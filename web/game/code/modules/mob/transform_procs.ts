@@ -538,7 +538,8 @@ rt.def("/mob/living/carbon/human/proc/Robotize", function* Robotize(f: Frame, de
 			rt.setFv(f, "active", rt.sv(f, "mind"), 0);
 		}
 		yield* g.callName(f, rt.sv(f, "mind"), "transfer_to", [live(R)]);
-		if (truthy(rt.fv(f, "special_role", rt.sv(f, "mind")))) {
+		// 2017 tg bug: read src.mind.special_role after transfer_to had emptied src.mind, a runtime that stopped Robotize half way (the player kept a frozen human); modern tg reads R.mind
+		if (truthy(rt.fv(f, "special_role", rt.fv(f, "mind", live(R))))) {
 			yield* g.callName(f, rt.fv(f, "mind", live(R)), "store_memory", ["In case you look at this after being borged, the objectives are only here until I find a way to make them not show up for you, as I can't simply delete them without screwing up round-end reporting. --NeoFite"]);
 		}
 	} else {

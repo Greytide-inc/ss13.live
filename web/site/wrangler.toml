@@ -1,0 +1,9 @@
+# ss13.live on Cloudflare Pages (plans/site.md). The deploy script runs wrangler from this folder.
+name = "ss13-live"
+pages_build_output_dir = "../build/site-pages"
+compatibility_date = "2026-10-01"
+
+# the files over Pages' 25 MiB limit (tools/site-pages.mjs), read by _worker.js as env.BIG
+[[r2_buckets]]
+binding = "BIG"
+bucket_name = "ss13-live-big"

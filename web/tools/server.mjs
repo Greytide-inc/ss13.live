@@ -37,13 +37,13 @@
 //   its acks lag (a backed-up link), views are held and merged (view-merge.mjs). Acks are outside the message budget. A hello with pack: 1
 //   gets packed views (worker/view-pack.js).
 // What a hostile connection can't do. A frame over MAX_FRAME closes it; each connection has
-//   a message budget (RATE_BURST, refilled RATE_PER_S a second: a real page stays under ~60/s), messages over it are dropped and a
-//   connection that keeps flooding is closed; resync and bugstate (the costly ones) once a second; a hello must come within HELLO_MS; at most
-//   MAX_SOCKETS connections, MAX_PER_IP from one outside address; a client too slow to take its views (MAX_BUFFERED waiting) is closed.
+//   a message budget (RATE_BURST, refilled RATE_PER_S a second: a real page stays under ~60/s) and a byte budget (BYTE_BURST, refilled
+//   BYTE_PER_S: past it only at 60 messages a second of over ~500 bytes each; input is ~100-200 bytes, a pasted book page ~20 KB once), messages over either are dropped and a connection that keeps flooding is closed; resync and bugstate (the costly ones) once a second; a hello must come within HELLO_MS; at most
+//   MAX_SOCKETS connections, MAX_PER_IP from one outside address (an IPv6 /64 counts as one address, as for every per-address limit and IP ban); a client too slow to take its views (MAX_BUFFERED waiting) is closed.
 //   A page (acks: 1, it pings once a second) silent for SILENT_MS is closed: a link that died without a close (a VPN or tunnel drop) would
 //   otherwise stay "connected" forever and its name could not join again.
 //   Names keep only letters, digits, space and _ - . (@ marks a tag; a name is shown to other players as HTML). The shape of each message is checked
-//   in the worker (src/worker/input-check.ts). World log lines (they hold every player's typed commands) go only to pages on this machine.
+//   in the worker (src/worker/input-check.ts). World log lines (they hold every player's typed commands) and the round-end data files go only to admins.
 import http from "node:http";
 import os from "node:os";
 import fs from "node:fs";
@@ -81,6 +81,14 @@ if (!["quiet", "normal", "chatty"].includes(logLevel)) { console.error(`--log-le
 // A request's peer address, and whether it is this machine (loopback or one of its own interface addresses).
 const peerOf = (req) => String(req.socket.remoteAddress ?? "").replace(/^::ffff:/, "");
 const isLocalPeer = (peer) => peer === "::1" || peer.startsWith("127.") || Object.values(os.networkInterfaces()).flat().map((i) => i?.address).includes(peer);
+// What the per-address limits and IP bans count (security review 2026-10-21): an IPv4 address, or an IPv6 address's /64, written
+// "2001:db8:1:2::/64": one home or rented server gets a whole /64, so counting each IPv6 address alone would let it walk past every limit.
+const blockOf = (ip) => {
+	if (!net.isIPv6(ip)) return ip;
+	const [h, t] = ip.split("::"), head = h ? h.split(":") : [], tail = t ? t.split(":") : [];
+	const all = t === undefined ? head : [...head, ...Array(Math.max(0, 8 - head.length - tail.length)).fill("0"), ...tail];
+	return `${all.slice(0, 4).map((x) => parseInt(x, 16).toString(16)).join(":")}::/64`;
+};
 // /loglevel only (admin is by secret): the host also asked for this machine by name (security review fix 1): a page whose domain was rebound to 127.0.0.1 sends its own
 // domain as Host, so it is not the host. Any X-Forwarded-For, even an empty one, means a proxy and not the host (review fix 3).
 const ownNames = () => ["localhost", os.hostname().toLowerCase(), `${os.hostname().toLowerCase()}.local`];
@@ -220,7 +228,7 @@ if (opt("--reserved", null)) {
 // Guessing secrets online: the tag a join gets back (and shows in OOC and Who) tells whoever joined whether its secret gives someone's
 // tag, under any free name. So every different tag an address brings counts: past NEW_TAGS_MAX in NEW_TAGS_MS, a hello with another
 // tag is refused, the right one too. The same tag again is free (a reconnect) and stays known; the host key is not a tag.
-const NEW_TAGS_MAX = 5, NEW_TAGS_MS = 60 * 60 * 1000, tagsSeen = new Map(); // ip -> Map(tag -> when it last brought it)
+const NEW_TAGS_MAX = 5, NEW_TAGS_MS = 60 * 60 * 1000, tagsSeen = new Map(); // blockOf(ip) -> Map(tag -> when it last brought it)
 const tagsOf = (ip) => { const t = tagsSeen.get(ip) ?? new Map(); for (const [k, at] of t) if (Date.now() - at >= NEW_TAGS_MS) t.delete(k); if (t.size) tagsSeen.set(ip, t); else tagsSeen.delete(ip); return t; };
 // The host key: fresh each start unless given, so nobody can guess it and a stale tab's old key just plays as a normal
 // player (not counted as a guess: counting would lock out this machine's own address after a few restarts). Printed, never in the log file.
@@ -231,7 +239,7 @@ let bans = { keys: {}, ips: {} };
 if (banFile && fs.existsSync(banFile)) { try { bans = { keys: {}, ips: {}, ...JSON.parse(fs.readFileSync(banFile, "utf8")) }; } catch (e) { console.error(`[server] ${banFile}: ${e.message}`); process.exit(2); } }
 function addBan(ck, addr) {
 	bans.keys[ck] = true;
-	if (addr && net.isIP(addr) && !addr.startsWith("127.") && addr !== "::1" && addr !== "192.0.2.1") bans.ips[addr] = true;
+	if (addr && net.isIP(addr) && !addr.startsWith("127.") && addr !== "::1" && addr !== "192.0.2.1") bans.ips[blockOf(addr)] = true; // IPv6: its /64
 	if (banFile) fs.writeFileSync(banFile, JSON.stringify(bans, null, 1));
 	out(`[server] ban saved: ${ck} ${addr ?? ""}`);
 }
@@ -292,7 +300,7 @@ function onWorkerMessage(m) {
 	if (to === null && m.type === "bugstate") return; // one player's state (security step 6): never to everyone
 	for (const c of clients) if (to === null || c.player === to) {
 		if (m.type === "view") { if (!c.viewReady && !m.update?.full) continue; c.viewReady = true; } // a new connection's views start at its resync's full one
-		if (m.type === "log" && !c.admin) continue; // the world log has every player's commands in it: only for admins
+		if ((m.type === "log" || m.type === "file") && !c.admin) continue; // the world log has every player's commands in it, and the round-end data files (security review 2026-10-21) their say/PDA logs and addresses: only for admins
 		if (c.ws.readyState !== 1) continue;
 			if (m.type === "disconnect" || m.type === "refused") setTimeout(() => c.ws.close(), 300); // del(client): the game kicked this player
 		if (c.ws.bufferedAmount > MAX_BUFFERED) { kick(c, `not reading (${(c.ws.bufferedAmount / 1048576).toFixed(0)} MB waiting)`); continue; }
@@ -304,10 +312,10 @@ function onWorkerMessage(m) {
 spawnWorker();
 
 // ---- WebSocket: each connection is one player
-const MAX_FRAME = 128 * 1024, RATE_BURST = 120, RATE_PER_S = 60, FLOOD_DROPS = 600, HELLO_MS = 10000, MAX_SOCKETS = 200, MAX_PER_IP = 8, MAX_BUFFERED = 16 * 1024 * 1024, SILENT_MS = 20000;
+const MAX_FRAME = 128 * 1024, RATE_BURST = 120, RATE_PER_S = 60, BYTE_BURST = 256 * 1024, BYTE_PER_S = 32 * 1024, FLOOD_DROPS = 600, HELLO_MS = 10000, MAX_SOCKETS = 200, MAX_PER_IP = 8, MAX_BUFFERED = 16 * 1024 * 1024, SILENT_MS = 20000;
 // New connections per address (security review: connection floods): MAX_PER_IP caps the open ones, this caps how fast they arrive, so a
 // few addresses can't keep the MAX_SOCKETS slots full by reconnecting. Every attempt counts, refused ones too. This machine is exempt.
-const CONN_MAX = 10, CONN_MS = 60 * 1000, connTimes = new Map(); // ip -> times of its recent connections
+const CONN_MAX = 10, CONN_MS = 60 * 1000, connTimes = new Map(); // blockOf(ip) -> times of its recent connections
 const connsOf = (ip) => { const t = (connTimes.get(ip) ?? []).filter((at) => Date.now() - at < CONN_MS); if (t.length) connTimes.set(ip, t); else connTimes.delete(ip); return t; };
 const ACK_BURST = 200, ACK_PER_S = 40; // acks and pings (security step 5): their own budget; a page sends at most one ack per view (20 a second) and a ping a second
 const SLOW = { resync: 1000, bugstate: 1000 }; // ms between two of these from one connection
@@ -327,7 +335,7 @@ function viewQueue(c, acks, pack) {
 const kick = (c, why) => { out(`[server] closing ${c.name ?? c.ip}: ${why}`); c.ws.terminate(); };
 const FORWARD = new Set(["key", "step", "click", "command", "typing", "answer", "statpanel", "statclick", "topic", "winclose", "menu", "menupick", "mouse", "resync", "bugstate"]);
 wss.on("connection", (ws, req) => {
-	const c = { ws, player: null, name: null, viewReady: false, views: null, ip: "", admin: false, tokens: RATE_BURST, at: Date.now(), ackTokens: ACK_BURST, ackAt: Date.now(), drops: 0, last: {}, heardAt: Date.now() }; // player = its ckey, set by hello
+	const c = { ws, player: null, name: null, viewReady: false, views: null, ip: "", admin: false, tokens: RATE_BURST, byteTokens: BYTE_BURST, at: Date.now(), ackTokens: ACK_BURST, ackAt: Date.now(), drops: 0, last: {}, heardAt: Date.now() }; // player = its ckey, set by hello
 	ws.on("error", () => {}); // a frame over MAX_FRAME or a broken one: ws closes the connection itself
 	// The player's address as the game sees it (client.address): an admin (a secret in the hello) is "127.0.0.1", which tg makes a
 	// localhost admin; anyone else gets their real address (192.0.2.1 if it is this machine's) and plays as a normal player.
@@ -337,13 +345,13 @@ wss.on("connection", (ws, req) => {
 	const proxied = peerLocal && req.headers["x-forwarded-for"] !== undefined;
 	const fwd = proxied ? String(req.headers["x-forwarded-for"]).split(",").pop().trim().replace(/^::ffff:/, "") : "";
 	const ip = proxied && net.isIP(fwd) ? fwd : peer;
-	c.ip = ip;
+	c.ip = ip; c.block = blockOf(ip);
 	// security review #2: from this machine, for a name that isn't this machine's, with no X-Forwarded-For: a proxy that drops the header.
 	// Not admin either way (Host), but every player would share this machine's address, so bans by address and the per-address limits stop working.
 	if (peerLocal && !proxied && !xffWarned && !isLocalName(String(req.headers.host ?? "").toLowerCase())) { xffWarned = true; out(`[server] warning: a connection from this machine for ${String(req.headers.host).slice(0, 100)} has no X-Forwarded-For: if a proxy (Caddy) is in front, make it send one, or bans by address and the per-address limits can't tell players apart`); }
 	let address = isLocalPeer(ip) ? "192.0.2.1" : ip; // 192.0.2.1: a documentation address, never a host; an admin gets 127.0.0.1 at hello
-	if (!isLocalPeer(ip)) { const t = connsOf(ip); t.push(Date.now()); connTimes.set(ip, t); if (t.length > CONN_MAX) { if ((t.length - CONN_MAX) % 100 === 1) out(`[server] connection from ${ip} refused (too fast, ${t.length - CONN_MAX} in a row; logged every 100th)`); ws.terminate(); return; } }
-	if (sockets.size >= MAX_SOCKETS || (!isLocalPeer(ip) && [...sockets].filter((o) => o.ip === ip).length >= MAX_PER_IP)) { out(`[server] connection from ${ip} refused (too many)`); ws.terminate(); return; }
+	if (!isLocalPeer(ip)) { const t = connsOf(c.block); t.push(Date.now()); connTimes.set(c.block, t); if (t.length > CONN_MAX) { if ((t.length - CONN_MAX) % 100 === 1) out(`[server] connection from ${ip} refused (too fast, ${t.length - CONN_MAX} in a row; logged every 100th)`); ws.terminate(); return; } }
+	if (sockets.size >= MAX_SOCKETS || (!isLocalPeer(ip) && [...sockets].filter((o) => o.block === c.block).length >= MAX_PER_IP)) { out(`[server] connection from ${ip} refused (too many)`); ws.terminate(); return; }
 	sockets.add(c);
 	out(`[server] websocket connected from ${ip}${proxied ? " (via proxy)" : ""}`);
 	const helloTimer = setTimeout(() => { if (c.player === null) kick(c, "no hello"); }, HELLO_MS);
@@ -361,11 +369,11 @@ wss.on("connection", (ws, req) => {
 			if (a) { c.views.ack(Number(a[1])); return; } // it only moves this player's own counter
 			if (p) { const now = Date.now(); if (now - (c.pongAt ?? 0) >= 500) { c.pongAt = now; ws.send(`{"type":"pong","t":${p[1]}}`); } return; } // the page's round-trip probe (once a second): answered at once, at most twice a second
 		}
-		// the message budget: counted before anything is parsed
-		const now = Date.now();
-		c.tokens = Math.min(RATE_BURST, c.tokens + ((now - c.at) / 1000) * RATE_PER_S); c.at = now;
-		if (c.tokens < 1) { stats.dropped++; if (++c.drops === FLOOD_DROPS) kick(c, `flooding (${FLOOD_DROPS} messages over the limit)`); return; }
-		c.tokens--;
+		// the message and byte budgets: counted before anything is parsed
+		const now = Date.now(), dt = (now - c.at) / 1000; c.at = now;
+		c.tokens = Math.min(RATE_BURST, c.tokens + dt * RATE_PER_S); c.byteTokens = Math.min(BYTE_BURST, c.byteTokens + dt * BYTE_PER_S);
+		if (c.tokens < 1 || c.byteTokens < data.length) { stats.dropped++; if (++c.drops === FLOOD_DROPS) kick(c, `flooding (${FLOOD_DROPS} messages over the limit)`); return; }
+		c.tokens--; c.byteTokens -= data.length;
 		let m;
 		try { m = JSON.parse(String(data)); } catch { return; }
 		if (!m || typeof m !== "object" || Array.isArray(m) || typeof m.type !== "string") return;
@@ -377,15 +385,15 @@ wss.on("connection", (ws, req) => {
 			const key = tag ? `${name} @${tag}` : name, ck = ckeyOf(key);
 			if (hostKeyOk(m.secret)) { c.admin = true; address = "127.0.0.1"; out(`[server] ${ck} is admin (host key from ${ip})`); }
 			else if (tag) {
-				const seen = tagsOf(ip);
+				const seen = tagsOf(c.block);
 				if (!seen.has(tag) && seen.size >= NEW_TAGS_MAX) {
 					out(`[server] ${key} (${ip}) refused: too many tries with new secrets (${NEW_TAGS_MAX} different tags this hour)`);
 					ws.send(toJson({ type: "refused", reason: "Too many different secrets from your address, try again in an hour." })); ws.close(); return;
 				}
-				seen.set(tag, Date.now()); tagsSeen.set(ip, seen);
+				seen.set(tag, Date.now()); tagsSeen.set(c.block, seen);
 				if (admins.has(tag)) { c.admin = true; address = "127.0.0.1"; out(`[server] ${ck} is admin (tag from ${ip})`); }
 			}
-			if (!c.admin && (bans.keys[ck] || bans.ips[ip])) {
+			if (!c.admin && (Object.hasOwn(bans.keys, ck) || Object.hasOwn(bans.ips, ip) || Object.hasOwn(bans.ips, c.block))) { // hasOwn: a player named Constructor is not Object's constructor
 				out(`[server] ${key} (${ip}) refused: banned`);
 				ws.send(toJson({ type: "refused", reason: "You are banned from this server." })); ws.close(); return;
 			}

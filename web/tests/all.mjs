@@ -40,6 +40,7 @@ const tests = [
 	"tests/static/statusdisplay.test.mjs",
 	"tests/input-check.test.mjs",
 	"tests/server-http.test.mjs",
+	"tests/server-private.test.mjs",
 	"tests/bugstate-to.test.mjs",
 	"tests/static/pixi-no-eval.test.mjs",
 	// drawing, icons, appearances (were only in test:draw / test:dmi / test:appearance / test:screen-loc)

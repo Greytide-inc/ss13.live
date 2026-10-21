@@ -5,3 +5,4 @@ node_modules/
 
 # Rebuild log (web/tools/rebuild-log.mjs)
 /REBUILDS.log
+/web/site/.wrangler/
