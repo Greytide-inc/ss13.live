@@ -79,13 +79,19 @@ export function shadowPolys(opaque: Uint8Array, w: number, h: number, px: number
 		// walking counter-clockwise from A to B passes the far side (A is the clockwise-most outline corner)
 		const poly: number[] = [];
 		for (let i = ia; ; i = (i + 1) % 4) { poly.push(c[2 * i], c[2 * i + 1]); if (i === ib) break; }
-		for (const i of [ib, ia]) {
-			const dx = c[2 * i] - px, dy = c[2 * i + 1] - py, k = far / Math.hypot(dx, dy);
-			poly.push(c[2 * i] + dx * k, c[2 * i + 1] + dy * k);
-		}
+		// out past B (past the tile's centre too when the fan is wide: with B and A alone its far edge cuts back near the point), past A
+		farOut(poly, px, py, c[2 * ib], c[2 * ib + 1], far);
+		if (hi - lo > 1.5) farOut(poly, px, py, tx + 0.5, ty + 0.5, far);
+		farOut(poly, px, py, c[2 * ia], c[2 * ia + 1], far);
 		out.push(poly);
 	}
 	return out;
+}
+
+/** Pushes the point `far` past (qx, qy) on the line out from (px, py). */
+function farOut(poly: number[], px: number, py: number, qx: number, qy: number, far: number): void {
+	const dx = qx - px, dy = qy - py, k = far / Math.hypot(dx, dy);
+	poly.push(qx + dx * k, qy + dy * k);
 }
 
 /** Whether (x, y) is inside the flat polygon p (even-odd). */

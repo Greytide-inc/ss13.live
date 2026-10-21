@@ -85,6 +85,15 @@ for (let run = 0; run < 30; run++) {
 	d[at(5, 4)] = 1; d[at(4, 5)] = 1; // east and north of the eye
 	assert.equal(litShare(d, w, h, 4.5, 4.5)[at(5, 5)], 0);
 }
+// an eye a hair below a lone wall: its shadow fans out nearly 180°, and a spot up and to the side behind the wall is still in it
+// (the far edge used to be one straight line between the two far corners, which cut back across close to the eye)
+{
+	const w = 9, h = 9, o = new Uint8Array(w * h);
+	o[3 + 7 * w] = 1;
+	const polys = shadowPolys(o, w, h, 3.3365, 6.9925, [], 0);
+	assert.equal(lineClear(o, w, h, 3.3365, 6.9925, 1.75, 8.9, 1, 8), false);
+	assert.ok(polys.some((p) => inPoly(p, 1.75, 8.9)));
+}
 // shadow polygons: in shadow exactly where a straight line from the eye point is blocked (random rooms, eyes and spots; no tile grown,
 // so the two agree everywhere but on outlines, which random spots don't hit)
 for (let run = 0; run < 200; run++) {

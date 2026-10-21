@@ -197,7 +197,7 @@ function buildExportText(vm: VM, top: Stored): string {
 /** Parses back a `. = <literal>\n\n` export (cheap version: no object(".N") blocks -- nothing in
  * tg's code round-trips an object through ImportText, only icon2base64 reads ExportText's text
  * directly with splittext/copytext). Returns undefined if the text isn't in that shape. */
-function parseExportedValue(text: string): Stored | undefined {
+export function parseExportedValue(text: string): Stored | undefined {
 	const m = /^\.\s*=\s*/.exec(text);
 	if (!m) return undefined;
 	let i = m[0].length;
@@ -230,6 +230,7 @@ function parseExportedValue(text: string): Stored | undefined {
 			const items: [Stored, Stored | undefined][] = [];
 			skipSpace();
 			while (text[i] !== ")") {
+				if (i >= text.length) throw new Error("unclosed list(");
 				const first = parseValue();
 				skipSpace();
 				if (text[i] === "=") {
@@ -252,9 +253,13 @@ function parseExportedValue(text: string): Stored | undefined {
 			i += numMatch[0].length;
 			return Number(numMatch[0]);
 		}
-		return null; // unrecognised (e.g. object(".N")): give up gracefully
+		throw new Error("unrecognised value"); // e.g. object(".N"): give up on the whole text
 	};
-	return parseValue();
+	try {
+		return parseValue();
+	} catch {
+		return undefined;
+	}
 }
 
 function resolvePath(cd: string[], path: string): string[] {
