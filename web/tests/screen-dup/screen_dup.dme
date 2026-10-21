@@ -1,0 +1,2 @@
+// screen_dup.dme - BYOND 511 check: duplicate entries in client.screen.
+#include "screen_dup.dm"

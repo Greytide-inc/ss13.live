@@ -1,0 +1,25 @@
+<!doctype html><meta charset="utf-8"><title>tgui rsc race test</title>
+<div id="popups"></div>
+<script type="module">
+// Sends tgui's browse_rsc files and its browse() to a fresh createPopups with different gaps, then decodes the script given to the frame
+// and checks that loadCSS("font-awesome.min.css") was rewritten to a data URL. window.result = [{gaps, ok}].
+import { createPopups } from "/web/worker/popups.js";
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const html = await (await fetch("/tgui/tgui.html")).text();
+const files = [["tgui.css", "tgui/assets/tgui.css"], ["tgui.js", "tgui/assets/tgui.js"], ["font-awesome.min.css", "tgui/assets/font-awesome.min.css"], ["fontawesome-webfont.woff2", "tgui/assets/fonts/fontawesome-webfont.woff2"]];
+const results = [];
+for (const [gapRsc, gapBrowse, pre] of [[0, 0, 0], [0, 5, 0], [10, 0, 0], [30, 30, 0], [0, 0, 1], [60, 0, 1], [0, 0, 2]]) {
+	const host = document.getElementById("popups"); host.textContent = "";
+	const p = createPopups({ host, send() {} });
+	if (pre) p.browse({ window: "other", html: "<p>x</p>", options: "size=50x50" }); // an unrelated browse running its finalize while tgui's files arrive
+	for (const [i, [name, file]] of files.entries()) { p.rsc({ file, name }); await sleep(gapRsc); if (pre === 2 && i === 1) { p.browse({ window: "other", html: "<p>x</p>", options: "size=50x50" }); await sleep(300); } } // pre 2: an unrelated browse lands between tgui.js and font-awesome.min.css (they arrive ticks apart)
+	await sleep(gapBrowse);
+	p.browse({ window: "tg", html, options: "size=300x200" });
+	await sleep(1500);
+	const w = p.windows.get("tg"), src = w?.doc ?? "";
+	const m = /<script defer src=["']?data:text\/javascript;base64,([^"'>]+)/.exec(src); let ok = false, plain = null;
+	if (m) { const js = atob(m[1]); plain = /["']font-awesome\.min\.css["']/.test(js); ok = /loadCSS\)?\(["']data:text\/css/.test(js) || (!plain && /data:text\/css/.test(js)); }
+	results.push({ gapRsc, gapBrowse, pre, jsFound: !!m, plainName: plain, ok, cssLinked: /href=["']?data:text\/css/.test(src) });
+}
+window.result = results; window.ready = true;
+</script>

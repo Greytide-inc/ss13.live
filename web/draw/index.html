@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>tg renderer: drawing page</title>
+<style>
+	body { font-family: system-ui, sans-serif; background: #1e1e1e; color: #ddd; margin: 0; padding: 16px; }
+	h1 { font-size: 18px; font-weight: 600; margin: 0 0 8px; }
+	#status { color: #9c9; font-size: 13px; margin-bottom: 16px; min-height: 1.2em; font-family: monospace; }
+	#canvas-host canvas { display: block; image-rendering: pixelated; }
+	#nav { font-size: 13px; margin-bottom: 8px; }
+	#nav a { color: #8ac; }
+	#station-host { display: none; }
+	/* Station mode (?scene=station): the page becomes one full-viewport pan/zoom area, no padding
+	 * eating into it -- overridden by JS adding .station-mode to <body>. */
+	body.station-mode { padding: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+	body.station-mode h1, body.station-mode #nav { padding: 8px 16px 0; margin: 0; flex: none; }
+	body.station-mode #status { padding: 0 16px; margin: 4px 0; flex: none; }
+	body.station-mode #canvas-host { display: none; }
+	body.station-mode #station-host { display: block; flex: 1; min-height: 0; }
+	#station-viewport { width: 100%; height: 100%; overflow: hidden; cursor: grab; touch-action: none; background: #000; }
+	#station-viewport:active { cursor: grabbing; }
+	#station-world { position: relative; transform-origin: 0 0; }
+	.station-chunk { position: absolute; image-rendering: pixelated; }
+	.station-lighting-chunk { mix-blend-mode: multiply; pointer-events: none; }
+	#lighting-toggle-wrap { display: none; margin-left: 12px; }
+	body.station-mode #lighting-toggle-wrap { display: inline; }
+	/* Client mode (?scene=client): a single canvas (map + HUD composited together), no pan/zoom
+	 * needed at this size -- just centered and scaled up for legibility. */
+	#client-host { display: none; }
+	body.client-mode #client-host { display: flex; justify-content: center; padding: 16px; }
+	.client-canvas { image-rendering: pixelated; width: 960px; height: 960px; background: #000; }
+	#hud-toggle-wrap { display: none; margin-left: 12px; }
+	body.client-mode #hud-toggle-wrap { display: inline; }
+	/* Animation demo mode (?scene=anim-demo): a couple of real, checked-in .dmi files
+	 * animated with the exact production draw path, since the current station/client dumps happen
+	 * to contain no multi-frame icon_states at all (see anim-demo.ts's header). */
+	#anim-demo-host { display: none; gap: 24px; flex-wrap: wrap; }
+	body.anim-demo-mode #anim-demo-host { display: flex; }
+	.anim-demo-cell { background: #111; padding: 12px; border-radius: 6px; max-width: 260px; }
+	.anim-demo-title { font-weight: 600; margin-bottom: 6px; }
+	.anim-demo-canvas { display: block; image-rendering: pixelated; background: #000; margin-bottom: 6px; }
+	.anim-demo-note { font-size: 12px; color: #9c9; font-family: monospace; }
+</style>
+<script type="importmap">
+{
+	"imports": {
+		"pixi.js": "/web/node_modules/pixi.js/dist/pixi.mjs"
+	}
+}
+</script>
+</head>
+<body>
+	<h1>Drawing page</h1>
+	<div id="nav">
+		<a href="/web/draw/index.html">atom gallery + 5x5 scene</a>
+		&middot;
+		<a href="/web/draw/index.html?scene=station">whole station (Box Station, z2)</a>
+		&middot;
+		<a href="/web/draw/index.html?scene=client">connected player's view</a>
+		&middot;
+		<a href="/web/draw/index.html?scene=anim-demo">animation demo</a>
+		&middot;
+		<a href="/web/draw/index.html?scene=maptext-demo">maptext demo</a>
+		<label id="lighting-toggle-wrap"><input type="checkbox" id="lighting-toggle" checked /> Lighting (L)</label>
+		<label id="hud-toggle-wrap"><input type="checkbox" id="hud-toggle" checked /> HUD</label>
+	</div>
+	<div id="status">Loading...</div>
+	<div id="canvas-host"></div>
+	<div id="station-host"></div>
+	<div id="client-host"></div>
+	<div id="anim-demo-host"></div>
+	<script type="module" src="/web/build/dist/src/render/draw-client.js"></script>
+</body>
+</html>

@@ -1,0 +1,78 @@
+#define HD 1
+#define HD 2
+#undef HD
+/world/New()
+	#ifdef HD
+	world.log << "HD after undef = [HD]"
+	#else
+	world.log << "HD gone"
+	#endif
+	var/datum/thing/T = new
+	world.log << "static1=[T.st()]"
+	T.inner = "changed"
+	world.log << "static2=[T.st()]"
+	var/datum/thing/T2 = new
+	var/list/datum/thing/LT = T2
+	world.log << "listtyped=[LT.inner]"
+	var/list/datum/thing/LL = list(1,2)
+	world.log << "listlen=[LL.len]"
+	world.log << "devil=[T.devil()]"
+	world.log << "pref=[T.pref()]"
+	world.log << "pref2=[T.pref2()]"
+	var/datum/thing/sub/S = new
+	world.log << "banned=[json_encode(S.banned)] [istype(S.banned,/list)] b2=[json_encode(S.banned2)]"
+	var/list/K = list("melee"=5)
+	K.["melee"] = 7
+	world.log << "dotidx=[K.["melee"]]"
+	world.log << "pw=[T.pw()]"
+	var/cnt = list()
+	for(var/i in 1 to 600)
+		var/y = pick("y",
+			300
+			"z")
+		cnt[y] = (cnt[y] || 0) + 1
+	for(var/k in cnt)
+		world.log << "cnt [k]=[cnt[k]]"
+	world.log << "col0=[T.col0()]"
+	shutdown()
+
+/datum/proc/basep()
+	return "base"
+/datum/proc/Kd(n)
+	return "Kd[n]"
+/datum/thing
+	var/inner = "orig"
+	var/list/banned
+/datum/thing/sub
+	var/list/banned2()
+/datum/thing/proc/st()
+	var/static/s = inner
+	return s
+/datum/thing/proc/devil()
+	/var/text = "a"
+	text += "b"
+	return text
+/datum/thing/proc/pref()
+	var/datum/cb/c = new /datum/cb(src, /datum/thing/sub/.pw)
+	return "[c.p] [c.p ? call(src, c.p)() : "null"]"
+/datum/thing/proc/pref2()
+	var/datum/cb/c = new /datum/cb(src, .pw)
+	return "[c.p] [c.p ? call(src, c.p)() : "null"]"
+/datum/thing/proc/pw()
+	return 1
+/datum/thing/proc/col0()
+	. = "c0"
+..()
+
+/datum/thing/sub/col0()
+	. = ..()
+	. += "sub"
+..()
+
+/datum/cb
+	var/p
+/datum/cb/New(o, pp)
+	p = pp
+
+/datum/thing/sub/pw()
+	return 2

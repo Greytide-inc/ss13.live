@@ -1,0 +1,52 @@
+
+
+Starting up round ID . 16:39:22
+---------------------
+Initialized Server Tasks subsystem within 0 seconds!
+Initialized Jobs subsystem within 0 seconds!
+Initialized Events subsystem within 0 seconds!
+Initialized Ticker subsystem within 0 seconds!
+Loading Box Station...
+Loaded station in 2.7s!
+Ruin "Syndicate Lava Base" placed at (117, 125, 5)
+Ruin "Biodome Beach" placed at (77, 79, 5)
+Ruin "Summoning Ritual" placed at (176, 82, 5)
+Ruin "Ruin of Envy" placed at (74, 186, 5)
+Ruin "UFO Crash" placed at (78, 115, 5)
+Ruin "Ruin of Pride" placed at (182, 131, 5)
+Ruin "Asteroid 1" placed at (182, 201, 9)
+Ruin "CF Corsair" placed at (213, 121, 10)
+Ruin "DJ Station" placed at (39, 136, 10)
+Ruin "Abandoned Teleporter" placed at (45, 71, 4)
+Ruin "Ordinary Space Tile" placed at (116, 61, 8)
+Ruin "Disposal Facility 17" placed at (213, 83, 9)
+Ruin "Survivalist Bunker" placed at (122, 100, 9)
+Ruin "Salvation" placed at (140, 49, 6)
+Ruin "Derelict 1" placed at (135, 50, 7)
+Ruin "Unnamed Turreted Outpost" placed at (71, 217, 3)
+Ruin "Authorship" placed at (29, 79, 6)
+Ruin "Strange Ship" placed at (126, 211, 6)
+Ruin "Derelict Tradepost" placed at (132, 179, 9)
+Ruin "Asteroid 3" placed at (114, 157, 8)
+Ruin "Waylaid Buses" placed at (190, 82, 3)
+Ruin "DK Excavator 453" placed at (58, 193, 3)
+Initialized Mapping subsystem within 6.3 seconds!
+## WARNING: one or more paperbins ate a pen duing initialize()
+Initialized 815464 atoms
+Initialized Atoms subsystem within 14.1 seconds!
+Initialized Language subsystem within 0 seconds!
+Initialized Machines subsystem within 0.1 seconds!
+Initialized Shuttle subsystem within 10.3 seconds!
+Initialized Weather subsystem within 0 seconds!
+## WARNING: There are 13 active turfs at roundstart, this is a mapping error caused by a difference of the air between the adjacent turfs. You can see its coordinates using "Mapping -> Show roundstart AT list" verb (debug verbs required)
+## WARNING: HEY! LISTEN! 0 Seconds were wasted processing 13 turf(s) (connected to 221 other turfs) with atmos differences at round start.
+Initialized Atmospherics subsystem within 54 seconds!
+Initialized Minimap subsystem within 0.1 seconds!
+Initialized Assets subsystem within 0 seconds!
+Initialized Icon Smoothing subsystem within 2.7 seconds!
+Initialized Overlay subsystem within 7.7 seconds!
+Initialized XKeyScore subsystem within 0 seconds!
+Initialized Lighting subsystem within 6 seconds!
+Initialized Persistence subsystem within 0.1 seconds!
+Initializations complete within 101.5 seconds!
+Game start took 0s

@@ -1,0 +1,51 @@
+// q5-vfs.dme - BYOND 511 file-op quirk test for the VFS module (web/src/vfs/).
+// Run from a scratch dir containing d1/a.txt="hello", d1/B.txt="world", d1/sub/c.txt="nested"
+// (all no trailing newline). Compile+run with DreamMaker/DreamDaemon -trusted -logself.
+//
+/world/New()
+	// fexists
+	world.log << "fexists(d1)=[fexists("d1")]"
+	world.log << "fexists(d1/)=[fexists("d1/")]"
+	world.log << "fexists(d1/a.txt)=[fexists("d1/a.txt")]"
+	world.log << "fexists(d1/A.TXT)=[fexists("d1/A.TXT")]"
+	world.log << "fexists(nope)=[fexists("nope")]"
+	world.log << "fexists(./d1/a.txt)=[fexists("./d1/a.txt")]"
+
+	// file2text
+	world.log << "file2text(d1/a.txt)=[file2text("d1/a.txt")]"
+	var/missing = file2text("nope.txt")
+	world.log << "file2text(missing)=[missing]|isnull=[isnull(missing)]"
+	var/dirtext = file2text("d1")
+	world.log << "file2text(dir)=[dirtext]|isnull=[isnull(dirtext)]"
+	world.log << "file2text(d1\\a.txt)=[file2text("d1\\a.txt")]"
+
+	// flist
+	var/list/l1 = flist("d1/")
+	world.log << "flist(d1/)=[jointext(l1, "|")]"
+	var/list/l2 = flist("d1")
+	world.log << "flist(d1)=[jointext(l2, "|")]"
+	var/list/l3 = flist("nope/")
+	world.log << "flist(nope/)=[jointext(l3, "|")]|isnull=[isnull(l3)]|len=[l3.len]"
+	var/list/l4 = flist("")
+	world.log << "flist(root, first5)=[jointext(l4.Copy(1,6), "|")]"
+
+	// text2file
+	var/w1 = text2file("line one", "out/deep/nested.txt")
+	world.log << "text2file to new nested dir=[w1]"
+	world.log << "fexists(out/deep/nested.txt)=[fexists("out/deep/nested.txt")]"
+	world.log << "file2text(out/deep/nested.txt)=[file2text("out/deep/nested.txt")]"
+	text2file("line two", "out/deep/nested.txt")
+	world.log << "after 2nd write=[file2text("out/deep/nested.txt")]"
+
+	// fcopy
+	fcopy("d1/a.txt", "out/copy.txt")
+	world.log << "fcopy result=[file2text("out/copy.txt")]"
+
+	// fdel
+	fdel("out/copy.txt")
+	world.log << "fexists after fdel file=[fexists("out/copy.txt")]"
+	fdel("out/deep/")
+	world.log << "fexists dir after fdel dir=[fexists("out/deep")]"
+	world.log << "fexists parent after fdel dir=[fexists("out")]"
+
+	shutdown()

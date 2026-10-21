@@ -1,0 +1,79 @@
+{
+ "config": {
+  "title": "Personal Data Assistant",
+  "status": 2,
+  "screen": null,
+  "style": "nanotrasen",
+  "interface": "pda",
+  "fancy": 0,
+  "locked": 0,
+  "window": "tgui-main",
+  "ref": "[0x1]",
+  "user": {
+   "name": "Test Man",
+   "ref": "[0x2]"
+  },
+  "srcObject": {
+   "name": "x",
+   "ref": "[0x1]"
+  },
+  "titlebar": 1
+ },
+ "data": {
+  "owner": "Test Man",
+  "ownjob": "Assistant",
+  "mode": 21,
+  "cartridge": "Engineering Cartridge",
+  "has_id": 1,
+  "id_name": "Test Man (Assistant)",
+  "pen": "pen",
+  "time": "12:00",
+  "ui_title": "Messages",
+  "silent": 0,
+  "toff": 0,
+  "ttone": "beep",
+  "message_header": "",
+  "can_all": 1,
+  "msgs": [
+   {
+    "out": 0,
+    "pda": "[0x10]",
+    "name": "Captain Palmer (Captain)",
+    "text": "whats up playa",
+    "photo": ""
+   },
+   {
+    "out": 1,
+    "pda": "[0x10]",
+    "name": "Captain Palmer (Captain)",
+    "text": "not much b, hbu? this one is a longer message to check that it wraps onto the next line inside its box",
+    "photo": ""
+   }
+  ],
+  "chat_target": "[0x10]",
+  "chat_name": "Captain Palmer (Captain)"
+ },
+ "window": {
+  "w": 500,
+  "h": 600
+ },
+ "checks": {
+  "text": [
+   "Captain Palmer (Captain)",
+   "You",
+   "whats up playa",
+   "not much b"
+  ],
+  "disabled": [],
+  "enabled": [
+   "Send Message"
+  ],
+  "clicks": [
+   {
+    "button": "Send Message",
+    "hrefPart": "choice=Message&target=[0x10]"
+   }
+  ],
+  "boxMin": 0.8
+ }
+}

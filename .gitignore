@@ -1,0 +1,7 @@
+node_modules/
+/web/build/
+/web/dist/
+
+
+# Rebuild log (web/tools/rebuild-log.mjs)
+/REBUILDS.log

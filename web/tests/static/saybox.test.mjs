@@ -1,0 +1,24 @@
+// say box channel logic: what each channel sends, Tab cycling, when "typing" is on.
+import assert from "node:assert";
+const s = await import("../../worker/saybox.js");
+const eq = assert.deepStrictEqual;
+eq(s.lineFor("say", " hello "), { text: 'say "hello' });
+eq(s.lineFor("say", "me too"), { text: 'say "me too' }, "a verb word at the start is still speech");
+eq(s.lineFor("say", "/resist"), { text: "resist" }, "/ runs a command");
+eq(s.lineFor("me", "/a-intent help"), { text: "a-intent help" }, "/ works in any channel");
+eq(s.lineFor("say", "/"), null);
+eq(s.lineFor("me", " waves "), { text: 'me "waves' });
+eq(s.lineFor("whisper", "psst"), { text: 'whisper "psst' });
+eq(s.lineFor("radio", "help in bar"), { text: 'say ";help in bar' });
+eq(s.lineFor("radio", ":e need engineers"), { text: 'say ":e need engineers' });
+eq(s.lineFor("radio", ".h sec to arrivals"), { text: 'say ".h sec to arrivals' });
+eq(s.lineFor("radio", ":ewhat"), { text: 'say ":ewhat' }, "tg reads the key with no space too");
+eq(s.lineFor("say", "   "), null);
+eq(s.nextChannel("say"), "radio"); eq(s.nextChannel("radio"), "me"); eq(s.nextChannel("me"), "whisper"); eq(s.nextChannel("whisper"), "say");
+eq(s.nextChannel("say", -1), "whisper"); eq(s.nextChannel("radio", -1), "say");
+eq(s.isTyping("x", true), true);
+eq(s.isTyping("x", false), false, "left the box");
+eq(s.isTyping("  ", true), false, "empty box");
+eq(s.hotkeyOpens("T", false), "say"); eq(s.hotkeyOpens("M", false), "me");
+eq(s.hotkeyOpens("T", true), null, "CTRL+T etc. keep their macro"); eq(s.hotkeyOpens("W", false), null);
+console.log("saybox: ok");

@@ -1,0 +1,28 @@
+Sat Sep 26 18:50:23 2026
+World opened on network port 46853.
+Welcome BYOND! (5.0 Public Version 511.1385)
+fexists(d1)=1
+fexists(d1/)=1
+fexists(d1/a.txt)=1
+fexists(d1/A.TXT)=0
+fexists(nope)=0
+fexists(./d1/a.txt)=1
+file2text(d1/a.txt)=hello
+file2text(missing)=|isnull=1
+file2text(dir)=|isnull=0
+file2text(d1\a.txt)=hello
+flist(d1/)=sub/|B.txt|a.txt
+flist(d1)=d1/
+flist(nope/)=|isnull=0|len=0
+flist(root, first5)=run.out|dm.log|d1/|vfs.dmb|vfs.dme
+text2file to new nested dir=1
+fexists(out/deep/nested.txt)=1
+file2text(out/deep/nested.txt)=line one
+
+after 2nd write=line one
+line two
+
+fcopy result=hello
+fexists after fdel file=0
+fexists dir after fdel dir=0
+fexists parent after fdel dir=1

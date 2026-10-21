@@ -1,0 +1,23 @@
+<!doctype html><meta charset="utf-8"><title>ui1 test</title>
+<style>#ctxmenu{position:fixed;z-index:12;background:#f4f4f4;border:1px solid #666;font:12px sans-serif;min-width:120px}#ctxmenu .row{position:relative;padding:3px 18px 3px 8px;white-space:nowrap}#ctxmenu .row:hover{background:#39c}#ctxmenu .sm{display:none;position:fixed;background:#f4f4f4;border:1px solid #666}#ctxmenu .row:hover>.sm{display:block}
+.bwin{position:absolute;pointer-events:auto;display:flex;flex-direction:column;border:2px solid #446;overflow:hidden}.bwin iframe{flex:1;border:0;width:100%}</style>
+<div id="popups" style="position:fixed;inset:0;pointer-events:none"></div>
+<script type="module">
+import { createPopups } from "/web/worker/popups.js";
+import { createCtxMenu } from "/web/worker/ctxmenu.js";
+window.sent = [];
+const p = createPopups({ host: document.getElementById("popups"), send: (m) => window.sent.push(m) });
+window.popups = p;
+window.menu = createCtxMenu((m) => window.sent.push(m));
+// tgui's dragresize.js (drag/lock/resize), as the game's window would run it: titlebar=0 and its own header
+const html = `<html><body style="margin:0"><div id="hdr" style="height:30px;background:#357">header</div><script>
+const winset=(win,key,value)=>{window.location.href="byond://winset?"+encodeURIComponent(win+"."+key)+"="+encodeURIComponent(value)};
+function lock(x,y){if(x<0)x=0;else if(x+window.innerWidth>window.screen.availWidth)x=window.screen.availWidth-window.innerWidth;if(y<0)y=0;else if(y+window.innerHeight>window.screen.availHeight)y=window.screen.availHeight-window.innerHeight;return{x,y}}
+let st={drag:false,x:0,y:0};
+hdr.onmousedown=(e)=>{st={drag:true,x:e.screenX,y:e.screenY};};
+addEventListener("mousemove",(e)=>{if(!st.drag)return;let x=(e.screenX-st.x)+window.screenLeft,y=(e.screenY-st.y)+window.screenTop;({x,y}=lock(x,y));winset("tguiwin","pos",x+","+y);st.x=e.screenX;st.y=e.screenY});
+addEventListener("mouseup",()=>st.drag=false);
+<\/script></body></html>`;
+p.browse({ window: "tguiwin", html, options: "size=300x200;titlebar=0" });
+window.ready = true;
+</script>

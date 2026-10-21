@@ -1,0 +1,16 @@
+[16:29:18] Runtime in portable_turret.dm,317: Cannot execute null.start().
+  proc name: take damage (/obj/machinery/porta_turret/take_damage)
+  src: turret (/obj/machinery/porta_turret/syndicate/pod)
+  call stack:
+  turret (/obj/machinery/porta_turret/syndicate/pod): take damage(20, "fire", "laser", 0)
+  turret (/obj/machinery/porta_turret/syndicate/pod): bullet act(laser (114,115,6) (/obj/item/projectile/beam/laser))
+  laser (114,115,6) (/obj/item/projectile/beam/laser): Bump(turret (/obj/machinery/porta_turret/syndicate/pod), 1)
+  plating (115,115,6) (/turf/open/floor/plating/airless): Enter(laser (114,115,6) (/obj/item/projectile/beam/laser), ０space (114,115,6) (/turf/open/space/basic))
+  laser (114,115,6) (/obj/item/projectile/beam/laser): Move(plating (115,115,6) (/turf/open/floor/plating/airless), 4)
+  laser (114,115,6) (/obj/item/projectile/beam/laser): Move(plating (115,115,6) (/turf/open/floor/plating/airless), 4)
+  step(laser (114,115,6) (/obj/item/projectile/beam/laser), 4, 0)
+  laser (114,115,6) (/obj/item/projectile/beam/laser): Move(plating (115,115,6) (/turf/open/floor/plating/airless), 6)
+  step towards(laser (114,115,6) (/obj/item/projectile/beam/laser), plating (115,115,6) (/turf/open/floor/plating/airless), null)
+  laser (114,115,6) (/obj/item/projectile/beam/laser): fire(null, null)
+  Space Pirate Gunner (110,119,6) (/mob/living/simple_animal/hostile/pirate/space/ranged): Shoot(turret (/obj/machinery/porta_turret/syndicate/pod))
+  /datum/callback (/datum/callback): InvokeAsync()

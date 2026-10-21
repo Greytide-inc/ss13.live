@@ -1,0 +1,54 @@
+
+
+Starting up round ID . 17:13:05
+---------------------
+Initialized Server Tasks subsystem within 0 seconds!
+Initialized Jobs subsystem within 0 seconds!
+Initialized Events subsystem within 0 seconds!
+Initialized Ticker subsystem within 0 seconds!
+Loading Box Station...
+Loaded station in 2.6s!
+Ruin "Ash Walker Nest" placed at (94, 173, 5)
+Ruin "Fountain Hall" placed at (131, 93, 5)
+Ruin "Biodome Beach" placed at (72, 93, 5)
+Ruin "Ruin of Envy" placed at (211, 127, 5)
+Ruin "Ruin of Sloth" placed at (174, 87, 5)
+Ruin "Biodome Winter" placed at (203, 49, 5)
+Ruin "Makeshift Shelter" placed at (116, 33, 5)
+Ruin "Animal Hospital" placed at (42, 204, 5)
+Ruin "Crashed Clown Ship" placed at (37, 143, 10)
+Ruin "Ordinary Space Tile" placed at (192, 145, 9)
+Ruin "Derelict 3" placed at (123, 43, 4)
+Ruin "CF Corsair" placed at (173, 167, 8)
+Ruin "Syndicate Listening Station" placed at (84, 83, 3)
+Ruin "Survivalist Bunker" placed at (154, 112, 10)
+Ruin "Derelict 6" placed at (50, 188, 6)
+Ruin "Abandoned Telecommunications Satellite" placed at (144, 177, 4)
+Ruin "Authorship" placed at (45, 226, 7)
+Ruin "Derelict 4" placed at (94, 56, 4)
+Ruin "Crashed Ship" placed at (191, 97, 9)
+Ruin "DK Excavator 453" placed at (193, 54, 6)
+Ruin "Derelict 1" placed at (165, 178, 7)
+Ruin "Dinner for Two" placed at (139, 138, 9)
+Ruin "Derelict 5" placed at (133, 156, 6)
+Ruin "Kosmicheskaya Stantsiya 13" placed at (143, 47, 7)
+Initialized Mapping subsystem within 7.2 seconds!
+## WARNING: one or more paperbins ate a pen duing initialize()
+Initialized 815942 atoms
+Initialized Atoms subsystem within 14.1 seconds!
+Initialized Language subsystem within 0 seconds!
+Initialized Machines subsystem within 0.1 seconds!
+Initialized Shuttle subsystem within 10.2 seconds!
+Initialized Weather subsystem within 0 seconds!
+## WARNING: There are 40 active turfs at roundstart, this is a mapping error caused by a difference of the air between the adjacent turfs. You can see its coordinates using "Mapping -> Show roundstart AT list" verb (debug verbs required)
+## WARNING: HEY! LISTEN! 0.8 Seconds were wasted processing 40 turf(s) (connected to 19512 other turfs) with atmos differences at round start.
+Initialized Atmospherics subsystem within 55.1 seconds!
+Initialized Minimap subsystem within 0.1 seconds!
+Initialized Assets subsystem within 0 seconds!
+Initialized Icon Smoothing subsystem within 2.9 seconds!
+Initialized Overlay subsystem within 7.9 seconds!
+Initialized XKeyScore subsystem within 0 seconds!
+Initialized Lighting subsystem within 6.2 seconds!
+Initialized Persistence subsystem within 0.1 seconds!
+Initializations complete within 103.9 seconds!
+Game start took 0s

@@ -1,0 +1,73 @@
+<div style='display: flex'>
+<div style='flex: 2; margin-right: 6px'>
+<ui-display title='Materials' button>
+  {{#partial button}}
+    <ui-button icon='refresh' action='sync'>Sync with R&amp;D servers</ui-button>
+  {{/partial}}
+  <div style='display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px'>
+  {{#each data.materials}}
+    <div style='text-align: center; background: rgba(0, 0, 0, 0.25); padding: 2px'>
+      <img src='mat-{{id.slice(1)}}.png' width='48' height='48' style='width: 48px; height: 48px; image-rendering: pixelated; display: block; margin: 0 auto'/>
+      <div style='text-transform: capitalize'>{{name}}</div>
+      <div class='{{amount ? null : "average"}}'>{{amount}} cm&sup3;</div>
+      <div style='min-height: 20px'>
+        {{#if amount >= 2000}}<ui-button action='remove_mat' params='{"material": "{{id}}", "amount": "1"}'>1</ui-button>{{/if}}
+        {{#if amount >= 20000}}<ui-button action='remove_mat' params='{"material": "{{id}}", "amount": "10"}'>10</ui-button>{{/if}}
+        {{#if amount >= 2000}}<ui-button action='remove_mat' params='{"material": "{{id}}", "amount": "50"}'>All</ui-button>{{/if}}
+      </div>
+    </div>
+  {{/each}}
+  </div>
+</ui-display>
+{{#if data.being_built}}
+  <ui-display title='Building'>
+    <span class='average'>Building {{data.being_built}}. Please wait until completion...</span>
+  </ui-display>
+{{elseif data.screen == "parts"}}
+  <ui-display title='{{data.part_set}}'>
+    <ui-section>
+      <ui-button icon='arrow-left' action='back'>Return</ui-button>
+      <ui-button icon='plus' action='partset_to_queue' params='{"set": "{{data.part_set}}"}'>Add all parts to queue</ui-button>
+    </ui-section>
+    {{#each data.parts}}
+      <ui-section label='{{name}}'>
+        <span title='{{desc}}'>{{cost}} | {{time}} sec</span>
+        <ui-button icon='wrench' state='{{can_build ? null : "disabled"}}' action='build' params='{"id": "{{id}}"}'>Build</ui-button>
+        <ui-button icon='plus' action='add_to_queue' params='{"id": "{{id}}"}'>Add to queue</ui-button>
+      </ui-section>
+    {{/each}}
+  </ui-display>
+{{else}}
+  <ui-display title='Part categories'>
+    <div style='display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px 8px'>
+    {{#each data.part_sets}}
+      <div>
+        <ui-button icon='folder-open' action='part_set' params='{"set": "{{.}}"}'>{{.}}</ui-button>
+        <ui-button icon='plus' tooltip='Add all parts to queue' action='partset_to_queue' params='{"set": "{{.}}"}'></ui-button>
+      </div>
+    {{/each}}
+    </div>
+  </ui-display>
+{{/if}}
+</div>
+<div style='flex: 1'>
+<ui-display title='Queue'>
+  {{#if data.queue.length}}
+    {{#each data.queue}}
+      <ui-section label='{{index}}. {{name}}'>
+        <span class='{{can_build ? "good" : "bad"}}'>{{can_build ? "ready" : "missing materials"}}</span>
+        <ui-button icon='arrow-up' state='{{index > 1 ? null : "disabled"}}' action='queue_move' params='{"dir": "-1", "index": "{{index}}"}'></ui-button>
+        <ui-button icon='arrow-down' state='{{index < data.queue.length ? null : "disabled"}}' action='queue_move' params='{"dir": "1", "index": "{{index}}"}'></ui-button>
+        <ui-button icon='close' action='remove_from_queue' params='{"index": "{{index}}"}'>Remove</ui-button>
+      </ui-section>
+    {{/each}}
+    <ui-section>
+      <ui-button icon='play' action='process_queue'>Process queue</ui-button>
+      <ui-button icon='trash' action='clear_queue'>Clear queue</ui-button>
+    </ui-section>
+  {{else}}
+    <span class='average'>Nothing queued.</span>
+  {{/if}}
+</ui-display>
+</div>
+</div>

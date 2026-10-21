@@ -1,0 +1,51 @@
+// q6: which turf gives an area its x/y/z (az1)
+// map: z1 a at (2,4),(4,2); z2 a at (1,1); b on z2 at (3,3); e on z2 at (5,1)
+#include "q6-area.dmm"
+/turf/t
+/area/def
+/area/a
+/area/b
+/area/c
+/area/e
+/area/d
+/proc/p(atom/A, tag)
+	world.log << "[tag]: [A ? "[A.x],[A.y],[A.z]" : "null"]"
+/world/New()
+	var/area/a/A = locate(/area/a)
+	p(A, "a spread z1(2,4)(4,2) z2(1,1)")
+	p(locate(/area/b), "b z2(3,3)")
+	var/area/def/D = locate(/area/def)
+	p(D, "def (everything else)")
+	var/area/c/C = new
+	p(C, "c no turfs")
+	world.log << "c no turfs: isnull(x)=[isnull(C.x)] x==0:[C.x == 0]"
+	// add turf at runtime to a
+	A.contents += locate(3,1,1)
+	p(A, "a after += (3,1,1)")
+	A.contents += locate(1,1,1)
+	p(A, "a after += (1,1,1)")
+	// def lost (1,1,1) and (3,1,1)
+	p(D, "def after losing (1,1,1),(3,1,1)")
+	// c gets a turf
+	C.contents += locate(5,5,2)
+	p(C, "c after += (5,5,2)")
+	C.contents += locate(4,5,1)
+	p(C, "c after += (4,5,1)")
+	// new area with loc
+	var/area/d/N = new(locate(2,2,2))
+	p(N, "new /area/d(turf 2,2,2)")
+	var/turf/T = locate(2,2,2)
+	world.log << "turf 2,2,2 loc=[T.loc.type]"
+	// e: turf moved out to another area -> empty?
+	var/area/e/E = locate(/area/e)
+	p(E, "e z2(5,1)")
+	C.contents += locate(5,1,2)
+	p(E, "e after losing its only turf")
+	// write x: B.x = 7 is a compile error ("cannot change constant value"); try vars[]
+	var/area/b/B = locate(/area/b)
+	try
+		B.vars["x"] = 7
+	catch(var/exception/X)
+		world.log << "write x: [X.name]"
+	p(B, "b after x=7")
+	shutdown()

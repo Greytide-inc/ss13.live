@@ -1,0 +1,31 @@
+<ui-display title='Storage'>
+  {{#if data.contents.length}}
+    {{#each data.contents}}
+      <ui-section label='{{label}}'>
+        <span class='good'>{{amount}} in stock</span>
+        <ui-button icon='arrow-down' action='vend' params='{"name": "{{name}}", "amount": "1"}'>Vend</ui-button>
+        {{#if amount > 5}}
+          <ui-button action='vend' params='{"name": "{{name}}", "amount": "5"}'>x5</ui-button>
+        {{/if}}
+        {{#if amount > 10}}
+          <ui-button action='vend' params='{"name": "{{name}}", "amount": "10"}'>x10</ui-button>
+        {{/if}}
+        {{#if amount > 25}}
+          <ui-button action='vend' params='{"name": "{{name}}", "amount": "25"}'>x25</ui-button>
+        {{/if}}
+        {{#if amount > 1}}
+          <ui-button action='vend' params='{"name": "{{name}}", "amount": "{{amount}}"}'>All</ui-button>
+        {{/if}}
+      </ui-section>
+    {{/each}}
+  {{else}}
+    <span class='bad'>No products loaded.</span>
+  {{/if}}
+</ui-display>
+{{#if data.drying_rack}}
+  <ui-display title='Drying'>
+    <ui-section label='Drying'>
+      <ui-button icon='{{data.drying ? "power-off" : "close"}}' style='{{data.drying ? "selected" : null}}' action='dry'>{{data.drying ? "On" : "Off"}}</ui-button>
+    </ui-section>
+  </ui-display>
+{{/if}}

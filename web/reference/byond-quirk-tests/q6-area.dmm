@@ -1,0 +1,20 @@
+"d" = (/turf/t,/area/def)
+"a" = (/turf/t,/area/a)
+"b" = (/turf/t,/area/b)
+"e" = (/turf/t,/area/e)
+
+(1,1,1) = {"
+ddddd
+daddd
+ddddd
+dddad
+ddddd
+"}
+
+(1,1,2) = {"
+ddddd
+ddddd
+ddbdd
+ddddd
+addde
+"}

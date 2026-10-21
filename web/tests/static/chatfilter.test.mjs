@@ -1,0 +1,21 @@
+// line -> category and highlight matching.
+import assert from "node:assert";
+import { classify, parseWords, matchWords, CATEGORIES } from "../../worker/chatfilter.js";
+const c = classify;
+assert.strictEqual(c("<span class='userdanger'>Bob hits you!</span>"), "combat");
+assert.strictEqual(c("<span class='danger'>Bob attacks Al</span>"), "combat");
+assert.strictEqual(c("<span class='game say'><span class='radio'>[Common] <span class='message'>hi</span></span></span>"), "radio");
+assert.strictEqual(c('<span class="game say"><span class="name">Bob</span> says</span>'), "speech");
+assert.strictEqual(c("<font color='#002eb8'><span class='ooc'><span class='prefix'>OOC:</span> x</span></font>"), "ooc");
+assert.strictEqual(c("<span class='game deadsay'><span class='prefix'>DEAD:</span> hi</span>"), "dead");
+assert.strictEqual(c("<span class='notice'>You pick up the thing.</span>"), "info");
+assert.strictEqual(c("<span class='danger'>x</span><span class='notice'>y</span>"), "combat");
+assert.strictEqual(c("<b>Bob</b> waves."), "");
+assert.strictEqual(c("<span class='cult'>chant</span>"), "");
+assert.strictEqual(c("<span class='sciradio'>x</span>"), "radio");
+assert.deepStrictEqual(parseWords(" Foo, bar baz ,,"), ["foo", "bar baz"]);
+assert.ok(matchWords("The Captain says hi", ["captain"]));
+assert.ok(!matchWords("nothing", ["captain"]));
+assert.ok(!matchWords("anything", []));
+assert.strictEqual(CATEGORIES.length, 6);
+console.log("chatfilter test ok");

@@ -1,0 +1,21 @@
+<ui-display title='Send Signal'>
+  <ui-section label='Send'>
+    <ui-button icon='arrow-up' action='send'>Send Signal</ui-button>
+  </ui-section>
+</ui-display>
+<ui-display title='Frequency / Code'>
+  <ui-section label='Frequency'>
+    <ui-button action='freq' params='{"adjust": -10}'>-10</ui-button>
+    <ui-button action='freq' params='{"adjust": -2}'>-2</ui-button>
+    <span>{{data.readable_frequency}}</span>
+    <ui-button action='freq' params='{"adjust": 2}'>+2</ui-button>
+    <ui-button action='freq' params='{"adjust": 10}'>+10</ui-button>
+  </ui-section>
+  <ui-section label='Code'>
+    <ui-button action='code' params='{"adjust": -5}'>-5</ui-button>
+    <ui-button action='code' params='{"adjust": -1}'>-1</ui-button>
+    <span>{{data.code}}</span>
+    <ui-button action='code' params='{"adjust": 1}'>+1</ui-button>
+    <ui-button action='code' params='{"adjust": 5}'>+5</ui-button>
+  </ui-section>
+</ui-display>

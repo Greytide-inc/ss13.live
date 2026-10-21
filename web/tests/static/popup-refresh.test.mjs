@@ -1,0 +1,26 @@
+// a second browse() of an open window loads in a hidden frame and swaps in once written: the showing frame is never reloaded (the flicker).
+import assert from "node:assert";
+const listeners = {};
+const mkFrame = () => { const f = { sandbox: "", style: {}, srcSets: 0, removed: false, posted: [], contentWindow: { postMessage(m) { f.posted.push(m); } }, blur() {}, remove() { f.removed = true; } }; Object.defineProperty(f, "src", { set() { f.srcSets++; } }); return f; };
+const frames = [];
+const mkEl = () => ({ style: {}, dataset: {}, append() {}, remove() {}, querySelector: () => null, offsetLeft: 0, offsetTop: 0 });
+globalThis.window = globalThis; globalThis.focus = () => {}; globalThis.innerWidth = 800; globalThis.innerHeight = 600;
+globalThis.addEventListener = (t, f) => { (listeners[t] ??= []).push(f); };
+globalThis.removeEventListener = () => {};
+Object.defineProperty(globalThis, "document", { value: { baseURI: "http://x/index.html", createElement: (t) => (t === "iframe" ? (frames.push(mkFrame()), frames.at(-1)) : mkEl()), activeElement: null }, configurable: true });
+const { createPopups } = await import("../../worker/popups.js");
+const p = createPopups({ host: { append() {}, clientWidth: 800, clientHeight: 600 }, send() {} });
+const msg = (frame, d) => listeners.message.forEach((f) => f({ source: frame.contentWindow, data: d }));
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+await p.browse({ window: "w1", html: "<p>one</p>" }); await wait(50);
+assert.strictEqual(frames.length, 1); assert.strictEqual(frames[0].srcSets, 1);
+msg(frames[0], { popupReady: 1 }); msg(frames[0], { popupWritten: 1 });
+await p.browse({ window: "w1", html: "<p>two</p>" }); await wait(50);
+assert.strictEqual(frames.length, 2, "a refresh gets a second frame"); assert.strictEqual(frames[0].srcSets, 1, "the showing frame is not reloaded");
+assert.strictEqual(frames[0].removed, false, "old frame stays until the new page is written");
+msg(frames[1], { popupReady: 1 });
+assert.ok(frames[1].posted.some((m) => m.popupHtml?.includes("two")), "the new frame gets the new html");
+msg(frames[1], { popupWritten: 1 }); await wait(400);
+assert.strictEqual(frames[0].removed, true, "swapped in once written");
+console.log("popup-refresh: ok");
+process.exit(0);

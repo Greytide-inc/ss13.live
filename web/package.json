@@ -1,0 +1,38 @@
+{
+  "name": "ss13-live",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "version": "0.9.0-beta",
+  "description": "ss13.live: 2017 /tg/station in the browser (beta)",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p .",
+    "test": "tsc -p . && node tests/all.mjs",
+    "bundle-vfs": "tsc -p . && node build/dist/src/tools/bundle-vfs.js",
+    "compare-logs": "tsc -p . && node build/dist/src/tools/compare-logs.js",
+    "test:dmi-all": "tsc -p . && node build/dist/tests/dmi/dmi-all.test.js",
+    "gallery": "tsc -p . && node build/dist/src/tools/gallery-server.js",
+    "appearance-dump": "tsc -p . && node build/dist/src/tools/appearance-dump.js",
+    "build:tgui": "cd ../tgui && npm install --no-audit --no-fund --silent && node build.js",
+    "build:static": "tsc -p . && node tools/build-static.mjs",
+    "test:ui1": "tsc -p . && node --experimental-websocket tools/ui1-test.mjs",
+    "test:sw": "node --experimental-websocket tests/static/sw.test.mjs",
+    "test:restart": "node --experimental-websocket tests/static/restart.test.mjs",
+    "check:static": "node tools/check-static.mjs",
+    "skin": "tsc -p . && node build/dist/src/tools/skin-to-html.js",
+    "boot-check": "tools/boot-check.sh",
+    "boot": "tsc -p . && node --max-old-space-size=3072 build/dist/src/tools/boot.js",
+    "icon-sizes": "tsc -p . && node build/dist/src/tools/icon-sizes.js",
+    "worker-boot": "tsc -p . && node --experimental-websocket tools/worker-boot.mjs",
+    "station-dump": "tsc -p . && node build/dist/src/tools/bundle-vfs.js >/dev/null && node --max-old-space-size=3072 build/dist/src/tools/station-dump.js",
+    "extract-screen-locs": "tsc -p . && node build/dist/src/tools/extract-screen-locs.js"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "pixi.js": "^8.21.0",
+    "ws": "^8.22.0"
+  }
+}

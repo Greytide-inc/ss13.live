@@ -1,0 +1,18 @@
+/world/New()
+	var/datum/t/T = new
+	world.log << "g=[T.g()] h=[T.h()]"
+	var/obj/foo2/F = new
+	world.log << F.name
+	shutdown()
+/datum/t/proc/g()
+	. = 1
+ . += 2
+
+/datum/t/proc/h()
+	. = 1
+		. += 4
+
+/datum/t/proc/f()
+	return 1
+ /obj/foo2
+ 	name = "foo2name"

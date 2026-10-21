@@ -1,0 +1,18 @@
+[04:55:36] Runtime in gas_mixture.dm,395: Cannot read null.gases
+  proc name: compare (/datum/gas_mixture/compare)
+  src: /datum/gas_mixture (/datum/gas_mixture)
+  call stack:
+  /datum/gas_mixture (/datum/gas_mixture): compare(null)
+  volcanic floor (19,36,5) (/turf/open/floor/plating/asteroid/basalt/lava_land_surface): Initalize Atmos(1)
+  Atmospherics (/datum/controller/subsystem/air): setup allturfs()
+  Atmospherics (/datum/controller/subsystem/air): Initialize(140803)
+  Master (/datum/controller/master): Initialize(10, 0)
+[vm-boot] runtime: Cannot read null.gases | /datum/gas_mixture/proc/compare (code/modules/atmospherics/gasmixtures/gas_mixture.dm:395) | /turf/open/proc/Initalize_Atmos <- /datum/controller/subsystem/air/proc/setup_allturfs <- /datum/controller/subsystem/air/proc/Initialize <- /datum/controller/master/proc/Initialize
+[04:55:36] Runtime in open.dm,103: Cannot execute null.compare().
+  proc name: Initalize Atmos (/turf/open/Initalize_Atmos)
+  src: asteroid sand (20,36,5) (/turf/open/floor/plating/asteroid/airless/cave/volcanic)
+  call stack:
+  asteroid sand (20,36,5) (/turf/open/floor/plating/asteroid/airless/cave/volcanic): Initalize Atmos(1)
+  Atmospherics (/datum/controller/subsystem/air): setup allturfs()
+  Atmospherics (/datum/controller/subsystem/air): Initialize(140803)
+  Master (/datum/controller/master): Initialize(10, 0)

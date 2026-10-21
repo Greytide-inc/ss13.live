@@ -1,0 +1,54 @@
+<ui-display title='Materials'>
+  <ui-section label='Total amount'>
+    <span>{{data.total_amount}} / {{data.max_amount}} cm&sup3;</span>
+  </ui-section>
+  {{#each data.materials}}
+    <ui-section label='{{name}}'>
+      <span>{{amount}} cm&sup3;</span>
+      {{#if amount >= 2000}}
+        <ui-button icon='eject' state='{{data.busy ? "disabled" : null}}' action='eject' params='{"material": "{{id}}", "amount": "1"}'>1</ui-button>
+      {{/if}}
+      {{#if amount >= 20000}}
+        <ui-button icon='eject' state='{{data.busy ? "disabled" : null}}' action='eject' params='{"material": "{{id}}", "amount": "10"}'>10</ui-button>
+      {{/if}}
+      {{#if amount >= 2000}}
+        <ui-button icon='eject' state='{{data.busy ? "disabled" : null}}' action='eject' params='{"material": "{{id}}", "amount": "50"}'>All</ui-button>
+      {{/if}}
+    </ui-section>
+  {{/each}}
+</ui-display>
+{{#if data.busy}}
+  <ui-display title='Building'>
+    <span class='average'>Building{{#if data.being_built}} {{data.being_built}}{{/if}}...</span>
+  </ui-display>
+{{/if}}
+{{#if data.screen == 1}}
+  <ui-display title='Autolathe menu'>
+    <ui-section label='Search'>
+      <input value='{{search}}' placeholder='Item name'/>
+      <ui-button icon='search' action='search' params='{"to_search": "{{search}}"}'>Search</ui-button>
+    </ui-section>
+    {{#each data.categories}}
+      <ui-section label='{{.}}'>
+        <ui-button icon='folder-open' action='category' params='{"category": "{{.}}"}'>Open</ui-button>
+      </ui-section>
+    {{/each}}
+  </ui-display>
+{{else}}
+  <ui-display title='{{data.screen == 2 ? data.category : "Search results"}}'>
+    <ui-section>
+      <ui-button icon='arrow-left' action='menu' params='{"menu": "1"}'>Return to main menu</ui-button>
+    </ui-section>
+    {{#each data.designs}}
+      <ui-section label='{{name}}'>
+        <span>{{cost}}</span>
+        <ui-button icon='wrench' state='{{can_build ? null : "disabled"}}' action='make' params='{"id": "{{id}}", "multiplier": "1"}'>Build</ui-button>
+        {{#each mults}}
+          <ui-button action='make' params='{"id": "{{id}}", "multiplier": "{{.}}"}'>x{{.}}</ui-button>
+        {{/each}}
+      </ui-section>
+    {{else}}
+      <span class='average'>Nothing here.</span>
+    {{/each}}
+  </ui-display>
+{{/if}}

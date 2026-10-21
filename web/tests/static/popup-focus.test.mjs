@@ -1,0 +1,21 @@
+// a link click in a popup hands keyboard focus back to the page (so WASD works); a form submit keeps it (typing).
+import assert from "node:assert";
+const listeners = {};
+let focused = null, pageFocus = 0, blurs = 0;
+const frame = { sandbox: "", style: {}, contentWindow: { postMessage() {} }, blur() { blurs++; if (focused === frame) focused = null; } };
+const mkEl = () => ({ style: {}, dataset: {}, append() {}, remove() {}, querySelector: () => null, offsetLeft: 0, offsetTop: 0 });
+globalThis.window = globalThis; globalThis.focus = () => { pageFocus++; };
+globalThis.innerWidth = 800; globalThis.innerHeight = 600;
+globalThis.addEventListener = (t, f) => { (listeners[t] ??= []).push(f); };
+globalThis.removeEventListener = () => {};
+Object.defineProperty(globalThis, "document", { value: { baseURI: "http://x/index.html", createElement: (t) => (t === "iframe" ? frame : mkEl()), get activeElement() { return focused; } }, configurable: true });
+const { createPopups } = await import("../../worker/popups.js");
+const p = createPopups({ host: { append() {}, clientWidth: 800, clientHeight: 600 }, send() {} });
+await p.browse({ window: "w1", html: "<a>x</a>" }); await new Promise((r) => setTimeout(r, 50));
+const msg = (d) => listeners.message.forEach((f) => f({ source: frame.contentWindow, data: d }));
+focused = frame; msg({ href: "byond://?src=1;heal=1" });
+assert.strictEqual(focused, null, "link click releases the popup's focus"); assert.strictEqual(pageFocus, 1);
+focused = frame; msg({ href: "byond://?q=a", kb: 1 });
+assert.strictEqual(focused, frame, "form submit keeps focus for typing");
+console.log("popup-focus: ok");
+process.exit(0);

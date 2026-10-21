@@ -1,0 +1,10 @@
+<ui-display title='Destination'>
+  <ui-section label='Current selection'>
+    <span class='{{data.currTag ? "good" : "average"}}'>{{data.current}}</span>
+  </ui-section>
+</ui-display>
+<ui-display title='Destinations'>
+  {{#each data.locations}}
+    <ui-button style='{{index == data.currTag ? "selected" : null}}' action='set_tag' params='{"index": "{{index}}"}'>{{name}}</ui-button>
+  {{/each}}
+</ui-display>

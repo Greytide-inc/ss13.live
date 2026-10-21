@@ -1,0 +1,156 @@
+{
+ "_note": "hand-written from stack.ts ui_data (metal, 3 sheets); recapture with ui2-tgui capture: when possible",
+ "config": {
+  "title": "metal",
+  "status": 2,
+  "screen": null,
+  "style": "",
+  "interface": "stack",
+  "fancy": 0,
+  "locked": 0,
+  "window": "tgui-main",
+  "ref": "[0x1]",
+  "user": {
+   "name": "Test Man",
+   "ref": "[0x2]"
+  },
+  "srcObject": {
+   "name": "x",
+   "ref": "[0x1]"
+  },
+  "titlebar": 1
+ },
+ "data": {
+  "amount": 3,
+  "singular": "metal sheet",
+  "recipes": [
+   {
+    "index": 1,
+    "title": "stool",
+    "cost": 1,
+    "can_build": 1,
+    "multipliers": []
+   },
+   {
+    "index": 2,
+    "title": "bar stool",
+    "cost": 1,
+    "can_build": 1,
+    "multipliers": []
+   },
+   {
+    "index": 3,
+    "title": "chair",
+    "cost": 1,
+    "can_build": 1,
+    "multipliers": []
+   },
+   {
+    "index": 4,
+    "title": "swivel chair",
+    "cost": 5,
+    "can_build": 0,
+    "multipliers": []
+   },
+   {
+    "index": 5,
+    "title": "comfy chair",
+    "cost": 2,
+    "can_build": 1,
+    "multipliers": []
+   },
+   {
+    "index": 6,
+    "title": "bed",
+    "cost": 2,
+    "can_build": 1,
+    "multipliers": []
+   },
+   {
+    "sep": 1
+   },
+   {
+    "index": 8,
+    "title": "rack parts",
+    "cost": 1,
+    "can_build": 1,
+    "multipliers": []
+   },
+   {
+    "index": 9,
+    "title": "closet",
+    "cost": 2,
+    "can_build": 1,
+    "multipliers": []
+   },
+   {
+    "sep": 1
+   },
+   {
+    "index": 11,
+    "title": "canister",
+    "cost": 10,
+    "can_build": 0,
+    "multipliers": []
+   },
+   {
+    "sep": 1
+   },
+   {
+    "index": 13,
+    "title": "4x floor tile",
+    "cost": 1,
+    "can_build": 1,
+    "multipliers": [
+     {
+      "n": 3,
+      "label": 12
+     }
+    ]
+   },
+   {
+    "index": 14,
+    "title": "2x metal rod",
+    "cost": 1,
+    "can_build": 1,
+    "multipliers": [
+     {
+      "n": 3,
+      "label": 6
+     }
+    ]
+   }
+  ]
+ },
+ "window": {
+  "w": 420,
+  "h": 500
+ },
+ "checks": {
+  "text": [
+   "Amount left",
+   "3 metal sheet(s)",
+   "chair",
+   "closet"
+  ],
+  "disabled": [
+   "swivel chair",
+   "canister"
+  ],
+  "enabled": [
+   "stool",
+   "chair",
+   "closet"
+  ],
+  "clicks": [
+   {
+    "button": "chair",
+    "href": "action=make&id=3&multiplier=1"
+   },
+   {
+    "button": "swivel chair",
+    "none": true
+   }
+  ]
+ }
+}

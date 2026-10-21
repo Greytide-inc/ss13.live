@@ -1,0 +1,104 @@
+{
+ "config": {
+  "title": "Autolathe",
+  "status": 2,
+  "screen": null,
+  "style": "",
+  "interface": "autolathe",
+  "fancy": 0,
+  "locked": 0,
+  "window": "tgui-main",
+  "ref": "[0x1]",
+  "user": {
+   "name": "Test Man",
+   "ref": "[0x2]"
+  },
+  "srcObject": {
+   "name": "x",
+   "ref": "[0x1]"
+  },
+  "titlebar": 1
+ },
+ "data": {
+  "screen": 2,
+  "category": "Tools",
+  "busy": 0,
+  "disabled": 0,
+  "being_built": null,
+  "total_amount": 30000,
+  "max_amount": 150000,
+  "categories": [
+   "Tools",
+   "Electronics"
+  ],
+  "materials": [
+   {
+    "id": "$metal",
+    "name": "metal",
+    "amount": 25000
+   },
+   {
+    "id": "$glass",
+    "name": "glass",
+    "amount": 500
+   }
+  ],
+  "designs": [
+   {
+    "id": "screwdriver",
+    "name": "Screwdriver",
+    "cost": "75 metal ",
+    "can_build": 1,
+    "mults": [
+     5,
+     10
+    ]
+   },
+   {
+    "id": "rglass",
+    "name": "Reinforced glass",
+    "cost": "500 glass",
+    "can_build": 0,
+    "mults": []
+   },
+   {
+    "id": "metal",
+    "name": "Metal",
+    "cost": "2000 metal ",
+    "can_build": 1,
+    "mults": [
+     10,
+     12
+    ]
+   }
+  ]
+ },
+ "window": {
+  "w": 500,
+  "h": 600
+ },
+ "checks": {
+  "text": [
+   "Screwdriver",
+   "Reinforced glass",
+   "Return to main menu",
+   "x12"
+  ],
+  "disabled": [],
+  "enabled": [
+   "Return to main menu"
+  ],
+  "clicks": [
+   {
+    "button": "Return to main menu",
+    "hrefPart": "menu"
+   },
+   {
+    "button": "x12",
+    "hrefPart": "multiplier"
+   }
+  ],
+  "boxMin": 0.8
+ },
+ "_note": "hand-written from autolathe.ts ui_data (category screen)"
+}

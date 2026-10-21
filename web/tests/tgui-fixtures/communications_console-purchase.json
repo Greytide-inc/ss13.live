@@ -1,0 +1,84 @@
+{
+ "_note": "hand-written from communications.ts ui_data, screen 11 (purchase shuttle), captain logged in",
+ "config": {
+  "title": "Communications Console",
+  "status": 2,
+  "screen": 11,
+  "style": "",
+  "interface": "communications_console",
+  "fancy": 0,
+  "locked": 0,
+  "window": "tgui-main",
+  "ref": "[0x1]",
+  "user": {
+   "name": "Test Man",
+   "ref": "[0x2]"
+  },
+  "srcObject": {
+   "name": "x",
+   "ref": "[0x1]"
+  },
+  "titlebar": 1
+ },
+ "data": {
+  "is_ai": 0,
+  "screen": 11,
+  "authenticated": 2,
+  "auth_id": "Test Man (Captain)",
+  "emagged": 0,
+  "cross_allowed": 0,
+  "shuttle_mode": "idle",
+  "can_call": 1,
+  "can_cancel": 0,
+  "eta": null,
+  "call_amount": 0,
+  "last_call_loc": null,
+  "messages": [],
+  "budget": 5000,
+  "shuttle_purchased": 0,
+  "shuttles": [
+   {
+    "id": "emergency_airless",
+    "name": "Airless Shuttle",
+    "cost": 3000,
+    "description": "A shuttle with no air.",
+    "prerequisites": null
+   },
+   {
+    "id": "emergency_clown",
+    "name": "Snappop(tm)!",
+    "cost": 2500,
+    "description": "Hey kids, it is the clown shuttle with a very long description that wraps around the card to test that the boxes use the full width of the window.",
+    "prerequisites": "Must have honked"
+   }
+  ]
+ },
+ "window": {
+  "w": 420,
+  "h": 500
+ },
+ "checks": {
+  "text": [
+   "Purchase Shuttle",
+   "5000 Credits",
+   "Airless Shuttle | 3000 Credits",
+   "Prerequisites"
+  ],
+  "enabled": [
+   "Purchase",
+   "Main Menu"
+  ],
+  "boxMin": 0.9,
+  "clicks": [
+   {
+    "button": "Purchase",
+    "nth": 1,
+    "href": "action=buyshuttle&shuttle_id=emergency_clown"
+   },
+   {
+    "button": "Main Menu",
+    "href": "action=main"
+   }
+  ]
+ }
+}

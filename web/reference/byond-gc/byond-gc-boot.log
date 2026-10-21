@@ -1,0 +1,119 @@
+Sun Sep 27 17:13:01 2026
+World opened on network port 25001.
+Welcome BYOND! (5.0 Public Version 511.1385)
+map_config not found: data/next_map.json
+607 global variables
+Running /tg/ revision:
+[17:13:05] Runtime in getrev.dm,21: list index out of bounds
+  proc name: New (/datum/getrev/New)
+  src: /datum/getrev (/datum/getrev)
+  call stack:
+  /datum/getrev (/datum/getrev): New()
+  Global Variables (/datum/controller/global_vars): InitGlobalrevdata()
+  Global Variables (/datum/controller/global_vars): Initialize()
+  Global Variables (/datum/controller/global_vars): New()
+  Master (/datum/controller/master): New()
+  world: ()
+runtime error: 
+[17:13:05]list index out of bounds
+[17:13:05]proc name: New (/datum/getrev/New)
+[17:13:05]  source file: getrev.dm,21
+[17:13:05]  usr: null
+[17:13:05]  src: /datum/getrev (/datum/getrev)
+[17:13:05]  call stack:
+[17:13:05]/datum/getrev (/datum/getrev): New()
+[17:13:05]Global Variables (/datum/controller/global_vars): InitGlobalrevdata()
+[17:13:05]Global Variables (/datum/controller/global_vars): Initialize()
+[17:13:05]Global Variables (/datum/controller/global_vars): New()
+[17:13:05]Master (/datum/controller/master): New()
+[17:13:05]world: ()
+World loaded at 17:13:05
+Initialized Server Tasks subsystem within 0 seconds!
+Initialized Jobs subsystem within 0 seconds!
+Initialized Events subsystem within 0 seconds!
+Initialized Ticker subsystem within 0 seconds!
+Loading Box Station...
+Loaded station in 2.6s!
+Ruin "Ash Walker Nest" placed at (94, 173, 5)
+Ruin "Fountain Hall" placed at (131, 93, 5)
+Ruin "Biodome Beach" placed at (72, 93, 5)
+Ruin "Ruin of Envy" placed at (211, 127, 5)
+Ruin "Ruin of Sloth" placed at (174, 87, 5)
+Ruin "Biodome Winter" placed at (203, 49, 5)
+Ruin "Makeshift Shelter" placed at (116, 33, 5)
+Ruin "Animal Hospital" placed at (42, 204, 5)
+Ruin "Crashed Clown Ship" placed at (37, 143, 10)
+Ruin "Ordinary Space Tile" placed at (192, 145, 9)
+Ruin "Derelict 3" placed at (123, 43, 4)
+Ruin "CF Corsair" placed at (173, 167, 8)
+Ruin "Syndicate Listening Station" placed at (84, 83, 3)
+Ruin "Survivalist Bunker" placed at (154, 112, 10)
+Ruin "Derelict 6" placed at (50, 188, 6)
+Ruin "Abandoned Telecommunications Satellite" placed at (144, 177, 4)
+Ruin "Authorship" placed at (45, 226, 7)
+Ruin "Derelict 4" placed at (94, 56, 4)
+Ruin "Crashed Ship" placed at (191, 97, 9)
+Ruin "DK Excavator 453" placed at (193, 54, 6)
+Ruin "Derelict 1" placed at (165, 178, 7)
+Ruin "Dinner for Two" placed at (139, 138, 9)
+Ruin "Derelict 5" placed at (133, 156, 6)
+Ruin "Kosmicheskaya Stantsiya 13" placed at (143, 47, 7)
+Initialized Mapping subsystem within 7.2 seconds!
+## WARNING: one or more paperbins ate a pen duing initialize()
+Initialized 815942 atoms
+Initialized Atoms subsystem within 14.1 seconds!
+Initialized Language subsystem within 0 seconds!
+Initialized Machines subsystem within 0.1 seconds!
+The BYOND hub reports that port 25001 is not reachable.
+Initialized Shuttle subsystem within 10.2 seconds!
+Initialized Weather subsystem within 0 seconds!
+## WARNING: There are 40 active turfs at roundstart, this is a mapping error caused by a difference of the air between the adjacent turfs. You can see its coordinates using "Mapping -> Show roundstart AT list" verb (debug verbs required)
+## WARNING: HEY! LISTEN! 0.8 Seconds were wasted processing 40 turf(s) (connected to 19512 other turfs) with atmos differences at round start.
+Initialized Atmospherics subsystem within 55.1 seconds!
+Initialized Minimap subsystem within 0.1 seconds!
+Initialized Assets subsystem within 0 seconds!
+Initialized Icon Smoothing subsystem within 2.9 seconds!
+Initialized Overlay subsystem within 7.9 seconds!
+Initialized XKeyScore subsystem within 0 seconds!
+Initialized Lighting subsystem within 6.2 seconds!
+Initialized Persistence subsystem within 0.1 seconds!
+Initializations complete within 103.9 seconds!
+[gc-probe] time 310 totalgcs 0 totaldels 0 queue 3057 tobequeued 0 | 
+[gc-probe] time 610 totalgcs 0 totaldels 0 queue 3057 tobequeued 0 | 
+[gc-probe] time 615 queued types total 3061: /obj/effect/turf_decal/stripes/line x1455, /obj/effect/temp_visual/cult/turf/floor x288, /obj/effect/turf_decal/delivery x224, /obj/effect/turf_decal/bot x173, /icon x153, /obj/effect/spawner/lootdrop/maintenance x132, /obj/effect/spawner/structure/window/reinforced x75, /obj/effect/turf_decal/stripes/corner x71, /obj/effect/temp_visual/cult/turf x71, /obj/effect/landmark/thunderdome/two x30, /obj/effect/landmark/thunderdome/one x30, /obj/effect/ruin_loader x24, /obj/effect/landmark/blobstart x24, /obj/effect/landmark/thunderdome/observe x21, /obj/effect/landmark/xeno_spawn x16, /datum/wires/vending x15, /obj/effect/spawner/structure/window x14, /obj/item/stack/medical/gauze x12, /obj/effect/landmark/prisonwarp x12, /obj/effect/turf_decal/stripes/asteroid/line x11, /obj/effect/landmark/ert_spawn x9, /datum/reagents x9, /obj/machinery/computer/arcade x8, /obj/effect/landmark/thunderdome/admin x8, /obj/effect/landmark/holding_facility x8
+[gc-probe] time 615 emitter fire_beam total 0: 
+[gc-probe] time 910 totalgcs 0 totaldels 0 queue 3057 tobequeued 0 | 
+Game start took 0s
+[gc-probe] time 1210 totalgcs 0 totaldels 0 queue 3057 tobequeued 125 | 
+[gc-probe] time 1215 queued types total 3117: /obj/effect/turf_decal/stripes/line x1455, /obj/effect/temp_visual/cult/turf/floor x288, /obj/effect/turf_decal/delivery x224, /obj/effect/turf_decal/bot x173, /icon x153, /obj/effect/spawner/lootdrop/maintenance x132, /obj/effect/spawner/structure/window/reinforced x75, /obj/effect/turf_decal/stripes/corner x71, /obj/effect/temp_visual/cult/turf x71, /obj/effect/landmark/thunderdome/two x30, /obj/effect/landmark/thunderdome/one x30, /obj/item/projectile/beam/emitter x28, /obj/effect/temp_visual/impact_effect/green_laser x28, /obj/effect/ruin_loader x24, /obj/effect/landmark/blobstart x24, /obj/effect/landmark/thunderdome/observe x21, /obj/effect/landmark/xeno_spawn x16, /datum/wires/vending x15, /obj/effect/spawner/structure/window x14, /obj/item/stack/medical/gauze x12, /obj/effect/landmark/prisonwarp x12, /obj/effect/turf_decal/stripes/asteroid/line x11, /obj/effect/landmark/ert_spawn x9, /datum/reagents x9, /obj/machinery/computer/arcade x8
+[gc-probe] time 1215 emitter fire_beam total 56: /obj/machinery/power/emitter/energycannon z1 x56
+[gc-probe] time 1510 totalgcs 0 totaldels 0 queue 3166 tobequeued 16 | 
+[gc-probe] time 1810 totalgcs 0 totaldels 0 queue 3180 tobequeued 6 | 
+[gc-probe] time 1815 queued types total 4996: /obj/effect/turf_decal/stripes/line x1455, /obj/effect/particle_effect/sparks x812, /obj/item/projectile/beam/emitter x500, /obj/effect/temp_visual/impact_effect/green_laser x500, /obj/effect/temp_visual/cult/turf/floor x288, /obj/effect/turf_decal/delivery x224, /icon x181, /obj/effect/turf_decal/bot x173, /obj/effect/spawner/lootdrop/maintenance x132, /obj/effect/spawner/structure/window/reinforced x75, /obj/effect/turf_decal/stripes/corner x71, /obj/effect/temp_visual/cult/turf x71, /obj/effect/landmark/thunderdome/two x30, /obj/effect/landmark/thunderdome/one x30, /obj/effect/ruin_loader x24, /obj/effect/landmark/blobstart x24, /obj/effect/landmark/thunderdome/observe x21, /obj/effect/landmark/start/assistant x20, /obj/effect/landmark/xeno_spawn x16, /datum/wires/vending x15, /obj/effect/landmark/start/security_officer x15, /obj/effect/spawner/structure/window x14, /obj/item/stack/medical/gauze x12, /obj/effect/landmark/prisonwarp x12, /obj/effect/turf_decal/stripes/asteroid/line x11
+[gc-probe] time 1815 emitter fire_beam total 500: /obj/machinery/power/emitter/energycannon z1 x500
+[gc-probe] time 2110 totalgcs 0 totaldels 0 queue 3196 tobequeued 0 | 
+[gc-probe] time 2410 totalgcs 0 totaldels 0 queue 3196 tobequeued 0 | 
+[gc-probe] time 2415 queued types total 6711: /obj/effect/particle_effect/sparks x1587, /obj/effect/turf_decal/stripes/line x1455, /obj/item/projectile/beam/emitter x960, /obj/effect/temp_visual/impact_effect/green_laser x960, /obj/effect/temp_visual/cult/turf/floor x288, /obj/effect/turf_decal/delivery x224, /icon x195, /obj/effect/turf_decal/bot x173, /obj/effect/spawner/lootdrop/maintenance x132, /obj/effect/spawner/structure/window/reinforced x75, /obj/effect/turf_decal/stripes/corner x71, /obj/effect/temp_visual/cult/turf x71, /obj/effect/landmark/thunderdome/two x30, /obj/effect/landmark/thunderdome/one x30, /obj/effect/ruin_loader x24, /obj/effect/landmark/blobstart x24, /obj/effect/landmark/thunderdome/observe x21, /obj/effect/landmark/start/assistant x20, /obj/effect/landmark/xeno_spawn x16, /datum/wires/vending x15, /obj/effect/landmark/start/security_officer x15, /obj/effect/spawner/structure/window x14, /obj/item/stack/medical/gauze x12, /obj/effect/landmark/prisonwarp x12, /obj/effect/turf_decal/stripes/asteroid/line x11
+[gc-probe] time 2415 emitter fire_beam total 960: /obj/machinery/power/emitter/energycannon z1 x960
+[gc-probe] time 2710 totalgcs 0 totaldels 0 queue 3196 tobequeued 0 | 
+[gc-probe] time 3010 totalgcs 0 totaldels 0 queue 3199 tobequeued 0 | 
+[gc-probe] time 3015 queued types total 8514: /obj/effect/particle_effect/sparks x2432, /obj/effect/turf_decal/stripes/line x1455, /obj/item/projectile/beam/emitter x1436, /obj/effect/temp_visual/impact_effect/green_laser x1436, /obj/effect/temp_visual/cult/turf/floor x288, /obj/effect/turf_decal/delivery x224, /icon x195, /obj/effect/turf_decal/bot x173, /obj/effect/spawner/lootdrop/maintenance x132, /obj/effect/spawner/structure/window/reinforced x75, /obj/effect/turf_decal/stripes/corner x71, /obj/effect/temp_visual/cult/turf x71, /obj/effect/landmark/thunderdome/two x30, /obj/effect/landmark/thunderdome/one x30, /obj/effect/ruin_loader x24, /obj/effect/landmark/blobstart x24, /obj/effect/landmark/thunderdome/observe x21, /obj/effect/landmark/start/assistant x20, /obj/effect/landmark/xeno_spawn x16, /datum/wires/vending x15, /obj/effect/landmark/start/security_officer x15, /obj/effect/spawner/structure/window x14, /obj/item/stack/medical/gauze x12, /obj/effect/landmark/prisonwarp x12, /obj/effect/turf_decal/stripes/asteroid/line x11
+[gc-probe] time 3015 emitter fire_beam total 1436: /obj/machinery/power/emitter/energycannon z1 x1436
+[gc-probe] time 3310 totalgcs 2901 totaldels 0 queue 299 tobequeued 23 | 
+[gc-probe] time 3610 totalgcs 2901 totaldels 0 queue 301 tobequeued 24 | 
+[gc-probe] time 3615 queued types total 10219: /obj/effect/particle_effect/sparks x3197, /obj/item/projectile/beam/emitter x1903, /obj/effect/temp_visual/impact_effect/green_laser x1903, /obj/effect/turf_decal/stripes/line x1455, /obj/effect/temp_visual/cult/turf/floor x288, /obj/effect/turf_decal/delivery x224, /icon x195, /obj/effect/turf_decal/bot x173, /obj/effect/spawner/lootdrop/maintenance x132, /obj/effect/spawner/structure/window/reinforced x75, /obj/effect/turf_decal/stripes/corner x71, /obj/effect/temp_visual/cult/turf x71, /obj/effect/landmark/thunderdome/two x30, /obj/effect/landmark/thunderdome/one x30, /obj/effect/ruin_loader x24, /obj/effect/landmark/blobstart x24, /obj/effect/landmark/thunderdome/observe x21, /obj/effect/landmark/start/assistant x20, /obj/effect/landmark/xeno_spawn x16, /datum/wires/vending x15, /obj/effect/landmark/start/security_officer x15, /obj/effect/spawner/structure/window x14, /obj/item/stack/medical/gauze x12, /obj/effect/landmark/prisonwarp x12, /obj/effect/turf_decal/stripes/asteroid/line x11
+[gc-probe] time 3615 emitter fire_beam total 1903: /obj/machinery/power/emitter/energycannon z1 x1903
+[gc-probe] time 3910 totalgcs 2901 totaldels 0 queue 301 tobequeued 22 | 
+[gc-probe] time 4210 totalgcs 2901 totaldels 0 queue 301 tobequeued 6 | 
+[gc-probe] time 4215 queued types total 11946: /obj/effect/particle_effect/sparks x4012, /obj/item/projectile/beam/emitter x2359, /obj/effect/temp_visual/impact_effect/green_laser x2359, /obj/effect/turf_decal/stripes/line x1455, /obj/effect/temp_visual/cult/turf/floor x288, /obj/effect/turf_decal/delivery x224, /icon x195, /obj/effect/turf_decal/bot x173, /obj/effect/spawner/lootdrop/maintenance x132, /obj/effect/spawner/structure/window/reinforced x75, /obj/effect/turf_decal/stripes/corner x71, /obj/effect/temp_visual/cult/turf x71, /obj/effect/landmark/thunderdome/two x30, /obj/effect/landmark/thunderdome/one x30, /obj/effect/ruin_loader x24, /obj/effect/landmark/blobstart x24, /obj/effect/landmark/thunderdome/observe x21, /obj/effect/landmark/start/assistant x20, /obj/effect/landmark/xeno_spawn x16, /datum/wires/vending x15, /obj/effect/landmark/start/security_officer x15, /obj/effect/spawner/structure/window x14, /obj/item/stack/medical/gauze x12, /obj/effect/landmark/prisonwarp x12, /obj/effect/turf_decal/stripes/asteroid/line x11
+[gc-probe] time 4215 emitter fire_beam total 2359: /obj/machinery/power/emitter/energycannon z1 x2359
+[gc-probe] time 4510 totalgcs 3016 totaldels 0 queue 187 tobequeued 0 | 
+[gc-probe] time 4810 totalgcs 3029 totaldels 0 queue 176 tobequeued 0 | 
+[gc-probe] time 4815 queued types total 13586: /obj/effect/particle_effect/sparks x4742, /obj/item/projectile/beam/emitter x2812, /obj/effect/temp_visual/impact_effect/green_laser x2812, /obj/effect/turf_decal/stripes/line x1455, /obj/effect/temp_visual/cult/turf/floor x288, /obj/effect/turf_decal/delivery x224, /icon x195, /obj/effect/turf_decal/bot x173, /obj/effect/spawner/lootdrop/maintenance x132, /obj/effect/spawner/structure/window/reinforced x75, /obj/effect/turf_decal/stripes/corner x71, /obj/effect/temp_visual/cult/turf x71, /obj/effect/landmark/thunderdome/two x30, /obj/effect/landmark/thunderdome/one x30, /obj/effect/ruin_loader x24, /obj/effect/landmark/blobstart x24, /obj/effect/landmark/thunderdome/observe x21, /obj/effect/landmark/start/assistant x20, /obj/effect/landmark/xeno_spawn x16, /datum/wires/vending x15, /obj/effect/landmark/start/security_officer x15, /obj/effect/spawner/structure/window x14, /obj/item/stack/medical/gauze x12, /obj/effect/landmark/prisonwarp x12, /obj/effect/turf_decal/stripes/asteroid/line x11
+[gc-probe] time 4815 emitter fire_beam total 2812: /obj/machinery/power/emitter/energycannon z1 x2812
+[gc-probe] time 5110 totalgcs 3056 totaldels 0 queue 156 tobequeued 0 | 
+
+******************************************
+Caught SIGTERM, attempting clean shutdown.
+
+[boot-byond] boot->init 110s, boot->round start 215s

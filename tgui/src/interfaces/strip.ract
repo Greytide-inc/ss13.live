@@ -1,0 +1,22 @@
+<ui-display title='{{data.name}}'>
+  {{#each data.rows}}
+    <ui-section label='{{label}}'>
+      {{#if obscured}}
+        <span class='average'>Obscured</span>
+      {{else}}
+        {{#if !plain}}
+          {{#if item}}
+            <span class='good'>{{item}}</span>
+          {{else}}
+            <span class='average'>Empty</span>
+          {{/if}}
+        {{/if}}
+        {{#each buttons}}
+          <ui-button icon='{{icon}}' action='strip' params='{"key": "{{key}}", "val": "{{val}}", "hand": "{{hand}}"}'>{{text}}</ui-button>
+        {{/each}}
+      {{/if}}
+    </ui-section>
+  {{else}}
+    <span class='average'>Nothing to see</span>
+  {{/each}}
+</ui-display>

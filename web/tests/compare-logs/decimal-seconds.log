@@ -1,0 +1,92 @@
+Sat Sep 26 17:17:57 2026
+World opened on network port 25001.
+Welcome BYOND! (5.0 Public Version 511.1385)
+map_config not found: data/next_map.json
+607 global variables
+Running /tg/ revision:
+1970-01-01
+[17:18:01] Runtime in getrev.dm,27: list index out of bounds
+  proc name: New (/datum/getrev/New)
+  src: /datum/getrev (/datum/getrev)
+  call stack:
+  /datum/getrev (/datum/getrev): New()
+  Global Variables (/datum/controller/global_vars): InitGlobalrevdata()
+  Global Variables (/datum/controller/global_vars): Initialize()
+  Global Variables (/datum/controller/global_vars): New()
+  Master (/datum/controller/master): New()
+  world: ()
+runtime error: 
+[17:18:01]list index out of bounds
+[17:18:01]proc name: New (/datum/getrev/New)
+[17:18:01]  source file: getrev.dm,27
+[17:18:01]  usr: null
+[17:18:01]  src: /datum/getrev (/datum/getrev)
+[17:18:01]  call stack:
+[17:18:01]/datum/getrev (/datum/getrev): New()
+[17:18:01]Global Variables (/datum/controller/global_vars): InitGlobalrevdata()
+[17:18:01]Global Variables (/datum/controller/global_vars): Initialize()
+[17:18:01]Global Variables (/datum/controller/global_vars): New()
+[17:18:01]Master (/datum/controller/master): New()
+[17:18:01]world: ()
+World loaded at 17:18:01
+Initialized Server Tasks subsystem within 0 seconds!
+Initialized Jobs subsystem within 0 seconds!
+Initialized Events subsystem within 0 seconds!
+Initialized Ticker subsystem within 0 seconds!
+Loading Box Station...
+Loaded station in 50.6s!
+Ruin "Biodome Clown Planet" placed at (146, 105, 5)
+Ruin "Xenomorph Nest" placed at (149, 69, 5)
+Ruin "Makeshift Shelter" placed at (220, 134, 5)
+Ruin "Fountain Hall" placed at (229, 182, 5)
+Ruin "Ash Walker Nest" placed at (55, 204, 5)
+Ruin "Abandoned Telecommunications Satellite" placed at (79, 120, 10)
+Ruin "Asteroid 2" placed at (191, 53, 10)
+Ruin "Ordinary Space Tile" placed at (68, 206, 8)
+Ruin "Derelict Tradepost" placed at (135, 98, 3)
+Ruin "A Giant Ball of Paper in Space" placed at (157, 142, 9)
+Ruin "Biological Storage Facility" placed at (154, 112, 7)
+Ruin "Derelict 6" placed at (177, 103, 4)
+Ruin "Salvation" placed at (111, 145, 7)
+Ruin "Crashed Ship" placed at (175, 78, 9)
+Ruin "Disposal Facility 17" placed at (167, 149, 3)
+Ruin "Unnamed Turreted Outpost" placed at (74, 110, 4)
+Ruin "Derelict 4" placed at (146, 142, 4)
+Ruin "Detached Teleporter" placed at (190, 220, 9)
+Ruin "Ancient Space Station" placed at (82, 196, 9)
+Ruin "Dinner for Two" placed at (61, 159, 8)
+Ruin "Asteroid 5" placed at (133, 105, 6)
+Initialized Mapping subsystem within 7.9 seconds!
+## WARNING: one or more paperbins ate a pen duing initialize()
+Initialized 817745 atoms
+Initialized Atoms subsystem within 16.4 seconds!
+Initialized Language subsystem within 0 seconds!
+Initialized Machines subsystem within 0.2 seconds!
+The BYOND hub reports that port 25001 is not reachable.
+Initialized Shuttle subsystem within 10.7 seconds!
+Initialized Weather subsystem within 0 seconds!
+[17:19:22] Runtime in open.dm,103: Cannot execute null.compare().
+  proc name: Initalize Atmos (/turf/open/Initalize_Atmos)
+  src: the asteroid sand (150,59,9) (/turf/open/floor/plating/asteroid/airless/cave)
+  call stack:
+  the asteroid sand (150,59,9) (/turf/open/floor/plating/asteroid/airless/cave): Initalize Atmos(1)
+  Atmospherics (/datum/controller/subsystem/air): setup allturfs()
+  Atmospherics (/datum/controller/subsystem/air): Initialize(587181)
+  Master (/datum/controller/master): Initialize(10, 0)
+## WARNING: There are 71 active turfs at roundstart, this is a mapping error caused by a difference of the air between the adjacent turfs. You can see its coordinates using "Mapping -> Show roundstart AT list" verb (debug verbs required)
+## WARNING: HEY! LISTEN! 0.1 Seconds were wasted processing 71 turf(s) (connected to 803 other turfs) with atmos differences at round start.
+Initialized Atmospherics subsystem within 56.2 seconds!
+Initialized Minimap subsystem within 0 seconds!
+Initialized Assets subsystem within 0 seconds!
+Initialized Icon Smoothing subsystem within 3 seconds!
+Initialized Overlay subsystem within 9.1 seconds!
+Initialized XKeyScore subsystem within 0 seconds!
+Initialized Lighting subsystem within 6.3 seconds!
+Initialized Persistence subsystem within 0 seconds!
+Initializations complete within 109.9 seconds!
+Game start took 0.4s
+
+******************************************
+Caught SIGTERM, attempting clean shutdown.
+
+[boot-byond] boot->init 116s, boot->round start 223s

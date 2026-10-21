@@ -1,0 +1,21 @@
+<!doctype html><meta charset="utf-8"><title>popup form test</title>
+<div id="popups" style="position:fixed;inset:0"></div>
+<script type="module">
+import { createPopups } from "/web/worker/popups.js";
+window.sent = [];
+const p = createPopups({ host: document.getElementById("popups"), send: (m) => window.sent.push(m) });
+window.popups = p;
+// the shape of communications.dm get_call_shuttle_form(): a GET form submitted from JS, which fires no submit event
+const html = `<html><head><script>function submit(){document.getElementById('callshuttle').submit()}<\/script></head><body>
+<form name='callshuttle' id='callshuttle' action='?src=\\[0x1]' method='get' style='display: inline'>
+<input type='hidden' name='src' value='\\[0x1]'><input type='hidden' name='operation' value='callshuttle2'>
+<input type='text' id='reasonfield' name='call' value='fire'>
+Are you sure? [ <a href='#' onclick='submit()'>Call</a> ] <a href='?src=\\[0x1];operation=x'>Plain link</a></form></body></html>`;
+p.browse({ window: "communications", html, options: "size=400x300" });
+// a runtime icon as a PNG under its name, and a page that sets its own <title> (html_interface's setTitle): title bar follows it
+const png = Uint8Array.from(atob("iVBORw0KGgoAAAANSUhEUgAAAAMAAAACCAYAAACddGYaAAAAEklEQVR4nGNgYPj/n4EBhoEAAF3DAgFKhpBlAAAAAElFTkSuQmCC"), (c) => c.charCodeAt(0));
+p.rsc({ type: "browse_rsc", file: "rsc/icon1.dmi", name: "previewicon.png", pendingPng: true });
+setTimeout(() => p.rscPng({ type: "rsc_png", name: "previewicon.png", png }), 300);
+p.browse({ window: "browser_[0x9]", html: `<html><head><title></title></head><body><img src=previewicon.png onload="document.title='preview '+this.naturalWidth+'x'+this.naturalHeight" onerror="document.title='preview broken'"></body></html>`, options: "size=200x100" });
+window.ready = true;
+</script>

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SS13 Classic — skin.dmf mock-up</title>
+<link rel="stylesheet" href="skin.css">
+</head>
+<body>
+<p class="notice">Generated from <code>interface/skin.dmf</code> by <code>npm run skin</code>
+(<code>web/src/tools/skin-to-html.ts</code>) — layout only. Every control keeps its DMF
+<code>id</code> for later <code>winset</code>/<code>winget</code> wiring. Resize the
+window to see the DMF anchors respected.</p>
+<div id="mainwindow" class="window-frame">
+<nav class="menubar"><div class="menu-trigger">File<div class="menu-dropdown"><div class="menu-item" title="command: .screenshot auto">Quick screenshot<span class="hotkey">F2</span></div>
+<div class="menu-item" title="command: .screenshot">Save screenshot as...<span class="hotkey">Shift+F2</span></div>
+<hr>
+<div id="reconnectbutton" class="menu-item" title="command: .reconnect">Reconnect</div>
+<div class="menu-item" title="command: .quit">Quit<span class="hotkey">Alt-F4</span></div></div></div>
+<div class="menu-trigger">Help<div class="menu-dropdown"><div class="menu-item" title="command: adminhelp">Admin Help<span class="hotkey">F1</span></div>
+<div class="menu-item" title="command: hotkeys-help">Hotkeys</div></div></div></nav>
+<div class="window-body" data-window="mainwindow" style="position:relative; flex:1 1 auto;">
+<div id="split" class="ctl ctl-split split-row" title="DMF id: split — type CHILD" style="position:absolute; left:3px; top:0px; width:calc(100% + -6px); height:calc(100% + -23px);">
+				<div class="split-pane" style="flex-basis:50%;"><div class="window-body" data-window="mapwindow"><div id="map" class="ctl ctl-map" title="DMF id: map — type MAP" style="position:absolute; left:0px; top:0px; width:calc(100% + 0px); height:calc(100% + 0px);  "><div class="placeholder">map viewport (id: map)</div></div></div></div>
+				<div class="split-divider"></div>
+				<div class="split-pane" style="flex-basis:50%;"><div class="window-body" data-window="infowindow"><div id="info" class="ctl ctl-split split-col" title="DMF id: info — type CHILD" style="position:absolute; left:0px; top:30px; width:calc(100% + 0px); height:calc(100% + -35px);">
+				<div class="split-pane" style="flex-basis:50%;"><div class="window-body" data-window="statwindow"><div id="stat" class="ctl ctl-statpanel" title="DMF id: stat — type INFO" style="position:absolute; left:0px; top:0px; width:calc(100% + 0px); height:calc(100% + 0px); color: #000000; background-color: #ffffff;">
+				<div class="statpanel-tabs"><span class="tab active">Status</span><span class="tab">MC</span></div>
+				<div class="statpanel-body placeholder">stat panel (id: stat) — tabs/content set at runtime</div>
+			</div></div></div>
+				<div class="split-divider"></div>
+				<div class="split-pane" style="flex-basis:50%;"><div class="window-body" data-window="outputwindow"><div id="browseroutput" class="ctl ctl-browser" title="DMF id: browseroutput — type BROWSER" style="position:absolute; left:0px; top:0px; width:calc(100% + 0px); height:calc(100% + 0px); display:none; color: #000000; background-color: #ffffff;"><div class="placeholder">browser panel (id: browseroutput)</div></div>
+<div id="output" class="ctl ctl-output" title="DMF id: output — type OUTPUT" style="position:absolute; left:0px; top:0px; width:calc(100% + 0px); height:calc(100% + 0px); color: #000000; background-color: #ffffff;"><div class="placeholder">chat / game text output (id: output)</div></div></div></div>
+			</div>
+<button id="changelog" class="ctl ctl-button" type="button" title="DMF id: changelog — type BUTTON" style="position:absolute; left:calc(3% + -3.20px); top:5px; width:calc(16% + 1.60px); height:20px; color: #000000; ">Changelog</button>
+<button id="rules" class="ctl ctl-button" type="button" title="DMF id: rules — type BUTTON" style="position:absolute; left:calc(19% + -1.60px); top:5px; width:calc(15% + 4px); height:20px; color: #000000; ">Rules</button>
+<button id="wiki" class="ctl ctl-button" type="button" title="DMF id: wiki — type BUTTON" style="position:absolute; left:calc(34% + 2.40px); top:5px; width:calc(16% + -2.40px); height:20px; color: #000000; ">Wiki</button>
+<button id="forum" class="ctl ctl-button" type="button" title="DMF id: forum — type BUTTON" style="position:absolute; left:calc(50% + 0px); top:5px; width:calc(16% + -2.40px); height:20px; color: #000000; ">Forum</button>
+<button id="github" class="ctl ctl-button" type="button" title="DMF id: github — type BUTTON" style="position:absolute; left:calc(66% + -2.40px); top:5px; width:calc(15% + 4px); height:20px; color: #000000; ">Github</button>
+<button id="report-issue" class="ctl ctl-button" type="button" title="DMF id: report-issue — type BUTTON" style="position:absolute; left:calc(81% + 1.60px); top:5px; width:calc(16% + -2.40px); height:20px; color: #000000; ">Report Issue</button></div></div>
+			</div>
+<input id="input" class="ctl ctl-input" type="text" value="" title="DMF id: input — type INPUT" style="position:absolute; left:5px; top:calc(100% + -20px); width:calc(100% + -45px); height:20px; color: #000000; background-color: #d3b5b5;">
+<button id="say" class="ctl ctl-button" type="button" title="DMF id: say — type BUTTON" style="position:absolute; left:calc(100% + -40px); top:calc(100% + -20px); width:37px; height:20px; color: #000000; ">Chat</button>
+<div id="asset_cache_browser" class="ctl ctl-browser" title="DMF id: asset_cache_browser — type BROWSER" style="position:absolute; left:0px; top:0px; width:200px; height:200px; display:none; color: #000000; "><div class="placeholder">browser panel (id: asset_cache_browser)</div></div>
+<div id="tooltip" class="ctl ctl-browser" title="DMF id: tooltip — type BROWSER" style="position:absolute; left:0px; top:0px; width:999px; height:999px; display:none; color: #000000; "><div class="placeholder">browser panel (id: tooltip)</div></div>
+</div>
+</div>
+</body>
+</html>

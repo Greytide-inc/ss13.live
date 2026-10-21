@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>DMI sprite gallery</title>
+<style>
+	body { font-family: system-ui, sans-serif; background: #1e1e1e; color: #ddd; margin: 0; padding: 16px; }
+	h1 { font-size: 18px; font-weight: 600; }
+	#controls { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+	#search { width: 480px; padding: 6px; font-family: monospace; }
+	button { padding: 6px 14px; }
+	#status { color: #9c9; font-size: 13px; margin-bottom: 16px; min-height: 1.2em; }
+	.state { border-top: 1px solid #444; padding: 10px 0; }
+	.state-title { font-weight: 600; }
+	.state-info { font-size: 12px; color: #aaa; margin-bottom: 6px; font-family: monospace; }
+	.dir-row { display: flex; flex-wrap: wrap; gap: 10px; }
+	.dir-cell { text-align: center; }
+	.dir-cell canvas { background: repeating-conic-gradient(#333 0% 25%, #2a2a2a 0% 50%) 50% / 12px 12px; border: 1px solid #555; }
+	.dir-label { font-size: 11px; color: #888; margin-top: 2px; }
+</style>
+</head>
+<body>
+	<h1>DMI sprite gallery</h1>
+	<div id="controls">
+		<input id="search" list="icon-list" placeholder="icons/mob/human.dmi" autocomplete="off" />
+		<datalist id="icon-list"></datalist>
+		<button id="load">Load</button>
+	</div>
+	<div id="status">Loading icon list...</div>
+	<div id="states"></div>
+	<script type="module" src="/web/build/dist/src/tools/gallery-client.js"></script>
+</body>
+</html>

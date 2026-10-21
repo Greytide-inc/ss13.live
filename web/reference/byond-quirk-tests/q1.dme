@@ -1,0 +1,50 @@
+#include "inc1.dm"
+#include "inc2.dm"
+/world/New()
+	#ifdef A
+	world.log << "A defined"
+	#endif
+	#ifdef B
+	world.log << "B=[B]"
+	#else
+	world.log << "B undefined"
+	#endif
+	var/x = pick("a",
+		"b"
+		"c",
+		"d")
+	world.log << "pick=[x]"
+	var/cnt = list()
+	for(var/i in 1 to 400)
+		var/y = pick("a",
+			"b"
+			"c",
+			"d")
+		cnt[y] = (cnt[y] || 0) + 1
+	for(var/k in cnt)
+		world.log << "cnt [k]=[cnt[k]]"
+	world.log << "empty=[(1) ? ("yes") : ()]|[(0) ? ("yes") : ()]|"
+	var/obj/o = new /obj/foo
+	world.log << "foo.name=[o.name]"
+	var/datum/d = new /datum/bar
+	world.log << "bar.get=[d:get_cost(1)]"
+	var/obj/o2 = new /obj/sub
+	world.log << "sub.name=[o2.name] desc=[o2.desc]"
+	world.log << "q=[d:q(2)]"
+	shutdown()
+
+/datum/bar/proc/get_cost(a)
+	return 1
+/datum/bar/sub
+/datum/bar.get_cost(a)
+	return 5
+/datum/bar/proc/q(n).
+	return n*3
+
+ /obj/foo
+ 	name = "leading space"
+
+/obj/sub
+	..()
+	name = "subname"
+	desc = "subdesc"

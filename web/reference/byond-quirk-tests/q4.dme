@@ -1,0 +1,10 @@
+/world/New()
+	var/obj/foo3/F = new
+	world.log << F.name
+	world.log << "k=[k()]"
+	shutdown()
+/proc/k()
+	. = 1
+	/obj/foo3
+		name = "foo3name"
+	. += 2

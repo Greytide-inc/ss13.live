@@ -1,0 +1,4 @@
+# activate - Puts Node 20 (what the engine is tested on) on PATH, the newest v20 nvm has. Load with:  source activate
+_TG_NODE=$(ls -d "$HOME"/.nvm/versions/node/v20.*/bin 2>/dev/null | sort -V | tail -1)
+if [ -n "$_TG_NODE" ]; then export PATH="$_TG_NODE:$PATH"; fi
+unset _TG_NODE

@@ -1,0 +1,13 @@
+Sat Sep 26 17:30:25 2026
+World opened on network port 34033.
+Welcome BYOND! (5.0 Public Version 511.1385)
+A defined
+B=2
+pick=d
+cnt d=188
+cnt a=212
+empty=yes||
+foo.name=leading space
+bar.get=5
+sub.name=subname desc=subdesc
+q=6

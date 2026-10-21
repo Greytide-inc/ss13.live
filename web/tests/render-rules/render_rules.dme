@@ -1,0 +1,2 @@
+// render_rules.dme - tiny BYOND 511 world for checking render rules by screenshot.
+#include "render_rules.dm"

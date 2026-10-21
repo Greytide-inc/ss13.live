@@ -1,0 +1,49 @@
+<ui-display title='Select an item'>
+  {{#if data.products.length || data.hidden.length || data.premium.length}}
+    {{#each data.products}}
+      <ui-section label='{{name}}'>
+        <span class='{{amount > 0 ? "good" : "bad"}}'>{{amount}} left</span>
+        <ui-button icon='shopping-cart' state='{{amount > 0 ? null : "disabled"}}' action='vend' params='{"id": "{{id}}"}'>{{amount > 0 ? "Vend" : "Sold out"}}</ui-button>
+      </ui-section>
+    {{/each}}
+    {{#each data.hidden}}
+      <ui-section label='{{name}}'>
+        <span class='average'>{{amount}} left</span>
+        <ui-button icon='shopping-cart' state='{{amount > 0 ? null : "disabled"}}' action='vend' params='{"id": "{{id}}"}'>{{amount > 0 ? "Vend" : "Sold out"}}</ui-button>
+      </ui-section>
+    {{/each}}
+    {{#each data.premium}}
+      <ui-section label='{{name}}'>
+        <span class='good'>{{amount}} left</span>
+        <ui-button icon='star' state='{{amount > 0 ? null : "disabled"}}' action='vend' params='{"id": "{{id}}"}'>{{amount > 0 ? "Vend" : "Sold out"}}</ui-button>
+      </ui-section>
+    {{/each}}
+  {{else}}
+    <span class='bad'>No product loaded!</span>
+  {{/if}}
+</ui-display>
+{{#if data.has_premium}}
+  <ui-display title='Change Return'>
+    <ui-section label='Money'>
+      {{#if data.has_money}}
+        <span>{{data.coin}} {{data.bill}}</span>
+        <ui-button icon='eject' action='remove_coin'>Remove</ui-button>
+      {{else}}
+        <span class='average'>No money</span>
+        <ui-button icon='eject' state='disabled' action='remove_coin'>Remove</ui-button>
+      {{/if}}
+    </ui-section>
+  </ui-display>
+{{/if}}
+{{#if data.is_snack}}
+  <ui-display title="Chef's Food Selection">
+    {{#each data.dishes}}
+      <ui-section label='{{name}}'>
+        <span>{{amount}} left</span>
+        <ui-button icon='cutlery' action='dispense' params='{"key": "{{key}}"}'>Dispense</ui-button>
+      </ui-section>
+    {{else}}
+      <span class='average'>Compartment empty</span>
+    {{/each}}
+  </ui-display>
+{{/if}}

@@ -1,0 +1,238 @@
+<!-- Communications console. Screens (data.screen): 1 main, 2 call shuttle, 3 cancel shuttle, 4 message list, 5 view message,
+     6 delete message, 7 status displays, 8 alert level, 9 confirm level, 10 emergency access, 11 purchase shuttle.
+     Silicons see the same screens; the game side maps each action to the "ai-" version. -->
+{{#if data.shuttle_mode == "call"}}
+	<ui-notice>
+		<span>Emergency shuttle ETA: {{data.eta}}</span>
+	</ui-notice>
+{{/if}}
+
+{{#if data.screen == 1}}
+	<ui-display title='{{data.is_ai ? "Current login" : "Communications"}}'>
+		{{#if data.call_amount}}
+			<ui-section>
+				{{#if data.last_call_loc}}
+					{{data.is_ai ? "Last emergency signal origin" : "Most recent shuttle call/recall traced to"}}: <b>{{data.last_call_loc}}</b>
+				{{else}}
+					Unable to trace most recent shuttle call/recall signal.
+				{{/if}}
+			</ui-section>
+		{{/if}}
+		{{#if data.is_ai}}
+			<ui-section label='Login'>{{data.authenticated ? data.auth_id : "None"}}</ui-section>
+		{{else}}
+			{{#if data.authenticated}}
+				<ui-section label='Logged in as'>
+					<span>{{data.auth_id}}</span>
+					<ui-button icon='sign-out' action='logout'>Log Out</ui-button>
+				</ui-section>
+			{{else}}
+				<ui-section label='Login'>
+					<ui-button icon='sign-in' action='login'>Log In (use your ID)</ui-button>
+				</ui-section>
+			{{/if}}
+		{{/if}}
+	</ui-display>
+
+	{{#if data.authenticated || data.is_ai}}
+		<ui-display title='General Functions'>
+			<ui-section>
+				<ui-button icon='envelope' action='messagelist'>Message List</ui-button>
+			</ui-section>
+			<ui-section>
+				{{#if data.can_call}}
+					<ui-button icon='rocket' style='danger' action='callshuttle'>Call Emergency Shuttle</ui-button>
+				{{/if}}
+				{{#if data.can_cancel}}
+					<ui-button icon='ban' style='danger' action='cancelshuttle'>Cancel Shuttle Call</ui-button>
+				{{/if}}
+				{{#if !data.can_call && !data.can_cancel}}
+					<span class='average'>Shuttle call unavailable.</span>
+				{{/if}}
+			</ui-section>
+			<ui-section>
+				<ui-button icon='television' action='status'>Set Status Display</ui-button>
+			</ui-section>
+		</ui-display>
+
+		{{#if data.authenticated == 2 || data.is_ai}}
+			<ui-display title='{{data.is_ai ? "Special Functions" : "Captain Functions"}}'>
+				<ui-section>
+					<ui-button icon='bullhorn' action='announce'>{{data.is_ai ? "Make an Announcement" : "Make a Captain's Announcement"}}</ui-button>
+				</ui-section>
+				{{#if !data.is_ai}}
+					<ui-section>
+						<ui-button icon='shopping-cart' action='purchase_menu'>Purchase Shuttle</ui-button>
+					</ui-section>
+				{{/if}}
+				<ui-section>
+					<ui-button icon='exclamation-triangle' action='changeseclevel'>Change Alert Level</ui-button>
+				</ui-section>
+				<ui-section>
+					<ui-button icon='wrench' action='emergencyaccess'>Emergency Maintenance Access</ui-button>
+				</ui-section>
+				{{#if !data.is_ai}}
+					<ui-section>
+						<ui-button icon='bomb' style='danger' action='nukerequest'>Request Nuclear Authentication Codes</ui-button>
+					</ui-section>
+					<ui-section>
+						{{#if data.emagged}}
+							<ui-button icon='question' style='danger' action='MessageSyndicate'>Send Message to [UNKNOWN]</ui-button>
+							<ui-button icon='undo' action='RestoreBackup'>Restore Backup Routing Data</ui-button>
+						{{else}}
+							<ui-button icon='send' action='MessageCentcomm'>Send Message to Centcom</ui-button>
+						{{/if}}
+					</ui-section>
+				{{/if}}
+			</ui-display>
+		{{/if}}
+	{{/if}}
+{{/if}}
+
+{{#if data.screen == 2}}
+	<ui-display title='Call Emergency Shuttle'>
+		<ui-section>Are you sure you want to call the shuttle? You will be asked for the nature of the emergency.</ui-section>
+		<ui-section>
+			<ui-button icon='rocket' style='danger' action='callshuttle2'>Call</ui-button>
+		</ui-section>
+	</ui-display>
+{{/if}}
+
+{{#if data.screen == 3}}
+	<ui-display title='Cancel Shuttle Call'>
+		<ui-section>Are you sure you want to cancel the shuttle?</ui-section>
+		<ui-section>
+			<ui-button icon='ban' style='danger' action='cancelshuttle2'>Cancel the shuttle</ui-button>
+		</ui-section>
+	</ui-display>
+{{/if}}
+
+{{#if data.screen == 4}}
+	<ui-display title='Messages'>
+		{{#each data.messages}}
+			<ui-section candystripe>
+				<ui-button icon='envelope-o' action='viewmessage' params='{"message-num": "{{num}}"}'>{{title}}</ui-button>
+			</ui-section>
+		{{else}}
+			<ui-section>No messages.</ui-section>
+		{{/each}}
+	</ui-display>
+{{/if}}
+
+{{#if data.screen == 5}}
+	<ui-display title='{{data.msg_title}}'>
+		<ui-section>{{{data.msg_text}}}</ui-section>
+		{{#if data.authenticated || data.is_ai}}
+			<ui-section>
+				<ui-button icon='trash' style='danger' action='delmessage'>Delete</ui-button>
+			</ui-section>
+		{{/if}}
+		<ui-section>
+			<ui-button icon='list' action='messagelist'>Back to list</ui-button>
+		</ui-section>
+	</ui-display>
+{{/if}}
+
+{{#if data.screen == 6}}
+	<ui-display title='Delete message'>
+		<ui-section>Are you sure you want to delete this message?</ui-section>
+		<ui-section>
+			<ui-button icon='check' style='danger' action='delmessage2'>OK</ui-button>
+			<ui-button icon='close' action='viewmessage'>Cancel</ui-button>
+		</ui-section>
+	</ui-display>
+{{/if}}
+
+{{#if data.screen == 7}}
+	<ui-display title='Set Status Displays'>
+		<ui-section label='Display'>
+			<ui-button icon='eraser' action='setstat' params='{"statdisp": "blank"}'>Clear</ui-button>
+			<ui-button icon='clock-o' action='setstat' params='{"statdisp": "shuttle"}'>Shuttle ETA</ui-button>
+			<ui-button icon='comment' action='setstat' params='{"statdisp": "message"}'>Message</ui-button>
+		</ui-section>
+		<ui-section label='Line 1'>
+			<ui-button icon='pencil' action='setmsg1'>{{data.stat_msg1 ? data.stat_msg1 : "(none)"}}</ui-button>
+		</ui-section>
+		<ui-section label='Line 2'>
+			<ui-button icon='pencil' action='setmsg2'>{{data.stat_msg2 ? data.stat_msg2 : "(none)"}}</ui-button>
+		</ui-section>
+		<ui-section label='Alert'>
+			<ui-button action='setstat' params='{"statdisp": "alert", "alert": "default"}'>None</ui-button>
+			<ui-button style='danger' action='setstat' params='{"statdisp": "alert", "alert": "redalert"}'>Red Alert</ui-button>
+			<ui-button action='setstat' params='{"statdisp": "alert", "alert": "lockdown"}'>Lockdown</ui-button>
+			<ui-button action='setstat' params='{"statdisp": "alert", "alert": "biohazard"}'>Biohazard</ui-button>
+		</ui-section>
+	</ui-display>
+{{/if}}
+
+{{#if data.screen == 8}}
+	<ui-display title='Alert Level'>
+		<ui-section label='Current level'>{{data.sec_level}}</ui-section>
+		{{#if data.sec_delta}}
+			<ui-section>
+				<span class='bad'>The self-destruct mechanism is active. Find a way to deactivate the mechanism to lower the alert level or evacuate.</span>
+			</ui-section>
+		{{else}}
+			<ui-section label='Change to'>
+				<ui-button icon='shield' action='securitylevel' params='{"newalertlevel": "1"}'>Blue</ui-button>
+				<ui-button icon='check' style='good' action='securitylevel' params='{"newalertlevel": "0"}'>Green</ui-button>
+			</ui-section>
+		{{/if}}
+	</ui-display>
+{{/if}}
+
+{{#if data.screen == 9}}
+	<ui-display title='Confirm Alert Level'>
+		<ui-section label='Current level'>{{data.sec_level}}</ui-section>
+		<ui-section label='Change to'>{{data.tmp_level}}</ui-section>
+		<ui-section>Swipe your ID (hold it in your hand) to confirm the change.</ui-section>
+		<ui-section>
+			<ui-button icon='id-card' action='swipeidseclevel'>Swipe ID</ui-button>
+		</ui-section>
+	</ui-display>
+{{/if}}
+
+{{#if data.screen == 10}}
+	<ui-display title='Emergency Maintenance Access'>
+		{{#if data.emergency_access}}
+			<ui-section>Currently <span class='bad'>ENABLED</span>. Restore maintenance access restrictions?</ui-section>
+			<ui-section>
+				<ui-button icon='lock' style='danger' action='disableemergency'>OK</ui-button>
+				<ui-button icon='close' action='main'>Cancel</ui-button>
+			</ui-section>
+		{{else}}
+			<ui-section>Currently <span class='good'>DISABLED</span>. Lift access restrictions on maintenance and external airlocks?</ui-section>
+			<ui-section>
+				<ui-button icon='unlock' style='danger' action='enableemergency'>OK</ui-button>
+				<ui-button icon='close' action='main'>Cancel</ui-button>
+			</ui-section>
+		{{/if}}
+	</ui-display>
+{{/if}}
+
+{{#if data.screen == 11}}
+	<ui-display title='Purchase Shuttle'>
+		<ui-section label='Budget'>{{data.budget}} Credits</ui-section>
+	</ui-display>
+	{{#each data.shuttles}}
+		<ui-display title='{{name}} | {{cost}} Credits'>
+			<ui-section>{{description}}</ui-section>
+			{{#if prerequisites}}
+				<ui-section label='Prerequisites'>{{prerequisites}}</ui-section>
+			{{/if}}
+			<ui-section>
+				<ui-button icon='shopping-cart' style='danger' action='buyshuttle' params='{"shuttle_id": "{{id}}"}'>Purchase</ui-button>
+			</ui-section>
+		</ui-display>
+	{{else}}
+		<ui-display><ui-section>No shuttles for sale.</ui-section></ui-display>
+	{{/each}}
+{{/if}}
+
+{{#if data.screen != 1}}
+	<ui-display>
+		<ui-section>
+			<ui-button icon='home' action='main'>Main Menu</ui-button>
+		</ui-section>
+	</ui-display>
+{{/if}}

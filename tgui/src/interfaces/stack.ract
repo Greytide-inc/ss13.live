@@ -1,0 +1,19 @@
+<ui-display title='Constructions'>
+	<ui-section label='Amount left'>
+		<span class='{{data.amount > 0 ? "good" : "bad"}}'>{{data.amount}} {{data.singular}}(s)</span>
+	</ui-section>
+</ui-display>
+<ui-display title='Recipes'>
+	{{#each data.recipes}}
+		{{#if sep}}
+			<hr>
+		{{else}}
+			<ui-section label='{{cost}} {{data.singular}}(s)'>
+				<ui-button icon='wrench' state='{{can_build ? null : "disabled"}}' action='make' params='{"id": "{{index}}", "multiplier": "1"}'>{{title}}</ui-button>
+				{{#each multipliers}}
+					<ui-button state='{{can_build ? null : "disabled"}}' action='make' params='{"id": "{{index}}", "multiplier": "{{n}}"}'>{{label}}x</ui-button>
+				{{/each}}
+			</ui-section>
+		{{/if}}
+	{{/each}}
+</ui-display>

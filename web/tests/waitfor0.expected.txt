@@ -1,0 +1,59 @@
+R t0 hook /atom/movable/proc/Bump
+R t0 new type /obj/item/weapon del type /datum/linked_list
+R t0 ret 11
+R t0 sleep 2
+R t0 nested 3
+R t0 throwEarly caught Cannot execute null.boom().
+E t0 Cannot execute null.boom(). | /obj/item/clothing/suit/space/changeling/proc/process | /obj/item/clothing/suit/space/changeling/proc/process < /obj/machinery/door/airlock/proc/AIAltClick
+R t0 throwEarly uncaught 4
+R t0 throwLate 5
+R t0 W.outer got 6
+R t0 outer 70
+R t0 prompt types=1 a1=Title a2=Message a3=dflt a4=null
+R t0 prompt 10
+R t0 dyn 0
+R t0 dyn proc 12
+R t0 after spawn
+R t0 plain->W.sleep 2
+R t0 drive2 W.ret 11
+R t0 drive2 W.sleep 2
+R t0 plain->drive2 null
+R t0 plain 5
+R t0 drive started, done 0
+R t0 srcGone 9
+R t0 deleting b
+R t0 srcDrive started, done 1
+R t0 delDrive started, done 1
+R t0 b deleted 1 c deleted 1
+R t0 Move calls Bump
+R t0 Move got 15
+R t0 Move started, done 1
+R t0 new got /obj/item/weapon
+R t0 newDrive started, done 0
+R t1 spawn body
+R t1 spawn got 13
+R t1 spawn after
+R t1 W.sleep woke
+R t1 W.throwLate woke
+E t1 Cannot execute null.bang(). | /obj/item/clockwork/slab/proc/process | /obj/item/clockwork/slab/proc/process
+R t1 W.outer woke
+R t1 W.dyn woke src A
+R t1 W.sleep woke
+R t1 W.sleep woke
+R t1 drive woke
+R t1 hook Bump woke
+R t1 New woke
+R t1 W.spawned woke
+R t2 G.sleepy woke
+R t2 W.nested got 33
+R t2 drive2 woke
+R t2 Del woke
+R t2 del null
+R t2 del done, deleted 1
+R t3 W.inner woke
+R t3 G.sleepy woke
+R t3 sleepy 33
+E t3 Cannot execute null.zap(). | /obj/machinery/power/apc/proc/AICtrlClick | /obj/machinery/power/apc/proc/AICtrlClick < /obj/machinery/door/airlock/proc/AIAltClick
+R t3 thrower 14
+R t3 answering
+R t4 W.prompt got yes

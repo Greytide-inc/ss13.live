@@ -1,0 +1,380 @@
+<script>
+  // Cosmetic only: picks a Font Awesome icon for a program row from its name.
+  const ICONS = [
+    [/note/i, 'sticky-note-o'], [/messag/i, 'commenting'], [/manifest/i, 'users'],
+    [/status/i, 'desktop'], [/power/i, 'bolt'], [/record/i, 'folder-open'],
+    [/scan|geiger|halogen/i, 'search'], [/signal/i, 'rss'], [/news/i, 'newspaper-o'],
+    [/bot|drone/i, 'android'], [/custodial|locator/i, 'map-marker'], [/door/i, 'unlock'],
+    [/honk|trombone/i, 'music'], [/pai/i, 'cogs'], [/atmos|gas/i, 'cloud'],
+    [/reagent/i, 'flask'], [/supply/i, 'cube'], [/light/i, 'lightbulb-o']
+  ]
+  component.exports = {
+    data: {
+      appIcon (name) {
+        for (const [re, icon] of ICONS) if (re.test(name)) return icon
+        return 'th-large'
+      }
+    }
+  }
+</script>
+
+<div class='pda'>
+<div class='pda-status'>
+  <span><i class='fa fa-clock-o'></i> {{data.time}} <i class='pda-os'>ThinkTronic</i></span>
+  <span class='pda-actions'>
+    {{#if data.fon}}<i class='fa fa-lightbulb-o pda-light' title='Flashlight on'></i>{{/if}}
+    <i class='fa fa-signal {{data.toff ? "bad" : "good"}}' title='{{data.toff ? "Messenger off" : "Messenger on"}}'></i>
+    <ui-button icon='refresh' class='pda-icon' action='choice' params='{"choice": "Refresh"}'/>
+    {{#if data.mode != 0}}
+      <ui-button icon='home' class='pda-icon' action='choice' params='{"choice": "Return"}'/>
+    {{/if}}
+  </span>
+</div>
+
+{{#if data.owner}}
+  {{#if data.mode == 0}}
+    <ui-display>
+      <ui-button icon='commenting' action='choice' params='{"choice": "2"}'>Messenger</ui-button>
+      <ui-button icon='sticky-note-o' action='choice' params='{"choice": "1"}'>Notekeeper</ui-button>
+      <ui-button icon='lightbulb-o' state='{{data.fon ? "toggle" : null}}' action='choice' params='{"choice": "Light"}'>Light</ui-button>
+    </ui-display>
+    <ui-display title='Details' button>
+      {{#partial button}}
+        {{#if data.has_id}}
+          <ui-button icon='eject' action='choice' params='{"choice": "Authenticate"}'>Eject ID</ui-button>
+          <ui-button icon='repeat' action='choice' params='{"choice": "UpdateInfo"}'>Update Info</ui-button>
+        {{else}}
+          <ui-button icon='id-card' action='choice' params='{"choice": "Authenticate"}'>Insert ID</ui-button>
+        {{/if}}
+      {{/partial}}
+      <div class='pda-line'>Owner: {{data.owner}}</div>
+      <div class='pda-line'>Assignment: {{data.ownjob}}</div>
+      <div class='pda-line'>ID: {{#if data.has_id}}{{data.id_name}}{{else}}<span class='average'>none</span>{{/if}}</div>
+      <div class='pda-line'>Cartridge: {{#if data.cartridge}}{{data.cartridge}} <ui-button icon='eject' class='pda-icon' action='choice' params='{"choice": "Eject"}'/>{{else}}<span class='average'>none</span>{{/if}}</div>
+    </ui-display>
+    <ui-display title='Programs'>
+      {{#each data.sections}}
+        {{#each items}}
+          {{#if choice != "1" && choice != "2" && choice != "Light"}}
+            <ui-button class='pda-link' icon='{{appIcon(name)}}' action='choice' params='{"choice": "{{choice}}"}'>{{name}}</ui-button>
+          {{/if}}
+        {{/each}}
+      {{/each}}
+    </ui-display>
+  {{elseif data.mode == 1}}
+    <ui-display title='Notekeeper V2.2'>
+      <ui-button icon='pencil' action='choice' params='{"choice": "Edit"}'>Edit</ui-button>
+      {{#if data.notescanned}}
+        <div class='average'>(This is a scanned image, editing it may cause some text formatting to change.)</div>
+      {{/if}}
+      <hr>
+      {{#if data.notehtml}}
+        <div>{{{data.notehtml}}}</div>
+      {{else}}
+        <div>{{data.note}}</div>
+      {{/if}}
+    </ui-display>
+  {{elseif data.mode == 2}}
+    <ui-display>
+      <ui-button icon='{{data.silent ? "bell-slash" : "bell"}}' action='choice' params='{"choice": "Toggle Ringer"}'>Ringer: {{data.silent ? "Off" : "On"}}</ui-button>
+      <ui-button icon='envelope' action='choice' params='{"choice": "Toggle Messenger"}'>Send/Receive: {{data.toff ? "Off" : "On"}}</ui-button>
+      <ui-button icon='music' action='choice' params='{"choice": "Ringtone"}'>Ringtone: {{data.ttone}}</ui-button>
+      <ui-button icon='list' action='choice' params='{"choice": "21"}'>Messages</ui-button>
+      {{#if data.message_header}}
+        <div class='pda-line'>{{{data.message_header}}}</div>
+      {{/if}}
+    </ui-display>
+    <ui-display title='Detected PDAs' button>
+      {{#partial button}}
+        {{#if data.can_all && data.pdas.length}}
+          <ui-button icon='bullhorn' action='choice' params='{"choice": "MessageAll"}'>Send To All</ui-button>
+        {{/if}}
+      {{/partial}}
+      {{#each data.pdas}}
+        <div class='pda-line'>
+          <ui-button class='pda-link' icon='envelope-o' action='choice' params='{"choice": "Chat", "target": "{{target}}"}'>{{name}}</ui-button>{{#if special}} {{{special}}}{{/if}}
+        </div>
+      {{else}}
+        <span class='average'>{{data.toff ? "Send/Receive is off." : "None detected."}}</span>
+      {{/each}}
+    </ui-display>
+  {{elseif data.mode == 21}}
+    <ui-display title='{{data.chat_target ? data.chat_name : "All Messages"}}' button>
+      {{#partial button}}
+        {{#if data.chat_target}}
+          <ui-button icon='envelope' action='choice' params='{"choice": "Message", "target": "{{data.chat_target}}"}'>Send Message</ui-button>
+        {{else}}
+          <ui-button icon='trash' action='choice' params='{"choice": "Clear"}'>Clear</ui-button>
+        {{/if}}
+      {{/partial}}
+      {{#each data.msgs}}
+        <div class='pda-msg {{out ? "pda-out" : "pda-in"}}'>
+          <div class='pda-msg-who'>
+            {{#if data.chat_target}}
+              {{out ? "You" : name}}
+            {{elseif pda}}
+              {{out ? "To" : "From"}} <ui-button class='pda-link' action='choice' params='{"choice": "Chat", "target": "{{pda}}"}'>{{name}}</ui-button>
+            {{else}}
+              {{out ? "To" : "From"}} {{name}}
+            {{/if}}
+          </div>
+          <div>{{{text}}}{{{photo}}}</div>
+        </div>
+      {{else}}
+        <span class='average'>No messages.</span>
+      {{/each}}
+    </ui-display>
+  {{elseif data.mode == 3}}
+    <ui-display title='Atmospheric Readings'>
+      {{#if data.pressure != undefined}}
+        <ui-section label='Air Pressure'>{{data.pressure}} kPa</ui-section>
+        {{#each data.gases}}
+          <ui-section label='{{name}}'>{{pct}}%</ui-section>
+        {{/each}}
+        <ui-section label='Temperature'>{{data.temperature}} &deg;C</ui-section>
+      {{else}}
+        <span class='bad'>Unable to obtain a reading.</span>
+      {{/if}}
+    </ui-display>
+  {{elseif data.mode == 41}}
+    <ui-display title='Crew Manifest'>
+      <div class='average'>Entries cannot be modified from this terminal.</div>
+      {{#each data.manifest}}
+        <ui-section label='{{name}}'>{{rank}}</ui-section>
+      {{/each}}
+    </ui-display>
+  {{elseif data.mode == 40}}
+    <ui-display title='Remote Signaling System'>
+      <ui-section label='Signal'>
+        <ui-button icon='bolt' action='cart' params='{"choice": "Send Signal"}'>Send Signal</ui-button>
+      </ui-section>
+      <ui-section label='Frequency'>
+        <ui-button icon='fast-backward' action='cart' params='{"choice": "Signal Frequency", "sfreq": "-10"}'>-</ui-button>
+        <ui-button icon='backward' action='cart' params='{"choice": "Signal Frequency", "sfreq": "-2"}'>-</ui-button>
+        <span>{{data.cart.frequency}}</span>
+        <ui-button icon='forward' action='cart' params='{"choice": "Signal Frequency", "sfreq": "2"}'>+</ui-button>
+        <ui-button icon='fast-forward' action='cart' params='{"choice": "Signal Frequency", "sfreq": "10"}'>+</ui-button>
+      </ui-section>
+      <ui-section label='Code'>
+        <ui-button icon='fast-backward' action='cart' params='{"choice": "Signal Code", "scode": "-5"}'>-</ui-button>
+        <ui-button icon='backward' action='cart' params='{"choice": "Signal Code", "scode": "-1"}'>-</ui-button>
+        <span>{{data.cart.code}}</span>
+        <ui-button icon='forward' action='cart' params='{"choice": "Signal Code", "scode": "1"}'>+</ui-button>
+        <ui-button icon='fast-forward' action='cart' params='{"choice": "Signal Code", "scode": "5"}'>+</ui-button>
+      </ui-section>
+    </ui-display>
+  {{elseif data.mode == 42}}
+    <ui-display title='Station Status Display Interlink'>
+      <ui-section label='Display'>
+        <ui-button icon='eraser' action='cart' params='{"choice": "Status", "statdisp": "blank"}'>Clear</ui-button>
+        <ui-button icon='rocket' action='cart' params='{"choice": "Status", "statdisp": "shuttle"}'>Shuttle ETA</ui-button>
+        <ui-button icon='comment' action='cart' params='{"choice": "Status", "statdisp": "message"}'>Message</ui-button>
+      </ui-section>
+      <ui-section label='Line 1'>
+        <ui-button icon='pencil' action='cart' params='{"choice": "Status", "statdisp": "setmsg1"}'>{{data.cart.message1 ? data.cart.message1 : "(none)"}}</ui-button>
+      </ui-section>
+      <ui-section label='Line 2'>
+        <ui-button icon='pencil' action='cart' params='{"choice": "Status", "statdisp": "setmsg2"}'>{{data.cart.message2 ? data.cart.message2 : "(none)"}}</ui-button>
+      </ui-section>
+      <ui-section label='Alert'>
+        <ui-button action='cart' params='{"choice": "Status", "statdisp": "alert", "alert": "default"}'>None</ui-button>
+        <ui-button action='cart' params='{"choice": "Status", "statdisp": "alert", "alert": "redalert"}'>Red Alert</ui-button>
+        <ui-button action='cart' params='{"choice": "Status", "statdisp": "alert", "alert": "lockdown"}'>Lockdown</ui-button>
+        <ui-button action='cart' params='{"choice": "Status", "statdisp": "alert", "alert": "biohazard"}'>Biohazard</ui-button>
+      </ui-section>
+    </ui-display>
+  {{elseif data.mode == 43}}
+    <ui-display title='Power Monitors - Please select one'>
+      {{#each data.cart.monitors}}
+        <ui-button icon='bolt' action='cart' params='{"choice": "Power Select", "target": "{{n}}"}'>{{name}}</ui-button>
+      {{else}}
+        <span class='bad'>No connection</span>
+      {{/each}}
+    </ui-display>
+  {{elseif data.mode == 433}}
+    <ui-display title='Power Monitor'>
+      {{#if data.cart.connected}}
+        <ui-section label='Total power'>{{data.cart.avail}} W</ui-section>
+        <ui-section label='Total load'>{{data.cart.load}} W</ui-section>
+        <table class='pda-table'>
+          <tr><th>Area</th><th>Eqp.</th><th>Lgt.</th><th>Env.</th><th>Load</th><th>Cell</th></tr>
+          {{#each data.cart.apcs}}
+            <tr><td>{{area}}</td><td>{{eqp}}</td><td>{{lgt}}</td><td>{{env}}</td><td>{{load}}</td><td>{{#if cell != null}}{{cell}}% {{charging}}{{else}}N/C{{/if}}</td></tr>
+          {{/each}}
+        </table>
+      {{else}}
+        <span class='bad'>No connection</span>
+      {{/if}}
+    </ui-display>
+  {{elseif data.mode == 44 || data.mode == 45}}
+    <ui-display title='{{data.mode == 44 ? "Medical Record List" : "Security Record List"}}'>
+      {{#each data.cart.records}}
+        <ui-button icon='file' action='cart' params='{"choice": "{{data.mode == 44 ? "Medical Records" : "Security Records"}}", "target": "{{id}}"}'>{{id}}: {{name}}</ui-button>
+      {{/each}}
+    </ui-display>
+  {{elseif data.mode == 441 || data.mode == 451}}
+    <ui-display title='{{data.mode == 441 ? "Medical Record" : "Security Record"}}'>
+      {{#if data.cart.general}}
+        <ui-section label='Name'>{{data.cart.general.name}}</ui-section>
+        <ui-section label='ID'>{{data.cart.general.id}}</ui-section>
+        <ui-section label='Sex'>{{data.cart.general.sex}}</ui-section>
+        <ui-section label='Age'>{{data.cart.general.age}}</ui-section>
+        <ui-section label='Rank'>{{data.cart.general.rank}}</ui-section>
+        <ui-section label='Fingerprint'>{{data.cart.general.fingerprint}}</ui-section>
+        <ui-section label='Physical Status'>{{data.cart.general.p_stat}}</ui-section>
+        <ui-section label='Mental Status'>{{data.cart.general.m_stat}}</ui-section>
+      {{else}}
+        <span class='bad'>Record Lost!</span>
+      {{/if}}
+    </ui-display>
+    {{#if data.mode == 441}}
+      <ui-display title='Medical Data'>
+        {{#if data.cart.medical}}
+          <ui-section label='Blood Type'>{{data.cart.medical.blood_type}}</ui-section>
+          <ui-section label='Minor Disabilities'>{{data.cart.medical.mi_dis}}<div>{{data.cart.medical.mi_dis_d}}</div></ui-section>
+          <ui-section label='Major Disabilities'>{{data.cart.medical.ma_dis}}<div>{{data.cart.medical.ma_dis_d}}</div></ui-section>
+          <ui-section label='Allergies'>{{data.cart.medical.alg}}<div>{{data.cart.medical.alg_d}}</div></ui-section>
+          <ui-section label='Current Diseases'>{{data.cart.medical.cdi}}<div>{{data.cart.medical.cdi_d}}</div></ui-section>
+          <ui-section label='Important Notes'>{{data.cart.medical.notes}}</ui-section>
+        {{else}}
+          <span class='bad'>Record Lost!</span>
+        {{/if}}
+      </ui-display>
+    {{else}}
+      <ui-display title='Security Data'>
+        {{#if data.cart.security}}
+          <ui-section label='Criminal Status'>{{data.cart.security.criminal}}</ui-section>
+          <ui-section label='Minor Crimes'>
+            {{#each data.cart.security.mi_crim}}<div>{{crime}} - {{details}} ({{author}}, {{time}})</div>{{else}}<span class='average'>None</span>{{/each}}
+          </ui-section>
+          <ui-section label='Major Crimes'>
+            {{#each data.cart.security.ma_crim}}<div>{{crime}} - {{details}} ({{author}}, {{time}})</div>{{else}}<span class='average'>None</span>{{/each}}
+          </ui-section>
+          <ui-section label='Important Notes'>{{data.cart.security.notes}}</ui-section>
+        {{else}}
+          <span class='bad'>Record Lost!</span>
+        {{/if}}
+      </ui-display>
+    {{/if}}
+  {{elseif data.mode == 47}}
+    <ui-display title='Supply Record Interlink'>
+      <ui-section label='Supply shuttle'>{{data.cart.shuttle}}</ui-section>
+      <ui-section label='Approved orders'>
+        {{#each data.cart.approved}}<div>#{{id}} - {{name}} approved by {{orderer}} {{#if reason}}({{reason}}){{/if}}</div>{{else}}<span class='average'>None</span>{{/each}}
+      </ui-section>
+      <ui-section label='Current requests'>
+        {{#each data.cart.requests}}<div>#{{id}} - {{name}} requested by {{orderer}}</div>{{else}}<span class='average'>None</span>{{/each}}
+      </ui-section>
+    </ui-display>
+  {{elseif data.mode == 49}}
+    <ui-display title='Persistent Custodial Object Locator'>
+      {{#if data.cart.located}}
+        <ui-section label='Current Orbital Location'>[{{data.cart.x}},{{data.cart.y}}]</ui-section>
+        <ui-section label='Located Mops'>
+          {{#each data.cart.mops}}<div>Mop - [{{x}},{{y}} ({{dir}})] - {{info}}</div>{{else}}<span class='average'>None</span>{{/each}}
+        </ui-section>
+        <ui-section label='Janitorial Carts'>
+          {{#each data.cart.carts}}<div>Cart - [{{x}},{{y}} ({{dir}})] - {{info}}</div>{{else}}<span class='average'>None</span>{{/each}}
+        </ui-section>
+        <ui-section label='Cleanbots'>
+          {{#each data.cart.bots}}<div>Cleanbot - [{{x}},{{y}} ({{dir}})] - {{info}}</div>{{else}}<span class='average'>None</span>{{/each}}
+        </ui-section>
+      {{else}}
+        <span class='bad'>ERROR: Unable to determine current location.</span>
+      {{/if}}
+      <ui-button icon='refresh' action='cart' params='{"choice": "49"}'>Refresh GPS Locator</ui-button>
+    </ui-display>
+  {{elseif data.mode == 53}}
+    <ui-display title='Newscaster Access'>
+      <ui-section label='Current Newsfeed'>
+        <ui-button icon='newspaper-o' action='cart' params='{"choice": "Newscaster Switch Channel"}'>{{data.cart.channel}}</ui-button>
+      </ui-section>
+      {{#if data.cart.found}}
+        {{#each data.cart.messages}}
+          <ui-section label='{{author}}'>
+            <div>{{body}}</div>
+            {{#if photo}}<div class='average'>[photo attached]</div>{{/if}}
+            {{#each comments}}<div class='average'>{{body}} - {{author}} {{time}}</div>{{/each}}
+          </ui-section>
+        {{else}}
+          <span class='average'>No stories yet.</span>
+        {{/each}}
+      {{else}}
+        <span class='bad'>ERROR : NO CHANNEL FOUND</span>
+      {{/if}}
+      <ui-button icon='pencil' action='cart' params='{"choice": "Newscaster Message"}'>Post Message</ui-button>
+    </ui-display>
+  {{elseif data.mode == 54}}
+    <ui-display title='Bots Interlink'>
+      {{#if data.cart.bot}}
+        <ui-section label='Bot'>{{data.cart.bot.name}}
+          <ui-button icon='refresh' action='cart' params='{"op": "control", "bot": "{{data.cart.bot.ref}}"}'>Refresh</ui-button>
+        </ui-section>
+        <ui-section label='Model'>{{data.cart.bot.model}}</ui-section>
+        <ui-section label='Location'>{{data.cart.bot.area}}</ui-section>
+        <ui-section label='Mode'>{{{data.cart.bot.mode}}}</ui-section>
+        {{#if data.cart.bot.allow_pai}}
+          <ui-section label='pAI'>
+            {{#if data.cart.bot.pai}}
+              {{data.cart.bot.pai}}
+              {{#if data.cart.bot.can_eject}}<ui-button icon='eject' action='cart' params='{"op": "ejectpai"}'>Eject</ui-button>{{/if}}
+            {{else}}
+              <span class='average'>none</span>
+            {{/if}}
+          </ui-section>
+        {{/if}}
+        {{#if data.cart.bot.is_mule}}
+          <ui-section label='Current Load'>
+            {{data.cart.bot.load ? data.cart.bot.load : "none"}}
+            {{#if data.cart.bot.load}}<ui-button action='cart' params='{"mule": "unload"}'>Unload</ui-button>{{/if}}
+          </ui-section>
+          <ui-section label='Destination'>
+            {{data.cart.bot.destination ? data.cart.bot.destination : "None"}}
+            <ui-button action='cart' params='{"mule": "destination"}'>Set</ui-button>
+          </ui-section>
+          <ui-section label='ID'>{{data.cart.bot.suffix}} <ui-button action='cart' params='{"mule": "setid"}'>Modify</ui-button></ui-section>
+          <ui-section label='Power'>{{data.cart.bot.power}}%</ui-section>
+          <ui-section label='Home'>{{data.cart.bot.home ? data.cart.bot.home : "none"}}</ui-section>
+          <ui-section label='Delivery Reporting'><ui-button action='cart' state='{{data.cart.bot.report ? "toggle" : null}}' params='{"mule": "report"}'>{{data.cart.bot.report ? "On" : "Off"}}</ui-button></ui-section>
+          <ui-section label='Auto Return Home'><ui-button action='cart' state='{{data.cart.bot.autoret ? "toggle" : null}}' params='{"mule": "autoret"}'>{{data.cart.bot.autoret ? "On" : "Off"}}</ui-button></ui-section>
+          <ui-section label='Auto Pickup Crate'><ui-button action='cart' state='{{data.cart.bot.autopick ? "toggle" : null}}' params='{"mule": "autopick"}'>{{data.cart.bot.autopick ? "On" : "Off"}}</ui-button></ui-section>
+          <ui-section label='Control'>
+            <ui-button action='cart' params='{"mule": "stop"}'>Stop</ui-button>
+            <ui-button action='cart' params='{"mule": "go"}'>Proceed</ui-button>
+            <ui-button action='cart' params='{"mule": "home"}'>Return Home</ui-button>
+          </ui-section>
+        {{else}}
+          <ui-section label='Control'>
+            <ui-button action='cart' params='{"op": "patroloff"}'>Stop Patrol</ui-button>
+            <ui-button action='cart' params='{"op": "patrolon"}'>Start Patrol</ui-button>
+            <ui-button action='cart' params='{"op": "summon"}'>Summon Bot</ui-button>
+          </ui-section>
+          <div class='average'>Keep an ID inserted to upload access codes upon summoning.</div>
+        {{/if}}
+        <ui-button icon='arrow-left' action='cart' params='{"op": "botlist"}'>Return to bot list</ui-button>
+      {{else}}
+        <ui-button icon='refresh' action='cart' params='{"op": "botlist"}'>Scan for active bots</ui-button>
+        {{#each data.cart.bots}}
+          <ui-section label='{{name}}'>
+            <ui-button class='pda-link' icon='android' action='cart' params='{"op": "control", "bot": "{{ref}}"}'>{{{mode}}}</ui-button>
+          </ui-section>
+        {{else}}
+          <span class='average'>No bots found.</span>
+        {{/each}}
+      {{/if}}
+    </ui-display>
+  {{elseif data.mode == 99}}
+    <ui-display title='Cartridge Application'>
+      <span class='bad'>ERROR : NOT AUTHORIZED {{data.cart.no_id ? "- ID SLOT EMPTY" : ""}}</span>
+    </ui-display>
+  {{else}}
+    <ui-display title='Cartridge Application'>
+      <span class='average'>Nothing to show here.</span>
+    </ui-display>
+  {{/if}}
+{{else}}
+  <ui-display>
+    <span class='bad'>No owner information entered. Swipe your ID card on the PDA.</span>
+  </ui-display>
+{{/if}}
+</div>

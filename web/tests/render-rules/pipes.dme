@@ -1,0 +1,3 @@
+// pipes.dme - BYOND 511 world for the pipe-look check (phase pv1).
+#define FILE_DIR ../../..
+#include "pipes.dm"

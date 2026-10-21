@@ -1,0 +1,184 @@
+/* skin.css - hand-written base styles for the skin.dmf mock-up. Not generated: layout
+   (position/size/anchor math) is computed per-element and written inline by
+   web/src/tools/skin-to-html.ts; this file only supplies the "chrome" (how each control TYPE
+   looks) and the outer page/window frame. Regenerating index.html never touches this file. */
+
+:root {
+	--frame-bg: #c0c0c0;
+	--pane-border: #7a7a7a;
+	color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+	margin: 0;
+	padding: 0;
+	height: 100%;
+	background: #202020;
+	font-family: "MS Sans Serif", Tahoma, Arial, sans-serif;
+	font-size: 12px;
+}
+
+.notice {
+	margin: 0;
+	padding: 6px 10px;
+	background: #2d2d2d;
+	color: #b7b7b7;
+	font-family: monospace;
+	font-size: 11px;
+	border-bottom: 1px solid #444;
+}
+
+/* The outer client window (skin.dmf's "mainwindow" MAIN elem). Fills whatever space is left below
+   the notice banner; grows/shrinks with the browser, which is what exercises the DMF anchors. */
+.window-frame {
+	display: flex;
+	flex-direction: column;
+	height: calc(100vh - 34px);
+	min-height: 320px;
+	background: var(--frame-bg);
+	border: 1px solid #555;
+}
+
+.window-body {
+	position: relative;
+	overflow: hidden;
+}
+
+/* --- menu bar (File / Help) --- */
+.menubar {
+	display: flex;
+	flex: 0 0 auto;
+	background: #ece9d8;
+	border-bottom: 1px solid #8f8f8f;
+	font-size: 12px;
+}
+.menu-trigger {
+	position: relative;
+	padding: 3px 10px;
+	cursor: default;
+}
+.menu-trigger:hover { background: #316ac5; color: #fff; }
+.menu-dropdown {
+	display: none;
+	position: absolute;
+	left: 0;
+	top: 100%;
+	min-width: 180px;
+	background: #fff;
+	border: 1px solid #8f8f8f;
+	box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.35);
+	z-index: 20;
+}
+.menu-trigger:hover .menu-dropdown { display: block; }
+.menu-item {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 4px 14px;
+	color: #000;
+	white-space: nowrap;
+}
+.menu-item:hover { background: #316ac5; color: #fff; }
+.menu-dropdown hr { border: none; border-top: 1px solid #ddd; margin: 2px 0; }
+.hotkey { color: #888; font-size: 10px; }
+.menu-item:hover .hotkey { color: #dde; }
+
+/* --- generic control reset --- */
+.ctl {
+	box-sizing: border-box;
+	font-family: inherit;
+	font-size: 11px;
+}
+
+/* --- splitter (CHILD) --- */
+.ctl-split {
+	display: flex;
+	overflow: hidden;
+	border: 1px solid var(--pane-border);
+}
+.split-row { flex-direction: row; }
+.split-col { flex-direction: column; }
+.split-pane { position: relative; overflow: hidden; min-width: 0; min-height: 0; }
+.split-divider {
+	flex: 0 0 4px;
+	background: repeating-linear-gradient(135deg, #999, #999 2px, #aaa 2px, #aaa 4px);
+}
+.split-row .split-divider { cursor: ew-resize; }
+.split-col .split-divider { cursor: ns-resize; height: auto; }
+.split-col { }
+.split-col > .split-divider { flex: 0 0 4px; }
+
+/* --- map viewport placeholder --- */
+.ctl-map {
+	background: repeating-conic-gradient(#2b2b2b 0% 25%, #333 0% 50%) 0 0 / 24px 24px;
+	border: 1px solid #000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+.ctl-map .placeholder { color: #888; font-family: monospace; font-size: 12px; }
+
+/* --- chat/game output --- */
+.ctl-output {
+	background: #fff;
+	border: 1px solid var(--pane-border);
+	overflow: auto;
+	padding: 4px 6px;
+}
+.ctl-output .placeholder { color: #999; font-style: italic; }
+
+/* --- generic browser (asset cache, tooltip, browseroutput) --- */
+.ctl-browser {
+	background: #f4f4f4;
+	border: 1px solid var(--pane-border);
+	overflow: auto;
+}
+.ctl-browser .placeholder { color: #999; font-style: italic; padding: 4px 6px; }
+
+/* --- stat panel (INFO) --- */
+.ctl-statpanel {
+	background: #fff;
+	border: 1px solid var(--pane-border);
+	display: flex;
+	flex-direction: column;
+}
+.statpanel-tabs {
+	flex: 0 0 auto;
+	display: flex;
+	background: #e8e8e8;
+	border-bottom: 1px solid var(--pane-border);
+}
+.statpanel-tabs .tab {
+	padding: 3px 10px;
+	border-right: 1px solid var(--pane-border);
+	color: #000;
+}
+.statpanel-tabs .tab.active { background: #fff; font-weight: bold; }
+.statpanel-body { flex: 1 1 auto; padding: 4px 6px; overflow: auto; }
+.statpanel-body.placeholder { color: #999; font-style: italic; }
+
+/* --- input bar --- */
+.ctl-input {
+	border: 1px solid var(--pane-border);
+	padding: 2px 4px;
+}
+
+/* --- buttons --- */
+.ctl-button {
+	border: 1px outset #ccc;
+	background: #ece9d8;
+	cursor: default;
+}
+.ctl-button:active { border-style: inset; }
+
+/* --- unhandled / missing (should not normally appear; skin-to-html.ts lists any skipped types) --- */
+.ctl-unknown, .ctl-missing {
+	background: repeating-linear-gradient(45deg, #500, #500 6px, #700 6px, #700 12px);
+	color: #fff;
+	font-family: monospace;
+	font-size: 10px;
+	padding: 2px 4px;
+	overflow: auto;
+}

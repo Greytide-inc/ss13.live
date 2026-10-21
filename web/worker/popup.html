@@ -1,0 +1,14 @@
+<!doctype html>
+<!-- tsh-chat: the empty page every browse() popup frame loads (popups.js). The game page has a Content-Security-Policy that blocks inline
+     scripts, and a srcdoc frame would inherit it, breaking tg's popup scripts. A page loaded from its own URL doesn't, so this one tells
+     the page it's ready and writes the popup's html into itself. The frame is still sandboxed without allow-same-origin. -->
+<meta charset="utf-8">
+<script>
+let written = false;
+addEventListener("message", (e) => {
+	if (written || e.source !== parent || typeof e.data?.popupHtml !== "string") return;
+	written = true; document.open(); document.write(e.data.popupHtml); document.close();
+	parent.postMessage({ popupWritten: 1 }, "*");
+});
+parent.postMessage({ popupReady: 1 }, "*");
+</script>

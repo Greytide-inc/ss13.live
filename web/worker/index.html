@@ -1,0 +1,676 @@
+<!doctype html>
+<html lang="en">
+<!-- Boots tgstation in a Web Worker (src/worker/boot-worker.ts) and shows its log.
+     Serve with `npm run gallery`, open http://127.0.0.1:8471/web/worker/index.html
+     Query: ?ticks=N&seconds=S&afterStart=S (boot.ts's flags; default: no limit, the world runs until the tab closes).
+     &join=Assistant (2v): join the round as that job and draw the player's view live (client-scene.ts), updated every tick (3c).
+     &roundstart=1 (with join): get that job at round start, as a Ready player does: you spawn on the station, not on the arrivals shuttle.
+     &scenario=NAME (scen2): run web/scenarios/NAME.txt: its header sets job (round-start join), seed and map, its lines are played from the spawn.
+     &gender=female (3b): the character's gender when joining (default male).
+     &endround=N: N seconds after you spawn, end the round the way the admin "End Round" verb does (tg's round-end
+     report, then "Rebooting World in 90 seconds"; the tab then starts the next world and you land in its lobby).
+     &autojoin=JOB (test aid): in every world's lobby, 20 ticks after round start, click the late-join link for JOB.
+     &rounddelay=S: tg's reboot countdown after the round-end report (config.txt ROUND_END_COUNTDOWN, 90 s).
+     &renderer=canvas (3d): draw with canvas 2D instead of PixiJS (the default); &sync=1 waits for the GPU each redraw so #perf is the real cost.
+     Mouse (3j): clicks on the map or HUD go to tg's client/Click (shift/ctrl/alt and left/middle/right in params).
+     Keys (3a): presses/releases go to the worker, which runs tg's skin macros (arrows walk; TAB switches
+     to hotkey mode, where WASD walk; CTRL+B / B resist, which gets you out of the arrivals chair). -->
+<meta charset="utf-8">
+<!-- tsh-chat: only this page's own scripts run here (the inline ones by hash: after editing one, `node tools/csp.mjs` from web/).
+     No 'unsafe-eval': PixiJS builds shader code with new Function unless ./pixi-no-eval.js (its own add-on, made by
+     tools/pixi-no-eval.mjs) is imported first; blob: workers are PixiJS's image loaders. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-w7FiRm3A6tvyprAne8G8M8dv/0vxuAgFXzs3peZutUk=' 'sha256-Ad3Z0q0oJIukpVoFDmVV3lZDWdAwsRN0YJ2W3tL8hT4=' 'sha256-lTxu9zC4uShGdcuJrAXIeXJWl4Hunla9A+ucH/rf2Jc=' 'sha256-6Qnltw39LyouMvunuLpzZWyAU1Sg02mf3koDwutSrJU='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' blob: ws://localhost:* ws://127.0.0.1:*; worker-src 'self' blob:; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>ss13.live: Space Station 13 in your browser</title>
+<!-- Hosting: tab title, link preview card (Reddit, Discord), tg's own SS13 icon. -->
+<meta name="description" content="Space Station 13 (2017 /tg/station) in your browser: no BYOND, no download. Join a round on ss13.live.">
+<meta property="og:title" content="ss13.live">
+<meta property="og:description" content="Space Station 13 (2017 /tg/station) in your browser: no BYOND, no download.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ss13.live/">
+<meta property="og:image" content="https://ss13.live/icons/ss13_64.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/ss13_32.png">
+<link rel="icon" type="image/png" sizes="64x64" href="/icons/ss13_64.png">
+<link rel="stylesheet" href="/web/worker/output.css">
+<style>
+/* window layout from interface/skin.dmf: mainwindow = split(mapwindow | infowindow), 50/50 vertical splitter, input bar + Say along the bottom;
+   infowindow = split(statwindow / outputwindow), 50/50 horizontal splitter (sk1: the Changelog/Rules/... button row was dropped).
+   sk1: menu bar across the top (menubar.js, from skin.dmf's `menu "menu"`); both splitters drag (splitter.js); the map canvas fits #mapwindow via container units. Output styles: output.css (interface/stylesheet.dm's client.script). */
+html,body{height:100%}body{font:12px monospace;margin:0;display:flex;flex-direction:column;background:#fff}
+#main{flex:1;display:flex;min-height:0}
+#mapwindow{flex:0 0 50%;min-width:0;background:#000;display:flex;align-items:flex-start;justify-content:center;overflow:hidden;container-type:size}
+#infowindow{flex:1;display:flex;flex-direction:column;min-width:0}
+#menubar{flex:0 0 auto;position:relative;display:flex;background:#f0f0f0;border-bottom:1px solid #aaa;font:12px sans-serif;user-select:none;z-index:7}
+.mtop{padding:3px 8px;cursor:default}.mtop:hover,.mtop.on{background:#cde}.mtop.off{color:#888}
+.mdrop{position:absolute;top:100%;min-width:190px;width:max-content;background:#f4f4f4;border:1px solid #666;box-shadow:2px 2px 6px #0006;padding:2px 0}
+.mrow{display:grid;grid-template-columns:18px 1fr auto;padding:3px 10px 3px 4px;cursor:default;white-space:nowrap}.mrow:hover:not(.off),.mrow.hot{background:#39c;color:#fff}.mrow.off{color:#999}
+.mrow .chk{flex:0 0 18px;text-align:center}.mrow .sc{margin-left:24px;opacity:.8}.msep{height:1px;margin:3px 2px;background:#aaa}
+.splitbar{flex:0 0 5px;background:#ccc;touch-action:none}.splitbar.v{cursor:col-resize}.splitbar.h{cursor:row-resize}.splitbar:hover,.splitbar.drag{background:#999}
+#statwindow{flex:0 0 50%;min-height:0;background:#fff;color:#000;font:12px sans-serif;display:flex;flex-direction:column}
+#stattabs{flex:0 0 auto;display:flex;flex-wrap:wrap;gap:1px;background:#ddd;padding:2px 2px 0}#stattabs button{font:11px sans-serif;border:1px solid #999;border-bottom:0;background:#eee;padding:2px 8px;cursor:pointer}#stattabs button.on{background:#fff;font-weight:bold}
+#statlines{flex:1;overflow-y:auto;padding:4px}#statlines div{display:flex;gap:6px}#statlines .n{color:#666;white-space:nowrap}#statlines .c{cursor:pointer;color:#00c}#statlines .c:hover{text-decoration:underline}
+#statlines.verbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));align-content:start;gap:1px 10px}#statlines.verbs div{overflow:hidden;white-space:nowrap}
+#outputwindow{flex:1;min-height:0;overflow-y:auto;background:#fff;padding:2px 4px;font:12px Verdana,sans-serif}
+#outputwindow div{overflow-wrap:anywhere}
+#inputbar{flex:0 0 26px;display:flex;gap:3px;padding:3px 5px;background:#eee;min-width:0}#input{flex:1 1 0;min-width:0;background:#d3b5b5;border:1px solid #888}#channels{flex:0 0 auto;display:flex;gap:2px}#channels button{font:12px sans-serif;border:1px solid #888;background:#e4e4e4;padding:0 7px;cursor:pointer}#channels button.on{font-weight:bold;border-color:#333;box-shadow:inset 0 0 0 1px #333}
+#debug{font:12px monospace;padding:0 8px}#boot{font-weight:bold}pre{white-space:pre-wrap;margin:0;max-height:300px;overflow:auto}
+#client-host{display:flex}.client-canvas{image-rendering:pixelated;flex:none;--h:min(100cqh,calc(100cqw / var(--ar,1)));--over:calc(var(--h) * (var(--vr,var(--ar,1)) - var(--ar,1)) / 2);height:var(--h);width:calc(var(--h) * var(--vr,var(--ar,1)));margin:0 calc(-1 * var(--over));clip-path:inset(0 var(--over));background:#000}
+#dialogs{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;pointer-events:none;z-index:10}
+.dlg{pointer-events:auto;background:#eee;border:2px solid #666;box-shadow:0 2px 10px #000a;min-width:260px;max-width:480px;font:13px sans-serif}
+.dlg h4{margin:0;padding:3px 8px;background:#446;color:#fff;font-size:13px}
+.dlg .body{padding:8px;display:flex;flex-direction:column;gap:6px}.dlg .msg{white-space:pre-wrap;overflow-wrap:anywhere}
+#ctxmenu{position:fixed;z-index:12;background:#f4f4f4;border:1px solid #666;box-shadow:2px 2px 6px #0006;font:12px sans-serif;min-width:120px;user-select:none}
+#ctxmenu .row{position:relative;padding:3px 18px 3px 8px;cursor:default;white-space:nowrap}#ctxmenu .row:hover{background:#39c;color:#fff}
+#ctxmenu .row.sub::after{content:"\25B8";position:absolute;right:5px}
+#ctxmenu .sm{display:none;position:fixed;background:#f4f4f4;border:1px solid #666;box-shadow:2px 2px 6px #0006;color:#000}#ctxmenu .row:hover>.sm{display:block}
+#popups{position:fixed;inset:0;pointer-events:none;z-index:8}
+.bwin{position:absolute;pointer-events:auto;display:flex;flex-direction:column;background:#fff;border:2px solid #446;box-shadow:0 2px 10px #000a;overflow:hidden;min-width:120px;min-height:60px}
+.bbar{flex:0 0 20px;display:flex;justify-content:space-between;align-items:center;background:#446;color:#fff;font:12px sans-serif;padding:0 4px;cursor:move;user-select:none}
+.bbar button{border:0;background:#a33;color:#fff;width:18px;height:16px;padding:0;line-height:14px;cursor:pointer}
+.bwin iframe{flex:1;border:0;width:100%;min-height:0;background:#fff}
+.dlg .btns{display:flex;gap:6px;justify-content:flex-end}.dlg select{min-height:120px}
+</style>
+<div id="popups"></div>
+<div id="dialogs"></div>
+<div id="loading" style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000d;color:#fff;font:20px sans-serif;text-align:center;z-index:9;pointer-events:none"><div>Starting the game...</div><div style="font-size:14px;margin-top:8px">Please don't reload the page.</div><div id="loading-stage" style="font-size:14px;margin-top:8px;color:#9cf"></div><div style="font-size:12px;margin-top:28px;pointer-events:auto"><a href="/about.html" target="_blank" rel="noopener" style="color:#9cf">About, privacy and source code</a></div></div>
+<div id="menubar"></div>
+<div id="main">
+<div id="mapwindow"><div id="client-host"></div></div>
+<div id="vsplit"></div>
+<div id="infowindow">
+<div id="statwindow"><div id="stattabs"></div><div id="statlines"></div></div>
+<div id="hsplit"></div>
+<div id="outputwindow"></div>
+</div></div>
+<div id="inputbar"><input id="input" autocomplete="off" spellcheck="false"><div id="channels"></div></div>
+<details id="debug"><summary>debug log</summary><div id="boot">starting</div><div id="perf"></div><div id="status"></div><pre id="log"></pre></details>
+<script>if(window.top!==window){window.stop();document.documentElement.innerHTML="<body style=background:#000>";throw new Error("game page inside a frame: not booting")}</script>
+<script type="importmap">{ "imports": { "pixi.js": "/web/node_modules/pixi.js/dist/pixi.mjs" } }</script>
+<script>/*SW_GATE*/</script>
+<script type="module">
+await (window.ss13Gate || Promise.resolve());
+import "/web/worker/pixi-no-eval.js"; // before anything makes a PixiJS renderer: the CSP has no 'unsafe-eval'
+import { liveClientView, viewStats } from "/web/build/dist/src/render/client-scene.js";
+import { ViewUnpacker } from "/web/worker/view-pack.js";
+import { JitterBuffer } from "/web/worker/jitter-buffer.js";
+import { createSound } from "/web/worker/sound.js";
+import { createPopups } from "/web/worker/popups.js";
+import { createCtxMenu } from "/web/worker/ctxmenu.js";
+import { parseMenu, menuTree, createMenubar, screenshot } from "/web/worker/menubar.js";
+import { createSplitter } from "/web/worker/splitter.js";
+import { CHANNELS, nextChannel, lineFor, isTyping, hotkeyOpens } from "/web/worker/saybox.js";
+import { joinName, nameToSave, warnOnLeave } from "/web/worker/join.js";
+import { createChatFilter } from "/web/worker/chatfilter.js";
+import { cleanChat } from "/web/worker/chathtml.js";
+import { clickParams } from "/web/build/dist/src/render/click-params.js";
+const q = new URLSearchParams(location.search);
+// ?adminkey= (security step 4): kept for this tab in sessionStorage (a reload or reconnect still sends it) and taken out of the
+// address bar at once, so it isn't left in history, a shared link, a screenshot or an F9 report.
+const adminKey = q.get("adminkey") ?? (() => { try { return sessionStorage.getItem("ss13-adminkey") ?? undefined; } catch { return undefined; } })();
+if (q.has("adminkey")) {
+	try { sessionStorage.setItem("ss13-adminkey", adminKey); } catch {}
+	q.delete("adminkey");
+	history.replaceState(history.state, "", location.pathname + (q.toString() ? `?${q}` : "") + location.hash);
+}
+const num = (k, d) => (q.has(k) ? Number(q.get(k)) : d);
+const status = document.getElementById("boot"), pre = document.getElementById("log");
+const loading = document.getElementById("loading"), stage = document.getElementById("loading-stage");
+const STAGES = { loaded: "Game code loaded.", "world-new": "World created, setting up the station...", snapshot: "Station loaded, starting...", "round-start": "Round starting...", joined: "Joining...", lobby: "In the lobby." };
+const fail = (t) => { loading.style.background = "#000"; loading.firstChild.textContent = "The game stopped: " + t; loading.firstChild.style.color = "#f66"; loading.children[1].textContent = "Reload the page to try again."; };
+const outPane = document.getElementById("outputwindow");
+const chatFilter = createChatFilter(outPane); // category filters + highlight words
+// text the game sends the player (`<<`, output(msg, "output")). Batched by the worker per tick; capped at 500 messages. Only sticks to the bottom if it was there.
+// Each message is cleaned first (chathtml.js); the first 20 that lost something are logged ("[page] chat cleaned").
+let cleanedLogged = 0;
+const addOutput = (texts) => {
+	const stick = outPane.scrollTop + outPane.clientHeight >= outPane.scrollHeight - 4;
+	const frag = document.createDocumentFragment();
+	for (const t of texts) {
+		const d = document.createElement("div"), c = cleanChat(String(t));
+		if (c.removed.length && cleanedLogged++ < 20) lines.push(`[page] chat cleaned (${[...new Set(c.removed)].join(", ")}): ${String(t).slice(0, 200)}`);
+		d.append(c.frag); chatFilter.tag(d, t); frag.append(d);
+	}
+	outPane.append(frag);
+	while (outPane.childElementCount > 500) outPane.firstChild.remove();
+	if (stick) outPane.scrollTop = outPane.scrollHeight;
+};
+window.addOutput = addOutput;
+addEventListener("securitypolicyviolation", (e) => lines.push(`[page] CSP blocked ${e.effectiveDirective} ${e.blockedURI} (${e.sourceFile}:${e.lineNumber})`));
+// browse() windows and byond:// links (worker/popups.js). Links in the output pane go the same way.
+const popups = createPopups({ host: document.getElementById("popups"), send: (m) => w.postMessage(m) });
+window.popups = popups;
+outPane.addEventListener("click", (e) => {
+	const a = e.target.closest("a[href]");
+	if (a && !a.getAttribute("href").startsWith("#")) { e.preventDefault(); popups.link(a.getAttribute("href")); }
+});
+const lines = [], files = {}, milestones = {}, pageAt = {}; // pageAt: each milestone in seconds since the page was opened (milestones: since the worker started)
+// every log line, chat line and input with the time it happened (seconds since the page opened), for the F9 bug report.
+const bugRing = [], bugNote = (l) => { bugRing.push((performance.now() / 1000).toFixed(2) + " " + l); if (bugRing.length > 30000) bugRing.splice(0, 10000); };
+{ const push = lines.push.bind(lines); lines.push = (...a) => { for (const l of a) bugNote(l); return push(...a); }; }
+// The combined log (world.log + game.log), as `npm run compare-logs` wants it; read by tools/worker-boot.mjs.
+Object.assign(viewStats, { checks: 0, checkFails: 0, netGaps: [] });
+window.bootResult = { lines, files, milestones, pageAt, done: false, views: 0, viewStats };
+// closing the tab while playing asks first: browsers don't let a page block Ctrl+W, and W walks (Ctrl+W is a game key too)
+addEventListener("beforeunload", (e) => { if (warnOnLeave(window.bootResult, navigator.webdriver)) { e.preventDefault(); e.returnValue = ""; } });
+let w = null; // the world's worker; a new one for each world (tg's world.Reboot() ends the old one)
+// Per-tick view updates; a missing one asks the worker for a full view.
+const liveView = liveClientView(document.getElementById("client-host"), () => w.postMessage({ type: "resync" }), (dir) => w.postMessage({ type: "step", dir }));
+window.resyncView = () => w.postMessage({ type: "resync" }); // ask for a full view by hand (console, or the driver's check run)
+// Once a second: view updates received and redraw cost on this machine, over the last second.
+const perf = document.getElementById("perf");
+let lastStats = { ...viewStats };
+setInterval(() => {
+	const d = (k) => viewStats[k] - lastStats[k];
+	if (viewStats.received) perf.textContent = `view: ${d("received")} updates/s (${d("changed")} with changes), ${d("renders")} redraws/s at ${d("renders") ? (d("renderMs") / d("renders")).toFixed(1) : "-"} ms, applied ${d("applied")}x at ${d("applied") ? (d("applyMs") / d("applied")).toFixed(1) : "-"} ms`;
+	lastStats = { ...viewStats };
+}, 1000);
+// every 10 s after the first view, a "[page] perf" log line: redraws, main-thread long tasks (>50 ms, Chromium only)
+// and keydown -> first moving frame latency, so a play log shows which side was slow.
+const lt = { n: 0, ms: 0, max: 0 };
+try { new PerformanceObserver((l) => { for (const e of l.getEntries()) { lt.n++; lt.ms += e.duration; lt.max = Math.max(lt.max, e.duration); } }).observe({ type: "longtask" }); } catch {}
+let perfLast = { ...viewStats }, rdN = 0, keyN = 0, clickN = 0, keyPN = 0, gapN = 0, glideN = 0, netN = 0;
+const pct = (a, q) => { if (!a.length) return "-"; const b = [...a].sort((x, y) => x - y); return b[Math.min(b.length - 1, Math.floor(b.length * q))]; };
+const p3 = (a) => `${pct(a, 0.5)}/${pct(a, 0.95)}/${pct(a, 0.99)}`;
+setInterval(() => {
+	if (!viewStats.received) return;
+	const d = (k) => viewStats[k] - perfLast[k], keys = viewStats.keyLat.slice(keyN);
+	const cl = viewStats.clickLat.slice(clickN); keyN = viewStats.keyLat.length; clickN = viewStats.clickLat.length;
+	const kp = viewStats.keyPaint.slice(keyPN), gaps = viewStats.viewGaps.slice(gapN), gg = viewStats.glideGaps.slice(glideN);
+	keyPN = viewStats.keyPaint.length; gapN = viewStats.viewGaps.length; glideN = viewStats.glideGaps.length;
+	const preNote = viewStats.preloaded; viewStats.preloaded = "";
+	const ih = viewStats.iconHolds.splice(0), lf = viewStats.longFrames.splice(0), pg = viewStats.pings.splice(0);
+	const ng = viewStats.netGaps.slice(netN), held = viewStats.jb?.held.splice(0) ?? []; netN = viewStats.netGaps.length;
+	if (gapN >= 20000) viewStats.viewGaps.length = gapN = 0; // the lists stop at 20000 (~17 min of views): start them again
+	if (netN >= 20000) viewStats.netGaps.length = netN = 0;
+	const line = `[page] perf 10 s: ${d("received")} view updates, ${d("renders")} redraws at ${d("renders") ? (d("renderMs") / d("renders")).toFixed(1) : "-"} ms, applied ${d("applied")}x at ${d("applied") ? (d("applyMs") / d("applied")).toFixed(1) : "-"} ms; `
+		+ `long tasks ${lt.n} (${lt.ms.toFixed(0)} ms, max ${lt.max.toFixed(0)}); `
+		+ `key->move ${keys.length ? keys.join(",") : "-"} ms; `
+		+ `key->paint ${kp.length ? kp.join(",") : "-"} ms; `
+		+ `${cl.length ? `click->answer ${cl.join(",")} ms; ` : ""}${pg.length ? `ping p50/p95/max ${pct(pg, 0.5)}/${pct(pg, 0.95)}/${Math.max(...pg)} ms; ` : ""}view gaps p50/p95/p99 ${p3(gaps)} ms${ng.length ? ` (as they arrived ${p3(ng)}, jitter buffer ${held.length ? `held ${p3(held)}` : "off"})` : ""}; `
+		+ `glide frame gaps p50/p95/p99 ${p3(gg)} ms${lf.length ? `; frames over 100 ms ${lf.join(",")}` : ""}${ih.length ? `; waited for icons ${ih.join(",")} ms` : ""}${preNote ? `; preloaded ${preNote}` : ""}${d("predToggle") ? `; predicted toggles ${d("predToggle")}` : ""}${d("predSteps") ? `; predicted steps ${d("predSteps")} (server took ${d("predOk")}, differently ${d("predWrong")}, too late ${d("predLate")}; not predicted, so far ${JSON.stringify(viewStats.predSkip)})${d("predImgFrames") ? `; bubble drawn up to ${viewStats.predImgGap} px off the mob` : ""}` : ""}${viewStats.predJumps.length ? `; your mob or the camera jumped (so far): ${viewStats.predJumps.join(" | ")}` : ""}${d("shadowPaints") ? `; sight shadows painted ${d("shadowPaints")}x at ${(d("shadowMs") / d("shadowPaints")).toFixed(2)} ms` : ""}`;
+	// where the applied and redraw ms go (per call), counts, and per plane draws (anim = redrawn only for animation) / items / sprites / ms
+	const per = (k, n) => (d(n) ? (d(k) / d(n)).toFixed(1) : "-");
+	const pa = Object.entries(viewStats.planeAcc).map(([pl, a]) => { const o = perfLast.planeAcc?.[pl] ?? { draws: 0, anim: 0, placeMs: 0, texMs: 0 }; return a.draws - o.draws ? `${pl}:${a.draws - o.draws}(${a.anim - o.anim}a) ${a.items}i/${a.sprites}s ${((a.placeMs - o.placeMs) / (a.draws - o.draws)).toFixed(1)}+${((a.texMs - o.texMs) / (a.draws - o.draws)).toFixed(1)}ms` : ""; }).filter(Boolean).join(", ");
+	const rd = viewStats.redrawTimes.slice(rdN); rdN = viewStats.redrawTimes.length;
+	const zl = (viewStats.zoomLog ?? []).splice(0);
+	const dirtyText = () => { // causes with counts; "(N tiles)" entries are single look changes that hit many tiles at once, xM = times seen
+		const e = Object.entries(viewStats.dirtyBy ?? {}); viewStats.dirtyBy = {};
+		const main = e.filter(([k]) => !k.endsWith("tiles)")).sort((x, y) => y[1] - x[1]).map(([k, n]) => `${k} ${n}`);
+		const big = e.filter(([k]) => k.endsWith("tiles)")).sort((x, y) => y[1] - x[1]).slice(0, 5).map(([k, n]) => `${k} x${Math.round(n * 1000)}`);
+		return (main.join(", ") || "-") + (big.length ? `; biggest: ${big.join(", ")}` : "");
+	};
+	const split = `[page] split 10 s: redraw p50/p95/max ${pct(rd, 0.5)}/${pct(rd, 0.95)}/${rd.length ? Math.max(...rd) : "-"} ms (n ${rd.length}); `
+		+ `applied = current0 (dirty tiles rebuilt, ${per("rbTiles", "applied")} a time) ${per("rbCur", "applied")} + missingIcons ${per("rbMiss", "applied")} + buildPrepared (HUD, scene handle) ${per("rbBuild", "applied")} ms; `
+		+ `redraw = sort ${per("rSort", "renders")} + place ${per("rPlace", "renders")} + plane textures ${per("rTex", "renders")} + composite ${per("rComp", "renders")} ms${q.has("sync") ? " (GPU included)" : " (CPU only, no ?sync)"}; `
+		+ `${viewStats.tiles} tiles, ${viewStats.items} items; `
+		+ `planes drawn ${d("plDrawn")} changed + ${d("plAnim")} animated, ${d("plShift")} shifted, ${d("plSame")} skipped, ${d("sprites")} sprites placed; `
+		+ `map sort full/patched/same ${d("sFull")}/${d("sPatch")}/${d("sSame")}, items placed again/moved/untouched in incremental draws ${d("iRep")}/${d("iMov")}/${d("iKeep")}; `
+		+ `rafs ${(d("rafs") / 10).toFixed(1)}/s; `
+		+ `${viewStats.pixiInfo}; `
+		+ `per plane draws(anim) items/sprites place+tex ms: ${pa}${zl.length ? `; zoom steps: ${zl.join(" | ")}` : ""}; `
+		+ `tiles dirtied by (one tile can count twice): ${dirtyText()}`;
+	lines.push(line, split); pending.push(line, split); capLines();
+	if (d("cRender") || d("cComp")) { const cl2 = `[page] chunked 10 s: per redraw ${per("cPlace", "renders")} chunk-planes re-placed, ${per("cFrame", "renders")} frame-swapped, ${per("cRender", "renders")} chunk textures rendered, ${per("cComp", "renders")} plane composites, ${d("cFall")} whole-plane fallbacks (${viewStats.cFallInfo}); ${viewStats.cVisible} chunk-planes in view`; lines.push(cl2); pending.push(cl2); }
+	perfLast = { ...viewStats, planeAcc: structuredClone(viewStats.planeAcc) }; Object.assign(lt, { n: 0, ms: 0, max: 0 });
+}, 10000);
+let pending = [];
+// a long play session would grow `lines` forever; keep the last 5000 unless a tool is reading the whole log (driver runs set navigator.webdriver).
+const capLines = () => { if (!navigator.webdriver && lines.length > 6000) lines.splice(0, lines.length - 5000); if (pending.length > 6000) pending.splice(0, pending.length - 5000); };
+setInterval(capLines, 5000);
+const flush = () => { if (pending.length) { pre.append(pending.join("\n") + "\n"); pending = []; } };
+setInterval(flush, 500);
+// the right-click popup. The page asks (a "menu" message with the tile), the worker answers with the atoms on it and their
+// verbs; a choice goes back as {type:"menupick", id, a, v}. Any click elsewhere, Escape or a scroll closes it.
+const { ctx, show: showMenu, close: closeMenu } = createCtxMenu((m) => w.postMessage(m));
+addEventListener("mousedown", (e) => { if (!ctx.hidden && !ctx.contains(e.target)) closeMenu(); }, true);
+addEventListener("keydown", (e) => { if (e.key === "Escape") closeMenu(); }, true);
+window.addEventListener("blur", closeMenu);
+// input()/alert() from the game. Each dialog is a small box; several stack. The answer goes back as {type:"answer", id, value}:
+// text, a number (num box, or the index of the chosen list item), or null for Cancel. An alert answers with its button's text.
+// statpanel. {type:"stat", tabs, panel, lines:[[name,text,ref],...], verb}: tabs across the top (click = {type:"statpanel", name});
+// a line with ref >= 0 (an atom) or in a verb tab is clickable ({type:"statclick", idx}, idx = position in the lines).
+const showStat = (m) => {
+	const tabs = document.getElementById("stattabs"), box = document.getElementById("statlines");
+	tabs.replaceChildren(...m.tabs.map((t) => { const b = document.createElement("button"); b.textContent = t; b.className = t === m.panel ? "on" : ""; b.onclick = () => w.postMessage({ type: "statpanel", name: t }); return b; }));
+	box.classList.toggle("verbs", !!m.verb); // a verb tab is laid out in columns, filled left to right like BYOND's
+	box.replaceChildren(...m.lines.map(([n, v, ref], i) => {
+		const d = document.createElement("div");
+		if (n) { const s = document.createElement("span"); s.className = "n"; s.textContent = n; d.append(s); }
+		const s = document.createElement("span"); s.textContent = v;
+		if (m.verb || ref >= 0) { s.className = "c"; s.onclick = () => w.postMessage({ type: "statclick", idx: m.verb ? i : ref }); }
+		d.append(s); return d;
+	}));
+};
+const dialogHost = document.getElementById("dialogs");
+const showDialog = (m) => {
+	const box = document.createElement("div"); box.className = "dlg"; box.dataset.dialog = m.id;
+	const title = document.createElement("h4"); title.textContent = m.title || (m.kind === "alert" ? "Alert" : "Input");
+	const body = document.createElement("div"); body.className = "body";
+	const msg = document.createElement("div"); msg.className = "msg"; msg.textContent = m.message;
+	const btns = document.createElement("div"); btns.className = "btns";
+	const done = (value) => { w.postMessage({ type: "answer", id: m.id, value }); box.remove(); };
+	const button = (label, value) => { const b = document.createElement("button"); b.textContent = label; b.onclick = () => done(value); btns.append(b); return b; };
+	let field = null;
+	if (m.kind === "alert") m.buttons.forEach((t) => button(t, t));
+	else {
+		if (m.input === "list") { field = document.createElement("select"); field.size = Math.min(10, Math.max(3, m.items.length)); m.items.forEach((t, i) => field.add(new Option(t, i))); field.selectedIndex = 0; field.ondblclick = () => done(field.selectedIndex); }
+		else if (m.input === "message") { field = document.createElement("textarea"); field.rows = 4; field.value = m.default; }
+		else if (m.input === "color") { field = document.createElement("input"); field.type = "color"; field.value = /^#[0-9a-f]{6}$/i.test(m.default) ? m.default.toLowerCase() : "#000000"; } // answers "#rrggbb"
+		else { field = document.createElement("input"); field.type = m.input === "num" ? "number" : "text"; field.step = "any"; field.value = m.default; }
+		field.onkeydown = (e) => { e.stopPropagation(); if (e.key === "Enter" && m.input !== "message") button_ok.click(); else if (e.key === "Escape" && m.nullOk) done(null); };
+		var button_ok = button("OK", null);
+		button_ok.onclick = () => done(m.input === "list" ? (field.selectedIndex < 0 ? null : field.selectedIndex) : m.input === "num" ? Number(field.value) || 0 : field.value);
+		if (m.nullOk) button("Cancel", null);
+	}
+	body.append(msg, ...(field ? [field] : []), btns); box.append(title, body); dialogHost.append(box);
+	(field ?? btns.firstChild)?.focus();
+};
+const sound = createSound((l) => { lines.push(l); pending.push(l); });
+for (const ev of ["keydown", "pointerdown"]) addEventListener(ev, () => sound.unlock(), { capture: true }); // autoplay: audio starts on the first gesture
+const menuEarly = []; // winsets for menu items that arrive before the menu bar is built
+// In server mode this page is the player it named (?name=, else asked); single-player is "localplayer".
+// Hosting: a page served by tools/server.mjs carries <meta name="ss13-server"> and plays on that server with no ?server= (wss on https).
+const serverUrl = q.get("server") ?? (document.querySelector('meta[name="ss13-server"]') ? `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}` : null);
+// Tripcodes: "Name#secret" (asked, or ?name=Name#secret, whose # part is the address's hash: taken out of the address bar at once) plays
+// as "Name @tag", a tag the server makes from the secret, so only that secret gets the character back. No #: a random secret this
+// browser keeps (localStorage), so only this browser does. The server's {type:"you"} gives the real ckey.
+const asked = !serverUrl ? "LocalPlayer" : q.get("name") ? q.get("name") + (() => { try { return decodeURIComponent(location.hash); } catch { return location.hash; } })() : joinName((() => { try { return localStorage.getItem("ss13-name"); } catch { return null; } })(), (offered) => prompt("Your name? (Name#secret keeps your character yours on any computer; make the secret long, short ones can be guessed)", offered));
+if (serverUrl && nameToSave(asked)) try { localStorage.setItem("ss13-name", nameToSave(asked)); } catch {} // offered next time (the name only, never the secret)
+if (serverUrl && q.get("name") && location.hash) history.replaceState(history.state, "", location.pathname + location.search);
+const ownName = asked.split("#")[0].trim() || "Player";
+const ownTrip = !serverUrl ? undefined : (asked.includes("#") && asked.slice(asked.indexOf("#") + 1)) || (() => {
+	try { let t = localStorage.getItem("ss13-trip"); if (!t) { t = [...crypto.getRandomValues(new Uint8Array(16))].map((b) => b.toString(16).padStart(2, "0")).join(""); localStorage.setItem("ss13-trip", t); } return t; } catch { return undefined; }
+})();
+let ownCkey = ownName.toLowerCase().replace(/[^a-z0-9@]/g, "");
+const HOLD = new Set(["browse", "browse_rsc", "rsc_png", "popout", "popwinset"]), held = [];
+let pageReady = !serverUrl;
+// netcode 1: click -> the first chat line or sound after it (the answer as the player notices it); none within 3 s isn't counted.
+const clickAnswered = () => { const t = viewStats.clickAt; if (!t) return; viewStats.clickAt = 0; const ms = performance.now() - t; if (ms < 3000 && viewStats.clickLat.length < 20000) viewStats.clickLat.push(Math.round(ms)); };
+// link() (tg's Github, wiki and forum verbs): a web address opens in a new tab; if the browser blocks the pop-up, a clickable line in chat instead.
+const openLink = (url) => {
+	if (!/^https?:\/\//i.test(url)) { lines.push(`[page] link ignored (not a web address): ${String(url).slice(0, 100)}`); return; }
+	const opened = window.open(url, "_blank"); // not "noopener": that always returns null, so a blocked pop-up couldn't be told apart
+	if (opened) opened.opener = null;
+	lines.push(`[page] link ${url}: ${opened === null ? "pop-up blocked, shown in chat" : "opened"}`);
+	if (opened === null) { const a = document.createElement("a"); a.href = url; a.textContent = url; addOutput([`<span class='notice'>Open this link: ${a.outerHTML}</span>`]); }
+};
+const onWorkerMessage = (e) => {
+	const m = e.data;
+	if (m.player && m.player !== ownCkey) return; // messages for another player (the ?second= test aid) are not this page's own
+	if (!pageReady && HOLD.has(m.type)) { held.push(m); return; } // a window that arrives before the first view is held and shown then
+	if (m.type === "log") { lines.push(m.line); pending.push(m.line); }
+	else if (m.type === "output") { clickAnswered(); addOutput(m.lines); for (const t of m.lines) bugNote("[chat] " + String(t).replace(/<[^>]*>/g, "").slice(0, 300)); }
+	else if (m.type === "view") { loading.remove(); if (!pageReady) { pageReady = true; lines.push(`[page] ${held.length} window messages (${[...new Set(held.map((h) => h.type))].join(",")}) held until the first view; showing them now`); for (const h of held.splice(0)) onWorkerMessage({ data: h }); } window.bootResult.views++; liveView.update(m.update); }
+	else if (m.type === "dialog") showDialog(m);
+	else if (m.type === "menu") showMenu(m);
+	else if (m.type === "stat") showStat(m);
+	else if (m.type === "sound") { clickAnswered(); sound.play(m); }
+	else if (m.type === "bugstate") bugSave(m.text);
+	else if (m.type === "browse") popups.browse(m);
+	else if (m.type === "browse_rsc") popups.rsc(m);
+	else if (m.type === "rsc_png") popups.rscPng(m);
+	else if (m.type === "popout") popups.output(m.control, m.text);
+	else if (m.type === "popwinset") { sayWinset(m.params); popups.winset(m.id, m.params); (window.menubar ? window.menubar.winset(m.id, m.params) : menuEarly.push([m.id, m.params])); }
+	else if (m.type === "viewcheck") { const d = liveView.check(m.view); viewStats.checks++; if (d.length) { viewStats.checkFails++; lines.push(`[page] view check FAILED at world.time ${m.view.worldTime}: ${d.slice(0, 10).join("; ")} (${d.length})`); } }
+	else if (m.type === "stage") { stage.textContent = m.text; lines.push("[page] loading: " + m.text); } // loading-screen text from the worker (snapshot download/unpack)
+	else if (m.type === "snapfail") { const u = new URL(location.href); u.searchParams.set("nosnap", "1"); console.warn("snapshot load failed part-way (" + m.error + "): reloading with ?nosnap=1"); w.terminate(); location.replace(u.href); } // a half-loaded world can't boot; start over without it
+	else if (m.type === "milestone") { milestones[m.name] = m.s; pageAt[m.name] = Math.round(performance.now()) / 1000; status.textContent = `${m.name} at ${m.s} s`; if (STAGES[m.name]) stage.textContent = STAGES[m.name]; }
+	else if (m.type === "file") files[m.path] = m.text;
+	else if (m.type === "link") openLink(m.url);
+	else if (m.type === "reboot") reboot(m);
+	else if (m.type === "done") { flush(); window.bootResult.done = true; status.textContent = "STOPPED, the world is no longer running: " + m.summary[0]; status.style.color = "#c00"; if (loading.isConnected) fail(m.summary[0]); }
+};
+// Keys: the worker runs the client's macro for each press/release (Clients.keyDown/keyUp).
+// Browser key -> BYOND key name; modifiers go in front as BYOND writes them ("CTRL+B").
+const KEYS = { ArrowUp: "NORTH", ArrowDown: "SOUTH", ArrowLeft: "WEST", ArrowRight: "EAST", Home: "NORTHWEST", PageUp: "NORTHEAST",
+	End: "SOUTHWEST", PageDown: "SOUTHEAST", Clear: "CENTER", Tab: "TAB", Insert: "INSERT", Delete: "DELETE", Escape: "ESCAPE",
+	Enter: "RETURN", Backspace: "BACK", " ": "SPACE", Shift: "SHIFT", Control: "CTRL", Alt: "ALT", Add: "ADD", Subtract: "SUBTRACT" };
+const byondKey = (e) => {
+	const k = KEYS[e.key] ?? (/^F\d+$/.test(e.key) ? e.key : /^Key[A-Z]$|^Digit\d$/.test(e.code) ? e.code.slice(-1) : null);
+	if (!k) return null;
+	return [e.shiftKey && k !== "SHIFT" && "SHIFT", e.ctrlKey && k !== "CTRL" && "CTRL", e.altKey && k !== "ALT" && "ALT", k].filter(Boolean).join("+");
+};
+// the input bar. The game is always in hotkey mode (WASD walk, the map has the keys); T / M, a channel button or a click
+// in the bar opens the say box. Four channels (Say, Radio, Me, Whisper; worker/saybox.js has the rules) turn the text into
+// say/me/whisper commands; a Say line that starts with one of your verbs (look, ooc ...) runs as that verb. Tab cycles the channel
+// while the box is open and does nothing otherwise. Enter sends and gives the keys back to the map, Escape closes. While you type
+// the worker is told ({type:"typing", on}), one message per change, and the game shows a bubble over your mob until you send or leave.
+const inputBox = document.getElementById("input"), channelBox = document.getElementById("channels");
+let channel = "say", hkReturn = false, hkPrev = null, typingOn = false;
+const chanButtons = new Map(CHANNELS.map((c) => { const b = document.createElement("button"); b.textContent = c.label; b.title = c.title; b.dataset.channel = c.id; b.tabIndex = -1; channelBox.append(b); return [c.id, b]; }));
+const paintBar = () => {
+	for (const [id, b] of chanButtons) b.classList.toggle("on", id === channel);
+	const c = CHANNELS.find((x) => x.id === channel);
+	inputBox.style.background = c.color;
+	inputBox.placeholder = c.label + "...";
+};
+const typingNow = (focused = document.activeElement === inputBox) => { // one message per change
+	const on = isTyping(inputBox.value, focused);
+	if (on !== typingOn) { typingOn = on; w.postMessage({ type: "typing", on }); }
+};
+const setChannel = (id) => { channel = id; paintBar(); typingNow(); };
+const closeBox = () => { if (hkReturn) { hkReturn = false; setChannel(hkPrev); } inputBox.blur(); typingNow(false); }; // T / M put the channel back as it was
+const sendCommand = (text, speech) => { if (text.trim()) w.postMessage({ type: "command", text, ...(speech !== undefined && { speech }) }); };
+window.sendCommand = sendCommand;
+window.saybox = { get channel() { return channel; }, get typing() { return typingOn; } }; // for tests
+paintBar();
+// the two splitters (skin.dmf `splitter = 50` each) and the menu bar (skin.dmf `menu "menu"`). A menu item's command runs
+// like a typed line; the BYOND built-ins: .screenshot = download a PNG of the map; .reconnect/.quit can't mean anything in a tab (greyed).
+const mainSplit = createSplitter({ bar: document.getElementById("vsplit"), first: document.getElementById("mapwindow"), container: document.getElementById("main"), vertical: true, percent: 50, key: "ss13.split.main" });
+// the map canvas keeps its view's shape (--ar, set by client-scene; a zoomed view's canvas (--vr) is a little wider: its sides are cut off, CSS above). A widescreen view (Help > Widescreen) gets its own
+// saved splitter position; until the player drags it, the map pane is sized so the map fills its height (at most 75% wide).
+document.getElementById("client-host").addEventListener("viewaspect", (e) => {
+	const ar = e.detail.w / e.detail.h;
+	if (Math.abs(ar - 1) < 0.01) { mainSplit.useKey("ss13.split.main", 50); return; }
+	const main = document.getElementById("main").getBoundingClientRect(), h = document.getElementById("mapwindow").clientHeight;
+	mainSplit.useKey("ss13.split.main.wide", Math.min(75, h * ar / (main.width - 5) * 100));
+});
+createSplitter({ bar: document.getElementById("hsplit"), first: document.getElementById("statwindow"), container: document.getElementById("infowindow"), vertical: false, percent: 50, key: "ss13.split.info" });
+const BUILTIN = { ".reconnect": "Not needed here: the game runs inside this tab. Reload the page to start over.", ".quit": "Close this browser tab to quit." };
+fetch(new URL("../../interface/skin.dmf", import.meta.url)).then((r) => r.text()).then((dmf) => {
+	window.menubar = createMenubar({ bar: document.getElementById("menubar"), tree: menuTree(parseMenu(dmf)),
+		info: (c) => { const k = c.split(" ")[0]; return k in BUILTIN ? { disabled: true, title: BUILTIN[k] } : c.startsWith(".winset") ? { disabled: true, title: "Window settings aren't supported here." } : null; },
+		run: (c) => { if (c.startsWith(".screenshot")) screenshot(document.getElementById("client-host"), (t) => addOutput([t])); else if (!c.startsWith(".")) sendCommand(c); } });
+	for (const [id, p] of menuEarly.splice(0)) window.menubar.winset(id, p);
+}).catch((e) => console.warn("menu bar: skin.dmf not loaded: " + e.message));
+inputBox.addEventListener("keydown", (e) => {
+	if (e.key === "Enter") {
+		const line = lineFor(channel, inputBox.value);
+		inputBox.value = ""; typingNow(); // typing off first, so the bubble is gone before the words appear
+		if (line) sendCommand(line.text, line.speech);
+		closeBox();
+	} else if (e.key === "Escape") { inputBox.value = ""; typingNow(); closeBox(); }
+	else if (e.key === "Tab") { e.preventDefault(); if (!e.ctrlKey && !e.altKey && !e.metaKey) { if (hkReturn) hkReturn = false; setChannel(nextChannel(channel, e.shiftKey ? -1 : 1)); } }
+});
+inputBox.addEventListener("input", () => typingNow(true));
+inputBox.addEventListener("focus", () => typingNow(true));
+inputBox.addEventListener("blur", () => { typingNow(false); if (hkReturn) { hkReturn = false; setChannel(hkPrev); } });
+channelBox.addEventListener("click", (e) => {
+	const id = e.target.dataset?.channel;
+	if (!id) return;
+	hkReturn = false; setChannel(id); inputBox.focus();
+});
+// A winset from the game: only the focus parts matter (the macro set is always hotkeys, and the bar's colour is the channel's).
+const sayWinset = (params) => {
+	if (/(?:^|[\s;])input\.focus=true/.test(params)) inputBox.focus();
+	else if (/(?:^|[\s;])mapwindow\.map\.focus=true/.test(params) && document.activeElement === inputBox) inputBox.blur();
+};
+addEventListener("keydown", (e) => { // T / M open the box; Tab outside the box does nothing (before the key reaches the worker's macros)
+	if (e.target === inputBox || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName)) return;
+	if (e.key === "Tab") { e.preventDefault(); e.stopImmediatePropagation(); return; }
+	if (e.repeat) return;
+	const open = hotkeyOpens(e.key.length === 1 ? e.key.toUpperCase() : e.key, e.ctrlKey || e.altKey || e.metaKey || e.shiftKey);
+	if (!open) return;
+	e.preventDefault(); e.stopImmediatePropagation();
+	hkPrev = channel; hkReturn = true; setChannel(open); inputBox.focus();
+}, { capture: true });
+document.getElementById("mapwindow").addEventListener("mousedown", () => { inputBox.blur(); typingNow(false); });
+// F9 saves a bug report (the last 3 minutes of log, chat and input, plus the audio engine's and the player's state)
+// as ss13-bug-DATE.txt in the browser's downloads folder. It asks the worker for the player's state first; if the world
+// doesn't answer within 2 s (frozen), the report is saved without it.
+let bugAsked = 0, bugTimer = null;
+const bugSave = (worldState) => {
+	if (!bugAsked) return;
+	clearTimeout(bugTimer);
+	const at = bugAsked; bugAsked = 0;
+	const since = at / 1000 - 180, recent = bugRing.filter((l) => parseFloat(l) >= since);
+	const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+	const text = [`SS13 Classic bug report, ${new Date().toString()}`, `F9 pressed at ${(at / 1000).toFixed(2)} s after the page opened; page ${location.search || "(no options)"}; ${navigator.userAgent}`,
+		"", "== audio ==", sound.debug(), "", "== player (from the world) ==", worldState ?? "(no answer from the world within 2 s: frozen or not started)",
+		"", `== last 3 minutes (${recent.length} lines; time = seconds since the page opened) ==`, ...recent, `${(at / 1000).toFixed(2)} ===== F9 PRESSED HERE =====`].join("\n");
+	const a = document.createElement("a");
+	a.href = URL.createObjectURL(new Blob([text], { type: "text/plain" })); a.download = `ss13-bug-${stamp}.txt`;
+	document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+	const toast = document.createElement("div");
+	toast.textContent = `Bug report saved to Downloads: ${a.download}`;
+	toast.style.cssText = "position:fixed;top:12px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:8px 14px;border-radius:6px;font:14px sans-serif;z-index:99999";
+	document.body.append(toast); setTimeout(() => toast.remove(), 4000);
+};
+addEventListener("keydown", (e) => {
+	if (e.key !== "F9") return;
+	e.preventDefault(); e.stopImmediatePropagation();
+	if (e.repeat || bugAsked) return;
+	bugAsked = performance.now(); bugNote("[input] F9 bug report");
+	w.postMessage({ type: "bugstate" });
+	bugTimer = setTimeout(() => bugSave(null), 2000);
+}, { capture: true });
+addEventListener("keydown", (e) => { if (!e.repeat) bugNote(`[input] key ${e.key}${e.target?.id ? " in #" + e.target.id : ""}`); }, { capture: true });
+addEventListener("pointerdown", (e) => bugNote(`[input] click ${["left", "middle", "right"][e.button] ?? e.button} at ${e.clientX},${e.clientY} on ${e.target?.id ? "#" + e.target.id : e.target?.tagName ?? "?"}`), { capture: true });
+const down = new Map(); // e.code -> the name sent at press, so the release matches it even if modifiers changed
+// lag-smoothing step 4: on a server, your own mob moves at once on a direction key and the server's view corrects it
+// (on by default since 2026-10-15, "much much better" over a VPN; ?predict=0 turns it off. It was off after a hotspot test felt "jelly-like")
+// WASD walk too (the game is always in hotkey mode), so they count as their arrow
+const WASD = { W: "NORTH", A: "WEST", S: "SOUTH", D: "EAST" };
+// With prediction on, the page sends the steps itself (movement prediction): plain direction keys don't go to the server as keys.
+const predictOn = !!serverUrl && q.get("predict") !== "0";
+const predict = predictOn ? (k, d) => liveView.predictKey(WASD[k] ?? k, d) : () => {};
+const stepKey = (k) => predictOn && /^(NORTH|SOUTH|EAST|WEST|W|A|S|D)$/.test(k);
+addEventListener("keydown", (e) => {
+	if (e.target === inputBox) return; // typing in the input bar
+	const k = byondKey(e);
+	if (!k) return;
+	e.preventDefault(); // Tab, arrows, CTRL+W etc. belong to the game, not the browser
+	if (e.repeat || down.has(e.code)) return; // the worker repeats held +REP macros itself
+	down.set(e.code, k);
+	if (/^(NORTH|SOUTH|EAST|WEST|W|A|S|D)$/.test(k)) viewStats.keyAt = performance.now();
+	if (!stepKey(k)) w.postMessage({ type: "key", key: k, down: true });
+	predict(k, true);
+	if (predictOn) liveView.predictPut(null, "", k); // the drop key: the held item shows on your tile at once
+});
+addEventListener("keyup", (e) => {
+	const k = down.get(e.code);
+	if (!k) return;
+	down.delete(e.code);
+	if (!stepKey(k)) w.postMessage({ type: "key", key: k, down: false });
+	predict(k, false);
+});
+addEventListener("blur", () => { for (const k of down.values()) { if (!stepKey(k)) w.postMessage({ type: "key", key: k, down: false }); predict(k, false); } down.clear(); });
+// Mouse: what the pointer is over is worked out here (hit-test.ts, on what is drawn); the worker gets the object's
+// view id, the tile under the pointer and BYOND's params text, and calls client/Click (or DblClick) on the next tick.
+// A double-click sends Click for the first press and DblClick for the second (assumed, not measured in BYOND).
+// press and release on different objects is a drag: MouseDrop(src_object, over_object, src_location, over_location, ...). A press sends
+// MouseDown and a release MouseUp (before Click/MouseDrop, as BYOND does); the worker drops them when the game defines no such proc.
+// A press and release with the pointer held still (within 4 px) is always a click, on what is under it at the release: while you run the map
+// slides under the pointer, so the two land on different floor tiles, and that used to count as a drag (a throw or a shot that did nothing).
+// MouseMove/MouseDrag (at most one per 50 ms, and the worker keeps only the newest per tick), MouseEntered/Exited when the
+// object under the pointer changes, MouseWheel per wheel event. The worker drops any the client/object doesn't define.
+const host = document.getElementById("client-host");
+const BUTTONS = ["left", "middle", "right"];
+let pressed = null;
+const paramsOf = (p, e) => clickParams({ px: p.px, py: p.py, canvasH: p.canvasH, iconX: p.hit.iconX, iconY: p.hit.iconY, button: (e.type === "mousemove" || e.type === "mouseleave") && !pressed || e.type === "wheel" ? "" : BUTTONS[e.button], shift: e.shiftKey, ctrl: e.ctrlKey, alt: e.altKey });
+host.addEventListener("mousedown", (e) => {
+	e.preventDefault();
+	const p = liveView.pointAt(e.clientX, e.clientY);
+	pressed = p && BUTTONS[e.button] ? { id: p.id, button: e.button, tile: p.tile, sx: e.clientX, sy: e.clientY } : null;
+	if (p && p.id !== null && pressed) w.postMessage({ type: "mouse", proc: "MouseDown", id: p.id, x: p.tile?.[0] ?? null, y: p.tile?.[1] ?? null, control: "mapwindow.map", params: paramsOf(p, e) });
+});
+host.addEventListener("contextmenu", (e) => e.preventDefault());
+// On window, not host: a release off the map must still send MouseUp, or tg's autoclick loop (autoclick.dm) never stops.
+// Off the map (or over nothing) MouseUp goes to the pressed object: assumed, BYOND's object there isn't measured.
+addEventListener("mouseup", (e) => {
+	const p = liveView.pointAt(e.clientX, e.clientY);
+	const down = pressed; pressed = null;
+	if (!down || down.button !== e.button || !BUTTONS[e.button]) return;
+	if (!p || p.id === null) {
+		if (down.id !== null) w.postMessage({ type: "mouse", proc: "MouseUp", id: down.id, x: down.tile?.[0] ?? null, y: down.tile?.[1] ?? null, control: "mapwindow.map", params: "" });
+		return;
+	}
+	const params = paramsOf(p, e), x = p.tile?.[0] ?? null, y = p.tile?.[1] ?? null;
+	const same = down.id === p.id || e.button === 1 || Math.hypot(e.clientX - down.sx, e.clientY - down.sy) <= 4; // a middle press has no drag in the game (swap hands, shift: point), and a wheel press nudges the pointer: it always clicks
+	if (p.id !== null) w.postMessage({ type: "mouse", proc: "MouseUp", id: p.id, x, y, control: "mapwindow.map", params });
+	if (same && e.button === 2 && !e.shiftKey && !e.ctrlKey && !e.altKey && (p.tile || p.hit.hud)) // the popup menu instead of a click (the worker sends the click if it has nothing to list or show_popup_menus is off). on a screen object (hud) the menu is of that one object (assumed: BYOND shows the object's own verbs)
+		viewStats.clickAt = performance.now(), w.postMessage({ type: "menu", one: p.hit.hud ? p.id : undefined, x, y, sx: e.clientX, sy: e.clientY, click: { type: "click", id: p.id, x, y, dbl: false, control: "mapwindow.map", params } });
+	else if (same) {
+		viewStats.clickAt = performance.now();
+		if (predictOn && e.button === 1 && !e.shiftKey && !e.ctrlKey && !e.altKey) liveView.predictSwap(); // middle click: tg swaps hands
+		if (predictOn && !p.hit.hud && p.id !== null && e.button === 0 && !e.shiftKey && !e.ctrlKey && !e.altKey && e.detail !== 2) liveView.predictPick(p.id); // an item picked up shows in your hand at once (before predictThrow: it reads throw mode)
+		if (predictOn && !p.hit.hud && p.id !== null && e.button === 0 && !e.shiftKey && !e.ctrlKey && !e.altKey && e.detail !== 2) liveView.predictPut(p.id, params); // the held item put on a table or rack shows there at once
+		if (predictOn && !p.hit.hud && p.tile && e.button === 0 && !e.shiftKey && !e.ctrlKey && !e.altKey && e.detail !== 2) liveView.predictThrow(); // netcode 3: with throw mode on, the held item leaves the hand at once
+		if (predictOn && p.hit.hud && p.id !== null && e.button === 0 && !e.shiftKey && !e.ctrlKey && !e.altKey && e.detail !== 2) liveView.predictClick(p.id, params); // netcode 2: your own HUD toggles show at once
+		w.postMessage({ type: "click", id: p.id, x, y, dbl: e.detail === 2, control: "mapwindow.map", params });
+	}
+	else if (down.id !== null) w.postMessage({ type: "mouse", proc: "MouseDrop", id: down.id, x: down.tile?.[0] ?? null, y: down.tile?.[1] ?? null, over: p.id, ox: x, oy: y, control: "mapwindow.map", params });
+});
+let hover = null, lastMove = 0;
+const sendMouse = (proc, p, e, extra) => w.postMessage({ type: "mouse", proc, id: p.id, x: p.tile?.[0] ?? null, y: p.tile?.[1] ?? null, control: "mapwindow.map", params: paramsOf(p, e), ...extra });
+addEventListener("mousemove", (e) => {
+	const now = performance.now();
+	if (now - lastMove < 50) return;
+	lastMove = now;
+	const p = liveView.pointAt(e.clientX, e.clientY);
+	if (pressed) { // button held: MouseDrag(src = pressed object, over = object under the pointer)
+		if (pressed.id === null || !p) return;
+		w.postMessage({ type: "mouse", proc: "MouseDrag", id: pressed.id, x: pressed.tile?.[0] ?? null, y: pressed.tile?.[1] ?? null, over: p.id, ox: p.tile?.[0] ?? null, oy: p.tile?.[1] ?? null, control: "mapwindow.map", params: paramsOf(p, e) });
+		return;
+	}
+	const id = p && p.id !== null ? p.id : null;
+	if (id !== hover) {
+		if (hover !== null && p) sendMouse("MouseExited", { ...p, id: hover }, e);
+		hover = id;
+		if (id !== null) sendMouse("MouseEntered", p, e);
+	}
+	if (id !== null) sendMouse("MouseMove", p, e);
+});
+host.addEventListener("mouseleave", (e) => { if (hover !== null) { const p = liveView.pointAt(e.clientX, e.clientY); if (p) sendMouse("MouseExited", { ...p, id: hover }, e); } hover = null; });
+host.addEventListener("wheel", (e) => { // BYOND: positive delta = up/right; 120 per notch (assumed)
+	e.preventDefault();
+	const p = liveView.pointAt(e.clientX, e.clientY);
+	if (p && p.id !== null) sendMouse("MouseWheel", p, e, { dx: Math.sign(e.deltaX) * 120, dy: -Math.sign(e.deltaY) * 120 });
+}, { passive: false });
+window.locateClick = (spec) => liveView.locate(spec);
+window.hudState = (spec) => liveView.hudState(spec);
+window.clickId = (id) => { if (predictOn) liveView.predictPick(id); w.postMessage({ type: "click", id, x: null, y: null, dbl: false, control: "mapwindow.map", params: "icon-x=16;icon-y=16;left=1" }); }; // the driver: a plain left click on map object id, as a real one (firefox-perf js: steps, when headless draws no frames to point at)
+window.pointAt = (x, y) => liveView.pointAt(x, y); // the driver's hover sweep (firefox-perf --hits) // for the driver (tools/worker-boot.mjs --clicks)
+// No ticks/seconds/afterStart in the URL = run until the tab closes (tools/worker-boot.mjs always passes them).
+const startMsg = {
+	type: "start",
+	second: q.get("second") ?? undefined,
+	log: q.get("log") ?? undefined, // ?log=quiet|chatty: how much per-input logging (default normal)
+	secondJob: q.get("secondjob") ?? undefined,
+	stress: q.has("stress"),
+	fastAir: q.get("fastair") !== "0",
+	autojoin: q.get("autojoin") ?? undefined,
+	roundstart: q.has("roundstart") && q.get("roundstart") !== "0",
+	setup: q.get("setup") ?? undefined,
+	endround: q.has("endround") ? num("endround") : undefined,
+	rounddelay: q.has("rounddelay") ? num("rounddelay") : undefined,
+	snapshot: !q.has("nosnap"),
+	ticks: num("ticks", Infinity),
+	seconds: num("seconds", Infinity),
+	afterStart: q.has("afterStart") ? num("afterStart") : null,
+	join: q.get("join") ?? undefined,
+	gender: q.get("gender") ?? undefined,
+	check: q.has("check"),
+	dirty: q.get("dirty") !== "0",
+	lie: q.has("lie"),
+	goto: q.get("goto") ?? undefined,
+	ride: q.has("ride"),
+	shoot: q.has("shoot"),
+	shake: q.has("shake"),
+	crew: q.has("crew"),
+	tgui: q.get("tgui") ?? undefined,
+	busyWait: q.has("busywait") ? q.get("busywait") !== "0" : undefined,
+	lobby: !q.has("nolobby"),
+	lobbySeconds: q.has("lobby") ? num("lobby") : undefined,
+	map: q.get("map") ?? undefined,
+	snap: q.get("snap") ?? undefined,
+	seed: q.has("seed") ? num("seed") : crypto.getRandomValues(new Uint32Array(1))[0], // ?seed=N repeats a round; else a fresh one each load
+};
+let round = 0;
+// ?server=ws://HOST:PORT -> talk to tools/server.mjs instead of starting a Worker. Same two calls as a Worker (postMessage, onmessage) plus terminate.
+// Frames are JSON; {"$b64": ...} is bytes; {type:"rtIcon"} carries a runtime icon's .dmi bytes, which become a local blob: URL that replaces the server's URL in later frames.
+const socketWorker = (url) => {
+	let netAt = 0;
+	const ws = new WebSocket(url), sw = { onmessage: null, onerror: null }, queue = [], urls = new Map(), unpacker = new ViewUnpacker();
+	// lag-smoothing step 3: views wait a little (worker/jitter-buffer.js) so uneven arrivals play evenly; ?jb=0 turns it off. A hidden tab's timers are slowed, so it lets everything through.
+	const jb = q.get("jb") !== "0" ? (viewStats.jb = new JitterBuffer((m) => sw.onmessage?.({ data: m }))) : null;
+	// netcode 1: a view marked now answers this page's click (run between ticks): what is held goes out first, in order, then it, at once.
+	const give = (m) => { if (!jb) sw.onmessage?.({ data: m }); else if (document.hidden || (m.type === "view" && m.update.now)) { jb.flush(); sw.onmessage?.({ data: m }); } else jb.push(m, m.type === "view" ? m.update.worldTime : undefined); };
+	ws.onopen = () => { ws.send(JSON.stringify({ type: "hello", player: ownName, trip: ownTrip, secret: adminKey, acks: 1, pack: 1 })); for (const t of queue.splice(0)) ws.send(t); };
+	ws.onerror = () => sw.onerror?.({ message: "cannot reach the game server at " + url });
+	ws.onclose = () => { if (!sw.closing) give({ type: "done", summary: ["The connection to the game server closed."] }); };
+	let heardAt = performance.now();
+	ws.onmessage = (e) => {
+		heardAt = performance.now();
+		let t = e.data;
+		if (urls.size && t.includes("blob:")) for (const [from, to] of urls) t = t.replaceAll(from, to);
+		const m = JSON.parse(t, (k, v) => v && typeof v === "object" && typeof v.$b64 === "string" ? Uint8Array.from(atob(v.$b64), (c) => c.charCodeAt(0)) : v);
+		if (m.type === "you") { ownCkey = m.ckey; lines.push(`[page] playing as ${m.key}`); return; }
+		if (m.type === "nameTaken") { sw.closing = true; sw.onerror?.({ message: m.reason === "reserved" ? `The name "${m.name}" is kept for the admins. Pick another name.` : m.reason === "replaced" ? "You joined again from another tab or window, so this one stopped." : `The name "${m.name}" is already in use on this server. Reload with another name.` }); return; }
+		if (m.type === "refused") { sw.closing = true; sw.onerror?.({ message: m.reason }); return; }
+		if (m.type === "rtIcon") { urls.set(m.url, URL.createObjectURL(new Blob([m.dmi], { type: "image/png" }))); return; }
+		if (m.type === "pong") { const p = Math.round(performance.now() - m.t); viewStats.pings.push(p); viewStats.pingRecent.push(p); if (viewStats.pingRecent.length > 10) viewStats.pingRecent.shift(); return; }
+		if (m.type === "view") {
+			m.update = unpacker.unpack(m.update); // lag-smoothing step 2: looks come by number (worker/view-pack.js)
+			const now = performance.now(); if (!m.update.now) { if (netAt && viewStats.netGaps.length < 20000) viewStats.netGaps.push(Math.round(now - netAt)); netAt = now; } // arrival gaps, before the buffer (a click's extra view isn't a tick's)
+		}
+		give(m);
+		if (m.type === "view") ws.send(`{"type":"ack","s":${m.update.seq}}`); // lag-smoothing: on arrival (the buffer's hold is not the link's); the server holds views back while acks lag
+	};
+	sw.postMessage = (m) => { const t = JSON.stringify(m); if (ws.readyState === 1) ws.send(t); else if (ws.readyState === 0) queue.push(t); };
+	const pinger = setInterval(() => { // the real round trip, for F9's perf line; the server answers each within a second, so 15 s of silence is a dead link
+		if (ws.readyState !== 1 || sw.closing) return;
+		if (performance.now() - heardAt > 15000) { sw.closing = true; clearInterval(pinger); give({ type: "done", summary: ["The connection to the game server was lost (nothing heard for 15 s). Reload the page to rejoin: your character is still there."] }); ws.close(); return; }
+		ws.send(`{"type":"ping","t":${Math.round(performance.now())}}`);
+	}, 1000);
+	sw.terminate = () => { sw.closing = true; clearInterval(pinger); jb?.flush(); ws.close(); };
+	return sw;
+};
+const startWorker = (msg) => {
+	round++;
+	if (serverUrl) { // the server starts the game itself; the page sends no start message
+		w = socketWorker(serverUrl);
+		w.onmessage = onWorkerMessage;
+		w.onerror = (e) => { fail(e.message); status.textContent = e.message; window.bootResult.error = e.message; };
+		return;
+	}
+	w = new Worker("/web/build/dist/src/worker/boot-worker.js", { type: "module" });
+	w.onmessage = onWorkerMessage;
+	w.onerror = (e) => { fail(e.message); status.textContent = "worker error: " + e.message; window.bootResult.error = e.message; };
+	w.postMessage({ ...msg, round });
+};
+// tg called world.Reboot(). In BYOND the server runs world/New again and the client reconnects into the new world's lobby.
+// Here the old world's worker is ended (that frees all of it) and a new one starts the next world from the pre-started
+// snapshot (or a normal boot); the saves the old round wrote are already in IndexedDB. The page resets what a reconnecting
+// BYOND client resets (map, HUD, popups, dialogs, statpanel) and keeps the output pane and any playing sound (tg's round-end
+// sound plays across the reboot). The next world always starts in the lobby: ?join= only picks the first round's job.
+const roundsDone = (window.bootResult.rounds = []);
+const reboot = (m) => {
+	if (serverUrl) { // the server starts the next world itself and sends this connection a full view when it is up
+		flush();
+		popups.closeAll(); dialogHost.replaceChildren(); closeMenu(); down.clear();
+		document.getElementById("stattabs").replaceChildren(); document.getElementById("statlines").replaceChildren();
+		addOutput(["<span class='boldannounce'>The world is restarting: a new round is being set up...</span>"]);
+		loading.firstChild.textContent = "Rebooting world: the next round is starting... this takes a few seconds.";
+		loading.firstChild.style.color = ""; loading.style.background = "#000";
+		loading.children[1].textContent = "Please don't reload the page.";
+		document.body.append(loading);
+		pageReady = false; round++;
+		status.textContent = `round over (${m.reason}), the server is starting world ${round}`;
+		return;
+	}
+	flush();
+	roundsDone.push({ reason: m.reason, lines: lines.splice(0), files: { ...files }, milestones: { ...milestones }, pageAt: { ...pageAt }, views: window.bootResult.views });
+	for (const o of [files, milestones, pageAt]) for (const k in o) delete o[k];
+	window.bootResult.views = 0;
+	w.terminate();
+	popups.closeAll(); dialogHost.replaceChildren(); closeMenu(); down.clear();
+	document.getElementById("stattabs").replaceChildren(); document.getElementById("statlines").replaceChildren();
+	addOutput(["<span class='boldannounce'>The world is restarting: a new round is being set up...</span>"]);
+	loading.firstChild.textContent = "Rebooting world: the next round is starting... this takes a few seconds.";
+	loading.firstChild.style.color = ""; loading.style.background = "#000"; // hides the old map until the new world draws
+	loading.children[1].textContent = "Please don't reload the page.";
+	stage.textContent = `Round ${round} is over.`;
+	document.body.append(loading);
+	status.textContent = `world ${round} rebooted, starting world ${round + 1}`;
+	startWorker({ ...startMsg, scenario: undefined, join: undefined, seed: q.has("seed") ? num("seed") + round : crypto.getRandomValues(new Uint32Array(1))[0] });
+};
+// ?scenario=NAME: fetch web/scenarios/NAME.txt here, so the worker can take its map/seed/job before it boots.
+if (q.has("scenario")) {
+	const name = q.get("scenario");
+	try {
+		const r = /^[\w.-]+$/.test(name) ? await fetch("/web/scenarios/" + name + ".txt") : null;
+		startMsg.scenario = !r ? { name, error: "bad scenario name" } : r.ok ? { name, text: await r.text() } : { name, error: `no such scenario (web/scenarios/${name}.txt: HTTP ${r.status})` };
+	} catch (e) { startMsg.scenario = { name, error: `fetch failed: ${e}` }; }
+}
+startWorker(startMsg);
+</script>
