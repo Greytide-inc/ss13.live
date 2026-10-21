@@ -153,12 +153,35 @@ export function computeLos(b: LosBox, seeInDark: number, ignoreLight: boolean, r
 
 /** The same box without its outer m rings (the eye stays in the middle). */
 export function cropLosBox(b: LosBox, m: number): LosBox {
-	const w = b.w - 2 * m, h = b.h - 2 * m, c = newLosBox(w, h);
+	return subLosBox(b, b.ex, b.ey, (b.w - 1) / 2 - m, (b.h - 1) / 2 - m);
+}
+
+/** The box of half-size rx, ry centred on cell (cx, cy) of b (the eye in its middle); cells past b's edge are clear and lit, as past the map edge.
+ *  reuse: the scratch box of that size (scratchLosBox), overwritten by the next such call. */
+export function subLosBox(b: LosBox, cx: number, cy: number, rx: number, ry: number, reuse = false): LosBox {
+	const w = 2 * rx + 1, h = 2 * ry + 1, c = reuse ? scratchLosBox(w, h) : newLosBox(w, h), x0 = cx - rx, y0 = cy - ry;
 	for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-		const k = x + y * w, s = x + m + (y + m) * b.w;
+		const k = x + y * w, bx = x + x0, by = y + y0;
+		if (bx < 0 || by < 0 || bx >= b.w || by >= b.h) { c.areaLit[k] = 1; continue; }
+		const s = bx + by * b.w;
 		c.opaque[k] = b.opaque[s];
 		c.lamp[k] = b.lamp[s];
 		c.areaLit[k] = b.areaLit[s];
 	}
 	return c;
+}
+
+/** What a client whose eye is on cell (cx, cy) of b sees, as BYOND's client does: per cell of the box of half-size rx+ring, ry+ring round the eye,
+ *  1 = shown. The view (half-size rx, ry) is view() from the eye; the outer ring (sent ahead for a camera glide) is from the ring-bigger box.
+ *  Used by the server for the eye's own tile (worker/client-view.ts clientSight) and by the page for the tile it has stepped to (sight-pop-in). */
+export function viewSight(b: LosBox, cx: number, cy: number, rx: number, ry: number, ring: number, seeInDark: number): Uint8Array {
+	const W = 2 * (rx + ring) + 1, H = 2 * (ry + ring) + 1, IW = 2 * rx + 1;
+	const big = cx === b.ex && cy === b.ey && W === b.w && H === b.h ? b : subLosBox(b, cx, cy, rx + ring, ry + ring);
+	const outer = computeLos(big, seeInDark, false), inner = computeLos(subLosBox(big, big.ex, big.ey, rx, ry), seeInDark, false);
+	const vis = new Uint8Array(W * H);
+	for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+		const out = x < ring || y < ring || x >= W - ring || y >= H - ring;
+		vis[x + y * W] = (out ? outer[x + y * W] : inner[x - ring + (y - ring) * IW]) !== 0 ? 1 : 0;
+	}
+	return vis;
 }

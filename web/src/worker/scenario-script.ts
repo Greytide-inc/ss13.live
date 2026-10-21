@@ -51,7 +51,7 @@ import { DMAtom, Kind } from "../vm/world.js";
 import { refOf } from "../vm/refs.js";
 import { stringify } from "../vm/value.js";
 import type { VM } from "../vm/interpreter.js";
-import { carriedLightOf, pickOf, predMover, predOf, predTurnOf, putOf, ViewDiffer } from "./client-view.js";
+import { carriedLightOf, clientSeen, pickOf, popInSight, predMover, predOf, predTurnOf, putOf, unionExtra, ViewDiffer, type UnionAt } from "./client-view.js";
 import { lessLight, parseLight } from "../render/carried-light.js";
 import { shadowStrength, type Opq } from "../render/sight-shadow.js";
 
@@ -112,6 +112,7 @@ export function parseScript(src: string): ScriptAction[] {
 export class ScriptPlayer {
 	readonly actions: ScriptAction[];
 	private next = 0;
+	private unionAt: UnionAt | null = null; // the `union` command's tiles looked from, for the next one
 	/** An active `goto`: walks one step per tick until within 1 tile of the goal (later actions wait for it). */
 	private differ: ViewDiffer | null = null;
 	private walk: { sel: string; since: number; stuck: number; last: string } | null = null;
@@ -221,6 +222,18 @@ export class ScriptPlayer {
 				let n = 0;
 				for (let b = free; b >= 1; b = Math.floor(b / 2)) n += b % 2; // 49 bits: no >> or &
 				return `pred free tiles ${n}${mover && mover !== mob ? " (eye)" : ""}${mover && t instanceof DMAtom ? ` ${mover.type.path}@${t.x},${t.y}` : ""}${mover && predTurnOf(mover) ? ` turn first, facing ${String(live(mover.getVar("dir")))}` : ""}`; // what moves, its tile
+			}
+			case "union": { // union: what a predicting page is sent beyond what the eye sees (plans/archive/sight-pop-in.md step 3), and what working it out costs
+				const cv = clientSeen(this.vm, c, { key: "", vis: new Uint8Array(0) }), cs = cv.cs;
+				if (!cs?.own || !cv.free) return `union none (predicts ${cl.predicts(c)}, popInSight ${popInSight(cv)}, free ${cv.free ? "yes" : "no"})`;
+				const n = (v: Uint8Array) => v.reduce((x, y) => x + y, 0), t0 = performance.now();
+				for (let i = 0; i < 20; i++) unionExtra(cs.box!, cv.free, cv.vx, cv.vy, cv.ring);
+				const t1 = performance.now(), last = this.unionAt ?? undefined, e = cv.eyeTile!; // with the tiles the last `union` looked from (UnionAt): a step's cost
+				let next: UnionAt = new Map(), got: Uint8Array = new Uint8Array(0);
+				for (let i = 0; i < 20; i++) { next = new Map(); got = unionExtra(cs.box!, cv.free, cv.vx, cv.vy, cv.ring, e, last, next); }
+				const t2 = performance.now(), ref = unionExtra(cs.box!, cv.free, cv.vx, cv.vy, cv.ring), same = got.every((v, k) => v === ref[k]);
+				this.unionAt = next;
+				return `union adds ${n(cs.vis) - n(cs.own)} tiles to ${n(cs.own)} seen, ${((t1 - t0) / 20).toFixed(3)} ms${last ? `, ${((t2 - t1) / 20).toFixed(3)} ms after the last union, ${same ? "the same" : "DIFFERS"}` : ""}`;
 			}
 			case "shadow": { // shadow: how the page would draw the sight shadow from a fresh full view update (render/sight-shadow.ts shadowStrength):
 				// full / dim / none, the mob's sight flags, and the tile the opacity box is centred on (the eye: a camera console's, the blob's)

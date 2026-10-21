@@ -4,6 +4,7 @@
 //   node tools/server.mjs --dist build/mp-server-dist --port 8780 [--join Assistant] [--roundstart] [--seconds N] [--log FILE]
 //        [--map NAME] [--spawn-near] [--seed N] [--second KEY] [--tgui /obj/path [--tgui-watch var,var]] [--lobby] [--lobby-seconds N --autojoin JOB --endround S --rounddelay S: test aids] [--host-key KEY] [--log-level quiet|normal|chatty] [--hot] [--no-click-now] [--admins FILE] [--reserved FILE] [--bans FILE] [--pepper FILE] [--saves FILE] [--empty-reset S]
 // --log-level: how much of the per-input log (key, topic, Click, to client: ...) goes in the log: quiet = none of it, chatty = also every "to client:" line, uncut.
+//   /status: players on, map, round (JSON for the landing page, no names).
 //   Mid-round: curl "http://127.0.0.1:PORT/loglevel?level=chatty" (this machine only, no X-Forwarded-For; a player's socket can't send it).
 // --hot: dev only: `node tools/hot.mjs` loads edited game procs into this running world (no restart).
 // --no-click-now: a click waits for the next tick, as before netcode step 1 (by default it runs when it arrives and its answer goes out at once).
@@ -113,6 +114,10 @@ const httpServer = http.createServer((req, res) => {
 		res.writeHead(200).end(`log level ${lv}\n`); return;
 	}
 	if (req.method !== "GET" && req.method !== "HEAD") { res.writeHead(405).end(); return; }
+	if ((req.url ?? "").split("?")[0] === "/status") { // plans/site.md step 1: for the landing page on ss13.live (another address): no names
+		const body = JSON.stringify({ players: clients.size, map: mapName, round, started: roundStarted, roundSeconds: roundStartAt ? Math.round((Date.now() - roundStartAt) / 1000) : null });
+		res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-store", "Access-Control-Allow-Origin": "*" }).end(req.method === "HEAD" ? undefined : body); return;
+	}
 	let p;
 	try { p = decodeURIComponent((req.url ?? "/").split("?")[0]); } catch { res.writeHead(400).end("bad request"); return; } // a broken %-escape throws
 	if (p.includes("\0")) { res.writeHead(400).end("bad request"); return; }
@@ -147,7 +152,7 @@ const clients = new Set(); // { ws, player }
 const rtIcons = []; // runtime icons sent so far (.dmi bytes)
 const backlog = []; // log/milestone/stage/done messages, replayed to a connecting client (capped)
 const stats = { toWorker: 0, dropped: 0, acksDropped: 0, byType: {}, bytes: 0 };
-let tickLines = 0, roundStarted = false;
+let tickLines = 0, roundStarted = false, roundStartAt = 0, mapName = null; // for /status: tg's "Loading Box Station..." line names the map
 let shuttingDown = false, doneSeen = false;
 let workerReady = false, firstName = null, firstAddress = null, started = false;
 let round = 1; // ps-rounds: which world this is; each reboot starts a fresh worker thread (frees all of the old world)
@@ -169,7 +174,7 @@ function nextRound() {
 	const old = worker;
 	round++;
 	out(`[server] round over: starting world ${round} for ${clients.size} connected player(s)`);
-	started = false; workerReady = false; roundStarted = false; tickLines = 0;
+	started = false; workerReady = false; roundStarted = false; roundStartAt = 0; mapName = null; tickLines = 0;
 	firstName = null; firstAddress = null; clearTimeout(emptyTimer); emptyTimer = null;
 	rtIcons.length = 0; backlog.length = 0;
 	for (const c of clients) { c.viewReady = false; c.views.held = null; }
@@ -274,7 +279,7 @@ function tryStart() {
 function onWorkerMessage(m) {
 	if (m.type === "hotResult") { fs.writeFileSync(path.join(hotDir, `${port}.out.json`), JSON.stringify(m)); return; }
 	if (m.type === "worker-ready") { workerReady = true; out("[server] worker ready, waiting for the first player"); tryStart(); return; }
-	if (m.type === "log") { out(m.line); const b = /^\[server-ban\] ([a-z0-9@]+) (\S+)$/.exec(m.line); if (b) addBan(b[1], b[2] === "-" ? null : b[2]); if (/Game start took/.test(m.line)) roundStarted = true; if (/live:/.test(m.line)) tickLines++; }
+	if (m.type === "log") { out(m.line); const b = /^\[server-ban\] ([a-z0-9@]+) (\S+)$/.exec(m.line); if (b) addBan(b[1], b[2] === "-" ? null : b[2]); if (/Game start took/.test(m.line)) { roundStarted = true; roundStartAt = Date.now(); } const mp = /^Loading (.+)\.\.\.$/.exec(m.line); if (mp) mapName = mp[1]; if (/live:/.test(m.line)) tickLines++; }
 	if (m.type === "milestone") out(`[server] milestone ${m.name} (${m.s}s)`);
 	if (m.type === "rtIcon") rtIcons.push(m); // replayed to a connecting client (the views it gets use these URLs)
 	if (m.type === "log" || m.type === "milestone" || m.type === "done") { backlog.push(m); if (backlog.length > 500) backlog.shift(); }

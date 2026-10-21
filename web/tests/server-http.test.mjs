@@ -3,7 +3,7 @@
 // while the file is unchanged, so a deploy reaches players at once and nothing old mixes with new code. Icons and sounds (tg's own
 // art, ~2000 files, almost never changed) are the exception: the browser uses its copy without asking, for up to an hour (then it
 // checks in the background). index.html carries the <meta name="ss13-server"> marker, so the page plays on this server with no
-// ?server= in the link. The test scenarios (web/scenarios/, kept out of the public repo too) are not served. With nobody connected for --empty-reset seconds the server starts a fresh world.
+// ?server= in the link. /status says how many are on, the map and the round (JSON, any site may read it, no names). The test scenarios (web/scenarios/, kept out of the public repo too) are not served. With nobody connected for --empty-reset seconds the server starts a fresh world.
 // Runs server.mjs on a tiny fake dist (its game thread does nothing), no build needed. Usage (from web/): node tests/server-http.test.mjs
 import { spawn } from "node:child_process";
 import fs from "node:fs";
@@ -55,14 +55,23 @@ try {
 	const log = () => fs.readFileSync(path.join(dist, "server.log"), "utf8");
 	await new Promise((r) => setTimeout(r, 1500));
 	check(!/starting world 2/.test(log()), "nobody has joined yet: no fresh world");
+	// /status (plans/site.md step 1): what the landing page on another address shows, no names
+	const status = async () => { const r = await get("/status"); return { r, j: await r.json().catch(() => null) }; };
+	const st0 = await status();
+	check(st0.r.status === 200 && st0.j?.players === 0 && st0.j?.round === 1 && "map" in st0.j && st0.j?.started === false, `/status: nobody on, round 1, not started (${JSON.stringify(st0.j)})`);
+	check(st0.r.headers.get("access-control-allow-origin") === "*" && st0.r.headers.get("cache-control") === "no-store", "/status: readable from any site, never cached");
 	const ws = new WebSocket(`ws://127.0.0.1:${port}`);
 	await new Promise((r) => ws.on("open", r));
 	ws.send(JSON.stringify({ type: "hello", player: "Visitor" }));
 	await new Promise((r) => setTimeout(r, 1500));
 	check(!/starting world 2/.test(log()), "a player still connected: no fresh world");
+	const st1 = await status();
+	check(st1.j?.players === 1 && !JSON.stringify(st1.j).includes("Visitor"), `/status: one player on, no names (${JSON.stringify(st1.j)})`);
 	ws.close();
 	await new Promise((r) => setTimeout(r, 2000));
 	check(/nobody connected for 1 s: a fresh world[^\n]*\n[^\n]*starting world 2 for 0 connected/.test(log()), "the last player left: a fresh world after --empty-reset");
+	const st2 = await status();
+	check(st2.j?.players === 0 && st2.j?.round === 2, `/status: after the fresh world, round 2 (${JSON.stringify(st2.j)})`);
 } finally {
 	srv.kill("SIGTERM");
 	await new Promise((r) => setTimeout(r, 300));

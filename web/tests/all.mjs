@@ -11,6 +11,7 @@ const tests = [
 	"build/dist/tests/savefile/export-text.test.js",
 	"build/dist/tests/view-marks/view-marks.test.js",
 	"build/dist/tests/sight-shadow/sight-shadow.test.js",
+	"build/dist/tests/sight-pop-in/sight-pop-in.test.js",
 	"build/dist/tests/skin/winset-params.test.js",
 	"build/dist/tests/popups/preview-png.test.js",
 	"build/dist/tests/static/title-screen.test.js",

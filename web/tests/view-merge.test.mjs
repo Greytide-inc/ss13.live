@@ -15,10 +15,11 @@ function apply(s, u) {
 	if (u.hud) s.hud = u.hud;
 	if (u.light !== undefined || u.full) s.light = u.light ?? null; // a full update without one: none (client-scene.ts)
 	if (u.opq !== undefined || u.full) s.opq = u.opq ?? null;
+	if (u.lum !== undefined || u.full) s.lum = u.lum ?? null;
 	s.eye = u.eyeTile;
 }
-const fresh = () => ({ apps: new Map(), tiles: new Map(), screen: [], off: [0, 0], eye: null, hud: null, light: null, opq: null });
-const dump = (s) => JSON.stringify([[...s.apps].sort((a, b) => a[0] - b[0]), [...s.tiles].sort(), s.screen, s.off, s.eye, s.hud, s.light, s.opq]);
+const fresh = () => ({ apps: new Map(), tiles: new Map(), screen: [], off: [0, 0], eye: null, hud: null, light: null, opq: null, lum: null });
+const dump = (s) => JSON.stringify([[...s.apps].sort((a, b) => a[0] - b[0]), [...s.tiles].sort(), s.screen, s.off, s.eye, s.hud, s.light, s.opq, s.lum]);
 function randomUpdate(i) {
 	const u = { seq: i, full: rnd(15) === 0, worldTime: i, eyeTile: { x: rnd(4), y: 0, z: 1 }, apps: [], gone: [], tiles: [], moved: [], screen: rnd(5) === 0 ? [[rnd(9), "s", "1,1"]] : null };
 	for (let k = rnd(4); k > 0; k--) u.apps.push([rnd(12), { look: rnd(100) }]);
@@ -28,6 +29,7 @@ function randomUpdate(i) {
 	if (rnd(4) === 0) u.off = [rnd(8), rnd(8)];
 	if (rnd(1000) < 300) u.light = rnd(1000) < 500 ? [] : [5, rnd(1000) < 500 ? 1 : 0, 0, 1, 1, 0.5, 0.5, 0.5];
 	if (rnd(1000) < 300) u.opq = rnd(1000) < 500 ? [] : [rnd(9), 1, 2, 2, "P"];
+	if (rnd(1000) < 300) u.lum = rnd(1000) < 500 ? [] : ["A", rnd(4), 1 + rnd(3)];
 	if (rnd(4) === 0) u.hud = { ia: ["help", "harm"].slice(0, 1 + rnd(2)), iq: rnd(2) };
 	if (rnd(3) === 0) u.anims = [["f", rnd(12), "x"]];
 	return u;

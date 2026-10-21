@@ -47,7 +47,8 @@ import { makePredictHud, PREDICT_HIDE_MS } from "./predict-hud.js";
 import { glideAt, predGlide as predGlideAt, serverGlide, type Glide } from "./glide.js";
 import { cornersOf, lessLight, parseLight, strengthAt, type CarriedLight } from "./carried-light.js";
 import { shadowPainter, type ShadowPaint } from "./sight-shadow-paint.js";
-import { shadowStrength, type Opq, type ShadowMode } from "./sight-shadow.js";
+import { shadowStrength, type Lum, type Opq, type ShadowMode } from "./sight-shadow.js";
+import { pageSees, pageSight, withSight, type PageSight } from "./sight-pop-in.js";
 
 // --- client.json shapes ---------------------------------------------------------------------
 
@@ -569,7 +570,7 @@ export function sortPrepared(p: Prepared, showHud: boolean, useScene = false): S
  *  renders = every redraw (new views plus animation frames); newView* = only the redraws of a new view. */
 export const viewStats = { received: 0, changed: 0, applied: 0, applyMs: 0, renders: 0, renderMs: 0, newViewRenders: 0, newViewMs: 0, newViewTimes: [] as number[], firstAt: 0, lastAt: 0,
 	/** redraws of gliding views (ms each) and, per rebuilt glide frame, [ms, camX, camY, atoms gliding, largest atom offset x, y]. */
-	missingVis: 0, iconHolds: [] as number[], iconHoldAt: 0, preloaded: "", longFrames: [] as number[], animEvents: 0, flickFrames: 0, shakeMax: 0, shakeApplied: 0, animLog: [] as string[], missingLog: [] as string[], keyAt: 0, clickAt: 0, clickLat: [] as number[], pings: [] as number[], pingRecent: [] as number[], keyRecv: [] as number[], keyLat: [] as number[], keyPaint: [] as number[], viewGaps: [] as number[], hitMs: [] as number[], redrawTimes: [] as number[], rafs: 0, glideGaps: [] as number[], glideFrames: 0, glideMs: 0, glideTimes: [] as number[], glideLog: [] as number[][], lightFades: 0, dirtyBy: {} as Record<string, number>, carriedTiles: 0, lessenedTiles: 0, shadowPaints: 0, shadowMs: 0,
+	missingVis: 0, iconHolds: [] as number[], iconHoldAt: 0, preloaded: "", longFrames: [] as number[], animEvents: 0, flickFrames: 0, shakeMax: 0, shakeApplied: 0, animLog: [] as string[], missingLog: [] as string[], keyAt: 0, clickAt: 0, clickLat: [] as number[], pings: [] as number[], pingRecent: [] as number[], keyRecv: [] as number[], keyLat: [] as number[], keyPaint: [] as number[], viewGaps: [] as number[], hitMs: [] as number[], redrawTimes: [] as number[], rafs: 0, glideGaps: [] as number[], glideFrames: 0, glideMs: 0, glideTimes: [] as number[], glideLog: [] as number[][], lightFades: 0, dirtyBy: {} as Record<string, number>, carriedTiles: 0, lessenedTiles: 0, shadowPaints: 0, shadowMs: 0, sightRuns: 0,
 	/** lag-smoothing step 4: predicted steps, ones the server then took, took differently, or never took in time; frames with the mob gliding and
 	 *  images on it (a speech bubble), and the most px one was drawn off the mob. */
 	predImgFrames: 0, predImgGap: 0, ownMoves: 0, ownMoveGaps: [] as number[], // ownMove*: your mob's steps as views brought them, ms apart (under 1 s; for walk-pace checks)
@@ -1186,6 +1187,24 @@ export function liveClientView(host: HTMLElement, resync: () => void, sendStep: 
 	let shadowMode: ShadowMode = shadowQ !== null ? modeOf(shadowQ) : pickedMode();
 	if (shadowQ === null) globalThis.addEventListener?.("ss13-shadows", () => { shadowMode = pickedMode(); forceNext = true; schedule(); });
 	let opqNow: Opq | null = null, shadowVersion = 0;
+	// Sight pop-in (plans/archive/sight-pop-in.md): with prediction the server sends what could be seen a step or two ahead (u.lum then comes with the
+	// box's light); the page shows only what is seen from the tile it has stepped you to (sightNow, worked out again when that tile or the box
+	// changes). Tiles it doesn't see are left out of the scene: black and unclickable, as tiles the server doesn't send.
+	let lumNow: Lum | null = null, sightNow: PageSight | null = null, sightOpq: Opq | null = null, sightFrom: unknown[] = [];
+	const sightHides = (sg: PageSight | null, x: number, y: number): boolean => sg !== null && !pageSees(sg, x, y);
+	const updateSight = (u: ViewUpdate): void => {
+		let ax = 0, ay = 0;
+		if (pred) for (const q of pending) if (q.drawn) { ax += q.dx; ay += q.dy; }
+		const [hx, hy] = viewHalf(u.view), sid = Number((u.sight as { see_in_dark?: unknown } | null)?.see_in_dark ?? 0) || 0;
+		const from = [opqNow, lumNow, ax, ay, hx, hy, sid];
+		if (from.every((v, i) => v === sightFrom[i])) return;
+		sightFrom = from;
+		const next = opqNow && lumNow ? pageSight(opqNow, lumNow, ax, ay, hx, hy, sid) : null;
+		for (const [k, t] of tiles) if (sightHides(sightNow, t.x, t.y) !== sightHides(next, t.x, t.y)) dirty.add(k);
+		sightNow = next;
+		sightOpq = next && opqNow ? withSight(opqNow, next) : null;
+		viewStats.sightRuns++;
+	};
 	let carried: CarriedLight | null = null, carriedN = 0;
 	const carriedTiles = new Map<number, number>(); // our id -> the tile key it was put on
 	const lessened = new Map<number, { server: BuiltAppearance; ours: BuiltAppearance }>(); // real lighting objects drawn with the light taken out
@@ -1547,10 +1566,11 @@ export function liveClientView(host: HTMLElement, resync: () => void, sendStep: 
 			if (now >= top.t0 + top.ms) lightFades.delete(id); else { animating++; markWhy = "light fades"; markId(id); }
 		}
 		markWhy = "other";
+		updateSight(u);
 		let rebuilt = 0;
 		if (fullDirty || !scene.size && tiles.size) {
 			scene.clear(); chunks.clear(); dynTiles.clear(); orderKeys = flatCache = null; animTiles = 0; itemCount = 0; dirty.clear();
-			for (const [key, tile] of tiles) keep(buildKept(tile, now, anyAnim), key);
+			for (const [key, tile] of tiles) if (!sightHides(sightNow, tile.x, tile.y)) keep(buildKept(tile, now, anyAnim), key);
 			rebuilt = tiles.size;
 			fullDirty = false;
 		} else {
@@ -1562,7 +1582,7 @@ export function liveClientView(host: HTMLElement, resync: () => void, sendStep: 
 			dirtied("gliding/animating tiles", dynTiles.size);
 			for (const key of dirty) {
 				const tile = tiles.get(key);
-				keep(tile ? buildKept(tile, now, anyAnim) : null, key);
+				keep(tile && !sightHides(sightNow, tile.x, tile.y) ? buildKept(tile, now, anyAnim) : null, key);
 				rebuilt++;
 			}
 			dirty.clear();
@@ -1589,7 +1609,7 @@ export function liveClientView(host: HTMLElement, resync: () => void, sendStep: 
 			const shadowA = shadowMode !== "tg" ? shadowStrength(Number(client.sight?.sight ?? 0), opqNow !== null) : 0;
 			let shadow: ShadowPaint | undefined;
 			if (shadowA > 0) {
-				shadow = shadowP.paint(opqNow!, e.x + 0.5 + camX / TILE_PX, e.y + 0.5 + camY / TILE_PX, shadowMode);
+				shadow = shadowP.paint(shadowMode === "smooth" && sightOpq ? sightOpq : opqNow!, e.x + 0.5 + camX / TILE_PX, e.y + 0.5 + camY / TILE_PX, shadowMode); // smoothed tg: the page's own sight
 				if (shadow.version !== shadowVersion) { shadowVersion = shadow.version; viewStats.shadowPaints++; viewStats.shadowMs += shadow.ms; }
 			}
 			shown = {
@@ -1856,6 +1876,7 @@ export function liveClientView(host: HTMLElement, resync: () => void, sendStep: 
 			for (const [k, t] of tiles) if (Math.abs(t.x - e.x) > rx + ring || Math.abs(t.y - e.y) > ry + ring) dropTile(k);
 		}
 		if (u.opq !== undefined || u.full) { const o = u.opq && u.opq.length ? u.opq as Opq : null; changed ||= o !== opqNow; opqNow = o; }
+		if (u.lum !== undefined || u.full) { const l = u.lum && u.lum.length ? u.lum as Lum : null; changed ||= l !== lumNow; lumNow = l; }
 		if (u.light !== undefined || u.full || carried) { applyCarried(u.light ?? (u.full ? [] : undefined)); changed ||= carriedN > 0 || u.light !== undefined; }
 		if (changed) { viewStats.changed++; schedule(); }
 	};

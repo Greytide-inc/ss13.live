@@ -1,5 +1,5 @@
 // sight-shadow-paint (plans/archive/sight-shadows.md step 3) - Paints the soft sight shadows for the box the server sent (`opq`) from where the
-// page draws the eye: per eye point (eyePoints) its shadows (shadowPolys) filled on a scratch canvas, added up at 1/16 each, then turned
+// page draws the eye: per eye point (eyePoints) its shadows (shadowPolys) filled as one shape, added up at 1/16 each, then turned
 // into darkness (softDark's rule, one value per pixel) on a small canvas, `res` pixels a tile; the backend stretches it over the map (smooth).
 // The smoothed tg look (mode "smooth") is tg's black squares with hard diagonal steps (hardTile per tile: black, or stamps of its corner triangles), one canvas pixel per game pixel and
 // drawn unsmoothed (crisp), from the box alone: painted again only when the box changes, never as the eye moves.
@@ -60,8 +60,8 @@ function hardPainter(): (opq: Opq) => ShadowPaint {
 
 export function shadowPainter(res = RES): { paint(opq: Opq, eyeX: number, eyeY: number, mode?: ShadowMode): ShadowPaint } {
 	const mk = () => document.createElement("canvas");
-	const acc = mk(), tmp = mk(), out: ShadowPaint = { canvas: mk(), version: 0, x0: 0, y0: 0, w: 0, h: 0, res, ms: 0 };
-	const ac = acc.getContext("2d", { willReadFrequently: true })!, tc = tmp.getContext("2d")!, oc = out.canvas.getContext("2d")!;
+	const acc = mk(), out: ShadowPaint = { canvas: mk(), version: 0, x0: 0, y0: 0, w: 0, h: 0, res, ms: 0 };
+	const ac = acc.getContext("2d", { willReadFrequently: true })!, oc = out.canvas.getContext("2d")!;
 	let box: ReturnType<typeof unpackOpacity> | null = null, boxKey = "", key = "";
 	let img: ImageData | null = null;
 	const hard = hardPainter();
@@ -77,23 +77,23 @@ export function shadowPainter(res = RES): { paint(opq: Opq, eyeX: number, eyeY: 
 			const t0 = performance.now();
 			const W = b.w * res, H = b.h * res;
 			if (acc.width !== W || acc.height !== H) {
-				for (const c of [acc, tmp, out.canvas]) { c.width = W; c.height = H; }
+				for (const c of [acc, out.canvas]) { c.width = W; c.height = H; }
 				img = oc.createImageData(W, H);
 			}
 			const pts = eyePoints(ex, ey);
-			ac.globalCompositeOperation = "copy"; ac.fillStyle = "#000"; ac.fillRect(0, 0, W, H);
-			ac.globalCompositeOperation = "lighter"; ac.globalAlpha = 1 / pts.length;
-			tc.fillStyle = "#fff";
+			ac.globalCompositeOperation = "copy"; ac.globalAlpha = 1; ac.fillStyle = "#000"; ac.fillRect(0, 0, W, H);
+			ac.globalCompositeOperation = "lighter"; ac.globalAlpha = 1 / pts.length; ac.fillStyle = "#fff";
 			for (const [px, py] of pts) {
-				tc.clearRect(0, 0, W, H);
-				tc.beginPath(); // one shape (all wound the same way, so they add up, not cancel): separate fills left faint seams where shadows meet
+				// one fill per eye point, straight onto acc: a fill paints each pixel once however many of its shapes overlap (all wound the
+				// same way, so they add up, not cancel; separate fills left faint seams where shadows meet). No scratch canvas: copying one
+				// into acc 16 times a paint was the cost (11-14 ms a paint, F9 2026-10-21), a GPU canvas read back into a CPU one each time.
+				ac.beginPath();
 				for (const p of shadowPolys(b.opaque, b.w, b.h, px, py)) {
-					tc.moveTo(p[0] * res, (b.h - p[1]) * res);
-					for (let i = 2; i < p.length; i += 2) tc.lineTo(p[i] * res, (b.h - p[i + 1]) * res);
-					tc.closePath();
+					ac.moveTo(p[0] * res, (b.h - p[1]) * res);
+					for (let i = 2; i < p.length; i += 2) ac.lineTo(p[i] * res, (b.h - p[i + 1]) * res);
+					ac.closePath();
 				}
-				tc.fill();
-				ac.drawImage(tmp, 0, 0);
+				ac.fill();
 			}
 			// shaded / 255 = the share of eye points whose shadow covers the pixel; dark = 1 - min(1, GAIN * seen share)
 			const src = ac.getImageData(0, 0, W, H).data, dst = img!.data;

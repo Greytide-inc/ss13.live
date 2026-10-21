@@ -18,6 +18,7 @@ export function mergeViews(a, b) {
 	if (b.icons === undefined && a.icons !== undefined) out.icons = a.icons;
 	if (b.light === undefined && a.light !== undefined) out.light = a.light;
 	if (b.opq === undefined && a.opq !== undefined) out.opq = a.opq;
+	if (b.lum === undefined && a.lum !== undefined) out.lum = a.lum;
 	if (a.now) out.now = 1; // netcode 1: still answers a click
 	if (anims.length) out.anims = anims; else delete out.anims;
 	return out;

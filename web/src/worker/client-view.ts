@@ -12,10 +12,10 @@ import { stringify } from "../vm/value.js";
 import { DMType } from "../vm/objtree.js";
 import { DMAtom, Kind, LOOK_VARS_SIG, registerViewMarks, unregisterViewMarks, SEE_MOBS, SEE_OBJS, SEE_THRU, SEE_TURFS, SIGHT_BLIND } from "../vm/world.js";
 import { stress, stressNoteLos } from "../vm/stress-log.js";
-import { computeLos, cropLosBox } from "../vm/view-los.js";
+import { computeLos, subLosBox, viewSight, type LosBox } from "../vm/view-los.js";
 import { buildAppearance, resolveIconPath, type BuiltAppearance } from "../appearance/appearance.js";
 import { CLIENT_ANIM_ID } from "../render/anim.js";
-import { packOpacity, type Opq } from "../render/sight-shadow.js";
+import { packLum, packOpacity, type Lum, type Opq } from "../render/sight-shadow.js";
 import type { OutMsg } from "../vm/clients.js";
 import { SEE_INVISIBLE_LIVING, type Tile } from "../tools/tile-dump.js";
 
@@ -68,6 +68,8 @@ export interface ClientSeen {
 	cs: ClientSight | null; // null = sees everything in range
 	imgsAt: Map<number, DMObject[]>; // client.images drawn on a tile (key x + y * 65536): shown on tiles in sight
 	imgs: Set<DMObject>;
+	/** predOf's free square, when clientSeen worked it out for the union (else undefined) */
+	free?: number;
 }
 
 let cfgVm: VM | null = null, cfgIdx = -1;
@@ -81,7 +83,16 @@ export function baseViewOf(vm: VM, c: DMObject): unknown {
 	return live(cfg.getVar(wide ? "default_view" : "default_view_square"));
 }
 
-export function clientSeen(vm: VM, c: DMObject): ClientSeen {
+/** plans/archive/sight-pop-in.md step 3: the last unionExtra per client, kept while nothing it was worked out from changes */
+export interface UnionCache { key: string; vis: Uint8Array; at?: UnionAt }
+/** per tile unionExtra looked from, by world tile (unionAtKey): its sub-box's opacity and the line of sight worked out from it. A step moves
+ *  the eye one tile, so most of the up to 24 tiles were looked from last time: kept while their walls are the same, ~4x less work a step. */
+export type UnionAt = Map<number, { opaque: Uint8Array; vis: Uint8Array }>;
+const unionAtKey = (x: number, y: number, z: number) => x + 1024 * (y + 1024 * z);
+
+/** union: a ViewDiffer's update for a predicting page (sight-pop-in step 3): cs.vis becomes the tiles seen from any tile the page may step to
+ *  (own | unionExtra), cs.own the eye's own. Off for buildClientView, so `?check=1` compares what the page draws. */
+export function clientSeen(vm: VM, c: DMObject, union?: UnionCache): ClientSeen {
 	const view = live(c.getVar("view"));
 	const m = live(c.getVar("mob"));
 	const sight = m instanceof DMObject ? Object.fromEntries(["see_invisible", "see_in_dark", "sight"].map((k) => [k, live(vm.getField(m, k))])) : null;
@@ -110,7 +121,16 @@ export function clientSeen(vm: VM, c: DMObject): ClientSeen {
 	}
 	const ring = vm.clients.predicts(c) ? 1 + PRED_R : 1;
 	const cs = eyeTile ? clientSight(vm, eyeTile, vx, vy, m, ring) : null; // los1
-	return { eyeTile, view, vx, vy, ring, mob: m, sight, seeInv, cs, imgsAt, imgs };
+	const cv: ClientSeen = { eyeTile, view, vx, vy, ring, mob: m, sight, seeInv, cs, imgsAt, imgs };
+	if (union && popInSight(cv)) {
+		const free = cv.free = predOf(vm, predMover(vm, c), eyeTile), b = cs!.box!;
+		if (free) {
+			const key = `${eyeTile!.x},${eyeTile!.y},${eyeTile!.z},${free},${vx},${vy},${hashOpaque(b.opaque)}`; // light isn't in it: a flickering lamp costs nothing
+			if (union.key !== key) { union.key = key; const at: UnionAt = new Map(); union.vis = unionExtra(b, free, vx, vy, ring, eyeTile!, union.at, at); union.at = at; }
+			cs!.own = cs!.vis; cs!.vis = cs!.vis.map((v, k) => v | union.vis[k]);
+		}
+	}
+	return cv;
 }
 
 /** Fills objs with what the client sees on tile tx,ty of the eye's z: turf and area (nFixed), then contents
@@ -143,9 +163,54 @@ export function seenOn(vm: VM, cv: ClientSeen, tx: number, ty: number, objs: DMO
  *  the outer ring (sent ahead for the camera glide, wider for a predicting page) from the ring-bigger box. Per tile: 1 = everything shows,
  *  0 = hidden (drawn black), except what the mob's SEE_TURFS/SEE_OBJS/SEE_MOBS flags show anyway. opaque: per tile of the same box, 1 = blocks
  *  sight (none with SEE_THRU; null when blind), for the page's sight shadows (render/sight-shadow.ts). */
-export interface ClientSight { x0: number; y0: number; w: number; vis: Uint8Array; flags: number; self: DMObject | null; opaque: Uint8Array | null }
+export interface ClientSight { x0: number; y0: number; w: number; vis: Uint8Array; flags: number; self: DMObject | null; opaque: Uint8Array | null; box: LosBox | null; own?: Uint8Array }
 
 const SEE_SELF = 32, XRAY = SEE_MOBS | SEE_OBJS | SEE_TURFS;
+/** plans/archive/sight-pop-in.md: the page works out sight itself from the tile it has stepped to: a predicting page, a box of opacity, no x-ray sight
+ *  (with mesons or thermals the hidden tiles still show some things, which the page can't sort out) */
+export const popInSight = (cv: ClientSeen): boolean => cv.ring > 1 && !!cv.cs?.box && (cv.cs.flags & XRAY) === 0;
+
+/** How many steps ahead the union looks: the page draws up to PRED_R ahead, but a 3rd only when the ping is longer than two steps' time; each
+ *  step out about doubles the cost (2 steps: ~0.4 ms when the eye moves, Box/Meta, sight-pop-in step 3). */
+export const UNION_R = 2;
+/** The tiles of box b (eye in the middle, `ring` = 1 + PRED_R tiles beyond the view) in line of sight from any tile the page may step
+ *  to, the eye's own left out (its sight, light and all, is ClientSight.vis): reachable through predOf's free square in up to UNION_R steps, a
+ *  diagonal only when both straight steps are free (client-scene.ts drawNext). From each, line of sight over its view plus the 1-tile glide
+ *  ring (light left out: ~2x faster, and the page applies it, sight-pop-in step 4). eye: b's eye in the world; a tile's sight found in `lastAt`
+ *  with the same walls is reused, and every tile looked from goes into `nextAt` (UnionAt). */
+export function unionExtra(b: LosBox, free: number, vx: number, vy: number, ring: number, eye?: { x: number; y: number; z: number }, lastAt?: UnionAt, nextAt?: UnionAt): Uint8Array {
+	const ok = (dx: number, dy: number) => Math.abs(dx) <= PRED_R && Math.abs(dy) <= PRED_R && Math.floor(free / 2 ** ((dy + PRED_R) * PRED_W + dx + PRED_R)) % 2 === 1;
+	const out = new Uint8Array(b.w * b.h), seen = new Set<number>([0]);
+	let front: [number, number][] = [[0, 0]];
+	for (let d = 0; d < UNION_R && front.length; d++) {
+		const next: [number, number][] = [];
+		for (const [x, y] of front) for (let sy = -1; sy <= 1; sy++) for (let sx = -1; sx <= 1; sx++) {
+			const nx = x + sx, ny = y + sy, k = nx + ny * 64;
+			if ((!sx && !sy) || seen.has(k) || !ok(nx, ny) || (sx && sy && !(ok(x + sx, y) && ok(x, y + sy)))) continue;
+			seen.add(k); next.push([nx, ny]);
+			const sub = subLosBox(b, b.ex + nx, b.ey + ny, vx + 1, vy + 1, true), vw = 2 * (vx + 1) + 1;
+			const at = eye ? unionAtKey(eye.x + nx, eye.y + ny, eye.z) : 0, old = lastAt?.get(at);
+			let v: Uint8Array;
+			if (old && sameBytes(old.opaque, sub.opaque)) v = old.vis;
+			else v = Uint8Array.from(computeLos(sub, 0, true, true), (x) => (x ? 1 : 0));
+			nextAt?.set(at, old && v === old.vis ? old : { opaque: sub.opaque.slice(), vis: v });
+			for (let j = 0; j < v.length / vw; j++) for (let i = 0; i < vw; i++) if (v[i + j * vw]) out[ring - 1 + nx + i + (ring - 1 + ny + j) * b.w] = 1;
+		}
+		front = next;
+	}
+	return out;
+}
+const sameBytes = (a: Uint8Array, b: Uint8Array): boolean => {
+	if (a.length !== b.length) return false;
+	for (let k = 0; k < a.length; k++) if (a[k] !== b[k]) return false;
+	return true;
+};
+/** FNV-1a over a box's opacity */
+function hashOpaque(o: Uint8Array): number {
+	let h = 2166136261;
+	for (let k = 0; k < o.length; k++) h = Math.imul(h ^ o[k], 16777619);
+	return h >>> 0;
+}
 
 export function clientSight(vm: VM, eyeTile: { x: number; y: number; z: number }, rx: number, ry: number, mob: unknown, ring = 1): ClientSight | null {
 	const m = live(mob as never);
@@ -154,21 +219,17 @@ export function clientSight(vm: VM, eyeTile: { x: number; y: number; z: number }
 	const self = m instanceof DMAtom && m.kind === Kind.Mob ? m : null;
 	if ((flags & XRAY) === XRAY) return null; // sees everything in range (a ghost)
 	const w = 2 * (rx + ring) + 1, h = 2 * (ry + ring) + 1, x0 = eyeTile.x - rx - ring, y0 = eyeTile.y - ry - ring;
-	const vis = new Uint8Array(w * h);
+	let vis: Uint8Array = new Uint8Array(w * h);
 	const ct = vm.map.turfAt(eyeTile.x, eyeTile.y, eyeTile.z);
-	let opaque: Uint8Array | null = null;
+	let opaque: Uint8Array | null = null, lbox: LosBox | null = null;
 	if (ct && !(flags & SIGHT_BLIND)) {
 		const { box } = vm.map.losBox(ct, rx + ring, ry + ring, (flags & SEE_THRU) !== 0, false);
 		const t0 = stress.on ? performance.now() : 0;
-		opaque = box.opaque;
-		const outer = computeLos(box, sid, false), inner = computeLos(cropLosBox(box, ring), sid, false);
+		opaque = box.opaque; lbox = box;
+		vis = viewSight(box, box.ex, box.ey, rx, ry, ring, sid);
 		if (stress.on) { stressNoteLos(performance.now() - t0, "client-view.ts:143 (x2 computeLos)"); }
-		for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-			const out = x < ring || y < ring || x >= w - ring || y >= h - ring;
-			vis[x + y * w] = (out ? outer[x + y * w] : inner[x - ring + (y - ring) * (w - 2 * ring)]) !== 0 ? 1 : 0;
-		}
 	}
-	return { x0, y0, w, vis, flags, self: flags & SEE_SELF ? self : null, opaque };
+	return { x0, y0, w, vis, flags, self: flags & SEE_SELF ? self : null, opaque, box: lbox };
 }
 
 const FIRST_OF_EACH = 3;
@@ -309,6 +370,9 @@ export interface ViewUpdate {
 	/** sight-shadows: which tiles block sight in the box clientSight works out (the view plus its ring), packed (render/sight-shadow.ts
 	 *  packOpacity), when it changed; [] = none now (a ghost, blind). Absent: as before. */
 	opq?: Opq | [];
+	/** the light of the opq box, for the page's own line of sight from the tile it has stepped to (plans/archive/sight-pop-in.md): sent only to a predicting page
+	 *  with no x-ray sight, when it changes; [] = none now (the page then shows what the server sends, as before) */
+	lum?: Lum | [];
 }
 
 /** The icon sheets of everything on z (turfs, areas, what lies on the turfs; their overlays too), most used first. One appearance is built
@@ -718,6 +782,8 @@ export class ViewDiffer {
 	private pHud = "";
 	private pLight = "";
 	private pOpq = "";
+	private pLum = "";
+	private union: UnionCache = { key: "", vis: new Uint8Array(0) };
 	/** netcode 2: screen objects the next update sends again even if unchanged (a click on a toggle the page guessed at: the answer corrects a refused one). */
 	private resendIf: ((o: DMObject) => boolean) | null = null;
 	/** Predicted pick-up: map objects whose appearance the next update sends again (a pick-up click ran: the answer to the page's guess). */
@@ -776,7 +842,7 @@ export class ViewDiffer {
 			}
 			return s.id;
 		};
-		const cv = clientSeen(vm, c);
+		const cv = clientSeen(vm, c, this.union);
 		const { view, sight, eyeTile } = cv;
 		this.imgs = cv.imgs;
 		const csFlags = cv.cs ? cv.cs.flags : -1, csSelf = cv.cs ? cv.cs.self : null;
@@ -928,7 +994,7 @@ export class ViewDiffer {
 		this.screenObjs = screenObjs;
 		// What the movement keys move (your mob, the AI's eye) and where it may step. One the client doesn't see (the AI eye is invisible) goes as
 		// MOVER_ID, its step from the eye's last tile added to moved: the page glides it and the camera with it, predicted or not.
-		const mover = predMover(vm, c), free = predOf(vm, mover, eyeTile), run = free ? predRunOf(mover) : null;
+		const mover = predMover(vm, c), free = cv.free ?? predOf(vm, mover, eyeTile), run = free ? predRunOf(mover) : null;
 		const mobId = free ? this.sent.get(mover as DMObject)?.id ?? MOVER_ID : undefined;
 		if (mobId === MOVER_ID && eyeTile && this.pEye && this.pEye.z === eyeTile.z && (this.pEye.x !== eyeTile.x || this.pEye.y !== eyeTile.y))
 			moved.push([MOVER_ID, this.pEye.x, this.pEye.y, eyeTile.x, eyeTile.y, run ? TILE_GLIDE : Number(live(mover!.getVar("glide_size"))) || 0, 1]);
@@ -969,9 +1035,12 @@ export class ViewDiffer {
 		const light = ownId !== undefined ? carriedLightOf(cv.mob, ownId) : [], lightKey = light.join();
 		const lightChanged = full ? light.length > 0 : lightKey !== this.pLight;
 		this.pLight = lightKey;
-		const op = cv.cs?.opaque, opq: Opq | [] = op ? packOpacity(cv.cs!.x0, cv.cs!.y0, cv.cs!.w, op.length / cv.cs!.w, op, cv.cs!.vis) : [], opqKey = opq.join();
+		const op = cv.cs?.opaque, opq: Opq | [] = op ? packOpacity(cv.cs!.x0, cv.cs!.y0, cv.cs!.w, op.length / cv.cs!.w, op, cv.cs!.own ?? cv.cs!.vis) : [], opqKey = opq.join();
 		const opqChanged = full ? opq.length > 0 : opqKey !== this.pOpq;
 		this.pOpq = opqKey;
+		const lb = popInSight(cv) ? cv.cs!.box! : null, lum: Lum | [] = lb ? packLum(lb.lamp, lb.areaLit) : [], lumKey = lum.join();
+		const lumChanged = full ? lum.length > 0 : lumKey !== this.pLum;
+		this.pLum = lumKey;
 		return {
 			seq: ++this.seq, full, worldTime: vm.sched.time, key: c.getVar("key"), view, baseView: baseViewOf(vm, c), eyeTile, sight,
 			apps, gone, tiles, moved, screen: full || screenChanged ? entries : null,
@@ -987,6 +1056,7 @@ export class ViewDiffer {
 			...(hudChanged ? { hud } : {}),
 			...(lightChanged ? { light } : {}),
 			...(opqChanged ? { opq } : {}),
+			...(lumChanged ? { lum } : {}),
 			...((full || newZ) && eyeTile ? { icons: zIcons(vm, eyeTile.z) } : {}),
 		};
 	}

@@ -34,6 +34,25 @@ export function unpackOpacity(p: Opq): { x0: number; y0: number; w: number; h: n
 	return { x0, y0, w, h, opaque: unpackBits(w * h, s), vis: v ? unpackBits(w * h, v) : null };
 }
 
+/** `lum` on the wire (plans/archive/sight-pop-in.md): the light of the same box as `opq`, for the page's own line of sight (vm/view-los.ts viewSight):
+ *  [lit-area bits, then tile k and lamp value pairs for the lit tiles]. */
+export type Lum = [string, ...number[]];
+
+export function packLum(lamp: Int32Array, areaLit: Uint8Array): Lum {
+	const p: Lum = [packBits(areaLit.length, areaLit)];
+	for (let k = 0; k < lamp.length; k++) if (lamp[k] > 0) p.push(k, lamp[k]);
+	return p;
+}
+
+/** opq and lum back into the box viewSight takes (eye in the middle); null when lum doesn't fit the opq box */
+export function unpackLum(o: { w: number; h: number; opaque: Uint8Array }, p: Lum): { w: number; h: number; ex: number; ey: number; opaque: Uint8Array; lamp: Int32Array; areaLit: Uint8Array } | null {
+	const n = o.w * o.h;
+	if (p[0].length !== Math.ceil(n / 6)) return null;
+	const lamp = new Int32Array(n);
+	for (let i = 1; i + 1 < p.length; i += 2) { const k = p[i] as number; if (k >= 0 && k < n) lamp[k] = p[i + 1] as number; }
+	return { w: o.w, h: o.h, ex: (o.w - 1) >> 1, ey: (o.h - 1) >> 1, opaque: o.opaque, lamp, areaLit: unpackBits(n, p[0]) };
+}
+
 /** Whether the straight line from (px, py) to (qx, qy), a point inside tile (tx, ty), crosses no opaque tile on the way. The start and end
  *  tiles don't count (a wall's own face shows); a line through the exact corner between two opaque tiles is blocked (walls that meet
  *  diagonally leave no gap). Tiles outside the box are clear. */
