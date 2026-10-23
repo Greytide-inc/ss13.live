@@ -135,7 +135,6 @@ rt.def("/datum/browser/proc/get_header", function get_header(f: Frame) {
 		$1 = "";
 	}
 	return fmt("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">\n<html>\n\t<meta http-equiv=\"Content-Type\" content=\"text/html; charset=ISO-8859-1\">\n\t<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n\t<head>\n\t\t＀\n\t</head>\n\t<body scroll=auto>\n\t\t<div class='uiWrapper'>\n\t\t\t＀\n\t\t\t<div class='uiContent'>\n\t", [$0, $1]);
-	return f.dot;
 });
 
 // /datum/browser/proc/get_footer  (code/datums/browser.dm:81)

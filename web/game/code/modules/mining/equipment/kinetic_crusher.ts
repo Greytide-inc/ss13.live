@@ -492,7 +492,6 @@ rt.type(10111, "/obj/item/crusher_trophy/demon_claws", "/obj/item/crusher_trophy
 // /obj/item/crusher_trophy/demon_claws/proc/effect_desc  (code/modules/mining/equipment/kinetic_crusher.dm:299)
 rt.def("/obj/item/crusher_trophy/demon_claws/proc/effect_desc", function effect_desc(f: Frame) {
 	return fmt("melee hits to do <b>＀</b> more damage and heal you for <b>＀</b>; this effect is increased by <b>500%</b> during mark detonation", [multiply(rt.sv(f, "bonus_value"), 0.20000000298023224), multiply(rt.sv(f, "bonus_value"), 0.10000000149011612)]);
-	return f.dot;
 });
 
 // /obj/item/crusher_trophy/demon_claws/proc/add_to  (code/modules/mining/equipment/kinetic_crusher.dm:302)  may sleep

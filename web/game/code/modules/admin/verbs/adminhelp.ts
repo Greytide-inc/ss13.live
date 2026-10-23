@@ -381,7 +381,6 @@ rt.def("/datum/admin_help/proc/LinkedReplyName", function LinkedReplyName(f: Fra
 		ref_src = fmt("＃", [live(f.src)]);
 	}
 	return fmt("<A HREF='?_src_=holder;ahelp=＀;ahelp_action=reply'>＀</A>", [live(ref_src), rt.sv(f, "initiator_key_name")]);
-	return f.dot;
 });
 
 // /datum/admin_help/proc/TicketHref  (code/modules/admin/verbs/adminhelp.dm:246)
@@ -394,7 +393,6 @@ rt.def("/datum/admin_help/proc/TicketHref", function TicketHref(f: Frame, msg: V
 		ref_src = fmt("＃", [live(f.src)]);
 	}
 	return fmt("<A HREF='?_src_=holder;ahelp=＀;ahelp_action=＀'>＀</A>", [live(ref_src), live(action), live(msg)]);
-	return f.dot;
 });
 
 // /datum/admin_help/proc/MessageNoRecipient  (code/modules/admin/verbs/adminhelp.dm:253)

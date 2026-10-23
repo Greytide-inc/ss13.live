@@ -531,7 +531,6 @@ rt.def("/proc/seen_by_camera", function seen_by_camera(f: Frame, M: Value) {
 		C = $e;
 		if (truthy(rt.callName(f, live(C), "can_use", []))) {
 			return live(C);
-			break;
 		}
 	}
 	rt.endFor(f, 0);
@@ -549,7 +548,6 @@ rt.def("/proc/near_range_camera", function near_range_camera(f: Frame, M: Value)
 		C = $e;
 		if (truthy(rt.callName(f, live(C), "can_use", []))) {
 			return live(C);
-			break;
 		}
 	}
 	rt.endFor(f, 0);

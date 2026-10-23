@@ -188,7 +188,6 @@ rt.def("/obj/item/mecha_parts/mecha_equipment/gravcatapult/proc/get_equip_info",
 		$1 = null;
 	}
 	return fmt("＀ ＀ [<a href='?src=＃;mode=1'>S</a>|<a href='?src=＃;mode=2'>P</a>]", [$0, $1, live(f.src), live(f.src)]);
-	return f.dot;
 });
 
 // /obj/item/mecha_parts/mecha_equipment/gravcatapult/proc/Topic  (code/game/mecha/equipment/tools/other_tools.dm:127)  may sleep
@@ -301,7 +300,6 @@ rt.def("/obj/item/mecha_parts/mecha_equipment/repair_droid/proc/get_equip_info",
 		$3 = "Dea";
 	}
 	return fmt("<span style=\"color:＀;\">*</span>&nbsp; ＀ - <a href='?src=＃;toggle_repairs=1'>＀ctivate</a>", [$0, $1, $2, $3]);
-	return f.dot;
 });
 
 // /obj/item/mecha_parts/mecha_equipment/repair_droid/proc/Topic  (code/game/mecha/equipment/tools/other_tools.dm:213)  may sleep
@@ -480,7 +478,6 @@ rt.def("/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/proc/get_equip_
 		$3 = "Dea";
 	}
 	return fmt("<span style=\"color:＀;\">*</span>&nbsp; ＀ - <a href='?src=＃;toggle_relay=1'>＀ctivate</a>", [$0, $1, $2, $3]);
-	return f.dot;
 });
 
 // /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/proc/process  (code/game/mecha/equipment/tools/other_tools.dm:320)  may sleep
@@ -600,7 +597,6 @@ rt.def("/obj/item/mecha_parts/mecha_equipment/generator/proc/get_equip_info", fu
 		$4 = "Dea";
 	}
 	return fmt("＀ [＀: ＀ cm<sup>3</sup>] - <a href='?src=＃;toggle=1'>＀ctivate</a>", [$0, $1, $2, $3, $4]);
-	return f.dot;
 });
 
 // /obj/item/mecha_parts/mecha_equipment/generator/proc/action  (code/game/mecha/equipment/tools/other_tools.dm:397)  may sleep

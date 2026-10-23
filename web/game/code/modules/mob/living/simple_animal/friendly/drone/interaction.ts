@@ -157,8 +157,9 @@ rt.def("/mob/living/simple_animal/drone/proc/update_drone_hack", function* updat
 	if (truthy(live(hack))) {
 		if (truthy(rt.sv(f, "hacked"))) {
 			return live(f.dot);
-			yield* g.srcCall(f, "Stun", 40);
-		}
+			}
+		// tg bug: this Stun sat after the `return` above, so hacking a drone never stunned it (modern tg stuns)
+		yield* g.srcCall(f, "Stun", 40);
 		if (truthy(live(clockwork))) {
 			yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='large_brass'><b>ERROR: LAW OVERRIDE DETECTED</b></span>"]);
 			yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='heavy_brass'>From now on, these are your laws:</span>"]);

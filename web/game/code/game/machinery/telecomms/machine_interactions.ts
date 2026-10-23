@@ -190,7 +190,6 @@ rt.def("/obj/machinery/telecomms/relay/proc/Options_Menu", function Options_Menu
 		$1 = "NO";
 	}
 	return (dat = rt.modify(live(dat), fmt("<br>Receiving:    <A href='?src=＃;receive=1'>＀</a>", [$0, $1]), add));
-	return f.dot;
 });
 
 // /obj/machinery/telecomms/relay/proc/Options_Topic  (code/game/machinery/telecomms/machine_interactions.dm:159)
@@ -230,7 +229,6 @@ rt.def("/obj/machinery/telecomms/bus/proc/Options_Menu", function Options_Menu(f
 		$1 = "NO";
 	}
 	return (dat = fmt("<br>Change Signal Frequency: <A href='?src=＃;change_freq=1'>＀</a>", [$0, $1]));
-	return f.dot;
 });
 
 // /obj/machinery/telecomms/bus/proc/Options_Topic  (code/game/machinery/telecomms/machine_interactions.dm:174)  may sleep

@@ -198,7 +198,6 @@ rt.def("/obj/effect/countdown/supermatter/proc/get_value", function get_value(f:
 		return live(f.dot);
 	}
 	return fmt("<div align='center' valign='middle' style='position:relative; top:0px; left:6px'>＀</div>", [rt.call(f, P("/proc/round"), null, [multiply(divide(rt.fv(f, "damage", live(S)), rt.fv(f, "explosion_point", live(S))), 100)])]);
-	return f.dot;
 });
 
 rt.type(11798, "/obj/effect/countdown/transformer", "/obj/effect/countdown", {

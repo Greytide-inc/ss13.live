@@ -88,7 +88,6 @@ rt.def("/mob/living/silicon/ai/proc/ClickOn", function* ClickOn(f: Frame, A: Val
 			yield* g.callName(f, rt.sv(f, "controlled_mech"), "click_action", [live(A), live(f.src), live(params)]);
 		}
 		return live(f.dot);
-		return live(f.dot);
 	}
 	if (truthy(rt.at(live(modifiers), "shift"))) {
 		yield* g.srcCall(f, "ShiftClickOn", live(A));

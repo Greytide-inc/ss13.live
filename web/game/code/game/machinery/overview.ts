@@ -166,7 +166,6 @@ rt.tail("/obj/machinery/computer/security/proc/close: spawn at game/machinery/ov
 		}
 	}
 	return live(f.dot);
-	return null;
 });
 
 // /proc/getr  (code/game/machinery/overview.dm:335)

@@ -26,7 +26,6 @@ rt.def("/datum/pipe_info/proc/New", function New(f: Frame, pid: Value, direction
 // /datum/pipe_info/proc/Render  (code/game/objects/items/weapons/RPD.dm:39)
 rt.def("/datum/pipe_info/proc/Render", function Render(f: Frame, dispenser: Value, label: Value) {
 	return fmt("<li><a href='?src=＃;makepipe=＀;dir=＀;type=＀'>＀</a></li>", [live(dispenser), rt.sv(f, "id"), rt.sv(f, "dir"), rt.sv(f, "dirtype"), live(label)]);
-	return f.dot;
 });
 
 rt.type(1533, "/datum/pipe_info/meter", "/datum/pipe_info", {
@@ -37,7 +36,6 @@ rt.type(1533, "/datum/pipe_info/meter", "/datum/pipe_info", {
 // /datum/pipe_info/meter/proc/Render  (code/game/objects/items/weapons/RPD.dm:49)
 rt.def("/datum/pipe_info/meter/proc/Render", function Render(f: Frame, dispenser: Value, label: Value) {
 	return fmt("<li><a href='?src=＃;makemeter=1;type=＀'>＀</a></li>", [live(dispenser), rt.sv(f, "dirtype"), live(label)]);
-	return f.dot;
 });
 
 // /datum/controller/global_vars/proc/InitGlobaldisposalpipeID2State  (code/game/objects/items/weapons/RPD.dm:51)
@@ -67,7 +65,6 @@ rt.def("/datum/pipe_info/disposal/proc/New", function New(f: Frame, pid: Value, 
 // /datum/pipe_info/disposal/proc/Render  (code/game/objects/items/weapons/RPD.dm:78)
 rt.def("/datum/pipe_info/disposal/proc/Render", function Render(f: Frame, dispenser: Value, label: Value) {
 	return fmt("<li><a href='?src=＃;dmake=＀;type=＀'>＀</a></li>", [live(dispenser), rt.sv(f, "id"), rt.sv(f, "dirtype"), live(label)]);
-	return f.dot;
 });
 
 // /datum/controller/global_vars/proc/InitGlobalRPD_recipes  (code/game/objects/items/weapons/RPD.dm:81)
@@ -158,7 +155,6 @@ rt.def("/obj/item/weapon/pipe_dispenser/proc/render_dir_img", function render_di
 		selected = " class=\"imglink selected\"";
 	}
 	return fmt("<a href=\"?src=＃;setdir=＀;flipped=＀\" title=\"＀\"＀\"><img src=\"＀\" /></a>", [live(f.src), live(_dir), live(flipped), live(title), live(selected), live(pic)]);
-	return f.dot;
 });
 
 // /obj/item/weapon/pipe_dispenser/proc/show_menu  (code/game/objects/items/weapons/RPD.dm:183)  may sleep

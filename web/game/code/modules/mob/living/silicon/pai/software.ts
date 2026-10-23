@@ -341,7 +341,6 @@ rt.def("/mob/living/silicon/pai/proc/softwareMenu", function softwareMenu(f: Fra
 	dat = rt.modify(live(dat), "<br>", add);
 	dat = rt.modify(live(dat), "<br>", add);
 	return (dat = rt.modify(live(dat), fmt("<a href='byond://?src=＃;software=buy;sub=0'>Download additional software</a>", [live(f.src)]), add));
-	return f.dot;
 });
 
 // /mob/living/silicon/pai/proc/downloadSoftware  (code/modules/mob/living/silicon/pai/software.dm:332)
@@ -427,7 +426,6 @@ rt.def("/mob/living/silicon/pai/proc/softwareSignal", function softwareSignal(f:
 	dat = "";
 	dat = rt.modify(live(dat), "<h3>Remote Signaller</h3><br><br>", add);
 	return (dat = rt.modify(live(dat), fmt("<B>Frequency/Code</B> for signaler:<BR>\n\tFrequency:\n\t<A href='byond://?src=＃;software=signaller;freq=-10;'>-</A>\n\t<A href='byond://?src=＃;software=signaller;freq=-2'>-</A>\n\t＀\n\t<A href='byond://?src=＃;software=signaller;freq=2'>+</A>\n\t<A href='byond://?src=＃;software=signaller;freq=10'>+</A><BR>\n\n\tCode:\n\t<A href='byond://?src=＃;software=signaller;code=-5'>-</A>\n\t<A href='byond://?src=＃;software=signaller;code=-1'>-</A>\n\t＀\n\t<A href='byond://?src=＃;software=signaller;code=1'>+</A>\n\t<A href='byond://?src=＃;software=signaller;code=5'>+</A><BR>\n\n\t<A href='byond://?src=＃;software=signaller;send=1'>Send Signal</A><BR>", [live(f.src), live(f.src), rt.call(f, P("/proc/format_frequency"), null, [rt.gv(f, "frequency", rt.fv(f, "sradio", live(f.src)))]), live(f.src), live(f.src), live(f.src), live(f.src), rt.gv(f, "code", rt.fv(f, "sradio", live(f.src))), live(f.src), live(f.src), live(f.src)]), add));
-	return f.dot;
 });
 
 // /mob/living/silicon/pai/proc/softwareManifest  (code/modules/mob/living/silicon/pai/software.dm:416)  may sleep
@@ -552,7 +550,6 @@ rt.def("/mob/living/silicon/pai/proc/facialRecognition", function facialRecognit
 		$0 = "<font color=#FF5555>dis";
 	}
 	return (dat = fmt("<h3>Facial Recognition Suite</h3><br>\n\t\t\t\tWhen enabled, this package will scan all viewable faces and compare them against the known criminal database, providing real-time graphical data about any detected persons of interest.<br><br>\n\t\t\t\tThe package is currently ＀abled.</font><br>\n\t\t\t\t<a href='byond://?src=＃;software=securityhud;sub=0;toggle=1'>Toggle Package</a><br>\n\t\t\t\t", [$0, live(f.src)]));
-	return f.dot;
 });
 
 // /mob/living/silicon/pai/proc/medicalAnalysis  (code/modules/mob/living/silicon/pai/software.dm:485)

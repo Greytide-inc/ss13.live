@@ -413,7 +413,6 @@ rt.def("/datum/controller/subsystem/vote/proc/interface", function _interface(f:
 		f.dot = rt.modify(live(f.dot), "</ul><hr>", add);
 	}
 	return (f.dot = rt.modify(live(f.dot), fmt("<a href='?src=＃;vote=close' style='position:absolute;right:50px'>Close</a>", [live(f.src)]), add));
-	return f.dot;
 });
 
 // /datum/controller/subsystem/vote/proc/Topic  (code/controllers/subsystem/vote.dm:257)  may sleep

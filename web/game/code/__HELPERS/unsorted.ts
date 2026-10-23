@@ -27,7 +27,6 @@ rt.def("/proc/invertHTML", function invertHTML(f: Frame, HTMLstring: Value) {
 	textg = rt.call(f, P("/proc/num2hex"), null, [subtract(255, live(_g)), 2]);
 	textb = rt.call(f, P("/proc/num2hex"), null, [subtract(255, live(b)), 2]);
 	return fmt("#＀＀＀", [live(textr), live(textg), live(textb)]);
-	return live(f.dot);
 });
 
 // /proc/Get_Angle  (code/__HELPERS/unsorted.dm:30)

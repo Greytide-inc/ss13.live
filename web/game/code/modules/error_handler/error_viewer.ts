@@ -50,7 +50,6 @@ rt.def("/datum/error_viewer/proc/make_link", function make_link(f: Frame, linkte
 		back_to_param = rt.modify(live(back_to_param), ";viewruntime_linear=1", add);
 	}
 	return fmt("<a href='?_src_=holder;viewruntime=＃＀'>＀</a>", [live(f.src), live(back_to_param), live(linktext)]);
-	return f.dot;
 });
 
 rt.type(2294, "/datum/error_viewer/error_cache", "/datum/error_viewer", {

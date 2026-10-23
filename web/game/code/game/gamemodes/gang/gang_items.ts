@@ -138,7 +138,6 @@ rt.type(1263, "/datum/gang_item/weapon/ammo", "/datum/gang_item/weapon", {});
 // /datum/gang_item/weapon/ammo/proc/get_cost_display  (code/game/gamemodes/gang/gang_items.dm:199)
 rt.def("/datum/gang_item/weapon/ammo/proc/get_cost_display", function get_cost_display(f: Frame) {
 	return add("&nbsp;&#8627;", rt.callSuper(f, [], rt.Args.Same));
-	return f.dot;
 }, false, { args: ["user", "gang", "gangtool"] });
 
 rt.type(1285, "/datum/gang_item/equipment/implant_breaker", "/datum/gang_item/equipment", {

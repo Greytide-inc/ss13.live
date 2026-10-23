@@ -272,7 +272,6 @@ rt.def("/proc/bicon", function bicon(f: Frame, thing: Value) {
 		rt.setAt(rt.gl("bicon_cache"), live(key), rt.call(f, P("/proc/icon2base64"), null, [live(I), live(key)]));
 	}
 	return fmt("<img class='icon ＀' src='data:image/png;base64,＀'>", [rt.fv(f, "icon_state", live(A)), rt.index(rt.gl("bicon_cache"), live(key))]);
-	return f.dot;
 });
 
 // /proc/to_chat  (code/modules/goonchat/browserOutput.dm:218)

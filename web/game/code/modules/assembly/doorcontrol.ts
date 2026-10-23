@@ -58,7 +58,6 @@ rt.tail("/obj/item/device/assembly/control/proc/activate: spawn at modules/assem
 		}
 	}
 	return live(f.dot);
-	return null;
 });
 
 rt.type(9364, "/obj/item/device/assembly/control/airlock", "/obj/item/device/assembly/control", {

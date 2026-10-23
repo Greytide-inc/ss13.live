@@ -245,7 +245,7 @@ rt.def("/obj/machinery/atmospherics/components/unary/cryo_cell/proc/process", fu
 			return live(f.dot);
 		} else {
 			if (isEqual(rt.fv(f, "stat", live(mob_occupant)), 2)) {
-				return live(f.dot);
+				// tg bug: a `return` here made the auto-eject below unreachable, so a dead patient stayed in (modern tg ejects)
 				if (truthy(rt.sv(f, "autoeject"))) {
 					yield* g.srcCall(f, "open_machine");
 				}

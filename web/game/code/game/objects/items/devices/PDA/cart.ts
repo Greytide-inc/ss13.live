@@ -499,7 +499,6 @@ rt.tail("/obj/item/weapon/cartridge/proc/Topic: spawn at game/objects/items/devi
 	f.vars = () => [S, new_frequency, pnum, host_pda_owner_name, message, current, chan];
 	yield* g.callName(f, (S = rt.sv(f, "radio")), "send_signal", ["ACTIVATE"]);
 	return live(f.dot);
-	return null;
 });
 
 // /obj/item/weapon/cartridge/proc/message_header  (code/game/objects/items/devices/PDA/cart.dm:727)

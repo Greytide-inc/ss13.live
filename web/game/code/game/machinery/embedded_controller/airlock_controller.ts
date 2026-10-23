@@ -324,5 +324,4 @@ rt.def("/obj/machinery/embedded_controller/radio/airlock_controller/proc/return_
 		current_status = "Exterior Airlock Open<BR><span class='bad'>Chamber Depressurized</span>";
 	}
 	return (output = fmt("<h3>Airlock Status</h3>\n<div class='statusDisplay'>\n<div class='line'><div class='statusLabel'>Current Status:</div><div class='statusValue'>＀</div></div>\n<div class='line'>&nbsp;</div>\n<div class='line'><div class='statusLabel'>> Chamber Pressure:</div><div class='statusValue'>＀ kPa</div></div>\n<div class='line'><div class='statusLabel'>> Control Pump:</div><div class='statusValue'>＀</div></div>\n<div class='line'><div class='statusLabel'>> Interior Door:</div><div class='statusValue'>＀</div></div>\n<div class='line'><div class='statusLabel'>> Exterior Door:</div><div class='statusValue'>＀</div></div>\n</div>\n＀", [live(current_status), live(sensor_pressure), live(pump_status), live(interior_status), live(exterior_status), live(state_options)]));
-	return f.dot;
 });

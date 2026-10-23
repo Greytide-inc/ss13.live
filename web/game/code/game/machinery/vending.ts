@@ -884,7 +884,7 @@ rt.def("/obj/machinery/vending/proc/Topic", function* Topic(f: Frame) {
 		}
 		yield* g.new_(f, rt.fv(f, "product_path", live(R)), [rt.getStep(f, live(f.src), 0)]);
 		rt.setSv(f, "vend_ready", 1);
-		return live(f.dot);
+		// tg bug: a `return` here skipped the refresh below, so the window kept the old stock after a vend
 		yield* g.srcCall(f, "updateUsrDialog");
 		return live(f.dot);
 	} else {

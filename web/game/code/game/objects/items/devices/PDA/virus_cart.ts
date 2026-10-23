@@ -20,7 +20,6 @@ rt.def("/obj/item/weapon/cartridge/virus/proc/message_special", function message
 		return "";
 	}
 	return fmt(" (<a href='byond://?src=＃;choice=cart;special=virus;target=＃'>*Send Virus*</a>)", [rt.sv(f, "loc"), live(target)]);
-	return f.dot;
 });
 
 // /obj/item/weapon/cartridge/virus/proc/special  (code/game/objects/items/devices/PDA/virus_cart.dm:17)  may sleep

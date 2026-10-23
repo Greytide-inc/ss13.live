@@ -156,7 +156,6 @@ rt.def("/proc/RoundHealth", function RoundHealth(f: Frame, M: Value) {
 		return "health-50";
 	} else if (rt.inRange($0, -99, -85)) {
 		return "health-85";
-		return "0";
 	} else {
 		return "health-100";
 	}
@@ -342,7 +341,6 @@ rt.def("/proc/RoundDiagBar", function RoundDiagBar(f: Frame, value: Value) {
 		return "low";
 	} else if (rt.inRange($0, 1, 20)) {
 		return "crit";
-		return "dead";
 	} else {
 		return "dead";
 	}

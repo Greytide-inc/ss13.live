@@ -383,7 +383,6 @@ rt.def("/obj/item/mecha_parts/mecha_equipment/rcd/proc/Topic", function* Topic(f
 // /obj/item/mecha_parts/mecha_equipment/rcd/proc/get_equip_info  (code/game/mecha/equipment/tools/work_tools.dm:288)
 rt.def("/obj/item/mecha_parts/mecha_equipment/rcd/proc/get_equip_info", function get_equip_info(f: Frame) {
 	return fmt("＀ [<a href='?src=＃;mode=0'>D</a>|<a href='?src=＃;mode=1'>C</a>|<a href='?src=＃;mode=2'>A</a>]", [rt.callSuper(f, [], rt.Args.Same), live(f.src), live(f.src), live(f.src)]);
-	return f.dot;
 });
 
 rt.type(9627, "/obj/item/mecha_parts/mecha_equipment/cable_layer", "/obj/item/mecha_parts/mecha_equipment", {

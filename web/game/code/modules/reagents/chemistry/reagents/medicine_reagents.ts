@@ -1143,7 +1143,6 @@ rt.def("/datum/reagent/medicine/strange_reagent/proc/reaction_mob", function* re
 // a spawn(100) body of /datum/reagent/medicine/strange_reagent/proc/reaction_mob, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/datum/reagent/medicine/strange_reagent/proc/reaction_mob: spawn at modules/reagents/chemistry/reagents/medicine_reagents.dm:794", function* (f: Frame) {
 	return live(f.dot);
-	return null;
 });
 
 // /datum/reagent/medicine/strange_reagent/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:806)  may sleep

@@ -42,7 +42,6 @@ rt.def("/datum/airlock_maker/proc/linkpretty", function linkpretty(f: Frame, hre
 		return fmt("<a href='?src=＃;＀'><b>＀</b></a>", [live(f.src), live(href), live(desc)]);
 	}
 	return fmt("<a href='?src=＃;＀'><i>＀</i></a>", [live(f.src), live(href), live(desc)]);
-	return f.dot;
 });
 
 // /datum/airlock_maker/proc/interact  (code/game/gamemodes/sandbox/airlock_maker.dm:43)

@@ -76,7 +76,6 @@ rt.tail("/obj/machinery/computer/scan_consolenew/proc/New: spawn at game/machine
 	rt.endFor(f, 0);
 	rt.setSv(f, "injectorready", add(rt.worldTime(f), 100));
 	return live(f.dot);
-	return null;
 });
 
 // /obj/machinery/computer/scan_consolenew/proc/attack_hand  (code/game/machinery/computer/dna_console.dm:69)  may sleep

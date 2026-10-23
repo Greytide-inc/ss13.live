@@ -224,5 +224,4 @@ rt.tail("/client/proc/cmd_admin_pm: spawn at modules/admin/verbs/adminpm.dm:189"
 		}
 	}
 	return live(f.dot);
-	return null;
 });

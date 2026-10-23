@@ -213,7 +213,6 @@ rt.def("/obj/item/mecha_parts/mecha_equipment/medical/sleeper/proc/get_patient_s
 		return live(f.dot);
 	}
 	return fmt("<html>\n\t\t\t\t<head>\n\t\t\t\t<title>＀ statistics</title>\n\t\t\t\t<script language='javascript' type='text/javascript'>\n\t\t\t\t＀\n\t\t\t\t</script>\n\t\t\t\t<style>\n\t\t\t\th3 {margin-bottom:2px;font-size:14px;}\n\t\t\t\t#lossinfo, #reagents, #injectwith {padding-left:15px;}\n\t\t\t\t</style>\n\t\t\t\t</head>\n\t\t\t\t<body>\n\t\t\t\t<h3>Health statistics</h3>\n\t\t\t\t<div id=\"lossinfo\">\n\t\t\t\t＀\n\t\t\t\t</div>\n\t\t\t\t<h3>Reagents in bloodstream</h3>\n\t\t\t\t<div id=\"reagents\">\n\t\t\t\t＀\n\t\t\t\t</div>\n\t\t\t\t<div id=\"injectwith\">\n\t\t\t\t＀\n\t\t\t\t</div>\n\t\t\t\t</body>\n\t\t\t\t</html>", [rt.sv(f, "patient"), "\n\nfunction replaceContent() {\n\tvar args = Array.prototype.slice.call(arguments);\n\tvar id = args[0];\n\tvar content = args[1];\n\tvar callback  = null;\n\tif(args[2]){\n\t\tcallback = args[2];\n\t\tif(args[3]){\n\t\t\targs = args.slice(3);\n\t\t}\n\t}\n\tvar parent = document.getElementById(id);\n\tif(typeof(parent)!=='undefined' && parent!=null){\n\t\tparent.innerHTML = content?content:'';\n\t}\n\tif(callback && window[callback]){\n\t\twindow[callback].apply(null,args);\n\t}\n}\n", rt.callSrc(f, "get_patient_dam", []), rt.callSrc(f, "get_patient_reagents", []), rt.callSrc(f, "get_available_reagents", [])]);
-	return f.dot;
 });
 
 // /obj/item/mecha_parts/mecha_equipment/medical/sleeper/proc/get_patient_dam  (code/game/mecha/equipment/tools/medical_tools.dm:158)
@@ -284,7 +283,6 @@ rt.def("/obj/item/mecha_parts/mecha_equipment/medical/sleeper/proc/get_patient_d
 		$14 = "";
 	}
 	return fmt("<font color=\"＀\"><b>Health:</b> ＀</font><br />\n\t\t\t\t<font color=\"＀\"><b>Core Temperature:</b> ＀&deg;C (＀&deg;F)</font><br />\n\t\t\t\t<font color=\"＀\"><b>Brute Damage:</b> ＀%</font><br />\n\t\t\t\t<font color=\"＀\"><b>Respiratory Damage:</b> ＀%</font><br />\n\t\t\t\t<font color=\"＀\"><b>Toxin Content:</b> ＀%</font><br />\n\t\t\t\t<font color=\"＀\"><b>Burn Severity:</b> ＀%</font><br />\n\t\t\t\t<font color=\"red\">＀</font><br />\n\t\t\t\t<font color=\"red\">＀</font><br />\n\t\t\t\t", [$0, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14]);
-	return f.dot;
 });
 
 // /obj/item/mecha_parts/mecha_equipment/medical/sleeper/proc/get_patient_reagents  (code/game/mecha/equipment/tools/medical_tools.dm:178)
@@ -649,7 +647,6 @@ rt.def("/obj/item/mecha_parts/mecha_equipment/medical/syringe_gun/proc/get_reage
 	let output: Value = null;
 	f.vars = () => [output];
 	return (output = fmt("<html>\n\t\t\t\t\t\t<head>\n\t\t\t\t\t\t<title>Reagent Synthesizer</title>\n\t\t\t\t\t\t<script language='javascript' type='text/javascript'>\n\t\t\t\t\t\t＀\n\t\t\t\t\t\t</script>\n\t\t\t\t\t\t<style>\n\t\t\t\t\t\th3 {margin-bottom:2px;font-size:14px;}\n\t\t\t\t\t\t#reagents, #reagents_form {}\n\t\t\t\t\t\tform {width: 90%; margin:10px auto; border:1px dotted #999; padding:6px;}\n\t\t\t\t\t\t#submit {margin-top:5px;}\n\t\t\t\t\t\t</style>\n\t\t\t\t\t\t</head>\n\t\t\t\t\t\t<body>\n\t\t\t\t\t\t<h3>Current reagents:</h3>\n\t\t\t\t\t\t<div id=\"reagents\">\n\t\t\t\t\t\t＀\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t<h3>Reagents production:</h3>\n\t\t\t\t\t\t<div id=\"reagents_form\">\n\t\t\t\t\t\t＀\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</body>\n\t\t\t\t\t\t</html>\n\t\t\t\t\t\t", ["\n\nfunction replaceContent() {\n\tvar args = Array.prototype.slice.call(arguments);\n\tvar id = args[0];\n\tvar content = args[1];\n\tvar callback  = null;\n\tif(args[2]){\n\t\tcallback = args[2];\n\t\tif(args[3]){\n\t\t\targs = args.slice(3);\n\t\t}\n\t}\n\tvar parent = document.getElementById(id);\n\tif(typeof(parent)!=='undefined' && parent!=null){\n\t\tparent.innerHTML = content?content:'';\n\t}\n\tif(callback && window[callback]){\n\t\twindow[callback].apply(null,args);\n\t}\n}\n", rt.callSrc(f, "get_current_reagents", []), rt.callSrc(f, "get_reagents_form", [])]));
-	return f.dot;
 });
 
 // /obj/item/mecha_parts/mecha_equipment/medical/syringe_gun/proc/get_reagents_form  (code/game/mecha/equipment/tools/medical_tools.dm:429)

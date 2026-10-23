@@ -27,6 +27,7 @@ const tests = [
 	"tests/page-scripts.test.mjs",
 	"tests/dm-lines-cols.test.mjs",
 	"tests/plain-gen-calls.test.mjs",
+	"tests/unreachable.test.mjs",
 	"tests/sleep0.test.mjs",
 	"tests/waitfor0.test.mjs",
 	"tests/error-lines.test.mjs",
