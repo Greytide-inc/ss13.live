@@ -22,6 +22,11 @@ const play = readFileSync(join(pages, "play.html"), "utf8"), play2 = play.replac
 if (play2 === play) throw new Error("site-pages: play.html's pixi import map not found");
 writeFileSync(join(pages, "play.html"), fixCsp(play2));
 const build = writeSw(pages); // the manifest again, without the scenarios; its hash names the build
+// the game worker gets the build in its address and adds it to every build file's (boot-worker.ts buildUrl): Cloudflare caches those for 4 h
+// at their address, so after a deploy an unchanged address served the last build's saved world (rejected: a full boot).
+const play3 = readFileSync(join(pages, "play.html"), "utf8"), play4 = play3.replace('/boot-worker.js"', `/boot-worker.js?b=${build}"`);
+if (play4 === play3) throw new Error("site-pages: play.html's boot-worker.js not found");
+writeFileSync(join(pages, "play.html"), play4);
 const big = [];
 (function walk(d) {
 	for (const e of readdirSync(d, { withFileTypes: true })) {

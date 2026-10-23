@@ -195,8 +195,11 @@ let logLevel: LogLevel = "normal";
 const asLevel = (v: unknown): LogLevel | null => (v === "quiet" || v === "normal" || v === "chatty" ? v : null);
 const cutAt = (n: number): number => (logLevel === "chatty" ? Infinity : n);
 const inLog = (line: string): void => { if (logLevel !== "quiet") post({ type: "log", line }); }; // every per-input line goes through here
-// web/build/dist/src/worker/boot-worker.js -> web/build/
-const buildUrl = (name: string) => new URL(`../../../${name}`, import.meta.url);
+// web/build/dist/src/worker/boot-worker.js -> web/build/. On ss13.live the page starts this worker with ?b=BUILD (tools/site-pages.mjs), passed
+// on here: Cloudflare's cache kept a big file (the saved world, translated-tg.js) at its old address for 4 h after a deploy, and the new
+// build rejected the old build's world and did a full boot (F9 2026-10-23 18:50). A new address each build can't be stale.
+const BUILD_ID = new URL(import.meta.url).searchParams.get("b");
+const buildUrl = (name: string) => { const u = new URL(`../../../${name}`, import.meta.url); if (BUILD_ID) u.searchParams.set("b", BUILD_ID); return u; };
 const fetchJson = async <T>(name: string): Promise<T> => {
 	const r = await fetch(buildUrl(name));
 	if (!r.ok) throw new Error(`${name}: HTTP ${r.status}`);
