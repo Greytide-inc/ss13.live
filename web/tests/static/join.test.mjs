@@ -20,4 +20,21 @@ eq(j.warnOnLeave({ views: 3 }), true, "playing: ask before closing");
 eq(j.warnOnLeave({ views: 3, done: true }), false, "the world stopped / connection lost: close freely");
 eq(j.warnOnLeave({ views: 3, error: "refused" }), false, "refused or replaced: close freely");
 eq(j.warnOnLeave({ views: 3 }, true), false, "test drivers (navigator.webdriver) never get the question");
+// the join window (plans/site.md step 4): short or common secrets are warned about, never refused; no secret is no warning
+eq(j.weakSecret(""), false, "no secret: nothing to warn about");
+eq(j.weakSecret("abc"), true, "under 8 characters");
+eq(j.weakSecret("Password"), true, "on the common list, any case");
+eq(j.weakSecret("blue walrus engine"), false, "long and uncommon");
+eq(j.joinString(" Ian ", "k3x9 secret"), "Ian#k3x9 secret", "the page sends Name#secret as before");
+eq(j.joinString("I#an", ""), "Ian", "a # typed in the name can't start a secret");
+eq(j.joinString("  ", ""), "Player");
+eq(j.nameAnswer("connected", "Ian").cls, "red");
+assert.match(j.nameAnswer("reserved", "Ian").text, /admins/);
+eq(j.nameAnswer("replaced", "Ian"), null, "another tab took over: the error window, not the join window");
+// the loading window's steps follow the worker's messages and never go back
+eq(j.loadStepOf("solo", "loaded"), 1); eq(j.loadStepOf("solo", "Loading the station... 12 / 36 MB"), 1);
+eq(j.loadStepOf("solo", "Unpacking the station..."), 2); eq(j.loadStepOf("solo", "world-new"), 2); eq(j.loadStepOf("solo", "lobby"), 3);
+eq(j.loadStepOf("mp", "connected"), 1); eq(j.loadStepOf("mp", "connect"), 0);
+eq(j.stepShare("Loading the station... 12 / 36 MB"), 1 / 3); eq(j.stepShare("Unpacking"), 0);
+for (const k of ["crash", "tab", "lost", "refused"]) eq(j.ERRORS[k].length, 3, `error window ${k}: title, detail, buttons`);
 console.log("join: ok");

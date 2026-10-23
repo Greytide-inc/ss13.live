@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<!-- ss13.live's front page (plans/site.md look B, a tgui console window). tools/site-pages.mjs puts it at the site's root, the game page
+     at /play (play.html). Multiplayer opens the host's own page (https://play.ss13.live/; ?play=URL for a test against another host),
+     whose /status fills the Server status box every 30 s. Script: site/landing.js. -->
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self'; connect-src 'self' https://play.ss13.live http://127.0.0.1:* http://localhost:*; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ss13.live: Space Station 13 in your browser</title>
+<meta name="description" content="Space Station 13 (2017 /tg/station) in your browser: no BYOND, no download. Play alone or join the crew.">
+<meta property="og:title" content="ss13.live">
+<meta property="og:description" content="Space Station 13 (2017 /tg/station) in your browser: no BYOND, no download.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ss13.live/">
+<meta property="og:image" content="https://ss13.live/icons/ss13_64.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/ss13_32.png">
+<link rel="icon" type="image/png" sizes="64x64" href="icons/ss13_64.png">
+<link rel="stylesheet" href="web/worker/screens.css">
+<style>
+html,body{margin:0;min-height:100%}body{background:#0c0f14 radial-gradient(circle at 70% 20%,#1b2a3a 0,#0c0f14 60%) fixed}
+.ovl{position:static;min-height:100vh;background:none}
+.phone-only{display:none}
+@media (pointer:coarse) and (max-width:900px){.phone-only{display:block}.pc-only{display:none!important}}
+</style>
+<div class="ovl"><div class="tgw">
+	<div class="tb"><img class="px" src="web/worker/img/console_comm.png" alt="">ss13.live: Space Station 13 in your browser</div>
+	<div class="body">
+		<div class="sec"><h3>Play</h3>
+			<a class="btn pc-only" href="play"><img class="px" src="web/worker/img/crowbar.png" alt=""><span>Singleplayer<small>your own station, on your computer</small></span></a>
+			<div class="phone-only fine" style="margin:4px 0 6px">Singleplayer needs a computer: the whole station runs in your browser (a few GB of memory).</div>
+			<a class="btn off" id="mp" href="https://play.ss13.live/"><img class="px" src="web/worker/img/console_crew.png" alt=""><span>Multiplayer<small id="mp-sub">asking the server...</small></span></a>
+			<a class="btn off"><img class="px" src="web/worker/img/paper.png" alt=""><span>How to play<small>a short tutorial for the controls: coming soon</small></span></a>
+		</div>
+		<div class="sec"><h3>Server status</h3>
+			<div class="row"><span>Status</span><span id="st-state">...</span></div>
+			<div class="row"><span>Crew aboard</span><span id="st-players">&mdash;</span></div>
+			<div class="row"><span>Station</span><span id="st-map">&mdash;</span></div>
+			<div class="row"><span>Round time</span><span id="st-time">&mdash;</span></div>
+		</div>
+		<div class="sec wide"><h3>About</h3>
+			<ul><li>No account, no cookies, no download. Your character and settings stay in your browser.</li>
+			<li>Free software (AGPL v3): <a href="https://github.com/Greytide-inc/ss13.live">github.com/Greytide-inc/ss13.live</a> &middot; <a href="about.html">privacy note</a></li></ul>
+			<div class="fine" style="margin-top:6px">The game, its sprites and sounds are the work of the /tg/station 13 contributors and the Space Station 13 coders before them.</div>
+		</div>
+	</div>
+</div></div>
+<script src="landing.js"></script>

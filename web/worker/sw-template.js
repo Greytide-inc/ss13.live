@@ -53,7 +53,8 @@ self.addEventListener("fetch", (e) => {
 	if (req.method !== "GET" || !req.url.startsWith(base.href)) return;
 	e.respondWith((async () => {
 		const cache = await caches.open(CACHE);
-		const hit = await cache.match(req, { ignoreSearch: true }) || (new URL(req.url).pathname === base.pathname && await cache.match(urlOf("index.html")));
+		const path = new URL(req.url).pathname; // "/" is index.html; on ss13.live "/play" is play.html (Pages drops the .html)
+		const hit = await cache.match(req, { ignoreSearch: true }) || (path === base.pathname && await cache.match(urlOf("index.html"))) || (/\/[\w-]+$/.test(path) && await cache.match(req.url.split(/[?#]/)[0] + ".html"));
 		return hit || fetch(req);
 	})());
 });

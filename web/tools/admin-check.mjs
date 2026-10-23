@@ -112,6 +112,7 @@ check(resAdmin.you !== null && resHost.you !== null && !resAdmin.nameTaken && !r
 check(cap.you?.key === `Cap @${capT}` && capBack.you?.key === cap.you?.key && capBack.you?.ckey === `cap@${capT}` && !capBack.nameTaken, `the same secret gets the name and character back (${cap.you?.key} then ${capBack.you?.key})`);
 check(fake.you?.ckey === `zed${capT}`, `an @ typed into a name is dropped, so no name looks like a tag (${fake.you?.ckey})`);
 check(twin1.reason === "replaced" && twin1.closed && !twin2.nameTaken && twin2.you?.key === `Twin @${tag("twins")}`, "the same tag again while still connected replaces the old connection");
+check(!twin2.closed, "the new connection stays (the game's disconnect of the old client didn't close it too)");
 check(bravo2.reason === "connected", `a plain name already connected is refused (${bravo2.reason})`);
 check(!evil.opened && /refused: page from https:\/\/evil\.example/.test(log), "a page from another site is refused (and logged)");
 check(!nullOrigin.opened, "a sandboxed page (Origin: null) is refused");

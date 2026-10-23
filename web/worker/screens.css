@@ -1,0 +1,39 @@
+/* ss13.live's windows in the tgui look (plans/site.md look B): the landing page (site/index.html) and the game page's join, loading,
+   round-over and error windows (worker/index.html). Everything sits under .tgw, so the game's own dialogs and menus are untouched. */
+.tgw,.tgw *{box-sizing:border-box}
+.ovl{position:fixed;inset:0;z-index:9;display:flex;align-items:center;justify-content:center;padding:12px;overflow:auto;background:#0c0f14ee}
+.ovl.dim{background:#0008}
+.tgw{position:relative;width:min(640px,100%);background:#252525;border:1px solid #3a3a3a;box-shadow:0 8px 40px #000c;font:13px/1.4 Verdana,Geneva,sans-serif;color:#fff;text-align:left}
+.tgw.narrow{width:min(440px,100%)}
+.tgw img.px{image-rendering:pixelated}
+.tgw .tb{display:flex;align-items:center;gap:8px;height:32px;padding:0 10px;background:#363636;color:#8fb3d9;font-weight:700}
+.tgw .tb img{width:32px;height:32px}
+.tgw .body{padding:8px;display:grid;grid-template-columns:1fr 1fr;gap:8px}.tgw .body.one{grid-template-columns:1fr}
+.tgw .sec{background:#1c1c1c;border:1px solid #333;padding:8px;min-width:0}.tgw .sec.wide{grid-column:1/-1}
+.tgw h3{margin:0 0 6px;padding-bottom:4px;border-bottom:2px solid #4972a1;font-size:13px;color:#fff}
+.tgw .row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:2px 0}.tgw .row>span:first-child{color:#8ba5c4}
+.tgw .btn{display:flex;align-items:center;gap:8px;width:100%;margin:4px 0;padding:6px 8px;background:#40628a;color:#fff;border:0;font:700 14px Verdana,sans-serif;cursor:pointer;text-align:left;text-decoration:none}
+.tgw .btn:hover{background:#4c75a5}.tgw .btn img{width:32px;height:32px}
+.tgw .btn.off{background:#3a3a3a;color:#888;cursor:default;pointer-events:none}
+.tgw .btn small{display:block;font-weight:400;font-size:11px;opacity:.85}
+.tgw .btn.small{display:inline-flex;width:auto;padding:4px 12px;font-size:13px;justify-content:center}
+.tgw .btn.grey{background:#3a3a3a}.tgw .btn.grey:hover{background:#4a4a4a}
+.tgw .btns{display:flex;gap:6px;justify-content:flex-end;margin-top:6px}
+.tgw .good{color:#5baa27}.tgw .bad{color:#db2828}.tgw .label{color:#8ba5c4}
+.tgw ul{margin:0;padding-left:16px}.tgw .fine{font-size:11px;color:#999}
+.tgw a{color:#9cf}
+.tgw .inp{width:100%;padding:3px 6px;background:#0a0a0a;border:1px solid #88bfff;color:#fff;font:13px Verdana,sans-serif;outline:0}
+.tgw .inp:focus{border-color:#b6d6ff;box-shadow:0 0 0 1px #88bfff55}.tgw .inp.badin{border-color:#db2828}
+.tgw .field{margin:6px 0}.tgw .field label{display:block;color:#8ba5c4;margin-bottom:2px}
+.tgw .eg{margin:8px 0 2px;padding:6px 8px;background:#111;border-left:3px solid #4972a1}.tgw .egrow{display:grid;grid-template-columns:96px 1fr;padding:1px 0}.tgw .tag{color:#f2c94c}
+.tgw .notice{padding:6px 8px;margin:6px 0;color:#fff;background:#bb9b68 repeating-linear-gradient(-45deg,transparent,transparent 10px,#0001 10px,#0001 20px)}
+.tgw .notice.red{background-color:#a33}.tgw .notice.blue{background-color:#40628a}
+.tgw .bar{position:relative;height:20px;border:1px solid #40628a;background:#0a0a0a;margin:4px 0}
+.tgw .bar i{position:absolute;inset:0 auto 0 0;background:#40628a;transition:width .25s}
+.tgw .bar.wait i{width:30%;animation:tgw-wait 1.6s ease-in-out infinite alternate}
+@keyframes tgw-wait{from{left:0}to{left:70%}}
+.tgw .bar span{position:relative;display:block;text-align:center;line-height:18px;font-size:12px}
+.tgw .steps{list-style:none;padding:0;margin:6px 0 0}.tgw .steps li{display:flex;justify-content:space-between;padding:1px 0;color:#666}
+.tgw .steps li.done{color:#8ba5c4}.tgw .steps li.now{color:#fff;font-weight:700}.tgw .steps li .t{font-weight:400;color:#888}
+@media (max-width:560px){.tgw .body{grid-template-columns:1fr}.ovl{padding:0;align-items:stretch}.tgw{border:0;min-height:100%;width:100%}}
+.ovl[hidden]{display:none}

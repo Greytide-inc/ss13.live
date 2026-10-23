@@ -180,7 +180,7 @@ function spawnWorker() {
 // and arrive in the new world's lobby (the first one is its start player, the rest connect as later hellos do).
 function nextRound() {
 	const old = worker;
-	round++;
+	round++; replacedAway.clear(); // a new world answers no old disconnects
 	out(`[server] round over: starting world ${round} for ${clients.size} connected player(s)`);
 	started = false; workerReady = false; roundStarted = false; roundStartAt = 0; mapName = null; tickLines = 0;
 	firstName = null; firstAddress = null; clearTimeout(emptyTimer); emptyTimer = null;
@@ -210,6 +210,7 @@ const sha = (t) => crypto.createHash("sha256").update(String(t)).digest();
 let pepper;
 try { pepper = loadPepper(opt("--pepper", null)); } catch (e) { console.error(`[server] ${e.message}`); process.exit(2); }
 const admins = new Set(); // tripcode tags
+const replacedAway = new Map(); // ckey -> disconnects this server sent the game for a replaced tab: the game's {type:"disconnect"} answers close nobody
 if (opt("--admins", null)) {
 	for (const line of fs.readFileSync(opt("--admins"), "utf8").split("\n")) {
 		const t = line.trim().split(/\s+/)[0]?.replace(/^@/, "");
@@ -298,6 +299,7 @@ function onWorkerMessage(m) {
 	stats.bytes += text.length;
 	const to = m.player ? ckeyOf(m.player) : null;
 	if (to === null && m.type === "bugstate") return; // one player's state (security step 6): never to everyone
+	if (m.type === "disconnect" && replacedAway.get(to) > 0) { replacedAway.set(to, replacedAway.get(to) - 1); return; } // the game's answer to the old tab's disconnect, not a kick of the new one
 	for (const c of clients) if (to === null || c.player === to) {
 		if (m.type === "view") { if (!c.viewReady && !m.update?.full) continue; c.viewReady = true; } // a new connection's views start at its resync's full one
 		if ((m.type === "log" || m.type === "file") && !c.admin) continue; // the world log has every player's commands in it, and the round-end data files (security review 2026-10-21) their say/PDA logs and addresses: only for admins
@@ -410,7 +412,7 @@ wss.on("connection", (ws, req) => {
 			}
 			if (holder) { // done here, not in its close handler, so the game hears the disconnect before this connect
 				clients.delete(holder); out(`[server] ${holder.name} (${holder.ip}) replaced by the same key from ${ip}`);
-				if (holder.name !== firstName || started) worker.postMessage({ type: "disconnect", key: holder.name });
+				if (holder.name !== firstName || started) { worker.postMessage({ type: "disconnect", key: holder.name }); replacedAway.set(ck, (replacedAway.get(ck) ?? 0) + 1); }
 				holder.ws.send(toJson({ type: "nameTaken", name: holder.name, reason: "replaced" })); holder.ws.close();
 			}
 			ws.send(toJson({ type: "you", key, ckey: ck }));

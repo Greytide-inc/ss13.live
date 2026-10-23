@@ -16,13 +16,13 @@ window.ss13Gate = (async () => {
 		} catch (err) { console.warn("removing the offline copy failed:", err); }
 		return;
 	}
-	const loading = document.getElementById("loading"), stage = document.getElementById("loading-stage");
+	const title = document.getElementById("loading-title"), stage = document.getElementById("loading-stage");
 	const mb = (n) => Math.round(n / 1e6);
 	const chan = new BroadcastChannel("ss13-sw");
 	let failed = null;
 	chan.onmessage = (e) => {
 		const m = e.data;
-		if (m.type === "progress" && loading && stage) { loading.firstChild.textContent = "Downloading the game (first visit only)"; stage.textContent = mb(m.done) + " / " + mb(m.total) + " MB. Afterwards it plays with no internet."; }
+		if (m.type === "progress" && title && stage) { title.textContent = "Downloading the game (first visit only)"; stage.textContent = mb(m.done) + " / " + mb(m.total) + " MB. Afterwards it plays with no internet."; }
 		if (m.type === "failed") failed = m.error;
 	};
 	try {
@@ -40,10 +40,10 @@ window.ss13Gate = (async () => {
 		sessionStorage.removeItem("ss13-sw-reload");
 		if (failed || (reg.installing === null && !reg.active)) throw new Error(failed || "no active worker");
 		if (stage) stage.textContent = "";
-		loading && (loading.firstChild.textContent = "Starting the game...");
+		if (title) title.textContent = "Starting the game";
 	} catch (err) {
 		console.warn("offline cache not ready:", err);
-		if (loading && loading.firstChild) { loading.firstChild.textContent = "Starting the game..."; }
+		if (title) title.textContent = "Starting the game";
 		if (stage) stage.textContent = "The offline download didn't finish (" + (failed || err.message || err) + "). It will try again next visit; the game still runs while you're online.";
 		setTimeout(() => { if (stage && stage.isConnected && /offline download/.test(stage.textContent)) stage.textContent = ""; }, 15000);
 	}

@@ -19,7 +19,7 @@
 <!-- tsh-chat: only this page's own scripts run here (the inline ones by hash: after editing one, `node tools/csp.mjs` from web/).
      No 'unsafe-eval': PixiJS builds shader code with new Function unless ./pixi-no-eval.js (its own add-on, made by
      tools/pixi-no-eval.mjs) is imported first; blob: workers are PixiJS's image loaders. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-w7FiRm3A6tvyprAne8G8M8dv/0vxuAgFXzs3peZutUk=' 'sha256-Ad3Z0q0oJIukpVoFDmVV3lZDWdAwsRN0YJ2W3tL8hT4=' 'sha256-lTxu9zC4uShGdcuJrAXIeXJWl4Hunla9A+ucH/rf2Jc=' 'sha256-OTpvrTbyYEzUthpM2TISBmbSAj6DoSSAcu678fp8YIw='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' blob: ws://localhost:* ws://127.0.0.1:*; worker-src 'self' blob:; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-w7FiRm3A6tvyprAne8G8M8dv/0vxuAgFXzs3peZutUk=' 'sha256-Ad3Z0q0oJIukpVoFDmVV3lZDWdAwsRN0YJ2W3tL8hT4=' 'sha256-lTxu9zC4uShGdcuJrAXIeXJWl4Hunla9A+ucH/rf2Jc=' 'sha256-zM7AFp3ziAmK5tQ4zxrrnoqWPg9mgPZjFhGai228G90='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' blob: ws://localhost:* ws://127.0.0.1:*; worker-src 'self' blob:; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>ss13.live: Space Station 13 in your browser</title>
 <!-- Hosting: tab title, link preview card (Reddit, Discord), tg's own SS13 icon. -->
 <meta name="description" content="Space Station 13 (2017 /tg/station) in your browser: no BYOND, no download. Join a round on ss13.live.">
@@ -31,6 +31,7 @@
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/ss13_32.png">
 <link rel="icon" type="image/png" sizes="64x64" href="/icons/ss13_64.png">
 <link rel="stylesheet" href="/web/worker/output.css">
+<link rel="stylesheet" href="/web/worker/screens.css">
 <style>
 /* window layout from interface/skin.dmf: mainwindow = split(mapwindow | infowindow), 50/50 vertical splitter, input bar + Say along the bottom;
    infowindow = split(statwindow / outputwindow), 50/50 horizontal splitter (sk1: the Changelog/Rules/... button row was dropped).
@@ -71,7 +72,30 @@ html,body{height:100%}body{font:12px monospace;margin:0;display:flex;flex-direct
 </style>
 <div id="popups"></div>
 <div id="dialogs"></div>
-<div id="loading" style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000d;color:#fff;font:20px sans-serif;text-align:center;z-index:9;pointer-events:none"><div>Starting the game...</div><div style="font-size:14px;margin-top:8px">Please don't reload the page.</div><div id="loading-stage" style="font-size:14px;margin-top:8px;color:#9cf"></div><div style="font-size:12px;margin-top:28px;pointer-events:auto"><a href="/about.html" target="_blank" rel="noopener" style="color:#9cf">About, privacy and source code</a></div></div>
+<!-- the loading, round-over, join and error windows (plans/site.md step 4; look: worker/screens.css). #loading stays until the first view. -->
+<div id="loading" class="ovl"><div class="tgw narrow">
+	<div class="tb"><img class="px" src="/web/worker/img/computer.png" alt=""><span id="loading-title">Starting the game</span></div>
+	<div class="body one"><div class="sec"><h3 id="loading-stage">Starting...</h3><div class="bar" id="loading-bar"><i></i><span></span></div><ul class="steps" id="loading-steps"></ul><div id="loading-rows"></div></div>
+		<div class="notice blue" id="loading-note">Please don't reload the page.</div>
+		<div class="fine" style="text-align:right"><a href="/about.html" target="_blank" rel="noopener">About, privacy and source code</a></div></div>
+</div></div>
+<div id="joinwin" class="ovl" hidden><form class="tgw narrow" id="joinform" autocomplete="off">
+	<div class="tb"><img class="px" src="/web/worker/img/console_crew.png" alt="">Join the crew</div>
+	<div class="body one"><div class="sec"><h3>Who are you?</h3>
+		<div class="field"><label for="join-name">Name</label><input id="join-name" class="inp" maxlength="26" spellcheck="false"></div>
+		<div class="field"><label for="join-secret">Secret <span class="fine">(optional)</span></label><input id="join-secret" class="inp" type="password" placeholder="keeps your name yours on any computer"></div>
+		<div class="fine">With a secret, nobody else can join as you: type the same name and secret next time, on any computer. It's never saved and never shown. Make it long; short ones can be guessed.</div>
+		<div class="eg"><div class="egrow"><span class="label">With a secret</span><span><b class="egn"></b><span class="tag"> @k3x9q2mf</span>: AI, open the door</span></div>
+			<div class="egrow"><span class="label">Without</span><span><b class="egn"></b><span class="tag"> @</span><span class="fine">this browser's tag</span>: AI, open the door</span></div>
+			<div class="fine">The tag comes from your secret, so only you can have it. Without one, this browser keeps a tag of its own: another computer gets another.</div></div>
+		<div id="join-answer"></div>
+		<div class="btns"><a class="btn small grey" id="join-back">Back</a><button class="btn small" id="join-go">Join</button></div></div>
+	<div class="sec"><h3>Server</h3><div class="row"><span>Crew aboard</span><span id="join-players">?</span></div><div class="row"><span>Station</span><span id="join-map">?</span></div><div class="row"><span>Round time</span><span id="join-time">?</span></div></div></div>
+</form></div>
+<div id="errwin" class="ovl" hidden><div class="tgw narrow">
+	<div class="tb"><img class="px" src="/web/worker/img/wrench.png" alt=""><span id="err-title"></span></div>
+	<div class="body one"><div class="sec"><div class="notice red" id="err-msg"></div><div class="fine" id="err-detail"></div><div class="btns" id="err-btns"></div></div></div>
+</div></div>
 <div id="menubar"></div>
 <div id="main">
 <div id="mapwindow"><div id="client-host"></div></div>
@@ -98,7 +122,7 @@ import { createCtxMenu } from "/web/worker/ctxmenu.js";
 import { parseMenu, menuTree, createMenubar, screenshot } from "/web/worker/menubar.js";
 import { createSplitter } from "/web/worker/splitter.js";
 import { CHANNELS, nextChannel, lineFor, isTyping, hotkeyOpens } from "/web/worker/saybox.js";
-import { joinName, nameToSave, warnOnLeave } from "/web/worker/join.js";
+import { joinName, nameToSave, warnOnLeave, weakSecret, joinString, nameAnswer, ERRORS, LOAD_STEPS, loadStepOf, stepShare } from "/web/worker/join.js";
 import { createChatFilter } from "/web/worker/chatfilter.js";
 import { cleanChat } from "/web/worker/chathtml.js";
 import { clickParams } from "/web/build/dist/src/render/click-params.js";
@@ -113,9 +137,54 @@ if (q.has("adminkey")) {
 }
 const num = (k, d) => (q.has(k) ? Number(q.get(k)) : d);
 const status = document.getElementById("boot"), pre = document.getElementById("log");
-const loading = document.getElementById("loading"), stage = document.getElementById("loading-stage");
-const STAGES = { loaded: "Game code loaded.", "world-new": "World created, setting up the station...", snapshot: "Station loaded, starting...", "round-start": "Round starting...", joined: "Joining...", lobby: "In the lobby." };
-const fail = (t) => { loading.style.background = "#000"; loading.firstChild.textContent = "The game stopped: " + t; loading.firstChild.style.color = "#f66"; loading.children[1].textContent = "Reload the page to try again."; };
+const $id = (i) => document.getElementById(i);
+const loading = $id("loading"), stage = $id("loading-stage"), loadBar = $id("loading-bar"); // held: off the page between rounds, so $id can't find them then
+const loadTitle = $id("loading-title"), loadSteps = $id("loading-steps"), loadRows = $id("loading-rows"), loadNote = $id("loading-note");
+// the windows over the game (plans/site.md step 4): loading (a bar per step), round over, join, something went wrong
+const playMode = q.get("server") || document.querySelector('meta[name="ss13-server"]') ? "mp" : "solo";
+const home = /\/play(\.html)?$/.test(location.pathname) ? "./" : "https://ss13.live/"; // the landing page: this site's own on ss13.live, else the public one
+let loadAt = 0, loadDone = false; // loadDone: the window shows a round over, not steps
+loadTitle.textContent = playMode === "mp" ? "Joining ss13.live" : "Starting your station";
+if (playMode === "solo") loadNote.textContent = "Please don't reload the page. The first visit downloads about 90 MB; after that it's kept and starts faster.";
+const loadStep = (ev, text) => {
+	const i = loadStepOf(playMode, ev);
+	if (i > loadAt) loadAt = i;
+	stage.textContent = text ?? LOAD_STEPS[playMode][loadAt] + "...";
+	if (loadDone) return;
+	const n = LOAD_STEPS[playMode].length, share = (loadAt + (i === loadAt ? stepShare(text) : 0)) / n;
+	loadBar.firstChild.style.width = share * 100 + "%"; loadBar.lastChild.textContent = Math.round(share * 100) + "%";
+	loadSteps.replaceChildren(...LOAD_STEPS[playMode].map((s, k) => {
+		const li = document.createElement("li"), name = document.createElement("span"), tail = document.createElement("span");
+		li.className = k < loadAt ? "done" : k === loadAt ? "now" : ""; name.textContent = s; tail.className = "t"; tail.textContent = k < loadAt ? "\u2713" : k === loadAt && /MB/.test(text ?? "") ? /\d+ \/ \d+ MB/.exec(text)?.[0] ?? "" : "";
+		li.append(name, tail); return li;
+	}));
+};
+loadStep(playMode === "mp" ? "connect" : "start");
+// tg's world.Reboot(): the loading window again, as "Round N is over" until the next world's first view
+let roundStartedAt = 0;
+const showRoundOver = (n) => {
+	loadDone = true;
+	loadTitle.textContent = `Round ${n} is over`;
+	stage.textContent = "The next round is starting...";
+	loadSteps.replaceChildren();
+	const rows = loadRows; rows.replaceChildren();
+	if (roundStartedAt) { const m = Math.round((performance.now() - roundStartedAt) / 60000), r = document.createElement("div"); r.className = "row"; r.innerHTML = "<span>Round time</span><span></span>"; r.lastChild.textContent = m >= 60 ? `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, "0")} min` : `${m} min`; rows.append(r); }
+	loadBar.className = "bar wait"; loadBar.firstChild.style.width = ""; loadBar.lastChild.textContent = "Next round in a few seconds...";
+	loadNote.textContent = "Please don't reload the page.";
+	roundStartedAt = 0;
+	document.body.append(loading);
+};
+// something went wrong: kind is a key of ERRORS (join.js). Its buttons go back to the landing page, reload, rejoin or save a bug report.
+const fail = (t, kind = "crash") => {
+	const [title, detail, buttons] = ERRORS[kind];
+	$id("err-title").textContent = title; $id("err-msg").textContent = t; $id("err-detail").textContent = detail;
+	$id("err-btns").replaceChildren(...buttons.map((label, k) => {
+		const b = document.createElement("button"); b.className = "btn small" + (k < buttons.length - 1 ? " grey" : ""); b.textContent = label;
+		b.onclick = () => label === "Back to ss13.live" ? location.assign(home) : label === "Save bug report" ? bugReport() : label === "Reload" ? location.reload() : rejoin();
+		return b;
+	}));
+	loading.remove(); $id("errwin").hidden = false;
+};
 const outPane = document.getElementById("outputwindow");
 const chatFilter = createChatFilter(outPane); // category filters + highlight words
 // text the game sends the player (`<<`, output(msg, "output")). Batched by the worker per tick; capped at 500 messages. Only sticks to the bottom if it was there.
@@ -273,14 +342,42 @@ const serverUrl = q.get("server") ?? (document.querySelector('meta[name="ss13-se
 // Tripcodes: "Name#secret" (asked, or ?name=Name#secret, whose # part is the address's hash: taken out of the address bar at once) plays
 // as "Name @tag", a tag the server makes from the secret, so only that secret gets the character back. No #: a random secret this
 // browser keeps (localStorage), so only this browser does. The server's {type:"you"} gives the real ckey.
-const asked = !serverUrl ? "LocalPlayer" : q.get("name") ? q.get("name") + (() => { try { return decodeURIComponent(location.hash); } catch { return location.hash; } })() : joinName((() => { try { return localStorage.getItem("ss13-name"); } catch { return null; } })(), (offered) => prompt("Your name? (Name#secret keeps your character yours on any computer; make the secret long, short ones can be guessed)", offered));
-if (serverUrl && nameToSave(asked)) try { localStorage.setItem("ss13-name", nameToSave(asked)); } catch {} // offered next time (the name only, never the secret)
-if (serverUrl && q.get("name") && location.hash) history.replaceState(history.state, "", location.pathname + location.search);
-const ownName = asked.split("#")[0].trim() || "Player";
-const ownTrip = !serverUrl ? undefined : (asked.includes("#") && asked.slice(asked.indexOf("#") + 1)) || (() => {
-	try { let t = localStorage.getItem("ss13-trip"); if (!t) { t = [...crypto.getRandomValues(new Uint8Array(16))].map((b) => b.toString(16).padStart(2, "0")).join(""); localStorage.setItem("ss13-trip", t); } return t; } catch { return undefined; }
-})();
-let ownCkey = ownName.toLowerCase().replace(/[^a-z0-9@]/g, "");
+const savedName = () => { try { return localStorage.getItem("ss13-name"); } catch { return null; } };
+const browserTrip = () => { try { let t = localStorage.getItem("ss13-trip"); if (!t) { t = [...crypto.getRandomValues(new Uint8Array(16))].map((b) => b.toString(16).padStart(2, "0")).join(""); localStorage.setItem("ss13-trip", t); } return t; } catch { return undefined; } };
+let ownName = "LocalPlayer", ownTrip, ownCkey = "localplayer";
+const setPlayer = (asked) => {
+	if (serverUrl && nameToSave(asked)) try { localStorage.setItem("ss13-name", nameToSave(asked)); } catch {} // offered next time (the name only, never the secret)
+	ownName = asked.split("#")[0].trim() || "Player";
+	ownTrip = !serverUrl ? undefined : (asked.includes("#") && asked.slice(asked.indexOf("#") + 1)) || browserTrip();
+	ownCkey = ownName.toLowerCase().replace(/[^a-z0-9@]/g, "");
+};
+if (serverUrl && q.get("name")) { setPlayer(q.get("name") + (() => { try { return decodeURIComponent(location.hash); } catch { return location.hash; } })()); if (location.hash) history.replaceState(history.state, "", location.pathname + location.search); }
+else if (serverUrl && navigator.webdriver) setPlayer(joinName(savedName(), () => null)); // test drivers: the offered name, no window
+// The join window (no ?name=): name and an optional secret; the page sends "Name#secret" as before. A short or common secret is warned
+// about once, never refused (plans/site.md step 4). It opens again when the server refuses the name.
+const joinWin = $id("joinwin"), joinNm = $id("join-name"), joinSc = $id("join-secret"), joinGo = $id("join-go");
+let joinDone = null, warned = null;
+const joinSay = (a) => { const box = $id("join-answer"); box.replaceChildren(); if (a) { const d = document.createElement("div"); d.className = "notice " + a.cls; d.textContent = a.text; box.append(d); } };
+const egNames = () => joinWin.querySelectorAll(".egn").forEach((n) => (n.textContent = joinNm.value.trim() || "Ian"));
+joinNm.addEventListener("input", () => { egNames(); joinNm.classList.remove("badin"); });
+joinSc.addEventListener("input", () => { if (warned !== null) { warned = null; joinSay(null); joinGo.textContent = "Join"; } });
+$id("join-back").href = home;
+$id("joinform").addEventListener("submit", (e) => {
+	e.preventDefault();
+	const s = joinSc.value;
+	if (weakSecret(s) && warned !== s) { warned = s; joinSay({ cls: "", text: "That secret is short or common: someone could guess it or pick the same one, and play as you. Join anyway, or make it longer." }); joinGo.textContent = "Join anyway"; return; }
+	joinWin.hidden = true; const done = joinDone; joinDone = null; done?.(joinString(joinNm.value, s));
+});
+const askJoin = (answer) => {
+	if (!joinNm.value) joinNm.value = joinName(savedName(), () => null);
+	egNames(); joinSay(answer); joinNm.classList.toggle("badin", !!answer); joinGo.textContent = "Join"; warned = null;
+	joinWin.hidden = false; joinNm.focus(); joinNm.select();
+	fetch("/status").then((r) => r.json()).then((s) => {
+		$id("join-players").textContent = s.players; $id("join-map").textContent = s.map ?? "not started yet";
+		$id("join-time").textContent = s.roundSeconds != null ? `${Math.round(s.roundSeconds / 60)} min` : "\u2014";
+	}).catch(() => {});
+	return new Promise((res) => (joinDone = res));
+};
 const HOLD = new Set(["browse", "browse_rsc", "rsc_png", "popout", "popwinset"]), held = [];
 let pageReady = !serverUrl;
 // netcode 1: click -> the first chat line or sound after it (the answer as the player notices it); none within 3 s isn't counted.
@@ -311,13 +408,13 @@ const onWorkerMessage = (e) => {
 	else if (m.type === "popout") popups.output(m.control, m.text);
 	else if (m.type === "popwinset") { sayWinset(m.params); popups.winset(m.id, m.params); (window.menubar ? window.menubar.winset(m.id, m.params) : menuEarly.push([m.id, m.params])); }
 	else if (m.type === "viewcheck") { const d = liveView.check(m.view); viewStats.checks++; if (d.length) { viewStats.checkFails++; lines.push(`[page] view check FAILED at world.time ${m.view.worldTime}: ${d.slice(0, 10).join("; ")} (${d.length})`); } }
-	else if (m.type === "stage") { stage.textContent = m.text; lines.push("[page] loading: " + m.text); } // loading-screen text from the worker (snapshot download/unpack)
+	else if (m.type === "stage") { loadStep(m.text, m.text); lines.push("[page] loading: " + m.text); } // loading-screen text from the worker (snapshot download/unpack)
 	else if (m.type === "snapfail") { const u = new URL(location.href); u.searchParams.set("nosnap", "1"); console.warn("snapshot load failed part-way (" + m.error + "): reloading with ?nosnap=1"); w.terminate(); location.replace(u.href); } // a half-loaded world can't boot; start over without it
-	else if (m.type === "milestone") { milestones[m.name] = m.s; pageAt[m.name] = Math.round(performance.now()) / 1000; status.textContent = `${m.name} at ${m.s} s`; if (STAGES[m.name]) stage.textContent = STAGES[m.name]; }
+	else if (m.type === "milestone") { milestones[m.name] = m.s; pageAt[m.name] = Math.round(performance.now()) / 1000; status.textContent = `${m.name} at ${m.s} s`; loadStep(m.name); if (m.name === "round-start" || m.name === "lobby") roundStartedAt ||= performance.now(); }
 	else if (m.type === "file") files[m.path] = m.text;
 	else if (m.type === "link") openLink(m.url);
 	else if (m.type === "reboot") reboot(m);
-	else if (m.type === "done") { flush(); window.bootResult.done = true; status.textContent = "STOPPED, the world is no longer running: " + m.summary[0]; status.style.color = "#c00"; if (loading.isConnected) fail(m.summary[0]); }
+	else if (m.type === "done") { flush(); window.bootResult.done = true; status.textContent = "STOPPED, the world is no longer running: " + m.summary[0]; status.style.color = "#c00"; if (m.lost) fail(m.summary[0], "lost"); else if (loading.isConnected) fail(m.summary[0]); }
 };
 // Keys: the worker runs the client's macro for each press/release (Clients.keyDown/keyUp).
 // Browser key -> BYOND key name; modifiers go in front as BYOND writes them ("CTRL+B").
@@ -428,24 +525,29 @@ const bugSave = (worldState) => {
 addEventListener("keydown", (e) => {
 	if (e.key !== "F9") return;
 	e.preventDefault(); e.stopImmediatePropagation();
-	if (e.repeat || bugAsked) return;
-	bugAsked = performance.now(); bugNote("[input] F9 bug report");
-	w.postMessage({ type: "bugstate" });
-	bugTimer = setTimeout(() => bugSave(null), 2000);
+	if (e.repeat) return;
+	bugReport();
 }, { capture: true });
+function bugReport() { // F9, or the error window's button
+	if (bugAsked) return;
+	bugAsked = performance.now(); bugNote("[input] F9 bug report");
+	try { w.postMessage({ type: "bugstate" }); } catch {}
+	bugTimer = setTimeout(() => bugSave(null), 2000);
+}
 addEventListener("keydown", (e) => { if (!e.repeat) bugNote(`[input] key ${e.key}${e.target?.id ? " in #" + e.target.id : ""}`); }, { capture: true });
 addEventListener("pointerdown", (e) => bugNote(`[input] click ${["left", "middle", "right"][e.button] ?? e.button} at ${e.clientX},${e.clientY} on ${e.target?.id ? "#" + e.target.id : e.target?.tagName ?? "?"}`), { capture: true });
 const down = new Map(); // e.code -> the name sent at press, so the release matches it even if modifiers changed
-// lag-smoothing step 4: on a server, your own mob moves at once on a direction key and the server's view corrects it
-// (on by default since 2026-10-15, "much much better" over a VPN; ?predict=0 turns it off. It was off after a hotspot test felt "jelly-like")
+// lag-smoothing step 4: your own mob moves at once on a direction key and the world's view corrects it
+// (on by default on a server since 2026-10-15, "much much better" over a VPN; in solo too since 2026-10-23: a step waited up to a
+// 50 ms tick, uneven walking. ?predict=0 turns it off. It was off after a hotspot test felt "jelly-like")
 // WASD walk too (the game is always in hotkey mode), so they count as their arrow
 const WASD = { W: "NORTH", A: "WEST", S: "SOUTH", D: "EAST" };
 // With prediction on, the page sends the steps itself (movement prediction): plain direction keys don't go to the server as keys.
-const predictOn = !!serverUrl && q.get("predict") !== "0";
+const predictOn = q.get("predict") !== "0";
 const predict = predictOn ? (k, d) => liveView.predictKey(WASD[k] ?? k, d) : () => {};
 const stepKey = (k) => predictOn && /^(NORTH|SOUTH|EAST|WEST|W|A|S|D)$/.test(k);
 addEventListener("keydown", (e) => {
-	if (e.target === inputBox) return; // typing in the input bar
+	if (e.target === inputBox || e.target.closest?.(".ovl")) return; // typing in the input bar, or in the join window
 	const k = byondKey(e);
 	if (!k) return;
 	e.preventDefault(); // Tab, arrows, CTRL+W etc. belong to the game, not the browser
@@ -582,12 +684,13 @@ const socketWorker = (url) => {
 	let netAt = 0;
 	const ws = new WebSocket(url), sw = { onmessage: null, onerror: null }, queue = [], urls = new Map(), unpacker = new ViewUnpacker();
 	// lag-smoothing step 3: views wait a little (worker/jitter-buffer.js) so uneven arrivals play evenly; ?jb=0 turns it off. A hidden tab's timers are slowed, so it lets everything through.
-	const jb = q.get("jb") !== "0" ? (viewStats.jb = new JitterBuffer((m) => sw.onmessage?.({ data: m }))) : null;
+	const jb = q.get("jb") !== "0" ? (viewStats.jb = new JitterBuffer((m) => { if (!sw.refused) sw.onmessage?.({ data: m }); })) : null;
 	// netcode 1: a view marked now answers this page's click (run between ticks): what is held goes out first, in order, then it, at once.
-	const give = (m) => { if (!jb) sw.onmessage?.({ data: m }); else if (document.hidden || (m.type === "view" && m.update.now)) { jb.flush(); sw.onmessage?.({ data: m }); } else jb.push(m, m.type === "view" ? m.update.worldTime : undefined); };
-	ws.onopen = () => { ws.send(JSON.stringify({ type: "hello", player: ownName, trip: ownTrip, secret: adminKey, acks: 1, pack: 1 })); for (const t of queue.splice(0)) ws.send(t); };
-	ws.onerror = () => sw.onerror?.({ message: "cannot reach the game server at " + url });
-	ws.onclose = () => { if (!sw.closing) give({ type: "done", summary: ["The connection to the game server closed."] }); };
+	const give = (m) => { if (sw.refused) return; // refused or replaced: nothing more from this connection
+	if (!jb) sw.onmessage?.({ data: m }); else if (document.hidden || (m.type === "view" && m.update.now)) { jb.flush(); sw.onmessage?.({ data: m }); } else jb.push(m, m.type === "view" ? m.update.worldTime : undefined); };
+	ws.onopen = () => { loadStep("connected"); ws.send(JSON.stringify({ type: "hello", player: ownName, trip: ownTrip, secret: adminKey, acks: 1, pack: 1 })); for (const t of queue.splice(0)) ws.send(t); };
+	ws.onerror = () => { if (!sw.closing) sw.onerror?.({ message: "cannot reach the game server at " + url }); }; // not after a refusal: the server's close can come as an error
+	ws.onclose = () => { if (!sw.closing) give({ type: "done", lost: true, summary: ["The connection to the game server closed."] }); };
 	let heardAt = performance.now();
 	ws.onmessage = (e) => {
 		heardAt = performance.now();
@@ -595,8 +698,8 @@ const socketWorker = (url) => {
 		if (urls.size && t.includes("blob:")) for (const [from, to] of urls) t = t.replaceAll(from, to);
 		const m = JSON.parse(t, (k, v) => v && typeof v === "object" && typeof v.$b64 === "string" ? Uint8Array.from(atob(v.$b64), (c) => c.charCodeAt(0)) : v);
 		if (m.type === "you") { ownCkey = m.ckey; lines.push(`[page] playing as ${m.key}`); return; }
-		if (m.type === "nameTaken") { sw.closing = true; sw.onerror?.({ message: m.reason === "reserved" ? `The name "${m.name}" is kept for the admins. Pick another name.` : m.reason === "replaced" ? "You joined again from another tab or window, so this one stopped." : `The name "${m.name}" is already in use on this server. Reload with another name.` }); return; }
-		if (m.type === "refused") { sw.closing = true; sw.onerror?.({ message: m.reason }); return; }
+		if (m.type === "nameTaken") { sw.closing = sw.refused = true; clearInterval(pinger); nameRefused(m); return; }
+		if (m.type === "refused") { sw.closing = sw.refused = true; clearInterval(pinger); window.bootResult.error = m.reason; fail(m.reason, "refused"); return; }
 		if (m.type === "rtIcon") { urls.set(m.url, URL.createObjectURL(new Blob([m.dmi], { type: "image/png" }))); return; }
 		if (m.type === "pong") { const p = Math.round(performance.now() - m.t); viewStats.pings.push(p); viewStats.pingRecent.push(p); if (viewStats.pingRecent.length > 10) viewStats.pingRecent.shift(); return; }
 		if (m.type === "view") {
@@ -609,7 +712,7 @@ const socketWorker = (url) => {
 	sw.postMessage = (m) => { const t = JSON.stringify(m); if (ws.readyState === 1) ws.send(t); else if (ws.readyState === 0) queue.push(t); };
 	const pinger = setInterval(() => { // the real round trip, for F9's perf line; the server answers each within a second, so 15 s of silence is a dead link
 		if (ws.readyState !== 1 || sw.closing) return;
-		if (performance.now() - heardAt > 15000) { sw.closing = true; clearInterval(pinger); give({ type: "done", summary: ["The connection to the game server was lost (nothing heard for 15 s). Reload the page to rejoin: your character is still there."] }); ws.close(); return; }
+		if (performance.now() - heardAt > 15000) { sw.closing = true; clearInterval(pinger); give({ type: "done", lost: true, summary: ["The connection to the game server was lost (nothing heard for 15 s)."] }); ws.close(); return; }
 		ws.send(`{"type":"ping","t":${Math.round(performance.now())}}`);
 	}, 1000);
 	sw.terminate = () => { sw.closing = true; clearInterval(pinger); jb?.flush(); ws.close(); };
@@ -620,7 +723,7 @@ const startWorker = (msg) => {
 	if (serverUrl) { // the server starts the game itself; the page sends no start message
 		w = socketWorker(serverUrl);
 		w.onmessage = onWorkerMessage;
-		w.onerror = (e) => { fail(e.message); status.textContent = e.message; window.bootResult.error = e.message; };
+		w.onerror = (e) => { fail(e.message, "lost"); status.textContent = e.message; window.bootResult.error = e.message; };
 		return;
 	}
 	w = new Worker("/web/build/dist/src/worker/boot-worker.js", { type: "module" });
@@ -640,10 +743,7 @@ const reboot = (m) => {
 		popups.closeAll(); dialogHost.replaceChildren(); closeMenu(); down.clear();
 		document.getElementById("stattabs").replaceChildren(); document.getElementById("statlines").replaceChildren();
 		addOutput(["<span class='boldannounce'>The world is restarting: a new round is being set up...</span>"]);
-		loading.firstChild.textContent = "Rebooting world: the next round is starting... this takes a few seconds.";
-		loading.firstChild.style.color = ""; loading.style.background = "#000";
-		loading.children[1].textContent = "Please don't reload the page.";
-		document.body.append(loading);
+		showRoundOver(round);
 		pageReady = false; round++;
 		status.textContent = `round over (${m.reason}), the server is starting world ${round}`;
 		return;
@@ -656,11 +756,7 @@ const reboot = (m) => {
 	popups.closeAll(); dialogHost.replaceChildren(); closeMenu(); down.clear();
 	document.getElementById("stattabs").replaceChildren(); document.getElementById("statlines").replaceChildren();
 	addOutput(["<span class='boldannounce'>The world is restarting: a new round is being set up...</span>"]);
-	loading.firstChild.textContent = "Rebooting world: the next round is starting... this takes a few seconds.";
-	loading.firstChild.style.color = ""; loading.style.background = "#000"; // hides the old map until the new world draws
-	loading.children[1].textContent = "Please don't reload the page.";
-	stage.textContent = `Round ${round} is over.`;
-	document.body.append(loading);
+	showRoundOver(round); // hides the old map until the new world draws
 	status.textContent = `world ${round} rebooted, starting world ${round + 1}`;
 	startWorker({ ...startMsg, scenario: undefined, join: undefined, seed: q.has("seed") ? num("seed") + round : crypto.getRandomValues(new Uint32Array(1))[0] });
 };
@@ -671,6 +767,26 @@ if (q.has("scenario")) {
 		const r = /^[\w.-]+$/.test(name) ? await fetch("/web/scenarios/" + name + ".txt") : null;
 		startMsg.scenario = !r ? { name, error: "bad scenario name" } : r.ok ? { name, text: await r.text() } : { name, error: `no such scenario (web/scenarios/${name}.txt: HTTP ${r.status})` };
 	} catch (e) { startMsg.scenario = { name, error: `fetch failed: ${e}` }; }
+}
+// multiplayer with no ?name=: the join window first; a refused name opens it again with the server's answer
+if (serverUrl && !q.get("name") && !navigator.webdriver) setPlayer(await askJoin(null));
+async function nameRefused(m) {
+	lines.push(`[page] name "${m.name}" refused: ${m.reason}`);
+	const answer = nameAnswer(m.reason, m.name);
+	if (!answer) { window.bootResult.error = "replaced"; fail("You joined again from another tab or window, so this one stopped.", "tab"); return; }
+	if (q.get("name") || navigator.webdriver) { window.bootResult.error = answer.text; fail(answer.text, "refused"); return; } // a link or a test named the player: no window to ask in
+	setPlayer(await askJoin(answer));
+	round--; startWorker(startMsg);
+}
+// Reconnect / Play here instead: a new connection to the same server, as the same player (the server sends a full view)
+function rejoin() {
+	$id("errwin").hidden = true;
+	popups.closeAll(); dialogHost.replaceChildren(); closeMenu(); down.clear();
+	$id("stattabs").replaceChildren(); $id("statlines").replaceChildren();
+	Object.assign(window.bootResult, { done: false, error: undefined });
+	loadDone = false; loadAt = 0; loadBar.className = "bar"; loadRows.replaceChildren(); loadTitle.textContent = "Joining ss13.live";
+	loadStep("connect"); document.body.append(loading);
+	pageReady = false; round--; startWorker(startMsg);
 }
 startWorker(startMsg);
 </script>
