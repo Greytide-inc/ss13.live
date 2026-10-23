@@ -19,12 +19,12 @@
 <!-- tsh-chat: only this page's own scripts run here (the inline ones by hash: after editing one, `node tools/csp.mjs` from web/).
      No 'unsafe-eval': PixiJS builds shader code with new Function unless ./pixi-no-eval.js (its own add-on, made by
      tools/pixi-no-eval.mjs) is imported first; blob: workers are PixiJS's image loaders. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-w7FiRm3A6tvyprAne8G8M8dv/0vxuAgFXzs3peZutUk=' 'sha256-Ad3Z0q0oJIukpVoFDmVV3lZDWdAwsRN0YJ2W3tL8hT4=' 'sha256-lTxu9zC4uShGdcuJrAXIeXJWl4Hunla9A+ucH/rf2Jc=' 'sha256-zM7AFp3ziAmK5tQ4zxrrnoqWPg9mgPZjFhGai228G90='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' blob: ws://localhost:* ws://127.0.0.1:*; worker-src 'self' blob:; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-w7FiRm3A6tvyprAne8G8M8dv/0vxuAgFXzs3peZutUk=' 'sha256-Ad3Z0q0oJIukpVoFDmVV3lZDWdAwsRN0YJ2W3tL8hT4=' 'sha256-lTxu9zC4uShGdcuJrAXIeXJWl4Hunla9A+ucH/rf2Jc=' 'sha256-92K2eQMdBIxVScVmDcou+5a8lyMswjl531WNa0SqDF8='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' blob: ws://localhost:* ws://127.0.0.1:*; worker-src 'self' blob:; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>ss13.live: Space Station 13 in your browser</title>
 <!-- Hosting: tab title, link preview card (Reddit, Discord), tg's own SS13 icon. -->
-<meta name="description" content="Space Station 13 (2017 /tg/station) in your browser: no BYOND, no download. Join a round on ss13.live.">
+<meta name="description" content="Space Station 13 (2017 /tg/station) in your browser: no BYOND, nothing to install. Join a round on ss13.live.">
 <meta property="og:title" content="ss13.live">
-<meta property="og:description" content="Space Station 13 (2017 /tg/station) in your browser: no BYOND, no download.">
+<meta property="og:description" content="Space Station 13 (2017 /tg/station) in your browser: no BYOND, nothing to install.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://ss13.live/">
 <meta property="og:image" content="https://ss13.live/icons/ss13_64.png">
@@ -84,10 +84,10 @@ html,body{height:100%}body{font:12px monospace;margin:0;display:flex;flex-direct
 	<div class="body one"><div class="sec"><h3>Who are you?</h3>
 		<div class="field"><label for="join-name">Name</label><input id="join-name" class="inp" maxlength="26" spellcheck="false"></div>
 		<div class="field"><label for="join-secret">Secret <span class="fine">(optional)</span></label><input id="join-secret" class="inp" type="password" placeholder="keeps your name yours on any computer"></div>
-		<div class="fine">With a secret, nobody else can join as you: type the same name and secret next time, on any computer. It's never saved and never shown. Make it long; short ones can be guessed.</div>
+		<div class="fine">With a secret, nobody else can join as you: type the same name and secret next time, on any computer, and your character setup comes back. The secret is never saved or shown: the server keeps only the tag made from it. Make it long; short ones can be guessed.</div>
 		<div class="eg"><div class="egrow"><span class="label">With a secret</span><span><b class="egn"></b><span class="tag"> @k3x9q2mf</span>: AI, open the door</span></div>
 			<div class="egrow"><span class="label">Without</span><span><b class="egn"></b><span class="tag"> @</span><span class="fine">this browser's tag</span>: AI, open the door</span></div>
-			<div class="fine">The tag comes from your secret, so only you can have it. Without one, this browser keeps a tag of its own: another computer gets another.</div></div>
+			<div class="fine">The tag comes from your secret, so only you can have it. Without one, this browser keeps a tag of its own: another computer, or clearing this browser's data, means a new tag and a fresh character.</div></div>
 		<div id="join-answer"></div>
 		<div class="btns"><a class="btn small grey" id="join-back">Back</a><button class="btn small" id="join-go">Join</button></div></div>
 	<div class="sec"><h3>Server</h3><div class="row"><span>Crew aboard</span><span id="join-players">?</span></div><div class="row"><span>Station</span><span id="join-map">?</span></div><div class="row"><span>Round time</span><span id="join-time">?</span></div></div></div>
@@ -122,7 +122,7 @@ import { createCtxMenu } from "/web/worker/ctxmenu.js";
 import { parseMenu, menuTree, createMenubar, screenshot } from "/web/worker/menubar.js";
 import { createSplitter } from "/web/worker/splitter.js";
 import { CHANNELS, nextChannel, lineFor, isTyping, hotkeyOpens } from "/web/worker/saybox.js";
-import { joinName, nameToSave, warnOnLeave, weakSecret, joinString, nameAnswer, ERRORS, LOAD_STEPS, loadStepOf, stepShare } from "/web/worker/join.js";
+import { joinName, nameToSave, warnOnLeave, weakSecret, joinString, nameAnswer, ERRORS, LOAD_STEPS, loadProgress } from "/web/worker/join.js";
 import { createChatFilter } from "/web/worker/chatfilter.js";
 import { cleanChat } from "/web/worker/chathtml.js";
 import { clickParams } from "/web/build/dist/src/render/click-params.js";
@@ -143,21 +143,30 @@ const loadTitle = $id("loading-title"), loadSteps = $id("loading-steps"), loadRo
 // the windows over the game (plans/site.md step 4): loading (a bar per step), round over, join, something went wrong
 const playMode = q.get("server") || document.querySelector('meta[name="ss13-server"]') ? "mp" : "solo";
 const home = /\/play(\.html)?$/.test(location.pathname) ? "./" : "https://ss13.live/"; // the landing page: this site's own on ss13.live, else the public one
-let loadAt = 0, loadDone = false; // loadDone: the window shows a round over, not steps
+let load = loadProgress(playMode), loadDone = false, loadCreep = 0, loadClosing = 0; // loadDone: the window shows a round over, not steps
 loadTitle.textContent = playMode === "mp" ? "Joining ss13.live" : "Starting your station";
 if (playMode === "solo") loadNote.textContent = "Please don't reload the page. The first visit downloads about 90 MB; after that it's kept and starts faster.";
+const drawLoad = () => { loadBar.firstChild.style.width = load.shown * 100 + "%"; loadBar.lastChild.textContent = Math.floor(load.shown * 100) + "%"; };
 const loadStep = (ev, text) => {
-	const i = loadStepOf(playMode, ev);
-	if (i > loadAt) loadAt = i;
-	stage.textContent = text ?? LOAD_STEPS[playMode][loadAt] + "...";
+	load.see(ev, text);
+	const at = load.step;
+	stage.textContent = text ?? LOAD_STEPS[playMode][at] + "...";
 	if (loadDone) return;
-	const n = LOAD_STEPS[playMode].length, share = (loadAt + (i === loadAt ? stepShare(text) : 0)) / n;
-	loadBar.firstChild.style.width = share * 100 + "%"; loadBar.lastChild.textContent = Math.round(share * 100) + "%";
+	drawLoad();
 	loadSteps.replaceChildren(...LOAD_STEPS[playMode].map((s, k) => {
 		const li = document.createElement("li"), name = document.createElement("span"), tail = document.createElement("span");
-		li.className = k < loadAt ? "done" : k === loadAt ? "now" : ""; name.textContent = s; tail.className = "t"; tail.textContent = k < loadAt ? "\u2713" : k === loadAt && /MB/.test(text ?? "") ? /\d+ \/ \d+ MB/.exec(text)?.[0] ?? "" : "";
+		const done = playMode === "solo" && k === 0 ? load.gameDone : k < at; // solo: the game code downloads alongside the station, so step 0 ends on its own
+		li.className = done ? "done" : k <= at ? "now" : ""; name.textContent = s; tail.className = "t"; tail.textContent = done ? "\u2713" : k === at && /MB/.test(text ?? "") ? /\d+ \/ \d+ MB/.exec(text)?.[0] ?? "" : "";
 		li.append(name, tail); return li;
 	}));
+	loadCreep ||= setInterval(() => { if (loadDone || !loading.isConnected) { clearInterval(loadCreep); loadCreep = 0; } else { load.creep(); drawLoad(); } }, 250);
+};
+// the first view: the bar fills, then the window goes once the bar has slid there (.25 s, screens.css)
+const closeLoading = () => {
+	if (!loading.isConnected || loadClosing) return;
+	if (loadDone) return loading.remove();
+	load.finish(); drawLoad();
+	loadClosing = setTimeout(() => { loadClosing = 0; loading.remove(); }, 300);
 };
 loadStep(playMode === "mp" ? "connect" : "start");
 // tg's world.Reboot(): the loading window again, as "Round N is over" until the next world's first view
@@ -396,7 +405,7 @@ const onWorkerMessage = (e) => {
 	if (!pageReady && HOLD.has(m.type)) { held.push(m); return; } // a window that arrives before the first view is held and shown then
 	if (m.type === "log") { lines.push(m.line); pending.push(m.line); }
 	else if (m.type === "output") { clickAnswered(); addOutput(m.lines); for (const t of m.lines) bugNote("[chat] " + String(t).replace(/<[^>]*>/g, "").slice(0, 300)); }
-	else if (m.type === "view") { loading.remove(); if (!pageReady) { pageReady = true; lines.push(`[page] ${held.length} window messages (${[...new Set(held.map((h) => h.type))].join(",")}) held until the first view; showing them now`); for (const h of held.splice(0)) onWorkerMessage({ data: h }); } window.bootResult.views++; liveView.update(m.update); }
+	else if (m.type === "view") { closeLoading(); if (!pageReady) { pageReady = true; lines.push(`[page] ${held.length} window messages (${[...new Set(held.map((h) => h.type))].join(",")}) held until the first view; showing them now`); for (const h of held.splice(0)) onWorkerMessage({ data: h }); } window.bootResult.views++; liveView.update(m.update); }
 	else if (m.type === "dialog") showDialog(m);
 	else if (m.type === "menu") showMenu(m);
 	else if (m.type === "stat") showStat(m);
@@ -784,7 +793,7 @@ function rejoin() {
 	popups.closeAll(); dialogHost.replaceChildren(); closeMenu(); down.clear();
 	$id("stattabs").replaceChildren(); $id("statlines").replaceChildren();
 	Object.assign(window.bootResult, { done: false, error: undefined });
-	loadDone = false; loadAt = 0; loadBar.className = "bar"; loadRows.replaceChildren(); loadTitle.textContent = "Joining ss13.live";
+	loadDone = false; load = loadProgress(playMode); loadBar.className = "bar"; loadRows.replaceChildren(); loadTitle.textContent = "Joining ss13.live";
 	loadStep("connect"); document.body.append(loading);
 	pageReady = false; round--; startWorker(startMsg);
 }

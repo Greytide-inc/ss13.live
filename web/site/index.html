@@ -7,9 +7,9 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self'; connect-src 'self' https://play.ss13.live http://127.0.0.1:* http://localhost:*; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ss13.live: Space Station 13 in your browser</title>
-<meta name="description" content="Space Station 13 (2017 /tg/station) in your browser: no BYOND, no download. Play alone or join the crew.">
+<meta name="description" content="Space Station 13 (2017 /tg/station) in your browser: no BYOND, nothing to install. Play alone or join the crew.">
 <meta property="og:title" content="ss13.live">
-<meta property="og:description" content="Space Station 13 (2017 /tg/station) in your browser: no BYOND, no download.">
+<meta property="og:description" content="Space Station 13 (2017 /tg/station) in your browser: no BYOND, nothing to install.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://ss13.live/">
 <meta property="og:image" content="https://ss13.live/icons/ss13_64.png">
@@ -20,6 +20,9 @@
 html,body{margin:0;min-height:100%}body{background:#0c0f14 radial-gradient(circle at 70% 20%,#1b2a3a 0,#0c0f14 60%) fixed}
 .ovl{position:static;min-height:100vh;background:none}
 .phone-only{display:none}
+summary{cursor:pointer;list-style:none}summary::-webkit-details-marker{display:none}
+summary h3::before{content:"\25B6  ";font-size:10px}details[open] summary h3::before{content:"\25BC  "}
+details:not([open]) summary h3{margin:0;padding:0;border:0}
 @media (pointer:coarse) and (max-width:900px){.phone-only{display:block}.pc-only{display:none!important}}
 </style>
 <div class="ovl"><div class="tgw">
@@ -37,11 +40,12 @@ html,body{margin:0;min-height:100%}body{background:#0c0f14 radial-gradient(circl
 			<div class="row"><span>Station</span><span id="st-map">&mdash;</span></div>
 			<div class="row"><span>Round time</span><span id="st-time">&mdash;</span></div>
 		</div>
-		<div class="sec wide"><h3>About</h3>
-			<ul><li>No account, no cookies, no download. Your character and settings stay in your browser.</li>
+		<details class="sec wide"><summary><h3>About</h3></summary>
+			<ul><li>Nothing to install, no sign-up, no cookies. Singleplayer downloads about 90 MB once; your browser keeps it, with your settings and your singleplayer character.</li>
+			<li>Multiplayer: your name plus an optional secret (a tripcode) gives you a tag only you can have, and the server saves your character under it. No password to reset: forget the secret and you start fresh with a new tag.</li>
 			<li>Free software (AGPL v3): <a href="https://github.com/Greytide-inc/ss13.live">github.com/Greytide-inc/ss13.live</a> &middot; <a href="about.html">privacy note</a></li></ul>
 			<div class="fine" style="margin-top:6px">The game, its sprites and sounds are the work of the /tg/station 13 contributors and the Space Station 13 coders before them.</div>
-		</div>
+		</details>
 	</div>
 </div></div>
 <script src="landing.js"></script>

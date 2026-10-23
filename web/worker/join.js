@@ -61,3 +61,28 @@ export function loadStepOf(mode, ev) {
 }
 /** "12 / 36 MB" in a stage text, as a share of that step (0 when there is none). */
 export const stepShare = (text) => { const m = /(\d+) \/ (\d+) MB/.exec(text ?? ""); return m && +m[2] ? Math.min(1, m[1] / m[2]) : 0; };
+/**
+ * Where each step's part of the bar ends, from a measured first solo visit (plans/site.md step 7): the station downloads for ~11 s
+ * with the game code alongside it (so step 0 has no part of its own), unpacks in ~6 s, the lobby opens in ~1 s.
+ */
+export const LOAD_ENDS = { solo: [0, 0.6, 0.92, 1], mp: [0.5, 1] };
+/**
+ * The loading bar: see(ev, text) for each worker message, creep() a few times a second (steps with no MB count still move,
+ * slowing as they near their end), finish() when the window closes. `shown` only ever grows. gameDone: the game code is in
+ * (solo step 0, which runs alongside the station download).
+ */
+export function loadProgress(mode) {
+	const ends = LOAD_ENDS[mode], from = (k) => (k ? ends[k - 1] : 0);
+	let step = 0, shown = 0, gameDone = mode !== "solo";
+	return {
+		get step() { return step; }, get shown() { return shown; }, get gameDone() { return gameDone; },
+		see(ev, text = ev) {
+			const i = loadStepOf(mode, ev);
+			if (i > step) step = i;
+			if (ev === "translated" || step > 2) gameDone = true;
+			shown = Math.max(shown, from(step) + (i === step ? (ends[step] - from(step)) * stepShare(text) : 0));
+		},
+		creep() { if (shown < ends[step]) shown += (ends[step] - shown) * 0.04; },
+		finish() { shown = 1; },
+	};
+}
