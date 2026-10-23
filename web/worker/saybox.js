@@ -1,10 +1,10 @@
 // the say box's pure logic (no DOM), so tests/static/saybox.test.mjs can check it. The page (index.html) wires it up.
 // A channel is what the bottom bar's text means: "say", "radio", "me", "whisper", or null = a plain verb command line.
 export const CHANNELS = [
-	{ id: "say", label: "Say", color: "#dce8ff", title: 'Say: everyone nearby hears you. Start a line with / to run a command instead (/resist)' },
-	{ id: "radio", label: "Radio", color: "#d6f0d2", title: 'Radio: your headset, common channel. Start with :e, :s ... to pick another (say ";...")' },
-	{ id: "me", label: "Me", color: "#ffe9c4", title: 'Me: an emote, "Name does something" (verb: me "...")' },
-	{ id: "whisper", label: "Whisper", color: "#e6dcf5", title: 'Whisper: only people right next to you (verb: whisper "...")' },
+	{ id: "say", label: "Say", color: "#dce8ff", dark: "#8fb3d9", title: 'Say: everyone nearby hears you. Start a line with / to run a command instead (/resist)' },
+	{ id: "radio", label: "Radio", color: "#d6f0d2", dark: "#1ecc43", title: 'Radio: your headset, common channel. Start with :e, :s ... to pick another (say ";...")' },
+	{ id: "me", label: "Me", color: "#ffe9c4", dark: "#f2a93b", title: 'Me: an emote, "Name does something" (verb: me "...")' },
+	{ id: "whisper", label: "Whisper", color: "#e6dcf5", dark: "#a77bea", title: 'Whisper: only people right next to you (verb: whisper "...")' },
 ];
 const ids = CHANNELS.map((c) => c.id);
 

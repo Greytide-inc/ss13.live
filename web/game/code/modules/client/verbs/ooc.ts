@@ -341,3 +341,9 @@ rt.def("/client/verb/select_ignore", function* select_ignore(f: Frame) {
 	yield* g.srcCall(f, "ignore_key", live(selection));
 	return f.dot;
 }, true, { verb: { name: "Ignore", category: "OOC", desc: "Ignore a player's messages on the OOC channel" } });
+
+// /client/verb/stop_all_sounds  (ss13.live, not in tg 2017; modern tg's OOC "Stop Sounds"): stops every sound playing for you now, new ones still play
+rt.def("/client/verb/stop_all_sounds", function stop_all_sounds(f: Frame) {
+	rt.op(f, "Output", [], [live(f.src), rt.call(f, P("/proc/sound"), null, [null])], false);
+	return f.dot;
+}, false, { verb: { name: "Stop All Sounds", category: "OOC", desc: "Stop the sounds playing for you now; new ones still play" } });

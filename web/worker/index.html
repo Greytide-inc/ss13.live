@@ -19,7 +19,7 @@
 <!-- tsh-chat: only this page's own scripts run here (the inline ones by hash: after editing one, `node tools/csp.mjs` from web/).
      No 'unsafe-eval': PixiJS builds shader code with new Function unless ./pixi-no-eval.js (its own add-on, made by
      tools/pixi-no-eval.mjs) is imported first; blob: workers are PixiJS's image loaders. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-w7FiRm3A6tvyprAne8G8M8dv/0vxuAgFXzs3peZutUk=' 'sha256-Ad3Z0q0oJIukpVoFDmVV3lZDWdAwsRN0YJ2W3tL8hT4=' 'sha256-lTxu9zC4uShGdcuJrAXIeXJWl4Hunla9A+ucH/rf2Jc=' 'sha256-92K2eQMdBIxVScVmDcou+5a8lyMswjl531WNa0SqDF8='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' blob: ws://localhost:* ws://127.0.0.1:*; worker-src 'self' blob:; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-w7FiRm3A6tvyprAne8G8M8dv/0vxuAgFXzs3peZutUk=' 'sha256-Ad3Z0q0oJIukpVoFDmVV3lZDWdAwsRN0YJ2W3tL8hT4=' 'sha256-lTxu9zC4uShGdcuJrAXIeXJWl4Hunla9A+ucH/rf2Jc=' 'sha256-ixo5sx15p/JPxE7goGuKmUqjoapThSXBpQJTmYoTiSY='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' blob: ws://localhost:* ws://127.0.0.1:*; worker-src 'self' blob:; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>ss13.live: Space Station 13 in your browser</title>
 <!-- Hosting: tab title, link preview card (Reddit, Discord), tg's own SS13 icon. -->
 <meta name="description" content="Space Station 13 (2017 /tg/station) in your browser: no BYOND, nothing to install. Join a round on ss13.live.">
@@ -447,6 +447,7 @@ const paintBar = () => {
 	for (const [id, b] of chanButtons) b.classList.toggle("on", id === channel);
 	const c = CHANNELS.find((x) => x.id === channel);
 	inputBox.style.background = c.color;
+	channelBox.parentElement.style.setProperty("--chan", c.dark); // the dark theme's outline colour for the chosen button (output.css)
 	inputBox.placeholder = c.label + "...";
 };
 const typingNow = (focused = document.activeElement === inputBox) => { // one message per change

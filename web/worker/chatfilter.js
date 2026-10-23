@@ -1,4 +1,4 @@
-// chat filters and highlights for the output pane, and the Game settings (sight shadows). Pure functions (classify, parseWords, matchWords) plus createChatFilter(pane).
+// chat filters and highlights for the output pane, and the Game settings (sight shadows, theme). Pure functions (classify, parseWords, matchWords) plus createChatFilter(pane).
 // Categories come from the span classes tg 2017 puts in its chat lines; a line that matches nothing is never hidden.
 export const CATEGORIES = [
 	{ id: "combat", label: "Combat", classes: ["userdanger", "danger", "attack", "disarm", "passive", "boldwarning"] },
@@ -63,7 +63,8 @@ export function createChatFilter(pane, storage = globalThis.localStorage) {
 	const panel = document.createElement("div");
 	panel.id = "cf-panel"; panel.hidden = true;
 	panel.innerHTML = "<b>Show</b>" + CATEGORIES.map((c) => `<label><input type="checkbox" data-cat="${c.id}"> ${c.label}</label>`).join("") + '<b>Highlight words (comma separated)</b><input type="text" id="cf-words" autocomplete="off" spellcheck="false">'
-		+ '<b>Game</b><label>Sight shadows <select id="cf-shadows"><option value="tg">tg (black squares)</option><option value="smooth">smoothed tg</option><option value="full">cast shadows</option></select></label>';
+		+ '<b>Game</b><label>Sight shadows <select id="cf-shadows"><option value="tg">tg (black squares)</option><option value="smooth">smoothed tg</option><option value="full">cast shadows</option></select></label>'
+		+ '<label>Theme <select id="cf-theme"><option value="light">light (tg)</option><option value="dark">dark</option></select></label>';
 	for (const cb of panel.querySelectorAll("input[data-cat]")) {
 		cb.checked = !state.hidden.includes(cb.dataset.cat);
 		cb.addEventListener("change", () => {
@@ -80,6 +81,13 @@ export function createChatFilter(pane, storage = globalThis.localStorage) {
 	try { sh.value = storage.getItem("ss13-shadows") ?? "tg"; } catch {}
 	if (!sh.value) sh.value = "tg";
 	sh.addEventListener("change", () => { try { storage.setItem("ss13-shadows", sh.value); } catch {} dispatchEvent(new Event("ss13-shadows")); sh.blur(); }); // blur: a focused select takes WASD (S picks "smoothed tg")
+	// the page theme: dark = .dark on <html>, the colours are in output.css
+	const th = panel.querySelector("#cf-theme");
+	try { th.value = storage.getItem("ss13-theme") ?? "light"; } catch {}
+	if (!th.value) th.value = "light";
+	const applyTheme = () => document.documentElement.classList.toggle("dark", th.value === "dark");
+	applyTheme();
+	th.addEventListener("change", () => { try { storage.setItem("ss13-theme", th.value); } catch {} applyTheme(); th.blur(); });
 	btn.addEventListener("click", () => { panel.hidden = !panel.hidden; });
 	document.addEventListener("pointerdown", (e) => { if (!panel.hidden && !panel.contains(e.target) && e.target !== btn) { panel.hidden = true; if (panel.contains(document.activeElement)) document.activeElement.blur(); } });
 	pane.parentElement.append(btn, panel);

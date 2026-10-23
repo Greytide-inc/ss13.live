@@ -59,6 +59,7 @@ const tests = [
 	"build/dist/tests/draw/carried-walk.test.js",
 	"build/dist/tests/draw/put-down.test.js",
 	"build/dist/tests/draw/mech-turn.test.js",
+	"build/dist/tests/draw/rider-cam.test.js",
 	"build/dist/tests/draw/chunk-index.test.js",
 	"build/dist/tests/draw/inc-place.test.js",
 	"build/dist/tests/draw/inc-chunk.test.js",

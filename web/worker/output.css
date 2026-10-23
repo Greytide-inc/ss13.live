@@ -151,3 +151,36 @@ BIG IMG.icon 			{width: 32px; height: 32px;}
 .monkey					{color: #975032;}
 .swarmer				{color: #2C75FF;}
 .resonate				{color: #298F85;}
+
+/* Dark theme (ss13.live, ⚙ → Game → Theme; chatfilter.js puts .dark on <html>): the page's panes plus the chat colours that are too dark to
+   read on black, colours from modern tg's dark chat. Popup windows (tg's own HTML pages) keep their light look. */
+html.dark body,html.dark #statwindow,html.dark #outputwindow{background:#171717;color:#c8d0da}
+html.dark #menubar{background:#262626;color:#ddd;border-color:#444}html.dark .mtop:hover,html.dark .mtop.on{background:#40628a}
+html.dark .mdrop,html.dark #ctxmenu,html.dark #ctxmenu .sm,html.dark #cf-panel{background:#262626;color:#ddd;border-color:#555}
+html.dark .msep{background:#555}html.dark .mrow.off,html.dark .mtop.off{color:#777}
+html.dark .splitbar{background:#333}html.dark .splitbar:hover,html.dark .splitbar.drag{background:#555}
+html.dark #stattabs{background:#202020}html.dark #stattabs button{background:#2c2c2c;color:#bbb;border-color:#444}html.dark #stattabs button.on{background:#171717;color:#fff}
+html.dark #statlines .n{color:#8ba5c4}html.dark #statlines .c{color:#7fb2ff}
+html.dark #inputbar{background:#262626}html.dark #input{background:#222526!important;color:#ddd;border-color:#444}html.dark #input::placeholder{color:#777}
+html.dark #channels button{background:#333;color:#ddd;border-color:#555}html.dark #channels button.on{border-color:var(--chan);box-shadow:inset 0 0 0 1px var(--chan);color:var(--chan)}
+html.dark .dlg{background:#262626;color:#ddd;border-color:#555}html.dark .dlg h4,html.dark .bbar{background:#363636;color:#8fb3d9}html.dark .bwin{border-color:#363636}
+html.dark #cf-btn{background:#333e;color:#ddd;border-color:#555}html.dark .cf-hl{background:#5c5200}
+html.dark input,html.dark select,html.dark textarea,html.dark button{color-scheme:dark}
+html.dark #outputwindow a{color:#7fb2ff}
+html.dark #outputwindow font[color="#002eb8" i]{color:#6d8dff} /* normal OOC */
+html.dark #outputwindow h1,html.dark #outputwindow h2,html.dark #outputwindow h3,html.dark #outputwindow h4,html.dark #outputwindow h5,html.dark #outputwindow h6,html.dark #outputwindow h1.alert,html.dark #outputwindow h2.alert{color:#a4bad6}
+html.dark #outputwindow .adminooc{color:#ff5fa0}html.dark #outputwindow .deadsay,html.dark #outputwindow .ghostalert{color:#c9a3ff}
+html.dark #outputwindow .info{color:#9ab0ff}html.dark #outputwindow .notice,html.dark #outputwindow .boldnotice,html.dark #outputwindow .adminnotice{color:#6d8dff}html.dark #outputwindow .unconscious{color:#6d8dff}
+html.dark #outputwindow .radio{color:#1ecc43}html.dark #outputwindow .sciradio{color:#c68cfa}html.dark #outputwindow .comradio{color:#e0d40a}html.dark #outputwindow .secradio{color:#dd3535}
+html.dark #outputwindow .medradio{color:#57b8f0}html.dark #outputwindow .syndradio{color:#c06465}html.dark #outputwindow .centcomradio{color:#2681a5}html.dark #outputwindow .blueteamradio{color:#5f7fff}
+html.dark #outputwindow .disarm{color:#d23b3b}html.dark #outputwindow .passive{color:#b33}
+html.dark #outputwindow .shadowling{color:#a37bf7}html.dark #outputwindow .cult,html.dark #outputwindow .cultitalic,html.dark #outputwindow .cultlarge,html.dark #outputwindow .narsie,html.dark #outputwindow .narsiesmall{color:#d04040}
+html.dark #outputwindow .colossus{color:#c04545}html.dark #outputwindow .hierophant,html.dark #outputwindow .hierophant_warning{color:#b441ee}html.dark #outputwindow .purple{color:#c86ecc}
+html.dark #outputwindow .holoparasite,html.dark #outputwindow .holoparasitebold{color:#a69ebd}
+html.dark #outputwindow .revennotice,html.dark #outputwindow .revenboldnotice,html.dark #outputwindow .revenbignotice{color:#c099e2}
+html.dark #outputwindow .umbra,html.dark #outputwindow .umbra_bold,html.dark #outputwindow .umbra_italics,html.dark #outputwindow .umbra_emphasis,html.dark #outputwindow .umbra_large{color:#9a5cff}
+html.dark #outputwindow .alloy,html.dark #outputwindow .heavy_alloy,html.dark #outputwindow .large_alloy,html.dark #outputwindow .nezbere_large,html.dark #outputwindow .nezbere,html.dark #outputwindow .nezbere_small{color:#a9b1ba}
+html.dark #outputwindow .neovgre_large,html.dark #outputwindow .neovgre,html.dark #outputwindow .neovgre_small{color:#c4345b}
+html.dark #outputwindow .newscaster{color:#c05d5d}html.dark #outputwindow .alien{color:#a77ca7}html.dark #outputwindow .changeling,html.dark #outputwindow .abductor{color:#c94fc9}html.dark #outputwindow .interface{color:#b05fb0}
+html.dark #outputwindow .memo,html.dark #outputwindow .motd,html.dark #outputwindow .motd h1,html.dark #outputwindow .motd h2,html.dark #outputwindow .motd h3,html.dark #outputwindow .motd a{color:#9ccc2a}
+html.dark #outputwindow .monkey{color:#c07a50}html.dark #outputwindow .selecteddna{background-color:#0a3a3a}

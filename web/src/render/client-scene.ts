@@ -1818,7 +1818,8 @@ export function liveClientView(host: HTMLElement, resync: () => void, sendStep: 
 		stepsDone = u.steps ?? 0;
 		if (faced && stepsDone >= faced.n) unface();
 		const imgsOk = new Set<number>(); // the mob's images, when its predicted step was taken: they keep the mob's glide, not their own server step
-		for (const [id, x0, y0, x1, y1, size, anim] of u.moved ?? []) {
+		const ownFirst = pred ? [...(u.moved ?? [])].sort((a, b) => Number(b[0] === pred![0]) - Number(a[0] === pred![0])) : u.moved ?? []; // the mob before its images and riders, which the server can name first: as a step of their own, theirs restarted the camera behind the predicted one
+		for (const [id, x0, y0, x1, y1, size, anim] of ownFirst) {
 			const dx = x1 - x0, dy = y1 - y0;
 			if (imgsOk.has(id)) continue;
 			if (pull && id === pull[0] && !u.full && anim !== 0 && Math.abs(dx) <= 1 && Math.abs(dy) <= 1) {
