@@ -90,6 +90,7 @@ export function installNatives(vm: VM): void {
 	// ---- datum ----
 	def("/datum/proc/New", () => null);
 	def("/datum/proc/Del", () => null);
+	def("/client/proc/Del", () => null); // tg's client/Del ends in ..(): the disconnect itself is done by the VM (qdel of a client: an admin kick, the boot vote)
 	def("/datum/proc/Topic", () => null); // BYOND's default does nothing; tg's overrides call ..() (3x)
 
 	// ---- /list methods ----

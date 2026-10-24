@@ -31,6 +31,9 @@ rt.type(81, "/datum/configuration", "/datum", {
 	allow_admin_ooccolor: 0,
 	allow_vote_restart: 0,
 	allow_vote_mode: 0,
+	allow_vote_shuttle: 0,
+	allow_vote_boot: 0,
+	allow_vote_map: 0,
 	vote_delay: 6000,
 	vote_period: 600,
 	vote_no_default: 0,
@@ -252,7 +255,7 @@ rt.def("/datum/configuration/proc/Reload", function Reload(f: Frame) {
 	rt.callSrc(f, "load", ["config/config.txt"]);
 	rt.callSrc(f, "load", ["config/game_options.txt", "game_options"]);
 	rt.callSrc(f, "load", ["config/policies.txt", "policies"]);
-	if (truthy(rt.sv(f, "maprotation"))) {
+	if (truthy(rt.sv(f, "maprotation")) || truthy(rt.sv(f, "allow_vote_map"))) { // ss13.live: the map vote needs the list too
 		rt.callSrc(f, "loadmaplist", ["config/maps.txt"]);
 	}
 	rt.setGl("abandon_allowed", rt.sv(f, "respawn"));
@@ -333,6 +336,12 @@ rt.def("/datum/configuration/proc/load", function load(f: Frame, filename: Value
 				rt.setSv(f, "allow_vote_restart", 1);
 			} else if ($0 === "allow_vote_mode") {
 				rt.setSv(f, "allow_vote_mode", 1);
+			} else if ($0 === "allow_vote_shuttle") {
+				rt.setSv(f, "allow_vote_shuttle", 1);
+			} else if ($0 === "allow_vote_boot") {
+				rt.setSv(f, "allow_vote_boot", 1);
+			} else if ($0 === "allow_vote_map") {
+				rt.setSv(f, "allow_vote_map", 1);
 			} else if ($0 === "no_dead_vote") {
 				rt.setSv(f, "vote_no_dead", 1);
 			} else if ($0 === "default_no_vote") {

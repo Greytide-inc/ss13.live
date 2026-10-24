@@ -895,6 +895,14 @@ rt.def("/datum/controller/subsystem/ticker/proc/check_queue", function* check_qu
 
 // /datum/controller/subsystem/ticker/proc/check_maprotate  (code/controllers/subsystem/ticker.dm:643)
 rt.def("/datum/controller/subsystem/ticker/proc/check_maprotate", function check_maprotate(f: Frame) {
+	// ss13.live: on a server with the map vote on, the vote replaces tg's random rotation: it starts by itself once the shuttle leaves
+	if (rt.onServer() && truthy(rt.fv(f, "allow_vote_map", rt.gl("config")))) {
+		if (truthy(rt.sv(f, "maprotatechecked"))) return f.dot;
+		if ((truthy(rt.fv(f, "emergency", rt.gl("SSshuttle"))) && !isEqual(rt.gv(f, "mode", rt.fv(f, "emergency", rt.gl("SSshuttle"))), "escape")) || truthy(rt.callName(f, rt.gl("SSshuttle"), "canRecall", []))) return f.dot;
+		rt.setSv(f, "maprotatechecked", 1);
+		rt.call(f, P("/proc/ImmediateInvokeAsync"), null, [rt.gl("SSvote"), P("/datum/controller/subsystem/vote/proc/initiate_vote"), "map", null]);
+		return f.dot;
+	}
 	if (!truthy(rt.fv(f, "maprotation", rt.gl("config")))) {
 		return live(f.dot);
 	}

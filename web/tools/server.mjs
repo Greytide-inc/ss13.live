@@ -17,7 +17,10 @@
 //   key (--host-key KEY, else a random one printed as a link at start) is admin under any name;
 //   --admins FILE (one tag a line, # comments) lists tripcode tags whose players are admin. A kick is
 //   del(client) in the game (admin panel): the server closes that connection. A permanent ban in the game also lands in --bans FILE
-//   (JSON {keys, ips}); a banned key or address is refused at hello, before it reaches the game.
+//   (JSON {keys, ips}); a banned key or address is refused at hello, before it reaches the game. A player voted off by the boot vote
+//   (the game logs "[server-roundban] ckey address") is refused the same way, by key and address, until the next round.
+// The map vote (the game logs "[server-nextmap] NAME", a _maps/NAME.json) picks the map every later world starts on, until the next
+//   map vote or a restart (then --map, else Box).
 // Server -> client: every worker message, as JSON. Messages with `player` go to the connection of that ckey only; the rest go to
 //   everyone. Uint8Array bytes (rsc_png.png) are sent as {"$b64": "..."}; runtime icons come first as {type:"rtIcon", url, path, dmi} (the client makes
 //   its own blob URL and swaps it for `url` in later views). Client -> server: input messages (key, click, command, ...), forwarded to the
@@ -163,6 +166,7 @@ const stats = { toWorker: 0, dropped: 0, acksDropped: 0, byType: {}, bytes: 0 };
 let tickLines = 0, roundStarted = false, roundStartAt = 0, mapName = null; // for /status: tg's "Loading Box Station..." line names the map
 let shuttingDown = false, doneSeen = false;
 let workerReady = false, firstName = null, firstAddress = null, started = false;
+let nextMap = null; // the map vote's pick (the game logs "[server-nextmap] NAME", a _maps/NAME.json): later worlds start on it, else --map
 let round = 1; // ps-rounds: which world this is; each reboot starts a fresh worker thread (frees all of the old world)
 let worker;
 function spawnWorker() {
@@ -180,7 +184,7 @@ function spawnWorker() {
 // and arrive in the new world's lobby (the first one is its start player, the rest connect as later hellos do).
 function nextRound() {
 	const old = worker;
-	round++; replacedAway.clear(); // a new world answers no old disconnects
+	round++; replacedAway.clear(); roundBans.keys.clear(); roundBans.blocks.clear(); // a new world answers no old disconnects; boot votes last one round
 	out(`[server] round over: starting world ${round} for ${clients.size} connected player(s)`);
 	started = false; workerReady = false; roundStarted = false; roundStartAt = 0; mapName = null; tickLines = 0;
 	firstName = null; firstAddress = null; clearTimeout(emptyTimer); emptyTimer = null;
@@ -244,6 +248,16 @@ function addBan(ck, addr) {
 	if (banFile) fs.writeFileSync(banFile, JSON.stringify(bans, null, 1));
 	out(`[server] ban saved: ${ck} ${addr ?? ""}`);
 }
+// The boot vote (the game's Vote panel): a key voted off is refused until the next round, with its address (and every address it is
+// connected from now), so a new name from the same place doesn't walk straight back in. Cleared by nextRound.
+const roundBans = { keys: new Set(), blocks: new Set() };
+function addRoundBan(ck, addr) {
+	roundBans.keys.add(ck);
+	const blocks = [...clients].filter((o) => o.player === ck).map((o) => o.block);
+	if (addr && net.isIP(addr)) blocks.push(blockOf(addr));
+	for (const b of blocks) if (!isLocalPeer(b) && b !== "192.0.2.1") roundBans.blocks.add(b);
+	out(`[server] voted off until the next round: ${ck} ${blocks.join(" ")}`);
+}
 // --empty-reset: the last player left a world someone played in: a fresh world after EMPTY_RESET_S unless someone comes back first
 const EMPTY_RESET_S = Number(opt("--empty-reset", "900"));
 let emptyTimer = null;
@@ -269,7 +283,8 @@ function tryStart() {
 	{
 		const isLobby = lobby || round > 1; // the next world always starts in the lobby
 		const start = { type: "start", playerKey: firstName, playerAddress: firstAddress, snapshot: true, fastAir: true, dirty: true, lobby: isLobby, rtIcons: true, join: isLobby ? "" : join, gender: "male", roundstart: !isLobby, ticks: Infinity, seconds: seconds ? Number(seconds) : Infinity, afterStart: null, seed: round > 1 ? crypto.randomInt(1, 1e6) : Number(opt("--seed", String(Date.now() % 1e6))), busyWait: false, round, clickNow: !argv.includes("--no-click-now"), log: logLevel };
-		if (opt("--map", null)) start.map = opt("--map");
+		const map = nextMap ?? opt("--map", null);
+		if (map && !/^box(station)?$/i.test(map)) start.map = map; // Box is the default (and its snapshot is the plain one)
 		// test aids (tools/rounds-check.mjs): short rounds. --autojoin JOB late-joins the first player in every lobby once the round starts.
 		if (opt("--lobby-seconds", null)) start.lobbySeconds = Number(opt("--lobby-seconds"));
 		if (opt("--autojoin", null)) start.autojoin = opt("--autojoin");
@@ -288,7 +303,7 @@ function tryStart() {
 function onWorkerMessage(m) {
 	if (m.type === "hotResult") { fs.writeFileSync(path.join(hotDir, `${port}.out.json`), JSON.stringify(m)); return; }
 	if (m.type === "worker-ready") { workerReady = true; out("[server] worker ready, waiting for the first player"); tryStart(); return; }
-	if (m.type === "log") { out(m.line); const b = /^\[server-ban\] ([a-z0-9@]+) (\S+)$/.exec(m.line); if (b) addBan(b[1], b[2] === "-" ? null : b[2]); if (/Game start took/.test(m.line)) { roundStarted = true; roundStartAt = Date.now(); } const mp = /^Loading (.+)\.\.\.$/.exec(m.line); if (mp) mapName = mp[1]; if (/live:/.test(m.line)) tickLines++; }
+	if (m.type === "log") { out(m.line); const b = /^\[server-ban\] ([a-z0-9@]+) (\S+)$/.exec(m.line); if (b) addBan(b[1], b[2] === "-" ? null : b[2]); const rb = /^\[server-roundban\] ([a-z0-9@]+) (\S+)$/.exec(m.line); if (rb) addRoundBan(rb[1], rb[2] === "-" ? null : rb[2]); const nm = /^\[server-nextmap\] ([a-z0-9_]+)$/.exec(m.line); if (nm) { nextMap = nm[1]; out(`[server] next world's map: ${nextMap}`); } if (/Game start took/.test(m.line)) { roundStarted = true; roundStartAt = Date.now(); } const mp = /^Loading (.+)\.\.\.$/.exec(m.line); if (mp) mapName = mp[1]; if (/live:/.test(m.line)) tickLines++; }
 	if (m.type === "milestone") out(`[server] milestone ${m.name} (${m.s}s)`);
 	if (m.type === "rtIcon") rtIcons.push(m); // replayed to a connecting client (the views it gets use these URLs)
 	if (m.type === "log" || m.type === "milestone" || m.type === "done") { backlog.push(m); if (backlog.length > 500) backlog.shift(); }
@@ -398,6 +413,10 @@ wss.on("connection", (ws, req) => {
 			if (!c.admin && (Object.hasOwn(bans.keys, ck) || Object.hasOwn(bans.ips, ip) || Object.hasOwn(bans.ips, c.block))) { // hasOwn: a player named Constructor is not Object's constructor
 				out(`[server] ${key} (${ip}) refused: banned`);
 				ws.send(toJson({ type: "refused", reason: "You are banned from this server." })); ws.close(); return;
+			}
+			if (!c.admin && (roundBans.keys.has(ck) || roundBans.blocks.has(c.block))) {
+				out(`[server] ${key} (${ip}) refused: voted off this round`);
+				ws.send(toJson({ type: "refused", reason: "The crew voted you off the station for this round. Come back next round." })); ws.close(); return;
 			}
 			if (reserved.has(base) && !c.admin) {
 				out(`[server] name "${name}" refused from ${ip}: reserved`);
