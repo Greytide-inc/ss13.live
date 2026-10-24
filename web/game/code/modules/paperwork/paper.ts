@@ -352,15 +352,16 @@ rt.def("/obj/item/weapon/paper/proc/attackby", function* attackby(f: Frame) {
 		return live(f.dot);
 	}
 	if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/pen")) ? 1 : 0)) || truthy((rt.istype(live(f.args[0]), T("/obj/item/toy/crayon")) ? 1 : 0)))) {
+		// tg bug: the talisman check sat after both branches' returns, so a talisman opened the write window; checked first now
+		if (truthy((rt.istype(live(f.src), T("/obj/item/weapon/paper/talisman")) ? 1 : 0))) {
+			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>＀'s ink fades away shortly after it is written.</span>", [live(f.args[0])])]);
+			return live(f.dot);
+		}
 		if (truthy((yield* g.callName(f, live(f.args[1]), "is_literate", [])))) {
 			rt.op(f, "Browse", [], [live(f.args[1]), fmt("<HTML><HEAD><TITLE>＀</TITLE></HEAD><BODY>＀<HR>＀</BODY><div align='right'style='position:fixed;bottom:0;font-style:bold;'><A href='?src=＃;help=1'>[?]</A></div></HTML>", [rt.sv(f, "name"), rt.sv(f, "info_links"), rt.sv(f, "stamps"), live(f.src)]), fmt("window=＀", [rt.sv(f, "name")])], false);
 			return live(f.dot);
 		} else {
 			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You don't know how to read or write.</span>"]);
-			return live(f.dot);
-		}
-		if (truthy((rt.istype(live(f.src), T("/obj/item/weapon/paper/talisman")) ? 1 : 0))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>＀'s ink fades away shortly after it is written.</span>", [live(f.args[0])])]);
 			return live(f.dot);
 		}
 	} else {

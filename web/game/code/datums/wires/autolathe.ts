@@ -75,7 +75,7 @@ rt.def("/datum/wires/autolathe/proc/on_cut", function* on_cut(f: Frame, wire: Va
 	$0 = live(wire);
 	if ($0 === "Hack") {
 		yield* g.callName(f, live(A), "adjust_hacked", [(!truthy(live(mend)) ? 1 : 0)]);
-	} else if ($0 === "Hack") {
+	} else if ($0 === "High Voltage Ground") { // tg bug: tested WIRE_HACK twice, so cutting the shock wire did nothing (modern tg: WIRE_SHOCK)
 		rt.setFv(f, "shocked", live(A), (!truthy(live(mend)) ? 1 : 0));
 	} else if ($0 === "Disable") {
 		rt.setFv(f, "disabled", live(A), (!truthy(live(mend)) ? 1 : 0));

@@ -136,5 +136,7 @@ rt.def("/proc/sanitize_ooccolor", function sanitize_ooccolor(f: Frame, color: Va
 	// tg 5beb871aea: only #RRGGBB goes through; anything else is the normal OOC colour
 	if (typeof color !== "string" || !/^#[0-9a-fA-F]{6}$/.test(color)) return rt.gl("normal_ooc_colour");
 	rt.setAt((HSL = rt.call(f, P("/proc/rgb2hsl"), null, [rt.call(f, P("/proc/hex2num"), null, [rt.call(f, P("/proc/copytext"), null, [live(color), 2, 4])]), rt.call(f, P("/proc/hex2num"), null, [rt.call(f, P("/proc/copytext"), null, [live(color), 4, 6])]), rt.call(f, P("/proc/hex2num"), null, [rt.call(f, P("/proc/copytext"), null, [live(color), 6, 8])])])), 3, rt.call(f, P("/proc/min"), null, [rt.index(live(HSL), 3), 0.4000000059604645]));
+	// ss13.live: black and near-black is no colour (null): an unset colour loads as #000000, unreadable in dark chat
+	if (Number(rt.index(live(HSL), 3)) < 0.15) return null;
 	return fmt("#＀＀＀", [rt.call(f, P("/proc/num2hex"), null, [rt.index((RGB = rt.call(f, P("/proc/hsl2rgb"), null, [live(HSL)], rt.Args.List)), 1), 2]), rt.call(f, P("/proc/num2hex"), null, [rt.index(live(RGB), 2), 2]), rt.call(f, P("/proc/num2hex"), null, [rt.index(live(RGB), 3), 2])]);
 });
