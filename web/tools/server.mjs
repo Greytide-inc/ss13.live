@@ -121,6 +121,16 @@ const foreignOrigin = (req) => {
 	if (o === undefined) return false;
 	try { return new URL(o).host.toLowerCase() !== String(req.headers.host ?? "").toLowerCase(); } catch { return true; } // "null" (a sandboxed frame) or junk
 };
+// Security review 2026-10-25 #5, #6: a connection from this machine plays as this machine (free of every per-address limit and IP
+// ban) unless it is a proxied player. So a page for a name that isn't this machine's with no X-Forwarded-For (a DNS-rebinding page:
+// evil.example pointed at 127.0.0.1, so its Origin matches its Host; or a proxy that drops the header) and an X-Forwarded-For that
+// doesn't end in an address (the proxy always appends one) are refused. Node tools send no Origin and still connect.
+const localRefusal = (req) => {
+	if (!isLocalPeer(peerOf(req))) return null;
+	const xff = req.headers["x-forwarded-for"], host = String(req.headers.host ?? "").toLowerCase();
+	if (xff !== undefined) return net.isIP(String(xff).split(",").pop().trim().replace(/^::ffff:/, "")) ? null : "X-Forwarded-For with no address at its end";
+	return req.headers.origin !== undefined && !isLocalName(host) ? `a page for ${host.slice(0, 100)} from this machine with no X-Forwarded-For (DNS rebinding, or a proxy that doesn't send one)` : null;
+};
 const crossSite = (req) => foreignOrigin(req) || !["same-origin", "none", undefined].includes(req.headers["sec-fetch-site"]);
 // Hosting: every answer: no type sniffing, never inside another site's frame (its own popups are frames). Every file is
 // "no-cache" with an ETag (size + time), so a returning player's browser asks once per file and gets a short 304 while it is unchanged:
@@ -356,7 +366,11 @@ const SLOW = { resync: 1000, bugstate: 1000 }; // ms between two of these from o
 // --no-deflate turns it off; a page that doesn't offer it gets plain frames either way.
 const deflate = argv.includes("--no-deflate") ? false : { threshold: 0, zlibDeflateOptions: { level: 6 } };
 const wss = new WebSocketServer({ server: httpServer, maxPayload: MAX_FRAME, perMessageDeflate: deflate,
-	verifyClient: ({ req }) => { if (!foreignOrigin(req)) return true; out(`[server] refused: page from ${String(req.headers.origin).slice(0, 100)} (${peerOf(req)})`); return false; } });
+	verifyClient: ({ req }) => {
+		const why = foreignOrigin(req) ? `page from ${String(req.headers.origin).slice(0, 100)}` : localRefusal(req);
+		if (!why) return true;
+		out(`[server] refused: ${why} (${peerOf(req)})`); return false;
+	} });
 let xffWarned = false; // the proxy warning below, once per run
 const sockets = new Set(); // every open connection, named or not: { ws, ip }
 // lag-smoothing: each player's views go through a ViewQueue (view-merge.mjs), which holds and merges them while the link is backed up,

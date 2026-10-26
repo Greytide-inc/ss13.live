@@ -72,6 +72,13 @@ try {
 	check(/nobody connected for 1 s: a fresh world[^\n]*\n[^\n]*starting world 2 for 0 connected/.test(log()), "the last player left: a fresh world after --empty-reset");
 	const st2 = await status();
 	check(st2.j?.players === 0 && st2.j?.round === 2, `/status: after the fresh world, round 2 (${JSON.stringify(st2.j)})`);
+	// security review 2026-10-25 #5, #6: from this machine, a page for a name that isn't this machine's (a DNS-rebinding page) and a
+	// "proxy" whose X-Forwarded-For doesn't end in an address are refused; both would have played as this machine, free of every per-address limit
+	const opens = (headers) => new Promise((r) => { const w = new WebSocket(`ws://127.0.0.1:${port}`, { headers }); w.on("open", () => { w.close(); r(true); }); w.on("error", () => r(false)); w.on("unexpected-response", (req) => { req.destroy(); r(false); }); });
+	check(await opens({ Origin: `http://127.0.0.1:${port}` }), "a page on this machine at 127.0.0.1: connects");
+	check(await opens({ Host: "ss13.live", Origin: "https://ss13.live", "X-Forwarded-For": "203.0.113.7" }), "a player through the proxy: connects");
+	check(!(await opens({ Host: `evil.example:${port}`, Origin: `http://evil.example:${port}` })), "a DNS-rebinding page (evil.example pointed at 127.0.0.1): refused");
+	for (const xff of ["junk", "", "203.0.113.7, "]) check(!(await opens({ Host: "ss13.live", Origin: "https://ss13.live", "X-Forwarded-For": xff })), `X-Forwarded-For ${JSON.stringify(xff)} (no address at its end): refused`);
 } finally {
 	srv.kill("SIGTERM");
 	await new Promise((r) => setTimeout(r, 300));

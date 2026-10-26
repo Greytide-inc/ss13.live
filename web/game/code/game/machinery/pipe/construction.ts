@@ -186,7 +186,7 @@ rt.def("/obj/item/pipe/proc/attackby", function* attackby(f: Frame) {
 	if (!truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.fv(f, "loc", live(f.src))])))) {
 		return 1;
 	}
-	yield* g.srcCall(f, "fixdir");
+	if (!rt.isIn(f, rt.sv(f, "pipe_type"), rt.gl("pipe_types"))) return 1; yield* g.srcCall(f, "fixdir"); // tg's own hole: a fitting of any type (from a forged dispenser href) created that type
 	if (truthy((rt.isIn(f, rt.sv(f, "pipe_type"), rt.list(T("/obj/machinery/atmospherics/components/trinary/mixer"), T("/obj/machinery/atmospherics/components/trinary/filter"))) ? 1 : 0))) {
 		yield* g.srcCall(f, "setDir", (yield* g.srcCall(f, "unflip", rt.sv(f, "dir"))));
 	}

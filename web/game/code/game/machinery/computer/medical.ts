@@ -323,7 +323,7 @@ rt.def("/obj/machinery/computer/med_data/proc/Topic", function* Topic(f: Frame) 
 				rt.setFv(f, "active2", live(f.src), null);
 			} else {
 				if (truthy(rt.at(live(f.args[1]), "vir"))) {
-					type = rt.at(live(f.args[1]), "vir");
+					type = (yield* g.call(f, P("/proc/text2path"), null, [rt.at(live(f.args[1]), "vir")])); if (!truthy((yield* g.call(f, P("/proc/ispath"), null, [live(type), T("/datum/disease")])))) return f.dot; // tg's own hole: vir= went straight into new(), any type
 					Dis = (yield* g.new_(f, live(type), [0]));
 					AfS = "";
 					M = null;

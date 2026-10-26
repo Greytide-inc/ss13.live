@@ -358,7 +358,7 @@ rt.def("/obj/item/weapon/pipe_dispenser/proc/show_menu", function* show_menu(f: 
 
 // /obj/item/weapon/pipe_dispenser/proc/Topic  (code/game/objects/items/weapons/RPD.dm:457)  may sleep
 rt.def("/obj/item/weapon/pipe_dispenser/proc/Topic", function* Topic(f: Frame, href: Value, href_list: Value) {
-	f.vars = () => [href, href_list];
+	let new_type: Value = null; f.vars = () => [href, href_list, new_type];
 	if (!truthy((yield* g.callName(f, live(f.usr), "canUseTopic", [live(f.src)])))) {
 		rt.op(f, "Browse", [], [live(f.usr), null, "window=pipedispenser"], false);
 		return live(f.dot);
@@ -397,7 +397,7 @@ rt.def("/obj/item/weapon/pipe_dispenser/proc/Topic", function* Topic(f: Frame, h
 		yield* g.srcCall(f, "show_menu", live(f.usr));
 	}
 	if (truthy(rt.at(live(href_list), "makepipe"))) {
-		rt.setSv(f, "p_type", (yield* g.call(f, P("/proc/text2path"), null, [rt.at(live(href_list), "makepipe")])));
+		new_type = (yield* g.call(f, P("/proc/text2path"), null, [rt.at(live(href_list), "makepipe")])); if (rt.isIn(f, live(new_type), rt.gl("pipe_types"))) rt.setSv(f, "p_type", live(new_type)); // tg's own hole: makepipe= took any type path (makepipe=0, the Atmospherics tab, now keeps the last pipe)
 		rt.setSv(f, "p_dir", (yield* g.call(f, P("/proc/text2num"), null, [rt.at(live(href_list), "dir")])));
 		rt.setSv(f, "p_conntype", (yield* g.call(f, P("/proc/text2num"), null, [rt.at(live(href_list), "type")])));
 		rt.setSv(f, "p_class", 0);

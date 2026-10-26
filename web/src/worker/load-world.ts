@@ -12,6 +12,7 @@ import { restoreSaves } from "../vm/persist-replay.js";
 import { parseHeader, parseScript } from "./scenario-script.js";
 import { encodeDmi } from "../dmi/png.js";
 import { type IconImage, evalRecipe } from "../dmi/icon-ops.js";
+import type { Appearance, BuiltAppearance } from "../appearance/appearance.js";
 import type { DmiState } from "../dmi/dmi.js";
 import type { StartMsg, HotMsg, SnapFetch } from "./boot-worker.js";
 
@@ -190,9 +191,16 @@ export async function loadWorld(ctx: LoadWorldCtx) {
 			else if (v !== null && typeof v === "object") fixIcons(v as Record<string, unknown>);
 		}
 	};
+	/** fixIcons for a view update's appearances, where an icon can only be on an appearance or one of its overlays: walking every field
+	 *  with for-in made a property iterator per object, and Firefox put those straight into the old heap (most of what a walking view
+	 *  left there: solo freezes). */
+	const fixAppIcons = (apps: [number, BuiltAppearance][]): void => {
+		const fix = (a: Appearance) => { const v = a.icon; if (v !== null && v.startsWith("rsc/")) { const u = runtimeUrl(v); if (u) a.icon = u; } };
+		for (let i = 0; i < apps.length; i++) { const ap = apps[i][1], os = ap.overlays; fix(ap); for (let j = 0; j < os.length; j++) fix(os[j]); }
+	};
 
 	return {
-		opts, vm, tree, bundle, pixels, scenarioText, scenarioName, stage, snapNote, saveStore, startStore, fixIcons,
+		opts, vm, tree, bundle, pixels, scenarioText, scenarioName, stage, snapNote, saveStore, startStore, fixIcons, fixAppIcons,
 		get snapP() { return snapP; }, set snapP(v) { snapP = v; },
 		get storeFiles() { return storeFiles; },
 	};

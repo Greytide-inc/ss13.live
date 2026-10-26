@@ -4,14 +4,15 @@
 // what was taken out ("tag script", "attr img onerror", ...), for the page log.
 // Parsed in a <template>, whose content is inert: nothing in it loads or runs while it's being cleaned.
 // Kept: the tags below; unknown tags are unwrapped (their text stays); DROP tags go with everything in them. Attributes: KEEP only,
-// href only on <a> (?..., byond://, http(s), #, relative), src only on <img> (data:image/png|gif|jpeg, blob:, relative), style without
+// href only on <a> (?..., byond:// but not byond://winset, http(s), #, relative), src only on <img> (data:image/png|gif|jpeg, blob:, relative), style without
 // positioning (a fixed box over the screen could fake the game's own text) or url().
 const TAGS = new Set("a abbr b big blockquote br center code dd div dl dt em font h1 h2 h3 h4 h5 h6 hr i img li ol p pre s small span strike strong sub sup table tbody td tfoot th thead tr tt u ul".split(" "));
 const DROP = new Set("script style iframe frame frameset object embed applet svg math template noscript link meta base form input button textarea select option audio video source track canvas title".split(" "));
 const KEEP = new Set("class style color face size align valign title alt width height border colspan rowspan bgcolor".split(" "));
 const BAD_STYLE = /^(position|z-index|inset|top|left|right|bottom|transform|translate|rotate|scale)/;
 const scheme = (v) => /^([a-z][a-z0-9+.-]*):/i.exec(v.replace(/[\u0000- \u007f]/g, ""))?.[1].toLowerCase();
-const hrefOk = (v) => { const s = scheme(v); return !s || s === "byond" || s === "http" || s === "https"; };
+// byond://winset links run a command as whoever clicks them: tg's chat never sends one (security review 2026-10-25 #3)
+const hrefOk = (v) => { const s = scheme(v); return !s || (s === "byond" && !/^byond:\/\/winset/i.test(v.replace(/[\u0000- \u007f]/g, ""))) || s === "http" || s === "https"; };
 const srcOk = (v) => { const s = scheme(v); return !s || s === "blob" || (s === "data" && /^\s*data:image\/(png|gif|jpeg);/i.test(v)); };
 
 export function cleanChat(html, doc = document) {

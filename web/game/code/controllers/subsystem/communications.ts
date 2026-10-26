@@ -45,7 +45,7 @@ rt.def("/datum/controller/subsystem/communications/proc/make_announcement", func
 		return 0;
 	}
 	if (truthy(live(is_silicon))) {
-		yield* g.call(f, P("/proc/minor_announce"), null, [(yield* g.call(f, P("/proc/html_decode"), null, [live(input)])), fmt("＀ Announces:", [rt.fv(f, "name", live(user))])]);
+		yield* g.call(f, P("/proc/minor_announce"), null, [live(input), fmt("＀ Announces:", [rt.fv(f, "name", live(user))])]); // tg's own hole: this html_decode()d the already-encoded input, and minor_announce prints its message as it is: raw HTML in every chat
 		rt.setSv(f, "silicon_message_cooldown", add(rt.worldTime(f), 600));
 	} else {
 		yield* g.call(f, P("/proc/priority_announce"), null, [(yield* g.call(f, P("/proc/html_decode"), null, [live(input)])), null, rt.rsc("sound/misc/announce.ogg"), "Captain"]);

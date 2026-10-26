@@ -6,10 +6,11 @@ import { DMList, DMObject, live } from "../vm/objects.js";
 import { refTable } from "../vm/refs.js";
 import { heap } from "../vm/gc.js";
 import { stringify } from "../vm/value.js";
-import type { ViewDiffer } from "./client-view.js";
+import type { ViewDiffer, ViewUpdate } from "./client-view.js";
 import { type IconImage, evalRecipe, recipePaths } from "../dmi/icon-ops.js";
 import { encodePng } from "../dmi/png.js";
 import type { StartMsg } from "./boot-worker.js";
+import { linkCommandOk } from "./input-check.js";
 
 export type ClickMsg = { type: "click"; player?: string; id: number | null; x: number | null; y: number | null; dbl: boolean; control: string; params: string };
 export type MenuMsg = { type: "menu"; player?: string; one?: number; x: number; y: number; sx: number; sy: number; click: ClickMsg };
@@ -64,7 +65,7 @@ export interface InputCtx {
 	pixels: Map<string, IconImage | null>;
 	fetchPixels: (path: string) => Promise<IconImage | null>;
 	normPath: (path: string) => string;
-	fixIcons: (o: Record<string, unknown>) => void;
+	fixAppIcons: (apps: ViewUpdate["apps"]) => void;
 	resyncRequested: Set<string>;
 	lateWakes: string[];
 	readonly joined: boolean;
@@ -72,7 +73,7 @@ export interface InputCtx {
 }
 
 export function installInput(ctx: InputCtx): void {
-	const { opts, vm, log, post, inLog, cutAt, players, early, playerOf, by, pixels, fetchPixels, normPath, fixIcons, resyncRequested, lateWakes } = ctx;
+	const { opts, vm, log, post, inLog, cutAt, players, early, playerOf, by, pixels, fetchPixels, normPath, fixAppIcons, resyncRequested, lateWakes } = ctx;
 onStep = (dir, player) => {
 	const c = playerOf(player)?.client;
 	if (c && playerOf(player)!.joined) vm.clients.step(c, dir);
@@ -162,7 +163,7 @@ onTopic = (href, player) => {
 		q.delete("id");
 		vm.clients.winset(c, id, [...q].map(([k, v]) => `${k}=${v.includes(";") || v.includes(" ") ? `"${v.replace(/"/g, '\\"')}"` : v}`).join(";"), true);
 		const cmd = q.get("command");
-		if (cmd) vm.clients.typeLine(c, cmd);
+		if (cmd && linkCommandOk(cmd)) vm.clients.typeLine(c, cmd);
 		return;
 	}
 	if (href.startsWith("?")) href = href.slice(1);
@@ -258,7 +259,7 @@ const clickAtOnce = (P: Player) => {
 	const evs = vm.animLog?.length ? vm.animLog.slice() : null;
 	const update = P.differ.update(vm, false, P.client);
 	if (evs) { vm.animLog!.push(...evs); P.animSeen ??= new Set(); for (const e of evs) P.animSeen.add(e); } // kept for the other players' next views, not given to this one twice
-	if (vm.runtimeIcons.size) fixIcons(update.apps as unknown as Record<string, unknown>);
+	if (vm.runtimeIcons.size) fixAppIcons(update.apps);
 	if (P.outLines.length) { post({ type: "output", player: P.ckey, lines: P.outLines }); P.outLines = []; }
 	post({ type: "view", player: P.ckey, update: { ...update, now: 1 } });
 	P.views++;

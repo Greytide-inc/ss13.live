@@ -99,7 +99,9 @@ export function clientSeen(vm: VM, c: DMObject, union?: UnionCache): ClientSeen 
 	const seeInv = typeof sight?.see_invisible === "number" ? sight.see_invisible : SEE_INVISIBLE_LIVING; // pt-d: the mob's own level (a ghost sees 60, so it sees itself)
 	const eyeTile = eyeTileOf(vm, c.getVar("eye")); // the outermost container's turf
 	const [vx, vy] = viewRadius(view);
-	// client.images whose loc is an atom or turf shown this update, by the tile they are drawn on (the atom's outermost turf).
+	const ring = vm.clients.predicts(c) ? 1 + PRED_R : 1;
+	// client.images whose loc is an atom or turf shown this update, by the tile they are drawn on (the atom's outermost turf). Only those in the
+	// box the update sends (the view plus its ring): an AI has thousands on its z level, and keeping them all made new garbage every update.
 	const imgsAt = new Map<number, DMObject[]>();
 	const imgs = new Set<DMObject>();
 	const imgList = live(c.getVar("images"));
@@ -111,7 +113,7 @@ export function clientSeen(vm: VM, c: DMObject, union?: UnionCache): ClientSeen 
 			const t = l instanceof DMAtom ? vm.map.outerTurf(l) : null;
 			if (!t || vm.getField(t, "z") !== eyeTile.z) continue;
 			const tx = vm.getField(t, "x"), ty = vm.getField(t, "y");
-			if (typeof tx !== "number" || typeof ty !== "number") continue;
+			if (typeof tx !== "number" || typeof ty !== "number" || Math.abs(tx - eyeTile.x) > vx + ring || Math.abs(ty - eyeTile.y) > vy + ring) continue;
 			const k = tx + ty * 65536;
 			let arr = imgsAt.get(k);
 			if (!arr) imgsAt.set(k, (arr = []));
@@ -119,7 +121,6 @@ export function clientSeen(vm: VM, c: DMObject, union?: UnionCache): ClientSeen 
 			imgs.add(im);
 		}
 	}
-	const ring = vm.clients.predicts(c) ? 1 + PRED_R : 1;
 	const cs = eyeTile ? clientSight(vm, eyeTile, vx, vy, m, ring) : null; // los1
 	const cv: ClientSeen = { eyeTile, view, vx, vy, ring, mob: m, sight, seeInv, cs, imgsAt, imgs };
 	if (union && popInSight(cv)) {
@@ -192,7 +193,7 @@ export function unionExtra(b: LosBox, free: number, vx: number, vy: number, ring
 			const at = eye ? unionAtKey(eye.x + nx, eye.y + ny, eye.z) : 0, old = lastAt?.get(at);
 			let v: Uint8Array;
 			if (old && sameBytes(old.opaque, sub.opaque)) v = old.vis;
-			else v = Uint8Array.from(computeLos(sub, 0, true, true), (x) => (x ? 1 : 0));
+			else { const los = computeLos(sub, 0, true, true); v = new Uint8Array(los.length); for (let k = 0; k < los.length; k++) v[k] = los[k] ? 1 : 0; }
 			nextAt?.set(at, old && v === old.vis ? old : { opaque: sub.opaque.slice(), vis: v });
 			for (let j = 0; j < v.length / vw; j++) for (let i = 0; i < vw; i++) if (v[i + j * vw]) out[ring - 1 + nx + i + (ring - 1 + ny + j) * b.w] = 1;
 		}
@@ -200,6 +201,23 @@ export function unionExtra(b: LosBox, free: number, vx: number, vy: number, ring
 	}
 	return out;
 }
+/** whether `now` (null = none) holds the same values as held[i], the copy the last call kept; held[i] becomes a copy of now (its buffer reused when the size is the same) */
+function keepSame(held: (Uint8Array | Int32Array | null)[], i: number, now: Uint8Array | Int32Array | null): boolean {
+	const was = held[i];
+	if (!now) { held[i] = null; return !was; }
+	if (was && was.length === now.length && was.constructor === now.constructor) {
+		let same = true;
+		for (let k = 0; k < now.length; k++) if (was[k] !== now[k]) { same = false; was[k] = now[k]; }
+		return same;
+	}
+	held[i] = now.slice();
+	return false;
+}
+const sameList = (a: unknown[], b: unknown[]): boolean => {
+	if (a.length !== b.length) return false;
+	for (let k = 0; k < a.length; k++) if (a[k] !== b[k]) return false;
+	return true;
+};
 const sameBytes = (a: Uint8Array, b: Uint8Array): boolean => {
 	if (a.length !== b.length) return false;
 	for (let k = 0; k < a.length; k++) if (a[k] !== b[k]) return false;
@@ -781,8 +799,9 @@ export class ViewDiffer {
 	private pSelf: DMObject | null = null;
 	private pHud = "";
 	private pLight = "";
-	private pOpq = "";
-	private pLum = "";
+	/** copies of what opq and lum were last made from (keepSame): the box's x0/y0/w, opaque, vis; lamp, areaLit */
+	private held: (Uint8Array | Int32Array | null)[] = [null, null, null, null, null];
+	private geo = new Int32Array(3);
 	private union: UnionCache = { key: "", vis: new Uint8Array(0) };
 	/** netcode 2: screen objects the next update sends again even if unchanged (a click on a toggle the page guessed at: the answer corrects a refused one). */
 	private resendIf: ((o: DMObject) => boolean) | null = null;
@@ -918,9 +937,9 @@ export class ViewDiffer {
 				}
 			}
 			const pi = this.pImgsAt; // images that appeared or left a tile
-			for (const [k, a] of cv.imgsAt) { const b = pi.get(k); if (!b || b.length !== a.length || a.some((o, i) => o !== b[i])) dirty.add(k); }
-			for (const k of pi.keys()) if (!cv.imgsAt.has(k)) dirty.add(k);
-			for (const k of dirty) doTile(k % 65536, Math.floor(k / 65536));
+			cv.imgsAt.forEach((a, k) => { const b = pi.get(k); if (!b || !sameList(a, b)) dirty.add(k); });
+			pi.forEach((_, k) => { if (!cv.imgsAt.has(k)) dirty.add(k); });
+			for (const k of dirty) if (inB(box, k % 65536, Math.floor(k / 65536))) doTile(k % 65536, Math.floor(k / 65536)); // an image that left the box: its tile was dropped above
 			// The safety sweep: a slice of the rest of the box, to catch a change nobody marked.
 			const bw = box[1] - box[0] + 1, total = bw * (box[3] - box[2] + 1), cnt = Math.min(total, Math.ceil(total / SWEEP_EVERY));
 			sweeping = true;
@@ -1035,12 +1054,14 @@ export class ViewDiffer {
 		const light = ownId !== undefined ? carriedLightOf(cv.mob, ownId) : [], lightKey = light.join();
 		const lightChanged = full ? light.length > 0 : lightKey !== this.pLight;
 		this.pLight = lightKey;
-		const op = cv.cs?.opaque, opq: Opq | [] = op ? packOpacity(cv.cs!.x0, cv.cs!.y0, cv.cs!.w, op.length / cv.cs!.w, op, cv.cs!.own ?? cv.cs!.vis) : [], opqKey = opq.join();
-		const opqChanged = full ? opq.length > 0 : opqKey !== this.pOpq;
-		this.pOpq = opqKey;
-		const lb = popInSight(cv) ? cv.cs!.box! : null, lum: Lum | [] = lb ? packLum(lb.lamp, lb.areaLit) : [], lumKey = lum.join();
-		const lumChanged = full ? lum.length > 0 : lumKey !== this.pLum;
-		this.pLum = lumKey;
+		// opq and lum are packed only when they changed (packing and joining them every update was most of a walking view's garbage: solo freezes)
+		const cs = cv.cs, op = cs?.opaque ?? null, held = this.held, geo = this.geo;
+		if (cs && op) { geo[0] = cs.x0; geo[1] = cs.y0; geo[2] = cs.w; }
+		const sameOpq = Number(keepSame(held, 0, op ? geo : null)) & Number(keepSame(held, 1, op)) & Number(keepSame(held, 2, op ? cs!.own ?? cs!.vis : null));
+		const opqChanged = full ? !!op : !sameOpq, opq: Opq | [] = !opqChanged ? [] : op ? packOpacity(cs!.x0, cs!.y0, cs!.w, op.length / cs!.w, op, cs!.own ?? cs!.vis) : [];
+		const lb = popInSight(cv) ? cs!.box! : null;
+		const sameLum = Number(keepSame(held, 3, lb ? lb.lamp : null)) & Number(keepSame(held, 4, lb ? lb.areaLit : null));
+		const lumChanged = full ? !!lb : !sameLum, lum: Lum | [] = lumChanged && lb ? packLum(lb.lamp, lb.areaLit) : [];
 		return {
 			seq: ++this.seq, full, worldTime: vm.sched.time, key: c.getVar("key"), view, baseView: baseViewOf(vm, c), eyeTile, sight,
 			apps, gone, tiles, moved, screen: full || screenChanged ? entries : null,

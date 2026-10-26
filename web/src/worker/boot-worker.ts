@@ -301,7 +301,7 @@ async function run(opts: StartMsg): Promise<void> {
 	const log = (line: string) => post({ type: "log", line });
 	const world = await loadWorld({ opts, log, secs, post, buildUrl, fetchJson, fetchPixels, fetchSnapshot, normPath, PIXEL_FILES, setOnHot: (f) => { onHot = f; }, setFreshAsk: (a) => { freshAsk = a; } });
 	opts = world.opts;
-	const { vm, tree, bundle, pixels, scenarioText, scenarioName, stage, snapNote, saveStore, startStore, fixIcons } = world;
+	const { vm, tree, bundle, pixels, scenarioText, scenarioName, stage, snapNote, saveStore, startStore, fixIcons, fixAppIcons } = world;
 	let scenarioPlayer: ScriptPlayer | null = null, scenarioStart = -1;
 	const joinJob = opts.join ?? "";
 	const playerKey = opts.playerKey ?? "LocalPlayer"; // multiplayer: the first player's key (tools/server.mjs passes the first connection's name)
@@ -440,7 +440,7 @@ async function run(opts: StartMsg): Promise<void> {
 				const aids = makeTickAids({ opts, vm, log, post, firstC, players, get joinAt() { return joinAt; }, get ticks() { return ticks; }, get freshAsk() { return freshAsk; }, set freshAsk(v) { freshAsk = v; } });
 		let lastCheck = 0;
 		let idle = false; // netcode 1: between ticks (the VM is not running anything), so a click can run at once
-		installInput({ opts, vm, log, post, inLog, cutAt, get logLevel() { return logLevel; }, players, early, playerOf, by, pixels, fetchPixels, normPath, fixIcons, resyncRequested, lateWakes, get joined() { return joined; }, get idle() { return idle; } });
+		installInput({ opts, vm, log, post, inLog, cutAt, get logLevel() { return logLevel; }, players, early, playerOf, by, pixels, fetchPixels, normPath, fixAppIcons, resyncRequested, lateWakes, get joined() { return joined; }, get idle() { return idle; } });
 		while (ticks < maxTicks && Date.now() < deadline() && !stopRequested) {
 			const due = vm.nextDue();
 			if (due === null) break;
@@ -625,7 +625,7 @@ async function run(opts: StartMsg): Promise<void> {
 				resyncRequested.delete(P.ckey); if (isFirst) resyncRequested.delete("");
 				const first = update.seq === 1;
 				const rtUses = first && vm.runtimeIcons.size ? [...JSON.stringify(update.apps).matchAll(/"icon":"([^"]+)"/g)].map((m) => m[1]).filter((i) => vm.runtimeIcons.has(i)) : [];
-				if (vm.runtimeIcons.size) fixIcons(update.apps as unknown as Record<string, unknown>);
+				if (vm.runtimeIcons.size) fixAppIcons(update.apps);
 				const tb = performance.now();
 				if (P.outLines.length) { post({ type: "output", player: P.ckey, lines: P.outLines }); P.outLines = []; }
 				post({ type: "view", player: P.ckey, update });

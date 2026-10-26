@@ -47,7 +47,7 @@ rt.def("/obj/machinery/pipedispenser/proc/Topic", function* Topic(f: Frame) {
 	yield* g.callName(f, live(f.src), "add_fingerprint", [live(f.usr)]);
 	if (truthy(rt.at(live(f.args[1]), "make"))) {
 		if (rt.lt(rt.sv(f, "wait"), rt.worldTime(f))) {
-			p_type = (yield* g.call(f, P("/proc/text2path"), null, [rt.at(live(f.args[1]), "make")]));
+			p_type = (yield* g.call(f, P("/proc/text2path"), null, [rt.at(live(f.args[1]), "make")])); if (!rt.isIn(f, live(p_type), rt.gl("pipe_types"))) return 1; // tg's own hole: make= took any type path, and wrenching the fitting created it
 			p_dir = (yield* g.call(f, P("/proc/text2num"), null, [rt.at(live(f.args[1]), "dir")]));
 			yield* g.callName(f, (_P = (yield* g.new_(f, T("/obj/item/pipe"), [null, rt.fv(f, "loc", live(f.src)), "pipe_type", live(p_type), "dir", live(p_dir)], rt.Args.Named))), "add_fingerprint", [live(f.usr)]);
 			rt.setSv(f, "wait", add(rt.worldTime(f), 10));

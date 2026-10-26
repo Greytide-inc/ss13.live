@@ -44,5 +44,8 @@ export function inputOk(m: unknown): boolean {
 	const pl = (m as Rec).player;
 	return (pl === undefined || str(pl, 64)) && CHECKS[type](m as Rec);
 }
+/** A byond://winset link's command= runs as whoever clicks it (admin verbs too), so a link that slipped into chat or a popup could act
+ * for them: only tgui's close button sends one (`uiclose [0x...]`), and only that runs. Security review 2026-10-25 #3. */
+export const linkCommandOk = (cmd: string): boolean => /^uiclose \[0x[0-9a-f]+\]$/i.test(cmd);
 /** The message types inputOk knows: a player's page may send these and no others. */
 export const INPUT_TYPES = Object.keys(CHECKS);

@@ -28,6 +28,8 @@ const ATTACKS = [
 	`<meta http-equiv="refresh" content="0;url=javascript:hits.push('meta')">`, `<img src="data:image/svg+xml,<svg onload=hits.push(1)>">`,
 	`<a class=go href="data:text/html,<script>alert(1)<\/script>">d</a>`, `<span style="position:fixed;inset:0;background:url(//example.invalid/x.png)">fake</span>`,
 	`<scr<script>ipt>hits.push('nest')</scr</script>ipt>`, `<img src=x id=popups name=addOutput onerror="hits.push('id')">`,
+	// byond://winset links run a command as whoever clicks them
+	`<a href="byond://winset?command=.quit">w1</a>`, `<a href=" BYOND://win&#9;Set?map.focus=true">w2</a>`,
 ];
 const GAME = [ // tg's own chat formats: must come out exactly as a plain parse
 	`<span class='game say'><span class='name'>John Smith</span> <span class='message'>says, "hi &amp; bye"</span></span>`,
@@ -101,7 +103,7 @@ try {
 			if (!p) { check(false, `${b.name}: plain page gave no result`); continue; }
 			check(p.hits.length === 0, `${b.name}: ${ATTACKS.length} attack strings through cleanChat, no CSP: nothing ran (${p.hits.join(",") || "none"})`);
 			check(p.removed.every((n, i) => n > 0 || ATTACKS[i].startsWith("<body")), `${b.name}: every attack string had something removed (${p.removed.join(",")})`);
-			const left = p.html.match(/.{0,40}(?: on\w+=|javascript:|<script|<iframe|<svg|<style|(?<![-\w])position:|url\().{0,40}/i); check(!left,`${b.name}: no handler, javascript:, script, iframe, svg, style, positioning left in the output${left ? ": " + left[0] : ""}`);
+			const left = p.html.match(/.{0,40}(?: on\w+=|javascript:|<script|<iframe|<svg|<style|(?<![-\w])position:|url\(|winset).{0,40}/i); check(!left,`${b.name}: no handler, javascript:, script, iframe, svg, style, positioning, winset link left in the output${left ? ": " + left[0] : ""}`);
 			check(p.popups === "undefined", `${b.name}: id/name attributes dropped (no window.popups clobber)`);
 			check(p.changed.length === 0, `${b.name}: ${GAME.length} lines of tg's own chat formatting unchanged${p.changed.length ? ":\n      " + p.changed.join("\n      ") : ""}`);
 			await b.go(base + "/csp.html"); const c = await result(b);

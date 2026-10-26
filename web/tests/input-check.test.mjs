@@ -1,6 +1,6 @@
 // input-check.test - ps-security: the messages a real page sends pass the shape check; junk, oversized and forged-proc ones don't.
 import assert from "node:assert/strict";
-import { inputOk, MAX_TEXT, INPUT_TYPES } from "../build/dist/src/worker/input-check.js";
+import { inputOk, MAX_TEXT, INPUT_TYPES, linkCommandOk } from "../build/dist/src/worker/input-check.js";
 
 const click = { type: "click", id: 12, x: 100, y: 120, dbl: false, control: "mapwindow.map", params: "icon-x=16;icon-y=16;left=1" };
 const good = [
@@ -26,6 +26,9 @@ const bad = [
 	{ type: "mouse", proc: "MouseDrop", id: 5, over: "6" },
 ];
 for (const m of bad) assert.ok(!inputOk(m), `should be refused: ${JSON.stringify(m)?.slice(0, 80)}`);
+// a byond://winset link's command= runs as whoever clicks it: only tgui's close button sends one
+assert.ok(linkCommandOk("uiclose [0x2000123]"));
+for (const cmd of [".quit", "ooc hi", "uiclose [0x2000123];ooc hi", "uiclose [0x2000123]\nooc hi", "uiclose", "Uiclose x", " adminhelp"]) assert.ok(!linkCommandOk(cmd), `link command refused: ${cmd}`);
 // every type tools/server.mjs forwards has a check, and nothing else does
 const src = (await import("node:fs")).readFileSync(new URL("../tools/server.mjs", import.meta.url), "utf8");
 const forward = JSON.parse(src.match(/const FORWARD = new Set\((\[[^\]]*\])\)/)[1]);
