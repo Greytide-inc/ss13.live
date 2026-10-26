@@ -4,23 +4,28 @@
 // .dmi files are PNGs.
 const BUILD = "__BUILD__";
 const BIG = new Set(__BIG__); // "/web/build/world.snap.gz", ...
-const TYPES = { ".js": "text/javascript", ".gz": "application/octet-stream", ".json": "application/json", ".dmi": "image/png", ".dmf": "text/plain" };
+const TYPES = { ".js": "text/javascript", ".gz": "application/octet-stream", ".zst": "application/octet-stream", ".json": "application/json", ".dmi": "image/png", ".dmf": "text/plain" };
 const typeOf = (p) => TYPES[p.slice(p.lastIndexOf("."))];
 
 // A big file: the browser's copy if it has this build's (If-None-Match), else Cloudflare's edge copy, else R2.
 // The R2 key holds the build hash, so a copy never goes stale: repeat visits cost no R2 reads.
+// A saved world's zstd copy (.snap.zst, 23 MB instead of 37 for Box) goes out with Content-Encoding: zstd, so the browser unpacks it
+// on arrival (there's no zstd DecompressionStream). The page asks for it by name and falls back to the .snap.gz if its browser
+// can't (boot-worker.ts fetchSnapshot): Cloudflare drops zstd from the Accept-Encoding the worker sees (cf.clientAcceptEncoding too),
+// so the worker can't choose. encodeBody "manual": the bytes go out as stored.
 async function big(req, env, ctx, path) {
-	const etag = `"${BUILD}"`;
+	const zst = path.endsWith(".snap.zst"), etag = `"${BUILD}"`;
 	const head = { "Content-Type": typeOf(path) ?? "application/octet-stream", "Cache-Control": "no-cache", ETag: etag };
+	const send = (body, size) => new Response(req.method === "HEAD" ? null : body, { headers: { ...head, ...(size ? { "Content-Length": String(size) } : {}), ...(zst ? { "Content-Encoding": "zstd" } : {}) }, ...(zst ? { encodeBody: "manual" } : {}) });
 	if (req.headers.get("If-None-Match") === etag) return new Response(null, { status: 304, headers: head });
 	const key = BUILD + path, edgeKey = new Request(new URL("/__big/" + key, req.url));
-	const edge = await caches.default.match(edgeKey);
-	if (edge) return new Response(req.method === "HEAD" ? null : edge.body, { headers: head });
+	const edge = await caches.default.match(edgeKey); // stored without Content-Encoding (plain bytes), so the cache never unpacks it
+	if (edge) return send(edge.body, edge.headers.get("Content-Length"));
 	const obj = await env.BIG.get(key);
 	if (!obj) return new Response("not found", { status: 404 });
 	const [mine, cached] = obj.body.tee();
 	ctx.waitUntil(caches.default.put(edgeKey, new Response(cached, { headers: { ...head, "Content-Length": String(obj.size), "Cache-Control": "public, max-age=31536000, immutable" } })));
-	return new Response(req.method === "HEAD" ? null : mine, { headers: { ...head, "Content-Length": String(obj.size) } });
+	return send(mine, obj.size);
 }
 
 export default {

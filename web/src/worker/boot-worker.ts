@@ -88,17 +88,20 @@ const normPath = (path: string) => path.replace(/\\/g, "/").replace(/^\.\//, "")
 
 // the pre-started world (vm/snapshot.ts), made by `npm run build:static` into dist only: web/build/world-snap.json
 // ({ raw, gz }: sizes) next to web/build/world.snap.gz. Streamed and gunzipped (DecompressionStream; brotli isn't in
-// Chrome's) straight into one buffer of the raw size. If the host already undid the gzip (Content-Encoding), the bytes
-// are taken as they come. Returns why not, instead of throwing: any failure here means a normal boot.
-export type SnapFetch = { bytes: Uint8Array; gz: number; ms: number } | { why: string };
+// Chrome's) straight into one buffer of the raw size. ss13.live also has world.snap.zst (23 MB instead of 37 for Box), sent with
+// Content-Encoding: zstd (site/worker.js), so the browser unpacks it on arrival: asked for first, and taken only if the reply says
+// zstd. Otherwise it's dropped unread: no such file (local servers), or a browser without zstd, which Cloudflare sends the whole
+// 195 MB unpacked. Any other bytes the browser already unpacked are taken as they come. Returns why not, instead of throwing: any
+// failure here means a normal boot. how: "zstd", "gzip" or the Content-Encoding the browser undid; gz: the bytes downloaded.
+export type SnapFetch = { bytes: Uint8Array; gz: number; how: string; ms: number } | { why: string };
 // one snapshot per map. BoxStation (or no map) is world.snap.gz; another map is world-<short name>.snap.gz, "runtime" and
 // "RuntimeStation" both world-runtime (the same rule as snapNames in tools/snapshot-key.mjs).
 // ?snap=NAME: world-NAME.snap.gz instead, a snapshot tools/make-snapshot.mjs made (e.g. mid-round; pass its ?map= too).
-function snapFiles(map?: string, snap?: string): { gz: string; meta: string } {
-	if (snap) return { gz: `world-${snap}.snap.gz`, meta: `world-${snap}-snap.json` };
+function snapFiles(map?: string, snap?: string): { gz: string; zst: string; meta: string } {
+	if (snap) return { gz: `world-${snap}.snap.gz`, zst: `world-${snap}.snap.zst`, meta: `world-${snap}-snap.json` };
 	const slug = (map || "").toLowerCase().replace(/station$/, "").replace(/[^a-z0-9]/g, "");
 	const sfx = !slug || slug === "box" ? "" : "-" + slug;
-	return { gz: `world${sfx}.snap.gz`, meta: `world${sfx}-snap.json` };
+	return { gz: `world${sfx}.snap.gz`, zst: `world${sfx}.snap.zst`, meta: `world${sfx}-snap.json` };
 }
 async function fetchSnapshot(stage: (text: string) => void, map?: string, snap?: string): Promise<SnapFetch> {
 	const t0 = Date.now();
@@ -107,13 +110,19 @@ async function fetchSnapshot(stage: (text: string) => void, map?: string, snap?:
 		const mr = await fetch(buildUrl(nm.meta));
 		if (!mr.ok) return { why: `no snapshot ${snap ? `"${snap}"` : `for ${map || "BoxStation"}`} in this build (${nm.meta}: HTTP ${mr.status})` };
 		const meta = (await mr.json()) as { raw: number; gz: number };
-		const r = await fetch(buildUrl(nm.gz));
+		const rz = await fetch(buildUrl(nm.zst)).catch(() => null);
+		const zstd = !!rz?.ok && /\bzstd\b/.test(rz.headers.get("Content-Encoding") ?? "");
+		if (!zstd) rz?.body?.cancel().catch(() => {});
+		const r = zstd && rz ? rz : await fetch(buildUrl(nm.gz));
 		if (!r.ok || !r.body) return { why: `${nm.gz}: HTTP ${r.status}` };
 		const src = r.body.getReader();
 		const first = await src.read();
 		if (first.done) return { why: `${nm.gz} is empty` };
 		let got = first.value.length, lastShown = 0;
 		const gzipped = first.value[0] === 0x1f && first.value[1] === 0x8b;
+		// unpacked on arrival: the counter counts unpacked bytes, shown scaled to the download's size (Content-Length) when there is one
+		const enc = r.headers.get("Content-Encoding") || "none", sent = gzipped ? meta.gz : Number(r.headers.get("Content-Length")) || meta.raw;
+		const shown = (n: number) => (gzipped ? n : (n * sent) / meta.raw);
 		// the fetched stream again, first chunk included, counting download progress for the loading screen
 		const body = new ReadableStream<Uint8Array>({
 			start(c) { c.enqueue(first.value); },
@@ -121,7 +130,7 @@ async function fetchSnapshot(stage: (text: string) => void, map?: string, snap?:
 				const x = await src.read();
 				if (x.done) return c.close();
 				got += x.value.length;
-				if (got - lastShown > 4e6) { lastShown = got; stage(`Loading the station... ${Math.round(got / 1e6)} / ${Math.round(meta.gz / 1e6)} MB`); }
+				if (got - lastShown > 4e6) { lastShown = got; stage(`Loading the station... ${Math.round(shown(got) / 1e6)} / ${Math.round(sent / 1e6)} MB`); }
 				c.enqueue(x.value);
 			},
 		});
@@ -136,7 +145,7 @@ async function fetchSnapshot(stage: (text: string) => void, map?: string, snap?:
 			at += x.value.length;
 		}
 		if (at !== out.length) return { why: `${nm.gz} unpacked to ${at} bytes, ${nm.meta} says ${meta.raw}` };
-		return { bytes: out, gz: got, ms: Date.now() - t0 };
+		return { bytes: out, gz: gzipped ? got : sent, how: zstd ? "zstd" : gzipped ? "gzip" : enc, ms: Date.now() - t0 };
 	} catch (e) {
 		return { why: `snapshot download failed: ${e}` };
 	}
@@ -373,7 +382,7 @@ async function run(opts: StartMsg): Promise<void> {
 			else {
 				stage("Unpacking the station...");
 				await yieldNow(); // let the page show it
-				const rawMB = (snap.bytes.length / 1048576).toFixed(1), gzMB = (snap.gz / 1048576).toFixed(1), fetchS = (snap.ms / 1000).toFixed(1);
+				const rawMB = (snap.bytes.length / 1048576).toFixed(1), gzMB = (snap.gz / 1048576).toFixed(1), fetchS = (snap.ms / 1000).toFixed(1), snapHow = snap.how;
 				try {
 					const r = loadSnapshot(vm, snap.bytes);
 					freeBytes(snap.bytes);
@@ -388,7 +397,7 @@ async function run(opts: StartMsg): Promise<void> {
 					const seed = opts.seed ?? Math.floor(Math.random() * 0x7fffffff);
 					const reset = resumeWorld(vm, seed);
 					if (skinText !== null) vm.clients.setSkin(skinText); // the saved world had no client, hence no skin
-					log(`[vm-boot] snapshot loaded (${gzMB} MB gzip, ${rawMB} MB raw, fetched and unpacked in ${fetchS} s; ${r.objects} objects in ${(r.ms / 1000).toFixed(1)} s) at ${secs()} s wall (the saved boot took ${host.wall.toFixed(1)} s to get here); world.time ${vm.sched.time}, tick ${vm.sched.tick}, ${vm.sched.sleeping} sleeping threads; RNG seed ${seed}; reset ${reset.join(", ") || "nothing"}; heap ${heapMB()} MB`);
+					log(`[vm-boot] snapshot loaded (${gzMB} MB ${snapHow}, ${rawMB} MB raw, fetched and unpacked in ${fetchS} s; ${r.objects} objects in ${(r.ms / 1000).toFixed(1)} s) at ${secs()} s wall (the saved boot took ${host.wall.toFixed(1)} s to get here); world.time ${vm.sched.time}, tick ${vm.sched.tick}, ${vm.sched.sleeping} sleeping threads; RNG seed ${seed}; reset ${reset.join(", ") || "nothing"}; heap ${heapMB()} MB`);
 					post({ type: "milestone", name: "snapshot", s: Number(secs()) });
 					startStore(true); // after the load: the snapshot replaced the file layer
 					// Memory: free the load's garbage now, behind the loading screen. Without a GC here the first full GC came ~85 s in,

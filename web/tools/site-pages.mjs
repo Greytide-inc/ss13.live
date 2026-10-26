@@ -4,6 +4,7 @@
 import { cpSync, rmSync, mkdirSync, readFileSync, writeFileSync, readdirSync, statSync, renameSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { spawnSync } from "node:child_process";
 import { writeSw } from "./write-sw.mjs";
 import { fixCsp } from "./csp.mjs";
 
@@ -39,6 +40,17 @@ const big = [];
 	}
 })(pages);
 for (const p of big) { mkdirSync(dirname(join(r2, build + p)), { recursive: true }); renameSync(join(pages, p), join(r2, build + p)); }
-writeFileSync(join(pages, "_worker.js"), readFileSync(join(web, "site/worker.js"), "utf8").replace("__BUILD__", build).replace("__BIG__", JSON.stringify(big)));
-console.log(`site build ${build}: ${big.length} files for R2 (${big.join(", ")})`);
+// each saved world also as zstd (-19: 37 -> 23 MB for Box; no long mode, browsers only take an 8 MB window), sent to browsers that
+// accept it with Content-Encoding: zstd, so the browser unpacks it on arrival (no DecompressionStream for zstd). Not in the service
+// worker's list: the offline copy keeps the .gz. Needs the zstd command (apt install zstd).
+const zst = [];
+for (const p of big.filter((x) => x.endsWith(".snap.gz"))) {
+	const z = p.replace(/\.gz$/, ".zst"), t0 = Date.now();
+	const r = spawnSync("bash", ["-c", 'set -o pipefail; gzip -dc "$1" | zstd -19 -T0 -q -f -o "$2"', "sh", join(r2, build + p), join(r2, build + z)], { stdio: ["ignore", "inherit", "inherit"] });
+	if (r.status !== 0) throw new Error(`site-pages: zstd of ${p} failed (is the zstd command installed?)`);
+	console.log(`${z}: ${(statSync(join(r2, build + z)).size / 1048576).toFixed(1)} MB zstd (gzip ${(statSync(join(r2, build + p)).size / 1048576).toFixed(1)}) in ${((Date.now() - t0) / 1000).toFixed(0)} s`);
+	zst.push(z);
+}
+writeFileSync(join(pages, "_worker.js"), readFileSync(join(web, "site/worker.js"), "utf8").replace("__BUILD__", build).replace("__BIG__", JSON.stringify([...big, ...zst])));
+console.log(`site build ${build}: ${big.length + zst.length} files for R2 (${[...big, ...zst].join(", ")})`);
 console.log(`BUILD=${build}`);
