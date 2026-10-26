@@ -89,6 +89,14 @@ ALLOW_VOTE_BOOT
 ## allow players to start a vote on next round's map (the maps in maps.txt that allow this many players); on a server it also starts by itself when the shuttle leaves
 ALLOW_VOTE_MAP
 
+## new arrivals (a name and address not seen this round, joining later than this after the round started) can't use OOC, vote or
+## start a vote for this long (deciseconds; 2 minutes). Playing and talking in character are fine. Comment out to turn off.
+NEWCOMER_WAIT 1200
+
+## tell everyone when an admin kicks or bans a player (with the ban's reason); the round-end report lists every kick, ban and
+## boot vote either way
+ANNOUNCE_REMOVALS
+
 ## min delay (deciseconds) between voting sessions (default 10 minutes)
 VOTE_DELAY 6000
 
@@ -165,8 +173,8 @@ TICK_LIMIT_MC_INIT 500
 ##Defines the ticklag for the world.  0.9 is the normal one, 0.5 is smoother.
 TICKLAG 0.5
 
-## Comment this out to disable automuting
-#AUTOMUTE_ON
+## Comment this out to disable automuting (repeating the same message 10 times in a row mutes that chat channel; admins are exempt)
+AUTOMUTE_ON
 
 ## Uncomment this to let players see their own notes (they can still be set by admins only)
 #SEE_OWN_NOTES

@@ -12,6 +12,9 @@ rt.type(50, "/datum/controller/subsystem/vote", "/datum/controller/subsystem", {
 	question: null,
 	choices: null,
 	voted: null,
+	voted_ids: null,
+	arrivals: null,
+	removals: null,
 	voting: null,
 	generated_actions: null,
 	boot_ckey: null,
@@ -44,6 +47,9 @@ rt.def("/datum/controller/subsystem/vote/proc/<init>", function _init_(f: Frame)
 	$0 = $0;
 	rt.setSv(f, "voted", rt.list());
 	$0 = $0;
+	rt.setSv(f, "voted_ids", rt.list());
+	rt.setSv(f, "arrivals", rt.list());
+	rt.setSv(f, "removals", rt.list());
 	rt.setSv(f, "voting", rt.list());
 	$0 = $0;
 	rt.setSv(f, "generated_actions", rt.list());
@@ -92,6 +98,7 @@ rt.def("/datum/controller/subsystem/vote/proc/reset", function* reset(f: Frame) 
 	rt.setSv(f, "boot_address", null);
 	yield* g.callName(f, rt.sv(f, "choices"), "Cut", []);
 	yield* g.callName(f, rt.sv(f, "voted"), "Cut", []);
+	yield* g.callName(f, rt.sv(f, "voted_ids"), "Cut", []);
 	yield* g.callName(f, rt.sv(f, "voting"), "Cut", []);
 	yield* g.srcCall(f, "remove_action_buttons");
 	return f.dot;
@@ -99,9 +106,9 @@ rt.def("/datum/controller/subsystem/vote/proc/reset", function* reset(f: Frame) 
 
 // /datum/controller/subsystem/vote/proc/get_result  (code/controllers/subsystem/vote.dm:51)
 rt.def("/datum/controller/subsystem/vote/proc/get_result", function get_result(f: Frame) {
-	let greatest_votes: Value = null, total_votes: Value = null, option: Value = null, votes: Value = null, non_voters: Value = null, non_voter_ckey: Value = null, C: Value = null;
+	let greatest_votes: Value = null, total_votes: Value = null, option: Value = null, votes: Value = null, non_voters: Value = null, non_voter_ckey: Value = null, C: Value = null, seen: Value = null, id: Value = null;
 	let $e: any;
-	f.vars = () => [greatest_votes, total_votes, option, votes, non_voters, non_voter_ckey, C, $e];
+	f.vars = () => [greatest_votes, total_votes, option, votes, non_voters, non_voter_ckey, C, seen, id, $e];
 	greatest_votes = 0;
 	total_votes = 0;
 	option = null;
@@ -118,11 +125,14 @@ rt.def("/datum/controller/subsystem/vote/proc/get_result", function get_result(f
 		non_voters = rt.callName(f, rt.gl("directory"), "Copy", []);
 		(non_voters = rt.modify(live(non_voters), rt.sv(f, "voted"), subtract));
 		non_voter_ckey = null;
+		seen = rt.callName(f, rt.sv(f, "voted_ids"), "Copy", []); // ss13.live: one vote per address, so one non-voter per address too, and none from an address that voted
 		rt.forList(f, 0, live(non_voters));
 		while (($e = rt.next(f, 0)) !== undefined) {
 			non_voter_ckey = $e;
-			if ((!truthy((C = rt.index(live(non_voters), live(non_voter_ckey)))) || truthy(rt.callName(f, live(C), "is_afk", [])))) {
+			if ((!truthy((C = rt.index(live(non_voters), live(non_voter_ckey)))) || truthy(rt.callName(f, live(C), "is_afk", [])) || rt.isIn(f, (id = rt.callSrc(f, "vote_id", [live(C)])), live(seen)))) {
 				(non_voters = rt.modify(live(non_voters), live(non_voter_ckey), subtract));
+			} else {
+				seen = rt.modify(live(seen), live(id), add);
 			}
 		}
 		rt.endFor(f, 0);
@@ -275,13 +285,22 @@ rt.def("/datum/controller/subsystem/vote/proc/result", function* result(f: Frame
 }, true);
 
 // /datum/controller/subsystem/vote/proc/submit_vote  (code/controllers/subsystem/vote.dm:142)
-rt.def("/datum/controller/subsystem/vote/proc/submit_vote", function submit_vote(f: Frame, vote: Value) {
+rt.def("/datum/controller/subsystem/vote/proc/submit_vote", function* submit_vote(f: Frame, vote: Value) {
+	let id: Value = null;
+	f.vars = () => [vote, id];
 	if (truthy(rt.sv(f, "mode"))) {
 		if (((truthy(rt.fv(f, "vote_no_dead", rt.gl("config"))) && isEqual(rt.fv(f, "stat", live(f.usr)), 2)) && !truthy(rt.gv(f, "holder", rt.fv(f, "client", live(f.usr)))))) {
 			return 0;
 		}
 		if (!truthy((rt.isIn(f, rt.fv(f, "ckey", live(f.usr)), rt.sv(f, "voted")) ? 1 : 0))) {
 			if (((truthy(live(vote)) && rt.le(1, live(vote))) && rt.le(live(vote), rt.len(f, rt.sv(f, "choices"))))) {
+				if (truthy((yield* g.srcCall(f, "newcomer_refused", rt.fv(f, "client", live(f.usr)), "vote")))) return 0;
+				id = rt.callSrc(f, "vote_id", [rt.fv(f, "client", live(f.usr))]);
+				if (rt.isIn(f, live(id), rt.sv(f, "voted_ids"))) { // ss13.live: one vote per address (plans/server-rules.md step 3)
+					yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), "<span class='warning'>Someone at your address has already voted: one vote per address.</span>"]);
+					return 0;
+				}
+				rt.modSrcVar(f, "voted_ids", live(id), add);
 				rt.modSrcVar(f, "voted", rt.fv(f, "ckey", live(f.usr)), add);
 				rt.incAt(rt.sv(f, "choices"), rt.index(rt.sv(f, "choices"), live(vote)), 1, true);
 				return live(vote);
@@ -289,7 +308,7 @@ rt.def("/datum/controller/subsystem/vote/proc/submit_vote", function submit_vote
 		}
 	}
 	return 0;
-});
+}, true);
 
 // /datum/controller/subsystem/vote/proc/initiate_vote  (code/controllers/subsystem/vote.dm:152)  may sleep
 rt.def("/datum/controller/subsystem/vote/proc/initiate_vote", function* initiate_vote(f: Frame, vote_type: Value, initiator_key: Value, target: Value) {
@@ -297,6 +316,9 @@ rt.def("/datum/controller/subsystem/vote/proc/initiate_vote", function* initiate
 	let $0: any, $e: any;
 	f.vars = () => [vote_type, initiator_key, target, next_allowed_time, admin, ckey, i, option, text, c, C, V, $0, $e];
 	if (!truthy(rt.sv(f, "mode"))) {
+		if (live(initiator_key) !== null && truthy((yield* g.srcCall(f, "newcomer_refused", rt.fv(f, "client", live(f.usr)), "start a vote")))) { // ss13.live: plans/server-rules.md step 4
+			return 0;
+		}
 		if (truthy(rt.sv(f, "started_time"))) {
 			next_allowed_time = add(rt.sv(f, "started_time"), rt.fv(f, "vote_delay", rt.gl("config")));
 			if (truthy(rt.sv(f, "mode"))) {
@@ -615,6 +637,82 @@ rt.def("/datum/controller/subsystem/vote/proc/shuttle_vote_passed", function* sh
 	return f.dot;
 }, true);
 
+// ss13.live: who a vote counts as (plans/server-rules.md step 3): one vote per address, so one person with several tabs or names
+// votes once. This machine's own connections (admins, local play) count by key: they all share 127.0.0.1.
+rt.def("/datum/controller/subsystem/vote/proc/vote_id", function vote_id(f: Frame, C: Value) {
+	const address = truthy(live(C)) ? rt.gv(f, "address", C) : null;
+	if (truthy(address) && !isEqual(address, "127.0.0.1") && !isEqual(address, "::1")) return address;
+	return truthy(live(C)) ? rt.gv(f, "ckey", C) : null;
+});
+
+// ss13.live: new arrivals wait (plans/server-rules.md step 4). A name and address not seen this round that joins more than
+// config.newcomer_wait after the round started can't use OOC, vote or start a vote for that long. Joining before then is free: the
+// server starts each round as soon as its world is up, and the regulars rejoin within seconds. A known name or address shares the wait (or none) already
+// recorded for it, so a reconnect, a new tab or a new name from the same address doesn't skip or restart it. arrivals: id -> world.time the wait ends.
+rt.def("/datum/controller/subsystem/vote/proc/note_arrival", function note_arrival(f: Frame, C: Value) {
+	const ids = [rt.gv(f, "ckey", C)], address = rt.callSrc(f, "vote_id", [live(C)]);
+	if (!isEqual(address, ids[0])) ids.push(address);
+	let until: Value = null;
+	for (const id of ids) {
+		const t = rt.at(rt.sv(f, "arrivals"), id);
+		if (t !== null && (until === null || rt.lt(t, until))) until = t;
+	}
+	if (until === null) {
+		const wait = rt.fv(f, "newcomer_wait", rt.gl("config"));
+		const late = truthy(rt.callName(f, rt.gl("SSticker"), "HasRoundStarted", [])) && rt.gt(subtract(rt.worldTime(f), rt.fv(f, "round_start_time", rt.gl("SSticker"))), wait);
+		until = late ? add(rt.worldTime(f), wait) : 0;
+	}
+	for (const id of ids) rt.setAt(rt.sv(f, "arrivals"), id, until);
+	return f.dot;
+});
+
+// Deciseconds the client still has to wait, 0 if none (admins, and this machine's own connections, never wait).
+rt.def("/datum/controller/subsystem/vote/proc/newcomer_wait_left", function newcomer_wait_left(f: Frame, C: Value) {
+	if (!truthy(live(C)) || truthy(rt.gv(f, "holder", C))) return 0;
+	if (isEqual(rt.callSrc(f, "vote_id", [live(C)]), rt.gv(f, "ckey", C))) return 0;
+	const until = rt.at(rt.sv(f, "arrivals"), rt.gv(f, "ckey", C));
+	if (until === null) return 0;
+	const left = subtract(until, rt.worldTime(f));
+	return rt.gt(left, 0) ? left : 0;
+});
+
+// Tells a waiting newcomer why `what` (OOC, vote, start a vote) is refused; returns 1 if refused.
+rt.def("/datum/controller/subsystem/vote/proc/newcomer_refused", function* newcomer_refused(f: Frame, C: Value, what: Value) {
+	let left: Value = null;
+	f.vars = () => [C, what, left];
+	left = rt.callSrc(f, "newcomer_wait_left", [live(C)]);
+	if (!rt.gt(live(left), 0)) return 0;
+	yield* g.call(f, P("/proc/to_chat"), null, [live(C), fmt("<span class='warning'>New arrivals can ＀ after ＀ more seconds. Playing and talking in character are fine.</span>", [live(what), Math.ceil(Number(live(left)) / 10)])]);
+	return 1;
+}, true);
+
+// ss13.live: punishments are seen (plans/server-rules.md step 5). Every kick, ban and boot vote this round goes on the list the
+// round-end report shows; kicks and bans are also told to everyone at once (config.announce_removals; the boot vote announces itself).
+rt.def("/datum/controller/subsystem/vote/proc/note_removal", function* note_removal(f: Frame, text: Value, announce: Value) {
+	f.vars = () => [text, announce];
+	yield* g.callName(f, rt.sv(f, "removals"), "Add", [live(text)]);
+	if (truthy(live(announce)) && truthy(rt.fv(f, "announce_removals", rt.gl("config")))) {
+		yield* g.call(f, P("/proc/to_chat"), null, [rt.world(), fmt("<span class='boldannounce'>＀</span>", [live(text)])]);
+	}
+	return f.dot;
+}, true);
+
+rt.def("/datum/controller/subsystem/vote/proc/removals_report", function* removals_report(f: Frame) {
+	let text: Value = null, line: Value = null;
+	let $e: any;
+	f.vars = () => [text, line, $e];
+	if (!truthy(rt.len(f, rt.sv(f, "removals")))) return f.dot;
+	text = "<br><b>Removed this round:</b>";
+	rt.forList(f, 0, rt.sv(f, "removals"));
+	while (($e = rt.next(f, 0)) !== undefined) {
+		line = $e;
+		text = rt.modify(live(text), fmt("<br>＀", [live(line)]), add);
+	}
+	rt.endFor(f, 0);
+	yield* g.call(f, P("/proc/to_chat"), null, [rt.world(), live(text)]);
+	return f.dot;
+}, true);
+
 // ss13.live: in the shuttle and boot votes the choice that changes nothing: it gets the non-voters and wins a tie. null in other votes.
 rt.def("/datum/controller/subsystem/vote/proc/status_quo", function status_quo(f: Frame) {
 	if (isEqual(rt.sv(f, "mode"), "shuttle")) return "Keep playing";
@@ -703,6 +801,7 @@ rt.def("/datum/controller/subsystem/vote/proc/boot_vote_passed", function* boot_
 	yield* g.call(f, P("/proc/log_world"), null, [fmt("[server-roundban] ＀ ＀", [live(ckey), truthy(rt.sv(f, "boot_address")) ? rt.sv(f, "boot_address") : "-"])]); // read by tools/server.mjs
 	yield* g.call(f, P("/proc/log_game"), null, [fmt("Boot vote passed: ＀ is off the server until the next round.", [live(label)])]);
 	yield* g.call(f, P("/proc/to_chat"), null, [rt.world(), fmt("<span class='boldannounce'>＀ was voted off the station for the rest of the round.</span>", [live(label)])]);
+	yield* g.srcCall(f, "note_removal", fmt("＀ was voted off the station.", [live(label)]), 0);
 	if (truthy(live(C))) {
 		yield* g.call(f, P("/proc/to_chat"), null, [live(C), "<span class='danger'>The crew voted you off the station for the rest of this round. You can come back next round.</span>"]);
 		yield* g.call(f, P("/proc/qdel"), null, [live(C)]);

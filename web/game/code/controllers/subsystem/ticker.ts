@@ -764,6 +764,7 @@ rt.def("/datum/controller/subsystem/ticker/proc/declare_completion", function* d
 		yield* g.call(f, P("/proc/stoplag"), null, []);
 	}
 	yield* g.callName(f, rt.sv(f, "mode"), "declare_completion", []);
+	yield* g.callName(f, rt.gl("SSvote"), "removals_report", []); // ss13.live: kicks, bans and boot votes this round (plans/server-rules.md step 5)
 	if (rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit"))) {
 		yield* g.call(f, P("/proc/stoplag"), null, []);
 	}

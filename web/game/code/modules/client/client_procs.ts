@@ -190,6 +190,7 @@ rt.def("/client/proc/New", function* New(f: Frame) {
 		rt.setAt(rt.gl("preferences_datums"), rt.sv(f, "ckey"), rt.sv(f, "prefs"));
 	}
 	rt.setFv(f, "last_ip", rt.sv(f, "prefs"), rt.sv(f, "address"));
+	if (truthy(rt.gl("SSvote"))) yield* g.callName(f, rt.gl("SSvote"), "note_arrival", [live(f.src)]); // ss13.live: the newcomer wait (plans/server-rules.md step 4)
 	rt.setFv(f, "last_id", rt.sv(f, "prefs"), rt.sv(f, "computer_id"));
 	if (((rt.ge(rt.fv(f, "byond_version", rt.world()), 511) && rt.ge(rt.sv(f, "byond_version"), 511)) && truthy(rt.fv(f, "clientfps", rt.sv(f, "prefs"))))) {
 		rt.setAt(rt.sv(f, "vars"), "fps", rt.fv(f, "clientfps", rt.sv(f, "prefs")));

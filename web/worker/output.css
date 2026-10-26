@@ -19,6 +19,7 @@ em						{font-style: normal;	font-weight: bold;}
 .ooc					{					font-weight: bold;}
 .adminobserverooc		{color: #0099cc;	font-weight: bold;}
 .adminooc				{color: #700038;	font-weight: bold;}
+.adminbadge				{background: #700038; color: #fff; border-radius: 3px; padding: 0 3px; font-size: 85%;} /* ss13.live: comes from the admin list, players can't type it */
 
 .adminobserver			{color: #996600;	font-weight: bold;}
 .admin					{color: #386aff;	font-weight: bold;}

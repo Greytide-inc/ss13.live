@@ -1,4 +1,12 @@
 <!-- Most valid html will work in here, excluding images. -->
 
 <h1>Welcome to Space Station 13!</h1>
-
+<p>Anything goes in the round: griefing, betrayal and chaos are part of the game. The rules are about the server:</p>
+<ol>
+<li>No slurs, and no spamming or flooding chat.</li>
+<li>No real-life info about anyone.</li>
+<li>Don't pretend to be an admin. Real admins have an ADMIN badge in OOC.</li>
+<li>One person, one vote.</li>
+<li>Dodging a ban gets you a longer one.</li>
+<li>Problem with a player? Use Adminhelp, not OOC.</li>
+</ol>

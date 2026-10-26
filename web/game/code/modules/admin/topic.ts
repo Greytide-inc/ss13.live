@@ -489,6 +489,7 @@ rt.def("/datum/admins/proc/Topic", function* Topic(f: Frame) {
 																					yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='danger'>You have been kicked from the server by ＀.</span>", [$1])]);
 																					yield* g.call(f, P("/proc/log_admin"), null, [fmt("＀ kicked ＀.", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.usr)])), (yield* g.call(f, P("/proc/key_name"), null, [live(M_0)]))])]);
 																					yield* g.call(f, P("/proc/message_admins"), null, [fmt("<span class='adminnotice'>＀ kicked ＀.</span>", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.usr)])), (yield* g.call(f, P("/proc/key_name_admin"), null, [live(M_0)]))])]);
+																					if (truthy(rt.fv(f, "client", live(M_0)))) yield* g.callName(f, rt.gl("SSvote"), "note_removal", [fmt("＀ was kicked by an admin.", [(yield* g.callName(f, rt.gl("SSvote"), "boot_label", [rt.fv(f, "client", live(M_0))]))]), 1]); // ss13.live: plans/server-rules.md step 5
 																					yield* g.call(f, P("/proc/qdel"), null, [rt.fv(f, "client", live(M_0))]);
 																				}
 																			} else {
@@ -530,6 +531,7 @@ rt.def("/datum/admins/proc/Topic", function* Topic(f: Frame) {
 																						if (truthy((AH_4 = $0))) {
 																							yield* g.callName(f, live(AH_4), "Resolve", []);
 																						}
+																						if (truthy(rt.fv(f, "client", live(M_0)))) yield* g.callName(f, rt.gl("SSvote"), "note_removal", [fmt("＀ was banned by an admin for ＀ minutes. Reason: ＀", [(yield* g.callName(f, rt.gl("SSvote"), "boot_label", [rt.fv(f, "client", live(M_0))])), live(mins_1), live(reason_2)]), 1]); // ss13.live: plans/server-rules.md step 5
 																						yield* g.call(f, P("/proc/qdel"), null, [rt.fv(f, "client", live(M_0))]);
 																					} else if ($0 === "No") {
 																						if (!truthy((reason_1 = (yield* g.op(f, "Prompt", [65], [null, "Reason", "Please State Reason.", live(f.usr), null]))))) {
@@ -561,6 +563,7 @@ rt.def("/datum/admins/proc/Topic", function* Topic(f: Frame) {
 																						if (truthy((AH_3 = $0))) {
 																							yield* g.callName(f, live(AH_3), "Resolve", []);
 																						}
+																						if (truthy(rt.fv(f, "client", live(M_0)))) yield* g.callName(f, rt.gl("SSvote"), "note_removal", [fmt("＀ was banned by an admin. Reason: ＀", [(yield* g.callName(f, rt.gl("SSvote"), "boot_label", [rt.fv(f, "client", live(M_0))])), live(reason_1)]), 1]); // ss13.live: plans/server-rules.md step 5
 																						yield* g.call(f, P("/proc/qdel"), null, [rt.fv(f, "client", live(M_0))]);
 																					} else if ($0 === "Cancel") {
 																						return live(f.dot);

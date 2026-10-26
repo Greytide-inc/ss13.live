@@ -53,6 +53,9 @@ rt.def("/client/verb/ooc", function* ooc(f: Frame, msg: Value) {
 				return live(f.dot);
 			}
 		}
+		if (truthy(rt.gl("SSvote")) && truthy((yield* g.callName(f, rt.gl("SSvote"), "newcomer_refused", [live(f.src), "use OOC"])))) { // ss13.live: plans/server-rules.md step 4
+			return live(f.dot);
+		}
 		if (truthy((yield* g.srcCall(f, "handle_spam_prevention", live(msg), 2)))) {
 			return live(f.dot);
 		}
@@ -96,7 +99,7 @@ rt.def("/client/verb/ooc", function* ooc(f: Frame, msg: Value) {
 						} else {
 							$3 = "";
 						}
-						yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='adminooc'>＀<span class='prefix'>OOC:</span> <EM>＀＀:</EM> <span class='message'>＀</span></span></font>", [$1, $2, $3, live(msg)])]);
+						yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='adminooc'>＀<span class='prefix'>OOC:</span> <span class='adminbadge'>ADMIN</span> <EM>＀＀:</EM> <span class='message'>＀</span></span></font>", [$1, $2, $3, live(msg)])]);
 					} else {
 						$0 = live(C);
 						$1 = live(keyname);

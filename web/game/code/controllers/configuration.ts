@@ -35,6 +35,8 @@ rt.type(81, "/datum/configuration", "/datum", {
 	allow_vote_boot: 0,
 	allow_vote_map: 0,
 	vote_delay: 6000,
+	newcomer_wait: 0,
+	announce_removals: 0,
 	vote_period: 600,
 	vote_no_default: 0,
 	vote_no_dead: 0,
@@ -346,6 +348,10 @@ rt.def("/datum/configuration/proc/load", function load(f: Frame, filename: Value
 				rt.setSv(f, "vote_no_dead", 1);
 			} else if ($0 === "default_no_vote") {
 				rt.setSv(f, "vote_no_default", 1);
+			} else if ($0 === "announce_removals") {
+				rt.setSv(f, "announce_removals", 1);
+			} else if ($0 === "newcomer_wait") {
+				rt.setSv(f, "newcomer_wait", rt.call(f, P("/proc/text2num"), null, [live(value)]));
 			} else if ($0 === "vote_delay") {
 				rt.setSv(f, "vote_delay", rt.call(f, P("/proc/text2num"), null, [live(value)]));
 			} else if ($0 === "vote_period") {
