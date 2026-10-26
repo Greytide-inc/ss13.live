@@ -165,16 +165,20 @@ export async function loadWorld(ctx: LoadWorldCtx) {
 		}
 		return pixels.get(p) ?? null;
 	};
-	// Runtime icons (fcopy_rsc'd /icons) -> blob: URLs of real .dmi files, made once each.
-	const runtimeUrls = new Map<string, string>();
+	// Runtime icons (fcopy_rsc'd /icons) -> blob: URLs of real .dmi files, made once each, by the page: the worker sends the
+	// bytes under a made-up blob: name (rtIcon) and the page makes the real URL. URL.createObjectURL in a Firefox worker waits
+	// on the main thread with the worker's queue empty, which starts its 5 s idle GC: a ~1 s freeze 5 s after a spawn that
+	// drew one (plans/less-garbage.md step 4). The name ends in ")" so no name is the start of another (the page's server
+	// path swaps them by text), and carries this world's start time so a later world's icon isn't the page's cached one.
+	const runtimeUrls = new Map<string, string>(), rtTag = Date.now().toString(36);
 	const runtimeUrl = (path: string): string | null => {
 		const recipe = vm.runtimeIcons.get(path);
 		if (!recipe) return null;
 		let url = runtimeUrls.get(path);
 		if (!url) {
 			const dmi = encodeDmi(evalRecipe(recipe, (p) => vm.loadIcon!(p)));
-			runtimeUrls.set(path, (url = URL.createObjectURL(new Blob([dmi as BlobPart], { type: "image/png" }))));
-			if (opts.rtIcons) post({ type: "rtIcon", url, path, dmi }); // server mode: a blob: URL means nothing to a client over a socket; send the bytes before the view that uses the URL
+			runtimeUrls.set(path, (url = `blob:rticon(${rtTag}:${path})`));
+			post({ type: "rtIcon", url, path, dmi }); // before the view that uses the URL
 			log(`[vm-boot] runtime icon ${path} sent to the page as a ${dmi.length}-byte .dmi (${url})`);
 		}
 		return url;

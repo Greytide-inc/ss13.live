@@ -132,6 +132,9 @@ rt.def("/obj/machinery/power/emitter/proc/AltClick", function* AltClick(f: Frame
 // /obj/machinery/power/emitter/proc/Initialize  (code/modules/power/singularity/emitter.dm:91)  may sleep
 rt.def("/obj/machinery/power/emitter/proc/Initialize", function* Initialize(f: Frame) {
 	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	// ss13.live: the CTF arena's energy cannons wait for a CTF game (start_ctf turns them on, stop_ctf off). tg fired them all
+	// round: their beams and sparks were 16% of the long-lived garbage behind solo play's GC freezes (plans/less-garbage.md).
+	if (rt.istype(live(f.src), T("/obj/machinery/power/emitter/energycannon")) && rt.istype((yield* g.call(f, P("/proc/get_area"), null, [live(f.src)])), T("/area/ctf"))) rt.setSv(f, "active", 0);
 	if ((isEqual(rt.sv(f, "state"), 2) && truthy(rt.sv(f, "anchored")))) {
 		yield* g.srcCall(f, "connect_to_network");
 	}

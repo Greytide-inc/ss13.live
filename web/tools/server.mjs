@@ -2,7 +2,7 @@
 // (build/dist/src/worker/boot-worker.js inside <dist>) in a worker thread, serves the dist folder over HTTP and accepts
 // WebSocket connections. Messages are the worker protocol (see the top of src/worker/boot-worker.ts), as JSON text frames.
 //   node tools/server.mjs --dist build/mp-server-dist --port 8780 [--join Assistant] [--roundstart] [--seconds N] [--log FILE]
-//        [--map NAME] [--spawn-near] [--seed N] [--second KEY] [--tgui /obj/path [--tgui-watch var,var]] [--lobby] [--lobby-seconds N --autojoin JOB --endround S --rounddelay S: test aids] [--host-key KEY] [--log-level quiet|normal|chatty] [--hot] [--no-click-now] [--admins FILE] [--reserved FILE] [--bans FILE] [--pepper FILE] [--saves FILE] [--empty-reset S]
+//        [--map NAME] [--spawn-near] [--seed N] [--second KEY] [--tgui /obj/path [--tgui-watch var,var]] [--lobby] [--lobby-seconds N --autojoin JOB --endround S --rounddelay S: test aids] [--host-key KEY] [--log-level quiet|normal|chatty] [--hot] [--no-click-now] [--log-dir DIR] [--admins FILE] [--reserved FILE] [--bans FILE] [--pepper FILE] [--saves FILE] [--empty-reset S]
 // --log-level: how much of the per-input log (key, topic, Click, to client: ...) goes in the log: quiet = none of it, chatty = also every "to client:" line, uncut.
 //   /status: players on, map, round (JSON for the landing page, no names).
 //   Mid-round: curl "http://127.0.0.1:PORT/loglevel?level=chatty" (this machine only, no X-Forwarded-For; a player's socket can't send it).
@@ -43,7 +43,7 @@
 //   a message budget (RATE_BURST, refilled RATE_PER_S a second: a real page stays under ~60/s) and a byte budget (BYTE_BURST, refilled
 //   BYTE_PER_S: past it only at 60 messages a second of over ~500 bytes each; input is ~100-200 bytes, a pasted book page ~20 KB once), messages over either are dropped and a connection that keeps flooding is closed; resync and bugstate (the costly ones) once a second; a hello must come within HELLO_MS; at most
 //   MAX_SOCKETS connections, MAX_PER_IP from one outside address (an IPv6 /64 counts as one address, as for every per-address limit and IP ban); a client too slow to take its views (MAX_BUFFERED waiting) is closed.
-//   A page (acks: 1, it pings once a second) silent for SILENT_MS is closed: a link that died without a close (a VPN or tunnel drop) would
+//   A page (acks: 1, it pings once a second) silent for SILENT_MS, or with a view unacked that long (its held view only grows), is closed: a link that died without a close (a VPN or tunnel drop) would
 //   otherwise stay "connected" forever and its name could not join again.
 //   Names keep only letters, digits, space and _ - . (@ marks a tag; a name is shown to other players as HTML). The shape of each message is checked
 //   in the worker (src/worker/input-check.ts). World log lines (they hold every player's typed commands) and the round-end data files go only to admins.
@@ -66,13 +66,29 @@ const dist = path.resolve(opt("--dist", "build/mp-server-dist"));
 const port = Number(opt("--port", "8780"));
 const lobby = argv.includes("--lobby");
 const join = lobby ? "" : opt("--join", "Assistant");
-const logFile = opt("--log", `build/server-${port}.log`);
+// --log-dir DIR (24/7 hosting): DIR/round-DATE_TIME.log, a new one each day; round logs older than LOG_KEEP_DAYS are deleted then (they
+//   hold player addresses: about.html promises 7 days). Else one --log FILE for the whole run.
+const logDir = opt("--log-dir", null), LOG_KEEP_DAYS = 7;
+const localDay = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+let logFile = opt("--log", `build/server-${port}.log`), logStream, logDay;
 const seconds = opt("--seconds", null);
 const script = path.join(dist, "web/build/dist/src/worker/boot-worker.js");
 if (!fs.existsSync(script)) { console.error(`no ${script}: build first (npm run build:static -- --dist ${opt("--dist", "build/mp-server-dist")})`); process.exit(2); }
 
-fs.mkdirSync(path.dirname(path.resolve(logFile)), { recursive: true });
-const logStream = fs.createWriteStream(logFile);
+function openLog() {
+	const d = new Date(); logDay = localDay(d);
+	if (logDir) {
+		logFile = path.join(logDir, `round-${logDay}_${String(d.getHours()).padStart(2, "0")}-${String(d.getMinutes()).padStart(2, "0")}.log`);
+		fs.mkdirSync(logDir, { recursive: true });
+		for (const f of fs.readdirSync(logDir)) {
+			const file = path.join(logDir, f);
+			if (/^round-.*\.log$/.test(f) && Date.now() - fs.statSync(file).mtimeMs > LOG_KEEP_DAYS * 86400000) fs.unlinkSync(file);
+		}
+	} else fs.mkdirSync(path.dirname(path.resolve(logFile)), { recursive: true });
+	logStream = fs.createWriteStream(logFile, { flags: logDir ? "a" : "w" });
+}
+openLog();
+if (logDir) setInterval(() => { if (localDay() === logDay) return; const old = logStream; openLog(); old.end(); out(`[server] new day: log ${logFile}`); }, 60000).unref();
 const out = (line) => { const l = `${new Date().toISOString().slice(11, 19)} ${line}`; console.log(l); logStream.write(l + "\n"); };
 
 // ---- HTTP: the dist folder
@@ -282,7 +298,7 @@ function tryStart() {
 	started = true;
 	{
 		const isLobby = lobby || round > 1; // the next world always starts in the lobby
-		const start = { type: "start", playerKey: firstName, playerAddress: firstAddress, snapshot: true, fastAir: true, dirty: true, lobby: isLobby, rtIcons: true, join: isLobby ? "" : join, gender: "male", roundstart: !isLobby, ticks: Infinity, seconds: seconds ? Number(seconds) : Infinity, afterStart: null, seed: round > 1 ? crypto.randomInt(1, 1e6) : Number(opt("--seed", String(Date.now() % 1e6))), busyWait: false, round, clickNow: !argv.includes("--no-click-now"), log: logLevel };
+		const start = { type: "start", playerKey: firstName, playerAddress: firstAddress, snapshot: true, fastAir: true, dirty: true, lobby: isLobby, join: isLobby ? "" : join, gender: "male", roundstart: !isLobby, ticks: Infinity, seconds: seconds ? Number(seconds) : Infinity, afterStart: null, seed: round > 1 ? crypto.randomInt(1, 1e6) : Number(opt("--seed", String(Date.now() % 1e6))), busyWait: false, round, clickNow: !argv.includes("--no-click-now"), log: logLevel };
 		const map = nextMap ?? opt("--map", null);
 		if (map && !/^box(station)?$/i.test(map)) start.map = map; // Box is the default (and its snapshot is the plain one)
 		// test aids (tools/rounds-check.mjs): short rounds. --autojoin JOB late-joins the first player in every lobby once the round starts.
@@ -463,7 +479,13 @@ httpServer.listen(port, () => {
 	out(`[server] http + ws on port ${port}, dist ${dist}, log ${logFile}`);
 	if (!opt("--host-key", null)) console.log(`[server] admin link (this run only): http://localhost:${port}/?server=ws://localhost:${port}&adminkey=${hostKeyText}`);
 });
-const silentTimer = setInterval(() => { const now = Date.now(); for (const c of clients) if (c.acks && now - c.heardAt > SILENT_MS) kick(c, `silent for ${Math.round((now - c.heardAt) / 1000)} s (link lost)`); }, 5000);
+const silentTimer = setInterval(() => {
+	const now = Date.now();
+	for (const c of clients) {
+		if (c.acks && now - c.heardAt > SILENT_MS) kick(c, `silent for ${Math.round((now - c.heardAt) / 1000)} s (link lost)`);
+		else if (c.views.unackedMs() > SILENT_MS) kick(c, `no acks for ${Math.round(c.views.unackedMs() / 1000)} s`); // pings but never acks: its held view would grow without end
+	}
+}, 5000);
 let cpuLast = process.cpuUsage(), cpuAt = Date.now();
 const statTimer = setInterval(() => {
 	const cpu = process.cpuUsage(cpuLast), cpuPct = Math.round((cpu.user + cpu.system) / 10 / (Date.now() - cpuAt)); // the whole process, game worker included; 100 = one core

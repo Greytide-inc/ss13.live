@@ -52,7 +52,8 @@ export interface LoadedIcon {
 }
 
 export async function loadIcon(iconPath: string): Promise<LoadedIcon | null> {
-	const url = iconPath.startsWith("blob:") ? iconPath : "/" + iconPath; // blob: = a runtime icon from the worker
+	// blob: = a runtime icon from the worker, by the made-up name the page swaps for a real URL (worker/index.html, rtIcon)
+	const url = iconPath.startsWith("blob:") ? ((globalThis as { rtIconUrls?: Map<string, string> }).rtIconUrls?.get(iconPath) ?? iconPath) : "/" + iconPath;
 	const dmi = await parseDmiUrl(url);
 	if (!dmi) return null;
 	const img = new Image();

@@ -9,6 +9,7 @@
      &gender=female (3b): the character's gender when joining (default male).
      &endround=N: N seconds after you spawn, end the round the way the admin "End Round" verb does (tg's round-end
      report, then "Rebooting World in 90 seconds"; the tab then starts the next world and you land in its lobby).
+     &ssoff=air,machines (test aid): at round start, stop those subsystems (SSair, SSmachines: can_fire = 0), to measure what each costs.
      &autojoin=JOB (test aid): in every world's lobby, 20 ticks after round start, click the late-join link for JOB.
      &rounddelay=S: tg's reboot countdown after the round-end report (config.txt ROUND_END_COUNTDOWN, 90 s).
      &renderer=canvas (3d): draw with canvas 2D instead of PixiJS (the default); &sync=1 waits for the GPU each redraw so #perf is the real cost.
@@ -19,7 +20,7 @@
 <!-- tsh-chat: only this page's own scripts run here (the inline ones by hash: after editing one, `node tools/csp.mjs` from web/).
      No 'unsafe-eval': PixiJS builds shader code with new Function unless ./pixi-no-eval.js (its own add-on, made by
      tools/pixi-no-eval.mjs) is imported first; blob: workers are PixiJS's image loaders. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-w7FiRm3A6tvyprAne8G8M8dv/0vxuAgFXzs3peZutUk=' 'sha256-Ad3Z0q0oJIukpVoFDmVV3lZDWdAwsRN0YJ2W3tL8hT4=' 'sha256-lTxu9zC4uShGdcuJrAXIeXJWl4Hunla9A+ucH/rf2Jc=' 'sha256-ixo5sx15p/JPxE7goGuKmUqjoapThSXBpQJTmYoTiSY='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' blob: ws://localhost:* ws://127.0.0.1:*; worker-src 'self' blob:; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-w7FiRm3A6tvyprAne8G8M8dv/0vxuAgFXzs3peZutUk=' 'sha256-Ad3Z0q0oJIukpVoFDmVV3lZDWdAwsRN0YJ2W3tL8hT4=' 'sha256-lTxu9zC4uShGdcuJrAXIeXJWl4Hunla9A+ucH/rf2Jc=' 'sha256-+Mb/MTLcemMWDRTNiHLJxEtp2o6Mdw39eIxskwfagDI='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' blob: ws://localhost:* ws://127.0.0.1:*; worker-src 'self' blob:; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>ss13.live: Space Station 13 in your browser</title>
 <!-- Hosting: tab title, link preview card (Reddit, Discord), tg's own SS13 icon. -->
 <meta name="description" content="Space Station 13 (2017 /tg/station) in your browser: no BYOND, nothing to install. Join a round on ss13.live.">
@@ -227,6 +228,7 @@ const bugRing = [], bugNote = (l) => { bugRing.push((performance.now() / 1000).t
 // The combined log (world.log + game.log), as `npm run compare-logs` wants it; read by tools/worker-boot.mjs.
 Object.assign(viewStats, { checks: 0, checkFails: 0, netGaps: [] });
 window.bootResult = { lines, files, milestones, pageAt, done: false, views: 0, viewStats };
+const rtIconUrls = window.rtIconUrls = new Map(); // runtime icons: the worker's made-up blob: name -> a real blob: URL (station-client.ts loadIcon)
 // closing the tab while playing asks first: browsers don't let a page block Ctrl+W, and W walks (Ctrl+W is a game key too)
 addEventListener("beforeunload", (e) => { if (warnOnLeave(window.bootResult, navigator.webdriver)) { e.preventDefault(); e.returnValue = ""; } });
 let w = null; // the world's worker; a new one for each world (tg's world.Reboot() ends the old one)
@@ -404,6 +406,7 @@ const onWorkerMessage = (e) => {
 	if (m.player && m.player !== ownCkey) return; // messages for another player (the ?second= test aid) are not this page's own
 	if (!pageReady && HOLD.has(m.type)) { held.push(m); return; } // a window that arrives before the first view is held and shown then
 	if (m.type === "log") { lines.push(m.line); pending.push(m.line); }
+	else if (m.type === "rtIcon") rtIconUrls.set(m.url, URL.createObjectURL(new Blob([m.dmi], { type: "image/png" }))); // made here, not in the worker (load-world.ts runtimeUrl)
 	else if (m.type === "output") { clickAnswered(); addOutput(m.lines); for (const t of m.lines) bugNote("[chat] " + String(t).replace(/<[^>]*>/g, "").slice(0, 300)); }
 	else if (m.type === "view") { closeLoading(); if (!pageReady) { pageReady = true; lines.push(`[page] ${held.length} window messages (${[...new Set(held.map((h) => h.type))].join(",")}) held until the first view; showing them now`); for (const h of held.splice(0)) onWorkerMessage({ data: h }); } window.bootResult.views++; liveView.update(m.update); }
 	else if (m.type === "dialog") showDialog(m);
@@ -664,6 +667,7 @@ const startMsg = {
 	roundstart: q.has("roundstart") && q.get("roundstart") !== "0",
 	setup: q.get("setup") ?? undefined,
 	endround: q.has("endround") ? num("endround") : undefined,
+	ssoff: q.get("ssoff") ?? undefined,
 	rounddelay: q.has("rounddelay") ? num("rounddelay") : undefined,
 	snapshot: !q.has("nosnap"),
 	ticks: num("ticks", Infinity),

@@ -1,6 +1,6 @@
 // mp-check - multiplayer check: two raw WebSocket players on a running tools/server.mjs, no browser. Alpha joins, Beta joins later; Alpha walks and talks;
 // the check is what Beta's stream shows: Alpha's mob moving (Beta's view `moved` list has a move onto Alpha's new tile) and Alpha's say line in
-// Beta's chat output. Also: a second connection with a taken name is refused; Beta plays under a tripcode and gets the same mob back. Prints views / bytes per second per player.
+// Beta's chat output. Also: a second connection with a taken plain name is refused; Beta plays under a tripcode and gets the same mob back. Prints views / bytes per second per player.
 //   node tools/mp-check.mjs PORT [SECONDS_AFTER_BETA=25]      exit 0 = all checks passed
 import { WebSocket } from "ws";
 const port = Number(process.argv[2] ?? "8780"), wait = Number(process.argv[3] ?? "25") * 1000;
@@ -38,9 +38,9 @@ while (A.views < 5) await sleep(200);
 log(`Alpha has views, eye ${JSON.stringify(A.eye)}`);
 const B = player("Beta", "betas-secret");
 await sleep(wait);
-const dup = player("beta"); // Beta's name with no tag
+const dup = player("alpha"); // a plain name (no tag) already connected is refused; a tagged one would replace its own old connection
 await sleep(1500);
-check(dup.nameTaken, "a second connection named 'beta' is refused (nameTaken)");
+check(dup.nameTaken && dup.closed, "a second plain-named 'alpha' is refused (nameTaken)");
 check(B.views > 20, `Beta gets views (${B.views})`);
 const a0 = { ...A.eye }, mark = Date.now();
 for (let i = 0; i < 4; i++) { key(A, "EAST"); await sleep(400); }

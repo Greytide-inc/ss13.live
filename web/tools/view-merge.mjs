@@ -31,6 +31,7 @@ export function mergeViews(a, b) {
 export const QUEUE_MS = 300, GUESS_RTT = 250;
 export class ViewQueue {
 	constructor(send, acking = false, now = () => performance.now()) { Object.assign(this, { send, acking, now, seq: 0, sent: [], minRtt: Infinity, measured: false, held: null, merged: 0 }); }
+	unackedMs() { return this.acking && this.sent.length ? this.now() - this.sent[0][1] : 0; } // a page that pings but never acks: its held view only grows
 	queued() { return this.acking && this.sent.length > 0 && this.now() - this.sent[0][1] > (this.measured ? this.minRtt + QUEUE_MS : GUESS_RTT); }
 	push(update) {
 		if (this.held || this.queued()) this.held = this.held ? mergeViews(this.held, update) : update;

@@ -69,7 +69,7 @@ import { type IconImage, iconFromSheet, recipePaths } from "../dmi/icon-ops.js";
 import { stress, stressStart, stressLosLine } from "../vm/stress-log.js";
 import { type Pace, paceStart, paceStep } from "./pace.js";
 import { inputOk } from "./input-check.js";
-import { sleep, waitUntil, type WaitMode } from "./tick-wait.js";
+import { waitUntil, type WaitMode } from "./tick-wait.js";
 
 // The icon files whose pixels a boot + join reads (measured: tg's generate_female_clothing on the
 // jumpsuit and the undershirt, update_icons.dm / species.dm). Anything else is a logged miss.
@@ -162,6 +162,7 @@ export interface StartMsg {
 	autojoin?: string;
 	roundstart?: boolean;
 	endround?: number;
+	ssoff?: string;
 	setup?: string;
 	rounddelay?: number;
 	round?: number;
@@ -182,7 +183,6 @@ export interface StartMsg {
 	playerAddress?: string;
 	second?: string;
 	secondJob?: string;
-	rtIcons?: boolean;
 	clickNow?: boolean;
 	log?: string;
 }
@@ -217,7 +217,12 @@ const freeBytes = (b: Uint8Array) => {
 		(b.buffer as ArrayBuffer & { transfer?: (n: number) => ArrayBuffer }).transfer?.(0);
 	} catch { /* already detached, or no ArrayBuffer.transfer (older browsers): the GC frees it later */ }
 };
-const yieldNow = () => new Promise<void>((r) => { const c = new MessageChannel(); c.port1.onmessage = () => r(); c.port2.postMessage(0); });
+// One channel for good: a new MessageChannel's first message may wait on another thread, leaving the worker's queue empty
+// for a moment, which starts Firefox's 5 s idle GC (tick-wait.ts). Suspected after the slow spawn tick (plans/less-garbage.md step 4).
+const yieldPort = new MessageChannel();
+let yieldWake: (() => void) | null = null;
+yieldPort.port1.onmessage = () => { const w = yieldWake; yieldWake = null; w?.(); };
+const yieldNow = () => new Promise<void>((r) => { yieldWake = r; yieldPort.port2.postMessage(0); });
 
 let stopRequested = false;
 const resyncRequested = new Set<string>(); // players asked for a full view ("" = the first player)
@@ -386,10 +391,11 @@ async function run(opts: StartMsg): Promise<void> {
 					log(`[vm-boot] snapshot loaded (${gzMB} MB gzip, ${rawMB} MB raw, fetched and unpacked in ${fetchS} s; ${r.objects} objects in ${(r.ms / 1000).toFixed(1)} s) at ${secs()} s wall (the saved boot took ${host.wall.toFixed(1)} s to get here); world.time ${vm.sched.time}, tick ${vm.sched.tick}, ${vm.sched.sleeping} sleeping threads; RNG seed ${seed}; reset ${reset.join(", ") || "nothing"}; heap ${heapMB()} MB`);
 					post({ type: "milestone", name: "snapshot", s: Number(secs()) });
 					startStore(true); // after the load: the snapshot replaced the file layer
-					// Memory: let Firefox's worker go idle once, so its idle GC (see tick-wait.ts) runs ~5 s from now, in the lobby or
-					// the first seconds of the round, and frees the load's garbage. Without it the first full GC came ~85 s in, at a
-					// ~0.9 GB higher peak. The paced loop busy-waits from here on, so it's the only one.
-					if (busyWait) await sleep(20);
+					// Memory: free the load's garbage now, behind the loading screen. Without a GC here the first full GC came ~85 s in,
+					// at a ~0.9 GB higher peak. It used to let Firefox's worker go idle once (its idle GC, see tick-wait.ts), but that GC
+					// came 5 s later, just after a quick join's spawn: a ~0.9 s freeze (plans/less-garbage.md step 4). A big buffer that
+					// is never touched (no memory used) puts the malloc heap over its limit, so SpiderMonkey runs one ~0.5 s GC at once.
+					if (busyWait) try { new ArrayBuffer(512 * 1048576); } catch { /* no room: the GC comes later instead */ }
 				} catch (e) {
 					if (snap && !("why" in snap)) freeBytes(snap.bytes);
 					snap = null;
@@ -459,6 +465,14 @@ async function run(opts: StartMsg): Promise<void> {
 				for (const p of players) if (p.outLines.length) { post({ type: "output", player: p.ckey, lines: p.outLines }); p.outLines = []; } // "Rebooting world..."
 				log(`[vm-boot] world.Reboot(${JSON.stringify(vm.rebootRequested.reason)}) at world.time ${vm.rebootRequested.time}, ${secs()} s wall: this world is over, the page starts the next one`);
 				break;
+			}
+			if (opts.ssoff && roundStart !== null) { // ?ssoff=air,machines (test aid): stop those subsystems once, at round start
+				for (const n of opts.ssoff.split(",")) {
+					const ss = live(vm.globals[vm.tree.globalNames.indexOf(`SS${n}`)]);
+					if (ss instanceof DMObject) ss.setVar("can_fire", 0);
+					log(`[vm-boot] ssoff: SS${n} ${ss instanceof DMObject ? "stopped" : "not found"} at world.time ${vm.sched.time}`);
+				}
+				opts.ssoff = undefined;
 			}
 			if (opts.endround != null && joinAt !== Infinity) { // ?endround=N, N seconds after spawning, through tg's own path
 				if (endRoundAt === null) endRoundAt = vm.sched.time + opts.endround * 10;

@@ -9,12 +9,14 @@
 //        netcode 5: --steps "cmd:spawn /obj/structure/closet/crate;keys:east;click:ctrl+rel:-1,0;keys:west*8;stat:predPullGap" (pull a crate; the "prediction:" line is printed before the steps: use stat:)
 //        netcode 1: [--clicks "shift+eye*8/1500"] (after the keys: mouse clicks on a locateClick spot, modifiers held; prints click -> answer ms)
 //        ws1: [--window W,H] [--pre-cmd "toggle-widescreen"] (typed 5 s after joining; ";" separates several) [--shot FILE.png] (just before the keys) [--shot-end FILE.png] (after them) [--shot-mid MS:FILE.png] (MS after the keys start, while they run) [--fps N] (rAF rate, e.g. 144)
+//        gc: [--no-join] (nobody joins: no view is built) [--join ROLE] (default Assistant; e.g. AI) [--ff-stderr FILE] (Firefox's stderr; JS_GC_PROFILE=0 in the env logs the page's GCs, not the worker's); MOZ_PROFILER_SHUTDOWN=FILE.json
+//        (+ MOZ_PROFILER_STARTUP=1) quits Firefox cleanly so it writes a profile, worker GC markers included
 // Drives /usr/bin/firefox over WebDriver BiDi (ws://127.0.0.1:PORT/session): real trusted key events via input.performActions,
 // so the page's keydown -> first moving frame numbers (viewStats.keyLat) are measured as in worker-boot.mjs. Keys: north/south/
 // east/west, a letter, ctrl+X; *N = N taps 340 ms apart (*N/MS: MS apart), @MS = hold. Writes the page's log lines to --out and prints the
 // "[vm-boot] live", "long tick", "[page] perf" lines and the key latencies. Uses a throwaway profile in build/ff-profile-PID.
 import { spawn } from "node:child_process";
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, openSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 const argv = process.argv.slice(2);
 const opt = (n, d) => (argv.includes(n) ? argv[argv.indexOf(n) + 1] : d);
@@ -29,7 +31,7 @@ const prof = resolve(`build/ff-profile-${process.pid}`);
 mkdirSync(prof, { recursive: true });
 if (opt("--fps", "")) writeFileSync(`${prof}/user.js`, `user_pref("layout.frame_rate", ${Number(opt("--fps", ""))});\n`); // --fps N: rAF rate
 const server = spawn(process.execPath, ["build/dist/src/tools/gallery-server.js"], { env: { ...process.env, PORT: WEB_PORT }, stdio: "ignore" });
-const ff = opt("--ff-port", "") ? { kill() {} } : spawn("/usr/bin/firefox", ["--headless", "--no-remote", "--profile", prof, `--remote-debugging-port=${FF_PORT}`, `--window-size=${win}`], { stdio: "ignore", env: { ...process.env, MOZ_HEADLESS: "1" } });
+const ff = opt("--ff-port", "") ? { kill() {} } : spawn("/usr/bin/firefox", ["--headless", "--no-remote", "--profile", prof, `--remote-debugging-port=${FF_PORT}`, `--window-size=${win}`], { stdio: ["ignore", "ignore", opt("--ff-stderr", "") ? openSync(opt("--ff-stderr", ""), "w") : "ignore"], env: { ...process.env, MOZ_HEADLESS: "1" } });
 const t0 = Date.now();
 const KEYS = { north: "", south: "", east: "", west: "", ctrl: "", shift: "", alt: "", tab: "" };
 try {
@@ -45,7 +47,7 @@ try {
 	await send("session.new", { capabilities: {} });
 	const ctx = (await send("browsingContext.getTree", {})).result.contexts[0].context;
 	const evaluate = async (expression) => { const r = await send("script.evaluate", { expression, target: { context: ctx }, awaitPromise: true }); return r.result?.result?.value; };
-	await send("browsingContext.navigate", { context: ctx, url: opt("--url", "") || `http://127.0.0.1:${WEB_PORT}/web/worker/index.html?seed=24301&ticks=100000&afterStart=${afterStart}&join=Assistant${query ? `&${query}` : ""}`, wait: "complete" });
+	await send("browsingContext.navigate", { context: ctx, url: opt("--url", "") || `http://127.0.0.1:${WEB_PORT}/web/worker/index.html?seed=24301&ticks=100000&afterStart=${afterStart}${argv.includes("--no-join") ? "" : `&join=${opt("--join", "Assistant")}`}${query ? `&${query}` : ""}`, wait: "complete" });
 	console.log(`firefox ${(await send("session.status")).result ? "up" : "?"}; page loaded; renderer: ${await evaluate("(() => { const g = document.createElement('canvas').getContext('webgl'); const e = g && g.getExtension('WEBGL_debug_renderer_info'); return g ? String(g.getParameter(e ? e.UNMASKED_RENDERER_WEBGL : g.RENDERER)) : 'no webgl'; })()")}`);
 	if (argv.includes("--window")) { const [vw, vh] = win.split(",").map(Number); await send("browsingContext.setViewport", { context: ctx, viewport: { width: vw, height: vh } }); }
 	await evaluate("dispatchEvent(new Event('pointerdown')), 1"); // audio unlock, as a first click would
@@ -160,5 +162,14 @@ try {
 	for (const l of r.lines.filter((l) => /^\[vm-boot\] (live|long tick|after round start|stopped)|^\[page\] (perf|split|chunks|view check)|shoot:/.test(l))) console.log(l);
 	if (r.checks) console.log(`view checks (?check=1): ${r.checks} run, ${r.checkFails} failed`);
 	console.log(`key latency (keydown -> first moving frame), ms: ${JSON.stringify(r.keyLat)}; keydown -> update arriving: ${JSON.stringify(r.keyRecv)}; own mob steps seen ${r.ownMoves ?? "-"}, ms apart ${JSON.stringify(r.ownMoveGaps ?? [])}`);
+	if (process.env.MOZ_PROFILER_SHUTDOWN) { // the profile is written on a clean quit; Firefox writes a small one at startup too, so wait for a newer file
+		const f = process.env.MOZ_PROFILER_SHUTDOWN, closedAt = Date.now(), gone = new Promise((r) => ff.on?.("exit", r));
+		send("browser.close");
+		const written = () => existsSync(f) && statSync(f).mtimeMs > closedAt;
+		let exited = false; gone.then(() => (exited = true));
+		while (Date.now() - closedAt < 300000 && !exited && !written()) await sleep(1000);
+		for (let size = -1; written() && statSync(f).size !== size; ) { size = statSync(f).size; await sleep(3000); } // until it stops growing
+		if (!written()) console.log(`profile ${f} NOT written after quitting`);
+	}
 	ws.close();
 } finally { ff.kill(); server.kill(); await sleep(1000); rmSync(prof, { recursive: true, force: true }); }

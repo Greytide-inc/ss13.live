@@ -3,7 +3,8 @@
 // server is up and still sends Alpha views, Alpha didn't move and is still a living human, nobody said Mallory's forged words, no
 // proc other than the mouse procs was run by a "mouse" message, a flood is cut off, and bad HTTP paths get an error, not a crash.
 //   node tools/fuzz-check.mjs PORT [SERVER_LOG=build/server-PORT.log]      exit 0 = all checks passed
-// Also: a page (hello acks: 1) that then sends nothing is closed by the server within SILENT_MS + 5 s ("closing NAME: silent"), and its name is free again.
+// Also: a page (hello acks: 1) that then sends nothing is closed by the server within SILENT_MS + 5 s ("closing NAME: silent"), and its name is free again;
+// one that pings but never acks its views is closed the same way ("closing NAME: no acks").
 // Start the server first (not --lobby, so both players get a body):  node tools/server.mjs --dist build/NAME-dist --port PORT --seconds 200
 import fs from "node:fs";
 import http from "node:http";
@@ -38,6 +39,7 @@ const A = player("Alpha");
 while (A.views < 5) await sleep(200);
 const M = player("Mallory");
 const quiet = player("Quiet", { acks: 1 }), quietAt = Date.now(); // never pings or acks: the silent-link row near the end checks it was cut off
+const pinger = player("Pinger", { acks: 1 }), pingTimer = setInterval(() => pinger.send(`{"type":"ping","t":${Date.now()}}`), 1000); // pings but never acks a view: its held view would grow forever
 for (let i = 0; i < 150 && M.views < 5; i++) await sleep(200);
 check(M.views >= 5, `Mallory joined and gets views (${M.views})`);
 await sleep(8000); // both in their bodies
@@ -118,6 +120,9 @@ check(quiet.closed && quietS * 1000 <= SILENT_LIMIT, `a page silent after its he
 const back = player("Quiet", { acks: 1 });
 for (let i = 0; i < 50 && back.views < 1 && !back.closed; i++) await sleep(200);
 check(back.views >= 1 && !back.closed, `the silent page's name is free again: a new hello as Quiet gets views (${back.views})`);
+clearInterval(pingTimer);
+const pingS = ((pinger.closedAt ?? Date.now()) - quietAt) / 1000;
+check(pinger.closed && pingS * 1000 <= SILENT_LIMIT, `a page that pings but never acks its views is closed by the server (${pinger.closed ? `after ${pingS.toFixed(1)} s` : `still open after ${pingS.toFixed(1)} s`})`);
 
 // ---- what must still be true
 const names = ["<img src=x onerror=alert(1)>", "", "   ", "a".repeat(5000), "\u0000‮"];
@@ -142,9 +147,10 @@ if (text !== null) {
 	const joined = text.split("\n").filter((l) => /\[server\] .* joined \(/.test(l) && /[<>\u0000-\u001f‮]/.test(l.slice(9)));
 	check(joined.length === 0, `no player name with HTML or control characters was let in (${joined.length}${joined[0] ? `: ${joined[0].slice(9, 100)}` : ""})`);
 	check(text.split("\n").some((l) => /\[server\] closing Quiet: silent/.test(l)), "the server log says it closed Quiet: silent");
+	check(text.split("\n").some((l) => /\[server\] closing Pinger: no acks/.test(l)), "the server log says it closed Pinger: no acks");
 	check(!text.split("\n").some((l) => l.length > 2500), "no server log line over 2500 characters (input is cut before it is logged)");
 }
-for (const p of [A, M, again, quiet, back, ...odd]) if (!p.closed) p.ws.close();
+for (const p of [A, M, again, quiet, pinger, back, ...odd]) if (!p.closed) p.ws.close();
 await sleep(500);
 log(fails.length ? `FAILED (${fails.length}): ${fails.join("; ")}` : "all checks passed");
 process.exit(fails.length ? 1 : 0);

@@ -423,6 +423,12 @@ rt.def("/obj/machinery/capture_the_flag/proc/start_ctf", function* start_ctf(f: 
 	let $e: any;
 	f.vars = () => [d, D, $e];
 	rt.setSv(f, "ctf_enabled", 1);
+	// ss13.live: the arena's energy cannons fire only during a game (emitter Initialize turns them off)
+	rt.forList(f, 1, rt.gl("machines"), T("/obj/machinery/power/emitter/energycannon"));
+	while (($e = rt.next(f, 1)) !== undefined) {
+		if (rt.istype((yield* g.call(f, P("/proc/get_area"), null, [live($e)])), T("/area/ctf"))) rt.setFv(f, "active", live($e), 1);
+	}
+	rt.endFor(f, 1);
 	d = null;
 	rt.forList(f, 0, rt.sv(f, "dead_barricades"));
 	while (($e = rt.next(f, 0)) !== undefined) {
@@ -480,6 +486,12 @@ rt.def("/obj/machinery/capture_the_flag/proc/stop_ctf", function* stop_ctf(f: Fr
 	yield* g.callName(f, rt.sv(f, "team_members"), "Cut", []);
 	yield* g.callName(f, rt.sv(f, "spawned_mobs"), "Cut", []);
 	yield* g.callName(f, rt.sv(f, "recently_dead_ckeys"), "Cut", []);
+	// ss13.live: the arena's energy cannons fire only during a game (emitter Initialize turns them off)
+	rt.forList(f, 1, rt.gl("machines"), T("/obj/machinery/power/emitter/energycannon"));
+	while (($e = rt.next(f, 1)) !== undefined) {
+		if (rt.istype((yield* g.call(f, P("/proc/get_area"), null, [live($e)])), T("/area/ctf"))) rt.setFv(f, "active", live($e), 0);
+	}
+	rt.endFor(f, 1);
 	return f.dot;
 }, true);
 
