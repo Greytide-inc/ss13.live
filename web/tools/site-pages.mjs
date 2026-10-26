@@ -1,5 +1,5 @@
 // site-pages - turns a static build (build/site-dist, from build-static) into what ss13.live's Cloudflare deploy uploads (plans/site.md):
-// build/site-pages/ for Pages (with site/worker.js as _worker.js, the front page site/index.html, the game as play.html) and build/site-r2/BUILD/... for the R2 bucket: the files over
+// build/site-pages/ for Pages (with site/worker.js as _worker.js, the front page site/index.html, the game as play.html, Box's saved world only) and build/site-r2/BUILD/... for the R2 bucket: the files over
 // Pages' 25 MiB limit, served by the worker at their usual paths. No test scenarios. Prints BUILD. The deploy script runs it.
 import { cpSync, rmSync, mkdirSync, readFileSync, writeFileSync, readdirSync, statSync, renameSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -13,7 +13,8 @@ const dist = join(web, "build/site-dist"), pages = join(web, "build/site-pages")
 const LIMIT = 24 * 1048576; // Pages refuses files over 25 MiB: a margin below it
 if (!existsSync(join(dist, "index.html"))) throw new Error("no build/site-dist: npm run build:static -- --dist build/site-dist");
 for (const d of [pages, r2]) rmSync(d, { recursive: true, force: true });
-cpSync(dist, pages, { recursive: true, filter: (f) => !f.startsWith(join(dist, "web/scenarios")) });
+// only Box's saved world: the site has no map picker, so the others (Runtime, make-snapshot's ?snap=) are for local test builds
+cpSync(dist, pages, { recursive: true, filter: (f) => !f.startsWith(join(dist, "web/scenarios")) && !/[\\/]web[\\/]build[\\/]world-[^/]*(\.snap\.gz|-snap\.json)$/.test(f) });
 // step 4: the game page moves to /play (play.html, next to index.html, so its relative paths still resolve); the front page takes its place
 renameSync(join(pages, "index.html"), join(pages, "play.html"));
 for (const f of ["index.html", "landing.js"]) cpSync(join(web, "site", f), join(pages, f));

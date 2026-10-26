@@ -93,7 +93,9 @@ const normPath = (path: string) => path.replace(/\\/g, "/").replace(/^\.\//, "")
 // zstd. Otherwise it's dropped unread: no such file (local servers), or a browser without zstd, which Cloudflare sends the whole
 // 195 MB unpacked. Any other bytes the browser already unpacked are taken as they come. Returns why not, instead of throwing: any
 // failure here means a normal boot. how: "zstd", "gzip" or the Content-Encoding the browser undid; gz: the bytes downloaded.
-export type SnapFetch = { bytes: Uint8Array; gz: number; how: string; ms: number } | { why: string };
+// noZstd: the .zst came without its zstd label (a browser without zstd, e.g. Safari 18) and there's no .gz (ss13-deploy keeps the gzip
+// only for the newest live builds): the page tells the player why the start is slow.
+export type SnapFetch = { bytes: Uint8Array; gz: number; how: string; ms: number } | { why: string; noZstd?: boolean };
 // one snapshot per map. BoxStation (or no map) is world.snap.gz; another map is world-<short name>.snap.gz, "runtime" and
 // "RuntimeStation" both world-runtime (the same rule as snapNames in tools/snapshot-key.mjs).
 // ?snap=NAME: world-NAME.snap.gz instead, a snapshot tools/make-snapshot.mjs made (e.g. mid-round; pass its ?map= too).
@@ -114,7 +116,7 @@ async function fetchSnapshot(stage: (text: string) => void, map?: string, snap?:
 		const zstd = !!rz?.ok && /\bzstd\b/.test(rz.headers.get("Content-Encoding") ?? "");
 		if (!zstd) rz?.body?.cancel().catch(() => {});
 		const r = zstd && rz ? rz : await fetch(buildUrl(nm.gz));
-		if (!r.ok || !r.body) return { why: `${nm.gz}: HTTP ${r.status}` };
+		if (!r.ok || !r.body) return { why: `${nm.gz}: HTTP ${r.status}${rz?.ok ? " (and this browser doesn't take the zstd copy)" : ""}`, noZstd: !!rz?.ok };
 		const src = r.body.getReader();
 		const first = await src.read();
 		if (first.done) return { why: `${nm.gz} is empty` };
@@ -378,7 +380,10 @@ async function run(opts: StartMsg): Promise<void> {
 			let snap: SnapFetch | null = await world.snapP;
 			world.snapP = null;
 			if (!("why" in snap) && !snapshotMapOk(world.storeFiles, snapMapFile)) snap = { why: `your saves pick another map for this round (data/next_map.json); the snapshot is ${opts.map || "Box Station"}` };
-			if ("why" in snap) snapNote(snap.why);
+			if ("why" in snap) {
+				snapNote(snap.why);
+				if (snap.noZstd) post({ type: "loadnote", text: "This browser can't unpack this build's quick station download (zstd: Safari can't yet), so the station is being set up from scratch, which takes about a minute. Firefox or Chrome start in seconds." });
+			}
 			else {
 				stage("Unpacking the station...");
 				await yieldNow(); // let the page show it

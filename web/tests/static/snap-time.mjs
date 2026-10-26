@@ -10,6 +10,7 @@
 // zstd: there's a world.snap.zst, sent with Content-Encoding: zstd as ss13.live's worker does (site/worker.js) to a browser that
 // accepts zstd; the page must load it ("MB zstd" in its snapshot line). Needs the zstd command. zstdraw: the .snap.zst comes
 // unpacked with no Content-Encoding, as Cloudflare sends it to a browser without zstd: the page must drop it and load the gzip.
+// nogz: the same, but no .gz (an older ss13.live build): the page must boot normally and show the loading note saying why.
 import { spawn, execFileSync } from "node:child_process";
 import { createServer } from "node:http";
 import { existsSync, readFileSync, readdirSync, rmSync, statSync, mkdirSync } from "node:fs";
@@ -39,7 +40,8 @@ const srv = createServer((q, r) => {
 	if (serveMode === "garbage" && p.endsWith("/world.snap.gz")) { r.writeHead(200); return r.end(gzipSync(Buffer.alloc(Number(JSON.parse(readFileSync(join(dist, "web/build/world-snap.json"), "utf8")).raw), 7))); }
 	if (serveMode === "midload" && p.endsWith("/world.snap.gz")) { r.writeHead(200); return r.end(broken()); }
 	if (serveMode === "zstd" && p.endsWith("/world.snap.zst") && /\bzstd\b/.test(q.headers["accept-encoding"] ?? "")) { r.writeHead(200, { "content-encoding": "zstd", "content-length": zst.length }); return r.end(zst); }
-	if (serveMode === "zstdraw" && p.endsWith("/world.snap.zst")) { r.writeHead(200); return r.end(gunzipSync(readFileSync(join(dist, "web/build/world.snap.gz")))); }
+	if (serveMode === "nogz" && p.endsWith("/world.snap.gz")) { r.writeHead(404); return r.end(); }
+	if ((serveMode === "zstdraw" || serveMode === "nogz") && p.endsWith("/world.snap.zst")) { r.writeHead(200); return r.end(gunzipSync(readFileSync(join(dist, "web/build/world.snap.gz")))); }
 	if (p.endsWith("/")) p += "index.html";
 	const f = join(dist, p);
 	if (!f.startsWith(dist) || !existsSync(f) || !statSync(f).isFile()) { r.writeHead(404); return r.end(); }
@@ -115,7 +117,7 @@ for (const b of browsers) for (const mode of modes) {
 	let st = null;
 	for (let i = 0; i < 300 * 2; i++) {
 		await sleep(500);
-		const s = await br.evaluate(`JSON.stringify(window.bootResult ? { pageAt: window.bootResult.pageAt, ms: window.bootResult.milestones, done: window.bootResult.done, search: location.search, snap: window.bootResult.lines.filter((l) => /snapshot (loaded|not used)|load failed|loading: Loading the station[.]{3} [0-9]/.test(l)) } : null)`).catch(() => null);
+		const s = await br.evaluate(`JSON.stringify(window.bootResult ? { pageAt: window.bootResult.pageAt, ms: window.bootResult.milestones, done: window.bootResult.done, search: location.search, snap: window.bootResult.lines.filter((l) => /snapshot (loaded|not used)|load failed|loading: Loading the station[.]{3} [0-9]|loading note/.test(l)) } : null)`).catch(() => null);
 		st = s ? JSON.parse(s) : null;
 		if (st && ((fallback ? st.pageAt?.["world-new"] : st.pageAt?.lobby) !== undefined || st.done)) break;
 	}
@@ -125,7 +127,7 @@ for (const b of browsers) for (const mode of modes) {
 	// zstd: the download counter counts to the zstd file's size, not the unpacked size (it showed "... / 195 MB" on 2026-10-26)
 	const counts = (st?.snap ?? []).map((l) => /Loading the station\.\.\. (\d+) \/ (\d+) MB/.exec(l)).filter(Boolean).map((m) => [Number(m[1]), Number(m[2])]);
 	const countOk = mode !== "zstd" || (counts.length > 0 && counts.every(([n, of]) => of === Math.round(zst.length / 1e6) && n <= of));
-	const ok = !countOk ? false : mode === "zstd" || mode === "zstdraw" ? st?.pageAt?.lobby !== undefined && st.snap.some((l) => new RegExp(`snapshot loaded \\([\\d.]+ MB ${mode === "zstd" ? "zstd" : "gzip"}`).test(l)) : fallback ? st?.pageAt?.["world-new"] !== undefined && (mode === "midload" ? /nosnap=1/.test(st.search) : st.snap.some((l) => /snapshot not used/.test(l))) : st?.pageAt?.lobby !== undefined;
+	const ok = !countOk ? false : mode === "zstd" || mode === "zstdraw" ? st?.pageAt?.lobby !== undefined && st.snap.some((l) => new RegExp(`snapshot loaded \\([\\d.]+ MB ${mode === "zstd" ? "zstd" : "gzip"}`).test(l)) : fallback ? st?.pageAt?.["world-new"] !== undefined && (mode === "midload" ? /nosnap=1/.test(st.search) : mode === "nogz" ? st.snap.some((l) => /snapshot not used/.test(l)) && st.snap.some((l) => /loading note: .*zstd/.test(l)) : st.snap.some((l) => /snapshot not used/.test(l))) : st?.pageAt?.lobby !== undefined;
 	const r = { browser: b, mode, ok, search: st?.search, lobbyAfterPageOpen: st?.pageAt?.lobby ?? null, milestonesSincePageOpen: st?.pageAt, wall: (Date.now() - t0) / 1000, peakRssProcessMB: Math.round(mem.peak.one), peakRssAllMB: Math.round(mem.peak.sum), snapshotLines: st?.snap };
 	results.push(r);
 	console.log(JSON.stringify(r));
