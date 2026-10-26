@@ -35,8 +35,8 @@ const stripTags = (html) => html.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ")
 
 const KEY = "ss13.chatfilter";
 const CSS = `#infowindow{position:relative}
-#cf-btn{position:absolute;top:2px;right:18px;z-index:5;font:13px sans-serif;line-height:1;padding:1px 4px;border:1px solid #888;background:#eeeeeeee;cursor:pointer;opacity:.75}#cf-btn:hover{opacity:1}
-#cf-panel{position:absolute;top:22px;right:18px;z-index:6;width:200px;background:#f4f4f4;border:1px solid #666;box-shadow:2px 2px 6px #0006;padding:6px 8px;font:12px sans-serif;color:#000}
+#cf-btn{order:99;margin:1px 4px 1px auto;font:bold 12px sans-serif;line-height:1;padding:2px 8px;border:1px solid #2c4664;border-radius:3px;background:#40628a;color:#fff;cursor:pointer}#cf-btn:hover,#cf-btn.on{background:#5a82b4}
+#cf-panel{position:absolute;top:100%;right:4px;z-index:8;cursor:default;width:200px;background:#f4f4f4;border:1px solid #666;box-shadow:2px 2px 6px #0006;padding:6px 8px;font:12px sans-serif;color:#000}
 #cf-panel[hidden]{display:none}#cf-panel b{display:block;margin:4px 0 2px}#cf-panel label{display:block;cursor:pointer}#cf-panel input[type=text]{width:100%;box-sizing:border-box}
 .cf-hl{background:#fff176}
 ${CATEGORIES.map((c) => `.cf-hide-${c.id} .cf-${c.id}{display:none}`).join("\n")}`;
@@ -59,7 +59,7 @@ export function createChatFilter(pane, storage = globalThis.localStorage) {
 	document.head.append(style);
 	applyHidden();
 	const btn = document.createElement("button");
-	btn.id = "cf-btn"; btn.textContent = "⚙"; btn.title = "Chat filters, highlights and game settings";
+	btn.id = "cf-btn"; btn.textContent = "⚙ Settings"; btn.title = "Chat filters, highlights and game settings";
 	const panel = document.createElement("div");
 	panel.id = "cf-panel"; panel.hidden = true;
 	panel.innerHTML = "<b>Show</b>" + CATEGORIES.map((c) => `<label><input type="checkbox" data-cat="${c.id}"> ${c.label}</label>`).join("") + '<b>Highlight words (comma separated)</b><input type="text" id="cf-words" autocomplete="off" spellcheck="false">'
@@ -88,8 +88,9 @@ export function createChatFilter(pane, storage = globalThis.localStorage) {
 	const applyTheme = () => document.documentElement.classList.toggle("dark", th.value === "dark");
 	applyTheme();
 	th.addEventListener("change", () => { try { storage.setItem("ss13-theme", th.value); } catch {} applyTheme(); th.blur(); });
-	btn.addEventListener("click", () => { panel.hidden = !panel.hidden; });
-	document.addEventListener("pointerdown", (e) => { if (!panel.hidden && !panel.contains(e.target) && e.target !== btn) { panel.hidden = true; if (panel.contains(document.activeElement)) document.activeElement.blur(); } });
-	pane.parentElement.append(btn, panel);
+	btn.addEventListener("click", () => { panel.hidden = !panel.hidden; btn.classList.toggle("on", !panel.hidden); btn.blur(); }); // blur: a focused button takes Enter/Space
+	document.addEventListener("pointerdown", (e) => { if (!panel.hidden && !panel.contains(e.target) && e.target !== btn) { panel.hidden = true; btn.classList.remove("on"); if (panel.contains(document.activeElement)) document.activeElement.blur(); } });
+	// in the menu bar across the top (its right end; order:99 keeps it after the menus menubar.js adds later), else over the chat pane
+	(document.getElementById("menubar") ?? pane.parentElement).append(btn, panel);
 	return { tag, state: () => state };
 }

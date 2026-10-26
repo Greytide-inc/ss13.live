@@ -165,7 +165,7 @@ html.dark #statlines .n{color:#8ba5c4}html.dark #statlines .c{color:#7fb2ff}
 html.dark #inputbar{background:#262626}html.dark #input{background:#222526!important;color:#ddd;border-color:#444}html.dark #input::placeholder{color:#777}
 html.dark #channels button{background:#333;color:#ddd;border-color:#555}html.dark #channels button.on{border-color:var(--chan);box-shadow:inset 0 0 0 1px var(--chan);color:var(--chan)}
 html.dark .dlg{background:#262626;color:#ddd;border-color:#555}html.dark .dlg h4,html.dark .bbar{background:#363636;color:#8fb3d9}html.dark .bwin{border-color:#363636}
-html.dark #cf-btn{background:#333e;color:#ddd;border-color:#555}html.dark .cf-hl{background:#5c5200}
+html.dark .cf-hl{background:#5c5200}
 html.dark input,html.dark select,html.dark textarea,html.dark button{color-scheme:dark}
 html.dark #outputwindow a{color:#7fb2ff}
 html.dark #outputwindow font[color="#002eb8" i]{color:#6d8dff} /* normal OOC */

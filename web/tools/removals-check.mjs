@@ -49,7 +49,7 @@ send(alice, { type: "topic", href: `?_src_=holder;boot2=${bobRef}` });
 check(await until(() => bob.closed, 15), "Bob is disconnected");
 check(await until(() => saw(carol, /Bob @\w+\) was kicked by an admin/), 10), "Carol is told Bob was kicked by an admin");
 check(await until(() => saw(carol, /Removed this round:.*Bob @\w+\) was kicked by an admin/), 150), "the round-end report lists the kick");
-check(saw(carol, /Anything goes in the round/) && saw(carol, /Use Adminhelp, not OOC/), "players see the server rules on joining (config/motd.txt)");
+check(saw(carol, /The rules:/) && saw(carol, /Boot a player/), "players see the server rules on joining (config/motd.txt)");
 for (let i = 0; i < 11; i++) { send(carol, { type: "command", text: 'ooc "same message again"' }); await sleep(150); }
 check(await until(() => saw(carol, /auto-mute was applied/), 10), "the same OOC line 11 times auto-mutes the sender (AUTOMUTE_ON)");
 for (const p of [alice, bob, carol]) p.ws.close();
