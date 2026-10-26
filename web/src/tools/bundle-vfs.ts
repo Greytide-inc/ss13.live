@@ -46,10 +46,10 @@ const RULES: Rule[] = [
 	{ dir: "_maps", recursive: true, extFilter: (n) => /\.(dmm|json)$/i.test(n) },
 	{ dir: "strings", recursive: true },
 	{ dir: "icons/minimaps", recursive: false, presenceOnly: true },
-	// PRESENCE ONLY: SStitle.PreInit needs flist() here; fcopy_rsc is an identity stub, no bytes needed.
 	// PRESENCE ONLY: fexists()/flist() on sound files (musician.dm's fexists(note file), GLOB.guitar_notes = flist("sound/guitar/")); the page fetches the real file.
 	{ dir: "sound", recursive: true, extFilter: (n) => /\.(ogg|wav|mid)$/i.test(n), presenceOnly: true },
-	{ dir: "config/title_screens/images", recursive: false, presenceOnly: true },
+	// config/title_screens/images is left out on purpose: SStitle.PreInit's flist() finds no title screen, so the lobby turf stays blank.png and
+	// the join splash (/obj/screen/splash) has no picture; the page draws ss13.live's own lobby pictures instead (worker/lobby-art.js).
 ];
 const EXTRA_FILES = ["html/create_object.html", "code/modules/tooltip/tooltip.html", "tgui/tgui.html", "code/modules/html_interface/html_interface.html"];
 

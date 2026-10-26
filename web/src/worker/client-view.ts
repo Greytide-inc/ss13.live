@@ -72,14 +72,17 @@ export interface ClientSeen {
 	free?: number;
 }
 
+/** the client's mob is tg's lobby mob (new_player): the page shows the lobby picture over the view (plans/lobby-art.md) */
+export function inLobby(c: DMObject): boolean { const m = live(c.getVar("mob")); return m instanceof DMObject && m.type.path === "/mob/dead/new_player"; }
+
 let cfgVm: VM | null = null, cfgIdx = -1;
 /** the view this client gets unzoomed (client.default_view): config's default_view when widescreen, else default_view_square. The page lays the HUD out against it. */
 export function baseViewOf(vm: VM, c: DMObject): unknown {
 	if (cfgVm !== vm) { cfgVm = vm; cfgIdx = vm.tree.globalNames.indexOf("config"); }
 	const cfg = cfgIdx >= 0 ? live(vm.globals[cfgIdx]) : null;
 	if (!(cfg instanceof DMObject)) return null;
-	const m = live(c.getVar("mob")), prefs = live(c.getVar("prefs"));
-	const wide = !(m instanceof DMObject && m.type.path === "/mob/dead/new_player") && (!(prefs instanceof DMObject) || !!live(prefs.getVar("widescreenpref")));
+	const prefs = live(c.getVar("prefs"));
+	const wide = !inLobby(c) && (!(prefs instanceof DMObject) || !!live(prefs.getVar("widescreenpref")));
 	return live(cfg.getVar(wide ? "default_view" : "default_view_square"));
 }
 
@@ -340,6 +343,8 @@ export interface ViewUpdate {
 	view: unknown;
 	/** client.default_view (what `view` is when not zoomed); the HUD is laid out against it. */
 	baseView?: unknown;
+	/** 1 while the mob is the lobby one (inLobby); left out otherwise */
+	lobby?: 1;
 	eyeTile: { x: number; y: number; z: number } | null;
 	sight: Record<string, unknown> | null;
 	/** New or changed appearances by id. */
@@ -1065,6 +1070,7 @@ export class ViewDiffer {
 		return {
 			seq: ++this.seq, full, worldTime: vm.sched.time, key: c.getVar("key"), view, baseView: baseViewOf(vm, c), eyeTile, sight,
 			apps, gone, tiles, moved, screen: full || screenChanged ? entries : null,
+			...(inLobby(c) ? { lobby: 1 as const } : {}),
 			pred: mobId !== undefined ? [mobId, free, ...predImgs] : null,
 			...(run ? { predRun: run } : {}),
 			...(free && predTurnOf(mover) ? { predTurn: 1 as const } : {}),

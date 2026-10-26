@@ -20,7 +20,7 @@
 <!-- tsh-chat: only this page's own scripts run here (the inline ones by hash: after editing one, `node tools/csp.mjs` from web/).
      No 'unsafe-eval': PixiJS builds shader code with new Function unless ./pixi-no-eval.js (its own add-on, made by
      tools/pixi-no-eval.mjs) is imported first; blob: workers are PixiJS's image loaders. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-w7FiRm3A6tvyprAne8G8M8dv/0vxuAgFXzs3peZutUk=' 'sha256-Ad3Z0q0oJIukpVoFDmVV3lZDWdAwsRN0YJ2W3tL8hT4=' 'sha256-lTxu9zC4uShGdcuJrAXIeXJWl4Hunla9A+ucH/rf2Jc=' 'sha256-Rvnwlc0zTCVG5M88SrYurZ3r6+kr7RD/8NFNX8V63yA='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' blob: ws://localhost:* ws://127.0.0.1:*; worker-src 'self' blob:; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-w7FiRm3A6tvyprAne8G8M8dv/0vxuAgFXzs3peZutUk=' 'sha256-Ad3Z0q0oJIukpVoFDmVV3lZDWdAwsRN0YJ2W3tL8hT4=' 'sha256-lTxu9zC4uShGdcuJrAXIeXJWl4Hunla9A+ucH/rf2Jc=' 'sha256-09Lg00n9zALgQxVT/Yu2v8x9VAhsgNqvNPoIiRkeCGI='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' blob: ws://localhost:* ws://127.0.0.1:*; worker-src 'self' blob:; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>ss13.live: Space Station 13 in your browser</title>
 <!-- Hosting: tab title, link preview card (Reddit, Discord), tg's own SS13 icon. -->
 <meta name="description" content="Space Station 13 (2017 /tg/station) in your browser: no BYOND, nothing to install. Join a round on ss13.live.">
@@ -39,7 +39,7 @@
    sk1: menu bar across the top (menubar.js, from skin.dmf's `menu "menu"`); both splitters drag (splitter.js); the map canvas fits #mapwindow via container units. Output styles: output.css (interface/stylesheet.dm's client.script). */
 html,body{height:100%}body{font:12px monospace;margin:0;display:flex;flex-direction:column;background:#fff}
 #main{flex:1;display:flex;min-height:0}
-#mapwindow{flex:0 0 50%;min-width:0;background:#000;display:flex;align-items:flex-start;justify-content:center;overflow:hidden;container-type:size}
+#mapwindow{position:relative;flex:0 0 50%;min-width:0;background:#000;display:flex;align-items:flex-start;justify-content:center;overflow:hidden;container-type:size}
 #infowindow{flex:1;display:flex;flex-direction:column;min-width:0}
 #menubar{flex:0 0 auto;position:relative;display:flex;background:#f0f0f0;border-bottom:1px solid #aaa;font:12px sans-serif;user-select:none;z-index:7}
 .mtop{padding:3px 8px;cursor:default}.mtop:hover,.mtop.on{background:#cde}.mtop.off{color:#888}
@@ -55,7 +55,7 @@ html,body{height:100%}body{font:12px monospace;margin:0;display:flex;flex-direct
 #outputwindow div{overflow-wrap:anywhere}
 #inputbar{flex:0 0 26px;display:flex;gap:3px;padding:3px 5px;background:#eee;min-width:0}#input{flex:1 1 0;min-width:0;background:#d3b5b5;border:1px solid #888}#channels{flex:0 0 auto;display:flex;gap:2px}#channels button{font:12px sans-serif;border:1px solid #888;background:#e4e4e4;padding:0 7px;cursor:pointer}#channels button.on{font-weight:bold;border-color:#333;box-shadow:inset 0 0 0 1px #333}
 #debug{font:12px monospace;padding:0 8px}#boot{font-weight:bold}pre{white-space:pre-wrap;margin:0;max-height:300px;overflow:auto}
-#client-host{display:flex}.client-canvas{image-rendering:pixelated;flex:none;--h:min(100cqh,calc(100cqw / var(--ar,1)));--over:calc(var(--h) * (var(--vr,var(--ar,1)) - var(--ar,1)) / 2);height:var(--h);width:calc(var(--h) * var(--vr,var(--ar,1)));margin:0 calc(-1 * var(--over));clip-path:inset(0 var(--over));background:#000}
+#client-host{display:flex}.lobby-art{position:absolute;top:0;left:50%;transform:translateX(-50%);width:min(100cqh,100cqw);height:min(100cqh,100cqw);image-rendering:pixelated;pointer-events:none}.client-canvas{image-rendering:pixelated;flex:none;--h:min(100cqh,calc(100cqw / var(--ar,1)));--over:calc(var(--h) * (var(--vr,var(--ar,1)) - var(--ar,1)) / 2);height:var(--h);width:calc(var(--h) * var(--vr,var(--ar,1)));margin:0 calc(-1 * var(--over));clip-path:inset(0 var(--over));background:#000}
 #dialogs{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;pointer-events:none;z-index:10}
 .dlg{pointer-events:auto;background:#eee;border:2px solid #666;box-shadow:0 2px 10px #000a;min-width:260px;max-width:480px;font:13px sans-serif}
 .dlg h4{margin:0;padding:3px 8px;background:#446;color:#fff;font-size:13px}
@@ -126,6 +126,7 @@ import { CHANNELS, nextChannel, lineFor, isTyping, hotkeyOpens } from "/web/work
 import { joinName, nameToSave, warnOnLeave, weakSecret, joinString, nameAnswer, ERRORS, LOAD_STEPS, loadProgress } from "/web/worker/join.js";
 import { createChatFilter } from "/web/worker/chatfilter.js";
 import { cleanChat } from "/web/worker/chathtml.js";
+import { createLobbyArt } from "/web/worker/lobby-art.js";
 import { clickParams } from "/web/build/dist/src/render/click-params.js";
 const q = new URLSearchParams(location.search);
 // ?adminkey= (security step 4): kept for this tab in sessionStorage (a reload or reconnect still sends it) and taken out of the
@@ -234,6 +235,8 @@ addEventListener("beforeunload", (e) => { if (warnOnLeave(window.bootResult, nav
 let w = null; // the world's worker; a new one for each world (tg's world.Reboot() ends the old one)
 // Per-tick view updates; a missing one asks the worker for a full view.
 const liveView = liveClientView(document.getElementById("client-host"), () => w.postMessage({ type: "resync" }), (dir) => w.postMessage({ type: "step", dir }));
+// the lobby picture over the map view while the mob is the lobby one (the view's `lobby` flag); ?lobbyart=NAME picks a design (tests)
+const lobbyArt = window.lobbyArt = createLobbyArt(document.getElementById("mapwindow"), q.get("lobbyart"));
 window.resyncView = () => w.postMessage({ type: "resync" }); // ask for a full view by hand (console, or the driver's check run)
 // Once a second: view updates received and redraw cost on this machine, over the last second.
 const perf = document.getElementById("perf");
@@ -408,7 +411,7 @@ const onWorkerMessage = (e) => {
 	if (m.type === "log") { lines.push(m.line); pending.push(m.line); }
 	else if (m.type === "rtIcon") rtIconUrls.set(m.url, URL.createObjectURL(new Blob([m.dmi], { type: "image/png" }))); // made here, not in the worker (load-world.ts runtimeUrl)
 	else if (m.type === "output") { clickAnswered(); addOutput(m.lines); for (const t of m.lines) bugNote("[chat] " + String(t).replace(/<[^>]*>/g, "").slice(0, 300)); }
-	else if (m.type === "view") { closeLoading(); if (!pageReady) { pageReady = true; lines.push(`[page] ${held.length} window messages (${[...new Set(held.map((h) => h.type))].join(",")}) held until the first view; showing them now`); for (const h of held.splice(0)) onWorkerMessage({ data: h }); } window.bootResult.views++; liveView.update(m.update); }
+	else if (m.type === "view") { closeLoading(); if (!pageReady) { pageReady = true; lines.push(`[page] ${held.length} window messages (${[...new Set(held.map((h) => h.type))].join(",")}) held until the first view; showing them now`); for (const h of held.splice(0)) onWorkerMessage({ data: h }); } window.bootResult.views++; liveView.update(m.update); if (!!m.update.lobby !== lobbyArt.wanted) { lobbyArt.show(!!m.update.lobby); lines.push(`[page] lobby picture ${lobbyArt.wanted ? "on: " + lobbyArt.design : "off"}`); } }
 	else if (m.type === "dialog") showDialog(m);
 	else if (m.type === "menu") showMenu(m);
 	else if (m.type === "stat") showStat(m);
