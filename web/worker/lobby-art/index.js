@@ -10,6 +10,7 @@ import redAlert from "./designs/3-red-alert.js";
 import corridorRun from "./designs/3a-corridor-run.js";
 import aiTerminal from "./designs/5-ai-terminal.js";
 import malfunction from "./designs/5a-malfunction.js";
+import titleScreen from "./designs/6-title-screen.js";
 
 // all text on the lobby canvas: bold DejaVu Sans Mono with hard pixel edges (no blur), same look as the logo. Patched on the one context only.
 function crispText(ctx) {
@@ -31,7 +32,7 @@ function crispText(ctx) {
 }
 
 
-const designs = [crew, corridorCam, lineUp, redAlert, corridorRun, aiTerminal, malfunction];
+const designs = [crew, corridorCam, lineUp, redAlert, corridorRun, aiTerminal, malfunction, titleScreen];
 designs.sort((a,b)=>a.name<b.name?-1:1);
 export const DESIGNS = designs;
 
@@ -55,7 +56,6 @@ export function createLobbyArt(host, pick) {
 	const drop = () => { clearTimeout(fading); fading = 0; cancelAnimationFrame(raf); raf = 0; cv?.remove(); cv = null; };
 	return {
 		design: d.name,
-		menuY: d.menuY ?? 176, // where the lobby menu (lobby-menu.js) sits on this picture, in its 480 px: below a logo or countdown in the middle
 		get shown() { return !!cv; },
 		get wanted() { return on; },
 		show(want) {

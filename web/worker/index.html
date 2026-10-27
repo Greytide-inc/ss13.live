@@ -239,7 +239,7 @@ const liveView = liveClientView(document.getElementById("client-host"), () => w.
 // the lobby picture over the map view while the mob is the lobby one (the view's `lobby` flag); ?lobbyart=NAME picks a design (tests)
 const lobbyArt = window.lobbyArt = createLobbyArt(document.getElementById("mapwindow"), q.get("lobbyart"));
 // tg's New Player Options window (playersetup) is drawn as a title-screen menu over the lobby picture instead of as a window (lobby-menu.js)
-const lobbyMenu = window.lobbyMenu = createLobbyMenu(document.getElementById("mapwindow"), (href) => popups.link(href), lobbyArt.menuY);
+const lobbyMenu = window.lobbyMenu = createLobbyMenu(document.getElementById("mapwindow"), (href) => popups.link(href));
 // arriving in a lobby (page load, a new world) opens the Lobby stat tab once, for its countdown and the menu's line; picking another tab after sticks
 let lobbyTab = true;
 { const probe = popups.probe; popups.probe = async () => [...await probe(), ...lobbyMenu.probe()]; } // test tools click its links like a popup's

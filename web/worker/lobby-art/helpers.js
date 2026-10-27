@@ -2,6 +2,11 @@
 // dark edges, and placing a crew sprite by its feet.
 
 export const W = 480; // every picture is W x W pixels
+
+// The lobby menu (lobby-menu.js) is always drawn over this box of every picture, in the same place; it never moves. The rule for every
+// picture, old and new: inside the box stays dark and still (stars, empty space, a dark window or screen), so the menu reads clearly.
+// Work the picture's idea around it. The box fits the longest menu (mid-round, with the map name line); tests/static/lobby-art.test.mjs checks it.
+export const MENU_ZONE = { x: 22, y: 176, w: 296, h: 168 };
 export const LOGO = "SS13.LIVE";
 export const TAGLINE = "Space Station 13 in your browser";
 

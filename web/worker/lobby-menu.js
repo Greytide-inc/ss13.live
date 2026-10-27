@@ -1,7 +1,6 @@
 // lobby-menu - tg's "New Player Options" window (playersetup) drawn as a title-screen menu over the lobby picture: plain text on the
 // left, a > on the one under the mouse, the current ready choice in green (mockup E, plans/lobby-art/lobby-window-mockups.html).
-// It shows only while the mouse is on the picture: the whole picture darkens to 80% black and the menu fades in (lobby-menu-fade-mockup.html);
-// mouse off, the picture is clear and the menu invisible. Touch screens (no hover, finger pointer) always show it.
+// It always shows, straight on the picture with no dark backing; the black outline on the text keeps it readable.
 // The game still sends tg's window html; the page reads its links out of it, so a click is the same topic the window's link sent.
 // The line under the menu is the Lobby stat tab (time to start, players), passed in by the page whenever that tab updates.
 
@@ -31,10 +30,8 @@ export function statLine(lines) {
 	return "";
 }
 
-const CSS = `.lobby-menu-box{position:absolute;top:0;left:50%;transform:translateX(-50%);width:min(100cqh,100cqw);height:min(100cqh,100cqw);z-index:2;--u:calc(min(100cqh,100cqw) / 480);background:#0000;transition:background-color .45s}
-.lobby-menu-box:hover{background:#000c}.lobby-menu-box:hover .lobby-menu{opacity:1}
-@media (hover:none) and (pointer:coarse){.lobby-menu-box{background:#000c}.lobby-menu-box .lobby-menu{opacity:1}}
-.lobby-menu{position:absolute;left:calc(22 * var(--u));top:calc(var(--menu-y,176) * var(--u));padding:.5em 1.4em .6em .7em;font:bold max(12px,calc(18 * var(--u))) "DejaVu Sans Mono",monospace;user-select:none;opacity:0;transition:opacity .45s}
+const CSS = `.lobby-menu-box{position:absolute;top:0;left:50%;transform:translateX(-50%);width:min(100cqh,100cqw);height:min(100cqh,100cqw);z-index:2;--u:calc(min(100cqh,100cqw) / 480)}
+.lobby-menu{position:absolute;left:calc(22 * var(--u));top:calc(176 * var(--u));padding:.5em 1.4em .6em .7em;font:bold max(12px,calc(18 * var(--u))) "DejaVu Sans Mono",monospace;user-select:none}
 .lobby-menu div{padding:.22em 0 .22em 1.1em;position:relative;cursor:pointer;color:#ccd;white-space:nowrap;text-shadow:2px 2px 0 #000,-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000}
 .lobby-menu div:hover{color:#ffd34e}.lobby-menu div:hover::before{content:">";position:absolute;left:0}
 .lobby-menu div.join{color:#6f6}.lobby-menu div.join:hover{color:#ffd34e}
@@ -42,8 +39,8 @@ const CSS = `.lobby-menu-box{position:absolute;top:0;left:50%;transform:translat
 .lobby-menu .sub:empty{display:none}.lobby-menu .sub{font-size:.67em;color:#9ab;cursor:default;margin-top:.7em}.lobby-menu .sub:hover{color:#9ab}.lobby-menu .sub:hover::before{content:""}`;
 
 /** The menu over `host` (the map window). show(html) on each playersetup browse, hide() when it closes; stat(lines) from the Lobby tab;
- *  click(href) sends a link's topic; menuY = how far down the 480 px picture it sits. */
-export function createLobbyMenu(host, click, menuY = 176) {
+ *  click(href) sends a link's topic. It sits in the same place on every picture (lobby-art/helpers.js MENU_ZONE). */
+export function createLobbyMenu(host, click) {
 	let box = null, sub = null, line = "";
 	const style = () => { if (document.getElementById("lobby-menu-css")) return; const s = document.createElement("style"); s.id = "lobby-menu-css"; s.textContent = CSS; document.head.append(s); };
 	return {
@@ -51,7 +48,7 @@ export function createLobbyMenu(host, click, menuY = 176) {
 		get items() { return box ? [...box.querySelectorAll(".lobby-menu div:not(.sub)")].map((d) => d.textContent) : []; },
 		show(html) {
 			style();
-			if (!box) { box = document.createElement("div"); box.className = "lobby-menu-box"; box.style.setProperty("--menu-y", menuY); host.append(box); }
+			if (!box) { box = document.createElement("div"); box.className = "lobby-menu-box"; host.append(box); }
 			const menu = document.createElement("div"); menu.className = "lobby-menu";
 			for (const it of menuItems(html)) {
 				const d = document.createElement("div"); d.textContent = (it.current ? "✓ " : "") + it.label;
