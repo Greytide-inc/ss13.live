@@ -20,7 +20,7 @@
 <!-- tsh-chat: only this page's own scripts run here (the inline ones by hash: after editing one, `node tools/csp.mjs` from web/).
      No 'unsafe-eval': PixiJS builds shader code with new Function unless ./pixi-no-eval.js (its own add-on, made by
      tools/pixi-no-eval.mjs) is imported first; blob: workers are PixiJS's image loaders. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-w7FiRm3A6tvyprAne8G8M8dv/0vxuAgFXzs3peZutUk=' 'sha256-Ad3Z0q0oJIukpVoFDmVV3lZDWdAwsRN0YJ2W3tL8hT4=' 'sha256-lTxu9zC4uShGdcuJrAXIeXJWl4Hunla9A+ucH/rf2Jc=' 'sha256-09Lg00n9zALgQxVT/Yu2v8x9VAhsgNqvNPoIiRkeCGI='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' blob: ws://localhost:* ws://127.0.0.1:*; worker-src 'self' blob:; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-w7FiRm3A6tvyprAne8G8M8dv/0vxuAgFXzs3peZutUk=' 'sha256-Ad3Z0q0oJIukpVoFDmVV3lZDWdAwsRN0YJ2W3tL8hT4=' 'sha256-lTxu9zC4uShGdcuJrAXIeXJWl4Hunla9A+ucH/rf2Jc=' 'sha256-N5ePBoUQHug59ShozlnWZdrLeFAYE4AKI+J8SykePT0='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'self' blob: ws://localhost:* ws://127.0.0.1:*; worker-src 'self' blob:; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>ss13.live: Space Station 13 in your browser</title>
 <!-- Hosting: tab title, link preview card (Reddit, Discord), tg's own SS13 icon. -->
 <meta name="description" content="Space Station 13 (2017 /tg/station) in your browser: no BYOND, nothing to install. Join a round on ss13.live.">
@@ -127,6 +127,7 @@ import { joinName, nameToSave, warnOnLeave, weakSecret, joinString, nameAnswer, 
 import { createChatFilter } from "/web/worker/chatfilter.js";
 import { cleanChat } from "/web/worker/chathtml.js";
 import { createLobbyArt } from "/web/worker/lobby-art.js";
+import { createLobbyMenu } from "/web/worker/lobby-menu.js";
 import { clickParams } from "/web/build/dist/src/render/click-params.js";
 const q = new URLSearchParams(location.search);
 // ?adminkey= (security step 4): kept for this tab in sessionStorage (a reload or reconnect still sends it) and taken out of the
@@ -237,6 +238,11 @@ let w = null; // the world's worker; a new one for each world (tg's world.Reboot
 const liveView = liveClientView(document.getElementById("client-host"), () => w.postMessage({ type: "resync" }), (dir) => w.postMessage({ type: "step", dir }));
 // the lobby picture over the map view while the mob is the lobby one (the view's `lobby` flag); ?lobbyart=NAME picks a design (tests)
 const lobbyArt = window.lobbyArt = createLobbyArt(document.getElementById("mapwindow"), q.get("lobbyart"));
+// tg's New Player Options window (playersetup) is drawn as a title-screen menu over the lobby picture instead of as a window (lobby-menu.js)
+const lobbyMenu = window.lobbyMenu = createLobbyMenu(document.getElementById("mapwindow"), (href) => popups.link(href), lobbyArt.menuY);
+// arriving in a lobby (page load, a new world) opens the Lobby stat tab once, for its countdown and the menu's line; picking another tab after sticks
+let lobbyTab = true;
+{ const probe = popups.probe; popups.probe = async () => [...await probe(), ...lobbyMenu.probe()]; } // test tools click its links like a popup's
 window.resyncView = () => w.postMessage({ type: "resync" }); // ask for a full view by hand (console, or the driver's check run)
 // Once a second: view updates received and redraw cost on this machine, over the last second.
 const perf = document.getElementById("perf");
@@ -411,13 +417,13 @@ const onWorkerMessage = (e) => {
 	if (m.type === "log") { lines.push(m.line); pending.push(m.line); }
 	else if (m.type === "rtIcon") rtIconUrls.set(m.url, URL.createObjectURL(new Blob([m.dmi], { type: "image/png" }))); // made here, not in the worker (load-world.ts runtimeUrl)
 	else if (m.type === "output") { clickAnswered(); addOutput(m.lines); for (const t of m.lines) bugNote("[chat] " + String(t).replace(/<[^>]*>/g, "").slice(0, 300)); }
-	else if (m.type === "view") { closeLoading(); if (!pageReady) { pageReady = true; lines.push(`[page] ${held.length} window messages (${[...new Set(held.map((h) => h.type))].join(",")}) held until the first view; showing them now`); for (const h of held.splice(0)) onWorkerMessage({ data: h }); } window.bootResult.views++; liveView.update(m.update); if (!!m.update.lobby !== lobbyArt.wanted) { lobbyArt.show(!!m.update.lobby); lines.push(`[page] lobby picture ${lobbyArt.wanted ? "on: " + lobbyArt.design : "off"}`); } }
+	else if (m.type === "view") { closeLoading(); if (!pageReady) { pageReady = true; lines.push(`[page] ${held.length} window messages (${[...new Set(held.map((h) => h.type))].join(",")}) held until the first view; showing them now`); for (const h of held.splice(0)) onWorkerMessage({ data: h }); } window.bootResult.views++; liveView.update(m.update); if (!!m.update.lobby !== lobbyArt.wanted) { lobbyArt.show(!!m.update.lobby); if (!m.update.lobby) lobbyMenu.hide(); else lobbyTab = true; lines.push(`[page] lobby picture ${lobbyArt.wanted ? "on: " + lobbyArt.design : "off"}`); } }
 	else if (m.type === "dialog") showDialog(m);
 	else if (m.type === "menu") showMenu(m);
-	else if (m.type === "stat") showStat(m);
+	else if (m.type === "stat") { if (lobbyTab && m.tabs.includes("Lobby")) { lobbyTab = false; if (m.panel !== "Lobby") w.postMessage({ type: "statpanel", name: "Lobby" }); } showStat(m); if (m.panel === "Lobby") lobbyMenu.stat(m.lines); }
 	else if (m.type === "sound") { clickAnswered(); sound.play(m); }
 	else if (m.type === "bugstate") bugSave(m.text);
-	else if (m.type === "browse") popups.browse(m);
+	else if (m.type === "browse") { if (m.window === "playersetup" && !m.embedded) { if (m.html === null) lobbyMenu.hide(); else if (typeof m.html === "string") lobbyMenu.show(m.html); else popups.browse(m); } else popups.browse(m); }
 	else if (m.type === "browse_rsc") popups.rsc(m);
 	else if (m.type === "rsc_png") popups.rscPng(m);
 	else if (m.type === "popout") popups.output(m.control, m.text);
@@ -758,7 +764,7 @@ const roundsDone = (window.bootResult.rounds = []);
 const reboot = (m) => {
 	if (serverUrl) { // the server starts the next world itself and sends this connection a full view when it is up
 		flush();
-		popups.closeAll(); dialogHost.replaceChildren(); closeMenu(); down.clear();
+		popups.closeAll(); lobbyMenu.hide(); dialogHost.replaceChildren(); closeMenu(); down.clear();
 		document.getElementById("stattabs").replaceChildren(); document.getElementById("statlines").replaceChildren();
 		addOutput(["<span class='boldannounce'>The world is restarting: a new round is being set up...</span>"]);
 		showRoundOver(round);
@@ -771,7 +777,7 @@ const reboot = (m) => {
 	for (const o of [files, milestones, pageAt]) for (const k in o) delete o[k];
 	window.bootResult.views = 0;
 	w.terminate();
-	popups.closeAll(); dialogHost.replaceChildren(); closeMenu(); down.clear();
+	popups.closeAll(); lobbyMenu.hide(); dialogHost.replaceChildren(); closeMenu(); down.clear();
 	document.getElementById("stattabs").replaceChildren(); document.getElementById("statlines").replaceChildren();
 	addOutput(["<span class='boldannounce'>The world is restarting: a new round is being set up...</span>"]);
 	showRoundOver(round); // hides the old map until the new world draws
@@ -799,7 +805,7 @@ async function nameRefused(m) {
 // Reconnect / Play here instead: a new connection to the same server, as the same player (the server sends a full view)
 function rejoin() {
 	$id("errwin").hidden = true;
-	popups.closeAll(); dialogHost.replaceChildren(); closeMenu(); down.clear();
+	popups.closeAll(); lobbyMenu.hide(); dialogHost.replaceChildren(); closeMenu(); down.clear();
 	$id("stattabs").replaceChildren(); $id("statlines").replaceChildren();
 	Object.assign(window.bootResult, { done: false, error: undefined });
 	loadDone = false; load = loadProgress(playMode); loadBar.className = "bar"; loadRows.replaceChildren(); loadTitle.textContent = "Joining ss13.live";

@@ -25,6 +25,7 @@ const tests = [
 	"tests/static/chatfilter.test.mjs",
 	[WS, "tests/static/csp.test.mjs"],
 	[WS, "tests/static/lobby-art.test.mjs"],
+	"tests/static/lobby-menu.test.mjs",
 	"tests/page-scripts.test.mjs",
 	"tests/dm-lines-cols.test.mjs",
 	"tests/plain-gen-calls.test.mjs",

@@ -218,7 +218,7 @@ designs.push(
  const gr=c.createLinearGradient(0,0,0,150);gr.addColorStop(0,'rgba(0,0,0,.6)');gr.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=gr;c.fillRect(0,0,W,150);
  pixText(c,L(),W/2,22,16,4,'#fff','#f22');
  if(Math.floor(t*2)%2)smallText(c,'!! EVACUATE !!',W/2,128,'#f66','center',16);}},
-{name:'3b. Self-destruct',desc:'The nuke on a plinth under a boxed red countdown on a black screen with hazard stripes; it ends in a white flash, then starts again.',draw(c,t){
+{menuY:262,name:'3b. Self-destruct',desc:'The nuke on a plinth under a boxed red countdown on a black screen with hazard stripes; it ends in a white flash, then starts again.',draw(c,t){
  const T=t%13,left=Math.max(0,10-T),fl=T>10&&T<10.15,boom=T>=10&&T<11.6;
  c.fillStyle='#050000';c.fillRect(0,0,W,W);
  const urg=1-left/10,pulse=0.5+0.5*Math.sin(t*(3+urg*9));
@@ -350,7 +350,7 @@ function op3_beacon(c,x,y,ang,p){// side-view rotating beacon on the banner fram
  c.fillStyle='rgba(255,220,210,.8)';c.fillRect(x-7,y-9,2,4);c.fillRect(x-5,y-11,2,2);
  c.fillStyle='rgba(30,0,0,.6)';c.fillRect(x-10,y-1,20,1);c.fillRect(x-1,y-14,2,18);
  if(fl>.05){c.save();c.globalCompositeOperation='lighter';const g=c.createRadialGradient(x,y-4,0,x,y-4,56);g.addColorStop(0,`rgba(255,110,80,${.9*fl**2})`);g.addColorStop(1,'rgba(255,0,0,0)');c.fillStyle=g;c.fillRect(x-56,y-60,112,112);c.restore();}}
-designs.push({name:'3. Red alert',desc:'Close-up of the station in emergency red: two rotating beacons on a hazard-striped blast-shutter banner sweep real light across the map, a broken lamp flickers and sparks. CODE RED flashes under the logo.',draw(c,t){
+designs.push({menuY:262,name:'3. Red alert',desc:'Close-up of the station in emergency red: two rotating beacons on a hazard-striped blast-shutter banner sweep real light across the map, a broken lamp flickers and sparks. CODE RED flashes under the logo.',draw(c,t){
  const im=IMG.station,sx=Math.round(337+Math.sin(t*0.1)*20),sy=368,z=240;
  const A=op3_canvas('a'),a=A.getContext('2d');a.imageSmoothingEnabled=false;a.globalCompositeOperation='source-over';a.drawImage(im,sx,sy,z,z,0,0,W,W);
  const P=(X,Y)=>[(X-sx)*2,(Y-sy)*2];
@@ -420,7 +420,7 @@ function monk_bubble(c,s,x,y,col='#000'){c.font='bold 13px "DejaVu Sans Mono",mo
 const MONK_T=12,MONK_P=W+200;
 // screen x for a runner: k laps (negative = leftwards) per MONK_T seconds
 function monk_x(x0,k,t){const p=(((x0+MONK_P*k*t/MONK_T)%MONK_P)+MONK_P)%MONK_P;return p-100;}
-designs.push({name:'3d. Monkeys loose',desc:'Red alert gone bananas: a siren-lit banner carries the logo under a flashing "MONKEYS ARE LOOSE!!!!" while monkeys swing from the pipes, a scientist chases one wearing the stolen captain\'s hat, a clown slips on a banana peel and Ian carries a monkey and sighs.',draw(c,t){
+designs.push({menuY:262,name:'3d. Monkeys loose',desc:'Red alert gone bananas: a siren-lit banner carries the logo under a flashing "MONKEYS ARE LOOSE!!!!" while monkeys swing from the pipes, a scientist chases one wearing the stolen captain\'s hat, a clown slips on a banana peel and Ian carries a monkey and sighs.',draw(c,t){
  c.fillStyle='#000';c.fillRect(0,0,W,W);c.save();c.imageSmoothingEnabled=false;
  const pu=0.5+0.5*Math.sin(t*Math.PI*2*12/MONK_T*0.5*2/2*1); // 1 Hz-ish pulse (12 per loop)
  // wall
@@ -591,6 +591,7 @@ export function createLobbyArt(host, pick) {
 	const drop = () => { clearTimeout(fading); fading = 0; cancelAnimationFrame(raf); raf = 0; cv?.remove(); cv = null; };
 	return {
 		design: d.name,
+		menuY: d.menuY ?? 176, // where the lobby menu (lobby-menu.js) sits on this picture, in its 480 px: below a logo or countdown in the middle
 		get shown() { return !!cv; },
 		get wanted() { return on; },
 		show(want) {

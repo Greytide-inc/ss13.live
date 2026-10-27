@@ -52,7 +52,7 @@ for (const f of ["vfs-bundle.json", "icon-sizes.json"]) cp(`web/build/${f}`, `we
 }
 cp("web/build/dist/src", "web/build/dist/src");
 cp("web/node_modules/pixi.js/dist/pixi.mjs", "web/node_modules/pixi.js/dist/pixi.mjs");
-for (const f of ["output.css", "popups.js", "ctxmenu.js", "sound.js", "menubar.js", "splitter.js", "saybox.js", "join.js", "chatfilter.js", "chathtml.js", "lobby-art.js", "view-pack.js", "jitter-buffer.js", "pixi-no-eval.js", "screens.css", "img"]) cp(`web/worker/${f}`, `web/worker/${f}`);
+for (const f of ["output.css", "popups.js", "ctxmenu.js", "sound.js", "menubar.js", "splitter.js", "saybox.js", "join.js", "chatfilter.js", "chathtml.js", "lobby-art.js", "lobby-menu.js", "view-pack.js", "jitter-buffer.js", "pixi-no-eval.js", "screens.css", "img"]) cp(`web/worker/${f}`, `web/worker/${f}`);
 cp("web/worker/about.html", "about.html"); // hosting: privacy note, licence and source (linked from the loading screen)
 cp("web/worker/popup.html", "popup.html"); // tsh-chat: popup frames load it, next to the page (popups.js)
 if (existsSync(join(repo, "web/scenarios"))) cp("web/scenarios", "web/scenarios"); // ?scenario=NAME fetches /web/scenarios/NAME.txt (the public copy has none)
