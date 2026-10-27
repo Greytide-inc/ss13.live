@@ -21,7 +21,16 @@ globalThis.self = globalThis;
 if (workerData.saves) {
 	const file = workerData.saves;
 	globalThis.tgjsFileStore = {
-		async load() { try { return Object.fromEntries(Object.entries(JSON.parse(readFileSync(file, "utf8"))).map(([k, v]) => [k, new Uint8Array(Buffer.from(v, "base64"))])); } catch (e) { if (e.code !== "ENOENT") throw e; return {}; } },
+		// A file that can't be read is moved aside first (code review 2026-10-27): the game starts with no saves after a failed load and
+		// writes FILE within seconds, which would lose every setup in a file that could be mended by hand.
+		async load() {
+			try { return Object.fromEntries(Object.entries(JSON.parse(readFileSync(file, "utf8"))).map(([k, v]) => [k, new Uint8Array(Buffer.from(v, "base64"))])); } catch (e) {
+				if (e.code === "ENOENT") return {};
+				const aside = `${file}.broken-${new Date().toISOString().replace(/[:.]/g, "-")}`;
+				renameSync(file, aside);
+				throw new Error(`${e.message}; the file is kept as ${aside}`);
+			}
+		},
 		async save(files) { writeFileSync(file + ".tmp", JSON.stringify(Object.fromEntries(Object.entries(files).map(([k, v]) => [k, Buffer.from(v).toString("base64")])))); renameSync(file + ".tmp", file); },
 	};
 }

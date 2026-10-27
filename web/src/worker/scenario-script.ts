@@ -17,7 +17,7 @@
 //   TICK: spawn /type [SEL]              creates one at SEL's tile (default: the tile east of the mob); for a target the map doesn't put nearby
 //   TICK: spawn /type xN rR [SEL]        N copies on random free tiles (not space, not blocked) within R tiles (default 5) of SEL (default self), picked with the
 //                                        seeded RNG (vm.rng), every free tile used once before any gets a second copy; logs every position
-//   TICK: call SEL PROC [args]           SEL.PROC(args) with usr = the mob; args are numbers, "text", null or a SEL; logs the return value
+//   TICK: call SEL PROC [args]           SEL.PROC(args) with usr = the mob; args are numbers, "text", null or a SEL; logs the return value. SEL `global`: a global proc
 //   TICK: tp SEL                         moves the mob onto SEL's tile, unbuckled
 //   TICK: hand /type                     a new item in the mob's active hand (put_in_hands), as the page's ?setup=hand:
 //   TICK: say TEXT                       the `say` verb (typed line)        TICK: verb LINE   any typed line
@@ -323,13 +323,13 @@ export class ScriptPlayer {
 				const toks = a.args.match(/"[^"]*"|\S+/g) ?? [];
 				if (toks.length < 2) return "ERROR call needs SEL PROC";
 				if (!(mob instanceof DMAtom)) return "no mob";
-				const o = this.resolve(c, mob, toks[0]!);
-				if (!o) return `no target for ${toks[0]}`;
-				const proc = o.type.procs.get(toks[1]!);
-				if (!proc) return `ERROR no proc ${toks[1]!} on ${o.type.path}`;
+				const o = toks[0] === "global" ? null : this.resolve(c, mob, toks[0]!); // `call global PROC`: a global proc, src null
+				if (!o && toks[0] !== "global") return `no target for ${toks[0]}`;
+				const proc = o ? o.type.procs.get(toks[1]!) : this.vm.tree.globalProcs.get(toks[1]!);
+				if (!proc) return `ERROR no proc ${toks[1]!} on ${o ? o.type.path : "global"}`;
 				const args = toks.slice(2).map((x) => x.startsWith('"') ? x.slice(1, -1) : x === "null" ? null : /^-?\d+(\.\d+)?$/.test(x) ? Number(x) : (this.resolve(c, mob, x) ?? x));
 				const v = this.vm.call(proc, args as never, o, mob);
-				return `called ${toks[1]!} on ${this.desc(o)} -> ${this.show(v)}`;
+				return `called ${toks[1]!} on ${o ? this.desc(o) : "global"} -> ${this.show(v)}`;
 			}
 			case "tp": { // tp SEL: moves the mob onto the tile of SEL, unbuckled
 				if (!(mob instanceof DMAtom)) return "no mob";

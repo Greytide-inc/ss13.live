@@ -201,6 +201,7 @@ rt.def("/proc/RemoveBan", function RemoveBan(f: Frame, foldername: Value) {
 	if (!truthy(rt.callName(f, rt.fv(f, "dir", rt.gl("Banlist")), "Remove", [live(foldername)]))) {
 		return 0;
 	}
+	rt.call(f, P("/proc/log_world"), null, [fmt("[server-unban] ＀", [live(key)])]); // tools/server.mjs drops the key (and the addresses banned with it) from its own file
 	if (!truthy(live(f.usr))) {
 		rt.call(f, P("/proc/log_admin_private"), null, [fmt("Ban Expired: ＀", [live(key)])]);
 		rt.call(f, P("/proc/message_admins"), null, [fmt("Ban Expired: ＀", [live(key)])]);

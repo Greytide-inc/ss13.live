@@ -17,7 +17,7 @@
 //   key (--host-key KEY, else a random one printed as a link at start) is admin under any name;
 //   --admins FILE (one tag a line, # comments) lists tripcode tags whose players are admin. A kick is
 //   del(client) in the game (admin panel): the server closes that connection. A permanent ban in the game also lands in --bans FILE
-//   (JSON {keys, ips}); a banned key or address is refused at hello, before it reaches the game. A player voted off by the boot vote
+//   (JSON {keys, ips}; the game's unban takes it out again); a banned key or address is refused at hello, before it reaches the game. A player voted off by the boot vote
 //   (the game logs "[server-roundban] ckey address") is refused the same way, by key and address, until the next round.
 // The map vote (the game logs "[server-nextmap] NAME", a _maps/NAME.json) picks the map every later world starts on, until the next
 //   map vote or a restart (then --map, else Box).
@@ -267,12 +267,29 @@ const hostKeyText = opt("--host-key", null) ?? crypto.randomBytes(18).toString("
 const hostKeyOk = (secret) => typeof secret === "string" && crypto.timingSafeEqual(hostKey, sha(secret));
 const banFile = opt("--bans", null);
 let bans = { keys: {}, ips: {} };
-if (banFile && fs.existsSync(banFile)) { try { bans = { keys: {}, ips: {}, ...JSON.parse(fs.readFileSync(banFile, "utf8")) }; } catch (e) { console.error(`[server] ${banFile}: ${e.message}`); process.exit(2); } }
+// A broken file (a hand edit gone wrong) stops the server rather than let every banned player in; the reason goes in the log file
+// too, since ss13-host throws away the terminal output (code review 2026-10-27).
+if (banFile && fs.existsSync(banFile)) {
+	try { bans = { keys: {}, ips: {}, ...JSON.parse(fs.readFileSync(banFile, "utf8")) }; if (typeof bans.keys !== "object" || typeof bans.ips !== "object" || !bans.keys || !bans.ips) throw new Error("keys and ips must be {...}"); }
+	catch (e) { const why = `[server] can't start: ${banFile} is broken (${e.message}): fix it by hand, or delete it to start with no bans`; console.error(why); out(why); logStream.end(() => process.exit(2)); await new Promise(() => {}); }
+}
+// Written to FILE.tmp, then renamed over FILE: a crash mid-write never leaves half a file.
+const saveBans = () => { if (!banFile) return; fs.writeFileSync(banFile + ".tmp", JSON.stringify(bans, null, 1)); fs.renameSync(banFile + ".tmp", banFile); };
 function addBan(ck, addr) {
 	bans.keys[ck] = true;
-	if (addr && net.isIP(addr) && !addr.startsWith("127.") && addr !== "::1" && addr !== "192.0.2.1") bans.ips[blockOf(addr)] = true; // IPv6: its /64
-	if (banFile) fs.writeFileSync(banFile, JSON.stringify(bans, null, 1));
+	if (addr && net.isIP(addr) && !addr.startsWith("127.") && addr !== "::1" && addr !== "192.0.2.1") bans.ips[blockOf(addr)] = ck; // IPv6: its /64; the key, so an unban can take it back out
+	saveBans();
 	out(`[server] ban saved: ${ck} ${addr ?? ""}`);
+}
+// The game's unban panel (RemoveBan logs "[server-unban] ckey"): the key goes, and every address banned with it. Older files have
+// true for an address (no key known): those stay until removed by hand.
+function removeBan(ck) {
+	const ips = Object.keys(bans.ips).filter((ip) => bans.ips[ip] === ck);
+	if (!Object.hasOwn(bans.keys, ck) && !ips.length) return;
+	delete bans.keys[ck];
+	for (const ip of ips) delete bans.ips[ip];
+	saveBans();
+	out(`[server] ban lifted: ${ck} ${ips.join(" ")}`);
 }
 // The boot vote (the game's Vote panel): a key voted off is refused until the next round, with its address (and every address it is
 // connected from now), so a new name from the same place doesn't walk straight back in. Cleared by nextRound.
@@ -329,7 +346,7 @@ function tryStart() {
 function onWorkerMessage(m) {
 	if (m.type === "hotResult") { fs.writeFileSync(path.join(hotDir, `${port}.out.json`), JSON.stringify(m)); return; }
 	if (m.type === "worker-ready") { workerReady = true; out("[server] worker ready, waiting for the first player"); tryStart(); return; }
-	if (m.type === "log") { out(m.line); const b = /^\[server-ban\] ([a-z0-9@]+) (\S+)$/.exec(m.line); if (b) addBan(b[1], b[2] === "-" ? null : b[2]); const rb = /^\[server-roundban\] ([a-z0-9@]+) (\S+)$/.exec(m.line); if (rb) addRoundBan(rb[1], rb[2] === "-" ? null : rb[2]); const nm = /^\[server-nextmap\] ([a-z0-9_]+)$/.exec(m.line); if (nm) { nextMap = nm[1]; out(`[server] next world's map: ${nextMap}`); } if (/Game start took/.test(m.line)) { roundStarted = true; roundStartAt = Date.now(); } const mp = /^Loading (.+)\.\.\.$/.exec(m.line); if (mp) mapName = mp[1]; if (/live:/.test(m.line)) tickLines++; }
+	if (m.type === "log") { out(m.line); const b = /^\[server-ban\] ([a-z0-9@]+) (\S+)$/.exec(m.line); if (b) addBan(b[1], b[2] === "-" ? null : b[2]); const ub = /^\[server-unban\] ([a-z0-9@]+)$/.exec(m.line); if (ub) removeBan(ub[1]); const rb = /^\[server-roundban\] ([a-z0-9@]+) (\S+)$/.exec(m.line); if (rb) addRoundBan(rb[1], rb[2] === "-" ? null : rb[2]); const nm = /^\[server-nextmap\] ([a-z0-9_]+)$/.exec(m.line); if (nm) { nextMap = nm[1]; out(`[server] next world's map: ${nextMap}`); } if (/Game start took/.test(m.line)) { roundStarted = true; roundStartAt = Date.now(); } const mp = /^Loading (.+)\.\.\.$/.exec(m.line); if (mp) mapName = mp[1]; if (/live:/.test(m.line)) tickLines++; }
 	if (m.type === "milestone") out(`[server] milestone ${m.name} (${m.s}s)`);
 	if (m.type === "rtIcon") rtIcons.push(m); // replayed to a connecting client (the views it gets use these URLs)
 	if (m.type === "log" || m.type === "milestone" || m.type === "done") { backlog.push(m); if (backlog.length > 500) backlog.shift(); }
