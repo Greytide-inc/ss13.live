@@ -1,4 +1,4 @@
-// The lobby pictures (worker/lobby-art.js, plans/lobby-art.md), in headless Firefox:
+// The lobby pictures (worker/lobby-art/, plans/lobby-art.md), in headless Firefox:
 // 1. every sprite loads and every design draws at a few times with no error and not all black;
 // 2. the overlay: show(true) puts one 480x480 canvas in the host, show(false) takes it out again.
 // 3. the lobby menu (worker/lobby-menu.js) over it: tg's playersetup html becomes menu lines, a click sends the link, hide() removes it.
@@ -14,7 +14,7 @@ const web = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 let bad = 0; const check = (ok, msg) => { console.log((ok ? "ok   " : "FAIL ") + msg); if (!ok) bad++; };
 
 const TEST = `
-import { DESIGNS, loadLobbyArt, createLobbyArt } from "/web/worker/lobby-art.js";
+import { DESIGNS, loadLobbyArt, createLobbyArt } from "/web/worker/lobby-art/index.js";
 import { createLobbyMenu } from "/web/worker/lobby-menu.js";
 const out = { errors: [], dark: [] };
 addEventListener("error", (e) => out.errors.push("window: " + e.message));
@@ -29,7 +29,7 @@ try {
 	}
 	out.designs = DESIGNS.length;
 	const host = document.createElement("div"); document.body.append(host);
-	const art = createLobbyArt(host, "5b");
+	const art = createLobbyArt(host, "5a");
 	art.show(true); await new Promise((r) => setTimeout(r, 300));
 	const shown = host.querySelectorAll("canvas.lobby-art");
 	out.shown = shown.length; out.size = shown[0] ? shown[0].width + "x" + shown[0].height : ""; out.design = art.design;
@@ -85,9 +85,9 @@ try {
 	if (!res) check(false, "the test page gave no result");
 	else {
 		check(res.errors.length === 0, `sprites load, every design draws with no error${res.errors.length ? ":\n      " + res.errors.join("\n      ") : ""}`);
-		check(res.designs === 13, `13 designs (${res.designs})`);
+		check(res.designs === 7, `7 designs (${res.designs})`);
 		check(res.dark.length === 0, `no design is all black${res.dark.length ? ": " + res.dark.join(", ") : ""}`);
-		check(res.shown === 1 && res.size === "480x480" && res.design.startsWith("5b"), `show(true): one 480x480 canvas (${res.shown}, ${res.size}, ${res.design})`);
+		check(res.shown === 1 && res.size === "480x480" && res.design.startsWith("5a"), `show(true): one 480x480 canvas (${res.shown}, ${res.size}, ${res.design})`);
 		check(res.fading === 1 && res.after === 0 && res.again === 1, `show(false) fades it out and removes it after 3 s, show(true) brings it back (${res.fading}, ${res.after}, ${res.again})`);
 		check(JSON.stringify(res.menu) === JSON.stringify(["READY", "✓ NOT READY", "OBSERVE", "SETUP CHARACTER"]) && res.sub === "STARTS IN 1:37 · 7 PLAYERS", `menu lines from tg's html (${JSON.stringify(res.menu)}, ${res.sub})`);
 		check(JSON.stringify(res.sent) === JSON.stringify(["byond://?src=[0x3000001];ready=1"]) && res.onTop === "2", `a click on READY sends its link, menu above the picture (${JSON.stringify(res.sent)}, z ${res.onTop})`);
