@@ -370,6 +370,8 @@ export interface ViewUpdate {
 	pred?: number[] | null;
 	/** netcode 5: what the mob is pulling, sent with pred: [its id, its tile's offset from the mob's (east+, north+; 0..1 either way), 1 if it blocks a step onto its tile]. Absent: nothing the page may move along. */
 	pull?: [number, number, number, number];
+	/** Mob swap, with pred (swapOf): per mob a straight step into would swap places with, [its id, its tile minus the mob's (east+, north+)], flat. Absent: none. */
+	swap?: number[];
 	/** With pred, for the AI eye: [sprint, acceleration] (predRunOf), so the page knows how many tiles each step moves it. */
 	predRun?: [number, number];
 	/** With pred: a key in a direction the mover doesn't face only turns it (a mech, not strafing: predTurnOf). */
@@ -608,6 +610,27 @@ function walkFree(vm: VM, m: DMAtom, t: DMAtom, skip: DMAtom[]): number {
 		free += 2 ** ((dy + PRED_R) * PRED_W + dx + PRED_R);
 	}
 	return free === self ? 0 : free;
+}
+/** Mob swap: the mobs round your mob (within PRED_R) that a straight step into would swap places with (/mob/living/MobBump): both on help
+ *  intent, neither buckled nor carrying riders, neither pulling anything nor pulled, the swapped one the only thing that blocks its tile, and
+ *  that tile free otherwise. [mob, its tile minus yours (east+, north+)]. Restrained mobs (who swap on any intent) aren't guessed, nor diagonal
+ *  steps (MobBump refuses them: moving_diagonally). Empty when the page may not predict your mob walking (free 0). */
+export function swapOf(vm: VM, m: unknown, free: number): [DMAtom, number, number][] {
+	if (!free || !(m instanceof DMAtom) || m.kind !== Kind.Mob || !m.type.path.startsWith("/mob/living/") || !m.loc || m.loc.kind !== Kind.Turf) return [];
+	const easy = (o: DMAtom): boolean => {
+		const riders = o.hasVar("buckled_mobs") ? live(o.getVar("buckled_mobs")) : null;
+		return live(o.getVar("a_intent")) === "help" && ["buckled", "pulling", "pulledby"].every((k) => !o.hasVar(k) || !truthyVar(o, k)) && !(riders instanceof DMList && riders.items.length);
+	};
+	if (!easy(m) || (m.hasVar("incorporeal_move") && truthyVar(m, "incorporeal_move"))) return []; // a revenant walks through them
+	const t = m.loc, out: [DMAtom, number, number][] = [];
+	for (let dy = -PRED_R; dy <= PRED_R; dy++) for (let dx = -PRED_R; dx <= PRED_R; dx++) {
+		if (!dx && !dy) continue;
+		const n = vm.map.turfAt(t.x + dx, t.y + dy, t.z);
+		if (!n || truthyVar(n, "density") || n.type.path.startsWith("/turf/open/space") || borderDense(n, m)) continue;
+		const bl = n.contents.filter((o) => blocks(o, m));
+		if (bl.length === 1 && bl[0].kind === Kind.Mob && easy(bl[0])) out.push([bl[0], dx, dy]);
+	}
+	return out;
 }
 /** A vehicle the client's mob rides (/obj/vehicle relaymove -> /datum/riding handle_ride): the rider not incapacitated (no stun, knockdown,
  *  sleep or restraints), its key in hand (keycheck), gravity where the vehicle is (Process_Spacemove), then step(): the walking square, the
@@ -1037,6 +1060,8 @@ export class ViewDiffer {
 			this.myMarks.clear();
 			this.sweepAt = 0;
 		}
+		const swap: number[] = [];
+		if (mobId !== undefined && mobId !== MOVER_ID && mover === cv.mob) for (const [o, dx, dy] of swapOf(vm, mover, free)) { const id = this.sent.get(o)?.id; if (id !== undefined) swap.push(id, dx, dy); }
 		const picks = mobId !== undefined && mobId !== MOVER_ID && mover === cv.mob ? pickOf(vm, mover) : [], pick: [number, number, number, string, string][] = [];
 		this.picks.clear();
 		for (const [o, dx, dy, f, st] of picks) { const id = this.sent.get(o)?.id; if (id !== undefined) { pick.push([id, dx, dy, f, st]); this.picks.add(o); } }
@@ -1076,6 +1101,7 @@ export class ViewDiffer {
 			...(free && predTurnOf(mover) ? { predTurn: 1 as const } : {}),
 			...(pick.length ? { pick } : {}),
 			...(put ? { put } : {}),
+			...(swap.length ? { swap } : {}),
 			...(pl && plId !== undefined ? { pull: [plId, pl.ox, pl.oy, pl.dense] as [number, number, number, number] } : {}),
 			...(anims ? { anims } : {}),
 			...(stepsDone ? { steps: stepsDone } : {}),

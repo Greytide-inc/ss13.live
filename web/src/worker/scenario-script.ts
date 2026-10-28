@@ -26,7 +26,7 @@
 //   TICK: pick                           logs the items the page may show picked up at a click (pickOf), as type@dx,dy(in-hand icon:state), or "none"
 //   TICK: put                            logs what the page may guess the held item does (putOf): the item, "floor L/P" (its layer/plane put down), and each table/rack a click puts it on as type@dx,dy (c = centred on the click), or "none"
 //   TICK: moved                          logs the movers a player's view update has since the last moved line (ViewDiffer's moved list), as type from->to
-//   TICK: pred                           logs how many tiles around the mob (the AI: its eye, "(eye)") the page may predict a step onto (0 = none)
+//   TICK: pred                           logs how many tiles around the mob (the AI: its eye, "(eye)") the page may predict a step onto (0 = none), and the mobs a step would swap places with (swapOf)
 //   TICK: look [R] [REGEX]               logs every atom within R tiles (default 3) whose type matches, as type@dx,dy (for writing scripts)
 //   TICK: map [R]                        logs a character map of the R tiles around the mob (default 8), rows joined with "/"
 //   TICK: goto SEL [MAXTICKS]            walks the mob to within 1 tile of SEL (an arrow key press per tick, a plain breadth-first path over
@@ -51,7 +51,7 @@ import { DMAtom, Kind } from "../vm/world.js";
 import { refOf } from "../vm/refs.js";
 import { stringify } from "../vm/value.js";
 import type { VM } from "../vm/interpreter.js";
-import { carriedLightOf, clientSeen, pickOf, popInSight, predMover, predOf, predTurnOf, putOf, unionExtra, ViewDiffer, type UnionAt } from "./client-view.js";
+import { carriedLightOf, clientSeen, pickOf, popInSight, predMover, predOf, predTurnOf, putOf, swapOf, unionExtra, ViewDiffer, type UnionAt } from "./client-view.js";
 import { lessLight, parseLight } from "../render/carried-light.js";
 import { shadowStrength, type Opq } from "../render/sight-shadow.js";
 
@@ -221,7 +221,8 @@ export class ScriptPlayer {
 				const free = t instanceof DMAtom ? predOf(this.vm, mover, { x: t.x, y: t.y, z: t.z }) : 0;
 				let n = 0;
 				for (let b = free; b >= 1; b = Math.floor(b / 2)) n += b % 2; // 49 bits: no >> or &
-				return `pred free tiles ${n}${mover && mover !== mob ? " (eye)" : ""}${mover && t instanceof DMAtom ? ` ${mover.type.path}@${t.x},${t.y}` : ""}${mover && predTurnOf(mover) ? ` turn first, facing ${String(live(mover.getVar("dir")))}` : ""}`; // what moves, its tile
+				const sw = mover === mob ? swapOf(this.vm, mover, free).map(([o, dx, dy]) => `${o.type.path}@${dx},${dy}`) : [];
+				return `pred free tiles ${n}${mover && mover !== mob ? " (eye)" : ""}${mover && t instanceof DMAtom ? ` ${mover.type.path}@${t.x},${t.y}` : ""}${mover && predTurnOf(mover) ? ` turn first, facing ${String(live(mover.getVar("dir")))}` : ""}${mover === mob ? ` swap ${sw.join(" ") || "none"}` : ""}`; // what moves, its tile; the mobs a step swaps with
 			}
 			case "union": { // union: what a predicting page is sent beyond what the eye sees (plans/archive/sight-pop-in.md step 3), and what working it out costs
 				const cv = clientSeen(this.vm, c, { key: "", vis: new Uint8Array(0) }), cs = cv.cs;

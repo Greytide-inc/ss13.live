@@ -574,7 +574,7 @@ export const viewStats = { received: 0, changed: 0, applied: 0, applyMs: 0, rend
 	/** lag-smoothing step 4: predicted steps, ones the server then took, took differently, or never took in time; frames with the mob gliding and
 	 *  images on it (a speech bubble), and the most px one was drawn off the mob. */
 	predImgFrames: 0, predImgGap: 0, ownMoves: 0, ownMoveGaps: [] as number[], // ownMove*: your mob's steps as views brought them, ms apart (under 1 s; for walk-pace checks)
-	predSteps: 0, predPull: 0, predPullFrames: 0, predPullGap: 0, predPullFar: 0, predToggle: 0, predThrow: 0, predPick: 0, predPickOk: 0, predPickBack: 0, predPut: 0, predPutOk: 0, predPutBack: 0, predFace: 0, predTurns: 0, predFaceOk: 0, predFaceWrong: 0, predOk: 0, predWrong: 0, predLate: 0, predJumps: [] as string[], predSkip: { last: "" } as Record<string, number | string>,
+	predSteps: 0, predPull: 0, predSwap: 0, predPullFrames: 0, predPullGap: 0, predPullFar: 0, predToggle: 0, predThrow: 0, predPick: 0, predPickOk: 0, predPickBack: 0, predPut: 0, predPutOk: 0, predPutBack: 0, predFace: 0, predTurns: 0, predFaceOk: 0, predFaceWrong: 0, predOk: 0, predWrong: 0, predLate: 0, predJumps: [] as string[], predSkip: { last: "" } as Record<string, number | string>,
 	/** rebuild split (ms totals: current0 / missingIcons / buildPrepared), last view's tile and item counts; the Pixi backend adds its render split
 	 *  (rSort / rPlace / rTex = plane render textures / rComp = final composite; GPU time only with ?sync=1), planes drawn (changed / animated / shifted / skipped), sprites placed. */
 	cFallInfo: "", cRender: 0, cPlace: 0, cFrame: 0, cComp: 0, cFall: 0, cVisible: 0, rbCur: 0, rbMiss: 0, rbBuild: 0, rbTiles: 0, tiles: 0, items: 0, rSort: 0, rPlace: 0, rTex: 0, rComp: 0, sFull: 0, sPatch: 0, sSame: 0, iRep: 0, iMov: 0, iKeep: 0, plDrawn: 0, plAnim: 0, plShift: 0, plSame: 0, sprites: 0,
@@ -904,6 +904,28 @@ export function liveClientView(host: HTMLElement, resync: () => void, sendStep: 
 		markId(id);
 		schedule();
 	};
+	// Mob swap (u.swap: [id, its tile minus the mob's server tile, ...]): a straight step into a mob listed there swaps the two (/mob/living/MobBump),
+	// so the page draws the step and slides that mob into the tile yours left. Where each listed mob is drawn is worked out afresh from the
+	// server's offsets and the drawn steps, as for the pulled thing. Diagonal steps never swap (tg refuses them), so a listed mob blocks those.
+	let swap: number[] | null = null;
+	const swapPred = new Set<number>(); // ids whose glide has a target we set
+	const swapsAt = (): number[][] => { const l: number[][] = []; for (let i = 0; swap && i + 2 < swap.length; i += 3) l.push([swap[i], swap[i + 1], swap[i + 2], swap[i + 1], swap[i + 2]]); return l; }; // [id, x, y, server x, server y]
+	const swapIn = (sp: number[][], x: number, y: number): number[] | undefined => sp.find((e) => e[1] === x && e[2] === y);
+	const swapAfter = (sp: number[][], ax: number, ay: number, dx: number, dy: number): void => { const e = swapIn(sp, ax + dx, ay + dy); if (e && !(dx && dy)) { e[1] = ax; e[2] = ay; } };
+	const predSwap = (now: number, ms = stepMs || 150): void => {
+		const sp = swapsAt(), want = new Map<number, [number, number]>();
+		let ax = 0, ay = 0;
+		for (const q of pending) if (q.drawn) { swapAfter(sp, ax, ay, q.dx, q.dy); ax += q.dx; ay += q.dy; }
+		for (const [id, x, y, x0, y0] of sp) if (x !== x0 || y !== y0) want.set(id, [(x - x0) * TILE_PX, (y - y0) * TILE_PX]);
+		for (const id of new Set([...swapPred, ...want.keys()])) {
+			const [tx, ty] = want.get(id) ?? [0, 0], g = glides.get(id);
+			if (g ? (g.tx ?? 0) === tx && (g.ty ?? 0) === ty : !tx && !ty) { if (!tx && !ty) swapPred.delete(id); continue; }
+			glides.set(id, predGlide(g, tx, ty, want.has(id) ? ms : 150, now));
+			if (want.has(id)) { swapPred.add(id); viewStats.predSwap++; } else swapPred.delete(id);
+			markId(id);
+			schedule();
+		}
+	};
 	const predBack = (now: number): void => { // the guess was wrong: glide back to the tile the server has
 		unface();
 		if (!pending.length) return;
@@ -913,6 +935,7 @@ export function liveClientView(host: HTMLElement, resync: () => void, sendStep: 
 		if (g) { glides.set(id, predGlide(g, 0, 0, 150, now)); markId(id); predImgs(id); }
 		if (camGlide) camGlide = predGlide(camGlide, 0, 0, 150, now);
 		predPull(now, 150);
+		predSwap(now, 150);
 		schedule();
 	};
 	// Steps go out on a timer at the walking pace: a frame hook alone would wait for frames, and a still scene draws none.
@@ -929,8 +952,9 @@ export function liveClientView(host: HTMLElement, resync: () => void, sendStep: 
 		if (!pred) return;
 		let ax = 0, ay = 0, nd = 0; // where the mob is drawn heading, from the server's tile
 		const pp: [number, number] | null = pull ? [pull[1], pull[2]] : null; // and the pulled thing
+		const sp = swapsAt(); // and the mobs a step swaps with
 		for (const [i, q] of pending.entries()) {
-			if (q.drawn) { if (pp) pullAfter(pp, ax, ay, q.dx, q.dy); ax += q.dx; ay += q.dy; nd++; continue; }
+			if (q.drawn) { if (pp) pullAfter(pp, ax, ay, q.dx, q.dy); swapAfter(sp, ax, ay, q.dx, q.dy); ax += q.dx; ay += q.dy; nd++; continue; }
 			if (nd >= PRED_MAX || q.id !== pred[0]) return;
 			if (!q.tiles) { q.drawn = true; nd++; face(q.id, q.dir & 4 ? 1 : q.dir & 8 ? -1 : 0, q.dir & 1 ? 1 : q.dir & 2 ? -1 : 0, q.n); viewStats.predTurns++; continue; } // a turn in place
 			const { id, dx, dy } = q, walk = (stepMs || 150) / q.tiles; // a tile's time: an AI eye's step of several tiles takes one step's time
@@ -938,7 +962,9 @@ export function liveClientView(host: HTMLElement, resync: () => void, sendStep: 
 			if (pp && pull![3] && ((pp[0] === ax + dx && pp[1] === ay + dy) || (dx && dy && ((pp[0] === ax + dx && pp[1] === ay) || (pp[0] === ax && pp[1] === ay + dy))))) return skip("pulled"); // a dense thing in the way: the server decides (swap, bump)
 			let past = true; // an eye's step of several tiles: each tile on the way (a xenobio eye stops at its area's edge)
 			for (let k = 1; k < q.tiles; k++) past &&= predFree(ax + Math.sign(dx) * k, ay + Math.sign(dy) * k);
-			if (!past || !predFree(ax + dx, ay + dy) || (dx && dy && !(predFree(ax + dx, ay) && predFree(ax, ay + dy)))) {
+			const walk1 = (x: number, y: number): boolean => predFree(x, y) && !swapIn(sp, x, y);
+			const swaps = !(dx && dy) && q.tiles === 1 && !pull && !!swapIn(sp, ax + dx, ay + dy); // straight into a listed mob: the two swap
+			if (!swaps && (!past || !walk1(ax + dx, ay + dy) || (dx && dy && !(walk1(ax + dx, ay) && walk1(ax, ay + dy))))) {
 				if (i === nd) face(id, dx, dy, q.n); // the next step the server tries: it bumps, and Move turns the mob all the same
 				pending.length = i; return skip("blocked");
 			}
@@ -947,12 +973,14 @@ export function liveClientView(host: HTMLElement, resync: () => void, sendStep: 
 			// (up to 400 ms): with a ping longer than that, a step at walking speed would stand ahead waiting, then walk on (a hitch at every start).
 			const ms = q.rest && !nd && confirmMs.length ? Math.max(walk, Math.min(400, [...confirmMs].sort((a, b) => a - b)[confirmMs.length >> 1] - (PRED_MAX - 1) * walk)) : walk;
 			if (pp) pullAfter(pp, ax, ay, dx, dy);
+			swapAfter(sp, ax, ay, dx, dy);
 			ax += dx; ay += dy; nd++;
 			q.drawn = true;
 			face(id, dx, dy, q.n);
 			glides.set(id, predGlide(glides.get(id), ax * TILE_PX, ay * TILE_PX, ms, now));
 			predImgs(id);
 			predPull(now, ms);
+			if (swaps) predSwap(now, ms);
 			camGlide = predGlide(camGlide, ax * TILE_PX, ay * TILE_PX, ms, now);
 			camFresh = true;
 			viewStats.predSteps++;
@@ -1809,6 +1837,7 @@ export function liveClientView(host: HTMLElement, resync: () => void, sendStep: 
 		run = u.predRun ?? null;
 		turnFirst = !!u.predTurn;
 		pull = u.pull ?? null;
+		swap = u.swap ?? null;
 		pick = u.pick ?? null;
 		put = u.put ?? null;
 		if (u.hud) setHudHint(u.hud);
@@ -1830,6 +1859,10 @@ export function liveClientView(host: HTMLElement, resync: () => void, sendStep: 
 					changed = true;
 					continue;
 				}
+			}
+			if (swapPred.has(id) && !u.full && anim !== 0 && Math.abs(dx) <= 1 && Math.abs(dy) <= 1) { // swapped as drawn: as the pulled thing, the glide goes on from where it is; predSwap sets the target
+				const g = glides.get(id);
+				if (g) { g.ox -= dx * TILE_PX; g.oy -= dy * TILE_PX; g.tx = (g.tx ?? 0) - dx * TILE_PX; g.ty = (g.ty ?? 0) - dy * TILE_PX; markId(id); changed = true; continue; }
 			}
 			if (pred && id === pred[0]) { viewStats.ownMoves++; if (now - lastConfirmAt < 1000 && viewStats.ownMoveGaps.length < 2000) viewStats.ownMoveGaps.push(Math.round(now - lastConfirmAt)); lastConfirmAt = now; if (size > 0) stepMs = TILE_PX / size * 50; } // client/Move sets glide_size from the mob's move delay (32 / ticks per step)
 			if (pending.length && id === pending[0].id) {
@@ -1866,6 +1899,7 @@ export function liveClientView(host: HTMLElement, resync: () => void, sendStep: 
 		if (pending.length && stepsSent - stepsDone < pending.length) predBack(now); // the server finished a sent step without taking it (a bump)
 		drawNext(now); // the server's answers freed room to draw more of the sent steps
 		predPull(now); // the pulled thing's server step or offset changed: its target from the drawn steps again
+		predSwap(now); // and the swapped mobs'
 		if (pending.length) predImgs(pending[0].id); // a bubble that appeared mid-step, or whose own server step came before the mob's: it goes where the mob is drawn
 		if (now - lastGlide.at < 500) for (const lf of freshFades) lf.ms = Math.max(50, Math.min(400, lastGlide.ms)); // as long as the latest glide (the light's update can come a tick or two after the step)
 		if (e && pe && (e.x !== pe.x || e.y !== pe.y) && !(u.moved ?? []).some((m) => m[3] === e.x && m[4] === e.y && m[1] === pe.x && m[2] === pe.y && m[6] !== 0 && !u.full)) camGlide = null; // eye jumped: the camera snaps
