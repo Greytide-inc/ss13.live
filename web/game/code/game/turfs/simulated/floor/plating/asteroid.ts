@@ -311,6 +311,10 @@ rt.def("/turf/open/floor/plating/asteroid/airless/cave/proc/SpawnFloor", functio
 	}
 	rt.endFor(f, 0);
 	if (!truthy(rt.sv(f, "sanity"))) {
+		// tg's bug: a starter tile that can't dig stayed a cave, which never ran Initialize, so no air and runtimes at world start.
+		if (isEqual(live(_T), live(f.src))) {
+			yield* g.callName(f, live(_T), "ChangeTurf", [rt.sv(f, "turf_type"), 0, 1]);
+		}
 		return live(f.dot);
 	}
 	yield* g.srcCall(f, "SpawnFlora", live(_T));
