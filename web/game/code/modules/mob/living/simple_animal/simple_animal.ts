@@ -607,30 +607,6 @@ rt.def("/mob/living/simple_animal/proc/OpenCraftingMenu", function* OpenCrafting
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/proc/activate_hand  (code/modules/mob/living/simple_animal/simple_animal.dm:459)  may sleep
-rt.def("/mob/living/simple_animal/proc/activate_hand", function* activate_hand(f: Frame) {
-	if (!truthy(rt.sv(f, "dextrous"))) {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
-	}
-	if (!truthy(live(f.args[0]))) {
-		f.args[0] = add(rt.modulus(rt.sv(f, "active_hand_index"), rt.len(f, rt.sv(f, "held_items"))), 1);
-	}
-	if (truthy((yield* g.call(f, P("/proc/istext"), null, [live(f.args[0])])))) {
-		if ((isEqual((f.args[0] = (yield* g.call(f, P("/proc/lowertext"), null, [live(f.args[0])]))), "right") || isEqual(live(f.args[0]), "r"))) {
-			f.args[0] = 2;
-		}
-		if ((isEqual(live(f.args[0]), "left") || isEqual(live(f.args[0]), "l"))) {
-			f.args[0] = 1;
-		}
-	}
-	if (!isEqual(live(f.args[0]), rt.sv(f, "active_hand_index"))) {
-		yield* g.srcCall(f, "swap_hand", live(f.args[0]));
-	} else {
-		yield* g.srcCall(f, "mode");
-	}
-	return f.dot;
-}, true, { args: ["selhand"] });
-
 // /mob/living/simple_animal/proc/swap_hand  (code/modules/mob/living/simple_animal/simple_animal.dm:475)
 rt.def("/mob/living/simple_animal/proc/swap_hand", function swap_hand(f: Frame) {
 	let held_item: Value = null, _T: Value = null, oindex: Value = null, H: Value = null;

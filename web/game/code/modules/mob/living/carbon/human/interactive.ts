@@ -961,54 +961,6 @@ rt.def("/mob/living/carbon/human/interactive/proc/tryWalk", function* tryWalk(f:
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/human/interactive/proc/getGoodPath  (code/modules/mob/living/carbon/human/interactive.dm:747)  may sleep
-rt.def("/mob/living/carbon/human/interactive/proc/getGoodPath", function* getGoodPath(f: Frame, target: Value, maxtries: Value) {
-	let end: Value = null, current: Value = null, path: Value = null, tries: Value = null, shortest: Value = null, _T: Value = null, foundDense: Value = null, A: Value = null;
-	let $e: any;
-	f.vars = () => [target, maxtries, end, current, path, tries, shortest, _T, foundDense, A, $e];
-	if (live(maxtries) === null) {
-		maxtries = 512;
-	}
-	end = rt.getStep(f, live(target), 0);
-	current = rt.getStep(f, live(f.src), 0);
-	path = rt.list();
-	tries = 0;
-	while (!isEqual(live(current), live(end)) && rt.lt(live(tries), live(maxtries))) {
-		shortest = live(current);
-		_T = null;
-		rt.forList(f, 0, (yield* g.call(f, P("/proc/view"), null, [live(current), 1])), T("/turf"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			_T = $e;
-			foundDense = 0;
-			A = null;
-			rt.forList(f, 1, live(_T), T("/atom"));
-			while (($e = rt.next(f, 1)) !== undefined) {
-				A = $e;
-				if (truthy(rt.fv(f, "density", live(A)))) {
-					foundDense = 1;
-				}
-				yield* g.call(f, P("/proc/sleep"), null, [-1]);
-			}
-			rt.endFor(f, 1);
-			if ((isEqual(rt.fv(f, "density", live(_T)), 0) && !truthy(live(foundDense)))) {
-				if (rt.lt((yield* g.call(f, P("/proc/get_dist"), null, [live(_T), live(target)])), (yield* g.call(f, P("/proc/get_dist"), null, [live(shortest), live(target)])))) {
-					shortest = live(_T);
-				} else {
-					tries = rt.inc(live(tries), 1);
-				}
-			} else {
-				tries = rt.inc(live(tries), 1);
-			}
-			yield* g.call(f, P("/proc/sleep"), null, [-1]);
-		}
-		rt.endFor(f, 0);
-		current = live(shortest);
-		path = rt.modify(live(path), live(shortest), add);
-		yield* g.call(f, P("/proc/sleep"), null, [-1]);
-	}
-	return live(path);
-}, true);
-
 // /mob/living/carbon/human/interactive/proc/walk2derpless  (code/modules/mob/living/carbon/human/interactive.dm:773)  may sleep
 rt.def("/mob/living/carbon/human/interactive/proc/walk2derpless", function* walk2derpless(f: Frame, target: Value) {
 	let spark_system: Value = null, i: Value = null;

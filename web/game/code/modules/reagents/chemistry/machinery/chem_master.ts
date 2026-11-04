@@ -510,23 +510,3 @@ rt.def("/obj/machinery/chem_master/proc/ui_act", function* ui_act(f: Frame) {
 	}
 	return f.dot;
 }, true, { args: ["action", "params"] });
-
-// /obj/machinery/chem_master/proc/isgoodnumber  (code/modules/reagents/chemistry/machinery/chem_master.dm:347)
-rt.def("/obj/machinery/chem_master/proc/isgoodnumber", function isgoodnumber(f: Frame, num: Value) {
-	f.vars = () => [num];
-	if (truthy(rt.call(f, P("/proc/isnum"), null, [live(num)]))) {
-		if (rt.gt(live(num), 200)) {
-			num = 200;
-		} else {
-			if (rt.lt(live(num), 0)) {
-				num = 0;
-			} else {
-				num = rt.call(f, P("/proc/round"), null, [live(num)]);
-			}
-		}
-		return live(num);
-	} else {
-		return 0;
-	}
-	return f.dot;
-});

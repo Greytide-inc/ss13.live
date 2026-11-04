@@ -139,27 +139,6 @@ rt.def("/datum/admin_rank/proc/process_keyword", function process_keyword(f: Fra
 	return f.dot;
 });
 
-// /datum/admins/proc/check_keyword  (code/modules/admin/admin_ranks.dm:97)
-rt.def("/datum/admins/proc/check_keyword", function check_keyword(f: Frame, word: Value) {
-	let flag: Value = null, path: Value = null, i: Value = null;
-	let $e: any;
-	f.vars = () => [flag, path, i, $e];
-	if (truthy((flag = rt.call(f, P("/proc/admin_keyword_to_flag"), null, [live(word)])))) {
-		return (isEqual(rt.bitAnd(rt.fv(f, "rights", rt.sv(f, "rank")), live(flag)), live(flag)) ? 1 : 0);
-	}
-	path = rt.call(f, P("/proc/admin_keyword_to_path"), null, [live(word)]);
-	i = null;
-	rt.forList(f, 0, rt.fv(f, "verbs", rt.sv(f, "owner")));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		i = $e;
-		if (isEqual(live(i), live(path))) {
-			return 1;
-		}
-	}
-	rt.endFor(f, 0);
-	return 0;
-});
-
 // /proc/load_admin_ranks  (code/modules/admin/admin_ranks.dm:109)
 rt.def("/proc/load_admin_ranks", function load_admin_ranks(f: Frame) {
 	let previous_rights: Value = null, line: Value = null, next: Value = null, R: Value = null, prev: Value = null;

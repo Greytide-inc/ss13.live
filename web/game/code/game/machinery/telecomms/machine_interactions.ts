@@ -132,18 +132,6 @@ rt.def("/obj/machinery/telecomms/proc/attack_hand", function* attack_hand(f: Fra
 	return f.dot;
 }, true);
 
-// /obj/machinery/telecomms/relay/proc/toggle_level  (code/game/machinery/telecomms/machine_interactions.dm:114)
-rt.def("/obj/machinery/telecomms/relay/proc/toggle_level", function toggle_level(f: Frame) {
-	let position: Value = null;
-	f.vars = () => [position];
-	position = rt.getStep(f, live(f.src), 0);
-	if (isEqual(rt.sv(f, "listening_level"), 2)) {
-		rt.setSv(f, "listening_level", rt.fv(f, "z", live(position)));
-		return 1;
-	}
-	return 0;
-});
-
 // /obj/machinery/telecomms/proc/get_multitool  (code/game/machinery/telecomms/machine_interactions.dm:128)
 rt.def("/obj/machinery/telecomms/proc/get_multitool", function get_multitool(f: Frame, user: Value) {
 	let _P: Value = null, U: Value = null;

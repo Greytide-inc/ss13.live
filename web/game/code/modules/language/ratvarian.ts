@@ -30,11 +30,3 @@ rt.def("/datum/language/ratvar/proc/scramble", function scramble(f: Frame, input
 	f.dot = rt.call(f, P("/proc/text2ratvar"), null, [live(input)]);
 	return f.dot;
 });
-
-// /datum/language/ratvar/proc/get_spoken_verb  (code/modules/language/ratvarian.dm:17)
-rt.def("/datum/language/ratvar/proc/get_spoken_verb", function get_spoken_verb(f: Frame) {
-	if (!truthy(live(f.args[0]))) {
-		return rt.op(f, "PickUnweighted", [1], [rt.gl("random_speech_verbs")]);
-	}
-	return rt.callSuper(f, [], rt.Args.Same);
-}, false, { args: ["msg_end"] });

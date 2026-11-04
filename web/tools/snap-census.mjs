@@ -6,7 +6,7 @@ import { snapshotObjects } from "../build/dist/src/vm/snapshot.js";
 const bytes = gunzipSync(readFileSync(process.argv[2]));
 const N = 8_000_000;
 const kind = new Uint8Array(N), size = new Uint32Array(N); // 1 array 2 map 3 set
-const cls = new Map(), owner = new Map(); let n = 0;
+const cls = new Map(); let n = 0;
 const ownerOf = new Int32Array(N).fill(-1); const ownerKeys = [];
 const ownerKeyIdx = new Map();
 for (const o of snapshotObjects(bytes)) {

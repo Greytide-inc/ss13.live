@@ -130,27 +130,6 @@ rt.def("/proc/attempt_initiate_surgery", function* attempt_initiate_surgery(f: F
 	return 1;
 }, true);
 
-// /proc/get_location_modifier  (code/modules/surgery/helpers.dm:94)
-rt.def("/proc/get_location_modifier", function get_location_modifier(f: Frame, M: Value) {
-	let _T: Value = null;
-	f.vars = () => [_T];
-	_T = rt.getStep(f, live(M), 0);
-	if (truthy(rt.locateIn(f, T("/obj/structure/table/optable"), live(_T)))) {
-		return 1;
-	} else {
-		if (truthy(rt.locateIn(f, T("/obj/structure/table"), live(_T)))) {
-			return 0.800000011920929;
-		} else {
-			if (truthy(rt.locateIn(f, T("/obj/structure/bed"), live(_T)))) {
-				return 0.699999988079071;
-			} else {
-				return 0.5;
-			}
-		}
-	}
-	return f.dot;
-});
-
 // /proc/get_location_accessible  (code/modules/surgery/helpers.dm:109)
 rt.def("/proc/get_location_accessible", function get_location_accessible(f: Frame, M: Value, location: Value) {
 	let covered_locations: Value = null, face_covered: Value = null, eyesmouth_covered: Value = null, C: Value = null, I: Value = null, H: Value = null, I_5: Value = null;

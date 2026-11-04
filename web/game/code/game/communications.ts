@@ -296,20 +296,3 @@ rt.def("/datum/signal/proc/debug_print", function debug_print(f: Frame) {
 	rt.endFor(f, 0);
 	return f.dot;
 });
-
-// /datum/signal/proc/sanitize_data  (code/game/communications.dm:306)
-rt.def("/datum/signal/proc/sanitize_data", function sanitize_data(f: Frame) {
-	let d: Value = null, val: Value = null;
-	let $e: any;
-	f.vars = () => [d, val, $e];
-	d = null;
-	rt.forList(f, 0, rt.sv(f, "data"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		d = $e;
-		if (truthy(rt.call(f, P("/proc/istext"), null, [(val = rt.index(rt.sv(f, "data"), live(d)))]))) {
-			rt.setAt(rt.sv(f, "data"), live(d), rt.call(f, P("/proc/html_encode"), null, [live(val)]));
-		}
-	}
-	rt.endFor(f, 0);
-	return f.dot;
-});

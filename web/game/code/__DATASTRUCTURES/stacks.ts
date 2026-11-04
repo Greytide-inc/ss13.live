@@ -70,28 +70,6 @@ rt.def("/datum/stack/proc/is_empty", function is_empty(f: Frame) {
 	return f.dot;
 });
 
-// /datum/stack/proc/RotateLeft  (code/__DATASTRUCTURES/stacks.dm:33)
-rt.def("/datum/stack/proc/RotateLeft", function RotateLeft(f: Frame) {
-	if (truthy(rt.callSrc(f, "is_empty", []))) {
-		return 0;
-	}
-	f.dot = rt.index(rt.sv(f, "stack"), 1);
-	rt.callName(f, rt.sv(f, "stack"), "Cut", [1, 2]);
-	rt.callSrc(f, "Push", [live(f.dot)]);
-	return f.dot;
-});
-
-// /datum/stack/proc/RotateRight  (code/__DATASTRUCTURES/stacks.dm:41)
-rt.def("/datum/stack/proc/RotateRight", function RotateRight(f: Frame) {
-	if (truthy(rt.callSrc(f, "is_empty", []))) {
-		return 0;
-	}
-	f.dot = rt.index(rt.sv(f, "stack"), rt.len(f, rt.sv(f, "stack")));
-	rt.callName(f, rt.sv(f, "stack"), "Cut", [rt.len(f, rt.sv(f, "stack")), 0]);
-	rt.callName(f, rt.sv(f, "stack"), "Insert", [1, live(f.dot)]);
-	return f.dot;
-});
-
 // /datum/stack/proc/Copy  (code/__DATASTRUCTURES/stacks.dm:49)
 rt.def("/datum/stack/proc/Copy", function Copy(f: Frame) {
 	let S: Value = null;

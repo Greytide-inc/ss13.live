@@ -148,17 +148,6 @@ rt.def("/datum/game_mode/proc/greet_wizard", function greet_wizard(f: Frame, wiz
 	return live(f.dot);
 });
 
-// /datum/game_mode/proc/learn_basic_spells  (code/game/gamemodes/wizard/wizard.dm:130)  may sleep
-rt.def("/datum/game_mode/proc/learn_basic_spells", function* learn_basic_spells(f: Frame, wizard_mob: Value) {
-	f.vars = () => [wizard_mob];
-	if ((!truthy((rt.istype(live(wizard_mob), T("/mob/living/carbon/human")) ? 1 : 0)) || !truthy(rt.fv(f, "mind", live(wizard_mob))))) {
-		return 0;
-	}
-	yield* g.callName(f, rt.fv(f, "mind", live(wizard_mob)), "AddSpell", [(yield* g.new_(f, T("/obj/effect/proc_holder/spell/targeted/projectile/magic_missile"), [null]))]);
-	yield* g.callName(f, rt.fv(f, "mind", live(wizard_mob)), "AddSpell", [(yield* g.new_(f, T("/obj/effect/proc_holder/spell/targeted/ethereal_jaunt"), [null]))]);
-	return f.dot;
-}, true);
-
 // /datum/game_mode/proc/equip_wizard  (code/game/gamemodes/wizard/wizard.dm:137)  may sleep
 rt.def("/datum/game_mode/proc/equip_wizard", function* equip_wizard(f: Frame, wizard_mob: Value) {
 	let I: Value = null, spellbook: Value = null;

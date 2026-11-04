@@ -18,20 +18,6 @@ rt.def("/proc/add_ratvarian_regex", function add_ratvarian_regex(f: Frame, text:
 	return rt.call(f, P("/proc/replacetext"), null, [(ratvarian = rt.call(f, P("/proc/replacetext"), null, [(ratvarian = rt.call(f, P("/proc/replacetext"), null, [(ratvarian = rt.call(f, P("/proc/replacetext"), null, [(ratvarian = rt.call(f, P("/proc/replacetext"), null, [(ratvarian = rt.call(f, P("/proc/replacetext"), null, [(ratvarian = rt.call(f, P("/proc/replacetext"), null, [(ratvarian = rt.call(f, P("/proc/replacetext"), null, [(ratvarian = rt.call(f, P("/proc/replacetext"), null, [(ratvarian = rt.call(f, P("/proc/replacetext"), null, [live(text), rt.call(f, P("/proc/regex"), null, ["(\\w)\\s([oO][fF])", "g"]), "$1-$2"])), rt.call(f, P("/proc/regex"), null, ["([gG][uU])([aA])", "g"]), "$1-$2"])), rt.call(f, P("/proc/regex"), null, ["([tT][hH]\\w)(\\w)", "g"]), "$1`$2"])), rt.call(f, P("/proc/regex"), null, ["([tT][iI])(\\w)", "g"]), "$1`$2"])), rt.call(f, P("/proc/regex"), null, ["(\\w)([eE][tT])", "g"]), "$1-$2"])), rt.call(f, P("/proc/regex"), null, ["([tT][eE])(\\w)", "g"]), "$1-$2"])), rt.call(f, P("/proc/regex"), null, ["(\\w)\\s([aA][nN][dD])(\\W)", "g"]), "$1-$2$3"])), rt.call(f, P("/proc/regex"), null, ["(\\W)([aA][nN][dD])\\s(\\w)", "g"]), "$1$2-$3"])), rt.call(f, P("/proc/regex"), null, ["(\\s)([tT][oO])\\s(\\w)", "g"]), "$1$2-$3"])), rt.call(f, P("/proc/regex"), null, ["(\\s)([mM][yY])\\s(\\w)", "g"]), "$1$2-$3"]);
 });
 
-// /proc/ratvar2text  (code/game/gamemodes/clock_cult/clock_helpers/ratvarian_language.dm:87)
-rt.def("/proc/ratvar2text", function ratvar2text(f: Frame, ratvarian: Value) {
-	let text: Value = null;
-	f.vars = () => [text];
-	return rt.call(f, P("/proc/remove_ratvarian_regex"), null, [(text = rt.call(f, P("/proc/replacetext"), null, [rt.call(f, P("/proc/rot13"), null, [(text = rt.call(f, P("/proc/remove_ratvarian_regex"), null, [live(ratvarian)]))]), "`", ""]))]);
-});
-
-// /proc/remove_ratvarian_regex  (code/game/gamemodes/clock_cult/clock_helpers/ratvarian_language.dm:92)
-rt.def("/proc/remove_ratvarian_regex", function remove_ratvarian_regex(f: Frame, ratvarian: Value) {
-	let text: Value = null;
-	f.vars = () => [text];
-	return rt.call(f, P("/proc/replacetext"), null, [(text = rt.call(f, P("/proc/replacetext"), null, [(text = rt.call(f, P("/proc/replacetext"), null, [(text = rt.call(f, P("/proc/replacetext"), null, [(text = rt.call(f, P("/proc/replacetext"), null, [(text = rt.call(f, P("/proc/replacetext"), null, [(text = rt.call(f, P("/proc/replacetext"), null, [live(ratvarian), rt.call(f, P("/proc/regex"), null, ["([gG][uU])-([aA])", "g"]), "$1$2"])), rt.call(f, P("/proc/regex"), null, ["(\\w)-([aA][nN][dD])", "g"]), "$1 $2"])), rt.call(f, P("/proc/regex"), null, ["([aA][nN][dD])-(\\w)", "g"]), "$1 $2"])), rt.call(f, P("/proc/regex"), null, ["([tTmM][oOyY])-", "g"]), "$1 "])), rt.call(f, P("/proc/regex"), null, ["([tT][eE])-", "g"]), "$1"])), rt.call(f, P("/proc/regex"), null, ["-([eE][tT])", "g"]), "$1"])), rt.call(f, P("/proc/regex"), null, ["-([oO][fF])", "g"]), " $1"]);
-});
-
 // /proc/clockwork_say  (code/game/gamemodes/clock_cult/clock_helpers/ratvarian_language.dm:102)  may sleep
 rt.def("/proc/clockwork_say", function* clockwork_say(f: Frame, AM: Value, message: Value, whisper: Value) {
 	let spans: Value = null, L: Value = null;

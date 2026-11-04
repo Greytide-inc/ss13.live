@@ -463,35 +463,6 @@ rt.def("/obj/machinery/airalarm/proc/shock", function* shock(f: Frame, user: Val
 	return f.dot;
 }, true);
 
-// /obj/machinery/airalarm/proc/refresh_all  (code/modules/atmospherics/machinery/airalarm.dm:377)  may sleep
-rt.def("/obj/machinery/airalarm/proc/refresh_all", function* refresh_all(f: Frame) {
-	let A: Value = null, id_tag: Value = null, I: Value = null;
-	let $e: any;
-	f.vars = () => [A, id_tag, I, $e];
-	A = (yield* g.call(f, P("/proc/get_area"), null, [live(f.src)]));
-	id_tag = null;
-	rt.forList(f, 0, rt.fv(f, "air_vent_names", live(A)));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		id_tag = $e;
-		if ((truthy((I = rt.index(rt.fv(f, "air_vent_info", live(A)), live(id_tag)))) && rt.gt(add(rt.at(live(I), "timestamp"), 50), rt.worldTime(f)))) {
-			continue;
-		}
-		yield* g.srcCall(f, "send_signal", live(id_tag), rt.list("status"));
-	}
-	rt.endFor(f, 0);
-	id_tag = null;
-	rt.forList(f, 0, rt.fv(f, "air_scrub_names", live(A)));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		id_tag = $e;
-		if ((truthy((I = rt.index(rt.fv(f, "air_scrub_info", live(A)), live(id_tag)))) && rt.gt(add(rt.at(live(I), "timestamp"), 50), rt.worldTime(f)))) {
-			continue;
-		}
-		yield* g.srcCall(f, "send_signal", live(id_tag), rt.list("status"));
-	}
-	rt.endFor(f, 0);
-	return f.dot;
-}, true);
-
 // /obj/machinery/airalarm/proc/set_frequency  (code/modules/atmospherics/machinery/airalarm.dm:390)  may sleep
 rt.def("/obj/machinery/airalarm/proc/set_frequency", function* set_frequency(f: Frame, new_frequency: Value) {
 	f.vars = () => [new_frequency];

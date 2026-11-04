@@ -76,37 +76,6 @@ rt.def("/datum/topic_input/proc/getMob", function getMob(f: Frame, i: Value) {
 	return $0;
 });
 
-// /datum/topic_input/proc/getTurf  (code/datums/helper_datums/topic_input.dm:36)
-rt.def("/datum/topic_input/proc/getTurf", function getTurf(f: Frame, i: Value) {
-	let t: Value = null;
-	let $0: any;
-	f.vars = () => [t, $0];
-	if (truthy(rt.call(f, P("/proc/isturf"), null, [(t = rt.callSrc(f, "getAndLocate", [live(i)]))]))) {
-		$0 = live(t);
-	} else {
-		$0 = null;
-	}
-	return $0;
-});
-
-// /datum/topic_input/proc/getAtom  (code/datums/helper_datums/topic_input.dm:40)
-rt.def("/datum/topic_input/proc/getAtom", function getAtom(f: Frame, i: Value) {
-	return rt.callSrc(f, "getType", [live(i), T("/atom")]);
-});
-
-// /datum/topic_input/proc/getArea  (code/datums/helper_datums/topic_input.dm:43)
-rt.def("/datum/topic_input/proc/getArea", function getArea(f: Frame, i: Value) {
-	let t: Value = null;
-	let $0: any;
-	f.vars = () => [t, $0];
-	if (truthy(rt.call(f, P("/proc/isarea"), null, [(t = rt.callSrc(f, "getAndLocate", [live(i)]))]))) {
-		$0 = live(t);
-	} else {
-		$0 = null;
-	}
-	return $0;
-});
-
 // /datum/topic_input/proc/getStr  (code/datums/helper_datums/topic_input.dm:47)
 rt.def("/datum/topic_input/proc/getStr", function getStr(f: Frame, i: Value) {
 	let t: Value = null;
@@ -126,35 +95,6 @@ rt.def("/datum/topic_input/proc/getType", function getType(f: Frame, i: Value, t
 	let $0: any;
 	f.vars = () => [t, $0];
 	if (truthy(rt.op(f, "IsType", [], [(t = rt.callSrc(f, "getAndLocate", [live(i)])), live(type)]))) {
-		$0 = live(t);
-	} else {
-		$0 = null;
-	}
-	return $0;
-});
-
-// /datum/topic_input/proc/getPath  (code/datums/helper_datums/topic_input.dm:55)
-rt.def("/datum/topic_input/proc/getPath", function getPath(f: Frame, i: Value) {
-	let t: Value = null;
-	let $0: any;
-	f.vars = () => [t, $0];
-	if (truthy((t = rt.callSrc(f, "get", [live(i)])))) {
-		t = rt.call(f, P("/proc/text2path"), null, [live(t)]);
-	}
-	if (truthy(rt.call(f, P("/proc/ispath"), null, [live(t)]))) {
-		$0 = live(t);
-	} else {
-		$0 = null;
-	}
-	return $0;
-});
-
-// /datum/topic_input/proc/getList  (code/datums/helper_datums/topic_input.dm:61)
-rt.def("/datum/topic_input/proc/getList", function getList(f: Frame, i: Value) {
-	let t: Value = null;
-	let $0: any;
-	f.vars = () => [t, $0];
-	if (truthy((rt.istype((t = rt.callSrc(f, "getAndLocate", [live(i)])), T("/list")) ? 1 : 0))) {
 		$0 = live(t);
 	} else {
 		$0 = null;

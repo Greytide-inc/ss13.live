@@ -238,16 +238,3 @@ rt.def("/datum/hud/proc/ButtonNumberToScreenCoords", function ButtonNumberToScre
 	coord_row = fmt("＀", [$0]);
 	return fmt("WEST＀:＀,NORTH＀:-6", [live(coord_col), live(coord_col_offset), live(coord_row)]);
 });
-
-// /datum/hud/proc/SetButtonCoords  (code/_onclick/hud/action_button.dm:162)
-rt.def("/datum/hud/proc/SetButtonCoords", function SetButtonCoords(f: Frame, button: Value, number: Value) {
-	let row: Value = null, col: Value = null, x_offset: Value = null, y_offset: Value = null, M: Value = null;
-	f.vars = () => [row, col, x_offset, y_offset, M];
-	row = rt.call(f, P("/proc/round"), null, [divide(subtract(live(number), 1), 10)]);
-	col = add(rt.modulus(subtract(live(number), 1), 10), 1);
-	x_offset = add(add(multiply(32, subtract(live(col), 1)), 4), multiply(2, live(col)));
-	y_offset = add(multiply(-32, add(live(row), 1)), 26);
-	rt.callName(f, (M = rt.call(f, P("/proc/matrix"), null, [])), "Translate", [live(x_offset), live(y_offset)]);
-	rt.setFv(f, "transform", live(button), live(M));
-	return f.dot;
-});

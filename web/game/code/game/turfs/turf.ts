@@ -501,35 +501,6 @@ rt.def("/turf/proc/ReplaceWithLattice", function* ReplaceWithLattice(f: Frame) {
 	return f.dot;
 }, true);
 
-// /turf/proc/phase_damage_creatures  (code/game/turfs/turf.dm:292)  may sleep
-rt.def("/turf/proc/phase_damage_creatures", function* phase_damage_creatures(f: Frame, damage: Value, U: Value) {
-	let M: Value = null;
-	let $e: any;
-	f.vars = () => [damage, U, M, $e];
-	if (live(U) === null) {
-		U = null;
-	}
-	M = null;
-	rt.forList(f, 0, live(f.src), T("/mob/living"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if (isEqual(live(M), live(U))) {
-			continue;
-		}
-		yield* g.callName(f, live(M), "adjustBruteLoss", [live(damage)]);
-		yield* g.callName(f, live(M), "Unconscious", [multiply(live(damage), 4)]);
-	}
-	rt.endFor(f, 0);
-	M = null;
-	rt.forList(f, 0, live(f.src), T("/obj/mecha"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		yield* g.callName(f, live(M), "take_damage", [multiply(live(damage), 2), "brute", "melee", 1]);
-	}
-	rt.endFor(f, 0);
-	return f.dot;
-}, true);
-
 // /turf/proc/Bless  (code/game/turfs/turf.dm:301)
 rt.def("/turf/proc/Bless", function Bless(f: Frame) {
 	(rt.modSrcVar(f, "flags", 1, rt.bitOr));
@@ -840,16 +811,6 @@ rt.def("/turf/proc/add_decal", function add_decal(f: Frame, decal: Value, group:
 	}
 	rt.modAt(rt.sv(f, "decals"), live(group), live(decal), add);
 	rt.callSrc(f, "add_overlay", [rt.index(rt.sv(f, "decals"), live(group))]);
-	return f.dot;
-});
-
-// /turf/proc/remove_decal  (code/game/turfs/turf.dm:505)
-rt.def("/turf/proc/remove_decal", function remove_decal(f: Frame, group: Value) {
-	if (!truthy(rt.sv(f, "decals"))) {
-		rt.setSv(f, "decals", rt.list());
-	}
-	rt.callSrc(f, "cut_overlay", [rt.index(rt.sv(f, "decals"), live(group))]);
-	rt.setAt(rt.sv(f, "decals"), live(group), null);
 	return f.dot;
 });
 

@@ -102,13 +102,3 @@ rt.def("/datum/ntnet_conversation/proc/changeop", function changeop(f: Frame, ne
 	rt.callSrc(f, "add_status_message", [fmt("Channel operator status transferred to ＀.", [rt.fv(f, "username", live(newop))])]);
 	return f.dot;
 });
-
-// /datum/ntnet_conversation/proc/change_title  (code/modules/modular_computers/NTNet/NTNRC/conversation.dm:64)
-rt.def("/datum/ntnet_conversation/proc/change_title", function change_title(f: Frame, newtitle: Value, client: Value) {
-	if (!isEqual(rt.sv(f, "operator"), live(client))) {
-		return 0;
-	}
-	rt.callSrc(f, "add_status_message", [fmt("＀ has changed channel title from ＀ to ＀", [rt.fv(f, "username", live(client)), rt.sv(f, "title"), live(newtitle)])]);
-	rt.setSv(f, "title", live(newtitle));
-	return f.dot;
-});

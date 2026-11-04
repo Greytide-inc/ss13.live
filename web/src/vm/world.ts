@@ -696,12 +696,6 @@ export class GameMap {
 		return done(out, items);
 	}
 
-	isOpaque(t: DMAtom): boolean {
-		if (t.getVar("opacity")) return true;
-		for (const m of t.contents) if (m.getVar("opacity")) return true;
-		return false;
-	}
-
 	/**
 	 * BYOND's visibility for the (2rx+1) x (2ry+1) box centred on turf c (see vm/view-los.ts). vis is indexed
 	 * (x - x0) + (y - y0) * w in world coordinates; nonzero = visible. Cells past the map edge must not be reported (they count as clear and lit).

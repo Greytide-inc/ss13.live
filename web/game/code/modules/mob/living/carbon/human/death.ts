@@ -62,13 +62,6 @@ rt.def("/mob/living/carbon/human/proc/death", function* death(f: Frame) {
 	return f.dot;
 }, true, { args: ["gibbed"] });
 
-// /mob/living/carbon/human/proc/makeSkeleton  (code/modules/mob/living/carbon/human/death.dm:41)  may sleep
-rt.def("/mob/living/carbon/human/proc/makeSkeleton", function* makeSkeleton(f: Frame) {
-	(rt.modSrcVar(f, "status_flags", 16384, rt.bitOr));
-	yield* g.srcCall(f, "set_species", T("/datum/species/skeleton"));
-	return 1;
-}, true);
-
 // /mob/living/carbon/proc/Drain  (code/modules/mob/living/carbon/human/death.dm:47)  may sleep
 rt.def("/mob/living/carbon/proc/Drain", function* Drain(f: Frame) {
 	yield* g.srcCall(f, "become_husk");

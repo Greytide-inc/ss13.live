@@ -12,7 +12,6 @@ import { snapshotKey, snapNames } from "./snapshot-key.mjs";
 import { existsSync, cpSync, rmSync, mkdirSync, readFileSync, writeFileSync, readdirSync, statSync, createReadStream, createWriteStream } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { createGzip } from "node:zlib";
-import { createHash } from "node:crypto";
 import { pipeline } from "node:stream/promises";
 import { writeSw } from "./write-sw.mjs";
 import { fixCsp } from "./csp.mjs";

@@ -100,28 +100,6 @@ rt.def("/datum/recipe/proc/make", function* make(f: Frame, container: Value) {
 	return live(result_obj);
 }, true);
 
-// /datum/recipe/proc/make_food  (code/datums/recipe.dm:88)  may sleep
-rt.def("/datum/recipe/proc/make_food", function* make_food(f: Frame, container: Value) {
-	let result_obj: Value = null, O: Value = null;
-	let $e: any;
-	f.vars = () => [container, result_obj, O, $e];
-	result_obj = (yield* g.new_(f, rt.sv(f, "result"), [live(container)]));
-	O = null;
-	rt.forList(f, 0, subtract(rt.fv(f, "contents", live(container)), live(result_obj)), T("/obj"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		O = $e;
-		if (truthy(rt.fv(f, "reagents", live(O)))) {
-			yield* g.callName(f, rt.fv(f, "reagents", live(O)), "del_reagent", ["nutriment"]);
-			yield* g.callName(f, rt.fv(f, "reagents", live(O)), "update_total", []);
-			yield* g.callName(f, rt.fv(f, "reagents", live(O)), "trans_to", [live(result_obj), rt.gv(f, "total_volume", rt.fv(f, "reagents", live(O)))]);
-		}
-		yield* g.call(f, P("/proc/qdel"), null, [live(O)]);
-	}
-	rt.endFor(f, 0);
-	yield* g.callName(f, rt.fv(f, "reagents", live(container)), "clear_reagents", []);
-	return live(result_obj);
-}, true);
-
 // /proc/select_recipe  (code/datums/recipe.dm:99)
 rt.def("/proc/select_recipe", function select_recipe(f: Frame, avaiable_recipes: Value, obj: Value, exact: Value) {
 	let possible_recipes: Value = null, recipe: Value = null, r_count: Value = null, i_count: Value = null, recipe_3: Value = null, N_i: Value = null, N_r: Value = null;

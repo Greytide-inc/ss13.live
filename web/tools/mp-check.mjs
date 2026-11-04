@@ -70,7 +70,6 @@ check(/Beta @[a-z2-9]{8}/.test(whoIn) && !/beta/i.test(whoOut), "Who lists Beta 
 const B2 = player("Beta", "betas-secret"); await sleep(3000);
 check(!B2.nameTaken && !B2.closed, "Beta can reconnect after leaving");
 check(!!B2.eye && B2.eye.x === B.eye.x && B2.eye.y === B.eye.y, `Beta is back in its own mob (eye ${JSON.stringify(B.eye)} before, ${JSON.stringify(B2.eye)} after)`);
-const secs = (Date.now() - A.t0) / 1000;
 for (const p of [A, B, B2]) log(`${p.name}: ${p.views} views, ${(p.bytes / 1024).toFixed(0)} KB, ${(p.bytes / 1024 / ((Date.now() - p.t0) / 1000)).toFixed(1)} KB/s, msgs ${JSON.stringify(p.msgs)}`);
 for (const p of [A, B2]) p.ws.close();
 await sleep(500);

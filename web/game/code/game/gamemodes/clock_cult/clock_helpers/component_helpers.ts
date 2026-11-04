@@ -116,27 +116,6 @@ rt.def("/proc/get_component_acronym", function get_component_acronym(f: Frame, i
 	return f.dot;
 });
 
-// /proc/get_component_id  (code/game/gamemodes/clock_cult/clock_helpers/component_helpers.dm:67)
-rt.def("/proc/get_component_id", function get_component_id(f: Frame, name: Value) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = live(name);
-	if ($0 === "Belligerent Eye") {
-		return "belligerent_eye";
-	} else if ($0 === "Vanguard Cogwheel") {
-		return "vanguard_cogwheel";
-	} else if ($0 === "Geis Capacitor") {
-		return "geis_capacitor";
-	} else if ($0 === "Replicant Alloy") {
-		return "replicant_alloy";
-	} else if ($0 === "Hierophant Ansible") {
-		return "hierophant_ansible";
-	} else {
-		return null;
-	}
-	return f.dot;
-});
-
 // /proc/get_component_span  (code/game/gamemodes/clock_cult/clock_helpers/component_helpers.dm:83)
 rt.def("/proc/get_component_span", function get_component_span(f: Frame, id: Value) {
 	let $0: any;
@@ -209,27 +188,6 @@ rt.def("/proc/get_component_animation_type", function get_component_animation_ty
 		return T("/obj/effect/temp_visual/ratvar/component/alloy");
 	} else if ($0 === "hierophant_ansible") {
 		return T("/obj/effect/temp_visual/ratvar/component/ansible");
-	} else {
-		return null;
-	}
-	return f.dot;
-});
-
-// /proc/get_component_type  (code/game/gamemodes/clock_cult/clock_helpers/component_helpers.dm:141)
-rt.def("/proc/get_component_type", function get_component_type(f: Frame, id: Value) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = live(id);
-	if ($0 === "belligerent_eye") {
-		return T("/obj/item/clockwork/component/belligerent_eye");
-	} else if ($0 === "vanguard_cogwheel") {
-		return T("/obj/item/clockwork/component/vanguard_cogwheel");
-	} else if ($0 === "geis_capacitor") {
-		return T("/obj/item/clockwork/component/geis_capacitor");
-	} else if ($0 === "replicant_alloy") {
-		return T("/obj/item/clockwork/component/replicant_alloy");
-	} else if ($0 === "hierophant_ansible") {
-		return T("/obj/item/clockwork/component/hierophant_ansible");
 	} else {
 		return null;
 	}

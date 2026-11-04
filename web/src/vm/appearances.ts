@@ -193,10 +193,6 @@ export class Appearances {
 		return this.imageType ?? t;
 	}
 
-	isAppearance(v: Value): v is DMAppearance {
-		return v instanceof DMAppearance;
-	}
-
 	/** `x.appearance` */
 	read(o: DMObject): DMAppearance {
 		return this.snapshot(o, false);

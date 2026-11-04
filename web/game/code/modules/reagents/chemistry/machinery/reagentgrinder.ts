@@ -297,23 +297,6 @@ rt.def("/obj/machinery/reagentgrinder/proc/eject", function* eject(f: Frame) {
 	return f.dot;
 }, true);
 
-// /obj/machinery/reagentgrinder/proc/is_allowed  (code/modules/reagents/chemistry/machinery/reagentgrinder.dm:276)
-rt.def("/obj/machinery/reagentgrinder/proc/is_allowed", function is_allowed(f: Frame, O: Value) {
-	let i: Value = null;
-	let $e: any;
-	f.vars = () => [i, $e];
-	i = null;
-	rt.forList(f, 0, rt.gl("blend_items"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		i = $e;
-		if (truthy(rt.op(f, "IsType", [], [live(O), live(i)]))) {
-			return 1;
-		}
-	}
-	rt.endFor(f, 0);
-	return 0;
-});
-
 // /obj/machinery/reagentgrinder/proc/get_allowed_by_id  (code/modules/reagents/chemistry/machinery/reagentgrinder.dm:282)
 rt.def("/obj/machinery/reagentgrinder/proc/get_allowed_by_id", function get_allowed_by_id(f: Frame, O: Value) {
 	let i: Value = null;
@@ -362,20 +345,6 @@ rt.def("/obj/machinery/reagentgrinder/proc/get_allowed_juice_by_id", function ge
 		}
 	}
 	rt.endFor(f, 0);
-	return f.dot;
-});
-
-// /obj/machinery/reagentgrinder/proc/get_grownweapon_amount  (code/modules/reagents/chemistry/machinery/reagentgrinder.dm:297)
-rt.def("/obj/machinery/reagentgrinder/proc/get_grownweapon_amount", function get_grownweapon_amount(f: Frame, O: Value) {
-	if ((!truthy((rt.istype(live(O), T("/obj/item/weapon/grown")) ? 1 : 0)) || !truthy(rt.fv(f, "seed", live(O))))) {
-		return 5;
-	} else {
-		if (isEqual(rt.gv(f, "potency", rt.fv(f, "seed", live(O))), -1)) {
-			return 5;
-		} else {
-			return rt.call(f, P("/proc/round"), null, [rt.gv(f, "potency", rt.fv(f, "seed", live(O)))]);
-		}
-	}
 	return f.dot;
 });
 

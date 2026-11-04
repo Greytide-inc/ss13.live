@@ -83,55 +83,6 @@ rt.def("/datum/admin_help_tickets/proc/Destroy", function* Destroy(f: Frame) {
 	return (yield* g.callSuper(f, [], rt.Args.Same));
 }, true);
 
-// /datum/admin_help_tickets/proc/TicketByID  (code/modules/admin/verbs/adminhelp.dm:30)
-rt.def("/datum/admin_help_tickets/proc/TicketByID", function TicketByID(f: Frame, id: Value) {
-	let lists: Value = null, I: Value = null, J: Value = null, AH: Value = null;
-	let $e: any;
-	f.vars = () => [lists, I, J, AH, $e];
-	lists = rt.list(rt.sv(f, "active_tickets"), rt.sv(f, "closed_tickets"), rt.sv(f, "resolved_tickets"));
-	I = null;
-	rt.forList(f, 0, live(lists));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		J = null;
-		rt.forList(f, 1, live(I));
-		while (($e = rt.next(f, 1)) !== undefined) {
-			J = $e;
-			if (isEqual(rt.gv(f, "id", (AH = live(J))), live(id))) {
-				return live(J);
-			}
-		}
-		rt.endFor(f, 1);
-	}
-	rt.endFor(f, 0);
-	return f.dot;
-});
-
-// /datum/admin_help_tickets/proc/TicketsByCKey  (code/modules/admin/verbs/adminhelp.dm:37)
-rt.def("/datum/admin_help_tickets/proc/TicketsByCKey", function TicketsByCKey(f: Frame, ckey: Value) {
-	let lists: Value = null, I: Value = null, J: Value = null, AH: Value = null;
-	let $e: any;
-	f.vars = () => [lists, I, J, AH, $e];
-	f.dot = rt.list();
-	lists = rt.list(rt.sv(f, "active_tickets"), rt.sv(f, "closed_tickets"), rt.sv(f, "resolved_tickets"));
-	I = null;
-	rt.forList(f, 0, live(lists));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		J = null;
-		rt.forList(f, 1, live(I));
-		while (($e = rt.next(f, 1)) !== undefined) {
-			J = $e;
-			if (isEqual(rt.gv(f, "initiator_ckey", (AH = live(J))), live(ckey))) {
-				f.dot = rt.modify(live(f.dot), live(AH), add);
-			}
-		}
-		rt.endFor(f, 1);
-	}
-	rt.endFor(f, 0);
-	return f.dot;
-});
-
 // /datum/admin_help_tickets/proc/ListInsert  (code/modules/admin/verbs/adminhelp.dm:48)
 rt.def("/datum/admin_help_tickets/proc/ListInsert", function ListInsert(f: Frame, new_ticket: Value) {
 	let ticket_list: Value = null, num_closed: Value = null, I: Value = null, AH: Value = null;

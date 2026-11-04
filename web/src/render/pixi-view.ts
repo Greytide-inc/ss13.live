@@ -15,10 +15,10 @@ import { byondMatrixToCanvas } from "./byond-transform.js";
 import { drawMaptext, maptextBoxRect } from "./maptext.js";
 import { frameForState, isLighting, matrixTintedRect, TILE_PX, type LoadedIcon } from "./station-client.js";
 import { ANIM, CLOCK, incPlace, incPlaceChunk, sameFit } from "./inc-place.js";
-import { icons, isAnimated, sortPrepared, viewStats, type DrawItem, type HudFit, type PlaneMaster, type Prepared, type SortedPrepared, type ViewBackend } from "./client-scene.js";
+import { icons, sortPrepared, viewStats, type DrawItem, type HudFit, type PlaneMaster, type Prepared, type SortedPrepared, type ViewBackend } from "./client-scene.js";
 import { blendOf } from "./inherit.js";
 import { buildAnimationSteps } from "../dmi/animation.js";
-import { chunkCol, chunkRect, chunkRow, CHUNK_PX, chunkId, type ChunkPlane } from "./chunk-index.js";
+import { chunkCol, chunkRect, chunkRow, chunkId, type ChunkPlane } from "./chunk-index.js";
 import type { Appearance } from "../appearance/appearance.js";
 
 // BLEND_OVERLAY(1)/INSET_OVERLAY(5) draw normally. WebGL multiply is dst*src + dst*(1-srcA): empty or src-transparent
@@ -303,7 +303,7 @@ export async function createPixiBackend(opts: { screen?: boolean } = {}): Promis
 		if (sync) gl.finish();
 		texMs += performance.now() - t;
 	}
-	let texMs = 0, lastFt = 0; // render-texture time of the plane being drawn (GPU included with ?sync=1)
+	let texMs = 0; // render-texture time of the plane being drawn (GPU included with ?sync=1)
 
 	/** the sprites this screen object just placed (pool slots u0..used) were laid out in base-view pixels: move and scale them to the zoomed view. */
 	function fitHud(st: LayerState, u0: number, hk: HudFit): void {
@@ -628,7 +628,6 @@ export async function createPixiBackend(opts: { screen?: boolean } = {}): Promis
 			for (const st of planes.values()) { st.p = null; st.sig = ""; st.hudLoItems = []; st.hudHiItems = []; }
 		}
 		const t0 = performance.now();
-		lastFt = frameTime;
 		if (chunked) drawChunked(p, showHud, frameTime, ox, oy, w, h, s);
 		else {
 		if (sorted?.p !== p || sorted.hud !== showHud || sorted.scene !== useScene) sorted = { p, hud: showHud, scene: useScene, ...sortPrepared(p, showHud, useScene) };

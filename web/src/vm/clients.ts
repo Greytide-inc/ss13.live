@@ -11,7 +11,6 @@
 
 import type { NativeProc, PromptReq, VM } from "./interpreter.js";
 import { stripMarkers } from "./markers.js";
-import { pin } from "./gc.js";
 import { fromRef } from "./refs.js";
 import { DMList, DMObject, ScreenList, live } from "./objects.js";
 import { DMProc, DMType, Resource } from "./objtree.js";

@@ -80,13 +80,6 @@ rt.def("/turf/open/proc/copy_air_with_tile", function copy_air_with_tile(f: Fram
 	return f.dot;
 });
 
-// /turf/open/proc/copy_air  (code/modules/atmospherics/environmental/LINDA_turf_tile.dm:74)
-rt.def("/turf/open/proc/copy_air", function copy_air(f: Frame, copy: Value) {
-	if (!truthy(live(copy))) return f.dot;
-	rt.callName(f, rt.sv(f, "air"), "copy_from", [live(copy)]);
-	return f.dot;
-});
-
 // /turf/proc/return_air  (code/modules/atmospherics/environmental/LINDA_turf_tile.dm:77)
 rt.def("/turf/proc/return_air", function return_air(f: Frame) {
 	let GM: Value = null;

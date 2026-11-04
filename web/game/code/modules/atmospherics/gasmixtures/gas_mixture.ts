@@ -695,8 +695,3 @@ rt.def("/datum/gas_mixture/proc/react", function* react(f: Frame, dump_location:
 rt.def("/datum/gas_mixture/proc/get_breath_partial_pressure", function get_breath_partial_pressure(f: Frame, gas_pressure: Value) {
 	return divide(multiply(multiply(live(gas_pressure), 8.3100004196167), rt.sv(f, "temperature")), 0.5);
 });
-
-// /datum/gas_mixture/proc/get_true_breath_pressure  (code/modules/atmospherics/gasmixtures/gas_mixture.dm:473)
-rt.def("/datum/gas_mixture/proc/get_true_breath_pressure", function get_true_breath_pressure(f: Frame, partial_pressure: Value) {
-	return divide(multiply(live(partial_pressure), 0.5), multiply(8.3100004196167, rt.sv(f, "temperature")));
-});

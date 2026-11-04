@@ -168,12 +168,6 @@ export class Vfs {
 		return this.baseFiles.get(stripTrailingSlash(this.resolve(path))) ?? null;
 	}
 
-	/** Same content as readText, UTF-8 encoded. Null if the path doesn't exist. */
-	readBytes(path: string): Uint8Array | null {
-		const text = this.readText(path);
-		return text === null ? null : new TextEncoder().encode(text);
-	}
-
 	/** flist(): see the module doc comment for the two modes. Never returns null. */
 	list(path: string): string[] {
 		const norm = normalize(path);

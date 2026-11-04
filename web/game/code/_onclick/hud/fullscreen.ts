@@ -78,22 +78,6 @@ rt.def("/mob/proc/clear_fullscreens", function* clear_fullscreens(f: Frame) {
 	return f.dot;
 }, true);
 
-// /mob/proc/hide_fullscreens  (code/_onclick/hud/fullscreen.dm:52)
-rt.def("/mob/proc/hide_fullscreens", function hide_fullscreens(f: Frame) {
-	let category: Value = null;
-	let $e: any;
-	f.vars = () => [category, $e];
-	if (!truthy(rt.sv(f, "client"))) return f.dot;
-	category = null;
-	rt.forList(f, 0, rt.sv(f, "screens"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		category = $e;
-		(rt.modField(f, rt.sv(f, "client"), "screen", rt.index(rt.sv(f, "screens"), live(category)), subtract));
-	}
-	rt.endFor(f, 0);
-	return f.dot;
-});
-
 // /mob/proc/reload_fullscreen  (code/_onclick/hud/fullscreen.dm:58)
 rt.def("/mob/proc/reload_fullscreen", function reload_fullscreen(f: Frame) {
 	let screen: Value = null, category: Value = null;

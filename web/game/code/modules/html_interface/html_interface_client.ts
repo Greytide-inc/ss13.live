@@ -39,18 +39,6 @@ rt.def("/datum/html_interface_client/proc/putExtraVar", function putExtraVar(f: 
 	return f.dot;
 });
 
-// /datum/html_interface_client/proc/removeExtraVar  (code/modules/html_interface/html_interface_client.dm:33)
-rt.def("/datum/html_interface_client/proc/removeExtraVar", function removeExtraVar(f: Frame, key: Value) {
-	if (truthy(rt.fv(f, "extra_vars", live(f.src)))) {
-		f.dot = rt.index(rt.fv(f, "extra_vars", live(f.src)), live(key));
-		rt.callName(f, rt.fv(f, "extra_vars", live(f.src)), "Remove", [live(key)]);
-		if (!truthy(rt.getLen(f, rt.fv(f, "extra_vars", live(f.src))))) {
-			rt.setFv(f, "extra_vars", live(f.src), null);
-		}
-	}
-	return live(f.dot);
-});
-
 // /datum/html_interface_client/proc/getExtraVar  (code/modules/html_interface/html_interface_client.dm:43)
 rt.def("/datum/html_interface_client/proc/getExtraVar", function getExtraVar(f: Frame, key: Value) {
 	if (!truthy(rt.fv(f, "extra_vars", live(f.src)))) return f.dot;

@@ -13,15 +13,6 @@ rt.type(12982, "/obj/structure/particle_accelerator/particle_emitter", "/obj/str
 	icon_state: "none",
 });
 
-// /obj/structure/particle_accelerator/particle_emitter/proc/set_delay  (code/modules/power/singularity/particle_accelerator/particle_emitter.dm:22)
-rt.def("/obj/structure/particle_accelerator/particle_emitter/proc/set_delay", function set_delay(f: Frame, delay: Value) {
-	if (rt.ge(live(delay), 0)) {
-		rt.setSv(f, "fire_delay", live(delay));
-		return 1;
-	}
-	return 0;
-});
-
 // /obj/structure/particle_accelerator/particle_emitter/proc/emit_particle  (code/modules/power/singularity/particle_accelerator/particle_emitter.dm:28)  may sleep
 rt.def("/obj/structure/particle_accelerator/particle_emitter/proc/emit_particle", function* emit_particle(f: Frame, strength: Value) {
 	let _T: Value = null, _P: Value = null;

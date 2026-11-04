@@ -4,24 +4,6 @@ import type { Frame, Value } from "../../../../../../build/dist/src/translate/ru
 const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
 
 
-// /mob/living/carbon/proc/damage_eyes  (code/modules/mob/living/carbon/status_procs.dm:6)  may sleep
-rt.def("/mob/living/carbon/proc/damage_eyes", function* damage_eyes(f: Frame, amount: Value) {
-	let eyes: Value = null;
-	f.vars = () => [amount, eyes];
-	if (!truthy((eyes = (yield* g.srcCall(f, "getorganslot", "eyes_sight"))))) {
-		return live(f.dot);
-	}
-	if (!rt.gt(live(amount), 0)) return f.dot;
-	rt.setFv(f, "eye_damage", live(eyes), live(amount));
-	if (!rt.gt(rt.fv(f, "eye_damage", live(eyes)), 20)) return f.dot;
-	if (rt.gt(rt.fv(f, "eye_damage", live(eyes)), 30)) {
-		yield* g.srcCall(f, "overlay_fullscreen", "eye_damage", T("/obj/screen/fullscreen/impaired"), 2);
-	} else {
-		yield* g.srcCall(f, "overlay_fullscreen", "eye_damage", T("/obj/screen/fullscreen/impaired"), 1);
-	}
-	return f.dot;
-}, true);
-
 // /mob/living/carbon/proc/set_eye_damage  (code/modules/mob/living/carbon/status_procs.dm:18)  may sleep
 rt.def("/mob/living/carbon/proc/set_eye_damage", function* set_eye_damage(f: Frame, amount: Value) {
 	let eyes: Value = null;

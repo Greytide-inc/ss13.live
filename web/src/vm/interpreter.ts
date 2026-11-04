@@ -657,7 +657,7 @@ export class VM {
 	/**
 	 * Boots the world as BYOND does: the global initialiser, then the compile-time maps, then
 	 * `world/New()` (src = world). Returns world/New's thread (it may sleep; drive the clock with
-	 * runTick/runUntilIdle/runRealtime), or null if the program has no world/New of its own.
+	 * runTick/runRealtime), or null if the program has no world/New of its own.
 	 */
 	boot(): Thread | null {
 		this.runGlobalInit();
@@ -727,7 +727,7 @@ export class VM {
 	// in the new tick, including ones that sleep(0) or spawn(0) during it. So after runTick(),
 	// world.time is the time of the tick that just ran.
 	//
-	// Headless fast mode (runUntilIdle, callAndWait) skips ticks where nothing is due. Real-time mode
+	// Headless fast mode (callAndWait) skips ticks where nothing is due. Real-time mode
 	// (runRealtime) calls runTick() every tick_lag * 100 ms. There's no sleep_offline: time always
 	// advances, with or without clients.
 
@@ -784,23 +784,6 @@ export class VM {
 		this.sched.advance();
 		if (this.walkers.size) this.runWalkers();
 		this.finishTick();
-	}
-
-	/**
-	 * Headless fast mode: runs ticks until no thread is sleeping or `maxTicks` ticks have passed,
-	 * skipping idle ticks instantly. Returns the number of ticks that passed.
-	 */
-	runUntilIdle(maxTicks = Infinity): number {
-		const start = this.sched.tick;
-		const limit = start + maxTicks;
-		this.finishTick();
-		for (;;) {
-			const due = this.nextDue();
-			if (due === null || due > limit) break;
-			this.sched.skipTicks(due - this.sched.tick - 1);
-			this.runTick();
-		}
-		return this.sched.tick - start;
 	}
 
 	/**

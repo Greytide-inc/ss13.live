@@ -13,18 +13,8 @@ name=boot-check
 if [ -n "$1" ] && [[ "$1" != --* ]]; then name="$1"; shift; fi
 npm run --silent bundle-vfs >/dev/null || exit 1
 npx tsc -p . || exit 1
-# Re-bundle web/game when a file in it is newer than the last bundle. Every boot needs it (step 3: it declares the type tree);
-# and its procs are what the boot runs.
-# A deleted or added file changes the sorted file list kept next to the stamp (.files), which -newer alone misses.
-stamp=build/game-js/.stamp
-filelist=build/game-js/.files
-cur_files="$(find game -name '*.ts' | LC_ALL=C sort)"
-files_changed=""; [ -f $filelist ] && [ "$cur_files" = "$(cat $filelist)" ] || files_changed=1
-[ -n "$STALE_DEBUG" ] && echo "[boot-check] stale-decision: files_changed=${files_changed:-0}"
-if [ -n "$files_changed" ] || [ ! -f $stamp ] || [ ! -f build/translated-tg.js ] || [ ! -f build/game-types.js ] || [ tools/translate-tg.mjs -nt $stamp ] || [ -n "$(find game -name '*.ts' -newer $stamp -print -quit)" ]; then
-	node tools/translate-tg.mjs > build/translate-tg.log 2>&1 || { tail -5 build/translate-tg.log; exit 1; }
-	tail -1 build/translate-tg.log; touch $stamp; echo "$cur_files" > $filelist
-fi
+# Every boot needs the bundle: it declares the type tree, and its procs are what the boot runs.
+tools/bundle-game.sh || exit 1
 
 one() { # one NAME ARGS...: boot + compare-logs, output to build/NAME.out
 	local n="$1"; shift

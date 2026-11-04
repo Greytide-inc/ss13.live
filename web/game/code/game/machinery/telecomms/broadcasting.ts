@@ -118,14 +118,6 @@ rt.def("/proc/Broadcast_Message", function* Broadcast_Message(f: Frame, AM: Valu
 	return f.dot;
 }, true, { waitfor: false });
 
-// /atom/proc/test_telecomms  (code/game/machinery/telecomms/broadcasting.dm:156)  may sleep
-rt.def("/atom/proc/test_telecomms", function* test_telecomms(f: Frame) {
-	let signal: Value = null, position: Value = null;
-	f.vars = () => [signal, position];
-	signal = (yield* g.srcCall(f, "telecomms_process"));
-	return (rt.isIn(f, rt.gv(f, "z", (position = rt.getStep(f, live(f.src), 0))), (rt.index(rt.fv(f, "data", live(signal)), "level") && rt.index(rt.fv(f, "data", live(signal)), "done"))) ? 1 : 0);
-}, true);
-
 // /atom/proc/telecomms_process  (code/game/machinery/telecomms/broadcasting.dm:163)  may sleep
 rt.def("/atom/proc/telecomms_process", function* telecomms_process(f: Frame) {
 	let signal: Value = null, pos: Value = null, R: Value = null;

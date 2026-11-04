@@ -43,21 +43,6 @@ rt.def("/datum/controller/global_vars/proc/InitGlobalFrozenAccounts", function I
 	return f.dot;
 });
 
-// /proc/list_frozen  (code/modules/stock_market/articles.dm:20)
-rt.def("/proc/list_frozen", function list_frozen(f: Frame) {
-	let A: Value = null;
-	let $e: any;
-	f.vars = () => [A, $e];
-	A = null;
-	rt.forList(f, 0, rt.gl("FrozenAccounts"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		A = $e;
-		rt.call(f, P("/proc/to_chat"), null, [live(f.usr), fmt("＀: ＀ borrows", [live(A), rt.length(rt.index(rt.gl("FrozenAccounts"), live(A)))])]);
-	}
-	rt.endFor(f, 0);
-	return f.dot;
-});
-
 rt.type(4205, "/datum/article", "/datum", {
 	headline: "Something big is happening",
 	subtitle: "Investors panic as stock market collapses",

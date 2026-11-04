@@ -28,11 +28,3 @@ rt.def("/datum/language/machine/proc/<init>", function _init_(f: Frame) {
 	rt.setSv(f, "syllables", rt.list("beep", "beep", "beep", "beep", "beep", "boop", "boop", "boop", "bop", "bop", "dee", "dee", "doo", "doo", "hiss", "hss", "buzz", "buzz", "bzz", "ksssh", "keey", "wurr", "wahh", "tzzz"));
 	return f.dot;
 });
-
-// /datum/language/machine/proc/get_random_name  (code/modules/language/machine.dm:17)
-rt.def("/datum/language/machine/proc/get_random_name", function get_random_name(f: Frame) {
-	if (truthy(rt.op(f, "Prob", [], [70]))) {
-		return fmt("＀-＀", [rt.op(f, "PickUnweighted", [1], [rt.gl("posibrain_names")]), rt.call(f, P("/proc/rand"), null, [100, 999])]);
-	}
-	return rt.op(f, "PickUnweighted", [1], [rt.gl("ai_names")]);
-});

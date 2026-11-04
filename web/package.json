@@ -7,7 +7,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p .",
-    "test": "tsc -p . && node tests/all.mjs",
+    "test": "tsc -p . && tools/bundle-game.sh && node tests/all.mjs",
     "bundle-vfs": "tsc -p . && node build/dist/src/tools/bundle-vfs.js",
     "compare-logs": "tsc -p . && node build/dist/src/tools/compare-logs.js",
     "test:dmi-all": "tsc -p . && node build/dist/tests/dmi/dmi-all.test.js",

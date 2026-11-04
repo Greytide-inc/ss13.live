@@ -104,12 +104,3 @@ rt.def("/datum/game_mode/proc/update_ninja_icons_added", function update_ninja_i
 	rt.callSrc(f, "set_antag_hud", [live(ninja), "ninja"]);
 	return f.dot;
 });
-
-// /datum/game_mode/proc/update_ninja_icons_removed  (code/modules/ninja/ninja_event.dm:114)
-rt.def("/datum/game_mode/proc/update_ninja_icons_removed", function update_ninja_icons_removed(f: Frame, ninja_mind: Value) {
-	let ninjahud: Value = null;
-	f.vars = () => [ninjahud];
-	rt.callName(f, (ninjahud = rt.index(rt.gl("huds"), 12)), "leave_hud", [rt.fv(f, "current", live(ninja_mind))]);
-	rt.callSrc(f, "set_antag_hud", [rt.fv(f, "current", live(ninja_mind)), null]);
-	return f.dot;
-});

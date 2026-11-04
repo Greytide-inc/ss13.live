@@ -27,11 +27,6 @@ rt.def("/obj/item/device/radio/beacon/proc/Destroy", function* Destroy(f: Frame)
 	return (yield* g.callSuper(f, [], rt.Args.Same));
 }, true);
 
-// /obj/item/device/radio/beacon/proc/send_hear  (code/game/objects/items/devices/radio/beacon.dm:22)
-rt.def("/obj/item/device/radio/beacon/proc/send_hear", function send_hear(f: Frame) {
-	return null;
-});
-
 // /obj/item/device/radio/beacon/verb/alter_signal  (code/game/objects/items/devices/radio/beacon.dm:30)  may sleep
 rt.def("/obj/item/device/radio/beacon/verb/alter_signal", function* alter_signal(f: Frame, t: Value) {
 	f.vars = () => [t];

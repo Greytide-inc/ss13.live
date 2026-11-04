@@ -175,54 +175,6 @@ rt.def("/obj/machinery/power/proc/get_connections", function get_connections(f: 
 	return live(f.dot);
 });
 
-// /obj/machinery/power/proc/get_marked_connections  (code/modules/power/power.dm:157)
-rt.def("/obj/machinery/power/proc/get_marked_connections", function get_marked_connections(f: Frame) {
-	let cdir: Value = null, _T: Value = null, card: Value = null, C: Value = null;
-	let $e: any;
-	f.vars = () => [cdir, _T, card, C, $e];
-	f.dot = rt.list();
-	cdir = null;
-	_T = null;
-	card = null;
-	rt.forList(f, 0, rt.gl("cardinal"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		card = $e;
-		cdir = rt.getDir(f, (_T = rt.getStep(f, rt.sv(f, "loc"), live(card))), rt.sv(f, "loc"));
-		C = null;
-		rt.forList(f, 1, live(_T), T("/obj/structure/cable"));
-		while (($e = rt.next(f, 1)) !== undefined) {
-			C = $e;
-			if ((isEqual(rt.fv(f, "d1", live(C)), live(cdir)) || isEqual(rt.fv(f, "d2", live(C)), live(cdir)))) {
-				f.dot = rt.modify(live(f.dot), live(C), add);
-			}
-		}
-		rt.endFor(f, 1);
-	}
-	rt.endFor(f, 0);
-	return live(f.dot);
-});
-
-// /obj/machinery/power/proc/get_indirect_connections  (code/modules/power/power.dm:173)
-rt.def("/obj/machinery/power/proc/get_indirect_connections", function get_indirect_connections(f: Frame) {
-	let C: Value = null;
-	let $e: any;
-	f.vars = () => [C, $e];
-	f.dot = rt.list();
-	C = null;
-	rt.forList(f, 0, rt.sv(f, "loc"), T("/obj/structure/cable"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		C = $e;
-		if (truthy(rt.fv(f, "powernet", live(C)))) {
-			continue;
-		}
-		if (isEqual(rt.fv(f, "d1", live(C)), 0)) {
-			f.dot = rt.modify(live(f.dot), live(C), add);
-		}
-	}
-	rt.endFor(f, 0);
-	return live(f.dot);
-});
-
 // /proc/power_list  (code/modules/power/power.dm:190)
 rt.def("/proc/power_list", function power_list(f: Frame, _T: Value, source: Value, d: Value, unmarked: Value, cable_only: Value) {
 	let AM: Value = null, _P: Value = null, C: Value = null;

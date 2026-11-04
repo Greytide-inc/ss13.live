@@ -4,7 +4,7 @@
 import type { VM } from "../vm/interpreter.js";
 import { DMList, DMObject, live } from "../vm/objects.js";
 import { refOf } from "../vm/refs.js";
-import { isTruthy, stringify, type Value } from "../vm/value.js";
+import { isTruthy, stringify } from "../vm/value.js";
 import { holdLobby } from "./test-aids.js";
 import type { StartMsg } from "./boot-worker.js";
 
@@ -23,7 +23,7 @@ export interface TickAidsCtx {
 
 export function makeTickAids(ctx: TickAidsCtx) {
 	const { opts, vm, log, firstC, players, post } = ctx;
-				let giftAt = 0, giftItem: DMObject | null = null, stripTgt: DMObject | null = null, stripState = ""; // tgui aid for the strip menu (?tgui=/mob/...): the player's held items and the target's worn items, logged when they change
+				let giftAt = 0, stripTgt: DMObject | null = null, stripState = ""; // tgui aid for the strip menu (?tgui=/mob/...): the player's held items and the target's worn items, logged when they change
 				let mobWatch = false, watchPos = [0, 0, 0], smallIt: DMObject | null = null, smallLog = "", fridgeTgt: DMObject | null = null, fridgeLog = "", fabTgt: DMObject | null = null, fabLog = "", watchTgt: DMObject | null = null, watchLog = "", watchRefs = ""; // watchTgt: ps-harness (tools/topic-check.mjs), the --tgui atom's vars (opts.tguiWatch) logged when they change // tgui aid for the signaler / destination tagger / smartfridge: frequency, code, tag, fridge contents, logged when they change
 				let freshOf = null as { arg: string; obj: DMObject; keep: Set<DMObject>; x: number; y: number; z: number } | null, freshNew: DMObject | null = null, freshN = 0; // hot2 test aid: what --tgui opened, and everything that stood within 2 tiles of it (and on the player) at that moment
 				const freshArea = (f: {
@@ -80,7 +80,7 @@ export function makeTickAids(ctx: TickAidsCtx) {
 					giftAt = 0;
 					const gm = live(firstC()?.getVar("mob")), ht = vm.tree.getType("/obj/item/clothing/head/helmet"), pih = gm instanceof DMObject ? gm.type.procs.get("put_in_hands") : undefined;
 					if (gm instanceof DMObject && ht && pih) {
-						const hat = giftItem = vm.newObject(ht, [vm.getField(gm, "loc")], gm);
+						const hat = vm.newObject(ht, [vm.getField(gm, "loc")], gm);
 						const pr = vm.call(pih, [hat], gm, gm);
 						log(`[vm-boot] tgui: gave the player a helmet (a dog fashion item) to put on the dog: put_in_hands returned ${stringify(live(pr as never))}, it is now in ${stringify(live(vm.getField(hat, "loc")))}`);
 					}

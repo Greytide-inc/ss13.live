@@ -247,24 +247,6 @@ rt.def("/proc/reject_bad_name", function reject_bad_name(f: Frame, t_in: Value, 
 	return live(t_out);
 });
 
-// /proc/non_zero_min  (code/__HELPERS/text.dm:177)
-rt.def("/proc/non_zero_min", function non_zero_min(f: Frame, a: Value, b: Value) {
-	let $0: any;
-	f.vars = () => [$0];
-	if (!truthy(live(a))) {
-		return live(b);
-	}
-	if (!truthy(live(b))) {
-		return live(a);
-	}
-	if (rt.lt(live(a), live(b))) {
-		$0 = live(a);
-	} else {
-		$0 = live(b);
-	}
-	return $0;
-});
-
 // /proc/dd_hasprefix  (code/__HELPERS/text.dm:191)
 rt.def("/proc/dd_hasprefix", function dd_hasprefix(f: Frame, text: Value, prefix: Value) {
 	let start: Value = null, end: Value = null;
@@ -293,83 +275,11 @@ rt.def("/proc/dd_hassuffix", function dd_hassuffix(f: Frame, text: Value, suffix
 	return live(f.dot);
 });
 
-// /proc/dd_hassuffix_case  (code/__HELPERS/text.dm:212)
-rt.def("/proc/dd_hassuffix_case", function dd_hassuffix_case(f: Frame, text: Value, suffix: Value) {
-	let start: Value = null;
-	f.vars = () => [start];
-	if (!truthy((start = subtract(rt.length(live(text)), rt.length(live(suffix)))))) return f.dot;
-	return rt.call(f, P("/proc/findtextEx"), null, [live(text), live(suffix), live(start), null]);
-});
-
-// /proc/text_in_list  (code/__HELPERS/text.dm:218)
-rt.def("/proc/text_in_list", function text_in_list(f: Frame, haystack: Value, needle_list: Value, start: Value, end: Value) {
-	let needle: Value = null;
-	let $e: any;
-	f.vars = () => [start, end, needle, $e];
-	if (live(start) === null) {
-		start = 1;
-	}
-	if (live(end) === null) {
-		end = 0;
-	}
-	needle = null;
-	rt.forList(f, 0, live(needle_list));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		needle = $e;
-		if (truthy(rt.call(f, P("/proc/findtext"), null, [live(haystack), live(needle), live(start), live(end)]))) {
-			return 1;
-		}
-	}
-	rt.endFor(f, 0);
-	return 0;
-});
-
-// /proc/text_in_list_case  (code/__HELPERS/text.dm:225)
-rt.def("/proc/text_in_list_case", function text_in_list_case(f: Frame, haystack: Value, needle_list: Value, start: Value, end: Value) {
-	let needle: Value = null;
-	let $e: any;
-	f.vars = () => [start, end, needle, $e];
-	if (live(start) === null) {
-		start = 1;
-	}
-	if (live(end) === null) {
-		end = 0;
-	}
-	needle = null;
-	rt.forList(f, 0, live(needle_list));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		needle = $e;
-		if (truthy(rt.call(f, P("/proc/findtextEx"), null, [live(haystack), live(needle), live(start), live(end)]))) {
-			return 1;
-		}
-	}
-	rt.endFor(f, 0);
-	return 0;
-});
-
 // /proc/add_zero  (code/__HELPERS/text.dm:232)
 rt.def("/proc/add_zero", function add_zero(f: Frame, t: Value, u: Value) {
 	f.vars = () => [t];
 	while (rt.lt(rt.length(live(t)), live(u))) {
 		t = fmt("0＀", [live(t)]);
-	}
-	return live(t);
-});
-
-// /proc/add_lspace  (code/__HELPERS/text.dm:238)
-rt.def("/proc/add_lspace", function add_lspace(f: Frame, t: Value, u: Value) {
-	f.vars = () => [t];
-	while (rt.lt(rt.length(live(t)), live(u))) {
-		t = fmt(" ＀", [live(t)]);
-	}
-	return live(t);
-});
-
-// /proc/add_tspace  (code/__HELPERS/text.dm:244)
-rt.def("/proc/add_tspace", function add_tspace(f: Frame, t: Value, u: Value) {
-	f.vars = () => [t];
-	while (rt.lt(rt.length(live(t)), live(u))) {
-		t = fmt("＀ ", [live(t)]);
 	}
 	return live(t);
 });
@@ -420,29 +330,6 @@ rt.def("/proc/capitalize", function capitalize(f: Frame, t: Value) {
 	return add(rt.call(f, P("/proc/uppertext"), null, [rt.call(f, P("/proc/copytext"), null, [live(t), 1, 2])]), rt.call(f, P("/proc/copytext"), null, [live(t), 2]));
 });
 
-// /proc/dd_centertext  (code/__HELPERS/text.dm:275)
-rt.def("/proc/dd_centertext", function dd_centertext(f: Frame, message: Value, length: Value) {
-	let new_message: Value = null, size: Value = null, delta: Value = null, spaces: Value = null;
-	f.vars = () => [new_message, size, delta, spaces];
-	new_message = live(message);
-	size = rt.length(live(message));
-	delta = subtract(live(length), live(size));
-	if (isEqual(live(size), live(length))) {
-		return live(new_message);
-	}
-	if (rt.gt(live(size), live(length))) {
-		return rt.call(f, P("/proc/copytext"), null, [live(new_message), 1, add(live(length), 1)]);
-	}
-	if (isEqual(live(delta), 1)) {
-		return add(live(new_message), " ");
-	}
-	if (truthy(rt.modulus(live(delta), 2))) {
-		new_message = add(" ", live(new_message));
-		delta = rt.inc(live(delta), -1);
-	}
-	return add(add((spaces = rt.call(f, P("/proc/add_lspace"), null, ["", subtract(divide(live(delta), 2), 1)])), live(new_message)), live(spaces));
-});
-
 // /proc/dd_limittext  (code/__HELPERS/text.dm:292)
 rt.def("/proc/dd_limittext", function dd_limittext(f: Frame, message: Value, length: Value) {
 	let size: Value = null;
@@ -451,77 +338,6 @@ rt.def("/proc/dd_limittext", function dd_limittext(f: Frame, message: Value, len
 		return live(message);
 	}
 	return rt.call(f, P("/proc/copytext"), null, [live(message), 1, add(live(length), 1)]);
-});
-
-// /proc/stringmerge  (code/__HELPERS/text.dm:302)
-rt.def("/proc/stringmerge", function stringmerge(f: Frame, text: Value, compare: Value, replace: Value) {
-	let newtext: Value = null, i: Value = null, a: Value = null, b: Value = null;
-	f.vars = () => [replace, newtext, i, a, b];
-	if (live(replace) === null) {
-		replace = "*";
-	}
-	newtext = live(text);
-	if (!isEqual(rt.call(f, P("/proc/lentext"), null, [live(text)]), rt.call(f, P("/proc/lentext"), null, [live(compare)]))) {
-		return 0;
-	}
-	i = null;
-	i = 1;
-	while (rt.lt(live(i), rt.call(f, P("/proc/lentext"), null, [live(text)]))) {
-		a = rt.call(f, P("/proc/copytext"), null, [live(text), live(i), add(live(i), 1)]);
-		b = rt.call(f, P("/proc/copytext"), null, [live(compare), live(i), add(live(i), 1)]);
-		if (!isEqual(live(a), live(b))) {
-			if (isEqual(live(a), live(replace))) {
-				newtext = add(add(rt.call(f, P("/proc/copytext"), null, [live(newtext), 1, live(i)]), live(b)), rt.call(f, P("/proc/copytext"), null, [live(newtext), add(live(i), 1)]));
-			} else {
-				if (isEqual(live(b), live(replace))) {
-					newtext = add(add(rt.call(f, P("/proc/copytext"), null, [live(newtext), 1, live(i)]), live(a)), rt.call(f, P("/proc/copytext"), null, [live(newtext), add(live(i), 1)]));
-				} else {
-					return 0;
-				}
-			}
-		}
-		i = rt.inc(live(i), 1);
-	}
-	return live(newtext);
-});
-
-// /proc/stringpercent  (code/__HELPERS/text.dm:322)
-rt.def("/proc/stringpercent", function stringpercent(f: Frame, text: Value, character: Value) {
-	let count: Value = null, i: Value = null, a: Value = null;
-	f.vars = () => [character, count, i, a];
-	if (live(character) === null) {
-		character = "*";
-	}
-	if ((!truthy(live(text)) || !truthy(live(character)))) {
-		return 0;
-	}
-	count = 0;
-	i = null;
-	i = 1;
-	while (rt.le(live(i), rt.call(f, P("/proc/lentext"), null, [live(text)]))) {
-		if (isEqual((a = rt.call(f, P("/proc/copytext"), null, [live(text), live(i), add(live(i), 1)])), live(character))) {
-			count = rt.inc(live(count), 1);
-		}
-		i = rt.inc(live(i), 1);
-	}
-	return live(count);
-});
-
-// /proc/reverse_text  (code/__HELPERS/text.dm:332)
-rt.def("/proc/reverse_text", function reverse_text(f: Frame, text: Value) {
-	let new_text: Value = null, i: Value = null;
-	f.vars = () => [text, new_text, i];
-	if (live(text) === null) {
-		text = "";
-	}
-	new_text = "";
-	i = null;
-	i = rt.length(live(text));
-	while (rt.gt(live(i), 0)) {
-		new_text = rt.modify(live(new_text), rt.call(f, P("/proc/copytext"), null, [live(text), live(i), add(live(i), 1)]), add);
-		i = rt.inc(live(i), -1);
-	}
-	return live(new_text);
 });
 
 // /datum/controller/global_vars/proc/InitGlobalzero_character_only  (code/__HELPERS/text.dm:337)
@@ -591,21 +407,6 @@ rt.def("/proc/random_short_color", function random_short_color(f: Frame) {
 // /proc/random_color  (code/__HELPERS/text.dm:355)
 rt.def("/proc/random_color", function random_color(f: Frame) {
 	return rt.call(f, P("/proc/random_string"), null, [6, rt.gl("hex_characters")]);
-});
-
-// /proc/add_zero2  (code/__HELPERS/text.dm:359)
-rt.def("/proc/add_zero2", function add_zero2(f: Frame, t: Value, u: Value) {
-	let temp1: Value = null;
-	f.vars = () => [t, temp1];
-	temp1 = null;
-	while (rt.lt(rt.length(live(t)), live(u))) {
-		t = fmt("0＀", [live(t)]);
-	}
-	temp1 = live(t);
-	if (rt.gt(rt.length(live(t)), live(u))) {
-		temp1 = rt.call(f, P("/proc/copytext"), null, [live(t), 2, add(live(u), 1)]);
-	}
-	return live(temp1);
 });
 
 // /proc/merge_text  (code/__HELPERS/text.dm:373)

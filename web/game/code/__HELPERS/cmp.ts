@@ -4,11 +4,6 @@ import type { Frame, Value } from "../../../build/dist/src/translate/runtime.js"
 const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
 
 
-// /proc/cmp_numeric_dsc  (code/__HELPERS/cmp.dm:2)
-rt.def("/proc/cmp_numeric_dsc", function cmp_numeric_dsc(f: Frame, a: Value, b: Value) {
-	return subtract(live(b), live(a));
-});
-
 // /proc/cmp_numeric_asc  (code/__HELPERS/cmp.dm:5)
 rt.def("/proc/cmp_numeric_asc", function cmp_numeric_asc(f: Frame, a: Value, b: Value) {
 	return subtract(live(a), live(b));

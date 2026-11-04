@@ -178,21 +178,6 @@ rt.def("/datum/mind/proc/remove_antag_datum", function* remove_antag_datum(f: Fr
 	return 1;
 }, true);
 
-// /datum/mind/proc/remove_all_antag_datums  (code/datums/mind.dm:152)  may sleep
-rt.def("/datum/mind/proc/remove_all_antag_datums", function* remove_all_antag_datums(f: Frame) {
-	let a: Value = null, A: Value = null;
-	let $e: any;
-	f.vars = () => [a, A, $e];
-	a = null;
-	rt.forList(f, 0, rt.sv(f, "antag_datums"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		a = $e;
-		yield* g.callName(f, (A = live(a)), "on_removal", []);
-	}
-	rt.endFor(f, 0);
-	return f.dot;
-}, true);
-
 // /datum/mind/proc/has_antag_datum  (code/datums/mind.dm:157)
 rt.def("/datum/mind/proc/has_antag_datum", function has_antag_datum(f: Frame, datum_type: Value, check_subtypes: Value) {
 	let a: Value = null, A: Value = null;

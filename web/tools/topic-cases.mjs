@@ -229,7 +229,7 @@ const fabSane = (a) => !(mats(a, "$metal") < 0) && amountsOk(a);
 // ps-stacks: a stack of 50 metal sheets in Alpha's hand (the window is the stack's own). Recipe slots (1-based): 6 bed, 7 a divider (null), 8 rack parts (1 sheet, an item),
 // 9 closet (2 sheets, 15 s build), 13 floor tile (1 sheet -> 4 tiles, stack of 20 at most), 14 metal rod (1 -> 2, 60). Held items are listed with the floor.
 const mkS = (id, m) => `?src={ui}&action=make&id=${id}&multiplier=${m}`, mkO = (id, m) => `?src={machine}&make=${id}&multiplier=${m}`;
-const METALS = /sheet\/metal/, TILES = /tile\/plasteel/, RACKS = /rack_parts/;
+const TILES = /tile\/plasteel/, RACKS = /rack_parts/;
 const stackSane = (a) => { const all = a.floor.split(", ").filter((x) => /\(amount=/.test(x)); return all.every((x) => { const n = Number(/\(amount=(-?[\d.e+]+)\)/.exec(x)[1]); return Number.isInteger(n) && n >= 0 && n <= (/tile/.test(x) ? 20 : 50); }); };
 const stack = [
 	["control: Alpha builds rack parts with the window's href", "A", mkS(8, 1), "changes", (a, b, h) => h.sheets(a) === h.sheets(b) - 1 && h.floorN(a, RACKS) === h.floorN(b, RACKS) + 1],
@@ -352,7 +352,7 @@ const pdaValues = [
 ];
 
 // ps-pda: a captain's PDA (all-access cartridge) spawned into Alpha's hand, for the cartridge's own Topic. Watch: the PDA's vars only (the cartridge's state is not logged: these rows read "no runtime" and the page mode).
-const pdK = (q) => `?src={ui}&action=cart&${q}`, pdKo = (q) => `?src={machine}&choice=cart&${q}`;
+const pdK = (q) => `?src={ui}&action=cart&${q}`;
 const pdaCart = [
 	["control: Alpha's cartridge button opens Supply Orders (mode 47)", "A", pdK("choice=Supply+Orders"), "changes", (a) => a.v.mode === "47"],
 	["control: ... Newscaster Access (mode 53)", "A", pdK("choice=Newscaster+Access"), "changes", (a) => a.v.mode === "53"],

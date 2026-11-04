@@ -21,54 +21,6 @@ rt.def("/PriorityQueue/proc/IsEmpty", function IsEmpty(f: Frame) {
 	return (!truthy(rt.len(f, rt.sv(f, "L"))) ? 1 : 0);
 });
 
-// /PriorityQueue/proc/FindElementIndex  (code/__DATASTRUCTURES/priority_queue.dm:24)  may sleep
-rt.def("/PriorityQueue/proc/FindElementIndex", function* FindElementIndex(f: Frame, A: Value) {
-	let i: Value = null, j: Value = null, mid: Value = null;
-	let $0: any;
-	f.vars = () => [A, i, j, mid, $0];
-	i = 1;
-	j = rt.len(f, rt.sv(f, "L"));
-	mid = null;
-	while (rt.lt(live(i), live(j))) {
-		mid = (yield* g.call(f, P("/proc/round"), null, [divide(add(live(i), live(j)), 2)]));
-		if (rt.lt((yield* g.callDyn(f, rt.sv(f, "cmp"), undefined, [rt.index(rt.sv(f, "L"), live(mid)), live(A)])), 0)) {
-			i = add(live(mid), 1);
-		} else {
-			j = live(mid);
-		}
-	}
-	if ((isEqual(live(i), 1) || isEqual(live(i), rt.len(f, rt.sv(f, "L"))))) {
-		if (rt.gt((yield* g.callDyn(f, rt.sv(f, "cmp"), undefined, [rt.index(rt.sv(f, "L"), live(i)), live(A)])), 0)) {
-			$0 = live(i);
-		} else {
-			$0 = add(live(i), 1);
-		}
-		return $0;
-	}
-	return live(i);
-}, true);
-
-// /PriorityQueue/proc/Enqueue  (code/__DATASTRUCTURES/priority_queue.dm:41)  may sleep
-rt.def("/PriorityQueue/proc/Enqueue", function* Enqueue(f: Frame, A: Value) {
-	f.vars = () => [A];
-	if (!truthy(rt.len(f, rt.sv(f, "L")))) {
-		yield* g.callName(f, rt.sv(f, "L"), "Add", [live(A)]);
-		return live(f.dot);
-	}
-	yield* g.callName(f, rt.sv(f, "L"), "Insert", [(yield* g.srcCall(f, "FindElementIndex", live(A))), live(A)]);
-	return f.dot;
-}, true);
-
-// /PriorityQueue/proc/Dequeue  (code/__DATASTRUCTURES/priority_queue.dm:49)
-rt.def("/PriorityQueue/proc/Dequeue", function Dequeue(f: Frame) {
-	if (!truthy(rt.len(f, rt.sv(f, "L")))) {
-		return 0;
-	}
-	f.dot = rt.index(rt.sv(f, "L"), 1);
-	rt.callSrc(f, "Remove", [live(f.dot)]);
-	return f.dot;
-});
-
 // /PriorityQueue/proc/Remove  (code/__DATASTRUCTURES/priority_queue.dm:57)
 rt.def("/PriorityQueue/proc/Remove", function Remove(f: Frame, A: Value) {
 	return rt.callName(f, rt.sv(f, "L"), "Remove", [live(A)]);

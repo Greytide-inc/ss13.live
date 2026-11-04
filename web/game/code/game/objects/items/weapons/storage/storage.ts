@@ -267,32 +267,6 @@ rt.def("/obj/item/weapon/storage/proc/close_all", function close_all(f: Frame) {
 	return f.dot;
 });
 
-// /obj/item/weapon/storage/proc/orient_objs  (code/game/objects/items/weapons/storage/storage.dm:177)
-rt.def("/obj/item/weapon/storage/proc/orient_objs", function orient_objs(f: Frame, tx: Value, ty: Value, mx: Value, my: Value) {
-	let cx: Value = null, cy: Value = null, O: Value = null;
-	let $e: any;
-	f.vars = () => [cx, cy, O, $e];
-	cx = live(tx);
-	cy = live(ty);
-	rt.setFv(f, "screen_loc", rt.sv(f, "boxes"), fmt("＀:,＀ to ＀,＀", [live(tx), live(ty), live(mx), live(my)]));
-	O = null;
-	rt.forList(f, 0, rt.sv(f, "contents"), T("/obj"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		O = $e;
-		rt.setFv(f, "screen_loc", live(O), fmt("＀,＀", [live(cx), live(cy)]));
-		rt.setFv(f, "layer", live(O), 20);
-		rt.setFv(f, "plane", live(O), 20);
-		cx = rt.inc(live(cx), 1);
-		if (rt.gt(live(cx), live(mx))) {
-			cx = live(tx);
-			cy = rt.inc(live(cy), -1);
-		}
-	}
-	rt.endFor(f, 0);
-	rt.setFv(f, "screen_loc", rt.sv(f, "closer"), fmt("＀,＀", [add(live(mx), 1), live(my)]));
-	return f.dot;
-});
-
 // /obj/item/weapon/storage/proc/standard_orient_objs  (code/game/objects/items/weapons/storage/storage.dm:194)
 rt.def("/obj/item/weapon/storage/proc/standard_orient_objs", function standard_orient_objs(f: Frame, rows: Value, cols: Value, display_contents: Value) {
 	let cx: Value = null, cy: Value = null, ND: Value = null, O: Value = null;

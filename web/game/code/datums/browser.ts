@@ -87,22 +87,9 @@ rt.def("/datum/browser/proc/add_stylesheet", function add_stylesheet(f: Frame, n
 	return f.dot;
 });
 
-// /datum/browser/proc/add_script  (code/datums/browser.dm:46)
-rt.def("/datum/browser/proc/add_script", function add_script(f: Frame, name: Value, file: Value) {
-	rt.setAt(rt.sv(f, "scripts"), fmt("＀.js", [rt.call(f, P("/proc/ckey"), null, [live(name)])]), live(file));
-	rt.call(f, P("/proc/register_asset"), null, [fmt("＀.js", [rt.call(f, P("/proc/ckey"), null, [live(name)])]), live(file)]);
-	return f.dot;
-});
-
 // /datum/browser/proc/set_content  (code/datums/browser.dm:50)
 rt.def("/datum/browser/proc/set_content", function set_content(f: Frame, ncontent: Value) {
 	rt.setSv(f, "content", live(ncontent));
-	return f.dot;
-});
-
-// /datum/browser/proc/add_content  (code/datums/browser.dm:53)
-rt.def("/datum/browser/proc/add_content", function add_content(f: Frame, ncontent: Value) {
-	rt.modSrcVar(f, "content", live(ncontent), add);
 	return f.dot;
 });
 

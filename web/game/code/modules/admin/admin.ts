@@ -986,25 +986,6 @@ rt.def("/datum/admins/proc/output_ai_laws", function output_ai_laws(f: Frame) {
 	return f.dot;
 });
 
-// /datum/admins/proc/output_all_devil_info  (code/modules/admin/admin.dm:712)
-rt.def("/datum/admins/proc/output_all_devil_info", function output_all_devil_info(f: Frame) {
-	let devil_number: Value = null, D: Value = null;
-	let $e: any;
-	f.vars = () => [devil_number, D, $e];
-	devil_number = 0;
-	D = null;
-	rt.forList(f, 0, rt.gv(f, "devils", rt.fv(f, "mode", rt.gl("SSticker"))));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		D = $e;
-		devil_number = rt.inc(live(devil_number), 1);
-		rt.call(f, P("/proc/to_chat"), null, [live(f.usr), add(fmt("Devil #＀:<br><br>", [live(devil_number)]), rt.callName(f, rt.fv(f, "mode", rt.gl("SSticker")), "printdevilinfo", [live(D)]))]);
-	}
-	rt.endFor(f, 0);
-	if (truthy(live(devil_number))) return f.dot;
-	rt.call(f, P("/proc/to_chat"), null, [live(f.usr), "<b>No Devils located</b>"]);
-	return f.dot;
-});
-
 // /datum/admins/proc/output_devil_info  (code/modules/admin/admin.dm:719)
 rt.def("/datum/admins/proc/output_devil_info", function output_devil_info(f: Frame, M: Value) {
 	if (truthy(rt.call(f, P("/proc/is_devil"), null, [live(M)]))) {

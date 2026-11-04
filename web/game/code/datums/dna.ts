@@ -566,26 +566,6 @@ rt.def("/mob/living/carbon/proc/randmuti", function* randmuti(f: Frame) {
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/proc/clean_dna  (code/datums/dna.dm:352)  may sleep
-rt.def("/mob/living/carbon/proc/clean_dna", function* clean_dna(f: Frame) {
-	if (!truthy((yield* g.srcCall(f, "has_dna")))) {
-		return live(f.dot);
-	}
-	yield* g.callName(f, rt.sv(f, "dna"), "remove_all_mutations", []);
-	return f.dot;
-}, true);
-
-// /mob/living/carbon/proc/clean_randmut  (code/datums/dna.dm:357)  may sleep
-rt.def("/mob/living/carbon/proc/clean_randmut", function* clean_randmut(f: Frame, candidates: Value, difficulty: Value) {
-	f.vars = () => [candidates, difficulty];
-	if (live(difficulty) === null) {
-		difficulty = 2;
-	}
-	yield* g.srcCall(f, "clean_dna");
-	yield* g.srcCall(f, "randmut", live(candidates), live(difficulty));
-	return f.dot;
-}, true);
-
 // /proc/scramble_dna  (code/datums/dna.dm:361)  may sleep
 rt.def("/proc/scramble_dna", function* scramble_dna(f: Frame, M: Value, ui: Value, se: Value, probability: Value) {
 	let i: Value = null;

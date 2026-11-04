@@ -154,13 +154,6 @@ rt.def("/obj/machinery/firealarm/proc/alarm", function alarm(f: Frame) {
 	return f.dot;
 });
 
-// /obj/machinery/firealarm/proc/alarm_in  (code/game/machinery/firealarm.dm:102)  may sleep
-rt.def("/obj/machinery/firealarm/proc/alarm_in", function* alarm_in(f: Frame, time: Value) {
-	f.vars = () => [time];
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/machinery/firealarm/proc/alarm")])), live(time)]);
-	return f.dot;
-}, true);
-
 // /obj/machinery/firealarm/proc/reset  (code/game/machinery/firealarm.dm:105)
 rt.def("/obj/machinery/firealarm/proc/reset", function reset(f: Frame) {
 	let A: Value = null;
@@ -171,13 +164,6 @@ rt.def("/obj/machinery/firealarm/proc/reset", function reset(f: Frame) {
 	rt.callName(f, (A = rt.call(f, P("/proc/get_area"), null, [live(f.src)])), "firereset", [live(f.src)]);
 	return f.dot;
 });
-
-// /obj/machinery/firealarm/proc/reset_in  (code/game/machinery/firealarm.dm:111)  may sleep
-rt.def("/obj/machinery/firealarm/proc/reset_in", function* reset_in(f: Frame, time: Value) {
-	f.vars = () => [time];
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/machinery/firealarm/proc/reset")])), live(time)]);
-	return f.dot;
-}, true);
 
 // /obj/machinery/firealarm/proc/ui_interact  (code/game/machinery/firealarm.dm:115)  may sleep
 rt.def("/obj/machinery/firealarm/proc/ui_interact", function* ui_interact(f: Frame, user: Value, ui_key: Value, ui: Value, force_open: Value, master_ui: Value, state: Value) {

@@ -346,9 +346,3 @@ rt.def("/datum/tgui/proc/set_status", function* set_status(f: Frame, status: Val
 	}
 	return f.dot;
 }, true);
-
-// /datum/tgui/proc/set_titlebar  (code/modules/tgui/tgui.dm:377)
-rt.def("/datum/tgui/proc/set_titlebar", function set_titlebar(f: Frame, value: Value) {
-	rt.setSv(f, "titlebar", live(value));
-	return f.dot;
-});

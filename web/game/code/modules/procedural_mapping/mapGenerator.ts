@@ -43,42 +43,6 @@ rt.def("/datum/mapGenerator/proc/defineRegion", function defineRegion(f: Frame, 
 	return rt.sv(f, "map");
 });
 
-// /datum/mapGenerator/proc/defineCircularRegion  (code/modules/procedural_mapping/mapGenerator.dm:48)
-rt.def("/datum/mapGenerator/proc/defineCircularRegion", function defineCircularRegion(f: Frame, Start: Value, End: Value, replace: Value) {
-	let centerX: Value = null, centerY: Value = null, lilZ: Value = null, bigZ: Value = null, sphereMagic: Value = null, radius: Value = null, offByOneOffset: Value = null, i: Value = null, theRadius: Value = null;
-	f.vars = () => [replace, centerX, centerY, lilZ, bigZ, sphereMagic, radius, offByOneOffset, i, theRadius];
-	if (live(replace) === null) {
-		replace = 0;
-	}
-	if (!truthy(rt.callSrc(f, "checkRegion", [live(Start), live(End)]))) {
-		return 0;
-	}
-	centerX = rt.call(f, P("/proc/max"), null, [rt.op(f, "Abs", [], [divide(add(rt.fv(f, "x", live(End)), rt.fv(f, "x", live(Start))), 2)]), 1]);
-	centerY = rt.call(f, P("/proc/max"), null, [rt.op(f, "Abs", [], [divide(add(rt.fv(f, "y", live(End)), rt.fv(f, "y", live(Start))), 2)]), 1]);
-	lilZ = rt.call(f, P("/proc/min"), null, [rt.fv(f, "z", live(Start)), rt.fv(f, "z", live(End))]);
-	bigZ = rt.call(f, P("/proc/max"), null, [rt.fv(f, "z", live(Start)), rt.fv(f, "z", live(End))]);
-	sphereMagic = rt.call(f, P("/proc/max"), null, [rt.op(f, "Abs", [], [subtract(live(bigZ), divide(live(lilZ), 2))]), 1]);
-	radius = rt.op(f, "Abs", [], [rt.call(f, P("/proc/max"), null, [live(centerX), live(centerY)])]);
-	if (truthy(live(replace))) {
-		rt.callSrc(f, "undefineRegion", []);
-	}
-	offByOneOffset = 1;
-	if (isEqual(rt.modulus(live(bigZ), 2), 0)) {
-		offByOneOffset = 0;
-	}
-	i = null;
-	i = live(lilZ);
-	while (rt.le(live(i), add(live(bigZ), live(offByOneOffset)))) {
-		theRadius = live(radius);
-		if (!isEqual(live(i), live(sphereMagic))) {
-			theRadius = rt.call(f, P("/proc/max"), null, [divide(live(radius), rt.call(f, P("/proc/max"), null, [multiply(2, rt.op(f, "Abs", [], [subtract(live(sphereMagic), live(i))])), 1])), 1]);
-		}
-		(rt.modSrcVar(f, "map", rt.call(f, P("/proc/circlerange"), null, [rt.locate(live(centerX), live(centerY), live(i)), live(theRadius)]), rt.bitOr));
-		i = rt.inc(live(i), 1);
-	}
-	return rt.sv(f, "map");
-});
-
 // /datum/mapGenerator/proc/undefineRegion  (code/modules/procedural_mapping/mapGenerator.dm:83)
 rt.def("/datum/mapGenerator/proc/undefineRegion", function undefineRegion(f: Frame) {
 	rt.setSv(f, "map", rt.list());
@@ -121,28 +85,6 @@ rt.def("/datum/mapGenerator/proc/generate", function* generate(f: Frame) {
 	rt.endFor(f, 0);
 	return f.dot;
 }, true);
-
-// /datum/mapGenerator/proc/generateOneTurf  (code/modules/procedural_mapping/mapGenerator.dm:115)
-rt.def("/datum/mapGenerator/proc/generateOneTurf", function generateOneTurf(f: Frame, _T: Value) {
-	let mod: Value = null;
-	let $e: any;
-	f.vars = () => [mod, $e];
-	if (!truthy(live(_T))) {
-		return live(f.dot);
-	}
-	rt.callSrc(f, "syncModules", []);
-	if ((!truthy(rt.sv(f, "modules")) || !truthy(rt.len(f, rt.sv(f, "modules"))))) {
-		return live(f.dot);
-	}
-	mod = null;
-	rt.forList(f, 0, rt.sv(f, "modules"), T("/datum/mapGeneratorModule"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		mod = $e;
-		rt.call(f, P("/proc/ImmediateInvokeAsync"), null, [live(mod), P("/datum/mapGeneratorModule/proc/place"), live(_T)]);
-	}
-	rt.endFor(f, 0);
-	return f.dot;
-});
 
 // /datum/mapGenerator/proc/initialiseModules  (code/modules/procedural_mapping/mapGenerator.dm:126)  may sleep
 rt.def("/datum/mapGenerator/proc/initialiseModules", function* initialiseModules(f: Frame) {

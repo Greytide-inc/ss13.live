@@ -22,8 +22,3 @@ rt.def("/obj/machinery/atmospherics/components/unary/generator_input/proc/update
 	}
 	return live(f.dot);
 });
-
-// /obj/machinery/atmospherics/components/unary/generator_input/proc/return_exchange_air  (code/modules/atmospherics/machinery/components/unary_devices/generator_input.dm:21)
-rt.def("/obj/machinery/atmospherics/components/unary/generator_input/proc/return_exchange_air", function return_exchange_air(f: Frame) {
-	return rt.index(rt.sv(f, "airs"), 1);
-});

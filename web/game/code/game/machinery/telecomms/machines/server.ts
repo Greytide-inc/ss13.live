@@ -123,20 +123,6 @@ rt.def("/obj/machinery/telecomms/server/proc/update_logs", function update_logs(
 	return f.dot;
 });
 
-// /obj/machinery/telecomms/server/proc/add_entry  (code/game/machinery/telecomms/machines/server.dm:112)
-rt.def("/obj/machinery/telecomms/server/proc/add_entry", function add_entry(f: Frame, content: Value, input: Value) {
-	let log: Value = null, identifier: Value = null;
-	f.vars = () => [log, identifier];
-	log = rt.new_(f, T("/datum/comm_log_entry"), []);
-	identifier = rt.call(f, P("/proc/num2text"), null, [add(rt.call(f, P("/proc/rand"), null, [-1000, 1000]), rt.worldTime(f))]);
-	rt.setFv(f, "name", live(log), fmt("＀ (＀)", [live(input), rt.call(f, P("/proc/md5"), null, [live(identifier)])]));
-	rt.setFv(f, "input_type", live(log), live(input));
-	rt.setAt(rt.fv(f, "parameters", live(log)), "message", live(content));
-	rt.callName(f, rt.sv(f, "log_entries"), "Add", [live(log)]);
-	rt.callSrc(f, "update_logs", []);
-	return f.dot;
-});
-
 rt.type(1505, "/datum/comm_log_entry", "/datum", {
 	parameters: null,
 	name: "data packet (#)",

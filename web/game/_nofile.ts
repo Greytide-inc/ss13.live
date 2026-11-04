@@ -1298,12 +1298,6 @@ rt.def("/proc/pass", function pass(f: Frame) {
 	return live(f.dot);
 });
 
-// /proc/SkinCmdRegister  (_nofile:0)
-rt.def("/proc/SkinCmdRegister", function SkinCmdRegister(f: Frame, user: Value, name: Value, O: Value) {
-	rt.setAt(rt.fv(f, "skincmds", live(user)), live(name), live(O));
-	return f.dot;
-});
-
 // /proc/register_asset  (_nofile:0)
 rt.def("/proc/register_asset", function register_asset(f: Frame, asset_name: Value, asset: Value) {
 	rt.setAt(rt.fv(f, "cache", rt.gl("SSassets")), live(asset_name), live(asset));
@@ -2243,11 +2237,6 @@ rt.def("/mob/proc/swap_hand", function swap_hand(f: Frame) {
 	return live(f.dot);
 });
 
-// /mob/proc/activate_hand  (_nofile:0)
-rt.def("/mob/proc/activate_hand", function activate_hand(f: Frame, selhand: Value) {
-	return live(f.dot);
-});
-
 // /mob/proc/assess_threat  (_nofile:0)
 rt.def("/mob/proc/assess_threat", function assess_threat(f: Frame, judgement_criteria: Value, lasercolor: Value, weaponcheck: Value) {
 	f.vars = () => [lasercolor, weaponcheck];
@@ -2364,11 +2353,6 @@ rt.def("/mob/proc/IsKnockdown", function IsKnockdown(f: Frame) {
 // /mob/proc/IsUnconscious  (_nofile:0)
 rt.def("/mob/proc/IsUnconscious", function IsUnconscious(f: Frame) {
 	return 0;
-});
-
-// /mob/proc/damage_eyes  (_nofile:0)
-rt.def("/mob/proc/damage_eyes", function damage_eyes(f: Frame, amount: Value) {
-	return live(f.dot);
 });
 
 // /mob/proc/adjust_eye_damage  (_nofile:0)
@@ -4544,16 +4528,6 @@ rt.def("/obj/proc/gang_contraband_value", function gang_contraband_value(f: Fram
 	return 0;
 });
 
-// /obj/proc/IsSpecialAssembly  (_nofile:0)
-rt.def("/obj/proc/IsSpecialAssembly", function IsSpecialAssembly(f: Frame) {
-	return 0;
-});
-
-// /obj/proc/IsAssemblyHolder  (_nofile:0)
-rt.def("/obj/proc/IsAssemblyHolder", function IsAssemblyHolder(f: Frame) {
-	return 0;
-});
-
 // /obj/item/proc/CanItemAutoclick  empty
 rt.def("/obj/item/proc/CanItemAutoclick", undefined, false, { args: ["object", "location", "params"] });
 
@@ -4814,11 +4788,6 @@ rt.def("/obj/item/weapon/gun/ballistic/minigun/proc/attack_self", function attac
 
 // /obj/item/weapon/gun/ballistic/revolver/grenadelauncher/cyborg/proc/attack_self  (_nofile:0)
 rt.def("/obj/item/weapon/gun/ballistic/revolver/grenadelauncher/cyborg/proc/attack_self", function attack_self(f: Frame) {
-	return live(f.dot);
-});
-
-// /obj/item/weapon/gun/medbeam/proc/on_beam_hit  (_nofile:0)
-rt.def("/obj/item/weapon/gun/medbeam/proc/on_beam_hit", function on_beam_hit(f: Frame, target: Value) {
 	return live(f.dot);
 });
 
@@ -5565,16 +5534,6 @@ rt.def("/obj/item/device/pressure_plate/proc/step_item", function step_item(f: F
 	return live(f.dot);
 });
 
-// /obj/item/device/transfer_valve/proc/IsAssemblyHolder  (_nofile:0)
-rt.def("/obj/item/device/transfer_valve/proc/IsAssemblyHolder", function IsAssemblyHolder(f: Frame) {
-	return 1;
-});
-
-// /obj/item/device/transfer_valve/proc/c_state  (_nofile:0)
-rt.def("/obj/item/device/transfer_valve/proc/c_state", function c_state(f: Frame) {
-	return live(f.dot);
-});
-
 // /obj/item/device/pda/proc/GetID  (_nofile:0)
 rt.def("/obj/item/device/pda/proc/GetID", function GetID(f: Frame) {
 	return rt.sv(f, "id");
@@ -5620,11 +5579,6 @@ rt.def("/obj/item/device/assembly/signaler/anomaly/proc/attack_self", function a
 // /obj/item/device/assembly/signaler/cyborg/proc/attackby  (_nofile:0)
 rt.def("/obj/item/device/assembly/signaler/cyborg/proc/attackby", function attackby(f: Frame, W: Value, user: Value, params: Value) {
 	return live(f.dot);
-});
-
-// /obj/item/device/assembly_holder/proc/IsAssemblyHolder  (_nofile:0)
-rt.def("/obj/item/device/assembly_holder/proc/IsAssemblyHolder", function IsAssemblyHolder(f: Frame) {
-	return 1;
 });
 
 // /obj/item/device/flightpack/proc/enable_safe  (_nofile:0)
@@ -7114,11 +7068,6 @@ rt.def("/obj/mecha/proc/drop_item", function drop_item(f: Frame) {
 	return live(f.dot);
 });
 
-// /obj/mecha/proc/range_action  (_nofile:0)
-rt.def("/obj/mecha/proc/range_action", function range_action(f: Frame, target: Value) {
-	return live(f.dot);
-});
-
 // /obj/mecha/proc/allow_drop  (_nofile:0)
 rt.def("/obj/mecha/proc/allow_drop", function allow_drop(f: Frame) {
 	return 0;
@@ -7612,29 +7561,8 @@ rt.def("/area/space/proc/powered", function powered(f: Frame, chan: Value) {
 	return 0;
 });
 
-// /proc/noise_hash  (_nofile:0)
-rt.def("/proc/noise_hash", function noise_hash(f: Frame) {
-	return 0.5;
-});
-
 // /proc/bounds  (_nofile:0)
 rt.def("/proc/bounds", function bounds(f: Frame, Ref: Value, Dist: Value) {
-	f.vars = () => [Ref, Dist];
-	if (live(Ref) === null) {
-		Ref = live(f.src);
-	}
-	if (live(Dist) !== null) return f.dot;
-	Dist = 0;
-	return f.dot;
-});
-
-// /proc/ispointer  (_nofile:0)
-rt.def("/proc/ispointer", function ispointer(f: Frame, _Value: Value) {
-	return 0;
-});
-
-// /proc/obounds  (_nofile:0)
-rt.def("/proc/obounds", function obounds(f: Frame, Ref: Value, Dist: Value) {
 	f.vars = () => [Ref, Dist];
 	if (live(Ref) === null) {
 		Ref = live(f.src);
@@ -7649,45 +7577,9 @@ rt.def("/client/proc/AllowUpload", function AllowUpload(f: Frame, filename: Valu
 	return 1;
 });
 
-// /client/proc/MeasureText  (_nofile:0)
-rt.def("/client/proc/MeasureText", function MeasureText(f: Frame, text: Value, style: Value, width: Value) {
-	f.vars = () => [width];
-	if (live(width) !== null) return f.dot;
-	width = 0;
-	return f.dot;
-});
-
 // /client/proc/IsByondMember  (_nofile:0)
 rt.def("/client/proc/IsByondMember", function IsByondMember(f: Frame) {
 	return 0;
-});
-
-// /client/proc/RenderIcon  (_nofile:0)
-rt.def("/client/proc/RenderIcon", function RenderIcon(f: Frame, object: Value) {
-	return live(object);
-});
-
-// /regex/proc/Find_char  (_nofile:0)
-rt.def("/regex/proc/Find_char", function Find_char(f: Frame, haystack: Value, start: Value, end: Value) {
-	f.vars = () => [start, end];
-	if (live(start) === null) {
-		start = 1;
-	}
-	if (live(end) !== null) return f.dot;
-	end = 0;
-	return f.dot;
-});
-
-// /regex/proc/Replace_char  (_nofile:0)
-rt.def("/regex/proc/Replace_char", function Replace_char(f: Frame, haystack: Value, replacement: Value, start: Value, end: Value) {
-	f.vars = () => [start, end];
-	if (live(start) === null) {
-		start = 1;
-	}
-	if (live(end) === null) {
-		end = 0;
-	}
-	return live(haystack);
 });
 
 // /savefile/proc/ImportText  (_nofile:0)
@@ -7698,24 +7590,8 @@ rt.def("/savefile/proc/ImportText", function ImportText(f: Frame, path: Value, s
 	return f.dot;
 });
 
-// /vector/proc/Normalize  (_nofile:0)
-rt.def("/vector/proc/Normalize", function Normalize(f: Frame) {
-	rt.setSv(f, "size", 1);
-	return live(f.src);
-});
-
 // /world/proc/IsBanned  (_nofile:0)
 rt.def("/world/proc/IsBanned", function IsBanned(f: Frame, key: Value, address: Value, computer_id: Value, type: Value) {
-	return 0;
-});
-
-// /world/proc/AddCredits  (_nofile:0)
-rt.def("/world/proc/AddCredits", function AddCredits(f: Frame, player: Value, credits: Value, note: Value) {
-	return 0;
-});
-
-// /world/proc/PayCredits  (_nofile:0)
-rt.def("/world/proc/PayCredits", function PayCredits(f: Frame, player: Value, credits: Value, note: Value) {
 	return 0;
 });
 
@@ -7730,11 +7606,6 @@ rt.def("/turf/proc/burn_tile");
 // /turf/proc/is_shielded  empty
 rt.def("/turf/proc/is_shielded");
 
-// /turf/proc/reachableAdjacentAtmosTurfs  (_nofile:0)
-rt.def("/turf/proc/reachableAdjacentAtmosTurfs", function reachableAdjacentAtmosTurfs(f: Frame) {
-	return rt.sv(f, "atmos_adjacent_turfs");
-});
-
 // /turf/proc/AllowClick  (_nofile:0)
 rt.def("/turf/proc/AllowClick", function AllowClick(f: Frame) {
 	return 1;
@@ -7748,11 +7619,6 @@ rt.def("/turf/proc/drill_act", function drill_act(f: Frame, drill: Value) {
 // /turf/proc/check_tile_is_border  (_nofile:0)
 rt.def("/turf/proc/check_tile_is_border", function check_tile_is_border(f: Frame) {
 	return 1;
-});
-
-// /turf/proc/is_plasteel_floor  (_nofile:0)
-rt.def("/turf/proc/is_plasteel_floor", function is_plasteel_floor(f: Frame) {
-	return 0;
 });
 
 // /turf/proc/can_have_cabling  (_nofile:0)

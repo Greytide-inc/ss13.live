@@ -4,31 +4,6 @@ import type { Frame, Value } from "../../../build/dist/src/translate/runtime.js"
 const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
 
 
-// /proc/invertHTML  (code/__HELPERS/unsorted.dm:10)
-rt.def("/proc/invertHTML", function invertHTML(f: Frame, HTMLstring: Value) {
-	let textr: Value = null, textg: Value = null, textb: Value = null, r: Value = null, _g: Value = null, b: Value = null;
-	f.vars = () => [textr, textg, textb, r, _g, b];
-	if (!truthy(rt.call(f, P("/proc/istext"), null, [live(HTMLstring)]))) {
-		rt.call(f, P("/proc/CRASH"), null, ["Given non-text argument!"]);
-		return live(f.dot);
-	} else {
-		if (!isEqual(rt.length(live(HTMLstring)), 7)) {
-			rt.call(f, P("/proc/CRASH"), null, ["Given non-HTML argument!"]);
-			return live(f.dot);
-		}
-	}
-	textr = rt.call(f, P("/proc/copytext"), null, [live(HTMLstring), 2, 4]);
-	textg = rt.call(f, P("/proc/copytext"), null, [live(HTMLstring), 4, 6]);
-	textb = rt.call(f, P("/proc/copytext"), null, [live(HTMLstring), 6, 8]);
-	r = rt.call(f, P("/proc/hex2num"), null, [live(textr)]);
-	_g = rt.call(f, P("/proc/hex2num"), null, [live(textg)]);
-	b = rt.call(f, P("/proc/hex2num"), null, [live(textb)]);
-	textr = rt.call(f, P("/proc/num2hex"), null, [subtract(255, live(r)), 2]);
-	textg = rt.call(f, P("/proc/num2hex"), null, [subtract(255, live(_g)), 2]);
-	textb = rt.call(f, P("/proc/num2hex"), null, [subtract(255, live(b)), 2]);
-	return fmt("#＀＀＀", [live(textr), live(textg), live(textb)]);
-});
-
 // /proc/Get_Angle  (code/__HELPERS/unsorted.dm:30)
 rt.def("/proc/Get_Angle", function Get_Angle(f: Frame, start: Value, end: Value) {
 	let dy: Value = null, dx: Value = null;
@@ -543,20 +518,6 @@ rt.def("/proc/sortmobs", function* sortmobs(f: Frame) {
 	return live(moblist);
 }, true);
 
-// /proc/convert2energy  (code/__HELPERS/unsorted.dm:352)
-rt.def("/proc/convert2energy", function convert2energy(f: Frame, M: Value) {
-	let E: Value = null;
-	f.vars = () => [E];
-	return (E = multiply(live(M), 90000000305594370));
-});
-
-// /proc/convert2mass  (code/__HELPERS/unsorted.dm:357)
-rt.def("/proc/convert2mass", function convert2mass(f: Frame, E: Value) {
-	let M: Value = null;
-	f.vars = () => [M];
-	return (M = divide(live(E), 90000000305594370));
-});
-
 // /proc/key_name  (code/__HELPERS/unsorted.dm:366)
 rt.def("/proc/key_name", function key_name(f: Frame, whom: Value, include_link: Value, include_name: Value) {
 	let M: Value = null, C: Value = null, key: Value = null, ckey: Value = null;
@@ -729,13 +690,6 @@ rt.def("/proc/get_offset_target_turf", function get_offset_target_turf(f: Frame,
 	return rt.locate(live(x), live(y), rt.fv(f, "z", live(A)));
 });
 
-// /proc/arctan  (code/__HELPERS/unsorted.dm:487)
-rt.def("/proc/arctan", function arctan(f: Frame, x: Value) {
-	let y: Value = null;
-	f.vars = () => [y];
-	return (y = rt.op(f, "ArcSin", [], [divide(live(x), rt.op(f, "Sqrt", [], [add(1, multiply(live(x), live(x)))]))]));
-});
-
 // /atom/proc/GetAllContents  (code/__HELPERS/unsorted.dm:491)
 rt.def("/atom/proc/GetAllContents", function GetAllContents(f: Frame) {
 	let processing_list: Value = null, assembled: Value = null, A: Value = null, a: Value = null;
@@ -833,41 +787,6 @@ rt.def("/proc/is_anchored_dense_turf", function is_anchored_dense_turf(f: Frame,
 	}
 	rt.endFor(f, 0);
 	return 0;
-});
-
-// /proc/get_step_towards2  (code/__HELPERS/unsorted.dm:546)
-rt.def("/proc/get_step_towards2", function get_step_towards2(f: Frame, ref: Value, trg: Value) {
-	let base_dir: Value = null, temp: Value = null, dir_alt1: Value = null, dir_alt2: Value = null, turf_last1: Value = null, turf_last2: Value = null, free_tile: Value = null, breakpoint: Value = null;
-	f.vars = () => [base_dir, temp, dir_alt1, dir_alt2, turf_last1, turf_last2, free_tile, breakpoint];
-	base_dir = rt.getDir(f, live(ref), rt.call(f, P("/proc/get_step_towards"), null, [live(ref), live(trg)]));
-	if (truthy(rt.call(f, P("/proc/is_blocked_turf"), null, [(temp = rt.call(f, P("/proc/get_step_towards"), null, [live(ref), live(trg)]))]))) {
-		dir_alt1 = rt.call(f, P("/proc/turn"), null, [live(base_dir), 90]);
-		dir_alt2 = rt.call(f, P("/proc/turn"), null, [live(base_dir), -90]);
-		turf_last1 = live(temp);
-		turf_last2 = live(temp);
-		free_tile = null;
-		breakpoint = 0;
-		while (!truthy(live(free_tile)) && rt.lt(live(breakpoint), 10)) {
-			if (!truthy(rt.call(f, P("/proc/is_blocked_turf"), null, [live(turf_last1)]))) {
-				free_tile = live(turf_last1);
-				break;
-			}
-			if (!truthy(rt.call(f, P("/proc/is_blocked_turf"), null, [live(turf_last2)]))) {
-				free_tile = live(turf_last2);
-				break;
-			}
-			turf_last1 = rt.getStep(f, live(turf_last1), live(dir_alt1));
-			turf_last2 = rt.getStep(f, live(turf_last2), live(dir_alt2));
-			breakpoint = rt.inc(live(breakpoint), 1);
-		}
-		if (!truthy(live(free_tile))) {
-			return rt.getStep(f, live(ref), live(base_dir));
-		}
-		return rt.call(f, P("/proc/get_step_towards"), null, [live(ref), live(free_tile)]);
-	} else {
-		return rt.getStep(f, live(ref), live(base_dir));
-	}
-	return f.dot;
 });
 
 // /proc/hasvar  (code/__HELPERS/unsorted.dm:579)
@@ -1033,11 +952,6 @@ rt.def("/proc/get_cardinal_dir", function get_cardinal_dir(f: Frame, A: Value, B
 	return rt.bitAnd($0, $1);
 });
 
-// /proc/anyprob  (code/__HELPERS/unsorted.dm:660)
-rt.def("/proc/anyprob", function anyprob(f: Frame, value: Value) {
-	return (isEqual(rt.call(f, P("/proc/rand"), null, [1, live(value)]), live(value)) ? 1 : 0);
-});
-
 // /proc/view_or_range  (code/__HELPERS/unsorted.dm:663)
 rt.def("/proc/view_or_range", function view_or_range(f: Frame, distance: Value, center: Value, type: Value) {
 	let $0: any;
@@ -1053,25 +967,6 @@ rt.def("/proc/view_or_range", function view_or_range(f: Frame, distance: Value, 
 		f.dot = rt.call(f, P("/proc/view"), null, [live(distance), live(center)]);
 	} else if ($0 === "range") {
 		f.dot = rt.call(f, P("/proc/range"), null, [live(distance), live(center)]);
-	}
-	return live(f.dot);
-});
-
-// /proc/oview_or_orange  (code/__HELPERS/unsorted.dm:671)
-rt.def("/proc/oview_or_orange", function oview_or_orange(f: Frame, distance: Value, center: Value, type: Value) {
-	let $0: any;
-	f.vars = () => [distance, center, $0];
-	if (live(distance) === null) {
-		distance = rt.fv(f, "view", rt.world());
-	}
-	if (live(center) === null) {
-		center = live(f.usr);
-	}
-	$0 = live(type);
-	if ($0 === "view") {
-		f.dot = rt.call(f, P("/proc/oview"), null, [live(distance), live(center)]);
-	} else if ($0 === "range") {
-		f.dot = rt.call(f, P("/proc/orange"), null, [live(distance), live(center)]);
 	}
 	return live(f.dot);
 });
@@ -1131,21 +1026,6 @@ rt.def("/proc/get_turf_pixel", function get_turf_pixel(f: Frame, AM: Value) {
 	final_y = add(rt.fv(f, "y", live(_T)), live(rough_y));
 	if (!(truthy(live(final_x)) || truthy(live(final_y)))) return f.dot;
 	return rt.locate(live(final_x), live(final_y), rt.fv(f, "z", live(_T)));
-});
-
-// /proc/getPixelDistance  (code/__HELPERS/unsorted.dm:750)
-rt.def("/proc/getPixelDistance", function getPixelDistance(f: Frame, A: Value, B: Value, centered: Value) {
-	f.vars = () => [centered];
-	if (live(centered) === null) {
-		centered = 1;
-	}
-	if ((!truthy((rt.istype(live(A), T("/atom")) ? 1 : 0)) || !truthy((rt.istype(live(B), T("/atom")) ? 1 : 0)))) {
-		return 0;
-	}
-	f.dot = add(rt.call(f, P("/proc/bounds_dist"), null, [live(A), live(B)]), rt.op(f, "Sqrt", [], [add(rt.power(add(rt.fv(f, "pixel_x", live(A)), rt.fv(f, "pixel_x", live(B))), 2), rt.power(add(rt.fv(f, "pixel_y", live(A)), rt.fv(f, "pixel_y", live(B))), 2))]));
-	if (!truthy(live(centered))) return f.dot;
-	f.dot = rt.modify(live(f.dot), rt.fv(f, "icon_size", rt.world()), add);
-	return f.dot;
 });
 
 // /proc/get  (code/__HELPERS/unsorted.dm:758)
@@ -1292,21 +1172,6 @@ rt.def("/obj/proc/atmosanalyzer_scan", function atmosanalyzer_scan(f: Frame, air
 	return live(f.dot);
 });
 
-// /proc/check_target_facings  (code/__HELPERS/unsorted.dm:861)
-rt.def("/proc/check_target_facings", function check_target_facings(f: Frame, initator: Value, target: Value) {
-	if ((!truthy(rt.call(f, P("/proc/ismob"), null, [live(target)])) || truthy(rt.fv(f, "lying", live(target))))) {
-		return 0;
-	}
-	if (isEqual(rt.fv(f, "dir", live(initator)), rt.fv(f, "dir", live(target)))) {
-		return 1;
-	}
-	if ((truthy(rt.call(f, P("/proc/is_A_facing_B"), null, [live(initator), live(target)])) && truthy(rt.call(f, P("/proc/is_A_facing_B"), null, [live(target), live(initator)])))) {
-		return 2;
-	}
-	if (!(((isEqual(add(rt.fv(f, "dir", live(initator)), 2), rt.fv(f, "dir", live(target))) || isEqual(subtract(rt.fv(f, "dir", live(initator)), 2), rt.fv(f, "dir", live(target)))) || isEqual(add(rt.fv(f, "dir", live(initator)), 6), rt.fv(f, "dir", live(target)))) || isEqual(subtract(rt.fv(f, "dir", live(initator)), 6), rt.fv(f, "dir", live(target))))) return f.dot;
-	return 3;
-});
-
 // /proc/random_step  (code/__HELPERS/unsorted.dm:872)  may sleep
 rt.def("/proc/random_step", function* random_step(f: Frame, AM: Value, steps: Value, chance: Value) {
 	let initial_chance: Value = null;
@@ -1382,48 +1247,10 @@ rt.def("/proc/params2turf", function params2turf(f: Frame, scr_loc: Value, origi
 	return rt.locate(live(tX), live(tY), live(tZ));
 });
 
-// /proc/screen_loc2turf  (code/__HELPERS/unsorted.dm:912)
-rt.def("/proc/screen_loc2turf", function screen_loc2turf(f: Frame, text: Value, origin: Value) {
-	let tZ: Value = null, tX: Value = null, tY: Value = null;
-	f.vars = () => [tZ, tX, tY];
-	if (!truthy(live(text))) {
-		return null;
-	}
-	tZ = rt.call(f, P("/proc/splittext"), null, [live(text), ","]);
-	tX = rt.call(f, P("/proc/splittext"), null, [rt.index(live(tZ), 1), "-"]);
-	tY = rt.call(f, P("/proc/text2num"), null, [rt.index(live(tX), 2)]);
-	tX = rt.call(f, P("/proc/text2num"), null, [rt.index((tX = rt.call(f, P("/proc/splittext"), null, [rt.index(live(tZ), 2), "-"])), 2)]);
-	tZ = rt.fv(f, "z", live(origin));
-	tX = rt.call(f, P("/proc/max"), null, [1, rt.call(f, P("/proc/min"), null, [subtract(add(rt.fv(f, "x", live(origin)), 7), live(tX)), rt.fv(f, "maxx", rt.world())])]);
-	tY = rt.call(f, P("/proc/max"), null, [1, rt.call(f, P("/proc/min"), null, [subtract(add(rt.fv(f, "y", live(origin)), 7), live(tY)), rt.fv(f, "maxy", rt.world())])]);
-	return rt.locate(live(tX), live(tY), live(tZ));
-});
-
 // /proc/IsValidSrc  (code/__HELPERS/unsorted.dm:925)
 rt.def("/proc/IsValidSrc", function IsValidSrc(f: Frame, D: Value) {
 	if (truthy((rt.istype(live(D), T("/datum")) ? 1 : 0))) {
 		return (!(!truthy(live(D)) || truthy(rt.fv(f, "gc_destroyed", live(D)))) ? 1 : 0);
-	}
-	return 0;
-});
-
-// /proc/is_A_facing_B  (code/__HELPERS/unsorted.dm:933)
-rt.def("/proc/is_A_facing_B", function is_A_facing_B(f: Frame, A: Value, B: Value) {
-	let LA: Value = null, goal_dir: Value = null, clockwise_A_dir: Value = null, anticlockwise_A_dir: Value = null;
-	f.vars = () => [LA, goal_dir, clockwise_A_dir, anticlockwise_A_dir];
-	if ((!truthy((rt.istype(live(A), T("/atom")) ? 1 : 0)) || !truthy((rt.istype(live(B), T("/atom")) ? 1 : 0)))) {
-		return 0;
-	}
-	if (truthy((rt.istype(live(A), T("/mob/living")) ? 1 : 0))) {
-		if (truthy(rt.gv(f, "lying", (LA = live(A))))) {
-			return 0;
-		}
-	}
-	goal_dir = rt.call(f, P("/proc/angle2dir"), null, [rt.call(f, P("/proc/dir2angle"), null, [add(rt.getDir(f, live(B), live(A)), 180)])]);
-	clockwise_A_dir = rt.call(f, P("/proc/turn"), null, [rt.fv(f, "dir", live(A)), -45]);
-	anticlockwise_A_dir = rt.call(f, P("/proc/turn"), null, [rt.fv(f, "dir", live(B)), 45]);
-	if (((isEqual(rt.fv(f, "dir", live(A)), live(goal_dir)) || isEqual(live(clockwise_A_dir), live(goal_dir))) || isEqual(live(anticlockwise_A_dir), live(goal_dir)))) {
-		return 1;
 	}
 	return 0;
 });

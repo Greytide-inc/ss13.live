@@ -523,26 +523,6 @@ rt.def("/datum/reagents/proc/set_reacting", function set_reacting(f: Frame, reac
 	return f.dot;
 });
 
-// /datum/reagents/proc/conditional_update_move  (code/modules/reagents/chemistry/holder.dm:312)  may sleep
-rt.def("/datum/reagents/proc/conditional_update_move", function* conditional_update_move(f: Frame, A: Value, Running: Value) {
-	let cached_reagents: Value = null, reagent: Value = null, R: Value = null;
-	let $e: any;
-	f.vars = () => [A, Running, cached_reagents, reagent, R, $e];
-	if (live(Running) === null) {
-		Running = 0;
-	}
-	cached_reagents = rt.sv(f, "reagent_list");
-	reagent = null;
-	rt.forList(f, 0, live(cached_reagents));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		reagent = $e;
-		yield* g.callName(f, (R = live(reagent)), "on_move", [live(A), live(Running)]);
-	}
-	rt.endFor(f, 0);
-	yield* g.srcCall(f, "update_total");
-	return f.dot;
-}, true);
-
 // /datum/reagents/proc/conditional_update  (code/modules/reagents/chemistry/holder.dm:319)  may sleep
 rt.def("/datum/reagents/proc/conditional_update", function* conditional_update(f: Frame, A: Value) {
 	let cached_reagents: Value = null, reagent: Value = null, R: Value = null;
@@ -712,25 +692,6 @@ rt.def("/datum/reagents/proc/handle_reactions", function* handle_reactions(f: Fr
 	}
 	yield* g.srcCall(f, "update_total");
 	return 0;
-}, true);
-
-// /datum/reagents/proc/isolate_reagent  (code/modules/reagents/chemistry/holder.dm:429)  may sleep
-rt.def("/datum/reagents/proc/isolate_reagent", function* isolate_reagent(f: Frame, reagent: Value) {
-	let cached_reagents: Value = null, _reagent: Value = null, R: Value = null;
-	let $e: any;
-	f.vars = () => [reagent, cached_reagents, _reagent, R, $e];
-	cached_reagents = rt.sv(f, "reagent_list");
-	_reagent = null;
-	rt.forList(f, 0, live(cached_reagents));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_reagent = $e;
-		if (!isEqual(rt.gv(f, "id", (R = live(_reagent))), live(reagent))) {
-			yield* g.srcCall(f, "del_reagent", rt.fv(f, "id", live(R)));
-			yield* g.srcCall(f, "update_total");
-		}
-	}
-	rt.endFor(f, 0);
-	return f.dot;
 }, true);
 
 // /datum/reagents/proc/del_reagent  (code/modules/reagents/chemistry/holder.dm:437)  may sleep
@@ -1065,23 +1026,6 @@ rt.def("/datum/reagents/proc/get_reagent_amount", function get_reagent_amount(f:
 	return 0;
 });
 
-// /datum/reagents/proc/get_reagents  (code/modules/reagents/chemistry/holder.dm:635)
-rt.def("/datum/reagents/proc/get_reagents", function get_reagents(f: Frame) {
-	let names: Value = null, cached_reagents: Value = null, reagent: Value = null, R: Value = null;
-	let $e: any;
-	f.vars = () => [names, cached_reagents, reagent, R, $e];
-	names = rt.list();
-	cached_reagents = rt.sv(f, "reagent_list");
-	reagent = null;
-	rt.forList(f, 0, live(cached_reagents));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		reagent = $e;
-		names = rt.modify(live(names), rt.gv(f, "name", (R = live(reagent))), add);
-	}
-	rt.endFor(f, 0);
-	return rt.call(f, P("/proc/jointext"), null, [live(names), ","]);
-});
-
 // /datum/reagents/proc/remove_all_type  (code/modules/reagents/chemistry/holder.dm:644)  may sleep
 rt.def("/datum/reagents/proc/remove_all_type", function* remove_all_type(f: Frame, reagent_type: Value, amount: Value, strict: Value, safety: Value) {
 	let cached_reagents: Value = null, has_removed_reagent: Value = null, reagent: Value = null, R: Value = null, matches: Value = null;
@@ -1133,24 +1077,6 @@ rt.def("/datum/reagents/proc/get_data", function get_data(f: Frame, reagent_id: 
 		reagent = $e;
 		if (isEqual(rt.gv(f, "id", (R = live(reagent))), live(reagent_id))) {
 			return rt.fv(f, "data", live(R));
-		}
-	}
-	rt.endFor(f, 0);
-	return f.dot;
-});
-
-// /datum/reagents/proc/set_data  (code/modules/reagents/chemistry/holder.dm:675)
-rt.def("/datum/reagents/proc/set_data", function set_data(f: Frame, reagent_id: Value, new_data: Value) {
-	let cached_reagents: Value = null, reagent: Value = null, R: Value = null;
-	let $e: any;
-	f.vars = () => [cached_reagents, reagent, R, $e];
-	cached_reagents = rt.sv(f, "reagent_list");
-	reagent = null;
-	rt.forList(f, 0, live(cached_reagents));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		reagent = $e;
-		if (isEqual(rt.gv(f, "id", (R = live(reagent))), live(reagent_id))) {
-			rt.setFv(f, "data", live(R), live(new_data));
 		}
 	}
 	rt.endFor(f, 0);

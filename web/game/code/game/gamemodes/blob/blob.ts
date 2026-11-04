@@ -95,24 +95,6 @@ rt.def("/datum/game_mode/blob/proc/pre_setup", function pre_setup(f: Frame) {
 	return 1;
 });
 
-// /datum/game_mode/blob/proc/get_blob_candidates  (code/game/gamemodes/blob/blob.dm:64)
-rt.def("/datum/game_mode/blob/proc/get_blob_candidates", function get_blob_candidates(f: Frame) {
-	let candidates: Value = null, player: Value = null;
-	let $e: any;
-	f.vars = () => [candidates, player, $e];
-	candidates = rt.list();
-	player = null;
-	rt.forList(f, 0, rt.gl("player_list"), T("/mob/living/carbon/human"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		player = $e;
-		if (((((!truthy(rt.fv(f, "stat", live(player))) && truthy(rt.fv(f, "mind", live(player)))) && !truthy(rt.gv(f, "special_role", rt.fv(f, "mind", live(player))))) && !truthy(rt.call(f, P("/proc/jobban_isbanned"), null, [live(player), "Syndicate"]))) && truthy((rt.isIn(f, "blob", rt.gv(f, "be_special", rt.gv(f, "prefs", rt.fv(f, "client", live(player))))) ? 1 : 0)))) {
-			candidates = rt.modify(live(candidates), live(player), add);
-		}
-	}
-	rt.endFor(f, 0);
-	return live(candidates);
-});
-
 // /datum/game_mode/blob/proc/show_message  (code/game/gamemodes/blob/blob.dm:72)
 rt.def("/datum/game_mode/blob/proc/show_message", function show_message(f: Frame, message: Value) {
 	let blob: Value = null;

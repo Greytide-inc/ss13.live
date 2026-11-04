@@ -43,7 +43,7 @@
 // errors, and "not implemented:" blocks for VM gaps (lenient mode). A summary of the gaps, in the
 // order they were first hit, goes to the end of the log and to stdout.
 
-import { closeSync, existsSync, mkdirSync, openSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync, writeSync } from "node:fs";
+import { closeSync, existsSync, mkdirSync, openSync, readFileSync, rmSync, writeFileSync, writeSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { dirname } from "node:path";
 import { resolve } from "node:path";

@@ -1,7 +1,6 @@
 // item-box - where a draw item's pixels can land, relative to its origin (map pixels, y down): the union of its icon rects (with pixel offsets and
 // transforms) and maptext boxes, atom and overlays. page-draw step 4 uses it to put an item into every 16x16-tile chunk its box touches.
 
-import { cellRect } from "../dmi/dmi.js";
 import type { Appearance, BuiltAppearance } from "../appearance/appearance.js";
 import { findState } from "./sprite-lookup.js";
 import { byondMatrixToCanvas } from "./byond-transform.js";

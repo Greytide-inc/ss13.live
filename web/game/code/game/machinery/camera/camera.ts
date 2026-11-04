@@ -493,67 +493,6 @@ rt.def("/obj/machinery/camera/proc/can_see", function can_see(f: Frame) {
 	return live(see);
 });
 
-// /atom/proc/auto_turn  (code/game/machinery/camera/camera.dm:327)  may sleep
-rt.def("/atom/proc/auto_turn", function* auto_turn(f: Frame) {
-	let _T: Value = null, i: Value = null;
-	let $0: any;
-	f.vars = () => [_T, i, $0];
-	_T = null;
-	i = null;
-	i = 1;
-	while (rt.le(live(i), 8)) {
-		if (truthy((rt.istype((_T = (yield* g.call(f, P("/proc/get_ranged_target_turf"), null, [live(f.src), live(i), 1]))), T("/turf/closed/wall")) ? 1 : 0))) {
-			$0 = live(i);
-			if ($0 === 1) {
-				yield* g.callName(f, live(f.src), "setDir", [2]);
-			} else if ($0 === 2) {
-				yield* g.callName(f, live(f.src), "setDir", [1]);
-			} else if ($0 === 8) {
-				yield* g.callName(f, live(f.src), "setDir", [4]);
-			} else if ($0 === 4) {
-				yield* g.callName(f, live(f.src), "setDir", [8]);
-			}
-			break;
-		}
-		i = rt.modify(live(i), live(i), add);
-	}
-	return f.dot;
-}, true);
-
-// /proc/seen_by_camera  (code/game/machinery/camera/camera.dm:345)
-rt.def("/proc/seen_by_camera", function seen_by_camera(f: Frame, M: Value) {
-	let C: Value = null;
-	let $e: any;
-	f.vars = () => [C, $e];
-	C = null;
-	rt.forList(f, 0, rt.call(f, P("/proc/oview"), null, [4, live(M)]), T("/obj/machinery/camera"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		C = $e;
-		if (truthy(rt.callName(f, live(C), "can_use", []))) {
-			return live(C);
-		}
-	}
-	rt.endFor(f, 0);
-	return null;
-});
-
-// /proc/near_range_camera  (code/game/machinery/camera/camera.dm:352)
-rt.def("/proc/near_range_camera", function near_range_camera(f: Frame, M: Value) {
-	let C: Value = null;
-	let $e: any;
-	f.vars = () => [C, $e];
-	C = null;
-	rt.forList(f, 0, rt.call(f, P("/proc/range"), null, [4, live(M)]), T("/obj/machinery/camera"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		C = $e;
-		if (truthy(rt.callName(f, live(C), "can_use", []))) {
-			return live(C);
-		}
-	}
-	rt.endFor(f, 0);
-	return null;
-});
-
 // /obj/machinery/camera/proc/weld  (code/game/machinery/camera/camera.dm:362)  may sleep
 rt.def("/obj/machinery/camera/proc/weld", function* weld(f: Frame, WT: Value, user: Value) {
 	f.vars = () => [WT, user];

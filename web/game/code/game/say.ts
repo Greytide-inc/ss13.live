@@ -203,19 +203,6 @@ rt.def("/proc/message_spans_start", function message_spans_start(f: Frame, spans
 	return (output = fmt("＀'>", [live(output)]));
 });
 
-// /proc/say_test  (code/game/say.dm:138)
-rt.def("/proc/say_test", function say_test(f: Frame, text: Value) {
-	let ending: Value = null;
-	f.vars = () => [ending];
-	if (isEqual((ending = rt.call(f, P("/proc/copytext"), null, [live(text), rt.length(live(text))])), "?")) {
-		return "1";
-	}
-	if (isEqual(live(ending), "!")) {
-		return "2";
-	}
-	return "0";
-});
-
 // /atom/movable/proc/GetVoice  (code/game/say.dm:146)
 rt.def("/atom/movable/proc/GetVoice", function GetVoice(f: Frame) {
 	return fmt("＀", [live(f.src)]);

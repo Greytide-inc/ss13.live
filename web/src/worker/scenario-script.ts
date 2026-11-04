@@ -126,7 +126,6 @@ export class ScriptPlayer {
 		log(`[script] ${file}: ${this.actions.length} actions, last at tick ${this.actions.at(-1)?.tick ?? 0}`);
 	}
 	get done(): boolean { return this.next >= this.actions.length && !this.walk; }
-	get lastTick(): number { return this.actions.at(-1)?.tick ?? 0; }
 
 	/** Runs every action due at this script tick (call before vm.runTick()). */
 	private hooked: unknown = null;

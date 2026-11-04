@@ -634,29 +634,6 @@ rt.def("/atom/proc/clean_blood", function clean_blood(f: Frame) {
 	return 1;
 });
 
-// /atom/proc/get_global_map_pos  (code/game/atoms.dm:431)
-rt.def("/atom/proc/get_global_map_pos", function get_global_map_pos(f: Frame) {
-	let cur_x: Value = null, cur_y: Value = null, y_arr: Value = null;
-	f.vars = () => [cur_x, cur_y, y_arr];
-	if ((!truthy((rt.istype(rt.gl("global_map"), T("/list")) ? 1 : 0)) || truthy(rt.call(f, P("/proc/isemptylist"), null, [rt.gl("global_map")])))) {
-		return live(f.dot);
-	}
-	cur_x = null;
-	cur_y = null;
-	y_arr = null;
-	cur_x = 1;
-	while (rt.le(live(cur_x), rt.len(f, rt.gl("global_map")))) {
-		if (truthy((cur_y = rt.callName(f, (y_arr = rt.index(rt.gl("global_map"), live(cur_x))), "Find", [rt.fv(f, "z", live(f.src))])))) {
-			break;
-		}
-		cur_x = rt.inc(live(cur_x), 1);
-	}
-	if ((truthy(live(cur_x)) && truthy(live(cur_y)))) {
-		return rt.alist(f, ["x", live(cur_x), "y", live(cur_y)]);
-	}
-	return 0;
-});
-
 // /atom/proc/isinspace  (code/game/atoms.dm:447)
 rt.def("/atom/proc/isinspace", function isinspace(f: Frame) {
 	if (truthy((rt.istype(rt.getStep(f, live(f.src), 0), T("/turf/open/space")) ? 1 : 0))) {

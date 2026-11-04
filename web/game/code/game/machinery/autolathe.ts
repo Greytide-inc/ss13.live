@@ -572,52 +572,6 @@ rt.def("/obj/machinery/autolathe/proc/category_win", function category_win(f: Fr
 	return (dat = rt.modify(live(dat), "</div>", add));
 });
 
-// /obj/machinery/autolathe/proc/search_win  (code/game/machinery/autolathe.dm:328)
-rt.def("/obj/machinery/autolathe/proc/search_win", function search_win(f: Frame, user: Value) {
-	let dat: Value = null, v: Value = null, D: Value = null, max_multiplier: Value = null;
-	let $0: any, $1: any, $2: any, $e: any;
-	f.vars = () => [dat, v, D, max_multiplier, $0, $1, $2, $e];
-	dat = fmt("<A href='?src=＃;menu=＀'>Return to main menu</A>", [live(f.src), 1]);
-	dat = rt.modify(live(dat), "<div class='statusDisplay'><h3>Search results:</h3><br>", add);
-	dat = rt.modify(live(dat), rt.callSrc(f, "materials_printout", []), add);
-	v = null;
-	rt.forList(f, 0, rt.sv(f, "matching_designs"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		v = $e;
-		D = live(v);
-		if ((truthy(rt.sv(f, "disabled")) || !truthy(rt.callSrc(f, "can_build", [live(D)])))) {
-			dat = rt.modify(live(dat), fmt("<span class='linkOff'>＀</span>", [rt.fv(f, "name", live(D))]), add);
-		} else {
-			dat = rt.modify(live(dat), fmt("<a href='?src=＃;make=＀;multiplier=1'>＀</a>", [live(f.src), rt.fv(f, "id", live(D)), rt.fv(f, "name", live(D))]), add);
-		}
-		if (truthy(rt.call(f, P("/proc/ispath"), null, [rt.fv(f, "build_path", live(D)), T("/obj/item/stack")]))) {
-			$0 = rt.fv(f, "maxstack", live(D));
-			if (truthy(rt.index(rt.fv(f, "materials", live(D)), "$metal"))) {
-				$1 = rt.call(f, P("/proc/round"), null, [divide(rt.callName(f, rt.sv(f, "materials"), "amount", ["$metal"]), rt.index(rt.fv(f, "materials", live(D)), "$metal"))]);
-			} else {
-				$1 = 9.999999848243207e+30;
-			}
-			if (truthy(rt.index(rt.fv(f, "materials", live(D)), "$glass"))) {
-				$2 = rt.call(f, P("/proc/round"), null, [divide(rt.callName(f, rt.sv(f, "materials"), "amount", ["$glass"]), rt.index(rt.fv(f, "materials", live(D)), "$glass"))]);
-			} else {
-				$2 = 9.999999848243207e+30;
-			}
-			if ((rt.gt((max_multiplier = rt.call(f, P("/proc/min"), null, [$0, $1, $2])), 10) && !truthy(rt.sv(f, "disabled")))) {
-				dat = rt.modify(live(dat), fmt(" <a href='?src=＃;make=＀;multiplier=10'>x10</a>", [live(f.src), rt.fv(f, "id", live(D))]), add);
-			}
-			if ((rt.gt(live(max_multiplier), 25) && !truthy(rt.sv(f, "disabled")))) {
-				dat = rt.modify(live(dat), fmt(" <a href='?src=＃;make=＀;multiplier=25'>x25</a>", [live(f.src), rt.fv(f, "id", live(D))]), add);
-			}
-			if ((rt.gt(live(max_multiplier), 0) && !truthy(rt.sv(f, "disabled")))) {
-				dat = rt.modify(live(dat), fmt(" <a href='?src=＃;make=＀;multiplier=＀'>x＀</a>", [live(f.src), rt.fv(f, "id", live(D)), live(max_multiplier), live(max_multiplier)]), add);
-			}
-		}
-		dat = rt.modify(live(dat), fmt("＀<br>", [rt.callSrc(f, "get_design_cost", [live(D)])]), add);
-	}
-	rt.endFor(f, 0);
-	return (dat = rt.modify(live(dat), "</div>", add));
-});
-
 // /obj/machinery/autolathe/proc/materials_printout  (code/game/machinery/autolathe.dm:354)
 rt.def("/obj/machinery/autolathe/proc/materials_printout", function materials_printout(f: Frame) {
 	let dat: Value = null, mat_id: Value = null, M: Value = null;

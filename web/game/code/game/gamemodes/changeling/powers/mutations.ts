@@ -330,13 +330,6 @@ rt.def("/obj/item/projectile/tentacle/proc/fire", function* fire(f: Frame) {
 	return f.dot;
 }, true, { args: ["setAngle"], waitfor: false });
 
-// /obj/item/projectile/tentacle/proc/reset_throw  (code/game/gamemodes/changeling/powers/mutations.dm:291)
-rt.def("/obj/item/projectile/tentacle/proc/reset_throw", function reset_throw(f: Frame, H: Value) {
-	if (!truthy(rt.fv(f, "in_throw_mode", live(H)))) return f.dot;
-	rt.callName(f, live(H), "throw_mode_off", []);
-	return f.dot;
-});
-
 // /obj/item/projectile/tentacle/proc/tentacle_grab  (code/game/gamemodes/changeling/powers/mutations.dm:295)  may sleep
 rt.def("/obj/item/projectile/tentacle/proc/tentacle_grab", function* tentacle_grab(f: Frame, H: Value, C: Value) {
 	f.vars = () => [H, C];

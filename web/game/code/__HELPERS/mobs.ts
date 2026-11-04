@@ -230,35 +230,6 @@ rt.def("/datum/controller/global_vars/proc/InitGlobalroundstart_species", functi
 	return f.dot;
 });
 
-// /proc/age2agedescription  (code/__HELPERS/mobs.dm:142)
-rt.def("/proc/age2agedescription", function age2agedescription(f: Frame, age: Value) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = live(age);
-	if (rt.inRange($0, 0, 1)) {
-		return "infant";
-	} else if (rt.inRange($0, 1, 3)) {
-		return "toddler";
-	} else if (rt.inRange($0, 3, 13)) {
-		return "child";
-	} else if (rt.inRange($0, 13, 19)) {
-		return "teenager";
-	} else if (rt.inRange($0, 19, 30)) {
-		return "young adult";
-	} else if (rt.inRange($0, 30, 45)) {
-		return "adult";
-	} else if (rt.inRange($0, 45, 60)) {
-		return "middle-aged";
-	} else if (rt.inRange($0, 60, 70)) {
-		return "aging";
-	} else if (rt.inRange($0, 70, 9.999999848243207e+30)) {
-		return "elderly";
-	} else {
-		return "unknown";
-	}
-	return f.dot;
-});
-
 // /proc/add_logs  (code/__HELPERS/mobs.dm:174)
 rt.def("/proc/add_logs", function add_logs(f: Frame, user: Value, target: Value, what_done: Value, object: Value, addition: Value) {
 	let attack_location: Value = null, is_mob_user: Value = null, is_mob_target: Value = null, living_target: Value = null, hp: Value = null, starget: Value = null, ssource: Value = null, sobject: Value = null, sattackloc: Value = null, message: Value = null;

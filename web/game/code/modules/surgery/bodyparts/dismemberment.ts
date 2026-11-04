@@ -382,38 +382,6 @@ rt.def("/obj/item/bodypart/head/proc/drop_limb", function* drop_limb(f: Frame) {
 	return f.dot;
 }, true, { args: ["special"] });
 
-// /obj/item/bodypart/proc/replace_limb  (code/modules/surgery/bodyparts/dismemberment.dm:239)  may sleep
-rt.def("/obj/item/bodypart/proc/replace_limb", function* replace_limb(f: Frame, C: Value, special: Value) {
-	let O: Value = null;
-	f.vars = () => [C, special, O];
-	if (!truthy((rt.istype(live(C), T("/mob/living/carbon")) ? 1 : 0))) {
-		return live(f.dot);
-	}
-	if (truthy((O = rt.locateIn(f, rt.fv(f, "type", live(f.src)), rt.fv(f, "bodyparts", live(C)))))) {
-		yield* g.callName(f, live(O), "drop_limb", [1]);
-	}
-	yield* g.srcCall(f, "attach_limb", live(C), live(special));
-	return f.dot;
-}, true);
-
-// /obj/item/bodypart/head/proc/replace_limb  (code/modules/surgery/bodyparts/dismemberment.dm:247)  may sleep
-rt.def("/obj/item/bodypart/head/proc/replace_limb", function* replace_limb(f: Frame, C: Value, special: Value) {
-	let O: Value = null;
-	f.vars = () => [C, special, O];
-	if (!truthy((rt.istype(live(C), T("/mob/living/carbon")) ? 1 : 0))) {
-		return live(f.dot);
-	}
-	if (truthy((O = rt.locateIn(f, rt.fv(f, "type", live(f.src)), rt.fv(f, "bodyparts", live(C)))))) {
-		if (!truthy(live(special))) {
-			return live(f.dot);
-		} else {
-			yield* g.callName(f, live(O), "drop_limb", [1]);
-		}
-	}
-	yield* g.srcCall(f, "attach_limb", live(C), live(special));
-	return f.dot;
-}, true);
-
 // /obj/item/bodypart/proc/attach_limb  (code/modules/surgery/bodyparts/dismemberment.dm:259)  may sleep
 rt.def("/obj/item/bodypart/proc/attach_limb", function* attach_limb(f: Frame, C: Value, special: Value) {
 	let hand: Value = null, X: Value = null, S: Value = null, surgery_zone: Value = null, O: Value = null;

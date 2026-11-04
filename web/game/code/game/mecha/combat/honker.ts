@@ -172,18 +172,3 @@ rt.def("/obj/mecha/combat/honker/proc/Topic", function* Topic(f: Frame) {
 	}
 	return live(f.dot);
 }, true, { args: ["href", "href_list"] });
-
-// /proc/rand_hex_color  (code/game/mecha/combat/honker.dm:152)
-rt.def("/proc/rand_hex_color", function rand_hex_color(f: Frame) {
-	let colors: Value = null, color: Value = null, i: Value = null;
-	f.vars = () => [colors, color, i];
-	colors = rt.list("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f");
-	color = "";
-	i = null;
-	i = 0;
-	while (rt.lt(live(i), 6)) {
-		color = add(live(color), rt.op(f, "PickUnweighted", [1], [live(colors)]));
-		i = rt.inc(live(i), 1);
-	}
-	return live(color);
-});

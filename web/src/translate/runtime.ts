@@ -69,7 +69,6 @@ function fullStack(): Frame[] {
 }
 /** the rt.def calls in bundle order; install() matches the i-th to the i-th declared proc (typedefs.procDecls). */
 const defs: { path: string; fn: PlainFn | GenFn | undefined; gen: boolean }[] = [];
-let nDefs = 0;
 const plain: (PlainFn | undefined)[] = [];
 /** the generator procs, called inline from other generator procs (callGen). */
 const gens: (GenFn | undefined)[] = [];
@@ -106,7 +105,6 @@ export function def(path: string, fn?: PlainFn | GenFn, gen = false, meta?: Proc
 	if (hot !== null) return void hot.push({ path, fn, gen }); // hotSwap is loading one file again
 	if (defs.length === 0) noteBundle(new Error().stack); // where translated-tg.lines.json is (error-lines.procStart)
 	defs.push({ path, fn, gen });
-	if (fn) nDefs++;
 }
 
 /** The runtime's VM: what translated code reads and calls through (install, or the global init on an interpreter-only VM). */
@@ -244,10 +242,6 @@ export function traceHooked(): boolean {
 let enterHook: ((proc: DMProc, src: Value, args: Value[]) => void) | null = null;
 export function setEnterHook(h: ((proc: DMProc, src: Value, args: Value[]) => void) | null): void {
 	enterHook = h;
-}
-
-export function registered(): number {
-	return nDefs;
 }
 
 function entryGen(fn: GenFn, f: Frame, n: number): Gen {
@@ -645,13 +639,6 @@ export function next(f: Frame, i: number): Value | undefined {
 	const en = f.enumerators[i];
 	return en ? en.next() : undefined;
 }
-/** for(k, v in L): L[k] for the key just enumerated. */
-export function assocOf(f: Frame, i: number, k: Value): Value {
-	const l = (f.enumerators[i] as { list?: DMList | null } | null)?.list;
-	const a = l ? l.assocOf(k) : undefined;
-	return a === undefined ? null : live(a);
-}
-
 // ---- operations by name ---------------------------------------------------------------------------
 
 /** Ends the current proc if its src was deleted (by del, in something it called). */

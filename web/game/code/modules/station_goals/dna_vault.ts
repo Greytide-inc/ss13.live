@@ -100,14 +100,6 @@ rt.def("/obj/item/device/dna_probe/proc/<init>", function _init_(f: Frame) {
 	return f.dot;
 });
 
-// /obj/item/device/dna_probe/proc/clear_data  (code/modules/station_goals/dna_vault.dm:74)
-rt.def("/obj/item/device/dna_probe/proc/clear_data", function clear_data(f: Frame) {
-	rt.setSv(f, "animals", rt.list());
-	rt.setSv(f, "plants", rt.list());
-	rt.setSv(f, "dna", rt.list());
-	return f.dot;
-});
-
 // /obj/item/device/dna_probe/proc/afterattack  (code/modules/station_goals/dna_vault.dm:79)
 rt.def("/obj/item/device/dna_probe/proc/afterattack", function afterattack(f: Frame) {
 	let H: Value = null, A: Value = null;

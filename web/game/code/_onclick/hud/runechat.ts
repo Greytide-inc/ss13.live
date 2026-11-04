@@ -242,30 +242,3 @@ rt.def("/atom/proc/balloon_alert", function* balloon_alert(f: Frame, viewer: Val
 	yield* g.new_(f, T("/datum/balloon_alert"), [rt.fv(f, "client", live(viewer)), live(target), live(text)]);
 	return f.dot;
 }, true);
-
-// /atom/proc/balloon_alert_to_viewers  (code/_onclick/hud/runechat.dm:163)  may sleep
-rt.def("/atom/proc/balloon_alert_to_viewers", function* balloon_alert_to_viewers(f: Frame, text: Value, self_text: Value, vision_distance: Value, ignored_mobs: Value) {
-	let M: Value = null;
-	let $0: any, $1: any, $e: any;
-	f.vars = () => [text, self_text, vision_distance, ignored_mobs, M, $0, $1, $e];
-	if (live(vision_distance) === null) {
-		vision_distance = 7;
-	}
-	M = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/viewers"), null, [live(vision_distance), live(f.src)])), T("/mob"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if ((!truthy(rt.fv(f, "client", live(M))) || (truthy(live(ignored_mobs)) && truthy((rt.isIn(f, live(M), live(ignored_mobs)) ? 1 : 0))))) {
-			continue;
-		}
-		$0 = live(M);
-		if ((truthy(live(self_text)) && isEqual(live(M), live(f.src)))) {
-			$1 = live(self_text);
-		} else {
-			$1 = live(text);
-		}
-		yield* g.srcCall(f, "balloon_alert", $0, $1);
-	}
-	rt.endFor(f, 0);
-	return f.dot;
-}, true);

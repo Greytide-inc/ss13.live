@@ -85,13 +85,6 @@ rt.def("/obj/machinery/computer/camera_advanced/abductor/proc/GrantActions", fun
 	return f.dot;
 }, true, { args: ["user"] });
 
-// /obj/machinery/computer/camera_advanced/abductor/proc/IsScientist  (code/game/gamemodes/miniantags/abduction/machinery/camera.dm:58)
-rt.def("/obj/machinery/computer/camera_advanced/abductor/proc/IsScientist", function IsScientist(f: Frame, H: Value) {
-	let S: Value = null;
-	f.vars = () => [S];
-	return rt.gv(f, "scientist", (S = rt.gv(f, "species", rt.fv(f, "dna", live(H)))));
-});
-
 // /obj/machinery/computer/camera_advanced/abductor/proc/attack_hand  (code/game/gamemodes/miniantags/abduction/machinery/camera.dm:62)  may sleep
 rt.def("/obj/machinery/computer/camera_advanced/abductor/proc/attack_hand", function* attack_hand(f: Frame) {
 	if (!truthy((yield* g.call(f, P("/proc/is_species"), null, [live(f.args[0]), T("/datum/species/abductor")])))) {

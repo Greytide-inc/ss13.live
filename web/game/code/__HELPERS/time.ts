@@ -41,17 +41,6 @@ rt.def("/proc/gameTimestamp", function gameTimestamp(f: Frame, format: Value, wt
 	return rt.call(f, P("/proc/time2text"), null, [subtract(add(subtract(live(wtime), rt.gl("timezoneOffset")), rt.fv(f, "gametime_offset", rt.gl("SSticker"))), rt.fv(f, "round_start_time", rt.gl("SSticker"))), live(format)]);
 });
 
-// /proc/isDay  (code/__HELPERS/time.dm:16)
-rt.def("/proc/isDay", function isDay(f: Frame, month: Value, day: Value) {
-	let MM: Value = null, DD: Value = null;
-	f.vars = () => [MM, DD];
-	if (!(truthy(rt.call(f, P("/proc/isnum"), null, [live(month)])) && truthy(rt.call(f, P("/proc/isnum"), null, [live(day)])))) return f.dot;
-	MM = rt.call(f, P("/proc/text2num"), null, [rt.call(f, P("/proc/time2text"), null, [rt.fv(f, "timeofday", rt.world()), "MM"])]);
-	DD = rt.call(f, P("/proc/text2num"), null, [rt.call(f, P("/proc/time2text"), null, [rt.fv(f, "timeofday", rt.world()), "DD"])]);
-	if (!(isEqual(live(month), live(MM)) && isEqual(live(day), live(DD)))) return f.dot;
-	return 1;
-});
-
 // /proc/SQLtime  (code/__HELPERS/time.dm:28)
 rt.def("/proc/SQLtime", function SQLtime(f: Frame, timevar: Value) {
 	f.vars = () => [timevar];

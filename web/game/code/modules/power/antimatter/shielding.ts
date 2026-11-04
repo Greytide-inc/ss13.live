@@ -335,20 +335,6 @@ rt.def("/obj/machinery/am_shielding/proc/check_stability", function* check_stabi
 	return live(f.dot);
 }, true);
 
-// /obj/machinery/am_shielding/proc/recalc_efficiency  (code/modules/power/antimatter/shielding.dm:219)
-rt.def("/obj/machinery/am_shielding/proc/recalc_efficiency", function recalc_efficiency(f: Frame, new_efficiency: Value) {
-	f.vars = () => [new_efficiency];
-	if ((!truthy(rt.sv(f, "control_unit")) || !truthy(rt.sv(f, "processing")))) {
-		return live(f.dot);
-	}
-	if (rt.lt(rt.sv(f, "stability"), 50)) {
-		(new_efficiency = rt.modify(live(new_efficiency), 2, divide));
-	}
-	rt.modField(f, rt.sv(f, "control_unit"), "reported_core_efficiency", subtract(live(new_efficiency), rt.sv(f, "efficiency")), add);
-	rt.setSv(f, "efficiency", live(new_efficiency));
-	return live(f.dot);
-});
-
 rt.type(9428, "/obj/item/device/am_shielding_container", "/obj/item/device", {
 	flags: 64,
 	throw_speed: 1,

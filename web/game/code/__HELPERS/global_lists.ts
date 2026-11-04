@@ -91,20 +91,3 @@ rt.def("/proc/init_subtypes", function* init_subtypes(f: Frame, prototype: Value
 	rt.endFor(f, 0);
 	return live(L);
 }, true);
-
-// /proc/init_paths  (code/__HELPERS/global_lists.dm:86)
-rt.def("/proc/init_paths", function init_paths(f: Frame, prototype: Value, L: Value) {
-	let path: Value = null;
-	let $e: any;
-	f.vars = () => [L, path, $e];
-	if (truthy((rt.istype(live(L), T("/list")) ? 1 : 0))) return f.dot;
-	L = rt.list();
-	path = null;
-	rt.forList(f, 0, subtract(rt.call(f, P("/proc/typesof"), null, [live(prototype)]), live(prototype)));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		path = $e;
-		L = rt.modify(live(L), live(path), add);
-	}
-	rt.endFor(f, 0);
-	return live(L);
-});

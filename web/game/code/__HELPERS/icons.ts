@@ -51,56 +51,10 @@ rt.def("/icon/proc/ColorTone", function ColorTone(f: Frame, tone: Value) {
 	return f.dot;
 });
 
-// /icon/proc/MinColors  (code/__HELPERS/icons.dm:246)
-rt.def("/icon/proc/MinColors", function MinColors(f: Frame, icon: Value) {
-	let I: Value = null;
-	f.vars = () => [I];
-	rt.callName(f, (I = rt.new_(f, T("/icon"), [live(f.src)])), "Opaque", []);
-	rt.callName(f, live(I), "Blend", [live(icon), 1]);
-	rt.callSrc(f, "Blend", [live(I), 1]);
-	return f.dot;
-});
-
-// /icon/proc/MaxColors  (code/__HELPERS/icons.dm:254)
-rt.def("/icon/proc/MaxColors", function MaxColors(f: Frame, icon: Value) {
-	let I: Value = null, J: Value = null;
-	f.vars = () => [I, J];
-	I = null;
-	if (truthy(rt.call(f, P("/proc/isicon"), null, [live(icon)]))) {
-		I = rt.new_(f, T("/icon"), [live(icon)]);
-	} else {
-		rt.callName(f, (I = rt.new_(f, T("/icon"), [live(f.src)])), "Blend", ["#000000", 3]);
-		rt.callName(f, live(I), "SwapColor", ["#000000", null]);
-		rt.callName(f, live(I), "Blend", [live(icon), 3]);
-	}
-	rt.callName(f, (J = rt.new_(f, T("/icon"), [live(f.src)])), "Opaque", []);
-	rt.callName(f, live(I), "Blend", [live(J), 1]);
-	rt.callSrc(f, "Blend", [live(I), 5]);
-	return f.dot;
-});
-
-// /icon/proc/Opaque  (code/__HELPERS/icons.dm:269)
-rt.def("/icon/proc/Opaque", function Opaque(f: Frame, background: Value) {
-	f.vars = () => [background];
-	if (live(background) === null) {
-		background = "#000000";
-	}
-	rt.callSrc(f, "SwapColor", [null, live(background)]);
-	rt.callSrc(f, "MapColors", [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1]);
-	return f.dot;
-});
-
 // /icon/proc/BecomeAlphaMask  (code/__HELPERS/icons.dm:275)
 rt.def("/icon/proc/BecomeAlphaMask", function BecomeAlphaMask(f: Frame) {
 	rt.callSrc(f, "SwapColor", [null, "#000000ff"]);
 	rt.callSrc(f, "MapColors", [0, 0, 0, 0.30000001192092896, 0, 0, 0, 0.5899999737739563, 0, 0, 0, 0.10999999940395355, 0, 0, 0, 0, 1, 1, 1, 0]);
-	return f.dot;
-});
-
-// /icon/proc/UseAlphaMask  (code/__HELPERS/icons.dm:279)
-rt.def("/icon/proc/UseAlphaMask", function UseAlphaMask(f: Frame, mask: Value) {
-	rt.callSrc(f, "Opaque", []);
-	rt.callSrc(f, "AddAlphaMask", [live(mask)]);
 	return f.dot;
 });
 
@@ -315,73 +269,6 @@ rt.def("/proc/ReadHSV", function ReadHSV(f: Frame, hsv: Value) {
 	return f.dot;
 });
 
-// /proc/HSVtoRGB  (code/__HELPERS/icons.dm:400)
-rt.def("/proc/HSVtoRGB", function HSVtoRGB(f: Frame, hsv: Value) {
-	let HSV: Value = null, hue: Value = null, sat: Value = null, val: Value = null, hi: Value = null, mid: Value = null, lo: Value = null, r: Value = null, _g: Value = null, b: Value = null;
-	let $0: any;
-	f.vars = () => [HSV, hue, sat, val, hi, mid, lo, r, _g, b, $0];
-	if (!truthy(live(hsv))) {
-		return "#000000";
-	}
-	if (!truthy((HSV = rt.call(f, P("/proc/ReadHSV"), null, [live(hsv)])))) {
-		return "#000000";
-	}
-	hue = rt.index(live(HSV), 1);
-	sat = rt.index(live(HSV), 2);
-	val = rt.index(live(HSV), 3);
-	(hue = rt.modify(live(hue), rt.shiftRight(live(hue), 8), subtract));
-	if (rt.ge(live(hue), 1530)) {
-		(hue = rt.modify(live(hue), 1530, subtract));
-	}
-	hi = null;
-	mid = null;
-	lo = null;
-	r = null;
-	_g = null;
-	b = null;
-	hi = live(val);
-	mid = add((lo = rt.call(f, P("/proc/round"), null, [divide(multiply(subtract(255, live(sat)), live(val)), 255), 1])), rt.call(f, P("/proc/round"), null, [divide(multiply(rt.op(f, "Abs", [], [subtract(rt.call(f, P("/proc/round"), null, [live(hue), 510]), live(hue))]), subtract(live(hi), live(lo))), 255), 1]));
-	if (rt.ge(live(hue), 765)) {
-		if (rt.ge(live(hue), 1275)) {
-			r = live(hi);
-			_g = live(lo);
-			b = live(mid);
-		} else {
-			if (rt.ge(live(hue), 1020)) {
-				r = live(mid);
-				_g = live(lo);
-				b = live(hi);
-			} else {
-				r = live(lo);
-				_g = live(mid);
-				b = live(hi);
-			}
-		}
-	} else {
-		if (rt.ge(live(hue), 510)) {
-			r = live(lo);
-			_g = live(hi);
-			b = live(mid);
-		} else {
-			if (rt.ge(live(hue), 255)) {
-				r = live(mid);
-				_g = live(hi);
-				b = live(lo);
-			} else {
-				r = live(hi);
-				_g = live(mid);
-				b = live(lo);
-			}
-		}
-	}
-	if (rt.gt(rt.len(f, live(HSV)), 3)) {
-		$0 = rt.op(f, "Rgb", [1, 4], [live(r), live(_g), live(b), rt.index(live(HSV), 4)]);
-	} else {
-		$0 = rt.op(f, "Rgb", [1, 3], [live(r), live(_g), live(b)]);
-	}
-	return $0;
-});
-
 // /proc/RGBtoHSV  (code/__HELPERS/icons.dm:428)
 rt.def("/proc/RGBtoHSV", function RGBtoHSV(f: Frame, rgb: Value) {
 	let RGB: Value = null, r: Value = null, _g: Value = null, b: Value = null, hi: Value = null, lo: Value = null, val: Value = null, sat: Value = null, hue: Value = null, dir: Value = null, mid: Value = null;
@@ -559,80 +446,6 @@ rt.def("/proc/hsv", function hsv(f: Frame, hue: Value, sat: Value, val: Value, a
 	return f.dot;
 });
 
-// /proc/BlendHSV  (code/__HELPERS/icons.dm:492)
-rt.def("/proc/BlendHSV", function BlendHSV(f: Frame, hsv1: Value, hsv2: Value, amount: Value) {
-	let HSV1: Value = null, HSV2: Value = null, usealpha: Value = null, hue_diff: Value = null, hue: Value = null, sat: Value = null, val: Value = null, alpha: Value = null;
-	let $0: any;
-	f.vars = () => [HSV1, HSV2, usealpha, hue_diff, hue, sat, val, alpha, $0];
-	HSV1 = rt.call(f, P("/proc/ReadHSV"), null, [live(hsv1)]);
-	HSV2 = rt.call(f, P("/proc/ReadHSV"), null, [live(hsv2)]);
-	if (rt.lt(rt.len(f, live(HSV1)), rt.len(f, live(HSV2)))) {
-		HSV1 = rt.modify(live(HSV1), 255, add);
-	} else {
-		if (rt.lt(rt.len(f, live(HSV2)), rt.len(f, live(HSV1)))) {
-			HSV2 = rt.modify(live(HSV2), 255, add);
-		}
-	}
-	usealpha = (rt.gt(rt.len(f, live(HSV1)), 3) ? 1 : 0);
-	if (rt.gt(rt.index(live(HSV1), 1), 1536)) {
-		(rt.modAt(live(HSV1), 1, 1536, rt.modulus));
-	}
-	if (rt.gt(rt.index(live(HSV2), 1), 1536)) {
-		(rt.modAt(live(HSV2), 1, 1536, rt.modulus));
-	}
-	if (rt.lt(rt.index(live(HSV1), 1), 0)) {
-		rt.modAt(live(HSV1), 1, 1536, add);
-	}
-	if (rt.lt(rt.index(live(HSV2), 1), 0)) {
-		rt.modAt(live(HSV2), 1, 1536, add);
-	}
-	if (!truthy(rt.index(live(HSV1), 3))) {
-		rt.setAt(live(HSV1), 1, 0);
-		rt.setAt(live(HSV1), 2, 0);
-	}
-	if (!truthy(rt.index(live(HSV2), 3))) {
-		rt.setAt(live(HSV2), 1, 0);
-		rt.setAt(live(HSV2), 2, 0);
-	}
-	if (!truthy(rt.index(live(HSV1), 3))) {
-		rt.setAt(live(HSV1), 2, rt.index(live(HSV2), 2));
-	}
-	if (!truthy(rt.index(live(HSV2), 3))) {
-		rt.setAt(live(HSV2), 2, rt.index(live(HSV1), 2));
-	}
-	if (!truthy(rt.index(live(HSV1), 2))) {
-		rt.setAt(live(HSV1), 1, rt.index(live(HSV2), 1));
-	}
-	if (!truthy(rt.index(live(HSV2), 2))) {
-		rt.setAt(live(HSV2), 1, rt.index(live(HSV1), 1));
-	}
-	(rt.modAt(live(HSV1), 1, rt.shiftRight(rt.index(live(HSV1), 1), 8), subtract));
-	(rt.modAt(live(HSV2), 1, rt.shiftRight(rt.index(live(HSV2), 1), 8), subtract));
-	if (rt.gt((hue_diff = subtract(rt.index(live(HSV2), 1), rt.index(live(HSV1), 1))), 765)) {
-		(hue_diff = rt.modify(live(hue_diff), 1530, subtract));
-	} else {
-		if (rt.le(live(hue_diff), -765)) {
-			hue_diff = rt.modify(live(hue_diff), 1530, add);
-		}
-	}
-	hue = rt.call(f, P("/proc/round"), null, [add(rt.index(live(HSV1), 1), multiply(live(hue_diff), live(amount))), 1]);
-	sat = rt.call(f, P("/proc/round"), null, [add(rt.index(live(HSV1), 2), multiply(subtract(rt.index(live(HSV2), 2), rt.index(live(HSV1), 2)), live(amount))), 1]);
-	val = rt.call(f, P("/proc/round"), null, [add(rt.index(live(HSV1), 3), multiply(subtract(rt.index(live(HSV2), 3), rt.index(live(HSV1), 3)), live(amount))), 1]);
-	if (truthy(live(usealpha))) {
-		$0 = rt.call(f, P("/proc/round"), null, [add(rt.index(live(HSV1), 4), multiply(subtract(rt.index(live(HSV2), 4), rt.index(live(HSV1), 4)), live(amount))), 1]);
-	} else {
-		$0 = null;
-	}
-	alpha = $0;
-	if ((rt.lt(live(hue), 0) || rt.ge(live(hue), 1530))) {
-		(hue = rt.modify(live(hue), 1530, rt.modulus));
-	}
-	if (rt.lt(live(hue), 0)) {
-		hue = rt.modify(live(hue), 1530, add);
-	}
-	return rt.call(f, P("/proc/hsv"), null, [(hue = rt.modify(live(hue), rt.call(f, P("/proc/round"), null, [divide(live(hue), 255)]), add)), live(sat), live(val), live(alpha)]);
-});
-
 // /proc/BlendRGB  (code/__HELPERS/icons.dm:546)
 rt.def("/proc/BlendRGB", function BlendRGB(f: Frame, rgb1: Value, rgb2: Value, amount: Value) {
 	let RGB1: Value = null, RGB2: Value = null, usealpha: Value = null, r: Value = null, _g: Value = null, b: Value = null, alpha: Value = null;
@@ -662,68 +475,6 @@ rt.def("/proc/BlendRGB", function BlendRGB(f: Frame, rgb1: Value, rgb2: Value, a
 		$0 = rt.op(f, "Rgb", [1, 4], [live(r), live(_g), live(b), live(alpha)]);
 	}
 	return $0;
-});
-
-// /proc/BlendRGBasHSV  (code/__HELPERS/icons.dm:562)
-rt.def("/proc/BlendRGBasHSV", function BlendRGBasHSV(f: Frame, rgb1: Value, rgb2: Value, amount: Value) {
-	return rt.call(f, P("/proc/HSVtoRGB"), null, [rt.call(f, P("/proc/RGBtoHSV"), null, [live(rgb1)]), rt.call(f, P("/proc/RGBtoHSV"), null, [live(rgb2)]), live(amount)]);
-});
-
-// /proc/HueToAngle  (code/__HELPERS/icons.dm:566)
-rt.def("/proc/HueToAngle", function HueToAngle(f: Frame, hue: Value) {
-	f.vars = () => [hue];
-	if ((rt.lt(live(hue), 0) || rt.ge(live(hue), 1536))) {
-		(hue = rt.modify(live(hue), 1536, rt.modulus));
-	}
-	if (rt.lt(live(hue), 0)) {
-		hue = rt.modify(live(hue), 1536, add);
-	}
-	(hue = rt.modify(live(hue), rt.shiftRight(live(hue), 8), subtract));
-	return divide(live(hue), 4.25);
-});
-
-// /proc/AngleToHue  (code/__HELPERS/icons.dm:574)
-rt.def("/proc/AngleToHue", function AngleToHue(f: Frame, angle: Value) {
-	let hue: Value = null;
-	f.vars = () => [angle, hue];
-	if ((rt.lt(live(angle), 0) || rt.ge(live(angle), 360))) {
-		(angle = rt.modify(live(angle), multiply(360, rt.call(f, P("/proc/round"), null, [divide(live(angle), 360)])), subtract));
-	}
-	return (hue = rt.modify(live(hue), rt.call(f, P("/proc/round"), null, [divide((hue = multiply(live(angle), 4.25)), 255)]), add));
-});
-
-// /proc/RotateHue  (code/__HELPERS/icons.dm:583)
-rt.def("/proc/RotateHue", function RotateHue(f: Frame, hsv: Value, angle: Value) {
-	let HSV: Value = null;
-	let $0: any, $1: any, $2: any, $3: any;
-	f.vars = () => [angle, HSV, $0, $1, $2, $3];
-	if (rt.ge(rt.index((HSV = rt.call(f, P("/proc/ReadHSV"), null, [live(hsv)])), 1), 1536)) {
-		(rt.modAt(live(HSV), 1, 1536, rt.modulus));
-	}
-	if (rt.lt(rt.index(live(HSV), 1), 0)) {
-		rt.modAt(live(HSV), 1, 1536, add);
-	}
-	(rt.modAt(live(HSV), 1, rt.shiftRight(rt.index(live(HSV), 1), 8), subtract));
-	if ((rt.lt(live(angle), 0) || rt.ge(live(angle), 360))) {
-		(angle = rt.modify(live(angle), multiply(360, rt.call(f, P("/proc/round"), null, [divide(live(angle), 360)])), subtract));
-	}
-	rt.setAt(live(HSV), 1, rt.call(f, P("/proc/round"), null, [add(rt.index(live(HSV), 1), multiply(live(angle), 4.25)), 1]));
-	if ((rt.lt(rt.index(live(HSV), 1), 0) || rt.ge(rt.index(live(HSV), 1), 1530))) {
-		(rt.modAt(live(HSV), 1, 1530, rt.modulus));
-	}
-	if (rt.lt(rt.index(live(HSV), 1), 0)) {
-		rt.modAt(live(HSV), 1, 1530, add);
-	}
-	rt.modAt(live(HSV), 1, rt.call(f, P("/proc/round"), null, [divide(rt.index(live(HSV), 1), 255)]), add);
-	$0 = rt.index(live(HSV), 1);
-	$1 = rt.index(live(HSV), 2);
-	$2 = rt.index(live(HSV), 3);
-	if (rt.gt(rt.len(f, live(HSV)), 3)) {
-		$3 = rt.index(live(HSV), 4);
-	} else {
-		$3 = null;
-	}
-	return rt.call(f, P("/proc/hsv"), null, [$0, $1, $2, $3]);
 });
 
 // /proc/GrayScale  (code/__HELPERS/icons.dm:605)
@@ -981,55 +732,6 @@ rt.def("/proc/getFlatIcon", function getFlatIcon(f: Frame, A: Value, defdir: Val
 	return rt.call(f, P("/proc/icon"), null, [live(flat), "", 2]);
 });
 
-// /proc/getIconMask  (code/__HELPERS/icons.dm:784)
-rt.def("/proc/getIconMask", function getIconMask(f: Frame, A: Value) {
-	let alpha_mask: Value = null, I: Value = null, image_overlay: Value = null;
-	let $e: any;
-	f.vars = () => [alpha_mask, I, image_overlay, $e];
-	alpha_mask = rt.new_(f, T("/icon"), [rt.fv(f, "icon", live(A)), rt.fv(f, "icon_state", live(A))]);
-	I = null;
-	rt.forList(f, 0, rt.fv(f, "overlays", live(A)));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		if (rt.gt(rt.fv(f, "layer", live(I)), rt.fv(f, "layer", live(A)))) {
-			continue;
-		}
-		image_overlay = rt.new_(f, T("/icon"), [rt.fv(f, "icon", live(I)), rt.fv(f, "icon_state", live(I))]);
-		rt.callName(f, live(alpha_mask), "Blend", [live(image_overlay), 5]);
-	}
-	rt.endFor(f, 0);
-	return live(alpha_mask);
-});
-
-// /mob/proc/AddCamoOverlay  (code/__HELPERS/icons.dm:794)
-rt.def("/mob/proc/AddCamoOverlay", function AddCamoOverlay(f: Frame, A: Value) {
-	let opacity_icon: Value = null, alpha_mask: Value = null, i: Value = null, I: Value = null;
-	let $0: any;
-	f.vars = () => [opacity_icon, alpha_mask, i, I, $0];
-	opacity_icon = rt.new_(f, T("/icon"), [rt.fv(f, "icon", live(A)), rt.fv(f, "icon_state", live(A))]);
-	alpha_mask = rt.call(f, P("/proc/getIconMask"), null, [live(f.src)]);
-	rt.callName(f, live(opacity_icon), "AddAlphaMask", [live(alpha_mask)]);
-	rt.callName(f, live(opacity_icon), "ChangeOpacity", [0.4000000059604645]);
-	i = null;
-	i = 0;
-	while (rt.lt(live(i), 5)) {
-		I = rt.call(f, P("/proc/image"), null, ["icon", live(opacity_icon), "icon_state", rt.fv(f, "icon_state", live(A)), "layer", add(rt.sv(f, "layer"), 0.800000011920929)], rt.Args.Named);
-		$0 = live(i);
-		if ($0 === 1) {
-			rt.incField(f, live(I), "pixel_x", -1, true);
-		} else if ($0 === 2) {
-			rt.incField(f, live(I), "pixel_x", 1, true);
-		} else if ($0 === 3) {
-			rt.incField(f, live(I), "pixel_y", -1, true);
-		} else if ($0 === 4) {
-			rt.incField(f, live(I), "pixel_y", 1, true);
-		}
-		rt.callSrc(f, "add_overlay", [live(I)]);
-		i = rt.inc(live(i), 1);
-	}
-	return f.dot;
-});
-
 // /proc/getHologramIcon  (code/__HELPERS/icons.dm:814)
 rt.def("/proc/getHologramIcon", function getHologramIcon(f: Frame, A: Value, safety: Value) {
 	let flat_icon: Value = null, alpha_mask: Value = null;
@@ -1048,23 +750,6 @@ rt.def("/proc/getHologramIcon", function getHologramIcon(f: Frame, A: Value, saf
 	alpha_mask = rt.new_(f, T("/icon"), [rt.rsc("icons/effects/effects.dmi"), "scanline"]);
 	rt.callName(f, live(flat_icon), "AddAlphaMask", [live(alpha_mask)]);
 	return live(flat_icon);
-});
-
-// /proc/build_composite_icon  (code/__HELPERS/icons.dm:823)
-rt.def("/proc/build_composite_icon", function build_composite_icon(f: Frame, A: Value) {
-	let composite: Value = null, O: Value = null, I: Value = null;
-	let $e: any;
-	f.vars = () => [composite, O, I, $e];
-	composite = rt.call(f, P("/proc/icon"), null, [rt.fv(f, "icon", live(A)), rt.fv(f, "icon_state", live(A)), rt.fv(f, "dir", live(A)), 1]);
-	O = null;
-	rt.forList(f, 0, rt.fv(f, "overlays", live(A)));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		O = $e;
-		I = live(O);
-		rt.callName(f, live(composite), "Blend", [rt.call(f, P("/proc/icon"), null, [rt.fv(f, "icon", live(I)), rt.fv(f, "icon_state", live(I)), rt.fv(f, "dir", live(I)), 1]), 3]);
-	}
-	rt.endFor(f, 0);
-	return live(composite);
 });
 
 // /proc/getStaticIcon  (code/__HELPERS/icons.dm:833)

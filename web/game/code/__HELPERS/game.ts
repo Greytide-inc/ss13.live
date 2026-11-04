@@ -75,13 +75,6 @@ rt.def("/proc/get_areas_in_range", function get_areas_in_range(f: Frame, dist: V
 	return live(areas);
 });
 
-// /proc/get_adjacent_areas  (code/__HELPERS/game.dm:42)
-rt.def("/proc/get_adjacent_areas", function get_adjacent_areas(f: Frame, center: Value) {
-	f.dot = rt.list(rt.call(f, P("/proc/get_area"), null, [rt.call(f, P("/proc/get_ranged_target_turf"), null, [live(center), 1, 1])]), rt.call(f, P("/proc/get_area"), null, [rt.call(f, P("/proc/get_ranged_target_turf"), null, [live(center), 2, 1])]), rt.call(f, P("/proc/get_area"), null, [rt.call(f, P("/proc/get_ranged_target_turf"), null, [live(center), 4, 1])]), rt.call(f, P("/proc/get_area"), null, [rt.call(f, P("/proc/get_ranged_target_turf"), null, [live(center), 8, 1])]));
-	rt.call(f, P("/proc/listclearnulls"), null, [live(f.dot)]);
-	return f.dot;
-});
-
 // /proc/get_open_turf_in_dir  (code/__HELPERS/game.dm:49)
 rt.def("/proc/get_open_turf_in_dir", function get_open_turf_in_dir(f: Frame, center: Value, dir: Value) {
 	let _T: Value = null;
@@ -183,34 +176,6 @@ rt.def("/proc/circlerange", function circlerange(f: Frame, center: Value, radius
 	}
 	rt.endFor(f, 0);
 	return live(turfs);
-});
-
-// /proc/circleview  (code/__HELPERS/game.dm:111)
-rt.def("/proc/circleview", function circleview(f: Frame, center: Value, radius: Value) {
-	let centerturf: Value = null, atoms: Value = null, rsq: Value = null, A: Value = null, dx: Value = null, dy: Value = null;
-	let $e: any;
-	f.vars = () => [center, radius, centerturf, atoms, rsq, A, dx, dy, $e];
-	if (live(center) === null) {
-		center = live(f.usr);
-	}
-	if (live(radius) === null) {
-		radius = 3;
-	}
-	centerturf = rt.getStep(f, live(center), 0);
-	atoms = rt.new_(f, T("/list"), []);
-	rsq = multiply(live(radius), add(live(radius), 0.5));
-	A = null;
-	rt.forList(f, 0, rt.call(f, P("/proc/view"), null, [live(radius), live(centerturf)]), T("/atom"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		A = $e;
-		dx = subtract(rt.fv(f, "x", live(A)), rt.fv(f, "x", live(centerturf)));
-		dy = subtract(rt.fv(f, "y", live(A)), rt.fv(f, "y", live(centerturf)));
-		if (rt.le(add(multiply(live(dx), live(dx)), multiply(live(dy), live(dy))), live(rsq))) {
-			atoms = rt.modify(live(atoms), live(A), add);
-		}
-	}
-	rt.endFor(f, 0);
-	return live(atoms);
 });
 
 // /proc/get_dist_euclidian  (code/__HELPERS/game.dm:125)
@@ -483,25 +448,6 @@ rt.def("/proc/isInSight", function isInSight(f: Frame, A: Value, B: Value) {
 	return f.dot;
 });
 
-// /proc/get_cardinal_step_away  (code/__HELPERS/game.dm:291)
-rt.def("/proc/get_cardinal_step_away", function get_cardinal_step_away(f: Frame, start: Value, finish: Value) {
-	let dx: Value = null, dy: Value = null;
-	f.vars = () => [dx, dy];
-	dx = subtract(rt.fv(f, "x", live(finish)), rt.fv(f, "x", live(start)));
-	if (rt.gt(rt.op(f, "Abs", [], [(dy = subtract(rt.fv(f, "y", live(finish)), rt.fv(f, "y", live(start))))]), rt.op(f, "Abs", [], [live(dx)]))) {
-		if (rt.gt(live(dy), 0)) {
-			return rt.getStep(f, live(start), 2);
-		}
-		return rt.getStep(f, live(start), 1);
-	} else {
-		if (rt.gt(live(dx), 0)) {
-			return rt.getStep(f, live(start), 8);
-		}
-		return rt.getStep(f, live(start), 4);
-	}
-	return f.dot;
-});
-
 // /proc/try_move_adjacent  (code/__HELPERS/game.dm:305)  may sleep
 rt.def("/proc/try_move_adjacent", function* try_move_adjacent(f: Frame, AM: Value) {
 	let _T: Value = null, direction: Value = null;
@@ -570,31 +516,6 @@ rt.def("/proc/get_candidates", function get_candidates(f: Frame, be_special_type
 	}
 	return live(candidates);
 });
-
-// /proc/ScreenText  (code/__HELPERS/game.dm:335)  may sleep
-rt.def("/proc/ScreenText", function* ScreenText(f: Frame, O: Value, maptext: Value, screen_loc: Value, maptext_height: Value, maptext_width: Value) {
-	f.vars = () => [O, maptext, screen_loc, maptext_height, maptext_width];
-	if (live(maptext) === null) {
-		maptext = "";
-	}
-	if (live(screen_loc) === null) {
-		screen_loc = "CENTER-7,CENTER-7";
-	}
-	if (live(maptext_height) === null) {
-		maptext_height = 480;
-	}
-	if (live(maptext_width) === null) {
-		maptext_width = 480;
-	}
-	if (!truthy((rt.istype(live(O), T("/obj")) ? 1 : 0))) {
-		O = (yield* g.new_(f, T("/obj/screen/text"), []));
-	}
-	rt.setFv(f, "maptext", live(O), live(maptext));
-	rt.setFv(f, "maptext_height", live(O), live(maptext_height));
-	rt.setFv(f, "maptext_width", live(O), live(maptext_width));
-	rt.setFv(f, "screen_loc", live(O), live(screen_loc));
-	return live(O);
-}, true);
 
 // /proc/remove_images_from_clients  (code/__HELPERS/game.dm:344)
 rt.def("/proc/remove_images_from_clients", function remove_images_from_clients(f: Frame, I: Value, show_to: Value) {
@@ -684,19 +605,6 @@ rt.def("/proc/get_active_player_count", function get_active_player_count(f: Fram
 		i = rt.inc(live(i), 1);
 	}
 	return live(active_players);
-});
-
-// /proc/projectile_trajectory  (code/__HELPERS/game.dm:408)
-rt.def("/proc/projectile_trajectory", function projectile_trajectory(f: Frame, src_x: Value, src_y: Value, rotation: Value, angle: Value, power: Value) {
-	let power_x: Value = null, power_y: Value = null, time: Value = null, distance: Value = null, dest_x: Value = null, dest_y: Value = null;
-	f.vars = () => [power_x, power_y, time, distance, dest_x, dest_y];
-	power_x = multiply(live(power), rt.op(f, "Cos", [], [live(angle)]));
-	power_y = multiply(live(power), rt.op(f, "Sin", [], [live(angle)]));
-	time = divide(multiply(2, live(power_y)), 10);
-	distance = multiply(live(time), live(power_x));
-	dest_x = add(live(src_x), multiply(live(distance), rt.op(f, "Sin", [], [live(rotation)])));
-	dest_y = add(live(src_y), multiply(live(distance), rt.op(f, "Cos", [], [live(rotation)])));
-	return rt.new_(f, T("/datum/projectile_data"), [live(src_x), live(src_y), live(time), live(distance), live(power_x), live(power_y), live(dest_x), live(dest_y)]);
 });
 
 // /proc/showCandidatePollWindow  (code/__HELPERS/game.dm:422)  may sleep

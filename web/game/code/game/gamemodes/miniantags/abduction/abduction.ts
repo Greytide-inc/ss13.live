@@ -348,12 +348,3 @@ rt.def("/datum/game_mode/proc/update_abductor_icons_added", function update_abdu
 	rt.callSrc(f, "set_antag_hud", [$0, $1]);
 	return f.dot;
 });
-
-// /datum/game_mode/proc/update_abductor_icons_removed  (code/game/gamemodes/miniantags/abduction/abduction.dm:244)
-rt.def("/datum/game_mode/proc/update_abductor_icons_removed", function update_abductor_icons_removed(f: Frame, alien_mind: Value) {
-	let hud: Value = null;
-	f.vars = () => [hud];
-	rt.callName(f, (hud = rt.index(rt.gl("huds"), 14)), "leave_hud", [rt.fv(f, "current", live(alien_mind))]);
-	rt.callSrc(f, "set_antag_hud", [rt.fv(f, "current", live(alien_mind)), null]);
-	return f.dot;
-});

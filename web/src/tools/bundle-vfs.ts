@@ -21,7 +21,7 @@
 // Excluded: icons/ (apart from the above), sound/ bytes (names only, see RULES), and
 // data/ (doesn't exist in the repo; it's created at runtime and belongs entirely to the writable
 // overlay, not the base layer).
-import { readFileSync, readdirSync, statSync, writeFileSync, mkdirSync } from "node:fs";
+import { readFileSync, readdirSync, writeFileSync, mkdirSync } from "node:fs";
 import { join, relative, dirname, resolve as resolvePath } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { VfsBundle } from "../vfs/bundle-format.js";

@@ -144,38 +144,6 @@ rt.def("/obj/machinery/mecha_part_fabricator/proc/emag_act", function* emag_act(
 	return f.dot;
 }, true);
 
-// /obj/machinery/mecha_part_fabricator/proc/output_parts_list  (code/game/mecha/mech_fabricator.dm:102)
-rt.def("/obj/machinery/mecha_part_fabricator/proc/output_parts_list", function output_parts_list(f: Frame, set_name: Value) {
-	let output: Value = null, v: Value = null, D: Value = null;
-	let $e: any;
-	f.vars = () => [output, v, D, $e];
-	output = "";
-	v = null;
-	rt.forList(f, 0, rt.fv(f, "known_designs", rt.sv(f, "files")));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		v = $e;
-		if (truthy(rt.bitAnd(rt.gv(f, "build_type", (D = rt.index(rt.fv(f, "known_designs", rt.sv(f, "files")), live(v)))), 16))) {
-			if (!truthy((rt.isIn(f, live(set_name), rt.fv(f, "category", live(D))) ? 1 : 0))) {
-				continue;
-			}
-			output = rt.modify(live(output), fmt("<div class='part'>＀<br>[", [rt.callSrc(f, "output_part_info", [live(D)])]), add);
-			if (truthy(rt.callSrc(f, "check_resources", [live(D)]))) {
-				output = rt.modify(live(output), fmt("<a href='?src=＃;part=＀'>Build</a> | ", [live(f.src), rt.fv(f, "id", live(D))]), add);
-			}
-			output = rt.modify(live(output), fmt("<a href='?src=＃;add_to_queue=＀'>Add to queue</a>][<a href='?src=＃;part_desc=＀'>?</a>]</div>", [live(f.src), rt.fv(f, "id", live(D)), live(f.src), rt.fv(f, "id", live(D))]), add);
-		}
-	}
-	rt.endFor(f, 0);
-	return live(output);
-});
-
-// /obj/machinery/mecha_part_fabricator/proc/output_part_info  (code/game/mecha/mech_fabricator.dm:115)
-rt.def("/obj/machinery/mecha_part_fabricator/proc/output_part_info", function output_part_info(f: Frame, D: Value) {
-	let output: Value = null;
-	f.vars = () => [output];
-	return (output = fmt("＀ (Cost: ＀) ＀sec", [rt.initial(f, live(D), "name"), rt.callSrc(f, "output_part_cost", [live(D)]), divide(rt.callSrc(f, "get_construction_time_w_coeff", [live(D)]), 10)]));
-});
-
 // /obj/machinery/mecha_part_fabricator/proc/output_part_cost  (code/game/mecha/mech_fabricator.dm:121)
 rt.def("/obj/machinery/mecha_part_fabricator/proc/output_part_cost", function output_part_cost(f: Frame, D: Value) {
 	let i: Value = null, output: Value = null, c: Value = null;
@@ -194,30 +162,6 @@ rt.def("/obj/machinery/mecha_part_fabricator/proc/output_part_cost", function ou
 		}
 		output = rt.modify(live(output), fmt("＀＀ ＀", [$0, rt.callSrc(f, "get_resource_cost_w_coeff", [live(D), live(c)]), rt.callSrc(f, "material2name", [live(c)])]), add);
 		i = rt.inc(live(i), 1);
-	}
-	rt.endFor(f, 0);
-	return live(output);
-});
-
-// /obj/machinery/mecha_part_fabricator/proc/output_available_resources  (code/game/mecha/mech_fabricator.dm:128)
-rt.def("/obj/machinery/mecha_part_fabricator/proc/output_available_resources", function output_available_resources(f: Frame) {
-	let output: Value = null, mat_id: Value = null, M: Value = null;
-	let $e: any;
-	f.vars = () => [output, mat_id, M, $e];
-	output = null;
-	mat_id = null;
-	rt.forList(f, 0, rt.fv(f, "materials", rt.sv(f, "materials")));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		mat_id = $e;
-		output = rt.modify(live(output), fmt("<span class=\"res_name\">＀: </span>＀ cm&sup3;", [rt.gv(f, "name", (M = rt.index(rt.fv(f, "materials", rt.sv(f, "materials")), live(mat_id)))), rt.fv(f, "amount", live(M))]), add);
-		if (rt.ge(rt.fv(f, "amount", live(M)), 2000)) {
-			output = rt.modify(live(output), fmt("<span style='font-size:80%;'>- Remove [<a href='?src=＃;remove_mat=1;material=＀'>1</a>]", [live(f.src), live(mat_id)]), add);
-			if (rt.ge(rt.fv(f, "amount", live(M)), 20000)) {
-				output = rt.modify(live(output), fmt(" | [<a href='?src=＃;remove_mat=10;material=＀'>10</a>]", [live(f.src), live(mat_id)]), add);
-			}
-			output = rt.modify(live(output), fmt(" | [<a href='?src=＃;remove_mat=50;material=＀'>All</a>]</span>", [live(f.src), live(mat_id)]), add);
-		}
-		output = rt.modify(live(output), "<br/>", add);
 	}
 	rt.endFor(f, 0);
 	return live(output);
@@ -348,51 +292,6 @@ rt.def("/obj/machinery/mecha_part_fabricator/proc/process_queue", function* proc
 	yield* g.srcCall(f, "say", "Queue processing finished successfully.");
 	return f.dot;
 }, true);
-
-// /obj/machinery/mecha_part_fabricator/proc/list_queue  (code/game/mecha/mech_fabricator.dm:223)
-rt.def("/obj/machinery/mecha_part_fabricator/proc/list_queue", function list_queue(f: Frame) {
-	let output: Value = null, i: Value = null, D: Value = null, part: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [output, i, D, part, $0, $e];
-	output = "<b>Queue contains:</b>";
-	if ((!truthy((rt.istype(rt.sv(f, "queue"), T("/list")) ? 1 : 0)) || !truthy(rt.len(f, rt.sv(f, "queue"))))) {
-		output = rt.modify(live(output), "<br>Nothing", add);
-	} else {
-		output = rt.modify(live(output), "<ol>", add);
-		i = 0;
-		D = null;
-		rt.forList(f, 0, rt.sv(f, "queue"), T("/datum/design"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			D = $e;
-			i = rt.inc(live(i), 1);
-			part = rt.fv(f, "build_path", live(D));
-			if (!truthy(rt.callSrc(f, "check_resources", [live(D)]))) {
-				$0 = " style='color: #f00;'";
-			} else {
-				$0 = null;
-			}
-			output = rt.modify(live(output), fmt("<li＀>", [$0]), add);
-			output = rt.modify(live(output), add(rt.initial(f, live(part), "name"), " - "), add);
-			if (rt.gt(live(i), 1)) {
-				$0 = fmt("<a href='?src=＃;queue_move=-1;index=＀' class='arrow'>&uarr;</a>", [live(f.src), live(i)]);
-			} else {
-				$0 = null;
-			}
-			output = rt.modify(live(output), fmt("＀ ", [$0]), add);
-			if (rt.lt(live(i), rt.len(f, rt.sv(f, "queue")))) {
-				$0 = fmt("<a href='?src=＃;queue_move=+1;index=＀' class='arrow'>&darr;</a>", [live(f.src), live(i)]);
-			} else {
-				$0 = null;
-			}
-			output = rt.modify(live(output), fmt("＀ ", [$0]), add);
-			output = rt.modify(live(output), fmt("<a href='?src=＃;remove_from_queue=＀'>Remove</a></li>", [live(f.src), live(i)]), add);
-		}
-		rt.endFor(f, 0);
-		output = rt.modify(live(output), "</ol>", add);
-		output = rt.modify(live(output), fmt("[<a href='?src=＃;process_queue=1'>Process queue</a> | <a href='?src=＃;clear_queue=1'>Clear queue</a>]", [live(f.src), live(f.src)]), add);
-	}
-	return live(output);
-});
 
 // /obj/machinery/mecha_part_fabricator/proc/sync  (code/game/mecha/mech_fabricator.dm:243)  may sleep
 rt.def("/obj/machinery/mecha_part_fabricator/proc/sync", function* sync(f: Frame) {

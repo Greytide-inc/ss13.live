@@ -141,34 +141,6 @@ rt.def("/datum/controller/subsystem/tgui/proc/close_all_uis", function* close_al
 	return live(close_count);
 }, true);
 
-// /datum/controller/subsystem/tgui/proc/update_user_uis  (code/modules/tgui/subsystem.dm:131)
-rt.def("/datum/controller/subsystem/tgui/proc/update_user_uis", function update_user_uis(f: Frame, user: Value, src_object: Value, ui_key: Value) {
-	let update_count: Value = null, ui: Value = null;
-	let $e: any;
-	f.vars = () => [src_object, ui_key, update_count, ui, $e];
-	if (live(src_object) === null) {
-		src_object = null;
-	}
-	if (live(ui_key) === null) {
-		ui_key = null;
-	}
-	if (((rt.fv(f, "open_uis", live(user)) === null || !truthy((rt.istype(rt.fv(f, "open_uis", live(user)), T("/list")) ? 1 : 0))) || isEqual(rt.len(f, rt.sv(f, "open_uis")), 0))) {
-		return 0;
-	}
-	update_count = 0;
-	ui = null;
-	rt.forList(f, 0, rt.fv(f, "open_uis", live(user)), T("/datum/tgui"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		ui = $e;
-		if (((live(src_object) === null || (live(src_object) !== null && isEqual(rt.fv(f, "src_object", live(ui)), live(src_object)))) && (live(ui_key) === null || (live(ui_key) !== null && isEqual(rt.fv(f, "ui_key", live(ui)), live(ui_key)))))) {
-			rt.callName(f, live(ui), "process", ["force", 1], rt.Args.Named);
-			update_count = rt.inc(live(update_count), 1);
-		}
-	}
-	rt.endFor(f, 0);
-	return live(update_count);
-});
-
 // /datum/controller/subsystem/tgui/proc/close_user_uis  (code/modules/tgui/subsystem.dm:153)  may sleep
 rt.def("/datum/controller/subsystem/tgui/proc/close_user_uis", function* close_user_uis(f: Frame, user: Value, src_object: Value, ui_key: Value) {
 	let close_count: Value = null, ui: Value = null;

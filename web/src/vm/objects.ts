@@ -1,7 +1,7 @@
 // Datum instances and lists. Semantics measured against BYOND 511.1385 (web/tests/dm/objects.dm,
 // lists.dm); anything not covered by a test is marked "unverified".
 
-import { decRef, GCFlag, GCNode, heap, incRef } from "./gc.js";
+import { decRef, GCFlag, GCNode, incRef } from "./gc.js";
 import { DMType, Resource } from "./objtree.js";
 import { DMRuntimeError, isEqual, type Value } from "./value.js";
 
@@ -134,10 +134,6 @@ export class DMObject extends GCNode {
 			taggedDatums.delete(this);
 			if (!(this.gcFlags & GCFlag.Released)) decRef(this);
 		}
-	}
-
-	get varsView(): VarsList {
-		return (this.varsList ??= new VarsList(this, null, null));
 	}
 
 	/** `vars` with the type's own global/static vars included (read and written through `globals`). */

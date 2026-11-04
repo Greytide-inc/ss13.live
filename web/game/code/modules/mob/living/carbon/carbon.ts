@@ -110,28 +110,6 @@ rt.def("/mob/living/carbon/proc/swap_hand", function swap_hand(f: Frame, held_in
 	return f.dot;
 });
 
-// /mob/living/carbon/proc/activate_hand  (code/modules/mob/living/carbon/carbon.dm:71)  may sleep
-rt.def("/mob/living/carbon/proc/activate_hand", function* activate_hand(f: Frame, selhand: Value) {
-	f.vars = () => [selhand];
-	if (!truthy(live(selhand))) {
-		selhand = add(rt.modulus(rt.sv(f, "active_hand_index"), rt.len(f, rt.sv(f, "held_items"))), 1);
-	}
-	if (truthy((yield* g.call(f, P("/proc/istext"), null, [live(selhand)])))) {
-		if ((isEqual((selhand = (yield* g.call(f, P("/proc/lowertext"), null, [live(selhand)]))), "right") || isEqual(live(selhand), "r"))) {
-			selhand = 2;
-		}
-		if ((isEqual(live(selhand), "left") || isEqual(live(selhand), "l"))) {
-			selhand = 1;
-		}
-	}
-	if (!isEqual(live(selhand), rt.sv(f, "active_hand_index"))) {
-		yield* g.srcCall(f, "swap_hand", live(selhand));
-	} else {
-		yield* g.srcCall(f, "mode");
-	}
-	return f.dot;
-}, true);
-
 // /mob/living/carbon/proc/attackby  (code/modules/mob/living/carbon/carbon.dm:87)  may sleep
 rt.def("/mob/living/carbon/proc/attackby", function* attackby(f: Frame) {
 	let S: Value = null;

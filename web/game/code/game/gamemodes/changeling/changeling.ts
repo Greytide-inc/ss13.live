@@ -546,30 +546,6 @@ rt.def("/datum/changeling/proc/add_new_profile", function* add_new_profile(f: Fr
 	return live(prof);
 }, true);
 
-// /datum/changeling/proc/remove_profile  (code/game/gamemodes/changeling/changeling.dm:422)  may sleep
-rt.def("/datum/changeling/proc/remove_profile", function* remove_profile(f: Frame, H: Value, force: Value) {
-	let prof: Value = null;
-	let $e: any;
-	f.vars = () => [H, force, prof, $e];
-	if (live(force) === null) {
-		force = 0;
-	}
-	prof = null;
-	rt.forList(f, 0, rt.sv(f, "stored_profiles"), T("/datum/changelingprofile"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		prof = $e;
-		if (isEqual(rt.fv(f, "real_name", live(H)), rt.fv(f, "name", live(prof)))) {
-			if ((truthy(rt.fv(f, "protected", live(prof))) && !truthy(live(force)))) {
-				continue;
-			}
-			(rt.modSrcVar(f, "stored_profiles", live(prof), subtract));
-			yield* g.call(f, P("/proc/qdel"), null, [live(prof)]);
-		}
-	}
-	rt.endFor(f, 0);
-	return f.dot;
-}, true);
-
 // /datum/changeling/proc/get_profile_to_remove  (code/game/gamemodes/changeling/changeling.dm:430)
 rt.def("/datum/changeling/proc/get_profile_to_remove", function get_profile_to_remove(f: Frame) {
 	let prof: Value = null;

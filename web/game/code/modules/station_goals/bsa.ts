@@ -202,19 +202,6 @@ rt.def("/obj/machinery/bsa/full/proc/get_front_turf", function get_front_turf(f:
 	return rt.getStep(f, live(f.src), 0);
 });
 
-// /obj/machinery/bsa/full/proc/get_back_turf  (code/modules/station_goals/bsa.dm:149)
-rt.def("/obj/machinery/bsa/full/proc/get_back_turf", function get_back_turf(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.sv(f, "dir");
-	if ($0 === 8) {
-		return rt.locate(add(rt.sv(f, "x"), 4), rt.sv(f, "y"), rt.sv(f, "z"));
-	} else if ($0 === 4) {
-		return rt.locate(subtract(rt.sv(f, "x"), 6), rt.sv(f, "y"), rt.sv(f, "z"));
-	}
-	return rt.getStep(f, live(f.src), 0);
-});
-
 // /obj/machinery/bsa/full/proc/get_target_turf  (code/modules/station_goals/bsa.dm:157)
 rt.def("/obj/machinery/bsa/full/proc/get_target_turf", function get_target_turf(f: Frame) {
 	let $0: any;

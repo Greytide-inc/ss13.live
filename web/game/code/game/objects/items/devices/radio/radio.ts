@@ -527,14 +527,6 @@ rt.def("/obj/item/device/radio/proc/receive_range", function receive_range(f: Fr
 	return rt.sv(f, "canhear_range");
 });
 
-// /obj/item/device/radio/proc/send_hear  (code/game/objects/items/devices/radio/radio.dm:501)
-rt.def("/obj/item/device/radio/proc/send_hear", function send_hear(f: Frame, freq: Value, level: Value) {
-	let range: Value = null;
-	f.vars = () => [range];
-	if (!rt.gt((range = rt.callSrc(f, "receive_range", [live(freq), live(level)])), -1)) return f.dot;
-	return rt.call(f, P("/proc/get_hearers_in_view"), null, [rt.sv(f, "canhear_range"), live(f.src)]);
-});
-
 // /obj/item/device/radio/proc/examine  (code/game/objects/items/devices/radio/radio.dm:507)
 rt.def("/obj/item/device/radio/proc/examine", function examine(f: Frame) {
 	rt.callSuper(f, [], rt.Args.Same);

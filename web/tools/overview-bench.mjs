@@ -212,7 +212,6 @@ function captureMarked(out1, out4) {
 	myMarks.clear();
 	return n;
 }
-const png = (w, h, rgba) => encodePng(w, h, rgba, (d) => deflateSync(d, { level: 9 }));
 const tm = (f) => { const t = performance.now(); const r = f(); return [r, performance.now() - t]; };
 
 // view: an aghost seeing the whole z, as a real spectator page would (one ViewDiffer, full + per-capture update)

@@ -147,17 +147,6 @@ rt.def("/datum/linked_list/proc/Remove", function Remove(f: Frame, node: Value) 
 	return 0;
 });
 
-// /datum/linked_list/proc/RemoveDelete  (code/__DATASTRUCTURES/linked_lists.dm:142)  may sleep
-rt.def("/datum/linked_list/proc/RemoveDelete", function* RemoveDelete(f: Frame, node: Value) {
-	let dead: Value = null;
-	f.vars = () => [node, dead];
-	if (truthy((dead = (yield* g.srcCall(f, "Remove", live(node)))))) {
-		yield* g.call(f, P("/proc/qdel"), null, [live(dead)]);
-		return 1;
-	}
-	return 0;
-}, true);
-
 // /datum/linked_list/proc/Empty  (code/__DATASTRUCTURES/linked_lists.dm:151)  may sleep
 rt.def("/datum/linked_list/proc/Empty", function* Empty(f: Frame) {
 	let n: Value = null, next: Value = null;
@@ -172,55 +161,3 @@ rt.def("/datum/linked_list/proc/Empty", function* Empty(f: Frame) {
 	rt.setSv(f, "node_amt", 0);
 	return f.dot;
 }, true);
-
-// /datum/linked_list/proc/CheckNodeLinks  (code/__DATASTRUCTURES/linked_lists.dm:162)
-rt.def("/datum/linked_list/proc/CheckNodeLinks", function CheckNodeLinks(f: Frame) {
-	let n: Value = null;
-	f.vars = () => [n];
-	n = rt.sv(f, "head");
-	while (truthy(live(n))) {
-		f.dot = fmt("|＀|", [rt.fv(f, "value", live(n))]);
-		if (truthy(rt.fv(f, "previous_node", live(n)))) {
-			f.dot = add(fmt("＀<-", [rt.gv(f, "value", rt.fv(f, "previous_node", live(n)))]), live(f.dot));
-		}
-		if (truthy(rt.fv(f, "next_node", live(n)))) {
-			f.dot = rt.modify(live(f.dot), fmt("->＀", [rt.gv(f, "value", rt.fv(f, "next_node", live(n)))]), add);
-		}
-		n = rt.fv(f, "next_node", live(n));
-		f.dot = rt.modify(live(f.dot), "<BR>", add);
-	}
-	return f.dot;
-});
-
-// /datum/linked_list/proc/DrawNodeLinks  (code/__DATASTRUCTURES/linked_lists.dm:174)
-rt.def("/datum/linked_list/proc/DrawNodeLinks", function DrawNodeLinks(f: Frame) {
-	let n: Value = null;
-	f.vars = () => [n];
-	f.dot = "|<-";
-	n = rt.sv(f, "head");
-	while (truthy(live(n))) {
-		if (truthy(rt.fv(f, "previous_node", live(n)))) {
-			f.dot = rt.modify(live(f.dot), "<-", add);
-		}
-		f.dot = rt.modify(live(f.dot), fmt("＀", [rt.fv(f, "value", live(n))]), add);
-		if (truthy(rt.fv(f, "next_node", live(n)))) {
-			f.dot = rt.modify(live(f.dot), "->", add);
-		}
-		n = rt.fv(f, "next_node", live(n));
-	}
-	f.dot = rt.modify(live(f.dot), "->|", add);
-	return f.dot;
-});
-
-// /datum/linked_list/proc/ToList  (code/__DATASTRUCTURES/linked_lists.dm:187)
-rt.def("/datum/linked_list/proc/ToList", function ToList(f: Frame) {
-	let n: Value = null;
-	f.vars = () => [n];
-	f.dot = rt.list();
-	n = rt.sv(f, "head");
-	while (truthy(live(n))) {
-		f.dot = rt.modify(live(f.dot), live(n), add);
-		n = rt.fv(f, "next_node", live(n));
-	}
-	return f.dot;
-});

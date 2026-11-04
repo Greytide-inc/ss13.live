@@ -495,42 +495,6 @@ rt.def("/obj/machinery/capture_the_flag/proc/stop_ctf", function* stop_ctf(f: Fr
 	return f.dot;
 }, true);
 
-// /obj/machinery/capture_the_flag/proc/instagib_mode  (code/modules/awaymissions/capture_the_flag.dm:340)
-rt.def("/obj/machinery/capture_the_flag/proc/instagib_mode", function instagib_mode(f: Frame) {
-	let CTF: Value = null;
-	let $e: any;
-	f.vars = () => [CTF, $e];
-	CTF = null;
-	rt.forList(f, 0, rt.gl("machines"), T("/obj/machinery/capture_the_flag"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		CTF = $e;
-		if (isEqual(rt.fv(f, "ctf_enabled", live(CTF)), 1)) {
-			rt.setFv(f, "ctf_gear", live(CTF), rt.fv(f, "instagib_gear", live(CTF)));
-			rt.setFv(f, "respawn_cooldown", live(CTF), 50);
-		}
-	}
-	rt.endFor(f, 0);
-	return f.dot;
-});
-
-// /obj/machinery/capture_the_flag/proc/normal_mode  (code/modules/awaymissions/capture_the_flag.dm:346)
-rt.def("/obj/machinery/capture_the_flag/proc/normal_mode", function normal_mode(f: Frame) {
-	let CTF: Value = null;
-	let $e: any;
-	f.vars = () => [CTF, $e];
-	CTF = null;
-	rt.forList(f, 0, rt.gl("machines"), T("/obj/machinery/capture_the_flag"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		CTF = $e;
-		if (isEqual(rt.fv(f, "ctf_enabled", live(CTF)), 1)) {
-			rt.setFv(f, "ctf_gear", live(CTF), rt.initial(f, live(f.src), "ctf_gear"));
-			rt.setFv(f, "respawn_cooldown", live(CTF), 150);
-		}
-	}
-	rt.endFor(f, 0);
-	return f.dot;
-});
-
 rt.type(5205, "/obj/item/weapon/gun/ballistic/automatic/pistol/deagle/ctf", "/obj/item/weapon/gun/ballistic/automatic/pistol/deagle", {
 	desc: "This looks like it could really hurt in melee.",
 	force: 75,

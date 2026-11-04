@@ -72,16 +72,6 @@ rt.def("/proc/Floor", function Floor(f: Frame, x: Value, y: Value) {
 	return multiply(rt.call(f, P("/proc/round"), null, [divide(live(x), live(y))]), live(y));
 });
 
-// /proc/Cot  (code/__HELPERS/maths.dm:30)
-rt.def("/proc/Cot", function Cot(f: Frame, x: Value) {
-	return divide(1, rt.call(f, P("/proc/Tan"), null, [live(x)]));
-});
-
-// /proc/Csc  (code/__HELPERS/maths.dm:34)
-rt.def("/proc/Csc", function Csc(f: Frame, x: Value) {
-	return divide(1, rt.op(f, "Sin", [], [live(x)]));
-});
-
 // /proc/Default  (code/__HELPERS/maths.dm:37)
 rt.def("/proc/Default", function Default(f: Frame, a: Value, b: Value) {
 	let $0: any;
@@ -111,15 +101,6 @@ rt.def("/proc/Inverse", function Inverse(f: Frame, x: Value) {
 	return divide(1, live(x));
 });
 
-// /proc/IsAboutEqual  (code/__HELPERS/maths.dm:47)
-rt.def("/proc/IsAboutEqual", function IsAboutEqual(f: Frame, a: Value, b: Value, deviation: Value) {
-	f.vars = () => [deviation];
-	if (live(deviation) === null) {
-		deviation = 0.10000000149011612;
-	}
-	return (rt.le(rt.op(f, "Abs", [], [subtract(live(a), live(b))]), live(deviation)) ? 1 : 0);
-});
-
 // /proc/IsEven  (code/__HELPERS/maths.dm:50)
 rt.def("/proc/IsEven", function IsEven(f: Frame, x: Value) {
 	return (isEqual(rt.modulus(live(x), 2), 0) ? 1 : 0);
@@ -145,11 +126,6 @@ rt.def("/proc/IsMultiple", function IsMultiple(f: Frame, x: Value, y: Value) {
 	return (isEqual(rt.modulus(live(x), live(y)), 0) ? 1 : 0);
 });
 
-// /proc/Lcm  (code/__HELPERS/maths.dm:67)
-rt.def("/proc/Lcm", function Lcm(f: Frame, a: Value, b: Value) {
-	return multiply(divide(rt.op(f, "Abs", [], [live(a)]), rt.call(f, P("/proc/Gcd"), null, [live(a), live(b)])), rt.op(f, "Abs", [], [live(b)]));
-});
-
 // /proc/Lerp  (code/__HELPERS/maths.dm:73)
 rt.def("/proc/Lerp", function Lerp(f: Frame, a: Value, b: Value, amount: Value) {
 	f.vars = () => [amount];
@@ -157,28 +133,6 @@ rt.def("/proc/Lerp", function Lerp(f: Frame, a: Value, b: Value, amount: Value) 
 		amount = 0.5;
 	}
 	return add(live(a), multiply(subtract(live(b), live(a)), live(amount)));
-});
-
-// /proc/Sum  (code/__HELPERS/maths.dm:78)
-rt.def("/proc/Sum", function Sum(f: Frame, data: Value) {
-	let val: Value = null;
-	let $e: any;
-	f.vars = () => [val, $e];
-	f.dot = 0;
-	val = null;
-	rt.forList(f, 0, live(data));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		val = $e;
-		f.dot = rt.modify(live(f.dot), live(val), add);
-	}
-	rt.endFor(f, 0);
-	return f.dot;
-});
-
-// /proc/Mean  (code/__HELPERS/maths.dm:83)
-rt.def("/proc/Mean", function Mean(f: Frame, data: Value) {
-	f.dot = divide(rt.call(f, P("/proc/Sum"), null, [live(data)]), rt.len(f, live(data)));
-	return f.dot;
 });
 
 // /proc/Root  (code/__HELPERS/maths.dm:88)
@@ -191,44 +145,9 @@ rt.def("/proc/Sec", function Sec(f: Frame, x: Value) {
 	return divide(1, rt.op(f, "Cos", [], [live(x)]));
 });
 
-// /proc/SolveQuadratic  (code/__HELPERS/maths.dm:97)
-rt.def("/proc/SolveQuadratic", function SolveQuadratic(f: Frame, a: Value, b: Value, c: Value) {
-	let d: Value = null, bottom: Value = null, root: Value = null;
-	let $0: any;
-	f.vars = () => [d, bottom, root, $0];
-	if (truthy(live(a))) {
-		$0 = null;
-	} else {
-		$0 = rt.call(f, P("/proc/CRASH"), null, ["Assertion Failed: a"]);
-	}
-	f.dot = rt.list();
-	d = subtract(multiply(live(b), live(b)), multiply(multiply(4, live(a)), live(c)));
-	bottom = multiply(2, live(a));
-	if (rt.lt(live(d), 0)) {
-		return live(f.dot);
-	}
-	root = rt.op(f, "Sqrt", [], [live(d)]);
-	f.dot = rt.modify(live(f.dot), divide(add(rt.neg(live(b)), live(root)), live(bottom)), add);
-	if (!truthy(live(d))) {
-		return live(f.dot);
-	}
-	f.dot = rt.modify(live(f.dot), divide(subtract(rt.neg(live(b)), live(root)), live(bottom)), add);
-	return f.dot;
-});
-
 // /proc/Tan  (code/__HELPERS/maths.dm:109)
 rt.def("/proc/Tan", function Tan(f: Frame, x: Value) {
 	return divide(rt.op(f, "Sin", [], [live(x)]), rt.op(f, "Cos", [], [live(x)]));
-});
-
-// /proc/ToDegrees  (code/__HELPERS/maths.dm:113)
-rt.def("/proc/ToDegrees", function ToDegrees(f: Frame, radians: Value) {
-	return multiply(live(radians), 57.295780181884766);
-});
-
-// /proc/ToRadians  (code/__HELPERS/maths.dm:117)
-rt.def("/proc/ToRadians", function ToRadians(f: Frame, degrees: Value) {
-	return multiply(live(degrees), 0.01745329238474369);
 });
 
 // /proc/SimplifyDegrees  (code/__HELPERS/maths.dm:122)

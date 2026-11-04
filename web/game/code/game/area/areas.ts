@@ -500,25 +500,6 @@ rt.def("/area/proc/set_fire_alarm_effect", function set_fire_alarm_effect(f: Fra
 	return f.dot;
 });
 
-// /area/proc/readyalert  (code/game/area/areas.dm:299)
-rt.def("/area/proc/readyalert", function readyalert(f: Frame) {
-	if (isEqual(rt.sv(f, "name"), "Space")) {
-		return live(f.dot);
-	}
-	if (truthy(rt.sv(f, "eject"))) return f.dot;
-	rt.setSv(f, "eject", 1);
-	rt.callSrc(f, "updateicon", []);
-	return f.dot;
-});
-
-// /area/proc/readyreset  (code/game/area/areas.dm:308)
-rt.def("/area/proc/readyreset", function readyreset(f: Frame) {
-	if (!truthy(rt.sv(f, "eject"))) return f.dot;
-	rt.setSv(f, "eject", 0);
-	rt.callSrc(f, "updateicon", []);
-	return f.dot;
-});
-
 // /area/proc/partyalert  (code/game/area/areas.dm:311)
 rt.def("/area/proc/partyalert", function partyalert(f: Frame) {
 	if (isEqual(rt.fv(f, "name", live(f.src)), "Space")) {

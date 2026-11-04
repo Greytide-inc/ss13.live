@@ -59,12 +59,6 @@ rt.def("/datum/proc/p_were", function p_were(f: Frame, temp_gender: Value) {
 	return f.dot;
 });
 
-// /datum/proc/p_do  (code/__HELPERS/pronouns.dm:28)
-rt.def("/datum/proc/p_do", function p_do(f: Frame, temp_gender: Value) {
-	f.dot = "does";
-	return f.dot;
-});
-
 // /datum/proc/p_theyve  (code/__HELPERS/pronouns.dm:31)
 rt.def("/datum/proc/p_theyve", function p_theyve(f: Frame, capitalized: Value, temp_gender: Value) {
 	f.dot = add(add(rt.callSrc(f, "p_they", [live(capitalized), live(temp_gender)]), "'"), rt.call(f, P("/proc/copytext"), null, [rt.callSrc(f, "p_have", [live(temp_gender)]), 3]));
@@ -173,18 +167,6 @@ rt.def("/client/proc/p_were", function p_were(f: Frame, temp_gender: Value) {
 	f.dot = "was";
 	if (!(isEqual(live(temp_gender), "plural") || isEqual(live(temp_gender), "neuter"))) return f.dot;
 	f.dot = "were";
-	return f.dot;
-});
-
-// /client/proc/p_do  (code/__HELPERS/pronouns.dm:98)
-rt.def("/client/proc/p_do", function p_do(f: Frame, temp_gender: Value) {
-	f.vars = () => [temp_gender];
-	if (!truthy(live(temp_gender))) {
-		temp_gender = rt.sv(f, "gender");
-	}
-	f.dot = "does";
-	if (!(isEqual(live(temp_gender), "plural") || isEqual(live(temp_gender), "neuter"))) return f.dot;
-	f.dot = "do";
 	return f.dot;
 });
 
@@ -298,18 +280,6 @@ rt.def("/mob/proc/p_were", function p_were(f: Frame, temp_gender: Value) {
 	return f.dot;
 });
 
-// /mob/proc/p_do  (code/__HELPERS/pronouns.dm:175)
-rt.def("/mob/proc/p_do", function p_do(f: Frame, temp_gender: Value) {
-	f.vars = () => [temp_gender];
-	if (!truthy(live(temp_gender))) {
-		temp_gender = rt.sv(f, "gender");
-	}
-	f.dot = "does";
-	if (!isEqual(live(temp_gender), "plural")) return f.dot;
-	f.dot = "do";
-	return f.dot;
-});
-
 // /mob/proc/p_s  (code/__HELPERS/pronouns.dm:182)
 rt.def("/mob/proc/p_s", function p_s(f: Frame, temp_gender: Value) {
 	f.vars = () => [temp_gender];
@@ -383,18 +353,6 @@ rt.def("/mob/living/carbon/human/proc/p_are", function p_are(f: Frame) {
 
 // /mob/living/carbon/human/proc/p_were  (code/__HELPERS/pronouns.dm:224)
 rt.def("/mob/living/carbon/human/proc/p_were", function p_were(f: Frame) {
-	let obscured: Value = null, skipface: Value = null;
-	f.vars = () => [obscured, skipface];
-	obscured = rt.callSrc(f, "check_obscured_slots", []);
-	skipface = ((rt.sv(f, "wear_mask") && rt.bitAnd(rt.fv(f, "flags_inv", rt.sv(f, "wear_mask")), 128)) || (rt.sv(f, "head") && rt.bitAnd(rt.fv(f, "flags_inv", rt.sv(f, "head")), 128)));
-	if ((truthy((rt.isIn(f, 14, live(obscured)) ? 1 : 0)) && truthy(live(skipface)))) {
-		f.args[0] = "plural";
-	}
-	return rt.callSuper(f, [], rt.Args.Same);
-}, false, { args: ["temp_gender"] });
-
-// /mob/living/carbon/human/proc/p_do  (code/__HELPERS/pronouns.dm:231)
-rt.def("/mob/living/carbon/human/proc/p_do", function p_do(f: Frame) {
 	let obscured: Value = null, skipface: Value = null;
 	f.vars = () => [obscured, skipface];
 	obscured = rt.callSrc(f, "check_obscured_slots", []);

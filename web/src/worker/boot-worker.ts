@@ -48,10 +48,8 @@
 // is synchronous and the browser only inflates asynchronously. A runtime icon in a view update is sent as
 // a blob: URL of a real .dmi (png.ts encodeDmi), which the page loads like any other sheet.
 
-import { VM, type AnimEvent, type RuntimeErrorRecord } from "../vm/interpreter.js";
 import { DMList, DMObject } from "../vm/objects.js";
-import { refOf, refTable } from "../vm/refs.js";
-import { heap } from "../vm/gc.js";
+import { refOf } from "../vm/refs.js";
 import { loadSnapshot, resumeWorld } from "../vm/snapshot.js";
 import { snapshotMapOk } from "../vm/persist-replay.js";
 import { isTruthy, stringify, type Value } from "../vm/value.js";
@@ -64,9 +62,9 @@ import { loadWorld } from "./load-world.js";
 import { installInput, mouseSeen, onKey, onStep, onCommand, onTyping, onAnswer, onStat, onTopic, onWinclose, onClick, onMenu, onMenuPick, onMouse, onBugState, type Player, type ClickMsg, type MenuMsg, type MenuPickMsg, type MouseMsg } from "./input.js";
 import { holdLobby, readyAtRoundStart, restoreJobPrefs } from "./test-aids.js";
 import { parseDmiBytes } from "../dmi/dmi-browser.js";
-import { decodePng, encodePng, pngIdat } from "../dmi/png.js";
-import { type IconImage, iconFromSheet, recipePaths } from "../dmi/icon-ops.js";
-import { stress, stressStart, stressLosLine } from "../vm/stress-log.js";
+import { decodePng, pngIdat } from "../dmi/png.js";
+import { type IconImage, iconFromSheet } from "../dmi/icon-ops.js";
+import { stressStart } from "../vm/stress-log.js";
 import { type Pace, paceStart, paceStep } from "./pace.js";
 import { inputOk } from "./input-check.js";
 import { waitUntil, type WaitMode } from "./tick-wait.js";

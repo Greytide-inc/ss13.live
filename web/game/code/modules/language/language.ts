@@ -56,47 +56,6 @@ rt.def("/datum/language/proc/get_icon", function get_icon(f: Frame) {
 	return fmt("＀", [rt.call(f, P("/proc/bicon"), null, [rt.call(f, P("/proc/icon"), null, [rt.sv(f, "icon"), rt.sv(f, "icon_state")])])]);
 });
 
-// /datum/language/proc/get_random_name  (code/modules/language/language.dm:41)
-rt.def("/datum/language/proc/get_random_name", function get_random_name(f: Frame, gender: Value, name_count: Value, syllable_count: Value, syllable_divisor: Value) {
-	let full_name: Value = null, new_name: Value = null, i: Value = null, Y: Value = null, x: Value = null;
-	let $e: any;
-	f.vars = () => [name_count, syllable_count, syllable_divisor, full_name, new_name, i, Y, x, $e];
-	if (live(name_count) === null) {
-		name_count = 2;
-	}
-	if (live(syllable_count) === null) {
-		syllable_count = 4;
-	}
-	if (live(syllable_divisor) === null) {
-		syllable_divisor = 2;
-	}
-	if ((!truthy(rt.sv(f, "syllables")) || !truthy(rt.len(f, rt.sv(f, "syllables"))))) {
-		if (isEqual(live(gender), "female")) {
-			return add(add(rt.call(f, P("/proc/capitalize"), null, [rt.op(f, "PickUnweighted", [1], [rt.gl("first_names_female")])]), " "), rt.call(f, P("/proc/capitalize"), null, [rt.op(f, "PickUnweighted", [1], [rt.gl("last_names")])]));
-		}
-		return add(add(rt.call(f, P("/proc/capitalize"), null, [rt.op(f, "PickUnweighted", [1], [rt.gl("first_names_male")])]), " "), rt.call(f, P("/proc/capitalize"), null, [rt.op(f, "PickUnweighted", [1], [rt.gl("last_names")])]));
-	}
-	full_name = "";
-	new_name = "";
-	i = null;
-	rt.forRange(f, 0, 0, live(name_count), 1);
-	while (($e = rt.next(f, 0)) !== undefined) {
-		i = $e;
-		new_name = "";
-		Y = rt.call(f, P("/proc/rand"), null, [rt.call(f, P("/proc/Floor"), null, [divide(live(syllable_count), live(syllable_divisor))]), live(syllable_count)]);
-		x = null;
-		rt.forRange(f, 1, live(Y), 0, 1);
-		while (($e = rt.next(f, 1)) !== undefined) {
-			x = $e;
-			new_name = rt.modify(live(new_name), rt.op(f, "PickUnweighted", [1], [rt.sv(f, "syllables")]), add);
-		}
-		rt.endFor(f, 1);
-		full_name = rt.modify(live(full_name), fmt(" ＀", [rt.call(f, P("/proc/capitalize"), null, [rt.call(f, P("/proc/lowertext"), null, [live(new_name)])])]), add);
-	}
-	rt.endFor(f, 0);
-	return fmt("＀", [rt.call(f, P("/proc/trim"), null, [live(full_name)])]);
-});
-
 // /datum/language/proc/check_cache  (code/modules/language/language.dm:60)
 rt.def("/datum/language/proc/check_cache", function check_cache(f: Frame, input: Value) {
 	let lookup: Value = null;
@@ -155,17 +114,4 @@ rt.def("/datum/language/proc/scramble", function scramble(f: Frame, input: Value
 	}
 	rt.callSrc(f, "add_to_cache", [live(input), live(scrambled_text)]);
 	return live(scrambled_text);
-});
-
-// /datum/language/proc/get_spoken_verb  (code/modules/language/language.dm:112)
-rt.def("/datum/language/proc/get_spoken_verb", function get_spoken_verb(f: Frame, msg_end: Value) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = live(msg_end);
-	if ($0 === "!") {
-		return rt.sv(f, "exclaim_verb");
-	} else if ($0 === "?") {
-		return rt.sv(f, "ask_verb");
-	}
-	return rt.sv(f, "speech_verb");
 });

@@ -201,33 +201,6 @@ rt.def("/datum/material_container/proc/use_amount_type", function use_amount_typ
 	return 0;
 });
 
-// /datum/material_container/proc/can_use_amount  (code/datums/material_container.dm:125)
-rt.def("/datum/material_container/proc/can_use_amount", function can_use_amount(f: Frame, amt: Value, id: Value, mats: Value) {
-	let M: Value = null;
-	let $e: any;
-	f.vars = () => [M, $e];
-	if ((truthy(live(amt)) && truthy(live(id)))) {
-		if ((truthy((M = rt.index(rt.sv(f, "materials"), live(id)))) && rt.ge(rt.fv(f, "amount", live(M)), live(amt)))) {
-			return 1;
-		}
-	} else {
-		if (truthy((rt.istype(live(mats), T("/list")) ? 1 : 0))) {
-			M = null;
-			rt.forList(f, 0, live(mats));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				M = $e;
-				if ((truthy(rt.index(rt.sv(f, "materials"), live(M))) && rt.le(rt.index(live(mats), live(M)), rt.index(rt.sv(f, "materials"), live(M))))) {
-					continue;
-				}
-				return 0;
-			}
-			rt.endFor(f, 0);
-			return 1;
-		}
-	}
-	return 0;
-});
-
 // /datum/material_container/proc/retrieve  (code/datums/material_container.dm:140)  may sleep
 rt.def("/datum/material_container/proc/retrieve", function* retrieve(f: Frame, sheet_amt: Value, M: Value, target: Value) {
 	let count: Value = null, s: Value = null;
@@ -274,12 +247,6 @@ rt.def("/datum/material_container/proc/retrieve_sheets", function* retrieve_shee
 		return (yield* g.srcCall(f, "retrieve", live(sheet_amt), rt.index(rt.sv(f, "materials"), live(id)), live(target)));
 	}
 	return 0;
-}, true);
-
-// /datum/material_container/proc/retrieve_amount  (code/datums/material_container.dm:166)  may sleep
-rt.def("/datum/material_container/proc/retrieve_amount", function* retrieve_amount(f: Frame, amt: Value, id: Value, target: Value) {
-	f.vars = () => [amt, id, target];
-	return (yield* g.srcCall(f, "retrieve_sheets", (yield* g.srcCall(f, "amount2sheet", live(amt))), live(id), live(target)));
 }, true);
 
 // /datum/material_container/proc/retrieve_all  (code/datums/material_container.dm:171)  may sleep
@@ -339,14 +306,6 @@ rt.def("/datum/material_container/proc/has_materials", function has_materials(f:
 rt.def("/datum/material_container/proc/amount2sheet", function amount2sheet(f: Frame, amt: Value) {
 	if (rt.ge(live(amt), 2000)) {
 		return rt.call(f, P("/proc/round"), null, [divide(live(amt), 2000)]);
-	}
-	return 0;
-});
-
-// /datum/material_container/proc/sheet2amount  (code/datums/material_container.dm:196)
-rt.def("/datum/material_container/proc/sheet2amount", function sheet2amount(f: Frame, sheet_amt: Value) {
-	if (rt.gt(live(sheet_amt), 0)) {
-		return multiply(live(sheet_amt), 2000);
 	}
 	return 0;
 });

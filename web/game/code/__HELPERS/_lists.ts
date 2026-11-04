@@ -104,46 +104,6 @@ rt.def("/proc/is_type_in_typecache", function is_type_in_typecache(f: Frame, A: 
 	return f.dot;
 });
 
-// /proc/is_string_in_list  (code/__HELPERS/_lists.dm:75)
-rt.def("/proc/is_string_in_list", function is_string_in_list(f: Frame, string: Value, L: Value) {
-	let V: Value = null;
-	let $e: any;
-	f.vars = () => [V, $e];
-	if (((!truthy(live(L)) || !truthy(rt.len(f, live(L)))) || !truthy(live(string)))) {
-		return live(f.dot);
-	}
-	V = null;
-	rt.forList(f, 0, live(L));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		V = $e;
-		if (isEqual(live(string), live(V))) {
-			return 1;
-		}
-	}
-	rt.endFor(f, 0);
-	return live(f.dot);
-});
-
-// /proc/remove_strings_from_list  (code/__HELPERS/_lists.dm:84)
-rt.def("/proc/remove_strings_from_list", function remove_strings_from_list(f: Frame, string: Value, L: Value) {
-	let V: Value = null;
-	let $e: any;
-	f.vars = () => [L, V, $e];
-	if (((!truthy(live(L)) || !truthy(rt.len(f, live(L)))) || !truthy(live(string)))) {
-		return live(f.dot);
-	}
-	V = null;
-	rt.forList(f, 0, live(L));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		V = $e;
-		if (isEqual(live(V), live(string))) {
-			(L = rt.modify(live(L), live(V), subtract));
-		}
-	}
-	rt.endFor(f, 0);
-	return live(f.dot);
-});
-
 // /proc/typecache_filter_list  (code/__HELPERS/_lists.dm:93)
 rt.def("/proc/typecache_filter_list", function typecache_filter_list(f: Frame, atoms: Value, typecache: Value) {
 	let thing: Value = null, A: Value = null;
@@ -279,25 +239,6 @@ rt.def("/proc/difflist", function difflist(f: Frame, first: Value, second: Value
 	return live(result);
 });
 
-// /proc/uniquemergelist  (code/__HELPERS/_lists.dm:164)
-rt.def("/proc/uniquemergelist", function uniquemergelist(f: Frame, first: Value, second: Value, skiprep: Value) {
-	let result: Value = null;
-	f.vars = () => [skiprep, result];
-	if (live(skiprep) === null) {
-		skiprep = 0;
-	}
-	if ((!truthy((rt.istype(live(first), T("/list")) ? 1 : 0)) || !truthy((rt.istype(live(second), T("/list")) ? 1 : 0)))) {
-		return live(f.dot);
-	}
-	result = rt.new_(f, T("/list"), []);
-	if (truthy(live(skiprep))) {
-		result = add(rt.call(f, P("/proc/difflist"), null, [live(first), live(second), live(skiprep)]), rt.call(f, P("/proc/difflist"), null, [live(second), live(first), live(skiprep)]));
-	} else {
-		result = rt.bitXor(live(first), live(second));
-	}
-	return live(result);
-});
-
 // /proc/pickweight  (code/__HELPERS/_lists.dm:177)
 rt.def("/proc/pickweight", function pickweight(f: Frame, L: Value) {
 	let total: Value = null, item: Value = null;
@@ -353,18 +294,6 @@ rt.def("/proc/popleft", function popleft(f: Frame, L: Value) {
 	rt.callName(f, live(L), "Cut", [1, 2]);
 	return f.dot;
 });
-
-// /proc/sorted_insert  (code/__HELPERS/_lists.dm:210)  may sleep
-rt.def("/proc/sorted_insert", function* sorted_insert(f: Frame, L: Value, thing: Value, comparator: Value) {
-	let pos: Value = null;
-	f.vars = () => [L, thing, comparator, pos];
-	pos = rt.len(f, live(L));
-	while (rt.gt(live(pos), 0) && rt.gt((yield* g.callDyn(f, live(comparator), undefined, [live(thing), rt.index(live(L), live(pos))])), 0)) {
-		pos = rt.inc(live(pos), -1);
-	}
-	yield* g.callName(f, live(L), "Insert", [add(live(pos), 1), live(thing)]);
-	return f.dot;
-}, true);
 
 // /proc/next_list_item  (code/__HELPERS/_lists.dm:217)
 rt.def("/proc/next_list_item", function next_list_item(f: Frame, item: Value, L: Value) {
@@ -523,39 +452,6 @@ rt.def("/proc/sortNames", function* sortNames(f: Frame, L: Value, order: Value) 
 	return (yield* g.call(f, P("/proc/sortTim"), null, [$0, $1]));
 }, true);
 
-// /proc/bitfield2list  (code/__HELPERS/_lists.dm:289)
-rt.def("/proc/bitfield2list", function bitfield2list(f: Frame, bitfield: Value, wordlist: Value) {
-	let r: Value = null, max: Value = null, bit: Value = null, i: Value = null, bit_1: Value = null;
-	f.vars = () => [bitfield, r, max, bit, i, bit_1];
-	if (live(bitfield) === null) {
-		bitfield = 0;
-	}
-	r = rt.list();
-	if (truthy((rt.istype(live(wordlist), T("/list")) ? 1 : 0))) {
-		max = rt.call(f, P("/proc/min"), null, [rt.len(f, live(wordlist)), 16]);
-		bit = 1;
-		i = null;
-		i = 1;
-		while (rt.le(live(i), live(max))) {
-			if (truthy(rt.bitAnd(live(bitfield), live(bit)))) {
-				r = rt.modify(live(r), rt.index(live(wordlist), live(i)), add);
-			}
-			bit = rt.shiftLeft(live(bit), 1);
-			i = rt.inc(live(i), 1);
-		}
-	} else {
-		bit_1 = null;
-		bit_1 = 1;
-		while (rt.le(live(bit_1), 65535)) {
-			if (truthy(rt.bitAnd(live(bitfield), live(bit_1)))) {
-				r = rt.modify(live(r), live(bit_1), add);
-			}
-			bit_1 = rt.shiftLeft(live(bit_1), 1);
-		}
-	}
-	return live(r);
-});
-
 // /proc/count_by_type  (code/__HELPERS/_lists.dm:309)
 rt.def("/proc/count_by_type", function count_by_type(f: Frame, L: Value, type: Value) {
 	let i: Value = null, _T: Value = null;
@@ -643,45 +539,6 @@ rt.def("/proc/moveRange", function moveRange(f: Frame, L: Value, fromIndex: Valu
 	return f.dot;
 });
 
-// /proc/swapRange  (code/__HELPERS/_lists.dm:364)
-rt.def("/proc/swapRange", function swapRange(f: Frame, L: Value, fromIndex: Value, toIndex: Value, len: Value) {
-	let distance: Value = null, i: Value = null, a: Value = null;
-	let $t: any;
-	f.vars = () => [fromIndex, toIndex, len, distance, i, a, $t];
-	if (live(len) === null) {
-		len = 1;
-	}
-	distance = rt.op(f, "Abs", [], [subtract(live(toIndex), live(fromIndex))]);
-	if (rt.gt(live(len), live(distance))) {
-		if (rt.lt(live(fromIndex), live(toIndex))) {
-			toIndex = rt.modify(live(toIndex), live(len), add);
-		} else {
-			fromIndex = rt.modify(live(fromIndex), live(len), add);
-		}
-		i = null;
-		i = 0;
-		while (rt.lt(live(i), live(distance))) {
-			rt.callName(f, live(L), "Insert", [live(fromIndex), null]);
-			rt.callName(f, live(L), "Swap", [live(fromIndex), live(toIndex)]);
-			rt.callName(f, live(L), "Cut", [live(toIndex), add(live(toIndex), 1)]);
-			i = rt.inc(live(i), 1);
-		}
-	} else {
-		if (rt.gt(live(toIndex), live(fromIndex))) {
-			a = live(toIndex);
-			toIndex = live(fromIndex);
-			fromIndex = live(a);
-		}
-		i = null;
-		i = 0;
-		while (rt.lt(live(i), live(len))) {
-			rt.callName(f, live(L), "Swap", [($t = live(fromIndex), fromIndex = rt.inc($t, 1), $t), ($t = live(toIndex), toIndex = rt.inc($t, 1), $t)]);
-			i = rt.inc(live(i), 1);
-		}
-	}
-	return f.dot;
-});
-
 // /proc/reverseRange  (code/__HELPERS/_lists.dm:386)
 rt.def("/proc/reverseRange", function reverseRange(f: Frame, L: Value, start: Value, end: Value) {
 	let $t: any;
@@ -707,26 +564,6 @@ rt.def("/proc/reverseRange", function reverseRange(f: Frame, L: Value, start: Va
 		}
 	}
 	return live(L);
-});
-
-// /proc/getElementByVar  (code/__HELPERS/_lists.dm:405)
-rt.def("/proc/getElementByVar", function getElementByVar(f: Frame, L: Value, varname: Value, value: Value) {
-	let D: Value = null;
-	let $e: any;
-	f.vars = () => [varname, D, $e];
-	varname = fmt("＀", [live(varname)]);
-	D = null;
-	rt.forList(f, 0, live(L), T("/datum"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		D = $e;
-		if (truthy(rt.callName(f, rt.fv(f, "vars", live(D)), "Find", [live(varname)]))) {
-			if (isEqual(rt.index(rt.fv(f, "vars", live(D)), live(varname)), live(value))) {
-				return live(D);
-			}
-		}
-	}
-	rt.endFor(f, 0);
-	return f.dot;
 });
 
 // /proc/removeNullsFromList  (code/__HELPERS/_lists.dm:413)

@@ -224,17 +224,6 @@ rt.def("/obj/machinery/atmospherics/components/proc/unsafe_pressure_release", fu
 	return f.dot;
 }, true, { args: ["user", "pressures"] });
 
-// /obj/machinery/atmospherics/components/proc/safe_input  (code/modules/atmospherics/machinery/components/components_base.dm:141)  may sleep
-rt.def("/obj/machinery/atmospherics/components/proc/safe_input", function* safe_input(f: Frame, title: Value, text: Value, default_set: Value) {
-	let new_value: Value = null;
-	f.vars = () => [title, text, default_set, new_value];
-	new_value = (yield* g.op(f, "Prompt", [32], [live(default_set), live(title), live(text), live(f.usr), null]));
-	if (truthy((yield* g.callName(f, live(f.usr), "canUseTopic", [live(f.src)])))) {
-		return live(new_value);
-	}
-	return live(default_set);
-}, true);
-
 // /obj/machinery/atmospherics/components/proc/update_parents  (code/modules/atmospherics/machinery/components/components_base.dm:151)
 rt.def("/obj/machinery/atmospherics/components/proc/update_parents", function update_parents(f: Frame) {
 	let I: Value = null, parent: Value = null;

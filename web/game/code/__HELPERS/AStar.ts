@@ -30,11 +30,6 @@ rt.def("/PathNode/proc/calc_f", function calc_f(f: Frame) {
 	return f.dot;
 });
 
-// /proc/PathWeightCompare  (code/__HELPERS/AStar.dm:57)
-rt.def("/proc/PathWeightCompare", function PathWeightCompare(f: Frame, a: Value, b: Value) {
-	return subtract(rt.fv(f, "f", live(a)), rt.fv(f, "f", live(b)));
-});
-
 // /proc/HeapPathWeightCompare  (code/__HELPERS/AStar.dm:61)
 rt.def("/proc/HeapPathWeightCompare", function HeapPathWeightCompare(f: Frame, a: Value, b: Value) {
 	return subtract(rt.fv(f, "f", live(b)), rt.fv(f, "f", live(a)));

@@ -304,20 +304,6 @@ rt.def("/obj/docking_port/mobile/arrivals/proc/Launch", function* Launch(f: Fram
 	return f.dot;
 }, true);
 
-// /obj/docking_port/mobile/arrivals/proc/RequireUndocked  (code/modules/shuttle/arrivals.dm:185)  may sleep
-rt.def("/obj/docking_port/mobile/arrivals/proc/RequireUndocked", function* RequireUndocked(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if ((isEqual(rt.sv(f, "mode"), "call") || truthy(rt.sv(f, "damaged")))) {
-		return live(f.dot);
-	}
-	yield* g.srcCall(f, "Launch", 1);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>Calling your shuttle. One moment...</span>"]);
-	while (!isEqual(rt.sv(f, "mode"), "call") && !truthy(rt.sv(f, "damaged"))) {
-		yield* g.call(f, P("/proc/stoplag"), null, []);
-	}
-	return f.dot;
-}, true);
-
 // /obj/docking_port/mobile/arrivals/proc/QueueAnnounce  (code/modules/shuttle/arrivals.dm:195)  may sleep
 rt.def("/obj/docking_port/mobile/arrivals/proc/QueueAnnounce", function* QueueAnnounce(f: Frame, mob: Value, rank: Value) {
 	f.vars = () => [mob, rank];

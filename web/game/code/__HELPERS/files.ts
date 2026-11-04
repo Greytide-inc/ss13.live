@@ -85,33 +85,3 @@ rt.def("/client/proc/file_spam_check", function file_spam_check(f: Frame) {
 	rt.setGl("fileaccess_timer", add(rt.worldTime(f), 200));
 	return 0;
 });
-
-// /proc/pathwalk  (code/__HELPERS/files.dm:53)
-rt.def("/proc/pathwalk", function pathwalk(f: Frame, path: Value) {
-	let jobs: Value = null, filenames: Value = null, current_dir: Value = null, new_filenames: Value = null, new_filename: Value = null;
-	let $e: any;
-	f.vars = () => [jobs, filenames, current_dir, new_filenames, new_filename, $e];
-	jobs = rt.list(live(path));
-	filenames = rt.list();
-	while (truthy(rt.len(f, live(jobs)))) {
-		current_dir = rt.call(f, P("/proc/pop"), null, [live(jobs)]);
-		new_filenames = rt.call(f, P("/proc/flist"), null, [live(current_dir)]);
-		new_filename = null;
-		rt.forList(f, 0, live(new_filenames));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			new_filename = $e;
-			if (truthy(rt.call(f, P("/proc/findtext"), null, [live(new_filename), "/", -1]))) {
-				jobs = rt.modify(live(jobs), add(live(current_dir), live(new_filename)), add);
-			} else {
-				filenames = rt.modify(live(filenames), add(live(current_dir), live(new_filename)), add);
-			}
-		}
-		rt.endFor(f, 0);
-	}
-	return live(filenames);
-});
-
-// /proc/pathflatten  (code/__HELPERS/files.dm:68)
-rt.def("/proc/pathflatten", function pathflatten(f: Frame, path: Value) {
-	return rt.call(f, P("/proc/replacetext"), null, [live(path), "/", "_"]);
-});

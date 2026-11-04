@@ -59,22 +59,6 @@ rt.def("/mob/living/carbon/human/proc/get_item_by_slot", function get_item_by_sl
 	return null;
 });
 
-// /mob/living/carbon/human/proc/get_all_slots  (code/modules/mob/living/carbon/human/inventory.dm:44)
-rt.def("/mob/living/carbon/human/proc/get_all_slots", function get_all_slots(f: Frame) {
-	f.dot = rt.bitOr(rt.callSrc(f, "get_head_slots", []), rt.callSrc(f, "get_body_slots", []));
-	return f.dot;
-});
-
-// /mob/living/carbon/human/proc/get_body_slots  (code/modules/mob/living/carbon/human/inventory.dm:47)
-rt.def("/mob/living/carbon/human/proc/get_body_slots", function get_body_slots(f: Frame) {
-	return rt.list(rt.sv(f, "back"), rt.sv(f, "s_store"), rt.sv(f, "handcuffed"), rt.sv(f, "legcuffed"), rt.sv(f, "wear_suit"), rt.sv(f, "gloves"), rt.sv(f, "shoes"), rt.sv(f, "belt"), rt.sv(f, "wear_id"), rt.sv(f, "l_store"), rt.sv(f, "r_store"), rt.sv(f, "w_uniform"));
-});
-
-// /mob/living/carbon/human/proc/get_head_slots  (code/modules/mob/living/carbon/human/inventory.dm:63)
-rt.def("/mob/living/carbon/human/proc/get_head_slots", function get_head_slots(f: Frame) {
-	return rt.list(rt.sv(f, "head"), rt.sv(f, "wear_mask"), rt.sv(f, "glasses"), rt.sv(f, "ears"));
-});
-
 // /mob/living/carbon/human/proc/get_storage_slots  (code/modules/mob/living/carbon/human/inventory.dm:71)
 rt.def("/mob/living/carbon/human/proc/get_storage_slots", function get_storage_slots(f: Frame) {
 	return rt.list(rt.sv(f, "back"), rt.sv(f, "belt"), rt.sv(f, "l_store"), rt.sv(f, "r_store"), rt.sv(f, "s_store"));
