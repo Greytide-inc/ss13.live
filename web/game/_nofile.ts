@@ -8465,8 +8465,8 @@ rt.def("/turf/open/floor/plasteel/proc/<init>", function _init_(f: Frame) {
 	let $0: any;
 	f.vars = () => [$0];
 	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "broken_states", rt.list("damaged1", "damaged2", "damaged3", "damaged4", "damaged5"));
-	rt.setSv(f, "burnt_states", rt.list("floorscorched1", "floorscorched2"));
+	rt.setSv(f, "broken_states", rt.gl("floor_broken_states")); // tg_js: shared read-only lists (_globals.ts), not a copy per tile
+	rt.setSv(f, "burnt_states", rt.gl("plasteel_burnt_states"));
 	return f.dot;
 });
 

@@ -13,10 +13,10 @@ rt.type(4507, "/turf/open/floor/plating", "/turf/open/floor", {
 // /turf/open/floor/plating/proc/Initialize  (code/game/turfs/simulated/floor/plating.dm:17)  may sleep
 rt.def("/turf/open/floor/plating/proc/Initialize", function* Initialize(f: Frame) {
 	if (!truthy(rt.sv(f, "broken_states"))) {
-		rt.setSv(f, "broken_states", rt.list("platingdmg1", "platingdmg2", "platingdmg3"));
+		rt.setSv(f, "broken_states", rt.gl("plating_broken_states")); // tg_js: shared read-only lists (_globals.ts), not a copy per tile
 	}
 	if (!truthy(rt.sv(f, "burnt_states"))) {
-		rt.setSv(f, "burnt_states", rt.list("panelscorched"));
+		rt.setSv(f, "burnt_states", rt.gl("plating_burnt_states"));
 	}
 	yield* g.callSuper(f, [], rt.Args.Same);
 	rt.setSv(f, "icon_plating", rt.sv(f, "icon_state"));

@@ -1,6 +1,6 @@
 <!-- TOC depthFrom:1 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 
-> **ss13.live:** build with `cd web && npm run build:tgui` (runs `tgui/build.js`, Node 20). The gulp/Windows instructions below are from 2017 and no longer apply.
+> **ss13.live:** build with `cd web && npm run build:tgui` (runs `tgui/build.js`, Node 20). The gulp/Windows instructions below are from 2017 and no longer apply. The DM examples below still describe the procs, but in this repo they are TypeScript in `web/game/` (how to read them: `web/game/HOW-TO-READ.md`).
 
 - [tgui](#tgui)
 	- [Concepts](#concepts)

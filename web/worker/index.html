@@ -10,6 +10,7 @@
      &endround=N: N seconds after you spawn, end the round the way the admin "End Round" verb does (tg's round-end
      report, then "Rebooting World in 90 seconds"; the tab then starts the next world and you land in its lobby).
      &ssoff=air,machines (test aid): at round start, stop those subsystems (SSair, SSmachines: can_fire = 0), to measure what each costs.
+     &map=creative: creative mode's map, a flat floor 239 tiles across, made at start (src/vm/creative-map.ts); the full build saves it as a world.
      &autojoin=JOB (test aid): in every world's lobby, 20 ticks after round start, click the late-join link for JOB.
      &rounddelay=S: tg's reboot countdown after the round-end report (config.txt ROUND_END_COUNTDOWN, 90 s).
      &renderer=canvas (3d): draw with canvas 2D instead of PixiJS (the default); &sync=1 waits for the GPU each redraw so #perf is the real cost.

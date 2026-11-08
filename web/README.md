@@ -15,15 +15,12 @@ npm run build:static                    # full (~2 min): saved worlds, loads in 
 
 | Command | What it does |
 |---|---|
-| `npm test` | Every quick test (engine, page, drawing, icons, VFS, compare-logs, tgui fixtures; ~30 s), listed in `tests/all.mjs`: a new test goes there. Doesn't compile `game/` |
+| `npm test` | Every quick test (engine, page, drawing, icons, VFS, compare-logs, tgui fixtures; ~30 s), listed in `tests/all.mjs`: a new test goes there. Rebundles `game/` first when it changed (no type check) |
 | `npm run boot-check -- [--twice] NAME` | Boot headless in Node (~3.5 min), compare the log with the BYOND recording in `reference/`. Rebundles `game/` when it changed. Exit 0 = clean |
-| `npm run build:static [-- --no-snapshot] [-- --dist build/NAME-dist]` | Build `dist/` (the game page) or your own test copy with `--dist`. Full builds save worlds for Box, Runtime and the scenario maps |
+| `npm run build:static [-- --no-snapshot] [-- --dist build/NAME-dist]` | Build `dist/` (the game page) or your own test copy with `--dist`. Full builds save worlds for Box, Runtime and creative mode |
 | `node tools/csp.mjs` | After any edit to `worker/index.html`'s inline script: refreshes its CSP hashes (else the page runs nothing and never connects; `npm test` catches it) |
 | `npm run build:tgui` | Rebuild `tgui/assets/tgui.js` + `.css` from `tgui/src` (~6 s); then `build:static` |
 | `node tools/make-snapshot.mjs NAME [--map runtime] [--after-start S]` | Save a world S game seconds into a round (default 300) as `build/snapshot-cache/world-NAME.snap.gz`; build:static ships it while it matches. The page loads it with `?snap=NAME`. Mid-round sleeps must be tails (`game/README.md`) |
-| `tools/scenario-check.sh [NAME...]` | Runs every scenario with an `expect:` / `expect-not:` header line (or the named ones) and prints ok/FAIL each; exit 1 if any failed (~36 s for one). Needs `npx tsc -p .` first |
-| `node build/dist/src/tools/boot.js --scenario NAME` | Play `scenarios/NAME.txt` (map, job, seed, length, scripted input) headless on a fake clock, so a seed always gives the same run (`--real-clock` for timing). The page: `?scenario=NAME` |
-| `GASDUMP_DIR=build/gd-A node build/dist/src/tools/boot.js --scenario gas-diff --log build/x.log --data-out build/x-data`, then again into `gd-B`, then `node tools/gas-diff.mjs build/gd-A build/gd-B`. After a game/ change add `--no-snapshot` to both runs (the saved lobby no longer matches the new build, so only one side would load it) | Gas guard for atmos speed-ups: exact gas state (active turfs, pipelines, turf sample) at 3 points; exit 0 = bit-identical, 1 = differences listed |
 | `npm run test:restart` | Round end in the offline build: three worlds, two restarts, headless Firefox (~2.5 min) |
 | `npm run gallery` / `npm run worker-boot -- --join Assistant` | Developer page on :8471 / boot in headless Chrome and screenshot |
 
@@ -47,7 +44,7 @@ It boots the round itself and logs the worker's `[vm-boot]` lines to stdout and 
 
 - **Far or hostile player vs a window's hrefs:** `node tools/topic-check.mjs --dist build/NAME-dist --only SCENARIO`.
 - **tgui-quick** (layout, no game, ~1 s): `node --experimental-websocket tools/tgui-quick.mjs [--shot DIR] [--click TEXT] NAME...` loads tgui in headless Firefox with a fixture (`tests/tgui-fixtures/NAME.json`: `{config, data}`, optional `checks`: `text`, `disabled`, `enabled`, `boxMin`, `clicks`) and prints the window text, buttons (`[disabled]` = greyed), box widths, image 404s, page errors, and the href a clicked button would send. New fixtures: `capture:NAME` in a `ui2-tgui --steps` run writes one from a real game.
-- **ui2-tgui** (what a click does in the game): `?tgui=PATH` stands the player next to the first such atom with its window open (`src/worker/boot-worker.ts`, `opts.tgui`); a state-log hook there (search `fabTgt`) logs the machine's vars as `tgui: tNNN ...` lines. Run it on your own build: `ui2-tgui --dist build/NAME-dist`.
+- **ui2-tgui** (what a click does in the game): `?tgui=PATH` stands the player next to the first such atom with its window open (`src/worker/boot-worker.ts`, `opts.tgui`); a state-log hook in `src/worker/tick-aids.ts` (search `fabTgt`) logs the machine's vars as `tgui: tNNN ...` lines. Run it on your own build: `ui2-tgui --dist build/NAME-dist`.
 
 ## Folders
 

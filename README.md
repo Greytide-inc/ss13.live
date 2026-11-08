@@ -77,6 +77,4 @@ All other assets, including icons and sounds, are under [CC BY-SA 3.0](https://c
 
 ## Credits
 
-The game, its sprites and its sounds are the work of the [/tg/station 13](https://github.com/tgstation/tgstation) contributors and the Space Station 13 coders before them. Features brought back from later /tg/station are theirs too.
-
-This port's code was written by AI coding assistants (mostly Claude Code), directed and play-tested by one person.
+The game, its sprites and its sounds are the work of the [/tg/station 13](https://github.com/tgstation/tgstation) contributors and the Space Station 13 coders before them. This port's code was written by AI coding assistants (mostly Claude Code), directed and play-tested by one person.

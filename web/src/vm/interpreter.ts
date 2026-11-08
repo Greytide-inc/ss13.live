@@ -538,12 +538,15 @@ export class VM {
 		return v instanceof DMType ? v : null;
 	}
 
+	/** Compile-time maps read from another file instead, by path (creative mode: creative-map.ts); null = as listed. */
+	compiledMapSwaps: Record<string, string> | null = null;
+
 	/** How long compiledMaps() took to read the .dmm files (for the boot log); -1 when they came from the JSON. */
 	mapReadMs = -1;
 
 	/** The compile-time maps: the .dmm files web/game/_maps.ts lists (read from the vfs), or the JSON's Maps (--json-types, tests). */
 	compiledMaps(): CompiledMap[] {
-		const files = this.tree.json.MapFiles;
+		const files = this.tree.json.MapFiles?.map((f) => this.compiledMapSwaps?.[f] ?? f);
 		if (!files) return (this.tree.json.Maps ?? []) as CompiledMap[];
 		const t0 = performance.now();
 		const maps = parseDmms(files, (f) => this.vfs.readText(f), (p) => this.tree.getType(p));

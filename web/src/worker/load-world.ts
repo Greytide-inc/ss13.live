@@ -9,6 +9,7 @@ import { Vfs } from "../vfs/vfs.js";
 import { openStore, isSavedPath, type FileStore } from "../vfs/persist.js";
 import type { VfsBundle } from "../vfs/bundle-format.js";
 import { restoreSaves } from "../vm/persist-replay.js";
+import { setUpCreative, SIZE as CREATIVE_SIZE } from "../vm/creative-map.js";
 import { parseHeader, parseScript } from "./scenario-script.js";
 import { encodeDmi } from "../dmi/png.js";
 import { type IconImage, evalRecipe } from "../dmi/icon-ops.js";
@@ -115,7 +116,8 @@ export async function loadWorld(ctx: LoadWorldCtx) {
 		post({ type: "milestone", name: "translated", s: Number(secs()) });
 	}
 	vm.vfs = new Vfs(bundle);
-	if (opts.map) { // ?map=runtime boots tg's map the way the game does: data/next_map.json holds that map's _maps/<name>.json
+	if (opts.map === "creative") { setUpCreative(vm); log(`[vm-boot] map option 'creative': ${CREATIVE_SIZE} tiles across, made at start, no Lavaland or space ruins`); } // creative-map.ts
+	else if (opts.map) { // ?map=runtime boots tg's map the way the game does: data/next_map.json holds that map's _maps/<name>.json
 		const mj = bundle.files[`_maps/${opts.map}station.json`] ?? bundle.files[`_maps/${opts.map}.json`];
 		if (mj) { vm.vfs.writeText("data/next_map.json", mj); log(`[vm-boot] map option '${opts.map}': data/next_map.json written`); } else log(`[vm-boot] map option '${opts.map}': no _maps json found, using the default`);
 	}

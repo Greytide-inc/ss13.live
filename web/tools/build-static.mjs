@@ -84,11 +84,11 @@ sub("web/build/dist/src/render/draw-client.js", [['"/" + iconPath', '"./" + icon
 // If none of those changed since the last snapshot (same content hash), the cached one is copied in (~1 s) instead of booting
 // again (~1 min). Page/worker/render/tgui edits keep it. `--fresh-snapshot` forces a new one.
 const snapCache = join(web, "build/snapshot-cache"), snapKey = snapshotKey(web);
-// one snapshot per map: BoxStation, runtime, and every map a web/scenarios/*.txt header names. Each has its own cache files
+// one snapshot per map: BoxStation, runtime, creative (creative-map.ts), and every map a web/scenarios/*.txt header names. Each has its own cache files
 // (names from snapNames) and the same key.
 const snapMaps = [""];
 if (!process.argv.includes("--no-snapshot")) {
-	const wanted = new Set(["runtime"]);
+	const wanted = new Set(["runtime", "creative"]);
 	const sdir = join(web, "scenarios");
 	if (existsSync(sdir)) for (const f of readdirSync(sdir)) if (f.endsWith(".txt")) { const m = readFileSync(join(sdir, f), "utf8").match(/^\s*map\s*:\s*(\S+)/im); if (m) wanted.add(m[1]); }
 	const seen = new Set(["box"]);

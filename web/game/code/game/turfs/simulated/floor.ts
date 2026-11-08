@@ -22,10 +22,10 @@ rt.type(4506, "/turf/open/floor", "/turf/open", {
 // /turf/open/floor/proc/Initialize  (code/game/turfs/simulated/floor.dm:20)  may sleep
 rt.def("/turf/open/floor/proc/Initialize", function* Initialize(f: Frame) {
 	if (!truthy(rt.sv(f, "broken_states"))) {
-		rt.setSv(f, "broken_states", rt.list("damaged1", "damaged2", "damaged3", "damaged4", "damaged5"));
+		rt.setSv(f, "broken_states", rt.gl("floor_broken_states")); // tg_js: shared read-only lists (_globals.ts), not a copy per tile
 	}
 	if (!truthy(rt.sv(f, "burnt_states"))) {
-		rt.setSv(f, "burnt_states", rt.list());
+		rt.setSv(f, "burnt_states", rt.gl("floor_burnt_states"));
 	}
 	yield* g.callSuper(f, [], rt.Args.Same);
 	if (truthy((rt.isIn(f, rt.sv(f, "icon_state"), rt.gl("icons_to_ignore_at_floor_init")) ? 1 : 0))) {

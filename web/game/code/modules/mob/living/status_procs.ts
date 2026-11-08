@@ -23,6 +23,7 @@ rt.def("/mob/living/proc/AmountStun", function AmountStun(f: Frame) {
 rt.def("/mob/living/proc/Stun", function* Stun(f: Frame, amount: Value, updating: Value, ignore_canstun: Value) {
 	let S: Value = null;
 	f.vars = () => [amount, updating, ignore_canstun, S];
+	if (truthy(rt.bitAnd(rt.sv(f, "status_flags"), 4096)) && rt.gt(live(amount), 0)) return null; // tg_js: GODMODE stops stuns too, as in modern tg
 	if (live(updating) === null) {
 		updating = 1;
 	}
@@ -47,6 +48,7 @@ rt.def("/mob/living/proc/Stun", function* Stun(f: Frame, amount: Value, updating
 rt.def("/mob/living/proc/SetStun", function* SetStun(f: Frame, amount: Value, updating: Value, ignore_canstun: Value) {
 	let S: Value = null;
 	f.vars = () => [amount, updating, ignore_canstun, S];
+	if (truthy(rt.bitAnd(rt.sv(f, "status_flags"), 4096)) && rt.gt(live(amount), 0)) return null; // tg_js: GODMODE stops stuns too, as in modern tg
 	if (live(updating) === null) {
 		updating = 1;
 	}
@@ -76,6 +78,7 @@ rt.def("/mob/living/proc/SetStun", function* SetStun(f: Frame, amount: Value, up
 rt.def("/mob/living/proc/AdjustStun", function* AdjustStun(f: Frame, amount: Value, updating: Value, ignore_canstun: Value) {
 	let S: Value = null;
 	f.vars = () => [amount, updating, ignore_canstun, S];
+	if (truthy(rt.bitAnd(rt.sv(f, "status_flags"), 4096)) && rt.gt(live(amount), 0)) return null; // tg_js: GODMODE stops stuns too, as in modern tg
 	if (live(updating) === null) {
 		updating = 1;
 	}
@@ -115,6 +118,7 @@ rt.def("/mob/living/proc/AmountKnockdown", function AmountKnockdown(f: Frame) {
 rt.def("/mob/living/proc/Knockdown", function* Knockdown(f: Frame, amount: Value, updating: Value, ignore_canknockdown: Value) {
 	let K: Value = null;
 	f.vars = () => [amount, updating, ignore_canknockdown, K];
+	if (truthy(rt.bitAnd(rt.sv(f, "status_flags"), 4096)) && rt.gt(live(amount), 0)) return null; // tg_js: GODMODE stops stuns too, as in modern tg
 	if (live(updating) === null) {
 		updating = 1;
 	}
@@ -139,6 +143,7 @@ rt.def("/mob/living/proc/Knockdown", function* Knockdown(f: Frame, amount: Value
 rt.def("/mob/living/proc/SetKnockdown", function* SetKnockdown(f: Frame, amount: Value, updating: Value, ignore_canknockdown: Value) {
 	let K: Value = null;
 	f.vars = () => [amount, updating, ignore_canknockdown, K];
+	if (truthy(rt.bitAnd(rt.sv(f, "status_flags"), 4096)) && rt.gt(live(amount), 0)) return null; // tg_js: GODMODE stops stuns too, as in modern tg
 	if (live(updating) === null) {
 		updating = 1;
 	}
@@ -168,6 +173,7 @@ rt.def("/mob/living/proc/SetKnockdown", function* SetKnockdown(f: Frame, amount:
 rt.def("/mob/living/proc/AdjustKnockdown", function* AdjustKnockdown(f: Frame, amount: Value, updating: Value, ignore_canknockdown: Value) {
 	let K: Value = null;
 	f.vars = () => [amount, updating, ignore_canknockdown, K];
+	if (truthy(rt.bitAnd(rt.sv(f, "status_flags"), 4096)) && rt.gt(live(amount), 0)) return null; // tg_js: GODMODE stops stuns too, as in modern tg
 	if (live(updating) === null) {
 		updating = 1;
 	}

@@ -15,7 +15,7 @@ The gym's punching bag, from `code/modules/mining/lavaland/ruins/gym.ts`. In DM 
 Here it is:
 
 ```ts
-rt.type(12972, "/obj/structure/punching_bag", "/obj/structure", {
+rt.type(12962, "/obj/structure/punching_bag", "/obj/structure", {
 	name: "punching bag",
 	icon: rt.rsc("icons/obj/gym_equipment.dmi"),
 	icon_state: "punchingbag",

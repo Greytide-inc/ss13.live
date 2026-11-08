@@ -23,6 +23,7 @@ rt.def("/mob/living/proc/AmountUnconscious", function AmountUnconscious(f: Frame
 rt.def("/mob/living/proc/Unconscious", function* Unconscious(f: Frame, amount: Value, updating: Value, ignore_canunconscious: Value) {
 	let U: Value = null;
 	f.vars = () => [amount, updating, ignore_canunconscious, U];
+	if (truthy(rt.bitAnd(rt.sv(f, "status_flags"), 4096)) && rt.gt(live(amount), 0)) return null; // tg_js: GODMODE stops stuns too, as in modern tg
 	if (live(updating) === null) {
 		updating = 1;
 	}
@@ -44,6 +45,7 @@ rt.def("/mob/living/proc/Unconscious", function* Unconscious(f: Frame, amount: V
 rt.def("/mob/living/proc/SetUnconscious", function* SetUnconscious(f: Frame, amount: Value, updating: Value, ignore_canunconscious: Value) {
 	let U: Value = null;
 	f.vars = () => [amount, updating, ignore_canunconscious, U];
+	if (truthy(rt.bitAnd(rt.sv(f, "status_flags"), 4096)) && rt.gt(live(amount), 0)) return null; // tg_js: GODMODE stops stuns too, as in modern tg
 	if (live(updating) === null) {
 		updating = 1;
 	}
@@ -70,6 +72,7 @@ rt.def("/mob/living/proc/SetUnconscious", function* SetUnconscious(f: Frame, amo
 rt.def("/mob/living/proc/AdjustUnconscious", function* AdjustUnconscious(f: Frame, amount: Value, updating: Value, ignore_canunconscious: Value) {
 	let U: Value = null;
 	f.vars = () => [amount, updating, ignore_canunconscious, U];
+	if (truthy(rt.bitAnd(rt.sv(f, "status_flags"), 4096)) && rt.gt(live(amount), 0)) return null; // tg_js: GODMODE stops stuns too, as in modern tg
 	if (live(updating) === null) {
 		updating = 1;
 	}
@@ -106,6 +109,7 @@ rt.def("/mob/living/proc/AmountSleeping", function AmountSleeping(f: Frame) {
 rt.def("/mob/living/proc/Sleeping", function* Sleeping(f: Frame, amount: Value, updating: Value) {
 	let S: Value = null;
 	f.vars = () => [amount, updating, S];
+	if (truthy(rt.bitAnd(rt.sv(f, "status_flags"), 4096)) && rt.gt(live(amount), 0)) return null; // tg_js: GODMODE stops stuns too, as in modern tg
 	if (live(updating) === null) {
 		updating = 1;
 	}
@@ -123,6 +127,7 @@ rt.def("/mob/living/proc/Sleeping", function* Sleeping(f: Frame, amount: Value, 
 rt.def("/mob/living/proc/SetSleeping", function* SetSleeping(f: Frame, amount: Value, updating: Value) {
 	let S: Value = null;
 	f.vars = () => [amount, updating, S];
+	if (truthy(rt.bitAnd(rt.sv(f, "status_flags"), 4096)) && rt.gt(live(amount), 0)) return null; // tg_js: GODMODE stops stuns too, as in modern tg
 	if (live(updating) === null) {
 		updating = 1;
 	}
@@ -145,6 +150,7 @@ rt.def("/mob/living/proc/SetSleeping", function* SetSleeping(f: Frame, amount: V
 rt.def("/mob/living/proc/AdjustSleeping", function* AdjustSleeping(f: Frame, amount: Value, updating: Value) {
 	let S: Value = null;
 	f.vars = () => [amount, updating, S];
+	if (truthy(rt.bitAnd(rt.sv(f, "status_flags"), 4096)) && rt.gt(live(amount), 0)) return null; // tg_js: GODMODE stops stuns too, as in modern tg
 	if (live(updating) === null) {
 		updating = 1;
 	}

@@ -72,6 +72,7 @@ import { stress, stressStart, stressTakeGc, gcFrom } from "../vm/stress-log.js";
 import { diffHook } from "../vm/clockhook.js";
 import { randomInt } from "node:crypto";
 import type { VfsBundle } from "../vfs/bundle-format.js";
+import { setUpCreative } from "../vm/creative-map.js";
 
 const argv = process.argv.slice(2);
 const opt = (name: string, dflt: string) => {
@@ -155,7 +156,8 @@ if (cfg) bundle.files["config/config.txt"] = cfg.replace(/^GUEST_BAN/m, "#GUEST_
 const vm = new VM(tree);
 vm.vfs = new Vfs(bundle);
 const mapOpt = opt("--map", scen && !isBoxStation(scen.map) ? scen.map! : ""); // --map runtime boots Runtime Station (data/next_map.json from _maps/runtimestation.json)
-if (mapOpt) { const mj = bundle.files[`_maps/${mapOpt}station.json`] ?? bundle.files[`_maps/${mapOpt}.json`]; if (!mj) throw new Error(`no _maps json for --map ${mapOpt}`); vm.vfs.writeText("data/next_map.json", mj); }
+if (mapOpt === "creative") setUpCreative(vm); // --map creative: creative-map.ts
+else if (mapOpt) { const mj = bundle.files[`_maps/${mapOpt}station.json`] ?? bundle.files[`_maps/${mapOpt}.json`]; if (!mj) throw new Error(`no _maps json for --map ${mapOpt}`); vm.vfs.writeText("data/next_map.json", mj); }
 // --diff (or DIFF=1): fake clock, collector at tick boundaries, one diary line per tick (src/tools/diff/diary.ts).
 // --diff-out PREFIX (default: the --log path without .log) names PREFIX.diary and PREFIX.diary.log; --diff-after-start N stops N ticks after round start.
 const diffOn = argv.includes("--diff") || process.env.DIFF === "1";

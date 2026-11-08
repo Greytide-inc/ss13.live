@@ -580,6 +580,10 @@ rt.def("/datum/controller/subsystem/job/proc/EquipRank", function* EquipRank(f: 
 	if ((truthy(live(job)) && truthy(live(H)))) {
 		yield* g.callName(f, live(job), "after_spawn", [live(H), live(M)]);
 	}
+	// tg_js: in creative mode (src/vm/creative-map.ts) players can't be hurt: tg's admin Godmode flag (GODMODE), on from the start
+	if (truthy(live(H)) && isEqual(rt.gv(f, "map_name", rt.fv(f, "config", rt.gl("SSmapping"))), "Creative")) {
+		rt.modField(f, live(H), "status_flags", 4096, rt.bitOr);
+	}
 	return live(H);
 }, true);
 

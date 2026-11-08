@@ -1065,6 +1065,11 @@ rt.globals([
 	["trimRegex", null],
 	["blast_throw_epi", null], // stress-throw: set by an explosion just before it throws an item (the epicenter), taken by throw_at into the thrown thing
 	["pipe_rebuild_defer", null], // stress2c: a list while a singularity pass is ripping pipes (the neighbours whose pipeline is rebuilt at the end of the pass), else null
+	["floor_broken_states", null], // tg_js: one shared copy of each floor look list (read-only), not one per tile
+	["floor_burnt_states", null],
+	["plating_broken_states", null],
+	["plating_burnt_states", null],
+	["plasteel_burnt_states", null],
 ]);
 
 rt.globalInit(function (f: Frame) {
@@ -1119,6 +1124,11 @@ rt.globalInit(function (f: Frame) {
 	rt.setGl("random_reagents", rt.list()); // code/modules/reagents/chemistry/holder.dm:764
 	rt.setGl("space_gas", rt.new_(f, T("/datum/gas_mixture/immutable/space"), [])); // code/game/turfs/space/space.dm:15
 	rt.setGl("icons_to_ignore_at_floor_init", rt.list("damaged1", "damaged2", "damaged3", "damaged4", "damaged5", "panelscorched", "floorscorched1", "floorscorched2", "platingdmg1", "platingdmg2", "platingdmg3", "plating", "light_on", "light_on_flicker1", "light_on_flicker2", "light_on_clicker3", "light_on_clicker4", "light_on_clicker5", "light_broken", "light_on_broken", "light_off", "wall_thermite", "grass", "sand", "asteroid", "asteroid_dug", "asteroid0", "asteroid1", "asteroid2", "asteroid3", "asteroid4", "asteroid5", "asteroid6", "asteroid7", "asteroid8", "asteroid9", "asteroid10", "asteroid11", "asteroid12", "basalt", "basalt_dug", "basalt0", "basalt1", "basalt2", "basalt3", "basalt4", "basalt5", "basalt6", "basalt7", "basalt8", "basalt9", "basalt10", "basalt11", "basalt12", "oldburning", "light-on-r", "light-on-y", "light-on-g", "light-on-b", "wood", "wood-broken", "carpetcorner", "carpetside", "carpet", "ironsand1", "ironsand2", "ironsand3", "ironsand4", "ironsand5", "ironsand6", "ironsand7", "ironsand8", "ironsand9", "ironsand10", "ironsand11", "ironsand12", "ironsand13", "ironsand14", "ironsand15")); // code/game/turfs/simulated/floor.dm:26
+	rt.setGl("floor_broken_states", rt.list("damaged1", "damaged2", "damaged3", "damaged4", "damaged5"));
+	rt.setGl("floor_burnt_states", rt.list());
+	rt.setGl("plating_broken_states", rt.list("platingdmg1", "platingdmg2", "platingdmg3"));
+	rt.setGl("plating_burnt_states", rt.list("panelscorched"));
+	rt.setGl("plasteel_burnt_states", rt.list("floorscorched1", "floorscorched2"));
 	rt.setGl("intercom_range_display_status", 0); // code/modules/admin/verbs/mapping.dm:125
 	rt.setGl("cidcheck", rt.list()); // code/modules/client/client_procs.dm:496
 	rt.setGl("tokens", rt.list()); // code/modules/client/client_procs.dm:497

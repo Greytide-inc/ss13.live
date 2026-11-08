@@ -104,7 +104,9 @@ rt.def("/obj/machinery/status_display/proc/update", function update(f: Frame) {
 	} else if ($0 === 4) {
 		line1 = null;
 		line2 = null;
-		if (isEqual(rt.gv(f, "mode", rt.fv(f, "supply", rt.gl("SSshuttle"))), "idle")) {
+		// tg bug: a map with no cargo shuttle (creative mode's) has SSshuttle.supply null; tg read null.mode every tick. Blank screen instead.
+		if (rt.fv(f, "supply", rt.gl("SSshuttle")) == null) {
+		} else if (isEqual(rt.gv(f, "mode", rt.fv(f, "supply", rt.gl("SSshuttle"))), "idle")) {
 			if (isEqual(rt.gv(f, "z", rt.fv(f, "supply", rt.gl("SSshuttle"))), 2)) {
 				line1 = "CARGO";
 				line2 = "Docked";
