@@ -198,7 +198,7 @@ rt.def("/mob/dead/new_player/proc/make_me_an_observer", function* make_me_an_obs
 		rt.setSv(f, "ready", 0);
 		return 0;
 	}
-	this_is_like_playing_right = (yield* g.call(f, P("/proc/alert"), null, [live(f.src), "Are you sure you wish to observe? You will not be able to play this round!", "Player Setup", "Yes", "No"]));
+	this_is_like_playing_right = truthy(yield* g.call(f, P("/proc/is_creative"), null, [])) ? "Yes" : (yield* g.call(f, P("/proc/alert"), null, [live(f.src), "Are you sure you wish to observe? You will not be able to play this round!", "Player Setup", "Yes", "No"])); // tg_js: on the Creative map everyone starts as a ghost (AttemptLateSpawn, SSticker create_characters), no question asked
 	if ((((!truthy(live(f.src)) || truthy(rt.fv(f, "gc_destroyed", live(f.src)))) || !truthy(rt.fv(f, "client", live(f.src)))) || !isEqual(live(this_is_like_playing_right), "Yes"))) {
 		rt.setSv(f, "ready", 0);
 		rt.op(f, "Browse", [], [live(f.src), null, "window=playersetup"], false);
@@ -218,7 +218,7 @@ rt.def("/mob/dead/new_player/proc/make_me_an_observer", function* make_me_an_obs
 		yield* g.call(f, P("/proc/stack_trace"), null, ["There's no freaking observer landmark available on this map or you're making observers before the map is initialised"]);
 	}
 	rt.setFv(f, "key", live(observer), rt.sv(f, "key"));
-	rt.setFv(f, "client", live(observer), rt.sv(f, "client"));
+	// tg_js: tg's observer.client = src.client went here; the key above already moved the client, so it wrote null over it (the ghost was named "ghost", with no player)
 	yield* g.callName(f, live(observer), "set_ghost_appearance", []);
 	if ((truthy(rt.fv(f, "client", live(observer))) && truthy(rt.gv(f, "prefs", rt.fv(f, "client", live(observer)))))) {
 		rt.setFv(f, "real_name", live(observer), rt.gv(f, "real_name", rt.gv(f, "prefs", rt.fv(f, "client", live(observer)))));
@@ -268,7 +268,7 @@ rt.def("/mob/dead/new_player/proc/IsJobAvailable", function* IsJobAvailable(f: F
 rt.def("/mob/dead/new_player/proc/AttemptLateSpawn", function* AttemptLateSpawn(f: Frame, rank: Value) {
 	let arrivals_docked: Value = null, character: Value = null, equip: Value = null, Spl: Value = null, humanc: Value = null;
 	let $0: any;
-	f.vars = () => [rank, arrivals_docked, character, equip, Spl, humanc, $0];
+	f.vars = () => [rank, arrivals_docked, character, equip, Spl, humanc, $0]; if (truthy(yield* g.call(f, P("/proc/is_creative"), null, []))) return yield* g.srcCall(f, "make_me_an_observer"); // tg_js: creative starts you as a ghost
 	if (!truthy((yield* g.srcCall(f, "IsJobAvailable", live(rank))))) {
 		yield* g.call(f, P("/proc/alert"), null, [live(f.src), fmt("＀ is not available. Please try another.", [live(rank)])]);
 		return 0;

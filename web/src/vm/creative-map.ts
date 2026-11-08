@@ -5,6 +5,9 @@
 // The floor is ringed by RIM tiles of indestructible wall: wider than half the 15-tile view, so space beyond is never in sight.
 // The area is tg's away-mission beach, renamed Creative: gravity, powered without an APC, and fully lit (dynamic_lighting 0), so no
 // tile gets a light overlay or shadows (the saved world ~12 MB smaller than with /area/ruin/unpowered's own lighting).
+// The floor is tg's unbreakable floor (/turf/open/indestructible/creative, game/.../environmental/types.ts): plasteel's look, but it can't be pried up, broken, burnt or bombed,
+// and its baseturf (what's left when what's on top is destroyed) is itself, as on Lavaland: walls built on it carry that
+// baseturf, so bombing one leaves this floor, never space.
 // Everyone late-joins on the middle tile (/obj/effect/landmark/latejoin; ghosts start there too).
 // Trimmed for a smaller saved world (measured 2026-11-08 on the 239 floor: 178.5 MB raw): z5 is plain space
 // (Space.dmm) instead of Lavaland.dmm (~32 MB), with minetype "none" so SSmapping seeds no lava ruins or rivers,
@@ -15,7 +18,7 @@ export const SIZE = 255 - 2 * RIM; // 239: the map, rim included, fills tg's 255
 
 /** The _maps json and the .dmm text for a floor `size` tiles across (SIZE in the game; smaller in tests). */
 export function creativeMap(size: number): { json: string; dmm: string } {
-	const area = '/area/awaymission/beach{name = "Creative"}', floor = "/turf/open/floor/plasteel";
+	const area = '/area/awaymission/beach{name = "Creative"}', floor = "/turf/open/indestructible/creative";
 	const keys = [
 		`"w" = (/turf/closed/indestructible,${area})`,
 		`"f" = (${floor},${area})`,
@@ -36,11 +39,12 @@ export function creativeMap(size: number): { json: string; dmm: string } {
 	return { json, dmm };
 }
 
-/** Sets a VM up for creative mode (see the top of this file): the map in its VFS, no Lavaland, no space ruins. */
+/** Sets a VM up for creative mode (see the top of this file): the map in its VFS, no Lavaland, no space ruins, no random events
+ * (the rest of creative mode is game code: game/code/modules/creative/creative.ts). */
 export function setUpCreative(vm: { vfs: { writeText(path: string, text: string): void; readText(path: string): string | null }; compiledMapSwaps: Record<string, string> | null }): void {
 	const m = creativeMap(SIZE);
 	vm.vfs.writeText("_maps/map_files/creative/creative.dmm", m.dmm);
 	vm.vfs.writeText("data/next_map.json", m.json);
-	vm.vfs.writeText("config/game_options.txt", (vm.vfs.readText("config/game_options.txt") ?? "").replace(/^Space_Budget \d+/im, "SPACE_BUDGET 0"));
+	vm.vfs.writeText("config/game_options.txt", (vm.vfs.readText("config/game_options.txt") ?? "").replace(/^Space_Budget \d+/im, "SPACE_BUDGET 0").replace(/^ALLOW_RANDOM_EVENTS/im, "#ALLOW_RANDOM_EVENTS"));
 	vm.compiledMapSwaps = { "_maps/map_files/Mining/Lavaland.dmm": "_maps/map_files/generic/Space.dmm" }; // game/_maps.ts's z5
 }

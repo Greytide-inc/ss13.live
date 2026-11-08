@@ -14,7 +14,7 @@ rt.def("/mob/dead/new_player/proc/Login", function* Login(f: Frame) {
 		rt.setFv(f, "current", rt.sv(f, "mind"), live(f.src));
 	}
 	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.gl("join_motd"))) {
+	if (truthy(rt.gl("join_motd")) && !truthy(yield* g.call(f, P("/proc/is_creative"), null, []))) { // tg_js: no rules text in Creative
 		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), fmt("<div class=\"motd\">＀</div>", [rt.gl("join_motd")])]);
 	}
 	if (truthy(rt.gl("admin_notice"))) {

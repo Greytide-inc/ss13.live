@@ -49,7 +49,7 @@ rt.type(11118, "/obj/screen/ghost/reenter_corpse", "/obj/screen/ghost", {
 rt.def("/obj/screen/ghost/reenter_corpse/proc/Click", function* Click(f: Frame) {
 	let G: Value = null;
 	f.vars = () => [G];
-	yield* g.callName(f, (G = live(f.usr)), "reenter_corpse", []);
+	yield* g.callName(f, (G = live(f.usr)), truthy(yield* g.call(f, P("/proc/is_creative"), null, [])) ? "become_human" : "reenter_corpse", []); // tg_js: on the Creative map it's Become human (modules/creative/creative.ts)
 	return f.dot;
 }, true);
 
@@ -127,7 +127,7 @@ rt.def("/datum/hud/ghost/proc/New", function* New(f: Frame) {
 	rt.setFv(f, "screen_loc", (using = (yield* g.new_(f, T("/obj/screen/ghost/orbit"), []))), "SOUTH:6,CENTER-1:24");
 	rt.modSrcVar(f, "static_inventory", live(using), add);
 	rt.setFv(f, "screen_loc", (using = (yield* g.new_(f, T("/obj/screen/ghost/reenter_corpse"), []))), "SOUTH:6,CENTER:24");
-	rt.modSrcVar(f, "static_inventory", live(using), add);
+	rt.modSrcVar(f, "static_inventory", live(using), add); if (truthy(yield* g.call(f, P("/proc/is_creative"), null, []))) yield* g.srcCall(f, "add_creative_buttons", live(using)); // tg_js: modules/creative/creative.ts
 	rt.setFv(f, "screen_loc", (using = (yield* g.new_(f, T("/obj/screen/ghost/teleport"), []))), "SOUTH:6,CENTER+1:24");
 	rt.modSrcVar(f, "static_inventory", live(using), add);
 	rt.setFv(f, "screen_loc", (using = (yield* g.new_(f, T("/obj/screen/ghost/pai"), []))), "SOUTH: 6, CENTER+2:24");

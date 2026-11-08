@@ -69,6 +69,11 @@ rt.type(4784, "/turf/open/indestructible", "/turf/open", {
 	icon: rt.rsc("icons/turf/floors.dmi"),
 	icon_state: "floor",
 });
+// Creative mode's floor (src/vm/creative-map.ts): its own baseturf as a type default, so whatever is built on it and then destroyed
+// leaves this floor, never space. A map-file override ({baseturf = ...}) would give each of the ~57,000 tiles its own vars list (~22 MB saved world).
+rt.type("/turf/open/indestructible/creative", "/turf/open/indestructible", {
+	baseturf: rt.typePath("/turf/open/indestructible/creative"),
+});
 rt.type(4788, "/turf/open/indestructible/boss", "/turf/open/indestructible", {
 	name: "necropolis floor",
 	icon: rt.rsc("icons/turf/boss_floors.dmi"),

@@ -850,7 +850,7 @@ rt.def("/datum/admins/proc/spawn_many", function* spawn_many(f: Frame, object: V
 	return f.dot;
 }, true, { verb: { name: "Spawn Many", category: "Debug", desc: "(atom path) Spawn several of an atom" }, argTypes: [{ type: 2 }] });
 
-// tg_js: Spawn, then asks for a number of rings N (1-10): one on every tile of the square reaching N-1 tiles out from
+// tg_js: Spawn, then asks for a number of rings N (1-128: from the middle, 128 covers the whole z-level): one on every tile of the square reaching N-1 tiles out from
 // the user in every direction (1 = their own tile, 2 = that plus the 8 tiles touching it, 3 = 5x5, ...).
 // Walls and other dense turfs are skipped, unless a turf is being spawned (then every tile is changed).
 rt.def("/datum/admins/proc/spawn_grid", function* spawn_grid(f: Frame, object: Value) {
@@ -866,7 +866,7 @@ rt.def("/datum/admins/proc/spawn_grid", function* spawn_grid(f: Frame, object: V
 	if (typeof size !== "number" || size < 1 || !truthy(rt.fv(f, "loc", live(f.usr)))) {
 		return live(f.dot);
 	}
-	size = Math.min(Math.floor(size), 10) * 2 - 1;
+	size = Math.min(Math.floor(size), 128) * 2 - 1;
 	const is_turf = truthy((yield* g.call(f, P("/proc/ispath"), null, [live(chosen), T("/turf")])));
 	const ux = rt.fv(f, "x", live(f.usr)), uy = rt.fv(f, "y", live(f.usr)), uz = rt.fv(f, "z", live(f.usr));
 	const x0 = ux - Math.floor(size / 2), y0 = uy - Math.floor(size / 2);

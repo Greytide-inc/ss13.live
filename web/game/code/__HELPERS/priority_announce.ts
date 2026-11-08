@@ -15,7 +15,7 @@ rt.def("/proc/priority_announce", function* priority_announce(f: Frame, text: Va
 	if (live(sound) === null) {
 		sound = rt.rsc("sound/ai/attention.ogg");
 	}
-	if (!truthy(live(text))) {
+	if (!truthy(live(text)) || (!isEqual(live(type), "Captain") && truthy(yield* g.call(f, P("/proc/is_creative"), null, [])))) { // tg_js: no CentCom announcements in creative mode (a captain's own still go out)
 		return live(f.dot);
 	}
 	announcement = null;

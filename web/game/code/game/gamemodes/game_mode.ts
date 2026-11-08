@@ -152,7 +152,7 @@ rt.def("/datum/game_mode/proc/post_setup", function* post_setup(f: Frame, report
 		report = rt.fv(f, "intercept", rt.gl("config"));
 	}
 	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), ["some_magic_bullshit", P("/proc/display_roundstart_logout_report")])), 6000]);
-	if (truthy(live(report))) {
+	if (truthy(live(report)) && !truthy(yield* g.call(f, P("/proc/is_creative"), null, []))) { // tg_js: creative mode: no CentCom report (nor its blue alert)
 		yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/datum/game_mode/proc/send_intercept"), 0])), (yield* g.call(f, P("/proc/rand"), null, [600, 1800]))]);
 	}
 	yield* g.srcCall(f, "generate_station_goals");

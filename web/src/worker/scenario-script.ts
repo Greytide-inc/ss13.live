@@ -319,7 +319,7 @@ export class ScriptPlayer {
 				}
 				return `spawned ${n} x ${path} within ${r} of ${t0.x},${t0.y},${t0.z} (${pool.length} free tiles) at ${spots.join(" ")}`;
 			}
-			case "call": { // call SEL PROC [args]: SEL.PROC(args), usr = the mob. Args: numbers, "text", null, or a SEL (as for click); the result is logged
+			case "call": { // call SEL PROC [args]: SEL.PROC(args), usr = the mob. Args: numbers, "text", null, a /type/path, or a SEL (as for click); the result is logged
 				const toks = a.args.match(/"[^"]*"|\S+/g) ?? [];
 				if (toks.length < 2) return "ERROR call needs SEL PROC";
 				if (!(mob instanceof DMAtom)) return "no mob";
@@ -327,7 +327,7 @@ export class ScriptPlayer {
 				if (!o && toks[0] !== "global") return `no target for ${toks[0]}`;
 				const proc = o ? o.type.procs.get(toks[1]!) : this.vm.tree.globalProcs.get(toks[1]!);
 				if (!proc) return `ERROR no proc ${toks[1]!} on ${o ? o.type.path : "global"}`;
-				const args = toks.slice(2).map((x) => x.startsWith('"') ? x.slice(1, -1) : x === "null" ? null : /^-?\d+(\.\d+)?$/.test(x) ? Number(x) : (this.resolve(c, mob, x) ?? x));
+				const args = toks.slice(2).map((x) => x.startsWith('"') ? x.slice(1, -1) : x === "null" ? null : /^-?\d+(\.\d+)?$/.test(x) ? Number(x) : x.startsWith("/") ? (this.vm.tree.getType(x) ?? x) : (this.resolve(c, mob, x) ?? x));
 				const v = this.vm.call(proc, args as never, o, mob);
 				return `called ${toks[1]!} on ${o ? this.desc(o) : "global"} -> ${this.show(v)}`;
 			}

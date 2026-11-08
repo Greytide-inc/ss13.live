@@ -522,7 +522,7 @@ rt.def("/datum/controller/subsystem/ticker/proc/create_characters", function* cr
 		player = $e;
 		if ((isEqual(rt.fv(f, "ready", live(player)), 1) && truthy(rt.fv(f, "mind", live(player))))) {
 			rt.modGl("joined_player_list", rt.fv(f, "ckey", live(player)), add);
-			yield* g.callName(f, live(player), "create_character", [0]);
+			yield* g.callName(f, live(player), truthy(yield* g.call(f, P("/proc/is_creative"), null, [])) ? "make_me_an_observer" : "create_character", [0]); // tg_js: creative starts you as a ghost
 		} else {
 			yield* g.callName(f, live(player), "new_player_panel", []);
 		}
