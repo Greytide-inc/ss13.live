@@ -1,4 +1,4 @@
-# ss13.live (beta)
+# ss13.live
 
 2017 /tg/station in a web browser with no BYOND: single-player offline in one tab, or multiplayer through a Node server. The game code is hand-editable TypeScript in `game/`, run by a TypeScript engine in `src/`: game rules in a Web Worker (or the server), drawing, UI and input on the page. Assets (icons, sounds, maps, config, html, tgui) are the plain folders at the repo root. A full round plays in Chrome and Firefox.
 
