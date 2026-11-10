@@ -1,7 +1,7 @@
-// From code/modules/assembly/holder.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/assembly/holder.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(9387, "/obj/item/device/assembly_holder", "/obj/item/device", {
@@ -18,179 +18,157 @@ rt.type(9387, "/obj/item/device/assembly_holder", "/obj/item/device", {
 	w_class: 2,
 });
 
-// /obj/item/device/assembly_holder/proc/assemble  (code/modules/assembly/holder.dm:20)  may sleep
+// holder.dm:20
 rt.def("/obj/item/device/assembly_holder/proc/assemble", function* assemble(f: Frame, A: Value, A2: Value, user: Value) {
-	f.vars = () => [A, A2, user];
-	yield* g.srcCall(f, "attach", live(A), live(user));
-	yield* g.srcCall(f, "attach", live(A2), live(user));
-	rt.setSv(f, "name", fmt("＀-＀ assembly", [rt.fv(f, "name", live(A)), rt.fv(f, "name", live(A2))]));
-	yield* g.srcCall(f, "update_icon");
+	yield* this.attach(A, user);
+	yield* this.attach(A2, user);
+	this.name = `${A.name}-${A2.name} assembly`;
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/item/device/assembly_holder/proc/attach  (code/modules/assembly/holder.dm:27)  may sleep
+// holder.dm:27
 rt.def("/obj/item/device/assembly_holder/proc/attach", function* attach(f: Frame, A: Value, user: Value) {
-	f.vars = () => [A, user];
-	if (!truthy((yield* g.callName(f, live(A), "remove_item_from_storage", [live(f.src)])))) {
-		if (truthy(live(user))) {
-			yield* g.callName(f, live(user), "transferItemToLoc", [live(A), live(f.src)]);
+	if (!(yield* A.remove_item_from_storage(this))) {
+		if (user) {
+			yield* user.transferItemToLoc(A, this);
 		} else {
-			yield* g.callName(f, live(A), "forceMove", [live(f.src)]);
+			yield* A.forceMove(this);
 		}
 	}
-	rt.setFv(f, "holder", live(A), live(f.src));
-	yield* g.callName(f, live(A), "toggle_secure", []);
-	if (!truthy(rt.sv(f, "a_left"))) {
-		rt.setSv(f, "a_left", live(A));
+	A.holder = this;
+	yield* A.toggle_secure();
+	if (!this.a_left) {
+		this.a_left = A;
 	} else {
-		rt.setSv(f, "a_right", live(A));
+		this.a_right = A;
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/device/assembly_holder/proc/update_icon  (code/modules/assembly/holder.dm:40)  may sleep
+// holder.dm:40
 rt.def("/obj/item/device/assembly_holder/proc/update_icon", function* update_icon(f: Frame) {
 	let O: Value = null, right: Value = null, O_1: Value = null;
-	let $e: any;
-	f.vars = () => [O, right, O_1, $e];
-	yield* g.srcCall(f, "cut_overlays");
-	if (truthy(rt.sv(f, "a_left"))) {
-		yield* g.srcCall(f, "add_overlay", fmt("＀_left", [rt.fv(f, "icon_state", rt.sv(f, "a_left"))]));
-		O = null;
-		rt.forList(f, 0, rt.fv(f, "attached_overlays", rt.sv(f, "a_left")));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			O = $e;
-			yield* g.srcCall(f, "add_overlay", fmt("＀_l", [live(O)]));
+	this.cut_overlays();
+	if (this.a_left) {
+		this.add_overlay(`${this.a_left.icon_state}_left`);
+		for (O of each(this.a_left.attached_overlays)) {
+			this.add_overlay(`${O}_l`);
 		}
-		rt.endFor(f, 0);
 	}
-	if (truthy(rt.sv(f, "a_right"))) {
-		rt.setFv(f, "transform", (right = (yield* g.call(f, P("/proc/mutable_appearance"), null, [rt.sv(f, "icon"), fmt("＀_left", [rt.fv(f, "icon_state", rt.sv(f, "a_right"))])]))), (yield* g.call(f, P("/proc/matrix"), null, [-1, 0, 0, 0, 1, 0])));
-		O_1 = null;
-		rt.forList(f, 0, rt.fv(f, "attached_overlays", rt.sv(f, "a_right")));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			O_1 = $e;
-			yield* g.callName(f, live(right), "add_overlay", [fmt("＀_l", [live(O_1)])]);
+	if (this.a_right) {
+		(right = mutable_appearance(this.icon, `${this.a_right.icon_state}_left`)).transform = matrix(-1, 0, 0, 0, 1, 0);
+		for (O_1 of each(this.a_right.attached_overlays)) {
+			right.add_overlay(`${O_1}_l`);
 		}
-		rt.endFor(f, 0);
-		yield* g.srcCall(f, "add_overlay", live(right));
+		this.add_overlay(right);
 	}
-	if (!truthy(rt.sv(f, "master"))) return f.dot;
-	yield* g.callName(f, rt.sv(f, "master"), "update_icon", []);
+	if (!this.master) return f.dot;
+	yield* this.master.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/item/device/assembly_holder/proc/Crossed  (code/modules/assembly/holder.dm:58)  may sleep
+// holder.dm:58
 rt.def("/obj/item/device/assembly_holder/proc/Crossed", function* Crossed(f: Frame, AM: Value) {
-	f.vars = () => [AM];
-	if (truthy(rt.sv(f, "a_left"))) {
-		yield* g.callName(f, rt.sv(f, "a_left"), "Crossed", [live(AM)]);
+	if (this.a_left) {
+		yield* this.a_left.Crossed(AM);
 	}
-	if (!truthy(rt.sv(f, "a_right"))) return f.dot;
-	yield* g.callName(f, rt.sv(f, "a_right"), "Crossed", [live(AM)]);
+	if (!this.a_right) return f.dot;
+	yield* this.a_right.Crossed(AM);
 	return f.dot;
 }, true);
 
-// /obj/item/device/assembly_holder/proc/on_found  (code/modules/assembly/holder.dm:64)  may sleep
+// holder.dm:64
 rt.def("/obj/item/device/assembly_holder/proc/on_found", function* on_found(f: Frame, finder: Value) {
-	f.vars = () => [finder];
-	if (truthy(rt.sv(f, "a_left"))) {
-		yield* g.callName(f, rt.sv(f, "a_left"), "on_found", [live(finder)]);
+	if (this.a_left) {
+		yield* this.a_left.on_found(finder);
 	}
-	if (!truthy(rt.sv(f, "a_right"))) return f.dot;
-	yield* g.callName(f, rt.sv(f, "a_right"), "on_found", [live(finder)]);
+	if (!this.a_right) return f.dot;
+	yield* this.a_right.on_found(finder);
 	return f.dot;
 }, true);
 
-// /obj/item/device/assembly_holder/proc/Move  (code/modules/assembly/holder.dm:69)  may sleep
+// holder.dm:69
 rt.def("/obj/item/device/assembly_holder/proc/Move", function* Move(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if ((truthy(rt.sv(f, "a_left")) && truthy(rt.sv(f, "a_right")))) {
-		yield* g.callName(f, rt.sv(f, "a_left"), "holder_movement", []);
-		yield* g.callName(f, rt.sv(f, "a_right"), "holder_movement", []);
+	yield* parent_proc();
+	if (this.a_left && this.a_right) {
+		yield* this.a_left.holder_movement();
+		yield* this.a_right.holder_movement();
 	}
-	return live(f.dot);
+	return f.dot;
 }, true);
 
-// /obj/item/device/assembly_holder/proc/attack_hand  (code/modules/assembly/holder.dm:76)  may sleep
+// holder.dm:76
 rt.def("/obj/item/device/assembly_holder/proc/attack_hand", function* attack_hand(f: Frame) {
-	if ((truthy(rt.sv(f, "a_left")) && truthy(rt.sv(f, "a_right")))) {
-		yield* g.callName(f, rt.sv(f, "a_left"), "holder_movement", []);
-		yield* g.callName(f, rt.sv(f, "a_right"), "holder_movement", []);
+	if (this.a_left && this.a_right) {
+		yield* this.a_left.holder_movement();
+		yield* this.a_right.holder_movement();
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	return live(f.dot);
+	yield* parent_proc();
+	return f.dot;
 }, true);
 
-// /obj/item/device/assembly_holder/proc/attackby  (code/modules/assembly/holder.dm:83)  may sleep
-rt.def("/obj/item/device/assembly_holder/proc/attackby", function* attackby(f: Frame) {
+// holder.dm:83
+rt.def("/obj/item/device/assembly_holder/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
 	let _T: Value = null;
-	f.vars = () => [_T];
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/screwdriver")) ? 1 : 0))) {
-		if (!truthy((_T = rt.getStep(f, live(f.src), 0)))) {
+	if (rt.istype(W, T("/obj/item/weapon/screwdriver"))) {
+		if (!(_T = rt.getStep(f, this, 0))) {
 			return 0;
 		}
-		if (truthy(rt.sv(f, "a_left"))) {
-			rt.setFv(f, "holder", rt.sv(f, "a_left"), null);
-			rt.setFv(f, "loc", rt.sv(f, "a_left"), live(_T));
+		if (this.a_left) {
+			this.a_left.holder = null;
+			this.a_left.loc = _T;
 		}
-		if (truthy(rt.sv(f, "a_right"))) {
-			rt.setFv(f, "holder", rt.sv(f, "a_right"), null);
-			rt.setFv(f, "loc", rt.sv(f, "a_right"), live(_T));
+		if (this.a_right) {
+			this.a_right.holder = null;
+			this.a_right.loc = _T;
 		}
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+		yield* qdel(this);
 	} else {
-		yield* g.callSuper(f, [], rt.Args.Same);
-	}
-	return f.dot;
-}, true, { args: ["W", "user", "params"] });
-
-// /obj/item/device/assembly_holder/proc/attack_self  (code/modules/assembly/holder.dm:98)  may sleep
-rt.def("/obj/item/device/assembly_holder/proc/attack_self", function* attack_self(f: Frame, user: Value) {
-	let $0: any;
-	f.vars = () => [user, $0];
-	yield* g.callName(f, live(f.src), "add_fingerprint", [live(user)]);
-	if ((!truthy(rt.sv(f, "a_left")) || !truthy(rt.sv(f, "a_right")))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='danger'>Assembly part missing!</span>"]);
-		return live(f.dot);
-	}
-	if (truthy(rt.op(f, "IsType", [], [rt.sv(f, "a_left"), rt.fv(f, "type", rt.sv(f, "a_right"))]))) {
-		$0 = (yield* g.call(f, P("/proc/alert"), null, ["Which side would you like to use?", null, "Left", "Right"]));
-		if ($0 === "Left") {
-			yield* g.callName(f, rt.sv(f, "a_left"), "attack_self", [live(user)]);
-		} else if ($0 === "Right") {
-			yield* g.callName(f, rt.sv(f, "a_right"), "attack_self", [live(user)]);
-		}
-		return live(f.dot);
-	} else {
-		yield* g.callName(f, rt.sv(f, "a_left"), "attack_self", [live(user)]);
-		yield* g.callName(f, rt.sv(f, "a_right"), "attack_self", [live(user)]);
+		yield* parent_proc();
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/device/assembly_holder/proc/process_activation  (code/modules/assembly/holder.dm:115)  may sleep
+// holder.dm:98
+rt.def("/obj/item/device/assembly_holder/proc/attack_self", function* attack_self(f: Frame, user: Value) {
+	yield* this.add_fingerprint(user);
+	if (!this.a_left || !this.a_right) {
+		to_chat(user, "<span class='danger'>Assembly part missing!</span>");
+		return f.dot;
+	}
+	if (rt.op(f, "IsType", [], [this.a_left, this.a_right.type])) {
+		const subject = (yield* alert("Which side would you like to use?", null, "Left", "Right"));
+		if (subject === "Left") {
+			yield* this.a_left.attack_self(user);
+		} else if (subject === "Right") {
+			yield* this.a_right.attack_self(user);
+		}
+		return f.dot;
+	} else {
+		yield* this.a_left.attack_self(user);
+		yield* this.a_right.attack_self(user);
+	}
+	return f.dot;
+}, true);
+
+// holder.dm:115
 rt.def("/obj/item/device/assembly_holder/proc/process_activation", function* process_activation(f: Frame, D: Value, normal: Value, special: Value) {
-	f.vars = () => [D, normal, special];
-	if (live(normal) === null) {
-		normal = 1;
-	}
-	if (live(special) === null) {
-		special = 1;
-	}
-	if (!truthy(live(D))) {
+	normal ??= 1;
+	special ??= 1;
+	if (!D) {
 		return 0;
 	}
-	if (((truthy(live(normal)) && truthy(rt.sv(f, "a_right"))) && truthy(rt.sv(f, "a_left")))) {
-		if (!isEqual(rt.sv(f, "a_right"), live(D))) {
-			yield* g.callName(f, rt.sv(f, "a_right"), "pulsed", [0]);
+	if (normal && this.a_right && this.a_left) {
+		if (this.a_right != D) {
+			this.a_right.pulsed(0);
 		}
-		if (!isEqual(rt.sv(f, "a_left"), live(D))) {
-			yield* g.callName(f, rt.sv(f, "a_left"), "pulsed", [0]);
+		if (this.a_left != D) {
+			this.a_left.pulsed(0);
 		}
 	}
-	if (truthy(rt.sv(f, "master"))) {
-		yield* g.callName(f, rt.sv(f, "master"), "receive_signal", []);
+	if (this.master) {
+		yield* this.master.receive_signal();
 	}
 	return 1;
 }, true);

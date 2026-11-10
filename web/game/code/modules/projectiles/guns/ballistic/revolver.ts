@@ -1,7 +1,7 @@
-// From code/modules/projectiles/guns/ballistic/revolver.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/projectiles/guns/ballistic/revolver.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, fmt } = rt;
 
 
 rt.type(5264, "/obj/item/weapon/gun/ballistic/revolver", "/obj/item/weapon/gun/ballistic", {
@@ -13,133 +13,120 @@ rt.type(5264, "/obj/item/weapon/gun/ballistic/revolver", "/obj/item/weapon/gun/b
 	origin_tech: "combat=3;materials=2",
 });
 
-// /obj/item/weapon/gun/ballistic/revolver/proc/Initialize  (code/modules/projectiles/guns/ballistic/revolver.dm:10)  may sleep
+// revolver.dm:10
 rt.def("/obj/item/weapon/gun/ballistic/revolver/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (truthy((rt.istype(rt.sv(f, "magazine"), T("/obj/item/ammo_box/magazine/internal/cylinder")) ? 1 : 0))) return f.dot;
-	(rt.modSrcVar(f, "verbs", P("/obj/item/weapon/gun/ballistic/revolver/verb/spin"), subtract));
+	f.dot = (yield* parent_proc());
+	if (rt.istype(this.magazine, T("/obj/item/ammo_box/magazine/internal/cylinder"))) return f.dot;
+	this.verbs -= P("/obj/item/weapon/gun/ballistic/revolver/verb/spin");
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/gun/ballistic/revolver/proc/chamber_round  (code/modules/projectiles/guns/ballistic/revolver.dm:16)
+// revolver.dm:16
 rt.def("/obj/item/weapon/gun/ballistic/revolver/proc/chamber_round", function chamber_round(f: Frame, spin: Value) {
-	f.vars = () => [spin];
-	if (live(spin) === null) {
-		spin = 1;
-	}
-	if (truthy(live(spin))) {
-		rt.setSv(f, "chambered", rt.callName(f, rt.sv(f, "magazine"), "get_round", [1]));
+	spin ??= 1;
+	if (spin) {
+		this.chambered = this.magazine.get_round(1);
 	} else {
-		rt.setSv(f, "chambered", rt.index(rt.fv(f, "stored_ammo", rt.sv(f, "magazine")), 1));
+		this.chambered = rt.index(this.magazine.stored_ammo, 1);
 	}
 	return f.dot;
 });
 
-// /obj/item/weapon/gun/ballistic/revolver/proc/shoot_with_empty_chamber  (code/modules/projectiles/guns/ballistic/revolver.dm:21)
-rt.def("/obj/item/weapon/gun/ballistic/revolver/proc/shoot_with_empty_chamber", function shoot_with_empty_chamber(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.callSrc(f, "chamber_round", [1]);
+// revolver.dm:21
+rt.def("/obj/item/weapon/gun/ballistic/revolver/proc/shoot_with_empty_chamber", function shoot_with_empty_chamber(f: Frame, user: Value) {
+	parent_proc();
+	this.chamber_round(1);
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/item/weapon/gun/ballistic/revolver/proc/attackby  (code/modules/projectiles/guns/ballistic/revolver.dm:25)  may sleep
-rt.def("/obj/item/weapon/gun/ballistic/revolver/proc/attackby", function* attackby(f: Frame) {
+// revolver.dm:25
+rt.def("/obj/item/weapon/gun/ballistic/revolver/proc/attackby", function* attackby(f: Frame, A: Value, user: Value, params: Value) {
 	let num_loaded: Value = null;
-	f.vars = () => [num_loaded];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (truthy(live(f.dot))) {
-		return live(f.dot);
+	f.dot = (yield* parent_proc());
+	if (f.dot) {
+		return f.dot;
 	}
-	if (!truthy((num_loaded = (yield* g.callName(f, rt.sv(f, "magazine"), "attackby", [live(f.args[0]), live(f.args[1]), live(f.args[2]), 1]))))) return f.dot;
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You load ＀ shell５ into ％！.</span>", [live(num_loaded), live(f.src)])]);
-	yield* g.call(f, P("/proc/playsound"), null, [live(f.args[1]), rt.rsc("sound/weapons/bulletinsert.ogg"), 60, 1]);
-	yield* g.callName(f, live(f.args[0]), "update_icon", []);
-	yield* g.srcCall(f, "update_icon");
-	yield* g.srcCall(f, "chamber_round", 0);
+	if (!(num_loaded = (yield* this.magazine.attackby(A, user, params, 1)))) return f.dot;
+	to_chat(user, fmt("<span class='notice'>You load ＀ shell５ into ％！.</span>", [num_loaded, this]));
+	playsound(user, rt.rsc("sound/weapons/bulletinsert.ogg"), 60, 1);
+	yield* A.update_icon();
+	yield* this.update_icon();
+	yield* this.chamber_round(0);
 	return f.dot;
-}, true, { args: ["A", "user", "params"] });
+}, true);
 
-// /obj/item/weapon/gun/ballistic/revolver/proc/attack_self  (code/modules/projectiles/guns/ballistic/revolver.dm:39)
+// revolver.dm:39
 rt.def("/obj/item/weapon/gun/ballistic/revolver/proc/attack_self", function attack_self(f: Frame, user: Value) {
-	let num_unloaded: Value = null, CB: Value = null;
-	f.vars = () => [num_unloaded, CB];
-	num_unloaded = 0;
-	rt.setSv(f, "chambered", null);
-	while (rt.gt(rt.callSrc(f, "get_ammo", []), 0)) {
+	let CB: Value = null;
+	let num_unloaded: Value = 0;
+	this.chambered = null;
+	while (this.get_ammo() > 0) {
 		CB = null;
-		if (truthy((CB = rt.callName(f, rt.sv(f, "magazine"), "get_round", [0])))) {
-			rt.setFv(f, "loc", live(CB), rt.getStep(f, rt.fv(f, "loc", live(f.src)), 0));
-			rt.callName(f, live(CB), "SpinAnimation", [10, 1]);
-			rt.callName(f, live(CB), "update_icon", []);
-			num_unloaded = rt.inc(live(num_unloaded), 1);
+		if (CB = this.magazine.get_round(0)) {
+			CB.loc = rt.getStep(f, this.loc, 0);
+			CB.SpinAnimation(10, 1);
+			CB.update_icon();
+			num_unloaded++;
 		}
 	}
-	if (truthy(live(num_unloaded))) {
-		rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You unload ＀ shell５ from ＀.</span>", [live(num_unloaded), live(f.src)])]);
-		rt.call(f, P("/proc/playsound"), null, [live(user), rt.rsc("sound/weapons/bulletremove.ogg"), 60, 1]);
+	if (num_unloaded) {
+		to_chat(user, fmt("<span class='notice'>You unload ＀ shell５ from ＀.</span>", [num_unloaded, this]));
+		playsound(user, rt.rsc("sound/weapons/bulletremove.ogg"), 60, 1);
 	} else {
-		rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ is empty!</span>", [live(f.src)])]);
+		to_chat(user, `<span class='warning'>${this} is empty!</span>`);
 	}
 	return f.dot;
 });
 
-// /obj/item/weapon/gun/ballistic/revolver/verb/spin  (code/modules/projectiles/guns/ballistic/revolver.dm:58)
+// revolver.dm:58
 rt.def("/obj/item/weapon/gun/ballistic/revolver/verb/spin", function spin(f: Frame) {
 	let M: Value = null;
-	f.vars = () => [M];
-	if ((truthy(rt.gv(f, "stat", (M = live(f.usr)))) || !rt.le(rt.call(f, P("/proc/get_dist"), null, [live(M), live(f.src)]), 1))) {
-		return live(f.dot);
+	if ((M = f.usr).stat || !(get_dist(M, this) <= 1)) {
+		return f.dot;
 	}
-	if (truthy(rt.callSrc(f, "do_spin", []))) {
-		rt.callName(f, live(f.usr), "visible_message", [fmt("＀ spins ＀'s chamber.", [live(f.usr), live(f.src)]), fmt("<span class='notice'>You spin ＀'s chamber.</span>", [live(f.src)])]);
+	if (this.do_spin()) {
+		f.usr.visible_message(`${f.usr} spins ${this}'s chamber.`, `<span class='notice'>You spin ${this}'s chamber.</span>`);
 	} else {
-		(rt.modSrcVar(f, "verbs", P("/obj/item/weapon/gun/ballistic/revolver/verb/spin"), subtract));
+		this.verbs -= P("/obj/item/weapon/gun/ballistic/revolver/verb/spin");
 	}
 	return f.dot;
 }, false, { verb: { name: "Spin Chamber", category: "Object", desc: "Click to spin your revolver's chamber." } });
 
-// /obj/item/weapon/gun/ballistic/revolver/proc/do_spin  (code/modules/projectiles/guns/ballistic/revolver.dm:69)
+// revolver.dm:69
 rt.def("/obj/item/weapon/gun/ballistic/revolver/proc/do_spin", function do_spin(f: Frame) {
 	let C: Value = null;
-	f.vars = () => [C];
-	f.dot = (rt.istype((C = rt.sv(f, "magazine")), T("/obj/item/ammo_box/magazine/internal/cylinder")) ? 1 : 0);
-	if (!truthy(live(f.dot))) return f.dot;
-	rt.callName(f, live(C), "spin", []);
-	rt.callSrc(f, "chamber_round", [0]);
+	f.dot = (rt.istype((C = this.magazine), T("/obj/item/ammo_box/magazine/internal/cylinder")) ? 1 : 0);
+	if (!f.dot) return f.dot;
+	C.spin();
+	this.chamber_round(0);
 	return f.dot;
 });
 
-// /obj/item/weapon/gun/ballistic/revolver/proc/can_shoot  (code/modules/projectiles/guns/ballistic/revolver.dm:76)
+// revolver.dm:76
 rt.def("/obj/item/weapon/gun/ballistic/revolver/proc/can_shoot", function can_shoot(f: Frame) {
-	return rt.callSrc(f, "get_ammo", [0, 0]);
+	return this.get_ammo(0, 0);
 });
 
-// /obj/item/weapon/gun/ballistic/revolver/proc/get_ammo  (code/modules/projectiles/guns/ballistic/revolver.dm:80)
+// revolver.dm:80
 rt.def("/obj/item/weapon/gun/ballistic/revolver/proc/get_ammo", function get_ammo(f: Frame, countchambered: Value, countempties: Value) {
-	let boolets: Value = null;
-	f.vars = () => [countchambered, countempties, boolets];
-	if (live(countchambered) === null) {
-		countchambered = 0;
+	countchambered ??= 0;
+	countempties ??= 1;
+	let boolets: Value = 0;
+	if (this.chambered && countchambered) {
+		boolets++;
 	}
-	if (live(countempties) === null) {
-		countempties = 1;
+	if (this.magazine) {
+		boolets += this.magazine.ammo_count(countempties);
 	}
-	boolets = 0;
-	if ((truthy(rt.sv(f, "chambered")) && truthy(live(countchambered)))) {
-		boolets = rt.inc(live(boolets), 1);
-	}
-	if (truthy(rt.sv(f, "magazine"))) {
-		boolets = rt.modify(live(boolets), rt.callName(f, rt.sv(f, "magazine"), "ammo_count", [live(countempties)]), add);
-	}
-	return live(boolets);
+	return boolets;
 });
 
-// /obj/item/weapon/gun/ballistic/revolver/proc/examine  (code/modules/projectiles/guns/ballistic/revolver.dm:87)
-rt.def("/obj/item/weapon/gun/ballistic/revolver/proc/examine", function examine(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("＀ of those are live rounds.", [rt.callSrc(f, "get_ammo", [0, 0])])]);
+// revolver.dm:87
+rt.def("/obj/item/weapon/gun/ballistic/revolver/proc/examine", function examine(f: Frame, user: Value) {
+	parent_proc();
+	to_chat(user, `${this.get_ammo(0, 0)} of those are live rounds.`);
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
 rt.type(5268, "/obj/item/weapon/gun/ballistic/revolver/detective", "/obj/item/weapon/gun/ballistic/revolver", {
 	name: "１.38 Mars Special",
@@ -150,74 +137,72 @@ rt.type(5268, "/obj/item/weapon/gun/ballistic/revolver/detective", "/obj/item/we
 	unique_reskin: null,
 });
 
-// /obj/item/weapon/gun/ballistic/revolver/detective/proc/<init>  (code/modules/projectiles/guns/ballistic/revolver.dm:96)
+// revolver.dm:96
 rt.def("/obj/item/weapon/gun/ballistic/revolver/detective/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "unique_reskin", rt.alist(f, ["Default", "detective", "Leopard Spots", "detective_leopard", "Black Panther", "detective_panther", "Gold Trim", "detective_gold", "The Peacemaker", "detective_peacemaker"]));
+	parent_proc();
+	this.unique_reskin = rt.alist(f, ["Default", "detective", "Leopard Spots", "detective_leopard", "Black Panther", "detective_panther", "Gold Trim", "detective_gold", "The Peacemaker", "detective_peacemaker"]);
 	return f.dot;
 });
 
-// /obj/item/weapon/gun/ballistic/revolver/detective/proc/process_fire  (code/modules/projectiles/guns/ballistic/revolver.dm:104)  may sleep
+// revolver.dm:104
 rt.def("/obj/item/weapon/gun/ballistic/revolver/detective/proc/process_fire", function* process_fire(f: Frame) {
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 1;
 	}
-	if (live(f.args[4]) === null) {
+	if (f.args[4] === null) {
 		f.args[4] = "";
 	}
-	if (!isEqual(rt.fv(f, "caliber", rt.sv(f, "magazine")), rt.initial(f, rt.sv(f, "magazine"), "caliber"))) {
-		if (truthy(rt.op(f, "Prob", [], [subtract(70, multiply((yield* g.callName(f, rt.sv(f, "magazine"), "ammo_count", [])), 10))]))) {
-			yield* g.call(f, P("/proc/playsound"), null, [live(f.args[1]), rt.sv(f, "fire_sound"), 50, 1]);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='userdanger'>＀ blows up in your face!</span>", [live(f.src)])]);
-			yield* g.callName(f, live(f.args[1]), "take_bodypart_damage", [0, 20]);
-			yield* g.callName(f, live(f.args[1]), "dropItemToGround", [live(f.src)]);
+	if (this.magazine.caliber != rt.initial(f, this.magazine, "caliber")) {
+		if (prob(70 - this.magazine.ammo_count() * 10)) {
+			playsound(f.args[1], this.fire_sound, 50, 1);
+			to_chat(f.args[1], `<span class='userdanger'>${this} blows up in your face!</span>`);
+			yield* f.args[1].take_bodypart_damage(0, 20);
+			yield* f.args[1].dropItemToGround(this);
 			return 0;
 		}
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true, { args: ["target", "user", "message", "params", "zone_override"] });
 
-// /obj/item/weapon/gun/ballistic/revolver/detective/proc/attackby  (code/modules/projectiles/guns/ballistic/revolver.dm:114)  may sleep
-rt.def("/obj/item/weapon/gun/ballistic/revolver/detective/proc/attackby", function* attackby(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/screwdriver")) ? 1 : 0))) return f.dot;
-	if (isEqual(rt.fv(f, "caliber", rt.sv(f, "magazine")), "38")) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You begin to reinforce the barrel of ＀...</span>", [live(f.src)])]);
-		if (truthy((yield* g.callName(f, rt.sv(f, "magazine"), "ammo_count", [])))) {
-			yield* g.srcCall(f, "afterattack", live(f.args[1]), live(f.args[1]));
-			yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='danger'>＀ goes off!</span>", [live(f.src)]), fmt("<span class='userdanger'>＀ goes off in your face!</span>", [live(f.src)])]);
-			return live(f.dot);
+// revolver.dm:114
+rt.def("/obj/item/weapon/gun/ballistic/revolver/detective/proc/attackby", function* attackby(f: Frame, A: Value, user: Value, params: Value) {
+	yield* parent_proc();
+	if (!rt.istype(A, T("/obj/item/weapon/screwdriver"))) return f.dot;
+	if (this.magazine.caliber == "38") {
+		to_chat(user, `<span class='notice'>You begin to reinforce the barrel of ${this}...</span>`);
+		if (this.magazine.ammo_count()) {
+			yield* this.afterattack(user, user);
+			user.visible_message(`<span class='danger'>${this} goes off!</span>`, `<span class='userdanger'>${this} goes off in your face!</span>`);
+			return f.dot;
 		}
-		if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, multiply(30, rt.fv(f, "toolspeed", live(f.args[0]))), "target", live(f.src)], rt.Args.Named)))) {
-			if (truthy((yield* g.callName(f, rt.sv(f, "magazine"), "ammo_count", [])))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You can't modify it!</span>"]);
-				return live(f.dot);
+		if (yield* do_after(user, 30 * A.toolspeed, { target: this })) {
+			if (this.magazine.ammo_count()) {
+				to_chat(user, "<span class='warning'>You can't modify it!</span>");
+				return f.dot;
 			}
-			rt.setFv(f, "caliber", rt.sv(f, "magazine"), "357");
-			rt.setSv(f, "desc", "The barrel and chamber assembly seems to have been modified.");
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You reinforce the barrel of ＀. Now it will fire .357 rounds.</span>", [live(f.src)])]);
+			this.magazine.caliber = "357";
+			this.desc = "The barrel and chamber assembly seems to have been modified.";
+			to_chat(user, `<span class='notice'>You reinforce the barrel of ${this}. Now it will fire .357 rounds.</span>`);
 		}
 	} else {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You begin to revert the modifications to ＀...</span>", [live(f.src)])]);
-		if (truthy((yield* g.callName(f, rt.sv(f, "magazine"), "ammo_count", [])))) {
-			yield* g.srcCall(f, "afterattack", live(f.args[1]), live(f.args[1]));
-			yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='danger'>＀ goes off!</span>", [live(f.src)]), fmt("<span class='userdanger'>＀ goes off in your face!</span>", [live(f.src)])]);
-			return live(f.dot);
+		to_chat(user, `<span class='notice'>You begin to revert the modifications to ${this}...</span>`);
+		if (this.magazine.ammo_count()) {
+			yield* this.afterattack(user, user);
+			user.visible_message(`<span class='danger'>${this} goes off!</span>`, `<span class='userdanger'>${this} goes off in your face!</span>`);
+			return f.dot;
 		}
-		if (!truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, multiply(30, rt.fv(f, "toolspeed", live(f.args[0]))), "target", live(f.src)], rt.Args.Named)))) return f.dot;
-		if (truthy((yield* g.callName(f, rt.sv(f, "magazine"), "ammo_count", [])))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You can't modify it!</span>"]);
-			return live(f.dot);
+		if (!(yield* do_after(user, 30 * A.toolspeed, { target: this }))) return f.dot;
+		if (this.magazine.ammo_count()) {
+			to_chat(user, "<span class='warning'>You can't modify it!</span>");
+			return f.dot;
 		}
-		rt.setFv(f, "caliber", rt.sv(f, "magazine"), "38");
-		rt.setSv(f, "desc", rt.initial(f, live(f.src), "desc"));
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You remove the modifications on ＀. Now it will fire .38 rounds.</span>", [live(f.src)])]);
+		this.magazine.caliber = "38";
+		this.desc = rt.initial(f, this, "desc");
+		to_chat(user, `<span class='notice'>You remove the modifications on ${this}. Now it will fire .38 rounds.</span>`);
 	}
 	return f.dot;
-}, true, { args: ["A", "user", "params"] });
+}, true);
 
 rt.type(5272, "/obj/item/weapon/gun/ballistic/revolver/russian", "/obj/item/weapon/gun/ballistic/revolver", {
 	spun: 0,
@@ -227,94 +212,90 @@ rt.type(5272, "/obj/item/weapon/gun/ballistic/revolver/russian", "/obj/item/weap
 	mag_type: rt.typePath("/obj/item/ammo_box/magazine/internal/cylinder/rus357"),
 });
 
-// /obj/item/weapon/gun/ballistic/revolver/russian/proc/Initialize  (code/modules/projectiles/guns/ballistic/revolver.dm:177)  may sleep
+// revolver.dm:177
 rt.def("/obj/item/weapon/gun/ballistic/revolver/russian/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.srcCall(f, "do_spin");
-	rt.setSv(f, "spun", 1);
-	yield* g.srcCall(f, "update_icon");
+	f.dot = (yield* parent_proc());
+	this.do_spin();
+	this.spun = 1;
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/gun/ballistic/revolver/russian/proc/attackby  (code/modules/projectiles/guns/ballistic/revolver.dm:183)  may sleep
-rt.def("/obj/item/weapon/gun/ballistic/revolver/russian/proc/attackby", function* attackby(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (rt.gt((yield* g.srcCall(f, "get_ammo")), 0)) {
-		yield* g.srcCall(f, "spin");
-		rt.setSv(f, "spun", 1);
+// revolver.dm:183
+rt.def("/obj/item/weapon/gun/ballistic/revolver/russian/proc/attackby", function* attackby(f: Frame, A: Value, user: Value, params: Value) {
+	yield* parent_proc();
+	if (this.get_ammo() > 0) {
+		yield* this.spin();
+		this.spun = 1;
 	}
-	yield* g.srcCall(f, "update_icon");
-	yield* g.callName(f, live(f.args[0]), "update_icon", []);
-	return live(f.dot);
-}, true, { args: ["A", "user", "params"] });
-
-// /obj/item/weapon/gun/ballistic/revolver/russian/proc/attack_self  (code/modules/projectiles/guns/ballistic/revolver.dm:192)
-rt.def("/obj/item/weapon/gun/ballistic/revolver/russian/proc/attack_self", function attack_self(f: Frame) {
-	if ((!truthy(rt.sv(f, "spun")) && truthy(rt.callSrc(f, "can_shoot", [])))) {
-		rt.callSrc(f, "spin", []);
-		rt.setSv(f, "spun", 1);
-		return live(f.dot);
-	}
-	rt.callSuper(f, [], rt.Args.Same);
+	yield* this.update_icon();
+	yield* A.update_icon();
 	return f.dot;
-}, false, { args: ["user"] });
+}, true);
 
-// /obj/item/weapon/gun/ballistic/revolver/russian/proc/afterattack  (code/modules/projectiles/guns/ballistic/revolver.dm:200)  may sleep
+// revolver.dm:192
+rt.def("/obj/item/weapon/gun/ballistic/revolver/russian/proc/attack_self", function attack_self(f: Frame, user: Value) {
+	if (!this.spun && this.can_shoot()) {
+		this.spin();
+		this.spun = 1;
+		return f.dot;
+	}
+	parent_proc();
+	return f.dot;
+}, false);
+
+// revolver.dm:200
 rt.def("/obj/item/weapon/gun/ballistic/revolver/russian/proc/afterattack", function* afterattack(f: Frame, target: Value, user: Value, flag: Value, params: Value) {
-	let H: Value = null, AC: Value = null, zone: Value = null, affecting: Value = null;
-	f.vars = () => [target, user, flag, params, H, AC, zone, affecting];
-	if (truthy(live(flag))) {
-		if ((!truthy((rt.isIn(f, live(target), rt.fv(f, "contents", live(user))) ? 1 : 0)) && truthy((yield* g.call(f, P("/proc/ismob"), null, [live(target)]))))) {
-			if (isEqual(rt.fv(f, "a_intent", live(user)), "harm")) {
-				return live(f.dot);
+	let AC: Value = null, zone: Value = null, affecting: Value = null;
+	if (flag) {
+		if (!rt.isIn(f, target, user.contents) && ismob(target)) {
+			if (user.a_intent == "harm") {
+				return f.dot;
 			}
 		}
 	}
-	if (truthy((rt.istype(live(user), T("/mob/living")) ? 1 : 0))) {
-		if (!truthy((yield* g.srcCall(f, "can_trigger_gun", live(user))))) {
-			return live(f.dot);
+	if (rt.istype(user, T("/mob/living"))) {
+		if (!(yield* this.can_trigger_gun(user))) {
+			return f.dot;
 		}
 	}
-	if (!isEqual(live(target), live(user))) {
-		if (truthy((yield* g.call(f, P("/proc/ismob"), null, [live(target)])))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>A mechanism prevents you from shooting anyone but yourself!</span>"]);
+	if (target != user) {
+		if (ismob(target)) {
+			to_chat(user, "<span class='warning'>A mechanism prevents you from shooting anyone but yourself!</span>");
 		}
-		return live(f.dot);
+		return f.dot;
 	}
-	if (!truthy((rt.istype(live(user), T("/mob/living/carbon/human")) ? 1 : 0))) return f.dot;
-	H = live(user);
-	if (!truthy(rt.sv(f, "spun"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>You need to spin the revolver's chamber first!</span>"]);
-		return live(f.dot);
+	if (!rt.istype(user, T("/mob/living/carbon/human"))) return f.dot;
+	let H: Value = user;
+	if (!this.spun) {
+		to_chat(user, "<span class='warning'>You need to spin the revolver's chamber first!</span>");
+		return f.dot;
 	}
-	rt.setSv(f, "spun", 0);
-	if (truthy(rt.sv(f, "chambered"))) {
-		if (truthy((yield* g.callName(f, (AC = rt.sv(f, "chambered")), "fire_casing", [live(user), live(user)])))) {
-			yield* g.call(f, P("/proc/playsound"), null, [live(user), rt.sv(f, "fire_sound"), 50, 1]);
-			zone = (yield* g.call(f, P("/proc/check_zone"), null, [rt.fv(f, "zone_selected", live(user))]));
-			affecting = (yield* g.callName(f, live(H), "get_bodypart", [live(zone)]));
-			if (((isEqual(live(zone), "head") || isEqual(live(zone), "eyes")) || isEqual(live(zone), "mouth"))) {
-				yield* g.srcCall(f, "shoot_self", live(user), live(affecting));
+	this.spun = 0;
+	if (this.chambered) {
+		if (yield* (AC = this.chambered).fire_casing(user, user)) {
+			playsound(user, this.fire_sound, 50, 1);
+			zone = check_zone(user.zone_selected);
+			affecting = H.get_bodypart(zone);
+			if (zone == "head" || zone == "eyes" || zone == "mouth") {
+				yield* this.shoot_self(user, affecting);
 			} else {
-				yield* g.callName(f, live(user), "visible_message", [fmt("<span class='danger'>＀ cowardly fires ＀ at ＀ ＀!</span>", [rt.fv(f, "name", live(user)), live(f.src), (yield* g.callName(f, live(user), "p_their", [])), rt.fv(f, "name", live(affecting))]), fmt("<span class='userdanger'>You cowardly fire ＀ at your ＀!</span>", [live(f.src), rt.fv(f, "name", live(affecting))]), "<span class='italics'>You hear a gunshot!</span>"]);
+				user.visible_message(`<span class='danger'>${user.name} cowardly fires ${this} at ${user.p_their()} ${affecting.name}!</span>`, `<span class='userdanger'>You cowardly fire ${this} at your ${affecting.name}!</span>`, "<span class='italics'>You hear a gunshot!</span>");
 			}
-			rt.setSv(f, "chambered", null);
-			return live(f.dot);
+			this.chambered = null;
+			return f.dot;
 		}
 	}
-	yield* g.callName(f, live(user), "visible_message", ["<span class='danger'>*click*</span>"]);
-	yield* g.call(f, P("/proc/playsound"), null, [live(user), rt.rsc("sound/weapons/empty.ogg"), 100, 1]);
+	user.visible_message("<span class='danger'>*click*</span>");
+	playsound(user, rt.rsc("sound/weapons/empty.ogg"), 100, 1);
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/gun/ballistic/revolver/russian/proc/shoot_self  (code/modules/projectiles/guns/ballistic/revolver.dm:237)  may sleep
+// revolver.dm:237
 rt.def("/obj/item/weapon/gun/ballistic/revolver/russian/proc/shoot_self", function* shoot_self(f: Frame, user: Value, affecting: Value) {
-	f.vars = () => [user, affecting];
-	if (live(affecting) === null) {
-		affecting = "head";
-	}
-	yield* g.callName(f, live(user), "apply_damage", [300, "brute", live(affecting)]);
-	yield* g.callName(f, live(user), "visible_message", [fmt("<span class='danger'>＀ fires ＀ at ＀ head!</span>", [rt.fv(f, "name", live(user)), live(f.src), (yield* g.callName(f, live(user), "p_their", []))]), fmt("<span class='userdanger'>You fire ＀ at your head!</span>", [live(f.src)]), "<span class='italics'>You hear a gunshot!</span>"]);
+	affecting ??= "head";
+	yield* user.apply_damage(300, "brute", affecting);
+	user.visible_message(`<span class='danger'>${user.name} fires ${this} at ${user.p_their()} head!</span>`, `<span class='userdanger'>You fire ${this} at your head!</span>`, "<span class='italics'>You hear a gunshot!</span>");
 	return f.dot;
 }, true);
 
@@ -323,18 +304,17 @@ rt.type(5273, "/obj/item/weapon/gun/ballistic/revolver/russian/soul", "/obj/item
 	desc: "To play with this revolver requires wagering your very soul.",
 });
 
-// /obj/item/weapon/gun/ballistic/revolver/russian/soul/proc/shoot_self  (code/modules/projectiles/guns/ballistic/revolver.dm:245)  may sleep
-rt.def("/obj/item/weapon/gun/ballistic/revolver/russian/soul/proc/shoot_self", function* shoot_self(f: Frame) {
+// revolver.dm:245
+rt.def("/obj/item/weapon/gun/ballistic/revolver/russian/soul/proc/shoot_self", function* shoot_self(f: Frame, user: Value) {
 	let SS: Value = null;
-	f.vars = () => [SS];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy((yield* g.callName(f, (SS = (yield* g.new_(f, T("/obj/item/device/soulstone/anybody"), [rt.getStep(f, live(f.src), 0)]))), "transfer_soul", ["FORCE", live(f.args[0])])))) {
-		yield* g.call(f, P("/proc/qdel"), null, [live(SS)]);
-		return live(f.dot);
+	yield* parent_proc();
+	if (!(yield* (SS = (yield* new_(T("/obj/item/device/soulstone/anybody"), rt.getStep(f, this, 0)))).transfer_soul("FORCE", user))) {
+		yield* qdel(SS);
+		return f.dot;
 	}
-	yield* g.callName(f, live(f.args[0]), "visible_message", [fmt("<span class='danger'>＀'s soul is captured by ％！!</span>", [rt.fv(f, "name", live(f.args[0])), live(f.src)]), "<span class='userdanger'>You've lost the gamble! Your soul is forfiet!</span>"]);
+	user.visible_message(fmt("<span class='danger'>＀'s soul is captured by ％！!</span>", [user.name, this]), "<span class='userdanger'>You've lost the gamble! Your soul is forfiet!</span>");
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
 rt.type(5274, "/obj/item/weapon/gun/ballistic/revolver/doublebarrel", "/obj/item/weapon/gun/ballistic/revolver", {
 	flags: 64,
@@ -352,50 +332,45 @@ rt.type(5274, "/obj/item/weapon/gun/ballistic/revolver/doublebarrel", "/obj/item
 	unique_reskin: null,
 });
 
-// /obj/item/weapon/gun/ballistic/revolver/doublebarrel/proc/<init>  (code/modules/projectiles/guns/ballistic/revolver.dm:269)
+// revolver.dm:269
 rt.def("/obj/item/weapon/gun/ballistic/revolver/doublebarrel/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "unique_reskin", rt.alist(f, ["Default", "dshotgun", "Dark Red Finish", "dshotgun-d", "Ash", "dshotgun-f", "Faded Grey", "dshotgun-g", "Maple", "dshotgun-1", "Rosewood", "dshotgun-p"]));
+	parent_proc();
+	this.unique_reskin = rt.alist(f, ["Default", "dshotgun", "Dark Red Finish", "dshotgun-d", "Ash", "dshotgun-f", "Faded Grey", "dshotgun-g", "Maple", "dshotgun-1", "Rosewood", "dshotgun-p"]);
 	return f.dot;
 });
 
-// /obj/item/weapon/gun/ballistic/revolver/doublebarrel/proc/attackby  (code/modules/projectiles/guns/ballistic/revolver.dm:278)  may sleep
-rt.def("/obj/item/weapon/gun/ballistic/revolver/doublebarrel/proc/attackby", function* attackby(f: Frame) {
+// revolver.dm:278
+rt.def("/obj/item/weapon/gun/ballistic/revolver/doublebarrel/proc/attackby", function* attackby(f: Frame, A: Value, user: Value, params: Value) {
 	let W: Value = null;
-	f.vars = () => [W];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/ammo_box")) ? 1 : 0)) || truthy((rt.istype(live(f.args[0]), T("/obj/item/ammo_casing")) ? 1 : 0)))) {
-		yield* g.srcCall(f, "chamber_round");
+	yield* parent_proc();
+	if (rt.istype(A, T("/obj/item/ammo_box")) || rt.istype(A, T("/obj/item/ammo_casing"))) {
+		yield* this.chamber_round();
 	}
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/melee/energy")) ? 1 : 0))) {
-		if (truthy(rt.gv(f, "active", (W = live(f.args[0]))))) {
-			yield* g.srcCall(f, "sawoff", live(f.args[1]));
+	if (rt.istype(A, T("/obj/item/weapon/melee/energy"))) {
+		if ((W = A).active) {
+			yield* this.sawoff(user);
 		}
 	}
-	if (!(truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/circular_saw")) ? 1 : 0)) || truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/gun/energy/plasmacutter")) ? 1 : 0)))) return f.dot;
-	yield* g.srcCall(f, "sawoff", live(f.args[1]));
+	if (!(rt.istype(A, T("/obj/item/weapon/circular_saw")) || rt.istype(A, T("/obj/item/weapon/gun/energy/plasmacutter")))) return f.dot;
+	yield* this.sawoff(user);
 	return f.dot;
-}, true, { args: ["A", "user", "params"] });
+}, true);
 
-// /obj/item/weapon/gun/ballistic/revolver/doublebarrel/proc/attack_self  (code/modules/projectiles/guns/ballistic/revolver.dm:290)
+// revolver.dm:290
 rt.def("/obj/item/weapon/gun/ballistic/revolver/doublebarrel/proc/attack_self", function attack_self(f: Frame, user: Value) {
-	let num_unloaded: Value = null, CB: Value = null;
-	f.vars = () => [num_unloaded, CB];
-	num_unloaded = 0;
-	while (rt.gt(rt.callSrc(f, "get_ammo", []), 0)) {
-		CB = null;
-		CB = rt.callName(f, rt.sv(f, "magazine"), "get_round", [0]);
-		rt.setSv(f, "chambered", null);
-		rt.setFv(f, "loc", live(CB), rt.getStep(f, rt.fv(f, "loc", live(f.src)), 0));
-		rt.callName(f, live(CB), "update_icon", []);
-		num_unloaded = rt.inc(live(num_unloaded), 1);
+	let CB: Value = null;
+	let num_unloaded: Value = 0;
+	while (this.get_ammo() > 0) {
+		CB = this.magazine.get_round(0);
+		this.chambered = null;
+		CB.loc = rt.getStep(f, this.loc, 0);
+		CB.update_icon();
+		num_unloaded++;
 	}
-	if (truthy(live(num_unloaded))) {
-		rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You break open ％！ and unload ＀ shell５.</span>", [live(f.src), live(num_unloaded)])]);
+	if (num_unloaded) {
+		to_chat(user, fmt("<span class='notice'>You break open ％！ and unload ＀ shell５.</span>", [this, num_unloaded]));
 	} else {
-		rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ is empty!</span>", [live(f.src)])]);
+		to_chat(user, `<span class='warning'>${this} is empty!</span>`);
 	}
 	return f.dot;
 });
@@ -415,63 +390,60 @@ rt.type(5275, "/obj/item/weapon/gun/ballistic/revolver/doublebarrel/improvised",
 	unique_reskin: null,
 });
 
-// /obj/item/weapon/gun/ballistic/revolver/doublebarrel/improvised/proc/<init>  (code/modules/projectiles/guns/ballistic/revolver.dm:315)
+// revolver.dm:315
 rt.def("/obj/item/weapon/gun/ballistic/revolver/doublebarrel/improvised/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "unique_reskin", null);
+	parent_proc();
+	this.unique_reskin = null;
 	return f.dot;
 });
 
-// /obj/item/weapon/gun/ballistic/revolver/doublebarrel/improvised/proc/attackby  (code/modules/projectiles/guns/ballistic/revolver.dm:319)  may sleep
-rt.def("/obj/item/weapon/gun/ballistic/revolver/doublebarrel/improvised/proc/attackby", function* attackby(f: Frame) {
+// revolver.dm:319
+rt.def("/obj/item/weapon/gun/ballistic/revolver/doublebarrel/improvised/proc/attackby", function* attackby(f: Frame, A: Value, user: Value, params: Value) {
 	let C: Value = null;
-	f.vars = () => [C];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!(truthy((rt.istype(live(f.args[0]), T("/obj/item/stack/cable_coil")) ? 1 : 0)) && !truthy(rt.sv(f, "sawn_state")))) return f.dot;
-	if (truthy((yield* g.callName(f, (C = live(f.args[0])), "use", [10])))) {
-		rt.setSv(f, "slot_flags", 1024);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You tie the lengths of cable to the shotgun, making a sling.</span>"]);
-		rt.setSv(f, "slung", 1);
-		yield* g.srcCall(f, "update_icon");
+	yield* parent_proc();
+	if (!(rt.istype(A, T("/obj/item/stack/cable_coil")) && !this.sawn_state)) return f.dot;
+	if (yield* (C = A).use(10)) {
+		this.slot_flags = SLOT_BACK;
+		to_chat(user, "<span class='notice'>You tie the lengths of cable to the shotgun, making a sling.</span>");
+		this.slung = 1;
+		yield* this.update_icon();
 	} else {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You need at least ten lengths of cable if you want to make a sling!</span>"]);
+		to_chat(user, "<span class='warning'>You need at least ten lengths of cable if you want to make a sling!</span>");
 	}
 	return f.dot;
-}, true, { args: ["A", "user", "params"] });
+}, true);
 
-// /obj/item/weapon/gun/ballistic/revolver/doublebarrel/improvised/proc/update_icon  (code/modules/projectiles/guns/ballistic/revolver.dm:331)
+// revolver.dm:331
 rt.def("/obj/item/weapon/gun/ballistic/revolver/doublebarrel/improvised/proc/update_icon", function update_icon(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.sv(f, "slung"))) return f.dot;
-	rt.modSrcVar(f, "icon_state", "sling", add);
+	parent_proc();
+	if (!this.slung) return f.dot;
+	this.icon_state += "sling";
 	return f.dot;
 });
 
-// /obj/item/weapon/gun/ballistic/revolver/doublebarrel/improvised/proc/sawoff  (code/modules/projectiles/guns/ballistic/revolver.dm:336)  may sleep
-rt.def("/obj/item/weapon/gun/ballistic/revolver/doublebarrel/improvised/proc/sawoff", function* sawoff(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!(truthy(live(f.dot)) && truthy(rt.sv(f, "slung")))) return f.dot;
-	yield* g.new_(f, T("/obj/item/stack/cable_coil"), [rt.getStep(f, live(f.src), 0), 10]);
-	rt.setSv(f, "slung", 0);
-	yield* g.srcCall(f, "update_icon");
+// revolver.dm:336
+rt.def("/obj/item/weapon/gun/ballistic/revolver/doublebarrel/improvised/proc/sawoff", function* sawoff(f: Frame, user: Value) {
+	f.dot = (yield* parent_proc());
+	if (!(f.dot && this.slung)) return f.dot;
+	yield* new_(T("/obj/item/stack/cable_coil"), rt.getStep(f, this, 0), 10);
+	this.slung = 0;
+	yield* this.update_icon();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
 rt.type(5277, "/obj/item/weapon/gun/ballistic/revolver/reverse", "/obj/item/weapon/gun/ballistic/revolver", {
 	clumsy_check: 0,
 });
 
-// /obj/item/weapon/gun/ballistic/revolver/reverse/proc/can_trigger_gun  (code/modules/projectiles/guns/ballistic/revolver.dm:356)  may sleep
-rt.def("/obj/item/weapon/gun/ballistic/revolver/reverse/proc/can_trigger_gun", function* can_trigger_gun(f: Frame) {
-	if ((truthy(rt.bitAnd(rt.fv(f, "disabilities", live(f.args[0])), 256)) || (truthy(rt.fv(f, "mind", live(f.args[0]))) && isEqual(rt.gv(f, "assigned_role", rt.fv(f, "mind", live(f.args[0]))), "Clown")))) {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+// revolver.dm:356
+rt.def("/obj/item/weapon/gun/ballistic/revolver/reverse/proc/can_trigger_gun", function* can_trigger_gun(f: Frame, user: Value) {
+	if (rt.bitAnd(user.disabilities, 256) || user.mind && user.mind.assigned_role == "Clown") {
+		return (yield* parent_proc());
 	}
-	if (!truthy((yield* g.callSrc(f, "process_fire", [null, live(f.args[0]), null, live(f.args[0]), null, 0, "zone_override", "head"], rt.Args.Named)))) return f.dot;
-	yield* g.callName(f, live(f.args[0]), "visible_message", [fmt("<span class='warning'>＀ somehow manages to shoot ＀self in the face!</span>", [live(f.args[0]), (yield* g.callName(f, live(f.args[0]), "p_them", []))]), "<span class='userdanger'>You somehow shoot yourself in the face! How the hell?!</span>"]);
-	yield* g.callName(f, live(f.args[0]), "emote", ["scream"]);
-	yield* g.callName(f, live(f.args[0]), "drop_item", []);
-	yield* g.callName(f, live(f.args[0]), "Knockdown", [80]);
+	if (!(yield* this.process_fire(user, user, 0, { zone_override: "head" }))) return f.dot;
+	user.visible_message(`<span class='warning'>${user} somehow manages to shoot ${user.p_them()}self in the face!</span>`, "<span class='userdanger'>You somehow shoot yourself in the face! How the hell?!</span>");
+	yield* user.emote("scream");
+	yield* user.drop_item();
+	yield* user.Knockdown(80);
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);

@@ -1,5 +1,5 @@
 // Types declared in code/modules/events that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(284, "/datum/round_event/ghost_role/sentience/all", "/datum/round_event/ghost_role/sentience", {
 	one: "all",

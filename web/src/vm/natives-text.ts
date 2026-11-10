@@ -5,7 +5,7 @@
 import type { NativeProc, VM } from "./interpreter.js";
 import { DMList, DMObject, listSubtract, live, type SharedAssoc } from "./objects.js";
 import { DMProc, DMType } from "./objtree.js";
-import { DMRuntimeError, formatNumber, fround, isTruthy, stringify, type Value } from "./value.js";
+import { DMRuntimeError, formatNumber, isTruthy, stringify, type Value } from "./value.js";
 import { stripMarkers } from "./markers.js";
 import { wallNow } from "./clockhook.js";
 
@@ -85,7 +85,7 @@ export function jsonEncode(v: Value): string {
 function jsonToValue(x: unknown): Value {
 	if (x === null) return null;
 	if (typeof x === "boolean") return x ? 1 : 0;
-	if (typeof x === "number") return fround(x);
+	if (typeof x === "number") return x;
 	if (typeof x === "string") return x;
 	if (Array.isArray(x)) return new DMList(x.map(jsonToValue));
 	const l = new DMList();
@@ -345,7 +345,7 @@ export function installTextNatives(vm: VM): void {
 	// ---- random. Measured: rand() is a float in [0,1); rand(H) is rand(0,H); bounds are floored;
 	// rand(4,1) gives 3 or 4 (L minus 0..L-H-2). prob is an opcode (interpreter.ts).
 	def("/proc/rand", (vm, args) => {
-		if (args.length === 0) return fround(vm.rng.next());
+		if (args.length === 0) return vm.rng.next();
 		let lo = Math.floor(num(args[0], 0)), hi = Math.floor(num(args[1] ?? null, 0));
 		if (args.length === 1) [lo, hi] = [0, lo];
 		if (hi >= lo) return vm.rng.int(lo, hi);

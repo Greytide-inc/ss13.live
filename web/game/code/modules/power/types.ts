@@ -1,5 +1,5 @@
 // Types declared in code/modules/power that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(5708, "/obj/item/weapon/stock_parts/cell/computer", "/obj/item/weapon/stock_parts/cell", {
 	name: "standard battery",

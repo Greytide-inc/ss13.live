@@ -24,7 +24,7 @@ vm.call(tree.getType("/turf/open").procs.get("Initalize_Atmos"), [1], turf);
 const want = { message: "Cannot execute null.compare().", proc: "/turf/open/proc/Initalize_Atmos", source: "code/game/turfs/open.dm:103" };
 const gameFile = "game/code/game/turfs/open.ts";
 const lines = readFileSync(resolve(web, gameFile), "utf8").split("\n");
-const wantLine = lines.findIndex((l) => l.includes('"compare", [live(enemy_air)]')) + 1;
+const wantLine = lines.findIndex((l) => l.includes(".compare(enemy_air)")) + 1;
 let fail = 0;
 const check = (what, ok) => { console.log(`${ok ? "ok  " : "FAIL"} ${what}`); if (!ok) fail++; };
 check(`one runtime error (got ${errors.length})`, errors.length === 1);

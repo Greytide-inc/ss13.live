@@ -1,7 +1,7 @@
-// From code/modules/reagents/chemistry/recipes/others.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/reagents/chemistry/recipes/others.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(2478, "/datum/chemical_reaction/sterilizine", "/datum/chemical_reaction", {
@@ -11,13 +11,11 @@ rt.type(2478, "/datum/chemical_reaction/sterilizine", "/datum/chemical_reaction"
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/sterilizine/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:5)
+// others.dm:5
 rt.def("/datum/chemical_reaction/sterilizine/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["sterilizine", 3]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["ethanol", 1, "charcoal", 1, "chlorine", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["sterilizine", 3]);
+	this.required_reagents = rt.alist(f, ["ethanol", 1, "charcoal", 1, "chlorine", 1]);
 	return f.dot;
 });
 
@@ -28,13 +26,11 @@ rt.type(2479, "/datum/chemical_reaction/lube", "/datum/chemical_reaction", {
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/lube/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:11)
+// others.dm:11
 rt.def("/datum/chemical_reaction/lube/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["lube", 4]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["water", 1, "silicon", 1, "oxygen", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["lube", 4]);
+	this.required_reagents = rt.alist(f, ["water", 1, "silicon", 1, "oxygen", 1]);
 	return f.dot;
 });
 
@@ -45,13 +41,11 @@ rt.type(2480, "/datum/chemical_reaction/spraytan", "/datum/chemical_reaction", {
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/spraytan/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:17)
+// others.dm:17
 rt.def("/datum/chemical_reaction/spraytan/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["spraytan", 2]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["orangejuice", 1, "oil", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["spraytan", 2]);
+	this.required_reagents = rt.alist(f, ["orangejuice", 1, "oil", 1]);
 	return f.dot;
 });
 
@@ -62,13 +56,11 @@ rt.type(2481, "/datum/chemical_reaction/spraytan2", "/datum/chemical_reaction", 
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/spraytan2/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:23)
+// others.dm:23
 rt.def("/datum/chemical_reaction/spraytan2/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["spraytan", 2]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["orangejuice", 1, "cornoil", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["spraytan", 2]);
+	this.required_reagents = rt.alist(f, ["orangejuice", 1, "cornoil", 1]);
 	return f.dot;
 });
 
@@ -79,13 +71,11 @@ rt.type(2482, "/datum/chemical_reaction/impedrezene", "/datum/chemical_reaction"
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/impedrezene/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:29)
+// others.dm:29
 rt.def("/datum/chemical_reaction/impedrezene/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["impedrezene", 2]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["mercury", 1, "oxygen", 1, "sugar", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["impedrezene", 2]);
+	this.required_reagents = rt.alist(f, ["mercury", 1, "oxygen", 1, "sugar", 1]);
 	return f.dot;
 });
 
@@ -96,13 +86,11 @@ rt.type(2483, "/datum/chemical_reaction/cryptobiolin", "/datum/chemical_reaction
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/cryptobiolin/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:35)
+// others.dm:35
 rt.def("/datum/chemical_reaction/cryptobiolin/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["cryptobiolin", 3]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["potassium", 1, "oxygen", 1, "sugar", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["cryptobiolin", 3]);
+	this.required_reagents = rt.alist(f, ["potassium", 1, "oxygen", 1, "sugar", 1]);
 	return f.dot;
 });
 
@@ -113,13 +101,11 @@ rt.type(2484, "/datum/chemical_reaction/glycerol", "/datum/chemical_reaction", {
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/glycerol/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:41)
+// others.dm:41
 rt.def("/datum/chemical_reaction/glycerol/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["glycerol", 1]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["cornoil", 3, "sacid", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["glycerol", 1]);
+	this.required_reagents = rt.alist(f, ["cornoil", 3, "sacid", 1]);
 	return f.dot;
 });
 
@@ -130,13 +116,11 @@ rt.type(2485, "/datum/chemical_reaction/sodiumchloride", "/datum/chemical_reacti
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/sodiumchloride/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:47)
+// others.dm:47
 rt.def("/datum/chemical_reaction/sodiumchloride/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["sodiumchloride", 3]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["water", 1, "sodium", 1, "chlorine", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["sodiumchloride", 3]);
+	this.required_reagents = rt.alist(f, ["water", 1, "sodium", 1, "chlorine", 1]);
 	return f.dot;
 });
 
@@ -147,25 +131,20 @@ rt.type(2486, "/datum/chemical_reaction/plasmasolidification", "/datum/chemical_
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/plasmasolidification/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:53)
+// others.dm:53
 rt.def("/datum/chemical_reaction/plasmasolidification/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "required_reagents", rt.alist(f, ["iron", 5, "frostoil", 5, "plasma", 20]));
+	parent_proc();
+	this.required_reagents = rt.alist(f, ["iron", 5, "frostoil", 5, "plasma", 20]);
 	return f.dot;
 });
 
-// /datum/chemical_reaction/plasmasolidification/proc/on_reaction  (code/modules/reagents/chemistry/recipes/others.dm:57)  may sleep
+// others.dm:57
 rt.def("/datum/chemical_reaction/plasmasolidification/proc/on_reaction", function* on_reaction(f: Frame, holder: Value, created_volume: Value) {
-	let location: Value = null, i: Value = null;
-	f.vars = () => [holder, created_volume, location, i];
-	location = rt.getStep(f, rt.fv(f, "my_atom", live(holder)), 0);
-	i = null;
-	i = 1;
-	while (rt.le(live(i), live(created_volume))) {
-		yield* g.new_(f, T("/obj/item/stack/sheet/mineral/plasma"), [live(location)]);
-		i = rt.inc(live(i), 1);
+	let location: Value = rt.getStep(f, holder.my_atom, 0);
+	let i: Value = 1;
+	while (i <= created_volume) {
+		yield* new_(T("/obj/item/stack/sheet/mineral/plasma"), location);
+		i++;
 	}
 	return f.dot;
 }, true);
@@ -177,25 +156,20 @@ rt.type(2487, "/datum/chemical_reaction/goldsolidification", "/datum/chemical_re
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/goldsolidification/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:64)
+// others.dm:64
 rt.def("/datum/chemical_reaction/goldsolidification/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "required_reagents", rt.alist(f, ["frostoil", 5, "gold", 20, "iron", 1]));
+	parent_proc();
+	this.required_reagents = rt.alist(f, ["frostoil", 5, "gold", 20, "iron", 1]);
 	return f.dot;
 });
 
-// /datum/chemical_reaction/goldsolidification/proc/on_reaction  (code/modules/reagents/chemistry/recipes/others.dm:68)  may sleep
+// others.dm:68
 rt.def("/datum/chemical_reaction/goldsolidification/proc/on_reaction", function* on_reaction(f: Frame, holder: Value, created_volume: Value) {
-	let location: Value = null, i: Value = null;
-	f.vars = () => [holder, created_volume, location, i];
-	location = rt.getStep(f, rt.fv(f, "my_atom", live(holder)), 0);
-	i = null;
-	i = 1;
-	while (rt.le(live(i), live(created_volume))) {
-		yield* g.new_(f, T("/obj/item/stack/sheet/mineral/gold"), [live(location)]);
-		i = rt.inc(live(i), 1);
+	let location: Value = rt.getStep(f, holder.my_atom, 0);
+	let i: Value = 1;
+	while (i <= created_volume) {
+		yield* new_(T("/obj/item/stack/sheet/mineral/gold"), location);
+		i++;
 	}
 	return f.dot;
 }, true);
@@ -207,13 +181,11 @@ rt.type(2488, "/datum/chemical_reaction/capsaicincondensation", "/datum/chemical
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/capsaicincondensation/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:75)
+// others.dm:75
 rt.def("/datum/chemical_reaction/capsaicincondensation/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["condensedcapsaicin", 5]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["capsaicin", 1, "ethanol", 5]));
+	parent_proc();
+	this.results = rt.alist(f, ["condensedcapsaicin", 5]);
+	this.required_reagents = rt.alist(f, ["capsaicin", 1, "ethanol", 5]);
 	return f.dot;
 });
 
@@ -225,25 +197,20 @@ rt.type(2489, "/datum/chemical_reaction/soapification", "/datum/chemical_reactio
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/soapification/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:81)
+// others.dm:81
 rt.def("/datum/chemical_reaction/soapification/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "required_reagents", rt.alist(f, ["liquidgibs", 10, "lye", 10]));
+	parent_proc();
+	this.required_reagents = rt.alist(f, ["liquidgibs", 10, "lye", 10]);
 	return f.dot;
 });
 
-// /datum/chemical_reaction/soapification/proc/on_reaction  (code/modules/reagents/chemistry/recipes/others.dm:86)  may sleep
+// others.dm:86
 rt.def("/datum/chemical_reaction/soapification/proc/on_reaction", function* on_reaction(f: Frame, holder: Value, created_volume: Value) {
-	let location: Value = null, i: Value = null;
-	f.vars = () => [holder, created_volume, location, i];
-	location = rt.getStep(f, rt.fv(f, "my_atom", live(holder)), 0);
-	i = null;
-	i = 1;
-	while (rt.le(live(i), live(created_volume))) {
-		yield* g.new_(f, T("/obj/item/weapon/soap/homemade"), [live(location)]);
-		i = rt.inc(live(i), 1);
+	let location: Value = rt.getStep(f, holder.my_atom, 0);
+	let i: Value = 1;
+	while (i <= created_volume) {
+		yield* new_(T("/obj/item/weapon/soap/homemade"), location);
+		i++;
 	}
 	return f.dot;
 }, true);
@@ -256,25 +223,20 @@ rt.type(2490, "/datum/chemical_reaction/candlefication", "/datum/chemical_reacti
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/candlefication/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:93)
+// others.dm:93
 rt.def("/datum/chemical_reaction/candlefication/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "required_reagents", rt.alist(f, ["liquidgibs", 5, "oxygen", 5]));
+	parent_proc();
+	this.required_reagents = rt.alist(f, ["liquidgibs", 5, "oxygen", 5]);
 	return f.dot;
 });
 
-// /datum/chemical_reaction/candlefication/proc/on_reaction  (code/modules/reagents/chemistry/recipes/others.dm:98)  may sleep
+// others.dm:98
 rt.def("/datum/chemical_reaction/candlefication/proc/on_reaction", function* on_reaction(f: Frame, holder: Value, created_volume: Value) {
-	let location: Value = null, i: Value = null;
-	f.vars = () => [holder, created_volume, location, i];
-	location = rt.getStep(f, rt.fv(f, "my_atom", live(holder)), 0);
-	i = null;
-	i = 1;
-	while (rt.le(live(i), live(created_volume))) {
-		yield* g.new_(f, T("/obj/item/candle"), [live(location)]);
-		i = rt.inc(live(i), 1);
+	let location: Value = rt.getStep(f, holder.my_atom, 0);
+	let i: Value = 1;
+	while (i <= created_volume) {
+		yield* new_(T("/obj/item/candle"), location);
+		i++;
 	}
 	return f.dot;
 }, true);
@@ -286,27 +248,22 @@ rt.type(2491, "/datum/chemical_reaction/meatification", "/datum/chemical_reactio
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/meatification/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:105)
+// others.dm:105
 rt.def("/datum/chemical_reaction/meatification/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "required_reagents", rt.alist(f, ["liquidgibs", 10, "nutriment", 10, "carbon", 10]));
+	parent_proc();
+	this.required_reagents = rt.alist(f, ["liquidgibs", 10, "nutriment", 10, "carbon", 10]);
 	return f.dot;
 });
 
-// /datum/chemical_reaction/meatification/proc/on_reaction  (code/modules/reagents/chemistry/recipes/others.dm:109)  may sleep
+// others.dm:109
 rt.def("/datum/chemical_reaction/meatification/proc/on_reaction", function* on_reaction(f: Frame, holder: Value, created_volume: Value) {
-	let location: Value = null, i: Value = null;
-	f.vars = () => [holder, created_volume, location, i];
-	location = rt.getStep(f, rt.fv(f, "my_atom", live(holder)), 0);
-	i = null;
-	i = 1;
-	while (rt.le(live(i), live(created_volume))) {
-		yield* g.new_(f, T("/obj/item/weapon/reagent_containers/food/snacks/meat/slab/meatproduct"), [live(location)]);
-		i = rt.inc(live(i), 1);
+	let location: Value = rt.getStep(f, holder.my_atom, 0);
+	let i: Value = 1;
+	while (i <= created_volume) {
+		yield* new_(T("/obj/item/weapon/reagent_containers/food/snacks/meat/slab/meatproduct"), location);
+		i++;
 	}
-	return live(f.dot);
+	return f.dot;
 }, true);
 
 rt.type(2492, "/datum/chemical_reaction/carbondioxide", "/datum/chemical_reaction", {
@@ -317,13 +274,11 @@ rt.type(2492, "/datum/chemical_reaction/carbondioxide", "/datum/chemical_reactio
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/carbondioxide/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:117)
+// others.dm:117
 rt.def("/datum/chemical_reaction/carbondioxide/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["co2", 3]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["carbon", 1, "oxygen", 2]));
+	parent_proc();
+	this.results = rt.alist(f, ["co2", 3]);
+	this.required_reagents = rt.alist(f, ["carbon", 1, "oxygen", 2]);
 	return f.dot;
 });
 
@@ -335,13 +290,11 @@ rt.type(2493, "/datum/chemical_reaction/nitrous_oxide", "/datum/chemical_reactio
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/nitrous_oxide/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:124)
+// others.dm:124
 rt.def("/datum/chemical_reaction/nitrous_oxide/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["nitrous_oxide", 5]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["ammonia", 2, "nitrogen", 1, "oxygen", 2]));
+	parent_proc();
+	this.results = rt.alist(f, ["nitrous_oxide", 5]);
+	this.required_reagents = rt.alist(f, ["ammonia", 2, "nitrogen", 1, "oxygen", 2]);
 	return f.dot;
 });
 
@@ -352,13 +305,11 @@ rt.type(2494, "/datum/chemical_reaction/stable_mutation_toxin", "/datum/chemical
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/stable_mutation_toxin/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:133)
+// others.dm:133
 rt.def("/datum/chemical_reaction/stable_mutation_toxin/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["stablemutationtoxin", 1]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["unstablemutationtoxin", 1, "blood", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["stablemutationtoxin", 1]);
+	this.required_reagents = rt.alist(f, ["unstablemutationtoxin", 1, "blood", 1]);
 	return f.dot;
 });
 
@@ -369,13 +320,11 @@ rt.type(2495, "/datum/chemical_reaction/lizard_mutation_toxin", "/datum/chemical
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/lizard_mutation_toxin/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:139)
+// others.dm:139
 rt.def("/datum/chemical_reaction/lizard_mutation_toxin/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["lizardmutationtoxin", 1]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["unstablemutationtoxin", 1, "radium", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["lizardmutationtoxin", 1]);
+	this.required_reagents = rt.alist(f, ["unstablemutationtoxin", 1, "radium", 1]);
 	return f.dot;
 });
 
@@ -386,13 +335,11 @@ rt.type(2496, "/datum/chemical_reaction/fly_mutation_toxin", "/datum/chemical_re
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/fly_mutation_toxin/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:145)
+// others.dm:145
 rt.def("/datum/chemical_reaction/fly_mutation_toxin/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["flymutationtoxin", 1]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["unstablemutationtoxin", 1, "mutagen", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["flymutationtoxin", 1]);
+	this.required_reagents = rt.alist(f, ["unstablemutationtoxin", 1, "mutagen", 1]);
 	return f.dot;
 });
 
@@ -403,13 +350,11 @@ rt.type(2497, "/datum/chemical_reaction/jelly_mutation_toxin", "/datum/chemical_
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/jelly_mutation_toxin/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:151)
+// others.dm:151
 rt.def("/datum/chemical_reaction/jelly_mutation_toxin/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["jellymutationtoxin", 1]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["unstablemutationtoxin", 1, "slimejelly", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["jellymutationtoxin", 1]);
+	this.required_reagents = rt.alist(f, ["unstablemutationtoxin", 1, "slimejelly", 1]);
 	return f.dot;
 });
 
@@ -420,13 +365,11 @@ rt.type(2498, "/datum/chemical_reaction/abductor_mutation_toxin", "/datum/chemic
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/abductor_mutation_toxin/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:157)
+// others.dm:157
 rt.def("/datum/chemical_reaction/abductor_mutation_toxin/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["abductormutationtoxin", 1]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["unstablemutationtoxin", 1, "morphine", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["abductormutationtoxin", 1]);
+	this.required_reagents = rt.alist(f, ["unstablemutationtoxin", 1, "morphine", 1]);
 	return f.dot;
 });
 
@@ -437,13 +380,11 @@ rt.type(2499, "/datum/chemical_reaction/android_mutation_toxin", "/datum/chemica
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/android_mutation_toxin/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:163)
+// others.dm:163
 rt.def("/datum/chemical_reaction/android_mutation_toxin/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["androidmutationtoxin", 1]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["unstablemutationtoxin", 1, "teslium", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["androidmutationtoxin", 1]);
+	this.required_reagents = rt.alist(f, ["unstablemutationtoxin", 1, "teslium", 1]);
 	return f.dot;
 });
 
@@ -454,13 +395,11 @@ rt.type(2500, "/datum/chemical_reaction/pod_mutation_toxin", "/datum/chemical_re
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/pod_mutation_toxin/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:169)
+// others.dm:169
 rt.def("/datum/chemical_reaction/pod_mutation_toxin/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["podmutationtoxin", 1]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["unstablemutationtoxin", 1, "eznutriment", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["podmutationtoxin", 1]);
+	this.required_reagents = rt.alist(f, ["unstablemutationtoxin", 1, "eznutriment", 1]);
 	return f.dot;
 });
 
@@ -471,13 +410,11 @@ rt.type(2501, "/datum/chemical_reaction/golem_mutation_toxin", "/datum/chemical_
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/golem_mutation_toxin/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:175)
+// others.dm:175
 rt.def("/datum/chemical_reaction/golem_mutation_toxin/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["golemmutationtoxin", 1]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["unstablemutationtoxin", 1, "silver", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["golemmutationtoxin", 1]);
+	this.required_reagents = rt.alist(f, ["unstablemutationtoxin", 1, "silver", 1]);
 	return f.dot;
 });
 
@@ -488,13 +425,11 @@ rt.type(2502, "/datum/chemical_reaction/skeleton_mutation_toxin", "/datum/chemic
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/skeleton_mutation_toxin/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:183)
+// others.dm:183
 rt.def("/datum/chemical_reaction/skeleton_mutation_toxin/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["skeletonmutationtoxin", 1]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["amutationtoxin", 1, "milk", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["skeletonmutationtoxin", 1]);
+	this.required_reagents = rt.alist(f, ["amutationtoxin", 1, "milk", 1]);
 	return f.dot;
 });
 
@@ -505,13 +440,11 @@ rt.type(2503, "/datum/chemical_reaction/zombie_mutation_toxin", "/datum/chemical
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/zombie_mutation_toxin/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:189)
+// others.dm:189
 rt.def("/datum/chemical_reaction/zombie_mutation_toxin/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["zombiemutationtoxin", 1]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["amutationtoxin", 1, "toxin", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["zombiemutationtoxin", 1]);
+	this.required_reagents = rt.alist(f, ["amutationtoxin", 1, "toxin", 1]);
 	return f.dot;
 });
 
@@ -522,13 +455,11 @@ rt.type(2504, "/datum/chemical_reaction/ash_mutation_toxin", "/datum/chemical_re
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/ash_mutation_toxin/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:195)
+// others.dm:195
 rt.def("/datum/chemical_reaction/ash_mutation_toxin/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["ashmutationtoxin", 1]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["amutationtoxin", 1, "lizardmutationtoxin", 1, "ash", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["ashmutationtoxin", 1]);
+	this.required_reagents = rt.alist(f, ["amutationtoxin", 1, "lizardmutationtoxin", 1, "ash", 1]);
 	return f.dot;
 });
 
@@ -539,13 +470,11 @@ rt.type(2505, "/datum/chemical_reaction/plasma_mutation_toxin", "/datum/chemical
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/plasma_mutation_toxin/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:203)
+// others.dm:203
 rt.def("/datum/chemical_reaction/plasma_mutation_toxin/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["plasmamutationtoxin", 1]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["skeletonmutationtoxin", 1, "plasma", 1, "uranium", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["plasmamutationtoxin", 1]);
+	this.required_reagents = rt.alist(f, ["skeletonmutationtoxin", 1, "plasma", 1, "uranium", 1]);
 	return f.dot;
 });
 
@@ -556,13 +485,11 @@ rt.type(2506, "/datum/chemical_reaction/shadow_mutation_toxin", "/datum/chemical
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/shadow_mutation_toxin/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:209)
+// others.dm:209
 rt.def("/datum/chemical_reaction/shadow_mutation_toxin/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["shadowmutationtoxin", 1]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["amutationtoxin", 1, "liquid_dark_matter", 1, "holywater", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["shadowmutationtoxin", 1]);
+	this.required_reagents = rt.alist(f, ["amutationtoxin", 1, "liquid_dark_matter", 1, "holywater", 1]);
 	return f.dot;
 });
 
@@ -573,13 +500,11 @@ rt.type(2507, "/datum/chemical_reaction/mulligan", "/datum/chemical_reaction", {
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/mulligan/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:216)
+// others.dm:216
 rt.def("/datum/chemical_reaction/mulligan/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["mulligan", 1]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["stablemutationtoxin", 1, "mutagen", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["mulligan", 1]);
+	this.required_reagents = rt.alist(f, ["stablemutationtoxin", 1, "mutagen", 1]);
 	return f.dot;
 });
 
@@ -590,13 +515,11 @@ rt.type(2508, "/datum/chemical_reaction/virus_food", "/datum/chemical_reaction",
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/virus_food/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:225)
+// others.dm:225
 rt.def("/datum/chemical_reaction/virus_food/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["virusfood", 15]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["water", 5, "milk", 5]));
+	parent_proc();
+	this.results = rt.alist(f, ["virusfood", 15]);
+	this.required_reagents = rt.alist(f, ["water", 5, "milk", 5]);
 	return f.dot;
 });
 
@@ -607,13 +530,11 @@ rt.type(2509, "/datum/chemical_reaction/virus_food_mutagen", "/datum/chemical_re
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/virus_food_mutagen/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:231)
+// others.dm:231
 rt.def("/datum/chemical_reaction/virus_food_mutagen/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["mutagenvirusfood", 1]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["mutagen", 1, "virusfood", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["mutagenvirusfood", 1]);
+	this.required_reagents = rt.alist(f, ["mutagen", 1, "virusfood", 1]);
 	return f.dot;
 });
 
@@ -624,13 +545,11 @@ rt.type(2510, "/datum/chemical_reaction/virus_food_synaptizine", "/datum/chemica
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/virus_food_synaptizine/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:237)
+// others.dm:237
 rt.def("/datum/chemical_reaction/virus_food_synaptizine/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["synaptizinevirusfood", 1]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["synaptizine", 1, "virusfood", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["synaptizinevirusfood", 1]);
+	this.required_reagents = rt.alist(f, ["synaptizine", 1, "virusfood", 1]);
 	return f.dot;
 });
 
@@ -641,13 +560,11 @@ rt.type(2511, "/datum/chemical_reaction/virus_food_plasma", "/datum/chemical_rea
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/virus_food_plasma/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:243)
+// others.dm:243
 rt.def("/datum/chemical_reaction/virus_food_plasma/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["plasmavirusfood", 1]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["plasma", 1, "virusfood", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["plasmavirusfood", 1]);
+	this.required_reagents = rt.alist(f, ["plasma", 1, "virusfood", 1]);
 	return f.dot;
 });
 
@@ -658,13 +575,11 @@ rt.type(2512, "/datum/chemical_reaction/virus_food_plasma_synaptizine", "/datum/
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/virus_food_plasma_synaptizine/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:249)
+// others.dm:249
 rt.def("/datum/chemical_reaction/virus_food_plasma_synaptizine/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["weakplasmavirusfood", 2]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["synaptizine", 1, "plasmavirusfood", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["weakplasmavirusfood", 2]);
+	this.required_reagents = rt.alist(f, ["synaptizine", 1, "plasmavirusfood", 1]);
 	return f.dot;
 });
 
@@ -675,13 +590,11 @@ rt.type(2513, "/datum/chemical_reaction/virus_food_mutagen_sugar", "/datum/chemi
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/virus_food_mutagen_sugar/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:255)
+// others.dm:255
 rt.def("/datum/chemical_reaction/virus_food_mutagen_sugar/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["sugarvirusfood", 2]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["sugar", 1, "mutagenvirusfood", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["sugarvirusfood", 2]);
+	this.required_reagents = rt.alist(f, ["sugar", 1, "mutagenvirusfood", 1]);
 	return f.dot;
 });
 
@@ -692,13 +605,11 @@ rt.type(2514, "/datum/chemical_reaction/virus_food_mutagen_salineglucose", "/dat
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/virus_food_mutagen_salineglucose/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:261)
+// others.dm:261
 rt.def("/datum/chemical_reaction/virus_food_mutagen_salineglucose/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["sugarvirusfood", 2]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["salglu_solution", 1, "mutagenvirusfood", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["sugarvirusfood", 2]);
+	this.required_reagents = rt.alist(f, ["salglu_solution", 1, "mutagenvirusfood", 1]);
 	return f.dot;
 });
 
@@ -709,13 +620,11 @@ rt.type(2515, "/datum/chemical_reaction/virus_food_uranium", "/datum/chemical_re
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/virus_food_uranium/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:267)
+// others.dm:267
 rt.def("/datum/chemical_reaction/virus_food_uranium/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["uraniumvirusfood", 1]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["uranium", 1, "virusfood", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["uraniumvirusfood", 1]);
+	this.required_reagents = rt.alist(f, ["uranium", 1, "virusfood", 1]);
 	return f.dot;
 });
 
@@ -726,13 +635,11 @@ rt.type(2516, "/datum/chemical_reaction/virus_food_uranium_plasma", "/datum/chem
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/virus_food_uranium_plasma/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:273)
+// others.dm:273
 rt.def("/datum/chemical_reaction/virus_food_uranium_plasma/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["uraniumplasmavirusfood_unstable", 1]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["uranium", 5, "plasmavirusfood", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["uraniumplasmavirusfood_unstable", 1]);
+	this.required_reagents = rt.alist(f, ["uranium", 5, "plasmavirusfood", 1]);
 	return f.dot;
 });
 
@@ -743,13 +650,11 @@ rt.type(2517, "/datum/chemical_reaction/virus_food_uranium_plasma_gold", "/datum
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/virus_food_uranium_plasma_gold/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:279)
+// others.dm:279
 rt.def("/datum/chemical_reaction/virus_food_uranium_plasma_gold/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["uraniumplasmavirusfood_stable", 1]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["uranium", 10, "gold", 10, "plasma", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["uraniumplasmavirusfood_stable", 1]);
+	this.required_reagents = rt.alist(f, ["uranium", 10, "gold", 10, "plasma", 1]);
 	return f.dot;
 });
 
@@ -760,13 +665,11 @@ rt.type(2518, "/datum/chemical_reaction/virus_food_uranium_plasma_silver", "/dat
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/virus_food_uranium_plasma_silver/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:285)
+// others.dm:285
 rt.def("/datum/chemical_reaction/virus_food_uranium_plasma_silver/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["uraniumplasmavirusfood_stable", 1]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["uranium", 10, "silver", 10, "plasma", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["uraniumplasmavirusfood_stable", 1]);
+	this.required_reagents = rt.alist(f, ["uranium", 10, "silver", 10, "plasma", 1]);
 	return f.dot;
 });
 
@@ -780,24 +683,21 @@ rt.type(2519, "/datum/chemical_reaction/mix_virus", "/datum/chemical_reaction", 
 	required_catalysts: null,
 });
 
-// /datum/chemical_reaction/mix_virus/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:291)
+// others.dm:291
 rt.def("/datum/chemical_reaction/mix_virus/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["blood", 1]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["virusfood", 1]));
-	rt.setSv(f, "required_catalysts", rt.alist(f, ["blood", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["blood", 1]);
+	this.required_reagents = rt.alist(f, ["virusfood", 1]);
+	this.required_catalysts = rt.alist(f, ["blood", 1]);
 	return f.dot;
 });
 
-// /datum/chemical_reaction/mix_virus/proc/on_reaction  (code/modules/reagents/chemistry/recipes/others.dm:299)  may sleep
+// others.dm:299
 rt.def("/datum/chemical_reaction/mix_virus/proc/on_reaction", function* on_reaction(f: Frame, holder: Value, created_volume: Value) {
 	let B: Value = null, D: Value = null;
-	f.vars = () => [holder, created_volume, B, D];
-	if (!(truthy((B = rt.locateIn(f, T("/datum/reagent/blood"), rt.fv(f, "reagent_list", live(holder))))) && truthy(rt.fv(f, "data", live(B))))) return f.dot;
-	if (!truthy((D = rt.locateIn(f, T("/datum/disease/advance"), rt.index(rt.fv(f, "data", live(B)), "viruses"))))) return f.dot;
-	yield* g.callName(f, live(D), "Evolve", [rt.sv(f, "level_min"), rt.sv(f, "level_max")]);
+	if (!((B = rt.locateIn(f, T("/datum/reagent/blood"), holder.reagent_list)) && B.data)) return f.dot;
+	if (!(D = rt.locateIn(f, T("/datum/disease/advance"), rt.index(B.data, "viruses")))) return f.dot;
+	yield* D.Evolve(this.level_min, this.level_max);
 	return f.dot;
 }, true);
 
@@ -809,12 +709,10 @@ rt.type(2520, "/datum/chemical_reaction/mix_virus/mix_virus_2", "/datum/chemical
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/mix_virus/mix_virus_2/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:310)
+// others.dm:310
 rt.def("/datum/chemical_reaction/mix_virus/mix_virus_2/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "required_reagents", rt.alist(f, ["mutagen", 1]));
+	parent_proc();
+	this.required_reagents = rt.alist(f, ["mutagen", 1]);
 	return f.dot;
 });
 
@@ -826,12 +724,10 @@ rt.type(2521, "/datum/chemical_reaction/mix_virus/mix_virus_3", "/datum/chemical
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/mix_virus/mix_virus_3/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:318)
+// others.dm:318
 rt.def("/datum/chemical_reaction/mix_virus/mix_virus_3/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "required_reagents", rt.alist(f, ["plasma", 1]));
+	parent_proc();
+	this.required_reagents = rt.alist(f, ["plasma", 1]);
 	return f.dot;
 });
 
@@ -843,12 +739,10 @@ rt.type(2522, "/datum/chemical_reaction/mix_virus/mix_virus_4", "/datum/chemical
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/mix_virus/mix_virus_4/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:326)
+// others.dm:326
 rt.def("/datum/chemical_reaction/mix_virus/mix_virus_4/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "required_reagents", rt.alist(f, ["uranium", 1]));
+	parent_proc();
+	this.required_reagents = rt.alist(f, ["uranium", 1]);
 	return f.dot;
 });
 
@@ -860,12 +754,10 @@ rt.type(2523, "/datum/chemical_reaction/mix_virus/mix_virus_5", "/datum/chemical
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/mix_virus/mix_virus_5/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:334)
+// others.dm:334
 rt.def("/datum/chemical_reaction/mix_virus/mix_virus_5/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "required_reagents", rt.alist(f, ["mutagenvirusfood", 1]));
+	parent_proc();
+	this.required_reagents = rt.alist(f, ["mutagenvirusfood", 1]);
 	return f.dot;
 });
 
@@ -877,12 +769,10 @@ rt.type(2524, "/datum/chemical_reaction/mix_virus/mix_virus_6", "/datum/chemical
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/mix_virus/mix_virus_6/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:342)
+// others.dm:342
 rt.def("/datum/chemical_reaction/mix_virus/mix_virus_6/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "required_reagents", rt.alist(f, ["sugarvirusfood", 1]));
+	parent_proc();
+	this.required_reagents = rt.alist(f, ["sugarvirusfood", 1]);
 	return f.dot;
 });
 
@@ -894,12 +784,10 @@ rt.type(2525, "/datum/chemical_reaction/mix_virus/mix_virus_7", "/datum/chemical
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/mix_virus/mix_virus_7/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:350)
+// others.dm:350
 rt.def("/datum/chemical_reaction/mix_virus/mix_virus_7/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "required_reagents", rt.alist(f, ["weakplasmavirusfood", 1]));
+	parent_proc();
+	this.required_reagents = rt.alist(f, ["weakplasmavirusfood", 1]);
 	return f.dot;
 });
 
@@ -911,12 +799,10 @@ rt.type(2526, "/datum/chemical_reaction/mix_virus/mix_virus_8", "/datum/chemical
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/mix_virus/mix_virus_8/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:358)
+// others.dm:358
 rt.def("/datum/chemical_reaction/mix_virus/mix_virus_8/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "required_reagents", rt.alist(f, ["plasmavirusfood", 1]));
+	parent_proc();
+	this.required_reagents = rt.alist(f, ["plasmavirusfood", 1]);
 	return f.dot;
 });
 
@@ -928,12 +814,10 @@ rt.type(2527, "/datum/chemical_reaction/mix_virus/mix_virus_9", "/datum/chemical
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/mix_virus/mix_virus_9/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:366)
+// others.dm:366
 rt.def("/datum/chemical_reaction/mix_virus/mix_virus_9/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "required_reagents", rt.alist(f, ["synaptizinevirusfood", 1]));
+	parent_proc();
+	this.required_reagents = rt.alist(f, ["synaptizinevirusfood", 1]);
 	return f.dot;
 });
 
@@ -945,12 +829,10 @@ rt.type(2528, "/datum/chemical_reaction/mix_virus/mix_virus_10", "/datum/chemica
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/mix_virus/mix_virus_10/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:374)
+// others.dm:374
 rt.def("/datum/chemical_reaction/mix_virus/mix_virus_10/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "required_reagents", rt.alist(f, ["uraniumvirusfood", 1]));
+	parent_proc();
+	this.required_reagents = rt.alist(f, ["uraniumvirusfood", 1]);
 	return f.dot;
 });
 
@@ -962,12 +844,10 @@ rt.type(2529, "/datum/chemical_reaction/mix_virus/mix_virus_11", "/datum/chemica
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/mix_virus/mix_virus_11/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:382)
+// others.dm:382
 rt.def("/datum/chemical_reaction/mix_virus/mix_virus_11/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "required_reagents", rt.alist(f, ["uraniumplasmavirusfood_unstable", 1]));
+	parent_proc();
+	this.required_reagents = rt.alist(f, ["uraniumplasmavirusfood_unstable", 1]);
 	return f.dot;
 });
 
@@ -979,12 +859,10 @@ rt.type(2530, "/datum/chemical_reaction/mix_virus/mix_virus_12", "/datum/chemica
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/mix_virus/mix_virus_12/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:390)
+// others.dm:390
 rt.def("/datum/chemical_reaction/mix_virus/mix_virus_12/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "required_reagents", rt.alist(f, ["uraniumplasmavirusfood_stable", 1]));
+	parent_proc();
+	this.required_reagents = rt.alist(f, ["uraniumplasmavirusfood_stable", 1]);
 	return f.dot;
 });
 
@@ -995,23 +873,20 @@ rt.type(2531, "/datum/chemical_reaction/mix_virus/rem_virus", "/datum/chemical_r
 	required_catalysts: null,
 });
 
-// /datum/chemical_reaction/mix_virus/rem_virus/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:398)
+// others.dm:398
 rt.def("/datum/chemical_reaction/mix_virus/rem_virus/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "required_reagents", rt.alist(f, ["synaptizine", 1]));
-	rt.setSv(f, "required_catalysts", rt.alist(f, ["blood", 1]));
+	parent_proc();
+	this.required_reagents = rt.alist(f, ["synaptizine", 1]);
+	this.required_catalysts = rt.alist(f, ["blood", 1]);
 	return f.dot;
 });
 
-// /datum/chemical_reaction/mix_virus/rem_virus/proc/on_reaction  (code/modules/reagents/chemistry/recipes/others.dm:403)  may sleep
+// others.dm:403
 rt.def("/datum/chemical_reaction/mix_virus/rem_virus/proc/on_reaction", function* on_reaction(f: Frame, holder: Value, created_volume: Value) {
 	let B: Value = null, D: Value = null;
-	f.vars = () => [holder, created_volume, B, D];
-	if (!(truthy((B = rt.locateIn(f, T("/datum/reagent/blood"), rt.fv(f, "reagent_list", live(holder))))) && truthy(rt.fv(f, "data", live(B))))) return f.dot;
-	if (!truthy((D = rt.locateIn(f, T("/datum/disease/advance"), rt.index(rt.fv(f, "data", live(B)), "viruses"))))) return f.dot;
-	yield* g.callName(f, live(D), "Devolve", []);
+	if (!((B = rt.locateIn(f, T("/datum/reagent/blood"), holder.reagent_list)) && B.data)) return f.dot;
+	if (!(D = rt.locateIn(f, T("/datum/disease/advance"), rt.index(B.data, "viruses")))) return f.dot;
+	yield* D.Devolve();
 	return f.dot;
 }, true);
 
@@ -1022,13 +897,11 @@ rt.type(2532, "/datum/chemical_reaction/surfactant", "/datum/chemical_reaction",
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/surfactant/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:417)
+// others.dm:417
 rt.def("/datum/chemical_reaction/surfactant/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["fluorosurfactant", 5]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["fluorine", 2, "carbon", 2, "sacid", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["fluorosurfactant", 5]);
+	this.required_reagents = rt.alist(f, ["fluorine", 2, "carbon", 2, "sacid", 1]);
 	return f.dot;
 });
 
@@ -1039,32 +912,24 @@ rt.type(2533, "/datum/chemical_reaction/foam", "/datum/chemical_reaction", {
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/foam/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:423)
+// others.dm:423
 rt.def("/datum/chemical_reaction/foam/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "required_reagents", rt.alist(f, ["fluorosurfactant", 1, "water", 1]));
+	parent_proc();
+	this.required_reagents = rt.alist(f, ["fluorosurfactant", 1, "water", 1]);
 	return f.dot;
 });
 
-// /datum/chemical_reaction/foam/proc/on_reaction  (code/modules/reagents/chemistry/recipes/others.dm:427)  may sleep
+// others.dm:427
 rt.def("/datum/chemical_reaction/foam/proc/on_reaction", function* on_reaction(f: Frame, holder: Value, created_volume: Value) {
-	let location: Value = null, M: Value = null, s: Value = null;
-	let $e: any;
-	f.vars = () => [holder, created_volume, location, M, s, $e];
-	location = rt.getStep(f, rt.fv(f, "my_atom", live(holder)), 0);
-	M = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/viewers"), null, [5, live(location)])), T("/mob"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		yield* g.call(f, P("/proc/to_chat"), null, [live(M), "<span class='danger'>The solution spews out foam!</span>"]);
+	let M: Value = null, s: Value = null;
+	let location: Value = rt.getStep(f, holder.my_atom, 0);
+	for (M of each(viewers(5, location), T("/mob"))) {
+		to_chat(M, "<span class='danger'>The solution spews out foam!</span>");
 	}
-	rt.endFor(f, 0);
-	yield* g.callName(f, (s = (yield* g.new_(f, T("/datum/effect_system/foam_spread"), []))), "set_up", [multiply(live(created_volume), 2), live(location), live(holder)]);
-	yield* g.callName(f, live(s), "start", []);
-	yield* g.callName(f, live(holder), "clear_reagents", []);
-	return live(f.dot);
+	yield* (s = (yield* new_(T("/datum/effect_system/foam_spread")))).set_up(created_volume * 2, location, holder);
+	yield* s.start();
+	yield* holder.clear_reagents();
+	return f.dot;
 }, true);
 
 rt.type(2534, "/datum/chemical_reaction/metalfoam", "/datum/chemical_reaction", {
@@ -1074,31 +939,23 @@ rt.type(2534, "/datum/chemical_reaction/metalfoam", "/datum/chemical_reaction", 
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/metalfoam/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:440)
+// others.dm:440
 rt.def("/datum/chemical_reaction/metalfoam/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "required_reagents", rt.alist(f, ["aluminium", 3, "foaming_agent", 1, "facid", 1]));
+	parent_proc();
+	this.required_reagents = rt.alist(f, ["aluminium", 3, "foaming_agent", 1, "facid", 1]);
 	return f.dot;
 });
 
-// /datum/chemical_reaction/metalfoam/proc/on_reaction  (code/modules/reagents/chemistry/recipes/others.dm:444)  may sleep
+// others.dm:444
 rt.def("/datum/chemical_reaction/metalfoam/proc/on_reaction", function* on_reaction(f: Frame, holder: Value, created_volume: Value) {
-	let location: Value = null, M: Value = null, s: Value = null;
-	let $e: any;
-	f.vars = () => [holder, created_volume, location, M, s, $e];
-	location = rt.getStep(f, rt.fv(f, "my_atom", live(holder)), 0);
-	M = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/viewers"), null, [5, live(location)])), T("/mob"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		yield* g.call(f, P("/proc/to_chat"), null, [live(M), "<span class='danger'>The solution spews out a metallic foam!</span>"]);
+	let M: Value = null, s: Value = null;
+	let location: Value = rt.getStep(f, holder.my_atom, 0);
+	for (M of each(viewers(5, location), T("/mob"))) {
+		to_chat(M, "<span class='danger'>The solution spews out a metallic foam!</span>");
 	}
-	rt.endFor(f, 0);
-	yield* g.callName(f, (s = (yield* g.new_(f, T("/datum/effect_system/foam_spread/metal"), []))), "set_up", [multiply(live(created_volume), 5), live(location), live(holder), 1]);
-	yield* g.callName(f, live(s), "start", []);
-	yield* g.callName(f, live(holder), "clear_reagents", []);
+	yield* (s = (yield* new_(T("/datum/effect_system/foam_spread/metal")))).set_up(created_volume * 5, location, holder, 1);
+	yield* s.start();
+	yield* holder.clear_reagents();
 	return f.dot;
 }, true);
 
@@ -1109,31 +966,23 @@ rt.type(2535, "/datum/chemical_reaction/ironfoam", "/datum/chemical_reaction", {
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/ironfoam/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:457)
+// others.dm:457
 rt.def("/datum/chemical_reaction/ironfoam/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "required_reagents", rt.alist(f, ["iron", 3, "foaming_agent", 1, "facid", 1]));
+	parent_proc();
+	this.required_reagents = rt.alist(f, ["iron", 3, "foaming_agent", 1, "facid", 1]);
 	return f.dot;
 });
 
-// /datum/chemical_reaction/ironfoam/proc/on_reaction  (code/modules/reagents/chemistry/recipes/others.dm:461)  may sleep
+// others.dm:461
 rt.def("/datum/chemical_reaction/ironfoam/proc/on_reaction", function* on_reaction(f: Frame, holder: Value, created_volume: Value) {
-	let location: Value = null, M: Value = null, s: Value = null;
-	let $e: any;
-	f.vars = () => [holder, created_volume, location, M, s, $e];
-	location = rt.getStep(f, rt.fv(f, "my_atom", live(holder)), 0);
-	M = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/viewers"), null, [5, live(location)])), T("/mob"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		yield* g.call(f, P("/proc/to_chat"), null, [live(M), "<span class='danger'>The solution spews out a metallic foam!</span>"]);
+	let M: Value = null, s: Value = null;
+	let location: Value = rt.getStep(f, holder.my_atom, 0);
+	for (M of each(viewers(5, location), T("/mob"))) {
+		to_chat(M, "<span class='danger'>The solution spews out a metallic foam!</span>");
 	}
-	rt.endFor(f, 0);
-	yield* g.callName(f, (s = (yield* g.new_(f, T("/datum/effect_system/foam_spread/metal"), []))), "set_up", [multiply(live(created_volume), 5), live(location), live(holder), 2]);
-	yield* g.callName(f, live(s), "start", []);
-	yield* g.callName(f, live(holder), "clear_reagents", []);
+	yield* (s = (yield* new_(T("/datum/effect_system/foam_spread/metal")))).set_up(created_volume * 5, location, holder, 2);
+	yield* s.start();
+	yield* holder.clear_reagents();
 	return f.dot;
 }, true);
 
@@ -1144,13 +993,11 @@ rt.type(2536, "/datum/chemical_reaction/foaming_agent", "/datum/chemical_reactio
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/foaming_agent/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:472)
+// others.dm:472
 rt.def("/datum/chemical_reaction/foaming_agent/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["foaming_agent", 1]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["lithium", 1, "hydrogen", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["foaming_agent", 1]);
+	this.required_reagents = rt.alist(f, ["lithium", 1, "hydrogen", 1]);
 	return f.dot;
 });
 
@@ -1161,13 +1008,11 @@ rt.type(2537, "/datum/chemical_reaction/ammonia", "/datum/chemical_reaction", {
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/ammonia/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:481)
+// others.dm:481
 rt.def("/datum/chemical_reaction/ammonia/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["ammonia", 3]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["hydrogen", 3, "nitrogen", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["ammonia", 3]);
+	this.required_reagents = rt.alist(f, ["hydrogen", 3, "nitrogen", 1]);
 	return f.dot;
 });
 
@@ -1178,13 +1023,11 @@ rt.type(2538, "/datum/chemical_reaction/diethylamine", "/datum/chemical_reaction
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/diethylamine/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:487)
+// others.dm:487
 rt.def("/datum/chemical_reaction/diethylamine/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["diethylamine", 2]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["ammonia", 1, "ethanol", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["diethylamine", 2]);
+	this.required_reagents = rt.alist(f, ["ammonia", 1, "ethanol", 1]);
 	return f.dot;
 });
 
@@ -1195,13 +1038,11 @@ rt.type(2539, "/datum/chemical_reaction/space_cleaner", "/datum/chemical_reactio
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/space_cleaner/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:493)
+// others.dm:493
 rt.def("/datum/chemical_reaction/space_cleaner/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["cleaner", 2]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["ammonia", 1, "water", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["cleaner", 2]);
+	this.required_reagents = rt.alist(f, ["ammonia", 1, "water", 1]);
 	return f.dot;
 });
 
@@ -1212,13 +1053,11 @@ rt.type(2540, "/datum/chemical_reaction/plantbgone", "/datum/chemical_reaction",
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/plantbgone/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:499)
+// others.dm:499
 rt.def("/datum/chemical_reaction/plantbgone/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["plantbgone", 5]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["toxin", 1, "water", 4]));
+	parent_proc();
+	this.results = rt.alist(f, ["plantbgone", 5]);
+	this.required_reagents = rt.alist(f, ["toxin", 1, "water", 4]);
 	return f.dot;
 });
 
@@ -1229,13 +1068,11 @@ rt.type(2541, "/datum/chemical_reaction/weedkiller", "/datum/chemical_reaction",
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/weedkiller/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:505)
+// others.dm:505
 rt.def("/datum/chemical_reaction/weedkiller/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["weedkiller", 5]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["toxin", 1, "ammonia", 4]));
+	parent_proc();
+	this.results = rt.alist(f, ["weedkiller", 5]);
+	this.required_reagents = rt.alist(f, ["toxin", 1, "ammonia", 4]);
 	return f.dot;
 });
 
@@ -1246,13 +1083,11 @@ rt.type(2542, "/datum/chemical_reaction/pestkiller", "/datum/chemical_reaction",
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/pestkiller/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:511)
+// others.dm:511
 rt.def("/datum/chemical_reaction/pestkiller/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["pestkiller", 5]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["toxin", 1, "ethanol", 4]));
+	parent_proc();
+	this.results = rt.alist(f, ["pestkiller", 5]);
+	this.required_reagents = rt.alist(f, ["toxin", 1, "ethanol", 4]);
 	return f.dot;
 });
 
@@ -1263,13 +1098,11 @@ rt.type(2543, "/datum/chemical_reaction/drying_agent", "/datum/chemical_reaction
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/drying_agent/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:517)
+// others.dm:517
 rt.def("/datum/chemical_reaction/drying_agent/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["drying_agent", 3]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["stable_plasma", 2, "ethanol", 1, "sodium", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["drying_agent", 3]);
+	this.required_reagents = rt.alist(f, ["stable_plasma", 2, "ethanol", 1, "sodium", 1]);
 	return f.dot;
 });
 
@@ -1280,13 +1113,11 @@ rt.type(2544, "/datum/chemical_reaction/acetone", "/datum/chemical_reaction", {
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/acetone/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:525)
+// others.dm:525
 rt.def("/datum/chemical_reaction/acetone/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["acetone", 3]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["oil", 1, "welding_fuel", 1, "oxygen", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["acetone", 3]);
+	this.required_reagents = rt.alist(f, ["oil", 1, "welding_fuel", 1, "oxygen", 1]);
 	return f.dot;
 });
 
@@ -1297,13 +1128,11 @@ rt.type(2545, "/datum/chemical_reaction/carpet", "/datum/chemical_reaction", {
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/carpet/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:531)
+// others.dm:531
 rt.def("/datum/chemical_reaction/carpet/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["carpet", 2]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["space_drugs", 1, "blood", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["carpet", 2]);
+	this.required_reagents = rt.alist(f, ["space_drugs", 1, "blood", 1]);
 	return f.dot;
 });
 
@@ -1314,13 +1143,11 @@ rt.type(2546, "/datum/chemical_reaction/oil", "/datum/chemical_reaction", {
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/oil/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:537)
+// others.dm:537
 rt.def("/datum/chemical_reaction/oil/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["oil", 3]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["welding_fuel", 1, "carbon", 1, "hydrogen", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["oil", 3]);
+	this.required_reagents = rt.alist(f, ["welding_fuel", 1, "carbon", 1, "hydrogen", 1]);
 	return f.dot;
 });
 
@@ -1331,13 +1158,11 @@ rt.type(2547, "/datum/chemical_reaction/phenol", "/datum/chemical_reaction", {
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/phenol/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:543)
+// others.dm:543
 rt.def("/datum/chemical_reaction/phenol/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["phenol", 3]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["water", 1, "chlorine", 1, "oil", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["phenol", 3]);
+	this.required_reagents = rt.alist(f, ["water", 1, "chlorine", 1, "oil", 1]);
 	return f.dot;
 });
 
@@ -1349,13 +1174,11 @@ rt.type(2548, "/datum/chemical_reaction/ash", "/datum/chemical_reaction", {
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/ash/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:549)
+// others.dm:549
 rt.def("/datum/chemical_reaction/ash/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["ash", 1]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["oil", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["ash", 1]);
+	this.required_reagents = rt.alist(f, ["oil", 1]);
 	return f.dot;
 });
 
@@ -1366,13 +1189,11 @@ rt.type(2549, "/datum/chemical_reaction/colorful_reagent", "/datum/chemical_reac
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/colorful_reagent/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:556)
+// others.dm:556
 rt.def("/datum/chemical_reaction/colorful_reagent/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["colorful_reagent", 5]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["stable_plasma", 1, "radium", 1, "space_drugs", 1, "cryoxadone", 1, "triple_citrus", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["colorful_reagent", 5]);
+	this.required_reagents = rt.alist(f, ["stable_plasma", 1, "radium", 1, "space_drugs", 1, "cryoxadone", 1, "triple_citrus", 1]);
 	return f.dot;
 });
 
@@ -1383,19 +1204,16 @@ rt.type(2550, "/datum/chemical_reaction/life", "/datum/chemical_reaction", {
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/life/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:562)
+// others.dm:562
 rt.def("/datum/chemical_reaction/life/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "required_reagents", rt.alist(f, ["strange_reagent", 1, "synthflesh", 1, "blood", 1]));
+	parent_proc();
+	this.required_reagents = rt.alist(f, ["strange_reagent", 1, "synthflesh", 1, "blood", 1]);
 	return f.dot;
 });
 
-// /datum/chemical_reaction/life/proc/on_reaction  (code/modules/reagents/chemistry/recipes/others.dm:566)  may sleep
+// others.dm:566
 rt.def("/datum/chemical_reaction/life/proc/on_reaction", function* on_reaction(f: Frame, holder: Value, created_volume: Value) {
-	f.vars = () => [holder, created_volume];
-	yield* g.srcCall(f, "chemical_mob_spawn", live(holder), (yield* g.call(f, P("/proc/rand"), null, [1, (yield* g.call(f, P("/proc/round"), null, [live(created_volume), 1]))])), "Life");
+	yield* this.chemical_mob_spawn(holder, rand(1, round(created_volume, 1)), "Life");
 	return f.dot;
 }, true);
 
@@ -1406,29 +1224,24 @@ rt.type(2551, "/datum/chemical_reaction/corgium", "/datum/chemical_reaction", {
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/corgium/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:571)
+// others.dm:571
 rt.def("/datum/chemical_reaction/corgium/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "required_reagents", rt.alist(f, ["nutriment", 1, "colorful_reagent", 1, "strange_reagent", 1, "blood", 1]));
+	parent_proc();
+	this.required_reagents = rt.alist(f, ["nutriment", 1, "colorful_reagent", 1, "strange_reagent", 1, "blood", 1]);
 	return f.dot;
 });
 
-// /datum/chemical_reaction/corgium/proc/on_reaction  (code/modules/reagents/chemistry/recipes/others.dm:575)  may sleep
-rt.def("/datum/chemical_reaction/corgium/proc/on_reaction", function* on_reaction(f: Frame) {
-	let location: Value = null, i: Value = null;
-	f.vars = () => [location, i];
-	location = rt.getStep(f, rt.fv(f, "my_atom", live(f.args[0])), 0);
-	i = null;
-	i = (yield* g.call(f, P("/proc/rand"), null, [1, live(f.args[1])]));
-	while (rt.le(live(i), live(f.args[1]))) {
-		yield* g.new_(f, T("/mob/living/simple_animal/pet/dog/corgi"), [live(location)]);
-		i = rt.inc(live(i), 1);
+// others.dm:575
+rt.def("/datum/chemical_reaction/corgium/proc/on_reaction", function* on_reaction(f: Frame, holder: Value, created_volume: Value) {
+	let location: Value = rt.getStep(f, holder.my_atom, 0);
+	let i: Value = rand(1, created_volume);
+	while (i <= created_volume) {
+		yield* new_(T("/mob/living/simple_animal/pet/dog/corgi"), location);
+		i++;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["holder", "created_volume"] });
+}, true);
 
 rt.type(2552, "/datum/chemical_reaction/hair_dye", "/datum/chemical_reaction", {
 	name: "hair_dye",
@@ -1437,13 +1250,11 @@ rt.type(2552, "/datum/chemical_reaction/hair_dye", "/datum/chemical_reaction", {
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/hair_dye/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:583)
+// others.dm:583
 rt.def("/datum/chemical_reaction/hair_dye/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["hair_dye", 5]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["colorful_reagent", 1, "radium", 1, "space_drugs", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["hair_dye", 5]);
+	this.required_reagents = rt.alist(f, ["colorful_reagent", 1, "radium", 1, "space_drugs", 1]);
 	return f.dot;
 });
 
@@ -1454,13 +1265,11 @@ rt.type(2553, "/datum/chemical_reaction/barbers_aid", "/datum/chemical_reaction"
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/barbers_aid/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:589)
+// others.dm:589
 rt.def("/datum/chemical_reaction/barbers_aid/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["barbers_aid", 5]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["carpet", 1, "radium", 1, "space_drugs", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["barbers_aid", 5]);
+	this.required_reagents = rt.alist(f, ["carpet", 1, "radium", 1, "space_drugs", 1]);
 	return f.dot;
 });
 
@@ -1471,13 +1280,11 @@ rt.type(2554, "/datum/chemical_reaction/concentrated_barbers_aid", "/datum/chemi
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/concentrated_barbers_aid/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:595)
+// others.dm:595
 rt.def("/datum/chemical_reaction/concentrated_barbers_aid/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["concentrated_barbers_aid", 2]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["barbers_aid", 1, "mutagen", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["concentrated_barbers_aid", 2]);
+	this.required_reagents = rt.alist(f, ["barbers_aid", 1, "mutagen", 1]);
 	return f.dot;
 });
 
@@ -1488,13 +1295,11 @@ rt.type(2555, "/datum/chemical_reaction/saltpetre", "/datum/chemical_reaction", 
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/saltpetre/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:601)
+// others.dm:601
 rt.def("/datum/chemical_reaction/saltpetre/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["saltpetre", 3]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["potassium", 1, "nitrogen", 1, "oxygen", 3]));
+	parent_proc();
+	this.results = rt.alist(f, ["saltpetre", 3]);
+	this.required_reagents = rt.alist(f, ["potassium", 1, "nitrogen", 1, "oxygen", 3]);
 	return f.dot;
 });
 
@@ -1505,13 +1310,11 @@ rt.type(2556, "/datum/chemical_reaction/lye", "/datum/chemical_reaction", {
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/lye/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:607)
+// others.dm:607
 rt.def("/datum/chemical_reaction/lye/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["lye", 3]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["sodium", 1, "hydrogen", 1, "oxygen", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["lye", 3]);
+	this.required_reagents = rt.alist(f, ["sodium", 1, "hydrogen", 1, "oxygen", 1]);
 	return f.dot;
 });
 
@@ -1522,13 +1325,11 @@ rt.type(2557, "/datum/chemical_reaction/lye2", "/datum/chemical_reaction", {
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/lye2/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:613)
+// others.dm:613
 rt.def("/datum/chemical_reaction/lye2/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["lye", 2]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["ash", 1, "water", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["lye", 2]);
+	this.required_reagents = rt.alist(f, ["ash", 1, "water", 1]);
 	return f.dot;
 });
 
@@ -1539,13 +1340,11 @@ rt.type(2558, "/datum/chemical_reaction/royal_bee_jelly", "/datum/chemical_react
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/royal_bee_jelly/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:619)
+// others.dm:619
 rt.def("/datum/chemical_reaction/royal_bee_jelly/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["royal_bee_jelly", 5]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["mutagen", 10, "honey", 40]));
+	parent_proc();
+	this.results = rt.alist(f, ["royal_bee_jelly", 5]);
+	this.required_reagents = rt.alist(f, ["mutagen", 10, "honey", 40]);
 	return f.dot;
 });
 
@@ -1556,13 +1355,11 @@ rt.type(2559, "/datum/chemical_reaction/laughter", "/datum/chemical_reaction", {
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/laughter/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:625)
+// others.dm:625
 rt.def("/datum/chemical_reaction/laughter/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "results", rt.alist(f, ["laughter", 10]));
-	rt.setSv(f, "required_reagents", rt.alist(f, ["sugar", 1, "banana", 1]));
+	parent_proc();
+	this.results = rt.alist(f, ["laughter", 10]);
+	this.required_reagents = rt.alist(f, ["sugar", 1, "banana", 1]);
 	return f.dot;
 });
 
@@ -1573,26 +1370,22 @@ rt.type(2560, "/datum/chemical_reaction/plastic_polymers", "/datum/chemical_reac
 	required_reagents: null,
 });
 
-// /datum/chemical_reaction/plastic_polymers/proc/<init>  (code/modules/reagents/chemistry/recipes/others.dm:631)
+// others.dm:631
 rt.def("/datum/chemical_reaction/plastic_polymers/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "required_reagents", rt.alist(f, ["oil", 5, "sodiumchloride", 2, "ash", 3]));
+	parent_proc();
+	this.required_reagents = rt.alist(f, ["oil", 5, "sodiumchloride", 2, "ash", 3]);
 	return f.dot;
 });
 
-// /datum/chemical_reaction/plastic_polymers/proc/on_reaction  (code/modules/reagents/chemistry/recipes/others.dm:635)  may sleep
+// others.dm:635
 rt.def("/datum/chemical_reaction/plastic_polymers/proc/on_reaction", function* on_reaction(f: Frame, holder: Value, created_volume: Value) {
-	let location: Value = null, i: Value = null;
+	let i: Value = null;
 	let $e: any;
-	f.vars = () => [holder, created_volume, location, i, $e];
-	location = rt.getStep(f, rt.fv(f, "my_atom", live(holder)), 0);
-	i = null;
+	let location: Value = rt.getStep(f, holder.my_atom, 0);
 	rt.forRange(f, 0, 1, 10, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/stack/sheet/plastic"), [live(location)]);
+		yield* new_(T("/obj/item/stack/sheet/plastic"), location);
 	}
 	rt.endFor(f, 0);
 	return f.dot;

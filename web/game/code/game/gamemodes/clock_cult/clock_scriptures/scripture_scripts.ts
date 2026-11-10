@@ -1,7 +1,7 @@
-// From code/game/gamemodes/clock_cult/clock_scriptures/scripture_scripts.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/gamemodes/clock_cult/clock_scriptures/scripture_scripts.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(1218, "/datum/clockwork_scripture/create_object/ocular_warden", "/datum/clockwork_scripture/create_object", {
@@ -24,30 +24,22 @@ rt.type(1218, "/datum/clockwork_scripture/create_object/ocular_warden", "/datum/
 	object_path: rt.typePath("/obj/structure/destructible/clockwork/ocular_warden"),
 });
 
-// /datum/clockwork_scripture/create_object/ocular_warden/proc/<init>  (code/game/gamemodes/clock_cult/clock_scriptures/scripture_scripts.dm:12)
+// scripture_scripts.dm:12
 rt.def("/datum/clockwork_scripture/create_object/ocular_warden/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "invocations", rt.list("Guardians...", "...of the Engine...", "...defend us!"));
-	rt.setSv(f, "consumed_components", rt.alist(f, ["belligerent_eye", 2, "replicant_alloy", 1]));
+	parent_proc();
+	this.invocations = list("Guardians...", "...of the Engine...", "...defend us!");
+	this.consumed_components = rt.alist(f, ["belligerent_eye", 2, "replicant_alloy", 1]);
 	return f.dot;
 });
 
-// /datum/clockwork_scripture/create_object/ocular_warden/proc/check_special_requirements  (code/game/gamemodes/clock_cult/clock_scriptures/scripture_scripts.dm:26)
+// scripture_scripts.dm:26
 rt.def("/datum/clockwork_scripture/create_object/ocular_warden/proc/check_special_requirements", function check_special_requirements(f: Frame) {
 	let W: Value = null;
-	let $e: any;
-	f.vars = () => [W, $e];
-	W = null;
-	rt.forList(f, 0, rt.call(f, P("/proc/range"), null, [3, rt.sv(f, "invoker")]), T("/obj/structure/destructible/clockwork/ocular_warden"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		W = $e;
-		rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "invoker"), "<span class='neovgre'>You sense another ocular warden too near this location. Placing another this close would cause them to fight.</span>"]);
+	for (W of each(range(OCULAR_WARDEN_EXCLUSION_RANGE, this.invoker), T("/obj/structure/destructible/clockwork/ocular_warden"))) {
+		to_chat(this.invoker, "<span class='neovgre'>You sense another ocular warden too near this location. Placing another this close would cause them to fight.</span>");
 		return 0;
 	}
-	rt.endFor(f, 0);
-	return rt.callSuper(f, [], rt.Args.Same);
+	return parent_proc();
 });
 
 rt.type(1219, "/datum/clockwork_scripture/create_object/cogscarab", "/datum/clockwork_scripture/create_object", {
@@ -68,13 +60,11 @@ rt.type(1219, "/datum/clockwork_scripture/create_object/cogscarab", "/datum/cloc
 	object_path: rt.typePath("/obj/structure/destructible/clockwork/shell/cogscarab"),
 });
 
-// /datum/clockwork_scripture/create_object/cogscarab/proc/<init>  (code/game/gamemodes/clock_cult/clock_scriptures/scripture_scripts.dm:39)
+// scripture_scripts.dm:39
 rt.def("/datum/clockwork_scripture/create_object/cogscarab/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "invocations", rt.list("Call forth...", "...the workers of Armorer."));
-	rt.setSv(f, "consumed_components", rt.alist(f, ["belligerent_eye", 2, "hierophant_ansible", 1]));
+	parent_proc();
+	this.invocations = list("Call forth...", "...the workers of Armorer.");
+	this.consumed_components = rt.alist(f, ["belligerent_eye", 2, "hierophant_ansible", 1]);
 	return f.dot;
 });
 
@@ -97,13 +87,11 @@ rt.type(1220, "/datum/clockwork_scripture/create_object/vitality_matrix", "/datu
 	object_path: rt.typePath("/obj/effect/clockwork/sigil/vitality"),
 });
 
-// /datum/clockwork_scripture/create_object/vitality_matrix/proc/<init>  (code/game/gamemodes/clock_cult/clock_scriptures/scripture_scripts.dm:59)
+// scripture_scripts.dm:59
 rt.def("/datum/clockwork_scripture/create_object/vitality_matrix/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "invocations", rt.list("Divinity...", "...steal their life...", "...for these shells!"));
-	rt.setSv(f, "consumed_components", rt.alist(f, ["belligerent_eye", 1, "vanguard_cogwheel", 2]));
+	parent_proc();
+	this.invocations = list("Divinity...", "...steal their life...", "...for these shells!");
+	this.consumed_components = rt.alist(f, ["belligerent_eye", 1, "vanguard_cogwheel", 2]);
 	return f.dot;
 });
 
@@ -125,137 +113,123 @@ rt.type(1201, "/datum/clockwork_scripture/channeled/mending_mantra", "/datum/clo
 	quickbind_desc: "Repairs nearby structures and constructs. Servants wearing clockwork armor will also be healed.<br><b>Maximum 10 chants.</b>",
 }, { global: { damage_heal_order: 650, heal_finish_messages: 651, heal_target_typecache: 952, ratvarian_armor_typecache: 953 } });
 
-// /datum/clockwork_scripture/channeled/mending_mantra/proc/<init>  (code/game/gamemodes/clock_cult/clock_scriptures/scripture_scripts.dm:80)
+// scripture_scripts.dm:80
 rt.def("/datum/clockwork_scripture/channeled/mending_mantra/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "chant_invocations", rt.list("Mend our dents!", "Heal our scratches!", "Repair our gears!"));
-	rt.setSv(f, "consumed_components", rt.alist(f, ["vanguard_cogwheel", 2, "replicant_alloy", 1]));
+	parent_proc();
+	this.chant_invocations = list("Mend our dents!", "Heal our scratches!", "Repair our gears!");
+	this.consumed_components = rt.alist(f, ["vanguard_cogwheel", 2, "replicant_alloy", 1]);
 	return f.dot;
 });
 
-// /datum/clockwork_scripture/channeled/mending_mantra/proc/chant_effects  (code/game/gamemodes/clock_cult/clock_scriptures/scripture_scripts.dm:107)  may sleep
+// scripture_scripts.dm:107
 rt.def("/datum/clockwork_scripture/channeled/mending_mantra/proc/chant_effects", function* chant_effects(f: Frame, chant_number: Value) {
 	let _T: Value = null, M: Value = null, S: Value = null, i: Value = null, H: Value = null, heal_ticks: Value = null, I: Value = null, i_5: Value = null, C: Value = null;
 	let $e: any;
-	f.vars = () => [chant_number, _T, M, S, i, H, heal_ticks, I, i_5, C, $e];
-	_T = null;
-	M = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/range"), null, [7, rt.sv(f, "invoker")])), T("/atom/movable"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if (truthy((rt.istype(live(M), T("/mob/living")) ? 1 : 0))) {
-			if ((truthy((rt.istype(live(M), T("/mob/living/simple_animal/hostile/clockwork")) ? 1 : 0)) || truthy((rt.istype(live(M), T("/mob/living/simple_animal/drone/cogscarab")) ? 1 : 0)))) {
-				if ((isEqual(rt.gv(f, "health", (S = live(M))), rt.fv(f, "maxHealth", live(S))) || isEqual(rt.fv(f, "stat", live(S)), 2))) {
+	for (M of each(range(7, this.invoker), T("/atom/movable"))) {
+		if (rt.istype(M, T("/mob/living"))) {
+			if (rt.istype(M, T("/mob/living/simple_animal/hostile/clockwork")) || rt.istype(M, T("/mob/living/simple_animal/drone/cogscarab"))) {
+				if ((S = M).health == S.maxHealth || S.stat == 2) {
 					continue;
 				}
-				_T = rt.getStep(f, live(M), 0);
+				_T = rt.getStep(f, M, 0);
 				i = null;
-				rt.forRange(f, 1, 1, rt.sv(f, "heal_attempts"), 1);
+				rt.forRange(f, 1, 1, this.heal_attempts, 1);
 				while (($e = rt.next(f, 1)) !== undefined) {
 					i = $e;
-					if (rt.lt(rt.fv(f, "health", live(S)), rt.fv(f, "maxHealth", live(S)))) {
-						yield* g.callName(f, live(S), "adjustHealth", [rt.neg(rt.sv(f, "heal_amount"))]);
-						yield* g.new_(f, T("/obj/effect/temp_visual/heal"), [live(_T), "#1E8CE1"]);
-						if ((isEqual(live(i), rt.sv(f, "heal_attempts")) && rt.ge(rt.fv(f, "health", live(S)), rt.fv(f, "maxHealth", live(S))))) {
-							yield* g.call(f, P("/proc/to_chat"), null, [live(S), fmt("<span class='inathneq'>\"＀\"</span>", [(yield* g.call(f, P("/proc/text2ratvar"), null, [rt.op(f, "PickUnweighted", [1], [rt.gl("heal_finish_messages")])]))])]);
+					if (S.health < S.maxHealth) {
+						yield* S.adjustHealth(-this.heal_amount);
+						yield* new_(T("/obj/effect/temp_visual/heal"), _T, "#1E8CE1");
+						if (i == this.heal_attempts && S.health >= S.maxHealth) {
+							to_chat(S, `<span class='inathneq'>"${text2ratvar(pick(GLOB.heal_finish_messages))}"</span>`);
 							break;
 						}
 					} else {
-						yield* g.call(f, P("/proc/to_chat"), null, [live(S), fmt("<span class='inathneq'>\"＀\"</span>", [(yield* g.call(f, P("/proc/text2ratvar"), null, [rt.op(f, "PickUnweighted", [1], [rt.gl("heal_finish_messages")])]))])]);
+						to_chat(S, `<span class='inathneq'>"${text2ratvar(pick(GLOB.heal_finish_messages))}"</span>`);
 						break;
 					}
 				}
 				rt.endFor(f, 1);
-			} else {
-				if (truthy((rt.istype(live(M), T("/mob/living/silicon")) ? 1 : 0))) {
-					if (((isEqual(rt.gv(f, "health", (S = live(M))), rt.fv(f, "maxHealth", live(S))) || isEqual(rt.fv(f, "stat", live(S)), 2)) || !truthy((yield* g.call(f, P("/proc/is_servant_of_ratvar"), null, [live(S)]))))) {
-						continue;
+			} else if (rt.istype(M, T("/mob/living/silicon"))) {
+				if ((S = M).health == S.maxHealth || S.stat == 2 || !is_servant_of_ratvar(S)) {
+					continue;
+				}
+				_T = rt.getStep(f, M, 0);
+				i = null;
+				rt.forRange(f, 1, 1, this.heal_attempts, 1);
+				while (($e = rt.next(f, 1)) !== undefined) {
+					i = $e;
+					if (S.health < S.maxHealth) {
+						yield* S.heal_ordered_damage(this.heal_amount, GLOB.damage_heal_order);
+						yield* new_(T("/obj/effect/temp_visual/heal"), _T, "#1E8CE1");
+						if (i == this.heal_attempts && S.health >= S.maxHealth) {
+							to_chat(S, `<span class='inathneq'>"${text2ratvar(pick(GLOB.heal_finish_messages))}"</span>`);
+							break;
+						}
+					} else {
+						to_chat(S, `<span class='inathneq'>"${text2ratvar(pick(GLOB.heal_finish_messages))}"</span>`);
+						break;
 					}
-					_T = rt.getStep(f, live(M), 0);
-					i = null;
-					rt.forRange(f, 1, 1, rt.sv(f, "heal_attempts"), 1);
+				}
+				rt.endFor(f, 1);
+			} else if (rt.istype(M, T("/mob/living/carbon/human"))) {
+				if ((H = M).health == H.maxHealth || H.stat == 2 || !is_servant_of_ratvar(H)) {
+					continue;
+				}
+				_T = rt.getStep(f, M, 0);
+				heal_ticks = 0;
+				if (is_type_in_typecache((I = H.get_item_by_slot(slot_wear_suit)), GLOB.ratvarian_armor_typecache)) {
+					heal_ticks++;
+				}
+				if (is_type_in_typecache((I = H.get_item_by_slot(slot_head)), GLOB.ratvarian_armor_typecache)) {
+					heal_ticks++;
+				}
+				if (is_type_in_typecache((I = H.get_item_by_slot(slot_gloves)), GLOB.ratvarian_armor_typecache)) {
+					heal_ticks++;
+				}
+				if (is_type_in_typecache((I = H.get_item_by_slot(slot_shoes)), GLOB.ratvarian_armor_typecache)) {
+					heal_ticks++;
+				}
+				if (heal_ticks) {
+					i_5 = null;
+					rt.forRange(f, 1, 1, heal_ticks, 1);
 					while (($e = rt.next(f, 1)) !== undefined) {
-						i = $e;
-						if (rt.lt(rt.fv(f, "health", live(S)), rt.fv(f, "maxHealth", live(S)))) {
-							yield* g.callName(f, live(S), "heal_ordered_damage", [rt.sv(f, "heal_amount"), rt.gl("damage_heal_order")]);
-							yield* g.new_(f, T("/obj/effect/temp_visual/heal"), [live(_T), "#1E8CE1"]);
-							if ((isEqual(live(i), rt.sv(f, "heal_attempts")) && rt.ge(rt.fv(f, "health", live(S)), rt.fv(f, "maxHealth", live(S))))) {
-								yield* g.call(f, P("/proc/to_chat"), null, [live(S), fmt("<span class='inathneq'>\"＀\"</span>", [(yield* g.call(f, P("/proc/text2ratvar"), null, [rt.op(f, "PickUnweighted", [1], [rt.gl("heal_finish_messages")])]))])]);
+						i_5 = $e;
+						if (H.health < H.maxHealth) {
+							yield* H.heal_ordered_damage(this.heal_amount, GLOB.damage_heal_order);
+							yield* new_(T("/obj/effect/temp_visual/heal"), _T, "#1E8CE1");
+							if (i_5 == heal_ticks && H.health >= H.maxHealth) {
+								to_chat(H, `<span class='inathneq'>"${text2ratvar(pick(GLOB.heal_finish_messages))}"</span>`);
 								break;
 							}
 						} else {
-							yield* g.call(f, P("/proc/to_chat"), null, [live(S), fmt("<span class='inathneq'>\"＀\"</span>", [(yield* g.call(f, P("/proc/text2ratvar"), null, [rt.op(f, "PickUnweighted", [1], [rt.gl("heal_finish_messages")])]))])]);
+							to_chat(H, `<span class='inathneq'>"${text2ratvar(pick(GLOB.heal_finish_messages))}"</span>`);
 							break;
 						}
 					}
 					rt.endFor(f, 1);
+				}
+			}
+		} else if (is_type_in_typecache(M, GLOB.heal_target_typecache)) {
+			if ((C = M).obj_integrity == C.max_integrity || rt.istype(C, T("/obj/structure/destructible/clockwork")) && !C.can_be_repaired) {
+				continue;
+			}
+			_T = rt.getStep(f, M, 0);
+			i = null;
+			rt.forRange(f, 1, 1, this.heal_attempts, 1);
+			while (($e = rt.next(f, 1)) !== undefined) {
+				i = $e;
+				if (C.obj_integrity < C.max_integrity) {
+					C.obj_integrity = min(C.obj_integrity + 5, C.max_integrity);
+					yield* C.update_icon();
+					yield* new_(T("/obj/effect/temp_visual/heal"), _T, "#1E8CE1");
 				} else {
-					if (truthy((rt.istype(live(M), T("/mob/living/carbon/human")) ? 1 : 0))) {
-						if (((isEqual(rt.gv(f, "health", (H = live(M))), rt.fv(f, "maxHealth", live(H))) || isEqual(rt.fv(f, "stat", live(H)), 2)) || !truthy((yield* g.call(f, P("/proc/is_servant_of_ratvar"), null, [live(H)]))))) {
-							continue;
-						}
-						_T = rt.getStep(f, live(M), 0);
-						heal_ticks = 0;
-						if (truthy((yield* g.call(f, P("/proc/is_type_in_typecache"), null, [(I = (yield* g.callName(f, live(H), "get_item_by_slot", [13]))), rt.gl("ratvarian_armor_typecache")])))) {
-							heal_ticks = rt.inc(live(heal_ticks), 1);
-						}
-						if (truthy((yield* g.call(f, P("/proc/is_type_in_typecache"), null, [(I = (yield* g.callName(f, live(H), "get_item_by_slot", [11]))), rt.gl("ratvarian_armor_typecache")])))) {
-							heal_ticks = rt.inc(live(heal_ticks), 1);
-						}
-						if (truthy((yield* g.call(f, P("/proc/is_type_in_typecache"), null, [(I = (yield* g.callName(f, live(H), "get_item_by_slot", [9]))), rt.gl("ratvarian_armor_typecache")])))) {
-							heal_ticks = rt.inc(live(heal_ticks), 1);
-						}
-						if (truthy((yield* g.call(f, P("/proc/is_type_in_typecache"), null, [(I = (yield* g.callName(f, live(H), "get_item_by_slot", [12]))), rt.gl("ratvarian_armor_typecache")])))) {
-							heal_ticks = rt.inc(live(heal_ticks), 1);
-						}
-						if (truthy(live(heal_ticks))) {
-							i_5 = null;
-							rt.forRange(f, 1, 1, live(heal_ticks), 1);
-							while (($e = rt.next(f, 1)) !== undefined) {
-								i_5 = $e;
-								if (rt.lt(rt.fv(f, "health", live(H)), rt.fv(f, "maxHealth", live(H)))) {
-									yield* g.callName(f, live(H), "heal_ordered_damage", [rt.sv(f, "heal_amount"), rt.gl("damage_heal_order")]);
-									yield* g.new_(f, T("/obj/effect/temp_visual/heal"), [live(_T), "#1E8CE1"]);
-									if ((isEqual(live(i_5), live(heal_ticks)) && rt.ge(rt.fv(f, "health", live(H)), rt.fv(f, "maxHealth", live(H))))) {
-										yield* g.call(f, P("/proc/to_chat"), null, [live(H), fmt("<span class='inathneq'>\"＀\"</span>", [(yield* g.call(f, P("/proc/text2ratvar"), null, [rt.op(f, "PickUnweighted", [1], [rt.gl("heal_finish_messages")])]))])]);
-										break;
-									}
-								} else {
-									yield* g.call(f, P("/proc/to_chat"), null, [live(H), fmt("<span class='inathneq'>\"＀\"</span>", [(yield* g.call(f, P("/proc/text2ratvar"), null, [rt.op(f, "PickUnweighted", [1], [rt.gl("heal_finish_messages")])]))])]);
-									break;
-								}
-							}
-							rt.endFor(f, 1);
-						}
-					}
+					break;
 				}
 			}
-		} else {
-			if (truthy((yield* g.call(f, P("/proc/is_type_in_typecache"), null, [live(M), rt.gl("heal_target_typecache")])))) {
-				if ((isEqual(rt.gv(f, "obj_integrity", (C = live(M))), rt.fv(f, "max_integrity", live(C))) || (truthy((rt.istype(live(C), T("/obj/structure/destructible/clockwork")) ? 1 : 0)) && !truthy(rt.fv(f, "can_be_repaired", live(C)))))) {
-					continue;
-				}
-				_T = rt.getStep(f, live(M), 0);
-				i = null;
-				rt.forRange(f, 1, 1, rt.sv(f, "heal_attempts"), 1);
-				while (($e = rt.next(f, 1)) !== undefined) {
-					i = $e;
-					if (rt.lt(rt.fv(f, "obj_integrity", live(C)), rt.fv(f, "max_integrity", live(C)))) {
-						rt.setFv(f, "obj_integrity", live(C), (yield* g.call(f, P("/proc/min"), null, [add(rt.fv(f, "obj_integrity", live(C)), 5), rt.fv(f, "max_integrity", live(C))])));
-						yield* g.callName(f, live(C), "update_icon", []);
-						yield* g.new_(f, T("/obj/effect/temp_visual/heal"), [live(_T), "#1E8CE1"]);
-					} else {
-						break;
-					}
-				}
-				rt.endFor(f, 1);
-			}
+			rt.endFor(f, 1);
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.new_(f, T("/obj/effect/temp_visual/ratvar/mending_mantra"), [rt.getStep(f, rt.sv(f, "invoker"), 0)]);
+	yield* new_(T("/obj/effect/temp_visual/ratvar/mending_mantra"), rt.getStep(f, this.invoker, 0));
 	return 1;
 }, true);
 
@@ -278,13 +252,11 @@ rt.type(1221, "/datum/clockwork_scripture/create_object/sigil_of_submission", "/
 	object_path: rt.typePath("/obj/effect/clockwork/sigil/submission"),
 });
 
-// /datum/clockwork_scripture/create_object/sigil_of_submission/proc/<init>  (code/game/gamemodes/clock_cult/clock_scriptures/scripture_scripts.dm:191)
+// scripture_scripts.dm:191
 rt.def("/datum/clockwork_scripture/create_object/sigil_of_submission/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "invocations", rt.list("Divinity, enlighten...", "...those who trespass here!"));
-	rt.setSv(f, "consumed_components", rt.alist(f, ["belligerent_eye", 1, "geis_capacitor", 2]));
+	parent_proc();
+	this.invocations = list("Divinity, enlighten...", "...those who trespass here!");
+	this.consumed_components = rt.alist(f, ["belligerent_eye", 1, "geis_capacitor", 2]);
 	return f.dot;
 });
 
@@ -307,13 +279,11 @@ rt.type(1222, "/datum/clockwork_scripture/create_object/soul_vessel", "/datum/cl
 	object_path: rt.typePath("/obj/item/device/mmi/posibrain/soul_vessel"),
 });
 
-// /datum/clockwork_scripture/create_object/soul_vessel/proc/<init>  (code/game/gamemodes/clock_cult/clock_scriptures/scripture_scripts.dm:211)
+// scripture_scripts.dm:211
 rt.def("/datum/clockwork_scripture/create_object/soul_vessel/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "invocations", rt.list("Herd the souls of...", "...the blasphemous damned!"));
-	rt.setSv(f, "consumed_components", rt.alist(f, ["vanguard_cogwheel", 1, "geis_capacitor", 2]));
+	parent_proc();
+	this.invocations = list("Herd the souls of...", "...the blasphemous damned!");
+	this.consumed_components = rt.alist(f, ["vanguard_cogwheel", 1, "geis_capacitor", 2]);
 	return f.dot;
 });
 
@@ -336,13 +306,11 @@ rt.type(1223, "/datum/clockwork_scripture/create_object/replica_fabricator", "/d
 	object_path: rt.typePath("/obj/item/clockwork/replica_fabricator/preloaded"),
 });
 
-// /datum/clockwork_scripture/create_object/replica_fabricator/proc/<init>  (code/game/gamemodes/clock_cult/clock_scriptures/scripture_scripts.dm:231)
+// scripture_scripts.dm:231
 rt.def("/datum/clockwork_scripture/create_object/replica_fabricator/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "invocations", rt.list("With this device...", "...his presence shall be made known."));
-	rt.setSv(f, "consumed_components", rt.alist(f, ["geis_capacitor", 1, "replicant_alloy", 2]));
+	parent_proc();
+	this.invocations = list("With this device...", "...his presence shall be made known.");
+	this.consumed_components = rt.alist(f, ["geis_capacitor", 1, "replicant_alloy", 2]);
 	return f.dot;
 });
 
@@ -360,38 +328,29 @@ rt.type(1234, "/datum/clockwork_scripture/function_call", "/datum/clockwork_scri
 	sort_priority: 8,
 });
 
-// /datum/clockwork_scripture/function_call/proc/<init>  (code/game/gamemodes/clock_cult/clock_scriptures/scripture_scripts.dm:252)
+// scripture_scripts.dm:252
 rt.def("/datum/clockwork_scripture/function_call/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "invocations", rt.list("Grant me...", "...the might of brass!"));
-	rt.setSv(f, "consumed_components", rt.alist(f, ["replicant_alloy", 2, "hierophant_ansible", 1]));
+	parent_proc();
+	this.invocations = list("Grant me...", "...the might of brass!");
+	this.consumed_components = rt.alist(f, ["replicant_alloy", 2, "hierophant_ansible", 1]);
 	return f.dot;
 });
 
-// /datum/clockwork_scripture/function_call/proc/check_special_requirements  (code/game/gamemodes/clock_cult/clock_scriptures/scripture_scripts.dm:260)
+// scripture_scripts.dm:260
 rt.def("/datum/clockwork_scripture/function_call/proc/check_special_requirements", function check_special_requirements(f: Frame) {
 	let F: Value = null;
-	let $e: any;
-	f.vars = () => [F, $e];
-	F = null;
-	rt.forList(f, 0, rt.fv(f, "actions", rt.sv(f, "invoker")), T("/datum/action/innate/function_call"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		F = $e;
-		rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "invoker"), "<span class='warning'>You have already bound a Ratvarian spear to yourself!</span>"]);
+	for (F of each(this.invoker.actions, T("/datum/action/innate/function_call"))) {
+		to_chat(this.invoker, "<span class='warning'>You have already bound a Ratvarian spear to yourself!</span>");
 		return 0;
 	}
-	rt.endFor(f, 0);
-	return rt.callName(f, rt.sv(f, "invoker"), "can_hold_items", []);
+	return this.invoker.can_hold_items();
 });
 
-// /datum/clockwork_scripture/function_call/proc/scripture_effects  (code/game/gamemodes/clock_cult/clock_scriptures/scripture_scripts.dm:266)  may sleep
+// scripture_scripts.dm:266
 rt.def("/datum/clockwork_scripture/function_call/proc/scripture_effects", function* scripture_effects(f: Frame) {
 	let F: Value = null;
-	f.vars = () => [F];
-	yield* g.callName(f, rt.sv(f, "invoker"), "visible_message", [fmt("<span class='warning'>A shimmer of yellow light infuses ＀!</span>", [rt.sv(f, "invoker")]), "<span class='brass'>You bind a Ratvarian spear to yourself. Use the \"Function Call\" action button to call it forth.</span>"]);
-	yield* g.callName(f, (F = (yield* g.new_(f, T("/datum/action/innate/function_call"), []))), "Grant", [rt.sv(f, "invoker")]);
+	this.invoker.visible_message(`<span class='warning'>A shimmer of yellow light infuses ${this.invoker}!</span>`, "<span class='brass'>You bind a Ratvarian spear to yourself. Use the \"Function Call\" action button to call it forth.</span>");
+	yield* (F = (yield* new_(T("/datum/action/innate/function_call")))).Grant(this.invoker);
 	return 1;
 }, true);
 
@@ -406,31 +365,29 @@ rt.type(90, "/datum/action/innate/function_call", "/datum/action/innate", {
 	buttontooltipstyle: "clockcult",
 });
 
-// /datum/action/innate/function_call/proc/IsAvailable  (code/game/gamemodes/clock_cult/clock_scriptures/scripture_scripts.dm:284)
+// scripture_scripts.dm:284
 rt.def("/datum/action/innate/function_call/proc/IsAvailable", function IsAvailable(f: Frame) {
-	if ((!truthy(rt.call(f, P("/proc/is_servant_of_ratvar"), null, [rt.sv(f, "owner")])) || rt.gt(rt.sv(f, "cooldown"), rt.worldTime(f)))) {
+	if (!is_servant_of_ratvar(this.owner) || this.cooldown > rt.worldTime(f)) {
 		return 0;
 	}
-	return rt.callSuper(f, [], rt.Args.Same);
+	return parent_proc();
 });
 
-// /datum/action/innate/function_call/proc/Activate  (code/game/gamemodes/clock_cult/clock_scriptures/scripture_scripts.dm:289)  may sleep
+// scripture_scripts.dm:289
 rt.def("/datum/action/innate/function_call/proc/Activate", function* Activate(f: Frame) {
-	let R: Value = null;
-	f.vars = () => [R];
-	if (!truthy((yield* g.callName(f, rt.sv(f, "owner"), "get_empty_held_indexes", [])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), "<span class='warning'>You need an empty hand to call forth your spear!</span>"]);
+	if (!this.owner.get_empty_held_indexes()) {
+		to_chat(f.usr, "<span class='warning'>You need an empty hand to call forth your spear!</span>");
 		return 0;
 	}
-	yield* g.callName(f, rt.sv(f, "owner"), "visible_message", [fmt("<span class='warning'>A strange spear materializes in ＀'s hands!</span>", [rt.sv(f, "owner")]), "<span class='brass'>You call forth your spear!</span>"]);
-	R = (yield* g.new_(f, T("/obj/item/clockwork/ratvarian_spear"), [rt.getStep(f, live(f.usr), 0)]));
-	yield* g.callName(f, rt.sv(f, "owner"), "put_in_hands", [live(R)]);
-	if (!truthy(rt.gl("ratvar_awakens"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "owner"), "<span class='warning'>Your spear begins to break down in this plane of existence. You can't use it for long!</span>"]);
+	this.owner.visible_message(`<span class='warning'>A strange spear materializes in ${this.owner}'s hands!</span>`, "<span class='brass'>You call forth your spear!</span>");
+	let R: Value = (yield* new_(T("/obj/item/clockwork/ratvarian_spear"), rt.getStep(f, f.usr, 0)));
+	yield* this.owner.put_in_hands(R);
+	if (!GLOB.ratvar_awakens) {
+		to_chat(this.owner, "<span class='warning'>Your spear begins to break down in this plane of existence. You can't use it for long!</span>");
 	}
-	rt.setSv(f, "cooldown", add(rt.sv(f, "base_cooldown"), rt.worldTime(f)));
-	yield* g.callName(f, rt.sv(f, "owner"), "update_action_buttons_icon", []);
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [rt.sv(f, "owner"), P("/mob/proc/update_action_buttons_icon")])), rt.sv(f, "base_cooldown")]);
+	this.cooldown = this.base_cooldown + rt.worldTime(f);
+	yield* this.owner.update_action_buttons_icon();
+	yield* addtimer((yield* new_(T("/datum/callback"), this.owner, P("/mob/proc/update_action_buttons_icon"))), this.base_cooldown);
 	return 1;
 }, true);
 
@@ -451,73 +408,55 @@ rt.type(1235, "/datum/clockwork_scripture/spatial_gateway", "/datum/clockwork_sc
 	quickbind_desc: "Allows you to create a one-way Spatial Gateway to a living Servant or Clockwork Obelisk.",
 });
 
-// /datum/clockwork_scripture/spatial_gateway/proc/<init>  (code/game/gamemodes/clock_cult/clock_scriptures/scripture_scripts.dm:311)
+// scripture_scripts.dm:311
 rt.def("/datum/clockwork_scripture/spatial_gateway/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "invocations", rt.list("Spatial Gateway...", "...activate!"));
-	rt.setSv(f, "consumed_components", rt.alist(f, ["vanguard_cogwheel", 1, "hierophant_ansible", 2]));
+	parent_proc();
+	this.invocations = list("Spatial Gateway...", "...activate!");
+	this.consumed_components = rt.alist(f, ["vanguard_cogwheel", 1, "hierophant_ansible", 2]);
 	return f.dot;
 });
 
-// /datum/clockwork_scripture/spatial_gateway/proc/check_special_requirements  (code/game/gamemodes/clock_cult/clock_scriptures/scripture_scripts.dm:322)
+// scripture_scripts.dm:322
 rt.def("/datum/clockwork_scripture/spatial_gateway/proc/check_special_requirements", function check_special_requirements(f: Frame) {
-	let other_servants: Value = null, L: Value = null, O: Value = null;
-	let $e: any;
-	f.vars = () => [other_servants, L, O, $e];
-	if (!truthy(rt.call(f, P("/proc/isturf"), null, [rt.fv(f, "loc", rt.sv(f, "invoker"))]))) {
-		rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "invoker"), "<span class='warning'>You must not be inside an object to use this scripture!</span>"]);
+	let L: Value = null, O: Value = null;
+	if (!isturf(this.invoker.loc)) {
+		to_chat(this.invoker, "<span class='warning'>You must not be inside an object to use this scripture!</span>");
 		return 0;
 	}
-	other_servants = 0;
-	L = null;
-	rt.forList(f, 0, rt.gl("living_mob_list"), T("/mob/living"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		L = $e;
-		if (((truthy(rt.call(f, P("/proc/is_servant_of_ratvar"), null, [live(L)])) && !truthy(rt.fv(f, "stat", live(L)))) && !isEqual(live(L), rt.sv(f, "invoker")))) {
-			other_servants = rt.inc(live(other_servants), 1);
+	let other_servants: Value = 0;
+	for (L of each(GLOB.living_mob_list, T("/mob/living"))) {
+		if (is_servant_of_ratvar(L) && !L.stat && L != this.invoker) {
+			other_servants++;
 		}
 	}
-	rt.endFor(f, 0);
-	O = null;
-	rt.forList(f, 0, rt.gl("all_clockwork_objects"), T("/obj/structure/destructible/clockwork/powered/clockwork_obelisk"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		O = $e;
-		if (truthy(rt.fv(f, "anchored", live(O)))) {
-			other_servants = rt.inc(live(other_servants), 1);
+	for (O of each(GLOB.all_clockwork_objects, T("/obj/structure/destructible/clockwork/powered/clockwork_obelisk"))) {
+		if (O.anchored) {
+			other_servants++;
 		}
 	}
-	rt.endFor(f, 0);
-	if (!truthy(live(other_servants))) {
-		rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "invoker"), "<span class='warning'>There are no other conscious servants or anchored clockwork obelisks!</span>"]);
+	if (!other_servants) {
+		to_chat(this.invoker, "<span class='warning'>There are no other conscious servants or anchored clockwork obelisks!</span>");
 		return 0;
 	}
 	return 1;
 });
 
-// /datum/clockwork_scripture/spatial_gateway/proc/scripture_effects  (code/game/gamemodes/clock_cult/clock_scriptures/scripture_scripts.dm:340)  may sleep
+// scripture_scripts.dm:340
 rt.def("/datum/clockwork_scripture/spatial_gateway/proc/scripture_effects", function* scripture_effects(f: Frame) {
-	let portal_uses: Value = null, duration: Value = null, L: Value = null;
-	let $e: any;
-	f.vars = () => [portal_uses, duration, L, $e];
-	portal_uses = 0;
-	duration = 0;
-	L = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/range"), null, [1, rt.sv(f, "invoker")])), T("/mob/living"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		L = $e;
-		if ((!truthy(rt.fv(f, "stat", live(L))) && truthy((yield* g.call(f, P("/proc/is_servant_of_ratvar"), null, [live(L)]))))) {
-			portal_uses = rt.inc(live(portal_uses), 1);
-			duration = rt.modify(live(duration), 40, add);
+	let L: Value = null;
+	let portal_uses: Value = 0;
+	let duration: Value = 0;
+	for (L of each(range(1, this.invoker), T("/mob/living"))) {
+		if (!L.stat && is_servant_of_ratvar(L)) {
+			portal_uses++;
+			duration += 40;
 		}
 	}
-	rt.endFor(f, 0);
-	if (truthy(rt.gl("ratvar_awakens"))) {
-		portal_uses = (yield* g.call(f, P("/proc/max"), null, [live(portal_uses), 100]));
-		duration = (yield* g.call(f, P("/proc/max"), null, [live(duration), 100]));
+	if (GLOB.ratvar_awakens) {
+		portal_uses = max(portal_uses, 100);
+		duration = max(duration, 100);
 	}
-	return (yield* g.callName(f, rt.sv(f, "slab"), "procure_gateway", [rt.sv(f, "invoker"), live(duration), live(portal_uses)]));
+	return (yield* this.slab.procure_gateway(this.invoker, duration, portal_uses));
 }, true);
 
 rt.type(1202, "/datum/clockwork_scripture/channeled/volt_blaster", "/datum/clockwork_scripture/channeled", {
@@ -538,28 +477,25 @@ rt.type(1202, "/datum/clockwork_scripture/channeled/volt_blaster", "/datum/clock
 	quickbind_desc: "Allows you to fire energy rays at target locations.<br><b>Maximum 5 chants.</b>",
 }, { global: { nzcrentr_insults: 652 } });
 
-// /datum/clockwork_scripture/channeled/volt_blaster/proc/<init>  (code/game/gamemodes/clock_cult/clock_scriptures/scripture_scripts.dm:360)
+// scripture_scripts.dm:360
 rt.def("/datum/clockwork_scripture/channeled/volt_blaster/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "invocations", rt.list("Amperage...", "...grant me your power!"));
-	rt.setSv(f, "chant_invocations", rt.list("Use charge to kill!", "Slay with power!", "Hunt with energy!"));
-	rt.setSv(f, "consumed_components", rt.alist(f, ["geis_capacitor", 1, "hierophant_ansible", 2]));
+	parent_proc();
+	this.invocations = list("Amperage...", "...grant me your power!");
+	this.chant_invocations = list("Use charge to kill!", "Slay with power!", "Hunt with energy!");
+	this.consumed_components = rt.alist(f, ["geis_capacitor", 1, "hierophant_ansible", 2]);
 	return f.dot;
 });
 
-// /datum/clockwork_scripture/channeled/volt_blaster/proc/chant_effects  (code/game/gamemodes/clock_cult/clock_scriptures/scripture_scripts.dm:371)  may sleep
+// scripture_scripts.dm:371
 rt.def("/datum/clockwork_scripture/channeled/volt_blaster/proc/chant_effects", function* chant_effects(f: Frame, chant_number: Value) {
-	let ray: Value = null, _T: Value = null;
-	f.vars = () => [chant_number, ray, _T];
-	rt.setFv(f, "busy", rt.sv(f, "slab"), null);
-	rt.setFv(f, "slab", (ray = (yield* g.new_(f, T("/datum/clockwork_scripture/ranged_ability/volt_ray"), []))), rt.sv(f, "slab"));
-	rt.setFv(f, "invoker", live(ray), rt.sv(f, "invoker"));
-	_T = rt.getStep(f, rt.sv(f, "invoker"), 0);
-	if (((!truthy((yield* g.callName(f, live(ray), "run_scripture", []))) && truthy(rt.sv(f, "slab"))) && truthy(rt.sv(f, "invoker")))) {
-		if ((truthy((yield* g.srcCall(f, "can_recite"))) && isEqual(live(_T), rt.getStep(f, rt.sv(f, "invoker"), 0)))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "invoker"), fmt("<span class='nzcrentr'>\"＀\"</span>", [(yield* g.call(f, P("/proc/text2ratvar"), null, [rt.op(f, "PickUnweighted", [1], [rt.gl("nzcrentr_insults")])]))])]);
+	let ray: Value = null;
+	this.slab.busy = null;
+	(ray = (yield* new_(T("/datum/clockwork_scripture/ranged_ability/volt_ray")))).slab = this.slab;
+	ray.invoker = this.invoker;
+	let _T: Value = rt.getStep(f, this.invoker, 0);
+	if (!(yield* ray.run_scripture()) && this.slab && this.invoker) {
+		if (this.can_recite() && _T == rt.getStep(f, this.invoker, 0)) {
+			to_chat(this.invoker, `<span class='nzcrentr'>"${text2ratvar(pick(GLOB.nzcrentr_insults))}"</span>`);
 		} else {
 			return 0;
 		}

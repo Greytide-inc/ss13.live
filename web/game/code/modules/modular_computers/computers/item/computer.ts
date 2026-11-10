@@ -1,7 +1,7 @@
-// From code/modules/modular_computers/computers/item/computer.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/modular_computers/computers/item/computer.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, g, fmt } = rt;
 
 
 rt.type(9409, "/obj/item/device/modular_computer", "/obj/item/device", {
@@ -38,572 +38,486 @@ rt.type(9409, "/obj/item/device/modular_computer", "/obj/item/device", {
 	armor: null,
 });
 
-// /obj/item/device/modular_computer/proc/<init>  (code/modules/modular_computers/computers/item/computer.dm:42)
+// computer.dm:42
 rt.def("/obj/item/device/modular_computer/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "all_components", rt.list());
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 0, "bullet", 20, "laser", 20, "energy", 100, "bomb", 0, "bio", 100, "rad", 100, "fire", 0, "acid", 0]));
+	parent_proc();
+	this.all_components = list();
+	this.armor = rt.alist(f, ["melee", 0, "bullet", 20, "laser", 20, "energy", 100, "bomb", 0, "bio", 100, "rad", 100, "fire", 0, "acid", 0]);
 	return f.dot;
 });
 
-// /obj/item/device/modular_computer/proc/Initialize  (code/modules/modular_computers/computers/item/computer.dm:53)  may sleep
+// computer.dm:53
 rt.def("/obj/item/device/modular_computer/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(rt.fv(f, "isprocessing", live(f.src)))) {
-		rt.setFv(f, "isprocessing", live(f.src), 1);
-		rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), add);
+	f.dot = (yield* parent_proc());
+	if (!this.isprocessing) {
+		this.isprocessing = 1;
+		GLOB.SSobj.processing += this;
 	}
-	if (!truthy(rt.sv(f, "physical"))) {
-		rt.setSv(f, "physical", live(f.src));
+	if (!this.physical) {
+		this.physical = f.src;
 	}
-	rt.setSv(f, "comp_light_color", "#FFFFFF");
-	rt.setSv(f, "idle_threads", rt.list());
-	yield* g.srcCall(f, "update_icon");
+	this.comp_light_color = "#FFFFFF";
+	this.idle_threads = list();
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/item/device/modular_computer/proc/Destroy  (code/modules/modular_computers/computers/item/computer.dm:62)  may sleep
+// computer.dm:62
 rt.def("/obj/item/device/modular_computer/proc/Destroy", function* Destroy(f: Frame) {
 	let H: Value = null, CH: Value = null;
-	let $e: any;
-	f.vars = () => [H, CH, $e];
-	yield* g.callSrc(f, "kill_program", ["forced", 1], rt.Args.Named);
-	rt.setFv(f, "isprocessing", live(f.src), 0);
-	(rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), subtract));
-	H = null;
-	rt.forList(f, 0, rt.sv(f, "all_components"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		H = $e;
-		if (isEqual(rt.gv(f, "holder", (CH = rt.index(rt.sv(f, "all_components"), live(H)))), live(f.src))) {
-			yield* g.callName(f, live(CH), "on_remove", [live(f.src)]);
-			rt.setFv(f, "holder", live(CH), null);
-			yield* g.callName(f, rt.sv(f, "all_components"), "Remove", [rt.fv(f, "device_type", live(CH))]);
-			yield* g.call(f, P("/proc/qdel"), null, [live(CH)]);
+	yield* this.kill_program({ forced: 1 });
+	this.isprocessing = 0;
+	GLOB.SSobj.processing -= this;
+	for (H of each(this.all_components)) {
+		if ((CH = rt.index(this.all_components, H)).holder == this) {
+			yield* CH.on_remove(this);
+			CH.holder = null;
+			yield* this.all_components.Remove(CH.device_type);
+			yield* qdel(CH);
 		}
 	}
-	rt.endFor(f, 0);
-	rt.setSv(f, "physical", null);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	this.physical = null;
+	return (yield* parent_proc());
 }, true);
 
-// /obj/item/device/modular_computer/proc/add_verb  (code/modules/modular_computers/computers/item/computer.dm:76)
+// computer.dm:76
 rt.def("/obj/item/device/modular_computer/proc/add_verb", function add_verb(f: Frame, path: Value) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = live(path);
-	if ($0 === "CARD") {
-		rt.modSrcVar(f, "verbs", P("/obj/item/device/modular_computer/proc/eject_id"), add);
-	} else if ($0 === "SDD") {
-		rt.modSrcVar(f, "verbs", P("/obj/item/device/modular_computer/proc/eject_disk"), add);
-	} else if ($0 === "AI") {
-		rt.modSrcVar(f, "verbs", P("/obj/item/device/modular_computer/proc/eject_card"), add);
+	if (path === "CARD") {
+		this.verbs += P("/obj/item/device/modular_computer/proc/eject_id");
+	} else if (path === "SDD") {
+		this.verbs += P("/obj/item/device/modular_computer/proc/eject_disk");
+	} else if (path === "AI") {
+		this.verbs += P("/obj/item/device/modular_computer/proc/eject_card");
 	}
 	return f.dot;
 });
 
-// /obj/item/device/modular_computer/proc/remove_verb  (code/modules/modular_computers/computers/item/computer.dm:85)
+// computer.dm:85
 rt.def("/obj/item/device/modular_computer/proc/remove_verb", function remove_verb(f: Frame, path: Value) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = live(path);
-	if ($0 === "CARD") {
-		(rt.modSrcVar(f, "verbs", P("/obj/item/device/modular_computer/proc/eject_id"), subtract));
-	} else if ($0 === "SDD") {
-		(rt.modSrcVar(f, "verbs", P("/obj/item/device/modular_computer/proc/eject_disk"), subtract));
-	} else if ($0 === "AI") {
-		(rt.modSrcVar(f, "verbs", P("/obj/item/device/modular_computer/proc/eject_card"), subtract));
+	if (path === "CARD") {
+		this.verbs -= P("/obj/item/device/modular_computer/proc/eject_id");
+	} else if (path === "SDD") {
+		this.verbs -= P("/obj/item/device/modular_computer/proc/eject_disk");
+	} else if (path === "AI") {
+		this.verbs -= P("/obj/item/device/modular_computer/proc/eject_card");
 	}
 	return f.dot;
 });
 
-// /obj/item/device/modular_computer/proc/eject_id  (code/modules/modular_computers/computers/item/computer.dm:99)  may sleep
+// computer.dm:99
 rt.def("/obj/item/device/modular_computer/proc/eject_id", function* eject_id(f: Frame) {
-	let card_slot: Value = null;
-	f.vars = () => [card_slot];
-	if (truthy((rt.istype(live(f.usr), T("/mob/living/silicon")) ? 1 : 0))) {
-		return live(f.dot);
+	if (rt.istype(f.usr, T("/mob/living/silicon"))) {
+		return f.dot;
 	}
-	card_slot = rt.at(rt.sv(f, "all_components"), "CARD");
-	if (!truthy((yield* g.callName(f, live(f.usr), "canUseTopic", [live(f.src)])))) return f.dot;
-	yield* g.callName(f, live(card_slot), "try_eject", [null, live(f.usr)]);
+	let card_slot: Value = rt.at(this.all_components, "CARD");
+	if (!f.usr.canUseTopic(this)) return f.dot;
+	yield* card_slot.try_eject(null, f.usr);
 	return f.dot;
 }, true, { verb: { name: "Eject ID", category: "Object", src: 1, range: 1 } });
 
-// /obj/item/device/modular_computer/proc/eject_card  (code/modules/modular_computers/computers/item/computer.dm:110)  may sleep
+// computer.dm:110
 rt.def("/obj/item/device/modular_computer/proc/eject_card", function* eject_card(f: Frame) {
-	let ai_slot: Value = null;
-	f.vars = () => [ai_slot];
-	if (truthy((rt.istype(live(f.usr), T("/mob/living/silicon")) ? 1 : 0))) {
-		return live(f.dot);
+	if (rt.istype(f.usr, T("/mob/living/silicon"))) {
+		return f.dot;
 	}
-	ai_slot = rt.at(rt.sv(f, "all_components"), "AI");
-	if (!truthy((yield* g.callName(f, live(f.usr), "canUseTopic", [live(f.src)])))) return f.dot;
-	yield* g.callName(f, live(ai_slot), "try_eject", [null, live(f.usr), 1]);
+	let ai_slot: Value = rt.at(this.all_components, "AI");
+	if (!f.usr.canUseTopic(this)) return f.dot;
+	yield* ai_slot.try_eject(null, f.usr, 1);
 	return f.dot;
 }, true, { verb: { name: "Eject Intellicard", category: "Object" } });
 
-// /obj/item/device/modular_computer/proc/eject_disk  (code/modules/modular_computers/computers/item/computer.dm:122)  may sleep
+// computer.dm:122
 rt.def("/obj/item/device/modular_computer/proc/eject_disk", function* eject_disk(f: Frame) {
 	let portable_drive: Value = null;
-	f.vars = () => [portable_drive];
-	if (truthy((rt.istype(live(f.usr), T("/mob/living/silicon")) ? 1 : 0))) {
-		return live(f.dot);
+	if (rt.istype(f.usr, T("/mob/living/silicon"))) {
+		return f.dot;
 	}
-	if (!truthy((yield* g.callName(f, live(f.usr), "canUseTopic", [live(f.src)])))) return f.dot;
-	if (!truthy((yield* g.srcCall(f, "uninstall_component", (portable_drive = rt.at(rt.sv(f, "all_components"), "SDD")), live(f.usr))))) return f.dot;
-	yield* g.callName(f, live(portable_drive), "verb_pickup", []);
+	if (!f.usr.canUseTopic(this)) return f.dot;
+	if (!(yield* this.uninstall_component((portable_drive = rt.at(this.all_components, "SDD")), f.usr))) return f.dot;
+	yield* portable_drive.verb_pickup();
 	return f.dot;
 }, true, { verb: { name: "Eject Data Disk", category: "Object" } });
 
-// /obj/item/device/modular_computer/proc/AltClick  (code/modules/modular_computers/computers/item/computer.dm:131)  may sleep
-rt.def("/obj/item/device/modular_computer/proc/AltClick", function* AltClick(f: Frame) {
-	let card_slot: Value = null, ai_slot: Value = null, portable_drive: Value = null;
-	f.vars = () => [card_slot, ai_slot, portable_drive];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy((rt.istype(live(f.args[0]), T("/mob/living/silicon")) ? 1 : 0))) {
-		return live(f.dot);
+// computer.dm:131
+rt.def("/obj/item/device/modular_computer/proc/AltClick", function* AltClick(f: Frame, user: Value) {
+	let portable_drive: Value = null;
+	yield* parent_proc();
+	if (rt.istype(user, T("/mob/living/silicon"))) {
+		return f.dot;
 	}
-	if (!truthy((yield* g.callName(f, live(f.args[0]), "canUseTopic", [live(f.src)])))) return f.dot;
-	card_slot = rt.at(rt.sv(f, "all_components"), "CARD");
-	ai_slot = rt.at(rt.sv(f, "all_components"), "AI");
-	if (truthy((portable_drive = rt.at(rt.sv(f, "all_components"), "SDD")))) {
-		if (truthy((yield* g.srcCall(f, "uninstall_component", live(portable_drive), live(f.args[0]))))) {
-			yield* g.callName(f, live(portable_drive), "verb_pickup", []);
+	if (!user.canUseTopic(this)) return f.dot;
+	let card_slot: Value = rt.at(this.all_components, "CARD");
+	let ai_slot: Value = rt.at(this.all_components, "AI");
+	if (portable_drive = rt.at(this.all_components, "SDD")) {
+		if (yield* this.uninstall_component(portable_drive, user)) {
+			yield* portable_drive.verb_pickup();
 		}
 	} else {
-		if ((truthy(live(card_slot)) && truthy((yield* g.callName(f, live(card_slot), "try_eject", [null, live(f.args[0])]))))) {
-			return live(f.dot);
+		if (card_slot && (yield* card_slot.try_eject(null, user))) {
+			return f.dot;
 		}
-		if (!truthy(live(ai_slot))) return f.dot;
-		yield* g.callName(f, live(ai_slot), "try_eject", [null, live(f.args[0])]);
+		if (!ai_slot) return f.dot;
+		yield* ai_slot.try_eject(null, user);
 	}
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /obj/item/device/modular_computer/proc/GetAccess  (code/modules/modular_computers/computers/item/computer.dm:152)
+// computer.dm:152
 rt.def("/obj/item/device/modular_computer/proc/GetAccess", function GetAccess(f: Frame) {
 	let card_slot: Value = null;
-	f.vars = () => [card_slot];
-	if (truthy((card_slot = rt.at(rt.sv(f, "all_components"), "CARD")))) {
-		return rt.callName(f, live(card_slot), "GetAccess", []);
+	if (card_slot = rt.at(this.all_components, "CARD")) {
+		return card_slot.GetAccess();
 	}
-	return rt.callSuper(f, [], rt.Args.Same);
+	return parent_proc();
 });
 
-// /obj/item/device/modular_computer/proc/GetID  (code/modules/modular_computers/computers/item/computer.dm:158)
+// computer.dm:158
 rt.def("/obj/item/device/modular_computer/proc/GetID", function GetID(f: Frame) {
 	let card_slot: Value = null;
-	f.vars = () => [card_slot];
-	if (truthy((card_slot = rt.at(rt.sv(f, "all_components"), "CARD")))) {
-		return rt.callName(f, live(card_slot), "GetID", []);
+	if (card_slot = rt.at(this.all_components, "CARD")) {
+		return card_slot.GetID();
 	}
-	return rt.callSuper(f, [], rt.Args.Same);
+	return parent_proc();
 });
 
-// /obj/item/device/modular_computer/proc/MouseDrop  (code/modules/modular_computers/computers/item/computer.dm:163)  may sleep
+// computer.dm:163
 rt.def("/obj/item/device/modular_computer/proc/MouseDrop", function* MouseDrop(f: Frame, over_object: Value, src_location: Value, over_location: Value) {
-	let M: Value = null;
-	f.vars = () => [over_object, src_location, over_location, M];
-	M = live(f.usr);
-	if ((!truthy((rt.istype(live(over_object), T("/obj/screen")) ? 1 : 0)) && truthy((yield* g.callName(f, live(f.usr), "canUseTopic", [live(f.src)]))))) {
-		return (yield* g.srcCall(f, "attack_self", live(M)));
+	let M: Value = f.usr;
+	if (!rt.istype(over_object, T("/obj/screen")) && f.usr.canUseTopic(this)) {
+		return (yield* this.attack_self(M));
 	}
-	return live(f.dot);
+	return f.dot;
 }, true);
 
-// /obj/item/device/modular_computer/proc/attack_ai  (code/modules/modular_computers/computers/item/computer.dm:169)  may sleep
+// computer.dm:169
 rt.def("/obj/item/device/modular_computer/proc/attack_ai", function* attack_ai(f: Frame, user: Value) {
-	f.vars = () => [user];
-	return (yield* g.srcCall(f, "attack_self", live(user)));
+	return (yield* this.attack_self(user));
 }, true);
 
-// /obj/item/device/modular_computer/proc/attack_ghost  (code/modules/modular_computers/computers/item/computer.dm:173)  may sleep
+// computer.dm:173
 rt.def("/obj/item/device/modular_computer/proc/attack_ghost", function* attack_ghost(f: Frame, user: Value) {
 	let response: Value = null;
-	f.vars = () => [user, response];
-	if (truthy(rt.sv(f, "enabled"))) {
-		yield* g.srcCall(f, "ui_interact", live(user));
+	if (this.enabled) {
+		yield* this.ui_interact(user);
 	} else {
-		if (!truthy((yield* g.call(f, P("/proc/IsAdminGhost"), null, [live(user)])))) return f.dot;
-		if (!isEqual((response = (yield* g.call(f, P("/proc/alert"), null, [live(user), "This computer is turned off. Would you like to turn it on?", "Admin Override", "Yes", "No"]))), "Yes")) return f.dot;
-		yield* g.srcCall(f, "turn_on", live(user));
+		if (!IsAdminGhost(user)) return f.dot;
+		if ((response = (yield* alert(user, "This computer is turned off. Would you like to turn it on?", "Admin Override", "Yes", "No"))) != "Yes") return f.dot;
+		yield* this.turn_on(user);
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/device/modular_computer/proc/emag_act  (code/modules/modular_computers/computers/item/computer.dm:181)
+// computer.dm:181
 rt.def("/obj/item/device/modular_computer/proc/emag_act", function emag_act(f: Frame, user: Value) {
-	if (truthy(rt.sv(f, "emagged"))) {
-		rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＄！ was already emagged.</span>", [live(f.src)])]);
+	if (this.emagged) {
+		to_chat(user, fmt("<span class='warning'>＄！ was already emagged.</span>", [this]));
 		return 0;
 	} else {
-		rt.setSv(f, "emagged", 1);
-		rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You emag ％！. It's screen briefly shows a \"OVERRIDE ACCEPTED: New software downloads available.\" message.</span>", [live(f.src)])]);
+		this.emagged = 1;
+		to_chat(user, fmt("<span class='notice'>You emag ％！. It's screen briefly shows a \"OVERRIDE ACCEPTED: New software downloads available.\" message.</span>", [this]));
 		return 1;
 	}
-	return f.dot;
 });
 
-// /obj/item/device/modular_computer/proc/examine  (code/modules/modular_computers/computers/item/computer.dm:189)
-rt.def("/obj/item/device/modular_computer/proc/examine", function examine(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	if (rt.le(rt.sv(f, "obj_integrity"), rt.sv(f, "integrity_failure"))) {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='danger'>It is heavily damaged!</span>"]);
+// computer.dm:189
+rt.def("/obj/item/device/modular_computer/proc/examine", function examine(f: Frame, user: Value) {
+	parent_proc();
+	if (this.obj_integrity <= this.integrity_failure) {
+		to_chat(user, "<span class='danger'>It is heavily damaged!</span>");
 	} else {
-		if (!rt.lt(rt.sv(f, "obj_integrity"), rt.sv(f, "max_integrity"))) return f.dot;
-		rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='warning'>It is damaged.</span>"]);
+		if (!(this.obj_integrity < this.max_integrity)) return f.dot;
+		to_chat(user, "<span class='warning'>It is damaged.</span>");
 	}
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/item/device/modular_computer/proc/update_icon  (code/modules/modular_computers/computers/item/computer.dm:196)
+// computer.dm:196
 rt.def("/obj/item/device/modular_computer/proc/update_icon", function update_icon(f: Frame) {
 	let $0: any;
-	f.vars = () => [$0];
-	rt.callSrc(f, "cut_overlays", []);
-	if (!truthy(rt.sv(f, "enabled"))) {
-		rt.setSv(f, "icon_state", rt.sv(f, "icon_state_unpowered"));
+	this.cut_overlays();
+	if (!this.enabled) {
+		this.icon_state = this.icon_state_unpowered;
 	} else {
-		rt.setSv(f, "icon_state", rt.sv(f, "icon_state_powered"));
-		if (truthy(rt.sv(f, "active_program"))) {
-			if (truthy(rt.fv(f, "program_icon_state", rt.sv(f, "active_program")))) {
-				$0 = rt.fv(f, "program_icon_state", rt.sv(f, "active_program"));
+		this.icon_state = this.icon_state_powered;
+		if (this.active_program) {
+			if (this.active_program.program_icon_state) {
+				$0 = this.active_program.program_icon_state;
 			} else {
-				$0 = rt.sv(f, "icon_state_menu");
+				$0 = this.icon_state_menu;
 			}
-			rt.callSrc(f, "add_overlay", [$0]);
+			this.add_overlay($0);
 		} else {
-			rt.callSrc(f, "add_overlay", [rt.sv(f, "icon_state_menu")]);
+			this.add_overlay(this.icon_state_menu);
 		}
 	}
-	if (!rt.le(rt.sv(f, "obj_integrity"), rt.sv(f, "integrity_failure"))) return f.dot;
-	rt.callSrc(f, "add_overlay", ["bsod"]);
-	rt.callSrc(f, "add_overlay", ["broken"]);
+	if (!(this.obj_integrity <= this.integrity_failure)) return f.dot;
+	this.add_overlay("bsod");
+	this.add_overlay("broken");
 	return f.dot;
 });
 
-// /obj/item/device/modular_computer/proc/attack_self  (code/modules/modular_computers/computers/item/computer.dm:214)  may sleep
+// computer.dm:214
 rt.def("/obj/item/device/modular_computer/proc/attack_self", function* attack_self(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (truthy(rt.sv(f, "enabled"))) {
-		yield* g.srcCall(f, "ui_interact", live(user));
+	if (this.enabled) {
+		yield* this.ui_interact(user);
 	} else {
-		yield* g.srcCall(f, "turn_on", live(user));
+		yield* this.turn_on(user);
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/device/modular_computer/proc/turn_on  (code/modules/modular_computers/computers/item/computer.dm:219)  may sleep
+// computer.dm:219
 rt.def("/obj/item/device/modular_computer/proc/turn_on", function* turn_on(f: Frame, user: Value) {
-	let issynth: Value = null, recharger: Value = null;
-	f.vars = () => [user, issynth, recharger];
-	issynth = (rt.istype(live(user), T("/mob/living/silicon")) ? 1 : 0);
-	if (rt.le(rt.sv(f, "obj_integrity"), rt.sv(f, "integrity_failure"))) {
-		if (truthy(live(issynth))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>You send an activation signal to ％！, but it responds with an error code. It must be damaged.</span>", [live(f.src)])]);
+	let recharger: Value = null;
+	let issynth: Value = (rt.istype(user, T("/mob/living/silicon")) ? 1 : 0);
+	if (this.obj_integrity <= this.integrity_failure) {
+		if (issynth) {
+			to_chat(user, fmt("<span class='warning'>You send an activation signal to ％！, but it responds with an error code. It must be damaged.</span>", [this]));
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>You press the power button, but the computer fails to boot up, displaying variety of errors before shutting down again.</span>"]);
+			to_chat(user, "<span class='warning'>You press the power button, but the computer fails to boot up, displaying variety of errors before shutting down again.</span>");
 		}
-		return live(f.dot);
+		return f.dot;
 	}
-	if (truthy((recharger = rt.at(rt.sv(f, "all_components"), "CHARGE")))) {
-		rt.setFv(f, "enabled", live(recharger), 1);
+	if (recharger = rt.at(this.all_components, "CHARGE")) {
+		recharger.enabled = 1;
 	}
-	if ((truthy(rt.at(rt.sv(f, "all_components"), "CPU")) && truthy((yield* g.srcCall(f, "use_power"))))) {
-		if (truthy(live(issynth))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You send an activation signal to ％！, turning it on.</span>", [live(f.src)])]);
+	if (rt.at(this.all_components, "CPU") && (yield* this.use_power())) {
+		if (issynth) {
+			to_chat(user, fmt("<span class='notice'>You send an activation signal to ％！, turning it on.</span>", [this]));
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You press the power button and start up ％！.</span>", [live(f.src)])]);
+			to_chat(user, fmt("<span class='notice'>You press the power button and start up ％！.</span>", [this]));
 		}
-		rt.setSv(f, "enabled", 1);
-		yield* g.srcCall(f, "update_icon");
-		yield* g.srcCall(f, "ui_interact", live(user));
+		this.enabled = 1;
+		yield* this.update_icon();
+		yield* this.ui_interact(user);
+	} else if (issynth) {
+		to_chat(user, fmt("<span class='warning'>You send an activation signal to ％！ but it does not respond.</span>", [this]));
 	} else {
-		if (truthy(live(issynth))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>You send an activation signal to ％！ but it does not respond.</span>", [live(f.src)])]);
-		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>You press the power button but ％！ does not respond.</span>", [live(f.src)])]);
-		}
+		to_chat(user, fmt("<span class='warning'>You press the power button but ％！ does not respond.</span>", [this]));
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/device/modular_computer/proc/process  (code/modules/modular_computers/computers/item/computer.dm:248)  may sleep
+// computer.dm:248
 rt.def("/obj/item/device/modular_computer/proc/process", function* process(f: Frame) {
 	let I: Value = null, _P: Value = null;
-	let $e: any;
-	f.vars = () => [I, _P, $e];
-	if (!truthy(rt.sv(f, "enabled"))) {
-		rt.setSv(f, "last_power_usage", 0);
+	if (!this.enabled) {
+		this.last_power_usage = 0;
 		return 0;
 	}
-	if (rt.le(rt.sv(f, "obj_integrity"), rt.sv(f, "integrity_failure"))) {
-		yield* g.srcCall(f, "shutdown_computer");
+	if (this.obj_integrity <= this.integrity_failure) {
+		yield* this.shutdown_computer();
 		return 0;
 	}
-	if (((truthy(rt.sv(f, "active_program")) && truthy(rt.fv(f, "requires_ntnet", rt.sv(f, "active_program")))) && !truthy((yield* g.srcCall(f, "get_ntnet_status", rt.fv(f, "requires_ntnet_feature", rt.sv(f, "active_program"))))))) {
-		yield* g.callName(f, rt.sv(f, "active_program"), "event_networkfailure", [0]);
+	if (this.active_program && this.active_program.requires_ntnet && !this.get_ntnet_status(this.active_program.requires_ntnet_feature)) {
+		this.active_program.event_networkfailure(0);
 	}
-	I = null;
-	rt.forList(f, 0, rt.sv(f, "idle_threads"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		if ((truthy(rt.gv(f, "requires_ntnet", (_P = live(I)))) && !truthy((yield* g.srcCall(f, "get_ntnet_status", rt.fv(f, "requires_ntnet_feature", live(_P))))))) {
-			yield* g.callName(f, live(_P), "event_networkfailure", [1]);
+	for (I of each(this.idle_threads)) {
+		if ((_P = I).requires_ntnet && !this.get_ntnet_status(_P.requires_ntnet_feature)) {
+			_P.event_networkfailure(1);
 		}
 	}
-	rt.endFor(f, 0);
-	if (truthy(rt.sv(f, "active_program"))) {
-		if (!isEqual(rt.fv(f, "program_state", rt.sv(f, "active_program")), 0)) {
-			yield* g.callName(f, rt.sv(f, "active_program"), "process_tick", []);
-			rt.setFv(f, "ntnet_status", rt.sv(f, "active_program"), (yield* g.srcCall(f, "get_ntnet_status")));
+	if (this.active_program) {
+		if (this.active_program.program_state != 0) {
+			yield* this.active_program.process_tick();
+			this.active_program.ntnet_status = this.get_ntnet_status();
 		} else {
-			rt.setSv(f, "active_program", null);
+			this.active_program = null;
 		}
 	}
 	I = null;
-	rt.forList(f, 0, rt.sv(f, "idle_threads"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		if (!isEqual(rt.gv(f, "program_state", (_P = live(I))), 0)) {
-			yield* g.callName(f, live(_P), "process_tick", []);
-			rt.setFv(f, "ntnet_status", live(_P), (yield* g.srcCall(f, "get_ntnet_status")));
+	for (I of each(this.idle_threads)) {
+		if ((_P = I).program_state != 0) {
+			yield* _P.process_tick();
+			_P.ntnet_status = this.get_ntnet_status();
 		} else {
-			yield* g.callName(f, rt.sv(f, "idle_threads"), "Remove", [live(_P)]);
+			yield* this.idle_threads.Remove(_P);
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.srcCall(f, "handle_power");
+	yield* this.handle_power();
 	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/item/device/modular_computer/proc/get_header_data  (code/modules/modular_computers/computers/item/computer.dm:284)
+// computer.dm:284
 rt.def("/obj/item/device/modular_computer/proc/get_header_data", function get_header_data(f: Frame) {
-	let data: Value = null, battery_module: Value = null, recharger: Value = null, program_headers: Value = null, I: Value = null, _P: Value = null;
-	let $0: any, $1: any, $2: any, $e: any;
-	f.vars = () => [data, battery_module, recharger, program_headers, I, _P, $0, $1, $2, $e];
-	data = rt.list();
-	battery_module = rt.at(rt.sv(f, "all_components"), "CELL");
-	recharger = rt.at(rt.sv(f, "all_components"), "CHARGE");
-	if ((truthy(live(battery_module)) && truthy(rt.fv(f, "battery", live(battery_module))))) {
-		$0 = rt.callName(f, rt.fv(f, "battery", live(battery_module)), "percent", []);
-		if (rt.inRange($0, 80, 200)) {
-			rt.setAt(live(data), "PC_batteryicon", "batt_100.gif");
-		} else if (rt.inRange($0, 60, 80)) {
-			rt.setAt(live(data), "PC_batteryicon", "batt_80.gif");
-		} else if (rt.inRange($0, 40, 60)) {
-			rt.setAt(live(data), "PC_batteryicon", "batt_60.gif");
-		} else if (rt.inRange($0, 20, 40)) {
-			rt.setAt(live(data), "PC_batteryicon", "batt_40.gif");
-		} else if (rt.inRange($0, 5, 20)) {
-			rt.setAt(live(data), "PC_batteryicon", "batt_20.gif");
+	let program_headers: Value = null, I: Value = null, _P: Value = null;
+	let $e: any;
+	let data: Value = list();
+	let battery_module: Value = rt.at(this.all_components, "CELL");
+	let recharger: Value = rt.at(this.all_components, "CHARGE");
+	if (battery_module && battery_module.battery) {
+		const percent = battery_module.battery.percent();
+		if (rt.inRange(percent, 80, 200)) {
+			rt.setAt(data, "PC_batteryicon", "batt_100.gif");
+		} else if (rt.inRange(percent, 60, 80)) {
+			rt.setAt(data, "PC_batteryicon", "batt_80.gif");
+		} else if (rt.inRange(percent, 40, 60)) {
+			rt.setAt(data, "PC_batteryicon", "batt_60.gif");
+		} else if (rt.inRange(percent, 20, 40)) {
+			rt.setAt(data, "PC_batteryicon", "batt_40.gif");
+		} else if (rt.inRange(percent, 5, 20)) {
+			rt.setAt(data, "PC_batteryicon", "batt_20.gif");
 		} else {
-			rt.setAt(live(data), "PC_batteryicon", "batt_5.gif");
+			rt.setAt(data, "PC_batteryicon", "batt_5.gif");
 		}
-		rt.setAt(live(data), "PC_batterypercent", fmt("＀ %", [rt.call(f, P("/proc/round"), null, [rt.callName(f, rt.fv(f, "battery", live(battery_module)), "percent", [])])]));
-		rt.setAt(live(data), "PC_showbatteryicon", 1);
+		rt.setAt(data, "PC_batterypercent", `${round(battery_module.battery.percent())} %`);
+		rt.setAt(data, "PC_showbatteryicon", 1);
 	} else {
-		rt.setAt(live(data), "PC_batteryicon", "batt_5.gif");
-		rt.setAt(live(data), "PC_batterypercent", "N/C");
-		$0 = live(data);
-		$1 = "PC_showbatteryicon";
-		if (truthy(live(battery_module))) {
-			$2 = 1;
-		} else {
-			$2 = 0;
-		}
-		rt.setAt($0, $1, $2);
+		rt.setAt(data, "PC_batteryicon", "batt_5.gif");
+		rt.setAt(data, "PC_batterypercent", "N/C");
+		rt.setAt(data, "PC_showbatteryicon", battery_module ? 1 : 0);
 	}
-	if ((((truthy(live(recharger)) && truthy(rt.fv(f, "enabled", live(recharger)))) && truthy(rt.callName(f, live(recharger), "check_functionality", []))) && truthy(rt.callName(f, live(recharger), "use_power", [0])))) {
-		rt.setAt(live(data), "PC_apclinkicon", "charging.gif");
+	if (recharger && recharger.enabled && recharger.check_functionality() && recharger.use_power(0)) {
+		rt.setAt(data, "PC_apclinkicon", "charging.gif");
 	}
-	$0 = rt.callSrc(f, "get_ntnet_status", []);
-	if ($0 === 0) {
-		rt.setAt(live(data), "PC_ntneticon", "sig_none.gif");
-	} else if ($0 === 1) {
-		rt.setAt(live(data), "PC_ntneticon", "sig_low.gif");
-	} else if ($0 === 2) {
-		rt.setAt(live(data), "PC_ntneticon", "sig_high.gif");
-	} else if ($0 === 3) {
-		rt.setAt(live(data), "PC_ntneticon", "sig_lan.gif");
+	const ntnet_status = this.get_ntnet_status();
+	if (ntnet_status === 0) {
+		rt.setAt(data, "PC_ntneticon", "sig_none.gif");
+	} else if (ntnet_status === 1) {
+		rt.setAt(data, "PC_ntneticon", "sig_low.gif");
+	} else if (ntnet_status === 2) {
+		rt.setAt(data, "PC_ntneticon", "sig_high.gif");
+	} else if (ntnet_status === 3) {
+		rt.setAt(data, "PC_ntneticon", "sig_lan.gif");
 	}
-	if (truthy(rt.len(f, rt.sv(f, "idle_threads")))) {
-		program_headers = rt.list();
-		I = null;
-		rt.forList(f, 0, rt.sv(f, "idle_threads"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			I = $e;
-			if (!truthy(rt.gv(f, "ui_header", (_P = live(I))))) {
+	if (rt.len(f, this.idle_threads)) {
+		program_headers = list();
+		for (I of each(this.idle_threads)) {
+			if (!(_P = I).ui_header) {
 				continue;
 			}
-			rt.callName(f, live(program_headers), "Add", [rt.list(rt.alist(f, ["icon", rt.fv(f, "ui_header", live(_P))]))]);
+			program_headers.Add(list(rt.alist(f, ["icon", _P.ui_header])));
 		}
-		rt.endFor(f, 0);
-		rt.setAt(live(data), "PC_programheaders", live(program_headers));
+		rt.setAt(data, "PC_programheaders", program_headers);
 	}
-	rt.setAt(live(data), "PC_stationtime", rt.call(f, P("/proc/worldtime2text"), null, []));
-	rt.setAt(live(data), "PC_hasheader", 1);
-	$0 = live(data);
-	$1 = "PC_showexitprogram";
-	if (truthy(rt.sv(f, "active_program"))) {
-		$2 = 1;
-	} else {
-		$2 = 0;
-	}
-	rt.setAt($0, $1, $2);
-	return live(data);
+	rt.setAt(data, "PC_stationtime", worldtime2text());
+	rt.setAt(data, "PC_hasheader", 1);
+	rt.setAt(data, "PC_showexitprogram", this.active_program ? 1 : 0);
+	return data;
 });
 
-// /obj/item/device/modular_computer/proc/kill_program  (code/modules/modular_computers/computers/item/computer.dm:343)  may sleep
+// computer.dm:343
 rt.def("/obj/item/device/modular_computer/proc/kill_program", function* kill_program(f: Frame, forced: Value) {
 	let user: Value = null;
-	f.vars = () => [forced, user];
-	if (live(forced) === null) {
-		forced = 0;
+	forced ??= 0;
+	if (this.active_program) {
+		yield* this.active_program.kill_program(forced);
+		this.active_program = null;
 	}
-	if (truthy(rt.sv(f, "active_program"))) {
-		yield* g.callName(f, rt.sv(f, "active_program"), "kill_program", [live(forced)]);
-		rt.setSv(f, "active_program", null);
+	if ((user = f.usr) && rt.istype(user, T("/mob"))) {
+		yield* this.ui_interact(user);
 	}
-	if ((truthy((user = live(f.usr))) && truthy((rt.istype(live(user), T("/mob")) ? 1 : 0)))) {
-		yield* g.srcCall(f, "ui_interact", live(user));
-	}
-	yield* g.srcCall(f, "update_icon");
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/item/device/modular_computer/proc/get_ntnet_status  (code/modules/modular_computers/computers/item/computer.dm:353)
+// computer.dm:353
 rt.def("/obj/item/device/modular_computer/proc/get_ntnet_status", function get_ntnet_status(f: Frame, specific_action: Value) {
 	let network_card: Value = null;
-	f.vars = () => [specific_action, network_card];
-	if (live(specific_action) === null) {
-		specific_action = 0;
-	}
-	if (truthy((network_card = rt.at(rt.sv(f, "all_components"), "NET")))) {
-		return rt.callName(f, live(network_card), "get_signal", [live(specific_action)]);
+	specific_action ??= 0;
+	if (network_card = rt.at(this.all_components, "NET")) {
+		return network_card.get_signal(specific_action);
 	}
 	return 0;
 });
 
-// /obj/item/device/modular_computer/proc/add_log  (code/modules/modular_computers/computers/item/computer.dm:359)
+// computer.dm:359
 rt.def("/obj/item/device/modular_computer/proc/add_log", function add_log(f: Frame, text: Value) {
-	let network_card: Value = null;
-	f.vars = () => [network_card];
-	if (!truthy(rt.callSrc(f, "get_ntnet_status", []))) {
+	if (!this.get_ntnet_status()) {
 		return 0;
 	}
-	network_card = rt.at(rt.sv(f, "all_components"), "NET");
-	return rt.callName(f, rt.gl("ntnet_global"), "add_log", [live(text), live(network_card)]);
+	let network_card: Value = rt.at(this.all_components, "NET");
+	return GLOB.ntnet_global.add_log(text, network_card);
 });
 
-// /obj/item/device/modular_computer/proc/shutdown_computer  (code/modules/modular_computers/computers/item/computer.dm:365)  may sleep
+// computer.dm:365
 rt.def("/obj/item/device/modular_computer/proc/shutdown_computer", function* shutdown_computer(f: Frame, loud: Value) {
 	let _P: Value = null;
-	let $e: any;
-	f.vars = () => [loud, _P, $e];
-	if (live(loud) === null) {
-		loud = 1;
+	loud ??= 1;
+	yield* this.kill_program({ forced: 1 });
+	for (_P of each(this.idle_threads, T("/datum/computer_file/program"))) {
+		yield* _P.kill_program({ forced: 1 });
+		yield* this.idle_threads.Remove(_P);
 	}
-	yield* g.callSrc(f, "kill_program", ["forced", 1], rt.Args.Named);
-	_P = null;
-	rt.forList(f, 0, rt.sv(f, "idle_threads"), T("/datum/computer_file/program"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_P = $e;
-		yield* g.callName(f, live(_P), "kill_program", ["forced", 1], rt.Args.Named);
-		yield* g.callName(f, rt.sv(f, "idle_threads"), "Remove", [live(_P)]);
+	if (loud) {
+		this.physical.visible_message(fmt("<span class='notice'>＄！ shuts down.</span>", [this]));
 	}
-	rt.endFor(f, 0);
-	if (truthy(live(loud))) {
-		yield* g.callName(f, rt.sv(f, "physical"), "visible_message", [fmt("<span class='notice'>＄！ shuts down.</span>", [live(f.src)])]);
-	}
-	rt.setSv(f, "enabled", 0);
-	yield* g.srcCall(f, "update_icon");
+	this.enabled = 0;
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/item/device/modular_computer/proc/attackby  (code/modules/modular_computers/computers/item/computer.dm:377)  may sleep
-rt.def("/obj/item/device/modular_computer/proc/attackby", function* attackby(f: Frame) {
+// computer.dm:377
+rt.def("/obj/item/device/modular_computer/proc/attackby", function* attackby(f: Frame, W: Value, user: Value) {
 	let h: Value = null, H: Value = null, WT: Value = null, dmg: Value = null, component_names: Value = null, h_1: Value = null, H_2: Value = null, choice: Value = null;
-	let $e: any;
-	f.vars = () => [h, H, WT, dmg, component_names, h_1, H_2, choice, $e];
-	h = null;
-	rt.forList(f, 0, rt.sv(f, "all_components"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		h = $e;
-		if (truthy((yield* g.callName(f, (H = rt.index(rt.sv(f, "all_components"), live(h))), "try_insert", [live(f.args[0]), live(f.args[1])])))) {
-			return live(f.dot);
+	for (h of each(this.all_components)) {
+		if (yield* (H = rt.index(this.all_components, h)).try_insert(W, user)) {
+			return f.dot;
 		}
 	}
-	rt.endFor(f, 0);
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/computer_hardware")) ? 1 : 0))) {
-		if (truthy((yield* g.srcCall(f, "install_component", live(f.args[0]), live(f.args[1]))))) {
-			return live(f.dot);
+	if (rt.istype(W, T("/obj/item/weapon/computer_hardware"))) {
+		if (yield* this.install_component(W, user)) {
+			return f.dot;
 		}
 	}
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/wrench")) ? 1 : 0))) {
-		if (truthy(rt.len(f, rt.sv(f, "all_components")))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>Remove all components from ％！ before disassembling it.</span>", [live(f.src)])]);
-			return live(f.dot);
+	if (rt.istype(W, T("/obj/item/weapon/wrench"))) {
+		if (rt.len(f, this.all_components)) {
+			to_chat(user, fmt("<span class='warning'>Remove all components from ％！ before disassembling it.</span>", [this]));
+			return f.dot;
 		}
-		yield* g.new_(f, T("/obj/item/stack/sheet/metal"), [rt.getStep(f, rt.fv(f, "loc", live(f.src)), 0), rt.sv(f, "steel_sheet_cost")]);
-		yield* g.callName(f, rt.sv(f, "physical"), "visible_message", [fmt("＄！ has been disassembled by ＀.", [live(f.src), live(f.args[1])])]);
-		yield* g.srcCall(f, "relay_qdel");
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-		return live(f.dot);
+		yield* new_(T("/obj/item/stack/sheet/metal"), rt.getStep(f, this.loc, 0), this.steel_sheet_cost);
+		this.physical.visible_message(fmt("＄！ has been disassembled by ＀.", [this, user]));
+		yield* this.relay_qdel();
+		yield* qdel(this);
+		return f.dot;
 	}
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/weldingtool")) ? 1 : 0))) {
-		if (!truthy((yield* g.callName(f, (WT = live(f.args[0])), "isOn", [])))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>＄！ is off.</span>", [live(f.args[0])])]);
-			return live(f.dot);
+	if (rt.istype(W, T("/obj/item/weapon/weldingtool"))) {
+		if (!(WT = W).isOn()) {
+			to_chat(user, fmt("<span class='warning'>＄！ is off.</span>", [W]));
+			return f.dot;
 		}
-		if (isEqual(rt.sv(f, "obj_integrity"), rt.sv(f, "max_integrity"))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>＄！ does not require repairs.</span>", [live(f.src)])]);
-			return live(f.dot);
+		if (this.obj_integrity == this.max_integrity) {
+			to_chat(user, fmt("<span class='warning'>＄！ does not require repairs.</span>", [this]));
+			return f.dot;
 		}
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You begin repairing damage to ％！...</span>", [live(f.src)])]);
-		dmg = (yield* g.call(f, P("/proc/round"), null, [subtract(rt.sv(f, "max_integrity"), rt.sv(f, "obj_integrity"))]));
-		if ((truthy((yield* g.callName(f, live(WT), "remove_fuel", [(yield* g.call(f, P("/proc/round"), null, [divide(live(dmg), 75)]))]))) && truthy((yield* g.call(f, P("/proc/do_after"), null, [live(f.usr), divide(live(dmg), 10)]))))) {
-			rt.setSv(f, "obj_integrity", rt.sv(f, "max_integrity"));
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You repair ％！.</span>", [live(f.src)])]);
+		to_chat(user, fmt("<span class='notice'>You begin repairing damage to ％！...</span>", [this]));
+		dmg = round(this.max_integrity - this.obj_integrity);
+		if ((yield* WT.remove_fuel(round(dmg / 75))) && (yield* do_after(f.usr, dmg / 10))) {
+			this.obj_integrity = this.max_integrity;
+			to_chat(user, fmt("<span class='notice'>You repair ％！.</span>", [this]));
 		}
-		return live(f.dot);
+		return f.dot;
 	}
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/screwdriver")) ? 1 : 0))) {
-		if (!truthy(rt.len(f, rt.sv(f, "all_components")))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>This device doesn't have any components installed.</span>"]);
-			return live(f.dot);
+	if (rt.istype(W, T("/obj/item/weapon/screwdriver"))) {
+		if (!rt.len(f, this.all_components)) {
+			to_chat(user, "<span class='warning'>This device doesn't have any components installed.</span>");
+			return f.dot;
 		}
-		component_names = rt.list();
-		h_1 = null;
-		rt.forList(f, 0, rt.sv(f, "all_components"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			h_1 = $e;
-			H_2 = rt.index(rt.sv(f, "all_components"), live(h_1));
-			yield* g.callName(f, live(component_names), "Add", [rt.fv(f, "name", live(H_2))]);
+		component_names = list();
+		for (h_1 of each(this.all_components)) {
+			H_2 = rt.index(this.all_components, h_1);
+			component_names.Add(H_2.name);
 		}
-		rt.endFor(f, 0);
-		if (!truthy((choice = (yield* g.op(f, "Prompt", [1], [null, "Computer maintenance", "Which component do you want to uninstall?", live(f.args[1]), live(component_names)]))))) {
-			return live(f.dot);
+		if (!(choice = (yield* g.op(f, "Prompt", [1], [null, "Computer maintenance", "Which component do you want to uninstall?", user, component_names])))) {
+			return f.dot;
 		}
-		if (!truthy((yield* g.srcCall(f, "Adjacent", live(f.args[1]))))) {
-			return live(f.dot);
+		if (!this.Adjacent(user)) {
+			return f.dot;
 		}
-		if (!truthy((H_2 = (yield* g.srcCall(f, "find_hardware_by_name", live(choice)))))) {
-			return live(f.dot);
+		if (!(H_2 = this.find_hardware_by_name(choice))) {
+			return f.dot;
 		}
-		yield* g.srcCall(f, "uninstall_component", live(H_2), live(f.args[1]));
-		return live(f.dot);
+		yield* this.uninstall_component(H_2, user);
+		return f.dot;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["W", "user"] });
+}, true);
 
-// /obj/item/device/modular_computer/proc/Adjacent  (code/modules/modular_computers/computers/item/computer.dm:447)
-rt.def("/obj/item/device/modular_computer/proc/Adjacent", function Adjacent(f: Frame) {
-	if ((truthy(rt.sv(f, "physical")) && !isEqual(rt.sv(f, "physical"), live(f.src)))) {
-		return rt.callName(f, rt.sv(f, "physical"), "Adjacent", [live(f.args[0])]);
+// computer.dm:447
+rt.def("/obj/item/device/modular_computer/proc/Adjacent", function Adjacent(f: Frame, neighbor: Value) {
+	if (this.physical && this.physical != this) {
+		return this.physical.Adjacent(neighbor);
 	}
-	return rt.callSuper(f, [], rt.Args.Same);
-}, false, { args: ["neighbor"] });
+	return parent_proc();
+}, false);

@@ -1,7 +1,7 @@
-// From code/modules/clothing/under/jobs/engineering.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/clothing/under/jobs/engineering.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(8310, "/obj/item/clothing/under/rank/chief_engineer", "/obj/item/clothing/under/rank", {
@@ -14,12 +14,10 @@ rt.type(8310, "/obj/item/clothing/under/rank/chief_engineer", "/obj/item/clothin
 	resistance_flags: 0,
 });
 
-// /obj/item/clothing/under/rank/chief_engineer/proc/<init>  (code/modules/clothing/under/jobs/engineering.dm:8)
+// engineering.dm:8
 rt.def("/obj/item/clothing/under/rank/chief_engineer/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 10, "fire", 80, "acid", 40]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 10, "fire", 80, "acid", 40]);
 	return f.dot;
 });
 
@@ -33,11 +31,9 @@ rt.type(8312, "/obj/item/clothing/under/rank/engineer", "/obj/item/clothing/unde
 	resistance_flags: 0,
 });
 
-// /obj/item/clothing/under/rank/engineer/proc/<init>  (code/modules/clothing/under/jobs/engineering.dm:25)
+// engineering.dm:25
 rt.def("/obj/item/clothing/under/rank/engineer/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 10, "fire", 60, "acid", 20]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 10, "fire", 60, "acid", 20]);
 	return f.dot;
 });

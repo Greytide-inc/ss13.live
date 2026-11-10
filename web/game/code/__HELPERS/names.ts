@@ -1,290 +1,250 @@
-// From code/__HELPERS/names.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/__HELPERS/names.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
-// /proc/lizard_name  (code/__HELPERS/names.dm:4)
+// names.dm:4
 rt.def("/proc/lizard_name", function lizard_name(f: Frame, gender: Value) {
-	if (isEqual(live(gender), "male")) {
-		return fmt("＀-＀", [rt.op(f, "PickUnweighted", [1], [rt.gl("lizard_names_male")]), rt.op(f, "PickUnweighted", [1], [rt.gl("lizard_names_male")])]);
+	if (gender == "male") {
+		return `${pick(GLOB.lizard_names_male)}-${pick(GLOB.lizard_names_male)}`;
 	}
-	return fmt("＀-＀", [rt.op(f, "PickUnweighted", [1], [rt.gl("lizard_names_female")]), rt.op(f, "PickUnweighted", [1], [rt.gl("lizard_names_female")])]);
+	return `${pick(GLOB.lizard_names_female)}-${pick(GLOB.lizard_names_female)}`;
 });
 
-// /proc/plasmaman_name  (code/__HELPERS/names.dm:10)
+// names.dm:10
 rt.def("/proc/plasmaman_name", function plasmaman_name(f: Frame) {
-	return fmt("＀ ３！", [rt.op(f, "PickUnweighted", [1], [rt.gl("plasmaman_names")]), rt.call(f, P("/proc/rand"), null, [1, 99])]);
+	return fmt("＀ ３！", [pick(GLOB.plasmaman_names), rand(1, 99)]);
 });
 
-// /proc/church_name  (code/__HELPERS/names.dm:17)
+// names.dm:17
 rt.def("/proc/church_name", function church_name(f: Frame) {
-	let name: Value = null;
-	f.vars = () => [name];
-	if (truthy(rt.gl("church_name"))) {
-		return rt.gl("church_name");
+	if (GLOB.church_name) {
+		return GLOB.church_name;
 	}
-	name = "";
-	name = rt.modify(live(name), rt.op(f, "PickUnweighted", [5], ["Holy", "United", "First", "Second", "Last"]), add);
-	if (truthy(rt.op(f, "Prob", [], [20]))) {
-		name = rt.modify(live(name), " Space", add);
+	let name: Value = "";
+	name += pick("Holy", "United", "First", "Second", "Last");
+	if (prob(20)) {
+		name += " Space";
 	}
-	name = rt.modify(live(name), add(" ", rt.op(f, "PickUnweighted", [6], ["Church", "Cathedral", "Body", "Worshippers", "Movement", "Witnesses"])), add);
-	return (name = rt.modify(live(name), fmt(" of ＀", [rt.call(f, P("/proc/religion_name"), null, [])]), add));
+	name += " " + pick("Church", "Cathedral", "Body", "Worshippers", "Movement", "Witnesses");
+	return (name += ` of ${religion_name()}`);
 });
 
-// /datum/controller/global_vars/proc/InitGlobalcommand_name  (code/__HELPERS/names.dm:29)
+// names.dm:29
 rt.def("/datum/controller/global_vars/proc/InitGlobalcommand_name", function InitGlobalcommand_name(f: Frame) {
-	rt.setGl("command_name", null);
-	rt.modSrcVar(f, "gvars_datum_init_order", "command_name", add);
+	GLOB.command_name = null;
+	this.gvars_datum_init_order += "command_name";
 	return f.dot;
 });
 
-// /proc/command_name  (code/__HELPERS/names.dm:34)
+// names.dm:34
 rt.def("/proc/command_name", function command_name(f: Frame) {
 	let name: Value = null;
-	f.vars = () => [name];
-	if (truthy(rt.gl("command_name"))) {
-		return rt.gl("command_name");
+	if (GLOB.command_name) {
+		return GLOB.command_name;
 	}
-	rt.setGl("command_name", (name = "Central Command"));
-	return live(name);
+	GLOB.command_name = (name = "Central Command");
+	return name;
 });
 
-// /proc/change_command_name  (code/__HELPERS/names.dm:41)
+// names.dm:41
 rt.def("/proc/change_command_name", function change_command_name(f: Frame, name: Value) {
-	rt.setGl("command_name", live(name));
-	return live(name);
+	GLOB.command_name = name;
+	return name;
 });
 
-// /proc/religion_name  (code/__HELPERS/names.dm:50)
+// names.dm:50
 rt.def("/proc/religion_name", function religion_name(f: Frame) {
-	let name: Value = null;
-	f.vars = () => [name];
-	if (truthy(rt.gl("religion_name"))) {
-		return rt.gl("religion_name");
+	if (GLOB.religion_name) {
+		return GLOB.religion_name;
 	}
-	name = "";
-	name = rt.modify(live(name), rt.op(f, "PickUnweighted", [19], ["bee", "science", "edu", "captain", "assistant", "monkey", "alien", "space", "unit", "sprocket", "gadget", "bomb", "revolution", "beyond", "station", "goon", "robot", "ivor", "hobnob"]), add);
-	return rt.call(f, P("/proc/capitalize"), null, [(name = rt.modify(live(name), rt.op(f, "PickUnweighted", [8], ["ism", "ia", "ology", "istism", "ites", "ick", "ian", "ity"]), add))]);
+	let name: Value = "";
+	name += pick("bee", "science", "edu", "captain", "assistant", "monkey", "alien", "space", "unit", "sprocket", "gadget", "bomb", "revolution", "beyond", "station", "goon", "robot", "ivor", "hobnob");
+	return capitalize((name += pick("ism", "ia", "ology", "istism", "ites", "ick", "ian", "ity")));
 });
 
-// /proc/station_name  (code/__HELPERS/names.dm:58)
+// names.dm:58
 rt.def("/proc/station_name", function station_name(f: Frame) {
 	let newname: Value = null;
-	f.vars = () => [newname];
-	if (!truthy(rt.gl("station_name"))) {
-		newname = null;
-		if ((truthy(rt.gl("config")) && truthy(rt.fv(f, "station_name", rt.gl("config"))))) {
-			newname = rt.fv(f, "station_name", rt.gl("config"));
+	if (!GLOB.station_name) {
+		if (GLOB.config && GLOB.config.station_name) {
+			newname = GLOB.config.station_name;
 		} else {
-			newname = rt.call(f, P("/proc/new_station_name"), null, []);
+			newname = new_station_name();
 		}
-		rt.call(f, P("/proc/set_station_name"), null, [live(newname)]);
+		set_station_name(newname);
 	}
-	return rt.gl("station_name");
+	return GLOB.station_name;
 });
 
-// /proc/set_station_name  (code/__HELPERS/names.dm:70)
+// names.dm:70
 rt.def("/proc/set_station_name", function set_station_name(f: Frame, newname: Value) {
-	let $0: any, $1: any, $2: any;
-	f.vars = () => [$0, $1, $2];
-	rt.setGl("station_name", live(newname));
-	if ((truthy(rt.gl("config")) && truthy(rt.fv(f, "server_name", rt.gl("config"))))) {
-		$0 = rt.world();
-		$1 = rt.fv(f, "server_name", rt.gl("config"));
-		if (isEqual(rt.fv(f, "server_name", rt.gl("config")), rt.gl("station_name"))) {
-			$2 = "";
-		} else {
-			$2 = fmt(": ＀", [rt.gl("station_name")]);
-		}
-		rt.setFv(f, "name", $0, fmt("＀＀", [$1, $2]));
+	GLOB.station_name = newname;
+	if (GLOB.config && GLOB.config.server_name) {
+		rt.world().name = `${GLOB.config.server_name}${GLOB.config.server_name == GLOB.station_name ? "" : `: ${GLOB.station_name}`}`;
 	} else {
-		rt.setFv(f, "name", rt.world(), rt.gl("station_name"));
+		rt.world().name = GLOB.station_name;
 	}
 	return f.dot;
 });
 
-// /proc/new_station_name  (code/__HELPERS/names.dm:79)
+// names.dm:79
 rt.def("/proc/new_station_name", function new_station_name(f: Frame) {
-	let random: Value = null, name: Value = null, new_station_name: Value = null, holiday_name: Value = null, holiday: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [random, name, new_station_name, holiday_name, holiday, $0, $e];
-	random = rt.call(f, P("/proc/rand"), null, [1, 5]);
-	name = "";
-	new_station_name = "";
-	if (truthy(rt.op(f, "Prob", [], [10]))) {
-		new_station_name = add((name = rt.op(f, "PickUnweighted", [1], [rt.gl("station_prefixes")])), " ");
+	let holiday_name: Value = null, holiday: Value = null;
+	let $e: any;
+	let random: Value = rand(1, 5);
+	let name: Value = "";
+	let new_station_name: Value = "";
+	if (prob(10)) {
+		new_station_name = (name = pick(GLOB.station_prefixes)) + " ";
 		name = "";
 	}
-	holiday_name = null;
-	rt.forList(f, 0, rt.fv(f, "holidays", rt.gl("SSevents")));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		holiday_name = $e;
-		if (isEqual(live(holiday_name), "Friday the 13th")) {
+	for (holiday_name of each(GLOB.SSevents.holidays)) {
+		if (holiday_name == "Friday the 13th") {
 			random = 13;
 		}
-		name = rt.callName(f, (holiday = rt.index(rt.fv(f, "holidays", rt.gl("SSevents")), live(holiday_name))), "getStationPrefix", []);
+		name = (holiday = rt.index(GLOB.SSevents.holidays, holiday_name)).getStationPrefix();
 	}
-	rt.endFor(f, 0);
-	if (!truthy(live(name))) {
-		name = rt.op(f, "PickUnweighted", [1], [rt.gl("station_names")]);
+	if (!name) {
+		name = pick(GLOB.station_names);
 	}
-	if (truthy(live(name))) {
-		new_station_name = rt.modify(live(new_station_name), add(live(name), " "), add);
+	if (name) {
+		new_station_name += name + " ";
 	}
-	new_station_name = rt.modify(live(new_station_name), add((name = rt.op(f, "PickUnweighted", [1], [rt.gl("station_suffixes")])), " "), add);
-	$0 = live(random);
-	if ($0 === 1) {
-		new_station_name = rt.modify(live(new_station_name), fmt("＀", [rt.call(f, P("/proc/rand"), null, [1, 99])]), add);
-	} else if ($0 === 2) {
-		new_station_name = rt.modify(live(new_station_name), rt.op(f, "PickUnweighted", [1], [rt.gl("greek_letters")]), add);
-	} else if ($0 === 3) {
-		new_station_name = rt.modify(live(new_station_name), fmt("３！", [rt.call(f, P("/proc/rand"), null, [1, 99])]), add);
-	} else if ($0 === 4) {
-		new_station_name = rt.modify(live(new_station_name), rt.op(f, "PickUnweighted", [1], [rt.gl("phonetic_alphabet")]), add);
-	} else if ($0 === 5) {
-		new_station_name = rt.modify(live(new_station_name), rt.op(f, "PickUnweighted", [1], [rt.gl("numbers_as_words")]), add);
-	} else if ($0 === 13) {
-		new_station_name = rt.modify(live(new_station_name), rt.op(f, "PickUnweighted", [3], ["13", "XIII", "Thirteen"]), add);
+	new_station_name += (name = pick(GLOB.station_suffixes)) + " ";
+	if (random === 1) {
+		new_station_name += `${rand(1, 99)}`;
+	} else if (random === 2) {
+		new_station_name += pick(GLOB.greek_letters);
+	} else if (random === 3) {
+		new_station_name += fmt("３！", [rand(1, 99)]);
+	} else if (random === 4) {
+		new_station_name += pick(GLOB.phonetic_alphabet);
+	} else if (random === 5) {
+		new_station_name += pick(GLOB.numbers_as_words);
+	} else if (random === 13) {
+		new_station_name += pick("13", "XIII", "Thirteen");
 	}
-	return live(new_station_name);
+	return new_station_name;
 });
 
-// /proc/syndicate_name  (code/__HELPERS/names.dm:126)
+// names.dm:126
 rt.def("/proc/syndicate_name", function syndicate_name(f: Frame) {
-	let name: Value = null;
-	f.vars = () => [name];
-	if (truthy(rt.gl("syndicate_name"))) {
-		return rt.gl("syndicate_name");
+	if (GLOB.syndicate_name) {
+		return GLOB.syndicate_name;
 	}
-	name = "";
-	name = rt.modify(live(name), rt.op(f, "PickUnweighted", [14], ["Clandestine", "Prima", "Blue", "Zero-G", "Max", "Blasto", "Waffle", "North", "Omni", "Newton", "Cyber", "Bonk", "Gene", "Gib"]), add);
-	if (truthy(rt.op(f, "Prob", [], [80]))) {
-		name = rt.modify(live(name), " ", add);
-		if (truthy(rt.op(f, "Prob", [], [60]))) {
-			name = rt.modify(live(name), rt.op(f, "PickUnweighted", [20], ["Syndicate", "Consortium", "Collective", "Corporation", "Group", "Holdings", "Biotech", "Industries", "Systems", "Products", "Chemicals", "Enterprises", "Family", "Creations", "International", "Intergalactic", "Interplanetary", "Foundation", "Positronics", "Hive"]), add);
+	let name: Value = "";
+	name += pick("Clandestine", "Prima", "Blue", "Zero-G", "Max", "Blasto", "Waffle", "North", "Omni", "Newton", "Cyber", "Bonk", "Gene", "Gib");
+	if (prob(80)) {
+		name += " ";
+		if (prob(60)) {
+			name += pick("Syndicate", "Consortium", "Collective", "Corporation", "Group", "Holdings", "Biotech", "Industries", "Systems", "Products", "Chemicals", "Enterprises", "Family", "Creations", "International", "Intergalactic", "Interplanetary", "Foundation", "Positronics", "Hive");
 		} else {
-			name = rt.modify(live(name), rt.op(f, "PickUnweighted", [8], ["Syndi", "Corp", "Bio", "System", "Prod", "Chem", "Inter", "Hive"]), add);
-			name = rt.modify(live(name), rt.op(f, "PickUnweighted", [2], ["", "-"]), add);
-			name = rt.modify(live(name), rt.op(f, "PickUnweighted", [7], ["Tech", "Sun", "Co", "Tek", "X", "Inc", "Code"]), add);
+			name += pick("Syndi", "Corp", "Bio", "System", "Prod", "Chem", "Inter", "Hive");
+			name += pick("", "-");
+			name += pick("Tech", "Sun", "Co", "Tek", "X", "Inc", "Code");
 		}
 	} else {
-		name = rt.modify(live(name), rt.op(f, "PickUnweighted", [3], ["-", "*", ""]), add);
-		name = rt.modify(live(name), rt.op(f, "PickUnweighted", [11], ["Tech", "Sun", "Co", "Tek", "X", "Inc", "Gen", "Star", "Dyne", "Code", "Hive"]), add);
+		name += pick("-", "*", "");
+		name += pick("Tech", "Sun", "Co", "Tek", "X", "Inc", "Gen", "Star", "Dyne", "Code", "Hive");
 	}
-	rt.setGl("syndicate_name", live(name));
-	return live(name);
+	GLOB.syndicate_name = name;
+	return name;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalsyndicate_code_phrase  (code/__HELPERS/names.dm:153)
+// names.dm:153
 rt.def("/datum/controller/global_vars/proc/InitGlobalsyndicate_code_phrase", function InitGlobalsyndicate_code_phrase(f: Frame) {
-	rt.setGl("syndicate_code_phrase", null);
-	rt.modSrcVar(f, "gvars_datum_init_order", "syndicate_code_phrase", add);
+	GLOB.syndicate_code_phrase = null;
+	this.gvars_datum_init_order += "syndicate_code_phrase";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalsyndicate_code_response  (code/__HELPERS/names.dm:154)
+// names.dm:154
 rt.def("/datum/controller/global_vars/proc/InitGlobalsyndicate_code_response", function InitGlobalsyndicate_code_response(f: Frame) {
-	rt.setGl("syndicate_code_response", null);
-	rt.modSrcVar(f, "gvars_datum_init_order", "syndicate_code_response", add);
+	GLOB.syndicate_code_response = null;
+	this.gvars_datum_init_order += "syndicate_code_response";
 	return f.dot;
 });
 
-// /proc/generate_code_phrase  (code/__HELPERS/names.dm:172)
+// names.dm:172
 rt.def("/proc/generate_code_phrase", function generate_code_phrase(f: Frame, return_list: Value) {
-	let words: Value = null, safety: Value = null, nouns: Value = null, objects: Value = null, adjectives: Value = null, threats: Value = null, foods: Value = null, drinks: Value = null, locations: Value = null, names: Value = null, t: Value = null, maxwords: Value = null, new_name: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [return_list, words, safety, nouns, objects, adjectives, threats, foods, drinks, locations, names, t, maxwords, new_name, $0, $e];
-	if (live(return_list) === null) {
-		return_list = 0;
-	}
-	if (!truthy(live(return_list))) {
+	let t: Value = null, new_name: Value = null;
+	let $e: any;
+	return_list ??= 0;
+	if (!return_list) {
 		f.dot = "";
 	} else {
-		f.dot = rt.list();
+		f.dot = list();
 	}
-	words = rt.op(f, "PickWeighted", [4], [50, 2, 200, 3, 50, 4, 25, 5]);
-	safety = rt.list(1, 2, 3);
-	nouns = rt.call(f, P("/proc/strings"), null, ["ion_laws.json", "ionabstract"]);
-	objects = rt.call(f, P("/proc/strings"), null, ["ion_laws.json", "ionobjects"]);
-	adjectives = rt.call(f, P("/proc/strings"), null, ["ion_laws.json", "ionadjectives"]);
-	threats = rt.call(f, P("/proc/strings"), null, ["ion_laws.json", "ionthreats"]);
-	foods = rt.call(f, P("/proc/strings"), null, ["ion_laws.json", "ionfood"]);
-	drinks = rt.call(f, P("/proc/strings"), null, ["ion_laws.json", "iondrinks"]);
-	if (truthy(rt.len(f, rt.gl("teleportlocs")))) {
-		$0 = rt.gl("teleportlocs");
-	} else {
-		$0 = live(drinks);
+	let words: Value = rt.op(f, "PickWeighted", [4], [50, 2, 200, 3, 50, 4, 25, 5]);
+	let safety: Value = list(1, 2, 3);
+	let nouns: Value = strings("ion_laws.json", "ionabstract");
+	let objects: Value = strings("ion_laws.json", "ionobjects");
+	let adjectives: Value = strings("ion_laws.json", "ionadjectives");
+	let threats: Value = strings("ion_laws.json", "ionthreats");
+	let foods: Value = strings("ion_laws.json", "ionfood");
+	let drinks: Value = strings("ion_laws.json", "iondrinks");
+	let locations: Value = rt.len(f, GLOB.teleportlocs) ? GLOB.teleportlocs : drinks;
+	let names: Value = list();
+	for (t of each(GLOB.data_core.general, T("/datum/data/record"))) {
+		names += rt.index(t.fields, "name");
 	}
-	locations = $0;
-	names = rt.list();
-	t = null;
-	rt.forList(f, 0, rt.fv(f, "general", rt.gl("data_core")), T("/datum/data/record"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		t = $e;
-		names = rt.modify(live(names), rt.index(rt.fv(f, "fields", live(t)), "name"), add);
-	}
-	rt.endFor(f, 0);
-	maxwords = live(words);
-	live(words);
-	while (rt.gt(live(words), 0)) {
-		if (((isEqual(live(words), 1) && truthy((rt.isIn(f, 1, live(safety)) ? 1 : 0))) && truthy((rt.isIn(f, 2, live(safety)) ? 1 : 0)))) {
-			safety = rt.list(rt.op(f, "PickUnweighted", [2], [1, 2]));
-		} else {
-			if ((isEqual(live(words), 1) && isEqual(live(maxwords), 2))) {
-				safety = rt.list(3);
-			}
+	let maxwords: Value = words;
+	words;
+	while (words > 0) {
+		if (words == 1 && rt.isIn(f, 1, safety) && rt.isIn(f, 2, safety)) {
+			safety = list(pick(1, 2));
+		} else if (words == 1 && maxwords == 2) {
+			safety = list(3);
 		}
-		$0 = rt.op(f, "PickUnweighted", [1], [live(safety)]);
-		if ($0 === 1) {
-			$0 = rt.call(f, P("/proc/rand"), null, [1, 2]);
-			if ($0 === 1) {
-				if ((truthy(rt.len(f, live(names))) && truthy(rt.op(f, "Prob", [], [70])))) {
-					f.dot = rt.modify(live(f.dot), rt.op(f, "PickUnweighted", [1], [live(names)]), add);
+		const chosen = pick(safety);
+		if (chosen === 1) {
+			const die = rand(1, 2);
+			if (die === 1) {
+				if (rt.len(f, names) && prob(70)) {
+					f.dot += pick(names);
+				} else if (prob(10)) {
+					f.dot += pick(lizard_name("male"), lizard_name("female"));
 				} else {
-					if (truthy(rt.op(f, "Prob", [], [10]))) {
-						f.dot = rt.modify(live(f.dot), rt.op(f, "PickUnweighted", [2], [rt.call(f, P("/proc/lizard_name"), null, ["male"]), rt.call(f, P("/proc/lizard_name"), null, ["female"])]), add);
-					} else {
-						new_name = rt.op(f, "PickUnweighted", [1], [rt.op(f, "PickUnweighted", [2], [rt.gl("first_names_male"), rt.gl("first_names_female")])]);
-						new_name = rt.modify(live(new_name), " ", add);
-						f.dot = rt.modify(live(f.dot), (new_name = rt.modify(live(new_name), rt.op(f, "PickUnweighted", [1], [rt.gl("last_names")]), add)), add);
-					}
+					new_name = pick(pick(GLOB.first_names_male, GLOB.first_names_female));
+					new_name += " ";
+					f.dot += (new_name += pick(GLOB.last_names));
 				}
-			} else if ($0 === 2) {
-				f.dot = rt.modify(live(f.dot), rt.op(f, "PickUnweighted", [1], [rt.call(f, P("/proc/get_all_jobs"), null, [])]), add);
+			} else if (die === 2) {
+				f.dot += pick(get_all_jobs());
 			}
-			(safety = rt.modify(live(safety), 1, subtract));
-		} else if ($0 === 2) {
-			$0 = rt.call(f, P("/proc/rand"), null, [1, 3]);
-			if ($0 === 1) {
-				f.dot = rt.modify(live(f.dot), rt.call(f, P("/proc/lowertext"), null, [rt.op(f, "PickUnweighted", [1], [live(drinks)])]), add);
-			} else if ($0 === 2) {
-				f.dot = rt.modify(live(f.dot), rt.call(f, P("/proc/lowertext"), null, [rt.op(f, "PickUnweighted", [1], [live(foods)])]), add);
-			} else if ($0 === 3) {
-				f.dot = rt.modify(live(f.dot), rt.call(f, P("/proc/lowertext"), null, [rt.op(f, "PickUnweighted", [1], [live(locations)])]), add);
+			safety -= 1;
+		} else if (chosen === 2) {
+			const die = rand(1, 3);
+			if (die === 1) {
+				f.dot += lowertext(pick(drinks));
+			} else if (die === 2) {
+				f.dot += lowertext(pick(foods));
+			} else if (die === 3) {
+				f.dot += lowertext(pick(locations));
 			}
-			(safety = rt.modify(live(safety), 2, subtract));
-		} else if ($0 === 3) {
-			$0 = rt.call(f, P("/proc/rand"), null, [1, 4]);
-			if ($0 === 1) {
-				f.dot = rt.modify(live(f.dot), rt.call(f, P("/proc/lowertext"), null, [rt.op(f, "PickUnweighted", [1], [live(nouns)])]), add);
-			} else if ($0 === 2) {
-				f.dot = rt.modify(live(f.dot), rt.call(f, P("/proc/lowertext"), null, [rt.op(f, "PickUnweighted", [1], [live(objects)])]), add);
-			} else if ($0 === 3) {
-				f.dot = rt.modify(live(f.dot), rt.call(f, P("/proc/lowertext"), null, [rt.op(f, "PickUnweighted", [1], [live(adjectives)])]), add);
-			} else if ($0 === 4) {
-				f.dot = rt.modify(live(f.dot), rt.call(f, P("/proc/lowertext"), null, [rt.op(f, "PickUnweighted", [1], [live(threats)])]), add);
+			safety -= 2;
+		} else if (chosen === 3) {
+			const die = rand(1, 4);
+			if (die === 1) {
+				f.dot += lowertext(pick(nouns));
+			} else if (die === 2) {
+				f.dot += lowertext(pick(objects));
+			} else if (die === 3) {
+				f.dot += lowertext(pick(adjectives));
+			} else if (die === 4) {
+				f.dot += lowertext(pick(threats));
 			}
 		}
-		if (!truthy(live(return_list))) {
-			if (isEqual(live(words), 1)) {
-				f.dot = rt.modify(live(f.dot), ".", add);
+		if (!return_list) {
+			if (words == 1) {
+				f.dot += ".";
 			} else {
-				f.dot = rt.modify(live(f.dot), ", ", add);
+				f.dot += ", ";
 			}
 		}
-		words = rt.inc(live(words), -1);
+		words--;
 	}
 	return f.dot;
 });

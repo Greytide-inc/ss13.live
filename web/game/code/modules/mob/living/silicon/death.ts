@@ -1,29 +1,29 @@
-// From code/modules/mob/living/silicon/death.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/silicon/death.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
-// /mob/living/silicon/proc/spawn_gibs  (code/modules/mob/living/silicon/death.dm:2)  may sleep
+// death.dm:2
 rt.def("/mob/living/silicon/proc/spawn_gibs", function* spawn_gibs(f: Frame) {
-	yield* g.new_(f, T("/obj/effect/gibspawner/robot"), [rt.sv(f, "loc"), rt.sv(f, "viruses")]);
+	yield* new_(T("/obj/effect/gibspawner/robot"), this.loc, this.viruses);
 	return f.dot;
 }, true);
 
-// /mob/living/silicon/proc/spawn_dust  (code/modules/mob/living/silicon/death.dm:5)  may sleep
+// death.dm:5
 rt.def("/mob/living/silicon/proc/spawn_dust", function* spawn_dust(f: Frame) {
-	yield* g.new_(f, T("/obj/effect/decal/remains/robot"), [rt.sv(f, "loc")]);
+	yield* new_(T("/obj/effect/decal/remains/robot"), this.loc);
 	return f.dot;
 }, true);
 
-// /mob/living/silicon/proc/death  (code/modules/mob/living/silicon/death.dm:8)  may sleep
-rt.def("/mob/living/silicon/proc/death", function* death(f: Frame) {
-	if (!truthy(live(f.args[0]))) {
-		yield* g.srcCall(f, "emote", "deathgasp");
+// death.dm:8
+rt.def("/mob/living/silicon/proc/death", function* death(f: Frame, gibbed: Value) {
+	if (!gibbed) {
+		yield* this.emote("deathgasp");
 	}
-	yield* g.srcCall(f, "diag_hud_set_status");
-	yield* g.srcCall(f, "diag_hud_set_health");
-	yield* g.srcCall(f, "update_health_hud");
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	this.diag_hud_set_status();
+	this.diag_hud_set_health();
+	this.update_health_hud();
+	f.dot = (yield* parent_proc());
 	return f.dot;
-}, true, { args: ["gibbed"] });
+}, true);

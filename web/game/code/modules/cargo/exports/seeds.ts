@@ -1,7 +1,7 @@
-// From code/modules/cargo/exports/seeds.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/cargo/exports/seeds.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(2046, "/datum/export/seed", "/datum/export", {
@@ -12,38 +12,32 @@ rt.type(2046, "/datum/export/seed", "/datum/export", {
 	export_types: null,
 }, { global: { discoveredPlants: 659 } });
 
-// /datum/export/seed/proc/<init>  (code/modules/cargo/exports/seeds.dm:5)
+// seeds.dm:5
 rt.def("/datum/export/seed/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/item/seeds")));
+	parent_proc();
+	this.export_types = list(T("/obj/item/seeds"));
 	return f.dot;
 });
 
-// /datum/export/seed/proc/get_cost  (code/modules/cargo/exports/seeds.dm:10)
-rt.def("/datum/export/seed/proc/get_cost", function get_cost(f: Frame) {
-	let S: Value = null;
-	f.vars = () => [S];
-	S = live(f.args[0]);
-	if ((!truthy(rt.sv(f, "needs_discovery")) && truthy((rt.isIn(f, rt.fv(f, "type", live(S)), rt.gl("discoveredPlants")) ? 1 : 0)))) {
+// seeds.dm:10
+rt.def("/datum/export/seed/proc/get_cost", function get_cost(f: Frame, O: Value) {
+	let S: Value = O;
+	if (!this.needs_discovery && rt.isIn(f, S.type, GLOB.discoveredPlants)) {
 		return 0;
 	}
-	if ((truthy(rt.sv(f, "needs_discovery")) && !truthy((rt.isIn(f, rt.fv(f, "type", live(S)), rt.gl("discoveredPlants")) ? 1 : 0)))) {
+	if (this.needs_discovery && !rt.isIn(f, S.type, GLOB.discoveredPlants)) {
 		return 0;
 	}
-	return multiply(rt.callSuper(f, [], rt.Args.Same), rt.fv(f, "rarity", live(S)));
-}, false, { args: ["O"] });
+	return parent_proc() * S.rarity;
+}, false);
 
-// /datum/export/seed/proc/sell_object  (code/modules/cargo/exports/seeds.dm:18)
-rt.def("/datum/export/seed/proc/sell_object", function sell_object(f: Frame) {
-	let S: Value = null;
-	f.vars = () => [S];
-	rt.callSuper(f, [], rt.Args.Same);
-	S = live(f.args[0]);
-	rt.setAt(rt.gl("discoveredPlants"), rt.fv(f, "type", live(S)), rt.fv(f, "potency", live(S)));
+// seeds.dm:18
+rt.def("/datum/export/seed/proc/sell_object", function sell_object(f: Frame, O: Value) {
+	parent_proc();
+	let S: Value = O;
+	rt.setAt(GLOB.discoveredPlants, S.type, S.potency);
 	return f.dot;
-}, false, { args: ["O"] });
+}, false);
 
 rt.type(2047, "/datum/export/seed/potency", "/datum/export/seed", {
 	cost: 2.5,
@@ -52,23 +46,20 @@ rt.type(2047, "/datum/export/seed/potency", "/datum/export/seed", {
 	export_types: null,
 });
 
-// /datum/export/seed/potency/proc/<init>  (code/modules/cargo/exports/seeds.dm:26)
+// seeds.dm:26
 rt.def("/datum/export/seed/potency/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/item/seeds")));
+	parent_proc();
+	this.export_types = list(T("/obj/item/seeds"));
 	return f.dot;
 });
 
-// /datum/export/seed/potency/proc/get_cost  (code/modules/cargo/exports/seeds.dm:30)
-rt.def("/datum/export/seed/potency/proc/get_cost", function get_cost(f: Frame) {
-	let S: Value = null, cost: Value = null, potDiff: Value = null;
-	f.vars = () => [S, cost, potDiff];
-	S = live(f.args[0]);
-	if (!truthy((cost = rt.callSuper(f, [], rt.Args.Same)))) {
+// seeds.dm:30
+rt.def("/datum/export/seed/potency/proc/get_cost", function get_cost(f: Frame, O: Value) {
+	let cost: Value = null;
+	let S: Value = O;
+	if (!(cost = parent_proc())) {
 		return 0;
 	}
-	potDiff = subtract(rt.fv(f, "potency", live(S)), rt.index(rt.gl("discoveredPlants"), rt.fv(f, "type", live(S))));
-	return rt.call(f, P("/proc/round"), null, [multiply(rt.callSuper(f, [], rt.Args.Same), live(potDiff))]);
-}, false, { args: ["O"] });
+	let potDiff: Value = S.potency - rt.index(GLOB.discoveredPlants, S.type);
+	return round(parent_proc() * potDiff);
+}, false);

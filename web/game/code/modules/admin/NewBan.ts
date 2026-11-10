@@ -1,286 +1,249 @@
-// From code/modules/admin/NewBan.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/admin/NewBan.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
-// /datum/controller/global_vars/proc/InitGlobalCMinutes  (code/modules/admin/NewBan.dm:1)
+// NewBan.dm:1
 rt.def("/datum/controller/global_vars/proc/InitGlobalCMinutes", function InitGlobalCMinutes(f: Frame) {
-	rt.setGl("CMinutes", null);
-	rt.modSrcVar(f, "gvars_datum_init_order", "CMinutes", add);
+	GLOB.CMinutes = null;
+	this.gvars_datum_init_order += "CMinutes";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalBanlist  (code/modules/admin/NewBan.dm:2)
+// NewBan.dm:2
 rt.def("/datum/controller/global_vars/proc/InitGlobalBanlist", function InitGlobalBanlist(f: Frame) {
-	rt.setGl("Banlist", null);
-	rt.modSrcVar(f, "gvars_datum_init_order", "Banlist", add);
+	GLOB.Banlist = null;
+	this.gvars_datum_init_order += "Banlist";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalBanlist  (code/modules/admin/NewBan.dm:3)
+// NewBan.dm:3
 rt.def("/datum/controller/global_vars/proc/InitGlobalBanlist", function InitGlobalBanlist(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.modSrcVar(f, "gvars_datum_protected_varlist", "Banlist", add);
+	parent_proc();
+	this.gvars_datum_protected_varlist += "Banlist";
 	return f.dot;
 });
 
-// /proc/CheckBan  (code/modules/admin/NewBan.dm:7)
+// NewBan.dm:7
 rt.def("/proc/CheckBan", function CheckBan(f: Frame, ckey: Value, id: Value, address: Value) {
 	let appeal: Value = null, A: Value = null, matches: Value = null;
-	let $e: any;
-	f.vars = () => [appeal, A, matches, $e];
-	if (!truthy(rt.gl("Banlist"))) {
-		rt.call(f, P("/proc/LoadBans"), null, []);
-		if (!truthy(rt.gl("Banlist"))) {
+	if (!GLOB.Banlist) {
+		LoadBans();
+		if (!GLOB.Banlist) {
 			return 0;
 		}
 	}
-	f.dot = rt.list();
-	appeal = null;
-	if ((truthy(rt.gl("config")) && truthy(rt.fv(f, "banappeals", rt.gl("config"))))) {
-		appeal = fmt("\nFor more information on your ban, or to appeal, head to <a href='＀'>＀</a>", [rt.fv(f, "banappeals", rt.gl("config")), rt.fv(f, "banappeals", rt.gl("config"))]);
+	f.dot = list();
+	if (GLOB.config && GLOB.config.banappeals) {
+		appeal = `\nFor more information on your ban, or to appeal, head to <a href='${GLOB.config.banappeals}'>${GLOB.config.banappeals}</a>`;
 	}
-	rt.setFv(f, "cd", rt.gl("Banlist"), "/base");
-	if (truthy((rt.isIn(f, fmt("＀＀", [live(ckey), live(id)]), rt.fv(f, "dir", rt.gl("Banlist"))) ? 1 : 0))) {
-		rt.setFv(f, "cd", rt.gl("Banlist"), fmt("＀＀", [live(ckey), live(id)]));
-		if (truthy(rt.at(rt.gl("Banlist"), "temp"))) {
-			if (!truthy(rt.call(f, P("/proc/GetExp"), null, [rt.at(rt.gl("Banlist"), "minutes")]))) {
-				rt.call(f, P("/proc/ClearTempbans"), null, []);
+	GLOB.Banlist.cd = "/base";
+	if (rt.isIn(f, `${ckey}${id}`, GLOB.Banlist.dir)) {
+		GLOB.Banlist.cd = `${ckey}${id}`;
+		if (rt.at(GLOB.Banlist, "temp")) {
+			if (!GetExp(rt.at(GLOB.Banlist, "minutes"))) {
+				ClearTempbans();
 				return 0;
 			} else {
-				rt.setAt(live(f.dot), "desc", fmt("\nReason: ＀\nExpires: ＀\nBy: ＀＀", [rt.at(rt.gl("Banlist"), "reason"), rt.call(f, P("/proc/GetExp"), null, [rt.at(rt.gl("Banlist"), "minutes")]), rt.at(rt.gl("Banlist"), "bannedby"), live(appeal)]));
+				rt.setAt(f.dot, "desc", `\nReason: ${rt.at(GLOB.Banlist, "reason")}\nExpires: ${GetExp(rt.at(GLOB.Banlist, "minutes"))}\nBy: ${rt.at(GLOB.Banlist, "bannedby")}${appeal}`);
 			}
 		} else {
-			rt.setFv(f, "cd", rt.gl("Banlist"), fmt("/base/＀＀", [live(ckey), live(id)]));
-			rt.setAt(live(f.dot), "desc", fmt("\nReason: ＀\nExpires: <B>PERMENANT</B>\nBy: ＀＀", [rt.at(rt.gl("Banlist"), "reason"), rt.at(rt.gl("Banlist"), "bannedby"), live(appeal)]));
+			GLOB.Banlist.cd = `/base/${ckey}${id}`;
+			rt.setAt(f.dot, "desc", `\nReason: ${rt.at(GLOB.Banlist, "reason")}\nExpires: <B>PERMENANT</B>\nBy: ${rt.at(GLOB.Banlist, "bannedby")}${appeal}`);
 		}
-		rt.setAt(live(f.dot), "reason", "ckey/id");
-		return live(f.dot);
+		rt.setAt(f.dot, "reason", "ckey/id");
+		return f.dot;
 	} else {
-		A = null;
-		rt.forList(f, 0, rt.fv(f, "dir", rt.gl("Banlist")));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			A = $e;
-			rt.setFv(f, "cd", rt.gl("Banlist"), fmt("/base/＀", [live(A)]));
+		for (A of each(GLOB.Banlist.dir)) {
+			GLOB.Banlist.cd = `/base/${A}`;
 			matches = null;
-			if (isEqual(live(ckey), rt.at(rt.gl("Banlist"), "key"))) {
-				matches = rt.modify(live(matches), "ckey", add);
+			if (ckey == rt.at(GLOB.Banlist, "key")) {
+				matches += "ckey";
 			}
-			if (isEqual(live(id), rt.at(rt.gl("Banlist"), "id"))) {
-				if (truthy(live(matches))) {
-					matches = rt.modify(live(matches), "/", add);
+			if (id == rt.at(GLOB.Banlist, "id")) {
+				if (matches) {
+					matches += "/";
 				}
-				matches = rt.modify(live(matches), "id", add);
+				matches += "id";
 			}
-			if (isEqual(live(address), rt.at(rt.gl("Banlist"), "ip"))) {
-				if (truthy(live(matches))) {
-					matches = rt.modify(live(matches), "/", add);
+			if (address == rt.at(GLOB.Banlist, "ip")) {
+				if (matches) {
+					matches += "/";
 				}
-				matches = rt.modify(live(matches), "ip", add);
+				matches += "ip";
 			}
-			if (truthy(live(matches))) {
-				if (truthy(rt.at(rt.gl("Banlist"), "temp"))) {
-					if (!truthy(rt.call(f, P("/proc/GetExp"), null, [rt.at(rt.gl("Banlist"), "minutes")]))) {
-						rt.call(f, P("/proc/ClearTempbans"), null, []);
+			if (matches) {
+				if (rt.at(GLOB.Banlist, "temp")) {
+					if (!GetExp(rt.at(GLOB.Banlist, "minutes"))) {
+						ClearTempbans();
 						return 0;
 					} else {
-						rt.setAt(live(f.dot), "desc", fmt("\nReason: ＀\nExpires: ＀\nBy: ＀＀", [rt.at(rt.gl("Banlist"), "reason"), rt.call(f, P("/proc/GetExp"), null, [rt.at(rt.gl("Banlist"), "minutes")]), rt.at(rt.gl("Banlist"), "bannedby"), live(appeal)]));
+						rt.setAt(f.dot, "desc", `\nReason: ${rt.at(GLOB.Banlist, "reason")}\nExpires: ${GetExp(rt.at(GLOB.Banlist, "minutes"))}\nBy: ${rt.at(GLOB.Banlist, "bannedby")}${appeal}`);
 					}
 				} else {
-					rt.setAt(live(f.dot), "desc", fmt("\nReason: ＀\nExpires: <B>PERMENANT</B>\nBy: ＀＀", [rt.at(rt.gl("Banlist"), "reason"), rt.at(rt.gl("Banlist"), "bannedby"), live(appeal)]));
+					rt.setAt(f.dot, "desc", `\nReason: ${rt.at(GLOB.Banlist, "reason")}\nExpires: <B>PERMENANT</B>\nBy: ${rt.at(GLOB.Banlist, "bannedby")}${appeal}`);
 				}
-				rt.setAt(live(f.dot), "reason", live(matches));
-				return live(f.dot);
+				rt.setAt(f.dot, "reason", matches);
+				return f.dot;
 			}
 		}
-		rt.endFor(f, 0);
 	}
 	return 0;
 });
 
-// /proc/UpdateTime  (code/modules/admin/NewBan.dm:59)
+// NewBan.dm:59
 rt.def("/proc/UpdateTime", function UpdateTime(f: Frame) {
-	rt.setGl("CMinutes", divide(divide(rt.fv(f, "realtime", rt.world()), 10), 60));
+	GLOB.CMinutes = rt.world().realtime / 10 / 60;
 	return 1;
 });
 
-// /proc/LoadBans  (code/modules/admin/NewBan.dm:64)
+// NewBan.dm:64
 rt.def("/proc/LoadBans", function LoadBans(f: Frame) {
-	rt.setGl("Banlist", rt.new_(f, T("/savefile"), ["data/banlist.bdb"]));
-	rt.call(f, P("/proc/log_admin"), null, ["Loading Banlist"]);
-	if (!truthy(rt.length(rt.fv(f, "dir", rt.gl("Banlist"))))) {
-		rt.call(f, P("/proc/log_admin"), null, ["Banlist is empty."]);
+	GLOB.Banlist = new_(T("/savefile"), "data/banlist.bdb");
+	log_admin("Loading Banlist");
+	if (!rt.length(GLOB.Banlist.dir)) {
+		log_admin("Banlist is empty.");
 	}
-	if (!truthy(rt.callName(f, rt.fv(f, "dir", rt.gl("Banlist")), "Find", ["base"]))) {
-		rt.call(f, P("/proc/log_admin"), null, ["Banlist missing base dir."]);
-		rt.callName(f, rt.fv(f, "dir", rt.gl("Banlist")), "Add", ["base"]);
-		rt.setFv(f, "cd", rt.gl("Banlist"), "/base");
-	} else {
-		if (truthy(rt.callName(f, rt.fv(f, "dir", rt.gl("Banlist")), "Find", ["base"]))) {
-			rt.setFv(f, "cd", rt.gl("Banlist"), "/base");
-		}
+	if (!GLOB.Banlist.dir.Find("base")) {
+		log_admin("Banlist missing base dir.");
+		GLOB.Banlist.dir.Add("base");
+		GLOB.Banlist.cd = "/base";
+	} else if (GLOB.Banlist.dir.Find("base")) {
+		GLOB.Banlist.cd = "/base";
 	}
-	rt.call(f, P("/proc/ClearTempbans"), null, []);
+	ClearTempbans();
 	return 1;
 });
 
-// /proc/ClearTempbans  (code/modules/admin/NewBan.dm:80)
+// NewBan.dm:80
 rt.def("/proc/ClearTempbans", function ClearTempbans(f: Frame) {
 	let A: Value = null;
-	let $e: any;
-	f.vars = () => [A, $e];
-	rt.call(f, P("/proc/UpdateTime"), null, []);
-	rt.setFv(f, "cd", rt.gl("Banlist"), "/base");
-	A = null;
-	rt.forList(f, 0, rt.fv(f, "dir", rt.gl("Banlist")));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		A = $e;
-		rt.setFv(f, "cd", rt.gl("Banlist"), fmt("/base/＀", [live(A)]));
-		if ((!truthy(rt.at(rt.gl("Banlist"), "key")) || !truthy(rt.at(rt.gl("Banlist"), "id")))) {
-			rt.call(f, P("/proc/RemoveBan"), null, [live(A)]);
-			rt.call(f, P("/proc/log_admin"), null, ["Invalid Ban."]);
-			rt.call(f, P("/proc/message_admins"), null, ["Invalid Ban."]);
+	UpdateTime();
+	GLOB.Banlist.cd = "/base";
+	for (A of each(GLOB.Banlist.dir)) {
+		GLOB.Banlist.cd = `/base/${A}`;
+		if (!rt.at(GLOB.Banlist, "key") || !rt.at(GLOB.Banlist, "id")) {
+			RemoveBan(A);
+			log_admin("Invalid Ban.");
+			message_admins("Invalid Ban.");
 			continue;
 		}
-		if (!truthy(rt.at(rt.gl("Banlist"), "temp"))) {
+		if (!rt.at(GLOB.Banlist, "temp")) {
 			continue;
 		}
-		if (rt.ge(rt.gl("CMinutes"), rt.at(rt.gl("Banlist"), "minutes"))) {
-			rt.call(f, P("/proc/RemoveBan"), null, [live(A)]);
+		if (GLOB.CMinutes >= rt.at(GLOB.Banlist, "minutes")) {
+			RemoveBan(A);
 		}
 	}
-	rt.endFor(f, 0);
 	return 1;
 });
 
-// /proc/AddBan  (code/modules/admin/NewBan.dm:102)  may sleep
+// NewBan.dm:102
 rt.def("/proc/AddBan", function* AddBan(f: Frame, ckey: Value, computerid: Value, reason: Value, bannedby: Value, temp: Value, minutes: Value, address: Value) {
 	let bantimestamp: Value = null;
-	f.vars = () => [ckey, computerid, reason, bannedby, temp, minutes, address, bantimestamp];
-	bantimestamp = null;
-	if (truthy(live(temp))) {
-		yield* g.call(f, P("/proc/UpdateTime"), null, []);
-		bantimestamp = add(rt.gl("CMinutes"), live(minutes));
+	if (temp) {
+		UpdateTime();
+		bantimestamp = GLOB.CMinutes + minutes;
 	}
-	rt.setFv(f, "cd", rt.gl("Banlist"), "/base");
-	if (truthy((yield* g.callName(f, rt.fv(f, "dir", rt.gl("Banlist")), "Find", [fmt("＀＀", [live(ckey), live(computerid)])])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), "<span class='danger'>Ban already exists.</span>"]);
+	GLOB.Banlist.cd = "/base";
+	if (GLOB.Banlist.dir.Find(`${ckey}${computerid}`)) {
+		to_chat(f.usr, "<span class='danger'>Ban already exists.</span>");
 		return 0;
 	} else {
-		yield* g.callName(f, rt.fv(f, "dir", rt.gl("Banlist")), "Add", [fmt("＀＀", [live(ckey), live(computerid)])]);
-		rt.setFv(f, "cd", rt.gl("Banlist"), fmt("/base/＀＀", [live(ckey), live(computerid)]));
-		rt.op(f, "OutputReference", [rt.R.index], [rt.gl("Banlist"), "key", live(ckey)], false);
-		rt.op(f, "OutputReference", [rt.R.index], [rt.gl("Banlist"), "id", live(computerid)], false);
-		rt.op(f, "OutputReference", [rt.R.index], [rt.gl("Banlist"), "ip", live(address)], false);
-		rt.op(f, "OutputReference", [rt.R.index], [rt.gl("Banlist"), "reason", live(reason)], false);
-		rt.op(f, "OutputReference", [rt.R.index], [rt.gl("Banlist"), "bannedby", live(bannedby)], false);
-		rt.op(f, "OutputReference", [rt.R.index], [rt.gl("Banlist"), "temp", live(temp)], false);
-		if (truthy(live(temp))) {
-			rt.op(f, "OutputReference", [rt.R.index], [rt.gl("Banlist"), "minutes", live(bantimestamp)], false);
+		GLOB.Banlist.dir.Add(`${ckey}${computerid}`);
+		GLOB.Banlist.cd = `/base/${ckey}${computerid}`;
+		rt.op(f, "OutputReference", [rt.R.index], [GLOB.Banlist, "key", ckey], false);
+		rt.op(f, "OutputReference", [rt.R.index], [GLOB.Banlist, "id", computerid], false);
+		rt.op(f, "OutputReference", [rt.R.index], [GLOB.Banlist, "ip", address], false);
+		rt.op(f, "OutputReference", [rt.R.index], [GLOB.Banlist, "reason", reason], false);
+		rt.op(f, "OutputReference", [rt.R.index], [GLOB.Banlist, "bannedby", bannedby], false);
+		rt.op(f, "OutputReference", [rt.R.index], [GLOB.Banlist, "temp", temp], false);
+		if (temp) {
+			rt.op(f, "OutputReference", [rt.R.index], [GLOB.Banlist, "minutes", bantimestamp], false);
 		}
-		if (!truthy(live(temp))) {
-			yield* g.call(f, P("/proc/log_world"), null, [fmt("[server-ban] ＀ ＀", [live(ckey), truthy(live(address)) ? live(address) : "-"])]); // tools/server.mjs saves permanent bans to its own file
+		if (!temp) {
+			log_world(`[server-ban] ${ckey} ${address ? address : "-"}`); // tools/server.mjs saves permanent bans to its own file
 		} else {
 		}
 	}
 	return 1;
 }, true);
 
-// /proc/RemoveBan  (code/modules/admin/NewBan.dm:130)
+// NewBan.dm:130
 rt.def("/proc/RemoveBan", function RemoveBan(f: Frame, foldername: Value) {
-	let key: Value = null, id: Value = null, A: Value = null;
-	let $e: any;
-	f.vars = () => [key, id, A, $e];
-	key = null;
-	id = null;
-	rt.setFv(f, "cd", rt.gl("Banlist"), fmt("/base/＀", [live(foldername)]));
-	key = rt.input(f, rt.R.index, null, [rt.gl("Banlist"), "key"]);
-	id = rt.input(f, rt.R.index, null, [rt.gl("Banlist"), "id"]);
-	rt.setFv(f, "cd", rt.gl("Banlist"), "/base");
-	if (!truthy(rt.callName(f, rt.fv(f, "dir", rt.gl("Banlist")), "Remove", [live(foldername)]))) {
+	let A: Value = null;
+	GLOB.Banlist.cd = `/base/${foldername}`;
+	let key: Value = rt.input(f, rt.R.index, null, [GLOB.Banlist, "key"]);
+	let id: Value = rt.input(f, rt.R.index, null, [GLOB.Banlist, "id"]);
+	GLOB.Banlist.cd = "/base";
+	if (!GLOB.Banlist.dir.Remove(foldername)) {
 		return 0;
 	}
-	rt.call(f, P("/proc/log_world"), null, [fmt("[server-unban] ＀", [live(key)])]); // tools/server.mjs drops the key (and the addresses banned with it) from its own file
-	if (!truthy(live(f.usr))) {
-		rt.call(f, P("/proc/log_admin_private"), null, [fmt("Ban Expired: ＀", [live(key)])]);
-		rt.call(f, P("/proc/message_admins"), null, [fmt("Ban Expired: ＀", [live(key)])]);
+	log_world(`[server-unban] ${key}`); // tools/server.mjs drops the key (and the addresses banned with it) from its own file
+	if (!f.usr) {
+		log_admin_private(`Ban Expired: ${key}`);
+		message_admins(`Ban Expired: ${key}`);
 	} else {
-		rt.call(f, P("/proc/ban_unban_log_save"), null, [fmt("＀ unbanned ＀", [rt.call(f, P("/proc/key_name"), null, [live(f.usr)]), live(key)])]);
-		rt.call(f, P("/proc/log_admin_private"), null, [fmt("＀ unbanned ＀", [rt.call(f, P("/proc/key_name"), null, [live(f.usr)]), live(key)])]);
-		rt.call(f, P("/proc/message_admins"), null, [fmt("＀ unbanned: ＀", [rt.call(f, P("/proc/key_name_admin"), null, [live(f.usr)]), live(key)])]);
+		ban_unban_log_save(`${key_name(f.usr)} unbanned ${key}`);
+		log_admin_private(`${key_name(f.usr)} unbanned ${key}`);
+		message_admins(`${key_name_admin(f.usr)} unbanned: ${key}`);
 	}
-	A = null;
-	rt.forList(f, 0, rt.fv(f, "dir", rt.gl("Banlist")));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		A = $e;
-		rt.setFv(f, "cd", rt.gl("Banlist"), fmt("/base/＀", [live(A)]));
-		if (isEqual(live(key), rt.at(rt.gl("Banlist"), "key"))) {
-			rt.setFv(f, "cd", rt.gl("Banlist"), "/base");
-			rt.callName(f, rt.fv(f, "dir", rt.gl("Banlist")), "Remove", [live(A)]);
+	for (A of each(GLOB.Banlist.dir)) {
+		GLOB.Banlist.cd = `/base/${A}`;
+		if (key == rt.at(GLOB.Banlist, "key")) {
+			GLOB.Banlist.cd = "/base";
+			GLOB.Banlist.dir.Remove(A);
 			continue;
 		}
 	}
-	rt.endFor(f, 0);
 	return 1;
 });
 
-// /proc/GetExp  (code/modules/admin/NewBan.dm:156)
+// NewBan.dm:156
 rt.def("/proc/GetExp", function GetExp(f: Frame, minutes: Value) {
 	let exp: Value = null, timeleftstring: Value = null;
-	f.vars = () => [exp, timeleftstring];
-	rt.call(f, P("/proc/UpdateTime"), null, []);
-	if (rt.le((exp = subtract(live(minutes), rt.gl("CMinutes"))), 0)) {
+	UpdateTime();
+	if ((exp = minutes - GLOB.CMinutes) <= 0) {
 		return 0;
 	} else {
-		timeleftstring = null;
-		if (rt.ge(live(exp), 1440)) {
-			timeleftstring = fmt("＀ Days", [rt.call(f, P("/proc/round"), null, [divide(live(exp), 1440), 0.10000000149011612])]);
+		if (exp >= 1440) {
+			timeleftstring = `${round(exp / 1440, 0.1)} Days`;
+		} else if (exp >= 60) {
+			timeleftstring = `${round(exp / 60, 0.1)} Hours`;
 		} else {
-			if (rt.ge(live(exp), 60)) {
-				timeleftstring = fmt("＀ Hours", [rt.call(f, P("/proc/round"), null, [divide(live(exp), 60), 0.10000000149011612])]);
-			} else {
-				timeleftstring = fmt("＀ Minutes", [live(exp)]);
-			}
+			timeleftstring = `${exp} Minutes`;
 		}
-		return live(timeleftstring);
+		return timeleftstring;
 	}
-	return f.dot;
 });
 
-// /datum/admins/proc/unbanpanel  (code/modules/admin/NewBan.dm:174)
+// NewBan.dm:174
 rt.def("/datum/admins/proc/unbanpanel", function unbanpanel(f: Frame) {
-	let count: Value = null, dat: Value = null, A: Value = null, ref: Value = null, key: Value = null, id: Value = null, ip: Value = null, reason: Value = null, by: Value = null, expiry: Value = null;
-	let $e: any;
-	f.vars = () => [count, dat, A, ref, key, id, ip, reason, by, expiry, $e];
-	count = 0;
-	dat = null;
-	rt.setFv(f, "cd", rt.gl("Banlist"), "/base");
-	A = null;
-	rt.forList(f, 0, rt.fv(f, "dir", rt.gl("Banlist")));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		A = $e;
-		count = rt.inc(live(count), 1);
-		rt.setFv(f, "cd", rt.gl("Banlist"), fmt("/base/＀", [live(A)]));
-		ref = fmt("＃", [live(f.src)]);
-		key = rt.at(rt.gl("Banlist"), "key");
-		id = rt.at(rt.gl("Banlist"), "id");
-		ip = rt.at(rt.gl("Banlist"), "ip");
-		reason = rt.at(rt.gl("Banlist"), "reason");
-		by = rt.at(rt.gl("Banlist"), "bannedby");
+	let dat: Value = null, A: Value = null, ref: Value = null, key: Value = null, id: Value = null, ip: Value = null, reason: Value = null, by: Value = null, expiry: Value = null;
+	let count: Value = 0;
+	GLOB.Banlist.cd = "/base";
+	for (A of each(GLOB.Banlist.dir)) {
+		count++;
+		GLOB.Banlist.cd = `/base/${A}`;
+		ref = fmt("＃", [this]);
+		key = rt.at(GLOB.Banlist, "key");
+		id = rt.at(GLOB.Banlist, "id");
+		ip = rt.at(GLOB.Banlist, "ip");
+		reason = rt.at(GLOB.Banlist, "reason");
+		by = rt.at(GLOB.Banlist, "bannedby");
 		expiry = null;
-		if (truthy(rt.at(rt.gl("Banlist"), "temp"))) {
-			if (!truthy((expiry = rt.call(f, P("/proc/GetExp"), null, [rt.at(rt.gl("Banlist"), "minutes")])))) {
+		if (rt.at(GLOB.Banlist, "temp")) {
+			if (!(expiry = GetExp(rt.at(GLOB.Banlist, "minutes")))) {
 				expiry = "Removal Pending";
 			}
 		} else {
 			expiry = "Permaban";
 		}
-		dat = rt.modify(live(dat), fmt("<tr><td><A href='?src=＀;unbanf=＀＀'>(U)</A><A href='?src=＀;unbane=＀＀'>(E)</A> Key: <B>＀</B></td><td>ComputerID: <B>＀</B></td><td>IP: <B>＀</B></td><td> ＀</td><td>(By: ＀)</td><td>(Reason: ＀)</td></tr>", [live(ref), live(key), live(id), live(ref), live(key), live(id), live(key), live(id), live(ip), live(expiry), live(by), live(reason)]), add);
+		dat += `<tr><td><A href='?src=${ref};unbanf=${key}${id}'>(U)</A><A href='?src=${ref};unbane=${key}${id}'>(E)</A> Key: <B>${key}</B></td><td>ComputerID: <B>${id}</B></td><td>IP: <B>${ip}</B></td><td> ${expiry}</td><td>(By: ${by})</td><td>(Reason: ${reason})</td></tr>`;
 	}
-	rt.endFor(f, 0);
-	dat = rt.modify(live(dat), "</table>", add);
-	dat = fmt("<HR><B>Bans:</B> <FONT COLOR=blue>(U) = Unban , (E) = Edit Ban</FONT> - <FONT COLOR=green>(＀ Bans)</FONT><HR><table border=1 rules=all frame=void cellspacing=0 cellpadding=3 >＀", [live(count), live(dat)]);
-	rt.op(f, "Browse", [], [live(f.usr), live(dat), "window=unbanp;size=875x400"], false);
+	dat += "</table>";
+	dat = `<HR><B>Bans:</B> <FONT COLOR=blue>(U) = Unban , (E) = Edit Ban</FONT> - <FONT COLOR=green>(${count} Bans)</FONT><HR><table border=1 rules=all frame=void cellspacing=0 cellpadding=3 >${dat}`;
+	rt.op(f, "Browse", [], [f.usr, dat, "window=unbanp;size=875x400"], false);
 	return f.dot;
 });

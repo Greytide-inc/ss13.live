@@ -1,7 +1,7 @@
-// From code/modules/mob/living/carbon/alien/humanoid/caste/hunter.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/carbon/alien/humanoid/caste/hunter.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(4829, "/mob/living/carbon/alien/humanoid/hunter", "/mob/living/carbon/alien/humanoid", {
@@ -13,135 +13,116 @@ rt.type(4829, "/mob/living/carbon/alien/humanoid/hunter", "/mob/living/carbon/al
 	icon_state: "alienh",
 });
 
-// /mob/living/carbon/alien/humanoid/hunter/proc/create_internal_organs  (code/modules/mob/living/carbon/alien/humanoid/caste/hunter.dm:10)  may sleep
+// hunter.dm:10
 rt.def("/mob/living/carbon/alien/humanoid/hunter/proc/create_internal_organs", function* create_internal_organs(f: Frame) {
-	rt.modSrcVar(f, "internal_organs", (yield* g.new_(f, T("/obj/item/organ/alien/plasmavessel/small"), [])), add);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	this.internal_organs += (yield* new_(T("/obj/item/organ/alien/plasmavessel/small")));
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/alien/humanoid/hunter/proc/movement_delay  (code/modules/mob/living/carbon/alien/humanoid/caste/hunter.dm:15)
+// hunter.dm:15
 rt.def("/mob/living/carbon/alien/humanoid/hunter/proc/movement_delay", function movement_delay(f: Frame) {
 	f.dot = -1;
-	f.dot = rt.modify(live(f.dot), rt.callSuper(f, [], rt.Args.Same), add);
+	f.dot += parent_proc();
 	return f.dot;
 });
 
-// /mob/living/carbon/alien/humanoid/hunter/proc/toggle_leap  (code/modules/mob/living/carbon/alien/humanoid/caste/hunter.dm:21)  may sleep
+// hunter.dm:21
 rt.def("/mob/living/carbon/alien/humanoid/hunter/proc/toggle_leap", function* toggle_leap(f: Frame, message: Value) {
-	let $0: any, $1: any;
-	f.vars = () => [message, $0, $1];
-	if (live(message) === null) {
-		message = 1;
-	}
-	rt.setSv(f, "leap_on_click", (!truthy(rt.sv(f, "leap_on_click")) ? 1 : 0));
-	$0 = rt.sv(f, "leap_icon");
-	if (truthy(rt.sv(f, "leap_on_click"))) {
-		$1 = "on";
+	message ??= 1;
+	this.leap_on_click = (!this.leap_on_click ? 1 : 0);
+	let $0: any = this.leap_icon;
+	$0.icon_state = `leap_${this.leap_on_click ? "on" : "off"}`;
+	yield* this.update_icons();
+	if (message) {
+		to_chat(this, `<span class='noticealien'>You will now ${this.leap_on_click ? "leap at" : "slash at"} enemies!</span>`);
 	} else {
-		$1 = "off";
-	}
-	rt.setFv(f, "icon_state", $0, fmt("leap_＀", [$1]));
-	yield* g.srcCall(f, "update_icons");
-	if (truthy(live(message))) {
-		$0 = live(f.src);
-		if (truthy(rt.sv(f, "leap_on_click"))) {
-			$1 = "leap at";
-		} else {
-			$1 = "slash at";
-		}
-		yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='noticealien'>You will now ＀ enemies!</span>", [$1])]);
-	} else {
-		return live(f.dot);
+		return f.dot;
 	}
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/alien/humanoid/hunter/proc/ClickOn  (code/modules/mob/living/carbon/alien/humanoid/caste/hunter.dm:31)  may sleep
-rt.def("/mob/living/carbon/alien/humanoid/hunter/proc/ClickOn", function* ClickOn(f: Frame) {
-	yield* g.srcCall(f, "face_atom", live(f.args[0]));
-	if (truthy(rt.sv(f, "leap_on_click"))) {
-		yield* g.srcCall(f, "leap_at", live(f.args[0]));
+// hunter.dm:31
+rt.def("/mob/living/carbon/alien/humanoid/hunter/proc/ClickOn", function* ClickOn(f: Frame, A: Value, params: Value) {
+	yield* this.face_atom(A);
+	if (this.leap_on_click) {
+		yield* this.leap_at(A);
 	} else {
-		yield* g.callSuper(f, [], rt.Args.Same);
+		yield* parent_proc();
 	}
 	return f.dot;
-}, true, { args: ["A", "params"] });
+}, true);
 
-// /mob/living/carbon/alien/humanoid/hunter/proc/leap_at  (code/modules/mob/living/carbon/alien/humanoid/caste/hunter.dm:41)  may sleep
+// hunter.dm:41
 rt.def("/mob/living/carbon/alien/humanoid/hunter/proc/leap_at", function* leap_at(f: Frame, A: Value) {
-	f.vars = () => [A];
-	if (rt.gt(rt.sv(f, "pounce_cooldown"), rt.worldTime(f))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='alertalien'>You are too fatigued to pounce right now!</span>"]);
-		return live(f.dot);
+	if (this.pounce_cooldown > rt.worldTime(f)) {
+		to_chat(this, "<span class='alertalien'>You are too fatigued to pounce right now!</span>");
+		return f.dot;
 	}
-	if ((((truthy(rt.sv(f, "leaping")) || truthy(rt.sv(f, "stat"))) || truthy(rt.sv(f, "buckled"))) || truthy(rt.sv(f, "lying")))) {
-		return live(f.dot);
+	if (this.leaping || this.stat || this.buckled || this.lying) {
+		return f.dot;
 	}
-	if ((!truthy((yield* g.srcCall(f, "has_gravity"))) || !truthy((yield* g.callName(f, live(A), "has_gravity", []))))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='alertalien'>It is unsafe to leap without gravity!</span>"]);
-		return live(f.dot);
+	if (!this.has_gravity() || !A.has_gravity()) {
+		to_chat(this, "<span class='alertalien'>It is unsafe to leap without gravity!</span>");
+		return f.dot;
 	} else {
-		rt.setSv(f, "leaping", 1);
-		rt.modSrcVar(f, "weather_immunities", "lava", add);
-		yield* g.srcCall(f, "update_icons");
-		yield* g.callSrc(f, "throw_at", [null, live(A), null, 7, null, 1, "spin", 0, "diagonals_first", 1, "callback", (yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/mob/living/carbon/alien/humanoid/hunter/proc/leap_end")]))], rt.Args.Named);
+		this.leaping = 1;
+		this.weather_immunities += "lava";
+		yield* this.update_icons();
+		yield* this.throw_at(A, 7, 1, { spin: 0, diagonals_first: 1, callback: (yield* new_(T("/datum/callback"), this, P("/mob/living/carbon/alien/humanoid/hunter/proc/leap_end"))) });
 	}
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/alien/humanoid/hunter/proc/leap_end  (code/modules/mob/living/carbon/alien/humanoid/caste/hunter.dm:61)  may sleep
+// hunter.dm:61
 rt.def("/mob/living/carbon/alien/humanoid/hunter/proc/leap_end", function* leap_end(f: Frame) {
-	rt.setSv(f, "leaping", 0);
-	(rt.modSrcVar(f, "weather_immunities", "lava", subtract));
-	yield* g.srcCall(f, "update_icons");
+	this.leaping = 0;
+	this.weather_immunities -= "lava";
+	yield* this.update_icons();
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/alien/humanoid/hunter/proc/throw_impact  (code/modules/mob/living/carbon/alien/humanoid/caste/hunter.dm:66)  may sleep
-rt.def("/mob/living/carbon/alien/humanoid/hunter/proc/throw_impact", function* throw_impact(f: Frame) {
+// hunter.dm:66
+rt.def("/mob/living/carbon/alien/humanoid/hunter/proc/throw_impact", function* throw_impact(f: Frame, A: Value) {
 	let L: Value = null, blocked: Value = null, H: Value = null;
-	f.vars = () => [L, blocked, H];
-	if (!truthy(rt.sv(f, "leaping"))) {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+	if (!this.leaping) {
+		return (yield* parent_proc());
 	}
-	if (!truthy(live(f.args[0]))) return f.dot;
-	if (truthy((rt.istype(live(f.args[0]), T("/mob/living")) ? 1 : 0))) {
-		L = live(f.args[0]);
+	if (!A) return f.dot;
+	if (rt.istype(A, T("/mob/living"))) {
+		L = A;
 		blocked = 0;
-		if (truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon/human")) ? 1 : 0))) {
-			if (truthy((yield* g.callName(f, (H = live(f.args[0])), "check_shields", [null, 0, null, fmt("the ＀", [rt.sv(f, "name")]), null, live(f.src), "attack_type", 5], rt.Args.Named)))) {
+		if (rt.istype(A, T("/mob/living/carbon/human"))) {
+			if (yield* (H = A).check_shields(0, `the ${this.name}`, this, { attack_type: 5 })) {
 				blocked = 1;
 			}
 		}
-		if (!truthy(live(blocked))) {
-			yield* g.callName(f, live(L), "visible_message", [fmt("<span class ='danger'>＀ pounces on ＀!</span>", [live(f.src), live(L)]), fmt("<span class ='userdanger'>＀ pounces on you!</span>", [live(f.src)])]);
-			yield* g.callName(f, live(L), "Knockdown", [100]);
-			yield* g.call(f, P("/proc/sleep"), null, [2]);
-			yield* g.call(f, P("/proc/step_towards"), null, [live(f.src), live(L)]);
+		if (!blocked) {
+			L.visible_message(`<span class ='danger'>${this} pounces on ${L}!</span>`, `<span class ='userdanger'>${this} pounces on you!</span>`);
+			yield* L.Knockdown(100);
+			yield* sleep(2);
+			yield* step_towards(this, L);
 		} else {
-			yield* g.srcCall(f, "Knockdown", 40, 1, 1);
+			yield* this.Knockdown(40, 1, 1);
 		}
-		yield* g.srcCall(f, "toggle_leap", 0);
-		rt.setSv(f, "pounce_cooldown", add(rt.worldTime(f), rt.sv(f, "pounce_cooldown_time")));
-	} else {
-		if ((truthy(rt.fv(f, "density", live(f.args[0]))) && !truthy((yield* g.callName(f, live(f.args[0]), "CanPass", [live(f.src)]))))) {
-			yield* g.srcCall(f, "visible_message", fmt("<span class ='danger'>＀ smashes into ＀!</span>", [live(f.src), live(f.args[0])]), fmt("<span class ='alertalien'>＀ smashes into ＀!</span>", [live(f.src), live(f.args[0])]));
-			yield* g.srcCall(f, "Knockdown", 40, 1, 1);
-		}
+		yield* this.toggle_leap(0);
+		this.pounce_cooldown = rt.worldTime(f) + this.pounce_cooldown_time;
+	} else if (A.density && !(yield* A.CanPass(this))) {
+		this.visible_message(`<span class ='danger'>${this} smashes into ${A}!</span>`, `<span class ='alertalien'>${this} smashes into ${A}!</span>`);
+		yield* this.Knockdown(40, 1, 1);
 	}
-	if (!truthy(rt.sv(f, "leaping"))) return f.dot;
-	rt.setSv(f, "leaping", 0);
-	yield* g.srcCall(f, "update_icons");
-	yield* g.srcCall(f, "update_canmove");
+	if (!this.leaping) return f.dot;
+	this.leaping = 0;
+	yield* this.update_icons();
+	yield* this.update_canmove();
 	return f.dot;
-}, true, { args: ["A"], waitfor: false });
+}, true, { waitfor: false });
 
-// /mob/living/carbon/alien/humanoid/proc/float  (code/modules/mob/living/carbon/alien/humanoid/caste/hunter.dm:100)  may sleep
-rt.def("/mob/living/carbon/alien/humanoid/proc/float", function* float(f: Frame) {
-	if (truthy(rt.sv(f, "leaping"))) {
-		return live(f.dot);
+// hunter.dm:100
+rt.def("/mob/living/carbon/alien/humanoid/proc/float", function* float(f: Frame, on: Value) {
+	if (this.leaping) {
+		return f.dot;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["on"] });
+}, true);

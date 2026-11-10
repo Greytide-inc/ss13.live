@@ -1,7 +1,7 @@
-// From code/modules/modular_computers/file_system/programs/airestorer.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/modular_computers/file_system/programs/airestorer.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(4160, "/datum/computer_file/program/aidiag", "/datum/computer_file/program", {
@@ -20,125 +20,113 @@ rt.type(4160, "/datum/computer_file/program/aidiag", "/datum/computer_file/progr
 	transfer_access: 19,
 });
 
-// /datum/computer_file/program/aidiag/proc/get_ai  (code/modules/modular_computers/file_system/programs/airestorer.dm:22)
+// airestorer.dm:22
 rt.def("/datum/computer_file/program/aidiag/proc/get_ai", function get_ai(f: Frame, cardcheck: Value) {
 	let ai_slot: Value = null;
-	f.vars = () => [ai_slot];
-	ai_slot = null;
-	if (truthy(rt.sv(f, "computer"))) {
-		ai_slot = rt.index(rt.fv(f, "all_components", rt.sv(f, "computer")), "AI");
+	if (this.computer) {
+		ai_slot = rt.index(this.computer.all_components, "AI");
 	}
-	if (((truthy(rt.sv(f, "computer")) && truthy(live(ai_slot))) && truthy(rt.callName(f, live(ai_slot), "check_functionality", [])))) {
-		if (isEqual(live(cardcheck), 1)) {
-			return live(ai_slot);
+	if (this.computer && ai_slot && ai_slot.check_functionality()) {
+		if (cardcheck == 1) {
+			return ai_slot;
 		}
-		if ((truthy(rt.fv(f, "enabled", live(ai_slot))) && truthy(rt.fv(f, "stored_card", live(ai_slot))))) {
-			if (isEqual(live(cardcheck), 2)) {
-				return rt.fv(f, "stored_card", live(ai_slot));
+		if (ai_slot.enabled && ai_slot.stored_card) {
+			if (cardcheck == 2) {
+				return ai_slot.stored_card;
 			}
-			if (truthy(rt.gv(f, "AI", rt.fv(f, "stored_card", live(ai_slot))))) {
-				return rt.gv(f, "AI", rt.fv(f, "stored_card", live(ai_slot)));
+			if (ai_slot.stored_card.AI) {
+				return ai_slot.stored_card.AI;
 			}
 		}
 	}
 	return null;
 });
 
-// /datum/computer_file/program/aidiag/proc/ui_act  (code/modules/modular_computers/file_system/programs/airestorer.dm:36)  may sleep
-rt.def("/datum/computer_file/program/aidiag/proc/ui_act", function* ui_act(f: Frame) {
+// airestorer.dm:36
+rt.def("/datum/computer_file/program/aidiag/proc/ui_act", function* ui_act(f: Frame, action: Value, params: Value) {
 	let A: Value = null, ai_slot: Value = null;
-	let $0: any;
-	f.vars = () => [A, ai_slot, $0];
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
+	if (yield* parent_proc()) {
 		return 1;
 	}
-	if (!truthy((A = (yield* g.srcCall(f, "get_ai"))))) {
-		rt.setSv(f, "restoring", 0);
+	if (!(A = this.get_ai())) {
+		this.restoring = 0;
 	}
-	$0 = live(f.args[0]);
-	if ($0 === "PRG_beginReconstruction") {
-		if ((truthy(live(A)) && rt.lt(rt.fv(f, "health", live(A)), 100))) {
-			rt.setSv(f, "restoring", 1);
+	if (action === "PRG_beginReconstruction") {
+		if (A && A.health < 100) {
+			this.restoring = 1;
 		}
 		return 1;
-	} else if ($0 === "PRG_eject") {
-		if (!truthy(rt.index(rt.fv(f, "all_components", rt.sv(f, "computer")), "AI"))) return f.dot;
-		if (!(truthy((ai_slot = rt.index(rt.fv(f, "all_components", rt.sv(f, "computer")), "AI"))) && truthy(rt.fv(f, "stored_card", live(ai_slot))))) return f.dot;
-		yield* g.callName(f, live(ai_slot), "try_eject", [0, live(f.usr)]);
+	} else if (action === "PRG_eject") {
+		if (!rt.index(this.computer.all_components, "AI")) return f.dot;
+		if (!((ai_slot = rt.index(this.computer.all_components, "AI")) && ai_slot.stored_card)) return f.dot;
+		yield* ai_slot.try_eject(0, f.usr);
 		return 1;
 	}
 	return f.dot;
-}, true, { args: ["action", "params"] });
+}, true);
 
-// /datum/computer_file/program/aidiag/proc/process_tick  (code/modules/modular_computers/file_system/programs/airestorer.dm:56)  may sleep
+// airestorer.dm:56
 rt.def("/datum/computer_file/program/aidiag/proc/process_tick", function* process_tick(f: Frame) {
-	let cardhold: Value = null, ai_slot: Value = null, A: Value = null;
-	f.vars = () => [cardhold, ai_slot, A];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.sv(f, "restoring"))) {
-		return live(f.dot);
+	let A: Value = null;
+	yield* parent_proc();
+	if (!this.restoring) {
+		return f.dot;
 	}
-	cardhold = (yield* g.srcCall(f, "get_ai", 2));
-	ai_slot = (yield* g.srcCall(f, "get_ai", 1));
-	if ((!truthy((A = (yield* g.srcCall(f, "get_ai")))) || !truthy(live(cardhold)))) {
-		rt.setSv(f, "restoring", 0);
-		if (truthy(live(ai_slot))) {
-			rt.setFv(f, "locked", live(ai_slot), 0);
+	let cardhold: Value = this.get_ai(2);
+	let ai_slot: Value = this.get_ai(1);
+	if (!(A = this.get_ai()) || !cardhold) {
+		this.restoring = 0;
+		if (ai_slot) {
+			ai_slot.locked = 0;
 		}
-		return live(f.dot);
+		return f.dot;
 	}
-	if (truthy(rt.fv(f, "flush", live(cardhold)))) {
-		rt.setFv(f, "locked", live(ai_slot), 0);
-		rt.setSv(f, "restoring", 0);
-		return live(f.dot);
+	if (cardhold.flush) {
+		ai_slot.locked = 0;
+		this.restoring = 0;
+		return f.dot;
 	}
-	rt.setFv(f, "locked", live(ai_slot), 1);
-	yield* g.callName(f, live(A), "adjustOxyLoss", [-1, 0]);
-	yield* g.callName(f, live(A), "adjustFireLoss", [-1, 0]);
-	yield* g.callName(f, live(A), "adjustToxLoss", [-1, 0]);
-	yield* g.callName(f, live(A), "adjustBruteLoss", [-1, 0]);
-	yield* g.callName(f, live(A), "updatehealth", []);
-	if ((rt.ge(rt.fv(f, "health", live(A)), 0) && isEqual(rt.fv(f, "stat", live(A)), 2))) {
-		yield* g.callName(f, live(A), "revive", []);
+	ai_slot.locked = 1;
+	yield* A.adjustOxyLoss(-1, 0);
+	yield* A.adjustFireLoss(-1, 0);
+	yield* A.adjustToxLoss(-1, 0);
+	yield* A.adjustBruteLoss(-1, 0);
+	yield* A.updatehealth();
+	if (A.health >= 0 && A.stat == 2) {
+		yield* A.revive();
 	}
-	if (rt.ge(rt.fv(f, "health", live(A)), 100)) {
-		rt.setFv(f, "locked", live(ai_slot), 0);
-		rt.setSv(f, "restoring", 0);
+	if (A.health >= 100) {
+		ai_slot.locked = 0;
+		this.restoring = 0;
 	}
 	return 1;
 }, true);
 
-// /datum/computer_file/program/aidiag/proc/ui_data  (code/modules/modular_computers/file_system/programs/airestorer.dm:92)
+// airestorer.dm:92
 rt.def("/datum/computer_file/program/aidiag/proc/ui_data", function ui_data(f: Frame, user: Value) {
-	let data: Value = null, AI: Value = null, aicard: Value = null, cardhold: Value = null;
-	f.vars = () => [data, AI, aicard, cardhold];
-	data = rt.callSrc(f, "get_header_data", []);
-	AI = null;
-	AI = rt.callSrc(f, "get_ai", []);
-	if (!truthy((aicard = rt.callSrc(f, "get_ai", [2])))) {
-		rt.setAt(live(data), "nocard", 1);
-		rt.setAt(live(data), "error", "Please insert an intelliCard.");
+	let aicard: Value = null, cardhold: Value = null;
+	let data: Value = this.get_header_data();
+	let AI: Value = this.get_ai();
+	if (!(aicard = this.get_ai(2))) {
+		rt.setAt(data, "nocard", 1);
+		rt.setAt(data, "error", "Please insert an intelliCard.");
+	} else if (!AI) {
+		rt.setAt(data, "error", "No AI located");
+	} else if ((cardhold = AI.loc).flush) {
+		rt.setAt(data, "error", "Flush in progress");
 	} else {
-		if (!truthy(live(AI))) {
-			rt.setAt(live(data), "error", "No AI located");
-		} else {
-			if (truthy(rt.gv(f, "flush", (cardhold = rt.fv(f, "loc", live(AI)))))) {
-				rt.setAt(live(data), "error", "Flush in progress");
-			} else {
-				rt.setAt(live(data), "name", rt.fv(f, "name", live(AI)));
-				rt.setAt(live(data), "restoring", rt.sv(f, "restoring"));
-				rt.setAt(live(data), "laws", rt.callName(f, rt.fv(f, "laws", live(AI)), "get_law_list", ["include_zeroth", 1], rt.Args.Named));
-				rt.setAt(live(data), "health", divide(add(rt.fv(f, "health", live(AI)), 100), 2));
-				rt.setAt(live(data), "isDead", (isEqual(rt.fv(f, "stat", live(AI)), 2) ? 1 : 0));
-				rt.setAt(live(data), "ai_laws", rt.callName(f, rt.fv(f, "laws", live(AI)), "get_law_list", ["include_zeroth", 1], rt.Args.Named));
-			}
-		}
+		rt.setAt(data, "name", AI.name);
+		rt.setAt(data, "restoring", this.restoring);
+		rt.setAt(data, "laws", AI.laws.get_law_list({ include_zeroth: 1 }));
+		rt.setAt(data, "health", (AI.health + 100) / 2);
+		rt.setAt(data, "isDead", (AI.stat == 2 ? 1 : 0));
+		rt.setAt(data, "ai_laws", AI.laws.get_law_list({ include_zeroth: 1 }));
 	}
-	return live(data);
+	return data;
 });
 
-// /datum/computer_file/program/aidiag/proc/kill_program  (code/modules/modular_computers/file_system/programs/airestorer.dm:121)
+// airestorer.dm:121
 rt.def("/datum/computer_file/program/aidiag/proc/kill_program", function kill_program(f: Frame, forced: Value) {
-	rt.setSv(f, "restoring", 0);
-	return rt.callSuper(f, [live(forced)]);
+	this.restoring = 0;
+	return parent_proc(forced);
 });

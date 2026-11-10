@@ -1,7 +1,7 @@
-// From code/datums/map_config.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/datums/map_config.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(566, "/datum/map_config", "/datum", {
@@ -17,175 +17,150 @@ rt.type(566, "/datum/map_config", "/datum", {
 	voteweight: 1,
 });
 
-// /datum/map_config/proc/<init>  (code/datums/map_config.dm:14)
+// map_config.dm:14
 rt.def("/datum/map_config/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "transition_config", rt.alist(f, ["CentComm", 1, "Main Station", 2, "Empty Area 1", 2, "Empty Area 2", 2, "Mining Asteroid", 1, "Empty Area 3", 2, "Empty Area 4", 2, "Empty Area 5", 2, "Empty Area 6", 2, "Empty Area 7", 2, "Empty Area 8", 2]));
+	parent_proc();
+	this.transition_config = rt.alist(f, ["CentComm", 1, "Main Station", 2, "Empty Area 1", 2, "Empty Area 2", 2, "Mining Asteroid", 1, "Empty Area 3", 2, "Empty Area 4", 2, "Empty Area 5", 2, "Empty Area 6", 2, "Empty Area 7", 2, "Empty Area 8", 2]);
 	return f.dot;
 });
 
-// /datum/map_config/proc/New  (code/datums/map_config.dm:34)
+// map_config.dm:34
 rt.def("/datum/map_config/proc/New", function New(f: Frame, filename: Value, default_to_box: Value, delete_after: Value) {
-	f.vars = () => [filename];
-	if (live(filename) === null) {
-		filename = "data/next_map.json";
+	filename ??= "data/next_map.json";
+	if (default_to_box) {
+		return f.dot;
 	}
-	if (truthy(live(default_to_box))) {
-		return live(f.dot);
-	}
-	rt.callSrc(f, "LoadConfig", [live(filename)]);
-	if (!truthy(live(delete_after))) return f.dot;
-	rt.call(f, P("/proc/fdel"), null, [live(filename)]);
+	this.LoadConfig(filename);
+	if (!delete_after) return f.dot;
+	fdel(filename);
 	return f.dot;
 });
 
-// /datum/map_config/proc/LoadConfig  (code/datums/map_config.dm:39)
+// map_config.dm:39
 rt.def("/datum/map_config/proc/LoadConfig", function LoadConfig(f: Frame, filename: Value) {
 	let json: Value = null, jtcl: Value = null, I: Value = null;
-	let $e: any;
-	f.vars = () => [json, jtcl, I, $e];
-	if (!truthy(rt.call(f, P("/proc/fexists"), null, [live(filename)]))) {
-		rt.call(f, P("/proc/log_world"), null, [fmt("map_config not found: ＀", [live(filename)])]);
-		return live(f.dot);
+	if (!fexists(filename)) {
+		log_world(`map_config not found: ${filename}`);
+		return f.dot;
 	}
-	if (!truthy((json = rt.call(f, P("/proc/file"), null, [live(filename)])))) {
-		rt.call(f, P("/proc/log_world"), null, [fmt("Could not open map_config: ＀", [live(filename)])]);
-		return live(f.dot);
+	if (!(json = file(filename))) {
+		log_world(`Could not open map_config: ${filename}`);
+		return f.dot;
 	}
-	if (!truthy((json = rt.call(f, P("/proc/file2text"), null, [live(json)])))) {
-		rt.call(f, P("/proc/log_world"), null, [fmt("map_config is not text: ＀", [live(filename)])]);
-		return live(f.dot);
+	if (!(json = file2text(json))) {
+		log_world(`map_config is not text: ${filename}`);
+		return f.dot;
 	}
-	if (!truthy((json = rt.call(f, P("/proc/json_decode"), null, [live(json)])))) {
-		rt.call(f, P("/proc/log_world"), null, [fmt("map_config is not json: ＀", [live(filename)])]);
-		return live(f.dot);
+	if (!(json = json_decode(json))) {
+		log_world(`map_config is not json: ${filename}`);
+		return f.dot;
 	}
-	if (!truthy(rt.callSrc(f, "ValidateJSON", [live(json)]))) {
-		rt.call(f, P("/proc/log_world"), null, [fmt("map_config failed to validate for above reason: ＀", [live(filename)])]);
-		return live(f.dot);
+	if (!this.ValidateJSON(json)) {
+		log_world(`map_config failed to validate for above reason: ${filename}`);
+		return f.dot;
 	}
-	rt.setSv(f, "config_filename", live(filename));
-	rt.setSv(f, "map_name", rt.at(live(json), "map_name"));
-	rt.setSv(f, "map_path", rt.at(live(json), "map_path"));
-	rt.setSv(f, "map_file", rt.at(live(json), "map_file"));
-	rt.setSv(f, "minetype", rt.at(live(json), "minetype"));
-	if (!isEqual((jtcl = rt.at(live(json), "transition_config")), "default")) {
-		rt.callName(f, rt.sv(f, "transition_config"), "Cut", []);
-		I = null;
-		rt.forList(f, 0, live(jtcl));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			I = $e;
-			rt.setAt(rt.sv(f, "transition_config"), rt.callSrc(f, "TransitionStringToEnum", [live(I)]), rt.callSrc(f, "TransitionStringToEnum", [rt.index(live(jtcl), live(I))]));
+	this.config_filename = filename;
+	this.map_name = rt.at(json, "map_name");
+	this.map_path = rt.at(json, "map_path");
+	this.map_file = rt.at(json, "map_file");
+	this.minetype = rt.at(json, "minetype");
+	if ((jtcl = rt.at(json, "transition_config")) != "default") {
+		this.transition_config.Cut();
+		for (I of each(jtcl)) {
+			rt.setAt(this.transition_config, this.TransitionStringToEnum(I), this.TransitionStringToEnum(rt.index(jtcl, I)));
 		}
-		rt.endFor(f, 0);
 	}
-	rt.setSv(f, "defaulted", 0);
+	this.defaulted = 0;
 	return f.dot;
 });
 
-// /datum/map_config/proc/ValidateJSON  (code/datums/map_config.dm:82)
+// map_config.dm:82
 rt.def("/datum/map_config/proc/ValidateJSON", function ValidateJSON(f: Frame, json: Value) {
 	let path: Value = null, jtcl: Value = null, I: Value = null;
-	let $e: any;
-	f.vars = () => [path, jtcl, I, $e];
-	if (!truthy(rt.call(f, P("/proc/istext"), null, [rt.at(live(json), "map_name")]))) {
-		rt.call(f, P("/proc/log_world"), null, ["map_namemissing from json!"]);
-		return live(f.dot);
+	if (!istext(rt.at(json, "map_name"))) {
+		log_world("map_namemissing from json!");
+		return f.dot;
 	}
-	if (!truthy(rt.call(f, P("/proc/istext"), null, [rt.at(live(json), "map_path")]))) {
-		rt.call(f, P("/proc/log_world"), null, ["map_pathmissing from json!"]);
-		return live(f.dot);
+	if (!istext(rt.at(json, "map_path"))) {
+		log_world("map_pathmissing from json!");
+		return f.dot;
 	}
-	if (!truthy(rt.call(f, P("/proc/istext"), null, [rt.at(live(json), "map_file")]))) {
-		rt.call(f, P("/proc/log_world"), null, ["map_filemissing from json!"]);
-		return live(f.dot);
+	if (!istext(rt.at(json, "map_file"))) {
+		log_world("map_filemissing from json!");
+		return f.dot;
 	}
-	if (!truthy(rt.call(f, P("/proc/istext"), null, [rt.at(live(json), "minetype")]))) {
-		rt.call(f, P("/proc/log_world"), null, ["minetypemissing from json!"]);
-		return live(f.dot);
+	if (!istext(rt.at(json, "minetype"))) {
+		log_world("minetypemissing from json!");
+		return f.dot;
 	}
-	if (!truthy(rt.call(f, P("/proc/istext"), null, [rt.at(live(json), "transition_config")]))) {
-		rt.call(f, P("/proc/log_world"), null, ["transition_configmissing from json!"]);
-		return live(f.dot);
+	if (!istext(rt.at(json, "transition_config"))) {
+		log_world("transition_configmissing from json!");
+		return f.dot;
 	}
-	if (!truthy(rt.call(f, P("/proc/fexists"), null, [(path = rt.callSrc(f, "GetFullMapPath", [rt.at(live(json), "map_path"), rt.at(live(json), "map_file")]))]))) {
-		rt.call(f, P("/proc/log_world"), null, [fmt("Map file (＀) does not exist!", [live(path)])]);
-		return live(f.dot);
+	if (!fexists((path = this.GetFullMapPath(rt.at(json, "map_path"), rt.at(json, "map_file"))))) {
+		log_world(`Map file (${path}) does not exist!`);
+		return f.dot;
 	}
-	if (!isEqual(rt.at(live(json), "transition_config"), "default")) {
-		if (!truthy((rt.istype(rt.at(live(json), "transition_config"), T("/list")) ? 1 : 0))) {
-			rt.call(f, P("/proc/log_world"), null, ["transition_config is not a list!"]);
-			return live(f.dot);
+	if (rt.at(json, "transition_config") != "default") {
+		if (!rt.istype(rt.at(json, "transition_config"), T("/list"))) {
+			log_world("transition_config is not a list!");
+			return f.dot;
 		}
-		jtcl = rt.at(live(json), "transition_config");
-		I = null;
-		rt.forList(f, 0, live(jtcl));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			I = $e;
-			if (rt.callSrc(f, "TransitionStringToEnum", [live(I)]) === null) {
-				rt.call(f, P("/proc/log_world"), null, [fmt("Invalid transition_config option: ＀!", [live(I)])]);
+		jtcl = rt.at(json, "transition_config");
+		for (I of each(jtcl)) {
+			if (this.TransitionStringToEnum(I) === null) {
+				log_world(`Invalid transition_config option: ${I}!`);
 			}
-			if (rt.callSrc(f, "TransitionStringToEnum", [rt.index(live(jtcl), live(I))]) === null) {
-				rt.call(f, P("/proc/log_world"), null, [fmt("Invalid transition_config option: ＀!", [live(I)])]);
+			if (this.TransitionStringToEnum(rt.index(jtcl, I)) === null) {
+				log_world(`Invalid transition_config option: ${I}!`);
 			}
 		}
-		rt.endFor(f, 0);
 	}
 	return 1;
 });
 
-// /datum/map_config/proc/TransitionStringToEnum  (code/datums/map_config.dm:109)
+// map_config.dm:109
 rt.def("/datum/map_config/proc/TransitionStringToEnum", function TransitionStringToEnum(f: Frame, string: Value) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = live(string);
-	if ($0 === "CROSSLINKED") {
+	if (string === "CROSSLINKED") {
 		return 2;
-	} else if ($0 === "SELFLOOPING") {
-		return 1;
-	} else if ($0 === "UNAFFECTED") {
+	} else if (string === "SELFLOOPING") {
+		return SELFLOOPING;
+	} else if (string === "UNAFFECTED") {
 		return 0;
-	} else if ($0 === "MAIN_STATION") {
+	} else if (string === "MAIN_STATION") {
 		return "Main Station";
-	} else if ($0 === "CENTCOMM") {
+	} else if (string === "CENTCOMM") {
 		return "CentComm";
-	} else if ($0 === "MINING") {
+	} else if (string === "MINING") {
 		return "Mining Asteroid";
-	} else if ($0 === "EMPTY_AREA_1") {
+	} else if (string === "EMPTY_AREA_1") {
 		return "Empty Area 1";
-	} else if ($0 === "EMPTY_AREA_2") {
+	} else if (string === "EMPTY_AREA_2") {
 		return "Empty Area 2";
-	} else if ($0 === "EMPTY_AREA_3") {
+	} else if (string === "EMPTY_AREA_3") {
 		return "Empty Area 3";
-	} else if ($0 === "EMPTY_AREA_4") {
+	} else if (string === "EMPTY_AREA_4") {
 		return "Empty Area 4";
-	} else if ($0 === "EMPTY_AREA_5") {
+	} else if (string === "EMPTY_AREA_5") {
 		return "Empty Area 5";
-	} else if ($0 === "EMPTY_AREA_6") {
+	} else if (string === "EMPTY_AREA_6") {
 		return "Empty Area 6";
-	} else if ($0 === "EMPTY_AREA_7") {
+	} else if (string === "EMPTY_AREA_7") {
 		return "Empty Area 7";
-	} else if ($0 === "EMPTY_AREA_8") {
+	} else if (string === "EMPTY_AREA_8") {
 		return "Empty Area 8";
 	}
 	return f.dot;
 });
 
-// /datum/map_config/proc/GetFullMapPath  (code/datums/map_config.dm:140)
+// map_config.dm:140
 rt.def("/datum/map_config/proc/GetFullMapPath", function GetFullMapPath(f: Frame, mp: Value, mf: Value) {
-	f.vars = () => [mp, mf];
-	if (live(mp) === null) {
-		mp = rt.sv(f, "map_path");
-	}
-	if (live(mf) === null) {
-		mf = rt.sv(f, "map_file");
-	}
-	return fmt("_maps/＀/＀", [live(mp), live(mf)]);
+	mp ??= this.map_path;
+	mf ??= this.map_file;
+	return `_maps/${mp}/${mf}`;
 });
 
-// /datum/map_config/proc/MakeNextMap  (code/datums/map_config.dm:143)
+// map_config.dm:143
 rt.def("/datum/map_config/proc/MakeNextMap", function MakeNextMap(f: Frame) {
-	return ((isEqual(rt.sv(f, "config_filename"), "data/next_map.json") ? 1 : 0) || rt.call(f, P("/proc/fcopy"), null, [rt.sv(f, "config_filename"), "data/next_map.json"]));
+	return ((this.config_filename == "data/next_map.json" ? 1 : 0) || fcopy(this.config_filename, "data/next_map.json"));
 });

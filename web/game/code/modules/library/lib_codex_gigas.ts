@@ -1,7 +1,7 @@
-// From code/modules/library/lib_codex_gigas.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/library/lib_codex_gigas.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(7304, "/obj/item/weapon/book/codex_gigas", "/obj/item/weapon/book", {
@@ -19,166 +19,135 @@ rt.type(7304, "/obj/item/weapon/book/codex_gigas", "/obj/item/weapon/book", {
 	title: "the Codex Gigas",
 });
 
-// /obj/item/weapon/book/codex_gigas/proc/attack_self  (code/modules/library/lib_codex_gigas.dm:22)  may sleep
+// lib_codex_gigas.dm:22
 rt.def("/obj/item/weapon/book/codex_gigas/proc/attack_self", function* attack_self(f: Frame, user: Value) {
 	let U: Value = null;
-	f.vars = () => [user, U];
-	if (truthy((yield* g.call(f, P("/proc/is_blind"), null, [live(user)])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>As you are trying to read, you suddenly feel very stupid.</span>"]);
-		return live(f.dot);
+	if (is_blind(user)) {
+		to_chat(user, "<span class='warning'>As you are trying to read, you suddenly feel very stupid.</span>");
+		return f.dot;
 	}
-	if (!truthy((yield* g.callName(f, live(user), "is_literate", [])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>You skim through the book but can't comprehend any of it.</span>"]);
-		return live(f.dot);
+	if (!user.is_literate()) {
+		to_chat(user, "<span class='notice'>You skim through the book but can't comprehend any of it.</span>");
+		return f.dot;
 	}
-	if (truthy(rt.sv(f, "inUse"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>Someone else is reading it.</span>"]);
+	if (this.inUse) {
+		to_chat(user, "<span class='notice'>Someone else is reading it.</span>");
 	}
-	if (truthy((rt.istype(live(user), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		if (truthy((yield* g.callName(f, (U = live(user)), "check_acedia", [])))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>None of this matters, why are you reading this? You put ＀ down.</span>", [rt.sv(f, "title")])]);
-			return live(f.dot);
+	if (rt.istype(user, T("/mob/living/carbon/human"))) {
+		if ((U = user).check_acedia()) {
+			to_chat(user, `<span class='notice'>None of this matters, why are you reading this? You put ${this.title} down.</span>`);
+			return f.dot;
 		}
 	}
-	yield* g.callName(f, live(user), "visible_message", [fmt("＀ opens ＀ and begins reading intently.", [live(user), rt.sv(f, "title")])]);
-	yield* g.srcCall(f, "ask_name", live(user));
+	user.visible_message(`${user} opens ${this.title} and begins reading intently.`);
+	yield* this.ask_name(user);
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/book/codex_gigas/proc/perform_research  (code/modules/library/lib_codex_gigas.dm:40)  may sleep
+// lib_codex_gigas.dm:40
 rt.def("/obj/item/weapon/book/codex_gigas/proc/perform_research", function* perform_research(f: Frame, user: Value, devilName: Value) {
-	let speed: Value = null, correctness: Value = null, U: Value = null, usedName: Value = null, devil: Value = null;
-	f.vars = () => [user, devilName, speed, correctness, U, usedName, devil];
-	if (!truthy(live(devilName))) {
-		yield* g.callName(f, live(user), "visible_message", [fmt("＀ closes ＀ without looking anything up.", [live(user), rt.sv(f, "title")])]);
-		return live(f.dot);
+	let U: Value = null, usedName: Value = null, devil: Value = null;
+	if (!devilName) {
+		user.visible_message(`${user} closes ${this.title} without looking anything up.`);
+		return f.dot;
 	}
-	rt.setSv(f, "inUse", 1);
-	speed = 300;
-	correctness = 85;
-	if (truthy((rt.istype(live(user), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		if (truthy((rt.isIn(f, rt.gv(f, "job", (U = live(user))), rt.list("Curator")) ? 1 : 0))) {
+	this.inUse = 1;
+	let speed: Value = 300;
+	let correctness: Value = 85;
+	if (rt.istype(user, T("/mob/living/carbon/human"))) {
+		if (rt.isIn(f, (U = user).job, list("Curator"))) {
 			speed = 100;
 			correctness = 100;
 		}
-		(correctness = rt.modify(live(correctness), multiply((yield* g.callName(f, live(U), "getBrainLoss", [])), 0.5), subtract));
-		speed = rt.modify(live(speed), multiply((yield* g.callName(f, live(U), "getBrainLoss", [])), 3), add);
+		correctness -= U.getBrainLoss() * 0.5;
+		speed += U.getBrainLoss() * 3;
 	}
-	if (truthy((yield* g.call(f, P("/proc/do_after"), null, [live(user), live(speed), 0, live(user)])))) {
-		usedName = live(devilName);
-		if (!truthy(rt.op(f, "Prob", [], [live(correctness)]))) {
-			usedName = rt.modify(live(usedName), "x", add);
+	if (yield* do_after(user, speed, 0, user)) {
+		usedName = devilName;
+		if (!prob(correctness)) {
+			usedName += "x";
 		}
-		yield* g.srcCall(f, "display_devil", (devil = (yield* g.call(f, P("/proc/devilInfo"), null, [live(usedName)]))), live(user), live(usedName));
+		this.display_devil((devil = devilInfo(usedName)), user, usedName);
 	}
-	yield* g.call(f, P("/proc/sleep"), null, [10]);
-	yield* g.call(f, P("/proc/onclose"), null, [live(user), "book"]);
-	rt.setSv(f, "inUse", 0);
+	yield* sleep(10);
+	onclose(user, "book");
+	this.inUse = 0;
 	return f.dot;
 }, true, { argTypes: [{ type: 8, path: "/mob" }, {  }] });
 
-// /obj/item/weapon/book/codex_gigas/proc/display_devil  (code/modules/library/lib_codex_gigas.dm:64)
+// lib_codex_gigas.dm:64
 rt.def("/obj/item/weapon/book/codex_gigas/proc/display_devil", function display_devil(f: Frame, devil: Value, reader: Value, devilName: Value) {
-	let $0: any, $1: any, $2: any, $3: any, $4: any, $5: any, $6: any;
-	f.vars = () => [$0, $1, $2, $3, $4, $5, $6];
-	$0 = live(reader);
-	$1 = live(devilName);
-	$2 = rt.index(rt.index(rt.gl("lawlorify"), 1), rt.fv(f, "ban", live(devil)));
-	$3 = rt.index(rt.index(rt.gl("lawlorify"), 1), rt.fv(f, "bane", live(devil)));
-	$4 = rt.index(rt.index(rt.gl("lawlorify"), 1), rt.fv(f, "obligation", live(devil)));
-	$5 = rt.index(rt.index(rt.gl("lawlorify"), 1), rt.fv(f, "banish", live(devil)));
-	if (truthy(rt.fv(f, "ascendable", live(devil)))) {
+	let $6: any;
+	let $0: any = reader;
+	let $1: any = devilName;
+	let $2: any = rt.index(rt.index(GLOB.lawlorify, LORE), devil.ban);
+	let $3: any = rt.index(rt.index(GLOB.lawlorify, LORE), devil.bane);
+	let $4: any = rt.index(rt.index(GLOB.lawlorify, LORE), devil.obligation);
+	let $5: any = rt.index(rt.index(GLOB.lawlorify, LORE), devil.banish);
+	if (devil.ascendable) {
 		$6 = "This devil may ascend given enough souls.";
 	} else {
 		$6 = "";
 	}
-	$1 = fmt("Information on ＀<br><br><br>＀<br>＀<br>＀<br>＀<br>＀", [$1, $2, $3, $4, $5, $6]);
-	if (rt.sv(f, "window_size") !== null) {
-		$2 = fmt(";size=＀", [rt.sv(f, "window_size")]);
-	} else {
-		$2 = "";
-	}
-	rt.op(f, "Browse", [], [$0, $1, fmt("window=book＀", [$2])], false);
+	$1 = `Information on ${$1}<br><br><br>${$2}<br>${$3}<br>${$4}<br>${$5}<br>${$6}`;
+	rt.op(f, "Browse", [], [$0, $1, `window=book${this.window_size !== null ? `;size=${this.window_size}` : ""}`], false);
 	return f.dot;
 });
 
-// /obj/item/weapon/book/codex_gigas/proc/ask_name  (code/modules/library/lib_codex_gigas.dm:67)  may sleep
+// lib_codex_gigas.dm:67
 rt.def("/obj/item/weapon/book/codex_gigas/proc/ask_name", function* ask_name(f: Frame, reader: Value) {
-	f.vars = () => [reader];
-	yield* g.srcCall(f, "ui_interact", live(reader));
+	yield* this.ui_interact(reader);
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/book/codex_gigas/proc/ui_act  (code/modules/library/lib_codex_gigas.dm:70)  may sleep
-rt.def("/obj/item/weapon/book/codex_gigas/proc/ui_act", function* ui_act(f: Frame) {
-	let oldSection: Value = null;
-	f.vars = () => [oldSection];
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		return live(f.dot);
+// lib_codex_gigas.dm:70
+rt.def("/obj/item/weapon/book/codex_gigas/proc/ui_act", function* ui_act(f: Frame, action: Value, params: Value) {
+	if (yield* parent_proc()) {
+		return f.dot;
 	}
-	if (!truthy(live(f.args[0]))) {
+	if (!action) {
 		return 0;
 	}
-	if (isEqual(live(f.args[0]), "search")) {
-		yield* g.callName(f, rt.gl("SStgui"), "close_uis", [live(f.src)]);
-		yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/item/weapon/book/codex_gigas/proc/perform_research"), live(f.usr), rt.sv(f, "currentName")])), 0]);
-		rt.setSv(f, "currentName", "");
-		rt.setSv(f, "currentSection", 1);
+	if (action == "search") {
+		yield* GLOB.SStgui.close_uis(this);
+		yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/item/weapon/book/codex_gigas/proc/perform_research"), f.usr, this.currentName)), 0);
+		this.currentName = "";
+		this.currentSection = PRE_TITLE;
 		return 0;
 	} else {
-		rt.modSrcVar(f, "currentName", live(f.args[0]), add);
+		this.currentName += action;
 	}
-	oldSection = rt.sv(f, "currentSection");
-	if (truthy((yield* g.callName(f, rt.gl("devil_pre_title"), "Find", [live(f.args[0])])))) {
-		rt.setSv(f, "currentSection", 2);
-	} else {
-		if (truthy((yield* g.callName(f, rt.gl("devil_title"), "Find", [live(f.args[0])])))) {
-			rt.setSv(f, "currentSection", 3);
+	let oldSection: Value = this.currentSection;
+	if (GLOB.devil_pre_title.Find(action)) {
+		this.currentSection = TITLE;
+	} else if (GLOB.devil_title.Find(action)) {
+		this.currentSection = SYLLABLE;
+	} else if (GLOB.devil_syllable.Find(action)) {
+		if (this.currentSection >= SYLLABLE) {
+			this.currentSection = MULTIPLE_SYLLABLE;
 		} else {
-			if (truthy((yield* g.callName(f, rt.gl("devil_syllable"), "Find", [live(f.args[0])])))) {
-				if (rt.ge(rt.sv(f, "currentSection"), 3)) {
-					rt.setSv(f, "currentSection", 4);
-				} else {
-					rt.setSv(f, "currentSection", 3);
-				}
-			} else {
-				if (truthy((yield* g.callName(f, rt.gl("devil_suffix"), "Find", [live(f.args[0])])))) {
-					rt.setSv(f, "currentSection", 5);
-				}
-			}
+			this.currentSection = SYLLABLE;
 		}
+	} else if (GLOB.devil_suffix.Find(action)) {
+		this.currentSection = SUFFIX;
 	}
-	return (!isEqual(rt.sv(f, "currentSection"), live(oldSection)) ? 1 : 0);
-}, true, { args: ["action", "params"] });
+	return (this.currentSection != oldSection ? PRE_TITLE : 0);
+}, true);
 
-// /obj/item/weapon/book/codex_gigas/proc/ui_interact  (code/modules/library/lib_codex_gigas.dm:98)  may sleep
+// lib_codex_gigas.dm:98
 rt.def("/obj/item/weapon/book/codex_gigas/proc/ui_interact", function* ui_interact(f: Frame, user: Value, ui_key: Value, ui: Value, force_open: Value, master_ui: Value, state: Value) {
-	f.vars = () => [user, ui_key, ui, force_open, master_ui, state];
-	if (live(ui_key) === null) {
-		ui_key = "main";
-	}
-	if (live(ui) === null) {
-		ui = null;
-	}
-	if (live(force_open) === null) {
-		force_open = 0;
-	}
-	if (live(master_ui) === null) {
-		master_ui = null;
-	}
-	if (live(state) === null) {
-		state = rt.gl("default_state");
-	}
-	if (truthy((ui = (yield* g.callName(f, rt.gl("SStgui"), "try_update_ui", [live(user), live(f.src), live(ui_key), live(ui), live(force_open)]))))) return f.dot;
-	yield* g.callName(f, (ui = (yield* g.new_(f, T("/datum/tgui"), [live(user), live(f.src), live(ui_key), "codex_gigas", rt.sv(f, "name"), 450, 450, live(master_ui), live(state)]))), "open", []);
+	ui_key ??= "main";
+	force_open ??= 0;
+	state ??= GLOB.default_state;
+	if (ui = (yield* GLOB.SStgui.try_update_ui(user, this, ui_key, ui, force_open))) return f.dot;
+	yield* (ui = (yield* new_(T("/datum/tgui"), user, this, ui_key, "codex_gigas", this.name, 450, 450, master_ui, state))).open();
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/book/codex_gigas/proc/ui_data  (code/modules/library/lib_codex_gigas.dm:104)
+// lib_codex_gigas.dm:104
 rt.def("/obj/item/weapon/book/codex_gigas/proc/ui_data", function ui_data(f: Frame, user: Value) {
 	let data: Value = null;
-	f.vars = () => [data];
-	rt.setAt((data = rt.list()), "name", rt.sv(f, "currentName"));
-	rt.setAt(live(data), "currentSection", rt.sv(f, "currentSection"));
-	return live(data);
+	rt.setAt((data = list()), "name", this.currentName);
+	rt.setAt(data, "currentSection", this.currentSection);
+	return data;
 });

@@ -1,152 +1,152 @@
-// From code/_globalvars/configuration.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/_globalvars/configuration.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
 
 
-// /datum/controller/global_vars/proc/InitGlobalhost  (code/_globalvars/configuration.dm:5)
+
+// configuration.dm:5
 rt.def("/datum/controller/global_vars/proc/InitGlobalhost", function InitGlobalhost(f: Frame) {
-	rt.setGl("host", null);
-	rt.modSrcVar(f, "gvars_datum_init_order", "host", add);
+	GLOB.host = null;
+	this.gvars_datum_init_order += "host";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobaljoin_motd  (code/_globalvars/configuration.dm:6)
+// configuration.dm:6
 rt.def("/datum/controller/global_vars/proc/InitGlobaljoin_motd", function InitGlobaljoin_motd(f: Frame) {
-	rt.setGl("join_motd", null);
-	rt.modSrcVar(f, "gvars_datum_init_order", "join_motd", add);
+	GLOB.join_motd = null;
+	this.gvars_datum_init_order += "join_motd";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalstation_name  (code/_globalvars/configuration.dm:7)
+// configuration.dm:7
 rt.def("/datum/controller/global_vars/proc/InitGlobalstation_name", function InitGlobalstation_name(f: Frame) {
-	rt.setGl("station_name", null);
-	rt.modSrcVar(f, "gvars_datum_init_order", "station_name", add);
+	GLOB.station_name = null;
+	this.gvars_datum_init_order += "station_name";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalgame_version  (code/_globalvars/configuration.dm:8)
+// configuration.dm:8
 rt.def("/datum/controller/global_vars/proc/InitGlobalgame_version", function InitGlobalgame_version(f: Frame) {
-	rt.setGl("game_version", "/tg/ Station 13");
-	rt.modSrcVar(f, "gvars_datum_init_order", "game_version", add);
+	GLOB.game_version = "/tg/ Station 13";
+	this.gvars_datum_init_order += "game_version";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalchangelog_hash  (code/_globalvars/configuration.dm:9)
+// configuration.dm:9
 rt.def("/datum/controller/global_vars/proc/InitGlobalchangelog_hash", function InitGlobalchangelog_hash(f: Frame) {
-	rt.setGl("changelog_hash", "");
-	rt.modSrcVar(f, "gvars_datum_init_order", "changelog_hash", add);
+	GLOB.changelog_hash = "";
+	this.gvars_datum_init_order += "changelog_hash";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalooc_allowed  (code/_globalvars/configuration.dm:11)
+// configuration.dm:11
 rt.def("/datum/controller/global_vars/proc/InitGlobalooc_allowed", function InitGlobalooc_allowed(f: Frame) {
-	rt.setGl("ooc_allowed", 1);
-	rt.modSrcVar(f, "gvars_datum_init_order", "ooc_allowed", add);
+	GLOB.ooc_allowed = 1;
+	this.gvars_datum_init_order += "ooc_allowed";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobaldooc_allowed  (code/_globalvars/configuration.dm:12)
+// configuration.dm:12
 rt.def("/datum/controller/global_vars/proc/InitGlobaldooc_allowed", function InitGlobaldooc_allowed(f: Frame) {
-	rt.setGl("dooc_allowed", 1);
-	rt.modSrcVar(f, "gvars_datum_init_order", "dooc_allowed", add);
+	GLOB.dooc_allowed = 1;
+	this.gvars_datum_init_order += "dooc_allowed";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalabandon_allowed  (code/_globalvars/configuration.dm:13)
+// configuration.dm:13
 rt.def("/datum/controller/global_vars/proc/InitGlobalabandon_allowed", function InitGlobalabandon_allowed(f: Frame) {
-	rt.setGl("abandon_allowed", 1);
-	rt.modSrcVar(f, "gvars_datum_init_order", "abandon_allowed", add);
+	GLOB.abandon_allowed = 1;
+	this.gvars_datum_init_order += "abandon_allowed";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalenter_allowed  (code/_globalvars/configuration.dm:14)
+// configuration.dm:14
 rt.def("/datum/controller/global_vars/proc/InitGlobalenter_allowed", function InitGlobalenter_allowed(f: Frame) {
-	rt.setGl("enter_allowed", 1);
-	rt.modSrcVar(f, "gvars_datum_init_order", "enter_allowed", add);
+	GLOB.enter_allowed = 1;
+	this.gvars_datum_init_order += "enter_allowed";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalguests_allowed  (code/_globalvars/configuration.dm:15)
+// configuration.dm:15
 rt.def("/datum/controller/global_vars/proc/InitGlobalguests_allowed", function InitGlobalguests_allowed(f: Frame) {
-	rt.setGl("guests_allowed", 1);
-	rt.modSrcVar(f, "gvars_datum_init_order", "guests_allowed", add);
+	GLOB.guests_allowed = 1;
+	this.gvars_datum_init_order += "guests_allowed";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalshuttle_frozen  (code/_globalvars/configuration.dm:16)
+// configuration.dm:16
 rt.def("/datum/controller/global_vars/proc/InitGlobalshuttle_frozen", function InitGlobalshuttle_frozen(f: Frame) {
-	rt.setGl("shuttle_frozen", 0);
-	rt.modSrcVar(f, "gvars_datum_init_order", "shuttle_frozen", add);
+	GLOB.shuttle_frozen = 0;
+	this.gvars_datum_init_order += "shuttle_frozen";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalshuttle_left  (code/_globalvars/configuration.dm:17)
+// configuration.dm:17
 rt.def("/datum/controller/global_vars/proc/InitGlobalshuttle_left", function InitGlobalshuttle_left(f: Frame) {
-	rt.setGl("shuttle_left", 0);
-	rt.modSrcVar(f, "gvars_datum_init_order", "shuttle_left", add);
+	GLOB.shuttle_left = 0;
+	this.gvars_datum_init_order += "shuttle_left";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobaltinted_weldhelh  (code/_globalvars/configuration.dm:18)
+// configuration.dm:18
 rt.def("/datum/controller/global_vars/proc/InitGlobaltinted_weldhelh", function InitGlobaltinted_weldhelh(f: Frame) {
-	rt.setGl("tinted_weldhelh", 1);
-	rt.modSrcVar(f, "gvars_datum_init_order", "tinted_weldhelh", add);
+	GLOB.tinted_weldhelh = 1;
+	this.gvars_datum_init_order += "tinted_weldhelh";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalDebug  (code/_globalvars/configuration.dm:23)
+// configuration.dm:23
 rt.def("/datum/controller/global_vars/proc/InitGlobalDebug", function InitGlobalDebug(f: Frame) {
-	rt.setGl("Debug", 0);
-	rt.modSrcVar(f, "gvars_datum_init_order", "Debug", add);
+	GLOB.Debug = 0;
+	this.gvars_datum_init_order += "Debug";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalDebug2  (code/_globalvars/configuration.dm:24)
+// configuration.dm:24
 rt.def("/datum/controller/global_vars/proc/InitGlobalDebug2", function InitGlobalDebug2(f: Frame) {
-	rt.setGl("Debug2", 0);
-	rt.modSrcVar(f, "gvars_datum_init_order", "Debug2", add);
+	GLOB.Debug2 = 0;
+	this.gvars_datum_init_order += "Debug2";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalMAX_EX_DEVESTATION_RANGE  (code/_globalvars/configuration.dm:27)
+// configuration.dm:27
 rt.def("/datum/controller/global_vars/proc/InitGlobalMAX_EX_DEVESTATION_RANGE", function InitGlobalMAX_EX_DEVESTATION_RANGE(f: Frame) {
-	rt.setGl("MAX_EX_DEVESTATION_RANGE", 3);
-	rt.modSrcVar(f, "gvars_datum_init_order", "MAX_EX_DEVESTATION_RANGE", add);
+	GLOB.MAX_EX_DEVESTATION_RANGE = 3;
+	this.gvars_datum_init_order += "MAX_EX_DEVESTATION_RANGE";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalMAX_EX_HEAVY_RANGE  (code/_globalvars/configuration.dm:28)
+// configuration.dm:28
 rt.def("/datum/controller/global_vars/proc/InitGlobalMAX_EX_HEAVY_RANGE", function InitGlobalMAX_EX_HEAVY_RANGE(f: Frame) {
-	rt.setGl("MAX_EX_HEAVY_RANGE", 7);
-	rt.modSrcVar(f, "gvars_datum_init_order", "MAX_EX_HEAVY_RANGE", add);
+	GLOB.MAX_EX_HEAVY_RANGE = 7;
+	this.gvars_datum_init_order += "MAX_EX_HEAVY_RANGE";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalMAX_EX_LIGHT_RANGE  (code/_globalvars/configuration.dm:29)
+// configuration.dm:29
 rt.def("/datum/controller/global_vars/proc/InitGlobalMAX_EX_LIGHT_RANGE", function InitGlobalMAX_EX_LIGHT_RANGE(f: Frame) {
-	rt.setGl("MAX_EX_LIGHT_RANGE", 14);
-	rt.modSrcVar(f, "gvars_datum_init_order", "MAX_EX_LIGHT_RANGE", add);
+	GLOB.MAX_EX_LIGHT_RANGE = 14;
+	this.gvars_datum_init_order += "MAX_EX_LIGHT_RANGE";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalMAX_EX_FLASH_RANGE  (code/_globalvars/configuration.dm:30)
+// configuration.dm:30
 rt.def("/datum/controller/global_vars/proc/InitGlobalMAX_EX_FLASH_RANGE", function InitGlobalMAX_EX_FLASH_RANGE(f: Frame) {
-	rt.setGl("MAX_EX_FLASH_RANGE", 14);
-	rt.modSrcVar(f, "gvars_datum_init_order", "MAX_EX_FLASH_RANGE", add);
+	GLOB.MAX_EX_FLASH_RANGE = 14;
+	this.gvars_datum_init_order += "MAX_EX_FLASH_RANGE";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalMAX_EX_FLAME_RANGE  (code/_globalvars/configuration.dm:31)
+// configuration.dm:31
 rt.def("/datum/controller/global_vars/proc/InitGlobalMAX_EX_FLAME_RANGE", function InitGlobalMAX_EX_FLAME_RANGE(f: Frame) {
-	rt.setGl("MAX_EX_FLAME_RANGE", 14);
-	rt.modSrcVar(f, "gvars_datum_init_order", "MAX_EX_FLAME_RANGE", add);
+	GLOB.MAX_EX_FLAME_RANGE = 14;
+	this.gvars_datum_init_order += "MAX_EX_FLAME_RANGE";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalDYN_EX_SCALE  (code/_globalvars/configuration.dm:32)
+// configuration.dm:32
 rt.def("/datum/controller/global_vars/proc/InitGlobalDYN_EX_SCALE", function InitGlobalDYN_EX_SCALE(f: Frame) {
-	rt.setGl("DYN_EX_SCALE", 0.5);
-	rt.modSrcVar(f, "gvars_datum_init_order", "DYN_EX_SCALE", add);
+	GLOB.DYN_EX_SCALE = 0.5;
+	this.gvars_datum_init_order += "DYN_EX_SCALE";
 	return f.dot;
 });

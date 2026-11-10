@@ -1,7 +1,7 @@
-// From code/game/machinery/camera/camera_assembly.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/machinery/camera/camera_assembly.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(9544, "/obj/item/wallframe/camera", "/obj/item/wallframe", {
@@ -13,12 +13,10 @@ rt.type(9544, "/obj/item/wallframe/camera", "/obj/item/wallframe", {
 	result_path: rt.typePath("/obj/structure/camera_assembly"),
 });
 
-// /obj/item/wallframe/camera/proc/<init>  (code/game/machinery/camera/camera_assembly.dm:6)
+// camera_assembly.dm:6
 rt.def("/obj/item/wallframe/camera/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 400, "$glass", 250]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 400, "$glass", 250]);
 	return f.dot;
 });
 
@@ -33,154 +31,133 @@ rt.type(12553, "/obj/structure/camera_assembly", "/obj/structure", {
 	max_integrity: 150,
 }, { global: { possible_upgrades: 798 } });
 
-// /obj/structure/camera_assembly/proc/Initialize  (code/game/machinery/camera/camera_assembly.dm:30)
-rt.def("/obj/structure/camera_assembly/proc/Initialize", function Initialize(f: Frame) {
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	if (truthy(live(f.args[2]))) {
-		rt.callSrc(f, "setDir", [live(f.args[1])]);
+// camera_assembly.dm:30
+rt.def("/obj/structure/camera_assembly/proc/Initialize", function Initialize(f: Frame, mapload: Value, ndir: Value, building: Value) {
+	f.dot = parent_proc();
+	if (building) {
+		this.setDir(ndir);
 	}
-	rt.setSv(f, "upgrades", rt.list());
+	this.upgrades = list();
 	return f.dot;
-}, false, { args: ["mapload", "ndir", "building"] });
+}, false);
 
-// /obj/structure/camera_assembly/proc/Destroy  (code/game/machinery/camera/camera_assembly.dm:36)  may sleep
+// camera_assembly.dm:36
 rt.def("/obj/structure/camera_assembly/proc/Destroy", function* Destroy(f: Frame) {
 	let I: Value = null;
-	let $e: any;
-	f.vars = () => [I, $e];
-	if (truthy(rt.sv(f, "upgrades"))) {
-		I = null;
-		rt.forList(f, 0, rt.sv(f, "upgrades"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			I = $e;
-			yield* g.call(f, P("/proc/qdel"), null, [live(I)]);
+	if (this.upgrades) {
+		for (I of each(this.upgrades)) {
+			yield* qdel(I);
 		}
-		rt.endFor(f, 0);
-		yield* g.callName(f, rt.sv(f, "upgrades"), "Cut", []);
+		this.upgrades.Cut();
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);
 
-// /obj/structure/camera_assembly/proc/attackby  (code/game/machinery/camera/camera_assembly.dm:40)  may sleep
-rt.def("/obj/structure/camera_assembly/proc/attackby", function* attackby(f: Frame) {
+// camera_assembly.dm:40
+rt.def("/obj/structure/camera_assembly/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
 	let C: Value = null, input: Value = null, tempnetwork: Value = null, C_2: Value = null, A: Value = null, U: Value = null;
-	let $0: any;
-	f.vars = () => [C, input, tempnetwork, C_2, A, U, $0];
-	$0 = rt.sv(f, "state");
-	if ($0 === 1) {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/weldingtool")) ? 1 : 0))) {
-			if (truthy((yield* g.srcCall(f, "weld", live(f.args[0]), live(f.args[1]))))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You weld the assembly securely into place.</span>"]);
-				rt.setSv(f, "anchored", 1);
-				rt.setSv(f, "state", 2);
+	if (this.state === 1) {
+		if (rt.istype(W, T("/obj/item/weapon/weldingtool"))) {
+			if (yield* this.weld(W, user)) {
+				to_chat(user, "<span class='notice'>You weld the assembly securely into place.</span>");
+				this.anchored = 1;
+				this.state = 2;
 			}
-			return live(f.dot);
-		} else {
-			if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/wrench")) ? 1 : 0))) {
-				yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.fv(f, "usesound", live(f.args[0])), 50, 1]);
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You unattach the assembly from its place.</span>"]);
-				yield* g.new_(f, T("/obj/item/wallframe/camera"), [rt.getStep(f, live(f.src), 0)]);
-				yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-				return live(f.dot);
-			}
+			return f.dot;
+		} else if (rt.istype(W, T("/obj/item/weapon/wrench"))) {
+			playsound(this.loc, W.usesound, 50, 1);
+			to_chat(user, "<span class='notice'>You unattach the assembly from its place.</span>");
+			yield* new_(T("/obj/item/wallframe/camera"), rt.getStep(f, this, 0));
+			yield* qdel(this);
+			return f.dot;
 		}
-	} else if ($0 === 2) {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/stack/cable_coil")) ? 1 : 0))) {
-			if (truthy((yield* g.callName(f, (C = live(f.args[0])), "use", [2])))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You add wires to the assembly.</span>"]);
-				rt.setSv(f, "state", 3);
+	} else if (this.state === 2) {
+		if (rt.istype(W, T("/obj/item/stack/cable_coil"))) {
+			if (yield* (C = W).use(2)) {
+				to_chat(user, "<span class='notice'>You add wires to the assembly.</span>");
+				this.state = 3;
 			} else {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You need two lengths of cable to wire a camera!</span>"]);
-				return live(f.dot);
+				to_chat(user, "<span class='warning'>You need two lengths of cable to wire a camera!</span>");
+				return f.dot;
 			}
-			return live(f.dot);
-		} else {
-			if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/weldingtool")) ? 1 : 0))) {
-				if (truthy((yield* g.srcCall(f, "weld", live(f.args[0]), live(f.args[1]))))) {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You unweld the assembly from its place.</span>"]);
-					rt.setSv(f, "state", 1);
-					rt.setSv(f, "anchored", 1);
-				}
-				return live(f.dot);
+			return f.dot;
+		} else if (rt.istype(W, T("/obj/item/weapon/weldingtool"))) {
+			if (yield* this.weld(W, user)) {
+				to_chat(user, "<span class='notice'>You unweld the assembly from its place.</span>");
+				this.state = 1;
+				this.anchored = 1;
 			}
+			return f.dot;
 		}
-	} else if ($0 === 3) {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/screwdriver")) ? 1 : 0))) {
-			yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.fv(f, "usesound", live(f.args[0])), 50, 1]);
-			if (!truthy((input = (yield* g.call(f, P("/proc/stripped_input"), null, [live(f.args[1]), "Which networks would you like to connect this camera to? Seperate networks with a comma. No Spaces!\nFor example: SS13,Security,Secret ", "Set Network", "SS13"]))))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>No input found, please hang up and try your call again!</span>"]);
-				return live(f.dot);
+	} else if (this.state === 3) {
+		if (rt.istype(W, T("/obj/item/weapon/screwdriver"))) {
+			playsound(this.loc, W.usesound, 50, 1);
+			if (!(input = (yield* stripped_input(user, "Which networks would you like to connect this camera to? Seperate networks with a comma. No Spaces!\nFor example: SS13,Security,Secret ", "Set Network", "SS13")))) {
+				to_chat(user, "<span class='warning'>No input found, please hang up and try your call again!</span>");
+				return f.dot;
 			}
-			if (rt.lt(rt.getLen(f, (tempnetwork = (yield* g.call(f, P("/proc/splittext"), null, [live(input), ","])))), 1)) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>No network found, please hang up and try your call again!</span>"]);
-				return live(f.dot);
+			if (rt.len(f, (tempnetwork = splittext(input, ","))) < 1) {
+				to_chat(user, "<span class='warning'>No network found, please hang up and try your call again!</span>");
+				return f.dot;
 			}
-			rt.setSv(f, "state", 4);
-			C_2 = (yield* g.new_(f, T("/obj/machinery/camera"), [rt.fv(f, "loc", live(f.src))]));
-			rt.setFv(f, "loc", live(f.src), live(C_2));
-			rt.setFv(f, "assembly", live(C_2), live(f.src));
-			yield* g.callName(f, live(C_2), "setDir", [rt.fv(f, "dir", live(f.src))]);
-			rt.setFv(f, "network", live(C_2), live(tempnetwork));
-			A = (yield* g.call(f, P("/proc/get_area"), null, [live(f.src)]));
-			rt.setFv(f, "c_tag", live(C_2), fmt("＀ (＀)", [rt.fv(f, "name", live(A)), (yield* g.call(f, P("/proc/rand"), null, [1, 999]))]));
-		} else {
-			if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/wirecutters")) ? 1 : 0))) {
-				yield* g.new_(f, T("/obj/item/stack/cable_coil"), [rt.getStep(f, live(f.src), 0), 2]);
-				yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.fv(f, "usesound", live(f.args[0])), 50, 1]);
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You cut the wires from the circuits.</span>"]);
-				rt.setSv(f, "state", 2);
-				return live(f.dot);
-			}
+			this.state = 4;
+			C_2 = (yield* new_(T("/obj/machinery/camera"), this.loc));
+			this.loc = C_2;
+			C_2.assembly = this;
+			yield* C_2.setDir(this.dir);
+			C_2.network = tempnetwork;
+			A = get_area(this);
+			C_2.c_tag = `${A.name} (${rand(1, 999)})`;
+		} else if (rt.istype(W, T("/obj/item/weapon/wirecutters"))) {
+			yield* new_(T("/obj/item/stack/cable_coil"), rt.getStep(f, this, 0), 2);
+			playsound(this.loc, W.usesound, 50, 1);
+			to_chat(user, "<span class='notice'>You cut the wires from the circuits.</span>");
+			this.state = 2;
+			return f.dot;
 		}
 	}
-	if ((truthy((yield* g.call(f, P("/proc/is_type_in_typecache"), null, [live(f.args[0]), rt.gl("possible_upgrades")]))) && !truthy((yield* g.call(f, P("/proc/is_type_in_list"), null, [live(f.args[0]), rt.sv(f, "upgrades")]))))) {
-		if (!truthy((yield* g.callName(f, live(f.args[1]), "drop_item", [live(f.args[0])])))) {
-			return live(f.dot);
+	if (is_type_in_typecache(W, GLOB.possible_upgrades) && !is_type_in_list(W, this.upgrades)) {
+		if (!(yield* user.drop_item(W))) {
+			return f.dot;
 		}
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You attach ％！ into the assembly inner circuits.</span>", [live(f.args[0])])]);
-		rt.modSrcVar(f, "upgrades", live(f.args[0]), add);
-		yield* g.callName(f, live(f.args[0]), "forceMove", [live(f.src)]);
-		return live(f.dot);
-	} else {
-		if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/crowbar")) ? 1 : 0)) && truthy(rt.len(f, rt.sv(f, "upgrades"))))) {
-			if (truthy((U = rt.locateIn(f, T("/obj"), rt.sv(f, "upgrades"))))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You unattach an upgrade from the assembly.</span>"]);
-				yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.fv(f, "usesound", live(f.args[0])), 50, 1]);
-				rt.setFv(f, "loc", live(U), rt.getStep(f, live(f.src), 0));
-				(rt.modSrcVar(f, "upgrades", live(U), subtract));
-			}
-			return live(f.dot);
+		to_chat(user, fmt("<span class='notice'>You attach ％！ into the assembly inner circuits.</span>", [W]));
+		this.upgrades += W;
+		yield* W.forceMove(this);
+		return f.dot;
+	} else if (rt.istype(W, T("/obj/item/weapon/crowbar")) && rt.len(f, this.upgrades)) {
+		if (U = rt.locateIn(f, T("/obj"), this.upgrades)) {
+			to_chat(user, "<span class='notice'>You unattach an upgrade from the assembly.</span>");
+			playsound(this.loc, W.usesound, 50, 1);
+			U.loc = rt.getStep(f, this, 0);
+			this.upgrades -= U;
 		}
+		return f.dot;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["W", "user", "params"] });
+	return (yield* parent_proc());
+}, true);
 
-// /obj/structure/camera_assembly/proc/weld  (code/game/machinery/camera/camera_assembly.dm:133)  may sleep
+// camera_assembly.dm:133
 rt.def("/obj/structure/camera_assembly/proc/weld", function* weld(f: Frame, WT: Value, user: Value) {
-	f.vars = () => [WT, user];
-	if (!truthy((yield* g.callName(f, live(WT), "remove_fuel", [0, live(user)])))) {
+	if (!(yield* WT.remove_fuel(0, user))) {
 		return 0;
 	}
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You start to weld ％！...</span>", [live(f.src)])]);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.fv(f, "usesound", live(WT)), 50, 1]);
-	if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(user), null, multiply(20, rt.fv(f, "toolspeed", live(WT))), "target", live(f.src)], rt.Args.Named)))) {
-		if (truthy((yield* g.callName(f, live(WT), "isOn", [])))) {
-			yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/items/welder2.ogg"), 50, 1]);
+	to_chat(user, fmt("<span class='notice'>You start to weld ％！...</span>", [this]));
+	playsound(this.loc, WT.usesound, 50, 1);
+	if (yield* do_after(user, 20 * WT.toolspeed, { target: this })) {
+		if (WT.isOn()) {
+			playsound(this.loc, rt.rsc("sound/items/welder2.ogg"), 50, 1);
 			return 1;
 		}
 	}
 	return 0;
 }, true);
 
-// /obj/structure/camera_assembly/proc/deconstruct  (code/game/machinery/camera/camera_assembly.dm:144)  may sleep
+// camera_assembly.dm:144
 rt.def("/obj/structure/camera_assembly/proc/deconstruct", function* deconstruct(f: Frame, disassembled: Value) {
-	f.vars = () => [disassembled];
-	if (live(disassembled) === null) {
-		disassembled = 1;
+	disassembled ??= 1;
+	if (!rt.bitAnd(this.flags, NODECONSTRUCT)) {
+		yield* new_(T("/obj/item/stack/sheet/metal"), this.loc);
 	}
-	if (!truthy(rt.bitAnd(rt.sv(f, "flags"), 128))) {
-		yield* g.new_(f, T("/obj/item/stack/sheet/metal"), [rt.sv(f, "loc")]);
-	}
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* qdel(this);
 	return f.dot;
 }, true);

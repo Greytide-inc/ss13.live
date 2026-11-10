@@ -1,87 +1,85 @@
-// From code/__HELPERS/cmp.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/__HELPERS/cmp.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
 
-
-// /proc/cmp_numeric_asc  (code/__HELPERS/cmp.dm:5)
+// cmp.dm:5
 rt.def("/proc/cmp_numeric_asc", function cmp_numeric_asc(f: Frame, a: Value, b: Value) {
-	return subtract(live(a), live(b));
+	return a - b;
 });
 
-// /proc/cmp_text_asc  (code/__HELPERS/cmp.dm:8)
+// cmp.dm:8
 rt.def("/proc/cmp_text_asc", function cmp_text_asc(f: Frame, a: Value, b: Value) {
-	return rt.call(f, P("/proc/sorttext"), null, [live(b), live(a)]);
+	return sorttext(b, a);
 });
 
-// /proc/cmp_text_dsc  (code/__HELPERS/cmp.dm:11)
+// cmp.dm:11
 rt.def("/proc/cmp_text_dsc", function cmp_text_dsc(f: Frame, a: Value, b: Value) {
-	return rt.call(f, P("/proc/sorttext"), null, [live(a), live(b)]);
+	return sorttext(a, b);
 });
 
-// /proc/cmp_name_asc  (code/__HELPERS/cmp.dm:14)
+// cmp.dm:14
 rt.def("/proc/cmp_name_asc", function cmp_name_asc(f: Frame, a: Value, b: Value) {
-	return rt.call(f, P("/proc/sorttext"), null, [rt.fv(f, "name", live(b)), rt.fv(f, "name", live(a))]);
+	return sorttext(b.name, a.name);
 }, false, { argTypes: [{ path: "/atom" }, { path: "/atom" }] });
 
-// /proc/cmp_name_dsc  (code/__HELPERS/cmp.dm:17)
+// cmp.dm:17
 rt.def("/proc/cmp_name_dsc", function cmp_name_dsc(f: Frame, a: Value, b: Value) {
-	return rt.call(f, P("/proc/sorttext"), null, [rt.fv(f, "name", live(a)), rt.fv(f, "name", live(b))]);
+	return sorttext(a.name, b.name);
 }, false, { argTypes: [{ path: "/atom" }, { path: "/atom" }] });
 
-// /datum/controller/global_vars/proc/InitGlobalcmp_field  (code/__HELPERS/cmp.dm:19)
+// cmp.dm:19
 rt.def("/datum/controller/global_vars/proc/InitGlobalcmp_field", function InitGlobalcmp_field(f: Frame) {
-	rt.setGl("cmp_field", "name");
-	rt.modSrcVar(f, "gvars_datum_init_order", "cmp_field", add);
+	GLOB.cmp_field = "name";
+	this.gvars_datum_init_order += "cmp_field";
 	return f.dot;
 });
 
-// /proc/cmp_records_asc  (code/__HELPERS/cmp.dm:21)
+// cmp.dm:21
 rt.def("/proc/cmp_records_asc", function cmp_records_asc(f: Frame, a: Value, b: Value) {
-	return rt.call(f, P("/proc/sorttext"), null, [rt.index(rt.fv(f, "fields", live(b)), rt.gl("cmp_field")), rt.index(rt.fv(f, "fields", live(a)), rt.gl("cmp_field"))]);
+	return sorttext(rt.index(b.fields, GLOB.cmp_field), rt.index(a.fields, GLOB.cmp_field));
 }, false, { argTypes: [{ path: "/datum/data/record" }, { path: "/datum/data/record" }] });
 
-// /proc/cmp_records_dsc  (code/__HELPERS/cmp.dm:24)
+// cmp.dm:24
 rt.def("/proc/cmp_records_dsc", function cmp_records_dsc(f: Frame, a: Value, b: Value) {
-	return rt.call(f, P("/proc/sorttext"), null, [rt.index(rt.fv(f, "fields", live(a)), rt.gl("cmp_field")), rt.index(rt.fv(f, "fields", live(b)), rt.gl("cmp_field"))]);
+	return sorttext(rt.index(a.fields, GLOB.cmp_field), rt.index(b.fields, GLOB.cmp_field));
 }, false, { argTypes: [{ path: "/datum/data/record" }, { path: "/datum/data/record" }] });
 
-// /proc/cmp_ckey_asc  (code/__HELPERS/cmp.dm:27)
+// cmp.dm:27
 rt.def("/proc/cmp_ckey_asc", function cmp_ckey_asc(f: Frame, a: Value, b: Value) {
-	return rt.call(f, P("/proc/sorttext"), null, [rt.fv(f, "ckey", live(b)), rt.fv(f, "ckey", live(a))]);
+	return sorttext(b.ckey, a.ckey);
 }, false, { argTypes: [{ path: "/client" }, { path: "/client" }] });
 
-// /proc/cmp_ckey_dsc  (code/__HELPERS/cmp.dm:30)
+// cmp.dm:30
 rt.def("/proc/cmp_ckey_dsc", function cmp_ckey_dsc(f: Frame, a: Value, b: Value) {
-	return rt.call(f, P("/proc/sorttext"), null, [rt.fv(f, "ckey", live(a)), rt.fv(f, "ckey", live(b))]);
+	return sorttext(a.ckey, b.ckey);
 }, false, { argTypes: [{ path: "/client" }, { path: "/client" }] });
 
-// /proc/cmp_subsystem_init  (code/__HELPERS/cmp.dm:33)
+// cmp.dm:33
 rt.def("/proc/cmp_subsystem_init", function cmp_subsystem_init(f: Frame, a: Value, b: Value) {
-	return subtract(rt.fv(f, "init_order", live(b)), rt.fv(f, "init_order", live(a)));
+	return b.init_order - a.init_order;
 }, false, { argTypes: [{ path: "/datum/controller/subsystem" }, { path: "/datum/controller/subsystem" }] });
 
-// /proc/cmp_subsystem_display  (code/__HELPERS/cmp.dm:36)
+// cmp.dm:36
 rt.def("/proc/cmp_subsystem_display", function cmp_subsystem_display(f: Frame, a: Value, b: Value) {
-	return rt.call(f, P("/proc/sorttext"), null, [rt.fv(f, "name", live(b)), rt.fv(f, "name", live(a))]);
+	return sorttext(b.name, a.name);
 }, false, { argTypes: [{ path: "/datum/controller/subsystem" }, { path: "/datum/controller/subsystem" }] });
 
-// /proc/cmp_subsystem_priority  (code/__HELPERS/cmp.dm:39)
+// cmp.dm:39
 rt.def("/proc/cmp_subsystem_priority", function cmp_subsystem_priority(f: Frame, a: Value, b: Value) {
-	return subtract(rt.fv(f, "priority", live(a)), rt.fv(f, "priority", live(b)));
+	return a.priority - b.priority;
 }, false, { argTypes: [{ path: "/datum/controller/subsystem" }, { path: "/datum/controller/subsystem" }] });
 
-// /proc/cmp_timer  (code/__HELPERS/cmp.dm:42)
+// cmp.dm:42
 rt.def("/proc/cmp_timer", function cmp_timer(f: Frame, a: Value, b: Value) {
-	return subtract(rt.fv(f, "timeToRun", live(a)), rt.fv(f, "timeToRun", live(b)));
+	return a.timeToRun - b.timeToRun;
 }, false, { argTypes: [{ path: "/datum/timedevent" }, { path: "/datum/timedevent" }] });
 
-// /proc/cmp_clientcolour_priority  (code/__HELPERS/cmp.dm:45)
+// cmp.dm:45
 rt.def("/proc/cmp_clientcolour_priority", function cmp_clientcolour_priority(f: Frame, A: Value, B: Value) {
-	return subtract(rt.fv(f, "priority", live(B)), rt.fv(f, "priority", live(A)));
+	return B.priority - A.priority;
 }, false, { argTypes: [{ path: "/datum/client_colour" }, { path: "/datum/client_colour" }] });
 
-// /proc/cmp_clockscripture_priority  (code/__HELPERS/cmp.dm:48)
+// cmp.dm:48
 rt.def("/proc/cmp_clockscripture_priority", function cmp_clockscripture_priority(f: Frame, A: Value, B: Value) {
-	return subtract(rt.initial(f, live(A), "sort_priority"), rt.initial(f, live(B), "sort_priority"));
+	return rt.initial(f, A, "sort_priority") - rt.initial(f, B, "sort_priority");
 }, false, { argTypes: [{ path: "/datum/clockwork_scripture" }, { path: "/datum/clockwork_scripture" }] });

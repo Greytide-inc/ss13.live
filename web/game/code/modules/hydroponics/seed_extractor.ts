@@ -1,51 +1,48 @@
-// From code/modules/hydroponics/seed_extractor.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/hydroponics/seed_extractor.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
-// /proc/seedify  (code/modules/hydroponics/seed_extractor.dm:3)  may sleep
+// seed_extractor.dm:3
 rt.def("/proc/seedify", function* seedify(f: Frame, O: Value, t_max: Value, extractor: Value, user: Value) {
-	let t_amount: Value = null, seedloc: Value = null, F: Value = null, t_prod: Value = null;
-	f.vars = () => [O, t_max, extractor, user, t_amount, seedloc, F, t_prod];
-	t_amount = 0;
-	if (isEqual(live(t_max), -1)) {
-		if (truthy(live(extractor))) {
-			t_max = multiply((yield* g.call(f, P("/proc/rand"), null, [1, 4])), rt.fv(f, "seed_multiplier", live(extractor)));
+	let F: Value = null, t_prod: Value = null;
+	let t_amount: Value = 0;
+	if (t_max == -1) {
+		if (extractor) {
+			t_max = rand(1, 4) * extractor.seed_multiplier;
 		} else {
-			t_max = (yield* g.call(f, P("/proc/rand"), null, [1, 4]));
+			t_max = rand(1, 4);
 		}
 	}
-	seedloc = rt.fv(f, "loc", live(O));
-	if (truthy(live(extractor))) {
-		seedloc = rt.fv(f, "loc", live(extractor));
+	let seedloc: Value = O.loc;
+	if (extractor) {
+		seedloc = extractor.loc;
 	}
-	if (truthy((rt.istype(live(O), T("/obj/item/weapon/reagent_containers/food/snacks/grown")) ? 1 : 0))) {
-		if (truthy(rt.gv(f, "seed", (F = live(O))))) {
-			if ((truthy(live(user)) && !truthy((yield* g.callName(f, live(user), "drop_item", []))))) {
-				return live(f.dot);
+	if (rt.istype(O, T("/obj/item/weapon/reagent_containers/food/snacks/grown"))) {
+		if ((F = O).seed) {
+			if (user && !(yield* user.drop_item())) {
+				return f.dot;
 			}
-			while (rt.lt(live(t_amount), live(t_max))) {
-				rt.setFv(f, "loc", (t_prod = (yield* g.callName(f, rt.fv(f, "seed", live(F)), "Copy", []))), live(seedloc));
-				t_amount = rt.inc(live(t_amount), 1);
+			while (t_amount < t_max) {
+				(t_prod = (yield* F.seed.Copy())).loc = seedloc;
+				t_amount++;
 			}
-			yield* g.call(f, P("/proc/qdel"), null, [live(O)]);
+			yield* qdel(O);
 			return 1;
 		}
-	} else {
-		if (truthy((rt.istype(live(O), T("/obj/item/weapon/grown")) ? 1 : 0))) {
-			if (truthy(rt.gv(f, "seed", (F = live(O))))) {
-				if ((truthy(live(user)) && !truthy((yield* g.callName(f, live(user), "drop_item", []))))) {
-					return live(f.dot);
-				}
-				while (rt.lt(live(t_amount), live(t_max))) {
-					rt.setFv(f, "loc", (t_prod = (yield* g.callName(f, rt.fv(f, "seed", live(F)), "Copy", []))), live(seedloc));
-					t_amount = rt.inc(live(t_amount), 1);
-				}
-				yield* g.call(f, P("/proc/qdel"), null, [live(O)]);
+	} else if (rt.istype(O, T("/obj/item/weapon/grown"))) {
+		if ((F = O).seed) {
+			if (user && !(yield* user.drop_item())) {
+				return f.dot;
 			}
-			return 1;
+			while (t_amount < t_max) {
+				(t_prod = (yield* F.seed.Copy())).loc = seedloc;
+				t_amount++;
+			}
+			yield* qdel(O);
 		}
+		return 1;
 	}
 	return 0;
 }, true);
@@ -62,21 +59,18 @@ rt.type(10923, "/obj/machinery/seed_extractor", "/obj/machinery", {
 	density: 1,
 });
 
-// /obj/machinery/seed_extractor/proc/<init>  (code/modules/hydroponics/seed_extractor.dm:47)
+// seed_extractor.dm:47
 rt.def("/obj/machinery/seed_extractor/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "piles", rt.list());
+	parent_proc();
+	this.piles = list();
 	return f.dot;
 });
 
-// /obj/machinery/seed_extractor/proc/New  (code/modules/hydroponics/seed_extractor.dm:52)  may sleep
+// seed_extractor.dm:52
 rt.def("/obj/machinery/seed_extractor/proc/New", function* New(f: Frame) {
 	let B: Value = null;
-	f.vars = () => [B];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.callName(f, (B = (yield* g.new_(f, T("/obj/item/weapon/circuitboard/machine/seed_extractor"), [null]))), "apply_default_parts", [live(f.src)]);
+	yield* parent_proc();
+	yield* (B = (yield* new_(T("/obj/item/weapon/circuitboard/machine/seed_extractor"), null))).apply_default_parts(this);
 	return f.dot;
 }, true);
 
@@ -87,213 +81,164 @@ rt.type(6759, "/obj/item/weapon/circuitboard/machine/seed_extractor", "/obj/item
 	origin_tech: "programming=1",
 });
 
-// /obj/item/weapon/circuitboard/machine/seed_extractor/proc/<init>  (code/modules/hydroponics/seed_extractor.dm:60)
+// seed_extractor.dm:60
 rt.def("/obj/item/weapon/circuitboard/machine/seed_extractor/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_components", rt.alist(f, [T("/obj/item/weapon/stock_parts/matter_bin"), 1, T("/obj/item/weapon/stock_parts/manipulator"), 1]));
+	parent_proc();
+	this.req_components = rt.alist(f, [T("/obj/item/weapon/stock_parts/matter_bin"), 1, T("/obj/item/weapon/stock_parts/manipulator"), 1]);
 	return f.dot;
 });
 
-// /obj/machinery/seed_extractor/proc/RefreshParts  (code/modules/hydroponics/seed_extractor.dm:65)
+// seed_extractor.dm:65
 rt.def("/obj/machinery/seed_extractor/proc/RefreshParts", function RefreshParts(f: Frame) {
 	let B: Value = null, M: Value = null;
-	let $e: any;
-	f.vars = () => [B, M, $e];
-	B = null;
-	rt.forList(f, 0, rt.sv(f, "component_parts"), T("/obj/item/weapon/stock_parts/matter_bin"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		B = $e;
-		rt.setSv(f, "max_seeds", multiply(1000, rt.fv(f, "rating", live(B))));
+	for (B of each(this.component_parts, T("/obj/item/weapon/stock_parts/matter_bin"))) {
+		this.max_seeds = 1000 * B.rating;
 	}
-	rt.endFor(f, 0);
-	M = null;
-	rt.forList(f, 0, rt.sv(f, "component_parts"), T("/obj/item/weapon/stock_parts/manipulator"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		rt.setSv(f, "seed_multiplier", rt.fv(f, "rating", live(M)));
+	for (M of each(this.component_parts, T("/obj/item/weapon/stock_parts/manipulator"))) {
+		this.seed_multiplier = M.rating;
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /obj/machinery/seed_extractor/proc/attackby  (code/modules/hydroponics/seed_extractor.dm:72)  may sleep
-rt.def("/obj/machinery/seed_extractor/proc/attackby", function* attackby(f: Frame) {
+// seed_extractor.dm:72
+rt.def("/obj/machinery/seed_extractor/proc/attackby", function* attackby(f: Frame, O: Value, user: Value, params: Value) {
 	let _P: Value = null, loaded: Value = null, G: Value = null;
-	let $e: any;
-	f.vars = () => [_P, loaded, G, $e];
-	if (truthy((yield* g.srcCall(f, "default_deconstruction_screwdriver", live(f.args[1]), "sextractor_open", "sextractor", live(f.args[0]))))) {
-		return live(f.dot);
+	if (this.default_deconstruction_screwdriver(user, "sextractor_open", "sextractor", O)) {
+		return f.dot;
 	}
-	if (truthy((yield* g.srcCall(f, "exchange_parts", live(f.args[1]), live(f.args[0]))))) {
-		return live(f.dot);
+	if (yield* this.exchange_parts(user, O)) {
+		return f.dot;
 	}
-	if (truthy((yield* g.srcCall(f, "default_pry_open", live(f.args[0]))))) {
-		return live(f.dot);
+	if (yield* this.default_pry_open(O)) {
+		return f.dot;
 	}
-	if (truthy((yield* g.srcCall(f, "default_unfasten_wrench", live(f.args[1]), live(f.args[0]))))) {
-		return live(f.dot);
+	if (yield* this.default_unfasten_wrench(user, O)) {
+		return f.dot;
 	}
-	if (truthy((yield* g.srcCall(f, "default_deconstruction_crowbar", live(f.args[0]))))) {
-		return live(f.dot);
+	if (yield* this.default_deconstruction_crowbar(O)) {
+		return f.dot;
 	}
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/storage/bag/plants")) ? 1 : 0))) {
-		_P = live(f.args[0]);
+	if (rt.istype(O, T("/obj/item/weapon/storage/bag/plants"))) {
+		_P = O;
 		loaded = 0;
-		G = null;
-		rt.forList(f, 0, rt.fv(f, "contents", live(_P)), T("/obj/item/seeds"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			G = $e;
-			if (rt.ge(rt.len(f, rt.sv(f, "contents")), rt.sv(f, "max_seeds"))) {
+		for (G of each(_P.contents, T("/obj/item/seeds"))) {
+			if (rt.len(f, this.contents) >= this.max_seeds) {
 				break;
 			}
-			loaded = rt.inc(live(loaded), 1);
-			yield* g.srcCall(f, "add_seed", live(G));
+			loaded++;
+			yield* this.add_seed(G);
 		}
-		rt.endFor(f, 0);
-		if (truthy(live(loaded))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You put the seeds from ％！ into ＀.</span>", [rt.fv(f, "name", live(f.args[0])), live(f.src)])]);
+		if (loaded) {
+			to_chat(user, fmt("<span class='notice'>You put the seeds from ％！ into ＀.</span>", [O.name, this]));
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>There are no seeds in ％！.</span>", [rt.fv(f, "name", live(f.args[0]))])]);
+			to_chat(user, fmt("<span class='notice'>There are no seeds in ％！.</span>", [O.name]));
 		}
-		return live(f.dot);
+		return f.dot;
+	} else if (yield* seedify(O, -1, this, user)) {
+		to_chat(user, "<span class='notice'>You extract some seeds.</span>");
+		return f.dot;
+	} else if (rt.istype(O, T("/obj/item/seeds"))) {
+		if (yield* this.add_seed(O)) {
+			to_chat(user, `<span class='notice'>You add ${O} to ${this.name}.</span>`);
+			yield* this.updateUsrDialog();
+		}
+		return f.dot;
+	} else if (user.a_intent != "harm") {
+		to_chat(user, fmt("<span class='warning'>You can't extract any seeds from ％！!</span>", [O.name]));
 	} else {
-		if (truthy((yield* g.call(f, P("/proc/seedify"), null, [live(f.args[0]), -1, live(f.src), live(f.args[1])])))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You extract some seeds.</span>"]);
-			return live(f.dot);
-		} else {
-			if (truthy((rt.istype(live(f.args[0]), T("/obj/item/seeds")) ? 1 : 0))) {
-				if (truthy((yield* g.srcCall(f, "add_seed", live(f.args[0]))))) {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You add ＀ to ＀.</span>", [live(f.args[0]), rt.fv(f, "name", live(f.src))])]);
-					yield* g.srcCall(f, "updateUsrDialog");
-				}
-				return live(f.dot);
-			} else {
-				if (!isEqual(rt.fv(f, "a_intent", live(f.args[1])), "harm")) {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>You can't extract any seeds from ％！!</span>", [rt.fv(f, "name", live(f.args[0]))])]);
-				} else {
-					return (yield* g.callSuper(f, [], rt.Args.Same));
-				}
-			}
-		}
+		return (yield* parent_proc());
 	}
-	return f.dot;
-}, true, { args: ["O", "user", "params"] });
-
-// /obj/machinery/seed_extractor/proc/attack_hand  (code/modules/hydroponics/seed_extractor.dm:135)  may sleep
-rt.def("/obj/machinery/seed_extractor/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.callName(f, live(user), "set_machine", [live(f.src)]);
-	yield* g.srcCall(f, "interact", live(user));
 	return f.dot;
 }, true);
 
-// /obj/machinery/seed_extractor/proc/interact  (code/modules/hydroponics/seed_extractor.dm:142)  may sleep
+// seed_extractor.dm:135
+rt.def("/obj/machinery/seed_extractor/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
+	yield* user.set_machine(this);
+	yield* this.interact(user);
+	return f.dot;
+}, true);
+
+// seed_extractor.dm:142
 rt.def("/obj/machinery/seed_extractor/proc/interact", function* interact(f: Frame, user: Value) {
-	let dat: Value = null, O: Value = null, popup: Value = null;
-	let $e: any;
-	f.vars = () => [user, dat, O, popup, $e];
-	if (truthy(rt.sv(f, "stat"))) {
+	let O: Value = null, popup: Value = null;
+	if (this.stat) {
 		return 0;
 	}
-	dat = "<b>Stored seeds:</b><br>";
-	if (isEqual(rt.len(f, rt.sv(f, "contents")), 0)) {
-		dat = rt.modify(live(dat), "<font color='red'>No seeds</font>", add);
+	let dat: Value = "<b>Stored seeds:</b><br>";
+	if (rt.len(f, this.contents) == 0) {
+		dat += "<font color='red'>No seeds</font>";
 	} else {
-		dat = rt.modify(live(dat), "<table cellpadding='3' style='text-align:center;'><tr><td>Name</td><td>Lifespan</td><td>Endurance</td><td>Maturation</td><td>Production</td><td>Yield</td><td>Potency</td><td>Stock</td></tr>", add);
-		O = null;
-		rt.forList(f, 0, rt.sv(f, "piles"), T("/datum/seed_pile"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			O = $e;
-			dat = rt.modify(live(dat), fmt("<tr><td>＀</td><td>＀</td><td>＀</td><td>＀</td>", [rt.fv(f, "name", live(O)), rt.fv(f, "lifespan", live(O)), rt.fv(f, "endurance", live(O)), rt.fv(f, "maturation", live(O))]), add);
-			dat = rt.modify(live(dat), fmt("<td>＀</td><td>＀</td><td>＀</td><td>", [rt.fv(f, "production", live(O)), rt.fv(f, "yield", live(O)), rt.fv(f, "potency", live(O))]), add);
-			dat = rt.modify(live(dat), fmt("<a href='byond://?src=＃;name=＀;li=＀;en=＀;ma=＀;pr=＀;yi=＀;pot=＀'>Vend</a> (＀ left)</td></tr>", [live(f.src), rt.fv(f, "name", live(O)), rt.fv(f, "lifespan", live(O)), rt.fv(f, "endurance", live(O)), rt.fv(f, "maturation", live(O)), rt.fv(f, "production", live(O)), rt.fv(f, "yield", live(O)), rt.fv(f, "potency", live(O)), rt.fv(f, "amount", live(O))]), add);
+		dat += "<table cellpadding='3' style='text-align:center;'><tr><td>Name</td><td>Lifespan</td><td>Endurance</td><td>Maturation</td><td>Production</td><td>Yield</td><td>Potency</td><td>Stock</td></tr>";
+		for (O of each(this.piles, T("/datum/seed_pile"))) {
+			dat += `<tr><td>${O.name}</td><td>${O.lifespan}</td><td>${O.endurance}</td><td>${O.maturation}</td>`;
+			dat += `<td>${O.production}</td><td>${O.yield}</td><td>${O.potency}</td><td>`;
+			dat += fmt("<a href='byond://?src=＃;name=＀;li=＀;en=＀;ma=＀;pr=＀;yi=＀;pot=＀'>Vend</a> (＀ left)</td></tr>", [this, O.name, O.lifespan, O.endurance, O.maturation, O.production, O.yield, O.potency, O.amount]);
 		}
-		rt.endFor(f, 0);
-		dat = rt.modify(live(dat), "</table>", add);
+		dat += "</table>";
 	}
-	yield* g.callName(f, (popup = (yield* g.new_(f, T("/datum/browser"), [live(user), "seed_ext", rt.sv(f, "name"), 700, 400]))), "set_content", [live(dat)]);
-	yield* g.callName(f, live(popup), "open", []);
-	return live(f.dot);
+	(popup = (yield* new_(T("/datum/browser"), user, "seed_ext", this.name, 700, 400))).set_content(dat);
+	yield* popup.open();
+	return f.dot;
 }, true);
 
-// /obj/machinery/seed_extractor/proc/Topic  (code/modules/hydroponics/seed_extractor.dm:159)  may sleep
-rt.def("/obj/machinery/seed_extractor/proc/Topic", function* Topic(f: Frame) {
+// seed_extractor.dm:159
+rt.def("/obj/machinery/seed_extractor/proc/Topic", function* Topic(f: Frame, href: Value, href_list: Value) {
 	let N: Value = null, _T: Value = null, O: Value = null;
-	let $e: any;
-	f.vars = () => [N, _T, O, $e];
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		return live(f.dot);
+	if (yield* parent_proc()) {
+		return f.dot;
 	}
-	yield* g.callName(f, live(f.usr), "set_machine", [live(f.src)]);
-	rt.setAt(live(f.args[1]), "li", (yield* g.call(f, P("/proc/text2num"), null, [rt.at(live(f.args[1]), "li")])));
-	rt.setAt(live(f.args[1]), "en", (yield* g.call(f, P("/proc/text2num"), null, [rt.at(live(f.args[1]), "en")])));
-	rt.setAt(live(f.args[1]), "ma", (yield* g.call(f, P("/proc/text2num"), null, [rt.at(live(f.args[1]), "ma")])));
-	rt.setAt(live(f.args[1]), "pr", (yield* g.call(f, P("/proc/text2num"), null, [rt.at(live(f.args[1]), "pr")])));
-	rt.setAt(live(f.args[1]), "yi", (yield* g.call(f, P("/proc/text2num"), null, [rt.at(live(f.args[1]), "yi")])));
-	rt.setAt(live(f.args[1]), "pot", (yield* g.call(f, P("/proc/text2num"), null, [rt.at(live(f.args[1]), "pot")])));
-	N = null;
-	rt.forList(f, 0, rt.sv(f, "piles"), T("/datum/seed_pile"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		N = $e;
-		if (((((((isEqual(rt.at(live(f.args[1]), "name"), rt.fv(f, "name", live(N))) && isEqual(rt.at(live(f.args[1]), "li"), rt.fv(f, "lifespan", live(N)))) && isEqual(rt.at(live(f.args[1]), "en"), rt.fv(f, "endurance", live(N)))) && isEqual(rt.at(live(f.args[1]), "ma"), rt.fv(f, "maturation", live(N)))) && isEqual(rt.at(live(f.args[1]), "pr"), rt.fv(f, "production", live(N)))) && isEqual(rt.at(live(f.args[1]), "yi"), rt.fv(f, "yield", live(N)))) && isEqual(rt.at(live(f.args[1]), "pot"), rt.fv(f, "potency", live(N))))) {
-			if (rt.le(rt.fv(f, "amount", live(N)), 0)) {
-				return live(f.dot);
+	yield* f.usr.set_machine(this);
+	rt.setAt(href_list, "li", text2num(rt.at(href_list, "li")));
+	rt.setAt(href_list, "en", text2num(rt.at(href_list, "en")));
+	rt.setAt(href_list, "ma", text2num(rt.at(href_list, "ma")));
+	rt.setAt(href_list, "pr", text2num(rt.at(href_list, "pr")));
+	rt.setAt(href_list, "yi", text2num(rt.at(href_list, "yi")));
+	rt.setAt(href_list, "pot", text2num(rt.at(href_list, "pot")));
+	for (N of each(this.piles, T("/datum/seed_pile"))) {
+		if (rt.at(href_list, "name") == N.name && rt.at(href_list, "li") == N.lifespan && rt.at(href_list, "en") == N.endurance && rt.at(href_list, "ma") == N.maturation && rt.at(href_list, "pr") == N.production && rt.at(href_list, "yi") == N.yield && rt.at(href_list, "pot") == N.potency) {
+			if (N.amount <= 0) {
+				return f.dot;
 			}
-			rt.setFv(f, "amount", live(N), (yield* g.call(f, P("/proc/max"), null, [subtract(rt.fv(f, "amount", live(N)), 1), 0])));
-			if (rt.le(rt.fv(f, "amount", live(N)), 0)) {
-				(rt.modSrcVar(f, "piles", live(N), subtract));
-				yield* g.call(f, P("/proc/qdel"), null, [live(N)]);
+			N.amount = max(N.amount - 1, 0);
+			if (N.amount <= 0) {
+				this.piles -= N;
+				yield* qdel(N);
 			}
 			break;
 		}
 	}
-	rt.endFor(f, 0);
-	_T = null;
-	rt.forList(f, 0, rt.sv(f, "contents"), T("/obj"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_T = $e;
-		if (((((((isEqual(rt.gv(f, "plantname", (O = live(_T))), rt.at(live(f.args[1]), "name")) && isEqual(rt.fv(f, "lifespan", live(O)), rt.at(live(f.args[1]), "li"))) && isEqual(rt.fv(f, "endurance", live(O)), rt.at(live(f.args[1]), "en"))) && isEqual(rt.fv(f, "maturation", live(O)), rt.at(live(f.args[1]), "ma"))) && isEqual(rt.fv(f, "production", live(O)), rt.at(live(f.args[1]), "pr"))) && isEqual(rt.fv(f, "yield", live(O)), rt.at(live(f.args[1]), "yi"))) && isEqual(rt.fv(f, "potency", live(O)), rt.at(live(f.args[1]), "pot")))) {
-			rt.setFv(f, "loc", live(O), rt.fv(f, "loc", live(f.src)));
+	for (_T of each(this.contents, T("/obj"))) {
+		if ((O = _T).plantname == rt.at(href_list, "name") && O.lifespan == rt.at(href_list, "li") && O.endurance == rt.at(href_list, "en") && O.maturation == rt.at(href_list, "ma") && O.production == rt.at(href_list, "pr") && O.yield == rt.at(href_list, "yi") && O.potency == rt.at(href_list, "pot")) {
+			O.loc = this.loc;
 			break;
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.callName(f, live(f.src), "updateUsrDialog", []);
-	return live(f.dot);
-}, true, { args: ["href", "href_list"] });
+	yield* this.updateUsrDialog();
+	return f.dot;
+}, true);
 
-// /obj/machinery/seed_extractor/proc/add_seed  (code/modules/hydroponics/seed_extractor.dm:190)  may sleep
+// seed_extractor.dm:190
 rt.def("/obj/machinery/seed_extractor/proc/add_seed", function* add_seed(f: Frame, O: Value) {
 	let M: Value = null, S: Value = null, N: Value = null;
-	let $e: any;
-	f.vars = () => [O, M, S, N, $e];
-	if (rt.ge(rt.len(f, rt.sv(f, "contents")), 999)) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), fmt("<span class='notice'>＄！ is full.</span>", [live(f.src)])]);
+	if (rt.len(f, this.contents) >= 999) {
+		to_chat(f.usr, fmt("<span class='notice'>＄！ is full.</span>", [this]));
 		return 0;
 	}
-	if (truthy((yield* g.call(f, P("/proc/ismob"), null, [rt.fv(f, "loc", live(O))])))) {
-		if (!truthy((yield* g.callName(f, (M = rt.fv(f, "loc", live(O))), "drop_item", [])))) {
+	if (ismob(O.loc)) {
+		if (!(yield* (M = O.loc).drop_item())) {
 			return 0;
 		}
-	} else {
-		if (truthy((rt.istype(rt.fv(f, "loc", live(O)), T("/obj/item/weapon/storage")) ? 1 : 0))) {
-			yield* g.callName(f, (S = rt.fv(f, "loc", live(O))), "remove_from_storage", [live(O), live(f.src)]);
-		}
+	} else if (rt.istype(O.loc, T("/obj/item/weapon/storage"))) {
+		yield* (S = O.loc).remove_from_storage(O, this);
 	}
-	rt.setFv(f, "loc", live(O), live(f.src));
+	O.loc = this;
 	f.dot = 1;
-	N = null;
-	rt.forList(f, 0, rt.sv(f, "piles"), T("/datum/seed_pile"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		N = $e;
-		if (((((((isEqual(rt.fv(f, "plantname", live(O)), rt.fv(f, "name", live(N))) && isEqual(rt.fv(f, "lifespan", live(O)), rt.fv(f, "lifespan", live(N)))) && isEqual(rt.fv(f, "endurance", live(O)), rt.fv(f, "endurance", live(N)))) && isEqual(rt.fv(f, "maturation", live(O)), rt.fv(f, "maturation", live(N)))) && isEqual(rt.fv(f, "production", live(O)), rt.fv(f, "production", live(N)))) && isEqual(rt.fv(f, "yield", live(O)), rt.fv(f, "yield", live(N)))) && isEqual(rt.fv(f, "potency", live(O)), rt.fv(f, "potency", live(N))))) {
-			rt.incField(f, live(N), "amount", 1, false);
-			return live(f.dot);
+	for (N of each(this.piles, T("/datum/seed_pile"))) {
+		if (O.plantname == N.name && O.lifespan == N.lifespan && O.endurance == N.endurance && O.maturation == N.maturation && O.production == N.production && O.yield == N.yield && O.potency == N.potency) {
+			++N.amount;
+			return f.dot;
 		}
 	}
-	rt.endFor(f, 0);
-	rt.modSrcVar(f, "piles", (yield* g.new_(f, T("/datum/seed_pile"), [rt.fv(f, "plantname", live(O)), rt.fv(f, "lifespan", live(O)), rt.fv(f, "endurance", live(O)), rt.fv(f, "maturation", live(O)), rt.fv(f, "production", live(O)), rt.fv(f, "yield", live(O)), rt.fv(f, "potency", live(O))])), add);
-	return live(f.dot);
+	this.piles += (yield* new_(T("/datum/seed_pile"), O.plantname, O.lifespan, O.endurance, O.maturation, O.production, O.yield, O.potency));
+	return f.dot;
 }, true);

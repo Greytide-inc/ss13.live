@@ -1,7 +1,7 @@
-// From code/modules/spells/spell_types/devil.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/spells/spell_types/devil.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, g } = rt;
 
 
 rt.type(11303, "/obj/effect/proc_holder/spell/targeted/summon_contract", "/obj/effect/proc_holder/spell/targeted", {
@@ -19,47 +19,40 @@ rt.type(11303, "/obj/effect/proc_holder/spell/targeted/summon_contract", "/obj/e
 	action_background_icon_state: "bg_demon",
 });
 
-// /obj/effect/proc_holder/spell/targeted/summon_contract/proc/cast  (code/modules/spells/spell_types/devil.dm:47)  may sleep
+// devil.dm:47
 rt.def("/obj/effect/proc_holder/spell/targeted/summon_contract/proc/cast", function* cast(f: Frame, targets: Value, user: Value) {
 	let C: Value = null, contract: Value = null, contractTypeName: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [targets, user, C, contract, contractTypeName, $0, $e];
-	if (live(user) === null) {
-		user = live(f.usr);
-	}
-	C = null;
-	rt.forList(f, 0, live(targets), T("/mob/living/carbon"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		C = $e;
-		if ((truthy(rt.fv(f, "mind", live(C))) && truthy(rt.fv(f, "mind", live(user))))) {
-			if (isEqual(rt.fv(f, "stat", live(C)), 2)) {
-				if (truthy((yield* g.callName(f, live(user), "drop_item", [])))) {
-					contract = (yield* g.new_(f, T("/obj/item/weapon/paper/contract/infernal/revive"), [rt.fv(f, "loc", live(user)), rt.fv(f, "mind", live(C)), rt.fv(f, "mind", live(user))]));
-					yield* g.callName(f, live(user), "put_in_hands", [live(contract)]);
+	let $e: any;
+	user ??= f.usr;
+	for (C of each(targets, T("/mob/living/carbon"))) {
+		if (C.mind && user.mind) {
+			if (C.stat == 2) {
+				if (yield* user.drop_item()) {
+					contract = (yield* new_(T("/obj/item/weapon/paper/contract/infernal/revive"), user.loc, C.mind, user.mind));
+					yield* user.put_in_hands(contract);
 				}
 			} else {
 				contract = null;
-				$0 = (contractTypeName = (yield* g.op(f, "Prompt", [0], [null, null, "What type of contract?", live(user), rt.list("Power", "Wealth", "Prestige", "Magic", "Knowledge", "Friendship")])));
-				if ($0 === "Power") {
-					contract = (yield* g.new_(f, T("/obj/item/weapon/paper/contract/infernal/power"), [rt.fv(f, "loc", live(C)), rt.fv(f, "mind", live(C)), rt.fv(f, "mind", live(user))]));
-				} else if ($0 === "Wealth") {
-					contract = (yield* g.new_(f, T("/obj/item/weapon/paper/contract/infernal/wealth"), [rt.fv(f, "loc", live(C)), rt.fv(f, "mind", live(C)), rt.fv(f, "mind", live(user))]));
-				} else if ($0 === "Prestige") {
-					contract = (yield* g.new_(f, T("/obj/item/weapon/paper/contract/infernal/prestige"), [rt.fv(f, "loc", live(C)), rt.fv(f, "mind", live(C)), rt.fv(f, "mind", live(user))]));
-				} else if ($0 === "Magic") {
-					contract = (yield* g.new_(f, T("/obj/item/weapon/paper/contract/infernal/magic"), [rt.fv(f, "loc", live(C)), rt.fv(f, "mind", live(C)), rt.fv(f, "mind", live(user))]));
-				} else if ($0 === "Knowledge") {
-					contract = (yield* g.new_(f, T("/obj/item/weapon/paper/contract/infernal/knowledge"), [rt.fv(f, "loc", live(C)), rt.fv(f, "mind", live(C)), rt.fv(f, "mind", live(user))]));
-				} else if ($0 === "Friendship") {
-					contract = (yield* g.new_(f, T("/obj/item/weapon/paper/contract/infernal/friend"), [rt.fv(f, "loc", live(C)), rt.fv(f, "mind", live(C)), rt.fv(f, "mind", live(user))]));
+				const subject = (contractTypeName = (yield* g.op(f, "Prompt", [0], [null, null, "What type of contract?", user, list("Power", "Wealth", "Prestige", "Magic", "Knowledge", "Friendship")])));
+				if (subject === "Power") {
+					contract = (yield* new_(T("/obj/item/weapon/paper/contract/infernal/power"), C.loc, C.mind, user.mind));
+				} else if (subject === "Wealth") {
+					contract = (yield* new_(T("/obj/item/weapon/paper/contract/infernal/wealth"), C.loc, C.mind, user.mind));
+				} else if (subject === "Prestige") {
+					contract = (yield* new_(T("/obj/item/weapon/paper/contract/infernal/prestige"), C.loc, C.mind, user.mind));
+				} else if (subject === "Magic") {
+					contract = (yield* new_(T("/obj/item/weapon/paper/contract/infernal/magic"), C.loc, C.mind, user.mind));
+				} else if (subject === "Knowledge") {
+					contract = (yield* new_(T("/obj/item/weapon/paper/contract/infernal/knowledge"), C.loc, C.mind, user.mind));
+				} else if (subject === "Friendship") {
+					contract = (yield* new_(T("/obj/item/weapon/paper/contract/infernal/friend"), C.loc, C.mind, user.mind));
 				}
-				yield* g.callName(f, live(C), "put_in_hands", [live(contract)]);
+				yield* C.put_in_hands(contract);
 			}
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>＀ seems to not be sentient.  You cannot summon a contract for ＀.</span>", [live(C), (yield* g.callName(f, live(C), "p_them", []))])]);
+			to_chat(user, `<span class='notice'>${C} seems to not be sentient.  You cannot summon a contract for ${C.p_them()}.</span>`);
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
@@ -78,110 +71,100 @@ rt.type(11304, "/obj/effect/proc_holder/spell/targeted/infernal_jaunt", "/obj/ef
 	phase_allowed: 1,
 });
 
-// /obj/effect/proc_holder/spell/targeted/infernal_jaunt/proc/cast  (code/modules/spells/spell_types/devil.dm:104)  may sleep
+// devil.dm:104
 rt.def("/obj/effect/proc_holder/spell/targeted/infernal_jaunt/proc/cast", function* cast(f: Frame) {
-	if (live(f.args[1]) === null) {
-		f.args[1] = live(f.usr);
+	if (f.args[1] === null) {
+		f.args[1] = f.usr;
 	}
-	if (truthy((rt.istype(live(f.args[1]), T("/mob/living")) ? 1 : 0))) {
-		if (truthy((rt.istype(rt.fv(f, "loc", live(f.args[1])), T("/obj/effect/dummy/slaughter")) ? 1 : 0))) {
-			if (truthy((yield* g.srcCall(f, "valid_location", live(f.args[1]))))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You are now phasing in.</span>"]);
-				if (truthy((yield* g.call(f, P("/proc/do_mob"), null, [live(f.args[1]), live(f.args[1]), 150])))) {
-					if (truthy((yield* g.srcCall(f, "valid_location", live(f.args[1]))))) {
-						yield* g.callName(f, live(f.args[1]), "infernalphasein", []);
+	if (rt.istype(f.args[1], T("/mob/living"))) {
+		if (rt.istype(f.args[1].loc, T("/obj/effect/dummy/slaughter"))) {
+			if (this.valid_location(f.args[1])) {
+				to_chat(f.args[1], "<span class='warning'>You are now phasing in.</span>");
+				if (yield* do_mob(f.args[1], f.args[1], 150)) {
+					if (this.valid_location(f.args[1])) {
+						yield* f.args[1].infernalphasein();
 					} else {
-						yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You are no longer near a potential signer.</span>"]);
+						to_chat(f.args[1], "<span class='warning'>You are no longer near a potential signer.</span>");
 					}
 				}
 			} else {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You can only re-appear near a potential signer."]);
-				yield* g.srcCall(f, "revert_cast");
-				return (yield* g.callSuper(f, [], rt.Args.Same));
+				to_chat(f.args[1], "<span class='warning'>You can only re-appear near a potential signer.");
+				yield* this.revert_cast();
+				return (yield* parent_proc());
 			}
 		} else {
-			rt.setFv(f, "notransform", live(f.args[1]), 1);
-			yield* g.callName(f, live(f.args[1]), "fakefire", []);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='warning'>You begin to phase back into sinful flames.</span>"]);
-			if (truthy((yield* g.call(f, P("/proc/do_mob"), null, [live(f.args[1]), live(f.args[1]), 150])))) {
-				yield* g.callName(f, live(f.args[1]), "infernalphaseout", []);
+			f.args[1].notransform = 1;
+			f.args[1].fakefire();
+			to_chat(this, "<span class='warning'>You begin to phase back into sinful flames.</span>");
+			if (yield* do_mob(f.args[1], f.args[1], 150)) {
+				yield* f.args[1].infernalphaseout();
 			} else {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You must remain still while exiting.</span>"]);
-				yield* g.callName(f, live(f.args[1]), "ExtinguishMob", []);
+				to_chat(f.args[1], "<span class='warning'>You must remain still while exiting.</span>");
+				yield* f.args[1].ExtinguishMob();
 			}
 		}
-		yield* g.srcCall(f, "start_recharge");
-		return live(f.dot);
+		this.start_recharge();
+		return f.dot;
 	}
-	yield* g.srcCall(f, "revert_cast");
+	yield* this.revert_cast();
 	return f.dot;
 }, true, { args: ["targets", "user"] });
 
-// /obj/effect/proc_holder/spell/targeted/infernal_jaunt/proc/valid_location  (code/modules/spells/spell_types/devil.dm:132)
+// devil.dm:132
 rt.def("/obj/effect/proc_holder/spell/targeted/infernal_jaunt/proc/valid_location", function valid_location(f: Frame, user: Value) {
 	let C: Value = null;
-	let $e: any;
-	f.vars = () => [user, C, $e];
-	if (live(user) === null) {
-		user = live(f.usr);
-	}
-	if (truthy((rt.istype(rt.call(f, P("/proc/get_area"), null, [live(user)]), T("/area/shuttle")) ? 1 : 0))) {
+	user ??= f.usr;
+	if (rt.istype(get_area(user), T("/area/shuttle"))) {
 		return 1;
 	} else {
-		C = null;
-		rt.forList(f, 0, rt.call(f, P("/proc/orange"), null, [2, rt.getStep(f, live(user), 0)]), T("/mob/living"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			C = $e;
-			if (truthy(rt.callName(f, live(C), "owns_soul", []))) {
+		for (C of each(orange(2, rt.getStep(f, user, 0)), T("/mob/living"))) {
+			if (C.owns_soul()) {
 				return 1;
 			}
 		}
-		rt.endFor(f, 0);
 	}
 	return 0;
 });
 
-// /mob/living/proc/infernalphaseout  (code/modules/spells/spell_types/devil.dm:141)  may sleep
+// devil.dm:141
 rt.def("/mob/living/proc/infernalphaseout", function* infernalphaseout(f: Frame) {
-	let holder: Value = null;
-	f.vars = () => [holder];
-	yield* g.srcCall(f, "dust_animation");
-	yield* g.srcCall(f, "spawn_dust");
-	yield* g.callName(f, live(f.src), "visible_message", [fmt("<span class='warning'>＀ disappears in a flashfire!</span>", [live(f.src)])]);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/magic/enter_blood.ogg"), 100, 1, -1]);
-	holder = (yield* g.new_(f, T("/obj/effect/dummy/slaughter"), [rt.sv(f, "loc")]));
-	yield* g.callName(f, live(f.src), "ExtinguishMob", []);
-	if (truthy(rt.sv(f, "buckled"))) {
-		yield* g.callName(f, rt.sv(f, "buckled"), "unbuckle_mob", [null, live(f.src), "force", 1], rt.Args.Named);
+	yield* this.dust_animation();
+	yield* this.spawn_dust();
+	this.visible_message(`<span class='warning'>${this} disappears in a flashfire!</span>`);
+	playsound(rt.getStep(f, this, 0), rt.rsc("sound/magic/enter_blood.ogg"), 100, 1, -1);
+	let holder: Value = (yield* new_(T("/obj/effect/dummy/slaughter"), this.loc));
+	yield* this.ExtinguishMob();
+	if (this.buckled) {
+		yield* this.buckled.unbuckle_mob(this, { force: 1 });
 	}
-	if (truthy((yield* g.srcCall(f, "has_buckled_mobs")))) {
-		yield* g.callSrc(f, "unbuckle_all_mobs", ["force", 1], rt.Args.Named);
+	if (this.has_buckled_mobs()) {
+		yield* this.unbuckle_all_mobs({ force: 1 });
 	}
-	if (truthy(rt.sv(f, "pulledby"))) {
-		yield* g.callName(f, rt.sv(f, "pulledby"), "stop_pulling", []);
+	if (this.pulledby) {
+		yield* this.pulledby.stop_pulling();
 	}
-	if (truthy(rt.sv(f, "pulling"))) {
-		yield* g.srcCall(f, "stop_pulling");
+	if (this.pulling) {
+		yield* this.stop_pulling();
 	}
-	rt.setFv(f, "loc", live(f.src), live(holder));
-	rt.setFv(f, "holder", live(f.src), live(holder));
-	rt.setFv(f, "notransform", live(f.src), 0);
-	yield* g.srcCall(f, "fakefireextinguish");
+	this.loc = holder;
+	this.holder = holder;
+	this.notransform = 0;
+	this.fakefireextinguish();
 	return f.dot;
 }, true);
 
-// /mob/living/proc/infernalphasein  (code/modules/spells/spell_types/devil.dm:161)  may sleep
+// devil.dm:161
 rt.def("/mob/living/proc/infernalphasein", function* infernalphasein(f: Frame) {
-	if (truthy(rt.fv(f, "notransform", live(f.src)))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='warning'>You're too busy to jaunt in.</span>"]);
+	if (this.notransform) {
+		to_chat(this, "<span class='warning'>You're too busy to jaunt in.</span>");
 		return 0;
 	}
-	yield* g.srcCall(f, "fakefire");
-	rt.setFv(f, "loc", live(f.src), rt.getStep(f, live(f.src), 0));
-	rt.setFv(f, "eye", rt.fv(f, "client", live(f.src)), live(f.src));
-	yield* g.callName(f, live(f.src), "visible_message", [fmt("<span class='warning'><B>＀ appears in a fiery blaze!</B>", [live(f.src)])]);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/magic/exit_blood.ogg"), 100, 1, -1]);
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/mob/living/proc/fakefireextinguish")])), 15, 1]);
+	this.fakefire();
+	this.loc = rt.getStep(f, this, 0);
+	this.client.eye = this;
+	this.visible_message(`<span class='warning'><B>${this} appears in a fiery blaze!</B>`);
+	playsound(rt.getStep(f, this, 0), rt.rsc("sound/magic/exit_blood.ogg"), 100, 1, -1);
+	yield* addtimer((yield* new_(T("/datum/callback"), this, P("/mob/living/proc/fakefireextinguish"))), 15, 1);
 	return f.dot;
 }, true);
 
@@ -205,28 +188,20 @@ rt.type(11305, "/obj/effect/proc_holder/spell/targeted/sintouch", "/obj/effect/p
 	invocation_type: "shout",
 });
 
-// /obj/effect/proc_holder/spell/targeted/sintouch/proc/cast  (code/modules/spells/spell_types/devil.dm:197)  may sleep
+// devil.dm:197
 rt.def("/obj/effect/proc_holder/spell/targeted/sintouch/proc/cast", function* cast(f: Frame, targets: Value, user: Value) {
 	let H: Value = null;
-	let $e: any;
-	f.vars = () => [targets, user, H, $e];
-	if (live(user) === null) {
-		user = live(f.usr);
-	}
-	H = null;
-	rt.forList(f, 0, live(targets), T("/mob/living/carbon/human"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		H = $e;
-		if (!truthy(rt.fv(f, "mind", live(H)))) {
+	user ??= f.usr;
+	for (H of each(targets, T("/mob/living/carbon/human"))) {
+		if (!H.mind) {
 			continue;
 		}
-		if (truthy(rt.locateIn(f, T("/datum/objective/sintouched"), rt.gv(f, "objectives", rt.fv(f, "mind", live(H)))))) {
+		if (rt.locateIn(f, T("/datum/objective/sintouched"), H.mind.objectives)) {
 			continue;
 		}
-		yield* g.callName(f, live(H), "influenceSin", []);
-		yield* g.callName(f, live(H), "Knockdown", [400]);
+		H.influenceSin();
+		yield* H.Knockdown(400);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
@@ -247,65 +222,53 @@ rt.type(11307, "/obj/effect/proc_holder/spell/targeted/summon_dancefloor", "/obj
 	action_background_icon_state: "bg_demon",
 });
 
-// /obj/effect/proc_holder/spell/targeted/summon_dancefloor/proc/cast  (code/modules/spells/spell_types/devil.dm:226)  may sleep
+// devil.dm:226
 rt.def("/obj/effect/proc_holder/spell/targeted/summon_dancefloor/proc/cast", function* cast(f: Frame, targets: Value, user: Value) {
 	let i: Value = null, _T: Value = null, funky_turfs: Value = null, solid: Value = null, i_1: Value = null, t: Value = null, _T_3: Value = null;
 	let $0: any, $1: any, $e: any;
-	f.vars = () => [targets, user, i, _T, funky_turfs, solid, i_1, t, _T_3, $0, $1, $e];
-	if (live(user) === null) {
-		user = live(f.usr);
+	user ??= f.usr;
+	if (!this.dancefloor_turfs) {
+		this.dancefloor_turfs = list();
 	}
-	if (!truthy(rt.sv(f, "dancefloor_turfs"))) {
-		rt.setSv(f, "dancefloor_turfs", rt.list());
+	if (!this.dancefloor_turfs_types) {
+		this.dancefloor_turfs_types = list();
 	}
-	if (!truthy(rt.sv(f, "dancefloor_turfs_types"))) {
-		rt.setSv(f, "dancefloor_turfs_types", rt.list());
+	if (!this.smoke) {
+		this.smoke = (yield* new_(T("/datum/effect_system/smoke_spread/transparent/dancefloor_devil")));
 	}
-	if (!truthy(rt.sv(f, "smoke"))) {
-		rt.setSv(f, "smoke", (yield* g.new_(f, T("/datum/effect_system/smoke_spread/transparent/dancefloor_devil"), [])));
-	}
-	yield* g.callName(f, rt.sv(f, "smoke"), "set_up", [0, rt.getStep(f, live(user), 0)]);
-	yield* g.callName(f, rt.sv(f, "smoke"), "start", []);
-	if (truthy(rt.sv(f, "dancefloor_exists"))) {
-		rt.setSv(f, "dancefloor_exists", 0);
-		i = null;
-		rt.forRange(f, 0, 1, rt.len(f, rt.sv(f, "dancefloor_turfs")), 1);
+	yield* this.smoke.set_up(0, rt.getStep(f, user, 0));
+	yield* this.smoke.start();
+	if (this.dancefloor_exists) {
+		this.dancefloor_exists = 0;
+		rt.forRange(f, 0, 1, rt.len(f, this.dancefloor_turfs), 1);
 		while (($e = rt.next(f, 0)) !== undefined) {
 			i = $e;
-			yield* g.callName(f, (_T = rt.index(rt.sv(f, "dancefloor_turfs"), live(i))), "ChangeTurf", [rt.index(rt.sv(f, "dancefloor_turfs_types"), live(i))]);
+			yield* (_T = rt.index(this.dancefloor_turfs, i)).ChangeTurf(rt.index(this.dancefloor_turfs_types, i));
 		}
 		rt.endFor(f, 0);
 	} else {
-		funky_turfs = (yield* g.call(f, P("/proc/block"), null, [rt.locate((yield* g.call(f, P("/proc/max"), null, [subtract(rt.fv(f, "x", live(user)), 1), 1])), (yield* g.call(f, P("/proc/max"), null, [subtract(rt.fv(f, "y", live(user)), 1), 1])), rt.fv(f, "z", live(user))), rt.locate((yield* g.call(f, P("/proc/min"), null, [add(rt.fv(f, "x", live(user)), 1), rt.fv(f, "maxx", rt.world())])), (yield* g.call(f, P("/proc/min"), null, [add(rt.fv(f, "y", live(user)), 1), rt.fv(f, "maxy", rt.world())])), rt.fv(f, "z", live(user)))]));
-		solid = null;
-		rt.forList(f, 0, live(funky_turfs), T("/turf/closed"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			solid = $e;
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>You're too close to a wall.</span>"]);
-			return live(f.dot);
+		funky_turfs = block(rt.locate(max(user.x - 1, 1), max(user.y - 1, 1), user.z), rt.locate(min(user.x + 1, rt.world().maxx), min(user.y + 1, rt.world().maxy), user.z));
+		for (solid of each(funky_turfs, T("/turf/closed"))) {
+			to_chat(user, "<span class='warning'>You're too close to a wall.</span>");
+			return f.dot;
 		}
-		rt.endFor(f, 0);
-		rt.setSv(f, "dancefloor_exists", 1);
+		this.dancefloor_exists = 1;
 		i_1 = 1;
-		rt.setFv(f, "len", rt.sv(f, "dancefloor_turfs"), rt.len(f, live(funky_turfs)));
-		rt.setFv(f, "len", rt.sv(f, "dancefloor_turfs_types"), rt.len(f, live(funky_turfs)));
-		t = null;
-		rt.forList(f, 0, live(funky_turfs));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			t = $e;
-			_T_3 = live(t);
-			rt.setAt(rt.sv(f, "dancefloor_turfs"), live(i_1), live(_T_3));
-			rt.setAt(rt.sv(f, "dancefloor_turfs_types"), live(i_1), rt.fv(f, "type", live(_T_3)));
-			$0 = live(_T_3);
-			if (isEqual(rt.modulus(live(i_1), 2), 0)) {
+		this.dancefloor_turfs.len = rt.len(f, funky_turfs);
+		this.dancefloor_turfs_types.len = rt.len(f, funky_turfs);
+		for (t of each(funky_turfs)) {
+			_T_3 = t;
+			rt.setAt(this.dancefloor_turfs, i_1, _T_3);
+			rt.setAt(this.dancefloor_turfs_types, i_1, _T_3.type);
+			$0 = _T_3;
+			if (i_1 % 2 == 0) {
 				$1 = T("/turf/open/floor/light/colour_cycle/dancefloor_a");
 			} else {
 				$1 = T("/turf/open/floor/light/colour_cycle/dancefloor_b");
 			}
-			yield* g.callName(f, $0, "ChangeTurf", [$1]);
-			i_1 = rt.inc(live(i_1), 1);
+			yield* $0.ChangeTurf($1);
+			i_1++;
 		}
-		rt.endFor(f, 0);
 	}
 	return f.dot;
 }, true);

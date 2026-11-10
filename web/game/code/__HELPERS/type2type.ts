@@ -1,506 +1,432 @@
-// From code/__HELPERS/type2type.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/__HELPERS/type2type.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { P } = rt;
 
 
-// /proc/hex2num  (code/__HELPERS/type2type.dm:17)
+// type2type.dm:17
 rt.def("/proc/hex2num", function hex2num(f: Frame, hex: Value) {
 	let negative: Value = null, len: Value = null, i: Value = null, num: Value = null;
-	let $0: any;
-	f.vars = () => [negative, len, i, num, $0];
 	f.dot = 0;
-	if (truthy(rt.call(f, P("/proc/istext"), null, [live(hex)]))) {
+	if (istext(hex)) {
 		negative = 0;
-		len = rt.length(live(hex));
-		i = null;
+		len = rt.length(hex);
 		i = 1;
-		while (rt.le(live(i), live(len))) {
+		while (i <= len) {
 			blk46: {
-				$0 = (num = rt.call(f, P("/proc/text2ascii"), null, [live(hex), live(i)]));
-				if (rt.inRange($0, 48, 57)) {
-					(num = rt.modify(live(num), 48, subtract));
-				} else if (rt.inRange($0, 97, 102)) {
-					(num = rt.modify(live(num), 87, subtract));
-				} else if (rt.inRange($0, 65, 70)) {
-					(num = rt.modify(live(num), 55, subtract));
-				} else if ($0 === 45) {
+				const subject = (num = text2ascii(hex, i));
+				if (rt.inRange(subject, 48, 57)) {
+					num -= 48;
+				} else if (rt.inRange(subject, 97, 102)) {
+					num -= 87;
+				} else if (rt.inRange(subject, 65, 70)) {
+					num -= 55;
+				} else if (subject === 45) {
 					negative = 1;
 				} else {
-					if (truthy(live(num))) {
+					if (num) {
 						break;
 					}
 					break blk46;
 				}
-				(f.dot = rt.modify(live(f.dot), 16, multiply));
-				f.dot = rt.modify(live(f.dot), live(num), add);
+				f.dot *= 16;
+				f.dot += num;
 			}
-			i = rt.inc(live(i), 1);
+			i++;
 		}
-		if (truthy(live(negative))) {
-			(f.dot = rt.modify(live(f.dot), -1, multiply));
+		if (negative) {
+			f.dot *= -1;
 		}
 	}
-	return live(f.dot);
+	return f.dot;
 });
 
-// /proc/num2hex  (code/__HELPERS/type2type.dm:49)
+// type2type.dm:49
 rt.def("/proc/num2hex", function num2hex(f: Frame, num: Value, len: Value) {
-	let i: Value = null, remainder: Value = null;
-	let $0: any;
-	f.vars = () => [num, len, i, remainder, $0];
-	if (live(len) === null) {
-		len = 2;
-	}
-	if (!truthy(rt.call(f, P("/proc/isnum"), null, [live(num)]))) {
+	let remainder: Value = null;
+	len ??= 2;
+	if (!isnum(num)) {
 		num = 0;
 	}
-	num = rt.call(f, P("/proc/round"), null, [rt.op(f, "Abs", [], [live(num)])]);
+	num = round(rt.op(f, "Abs", [], [num]));
 	f.dot = "";
-	i = 0;
+	let i: Value = 0;
 	while (true) {
-		if (rt.le(live(len), 0)) {
-			if (!truthy(live(num))) {
+		if (len <= 0) {
+			if (!num) {
 				break;
 			}
-		} else {
-			if (rt.ge(live(i), live(len))) {
-				break;
-			}
+		} else if (i >= len) {
+			break;
 		}
-		num = rt.call(f, P("/proc/round"), null, [(remainder = divide(live(num), 16))]);
-		$0 = (remainder = multiply(subtract(live(remainder), live(num)), 16));
-		if ($0 === 9 || $0 === 8 || $0 === 7 || $0 === 6 || $0 === 5 || $0 === 4 || $0 === 3 || $0 === 2 || $0 === 1) {
-			f.dot = add(fmt("＀", [live(remainder)]), live(f.dot));
-		} else if ($0 === 10 || $0 === 11 || $0 === 12 || $0 === 13 || $0 === 14 || $0 === 15) {
-			f.dot = add(rt.call(f, P("/proc/ascii2text"), null, [add(live(remainder), 87)]), live(f.dot));
+		num = round((remainder = num / 16));
+		const subject = (remainder = (remainder - num) * 16);
+		if (subject === 9 || subject === 8 || subject === 7 || subject === 6 || subject === 5 || subject === 4 || subject === 3 || subject === 2 || subject === 1) {
+			f.dot = `${remainder}` + f.dot;
+		} else if (subject === 10 || subject === 11 || subject === 12 || subject === 13 || subject === 14 || subject === 15) {
+			f.dot = ascii2text(remainder + 87) + f.dot;
 		} else {
-			f.dot = add("0", live(f.dot));
+			f.dot = "0" + f.dot;
 		}
-		i = rt.inc(live(i), 1);
+		i++;
 	}
-	return live(f.dot);
+	return f.dot;
 });
 
-// /world/proc/file2list  (code/__HELPERS/type2type.dm:76)
+// type2type.dm:76
 rt.def("/world/proc/file2list", function file2list(f: Frame, filename: Value, seperator: Value) {
-	f.vars = () => [seperator];
-	if (live(seperator) === null) {
-		seperator = "\n";
-	}
-	return rt.call(f, P("/proc/splittext"), null, [rt.call(f, P("/proc/file2text"), null, [live(filename)]), live(seperator)]);
+	seperator ??= "\n";
+	return splittext(file2text(filename), seperator);
 });
 
-// /proc/dir2text  (code/__HELPERS/type2type.dm:80)
+// type2type.dm:80
 rt.def("/proc/dir2text", function dir2text(f: Frame, direction: Value) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = live(direction);
-	if ($0 === 1) {
+	if (direction === 1) {
 		return "north";
-	} else if ($0 === 2) {
+	} else if (direction === 2) {
 		return "south";
-	} else if ($0 === 4) {
+	} else if (direction === 4) {
 		return "east";
-	} else if ($0 === 8) {
+	} else if (direction === 8) {
 		return "west";
-	} else if ($0 === 5) {
+	} else if (direction === 5) {
 		return "northeast";
-	} else if ($0 === 6) {
+	} else if (direction === 6) {
 		return "southeast";
-	} else if ($0 === 9) {
+	} else if (direction === 9) {
 		return "northwest";
-	} else if ($0 === 10) {
+	} else if (direction === 10) {
 		return "southwest";
 	}
-	return live(f.dot);
+	return f.dot;
 });
 
-// /proc/angle2dir  (code/__HELPERS/type2type.dm:125)
+// type2type.dm:125
 rt.def("/proc/angle2dir", function angle2dir(f: Frame, degree: Value) {
-	f.vars = () => [degree];
-	if (rt.lt((degree = rt.call(f, P("/proc/SimplifyDegrees"), null, [live(degree)])), 45)) {
+	if ((degree = SimplifyDegrees(degree)) < 45) {
 		return 1;
 	}
-	if (rt.lt(live(degree), 90)) {
+	if (degree < 90) {
 		return 5;
 	}
-	if (rt.lt(live(degree), 135)) {
+	if (degree < 135) {
 		return 4;
 	}
-	if (rt.lt(live(degree), 180)) {
+	if (degree < 180) {
 		return 6;
 	}
-	if (rt.lt(live(degree), 225)) {
+	if (degree < 225) {
 		return 2;
 	}
-	if (rt.lt(live(degree), 270)) {
+	if (degree < 270) {
 		return 10;
 	}
-	if (rt.lt(live(degree), 315)) {
+	if (degree < 315) {
 		return 8;
 	}
 	return 9;
 });
 
-// /proc/dir2angle  (code/__HELPERS/type2type.dm:146)
+// type2type.dm:146
 rt.def("/proc/dir2angle", function dir2angle(f: Frame, D: Value) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = live(D);
-	if ($0 === 1) {
+	if (D === 1) {
 		return 0;
-	} else if ($0 === 2) {
+	} else if (D === 2) {
 		return 180;
-	} else if ($0 === 4) {
+	} else if (D === 4) {
 		return 90;
-	} else if ($0 === 8) {
+	} else if (D === 8) {
 		return 270;
-	} else if ($0 === 5) {
+	} else if (D === 5) {
 		return 45;
-	} else if ($0 === 6) {
+	} else if (D === 6) {
 		return 135;
-	} else if ($0 === 9) {
+	} else if (D === 9) {
 		return 315;
-	} else if ($0 === 10) {
+	} else if (D === 10) {
 		return 225;
 	} else {
 		return null;
 	}
-	return f.dot;
 });
 
-// /proc/angle2text  (code/__HELPERS/type2type.dm:168)
+// type2type.dm:168
 rt.def("/proc/angle2text", function angle2text(f: Frame, degree: Value) {
-	return rt.call(f, P("/proc/dir2text"), null, [rt.call(f, P("/proc/angle2dir"), null, [live(degree)])]);
+	return dir2text(angle2dir(degree));
 });
 
-// /proc/blendMode2iconMode  (code/__HELPERS/type2type.dm:172)
+// type2type.dm:172
 rt.def("/proc/blendMode2iconMode", function blendMode2iconMode(f: Frame, blend_mode: Value) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = live(blend_mode);
-	if ($0 === 4) {
+	if (blend_mode === 4) {
 		return 2;
-	} else if ($0 === 2) {
+	} else if (blend_mode === 2) {
 		return 0;
-	} else if ($0 === 3) {
+	} else if (blend_mode === 3) {
 		return 1;
 	} else {
 		return 3;
 	}
+});
+
+// type2type.dm:184
+rt.def("/proc/rights2text", function rights2text(f: Frame, rights: Value, seperator: Value, adds: Value, subs: Value) {
+	let verbpath: Value = null;
+	seperator ??= "";
+	if (rt.bitAnd(rights, 1)) {
+		f.dot += `${seperator}+BUILDMODE`;
+	}
+	if (rt.bitAnd(rights, 2)) {
+		f.dot += `${seperator}+ADMIN`;
+	}
+	if (rt.bitAnd(rights, 4)) {
+		f.dot += `${seperator}+BAN`;
+	}
+	if (rt.bitAnd(rights, 8)) {
+		f.dot += `${seperator}+FUN`;
+	}
+	if (rt.bitAnd(rights, 16)) {
+		f.dot += `${seperator}+SERVER`;
+	}
+	if (rt.bitAnd(rights, 32)) {
+		f.dot += `${seperator}+DEBUG`;
+	}
+	if (rt.bitAnd(rights, 64)) {
+		f.dot += `${seperator}+POSSESS`;
+	}
+	if (rt.bitAnd(rights, 128)) {
+		f.dot += `${seperator}+PERMISSIONS`;
+	}
+	if (rt.bitAnd(rights, 256)) {
+		f.dot += `${seperator}+STEALTH`;
+	}
+	if (rt.bitAnd(rights, 512)) {
+		f.dot += `${seperator}+POLL`;
+	}
+	if (rt.bitAnd(rights, 1024)) {
+		f.dot += `${seperator}+VAREDIT`;
+	}
+	if (rt.bitAnd(rights, 2048)) {
+		f.dot += `${seperator}+SOUND`;
+	}
+	if (rt.bitAnd(rights, 4096)) {
+		f.dot += `${seperator}+SPAWN`;
+	}
+	for (verbpath of each(adds)) {
+		f.dot += `${seperator}+${verbpath}`;
+	}
+	verbpath = null;
+	for (verbpath of each(subs)) {
+		f.dot += `${seperator}-${verbpath}`;
+	}
 	return f.dot;
 });
 
-// /proc/rights2text  (code/__HELPERS/type2type.dm:184)
-rt.def("/proc/rights2text", function rights2text(f: Frame, rights: Value, seperator: Value, adds: Value, subs: Value) {
-	let verbpath: Value = null;
-	let $e: any;
-	f.vars = () => [seperator, verbpath, $e];
-	if (live(seperator) === null) {
-		seperator = "";
-	}
-	if (truthy(rt.bitAnd(live(rights), 1))) {
-		f.dot = rt.modify(live(f.dot), fmt("＀+BUILDMODE", [live(seperator)]), add);
-	}
-	if (truthy(rt.bitAnd(live(rights), 2))) {
-		f.dot = rt.modify(live(f.dot), fmt("＀+ADMIN", [live(seperator)]), add);
-	}
-	if (truthy(rt.bitAnd(live(rights), 4))) {
-		f.dot = rt.modify(live(f.dot), fmt("＀+BAN", [live(seperator)]), add);
-	}
-	if (truthy(rt.bitAnd(live(rights), 8))) {
-		f.dot = rt.modify(live(f.dot), fmt("＀+FUN", [live(seperator)]), add);
-	}
-	if (truthy(rt.bitAnd(live(rights), 16))) {
-		f.dot = rt.modify(live(f.dot), fmt("＀+SERVER", [live(seperator)]), add);
-	}
-	if (truthy(rt.bitAnd(live(rights), 32))) {
-		f.dot = rt.modify(live(f.dot), fmt("＀+DEBUG", [live(seperator)]), add);
-	}
-	if (truthy(rt.bitAnd(live(rights), 64))) {
-		f.dot = rt.modify(live(f.dot), fmt("＀+POSSESS", [live(seperator)]), add);
-	}
-	if (truthy(rt.bitAnd(live(rights), 128))) {
-		f.dot = rt.modify(live(f.dot), fmt("＀+PERMISSIONS", [live(seperator)]), add);
-	}
-	if (truthy(rt.bitAnd(live(rights), 256))) {
-		f.dot = rt.modify(live(f.dot), fmt("＀+STEALTH", [live(seperator)]), add);
-	}
-	if (truthy(rt.bitAnd(live(rights), 512))) {
-		f.dot = rt.modify(live(f.dot), fmt("＀+POLL", [live(seperator)]), add);
-	}
-	if (truthy(rt.bitAnd(live(rights), 1024))) {
-		f.dot = rt.modify(live(f.dot), fmt("＀+VAREDIT", [live(seperator)]), add);
-	}
-	if (truthy(rt.bitAnd(live(rights), 2048))) {
-		f.dot = rt.modify(live(f.dot), fmt("＀+SOUND", [live(seperator)]), add);
-	}
-	if (truthy(rt.bitAnd(live(rights), 4096))) {
-		f.dot = rt.modify(live(f.dot), fmt("＀+SPAWN", [live(seperator)]), add);
-	}
-	verbpath = null;
-	rt.forList(f, 0, live(adds));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		verbpath = $e;
-		f.dot = rt.modify(live(f.dot), fmt("＀+＀", [live(seperator), live(verbpath)]), add);
-	}
-	rt.endFor(f, 0);
-	verbpath = null;
-	rt.forList(f, 0, live(subs));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		verbpath = $e;
-		f.dot = rt.modify(live(f.dot), fmt("＀-＀", [live(seperator), live(verbpath)]), add);
-	}
-	rt.endFor(f, 0);
-	return live(f.dot);
-});
-
-// /proc/ui_style2icon  (code/__HELPERS/type2type.dm:218)
+// type2type.dm:218
 rt.def("/proc/ui_style2icon", function ui_style2icon(f: Frame, ui_style: Value) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = live(ui_style);
-	if ($0 === "Retro") {
+	if (ui_style === "Retro") {
 		return rt.rsc("icons/mob/screen_retro.dmi");
-	} else if ($0 === "Plasmafire") {
+	} else if (ui_style === "Plasmafire") {
 		return rt.rsc("icons/mob/screen_plasmafire.dmi");
-	} else if ($0 === "Slimecore") {
+	} else if (ui_style === "Slimecore") {
 		return rt.rsc("icons/mob/screen_slimecore.dmi");
-	} else if ($0 === "Operative") {
+	} else if (ui_style === "Operative") {
 		return rt.rsc("icons/mob/screen_operative.dmi");
-	} else if ($0 === "Clockwork") {
+	} else if (ui_style === "Clockwork") {
 		return rt.rsc("icons/mob/screen_clockwork.dmi");
 	} else {
 		return rt.rsc("icons/mob/screen_midnight.dmi");
 	}
-	return f.dot;
 });
 
-// /proc/rgb2hsl  (code/__HELPERS/type2type.dm:234)
+// type2type.dm:234
 rt.def("/proc/rgb2hsl", function rgb2hsl(f: Frame, red: Value, green: Value, blue: Value) {
-	let max: Value = null, min: Value = null, range: Value = null, hue: Value = null, saturation: Value = null, lightness: Value = null, dred: Value = null, dgreen: Value = null, dblue: Value = null;
-	f.vars = () => [red, green, blue, max, min, range, hue, saturation, lightness, dred, dgreen, dblue];
-	(red = rt.modify(live(red), 255, divide));
-	(green = rt.modify(live(green), 255, divide));
-	(blue = rt.modify(live(blue), 255, divide));
-	max = rt.call(f, P("/proc/max"), null, [live(red), live(green), live(blue)]);
-	min = rt.call(f, P("/proc/min"), null, [live(red), live(green), live(blue)]);
-	range = subtract(live(max), live(min));
-	hue = 0;
-	saturation = 0;
-	lightness = 0;
-	lightness = divide(add(live(max), live(min)), 2);
-	if (!isEqual(live(range), 0)) {
-		if (rt.lt(live(lightness), 0.5)) {
-			saturation = divide(live(range), add(live(max), live(min)));
+	let dred: Value = null, dgreen: Value = null, dblue: Value = null;
+	red /= 255;
+	green /= 255;
+	blue /= 255;
+	let max: Value = rt.call(f, P("/proc/max"), null, [red, green, blue]);
+	let min: Value = rt.call(f, P("/proc/min"), null, [red, green, blue]);
+	let range: Value = max - min;
+	let hue: Value = 0;
+	let saturation: Value = 0;
+	let lightness: Value = (max + min) / 2;
+	if (range != 0) {
+		if (lightness < 0.5) {
+			saturation = range / (max + min);
 		} else {
-			saturation = divide(live(range), subtract(subtract(2, live(max)), live(min)));
+			saturation = range / (2 - max - min);
 		}
-		dred = add(divide(subtract(live(max), live(red)), multiply(6, live(max))), 0.5);
-		dgreen = add(divide(subtract(live(max), live(green)), multiply(6, live(max))), 0.5);
-		dblue = add(divide(subtract(live(max), live(blue)), multiply(6, live(max))), 0.5);
-		if (isEqual(live(max), live(red))) {
-			hue = subtract(live(dblue), live(dgreen));
+		dred = (max - red) / (6 * max) + 0.5;
+		dgreen = (max - green) / (6 * max) + 0.5;
+		dblue = (max - blue) / (6 * max) + 0.5;
+		if (max == red) {
+			hue = dblue - dgreen;
+		} else if (max == green) {
+			hue = dred - dblue + 0.33333334;
 		} else {
-			if (isEqual(live(max), live(green))) {
-				hue = add(subtract(live(dred), live(dblue)), 0.3333333432674408);
-			} else {
-				hue = add(subtract(live(dgreen), live(dred)), 0.6666666865348816);
-			}
+			hue = dgreen - dred + 0.6666667;
 		}
-		if (rt.lt(live(hue), 0)) {
-			hue = rt.inc(live(hue), 1);
-		} else {
-			if (rt.gt(live(hue), 1)) {
-				hue = rt.inc(live(hue), -1);
-			}
+		if (hue < 0) {
+			hue++;
+		} else if (hue > 1) {
+			hue--;
 		}
 	}
-	return rt.list(live(hue), live(saturation), live(lightness));
+	return list(hue, saturation, lightness);
 });
 
-// /proc/hsl2rgb  (code/__HELPERS/type2type.dm:266)
+// type2type.dm:266
 rt.def("/proc/hsl2rgb", function hsl2rgb(f: Frame, hue: Value, saturation: Value, lightness: Value) {
 	let red: Value = null, green: Value = null, blue: Value = null, a: Value = null, b: Value = null;
-	f.vars = () => [red, green, blue, a, b];
-	red = null;
-	green = null;
-	blue = null;
-	if (isEqual(live(saturation), 0)) {
-		green = (red = multiply(live(lightness), 255));
-		blue = live(red);
+	if (saturation == 0) {
+		green = (red = lightness * 255);
+		blue = red;
 	} else {
-		a = null;
-		b = null;
-		if (rt.lt(live(lightness), 0.5)) {
-			b = multiply(live(lightness), add(1, live(saturation)));
+		if (lightness < 0.5) {
+			b = lightness * (1 + saturation);
 		} else {
-			b = subtract(add(live(lightness), live(saturation)), multiply(live(saturation), live(lightness)));
+			b = lightness + saturation - saturation * lightness;
 		}
-		a = subtract(multiply(2, live(lightness)), live(b));
-		red = rt.call(f, P("/proc/round"), null, [multiply(255, rt.call(f, P("/proc/hue2rgb"), null, [live(a), live(b), add(live(hue), 0.3333333432674408)]))]);
-		green = rt.call(f, P("/proc/round"), null, [multiply(255, rt.call(f, P("/proc/hue2rgb"), null, [live(a), live(b), live(hue)]))]);
-		blue = rt.call(f, P("/proc/round"), null, [multiply(255, rt.call(f, P("/proc/hue2rgb"), null, [live(a), live(b), subtract(live(hue), 0.3333333432674408)]))]);
+		a = 2 * lightness - b;
+		red = round(255 * hue2rgb(a, b, hue + 0.33333334));
+		green = round(255 * hue2rgb(a, b, hue));
+		blue = round(255 * hue2rgb(a, b, hue - 0.33333334));
 	}
-	return rt.list(live(red), live(green), live(blue));
+	return list(red, green, blue);
 });
 
-// /proc/hue2rgb  (code/__HELPERS/type2type.dm:285)
+// type2type.dm:285
 rt.def("/proc/hue2rgb", function hue2rgb(f: Frame, a: Value, b: Value, hue: Value) {
-	f.vars = () => [hue];
-	if (rt.lt(live(hue), 0)) {
-		hue = rt.inc(live(hue), 1);
-	} else {
-		if (rt.gt(live(hue), 1)) {
-			hue = rt.inc(live(hue), -1);
-		}
+	if (hue < 0) {
+		hue++;
+	} else if (hue > 1) {
+		hue--;
 	}
-	if (rt.lt(multiply(6, live(hue)), 1)) {
-		return add(live(a), multiply(multiply(subtract(live(b), live(a)), 6), live(hue)));
+	if (6 * hue < 1) {
+		return a + (b - a) * 6 * hue;
 	}
-	if (rt.lt(multiply(2, live(hue)), 1)) {
-		return live(b);
+	if (2 * hue < 1) {
+		return b;
 	}
-	if (rt.lt(multiply(3, live(hue)), 2)) {
-		return add(live(a), multiply(multiply(subtract(live(b), live(a)), subtract(0.6666666865348816, live(hue))), 6));
+	if (3 * hue < 2) {
+		return a + (b - a) * (0.6666667 - hue) * 6;
 	}
-	return live(a);
+	return a;
 });
 
-// /proc/heat2colour_r  (code/__HELPERS/type2type.dm:405)
+// type2type.dm:405
 rt.def("/proc/heat2colour_r", function heat2colour_r(f: Frame, temp: Value) {
-	f.vars = () => [temp];
-	(temp = rt.modify(live(temp), 100, divide));
-	if (rt.le(live(temp), 66)) {
+	temp /= 100;
+	if (temp <= 66) {
 		f.dot = 255;
 	} else {
-		f.dot = rt.call(f, P("/proc/max"), null, [0, rt.call(f, P("/proc/min"), null, [255, multiply(329.69873046875, rt.power(subtract(live(temp), 60), -0.13320475816726685))])]);
+		f.dot = max(0, min(255, 329.69873 * (temp - 60) ** -0.13320476));
 	}
 	return f.dot;
 });
 
-// /proc/heat2colour_g  (code/__HELPERS/type2type.dm:413)
+// type2type.dm:413
 rt.def("/proc/heat2colour_g", function heat2colour_g(f: Frame, temp: Value) {
-	f.vars = () => [temp];
-	(temp = rt.modify(live(temp), 100, divide));
-	if (rt.le(live(temp), 66)) {
-		f.dot = rt.call(f, P("/proc/max"), null, [0, rt.call(f, P("/proc/min"), null, [255, subtract(multiply(99.4708023071289, rt.op(f, "LogE", [], [live(temp)])), 161.11956787109375)])]);
+	temp /= 100;
+	if (temp <= 66) {
+		f.dot = max(0, min(255, 99.4708 * rt.op(f, "LogE", [], [temp]) - 161.11957));
 	} else {
-		f.dot = rt.call(f, P("/proc/max"), null, [0, rt.call(f, P("/proc/min"), null, [255, multiply(288.1221618652344, rt.power(subtract(live(temp), 60), -0.07514849305152893))])]);
+		f.dot = max(0, min(255, 288.12216 * (temp - 60) ** -0.07514849));
 	}
 	return f.dot;
 });
 
-// /proc/heat2colour_b  (code/__HELPERS/type2type.dm:421)
+// type2type.dm:421
 rt.def("/proc/heat2colour_b", function heat2colour_b(f: Frame, temp: Value) {
-	f.vars = () => [temp];
-	(temp = rt.modify(live(temp), 100, divide));
-	if (rt.ge(live(temp), 66)) {
+	temp /= 100;
+	if (temp >= 66) {
 		f.dot = 255;
+	} else if (temp <= 16) {
+		f.dot = 0;
 	} else {
-		if (rt.le(live(temp), 16)) {
-			f.dot = 0;
-		} else {
-			f.dot = rt.call(f, P("/proc/max"), null, [0, rt.call(f, P("/proc/min"), null, [255, subtract(multiply(138.51773071289062, rt.op(f, "LogE", [], [subtract(live(temp), 10)])), 305.0447998046875)])]);
-		}
+		f.dot = max(0, min(255, 138.51773 * rt.op(f, "LogE", [], [temp - 10]) - 305.0448));
 	}
 	return f.dot;
 });
 
-// /proc/color2hex  (code/__HELPERS/type2type.dm:431)
+// type2type.dm:431
 rt.def("/proc/color2hex", function color2hex(f: Frame, color: Value) {
-	let $0: any;
-	f.vars = () => [$0];
-	if (!truthy(live(color))) {
+	if (!color) {
 		return "#000000";
 	}
-	$0 = live(color);
-	if ($0 === "white") {
+	if (color === "white") {
 		return "#FFFFFF";
-	} else if ($0 === "black") {
+	} else if (color === "black") {
 		return "#000000";
-	} else if ($0 === "gray") {
+	} else if (color === "gray") {
 		return "#808080";
-	} else if ($0 === "brown") {
+	} else if (color === "brown") {
 		return "#A52A2A";
-	} else if ($0 === "red") {
+	} else if (color === "red") {
 		return "#FF0000";
-	} else if ($0 === "darkred") {
+	} else if (color === "darkred") {
 		return "#8B0000";
-	} else if ($0 === "crimson") {
+	} else if (color === "crimson") {
 		return "#DC143C";
-	} else if ($0 === "orange") {
+	} else if (color === "orange") {
 		return "#FFA500";
-	} else if ($0 === "yellow") {
+	} else if (color === "yellow") {
 		return "#FFFF00";
-	} else if ($0 === "green") {
+	} else if (color === "green") {
 		return "#008000";
-	} else if ($0 === "lime") {
+	} else if (color === "lime") {
 		return "#00FF00";
-	} else if ($0 === "darkgreen") {
+	} else if (color === "darkgreen") {
 		return "#006400";
-	} else if ($0 === "cyan") {
+	} else if (color === "cyan") {
 		return "#00FFFF";
-	} else if ($0 === "blue") {
+	} else if (color === "blue") {
 		return "#0000FF";
-	} else if ($0 === "navy") {
+	} else if (color === "navy") {
 		return "#000080";
-	} else if ($0 === "teal") {
+	} else if (color === "teal") {
 		return "#008080";
-	} else if ($0 === "purple") {
+	} else if (color === "purple") {
 		return "#800080";
-	} else if ($0 === "indigo") {
+	} else if (color === "indigo") {
 		return "#4B0082";
 	} else {
 		return "#FFFFFF";
 	}
-	return f.dot;
 });
 
-// /proc/string2listofvars  (code/__HELPERS/type2type.dm:485)
+// type2type.dm:485
 rt.def("/proc/string2listofvars", function string2listofvars(f: Frame, t_string: Value, var_source: Value) {
-	let var_found: Value = null, list_value: Value = null, intermediate_stage: Value = null, value: Value = null, A: Value = null;
-	let $e: any;
-	f.vars = () => [t_string, var_found, list_value, intermediate_stage, value, A, $e];
-	if ((!truthy(live(t_string)) || !truthy(live(var_source)))) {
-		return rt.list();
+	let var_found: Value = null, intermediate_stage: Value = null, value: Value = null, A: Value = null;
+	if (!t_string || !var_source) {
+		return list();
 	}
-	f.dot = rt.list();
-	if (!truthy((var_found = rt.call(f, P("/proc/findtext"), null, [live(t_string), "["])))) return f.dot;
-	t_string = rt.call(f, P("/proc/replacetext"), null, [live(t_string), "[", "[ "]);
-	list_value = rt.call(f, P("/proc/splittext"), null, [live(t_string), "["]);
-	list_value = rt.call(f, P("/proc/splittext"), null, [(intermediate_stage = rt.call(f, P("/proc/jointext"), null, [live(list_value), null])), " "]);
-	value = null;
-	rt.forList(f, 0, live(list_value));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		value = $e;
-		if (truthy(rt.call(f, P("/proc/findtext"), null, [live(value), "]"]))) {
-			value = rt.call(f, P("/proc/splittext"), null, [live(value), "]"]);
+	f.dot = list();
+	if (!(var_found = findtext(t_string, "["))) return f.dot;
+	t_string = replacetext(t_string, "[", "[ ");
+	let list_value: Value = splittext(t_string, "[");
+	list_value = splittext((intermediate_stage = jointext(list_value, null)), " ");
+	for (value of each(list_value)) {
+		if (findtext(value, "]")) {
+			value = splittext(value, "]");
 			A = null;
-			rt.forList(f, 1, live(value));
-			while (($e = rt.next(f, 1)) !== undefined) {
-				A = $e;
-				if (truthy(rt.callName(f, rt.fv(f, "vars", live(var_source)), "Find", [live(A)]))) {
-					f.dot = rt.modify(live(f.dot), live(A), add);
+			for (A of each(value)) {
+				if (var_source.vars.Find(A)) {
+					f.dot += A;
 				}
 			}
-			rt.endFor(f, 1);
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /proc/color_hex2num  (code/__HELPERS/type2type.dm:513)
+// type2type.dm:513
 rt.def("/proc/color_hex2num", function color_hex2num(f: Frame, A: Value) {
-	let R: Value = null, G: Value = null, B: Value = null;
-	f.vars = () => [R, G, B];
-	if (!truthy(live(A))) {
+	if (!A) {
 		return 0;
 	}
-	R = rt.call(f, P("/proc/hex2num"), null, [rt.call(f, P("/proc/copytext"), null, [live(A), 2, 4])]);
-	G = rt.call(f, P("/proc/hex2num"), null, [rt.call(f, P("/proc/copytext"), null, [live(A), 4, 6])]);
-	B = rt.call(f, P("/proc/hex2num"), null, [rt.call(f, P("/proc/copytext"), null, [live(A), 6, 0])]);
-	return add(add(live(R), live(G)), live(B));
+	let R: Value = hex2num(copytext(A, 2, 4));
+	let G: Value = hex2num(copytext(A, 4, 6));
+	let B: Value = hex2num(copytext(A, 6, 0));
+	return R + G + B;
 });

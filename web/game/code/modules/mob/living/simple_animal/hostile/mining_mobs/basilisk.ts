@@ -1,7 +1,7 @@
-// From code/modules/mob/living/simple_animal/hostile/mining_mobs/basilisk.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/simple_animal/hostile/mining_mobs/basilisk.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(5004, "/mob/living/simple_animal/hostile/asteroid/basilisk", "/mob/living/simple_animal/hostile/asteroid", {
@@ -38,36 +38,31 @@ rt.type(5004, "/mob/living/simple_animal/hostile/asteroid/basilisk", "/mob/livin
 	loot: null,
 });
 
-// /mob/living/simple_animal/hostile/asteroid/basilisk/proc/<init>  (code/modules/mob/living/simple_animal/hostile/mining_mobs/basilisk.dm:28)
+// basilisk.dm:28
 rt.def("/mob/living/simple_animal/hostile/asteroid/basilisk/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "speak_emote", rt.list("chitters"));
-	$0 = $0;
-	rt.setSv(f, "loot", rt.list(T("/obj/item/weapon/ore/diamond"), T("/obj/item/weapon/ore/diamond")));
+	parent_proc();
+	this.speak_emote = list("chitters");
+
+	this.loot = list(T("/obj/item/weapon/ore/diamond"), T("/obj/item/weapon/ore/diamond"));
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/asteroid/basilisk/proc/GiveTarget  (code/modules/mob/living/simple_animal/hostile/mining_mobs/basilisk.dm:46)  may sleep
-rt.def("/mob/living/simple_animal/hostile/asteroid/basilisk/proc/GiveTarget", function* GiveTarget(f: Frame) {
-	if (!truthy((yield* g.callSuper(f, [], rt.Args.Same)))) return f.dot;
-	if (!((truthy((rt.istype(rt.sv(f, "target"), T("/mob/living")) ? 1 : 0)) && !truthy((yield* g.callName(f, rt.sv(f, "target"), "Adjacent", [rt.sv(f, "targets_from")])))) && rt.le(rt.sv(f, "ranged_cooldown"), rt.worldTime(f)))) return f.dot;
-	yield* g.srcCall(f, "OpenFire", rt.sv(f, "target"));
+// basilisk.dm:46
+rt.def("/mob/living/simple_animal/hostile/asteroid/basilisk/proc/GiveTarget", function* GiveTarget(f: Frame, new_target: Value) {
+	if (!(yield* parent_proc())) return f.dot;
+	if (!(rt.istype(this.target, T("/mob/living")) && !this.target.Adjacent(this.targets_from) && this.ranged_cooldown <= rt.worldTime(f))) return f.dot;
+	yield* this.OpenFire(this.target);
 	return f.dot;
-}, true, { args: ["new_target"] });
+}, true);
 
-// /mob/living/simple_animal/hostile/asteroid/basilisk/proc/ex_act  (code/modules/mob/living/simple_animal/hostile/mining_mobs/basilisk.dm:51)  may sleep
+// basilisk.dm:51
 rt.def("/mob/living/simple_animal/hostile/asteroid/basilisk/proc/ex_act", function* ex_act(f: Frame, severity: Value, target: Value) {
-	let $0: any;
-	f.vars = () => [severity, target, $0];
-	$0 = live(severity);
-	if ($0 === 1) {
-		yield* g.srcCall(f, "gib");
-	} else if ($0 === 2) {
-		yield* g.srcCall(f, "adjustBruteLoss", 140);
-	} else if ($0 === 3) {
-		yield* g.srcCall(f, "adjustBruteLoss", 110);
+	if (severity === 1) {
+		yield* this.gib();
+	} else if (severity === 2) {
+		yield* this.adjustBruteLoss(140);
+	} else if (severity === 3) {
+		yield* this.adjustBruteLoss(110);
 	}
 	return f.dot;
 }, true, { waitfor: false });
@@ -96,15 +91,13 @@ rt.type(5005, "/mob/living/simple_animal/hostile/asteroid/basilisk/watcher", "/m
 	butcher_results: null,
 });
 
-// /mob/living/simple_animal/hostile/asteroid/basilisk/watcher/proc/<init>  (code/modules/mob/living/simple_animal/hostile/mining_mobs/basilisk.dm:74)
+// basilisk.dm:74
 rt.def("/mob/living/simple_animal/hostile/asteroid/basilisk/watcher/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "speak_emote", rt.list("telepathically cries"));
-	$0 = $0;
-	rt.setSv(f, "loot", rt.list());
-	$0 = $0;
-	rt.setSv(f, "butcher_results", rt.alist(f, [T("/obj/item/weapon/ore/diamond"), 2, T("/obj/item/stack/sheet/sinew"), 2, T("/obj/item/stack/sheet/bone"), 1]));
+	parent_proc();
+	this.speak_emote = list("telepathically cries");
+
+	this.loot = list();
+
+	this.butcher_results = rt.alist(f, [T("/obj/item/weapon/ore/diamond"), 2, T("/obj/item/stack/sheet/sinew"), 2, T("/obj/item/stack/sheet/bone"), 1]);
 	return f.dot;
 });

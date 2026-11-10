@@ -1,7 +1,7 @@
-// From code/modules/projectiles/projectile/reusable.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/projectiles/projectile/reusable.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(8791, "/obj/item/projectile/bullet/reusable", "/obj/item/projectile/bullet", {
@@ -12,30 +12,29 @@ rt.type(8791, "/obj/item/projectile/bullet/reusable", "/obj/item/projectile/bull
 	impact_effect_type: null,
 });
 
-// /obj/item/projectile/bullet/reusable/proc/on_hit  (code/modules/projectiles/projectile/reusable.dm:9)  may sleep
+// reusable.dm:9
 rt.def("/obj/item/projectile/bullet/reusable/proc/on_hit", function* on_hit(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.srcCall(f, "handle_drop");
+	f.dot = (yield* parent_proc());
+	yield* this.handle_drop();
 	return f.dot;
 }, true, { args: ["target", "blocked"] });
 
-// /obj/item/projectile/bullet/reusable/proc/on_range  (code/modules/projectiles/projectile/reusable.dm:13)  may sleep
+// reusable.dm:13
 rt.def("/obj/item/projectile/bullet/reusable/proc/on_range", function* on_range(f: Frame) {
-	yield* g.srcCall(f, "handle_drop");
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* this.handle_drop();
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /obj/item/projectile/bullet/reusable/proc/handle_drop  (code/modules/projectiles/projectile/reusable.dm:17)  may sleep
+// reusable.dm:17
 rt.def("/obj/item/projectile/bullet/reusable/proc/handle_drop", function* handle_drop(f: Frame) {
 	let _T: Value = null;
-	f.vars = () => [_T];
-	if (truthy(rt.sv(f, "dropped"))) return f.dot;
-	yield* g.new_(f, rt.sv(f, "ammo_type"), [(_T = rt.getStep(f, live(f.src), 0))]);
-	rt.setSv(f, "dropped", 1);
+	if (this.dropped) return f.dot;
+	yield* new_(this.ammo_type, (_T = rt.getStep(f, this, 0)));
+	this.dropped = 1;
 	return f.dot;
 }, true);
 
@@ -53,31 +52,30 @@ rt.type(8796, "/obj/item/projectile/bullet/reusable/foam_dart", "/obj/item/proje
 	range: 10,
 });
 
-// /obj/item/projectile/bullet/reusable/foam_dart/proc/handle_drop  (code/modules/projectiles/projectile/reusable.dm:45)  may sleep
+// reusable.dm:45
 rt.def("/obj/item/projectile/bullet/reusable/foam_dart/proc/handle_drop", function* handle_drop(f: Frame) {
-	let _T: Value = null, newcasing: Value = null, newdart: Value = null;
-	f.vars = () => [_T, newcasing, newdart];
-	if (truthy(rt.sv(f, "dropped"))) {
-		return live(f.dot);
+	let newcasing: Value = null, newdart: Value = null;
+	if (this.dropped) {
+		return f.dot;
 	}
-	_T = rt.getStep(f, live(f.src), 0);
-	rt.setSv(f, "dropped", 1);
-	rt.setFv(f, "modified", (newcasing = (yield* g.new_(f, rt.sv(f, "ammo_type"), [live(_T)]))), rt.sv(f, "modified"));
-	rt.setFv(f, "modified", (newdart = rt.fv(f, "BB", live(newcasing))), rt.sv(f, "modified"));
-	rt.setFv(f, "damage", live(newdart), rt.sv(f, "damage"));
-	rt.setFv(f, "nodamage", live(newdart), rt.sv(f, "nodamage"));
-	rt.setFv(f, "damage_type", live(newdart), rt.sv(f, "damage_type"));
-	if (truthy(rt.sv(f, "pen"))) {
-		rt.setFv(f, "pen", live(newdart), rt.sv(f, "pen"));
-		yield* g.callName(f, rt.sv(f, "pen"), "forceMove", [live(newdart)]);
-		rt.setSv(f, "pen", null);
+	let _T: Value = rt.getStep(f, this, 0);
+	this.dropped = 1;
+	(newcasing = (yield* new_(this.ammo_type, _T))).modified = this.modified;
+	(newdart = newcasing.BB).modified = this.modified;
+	newdart.damage = this.damage;
+	newdart.nodamage = this.nodamage;
+	newdart.damage_type = this.damage_type;
+	if (this.pen) {
+		newdart.pen = this.pen;
+		yield* this.pen.forceMove(newdart);
+		this.pen = null;
 	}
-	yield* g.callName(f, live(newdart), "update_icon", []);
+	yield* newdart.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/item/projectile/bullet/reusable/foam_dart/proc/Destroy  (code/modules/projectiles/projectile/reusable.dm:63)  may sleep
+// reusable.dm:63
 rt.def("/obj/item/projectile/bullet/reusable/foam_dart/proc/Destroy", function* Destroy(f: Frame) {
-	rt.setSv(f, "pen", null);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	this.pen = null;
+	return (yield* parent_proc());
 }, true);

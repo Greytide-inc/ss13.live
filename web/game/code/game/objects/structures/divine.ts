@@ -1,7 +1,7 @@
-// From code/game/objects/structures/divine.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/structures/divine.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(12728, "/obj/structure/sacrificealtar", "/obj/structure", {
@@ -14,22 +14,21 @@ rt.type(12728, "/obj/structure/sacrificealtar", "/obj/structure", {
 	density: 0,
 });
 
-// /obj/structure/sacrificealtar/proc/attack_hand  (code/game/objects/structures/divine.dm:11)  may sleep
-rt.def("/obj/structure/sacrificealtar/proc/attack_hand", function* attack_hand(f: Frame) {
+// divine.dm:11
+rt.def("/obj/structure/sacrificealtar/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
 	let L: Value = null;
-	f.vars = () => [L];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy((yield* g.srcCall(f, "has_buckled_mobs")))) {
-		return live(f.dot);
+	yield* parent_proc();
+	if (!this.has_buckled_mobs()) {
+		return f.dot;
 	}
-	if (!truthy((L = rt.locateIn(f, T("/mob/living"), rt.sv(f, "buckled_mobs"))))) {
-		return live(f.dot);
+	if (!(L = rt.locateIn(f, T("/mob/living"), this.buckled_mobs))) {
+		return f.dot;
 	}
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='notice'>You attempt to sacrifice ＀ by invoking the sacrificial ritual.</span>", [live(L)])]);
-	yield* g.callName(f, live(L), "gib", []);
-	yield* g.call(f, P("/proc/message_admins"), null, [fmt("＀ has sacrificed ＀ on the sacrifical altar.", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.args[0])])), (yield* g.call(f, P("/proc/key_name_admin"), null, [live(L)]))])]);
+	to_chat(user, `<span class='notice'>You attempt to sacrifice ${L} by invoking the sacrificial ritual.</span>`);
+	yield* L.gib();
+	message_admins(`${key_name_admin(user)} has sacrificed ${key_name_admin(L)} on the sacrifical altar.`);
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
 rt.type(12729, "/obj/structure/healingfountain", "/obj/structure", {
 	time_between_uses: 1800,
@@ -42,27 +41,26 @@ rt.type(12729, "/obj/structure/healingfountain", "/obj/structure", {
 	density: 1,
 });
 
-// /obj/structure/healingfountain/proc/attack_hand  (code/game/objects/structures/divine.dm:32)  may sleep
+// divine.dm:32
 rt.def("/obj/structure/healingfountain/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (rt.gt(add(rt.sv(f, "last_process"), rt.sv(f, "time_between_uses")), rt.worldTime(f))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>The fountain appears to be empty.</span>"]);
-		return live(f.dot);
+	if (this.last_process + this.time_between_uses > rt.worldTime(f)) {
+		to_chat(user, "<span class='notice'>The fountain appears to be empty.</span>");
+		return f.dot;
 	}
-	rt.setSv(f, "last_process", rt.worldTime(f));
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>The water feels warm and soothing as you touch it. The fountain immediately dries up shortly afterwards.</span>"]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(user)), "add_reagent", ["godblood", 20]);
-	yield* g.srcCall(f, "update_icons");
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/structure/healingfountain/proc/update_icons")])), rt.sv(f, "time_between_uses")]);
+	this.last_process = rt.worldTime(f);
+	to_chat(user, "<span class='notice'>The water feels warm and soothing as you touch it. The fountain immediately dries up shortly afterwards.</span>");
+	yield* user.reagents.add_reagent("godblood", 20);
+	yield* this.update_icons();
+	yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/structure/healingfountain/proc/update_icons"))), this.time_between_uses);
 	return f.dot;
 }, true);
 
-// /obj/structure/healingfountain/proc/update_icons  (code/game/objects/structures/divine.dm:43)
+// divine.dm:43
 rt.def("/obj/structure/healingfountain/proc/update_icons", function update_icons(f: Frame) {
-	if (rt.gt(add(rt.sv(f, "last_process"), rt.sv(f, "time_between_uses")), rt.worldTime(f))) {
-		rt.setSv(f, "icon_state", "fountain");
+	if (this.last_process + this.time_between_uses > rt.worldTime(f)) {
+		this.icon_state = "fountain";
 	} else {
-		rt.setSv(f, "icon_state", "fountain-red");
+		this.icon_state = "fountain-red";
 	}
 	return f.dot;
 });

@@ -1,7 +1,7 @@
-// From code/datums/diseases/advance/symptoms/sneeze.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/datums/diseases/advance/symptoms/sneeze.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(1012, "/datum/symptom/sneeze", "/datum/symptom", {
@@ -14,21 +14,18 @@ rt.type(1012, "/datum/symptom/sneeze", "/datum/symptom", {
 	severity: 1,
 });
 
-// /datum/symptom/sneeze/proc/Activate  (code/datums/diseases/advance/symptoms/sneeze.dm:30)  may sleep
-rt.def("/datum/symptom/sneeze/proc/Activate", function* Activate(f: Frame) {
+// sneeze.dm:30
+rt.def("/datum/symptom/sneeze/proc/Activate", function* Activate(f: Frame, A: Value) {
 	let M: Value = null;
-	let $0: any;
-	f.vars = () => [M, $0];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.op(f, "Prob", [], [rt.gl("SYMPTOM_ACTIVATION_PROB")]))) {
-		M = rt.fv(f, "affected_mob", live(f.args[0]));
-		$0 = rt.fv(f, "stage", live(f.args[0]));
-		if ($0 === 1 || $0 === 2 || $0 === 3) {
-			yield* g.callName(f, live(M), "emote", ["sniff"]);
+	yield* parent_proc();
+	if (prob(GLOB.SYMPTOM_ACTIVATION_PROB)) {
+		M = A.affected_mob;
+		if (A.stage === 1 || A.stage === 2 || A.stage === 3) {
+			yield* M.emote("sniff");
 		} else {
-			yield* g.callName(f, live(M), "emote", ["sneeze"]);
-			yield* g.callName(f, live(f.args[0]), "spread", [rt.fv(f, "holder", live(f.args[0])), 5]);
+			yield* M.emote("sneeze");
+			yield* A.spread(A.holder, 5);
 		}
 	}
-	return live(f.dot);
-}, true, { args: ["A"] });
+	return f.dot;
+}, true);

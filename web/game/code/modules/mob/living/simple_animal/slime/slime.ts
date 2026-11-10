@@ -1,7 +1,7 @@
-// From code/modules/mob/living/simple_animal/slime/slime.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/simple_animal/slime/slime.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(4851, "/mob/living/simple_animal/slime", "/mob/living/simple_animal", {
@@ -61,502 +61,455 @@ rt.type(4851, "/mob/living/simple_animal/slime", "/mob/living/simple_animal", {
 	status_flags: 12,
 }, { global: { slime_colours: 713, slime_name_regex: 1043 } });
 
-// /mob/living/simple_animal/slime/proc/<init>  (code/modules/mob/living/simple_animal/slime/slime.dm:59)
+// slime.dm:59
 rt.def("/mob/living/simple_animal/slime/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "Friends", rt.list());
-	$0 = $0;
-	rt.setSv(f, "speech_buffer", rt.list());
-	$0 = $0;
-	rt.setSv(f, "slime_mutation", rt.op(f, "CreateMultidimensionalList", [1], [4]));
-	rt.setSv(f, "faction", rt.list("slime", "neutral"));
-	rt.setSv(f, "emote_see", rt.list("jiggles", "bounces in place"));
-	$0 = $0;
-	rt.setSv(f, "speak_emote", rt.list("blorbles"));
-	rt.setSv(f, "atmos_requirements", rt.alist(f, ["min_oxy", 0, "max_oxy", 0, "min_tox", 0, "max_tox", 0, "min_co2", 0, "max_co2", 0, "min_n2", 0, "max_n2", 0]));
+	parent_proc();
+	this.Friends = list();
+
+	this.speech_buffer = list();
+
+	this.slime_mutation = rt.op(f, "CreateMultidimensionalList", [1], [4]);
+	this.faction = list("slime", "neutral");
+	this.emote_see = list("jiggles", "bounces in place");
+
+	this.speak_emote = list("blorbles");
+	this.atmos_requirements = rt.alist(f, ["min_oxy", 0, "max_oxy", 0, "min_tox", 0, "max_tox", 0, "min_co2", 0, "max_co2", 0, "min_n2", 0, "max_n2", 0]);
 	return f.dot;
 });
 
-// /mob/living/simple_animal/slime/proc/Initialize  (code/modules/mob/living/simple_animal/slime/slime.dm:80)  may sleep
+// slime.dm:80
 rt.def("/mob/living/simple_animal/slime/proc/Initialize", function* Initialize(f: Frame) {
 	let F: Value = null, R: Value = null, E: Value = null;
-	f.vars = () => [F, R, E];
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = "grey";
 	}
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 0;
 	}
-	yield* g.callName(f, (F = (yield* g.new_(f, T("/datum/action/innate/slime/feed"), []))), "Grant", [live(f.src)]);
-	rt.setSv(f, "is_adult", live(f.args[2]));
-	if (truthy(rt.sv(f, "is_adult"))) {
-		yield* g.callName(f, (R = (yield* g.new_(f, T("/datum/action/innate/slime/reproduce"), []))), "Grant", [live(f.src)]);
-		rt.setSv(f, "health", 200);
-		rt.setSv(f, "maxHealth", 200);
+	yield* (F = (yield* new_(T("/datum/action/innate/slime/feed")))).Grant(this);
+	this.is_adult = f.args[2];
+	if (this.is_adult) {
+		yield* (R = (yield* new_(T("/datum/action/innate/slime/reproduce")))).Grant(this);
+		this.health = 200;
+		this.maxHealth = 200;
 	} else {
-		yield* g.callName(f, (E = (yield* g.new_(f, T("/datum/action/innate/slime/evolve"), []))), "Grant", [live(f.src)]);
+		yield* (E = (yield* new_(T("/datum/action/innate/slime/evolve")))).Grant(this);
 	}
-	yield* g.srcCall(f, "create_reagents", 100);
-	yield* g.srcCall(f, "set_colour", live(f.args[1]));
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* this.create_reagents(100);
+	this.set_colour(f.args[1]);
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true, { args: ["mapload", "new_colour", "new_is_adult"] });
 
-// /mob/living/simple_animal/slime/proc/set_colour  (code/modules/mob/living/simple_animal/slime/slime.dm:98)
+// slime.dm:98
 rt.def("/mob/living/simple_animal/slime/proc/set_colour", function set_colour(f: Frame, new_colour: Value) {
 	let sanitizedcolour: Value = null;
-	f.vars = () => [sanitizedcolour];
-	rt.setSv(f, "colour", live(new_colour));
-	rt.callSrc(f, "update_name", []);
-	rt.setSv(f, "slime_mutation", rt.callSrc(f, "mutation_table", [rt.sv(f, "colour")]));
-	rt.setSv(f, "coretype", rt.call(f, P("/proc/text2path"), null, [fmt("/obj/item/slime_extract/＀", [(sanitizedcolour = rt.call(f, P("/proc/replacetext"), null, [rt.sv(f, "colour"), " ", ""]))])]));
-	rt.callSrc(f, "regenerate_icons", []);
+	this.colour = new_colour;
+	this.update_name();
+	this.slime_mutation = this.mutation_table(this.colour);
+	this.coretype = text2path(`/obj/item/slime_extract/${(sanitizedcolour = replacetext(this.colour, " ", ""))}`);
+	this.regenerate_icons();
 	return f.dot;
 });
 
-// /mob/living/simple_animal/slime/proc/update_name  (code/modules/mob/living/simple_animal/slime/slime.dm:106)
+// slime.dm:106
 rt.def("/mob/living/simple_animal/slime/proc/update_name", function update_name(f: Frame) {
-	let $0: any, $1: any;
-	f.vars = () => [$0, $1];
-	if (!truthy(rt.callName(f, rt.gl("slime_name_regex"), "Find", [rt.sv(f, "name")]))) return f.dot;
-	rt.setSv(f, "number", rt.call(f, P("/proc/rand"), null, [1, 1000]));
-	$0 = rt.sv(f, "colour");
-	if (truthy(rt.sv(f, "is_adult"))) {
-		$1 = "adult";
-	} else {
-		$1 = "baby";
-	}
-	rt.setSv(f, "name", fmt("＀ ＀ slime (＀)", [$0, $1, rt.sv(f, "number")]));
-	rt.setSv(f, "real_name", rt.sv(f, "name"));
+	if (!GLOB.slime_name_regex.Find(this.name)) return f.dot;
+	this.number = rand(1, 1000);
+	let $0: any = this.colour;
+	this.name = `${$0} ${this.is_adult ? "adult" : "baby"} slime (${this.number})`;
+	this.real_name = this.name;
 	return f.dot;
 });
 
-// /mob/living/simple_animal/slime/proc/regenerate_icons  (code/modules/mob/living/simple_animal/slime/slime.dm:115)
+// slime.dm:115
 rt.def("/mob/living/simple_animal/slime/proc/regenerate_icons", function regenerate_icons(f: Frame) {
 	let icon_text: Value = null;
-	let $0: any, $1: any;
-	f.vars = () => [icon_text, $0, $1];
-	rt.callSrc(f, "cut_overlays", []);
-	$0 = rt.sv(f, "colour");
-	if (truthy(rt.sv(f, "is_adult"))) {
-		$1 = "adult";
-	} else {
-		$1 = "baby";
-	}
-	rt.setSv(f, "icon_dead", fmt("＀ dead", [(icon_text = fmt("＀ ＀ slime", [$0, $1]))]));
-	if (!isEqual(rt.sv(f, "stat"), 2)) {
-		rt.setSv(f, "icon_state", live(icon_text));
-		if ((truthy(rt.sv(f, "mood")) && !truthy(rt.sv(f, "stat")))) {
-			rt.callSrc(f, "add_overlay", [fmt("aslime-＀", [rt.sv(f, "mood")])]);
+	this.cut_overlays();
+	let $0: any = this.colour;
+	this.icon_dead = `${(icon_text = `${$0} ${this.is_adult ? "adult" : "baby"} slime`)} dead`;
+	if (this.stat != 2) {
+		this.icon_state = icon_text;
+		if (this.mood && !this.stat) {
+			this.add_overlay(`aslime-${this.mood}`);
 		}
 	} else {
-		rt.setSv(f, "icon_state", rt.sv(f, "icon_dead"));
+		this.icon_state = this.icon_dead;
 	}
-	rt.callSuper(f, [], rt.Args.Same);
+	parent_proc();
 	return f.dot;
 });
 
-// /mob/living/simple_animal/slime/proc/movement_delay  (code/modules/mob/living/simple_animal/slime/slime.dm:127)
+// slime.dm:127
 rt.def("/mob/living/simple_animal/slime/proc/movement_delay", function movement_delay(f: Frame) {
 	let health_deficiency: Value = null;
-	f.vars = () => [health_deficiency];
-	if (rt.ge(rt.sv(f, "bodytemperature"), 330.2300109863281)) {
+	if (this.bodytemperature >= 330.23) {
 		return -1;
 	}
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	if (rt.ge((health_deficiency = subtract(100, rt.sv(f, "health"))), 45)) {
-		f.dot = rt.modify(live(f.dot), divide(live(health_deficiency), 25), add);
+	f.dot = parent_proc();
+	if ((health_deficiency = 100 - this.health) >= 45) {
+		f.dot += health_deficiency / 25;
 	}
-	if (rt.lt(rt.sv(f, "bodytemperature"), 183.2220001220703)) {
-		f.dot = rt.modify(live(f.dot), multiply(divide(subtract(283.22198486328125, rt.sv(f, "bodytemperature")), 10), 1.75), add);
+	if (this.bodytemperature < 183.222) {
+		f.dot += (283.222 - this.bodytemperature) / 10 * 1.75;
 	}
-	if (truthy(rt.sv(f, "reagents"))) {
-		if (truthy(rt.callName(f, rt.sv(f, "reagents"), "has_reagent", ["morphine"]))) {
-			(f.dot = rt.modify(live(f.dot), 2, multiply));
+	if (this.reagents) {
+		if (this.reagents.has_reagent("morphine")) {
+			f.dot *= 2;
 		}
-		if (truthy(rt.callName(f, rt.sv(f, "reagents"), "has_reagent", ["frostoil"]))) {
-			(f.dot = rt.modify(live(f.dot), 5, multiply));
+		if (this.reagents.has_reagent("frostoil")) {
+			f.dot *= 5;
 		}
 	}
-	if (rt.le(rt.sv(f, "health"), 0)) {
-		(f.dot = rt.modify(live(f.dot), 2, multiply));
+	if (this.health <= 0) {
+		f.dot *= 2;
 	}
-	f.dot = rt.modify(live(f.dot), rt.fv(f, "slime_delay", rt.gl("config")), add);
+	f.dot += GLOB.config.slime_delay;
 	return f.dot;
 });
 
-// /mob/living/simple_animal/slime/proc/ObjBump  (code/modules/mob/living/simple_animal/slime/slime.dm:152)  may sleep
+// slime.dm:152
 rt.def("/mob/living/simple_animal/slime/proc/ObjBump", function* ObjBump(f: Frame, O: Value) {
-	let probab: Value = null;
-	let $0: any;
-	f.vars = () => [O, probab, $0];
-	if (!(!truthy(rt.sv(f, "client")) && rt.gt(rt.sv(f, "powerlevel"), 0))) return f.dot;
-	probab = 10;
-	$0 = rt.sv(f, "powerlevel");
-	if (rt.inRange($0, 1, 2)) {
+	if (!(!this.client && this.powerlevel > 0)) return f.dot;
+	let probab: Value = 10;
+	if (rt.inRange(this.powerlevel, 1, 2)) {
 		probab = 20;
-	} else if (rt.inRange($0, 3, 4)) {
+	} else if (rt.inRange(this.powerlevel, 3, 4)) {
 		probab = 30;
-	} else if (rt.inRange($0, 5, 6)) {
+	} else if (rt.inRange(this.powerlevel, 5, 6)) {
 		probab = 40;
-	} else if (rt.inRange($0, 7, 8)) {
+	} else if (rt.inRange(this.powerlevel, 7, 8)) {
 		probab = 60;
-	} else if ($0 === 9) {
+	} else if (this.powerlevel === 9) {
 		probab = 70;
-	} else if ($0 === 10) {
+	} else if (this.powerlevel === 10) {
 		probab = 95;
 	}
-	if (!truthy(rt.op(f, "Prob", [], [live(probab)]))) return f.dot;
-	if (!(truthy((rt.istype(live(O), T("/obj/structure/window")) ? 1 : 0)) || truthy((rt.istype(live(O), T("/obj/structure/grille")) ? 1 : 0)))) return f.dot;
-	if (!(rt.le(rt.sv(f, "nutrition"), (yield* g.srcCall(f, "get_hunger_nutrition"))) && !truthy(rt.sv(f, "Atkcool")))) return f.dot;
-	if (!(truthy(rt.sv(f, "is_adult")) || truthy(rt.op(f, "Prob", [], [5])))) return f.dot;
-	yield* g.callName(f, live(O), "attack_slime", [live(f.src)]);
-	rt.setSv(f, "Atkcool", 1);
+	if (!prob(probab)) return f.dot;
+	if (!(rt.istype(O, T("/obj/structure/window")) || rt.istype(O, T("/obj/structure/grille")))) return f.dot;
+	if (!(this.nutrition <= this.get_hunger_nutrition() && !this.Atkcool)) return f.dot;
+	if (!(this.is_adult || prob(5))) return f.dot;
+	yield* O.attack_slime(this);
+	this.Atkcool = 1;
 	rt.spawnTail(f, 45, "/mob/living/simple_animal/slime/proc/ObjBump: spawn at modules/mob/living/simple_animal/slime/slime.dm:173", O, probab);
 	return f.dot;
 }, true);
 
 // a spawn(45) body of /mob/living/simple_animal/slime/proc/ObjBump, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/mob/living/simple_animal/slime/proc/ObjBump: spawn at modules/mob/living/simple_animal/slime/slime.dm:173", function* (f: Frame, O: Value, probab: Value) {
-	f.vars = () => [O, probab];
-	rt.setSv(f, "Atkcool", 0);
+	this.Atkcool = 0;
 	return null;
 });
 
-// /mob/living/simple_animal/slime/proc/Stat  (code/modules/mob/living/simple_animal/slime/slime.dm:180)  may sleep
+// slime.dm:180
 rt.def("/mob/living/simple_animal/slime/proc/Stat", function* Stat(f: Frame) {
-	if (!truthy((yield* g.callSuper(f, [], rt.Args.Same)))) return f.dot;
-	if (!truthy(rt.sv(f, "docile"))) {
-		yield* g.call(f, P("/proc/stat"), null, [null, fmt("Nutrition: ＀/＀", [rt.sv(f, "nutrition"), (yield* g.srcCall(f, "get_max_nutrition"))])]);
+	if (!(yield* parent_proc())) return f.dot;
+	if (!this.docile) {
+		stat(null, `Nutrition: ${this.nutrition}/${this.get_max_nutrition()}`);
 	}
-	if (rt.ge(rt.sv(f, "amount_grown"), 10)) {
-		if (truthy(rt.sv(f, "is_adult"))) {
-			yield* g.call(f, P("/proc/stat"), null, [null, "You can reproduce!"]);
+	if (this.amount_grown >= SLIME_EVOLUTION_THRESHOLD) {
+		if (this.is_adult) {
+			stat(null, "You can reproduce!");
 		} else {
-			yield* g.call(f, P("/proc/stat"), null, [null, "You can evolve!"]);
+			stat(null, "You can evolve!");
 		}
 	}
-	if (isEqual(rt.sv(f, "stat"), 1)) {
-		yield* g.call(f, P("/proc/stat"), null, [null, "You are knocked out by high levels of BZ!"]);
+	if (this.stat == 1) {
+		stat(null, "You are knocked out by high levels of BZ!");
 	} else {
-		yield* g.call(f, P("/proc/stat"), null, [null, fmt("Power Level: ＀", [rt.sv(f, "powerlevel")])]);
+		stat(null, `Power Level: ${this.powerlevel}`);
 	}
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/slime/proc/adjustFireLoss  (code/modules/mob/living/simple_animal/slime/slime.dm:197)  may sleep
+// slime.dm:197
 rt.def("/mob/living/simple_animal/slime/proc/adjustFireLoss", function* adjustFireLoss(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 1;
 	}
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 0;
 	}
-	if (!truthy(live(f.args[2]))) {
-		f.args[0] = rt.neg(rt.op(f, "Abs", [], [live(f.args[0])]));
+	if (!f.args[2]) {
+		f.args[0] = -rt.op(f, "Abs", [], [f.args[0]]);
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true, { args: ["amount", "updating_health", "forced"] });
 
-// /mob/living/simple_animal/slime/proc/bullet_act  (code/modules/mob/living/simple_animal/slime/slime.dm:202)  may sleep
+// slime.dm:202
 rt.def("/mob/living/simple_animal/slime/proc/bullet_act", function* bullet_act(f: Frame, Proj: Value) {
-	f.vars = () => [Proj];
-	if (!truthy(live(Proj))) {
-		return live(f.dot);
+	if (!Proj) {
+		return f.dot;
 	}
-	rt.modSrcVar(f, "attacked", 10, add);
-	if (isEqual(rt.fv(f, "damage_type", live(Proj)), "fire")) {
-		yield* g.srcCall(f, "adjustBruteLoss", rt.neg(rt.op(f, "Abs", [], [rt.fv(f, "damage", live(Proj))])));
-		yield* g.callName(f, live(Proj), "on_hit", [live(f.src)]);
+	this.attacked += 10;
+	if (Proj.damage_type == "fire") {
+		yield* this.adjustBruteLoss(-rt.op(f, "Abs", [], [Proj.damage]));
+		yield* Proj.on_hit(this);
 	} else {
-		yield* g.callSuper(f, [live(Proj)]);
+		yield* parent_proc(Proj);
 	}
 	return 0;
 }, true);
 
-// /mob/living/simple_animal/slime/proc/emp_act  (code/modules/mob/living/simple_animal/slime/slime.dm:214)  may sleep
-rt.def("/mob/living/simple_animal/slime/proc/emp_act", function* emp_act(f: Frame) {
-	rt.setSv(f, "powerlevel", 0);
-	yield* g.callSuper(f, [], rt.Args.Same);
+// slime.dm:214
+rt.def("/mob/living/simple_animal/slime/proc/emp_act", function* emp_act(f: Frame, severity: Value) {
+	this.powerlevel = 0;
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["severity"] });
+}, true);
 
-// /mob/living/simple_animal/slime/proc/MouseDrop  (code/modules/mob/living/simple_animal/slime/slime.dm:217)  may sleep
-rt.def("/mob/living/simple_animal/slime/proc/MouseDrop", function* MouseDrop(f: Frame) {
+// slime.dm:217
+rt.def("/mob/living/simple_animal/slime/proc/MouseDrop", function* MouseDrop(f: Frame, A: Value) {
 	let Food: Value = null;
-	f.vars = () => [Food];
-	if (((truthy((rt.istype(live(f.args[0]), T("/mob/living")) ? 1 : 0)) && !isEqual(live(f.args[0]), live(f.src))) && isEqual(live(f.usr), live(f.src)))) {
-		if (truthy((yield* g.srcCall(f, "CanFeedon", (Food = live(f.args[0])))))) {
-			yield* g.srcCall(f, "Feedon", live(Food));
+	if (rt.istype(A, T("/mob/living")) && A != this && f.usr == this) {
+		if (yield* this.CanFeedon((Food = A))) {
+			yield* this.Feedon(Food);
 		}
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["A"] });
+}, true);
 
-// /mob/living/simple_animal/slime/proc/attack_slime  (code/modules/mob/living/simple_animal/slime/slime.dm:233)  may sleep
-rt.def("/mob/living/simple_animal/slime/proc/attack_slime", function* attack_slime(f: Frame) {
-	if (!truthy((yield* g.callSuper(f, [], rt.Args.Same)))) return f.dot;
-	if (isEqual(live(f.args[0]), live(f.src))) {
-		return live(f.dot);
+// slime.dm:233
+rt.def("/mob/living/simple_animal/slime/proc/attack_slime", function* attack_slime(f: Frame, M: Value) {
+	if (!(yield* parent_proc())) return f.dot;
+	if (M == this) {
+		return f.dot;
 	}
-	if (truthy(rt.sv(f, "buckled"))) {
-		yield* g.callSrc(f, "Feedstop", ["silent", 1], rt.Args.Named);
-		yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＀ pulls ＀ off!</span>", [live(f.args[0]), live(f.src)]));
-		return live(f.dot);
+	if (this.buckled) {
+		yield* this.Feedstop({ silent: 1 });
+		this.visible_message(`<span class='danger'>${M} pulls ${this} off!</span>`);
+		return f.dot;
 	}
-	rt.modSrcVar(f, "attacked", 5, add);
-	if (rt.ge(rt.sv(f, "nutrition"), 100)) {
-		(rt.modSrcVar(f, "nutrition", add(50, multiply(40, rt.fv(f, "is_adult", live(f.args[0])))), subtract));
-		yield* g.callName(f, live(f.args[0]), "add_nutrition", [add(50, multiply(40, rt.fv(f, "is_adult", live(f.args[0]))))]);
+	this.attacked += 5;
+	if (this.nutrition >= 100) {
+		this.nutrition -= 50 + 40 * M.is_adult;
+		M.add_nutrition(50 + 40 * M.is_adult);
 	}
-	if (!rt.gt(rt.sv(f, "health"), 0)) return f.dot;
-	yield* g.callName(f, live(f.args[0]), "adjustBruteLoss", [add(-10, multiply(-10, rt.fv(f, "is_adult", live(f.args[0]))))]);
-	yield* g.callName(f, live(f.args[0]), "updatehealth", []);
+	if (!(this.health > 0)) return f.dot;
+	yield* M.adjustBruteLoss(-10 + -10 * M.is_adult);
+	yield* M.updatehealth();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /mob/living/simple_animal/slime/proc/attack_animal  (code/modules/mob/living/simple_animal/slime/slime.dm:249)  may sleep
-rt.def("/mob/living/simple_animal/slime/proc/attack_animal", function* attack_animal(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(live(f.dot))) return f.dot;
-	rt.modSrcVar(f, "attacked", 10, add);
+// slime.dm:249
+rt.def("/mob/living/simple_animal/slime/proc/attack_animal", function* attack_animal(f: Frame, M: Value) {
+	f.dot = (yield* parent_proc());
+	if (!f.dot) return f.dot;
+	this.attacked += 10;
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /mob/living/simple_animal/slime/proc/attack_paw  (code/modules/mob/living/simple_animal/slime/slime.dm:255)  may sleep
-rt.def("/mob/living/simple_animal/slime/proc/attack_paw", function* attack_paw(f: Frame) {
-	if (!truthy((yield* g.callSuper(f, [], rt.Args.Same)))) return f.dot;
-	rt.modSrcVar(f, "attacked", 10, add);
+// slime.dm:255
+rt.def("/mob/living/simple_animal/slime/proc/attack_paw", function* attack_paw(f: Frame, M: Value) {
+	if (!(yield* parent_proc())) return f.dot;
+	this.attacked += 10;
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /mob/living/simple_animal/slime/proc/attack_larva  (code/modules/mob/living/simple_animal/slime/slime.dm:259)  may sleep
-rt.def("/mob/living/simple_animal/slime/proc/attack_larva", function* attack_larva(f: Frame) {
-	if (!truthy((yield* g.callSuper(f, [], rt.Args.Same)))) return f.dot;
-	rt.modSrcVar(f, "attacked", 10, add);
+// slime.dm:259
+rt.def("/mob/living/simple_animal/slime/proc/attack_larva", function* attack_larva(f: Frame, L: Value) {
+	if (!(yield* parent_proc())) return f.dot;
+	this.attacked += 10;
 	return f.dot;
-}, true, { args: ["L"] });
+}, true);
 
-// /mob/living/simple_animal/slime/proc/attack_hulk  (code/modules/mob/living/simple_animal/slime/slime.dm:263)  may sleep
+// slime.dm:263
 rt.def("/mob/living/simple_animal/slime/proc/attack_hulk", function* attack_hulk(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	if (!isEqual(rt.fv(f, "a_intent", live(f.args[0])), "harm")) return f.dot;
-	yield* g.srcCall(f, "discipline_slime", live(f.args[0]));
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	if (f.args[0].a_intent != "harm") return f.dot;
+	yield* this.discipline_slime(f.args[0]);
+	return (yield* parent_proc());
 }, true, { args: ["user", "does_attack_animation"] });
 
-// /mob/living/simple_animal/slime/proc/attack_hand  (code/modules/mob/living/simple_animal/slime/slime.dm:271)  may sleep
-rt.def("/mob/living/simple_animal/slime/proc/attack_hand", function* attack_hand(f: Frame) {
+// slime.dm:271
+rt.def("/mob/living/simple_animal/slime/proc/attack_hand", function* attack_hand(f: Frame, M: Value) {
 	let S: Value = null;
-	let $e: any;
-	f.vars = () => [S, $e];
-	if (truthy(rt.sv(f, "buckled"))) {
-		yield* g.callName(f, live(f.args[0]), "do_attack_animation", [live(f.src), "disarm"]);
-		if (isEqual(rt.sv(f, "buckled"), live(f.args[0]))) {
-			if (truthy(rt.op(f, "Prob", [], [60]))) {
-				yield* g.srcCall(f, "visible_message", fmt("<span class='warning'>＀ attempts to wrestle ％！ off!</span>", [live(f.args[0]), rt.sv(f, "name")]));
-				yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/weapons/punchmiss.ogg"), 25, 1, -1]);
+	if (this.buckled) {
+		yield* M.do_attack_animation(this, "disarm");
+		if (this.buckled == M) {
+			if (prob(60)) {
+				this.visible_message(fmt("<span class='warning'>＀ attempts to wrestle ％！ off!</span>", [M, this.name]));
+				playsound(this.loc, rt.rsc("sound/weapons/punchmiss.ogg"), 25, 1, -1);
 			} else {
-				yield* g.srcCall(f, "visible_message", fmt("<span class='warning'>＀ manages to wrestle ％！ off!</span>", [live(f.args[0]), rt.sv(f, "name")]));
-				yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/weapons/thudswoosh.ogg"), 50, 1, -1]);
-				yield* g.srcCall(f, "discipline_slime", live(f.args[0]));
+				this.visible_message(fmt("<span class='warning'>＀ manages to wrestle ％！ off!</span>", [M, this.name]));
+				playsound(this.loc, rt.rsc("sound/weapons/thudswoosh.ogg"), 50, 1, -1);
+				yield* this.discipline_slime(M);
 			}
+		} else if (prob(30)) {
+			this.visible_message(fmt("<span class='warning'>＀ attempts to wrestle ％！ off of ＀!</span>", [M, this.name, this.buckled]));
+			playsound(this.loc, rt.rsc("sound/weapons/punchmiss.ogg"), 25, 1, -1);
 		} else {
-			if (truthy(rt.op(f, "Prob", [], [30]))) {
-				yield* g.srcCall(f, "visible_message", fmt("<span class='warning'>＀ attempts to wrestle ％！ off of ＀!</span>", [live(f.args[0]), rt.sv(f, "name"), rt.sv(f, "buckled")]));
-				yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/weapons/punchmiss.ogg"), 25, 1, -1]);
-			} else {
-				yield* g.srcCall(f, "visible_message", fmt("<span class='warning'>＀ manages to wrestle ％！ off of ＀!</span>", [live(f.args[0]), rt.sv(f, "name"), rt.sv(f, "buckled")]));
-				yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/weapons/thudswoosh.ogg"), 50, 1, -1]);
-				yield* g.srcCall(f, "discipline_slime", live(f.args[0]));
-			}
+			this.visible_message(fmt("<span class='warning'>＀ manages to wrestle ％！ off of ＀!</span>", [M, this.name, this.buckled]));
+			playsound(this.loc, rt.rsc("sound/weapons/thudswoosh.ogg"), 50, 1, -1);
+			yield* this.discipline_slime(M);
 		}
 	} else {
-		if ((isEqual(rt.sv(f, "stat"), 2) && truthy(rt.len(f, rt.sv(f, "surgeries"))))) {
-			if (isEqual(rt.fv(f, "a_intent", live(f.args[0])), "help")) {
-				S = null;
-				rt.forList(f, 0, rt.sv(f, "surgeries"), T("/datum/surgery"));
-				while (($e = rt.next(f, 0)) !== undefined) {
-					S = $e;
-					if (truthy((yield* g.callName(f, live(S), "next_step", [live(f.args[0])])))) {
+		if (this.stat == 2 && rt.len(f, this.surgeries)) {
+			if (M.a_intent == "help") {
+				for (S of each(this.surgeries, T("/datum/surgery"))) {
+					if (yield* S.next_step(M)) {
 						return 1;
 					}
 				}
-				rt.endFor(f, 0);
 			}
 		}
-		if (!truthy((yield* g.callSuper(f, [], rt.Args.Same)))) return f.dot;
-		rt.modSrcVar(f, "attacked", 10, add);
+		if (!(yield* parent_proc())) return f.dot;
+		this.attacked += 10;
 	}
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /mob/living/simple_animal/slime/proc/attack_alien  (code/modules/mob/living/simple_animal/slime/slime.dm:303)  may sleep
-rt.def("/mob/living/simple_animal/slime/proc/attack_alien", function* attack_alien(f: Frame) {
-	if (!truthy((yield* g.callSuper(f, [], rt.Args.Same)))) return f.dot;
-	rt.modSrcVar(f, "attacked", 10, add);
-	yield* g.srcCall(f, "discipline_slime", live(f.args[0]));
+// slime.dm:303
+rt.def("/mob/living/simple_animal/slime/proc/attack_alien", function* attack_alien(f: Frame, M: Value) {
+	if (!(yield* parent_proc())) return f.dot;
+	this.attacked += 10;
+	yield* this.discipline_slime(M);
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /mob/living/simple_animal/slime/proc/attackby  (code/modules/mob/living/simple_animal/slime/slime.dm:309)  may sleep
-rt.def("/mob/living/simple_animal/slime/proc/attackby", function* attackby(f: Frame) {
+// slime.dm:309
+rt.def("/mob/living/simple_animal/slime/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
 	let S: Value = null, force_effect: Value = null;
-	let $e: any;
-	f.vars = () => [S, force_effect, $e];
-	if ((isEqual(rt.sv(f, "stat"), 2) && truthy(rt.len(f, rt.sv(f, "surgeries"))))) {
-		if (isEqual(rt.fv(f, "a_intent", live(f.args[1])), "help")) {
-			S = null;
-			rt.forList(f, 0, rt.sv(f, "surgeries"), T("/datum/surgery"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				S = $e;
-				if (truthy((yield* g.callName(f, live(S), "next_step", [live(f.args[1])])))) {
+	if (this.stat == 2 && rt.len(f, this.surgeries)) {
+		if (user.a_intent == "help") {
+			for (S of each(this.surgeries, T("/datum/surgery"))) {
+				if (yield* S.next_step(user)) {
 					return 1;
 				}
 			}
-			rt.endFor(f, 0);
 		}
 	}
-	if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/stack/sheet/mineral/plasma")) ? 1 : 0)) && !truthy(rt.sv(f, "stat")))) {
-		if (truthy((rt.isIn(f, live(f.args[1]), rt.sv(f, "Friends")) ? 1 : 0))) {
-			rt.incAt(rt.sv(f, "Friends"), live(f.args[1]), 1, false);
+	if (rt.istype(W, T("/obj/item/stack/sheet/mineral/plasma")) && !this.stat) {
+		if (rt.isIn(f, user, this.Friends)) {
+			rt.incAt(this.Friends, user, 1, false);
 		} else {
-			rt.setAt(rt.sv(f, "Friends"), live(f.args[1]), 1);
+			rt.setAt(this.Friends, user, 1);
 		}
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You feed the slime the plasma. It chirps happily.</span>"]);
-		yield* g.callName(f, (S = live(f.args[0])), "use", [1]);
-		return live(f.dot);
+		to_chat(user, "<span class='notice'>You feed the slime the plasma. It chirps happily.</span>");
+		yield* (S = W).use(1);
+		return f.dot;
 	}
-	if (rt.gt(rt.fv(f, "force", live(f.args[0])), 0)) {
-		rt.modSrcVar(f, "attacked", 10, add);
-		if (truthy(rt.op(f, "Prob", [], [25]))) {
-			yield* g.callName(f, live(f.args[1]), "do_attack_animation", [live(f.src)]);
-			yield* g.callName(f, live(f.args[1]), "changeNext_move", [8]);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='danger'>＀ passes right through ＀!</span>", [live(f.args[0]), live(f.src)])]);
-			return live(f.dot);
+	if (W.force > 0) {
+		this.attacked += 10;
+		if (prob(25)) {
+			yield* user.do_attack_animation(this);
+			user.changeNext_move(8);
+			to_chat(user, `<span class='danger'>${W} passes right through ${this}!</span>`);
+			return f.dot;
 		}
-		if ((truthy(rt.sv(f, "Discipline")) && truthy(rt.op(f, "Prob", [], [50])))) {
-			rt.setSv(f, "Discipline", 0);
-		}
-	}
-	if (rt.ge(rt.fv(f, "force", live(f.args[0])), 3)) {
-		force_effect = multiply(2, rt.fv(f, "force", live(f.args[0])));
-		if (truthy(rt.sv(f, "is_adult"))) {
-			force_effect = (yield* g.call(f, P("/proc/round"), null, [divide(rt.fv(f, "force", live(f.args[0])), 2)]));
-		}
-		if (truthy(rt.op(f, "Prob", [], [add(10, live(force_effect))]))) {
-			yield* g.srcCall(f, "discipline_slime", live(f.args[1]));
+		if (this.Discipline && prob(50)) {
+			this.Discipline = 0;
 		}
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	if (W.force >= 3) {
+		force_effect = 2 * W.force;
+		if (this.is_adult) {
+			force_effect = round(W.force / 2);
+		}
+		if (prob(10 + force_effect)) {
+			yield* this.discipline_slime(user);
+		}
+	}
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["W", "user", "params"] });
-
-// /mob/living/simple_animal/slime/proc/apply_water  (code/modules/mob/living/simple_animal/slime/slime.dm:341)  may sleep
-rt.def("/mob/living/simple_animal/slime/proc/apply_water", function* apply_water(f: Frame) {
-	yield* g.srcCall(f, "adjustBruteLoss", (yield* g.call(f, P("/proc/rand"), null, [15, 20])));
-	if (!truthy(rt.sv(f, "client"))) {
-		if (truthy(rt.sv(f, "Target"))) {
-			rt.setSv(f, "Target", null);
-			rt.incSrcVar(f, "Discipline", 1, false);
-		}
-	}
-	return live(f.dot);
 }, true);
 
-// /mob/living/simple_animal/slime/proc/examine  (code/modules/mob/living/simple_animal/slime/slime.dm:350)
-rt.def("/mob/living/simple_animal/slime/proc/examine", function examine(f: Frame, user: Value) {
-	let msg: Value = null;
-	let $0: any;
-	f.vars = () => [msg, $0];
-	msg = fmt("<span class='info'>*---------*\nThis is ＀ ＇<EM>！</EM>!\n", [rt.call(f, P("/proc/bicon"), null, [live(f.src)]), live(f.src)]);
-	if (isEqual(rt.fv(f, "stat", live(f.src)), 2)) {
-		msg = rt.modify(live(msg), "<span class='deadsay'>It is limp and unresponsive.</span>\n", add);
-	} else {
-		if (isEqual(rt.sv(f, "stat"), 1)) {
-			msg = rt.modify(live(msg), "<span class='deadsay'>It appears to be alive but unresponsive.</span>\n", add);
-		}
-		if (truthy(rt.callName(f, live(f.src), "getBruteLoss", []))) {
-			msg = rt.modify(live(msg), "<span class='warning'>", add);
-			if (rt.lt(rt.callName(f, live(f.src), "getBruteLoss", []), 40)) {
-				msg = rt.modify(live(msg), "It has some punctures in its flesh!", add);
-			} else {
-				msg = rt.modify(live(msg), "<B>It has severe punctures and tears in its flesh!</B>", add);
-			}
-			msg = rt.modify(live(msg), "</span>\n", add);
-		}
-		$0 = rt.sv(f, "powerlevel");
-		if (rt.inRange($0, 2, 3)) {
-			msg = rt.modify(live(msg), "It is flickering gently with a little electrical activity.\n", add);
-		} else if (rt.inRange($0, 4, 5)) {
-			msg = rt.modify(live(msg), "It is glowing gently with moderate levels of electrical activity.\n", add);
-		} else if (rt.inRange($0, 6, 9)) {
-			msg = rt.modify(live(msg), "<span class='warning'>It is glowing brightly with high levels of electrical activity.</span>\n", add);
-		} else if ($0 === 10) {
-			msg = rt.modify(live(msg), "<span class='warning'><B>It is radiating with massive levels of electrical activity!</B></span>\n", add);
+// slime.dm:341
+rt.def("/mob/living/simple_animal/slime/proc/apply_water", function* apply_water(f: Frame) {
+	yield* this.adjustBruteLoss(rand(15, 20));
+	if (!this.client) {
+		if (this.Target) {
+			this.Target = null;
+			++this.Discipline;
 		}
 	}
-	msg = rt.modify(live(msg), "*---------*</span>", add);
-	rt.call(f, P("/proc/to_chat"), null, [live(user), live(msg)]);
-	return live(f.dot);
+	return f.dot;
+}, true);
+
+// slime.dm:350
+rt.def("/mob/living/simple_animal/slime/proc/examine", function examine(f: Frame, user: Value) {
+	let msg: Value = fmt("<span class='info'>*---------*\nThis is ＀ ＇<EM>！</EM>!\n", [bicon(this), this]);
+	if (this.stat == 2) {
+		msg += "<span class='deadsay'>It is limp and unresponsive.</span>\n";
+	} else {
+		if (this.stat == 1) {
+			msg += "<span class='deadsay'>It appears to be alive but unresponsive.</span>\n";
+		}
+		if (this.getBruteLoss()) {
+			msg += "<span class='warning'>";
+			if (this.getBruteLoss() < 40) {
+				msg += "It has some punctures in its flesh!";
+			} else {
+				msg += "<B>It has severe punctures and tears in its flesh!</B>";
+			}
+			msg += "</span>\n";
+		}
+		if (rt.inRange(this.powerlevel, 2, 3)) {
+			msg += "It is flickering gently with a little electrical activity.\n";
+		} else if (rt.inRange(this.powerlevel, 4, 5)) {
+			msg += "It is glowing gently with moderate levels of electrical activity.\n";
+		} else if (rt.inRange(this.powerlevel, 6, 9)) {
+			msg += "<span class='warning'>It is glowing brightly with high levels of electrical activity.</span>\n";
+		} else if (this.powerlevel === 10) {
+			msg += "<span class='warning'><B>It is radiating with massive levels of electrical activity!</B></span>\n";
+		}
+	}
+	msg += "*---------*</span>";
+	to_chat(user, msg);
+	return f.dot;
 });
 
-// /mob/living/simple_animal/slime/proc/discipline_slime  (code/modules/mob/living/simple_animal/slime/slime.dm:385)  may sleep
+// slime.dm:385
 rt.def("/mob/living/simple_animal/slime/proc/discipline_slime", function* discipline_slime(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (truthy(rt.sv(f, "stat"))) {
-		return live(f.dot);
+	if (this.stat) {
+		return f.dot;
 	}
-	if ((truthy(rt.op(f, "Prob", [], [80])) && !truthy(rt.sv(f, "client")))) {
-		rt.incSrcVar(f, "Discipline", 1, true);
-		if (!truthy(rt.sv(f, "is_adult"))) {
-			if (isEqual(rt.sv(f, "Discipline"), 1)) {
-				rt.setSv(f, "attacked", 0);
+	if (prob(80) && !this.client) {
+		this.Discipline++;
+		if (!this.is_adult) {
+			if (this.Discipline == 1) {
+				this.attacked = 0;
 			}
 		}
 	}
-	if (truthy(rt.sv(f, "Target"))) {
-		rt.setSv(f, "Target", null);
+	if (this.Target) {
+		this.Target = null;
 	}
-	if (truthy(rt.sv(f, "buckled"))) {
-		yield* g.callSrc(f, "Feedstop", ["silent", 1], rt.Args.Named);
+	if (this.buckled) {
+		yield* this.Feedstop({ silent: 1 });
 	}
-	rt.setSv(f, "SStun", add(rt.worldTime(f), (yield* g.call(f, P("/proc/rand"), null, [20, 60]))));
+	this.SStun = rt.worldTime(f) + rand(20, 60);
 	rt.spawnTail(f, 0, "/mob/living/simple_animal/slime/proc/discipline_slime: spawn at modules/mob/living/simple_animal/slime/slime.dm:398", user);
 	return f.dot;
 }, true);
 
 // a spawn(0) body of /mob/living/simple_animal/slime/proc/discipline_slime, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/mob/living/simple_animal/slime/proc/discipline_slime: spawn at modules/mob/living/simple_animal/slime/slime.dm:398", function* (f: Frame, user: Value) {
-	f.vars = () => [user];
-	rt.setSv(f, "canmove", 0);
-	if (truthy(live(user))) {
-		yield* g.call(f, P("/proc/step_away"), null, [live(f.src), live(user), 15]);
+	this.canmove = 0;
+	if (user) {
+		yield* step_away(this, user, 15);
 	}
-	yield* g.call(f, P("/proc/sleep"), null, [3]);
-	if (truthy(live(user))) {
-		yield* g.call(f, P("/proc/step_away"), null, [live(f.src), live(user), 15]);
+	yield* sleep(3);
+	if (user) {
+		yield* step_away(this, user, 15);
 	}
-	yield* g.srcCall(f, "update_canmove");
+	yield* this.update_canmove();
 	return null;
 });
 
-// /mob/living/simple_animal/slime/proc/get_mob_buckling_height  (code/modules/mob/living/simple_animal/slime/slime.dm:417)
-rt.def("/mob/living/simple_animal/slime/proc/get_mob_buckling_height", function get_mob_buckling_height(f: Frame) {
-	if (!truthy(rt.callSuper(f, [], rt.Args.Same))) return f.dot;
+// slime.dm:417
+rt.def("/mob/living/simple_animal/slime/proc/get_mob_buckling_height", function get_mob_buckling_height(f: Frame, seat: Value) {
+	if (!parent_proc()) return f.dot;
 	return 3;
-}, false, { args: ["seat"] });
+}, false);
 
 rt.type(4853, "/mob/living/simple_animal/slime/random", "/mob/living/simple_animal/slime", {});
 
-// /mob/living/simple_animal/slime/random/proc/Initialize  (code/modules/mob/living/simple_animal/slime/slime.dm:421)  may sleep
+// slime.dm:421
 rt.def("/mob/living/simple_animal/slime/random/proc/Initialize", function* Initialize(f: Frame, mapload: Value, new_colour: Value, new_is_adult: Value) {
-	f.vars = () => [mapload, new_colour, new_is_adult];
-	f.dot = (yield* g.callSuper(f, [live(mapload), rt.op(f, "PickUnweighted", [1], [rt.gl("slime_colours")]), rt.op(f, "Prob", [], [50])]));
+	f.dot = (yield* parent_proc(mapload, pick(GLOB.slime_colours), prob(50)));
 	return f.dot;
 }, true);

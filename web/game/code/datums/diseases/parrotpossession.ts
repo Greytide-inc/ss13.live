@@ -1,7 +1,7 @@
-// From code/datums/diseases/parrotpossession.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/datums/diseases/parrotpossession.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(958, "/datum/disease/parrot_possession", "/datum/disease", {
@@ -20,35 +20,33 @@ rt.type(958, "/datum/disease/parrot_possession", "/datum/disease", {
 	viable_mobtypes: null,
 });
 
-// /datum/disease/parrot_possession/proc/<init>  (code/datums/diseases/parrotpossession.dm:8)
+// parrotpossession.dm:8
 rt.def("/datum/disease/parrot_possession/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "cures", rt.list("holywater"));
-	$0 = $0;
-	rt.setSv(f, "viable_mobtypes", rt.list(T("/mob/living/carbon/human")));
+	parent_proc();
+	this.cures = list("holywater");
+
+	this.viable_mobtypes = list(T("/mob/living/carbon/human"));
 	return f.dot;
 });
 
-// /datum/disease/parrot_possession/proc/stage_act  (code/datums/diseases/parrotpossession.dm:17)  may sleep
+// parrotpossession.dm:17
 rt.def("/datum/disease/parrot_possession/proc/stage_act", function* stage_act(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if ((!truthy(rt.sv(f, "parrot")) || !isEqual(rt.fv(f, "loc", rt.sv(f, "parrot")), rt.sv(f, "affected_mob")))) {
-		yield* g.srcCall(f, "cure");
+	yield* parent_proc();
+	if (!this.parrot || this.parrot.loc != this.affected_mob) {
+		yield* this.cure();
 	} else {
-		if (!truthy(rt.op(f, "Prob", [], [rt.fv(f, "speak_chance", rt.sv(f, "parrot"))]))) return f.dot;
-		yield* g.callName(f, rt.sv(f, "affected_mob"), "say", [rt.op(f, "PickUnweighted", [1], [rt.fv(f, "speech_buffer", rt.sv(f, "parrot"))])]);
+		if (!prob(this.parrot.speak_chance)) return f.dot;
+		yield* this.affected_mob.say(pick(this.parrot.speech_buffer));
 	}
 	return f.dot;
 }, true);
 
-// /datum/disease/parrot_possession/proc/cure  (code/datums/diseases/parrotpossession.dm:24)  may sleep
+// parrotpossession.dm:24
 rt.def("/datum/disease/parrot_possession/proc/cure", function* cure(f: Frame) {
-	if ((truthy(rt.sv(f, "parrot")) && isEqual(rt.fv(f, "loc", rt.sv(f, "parrot")), rt.sv(f, "affected_mob")))) {
-		rt.setFv(f, "loc", rt.sv(f, "parrot"), rt.fv(f, "loc", rt.sv(f, "affected_mob")));
-		yield* g.callName(f, rt.sv(f, "affected_mob"), "visible_message", [fmt("<span class='danger'>＀ is violently driven out of ＀!</span>", [rt.sv(f, "parrot"), rt.sv(f, "affected_mob")]), fmt("<span class='userdanger'>＀ bursts out of your chest!</span>", [rt.sv(f, "parrot")])]);
+	if (this.parrot && this.parrot.loc == this.affected_mob) {
+		this.parrot.loc = this.affected_mob.loc;
+		this.affected_mob.visible_message(`<span class='danger'>${this.parrot} is violently driven out of ${this.affected_mob}!</span>`, `<span class='userdanger'>${this.parrot} bursts out of your chest!</span>`);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true);

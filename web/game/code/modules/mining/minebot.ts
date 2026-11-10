@@ -1,7 +1,7 @@
-// From code/modules/mining/minebot.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mining/minebot.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(4919, "/mob/living/simple_animal/hostile/mining_drone", "/mob/living/simple_animal/hostile", {
@@ -47,204 +47,172 @@ rt.type(4919, "/mob/living/simple_animal/hostile/mining_drone", "/mob/living/sim
 	healable: 0,
 });
 
-// /mob/living/simple_animal/hostile/mining_drone/proc/<init>  (code/modules/mining/minebot.dm:13)
+// minebot.dm:13
 rt.def("/mob/living/simple_animal/hostile/mining_drone/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "faction", rt.list("neutral"));
-	rt.setSv(f, "atmos_requirements", rt.alist(f, ["min_oxy", 0, "max_oxy", 0, "min_tox", 0, "max_tox", 0, "min_co2", 0, "max_co2", 0, "min_n2", 0, "max_n2", 0]));
-	$0 = $0;
-	rt.setSv(f, "speak_emote", rt.list("states"));
-	$0 = $0;
-	rt.setSv(f, "wanted_objects", rt.list(T("/obj/item/weapon/ore/diamond"), T("/obj/item/weapon/ore/gold"), T("/obj/item/weapon/ore/silver"), T("/obj/item/weapon/ore/plasma"), T("/obj/item/weapon/ore/uranium"), T("/obj/item/weapon/ore/iron"), T("/obj/item/weapon/ore/bananium"), T("/obj/item/weapon/ore/titanium")));
+	parent_proc();
+	this.faction = list("neutral");
+	this.atmos_requirements = rt.alist(f, ["min_oxy", 0, "max_oxy", 0, "min_tox", 0, "max_tox", 0, "min_co2", 0, "max_co2", 0, "min_n2", 0, "max_n2", 0]);
+
+	this.speak_emote = list("states");
+
+	this.wanted_objects = list(T("/obj/item/weapon/ore/diamond"), T("/obj/item/weapon/ore/gold"), T("/obj/item/weapon/ore/silver"), T("/obj/item/weapon/ore/plasma"), T("/obj/item/weapon/ore/uranium"), T("/obj/item/weapon/ore/iron"), T("/obj/item/weapon/ore/bananium"), T("/obj/item/weapon/ore/titanium"));
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/mining_drone/proc/Initialize  (code/modules/mining/minebot.dm:51)  may sleep
+// minebot.dm:51
 rt.def("/mob/living/simple_animal/hostile/mining_drone/proc/Initialize", function* Initialize(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "toggle_light_action", (yield* g.new_(f, T("/datum/action/innate/minedrone/toggle_light"), [])));
-	yield* g.callName(f, rt.sv(f, "toggle_light_action"), "Grant", [live(f.src)]);
-	rt.setSv(f, "toggle_mode_action", (yield* g.new_(f, T("/datum/action/innate/minedrone/toggle_mode"), [])));
-	yield* g.callName(f, rt.sv(f, "toggle_mode_action"), "Grant", [live(f.src)]);
-	rt.setSv(f, "dump_ore_action", (yield* g.new_(f, T("/datum/action/innate/minedrone/dump_ore"), [])));
-	yield* g.callName(f, rt.sv(f, "dump_ore_action"), "Grant", [live(f.src)]);
-	yield* g.srcCall(f, "SetCollectBehavior");
+	yield* parent_proc();
+	this.toggle_light_action = (yield* new_(T("/datum/action/innate/minedrone/toggle_light")));
+	yield* this.toggle_light_action.Grant(this);
+	this.toggle_mode_action = (yield* new_(T("/datum/action/innate/minedrone/toggle_mode")));
+	yield* this.toggle_mode_action.Grant(this);
+	this.dump_ore_action = (yield* new_(T("/datum/action/innate/minedrone/dump_ore")));
+	yield* this.dump_ore_action.Grant(this);
+	this.SetCollectBehavior();
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/mining_drone/proc/attackby  (code/modules/mining/minebot.dm:66)  may sleep
-rt.def("/mob/living/simple_animal/hostile/mining_drone/proc/attackby", function* attackby(f: Frame) {
+// minebot.dm:66
+rt.def("/mob/living/simple_animal/hostile/mining_drone/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
 	let W: Value = null;
-	f.vars = () => [W];
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/weldingtool")) ? 1 : 0))) {
-		if ((truthy(rt.gv(f, "welding", (W = live(f.args[0])))) && !truthy(rt.sv(f, "stat")))) {
-			if ((!isEqual(rt.sv(f, "AIStatus"), 3) && !isEqual(rt.sv(f, "AIStatus"), 2))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='info'>＀ is moving around too much to repair!</span>", [live(f.src)])]);
-				return live(f.dot);
+	if (rt.istype(I, T("/obj/item/weapon/weldingtool"))) {
+		if ((W = I).welding && !this.stat) {
+			if (this.AIStatus != AI_OFF && this.AIStatus != AI_IDLE) {
+				to_chat(user, `<span class='info'>${this} is moving around too much to repair!</span>`);
+				return f.dot;
 			}
-			if (isEqual(rt.sv(f, "maxHealth"), rt.sv(f, "health"))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='info'>＀ is at full integrity.</span>", [live(f.src)])]);
-			} else {
-				if (truthy((yield* g.callName(f, live(W), "remove_fuel", [0, live(f.args[1])])))) {
-					yield* g.srcCall(f, "adjustBruteLoss", -10);
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='info'>You repair some of the armor on ＀.</span>", [live(f.src)])]);
-				}
+			if (this.maxHealth == this.health) {
+				to_chat(user, `<span class='info'>${this} is at full integrity.</span>`);
+			} else if (yield* W.remove_fuel(0, user)) {
+				yield* this.adjustBruteLoss(-10);
+				to_chat(user, `<span class='info'>You repair some of the armor on ${this}.</span>`);
 			}
-			return live(f.dot);
+			return f.dot;
 		}
 	}
-	if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/device/mining_scanner")) ? 1 : 0)) || truthy((rt.istype(live(f.args[0]), T("/obj/item/device/t_scanner/adv_mining_scanner")) ? 1 : 0)))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='info'>You instruct ＀ to drop any collected ore.</span>", [live(f.src)])]);
-		yield* g.srcCall(f, "DropOre");
-		return live(f.dot);
+	if (rt.istype(I, T("/obj/item/device/mining_scanner")) || rt.istype(I, T("/obj/item/device/t_scanner/adv_mining_scanner"))) {
+		to_chat(user, `<span class='info'>You instruct ${this} to drop any collected ore.</span>`);
+		this.DropOre();
+		return f.dot;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["I", "user", "params"] });
+}, true);
 
-// /mob/living/simple_animal/hostile/mining_drone/proc/death  (code/modules/mining/minebot.dm:86)  may sleep
+// minebot.dm:86
 rt.def("/mob/living/simple_animal/hostile/mining_drone/proc/death", function* death(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＀ is destroyed!</span>", [live(f.src)]));
-	yield* g.new_(f, T("/obj/effect/decal/cleanable/robot_debris"), [rt.fv(f, "loc", live(f.src))]);
-	yield* g.srcCall(f, "DropOre", 0);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-	return live(f.dot);
+	yield* parent_proc();
+	this.visible_message(`<span class='danger'>${this} is destroyed!</span>`);
+	yield* new_(T("/obj/effect/decal/cleanable/robot_debris"), this.loc);
+	this.DropOre(0);
+	yield* qdel(this);
+	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/mining_drone/proc/attack_hand  (code/modules/mining/minebot.dm:94)  may sleep
-rt.def("/mob/living/simple_animal/hostile/mining_drone/proc/attack_hand", function* attack_hand(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	if (isEqual(rt.fv(f, "a_intent", live(f.args[0])), "help")) {
-		yield* g.srcCall(f, "toggle_mode");
-		$0 = rt.sv(f, "mode");
-		if ($0 === 1) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='info'>＀ has been set to search and store loose ore.</span>", [live(f.src)])]);
-		} else if ($0 === 2) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='info'>＀ has been set to attack hostile wildlife.</span>", [live(f.src)])]);
+// minebot.dm:94
+rt.def("/mob/living/simple_animal/hostile/mining_drone/proc/attack_hand", function* attack_hand(f: Frame, M: Value) {
+	if (M.a_intent == "help") {
+		yield* this.toggle_mode();
+		if (this.mode === MINEDRONE_COLLECT) {
+			to_chat(M, `<span class='info'>${this} has been set to search and store loose ore.</span>`);
+		} else if (this.mode === MINEDRONE_ATTACK) {
+			to_chat(M, `<span class='info'>${this} has been set to attack hostile wildlife.</span>`);
 		}
-		return live(f.dot);
+		return f.dot;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
-
-// /mob/living/simple_animal/hostile/mining_drone/proc/SetCollectBehavior  (code/modules/mining/minebot.dm:112)
-rt.def("/mob/living/simple_animal/hostile/mining_drone/proc/SetCollectBehavior", function SetCollectBehavior(f: Frame) {
-	rt.setSv(f, "mode", 1);
-	rt.setSv(f, "idle_vision_range", 9);
-	rt.setSv(f, "search_objects", 2);
-	rt.setSv(f, "wander", 1);
-	rt.setSv(f, "ranged", 0);
-	rt.setSv(f, "minimum_distance", 1);
-	rt.setSv(f, "retreat_distance", null);
-	rt.setSv(f, "icon_state", "mining_drone");
-	rt.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='info'>You are set to collect mode. You can now collect loose ore.</span>"]);
-	return f.dot;
-});
-
-// /mob/living/simple_animal/hostile/mining_drone/proc/SetOffenseBehavior  (code/modules/mining/minebot.dm:123)
-rt.def("/mob/living/simple_animal/hostile/mining_drone/proc/SetOffenseBehavior", function SetOffenseBehavior(f: Frame) {
-	rt.setSv(f, "mode", 2);
-	rt.setSv(f, "idle_vision_range", 7);
-	rt.setSv(f, "search_objects", 0);
-	rt.setSv(f, "wander", 0);
-	rt.setSv(f, "ranged", 1);
-	rt.setSv(f, "retreat_distance", 1);
-	rt.setSv(f, "minimum_distance", 2);
-	rt.setSv(f, "icon_state", "mining_drone_offense");
-	rt.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='info'>You are set to attack mode. You can now attack from range.</span>"]);
-	return f.dot;
-});
-
-// /mob/living/simple_animal/hostile/mining_drone/proc/AttackingTarget  (code/modules/mining/minebot.dm:127)  may sleep
-rt.def("/mob/living/simple_animal/hostile/mining_drone/proc/AttackingTarget", function* AttackingTarget(f: Frame) {
-	if ((truthy((rt.istype(rt.sv(f, "target"), T("/obj/item/weapon/ore")) ? 1 : 0)) && isEqual(rt.sv(f, "mode"), 1))) {
-		yield* g.srcCall(f, "CollectOre");
-		return live(f.dot);
-	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
 }, true);
 
-// /mob/living/simple_animal/hostile/mining_drone/proc/CollectOre  (code/modules/mining/minebot.dm:134)
+// minebot.dm:112
+rt.def("/mob/living/simple_animal/hostile/mining_drone/proc/SetCollectBehavior", function SetCollectBehavior(f: Frame) {
+	this.mode = MINEDRONE_COLLECT;
+	this.idle_vision_range = 9;
+	this.search_objects = 2;
+	this.wander = 1;
+	this.ranged = 0;
+	this.minimum_distance = 1;
+	this.retreat_distance = null;
+	this.icon_state = "mining_drone";
+	to_chat(this, "<span class='info'>You are set to collect mode. You can now collect loose ore.</span>");
+	return f.dot;
+});
+
+// minebot.dm:123
+rt.def("/mob/living/simple_animal/hostile/mining_drone/proc/SetOffenseBehavior", function SetOffenseBehavior(f: Frame) {
+	this.mode = MINEDRONE_ATTACK;
+	this.idle_vision_range = 7;
+	this.search_objects = 0;
+	this.wander = 0;
+	this.ranged = 1;
+	this.retreat_distance = 1;
+	this.minimum_distance = 2;
+	this.icon_state = "mining_drone_offense";
+	to_chat(this, "<span class='info'>You are set to attack mode. You can now attack from range.</span>");
+	return f.dot;
+});
+
+// minebot.dm:127
+rt.def("/mob/living/simple_animal/hostile/mining_drone/proc/AttackingTarget", function* AttackingTarget(f: Frame) {
+	if (rt.istype(this.target, T("/obj/item/weapon/ore")) && this.mode == MINEDRONE_COLLECT) {
+		this.CollectOre();
+		return f.dot;
+	}
+	return (yield* parent_proc());
+}, true);
+
+// minebot.dm:134
 rt.def("/mob/living/simple_animal/hostile/mining_drone/proc/CollectOre", function CollectOre(f: Frame) {
 	let O: Value = null, dir: Value = null, _T: Value = null;
-	let $e: any;
-	f.vars = () => [O, dir, _T, $e];
-	O = null;
-	rt.forList(f, 0, rt.fv(f, "loc", live(f.src)), T("/obj/item/weapon/ore"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		O = $e;
-		rt.setFv(f, "loc", live(O), live(f.src));
+	for (O of each(this.loc, T("/obj/item/weapon/ore"))) {
+		O.loc = this;
 	}
-	rt.endFor(f, 0);
-	dir = null;
-	rt.forList(f, 0, rt.gl("alldirs"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		dir = $e;
-		rt.forList(f, 1, (_T = rt.getStep(f, live(f.src), live(dir))), T("/obj/item/weapon/ore"));
-		while (($e = rt.next(f, 1)) !== undefined) {
-			O = $e;
-			rt.setFv(f, "loc", live(O), live(f.src));
+	for (dir of each(GLOB.alldirs)) {
+		for (O of each((_T = rt.getStep(f, this, dir)), T("/obj/item/weapon/ore"))) {
+			O.loc = this;
 		}
-		rt.endFor(f, 1);
 	}
-	rt.endFor(f, 0);
-	return live(f.dot);
+	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/mining_drone/proc/DropOre  (code/modules/mining/minebot.dm:143)
+// minebot.dm:143
 rt.def("/mob/living/simple_animal/hostile/mining_drone/proc/DropOre", function DropOre(f: Frame, message: Value) {
 	let O: Value = null;
-	let $e: any;
-	f.vars = () => [message, O, $e];
-	if (live(message) === null) {
-		message = 1;
-	}
-	if (!truthy(rt.len(f, rt.sv(f, "contents")))) {
-		if (truthy(live(message))) {
-			rt.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='notice'>You attempt to dump your stored ore, but you have none.</span>"]);
+	message ??= 1;
+	if (!rt.len(f, this.contents)) {
+		if (message) {
+			to_chat(this, "<span class='notice'>You attempt to dump your stored ore, but you have none.</span>");
 		}
-		return live(f.dot);
+		return f.dot;
 	}
-	if (truthy(live(message))) {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='notice'>You dump your stored ore.</span>"]);
+	if (message) {
+		to_chat(this, "<span class='notice'>You dump your stored ore.</span>");
 	}
-	O = null;
-	rt.forList(f, 0, rt.sv(f, "contents"), T("/obj/item/weapon/ore"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		O = $e;
-		(rt.modSrcVar(f, "contents", live(O), subtract));
-		rt.setFv(f, "loc", live(O), rt.fv(f, "loc", live(f.src)));
+	for (O of each(this.contents, T("/obj/item/weapon/ore"))) {
+		this.contents -= O;
+		O.loc = this.loc;
 	}
-	rt.endFor(f, 0);
-	return live(f.dot);
+	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/mining_drone/proc/adjustHealth  (code/modules/mining/minebot.dm:155)  may sleep
-rt.def("/mob/living/simple_animal/hostile/mining_drone/proc/adjustHealth", function* adjustHealth(f: Frame) {
-	if ((!isEqual(rt.sv(f, "mode"), 2) && rt.gt(live(f.args[0]), 0))) {
-		yield* g.srcCall(f, "SetOffenseBehavior");
+// minebot.dm:155
+rt.def("/mob/living/simple_animal/hostile/mining_drone/proc/adjustHealth", function* adjustHealth(f: Frame, amount: Value) {
+	if (this.mode != MINEDRONE_ATTACK && amount > 0) {
+		this.SetOffenseBehavior();
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	f.dot = (yield* parent_proc());
 	return f.dot;
-}, true, { args: ["amount"] });
+}, true);
 
-// /mob/living/simple_animal/hostile/mining_drone/proc/toggle_mode  (code/modules/mining/minebot.dm:160)
+// minebot.dm:160
 rt.def("/mob/living/simple_animal/hostile/mining_drone/proc/toggle_mode", function toggle_mode(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.sv(f, "mode");
-	if ($0 === 1) {
-		rt.callSrc(f, "SetOffenseBehavior", []);
-	} else if ($0 === 2) {
-		rt.callSrc(f, "SetCollectBehavior", []);
+	if (this.mode === MINEDRONE_COLLECT) {
+		this.SetOffenseBehavior();
+	} else if (this.mode === MINEDRONE_ATTACK) {
+		this.SetCollectBehavior();
 	} else {
-		rt.setSv(f, "mode", 1);
-		rt.callSrc(f, "SetCollectBehavior", []);
+		this.mode = MINEDRONE_COLLECT;
+		this.SetCollectBehavior();
 	}
 	return f.dot;
 });
@@ -254,24 +222,17 @@ rt.type(146, "/datum/action/innate/minedrone/toggle_light", "/datum/action/innat
 	button_icon_state: "mech_lights_off",
 });
 
-// /datum/action/innate/minedrone/toggle_light/proc/Activate  (code/modules/mining/minebot.dm:180)
+// minebot.dm:180
 rt.def("/datum/action/innate/minedrone/toggle_light/proc/Activate", function Activate(f: Frame) {
 	let user: Value = null;
-	let $0: any, $1: any;
-	f.vars = () => [user, $0, $1];
-	if (truthy(rt.gv(f, "light_on", (user = rt.sv(f, "owner"))))) {
-		rt.callName(f, live(user), "set_light", [0]);
+	if ((user = this.owner).light_on) {
+		user.set_light(0);
 	} else {
-		rt.callName(f, live(user), "set_light", [6]);
+		user.set_light(6);
 	}
-	rt.setFv(f, "light_on", live(user), (!truthy(rt.fv(f, "light_on", live(user))) ? 1 : 0));
-	$0 = live(user);
-	if (truthy(rt.fv(f, "light_on", live(user)))) {
-		$1 = "on";
-	} else {
-		$1 = "off";
-	}
-	rt.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='notice'>You toggle your light ＀.</span>", [$1])]);
+	user.light_on = (!user.light_on ? 1 : 0);
+	let $0: any = user;
+	to_chat($0, `<span class='notice'>You toggle your light ${user.light_on ? "on" : "off"}.</span>`);
 	return f.dot;
 });
 
@@ -280,11 +241,10 @@ rt.type(147, "/datum/action/innate/minedrone/toggle_mode", "/datum/action/innate
 	button_icon_state: "mech_cycle_equip_off",
 });
 
-// /datum/action/innate/minedrone/toggle_mode/proc/Activate  (code/modules/mining/minebot.dm:194)
+// minebot.dm:194
 rt.def("/datum/action/innate/minedrone/toggle_mode/proc/Activate", function Activate(f: Frame) {
 	let user: Value = null;
-	f.vars = () => [user];
-	rt.callName(f, (user = rt.sv(f, "owner")), "toggle_mode", []);
+	(user = this.owner).toggle_mode();
 	return f.dot;
 });
 
@@ -293,11 +253,10 @@ rt.type(148, "/datum/action/innate/minedrone/dump_ore", "/datum/action/innate/mi
 	button_icon_state: "mech_eject",
 });
 
-// /datum/action/innate/minedrone/dump_ore/proc/Activate  (code/modules/mining/minebot.dm:202)
+// minebot.dm:202
 rt.def("/datum/action/innate/minedrone/dump_ore/proc/Activate", function Activate(f: Frame) {
 	let user: Value = null;
-	f.vars = () => [user];
-	rt.callName(f, (user = rt.sv(f, "owner")), "DropOre", []);
+	(user = this.owner).DropOre();
 	return f.dot;
 });
 
@@ -308,26 +267,24 @@ rt.type(9397, "/obj/item/device/mine_bot_ugprade", "/obj/item/device", {
 	icon: rt.rsc("icons/obj/module.dmi"),
 });
 
-// /obj/item/device/mine_bot_ugprade/proc/afterattack  (code/modules/mining/minebot.dm:217)  may sleep
+// minebot.dm:217
 rt.def("/obj/item/device/mine_bot_ugprade/proc/afterattack", function* afterattack(f: Frame, M: Value, user: Value, proximity: Value) {
-	f.vars = () => [M, user, proximity];
-	if ((!truthy((rt.istype(live(M), T("/mob/living/simple_animal/hostile/mining_drone")) ? 1 : 0)) || !truthy(live(proximity)))) {
-		return live(f.dot);
+	if (!rt.istype(M, T("/mob/living/simple_animal/hostile/mining_drone")) || !proximity) {
+		return f.dot;
 	}
-	yield* g.srcCall(f, "upgrade_bot", live(M), live(user));
+	yield* this.upgrade_bot(M, user);
 	return f.dot;
 }, true);
 
-// /obj/item/device/mine_bot_ugprade/proc/upgrade_bot  (code/modules/mining/minebot.dm:222)  may sleep
+// minebot.dm:222
 rt.def("/obj/item/device/mine_bot_ugprade/proc/upgrade_bot", function* upgrade_bot(f: Frame, M: Value, user: Value) {
-	f.vars = () => [M, user];
-	if (!isEqual(rt.fv(f, "melee_damage_upper", live(M)), rt.initial(f, live(M), "melee_damage_upper"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("＀ already has a combat upgrade installed!", [live(f.src)])]);
-		return live(f.dot);
+	if (M.melee_damage_upper != rt.initial(f, M, "melee_damage_upper")) {
+		to_chat(user, `${this} already has a combat upgrade installed!`);
+		return f.dot;
 	}
-	rt.setFv(f, "melee_damage_lower", live(M), 22);
-	rt.setFv(f, "melee_damage_upper", live(M), 22);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	M.melee_damage_lower = 22;
+	M.melee_damage_upper = 22;
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
@@ -335,15 +292,14 @@ rt.type(9398, "/obj/item/device/mine_bot_ugprade/health", "/obj/item/device/mine
 	name: "minebot chassis upgrade",
 });
 
-// /obj/item/device/mine_bot_ugprade/health/proc/upgrade_bot  (code/modules/mining/minebot.dm:235)  may sleep
+// minebot.dm:235
 rt.def("/obj/item/device/mine_bot_ugprade/health/proc/upgrade_bot", function* upgrade_bot(f: Frame, M: Value, user: Value) {
-	f.vars = () => [M, user];
-	if (!isEqual(rt.fv(f, "maxHealth", live(M)), rt.initial(f, live(M), "maxHealth"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("＀ already has a reinforced chassis!", [live(f.src)])]);
-		return live(f.dot);
+	if (M.maxHealth != rt.initial(f, M, "maxHealth")) {
+		to_chat(user, `${this} already has a reinforced chassis!`);
+		return f.dot;
 	}
-	rt.setFv(f, "maxHealth", live(M), 170);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	M.maxHealth = 170;
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
@@ -351,15 +307,14 @@ rt.type(9399, "/obj/item/device/mine_bot_ugprade/cooldown", "/obj/item/device/mi
 	name: "minebot cooldown upgrade",
 });
 
-// /obj/item/device/mine_bot_ugprade/cooldown/proc/upgrade_bot  (code/modules/mining/minebot.dm:248)  may sleep
+// minebot.dm:248
 rt.def("/obj/item/device/mine_bot_ugprade/cooldown/proc/upgrade_bot", function* upgrade_bot(f: Frame, M: Value, user: Value) {
-	f.vars = () => [M, user];
-	rt.setSv(f, "name", "minebot cooldown upgrade");
-	if (!isEqual(rt.fv(f, "ranged_cooldown_time", live(M)), rt.initial(f, live(M), "ranged_cooldown_time"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("＀ already has a decreased weapon cooldown!", [live(f.src)])]);
-		return live(f.dot);
+	this.name = "minebot cooldown upgrade";
+	if (M.ranged_cooldown_time != rt.initial(f, M, "ranged_cooldown_time")) {
+		to_chat(user, `${this} already has a decreased weapon cooldown!`);
+		return f.dot;
 	}
-	rt.setFv(f, "ranged_cooldown_time", live(M), 10);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	M.ranged_cooldown_time = 10;
+	yield* qdel(this);
 	return f.dot;
 }, true);

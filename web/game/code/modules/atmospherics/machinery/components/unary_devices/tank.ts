@@ -1,7 +1,7 @@
-// From code/modules/atmospherics/machinery/components/unary_devices/tank.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/atmospherics/machinery/components/unary_devices/tank.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(10591, "/obj/machinery/atmospherics/components/unary/tank", "/obj/machinery/atmospherics/components/unary", {
@@ -17,17 +17,16 @@ rt.type(10591, "/obj/machinery/atmospherics/components/unary/tank", "/obj/machin
 	layer: 3.3,
 });
 
-// /obj/machinery/atmospherics/components/unary/tank/proc/New  (code/modules/atmospherics/machinery/components/unary_devices/tank.dm:15)  may sleep
+// tank.dm:15
 rt.def("/obj/machinery/atmospherics/components/unary/tank/proc/New", function* New(f: Frame) {
 	let air_contents: Value = null;
-	f.vars = () => [air_contents];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setFv(f, "volume", (air_contents = rt.index(rt.sv(f, "airs"), 1)), rt.sv(f, "volume"));
-	rt.setFv(f, "temperature", live(air_contents), 293.1499938964844);
-	if (!truthy(rt.sv(f, "gas_type"))) return f.dot;
-	yield* g.callName(f, live(air_contents), "assert_gas", [rt.sv(f, "gas_type")]);
-	rt.setAt(rt.index(rt.fv(f, "gases", live(air_contents)), rt.sv(f, "gas_type")), 1, divide(multiply(2533.125, rt.fv(f, "volume", live(air_contents))), multiply(8.3100004196167, rt.fv(f, "temperature", live(air_contents)))));
-	rt.setSv(f, "name", fmt("＀ (＀)", [rt.sv(f, "name"), rt.index(rt.index(rt.index(rt.fv(f, "gases", live(air_contents)), rt.sv(f, "gas_type")), 3), 2)]));
+	yield* parent_proc();
+	(air_contents = rt.index(this.airs, 1)).volume = this.volume;
+	air_contents.temperature = T20C;
+	if (!this.gas_type) return f.dot;
+	air_contents.assert_gas(this.gas_type);
+	rt.setAt(rt.index(air_contents.gases, this.gas_type), 1, 2533.125 * air_contents.volume / (8.31 * air_contents.temperature));
+	this.name = `${this.name} (${rt.index(rt.index(rt.index(air_contents.gases, this.gas_type), 3), 2)})`;
 	return f.dot;
 }, true);
 
@@ -36,13 +35,12 @@ rt.type(10597, "/obj/machinery/atmospherics/components/unary/tank/air", "/obj/ma
 	name: "pressure tank (Air)",
 });
 
-// /obj/machinery/atmospherics/components/unary/tank/air/proc/New  (code/modules/atmospherics/machinery/components/unary_devices/tank.dm:48)  may sleep
+// tank.dm:48
 rt.def("/obj/machinery/atmospherics/components/unary/tank/air/proc/New", function* New(f: Frame) {
 	let air_contents: Value = null;
-	f.vars = () => [air_contents];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.callName(f, (air_contents = rt.index(rt.sv(f, "airs"), 1)), "assert_gases", ["o2", "n2"]);
-	rt.setAt(rt.index(rt.fv(f, "gases", live(air_contents)), "o2"), 1, multiply(divide(multiply(2533.125, rt.fv(f, "volume", live(air_contents))), multiply(8.3100004196167, rt.fv(f, "temperature", live(air_contents)))), 0.20000000298023224));
-	rt.setAt(rt.index(rt.fv(f, "gases", live(air_contents)), "n2"), 1, multiply(divide(multiply(2533.125, rt.fv(f, "volume", live(air_contents))), multiply(8.3100004196167, rt.fv(f, "temperature", live(air_contents)))), 0.800000011920929));
+	yield* parent_proc();
+	(air_contents = rt.index(this.airs, 1)).assert_gases("o2", "n2");
+	rt.setAt(rt.index(air_contents.gases, "o2"), 1, 2533.125 * air_contents.volume / (8.31 * air_contents.temperature) * 0.2);
+	rt.setAt(rt.index(air_contents.gases, "n2"), 1, 2533.125 * air_contents.volume / (8.31 * air_contents.temperature) * 0.8);
 	return f.dot;
 }, true);

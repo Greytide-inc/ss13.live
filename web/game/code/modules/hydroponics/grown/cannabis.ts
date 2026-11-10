@@ -1,7 +1,7 @@
-// From code/modules/hydroponics/grown/cannabis.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/hydroponics/grown/cannabis.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(10007, "/obj/item/seeds/cannabis", "/obj/item/seeds", {
@@ -22,15 +22,13 @@ rt.type(10007, "/obj/item/seeds/cannabis", "/obj/item/seeds", {
 	mutatelist: null,
 });
 
-// /obj/item/seeds/cannabis/proc/<init>  (code/modules/hydroponics/grown/cannabis.dm:15)
+// cannabis.dm:15
 rt.def("/obj/item/seeds/cannabis/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "genes", rt.list(T("/datum/plant_gene/trait/repeated_harvest")));
-	rt.setSv(f, "reagents_add", rt.alist(f, ["space_drugs", 0.15000000596046448, "lipolicide", 0.3499999940395355]));
-	$0 = $0;
-	rt.setSv(f, "mutatelist", rt.list(T("/obj/item/seeds/cannabis/rainbow"), T("/obj/item/seeds/cannabis/death"), T("/obj/item/seeds/cannabis/white"), T("/obj/item/seeds/cannabis/ultimate")));
+	parent_proc();
+	this.genes = list(T("/datum/plant_gene/trait/repeated_harvest"));
+	this.reagents_add = rt.alist(f, ["space_drugs", 0.15, "lipolicide", 0.35]);
+
+	this.mutatelist = list(T("/obj/item/seeds/cannabis/rainbow"), T("/obj/item/seeds/cannabis/death"), T("/obj/item/seeds/cannabis/white"), T("/obj/item/seeds/cannabis/ultimate"));
 	return f.dot;
 });
 
@@ -46,13 +44,11 @@ rt.type(10008, "/obj/item/seeds/cannabis/rainbow", "/obj/item/seeds/cannabis", {
 	icon_state: "seed-megacannabis",
 });
 
-// /obj/item/seeds/cannabis/rainbow/proc/<init>  (code/modules/hydroponics/grown/cannabis.dm:30)
+// cannabis.dm:30
 rt.def("/obj/item/seeds/cannabis/rainbow/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "mutatelist", rt.list());
-	rt.setSv(f, "reagents_add", rt.alist(f, ["mindbreaker", 0.15000000596046448, "lipolicide", 0.3499999940395355]));
+	parent_proc();
+	this.mutatelist = list();
+	this.reagents_add = rt.alist(f, ["mindbreaker", 0.15, "lipolicide", 0.35]);
 	return f.dot;
 });
 
@@ -68,13 +64,11 @@ rt.type(10009, "/obj/item/seeds/cannabis/death", "/obj/item/seeds/cannabis", {
 	icon_state: "seed-blackcannabis",
 });
 
-// /obj/item/seeds/cannabis/death/proc/<init>  (code/modules/hydroponics/grown/cannabis.dm:41)
+// cannabis.dm:41
 rt.def("/obj/item/seeds/cannabis/death/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "mutatelist", rt.list());
-	rt.setSv(f, "reagents_add", rt.alist(f, ["cyanide", 0.3499999940395355, "space_drugs", 0.15000000596046448, "lipolicide", 0.15000000596046448]));
+	parent_proc();
+	this.mutatelist = list();
+	this.reagents_add = rt.alist(f, ["cyanide", 0.35, "space_drugs", 0.15, "lipolicide", 0.15]);
 	return f.dot;
 });
 
@@ -90,13 +84,11 @@ rt.type(10010, "/obj/item/seeds/cannabis/white", "/obj/item/seeds/cannabis", {
 	icon_state: "seed-whitecannabis",
 });
 
-// /obj/item/seeds/cannabis/white/proc/<init>  (code/modules/hydroponics/grown/cannabis.dm:52)
+// cannabis.dm:52
 rt.def("/obj/item/seeds/cannabis/white/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "mutatelist", rt.list());
-	rt.setSv(f, "reagents_add", rt.alist(f, ["omnizine", 0.3499999940395355, "space_drugs", 0.15000000596046448, "lipolicide", 0.15000000596046448]));
+	parent_proc();
+	this.mutatelist = list();
+	this.reagents_add = rt.alist(f, ["omnizine", 0.35, "space_drugs", 0.15, "lipolicide", 0.15]);
 	return f.dot;
 });
 
@@ -112,12 +104,10 @@ rt.type(10011, "/obj/item/seeds/cannabis/ultimate", "/obj/item/seeds/cannabis", 
 	icon_state: "seed-ocannabis",
 });
 
-// /obj/item/seeds/cannabis/ultimate/proc/<init>  (code/modules/hydroponics/grown/cannabis.dm:64)
+// cannabis.dm:64
 rt.def("/obj/item/seeds/cannabis/ultimate/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "mutatelist", rt.list());
-	rt.setSv(f, "reagents_add", rt.alist(f, ["space_drugs", 0.30000001192092896, "mindbreaker", 0.30000001192092896, "mercury", 0.15000000596046448, "lithium", 0.15000000596046448, "atropine", 0.15000000596046448, "haloperidol", 0.15000000596046448, "methamphetamine", 0.15000000596046448, "capsaicin", 0.15000000596046448, "barbers_aid", 0.15000000596046448, "bath_salts", 0.15000000596046448, "itching_powder", 0.15000000596046448, "crank", 0.15000000596046448, "krokodil", 0.15000000596046448, "histamine", 0.15000000596046448, "lipolicide", 0.15000000596046448]));
+	parent_proc();
+	this.mutatelist = list();
+	this.reagents_add = rt.alist(f, ["space_drugs", 0.3, "mindbreaker", 0.3, "mercury", 0.15, "lithium", 0.15, "atropine", 0.15, "haloperidol", 0.15, "methamphetamine", 0.15, "capsaicin", 0.15, "barbers_aid", 0.15, "bath_salts", 0.15, "itching_powder", 0.15, "crank", 0.15, "krokodil", 0.15, "histamine", 0.15, "lipolicide", 0.15]);
 	return f.dot;
 });

@@ -1,7 +1,7 @@
-// From code/game/objects/structures/traps.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/structures/traps.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(12881, "/obj/structure/trap", "/obj/structure", {
@@ -19,91 +19,88 @@ rt.type(12881, "/obj/structure/trap", "/obj/structure", {
 	alpha: 30,
 }, { global: { ignore_typecache: 804 } });
 
-// /obj/structure/trap/proc/<init>  (code/game/objects/structures/traps.dm:14)
+// traps.dm:14
 rt.def("/obj/structure/trap/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "immune_minds", rt.list());
+	parent_proc();
+	this.immune_minds = list();
 	return f.dot;
 });
 
-// /obj/structure/trap/proc/Initialize  (code/game/objects/structures/traps.dm:19)
-rt.def("/obj/structure/trap/proc/Initialize", function Initialize(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "spark_system", rt.new_(f, T("/datum/effect_system/spark_spread"), []));
-	rt.callName(f, rt.sv(f, "spark_system"), "set_up", [4, 1, live(f.src)]);
-	rt.callName(f, rt.sv(f, "spark_system"), "attach", [live(f.src)]);
-	if (truthy(rt.gl("ignore_typecache"))) return f.dot;
-	rt.setGl("ignore_typecache", rt.call(f, P("/proc/typecacheof"), null, [rt.list(T("/obj/effect"), T("/mob/dead"))]));
+// traps.dm:19
+rt.def("/obj/structure/trap/proc/Initialize", function Initialize(f: Frame, mapload: Value) {
+	parent_proc();
+	this.spark_system = new_(T("/datum/effect_system/spark_spread"));
+	this.spark_system.set_up(4, 1, this);
+	this.spark_system.attach(this);
+	if (GLOB.ignore_typecache) return f.dot;
+	GLOB.ignore_typecache = typecacheof(list(T("/obj/effect"), T("/mob/dead")));
 	return f.dot;
-}, false, { args: ["mapload"] });
+}, false);
 
-// /obj/structure/trap/proc/Destroy  (code/game/objects/structures/traps.dm:30)  may sleep
+// traps.dm:30
 rt.def("/obj/structure/trap/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "spark_system")]);
-	rt.setSv(f, "spark_system", null);
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* qdel(this.spark_system);
+	this.spark_system = null;
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true);
 
-// /obj/structure/trap/proc/examine  (code/game/objects/structures/traps.dm:35)  may sleep
-rt.def("/obj/structure/trap/proc/examine", function* examine(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy((rt.istype(live(f.args[0]), T("/mob/living")) ? 1 : 0))) {
-		return live(f.dot);
+// traps.dm:35
+rt.def("/obj/structure/trap/proc/examine", function* examine(f: Frame, user: Value) {
+	f.dot = (yield* parent_proc());
+	if (!rt.istype(user, T("/mob/living"))) {
+		return f.dot;
 	}
-	if (truthy((rt.isIn(f, (rt.fv(f, "mind", live(f.args[0])) && rt.fv(f, "mind", live(f.args[0]))), rt.sv(f, "immune_minds")) ? 1 : 0))) {
-		return live(f.dot);
+	if (rt.isIn(f, (user.mind && user.mind), this.immune_minds)) {
+		return f.dot;
 	}
-	if (!rt.le((yield* g.call(f, P("/proc/get_dist"), null, [live(f.args[0]), live(f.src)])), 1)) return f.dot;
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='notice'>You reveal ＀!</span>", [live(f.src)])]);
-	yield* g.srcCall(f, "flare");
+	if (!(get_dist(user, this) <= 1)) return f.dot;
+	to_chat(user, `<span class='notice'>You reveal ${this}!</span>`);
+	yield* this.flare();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /obj/structure/trap/proc/examine  (_nofile:0)
+
 rt.def("/obj/structure/trap/proc/examine", function examine(f: Frame, user: Value) {
-	return live(f.dot);
+	return f.dot;
 });
 
-// /obj/structure/trap/proc/flare  (code/game/objects/structures/traps.dm:47)  may sleep
+// traps.dm:47
 rt.def("/obj/structure/trap/proc/flare", function* flare(f: Frame) {
-	yield* g.srcCall(f, "visible_message", fmt("<span class='warning'>＀ flares brightly!</span>", [live(f.src)]));
-	yield* g.callName(f, rt.sv(f, "spark_system"), "start", []);
-	rt.setSv(f, "alpha", 200);
-	rt.setSv(f, "last_trigger", rt.worldTime(f));
-	rt.incSrcVar(f, "charges", -1, true);
-	if (rt.le(rt.sv(f, "charges"), 0)) {
-		rt.op(f, "Animate", [2, 6], [null, live(f.src), "alpha", 0, "time", 10]);
-		yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), ["some_magic_bullshit", P("/proc/qdel"), live(f.src)])), 10, 8]);
+	this.visible_message(`<span class='warning'>${this} flares brightly!</span>`);
+	yield* this.spark_system.start();
+	this.alpha = 200;
+	this.last_trigger = rt.worldTime(f);
+	this.charges--;
+	if (this.charges <= 0) {
+		rt.op(f, "Animate", [2, 6], [null, this, "alpha", 0, "time", 10]);
+		yield* addtimer((yield* new_(T("/datum/callback"), "some_magic_bullshit", P("/proc/qdel"), this)), 10, 8);
 	} else {
-		rt.op(f, "Animate", [2, 6], [null, live(f.src), "alpha", rt.initial(f, live(f.src), "alpha"), "time", rt.sv(f, "time_between_triggers")]);
+		rt.op(f, "Animate", [2, 6], [null, this, "alpha", rt.initial(f, this, "alpha"), "time", this.time_between_triggers]);
 	}
 	return f.dot;
 }, true);
 
-// /obj/structure/trap/proc/Crossed  (code/game/objects/structures/traps.dm:59)  may sleep
+// traps.dm:59
 rt.def("/obj/structure/trap/proc/Crossed", function* Crossed(f: Frame, AM: Value) {
 	let M: Value = null;
-	f.vars = () => [AM, M];
-	if (rt.gt(add(rt.sv(f, "last_trigger"), rt.sv(f, "time_between_triggers")), rt.worldTime(f))) {
-		return live(f.dot);
+	if (this.last_trigger + this.time_between_triggers > rt.worldTime(f)) {
+		return f.dot;
 	}
-	if (truthy((yield* g.call(f, P("/proc/is_type_in_typecache"), null, [live(AM), rt.gl("ignore_typecache")])))) {
-		return live(f.dot);
+	if (is_type_in_typecache(AM, GLOB.ignore_typecache)) {
+		return f.dot;
 	}
-	if (truthy((yield* g.call(f, P("/proc/ismob"), null, [live(AM)])))) {
-		if (truthy((rt.isIn(f, rt.gv(f, "mind", (M = live(AM))), rt.sv(f, "immune_minds")) ? 1 : 0))) {
-			return live(f.dot);
+	if (ismob(AM)) {
+		if (rt.isIn(f, (M = AM).mind, this.immune_minds)) {
+			return f.dot;
 		}
 	}
-	if (rt.le(rt.sv(f, "charges"), 0)) {
-		return live(f.dot);
+	if (this.charges <= 0) {
+		return f.dot;
 	}
-	yield* g.srcCall(f, "flare");
-	if (!truthy((rt.istype(live(AM), T("/mob/living")) ? 1 : 0))) return f.dot;
-	yield* g.srcCall(f, "trap_effect", live(AM));
+	yield* this.flare();
+	if (!rt.istype(AM, T("/mob/living"))) return f.dot;
+	yield* this.trap_effect(AM);
 	return f.dot;
 }, true);
 
@@ -113,11 +110,10 @@ rt.type(12882, "/obj/structure/trap/stun", "/obj/structure/trap", {
 	icon_state: "trap-shock",
 });
 
-// /obj/structure/trap/stun/proc/trap_effect  (code/game/objects/structures/traps.dm:83)  may sleep
+// traps.dm:83
 rt.def("/obj/structure/trap/stun/proc/trap_effect", function* trap_effect(f: Frame, L: Value) {
-	f.vars = () => [L];
-	yield* g.callName(f, live(L), "electrocute_act", [null, 30, null, live(f.src), "safety", 1], rt.Args.Named);
-	yield* g.callName(f, live(L), "Knockdown", [100]);
+	yield* L.electrocute_act(30, this, { safety: 1 });
+	yield* L.Knockdown(100);
 	return f.dot;
 }, true);
 
@@ -127,18 +123,17 @@ rt.type(12883, "/obj/structure/trap/fire", "/obj/structure/trap", {
 	icon_state: "trap-fire",
 });
 
-// /obj/structure/trap/fire/proc/trap_effect  (code/game/objects/structures/traps.dm:92)  may sleep
+// traps.dm:92
 rt.def("/obj/structure/trap/fire/proc/trap_effect", function* trap_effect(f: Frame, L: Value) {
-	f.vars = () => [L];
-	yield* g.call(f, P("/proc/to_chat"), null, [live(L), "<span class='danger'><B>Spontaneous combustion!</B></span>"]);
-	yield* g.callName(f, live(L), "Knockdown", [20]);
+	to_chat(L, "<span class='danger'><B>Spontaneous combustion!</B></span>");
+	yield* L.Knockdown(20);
 	return f.dot;
 }, true);
 
-// /obj/structure/trap/fire/proc/flare  (code/game/objects/structures/traps.dm:96)  may sleep
+// traps.dm:96
 rt.def("/obj/structure/trap/fire/proc/flare", function* flare(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.new_(f, T("/obj/effect/hotspot"), [rt.getStep(f, live(f.src), 0)]);
+	yield* parent_proc();
+	yield* new_(T("/obj/effect/hotspot"), rt.getStep(f, this, 0));
 	return f.dot;
 }, true);
 
@@ -148,13 +143,12 @@ rt.type(12884, "/obj/structure/trap/chill", "/obj/structure/trap", {
 	icon_state: "trap-frost",
 });
 
-// /obj/structure/trap/chill/proc/trap_effect  (code/game/objects/structures/traps.dm:106)  may sleep
+// traps.dm:106
 rt.def("/obj/structure/trap/chill/proc/trap_effect", function* trap_effect(f: Frame, L: Value) {
-	f.vars = () => [L];
-	yield* g.call(f, P("/proc/to_chat"), null, [live(L), "<span class='danger'><B>You're frozen solid!</B></span>"]);
-	yield* g.callName(f, live(L), "Knockdown", [20]);
-	(rt.modField(f, live(L), "bodytemperature", 300, subtract));
-	yield* g.callName(f, live(L), "apply_status_effect", [T("/datum/status_effect/freon")]);
+	to_chat(L, "<span class='danger'><B>You're frozen solid!</B></span>");
+	yield* L.Knockdown(20);
+	L.bodytemperature -= 300;
+	yield* L.apply_status_effect(T("/datum/status_effect/freon"));
 	return f.dot;
 }, true);
 
@@ -164,22 +158,19 @@ rt.type(12885, "/obj/structure/trap/damage", "/obj/structure/trap", {
 	icon_state: "trap-earth",
 });
 
-// /obj/structure/trap/damage/proc/trap_effect  (code/game/objects/structures/traps.dm:119)  may sleep
+// traps.dm:119
 rt.def("/obj/structure/trap/damage/proc/trap_effect", function* trap_effect(f: Frame, L: Value) {
-	f.vars = () => [L];
-	yield* g.call(f, P("/proc/to_chat"), null, [live(L), "<span class='danger'><B>The ground quakes beneath your feet!</B></span>"]);
-	yield* g.callName(f, live(L), "Knockdown", [100]);
-	yield* g.callName(f, live(L), "adjustBruteLoss", [35]);
+	to_chat(L, "<span class='danger'><B>The ground quakes beneath your feet!</B></span>");
+	yield* L.Knockdown(100);
+	yield* L.adjustBruteLoss(35);
 	return f.dot;
 }, true);
 
-// /obj/structure/trap/damage/proc/flare  (code/game/objects/structures/traps.dm:124)  may sleep
+// traps.dm:124
 rt.def("/obj/structure/trap/damage/proc/flare", function* flare(f: Frame) {
-	let giant_rock: Value = null;
-	f.vars = () => [giant_rock];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	giant_rock = (yield* g.new_(f, T("/obj/structure/flora/rock"), [rt.getStep(f, live(f.src), 0)]));
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), ["some_magic_bullshit", P("/proc/qdel"), live(giant_rock)])), 200, 8]);
+	yield* parent_proc();
+	let giant_rock: Value = (yield* new_(T("/obj/structure/flora/rock"), rt.getStep(f, this, 0)));
+	yield* addtimer((yield* new_(T("/datum/callback"), "some_magic_bullshit", P("/proc/qdel"), giant_rock)), 200, 8);
 	return f.dot;
 }, true);
 
@@ -191,9 +182,9 @@ rt.type(12886, "/obj/structure/trap/ward", "/obj/structure/trap", {
 	density: 1,
 });
 
-// /obj/structure/trap/ward/proc/New  (code/game/objects/structures/traps.dm:138)  may sleep
+// traps.dm:138
 rt.def("/obj/structure/trap/ward/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), ["some_magic_bullshit", P("/proc/qdel"), live(f.src)])), rt.sv(f, "time_between_triggers"), 8]);
+	yield* parent_proc();
+	yield* addtimer((yield* new_(T("/datum/callback"), "some_magic_bullshit", P("/proc/qdel"), this)), this.time_between_triggers, 8);
 	return f.dot;
 }, true);

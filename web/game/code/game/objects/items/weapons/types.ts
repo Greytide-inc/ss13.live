@@ -1,5 +1,5 @@
 // Types declared in code/game/objects/items/weapons that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(5614, "/obj/item/weapon/twohanded/dualsaber/toy", "/obj/item/weapon/twohanded/dualsaber", {
 	throw_speed: 3,

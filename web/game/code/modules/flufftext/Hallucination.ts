@@ -1,38 +1,36 @@
-// From code/modules/flufftext/Hallucination.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/flufftext/Hallucination.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
-// /mob/living/carbon/proc/handle_hallucinations  (code/modules/flufftext/Hallucination.dm:31)  may sleep
+// Hallucination.dm:31
 rt.def("/mob/living/carbon/proc/handle_hallucinations", function* handle_hallucinations(f: Frame) {
-	let minor: Value = null, medium: Value = null, major: Value = null, current: Value = null, halpick: Value = null;
-	let $0: any;
-	f.vars = () => [minor, medium, major, current, halpick, $0];
-	if (truthy(rt.sv(f, "handling_hal"))) {
-		return live(f.dot);
+	let current: Value = null, halpick: Value = null;
+	if (this.handling_hal) {
+		return f.dot;
 	}
-	minor = rt.alist(f, ["sounds", 25, "bolts_minor", 5, "whispers", 15, "message", 10, "hudscrew", 15]);
-	medium = rt.alist(f, ["fake_alert", 15, "items", 10, "items_other", 10, "dangerflash", 10, "bolts", 5, "flood", 5, "husks", 10, "battle", 15, "self_delusion", 10]);
-	major = rt.alist(f, ["fake", 20, "death", 10, "xeno", 10, "singulo", 10, "delusion", 20, "koolaid", 10]);
-	rt.setSv(f, "handling_hal", 1);
-	while (rt.gt(rt.sv(f, "hallucination"), 20)) {
-		yield* g.call(f, P("/proc/sleep"), null, [divide((yield* g.call(f, P("/proc/rand"), null, [200, 500])), divide(rt.sv(f, "hallucination"), 25))]);
-		if (truthy(rt.op(f, "Prob", [], [20]))) {
+	let minor: Value = rt.alist(f, ["sounds", 25, "bolts_minor", 5, "whispers", 15, "message", 10, "hudscrew", 15]);
+	let medium: Value = rt.alist(f, ["fake_alert", 15, "items", 10, "items_other", 10, "dangerflash", 10, "bolts", 5, "flood", 5, "husks", 10, "battle", 15, "self_delusion", 10]);
+	let major: Value = rt.alist(f, ["fake", 20, "death", 10, "xeno", 10, "singulo", 10, "delusion", 20, "koolaid", 10]);
+	this.handling_hal = 1;
+	while (this.hallucination > 20) {
+		yield* sleep(rand(200, 500) / (this.hallucination / 25));
+		if (prob(20)) {
 			continue;
 		}
-		current = rt.list();
-		$0 = (yield* g.call(f, P("/proc/rand"), null, [100]));
-		if (rt.inRange($0, 1, 50)) {
-			current = live(minor);
-		} else if (rt.inRange($0, 51, 85)) {
-			current = live(medium);
-		} else if (rt.inRange($0, 86, 100)) {
-			current = live(major);
+		current = list();
+		const die = rand(100);
+		if (rt.inRange(die, 1, 50)) {
+			current = minor;
+		} else if (rt.inRange(die, 51, 85)) {
+			current = medium;
+		} else if (rt.inRange(die, 86, 100)) {
+			current = major;
 		}
-		yield* g.srcCall(f, "hallucinate", (halpick = (yield* g.call(f, P("/proc/pickweight"), null, [live(current)]))));
+		yield* this.hallucinate((halpick = pickweight(current)));
 	}
-	rt.setSv(f, "handling_hal", 0);
+	this.handling_hal = 0;
 	return f.dot;
 }, true);
 
@@ -41,10 +39,10 @@ rt.type(12050, "/obj/effect/hallucination", "/obj/effect", {
 	invisibility: 60,
 });
 
-// /obj/effect/hallucination/proc/wake_and_restore  (code/modules/flufftext/Hallucination.dm:61)  may sleep
+// Hallucination.dm:61
 rt.def("/obj/effect/hallucination/proc/wake_and_restore", function* wake_and_restore(f: Frame) {
-	rt.setFv(f, "hal_screwyhud", rt.sv(f, "target"), 0);
-	yield* g.callName(f, rt.sv(f, "target"), "SetSleeping", [0]);
+	this.target.hal_screwyhud = SCREWYHUD_NONE;
+	yield* this.target.SetSleeping(0);
 	return f.dot;
 }, true);
 
@@ -59,80 +57,71 @@ rt.type(12051, "/obj/effect/hallucination/simple", "/obj/effect/hallucination", 
 	active: 1,
 });
 
-// /obj/effect/hallucination/simple/proc/Initialize  (code/modules/flufftext/Hallucination.dm:75)
-rt.def("/obj/effect/hallucination/simple/proc/Initialize", function Initialize(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "target", live(f.args[1]));
-	rt.setSv(f, "current_image", rt.callSrc(f, "GetImage", []));
-	if (!truthy(rt.fv(f, "client", rt.sv(f, "target")))) return f.dot;
-	(rt.modField(f, rt.fv(f, "client", rt.sv(f, "target")), "images", rt.sv(f, "current_image"), rt.bitOr));
+// Hallucination.dm:75
+rt.def("/obj/effect/hallucination/simple/proc/Initialize", function Initialize(f: Frame, mapload: Value, T: Value) {
+	parent_proc();
+	this.target = T;
+	this.current_image = this.GetImage();
+	if (!this.target.client) return f.dot;
+	(rt.modField(f, this.target.client, "images", this.current_image, rt.bitOr));
 	return f.dot;
-}, false, { args: ["mapload", "T"] });
+}, false);
 
-// /obj/effect/hallucination/simple/proc/GetImage  (code/modules/flufftext/Hallucination.dm:81)
+// Hallucination.dm:81
 rt.def("/obj/effect/hallucination/simple/proc/GetImage", function GetImage(f: Frame) {
 	let I: Value = null;
-	f.vars = () => [I];
-	rt.setFv(f, "pixel_x", (I = rt.call(f, P("/proc/image"), null, [null, rt.sv(f, "image_icon"), null, live(f.src), null, rt.sv(f, "image_state"), null, rt.sv(f, "image_layer"), "dir", rt.fv(f, "dir", live(f.src))], rt.Args.Named)), rt.sv(f, "px"));
-	rt.setFv(f, "pixel_y", live(I), rt.sv(f, "py"));
-	if (truthy(rt.sv(f, "col_mod"))) {
-		rt.setFv(f, "color", live(I), rt.sv(f, "col_mod"));
+	(I = image(this.image_icon, this, this.image_state, this.image_layer, { dir: this.dir })).pixel_x = this.px;
+	I.pixel_y = this.py;
+	if (this.col_mod) {
+		I.color = this.col_mod;
 	}
-	return live(I);
+	return I;
 });
 
-// /obj/effect/hallucination/simple/proc/Show  (code/modules/flufftext/Hallucination.dm:90)
+// Hallucination.dm:90
 rt.def("/obj/effect/hallucination/simple/proc/Show", function Show(f: Frame, update: Value) {
-	f.vars = () => [update];
-	if (live(update) === null) {
-		update = 1;
+	update ??= 1;
+	if (!this.active) return f.dot;
+	if (this.target.client) {
+		this.target.client.images.Remove(this.current_image);
 	}
-	if (!truthy(rt.sv(f, "active"))) return f.dot;
-	if (truthy(rt.fv(f, "client", rt.sv(f, "target")))) {
-		rt.callName(f, rt.gv(f, "images", rt.fv(f, "client", rt.sv(f, "target"))), "Remove", [rt.sv(f, "current_image")]);
+	if (update) {
+		this.current_image = this.GetImage();
 	}
-	if (truthy(live(update))) {
-		rt.setSv(f, "current_image", rt.callSrc(f, "GetImage", []));
-	}
-	if (!truthy(rt.fv(f, "client", rt.sv(f, "target")))) return f.dot;
-	(rt.modField(f, rt.fv(f, "client", rt.sv(f, "target")), "images", rt.sv(f, "current_image"), rt.bitOr));
+	if (!this.target.client) return f.dot;
+	(rt.modField(f, this.target.client, "images", this.current_image, rt.bitOr));
 	return f.dot;
 });
 
-// /obj/effect/hallucination/simple/proc/update_icon  (code/modules/flufftext/Hallucination.dm:96)
+// Hallucination.dm:96
 rt.def("/obj/effect/hallucination/simple/proc/update_icon", function update_icon(f: Frame, new_state: Value, new_icon: Value, new_px: Value, new_py: Value) {
-	f.vars = () => [new_px, new_py];
-	if (live(new_px) === null) {
-		new_px = 0;
-	}
-	if (live(new_py) === null) {
-		new_py = 0;
-	}
-	rt.setSv(f, "image_state", live(new_state));
-	if (truthy(live(new_icon))) {
-		rt.setSv(f, "image_icon", live(new_icon));
+	new_px ??= 0;
+	new_py ??= 0;
+	this.image_state = new_state;
+	if (new_icon) {
+		this.image_icon = new_icon;
 	} else {
-		rt.setSv(f, "image_icon", rt.initial(f, live(f.src), "image_icon"));
+		this.image_icon = rt.initial(f, this, "image_icon");
 	}
-	rt.setSv(f, "px", live(new_px));
-	rt.setSv(f, "py", live(new_py));
-	rt.callSrc(f, "Show", []);
+	this.px = new_px;
+	this.py = new_py;
+	this.Show();
 	return f.dot;
 });
 
-// /obj/effect/hallucination/simple/proc/Moved  (code/modules/flufftext/Hallucination.dm:106)
+// Hallucination.dm:106
 rt.def("/obj/effect/hallucination/simple/proc/Moved", function Moved(f: Frame, OldLoc: Value, Dir: Value) {
-	rt.callSrc(f, "Show", []);
+	this.Show();
 	return f.dot;
 });
 
-// /obj/effect/hallucination/simple/proc/Destroy  (code/modules/flufftext/Hallucination.dm:109)  may sleep
+// Hallucination.dm:109
 rt.def("/obj/effect/hallucination/simple/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.fv(f, "client", rt.sv(f, "target")))) {
-		yield* g.callName(f, rt.gv(f, "images", rt.fv(f, "client", rt.sv(f, "target"))), "Remove", [rt.sv(f, "current_image")]);
+	if (this.target.client) {
+		yield* this.target.client.images.Remove(this.current_image);
 	}
-	rt.setSv(f, "active", 0);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	this.active = 0;
+	return (yield* parent_proc());
 }, true);
 
 rt.type(12057, "/obj/effect/hallucination/fake_flood", "/obj/effect/hallucination", {
@@ -144,102 +133,85 @@ rt.type(12057, "/obj/effect/hallucination/fake_flood", "/obj/effect/hallucinatio
 	next_expand: 0,
 });
 
-// /obj/effect/hallucination/fake_flood/proc/<init>  (code/modules/flufftext/Hallucination.dm:118)
+// Hallucination.dm:118
 rt.def("/obj/effect/hallucination/fake_flood/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "flood_images", rt.list());
-	$0 = $0;
-	rt.setSv(f, "flood_turfs", rt.list());
+	parent_proc();
+	this.flood_images = list();
+
+	this.flood_turfs = list();
 	return f.dot;
 });
 
-// /obj/effect/hallucination/fake_flood/proc/Initialize  (code/modules/flufftext/Hallucination.dm:126)
+// Hallucination.dm:126
 rt.def("/obj/effect/hallucination/fake_flood/proc/Initialize", function Initialize(f: Frame) {
 	let U: Value = null;
-	let $e: any;
-	f.vars = () => [U, $e];
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "target", live(f.args[1]));
-	U = null;
-	rt.forList(f, 0, rt.call(f, P("/proc/orange"), null, [7, rt.sv(f, "target")]), T("/obj/machinery/atmospherics/components/unary/vent_pump"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		U = $e;
-		if (!truthy(rt.fv(f, "welded", live(U)))) {
-			rt.setFv(f, "loc", live(f.src), rt.fv(f, "loc", live(U)));
+	parent_proc();
+	this.target = f.args[1];
+	for (U of each(orange(7, this.target), T("/obj/machinery/atmospherics/components/unary/vent_pump"))) {
+		if (!U.welded) {
+			this.loc = U.loc;
 			break;
 		}
 	}
-	rt.endFor(f, 0);
-	rt.modSrcVar(f, "flood_images", rt.call(f, P("/proc/image"), null, [rt.sv(f, "image_icon"), live(f.src), rt.sv(f, "image_state"), 4]), add);
-	rt.modSrcVar(f, "flood_turfs", rt.getStep(f, rt.fv(f, "loc", live(f.src)), 0), add);
-	if (truthy(rt.fv(f, "client", rt.sv(f, "target")))) {
-		(rt.modField(f, rt.fv(f, "client", rt.sv(f, "target")), "images", rt.sv(f, "flood_images"), rt.bitOr));
+	this.flood_images += image(this.image_icon, this, this.image_state, 4);
+	this.flood_turfs += rt.getStep(f, this.loc, 0);
+	if (this.target.client) {
+		(rt.modField(f, this.target.client, "images", this.flood_images, rt.bitOr));
 	}
-	rt.setSv(f, "next_expand", add(rt.worldTime(f), 20));
-	if (truthy(rt.fv(f, "isprocessing", live(f.src)))) return f.dot;
-	rt.setFv(f, "isprocessing", live(f.src), 1);
-	rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), add);
+	this.next_expand = rt.worldTime(f) + FAKE_FLOOD_EXPAND_TIME;
+	if (this.isprocessing) return f.dot;
+	this.isprocessing = 1;
+	GLOB.SSobj.processing += this;
 	return f.dot;
 }, false, { args: ["mapload", "T"] });
 
-// /obj/effect/hallucination/fake_flood/proc/process  (code/modules/flufftext/Hallucination.dm:139)  may sleep
+// Hallucination.dm:139
 rt.def("/obj/effect/hallucination/fake_flood/proc/process", function* process(f: Frame) {
-	if (!rt.le(rt.sv(f, "next_expand"), rt.worldTime(f))) return f.dot;
-	rt.incSrcVar(f, "radius", 1, true);
-	if (rt.gt(rt.sv(f, "radius"), 10)) {
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-		return live(f.dot);
+	if (!(this.next_expand <= rt.worldTime(f))) return f.dot;
+	this.radius++;
+	if (this.radius > FAKE_FLOOD_MAX_RADIUS) {
+		yield* qdel(this);
+		return f.dot;
 	}
-	yield* g.srcCall(f, "Expand");
-	if ((truthy((rt.isIn(f, rt.getStep(f, rt.sv(f, "target"), 0), rt.sv(f, "flood_turfs")) ? 1 : 0)) && !truthy(rt.fv(f, "internal", rt.sv(f, "target"))))) {
-		yield* g.callName(f, rt.sv(f, "target"), "hallucinate", ["fake_alert", "tox_in_air"]);
+	yield* this.Expand();
+	if (rt.isIn(f, rt.getStep(f, this.target, 0), this.flood_turfs) && !this.target.internal) {
+		yield* this.target.hallucinate("fake_alert", "tox_in_air");
 	}
-	rt.setSv(f, "next_expand", add(rt.worldTime(f), 20));
+	this.next_expand = rt.worldTime(f) + FAKE_FLOOD_EXPAND_TIME;
 	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/effect/hallucination/fake_flood/proc/Expand  (code/modules/flufftext/Hallucination.dm:150)
+// Hallucination.dm:150
 rt.def("/obj/effect/hallucination/fake_flood/proc/Expand", function Expand(f: Frame) {
 	let FT: Value = null, dir: Value = null, _T: Value = null;
-	let $e: any;
-	f.vars = () => [FT, dir, _T, $e];
-	FT = null;
-	rt.forList(f, 0, rt.sv(f, "flood_turfs"), T("/turf"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		FT = $e;
+	for (FT of each(this.flood_turfs, T("/turf"))) {
 		dir = null;
-		rt.forList(f, 1, rt.gl("cardinal"));
-		while (($e = rt.next(f, 1)) !== undefined) {
-			dir = $e;
-			if ((truthy((rt.isIn(f, (_T = rt.getStep(f, live(FT), live(dir))), rt.sv(f, "flood_turfs")) ? 1 : 0)) || !truthy(rt.callName(f, live(FT), "CanAtmosPass", [live(_T)])))) {
+		for (dir of each(GLOB.cardinal)) {
+			if (rt.isIn(f, (_T = rt.getStep(f, FT, dir)), this.flood_turfs) || !FT.CanAtmosPass(_T)) {
 				continue;
 			}
-			rt.modSrcVar(f, "flood_images", rt.call(f, P("/proc/image"), null, [rt.sv(f, "image_icon"), live(_T), rt.sv(f, "image_state"), 4]), add);
-			rt.modSrcVar(f, "flood_turfs", live(_T), add);
+			this.flood_images += image(this.image_icon, _T, this.image_state, 4);
+			this.flood_turfs += _T;
 		}
-		rt.endFor(f, 1);
 	}
-	rt.endFor(f, 0);
-	if (!truthy(rt.fv(f, "client", rt.sv(f, "target")))) return f.dot;
-	(rt.modField(f, rt.fv(f, "client", rt.sv(f, "target")), "images", rt.sv(f, "flood_images"), rt.bitOr));
+	if (!this.target.client) return f.dot;
+	(rt.modField(f, this.target.client, "images", this.flood_images, rt.bitOr));
 	return f.dot;
 });
 
-// /obj/effect/hallucination/fake_flood/proc/Destroy  (code/modules/flufftext/Hallucination.dm:161)  may sleep
+// Hallucination.dm:161
 rt.def("/obj/effect/hallucination/fake_flood/proc/Destroy", function* Destroy(f: Frame) {
-	rt.setFv(f, "isprocessing", live(f.src), 0);
-	(rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), subtract));
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "flood_turfs")]);
-	rt.setSv(f, "flood_turfs", rt.list());
-	if (truthy(rt.fv(f, "client", rt.sv(f, "target")))) {
-		yield* g.callName(f, rt.gv(f, "images", rt.fv(f, "client", rt.sv(f, "target"))), "Remove", [rt.sv(f, "flood_images")]);
+	this.isprocessing = 0;
+	GLOB.SSobj.processing -= this;
+	yield* qdel(this.flood_turfs);
+	this.flood_turfs = list();
+	if (this.target.client) {
+		yield* this.target.client.images.Remove(this.flood_images);
 	}
-	rt.setSv(f, "target", null);
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "flood_images")]);
-	rt.setSv(f, "flood_images", rt.list());
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	this.target = null;
+	yield* qdel(this.flood_images);
+	this.flood_images = list();
+	return (yield* parent_proc());
 }, true);
 
 rt.type(12052, "/obj/effect/hallucination/simple/xeno", "/obj/effect/hallucination/simple", {
@@ -247,20 +219,19 @@ rt.type(12052, "/obj/effect/hallucination/simple/xeno", "/obj/effect/hallucinati
 	image_state: "alienh_pounce",
 });
 
-// /obj/effect/hallucination/simple/xeno/proc/Initialize  (code/modules/flufftext/Hallucination.dm:176)
-rt.def("/obj/effect/hallucination/simple/xeno/proc/Initialize", function Initialize(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "name", fmt("alien hunter (＀)", [rt.call(f, P("/proc/rand"), null, [1, 1000])]));
+// Hallucination.dm:176
+rt.def("/obj/effect/hallucination/simple/xeno/proc/Initialize", function Initialize(f: Frame, mapload: Value, T: Value) {
+	parent_proc();
+	this.name = `alien hunter (${rand(1, 1000)})`;
 	return f.dot;
-}, false, { args: ["mapload", "T"] });
+}, false);
 
-// /obj/effect/hallucination/simple/xeno/proc/throw_impact  (code/modules/flufftext/Hallucination.dm:180)  may sleep
+// Hallucination.dm:180
 rt.def("/obj/effect/hallucination/simple/xeno/proc/throw_impact", function* throw_impact(f: Frame, A: Value) {
-	f.vars = () => [A];
-	yield* g.srcCall(f, "update_icon", "alienh_pounce");
-	if (!(isEqual(live(A), rt.sv(f, "target")) && !isEqual(rt.fv(f, "stat", rt.sv(f, "target")), 2))) return f.dot;
-	yield* g.callName(f, rt.sv(f, "target"), "Knockdown", [100]);
-	yield* g.callName(f, rt.sv(f, "target"), "visible_message", [fmt("<span class='danger'>＀ flails around wildly.</span>", [rt.sv(f, "target")]), fmt("<span class ='userdanger'>＀ pounces on you!</span>", [rt.sv(f, "name")])]);
+	yield* this.update_icon("alienh_pounce");
+	if (!(A == this.target && this.target.stat != 2)) return f.dot;
+	yield* this.target.Knockdown(100);
+	this.target.visible_message(`<span class='danger'>${this.target} flails around wildly.</span>`, `<span class ='userdanger'>${this.name} pounces on you!</span>`);
 	return f.dot;
 }, true, { waitfor: false });
 
@@ -269,39 +240,33 @@ rt.type(12058, "/obj/effect/hallucination/xeno_attack", "/obj/effect/hallucinati
 	xeno: null,
 });
 
-// /obj/effect/hallucination/xeno_attack/proc/Initialize  (code/modules/flufftext/Hallucination.dm:191)  may sleep
+// Hallucination.dm:191
 rt.def("/obj/effect/hallucination/xeno_attack/proc/Initialize", function* Initialize(f: Frame) {
 	let U: Value = null, xeno_name: Value = null;
-	let $e: any;
-	f.vars = () => [U, xeno_name, $e];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "target", live(f.args[1]));
-	U = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/orange"), null, [7, rt.sv(f, "target")])), T("/obj/machinery/atmospherics/components/unary/vent_pump"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		U = $e;
-		if (!truthy(rt.fv(f, "welded", live(U)))) {
-			rt.setSv(f, "pump", live(U));
+	yield* parent_proc();
+	this.target = f.args[1];
+	for (U of each(orange(7, this.target), T("/obj/machinery/atmospherics/components/unary/vent_pump"))) {
+		if (!U.welded) {
+			this.pump = U;
 			break;
 		}
 	}
-	rt.endFor(f, 0);
-	if (truthy(rt.sv(f, "pump"))) {
-		rt.setSv(f, "xeno", (yield* g.new_(f, T("/obj/effect/hallucination/simple/xeno"), [rt.fv(f, "loc", rt.sv(f, "pump")), rt.sv(f, "target")])));
-		yield* g.call(f, P("/proc/sleep"), null, [10]);
-		yield* g.callName(f, rt.sv(f, "xeno"), "update_icon", ["alienh_leap", rt.rsc("icons/mob/alienleap.dmi"), -32, -32]);
-		yield* g.callName(f, rt.sv(f, "xeno"), "throw_at", [null, rt.sv(f, "target"), null, 7, null, 1, "spin", 0, "diagonals_first", 1], rt.Args.Named);
-		yield* g.call(f, P("/proc/sleep"), null, [10]);
-		yield* g.callName(f, rt.sv(f, "xeno"), "update_icon", ["alienh_leap", rt.rsc("icons/mob/alienleap.dmi"), -32, -32]);
-		yield* g.callName(f, rt.sv(f, "xeno"), "throw_at", [null, rt.sv(f, "pump"), null, 7, null, 1, "spin", 0, "diagonals_first", 1], rt.Args.Named);
-		yield* g.call(f, P("/proc/sleep"), null, [10]);
-		xeno_name = rt.fv(f, "name", rt.sv(f, "xeno"));
-		yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "target"), fmt("<span class='notice'>＀ begins climbing into the ventilation system...</span>", [live(xeno_name)])]);
-		yield* g.call(f, P("/proc/sleep"), null, [10]);
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "xeno")]);
-		yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "target"), fmt("<span class='notice'>＀ scrambles into the ventilation ducts!</span>", [live(xeno_name)])]);
+	if (this.pump) {
+		this.xeno = (yield* new_(T("/obj/effect/hallucination/simple/xeno"), this.pump.loc, this.target));
+		yield* sleep(10);
+		yield* this.xeno.update_icon("alienh_leap", rt.rsc("icons/mob/alienleap.dmi"), -32, -32);
+		yield* this.xeno.throw_at(this.target, 7, 1, { spin: 0, diagonals_first: 1 });
+		yield* sleep(10);
+		yield* this.xeno.update_icon("alienh_leap", rt.rsc("icons/mob/alienleap.dmi"), -32, -32);
+		yield* this.xeno.throw_at(this.pump, 7, 1, { spin: 0, diagonals_first: 1 });
+		yield* sleep(10);
+		xeno_name = this.xeno.name;
+		to_chat(this.target, `<span class='notice'>${xeno_name} begins climbing into the ventilation system...</span>`);
+		yield* sleep(10);
+		yield* qdel(this.xeno);
+		to_chat(this.target, `<span class='notice'>${xeno_name} scrambles into the ventilation ducts!</span>`);
 	}
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* qdel(this);
 	return f.dot;
 }, true, { args: ["mapload", "T"] });
 
@@ -310,12 +275,11 @@ rt.type(12053, "/obj/effect/hallucination/simple/clown", "/obj/effect/hallucinat
 	image_state: "clown",
 });
 
-// /obj/effect/hallucination/simple/clown/proc/Initialize  (code/modules/flufftext/Hallucination.dm:218)  may sleep
+// Hallucination.dm:218
 rt.def("/obj/effect/hallucination/simple/clown/proc/Initialize", function* Initialize(f: Frame, mapload: Value, _T: Value, duration: Value) {
-	f.vars = () => [mapload, _T, duration];
-	yield* g.callSuper(f, [rt.sv(f, "loc"), live(_T)]);
-	rt.setSv(f, "name", rt.op(f, "PickUnweighted", [1], [rt.gl("clown_names")]));
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), ["some_magic_bullshit", P("/proc/qdel"), live(f.src)])), live(duration), 8]);
+	yield* parent_proc(this.loc, _T);
+	this.name = pick(GLOB.clown_names);
+	yield* addtimer((yield* new_(T("/datum/callback"), "some_magic_bullshit", P("/proc/qdel"), this)), duration, 8);
 	return f.dot;
 }, true);
 
@@ -325,109 +289,100 @@ rt.type(12059, "/obj/effect/hallucination/oh_yeah", "/obj/effect/hallucination",
 	fakerune: null,
 });
 
-// /obj/effect/hallucination/oh_yeah/proc/Initialize  (code/modules/flufftext/Hallucination.dm:237)  may sleep
+// Hallucination.dm:237
 rt.def("/obj/effect/hallucination/oh_yeah/proc/Initialize", function* Initialize(f: Frame) {
-	let wall: Value = null, W: Value = null, landing: Value = null, landing_image_turf: Value = null;
+	let wall: Value = null, W: Value = null;
 	let $e: any;
-	f.vars = () => [wall, W, landing, landing_image_turf, $e];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "target", live(f.args[1]));
-	wall = null;
-	W = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/range"), null, [7, rt.sv(f, "target")])), T("/turf/closed/wall"));
+	f.dot = (yield* parent_proc());
+	this.target = f.args[1];
+	rt.forList(f, 0, range(7, this.target), T("/turf/closed/wall"));
 	if (($e = rt.next(f, 0)) !== undefined) {
 		W = $e;
-		wall = live(W);
+		wall = W;
 	}
 	rt.endFor(f, 0);
-	if (!truthy(live(wall))) {
+	if (!wall) {
 		return 2;
 	}
-	rt.setSv(f, "fakebroken", (yield* g.call(f, P("/proc/image"), null, [null, rt.rsc("icons/turf/floors.dmi"), null, live(wall), null, "plating", "layer", 2], rt.Args.Named)));
-	landing = rt.getStep(f, rt.sv(f, "target"), 0);
-	landing_image_turf = rt.getStep(f, live(landing), 10);
-	rt.setSv(f, "fakerune", (yield* g.call(f, P("/proc/image"), null, [null, rt.rsc("icons/effects/96x96.dmi"), null, live(landing_image_turf), null, "landing", "layer", 2.0399999618530273], rt.Args.Named)));
-	rt.setFv(f, "override", rt.sv(f, "fakebroken"), 1);
-	if (truthy(rt.fv(f, "client", rt.sv(f, "target")))) {
-		(rt.modField(f, rt.fv(f, "client", rt.sv(f, "target")), "images", rt.sv(f, "fakebroken"), rt.bitOr));
-		(rt.modField(f, rt.fv(f, "client", rt.sv(f, "target")), "images", rt.sv(f, "fakerune"), rt.bitOr));
+	this.fakebroken = (yield* image(rt.rsc("icons/turf/floors.dmi"), wall, "plating", { layer: 2 }));
+	let landing: Value = rt.getStep(f, this.target, 0);
+	let landing_image_turf: Value = rt.getStep(f, landing, 10);
+	this.fakerune = (yield* image(rt.rsc("icons/effects/96x96.dmi"), landing_image_turf, "landing", { layer: ABOVE_OPEN_TURF_LAYER }));
+	this.fakebroken.override = 1;
+	if (this.target.client) {
+		(rt.modField(f, this.target.client, "images", this.fakebroken, rt.bitOr));
+		(rt.modField(f, this.target.client, "images", this.fakerune, rt.bitOr));
 	}
-	yield* g.callName(f, rt.sv(f, "target"), "playsound_local", [live(wall), rt.rsc("sound/effects/meteorimpact.ogg"), 150, 1]);
-	rt.setSv(f, "bubblegum", (yield* g.new_(f, T("/obj/effect/hallucination/simple/bubblegum"), [live(wall), rt.sv(f, "target")])));
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/effect/hallucination/oh_yeah/proc/bubble_attack"), live(landing)])), 10]);
+	this.target.playsound_local(wall, rt.rsc("sound/effects/meteorimpact.ogg"), 150, 1);
+	this.bubblegum = (yield* new_(T("/obj/effect/hallucination/simple/bubblegum"), wall, this.target));
+	yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/effect/hallucination/oh_yeah/proc/bubble_attack"), landing)), 10);
 	return f.dot;
 }, true, { args: ["mapload", "T"] });
 
-// /obj/effect/hallucination/oh_yeah/proc/bubble_attack  (code/modules/flufftext/Hallucination.dm:260)  may sleep
+// Hallucination.dm:260
 rt.def("/obj/effect/hallucination/oh_yeah/proc/bubble_attack", function* bubble_attack(f: Frame, landing: Value) {
-	let charged: Value = null;
-	f.vars = () => [landing, charged];
-	charged = 0;
-	while ((!isEqual(rt.getStep(f, rt.sv(f, "bubblegum"), 0), live(landing)) && truthy(rt.sv(f, "target"))) && !isEqual(rt.fv(f, "stat", rt.sv(f, "target")), 2)) {
-		yield* g.callName(f, rt.sv(f, "bubblegum"), "forceMove", [(yield* g.call(f, P("/proc/get_step_towards"), null, [rt.sv(f, "bubblegum"), live(landing)]))]);
-		yield* g.callName(f, rt.sv(f, "bubblegum"), "setDir", [rt.getDir(f, rt.sv(f, "bubblegum"), live(landing))]);
-		yield* g.callName(f, rt.sv(f, "target"), "playsound_local", [rt.getStep(f, rt.sv(f, "bubblegum"), 0), rt.rsc("sound/effects/meteorimpact.ogg"), 150, 1]);
-		yield* g.call(f, P("/proc/shake_camera"), null, [rt.sv(f, "target"), 2, 1]);
-		if ((truthy((yield* g.callName(f, rt.sv(f, "bubblegum"), "Adjacent", [rt.sv(f, "target")]))) && !truthy(live(charged)))) {
+	let charged: Value = 0;
+	while (rt.getStep(f, this.bubblegum, 0) != landing && this.target && this.target.stat != 2) {
+		yield* this.bubblegum.forceMove(get_step_towards(this.bubblegum, landing));
+		yield* this.bubblegum.setDir(rt.getDir(f, this.bubblegum, landing));
+		this.target.playsound_local(rt.getStep(f, this.bubblegum, 0), rt.rsc("sound/effects/meteorimpact.ogg"), 150, 1);
+		shake_camera(this.target, 2, 1);
+		if (this.bubblegum.Adjacent(this.target) && !charged) {
 			charged = 1;
-			yield* g.callName(f, rt.sv(f, "target"), "Knockdown", [80]);
-			yield* g.callName(f, rt.sv(f, "target"), "adjustStaminaLoss", [40]);
-			yield* g.call(f, P("/proc/step_away"), null, [rt.sv(f, "target"), rt.sv(f, "bubblegum")]);
-			yield* g.call(f, P("/proc/shake_camera"), null, [rt.sv(f, "target"), 4, 3]);
-			yield* g.callName(f, rt.sv(f, "target"), "visible_message", [fmt("<span class='warning'>＀ jumps backwards, falling on the ground!</span>", [rt.sv(f, "target")]), fmt("<span class='userdanger'>＀ slams into you!</span>", [rt.sv(f, "bubblegum")])]);
+			yield* this.target.Knockdown(80);
+			yield* this.target.adjustStaminaLoss(40);
+			yield* step_away(this.target, this.bubblegum);
+			shake_camera(this.target, 4, 3);
+			this.target.visible_message(`<span class='warning'>${this.target} jumps backwards, falling on the ground!</span>`, `<span class='userdanger'>${this.bubblegum} slams into you!</span>`);
 		}
-		yield* g.call(f, P("/proc/sleep"), null, [2]);
+		yield* sleep(2);
 	}
-	yield* g.call(f, P("/proc/sleep"), null, [30]);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* sleep(30);
+	yield* qdel(this);
 	return f.dot;
 }, true, { argTypes: [{ path: "/turf" }] });
 
-// /obj/effect/hallucination/oh_yeah/proc/Destroy  (code/modules/flufftext/Hallucination.dm:277)  may sleep
+// Hallucination.dm:277
 rt.def("/obj/effect/hallucination/oh_yeah/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.fv(f, "client", rt.sv(f, "target")))) {
-		yield* g.callName(f, rt.gv(f, "images", rt.fv(f, "client", rt.sv(f, "target"))), "Remove", [rt.sv(f, "fakebroken")]);
-		yield* g.callName(f, rt.gv(f, "images", rt.fv(f, "client", rt.sv(f, "target"))), "Remove", [rt.sv(f, "fakerune")]);
+	if (this.target.client) {
+		yield* this.target.client.images.Remove(this.fakebroken);
+		yield* this.target.client.images.Remove(this.fakerune);
 	}
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "fakebroken")]);
-	rt.setSv(f, "fakebroken", null);
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "fakerune")]);
-	rt.setSv(f, "fakerune", null);
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "bubblegum")]);
-	rt.setSv(f, "bubblegum", null);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* qdel(this.fakebroken);
+	this.fakebroken = null;
+	yield* qdel(this.fakerune);
+	this.fakerune = null;
+	yield* qdel(this.bubblegum);
+	this.bubblegum = null;
+	return (yield* parent_proc());
 }, true);
 
 rt.type(12060, "/obj/effect/hallucination/singularity_scare", "/obj/effect/hallucination", {
 	s: null,
 });
 
-// /obj/effect/hallucination/singularity_scare/proc/Initialize  (code/modules/flufftext/Hallucination.dm:291)  may sleep
+// Hallucination.dm:291
 rt.def("/obj/effect/hallucination/singularity_scare/proc/Initialize", function* Initialize(f: Frame) {
-	let start: Value = null, screen_border: Value = null, i: Value = null;
-	f.vars = () => [start, screen_border, i];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "target", live(f.args[1]));
-	start = rt.getStep(f, live(f.args[1]), 0);
-	screen_border = rt.op(f, "PickUnweighted", [4], [2, 4, 8, 1]);
-	i = null;
-	i = 0;
-	while (rt.lt(live(i), 11)) {
-		start = rt.getStep(f, live(start), live(screen_border));
-		i = rt.inc(live(i), 1);
+	yield* parent_proc();
+	this.target = f.args[1];
+	let start: Value = rt.getStep(f, f.args[1], 0);
+	let screen_border: Value = pick(2, 4, 8, 1);
+	let i: Value = 0;
+	while (i < 11) {
+		start = rt.getStep(f, start, screen_border);
+		i++;
 	}
-	rt.setSv(f, "s", (yield* g.new_(f, T("/obj/effect/hallucination/simple/singularity"), [live(start), rt.sv(f, "target")])));
-	rt.setFv(f, "parent", rt.sv(f, "s"), live(f.src));
-	i = null;
+	this.s = (yield* new_(T("/obj/effect/hallucination/simple/singularity"), start, this.target));
+	this.s.parent = this;
 	i = 0;
-	while (rt.lt(live(i), 11)) {
-		yield* g.call(f, P("/proc/sleep"), null, [5]);
-		rt.setFv(f, "loc", rt.sv(f, "s"), rt.getStep(f, rt.getStep(f, rt.sv(f, "s"), 0), rt.getDir(f, rt.sv(f, "s"), rt.sv(f, "target"))));
-		yield* g.callName(f, rt.sv(f, "s"), "Show", []);
-		yield* g.callName(f, rt.sv(f, "s"), "Eat", []);
-		i = rt.inc(live(i), 1);
+	while (i < 11) {
+		yield* sleep(5);
+		this.s.loc = rt.getStep(f, rt.getStep(f, this.s, 0), rt.getDir(f, this.s, this.target));
+		this.s.Show();
+		yield* this.s.Eat();
+		i++;
 	}
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "s")]);
+	yield* qdel(this.s);
 	return f.dot;
 }, true, { args: ["mapload", "T"] });
 
@@ -440,142 +395,125 @@ rt.type(12056, "/obj/effect/hallucination/simple/singularity", "/obj/effect/hall
 	py: -96,
 });
 
-// /obj/effect/hallucination/simple/singularity/proc/Eat  (code/modules/flufftext/Hallucination.dm:315)  may sleep
+// Hallucination.dm:315
 rt.def("/obj/effect/hallucination/simple/singularity/proc/Eat", function* Eat(f: Frame, OldLoc: Value, Dir: Value) {
 	let target_dist: Value = null;
-	f.vars = () => [OldLoc, Dir, target_dist];
-	if (!rt.le((target_dist = (yield* g.call(f, P("/proc/get_dist"), null, [live(f.src), rt.sv(f, "target")]))), 3)) return f.dot;
-	rt.setFv(f, "hal_screwyhud", rt.sv(f, "target"), 1);
-	yield* g.callName(f, rt.sv(f, "target"), "SetUnconscious", [160]);
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [rt.sv(f, "parent"), P("/obj/effect/hallucination/proc/wake_and_restore")])), (yield* g.call(f, P("/proc/rand"), null, [30, 50]))]);
+	if (!((target_dist = get_dist(this, this.target)) <= 3)) return f.dot;
+	this.target.hal_screwyhud = SCREWYHUD_CRIT;
+	yield* this.target.SetUnconscious(160);
+	yield* addtimer((yield* new_(T("/datum/callback"), this.parent, P("/obj/effect/hallucination/proc/wake_and_restore"))), rand(30, 50));
 	return f.dot;
 }, true);
 
 rt.type(12061, "/obj/effect/hallucination/battle", "/obj/effect/hallucination", {});
 
-// /obj/effect/hallucination/battle/proc/Initialize  (code/modules/flufftext/Hallucination.dm:324)  may sleep
+// Hallucination.dm:324
 rt.def("/obj/effect/hallucination/battle/proc/Initialize", function* Initialize(f: Frame) {
-	let hits: Value = null, i: Value = null;
-	let $0: any;
-	f.vars = () => [hits, i, $0];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "target", live(f.args[1]));
-	hits = (yield* g.call(f, P("/proc/rand"), null, [3, 6]));
-	$0 = (yield* g.call(f, P("/proc/rand"), null, [1, 5]));
-	if ($0 === 1) {
-		i = null;
+	let i: Value = null;
+	yield* parent_proc();
+	this.target = f.args[1];
+	let hits: Value = rand(3, 6);
+	const die = rand(1, 5);
+	if (die === 1) {
 		i = 0;
-		while (rt.lt(live(i), live(hits))) {
-			yield* g.callName(f, rt.sv(f, "target"), "playsound_local", [null, rt.rsc("sound/weapons/laser.ogg"), 25, 1]);
-			if (truthy(rt.op(f, "Prob", [], [75]))) {
-				yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [rt.sv(f, "target"), P("/mob/proc/playsound_local"), null, rt.rsc("sound/weapons/sear.ogg"), 25, 1])), (yield* g.call(f, P("/proc/rand"), null, [10, 20]))]);
+		while (i < hits) {
+			this.target.playsound_local(null, rt.rsc("sound/weapons/laser.ogg"), 25, 1);
+			if (prob(75)) {
+				yield* addtimer((yield* new_(T("/datum/callback"), this.target, P("/mob/proc/playsound_local"), null, rt.rsc("sound/weapons/sear.ogg"), 25, 1)), rand(10, 20));
 			} else {
-				yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [rt.sv(f, "target"), P("/mob/proc/playsound_local"), null, rt.rsc("sound/weapons/effects/searwall.ogg"), 25, 1])), (yield* g.call(f, P("/proc/rand"), null, [10, 20]))]);
+				yield* addtimer((yield* new_(T("/datum/callback"), this.target, P("/mob/proc/playsound_local"), null, rt.rsc("sound/weapons/effects/searwall.ogg"), 25, 1)), rand(10, 20));
 			}
-			yield* g.call(f, P("/proc/sleep"), null, [(yield* g.call(f, P("/proc/rand"), null, [4, 12]))]);
-			i = rt.inc(live(i), 1);
+			yield* sleep(rand(4, 12));
+			i++;
 		}
-		yield* g.callName(f, rt.sv(f, "target"), "playsound_local", [null, (yield* g.call(f, P("/proc/get_sfx"), null, ["bodyfall"])), 25, 1]);
-	} else if ($0 === 2) {
-		yield* g.callName(f, rt.sv(f, "target"), "playsound_local", [null, rt.rsc("sound/weapons/saberon.ogg"), 15, 1]);
-		i = null;
+		this.target.playsound_local(null, get_sfx("bodyfall"), 25, 1);
+	} else if (die === 2) {
+		this.target.playsound_local(null, rt.rsc("sound/weapons/saberon.ogg"), 15, 1);
 		i = 0;
-		while (rt.lt(live(i), live(hits))) {
-			yield* g.callName(f, rt.sv(f, "target"), "playsound_local", [null, rt.rsc("sound/weapons/blade1.ogg"), 25, 1]);
-			yield* g.call(f, P("/proc/sleep"), null, [(yield* g.call(f, P("/proc/rand"), null, [8, 16]))]);
-			i = rt.inc(live(i), 1);
+		while (i < hits) {
+			this.target.playsound_local(null, rt.rsc("sound/weapons/blade1.ogg"), 25, 1);
+			yield* sleep(rand(8, 16));
+			i++;
 		}
-		yield* g.callName(f, rt.sv(f, "target"), "playsound_local", [null, (yield* g.call(f, P("/proc/get_sfx"), null, ["bodyfall"])), 25, 1]);
-		yield* g.callName(f, rt.sv(f, "target"), "playsound_local", [null, rt.rsc("sound/weapons/saberoff.ogg"), 15, 1]);
-	} else if ($0 === 3) {
-		i = null;
+		this.target.playsound_local(null, get_sfx("bodyfall"), 25, 1);
+		this.target.playsound_local(null, rt.rsc("sound/weapons/saberoff.ogg"), 15, 1);
+	} else if (die === 3) {
 		i = 0;
-		while (rt.lt(live(i), live(hits))) {
-			yield* g.callName(f, rt.sv(f, "target"), "playsound_local", [null, (yield* g.call(f, P("/proc/get_sfx"), null, ["gunshot"])), 25]);
-			if (truthy(rt.op(f, "Prob", [], [75]))) {
-				yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [rt.sv(f, "target"), P("/mob/proc/playsound_local"), null, rt.rsc("sound/weapons/pierce.ogg"), 25, 1])), (yield* g.call(f, P("/proc/rand"), null, [10, 20]))]);
+		while (i < hits) {
+			this.target.playsound_local(null, get_sfx("gunshot"), 25);
+			if (prob(75)) {
+				yield* addtimer((yield* new_(T("/datum/callback"), this.target, P("/mob/proc/playsound_local"), null, rt.rsc("sound/weapons/pierce.ogg"), 25, 1)), rand(10, 20));
 			} else {
-				yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [rt.sv(f, "target"), P("/mob/proc/playsound_local"), null, "ricochet", 25, 1])), (yield* g.call(f, P("/proc/rand"), null, [10, 20]))]);
+				yield* addtimer((yield* new_(T("/datum/callback"), this.target, P("/mob/proc/playsound_local"), null, "ricochet", 25, 1)), rand(10, 20));
 			}
-			yield* g.call(f, P("/proc/sleep"), null, [(yield* g.call(f, P("/proc/rand"), null, [4, 12]))]);
-			i = rt.inc(live(i), 1);
+			yield* sleep(rand(4, 12));
+			i++;
 		}
-		yield* g.callName(f, rt.sv(f, "target"), "playsound_local", [null, (yield* g.call(f, P("/proc/get_sfx"), null, ["bodyfall"])), 25, 1]);
-	} else if ($0 === 4) {
-		yield* g.callName(f, rt.sv(f, "target"), "playsound_local", [null, rt.rsc("sound/weapons/egloves.ogg"), 40, 1]);
-		yield* g.callName(f, rt.sv(f, "target"), "playsound_local", [null, (yield* g.call(f, P("/proc/get_sfx"), null, ["bodyfall"])), 25, 1]);
-		yield* g.call(f, P("/proc/sleep"), null, [20]);
-		yield* g.callName(f, rt.sv(f, "target"), "playsound_local", [null, rt.rsc("sound/weapons/cablecuff.ogg"), 15, 1]);
-	} else if ($0 === 5) {
-		i = null;
+		this.target.playsound_local(null, get_sfx("bodyfall"), 25, 1);
+	} else if (die === 4) {
+		this.target.playsound_local(null, rt.rsc("sound/weapons/egloves.ogg"), 40, 1);
+		this.target.playsound_local(null, get_sfx("bodyfall"), 25, 1);
+		yield* sleep(20);
+		this.target.playsound_local(null, rt.rsc("sound/weapons/cablecuff.ogg"), 15, 1);
+	} else if (die === 5) {
 		i = 0;
-		while (rt.lt(live(i), live(hits))) {
-			yield* g.callName(f, rt.sv(f, "target"), "playsound_local", [null, rt.rsc("sound/items/timer.ogg"), 25, 1]);
-			yield* g.call(f, P("/proc/sleep"), null, [15]);
-			i = rt.inc(live(i), 1);
+		while (i < hits) {
+			this.target.playsound_local(null, rt.rsc("sound/items/timer.ogg"), 25, 1);
+			yield* sleep(15);
+			i++;
 		}
 	}
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* qdel(this);
 	return f.dot;
 }, true, { args: ["mapload", "T"] });
 
 rt.type(12062, "/obj/effect/hallucination/items_other", "/obj/effect/hallucination", {});
 
-// /obj/effect/hallucination/items_other/proc/Initialize  (code/modules/flufftext/Hallucination.dm:367)  may sleep
+// Hallucination.dm:367
 rt.def("/obj/effect/hallucination/items_other/proc/Initialize", function* Initialize(f: Frame) {
-	let item: Value = null, image_file: Value = null, A: Value = null, H: Value = null, free_hand: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [item, image_file, A, H, free_hand, $0, $e];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "target", live(f.args[1]));
-	item = rt.op(f, "PickUnweighted", [1], [rt.list("esword", "dual_esword", "stunpaper", "clockspear", "ttv", "flash", "armblade")]);
-	image_file = null;
-	A = null;
-	H = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/view"), null, [7, rt.sv(f, "target")])), T("/mob/living/carbon/human"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		H = $e;
-		if (!isEqual(live(H), rt.sv(f, "target"))) {
-			if (truthy((free_hand = (yield* g.callName(f, live(H), "get_empty_held_index_for_side", ["side", "left"], rt.Args.Named))))) {
+	let image_file: Value = null, A: Value = null, H: Value = null, free_hand: Value = null;
+	let $e: any;
+	yield* parent_proc();
+	this.target = f.args[1];
+	let item: Value = pick(list("esword", "dual_esword", "stunpaper", "clockspear", "ttv", "flash", "armblade"));
+	for (H of each(view(7, this.target), T("/mob/living/carbon/human"))) {
+		if (H != this.target) {
+			if (free_hand = (yield* H.get_empty_held_index_for_side({ side: "left" }))) {
 				image_file = rt.rsc("icons/mob/inhands/items_lefthand.dmi");
-			} else {
-				if (truthy((free_hand = (yield* g.callName(f, live(H), "get_empty_held_index_for_side", ["side", "right"], rt.Args.Named))))) {
-					image_file = rt.rsc("icons/mob/inhands/items_righthand.dmi");
-				}
+			} else if (free_hand = (yield* H.get_empty_held_index_for_side({ side: "right" }))) {
+				image_file = rt.rsc("icons/mob/inhands/items_righthand.dmi");
 			}
-			if (truthy(live(image_file))) {
-				$0 = live(item);
-				if ($0 === "esword") {
-					yield* g.callName(f, rt.sv(f, "target"), "playsound_local", [live(H), rt.rsc("sound/weapons/saberon.ogg"), 35, 1]);
-					A = (yield* g.call(f, P("/proc/image"), null, [null, live(image_file), null, live(H), null, "swordred", "layer", 4.099999904632568], rt.Args.Named));
-				} else if ($0 === "dual_esword") {
-					yield* g.callName(f, rt.sv(f, "target"), "playsound_local", [live(H), rt.rsc("sound/weapons/saberon.ogg"), 35, 1]);
-					A = (yield* g.call(f, P("/proc/image"), null, [null, live(image_file), null, live(H), null, "dualsaberred1", "layer", 4.099999904632568], rt.Args.Named));
-				} else if ($0 === "stunpaper") {
-					rt.setFv(f, "color", (A = (yield* g.call(f, P("/proc/image"), null, [null, live(image_file), null, live(H), null, "paper", "layer", 4.099999904632568], rt.Args.Named))), "#ff0000");
-				} else if ($0 === "clockspear") {
-					A = (yield* g.call(f, P("/proc/image"), null, [null, live(image_file), null, live(H), null, "ratvarian_spear", "layer", 4.099999904632568], rt.Args.Named));
-				} else if ($0 === "ttv") {
-					A = (yield* g.call(f, P("/proc/image"), null, [null, live(image_file), null, live(H), null, "ttv", "layer", 4.099999904632568], rt.Args.Named));
-				} else if ($0 === "flash") {
-					A = (yield* g.call(f, P("/proc/image"), null, [null, live(image_file), null, live(H), null, "flashtool", "layer", 4.099999904632568], rt.Args.Named));
-				} else if ($0 === "armblade") {
-					A = (yield* g.call(f, P("/proc/image"), null, [null, live(image_file), null, live(H), null, "arm_blade", "layer", 4.099999904632568], rt.Args.Named));
+			if (image_file) {
+				if (item === "esword") {
+					this.target.playsound_local(H, rt.rsc("sound/weapons/saberon.ogg"), 35, 1);
+					A = (yield* image(image_file, H, "swordred", { layer: ABOVE_MOB_LAYER }));
+				} else if (item === "dual_esword") {
+					this.target.playsound_local(H, rt.rsc("sound/weapons/saberon.ogg"), 35, 1);
+					A = (yield* image(image_file, H, "dualsaberred1", { layer: ABOVE_MOB_LAYER }));
+				} else if (item === "stunpaper") {
+					(A = (yield* image(image_file, H, "paper", { layer: ABOVE_MOB_LAYER }))).color = "#ff0000";
+				} else if (item === "clockspear") {
+					A = (yield* image(image_file, H, "ratvarian_spear", { layer: ABOVE_MOB_LAYER }));
+				} else if (item === "ttv") {
+					A = (yield* image(image_file, H, "ttv", { layer: ABOVE_MOB_LAYER }));
+				} else if (item === "flash") {
+					A = (yield* image(image_file, H, "flashtool", { layer: ABOVE_MOB_LAYER }));
+				} else if (item === "armblade") {
+					A = (yield* image(image_file, H, "arm_blade", { layer: ABOVE_MOB_LAYER }));
 				}
-				if (truthy(rt.fv(f, "client", rt.sv(f, "target")))) {
-					(rt.modField(f, rt.fv(f, "client", rt.sv(f, "target")), "images", live(A), rt.bitOr));
-					yield* g.call(f, P("/proc/sleep"), null, [(yield* g.call(f, P("/proc/rand"), null, [150, 250]))]);
-					if ((isEqual(live(item), "esword") || isEqual(live(item), "dual_esword"))) {
-						yield* g.callName(f, rt.sv(f, "target"), "playsound_local", [live(H), rt.rsc("sound/weapons/saberoff.ogg"), 35, 1]);
+				if (this.target.client) {
+					(rt.modField(f, this.target.client, "images", A, rt.bitOr));
+					yield* sleep(rand(150, 250));
+					if (item == "esword" || item == "dual_esword") {
+						this.target.playsound_local(H, rt.rsc("sound/weapons/saberoff.ogg"), 35, 1);
 					}
-					yield* g.callName(f, rt.gv(f, "images", rt.fv(f, "client", rt.sv(f, "target"))), "Remove", [live(A)]);
+					yield* this.target.client.images.Remove(A);
 				}
 				break;
 			}
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* qdel(this);
 	return f.dot;
 }, true, { args: ["mapload", "T"] });
 
@@ -583,210 +521,176 @@ rt.type(12063, "/obj/effect/hallucination/delusion", "/obj/effect/hallucination"
 	delusions: null,
 });
 
-// /obj/effect/hallucination/delusion/proc/<init>  (code/modules/flufftext/Hallucination.dm:410)
+// Hallucination.dm:410
 rt.def("/obj/effect/hallucination/delusion/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "delusions", rt.list());
+	parent_proc();
+	this.delusions = list();
 	return f.dot;
 });
 
-// /obj/effect/hallucination/delusion/proc/Initialize  (code/modules/flufftext/Hallucination.dm:413)  may sleep
+// Hallucination.dm:413
 rt.def("/obj/effect/hallucination/delusion/proc/Initialize", function* Initialize(f: Frame) {
-	let A: Value = null, kind: Value = null, H: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [A, kind, H, $0, $e];
-	if (live(f.args[2]) === null) {
+	let A: Value = null, H: Value = null;
+	let $e: any;
+	if (f.args[2] === null) {
 		f.args[2] = null;
 	}
-	if (live(f.args[3]) === null) {
+	if (f.args[3] === null) {
 		f.args[3] = 300;
 	}
-	if (live(f.args[4]) === null) {
+	if (f.args[4] === null) {
 		f.args[4] = 1;
 	}
-	if (live(f.args[5]) === null) {
+	if (f.args[5] === null) {
 		f.args[5] = null;
 	}
-	if (live(f.args[6]) === null) {
+	if (f.args[6] === null) {
 		f.args[6] = null;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "target", live(f.args[1]));
-	A = null;
-	if (truthy(live(f.args[2]))) {
-		$0 = live(f.args[2]);
-	} else {
-		$0 = rt.op(f, "PickUnweighted", [6], ["clown", "corgi", "carp", "skeleton", "demon", "zombie"]);
-	}
-	kind = $0;
-	H = null;
-	rt.forList(f, 0, rt.gl("living_mob_list"), T("/mob/living/carbon/human"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		H = $e;
-		if (isEqual(live(H), rt.sv(f, "target"))) {
+	f.dot = (yield* parent_proc());
+	this.target = f.args[1];
+	let kind: Value = f.args[2] ? f.args[2] : pick("clown", "corgi", "carp", "skeleton", "demon", "zombie");
+	for (H of each(GLOB.living_mob_list, T("/mob/living/carbon/human"))) {
+		if (H == this.target) {
 			continue;
 		}
-		if ((truthy(live(f.args[4])) && truthy((rt.isIn(f, live(H), (yield* g.call(f, P("/proc/view"), null, [rt.sv(f, "target")]))) ? 1 : 0)))) {
+		if (f.args[4] && rt.isIn(f, H, view(this.target))) {
 			continue;
 		}
-		$0 = live(kind);
-		if ($0 === "clown") {
-			A = (yield* g.call(f, P("/proc/image"), null, [rt.rsc("icons/mob/animal.dmi"), live(H), "clown"]));
-		} else if ($0 === "carp") {
-			A = (yield* g.call(f, P("/proc/image"), null, [rt.rsc("icons/mob/animal.dmi"), live(H), "carp"]));
-		} else if ($0 === "corgi") {
-			A = (yield* g.call(f, P("/proc/image"), null, [rt.rsc("icons/mob/pets.dmi"), live(H), "corgi"]));
-		} else if ($0 === "skeleton") {
-			A = (yield* g.call(f, P("/proc/image"), null, [rt.rsc("icons/mob/human.dmi"), live(H), "skeleton"]));
-		} else if ($0 === "zombie") {
-			A = (yield* g.call(f, P("/proc/image"), null, [rt.rsc("icons/mob/human.dmi"), live(H), "zombie"]));
-		} else if ($0 === "demon") {
-			A = (yield* g.call(f, P("/proc/image"), null, [rt.rsc("icons/mob/mob.dmi"), live(H), "daemon"]));
-		} else if ($0 === "custom") {
-			A = (yield* g.call(f, P("/proc/image"), null, [live(f.args[6]), live(H), live(f.args[5])]));
+		if (kind === "clown") {
+			A = image(rt.rsc("icons/mob/animal.dmi"), H, "clown");
+		} else if (kind === "carp") {
+			A = image(rt.rsc("icons/mob/animal.dmi"), H, "carp");
+		} else if (kind === "corgi") {
+			A = image(rt.rsc("icons/mob/pets.dmi"), H, "corgi");
+		} else if (kind === "skeleton") {
+			A = image(rt.rsc("icons/mob/human.dmi"), H, "skeleton");
+		} else if (kind === "zombie") {
+			A = image(rt.rsc("icons/mob/human.dmi"), H, "zombie");
+		} else if (kind === "demon") {
+			A = image(rt.rsc("icons/mob/mob.dmi"), H, "daemon");
+		} else if (kind === "custom") {
+			A = image(f.args[6], H, f.args[5]);
 		}
-		rt.setFv(f, "override", live(A), 1);
-		if (truthy(rt.fv(f, "client", rt.sv(f, "target")))) {
-			(rt.modSrcVar(f, "delusions", live(A), rt.bitOr));
-			(rt.modField(f, rt.fv(f, "client", rt.sv(f, "target")), "images", live(A), rt.bitOr));
+		A.override = 1;
+		if (this.target.client) {
+			(rt.modSrcVar(f, "delusions", A, rt.bitOr));
+			(rt.modField(f, this.target.client, "images", A, rt.bitOr));
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), ["some_magic_bullshit", P("/proc/qdel"), live(f.src)])), live(f.args[3]), 8]);
+	yield* addtimer((yield* new_(T("/datum/callback"), "some_magic_bullshit", P("/proc/qdel"), this)), f.args[3], 8);
 	return f.dot;
 }, true, { args: ["mapload", "T", "force_kind", "duration", "skip_nearby", "custom_icon", "custom_icon_file"] });
 
-// /obj/effect/hallucination/delusion/proc/Destroy  (code/modules/flufftext/Hallucination.dm:444)  may sleep
+// Hallucination.dm:444
 rt.def("/obj/effect/hallucination/delusion/proc/Destroy", function* Destroy(f: Frame) {
 	let I: Value = null;
-	let $e: any;
-	f.vars = () => [I, $e];
-	I = null;
-	rt.forList(f, 0, rt.sv(f, "delusions"), T("/image"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		if (truthy(rt.fv(f, "client", rt.sv(f, "target")))) {
-			yield* g.callName(f, rt.gv(f, "images", rt.fv(f, "client", rt.sv(f, "target"))), "Remove", [live(I)]);
+	for (I of each(this.delusions, T("/image"))) {
+		if (this.target.client) {
+			yield* this.target.client.images.Remove(I);
 		}
 	}
-	rt.endFor(f, 0);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);
 
 rt.type(12064, "/obj/effect/hallucination/self_delusion", "/obj/effect/hallucination", {
 	delusion: null,
 });
 
-// /obj/effect/hallucination/self_delusion/proc/Initialize  (code/modules/flufftext/Hallucination.dm:453)  may sleep
+// Hallucination.dm:453
 rt.def("/obj/effect/hallucination/self_delusion/proc/Initialize", function* Initialize(f: Frame) {
 	let A: Value = null, kind: Value = null;
 	let $0: any;
-	f.vars = () => [A, kind, $0];
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = null;
 	}
-	if (live(f.args[3]) === null) {
+	if (f.args[3] === null) {
 		f.args[3] = 300;
 	}
-	if (live(f.args[4]) === null) {
+	if (f.args[4] === null) {
 		f.args[4] = null;
 	}
-	if (live(f.args[5]) === null) {
+	if (f.args[5] === null) {
 		f.args[5] = null;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "target", live(f.args[1]));
-	A = null;
-	if (truthy(live(f.args[2]))) {
-		$0 = live(f.args[2]);
+	yield* parent_proc();
+	this.target = f.args[1];
+	if (f.args[2]) {
+		$0 = f.args[2];
 	} else {
-		$0 = rt.op(f, "PickUnweighted", [7], ["clown", "corgi", "carp", "skeleton", "demon", "zombie", "robot"]);
+		$0 = pick("clown", "corgi", "carp", "skeleton", "demon", "zombie", "robot");
 	}
 	$0 = (kind = $0);
 	if ($0 === "clown") {
-		A = (yield* g.call(f, P("/proc/image"), null, [rt.rsc("icons/mob/animal.dmi"), rt.sv(f, "target"), "clown"]));
+		A = image(rt.rsc("icons/mob/animal.dmi"), this.target, "clown");
 	} else if ($0 === "carp") {
-		A = (yield* g.call(f, P("/proc/image"), null, [rt.rsc("icons/mob/animal.dmi"), rt.sv(f, "target"), "carp"]));
+		A = image(rt.rsc("icons/mob/animal.dmi"), this.target, "carp");
 	} else if ($0 === "corgi") {
-		A = (yield* g.call(f, P("/proc/image"), null, [rt.rsc("icons/mob/pets.dmi"), rt.sv(f, "target"), "corgi"]));
+		A = image(rt.rsc("icons/mob/pets.dmi"), this.target, "corgi");
 	} else if ($0 === "skeleton") {
-		A = (yield* g.call(f, P("/proc/image"), null, [rt.rsc("icons/mob/human.dmi"), rt.sv(f, "target"), "skeleton"]));
+		A = image(rt.rsc("icons/mob/human.dmi"), this.target, "skeleton");
 	} else if ($0 === "zombie") {
-		A = (yield* g.call(f, P("/proc/image"), null, [rt.rsc("icons/mob/human.dmi"), rt.sv(f, "target"), "zombie"]));
+		A = image(rt.rsc("icons/mob/human.dmi"), this.target, "zombie");
 	} else if ($0 === "demon") {
-		A = (yield* g.call(f, P("/proc/image"), null, [rt.rsc("icons/mob/mob.dmi"), rt.sv(f, "target"), "daemon"]));
+		A = image(rt.rsc("icons/mob/mob.dmi"), this.target, "daemon");
 	} else if ($0 === "robot") {
-		A = (yield* g.call(f, P("/proc/image"), null, [rt.rsc("icons/mob/robots.dmi"), rt.sv(f, "target"), "robot"]));
-		yield* g.callName(f, rt.sv(f, "target"), "playsound_local", [rt.sv(f, "target"), rt.rsc("sound/voice/liveagain.ogg"), 75, 1]);
+		A = image(rt.rsc("icons/mob/robots.dmi"), this.target, "robot");
+		this.target.playsound_local(this.target, rt.rsc("sound/voice/liveagain.ogg"), 75, 1);
 	} else if ($0 === "custom") {
-		A = (yield* g.call(f, P("/proc/image"), null, [live(f.args[5]), rt.sv(f, "target"), live(f.args[4])]));
+		A = image(f.args[5], this.target, f.args[4]);
 	}
-	rt.setFv(f, "override", live(A), 1);
-	if (truthy(rt.fv(f, "client", rt.sv(f, "target")))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "target"), "<span class='italics'>...wabbajack...wabbajack...</span>"]);
-		yield* g.callName(f, rt.sv(f, "target"), "playsound_local", [rt.sv(f, "target"), rt.rsc("sound/magic/staff_change.ogg"), 50, 1, -1]);
-		rt.setSv(f, "delusion", live(A));
-		(rt.modField(f, rt.fv(f, "client", rt.sv(f, "target")), "images", live(A), rt.bitOr));
+	A.override = 1;
+	if (this.target.client) {
+		to_chat(this.target, "<span class='italics'>...wabbajack...wabbajack...</span>");
+		this.target.playsound_local(this.target, rt.rsc("sound/magic/staff_change.ogg"), 50, 1, -1);
+		this.delusion = A;
+		(rt.modField(f, this.target.client, "images", A, rt.bitOr));
 	}
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), ["some_magic_bullshit", P("/proc/qdel"), live(f.src)])), live(f.args[3]), 8]);
+	yield* addtimer((yield* new_(T("/datum/callback"), "some_magic_bullshit", P("/proc/qdel"), this)), f.args[3], 8);
 	return f.dot;
 }, true, { args: ["mapload", "T", "force_kind", "duration", "custom_icon", "custom_icon_file"] });
 
-// /obj/effect/hallucination/self_delusion/proc/Destroy  (code/modules/flufftext/Hallucination.dm:484)  may sleep
+// Hallucination.dm:484
 rt.def("/obj/effect/hallucination/self_delusion/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.fv(f, "client", rt.sv(f, "target")))) {
-		yield* g.callName(f, rt.gv(f, "images", rt.fv(f, "client", rt.sv(f, "target"))), "Remove", [rt.sv(f, "delusion")]);
+	if (this.target.client) {
+		yield* this.target.client.images.Remove(this.delusion);
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);
 
 rt.type(12065, "/obj/effect/hallucination/fakeattacker", "/obj/effect/hallucination", {});
 
-// /obj/effect/hallucination/fakeattacker/proc/Initialize  (code/modules/flufftext/Hallucination.dm:489)  may sleep
+// Hallucination.dm:489
 rt.def("/obj/effect/hallucination/fakeattacker/proc/Initialize", function* Initialize(f: Frame) {
-	let clone: Value = null, clone_weapon: Value = null, H: Value = null, F: Value = null, I: Value = null;
-	let $e: any;
-	f.vars = () => [clone, clone_weapon, H, F, I, $e];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "target", live(f.args[1]));
-	clone = null;
-	clone_weapon = null;
-	H = null;
-	rt.forList(f, 0, rt.gl("living_mob_list"), T("/mob/living/carbon/human"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		H = $e;
-		if ((truthy(rt.fv(f, "stat", live(H))) || truthy(rt.fv(f, "lying", live(H))))) {
+	let clone: Value = null, clone_weapon: Value = null, H: Value = null, I: Value = null;
+	yield* parent_proc();
+	this.target = f.args[1];
+	for (H of each(GLOB.living_mob_list, T("/mob/living/carbon/human"))) {
+		if (H.stat || H.lying) {
 			continue;
 		}
-		clone = live(H);
+		clone = H;
 		break;
 	}
-	rt.endFor(f, 0);
-	if (!truthy(live(clone))) {
-		return live(f.dot);
+	if (!clone) {
+		return f.dot;
 	}
-	F = (yield* g.new_(f, T("/obj/effect/fake_attacker"), [rt.getStep(f, rt.sv(f, "target"), 0), rt.sv(f, "target")]));
-	I = null;
-	rt.forList(f, 0, rt.fv(f, "held_items", live(clone)), T("/obj/item"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		if (!truthy(rt.locateIn(f, live(I), rt.gl("non_fakeattack_weapons")))) {
-			clone_weapon = rt.fv(f, "name", live(I));
-			rt.setFv(f, "weap", live(F), live(I));
+	let F: Value = (yield* new_(T("/obj/effect/fake_attacker"), rt.getStep(f, this.target, 0), this.target));
+	for (I of each(clone.held_items, T("/obj/item"))) {
+		if (!rt.locateIn(f, I, GLOB.non_fakeattack_weapons)) {
+			clone_weapon = I.name;
+			F.weap = I;
 		}
 	}
-	rt.endFor(f, 0);
-	rt.setFv(f, "name", live(F), rt.fv(f, "name", live(clone)));
-	rt.setFv(f, "my_target", live(F), rt.sv(f, "target"));
-	rt.setFv(f, "weapon_name", live(F), live(clone_weapon));
-	rt.setFv(f, "left", live(F), (yield* g.call(f, P("/proc/image"), null, [null, live(clone), "dir", 8], rt.Args.Named)));
-	rt.setFv(f, "right", live(F), (yield* g.call(f, P("/proc/image"), null, [null, live(clone), "dir", 4], rt.Args.Named)));
-	rt.setFv(f, "up", live(F), (yield* g.call(f, P("/proc/image"), null, [null, live(clone), "dir", 1], rt.Args.Named)));
-	rt.setFv(f, "down", live(F), (yield* g.call(f, P("/proc/image"), null, [null, live(clone), "dir", 2], rt.Args.Named)));
-	yield* g.callName(f, live(F), "updateimage", []);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	F.name = clone.name;
+	F.my_target = this.target;
+	F.weapon_name = clone_weapon;
+	F.left = (yield* image(clone, { dir: 8 }));
+	F.right = (yield* image(clone, { dir: 4 }));
+	F.up = (yield* image(clone, { dir: 1 }));
+	F.down = (yield* image(clone, { dir: 2 }));
+	F.updateimage();
+	yield* qdel(this);
 	return f.dot;
 }, true, { args: ["mapload", "T"] });
 
@@ -814,131 +718,115 @@ rt.type(12069, "/obj/effect/fake_attacker", "/obj/effect", {
 	obj_integrity: 100,
 });
 
-// /obj/effect/fake_attacker/proc/attackby  (code/modules/flufftext/Hallucination.dm:563)  may sleep
+// Hallucination.dm:563
 rt.def("/obj/effect/fake_attacker/proc/attackby", function* attackby(f: Frame, _P: Value, user: Value, params: Value) {
-	f.vars = () => [_P, user, params];
-	yield* g.call(f, P("/proc/step_away"), null, [live(f.src), rt.sv(f, "my_target"), 2]);
-	yield* g.callName(f, live(user), "changeNext_move", [8]);
-	yield* g.callName(f, live(user), "do_attack_animation", [live(f.src)]);
-	yield* g.callName(f, rt.sv(f, "my_target"), "playsound_local", [live(f.src), rt.fv(f, "hitsound", live(_P)), 1]);
-	yield* g.callName(f, rt.sv(f, "my_target"), "visible_message", [fmt("<span class='danger'>＀ flails around wildly.</span>", [rt.sv(f, "my_target")]), fmt("<span class='danger'>＀ has attacked ＀!</span>", [rt.sv(f, "my_target"), live(f.src)])]);
-	(rt.modSrcVar(f, "obj_integrity", rt.fv(f, "force", live(_P)), subtract));
+	yield* step_away(this, this.my_target, 2);
+	user.changeNext_move(8);
+	yield* user.do_attack_animation(this);
+	this.my_target.playsound_local(this, _P.hitsound, 1);
+	this.my_target.visible_message(`<span class='danger'>${this.my_target} flails around wildly.</span>`, `<span class='danger'>${this.my_target} has attacked ${this}!</span>`);
+	this.obj_integrity -= _P.force;
 	return f.dot;
 }, true);
 
-// /obj/effect/fake_attacker/proc/Crossed  (code/modules/flufftext/Hallucination.dm:573)  may sleep
+// Hallucination.dm:573
 rt.def("/obj/effect/fake_attacker/proc/Crossed", function* Crossed(f: Frame, M: Value, somenumber: Value) {
 	let O: Value = null;
-	let $e: any;
-	f.vars = () => [M, somenumber, O, $e];
-	if (!isEqual(live(M), rt.sv(f, "my_target"))) return f.dot;
-	yield* g.call(f, P("/proc/step_away"), null, [live(f.src), rt.sv(f, "my_target"), 2]);
-	if (!truthy(rt.op(f, "Prob", [], [30]))) return f.dot;
-	O = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/oviewers"), null, [rt.fv(f, "view", rt.world()), rt.sv(f, "my_target")])), T("/mob"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		O = $e;
-		yield* g.call(f, P("/proc/to_chat"), null, [live(O), fmt("<span class='danger'>＀ stumbles around.</span>", [rt.sv(f, "my_target")])]);
+	if (M != this.my_target) return f.dot;
+	yield* step_away(this, this.my_target, 2);
+	if (!prob(30)) return f.dot;
+	for (O of each(oviewers(rt.world().view, this.my_target), T("/mob"))) {
+		to_chat(O, `<span class='danger'>${this.my_target} stumbles around.</span>`);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /obj/effect/fake_attacker/proc/Initialize  (code/modules/flufftext/Hallucination.dm:580)  may sleep
+// Hallucination.dm:580
 rt.def("/obj/effect/fake_attacker/proc/Initialize", function* Initialize(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "my_target", live(f.args[1]));
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), ["some_magic_bullshit", P("/proc/qdel"), live(f.src)])), 300, 8]);
-	yield* g.call(f, P("/proc/step_away"), null, [live(f.src), rt.sv(f, "my_target"), 2]);
-	yield* g.call(f, P("/proc/ImmediateInvokeAsync"), null, [live(f.src), P("/obj/effect/fake_attacker/proc/attack_loop")]);
+	yield* parent_proc();
+	this.my_target = f.args[1];
+	yield* addtimer((yield* new_(T("/datum/callback"), "some_magic_bullshit", P("/proc/qdel"), this)), 300, 8);
+	yield* step_away(this, this.my_target, 2);
+	yield* ImmediateInvokeAsync(this, P("/obj/effect/fake_attacker/proc/attack_loop"));
 	return f.dot;
 }, true, { args: ["mapload", "T"] });
 
-// /obj/effect/fake_attacker/proc/updateimage  (code/modules/flufftext/Hallucination.dm:589)
+// Hallucination.dm:589
 rt.def("/obj/effect/fake_attacker/proc/updateimage", function updateimage(f: Frame) {
-	if (isEqual(rt.fv(f, "dir", live(f.src)), 1)) {
-		rt.del(f, rt.fv(f, "currentimage", live(f.src)));
-		rt.setFv(f, "currentimage", live(f.src), rt.new_(f, T("/image"), [rt.sv(f, "up"), live(f.src)]));
-	} else {
-		if (isEqual(rt.fv(f, "dir", live(f.src)), 2)) {
-			rt.del(f, rt.fv(f, "currentimage", live(f.src)));
-			rt.setFv(f, "currentimage", live(f.src), rt.new_(f, T("/image"), [rt.sv(f, "down"), live(f.src)]));
-		} else {
-			if (isEqual(rt.fv(f, "dir", live(f.src)), 4)) {
-				rt.del(f, rt.fv(f, "currentimage", live(f.src)));
-				rt.setFv(f, "currentimage", live(f.src), rt.new_(f, T("/image"), [rt.sv(f, "right"), live(f.src)]));
-			} else {
-				if (isEqual(rt.fv(f, "dir", live(f.src)), 8)) {
-					rt.del(f, rt.fv(f, "currentimage", live(f.src)));
-					rt.setFv(f, "currentimage", live(f.src), rt.new_(f, T("/image"), [rt.sv(f, "left"), live(f.src)]));
-				}
-			}
-		}
+	if (this.dir == 1) {
+		rt.del(f, this.currentimage);
+		this.currentimage = new_(T("/image"), this.up, this);
+	} else if (this.dir == 2) {
+		rt.del(f, this.currentimage);
+		this.currentimage = new_(T("/image"), this.down, this);
+	} else if (this.dir == 4) {
+		rt.del(f, this.currentimage);
+		this.currentimage = new_(T("/image"), this.right, this);
+	} else if (this.dir == 8) {
+		rt.del(f, this.currentimage);
+		this.currentimage = new_(T("/image"), this.left, this);
 	}
-	rt.op(f, "OutputReference", [rt.R.srcVar("my_target")], [rt.sv(f, "currentimage")], false);
+	rt.op(f, "OutputReference", [rt.R.srcVar("my_target")], [this.currentimage], false);
 	return f.dot;
 });
 
-// /obj/effect/fake_attacker/proc/attack_loop  (code/modules/flufftext/Hallucination.dm:606)  may sleep
+// Hallucination.dm:606
 rt.def("/obj/effect/fake_attacker/proc/attack_loop", function* attack_loop(f: Frame) {
 	while (true) {
-		yield* g.call(f, P("/proc/sleep"), null, [(yield* g.call(f, P("/proc/rand"), null, [5, 10]))]);
-		if ((rt.lt(rt.sv(f, "obj_integrity"), 0) || truthy(rt.fv(f, "stat", rt.sv(f, "my_target"))))) {
-			yield* g.srcCall(f, "collapse");
+		yield* sleep(rand(5, 10));
+		if (this.obj_integrity < 0 || this.my_target.stat) {
+			yield* this.collapse();
 			continue;
 		}
-		if (rt.gt((yield* g.call(f, P("/proc/get_dist"), null, [live(f.src), rt.sv(f, "my_target")])), 1)) {
-			yield* g.callName(f, live(f.src), "setDir", [rt.getDir(f, live(f.src), rt.sv(f, "my_target"))]);
-			yield* g.call(f, P("/proc/step_towards"), null, [live(f.src), rt.sv(f, "my_target")]);
-			yield* g.srcCall(f, "updateimage");
-		} else {
-			if (truthy(rt.op(f, "Prob", [], [15]))) {
-				if (truthy(rt.sv(f, "weapon_name"))) {
-					yield* g.callName(f, rt.sv(f, "my_target"), "playsound_local", [rt.sv(f, "my_target"), rt.fv(f, "hitsound", rt.sv(f, "weap")), (yield* g.callName(f, rt.sv(f, "weap"), "get_clamped_volume", [])), 1]);
-					yield* g.callName(f, rt.sv(f, "my_target"), "show_message", [fmt("<span class='danger'>＀ has attacked ＀ with ＀!</span>", [rt.fv(f, "name", live(f.src)), rt.sv(f, "my_target"), rt.sv(f, "weapon_name")]), 1]);
-					rt.modField(f, rt.sv(f, "my_target"), "staminaloss", 30, add);
-					if (truthy(rt.op(f, "Prob", [], [20]))) {
-						yield* g.callName(f, rt.sv(f, "my_target"), "blur_eyes", [3]);
+		if (get_dist(this, this.my_target) > 1) {
+			yield* this.setDir(rt.getDir(f, this, this.my_target));
+			yield* step_towards(this, this.my_target);
+			this.updateimage();
+		} else if (prob(15)) {
+			if (this.weapon_name) {
+				this.my_target.playsound_local(this.my_target, this.weap.hitsound, this.weap.get_clamped_volume(), 1);
+				this.my_target.show_message(`<span class='danger'>${this.name} has attacked ${this.my_target} with ${this.weapon_name}!</span>`, 1);
+				this.my_target.staminaloss += 30;
+				if (prob(20)) {
+					yield* this.my_target.blur_eyes(3);
+				}
+				if (prob(33)) {
+					if (!rt.locateIn(f, T("/obj/effect/overlay"), this.my_target.loc)) {
+						yield* this.fake_blood(this.my_target);
 					}
-					if (truthy(rt.op(f, "Prob", [], [33]))) {
-						if (!truthy(rt.locateIn(f, T("/obj/effect/overlay"), rt.fv(f, "loc", rt.sv(f, "my_target"))))) {
-							yield* g.srcCall(f, "fake_blood", rt.sv(f, "my_target"));
-						}
-					}
-				} else {
-					yield* g.callName(f, rt.sv(f, "my_target"), "playsound_local", [rt.sv(f, "my_target"), rt.op(f, "PickUnweighted", [4], [rt.rsc("sound/weapons/punch1.ogg"), rt.rsc("sound/weapons/punch2.ogg"), rt.rsc("sound/weapons/punch3.ogg"), rt.rsc("sound/weapons/punch4.ogg")]), 25, 1, -1]);
-					yield* g.callName(f, rt.sv(f, "my_target"), "show_message", [fmt("<span class='userdanger'>＀ has punched ＀!</span>", [rt.fv(f, "name", live(f.src)), rt.sv(f, "my_target")]), 1]);
-					rt.modField(f, rt.sv(f, "my_target"), "staminaloss", 30, add);
-					if (truthy(rt.op(f, "Prob", [], [33]))) {
-						if (!truthy(rt.locateIn(f, T("/obj/effect/overlay"), rt.fv(f, "loc", rt.sv(f, "my_target"))))) {
-							yield* g.srcCall(f, "fake_blood", rt.sv(f, "my_target"));
-						}
+				}
+			} else {
+				this.my_target.playsound_local(this.my_target, pick(rt.rsc("sound/weapons/punch1.ogg"), rt.rsc("sound/weapons/punch2.ogg"), rt.rsc("sound/weapons/punch3.ogg"), rt.rsc("sound/weapons/punch4.ogg")), 25, 1, -1);
+				this.my_target.show_message(`<span class='userdanger'>${this.name} has punched ${this.my_target}!</span>`, 1);
+				this.my_target.staminaloss += 30;
+				if (prob(33)) {
+					if (!rt.locateIn(f, T("/obj/effect/overlay"), this.my_target.loc)) {
+						yield* this.fake_blood(this.my_target);
 					}
 				}
 			}
 		}
-		if (truthy(rt.op(f, "Prob", [], [15]))) {
-			yield* g.call(f, P("/proc/step_away"), null, [live(f.src), rt.sv(f, "my_target"), 2]);
+		if (prob(15)) {
+			yield* step_away(this, this.my_target, 2);
 		}
 	}
 	return f.dot;
 }, true);
 
-// /obj/effect/fake_attacker/proc/collapse  (code/modules/flufftext/Hallucination.dm:638)  may sleep
+// Hallucination.dm:638
 rt.def("/obj/effect/fake_attacker/proc/collapse", function* collapse(f: Frame) {
-	rt.setSv(f, "collapse", 1);
-	yield* g.srcCall(f, "updateimage");
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	this.collapse = 1;
+	this.updateimage();
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
-// /obj/effect/fake_attacker/proc/fake_blood  (code/modules/flufftext/Hallucination.dm:642)  may sleep
+// Hallucination.dm:642
 rt.def("/obj/effect/fake_attacker/proc/fake_blood", function* fake_blood(f: Frame, target: Value) {
 	let O: Value = null, I: Value = null;
-	f.vars = () => [target, O, I];
-	rt.setFv(f, "name", (O = (yield* g.new_(f, T("/obj/effect/overlay"), [rt.fv(f, "loc", live(target))]))), "blood");
-	rt.op(f, "Output", [], [live(target), (I = (yield* g.call(f, P("/proc/image"), null, [rt.rsc("icons/effects/blood.dmi"), live(O), fmt("floor＀", [(yield* g.call(f, P("/proc/rand"), null, [1, 7]))]), rt.fv(f, "dir", live(O)), 1])))], false);
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), ["some_magic_bullshit", P("/proc/qdel"), live(O)])), 300, 8]);
+	(O = (yield* new_(T("/obj/effect/overlay"), target.loc))).name = "blood";
+	rt.op(f, "Output", [], [target, (I = image(rt.rsc("icons/effects/blood.dmi"), O, `floor${rand(1, 7)}`, O.dir, 1))], false);
+	yield* addtimer((yield* new_(T("/datum/callback"), "some_magic_bullshit", P("/proc/qdel"), O)), 300, 8);
 	return f.dot;
 }, true);
 
@@ -946,491 +834,446 @@ rt.type(12066, "/obj/effect/hallucination/bolts", "/obj/effect/hallucination", {
 	doors: null,
 });
 
-// /obj/effect/hallucination/bolts/proc/<init>  (code/modules/flufftext/Hallucination.dm:650)
+// Hallucination.dm:650
 rt.def("/obj/effect/hallucination/bolts/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "doors", rt.list());
+	parent_proc();
+	this.doors = list();
 	return f.dot;
 });
 
-// /obj/effect/hallucination/bolts/proc/Initialize  (code/modules/flufftext/Hallucination.dm:653)  may sleep
+// Hallucination.dm:653
 rt.def("/obj/effect/hallucination/bolts/proc/Initialize", function* Initialize(f: Frame) {
-	let I: Value = null, count: Value = null, A: Value = null, B: Value = null;
-	let $e: any;
-	f.vars = () => [I, count, A, B, $e];
-	if (live(f.args[2]) === null) {
+	let I: Value = null, A: Value = null, B: Value = null;
+	if (f.args[2] === null) {
 		f.args[2] = -1;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "target", live(f.args[1]));
-	I = null;
-	count = 0;
-	A = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/range"), null, [7, rt.sv(f, "target")])), T("/obj/machinery/door/airlock"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		A = $e;
-		if ((rt.gt(live(count), live(f.args[2])) && rt.gt(live(f.args[2]), 0))) {
+	yield* parent_proc();
+	this.target = f.args[1];
+	let count: Value = 0;
+	for (A of each(range(7, this.target), T("/obj/machinery/door/airlock"))) {
+		if (count > f.args[2] && f.args[2] > 0) {
 			break;
 		}
-		count = rt.inc(live(count), 1);
-		rt.modSrcVar(f, "doors", (I = (yield* g.call(f, P("/proc/image"), null, [null, rt.fv(f, "overlays_file", live(A)), null, rt.getStep(f, live(A), 0), null, "lights_bolts", "layer", add(rt.fv(f, "layer", live(A)), 0.10000000149011612)], rt.Args.Named))), add);
-		if (truthy(rt.fv(f, "client", rt.sv(f, "target")))) {
-			(rt.modField(f, rt.fv(f, "client", rt.sv(f, "target")), "images", live(I), rt.bitOr));
-			yield* g.callName(f, rt.sv(f, "target"), "playsound_local", [rt.getStep(f, live(A), 0), rt.rsc("sound/machines/boltsdown.ogg"), 30, 0, 3]);
+		count++;
+		this.doors += (I = (yield* image(A.overlays_file, rt.getStep(f, A, 0), "lights_bolts", { layer: A.layer + 0.1 })));
+		if (this.target.client) {
+			(rt.modField(f, this.target.client, "images", I, rt.bitOr));
+			this.target.playsound_local(rt.getStep(f, A, 0), rt.rsc("sound/machines/boltsdown.ogg"), 30, 0, 3);
 		}
-		yield* g.call(f, P("/proc/sleep"), null, [(yield* g.call(f, P("/proc/rand"), null, [6, 12]))]);
+		yield* sleep(rand(6, 12));
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/sleep"), null, [100]);
-	B = null;
-	rt.forList(f, 0, rt.sv(f, "doors"), T("/image"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		B = $e;
-		if (truthy(rt.fv(f, "client", rt.sv(f, "target")))) {
-			yield* g.callName(f, rt.gv(f, "images", rt.fv(f, "client", rt.sv(f, "target"))), "Remove", [live(B)]);
-			yield* g.callName(f, rt.sv(f, "target"), "playsound_local", [rt.getStep(f, live(B), 0), rt.rsc("sound/machines/boltsup.ogg"), 30, 0, 3]);
+	yield* sleep(100);
+	for (B of each(this.doors, T("/image"))) {
+		if (this.target.client) {
+			yield* this.target.client.images.Remove(B);
+			this.target.playsound_local(rt.getStep(f, B, 0), rt.rsc("sound/machines/boltsup.ogg"), 30, 0, 3);
 		}
-		yield* g.call(f, P("/proc/sleep"), null, [(yield* g.call(f, P("/proc/rand"), null, [6, 12]))]);
+		yield* sleep(rand(6, 12));
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* qdel(this);
 	return f.dot;
 }, true, { args: ["mapload", "T", "door_number"] });
 
 rt.type(12067, "/obj/effect/hallucination/whispers", "/obj/effect/hallucination", {});
 
-// /obj/effect/hallucination/whispers/proc/Initialize  (code/modules/flufftext/Hallucination.dm:678)  may sleep
+// Hallucination.dm:678
 rt.def("/obj/effect/hallucination/whispers/proc/Initialize", function* Initialize(f: Frame) {
-	let speak_messages: Value = null, radio_messages: Value = null, people: Value = null, person: Value = null, understood_language: Value = null, H: Value = null, speech_overlay: Value = null, humans: Value = null, H_6: Value = null;
-	let $0: any, $1: any, $2: any, $3: any, $4: any, $5: any, $6: any, $7: any, $8: any, $e: any;
-	f.vars = () => [speak_messages, radio_messages, people, person, understood_language, H, speech_overlay, humans, H_6, $0, $1, $2, $3, $4, $5, $6, $7, $8, $e];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "target", live(f.args[1]));
-	speak_messages = rt.list("I'm watching you...", fmt("＀!", [(yield* g.callName(f, rt.sv(f, "target"), "first_name", []))]), "Get out!", "Kchck-Chkck? Kchchck!", "Did you hear that?", "What did you do ?", "Why?", "Give me that!", "HELP!!", "EI NATH!!", "RUN!!", "Kill me!", "O bidai nabora se'sma!", fmt("＀", [(yield* g.call(f, P("/proc/text2ratvar"), null, ["Divinity, grant..."]))]));
-	$0 = "Xenos!";
-	$1 = "Singularity loose!";
-	$2 = "Comms down!";
-	$3 = "They are arming the nuke!";
-	$4 = "They butchered Ian!";
-	$5 = "H-help!";
-	$6 = rt.op(f, "PickUnweighted", [9], ["Cult", "Wizard", "Ling", "Ops", "Revenant", "Murderer", "Harm", "I hear flashing", "Help"]);
-	$7 = rt.op(f, "PickUnweighted", [1], [rt.gl("teleportlocs")]);
-	if (truthy(rt.op(f, "Prob", [], [50]))) {
+	let person: Value = null, H: Value = null, speech_overlay: Value = null, humans: Value = null, H_6: Value = null;
+	let $8: any, $e: any;
+	yield* parent_proc();
+	this.target = f.args[1];
+	let speak_messages: Value = list("I'm watching you...", `${this.target.first_name()}!`, "Get out!", "Kchck-Chkck? Kchchck!", "Did you hear that?", "What did you do ?", "Why?", "Give me that!", "HELP!!", "EI NATH!!", "RUN!!", "Kill me!", "O bidai nabora se'sma!", `${text2ratvar("Divinity, grant...")}`);
+	let $0: any = "Xenos!";
+	let $1: any = "Singularity loose!";
+	let $2: any = "Comms down!";
+	let $3: any = "They are arming the nuke!";
+	let $4: any = "They butchered Ian!";
+	let $5: any = "H-help!";
+	let $6: any = pick("Cult", "Wizard", "Ling", "Ops", "Revenant", "Murderer", "Harm", "I hear flashing", "Help");
+	let $7: any = pick(GLOB.teleportlocs);
+	if (prob(50)) {
 		$8 = "!";
 	} else {
 		$8 = "!!";
 	}
-	radio_messages = rt.list($0, $1, $2, $3, $4, $5, fmt("＀ in ＀＀", [$6, $7, $8]), fmt("Where's ＀?", [(yield* g.callName(f, rt.sv(f, "target"), "first_name", []))]), "Call the shuttle!", "AI rogue!!");
-	people = rt.list();
-	person = null;
-	understood_language = (yield* g.callName(f, rt.sv(f, "target"), "get_random_understood_language", []));
-	H = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/view"), null, [rt.sv(f, "target")])), T("/mob/living/carbon"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		H = $e;
-		if (isEqual(live(H), rt.sv(f, "target"))) {
+	let radio_messages: Value = list($0, $1, $2, $3, $4, $5, `${$6} in ${$7}${$8}`, `Where's ${this.target.first_name()}?`, "Call the shuttle!", "AI rogue!!");
+	let people: Value = list();
+	let understood_language: Value = (yield* this.target.get_random_understood_language());
+	for (H of each(view(this.target), T("/mob/living/carbon"))) {
+		if (H == this.target) {
 			continue;
 		}
-		if (!truthy(live(person))) {
-			person = live(H);
-		} else {
-			if (rt.lt((yield* g.call(f, P("/proc/get_dist"), null, [rt.sv(f, "target"), live(H)])), (yield* g.call(f, P("/proc/get_dist"), null, [rt.sv(f, "target"), live(person)])))) {
-				person = live(H);
-			}
+		if (!person) {
+			person = H;
+		} else if (get_dist(this.target, H) < get_dist(this.target, person)) {
+			person = H;
 		}
-		people = rt.modify(live(people), live(H), add);
+		people += H;
 	}
-	rt.endFor(f, 0);
-	if (truthy(live(person))) {
-		speech_overlay = (yield* g.call(f, P("/proc/image"), null, [null, rt.rsc("icons/mob/talk.dmi"), null, live(person), null, "default0", "layer", 4.099999904632568], rt.Args.Named));
-		yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "target"), (yield* g.callName(f, rt.sv(f, "target"), "compose_message", [live(person), live(understood_language), rt.op(f, "PickUnweighted", [1], [live(speak_messages)]), null, (yield* g.callName(f, live(person), "get_spans", []))]))]);
-		if (truthy(rt.fv(f, "client", rt.sv(f, "target")))) {
-			(rt.modField(f, rt.fv(f, "client", rt.sv(f, "target")), "images", live(speech_overlay), rt.bitOr));
-			yield* g.call(f, P("/proc/sleep"), null, [30]);
-			yield* g.callName(f, rt.gv(f, "images", rt.fv(f, "client", rt.sv(f, "target"))), "Remove", [live(speech_overlay)]);
+	if (person) {
+		speech_overlay = (yield* image(rt.rsc("icons/mob/talk.dmi"), person, "default0", { layer: ABOVE_MOB_LAYER }));
+		to_chat(this.target, (yield* this.target.compose_message(person, understood_language, pick(speak_messages), null, person.get_spans())));
+		if (this.target.client) {
+			(rt.modField(f, this.target.client, "images", speech_overlay, rt.bitOr));
+			yield* sleep(30);
+			yield* this.target.client.images.Remove(speech_overlay);
 		}
 	} else {
-		humans = rt.list();
-		H_6 = null;
-		rt.forList(f, 0, rt.gl("living_mob_list"), T("/mob/living/carbon/human"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			H_6 = $e;
-			humans = rt.modify(live(humans), live(H_6), add);
+		humans = list();
+		for (H_6 of each(GLOB.living_mob_list, T("/mob/living/carbon/human"))) {
+			humans += H_6;
 		}
-		rt.endFor(f, 0);
-		person = rt.op(f, "PickUnweighted", [1], [live(humans)]);
-		yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "target"), (yield* g.callName(f, rt.sv(f, "target"), "compose_message", [live(person), live(understood_language), rt.op(f, "PickUnweighted", [1], [live(radio_messages)]), "1459", (yield* g.callName(f, live(person), "get_spans", []))]))]);
+		person = pick(humans);
+		to_chat(this.target, (yield* this.target.compose_message(person, understood_language, pick(radio_messages), "1459", person.get_spans())));
 	}
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* qdel(this);
 	return f.dot;
 }, true, { args: ["mapload", "T"] });
 
 rt.type(12068, "/obj/effect/hallucination/message", "/obj/effect/hallucination", {});
 
-// /obj/effect/hallucination/message/proc/Initialize  (code/modules/flufftext/Hallucination.dm:713)  may sleep
-rt.def("/obj/effect/hallucination/message/proc/Initialize", function* Initialize(f: Frame) {
-	let chosen: Value = null;
-	f.vars = () => [chosen];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "target", live(f.args[1]));
-	chosen = rt.op(f, "PickUnweighted", [11], ["<span class='userdanger'>The light burns you!</span>", "<span class='danger'>You don't feel like yourself.</span>", fmt("<span class='userdanger'>Unknown has punched ＀!</span>", [rt.sv(f, "target")]), "<span class='notice'>You hear something squeezing through the ducts...</span>", "<span class='notice'>You hear a distant scream.</span>", "<span class='notice'>You feel invincible, nothing can hurt you!</span>", "<span class='warning'>You feel a tiny prick!</span>", fmt("<B>＀</B> sneezes.", [rt.sv(f, "target")]), "<span class='warning'>You feel faint.</span>", fmt("<span class='noticealien'>You hear a strange, alien voice in your head...</span>＀", [rt.op(f, "PickUnweighted", [2], ["Hiss", "Ssss"])]), "<span class='notice'>You can see...everything!</span>"]);
-	yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "target"), live(chosen)]);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+// Hallucination.dm:713
+rt.def("/obj/effect/hallucination/message/proc/Initialize", function* Initialize(f: Frame, mapload: Value, T: Value) {
+	yield* parent_proc();
+	this.target = T;
+	let chosen: Value = pick("<span class='userdanger'>The light burns you!</span>", "<span class='danger'>You don't feel like yourself.</span>", `<span class='userdanger'>Unknown has punched ${this.target}!</span>`, "<span class='notice'>You hear something squeezing through the ducts...</span>", "<span class='notice'>You hear a distant scream.</span>", "<span class='notice'>You feel invincible, nothing can hurt you!</span>", "<span class='warning'>You feel a tiny prick!</span>", `<B>${this.target}</B> sneezes.`, "<span class='warning'>You feel faint.</span>", `<span class='noticealien'>You hear a strange, alien voice in your head...</span>${pick("Hiss", "Ssss")}`, "<span class='notice'>You can see...everything!</span>");
+	to_chat(this.target, chosen);
+	yield* qdel(this);
 	return f.dot;
-}, true, { args: ["mapload", "T"] });
+}, true);
 
-// /mob/living/carbon/proc/hallucinate  (code/modules/flufftext/Hallucination.dm:731)  may sleep
+// Hallucination.dm:731
 rt.def("/mob/living/carbon/proc/hallucinate", function* hallucinate(f: Frame, hal_type: Value, specific: Value) {
 	let creepyasssounds: Value = null, i: Value = null, alert_type: Value = null, l_hand: Value = null, r_hand: Value = null, l: Value = null, r: Value = null, slots_free: Value = null, H: Value = null, possible_points: Value = null, F: Value = null, target: Value = null, area: Value = null, dead_people: Value = null, G: Value = null, fakemob: Value = null, body: Value = null, M: Value = null;
 	let $0: any, $1: any, $2: any, $3: any, $4: any, $5: any, $6: any, $e: any;
-	f.vars = () => [hal_type, specific, creepyasssounds, i, alert_type, l_hand, r_hand, l, r, slots_free, H, possible_points, F, target, area, dead_people, G, fakemob, body, M, $0, $1, $2, $3, $4, $5, $6, $e];
-	$0 = live(hal_type);
-	if ($0 === "xeno") {
-		yield* g.new_(f, T("/obj/effect/hallucination/xeno_attack"), [rt.fv(f, "loc", live(f.src)), live(f.src)]);
-	} else if ($0 === "singulo") {
-		yield* g.new_(f, T("/obj/effect/hallucination/singularity_scare"), [rt.fv(f, "loc", live(f.src)), live(f.src)]);
-	} else if ($0 === "koolaid") {
-		yield* g.new_(f, T("/obj/effect/hallucination/oh_yeah"), [rt.fv(f, "loc", live(f.src)), live(f.src)]);
-	} else if ($0 === "battle") {
-		yield* g.new_(f, T("/obj/effect/hallucination/battle"), [rt.fv(f, "loc", live(f.src)), live(f.src)]);
-	} else if ($0 === "flood") {
-		yield* g.new_(f, T("/obj/effect/hallucination/fake_flood"), [rt.fv(f, "loc", live(f.src)), live(f.src)]);
-	} else if ($0 === "delusion") {
-		yield* g.new_(f, T("/obj/effect/hallucination/delusion"), [rt.fv(f, "loc", live(f.src)), live(f.src)]);
-	} else if ($0 === "self_delusion") {
-		yield* g.new_(f, T("/obj/effect/hallucination/self_delusion"), [rt.fv(f, "loc", live(f.src)), live(f.src)]);
-	} else if ($0 === "fake") {
-		yield* g.new_(f, T("/obj/effect/hallucination/fakeattacker"), [rt.fv(f, "loc", live(f.src)), live(f.src)]);
-	} else if ($0 === "bolts") {
-		yield* g.new_(f, T("/obj/effect/hallucination/bolts"), [rt.fv(f, "loc", live(f.src)), live(f.src)]);
-	} else if ($0 === "bolts_minor") {
-		yield* g.new_(f, T("/obj/effect/hallucination/bolts"), [rt.fv(f, "loc", live(f.src)), live(f.src), (yield* g.call(f, P("/proc/rand"), null, [1, 2]))]);
-	} else if ($0 === "whispers") {
-		yield* g.new_(f, T("/obj/effect/hallucination/whispers"), [rt.fv(f, "loc", live(f.src)), live(f.src)]);
-	} else if ($0 === "message") {
-		yield* g.new_(f, T("/obj/effect/hallucination/message"), [rt.fv(f, "loc", live(f.src)), live(f.src)]);
-	} else if ($0 === "items_other") {
-		yield* g.new_(f, T("/obj/effect/hallucination/items_other"), [rt.fv(f, "loc", live(f.src)), live(f.src)]);
-	} else if ($0 === "sounds") {
-		$0 = (yield* g.call(f, P("/proc/rand"), null, [1, 20]));
-		if ($0 === 1) {
-			yield* g.srcCall(f, "playsound_local", null, rt.rsc("sound/machines/airlock.ogg"), 15, 1);
-		} else if ($0 === 2) {
-			if (truthy(rt.op(f, "Prob", [], [50]))) {
-				yield* g.srcCall(f, "playsound_local", null, rt.rsc("sound/effects/explosion1.ogg"), 50, 1);
+	if (hal_type === "xeno") {
+		yield* new_(T("/obj/effect/hallucination/xeno_attack"), this.loc, this);
+	} else if (hal_type === "singulo") {
+		yield* new_(T("/obj/effect/hallucination/singularity_scare"), this.loc, this);
+	} else if (hal_type === "koolaid") {
+		yield* new_(T("/obj/effect/hallucination/oh_yeah"), this.loc, this);
+	} else if (hal_type === "battle") {
+		yield* new_(T("/obj/effect/hallucination/battle"), this.loc, this);
+	} else if (hal_type === "flood") {
+		yield* new_(T("/obj/effect/hallucination/fake_flood"), this.loc, this);
+	} else if (hal_type === "delusion") {
+		yield* new_(T("/obj/effect/hallucination/delusion"), this.loc, this);
+	} else if (hal_type === "self_delusion") {
+		yield* new_(T("/obj/effect/hallucination/self_delusion"), this.loc, this);
+	} else if (hal_type === "fake") {
+		yield* new_(T("/obj/effect/hallucination/fakeattacker"), this.loc, this);
+	} else if (hal_type === "bolts") {
+		yield* new_(T("/obj/effect/hallucination/bolts"), this.loc, this);
+	} else if (hal_type === "bolts_minor") {
+		yield* new_(T("/obj/effect/hallucination/bolts"), this.loc, this, rand(1, 2));
+	} else if (hal_type === "whispers") {
+		yield* new_(T("/obj/effect/hallucination/whispers"), this.loc, this);
+	} else if (hal_type === "message") {
+		yield* new_(T("/obj/effect/hallucination/message"), this.loc, this);
+	} else if (hal_type === "items_other") {
+		yield* new_(T("/obj/effect/hallucination/items_other"), this.loc, this);
+	} else if (hal_type === "sounds") {
+		const die = rand(1, 20);
+		if (die === 1) {
+			this.playsound_local(null, rt.rsc("sound/machines/airlock.ogg"), 15, 1);
+		} else if (die === 2) {
+			if (prob(50)) {
+				this.playsound_local(null, rt.rsc("sound/effects/explosion1.ogg"), 50, 1);
 			} else {
-				yield* g.srcCall(f, "playsound_local", null, rt.rsc("sound/effects/explosion2.ogg"), 50, 1);
+				this.playsound_local(null, rt.rsc("sound/effects/explosion2.ogg"), 50, 1);
 			}
-		} else if ($0 === 3) {
-			yield* g.srcCall(f, "playsound_local", null, rt.rsc("sound/effects/explosionfar.ogg"), 50, 1);
-		} else if ($0 === 4) {
-			yield* g.srcCall(f, "playsound_local", null, rt.op(f, "PickUnweighted", [3], [rt.rsc("sound/effects/glassbr1.ogg"), rt.rsc("sound/effects/glassbr2.ogg"), rt.rsc("sound/effects/glassbr3.ogg")]), 50, 1);
-		} else if ($0 === 5) {
-			yield* g.srcCall(f, "playsound_local", null, rt.rsc("sound/weapons/ring.ogg"), 35);
-			yield* g.call(f, P("/proc/sleep"), null, [15]);
-			yield* g.srcCall(f, "playsound_local", null, rt.rsc("sound/weapons/ring.ogg"), 35);
-			yield* g.call(f, P("/proc/sleep"), null, [15]);
-			yield* g.srcCall(f, "playsound_local", null, rt.rsc("sound/weapons/ring.ogg"), 35);
-		} else if ($0 === 6) {
-			yield* g.srcCall(f, "playsound_local", null, rt.rsc("sound/magic/summon_guns.ogg"), 50, 1);
-		} else if ($0 === 7) {
-			yield* g.srcCall(f, "playsound_local", null, rt.rsc("sound/machines/alarm.ogg"), 100, 0);
-		} else if ($0 === 8) {
-			yield* g.srcCall(f, "playsound_local", null, rt.rsc("sound/voice/bfreeze.ogg"), 35, 0);
-		} else if ($0 === 9) {
-			yield* g.srcCall(f, "playsound_local", null, rt.rsc("sound/weapons/gunshot.ogg"), 25, 1);
-			rt.spawnTail(f, (yield* g.call(f, P("/proc/rand"), null, [10, 30])), "/mob/living/carbon/proc/hallucinate: spawn at modules/flufftext/Hallucination.dm:778", hal_type, specific, creepyasssounds, i, alert_type, l_hand, r_hand, l, r, slots_free, H, possible_points, F, target, area, dead_people, G, fakemob, body, M);
-		} else if ($0 === 10) {
-			yield* g.srcCall(f, "playsound_local", null, rt.rsc("sound/effects/pray_chaplain.ogg"), 50);
-		} else if ($0 === 11) {
-			yield* g.srcCall(f, "playsound_local", null, rt.rsc("sound/weapons/taser.ogg"), 25, 1);
-			rt.spawnTail(f, (yield* g.call(f, P("/proc/rand"), null, [10, 30])), "/mob/living/carbon/proc/hallucinate: spawn at modules/flufftext/Hallucination.dm:786", hal_type, specific, creepyasssounds, i, alert_type, l_hand, r_hand, l, r, slots_free, H, possible_points, F, target, area, dead_people, G, fakemob, body, M);
-		} else if ($0 === 12) {
-			creepyasssounds = rt.list(rt.rsc("sound/effects/ghost.ogg"), rt.rsc("sound/effects/ghost2.ogg"), rt.rsc("sound/effects/heart_beat.ogg"), rt.rsc("sound/effects/screech.ogg"), rt.rsc("sound/hallucinations/behind_you1.ogg"), rt.rsc("sound/hallucinations/behind_you2.ogg"), rt.rsc("sound/hallucinations/far_noise.ogg"), rt.rsc("sound/hallucinations/growl1.ogg"), rt.rsc("sound/hallucinations/growl2.ogg"), rt.rsc("sound/hallucinations/growl3.ogg"), rt.rsc("sound/hallucinations/im_here1.ogg"), rt.rsc("sound/hallucinations/im_here2.ogg"), rt.rsc("sound/hallucinations/i_see_you1.ogg"), rt.rsc("sound/hallucinations/i_see_you2.ogg"), rt.rsc("sound/hallucinations/look_up1.ogg"), rt.rsc("sound/hallucinations/look_up2.ogg"), rt.rsc("sound/hallucinations/over_here1.ogg"), rt.rsc("sound/hallucinations/over_here2.ogg"), rt.rsc("sound/hallucinations/over_here3.ogg"), rt.rsc("sound/hallucinations/turn_around1.ogg"), rt.rsc("sound/hallucinations/turn_around2.ogg"), rt.rsc("sound/hallucinations/veryfar_noise.ogg"), rt.rsc("sound/hallucinations/wail.ogg"));
-			yield* g.srcCall(f, "playsound_local", null, rt.op(f, "PickUnweighted", [1], [live(creepyasssounds)]), 50, 1);
-		} else if ($0 === 13) {
-			yield* g.srcCall(f, "playsound_local", null, rt.rsc("sound/effects/ratvar_rises.ogg"), 100);
-			yield* g.call(f, P("/proc/sleep"), null, [150]);
-			yield* g.srcCall(f, "playsound_local", null, rt.rsc("sound/effects/ratvar_reveal.ogg"), 100);
-		} else if ($0 === 14) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<h1 class='alert'>Priority Announcement</h1>"]);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<br><br><span class='alert'>The Emergency Shuttle has docked with the station. You have 3 minutes to board the Emergency Shuttle.</span><br><br>"]);
-			yield* g.srcCall(f, "playsound_local", null, rt.rsc("sound/ai/shuttledock.ogg"), 100);
-		} else if ($0 === 15) {
-			yield* g.srcCall(f, "playsound_local", null, rt.rsc("sound/items/welder.ogg"), 15, 1);
-			yield* g.call(f, P("/proc/sleep"), null, [105]);
-			yield* g.srcCall(f, "playsound_local", null, rt.rsc("sound/items/welder2.ogg"), 15, 1);
-			yield* g.call(f, P("/proc/sleep"), null, [15]);
-			yield* g.srcCall(f, "playsound_local", null, rt.rsc("sound/items/ratchet.ogg"), 15, 1);
-		} else if ($0 === 16) {
-			yield* g.srcCall(f, "playsound_local", null, rt.rsc("sound/items/screwdriver.ogg"), 15, 1);
-			yield* g.call(f, P("/proc/sleep"), null, [(yield* g.call(f, P("/proc/rand"), null, [10, 30]))]);
-			i = null;
-			i = (yield* g.call(f, P("/proc/rand"), null, [1, 3]));
-			while (rt.gt(live(i), 0)) {
-				yield* g.srcCall(f, "playsound_local", null, rt.rsc("sound/weapons/empty.ogg"), 15, 1);
-				yield* g.call(f, P("/proc/sleep"), null, [(yield* g.call(f, P("/proc/rand"), null, [10, 30]))]);
-				i = rt.inc(live(i), -1);
+		} else if (die === 3) {
+			this.playsound_local(null, rt.rsc("sound/effects/explosionfar.ogg"), 50, 1);
+		} else if (die === 4) {
+			this.playsound_local(null, pick(rt.rsc("sound/effects/glassbr1.ogg"), rt.rsc("sound/effects/glassbr2.ogg"), rt.rsc("sound/effects/glassbr3.ogg")), 50, 1);
+		} else if (die === 5) {
+			this.playsound_local(null, rt.rsc("sound/weapons/ring.ogg"), 35);
+			yield* sleep(15);
+			this.playsound_local(null, rt.rsc("sound/weapons/ring.ogg"), 35);
+			yield* sleep(15);
+			this.playsound_local(null, rt.rsc("sound/weapons/ring.ogg"), 35);
+		} else if (die === 6) {
+			this.playsound_local(null, rt.rsc("sound/magic/summon_guns.ogg"), 50, 1);
+		} else if (die === 7) {
+			this.playsound_local(null, rt.rsc("sound/machines/alarm.ogg"), 100, 0);
+		} else if (die === 8) {
+			this.playsound_local(null, rt.rsc("sound/voice/bfreeze.ogg"), 35, 0);
+		} else if (die === 9) {
+			this.playsound_local(null, rt.rsc("sound/weapons/gunshot.ogg"), 25, 1);
+			rt.spawnTail(f, rand(10, 30), "/mob/living/carbon/proc/hallucinate: spawn at modules/flufftext/Hallucination.dm:778", hal_type, specific, creepyasssounds, i, alert_type, l_hand, r_hand, l, r, slots_free, H, possible_points, F, target, area, dead_people, G, fakemob, body, M);
+		} else if (die === 10) {
+			this.playsound_local(null, rt.rsc("sound/effects/pray_chaplain.ogg"), 50);
+		} else if (die === 11) {
+			this.playsound_local(null, rt.rsc("sound/weapons/taser.ogg"), 25, 1);
+			rt.spawnTail(f, rand(10, 30), "/mob/living/carbon/proc/hallucinate: spawn at modules/flufftext/Hallucination.dm:786", hal_type, specific, creepyasssounds, i, alert_type, l_hand, r_hand, l, r, slots_free, H, possible_points, F, target, area, dead_people, G, fakemob, body, M);
+		} else if (die === 12) {
+			creepyasssounds = list(rt.rsc("sound/effects/ghost.ogg"), rt.rsc("sound/effects/ghost2.ogg"), rt.rsc("sound/effects/heart_beat.ogg"), rt.rsc("sound/effects/screech.ogg"), rt.rsc("sound/hallucinations/behind_you1.ogg"), rt.rsc("sound/hallucinations/behind_you2.ogg"), rt.rsc("sound/hallucinations/far_noise.ogg"), rt.rsc("sound/hallucinations/growl1.ogg"), rt.rsc("sound/hallucinations/growl2.ogg"), rt.rsc("sound/hallucinations/growl3.ogg"), rt.rsc("sound/hallucinations/im_here1.ogg"), rt.rsc("sound/hallucinations/im_here2.ogg"), rt.rsc("sound/hallucinations/i_see_you1.ogg"), rt.rsc("sound/hallucinations/i_see_you2.ogg"), rt.rsc("sound/hallucinations/look_up1.ogg"), rt.rsc("sound/hallucinations/look_up2.ogg"), rt.rsc("sound/hallucinations/over_here1.ogg"), rt.rsc("sound/hallucinations/over_here2.ogg"), rt.rsc("sound/hallucinations/over_here3.ogg"), rt.rsc("sound/hallucinations/turn_around1.ogg"), rt.rsc("sound/hallucinations/turn_around2.ogg"), rt.rsc("sound/hallucinations/veryfar_noise.ogg"), rt.rsc("sound/hallucinations/wail.ogg"));
+			this.playsound_local(null, pick(creepyasssounds), 50, 1);
+		} else if (die === 13) {
+			this.playsound_local(null, rt.rsc("sound/effects/ratvar_rises.ogg"), 100);
+			yield* sleep(150);
+			this.playsound_local(null, rt.rsc("sound/effects/ratvar_reveal.ogg"), 100);
+		} else if (die === 14) {
+			to_chat(this, "<h1 class='alert'>Priority Announcement</h1>");
+			to_chat(this, "<br><br><span class='alert'>The Emergency Shuttle has docked with the station. You have 3 minutes to board the Emergency Shuttle.</span><br><br>");
+			this.playsound_local(null, rt.rsc("sound/ai/shuttledock.ogg"), 100);
+		} else if (die === 15) {
+			this.playsound_local(null, rt.rsc("sound/items/welder.ogg"), 15, 1);
+			yield* sleep(105);
+			this.playsound_local(null, rt.rsc("sound/items/welder2.ogg"), 15, 1);
+			yield* sleep(15);
+			this.playsound_local(null, rt.rsc("sound/items/ratchet.ogg"), 15, 1);
+		} else if (die === 16) {
+			this.playsound_local(null, rt.rsc("sound/items/screwdriver.ogg"), 15, 1);
+			yield* sleep(rand(10, 30));
+			i = rand(1, 3);
+			while (i > 0) {
+				this.playsound_local(null, rt.rsc("sound/weapons/empty.ogg"), 15, 1);
+				yield* sleep(rand(10, 30));
+				i--;
 			}
-			yield* g.srcCall(f, "playsound_local", null, rt.rsc("sound/machines/airlockforced.ogg"), 15, 1);
-		} else if ($0 === 17) {
-			yield* g.srcCall(f, "playsound_local", null, rt.rsc("sound/weapons/saberon.ogg"), 35, 1);
-		} else if ($0 === 18) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<h1 class='alert'>Biohazard Alert</h1>"]);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), fmt("<br><br><span class='alert'>Confirmed outbreak of level 5 biohazard aboard ＀. All personnel must contain the outbreak.</span><br><br>", [(yield* g.call(f, P("/proc/station_name"), null, []))])]);
-			yield* g.srcCall(f, "playsound_local", null, rt.rsc("sound/ai/outbreak5.ogg"));
-		} else if ($0 === 19) {
-			yield* g.srcCall(f, "playsound_local", null, rt.rsc("sound/magic/lightningbolt.ogg"), 35, 1);
-			yield* g.call(f, P("/proc/sleep"), null, [20]);
-			yield* g.srcCall(f, "playsound_local", null, rt.rsc("sound/magic/lightningbolt.ogg"), 65, 1);
-			yield* g.call(f, P("/proc/sleep"), null, [20]);
-			yield* g.srcCall(f, "playsound_local", null, rt.rsc("sound/magic/lightningbolt.ogg"), 100, 1);
-		} else if ($0 === 20) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<h1 class='alert'>Anomaly Alert</h1>"]);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<br><br><span class='alert'>Hostile runtimes detected in all station systems, please deactivate your AI to prevent possible damage to its morality core.</span><br><br>"]);
-			yield* g.srcCall(f, "playsound_local", null, rt.rsc("sound/ai/aimalf.ogg"), 100);
+			this.playsound_local(null, rt.rsc("sound/machines/airlockforced.ogg"), 15, 1);
+		} else if (die === 17) {
+			this.playsound_local(null, rt.rsc("sound/weapons/saberon.ogg"), 35, 1);
+		} else if (die === 18) {
+			to_chat(this, "<h1 class='alert'>Biohazard Alert</h1>");
+			to_chat(this, `<br><br><span class='alert'>Confirmed outbreak of level 5 biohazard aboard ${station_name()}. All personnel must contain the outbreak.</span><br><br>`);
+			this.playsound_local(null, rt.rsc("sound/ai/outbreak5.ogg"));
+		} else if (die === 19) {
+			this.playsound_local(null, rt.rsc("sound/magic/lightningbolt.ogg"), 35, 1);
+			yield* sleep(20);
+			this.playsound_local(null, rt.rsc("sound/magic/lightningbolt.ogg"), 65, 1);
+			yield* sleep(20);
+			this.playsound_local(null, rt.rsc("sound/magic/lightningbolt.ogg"), 100, 1);
+		} else if (die === 20) {
+			to_chat(this, "<h1 class='alert'>Anomaly Alert</h1>");
+			to_chat(this, "<br><br><span class='alert'>Hostile runtimes detected in all station systems, please deactivate your AI to prevent possible damage to its morality core.</span><br><br>");
+			this.playsound_local(null, rt.rsc("sound/ai/aimalf.ogg"), 100);
 		}
-	} else if ($0 === "hudscrew") {
-		rt.setSv(f, "hal_screwyhud", rt.op(f, "PickUnweighted", [4], [0, 1, 2, 3]));
-		yield* g.call(f, P("/proc/sleep"), null, [(yield* g.call(f, P("/proc/rand"), null, [100, 250]))]);
-		rt.setSv(f, "hal_screwyhud", 0);
-	} else if ($0 === "fake_alert") {
-		alert_type = rt.op(f, "PickUnweighted", [15], ["oxy", "not_enough_tox", "not_enough_co2", "too_much_oxy", "too_much_co2", "tox_in_air", "newlaw", "nutrition", "charge", "weightless", "fire", "locked", "hacked", "temp", "pressure"]);
-		if (truthy(live(specific))) {
-			alert_type = live(specific);
+	} else if (hal_type === "hudscrew") {
+		this.hal_screwyhud = pick(SCREWYHUD_NONE, SCREWYHUD_CRIT, SCREWYHUD_DEAD, SCREWYHUD_HEALTHY);
+		yield* sleep(rand(100, 250));
+		this.hal_screwyhud = 0;
+	} else if (hal_type === "fake_alert") {
+		alert_type = pick("oxy", "not_enough_tox", "not_enough_co2", "too_much_oxy", "too_much_co2", "tox_in_air", "newlaw", "nutrition", "charge", "weightless", "fire", "locked", "hacked", "temp", "pressure");
+		if (specific) {
+			alert_type = specific;
 		}
-		$0 = live(alert_type);
-		if ($0 === "oxy") {
-			yield* g.callSrc(f, "throw_alert", [null, "oxy", null, T("/obj/screen/alert/oxy"), "override", 1], rt.Args.Named);
-		} else if ($0 === "not_enough_tox") {
-			yield* g.callSrc(f, "throw_alert", [null, "not_enough_tox", null, T("/obj/screen/alert/not_enough_tox"), "override", 1], rt.Args.Named);
-		} else if ($0 === "not_enough_co2") {
-			yield* g.callSrc(f, "throw_alert", [null, "not_enough_co2", null, T("/obj/screen/alert/not_enough_co2"), "override", 1], rt.Args.Named);
-		} else if ($0 === "too_much_oxy") {
-			yield* g.callSrc(f, "throw_alert", [null, "too_much_oxy", null, T("/obj/screen/alert/too_much_oxy"), "override", 1], rt.Args.Named);
-		} else if ($0 === "too_much_co2") {
-			yield* g.callSrc(f, "throw_alert", [null, "too_much_co2", null, T("/obj/screen/alert/too_much_co2"), "override", 1], rt.Args.Named);
-		} else if ($0 === "tox_in_air") {
-			yield* g.callSrc(f, "throw_alert", [null, "tox_in_air", null, T("/obj/screen/alert/tox_in_air"), "override", 1], rt.Args.Named);
-		} else if ($0 === "nutrition") {
-			if (truthy(rt.op(f, "Prob", [], [50]))) {
-				yield* g.callSrc(f, "throw_alert", [null, "nutrition", null, T("/obj/screen/alert/fat"), "override", 1], rt.Args.Named);
+		if (alert_type === "oxy") {
+			yield* this.throw_alert("oxy", T("/obj/screen/alert/oxy"), { override: 1 });
+		} else if (alert_type === "not_enough_tox") {
+			yield* this.throw_alert("not_enough_tox", T("/obj/screen/alert/not_enough_tox"), { override: 1 });
+		} else if (alert_type === "not_enough_co2") {
+			yield* this.throw_alert("not_enough_co2", T("/obj/screen/alert/not_enough_co2"), { override: 1 });
+		} else if (alert_type === "too_much_oxy") {
+			yield* this.throw_alert("too_much_oxy", T("/obj/screen/alert/too_much_oxy"), { override: 1 });
+		} else if (alert_type === "too_much_co2") {
+			yield* this.throw_alert("too_much_co2", T("/obj/screen/alert/too_much_co2"), { override: 1 });
+		} else if (alert_type === "tox_in_air") {
+			yield* this.throw_alert("tox_in_air", T("/obj/screen/alert/tox_in_air"), { override: 1 });
+		} else if (alert_type === "nutrition") {
+			if (prob(50)) {
+				yield* this.throw_alert("nutrition", T("/obj/screen/alert/fat"), { override: 1 });
 			} else {
-				yield* g.callSrc(f, "throw_alert", [null, "nutrition", null, T("/obj/screen/alert/starving"), "override", 1], rt.Args.Named);
+				yield* this.throw_alert("nutrition", T("/obj/screen/alert/starving"), { override: 1 });
 			}
-		} else if ($0 === "weightless") {
-			yield* g.callSrc(f, "throw_alert", [null, "weightless", null, T("/obj/screen/alert/weightless"), "override", 1], rt.Args.Named);
-		} else if ($0 === "fire") {
-			yield* g.callSrc(f, "throw_alert", [null, "fire", null, T("/obj/screen/alert/fire"), "override", 1], rt.Args.Named);
-		} else if ($0 === "temp") {
-			if (truthy(rt.op(f, "Prob", [], [50]))) {
-				yield* g.callSrc(f, "throw_alert", [null, "temp", null, T("/obj/screen/alert/hot"), null, 3, "override", 1], rt.Args.Named);
+		} else if (alert_type === "weightless") {
+			yield* this.throw_alert("weightless", T("/obj/screen/alert/weightless"), { override: 1 });
+		} else if (alert_type === "fire") {
+			yield* this.throw_alert("fire", T("/obj/screen/alert/fire"), { override: 1 });
+		} else if (alert_type === "temp") {
+			if (prob(50)) {
+				yield* this.throw_alert("temp", T("/obj/screen/alert/hot"), 3, { override: 1 });
 			} else {
-				yield* g.callSrc(f, "throw_alert", [null, "temp", null, T("/obj/screen/alert/cold"), null, 3, "override", 1], rt.Args.Named);
+				yield* this.throw_alert("temp", T("/obj/screen/alert/cold"), 3, { override: 1 });
 			}
-		} else if ($0 === "pressure") {
-			if (truthy(rt.op(f, "Prob", [], [50]))) {
-				yield* g.callSrc(f, "throw_alert", [null, "pressure", null, T("/obj/screen/alert/highpressure"), null, 2, "override", 1], rt.Args.Named);
+		} else if (alert_type === "pressure") {
+			if (prob(50)) {
+				yield* this.throw_alert("pressure", T("/obj/screen/alert/highpressure"), 2, { override: 1 });
 			} else {
-				yield* g.callSrc(f, "throw_alert", [null, "pressure", null, T("/obj/screen/alert/lowpressure"), null, 2, "override", 1], rt.Args.Named);
+				yield* this.throw_alert("pressure", T("/obj/screen/alert/lowpressure"), 2, { override: 1 });
 			}
-		} else if ($0 === "newlaw") {
-			yield* g.callSrc(f, "throw_alert", [null, "newlaw", null, T("/obj/screen/alert/newlaw"), "override", 1], rt.Args.Named);
-		} else if ($0 === "locked") {
-			yield* g.callSrc(f, "throw_alert", [null, "locked", null, T("/obj/screen/alert/locked"), "override", 1], rt.Args.Named);
-		} else if ($0 === "hacked") {
-			yield* g.callSrc(f, "throw_alert", [null, "hacked", null, T("/obj/screen/alert/hacked"), "override", 1], rt.Args.Named);
-		} else if ($0 === "charge") {
-			yield* g.callSrc(f, "throw_alert", [null, "charge", null, T("/obj/screen/alert/emptycell"), "override", 1], rt.Args.Named);
+		} else if (alert_type === "newlaw") {
+			yield* this.throw_alert("newlaw", T("/obj/screen/alert/newlaw"), { override: 1 });
+		} else if (alert_type === "locked") {
+			yield* this.throw_alert("locked", T("/obj/screen/alert/locked"), { override: 1 });
+		} else if (alert_type === "hacked") {
+			yield* this.throw_alert("hacked", T("/obj/screen/alert/hacked"), { override: 1 });
+		} else if (alert_type === "charge") {
+			yield* this.throw_alert("charge", T("/obj/screen/alert/emptycell"), { override: 1 });
 		}
-		yield* g.call(f, P("/proc/sleep"), null, [(yield* g.call(f, P("/proc/rand"), null, [100, 200]))]);
-		yield* g.callSrc(f, "clear_alert", [null, live(alert_type), "clear_override", 1], rt.Args.Named);
-	} else if ($0 === "items") {
-		if (!truthy(rt.sv(f, "halitem"))) {
-			rt.setSv(f, "halitem", (yield* g.new_(f, T("/obj"), [])));
-			l_hand = (yield* g.srcCall(f, "get_item_for_held_index", 1));
-			r_hand = (yield* g.srcCall(f, "get_item_for_held_index", 2));
-			l = (yield* g.call(f, P("/proc/ui_hand_position"), null, [(yield* g.srcCall(f, "get_held_index_of_item", live(l_hand)))]));
-			r = (yield* g.call(f, P("/proc/ui_hand_position"), null, [(yield* g.srcCall(f, "get_held_index_of_item", live(r_hand)))]));
-			slots_free = rt.list(live(l), live(r));
-			if (truthy(live(l_hand))) {
-				(slots_free = rt.modify(live(slots_free), live(l), subtract));
+		yield* sleep(rand(100, 200));
+		yield* this.clear_alert(alert_type, { clear_override: 1 });
+	} else if (hal_type === "items") {
+		if (!this.halitem) {
+			this.halitem = (yield* new_(T("/obj")));
+			l_hand = this.get_item_for_held_index(1);
+			r_hand = this.get_item_for_held_index(2);
+			l = ui_hand_position(this.get_held_index_of_item(l_hand));
+			r = ui_hand_position(this.get_held_index_of_item(r_hand));
+			slots_free = list(l, r);
+			if (l_hand) {
+				slots_free -= l;
 			}
-			if (truthy(live(r_hand))) {
-				(slots_free = rt.modify(live(slots_free), live(r), subtract));
+			if (r_hand) {
+				slots_free -= r;
 			}
-			if (truthy((rt.istype(live(f.src), T("/mob/living/carbon/human")) ? 1 : 0))) {
-				if (!truthy(rt.gv(f, "belt", (H = live(f.src))))) {
-					slots_free = rt.modify(live(slots_free), "CENTER-3:14,SOUTH:5", add);
+			if (rt.istype(this, T("/mob/living/carbon/human"))) {
+				if (!(H = this).belt) {
+					slots_free += "CENTER-3:14,SOUTH:5";
 				}
-				if (!truthy(rt.fv(f, "l_store", live(H)))) {
-					slots_free = rt.modify(live(slots_free), "CENTER+1:18,SOUTH:5", add);
+				if (!H.l_store) {
+					slots_free += "CENTER+1:18,SOUTH:5";
 				}
-				if (!truthy(rt.fv(f, "r_store", live(H)))) {
-					slots_free = rt.modify(live(slots_free), "CENTER+2:20,SOUTH:5", add);
+				if (!H.r_store) {
+					slots_free += "CENTER+2:20,SOUTH:5";
 				}
 			}
-			if (truthy(rt.len(f, live(slots_free)))) {
-				rt.setFv(f, "screen_loc", rt.sv(f, "halitem"), rt.op(f, "PickUnweighted", [1], [live(slots_free)]));
-				rt.setFv(f, "layer", rt.sv(f, "halitem"), 20);
-				rt.setFv(f, "plane", rt.sv(f, "halitem"), 20);
-				$0 = (yield* g.call(f, P("/proc/rand"), null, [1, 6]));
-				if ($0 === 1) {
-					rt.setFv(f, "icon", rt.sv(f, "halitem"), rt.rsc("icons/obj/guns/projectile.dmi"));
-					rt.setFv(f, "icon_state", rt.sv(f, "halitem"), "revolver");
-					rt.setFv(f, "name", rt.sv(f, "halitem"), "Revolver");
-				} else if ($0 === 2) {
-					rt.setFv(f, "icon", rt.sv(f, "halitem"), rt.rsc("icons/obj/grenade.dmi"));
-					rt.setFv(f, "icon_state", rt.sv(f, "halitem"), "plastic-explosive0");
-					rt.setFv(f, "name", rt.sv(f, "halitem"), "Mysterious Package");
-					if (truthy(rt.op(f, "Prob", [], [25]))) {
-						rt.setFv(f, "icon_state", rt.sv(f, "halitem"), "c4small_1");
+			if (rt.len(f, slots_free)) {
+				this.halitem.screen_loc = pick(slots_free);
+				this.halitem.layer = ABOVE_HUD_LAYER;
+				this.halitem.plane = ABOVE_HUD_PLANE;
+				const die = rand(1, 6);
+				if (die === 1) {
+					this.halitem.icon = rt.rsc("icons/obj/guns/projectile.dmi");
+					this.halitem.icon_state = "revolver";
+					this.halitem.name = "Revolver";
+				} else if (die === 2) {
+					this.halitem.icon = rt.rsc("icons/obj/grenade.dmi");
+					this.halitem.icon_state = "plastic-explosive0";
+					this.halitem.name = "Mysterious Package";
+					if (prob(25)) {
+						this.halitem.icon_state = "c4small_1";
 					}
-				} else if ($0 === 3) {
-					rt.setFv(f, "icon", rt.sv(f, "halitem"), rt.rsc("icons/obj/weapons.dmi"));
-					rt.setFv(f, "icon_state", rt.sv(f, "halitem"), "sword1");
-					rt.setFv(f, "name", rt.sv(f, "halitem"), "Sword");
-				} else if ($0 === 4) {
-					rt.setFv(f, "icon", rt.sv(f, "halitem"), rt.rsc("icons/obj/weapons.dmi"));
-					rt.setFv(f, "icon_state", rt.sv(f, "halitem"), "stunbaton");
-					rt.setFv(f, "name", rt.sv(f, "halitem"), "Stun Baton");
-				} else if ($0 === 5) {
-					rt.setFv(f, "icon", rt.sv(f, "halitem"), rt.rsc("icons/obj/card.dmi"));
-					rt.setFv(f, "icon_state", rt.sv(f, "halitem"), "emag");
-					rt.setFv(f, "name", rt.sv(f, "halitem"), "Cryptographic Sequencer");
-				} else if ($0 === 6) {
-					rt.setFv(f, "icon", rt.sv(f, "halitem"), rt.rsc("icons/obj/grenade.dmi"));
-					rt.setFv(f, "icon_state", rt.sv(f, "halitem"), "flashbang1");
-					rt.setFv(f, "name", rt.sv(f, "halitem"), "Flashbang");
+				} else if (die === 3) {
+					this.halitem.icon = rt.rsc("icons/obj/weapons.dmi");
+					this.halitem.icon_state = "sword1";
+					this.halitem.name = "Sword";
+				} else if (die === 4) {
+					this.halitem.icon = rt.rsc("icons/obj/weapons.dmi");
+					this.halitem.icon_state = "stunbaton";
+					this.halitem.name = "Stun Baton";
+				} else if (die === 5) {
+					this.halitem.icon = rt.rsc("icons/obj/card.dmi");
+					this.halitem.icon_state = "emag";
+					this.halitem.name = "Cryptographic Sequencer";
+				} else if (die === 6) {
+					this.halitem.icon = rt.rsc("icons/obj/grenade.dmi");
+					this.halitem.icon_state = "flashbang1";
+					this.halitem.name = "Flashbang";
 				}
-				if (truthy(rt.sv(f, "client"))) {
-					rt.modField(f, rt.sv(f, "client"), "screen", rt.sv(f, "halitem"), add);
+				if (this.client) {
+					this.client.screen += this.halitem;
 				}
-				yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), ["some_magic_bullshit", P("/proc/qdel"), rt.sv(f, "halitem")])), (yield* g.call(f, P("/proc/rand"), null, [100, 250])), 8]);
+				yield* addtimer((yield* new_(T("/datum/callback"), "some_magic_bullshit", P("/proc/qdel"), this.halitem)), rand(100, 250), 8);
 			}
 		}
-	} else if ($0 === "dangerflash") {
-		if (!truthy(rt.sv(f, "halimage"))) {
-			possible_points = rt.list();
-			F = null;
-			rt.forList(f, 0, (yield* g.call(f, P("/proc/view"), null, [live(f.src), rt.fv(f, "view", rt.world())])), T("/turf/open/floor"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				F = $e;
-				possible_points = rt.modify(live(possible_points), live(F), add);
+	} else if (hal_type === "dangerflash") {
+		if (!this.halimage) {
+			possible_points = list();
+			for (F of each(view(this, rt.world().view), T("/turf/open/floor"))) {
+				possible_points += F;
 			}
-			rt.endFor(f, 0);
-			if (truthy(rt.len(f, live(possible_points)))) {
-				target = rt.op(f, "PickUnweighted", [1], [live(possible_points)]);
-				$0 = (yield* g.call(f, P("/proc/rand"), null, [1, 4]));
-				if ($0 === 1) {
-					rt.setSv(f, "halimage", (yield* g.call(f, P("/proc/image"), null, [rt.rsc("icons/turf/space.dmi"), live(target), fmt("＀", [(yield* g.call(f, P("/proc/rand"), null, [1, 25]))]), 2])));
-				} else if ($0 === 2) {
-					rt.setSv(f, "halimage", (yield* g.call(f, P("/proc/image"), null, [rt.rsc("icons/turf/floors/lava.dmi"), live(target), "smooth", 2])));
-				} else if ($0 === 3) {
-					rt.setSv(f, "halimage", (yield* g.call(f, P("/proc/image"), null, [rt.rsc("icons/turf/floors/chasms.dmi"), live(target), "smooth", 2])));
-				} else if ($0 === 4) {
-					rt.setSv(f, "halimage", (yield* g.call(f, P("/proc/image"), null, [rt.rsc("icons/obj/grenade.dmi"), live(target), "plastic-explosive2", 3.009999990463257])));
+			if (rt.len(f, possible_points)) {
+				target = pick(possible_points);
+				const die = rand(1, 4);
+				if (die === 1) {
+					this.halimage = image(rt.rsc("icons/turf/space.dmi"), target, `${rand(1, 25)}`, 2);
+				} else if (die === 2) {
+					this.halimage = image(rt.rsc("icons/turf/floors/lava.dmi"), target, "smooth", 2);
+				} else if (die === 3) {
+					this.halimage = image(rt.rsc("icons/turf/floors/chasms.dmi"), target, "smooth", 2);
+				} else if (die === 4) {
+					this.halimage = image(rt.rsc("icons/obj/grenade.dmi"), target, "plastic-explosive2", 3.01);
 				}
-				if (truthy(rt.sv(f, "client"))) {
-					rt.modField(f, rt.sv(f, "client"), "images", rt.sv(f, "halimage"), add);
+				if (this.client) {
+					this.client.images += this.halimage;
 				}
-				yield* g.call(f, P("/proc/sleep"), null, [(yield* g.call(f, P("/proc/rand"), null, [40, 60]))]);
-				if (truthy(rt.sv(f, "client"))) {
-					(rt.modField(f, rt.sv(f, "client"), "images", rt.sv(f, "halimage"), subtract));
+				yield* sleep(rand(40, 60));
+				if (this.client) {
+					this.client.images -= this.halimage;
 				}
-				rt.setSv(f, "halimage", null);
+				this.halimage = null;
 			}
 		}
-	} else if ($0 === "death") {
-		rt.setSv(f, "hal_screwyhud", 2);
-		yield* g.srcCall(f, "SetUnconscious", 400);
-		area = (yield* g.call(f, P("/proc/get_area"), null, [live(f.src)]));
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), fmt("<span class='deadsay'><b>＀</b> has died at <b>＀</b>.</span>", [rt.fv(f, "name", rt.sv(f, "mind")), rt.fv(f, "name", live(area))])]);
-		if (truthy(rt.op(f, "Prob", [], [50]))) {
-			dead_people = rt.list();
-			G = null;
-			rt.forList(f, 0, rt.gl("player_list"), T("/mob/dead/observer"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				G = $e;
-				dead_people = rt.modify(live(dead_people), live(G), add);
+	} else if (hal_type === "death") {
+		this.hal_screwyhud = SCREWYHUD_DEAD;
+		yield* this.SetUnconscious(400);
+		area = get_area(this);
+		to_chat(this, `<span class='deadsay'><b>${this.mind.name}</b> has died at <b>${area.name}</b>.</span>`);
+		if (prob(50)) {
+			dead_people = list();
+			for (G of each(GLOB.player_list, T("/mob/dead/observer"))) {
+				dead_people += G;
 			}
-			rt.endFor(f, 0);
-			if (truthy((fakemob = rt.op(f, "PickUnweighted", [1], [live(dead_people)])))) {
-				yield* g.call(f, P("/proc/sleep"), null, [(yield* g.call(f, P("/proc/rand"), null, [30, 60]))]);
-				$0 = live(f.src);
-				$1 = rt.fv(f, "name", live(fakemob));
+			if (fakemob = pick(dead_people)) {
+				yield* sleep(rand(30, 60));
+				$0 = this;
+				$1 = fakemob.name;
 				$2 = "rip";
-				$3 = fmt("welcome ＀", [(yield* g.srcCall(f, "first_name"))]);
+				$3 = `welcome ${this.first_name()}`;
 				$4 = "you too?";
 				$5 = "is the AI malf?";
-				if (truthy(rt.op(f, "Prob", [], [50]))) {
+				if (prob(50)) {
 					$6 = " fucking";
 				} else {
 					$6 = "";
 				}
-				yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='deadsay'><b>DEAD: ＀</b> says, \"＀\"</span>", [$1, rt.op(f, "PickUnweighted", [5], [$2, $3, $4, $5, fmt("i＀ hate ＀", [$6, rt.op(f, "PickUnweighted", [8], ["blood cult", "clock cult", "revenants", "abductors", "double agents", "viruses", "badmins", "you"])])])])]);
+				to_chat($0, `<span class='deadsay'><b>DEAD: ${$1}</b> says, "${pick($2, $3, $4, $5, `i${$6} hate ${pick("blood cult", "clock cult", "revenants", "abductors", "double agents", "viruses", "badmins", "you")}`)}"</span>`);
 			}
 		}
-		yield* g.call(f, P("/proc/sleep"), null, [(yield* g.call(f, P("/proc/rand"), null, [50, 70]))]);
-		rt.setSv(f, "hal_screwyhud", 0);
-		yield* g.srcCall(f, "SetSleeping", 0);
-	} else if ($0 === "husks") {
-		if (truthy(rt.sv(f, "halbody"))) return f.dot;
-		possible_points = rt.list();
+		yield* sleep(rand(50, 70));
+		this.hal_screwyhud = SCREWYHUD_NONE;
+		yield* this.SetSleeping(0);
+	} else if (hal_type === "husks") {
+		if (this.halbody) return f.dot;
+		possible_points = list();
 		F = null;
-		rt.forList(f, 0, (yield* g.call(f, P("/proc/view"), null, [live(f.src), rt.fv(f, "view", rt.world())])), T("/turf/open/floor"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			F = $e;
-			possible_points = rt.modify(live(possible_points), live(F), add);
+		for (F of each(view(this, rt.world().view), T("/turf/open/floor"))) {
+			possible_points += F;
 		}
-		rt.endFor(f, 0);
-		if (!truthy(rt.len(f, live(possible_points)))) return f.dot;
-		target = rt.op(f, "PickUnweighted", [1], [live(possible_points)]);
-		$0 = (yield* g.call(f, P("/proc/rand"), null, [1, 4]));
-		if ($0 === 1) {
-			body = (yield* g.call(f, P("/proc/image"), null, [rt.rsc("icons/mob/human.dmi"), live(target), "husk", 2]));
-			yield* g.callName(f, (M = (yield* g.call(f, P("/proc/matrix"), null, []))), "Turn", [90]);
-			rt.setFv(f, "transform", live(body), live(M));
-			rt.setSv(f, "halbody", live(body));
-		} else if ($0 === 2 || $0 === 3) {
-			rt.setSv(f, "halbody", (yield* g.call(f, P("/proc/image"), null, [rt.rsc("icons/mob/human.dmi"), live(target), "husk", 2])));
-		} else if ($0 === 4) {
-			rt.setSv(f, "halbody", (yield* g.call(f, P("/proc/image"), null, [rt.rsc("icons/mob/alien.dmi"), live(target), "alienother", 2])));
+		if (!rt.len(f, possible_points)) return f.dot;
+		target = pick(possible_points);
+		const die = rand(1, 4);
+		if (die === 1) {
+			body = image(rt.rsc("icons/mob/human.dmi"), target, "husk", 2);
+			(M = matrix()).Turn(90);
+			body.transform = M;
+			this.halbody = body;
+		} else if (die === 2 || die === 3) {
+			this.halbody = image(rt.rsc("icons/mob/human.dmi"), target, "husk", 2);
+		} else if (die === 4) {
+			this.halbody = image(rt.rsc("icons/mob/alien.dmi"), target, "alienother", 2);
 		}
-		if (truthy(rt.sv(f, "client"))) {
-			rt.modField(f, rt.sv(f, "client"), "images", rt.sv(f, "halbody"), add);
+		if (this.client) {
+			this.client.images += this.halbody;
 		}
-		rt.spawnTail(f, (yield* g.call(f, P("/proc/rand"), null, [30, 50])), "/mob/living/carbon/proc/hallucinate: spawn at modules/flufftext/Hallucination.dm:1008", hal_type, specific, creepyasssounds, i, alert_type, l_hand, r_hand, l, r, slots_free, H, possible_points, F, target, area, dead_people, G, fakemob, body, M);
+		rt.spawnTail(f, rand(30, 50), "/mob/living/carbon/proc/hallucinate: spawn at modules/flufftext/Hallucination.dm:1008", hal_type, specific, creepyasssounds, i, alert_type, l_hand, r_hand, l, r, slots_free, H, possible_points, F, target, area, dead_people, G, fakemob, body, M);
 	}
 	return f.dot;
 }, true, { waitfor: false });
 
 // a spawn((yield* g.call(f, P("/proc/rand"), null, [30, 50]))) body of /mob/living/carbon/proc/hallucinate, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/mob/living/carbon/proc/hallucinate: spawn at modules/flufftext/Hallucination.dm:1008", function* (f: Frame, hal_type: Value, specific: Value, creepyasssounds: Value, i: Value, alert_type: Value, l_hand: Value, r_hand: Value, l: Value, r: Value, slots_free: Value, H: Value, possible_points: Value, F: Value, target: Value, area: Value, dead_people: Value, G: Value, fakemob: Value, body: Value, M: Value) {
-	f.vars = () => [hal_type, specific, creepyasssounds, i, alert_type, l_hand, r_hand, l, r, slots_free, H, possible_points, F, target, area, dead_people, G, fakemob, body, M];
-	if (truthy(rt.sv(f, "client"))) {
-		(rt.modField(f, rt.sv(f, "client"), "images", rt.sv(f, "halbody"), subtract));
+	if (this.client) {
+		this.client.images -= this.halbody;
 	}
-	rt.setSv(f, "halbody", null);
+	this.halbody = null;
 	return null;
 });
 
 // a spawn((yield* g.call(f, P("/proc/rand"), null, [10, 30]))) body of /mob/living/carbon/proc/hallucinate, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/mob/living/carbon/proc/hallucinate: spawn at modules/flufftext/Hallucination.dm:786", function* (f: Frame, hal_type: Value, specific: Value, creepyasssounds: Value, i: Value, alert_type: Value, l_hand: Value, r_hand: Value, l: Value, r: Value, slots_free: Value, H: Value, possible_points: Value, F: Value, target: Value, area: Value, dead_people: Value, G: Value, fakemob: Value, body: Value, M: Value) {
-	f.vars = () => [hal_type, specific, creepyasssounds, i, alert_type, l_hand, r_hand, l, r, slots_free, H, possible_points, F, target, area, dead_people, G, fakemob, body, M];
-	yield* g.srcCall(f, "playsound_local", null, rt.rsc("sound/weapons/taser.ogg"), 25, 1);
-	yield* g.call(f, P("/proc/sleep"), null, [(yield* g.call(f, P("/proc/rand"), null, [5, 10]))]);
-	yield* g.srcCall(f, "playsound_local", null, (yield* g.call(f, P("/proc/sound"), null, [(yield* g.call(f, P("/proc/get_sfx"), null, ["bodyfall"])), 25])), 25, 1);
+	this.playsound_local(null, rt.rsc("sound/weapons/taser.ogg"), 25, 1);
+	yield* sleep(rand(5, 10));
+	this.playsound_local(null, sound(get_sfx("bodyfall"), 25), 25, 1);
 	return null;
 });
 
 // a spawn((yield* g.call(f, P("/proc/rand"), null, [10, 30]))) body of /mob/living/carbon/proc/hallucinate, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/mob/living/carbon/proc/hallucinate: spawn at modules/flufftext/Hallucination.dm:778", function* (f: Frame, hal_type: Value, specific: Value, creepyasssounds: Value, i: Value, alert_type: Value, l_hand: Value, r_hand: Value, l: Value, r: Value, slots_free: Value, H: Value, possible_points: Value, F: Value, target: Value, area: Value, dead_people: Value, G: Value, fakemob: Value, body: Value, M: Value) {
-	f.vars = () => [hal_type, specific, creepyasssounds, i, alert_type, l_hand, r_hand, l, r, slots_free, H, possible_points, F, target, area, dead_people, G, fakemob, body, M];
-	yield* g.srcCall(f, "playsound_local", null, rt.rsc("sound/weapons/gunshot.ogg"), 25, 1);
-	yield* g.call(f, P("/proc/sleep"), null, [(yield* g.call(f, P("/proc/rand"), null, [5, 10]))]);
-	yield* g.srcCall(f, "playsound_local", null, (yield* g.call(f, P("/proc/sound"), null, [(yield* g.call(f, P("/proc/get_sfx"), null, ["bodyfall"])), 25])), 25, 1);
+	this.playsound_local(null, rt.rsc("sound/weapons/gunshot.ogg"), 25, 1);
+	yield* sleep(rand(5, 10));
+	this.playsound_local(null, sound(get_sfx("bodyfall"), 25), 25, 1);
 	return null;
 });

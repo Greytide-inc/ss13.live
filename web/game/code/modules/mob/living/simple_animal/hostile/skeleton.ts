@@ -1,7 +1,7 @@
-// From code/modules/mob/living/simple_animal/hostile/skeleton.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/simple_animal/hostile/skeleton.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(4985, "/mob/living/simple_animal/hostile/skeleton", "/mob/living/simple_animal/hostile", {
@@ -40,19 +40,17 @@ rt.type(4985, "/mob/living/simple_animal/hostile/skeleton", "/mob/living/simple_
 	loot: null,
 });
 
-// /mob/living/simple_animal/hostile/skeleton/proc/<init>  (code/modules/mob/living/simple_animal/hostile/skeleton.dm:10)
+// skeleton.dm:10
 rt.def("/mob/living/simple_animal/hostile/skeleton/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "speak_emote", rt.list("rattles"));
-	$0 = $0;
-	rt.setSv(f, "emote_see", rt.list("rattles"));
-	rt.setSv(f, "atmos_requirements", rt.alist(f, ["min_oxy", 0, "max_oxy", 0, "min_tox", 0, "max_tox", 0, "min_co2", 0, "max_co2", 0, "min_n2", 0, "max_n2", 0]));
-	$0 = $0;
-	rt.setSv(f, "faction", rt.list("skeleton"));
-	$0 = $0;
-	rt.setSv(f, "loot", rt.list(T("/obj/effect/decal/remains/human")));
+	parent_proc();
+	this.speak_emote = list("rattles");
+
+	this.emote_see = list("rattles");
+	this.atmos_requirements = rt.alist(f, ["min_oxy", 0, "max_oxy", 0, "min_tox", 0, "max_tox", 0, "min_co2", 0, "max_co2", 0, "min_n2", 0, "max_n2", 0]);
+
+	this.faction = list("skeleton");
+
+	this.loot = list(T("/obj/effect/decal/remains/human"));
 	return f.dot;
 });
 
@@ -71,12 +69,10 @@ rt.type(4986, "/mob/living/simple_animal/hostile/skeleton/eskimo", "/mob/living/
 	loot: null,
 });
 
-// /mob/living/simple_animal/hostile/skeleton/eskimo/proc/<init>  (code/modules/mob/living/simple_animal/hostile/skeleton.dm:48)
+// skeleton.dm:48
 rt.def("/mob/living/simple_animal/hostile/skeleton/eskimo/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "loot", rt.list(T("/obj/effect/decal/remains/human"), T("/obj/item/weapon/twohanded/spear"), T("/obj/item/clothing/shoes/winterboots"), T("/obj/item/clothing/suit/hooded/wintercoat")));
+	parent_proc();
+	this.loot = list(T("/obj/effect/decal/remains/human"), T("/obj/item/weapon/twohanded/spear"), T("/obj/item/clothing/shoes/winterboots"), T("/obj/item/clothing/suit/hooded/wintercoat"));
 	return f.dot;
 });
 
@@ -100,14 +96,12 @@ rt.type(4987, "/mob/living/simple_animal/hostile/skeleton/templar", "/mob/living
 	loot: null,
 });
 
-// /mob/living/simple_animal/hostile/skeleton/templar/proc/<init>  (code/modules/mob/living/simple_animal/hostile/skeleton.dm:71)
+// skeleton.dm:71
 rt.def("/mob/living/simple_animal/hostile/skeleton/templar/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "speak", rt.list("THE GODS WILL IT!", "DEUS VULT!", "REMOVE KABAB!"));
-	$0 = $0;
-	rt.setSv(f, "loot", rt.list(T("/obj/effect/decal/remains/human"), T("/obj/item/clothing/suit/armor/riot/knight/templar"), T("/obj/item/clothing/head/helmet/knight/templar"), T("/obj/item/weapon/claymore/weak")));
+	parent_proc();
+	this.speak = list("THE GODS WILL IT!", "DEUS VULT!", "REMOVE KABAB!");
+
+	this.loot = list(T("/obj/effect/decal/remains/human"), T("/obj/item/clothing/suit/armor/riot/knight/templar"), T("/obj/item/clothing/head/helmet/knight/templar"), T("/obj/item/weapon/claymore/weak"));
 	return f.dot;
 });
 
@@ -121,11 +115,9 @@ rt.type(4988, "/mob/living/simple_animal/hostile/skeleton/ice", "/mob/living/sim
 	loot: null,
 });
 
-// /mob/living/simple_animal/hostile/skeleton/ice/proc/<init>  (code/modules/mob/living/simple_animal/hostile/skeleton.dm:83)
+// skeleton.dm:83
 rt.def("/mob/living/simple_animal/hostile/skeleton/ice/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "loot", rt.list(T("/obj/effect/decal/remains/human")));
+	parent_proc();
+	this.loot = list(T("/obj/effect/decal/remains/human"));
 	return f.dot;
 });

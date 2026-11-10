@@ -1,7 +1,7 @@
-// From code/modules/goonchat/jsErrorHandler.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/goonchat/jsErrorHandler.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(2660, "/datum/debugFileOutput", "/datum", {
@@ -11,113 +11,102 @@ rt.type(2660, "/datum/debugFileOutput", "/datum", {
 	validFiles: null,
 });
 
-// /datum/debugFileOutput/proc/error  (code/modules/goonchat/jsErrorHandler.dm:24)
+// jsErrorHandler.dm:24
 rt.def("/datum/debugFileOutput/proc/error", function error(f: Frame, fileName: Value, message: Value, C: Value) {
-	let logFile: Value = null, fileSize: Value = null;
-	let $0: any, $1: any;
-	f.vars = () => [message, logFile, fileSize, $0, $1];
-	if ((!truthy(live(fileName)) || !truthy(live(message)))) {
+	let fileSize: Value = null;
+	let $1: any;
+	if (!fileName || !message) {
 		return 0;
 	}
-	if (!truthy((rt.isIn(f, live(fileName), rt.fv(f, "validFiles", live(f.src))) ? 1 : 0))) {
+	if (!rt.isIn(f, fileName, this.validFiles)) {
 		return 0; // tg_js: was a thrown runtime: a player's made-up file name filled the server log
 	}
-	message = rt.call(f, P("/proc/copytext"), null, [live(message), 1, 2000]); // tg_js: one report is a line, not a 128 KB frame
-	logFile = rt.call(f, P("/proc/file"), null, [fmt("＀/＀.＀", [rt.fv(f, "directory", live(f.src)), live(fileName), rt.fv(f, "ext", live(f.src))])]);
+	message = copytext(message, 1, 2000); // tg_js: one report is a line, not a 128 KB frame
+	let logFile: Value = file(`${this.directory}/${fileName}.${this.ext}`);
 	// tg_js: the size from the text (length() of a file is 0 here, so the limit never held)
-	if (rt.ge((fileSize = rt.length(rt.call(f, P("/proc/file2text"), null, [fmt("＀/＀.＀", [rt.fv(f, "directory", live(f.src)), live(fileName), rt.fv(f, "ext", live(f.src))])]))), rt.fv(f, "logFileLimit", live(f.src)))) {
+	if ((fileSize = rt.length(file2text(`${this.directory}/${fileName}.${this.ext}`))) >= this.logFileLimit) {
 		return 0; // tg_js: full: stop quietly (CRASH was a runtime per report once a player had filled it)
 	}
-	$0 = rt.call(f, P("/proc/time2text"), null, [rt.fv(f, "realtime", rt.world()), "YYYY-MM-DD hh:mm:ss"]);
-	if ((truthy(live(C)) && truthy(rt.fv(f, "key", live(C))))) {
-		$1 = rt.fv(f, "key", live(C));
+	let $0: any = time2text(rt.world().realtime, "YYYY-MM-DD hh:mm:ss");
+	if (C && C.key) {
+		$1 = C.key;
 	} else {
 		$1 = "Unknown Client";
 	}
-	rt.op(f, "Output", [], [live(logFile), (message = fmt("[＀] Client: [＀] triggered: ＀", [$0, $1, live(message)]))], false);
+	rt.op(f, "Output", [], [logFile, (message = `[${$0}] Client: [${$1}] triggered: ${message}`)], false);
 	return 1;
 });
 
-// /datum/debugFileOutput/proc/clear  (code/modules/goonchat/jsErrorHandler.dm:39)
+// jsErrorHandler.dm:39
 rt.def("/datum/debugFileOutput/proc/clear", function clear(f: Frame, fileName: Value) {
-	if (!truthy(live(fileName))) {
+	if (!fileName) {
 		return 0;
 	}
-	if (!truthy(rt.call(f, P("/proc/fexists"), null, [fmt("＀/＀.＀", [rt.fv(f, "directory", live(f.src)), live(fileName), rt.fv(f, "ext", live(f.src))])]))) {
-		rt.throw_(f, rt.new_(f, T("/exception"), [fmt("Debug log file '＀.＀' does not exist.", [live(fileName), rt.fv(f, "ext", live(f.src))]), "code/modules/goonchat/jsErrorHandler.dm", 42]));
+	if (!fexists(`${this.directory}/${fileName}.${this.ext}`)) {
+		rt.throw_(f, new_(T("/exception"), `Debug log file '${fileName}.${this.ext}' does not exist.`, "code/modules/goonchat/jsErrorHandler.dm", 42));
 	}
-	if (!truthy((rt.isIn(f, live(fileName), rt.fv(f, "validFiles", live(f.src))) ? 1 : 0))) {
-		rt.throw_(f, rt.new_(f, T("/exception"), [fmt("Debug log file '＀.＀' is not a valid path.", [live(fileName), rt.fv(f, "ext", live(f.src))]), "code/modules/goonchat/jsErrorHandler.dm", 45]));
+	if (!rt.isIn(f, fileName, this.validFiles)) {
+		rt.throw_(f, new_(T("/exception"), `Debug log file '${fileName}.${this.ext}' is not a valid path.`, "code/modules/goonchat/jsErrorHandler.dm", 45));
 	}
-	rt.call(f, P("/proc/fdel"), null, [fmt("＀/＀.＀", [rt.fv(f, "directory", live(f.src)), live(fileName), rt.fv(f, "ext", live(f.src))])]);
+	fdel(`${this.directory}/${fileName}.${this.ext}`);
 	return 1;
 });
 
-// /datum/debugFileOutput/proc/clearAll  (code/modules/goonchat/jsErrorHandler.dm:51)
+// jsErrorHandler.dm:51
 rt.def("/datum/debugFileOutput/proc/clearAll", function clearAll(f: Frame) {
-	let deleted: Value = null, fileName: Value = null;
-	let $e: any;
-	f.vars = () => [deleted, fileName, $e];
-	deleted = rt.new_(f, T("/list"), []);
-	fileName = null;
-	rt.forList(f, 0, rt.fv(f, "validFiles", live(f.src)));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		fileName = $e;
-		if (truthy(rt.call(f, P("/proc/fexists"), null, [fmt("＀/＀.＀", [rt.fv(f, "directory", live(f.src)), live(fileName), rt.fv(f, "ext", live(f.src))])]))) {
-			rt.call(f, P("/proc/fdel"), null, [fmt("＀/＀.＀", [rt.fv(f, "directory", live(f.src)), live(fileName), rt.fv(f, "ext", live(f.src))])]);
+	let fileName: Value = null;
+	let deleted: Value = new_(T("/list"));
+	for (fileName of each(this.validFiles)) {
+		if (fexists(`${this.directory}/${fileName}.${this.ext}`)) {
+			fdel(`${this.directory}/${fileName}.${this.ext}`);
 		}
-		deleted = rt.modify(live(deleted), live(fileName), add);
+		deleted += fileName;
 	}
-	rt.endFor(f, 0);
-	return live(deleted);
+	return deleted;
 });
 
-// /datum/controller/global_vars/proc/InitGlobaldebugFileOutput  (code/modules/goonchat/jsErrorHandler.dm:60)
+// jsErrorHandler.dm:60
 rt.def("/datum/controller/global_vars/proc/InitGlobaldebugFileOutput", function InitGlobaldebugFileOutput(f: Frame) {
-	rt.setGl("debugFileOutput", rt.new_(f, T("/datum/debugFileOutput"), []));
-	rt.modSrcVar(f, "gvars_datum_init_order", "debugFileOutput", add);
+	GLOB.debugFileOutput = new_(T("/datum/debugFileOutput"));
+	this.gvars_datum_init_order += "debugFileOutput";
 	return f.dot;
 });
 
-// /client/proc/Topic  (code/modules/goonchat/jsErrorHandler.dm:63)  may sleep
-rt.def("/client/proc/Topic", function* Topic(f: Frame) {
-	let file: Value = null, message: Value = null;
-	f.vars = () => [file, message];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!(((truthy(rt.at(live(f.args[1]), "action")) && isEqual(rt.at(live(f.args[1]), "action"), "debugFileOutput")) && truthy(rt.at(live(f.args[1]), "file"))) && truthy(rt.at(live(f.args[1]), "message")))) return f.dot;
-	file = rt.at(live(f.args[1]), "file");
-	message = rt.at(live(f.args[1]), "message");
-	yield* g.callName(f, rt.gl("debugFileOutput"), "error", [live(file), live(message), live(f.src)]);
+// jsErrorHandler.dm:63
+rt.def("/client/proc/Topic", function* Topic(f: Frame, href: Value, href_list: Value) {
+	yield* parent_proc();
+	if (!(rt.at(href_list, "action") && rt.at(href_list, "action") == "debugFileOutput" && rt.at(href_list, "file") && rt.at(href_list, "message"))) return f.dot;
+	let file: Value = rt.at(href_list, "file");
+	let message: Value = rt.at(href_list, "message");
+	GLOB.debugFileOutput.error(file, message, this);
 	return f.dot;
-}, true, { args: ["href", "href_list"] });
+}, true);
 
-// /client/proc/deleteJsLogFile  (code/modules/goonchat/jsErrorHandler.dm:75)
+// jsErrorHandler.dm:75
 rt.def("/client/proc/deleteJsLogFile", function deleteJsLogFile(f: Frame, fileName: Value) {
-	if (!truthy(rt.sv(f, "holder"))) {
-		return live(f.dot);
+	if (!this.holder) {
+		return f.dot;
 	}
-	if (!truthy(live(fileName))) {
-		return live(f.dot);
+	if (!fileName) {
+		return f.dot;
 	}
-	rt.callName(f, rt.gl("debugFileOutput"), "clear", [live(fileName)]);
-	rt.call(f, P("/proc/log_admin"), null, [fmt("＀ deleted the '＀' JS logfile", [rt.call(f, P("/proc/key_name"), null, [live(f.usr)]), live(fileName)])]);
-	rt.call(f, P("/proc/message_admins"), null, [fmt("＀ deleted the '＀' JS logfile", [rt.call(f, P("/proc/key_name_admin"), null, [live(f.usr)]), live(fileName)])]);
+	rt.callName(f, GLOB.debugFileOutput, "clear", [fileName]);
+	log_admin(`${key_name(f.usr)} deleted the '${fileName}' JS logfile`);
+	message_admins(`${key_name_admin(f.usr)} deleted the '${fileName}' JS logfile`);
 	return f.dot;
 }, false, { hidePopup: true, verb: { name: "Delete JS Logfile", category: "Debug", desc: "Delete a logfile for JS error reporting. Be sure you want to do this!" }, argTypes: [{ type: 2 }] });
 
-// /client/proc/deleteAllJsLogFiles  (code/modules/goonchat/jsErrorHandler.dm:90)  may sleep
+// jsErrorHandler.dm:90
 rt.def("/client/proc/deleteAllJsLogFiles", function* deleteAllJsLogFiles(f: Frame) {
-	let summary: Value = null, friendlySummary: Value = null;
-	f.vars = () => [summary, friendlySummary];
-	if (!truthy(rt.sv(f, "holder"))) {
-		return live(f.dot);
+	if (!this.holder) {
+		return f.dot;
 	}
-	if (isEqual((yield* g.call(f, P("/proc/alert"), null, ["Are you really sure you want to delete every single JS logfile?", "No", "Yes"])), "No")) {
-		return live(f.dot);
+	if ((yield* alert("Are you really sure you want to delete every single JS logfile?", "No", "Yes")) == "No") {
+		return f.dot;
 	}
-	summary = (yield* g.callName(f, rt.gl("debugFileOutput"), "clearAll", []));
-	friendlySummary = (yield* g.callName(f, live(summary), "Join", [", "]));
-	yield* g.call(f, P("/proc/log_admin"), null, [fmt("＀ deleted every JS logfile! (＀)", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.usr)])), live(friendlySummary)])]);
-	yield* g.call(f, P("/proc/message_admins"), null, [fmt("＀ deleted every JS logfile! (＀)", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.usr)])), live(friendlySummary)])]);
+	let summary: Value = GLOB.debugFileOutput.clearAll();
+	let friendlySummary: Value = summary.Join(", ");
+	log_admin(`${key_name(f.usr)} deleted every JS logfile! (${friendlySummary})`);
+	message_admins(`${key_name_admin(f.usr)} deleted every JS logfile! (${friendlySummary})`);
 	return f.dot;
 }, true, { verb: { name: "Delete All JS Logfiles", category: "", desc: "Delete all logfiles for JS error reporting. Be extra sure you want to do this!" } });

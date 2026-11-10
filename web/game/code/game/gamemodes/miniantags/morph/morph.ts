@@ -1,7 +1,7 @@
-// From code/game/gamemodes/miniantags/morph/morph.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/gamemodes/miniantags/morph/morph.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(4888, "/mob/living/simple_animal/hostile/morph", "/mob/living/simple_animal/hostile", {
@@ -41,234 +41,215 @@ rt.type(4888, "/mob/living/simple_animal/hostile/morph", "/mob/living/simple_ani
 	butcher_results: null,
 }, { global: { blacklist_typecache: 1045 } });
 
-// /mob/living/simple_animal/hostile/morph/proc/<init>  (code/game/gamemodes/miniantags/morph/morph.dm:7)
+// morph.dm:7
 rt.def("/mob/living/simple_animal/hostile/morph/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "speak_emote", rt.list("gurgles"));
-	$0 = $0;
-	rt.setSv(f, "emote_hear", rt.list("gurgles"));
-	rt.setSv(f, "atmos_requirements", rt.alist(f, ["min_oxy", 0, "max_oxy", 0, "min_tox", 0, "max_tox", 0, "min_co2", 0, "max_co2", 0, "min_n2", 0, "max_n2", 0]));
-	$0 = $0;
-	rt.setSv(f, "butcher_results", rt.alist(f, [T("/obj/item/weapon/reagent_containers/food/snacks/meat/slab"), 2]));
+	parent_proc();
+	this.speak_emote = list("gurgles");
+
+	this.emote_hear = list("gurgles");
+	this.atmos_requirements = rt.alist(f, ["min_oxy", 0, "max_oxy", 0, "min_tox", 0, "max_tox", 0, "min_co2", 0, "max_co2", 0, "min_n2", 0, "max_n2", 0]);
+
+	this.butcher_results = rt.alist(f, [T("/obj/item/weapon/reagent_containers/food/snacks/meat/slab"), 2]);
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/morph/proc/examine  (code/game/gamemodes/miniantags/morph/morph.dm:53)  may sleep
-rt.def("/mob/living/simple_animal/hostile/morph/proc/examine", function* examine(f: Frame) {
-	if (truthy(rt.sv(f, "morphed"))) {
-		yield* g.callName(f, rt.sv(f, "form"), "examine", [live(f.args[0])]);
-		if (rt.le((yield* g.call(f, P("/proc/get_dist"), null, [live(f.args[0]), live(f.src)])), 3)) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='warning'>It doesn't look quite right...</span>"]);
+// morph.dm:53
+rt.def("/mob/living/simple_animal/hostile/morph/proc/examine", function* examine(f: Frame, user: Value) {
+	if (this.morphed) {
+		yield* this.form.examine(user);
+		if (get_dist(user, this) <= 3) {
+			to_chat(user, "<span class='warning'>It doesn't look quite right...</span>");
 		}
 	} else {
-		yield* g.callSuper(f, [], rt.Args.Same);
+		yield* parent_proc();
 	}
-	return live(f.dot);
-}, true, { args: ["user"] });
+	return f.dot;
+}, true);
 
-// /mob/living/simple_animal/hostile/morph/proc/med_hud_set_health  (code/game/gamemodes/miniantags/morph/morph.dm:61)
+// morph.dm:61
 rt.def("/mob/living/simple_animal/hostile/morph/proc/med_hud_set_health", function med_hud_set_health(f: Frame) {
 	let holder: Value = null;
-	f.vars = () => [holder];
-	if ((truthy(rt.sv(f, "morphed")) && !truthy((rt.istype(rt.sv(f, "form"), T("/mob/living")) ? 1 : 0)))) {
-		rt.setFv(f, "icon_state", (holder = rt.at(rt.sv(f, "hud_list"), "1")), null);
-		return live(f.dot);
+	if (this.morphed && !rt.istype(this.form, T("/mob/living"))) {
+		(holder = rt.at(this.hud_list, "1")).icon_state = null;
+		return f.dot;
 	}
-	rt.callSuper(f, [], rt.Args.Same);
+	parent_proc();
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/morph/proc/med_hud_set_status  (code/game/gamemodes/miniantags/morph/morph.dm:68)
+// morph.dm:68
 rt.def("/mob/living/simple_animal/hostile/morph/proc/med_hud_set_status", function med_hud_set_status(f: Frame) {
 	let holder: Value = null;
-	f.vars = () => [holder];
-	if ((truthy(rt.sv(f, "morphed")) && !truthy((rt.istype(rt.sv(f, "form"), T("/mob/living")) ? 1 : 0)))) {
-		rt.setFv(f, "icon_state", (holder = rt.at(rt.sv(f, "hud_list"), "2")), null);
-		return live(f.dot);
+	if (this.morphed && !rt.istype(this.form, T("/mob/living"))) {
+		(holder = rt.at(this.hud_list, "2")).icon_state = null;
+		return f.dot;
 	}
-	rt.callSuper(f, [], rt.Args.Same);
+	parent_proc();
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/morph/proc/allowed  (code/game/gamemodes/miniantags/morph/morph.dm:75)
+// morph.dm:75
 rt.def("/mob/living/simple_animal/hostile/morph/proc/allowed", function allowed(f: Frame, A: Value) {
-	return ((!truthy(rt.call(f, P("/proc/is_type_in_typecache"), null, [live(A), rt.gl("blacklist_typecache")])) ? 1 : 0) && ((rt.istype(live(A), T("/obj")) ? 1 : 0) || rt.call(f, P("/proc/ismob"), null, [live(A)])));
+	return ((!is_type_in_typecache(A, GLOB.blacklist_typecache) ? 1 : 0) && ((rt.istype(A, T("/obj")) ? 1 : 0) || ismob(A)));
 });
 
-// /mob/living/simple_animal/hostile/morph/proc/eat  (code/game/gamemodes/miniantags/morph/morph.dm:78)
+// morph.dm:78
 rt.def("/mob/living/simple_animal/hostile/morph/proc/eat", function eat(f: Frame, A: Value) {
-	if ((truthy(live(A)) && !isEqual(rt.fv(f, "loc", live(A)), live(f.src)))) {
-		rt.callSrc(f, "visible_message", [fmt("<span class='warning'>＀ swallows ＀ whole!</span>", [live(f.src), live(A)])]);
-		rt.setFv(f, "loc", live(A), live(f.src));
+	if (A && A.loc != this) {
+		this.visible_message(`<span class='warning'>${this} swallows ${A} whole!</span>`);
+		A.loc = this;
 		return 1;
 	}
 	return 0;
 });
 
-// /mob/living/simple_animal/hostile/morph/proc/ShiftClickOn  (code/game/gamemodes/miniantags/morph/morph.dm:85)  may sleep
-rt.def("/mob/living/simple_animal/hostile/morph/proc/ShiftClickOn", function* ShiftClickOn(f: Frame) {
-	if ((rt.le(rt.sv(f, "morph_time"), rt.worldTime(f)) && !truthy(rt.sv(f, "stat")))) {
-		if (isEqual(live(f.args[0]), live(f.src))) {
-			yield* g.srcCall(f, "restore");
-			return live(f.dot);
+// morph.dm:85
+rt.def("/mob/living/simple_animal/hostile/morph/proc/ShiftClickOn", function* ShiftClickOn(f: Frame, A: Value) {
+	if (this.morph_time <= rt.worldTime(f) && !this.stat) {
+		if (A == this) {
+			this.restore();
+			return f.dot;
 		}
-		if ((truthy((rt.istype(live(f.args[0]), T("/atom/movable")) ? 1 : 0)) && truthy((yield* g.srcCall(f, "allowed", live(f.args[0])))))) {
-			yield* g.srcCall(f, "assume", live(f.args[0]));
+		if (rt.istype(A, T("/atom/movable")) && (yield* this.allowed(A))) {
+			this.assume(A);
 		}
 	} else {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='warning'>Your chameleon skin is still repairing itself!</span>"]);
-		yield* g.callSuper(f, [], rt.Args.Same);
+		to_chat(this, "<span class='warning'>Your chameleon skin is still repairing itself!</span>");
+		yield* parent_proc();
 	}
 	return f.dot;
-}, true, { args: ["A"] });
+}, true);
 
-// /mob/living/simple_animal/hostile/morph/proc/assume  (code/game/gamemodes/miniantags/morph/morph.dm:97)
+// morph.dm:97
 rt.def("/mob/living/simple_animal/hostile/morph/proc/assume", function assume(f: Frame, target: Value) {
-	rt.setSv(f, "morphed", 1);
-	rt.setSv(f, "form", live(target));
-	rt.callSrc(f, "visible_message", [fmt("<span class='warning'>＀ suddenly twists and changes shape, becoming a copy of ＀!</span>", [live(f.src), live(target)]), fmt("<span class='notice'>You twist your body and assume the form of ＀.</span>", [live(target)])]);
-	rt.setSv(f, "appearance", rt.fv(f, "appearance", live(target)));
-	rt.callSrc(f, "copy_overlays", [live(target)]);
-	rt.setSv(f, "alpha", rt.call(f, P("/proc/max"), null, [rt.sv(f, "alpha"), 150]));
-	rt.setSv(f, "transform", rt.initial(f, live(f.src), "transform"));
-	rt.setSv(f, "pixel_y", rt.initial(f, live(f.src), "pixel_y"));
-	rt.setSv(f, "pixel_x", rt.initial(f, live(f.src), "pixel_x"));
-	rt.setSv(f, "melee_damage_lower", 5);
-	rt.setSv(f, "melee_damage_upper", 5);
-	rt.setSv(f, "speed", 0);
-	rt.setSv(f, "morph_time", add(rt.worldTime(f), 50));
-	rt.callSrc(f, "med_hud_set_health", []);
-	rt.callSrc(f, "med_hud_set_status", []);
-	return live(f.dot);
+	this.morphed = 1;
+	this.form = target;
+	this.visible_message(`<span class='warning'>${this} suddenly twists and changes shape, becoming a copy of ${target}!</span>`, `<span class='notice'>You twist your body and assume the form of ${target}.</span>`);
+	this.appearance = target.appearance;
+	this.copy_overlays(target);
+	this.alpha = max(this.alpha, 150);
+	this.transform = rt.initial(f, this, "transform");
+	this.pixel_y = rt.initial(f, this, "pixel_y");
+	this.pixel_x = rt.initial(f, this, "pixel_x");
+	this.melee_damage_lower = 5;
+	this.melee_damage_upper = 5;
+	this.speed = 0;
+	this.morph_time = rt.worldTime(f) + MORPH_COOLDOWN;
+	this.med_hud_set_health();
+	this.med_hud_set_status();
+	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/morph/proc/restore  (code/game/gamemodes/miniantags/morph/morph.dm:119)
+// morph.dm:119
 rt.def("/mob/living/simple_animal/hostile/morph/proc/restore", function restore(f: Frame) {
-	if (!truthy(rt.sv(f, "morphed"))) {
-		return live(f.dot);
+	if (!this.morphed) {
+		return f.dot;
 	}
-	rt.setSv(f, "morphed", 0);
-	rt.setSv(f, "form", null);
-	rt.setSv(f, "alpha", rt.initial(f, live(f.src), "alpha"));
-	rt.setSv(f, "color", rt.initial(f, live(f.src), "color"));
-	rt.callSrc(f, "visible_message", [fmt("<span class='warning'>＀ suddenly collapses in on itself, dissolving into a pile of green flesh!</span>", [live(f.src)]), "<span class='notice'>You reform to your normal body.</span>"]);
-	rt.setSv(f, "name", rt.initial(f, live(f.src), "name"));
-	rt.setSv(f, "icon", rt.initial(f, live(f.src), "icon"));
-	rt.setSv(f, "icon_state", rt.initial(f, live(f.src), "icon_state"));
-	rt.callSrc(f, "cut_overlays", []);
-	rt.setSv(f, "melee_damage_lower", rt.initial(f, live(f.src), "melee_damage_lower"));
-	rt.setSv(f, "melee_damage_upper", rt.initial(f, live(f.src), "melee_damage_upper"));
-	rt.setSv(f, "speed", rt.initial(f, live(f.src), "speed"));
-	rt.setSv(f, "morph_time", add(rt.worldTime(f), 50));
-	rt.callSrc(f, "med_hud_set_health", []);
-	rt.callSrc(f, "med_hud_set_status", []);
+	this.morphed = 0;
+	this.form = null;
+	this.alpha = rt.initial(f, this, "alpha");
+	this.color = rt.initial(f, this, "color");
+	this.visible_message(`<span class='warning'>${this} suddenly collapses in on itself, dissolving into a pile of green flesh!</span>`, "<span class='notice'>You reform to your normal body.</span>");
+	this.name = rt.initial(f, this, "name");
+	this.icon = rt.initial(f, this, "icon");
+	this.icon_state = rt.initial(f, this, "icon_state");
+	this.cut_overlays();
+	this.melee_damage_lower = rt.initial(f, this, "melee_damage_lower");
+	this.melee_damage_upper = rt.initial(f, this, "melee_damage_upper");
+	this.speed = rt.initial(f, this, "speed");
+	this.morph_time = rt.worldTime(f) + MORPH_COOLDOWN;
+	this.med_hud_set_health();
+	this.med_hud_set_status();
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/morph/proc/death  (code/game/gamemodes/miniantags/morph/morph.dm:144)  may sleep
-rt.def("/mob/living/simple_animal/hostile/morph/proc/death", function* death(f: Frame) {
-	if (truthy(rt.sv(f, "morphed"))) {
-		yield* g.srcCall(f, "visible_message", fmt("<span class='warning'>＀ twists and dissolves into a pile of green flesh!</span>", [live(f.src)]), "<span class='userdanger'>Your skin ruptures! Your flesh breaks apart! No disguise can ward off de--</span>");
-		yield* g.srcCall(f, "restore");
+// morph.dm:144
+rt.def("/mob/living/simple_animal/hostile/morph/proc/death", function* death(f: Frame, gibbed: Value) {
+	if (this.morphed) {
+		this.visible_message(`<span class='warning'>${this} twists and dissolves into a pile of green flesh!</span>`, "<span class='userdanger'>Your skin ruptures! Your flesh breaks apart! No disguise can ward off de--</span>");
+		this.restore();
 	}
-	yield* g.srcCall(f, "barf_contents");
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* this.barf_contents();
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["gibbed"] });
+}, true);
 
-// /mob/living/simple_animal/hostile/morph/proc/barf_contents  (code/game/gamemodes/miniantags/morph/morph.dm:151)  may sleep
+// morph.dm:151
 rt.def("/mob/living/simple_animal/hostile/morph/proc/barf_contents", function* barf_contents(f: Frame) {
 	let AM: Value = null;
-	let $e: any;
-	f.vars = () => [AM, $e];
-	AM = null;
-	rt.forList(f, 0, live(f.src), T("/atom/movable"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		AM = $e;
-		rt.setFv(f, "loc", live(AM), rt.sv(f, "loc"));
-		if (truthy(rt.op(f, "Prob", [], [90]))) {
-			yield* g.call(f, P("/proc/step"), null, [live(AM), rt.op(f, "PickUnweighted", [1], [rt.gl("alldirs")])]);
+	for (AM of each(this, T("/atom/movable"))) {
+		AM.loc = this.loc;
+		if (prob(90)) {
+			yield* step(AM, pick(GLOB.alldirs));
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/morph/proc/wabbajack_act  (code/game/gamemodes/miniantags/morph/morph.dm:157)  may sleep
-rt.def("/mob/living/simple_animal/hostile/morph/proc/wabbajack_act", function* wabbajack_act(f: Frame) {
-	yield* g.srcCall(f, "barf_contents");
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+// morph.dm:157
+rt.def("/mob/living/simple_animal/hostile/morph/proc/wabbajack_act", function* wabbajack_act(f: Frame, new_mob: Value) {
+	yield* this.barf_contents();
+	f.dot = (yield* parent_proc());
 	return f.dot;
-}, true, { args: ["new_mob"] });
+}, true);
 
-// /mob/living/simple_animal/hostile/morph/proc/Aggro  (code/game/gamemodes/miniantags/morph/morph.dm:161)  may sleep
+// morph.dm:161
 rt.def("/mob/living/simple_animal/hostile/morph/proc/Aggro", function* Aggro(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "restore");
+	yield* parent_proc();
+	this.restore();
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/morph/proc/LoseAggro  (code/game/gamemodes/miniantags/morph/morph.dm:165)
+// morph.dm:165
 rt.def("/mob/living/simple_animal/hostile/morph/proc/LoseAggro", function LoseAggro(f: Frame) {
-	rt.setSv(f, "vision_range", rt.sv(f, "idle_vision_range"));
+	this.vision_range = this.idle_vision_range;
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/morph/proc/AIShouldSleep  (code/game/gamemodes/miniantags/morph/morph.dm:168)  may sleep
-rt.def("/mob/living/simple_animal/hostile/morph/proc/AIShouldSleep", function* AIShouldSleep(f: Frame) {
-	let things: Value = null, A: Value = null, _T: Value = null;
-	let $e: any;
-	f.vars = () => [things, A, _T, $e];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(live(f.dot))) return f.dot;
-	things = rt.list();
-	A = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/view"), null, [live(f.src)])), T("/atom/movable"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		A = $e;
-		if (truthy((yield* g.srcCall(f, "allowed", live(A))))) {
-			things = rt.modify(live(things), live(A), add);
+// morph.dm:168
+rt.def("/mob/living/simple_animal/hostile/morph/proc/AIShouldSleep", function* AIShouldSleep(f: Frame, possible_targets: Value) {
+	let A: Value = null, _T: Value = null;
+	f.dot = (yield* parent_proc());
+	if (!f.dot) return f.dot;
+	let things: Value = list();
+	for (A of each(view(this), T("/atom/movable"))) {
+		if (yield* this.allowed(A)) {
+			things += A;
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.srcCall(f, "assume", (_T = rt.op(f, "PickUnweighted", [1], [live(things)])));
+	this.assume((_T = pick(things)));
 	return f.dot;
-}, true, { args: ["possible_targets"] });
+}, true);
 
-// /mob/living/simple_animal/hostile/morph/proc/can_track  (code/game/gamemodes/miniantags/morph/morph.dm:180)
-rt.def("/mob/living/simple_animal/hostile/morph/proc/can_track", function can_track(f: Frame) {
-	if (truthy(rt.sv(f, "morphed"))) {
+// morph.dm:180
+rt.def("/mob/living/simple_animal/hostile/morph/proc/can_track", function can_track(f: Frame, user: Value) {
+	if (this.morphed) {
 		return 0;
 	}
-	return rt.callSuper(f, [], rt.Args.Same);
-}, false, { args: ["user"] });
+	return parent_proc();
+}, false);
 
-// /mob/living/simple_animal/hostile/morph/proc/AttackingTarget  (code/game/gamemodes/miniantags/morph/morph.dm:183)  may sleep
+// morph.dm:183
 rt.def("/mob/living/simple_animal/hostile/morph/proc/AttackingTarget", function* AttackingTarget(f: Frame) {
 	let L: Value = null, I: Value = null;
-	f.vars = () => [L, I];
-	if (truthy((rt.istype(rt.sv(f, "target"), T("/mob/living")) ? 1 : 0))) {
-		if (isEqual(rt.gv(f, "stat", (L = rt.sv(f, "target"))), 2)) {
-			if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.src), null, 30, "target", live(L)], rt.Args.Named)))) {
-				if (truthy((yield* g.srcCall(f, "eat", live(L))))) {
-					yield* g.srcCall(f, "adjustHealth", -50);
+	if (rt.istype(this.target, T("/mob/living"))) {
+		if ((L = this.target).stat == 2) {
+			if (yield* do_after(this, 30, { target: L })) {
+				if (yield* this.eat(L)) {
+					yield* this.adjustHealth(-50);
 				}
 			}
-			return live(f.dot);
+			return f.dot;
 		}
-	} else {
-		if (truthy((rt.istype(rt.sv(f, "target"), T("/obj/item")) ? 1 : 0))) {
-			if (!truthy(rt.gv(f, "anchored", (I = rt.sv(f, "target"))))) {
-				if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.src), null, 20, "target", live(I)], rt.Args.Named)))) {
-					yield* g.srcCall(f, "eat", live(I));
-				}
-				return live(f.dot);
+	} else if (rt.istype(this.target, T("/obj/item"))) {
+		if (!(I = this.target).anchored) {
+			if (yield* do_after(this, 20, { target: I })) {
+				yield* this.eat(I);
 			}
+			return f.dot;
 		}
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);
 
 rt.type(275, "/datum/round_event/ghost_role/morph", "/datum/round_event/ghost_role", {
@@ -276,27 +257,26 @@ rt.type(275, "/datum/round_event/ghost_role/morph", "/datum/round_event/ghost_ro
 	role_name: "morphling",
 });
 
-// /datum/round_event/ghost_role/morph/proc/spawn_role  (code/game/gamemodes/miniantags/morph/morph.dm:211)  may sleep
+// morph.dm:211
 rt.def("/datum/round_event/ghost_role/morph/proc/spawn_role", function* spawn_role(f: Frame) {
-	let candidates: Value = null, selected: Value = null, player_mind: Value = null, S: Value = null;
-	f.vars = () => [candidates, selected, player_mind, S];
-	if (!truthy(rt.getLen(f, (candidates = (yield* g.srcCall(f, "get_candidates", "alien", null, "xenomorph")))))) {
-		return 3;
+	let candidates: Value = null, player_mind: Value = null;
+	if (!rt.len(f, (candidates = (yield* this.get_candidates("alien", null, "xenomorph"))))) {
+		return NOT_ENOUGH_PLAYERS;
 	}
-	selected = (yield* g.call(f, P("/proc/pick_n_take"), null, [live(candidates)]));
-	rt.setFv(f, "active", (player_mind = (yield* g.new_(f, T("/datum/mind"), [rt.fv(f, "key", live(selected))]))), 1);
-	if (!truthy(rt.gl("xeno_spawn"))) {
-		return 4;
+	let selected: Value = pick_n_take(candidates);
+	(player_mind = (yield* new_(T("/datum/mind"), selected.key))).active = 1;
+	if (!GLOB.xeno_spawn) {
+		return MAP_ERROR;
 	}
-	S = (yield* g.new_(f, T("/mob/living/simple_animal/hostile/morph"), [rt.op(f, "PickUnweighted", [1], [rt.gl("xeno_spawn")])]));
-	yield* g.callName(f, live(player_mind), "transfer_to", [live(S)]);
-	rt.setFv(f, "assigned_role", live(player_mind), "Morph");
-	rt.setFv(f, "special_role", live(player_mind), "Morph");
-	(rt.modField(f, rt.fv(f, "mode", rt.gl("SSticker")), "traitors", live(player_mind), rt.bitOr));
-	yield* g.call(f, P("/proc/to_chat"), null, [live(S), rt.fv(f, "playstyle_string", live(S))]);
-	rt.op(f, "Output", [], [live(S), rt.rsc("sound/magic/mutate.ogg")], false);
-	yield* g.call(f, P("/proc/message_admins"), null, [fmt("＀ has been made into a morph by an event.", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(S)]))])]);
-	yield* g.call(f, P("/proc/log_game"), null, [fmt("＀ was spawned as a morph by an event.", [(yield* g.call(f, P("/proc/key_name"), null, [live(S)]))])]);
-	rt.modSrcVar(f, "spawned_mobs", live(S), add);
-	return 2;
+	let S: Value = (yield* new_(T("/mob/living/simple_animal/hostile/morph"), pick(GLOB.xeno_spawn)));
+	yield* player_mind.transfer_to(S);
+	player_mind.assigned_role = "Morph";
+	player_mind.special_role = "Morph";
+	(rt.modField(f, GLOB.SSticker.mode, "traitors", player_mind, rt.bitOr));
+	to_chat(S, S.playstyle_string);
+	rt.op(f, "Output", [], [S, rt.rsc("sound/magic/mutate.ogg")], false);
+	message_admins(`${key_name_admin(S)} has been made into a morph by an event.`);
+	log_game(`${key_name(S)} was spawned as a morph by an event.`);
+	this.spawned_mobs += S;
+	return SUCCESSFUL_SPAWN;
 }, true);

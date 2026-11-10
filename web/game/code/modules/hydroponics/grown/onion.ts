@@ -1,7 +1,7 @@
-// From code/modules/hydroponics/grown/onion.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/hydroponics/grown/onion.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(10063, "/obj/item/seeds/onion", "/obj/item/seeds", {
@@ -23,14 +23,12 @@ rt.type(10063, "/obj/item/seeds/onion", "/obj/item/seeds", {
 	mutatelist: null,
 });
 
-// /obj/item/seeds/onion/proc/<init>  (code/modules/hydroponics/grown/onion.dm:16)
+// onion.dm:16
 rt.def("/obj/item/seeds/onion/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "reagents_add", rt.alist(f, ["vitamin", 0.03999999910593033, "nutriment", 0.10000000149011612]));
-	$0 = $0;
-	rt.setSv(f, "mutatelist", rt.list(T("/obj/item/seeds/onion/red")));
+	parent_proc();
+	this.reagents_add = rt.alist(f, ["vitamin", 0.04, "nutriment", 0.1]);
+
+	this.mutatelist = list(T("/obj/item/seeds/onion/red"));
 	return f.dot;
 });
 
@@ -46,12 +44,10 @@ rt.type(6326, "/obj/item/weapon/reagent_containers/food/snacks/grown/onion", "/o
 	slice_path: rt.typePath("/obj/item/weapon/reagent_containers/food/snacks/onion_slice"),
 });
 
-// /obj/item/weapon/reagent_containers/food/snacks/grown/onion/proc/<init>  (code/modules/hydroponics/grown/onion.dm:26)
+// onion.dm:26
 rt.def("/obj/item/weapon/reagent_containers/food/snacks/grown/onion/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "tastes", rt.alist(f, ["onions", 1]));
+	parent_proc();
+	this.tastes = rt.alist(f, ["onions", 1]);
 	return f.dot;
 });
 
@@ -66,30 +62,26 @@ rt.type(10064, "/obj/item/seeds/onion/red", "/obj/item/seeds/onion", {
 	icon_state: "seed-onionred",
 });
 
-// /obj/item/seeds/onion/red/proc/<init>  (code/modules/hydroponics/grown/onion.dm:38)
+// onion.dm:38
 rt.def("/obj/item/seeds/onion/red/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "reagents_add", rt.alist(f, ["vitamin", 0.03999999910593033, "nutriment", 0.10000000149011612, "tearjuice", 0.05000000074505806]));
+	parent_proc();
+	this.reagents_add = rt.alist(f, ["vitamin", 0.04, "nutriment", 0.1, "tearjuice", 0.05]);
 	return f.dot;
 });
 
-// /obj/item/weapon/reagent_containers/food/snacks/grown/onion/proc/slice  (code/modules/hydroponics/grown/onion.dm:49)  may sleep
-rt.def("/obj/item/weapon/reagent_containers/food/snacks/grown/onion/proc/slice", function* slice(f: Frame) {
-	let S: Value = null, splat_location: Value = null;
-	f.vars = () => [S, splat_location];
-	S = (yield* g.new_(f, T("/datum/effect_system/smoke_spread/chem"), []));
-	splat_location = rt.getStep(f, live(f.src), 0);
-	yield* g.callName(f, live(S), "attach", [live(splat_location)]);
-	yield* g.callName(f, live(S), "set_up", [rt.sv(f, "reagents"), 0, live(splat_location), 0]);
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		yield* g.callName(f, live(S), "start", []);
+// onion.dm:49
+rt.def("/obj/item/weapon/reagent_containers/food/snacks/grown/onion/proc/slice", function* slice(f: Frame, accuracy: Value, W: Value, user: Value) {
+	let S: Value = (yield* new_(T("/datum/effect_system/smoke_spread/chem")));
+	let splat_location: Value = rt.getStep(f, this, 0);
+	yield* S.attach(splat_location);
+	yield* S.set_up(this.reagents, 0, splat_location, 0);
+	if (yield* parent_proc()) {
+		yield* S.start();
 		return 1;
 	}
-	yield* g.call(f, P("/proc/qdel"), null, [live(S)]);
+	yield* qdel(S);
 	return f.dot;
-}, true, { args: ["accuracy", "W", "user"] });
+}, true);
 
 rt.type(6355, "/obj/item/weapon/reagent_containers/food/snacks/onion_slice", "/obj/item/weapon/reagent_containers/food/snacks", {
 	filling_color: "#C0C9A0",
@@ -101,12 +93,10 @@ rt.type(6355, "/obj/item/weapon/reagent_containers/food/snacks/onion_slice", "/o
 	gender: "plural",
 });
 
-// /obj/item/weapon/reagent_containers/food/snacks/onion_slice/proc/<init>  (code/modules/hydroponics/grown/onion.dm:62)
+// onion.dm:62
 rt.def("/obj/item/weapon/reagent_containers/food/snacks/onion_slice/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["nutriment", 5, "vitamin", 2]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["nutriment", 5, "vitamin", 2]);
 	return f.dot;
 });
 
@@ -118,11 +108,9 @@ rt.type(6356, "/obj/item/weapon/reagent_containers/food/snacks/onion_slice/red",
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/food/snacks/onion_slice/red/proc/<init>  (code/modules/hydroponics/grown/onion.dm:72)
+// onion.dm:72
 rt.def("/obj/item/weapon/reagent_containers/food/snacks/onion_slice/red/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["nutriment", 5, "vitamin", 2, "tearjuice", 2.5]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["nutriment", 5, "vitamin", 2, "tearjuice", 2.5]);
 	return f.dot;
 });

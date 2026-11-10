@@ -1,7 +1,7 @@
-// From code/game/machinery/transformer.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/machinery/transformer.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(10855, "/obj/machinery/transformer", "/obj/machinery", {
@@ -22,136 +22,129 @@ rt.type(10855, "/obj/machinery/transformer", "/obj/machinery", {
 	density: 0,
 });
 
-// /obj/machinery/transformer/proc/Initialize  (code/game/machinery/transformer.dm:22)  may sleep
+// transformer.dm:22
 rt.def("/obj/machinery/transformer/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.new_(f, T("/obj/machinery/conveyor/auto"), [rt.locate(subtract(rt.sv(f, "x"), 1), rt.sv(f, "y"), rt.sv(f, "z")), 8]);
-	yield* g.new_(f, T("/obj/machinery/conveyor/auto"), [rt.sv(f, "loc"), 8]);
-	yield* g.new_(f, T("/obj/machinery/conveyor/auto"), [rt.locate(add(rt.sv(f, "x"), 1), rt.sv(f, "y"), rt.sv(f, "z")), 8]);
-	rt.setSv(f, "countdown", (yield* g.new_(f, T("/obj/effect/countdown/transformer"), [live(f.src)])));
-	yield* g.callName(f, rt.sv(f, "countdown"), "start", []);
+	f.dot = (yield* parent_proc());
+	yield* new_(T("/obj/machinery/conveyor/auto"), rt.locate(this.x - 1, this.y, this.z), 8);
+	yield* new_(T("/obj/machinery/conveyor/auto"), this.loc, 8);
+	yield* new_(T("/obj/machinery/conveyor/auto"), rt.locate(this.x + 1, this.y, this.z), 8);
+	this.countdown = (yield* new_(T("/obj/effect/countdown/transformer"), this));
+	yield* this.countdown.start();
 	return f.dot;
 }, true);
 
-// /obj/machinery/transformer/proc/examine  (code/game/machinery/transformer.dm:30)
-rt.def("/obj/machinery/transformer/proc/examine", function examine(f: Frame) {
-	let seconds_remaining: Value = null;
-	f.vars = () => [seconds_remaining];
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	if (!(truthy(rt.sv(f, "cooldown")) && (truthy((rt.istype(live(f.args[0]), T("/mob/living/silicon")) ? 1 : 0)) || truthy((rt.istype(live(f.args[0]), T("/mob/dead/observer")) ? 1 : 0))))) return f.dot;
-	seconds_remaining = divide(subtract(rt.sv(f, "cooldown_timer"), rt.worldTime(f)), 10);
-	rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("It will be ready in ＀ seconds.", [rt.call(f, P("/proc/max"), null, [0, live(seconds_remaining)])])]);
+// transformer.dm:30
+rt.def("/obj/machinery/transformer/proc/examine", function examine(f: Frame, user: Value) {
+	f.dot = parent_proc();
+	if (!(this.cooldown && (rt.istype(user, T("/mob/living/silicon")) || rt.istype(user, T("/mob/dead/observer"))))) return f.dot;
+	let seconds_remaining: Value = (this.cooldown_timer - rt.worldTime(f)) / 10;
+	to_chat(user, `It will be ready in ${max(0, seconds_remaining)} seconds.`);
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/machinery/transformer/proc/Destroy  (code/game/machinery/transformer.dm:37)  may sleep
+// transformer.dm:37
 rt.def("/obj/machinery/transformer/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.sv(f, "countdown"))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "countdown")]);
+	if (this.countdown) {
+		yield* qdel(this.countdown);
 	}
-	rt.setSv(f, "countdown", null);
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	this.countdown = null;
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true);
 
-// /obj/machinery/transformer/proc/power_change  (code/game/machinery/transformer.dm:42)
+// transformer.dm:42
 rt.def("/obj/machinery/transformer/proc/power_change", function power_change(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.callSrc(f, "update_icon", []);
+	parent_proc();
+	this.update_icon();
 	return f.dot;
 });
 
-// /obj/machinery/transformer/proc/update_icon  (code/game/machinery/transformer.dm:46)
+// transformer.dm:46
 rt.def("/obj/machinery/transformer/proc/update_icon", function update_icon(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	if ((truthy(rt.bitAnd(rt.sv(f, "stat"), 3)) || isEqual(rt.sv(f, "cooldown"), 1))) {
-		rt.setSv(f, "icon_state", "separator-AO0");
+	parent_proc();
+	if (rt.bitAnd(this.stat, 3) || this.cooldown == 1) {
+		this.icon_state = "separator-AO0";
 	} else {
-		rt.setSv(f, "icon_state", rt.initial(f, live(f.src), "icon_state"));
+		this.icon_state = rt.initial(f, this, "icon_state");
 	}
 	return f.dot;
 });
 
-// /obj/machinery/transformer/proc/Bumped  (code/game/machinery/transformer.dm:53)  may sleep
+// transformer.dm:53
 rt.def("/obj/machinery/transformer/proc/Bumped", function* Bumped(f: Frame, AM: Value) {
-	let move_dir: Value = null, H: Value = null;
-	f.vars = () => [AM, move_dir, H];
-	if (isEqual(rt.sv(f, "cooldown"), 1)) {
-		return live(f.dot);
+	if (this.cooldown == 1) {
+		return f.dot;
 	}
-	if (!truthy((rt.istype(live(AM), T("/mob/living/carbon/human")) ? 1 : 0))) return f.dot;
-	move_dir = rt.getDir(f, rt.sv(f, "loc"), rt.fv(f, "loc", live(AM)));
-	H = live(AM);
-	if (!((truthy(rt.sv(f, "transform_standing")) || truthy(rt.fv(f, "lying", live(H)))) && isEqual(live(move_dir), 4))) return f.dot;
-	rt.setFv(f, "loc", live(AM), rt.fv(f, "loc", live(f.src)));
-	yield* g.srcCall(f, "do_transform", live(AM));
+	if (!rt.istype(AM, T("/mob/living/carbon/human"))) return f.dot;
+	let move_dir: Value = rt.getDir(f, this.loc, AM.loc);
+	let H: Value = AM;
+	if (!((this.transform_standing || H.lying) && move_dir == 4)) return f.dot;
+	AM.loc = this.loc;
+	yield* this.do_transform(AM);
 	return f.dot;
 }, true);
 
-// /obj/machinery/transformer/proc/CanPass  (code/game/machinery/transformer.dm:68)
+// transformer.dm:68
 rt.def("/obj/machinery/transformer/proc/CanPass", function CanPass(f: Frame) {
 	let dir: Value = null;
-	f.vars = () => [dir];
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 0;
 	}
-	if (!truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		if (isEqual((dir = rt.getDir(f, live(f.src), live(f.args[0]))), 4)) {
-			return rt.callSuper(f, [], rt.Args.Same);
+	if (!rt.istype(f.args[0], T("/mob/living/carbon/human"))) {
+		if ((dir = rt.getDir(f, this, f.args[0])) == 4) {
+			return parent_proc();
 		}
 	}
 	return 0;
 }, false, { args: ["mover", "target", "height"] });
 
-// /obj/machinery/transformer/proc/process  (code/game/machinery/transformer.dm:75)
+// transformer.dm:75
 rt.def("/obj/machinery/transformer/proc/process", function process(f: Frame) {
-	if (!(truthy(rt.sv(f, "cooldown")) && rt.le(rt.sv(f, "cooldown_timer"), rt.worldTime(f)))) return f.dot;
-	rt.setSv(f, "cooldown", 0);
-	rt.callSrc(f, "update_icon", []);
+	if (!(this.cooldown && this.cooldown_timer <= rt.worldTime(f))) return f.dot;
+	this.cooldown = 0;
+	this.update_icon();
 	return f.dot;
 }, false, { waitfor: false });
 
-// /obj/machinery/transformer/proc/do_transform  (code/game/machinery/transformer.dm:80)  may sleep
+// transformer.dm:80
 rt.def("/obj/machinery/transformer/proc/do_transform", function* do_transform(f: Frame, H: Value) {
 	let R: Value = null;
-	f.vars = () => [H, R];
-	if (truthy(rt.bitAnd(rt.sv(f, "stat"), 3))) {
-		return live(f.dot);
+	if (rt.bitAnd(this.stat, 3)) {
+		return f.dot;
 	}
-	if (isEqual(rt.sv(f, "cooldown"), 1)) {
-		return live(f.dot);
+	if (this.cooldown == 1) {
+		return f.dot;
 	}
-	if ((!truthy(rt.sv(f, "transform_dead")) && isEqual(rt.fv(f, "stat", live(H)), 2))) {
-		yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/machines/buzz-sigh.ogg"), 50, 0]);
-		return live(f.dot);
+	if (!this.transform_dead && H.stat == 2) {
+		playsound(this.loc, rt.rsc("sound/machines/buzz-sigh.ogg"), 50, 0);
+		return f.dot;
 	}
-	rt.setSv(f, "cooldown", 1);
-	rt.setSv(f, "cooldown_timer", add(rt.worldTime(f), rt.sv(f, "cooldown_duration")));
-	yield* g.srcCall(f, "update_icon");
-	yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/items/welder.ogg"), 50, 1]);
-	yield* g.callName(f, live(H), "emote", ["scream"]);
-	yield* g.callName(f, live(H), "adjustBruteLoss", [(yield* g.call(f, P("/proc/max"), null, [0, subtract(80, (yield* g.callName(f, live(H), "getBruteLoss", [])))]))]);
-	yield* g.call(f, P("/proc/sleep"), null, [5]);
-	yield* g.srcCall(f, "use_power", 5000);
-	rt.setFv(f, "maxcharge", rt.gv(f, "cell", (R = (yield* g.callName(f, live(H), "Robotize", [])))), rt.sv(f, "robot_cell_charge"));
-	rt.setFv(f, "charge", rt.fv(f, "cell", live(R)), rt.sv(f, "robot_cell_charge"));
-	yield* g.callName(f, live(R), "SetLockdown", []);
-	if (truthy(rt.sv(f, "masterAI"))) {
-		rt.setFv(f, "connected_ai", live(R), rt.sv(f, "masterAI"));
-		yield* g.callName(f, live(R), "lawsync", []);
-		rt.setFv(f, "lawupdate", live(R), 1);
+	this.cooldown = 1;
+	this.cooldown_timer = rt.worldTime(f) + this.cooldown_duration;
+	yield* this.update_icon();
+	playsound(this.loc, rt.rsc("sound/items/welder.ogg"), 50, 1);
+	yield* H.emote("scream");
+	yield* H.adjustBruteLoss(max(0, 80 - H.getBruteLoss()));
+	yield* sleep(5);
+	yield* this.use_power(5000);
+	(R = (yield* H.Robotize())).cell.maxcharge = this.robot_cell_charge;
+	R.cell.charge = this.robot_cell_charge;
+	yield* R.SetLockdown();
+	if (this.masterAI) {
+		R.connected_ai = this.masterAI;
+		yield* R.lawsync();
+		R.lawupdate = 1;
 	}
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/machinery/transformer/proc/unlock_new_robot"), live(R)])), 50]);
+	yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/machinery/transformer/proc/unlock_new_robot"), R)), 50);
 	return f.dot;
 }, true);
 
-// /obj/machinery/transformer/proc/unlock_new_robot  (code/game/machinery/transformer.dm:116)  may sleep
+// transformer.dm:116
 rt.def("/obj/machinery/transformer/proc/unlock_new_robot", function* unlock_new_robot(f: Frame, R: Value) {
-	f.vars = () => [R];
-	yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/machines/ping.ogg"), 50, 0]);
-	yield* g.call(f, P("/proc/sleep"), null, [30]);
-	if (!truthy(live(R))) return f.dot;
-	yield* g.callName(f, live(R), "SetLockdown", [0]);
-	yield* g.callName(f, live(R), "notify_ai", [1]);
+	playsound(this.loc, rt.rsc("sound/machines/ping.ogg"), 50, 0);
+	yield* sleep(30);
+	if (!R) return f.dot;
+	yield* R.SetLockdown(0);
+	R.notify_ai(NEW_BORG);
 	return f.dot;
 }, true, { argTypes: [{ type: 8, path: "/mob/living/silicon/robot" }] });

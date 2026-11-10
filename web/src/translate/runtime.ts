@@ -18,7 +18,7 @@ import { EndProc, Frame, assocList, genFramePool, ListEnumerator, MOVE_HOOKS, NO
 import { DMList, DMObject, FieldIC, listAndInPlace, listAssignFrom, listOr, listXor, live } from "../vm/objects.js";
 import { add, bitAnd, bitOr, bitXor, subtract } from "../vm/interpreter.js";
 import { ArgsType } from "../vm/args-type.js";
-import { DMRuntimeError, describe, fround, isTruthy, NotImplementedError, toInt, type Value } from "../vm/value.js";
+import { asDMError, DMRuntimeError, describe, isTruthy, NotImplementedError, toInt, type Value } from "../vm/value.js";
 import { output } from "../vm/natives-io.js";
 import { rgb } from "../vm/natives-misc.js";
 import { DMProc, DMType, Resource } from "../vm/objtree.js";
@@ -31,7 +31,7 @@ export { type, typePath, procRef, globals, maps, procDecls } from "../vm/typedef
 import { declaredPaths, setGlobalInit } from "../vm/typedefs.js";
 import { TAIL_MARK, Thread } from "../vm/scheduler.js";
 import { setTailStarter } from "../vm/snapshot.js";
-import { heap } from "../vm/gc.js";
+import { GCNode, heap } from "../vm/gc.js";
 
 export { add, subtract, multiply, divide, modulus, power, bitAnd, bitOr, bitXor, shiftLeft, shiftRight } from "../vm/interpreter.js";
 export { isTruthy as truthy, isEqual } from "../vm/value.js";
@@ -78,18 +78,19 @@ const natives: (NativeProc | undefined)[] = [];
 /** Frames of plain procs (not on any thread) with a translated `try` open, innermost last. */
 const openTries: Frame[] = [];
 
-/** fn(f, ...args) without the spread: a translated proc declares exactly its DM args (extra ones are only
- * seen through `args`, i.e. f.args), and `a` is padded to at least n. */
+/** fn(f, ...args) without the spread, with `this` = src (game code reads src's vars as `this.health`): a translated proc
+ * declares exactly its DM args (extra ones are only seen through `args`, i.e. f.args), and `a` is padded to at least n. */
 function invoke<R>(fn: (f: Frame, ...args: Value[]) => R, f: Frame, a: Value[], n: number): R {
+	const s = f.src;
 	switch (n) {
-		case 0: return fn(f);
-		case 1: return fn(f, a[0]);
-		case 2: return fn(f, a[0], a[1]);
-		case 3: return fn(f, a[0], a[1], a[2]);
-		case 4: return fn(f, a[0], a[1], a[2], a[3]);
-		case 5: return fn(f, a[0], a[1], a[2], a[3], a[4]);
-		case 6: return fn(f, a[0], a[1], a[2], a[3], a[4], a[5]);
-		default: return fn(f, ...a);
+		case 0: return fn.call(s, f);
+		case 1: return fn.call(s, f, a[0]);
+		case 2: return fn.call(s, f, a[0], a[1]);
+		case 3: return fn.call(s, f, a[0], a[1], a[2]);
+		case 4: return fn.call(s, f, a[0], a[1], a[2], a[3]);
+		case 5: return fn.call(s, f, a[0], a[1], a[2], a[3], a[4]);
+		case 6: return fn.call(s, f, a[0], a[1], a[2], a[3], a[4], a[5]);
+		default: return fn.call(s, f, ...a);
 	}
 }
 
@@ -134,6 +135,7 @@ export function globalInit(fn: PlainFn | GenFn, gen = false): void {
  */
 export function install(v: VM): number {
 	attach(v);
+	installVarProps(v);
 	v.stackOf = fullStack;
 	v.translatedSource = (f, err) => errorSource(err, f.proc.path) ?? errorSource(locateSuspended(f), f.proc.path);
 	setTailStarter(startTail);
@@ -283,7 +285,7 @@ class EntryCall {
 
 function* spawnGen(body: GenFn, f: Frame, vals: Value[]): Gen {
 	try {
-		return yield* body(f, ...vals);
+		return yield* body.call(f.src, f, ...vals);
 	} catch (e) {
 		if (e instanceof EndProc && e.frame === f) return f.dot;
 		throw e;
@@ -415,15 +417,62 @@ export function ge(a: Value, b: Value): boolean {
 	return cmpGe(a, b);
 }
 export function neg(v: Value): number {
-	return fround(-(typeof v === "number" ? v : 0));
+	return -(typeof v === "number" ? v : 0);
 }
 /** ++/--: anything that isn't a number counts as 0. */
 export function inc(v: Value, d: number): number {
-	return fround((typeof v === "number" ? v : 0) + d);
+	return (typeof v === "number" ? v : 0) + d;
 }
 /** `if(lo to hi)` in a switch: only numbers match (VM Op.SwitchCaseRange). */
 export function inRange(v: Value, lo: Value, hi: Value): boolean {
 	return typeof v === "number" && typeof lo === "number" && typeof hi === "number" && lo <= v && v <= hi;
+}
+
+// ---- vars as properties (detranslate) ----------------------------------------------------------------
+
+/**
+ * DM var names that are never properties: JS's own meanings (code that duck-types a `length`, `size`, `next`, `value` or
+ * `message` must not run a DM read) and the engine's members of objects and lists, which would hide them (`o.loc` is
+ * DMAtom's field, `L.len` and `L.copy` DMList's). Game code keeps rt.fv/rt.setFv for these. tests/dt-props.test.mjs checks
+ * that this covers every clash.
+ */
+export const NOT_PROPS: ReadonlySet<string> = new Set([
+	"length", "size", "next", "value", "message", "stack", "caller", "arguments", "prototype",
+	"type", "loc", "x", "y", "z", "contents", "key", // DMObject, DMAtom, DMAppearance
+	"len", "items", "index", "contains", "copy", "cut", "drop", "range", "map", "owner", "sync", // DMList and its views
+]);
+/** the names that have a property already (a second VM in one process: tests). */
+const propNames = new Set<string>();
+/**
+ * Every DM var name (but NOT_PROPS) becomes a property of every object and list: `o.health` reads and `o.health = v`
+ * writes through the same engine path as rt.fv/rt.setFv (VM.readIC/writeIC: deleted objects read null, a var of a
+ * deleted object is a runtime error, refcounts and tags kept), with one cache per name instead of one per site. A
+ * property read doesn't set the frame's lastDeref (rt.fv does): see plans/archive/detranslate.md step 4. The accessors sit on
+ * plain objects chained above GCNode.prototype, under 1000 per object: V8 turns an object with more properties into a
+ * hash table, and a read found in one of those isn't inlined.
+ */
+function installVarProps(v: VM): void {
+	const fresh: string[] = [];
+	for (const t of v.tree.types) for (const k of t.vars.keys()) if (!NOT_PROPS.has(k) && !propNames.has(k)) { propNames.add(k); fresh.push(k); }
+	for (let i = 0; i < fresh.length; i += 900) {
+		const holder = Object.create(Object.getPrototypeOf(GCNode.prototype)) as object;
+		for (const name of fresh.slice(i, i + 900)) {
+			const ic = new FieldIC(name);
+			Object.defineProperty(holder, name, {
+				get(this: Value): Value { return vm.readIC(this, ic); },
+				set(this: Value, val: Value): void { vm.writeIC(this, ic, val); },
+				configurable: true,
+			});
+		}
+		Object.setPrototypeOf(GCNode.prototype, holder);
+	}
+	// V8 turns a prototype back into a fast object the first time a read walks through it, but that walk stops at the
+	// first prototype made fast before (DMObject's, long before this): a read on a fresh object made from the top holder
+	// walks them all. Without it every property read is ~3x slower (measured).
+	if (fresh.length !== 0) {
+		const probe = Object.create(Object.getPrototypeOf(GCNode.prototype) as object) as Record<string, unknown>;
+		for (let k = 0; k < 2; k++) void probe.dtProbe;
+	}
 }
 
 // ---- vars, indexes ---------------------------------------------------------------------------------
@@ -477,20 +526,6 @@ export function fieldQ(f: Frame, ic: FieldIC, o: Value): Value {
 	f.lastDeref = o;
 	return vm.readIC(o, ic);
 }
-/** `rt.gv(f, "name", o)`, a read of a variable of another object, o read through live() first (getI by name). The bundle lowers a literal name to getQ; this is the unbundled fallback. */
-export function gv(f: Frame, name: string, o: Value): Value {
-	let ic = fvICs.get(name);
-	if (!ic) fvICs.set(name, (ic = new FieldIC(name)));
-	o = live(o);
-	f.lastDeref = o;
-	return vm.readIC(o, ic);
-}
-/** getI with the cache before the object (what the bundle lowers `rt.gv(f, "name", o)` to). */
-export function getQ(f: Frame, ic: FieldIC, o: Value): Value {
-	o = live(o);
-	f.lastDeref = o;
-	return vm.readIC(o, ic);
-}
 /** `rt.setFv(f, "name", o, v)`, a write of a variable of another object (setI by name). The bundle lowers a literal name to setQ; this is the unbundled fallback. */
 export function setFv(f: Frame, name: string, o: Value, v: Value): Value {
 	let ic = fvICs.get(name);
@@ -506,7 +541,6 @@ export function setQ(f: Frame, ic: FieldIC, o: Value, v: Value): Value {
 	return v;
 }
 export function getI(f: Frame, o: Value, ic: FieldIC): Value {
-	o = live(o);
 	f.lastDeref = o;
 	return vm.readIC(o, ic);
 }
@@ -517,12 +551,6 @@ export function setI(f: Frame, o: Value, ic: FieldIC, v: Value): Value {
 }
 /** `o.len` (same value and errors as fieldI with a "len" cache: a list reads straight, everything else goes through getField). */
 export function len(f: Frame, o: Value): Value {
-	f.lastDeref = o;
-	return o instanceof DMList && !heap.check ? o.len : vm.getField(o, "len");
-}
-/** `o.len` where o is read through live() first (getI). */
-export function getLen(f: Frame, o: Value): Value {
-	o = live(o);
 	f.lastDeref = o;
 	return o instanceof DMList && !heap.check ? o.len : vm.getField(o, "len");
 }
@@ -738,21 +766,21 @@ const FAST_OPS: Record<string, (vals: Value[], operands: unknown[]) => Value> = 
 		for (let i = 0; i < n; i++) if (r < cum[i]) return kv[i * 2 + 1];
 		return null;
 	},
-	// maths builtins: BYOND computes these in double precision, then stores a float
+	// maths builtins
 	Sqrt: (v) => {
 		const x = num(v[0]);
 		if (x < 0) throw new DMRuntimeError(`illegal: sqrt(${x.toFixed(6)})`);
-		return fround(Math.sqrt(x));
+		return Math.sqrt(x);
 	},
-	Sin: (v) => fround(Math.sin((num(v[0]) * Math.PI) / 180)),
-	Cos: (v) => fround(Math.cos((num(v[0]) * Math.PI) / 180)),
-	Tan: (v) => fround(Math.tan((num(v[0]) * Math.PI) / 180)),
-	ArcSin: (v) => fround((Math.asin(num(v[0])) * 180) / Math.PI),
-	ArcCos: (v) => fround((Math.acos(num(v[0])) * 180) / Math.PI),
-	ArcTan: (v) => fround((Math.atan(num(v[0])) * 180) / Math.PI),
-	ArcTan2: (v) => fround((Math.atan2(num(v[1]), num(v[0])) * 180) / Math.PI),
-	Log: (v) => fround(Math.log(num(v[0])) / Math.log(num(v[1]))),
-	LogE: (v) => fround(Math.log(num(v[0]))),
+	Sin: (v) => Math.sin((num(v[0]) * Math.PI) / 180),
+	Cos: (v) => Math.cos((num(v[0]) * Math.PI) / 180),
+	Tan: (v) => Math.tan((num(v[0]) * Math.PI) / 180),
+	ArcSin: (v) => (Math.asin(num(v[0])) * 180) / Math.PI,
+	ArcCos: (v) => (Math.acos(num(v[0])) * 180) / Math.PI,
+	ArcTan: (v) => (Math.atan(num(v[0])) * 180) / Math.PI,
+	ArcTan2: (v) => (Math.atan2(num(v[1]), num(v[0])) * 180) / Math.PI,
+	Log: (v) => Math.log(num(v[0])) / Math.log(num(v[1])),
+	LogE: (v) => Math.log(num(v[0])),
 	// `x in a to b` (OpenDream's semantics: non-numbers count as 0; unverified in BYOND)
 	IsInRange: (v) => {
 		const hi = typeof v[2] === "number" ? v[2] : 0, lo = typeof v[1] === "number" ? v[1] : 0, x = typeof v[0] === "number" ? v[0] : 0;
@@ -1015,7 +1043,8 @@ function callPlain(f: Frame, proc: DMProc, fn: PlainFn, src: Value, args: Value[
 	let r: Value;
 	try {
 		r = invoke(fn, f2, args, nParams[proc.id]);
-	} catch (e) {
+	} catch (e0) {
+		const e = asDMError(e0); // a JS error from game code is a DM one
 		const stack = e instanceof DMRuntimeError ? fullStack() : null; // f2 still on it
 		plainFrames.length = depth;
 		while (openTries.length !== 0 && openTries[openTries.length - 1] === f2) openTries.pop();
@@ -1379,7 +1408,7 @@ function tailFn(name: string): GenFn {
 function* runTail(f: Frame): Gen {
 	const l = f.locals;
 	f.locals = NONE;
-	return yield* tailFn(l[1] as string)(f, ...l.slice(2));
+	return yield* tailFn(l[1] as string).call(f.src, f, ...l.slice(2));
 }
 /** A frame holding [TAIL_MARK, name, ...values] (spawnTail, or a saved/loaded snapshot's) gets the generator that runs the tail. */
 function startTail(f: Frame): void {
@@ -1391,7 +1420,7 @@ export function* sleepThen(f: Frame, delay: Value, name: string, vals: Value[]):
 	f.locals = [TAIL_MARK, name, ...vals];
 	yield* g.call(f, P("/proc/sleep"), null, [delay]);
 	f.locals = NONE;
-	return yield* fn(f, ...vals);
+	return yield* fn.call(f.src, f, ...vals);
 }
 /** A sleep inside a loop that a snapshot may be saved during (mid-round snapshots, tools/make-snapshot.mjs): while it sleeps,
  *  the frame holds tail `name` with `vals`, so a saved (or just-saved) world restarts that tail, which must be the loop's next
@@ -1561,6 +1590,7 @@ class InlineCall implements Iterator<GenRequest, Value, Value> {
 	}
 	/** An error out of the callee: its `.` if it ends here, else thrown on. */
 	private caught(e: unknown): Value {
+		e = asDMError(e);
 		const f2 = this.f2;
 		// The thread may have changed (a sleep moved these frames to a thread of their own): it's the running one.
 		const frames = vm.running[vm.running.length - 1].frames;
@@ -1716,6 +1746,7 @@ function* delRest(f: Frame, obj: DMObject, r: GenLike): Gen {
 
 /** The value a DM `catch(e)` gets for a JS exception (rethrows anything that isn't a DM error). */
 export function caught(f: Frame, e: unknown): Value {
+	e = asDMError(e);
 	if (!(e instanceof DMRuntimeError)) throw e;
 	if (e.caught !== undefined) return e.caught;
 	if (e.isThrow) return e.thrown;
@@ -1733,6 +1764,7 @@ export function tryOpen(f: Frame): void {
 }
 /** A structured `catch`: the value DM's catch(e) gets (JS errors that aren't DM errors go on up). */
 export function catchValue(f: Frame, e: unknown): Value {
+	e = asDMError(e);
 	if (!(e instanceof DMRuntimeError)) throw e;
 	tryCaught(f, e);
 	return caught(f, e);

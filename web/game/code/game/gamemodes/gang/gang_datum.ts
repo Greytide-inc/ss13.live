@@ -1,7 +1,7 @@
-// From code/game/gamemodes/gang/gang_datum.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/gamemodes/gang/gang_datum.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, add } = rt;
 
 
 rt.type(1247, "/datum/gang", "/datum", {
@@ -31,426 +31,331 @@ rt.type(1247, "/datum/gang", "/datum", {
 	reg_category_list: null,
 }, { global: { boss_items: 956, soldier_items: 957 } });
 
-// /datum/gang/proc/<init>  (code/game/gamemodes/gang/gang_datum.dm:8)
+// gang_datum.dm:8
 rt.def("/datum/gang/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "gangsters", rt.list());
-	$0 = $0;
-	rt.setSv(f, "bosses", rt.list());
-	$0 = $0;
-	rt.setSv(f, "gangtools", rt.list());
-	$0 = $0;
-	rt.setSv(f, "tags_by_mind", rt.list());
-	$0 = $0;
-	rt.setSv(f, "territory", rt.list());
-	$0 = $0;
-	rt.setSv(f, "territory_new", rt.list());
-	$0 = $0;
-	rt.setSv(f, "territory_lost", rt.list());
+	parent_proc();
+	this.gangsters = list();
+
+	this.bosses = list();
+
+	this.gangtools = list();
+
+	this.tags_by_mind = list();
+
+	this.territory = list();
+
+	this.territory_new = list();
+
+	this.territory_lost = list();
 	return f.dot;
 });
 
-// /datum/gang/proc/New  (code/game/gamemodes/gang/gang_datum.dm:103)  may sleep
+// gang_datum.dm:103
 rt.def("/datum/gang/proc/New", function* New(f: Frame, loc: Value, gangname: Value) {
-	let $0: any;
-	f.vars = () => [loc, gangname, $0];
-	if (!truthy(rt.len(f, rt.gl("gang_colors_pool")))) {
-		yield* g.call(f, P("/proc/message_admins"), null, ["WARNING: Maximum number of gangs have been exceeded!"]);
-		rt.throw_(f, (yield* g.new_(f, T("/exception"), ["Maximum number of gangs has been exceeded", "code/game/gamemodes/gang/gang_datum.dm", 105])));
-		return live(f.dot);
+	if (!rt.len(f, GLOB.gang_colors_pool)) {
+		message_admins("WARNING: Maximum number of gangs have been exceeded!");
+		rt.throw_(f, (yield* new_(T("/exception"), "Maximum number of gangs has been exceeded", "code/game/gamemodes/gang/gang_datum.dm", 105)));
+		return f.dot;
 	} else {
-		rt.setSv(f, "color", rt.op(f, "PickUnweighted", [1], [rt.gl("gang_colors_pool")]));
-		(rt.modGl("gang_colors_pool", rt.sv(f, "color"), subtract));
-		$0 = rt.sv(f, "color");
-		if ($0 === "red") {
-			rt.setSv(f, "color_hex", "#DA0000");
-			rt.setSv(f, "inner_outfit", rt.op(f, "PickUnweighted", [2], [T("/obj/item/clothing/under/color/red"), T("/obj/item/clothing/under/lawyer/red")]));
-		} else if ($0 === "orange") {
-			rt.setSv(f, "color_hex", "#FF9300");
-			rt.setSv(f, "inner_outfit", rt.op(f, "PickUnweighted", [2], [T("/obj/item/clothing/under/color/orange"), T("/obj/item/clothing/under/geisha")]));
-		} else if ($0 === "yellow") {
-			rt.setSv(f, "color_hex", "#FFF200");
-			rt.setSv(f, "inner_outfit", rt.op(f, "PickUnweighted", [3], [T("/obj/item/clothing/under/color/yellow"), T("/obj/item/clothing/under/burial"), T("/obj/item/clothing/under/suit_jacket/tan")]));
-		} else if ($0 === "green") {
-			rt.setSv(f, "color_hex", "#A8E61D");
-			rt.setSv(f, "inner_outfit", rt.op(f, "PickUnweighted", [3], [T("/obj/item/clothing/under/color/green"), T("/obj/item/clothing/under/syndicate/camo"), T("/obj/item/clothing/under/suit_jacket/green")]));
-		} else if ($0 === "blue") {
-			rt.setSv(f, "color_hex", "#00B7EF");
-			rt.setSv(f, "inner_outfit", rt.op(f, "PickUnweighted", [2], [T("/obj/item/clothing/under/color/blue"), T("/obj/item/clothing/under/suit_jacket/navy")]));
-		} else if ($0 === "purple") {
-			rt.setSv(f, "color_hex", "#DA00FF");
-			rt.setSv(f, "inner_outfit", rt.op(f, "PickUnweighted", [2], [T("/obj/item/clothing/under/color/lightpurple"), T("/obj/item/clothing/under/lawyer/purpsuit")]));
-		} else if ($0 === "white") {
-			rt.setSv(f, "color_hex", "#FFFFFF");
-			rt.setSv(f, "inner_outfit", rt.op(f, "PickUnweighted", [2], [T("/obj/item/clothing/under/color/white"), T("/obj/item/clothing/under/suit_jacket/white")]));
+		this.color = pick(GLOB.gang_colors_pool);
+		GLOB.gang_colors_pool -= this.color;
+		if (this.color === "red") {
+			this.color_hex = "#DA0000";
+			this.inner_outfit = pick(T("/obj/item/clothing/under/color/red"), T("/obj/item/clothing/under/lawyer/red"));
+		} else if (this.color === "orange") {
+			this.color_hex = "#FF9300";
+			this.inner_outfit = pick(T("/obj/item/clothing/under/color/orange"), T("/obj/item/clothing/under/geisha"));
+		} else if (this.color === "yellow") {
+			this.color_hex = "#FFF200";
+			this.inner_outfit = pick(T("/obj/item/clothing/under/color/yellow"), T("/obj/item/clothing/under/burial"), T("/obj/item/clothing/under/suit_jacket/tan"));
+		} else if (this.color === "green") {
+			this.color_hex = "#A8E61D";
+			this.inner_outfit = pick(T("/obj/item/clothing/under/color/green"), T("/obj/item/clothing/under/syndicate/camo"), T("/obj/item/clothing/under/suit_jacket/green"));
+		} else if (this.color === "blue") {
+			this.color_hex = "#00B7EF";
+			this.inner_outfit = pick(T("/obj/item/clothing/under/color/blue"), T("/obj/item/clothing/under/suit_jacket/navy"));
+		} else if (this.color === "purple") {
+			this.color_hex = "#DA00FF";
+			this.inner_outfit = pick(T("/obj/item/clothing/under/color/lightpurple"), T("/obj/item/clothing/under/lawyer/purpsuit"));
+		} else if (this.color === "white") {
+			this.color_hex = "#FFFFFF";
+			this.inner_outfit = pick(T("/obj/item/clothing/under/color/white"), T("/obj/item/clothing/under/suit_jacket/white"));
 		}
 	}
-	if (truthy(live(gangname))) {
-		$0 = live(gangname);
-	} else {
-		$0 = rt.op(f, "PickUnweighted", [1], [rt.gl("gang_name_pool")]);
-	}
-	rt.setSv(f, "name", $0);
-	(rt.modGl("gang_name_pool", rt.sv(f, "name"), subtract));
-	rt.setSv(f, "outer_outfit", rt.op(f, "PickUnweighted", [1], [rt.gl("gang_outfit_pool")]));
-	rt.setSv(f, "ganghud", (yield* g.new_(f, T("/datum/atom_hud/antag/gang"), [])));
-	rt.setFv(f, "color", rt.sv(f, "ganghud"), rt.sv(f, "color_hex"));
-	yield* g.call(f, P("/proc/log_game"), null, [fmt("The ＀ Gang has been created. Their gang color is ＀.", [rt.sv(f, "name"), rt.sv(f, "color")])]);
-	yield* g.srcCall(f, "build_item_list");
+	this.name = gangname ? gangname : pick(GLOB.gang_name_pool);
+	GLOB.gang_name_pool -= this.name;
+	this.outer_outfit = pick(GLOB.gang_outfit_pool);
+	this.ganghud = (yield* new_(T("/datum/atom_hud/antag/gang")));
+	this.ganghud.color = this.color_hex;
+	log_game(`The ${this.name} Gang has been created. Their gang color is ${this.color}.`);
+	yield* this.build_item_list();
 	return f.dot;
 }, true);
 
-// /datum/gang/proc/build_item_list  (code/game/gamemodes/gang/gang_datum.dm:142)  may sleep
+// gang_datum.dm:142
 rt.def("/datum/gang/proc/build_item_list", function* build_item_list(f: Frame) {
 	let B: Value = null, G: Value = null, Cat: Value = null, S: Value = null;
-	let $e: any;
-	f.vars = () => [B, G, Cat, S, $e];
-	rt.setSv(f, "boss_item_list", rt.list());
-	rt.setSv(f, "boss_category_list", rt.list());
-	B = null;
-	rt.forList(f, 0, rt.gl("boss_items"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		B = $e;
-		G = (yield* g.new_(f, live(B), []));
-		rt.setAt(rt.sv(f, "boss_item_list"), rt.fv(f, "id", live(G)), live(G));
-		if (truthy((Cat = rt.index(rt.sv(f, "boss_category_list"), rt.fv(f, "category", live(G)))))) {
-			Cat = rt.modify(live(Cat), live(G), add);
+	this.boss_item_list = list();
+	this.boss_category_list = list();
+	for (B of each(GLOB.boss_items)) {
+		G = (yield* new_(B));
+		rt.setAt(this.boss_item_list, G.id, G);
+		if (Cat = rt.index(this.boss_category_list, G.category)) {
+			Cat += G;
 		} else {
-			rt.setAt(rt.sv(f, "boss_category_list"), rt.fv(f, "category", live(G)), rt.list(live(G)));
+			rt.setAt(this.boss_category_list, G.category, list(G));
 		}
 	}
-	rt.endFor(f, 0);
-	rt.setSv(f, "reg_item_list", rt.list());
-	rt.setSv(f, "reg_category_list", rt.list());
-	S = null;
-	rt.forList(f, 0, rt.gl("soldier_items"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		S = $e;
-		G = (yield* g.new_(f, live(S), []));
-		rt.setAt(rt.sv(f, "reg_item_list"), rt.fv(f, "id", live(G)), live(G));
-		if (truthy((Cat = rt.index(rt.sv(f, "reg_category_list"), rt.fv(f, "category", live(G)))))) {
-			Cat = rt.modify(live(Cat), live(G), add);
+	this.reg_item_list = list();
+	this.reg_category_list = list();
+	for (S of each(GLOB.soldier_items)) {
+		G = (yield* new_(S));
+		rt.setAt(this.reg_item_list, G.id, G);
+		if (Cat = rt.index(this.reg_category_list, G.category)) {
+			Cat += G;
 		} else {
-			rt.setAt(rt.sv(f, "reg_category_list"), rt.fv(f, "category", live(G)), rt.list(live(G)));
+			rt.setAt(this.reg_category_list, G.category, list(G));
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /datum/gang/proc/add_gang_hud  (code/game/gamemodes/gang/gang_datum.dm:165)
+// gang_datum.dm:165
 rt.def("/datum/gang/proc/add_gang_hud", function add_gang_hud(f: Frame, recruit_mind: Value) {
-	let $0: any, $1: any, $2: any;
-	f.vars = () => [$0, $1, $2];
-	rt.callName(f, rt.sv(f, "ganghud"), "join_hud", [rt.fv(f, "current", live(recruit_mind))]);
-	$0 = rt.fv(f, "mode", rt.gl("SSticker"));
-	$1 = rt.fv(f, "current", live(recruit_mind));
-	if (truthy((rt.isIn(f, live(recruit_mind), rt.sv(f, "bosses")) ? 1 : 0))) {
-		$2 = "gang_boss";
-	} else {
-		$2 = "gangster";
-	}
-	rt.callName(f, $0, "set_antag_hud", [$1, $2]);
+	this.ganghud.join_hud(recruit_mind.current);
+	let $0: any = GLOB.SSticker.mode;
+	let $1: any = recruit_mind.current;
+	$0.set_antag_hud($1, rt.isIn(f, recruit_mind, this.bosses) ? "gang_boss" : "gangster");
 	return f.dot;
 });
 
-// /datum/gang/proc/remove_gang_hud  (code/game/gamemodes/gang/gang_datum.dm:169)
+// gang_datum.dm:169
 rt.def("/datum/gang/proc/remove_gang_hud", function remove_gang_hud(f: Frame, defector_mind: Value) {
-	rt.callName(f, rt.sv(f, "ganghud"), "leave_hud", [rt.fv(f, "current", live(defector_mind))]);
-	rt.callName(f, rt.fv(f, "mode", rt.gl("SSticker")), "set_antag_hud", [rt.fv(f, "current", live(defector_mind)), null]);
+	this.ganghud.leave_hud(defector_mind.current);
+	GLOB.SSticker.mode.set_antag_hud(defector_mind.current, null);
 	return f.dot;
 });
 
-// /datum/gang/proc/domination  (code/game/gamemodes/gang/gang_datum.dm:173)
+// gang_datum.dm:173
 rt.def("/datum/gang/proc/domination", function domination(f: Frame, modifier: Value) {
-	f.vars = () => [modifier];
-	if (live(modifier) === null) {
-		modifier = 1;
-	}
-	rt.callSrc(f, "set_domination_time", [multiply(rt.call(f, P("/proc/determine_domination_time"), null, [live(f.src)]), live(modifier))]);
-	rt.setSv(f, "is_dominating", 1);
-	rt.call(f, P("/proc/set_security_level"), null, ["delta"]);
+	modifier ??= 1;
+	this.set_domination_time(determine_domination_time(this) * modifier);
+	this.is_dominating = 1;
+	set_security_level("delta");
 	return f.dot;
 });
 
-// /datum/gang/proc/set_domination_time  (code/game/gamemodes/gang/gang_datum.dm:178)
+// gang_datum.dm:178
 rt.def("/datum/gang/proc/set_domination_time", function set_domination_time(f: Frame, d: Value) {
-	rt.setSv(f, "domination_timer", add(rt.worldTime(f), multiply(10, live(d))));
+	this.domination_timer = rt.worldTime(f) + 10 * d;
 	return f.dot;
 });
 
-// /datum/gang/proc/domination_time_remaining  (code/game/gamemodes/gang/gang_datum.dm:181)
+// gang_datum.dm:181
 rt.def("/datum/gang/proc/domination_time_remaining", function domination_time_remaining(f: Frame) {
 	let diff: Value = null;
-	f.vars = () => [diff];
-	return divide((diff = subtract(rt.sv(f, "domination_timer"), rt.worldTime(f))), 10);
+	return (diff = this.domination_timer - rt.worldTime(f)) / 10;
 });
 
-// /datum/gang/proc/message_gangtools  (code/game/gamemodes/gang/gang_datum.dm:188)
+// gang_datum.dm:188
 rt.def("/datum/gang/proc/message_gangtools", function message_gangtools(f: Frame, message: Value, beep: Value, warning: Value) {
 	let tool: Value = null, mob: Value = null;
-	let $0: any, $1: any, $e: any;
-	f.vars = () => [beep, tool, mob, $0, $1, $e];
-	if (live(beep) === null) {
-		beep = 1;
+	let $e: any;
+	beep ??= 1;
+	if (!rt.len(f, this.gangtools) || !message) {
+		return f.dot;
 	}
-	if ((!truthy(rt.len(f, rt.sv(f, "gangtools"))) || !truthy(live(message)))) {
-		return live(f.dot);
-	}
-	tool = null;
-	rt.forList(f, 0, rt.sv(f, "gangtools"), T("/obj/item/device/gangtool"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		tool = $e;
-		if (((truthy((mob = rt.call(f, P("/proc/get"), null, [rt.fv(f, "loc", live(tool)), T("/mob/living")]))) && truthy(rt.fv(f, "mind", live(mob)))) && isEqual(rt.fv(f, "stat", live(mob)), 0))) {
-			if (isEqual(rt.gv(f, "gang_datum", rt.fv(f, "mind", live(mob))), live(f.src))) {
-				$0 = live(mob);
-				if (truthy(live(warning))) {
-					$1 = "warning";
-				} else {
-					$1 = "notice";
-				}
-				rt.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='＀'>＀ ＀</span>", [$1, rt.call(f, P("/proc/bicon"), null, [live(tool)]), live(message)])]);
+	for (tool of each(this.gangtools, T("/obj/item/device/gangtool"))) {
+		if ((mob = get(tool.loc, T("/mob/living"))) && mob.mind && mob.stat == 0) {
+			if (mob.mind.gang_datum == this) {
+				to_chat(mob, `<span class='${warning ? "warning" : "notice"}'>${bicon(tool)} ${message}</span>`);
 			}
-			return live(f.dot);
+			return f.dot;
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /datum/gang/proc/income  (code/game/gamemodes/gang/gang_datum.dm:202)  may sleep
+// gang_datum.dm:202
 rt.def("/datum/gang/proc/income", function* income(f: Frame) {
-	let added_names: Value = null, lost_names: Value = null, reclaimed_territories: Value = null, area: Value = null, message: Value = null, control: Value = null, sbonus: Value = null, seconds_remaining: Value = null, new_time: Value = null;
-	let $e: any;
-	f.vars = () => [added_names, lost_names, reclaimed_territories, area, message, control, sbonus, seconds_remaining, new_time, $e];
-	if (!truthy(rt.len(f, rt.sv(f, "bosses")))) {
-		return live(f.dot);
+	let reclaimed_territories: Value = null, area: Value = null, seconds_remaining: Value = null, new_time: Value = null;
+	if (!rt.len(f, this.bosses)) {
+		return f.dot;
 	}
-	added_names = "";
-	lost_names = "";
-	yield* g.callName(f, rt.fv(f, "mode", rt.gl("SSticker")), "shuttle_check", []);
-	(rt.modSrcVar(f, "territory", (reclaimed_territories = rt.bitAnd(rt.sv(f, "territory_new"), rt.sv(f, "territory_lost"))), rt.bitOr));
-	(rt.modSrcVar(f, "territory_new", live(reclaimed_territories), subtract));
-	(rt.modSrcVar(f, "territory_lost", live(reclaimed_territories), subtract));
+	let added_names: Value = "";
+	let lost_names: Value = "";
+	yield* GLOB.SSticker.mode.shuttle_check();
+	(rt.modSrcVar(f, "territory", (reclaimed_territories = rt.bitAnd(this.territory_new, this.territory_lost)), rt.bitOr));
+	this.territory_new -= reclaimed_territories;
+	this.territory_lost -= reclaimed_territories;
+	for (area of each(this.territory_lost)) {
+		if (lost_names != "") {
+			lost_names += ", ";
+		}
+		lost_names += `${rt.index(this.territory_lost, area)}`;
+		this.territory -= area;
+	}
 	area = null;
-	rt.forList(f, 0, rt.sv(f, "territory_lost"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		area = $e;
-		if (!isEqual(live(lost_names), "")) {
-			lost_names = rt.modify(live(lost_names), ", ", add);
+	for (area of each(this.territory_new)) {
+		if (added_names != "") {
+			added_names += ", ";
 		}
-		lost_names = rt.modify(live(lost_names), fmt("＀", [rt.index(rt.sv(f, "territory_lost"), live(area))]), add);
-		(rt.modSrcVar(f, "territory", live(area), subtract));
+		added_names += `${rt.index(this.territory_new, area)}`;
+		this.territory += area;
 	}
-	rt.endFor(f, 0);
-	area = null;
-	rt.forList(f, 0, rt.sv(f, "territory_new"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		area = $e;
-		if (!isEqual(live(added_names), "")) {
-			added_names = rt.modify(live(added_names), ", ", add);
+	let message: Value = `<b>${this} Gang Status Report:</b>.<BR>*---------*<BR>`;
+	message += `<b>${rt.len(f, this.territory_new)} new territories:</b><br><i>${added_names}</i><br>`;
+	message += `<b>${rt.len(f, this.territory_lost)} territories lost:</b><br><i>${lost_names}</i><br>`;
+	this.territory_new = list();
+	this.territory_lost = list();
+	let control: Value = round(rt.len(f, this.territory) / GLOB.start_state.num_territories * 100, 1);
+	let sbonus: Value = rt.op(f, "Sqrt", [], [rt.length(this.territory)]);
+	message += `Your gang now has <b>${control}% control</b> of the station.<BR>*---------*<BR>`;
+	if (this.is_dominating) {
+		seconds_remaining = this.domination_time_remaining();
+		if ((new_time = max(180, seconds_remaining - rt.len(f, this.territory) * 2)) < seconds_remaining) {
+			message += `Takeover shortened by ${seconds_remaining - new_time} seconds for defending ${rt.len(f, this.territory)} territories.<BR>`;
+			this.set_domination_time(new_time);
 		}
-		added_names = rt.modify(live(added_names), fmt("＀", [rt.index(rt.sv(f, "territory_new"), live(area))]), add);
-		rt.modSrcVar(f, "territory", live(area), add);
-	}
-	rt.endFor(f, 0);
-	message = fmt("<b>＀ Gang Status Report:</b>.<BR>*---------*<BR>", [live(f.src)]);
-	message = rt.modify(live(message), fmt("<b>＀ new territories:</b><br><i>＀</i><br>", [rt.len(f, rt.sv(f, "territory_new")), live(added_names)]), add);
-	message = rt.modify(live(message), fmt("<b>＀ territories lost:</b><br><i>＀</i><br>", [rt.len(f, rt.sv(f, "territory_lost")), live(lost_names)]), add);
-	rt.setSv(f, "territory_new", rt.list());
-	rt.setSv(f, "territory_lost", rt.list());
-	control = (yield* g.call(f, P("/proc/round"), null, [multiply(divide(rt.len(f, rt.sv(f, "territory")), rt.fv(f, "num_territories", rt.gl("start_state"))), 100), 1]));
-	sbonus = rt.op(f, "Sqrt", [], [rt.length(rt.sv(f, "territory"))]);
-	message = rt.modify(live(message), fmt("Your gang now has <b>＀% control</b> of the station.<BR>*---------*<BR>", [live(control)]), add);
-	if (truthy(rt.sv(f, "is_dominating"))) {
-		seconds_remaining = (yield* g.srcCall(f, "domination_time_remaining"));
-		if (rt.lt((new_time = (yield* g.call(f, P("/proc/max"), null, [180, subtract(live(seconds_remaining), multiply(rt.len(f, rt.sv(f, "territory")), 2))]))), live(seconds_remaining))) {
-			message = rt.modify(live(message), fmt("Takeover shortened by ＀ seconds for defending ＀ territories.<BR>", [subtract(live(seconds_remaining), live(new_time)), rt.len(f, rt.sv(f, "territory"))]), add);
-			yield* g.srcCall(f, "set_domination_time", live(new_time));
-		}
-		message = rt.modify(live(message), fmt("<b>＀ seconds remain</b> in hostile takeover.<BR>", [live(seconds_remaining)]), add);
+		message += `<b>${seconds_remaining} seconds remain</b> in hostile takeover.<BR>`;
 	} else {
-		yield* g.srcCall(f, "pay_territory_income_to_bosses");
-		yield* g.srcCall(f, "pay_territory_income_to_soldiers", live(sbonus));
-		yield* g.srcCall(f, "pay_all_clothing_bonuses");
-		yield* g.srcCall(f, "announce_all_influence");
+		this.pay_territory_income_to_bosses();
+		this.pay_territory_income_to_soldiers(sbonus);
+		this.pay_all_clothing_bonuses();
+		this.announce_all_influence();
 	}
 	return f.dot;
 }, true);
 
-// /datum/gang/proc/pay_all_clothing_bonuses  (code/game/gamemodes/gang/gang_datum.dm:255)
+// gang_datum.dm:255
 rt.def("/datum/gang/proc/pay_all_clothing_bonuses", function pay_all_clothing_bonuses(f: Frame) {
 	let mind: Value = null;
-	let $e: any;
-	f.vars = () => [mind, $e];
-	mind = null;
-	rt.forList(f, 0, rt.bitOr(rt.sv(f, "gangsters"), rt.sv(f, "bosses")), T("/datum/mind"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		mind = $e;
-		rt.callSrc(f, "pay_clothing_bonus", [live(mind)]);
+	for (mind of each(rt.bitOr(this.gangsters, this.bosses), T("/datum/mind"))) {
+		this.pay_clothing_bonus(mind);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /datum/gang/proc/pay_clothing_bonus  (code/game/gamemodes/gang/gang_datum.dm:261)
+// gang_datum.dm:261
 rt.def("/datum/gang/proc/pay_clothing_bonus", function pay_clothing_bonus(f: Frame, gangsta: Value) {
-	let gangbanger: Value = null, C: Value = null;
-	let $e: any;
-	f.vars = () => [gangbanger, C, $e];
-	gangbanger = rt.fv(f, "current", live(gangsta));
+	let C: Value = null;
+	let gangbanger: Value = gangsta.current;
 	f.dot = 0;
-	if ((!truthy((rt.istype(live(gangbanger), T("/mob/living/carbon/human")) ? 1 : 0)) || isEqual(rt.fv(f, "stat", live(gangbanger)), 2))) {
+	if (!rt.istype(gangbanger, T("/mob/living/carbon/human")) || gangbanger.stat == 2) {
 		return 0;
 	}
-	C = null;
-	rt.forList(f, 0, rt.fv(f, "contents", live(gangbanger)), T("/obj/item"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		C = $e;
-		if (isEqual(rt.fv(f, "type", live(C)), rt.sv(f, "inner_outfit"))) {
-			f.dot = rt.modify(live(f.dot), 2, add);
+	for (C of each(gangbanger.contents, T("/obj/item"))) {
+		if (C.type == this.inner_outfit) {
+			f.dot += 2;
 			continue;
 		}
-		if (isEqual(rt.fv(f, "type", live(C)), rt.sv(f, "outer_outfit"))) {
-			f.dot = rt.modify(live(f.dot), 2, add);
+		if (C.type == this.outer_outfit) {
+			f.dot += 2;
 			continue;
 		}
-		f.dot = rt.modify(live(f.dot), rt.callName(f, live(C), "gang_contraband_value", []), add);
+		f.dot += C.gang_contraband_value();
 	}
-	rt.endFor(f, 0);
-	rt.callSrc(f, "adjust_influence", [live(gangsta), live(f.dot)]);
-	if (truthy(live(f.dot))) {
-		rt.callSrc(f, "announce_to_mind", [live(gangsta), fmt("<span class='notice'>Your influential choice of clothing has increased your influence by ＀ points!</span>", [live(f.dot)])]);
+	this.adjust_influence(gangsta, f.dot);
+	if (f.dot) {
+		this.announce_to_mind(gangsta, `<span class='notice'>Your influential choice of clothing has increased your influence by ${f.dot} points!</span>`);
 	} else {
-		rt.callSrc(f, "announce_to_mind", [live(gangsta), "<span class='warning'>Unfortunately, you have not gained any additional influence from your drab, old, boring clothing. Learn to dress like a gangsta, bro!</span>"]);
+		this.announce_to_mind(gangsta, "<span class='warning'>Unfortunately, you have not gained any additional influence from your drab, old, boring clothing. Learn to dress like a gangsta, bro!</span>");
 	}
 	return f.dot;
 });
 
-// /datum/gang/proc/pay_soldier_territory_income  (code/game/gamemodes/gang/gang_datum.dm:281)
+// gang_datum.dm:281
 rt.def("/datum/gang/proc/pay_soldier_territory_income", function pay_soldier_territory_income(f: Frame, soldier: Value, sbonus: Value) {
-	f.vars = () => [sbonus];
-	if (live(sbonus) === null) {
-		sbonus = 0;
-	}
+	sbonus ??= 0;
 	f.dot = 0;
-	f.dot = add(add(rt.call(f, P("/proc/max"), null, [0, rt.call(f, P("/proc/round"), null, [subtract(3, divide(rt.index(rt.sv(f, "gangsters"), live(soldier)), 10))])]), live(sbonus)), divide(rt.callSrc(f, "get_soldier_territories", [live(soldier)]), 2));
-	rt.callSrc(f, "adjust_influence", [live(soldier), live(f.dot)]);
+	f.dot = max(0, round(3 - rt.index(this.gangsters, soldier) / 10)) + sbonus + this.get_soldier_territories(soldier) / 2;
+	this.adjust_influence(soldier, f.dot);
 	return f.dot;
 });
 
-// /datum/gang/proc/get_soldier_territories  (code/game/gamemodes/gang/gang_datum.dm:285)
+// gang_datum.dm:285
 rt.def("/datum/gang/proc/get_soldier_territories", function get_soldier_territories(f: Frame, soldier: Value) {
 	let tags: Value = null;
-	f.vars = () => [tags];
-	if (!truthy((rt.istype(rt.index(rt.sv(f, "tags_by_mind"), live(soldier)), T("/list")) ? 1 : 0))) {
+	if (!rt.istype(rt.index(this.tags_by_mind, soldier), T("/list"))) {
 		return 0;
 	}
-	return rt.getLen(f, (tags = rt.index(rt.sv(f, "tags_by_mind"), live(soldier))));
+	return rt.len(f, (tags = rt.index(this.tags_by_mind, soldier)));
 });
 
-// /datum/gang/proc/pay_territory_income_to_soldiers  (code/game/gamemodes/gang/gang_datum.dm:291)
+// gang_datum.dm:291
 rt.def("/datum/gang/proc/pay_territory_income_to_soldiers", function pay_territory_income_to_soldiers(f: Frame, sbonus: Value) {
 	let soldier: Value = null, returned: Value = null;
-	let $e: any;
-	f.vars = () => [sbonus, soldier, returned, $e];
-	if (live(sbonus) === null) {
-		sbonus = 0;
-	}
-	soldier = null;
-	rt.forList(f, 0, rt.sv(f, "gangsters"), T("/datum/mind"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		soldier = $e;
-		if (!truthy((returned = rt.callSrc(f, "pay_soldier_territory_income", [live(soldier)])))) {
-			rt.callSrc(f, "announce_to_mind", [live(soldier), "<span class='warning'>You have not gained any influence from territories you personally tagged. Get to work, soldier!</span>"]);
+	sbonus ??= 0;
+	for (soldier of each(this.gangsters, T("/datum/mind"))) {
+		if (!(returned = this.pay_soldier_territory_income(soldier))) {
+			this.announce_to_mind(soldier, "<span class='warning'>You have not gained any influence from territories you personally tagged. Get to work, soldier!</span>");
 		} else {
-			rt.callSrc(f, "announce_to_mind", [live(soldier), fmt("<span class='notice'>You have gained ＀ influence from ＀ territories you have personally tagged.</span>", [live(returned), rt.callSrc(f, "get_soldier_territories", [live(soldier)])])]);
+			this.announce_to_mind(soldier, `<span class='notice'>You have gained ${returned} influence from ${this.get_soldier_territories(soldier)} territories you have personally tagged.</span>`);
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /datum/gang/proc/announce_all_influence  (code/game/gamemodes/gang/gang_datum.dm:299)
+// gang_datum.dm:299
 rt.def("/datum/gang/proc/announce_all_influence", function announce_all_influence(f: Frame) {
 	let MG: Value = null;
-	let $e: any;
-	f.vars = () => [MG, $e];
-	MG = null;
-	rt.forList(f, 0, rt.bitOr(rt.sv(f, "bosses"), rt.sv(f, "gangsters")), T("/datum/mind"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		MG = $e;
-		rt.callSrc(f, "announce_total_influence", [live(MG)]);
+	for (MG of each(rt.bitOr(this.bosses, this.gangsters), T("/datum/mind"))) {
+		this.announce_total_influence(MG);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /datum/gang/proc/pay_territory_income_to_bosses  (code/game/gamemodes/gang/gang_datum.dm:304)
+// gang_datum.dm:304
 rt.def("/datum/gang/proc/pay_territory_income_to_bosses", function pay_territory_income_to_bosses(f: Frame) {
 	let boss_mind: Value = null, inc: Value = null;
-	let $e: any;
-	f.vars = () => [boss_mind, inc, $e];
 	f.dot = 0;
-	boss_mind = null;
-	rt.forList(f, 0, rt.sv(f, "bosses"), T("/datum/mind"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		boss_mind = $e;
-		f.dot = rt.modify(live(f.dot), (inc = add(rt.call(f, P("/proc/max"), null, [0, rt.call(f, P("/proc/round"), null, [subtract(5, divide(rt.index(rt.sv(f, "bosses"), live(boss_mind)), 10))])]), rt.length(rt.sv(f, "territory")))), add);
-		rt.callSrc(f, "adjust_influence", [live(boss_mind), live(inc)]);
-		rt.callSrc(f, "announce_to_mind", [live(boss_mind), fmt("<span class='boldnotice'>Your influence has increased by ＀ from your gang holding ＀ territories!</span>", [live(inc), rt.length(rt.sv(f, "territory"))])]);
+	for (boss_mind of each(this.bosses, T("/datum/mind"))) {
+		f.dot += (inc = max(0, round(5 - rt.index(this.bosses, boss_mind) / 10)) + rt.length(this.territory));
+		this.adjust_influence(boss_mind, inc);
+		this.announce_to_mind(boss_mind, `<span class='boldnotice'>Your influence has increased by ${inc} from your gang holding ${rt.length(this.territory)} territories!</span>`);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /datum/gang/proc/get_influence  (code/game/gamemodes/gang/gang_datum.dm:311)
+// gang_datum.dm:311
 rt.def("/datum/gang/proc/get_influence", function get_influence(f: Frame, gangster_mind: Value) {
-	if (truthy((rt.isIn(f, live(gangster_mind), rt.sv(f, "gangsters")) ? 1 : 0))) {
-		return rt.index(rt.sv(f, "gangsters"), live(gangster_mind));
+	if (rt.isIn(f, gangster_mind, this.gangsters)) {
+		return rt.index(this.gangsters, gangster_mind);
 	}
-	if (!truthy((rt.isIn(f, live(gangster_mind), rt.sv(f, "bosses")) ? 1 : 0))) return f.dot;
-	return rt.index(rt.sv(f, "bosses"), live(gangster_mind));
+	if (!rt.isIn(f, gangster_mind, this.bosses)) return f.dot;
+	return rt.index(this.bosses, gangster_mind);
 });
 
-// /datum/gang/proc/adjust_influence  (code/game/gamemodes/gang/gang_datum.dm:317)
+// gang_datum.dm:317
 rt.def("/datum/gang/proc/adjust_influence", function adjust_influence(f: Frame, gangster_mind: Value, amount: Value) {
-	if (truthy((rt.isIn(f, live(gangster_mind), rt.sv(f, "gangsters")) ? 1 : 0))) {
-		rt.modAt(rt.sv(f, "gangsters"), live(gangster_mind), live(amount), add);
+	if (rt.isIn(f, gangster_mind, this.gangsters)) {
+		rt.modAt(this.gangsters, gangster_mind, amount, add);
 	}
-	if (!truthy((rt.isIn(f, live(gangster_mind), rt.sv(f, "bosses")) ? 1 : 0))) return f.dot;
-	rt.modAt(rt.sv(f, "bosses"), live(gangster_mind), live(amount), add);
+	if (!rt.isIn(f, gangster_mind, this.bosses)) return f.dot;
+	rt.modAt(this.bosses, gangster_mind, amount, add);
 	return f.dot;
 });
 
-// /datum/gang/proc/announce_to_mind  (code/game/gamemodes/gang/gang_datum.dm:323)
+// gang_datum.dm:323
 rt.def("/datum/gang/proc/announce_to_mind", function announce_to_mind(f: Frame, gangster_mind: Value, message: Value) {
-	if (!(truthy(rt.fv(f, "current", live(gangster_mind))) && !isEqual(rt.gv(f, "stat", rt.fv(f, "current", live(gangster_mind))), 2))) return f.dot;
-	rt.call(f, P("/proc/to_chat"), null, [rt.fv(f, "current", live(gangster_mind)), live(message)]);
+	if (!(gangster_mind.current && gangster_mind.current.stat != 2)) return f.dot;
+	to_chat(gangster_mind.current, message);
 	return f.dot;
 });
 
-// /datum/gang/proc/announce_total_influence  (code/game/gamemodes/gang/gang_datum.dm:327)
+// gang_datum.dm:327
 rt.def("/datum/gang/proc/announce_total_influence", function announce_total_influence(f: Frame, gangster_mind: Value) {
-	rt.callSrc(f, "announce_to_mind", [live(gangster_mind), fmt("<span class='boldnotice'>＀ Gang: You now have a total of ＀ influence!</span>", [rt.sv(f, "name"), rt.callSrc(f, "get_influence", [live(gangster_mind)])])]);
+	this.announce_to_mind(gangster_mind, `<span class='boldnotice'>${this.name} Gang: You now have a total of ${this.get_influence(gangster_mind)} influence!</span>`);
 	return f.dot;
 });
 
-// /datum/gang/proc/reclaim_points  (code/game/gamemodes/gang/gang_datum.dm:330)
+// gang_datum.dm:330
 rt.def("/datum/gang/proc/reclaim_points", function reclaim_points(f: Frame, amount: Value) {
 	let bawss: Value = null;
-	let $e: any;
-	f.vars = () => [bawss, $e];
-	bawss = null;
-	rt.forList(f, 0, rt.sv(f, "bosses"), T("/datum/mind"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		bawss = $e;
-		rt.callSrc(f, "adjust_influence", [live(bawss), divide(live(amount), rt.len(f, rt.sv(f, "bosses")))]);
-		rt.callSrc(f, "announce_to_mind", [live(bawss), fmt("<span class='notice'>＀ Gang: ＀ influence given from internal automatic restructuring.</span>", [rt.sv(f, "name"), divide(live(amount), rt.len(f, rt.sv(f, "bosses")))])]);
+	for (bawss of each(this.bosses, T("/datum/mind"))) {
+		this.adjust_influence(bawss, amount / rt.len(f, this.bosses));
+		this.announce_to_mind(bawss, `<span class='notice'>${this.name} Gang: ${amount / rt.len(f, this.bosses)} influence given from internal automatic restructuring.</span>`);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
@@ -460,9 +365,9 @@ rt.type(1248, "/datum/gang/multiverse", "/datum/gang", {
 	is_deconvertible: 0,
 });
 
-// /datum/gang/multiverse/proc/New  (code/game/gamemodes/gang/gang_datum.dm:342)
+// gang_datum.dm:342
 rt.def("/datum/gang/multiverse/proc/New", function New(f: Frame, loc: Value, multiverse_override: Value) {
-	rt.setSv(f, "name", live(multiverse_override));
-	rt.setSv(f, "ganghud", rt.new_(f, T("/datum/atom_hud/antag/gang"), []));
+	this.name = multiverse_override;
+	this.ganghud = new_(T("/datum/atom_hud/antag/gang"));
 	return f.dot;
 });

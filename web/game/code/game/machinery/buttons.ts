@@ -1,7 +1,7 @@
-// From code/game/machinery/buttons.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/machinery/buttons.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, fmt } = rt;
 
 
 rt.type(10778, "/obj/machinery/button", "/obj/machinery", {
@@ -23,40 +23,35 @@ rt.type(10778, "/obj/machinery/button", "/obj/machinery", {
 	resistance_flags: 115,
 });
 
-// /obj/machinery/button/proc/<init>  (code/game/machinery/buttons.dm:13)
+// buttons.dm:13
 rt.def("/obj/machinery/button/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 50, "bullet", 50, "laser", 50, "energy", 50, "bomb", 10, "bio", 100, "rad", 100, "fire", 90, "acid", 70]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 50, "bullet", 50, "laser", 50, "energy", 50, "bomb", 10, "bio", 100, "rad", 100, "fire", 90, "acid", 70]);
 	return f.dot;
 });
 
-// /obj/machinery/button/proc/New  (code/game/machinery/buttons.dm:21)  may sleep
+// buttons.dm:21
 rt.def("/obj/machinery/button/proc/New", function* New(f: Frame) {
 	let $0: any;
-	f.vars = () => [$0];
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 0;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy(live(f.args[2]))) {
-		yield* g.srcCall(f, "setDir", live(f.args[1]));
-		if (truthy(rt.bitAnd(rt.sv(f, "dir"), 3))) {
+	yield* parent_proc();
+	if (f.args[2]) {
+		yield* this.setDir(f.args[1]);
+		if (rt.bitAnd(this.dir, 3)) {
 			$0 = 0;
+		} else if (this.dir == 4) {
+			$0 = -24;
 		} else {
-			if (isEqual(rt.sv(f, "dir"), 4)) {
-				$0 = -24;
-			} else {
-				$0 = 24;
-			}
+			$0 = 24;
 		}
-		rt.setSv(f, "pixel_x", $0);
-		if (truthy(rt.bitAnd(rt.sv(f, "dir"), 3))) {
-			if (isEqual(rt.sv(f, "dir"), 1)) {
+		this.pixel_x = $0;
+		if (rt.bitAnd(this.dir, 3)) {
+			if (this.dir == 1) {
 				$0 = -24;
 			} else {
 				$0 = 24;
@@ -64,180 +59,175 @@ rt.def("/obj/machinery/button/proc/New", function* New(f: Frame) {
 		} else {
 			$0 = 0;
 		}
-		rt.setSv(f, "pixel_y", $0);
-		rt.setSv(f, "panel_open", 1);
-		yield* g.srcCall(f, "update_icon");
+		this.pixel_y = $0;
+		this.panel_open = 1;
+		yield* this.update_icon();
 	}
-	if (((!truthy(live(f.args[2])) && !truthy(rt.sv(f, "device"))) && truthy(rt.sv(f, "device_type")))) {
-		rt.setSv(f, "device", (yield* g.new_(f, rt.sv(f, "device_type"), [live(f.src)])));
+	if (!f.args[2] && !this.device && this.device_type) {
+		this.device = (yield* new_(this.device_type, this));
 	}
-	yield* g.callName(f, live(f.src), "check_access", [null]);
-	if (!(truthy(rt.len(f, rt.sv(f, "req_access"))) || truthy(rt.len(f, rt.sv(f, "req_one_access"))))) return f.dot;
-	rt.setSv(f, "board", (yield* g.new_(f, T("/obj/item/weapon/electronics/airlock"), [live(f.src)])));
-	if (truthy(rt.len(f, rt.sv(f, "req_access")))) {
-		rt.setFv(f, "accesses", rt.sv(f, "board"), rt.sv(f, "req_access"));
+	this.check_access(null);
+	if (!(rt.len(f, this.req_access) || rt.len(f, this.req_one_access))) return f.dot;
+	this.board = (yield* new_(T("/obj/item/weapon/electronics/airlock"), this));
+	if (rt.len(f, this.req_access)) {
+		this.board.accesses = this.req_access;
 	} else {
-		rt.setFv(f, "one_access", rt.sv(f, "board"), 1);
-		rt.setFv(f, "accesses", rt.sv(f, "board"), rt.sv(f, "req_one_access"));
+		this.board.one_access = 1;
+		this.board.accesses = this.req_one_access;
 	}
 	return f.dot;
 }, true, { args: ["loc", "ndir", "built"] });
 
-// /obj/machinery/button/proc/update_icon  (code/game/machinery/buttons.dm:45)
+// buttons.dm:45
 rt.def("/obj/machinery/button/proc/update_icon", function update_icon(f: Frame) {
-	rt.callSrc(f, "cut_overlays", []);
-	if (truthy(rt.sv(f, "panel_open"))) {
-		rt.setSv(f, "icon_state", "button-open");
-		if (truthy(rt.sv(f, "device"))) {
-			rt.callSrc(f, "add_overlay", ["button-device"]);
+	this.cut_overlays();
+	if (this.panel_open) {
+		this.icon_state = "button-open";
+		if (this.device) {
+			this.add_overlay("button-device");
 		}
-		if (truthy(rt.sv(f, "board"))) {
-			rt.callSrc(f, "add_overlay", ["button-board"]);
+		if (this.board) {
+			this.add_overlay("button-board");
 		}
+	} else if (rt.bitAnd(this.stat, 3)) {
+		this.icon_state = `${this.skin}-p`;
 	} else {
-		if (truthy(rt.bitAnd(rt.sv(f, "stat"), 3))) {
-			rt.setSv(f, "icon_state", fmt("＀-p", [rt.sv(f, "skin")]));
-		} else {
-			rt.setSv(f, "icon_state", rt.sv(f, "skin"));
-		}
+		this.icon_state = this.skin;
 	}
 	return f.dot;
 });
 
-// /obj/machinery/button/proc/attackby  (code/game/machinery/buttons.dm:60)  may sleep
-rt.def("/obj/machinery/button/proc/attackby", function* attackby(f: Frame) {
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/screwdriver")) ? 1 : 0))) {
-		if ((truthy(rt.sv(f, "panel_open")) || truthy((yield* g.srcCall(f, "allowed", live(f.args[1])))))) {
-			yield* g.srcCall(f, "default_deconstruction_screwdriver", live(f.args[1]), "button-open", fmt("＀", [rt.sv(f, "skin")]), live(f.args[0]));
-			yield* g.srcCall(f, "update_icon");
+// buttons.dm:60
+rt.def("/obj/machinery/button/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
+	if (rt.istype(W, T("/obj/item/weapon/screwdriver"))) {
+		if (this.panel_open || (yield* this.allowed(user))) {
+			this.default_deconstruction_screwdriver(user, "button-open", `${this.skin}`, W);
+			yield* this.update_icon();
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='danger'>Maintenance Access Denied</span>"]);
-			yield* g.call(f, P("/proc/flick"), null, [fmt("＀-denied", [rt.sv(f, "skin")]), live(f.src)]);
+			to_chat(user, "<span class='danger'>Maintenance Access Denied</span>");
+			flick(`${this.skin}-denied`, this);
 		}
-		return live(f.dot);
+		return f.dot;
 	}
-	if (truthy(rt.sv(f, "panel_open"))) {
-		if ((!truthy(rt.sv(f, "device")) && truthy((rt.istype(live(f.args[0]), T("/obj/item/device/assembly")) ? 1 : 0)))) {
-			if (!truthy((yield* g.callName(f, live(f.args[1]), "transferItemToLoc", [live(f.args[0]), live(f.src)])))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>＄！ is stuck to you!</span>", [live(f.args[0])])]);
-				return live(f.dot);
+	if (this.panel_open) {
+		if (!this.device && rt.istype(W, T("/obj/item/device/assembly"))) {
+			if (!(yield* user.transferItemToLoc(W, this))) {
+				to_chat(user, fmt("<span class='warning'>＄！ is stuck to you!</span>", [W]));
+				return f.dot;
 			}
-			rt.setSv(f, "device", live(f.args[0]));
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You add ＀ to the button.</span>", [live(f.args[0])])]);
+			this.device = W;
+			to_chat(user, `<span class='notice'>You add ${W} to the button.</span>`);
 		}
-		if ((!truthy(rt.sv(f, "board")) && truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/electronics/airlock")) ? 1 : 0)))) {
-			if (!truthy((yield* g.callName(f, live(f.args[1]), "transferItemToLoc", [live(f.args[0]), live(f.src)])))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>＄！ is stuck to you!</span>", [live(f.args[0])])]);
-				return live(f.dot);
+		if (!this.board && rt.istype(W, T("/obj/item/weapon/electronics/airlock"))) {
+			if (!(yield* user.transferItemToLoc(W, this))) {
+				to_chat(user, fmt("<span class='warning'>＄！ is stuck to you!</span>", [W]));
+				return f.dot;
 			}
-			rt.setSv(f, "board", live(f.args[0]));
-			if (truthy(rt.fv(f, "one_access", rt.sv(f, "board")))) {
-				rt.setSv(f, "req_one_access", rt.fv(f, "accesses", rt.sv(f, "board")));
+			this.board = W;
+			if (this.board.one_access) {
+				this.req_one_access = this.board.accesses;
 			} else {
-				rt.setSv(f, "req_access", rt.fv(f, "accesses", rt.sv(f, "board")));
+				this.req_access = this.board.accesses;
 			}
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You add ＀ to the button.</span>", [live(f.args[0])])]);
+			to_chat(user, `<span class='notice'>You add ${W} to the button.</span>`);
 		}
-		if (((!truthy(rt.sv(f, "device")) && !truthy(rt.sv(f, "board"))) && truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/wrench")) ? 1 : 0)))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You start unsecuring the button frame...</span>"]);
-			yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.fv(f, "usesound", live(f.args[0])), 50, 1]);
-			if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, multiply(40, rt.fv(f, "toolspeed", live(f.args[0]))), "target", live(f.src)], rt.Args.Named)))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You unsecure the button frame.</span>"]);
-				yield* g.srcCall(f, "transfer_fingerprints_to", (yield* g.new_(f, T("/obj/item/wallframe/button"), [rt.getStep(f, live(f.src), 0)])));
-				yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/items/deconstruct.ogg"), 50, 1]);
-				yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+		if (!this.device && !this.board && rt.istype(W, T("/obj/item/weapon/wrench"))) {
+			to_chat(user, "<span class='notice'>You start unsecuring the button frame...</span>");
+			playsound(this.loc, W.usesound, 50, 1);
+			if (yield* do_after(user, 40 * W.toolspeed, { target: this })) {
+				to_chat(user, "<span class='notice'>You unsecure the button frame.</span>");
+				this.transfer_fingerprints_to((yield* new_(T("/obj/item/wallframe/button"), rt.getStep(f, this, 0))));
+				playsound(this.loc, rt.rsc("sound/items/deconstruct.ogg"), 50, 1);
+				yield* qdel(this);
 			}
 		}
-		yield* g.srcCall(f, "update_icon");
-		return live(f.dot);
+		yield* this.update_icon();
+		return f.dot;
 	}
-	if ((!isEqual(rt.fv(f, "a_intent", live(f.args[1])), "harm") && !truthy(rt.bitAnd(rt.fv(f, "flags", live(f.args[0])), 4)))) {
-		return (yield* g.callName(f, live(f.src), "attack_hand", [live(f.args[1])]));
+	if (user.a_intent != "harm" && !rt.bitAnd(W.flags, NOBLUDGEON)) {
+		return (yield* this.attack_hand(user));
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["W", "user", "params"] });
-
-// /obj/machinery/button/proc/emag_act  (code/game/machinery/buttons.dm:106)
-rt.def("/obj/machinery/button/proc/emag_act", function emag_act(f: Frame, user: Value) {
-	rt.setSv(f, "req_access", rt.list());
-	rt.setSv(f, "req_one_access", rt.list());
-	rt.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), "sparks", 100, 1]);
-	return f.dot;
-});
-
-// /obj/machinery/button/proc/attack_ai  (code/game/machinery/buttons.dm:111)  may sleep
-rt.def("/obj/machinery/button/proc/attack_ai", function* attack_ai(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (truthy(rt.sv(f, "panel_open"))) return f.dot;
-	return (yield* g.srcCall(f, "attack_hand", live(user)));
+	return (yield* parent_proc());
 }, true);
 
-// /obj/machinery/button/proc/setup_device  (code/game/machinery/buttons.dm:115)
+// buttons.dm:106
+rt.def("/obj/machinery/button/proc/emag_act", function emag_act(f: Frame, user: Value) {
+	this.req_access = list();
+	this.req_one_access = list();
+	playsound(this.loc, "sparks", 100, 1);
+	return f.dot;
+});
+
+// buttons.dm:111
+rt.def("/obj/machinery/button/proc/attack_ai", function* attack_ai(f: Frame, user: Value) {
+	if (this.panel_open) return f.dot;
+	return (yield* this.attack_hand(user));
+}, true);
+
+// buttons.dm:115
 rt.def("/obj/machinery/button/proc/setup_device", function setup_device(f: Frame) {
 	let A: Value = null;
-	f.vars = () => [A];
-	if ((truthy(rt.sv(f, "id")) && truthy((rt.istype(rt.sv(f, "device"), T("/obj/item/device/assembly/control")) ? 1 : 0)))) {
-		rt.setFv(f, "id", (A = rt.sv(f, "device")), rt.sv(f, "id"));
+	if (this.id && rt.istype(this.device, T("/obj/item/device/assembly/control"))) {
+		(A = this.device).id = this.id;
 	}
-	rt.setSv(f, "initialized_button", 1);
+	this.initialized_button = 1;
 	return f.dot;
 });
 
-// /obj/machinery/button/proc/attack_hand  (code/game/machinery/buttons.dm:121)  may sleep
+// buttons.dm:121
 rt.def("/obj/machinery/button/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (!truthy(rt.sv(f, "initialized_button"))) {
-		yield* g.srcCall(f, "setup_device");
+	if (!this.initialized_button) {
+		yield* this.setup_device();
 	}
-	yield* g.callName(f, live(f.src), "add_fingerprint", [live(user)]);
-	if (truthy(rt.sv(f, "panel_open"))) {
-		if ((truthy(rt.sv(f, "device")) || truthy(rt.sv(f, "board")))) {
-			if (truthy(rt.sv(f, "device"))) {
-				rt.setFv(f, "loc", rt.sv(f, "device"), rt.getStep(f, live(f.src), 0));
-				rt.setSv(f, "device", null);
+	yield* this.add_fingerprint(user);
+	if (this.panel_open) {
+		if (this.device || this.board) {
+			if (this.device) {
+				this.device.loc = rt.getStep(f, this, 0);
+				this.device = null;
 			}
-			if (truthy(rt.sv(f, "board"))) {
-				rt.setFv(f, "loc", rt.sv(f, "board"), rt.getStep(f, live(f.src), 0));
-				rt.setSv(f, "req_access", rt.list());
-				rt.setSv(f, "req_one_access", rt.list());
-				rt.setSv(f, "board", null);
+			if (this.board) {
+				this.board.loc = rt.getStep(f, this, 0);
+				this.req_access = list();
+				this.req_one_access = list();
+				this.board = null;
 			}
-			yield* g.srcCall(f, "update_icon");
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>You remove electronics from the button frame.</span>"]);
+			yield* this.update_icon();
+			to_chat(user, "<span class='notice'>You remove electronics from the button frame.</span>");
 		} else {
-			if (isEqual(rt.sv(f, "skin"), "doorctrl")) {
-				rt.setSv(f, "skin", "launcher");
+			if (this.skin == "doorctrl") {
+				this.skin = "launcher";
 			} else {
-				rt.setSv(f, "skin", "doorctrl");
+				this.skin = "doorctrl";
 			}
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>You change the button frame's front panel.</span>"]);
+			to_chat(user, "<span class='notice'>You change the button frame's front panel.</span>");
 		}
-		return live(f.dot);
+		return f.dot;
 	}
-	if (truthy(rt.bitAnd(rt.sv(f, "stat"), 3))) {
-		return live(f.dot);
+	if (rt.bitAnd(this.stat, 3)) {
+		return f.dot;
 	}
-	if ((truthy(rt.sv(f, "device")) && rt.gt(rt.fv(f, "next_activate", rt.sv(f, "device")), rt.worldTime(f)))) {
-		return live(f.dot);
+	if (this.device && this.device.next_activate > rt.worldTime(f)) {
+		return f.dot;
 	}
-	if (!truthy((yield* g.srcCall(f, "allowed", live(user))))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='danger'>Access Denied</span>"]);
-		yield* g.call(f, P("/proc/flick"), null, [fmt("＀-denied", [rt.sv(f, "skin")]), live(f.src)]);
-		return live(f.dot);
+	if (!(yield* this.allowed(user))) {
+		to_chat(user, "<span class='danger'>Access Denied</span>");
+		flick(`${this.skin}-denied`, this);
+		return f.dot;
 	}
-	yield* g.srcCall(f, "use_power", 5);
-	rt.setSv(f, "icon_state", fmt("＀1", [rt.sv(f, "skin")]));
-	if (truthy(rt.sv(f, "device"))) {
-		yield* g.callName(f, rt.sv(f, "device"), "pulsed", []);
+	yield* this.use_power(5);
+	this.icon_state = `${this.skin}1`;
+	if (this.device) {
+		this.device.pulsed();
 	}
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/machinery/button/proc/update_icon")])), 15]);
+	yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/machinery/button/proc/update_icon"))), 15);
 	return f.dot;
 }, true);
 
-// /obj/machinery/button/proc/power_change  (code/game/machinery/buttons.dm:165)
+// buttons.dm:165
 rt.def("/obj/machinery/button/proc/power_change", function power_change(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.callSrc(f, "update_icon", []);
+	parent_proc();
+	this.update_icon();
 	return f.dot;
 });
 
@@ -248,19 +238,18 @@ rt.type(10779, "/obj/machinery/button/door", "/obj/machinery/button", {
 	desc: "A door remote control switch.",
 });
 
-// /obj/machinery/button/door/proc/setup_device  (code/game/machinery/buttons.dm:176)  may sleep
+// buttons.dm:176
 rt.def("/obj/machinery/button/door/proc/setup_device", function* setup_device(f: Frame) {
 	let A: Value = null;
-	f.vars = () => [A];
-	if (!truthy(rt.sv(f, "device"))) {
-		if (truthy(rt.sv(f, "normaldoorcontrol"))) {
-			rt.setSv(f, "device", (A = (yield* g.new_(f, T("/obj/item/device/assembly/control/airlock"), [live(f.src)]))));
-			rt.setFv(f, "specialfunctions", live(A), rt.sv(f, "specialfunctions"));
+	if (!this.device) {
+		if (this.normaldoorcontrol) {
+			this.device = (A = (yield* new_(T("/obj/item/device/assembly/control/airlock"), this)));
+			A.specialfunctions = this.specialfunctions;
 		} else {
-			rt.setSv(f, "device", (yield* g.new_(f, T("/obj/item/device/assembly/control"), [live(f.src)])));
+			this.device = (yield* new_(T("/obj/item/device/assembly/control"), this));
 		}
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
@@ -274,12 +263,10 @@ rt.type(10783, "/obj/machinery/button/crematorium", "/obj/machinery/button", {
 	req_access: null,
 });
 
-// /obj/machinery/button/crematorium/proc/<init>  (code/game/machinery/buttons.dm:212)
+// buttons.dm:212
 rt.def("/obj/machinery/button/crematorium/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_access", rt.list());
+	parent_proc();
+	this.req_access = list();
 	return f.dot;
 });
 
@@ -291,11 +278,9 @@ rt.type(9540, "/obj/item/wallframe/button", "/obj/item/wallframe", {
 	materials: null,
 });
 
-// /obj/item/wallframe/button/proc/<init>  (code/game/machinery/buttons.dm:220)
+// buttons.dm:220
 rt.def("/obj/item/wallframe/button/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 2000]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 2000]);
 	return f.dot;
 });

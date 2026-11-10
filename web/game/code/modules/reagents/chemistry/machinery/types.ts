@@ -1,5 +1,5 @@
 // Types declared in code/modules/reagents/chemistry/machinery that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(6778, "/obj/item/weapon/circuitboard/machine/chem_master/condi", "/obj/item/weapon/circuitboard/machine/chem_master", {
 	name: "CondiMaster 3000 (Machine Board)",

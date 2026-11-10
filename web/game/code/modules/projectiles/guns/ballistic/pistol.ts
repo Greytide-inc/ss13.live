@@ -1,7 +1,7 @@
-// From code/modules/projectiles/guns/ballistic/pistol.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/projectiles/guns/ballistic/pistol.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(5203, "/obj/item/weapon/gun/ballistic/automatic/pistol", "/obj/item/weapon/gun/ballistic/automatic", {
@@ -17,33 +17,19 @@ rt.type(5203, "/obj/item/weapon/gun/ballistic/automatic/pistol", "/obj/item/weap
 	mag_type: rt.typePath("/obj/item/ammo_box/magazine/m10mm"),
 });
 
-// /obj/item/weapon/gun/ballistic/automatic/pistol/proc/<init>  (code/modules/projectiles/guns/ballistic/pistol.dm:11)
+// pistol.dm:11
 rt.def("/obj/item/weapon/gun/ballistic/automatic/pistol/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "actions_types", rt.list());
+	parent_proc();
+	this.actions_types = list();
 	return f.dot;
 });
 
-// /obj/item/weapon/gun/ballistic/automatic/pistol/proc/update_icon  (code/modules/projectiles/guns/ballistic/pistol.dm:14)
+// pistol.dm:14
 rt.def("/obj/item/weapon/gun/ballistic/automatic/pistol/proc/update_icon", function update_icon(f: Frame) {
-	let $0: any, $1: any, $2: any;
-	f.vars = () => [$0, $1, $2];
-	rt.callSuper(f, [], rt.Args.Same);
-	$0 = rt.initial(f, live(f.src), "icon_state");
-	if (truthy(rt.sv(f, "chambered"))) {
-		$1 = "";
-	} else {
-		$1 = "-e";
-	}
-	if (truthy(rt.sv(f, "suppressed"))) {
-		$2 = "-suppressed";
-	} else {
-		$2 = "";
-	}
-	rt.setSv(f, "icon_state", fmt("＀＀＀", [$0, $1, $2]));
-	return live(f.dot);
+	parent_proc();
+	let $0: any = rt.initial(f, this, "icon_state");
+	this.icon_state = `${$0}${this.chambered ? "" : "-e"}${this.suppressed ? "-suppressed" : ""}`;
+	return f.dot;
 });
 
 rt.type(5204, "/obj/item/weapon/gun/ballistic/automatic/pistol/deagle", "/obj/item/weapon/gun/ballistic/automatic/pistol", {
@@ -55,24 +41,17 @@ rt.type(5204, "/obj/item/weapon/gun/ballistic/automatic/pistol/deagle", "/obj/it
 	mag_type: rt.typePath("/obj/item/ammo_box/magazine/m50"),
 });
 
-// /obj/item/weapon/gun/ballistic/automatic/pistol/deagle/proc/update_icon  (code/modules/projectiles/guns/ballistic/pistol.dm:35)
+// pistol.dm:35
 rt.def("/obj/item/weapon/gun/ballistic/automatic/pistol/deagle/proc/update_icon", function update_icon(f: Frame) {
-	let $0: any, $1: any;
-	f.vars = () => [$0, $1];
-	rt.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.sv(f, "magazine"))) {
-		rt.callSrc(f, "cut_overlays", []);
-		rt.callSrc(f, "add_overlay", ["deagle_magazine"]);
+	parent_proc();
+	if (this.magazine) {
+		this.cut_overlays();
+		this.add_overlay("deagle_magazine");
 	} else {
-		rt.callSrc(f, "cut_overlays", []);
+		this.cut_overlays();
 	}
-	$0 = rt.initial(f, live(f.src), "icon_state");
-	if (truthy(rt.sv(f, "chambered"))) {
-		$1 = "";
-	} else {
-		$1 = "-e";
-	}
-	rt.setSv(f, "icon_state", fmt("＀＀", [$0, $1]));
+	let $0: any = rt.initial(f, this, "icon_state");
+	this.icon_state = `${$0}${this.chambered ? "" : "-e"}`;
 	return f.dot;
 });
 
@@ -89,12 +68,10 @@ rt.type(5209, "/obj/item/weapon/gun/ballistic/automatic/pistol/APS", "/obj/item/
 	mag_type: rt.typePath("/obj/item/ammo_box/magazine/pistolm9mm"),
 });
 
-// /obj/item/weapon/gun/ballistic/automatic/pistol/APS/proc/<init>  (code/modules/projectiles/guns/ballistic/pistol.dm:63)
+// pistol.dm:63
 rt.def("/obj/item/weapon/gun/ballistic/automatic/pistol/APS/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "actions_types", rt.list(T("/datum/action/item_action/toggle_firemode")));
+	parent_proc();
+	this.actions_types = list(T("/datum/action/item_action/toggle_firemode"));
 	return f.dot;
 });
 
@@ -105,17 +82,16 @@ rt.type(5210, "/obj/item/weapon/gun/ballistic/automatic/pistol/stickman", "/obj/
 	origin_tech: "combat=3;materials=2;abductor=3",
 });
 
-// /obj/item/weapon/gun/ballistic/automatic/pistol/stickman/proc/pickup  (code/modules/projectiles/guns/ballistic/pistol.dm:72)  may sleep
+// pistol.dm:72
 rt.def("/obj/item/weapon/gun/ballistic/automatic/pistol/stickman/proc/pickup", function* pickup(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>As you try to pick up ＀, it slips out of your grip..</span>", [live(f.src)])]);
-	if (truthy(rt.op(f, "Prob", [], [50]))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>..and vanishes from your vision! Where the hell did it go?</span>"]);
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-		yield* g.callName(f, live(user), "update_icons", []);
+	to_chat(user, `<span class='notice'>As you try to pick up ${this}, it slips out of your grip..</span>`);
+	if (prob(50)) {
+		to_chat(user, "<span class='notice'>..and vanishes from your vision! Where the hell did it go?</span>");
+		yield* qdel(this);
+		yield* user.update_icons();
 	} else {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>..and falls into view. Whew, that was a close one.</span>"]);
-		yield* g.callName(f, live(user), "dropItemToGround", [live(f.src)]);
+		to_chat(user, "<span class='notice'>..and falls into view. Whew, that was a close one.</span>");
+		yield* user.dropItemToGround(this);
 	}
 	return f.dot;
 }, true);

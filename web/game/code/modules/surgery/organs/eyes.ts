@@ -1,7 +1,7 @@
-// From code/modules/surgery/organs/eyes.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/surgery/organs/eyes.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, g } = rt;
 
 
 rt.type(9476, "/obj/item/organ/eyes", "/obj/item/organ", {
@@ -22,42 +22,40 @@ rt.type(9476, "/obj/item/organ/eyes", "/obj/item/organ", {
 	gender: "plural",
 });
 
-// /obj/item/organ/eyes/proc/Insert  (code/modules/surgery/organs/eyes.dm:20)  may sleep
+// eyes.dm:20
 rt.def("/obj/item/organ/eyes/proc/Insert", function* Insert(f: Frame) {
 	let HMN: Value = null;
-	f.vars = () => [HMN];
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy((rt.istype(rt.sv(f, "owner"), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		rt.setSv(f, "old_eye_color", rt.gv(f, "eye_color", (HMN = rt.sv(f, "owner"))));
-		if (truthy(rt.sv(f, "eye_color"))) {
-			rt.setFv(f, "eye_color", live(HMN), rt.sv(f, "eye_color"));
-			yield* g.callName(f, live(HMN), "regenerate_icons", []);
+	yield* parent_proc();
+	if (rt.istype(this.owner, T("/mob/living/carbon/human"))) {
+		this.old_eye_color = (HMN = this.owner).eye_color;
+		if (this.eye_color) {
+			HMN.eye_color = this.eye_color;
+			yield* HMN.regenerate_icons();
 		} else {
-			rt.setSv(f, "eye_color", rt.fv(f, "eye_color", live(HMN)));
+			this.eye_color = HMN.eye_color;
 		}
 	}
-	yield* g.callName(f, live(f.args[0]), "update_tint", []);
-	yield* g.callName(f, rt.sv(f, "owner"), "update_sight", []);
+	yield* f.args[0].update_tint();
+	yield* this.owner.update_sight();
 	return f.dot;
 }, true, { args: ["M", "special"] });
 
-// /obj/item/organ/eyes/proc/Remove  (code/modules/surgery/organs/eyes.dm:33)  may sleep
+// eyes.dm:33
 rt.def("/obj/item/organ/eyes/proc/Remove", function* Remove(f: Frame) {
 	let HMN: Value = null;
-	f.vars = () => [HMN];
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if ((truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon/human")) ? 1 : 0)) && truthy(rt.sv(f, "eye_color")))) {
-		rt.setFv(f, "eye_color", (HMN = live(f.args[0])), rt.sv(f, "old_eye_color"));
-		yield* g.callName(f, live(HMN), "regenerate_icons", []);
+	yield* parent_proc();
+	if (rt.istype(f.args[0], T("/mob/living/carbon/human")) && this.eye_color) {
+		(HMN = f.args[0]).eye_color = this.old_eye_color;
+		yield* HMN.regenerate_icons();
 	}
-	yield* g.callName(f, live(f.args[0]), "update_tint", []);
-	yield* g.callName(f, live(f.args[0]), "update_sight", []);
+	yield* f.args[0].update_tint();
+	yield* f.args[0].update_sight();
 	return f.dot;
 }, true, { args: ["M", "special"] });
 
@@ -70,30 +68,25 @@ rt.type(9477, "/obj/item/organ/eyes/night_vision", "/obj/item/organ/eyes", {
 	actions_types: null,
 });
 
-// /obj/item/organ/eyes/night_vision/proc/<init>  (code/modules/surgery/organs/eyes.dm:46)
+// eyes.dm:46
 rt.def("/obj/item/organ/eyes/night_vision/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "actions_types", rt.list(T("/datum/action/item_action/organ_action/use")));
+	parent_proc();
+	this.actions_types = list(T("/datum/action/item_action/organ_action/use"));
 	return f.dot;
 });
 
-// /obj/item/organ/eyes/night_vision/proc/ui_action_click  (code/modules/surgery/organs/eyes.dm:50)  may sleep
+// eyes.dm:50
 rt.def("/obj/item/organ/eyes/night_vision/proc/ui_action_click", function* ui_action_click(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.sv(f, "lighting_alpha");
-	if ($0 === 255) {
-		rt.setSv(f, "lighting_alpha", 192);
-	} else if ($0 === 192) {
-		rt.setSv(f, "lighting_alpha", 128);
-	} else if ($0 === 128) {
-		rt.setSv(f, "lighting_alpha", 0);
+	if (this.lighting_alpha === LIGHTING_PLANE_ALPHA_VISIBLE) {
+		this.lighting_alpha = LIGHTING_PLANE_ALPHA_MOSTLY_VISIBLE;
+	} else if (this.lighting_alpha === LIGHTING_PLANE_ALPHA_MOSTLY_VISIBLE) {
+		this.lighting_alpha = LIGHTING_PLANE_ALPHA_MOSTLY_INVISIBLE;
+	} else if (this.lighting_alpha === LIGHTING_PLANE_ALPHA_MOSTLY_INVISIBLE) {
+		this.lighting_alpha = LIGHTING_PLANE_ALPHA_INVISIBLE;
 	} else {
-		rt.setSv(f, "lighting_alpha", 255);
+		this.lighting_alpha = LIGHTING_PLANE_ALPHA_VISIBLE;
 	}
-	yield* g.callName(f, rt.sv(f, "owner"), "update_sight", []);
+	yield* this.owner.update_sight();
 	return f.dot;
 }, true);
 
@@ -104,19 +97,18 @@ rt.type(9480, "/obj/item/organ/eyes/robotic", "/obj/item/organ/eyes", {
 	status: 2,
 });
 
-// /obj/item/organ/eyes/robotic/proc/emp_act  (code/modules/surgery/organs/eyes.dm:81)  may sleep
+// eyes.dm:81
 rt.def("/obj/item/organ/eyes/robotic/proc/emp_act", function* emp_act(f: Frame, severity: Value) {
-	f.vars = () => [severity];
-	if (!truthy(rt.sv(f, "owner"))) {
-		return live(f.dot);
+	if (!this.owner) {
+		return f.dot;
 	}
-	if (rt.gt(live(severity), 1)) {
-		if (truthy(rt.op(f, "Prob", [], [multiply(10, live(severity))]))) {
-			return live(f.dot);
+	if (severity > 1) {
+		if (prob(10 * severity)) {
+			return f.dot;
 		}
 	}
-	yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "owner"), "<span class='warning'>Static obfuscates your vision!</span>"]);
-	yield* g.callName(f, rt.sv(f, "owner"), "flash_act", ["visual", 1], rt.Args.Named);
+	to_chat(this.owner, "<span class='warning'>Static obfuscates your vision!</span>");
+	yield* this.owner.flash_act({ visual: 1 });
 	return f.dot;
 }, true);
 
@@ -131,30 +123,30 @@ rt.type(9483, "/obj/item/organ/eyes/robotic/flashlight", "/obj/item/organ/eyes/r
 	icon_state: "flashlight_eyes",
 });
 
-// /obj/item/organ/eyes/robotic/flashlight/proc/Insert  (code/modules/surgery/organs/eyes.dm:120)  may sleep
+// eyes.dm:120
 rt.def("/obj/item/organ/eyes/robotic/flashlight/proc/Insert", function* Insert(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.sv(f, "eye"))) {
-		rt.setSv(f, "eye", (yield* g.new_(f, T("/obj/item/device/flashlight/eyelight"), [])));
+	yield* parent_proc();
+	if (!this.eye) {
+		this.eye = (yield* new_(T("/obj/item/device/flashlight/eyelight")));
 	}
-	rt.setFv(f, "on", rt.sv(f, "eye"), 1);
-	yield* g.callName(f, rt.sv(f, "eye"), "forceMove", [live(f.args[0])]);
-	yield* g.callName(f, rt.sv(f, "eye"), "update_brightness", [live(f.args[0])]);
+	this.eye.on = 1;
+	yield* this.eye.forceMove(f.args[0]);
+	this.eye.update_brightness(f.args[0]);
 	return f.dot;
 }, true, { args: ["M", "special"] });
 
-// /obj/item/organ/eyes/robotic/flashlight/proc/Remove  (code/modules/surgery/organs/eyes.dm:129)  may sleep
+// eyes.dm:129
 rt.def("/obj/item/organ/eyes/robotic/flashlight/proc/Remove", function* Remove(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	rt.setFv(f, "on", rt.sv(f, "eye"), 0);
-	yield* g.callName(f, rt.sv(f, "eye"), "update_brightness", [live(f.args[0])]);
-	yield* g.callName(f, rt.sv(f, "eye"), "forceMove", [live(f.src)]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	this.eye.on = 0;
+	this.eye.update_brightness(f.args[0]);
+	yield* this.eye.forceMove(this);
+	yield* parent_proc();
 	return f.dot;
 }, true, { args: ["M", "special"] });
 
@@ -175,310 +167,276 @@ rt.type(9485, "/obj/item/organ/eyes/robotic/glow", "/obj/item/organ/eyes/robotic
 	actions_types: null,
 });
 
-// /obj/item/organ/eyes/robotic/glow/proc/<init>  (code/modules/surgery/organs/eyes.dm:151)
+// eyes.dm:151
 rt.def("/obj/item/organ/eyes/robotic/glow/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "actions_types", rt.list(T("/datum/action/item_action/organ_action/use"), T("/datum/action/item_action/organ_action/toggle")));
+	parent_proc();
+	this.actions_types = list(T("/datum/action/item_action/organ_action/use"), T("/datum/action/item_action/organ_action/toggle"));
 	return f.dot;
 });
 
-// /obj/item/organ/eyes/robotic/glow/proc/Initialize  (code/modules/surgery/organs/eyes.dm:163)  may sleep
+// eyes.dm:163
 rt.def("/obj/item/organ/eyes/robotic/glow/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "mob_overlay", (yield* g.call(f, P("/proc/image"), null, [rt.rsc("icons/mob/human_face.dmi"), "eyes_glow_gs"])));
+	f.dot = (yield* parent_proc());
+	this.mob_overlay = image(rt.rsc("icons/mob/human_face.dmi"), "eyes_glow_gs");
 	return f.dot;
 }, true);
 
-// /obj/item/organ/eyes/robotic/glow/proc/Destroy  (code/modules/surgery/organs/eyes.dm:167)  may sleep
+// eyes.dm:167
 rt.def("/obj/item/organ/eyes/robotic/glow/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.srcCall(f, "terminate_effects");
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* this.terminate_effects();
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true);
 
-// /obj/item/organ/eyes/robotic/glow/proc/Remove  (code/modules/surgery/organs/eyes.dm:171)  may sleep
+// eyes.dm:171
 rt.def("/obj/item/organ/eyes/robotic/glow/proc/Remove", function* Remove(f: Frame) {
-	yield* g.srcCall(f, "terminate_effects");
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* this.terminate_effects();
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true);
 
-// /obj/item/organ/eyes/robotic/glow/proc/terminate_effects  (code/modules/surgery/organs/eyes.dm:175)  may sleep
+// eyes.dm:175
 rt.def("/obj/item/organ/eyes/robotic/glow/proc/terminate_effects", function* terminate_effects(f: Frame) {
-	if ((truthy(rt.sv(f, "owner")) && truthy(rt.sv(f, "active")))) {
-		yield* g.srcCall(f, "deactivate");
+	if (this.owner && this.active) {
+		yield* this.deactivate();
 	}
-	rt.setSv(f, "active", 0);
-	yield* g.srcCall(f, "clear_visuals", 1);
-	rt.setFv(f, "isprocessing", live(f.src), 0);
-	(rt.modField(f, rt.gl("SSfastprocess"), "processing", live(f.src), subtract));
+	this.active = 0;
+	yield* this.clear_visuals(1);
+	this.isprocessing = 0;
+	GLOB.SSfastprocess.processing -= this;
 	return f.dot;
 }, true);
 
-// /obj/item/organ/eyes/robotic/glow/proc/ui_action_click  (code/modules/surgery/organs/eyes.dm:182)  may sleep
+// eyes.dm:182
 rt.def("/obj/item/organ/eyes/robotic/glow/proc/ui_action_click", function* ui_action_click(f: Frame, owner: Value, action: Value) {
-	f.vars = () => [owner, action];
-	if (truthy((rt.istype(live(action), T("/datum/action/item_action/organ_action/toggle")) ? 1 : 0))) {
-		yield* g.srcCall(f, "toggle_active");
+	if (rt.istype(action, T("/datum/action/item_action/organ_action/toggle"))) {
+		yield* this.toggle_active();
 	} else {
-		if (!truthy((rt.istype(live(action), T("/datum/action/item_action/organ_action/use")) ? 1 : 0))) return f.dot;
-		yield* g.srcCall(f, "prompt_for_controls", live(owner));
+		if (!rt.istype(action, T("/datum/action/item_action/organ_action/use"))) return f.dot;
+		yield* this.prompt_for_controls(owner);
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/organ/eyes/robotic/glow/proc/toggle_active  (code/modules/surgery/organs/eyes.dm:189)  may sleep
+// eyes.dm:189
 rt.def("/obj/item/organ/eyes/robotic/glow/proc/toggle_active", function* toggle_active(f: Frame) {
-	if (truthy(rt.sv(f, "active"))) {
-		yield* g.srcCall(f, "deactivate");
+	if (this.active) {
+		yield* this.deactivate();
 	} else {
-		yield* g.srcCall(f, "activate");
+		yield* this.activate();
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/organ/eyes/robotic/glow/proc/prompt_for_controls  (code/modules/surgery/organs/eyes.dm:194)  may sleep
+// eyes.dm:194
 rt.def("/obj/item/organ/eyes/robotic/glow/proc/prompt_for_controls", function* prompt_for_controls(f: Frame, user: Value) {
-	let C: Value = null, range: Value = null;
-	f.vars = () => [user, C, range];
-	if (((((!truthy((C = (yield* g.op(f, "Prompt", [257], ["#ffffff", "Select color", "Select Color", rt.sv(f, "owner"), null])))) || (!truthy(live(f.src)) || truthy(rt.fv(f, "gc_destroyed", live(f.src))))) || (!truthy(live(user)) || truthy(rt.fv(f, "gc_destroyed", live(user))))) || (!truthy(rt.sv(f, "owner")) || truthy(rt.fv(f, "gc_destroyed", rt.sv(f, "owner"))))) || !isEqual(rt.sv(f, "owner"), live(user)))) {
-		return live(f.dot);
+	let C: Value = null;
+	if (!(C = (yield* g.op(f, "Prompt", [257], ["#ffffff", "Select color", "Select Color", this.owner, null]))) || !this || this.gc_destroyed || !user || user.gc_destroyed || !this.owner || this.owner.gc_destroyed || this.owner != user) {
+		return f.dot;
 	}
-	range = (yield* g.op(f, "Prompt", [33], [0, "Range Select", fmt("Enter range (0 - ＀)", [rt.sv(f, "max_light_beam_distance")]), live(user), null]));
-	yield* g.srcCall(f, "set_distance", (yield* g.call(f, P("/proc/max"), null, [0, (yield* g.call(f, P("/proc/min"), null, [live(range), rt.sv(f, "max_light_beam_distance")]))])));
-	yield* g.srcCall(f, "assume_rgb", live(C));
+	let range: Value = (yield* g.op(f, "Prompt", [33], [0, "Range Select", `Enter range (0 - ${this.max_light_beam_distance})`, user, null]));
+	yield* this.set_distance(max(0, min(range, this.max_light_beam_distance)));
+	yield* this.assume_rgb(C);
 	return f.dot;
 }, true);
 
-// /obj/item/organ/eyes/robotic/glow/proc/assume_rgb  (code/modules/surgery/organs/eyes.dm:203)  may sleep
+// eyes.dm:203
 rt.def("/obj/item/organ/eyes/robotic/glow/proc/assume_rgb", function* assume_rgb(f: Frame, newcolor: Value) {
-	f.vars = () => [newcolor];
-	rt.setSv(f, "current_color_string", live(newcolor));
-	rt.setSv(f, "eye_color", fmt("＀＀＀", [(yield* g.call(f, P("/proc/copytext"), null, [rt.sv(f, "current_color_string"), 2, 3])), (yield* g.call(f, P("/proc/copytext"), null, [rt.sv(f, "current_color_string"), 4, 5])), (yield* g.call(f, P("/proc/copytext"), null, [rt.sv(f, "current_color_string"), 6, 7]))]));
-	yield* g.srcCall(f, "sync_light_effects");
-	yield* g.srcCall(f, "cycle_mob_overlay");
-	if (!(!(!truthy(rt.sv(f, "owner")) || truthy(rt.fv(f, "gc_destroyed", rt.sv(f, "owner")))) && truthy((rt.istype(rt.sv(f, "owner"), T("/mob/living/carbon/human")) ? 1 : 0)))) return f.dot;
-	yield* g.callName(f, rt.gv(f, "species", rt.fv(f, "dna", rt.sv(f, "owner"))), "handle_body", [rt.sv(f, "owner")]);
+	this.current_color_string = newcolor;
+	this.eye_color = `${copytext(this.current_color_string, 2, 3)}${copytext(this.current_color_string, 4, 5)}${copytext(this.current_color_string, 6, 7)}`;
+	this.sync_light_effects();
+	this.cycle_mob_overlay();
+	if (!(!(!this.owner || this.owner.gc_destroyed) && rt.istype(this.owner, T("/mob/living/carbon/human")))) return f.dot;
+	yield* this.owner.dna.species.handle_body(this.owner);
 	return f.dot;
 }, true);
 
-// /obj/item/organ/eyes/robotic/glow/proc/cycle_mob_overlay  (code/modules/surgery/organs/eyes.dm:211)
+// eyes.dm:211
 rt.def("/obj/item/organ/eyes/robotic/glow/proc/cycle_mob_overlay", function cycle_mob_overlay(f: Frame) {
-	rt.callSrc(f, "remove_mob_overlay", []);
-	rt.setFv(f, "color", rt.sv(f, "mob_overlay"), rt.sv(f, "current_color_string"));
-	rt.callSrc(f, "add_mob_overlay", []);
+	this.remove_mob_overlay();
+	this.mob_overlay.color = this.current_color_string;
+	this.add_mob_overlay();
 	return f.dot;
 });
 
-// /obj/item/organ/eyes/robotic/glow/proc/add_mob_overlay  (code/modules/surgery/organs/eyes.dm:216)
+// eyes.dm:216
 rt.def("/obj/item/organ/eyes/robotic/glow/proc/add_mob_overlay", function add_mob_overlay(f: Frame) {
-	if (!truthy(rt.sv(f, "owner")) || truthy(rt.fv(f, "gc_destroyed", rt.sv(f, "owner")))) return f.dot;
-	rt.callName(f, rt.sv(f, "owner"), "add_overlay", [rt.sv(f, "mob_overlay")]);
+	if (!this.owner || this.owner.gc_destroyed) return f.dot;
+	this.owner.add_overlay(this.mob_overlay);
 	return f.dot;
 });
 
-// /obj/item/organ/eyes/robotic/glow/proc/remove_mob_overlay  (code/modules/surgery/organs/eyes.dm:220)
+// eyes.dm:220
 rt.def("/obj/item/organ/eyes/robotic/glow/proc/remove_mob_overlay", function remove_mob_overlay(f: Frame) {
-	if (!truthy(rt.sv(f, "owner")) || truthy(rt.fv(f, "gc_destroyed", rt.sv(f, "owner")))) return f.dot;
-	rt.callName(f, rt.sv(f, "owner"), "cut_overlay", [rt.sv(f, "mob_overlay")]);
+	if (!this.owner || this.owner.gc_destroyed) return f.dot;
+	this.owner.cut_overlay(this.mob_overlay);
 	return f.dot;
 });
 
-// /obj/item/organ/eyes/robotic/glow/proc/emp_act  (code/modules/surgery/organs/eyes.dm:225)  may sleep
+// eyes.dm:225
 rt.def("/obj/item/organ/eyes/robotic/glow/proc/emp_act", function* emp_act(f: Frame) {
-	if (!truthy(rt.sv(f, "active"))) return f.dot;
-	yield* g.callSrc(f, "deactivate", ["silent", 1], rt.Args.Named);
+	if (!this.active) return f.dot;
+	yield* this.deactivate({ silent: 1 });
 	return f.dot;
 }, true);
 
-// /obj/item/organ/eyes/robotic/glow/proc/on_mob_move  (code/modules/surgery/organs/eyes.dm:228)  may sleep
+// eyes.dm:228
 rt.def("/obj/item/organ/eyes/robotic/glow/proc/on_mob_move", function* on_mob_move(f: Frame) {
-	if (((!truthy(rt.sv(f, "owner")) || truthy(rt.fv(f, "gc_destroyed", rt.sv(f, "owner")))) || !truthy(rt.sv(f, "active")))) {
-		return live(f.dot);
+	if (!this.owner || this.owner.gc_destroyed || !this.active) {
+		return f.dot;
 	}
-	yield* g.srcCall(f, "update_visuals");
+	yield* this.update_visuals();
 	return f.dot;
 }, true);
 
-// /obj/item/organ/eyes/robotic/glow/proc/on_mob_turn  (code/modules/surgery/organs/eyes.dm:233)  may sleep
+// eyes.dm:233
 rt.def("/obj/item/organ/eyes/robotic/glow/proc/on_mob_turn", function* on_mob_turn(f: Frame) {
-	if (((!truthy(rt.sv(f, "owner")) || truthy(rt.fv(f, "gc_destroyed", rt.sv(f, "owner")))) || !truthy(rt.sv(f, "active")))) {
-		return live(f.dot);
+	if (!this.owner || this.owner.gc_destroyed || !this.active) {
+		return f.dot;
 	}
-	yield* g.srcCall(f, "update_visuals");
+	yield* this.update_visuals();
 	return f.dot;
 }, true);
 
-// /obj/item/organ/eyes/robotic/glow/proc/activate  (code/modules/surgery/organs/eyes.dm:238)  may sleep
+// eyes.dm:238
 rt.def("/obj/item/organ/eyes/robotic/glow/proc/activate", function* activate(f: Frame, silent: Value) {
-	f.vars = () => [silent];
-	if (live(silent) === null) {
-		silent = 0;
+	silent ??= 0;
+	yield* this.start_visuals();
+	if (!silent) {
+		to_chat(this.owner, `<span class='warning'>Your ${this} clicks and makes a whining noise, before shooting out a beam of light!</span>`);
 	}
-	yield* g.srcCall(f, "start_visuals");
-	if (!truthy(live(silent))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "owner"), fmt("<span class='warning'>Your ＀ clicks and makes a whining noise, before shooting out a beam of light!</span>", [live(f.src)])]);
-	}
-	rt.setSv(f, "active", 1);
-	yield* g.srcCall(f, "cycle_mob_overlay");
+	this.active = 1;
+	this.cycle_mob_overlay();
 	return f.dot;
 }, true);
 
-// /obj/item/organ/eyes/robotic/glow/proc/deactivate  (code/modules/surgery/organs/eyes.dm:245)  may sleep
+// eyes.dm:245
 rt.def("/obj/item/organ/eyes/robotic/glow/proc/deactivate", function* deactivate(f: Frame, silent: Value) {
-	f.vars = () => [silent];
-	if (live(silent) === null) {
-		silent = 0;
+	silent ??= 0;
+	yield* this.clear_visuals();
+	if (!silent) {
+		to_chat(this.owner, `<span class='warning'>Your ${this} shuts off!</span>`);
 	}
-	yield* g.srcCall(f, "clear_visuals");
-	if (!truthy(live(silent))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "owner"), fmt("<span class='warning'>Your ＀ shuts off!</span>", [live(f.src)])]);
-	}
-	rt.setSv(f, "active", 0);
-	yield* g.srcCall(f, "remove_mob_overlay");
+	this.active = 0;
+	this.remove_mob_overlay();
 	return f.dot;
 }, true);
 
-// /obj/item/organ/eyes/robotic/glow/proc/update_visuals  (code/modules/surgery/organs/eyes.dm:252)  may sleep
+// eyes.dm:252
 rt.def("/obj/item/organ/eyes/robotic/glow/proc/update_visuals", function* update_visuals(f: Frame) {
-	let scanfrom: Value = null, scandir: Value = null, scanning: Value = null, stop: Value = null, i: Value = null, L: Value = null;
+	let i: Value = null, L: Value = null;
 	let $0: any, $e: any;
-	f.vars = () => [scanfrom, scandir, scanning, stop, i, L, $0, $e];
-	if ((rt.lt(rt.length(rt.sv(f, "eye_lighting")), rt.sv(f, "light_beam_distance")) || !truthy(rt.sv(f, "on_mob")))) {
-		yield* g.srcCall(f, "regenerate_light_effects");
+	if (rt.length(this.eye_lighting) < this.light_beam_distance || !this.on_mob) {
+		yield* this.regenerate_light_effects();
 	}
-	scanfrom = rt.getStep(f, rt.sv(f, "owner"), 0);
-	scandir = rt.fv(f, "dir", rt.sv(f, "owner"));
-	if (!truthy((rt.istype(live(scanfrom), T("/turf")) ? 1 : 0))) {
-		yield* g.srcCall(f, "clear_visuals");
+	let scanfrom: Value = rt.getStep(f, this.owner, 0);
+	let scandir: Value = this.owner.dir;
+	if (!rt.istype(scanfrom, T("/turf"))) {
+		yield* this.clear_visuals();
 	}
-	scanning = live(scanfrom);
-	stop = 0;
-	yield* g.callName(f, rt.sv(f, "on_mob"), "forceMove", [live(scanning)]);
-	i = null;
-	rt.forRange(f, 0, 1, rt.sv(f, "light_beam_distance"), 1);
+	let scanning: Value = scanfrom;
+	let stop: Value = 0;
+	yield* this.on_mob.forceMove(scanning);
+	rt.forRange(f, 0, 1, this.light_beam_distance, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		if ((truthy(rt.gv(f, "opacity", (scanning = rt.getStep(f, live(scanning), live(scandir))))) || truthy(rt.fv(f, "has_opaque_atom", live(scanning))))) {
+		if ((scanning = rt.getStep(f, scanning, scandir)).opacity || scanning.has_opaque_atom) {
 			stop = 1;
 		}
-		if (truthy(rt.sv(f, "eye_lighting"))) {
-			if (truthy((yield* g.call(f, P("/proc/isnum"), null, [live(i)])))) {
-				if ((rt.gt(live(i), 0) && rt.le(live(i), rt.len(f, rt.sv(f, "eye_lighting"))))) {
-					$0 = rt.index(rt.sv(f, "eye_lighting"), live(i));
+		if (this.eye_lighting) {
+			if (isnum(i)) {
+				if (i > 0 && i <= rt.len(f, this.eye_lighting)) {
+					$0 = rt.index(this.eye_lighting, i);
 				} else {
 					$0 = null;
 				}
 			} else {
-				$0 = rt.index(rt.sv(f, "eye_lighting"), live(i));
+				$0 = rt.index(this.eye_lighting, i);
 			}
 		} else {
 			$0 = null;
 		}
 		L = $0;
-		if (truthy(live(stop))) {
-			yield* g.callName(f, live(L), "forceMove", [live(f.src)]);
+		if (stop) {
+			yield* L.forceMove(this);
 		} else {
-			yield* g.callName(f, live(L), "forceMove", [live(scanning)]);
+			yield* L.forceMove(scanning);
 		}
 	}
 	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /obj/item/organ/eyes/robotic/glow/proc/clear_visuals  (code/modules/surgery/organs/eyes.dm:273)  may sleep
+// eyes.dm:273
 rt.def("/obj/item/organ/eyes/robotic/glow/proc/clear_visuals", function* clear_visuals(f: Frame, delete_everything: Value) {
 	let I: Value = null, i: Value = null, L: Value = null;
-	let $e: any;
-	f.vars = () => [delete_everything, I, i, L, $e];
-	if (live(delete_everything) === null) {
-		delete_everything = 0;
-	}
-	if (truthy(live(delete_everything))) {
-		if (truthy(rt.sv(f, "eye_lighting"))) {
-			I = null;
-			rt.forList(f, 0, rt.sv(f, "eye_lighting"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				I = $e;
-				yield* g.call(f, P("/proc/qdel"), null, [live(I)]);
+	delete_everything ??= 0;
+	if (delete_everything) {
+		if (this.eye_lighting) {
+			for (I of each(this.eye_lighting)) {
+				yield* qdel(I);
 			}
-			rt.endFor(f, 0);
-			yield* g.callName(f, rt.sv(f, "eye_lighting"), "Cut", []);
+			this.eye_lighting.Cut();
 		}
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "on_mob")]);
-		rt.setSv(f, "on_mob", null);
+		yield* qdel(this.on_mob);
+		this.on_mob = null;
 	} else {
-		i = null;
-		rt.forList(f, 0, rt.sv(f, "eye_lighting"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			i = $e;
-			yield* g.callName(f, (L = live(i)), "forceMove", [live(f.src)]);
+		for (i of each(this.eye_lighting)) {
+			yield* (L = i).forceMove(this);
 		}
-		rt.endFor(f, 0);
-		if (!truthy(rt.sv(f, "on_mob")) || truthy(rt.fv(f, "gc_destroyed", rt.sv(f, "on_mob")))) return f.dot;
-		yield* g.callName(f, rt.sv(f, "on_mob"), "forceMove", [live(f.src)]);
+		if (!this.on_mob || this.on_mob.gc_destroyed) return f.dot;
+		yield* this.on_mob.forceMove(this);
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/organ/eyes/robotic/glow/proc/start_visuals  (code/modules/surgery/organs/eyes.dm:283)  may sleep
+// eyes.dm:283
 rt.def("/obj/item/organ/eyes/robotic/glow/proc/start_visuals", function* start_visuals(f: Frame) {
-	if (!truthy((rt.istype(rt.sv(f, "eye_lighting"), T("/list")) ? 1 : 0))) {
-		yield* g.srcCall(f, "regenerate_light_effects");
+	if (!rt.istype(this.eye_lighting, T("/list"))) {
+		yield* this.regenerate_light_effects();
 	}
-	if ((rt.lt(rt.len(f, rt.sv(f, "eye_lighting")), rt.sv(f, "light_beam_distance")) || !truthy(rt.sv(f, "on_mob")))) {
-		yield* g.srcCall(f, "regenerate_light_effects");
+	if (rt.len(f, this.eye_lighting) < this.light_beam_distance || !this.on_mob) {
+		yield* this.regenerate_light_effects();
 	}
-	yield* g.srcCall(f, "sync_light_effects");
-	yield* g.srcCall(f, "update_visuals");
+	this.sync_light_effects();
+	yield* this.update_visuals();
 	return f.dot;
 }, true);
 
-// /obj/item/organ/eyes/robotic/glow/proc/set_distance  (code/modules/surgery/organs/eyes.dm:291)  may sleep
+// eyes.dm:291
 rt.def("/obj/item/organ/eyes/robotic/glow/proc/set_distance", function* set_distance(f: Frame, dist: Value) {
-	f.vars = () => [dist];
-	rt.setSv(f, "light_beam_distance", live(dist));
-	yield* g.srcCall(f, "regenerate_light_effects");
+	this.light_beam_distance = dist;
+	yield* this.regenerate_light_effects();
 	return f.dot;
 }, true);
 
-// /obj/item/organ/eyes/robotic/glow/proc/regenerate_light_effects  (code/modules/surgery/organs/eyes.dm:295)  may sleep
+// eyes.dm:295
 rt.def("/obj/item/organ/eyes/robotic/glow/proc/regenerate_light_effects", function* regenerate_light_effects(f: Frame) {
 	let i: Value = null;
 	let $e: any;
-	f.vars = () => [i, $e];
-	yield* g.srcCall(f, "clear_visuals", 1);
-	rt.setSv(f, "on_mob", (yield* g.new_(f, T("/obj/effect/abstract/eye_lighting"), [live(f.src)])));
-	i = null;
-	rt.forRange(f, 0, 1, rt.sv(f, "light_beam_distance"), 1);
+	yield* this.clear_visuals(1);
+	this.on_mob = (yield* new_(T("/obj/effect/abstract/eye_lighting"), this));
+	rt.forRange(f, 0, 1, this.light_beam_distance, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		if (!truthy(rt.sv(f, "eye_lighting"))) {
-			rt.setSv(f, "eye_lighting", rt.list());
+		if (!this.eye_lighting) {
+			this.eye_lighting = list();
 		}
-		rt.modSrcVar(f, "eye_lighting", (yield* g.new_(f, T("/obj/effect/abstract/eye_lighting"), [live(f.src)])), add);
+		this.eye_lighting += (yield* new_(T("/obj/effect/abstract/eye_lighting"), this));
 	}
 	rt.endFor(f, 0);
-	yield* g.srcCall(f, "sync_light_effects");
+	this.sync_light_effects();
 	return f.dot;
 }, true);
 
-// /obj/item/organ/eyes/robotic/glow/proc/sync_light_effects  (code/modules/surgery/organs/eyes.dm:302)
+// eyes.dm:302
 rt.def("/obj/item/organ/eyes/robotic/glow/proc/sync_light_effects", function sync_light_effects(f: Frame) {
 	let I: Value = null, L: Value = null;
-	let $e: any;
-	f.vars = () => [I, L, $e];
-	I = null;
-	rt.forList(f, 0, rt.sv(f, "eye_lighting"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		rt.callName(f, (L = live(I)), "set_light", [rt.sv(f, "light_object_range"), rt.sv(f, "light_object_power"), rt.sv(f, "current_color_string")]);
+	for (I of each(this.eye_lighting)) {
+		(L = I).set_light(this.light_object_range, this.light_object_power, this.current_color_string);
 	}
-	rt.endFor(f, 0);
-	if (!truthy(rt.sv(f, "on_mob"))) return f.dot;
-	rt.callName(f, rt.sv(f, "on_mob"), "set_light", [1, 1, rt.sv(f, "current_color_string")]);
+	if (!this.on_mob) return f.dot;
+	this.on_mob.set_light(1, 1, this.current_color_string);
 	return f.dot;
 });
 
@@ -486,10 +444,10 @@ rt.type(11809, "/obj/effect/abstract/eye_lighting", "/obj/effect/abstract", {
 	parent: null,
 });
 
-// /obj/effect/abstract/eye_lighting/proc/Initialize  (code/modules/surgery/organs/eyes.dm:312)
+// eyes.dm:312
 rt.def("/obj/effect/abstract/eye_lighting/proc/Initialize", function Initialize(f: Frame) {
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "parent", rt.sv(f, "loc"));
-	if (truthy((rt.istype(rt.sv(f, "parent"), T("/obj/item/organ/eyes/robotic/glow")) ? 1 : 0))) return f.dot;
-	return 2;
+	f.dot = parent_proc();
+	this.parent = this.loc;
+	if (rt.istype(this.parent, T("/obj/item/organ/eyes/robotic/glow"))) return f.dot;
+	return INITIALIZE_HINT_QDEL;
 });

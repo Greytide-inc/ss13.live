@@ -1,7 +1,7 @@
-// From code/_onclick/hud/swarmer.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/_onclick/hud/swarmer.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(11195, "/obj/screen/swarmer/FabricateTrap", "/obj/screen/swarmer", {
@@ -10,12 +10,11 @@ rt.type(11195, "/obj/screen/swarmer/FabricateTrap", "/obj/screen/swarmer", {
 	desc: "Creates a trap that will nonlethally shock any non-swarmer that attempts to cross it. (Costs 5 resources)",
 });
 
-// /obj/screen/swarmer/FabricateTrap/proc/Click  (code/_onclick/hud/swarmer.dm:12)  may sleep
+// swarmer.dm:12
 rt.def("/obj/screen/swarmer/FabricateTrap/proc/Click", function* Click(f: Frame) {
 	let S: Value = null;
-	f.vars = () => [S];
-	if (!truthy((rt.istype(live(f.usr), T("/mob/living/simple_animal/hostile/swarmer")) ? 1 : 0))) return f.dot;
-	yield* g.callName(f, (S = live(f.usr)), "CreateTrap", []);
+	if (!rt.istype(f.usr, T("/mob/living/simple_animal/hostile/swarmer"))) return f.dot;
+	yield* (S = f.usr).CreateTrap();
 	return f.dot;
 }, true);
 
@@ -25,12 +24,11 @@ rt.type(11196, "/obj/screen/swarmer/Barricade", "/obj/screen/swarmer", {
 	desc: "Creates a destructible barricade that will stop any non swarmer from passing it. Also allows disabler beams to pass through. (Costs 5 resources)",
 });
 
-// /obj/screen/swarmer/Barricade/proc/Click  (code/_onclick/hud/swarmer.dm:22)  may sleep
+// swarmer.dm:22
 rt.def("/obj/screen/swarmer/Barricade/proc/Click", function* Click(f: Frame) {
 	let S: Value = null;
-	f.vars = () => [S];
-	if (!truthy((rt.istype(live(f.usr), T("/mob/living/simple_animal/hostile/swarmer")) ? 1 : 0))) return f.dot;
-	yield* g.callName(f, (S = live(f.usr)), "CreateBarricade", []);
+	if (!rt.istype(f.usr, T("/mob/living/simple_animal/hostile/swarmer"))) return f.dot;
+	yield* (S = f.usr).CreateBarricade();
 	return f.dot;
 }, true);
 
@@ -40,12 +38,11 @@ rt.type(11197, "/obj/screen/swarmer/Replicate", "/obj/screen/swarmer", {
 	desc: "Creates a another of our kind.",
 });
 
-// /obj/screen/swarmer/Replicate/proc/Click  (code/_onclick/hud/swarmer.dm:32)  may sleep
+// swarmer.dm:32
 rt.def("/obj/screen/swarmer/Replicate/proc/Click", function* Click(f: Frame) {
 	let S: Value = null;
-	f.vars = () => [S];
-	if (!truthy((rt.istype(live(f.usr), T("/mob/living/simple_animal/hostile/swarmer")) ? 1 : 0))) return f.dot;
-	yield* g.callName(f, (S = live(f.usr)), "CreateSwarmer", []);
+	if (!rt.istype(f.usr, T("/mob/living/simple_animal/hostile/swarmer"))) return f.dot;
+	yield* (S = f.usr).CreateSwarmer();
 	return f.dot;
 }, true);
 
@@ -55,12 +52,11 @@ rt.type(11198, "/obj/screen/swarmer/RepairSelf", "/obj/screen/swarmer", {
 	desc: "Repairs damage to our body.",
 });
 
-// /obj/screen/swarmer/RepairSelf/proc/Click  (code/_onclick/hud/swarmer.dm:42)  may sleep
+// swarmer.dm:42
 rt.def("/obj/screen/swarmer/RepairSelf/proc/Click", function* Click(f: Frame) {
 	let S: Value = null;
-	f.vars = () => [S];
-	if (!truthy((rt.istype(live(f.usr), T("/mob/living/simple_animal/hostile/swarmer")) ? 1 : 0))) return f.dot;
-	yield* g.callName(f, (S = live(f.usr)), "RepairSelf", []);
+	if (!rt.istype(f.usr, T("/mob/living/simple_animal/hostile/swarmer"))) return f.dot;
+	yield* (S = f.usr).RepairSelf();
 	return f.dot;
 }, true);
 
@@ -70,12 +66,11 @@ rt.type(11199, "/obj/screen/swarmer/ToggleLight", "/obj/screen/swarmer", {
 	desc: "Toggles our inbuilt light on or off.",
 });
 
-// /obj/screen/swarmer/ToggleLight/proc/Click  (code/_onclick/hud/swarmer.dm:52)
+// swarmer.dm:52
 rt.def("/obj/screen/swarmer/ToggleLight/proc/Click", function Click(f: Frame) {
 	let S: Value = null;
-	f.vars = () => [S];
-	if (!truthy((rt.istype(live(f.usr), T("/mob/living/simple_animal/hostile/swarmer")) ? 1 : 0))) return f.dot;
-	rt.callName(f, (S = live(f.usr)), "ToggleLight", []);
+	if (!rt.istype(f.usr, T("/mob/living/simple_animal/hostile/swarmer"))) return f.dot;
+	(S = f.usr).ToggleLight();
 	return f.dot;
 });
 
@@ -85,41 +80,38 @@ rt.type(11200, "/obj/screen/swarmer/ContactSwarmers", "/obj/screen/swarmer", {
 	desc: "Sends a message to all other swarmers, should they exist.",
 });
 
-// /obj/screen/swarmer/ContactSwarmers/proc/Click  (code/_onclick/hud/swarmer.dm:62)  may sleep
+// swarmer.dm:62
 rt.def("/obj/screen/swarmer/ContactSwarmers/proc/Click", function* Click(f: Frame) {
 	let S: Value = null;
-	f.vars = () => [S];
-	if (!truthy((rt.istype(live(f.usr), T("/mob/living/simple_animal/hostile/swarmer")) ? 1 : 0))) return f.dot;
-	yield* g.callName(f, (S = live(f.usr)), "ContactSwarmers", []);
+	if (!rt.istype(f.usr, T("/mob/living/simple_animal/hostile/swarmer"))) return f.dot;
+	yield* (S = f.usr).ContactSwarmers();
 	return f.dot;
 }, true);
 
 rt.type(78, "/datum/hud/swarmer", "/datum/hud", {});
 
-// /datum/hud/swarmer/proc/New  (code/_onclick/hud/swarmer.dm:67)  may sleep
-rt.def("/datum/hud/swarmer/proc/New", function* New(f: Frame) {
+// swarmer.dm:67
+rt.def("/datum/hud/swarmer/proc/New", function* New(f: Frame, owner: Value) {
 	let using: Value = null;
-	f.vars = () => [using];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	using = null;
-	rt.setFv(f, "screen_loc", (using = (yield* g.new_(f, T("/obj/screen/swarmer/FabricateTrap"), []))), (yield* g.call(f, P("/proc/ui_hand_position"), null, [2])));
-	rt.modSrcVar(f, "static_inventory", live(using), add);
-	rt.setFv(f, "screen_loc", (using = (yield* g.new_(f, T("/obj/screen/swarmer/Barricade"), []))), (yield* g.call(f, P("/proc/ui_hand_position"), null, [1])));
-	rt.modSrcVar(f, "static_inventory", live(using), add);
-	rt.setFv(f, "screen_loc", (using = (yield* g.new_(f, T("/obj/screen/swarmer/Replicate"), []))), "EAST-1:28,SOUTH:5");
-	rt.modSrcVar(f, "static_inventory", live(using), add);
-	rt.setFv(f, "screen_loc", (using = (yield* g.new_(f, T("/obj/screen/swarmer/RepairSelf"), []))), "CENTER+1:18,SOUTH:5");
-	rt.modSrcVar(f, "static_inventory", live(using), add);
-	rt.setFv(f, "screen_loc", (using = (yield* g.new_(f, T("/obj/screen/swarmer/ToggleLight"), []))), "CENTER-2:14,SOUTH:5");
-	rt.modSrcVar(f, "static_inventory", live(using), add);
-	rt.setFv(f, "screen_loc", (using = (yield* g.new_(f, T("/obj/screen/swarmer/ContactSwarmers"), []))), "WEST:6,SOUTH:5");
-	rt.modSrcVar(f, "static_inventory", live(using), add);
+	yield* parent_proc();
+	(using = (yield* new_(T("/obj/screen/swarmer/FabricateTrap")))).screen_loc = ui_hand_position(2);
+	this.static_inventory += using;
+	(using = (yield* new_(T("/obj/screen/swarmer/Barricade")))).screen_loc = ui_hand_position(1);
+	this.static_inventory += using;
+	(using = (yield* new_(T("/obj/screen/swarmer/Replicate")))).screen_loc = "EAST-1:28,SOUTH:5";
+	this.static_inventory += using;
+	(using = (yield* new_(T("/obj/screen/swarmer/RepairSelf")))).screen_loc = "CENTER+1:18,SOUTH:5";
+	this.static_inventory += using;
+	(using = (yield* new_(T("/obj/screen/swarmer/ToggleLight")))).screen_loc = "CENTER-2:14,SOUTH:5";
+	this.static_inventory += using;
+	(using = (yield* new_(T("/obj/screen/swarmer/ContactSwarmers")))).screen_loc = "WEST:6,SOUTH:5";
+	this.static_inventory += using;
 	return f.dot;
-}, true, { args: ["owner"] });
+}, true);
 
-// /mob/living/simple_animal/hostile/swarmer/proc/create_mob_hud  (code/_onclick/hud/swarmer.dm:96)  may sleep
+// swarmer.dm:96
 rt.def("/mob/living/simple_animal/hostile/swarmer/proc/create_mob_hud", function* create_mob_hud(f: Frame) {
-	if (!(truthy(rt.sv(f, "client")) && !truthy(rt.sv(f, "hud_used")))) return f.dot;
-	rt.setSv(f, "hud_used", (yield* g.new_(f, T("/datum/hud/swarmer"), [live(f.src)])));
+	if (!(this.client && !this.hud_used)) return f.dot;
+	this.hud_used = (yield* new_(T("/datum/hud/swarmer"), this));
 	return f.dot;
 }, true);

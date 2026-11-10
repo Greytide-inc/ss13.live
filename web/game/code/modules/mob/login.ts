@@ -1,47 +1,47 @@
-// From code/modules/mob/login.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/login.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { P } = rt;
 
 
-// /mob/proc/Login  (code/modules/mob/login.dm:2)  may sleep
+// login.dm:2
 rt.def("/mob/proc/Login", function* Login(f: Frame) {
-	(rt.modGl("player_list", live(f.src), rt.bitOr));
-	rt.setSv(f, "lastKnownIP", rt.fv(f, "address", rt.sv(f, "client")));
-	rt.setSv(f, "computer_id", rt.fv(f, "computer_id", rt.sv(f, "client")));
-	yield* g.call(f, P("/proc/log_access"), null, [fmt("Mob Login: ＀ was assigned to a ＀", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.src)])), rt.sv(f, "type")])]);
-	yield* g.callName(f, rt.world(), "update_status", []);
-	rt.setFv(f, "screen", rt.sv(f, "client"), rt.list());
-	rt.setFv(f, "images", rt.sv(f, "client"), rt.list());
-	if (!truthy(rt.sv(f, "hud_used"))) {
-		yield* g.srcCall(f, "create_mob_hud");
+	(rt.modGl("player_list", this, rt.bitOr));
+	this.lastKnownIP = this.client.address;
+	this.computer_id = this.client.computer_id;
+	log_access(`Mob Login: ${key_name(this)} was assigned to a ${this.type}`);
+	yield* rt.world().update_status();
+	this.client.screen = list();
+	this.client.images = list();
+	if (!this.hud_used) {
+		yield* this.create_mob_hud();
 	}
-	if (truthy(rt.sv(f, "hud_used"))) {
-		yield* g.callName(f, rt.sv(f, "hud_used"), "show_hud", [rt.fv(f, "hud_version", rt.sv(f, "hud_used"))]);
+	if (this.hud_used) {
+		yield* this.hud_used.show_hud(this.hud_used.hud_version);
 	}
-	rt.setSv(f, "next_move", 1);
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "reset_perspective", rt.sv(f, "loc"));
-	if (truthy(rt.sv(f, "loc"))) {
-		yield* g.callName(f, rt.sv(f, "loc"), "on_log", [1]);
+	this.next_move = 1;
+	yield* parent_proc();
+	yield* this.reset_perspective(this.loc);
+	if (this.loc) {
+		this.loc.on_log(1);
 	}
-	yield* g.srcCall(f, "reload_huds");
-	yield* g.srcCall(f, "reload_fullscreen");
-	if (truthy((rt.isIn(f, rt.sv(f, "ckey"), rt.gl("deadmins")) ? 1 : 0))) {
-		rt.modSrcVar(f, "verbs", P("/client/proc/readmin"), add);
+	this.reload_huds();
+	this.reload_fullscreen();
+	if (rt.isIn(f, this.ckey, GLOB.deadmins)) {
+		this.verbs += P("/client/proc/readmin");
 	}
-	yield* g.srcCall(f, "add_click_catcher");
-	yield* g.srcCall(f, "sync_mind");
-	yield* g.callName(f, rt.sv(f, "client"), "sethotkeys", []);
-	yield* g.srcCall(f, "update_client_colour");
-	if (truthy(rt.sv(f, "client"))) {
-		rt.setFv(f, "click_intercept", rt.sv(f, "client"), null);
-		yield* g.callName(f, rt.sv(f, "client"), "change_view", [(yield* g.callName(f, rt.sv(f, "client"), "default_view", []))]);
+	this.add_click_catcher();
+	this.sync_mind();
+	this.client.sethotkeys();
+	this.update_client_colour();
+	if (this.client) {
+		this.client.click_intercept = null;
+		yield* this.client.change_view(this.client.default_view());
 	}
-	if (!truthy(rt.index(rt.gl("individual_log_list"), rt.sv(f, "ckey")))) {
-		rt.setAt(rt.gl("individual_log_list"), rt.sv(f, "ckey"), rt.sv(f, "logging"));
+	if (!rt.index(GLOB.individual_log_list, this.ckey)) {
+		rt.setAt(GLOB.individual_log_list, this.ckey, this.logging);
 	} else {
-		rt.setSv(f, "logging", rt.index(rt.gl("individual_log_list"), rt.sv(f, "ckey")));
+		this.logging = rt.index(GLOB.individual_log_list, this.ckey);
 	}
 	return f.dot;
 }, true);

@@ -1,7 +1,7 @@
-// From code/game/gamemodes/nuclear/pinpointer.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/gamemodes/nuclear/pinpointer.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(6688, "/obj/item/weapon/pinpointer", "/obj/item/weapon", {
@@ -27,301 +27,241 @@ rt.type(6688, "/obj/item/weapon/pinpointer", "/obj/item/weapon", {
 	resistance_flags: 99,
 });
 
-// /obj/item/weapon/pinpointer/proc/<init>  (code/game/gamemodes/nuclear/pinpointer.dm:13)
+// pinpointer.dm:13
 rt.def("/obj/item/weapon/pinpointer/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 500, "$glass", 250]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 500, "$glass", 250]);
 	return f.dot;
 });
 
-// /obj/item/weapon/pinpointer/proc/New  (code/game/gamemodes/nuclear/pinpointer.dm:25)  may sleep
+// pinpointer.dm:25
 rt.def("/obj/item/weapon/pinpointer/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.modGl("pinpointer_list", live(f.src), add);
+	yield* parent_proc();
+	GLOB.pinpointer_list += this;
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/pinpointer/proc/Destroy  (code/game/gamemodes/nuclear/pinpointer.dm:29)  may sleep
+// pinpointer.dm:29
 rt.def("/obj/item/weapon/pinpointer/proc/Destroy", function* Destroy(f: Frame) {
-	rt.setFv(f, "isprocessing", live(f.src), 0);
-	(rt.modField(f, rt.gl("SSfastprocess"), "processing", live(f.src), subtract));
-	(rt.modGl("pinpointer_list", live(f.src), subtract));
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	this.isprocessing = 0;
+	GLOB.SSfastprocess.processing -= this;
+	GLOB.pinpointer_list -= this;
+	return (yield* parent_proc());
 }, true);
 
-// /obj/item/weapon/pinpointer/proc/attack_self  (code/game/gamemodes/nuclear/pinpointer.dm:34)
+// pinpointer.dm:34
 rt.def("/obj/item/weapon/pinpointer/proc/attack_self", function attack_self(f: Frame, user: Value) {
-	let $0: any, $1: any, $2: any;
-	f.vars = () => [$0, $1, $2];
-	rt.setSv(f, "active", (!truthy(rt.sv(f, "active")) ? 1 : 0));
-	$0 = live(user);
-	$1 = live(user);
-	if (truthy(rt.sv(f, "active"))) {
-		$1 = $1;
+	let $2: any;
+	this.active = (!this.active ? 1 : 0);
+	let $0: any = user;
+	let $1: any = user;
+	if (this.active) {
+
 		$2 = "";
 	} else {
 		$2 = "de";
 	}
-	$1 = fmt("<span class='notice'>＀ ＀activates their pinpointer.</span>", [$1, $2]);
-	if (truthy(rt.sv(f, "active"))) {
-		$2 = "";
-	} else {
-		$2 = "de";
-	}
-	rt.callName(f, $0, "visible_message", [$1, fmt("<span class='notice'>You ＀activate your pinpointer.</span>", [$2])]);
-	rt.call(f, P("/proc/playsound"), null, [live(user), rt.rsc("sound/items/screwdriver2.ogg"), 50, 1]);
-	if (truthy(rt.sv(f, "active"))) {
-		$0 = "onnull";
-	} else {
-		$0 = "off";
-	}
-	rt.setSv(f, "icon_state", fmt("pin＀", [$0]));
-	if (truthy(rt.sv(f, "active"))) {
-		if (!truthy(rt.fv(f, "isprocessing", live(f.src)))) {
-			rt.setFv(f, "isprocessing", live(f.src), 1);
-			rt.modField(f, rt.gl("SSfastprocess"), "processing", live(f.src), add);
+	$1 = `<span class='notice'>${$1} ${$2}activates their pinpointer.</span>`;
+	$0.visible_message($1, `<span class='notice'>You ${this.active ? "" : "de"}activate your pinpointer.</span>`);
+	playsound(user, rt.rsc("sound/items/screwdriver2.ogg"), 50, 1);
+	this.icon_state = `pin${this.active ? "onnull" : "off"}`;
+	if (this.active) {
+		if (!this.isprocessing) {
+			this.isprocessing = 1;
+			GLOB.SSfastprocess.processing += this;
 		}
 	} else {
-		rt.setSv(f, "target", null);
-		rt.setFv(f, "isprocessing", live(f.src), 0);
-		(rt.modField(f, rt.gl("SSfastprocess"), "processing", live(f.src), subtract));
+		this.target = null;
+		this.isprocessing = 0;
+		GLOB.SSfastprocess.processing -= this;
 	}
 	return f.dot;
 });
 
-// /obj/item/weapon/pinpointer/proc/attackby  (code/game/gamemodes/nuclear/pinpointer.dm:45)  may sleep
-rt.def("/obj/item/weapon/pinpointer/proc/attackby", function* attackby(f: Frame) {
-	if (!isEqual(rt.sv(f, "mode"), 5)) {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+// pinpointer.dm:45
+rt.def("/obj/item/weapon/pinpointer/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
+	if (this.mode != TRACK_ATOM) {
+		return (yield* parent_proc());
 	}
-	yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='notice'>＀ tunes ＀ to ＀.</span>", [live(f.args[1]), live(f.src), live(f.args[0])]), fmt("<span class='notice'>You fine-tune ＀'s tracking to track ＀.</span>", [live(f.src), live(f.args[0])])]);
-	yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/machines/click.ogg"), 50, 1]);
-	rt.setSv(f, "constant_target", live(f.args[0]));
+	user.visible_message(`<span class='notice'>${user} tunes ${this} to ${I}.</span>`, `<span class='notice'>You fine-tune ${this}'s tracking to track ${I}.</span>`);
+	playsound(this, rt.rsc("sound/machines/click.ogg"), 50, 1);
+	this.constant_target = I;
 	return f.dot;
-}, true, { args: ["I", "user", "params"] });
+}, true);
 
-// /obj/item/weapon/pinpointer/proc/examine  (code/game/gamemodes/nuclear/pinpointer.dm:52)
-rt.def("/obj/item/weapon/pinpointer/proc/examine", function examine(f: Frame) {
-	let msg: Value = null, bomb: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [msg, bomb, $0, $e];
-	rt.callSuper(f, [], rt.Args.Same);
-	msg = "Its tracking indicator reads ";
-	$0 = rt.sv(f, "mode");
-	if ($0 === 1) {
-		msg = rt.modify(live(msg), "\"nuclear_disk\".", add);
-	} else if ($0 === 2) {
-		msg = rt.modify(live(msg), "\"01000001 01001001\".", add);
-	} else if ($0 === 3) {
-		msg = rt.modify(live(msg), "\"vasvygengbefuvc\".", add);
-	} else if ($0 === 4) {
-		if (truthy(rt.sv(f, "target"))) {
-			$0 = fmt("Operative ＀", [rt.sv(f, "target")]);
+// pinpointer.dm:52
+rt.def("/obj/item/weapon/pinpointer/proc/examine", function examine(f: Frame, user: Value) {
+	let bomb: Value = null;
+	let $e: any;
+	parent_proc();
+	let msg: Value = "Its tracking indicator reads ";
+	let $0: any = this.mode;
+	if ($0 === TRACK_NUKE_DISK) {
+		msg += "\"nuclear_disk\".";
+	} else if ($0 === TRACK_MALF_AI) {
+		msg += "\"01000001 01001001\".";
+	} else if ($0 === TRACK_INFILTRATOR) {
+		msg += "\"vasvygengbefuvc\".";
+	} else if ($0 === TRACK_OPERATIVES) {
+		if (this.target) {
+			$0 = `Operative ${this.target}`;
 		} else {
 			$0 = "friends";
 		}
-		msg = rt.modify(live(msg), fmt("\"＀\".", [$0]), add);
-	} else if ($0 === 5) {
-		msg = rt.modify(live(msg), fmt("\"＀\".", [rt.initial(f, rt.sv(f, "constant_target"), "name")]), add);
-	} else if ($0 === 6) {
-		msg = rt.modify(live(msg), fmt("\"(＀, ＀)\".", [rt.sv(f, "target_x"), rt.sv(f, "target_y")]), add);
+		msg += `"${$0}".`;
+	} else if ($0 === TRACK_ATOM) {
+		msg += `"${rt.initial(f, this.constant_target, "name")}".`;
+	} else if ($0 === TRACK_COORDINATES) {
+		msg += `"(${this.target_x}, ${this.target_y})".`;
 	} else {
 		msg = "Its tracking indicator is blank.";
 	}
-	rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), live(msg)]);
-	bomb = null;
-	rt.forList(f, 0, rt.gl("machines"), T("/obj/machinery/nuclearbomb"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		bomb = $e;
-		if (truthy(rt.fv(f, "timing", live(bomb)))) {
-			rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("Extreme danger. Arming signal detected. Time remaining: ＀", [rt.callName(f, live(bomb), "get_time_left", [])])]);
+	to_chat(user, msg);
+	for (bomb of each(GLOB.machines, T("/obj/machinery/nuclearbomb"))) {
+		if (bomb.timing) {
+			to_chat(user, `Extreme danger. Arming signal detected. Time remaining: ${bomb.get_time_left()}`);
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/item/weapon/pinpointer/proc/process  (code/game/gamemodes/nuclear/pinpointer.dm:75)  may sleep
+// pinpointer.dm:75
 rt.def("/obj/item/weapon/pinpointer/proc/process", function* process(f: Frame) {
-	if (!truthy(rt.sv(f, "active"))) {
-		rt.setFv(f, "isprocessing", live(f.src), 0);
-		(rt.modField(f, rt.gl("SSfastprocess"), "processing", live(f.src), subtract));
-		return live(f.dot);
+	if (!this.active) {
+		this.isprocessing = 0;
+		GLOB.SSfastprocess.processing -= this;
+		return f.dot;
 	}
-	yield* g.srcCall(f, "scan_for_target");
-	yield* g.srcCall(f, "point_to_target");
-	yield* g.srcCall(f, "my_god_jc_a_bomb");
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/item/weapon/pinpointer/proc/refresh_target")])), 50, 1]);
+	this.scan_for_target();
+	this.point_to_target();
+	this.my_god_jc_a_bomb();
+	yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/item/weapon/pinpointer/proc/refresh_target"))), 50, 1);
 	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/item/weapon/pinpointer/proc/scan_for_target  (code/game/gamemodes/nuclear/pinpointer.dm:85)
+// pinpointer.dm:85
 rt.def("/obj/item/weapon/pinpointer/proc/scan_for_target", function scan_for_target(f: Frame) {
 	let L: Value = null, N: Value = null, V: Value = null, A: Value = null, possible_targets: Value = null, here: Value = null, V_2: Value = null, M: Value = null, closest_operative: Value = null, _T: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [L, N, V, A, possible_targets, here, V_2, M, closest_operative, _T, $0, $e];
-	if (truthy(rt.sv(f, "target"))) {
-		if (truthy((rt.istype(rt.sv(f, "target"), T("/mob/living")) ? 1 : 0))) {
-			if (isEqual(rt.gv(f, "stat", (L = rt.sv(f, "target"))), 2)) {
-				rt.setSv(f, "target", null);
+	let $e: any;
+	if (this.target) {
+		if (rt.istype(this.target, T("/mob/living"))) {
+			if ((L = this.target).stat == 2) {
+				this.target = null;
 			}
 		}
-		return live(f.dot);
+		return f.dot;
 	}
-	$0 = rt.sv(f, "mode");
-	if ($0 === 1) {
-		rt.setSv(f, "target", (N = rt.locateIn(f, T("/obj/item/weapon/disk/nuclear"), rt.world())));
-	} else if ($0 === 2) {
+	if (this.mode === 1) {
+		this.target = (N = rt.locateIn(f, T("/obj/item/weapon/disk/nuclear"), rt.world()));
+	} else if (this.mode === 2) {
+		for (V of each(GLOB.ai_list)) {
+			if ((A = V).nuking) {
+				this.target = A;
+			}
+		}
 		V = null;
-		rt.forList(f, 0, rt.gl("ai_list"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			V = $e;
-			if (truthy(rt.gv(f, "nuking", (A = live(V))))) {
-				rt.setSv(f, "target", live(A));
+		for (V of each(GLOB.apcs_list)) {
+			if ((A = V).malfhack && A.occupier) {
+				this.target = A;
 			}
 		}
-		rt.endFor(f, 0);
-		V = null;
-		rt.forList(f, 0, rt.gl("apcs_list"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			V = $e;
-			if ((truthy(rt.gv(f, "malfhack", (A = live(V)))) && truthy(rt.fv(f, "occupier", live(A))))) {
-				rt.setSv(f, "target", live(A));
+	} else if (this.mode === 3) {
+		this.target = GLOB.SSshuttle.getShuttle("syndicate");
+	} else if (this.mode === 4) {
+		possible_targets = list();
+		here = rt.getStep(f, this, 0);
+		for (V_2 of each(GLOB.SSticker.mode.syndicates)) {
+			if ((M = V_2).current && M.current.stat != 2) {
+				(possible_targets = rt.modify(possible_targets, M.current, rt.bitOr));
 			}
 		}
-		rt.endFor(f, 0);
-	} else if ($0 === 3) {
-		rt.setSv(f, "target", rt.callName(f, rt.gl("SSshuttle"), "getShuttle", ["syndicate"]));
-	} else if ($0 === 4) {
-		possible_targets = rt.list();
-		here = rt.getStep(f, live(f.src), 0);
-		V_2 = null;
-		rt.forList(f, 0, rt.gv(f, "syndicates", rt.fv(f, "mode", rt.gl("SSticker"))));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			V_2 = $e;
-			if ((truthy(rt.gv(f, "current", (M = live(V_2)))) && !isEqual(rt.gv(f, "stat", rt.fv(f, "current", live(M))), 2))) {
-				(possible_targets = rt.modify(live(possible_targets), rt.fv(f, "current", live(M)), rt.bitOr));
-			}
+		if (closest_operative = get_closest_atom(T("/mob/living/carbon/human"), possible_targets, here)) {
+			this.target = closest_operative;
 		}
-		rt.endFor(f, 0);
-		if (truthy((closest_operative = rt.call(f, P("/proc/get_closest_atom"), null, [T("/mob/living/carbon/human"), live(possible_targets), live(here)])))) {
-			rt.setSv(f, "target", live(closest_operative));
+	} else if (this.mode === 5) {
+		if (this.constant_target) {
+			this.target = this.constant_target;
 		}
-	} else if ($0 === 5) {
-		if (truthy(rt.sv(f, "constant_target"))) {
-			rt.setSv(f, "target", rt.sv(f, "constant_target"));
-		}
-	} else if ($0 === 6) {
-		_T = rt.getStep(f, live(f.src), 0);
-		rt.setSv(f, "target", rt.locate(rt.sv(f, "target_x"), rt.sv(f, "target_y"), rt.fv(f, "z", live(_T))));
+	} else if (this.mode === 6) {
+		_T = rt.getStep(f, this, 0);
+		this.target = rt.locate(this.target_x, this.target_y, _T.z);
 	}
 	return f.dot;
 });
 
-// /obj/item/weapon/pinpointer/proc/point_to_target  (code/game/gamemodes/nuclear/pinpointer.dm:123)
+// pinpointer.dm:123
 rt.def("/obj/item/weapon/pinpointer/proc/point_to_target", function point_to_target(f: Frame) {
-	let here: Value = null, there: Value = null;
 	let $0: any;
-	f.vars = () => [here, there, $0];
-	if (!truthy(rt.sv(f, "active"))) {
-		return live(f.dot);
+	if (!this.active) {
+		return f.dot;
 	}
-	if ((!truthy(rt.sv(f, "target")) || (isEqual(rt.sv(f, "mode"), 5) && !truthy(rt.sv(f, "constant_target"))))) {
-		if (truthy(rt.sv(f, "nuke_warning"))) {
-			$0 = "alert";
-		} else {
-			$0 = "";
-		}
-		rt.setSv(f, "icon_state", fmt("pinon＀null", [$0]));
-		return live(f.dot);
+	if (!this.target || this.mode == TRACK_ATOM && !this.constant_target) {
+		this.icon_state = `pinon${this.nuke_warning ? "alert" : ""}null`;
+		return f.dot;
 	}
-	here = rt.getStep(f, live(f.src), 0);
-	there = rt.getStep(f, rt.sv(f, "target"), 0);
-	if (!isEqual(rt.fv(f, "z", live(here)), rt.fv(f, "z", live(there)))) {
-		if (truthy(rt.sv(f, "nuke_warning"))) {
-			$0 = "alert";
-		} else {
-			$0 = "";
-		}
-		rt.setSv(f, "icon_state", fmt("pinon＀null", [$0]));
-		return live(f.dot);
+	let here: Value = rt.getStep(f, this, 0);
+	let there: Value = rt.getStep(f, this.target, 0);
+	if (here.z != there.z) {
+		this.icon_state = `pinon${this.nuke_warning ? "alert" : ""}null`;
+		return f.dot;
 	}
-	if (rt.le(rt.call(f, P("/proc/get_dist_euclidian"), null, [live(here), live(there)]), rt.sv(f, "minimum_range"))) {
-		if (truthy(rt.sv(f, "nuke_warning"))) {
-			$0 = "alert";
-		} else {
-			$0 = "";
-		}
-		rt.setSv(f, "icon_state", fmt("pinon＀direct", [$0]));
+	if (get_dist_euclidian(here, there) <= this.minimum_range) {
+		this.icon_state = `pinon${this.nuke_warning ? "alert" : ""}direct`;
 	} else {
-		rt.callSrc(f, "setDir", [rt.getDir(f, live(here), live(there))]);
-		$0 = rt.call(f, P("/proc/get_dist"), null, [live(here), live(there)]);
+		this.setDir(rt.getDir(f, here, there));
+		$0 = get_dist(here, there);
 		if (rt.inRange($0, 1, 8)) {
-			if (truthy(rt.sv(f, "nuke_warning"))) {
+			if (this.nuke_warning) {
 				$0 = "alert";
 			} else {
 				$0 = "close";
 			}
-			rt.setSv(f, "icon_state", fmt("pinon＀", [$0]));
+			this.icon_state = `pinon${$0}`;
 		} else if (rt.inRange($0, 9, 16)) {
-			if (truthy(rt.sv(f, "nuke_warning"))) {
+			if (this.nuke_warning) {
 				$0 = "alert";
 			} else {
 				$0 = "medium";
 			}
-			rt.setSv(f, "icon_state", fmt("pinon＀", [$0]));
-		} else if (rt.inRange($0, 16, 9.999999848243207e+30)) {
-			if (truthy(rt.sv(f, "nuke_warning"))) {
-				$0 = "alert";
-			} else {
-				$0 = "far";
-			}
-			rt.setSv(f, "icon_state", fmt("pinon＀", [$0]));
+			this.icon_state = `pinon${$0}`;
+		} else if (rt.inRange($0, 16, 1e+31)) {
+			this.icon_state = `pinon${this.nuke_warning ? "alert" : "far"}`;
 		}
 	}
 	return f.dot;
 });
 
-// /obj/item/weapon/pinpointer/proc/my_god_jc_a_bomb  (code/game/gamemodes/nuclear/pinpointer.dm:146)
+// pinpointer.dm:146
 rt.def("/obj/item/weapon/pinpointer/proc/my_god_jc_a_bomb", function my_god_jc_a_bomb(f: Frame) {
 	let bomb: Value = null, L: Value = null;
-	let $e: any;
-	f.vars = () => [bomb, L, $e];
-	bomb = null;
-	rt.forList(f, 0, rt.gl("nuke_list"), T("/obj/machinery/nuclearbomb"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		bomb = $e;
-		if (truthy(rt.fv(f, "timing", live(bomb)))) {
-			if (!truthy(rt.sv(f, "nuke_warning"))) {
-				rt.setSv(f, "nuke_warning", 1);
-				rt.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/items/nuke_toy_lowpower.ogg"), 50, 0]);
-				if (truthy((rt.istype(rt.sv(f, "loc"), T("/mob/living")) ? 1 : 0))) {
-					rt.call(f, P("/proc/to_chat"), null, [(L = rt.sv(f, "loc")), fmt("<span class='userdanger'>Your ＀ vibrates and lets out a tinny alarm. Uh oh.</span>", [rt.sv(f, "name")])]);
+	for (bomb of each(GLOB.nuke_list, T("/obj/machinery/nuclearbomb"))) {
+		if (bomb.timing) {
+			if (!this.nuke_warning) {
+				this.nuke_warning = 1;
+				playsound(this, rt.rsc("sound/items/nuke_toy_lowpower.ogg"), 50, 0);
+				if (rt.istype(this.loc, T("/mob/living"))) {
+					to_chat((L = this.loc), `<span class='userdanger'>Your ${this.name} vibrates and lets out a tinny alarm. Uh oh.</span>`);
 				}
 			}
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /obj/item/weapon/pinpointer/proc/switch_mode_to  (code/game/gamemodes/nuclear/pinpointer.dm:156)
+// pinpointer.dm:156
 rt.def("/obj/item/weapon/pinpointer/proc/switch_mode_to", function switch_mode_to(f: Frame, new_mode: Value) {
 	let L: Value = null;
-	f.vars = () => [L];
-	if (truthy((rt.istype(rt.sv(f, "loc"), T("/mob/living")) ? 1 : 0))) {
-		rt.call(f, P("/proc/to_chat"), null, [(L = rt.sv(f, "loc")), fmt("<span class='userdanger'>Your ＀ beeps as it reconfigures its tracking algorithms.</span>", [rt.sv(f, "name")])]);
-		rt.call(f, P("/proc/playsound"), null, [live(L), rt.rsc("sound/machines/triple_beep.ogg"), 50, 1]);
+	if (rt.istype(this.loc, T("/mob/living"))) {
+		to_chat((L = this.loc), `<span class='userdanger'>Your ${this.name} beeps as it reconfigures its tracking algorithms.</span>`);
+		playsound(L, rt.rsc("sound/machines/triple_beep.ogg"), 50, 1);
 	}
-	rt.setSv(f, "mode", live(new_mode));
-	rt.setSv(f, "target", null);
+	this.mode = new_mode;
+	this.target = null;
 	return f.dot;
 });
 
-// /obj/item/weapon/pinpointer/proc/refresh_target  (code/game/gamemodes/nuclear/pinpointer.dm:164)
+// pinpointer.dm:164
 rt.def("/obj/item/weapon/pinpointer/proc/refresh_target", function refresh_target(f: Frame) {
-	rt.setSv(f, "target", null);
+	this.target = null;
 	return f.dot;
 });

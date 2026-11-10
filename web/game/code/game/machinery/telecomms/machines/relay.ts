@@ -1,7 +1,7 @@
-// From code/game/machinery/telecomms/machines/relay.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/machinery/telecomms/machines/relay.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(10708, "/obj/machinery/telecomms/relay", "/obj/machinery/telecomms", {
@@ -19,46 +19,45 @@ rt.type(10708, "/obj/machinery/telecomms/relay", "/obj/machinery/telecomms", {
 	long_range_link: 1,
 });
 
-// /obj/machinery/telecomms/relay/proc/receive_information  (code/game/machinery/telecomms/machines/relay.dm:26)
+// relay.dm:26
 rt.def("/obj/machinery/telecomms/relay/proc/receive_information", function receive_information(f: Frame, signal: Value, machine_from: Value) {
-	if (!truthy(rt.callSrc(f, "can_send", [live(signal)]))) return f.dot;
-	(rt.modAt(rt.fv(f, "data", live(signal)), "level", rt.sv(f, "listening_level"), rt.bitOr));
+	if (!this.can_send(signal)) return f.dot;
+	(rt.modAt(signal.data, "level", this.listening_level, rt.bitOr));
 	return f.dot;
 });
 
-// /obj/machinery/telecomms/relay/proc/can  (code/game/machinery/telecomms/machines/relay.dm:32)
+// relay.dm:32
 rt.def("/obj/machinery/telecomms/relay/proc/can", function can(f: Frame, signal: Value) {
-	if (!truthy(rt.sv(f, "on"))) {
+	if (!this.on) {
 		return 0;
 	}
-	if (!truthy(rt.callSrc(f, "is_freq_listening", [live(signal)]))) {
+	if (!this.is_freq_listening(signal)) {
 		return 0;
 	}
 	return 1;
 });
 
-// /obj/machinery/telecomms/relay/proc/can_send  (code/game/machinery/telecomms/machines/relay.dm:39)
+// relay.dm:39
 rt.def("/obj/machinery/telecomms/relay/proc/can_send", function can_send(f: Frame, signal: Value) {
-	if (!truthy(rt.callSrc(f, "can", [live(signal)]))) {
+	if (!this.can(signal)) {
 		return 0;
 	}
-	return rt.sv(f, "broadcasting");
+	return this.broadcasting;
 });
 
-// /obj/machinery/telecomms/relay/proc/can_receive  (code/game/machinery/telecomms/machines/relay.dm:44)
+// relay.dm:44
 rt.def("/obj/machinery/telecomms/relay/proc/can_receive", function can_receive(f: Frame, signal: Value) {
-	if (!truthy(rt.callSrc(f, "can", [live(signal)]))) {
+	if (!this.can(signal)) {
 		return 0;
 	}
-	return rt.sv(f, "receiving");
+	return this.receiving;
 });
 
-// /obj/machinery/telecomms/relay/proc/New  (code/game/machinery/telecomms/machines/relay.dm:49)  may sleep
+// relay.dm:49
 rt.def("/obj/machinery/telecomms/relay/proc/New", function* New(f: Frame) {
 	let B: Value = null;
-	f.vars = () => [B];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.callName(f, (B = (yield* g.new_(f, T("/obj/item/weapon/circuitboard/machine/telecomms/relay"), [null]))), "apply_default_parts", [live(f.src)]);
+	yield* parent_proc();
+	yield* (B = (yield* new_(T("/obj/item/weapon/circuitboard/machine/telecomms/relay"), null))).apply_default_parts(this);
 	return f.dot;
 }, true);
 
@@ -69,12 +68,10 @@ rt.type(6740, "/obj/item/weapon/circuitboard/machine/telecomms/relay", "/obj/ite
 	req_components: null,
 });
 
-// /obj/item/weapon/circuitboard/machine/telecomms/relay/proc/<init>  (code/game/machinery/telecomms/machines/relay.dm:57)
+// relay.dm:57
 rt.def("/obj/item/weapon/circuitboard/machine/telecomms/relay/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_components", rt.alist(f, [T("/obj/item/weapon/stock_parts/manipulator"), 2, T("/obj/item/stack/cable_coil"), 2, T("/obj/item/weapon/stock_parts/subspace/filter"), 2]));
+	parent_proc();
+	this.req_components = rt.alist(f, [T("/obj/item/weapon/stock_parts/manipulator"), 2, T("/obj/item/stack/cable_coil"), 2, T("/obj/item/weapon/stock_parts/subspace/filter"), 2]);
 	return f.dot;
 });
 
@@ -84,12 +81,10 @@ rt.type(10710, "/obj/machinery/telecomms/relay/preset/station", "/obj/machinery/
 	autolinkers: null,
 });
 
-// /obj/machinery/telecomms/relay/preset/station/proc/<init>  (code/game/machinery/telecomms/machines/relay.dm:72)
+// relay.dm:72
 rt.def("/obj/machinery/telecomms/relay/preset/station/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "autolinkers", rt.list("s_relay"));
+	parent_proc();
+	this.autolinkers = list("s_relay");
 	return f.dot;
 });
 
@@ -98,12 +93,10 @@ rt.type(10711, "/obj/machinery/telecomms/relay/preset/telecomms", "/obj/machiner
 	autolinkers: null,
 });
 
-// /obj/machinery/telecomms/relay/preset/telecomms/proc/<init>  (code/game/machinery/telecomms/machines/relay.dm:76)
+// relay.dm:76
 rt.def("/obj/machinery/telecomms/relay/preset/telecomms/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "autolinkers", rt.list("relay"));
+	parent_proc();
+	this.autolinkers = list("relay");
 	return f.dot;
 });
 
@@ -112,12 +105,10 @@ rt.type(10712, "/obj/machinery/telecomms/relay/preset/mining", "/obj/machinery/t
 	autolinkers: null,
 });
 
-// /obj/machinery/telecomms/relay/preset/mining/proc/<init>  (code/game/machinery/telecomms/machines/relay.dm:80)
+// relay.dm:80
 rt.def("/obj/machinery/telecomms/relay/preset/mining/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "autolinkers", rt.list("m_relay"));
+	parent_proc();
+	this.autolinkers = list("m_relay");
 	return f.dot;
 });
 
@@ -128,11 +119,9 @@ rt.type(10713, "/obj/machinery/telecomms/relay/preset/ruskie", "/obj/machinery/t
 	autolinkers: null,
 });
 
-// /obj/machinery/telecomms/relay/preset/ruskie/proc/<init>  (code/game/machinery/telecomms/machines/relay.dm:86)
+// relay.dm:86
 rt.def("/obj/machinery/telecomms/relay/preset/ruskie/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "autolinkers", rt.list("r_relay"));
+	parent_proc();
+	this.autolinkers = list("r_relay");
 	return f.dot;
 });

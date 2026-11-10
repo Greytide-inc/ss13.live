@@ -1,153 +1,144 @@
-// From code/modules/mob/living/silicon/pai/pai_shell.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/silicon/pai/pai_shell.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, g } = rt;
 
 
-// /mob/living/silicon/pai/proc/fold_out  (code/modules/mob/living/silicon/pai/pai_shell.dm:3)  may sleep
+// pai_shell.dm:3
 rt.def("/mob/living/silicon/pai/proc/fold_out", function* fold_out(f: Frame, force: Value) {
 	let _P: Value = null, L: Value = null;
-	f.vars = () => [force, _P, L];
-	if (live(force) === null) {
-		force = 0;
-	}
-	if (rt.lt(rt.sv(f, "emitterhealth"), 0)) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='warning'>Your holochassis emitters are still too unstable! Please wait for automatic repair.</span>"]);
+	force ??= 0;
+	if (this.emitterhealth < 0) {
+		to_chat(this, "<span class='warning'>Your holochassis emitters are still too unstable! Please wait for automatic repair.</span>");
 		return 0;
 	}
-	if ((!truthy(rt.sv(f, "canholo")) && !truthy(live(force)))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='warning'>Your master or another force has disabled your holochassis emitters!</span>"]);
+	if (!this.canholo && !force) {
+		to_chat(this, "<span class='warning'>Your master or another force has disabled your holochassis emitters!</span>");
 		return 0;
 	}
-	if (truthy(rt.sv(f, "holoform"))) {
-		f.dot = (yield* g.srcCall(f, "fold_in", live(force)));
-		return live(f.dot);
+	if (this.holoform) {
+		f.dot = (yield* this.fold_in(force));
+		return f.dot;
 	}
-	if (truthy(rt.sv(f, "emittersemicd"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='warning'>Error: Holochassis emitters recycling. Please try again later.</span>"]);
+	if (this.emittersemicd) {
+		to_chat(this, "<span class='warning'>Error: Holochassis emitters recycling. Please try again later.</span>");
 		return 0;
 	}
-	rt.setSv(f, "emittersemicd", 1);
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/mob/living/silicon/pai/proc/emittercool")])), rt.sv(f, "emittercd")]);
-	rt.setSv(f, "canmove", 1);
-	rt.setSv(f, "density", 1);
-	if (truthy((rt.istype(rt.fv(f, "loc", rt.sv(f, "card")), T("/obj/item/device/pda")) ? 1 : 0))) {
-		rt.setFv(f, "pai", (_P = rt.fv(f, "loc", rt.sv(f, "card"))), null);
-		yield* g.callName(f, live(_P), "visible_message", [fmt("<span class='notice'>＀ ejects itself from ＀!</span>", [live(f.src), live(_P)])]);
+	this.emittersemicd = 1;
+	yield* addtimer((yield* new_(T("/datum/callback"), this, P("/mob/living/silicon/pai/proc/emittercool"))), this.emittercd);
+	this.canmove = 1;
+	this.density = 1;
+	if (rt.istype(this.card.loc, T("/obj/item/device/pda"))) {
+		(_P = this.card.loc).pai = null;
+		_P.visible_message(`<span class='notice'>${this} ejects itself from ${_P}!</span>`);
 	}
-	if (truthy((rt.istype(rt.fv(f, "loc", rt.sv(f, "card")), T("/mob/living")) ? 1 : 0))) {
-		if (!truthy((yield* g.callName(f, (L = rt.fv(f, "loc", rt.sv(f, "card"))), "temporarilyRemoveItemFromInventory", [rt.sv(f, "card")])))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='warning'>Error: Unable to expand to mobile form. Chassis is restrained by some device or person.</span>"]);
+	if (rt.istype(this.card.loc, T("/mob/living"))) {
+		if (!(yield* (L = this.card.loc).temporarilyRemoveItemFromInventory(this.card))) {
+			to_chat(this, "<span class='warning'>Error: Unable to expand to mobile form. Chassis is restrained by some device or person.</span>");
 			return 0;
 		}
 	}
-	yield* g.srcCall(f, "forceMove", rt.getStep(f, rt.sv(f, "card"), 0));
-	yield* g.callName(f, rt.sv(f, "card"), "forceMove", [live(f.src)]);
-	if (truthy(rt.sv(f, "client"))) {
-		rt.setFv(f, "perspective", rt.sv(f, "client"), 1);
-		rt.setFv(f, "eye", rt.sv(f, "client"), live(f.src));
+	yield* this.forceMove(rt.getStep(f, this.card, 0));
+	yield* this.card.forceMove(this);
+	if (this.client) {
+		this.client.perspective = 1;
+		this.client.eye = this;
 	}
-	yield* g.srcCall(f, "set_light", 0);
-	rt.setSv(f, "icon_state", fmt("＀", [rt.sv(f, "chassis")]));
-	yield* g.srcCall(f, "visible_message", fmt("<span class='boldnotice'>＀ folds out its holochassis emitter and forms a holoshell around itself!</span>", [live(f.src)]));
-	rt.setSv(f, "holoform", 1);
+	this.set_light(0);
+	this.icon_state = `${this.chassis}`;
+	this.visible_message(`<span class='boldnotice'>${this} folds out its holochassis emitter and forms a holoshell around itself!</span>`);
+	this.holoform = 1;
 	return f.dot;
 }, true);
 
-// /mob/living/silicon/pai/proc/fold_in  (code/modules/mob/living/silicon/pai/pai_shell.dm:47)  may sleep
+// pai_shell.dm:47
 rt.def("/mob/living/silicon/pai/proc/fold_in", function* fold_in(f: Frame, force: Value) {
-	let _T: Value = null;
-	f.vars = () => [force, _T];
-	if (live(force) === null) {
-		force = 0;
-	}
-	rt.setSv(f, "emittersemicd", 1);
-	if (!truthy(live(force))) {
-		yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/mob/living/silicon/pai/proc/emittercool")])), rt.sv(f, "emittercd")]);
+	force ??= 0;
+	this.emittersemicd = 1;
+	if (!force) {
+		yield* addtimer((yield* new_(T("/datum/callback"), this, P("/mob/living/silicon/pai/proc/emittercool"))), this.emittercd);
 	} else {
-		yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/mob/living/silicon/pai/proc/emittercool")])), rt.sv(f, "emitteroverloadcd")]);
+		yield* addtimer((yield* new_(T("/datum/callback"), this, P("/mob/living/silicon/pai/proc/emittercool"))), this.emitteroverloadcd);
 	}
-	rt.setSv(f, "icon_state", fmt("＀", [rt.sv(f, "chassis")]));
-	if (!truthy(rt.sv(f, "holoform"))) {
-		f.dot = (yield* g.srcCall(f, "fold_out", live(force)));
-		return live(f.dot);
+	this.icon_state = `${this.chassis}`;
+	if (!this.holoform) {
+		f.dot = (yield* this.fold_out(force));
+		return f.dot;
 	}
-	yield* g.srcCall(f, "visible_message", fmt("<span class='notice'>＀ deactivates its holochassis emitter and folds back into a compact card!</span>", [live(f.src)]));
-	yield* g.srcCall(f, "stop_pulling");
-	if (truthy(rt.sv(f, "client"))) {
-		rt.setFv(f, "perspective", rt.sv(f, "client"), 1);
-		rt.setFv(f, "eye", rt.sv(f, "client"), rt.sv(f, "card"));
+	this.visible_message(`<span class='notice'>${this} deactivates its holochassis emitter and folds back into a compact card!</span>`);
+	yield* this.stop_pulling();
+	if (this.client) {
+		this.client.perspective = 1;
+		this.client.eye = this.card;
 	}
-	_T = rt.getStep(f, live(f.src), 0);
-	yield* g.callName(f, rt.sv(f, "card"), "forceMove", [live(_T)]);
-	yield* g.srcCall(f, "forceMove", rt.sv(f, "card"));
-	rt.setSv(f, "canmove", 0);
-	rt.setSv(f, "density", 0);
-	yield* g.srcCall(f, "set_light", 0);
-	rt.setSv(f, "holoform", 0);
-	if (!truthy(rt.sv(f, "resting"))) return f.dot;
-	yield* g.srcCall(f, "lay_down");
+	let _T: Value = rt.getStep(f, this, 0);
+	yield* this.card.forceMove(_T);
+	yield* this.forceMove(this.card);
+	this.canmove = 0;
+	this.density = 0;
+	this.set_light(0);
+	this.holoform = 0;
+	if (!this.resting) return f.dot;
+	yield* this.lay_down();
 	return f.dot;
 }, true);
 
-// /mob/living/silicon/pai/proc/choose_chassis  (code/modules/mob/living/silicon/pai/pai_shell.dm:71)  may sleep
+// pai_shell.dm:71
 rt.def("/mob/living/silicon/pai/proc/choose_chassis", function* choose_chassis(f: Frame) {
 	let choice: Value = null;
-	f.vars = () => [choice];
-	if (!truthy((choice = (yield* g.op(f, "Prompt", [1], [null, null, "What would you like to use for your holochassis composite?", live(f.src), rt.sv(f, "possible_chassis")]))))) {
+	if (!(choice = (yield* g.op(f, "Prompt", [1], [null, null, "What would you like to use for your holochassis composite?", this, this.possible_chassis])))) {
 		return 0;
 	}
-	rt.setSv(f, "chassis", live(choice));
-	rt.setSv(f, "icon_state", fmt("＀", [rt.sv(f, "chassis")]));
-	if (truthy(rt.sv(f, "resting"))) {
-		rt.setSv(f, "icon_state", fmt("＀_rest", [rt.sv(f, "chassis")]));
+	this.chassis = choice;
+	this.icon_state = `${this.chassis}`;
+	if (this.resting) {
+		this.icon_state = `${this.chassis}_rest`;
 	}
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), fmt("<span class='boldnotice'>You switch your holochassis projection composite to ＀</span>", [rt.sv(f, "chassis")])]);
+	to_chat(this, `<span class='boldnotice'>You switch your holochassis projection composite to ${this.chassis}</span>`);
 	return f.dot;
 }, true);
 
-// /mob/living/silicon/pai/proc/lay_down  (code/modules/mob/living/silicon/pai/pai_shell.dm:81)  may sleep
+// pai_shell.dm:81
 rt.def("/mob/living/silicon/pai/proc/lay_down", function* lay_down(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "update_resting_icon", rt.sv(f, "resting"));
+	yield* parent_proc();
+	this.update_resting_icon(this.resting);
 	return f.dot;
 }, true);
 
-// /mob/living/silicon/pai/proc/update_resting_icon  (code/modules/mob/living/silicon/pai/pai_shell.dm:86)
+// pai_shell.dm:86
 rt.def("/mob/living/silicon/pai/proc/update_resting_icon", function update_resting_icon(f: Frame, rest: Value) {
-	let $0: any, $1: any;
-	f.vars = () => [$0, $1];
-	if (truthy(live(rest))) {
-		rt.setSv(f, "icon_state", fmt("＀_rest", [rt.sv(f, "chassis")]));
+	let $1: any;
+	if (rest) {
+		this.icon_state = `${this.chassis}_rest`;
 	} else {
-		rt.setSv(f, "icon_state", fmt("＀", [rt.sv(f, "chassis")]));
+		this.icon_state = `${this.chassis}`;
 	}
-	if (isEqual(rt.sv(f, "loc"), rt.sv(f, "card"))) return f.dot;
-	$0 = live(f.src);
-	if (truthy(live(rest))) {
+	if (this.loc == this.card) return f.dot;
+	let $0: any = this;
+	if (rest) {
 		$1 = "lays down for a moment...";
 	} else {
 		$1 = "perks up from the ground";
 	}
-	rt.callSrc(f, "visible_message", [fmt("<span class='notice'>＀ ＀</span>", [$0, $1])]);
+	this.visible_message(`<span class='notice'>${$0} ${$1}</span>`);
 	return f.dot;
 });
 
-// /mob/living/silicon/pai/proc/toggle_integrated_light  (code/modules/mob/living/silicon/pai/pai_shell.dm:96)
+// pai_shell.dm:96
 rt.def("/mob/living/silicon/pai/proc/toggle_integrated_light", function toggle_integrated_light(f: Frame) {
-	if (!truthy(rt.sv(f, "luminosity"))) {
-		rt.callSrc(f, "set_light", [rt.sv(f, "brightness_power")]);
-		rt.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='notice'>You enable your integrated light.</span>"]);
+	if (!this.luminosity) {
+		this.set_light(this.brightness_power);
+		to_chat(this, "<span class='notice'>You enable your integrated light.</span>");
 	} else {
-		rt.callSrc(f, "set_light", [0]);
-		rt.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='notice'>You disable your integrated light.</span>"]);
+		this.set_light(0);
+		to_chat(this, "<span class='notice'>You disable your integrated light.</span>");
 	}
 	return f.dot;
 });
 
-// /mob/living/silicon/pai/proc/movement_delay  (code/modules/mob/living/silicon/pai/pai_shell.dm:104)
+// pai_shell.dm:104
 rt.def("/mob/living/silicon/pai/proc/movement_delay", function movement_delay(f: Frame) {
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	f.dot = rt.modify(live(f.dot), 1, add);
+	f.dot = parent_proc();
+	f.dot += 1;
 	return f.dot;
 });

@@ -1,7 +1,7 @@
-// From code/modules/jobs/job_types/civilian_chaplain.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/jobs/job_types/civilian_chaplain.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(2757, "/datum/job/chaplain", "/datum/job", {
@@ -19,80 +19,76 @@ rt.type(2757, "/datum/job/chaplain", "/datum/job", {
 	minimal_access: null,
 });
 
-// /datum/job/chaplain/proc/<init>  (code/modules/jobs/job_types/civilian_chaplain.dm:8)
+// civilian_chaplain.dm:8
 rt.def("/datum/job/chaplain/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "department_head", rt.list("Head of Personnel"));
-	rt.setSv(f, "access", rt.list(6, 22, 27, 46));
-	rt.setSv(f, "minimal_access", rt.list(6, 22, 27, 46));
+	parent_proc();
+	this.department_head = list("Head of Personnel");
+	this.access = list(6, 22, 27, 46);
+	this.minimal_access = list(6, 22, 27, 46);
 	return f.dot;
 });
 
-// /datum/job/chaplain/proc/after_spawn  (code/modules/jobs/job_types/civilian_chaplain.dm:22)  may sleep
+// civilian_chaplain.dm:22
 rt.def("/datum/job/chaplain/proc/after_spawn", function* after_spawn(f: Frame, H: Value, M: Value) {
-	let B: Value = null, nrt: Value = null, N: Value = null, new_religion: Value = null, new_deity: Value = null;
-	let $0: any;
-	f.vars = () => [H, M, B, nrt, N, new_religion, new_deity, $0];
-	if (truthy(rt.fv(f, "mind", live(H)))) {
-		rt.setFv(f, "isholy", rt.fv(f, "mind", live(H)), 1);
+	let nrt: Value = null, N: Value = null;
+	if (H.mind) {
+		H.mind.isholy = 1;
 	}
-	B = (yield* g.new_(f, T("/obj/item/weapon/storage/book/bible/booze"), []));
-	if (truthy(rt.fv(f, "religion", rt.gl("SSreligion")))) {
-		rt.setFv(f, "deity_name", live(B), rt.fv(f, "deity", rt.gl("SSreligion")));
-		rt.setFv(f, "name", live(B), rt.fv(f, "bible_name", rt.gl("SSreligion")));
-		rt.setFv(f, "icon_state", live(B), rt.fv(f, "bible_icon_state", rt.gl("SSreligion")));
-		rt.setFv(f, "item_state", live(B), rt.fv(f, "bible_item_state", rt.gl("SSreligion")));
-		yield* g.call(f, P("/proc/to_chat"), null, [live(H), fmt("There is already an established religion onboard the station. You are an acolyte of ＀. Defer to the Chaplain.", [rt.fv(f, "deity", rt.gl("SSreligion"))])]);
-		yield* g.callName(f, live(H), "equip_to_slot_or_del", [live(B), 18]);
-		nrt = (rt.fv(f, "holy_weapon_type", rt.gl("SSreligion")) || T("/obj/item/weapon/nullrod"));
-		N = (yield* g.new_(f, live(nrt), [live(H)]));
-		yield* g.callName(f, live(H), "equip_to_slot_or_del", [live(N), 18]);
-		return live(f.dot);
+	let B: Value = (yield* new_(T("/obj/item/weapon/storage/book/bible/booze")));
+	if (GLOB.SSreligion.religion) {
+		B.deity_name = GLOB.SSreligion.deity;
+		B.name = GLOB.SSreligion.bible_name;
+		B.icon_state = GLOB.SSreligion.bible_icon_state;
+		B.item_state = GLOB.SSreligion.bible_item_state;
+		to_chat(H, `There is already an established religion onboard the station. You are an acolyte of ${GLOB.SSreligion.deity}. Defer to the Chaplain.`);
+		yield* H.equip_to_slot_or_del(B, slot_in_backpack);
+		nrt = (GLOB.SSreligion.holy_weapon_type || T("/obj/item/weapon/nullrod"));
+		N = (yield* new_(nrt, H));
+		yield* H.equip_to_slot_or_del(N, slot_in_backpack);
+		return f.dot;
 	}
-	new_religion = "Christianity";
-	if ((truthy(rt.fv(f, "client", live(M))) && truthy(rt.index(rt.gv(f, "custom_names", rt.gv(f, "prefs", rt.fv(f, "client", live(M)))), "religion")))) {
-		new_religion = rt.index(rt.gv(f, "custom_names", rt.gv(f, "prefs", rt.fv(f, "client", live(M)))), "religion");
+	let new_religion: Value = "Christianity";
+	if (M.client && rt.index(M.client.prefs.custom_names, "religion")) {
+		new_religion = rt.index(M.client.prefs.custom_names, "religion");
 	}
-	new_deity = "Space Jesus";
-	if ((truthy(rt.fv(f, "client", live(M))) && truthy(rt.index(rt.gv(f, "custom_names", rt.gv(f, "prefs", rt.fv(f, "client", live(M)))), "deity")))) {
-		new_deity = rt.index(rt.gv(f, "custom_names", rt.gv(f, "prefs", rt.fv(f, "client", live(M)))), "deity");
+	let new_deity: Value = "Space Jesus";
+	if (M.client && rt.index(M.client.prefs.custom_names, "deity")) {
+		new_deity = rt.index(M.client.prefs.custom_names, "deity");
 	}
-	rt.setFv(f, "deity_name", live(B), live(new_deity));
-	$0 = (yield* g.call(f, P("/proc/lowertext"), null, [live(new_religion)]));
-	if ($0 === "christianity") {
-		rt.setFv(f, "name", live(B), rt.op(f, "PickUnweighted", [2], ["The Holy Bible", "The Dead Sea Scrolls"]));
-	} else if ($0 === "satanism") {
-		rt.setFv(f, "name", live(B), "The Unholy Bible");
-	} else if ($0 === "cthulu") {
-		rt.setFv(f, "name", live(B), "The Necronomicon");
-	} else if ($0 === "islam") {
-		rt.setFv(f, "name", live(B), "Quran");
-	} else if ($0 === "scientology") {
-		rt.setFv(f, "name", live(B), rt.op(f, "PickUnweighted", [2], ["The Biography of L. Ron Hubbard", "Dianetics"]));
-	} else if ($0 === "chaos") {
-		rt.setFv(f, "name", live(B), "The Book of Lorgar");
-	} else if ($0 === "imperium") {
-		rt.setFv(f, "name", live(B), "Uplifting Primer");
-	} else if ($0 === "toolboxia") {
-		rt.setFv(f, "name", live(B), "Toolbox Manifesto");
-	} else if ($0 === "homosexuality") {
-		rt.setFv(f, "name", live(B), "Guys Gone Wild");
-	} else if ($0 === "lol" || $0 === "wtf" || $0 === "gay" || $0 === "penis" || $0 === "ass" || $0 === "poo" || $0 === "badmin" || $0 === "shitmin" || $0 === "deadmin" || $0 === "cock" || $0 === "cocks" || $0 === "meme" || $0 === "memes") {
-		rt.setFv(f, "name", live(B), rt.op(f, "PickUnweighted", [3], ["Woodys Got Wood: The Aftermath", "War of the Cocks", "Sweet Bro and Hella Jef: Expanded Edition"]));
-		yield* g.callName(f, live(H), "setBrainLoss", [100]);
-	} else if ($0 === "science") {
-		rt.setFv(f, "name", live(B), rt.op(f, "PickUnweighted", [8], ["Principle of Relativity", "Quantum Enigma: Physics Encounters Consciousness", "Programming the Universe", "Quantum Physics and Theology", "String Theory for Dummies", "How To: Build Your Own Warp Drive", "The Mysteries of Bluespace", "Playing God: Collector's Edition"]));
+	B.deity_name = new_deity;
+	const lowertext_2 = lowertext(new_religion);
+	if (lowertext_2 === "christianity") {
+		B.name = pick("The Holy Bible", "The Dead Sea Scrolls");
+	} else if (lowertext_2 === "satanism") {
+		B.name = "The Unholy Bible";
+	} else if (lowertext_2 === "cthulu") {
+		B.name = "The Necronomicon";
+	} else if (lowertext_2 === "islam") {
+		B.name = "Quran";
+	} else if (lowertext_2 === "scientology") {
+		B.name = pick("The Biography of L. Ron Hubbard", "Dianetics");
+	} else if (lowertext_2 === "chaos") {
+		B.name = "The Book of Lorgar";
+	} else if (lowertext_2 === "imperium") {
+		B.name = "Uplifting Primer";
+	} else if (lowertext_2 === "toolboxia") {
+		B.name = "Toolbox Manifesto";
+	} else if (lowertext_2 === "homosexuality") {
+		B.name = "Guys Gone Wild";
+	} else if (lowertext_2 === "lol" || lowertext_2 === "wtf" || lowertext_2 === "gay" || lowertext_2 === "penis" || lowertext_2 === "ass" || lowertext_2 === "poo" || lowertext_2 === "badmin" || lowertext_2 === "shitmin" || lowertext_2 === "deadmin" || lowertext_2 === "cock" || lowertext_2 === "cocks" || lowertext_2 === "meme" || lowertext_2 === "memes") {
+		B.name = pick("Woodys Got Wood: The Aftermath", "War of the Cocks", "Sweet Bro and Hella Jef: Expanded Edition");
+		H.setBrainLoss(100);
+	} else if (lowertext_2 === "science") {
+		B.name = pick("Principle of Relativity", "Quantum Enigma: Physics Encounters Consciousness", "Programming the Universe", "Quantum Physics and Theology", "String Theory for Dummies", "How To: Build Your Own Warp Drive", "The Mysteries of Bluespace", "Playing God: Collector's Edition");
 	} else {
-		rt.setFv(f, "name", live(B), fmt("The Holy Book of ＀", [live(new_religion)]));
+		B.name = `The Holy Book of ${new_religion}`;
 	}
-	if (truthy(rt.gl("SSreligion"))) {
-		rt.setFv(f, "religion", rt.gl("SSreligion"), live(new_religion));
-		rt.setFv(f, "bible_name", rt.gl("SSreligion"), rt.fv(f, "name", live(B)));
-		rt.setFv(f, "deity", rt.gl("SSreligion"), rt.fv(f, "deity_name", live(B)));
+	if (GLOB.SSreligion) {
+		GLOB.SSreligion.religion = new_religion;
+		GLOB.SSreligion.bible_name = B.name;
+		GLOB.SSreligion.deity = B.deity_name;
 	}
-	yield* g.callName(f, live(H), "equip_to_slot_or_del", [live(B), 18]);
+	yield* H.equip_to_slot_or_del(B, slot_in_backpack);
 	return f.dot;
 }, true);
 
@@ -107,11 +103,9 @@ rt.type(700, "/datum/outfit/job/chaplain", "/datum/outfit/job", {
 	satchel: rt.typePath("/obj/item/weapon/storage/backpack/cultpack"),
 });
 
-// /datum/outfit/job/chaplain/proc/<init>  (code/modules/jobs/job_types/civilian_chaplain.dm:94)
+// civilian_chaplain.dm:94
 rt.def("/datum/outfit/job/chaplain/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "backpack_contents", rt.alist(f, [T("/obj/item/device/camera/spooky"), 1]));
+	parent_proc();
+	this.backpack_contents = rt.alist(f, [T("/obj/item/device/camera/spooky"), 1]);
 	return f.dot;
 });

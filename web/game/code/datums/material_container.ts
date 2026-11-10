@@ -1,7 +1,7 @@
-// From code/datums/material_container.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/datums/material_container.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(574, "/datum/material_container", "/datum", {
@@ -12,332 +12,237 @@ rt.type(574, "/datum/material_container", "/datum", {
 	materials: null,
 });
 
-// /datum/material_container/proc/<init>  (code/datums/material_container.dm:17)
+// material_container.dm:17
 rt.def("/datum/material_container/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.list());
+	parent_proc();
+	this.materials = list();
 	return f.dot;
 });
 
-// /datum/material_container/proc/New  (code/datums/material_container.dm:22)  may sleep
+// material_container.dm:22
 rt.def("/datum/material_container/proc/New", function* New(f: Frame, O: Value, mat_list: Value, max_amt: Value) {
-	let possible_mats: Value = null, mat_type: Value = null, MT: Value = null, id: Value = null, mat_path: Value = null;
-	let $e: any;
-	f.vars = () => [O, mat_list, max_amt, possible_mats, mat_type, MT, id, mat_path, $e];
-	if (live(max_amt) === null) {
-		max_amt = 0;
+	let mat_type: Value = null, MT: Value = null, id: Value = null, mat_path: Value = null;
+	max_amt ??= 0;
+	this.owner = O;
+	this.max_amount = max(0, max_amt);
+	let possible_mats: Value = list();
+	for (mat_type of each(typesof(T("/datum/material")) - T("/datum/material"))) {
+		MT = mat_type;
+		rt.setAt(possible_mats, rt.initial(f, MT, "id"), mat_type);
 	}
-	rt.setSv(f, "owner", live(O));
-	rt.setSv(f, "max_amount", (yield* g.call(f, P("/proc/max"), null, [0, live(max_amt)])));
-	possible_mats = rt.list();
-	mat_type = null;
-	rt.forList(f, 0, subtract((yield* g.call(f, P("/proc/typesof"), null, [T("/datum/material")])), T("/datum/material")));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		mat_type = $e;
-		MT = live(mat_type);
-		rt.setAt(live(possible_mats), rt.initial(f, live(MT), "id"), live(mat_type));
-	}
-	rt.endFor(f, 0);
-	id = null;
-	rt.forList(f, 0, live(mat_list));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		id = $e;
-		if (truthy(rt.index(live(possible_mats), live(id)))) {
-			mat_path = rt.index(live(possible_mats), live(id));
-			rt.setAt(rt.sv(f, "materials"), live(id), (yield* g.new_(f, live(mat_path), [])));
+	for (id of each(mat_list)) {
+		if (rt.index(possible_mats, id)) {
+			mat_path = rt.index(possible_mats, id);
+			rt.setAt(this.materials, id, (yield* new_(mat_path)));
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /datum/material_container/proc/Destroy  (code/datums/material_container.dm:36)  may sleep
+// material_container.dm:36
 rt.def("/datum/material_container/proc/Destroy", function* Destroy(f: Frame) {
-	rt.setSv(f, "owner", null);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	this.owner = null;
+	return (yield* parent_proc());
 }, true);
 
-// /datum/material_container/proc/insert_amount  (code/datums/material_container.dm:40)
+// material_container.dm:40
 rt.def("/datum/material_container/proc/insert_amount", function insert_amount(f: Frame, amt: Value, id: Value) {
 	let total_amount_saved: Value = null, M: Value = null, i: Value = null, M_2: Value = null;
-	let $e: any;
-	f.vars = () => [id, total_amount_saved, M, i, M_2, $e];
-	if (live(id) === null) {
-		id = null;
-	}
-	if ((rt.gt(live(amt), 0) && truthy(rt.callSrc(f, "has_space", [live(amt)])))) {
-		total_amount_saved = rt.sv(f, "total_amount");
-		if (truthy(live(id))) {
-			if (truthy((M = rt.index(rt.sv(f, "materials"), live(id))))) {
-				rt.modField(f, live(M), "amount", live(amt), add);
-				rt.modSrcVar(f, "total_amount", live(amt), add);
+	if (amt > 0 && this.has_space(amt)) {
+		total_amount_saved = this.total_amount;
+		if (id) {
+			if (M = rt.index(this.materials, id)) {
+				M.amount += amt;
+				this.total_amount += amt;
 			}
 		} else {
-			i = null;
-			rt.forList(f, 0, rt.sv(f, "materials"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				i = $e;
-				rt.modField(f, (M_2 = rt.index(rt.sv(f, "materials"), live(i))), "amount", live(amt), add);
-				rt.modSrcVar(f, "total_amount", live(amt), add);
+			for (i of each(this.materials)) {
+				(M_2 = rt.index(this.materials, i)).amount += amt;
+				this.total_amount += amt;
 			}
-			rt.endFor(f, 0);
 		}
-		return subtract(rt.sv(f, "total_amount"), live(total_amount_saved));
+		return this.total_amount - total_amount_saved;
 	}
 	return 0;
 });
 
-// /datum/material_container/proc/insert_stack  (code/datums/material_container.dm:56)  may sleep
+// material_container.dm:56
 rt.def("/datum/material_container/proc/insert_stack", function* insert_stack(f: Frame, S: Value, amt: Value) {
 	let material_amt: Value = null;
-	f.vars = () => [S, amt, material_amt];
-	if (live(amt) === null) {
-		amt = 0;
-	}
-	if (rt.le(live(amt), 0)) {
+	amt ??= 0;
+	if (amt <= 0) {
 		return 0;
 	}
-	if (rt.gt(live(amt), rt.fv(f, "amount", live(S)))) {
-		amt = rt.fv(f, "amount", live(S));
+	if (amt > S.amount) {
+		amt = S.amount;
 	}
-	if (!truthy((material_amt = (yield* g.srcCall(f, "get_item_material_amount", live(S)))))) {
+	if (!(material_amt = this.get_item_material_amount(S))) {
 		return 0;
 	}
-	if (!truthy((amt = (yield* g.call(f, P("/proc/min"), null, [live(amt), (yield* g.call(f, P("/proc/round"), null, [divide(subtract(rt.sv(f, "max_amount"), rt.sv(f, "total_amount")), live(material_amt))]))]))))) {
+	if (!(amt = min(amt, round((this.max_amount - this.total_amount) / material_amt)))) {
 		return 0;
 	}
-	yield* g.srcCall(f, "insert_materials", live(S), live(amt));
-	yield* g.callName(f, live(S), "use", [live(amt)]);
-	return live(amt);
+	this.insert_materials(S, amt);
+	yield* S.use(amt);
+	return amt;
 }, true);
 
-// /datum/material_container/proc/insert_item  (code/datums/material_container.dm:74)  may sleep
+// material_container.dm:74
 rt.def("/datum/material_container/proc/insert_item", function* insert_item(f: Frame, I: Value, multiplier: Value) {
 	let S: Value = null, material_amount: Value = null;
-	f.vars = () => [I, multiplier, S, material_amount];
-	if (live(multiplier) === null) {
-		multiplier = 1;
-	}
-	if (!truthy(live(I))) {
+	multiplier ??= 1;
+	if (!I) {
 		return 0;
 	}
-	if (truthy((rt.istype(live(I), T("/obj/item/stack")) ? 1 : 0))) {
-		S = live(I);
-		return (yield* g.srcCall(f, "insert_stack", live(I), rt.fv(f, "amount", live(S))));
+	if (rt.istype(I, T("/obj/item/stack"))) {
+		S = I;
+		return (yield* this.insert_stack(I, S.amount));
 	}
-	if ((!truthy((material_amount = (yield* g.srcCall(f, "get_item_material_amount", live(I))))) || !truthy((yield* g.srcCall(f, "has_space", live(material_amount)))))) {
+	if (!(material_amount = this.get_item_material_amount(I)) || !this.has_space(material_amount)) {
 		return 0;
 	}
-	yield* g.srcCall(f, "insert_materials", live(I), live(multiplier));
-	return live(material_amount);
+	this.insert_materials(I, multiplier);
+	return material_amount;
 }, true);
 
-// /datum/material_container/proc/insert_materials  (code/datums/material_container.dm:89)
+// material_container.dm:89
 rt.def("/datum/material_container/proc/insert_materials", function insert_materials(f: Frame, I: Value, multiplier: Value) {
 	let M: Value = null, MAT: Value = null;
-	let $e: any;
-	f.vars = () => [multiplier, M, MAT, $e];
-	if (live(multiplier) === null) {
-		multiplier = 1;
+	multiplier ??= 1;
+	for (MAT of each(this.materials)) {
+		(M = rt.index(this.materials, MAT)).amount += rt.index(I.materials, MAT) * multiplier;
+		this.total_amount += rt.index(I.materials, MAT) * multiplier;
 	}
-	M = null;
-	MAT = null;
-	rt.forList(f, 0, rt.sv(f, "materials"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		MAT = $e;
-		rt.modField(f, (M = rt.index(rt.sv(f, "materials"), live(MAT))), "amount", multiply(rt.index(rt.fv(f, "materials", live(I)), live(MAT)), live(multiplier)), add);
-		rt.modSrcVar(f, "total_amount", multiply(rt.index(rt.fv(f, "materials", live(I)), live(MAT)), live(multiplier)), add);
-	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /datum/material_container/proc/use_amount  (code/datums/material_container.dm:97)
+// material_container.dm:97
 rt.def("/datum/material_container/proc/use_amount", function use_amount(f: Frame, mats: Value, multiplier: Value) {
-	let M: Value = null, MAT: Value = null, total_amount_save: Value = null, MAT_2: Value = null;
-	let $e: any;
-	f.vars = () => [multiplier, M, MAT, total_amount_save, MAT_2, $e];
-	if (live(multiplier) === null) {
-		multiplier = 1;
-	}
-	if ((!truthy(live(mats)) || !truthy(rt.len(f, live(mats))))) {
+	let M: Value = null, MAT: Value = null, MAT_2: Value = null;
+	multiplier ??= 1;
+	if (!mats || !rt.len(f, mats)) {
 		return 0;
 	}
-	M = null;
-	MAT = null;
-	rt.forList(f, 0, rt.sv(f, "materials"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		MAT = $e;
-		if (rt.lt(rt.gv(f, "amount", (M = rt.index(rt.sv(f, "materials"), live(MAT)))), multiply(rt.index(live(mats), live(MAT)), live(multiplier)))) {
+	for (MAT of each(this.materials)) {
+		if ((M = rt.index(this.materials, MAT)).amount < rt.index(mats, MAT) * multiplier) {
 			return 0;
 		}
 	}
-	rt.endFor(f, 0);
-	total_amount_save = rt.sv(f, "total_amount");
-	MAT_2 = null;
-	rt.forList(f, 0, rt.sv(f, "materials"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		MAT_2 = $e;
-		(rt.modField(f, (M = rt.index(rt.sv(f, "materials"), live(MAT_2))), "amount", multiply(rt.index(live(mats), live(MAT_2)), live(multiplier)), subtract));
-		(rt.modSrcVar(f, "total_amount", multiply(rt.index(live(mats), live(MAT_2)), live(multiplier)), subtract));
+	let total_amount_save: Value = this.total_amount;
+	for (MAT_2 of each(this.materials)) {
+		(M = rt.index(this.materials, MAT_2)).amount -= rt.index(mats, MAT_2) * multiplier;
+		this.total_amount -= rt.index(mats, MAT_2) * multiplier;
 	}
-	rt.endFor(f, 0);
-	return subtract(live(total_amount_save), rt.sv(f, "total_amount"));
+	return total_amount_save - this.total_amount;
 });
 
-// /datum/material_container/proc/use_amount_type  (code/datums/material_container.dm:116)
+// material_container.dm:116
 rt.def("/datum/material_container/proc/use_amount_type", function use_amount_type(f: Frame, amt: Value, id: Value) {
 	let M: Value = null;
-	f.vars = () => [M];
-	if (truthy((M = rt.index(rt.sv(f, "materials"), live(id))))) {
-		if (rt.ge(rt.fv(f, "amount", live(M)), live(amt))) {
-			(rt.modField(f, live(M), "amount", live(amt), subtract));
-			(rt.modSrcVar(f, "total_amount", live(amt), subtract));
-			return live(amt);
+	if (M = rt.index(this.materials, id)) {
+		if (M.amount >= amt) {
+			M.amount -= amt;
+			this.total_amount -= amt;
+			return amt;
 		}
 	}
 	return 0;
 });
 
-// /datum/material_container/proc/retrieve  (code/datums/material_container.dm:140)  may sleep
+// material_container.dm:140
 rt.def("/datum/material_container/proc/retrieve", function* retrieve(f: Frame, sheet_amt: Value, M: Value, target: Value) {
 	let count: Value = null, s: Value = null;
-	f.vars = () => [sheet_amt, M, target, count, s];
-	if (live(target) === null) {
-		target = null;
-	}
-	if (!truthy(rt.fv(f, "sheet_type", live(M)))) {
+	if (!M.sheet_type) {
 		return 0;
 	}
 	if (typeof sheet_amt === "number") sheet_amt = Math.floor(sheet_amt); // tg_js: whole sheets only (1.5 made a stack of 1.5); NaN and Infinity fall out below
 	if (typeof sheet_amt === "number" && !Number.isFinite(sheet_amt) && sheet_amt > 0) sheet_amt = 1e9; // clamped to the stock just below
-	if (rt.gt(live(sheet_amt), 0)) {
-		if (rt.lt(rt.fv(f, "amount", live(M)), multiply(live(sheet_amt), 2000))) {
-			sheet_amt = (yield* g.call(f, P("/proc/round"), null, [divide(rt.fv(f, "amount", live(M)), 2000)]));
+	if (sheet_amt > 0) {
+		if (M.amount < sheet_amt * 2000) {
+			sheet_amt = round(M.amount / 2000);
 		}
 		count = 0;
-		while (rt.gt(live(sheet_amt), 50)) {
-			yield* g.new_(f, rt.fv(f, "sheet_type", live(M)), [rt.getStep(f, rt.sv(f, "owner"), 0), 50]);
-			count = rt.modify(live(count), 50, add);
-			yield* g.srcCall(f, "use_amount_type", 50 * 2000, rt.fv(f, "id", live(M))); // tg_js: charge the 50 handed out (it charged the whole remaining amount)
-			(sheet_amt = rt.modify(live(sheet_amt), 50, subtract));
+		while (sheet_amt > 50) {
+			yield* new_(M.sheet_type, rt.getStep(f, this.owner, 0), 50);
+			count += 50;
+			this.use_amount_type(50 * 2000, M.id); // tg_js: charge the 50 handed out (it charged the whole remaining amount)
+			sheet_amt -= 50;
 		}
-		if (truthy((yield* g.call(f, P("/proc/round"), null, [divide(multiply(live(sheet_amt), 2000), 2000)])))) {
-			s = (yield* g.new_(f, rt.fv(f, "sheet_type", live(M)), [rt.getStep(f, rt.sv(f, "owner"), 0), live(sheet_amt)]));
-			if (truthy(live(target))) {
-				yield* g.callName(f, live(s), "forceMove", [live(target)]);
+		if (round(sheet_amt * 2000 / 2000)) {
+			s = (yield* new_(M.sheet_type, rt.getStep(f, this.owner, 0), sheet_amt));
+			if (target) {
+				yield* s.forceMove(target);
 			}
-			count = rt.modify(live(count), live(sheet_amt), add);
-			yield* g.srcCall(f, "use_amount_type", multiply(live(sheet_amt), 2000), rt.fv(f, "id", live(M)));
+			count += sheet_amt;
+			this.use_amount_type(sheet_amt * 2000, M.id);
 		}
-		return live(count);
+		return count;
 	}
 	return 0;
 }, true);
 
-// /datum/material_container/proc/retrieve_sheets  (code/datums/material_container.dm:161)  may sleep
+// material_container.dm:161
 rt.def("/datum/material_container/proc/retrieve_sheets", function* retrieve_sheets(f: Frame, sheet_amt: Value, id: Value, target: Value) {
-	f.vars = () => [sheet_amt, id, target];
-	if (live(target) === null) {
-		target = null;
-	}
-	if (truthy(rt.index(rt.sv(f, "materials"), live(id)))) {
-		return (yield* g.srcCall(f, "retrieve", live(sheet_amt), rt.index(rt.sv(f, "materials"), live(id)), live(target)));
+	if (rt.index(this.materials, id)) {
+		return (yield* this.retrieve(sheet_amt, rt.index(this.materials, id), target));
 	}
 	return 0;
 }, true);
 
-// /datum/material_container/proc/retrieve_all  (code/datums/material_container.dm:171)  may sleep
+// material_container.dm:171
 rt.def("/datum/material_container/proc/retrieve_all", function* retrieve_all(f: Frame, target: Value) {
-	let result: Value = null, M: Value = null, MAT: Value = null;
-	let $e: any;
-	f.vars = () => [target, result, M, MAT, $e];
-	if (live(target) === null) {
-		target = null;
+	let M: Value = null, MAT: Value = null;
+	let result: Value = 0;
+	for (MAT of each(this.materials)) {
+		result += (yield* this.retrieve_sheets(this.amount2sheet((M = rt.index(this.materials, MAT)).amount), MAT, target));
 	}
-	result = 0;
-	M = null;
-	MAT = null;
-	rt.forList(f, 0, rt.sv(f, "materials"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		MAT = $e;
-		result = rt.modify(live(result), (yield* g.srcCall(f, "retrieve_sheets", (yield* g.srcCall(f, "amount2sheet", rt.gv(f, "amount", (M = rt.index(rt.sv(f, "materials"), live(MAT)))))), live(MAT), live(target))), add);
-	}
-	rt.endFor(f, 0);
-	return live(result);
+	return result;
 }, true);
 
-// /datum/material_container/proc/has_space  (code/datums/material_container.dm:177)
+// material_container.dm:177
 rt.def("/datum/material_container/proc/has_space", function has_space(f: Frame, amt: Value) {
-	f.vars = () => [amt];
-	if (live(amt) === null) {
-		amt = 0;
-	}
-	return (rt.le(add(rt.sv(f, "total_amount"), live(amt)), rt.sv(f, "max_amount")) ? 1 : 0);
+	amt ??= 0;
+	return (this.total_amount + amt <= this.max_amount ? 1 : 0);
 });
 
-// /datum/material_container/proc/has_materials  (code/datums/material_container.dm:180)
+// material_container.dm:180
 rt.def("/datum/material_container/proc/has_materials", function has_materials(f: Frame, mats: Value, multiplier: Value) {
 	let M: Value = null, MAT: Value = null;
-	let $e: any;
-	f.vars = () => [multiplier, M, MAT, $e];
-	if (live(multiplier) === null) {
-		multiplier = 1;
-	}
-	if ((!truthy(live(mats)) || !truthy(rt.len(f, live(mats))))) {
+	multiplier ??= 1;
+	if (!mats || !rt.len(f, mats)) {
 		return 0;
 	}
-	M = null;
-	MAT = null;
-	rt.forList(f, 0, live(mats));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		MAT = $e;
-		if (rt.lt(rt.gv(f, "amount", (M = rt.index(rt.sv(f, "materials"), live(MAT)))), multiply(rt.index(live(mats), live(MAT)), live(multiplier)))) {
+	for (MAT of each(mats)) {
+		if ((M = rt.index(this.materials, MAT)).amount < rt.index(mats, MAT) * multiplier) {
 			return 0;
 		}
 	}
-	rt.endFor(f, 0);
 	return 1;
 });
 
-// /datum/material_container/proc/amount2sheet  (code/datums/material_container.dm:191)
+// material_container.dm:191
 rt.def("/datum/material_container/proc/amount2sheet", function amount2sheet(f: Frame, amt: Value) {
-	if (rt.ge(live(amt), 2000)) {
-		return rt.call(f, P("/proc/round"), null, [divide(live(amt), 2000)]);
+	if (amt >= MINERAL_MATERIAL_AMOUNT) {
+		return round(amt / MINERAL_MATERIAL_AMOUNT);
 	}
 	return 0;
 });
 
-// /datum/material_container/proc/amount  (code/datums/material_container.dm:201)
+// material_container.dm:201
 rt.def("/datum/material_container/proc/amount", function amount(f: Frame, id: Value) {
 	let M: Value = null;
-	let $0: any;
-	f.vars = () => [M, $0];
-	if (truthy((M = rt.index(rt.sv(f, "materials"), live(id))))) {
-		$0 = rt.fv(f, "amount", live(M));
-	} else {
-		$0 = 0;
-	}
-	return $0;
+	return (M = rt.index(this.materials, id)) ? M.amount : 0;
 });
 
-// /datum/material_container/proc/get_item_material_amount  (code/datums/material_container.dm:207)
+// material_container.dm:207
 rt.def("/datum/material_container/proc/get_item_material_amount", function get_item_material_amount(f: Frame, I: Value) {
-	let material_amount: Value = null, MAT: Value = null;
-	let $e: any;
-	f.vars = () => [material_amount, MAT, $e];
-	if (!truthy((rt.istype(live(I), T("/obj/item")) ? 1 : 0))) {
+	let MAT: Value = null;
+	if (!rt.istype(I, T("/obj/item"))) {
 		return 0;
 	}
-	material_amount = 0;
-	MAT = null;
-	rt.forList(f, 0, rt.sv(f, "materials"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		MAT = $e;
-		material_amount = rt.modify(live(material_amount), rt.index(rt.fv(f, "materials", live(I)), live(MAT)), add);
+	let material_amount: Value = 0;
+	for (MAT of each(this.materials)) {
+		material_amount += rt.index(I.materials, MAT);
 	}
-	rt.endFor(f, 0);
-	return live(material_amount);
+	return material_amount;
 });

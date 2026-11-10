@@ -1,7 +1,7 @@
-// From code/modules/mining/equipment/resonator.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mining/equipment/resonator.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(7542, "/obj/item/weapon/resonator", "/obj/item/weapon", {
@@ -20,48 +20,44 @@ rt.type(7542, "/obj/item/weapon/resonator", "/obj/item/weapon", {
 	origin_tech: "magnets=3;engineering=3",
 });
 
-// /obj/item/weapon/resonator/proc/<init>  (code/modules/mining/equipment/resonator.dm:13)
+// resonator.dm:13
 rt.def("/obj/item/weapon/resonator/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "fields", rt.list());
+	parent_proc();
+	this.fields = list();
 	return f.dot;
 });
 
-// /obj/item/weapon/resonator/proc/attack_self  (code/modules/mining/equipment/resonator.dm:27)
+// resonator.dm:27
 rt.def("/obj/item/weapon/resonator/proc/attack_self", function attack_self(f: Frame, user: Value) {
-	if (isEqual(rt.sv(f, "burst_time"), 50)) {
-		rt.setSv(f, "burst_time", 30);
-		rt.call(f, P("/proc/to_chat"), null, [live(user), "<span class='info'>You set the resonator's fields to detonate after 3 seconds.</span>"]);
+	if (this.burst_time == 50) {
+		this.burst_time = 30;
+		to_chat(user, "<span class='info'>You set the resonator's fields to detonate after 3 seconds.</span>");
 	} else {
-		rt.setSv(f, "burst_time", 50);
-		rt.call(f, P("/proc/to_chat"), null, [live(user), "<span class='info'>You set the resonator's fields to detonate after 5 seconds.</span>"]);
+		this.burst_time = 50;
+		to_chat(user, "<span class='info'>You set the resonator's fields to detonate after 5 seconds.</span>");
 	}
 	return f.dot;
 });
 
-// /obj/item/weapon/resonator/proc/CreateResonance  (code/modules/mining/equipment/resonator.dm:35)  may sleep
+// resonator.dm:35
 rt.def("/obj/item/weapon/resonator/proc/CreateResonance", function* CreateResonance(f: Frame, target: Value, user: Value) {
-	let _T: Value = null, R: Value = null;
-	f.vars = () => [target, user, _T, R];
-	_T = rt.getStep(f, live(target), 0);
-	if (truthy((R = rt.locateIn(f, T("/obj/effect/temp_visual/resonance"), live(_T))))) {
-		rt.setFv(f, "damage_multiplier", live(R), rt.sv(f, "quick_burst_mod"));
-		yield* g.callName(f, live(R), "burst", []);
-		return live(f.dot);
+	let R: Value = null;
+	let _T: Value = rt.getStep(f, target, 0);
+	if (R = rt.locateIn(f, T("/obj/effect/temp_visual/resonance"), _T)) {
+		R.damage_multiplier = this.quick_burst_mod;
+		yield* R.burst();
+		return f.dot;
 	}
-	if (!rt.lt(rt.length(rt.sv(f, "fields")), rt.sv(f, "fieldlimit"))) return f.dot;
-	yield* g.new_(f, T("/obj/effect/temp_visual/resonance"), [live(_T), live(user), live(f.src), rt.sv(f, "burst_time")]);
-	yield* g.callName(f, live(user), "changeNext_move", [8]);
+	if (!(rt.length(this.fields) < this.fieldlimit)) return f.dot;
+	yield* new_(T("/obj/effect/temp_visual/resonance"), _T, user, this, this.burst_time);
+	user.changeNext_move(8);
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/resonator/proc/pre_attackby  (code/modules/mining/equipment/resonator.dm:46)  may sleep
+// resonator.dm:46
 rt.def("/obj/item/weapon/resonator/proc/pre_attackby", function* pre_attackby(f: Frame, target: Value, user: Value, params: Value) {
-	f.vars = () => [target, user, params];
-	if (truthy((yield* g.srcCall(f, "check_allowed_items", live(target), 1)))) {
-		yield* g.srcCall(f, "CreateResonance", live(target), live(user));
+	if (this.check_allowed_items(target, 1)) {
+		yield* this.CreateResonance(target, user);
 	}
 	return 1;
 }, true);
@@ -78,80 +74,72 @@ rt.type(11672, "/obj/effect/temp_visual/resonance", "/obj/effect/temp_visual", {
 	layer: 4.5,
 });
 
-// /obj/effect/temp_visual/resonance/proc/Initialize  (code/modules/mining/equipment/resonator.dm:63)  may sleep
-rt.def("/obj/effect/temp_visual/resonance/proc/Initialize", function* Initialize(f: Frame) {
-	rt.setSv(f, "duration", live(f.args[3]));
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "creator", live(f.args[1]));
-	rt.setSv(f, "res", live(f.args[2]));
-	if (truthy(rt.sv(f, "res"))) {
-		rt.modField(f, rt.sv(f, "res"), "fields", live(f.src), add);
+// resonator.dm:63
+rt.def("/obj/effect/temp_visual/resonance/proc/Initialize", function* Initialize(f: Frame, mapload: Value, set_creator: Value, set_resonator: Value, set_duration: Value) {
+	this.duration = set_duration;
+	f.dot = (yield* parent_proc());
+	this.creator = set_creator;
+	this.res = set_resonator;
+	if (this.res) {
+		this.res.fields += this;
 	}
-	yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/weapons/resonator_fire.ogg"), 50, 1]);
-	rt.setSv(f, "transform", multiply((yield* g.call(f, P("/proc/matrix"), null, [])), 0.75));
-	rt.op(f, "Animate", [2, 6], [null, live(f.src), "transform", multiply((yield* g.call(f, P("/proc/matrix"), null, [])), 1.5), "time", rt.sv(f, "duration")]);
-	yield* g.call(f, P("/proc/deltimer"), null, [rt.sv(f, "timerid")]);
-	rt.setSv(f, "timerid", (yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/effect/temp_visual/resonance/proc/burst")])), rt.sv(f, "duration"), 8])));
-	return f.dot;
-}, true, { args: ["mapload", "set_creator", "set_resonator", "set_duration"] });
-
-// /obj/effect/temp_visual/resonance/proc/Destroy  (code/modules/mining/equipment/resonator.dm:77)  may sleep
-rt.def("/obj/effect/temp_visual/resonance/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.sv(f, "res"))) {
-		(rt.modField(f, rt.sv(f, "res"), "fields", live(f.src), subtract));
-		rt.setSv(f, "res", null);
-	}
-	rt.setSv(f, "creator", null);
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	playsound(this, rt.rsc("sound/weapons/resonator_fire.ogg"), 50, 1);
+	this.transform = matrix() * 0.75;
+	rt.op(f, "Animate", [2, 6], [null, this, "transform", matrix() * 1.5, "time", this.duration]);
+	yield* deltimer(this.timerid);
+	this.timerid = (yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/effect/temp_visual/resonance/proc/burst"))), this.duration, 8));
 	return f.dot;
 }, true);
 
-// /obj/effect/temp_visual/resonance/proc/check_pressure  (code/modules/mining/equipment/resonator.dm:83)
+// resonator.dm:77
+rt.def("/obj/effect/temp_visual/resonance/proc/Destroy", function* Destroy(f: Frame) {
+	if (this.res) {
+		this.res.fields -= this;
+		this.res = null;
+	}
+	this.creator = null;
+	f.dot = (yield* parent_proc());
+	return f.dot;
+}, true);
+
+// resonator.dm:83
 rt.def("/obj/effect/temp_visual/resonance/proc/check_pressure", function check_pressure(f: Frame, proj_turf: Value) {
-	let environment: Value = null, pressure: Value = null;
-	f.vars = () => [proj_turf, environment, pressure];
-	if (!truthy(live(proj_turf))) {
-		proj_turf = rt.getStep(f, live(f.src), 0);
+	if (!proj_turf) {
+		proj_turf = rt.getStep(f, this, 0);
 	}
-	if (!truthy((rt.istype(live(proj_turf), T("/turf")) ? 1 : 0))) {
-		return live(f.dot);
+	if (!rt.istype(proj_turf, T("/turf"))) {
+		return f.dot;
 	}
-	environment = rt.callName(f, live(proj_turf), "return_air", []);
-	pressure = rt.callName(f, live(environment), "return_pressure", []);
-	rt.setSv(f, "resonance_damage", rt.initial(f, live(f.src), "resonance_damage"));
-	if (rt.lt(live(pressure), 50)) {
-		rt.setSv(f, "name", fmt("strong ＀", [rt.initial(f, live(f.src), "name")]));
-		(rt.modSrcVar(f, "resonance_damage", 3, multiply));
+	let environment: Value = proj_turf.return_air();
+	let pressure: Value = environment.return_pressure();
+	this.resonance_damage = rt.initial(f, this, "resonance_damage");
+	if (pressure < 50) {
+		this.name = `strong ${rt.initial(f, this, "name")}`;
+		this.resonance_damage *= 3;
 	} else {
-		rt.setSv(f, "name", rt.initial(f, live(f.src), "name"));
+		this.name = rt.initial(f, this, "name");
 	}
-	(rt.modSrcVar(f, "resonance_damage", rt.sv(f, "damage_multiplier"), multiply));
+	this.resonance_damage *= this.damage_multiplier;
 	return f.dot;
 });
 
-// /obj/effect/temp_visual/resonance/proc/burst  (code/modules/mining/equipment/resonator.dm:98)  may sleep
+// resonator.dm:98
 rt.def("/obj/effect/temp_visual/resonance/proc/burst", function* burst(f: Frame) {
 	let _T: Value = null, M: Value = null, L: Value = null;
-	let $e: any;
-	f.vars = () => [_T, M, L, $e];
-	yield* g.new_(f, T("/obj/effect/temp_visual/resonance_crush"), [(_T = rt.getStep(f, live(f.src), 0))]);
-	if (truthy((rt.istype(live(_T), T("/turf/closed/mineral")) ? 1 : 0))) {
-		yield* g.callName(f, (M = live(_T)), "gets_drilled", [rt.sv(f, "creator")]);
+	yield* new_(T("/obj/effect/temp_visual/resonance_crush"), (_T = rt.getStep(f, this, 0)));
+	if (rt.istype(_T, T("/turf/closed/mineral"))) {
+		yield* (M = _T).gets_drilled(this.creator);
 	}
-	yield* g.srcCall(f, "check_pressure", live(_T));
-	yield* g.call(f, P("/proc/playsound"), null, [live(_T), rt.rsc("sound/weapons/resonator_blast.ogg"), 50, 1]);
-	L = null;
-	rt.forList(f, 0, live(_T), T("/mob/living"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		L = $e;
-		if (truthy(rt.sv(f, "creator"))) {
-			yield* g.call(f, P("/proc/add_logs"), null, [rt.sv(f, "creator"), live(L), "used a resonator field on", "resonator"]);
+	this.check_pressure(_T);
+	playsound(_T, rt.rsc("sound/weapons/resonator_blast.ogg"), 50, 1);
+	for (L of each(_T, T("/mob/living"))) {
+		if (this.creator) {
+			add_logs(this.creator, L, "used a resonator field on", "resonator");
 		}
-		yield* g.call(f, P("/proc/to_chat"), null, [live(L), fmt("<span class='userdanger'>＀ ruptured with you in it!</span>", [live(f.src)])]);
-		yield* g.callName(f, live(L), "apply_damage", [rt.sv(f, "resonance_damage"), "brute"]);
+		to_chat(L, `<span class='userdanger'>${this} ruptured with you in it!</span>`);
+		yield* L.apply_damage(this.resonance_damage, "brute");
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
@@ -161,10 +149,10 @@ rt.type(11673, "/obj/effect/temp_visual/resonance_crush", "/obj/effect/temp_visu
 	layer: 4.5,
 });
 
-// /obj/effect/temp_visual/resonance_crush/proc/Initialize  (code/modules/mining/equipment/resonator.dm:118)  may sleep
+// resonator.dm:118
 rt.def("/obj/effect/temp_visual/resonance_crush/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "transform", multiply((yield* g.call(f, P("/proc/matrix"), null, [])), 1.5));
-	rt.op(f, "Animate", [2, 8], [null, live(f.src), "transform", multiply((yield* g.call(f, P("/proc/matrix"), null, [])), 0.10000000149011612), "alpha", 50, "time", 4]);
+	f.dot = (yield* parent_proc());
+	this.transform = matrix() * 1.5;
+	rt.op(f, "Animate", [2, 8], [null, this, "transform", matrix() * 0.1, "alpha", 50, "time", 4]);
 	return f.dot;
 }, true);

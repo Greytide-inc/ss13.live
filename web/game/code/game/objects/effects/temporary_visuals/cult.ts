@@ -1,7 +1,7 @@
-// From code/game/objects/effects/temporary_visuals/cult.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/effects/temporary_visuals/cult.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(11578, "/obj/effect/temp_visual/cult/rune_spawn", "/obj/effect/temp_visual/cult", {
@@ -10,22 +10,21 @@ rt.type(11578, "/obj/effect/temp_visual/cult/rune_spawn", "/obj/effect/temp_visu
 	alpha: 0,
 });
 
-// /obj/effect/temp_visual/cult/rune_spawn/proc/Initialize  (code/game/objects/effects/temporary_visuals/cult.dm:58)  may sleep
-rt.def("/obj/effect/temp_visual/cult/rune_spawn/proc/Initialize", function* Initialize(f: Frame) {
-	let oldtransform: Value = null, M: Value = null;
-	f.vars = () => [oldtransform, M];
-	if (truthy((yield* g.call(f, P("/proc/isnum"), null, [live(f.args[1])])))) {
-		rt.setSv(f, "duration", live(f.args[1]));
+// cult.dm:58
+rt.def("/obj/effect/temp_visual/cult/rune_spawn/proc/Initialize", function* Initialize(f: Frame, mapload: Value, set_duration: Value, set_color: Value) {
+	let M: Value = null;
+	if (isnum(set_duration)) {
+		this.duration = set_duration;
 	}
-	if (truthy(live(f.args[2]))) {
-		yield* g.srcCall(f, "add_atom_colour", live(f.args[2]), 4);
+	if (set_color) {
+		this.add_atom_colour(set_color, FIXED_COLOUR_PRIORITY);
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	oldtransform = rt.sv(f, "transform");
-	rt.setSv(f, "transform", multiply((yield* g.call(f, P("/proc/matrix"), null, [])), 2));
-	yield* g.callName(f, (M = rt.sv(f, "transform")), "Turn", [rt.sv(f, "turnedness")]);
-	rt.setSv(f, "transform", live(M));
-	rt.op(f, "Animate", [2, 10], [null, live(f.src), "alpha", 255, "time", rt.sv(f, "duration"), "easing", 4, "flags", 4]);
-	rt.op(f, "Animate", [2, 8], [null, live(f.src), "transform", live(oldtransform), "time", rt.sv(f, "duration"), "flags", 4]);
+	f.dot = (yield* parent_proc());
+	let oldtransform: Value = this.transform;
+	this.transform = matrix() * 2;
+	(M = this.transform).Turn(this.turnedness);
+	this.transform = M;
+	rt.op(f, "Animate", [2, 10], [null, this, "alpha", 255, "time", this.duration, "easing", 4, "flags", 4]);
+	rt.op(f, "Animate", [2, 8], [null, this, "transform", oldtransform, "time", this.duration, "flags", 4]);
 	return f.dot;
-}, true, { args: ["mapload", "set_duration", "set_color"] });
+}, true);

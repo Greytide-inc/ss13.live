@@ -1,127 +1,101 @@
-// From code/modules/admin/verbs/pray.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/admin/verbs/pray.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
-// /mob/verb/pray  (code/modules/admin/verbs/pray.dm:6)
+// pray.dm:6
 rt.def("/mob/verb/pray", function pray(f: Frame, msg: Value) {
-	let cross: Value = null, font_color: Value = null, prayer_type: Value = null, deity: Value = null, C: Value = null;
-	let $0: any, $1: any, $2: any, $3: any, $e: any;
-	f.vars = () => [msg, cross, font_color, prayer_type, deity, C, $0, $1, $2, $3, $e];
-	if (truthy(rt.gl("say_disabled"))) {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.usr), "<span class='danger'>Speech is currently admin-disabled.</span>"]);
-		return live(f.dot);
+	let deity: Value = null, C: Value = null;
+	let $3: any, $e: any;
+	if (GLOB.say_disabled) {
+		to_chat(f.usr, "<span class='danger'>Speech is currently admin-disabled.</span>");
+		return f.dot;
 	}
-	if (!truthy((msg = rt.call(f, P("/proc/copytext"), null, [rt.call(f, P("/proc/sanitize"), null, [live(msg)]), 1, 1024])))) {
-		return live(f.dot);
+	if (!(msg = copytext(sanitize(msg), 1, 1024))) {
+		return f.dot;
 	}
-	rt.call(f, P("/proc/log_prayer"), null, [fmt("＀/(＀): ＀", [rt.fv(f, "key", live(f.src)), rt.fv(f, "name", live(f.src)), live(msg)])]);
-	if (truthy(rt.fv(f, "client", live(f.usr)))) {
-		if (truthy(rt.bitAnd(rt.gv(f, "muted", rt.gv(f, "prefs", rt.fv(f, "client", live(f.usr)))), 4))) {
-			rt.call(f, P("/proc/to_chat"), null, [live(f.usr), "<span class='danger'>You cannot pray (muted).</span>"]);
-			return live(f.dot);
+	log_prayer(`${this.key}/(${this.name}): ${msg}`);
+	if (f.usr.client) {
+		if (rt.bitAnd(f.usr.client.prefs.muted, 4)) {
+			to_chat(f.usr, "<span class='danger'>You cannot pray (muted).</span>");
+			return f.dot;
 		}
-		if (truthy(rt.callName(f, rt.fv(f, "client", live(f.src)), "handle_spam_prevention", [live(msg), 4]))) {
-			return live(f.dot);
+		if (this.client.handle_spam_prevention(msg, 4)) {
+			return f.dot;
 		}
 	}
-	cross = rt.call(f, P("/proc/mutable_appearance"), null, [rt.rsc("icons/obj/storage.dmi"), "bible"]);
-	font_color = "purple";
-	prayer_type = "PRAYER";
-	deity = null;
-	if (isEqual(rt.fv(f, "job", live(f.usr)), "Chaplain")) {
-		rt.setFv(f, "icon_state", live(cross), "kingyellow");
+	let cross: Value = mutable_appearance(rt.rsc("icons/obj/storage.dmi"), "bible");
+	let font_color: Value = "purple";
+	let prayer_type: Value = "PRAYER";
+	if (f.usr.job == "Chaplain") {
+		cross.icon_state = "kingyellow";
 		font_color = "blue";
 		prayer_type = "CHAPLAIN PRAYER";
-		if (truthy(rt.fv(f, "deity", rt.gl("SSreligion")))) {
-			deity = rt.fv(f, "deity", rt.gl("SSreligion"));
+		if (GLOB.SSreligion.deity) {
+			deity = GLOB.SSreligion.deity;
 		}
-	} else {
-		if (truthy(rt.call(f, P("/proc/iscultist"), null, [live(f.usr)]))) {
-			rt.setFv(f, "icon_state", live(cross), "tome");
-			font_color = "red";
-			prayer_type = "CULTIST PRAYER";
-			deity = "Nar-Sie";
-		}
+	} else if (iscultist(f.usr)) {
+		cross.icon_state = "tome";
+		font_color = "red";
+		prayer_type = "CULTIST PRAYER";
+		deity = "Nar-Sie";
 	}
-	$0 = rt.call(f, P("/proc/bicon"), null, [live(cross)]);
-	$1 = live(font_color);
-	$2 = live(prayer_type);
-	if (truthy(live(deity))) {
-		$3 = fmt(" (to ＀)", [live(deity)]);
+	let $0: any = bicon(cross);
+	let $1: any = font_color;
+	let $2: any = prayer_type;
+	if (deity) {
+		$3 = ` (to ${deity})`;
 	} else {
 		$3 = "";
 	}
-	msg = fmt("<span class='adminnotice'>＀<b><font color=＀>＀＀: </font>＀ ＀:</b> ＀</span>", [$0, $1, $2, $3, fmt("＀ ＀", [rt.call(f, P("/proc/key_name_admin"), null, [live(f.src)]), fmt("＀ ＀ ＀ ＀ ＀ ＀ ＀ ＀", [fmt("(<a href='?_src_=holder;adminmoreinfo=＃'>?</a>)", [live(f.src)]), fmt("(<a href='?_src_=holder;adminplayeropts=＃'>PP</a>)", [live(f.src)]), fmt("(<a href='?_src_=vars;Vars=＃'>VV</a>)", [live(f.src)]), fmt("(<a href='?_src_=holder;subtlemessage=＃'>SM</a>)", [live(f.src)]), fmt("(<a href='?_src_=holder;adminplayerobservefollow=＃'>FLW</a>)", [live(f.src)]), fmt("(<a href='?_src_=holder;traitor=＃'>TP</a>)", [live(f.src)]), fmt("(<a href='?_src_=holder;individuallog=＃'>LOGS</a>)", [live(f.src)]), fmt("(<a href='?_src_=holder;adminsmite=＃'>SMITE</a>)", [live(f.src)])])]), fmt("(<a href='?_src_=holder;adminspawncookie=＃'>SC</a>)", [live(f.src)]), live(msg)]);
-	C = null;
-	rt.forList(f, 0, rt.gl("admins"), T("/client"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		C = $e;
-		if (truthy(rt.bitAnd(rt.gv(f, "chat_toggles", rt.fv(f, "prefs", live(C))), 16))) {
-			rt.call(f, P("/proc/to_chat"), null, [live(C), live(msg)]);
-			if (truthy(rt.bitAnd(rt.gv(f, "toggles", rt.fv(f, "prefs", live(C))), 512))) {
-				if (isEqual(rt.fv(f, "job", live(f.usr)), "Chaplain")) {
-					rt.op(f, "Output", [], [live(C), rt.rsc("sound/effects/pray.ogg")], false);
+	msg = `<span class='adminnotice'>${$0}<b><font color=${$1}>${$2}${$3}: </font>${`${key_name_admin(this)} ${`${fmt("(<a href='?_src_=holder;adminmoreinfo=＃'>?</a>)", [this])} ${fmt("(<a href='?_src_=holder;adminplayeropts=＃'>PP</a>)", [this])} ${fmt("(<a href='?_src_=vars;Vars=＃'>VV</a>)", [this])} ${fmt("(<a href='?_src_=holder;subtlemessage=＃'>SM</a>)", [this])} ${fmt("(<a href='?_src_=holder;adminplayerobservefollow=＃'>FLW</a>)", [this])} ${fmt("(<a href='?_src_=holder;traitor=＃'>TP</a>)", [this])} ${fmt("(<a href='?_src_=holder;individuallog=＃'>LOGS</a>)", [this])} ${fmt("(<a href='?_src_=holder;adminsmite=＃'>SMITE</a>)", [this])}`}`} ${fmt("(<a href='?_src_=holder;adminspawncookie=＃'>SC</a>)", [this])}:</b> ${msg}</span>`;
+	for (C of each(GLOB.admins, T("/client"))) {
+		if (rt.bitAnd(C.prefs.chat_toggles, 16)) {
+			to_chat(C, msg);
+			if (rt.bitAnd(C.prefs.toggles, 512)) {
+				if (f.usr.job == "Chaplain") {
+					rt.op(f, "Output", [], [C, rt.rsc("sound/effects/pray.ogg")], false);
 				}
 			}
 		}
 	}
-	rt.endFor(f, 0);
-	rt.call(f, P("/proc/to_chat"), null, [live(f.usr), "Your prayers have been received by the gods."]);
+	to_chat(f.usr, "Your prayers have been received by the gods.");
 	return f.dot;
 }, false, { verb: { name: "Pray", category: "IC" }, argTypes: [{ type: 2 }] });
 
-// /proc/Centcomm_announce  (code/modules/admin/verbs/pray.dm:50)
+// pray.dm:50
 rt.def("/proc/Centcomm_announce", function Centcomm_announce(f: Frame, text: Value, Sender: Value) {
-	let msg: Value = null, C: Value = null;
-	let $e: any;
-	f.vars = () => [msg, C, $e];
-	msg = rt.call(f, P("/proc/copytext"), null, [rt.call(f, P("/proc/sanitize"), null, [live(text)]), 1, 1024]);
-	msg = fmt("<span class='adminnotice'><b><font color=orange>CENTCOM:</font>＀ ＀:</b> ＀</span>", [fmt("＀ ＀", [rt.call(f, P("/proc/key_name_admin"), null, [live(Sender)]), fmt("＀ ＀ ＀ ＀ ＀ ＀ ＀ ＀", [fmt("(<a href='?_src_=holder;adminmoreinfo=＃'>?</a>)", [live(Sender)]), fmt("(<a href='?_src_=holder;adminplayeropts=＃'>PP</a>)", [live(Sender)]), fmt("(<a href='?_src_=vars;Vars=＃'>VV</a>)", [live(Sender)]), fmt("(<a href='?_src_=holder;subtlemessage=＃'>SM</a>)", [live(Sender)]), fmt("(<a href='?_src_=holder;adminplayerobservefollow=＃'>FLW</a>)", [live(Sender)]), fmt("(<a href='?_src_=holder;traitor=＃'>TP</a>)", [live(Sender)]), fmt("(<a href='?_src_=holder;individuallog=＃'>LOGS</a>)", [live(Sender)]), fmt("(<a href='?_src_=holder;adminsmite=＃'>SMITE</a>)", [live(Sender)])])]), fmt("(<a href='?_src_=holder;CentcommReply=＃'>RPLY</a>)", [live(Sender)]), live(msg)]);
-	rt.call(f, P("/proc/to_chat"), null, [rt.gl("admins"), live(msg)]);
-	C = null;
-	rt.forList(f, 0, rt.gl("machines"), T("/obj/machinery/computer/communications"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		C = $e;
-		rt.callName(f, live(C), "overrideCooldown", []);
+	let C: Value = null;
+	let msg: Value = copytext(sanitize(text), 1, 1024);
+	msg = `<span class='adminnotice'><b><font color=orange>CENTCOM:</font>${`${key_name_admin(Sender)} ${`${fmt("(<a href='?_src_=holder;adminmoreinfo=＃'>?</a>)", [Sender])} ${fmt("(<a href='?_src_=holder;adminplayeropts=＃'>PP</a>)", [Sender])} ${fmt("(<a href='?_src_=vars;Vars=＃'>VV</a>)", [Sender])} ${fmt("(<a href='?_src_=holder;subtlemessage=＃'>SM</a>)", [Sender])} ${fmt("(<a href='?_src_=holder;adminplayerobservefollow=＃'>FLW</a>)", [Sender])} ${fmt("(<a href='?_src_=holder;traitor=＃'>TP</a>)", [Sender])} ${fmt("(<a href='?_src_=holder;individuallog=＃'>LOGS</a>)", [Sender])} ${fmt("(<a href='?_src_=holder;adminsmite=＃'>SMITE</a>)", [Sender])}`}`} ${fmt("(<a href='?_src_=holder;CentcommReply=＃'>RPLY</a>)", [Sender])}:</b> ${msg}</span>`;
+	to_chat(GLOB.admins, msg);
+	for (C of each(GLOB.machines, T("/obj/machinery/computer/communications"))) {
+		C.overrideCooldown();
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /proc/Syndicate_announce  (code/modules/admin/verbs/pray.dm:57)
+// pray.dm:57
 rt.def("/proc/Syndicate_announce", function Syndicate_announce(f: Frame, text: Value, Sender: Value) {
-	let msg: Value = null, C: Value = null;
-	let $e: any;
-	f.vars = () => [msg, C, $e];
-	msg = rt.call(f, P("/proc/copytext"), null, [rt.call(f, P("/proc/sanitize"), null, [live(text)]), 1, 1024]);
-	msg = fmt("<span class='adminnotice'><b><font color=crimson>SYNDICATE:</font>＀ ＀:</b> ＀</span>", [fmt("＀ ＀", [rt.call(f, P("/proc/key_name_admin"), null, [live(Sender)]), fmt("＀ ＀ ＀ ＀ ＀ ＀ ＀ ＀", [fmt("(<a href='?_src_=holder;adminmoreinfo=＃'>?</a>)", [live(Sender)]), fmt("(<a href='?_src_=holder;adminplayeropts=＃'>PP</a>)", [live(Sender)]), fmt("(<a href='?_src_=vars;Vars=＃'>VV</a>)", [live(Sender)]), fmt("(<a href='?_src_=holder;subtlemessage=＃'>SM</a>)", [live(Sender)]), fmt("(<a href='?_src_=holder;adminplayerobservefollow=＃'>FLW</a>)", [live(Sender)]), fmt("(<a href='?_src_=holder;traitor=＃'>TP</a>)", [live(Sender)]), fmt("(<a href='?_src_=holder;individuallog=＃'>LOGS</a>)", [live(Sender)]), fmt("(<a href='?_src_=holder;adminsmite=＃'>SMITE</a>)", [live(Sender)])])]), fmt("(<a href='?_src_=holder;SyndicateReply=＃'>RPLY</a>)", [live(Sender)]), live(msg)]);
-	rt.call(f, P("/proc/to_chat"), null, [rt.gl("admins"), live(msg)]);
-	C = null;
-	rt.forList(f, 0, rt.gl("machines"), T("/obj/machinery/computer/communications"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		C = $e;
-		rt.callName(f, live(C), "overrideCooldown", []);
+	let C: Value = null;
+	let msg: Value = copytext(sanitize(text), 1, 1024);
+	msg = `<span class='adminnotice'><b><font color=crimson>SYNDICATE:</font>${`${key_name_admin(Sender)} ${`${fmt("(<a href='?_src_=holder;adminmoreinfo=＃'>?</a>)", [Sender])} ${fmt("(<a href='?_src_=holder;adminplayeropts=＃'>PP</a>)", [Sender])} ${fmt("(<a href='?_src_=vars;Vars=＃'>VV</a>)", [Sender])} ${fmt("(<a href='?_src_=holder;subtlemessage=＃'>SM</a>)", [Sender])} ${fmt("(<a href='?_src_=holder;adminplayerobservefollow=＃'>FLW</a>)", [Sender])} ${fmt("(<a href='?_src_=holder;traitor=＃'>TP</a>)", [Sender])} ${fmt("(<a href='?_src_=holder;individuallog=＃'>LOGS</a>)", [Sender])} ${fmt("(<a href='?_src_=holder;adminsmite=＃'>SMITE</a>)", [Sender])}`}`} ${fmt("(<a href='?_src_=holder;SyndicateReply=＃'>RPLY</a>)", [Sender])}:</b> ${msg}</span>`;
+	to_chat(GLOB.admins, msg);
+	for (C of each(GLOB.machines, T("/obj/machinery/computer/communications"))) {
+		C.overrideCooldown();
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /proc/Nuke_request  (code/modules/admin/verbs/pray.dm:64)
+// pray.dm:64
 rt.def("/proc/Nuke_request", function Nuke_request(f: Frame, text: Value, Sender: Value) {
-	let msg: Value = null, C: Value = null;
-	let $e: any;
-	f.vars = () => [msg, C, $e];
-	msg = rt.call(f, P("/proc/copytext"), null, [rt.call(f, P("/proc/sanitize"), null, [live(text)]), 1, 1024]);
-	msg = fmt("<span class='adminnotice'><b><font color=orange>NUKE CODE REQUEST:</font>＀ ＀ ＀:</b> ＀</span>", [fmt("＀ ＀", [rt.call(f, P("/proc/key_name_admin"), null, [live(Sender)]), fmt("＀ ＀ ＀ ＀ ＀ ＀ ＀ ＀", [fmt("(<a href='?_src_=holder;adminmoreinfo=＃'>?</a>)", [live(Sender)]), fmt("(<a href='?_src_=holder;adminplayeropts=＃'>PP</a>)", [live(Sender)]), fmt("(<a href='?_src_=vars;Vars=＃'>VV</a>)", [live(Sender)]), fmt("(<a href='?_src_=holder;subtlemessage=＃'>SM</a>)", [live(Sender)]), fmt("(<a href='?_src_=holder;adminplayerobservefollow=＃'>FLW</a>)", [live(Sender)]), fmt("(<a href='?_src_=holder;traitor=＃'>TP</a>)", [live(Sender)]), fmt("(<a href='?_src_=holder;individuallog=＃'>LOGS</a>)", [live(Sender)]), fmt("(<a href='?_src_=holder;adminsmite=＃'>SMITE</a>)", [live(Sender)])])]), fmt("(<a href='?_src_=holder;CentcommReply=＃'>RPLY</a>)", [live(Sender)]), "(<a href='?_src_=holder;set_selfdestruct_code=1'>SETCODE</a>)", live(msg)]);
-	rt.call(f, P("/proc/to_chat"), null, [rt.gl("admins"), live(msg)]);
-	C = null;
-	rt.forList(f, 0, rt.gl("machines"), T("/obj/machinery/computer/communications"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		C = $e;
-		rt.callName(f, live(C), "overrideCooldown", []);
+	let C: Value = null;
+	let msg: Value = copytext(sanitize(text), 1, 1024);
+	msg = `<span class='adminnotice'><b><font color=orange>NUKE CODE REQUEST:</font>${`${key_name_admin(Sender)} ${`${fmt("(<a href='?_src_=holder;adminmoreinfo=＃'>?</a>)", [Sender])} ${fmt("(<a href='?_src_=holder;adminplayeropts=＃'>PP</a>)", [Sender])} ${fmt("(<a href='?_src_=vars;Vars=＃'>VV</a>)", [Sender])} ${fmt("(<a href='?_src_=holder;subtlemessage=＃'>SM</a>)", [Sender])} ${fmt("(<a href='?_src_=holder;adminplayerobservefollow=＃'>FLW</a>)", [Sender])} ${fmt("(<a href='?_src_=holder;traitor=＃'>TP</a>)", [Sender])} ${fmt("(<a href='?_src_=holder;individuallog=＃'>LOGS</a>)", [Sender])} ${fmt("(<a href='?_src_=holder;adminsmite=＃'>SMITE</a>)", [Sender])}`}`} ${fmt("(<a href='?_src_=holder;CentcommReply=＃'>RPLY</a>)", [Sender])} ${"(<a href='?_src_=holder;set_selfdestruct_code=1'>SETCODE</a>)"}:</b> ${msg}</span>`;
+	to_chat(GLOB.admins, msg);
+	for (C of each(GLOB.machines, T("/obj/machinery/computer/communications"))) {
+		C.overrideCooldown();
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });

@@ -1,7 +1,7 @@
-// From code/game/objects/items/weapons/tanks/tank_types.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/weapons/tanks/tank_types.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(7456, "/obj/item/weapon/tank/internals/oxygen", "/obj/item/weapon/tank/internals", {
@@ -13,12 +13,12 @@ rt.type(7456, "/obj/item/weapon/tank/internals/oxygen", "/obj/item/weapon/tank/i
 	dog_fashion: rt.typePath("/datum/dog_fashion/back"),
 });
 
-// /obj/item/weapon/tank/internals/oxygen/proc/New  (code/game/objects/items/weapons/tanks/tank_types.dm:23)  may sleep
+// tank_types.dm:23
 rt.def("/obj/item/weapon/tank/internals/oxygen/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.callName(f, rt.sv(f, "air_contents"), "assert_gas", ["o2"]);
-	rt.setAt(rt.index(rt.fv(f, "gases", rt.sv(f, "air_contents")), "o2"), 1, divide(multiply(607.949951171875, rt.sv(f, "volume")), 2436.07666015625));
-	return live(f.dot);
+	yield* parent_proc();
+	this.air_contents.assert_gas("o2");
+	rt.setAt(rt.index(this.air_contents.gases, "o2"), 1, 607.94995 * this.volume / 2436.0767);
+	return f.dot;
 }, true);
 
 rt.type(7459, "/obj/item/weapon/tank/internals/anesthetic", "/obj/item/weapon/tank/internals", {
@@ -29,13 +29,13 @@ rt.type(7459, "/obj/item/weapon/tank/internals/anesthetic", "/obj/item/weapon/ta
 	force: 10,
 });
 
-// /obj/item/weapon/tank/internals/anesthetic/proc/New  (code/game/objects/items/weapons/tanks/tank_types.dm:51)  may sleep
+// tank_types.dm:51
 rt.def("/obj/item/weapon/tank/internals/anesthetic/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.callName(f, rt.sv(f, "air_contents"), "assert_gases", ["o2", "n2o"]);
-	rt.setAt(rt.index(rt.fv(f, "gases", rt.sv(f, "air_contents")), "o2"), 1, multiply(divide(multiply(303.9749755859375, rt.sv(f, "volume")), 2436.07666015625), 0.20999999344348907));
-	rt.setAt(rt.index(rt.fv(f, "gases", rt.sv(f, "air_contents")), "n2o"), 1, multiply(divide(multiply(303.9749755859375, rt.sv(f, "volume")), 2436.07666015625), 0.7900000214576721));
-	return live(f.dot);
+	yield* parent_proc();
+	this.air_contents.assert_gases("o2", "n2o");
+	rt.setAt(rt.index(this.air_contents.gases, "o2"), 1, 303.97498 * this.volume / 2436.0767 * 0.21);
+	rt.setAt(rt.index(this.air_contents.gases, "n2o"), 1, 303.97498 * this.volume / 2436.0767 * 0.79);
+	return f.dot;
 }, true);
 
 rt.type(7460, "/obj/item/weapon/tank/internals/air", "/obj/item/weapon/tank/internals", {
@@ -46,13 +46,13 @@ rt.type(7460, "/obj/item/weapon/tank/internals/air", "/obj/item/weapon/tank/inte
 	dog_fashion: rt.typePath("/datum/dog_fashion/back"),
 });
 
-// /obj/item/weapon/tank/internals/air/proc/New  (code/game/objects/items/weapons/tanks/tank_types.dm:68)  may sleep
+// tank_types.dm:68
 rt.def("/obj/item/weapon/tank/internals/air/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.callName(f, rt.sv(f, "air_contents"), "assert_gases", ["o2", "n2"]);
-	rt.setAt(rt.index(rt.fv(f, "gases", rt.sv(f, "air_contents")), "o2"), 1, multiply(divide(multiply(607.949951171875, rt.sv(f, "volume")), 2436.07666015625), 0.20999999344348907));
-	rt.setAt(rt.index(rt.fv(f, "gases", rt.sv(f, "air_contents")), "n2"), 1, multiply(divide(multiply(607.949951171875, rt.sv(f, "volume")), 2436.07666015625), 0.7900000214576721));
-	return live(f.dot);
+	yield* parent_proc();
+	this.air_contents.assert_gases("o2", "n2");
+	rt.setAt(rt.index(this.air_contents.gases, "o2"), 1, 607.94995 * this.volume / 2436.0767 * 0.21);
+	rt.setAt(rt.index(this.air_contents.gases, "n2"), 1, 607.94995 * this.volume / 2436.0767 * 0.79);
+	return f.dot;
 }, true);
 
 rt.type(7461, "/obj/item/weapon/tank/internals/plasma", "/obj/item/weapon/tank/internals", {
@@ -64,42 +64,41 @@ rt.type(7461, "/obj/item/weapon/tank/internals/plasma", "/obj/item/weapon/tank/i
 	force: 8,
 });
 
-// /obj/item/weapon/tank/internals/plasma/proc/New  (code/game/objects/items/weapons/tanks/tank_types.dm:88)  may sleep
+// tank_types.dm:88
 rt.def("/obj/item/weapon/tank/internals/plasma/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.callName(f, rt.sv(f, "air_contents"), "assert_gas", ["plasma"]);
-	rt.setAt(rt.index(rt.fv(f, "gases", rt.sv(f, "air_contents")), "plasma"), 1, divide(multiply(303.9749755859375, rt.sv(f, "volume")), 2436.07666015625));
-	return live(f.dot);
+	yield* parent_proc();
+	this.air_contents.assert_gas("plasma");
+	rt.setAt(rt.index(this.air_contents.gases, "plasma"), 1, 303.97498 * this.volume / 2436.0767);
+	return f.dot;
 }, true);
 
-// /obj/item/weapon/tank/internals/plasma/proc/attackby  (code/game/objects/items/weapons/tanks/tank_types.dm:94)  may sleep
-rt.def("/obj/item/weapon/tank/internals/plasma/proc/attackby", function* attackby(f: Frame) {
+// tank_types.dm:94
+rt.def("/obj/item/weapon/tank/internals/plasma/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
 	let F: Value = null;
-	f.vars = () => [F];
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/flamethrower")) ? 1 : 0))) {
-		if ((!truthy(rt.gv(f, "status", (F = live(f.args[0])))) || truthy(rt.fv(f, "ptank", live(F))))) {
-			return live(f.dot);
+	if (rt.istype(W, T("/obj/item/weapon/flamethrower"))) {
+		if (!(F = W).status || F.ptank) {
+			return f.dot;
 		}
-		if (!truthy((yield* g.callName(f, live(f.args[1]), "transferItemToLoc", [live(f.src), live(F)])))) {
-			return live(f.dot);
+		if (!(yield* user.transferItemToLoc(this, F))) {
+			return f.dot;
 		}
-		rt.setFv(f, "master", live(f.src), live(F));
-		rt.setFv(f, "ptank", live(F), live(f.src));
-		yield* g.callName(f, live(F), "update_icon", []);
+		this.master = F;
+		F.ptank = this;
+		yield* F.update_icon();
 	} else {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["W", "user", "params"] });
+}, true);
 
 rt.type(7462, "/obj/item/weapon/tank/internals/plasma/full", "/obj/item/weapon/tank/internals/plasma", {});
 
-// /obj/item/weapon/tank/internals/plasma/full/proc/New  (code/game/objects/items/weapons/tanks/tank_types.dm:107)  may sleep
+// tank_types.dm:107
 rt.def("/obj/item/weapon/tank/internals/plasma/full/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.callName(f, rt.sv(f, "air_contents"), "assert_gas", ["plasma"]);
-	rt.setAt(rt.index(rt.fv(f, "gases", rt.sv(f, "air_contents")), "plasma"), 1, divide(multiply(1013.25, rt.sv(f, "volume")), 2436.07666015625));
-	return live(f.dot);
+	yield* parent_proc();
+	this.air_contents.assert_gas("plasma");
+	rt.setAt(rt.index(this.air_contents.gases, "plasma"), 1, 1013.25 * this.volume / 2436.0767);
+	return f.dot;
 }, true);
 
 rt.type(7463, "/obj/item/weapon/tank/internals/plasmaman", "/obj/item/weapon/tank/internals", {
@@ -111,32 +110,32 @@ rt.type(7463, "/obj/item/weapon/tank/internals/plasmaman", "/obj/item/weapon/tan
 	distribute_pressure: 16,
 });
 
-// /obj/item/weapon/tank/internals/plasmaman/proc/New  (code/game/objects/items/weapons/tanks/tank_types.dm:126)  may sleep
+// tank_types.dm:126
 rt.def("/obj/item/weapon/tank/internals/plasmaman/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.callName(f, rt.sv(f, "air_contents"), "assert_gas", ["plasma"]);
-	rt.setAt(rt.index(rt.fv(f, "gases", rt.sv(f, "air_contents")), "plasma"), 1, divide(multiply(303.9749755859375, rt.sv(f, "volume")), 2436.07666015625));
-	return live(f.dot);
+	yield* parent_proc();
+	this.air_contents.assert_gas("plasma");
+	rt.setAt(rt.index(this.air_contents.gases, "plasma"), 1, 303.97498 * this.volume / 2436.0767);
+	return f.dot;
 }, true);
 
 rt.type(7464, "/obj/item/weapon/tank/internals/plasmaman/full", "/obj/item/weapon/tank/internals/plasmaman", {});
 
-// /obj/item/weapon/tank/internals/plasmaman/full/proc/New  (code/game/objects/items/weapons/tanks/tank_types.dm:132)  may sleep
+// tank_types.dm:132
 rt.def("/obj/item/weapon/tank/internals/plasmaman/full/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.callName(f, rt.sv(f, "air_contents"), "assert_gas", ["plasma"]);
-	rt.setAt(rt.index(rt.fv(f, "gases", rt.sv(f, "air_contents")), "plasma"), 1, divide(multiply(1013.25, rt.sv(f, "volume")), 2436.07666015625));
-	return live(f.dot);
+	yield* parent_proc();
+	this.air_contents.assert_gas("plasma");
+	rt.setAt(rt.index(this.air_contents.gases, "plasma"), 1, 1013.25 * this.volume / 2436.0767);
+	return f.dot;
 }, true);
 
 rt.type(7466, "/obj/item/weapon/tank/internals/plasmaman/belt/full", "/obj/item/weapon/tank/internals/plasmaman/belt", {});
 
-// /obj/item/weapon/tank/internals/plasmaman/belt/full/proc/New  (code/game/objects/items/weapons/tanks/tank_types.dm:147)  may sleep
+// tank_types.dm:147
 rt.def("/obj/item/weapon/tank/internals/plasmaman/belt/full/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.callName(f, rt.sv(f, "air_contents"), "assert_gas", ["plasma"]);
-	rt.setAt(rt.index(rt.fv(f, "gases", rt.sv(f, "air_contents")), "plasma"), 1, divide(multiply(1013.25, rt.sv(f, "volume")), 2436.07666015625));
-	return live(f.dot);
+	yield* parent_proc();
+	this.air_contents.assert_gas("plasma");
+	rt.setAt(rt.index(this.air_contents.gases, "plasma"), 1, 1013.25 * this.volume / 2436.0767);
+	return f.dot;
 }, true);
 
 rt.type(7467, "/obj/item/weapon/tank/internals/emergency_oxygen", "/obj/item/weapon/tank/internals", {
@@ -151,10 +150,10 @@ rt.type(7467, "/obj/item/weapon/tank/internals/emergency_oxygen", "/obj/item/wea
 	volume: 3,
 });
 
-// /obj/item/weapon/tank/internals/emergency_oxygen/proc/New  (code/game/objects/items/weapons/tanks/tank_types.dm:170)  may sleep
+// tank_types.dm:170
 rt.def("/obj/item/weapon/tank/internals/emergency_oxygen/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.callName(f, rt.sv(f, "air_contents"), "assert_gas", ["o2"]);
-	rt.setAt(rt.index(rt.fv(f, "gases", rt.sv(f, "air_contents")), "o2"), 1, divide(multiply(303.9749755859375, rt.sv(f, "volume")), 2436.07666015625));
-	return live(f.dot);
+	yield* parent_proc();
+	this.air_contents.assert_gas("o2");
+	rt.setAt(rt.index(this.air_contents.gases, "o2"), 1, 303.97498 * this.volume / 2436.0767);
+	return f.dot;
 }, true);

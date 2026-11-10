@@ -1,7 +1,7 @@
-// From code/game/objects/effects/effect_system/effects_smoke.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/effects/effect_system/effects_smoke.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, add, fmt } = rt;
 
 
 rt.type(11925, "/obj/effect/particle_effect/smoke", "/obj/effect/particle_effect", {
@@ -20,159 +20,133 @@ rt.type(11925, "/obj/effect/particle_effect/smoke", "/obj/effect/particle_effect
 	animate_movement: 0,
 });
 
-// /obj/effect/particle_effect/smoke/proc/fade_out  (code/game/objects/effects/effect_system/effects_smoke.dm:22)  may sleep
+// effects_smoke.dm:22
 rt.def("/obj/effect/particle_effect/smoke/proc/fade_out", function* fade_out(f: Frame, frames: Value) {
-	let step: Value = null, i: Value = null;
-	f.vars = () => [frames, step, i];
-	if (live(frames) === null) {
-		frames = 16;
+	frames ??= 16;
+	if (this.alpha == 0) {
+		return f.dot;
 	}
-	if (isEqual(rt.sv(f, "alpha"), 0)) {
-		return live(f.dot);
-	}
-	if (isEqual(live(frames), 0)) {
+	if (frames == 0) {
 		frames = 1;
 	}
-	step = divide(rt.sv(f, "alpha"), live(frames));
-	i = null;
-	i = 0;
-	while (rt.lt(live(i), live(frames))) {
-		(rt.modSrcVar(f, "alpha", live(step), subtract));
-		if (rt.lt(rt.sv(f, "alpha"), 160)) {
-			yield* g.srcCall(f, "set_opacity", 0);
+	let step: Value = this.alpha / frames;
+	let i: Value = 0;
+	while (i < frames) {
+		this.alpha -= step;
+		if (this.alpha < 160) {
+			this.set_opacity(0);
 		}
-		yield* g.call(f, P("/proc/stoplag"), null, []);
-		i = rt.inc(live(i), 1);
+		yield* stoplag();
+		i++;
 	}
 	return f.dot;
 }, true);
 
-// /obj/effect/particle_effect/smoke/proc/New  (code/game/objects/effects/effect_system/effects_smoke.dm:34)  may sleep
+// effects_smoke.dm:34
 rt.def("/obj/effect/particle_effect/smoke/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "create_reagents", 500);
-	if (truthy(rt.fv(f, "isprocessing", live(f.src)))) return f.dot;
-	rt.setFv(f, "isprocessing", live(f.src), 1);
-	rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), add);
+	yield* parent_proc();
+	yield* this.create_reagents(500);
+	if (this.isprocessing) return f.dot;
+	this.isprocessing = 1;
+	GLOB.SSobj.processing += this;
 	return f.dot;
 }, true);
 
-// /obj/effect/particle_effect/smoke/proc/Destroy  (code/game/objects/effects/effect_system/effects_smoke.dm:40)  may sleep
+// effects_smoke.dm:40
 rt.def("/obj/effect/particle_effect/smoke/proc/Destroy", function* Destroy(f: Frame) {
-	rt.setFv(f, "isprocessing", live(f.src), 0);
-	(rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), subtract));
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	this.isprocessing = 0;
+	GLOB.SSobj.processing -= this;
+	return (yield* parent_proc());
 }, true);
 
-// /obj/effect/particle_effect/smoke/proc/kill_smoke  (code/game/objects/effects/effect_system/effects_smoke.dm:44)  may sleep
+// effects_smoke.dm:44
 rt.def("/obj/effect/particle_effect/smoke/proc/kill_smoke", function* kill_smoke(f: Frame) {
-	rt.setFv(f, "isprocessing", live(f.src), 0);
-	(rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), subtract));
-	yield* g.call(f, P("/proc/ImmediateInvokeAsync"), null, [live(f.src), P("/obj/effect/particle_effect/smoke/proc/fade_out")]);
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), ["some_magic_bullshit", P("/proc/qdel"), live(f.src)])), 10, 8]);
+	this.isprocessing = 0;
+	GLOB.SSobj.processing -= this;
+	yield* ImmediateInvokeAsync(this, P("/obj/effect/particle_effect/smoke/proc/fade_out"));
+	yield* addtimer((yield* new_(T("/datum/callback"), "some_magic_bullshit", P("/proc/qdel"), this)), 10, 8);
 	return f.dot;
 }, true);
 
-// /obj/effect/particle_effect/smoke/proc/process  (code/game/objects/effects/effect_system/effects_smoke.dm:49)  may sleep
+// effects_smoke.dm:49
 rt.def("/obj/effect/particle_effect/smoke/proc/process", function* process(f: Frame) {
 	let L: Value = null;
-	let $e: any;
-	f.vars = () => [L, $e];
-	rt.incSrcVar(f, "lifetime", -1, true);
-	if (rt.lt(rt.sv(f, "lifetime"), 1)) {
-		yield* g.srcCall(f, "kill_smoke");
+	this.lifetime--;
+	if (this.lifetime < 1) {
+		yield* this.kill_smoke();
 		return 0;
 	}
-	L = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/range"), null, [0, live(f.src)])), T("/mob/living"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		L = $e;
-		yield* g.srcCall(f, "smoke_mob", live(L));
+	for (L of each(range(0, this), T("/mob/living"))) {
+		yield* this.smoke_mob(L);
 	}
-	rt.endFor(f, 0);
 	return 1;
 }, true, { waitfor: false });
 
-// /obj/effect/particle_effect/smoke/proc/smoke_mob  (code/game/objects/effects/effect_system/effects_smoke.dm:58)  may sleep
+// effects_smoke.dm:58
 rt.def("/obj/effect/particle_effect/smoke/proc/smoke_mob", function* smoke_mob(f: Frame, C: Value) {
-	f.vars = () => [C];
-	if (!truthy((rt.istype(live(C), T("/mob/living/carbon")) ? 1 : 0))) {
+	if (!rt.istype(C, T("/mob/living/carbon"))) {
 		return 0;
 	}
-	if (rt.lt(rt.sv(f, "lifetime"), 1)) {
+	if (this.lifetime < 1) {
 		return 0;
 	}
-	if ((rt.fv(f, "internal", live(C)) !== null || truthy((yield* g.callName(f, live(C), "has_smoke_protection", []))))) {
+	if (C.internal !== null || C.has_smoke_protection()) {
 		return 0;
 	}
-	if (truthy(rt.fv(f, "smoke_delay", live(C)))) {
+	if (C.smoke_delay) {
 		return 0;
 	}
-	rt.incField(f, live(C), "smoke_delay", 1, true);
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/effect/particle_effect/smoke/proc/remove_smoke_delay"), live(C)])), 10]);
+	C.smoke_delay++;
+	yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/effect/particle_effect/smoke/proc/remove_smoke_delay"), C)), 10);
 	return 1;
 }, true);
 
-// /obj/effect/particle_effect/smoke/proc/remove_smoke_delay  (code/game/objects/effects/effect_system/effects_smoke.dm:72)
+// effects_smoke.dm:72
 rt.def("/obj/effect/particle_effect/smoke/proc/remove_smoke_delay", function remove_smoke_delay(f: Frame, C: Value) {
-	if (!truthy(live(C))) return f.dot;
-	rt.setFv(f, "smoke_delay", live(C), 0);
+	if (!C) return f.dot;
+	C.smoke_delay = 0;
 	return f.dot;
 }, false, { argTypes: [{ type: 8, path: "/mob/living/carbon" }] });
 
-// /obj/effect/particle_effect/smoke/proc/spread_smoke  (code/game/objects/effects/effect_system/effects_smoke.dm:75)  may sleep
+// effects_smoke.dm:75
 rt.def("/obj/effect/particle_effect/smoke/proc/spread_smoke", function* spread_smoke(f: Frame) {
-	let t_loc: Value = null, newsmokes: Value = null, _T: Value = null, foundsmoke: Value = null, L: Value = null, S: Value = null, SM: Value = null;
-	let $e: any;
-	f.vars = () => [t_loc, newsmokes, _T, foundsmoke, L, S, SM, $e];
-	if (!truthy((t_loc = rt.getStep(f, live(f.src), 0)))) {
-		return live(f.dot);
+	let t_loc: Value = null, _T: Value = null, foundsmoke: Value = null, L: Value = null, S: Value = null, SM: Value = null;
+	if (!(t_loc = rt.getStep(f, this, 0))) {
+		return f.dot;
 	}
-	newsmokes = rt.list();
-	_T = null;
-	rt.forList(f, 0, (yield* g.callName(f, live(t_loc), "GetAtmosAdjacentTurfs", [])), T("/turf"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_T = $e;
-		if (truthy((foundsmoke = rt.locateIn(f, T("/obj/effect/particle_effect/smoke"), live(_T))))) {
+	let newsmokes: Value = list();
+	for (_T of each(t_loc.GetAtmosAdjacentTurfs(), T("/turf"))) {
+		if (foundsmoke = rt.locateIn(f, T("/obj/effect/particle_effect/smoke"), _T)) {
 			continue;
 		}
 		L = null;
-		rt.forList(f, 1, live(_T), T("/mob/living"));
-		while (($e = rt.next(f, 1)) !== undefined) {
-			L = $e;
-			yield* g.srcCall(f, "smoke_mob", live(L));
+		for (L of each(_T, T("/mob/living"))) {
+			yield* this.smoke_mob(L);
 		}
-		rt.endFor(f, 1);
-		S = (yield* g.new_(f, rt.sv(f, "type"), [live(_T)]));
-		yield* g.callName(f, rt.sv(f, "reagents"), "copy_to", [live(S), rt.fv(f, "total_volume", rt.sv(f, "reagents"))]);
-		yield* g.callName(f, live(S), "setDir", [rt.op(f, "PickUnweighted", [1], [rt.gl("cardinal")])]);
-		rt.setFv(f, "amount", live(S), subtract(rt.sv(f, "amount"), 1));
-		yield* g.callName(f, live(S), "add_atom_colour", [rt.sv(f, "color"), 4]);
-		rt.setFv(f, "lifetime", live(S), rt.sv(f, "lifetime"));
-		if (rt.gt(rt.fv(f, "amount", live(S)), 0)) {
-			if (truthy(rt.sv(f, "opaque"))) {
-				yield* g.callName(f, live(S), "set_opacity", [1]);
+		S = (yield* new_(this.type, _T));
+		yield* this.reagents.copy_to(S, this.reagents.total_volume);
+		yield* S.setDir(pick(GLOB.cardinal));
+		S.amount = this.amount - 1;
+		S.add_atom_colour(this.color, FIXED_COLOUR_PRIORITY);
+		S.lifetime = this.lifetime;
+		if (S.amount > 0) {
+			if (this.opaque) {
+				S.set_opacity(1);
 			}
-			yield* g.callName(f, live(newsmokes), "Add", [live(S)]);
+			newsmokes.Add(S);
 		}
 	}
-	rt.endFor(f, 0);
-	if (!truthy(rt.len(f, live(newsmokes)))) return f.dot;
+	if (!rt.len(f, newsmokes)) return f.dot;
 	rt.spawnTail(f, 1, "/obj/effect/particle_effect/smoke/proc/spread_smoke: spawn at game/objects/effects/effect_system/effects_smoke.dm:97", t_loc, newsmokes, _T, foundsmoke, L, S, SM);
 	return f.dot;
 }, true);
 
 // a spawn(1) body of /obj/effect/particle_effect/smoke/proc/spread_smoke, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/obj/effect/particle_effect/smoke/proc/spread_smoke: spawn at game/objects/effects/effect_system/effects_smoke.dm:97", function* (f: Frame, t_loc: Value, newsmokes: Value, _T: Value, foundsmoke: Value, L: Value, S: Value, SM: Value) {
-	let $e: any;
-	f.vars = () => [t_loc, newsmokes, _T, foundsmoke, L, S, SM, $e];
 	SM = null;
-	rt.forList(f, 0, live(newsmokes), T("/obj/effect/particle_effect/smoke"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		SM = $e;
-		yield* g.callName(f, live(SM), "spread_smoke", []);
+	for (SM of each(newsmokes, T("/obj/effect/particle_effect/smoke"))) {
+		yield* SM.spread_smoke();
 	}
-	rt.endFor(f, 0);
 	return null;
 });
 
@@ -181,31 +155,27 @@ rt.type(1521, "/datum/effect_system/smoke_spread", "/datum/effect_system", {
 	effect_type: rt.typePath("/obj/effect/particle_effect/smoke"),
 });
 
-// /datum/effect_system/smoke_spread/proc/set_up  (code/game/objects/effects/effect_system/effects_smoke.dm:107)
+// effects_smoke.dm:107
 rt.def("/datum/effect_system/smoke_spread/proc/set_up", function set_up(f: Frame, radius: Value, loca: Value) {
-	f.vars = () => [radius];
-	if (live(radius) === null) {
-		radius = 5;
-	}
-	if (truthy(rt.call(f, P("/proc/isturf"), null, [live(loca)]))) {
-		rt.setSv(f, "location", live(loca));
+	radius ??= 5;
+	if (isturf(loca)) {
+		this.location = loca;
 	} else {
-		rt.setSv(f, "location", rt.getStep(f, live(loca), 0));
+		this.location = rt.getStep(f, loca, 0);
 	}
-	rt.setSv(f, "amount", live(radius));
+	this.amount = radius;
 	return f.dot;
 });
 
-// /datum/effect_system/smoke_spread/proc/start  (code/game/objects/effects/effect_system/effects_smoke.dm:115)  may sleep
+// effects_smoke.dm:115
 rt.def("/datum/effect_system/smoke_spread/proc/start", function* start(f: Frame) {
 	let S: Value = null;
-	f.vars = () => [S];
-	if (truthy(rt.sv(f, "holder"))) {
-		rt.setSv(f, "location", rt.getStep(f, rt.sv(f, "holder"), 0));
+	if (this.holder) {
+		this.location = rt.getStep(f, this.holder, 0);
 	}
-	rt.setFv(f, "amount", (S = (yield* g.new_(f, rt.sv(f, "effect_type"), [rt.sv(f, "location")]))), rt.sv(f, "amount"));
-	if (!truthy(rt.fv(f, "amount", live(S)))) return f.dot;
-	yield* g.callName(f, live(S), "spread_smoke", []);
+	(S = (yield* new_(this.effect_type, this.location))).amount = this.amount;
+	if (!S.amount) return f.dot;
+	yield* S.spread_smoke();
 	return f.dot;
 }, true);
 
@@ -213,27 +183,24 @@ rt.type(11926, "/obj/effect/particle_effect/smoke/bad", "/obj/effect/particle_ef
 	lifetime: 8,
 });
 
-// /obj/effect/particle_effect/smoke/bad/proc/smoke_mob  (code/game/objects/effects/effect_system/effects_smoke.dm:130)  may sleep
-rt.def("/obj/effect/particle_effect/smoke/bad/proc/smoke_mob", function* smoke_mob(f: Frame) {
-	if (!truthy((yield* g.callSuper(f, [], rt.Args.Same)))) return f.dot;
-	yield* g.callName(f, live(f.args[0]), "drop_item", []);
-	yield* g.callName(f, live(f.args[0]), "adjustOxyLoss", [1]);
-	yield* g.callName(f, live(f.args[0]), "emote", ["cough"]);
+// effects_smoke.dm:130
+rt.def("/obj/effect/particle_effect/smoke/bad/proc/smoke_mob", function* smoke_mob(f: Frame, M: Value) {
+	if (!(yield* parent_proc())) return f.dot;
+	yield* M.drop_item();
+	yield* M.adjustOxyLoss(1);
+	yield* M.emote("cough");
 	return 1;
-}, true, { args: ["M"] });
+}, true);
 
-// /obj/effect/particle_effect/smoke/bad/proc/CanPass  (code/game/objects/effects/effect_system/effects_smoke.dm:137)
+// effects_smoke.dm:137
 rt.def("/obj/effect/particle_effect/smoke/bad/proc/CanPass", function CanPass(f: Frame, mover: Value, target: Value, height: Value) {
 	let B: Value = null;
-	f.vars = () => [height, B];
-	if (live(height) === null) {
-		height = 0;
-	}
-	if (isEqual(live(height), 0)) {
+	height ??= 0;
+	if (height == 0) {
 		return 1;
 	}
-	if (truthy((rt.istype(live(mover), T("/obj/item/projectile/beam")) ? 1 : 0))) {
-		rt.setFv(f, "damage", (B = live(mover)), divide(rt.fv(f, "damage", live(B)), 2));
+	if (rt.istype(mover, T("/obj/item/projectile/beam"))) {
+		(B = mover).damage = B.damage / 2;
 	}
 	return 1;
 });
@@ -243,88 +210,64 @@ rt.type(1523, "/datum/effect_system/smoke_spread/freezing", "/datum/effect_syste
 	effect_type: rt.typePath("/obj/effect/particle_effect/smoke/freezing"),
 });
 
-// /datum/effect_system/smoke_spread/freezing/proc/Chilled  (code/game/objects/effects/effect_system/effects_smoke.dm:162)  may sleep
+// effects_smoke.dm:162
 rt.def("/datum/effect_system/smoke_spread/freezing/proc/Chilled", function* Chilled(f: Frame, A: Value) {
 	let _T: Value = null, G: Value = null, H: Value = null, G_gases: Value = null, U: Value = null, L: Value = null, Item: Value = null;
-	let $e: any;
-	f.vars = () => [A, _T, G, H, G_gases, U, L, Item, $e];
-	if (!truthy((rt.istype(live(A), T("/turf/open")) ? 1 : 0))) return f.dot;
-	if (truthy(rt.gv(f, "air", (_T = live(A))))) {
-		G = rt.fv(f, "air", live(_T));
-		if (rt.lt((yield* g.call(f, P("/proc/get_dist"), null, [live(_T), rt.sv(f, "location")])), 2)) {
-			rt.setFv(f, "temperature", live(G), 2);
+	if (!rt.istype(A, T("/turf/open"))) return f.dot;
+	if ((_T = A).air) {
+		G = _T.air;
+		if (get_dist(_T, this.location) < 2) {
+			G.temperature = 2;
 		}
-		yield* g.callName(f, live(_T), "air_update_turf", []);
-		H = null;
-		rt.forList(f, 0, live(_T), T("/obj/effect/hotspot"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			H = $e;
-			yield* g.call(f, P("/proc/qdel"), null, [live(H)]);
-			if (truthy(rt.index((G_gases = rt.fv(f, "gases", live(G))), "plasma"))) {
-				yield* g.callName(f, live(G), "assert_gas", ["n2"]);
-				rt.modAt(rt.at(live(G_gases), "n2"), 1, rt.index(rt.at(live(G_gases), "plasma"), 1), add);
-				rt.setAt(rt.at(live(G_gases), "plasma"), 1, 0);
-				yield* g.callName(f, live(G), "garbage_collect", []);
+		_T.air_update_turf();
+		for (H of each(_T, T("/obj/effect/hotspot"))) {
+			yield* qdel(H);
+			if (rt.index((G_gases = G.gases), "plasma")) {
+				G.assert_gas("n2");
+				rt.modAt(rt.at(G_gases, "n2"), 1, rt.index(rt.at(G_gases, "plasma"), 1), add);
+				rt.setAt(rt.at(G_gases, "plasma"), 1, 0);
+				G.garbage_collect();
 			}
 		}
-		rt.endFor(f, 0);
 	}
-	U = null;
-	rt.forList(f, 0, live(_T), T("/obj/machinery/atmospherics/components/unary"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		U = $e;
-		if ((rt.fv(f, "welded", live(U)) !== null && !truthy(rt.fv(f, "welded", live(U))))) {
-			rt.setFv(f, "welded", live(U), 1);
-			yield* g.callName(f, live(U), "update_icon", []);
-			yield* g.callName(f, live(U), "visible_message", [fmt("<span class='danger'>＀ was frozen shut!</span>", [live(U)])]);
+	for (U of each(_T, T("/obj/machinery/atmospherics/components/unary"))) {
+		if (U.welded !== null && !U.welded) {
+			U.welded = 1;
+			yield* U.update_icon();
+			U.visible_message(`<span class='danger'>${U} was frozen shut!</span>`);
 		}
 	}
-	rt.endFor(f, 0);
-	L = null;
-	rt.forList(f, 0, live(_T), T("/mob/living"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		L = $e;
-		yield* g.callName(f, live(L), "ExtinguishMob", []);
+	for (L of each(_T, T("/mob/living"))) {
+		yield* L.ExtinguishMob();
 	}
-	rt.endFor(f, 0);
-	Item = null;
-	rt.forList(f, 0, live(_T), T("/obj/item"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		Item = $e;
-		yield* g.callName(f, live(Item), "extinguish", []);
+	for (Item of each(_T, T("/obj/item"))) {
+		yield* Item.extinguish();
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /datum/effect_system/smoke_spread/freezing/proc/set_up  (code/game/objects/effects/effect_system/effects_smoke.dm:188)
+// effects_smoke.dm:188
 rt.def("/datum/effect_system/smoke_spread/freezing/proc/set_up", function set_up(f: Frame) {
-	if (live(f.args[0]) === null) {
+	if (f.args[0] === null) {
 		f.args[0] = 5;
 	}
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 0;
 	}
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "blast", live(f.args[2]));
+	parent_proc();
+	this.blast = f.args[2];
 	return f.dot;
 }, false, { args: ["radius", "loca", "blasting"] });
 
-// /datum/effect_system/smoke_spread/freezing/proc/start  (code/game/objects/effects/effect_system/effects_smoke.dm:193)  may sleep
+// effects_smoke.dm:193
 rt.def("/datum/effect_system/smoke_spread/freezing/proc/start", function* start(f: Frame) {
 	let _T: Value = null;
-	let $e: any;
-	f.vars = () => [_T, $e];
-	if (truthy(rt.sv(f, "blast"))) {
-		_T = null;
-		rt.forList(f, 0, (yield* g.call(f, P("/proc/block"), null, [rt.locate((yield* g.call(f, P("/proc/max"), null, [subtract(rt.fv(f, "x", rt.sv(f, "location")), 2), 1])), (yield* g.call(f, P("/proc/max"), null, [subtract(rt.fv(f, "y", rt.sv(f, "location")), 2), 1])), rt.fv(f, "z", rt.sv(f, "location"))), rt.locate((yield* g.call(f, P("/proc/min"), null, [add(rt.fv(f, "x", rt.sv(f, "location")), 2), rt.fv(f, "maxx", rt.world())])), (yield* g.call(f, P("/proc/min"), null, [add(rt.fv(f, "y", rt.sv(f, "location")), 2), rt.fv(f, "maxy", rt.world())])), rt.fv(f, "z", rt.sv(f, "location")))])), T("/turf"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			_T = $e;
-			yield* g.srcCall(f, "Chilled", live(_T));
+	if (this.blast) {
+		for (_T of each(block(rt.locate(max(this.location.x - 2, 1), max(this.location.y - 2, 1), this.location.z), rt.locate(min(this.location.x + 2, rt.world().maxx), min(this.location.y + 2, rt.world().maxy), this.location.z)), T("/turf"))) {
+			yield* this.Chilled(_T);
 		}
-		rt.endFor(f, 0);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
@@ -333,60 +276,53 @@ rt.type(11928, "/obj/effect/particle_effect/smoke/sleeping", "/obj/effect/partic
 	color: "#9C3636",
 });
 
-// /obj/effect/particle_effect/smoke/sleeping/proc/smoke_mob  (code/game/objects/effects/effect_system/effects_smoke.dm:208)  may sleep
-rt.def("/obj/effect/particle_effect/smoke/sleeping/proc/smoke_mob", function* smoke_mob(f: Frame) {
-	if (!truthy((yield* g.callSuper(f, [], rt.Args.Same)))) return f.dot;
-	yield* g.callName(f, live(f.args[0]), "drop_item", []);
-	yield* g.callName(f, live(f.args[0]), "Sleeping", [200]);
-	yield* g.callName(f, live(f.args[0]), "emote", ["cough"]);
+// effects_smoke.dm:208
+rt.def("/obj/effect/particle_effect/smoke/sleeping/proc/smoke_mob", function* smoke_mob(f: Frame, M: Value) {
+	if (!(yield* parent_proc())) return f.dot;
+	yield* M.drop_item();
+	yield* M.Sleeping(200);
+	yield* M.emote("cough");
 	return 1;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(11929, "/obj/effect/particle_effect/smoke/chem", "/obj/effect/particle_effect/smoke", {
 	lifetime: 10,
 });
 
-// /obj/effect/particle_effect/smoke/chem/proc/process  (code/game/objects/effects/effect_system/effects_smoke.dm:226)  may sleep
+// effects_smoke.dm:226
 rt.def("/obj/effect/particle_effect/smoke/chem/proc/process", function* process(f: Frame) {
-	let _T: Value = null, fraction: Value = null, AM: Value = null;
-	let $e: any;
-	f.vars = () => [_T, fraction, AM, $e];
-	if (!truthy((yield* g.callSuper(f, [], rt.Args.Same)))) return f.dot;
-	_T = rt.getStep(f, live(f.src), 0);
-	fraction = divide(1, rt.initial(f, live(f.src), "lifetime"));
-	AM = null;
-	rt.forList(f, 0, live(_T), T("/atom/movable"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		AM = $e;
-		if (isEqual(rt.fv(f, "type", live(AM)), rt.fv(f, "type", live(f.src)))) {
+	let AM: Value = null;
+	if (!(yield* parent_proc())) return f.dot;
+	let _T: Value = rt.getStep(f, this, 0);
+	let fraction: Value = 1 / rt.initial(f, this, "lifetime");
+	for (AM of each(_T, T("/atom/movable"))) {
+		if (AM.type == this.type) {
 			continue;
 		}
-		if ((truthy(rt.fv(f, "intact", live(_T))) && isEqual(rt.fv(f, "level", live(AM)), 1))) {
+		if (_T.intact && AM.level == 1) {
 			continue;
 		}
-		yield* g.callName(f, rt.sv(f, "reagents"), "reaction", [live(AM), 1, live(fraction)]);
+		yield* this.reagents.reaction(AM, TOUCH, fraction);
 	}
-	rt.endFor(f, 0);
-	yield* g.callName(f, rt.sv(f, "reagents"), "reaction", [live(_T), 1, live(fraction)]);
+	yield* this.reagents.reaction(_T, TOUCH, fraction);
 	return 1;
 }, true, { waitfor: false });
 
-// /obj/effect/particle_effect/smoke/chem/proc/smoke_mob  (code/game/objects/effects/effect_system/effects_smoke.dm:240)  may sleep
+// effects_smoke.dm:240
 rt.def("/obj/effect/particle_effect/smoke/chem/proc/smoke_mob", function* smoke_mob(f: Frame, M: Value) {
-	let C: Value = null, fraction: Value = null;
-	f.vars = () => [M, C, fraction];
-	if (rt.lt(rt.sv(f, "lifetime"), 1)) {
+	let C: Value = null;
+	if (this.lifetime < 1) {
 		return 0;
 	}
-	if (!truthy((rt.istype(live(M), T("/mob/living/carbon")) ? 1 : 0))) {
+	if (!rt.istype(M, T("/mob/living/carbon"))) {
 		return 0;
 	}
-	if ((rt.gv(f, "internal", (C = live(M))) !== null || truthy((yield* g.callName(f, live(C), "has_smoke_protection", []))))) {
+	if ((C = M).internal !== null || C.has_smoke_protection()) {
 		return 0;
 	}
-	fraction = divide(1, rt.initial(f, live(f.src), "lifetime"));
-	yield* g.callName(f, rt.sv(f, "reagents"), "copy_to", [live(C), multiply(live(fraction), rt.fv(f, "total_volume", rt.sv(f, "reagents")))]);
-	yield* g.callName(f, rt.sv(f, "reagents"), "reaction", [live(M), 2, live(fraction)]);
+	let fraction: Value = 1 / rt.initial(f, this, "lifetime");
+	yield* this.reagents.copy_to(C, fraction * this.reagents.total_volume);
+	yield* this.reagents.reaction(M, INGEST, fraction);
 	return 1;
 }, true);
 
@@ -395,93 +331,76 @@ rt.type(1525, "/datum/effect_system/smoke_spread/chem", "/datum/effect_system/sm
 	effect_type: rt.typePath("/obj/effect/particle_effect/smoke/chem"),
 });
 
-// /datum/effect_system/smoke_spread/chem/proc/New  (code/game/objects/effects/effect_system/effects_smoke.dm:259)  may sleep
+// effects_smoke.dm:259
 rt.def("/datum/effect_system/smoke_spread/chem/proc/New", function* New(f: Frame) {
-	let R: Value = null;
-	f.vars = () => [R];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "chemholder", (yield* g.new_(f, T("/obj"), [])));
-	R = (yield* g.new_(f, T("/datum/reagents"), [500]));
-	rt.setFv(f, "reagents", rt.sv(f, "chemholder"), live(R));
-	rt.setFv(f, "my_atom", live(R), rt.sv(f, "chemholder"));
+	yield* parent_proc();
+	this.chemholder = (yield* new_(T("/obj")));
+	let R: Value = (yield* new_(T("/datum/reagents"), 500));
+	this.chemholder.reagents = R;
+	R.my_atom = this.chemholder;
 	return f.dot;
 }, true);
 
-// /datum/effect_system/smoke_spread/chem/proc/Destroy  (code/game/objects/effects/effect_system/effects_smoke.dm:266)  may sleep
+// effects_smoke.dm:266
 rt.def("/datum/effect_system/smoke_spread/chem/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "chemholder")]);
-	rt.setSv(f, "chemholder", null);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* qdel(this.chemholder);
+	this.chemholder = null;
+	return (yield* parent_proc());
 }, true);
 
-// /datum/effect_system/smoke_spread/chem/proc/set_up  (code/game/objects/effects/effect_system/effects_smoke.dm:271)  may sleep
+// effects_smoke.dm:271
 rt.def("/datum/effect_system/smoke_spread/chem/proc/set_up", function* set_up(f: Frame, carry: Value, radius: Value, loca: Value, silent: Value) {
-	let contained: Value = null, reagent: Value = null, A: Value = null, where: Value = null, whereLink: Value = null, M: Value = null, more: Value = null;
-	let $e: any;
-	f.vars = () => [carry, radius, loca, silent, contained, reagent, A, where, whereLink, M, more, $e];
-	if (live(carry) === null) {
-		carry = null;
-	}
-	if (live(radius) === null) {
-		radius = 1;
-	}
-	if (live(silent) === null) {
-		silent = 0;
-	}
-	if (truthy((yield* g.call(f, P("/proc/isturf"), null, [live(loca)])))) {
-		rt.setSv(f, "location", live(loca));
+	let reagent: Value = null, M: Value = null, more: Value = null;
+	radius ??= 1;
+	silent ??= 0;
+	if (isturf(loca)) {
+		this.location = loca;
 	} else {
-		rt.setSv(f, "location", rt.getStep(f, live(loca), 0));
+		this.location = rt.getStep(f, loca, 0);
 	}
-	rt.setSv(f, "amount", live(radius));
-	yield* g.callName(f, live(carry), "copy_to", [rt.sv(f, "chemholder"), multiply(4, rt.fv(f, "total_volume", live(carry)))]);
-	if (truthy(live(silent))) return f.dot;
-	contained = "";
-	reagent = null;
-	rt.forList(f, 0, rt.fv(f, "reagent_list", live(carry)));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		reagent = $e;
-		contained = rt.modify(live(contained), fmt(" ＀ ", [live(reagent)]), add);
+	this.amount = radius;
+	yield* carry.copy_to(this.chemholder, 4 * carry.total_volume);
+	if (silent) return f.dot;
+	let contained: Value = "";
+	for (reagent of each(carry.reagent_list)) {
+		contained += ` ${reagent} `;
 	}
-	rt.endFor(f, 0);
-	if (truthy(live(contained))) {
-		contained = fmt("[＀]", [live(contained)]);
+	if (contained) {
+		contained = `[${contained}]`;
 	}
-	A = (yield* g.call(f, P("/proc/get_area"), null, [rt.sv(f, "location")]));
-	where = fmt("＀ | ＀, ＀", [rt.fv(f, "name", live(A)), rt.fv(f, "x", rt.sv(f, "location")), rt.fv(f, "y", rt.sv(f, "location"))]);
-	whereLink = fmt("<A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=＀;Y=＀;Z=＀'>＀</a>", [rt.fv(f, "x", rt.sv(f, "location")), rt.fv(f, "y", rt.sv(f, "location")), rt.fv(f, "z", rt.sv(f, "location")), live(where)]);
-	if (truthy(rt.gv(f, "fingerprintslast", rt.fv(f, "my_atom", live(carry))))) {
-		M = (yield* g.call(f, P("/proc/get_mob_by_key"), null, [rt.gv(f, "fingerprintslast", rt.fv(f, "my_atom", live(carry)))]));
+	let A: Value = get_area(this.location);
+	let where: Value = `${A.name} | ${this.location.x}, ${this.location.y}`;
+	let whereLink: Value = `<A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=${this.location.x};Y=${this.location.y};Z=${this.location.z}'>${where}</a>`;
+	if (carry.my_atom.fingerprintslast) {
+		M = get_mob_by_key(carry.my_atom.fingerprintslast);
 		more = "";
-		if (truthy(live(M))) {
-			more = fmt("(<A HREF='?_src_=holder;adminmoreinfo=＃'>?</a>) (<A HREF='?_src_=holder;adminplayerobservefollow=＃'>FLW</A>) ", [live(M), live(M)]);
+		if (M) {
+			more = fmt("(<A HREF='?_src_=holder;adminmoreinfo=＃'>?</a>) (<A HREF='?_src_=holder;adminplayerobservefollow=＃'>FLW</A>) ", [M, M]);
 		}
-		yield* g.call(f, P("/proc/message_admins"), null, [fmt("Smoke: (＀)＀. Key: ＀＀.", [live(whereLink), live(contained), rt.gv(f, "fingerprintslast", rt.fv(f, "my_atom", live(carry))), live(more)]), 0, 1]);
-		yield* g.call(f, P("/proc/log_game"), null, [fmt("A chemical smoke reaction has taken place in (＀)＀. Last associated key is ＀.", [live(where), live(contained), rt.gv(f, "fingerprintslast", rt.fv(f, "my_atom", live(carry)))])]);
+		message_admins(`Smoke: (${whereLink})${contained}. Key: ${carry.my_atom.fingerprintslast}${more}.`, 0, 1);
+		log_game(`A chemical smoke reaction has taken place in (${where})${contained}. Last associated key is ${carry.my_atom.fingerprintslast}.`);
 	} else {
-		yield* g.call(f, P("/proc/message_admins"), null, [fmt("Smoke: (＀)＀. No associated key.", [live(whereLink), live(contained)]), 0, 1]);
-		yield* g.call(f, P("/proc/log_game"), null, [fmt("A chemical smoke reaction has taken place in (＀)＀. No associated key.", [live(where), live(contained)])]);
+		message_admins(`Smoke: (${whereLink})${contained}. No associated key.`, 0, 1);
+		log_game(`A chemical smoke reaction has taken place in (${where})${contained}. No associated key.`);
 	}
 	return f.dot;
 }, true);
 
-// /datum/effect_system/smoke_spread/chem/proc/start  (code/game/objects/effects/effect_system/effects_smoke.dm:302)  may sleep
+// effects_smoke.dm:302
 rt.def("/datum/effect_system/smoke_spread/chem/proc/start", function* start(f: Frame) {
-	let mixcolor: Value = null, S: Value = null;
-	f.vars = () => [mixcolor, S];
-	mixcolor = (yield* g.call(f, P("/proc/mix_color_from_reagents"), null, [rt.gv(f, "reagent_list", rt.fv(f, "reagents", rt.sv(f, "chemholder")))]));
-	if (truthy(rt.sv(f, "holder"))) {
-		rt.setSv(f, "location", rt.getStep(f, rt.sv(f, "holder"), 0));
+	let mixcolor: Value = mix_color_from_reagents(this.chemholder.reagents.reagent_list);
+	if (this.holder) {
+		this.location = rt.getStep(f, this.holder, 0);
 	}
-	S = (yield* g.new_(f, rt.sv(f, "effect_type"), [rt.sv(f, "location")]));
-	if (rt.gt(rt.gv(f, "total_volume", rt.fv(f, "reagents", rt.sv(f, "chemholder"))), 1)) {
-		yield* g.callName(f, rt.fv(f, "reagents", rt.sv(f, "chemholder")), "copy_to", [live(S), rt.gv(f, "total_volume", rt.fv(f, "reagents", rt.sv(f, "chemholder")))]);
+	let S: Value = (yield* new_(this.effect_type, this.location));
+	if (this.chemholder.reagents.total_volume > 1) {
+		yield* this.chemholder.reagents.copy_to(S, this.chemholder.reagents.total_volume);
 	}
-	if (truthy(live(mixcolor))) {
-		yield* g.callName(f, live(S), "add_atom_colour", [live(mixcolor), 4]);
+	if (mixcolor) {
+		S.add_atom_colour(mixcolor, FIXED_COLOUR_PRIORITY);
 	}
-	rt.setFv(f, "amount", live(S), rt.sv(f, "amount"));
-	if (!truthy(rt.fv(f, "amount", live(S)))) return f.dot;
-	yield* g.callName(f, live(S), "spread_smoke", []);
+	S.amount = this.amount;
+	if (!S.amount) return f.dot;
+	yield* S.spread_smoke();
 	return f.dot;
 }, true);

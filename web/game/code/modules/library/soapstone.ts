@@ -1,7 +1,7 @@
-// From code/modules/library/soapstone.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/library/soapstone.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(10089, "/obj/item/soapstone", "/obj/item", {
@@ -16,125 +16,122 @@ rt.type(10089, "/obj/item/soapstone", "/obj/item", {
 	icon_state: "soapstone",
 });
 
-// /obj/item/soapstone/proc/Initialize  (code/modules/library/soapstone.dm:13)  may sleep
-rt.def("/obj/item/soapstone/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.srcCall(f, "check_name");
+// soapstone.dm:13
+rt.def("/obj/item/soapstone/proc/Initialize", function* Initialize(f: Frame, mapload: Value) {
+	f.dot = (yield* parent_proc());
+	this.check_name();
 	return f.dot;
-}, true, { args: ["mapload"] });
+}, true);
 
-// /obj/item/soapstone/proc/examine  (code/modules/library/soapstone.dm:17)
-rt.def("/obj/item/soapstone/proc/examine", function examine(f: Frame) {
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	if (isEqual(rt.sv(f, "remaining_uses"), -1)) return f.dot;
-	rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("It has ＀ uses left.", [rt.sv(f, "remaining_uses")])]);
+// soapstone.dm:17
+rt.def("/obj/item/soapstone/proc/examine", function examine(f: Frame, user: Value) {
+	f.dot = parent_proc();
+	if (this.remaining_uses == -1) return f.dot;
+	to_chat(user, `It has ${this.remaining_uses} uses left.`);
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/item/soapstone/proc/afterattack  (code/modules/library/soapstone.dm:22)  may sleep
+// soapstone.dm:22
 rt.def("/obj/item/soapstone/proc/afterattack", function* afterattack(f: Frame, target: Value, user: Value, proximity: Value) {
-	let _T: Value = null, existing_message: Value = null, message: Value = null, M: Value = null;
+	let message: Value = null, M: Value = null;
 	let $0: any, $1: any, $2: any, $3: any;
-	f.vars = () => [target, user, proximity, _T, existing_message, message, M, $0, $1, $2, $3];
-	_T = rt.getStep(f, live(target), 0);
-	if (!truthy(live(proximity))) {
-		return live(f.dot);
+	let _T: Value = rt.getStep(f, target, 0);
+	if (!proximity) {
+		return f.dot;
 	}
-	existing_message = rt.locateIn(f, T("/obj/structure/chisel_message"), live(_T));
-	if ((!truthy(rt.sv(f, "remaining_uses")) && !truthy(live(existing_message)))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ is too worn out to use.</span>", [live(f.src)])]);
-		return live(f.dot);
+	let existing_message: Value = rt.locateIn(f, T("/obj/structure/chisel_message"), _T);
+	if (!this.remaining_uses && !existing_message) {
+		to_chat(user, `<span class='warning'>${this} is too worn out to use.</span>`);
+		return f.dot;
 	}
-	if (!truthy((yield* g.call(f, P("/proc/good_chisel_message_location"), null, [live(_T)])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>It's not appropriate to engrave on ＀.</span>", [live(_T)])]);
-		return live(f.dot);
+	if (!good_chisel_message_location(_T)) {
+		to_chat(user, `<span class='warning'>It's not appropriate to engrave on ${_T}.</span>`);
+		return f.dot;
 	}
-	if (truthy(live(existing_message))) {
-		yield* g.callName(f, live(user), "visible_message", [fmt("<span class='notice'>＀ starts erasing ＀.</span>", [live(user), live(existing_message)]), fmt("<span class='notice'>You start erasing ＀.</span>", [live(existing_message)]), "<span class='italics'>You hear a chipping sound.</span>"]);
-		yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/items/gavel.ogg"), 50, 1, -1]);
-		if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(user), null, rt.sv(f, "tool_speed"), "target", live(existing_message)], rt.Args.Named)))) {
-			$0 = live(user);
-			$1 = fmt("<span class='notice'>＀ erases ＀.</span>", [live(user), live(existing_message)]);
-			$2 = live(existing_message);
-			if (isEqual(rt.fv(f, "creator_key", live(existing_message)), rt.fv(f, "ckey", live(user)))) {
+	if (existing_message) {
+		user.visible_message(`<span class='notice'>${user} starts erasing ${existing_message}.</span>`, `<span class='notice'>You start erasing ${existing_message}.</span>`, "<span class='italics'>You hear a chipping sound.</span>");
+		playsound(this.loc, rt.rsc("sound/items/gavel.ogg"), 50, 1, -1);
+		if (yield* do_after(user, this.tool_speed, { target: existing_message })) {
+			$0 = user;
+			$1 = `<span class='notice'>${user} erases ${existing_message}.</span>`;
+			$2 = existing_message;
+			if (existing_message.creator_key == user.ckey) {
 				$3 = ", refunding a use";
 			} else {
 				$3 = "";
 			}
-			yield* g.callName(f, $0, "visible_message", [$1, fmt("<span class='notice'>You erase ＀＀.</span>", [$2, $3])]);
-			rt.setFv(f, "persists", live(existing_message), 0);
-			yield* g.call(f, P("/proc/qdel"), null, [live(existing_message)]);
-			yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/items/gavel.ogg"), 50, 1, -1]);
-			if (isEqual(rt.fv(f, "creator_key", live(existing_message)), rt.fv(f, "ckey", live(user)))) {
-				yield* g.srcCall(f, "refund_use");
+			$0.visible_message($1, `<span class='notice'>You erase ${$2}${$3}.</span>`);
+			existing_message.persists = 0;
+			yield* qdel(existing_message);
+			playsound(this.loc, rt.rsc("sound/items/gavel.ogg"), 50, 1, -1);
+			if (existing_message.creator_key == user.ckey) {
+				this.refund_use();
 			}
 		}
-		return live(f.dot);
+		return f.dot;
 	}
-	if (!truthy((message = (yield* g.call(f, P("/proc/stripped_input"), null, [live(user), "What would you like to engrave?", "Leave a message"]))))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>You decide not to engrave anything.</span>"]);
-		return live(f.dot);
+	if (!(message = (yield* stripped_input(user, "What would you like to engrave?", "Leave a message")))) {
+		to_chat(user, "<span class='notice'>You decide not to engrave anything.</span>");
+		return f.dot;
 	}
-	if ((!truthy((yield* g.callName(f, live(target), "Adjacent", [live(user)]))) && truthy(rt.locateIn(f, T("/obj/structure/chisel_message"), live(_T))))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>Someone wrote here before you chose! Find another spot.</span>"]);
-		return live(f.dot);
+	if (!target.Adjacent(user) && rt.locateIn(f, T("/obj/structure/chisel_message"), _T)) {
+		to_chat(user, "<span class='warning'>Someone wrote here before you chose! Find another spot.</span>");
+		return f.dot;
 	}
-	yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/items/gavel.ogg"), 50, 1, -1]);
-	yield* g.callName(f, live(user), "visible_message", [fmt("<span class='notice'>＀ starts engraving a message into ＀...</span>", [live(user), live(_T)]), fmt("<span class='notice'>You start engraving a message into ＀...</span>", [live(_T)]), "<span class='italics'>You hear a chipping sound.</span>"]);
-	if (!((truthy((yield* g.srcCall(f, "can_use"))) && truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(user), null, rt.sv(f, "tool_speed"), "target", live(_T)], rt.Args.Named)))) && truthy((yield* g.srcCall(f, "can_use"))))) return f.dot;
-	if (truthy(rt.locateIn(f, (rt.isIn(f, T("/obj/structure/chisel_message"), live(_T)) ? 1 : 0), rt.world()))) return f.dot;
-	yield* g.callName(f, live(user), "visible_message", [fmt("<span class='notice'>＀ leaves a message for future spacemen!</span>", [live(user)]), fmt("<span class='notice'>You engrave a message into ＀!</span>", [live(_T)]), "<span class='italics'>You hear a chipping sound.</span>"]);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/items/gavel.ogg"), 50, 1, -1]);
-	yield* g.callName(f, (M = (yield* g.new_(f, T("/obj/structure/chisel_message"), [live(_T)]))), "register", [live(user), live(message)]);
-	yield* g.srcCall(f, "remove_use");
+	playsound(this.loc, rt.rsc("sound/items/gavel.ogg"), 50, 1, -1);
+	user.visible_message(`<span class='notice'>${user} starts engraving a message into ${_T}...</span>`, `<span class='notice'>You start engraving a message into ${_T}...</span>`, "<span class='italics'>You hear a chipping sound.</span>");
+	if (!(this.can_use() && (yield* do_after(user, this.tool_speed, { target: _T })) && this.can_use())) return f.dot;
+	if (rt.locateIn(f, (rt.isIn(f, T("/obj/structure/chisel_message"), _T) ? 1 : 0), rt.world())) return f.dot;
+	user.visible_message(`<span class='notice'>${user} leaves a message for future spacemen!</span>`, `<span class='notice'>You engrave a message into ${_T}!</span>`, "<span class='italics'>You hear a chipping sound.</span>");
+	playsound(this.loc, rt.rsc("sound/items/gavel.ogg"), 50, 1, -1);
+	yield* (M = (yield* new_(T("/obj/structure/chisel_message"), _T))).register(user, message);
+	this.remove_use();
 	return f.dot;
 }, true);
 
-// /obj/item/soapstone/proc/can_use  (code/modules/library/soapstone.dm:67)
+// soapstone.dm:67
 rt.def("/obj/item/soapstone/proc/can_use", function can_use(f: Frame) {
-	return ((isEqual(rt.sv(f, "remaining_uses"), -1) ? 1 : 0) || (rt.ge(rt.sv(f, "remaining_uses"), 0) ? 1 : 0));
+	return ((this.remaining_uses == -1 ? 1 : 0) || (this.remaining_uses >= 0 ? 1 : 0));
 });
 
-// /obj/item/soapstone/proc/remove_use  (code/modules/library/soapstone.dm:70)
+// soapstone.dm:70
 rt.def("/obj/item/soapstone/proc/remove_use", function remove_use(f: Frame) {
-	if (rt.le(rt.sv(f, "remaining_uses"), 0)) {
-		return live(f.dot);
+	if (this.remaining_uses <= 0) {
+		return f.dot;
 	}
-	rt.incSrcVar(f, "remaining_uses", -1, true);
-	rt.callSrc(f, "check_name", []);
+	this.remaining_uses--;
+	this.check_name();
 	return f.dot;
 });
 
-// /obj/item/soapstone/proc/refund_use  (code/modules/library/soapstone.dm:76)
+// soapstone.dm:76
 rt.def("/obj/item/soapstone/proc/refund_use", function refund_use(f: Frame) {
-	if (isEqual(rt.sv(f, "remaining_uses"), -1)) {
-		return live(f.dot);
+	if (this.remaining_uses == -1) {
+		return f.dot;
 	}
-	rt.incSrcVar(f, "remaining_uses", 1, true);
-	rt.callSrc(f, "check_name", []);
+	this.remaining_uses++;
+	this.check_name();
 	return f.dot;
 });
 
-// /obj/item/soapstone/proc/check_name  (code/modules/library/soapstone.dm:84)
+// soapstone.dm:84
 rt.def("/obj/item/soapstone/proc/check_name", function check_name(f: Frame) {
-	if (truthy(rt.sv(f, "remaining_uses"))) {
-		rt.setSv(f, "name", rt.initial(f, live(f.src), "name"));
+	if (this.remaining_uses) {
+		this.name = rt.initial(f, this, "name");
 	} else {
-		rt.setSv(f, "name", fmt("dull ＀", [rt.initial(f, live(f.src), "name")]));
+		this.name = `dull ${rt.initial(f, this, "name")}`;
 	}
 	return f.dot;
 });
 
-// /proc/good_chisel_message_location  (code/modules/library/soapstone.dm:102)
+// soapstone.dm:102
 rt.def("/proc/good_chisel_message_location", function good_chisel_message_location(f: Frame, _T: Value) {
-	if (!truthy(live(_T))) {
+	if (!_T) {
+		f.dot = 0;
+	} else if (!(rt.istype(_T, T("/turf/open/floor")) || rt.istype(_T, T("/turf/closed/wall")))) {
 		f.dot = 0;
 	} else {
-		if (!(truthy((rt.istype(live(_T), T("/turf/open/floor")) ? 1 : 0)) || truthy((rt.istype(live(_T), T("/turf/closed/wall")) ? 1 : 0)))) {
-			f.dot = 0;
-		} else {
-			f.dot = 1;
-		}
+		f.dot = 1;
 	}
 	return f.dot;
 });
@@ -160,205 +157,182 @@ rt.type(12953, "/obj/structure/chisel_message", "/obj/structure", {
 	max_integrity: 30,
 });
 
-// /obj/structure/chisel_message/proc/<init>  (code/modules/library/soapstone.dm:127)
+// soapstone.dm:127
 rt.def("/obj/structure/chisel_message/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "like_keys", rt.list());
-	$0 = $0;
-	rt.setSv(f, "dislike_keys", rt.list());
+	parent_proc();
+	this.like_keys = list();
+
+	this.dislike_keys = list();
 	return f.dot;
 });
 
-// /obj/structure/chisel_message/proc/Initialize  (code/modules/library/soapstone.dm:133)  may sleep
-rt.def("/obj/structure/chisel_message/proc/Initialize", function* Initialize(f: Frame) {
+// soapstone.dm:133
+rt.def("/obj/structure/chisel_message/proc/Initialize", function* Initialize(f: Frame, mapload: Value) {
 	let _T: Value = null;
-	f.vars = () => [_T];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.modField(f, rt.gl("SSpersistence"), "chisel_messages", live(f.src), add);
-	rt.setSv(f, "original_turf", (_T = rt.getStep(f, live(f.src), 0)));
-	if (truthy((yield* g.call(f, P("/proc/good_chisel_message_location"), null, [live(_T)])))) return f.dot;
-	rt.setSv(f, "persists", 0);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	f.dot = (yield* parent_proc());
+	GLOB.SSpersistence.chisel_messages += this;
+	this.original_turf = (_T = rt.getStep(f, this, 0));
+	if (good_chisel_message_location(_T)) return f.dot;
+	this.persists = 0;
+	yield* qdel(this);
 	return f.dot;
-}, true, { args: ["mapload"] });
+}, true);
 
-// /obj/structure/chisel_message/proc/register  (code/modules/library/soapstone.dm:143)
+// soapstone.dm:143
 rt.def("/obj/structure/chisel_message/proc/register", function register(f: Frame, user: Value, newmessage: Value) {
-	rt.setSv(f, "hidden_message", live(newmessage));
-	rt.setSv(f, "creator_name", rt.fv(f, "real_name", live(user)));
-	rt.setSv(f, "creator_key", rt.fv(f, "ckey", live(user)));
-	rt.setSv(f, "realdate", rt.fv(f, "timeofday", rt.world()));
-	rt.setSv(f, "map", rt.gv(f, "map_name", rt.fv(f, "config", rt.gl("SSmapping"))));
-	rt.callSrc(f, "update_icon", []);
+	this.hidden_message = newmessage;
+	this.creator_name = user.real_name;
+	this.creator_key = user.ckey;
+	this.realdate = rt.world().timeofday;
+	this.map = GLOB.SSmapping.config.map_name;
+	this.update_icon();
 	return f.dot;
 });
 
-// /obj/structure/chisel_message/proc/update_icon  (code/modules/library/soapstone.dm:151)
+// soapstone.dm:151
 rt.def("/obj/structure/chisel_message/proc/update_icon", function update_icon(f: Frame) {
-	let hash: Value = null, newcolor: Value = null;
-	f.vars = () => [hash, newcolor];
-	rt.callSuper(f, [], rt.Args.Same);
-	hash = rt.call(f, P("/proc/md5"), null, [rt.sv(f, "hidden_message")]);
-	rt.callSrc(f, "add_atom_colour", [fmt("#＀", [(newcolor = rt.call(f, P("/proc/copytext"), null, [live(hash), 1, 7]))]), 4]);
-	rt.setSv(f, "light_color", fmt("#＀", [live(newcolor)]));
-	rt.callSrc(f, "set_light", [1]);
+	let newcolor: Value = null;
+	parent_proc();
+	let hash: Value = md5(this.hidden_message);
+	this.add_atom_colour(`#${(newcolor = copytext(hash, 1, 7))}`, FIXED_COLOUR_PRIORITY);
+	this.light_color = `#${newcolor}`;
+	this.set_light(1);
 	return f.dot;
 });
 
-// /obj/structure/chisel_message/proc/pack  (code/modules/library/soapstone.dm:159)
+// soapstone.dm:159
 rt.def("/obj/structure/chisel_message/proc/pack", function pack(f: Frame) {
 	let data: Value = null;
-	f.vars = () => [data];
-	rt.setAt((data = rt.list()), "hidden_message", rt.sv(f, "hidden_message"));
-	rt.setAt(live(data), "creator_name", rt.sv(f, "creator_name"));
-	rt.setAt(live(data), "creator_key", rt.sv(f, "creator_key"));
-	rt.setAt(live(data), "realdate", rt.sv(f, "realdate"));
-	rt.setAt(live(data), "map", rt.gv(f, "map_name", rt.fv(f, "config", rt.gl("SSmapping"))));
-	rt.setAt(live(data), "x", rt.fv(f, "x", rt.sv(f, "original_turf")));
-	rt.setAt(live(data), "y", rt.fv(f, "y", rt.sv(f, "original_turf")));
-	rt.setAt(live(data), "z", rt.fv(f, "z", rt.sv(f, "original_turf")));
-	rt.setAt(live(data), "like_keys", rt.sv(f, "like_keys"));
-	rt.setAt(live(data), "dislike_keys", rt.sv(f, "dislike_keys"));
-	return live(data);
+	rt.setAt((data = list()), "hidden_message", this.hidden_message);
+	rt.setAt(data, "creator_name", this.creator_name);
+	rt.setAt(data, "creator_key", this.creator_key);
+	rt.setAt(data, "realdate", this.realdate);
+	rt.setAt(data, "map", GLOB.SSmapping.config.map_name);
+	rt.setAt(data, "x", this.original_turf.x);
+	rt.setAt(data, "y", this.original_turf.y);
+	rt.setAt(data, "z", this.original_turf.z);
+	rt.setAt(data, "like_keys", this.like_keys);
+	rt.setAt(data, "dislike_keys", this.dislike_keys);
+	return data;
 });
 
-// /obj/structure/chisel_message/proc/unpack  (code/modules/library/soapstone.dm:173)  may sleep
+// soapstone.dm:173
 rt.def("/obj/structure/chisel_message/proc/unpack", function* unpack(f: Frame, data: Value) {
-	let x: Value = null, y: Value = null, z: Value = null, newloc: Value = null;
-	f.vars = () => [data, x, y, z, newloc];
-	if (!truthy((rt.istype(live(data), T("/list")) ? 1 : 0))) {
-		return live(f.dot);
+	let newloc: Value = null;
+	if (!rt.istype(data, T("/list"))) {
+		return f.dot;
 	}
-	rt.setSv(f, "hidden_message", rt.at(live(data), "hidden_message"));
-	rt.setSv(f, "creator_name", rt.at(live(data), "creator_name"));
-	rt.setSv(f, "creator_key", rt.at(live(data), "creator_key"));
-	rt.setSv(f, "realdate", rt.at(live(data), "realdate"));
-	rt.setSv(f, "like_keys", rt.at(live(data), "like_keys"));
-	if (!truthy(rt.sv(f, "like_keys"))) {
-		rt.setSv(f, "like_keys", rt.list());
+	this.hidden_message = rt.at(data, "hidden_message");
+	this.creator_name = rt.at(data, "creator_name");
+	this.creator_key = rt.at(data, "creator_key");
+	this.realdate = rt.at(data, "realdate");
+	this.like_keys = rt.at(data, "like_keys");
+	if (!this.like_keys) {
+		this.like_keys = list();
 	}
-	rt.setSv(f, "dislike_keys", rt.at(live(data), "dislike_keys"));
-	if (!truthy(rt.sv(f, "dislike_keys"))) {
-		rt.setSv(f, "dislike_keys", rt.list());
+	this.dislike_keys = rt.at(data, "dislike_keys");
+	if (!this.dislike_keys) {
+		this.dislike_keys = list();
 	}
-	x = rt.at(live(data), "x");
-	y = rt.at(live(data), "y");
-	z = rt.at(live(data), "z");
-	if (truthy((yield* g.call(f, P("/proc/isturf"), null, [(newloc = rt.locate(live(x), live(y), live(z)))])))) {
-		yield* g.srcCall(f, "forceMove", live(newloc));
+	let x: Value = rt.at(data, "x");
+	let y: Value = rt.at(data, "y");
+	let z: Value = rt.at(data, "z");
+	if (isturf((newloc = rt.locate(x, y, z)))) {
+		yield* this.forceMove(newloc);
 	}
-	yield* g.srcCall(f, "update_icon");
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/structure/chisel_message/proc/examine  (code/modules/library/soapstone.dm:196)
-rt.def("/obj/structure/chisel_message/proc/examine", function examine(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='warning'>＀</span>", [rt.sv(f, "hidden_message")])]);
+// soapstone.dm:196
+rt.def("/obj/structure/chisel_message/proc/examine", function examine(f: Frame, user: Value) {
+	parent_proc();
+	to_chat(user, `<span class='warning'>${this.hidden_message}</span>`);
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/structure/chisel_message/proc/Destroy  (code/modules/library/soapstone.dm:201)  may sleep
+// soapstone.dm:201
 rt.def("/obj/structure/chisel_message/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.sv(f, "persists"))) {
-		yield* g.callName(f, rt.gl("SSpersistence"), "SaveChiselMessage", [live(f.src)]);
+	if (this.persists) {
+		GLOB.SSpersistence.SaveChiselMessage(this);
 	}
-	(rt.modField(f, rt.gl("SSpersistence"), "chisel_messages", live(f.src), subtract));
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	GLOB.SSpersistence.chisel_messages -= this;
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true);
 
-// /obj/structure/chisel_message/proc/ui_interact  (code/modules/library/soapstone.dm:207)  may sleep
+// soapstone.dm:207
 rt.def("/obj/structure/chisel_message/proc/ui_interact", function* ui_interact(f: Frame, user: Value, ui_key: Value, ui: Value, force_open: Value, master_ui: Value, state: Value) {
-	f.vars = () => [user, ui_key, ui, force_open, master_ui, state];
-	if (live(ui_key) === null) {
-		ui_key = "main";
-	}
-	if (live(ui) === null) {
-		ui = null;
-	}
-	if (live(force_open) === null) {
-		force_open = 0;
-	}
-	if (live(master_ui) === null) {
-		master_ui = null;
-	}
-	if (live(state) === null) {
-		state = rt.gl("always_state");
-	}
-	if (truthy((ui = (yield* g.callName(f, rt.gl("SStgui"), "try_update_ui", [live(user), live(f.src), live(ui_key), live(ui), live(force_open)]))))) return f.dot;
-	yield* g.callName(f, (ui = (yield* g.new_(f, T("/datum/tgui"), [live(user), live(f.src), live(ui_key), "engraved_message", rt.sv(f, "name"), 600, 300, live(master_ui), live(state)]))), "open", []);
+	ui_key ??= "main";
+	force_open ??= 0;
+	state ??= GLOB.always_state;
+	if (ui = (yield* GLOB.SStgui.try_update_ui(user, this, ui_key, ui, force_open))) return f.dot;
+	yield* (ui = (yield* new_(T("/datum/tgui"), user, this, ui_key, "engraved_message", this.name, 600, 300, master_ui, state))).open();
 	return f.dot;
 }, true);
 
-// /obj/structure/chisel_message/proc/ui_data  (code/modules/library/soapstone.dm:213)
+// soapstone.dm:213
 rt.def("/obj/structure/chisel_message/proc/ui_data", function ui_data(f: Frame, user: Value) {
 	let data: Value = null;
-	f.vars = () => [data];
-	rt.setAt((data = rt.list()), "hidden_message", rt.sv(f, "hidden_message"));
-	rt.setAt(live(data), "realdate", rt.call(f, P("/proc/SQLtime"), null, [rt.sv(f, "realdate")]));
-	rt.setAt(live(data), "num_likes", rt.len(f, rt.sv(f, "like_keys")));
-	rt.setAt(live(data), "num_dislikes", rt.len(f, rt.sv(f, "dislike_keys")));
-	rt.setAt(live(data), "is_creator", (isEqual(rt.fv(f, "ckey", live(user)), rt.sv(f, "creator_key")) ? 1 : 0));
-	rt.setAt(live(data), "has_liked", (rt.isIn(f, rt.fv(f, "ckey", live(user)), rt.sv(f, "like_keys")) ? 1 : 0));
-	rt.setAt(live(data), "has_disliked", (rt.isIn(f, rt.fv(f, "ckey", live(user)), rt.sv(f, "dislike_keys")) ? 1 : 0));
-	if (truthy(rt.call(f, P("/proc/check_rights_for"), null, [rt.fv(f, "client", live(user)), 2]))) {
-		rt.setAt(live(data), "admin_mode", 1);
-		rt.setAt(live(data), "creator_key", rt.sv(f, "creator_key"));
-		rt.setAt(live(data), "creator_name", rt.sv(f, "creator_name"));
+	rt.setAt((data = list()), "hidden_message", this.hidden_message);
+	rt.setAt(data, "realdate", SQLtime(this.realdate));
+	rt.setAt(data, "num_likes", rt.len(f, this.like_keys));
+	rt.setAt(data, "num_dislikes", rt.len(f, this.dislike_keys));
+	rt.setAt(data, "is_creator", (user.ckey == this.creator_key ? 1 : 0));
+	rt.setAt(data, "has_liked", (rt.isIn(f, user.ckey, this.like_keys) ? 1 : 0));
+	rt.setAt(data, "has_disliked", (rt.isIn(f, user.ckey, this.dislike_keys) ? 1 : 0));
+	if (check_rights_for(user.client, 2)) {
+		rt.setAt(data, "admin_mode", 1);
+		rt.setAt(data, "creator_key", this.creator_key);
+		rt.setAt(data, "creator_name", this.creator_name);
 	}
-	return live(data);
+	return data;
 });
 
-// /obj/structure/chisel_message/proc/ui_act  (code/modules/library/soapstone.dm:231)  may sleep
+// soapstone.dm:231
 rt.def("/obj/structure/chisel_message/proc/ui_act", function* ui_act(f: Frame, action: Value, params: Value, ui: Value) {
-	let user: Value = null, is_admin: Value = null, is_creator: Value = null, has_liked: Value = null, has_disliked: Value = null, confirm: Value = null;
-	let $0: any;
-	f.vars = () => [action, params, ui, user, is_admin, is_creator, has_liked, has_disliked, confirm, $0];
+	let confirm: Value = null;
 	// An href can reach this with the window closed or out of reach: only an interactive window may act.
-	if (!truthy(live(ui)) || !isEqual(rt.fv(f, "status", live(ui)), 2)) {
+	if (!ui || ui.status != 2) {
 		return 1;
 	}
-	user = live(f.usr);
-	is_admin = (yield* g.call(f, P("/proc/check_rights_for"), null, [rt.fv(f, "client", live(user)), 2]));
-	is_creator = (isEqual(rt.fv(f, "ckey", live(user)), rt.sv(f, "creator_key")) ? 1 : 0);
-	has_liked = (rt.isIn(f, rt.fv(f, "ckey", live(user)), rt.sv(f, "like_keys")) ? 1 : 0);
-	has_disliked = (rt.isIn(f, rt.fv(f, "ckey", live(user)), rt.sv(f, "dislike_keys")) ? 1 : 0);
-	$0 = live(action);
-	if ($0 === "like") {
-		if (truthy(live(is_creator))) {
-			return live(f.dot);
+	let user: Value = f.usr;
+	let is_admin: Value = check_rights_for(user.client, 2);
+	let is_creator: Value = (user.ckey == this.creator_key ? 1 : 0);
+	let has_liked: Value = (rt.isIn(f, user.ckey, this.like_keys) ? 1 : 0);
+	let has_disliked: Value = (rt.isIn(f, user.ckey, this.dislike_keys) ? 1 : 0);
+	if (action === "like") {
+		if (is_creator) {
+			return f.dot;
 		}
-		if (truthy(live(has_disliked))) {
-			(rt.modSrcVar(f, "dislike_keys", rt.fv(f, "ckey", live(user)), subtract));
+		if (has_disliked) {
+			this.dislike_keys -= user.ckey;
 		}
-		(rt.modSrcVar(f, "like_keys", rt.fv(f, "ckey", live(user)), rt.bitOr));
+		(rt.modSrcVar(f, "like_keys", user.ckey, rt.bitOr));
 		f.dot = 1;
-	} else if ($0 === "dislike") {
-		if (truthy(live(is_creator))) {
-			return live(f.dot);
+	} else if (action === "dislike") {
+		if (is_creator) {
+			return f.dot;
 		}
-		if (truthy(live(has_liked))) {
-			(rt.modSrcVar(f, "like_keys", rt.fv(f, "ckey", live(user)), subtract));
+		if (has_liked) {
+			this.like_keys -= user.ckey;
 		}
-		(rt.modSrcVar(f, "dislike_keys", rt.fv(f, "ckey", live(user)), rt.bitOr));
+		(rt.modSrcVar(f, "dislike_keys", user.ckey, rt.bitOr));
 		f.dot = 1;
-	} else if ($0 === "neutral") {
-		if (truthy(live(is_creator))) {
-			return live(f.dot);
+	} else if (action === "neutral") {
+		if (is_creator) {
+			return f.dot;
 		}
-		(rt.modSrcVar(f, "dislike_keys", rt.fv(f, "ckey", live(user)), subtract));
-		(rt.modSrcVar(f, "like_keys", rt.fv(f, "ckey", live(user)), subtract));
+		this.dislike_keys -= user.ckey;
+		this.like_keys -= user.ckey;
 		f.dot = 1;
-	} else if ($0 === "delete") {
-		if (!truthy(live(is_admin))) {
-			return live(f.dot);
+	} else if (action === "delete") {
+		if (!is_admin) {
+			return f.dot;
 		}
-		if (!isEqual((confirm = (yield* g.call(f, P("/proc/alert"), null, [live(user), "Confirm deletion of engraved message?", "Confirm Deletion", "Yes", "No"]))), "Yes")) return f.dot;
-		rt.setSv(f, "persists", 0);
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+		if ((confirm = (yield* alert(user, "Confirm deletion of engraved message?", "Confirm Deletion", "Yes", "No"))) != "Yes") return f.dot;
+		this.persists = 0;
+		yield* qdel(this);
 	}
 	return f.dot;
 }, true);

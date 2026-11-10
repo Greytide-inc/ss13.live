@@ -1,483 +1,430 @@
-// From code/_onclick/click.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/_onclick/click.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, g } = rt;
 
 
-// /mob/proc/changeNext_move  (code/_onclick/click.dm:21)
+// click.dm:21
 rt.def("/mob/proc/changeNext_move", function changeNext_move(f: Frame, num: Value) {
-	rt.setSv(f, "next_move", add(rt.worldTime(f), multiply(add(live(num), rt.sv(f, "next_move_adjust")), rt.sv(f, "next_move_modifier"))));
+	this.next_move = rt.worldTime(f) + (num + this.next_move_adjust) * this.next_move_modifier;
 	return f.dot;
 });
 
-// /atom/proc/Click  built in (BYOND provides it)
+// BYOND built-in.
 rt.def("/atom/proc/Click", undefined, false, { args: ["location", "control", "params"] });
 
-// /atom/proc/Click  (code/_onclick/click.dm:35)  may sleep
+// click.dm:35
 rt.def("/atom/proc/Click", function* Click(f: Frame, location: Value, control: Value, params: Value) {
-	f.vars = () => [location, control, params];
-	if (!truthy(rt.sv(f, "initialized"))) return f.dot;
-	yield* g.callName(f, live(f.usr), "ClickOn", [live(f.src), live(params)]);
+	if (!this.initialized) return f.dot;
+	yield* f.usr.ClickOn(this, params);
 	return f.dot;
 }, true);
 
-// /atom/proc/DblClick  built in (BYOND provides it)
+// BYOND built-in.
 rt.def("/atom/proc/DblClick", undefined, false, { args: ["location", "control", "params"] });
 
-// /atom/proc/DblClick  (code/_onclick/click.dm:39)  may sleep
+// click.dm:39
 rt.def("/atom/proc/DblClick", function* DblClick(f: Frame, location: Value, control: Value, params: Value) {
-	f.vars = () => [location, control, params];
-	if (!truthy(rt.sv(f, "initialized"))) return f.dot;
-	yield* g.callName(f, live(f.usr), "DblClickOn", [live(f.src), live(params)]);
+	if (!this.initialized) return f.dot;
+	yield* f.usr.DblClickOn(this, params);
 	return f.dot;
 }, true);
 
-// /atom/proc/MouseWheel  built in (BYOND provides it)
+// BYOND built-in.
 rt.def("/atom/proc/MouseWheel", undefined, false, { args: ["delta_x", "delta_y", "location", "control", "params"] });
 
-// /atom/proc/MouseWheel  (code/_onclick/click.dm:43)  may sleep
+// click.dm:43
 rt.def("/atom/proc/MouseWheel", function* MouseWheel(f: Frame, delta_x: Value, delta_y: Value, location: Value, control: Value, params: Value) {
-	f.vars = () => [delta_x, delta_y, location, control, params];
-	if (!truthy(rt.sv(f, "initialized"))) return f.dot;
-	yield* g.callName(f, live(f.usr), "MouseWheelOn", [live(f.src), live(delta_x), live(delta_y), live(params)]);
+	if (!this.initialized) return f.dot;
+	yield* f.usr.MouseWheelOn(this, delta_x, delta_y, params);
 	return f.dot;
 }, true);
 
-// /mob/proc/ClickOn  (code/_onclick/click.dm:59)  may sleep
+// click.dm:59
 rt.def("/mob/proc/ClickOn", function* ClickOn(f: Frame, A: Value, params: Value) {
 	let modifiers: Value = null, M: Value = null, W: Value = null;
-	f.vars = () => [A, params, modifiers, M, W];
-	if (rt.le(rt.worldTime(f), rt.sv(f, "next_click"))) {
-		return live(f.dot);
+	if (rt.worldTime(f) <= this.next_click) {
+		return f.dot;
 	}
-	rt.setSv(f, "next_click", add(rt.worldTime(f), 1));
-	if ((truthy(rt.sv(f, "client")) && truthy(rt.fv(f, "click_intercept", rt.sv(f, "client"))))) {
-		if (truthy((yield* g.callDyn(f, rt.fv(f, "click_intercept", rt.sv(f, "client")), "InterceptClickOn", [live(f.src), live(params), live(A)])))) {
-			return live(f.dot);
+	this.next_click = rt.worldTime(f) + 1;
+	if (this.client && this.client.click_intercept) {
+		if (yield* g.callDyn(f, this.client.click_intercept, "InterceptClickOn", [this, params, A])) {
+			return f.dot;
 		}
 	}
-	if ((truthy(rt.index((modifiers = (yield* g.call(f, P("/proc/params2list"), null, [live(params)]))), "shift")) && truthy(rt.at(live(modifiers), "middle")))) {
-		yield* g.srcCall(f, "ShiftMiddleClickOn", live(A));
-		return live(f.dot);
+	if (rt.index((modifiers = params2list(params)), "shift") && rt.at(modifiers, "middle")) {
+		yield* this.ShiftMiddleClickOn(A);
+		return f.dot;
 	}
-	if ((truthy(rt.at(live(modifiers), "shift")) && truthy(rt.at(live(modifiers), "ctrl")))) {
-		yield* g.srcCall(f, "CtrlShiftClickOn", live(A));
-		return live(f.dot);
+	if (rt.at(modifiers, "shift") && rt.at(modifiers, "ctrl")) {
+		yield* this.CtrlShiftClickOn(A);
+		return f.dot;
 	}
-	if (truthy(rt.at(live(modifiers), "middle"))) {
-		yield* g.srcCall(f, "MiddleClickOn", live(A));
-		return live(f.dot);
+	if (rt.at(modifiers, "middle")) {
+		yield* this.MiddleClickOn(A);
+		return f.dot;
 	}
-	if (truthy(rt.at(live(modifiers), "shift"))) {
-		yield* g.srcCall(f, "ShiftClickOn", live(A));
-		return live(f.dot);
+	if (rt.at(modifiers, "shift")) {
+		yield* this.ShiftClickOn(A);
+		return f.dot;
 	}
-	if (truthy(rt.at(live(modifiers), "alt"))) {
-		yield* g.srcCall(f, "AltClickOn", live(A));
-		return live(f.dot);
+	if (rt.at(modifiers, "alt")) {
+		yield* this.AltClickOn(A);
+		return f.dot;
 	}
-	if (truthy(rt.at(live(modifiers), "ctrl"))) {
-		yield* g.srcCall(f, "CtrlClickOn", live(A));
-		return live(f.dot);
+	if (rt.at(modifiers, "ctrl")) {
+		yield* this.CtrlClickOn(A);
+		return f.dot;
 	}
-	if (truthy((yield* g.callSrc(f, "incapacitated", ["ignore_restraints", 1], rt.Args.Named)))) {
-		return live(f.dot);
+	if (yield* this.incapacitated({ ignore_restraints: 1 })) {
+		return f.dot;
 	}
-	yield* g.srcCall(f, "face_atom", live(A));
-	if (rt.gt(rt.sv(f, "next_move"), rt.worldTime(f))) {
-		return live(f.dot);
+	yield* this.face_atom(A);
+	if (this.next_move > rt.worldTime(f)) {
+		return f.dot;
 	}
-	if ((!truthy(rt.at(live(modifiers), "catcher")) && truthy((yield* g.callName(f, live(A), "IsObscured", []))))) {
-		return live(f.dot);
+	if (!rt.at(modifiers, "catcher") && A.IsObscured()) {
+		return f.dot;
 	}
-	if (truthy((rt.istype(rt.sv(f, "loc"), T("/obj/mecha")) ? 1 : 0))) {
-		return (yield* g.callName(f, (M = rt.sv(f, "loc")), "click_action", [live(A), live(f.src), live(params)]));
+	if (rt.istype(this.loc, T("/obj/mecha"))) {
+		return (yield* (M = this.loc).click_action(A, this, params));
 	}
-	if (truthy((yield* g.srcCall(f, "restrained")))) {
-		yield* g.srcCall(f, "changeNext_move", 10);
-		yield* g.srcCall(f, "RestrainedClickOn", live(A));
-		return live(f.dot);
+	if (this.restrained()) {
+		this.changeNext_move(10);
+		yield* this.RestrainedClickOn(A);
+		return f.dot;
 	}
-	if (truthy(rt.sv(f, "in_throw_mode"))) {
-		yield* g.srcCall(f, "throw_item", live(A));
-		return live(f.dot);
+	if (this.in_throw_mode) {
+		yield* this.throw_item(A);
+		return f.dot;
 	}
-	if (isEqual((W = (yield* g.srcCall(f, "get_active_held_item"))), live(A))) {
-		yield* g.callName(f, live(W), "attack_self", [live(f.src)]);
-		yield* g.srcCall(f, "update_inv_hands");
-		return live(f.dot);
+	if ((W = this.get_active_held_item()) == A) {
+		yield* W.attack_self(this);
+		yield* this.update_inv_hands();
+		return f.dot;
 	}
-	if (truthy((yield* g.srcCall(f, "DirectAccess", live(A))))) {
-		if (truthy(live(W))) {
-			yield* g.callName(f, live(W), "melee_attack_chain", [live(f.src), live(A), live(params)]);
+	if (this.DirectAccess(A)) {
+		if (W) {
+			yield* W.melee_attack_chain(this, A, params);
 		} else {
-			if (truthy((yield* g.call(f, P("/proc/ismob"), null, [live(A)])))) {
-				yield* g.srcCall(f, "changeNext_move", 8);
+			if (ismob(A)) {
+				this.changeNext_move(8);
 			}
-			yield* g.srcCall(f, "UnarmedAttack", live(A));
+			yield* this.UnarmedAttack(A);
 		}
-		return live(f.dot);
+		return f.dot;
 	}
-	if (!truthy((yield* g.callName(f, rt.sv(f, "loc"), "AllowClick", [])))) {
-		return live(f.dot);
+	if (!this.loc.AllowClick()) {
+		return f.dot;
 	}
-	if (truthy((yield* g.srcCall(f, "CanReach", live(A), live(W))))) {
-		if (truthy(live(W))) {
-			yield* g.callName(f, live(W), "melee_attack_chain", [live(f.src), live(A), live(params)]);
+	if (yield* this.CanReach(A, W)) {
+		if (W) {
+			yield* W.melee_attack_chain(this, A, params);
 		} else {
-			if (truthy((yield* g.call(f, P("/proc/ismob"), null, [live(A)])))) {
-				yield* g.srcCall(f, "changeNext_move", 8);
+			if (ismob(A)) {
+				this.changeNext_move(8);
 			}
-			yield* g.srcCall(f, "UnarmedAttack", live(A), 1);
+			yield* this.UnarmedAttack(A, 1);
 		}
+	} else if (W) {
+		yield* W.afterattack(A, this, 0, params);
 	} else {
-		if (truthy(live(W))) {
-			yield* g.callName(f, live(W), "afterattack", [live(A), live(f.src), 0, live(params)]);
-		} else {
-			yield* g.srcCall(f, "RangedAttack", live(A), live(params));
-		}
+		yield* this.RangedAttack(A, params);
 	}
 	return f.dot;
 }, true);
 
-// /atom/proc/IsObscured  (code/_onclick/click.dm:149)
+// click.dm:149
 rt.def("/atom/proc/IsObscured", function IsObscured(f: Frame) {
 	let _T: Value = null, AM: Value = null;
-	let $e: any;
-	f.vars = () => [_T, AM, $e];
-	if (!truthy(rt.call(f, P("/proc/isturf"), null, [rt.sv(f, "loc")]))) {
+	if (!isturf(this.loc)) {
 		return 0;
 	}
-	if (!truthy((_T = rt.call(f, P("/proc/get_turf_pixel"), null, [live(f.src)])))) {
+	if (!(_T = get_turf_pixel(this))) {
 		return 0;
 	}
-	AM = null;
-	rt.forList(f, 0, live(_T), T("/atom/movable"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		AM = $e;
-		if (((truthy(rt.bitAnd(rt.fv(f, "flags", live(AM)), 32768)) && truthy(rt.fv(f, "density", live(AM)))) && rt.gt(rt.fv(f, "layer", live(AM)), rt.sv(f, "layer")))) {
+	for (AM of each(_T, T("/atom/movable"))) {
+		if (rt.bitAnd(AM.flags, PREVENT_CLICK_UNDER) && AM.density && AM.layer > this.layer) {
 			return 1;
 		}
 	}
-	rt.endFor(f, 0);
 	return 0;
 });
 
-// /turf/proc/IsObscured  (code/_onclick/click.dm:160)
+// click.dm:160
 rt.def("/turf/proc/IsObscured", function IsObscured(f: Frame) {
 	let AM: Value = null;
-	let $e: any;
-	f.vars = () => [AM, $e];
-	AM = null;
-	rt.forList(f, 0, live(f.src), T("/atom/movable"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		AM = $e;
-		if ((truthy(rt.bitAnd(rt.fv(f, "flags", live(AM)), 32768)) && truthy(rt.fv(f, "density", live(AM))))) {
+	for (AM of each(this, T("/atom/movable"))) {
+		if (rt.bitAnd(AM.flags, PREVENT_CLICK_UNDER) && AM.density) {
 			return 1;
 		}
 	}
-	rt.endFor(f, 0);
 	return 0;
 });
 
-// /atom/movable/proc/CanReach  (code/_onclick/click.dm:166)  may sleep
+// click.dm:166
 rt.def("/atom/movable/proc/CanReach", function* CanReach(f: Frame, target: Value, tool: Value, view_only: Value) {
 	let outer_storage: Value = null;
-	let $0: any, $1: any, $2: any, $3: any;
-	f.vars = () => [target, tool, view_only, outer_storage, $0, $1, $2, $3];
-	if (live(view_only) === null) {
-		view_only = 0;
-	}
-	if (((truthy((yield* g.call(f, P("/proc/isturf"), null, [live(target)]))) || truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.fv(f, "loc", live(target))])))) || truthy((yield* g.srcCall(f, "DirectAccess", live(target)))))) {
-		if ((truthy((yield* g.srcCall(f, "Adjacent", live(target)))) || (truthy(live(tool)) && truthy((yield* g.call(f, P("/proc/CheckToolReach"), null, [live(f.src), live(target), rt.fv(f, "reach", live(tool))])))))) {
+	let $0: any;
+	view_only ??= 0;
+	if (isturf(target) || isturf(target.loc) || this.DirectAccess(target)) {
+		if (this.Adjacent(target) || tool && (yield* CheckToolReach(this, target, tool.reach))) {
 			return 1;
 		}
 	} else {
-		if (isEqual((outer_storage = (yield* g.call(f, P("/proc/get_atom_on_turf"), null, [live(target)]))), live(target))) {
+		if ((outer_storage = get_atom_on_turf(target)) == target) {
 			return 0;
 		}
-		$0 = (live(outer_storage) && (yield* g.srcCall(f, "CanReach", live(outer_storage), live(tool))));
-		if (truthy($0)) {
-			$0 = live(outer_storage);
-			$1 = live(target);
-			$2 = live(f.src);
-			if (truthy(live(view_only))) {
-				$3 = 2;
-			} else {
-				$3 = 3;
-			}
-			$0 = (yield* g.callName(f, $0, "CanReachStorage", [$1, $2, $3]));
+		$0 = (outer_storage && (yield* this.CanReach(outer_storage, tool)));
+		if ($0) {
+			$0 = outer_storage;
+			$0 = $0.CanReachStorage(target, this, view_only ? STORAGE_VIEW_DEPTH : INVENTORY_DEPTH);
 		}
-		if (truthy($0)) {
+		if ($0) {
 			return 1;
 		}
 	}
 	return 0;
 }, true);
 
-// /obj/item/weapon/storage/proc/CanReachStorage  (code/_onclick/click.dm:184)
+// click.dm:184
 rt.def("/obj/item/weapon/storage/proc/CanReachStorage", function CanReachStorage(f: Frame, target: Value, user: Value, depth: Value) {
-	f.vars = () => [target, depth];
-	while (truthy(live(target)) && rt.gt(live(depth), 0)) {
-		target = rt.fv(f, "loc", live(target));
-		depth = rt.inc(live(depth), -1);
-		if (isEqual(live(target), live(f.src))) {
+	while (target && depth > 0) {
+		target = target.loc;
+		depth--;
+		if (target == this) {
 			return 1;
 		}
 	}
 	return 0;
 });
 
-// /atom/movable/proc/DirectAccess  (code/_onclick/click.dm:192)
+// click.dm:192
 rt.def("/atom/movable/proc/DirectAccess", function DirectAccess(f: Frame, target: Value) {
-	if (isEqual(live(target), live(f.src))) {
+	if (target == this) {
 		return 1;
 	}
-	if (!isEqual(live(target), rt.sv(f, "loc"))) return f.dot;
+	if (target != this.loc) return f.dot;
 	return 1;
 });
 
-// /mob/proc/DirectAccess  (code/_onclick/click.dm:198)
-rt.def("/mob/proc/DirectAccess", function DirectAccess(f: Frame) {
-	if (truthy(rt.callSuper(f, [], rt.Args.Same))) {
+// click.dm:198
+rt.def("/mob/proc/DirectAccess", function DirectAccess(f: Frame, target: Value) {
+	if (parent_proc()) {
 		return 1;
 	}
-	if (truthy((rt.isIn(f, live(f.args[0]), rt.sv(f, "contents")) ? 1 : 0))) {
+	if (rt.isIn(f, target, this.contents)) {
 		return 1;
 	}
 	return 0;
-}, false, { args: ["target"] });
+}, false);
 
-// /mob/living/proc/DirectAccess  (code/_onclick/click.dm:205)
-rt.def("/mob/living/proc/DirectAccess", function DirectAccess(f: Frame) {
-	if (truthy(rt.callSuper(f, [], rt.Args.Same))) {
+// click.dm:205
+rt.def("/mob/living/proc/DirectAccess", function DirectAccess(f: Frame, target: Value) {
+	if (parent_proc()) {
 		return 1;
 	}
-	if (!truthy((rt.isIn(f, live(f.args[0]), rt.callSrc(f, "GetAllContents", [])) ? 1 : 0))) return f.dot;
+	if (!rt.isIn(f, target, this.GetAllContents())) return f.dot;
 	return 1;
-}, false, { args: ["target"] });
+}, false);
 
-// /proc/CheckToolReach  (code/_onclick/click.dm:217)  may sleep
+// click.dm:217
 rt.def("/proc/CheckToolReach", function* CheckToolReach(f: Frame, here: Value, there: Value, reach: Value) {
 	let dummy: Value = null, i: Value = null, _T: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [here, there, reach, dummy, i, _T, $0, $e];
-	if ((!truthy(live(here)) || !truthy(live(there)))) {
-		return live(f.dot);
+	let $e: any;
+	if (!here || !there) {
+		return f.dot;
 	}
-	$0 = live(reach);
-	if ($0 === 0) {
+	if (reach === 0) {
 		return 0;
-	} else if ($0 === 1) {
+	} else if (reach === 1) {
 		return 0;
-	} else if (rt.inRange($0, 2, 9.999999848243207e+30)) {
-		(rt.modField(f, (dummy = (yield* g.new_(f, T("/obj"), [rt.getStep(f, live(here), 0)]))), "pass_flags", 1, rt.bitOr));
-		rt.setFv(f, "invisibility", live(dummy), 101);
-		i = null;
-		rt.forRange(f, 0, 1, live(reach), 1);
+	} else if (rt.inRange(reach, 2, 1e+31)) {
+		(rt.modField(f, (dummy = (yield* new_(T("/obj"), rt.getStep(f, here, 0)))), "pass_flags", 1, rt.bitOr));
+		dummy.invisibility = INVISIBILITY_ABSTRACT;
+		rt.forRange(f, 0, 1, reach, 1);
 		while (($e = rt.next(f, 0)) !== undefined) {
 			i = $e;
-			_T = rt.getStep(f, live(dummy), rt.getDir(f, live(dummy), live(there)));
-			if (truthy((yield* g.callName(f, live(dummy), "CanReach", [live(there)])))) {
-				yield* g.call(f, P("/proc/qdel"), null, [live(dummy)]);
+			_T = rt.getStep(f, dummy, rt.getDir(f, dummy, there));
+			if (yield* dummy.CanReach(there)) {
+				yield* qdel(dummy);
 				return 1;
 			}
-			if (!truthy((yield* g.callName(f, live(dummy), "Move", [live(_T)])))) {
-				yield* g.call(f, P("/proc/qdel"), null, [live(dummy)]);
-				return live(f.dot);
+			if (!(yield* dummy.Move(_T))) {
+				yield* qdel(dummy);
+				return f.dot;
 			}
 		}
 		rt.endFor(f, 0);
-		yield* g.call(f, P("/proc/qdel"), null, [live(dummy)]);
+		yield* qdel(dummy);
 	}
 	return f.dot;
 }, true);
 
-// /mob/proc/UnarmedAttack  (code/_onclick/click.dm:254)
+// click.dm:254
 rt.def("/mob/proc/UnarmedAttack", function UnarmedAttack(f: Frame, A: Value, proximity_flag: Value) {
-	if (truthy(rt.call(f, P("/proc/ismob"), null, [live(A)]))) {
-		rt.callSrc(f, "changeNext_move", [8]);
+	if (ismob(A)) {
+		this.changeNext_move(8);
 	}
-	return live(f.dot);
+	return f.dot;
 });
 
-// /mob/living/carbon/proc/MiddleClickOn  (code/_onclick/click.dm:284)  may sleep
+// click.dm:284
 rt.def("/mob/living/carbon/proc/MiddleClickOn", function* MiddleClickOn(f: Frame, A: Value) {
-	f.vars = () => [A];
-	if ((((((!truthy(rt.fv(f, "stat", live(f.src))) && truthy(rt.fv(f, "mind", live(f.src)))) && truthy(rt.gv(f, "changeling", rt.fv(f, "mind", live(f.src))))) && truthy(rt.gv(f, "chosen_sting", rt.gv(f, "changeling", rt.fv(f, "mind", live(f.src)))))) && truthy((rt.istype(live(A), T("/mob/living/carbon")) ? 1 : 0))) && !isEqual(live(A), live(f.src)))) {
-		rt.setSv(f, "next_click", add(rt.worldTime(f), 5));
-		yield* g.callName(f, rt.gv(f, "chosen_sting", rt.fv(f, "changeling", rt.sv(f, "mind"))), "try_to_sting", [live(f.src), live(A)]);
+	if (!this.stat && this.mind && this.mind.changeling && this.mind.changeling.chosen_sting && rt.istype(A, T("/mob/living/carbon")) && A != this) {
+		this.next_click = rt.worldTime(f) + 5;
+		yield* this.mind.changeling.chosen_sting.try_to_sting(this, A);
 	} else {
-		yield* g.srcCall(f, "swap_hand");
+		this.swap_hand();
 	}
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/drone/proc/MiddleClickOn  (code/_onclick/click.dm:291)
+// click.dm:291
 rt.def("/mob/living/simple_animal/drone/proc/MiddleClickOn", function MiddleClickOn(f: Frame, A: Value) {
-	rt.callSrc(f, "swap_hand", []);
+	this.swap_hand();
 	return f.dot;
 });
 
-// /mob/proc/ShiftClickOn  (code/_onclick/click.dm:305)  may sleep
+// click.dm:305
 rt.def("/mob/proc/ShiftClickOn", function* ShiftClickOn(f: Frame, A: Value) {
-	f.vars = () => [A];
-	yield* g.callName(f, live(A), "ShiftClick", [live(f.src)]);
-	return live(f.dot);
+	yield* A.ShiftClick(this);
+	return f.dot;
 }, true);
 
-// /atom/proc/ShiftClick  (code/_onclick/click.dm:308)  may sleep
+// click.dm:308
 rt.def("/atom/proc/ShiftClick", function* ShiftClick(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (((truthy(rt.fv(f, "client", live(user))) && isEqual(rt.gv(f, "eye", rt.fv(f, "client", live(user))), live(user))) || isEqual(rt.gv(f, "eye", rt.fv(f, "client", live(user))), rt.fv(f, "loc", live(user))))) {
-		yield* g.callName(f, live(user), "examinate", [live(f.src)]);
+	if (user.client && user.client.eye == user || user.client.eye == user.loc) {
+		yield* user.examinate(this);
 	}
-	return live(f.dot);
+	return f.dot;
 }, true);
 
-// /mob/proc/CtrlClickOn  (code/_onclick/click.dm:318)  may sleep
+// click.dm:318
 rt.def("/mob/proc/CtrlClickOn", function* CtrlClickOn(f: Frame, A: Value) {
-	f.vars = () => [A];
-	yield* g.callName(f, live(A), "CtrlClick", [live(f.src)]);
-	return live(f.dot);
+	yield* A.CtrlClick(this);
+	return f.dot;
 }, true);
 
-// /atom/proc/CtrlClick  (code/_onclick/click.dm:322)  may sleep
+// click.dm:322
 rt.def("/atom/proc/CtrlClick", function* CtrlClick(f: Frame, user: Value) {
 	let ML: Value = null;
-	f.vars = () => [user, ML];
-	if (!truthy((rt.istype((ML = live(user)), T("/mob/living")) ? 1 : 0))) return f.dot;
-	yield* g.callName(f, live(ML), "pulled", [live(f.src)]);
+	if (!rt.istype((ML = user), T("/mob/living"))) return f.dot;
+	yield* ML.pulled(this);
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/human/proc/CtrlClick  (code/_onclick/click.dm:327)  may sleep
-rt.def("/mob/living/carbon/human/proc/CtrlClick", function* CtrlClick(f: Frame) {
+// click.dm:327
+rt.def("/mob/living/carbon/human/proc/CtrlClick", function* CtrlClick(f: Frame, user: Value) {
 	let H: Value = null;
-	f.vars = () => [H];
-	if ((truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon/human")) ? 1 : 0)) && truthy((yield* g.srcCall(f, "Adjacent", live(f.args[0])))))) {
-		if (rt.lt(rt.worldTime(f), rt.fv(f, "next_move", live(f.args[0])))) {
+	if (rt.istype(user, T("/mob/living/carbon/human")) && this.Adjacent(user)) {
+		if (rt.worldTime(f) < user.next_move) {
 			return 0;
 		}
-		yield* g.callName(f, rt.gv(f, "species", rt.gv(f, "dna", (H = live(f.args[0])))), "grab", [live(H), live(f.src), rt.gv(f, "martial_art", rt.fv(f, "mind", live(H)))]);
-		yield* g.callName(f, live(H), "changeNext_move", [8]);
+		yield* (H = user).dna.species.grab(H, this, H.mind.martial_art);
+		H.changeNext_move(8);
 	} else {
-		yield* g.callSuper(f, [], rt.Args.Same);
+		yield* parent_proc();
 	}
 	return f.dot;
-}, true, { args: ["user"] });
-
-// /mob/proc/AltClickOn  (code/_onclick/click.dm:340)  may sleep
-rt.def("/mob/proc/AltClickOn", function* AltClickOn(f: Frame, A: Value) {
-	f.vars = () => [A];
-	yield* g.callName(f, live(A), "AltClick", [live(f.src)]);
-	return live(f.dot);
 }, true);
 
-// /mob/living/carbon/proc/AltClickOn  (code/_onclick/click.dm:344)  may sleep
-rt.def("/mob/living/carbon/proc/AltClickOn", function* AltClickOn(f: Frame) {
-	if ((((((!truthy(rt.fv(f, "stat", live(f.src))) && truthy(rt.fv(f, "mind", live(f.src)))) && truthy(rt.gv(f, "changeling", rt.fv(f, "mind", live(f.src))))) && truthy(rt.gv(f, "chosen_sting", rt.gv(f, "changeling", rt.fv(f, "mind", live(f.src)))))) && truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon")) ? 1 : 0))) && !isEqual(live(f.args[0]), live(f.src)))) {
-		rt.setSv(f, "next_click", add(rt.worldTime(f), 5));
-		yield* g.callName(f, rt.gv(f, "chosen_sting", rt.fv(f, "changeling", rt.sv(f, "mind"))), "try_to_sting", [live(f.src), live(f.args[0])]);
+// click.dm:340
+rt.def("/mob/proc/AltClickOn", function* AltClickOn(f: Frame, A: Value) {
+	yield* A.AltClick(this);
+	return f.dot;
+}, true);
+
+// click.dm:344
+rt.def("/mob/living/carbon/proc/AltClickOn", function* AltClickOn(f: Frame, A: Value) {
+	if (!this.stat && this.mind && this.mind.changeling && this.mind.changeling.chosen_sting && rt.istype(A, T("/mob/living/carbon")) && A != this) {
+		this.next_click = rt.worldTime(f) + 5;
+		yield* this.mind.changeling.chosen_sting.try_to_sting(this, A);
 	} else {
-		yield* g.callSuper(f, [], rt.Args.Same);
+		yield* parent_proc();
 	}
 	return f.dot;
-}, true, { args: ["A"] });
+}, true);
 
-// /atom/proc/AltClick  (code/_onclick/click.dm:351)
+// click.dm:351
 rt.def("/atom/proc/AltClick", function AltClick(f: Frame, user: Value) {
 	let _T: Value = null;
-	f.vars = () => [_T];
-	if ((truthy((_T = rt.getStep(f, live(f.src), 0))) && truthy(rt.callName(f, live(user), "TurfAdjacent", [live(_T)])))) {
-		if (isEqual(rt.fv(f, "listed_turf", live(user)), live(_T))) {
-			rt.setFv(f, "listed_turf", live(user), null);
+	if ((_T = rt.getStep(f, this, 0)) && user.TurfAdjacent(_T)) {
+		if (user.listed_turf == _T) {
+			user.listed_turf = null;
 		} else {
-			rt.setFv(f, "listed_turf", live(user), live(_T));
-			rt.setFv(f, "statpanel", rt.fv(f, "client", live(user)), rt.fv(f, "name", live(_T)));
+			user.listed_turf = _T;
+			user.client.statpanel = _T.name;
 		}
 	}
-	return live(f.dot);
+	return f.dot;
 });
 
-// /mob/proc/TurfAdjacent  (code/_onclick/click.dm:361)
+// click.dm:361
 rt.def("/mob/proc/TurfAdjacent", function TurfAdjacent(f: Frame, _T: Value) {
-	return rt.callName(f, live(_T), "Adjacent", [live(f.src)]);
+	return _T.Adjacent(this);
 });
 
-// /mob/proc/CtrlShiftClickOn  (code/_onclick/click.dm:368)  may sleep
+// click.dm:368
 rt.def("/mob/proc/CtrlShiftClickOn", function* CtrlShiftClickOn(f: Frame, A: Value) {
-	f.vars = () => [A];
-	yield* g.callName(f, live(A), "CtrlShiftClick", [live(f.src)]);
-	return live(f.dot);
-}, true);
-
-// /mob/proc/ShiftMiddleClickOn  (code/_onclick/click.dm:372)  may sleep
-rt.def("/mob/proc/ShiftMiddleClickOn", function* ShiftMiddleClickOn(f: Frame, A: Value) {
-	f.vars = () => [A];
-	yield* g.callName(f, live(f.src), "pointed", [live(A)]);
-	return live(f.dot);
-}, true);
-
-// /mob/living/proc/LaserEyes  (code/_onclick/click.dm:388)  may sleep
-rt.def("/mob/living/proc/LaserEyes", function* LaserEyes(f: Frame, A: Value) {
-	let _T: Value = null, U: Value = null, LE: Value = null;
-	f.vars = () => [A, _T, U, LE];
-	yield* g.srcCall(f, "changeNext_move", 4);
-	_T = rt.getStep(f, live(f.src), 0);
-	U = rt.getStep(f, live(A), 0);
-	rt.setFv(f, "icon", (LE = (yield* g.new_(f, T("/obj/item/projectile/beam"), [rt.sv(f, "loc")]))), rt.rsc("icons/effects/genetics.dmi"));
-	rt.setFv(f, "icon_state", live(LE), "eyelasers");
-	yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.usr)), rt.rsc("sound/weapons/taser2.ogg"), 75, 1]);
-	rt.setFv(f, "firer", live(LE), live(f.src));
-	rt.setFv(f, "def_zone", live(LE), (yield* g.srcCall(f, "get_organ_target")));
-	rt.setFv(f, "original", live(LE), live(A));
-	rt.setFv(f, "current", live(LE), live(_T));
-	rt.setFv(f, "yo", live(LE), subtract(rt.fv(f, "y", live(U)), rt.fv(f, "y", live(_T))));
-	rt.setFv(f, "xo", live(LE), subtract(rt.fv(f, "x", live(U)), rt.fv(f, "x", live(_T))));
-	yield* g.callName(f, live(LE), "fire", []);
+	yield* A.CtrlShiftClick(this);
 	return f.dot;
 }, true);
 
-// /mob/proc/face_atom  (code/_onclick/click.dm:407)  may sleep
+// click.dm:372
+rt.def("/mob/proc/ShiftMiddleClickOn", function* ShiftMiddleClickOn(f: Frame, A: Value) {
+	yield* this.pointed(A);
+	return f.dot;
+}, true);
+
+// click.dm:388
+rt.def("/mob/living/proc/LaserEyes", function* LaserEyes(f: Frame, A: Value) {
+	let LE: Value = null;
+	this.changeNext_move(4);
+	let _T: Value = rt.getStep(f, this, 0);
+	let U: Value = rt.getStep(f, A, 0);
+	(LE = (yield* new_(T("/obj/item/projectile/beam"), this.loc))).icon = rt.rsc("icons/effects/genetics.dmi");
+	LE.icon_state = "eyelasers";
+	playsound(f.usr.loc, rt.rsc("sound/weapons/taser2.ogg"), 75, 1);
+	LE.firer = this;
+	LE.def_zone = this.get_organ_target();
+	LE.original = A;
+	LE.current = _T;
+	LE.yo = U.y - _T.y;
+	LE.xo = U.x - _T.x;
+	yield* LE.fire();
+	return f.dot;
+}, true);
+
+// click.dm:407
 rt.def("/mob/proc/face_atom", function* face_atom(f: Frame, A: Value) {
-	let dx: Value = null, dy: Value = null;
-	f.vars = () => [A, dx, dy];
-	if (((((((truthy(rt.sv(f, "buckled")) || !isEqual(rt.sv(f, "stat"), 0)) || !truthy(live(A))) || !truthy(rt.sv(f, "x"))) || !truthy(rt.sv(f, "y"))) || !truthy(rt.fv(f, "x", live(A)))) || !truthy(rt.fv(f, "y", live(A))))) {
-		return live(f.dot);
+	if (this.buckled || this.stat != 0 || !A || !this.x || !this.y || !A.x || !A.y) {
+		return f.dot;
 	}
-	dx = subtract(rt.fv(f, "x", live(A)), rt.sv(f, "x"));
-	dy = subtract(rt.fv(f, "y", live(A)), rt.sv(f, "y"));
-	if ((!truthy(live(dx)) && !truthy(live(dy)))) {
-		if (rt.gt(rt.fv(f, "pixel_y", live(A)), 16)) {
-			yield* g.srcCall(f, "setDir", 1);
-		} else {
-			if (rt.lt(rt.fv(f, "pixel_y", live(A)), -16)) {
-				yield* g.srcCall(f, "setDir", 2);
-			} else {
-				if (rt.gt(rt.fv(f, "pixel_x", live(A)), 16)) {
-					yield* g.srcCall(f, "setDir", 4);
-				} else {
-					if (rt.lt(rt.fv(f, "pixel_x", live(A)), -16)) {
-						yield* g.srcCall(f, "setDir", 8);
-					}
-				}
-			}
+	let dx: Value = A.x - this.x;
+	let dy: Value = A.y - this.y;
+	if (!dx && !dy) {
+		if (A.pixel_y > 16) {
+			yield* this.setDir(1);
+		} else if (A.pixel_y < -16) {
+			yield* this.setDir(2);
+		} else if (A.pixel_x > 16) {
+			yield* this.setDir(4);
+		} else if (A.pixel_x < -16) {
+			yield* this.setDir(8);
 		}
-		return live(f.dot);
+		return f.dot;
 	}
-	if (rt.lt(rt.op(f, "Abs", [], [live(dx)]), rt.op(f, "Abs", [], [live(dy)]))) {
-		if (rt.gt(live(dy), 0)) {
-			yield* g.srcCall(f, "setDir", 1);
+	if (rt.op(f, "Abs", [], [dx]) < rt.op(f, "Abs", [], [dy])) {
+		if (dy > 0) {
+			yield* this.setDir(1);
 		} else {
-			yield* g.srcCall(f, "setDir", 2);
+			yield* this.setDir(2);
 		}
+	} else if (dx > 0) {
+		yield* this.setDir(4);
 	} else {
-		if (rt.gt(live(dx), 0)) {
-			yield* g.srcCall(f, "setDir", 4);
-		} else {
-			yield* g.srcCall(f, "setDir", 8);
-		}
+		yield* this.setDir(8);
 	}
 	return f.dot;
 }, true);
@@ -490,41 +437,39 @@ rt.type(11000, "/obj/screen/click_catcher", "/obj/screen", {
 	screen_loc: "CENTER",
 });
 
-// /obj/screen/click_catcher/proc/New  (code/_onclick/click.dm:441)  may sleep
+// click.dm:441
 rt.def("/obj/screen/click_catcher/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "transform", (yield* g.call(f, P("/proc/matrix"), null, [200, 0, 0, 0, 200, 0])));
+	yield* parent_proc();
+	this.transform = matrix(200, 0, 0, 0, 200, 0);
 	return f.dot;
 }, true);
 
-// /obj/screen/click_catcher/proc/Click  (code/_onclick/click.dm:445)  may sleep
+// click.dm:445
 rt.def("/obj/screen/click_catcher/proc/Click", function* Click(f: Frame, location: Value, control: Value, params: Value) {
 	let modifiers: Value = null, C: Value = null, _T: Value = null;
-	f.vars = () => [location, control, params, modifiers, C, _T];
-	if ((truthy(rt.index((modifiers = (yield* g.call(f, P("/proc/params2list"), null, [live(params)]))), "middle")) && truthy((rt.istype(live(f.usr), T("/mob/living/carbon")) ? 1 : 0)))) {
-		yield* g.callName(f, (C = live(f.usr)), "swap_hand", []);
+	if (rt.index((modifiers = params2list(params)), "middle") && rt.istype(f.usr, T("/mob/living/carbon"))) {
+		(C = f.usr).swap_hand();
 	} else {
-		_T = (yield* g.call(f, P("/proc/params2turf"), null, [rt.at(live(modifiers), "screen-loc"), rt.getStep(f, live(f.usr), 0), rt.fv(f, "client", live(f.usr))]));
-		params = rt.modify(live(params), "&catcher=1", add);
-		if (truthy(live(_T))) {
-			yield* g.callName(f, live(_T), "Click", [live(location), live(control), live(params)]);
+		_T = params2turf(rt.at(modifiers, "screen-loc"), rt.getStep(f, f.usr, 0), f.usr.client);
+		params += "&catcher=1";
+		if (_T) {
+			yield* _T.Click(location, control, params);
 		}
 	}
 	f.dot = 1;
 	return f.dot;
 }, true);
 
-// /mob/dead/observer/proc/MouseWheelOn  (code/_onclick/click.dm:463)  may sleep
+// click.dm:463
 rt.def("/mob/dead/observer/proc/MouseWheelOn", function* MouseWheelOn(f: Frame, A: Value, delta_x: Value, delta_y: Value, params: Value) {
-	let modifier: Value = null, view: Value = null;
-	f.vars = () => [A, delta_x, delta_y, params, modifier, view];
-	if (!truthy(rt.index((modifier = (yield* g.call(f, P("/proc/params2list"), null, [live(params)]))), "shift"))) return f.dot;
-	view = 0;
-	if (rt.gt(live(delta_y), 0)) {
+	let modifier: Value = null;
+	if (!rt.index((modifier = params2list(params)), "shift")) return f.dot;
+	let view: Value = 0;
+	if (delta_y > 0) {
 		view = -1;
 	} else {
 		view = 1;
 	}
-	yield* g.srcCall(f, "add_view_range", live(view));
+	yield* this.add_view_range(view);
 	return f.dot;
 }, true);

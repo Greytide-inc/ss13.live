@@ -1,28 +1,25 @@
-// From code/modules/mob/living/login.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/login.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
 
 
-// /mob/living/proc/Login  (code/modules/mob/living/login.dm:2)  may sleep
+
+// login.dm:2
 rt.def("/mob/living/proc/Login", function* Login(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "sync_mind");
-	yield* g.callName(f, rt.sv(f, "mind"), "show_memory", [live(f.src), 0]);
-	if (truthy(rt.fv(f, "mode", rt.gl("SSticker")))) {
-		$0 = rt.gv(f, "name", rt.fv(f, "mode", rt.gl("SSticker")));
-		if ($0 === "sandbox") {
-			yield* g.srcCall(f, "CanBuild");
+	yield* parent_proc();
+	this.sync_mind();
+	this.mind.show_memory(this, 0);
+	if (GLOB.SSticker.mode) {
+		if (GLOB.SSticker.mode.name === "sandbox") {
+			yield* this.CanBuild();
 		}
 	}
-	yield* g.srcCall(f, "update_damage_hud");
-	yield* g.srcCall(f, "update_health_hud");
-	if (truthy(rt.sv(f, "ventcrawler"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='notice'>You can ventcrawl! Use alt+click on vents to quickly travel about the station.</span>"]);
+	yield* this.update_damage_hud();
+	this.update_health_hud();
+	if (this.ventcrawler) {
+		to_chat(this, "<span class='notice'>You can ventcrawl! Use alt+click on vents to quickly travel about the station.</span>");
 	}
-	if (!truthy(rt.sv(f, "ranged_ability"))) return f.dot;
-	yield* g.callName(f, rt.sv(f, "ranged_ability"), "add_ranged_ability", [live(f.src), fmt("<span class='notice'>You currently have <b>＀</b> active!</span>", [rt.sv(f, "ranged_ability")])]);
+	if (!this.ranged_ability) return f.dot;
+	yield* this.ranged_ability.add_ranged_ability(this, `<span class='notice'>You currently have <b>${this.ranged_ability}</b> active!</span>`);
 	return f.dot;
 }, true);

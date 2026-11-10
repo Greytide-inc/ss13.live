@@ -30,6 +30,7 @@
 //                   admin "End Round" verb does: SSticker.force_ending = 1), then declare_completion, the round-end
 //                   report and SSticker.Reboot -> world.Reboot(). The boot stops when world.Reboot() is called.
 //   --translated    no-op now (kept so scripts work): the game always runs as web/build/translated-tg.js.
+//   --bundle FILE   run this copy of translated-tg.js instead (kept in web/build/: it imports ./dist/...); dt-diff's old-vs-new game code.
 //   --gender G      with --join: just before joining, if the character's gender isn't G (male/female),
 //                   click the character setup window's Gender link (a Topic "_src_=prefs;preference=gender")
 //   --scenario NAME reads web/scenarios/NAME.txt (header map/job/seed/length + script lines, see src/worker/scenario-script.ts): connects in the
@@ -159,7 +160,8 @@ const mapOpt = opt("--map", scen && !isBoxStation(scen.map) ? scen.map! : ""); /
 if (mapOpt === "creative") setUpCreative(vm); // --map creative: creative-map.ts
 else if (mapOpt) { const mj = bundle.files[`_maps/${mapOpt}station.json`] ?? bundle.files[`_maps/${mapOpt}.json`]; if (!mj) throw new Error(`no _maps json for --map ${mapOpt}`); vm.vfs.writeText("data/next_map.json", mj); }
 // --diff (or DIFF=1): fake clock, collector at tick boundaries, one diary line per tick (src/tools/diff/diary.ts).
-// --diff-out PREFIX (default: the --log path without .log) names PREFIX.diary and PREFIX.diary.log; --diff-after-start N stops N ticks after round start.
+// --diff-out PREFIX (default: the --log path without .log) names PREFIX.diary, PREFIX.diary.log and PREFIX.state/; --diff-after-start N stops N ticks after round start.
+// --diff-ref A: compare with run A's diary as it goes; stops at the first state check at or after a difference (only that dump is kept).
 const diffOn = argv.includes("--diff") || process.env.DIFF === "1";
 const diffTicks = argv.includes("--diff-ticks") ? Number(opt("--diff-ticks", "0")) : -1; // run this many ticks from the start of the loop (after a snapshot load too)
 const diffAfterStart = argv.includes("--diff-after-start") ? Number(opt("--diff-after-start", "0")) : -1;
@@ -176,6 +178,9 @@ if (diffOn) {
 	startDiary = () => { // after a snapshot load: that load rewrites the VM's fields
 		const prefix = opt("--diff-out", logFile.replace(/\.log$/, ""));
 		diary = new dm.Diary(vm, prefix, trSetEnter);
+		diary.note = log;
+		const ref = opt("--diff-ref", ""); // --diff-ref A: check against run A's diary as it goes, stop at the first check after a difference
+		if (ref) diary.setRef(ref);
 		const tr = opt("--diff-trace", ""); // diff detail mode: --diff-trace FROM-TO (diary tick numbers)
 		if (tr) { const m = /^(\d+)-(\d+)$/.exec(tr); if (!m) throw new Error(`--diff-trace FROM-TO, got ${tr}`); diary.startTrace(prefix, Number(m[1]), Number(m[2]), trSetEnter); }
 	};
@@ -190,7 +195,7 @@ vm.iconSize = iconSizeReader([repoRoot]); // icon Width()/Height() (tg's get_tur
 vm.loadIcon = iconLoader([repoRoot]); // runtime icon pixels (GetPixel), read only when asked for
 vm.iconStates = iconStatesReader([repoRoot]); // icon_states(): read from the file header only when asked for
 { // translated tg (tools/translate-tg.mjs); the one-module bundle the page loads too. always (no bytecode)
-	const bundleJs = resolve(repoRoot, "web/build/translated-tg.js");
+	const bundleJs = resolve(opt("--bundle", resolve(repoRoot, "web/build/translated-tg.js"))); // --bundle FILE: another copy of the game (in web/build/, beside the real one, for its import)
 	const rt = await import("../translate/runtime.js");
 	const tl = Date.now();
 	await import(pathToFileURL(bundleJs).href);
@@ -207,6 +212,7 @@ const scriptPlayer = scriptFile ? new ScriptPlayer(vm, scen ? scenarioText : rea
 const bombProbe = process.env.BOMB_TL ? new BombProbe(vm, log) : null; // bomb1
 let scriptStart = -1; // the tick the player got its mob (join click, or connect without --join)
 if (connectKey) vm.clients.setSkin(readFileSync(resolve(repoRoot, "interface/skin.dmf"), "utf8"));
+if (scen) vm.clients.onMessage = (m) => { if (m.type === "text" || m.type === "output") log(`[chat] ${String((m as { text?: unknown }).text ?? "").replace(/\s+/g, " ").slice(0, 200)}`); }; // scenarios: what the player is told, for expect lines
 // Detect round start ("Game start took ...s", printed right before "Welcome to ..." in
 // code/controllers/subsystem/ticker.dm) to drive --after-start, without changing what gets logged.
 const ROUND_START_RE = /^Game start took [\d.]+s$/;
@@ -393,6 +399,7 @@ try {
 		ticks++;
 		if (diary) {
 			diary.tick();
+			if (diary.stop) { log(`[vm-boot] differs from the --diff-ref run (first at tick ${diary.firstDiff ?? vm.sched.tick}); stopping at tick ${vm.sched.tick}`); break; }
 			if (diffTicks >= 0 && ticks - diffTicks0 >= diffTicks) { log(`[vm-boot] --diff-ticks ${diffTicks} done at tick ${vm.sched.tick}; stopping`); break; }
 			if (diffAfterStart >= 0 && diary.roundStartTick !== null && vm.sched.tick >= diary.roundStartTick + diffAfterStart) { log(`[vm-boot] --diff-after-start ${diffAfterStart} ticks done at tick ${vm.sched.tick}; stopping`); break; }
 		}
@@ -469,7 +476,7 @@ try {
 	}
 }
 
-if (diary) { if (diary.vcostStats.ticks > 0) log(`[vm-boot] vcost: ${JSON.stringify(diary.vcostStats)} (calls per percent ${diffHook.vcostPerPct})`); log(`[vm-boot] diary: fingerprints took ${(diary.fpMs / 1000).toFixed(1)} s of the run`); diary.close(); }
+if (diary) { if (diary.vcostStats.ticks > 0) log(`[vm-boot] vcost: ${JSON.stringify(diary.vcostStats)} (calls per percent ${diffHook.vcostPerPct})`); log(`[vm-boot] diary: state checks took ${(diary.fpMs / 1000).toFixed(1)} s of the run, dumps ${(diary.fpBytes / 1048576).toFixed(0)} MB`); diary.close(); }
 const summary: string[] = [];
 summary.push(`[vm-boot] stopped after ${ticks} ticks, world.time ${vm.sched.time}, ${secs()} s wall, ${vm.runtimeErrors.length - vm.notImplemented.length} runtime errors, ${vm.notImplemented.length} not-implemented hits${fatal ? ", FATAL" : ""}`);
 if (roundStart !== null) {
@@ -492,11 +499,14 @@ if (roundStart !== null) {
 			summary.push(`[vm-boot] SSgarbage failed to GC (${rows.length} types): ${rows.slice(0, 15).map(([k, c]) => `${k} x${c}`).join(", ")}`);
 		}
 	}
+	if (vm.deletedUses) summary.push(`[vm-boot] WARNING deleted objects used ${vm.deletedUses}x (detranslate 6b): ${[...vm.deletedUseNames].slice(0, 10).join(", ")}`);
 	const g = vm.gcStats;
 	summary.push(`[vm-boot] VM collector: ${g.freed} objects freed at ${g.safePoints} safe points, ${(g.ms / 1000).toFixed(1)} s; ${vm.map.atoms.size} atoms`);
 	if (process.env.VM_GC_VERIFY) summary.push(`[vm-boot] reference count check: ${vm.gcVerify().join("; ") || "ok"}`);
 	if (dkCounts.size) summary.push(`[pf1] call counts: ${[...dkCounts].sort((x, y) => y[1] - x[1]).map(([k, v]) => `${k} ${v}`).join(", ")}`);
 	summary.push(`[vm-boot] heap at end ${Math.round(process.memoryUsage().heapUsed / 1048576)} MB`);
+	const gc = (globalThis as { gc?: () => void }).gc; // node --expose-gc: what the world really keeps
+	if (gc) { gc(); summary.push(`[vm-boot] heap after a forced GC ${Math.round(process.memoryUsage().heapUsed / 1048576)} MB`); }
 }
 if (connectKey) {
 	try {

@@ -1,7 +1,7 @@
-// From code/game/gamemodes/miniantags/abduction/machinery/camera.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/gamemodes/miniantags/abduction/machinery/camera.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(10351, "/obj/machinery/computer/camera_advanced/abductor", "/obj/machinery/computer/camera_advanced", {
@@ -21,95 +21,91 @@ rt.type(10351, "/obj/machinery/computer/camera_advanced/abductor", "/obj/machine
 	resistance_flags: 99,
 });
 
-// /obj/machinery/computer/camera_advanced/abductor/proc/<init>  (code/game/gamemodes/miniantags/abduction/machinery/camera.dm:5)  may sleep
+// camera.dm:5
 rt.def("/obj/machinery/computer/camera_advanced/abductor/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "tele_in_action", (yield* g.new_(f, T("/datum/action/innate/teleport_in"), [])));
-	$0 = $0;
-	rt.setSv(f, "tele_out_action", (yield* g.new_(f, T("/datum/action/innate/teleport_out"), [])));
-	$0 = $0;
-	rt.setSv(f, "tele_self_action", (yield* g.new_(f, T("/datum/action/innate/teleport_self"), [])));
-	$0 = $0;
-	rt.setSv(f, "vest_mode_action", (yield* g.new_(f, T("/datum/action/innate/vest_mode_swap"), [])));
-	$0 = $0;
-	rt.setSv(f, "vest_disguise_action", (yield* g.new_(f, T("/datum/action/innate/vest_disguise_swap"), [])));
-	$0 = $0;
-	rt.setSv(f, "set_droppoint_action", (yield* g.new_(f, T("/datum/action/innate/set_droppoint"), [])));
-	rt.setSv(f, "networks", rt.list("SS13", "Abductor"));
+	yield* parent_proc();
+	this.tele_in_action = (yield* new_(T("/datum/action/innate/teleport_in")));
+
+	this.tele_out_action = (yield* new_(T("/datum/action/innate/teleport_out")));
+
+	this.tele_self_action = (yield* new_(T("/datum/action/innate/teleport_self")));
+
+	this.vest_mode_action = (yield* new_(T("/datum/action/innate/vest_mode_swap")));
+
+	this.vest_disguise_action = (yield* new_(T("/datum/action/innate/vest_disguise_swap")));
+
+	this.set_droppoint_action = (yield* new_(T("/datum/action/innate/set_droppoint")));
+	this.networks = list("SS13", "Abductor");
 	return f.dot;
 }, true);
 
-// /obj/machinery/computer/camera_advanced/abductor/proc/CreateEye  (code/game/gamemodes/miniantags/abduction/machinery/camera.dm:19)  may sleep
+// camera.dm:19
 rt.def("/obj/machinery/computer/camera_advanced/abductor/proc/CreateEye", function* CreateEye(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setFv(f, "visible_icon", rt.sv(f, "eyeobj"), 1);
-	rt.setFv(f, "icon", rt.sv(f, "eyeobj"), rt.rsc("icons/obj/abductor.dmi"));
-	rt.setFv(f, "icon_state", rt.sv(f, "eyeobj"), "camera_target");
+	yield* parent_proc();
+	this.eyeobj.visible_icon = 1;
+	this.eyeobj.icon = rt.rsc("icons/obj/abductor.dmi");
+	this.eyeobj.icon_state = "camera_target";
 	return f.dot;
 }, true);
 
-// /obj/machinery/computer/camera_advanced/abductor/proc/GrantActions  (code/game/gamemodes/miniantags/abduction/machinery/camera.dm:25)  may sleep
-rt.def("/obj/machinery/computer/camera_advanced/abductor/proc/GrantActions", function* GrantActions(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.sv(f, "tele_in_action"))) {
-		rt.setFv(f, "target", rt.sv(f, "tele_in_action"), rt.fv(f, "pad", rt.sv(f, "console")));
-		yield* g.callName(f, rt.sv(f, "tele_in_action"), "Grant", [live(f.args[0])]);
-		rt.modSrcVar(f, "actions", rt.sv(f, "tele_in_action"), add);
+// camera.dm:25
+rt.def("/obj/machinery/computer/camera_advanced/abductor/proc/GrantActions", function* GrantActions(f: Frame, user: Value) {
+	yield* parent_proc();
+	if (this.tele_in_action) {
+		this.tele_in_action.target = this.console.pad;
+		yield* this.tele_in_action.Grant(user);
+		this.actions += this.tele_in_action;
 	}
-	if (truthy(rt.sv(f, "tele_out_action"))) {
-		rt.setFv(f, "target", rt.sv(f, "tele_out_action"), rt.sv(f, "console"));
-		yield* g.callName(f, rt.sv(f, "tele_out_action"), "Grant", [live(f.args[0])]);
-		rt.modSrcVar(f, "actions", rt.sv(f, "tele_out_action"), add);
+	if (this.tele_out_action) {
+		this.tele_out_action.target = this.console;
+		yield* this.tele_out_action.Grant(user);
+		this.actions += this.tele_out_action;
 	}
-	if (truthy(rt.sv(f, "tele_self_action"))) {
-		rt.setFv(f, "target", rt.sv(f, "tele_self_action"), rt.fv(f, "pad", rt.sv(f, "console")));
-		yield* g.callName(f, rt.sv(f, "tele_self_action"), "Grant", [live(f.args[0])]);
-		rt.modSrcVar(f, "actions", rt.sv(f, "tele_self_action"), add);
+	if (this.tele_self_action) {
+		this.tele_self_action.target = this.console.pad;
+		yield* this.tele_self_action.Grant(user);
+		this.actions += this.tele_self_action;
 	}
-	if (truthy(rt.sv(f, "vest_mode_action"))) {
-		rt.setFv(f, "target", rt.sv(f, "vest_mode_action"), rt.sv(f, "console"));
-		yield* g.callName(f, rt.sv(f, "vest_mode_action"), "Grant", [live(f.args[0])]);
-		rt.modSrcVar(f, "actions", rt.sv(f, "vest_mode_action"), add);
+	if (this.vest_mode_action) {
+		this.vest_mode_action.target = this.console;
+		yield* this.vest_mode_action.Grant(user);
+		this.actions += this.vest_mode_action;
 	}
-	if (truthy(rt.sv(f, "vest_disguise_action"))) {
-		rt.setFv(f, "target", rt.sv(f, "vest_disguise_action"), rt.sv(f, "console"));
-		yield* g.callName(f, rt.sv(f, "vest_disguise_action"), "Grant", [live(f.args[0])]);
-		rt.modSrcVar(f, "actions", rt.sv(f, "vest_disguise_action"), add);
+	if (this.vest_disguise_action) {
+		this.vest_disguise_action.target = this.console;
+		yield* this.vest_disguise_action.Grant(user);
+		this.actions += this.vest_disguise_action;
 	}
-	if (!truthy(rt.sv(f, "set_droppoint_action"))) return f.dot;
-	rt.setFv(f, "target", rt.sv(f, "set_droppoint_action"), rt.sv(f, "console"));
-	yield* g.callName(f, rt.sv(f, "set_droppoint_action"), "Grant", [live(f.args[0])]);
-	rt.modSrcVar(f, "actions", rt.sv(f, "set_droppoint_action"), add);
+	if (!this.set_droppoint_action) return f.dot;
+	this.set_droppoint_action.target = this.console;
+	yield* this.set_droppoint_action.Grant(user);
+	this.actions += this.set_droppoint_action;
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /obj/machinery/computer/camera_advanced/abductor/proc/attack_hand  (code/game/gamemodes/miniantags/abduction/machinery/camera.dm:62)  may sleep
-rt.def("/obj/machinery/computer/camera_advanced/abductor/proc/attack_hand", function* attack_hand(f: Frame) {
-	if (!truthy((yield* g.call(f, P("/proc/is_species"), null, [live(f.args[0]), T("/datum/species/abductor")])))) {
-		return live(f.dot);
+// camera.dm:62
+rt.def("/obj/machinery/computer/camera_advanced/abductor/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
+	if (!is_species(user, T("/datum/species/abductor"))) {
+		return f.dot;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["user"] });
+	return (yield* parent_proc());
+}, true);
 
 rt.type(114, "/datum/action/innate/teleport_in", "/datum/action/innate", {
 	name: "Send To",
 	button_icon_state: "beam_down",
 });
 
-// /datum/action/innate/teleport_in/proc/Activate  (code/game/gamemodes/miniantags/abduction/machinery/camera.dm:71)  may sleep
+// camera.dm:71
 rt.def("/datum/action/innate/teleport_in/proc/Activate", function* Activate(f: Frame) {
-	let C: Value = null, remote_eye: Value = null, _P: Value = null;
-	f.vars = () => [C, remote_eye, _P];
-	if ((!truthy(rt.sv(f, "target")) || !truthy((rt.istype(rt.sv(f, "owner"), T("/mob/living/carbon")) ? 1 : 0)))) {
-		return live(f.dot);
+	if (!this.target || !rt.istype(this.owner, T("/mob/living/carbon"))) {
+		return f.dot;
 	}
-	C = rt.sv(f, "owner");
-	remote_eye = rt.fv(f, "remote_control", live(C));
-	_P = rt.sv(f, "target");
-	if (!truthy((yield* g.callName(f, rt.gl("cameranet"), "checkTurfVis", [rt.fv(f, "loc", live(remote_eye))])))) return f.dot;
-	yield* g.callName(f, live(_P), "PadToLoc", [rt.fv(f, "loc", live(remote_eye))]);
+	let C: Value = this.owner;
+	let remote_eye: Value = C.remote_control;
+	let _P: Value = this.target;
+	if (!GLOB.cameranet.checkTurfVis(remote_eye.loc)) return f.dot;
+	yield* _P.PadToLoc(remote_eye.loc);
 	return f.dot;
 }, true);
 
@@ -118,14 +114,13 @@ rt.type(115, "/datum/action/innate/teleport_out", "/datum/action/innate", {
 	button_icon_state: "beam_up",
 });
 
-// /datum/action/innate/teleport_out/proc/Activate  (code/game/gamemodes/miniantags/abduction/machinery/camera.dm:85)  may sleep
+// camera.dm:85
 rt.def("/datum/action/innate/teleport_out/proc/Activate", function* Activate(f: Frame) {
 	let console: Value = null;
-	f.vars = () => [console];
-	if ((!truthy(rt.sv(f, "target")) || !truthy((rt.istype(rt.sv(f, "owner"), T("/mob/living/carbon")) ? 1 : 0)))) {
-		return live(f.dot);
+	if (!this.target || !rt.istype(this.owner, T("/mob/living/carbon"))) {
+		return f.dot;
 	}
-	yield* g.callName(f, (console = rt.sv(f, "target")), "TeleporterRetrieve", []);
+	yield* (console = this.target).TeleporterRetrieve();
 	return f.dot;
 }, true);
 
@@ -134,18 +129,16 @@ rt.type(116, "/datum/action/innate/teleport_self", "/datum/action/innate", {
 	button_icon_state: "beam_down",
 });
 
-// /datum/action/innate/teleport_self/proc/Activate  (code/game/gamemodes/miniantags/abduction/machinery/camera.dm:96)  may sleep
+// camera.dm:96
 rt.def("/datum/action/innate/teleport_self/proc/Activate", function* Activate(f: Frame) {
-	let C: Value = null, remote_eye: Value = null, _P: Value = null;
-	f.vars = () => [C, remote_eye, _P];
-	if ((!truthy(rt.sv(f, "target")) || !truthy((rt.istype(rt.sv(f, "owner"), T("/mob/living/carbon")) ? 1 : 0)))) {
-		return live(f.dot);
+	if (!this.target || !rt.istype(this.owner, T("/mob/living/carbon"))) {
+		return f.dot;
 	}
-	C = rt.sv(f, "owner");
-	remote_eye = rt.fv(f, "remote_control", live(C));
-	_P = rt.sv(f, "target");
-	if (!truthy((yield* g.callName(f, rt.gl("cameranet"), "checkTurfVis", [rt.fv(f, "loc", live(remote_eye))])))) return f.dot;
-	yield* g.callName(f, live(_P), "MobToLoc", [rt.fv(f, "loc", live(remote_eye)), live(C)]);
+	let C: Value = this.owner;
+	let remote_eye: Value = C.remote_control;
+	let _P: Value = this.target;
+	if (!GLOB.cameranet.checkTurfVis(remote_eye.loc)) return f.dot;
+	yield* _P.MobToLoc(remote_eye.loc, C);
 	return f.dot;
 }, true);
 
@@ -154,14 +147,13 @@ rt.type(117, "/datum/action/innate/vest_mode_swap", "/datum/action/innate", {
 	button_icon_state: "vest_mode",
 });
 
-// /datum/action/innate/vest_mode_swap/proc/Activate  (code/game/gamemodes/miniantags/abduction/machinery/camera.dm:110)  may sleep
+// camera.dm:110
 rt.def("/datum/action/innate/vest_mode_swap/proc/Activate", function* Activate(f: Frame) {
 	let console: Value = null;
-	f.vars = () => [console];
-	if ((!truthy(rt.sv(f, "target")) || !truthy((rt.istype(rt.sv(f, "owner"), T("/mob/living/carbon")) ? 1 : 0)))) {
-		return live(f.dot);
+	if (!this.target || !rt.istype(this.owner, T("/mob/living/carbon"))) {
+		return f.dot;
 	}
-	yield* g.callName(f, (console = rt.sv(f, "target")), "FlipVest", []);
+	yield* (console = this.target).FlipVest();
 	return f.dot;
 }, true);
 
@@ -170,14 +162,13 @@ rt.type(118, "/datum/action/innate/vest_disguise_swap", "/datum/action/innate", 
 	button_icon_state: "vest_disguise",
 });
 
-// /datum/action/innate/vest_disguise_swap/proc/Activate  (code/game/gamemodes/miniantags/abduction/machinery/camera.dm:121)  may sleep
+// camera.dm:121
 rt.def("/datum/action/innate/vest_disguise_swap/proc/Activate", function* Activate(f: Frame) {
 	let console: Value = null;
-	f.vars = () => [console];
-	if ((!truthy(rt.sv(f, "target")) || !truthy((rt.istype(rt.sv(f, "owner"), T("/mob/living/carbon")) ? 1 : 0)))) {
-		return live(f.dot);
+	if (!this.target || !rt.istype(this.owner, T("/mob/living/carbon"))) {
+		return f.dot;
 	}
-	yield* g.callName(f, (console = rt.sv(f, "target")), "SelectDisguise", ["remote", 1], rt.Args.Named);
+	yield* (console = this.target).SelectDisguise({ remote: 1 });
 	return f.dot;
 }, true);
 
@@ -186,15 +177,14 @@ rt.type(119, "/datum/action/innate/set_droppoint", "/datum/action/innate", {
 	button_icon_state: "set_drop",
 });
 
-// /datum/action/innate/set_droppoint/proc/Activate  (code/game/gamemodes/miniantags/abduction/machinery/camera.dm:131)
+// camera.dm:131
 rt.def("/datum/action/innate/set_droppoint/proc/Activate", function Activate(f: Frame) {
-	let C: Value = null, remote_eye: Value = null, console: Value = null;
-	f.vars = () => [C, remote_eye, console];
-	if ((!truthy(rt.sv(f, "target")) || !truthy((rt.istype(rt.sv(f, "owner"), T("/mob/living/carbon")) ? 1 : 0)))) {
-		return live(f.dot);
+	let console: Value = null;
+	if (!this.target || !rt.istype(this.owner, T("/mob/living/carbon"))) {
+		return f.dot;
 	}
-	C = rt.sv(f, "owner");
-	remote_eye = rt.fv(f, "remote_control", live(C));
-	rt.callName(f, (console = rt.sv(f, "target")), "SetDroppoint", [rt.fv(f, "loc", live(remote_eye)), rt.sv(f, "owner")]);
+	let C: Value = this.owner;
+	let remote_eye: Value = C.remote_control;
+	(console = this.target).SetDroppoint(remote_eye.loc, this.owner);
 	return f.dot;
 });

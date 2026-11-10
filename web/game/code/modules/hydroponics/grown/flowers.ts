@@ -1,7 +1,7 @@
-// From code/modules/hydroponics/grown/flowers.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/hydroponics/grown/flowers.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(10029, "/obj/item/seeds/poppy", "/obj/item/seeds", {
@@ -23,14 +23,12 @@ rt.type(10029, "/obj/item/seeds/poppy", "/obj/item/seeds", {
 	mutatelist: null,
 });
 
-// /obj/item/seeds/poppy/proc/<init>  (code/modules/hydroponics/grown/flowers.dm:18)
+// flowers.dm:18
 rt.def("/obj/item/seeds/poppy/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "reagents_add", rt.alist(f, ["bicaridine", 0.20000000298023224, "nutriment", 0.05000000074505806]));
-	$0 = $0;
-	rt.setSv(f, "mutatelist", rt.list(T("/obj/item/seeds/poppy/geranium"), T("/obj/item/seeds/poppy/lily")));
+	parent_proc();
+	this.reagents_add = rt.alist(f, ["bicaridine", 0.2, "nutriment", 0.05]);
+
+	this.mutatelist = list(T("/obj/item/seeds/poppy/geranium"), T("/obj/item/seeds/poppy/lily"));
 	return f.dot;
 });
 
@@ -44,12 +42,10 @@ rt.type(10030, "/obj/item/seeds/poppy/lily", "/obj/item/seeds/poppy", {
 	icon_state: "seed-lily",
 });
 
-// /obj/item/seeds/poppy/lily/proc/<init>  (code/modules/hydroponics/grown/flowers.dm:37)
+// flowers.dm:37
 rt.def("/obj/item/seeds/poppy/lily/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "mutatelist", rt.list());
+	parent_proc();
+	this.mutatelist = list();
 	return f.dot;
 });
 
@@ -63,12 +59,10 @@ rt.type(10031, "/obj/item/seeds/poppy/geranium", "/obj/item/seeds/poppy", {
 	icon_state: "seed-geranium",
 });
 
-// /obj/item/seeds/poppy/geranium/proc/<init>  (code/modules/hydroponics/grown/flowers.dm:54)
+// flowers.dm:54
 rt.def("/obj/item/seeds/poppy/geranium/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "mutatelist", rt.list());
+	parent_proc();
+	this.mutatelist = list();
 	return f.dot;
 });
 
@@ -91,13 +85,11 @@ rt.type(10032, "/obj/item/seeds/harebell", "/obj/item/seeds", {
 	icon_state: "seed-harebell",
 });
 
-// /obj/item/seeds/harebell/proc/<init>  (code/modules/hydroponics/grown/flowers.dm:79)
+// flowers.dm:79
 rt.def("/obj/item/seeds/harebell/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "genes", rt.list(T("/datum/plant_gene/trait/plant_type/weed_hardy")));
-	rt.setSv(f, "reagents_add", rt.alist(f, ["nutriment", 0.03999999910593033]));
+	parent_proc();
+	this.genes = list(T("/datum/plant_gene/trait/plant_type/weed_hardy"));
+	this.reagents_add = rt.alist(f, ["nutriment", 0.04]);
 	return f.dot;
 });
 
@@ -119,14 +111,12 @@ rt.type(10033, "/obj/item/seeds/sunflower", "/obj/item/seeds", {
 	mutatelist: null,
 });
 
-// /obj/item/seeds/sunflower/proc/<init>  (code/modules/hydroponics/grown/flowers.dm:109)
+// flowers.dm:109
 rt.def("/obj/item/seeds/sunflower/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "reagents_add", rt.alist(f, ["cornoil", 0.07999999821186066, "nutriment", 0.03999999910593033]));
-	$0 = $0;
-	rt.setSv(f, "mutatelist", rt.list(T("/obj/item/seeds/sunflower/moonflower"), T("/obj/item/seeds/sunflower/novaflower")));
+	parent_proc();
+	this.reagents_add = rt.alist(f, ["cornoil", 0.08, "nutriment", 0.04]);
+
+	this.mutatelist = list(T("/obj/item/seeds/sunflower/moonflower"), T("/obj/item/seeds/sunflower/novaflower"));
 	return f.dot;
 });
 
@@ -144,10 +134,10 @@ rt.type(7499, "/obj/item/weapon/grown/sunflower", "/obj/item/weapon/grown", {
 	w_class: 1,
 });
 
-// /obj/item/weapon/grown/sunflower/proc/attack  (code/modules/hydroponics/grown/flowers.dm:125)
+// flowers.dm:125
 rt.def("/obj/item/weapon/grown/sunflower/proc/attack", function attack(f: Frame, M: Value, user: Value) {
-	rt.call(f, P("/proc/to_chat"), null, [live(M), fmt("<font color='green'><b> ＀ smacks you with a sunflower!</font><font color='yellow'><b>FLOWER POWER<b></font>", [live(user)])]);
-	rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<font color='green'>Your sunflower's </font><font color='yellow'><b>FLOWER POWER</b></font><font color='green'>strikes ＀</font>", [live(M)])]);
+	to_chat(M, `<font color='green'><b> ${user} smacks you with a sunflower!</font><font color='yellow'><b>FLOWER POWER<b></font>`);
+	to_chat(user, `<font color='green'>Your sunflower's </font><font color='yellow'><b>FLOWER POWER</b></font><font color='green'>strikes ${M}</font>`);
 	return f.dot;
 });
 
@@ -163,13 +153,11 @@ rt.type(10034, "/obj/item/seeds/sunflower/moonflower", "/obj/item/seeds/sunflowe
 	icon_state: "seed-moonflower",
 });
 
-// /obj/item/seeds/sunflower/moonflower/proc/<init>  (code/modules/hydroponics/grown/flowers.dm:136)
+// flowers.dm:136
 rt.def("/obj/item/seeds/sunflower/moonflower/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "mutatelist", rt.list());
-	rt.setSv(f, "reagents_add", rt.alist(f, ["moonshine", 0.20000000298023224, "vitamin", 0.019999999552965164, "nutriment", 0.019999999552965164]));
+	parent_proc();
+	this.mutatelist = list();
+	this.reagents_add = rt.alist(f, ["moonshine", 0.2, "vitamin", 0.02, "nutriment", 0.02]);
 	return f.dot;
 });
 
@@ -185,13 +173,11 @@ rt.type(10035, "/obj/item/seeds/sunflower/novaflower", "/obj/item/seeds/sunflowe
 	icon_state: "seed-novaflower",
 });
 
-// /obj/item/seeds/sunflower/novaflower/proc/<init>  (code/modules/hydroponics/grown/flowers.dm:157)
+// flowers.dm:157
 rt.def("/obj/item/seeds/sunflower/novaflower/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "mutatelist", rt.list());
-	rt.setSv(f, "reagents_add", rt.alist(f, ["condensedcapsaicin", 0.25, "capsaicin", 0.30000001192092896, "nutriment", 0]));
+	parent_proc();
+	this.mutatelist = list();
+	this.reagents_add = rt.alist(f, ["condensedcapsaicin", 0.25, "capsaicin", 0.3, "nutriment", 0]);
 	return f.dot;
 });
 
@@ -210,47 +196,46 @@ rt.type(7500, "/obj/item/weapon/grown/novaflower", "/obj/item/weapon/grown", {
 	attack_verb: null,
 });
 
-// /obj/item/weapon/grown/novaflower/proc/add_juice  (code/modules/hydroponics/grown/flowers.dm:176)
+// flowers.dm:176
 rt.def("/obj/item/weapon/grown/novaflower/proc/add_juice", function add_juice(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "force", rt.call(f, P("/proc/round"), null, [add(5, divide(rt.fv(f, "potency", rt.sv(f, "seed")), 5)), 1]));
+	parent_proc();
+	this.force = round(5 + this.seed.potency / 5, 1);
 	return f.dot;
 });
 
-// /obj/item/weapon/grown/novaflower/proc/attack  (code/modules/hydroponics/grown/flowers.dm:180)  may sleep
-rt.def("/obj/item/weapon/grown/novaflower/proc/attack", function* attack(f: Frame) {
-	if (!truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		return live(f.dot);
+// flowers.dm:180
+rt.def("/obj/item/weapon/grown/novaflower/proc/attack", function* attack(f: Frame, M: Value, user: Value) {
+	if (!(yield* parent_proc())) {
+		return f.dot;
 	}
-	if (!truthy((rt.istype(live(f.args[0]), T("/mob/living")) ? 1 : 0))) return f.dot;
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='danger'>You are lit on fire from the intense heat of the ＀!</span>", [rt.sv(f, "name")])]);
-	yield* g.callName(f, live(f.args[0]), "adjust_fire_stacks", [divide(rt.fv(f, "potency", rt.sv(f, "seed")), 20)]);
-	if (!truthy((yield* g.callName(f, live(f.args[0]), "IgniteMob", [])))) return f.dot;
-	yield* g.call(f, P("/proc/message_admins"), null, [fmt("＀ set ＀ on fire", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.args[1])])), (yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.args[0])]))])]);
-	yield* g.call(f, P("/proc/log_game"), null, [fmt("＀ set ＀ on fire", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.args[1])])), (yield* g.call(f, P("/proc/key_name"), null, [live(f.args[0])]))])]);
+	if (!rt.istype(M, T("/mob/living"))) return f.dot;
+	to_chat(M, `<span class='danger'>You are lit on fire from the intense heat of the ${this.name}!</span>`);
+	yield* M.adjust_fire_stacks(this.seed.potency / 20);
+	if (!(yield* M.IgniteMob())) return f.dot;
+	message_admins(`${key_name_admin(user)} set ${key_name_admin(M)} on fire`);
+	log_game(`${key_name(user)} set ${key_name(M)} on fire`);
 	return f.dot;
-}, true, { args: ["M", "user"] });
+}, true);
 
-// /obj/item/weapon/grown/novaflower/proc/afterattack  (code/modules/hydroponics/grown/flowers.dm:190)  may sleep
+// flowers.dm:190
 rt.def("/obj/item/weapon/grown/novaflower/proc/afterattack", function* afterattack(f: Frame, A: Value, user: Value, proximity: Value) {
-	f.vars = () => [A, user, proximity];
-	if (!truthy(live(proximity))) {
-		return live(f.dot);
+	if (!proximity) {
+		return f.dot;
 	}
-	if (rt.gt(rt.sv(f, "force"), 0)) {
-		(rt.modSrcVar(f, "force", (yield* g.call(f, P("/proc/rand"), null, [1, add(divide(rt.sv(f, "force"), 3), 1)])), subtract));
+	if (this.force > 0) {
+		this.force -= rand(1, this.force / 3 + 1);
 	} else {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), fmt("<span class='warning'>All the petals have fallen off the ＀ from violent whacking!</span>", [rt.sv(f, "name")])]);
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+		to_chat(f.usr, `<span class='warning'>All the petals have fallen off the ${this.name} from violent whacking!</span>`);
+		yield* qdel(this);
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/grown/novaflower/proc/pickup  (code/modules/hydroponics/grown/flowers.dm:198)  may sleep
-rt.def("/obj/item/weapon/grown/novaflower/proc/pickup", function* pickup(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.fv(f, "gloves", live(f.args[0])))) return f.dot;
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='danger'>The ＀ burns your bare hand!</span>", [rt.sv(f, "name")])]);
-	yield* g.callName(f, live(f.args[0]), "adjustFireLoss", [(yield* g.call(f, P("/proc/rand"), null, [1, 5]))]);
+// flowers.dm:198
+rt.def("/obj/item/weapon/grown/novaflower/proc/pickup", function* pickup(f: Frame, user: Value) {
+	yield* parent_proc();
+	if (user.gloves) return f.dot;
+	to_chat(user, `<span class='danger'>The ${this.name} burns your bare hand!</span>`);
+	yield* user.adjustFireLoss(rand(1, 5));
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);

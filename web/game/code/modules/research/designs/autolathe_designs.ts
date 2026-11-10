@@ -1,7 +1,7 @@
-// From code/modules/research/designs/autolathe_designs.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/research/designs/autolathe_designs.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(2992, "/datum/design/bucket", "/datum/design", {
@@ -13,13 +13,11 @@ rt.type(2992, "/datum/design/bucket", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/reagent_containers/glass/bucket"),
 });
 
-// /datum/design/bucket/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:9)
+// autolathe_designs.dm:9
 rt.def("/datum/design/bucket/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 200]));
-	rt.setSv(f, "category", rt.list("initial", "Tools"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 200]);
+	this.category = list("initial", "Tools");
 	return f.dot;
 });
 
@@ -32,13 +30,11 @@ rt.type(2993, "/datum/design/crowbar", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/crowbar"),
 });
 
-// /datum/design/crowbar/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:17)
+// autolathe_designs.dm:17
 rt.def("/datum/design/crowbar/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 50]));
-	rt.setSv(f, "category", rt.list("initial", "Tools"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 50]);
+	this.category = list("initial", "Tools");
 	return f.dot;
 });
 
@@ -51,13 +47,11 @@ rt.type(2994, "/datum/design/flashlight", "/datum/design", {
 	build_path: rt.typePath("/obj/item/device/flashlight"),
 });
 
-// /datum/design/flashlight/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:25)
+// autolathe_designs.dm:25
 rt.def("/datum/design/flashlight/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 50, "$glass", 20]));
-	rt.setSv(f, "category", rt.list("initial", "Tools"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 50, "$glass", 20]);
+	this.category = list("initial", "Tools");
 	return f.dot;
 });
 
@@ -70,13 +64,11 @@ rt.type(2995, "/datum/design/extinguisher", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/extinguisher"),
 });
 
-// /datum/design/extinguisher/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:33)
+// autolathe_designs.dm:33
 rt.def("/datum/design/extinguisher/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 90]));
-	rt.setSv(f, "category", rt.list("initial", "Tools"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 90]);
+	this.category = list("initial", "Tools");
 	return f.dot;
 });
 
@@ -89,13 +81,11 @@ rt.type(2996, "/datum/design/multitool", "/datum/design", {
 	build_path: rt.typePath("/obj/item/device/multitool"),
 });
 
-// /datum/design/multitool/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:41)
+// autolathe_designs.dm:41
 rt.def("/datum/design/multitool/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 50, "$glass", 20]));
-	rt.setSv(f, "category", rt.list("initial", "Tools"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 50, "$glass", 20]);
+	this.category = list("initial", "Tools");
 	return f.dot;
 });
 
@@ -108,13 +98,11 @@ rt.type(2997, "/datum/design/analyzer", "/datum/design", {
 	build_path: rt.typePath("/obj/item/device/analyzer"),
 });
 
-// /datum/design/analyzer/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:49)
+// autolathe_designs.dm:49
 rt.def("/datum/design/analyzer/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 30, "$glass", 20]));
-	rt.setSv(f, "category", rt.list("initial", "Tools"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 30, "$glass", 20]);
+	this.category = list("initial", "Tools");
 	return f.dot;
 });
 
@@ -127,13 +115,11 @@ rt.type(2998, "/datum/design/tscanner", "/datum/design", {
 	build_path: rt.typePath("/obj/item/device/t_scanner"),
 });
 
-// /datum/design/tscanner/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:57)
+// autolathe_designs.dm:57
 rt.def("/datum/design/tscanner/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 150]));
-	rt.setSv(f, "category", rt.list("initial", "Tools"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 150]);
+	this.category = list("initial", "Tools");
 	return f.dot;
 });
 
@@ -146,13 +132,11 @@ rt.type(2999, "/datum/design/weldingtool", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/weldingtool"),
 });
 
-// /datum/design/weldingtool/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:65)
+// autolathe_designs.dm:65
 rt.def("/datum/design/weldingtool/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 70, "$glass", 20]));
-	rt.setSv(f, "category", rt.list("initial", "Tools"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 70, "$glass", 20]);
+	this.category = list("initial", "Tools");
 	return f.dot;
 });
 
@@ -165,13 +149,11 @@ rt.type(3000, "/datum/design/mini_weldingtool", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/weldingtool/mini"),
 });
 
-// /datum/design/mini_weldingtool/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:73)
+// autolathe_designs.dm:73
 rt.def("/datum/design/mini_weldingtool/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 30, "$glass", 10]));
-	rt.setSv(f, "category", rt.list("initial", "Tools"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 30, "$glass", 10]);
+	this.category = list("initial", "Tools");
 	return f.dot;
 });
 
@@ -184,13 +166,11 @@ rt.type(3001, "/datum/design/screwdriver", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/screwdriver"),
 });
 
-// /datum/design/screwdriver/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:81)
+// autolathe_designs.dm:81
 rt.def("/datum/design/screwdriver/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 75]));
-	rt.setSv(f, "category", rt.list("initial", "Tools"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 75]);
+	this.category = list("initial", "Tools");
 	return f.dot;
 });
 
@@ -203,13 +183,11 @@ rt.type(3002, "/datum/design/wirecutters", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/wirecutters"),
 });
 
-// /datum/design/wirecutters/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:89)
+// autolathe_designs.dm:89
 rt.def("/datum/design/wirecutters/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 80]));
-	rt.setSv(f, "category", rt.list("initial", "Tools"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 80]);
+	this.category = list("initial", "Tools");
 	return f.dot;
 });
 
@@ -222,13 +200,11 @@ rt.type(3003, "/datum/design/wrench", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/wrench"),
 });
 
-// /datum/design/wrench/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:97)
+// autolathe_designs.dm:97
 rt.def("/datum/design/wrench/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 150]));
-	rt.setSv(f, "category", rt.list("initial", "Tools"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 150]);
+	this.category = list("initial", "Tools");
 	return f.dot;
 });
 
@@ -241,13 +217,11 @@ rt.type(3004, "/datum/design/welding_helmet", "/datum/design", {
 	build_path: rt.typePath("/obj/item/clothing/head/welding"),
 });
 
-// /datum/design/welding_helmet/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:105)
+// autolathe_designs.dm:105
 rt.def("/datum/design/welding_helmet/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 1750, "$glass", 400]));
-	rt.setSv(f, "category", rt.list("initial", "Tools"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 1750, "$glass", 400]);
+	this.category = list("initial", "Tools");
 	return f.dot;
 });
 
@@ -261,13 +235,11 @@ rt.type(3005, "/datum/design/cable_coil", "/datum/design", {
 	build_path: rt.typePath("/obj/item/stack/cable_coil/random"),
 });
 
-// /datum/design/cable_coil/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:113)
+// autolathe_designs.dm:113
 rt.def("/datum/design/cable_coil/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 10, "$glass", 5]));
-	rt.setSv(f, "category", rt.list("initial", "Tools"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 10, "$glass", 5]);
+	this.category = list("initial", "Tools");
 	return f.dot;
 });
 
@@ -280,13 +252,11 @@ rt.type(3006, "/datum/design/toolbox", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/storage/toolbox"),
 });
 
-// /datum/design/toolbox/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:122)
+// autolathe_designs.dm:122
 rt.def("/datum/design/toolbox/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 500]));
-	rt.setSv(f, "category", rt.list("initial", "Tools"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 500]);
+	this.category = list("initial", "Tools");
 	return f.dot;
 });
 
@@ -299,13 +269,11 @@ rt.type(3007, "/datum/design/console_screen", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/stock_parts/console_screen"),
 });
 
-// /datum/design/console_screen/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:130)
+// autolathe_designs.dm:130
 rt.def("/datum/design/console_screen/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$glass", 200]));
-	rt.setSv(f, "category", rt.list("initial", "Electronics"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$glass", 200]);
+	this.category = list("initial", "Electronics");
 	return f.dot;
 });
 
@@ -318,13 +286,11 @@ rt.type(3008, "/datum/design/apc_board", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/electronics/apc"),
 });
 
-// /datum/design/apc_board/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:138)
+// autolathe_designs.dm:138
 rt.def("/datum/design/apc_board/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 100, "$glass", 100]));
-	rt.setSv(f, "category", rt.list("initial", "Electronics"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 100, "$glass", 100]);
+	this.category = list("initial", "Electronics");
 	return f.dot;
 });
 
@@ -337,13 +303,11 @@ rt.type(3009, "/datum/design/airlock_board", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/electronics/airlock"),
 });
 
-// /datum/design/airlock_board/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:146)
+// autolathe_designs.dm:146
 rt.def("/datum/design/airlock_board/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 50, "$glass", 50]));
-	rt.setSv(f, "category", rt.list("initial", "Electronics"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 50, "$glass", 50]);
+	this.category = list("initial", "Electronics");
 	return f.dot;
 });
 
@@ -356,13 +320,11 @@ rt.type(3010, "/datum/design/firelock_board", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/electronics/firelock"),
 });
 
-// /datum/design/firelock_board/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:154)
+// autolathe_designs.dm:154
 rt.def("/datum/design/firelock_board/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 50, "$glass", 50]));
-	rt.setSv(f, "category", rt.list("initial", "Electronics"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 50, "$glass", 50]);
+	this.category = list("initial", "Electronics");
 	return f.dot;
 });
 
@@ -375,13 +337,11 @@ rt.type(3011, "/datum/design/airalarm_electronics", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/electronics/airalarm"),
 });
 
-// /datum/design/airalarm_electronics/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:162)
+// autolathe_designs.dm:162
 rt.def("/datum/design/airalarm_electronics/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 50, "$glass", 50]));
-	rt.setSv(f, "category", rt.list("initial", "Electronics"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 50, "$glass", 50]);
+	this.category = list("initial", "Electronics");
 	return f.dot;
 });
 
@@ -394,13 +354,11 @@ rt.type(3012, "/datum/design/firealarm_electronics", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/electronics/firealarm"),
 });
 
-// /datum/design/firealarm_electronics/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:170)
+// autolathe_designs.dm:170
 rt.def("/datum/design/firealarm_electronics/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 50, "$glass", 50]));
-	rt.setSv(f, "category", rt.list("initial", "Electronics"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 50, "$glass", 50]);
+	this.category = list("initial", "Electronics");
 	return f.dot;
 });
 
@@ -413,13 +371,11 @@ rt.type(3013, "/datum/design/earmuffs", "/datum/design", {
 	build_path: rt.typePath("/obj/item/clothing/ears/earmuffs"),
 });
 
-// /datum/design/earmuffs/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:178)
+// autolathe_designs.dm:178
 rt.def("/datum/design/earmuffs/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 500, "$glass", 500]));
-	rt.setSv(f, "category", rt.list("initial", "Misc"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 500, "$glass", 500]);
+	this.category = list("initial", "Misc");
 	return f.dot;
 });
 
@@ -432,13 +388,11 @@ rt.type(3014, "/datum/design/pipe_painter", "/datum/design", {
 	build_path: rt.typePath("/obj/item/device/pipe_painter"),
 });
 
-// /datum/design/pipe_painter/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:186)
+// autolathe_designs.dm:186
 rt.def("/datum/design/pipe_painter/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 5000, "$glass", 2000]));
-	rt.setSv(f, "category", rt.list("initial", "Misc"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 5000, "$glass", 2000]);
+	this.category = list("initial", "Misc");
 	return f.dot;
 });
 
@@ -451,13 +405,11 @@ rt.type(3015, "/datum/design/airlock_painter", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/airlock_painter"),
 });
 
-// /datum/design/airlock_painter/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:194)
+// autolathe_designs.dm:194
 rt.def("/datum/design/airlock_painter/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 50, "$glass", 50]));
-	rt.setSv(f, "category", rt.list("initial", "Misc"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 50, "$glass", 50]);
+	this.category = list("initial", "Misc");
 	return f.dot;
 });
 
@@ -471,13 +423,11 @@ rt.type(3016, "/datum/design/metal", "/datum/design", {
 	build_path: rt.typePath("/obj/item/stack/sheet/metal"),
 });
 
-// /datum/design/metal/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:202)
+// autolathe_designs.dm:202
 rt.def("/datum/design/metal/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 2000]));
-	rt.setSv(f, "category", rt.list("initial", "Construction"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 2000]);
+	this.category = list("initial", "Construction");
 	return f.dot;
 });
 
@@ -491,13 +441,11 @@ rt.type(3017, "/datum/design/glass", "/datum/design", {
 	build_path: rt.typePath("/obj/item/stack/sheet/glass"),
 });
 
-// /datum/design/glass/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:211)
+// autolathe_designs.dm:211
 rt.def("/datum/design/glass/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$glass", 2000]));
-	rt.setSv(f, "category", rt.list("initial", "Construction"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$glass", 2000]);
+	this.category = list("initial", "Construction");
 	return f.dot;
 });
 
@@ -511,13 +459,11 @@ rt.type(3018, "/datum/design/rglass", "/datum/design", {
 	build_path: rt.typePath("/obj/item/stack/sheet/rglass"),
 });
 
-// /datum/design/rglass/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:220)
+// autolathe_designs.dm:220
 rt.def("/datum/design/rglass/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 1000, "$glass", 2000]));
-	rt.setSv(f, "category", rt.list("initial", "Construction"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 1000, "$glass", 2000]);
+	this.category = list("initial", "Construction");
 	return f.dot;
 });
 
@@ -531,13 +477,11 @@ rt.type(3019, "/datum/design/rods", "/datum/design", {
 	build_path: rt.typePath("/obj/item/stack/rods"),
 });
 
-// /datum/design/rods/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:229)
+// autolathe_designs.dm:229
 rt.def("/datum/design/rods/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 1000]));
-	rt.setSv(f, "category", rt.list("initial", "Construction"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 1000]);
+	this.category = list("initial", "Construction");
 	return f.dot;
 });
 
@@ -550,13 +494,11 @@ rt.type(3020, "/datum/design/rcd_ammo", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/rcd_ammo"),
 });
 
-// /datum/design/rcd_ammo/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:238)
+// autolathe_designs.dm:238
 rt.def("/datum/design/rcd_ammo/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 12000, "$glass", 8000]));
-	rt.setSv(f, "category", rt.list("initial", "Construction"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 12000, "$glass", 8000]);
+	this.category = list("initial", "Construction");
 	return f.dot;
 });
 
@@ -569,13 +511,11 @@ rt.type(3021, "/datum/design/kitchen_knife", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/kitchen/knife"),
 });
 
-// /datum/design/kitchen_knife/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:246)
+// autolathe_designs.dm:246
 rt.def("/datum/design/kitchen_knife/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 12000]));
-	rt.setSv(f, "category", rt.list("initial", "Dinnerware"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 12000]);
+	this.category = list("initial", "Dinnerware");
 	return f.dot;
 });
 
@@ -588,13 +528,11 @@ rt.type(3022, "/datum/design/fork", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/kitchen/fork"),
 });
 
-// /datum/design/fork/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:254)
+// autolathe_designs.dm:254
 rt.def("/datum/design/fork/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 80]));
-	rt.setSv(f, "category", rt.list("initial", "Dinnerware"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 80]);
+	this.category = list("initial", "Dinnerware");
 	return f.dot;
 });
 
@@ -607,13 +545,11 @@ rt.type(3023, "/datum/design/tray", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/storage/bag/tray"),
 });
 
-// /datum/design/tray/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:262)
+// autolathe_designs.dm:262
 rt.def("/datum/design/tray/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 3000]));
-	rt.setSv(f, "category", rt.list("initial", "Dinnerware"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 3000]);
+	this.category = list("initial", "Dinnerware");
 	return f.dot;
 });
 
@@ -626,13 +562,11 @@ rt.type(3024, "/datum/design/bowl", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/reagent_containers/glass/bowl"),
 });
 
-// /datum/design/bowl/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:270)
+// autolathe_designs.dm:270
 rt.def("/datum/design/bowl/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$glass", 500]));
-	rt.setSv(f, "category", rt.list("initial", "Dinnerware"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$glass", 500]);
+	this.category = list("initial", "Dinnerware");
 	return f.dot;
 });
 
@@ -645,13 +579,11 @@ rt.type(3025, "/datum/design/drinking_glass", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/reagent_containers/food/drinks/drinkingglass"),
 });
 
-// /datum/design/drinking_glass/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:278)
+// autolathe_designs.dm:278
 rt.def("/datum/design/drinking_glass/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$glass", 500]));
-	rt.setSv(f, "category", rt.list("initial", "Dinnerware"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$glass", 500]);
+	this.category = list("initial", "Dinnerware");
 	return f.dot;
 });
 
@@ -664,13 +596,11 @@ rt.type(3026, "/datum/design/shot_glass", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/reagent_containers/food/drinks/drinkingglass/shotglass"),
 });
 
-// /datum/design/shot_glass/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:286)
+// autolathe_designs.dm:286
 rt.def("/datum/design/shot_glass/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$glass", 100]));
-	rt.setSv(f, "category", rt.list("initial", "Dinnerware"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$glass", 100]);
+	this.category = list("initial", "Dinnerware");
 	return f.dot;
 });
 
@@ -683,13 +613,11 @@ rt.type(3027, "/datum/design/shaker", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/reagent_containers/food/drinks/shaker"),
 });
 
-// /datum/design/shaker/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:294)
+// autolathe_designs.dm:294
 rt.def("/datum/design/shaker/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 1500]));
-	rt.setSv(f, "category", rt.list("initial", "Dinnerware"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 1500]);
+	this.category = list("initial", "Dinnerware");
 	return f.dot;
 });
 
@@ -702,13 +630,11 @@ rt.type(3028, "/datum/design/cultivator", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/cultivator"),
 });
 
-// /datum/design/cultivator/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:302)
+// autolathe_designs.dm:302
 rt.def("/datum/design/cultivator/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 50]));
-	rt.setSv(f, "category", rt.list("initial", "Misc"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 50]);
+	this.category = list("initial", "Misc");
 	return f.dot;
 });
 
@@ -721,13 +647,11 @@ rt.type(3029, "/datum/design/plant_analyzer", "/datum/design", {
 	build_path: rt.typePath("/obj/item/device/plant_analyzer"),
 });
 
-// /datum/design/plant_analyzer/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:310)
+// autolathe_designs.dm:310
 rt.def("/datum/design/plant_analyzer/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 30, "$glass", 20]));
-	rt.setSv(f, "category", rt.list("initial", "Misc"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 30, "$glass", 20]);
+	this.category = list("initial", "Misc");
 	return f.dot;
 });
 
@@ -740,13 +664,11 @@ rt.type(3030, "/datum/design/shovel", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/shovel"),
 });
 
-// /datum/design/shovel/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:318)
+// autolathe_designs.dm:318
 rt.def("/datum/design/shovel/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 50]));
-	rt.setSv(f, "category", rt.list("initial", "Misc"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 50]);
+	this.category = list("initial", "Misc");
 	return f.dot;
 });
 
@@ -759,13 +681,11 @@ rt.type(3031, "/datum/design/spade", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/shovel/spade"),
 });
 
-// /datum/design/spade/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:326)
+// autolathe_designs.dm:326
 rt.def("/datum/design/spade/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 50]));
-	rt.setSv(f, "category", rt.list("initial", "Misc"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 50]);
+	this.category = list("initial", "Misc");
 	return f.dot;
 });
 
@@ -778,13 +698,11 @@ rt.type(3032, "/datum/design/hatchet", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/hatchet"),
 });
 
-// /datum/design/hatchet/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:334)
+// autolathe_designs.dm:334
 rt.def("/datum/design/hatchet/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 15000]));
-	rt.setSv(f, "category", rt.list("initial", "Misc"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 15000]);
+	this.category = list("initial", "Misc");
 	return f.dot;
 });
 
@@ -797,13 +715,11 @@ rt.type(3033, "/datum/design/scalpel", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/scalpel"),
 });
 
-// /datum/design/scalpel/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:342)
+// autolathe_designs.dm:342
 rt.def("/datum/design/scalpel/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 4000, "$glass", 1000]));
-	rt.setSv(f, "category", rt.list("initial", "Medical"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 4000, "$glass", 1000]);
+	this.category = list("initial", "Medical");
 	return f.dot;
 });
 
@@ -816,13 +732,11 @@ rt.type(3034, "/datum/design/circular_saw", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/circular_saw"),
 });
 
-// /datum/design/circular_saw/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:350)
+// autolathe_designs.dm:350
 rt.def("/datum/design/circular_saw/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 10000, "$glass", 6000]));
-	rt.setSv(f, "category", rt.list("initial", "Medical"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 10000, "$glass", 6000]);
+	this.category = list("initial", "Medical");
 	return f.dot;
 });
 
@@ -835,13 +749,11 @@ rt.type(3035, "/datum/design/surgicaldrill", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/surgicaldrill"),
 });
 
-// /datum/design/surgicaldrill/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:358)
+// autolathe_designs.dm:358
 rt.def("/datum/design/surgicaldrill/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 10000, "$glass", 6000]));
-	rt.setSv(f, "category", rt.list("initial", "Medical"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 10000, "$glass", 6000]);
+	this.category = list("initial", "Medical");
 	return f.dot;
 });
 
@@ -854,13 +766,11 @@ rt.type(3036, "/datum/design/retractor", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/retractor"),
 });
 
-// /datum/design/retractor/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:366)
+// autolathe_designs.dm:366
 rt.def("/datum/design/retractor/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 6000, "$glass", 3000]));
-	rt.setSv(f, "category", rt.list("initial", "Medical"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 6000, "$glass", 3000]);
+	this.category = list("initial", "Medical");
 	return f.dot;
 });
 
@@ -873,13 +783,11 @@ rt.type(3037, "/datum/design/cautery", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/cautery"),
 });
 
-// /datum/design/cautery/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:374)
+// autolathe_designs.dm:374
 rt.def("/datum/design/cautery/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 2500, "$glass", 750]));
-	rt.setSv(f, "category", rt.list("initial", "Medical"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 2500, "$glass", 750]);
+	this.category = list("initial", "Medical");
 	return f.dot;
 });
 
@@ -892,13 +800,11 @@ rt.type(3038, "/datum/design/hemostat", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/hemostat"),
 });
 
-// /datum/design/hemostat/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:382)
+// autolathe_designs.dm:382
 rt.def("/datum/design/hemostat/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 5000, "$glass", 2500]));
-	rt.setSv(f, "category", rt.list("initial", "Medical"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 5000, "$glass", 2500]);
+	this.category = list("initial", "Medical");
 	return f.dot;
 });
 
@@ -911,13 +817,11 @@ rt.type(3039, "/datum/design/beaker", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/reagent_containers/glass/beaker"),
 });
 
-// /datum/design/beaker/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:390)
+// autolathe_designs.dm:390
 rt.def("/datum/design/beaker/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$glass", 500]));
-	rt.setSv(f, "category", rt.list("initial", "Medical"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$glass", 500]);
+	this.category = list("initial", "Medical");
 	return f.dot;
 });
 
@@ -930,13 +834,11 @@ rt.type(3040, "/datum/design/large_beaker", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/reagent_containers/glass/beaker/large"),
 });
 
-// /datum/design/large_beaker/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:398)
+// autolathe_designs.dm:398
 rt.def("/datum/design/large_beaker/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$glass", 2500]));
-	rt.setSv(f, "category", rt.list("initial", "Medical"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$glass", 2500]);
+	this.category = list("initial", "Medical");
 	return f.dot;
 });
 
@@ -949,13 +851,11 @@ rt.type(3041, "/datum/design/healthanalyzer", "/datum/design", {
 	build_path: rt.typePath("/obj/item/device/healthanalyzer"),
 });
 
-// /datum/design/healthanalyzer/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:406)
+// autolathe_designs.dm:406
 rt.def("/datum/design/healthanalyzer/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 500, "$glass", 50]));
-	rt.setSv(f, "category", rt.list("initial", "Medical"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 500, "$glass", 50]);
+	this.category = list("initial", "Medical");
 	return f.dot;
 });
 
@@ -968,13 +868,11 @@ rt.type(3042, "/datum/design/beanbag_slug", "/datum/design", {
 	build_path: rt.typePath("/obj/item/ammo_casing/shotgun/beanbag"),
 });
 
-// /datum/design/beanbag_slug/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:414)
+// autolathe_designs.dm:414
 rt.def("/datum/design/beanbag_slug/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 250]));
-	rt.setSv(f, "category", rt.list("initial", "Security"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 250]);
+	this.category = list("initial", "Security");
 	return f.dot;
 });
 
@@ -987,13 +885,11 @@ rt.type(3043, "/datum/design/rubbershot", "/datum/design", {
 	build_path: rt.typePath("/obj/item/ammo_casing/shotgun/rubbershot"),
 });
 
-// /datum/design/rubbershot/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:422)
+// autolathe_designs.dm:422
 rt.def("/datum/design/rubbershot/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 4000]));
-	rt.setSv(f, "category", rt.list("initial", "Security"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 4000]);
+	this.category = list("initial", "Security");
 	return f.dot;
 });
 
@@ -1006,13 +902,11 @@ rt.type(3044, "/datum/design/c38", "/datum/design", {
 	build_path: rt.typePath("/obj/item/ammo_box/c38"),
 });
 
-// /datum/design/c38/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:430)
+// autolathe_designs.dm:430
 rt.def("/datum/design/c38/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 30000]));
-	rt.setSv(f, "category", rt.list("initial", "Security"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 30000]);
+	this.category = list("initial", "Security");
 	return f.dot;
 });
 
@@ -1025,13 +919,11 @@ rt.type(3045, "/datum/design/recorder", "/datum/design", {
 	build_path: rt.typePath("/obj/item/device/taperecorder/empty"),
 });
 
-// /datum/design/recorder/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:438)
+// autolathe_designs.dm:438
 rt.def("/datum/design/recorder/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 60, "$glass", 30]));
-	rt.setSv(f, "category", rt.list("initial", "Misc"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 60, "$glass", 30]);
+	this.category = list("initial", "Misc");
 	return f.dot;
 });
 
@@ -1044,13 +936,11 @@ rt.type(3046, "/datum/design/tape", "/datum/design", {
 	build_path: rt.typePath("/obj/item/device/tape"),
 });
 
-// /datum/design/tape/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:446)
+// autolathe_designs.dm:446
 rt.def("/datum/design/tape/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 20, "$glass", 5]));
-	rt.setSv(f, "category", rt.list("initial", "Misc"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 20, "$glass", 5]);
+	this.category = list("initial", "Misc");
 	return f.dot;
 });
 
@@ -1063,13 +953,11 @@ rt.type(3047, "/datum/design/igniter", "/datum/design", {
 	build_path: rt.typePath("/obj/item/device/assembly/igniter"),
 });
 
-// /datum/design/igniter/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:454)
+// autolathe_designs.dm:454
 rt.def("/datum/design/igniter/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 500, "$glass", 50]));
-	rt.setSv(f, "category", rt.list("initial", "Misc"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 500, "$glass", 50]);
+	this.category = list("initial", "Misc");
 	return f.dot;
 });
 
@@ -1082,13 +970,11 @@ rt.type(3048, "/datum/design/signaler", "/datum/design", {
 	build_path: rt.typePath("/obj/item/device/assembly/signaler"),
 });
 
-// /datum/design/signaler/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:462)
+// autolathe_designs.dm:462
 rt.def("/datum/design/signaler/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 400, "$glass", 120]));
-	rt.setSv(f, "category", rt.list("initial", "T-Comm"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 400, "$glass", 120]);
+	this.category = list("initial", "T-Comm");
 	return f.dot;
 });
 
@@ -1101,13 +987,11 @@ rt.type(3049, "/datum/design/radio_headset", "/datum/design", {
 	build_path: rt.typePath("/obj/item/device/radio/headset"),
 });
 
-// /datum/design/radio_headset/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:470)
+// autolathe_designs.dm:470
 rt.def("/datum/design/radio_headset/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 75]));
-	rt.setSv(f, "category", rt.list("initial", "T-Comm"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 75]);
+	this.category = list("initial", "T-Comm");
 	return f.dot;
 });
 
@@ -1120,13 +1004,11 @@ rt.type(3050, "/datum/design/bounced_radio", "/datum/design", {
 	build_path: rt.typePath("/obj/item/device/radio/off"),
 });
 
-// /datum/design/bounced_radio/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:478)
+// autolathe_designs.dm:478
 rt.def("/datum/design/bounced_radio/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 75, "$glass", 25]));
-	rt.setSv(f, "category", rt.list("initial", "T-Comm"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 75, "$glass", 25]);
+	this.category = list("initial", "T-Comm");
 	return f.dot;
 });
 
@@ -1139,13 +1021,11 @@ rt.type(3051, "/datum/design/intercom_frame", "/datum/design", {
 	build_path: rt.typePath("/obj/item/wallframe/intercom"),
 });
 
-// /datum/design/intercom_frame/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:486)
+// autolathe_designs.dm:486
 rt.def("/datum/design/intercom_frame/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 75, "$glass", 25]));
-	rt.setSv(f, "category", rt.list("initial", "T-Comm"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 75, "$glass", 25]);
+	this.category = list("initial", "T-Comm");
 	return f.dot;
 });
 
@@ -1158,13 +1038,11 @@ rt.type(3052, "/datum/design/infrared_emitter", "/datum/design", {
 	build_path: rt.typePath("/obj/item/device/assembly/infra"),
 });
 
-// /datum/design/infrared_emitter/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:494)
+// autolathe_designs.dm:494
 rt.def("/datum/design/infrared_emitter/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 1000, "$glass", 500]));
-	rt.setSv(f, "category", rt.list("initial", "Misc"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 1000, "$glass", 500]);
+	this.category = list("initial", "Misc");
 	return f.dot;
 });
 
@@ -1177,13 +1055,11 @@ rt.type(3053, "/datum/design/health_sensor", "/datum/design", {
 	build_path: rt.typePath("/obj/item/device/assembly/health"),
 });
 
-// /datum/design/health_sensor/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:502)
+// autolathe_designs.dm:502
 rt.def("/datum/design/health_sensor/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 800, "$glass", 200]));
-	rt.setSv(f, "category", rt.list("initial", "Medical"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 800, "$glass", 200]);
+	this.category = list("initial", "Medical");
 	return f.dot;
 });
 
@@ -1196,13 +1072,11 @@ rt.type(3054, "/datum/design/timer", "/datum/design", {
 	build_path: rt.typePath("/obj/item/device/assembly/timer"),
 });
 
-// /datum/design/timer/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:510)
+// autolathe_designs.dm:510
 rt.def("/datum/design/timer/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 500, "$glass", 50]));
-	rt.setSv(f, "category", rt.list("initial", "Misc"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 500, "$glass", 50]);
+	this.category = list("initial", "Misc");
 	return f.dot;
 });
 
@@ -1215,13 +1089,11 @@ rt.type(3055, "/datum/design/voice_analyser", "/datum/design", {
 	build_path: rt.typePath("/obj/item/device/assembly/voice"),
 });
 
-// /datum/design/voice_analyser/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:518)
+// autolathe_designs.dm:518
 rt.def("/datum/design/voice_analyser/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 500, "$glass", 50]));
-	rt.setSv(f, "category", rt.list("initial", "Misc"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 500, "$glass", 50]);
+	this.category = list("initial", "Misc");
 	return f.dot;
 });
 
@@ -1234,13 +1106,11 @@ rt.type(3056, "/datum/design/light_tube", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/light/tube"),
 });
 
-// /datum/design/light_tube/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:526)
+// autolathe_designs.dm:526
 rt.def("/datum/design/light_tube/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$glass", 100]));
-	rt.setSv(f, "category", rt.list("initial", "Construction"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$glass", 100]);
+	this.category = list("initial", "Construction");
 	return f.dot;
 });
 
@@ -1253,13 +1123,11 @@ rt.type(3057, "/datum/design/light_bulb", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/light/bulb"),
 });
 
-// /datum/design/light_bulb/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:534)
+// autolathe_designs.dm:534
 rt.def("/datum/design/light_bulb/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$glass", 100]));
-	rt.setSv(f, "category", rt.list("initial", "Construction"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$glass", 100]);
+	this.category = list("initial", "Construction");
 	return f.dot;
 });
 
@@ -1272,13 +1140,11 @@ rt.type(3058, "/datum/design/camera_assembly", "/datum/design", {
 	build_path: rt.typePath("/obj/item/wallframe/camera"),
 });
 
-// /datum/design/camera_assembly/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:542)
+// autolathe_designs.dm:542
 rt.def("/datum/design/camera_assembly/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 400, "$glass", 250]));
-	rt.setSv(f, "category", rt.list("initial", "Construction"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 400, "$glass", 250]);
+	this.category = list("initial", "Construction");
 	return f.dot;
 });
 
@@ -1291,13 +1157,11 @@ rt.type(3059, "/datum/design/newscaster_frame", "/datum/design", {
 	build_path: rt.typePath("/obj/item/wallframe/newscaster"),
 });
 
-// /datum/design/newscaster_frame/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:550)
+// autolathe_designs.dm:550
 rt.def("/datum/design/newscaster_frame/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 14000, "$glass", 8000]));
-	rt.setSv(f, "category", rt.list("initial", "Construction"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 14000, "$glass", 8000]);
+	this.category = list("initial", "Construction");
 	return f.dot;
 });
 
@@ -1310,13 +1174,11 @@ rt.type(3060, "/datum/design/syringe", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/reagent_containers/syringe"),
 });
 
-// /datum/design/syringe/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:558)
+// autolathe_designs.dm:558
 rt.def("/datum/design/syringe/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 10, "$glass", 20]));
-	rt.setSv(f, "category", rt.list("initial", "Medical"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 10, "$glass", 20]);
+	this.category = list("initial", "Medical");
 	return f.dot;
 });
 
@@ -1329,13 +1191,11 @@ rt.type(3061, "/datum/design/prox_sensor", "/datum/design", {
 	build_path: rt.typePath("/obj/item/device/assembly/prox_sensor"),
 });
 
-// /datum/design/prox_sensor/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:566)
+// autolathe_designs.dm:566
 rt.def("/datum/design/prox_sensor/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 800, "$glass", 200]));
-	rt.setSv(f, "category", rt.list("initial", "Misc"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 800, "$glass", 200]);
+	this.category = list("initial", "Misc");
 	return f.dot;
 });
 
@@ -1348,13 +1208,11 @@ rt.type(3062, "/datum/design/foam_dart", "/datum/design", {
 	build_path: rt.typePath("/obj/item/ammo_box/foambox"),
 });
 
-// /datum/design/foam_dart/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:574)
+// autolathe_designs.dm:574
 rt.def("/datum/design/foam_dart/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 500]));
-	rt.setSv(f, "category", rt.list("initial", "Misc"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 500]);
+	this.category = list("initial", "Misc");
 	return f.dot;
 });
 
@@ -1367,13 +1225,11 @@ rt.type(3063, "/datum/design/flamethrower", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/flamethrower/full"),
 });
 
-// /datum/design/flamethrower/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:583)
+// autolathe_designs.dm:583
 rt.def("/datum/design/flamethrower/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 500]));
-	rt.setSv(f, "category", rt.list("hacked", "Weapons and ammo"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 500]);
+	this.category = list("hacked", "Weapons and ammo");
 	return f.dot;
 });
 
@@ -1386,13 +1242,11 @@ rt.type(3064, "/datum/design/rcd", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/construction/rcd"),
 });
 
-// /datum/design/rcd/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:591)
+// autolathe_designs.dm:591
 rt.def("/datum/design/rcd/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 30000]));
-	rt.setSv(f, "category", rt.list("hacked", "Construction"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 30000]);
+	this.category = list("hacked", "Construction");
 	return f.dot;
 });
 
@@ -1405,13 +1259,11 @@ rt.type(3065, "/datum/design/rpd", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/pipe_dispenser"),
 });
 
-// /datum/design/rpd/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:599)
+// autolathe_designs.dm:599
 rt.def("/datum/design/rpd/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 75000, "$glass", 37500]));
-	rt.setSv(f, "category", rt.list("hacked", "Construction"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 75000, "$glass", 37500]);
+	this.category = list("hacked", "Construction");
 	return f.dot;
 });
 
@@ -1424,13 +1276,11 @@ rt.type(3066, "/datum/design/electropack", "/datum/design", {
 	build_path: rt.typePath("/obj/item/device/electropack"),
 });
 
-// /datum/design/electropack/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:607)
+// autolathe_designs.dm:607
 rt.def("/datum/design/electropack/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 10000, "$glass", 2500]));
-	rt.setSv(f, "category", rt.list("hacked", "Tools"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 10000, "$glass", 2500]);
+	this.category = list("hacked", "Tools");
 	return f.dot;
 });
 
@@ -1443,13 +1293,11 @@ rt.type(3067, "/datum/design/large_welding_tool", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/weldingtool/largetank"),
 });
 
-// /datum/design/large_welding_tool/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:615)
+// autolathe_designs.dm:615
 rt.def("/datum/design/large_welding_tool/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 70, "$glass", 60]));
-	rt.setSv(f, "category", rt.list("hacked", "Tools"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 70, "$glass", 60]);
+	this.category = list("hacked", "Tools");
 	return f.dot;
 });
 
@@ -1462,13 +1310,11 @@ rt.type(3068, "/datum/design/handcuffs", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/restraints/handcuffs"),
 });
 
-// /datum/design/handcuffs/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:623)
+// autolathe_designs.dm:623
 rt.def("/datum/design/handcuffs/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 500]));
-	rt.setSv(f, "category", rt.list("hacked", "Security"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 500]);
+	this.category = list("hacked", "Security");
 	return f.dot;
 });
 
@@ -1481,13 +1327,11 @@ rt.type(3069, "/datum/design/receiver", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weaponcrafting/receiver"),
 });
 
-// /datum/design/receiver/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:631)
+// autolathe_designs.dm:631
 rt.def("/datum/design/receiver/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 15000]));
-	rt.setSv(f, "category", rt.list("hacked", "Security"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 15000]);
+	this.category = list("hacked", "Security");
 	return f.dot;
 });
 
@@ -1500,13 +1344,11 @@ rt.type(3070, "/datum/design/shotgun_slug", "/datum/design", {
 	build_path: rt.typePath("/obj/item/ammo_casing/shotgun"),
 });
 
-// /datum/design/shotgun_slug/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:639)
+// autolathe_designs.dm:639
 rt.def("/datum/design/shotgun_slug/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 4000]));
-	rt.setSv(f, "category", rt.list("hacked", "Security"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 4000]);
+	this.category = list("hacked", "Security");
 	return f.dot;
 });
 
@@ -1519,13 +1361,11 @@ rt.type(3071, "/datum/design/buckshot_shell", "/datum/design", {
 	build_path: rt.typePath("/obj/item/ammo_casing/shotgun/buckshot"),
 });
 
-// /datum/design/buckshot_shell/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:647)
+// autolathe_designs.dm:647
 rt.def("/datum/design/buckshot_shell/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 4000]));
-	rt.setSv(f, "category", rt.list("hacked", "Security"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 4000]);
+	this.category = list("hacked", "Security");
 	return f.dot;
 });
 
@@ -1538,13 +1378,11 @@ rt.type(3072, "/datum/design/shotgun_dart", "/datum/design", {
 	build_path: rt.typePath("/obj/item/ammo_casing/shotgun/dart"),
 });
 
-// /datum/design/shotgun_dart/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:655)
+// autolathe_designs.dm:655
 rt.def("/datum/design/shotgun_dart/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 4000]));
-	rt.setSv(f, "category", rt.list("hacked", "Security"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 4000]);
+	this.category = list("hacked", "Security");
 	return f.dot;
 });
 
@@ -1557,13 +1395,11 @@ rt.type(3073, "/datum/design/incendiary_slug", "/datum/design", {
 	build_path: rt.typePath("/obj/item/ammo_casing/shotgun/incendiary"),
 });
 
-// /datum/design/incendiary_slug/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:663)
+// autolathe_designs.dm:663
 rt.def("/datum/design/incendiary_slug/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 4000]));
-	rt.setSv(f, "category", rt.list("hacked", "Security"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 4000]);
+	this.category = list("hacked", "Security");
 	return f.dot;
 });
 
@@ -1576,13 +1412,11 @@ rt.type(3074, "/datum/design/riot_dart", "/datum/design", {
 	build_path: rt.typePath("/obj/item/ammo_casing/caseless/foam_dart/riot"),
 });
 
-// /datum/design/riot_dart/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:671)
+// autolathe_designs.dm:671
 rt.def("/datum/design/riot_dart/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 1000]));
-	rt.setSv(f, "category", rt.list("hacked", "Security"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 1000]);
+	this.category = list("hacked", "Security");
 	return f.dot;
 });
 
@@ -1595,13 +1429,11 @@ rt.type(3075, "/datum/design/riot_darts", "/datum/design", {
 	build_path: rt.typePath("/obj/item/ammo_box/foambox/riot"),
 });
 
-// /datum/design/riot_darts/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:679)
+// autolathe_designs.dm:679
 rt.def("/datum/design/riot_darts/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 50000]));
-	rt.setSv(f, "category", rt.list("hacked", "Security"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 50000]);
+	this.category = list("hacked", "Security");
 	return f.dot;
 });
 
@@ -1614,13 +1446,11 @@ rt.type(3076, "/datum/design/a357", "/datum/design", {
 	build_path: rt.typePath("/obj/item/ammo_box/a357"),
 });
 
-// /datum/design/a357/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:687)
+// autolathe_designs.dm:687
 rt.def("/datum/design/a357/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 30000]));
-	rt.setSv(f, "category", rt.list("hacked", "Security"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 30000]);
+	this.category = list("hacked", "Security");
 	return f.dot;
 });
 
@@ -1633,13 +1463,11 @@ rt.type(3077, "/datum/design/c10mm", "/datum/design", {
 	build_path: rt.typePath("/obj/item/ammo_box/c10mm"),
 });
 
-// /datum/design/c10mm/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:695)
+// autolathe_designs.dm:695
 rt.def("/datum/design/c10mm/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 30000]));
-	rt.setSv(f, "category", rt.list("hacked", "Security"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 30000]);
+	this.category = list("hacked", "Security");
 	return f.dot;
 });
 
@@ -1652,13 +1480,11 @@ rt.type(3078, "/datum/design/c45", "/datum/design", {
 	build_path: rt.typePath("/obj/item/ammo_box/c45"),
 });
 
-// /datum/design/c45/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:703)
+// autolathe_designs.dm:703
 rt.def("/datum/design/c45/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 30000]));
-	rt.setSv(f, "category", rt.list("hacked", "Security"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 30000]);
+	this.category = list("hacked", "Security");
 	return f.dot;
 });
 
@@ -1671,13 +1497,11 @@ rt.type(3079, "/datum/design/c9mm", "/datum/design", {
 	build_path: rt.typePath("/obj/item/ammo_box/c9mm"),
 });
 
-// /datum/design/c9mm/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:711)
+// autolathe_designs.dm:711
 rt.def("/datum/design/c9mm/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 30000]));
-	rt.setSv(f, "category", rt.list("hacked", "Security"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 30000]);
+	this.category = list("hacked", "Security");
 	return f.dot;
 });
 
@@ -1690,13 +1514,11 @@ rt.type(3080, "/datum/design/cleaver", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/kitchen/knife/butcher"),
 });
 
-// /datum/design/cleaver/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:719)
+// autolathe_designs.dm:719
 rt.def("/datum/design/cleaver/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 18000]));
-	rt.setSv(f, "category", rt.list("hacked", "Dinnerware"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 18000]);
+	this.category = list("hacked", "Dinnerware");
 	return f.dot;
 });
 
@@ -1709,13 +1531,11 @@ rt.type(3081, "/datum/design/spraycan", "/datum/design", {
 	build_path: rt.typePath("/obj/item/toy/crayon/spraycan"),
 });
 
-// /datum/design/spraycan/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:727)
+// autolathe_designs.dm:727
 rt.def("/datum/design/spraycan/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 100, "$glass", 100]));
-	rt.setSv(f, "category", rt.list("initial", "Tools"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 100, "$glass", 100]);
+	this.category = list("initial", "Tools");
 	return f.dot;
 });
 
@@ -1728,13 +1548,11 @@ rt.type(3082, "/datum/design/desttagger", "/datum/design", {
 	build_path: rt.typePath("/obj/item/device/destTagger"),
 });
 
-// /datum/design/desttagger/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:735)
+// autolathe_designs.dm:735
 rt.def("/datum/design/desttagger/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 250, "$glass", 125]));
-	rt.setSv(f, "category", rt.list("initial", "Electronics"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 250, "$glass", 125]);
+	this.category = list("initial", "Electronics");
 	return f.dot;
 });
 
@@ -1747,13 +1565,11 @@ rt.type(3083, "/datum/design/handlabeler", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/hand_labeler"),
 });
 
-// /datum/design/handlabeler/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:743)
+// autolathe_designs.dm:743
 rt.def("/datum/design/handlabeler/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 150, "$glass", 125]));
-	rt.setSv(f, "category", rt.list("initial", "Electronics"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 150, "$glass", 125]);
+	this.category = list("initial", "Electronics");
 	return f.dot;
 });
 
@@ -1766,13 +1582,11 @@ rt.type(3084, "/datum/design/geiger", "/datum/design", {
 	build_path: rt.typePath("/obj/item/device/geiger_counter"),
 });
 
-// /datum/design/geiger/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:751)
+// autolathe_designs.dm:751
 rt.def("/datum/design/geiger/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 150, "$glass", 150]));
-	rt.setSv(f, "category", rt.list("initial", "Tools"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 150, "$glass", 150]);
+	this.category = list("initial", "Tools");
 	return f.dot;
 });
 
@@ -1785,13 +1599,11 @@ rt.type(3085, "/datum/design/turret_control_frame", "/datum/design", {
 	build_path: rt.typePath("/obj/item/wallframe/turret_control"),
 });
 
-// /datum/design/turret_control_frame/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:759)
+// autolathe_designs.dm:759
 rt.def("/datum/design/turret_control_frame/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 12000]));
-	rt.setSv(f, "category", rt.list("initial", "Construction"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 12000]);
+	this.category = list("initial", "Construction");
 	return f.dot;
 });
 
@@ -1804,13 +1616,11 @@ rt.type(3086, "/datum/design/conveyor_belt", "/datum/design", {
 	build_path: rt.typePath("/obj/item/conveyor_construct"),
 });
 
-// /datum/design/conveyor_belt/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:767)
+// autolathe_designs.dm:767
 rt.def("/datum/design/conveyor_belt/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 5000]));
-	rt.setSv(f, "category", rt.list("initial", "Construction"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 5000]);
+	this.category = list("initial", "Construction");
 	return f.dot;
 });
 
@@ -1823,13 +1633,11 @@ rt.type(3087, "/datum/design/conveyor_switch", "/datum/design", {
 	build_path: rt.typePath("/obj/item/conveyor_switch_construct"),
 });
 
-// /datum/design/conveyor_switch/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:775)
+// autolathe_designs.dm:775
 rt.def("/datum/design/conveyor_switch/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 450, "$glass", 190]));
-	rt.setSv(f, "category", rt.list("initial", "Construction"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 450, "$glass", 190]);
+	this.category = list("initial", "Construction");
 	return f.dot;
 });
 
@@ -1842,13 +1650,11 @@ rt.type(3088, "/datum/design/laptop", "/datum/design", {
 	build_path: rt.typePath("/obj/item/device/modular_computer/laptop/buildable"),
 });
 
-// /datum/design/laptop/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:783)
+// autolathe_designs.dm:783
 rt.def("/datum/design/laptop/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 10000, "$glass", 1000]));
-	rt.setSv(f, "category", rt.list("initial", "Misc"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 10000, "$glass", 1000]);
+	this.category = list("initial", "Misc");
 	return f.dot;
 });
 
@@ -1861,13 +1667,11 @@ rt.type(3089, "/datum/design/tablet", "/datum/design", {
 	build_path: rt.typePath("/obj/item/device/modular_computer/tablet"),
 });
 
-// /datum/design/tablet/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:791)
+// autolathe_designs.dm:791
 rt.def("/datum/design/tablet/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 2000, "$glass", 1000]));
-	rt.setSv(f, "category", rt.list("initial", "Misc"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 2000, "$glass", 1000]);
+	this.category = list("initial", "Misc");
 	return f.dot;
 });
 
@@ -1880,12 +1684,10 @@ rt.type(3090, "/datum/design/slime_scanner", "/datum/design", {
 	build_path: rt.typePath("/obj/item/device/slime_scanner"),
 });
 
-// /datum/design/slime_scanner/proc/<init>  (code/modules/research/designs/autolathe_designs.dm:799)
+// autolathe_designs.dm:799
 rt.def("/datum/design/slime_scanner/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 300, "$glass", 200]));
-	rt.setSv(f, "category", rt.list("initial", "Misc"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 300, "$glass", 200]);
+	this.category = list("initial", "Misc");
 	return f.dot;
 });

@@ -1,5 +1,5 @@
 // Types declared in code/modules/assembly that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(9362, "/obj/item/device/assembly/igniter/cold", "/obj/item/device/assembly/igniter", {});
 rt.type(9371, "/obj/item/device/assembly/flash/memorizer", "/obj/item/device/assembly/flash", {

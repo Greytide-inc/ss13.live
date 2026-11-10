@@ -1,7 +1,7 @@
-// From code/modules/mob/living/simple_animal/hostile/venus_human_trap.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/simple_animal/hostile/venus_human_trap.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, fmt } = rt;
 
 
 rt.type(12715, "/obj/structure/alien/resin/flower_bud_enemy", "/obj/structure/alien/resin", {
@@ -16,42 +16,34 @@ rt.type(12715, "/obj/structure/alien/resin/flower_bud_enemy", "/obj/structure/al
 	opacity: 0,
 });
 
-// /obj/structure/alien/resin/flower_bud_enemy/proc/<init>  (code/modules/mob/living/simple_animal/hostile/venus_human_trap.dm:10)
+// venus_human_trap.dm:10
 rt.def("/obj/structure/alien/resin/flower_bud_enemy/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "canSmoothWith", rt.list());
+	parent_proc();
+	this.canSmoothWith = list();
 	return f.dot;
 });
 
-// /obj/structure/alien/resin/flower_bud_enemy/proc/New  (code/modules/mob/living/simple_animal/hostile/venus_human_trap.dm:16)  may sleep
+// venus_human_trap.dm:16
 rt.def("/obj/structure/alien/resin/flower_bud_enemy/proc/New", function* New(f: Frame) {
-	let anchors: Value = null, _T: Value = null, B: Value = null;
-	let $e: any;
-	f.vars = () => [anchors, _T, B, $e];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	anchors = rt.list();
-	anchors = rt.modify(live(anchors), rt.locate(subtract(rt.sv(f, "x"), 2), add(rt.sv(f, "y"), 2), rt.sv(f, "z")), add);
-	anchors = rt.modify(live(anchors), rt.locate(add(rt.sv(f, "x"), 2), add(rt.sv(f, "y"), 2), rt.sv(f, "z")), add);
-	anchors = rt.modify(live(anchors), rt.locate(subtract(rt.sv(f, "x"), 2), subtract(rt.sv(f, "y"), 2), rt.sv(f, "z")), add);
-	anchors = rt.modify(live(anchors), rt.locate(add(rt.sv(f, "x"), 2), subtract(rt.sv(f, "y"), 2), rt.sv(f, "z")), add);
-	_T = null;
-	rt.forList(f, 0, live(anchors), T("/turf"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_T = $e;
-		rt.setFv(f, "sleep_time", (B = (yield* g.callSrc(f, "Beam", [null, live(_T), null, "vine", "time", 9.999999848243207e+30, "maxdistance", 5, "beam_type", T("/obj/effect/ebeam/vine")], rt.Args.Named))), 10);
+	let _T: Value = null, B: Value = null;
+	yield* parent_proc();
+	let anchors: Value = list();
+	anchors += rt.locate(this.x - 2, this.y + 2, this.z);
+	anchors += rt.locate(this.x + 2, this.y + 2, this.z);
+	anchors += rt.locate(this.x - 2, this.y - 2, this.z);
+	anchors += rt.locate(this.x + 2, this.y - 2, this.z);
+	for (_T of each(anchors, T("/turf"))) {
+		(B = (yield* this.Beam(_T, "vine", { time: 1e+31, maxdistance: 5, beam_type: T("/obj/effect/ebeam/vine") }))).sleep_time = 10;
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/structure/alien/resin/flower_bud_enemy/proc/bear_fruit")])), rt.sv(f, "growth_time")]);
+	yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/structure/alien/resin/flower_bud_enemy/proc/bear_fruit"))), this.growth_time);
 	return f.dot;
 }, true);
 
-// /obj/structure/alien/resin/flower_bud_enemy/proc/bear_fruit  (code/modules/mob/living/simple_animal/hostile/venus_human_trap.dm:29)  may sleep
+// venus_human_trap.dm:29
 rt.def("/obj/structure/alien/resin/flower_bud_enemy/proc/bear_fruit", function* bear_fruit(f: Frame) {
-	yield* g.srcCall(f, "visible_message", "<span class='danger'>the plant has borne fruit!</span>");
-	yield* g.new_(f, T("/mob/living/simple_animal/hostile/venus_human_trap"), [rt.getStep(f, live(f.src), 0)]);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	this.visible_message("<span class='danger'>the plant has borne fruit!</span>");
+	yield* new_(T("/mob/living/simple_animal/hostile/venus_human_trap"), rt.getStep(f, this, 0));
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
@@ -61,15 +53,13 @@ rt.type(11219, "/obj/effect/ebeam/vine", "/obj/effect/ebeam", {
 	desc: "A thick vine, painful to the touch.",
 });
 
-// /obj/effect/ebeam/vine/proc/Crossed  (code/modules/mob/living/simple_animal/hostile/venus_human_trap.dm:41)  may sleep
+// venus_human_trap.dm:41
 rt.def("/obj/effect/ebeam/vine/proc/Crossed", function* Crossed(f: Frame, AM: Value) {
-	let L: Value = null;
-	f.vars = () => [AM, L];
-	if (!truthy((rt.istype(live(AM), T("/mob/living")) ? 1 : 0))) return f.dot;
-	L = live(AM);
-	if (truthy((rt.isIn(f, "vines", rt.fv(f, "faction", live(L))) ? 1 : 0))) return f.dot;
-	yield* g.callName(f, live(L), "adjustBruteLoss", [5]);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(L), "<span class='alert'>You cut yourself on the thorny vines.</span>"]);
+	if (!rt.istype(AM, T("/mob/living"))) return f.dot;
+	let L: Value = AM;
+	if (rt.isIn(f, "vines", L.faction)) return f.dot;
+	yield* L.adjustBruteLoss(5);
+	to_chat(L, "<span class='alert'>You cut yourself on the thorny vines.</span>");
 	return f.dot;
 }, true);
 
@@ -98,89 +88,68 @@ rt.type(4996, "/mob/living/simple_animal/hostile/venus_human_trap", "/mob/living
 	del_on_death: 1,
 });
 
-// /mob/living/simple_animal/hostile/venus_human_trap/proc/<init>  (code/modules/mob/living/simple_animal/hostile/venus_human_trap.dm:66)
+// venus_human_trap.dm:66
 rt.def("/mob/living/simple_animal/hostile/venus_human_trap/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "grasping", rt.list());
-	rt.setSv(f, "atmos_requirements", rt.alist(f, ["min_oxy", 0, "max_oxy", 0, "min_tox", 0, "max_tox", 0, "min_co2", 0, "max_co2", 0, "min_n2", 0, "max_n2", 0]));
-	rt.setSv(f, "faction", rt.list("hostile", "vines", "plants"));
+	parent_proc();
+	this.grasping = list();
+	this.atmos_requirements = rt.alist(f, ["min_oxy", 0, "max_oxy", 0, "min_tox", 0, "max_tox", 0, "min_co2", 0, "max_co2", 0, "min_n2", 0, "max_n2", 0]);
+	this.faction = list("hostile", "vines", "plants");
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/venus_human_trap/proc/Destroy  (code/modules/mob/living/simple_animal/hostile/venus_human_trap.dm:74)  may sleep
+// venus_human_trap.dm:74
 rt.def("/mob/living/simple_animal/hostile/venus_human_trap/proc/Destroy", function* Destroy(f: Frame) {
 	let L: Value = null, B: Value = null;
-	let $e: any;
-	f.vars = () => [L, B, $e];
-	L = null;
-	rt.forList(f, 0, rt.sv(f, "grasping"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		L = $e;
-		if (truthy((B = rt.index(rt.sv(f, "grasping"), live(L))))) {
-			yield* g.call(f, P("/proc/qdel"), null, [live(B)]);
+	for (L of each(this.grasping)) {
+		if (B = rt.index(this.grasping, L)) {
+			yield* qdel(B);
 		}
 	}
-	rt.endFor(f, 0);
-	rt.setSv(f, "grasping", null);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	this.grasping = null;
+	return (yield* parent_proc());
 }, true);
 
-// /mob/living/simple_animal/hostile/venus_human_trap/proc/handle_automated_action  (code/modules/mob/living/simple_animal/hostile/venus_human_trap.dm:82)  may sleep
+// venus_human_trap.dm:82
 rt.def("/mob/living/simple_animal/hostile/venus_human_trap/proc/handle_automated_action", function* handle_automated_action(f: Frame) {
 	let L: Value = null, B: Value = null, t: Value = null, a: Value = null, A: Value = null;
 	let $e: any;
-	f.vars = () => [L, B, t, a, A, $e];
-	if (!truthy((yield* g.callSuper(f, [], rt.Args.Same)))) return f.dot;
-	L = null;
-	rt.forList(f, 0, rt.sv(f, "grasping"), T("/mob/living"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		L = $e;
-		if (isEqual(rt.fv(f, "stat", live(L)), 2)) {
-			if (truthy((B = rt.index(rt.sv(f, "grasping"), live(L))))) {
-				yield* g.callName(f, live(B), "End", []);
+	if (!(yield* parent_proc())) return f.dot;
+	for (L of each(this.grasping, T("/mob/living"))) {
+		if (L.stat == 2) {
+			if (B = rt.index(this.grasping, L)) {
+				yield* B.End();
 			}
-			(rt.modSrcVar(f, "grasping", live(L), subtract));
+			this.grasping -= L;
 		}
-		if (truthy((yield* g.callName(f, live(L), "Adjacent", [live(f.src)])))) {
-			yield* g.callName(f, live(L), "attack_animal", [live(f.src)]);
-		} else {
-			if (truthy(rt.op(f, "Prob", [], [rt.sv(f, "grasp_pull_chance")]))) {
-				yield* g.srcCall(f, "setDir", rt.getDir(f, live(f.src), live(L)));
-				yield* g.call(f, P("/proc/step"), null, [live(L), rt.getDir(f, live(L), live(f.src))]);
-				yield* g.callName(f, live(L), "Knockdown", [60]);
-			}
+		if (L.Adjacent(this)) {
+			yield* L.attack_animal(this);
+		} else if (prob(this.grasp_pull_chance)) {
+			yield* this.setDir(rt.getDir(f, this, L));
+			yield* step(L, rt.getDir(f, L, this));
+			yield* L.Knockdown(60);
 		}
 	}
-	rt.endFor(f, 0);
-	if (!rt.lt(rt.len(f, rt.sv(f, "grasping")), rt.sv(f, "max_grasps"))) return f.dot;
+	if (!(rt.len(f, this.grasping) < this.max_grasps)) return f.dot;
 	L = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/view"), null, [rt.sv(f, "grasp_range"), live(f.src)])), T("/mob/living"));
+	rt.forList(f, 0, view(this.grasp_range, this), T("/mob/living"));
 	loop52: while (true) {
 		if (($e = rt.next(f, 0)) === undefined) break;
 		L = $e;
-		if ((((isEqual(live(L), live(f.src)) || truthy((yield* g.srcCall(f, "faction_check_mob", live(L))))) || truthy((rt.isIn(f, live(L), rt.sv(f, "grasping")) ? 1 : 0))) || isEqual(live(L), rt.sv(f, "target")))) {
+		if (L == this || this.faction_check_mob(L) || rt.isIn(f, L, this.grasping) || L == this.target) {
 			continue;
 		}
 		t = null;
-		rt.forList(f, 1, (yield* g.call(f, P("/proc/getline"), null, [live(f.src), live(L)])));
-		while (($e = rt.next(f, 1)) !== undefined) {
-			t = $e;
+		for (t of each(getline(this, L))) {
 			a = null;
-			rt.forList(f, 2, live(t));
-			while (($e = rt.next(f, 2)) !== undefined) {
-				a = $e;
-				if ((truthy(rt.gv(f, "density", (A = live(a)))) && !isEqual(live(A), live(L)))) {
+			for (a of each(t)) {
+				if ((A = a).density && A != L) {
 					continue loop52;
 				}
 			}
-			rt.endFor(f, 2);
 		}
-		rt.endFor(f, 1);
-		if (truthy(rt.op(f, "Prob", [], [rt.sv(f, "grasp_chance")]))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(L), fmt("<span class='userdanger'>＄！ has you entangled!</span>", [live(f.src)])]);
-			rt.setAt(rt.sv(f, "grasping"), live(L), (yield* g.callSrc(f, "Beam", [null, live(L), null, "vine", "time", 9.999999848243207e+30, "maxdistance", 5, "beam_type", T("/obj/effect/ebeam/vine")], rt.Args.Named)));
+		if (prob(this.grasp_chance)) {
+			to_chat(L, fmt("<span class='userdanger'>＄！ has you entangled!</span>", [this]));
+			rt.setAt(this.grasping, L, (yield* this.Beam(L, "vine", { time: 1e+31, maxdistance: 5, beam_type: T("/obj/effect/ebeam/vine") })));
 			break;
 		}
 	}
@@ -188,20 +157,18 @@ rt.def("/mob/living/simple_animal/hostile/venus_human_trap/proc/handle_automated
 	return f.dot;
 }, true, { waitfor: false });
 
-// /mob/living/simple_animal/hostile/venus_human_trap/proc/OpenFire  (code/modules/mob/living/simple_animal/hostile/venus_human_trap.dm:117)  may sleep
+// venus_human_trap.dm:117
 rt.def("/mob/living/simple_animal/hostile/venus_human_trap/proc/OpenFire", function* OpenFire(f: Frame, the_target: Value) {
-	let dist: Value = null;
-	f.vars = () => [the_target, dist];
-	dist = (yield* g.call(f, P("/proc/get_dist"), null, [live(f.src), live(the_target)]));
-	yield* g.callSrc(f, "Beam", [null, live(the_target), null, "vine", "time", multiply(live(dist), 2), "maxdistance", add(live(dist), 2), "beam_type", T("/obj/effect/ebeam/vine")], rt.Args.Named);
-	yield* g.callName(f, live(the_target), "attack_animal", [live(f.src)]);
+	let dist: Value = get_dist(this, the_target);
+	yield* this.Beam(the_target, "vine", { time: dist * 2, maxdistance: dist + 2, beam_type: T("/obj/effect/ebeam/vine") });
+	yield* the_target.attack_animal(this);
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/venus_human_trap/proc/CanAttack  (code/modules/mob/living/simple_animal/hostile/venus_human_trap.dm:123)
-rt.def("/mob/living/simple_animal/hostile/venus_human_trap/proc/CanAttack", function CanAttack(f: Frame) {
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	if (!truthy(live(f.dot))) return f.dot;
-	if (!truthy((rt.isIn(f, live(f.args[0]), rt.sv(f, "grasping")) ? 1 : 0))) return f.dot;
+// venus_human_trap.dm:123
+rt.def("/mob/living/simple_animal/hostile/venus_human_trap/proc/CanAttack", function CanAttack(f: Frame, the_target: Value) {
+	f.dot = parent_proc();
+	if (!f.dot) return f.dot;
+	if (!rt.isIn(f, the_target, this.grasping)) return f.dot;
 	return 0;
-}, false, { args: ["the_target"] });
+}, false);

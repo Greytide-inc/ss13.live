@@ -1,7 +1,7 @@
-// From code/game/objects/items/weapons/grenades/clusterbuster.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/weapons/grenades/clusterbuster.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(6901, "/obj/item/weapon/grenade/clusterbuster", "/obj/item/weapon/grenade", {
@@ -12,31 +12,27 @@ rt.type(6901, "/obj/item/weapon/grenade/clusterbuster", "/obj/item/weapon/grenad
 	icon_state: "clusterbang",
 });
 
-// /obj/item/weapon/grenade/clusterbuster/proc/prime  (code/game/objects/items/weapons/grenades/clusterbuster.dm:12)  may sleep
+// clusterbuster.dm:12
 rt.def("/obj/item/weapon/grenade/clusterbuster/proc/prime", function* prime(f: Frame) {
-	let numspawned: Value = null, again: Value = null, more: Value = null, loop: Value = null;
-	f.vars = () => [numspawned, again, more, loop];
-	yield* g.srcCall(f, "update_mob");
-	numspawned = (yield* g.call(f, P("/proc/rand"), null, [4, 8]));
-	again = 0;
-	more = null;
-	more = live(numspawned);
-	while (rt.gt(live(more), 0)) {
-		if (truthy(rt.op(f, "Prob", [], [35]))) {
-			again = rt.inc(live(again), 1);
-			numspawned = rt.inc(live(numspawned), -1);
+	yield* this.update_mob();
+	let numspawned: Value = rand(4, 8);
+	let again: Value = 0;
+	let more: Value = numspawned;
+	while (more > 0) {
+		if (prob(35)) {
+			again++;
+			numspawned--;
 		}
-		more = rt.inc(live(more), -1);
+		more--;
 	}
-	loop = null;
-	loop = live(again);
-	while (rt.gt(live(loop), 0)) {
-		yield* g.new_(f, T("/obj/item/weapon/grenade/clusterbuster/segment"), [rt.sv(f, "loc"), rt.sv(f, "payload")]);
-		loop = rt.inc(live(loop), -1);
+	let loop: Value = again;
+	while (loop > 0) {
+		yield* new_(T("/obj/item/weapon/grenade/clusterbuster/segment"), this.loc, this.payload);
+		loop--;
 	}
-	yield* g.new_(f, T("/obj/effect/payload_spawner"), [rt.sv(f, "loc"), rt.sv(f, "payload"), live(numspawned)]);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/weapons/armbomb.ogg"), 75, 1, -3]);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* new_(T("/obj/effect/payload_spawner"), this.loc, this.payload, numspawned);
+	playsound(this.loc, rt.rsc("sound/weapons/armbomb.ogg"), 75, 1, -3);
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
@@ -47,63 +43,58 @@ rt.type(6902, "/obj/item/weapon/grenade/clusterbuster/segment", "/obj/item/weapo
 	icon_state: "clusterbang_segment",
 });
 
-// /obj/item/weapon/grenade/clusterbuster/segment/proc/New  (code/game/objects/items/weapons/grenades/clusterbuster.dm:41)  may sleep
+// clusterbuster.dm:41
 rt.def("/obj/item/weapon/grenade/clusterbuster/segment/proc/New", function* New(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = T("/obj/item/weapon/grenade/flashbang/cluster");
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "icon_state", "clusterbang_segment_active");
-	rt.setSv(f, "payload", live(f.args[1]));
-	rt.setSv(f, "active", 1);
-	yield* g.call(f, P("/proc/walk_away"), null, [live(f.src), live(f.args[0]), (yield* g.call(f, P("/proc/rand"), null, [1, 4]))]);
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/item/weapon/grenade/clusterbuster/segment/proc/prime")])), (yield* g.call(f, P("/proc/rand"), null, [15, 60]))]);
+	yield* parent_proc();
+	this.icon_state = "clusterbang_segment_active";
+	this.payload = f.args[1];
+	this.active = 1;
+	walk_away(this, f.args[0], rand(1, 4));
+	yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/item/weapon/grenade/clusterbuster/segment/proc/prime"))), rand(15, 60));
 	return f.dot;
 }, true, { args: ["loc", "payload_type"] });
 
-// /obj/item/weapon/grenade/clusterbuster/segment/proc/prime  (code/game/objects/items/weapons/grenades/clusterbuster.dm:50)  may sleep
+// clusterbuster.dm:50
 rt.def("/obj/item/weapon/grenade/clusterbuster/segment/proc/prime", function* prime(f: Frame) {
-	yield* g.new_(f, T("/obj/effect/payload_spawner"), [rt.sv(f, "loc"), rt.sv(f, "payload"), (yield* g.call(f, P("/proc/rand"), null, [4, 8]))]);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/weapons/armbomb.ogg"), 75, 1, -3]);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* new_(T("/obj/effect/payload_spawner"), this.loc, this.payload, rand(4, 8));
+	playsound(this.loc, rt.rsc("sound/weapons/armbomb.ogg"), 75, 1, -3);
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
 rt.type(11952, "/obj/effect/payload_spawner", "/obj/effect", {});
 
-// /obj/effect/payload_spawner/proc/New  (code/game/objects/items/weapons/grenades/clusterbuster.dm:61)  may sleep
+// clusterbuster.dm:61
 rt.def("/obj/effect/payload_spawner/proc/New", function* New(f: Frame, newloc: Value, type: Value, numspawned: Value) {
-	let loop: Value = null, _P: Value = null;
-	f.vars = () => [newloc, type, numspawned, loop, _P];
-	loop = null;
-	loop = live(numspawned);
-	while (rt.gt(live(loop), 0)) {
-		rt.setFv(f, "active", (_P = (yield* g.new_(f, live(type), [rt.sv(f, "loc")]))), 1);
-		yield* g.call(f, P("/proc/walk_away"), null, [live(_P), rt.sv(f, "loc"), (yield* g.call(f, P("/proc/rand"), null, [1, 4]))]);
-		rt.spawnTail(f, (yield* g.call(f, P("/proc/rand"), null, [15, 60])), "/obj/effect/payload_spawner/proc/New: spawn at game/objects/items/weapons/grenades/clusterbuster.dm:64", newloc, type, numspawned, loop, _P);
-		loop = rt.inc(live(loop), -1);
+	let _P: Value = null;
+	let loop: Value = numspawned;
+	while (loop > 0) {
+		(_P = (yield* new_(type, this.loc))).active = 1;
+		walk_away(_P, this.loc, rand(1, 4));
+		rt.spawnTail(f, rand(15, 60), "/obj/effect/payload_spawner/proc/New: spawn at game/objects/items/weapons/grenades/clusterbuster.dm:64", newloc, type, numspawned, loop, _P);
+		loop--;
 	}
 	return f.dot;
 }, true);
 
 // a spawn((yield* g.call(f, P("/proc/rand"), null, [15, 60]))) body of /obj/effect/payload_spawner/proc/New, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/obj/effect/payload_spawner/proc/New: spawn at game/objects/items/weapons/grenades/clusterbuster.dm:64", function* (f: Frame, newloc: Value, type: Value, numspawned: Value, loop: Value, _P: Value) {
-	f.vars = () => [newloc, type, numspawned, loop, _P];
-	if ((truthy(live(_P)) && !(!truthy(live(_P)) || truthy(rt.fv(f, "gc_destroyed", live(_P)))))) {
-		yield* g.callName(f, live(_P), "prime", []);
+	if (_P && !(!_P || _P.gc_destroyed)) {
+		yield* _P.prime();
 	}
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* qdel(this);
 	return null;
 });
 
 rt.type(6916, "/obj/item/weapon/grenade/clusterbuster/random", "/obj/item/weapon/grenade/clusterbuster", {});
 
-// /obj/item/weapon/grenade/clusterbuster/random/proc/New  (code/game/objects/items/weapons/grenades/clusterbuster.dm:133)  may sleep
+// clusterbuster.dm:133
 rt.def("/obj/item/weapon/grenade/clusterbuster/random/proc/New", function* New(f: Frame) {
-	let real_type: Value = null;
-	f.vars = () => [real_type];
-	real_type = rt.op(f, "PickUnweighted", [1], [subtract((yield* g.call(f, P("/proc/typesof"), null, [T("/obj/item/weapon/grenade/clusterbuster")])), T("/obj/item/weapon/grenade/clusterbuster"))]);
-	yield* g.new_(f, live(real_type), [rt.sv(f, "loc")]);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	let real_type: Value = pick(typesof(T("/obj/item/weapon/grenade/clusterbuster")) - T("/obj/item/weapon/grenade/clusterbuster"));
+	yield* new_(real_type, this.loc);
+	yield* qdel(this);
 	return f.dot;
 }, true);

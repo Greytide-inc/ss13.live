@@ -1,7 +1,7 @@
-// From code/game/gamemodes/clock_cult/clock_scripture.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/gamemodes/clock_cult/clock_scripture.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, add, multiply } = rt;
 
 
 rt.type(1197, "/datum/clockwork_scripture", "/datum", {
@@ -27,290 +27,235 @@ rt.type(1197, "/datum/clockwork_scripture", "/datum", {
 	used_cache_components: null,
 }, { global: { neovgre_penalty: 645, inathneq_penalty: 646, sevtug_penalty: 647, nezbere_penalty: 648, nzcrentr_penalty: 649 } });
 
-// /datum/clockwork_scripture/proc/<init>  (code/game/gamemodes/clock_cult/clock_scripture.dm:16)
+// clock_scripture.dm:16
 rt.def("/datum/clockwork_scripture/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "invocations", rt.list());
-	rt.setSv(f, "consumed_components", rt.alist(f, ["belligerent_eye", 0, "vanguard_cogwheel", 0, "geis_capacitor", 0, "replicant_alloy", 0, "hierophant_ansible", 0]));
-	rt.setSv(f, "used_slab_components", rt.alist(f, ["belligerent_eye", 0, "vanguard_cogwheel", 0, "geis_capacitor", 0, "replicant_alloy", 0, "hierophant_ansible", 0]));
-	rt.setSv(f, "used_cache_components", rt.alist(f, ["belligerent_eye", 0, "vanguard_cogwheel", 0, "geis_capacitor", 0, "replicant_alloy", 0, "hierophant_ansible", 0]));
+	parent_proc();
+	this.invocations = list();
+	this.consumed_components = rt.alist(f, ["belligerent_eye", 0, "vanguard_cogwheel", 0, "geis_capacitor", 0, "replicant_alloy", 0, "hierophant_ansible", 0]);
+	this.used_slab_components = rt.alist(f, ["belligerent_eye", 0, "vanguard_cogwheel", 0, "geis_capacitor", 0, "replicant_alloy", 0, "hierophant_ansible", 0]);
+	this.used_cache_components = rt.alist(f, ["belligerent_eye", 0, "vanguard_cogwheel", 0, "geis_capacitor", 0, "replicant_alloy", 0, "hierophant_ansible", 0]);
 	return f.dot;
 });
 
-// /datum/clockwork_scripture/proc/New  (code/game/gamemodes/clock_cult/clock_scripture.dm:49)
+// clock_scripture.dm:49
 rt.def("/datum/clockwork_scripture/proc/New", function New(f: Frame) {
-	rt.callSrc(f, "creation_update", []);
+	this.creation_update();
 	return f.dot;
 });
 
-// /datum/clockwork_scripture/proc/run_scripture  (code/game/gamemodes/clock_cult/clock_scripture.dm:56)  may sleep
+// clock_scripture.dm:56
 rt.def("/datum/clockwork_scripture/proc/run_scripture", function* run_scripture(f: Frame) {
-	let successful: Value = null, i: Value = null, j: Value = null;
+	let i: Value = null, j: Value = null;
 	let $e: any;
-	f.vars = () => [successful, i, j, $e];
-	successful = 0;
-	if ((truthy((yield* g.srcCall(f, "can_recite"))) && truthy((yield* g.srcCall(f, "has_requirements"))))) {
-		if (truthy(rt.fv(f, "busy", rt.sv(f, "slab")))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "invoker"), fmt("<span class='warning'>＀ refuses to work, displaying the message: \"＀!\"</span>", [rt.sv(f, "slab"), rt.fv(f, "busy", rt.sv(f, "slab"))])]);
+	let successful: Value = 0;
+	if (this.can_recite() && this.has_requirements()) {
+		if (this.slab.busy) {
+			to_chat(this.invoker, `<span class='warning'>${this.slab} refuses to work, displaying the message: "${this.slab.busy}!"</span>`);
 			return 0;
 		}
-		rt.setFv(f, "busy", rt.sv(f, "slab"), fmt("Invocation (＀) in progress", [rt.sv(f, "name")]));
-		if (truthy(rt.gl("ratvar_awakens"))) {
-			(rt.modSrcVar(f, "channel_time", 0.5, multiply));
-		} else {
-			if (!truthy(rt.fv(f, "no_cost", rt.sv(f, "slab")))) {
-				i = null;
-				rt.forList(f, 0, rt.sv(f, "consumed_components"));
-				while (($e = rt.next(f, 0)) !== undefined) {
-					i = $e;
-					if (truthy(rt.index(rt.sv(f, "consumed_components"), live(i)))) {
-						j = null;
-						rt.forRange(f, 1, 1, rt.index(rt.sv(f, "consumed_components"), live(i)), 1);
-						while (($e = rt.next(f, 1)) !== undefined) {
-							j = $e;
-							if (truthy(rt.index(rt.fv(f, "stored_components", rt.sv(f, "slab")), live(i)))) {
-								rt.incAt(rt.fv(f, "stored_components", rt.sv(f, "slab")), live(i), -1, true);
-								rt.incAt(rt.sv(f, "used_slab_components"), live(i), 1, true);
-							} else {
-								rt.incAt(rt.gl("clockwork_component_cache"), live(i), -1, true);
-								rt.incAt(rt.sv(f, "used_cache_components"), live(i), 1, true);
-							}
+		this.slab.busy = `Invocation (${this.name}) in progress`;
+		if (GLOB.ratvar_awakens) {
+			this.channel_time *= 0.5;
+		} else if (!this.slab.no_cost) {
+			for (i of each(this.consumed_components)) {
+				if (rt.index(this.consumed_components, i)) {
+					j = null;
+					rt.forRange(f, 1, 1, rt.index(this.consumed_components, i), 1);
+					while (($e = rt.next(f, 1)) !== undefined) {
+						j = $e;
+						if (rt.index(this.slab.stored_components, i)) {
+							rt.incAt(this.slab.stored_components, i, -1, true);
+							rt.incAt(this.used_slab_components, i, 1, true);
+						} else {
+							rt.incAt(GLOB.clockwork_component_cache, i, -1, true);
+							rt.incAt(this.used_cache_components, i, 1, true);
 						}
-						rt.endFor(f, 1);
 					}
+					rt.endFor(f, 1);
 				}
-				rt.endFor(f, 0);
-				yield* g.call(f, P("/proc/update_slab_info"), null, []);
 			}
+			yield* update_slab_info();
 		}
-		(rt.modSrcVar(f, "channel_time", rt.fv(f, "speed_multiplier", rt.sv(f, "slab")), multiply));
-		if (((!truthy((yield* g.srcCall(f, "recital"))) || !truthy((yield* g.srcCall(f, "check_special_requirements")))) || !truthy((yield* g.srcCall(f, "scripture_effects"))))) {
+		this.channel_time *= this.slab.speed_multiplier;
+		if (!(yield* this.recital()) || !this.check_special_requirements() || !(yield* this.scripture_effects())) {
 			i = null;
-			rt.forList(f, 0, rt.sv(f, "used_slab_components"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				i = $e;
-				if (truthy(rt.index(rt.sv(f, "used_slab_components"), live(i)))) {
-					if (truthy(rt.sv(f, "slab"))) {
-						rt.modAt(rt.fv(f, "stored_components", rt.sv(f, "slab")), live(i), rt.index(rt.sv(f, "consumed_components"), live(i)), add);
+			for (i of each(this.used_slab_components)) {
+				if (rt.index(this.used_slab_components, i)) {
+					if (this.slab) {
+						rt.modAt(this.slab.stored_components, i, rt.index(this.consumed_components, i), add);
 					} else {
-						rt.modAt(rt.gl("clockwork_component_cache"), live(i), rt.index(rt.sv(f, "consumed_components"), live(i)), add);
+						rt.modAt(GLOB.clockwork_component_cache, i, rt.index(this.consumed_components, i), add);
 					}
 				}
 			}
-			rt.endFor(f, 0);
 			i = null;
-			rt.forList(f, 0, rt.sv(f, "used_cache_components"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				i = $e;
-				if (truthy(rt.index(rt.sv(f, "used_cache_components"), live(i)))) {
-					rt.modAt(rt.gl("clockwork_component_cache"), live(i), rt.index(rt.sv(f, "consumed_components"), live(i)), add);
+			for (i of each(this.used_cache_components)) {
+				if (rt.index(this.used_cache_components, i)) {
+					rt.modAt(GLOB.clockwork_component_cache, i, rt.index(this.consumed_components, i), add);
 				}
 			}
-			rt.endFor(f, 0);
-			yield* g.call(f, P("/proc/update_slab_info"), null, []);
+			yield* update_slab_info();
 		} else {
 			successful = 1;
 		}
 	}
-	if (truthy(rt.sv(f, "slab"))) {
-		rt.setFv(f, "busy", rt.sv(f, "slab"), null);
+	if (this.slab) {
+		this.slab.busy = null;
 	}
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-	return live(successful);
+	yield* qdel(this);
+	return successful;
 }, true);
 
-// /datum/clockwork_scripture/proc/can_recite  (code/game/gamemodes/clock_cult/clock_scripture.dm:96)
+// clock_scripture.dm:96
 rt.def("/datum/clockwork_scripture/proc/can_recite", function can_recite(f: Frame) {
-	if (((!truthy(rt.sv(f, "invoker")) || !truthy(rt.sv(f, "slab"))) || !isEqual(rt.callName(f, rt.sv(f, "invoker"), "get_active_held_item", []), rt.sv(f, "slab")))) {
+	if (!this.invoker || !this.slab || this.invoker.get_active_held_item() != this.slab) {
 		return 0;
 	}
-	if (!truthy(rt.callName(f, rt.sv(f, "invoker"), "can_speak_vocal", []))) {
-		rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "invoker"), "<span class='warning'>You are unable to speak the words of the scripture!</span>"]);
+	if (!this.invoker.can_speak_vocal()) {
+		to_chat(this.invoker, "<span class='warning'>You are unable to speak the words of the scripture!</span>");
 		return 0;
 	}
 	return 1;
 });
 
-// /datum/clockwork_scripture/proc/has_requirements  (code/game/gamemodes/clock_cult/clock_scripture.dm:105)
+// clock_scripture.dm:105
 rt.def("/datum/clockwork_scripture/proc/has_requirements", function has_requirements(f: Frame) {
-	let checked_penalty: Value = null, component_printout: Value = null, failed: Value = null, i: Value = null, cache_components: Value = null, total_components: Value = null, nearby_servants: Value = null, L: Value = null, message: Value = null, ratvarian_prob: Value = null;
+	let component_printout: Value = null, failed: Value = null, i: Value = null, cache_components: Value = null, total_components: Value = null, nearby_servants: Value = null, L: Value = null, message: Value = null, ratvarian_prob: Value = null;
 	let $0: any, $1: any, $2: any, $3: any, $4: any, $e: any;
-	f.vars = () => [checked_penalty, component_printout, failed, i, cache_components, total_components, nearby_servants, L, message, ratvarian_prob, $0, $1, $2, $3, $4, $e];
-	checked_penalty = 0;
-	if ((!truthy(rt.gl("ratvar_awakens")) && !truthy(rt.fv(f, "no_cost", rt.sv(f, "slab"))))) {
-		checked_penalty = rt.callSrc(f, "check_offstation_penalty", []);
+	let checked_penalty: Value = 0;
+	if (!GLOB.ratvar_awakens && !this.slab.no_cost) {
+		checked_penalty = this.check_offstation_penalty();
 		component_printout = "<span class='warning'>You lack the components to recite this piece of scripture!";
 		failed = 0;
-		i = null;
-		rt.forList(f, 0, rt.sv(f, "consumed_components"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			i = $e;
-			if (truthy(rt.gl("clockwork_caches"))) {
-				$0 = rt.index(rt.gl("clockwork_component_cache"), live(i));
-			} else {
-				$0 = 0;
-			}
-			cache_components = $0;
-			total_components = add(rt.index(rt.fv(f, "stored_components", rt.sv(f, "slab")), live(i)), live(cache_components));
-			if ((truthy(rt.index(rt.sv(f, "consumed_components"), live(i))) && rt.lt(live(total_components), rt.index(rt.sv(f, "consumed_components"), live(i))))) {
-				$0 = rt.call(f, P("/proc/get_component_span"), null, [live(i)]);
-				$1 = live(total_components);
-				$2 = rt.index(rt.sv(f, "consumed_components"), live(i));
-				$3 = rt.call(f, P("/proc/get_component_name"), null, [live(i)]);
-				if (!isEqual(live(i), "replicant_alloy")) {
+		for (i of each(this.consumed_components)) {
+			cache_components = GLOB.clockwork_caches ? rt.index(GLOB.clockwork_component_cache, i) : 0;
+			total_components = rt.index(this.slab.stored_components, i) + cache_components;
+			if (rt.index(this.consumed_components, i) && total_components < rt.index(this.consumed_components, i)) {
+				$0 = get_component_span(i);
+				$1 = total_components;
+				$2 = rt.index(this.consumed_components, i);
+				$3 = get_component_name(i);
+				if (i != "replicant_alloy") {
 					$4 = "s";
 				} else {
 					$4 = "";
 				}
-				component_printout = rt.modify(live(component_printout), fmt("\nYou have <span class='＀_small'><b>＀/＀</b> ＀＀.</span>", [$0, $1, $2, $3, $4]), add);
+				component_printout += `\nYou have <span class='${$0}_small'><b>${$1}/${$2}</b> ${$3}${$4}.</span>`;
 				failed = 1;
 			}
 		}
-		rt.endFor(f, 0);
-		if (truthy(live(failed))) {
-			component_printout = rt.modify(live(component_printout), "</span>", add);
-			rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "invoker"), live(component_printout)]);
+		if (failed) {
+			component_printout += "</span>";
+			to_chat(this.invoker, component_printout);
 			return 0;
 		}
 	}
-	if ((((truthy(rt.sv(f, "multiple_invokers_used")) && !truthy(rt.sv(f, "multiple_invokers_optional"))) && !truthy(rt.gl("ratvar_awakens"))) && !truthy(rt.fv(f, "no_cost", rt.sv(f, "slab"))))) {
+	if (this.multiple_invokers_used && !this.multiple_invokers_optional && !GLOB.ratvar_awakens && !this.slab.no_cost) {
 		nearby_servants = 0;
-		L = null;
-		rt.forList(f, 0, rt.call(f, P("/proc/range"), null, [1, rt.getStep(f, rt.sv(f, "invoker"), 0)]), T("/mob/living"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			L = $e;
-			if (truthy(rt.call(f, P("/proc/can_recite_scripture"), null, [live(L)]))) {
-				nearby_servants = rt.inc(live(nearby_servants), 1);
+		for (L of each(range(1, rt.getStep(f, this.invoker, 0)), T("/mob/living"))) {
+			if (can_recite_scripture(L)) {
+				nearby_servants++;
 			}
 		}
-		rt.endFor(f, 0);
-		if (rt.lt(live(nearby_servants), rt.sv(f, "invokers_required"))) {
-			rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "invoker"), fmt("<span class='warning'>There aren't enough non-mute servants nearby (＀/＀)!</span>", [live(nearby_servants), rt.sv(f, "invokers_required")])]);
+		if (nearby_servants < this.invokers_required) {
+			to_chat(this.invoker, `<span class='warning'>There aren't enough non-mute servants nearby (${nearby_servants}/${this.invokers_required})!</span>`);
 			return 0;
 		}
 	}
-	if (!truthy(rt.callSrc(f, "check_special_requirements", []))) {
+	if (!this.check_special_requirements()) {
 		return 0;
 	}
-	if ((truthy(live(checked_penalty)) && !truthy(rt.fv(f, "busy", rt.sv(f, "slab"))))) {
-		message = null;
+	if (checked_penalty && !this.slab.busy) {
 		ratvarian_prob = 0;
-		$0 = rt.sv(f, "primary_component");
-		if ($0 === "belligerent_eye") {
-			message = rt.op(f, "PickUnweighted", [1], [rt.gl("neovgre_penalty")]);
+		if (this.primary_component === "belligerent_eye") {
+			message = pick(GLOB.neovgre_penalty);
 			ratvarian_prob = 55;
-		} else if ($0 === "vanguard_cogwheel") {
-			message = rt.op(f, "PickUnweighted", [1], [rt.gl("inathneq_penalty")]);
+		} else if (this.primary_component === "vanguard_cogwheel") {
+			message = pick(GLOB.inathneq_penalty);
 			ratvarian_prob = 25;
-		} else if ($0 === "geis_capacitor") {
-			message = rt.op(f, "PickUnweighted", [1], [rt.gl("sevtug_penalty")]);
+		} else if (this.primary_component === "geis_capacitor") {
+			message = pick(GLOB.sevtug_penalty);
 			ratvarian_prob = 40;
-		} else if ($0 === "replicant_alloy") {
-			message = rt.op(f, "PickUnweighted", [1], [rt.gl("nezbere_penalty")]);
+		} else if (this.primary_component === "replicant_alloy") {
+			message = pick(GLOB.nezbere_penalty);
 			ratvarian_prob = 10;
-		} else if ($0 === "hierophant_ansible") {
-			message = rt.op(f, "PickUnweighted", [1], [rt.gl("nzcrentr_penalty")]);
+		} else if (this.primary_component === "hierophant_ansible") {
+			message = pick(GLOB.nzcrentr_penalty);
 			ratvarian_prob = 70;
 		}
-		if (truthy(live(message))) {
-			if (truthy(rt.op(f, "Prob", [], [live(ratvarian_prob)]))) {
-				message = rt.call(f, P("/proc/text2ratvar"), null, [live(message)]);
+		if (message) {
+			if (prob(ratvarian_prob)) {
+				message = text2ratvar(message);
 			}
-			rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "invoker"), fmt("<span class='＀_large'>\"＀\"</span>", [rt.call(f, P("/proc/get_component_span"), null, [rt.sv(f, "primary_component")]), live(message)])]);
+			to_chat(this.invoker, `<span class='${get_component_span(this.primary_component)}_large'>"${message}"</span>`);
 			rt.op(f, "OutputReference", [rt.R.srcVar("invoker")], [rt.rsc("sound/magic/clockwork/invoke_general.ogg")], false);
 		}
 	}
 	return 1;
 });
 
-// /datum/clockwork_scripture/proc/check_offstation_penalty  (code/game/gamemodes/clock_cult/clock_scripture.dm:157)
+// clock_scripture.dm:157
 rt.def("/datum/clockwork_scripture/proc/check_offstation_penalty", function check_offstation_penalty(f: Frame) {
 	let _T: Value = null, i: Value = null;
-	let $e: any;
-	f.vars = () => [_T, i, $e];
-	if ((!truthy((_T = rt.getStep(f, rt.sv(f, "invoker"), 0))) || (((!isEqual(rt.fv(f, "z", live(_T)), 2) && !isEqual(rt.fv(f, "z", live(_T)), 1)) && !isEqual(rt.fv(f, "z", live(_T)), 5)) && !isEqual(rt.fv(f, "z", live(_T)), 5)))) {
-		(rt.modSrcVar(f, "channel_time", 2, multiply));
-		i = null;
-		rt.forList(f, 0, rt.sv(f, "consumed_components"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			i = $e;
-			if (truthy(rt.index(rt.sv(f, "consumed_components"), live(i)))) {
-				(rt.modAt(rt.sv(f, "consumed_components"), live(i), 2, multiply));
+	if (!(_T = rt.getStep(f, this.invoker, 0)) || _T.z != ZLEVEL_STATION && _T.z != ZLEVEL_CENTCOM && _T.z != ZLEVEL_MINING && _T.z != ZLEVEL_LAVALAND) {
+		this.channel_time *= 2;
+		for (i of each(this.consumed_components)) {
+			if (rt.index(this.consumed_components, i)) {
+				(rt.modAt(this.consumed_components, i, 2, multiply));
 			}
 		}
-		rt.endFor(f, 0);
 		return 1;
 	}
 	return 0;
 });
 
-// /datum/clockwork_scripture/proc/recital  (code/game/gamemodes/clock_cult/clock_scripture.dm:170)  may sleep
+// clock_scripture.dm:170
 rt.def("/datum/clockwork_scripture/proc/recital", function* recital(f: Frame) {
 	let L: Value = null, invocation: Value = null, invocation_0: Value = null, L_1: Value = null;
-	let $0: any, $1: any, $e: any;
-	f.vars = () => [L, invocation, invocation_0, L_1, $0, $1, $e];
-	if ((!truthy(rt.sv(f, "channel_time")) && truthy(rt.len(f, rt.sv(f, "invocations"))))) {
-		if (truthy(rt.sv(f, "multiple_invokers_used"))) {
-			L = null;
-			rt.forList(f, 0, (yield* g.call(f, P("/proc/range"), null, [1, rt.sv(f, "invoker")])), T("/mob/living"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				L = $e;
-				if (truthy((yield* g.call(f, P("/proc/can_recite_scripture"), null, [live(L)])))) {
+	let $1: any, $e: any;
+	if (!this.channel_time && rt.len(f, this.invocations)) {
+		if (this.multiple_invokers_used) {
+			for (L of each(range(1, this.invoker), T("/mob/living"))) {
+				if (can_recite_scripture(L)) {
 					invocation = null;
-					rt.forList(f, 1, rt.sv(f, "invocations"));
-					while (($e = rt.next(f, 1)) !== undefined) {
-						invocation = $e;
-						yield* g.call(f, P("/proc/clockwork_say"), null, [live(L), (yield* g.call(f, P("/proc/text2ratvar"), null, [live(invocation)])), rt.sv(f, "whispered")]);
+					for (invocation of each(this.invocations)) {
+						yield* clockwork_say(L, text2ratvar(invocation), this.whispered);
 					}
-					rt.endFor(f, 1);
 				}
 			}
-			rt.endFor(f, 0);
 		} else {
-			invocation_0 = null;
-			rt.forList(f, 0, rt.sv(f, "invocations"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				invocation_0 = $e;
-				yield* g.call(f, P("/proc/clockwork_say"), null, [rt.sv(f, "invoker"), (yield* g.call(f, P("/proc/text2ratvar"), null, [live(invocation_0)])), rt.sv(f, "whispered")]);
+			for (invocation_0 of each(this.invocations)) {
+				yield* clockwork_say(this.invoker, text2ratvar(invocation_0), this.whispered);
 			}
-			rt.endFor(f, 0);
 		}
 	}
-	$0 = rt.sv(f, "invoker");
-	if (rt.le(rt.sv(f, "channel_time"), 0)) {
+	let $0: any = this.invoker;
+	if (this.channel_time <= 0) {
 		$1 = "recite";
 	} else {
 		$1 = "begin reciting";
 	}
-	yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='brass'>You ＀ a piece of scripture entitled \"＀\".</span>", [$1, rt.sv(f, "name")])]);
-	if (!truthy(rt.sv(f, "channel_time"))) {
+	to_chat($0, `<span class='brass'>You ${$1} a piece of scripture entitled "${this.name}".</span>`);
+	if (!this.channel_time) {
 		return 1;
 	}
 	invocation_0 = null;
-	rt.forList(f, 0, rt.sv(f, "invocations"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		invocation_0 = $e;
-		if (!truthy((yield* g.call(f, P("/proc/do_after"), null, [null, rt.sv(f, "invoker"), null, divide(rt.sv(f, "channel_time"), rt.len(f, rt.sv(f, "invocations"))), "target", rt.sv(f, "invoker"), "extra_checks", (yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/datum/clockwork_scripture/proc/check_special_requirements")]))], rt.Args.Named)))) {
-			rt.setFv(f, "busy", rt.sv(f, "slab"), null);
+	for (invocation_0 of each(this.invocations)) {
+		if (!(yield* do_after(this.invoker, this.channel_time / rt.len(f, this.invocations), { target: this.invoker, extra_checks: (yield* new_(T("/datum/callback"), this, P("/datum/clockwork_scripture/proc/check_special_requirements"))) }))) {
+			this.slab.busy = null;
 			return 0;
 		}
-		if (truthy(rt.sv(f, "multiple_invokers_used"))) {
+		if (this.multiple_invokers_used) {
 			L_1 = null;
-			rt.forList(f, 1, (yield* g.call(f, P("/proc/range"), null, [1, rt.getStep(f, rt.sv(f, "invoker"), 0)])), T("/mob/living"));
-			while (($e = rt.next(f, 1)) !== undefined) {
-				L_1 = $e;
-				if (truthy((yield* g.call(f, P("/proc/can_recite_scripture"), null, [live(L_1)])))) {
-					yield* g.call(f, P("/proc/clockwork_say"), null, [live(L_1), (yield* g.call(f, P("/proc/text2ratvar"), null, [live(invocation_0)])), rt.sv(f, "whispered")]);
+			for (L_1 of each(range(1, rt.getStep(f, this.invoker, 0)), T("/mob/living"))) {
+				if (can_recite_scripture(L_1)) {
+					yield* clockwork_say(L_1, text2ratvar(invocation_0), this.whispered);
 				}
 			}
-			rt.endFor(f, 1);
 		} else {
-			yield* g.call(f, P("/proc/clockwork_say"), null, [rt.sv(f, "invoker"), (yield* g.call(f, P("/proc/text2ratvar"), null, [live(invocation_0)])), rt.sv(f, "whispered")]);
+			yield* clockwork_say(this.invoker, text2ratvar(invocation_0), this.whispered);
 		}
 	}
-	rt.endFor(f, 0);
 	return 1;
 }, true);
 
@@ -320,53 +265,49 @@ rt.type(1198, "/datum/clockwork_scripture/channeled", "/datum/clockwork_scriptur
 	chant_interval: 10,
 });
 
-// /datum/clockwork_scripture/channeled/proc/chant_effects  empty
+// Empty in tg.
 rt.def("/datum/clockwork_scripture/channeled/proc/chant_effects", undefined, false, { args: ["chant_number"] });
 
-// /datum/clockwork_scripture/channeled/proc/<init>  (code/game/gamemodes/clock_cult/clock_scripture.dm:199)
+// clock_scripture.dm:199
 rt.def("/datum/clockwork_scripture/channeled/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "chant_invocations", rt.list("AYY LMAO"));
+	parent_proc();
+	this.chant_invocations = list("AYY LMAO");
 	return f.dot;
 });
 
-// /datum/clockwork_scripture/channeled/proc/check_offstation_penalty  (code/game/gamemodes/clock_cult/clock_scripture.dm:204)
+// clock_scripture.dm:204
 rt.def("/datum/clockwork_scripture/channeled/proc/check_offstation_penalty", function check_offstation_penalty(f: Frame) {
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	if (!truthy(live(f.dot))) return f.dot;
-	(rt.modSrcVar(f, "chant_interval", 2, multiply));
+	f.dot = parent_proc();
+	if (!f.dot) return f.dot;
+	this.chant_interval *= 2;
 	return f.dot;
 });
 
-// /datum/clockwork_scripture/channeled/proc/scripture_effects  (code/game/gamemodes/clock_cult/clock_scripture.dm:209)  may sleep
+// clock_scripture.dm:209
 rt.def("/datum/clockwork_scripture/channeled/proc/scripture_effects", function* scripture_effects(f: Frame) {
 	let i: Value = null;
 	let $e: any;
-	f.vars = () => [i, $e];
-	i = null;
-	rt.forRange(f, 0, 1, rt.sv(f, "chant_amount"), 1);
+	rt.forRange(f, 0, 1, this.chant_amount, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		if (!truthy((yield* g.call(f, P("/proc/do_after"), null, [null, rt.sv(f, "invoker"), null, rt.sv(f, "chant_interval"), "target", rt.sv(f, "invoker"), "extra_checks", (yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/datum/clockwork_scripture/proc/can_recite")]))], rt.Args.Named)))) {
+		if (!(yield* do_after(this.invoker, this.chant_interval, { target: this.invoker, extra_checks: (yield* new_(T("/datum/callback"), this, P("/datum/clockwork_scripture/proc/can_recite"))) }))) {
 			break;
 		}
-		yield* g.call(f, P("/proc/clockwork_say"), null, [rt.sv(f, "invoker"), (yield* g.call(f, P("/proc/text2ratvar"), null, [rt.op(f, "PickUnweighted", [1], [rt.sv(f, "chant_invocations")])])), rt.sv(f, "whispered")]);
-		if (!truthy((yield* g.srcCall(f, "chant_effects", live(i))))) {
+		yield* clockwork_say(this.invoker, text2ratvar(pick(this.chant_invocations)), this.whispered);
+		if (!(yield* this.chant_effects(i))) {
 			break;
 		}
 	}
 	rt.endFor(f, 0);
-	if ((truthy(rt.sv(f, "invoker")) && truthy(rt.sv(f, "slab")))) {
-		yield* g.srcCall(f, "chant_end_effects");
+	if (this.invoker && this.slab) {
+		yield* this.chant_end_effects();
 	}
 	return 1;
 }, true);
 
-// /datum/clockwork_scripture/channeled/proc/chant_end_effects  (code/game/gamemodes/clock_cult/clock_scripture.dm:222)
+// clock_scripture.dm:222
 rt.def("/datum/clockwork_scripture/channeled/proc/chant_end_effects", function chant_end_effects(f: Frame) {
-	rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "invoker"), "<span class='brass'>You cease your chant.</span>"]);
+	to_chat(this.invoker, "<span class='brass'>You cease your chant.</span>");
 	return f.dot;
 });
 
@@ -379,44 +320,39 @@ rt.type(1203, "/datum/clockwork_scripture/create_object", "/datum/clockwork_scri
 	object_path: rt.typePath("/obj/item/clockwork"),
 });
 
-// /datum/clockwork_scripture/create_object/proc/New  (code/game/gamemodes/clock_cult/clock_scripture.dm:235)
+// clock_scripture.dm:235
 rt.def("/datum/clockwork_scripture/create_object/proc/New", function New(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.sv(f, "prevent_path"))) return f.dot;
-	rt.setSv(f, "prevent_path", rt.sv(f, "object_path"));
+	parent_proc();
+	if (this.prevent_path) return f.dot;
+	this.prevent_path = this.object_path;
 	return f.dot;
 });
 
-// /datum/clockwork_scripture/create_object/proc/check_special_requirements  (code/game/gamemodes/clock_cult/clock_scripture.dm:240)
+// clock_scripture.dm:240
 rt.def("/datum/clockwork_scripture/create_object/proc/check_special_requirements", function check_special_requirements(f: Frame) {
-	let _T: Value = null;
-	f.vars = () => [_T];
-	_T = rt.getStep(f, rt.sv(f, "invoker"), 0);
-	if ((!truthy(rt.sv(f, "space_allowed")) && truthy((rt.istype(live(_T), T("/turf/open/space")) ? 1 : 0)))) {
-		rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "invoker"), "<span class='warning'>You need solid ground to place this object!</span>"]);
+	let _T: Value = rt.getStep(f, this.invoker, 0);
+	if (!this.space_allowed && rt.istype(_T, T("/turf/open/space"))) {
+		to_chat(this.invoker, "<span class='warning'>You need solid ground to place this object!</span>");
 		return 0;
 	}
-	if ((truthy(rt.sv(f, "one_per_tile")) && truthy(rt.locateIn(f, rt.sv(f, "prevent_path"), live(_T))))) {
-		rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "invoker"), "<span class='warning'>You can only place one of this object on each tile!</span>"]);
+	if (this.one_per_tile && rt.locateIn(f, this.prevent_path, _T)) {
+		to_chat(this.invoker, "<span class='warning'>You can only place one of this object on each tile!</span>");
 		return 0;
 	}
 	return 1;
 });
 
-// /datum/clockwork_scripture/create_object/proc/scripture_effects  (code/game/gamemodes/clock_cult/clock_scripture.dm:250)  may sleep
+// clock_scripture.dm:250
 rt.def("/datum/clockwork_scripture/create_object/proc/scripture_effects", function* scripture_effects(f: Frame) {
 	let O: Value = null;
-	f.vars = () => [O];
-	if ((truthy(rt.sv(f, "creator_message")) && truthy(rt.sv(f, "observer_message")))) {
-		yield* g.callName(f, rt.sv(f, "invoker"), "visible_message", [rt.sv(f, "observer_message"), rt.sv(f, "creator_message")]);
-	} else {
-		if (truthy(rt.sv(f, "creator_message"))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "invoker"), rt.sv(f, "creator_message")]);
-		}
+	if (this.creator_message && this.observer_message) {
+		this.invoker.visible_message(this.observer_message, this.creator_message);
+	} else if (this.creator_message) {
+		to_chat(this.invoker, this.creator_message);
 	}
-	yield* g.callName(f, (O = (yield* g.new_(f, rt.sv(f, "object_path"), [rt.getStep(f, rt.sv(f, "invoker"), 0)]))), "ratvar_act", []);
-	if (truthy((rt.istype(live(O), T("/obj/item")) ? 1 : 0))) {
-		yield* g.callName(f, rt.sv(f, "invoker"), "put_in_hands", [live(O)]);
+	yield* (O = (yield* new_(this.object_path, rt.getStep(f, this.invoker, 0)))).ratvar_act();
+	if (rt.istype(O, T("/obj/item"))) {
+		yield* this.invoker.put_in_hands(O);
 	}
 	return 1;
 }, true);
@@ -430,48 +366,46 @@ rt.type(1224, "/datum/clockwork_scripture/ranged_ability", "/datum/clockwork_scr
 	ranged_type: rt.typePath("/obj/effect/proc_holder/slab"),
 });
 
-// /datum/clockwork_scripture/ranged_ability/proc/Destroy  (code/game/gamemodes/clock_cult/clock_scripture.dm:270)  may sleep
+// clock_scripture.dm:270
 rt.def("/datum/clockwork_scripture/ranged_ability/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "progbar")]);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* qdel(this.progbar);
+	return (yield* parent_proc());
 }, true);
 
-// /datum/clockwork_scripture/ranged_ability/proc/scripture_effects  (code/game/gamemodes/clock_cult/clock_scripture.dm:275)  may sleep
+// clock_scripture.dm:275
 rt.def("/datum/clockwork_scripture/ranged_ability/proc/scripture_effects", function* scripture_effects(f: Frame) {
-	let end_time: Value = null, successful: Value = null, _T: Value = null;
-	f.vars = () => [end_time, successful, _T];
-	rt.setFv(f, "icon_state", rt.sv(f, "slab"), rt.sv(f, "slab_icon"));
-	rt.setFv(f, "slab_ability", rt.sv(f, "slab"), (yield* g.new_(f, rt.sv(f, "ranged_type"), [rt.sv(f, "slab")])));
-	rt.setFv(f, "slab", rt.fv(f, "slab_ability", rt.sv(f, "slab")), rt.sv(f, "slab"));
-	yield* g.callName(f, rt.fv(f, "slab_ability", rt.sv(f, "slab")), "add_ranged_ability", [rt.sv(f, "invoker"), rt.sv(f, "ranged_message")]);
-	yield* g.callName(f, rt.sv(f, "invoker"), "update_inv_hands", []);
-	end_time = add(rt.worldTime(f), rt.sv(f, "timeout_time"));
-	successful = 0;
-	if (truthy(rt.sv(f, "timeout_time"))) {
-		rt.setSv(f, "progbar", (yield* g.new_(f, T("/datum/progressbar"), [rt.sv(f, "invoker"), rt.sv(f, "timeout_time"), rt.sv(f, "slab")])));
+	this.slab.icon_state = this.slab_icon;
+	this.slab.slab_ability = (yield* new_(this.ranged_type, this.slab));
+	this.slab.slab_ability.slab = this.slab;
+	yield* this.slab.slab_ability.add_ranged_ability(this.invoker, this.ranged_message);
+	yield* this.invoker.update_inv_hands();
+	let end_time: Value = rt.worldTime(f) + this.timeout_time;
+	let successful: Value = 0;
+	if (this.timeout_time) {
+		this.progbar = (yield* new_(T("/datum/progressbar"), this.invoker, this.timeout_time, this.slab));
 	}
-	_T = rt.getStep(f, rt.sv(f, "invoker"), 0);
-	while ((((truthy(rt.sv(f, "slab")) && truthy(rt.fv(f, "slab_ability", rt.sv(f, "slab")))) && !truthy(rt.gv(f, "finished", rt.fv(f, "slab_ability", rt.sv(f, "slab"))))) && ((truthy(rt.gv(f, "in_progress", rt.fv(f, "slab_ability", rt.sv(f, "slab")))) || !truthy(rt.sv(f, "timeout_time"))) || rt.le(rt.worldTime(f), live(end_time)))) && (truthy(rt.sv(f, "allow_mobility")) || (truthy((yield* g.srcCall(f, "can_recite"))) && isEqual(live(_T), rt.getStep(f, rt.sv(f, "invoker"), 0))))) {
-		if (truthy(rt.sv(f, "progbar"))) {
-			if (truthy(rt.gv(f, "in_progress", rt.fv(f, "slab_ability", rt.sv(f, "slab"))))) {
-				yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "progbar")]);
+	let _T: Value = rt.getStep(f, this.invoker, 0);
+	while (this.slab && this.slab.slab_ability && !this.slab.slab_ability.finished && (this.slab.slab_ability.in_progress || !this.timeout_time || rt.worldTime(f) <= end_time) && (this.allow_mobility || this.can_recite() && _T == rt.getStep(f, this.invoker, 0))) {
+		if (this.progbar) {
+			if (this.slab.slab_ability.in_progress) {
+				yield* qdel(this.progbar);
 			} else {
-				yield* g.callName(f, rt.sv(f, "progbar"), "update", [subtract(live(end_time), rt.worldTime(f))]);
+				yield* this.progbar.update(end_time - rt.worldTime(f));
 			}
 		}
-		yield* g.call(f, P("/proc/sleep"), null, [1]);
+		yield* sleep(1);
 	}
-	if (truthy(rt.sv(f, "slab"))) {
-		if (truthy(rt.fv(f, "slab_ability", rt.sv(f, "slab")))) {
-			successful = rt.gv(f, "successful", rt.fv(f, "slab_ability", rt.sv(f, "slab")));
-			if (!truthy(rt.gv(f, "finished", rt.fv(f, "slab_ability", rt.sv(f, "slab"))))) {
-				yield* g.callName(f, rt.fv(f, "slab_ability", rt.sv(f, "slab")), "remove_ranged_ability", []);
+	if (this.slab) {
+		if (this.slab.slab_ability) {
+			successful = this.slab.slab_ability.successful;
+			if (!this.slab.slab_ability.finished) {
+				yield* this.slab.slab_ability.remove_ranged_ability();
 			}
 		}
-		rt.setFv(f, "icon_state", rt.sv(f, "slab"), "dread_ipad");
-		if (truthy(rt.sv(f, "invoker"))) {
-			yield* g.callName(f, rt.sv(f, "invoker"), "update_inv_hands", []);
+		this.slab.icon_state = "dread_ipad";
+		if (this.invoker) {
+			yield* this.invoker.update_inv_hands();
 		}
 	}
-	return live(successful);
+	return successful;
 }, true);

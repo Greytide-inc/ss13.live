@@ -1,455 +1,408 @@
-// From code/modules/mob/living/carbon/life.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/carbon/life.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, g, add, subtract } = rt;
 
 
-// /mob/living/carbon/proc/Life  (code/modules/mob/living/carbon/life.dm:10)  may sleep
+// life.dm:10
 rt.def("/mob/living/carbon/proc/Life", function* Life(f: Frame) {
 	let V: Value = null, O: Value = null;
-	let $e: any;
-	f.vars = () => [V, O, $e];
-	if (truthy(rt.sv(f, "notransform"))) {
-		return live(f.dot);
+	if (this.notransform) {
+		return f.dot;
 	}
-	if (truthy(rt.sv(f, "damageoverlaytemp"))) {
-		rt.setSv(f, "damageoverlaytemp", 0);
-		yield* g.srcCall(f, "update_damage_hud");
+	if (this.damageoverlaytemp) {
+		this.damageoverlaytemp = 0;
+		yield* this.update_damage_hud();
 	}
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		yield* g.srcCall(f, "handle_blood");
+	if (yield* parent_proc()) {
+		yield* this.handle_blood();
 	}
-	if (!isEqual(rt.sv(f, "stat"), 2)) {
-		V = null;
-		rt.forList(f, 0, rt.sv(f, "internal_organs"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			V = $e;
-			yield* g.callName(f, (O = live(V)), "on_life", []);
+	if (this.stat != 2) {
+		for (V of each(this.internal_organs)) {
+			yield* (O = V).on_life();
 		}
-		rt.endFor(f, 0);
 	}
-	if (isEqual(rt.sv(f, "stat"), 2)) {
-		yield* g.srcCall(f, "stop_sound_channel", 1019);
+	if (this.stat == 2) {
+		yield* this.stop_sound_channel(1019);
 	}
-	yield* g.srcCall(f, "handle_changeling");
-	if (isEqual(rt.sv(f, "stat"), 2)) return f.dot;
+	yield* this.handle_changeling();
+	if (this.stat == 2) return f.dot;
 	return 1;
 }, true, { waitfor: false });
 
-// /mob/living/carbon/proc/handle_breathing  (code/modules/mob/living/carbon/life.dm:35)  may sleep
+// life.dm:35
 rt.def("/mob/living/carbon/proc/handle_breathing", function* handle_breathing(f: Frame, times_fired: Value) {
 	let location_as_object: Value = null;
-	f.vars = () => [times_fired, location_as_object];
-	if ((isEqual(rt.modulus(live(times_fired), 4), 2) || truthy(rt.sv(f, "failed_last_breath")))) {
-		yield* g.srcCall(f, "breathe");
+	if (times_fired % 4 == 2 || this.failed_last_breath) {
+		yield* this.breathe();
 	} else {
-		if (!truthy((rt.istype(rt.sv(f, "loc"), T("/obj")) ? 1 : 0))) return f.dot;
-		yield* g.callName(f, (location_as_object = rt.sv(f, "loc")), "handle_internal_lifeform", [live(f.src), 0]);
+		if (!rt.istype(this.loc, T("/obj"))) return f.dot;
+		yield* (location_as_object = this.loc).handle_internal_lifeform(f.src, 0);
 	}
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/proc/breathe  (code/modules/mob/living/carbon/life.dm:44)  may sleep
+// life.dm:44
 rt.def("/mob/living/carbon/proc/breathe", function* breathe(f: Frame) {
 	let environment: Value = null, breath: Value = null, loc_as_obj: Value = null, breath_moles: Value = null;
-	f.vars = () => [environment, breath, loc_as_obj, breath_moles];
-	if (truthy((yield* g.callName(f, rt.sv(f, "reagents"), "has_reagent", ["lexorin"])))) {
-		return live(f.dot);
+	if (this.reagents.has_reagent("lexorin")) {
+		return f.dot;
 	}
-	if (truthy((rt.istype(rt.sv(f, "loc"), T("/obj/machinery/atmospherics/components/unary/cryo_cell")) ? 1 : 0))) {
-		return live(f.dot);
+	if (rt.istype(this.loc, T("/obj/machinery/atmospherics/components/unary/cryo_cell"))) {
+		return f.dot;
 	}
-	environment = null;
-	if (truthy(rt.sv(f, "loc"))) {
-		environment = (yield* g.callName(f, rt.sv(f, "loc"), "return_air", []));
+	if (this.loc) {
+		environment = this.loc.return_air();
 	}
-	breath = null;
-	if ((rt.le(rt.sv(f, "health"), 0) || ((truthy(rt.sv(f, "pulledby")) && rt.ge(rt.fv(f, "grab_state", rt.sv(f, "pulledby")), 3)) && !truthy((yield* g.srcCall(f, "getorganslot", "breathing_tube")))))) {
+	if (this.health <= 0 || this.pulledby && this.pulledby.grab_state >= 3 && !(yield* this.getorganslot("breathing_tube"))) {
 		rt.incSrcVar(f, "losebreath", 1, true);
 	}
-	if (rt.gt(rt.sv(f, "losebreath"), 0)) {
+	if (this.losebreath > 0) {
 		rt.incSrcVar(f, "losebreath", -1, true);
-		if (truthy(rt.op(f, "Prob", [], [10]))) {
-			yield* g.srcCall(f, "emote", "gasp");
+		if (prob(10)) {
+			yield* this.emote("gasp");
 		}
-		if (truthy((rt.istype(rt.sv(f, "loc"), T("/obj")) ? 1 : 0))) {
-			yield* g.callName(f, (loc_as_obj = rt.sv(f, "loc")), "handle_internal_lifeform", [live(f.src), 0]);
+		if (rt.istype(this.loc, T("/obj"))) {
+			yield* (loc_as_obj = this.loc).handle_internal_lifeform(f.src, 0);
 		}
-	} else {
-		if (!truthy((breath = (yield* g.srcCall(f, "get_breath_from_internal", 0.5))))) {
-			if (truthy((rt.istype(rt.sv(f, "loc"), T("/obj")) ? 1 : 0))) {
-				breath = (yield* g.callName(f, (loc_as_obj = rt.sv(f, "loc")), "handle_internal_lifeform", [live(f.src), 0.5]));
-			} else {
-				if (truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.sv(f, "loc")])))) {
-					breath_moles = 0;
-					if (truthy(live(environment))) {
-						breath_moles = multiply((yield* g.callName(f, live(environment), "total_moles", [])), 0.00019999999494757503);
-					}
-					breath = (yield* g.callName(f, rt.sv(f, "loc"), "remove_air", [live(breath_moles)]));
-				}
+	} else if (!(breath = (yield* this.get_breath_from_internal(BREATH_VOLUME)))) {
+		if (rt.istype(this.loc, T("/obj"))) {
+			breath = (yield* (loc_as_obj = this.loc).handle_internal_lifeform(f.src, BREATH_VOLUME));
+		} else if (isturf(this.loc)) {
+			breath_moles = 0;
+			if (environment) {
+				breath_moles = environment.total_moles() * 0.0002;
 			}
-		} else {
-			if (truthy((rt.istype(rt.sv(f, "loc"), T("/obj")) ? 1 : 0))) {
-				yield* g.callName(f, (loc_as_obj = rt.sv(f, "loc")), "handle_internal_lifeform", [live(f.src), 0]);
-			}
+			breath = (yield* this.loc.remove_air(breath_moles));
 		}
+	} else if (rt.istype(this.loc, T("/obj"))) {
+		yield* (loc_as_obj = this.loc).handle_internal_lifeform(f.src, 0);
 	}
-	yield* g.srcCall(f, "check_breath", live(breath));
-	if (!truthy(live(breath))) return f.dot;
-	yield* g.callName(f, rt.sv(f, "loc"), "assume_air", [live(breath)]);
-	yield* g.srcCall(f, "air_update_turf");
+	yield* this.check_breath(breath);
+	if (!breath) return f.dot;
+	yield* this.loc.assume_air(breath);
+	yield* this.air_update_turf();
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/proc/check_breath  (code/modules/mob/living/carbon/life.dm:99)  may sleep
+// life.dm:99
 rt.def("/mob/living/carbon/proc/check_breath", function* check_breath(f: Frame, breath: Value) {
-	let lungs: Value = null, safe_oxy_min: Value = null, safe_co2_max: Value = null, safe_tox_max: Value = null, SA_para_min: Value = null, SA_sleep_min: Value = null, oxygen_used: Value = null, breath_pressure: Value = null, breath_gases: Value = null, O2_partialpressure: Value = null, Toxins_partialpressure: Value = null, CO2_partialpressure: Value = null, ratio: Value = null, SA_partialpressure: Value = null, bz_partialpressure: Value = null;
-	f.vars = () => [breath, lungs, safe_oxy_min, safe_co2_max, safe_tox_max, SA_para_min, SA_sleep_min, oxygen_used, breath_pressure, breath_gases, O2_partialpressure, Toxins_partialpressure, CO2_partialpressure, ratio, SA_partialpressure, bz_partialpressure];
-	if (truthy(rt.bitAnd(rt.sv(f, "status_flags"), 4096))) {
-		return live(f.dot);
+	let lungs: Value = null, ratio: Value = null, SA_partialpressure: Value = null, bz_partialpressure: Value = null;
+	if (rt.bitAnd(this.status_flags, 4096)) {
+		return f.dot;
 	}
-	if (!truthy((lungs = (yield* g.srcCall(f, "getorganslot", "lungs"))))) {
-		yield* g.srcCall(f, "adjustOxyLoss", 2);
+	if (!(lungs = (yield* this.getorganslot("lungs")))) {
+		yield* this.adjustOxyLoss(2);
 	}
-	if (((!truthy(live(breath)) || isEqual((yield* g.callName(f, live(breath), "total_moles", [])), 0)) || !truthy(live(lungs)))) {
-		if ((truthy((yield* g.callName(f, rt.sv(f, "reagents"), "has_reagent", ["epinephrine"]))) && truthy(live(lungs)))) {
-			return live(f.dot);
+	if (!breath || breath.total_moles() == 0 || !lungs) {
+		if (this.reagents.has_reagent("epinephrine") && lungs) {
+			return f.dot;
 		}
-		yield* g.srcCall(f, "adjustOxyLoss", 1);
-		rt.setSv(f, "failed_last_breath", 1);
-		yield* g.srcCall(f, "throw_alert", "oxy", T("/obj/screen/alert/oxy"));
+		yield* this.adjustOxyLoss(1);
+		this.failed_last_breath = 1;
+		yield* this.throw_alert("oxy", T("/obj/screen/alert/oxy"));
 		return 0;
 	}
-	safe_oxy_min = 16;
-	safe_co2_max = 10;
-	safe_tox_max = 0.05000000074505806;
-	SA_para_min = 1;
-	SA_sleep_min = 5;
-	oxygen_used = 0;
-	breath_pressure = divide(multiply(multiply((yield* g.callName(f, live(breath), "total_moles", [])), 8.3100004196167), rt.fv(f, "temperature", live(breath))), 0.5);
-	breath_gases = rt.fv(f, "gases", live(breath));
-	yield* g.callName(f, live(breath), "assert_gases", ["o2", "plasma", "co2", "n2o", "bz"]);
-	O2_partialpressure = multiply(divide(rt.index(rt.at(live(breath_gases), "o2"), 1), (yield* g.callName(f, live(breath), "total_moles", []))), live(breath_pressure));
-	Toxins_partialpressure = multiply(divide(rt.index(rt.at(live(breath_gases), "plasma"), 1), (yield* g.callName(f, live(breath), "total_moles", []))), live(breath_pressure));
-	CO2_partialpressure = multiply(divide(rt.index(rt.at(live(breath_gases), "co2"), 1), (yield* g.callName(f, live(breath), "total_moles", []))), live(breath_pressure));
-	if (rt.lt(live(O2_partialpressure), live(safe_oxy_min))) {
-		if (truthy(rt.op(f, "Prob", [], [20]))) {
-			yield* g.srcCall(f, "emote", "gasp");
+	let safe_oxy_min: Value = 16;
+	let safe_co2_max: Value = 10;
+	let safe_tox_max: Value = 0.05;
+	let SA_para_min: Value = 1;
+	let SA_sleep_min: Value = 5;
+	let oxygen_used: Value = 0;
+	let breath_pressure: Value = breath.total_moles() * R_IDEAL_GAS_EQUATION * breath.temperature / BREATH_VOLUME;
+	let breath_gases: Value = breath.gases;
+	breath.assert_gases("o2", "plasma", "co2", "n2o", "bz");
+	let O2_partialpressure: Value = rt.index(rt.at(breath_gases, "o2"), 1) / breath.total_moles() * breath_pressure;
+	let Toxins_partialpressure: Value = rt.index(rt.at(breath_gases, "plasma"), 1) / breath.total_moles() * breath_pressure;
+	let CO2_partialpressure: Value = rt.index(rt.at(breath_gases, "co2"), 1) / breath.total_moles() * breath_pressure;
+	if (O2_partialpressure < safe_oxy_min) {
+		if (prob(20)) {
+			yield* this.emote("gasp");
 		}
-		if (rt.gt(live(O2_partialpressure), 0)) {
-			ratio = subtract(1, divide(live(O2_partialpressure), live(safe_oxy_min)));
-			yield* g.srcCall(f, "adjustOxyLoss", (yield* g.call(f, P("/proc/min"), null, [multiply(5, live(ratio)), 3])));
-			rt.setSv(f, "failed_last_breath", 1);
-			oxygen_used = multiply(rt.index(rt.at(live(breath_gases), "o2"), 1), live(ratio));
+		if (O2_partialpressure > 0) {
+			ratio = 1 - O2_partialpressure / safe_oxy_min;
+			yield* this.adjustOxyLoss(min(5 * ratio, 3));
+			this.failed_last_breath = 1;
+			oxygen_used = rt.index(rt.at(breath_gases, "o2"), 1) * ratio;
 		} else {
-			yield* g.srcCall(f, "adjustOxyLoss", 3);
-			rt.setSv(f, "failed_last_breath", 1);
+			yield* this.adjustOxyLoss(3);
+			this.failed_last_breath = 1;
 		}
-		yield* g.srcCall(f, "throw_alert", "oxy", T("/obj/screen/alert/oxy"));
+		yield* this.throw_alert("oxy", T("/obj/screen/alert/oxy"));
 	} else {
-		rt.setSv(f, "failed_last_breath", 0);
-		if (truthy(rt.sv(f, "oxyloss"))) {
-			yield* g.srcCall(f, "adjustOxyLoss", -5);
+		this.failed_last_breath = 0;
+		if (this.oxyloss) {
+			yield* this.adjustOxyLoss(-5);
 		}
-		oxygen_used = rt.index(rt.at(live(breath_gases), "o2"), 1);
-		yield* g.srcCall(f, "clear_alert", "oxy");
+		oxygen_used = rt.index(rt.at(breath_gases, "o2"), 1);
+		yield* this.clear_alert("oxy");
 	}
-	(rt.modAt(rt.at(live(breath_gases), "o2"), 1, live(oxygen_used), subtract));
-	rt.modAt(rt.at(live(breath_gases), "co2"), 1, live(oxygen_used), add);
-	if (rt.gt(live(CO2_partialpressure), live(safe_co2_max))) {
-		if (!truthy(rt.sv(f, "co2overloadtime"))) {
-			rt.setSv(f, "co2overloadtime", rt.worldTime(f));
-		} else {
-			if (rt.gt(subtract(rt.worldTime(f), rt.sv(f, "co2overloadtime")), 120)) {
-				yield* g.srcCall(f, "Unconscious", 60);
-				yield* g.srcCall(f, "adjustOxyLoss", 3);
-				if (rt.gt(subtract(rt.worldTime(f), rt.sv(f, "co2overloadtime")), 300)) {
-					yield* g.srcCall(f, "adjustOxyLoss", 8);
-				}
+	(rt.modAt(rt.at(breath_gases, "o2"), 1, oxygen_used, subtract));
+	rt.modAt(rt.at(breath_gases, "co2"), 1, oxygen_used, add);
+	if (CO2_partialpressure > safe_co2_max) {
+		if (!this.co2overloadtime) {
+			this.co2overloadtime = rt.worldTime(f);
+		} else if (rt.worldTime(f) - this.co2overloadtime > 120) {
+			yield* this.Unconscious(60);
+			yield* this.adjustOxyLoss(3);
+			if (rt.worldTime(f) - this.co2overloadtime > 300) {
+				yield* this.adjustOxyLoss(8);
 			}
 		}
-		if (truthy(rt.op(f, "Prob", [], [20]))) {
-			yield* g.srcCall(f, "emote", "cough");
+		if (prob(20)) {
+			yield* this.emote("cough");
 		}
 	} else {
-		rt.setSv(f, "co2overloadtime", 0);
+		this.co2overloadtime = 0;
 	}
-	if (rt.gt(live(Toxins_partialpressure), live(safe_tox_max))) {
-		ratio = multiply(divide(rt.index(rt.at(live(breath_gases), "plasma"), 1), live(safe_tox_max)), 10);
-		if (truthy(rt.sv(f, "reagents"))) {
-			yield* g.callName(f, rt.sv(f, "reagents"), "add_reagent", ["plasma", (yield* g.call(f, P("/proc/max"), null, [1, (yield* g.call(f, P("/proc/min"), null, [live(ratio), 10]))]))]);
+	if (Toxins_partialpressure > safe_tox_max) {
+		ratio = rt.index(rt.at(breath_gases, "plasma"), 1) / safe_tox_max * 10;
+		if (this.reagents) {
+			yield* this.reagents.add_reagent("plasma", max(1, min(ratio, 10)));
 		}
-		yield* g.srcCall(f, "throw_alert", "tox_in_air", T("/obj/screen/alert/tox_in_air"));
+		yield* this.throw_alert("tox_in_air", T("/obj/screen/alert/tox_in_air"));
 	} else {
-		yield* g.srcCall(f, "clear_alert", "tox_in_air");
+		yield* this.clear_alert("tox_in_air");
 	}
-	if (truthy(rt.at(live(breath_gases), "n2o"))) {
-		if (rt.gt((SA_partialpressure = multiply(divide(rt.index(rt.at(live(breath_gases), "n2o"), 1), (yield* g.callName(f, live(breath), "total_moles", []))), live(breath_pressure))), live(SA_para_min))) {
-			yield* g.srcCall(f, "Unconscious", 60);
-			if (rt.gt(live(SA_partialpressure), live(SA_sleep_min))) {
-				yield* g.srcCall(f, "Sleeping", (yield* g.call(f, P("/proc/max"), null, [add((yield* g.srcCall(f, "AmountSleeping")), 40), 200])));
+	if (rt.at(breath_gases, "n2o")) {
+		if ((SA_partialpressure = rt.index(rt.at(breath_gases, "n2o"), 1) / breath.total_moles() * breath_pressure) > SA_para_min) {
+			yield* this.Unconscious(60);
+			if (SA_partialpressure > SA_sleep_min) {
+				yield* this.Sleeping(max((yield* this.AmountSleeping()) + 40, 200));
 			}
-		} else {
-			if (rt.gt(live(SA_partialpressure), 0.009999999776482582)) {
-				if (truthy(rt.op(f, "Prob", [], [20]))) {
-					yield* g.srcCall(f, "emote", rt.op(f, "PickUnweighted", [2], ["giggle", "laugh"]));
-				}
+		} else if (SA_partialpressure > 0.01) {
+			if (prob(20)) {
+				yield* this.emote(pick("giggle", "laugh"));
 			}
 		}
 	}
-	if (truthy(rt.at(live(breath_gases), "bz"))) {
-		if (rt.gt((bz_partialpressure = multiply(divide(rt.index(rt.at(live(breath_gases), "bz"), 1), (yield* g.callName(f, live(breath), "total_moles", []))), live(breath_pressure))), 1)) {
+	if (rt.at(breath_gases, "bz")) {
+		if ((bz_partialpressure = rt.index(rt.at(breath_gases, "bz"), 1) / breath.total_moles() * breath_pressure) > 1) {
 			rt.modSrcVar(f, "hallucination", 20, add);
-		} else {
-			if (rt.gt(live(bz_partialpressure), 0.009999999776482582)) {
-				rt.modSrcVar(f, "hallucination", 5, add);
-			}
+		} else if (bz_partialpressure > 0.01) {
+			rt.modSrcVar(f, "hallucination", 5, add);
 		}
 	}
-	yield* g.callName(f, live(breath), "garbage_collect", []);
-	yield* g.srcCall(f, "handle_breath_temperature", live(breath));
+	breath.garbage_collect();
+	yield* this.handle_breath_temperature(breath);
 	return 1;
 }, true);
 
-// /mob/living/carbon/proc/get_breath_from_internal  (code/modules/mob/living/carbon/life.dm:211)  may sleep
+// life.dm:211
 rt.def("/mob/living/carbon/proc/get_breath_from_internal", function* get_breath_from_internal(f: Frame, volume_needed: Value) {
-	f.vars = () => [volume_needed];
-	if (!truthy(rt.sv(f, "internal"))) return f.dot;
-	if (!isEqual(rt.fv(f, "loc", rt.sv(f, "internal")), live(f.src))) {
-		rt.setSv(f, "internal", null);
-		yield* g.srcCall(f, "update_internals_hud_icon", 0);
+	if (!this.internal) return f.dot;
+	if (this.internal.loc != f.src) {
+		this.internal = null;
+		yield* this.update_internals_hud_icon(0);
+	} else if ((!this.wear_mask || !rt.bitAnd(this.wear_mask.flags, MASKINTERNALS)) && !(yield* this.getorganslot("breathing_tube"))) {
+		this.internal = null;
+		yield* this.update_internals_hud_icon(0);
 	} else {
-		if (((!truthy(rt.sv(f, "wear_mask")) || !truthy(rt.bitAnd(rt.fv(f, "flags", rt.sv(f, "wear_mask")), 8))) && !truthy((yield* g.srcCall(f, "getorganslot", "breathing_tube"))))) {
-			rt.setSv(f, "internal", null);
-			yield* g.srcCall(f, "update_internals_hud_icon", 0);
-		} else {
-			yield* g.srcCall(f, "update_internals_hud_icon", 1);
-			return (yield* g.callName(f, rt.sv(f, "internal"), "remove_air_volume", [live(volume_needed)]));
-		}
+		yield* this.update_internals_hud_icon(1);
+		return (yield* this.internal.remove_air_volume(volume_needed));
 	}
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/proc/handle_changeling  (code/modules/mob/living/carbon/life.dm:225)  may sleep
+// life.dm:225
 rt.def("/mob/living/carbon/proc/handle_changeling", function* handle_changeling(f: Frame) {
-	if (!((truthy(rt.sv(f, "mind")) && truthy(rt.sv(f, "hud_used"))) && truthy(rt.fv(f, "lingchemdisplay", rt.sv(f, "hud_used"))))) return f.dot;
-	if (truthy(rt.fv(f, "changeling", rt.sv(f, "mind")))) {
-		yield* g.callName(f, rt.fv(f, "changeling", rt.sv(f, "mind")), "regenerate", [live(f.src)]);
-		rt.setFv(f, "invisibility", rt.fv(f, "lingchemdisplay", rt.sv(f, "hud_used")), 0);
-		rt.setFv(f, "maptext", rt.fv(f, "lingchemdisplay", rt.sv(f, "hud_used")), fmt("<div align='center' valign='middle' style='position:relative; top:0px; left:6px'><font color='#dd66dd'>＀</font></div>", [(yield* g.call(f, P("/proc/round"), null, [rt.gv(f, "chem_charges", rt.fv(f, "changeling", rt.sv(f, "mind")))]))]));
+	if (!(this.mind && this.hud_used && this.hud_used.lingchemdisplay)) return f.dot;
+	if (this.mind.changeling) {
+		yield* this.mind.changeling.regenerate(f.src);
+		this.hud_used.lingchemdisplay.invisibility = 0;
+		this.hud_used.lingchemdisplay.maptext = `<div align='center' valign='middle' style='position:relative; top:0px; left:6px'><font color='#dd66dd'>${round(this.mind.changeling.chem_charges)}</font></div>`;
 	} else {
-		rt.setFv(f, "invisibility", rt.fv(f, "lingchemdisplay", rt.sv(f, "hud_used")), 101);
+		this.hud_used.lingchemdisplay.invisibility = INVISIBILITY_ABSTRACT;
 	}
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/proc/handle_mutations_and_radiation  (code/modules/mob/living/carbon/life.dm:235)  may sleep
+// life.dm:235
 rt.def("/mob/living/carbon/proc/handle_mutations_and_radiation", function* handle_mutations_and_radiation(f: Frame) {
 	let HM: Value = null, mut: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [HM, mut, $0, $e];
-	if ((truthy(rt.sv(f, "dna")) && truthy(rt.getLen(f, rt.fv(f, "temporary_mutations", rt.sv(f, "dna")))))) {
-		HM = null;
-		mut = null;
-		rt.forList(f, 0, rt.fv(f, "temporary_mutations", rt.sv(f, "dna")));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			mut = $e;
-			if (rt.lt(rt.index(rt.fv(f, "temporary_mutations", rt.sv(f, "dna")), live(mut)), rt.worldTime(f))) {
-				if (isEqual(live(mut), "ui changed")) {
-					if (truthy(rt.index(rt.fv(f, "previous", rt.sv(f, "dna")), "UI"))) {
-						rt.setFv(f, "uni_identity", rt.sv(f, "dna"), (yield* g.call(f, P("/proc/merge_text"), null, [rt.fv(f, "uni_identity", rt.sv(f, "dna")), rt.index(rt.fv(f, "previous", rt.sv(f, "dna")), "UI")])));
-						yield* g.callSrc(f, "updateappearance", ["mutations_overlay_update", 1], rt.Args.Named);
-						yield* g.callName(f, rt.fv(f, "previous", rt.sv(f, "dna")), "Remove", ["UI"]);
+	let $e: any;
+	if (this.dna && rt.len(f, this.dna.temporary_mutations)) {
+		for (mut of each(this.dna.temporary_mutations)) {
+			if (rt.index(this.dna.temporary_mutations, mut) < rt.worldTime(f)) {
+				if (mut == "ui changed") {
+					if (rt.index(this.dna.previous, "UI")) {
+						this.dna.uni_identity = merge_text(this.dna.uni_identity, rt.index(this.dna.previous, "UI"));
+						yield* this.updateappearance({ mutations_overlay_update: 1 });
+						yield* this.dna.previous.Remove("UI");
 					}
-					yield* g.callName(f, rt.fv(f, "temporary_mutations", rt.sv(f, "dna")), "Remove", [live(mut)]);
+					yield* this.dna.temporary_mutations.Remove(mut);
 					continue;
 				}
-				if (isEqual(live(mut), "ue changed")) {
-					if (truthy(rt.index(rt.fv(f, "previous", rt.sv(f, "dna")), "name"))) {
-						rt.setSv(f, "real_name", rt.index(rt.fv(f, "previous", rt.sv(f, "dna")), "name"));
-						rt.setSv(f, "name", rt.sv(f, "real_name"));
-						yield* g.callName(f, rt.fv(f, "previous", rt.sv(f, "dna")), "Remove", ["name"]);
+				if (mut == "ue changed") {
+					if (rt.index(this.dna.previous, "name")) {
+						this.real_name = rt.index(this.dna.previous, "name");
+						this.name = rt.sv(f, "real_name");
+						yield* this.dna.previous.Remove("name");
 					}
-					if (truthy(rt.index(rt.fv(f, "previous", rt.sv(f, "dna")), "UE"))) {
-						rt.setFv(f, "unique_enzymes", rt.sv(f, "dna"), rt.index(rt.fv(f, "previous", rt.sv(f, "dna")), "UE"));
-						yield* g.callName(f, rt.fv(f, "previous", rt.sv(f, "dna")), "Remove", ["UE"]);
+					if (rt.index(this.dna.previous, "UE")) {
+						this.dna.unique_enzymes = rt.index(this.dna.previous, "UE");
+						yield* this.dna.previous.Remove("UE");
 					}
-					if (truthy(rt.index(rt.fv(f, "previous", rt.sv(f, "dna")), "blood_type"))) {
-						rt.setFv(f, "blood_type", rt.sv(f, "dna"), rt.index(rt.fv(f, "previous", rt.sv(f, "dna")), "blood_type"));
-						yield* g.callName(f, rt.fv(f, "previous", rt.sv(f, "dna")), "Remove", ["blood_type"]);
+					if (rt.index(this.dna.previous, "blood_type")) {
+						this.dna.blood_type = rt.index(this.dna.previous, "blood_type");
+						yield* this.dna.previous.Remove("blood_type");
 					}
-					yield* g.callName(f, rt.fv(f, "temporary_mutations", rt.sv(f, "dna")), "Remove", [live(mut)]);
+					yield* this.dna.temporary_mutations.Remove(mut);
 					continue;
 				}
-				yield* g.callName(f, (HM = rt.index(rt.gl("mutations_list"), live(mut))), "force_lose", [live(f.src)]);
-				yield* g.callName(f, rt.fv(f, "temporary_mutations", rt.sv(f, "dna")), "Remove", [live(mut)]);
+				yield* (HM = rt.index(GLOB.mutations_list, mut)).force_lose(f.src);
+				yield* this.dna.temporary_mutations.Remove(mut);
 			}
 		}
-		rt.endFor(f, 0);
 	}
-	if (!truthy(rt.sv(f, "radiation"))) return f.dot;
-	rt.setSv(f, "radiation", (yield* g.call(f, P("/proc/max"), null, [0, (yield* g.call(f, P("/proc/min"), null, [rt.sv(f, "radiation"), 100]))])));
-	$0 = rt.sv(f, "radiation");
-	if (rt.inRange($0, 0, 50)) {
-		rt.setSv(f, "radiation", (yield* g.call(f, P("/proc/max"), null, [subtract(rt.sv(f, "radiation"), 1), 0])));
-		if (truthy(rt.op(f, "Prob", [], [25]))) {
-			yield* g.srcCall(f, "adjustToxLoss", 1);
+	if (!this.radiation) return f.dot;
+	this.radiation = max(0, min(this.radiation, 100));
+	if (rt.inRange(this.radiation, 0, 50)) {
+		this.radiation = max(this.radiation - 1, 0);
+		if (prob(25)) {
+			yield* this.adjustToxLoss(1);
 		}
-	} else if (rt.inRange($0, 50, 75)) {
-		rt.setSv(f, "radiation", (yield* g.call(f, P("/proc/max"), null, [subtract(rt.sv(f, "radiation"), 2), 0])));
-		yield* g.srcCall(f, "adjustToxLoss", 1);
-		if (truthy(rt.op(f, "Prob", [], [5]))) {
-			rt.setSv(f, "radiation", (yield* g.call(f, P("/proc/max"), null, [subtract(rt.sv(f, "radiation"), 5), 0])));
+	} else if (rt.inRange(this.radiation, 50, 75)) {
+		this.radiation = max(this.radiation - 2, 0);
+		yield* this.adjustToxLoss(1);
+		if (prob(5)) {
+			this.radiation = max(this.radiation - 5, 0);
 		}
-	} else if (rt.inRange($0, 75, 100)) {
-		rt.setSv(f, "radiation", (yield* g.call(f, P("/proc/max"), null, [subtract(rt.sv(f, "radiation"), 3), 0])));
-		yield* g.srcCall(f, "adjustToxLoss", 3);
+	} else if (rt.inRange(this.radiation, 75, 100)) {
+		this.radiation = max(this.radiation - 3, 0);
+		yield* this.adjustToxLoss(3);
 	}
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/proc/handle_chemicals_in_body  (code/modules/mob/living/carbon/life.dm:283)  may sleep
+// life.dm:283
 rt.def("/mob/living/carbon/proc/handle_chemicals_in_body", function* handle_chemicals_in_body(f: Frame) {
-	if (!truthy(rt.sv(f, "reagents"))) return f.dot;
-	yield* g.callName(f, rt.sv(f, "reagents"), "metabolize", [live(f.src)]);
+	if (!this.reagents) return f.dot;
+	yield* this.reagents.metabolize(f.src);
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/proc/handle_stomach  (code/modules/mob/living/carbon/life.dm:288)  may sleep
+// life.dm:288
 rt.def("/mob/living/carbon/proc/handle_stomach", function* handle_stomach(f: Frame) {
 	let M: Value = null;
-	let $e: any;
-	f.vars = () => [M, $e];
-	M = null;
-	rt.forList(f, 0, rt.sv(f, "stomach_contents"), T("/mob/living"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if (!isEqual(rt.fv(f, "loc", live(M)), live(f.src))) {
-			yield* g.callName(f, rt.sv(f, "stomach_contents"), "Remove", [live(M)]);
+	for (M of each(this.stomach_contents, T("/mob/living"))) {
+		if (M.loc != f.src) {
+			yield* this.stomach_contents.Remove(M);
 			continue;
 		}
-		if ((truthy((rt.istype(live(M), T("/mob/living/carbon")) ? 1 : 0)) && !isEqual(rt.sv(f, "stat"), 2))) {
-			if (isEqual(rt.fv(f, "stat", live(M)), 2)) {
-				yield* g.callName(f, live(M), "death", [1]);
-				yield* g.callName(f, rt.sv(f, "stomach_contents"), "Remove", [live(M)]);
-				yield* g.call(f, P("/proc/qdel"), null, [live(M)]);
+		if (rt.istype(M, T("/mob/living/carbon")) && this.stat != 2) {
+			if (M.stat == 2) {
+				yield* M.death(1);
+				yield* this.stomach_contents.Remove(M);
+				yield* qdel(M);
 				continue;
 			}
-			if (isEqual(rt.modulus(rt.fv(f, "times_fired", rt.gl("SSmobs")), 3), 1)) {
-				if (!truthy(rt.bitAnd(rt.fv(f, "status_flags", live(M)), 4096))) {
-					yield* g.callName(f, live(M), "adjustBruteLoss", [5]);
+			if (GLOB.SSmobs.times_fired % 3 == 1) {
+				if (!rt.bitAnd(M.status_flags, 4096)) {
+					yield* M.adjustBruteLoss(5);
 				}
 				rt.modSrcVar(f, "nutrition", 10, add);
 			}
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true, { waitfor: false });
 
-// /mob/living/carbon/proc/handle_status_effects  (code/modules/mob/living/carbon/life.dm:305)  may sleep
+// life.dm:305
 rt.def("/mob/living/carbon/proc/handle_status_effects", function* handle_status_effects(f: Frame) {
-	let restingpwr: Value = null, C: Value = null, pixel_x_diff: Value = null, pixel_y_diff: Value = null, temp: Value = null, saved_dizz: Value = null, oldsrc: Value = null, amplitude: Value = null;
-	f.vars = () => [restingpwr, C, pixel_x_diff, pixel_y_diff, temp, saved_dizz, oldsrc, amplitude];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.sv(f, "staminaloss"))) {
+	let C: Value = null, pixel_x_diff: Value = null, pixel_y_diff: Value = null, temp: Value = null, saved_dizz: Value = null, oldsrc: Value = null, amplitude: Value = null;
+	yield* parent_proc();
+	if (rt.sv(f, "staminaloss")) {
 		yield* g.srcCall(f, "adjustStaminaLoss", -3);
 	}
-	restingpwr = add(1, multiply(4, rt.sv(f, "resting")));
-	if (truthy(rt.sv(f, "dizziness"))) {
+	let restingpwr: Value = 1 + 4 * rt.sv(f, "resting");
+	if (rt.sv(f, "dizziness")) {
 		C = rt.sv(f, "client");
 		pixel_x_diff = 0;
 		pixel_y_diff = 0;
-		temp = null;
 		saved_dizz = rt.sv(f, "dizziness");
-		if (truthy(live(C))) {
-			oldsrc = live(f.src);
-			amplitude = divide(multiply(rt.sv(f, "dizziness"), add(rt.op(f, "Sin", [], [multiply(multiply(rt.sv(f, "dizziness"), 0.04399999976158142), rt.worldTime(f))]), 1)), 70);
+		if (C) {
+			oldsrc = f.src;
+			amplitude = rt.sv(f, "dizziness") * (rt.op(f, "Sin", [], [rt.sv(f, "dizziness") * 0.044 * rt.worldTime(f)]) + 1) / 70;
 			f.src = null;
 			rt.spawnTail(f, 0, "/mob/living/carbon/proc/handle_status_effects: spawn at modules/mob/living/carbon/life.dm:322", restingpwr, C, pixel_x_diff, pixel_y_diff, temp, saved_dizz, oldsrc, amplitude);
-			f.src = live(oldsrc);
+			f.src = oldsrc;
 		}
-		rt.setSv(f, "dizziness", (yield* g.call(f, P("/proc/max"), null, [subtract(rt.sv(f, "dizziness"), live(restingpwr)), 0])));
+		rt.setSv(f, "dizziness", max(rt.sv(f, "dizziness") - restingpwr, 0));
 	}
-	if (truthy(rt.sv(f, "drowsyness"))) {
-		rt.setSv(f, "drowsyness", (yield* g.call(f, P("/proc/max"), null, [subtract(rt.sv(f, "drowsyness"), live(restingpwr)), 0])));
+	if (rt.sv(f, "drowsyness")) {
+		rt.setSv(f, "drowsyness", max(rt.sv(f, "drowsyness") - restingpwr, 0));
 		yield* g.srcCall(f, "blur_eyes", 2);
-		if (truthy(rt.op(f, "Prob", [], [5]))) {
+		if (prob(5)) {
 			yield* g.srcCall(f, "AdjustSleeping", 20);
 			yield* g.srcCall(f, "Unconscious", 100);
 		}
 	}
-	if (truthy(rt.sv(f, "jitteriness"))) {
+	if (rt.sv(f, "jitteriness")) {
 		yield* g.srcCall(f, "do_jitter_animation", rt.sv(f, "jitteriness"));
-		rt.setSv(f, "jitteriness", (yield* g.call(f, P("/proc/max"), null, [subtract(rt.sv(f, "jitteriness"), live(restingpwr)), 0])));
+		rt.setSv(f, "jitteriness", max(rt.sv(f, "jitteriness") - restingpwr, 0));
 	}
-	if (truthy(rt.sv(f, "stuttering"))) {
-		rt.setSv(f, "stuttering", (yield* g.call(f, P("/proc/max"), null, [subtract(rt.sv(f, "stuttering"), 1), 0])));
+	if (rt.sv(f, "stuttering")) {
+		rt.setSv(f, "stuttering", max(rt.sv(f, "stuttering") - 1, 0));
 	}
-	if (truthy(rt.sv(f, "slurring"))) {
-		rt.setSv(f, "slurring", (yield* g.call(f, P("/proc/max"), null, [subtract(rt.sv(f, "slurring"), 1), 0])));
+	if (rt.sv(f, "slurring")) {
+		rt.setSv(f, "slurring", max(rt.sv(f, "slurring") - 1, 0));
 	}
-	if (truthy(rt.sv(f, "cultslurring"))) {
-		rt.setSv(f, "cultslurring", (yield* g.call(f, P("/proc/max"), null, [subtract(rt.sv(f, "cultslurring"), 1), 0])));
+	if (rt.sv(f, "cultslurring")) {
+		rt.setSv(f, "cultslurring", max(rt.sv(f, "cultslurring") - 1, 0));
 	}
-	if (truthy(rt.sv(f, "silent"))) {
-		rt.setSv(f, "silent", (yield* g.call(f, P("/proc/max"), null, [subtract(rt.sv(f, "silent"), 1), 0])));
+	if (rt.sv(f, "silent")) {
+		rt.setSv(f, "silent", max(rt.sv(f, "silent") - 1, 0));
 	}
-	if (truthy(rt.sv(f, "druggy"))) {
+	if (rt.sv(f, "druggy")) {
 		yield* g.srcCall(f, "adjust_drugginess", -1);
 	}
-	if (!truthy(rt.sv(f, "hallucination"))) return f.dot;
+	if (!rt.sv(f, "hallucination")) return f.dot;
 	rt.spawnTail(f, 0, "/mob/living/carbon/proc/handle_status_effects: spawn at modules/mob/living/carbon/life.dm:373", restingpwr, C, pixel_x_diff, pixel_y_diff, temp, saved_dizz, oldsrc, amplitude);
-	rt.setSv(f, "hallucination", (yield* g.call(f, P("/proc/max"), null, [subtract(rt.sv(f, "hallucination"), 2), 0])));
+	rt.setSv(f, "hallucination", max(rt.sv(f, "hallucination") - 2, 0));
 	return f.dot;
 }, true);
 
 // a spawn(0) body of /mob/living/carbon/proc/handle_status_effects, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/mob/living/carbon/proc/handle_status_effects: spawn at modules/mob/living/carbon/life.dm:373", function* (f: Frame, restingpwr: Value, C: Value, pixel_x_diff: Value, pixel_y_diff: Value, temp: Value, saved_dizz: Value, oldsrc: Value, amplitude: Value) {
-	f.vars = () => [restingpwr, C, pixel_x_diff, pixel_y_diff, temp, saved_dizz, oldsrc, amplitude];
 	yield* g.srcCall(f, "handle_hallucinations");
 	return null;
 });
 
 // a spawn(0) body of /mob/living/carbon/proc/handle_status_effects, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/mob/living/carbon/proc/handle_status_effects: spawn at modules/mob/living/carbon/life.dm:322", function* (f: Frame, restingpwr: Value, C: Value, pixel_x_diff: Value, pixel_y_diff: Value, temp: Value, saved_dizz: Value, oldsrc: Value, amplitude: Value) {
-	f.vars = () => [restingpwr, C, pixel_x_diff, pixel_y_diff, temp, saved_dizz, oldsrc, amplitude];
-	if (truthy(live(C))) {
-		pixel_x_diff = rt.modify(live(pixel_x_diff), (temp = multiply(live(amplitude), rt.op(f, "Sin", [], [multiply(multiply(0.00800000037997961, live(saved_dizz)), rt.worldTime(f))]))), add);
-		rt.modField(f, live(C), "pixel_x", live(temp), add);
-		pixel_y_diff = rt.modify(live(pixel_y_diff), (temp = multiply(live(amplitude), rt.op(f, "Cos", [], [multiply(multiply(0.00800000037997961, live(saved_dizz)), rt.worldTime(f))]))), add);
-		rt.modField(f, live(C), "pixel_y", live(temp), add);
-		yield* g.call(f, P("/proc/sleep"), null, [3]);
-		if (truthy(live(C))) {
-			pixel_x_diff = rt.modify(live(pixel_x_diff), (temp = multiply(live(amplitude), rt.op(f, "Sin", [], [multiply(multiply(0.00800000037997961, live(saved_dizz)), rt.worldTime(f))]))), add);
-			rt.modField(f, live(C), "pixel_x", live(temp), add);
-			pixel_y_diff = rt.modify(live(pixel_y_diff), (temp = multiply(live(amplitude), rt.op(f, "Cos", [], [multiply(multiply(0.00800000037997961, live(saved_dizz)), rt.worldTime(f))]))), add);
-			rt.modField(f, live(C), "pixel_y", live(temp), add);
+	if (C) {
+		pixel_x_diff += (temp = amplitude * rt.op(f, "Sin", [], [0.008 * saved_dizz * rt.worldTime(f)]));
+		C.pixel_x += temp;
+		pixel_y_diff += (temp = amplitude * rt.op(f, "Cos", [], [0.008 * saved_dizz * rt.worldTime(f)]));
+		C.pixel_y += temp;
+		yield* sleep(3);
+		if (C) {
+			pixel_x_diff += (temp = amplitude * rt.op(f, "Sin", [], [0.008 * saved_dizz * rt.worldTime(f)]));
+			C.pixel_x += temp;
+			pixel_y_diff += (temp = amplitude * rt.op(f, "Cos", [], [0.008 * saved_dizz * rt.worldTime(f)]));
+			C.pixel_y += temp;
 		}
-		yield* g.call(f, P("/proc/sleep"), null, [3]);
-		if (truthy(live(C))) {
-			(rt.modField(f, live(C), "pixel_x", live(pixel_x_diff), subtract));
-			(rt.modField(f, live(C), "pixel_y", live(pixel_y_diff), subtract));
+		yield* sleep(3);
+		if (C) {
+			C.pixel_x -= pixel_x_diff;
+			C.pixel_y -= pixel_y_diff;
 		}
 	}
 	return null;
 });
 
-// /mob/living/carbon/proc/natural_bodytemperature_stabilization  (code/modules/mob/living/carbon/life.dm:378)
+// life.dm:378
 rt.def("/mob/living/carbon/proc/natural_bodytemperature_stabilization", function natural_bodytemperature_stabilization(f: Frame) {
-	let body_temperature_difference: Value = null;
-	let $0: any;
-	f.vars = () => [body_temperature_difference, $0];
-	body_temperature_difference = subtract(310.1499938964844, rt.sv(f, "bodytemperature"));
-	$0 = rt.sv(f, "bodytemperature");
-	if (rt.inRange($0, -9.999999848243207e+30, 260.1499938964844)) {
-		rt.modSrcVar(f, "bodytemperature", rt.call(f, P("/proc/max"), null, [divide(multiply(live(body_temperature_difference), rt.sv(f, "metabolism_efficiency")), 12), 10]), add);
-	} else if (rt.inRange($0, 260.1499938964844, 310.1499938964844)) {
-		rt.modSrcVar(f, "bodytemperature", rt.call(f, P("/proc/max"), null, [divide(multiply(live(body_temperature_difference), rt.sv(f, "metabolism_efficiency")), 12), rt.call(f, P("/proc/min"), null, [live(body_temperature_difference), 2.5])]), add);
-	} else if (rt.inRange($0, 310.1499938964844, 360.1499938964844)) {
-		rt.modSrcVar(f, "bodytemperature", rt.call(f, P("/proc/min"), null, [divide(multiply(live(body_temperature_difference), rt.sv(f, "metabolism_efficiency")), 12), rt.call(f, P("/proc/max"), null, [live(body_temperature_difference), -2.5])]), add);
-	} else if (rt.inRange($0, 360.1499938964844, 9.999999848243207e+30)) {
-		rt.modSrcVar(f, "bodytemperature", rt.call(f, P("/proc/min"), null, [divide(live(body_temperature_difference), 12), -10]), add);
+	let body_temperature_difference: Value = 310.15 - this.bodytemperature;
+	if (rt.inRange(this.bodytemperature, -1e+31, 260.15)) {
+		rt.modSrcVar(f, "bodytemperature", max(body_temperature_difference * this.metabolism_efficiency / BODYTEMP_AUTORECOVERY_DIVISOR, BODYTEMP_AUTORECOVERY_MINIMUM), add);
+	} else if (rt.inRange(this.bodytemperature, 260.15, 310.15)) {
+		rt.modSrcVar(f, "bodytemperature", max(body_temperature_difference * this.metabolism_efficiency / BODYTEMP_AUTORECOVERY_DIVISOR, min(body_temperature_difference, 2.5)), add);
+	} else if (rt.inRange(this.bodytemperature, 310.15, 360.15)) {
+		rt.modSrcVar(f, "bodytemperature", min(body_temperature_difference * this.metabolism_efficiency / BODYTEMP_AUTORECOVERY_DIVISOR, max(body_temperature_difference, -2.5)), add);
+	} else if (rt.inRange(this.bodytemperature, 360.15, 1e+31)) {
+		rt.modSrcVar(f, "bodytemperature", min(body_temperature_difference / BODYTEMP_AUTORECOVERY_DIVISOR, -10), add);
 	}
 	return f.dot;
 });

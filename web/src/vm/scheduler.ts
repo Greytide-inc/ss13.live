@@ -13,7 +13,7 @@
 //   and the caller carries on when it finishes or sleeps.
 
 import type { Frame } from "./interpreter.js";
-import { fround, type Value } from "./value.js";
+import { type Value } from "./value.js";
 import { stress } from "./stress-log.js";
 import { diffHook, wallNow } from "./clockhook.js";
 
@@ -114,7 +114,7 @@ export class Scheduler {
 		this.lastTickUsage = this.tickUsage();
 		if (diffHook.vcostPerPct > 0) diffHook.calls = 0; // diff mode virtual cost: a new tick starts counting from zero
 		this.tick++;
-		this.time = fround(this.time + this.tickLag);
+		this.time += this.tickLag;
 		this.tickStart = now();
 	}
 
@@ -122,7 +122,7 @@ export class Scheduler {
 	skipTicks(n: number): void {
 		for (let i = 0; i < n; i++) {
 			this.tick++;
-			this.time = fround(this.time + this.tickLag);
+			this.time += this.tickLag;
 		}
 	}
 
@@ -131,13 +131,13 @@ export class Scheduler {
 		let fake = diffHook.fakeUsage;
 		if (fake !== null && diffHook.vcostPerPct > 0) fake = diffHook.calls / diffHook.vcostPerPct;
 		if (fake !== null) return this.inCommand && fake < COMMAND_TICK_USAGE ? COMMAND_TICK_USAGE : fake;
-		const used = fround(((now() - this.tickStart) / (this.tickLag * 100)) * 100);
+		const used = ((now() - this.tickStart) / (this.tickLag * 100)) * 100;
 		if (stress.on) { stress.usageReads++; if (used >= 80) stress.usageHi++; if (used >= 100) stress.usageOver++; if (used > stress.usageMax) stress.usageMax = used; }
 		return this.inCommand && used < COMMAND_TICK_USAGE ? COMMAND_TICK_USAGE : used;
 	}
 
 	get fps(): number {
-		return fround(10 / this.tickLag);
+		return 10 / this.tickLag;
 	}
 }
 
@@ -151,7 +151,7 @@ export function timeOfDay(): number {
 	return Math.floor((wallNow() % 86400000) / 100);
 }
 
-/** `world.realtime`: deciseconds since 2000-01-01 00:00 UTC, as a 32-bit float (so it moves in ~100 s steps). */
+/** `world.realtime`: deciseconds since 2000-01-01 00:00 UTC (BYOND's float32 moved in ~100 s steps; this one doesn't). */
 export function realTime(): number {
-	return fround(Math.floor((wallNow() - Date.UTC(2000, 0, 1)) / 100));
+	return Math.floor((wallNow() - Date.UTC(2000, 0, 1)) / 100);
 }

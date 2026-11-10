@@ -1,7 +1,7 @@
-// From code/controllers/subsystem/atoms.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/controllers/subsystem/atoms.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, g } = rt;
 
 
 rt.type(15, "/datum/controller/subsystem/atoms", "/datum/controller/subsystem", {
@@ -15,242 +15,202 @@ rt.type(15, "/datum/controller/subsystem/atoms", "/datum/controller/subsystem", 
 	flags: 2,
 });
 
-// /datum/controller/subsystem/atoms/proc/New  (code/controllers/subsystem/atoms.dm:6)  may sleep
+// atoms.dm:6
 rt.def("/datum/controller/subsystem/atoms/proc/New", function* New(f: Frame) {
-	if (!isEqual(rt.gl("SSatoms"), live(f.src))) {
-		if (truthy((rt.istype(rt.gl("SSatoms"), T("/datum/controller/subsystem/atoms")) ? 1 : 0))) {
-			yield* g.srcCall(f, "Recover");
-			yield* g.call(f, P("/proc/qdel"), null, [rt.gl("SSatoms")]);
+	if (GLOB.SSatoms != this) {
+		if (rt.istype(GLOB.SSatoms, T("/datum/controller/subsystem/atoms"))) {
+			yield* this.Recover();
+			yield* qdel(GLOB.SSatoms);
 		}
-		rt.setGl("SSatoms", live(f.src));
+		GLOB.SSatoms = this;
 	}
-	yield* g.srcCall(f, "PreInit");
+	this.PreInit();
 	return f.dot;
 }, true);
 
-// /datum/controller/subsystem/atoms/proc/<init>  (code/controllers/subsystem/atoms.dm:17)
+// atoms.dm:17
 rt.def("/datum/controller/subsystem/atoms/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "BadInitializeCalls", rt.list());
+	parent_proc();
+	this.BadInitializeCalls = list();
 	return f.dot;
 });
 
-// /datum/controller/subsystem/atoms/proc/Initialize  (code/controllers/subsystem/atoms.dm:20)  may sleep
-rt.def("/datum/controller/subsystem/atoms/proc/Initialize", function* Initialize(f: Frame) {
-	rt.setFv(f, "appearance_flags", rt.gl("fire_overlay"), 2);
-	yield* g.srcCall(f, "setupGenetics");
-	rt.setSv(f, "initialized", 1);
-	yield* g.srcCall(f, "InitializeAtoms");
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["timeofday"] });
+// atoms.dm:20
+rt.def("/datum/controller/subsystem/atoms/proc/Initialize", function* Initialize(f: Frame, timeofday: Value) {
+	GLOB.fire_overlay.appearance_flags = 2;
+	yield* this.setupGenetics();
+	this.initialized = INITIALIZATION_INNEW_MAPLOAD;
+	yield* this.InitializeAtoms();
+	return (yield* parent_proc());
+}, true);
 
-// /datum/controller/subsystem/atoms/proc/InitializeAtoms  (code/controllers/subsystem/atoms.dm:27)  may sleep
+// atoms.dm:27
 rt.def("/datum/controller/subsystem/atoms/proc/InitializeAtoms", function* InitializeAtoms(f: Frame, atoms: Value) {
-	let count: Value = null, mapload_arg: Value = null, I: Value = null, A: Value = null, A_2: Value = null;
-	let $e: any;
-	f.vars = () => [atoms, count, mapload_arg, I, A, A_2, $e];
-	if (isEqual(rt.sv(f, "initialized"), 0)) {
-		return live(f.dot);
+	let count: Value = null, I: Value = null, A: Value = null, A_2: Value = null;
+	if (this.initialized == INITIALIZATION_INSSATOMS) {
+		return f.dot;
 	}
-	rt.setSv(f, "initialized", 1);
-	if (!truthy(rt.sv(f, "late_loaders"))) {
-		rt.setSv(f, "late_loaders", rt.list());
+	this.initialized = 1;
+	if (!this.late_loaders) {
+		this.late_loaders = list();
 	}
-	count = null;
-	mapload_arg = rt.list(1);
-	if (truthy(live(atoms))) {
-		rt.setSv(f, "created_atoms", rt.list());
-		count = rt.len(f, live(atoms));
-		I = null;
-		rt.forList(f, 0, live(atoms));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			I = $e;
-			if (!truthy(rt.gv(f, "initialized", (A = live(I))))) {
-				if (truthy((yield* g.srcCall(f, "InitAtom", live(I), live(mapload_arg))))) {
-					(atoms = rt.modify(live(atoms), live(I), subtract));
+	let mapload_arg: Value = list(1);
+	if (atoms) {
+		this.created_atoms = list();
+		count = rt.len(f, atoms);
+		for (I of each(atoms)) {
+			if (!(A = I).initialized) {
+				if (yield* this.InitAtom(I, mapload_arg)) {
+					atoms -= I;
 				}
-				if (rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit"))) {
-					yield* g.call(f, P("/proc/stoplag"), null, []);
+				if (rt.tickUsage(f) > GLOB.current_ticklimit) {
+					yield* stoplag();
 				}
 			}
 		}
-		rt.endFor(f, 0);
 	} else {
 		count = 0;
-		A_2 = null;
-		rt.forList(f, 0, rt.world(), T("/atom"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			A_2 = $e;
-			if (!truthy(rt.fv(f, "initialized", live(A_2)))) {
-				yield* g.srcCall(f, "InitAtom", live(A_2), live(mapload_arg));
-				count = rt.inc(live(count), 1);
-				if (rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit"))) {
-					yield* g.call(f, P("/proc/stoplag"), null, []);
+		for (A_2 of each(rt.world(), T("/atom"))) {
+			if (!A_2.initialized) {
+				yield* this.InitAtom(A_2, mapload_arg);
+				count++;
+				if (rt.tickUsage(f) > GLOB.current_ticklimit) {
+					yield* stoplag();
 				}
 			}
 		}
-		rt.endFor(f, 0);
 	}
-	yield* g.call(f, P("/proc/log_world"), null, [fmt("Initialized ＀ atoms", [live(count)])]);
-	rt.setSv(f, "initialized", 2);
-	if (truthy(rt.len(f, rt.sv(f, "late_loaders")))) {
+	log_world(`Initialized ${count} atoms`);
+	this.initialized = INITIALIZATION_INNEW_REGULAR;
+	if (rt.len(f, this.late_loaders)) {
 		I = null;
-		rt.forList(f, 0, rt.sv(f, "late_loaders"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			I = $e;
-			yield* g.callName(f, (A = live(I)), "LateInitialize", []);
+		for (I of each(this.late_loaders)) {
+			yield* (A = I).LateInitialize();
 		}
-		rt.endFor(f, 0);
-		yield* g.callName(f, rt.sv(f, "late_loaders"), "Cut", []);
+		this.late_loaders.Cut();
 	}
-	if (!truthy(live(atoms))) return f.dot;
-	f.dot = add(rt.sv(f, "created_atoms"), live(atoms));
-	rt.setSv(f, "created_atoms", null);
+	if (!atoms) return f.dot;
+	f.dot = this.created_atoms + atoms;
+	this.created_atoms = null;
 	return f.dot;
 }, true);
 
-// /datum/controller/subsystem/atoms/proc/InitAtom  (code/controllers/subsystem/atoms.dm:70)  may sleep
+// atoms.dm:70
 rt.def("/datum/controller/subsystem/atoms/proc/InitAtom", function* InitAtom(f: Frame, A: Value, _arguments: Value) {
-	let the_type: Value = null, start_tick: Value = null, result: Value = null, qdeleted: Value = null;
-	let $0: any;
-	f.vars = () => [A, _arguments, the_type, start_tick, result, qdeleted, $0];
-	the_type = rt.fv(f, "type", live(A));
-	if (truthy(rt.fv(f, "gc_destroyed", live(A)))) {
-		(rt.modAt(rt.sv(f, "BadInitializeCalls"), live(the_type), 1, rt.bitOr));
+	let the_type: Value = A.type;
+	if (A.gc_destroyed) {
+		(rt.modAt(this.BadInitializeCalls, the_type, 1, rt.bitOr));
 		return 1;
 	}
-	start_tick = rt.worldTime(f);
-	result = (yield* g.callName(f, live(A), "Initialize", [live(_arguments)], rt.Args.List));
-	if (!isEqual(live(start_tick), rt.worldTime(f))) {
-		(rt.modAt(rt.sv(f, "BadInitializeCalls"), live(the_type), 4, rt.bitOr));
+	let start_tick: Value = rt.worldTime(f);
+	let result: Value = (yield* g.callName(f, A, "Initialize", [_arguments], rt.Args.List));
+	if (start_tick != rt.worldTime(f)) {
+		(rt.modAt(this.BadInitializeCalls, the_type, 4, rt.bitOr));
 	}
-	qdeleted = 0;
-	if (!isEqual(live(result), 0)) {
-		$0 = live(result);
-		if ($0 === 1) {
-			if (truthy(rt.index(live(_arguments), 1))) {
-				rt.modSrcVar(f, "late_loaders", live(A), add);
+	let qdeleted: Value = 0;
+	if (result != 0) {
+		if (result === 1) {
+			if (rt.index(_arguments, 1)) {
+				this.late_loaders += A;
 			} else {
-				yield* g.callName(f, live(A), "LateInitialize", []);
+				yield* A.LateInitialize();
 			}
-		} else if ($0 === 2) {
-			yield* g.call(f, P("/proc/qdel"), null, [live(A)]);
+		} else if (result === 2) {
+			yield* qdel(A);
 			qdeleted = 1;
 		} else {
-			(rt.modAt(rt.sv(f, "BadInitializeCalls"), live(the_type), 8, rt.bitOr));
+			(rt.modAt(this.BadInitializeCalls, the_type, 8, rt.bitOr));
 		}
 	}
-	if (!truthy(live(A))) {
+	if (!A) {
 		qdeleted = 1;
-	} else {
-		if (!truthy(rt.fv(f, "initialized", live(A)))) {
-			(rt.modAt(rt.sv(f, "BadInitializeCalls"), live(the_type), 2, rt.bitOr));
-		}
+	} else if (!A.initialized) {
+		(rt.modAt(this.BadInitializeCalls, the_type, 2, rt.bitOr));
 	}
-	return (live(qdeleted) || rt.fv(f, "gc_destroyed", live(A)));
+	return (qdeleted || A.gc_destroyed);
 }, true);
 
-// /datum/controller/subsystem/atoms/proc/map_loader_begin  (code/controllers/subsystem/atoms.dm:104)
+// atoms.dm:104
 rt.def("/datum/controller/subsystem/atoms/proc/map_loader_begin", function map_loader_begin(f: Frame) {
-	rt.setSv(f, "old_initialized", rt.sv(f, "initialized"));
-	rt.setSv(f, "initialized", 0);
+	this.old_initialized = this.initialized;
+	this.initialized = INITIALIZATION_INSSATOMS;
 	return f.dot;
 });
 
-// /datum/controller/subsystem/atoms/proc/map_loader_stop  (code/controllers/subsystem/atoms.dm:108)
+// atoms.dm:108
 rt.def("/datum/controller/subsystem/atoms/proc/map_loader_stop", function map_loader_stop(f: Frame) {
-	rt.setSv(f, "initialized", rt.sv(f, "old_initialized"));
+	this.initialized = this.old_initialized;
 	return f.dot;
 });
 
-// /datum/controller/subsystem/atoms/proc/Recover  (code/controllers/subsystem/atoms.dm:112)  may sleep
+// atoms.dm:112
 rt.def("/datum/controller/subsystem/atoms/proc/Recover", function* Recover(f: Frame) {
-	rt.setSv(f, "initialized", rt.fv(f, "initialized", rt.gl("SSatoms")));
-	if (isEqual(rt.sv(f, "initialized"), 1)) {
-		yield* g.srcCall(f, "InitializeAtoms");
+	this.initialized = GLOB.SSatoms.initialized;
+	if (this.initialized == INITIALIZATION_INNEW_MAPLOAD) {
+		yield* this.InitializeAtoms();
 	}
-	rt.setSv(f, "old_initialized", rt.fv(f, "old_initialized", rt.gl("SSatoms")));
-	rt.setSv(f, "BadInitializeCalls", rt.fv(f, "BadInitializeCalls", rt.gl("SSatoms")));
+	this.old_initialized = GLOB.SSatoms.old_initialized;
+	this.BadInitializeCalls = GLOB.SSatoms.BadInitializeCalls;
 	return f.dot;
 }, true);
 
-// /datum/controller/subsystem/atoms/proc/setupGenetics  (code/controllers/subsystem/atoms.dm:118)  may sleep
+// atoms.dm:118
 rt.def("/datum/controller/subsystem/atoms/proc/setupGenetics", function* setupGenetics(f: Frame) {
-	let avnums: Value = null, i: Value = null, A: Value = null, B: Value = null;
-	let $e: any;
-	f.vars = () => [avnums, i, A, B, $e];
-	avnums = (yield* g.new_(f, T("/list"), [19]));
-	i = null;
-	i = 1;
-	while (rt.le(live(i), 19)) {
-		rt.setAt(live(avnums), live(i), live(i));
-		if (rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit"))) {
-			yield* g.call(f, P("/proc/stoplag"), null, []);
+	let A: Value = null, B: Value = null;
+	let avnums: Value = (yield* new_(T("/list"), DNA_STRUC_ENZYMES_BLOCKS));
+	let i: Value = 1;
+	while (i <= DNA_STRUC_ENZYMES_BLOCKS) {
+		rt.setAt(avnums, i, i);
+		if (rt.tickUsage(f) > GLOB.current_ticklimit) {
+			yield* stoplag();
 		}
-		i = rt.inc(live(i), 1);
+		i++;
 	}
-	A = null;
-	rt.forList(f, 0, subtract((yield* g.call(f, P("/proc/typesof"), null, [T("/datum/mutation/human")])), T("/datum/mutation/human")));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		A = $e;
-		if (isEqual(rt.gv(f, "dna_block", (B = (yield* g.new_(f, live(A), [])))), -1)) {
+	for (A of each(typesof(T("/datum/mutation/human")) - T("/datum/mutation/human"))) {
+		if ((B = (yield* new_(A))).dna_block == NON_SCANNABLE) {
 			continue;
 		}
-		rt.setFv(f, "dna_block", live(B), (yield* g.call(f, P("/proc/pick_n_take"), null, [live(avnums)])));
-		if (isEqual(rt.fv(f, "quality", live(B)), 1)) {
-			(rt.modGl("good_mutations", live(B), rt.bitOr));
-		} else {
-			if (isEqual(rt.fv(f, "quality", live(B)), 2)) {
-				(rt.modGl("bad_mutations", live(B), rt.bitOr));
-			} else {
-				if (isEqual(rt.fv(f, "quality", live(B)), 3)) {
-					(rt.modGl("not_good_mutations", live(B), rt.bitOr));
-				}
-			}
+		B.dna_block = pick_n_take(avnums);
+		if (B.quality == POSITIVE) {
+			(rt.modGl("good_mutations", B, rt.bitOr));
+		} else if (B.quality == NEGATIVE) {
+			(rt.modGl("bad_mutations", B, rt.bitOr));
+		} else if (B.quality == MINOR_NEGATIVE) {
+			(rt.modGl("not_good_mutations", B, rt.bitOr));
 		}
-		if (rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit"))) {
-			yield* g.call(f, P("/proc/stoplag"), null, []);
+		if (rt.tickUsage(f) > GLOB.current_ticklimit) {
+			yield* stoplag();
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /datum/controller/subsystem/atoms/proc/InitLog  (code/controllers/subsystem/atoms.dm:137)
+// atoms.dm:137
 rt.def("/datum/controller/subsystem/atoms/proc/InitLog", function InitLog(f: Frame) {
 	let path: Value = null, fails: Value = null;
-	let $e: any;
-	f.vars = () => [path, fails, $e];
 	f.dot = "";
-	path = null;
-	rt.forList(f, 0, rt.sv(f, "BadInitializeCalls"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		path = $e;
-		f.dot = rt.modify(live(f.dot), fmt("Path : ＀ \n", [live(path)]), add);
-		if (truthy(rt.bitAnd((fails = rt.index(rt.sv(f, "BadInitializeCalls"), live(path))), 2))) {
-			f.dot = rt.modify(live(f.dot), "- Didn't call atom/Initialize()\n", add);
+	for (path of each(this.BadInitializeCalls)) {
+		f.dot += `Path : ${path} \n`;
+		if (rt.bitAnd((fails = rt.index(this.BadInitializeCalls, path)), 2)) {
+			f.dot += "- Didn't call atom/Initialize()\n";
 		}
-		if (truthy(rt.bitAnd(live(fails), 8))) {
-			f.dot = rt.modify(live(f.dot), "- Didn't return an Initialize hint\n", add);
+		if (rt.bitAnd(fails, 8)) {
+			f.dot += "- Didn't return an Initialize hint\n";
 		}
-		if (truthy(rt.bitAnd(live(fails), 1))) {
-			f.dot = rt.modify(live(f.dot), "- Qdel'd in New()\n", add);
+		if (rt.bitAnd(fails, 1)) {
+			f.dot += "- Qdel'd in New()\n";
 		}
-		if (truthy(rt.bitAnd(live(fails), 4))) {
-			f.dot = rt.modify(live(f.dot), "- Slept during Initialize()\n", add);
+		if (rt.bitAnd(fails, 4)) {
+			f.dot += "- Slept during Initialize()\n";
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /datum/controller/subsystem/atoms/proc/Shutdown  (code/controllers/subsystem/atoms.dm:151)
+// atoms.dm:151
 rt.def("/datum/controller/subsystem/atoms/proc/Shutdown", function Shutdown(f: Frame) {
 	let initlog: Value = null;
-	f.vars = () => [initlog];
-	if (!truthy((initlog = rt.callSrc(f, "InitLog", [])))) return f.dot;
-	rt.call(f, P("/proc/text2file"), null, [live(initlog), fmt("＀/initialize.log", [rt.gl("log_directory")])]);
+	if (!(initlog = this.InitLog())) return f.dot;
+	text2file(initlog, `${GLOB.log_directory}/initialize.log`);
 	return f.dot;
 });

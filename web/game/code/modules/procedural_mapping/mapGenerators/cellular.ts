@@ -1,7 +1,7 @@
-// From code/modules/procedural_mapping/mapGenerators/cellular.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/procedural_mapping/mapGenerators/cellular.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(1876, "/datum/mapGenerator/ca", "/datum/mapGenerator", {
@@ -18,148 +18,128 @@ rt.type(1876, "/datum/mapGenerator/ca", "/datum/mapGenerator", {
 	type_map: null,
 });
 
-// /datum/mapGenerator/ca/proc/<init>  (code/modules/procedural_mapping/mapGenerators/cellular.dm:6)
+// cellular.dm:6
 rt.def("/datum/mapGenerator/ca/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "b_rule", rt.list());
-	$0 = $0;
-	rt.setSv(f, "s_rule", rt.list());
-	$0 = $0;
-	rt.setSv(f, "type_map", rt.list(T("/turf/open/floor/plating"), T("/turf/closed/wall")));
+	parent_proc();
+	this.b_rule = list();
+
+	this.s_rule = list();
+
+	this.type_map = list(T("/turf/open/floor/plating"), T("/turf/closed/wall"));
 	return f.dot;
 });
 
-// /datum/mapGenerator/ca/proc/defineRegion  (code/modules/procedural_mapping/mapGenerators/cellular.dm:19)
+// cellular.dm:19
 rt.def("/datum/mapGenerator/ca/proc/defineRegion", function defineRegion(f: Frame) {
-	let min_x: Value = null, max_x: Value = null, min_y: Value = null, max_y: Value = null;
-	f.vars = () => [min_x, max_x, min_y, max_y];
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 0;
 	}
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	min_x = rt.call(f, P("/proc/min"), null, [rt.fv(f, "x", live(f.args[0])), rt.fv(f, "x", live(f.args[1]))]);
-	max_x = rt.call(f, P("/proc/max"), null, [rt.fv(f, "x", live(f.args[0])), rt.fv(f, "x", live(f.args[1]))]);
-	min_y = rt.call(f, P("/proc/min"), null, [rt.fv(f, "y", live(f.args[0])), rt.fv(f, "y", live(f.args[1]))]);
-	max_y = rt.call(f, P("/proc/max"), null, [rt.fv(f, "y", live(f.args[0])), rt.fv(f, "y", live(f.args[1]))]);
-	rt.setSv(f, "width", subtract(live(max_x), live(min_x)));
-	rt.setSv(f, "height", subtract(live(max_y), live(min_y)));
-	rt.setSv(f, "start", rt.locate(live(min_x), live(min_y), rt.fv(f, "z", live(f.args[0]))));
+	f.dot = parent_proc();
+	let min_x: Value = min(f.args[0].x, f.args[1].x);
+	let max_x: Value = max(f.args[0].x, f.args[1].x);
+	let min_y: Value = min(f.args[0].y, f.args[1].y);
+	let max_y: Value = max(f.args[0].y, f.args[1].y);
+	this.width = max_x - min_x;
+	this.height = max_y - min_y;
+	this.start = rt.locate(min_x, min_y, f.args[0].z);
 	return f.dot;
 }, false, { args: ["Start", "End", "replace"] });
 
-// /datum/mapGenerator/ca/proc/initialize  (code/modules/procedural_mapping/mapGenerators/cellular.dm:32)
+// cellular.dm:32
 rt.def("/datum/mapGenerator/ca/proc/initialize", function initialize(f: Frame) {
-	let i: Value = null, j: Value = null;
-	f.vars = () => [i, j];
-	rt.setSv(f, "old_state", rt.new_(f, T("/list"), [rt.sv(f, "width")]));
-	i = null;
-	i = 1;
-	while (rt.le(live(i), rt.sv(f, "width"))) {
-		rt.setAt(rt.sv(f, "old_state"), live(i), rt.new_(f, T("/list"), [rt.sv(f, "height")]));
-		j = null;
+	let j: Value = null;
+	this.old_state = new_(T("/list"), this.width);
+	let i: Value = 1;
+	while (i <= this.width) {
+		rt.setAt(this.old_state, i, new_(T("/list"), this.height));
 		j = 1;
-		while (rt.le(live(j), rt.sv(f, "height"))) {
-			rt.setAt(rt.index(rt.sv(f, "old_state"), live(i)), live(j), rt.call(f, P("/proc/rand"), null, [0, 1]));
-			j = rt.inc(live(j), 1);
+		while (j <= this.height) {
+			rt.setAt(rt.index(this.old_state, i), j, rand(0, 1));
+			j++;
 		}
-		i = rt.inc(live(i), 1);
+		i++;
 	}
-	rt.setSv(f, "current_state", rt.callName(f, rt.sv(f, "old_state"), "Copy", []));
+	this.current_state = this.old_state.Copy();
 	return f.dot;
 });
 
-// /datum/mapGenerator/ca/proc/generate  (code/modules/procedural_mapping/mapGenerators/cellular.dm:45)  may sleep
+// cellular.dm:45
 rt.def("/datum/mapGenerator/ca/proc/generate", function* generate(f: Frame) {
-	let generation: Value = null, i: Value = null, j: Value = null, i_0: Value = null, j_1: Value = null, _T: Value = null;
-	f.vars = () => [generation, i, j, i_0, j_1, _T];
-	yield* g.srcCall(f, "initialize");
-	generation = null;
-	generation = 0;
-	while (rt.lt(live(generation), rt.sv(f, "iterations"))) {
-		i = null;
+	let i: Value = null, j: Value = null, j_1: Value = null, _T: Value = null;
+	this.initialize();
+	let generation: Value = 0;
+	while (generation < this.iterations) {
 		i = 1;
-		while (rt.le(live(i), rt.sv(f, "width"))) {
-			j = null;
+		while (i <= this.width) {
 			j = 1;
-			while (rt.le(live(j), rt.sv(f, "height"))) {
-				rt.setAt(rt.index(rt.sv(f, "current_state"), live(i)), live(j), (yield* g.srcCall(f, "apply_rule", live(i), live(j))));
-				j = rt.inc(live(j), 1);
-				yield* g.call(f, P("/proc/sleep"), null, [-1]);
+			while (j <= this.height) {
+				rt.setAt(rt.index(this.current_state, i), j, this.apply_rule(i, j));
+				j++;
+				yield* sleep(-1);
 			}
-			i = rt.inc(live(i), 1);
-			yield* g.call(f, P("/proc/sleep"), null, [-1]);
+			i++;
+			yield* sleep(-1);
 		}
-		rt.setSv(f, "old_state", (yield* g.callName(f, rt.sv(f, "current_state"), "Copy", [])));
-		generation = rt.inc(live(generation), 1);
-		yield* g.call(f, P("/proc/sleep"), null, [-1]);
+		this.old_state = (yield* this.current_state.Copy());
+		generation++;
+		yield* sleep(-1);
 	}
-	i_0 = null;
-	i_0 = 1;
-	while (rt.le(live(i_0), rt.sv(f, "width"))) {
-		j_1 = null;
+	let i_0: Value = 1;
+	while (i_0 <= this.width) {
 		j_1 = 1;
-		while (rt.le(live(j_1), rt.sv(f, "height"))) {
-			if (truthy((_T = rt.locate(subtract(add(rt.fv(f, "x", rt.sv(f, "start")), live(i_0)), 1), subtract(add(rt.fv(f, "y", rt.sv(f, "start")), live(j_1)), 1), rt.fv(f, "z", rt.sv(f, "start")))))) {
-				yield* g.callName(f, live(_T), "ChangeTurf", [rt.index(rt.sv(f, "type_map"), add(rt.index(rt.index(rt.sv(f, "current_state"), live(i_0)), live(j_1)), 1))]);
+		while (j_1 <= this.height) {
+			if (_T = rt.locate(this.start.x + i_0 - 1, this.start.y + j_1 - 1, this.start.z)) {
+				yield* _T.ChangeTurf(rt.index(this.type_map, rt.index(rt.index(this.current_state, i_0), j_1) + 1));
 			}
-			j_1 = rt.inc(live(j_1), 1);
-			yield* g.call(f, P("/proc/sleep"), null, [-1]);
+			j_1++;
+			yield* sleep(-1);
 		}
-		i_0 = rt.inc(live(i_0), 1);
-		yield* g.call(f, P("/proc/sleep"), null, [-1]);
+		i_0++;
+		yield* sleep(-1);
 	}
 	return f.dot;
 }, true);
 
-// /datum/mapGenerator/ca/proc/apply_rule  (code/modules/procedural_mapping/mapGenerators/cellular.dm:62)
+// cellular.dm:62
 rt.def("/datum/mapGenerator/ca/proc/apply_rule", function apply_rule(f: Frame, i: Value, j: Value) {
-	let value: Value = null, dx: Value = null, dy: Value = null, n_x: Value = null, n_y: Value = null;
-	f.vars = () => [value, dx, dy, n_x, n_y];
-	value = 0;
-	dx = null;
-	dx = -1;
-	while (rt.le(live(dx), 1)) {
-		dy = null;
+	let dy: Value = null, n_x: Value = null, n_y: Value = null;
+	let value: Value = 0;
+	let dx: Value = -1;
+	while (dx <= 1) {
 		dy = -1;
-		while (rt.le(live(dy), 1)) {
-			n_x = add(live(i), live(dx));
-			n_y = add(live(j), live(dy));
+		while (dy <= 1) {
+			n_x = i + dx;
+			n_y = j + dy;
 			blk65: {
-				if ((((rt.lt(live(n_x), 1) || rt.gt(live(n_x), rt.sv(f, "width"))) || rt.lt(live(n_y), 1)) || rt.gt(live(n_y), rt.sv(f, "height")))) {
-					if (truthy(rt.sv(f, "loop_edges"))) {
-						if (rt.lt(live(n_x), 1)) {
-							n_x = rt.sv(f, "width");
-						} else {
-							if (rt.gt(live(n_x), rt.sv(f, "width"))) {
-								n_x = 1;
-							}
+				if (n_x < 1 || n_x > this.width || n_y < 1 || n_y > this.height) {
+					if (this.loop_edges) {
+						if (n_x < 1) {
+							n_x = this.width;
+						} else if (n_x > this.width) {
+							n_x = 1;
 						}
-						if (rt.lt(live(n_y), 1)) {
-							n_y = rt.sv(f, "height");
-						} else {
-							if (rt.gt(live(n_y), rt.sv(f, "height"))) {
-								n_y = 1;
-							}
+						if (n_y < 1) {
+							n_y = this.height;
+						} else if (n_y > this.height) {
+							n_y = 1;
 						}
 					} else {
-						value = rt.modify(live(value), rt.sv(f, "edge_value"), add);
+						value += this.edge_value;
 						break blk65;
 					}
 				}
-				value = rt.modify(live(value), rt.index(rt.index(rt.sv(f, "old_state"), live(n_x)), live(n_y)), add);
+				value += rt.index(rt.index(this.old_state, n_x), n_y);
 			}
-			dy = rt.inc(live(dy), 1);
+			dy++;
 		}
-		dx = rt.inc(live(dx), 1);
+		dx++;
 	}
-	(value = rt.modify(live(value), rt.index(rt.index(rt.sv(f, "old_state"), live(i)), live(j)), subtract));
-	if (truthy((rt.isIn(f, live(value), rt.sv(f, "b_rule")) ? 1 : 0))) {
+	value -= rt.index(rt.index(this.old_state, i), j);
+	if (rt.isIn(f, value, this.b_rule)) {
 		return 1;
 	}
-	if (truthy((rt.isIn(f, live(value), rt.sv(f, "s_rule")) ? 1 : 0))) {
-		return rt.index(rt.index(rt.sv(f, "old_state"), live(i)), live(j));
+	if (rt.isIn(f, value, this.s_rule)) {
+		return rt.index(rt.index(this.old_state, i), j);
 	}
 	return 0;
 });
@@ -171,16 +151,14 @@ rt.type(1877, "/datum/mapGenerator/ca/caves", "/datum/mapGenerator/ca", {
 	type_map: null,
 });
 
-// /datum/mapGenerator/ca/caves/proc/<init>  (code/modules/procedural_mapping/mapGenerators/cellular.dm:90)
+// cellular.dm:90
 rt.def("/datum/mapGenerator/ca/caves/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "b_rule", rt.list(5, 6, 7, 8));
-	$0 = $0;
-	rt.setSv(f, "s_rule", rt.list(4));
-	$0 = $0;
-	rt.setSv(f, "type_map", rt.list(T("/turf/open/floor/plating/asteroid/basalt"), T("/turf/closed/mineral/volcanic")));
+	parent_proc();
+	this.b_rule = list(5, 6, 7, 8);
+
+	this.s_rule = list(4);
+
+	this.type_map = list(T("/turf/open/floor/plating/asteroid/basalt"), T("/turf/closed/mineral/volcanic"));
 	return f.dot;
 });
 
@@ -191,12 +169,10 @@ rt.type(1878, "/datum/mapGenerator/ca/maze", "/datum/mapGenerator/ca", {
 	edge_value: 0,
 });
 
-// /datum/mapGenerator/ca/maze/proc/<init>  (code/modules/procedural_mapping/mapGenerators/cellular.dm:95)
+// cellular.dm:95
 rt.def("/datum/mapGenerator/ca/maze/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "b_rule", rt.list(3));
-	rt.setSv(f, "s_rule", rt.list(1, 2, 3, 4, 5));
+	parent_proc();
+	this.b_rule = list(3);
+	this.s_rule = list(1, 2, 3, 4, 5);
 	return f.dot;
 });

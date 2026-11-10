@@ -1,118 +1,100 @@
-// From code/modules/uplink/uplink_item.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/uplink/uplink_item.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
-// /datum/controller/global_vars/proc/InitGlobaluplink_items  (code/modules/uplink/uplink_item.dm:1)
+// uplink_item.dm:1
 rt.def("/datum/controller/global_vars/proc/InitGlobaluplink_items", function InitGlobaluplink_items(f: Frame) {
-	rt.setGl("uplink_items", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "uplink_items", add);
+	GLOB.uplink_items = list();
+	this.gvars_datum_init_order += "uplink_items";
 	return f.dot;
 });
 
-// /proc/initialize_global_uplink_items  (code/modules/uplink/uplink_item.dm:4)  may sleep
+// uplink_item.dm:4
 rt.def("/proc/initialize_global_uplink_items", function* initialize_global_uplink_items(f: Frame) {
 	let item: Value = null, I: Value = null;
-	let $e: any;
-	f.vars = () => [item, I, $e];
-	rt.setGl("uplink_items", rt.list());
-	item = null;
-	rt.forList(f, 0, subtract((yield* g.call(f, P("/proc/typesof"), null, [T("/datum/uplink_item")])), T("/datum/uplink_item")));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		item = $e;
-		if (!truthy(rt.gv(f, "item", (I = (yield* g.new_(f, live(item), [])))))) {
+	GLOB.uplink_items = list();
+	for (item of each(typesof(T("/datum/uplink_item")) - T("/datum/uplink_item"))) {
+		if (!(I = (yield* new_(item))).item) {
 			continue;
 		}
-		if (!truthy(rt.index(rt.gl("uplink_items"), rt.fv(f, "category", live(I))))) {
-			rt.setAt(rt.gl("uplink_items"), rt.fv(f, "category", live(I)), rt.list());
+		if (!rt.index(GLOB.uplink_items, I.category)) {
+			rt.setAt(GLOB.uplink_items, I.category, list());
 		}
-		rt.setAt(rt.index(rt.gl("uplink_items"), rt.fv(f, "category", live(I))), rt.fv(f, "name", live(I)), live(I));
+		rt.setAt(rt.index(GLOB.uplink_items, I.category), I.name, I);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /proc/get_uplink_items  (code/modules/uplink/uplink_item.dm:14)  may sleep
+// uplink_item.dm:14
 rt.def("/proc/get_uplink_items", function* get_uplink_items(f: Frame, gamemode: Value) {
-	let filtered_uplink_items: Value = null, sale_items: Value = null, category: Value = null, item: Value = null, I: Value = null, i: Value = null, I_3: Value = null, A: Value = null, discount: Value = null, disclaimer: Value = null;
+	let category: Value = null, item: Value = null, I: Value = null, i: Value = null, I_3: Value = null, A: Value = null, discount: Value = null, disclaimer: Value = null;
 	let $e: any;
-	f.vars = () => [gamemode, filtered_uplink_items, sale_items, category, item, I, i, I_3, A, discount, disclaimer, $e];
-	if (live(gamemode) === null) {
-		gamemode = null;
+	if (!rt.len(f, GLOB.uplink_items)) {
+		yield* initialize_global_uplink_items();
 	}
-	if (!truthy(rt.len(f, rt.gl("uplink_items")))) {
-		yield* g.call(f, P("/proc/initialize_global_uplink_items"), null, []);
-	}
-	filtered_uplink_items = rt.list();
-	sale_items = rt.list();
-	category = null;
-	rt.forList(f, 0, rt.gl("uplink_items"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		category = $e;
+	let filtered_uplink_items: Value = list();
+	let sale_items: Value = list();
+	for (category of each(GLOB.uplink_items)) {
 		item = null;
-		rt.forList(f, 1, rt.index(rt.gl("uplink_items"), live(category)));
-		while (($e = rt.next(f, 1)) !== undefined) {
-			item = $e;
-			if (!truthy((rt.istype((I = rt.index(rt.index(rt.gl("uplink_items"), live(category)), live(item))), T("/datum/uplink_item")) ? 1 : 0))) {
+		for (item of each(rt.index(GLOB.uplink_items, category))) {
+			if (!rt.istype((I = rt.index(rt.index(GLOB.uplink_items, category), item)), T("/datum/uplink_item"))) {
 				continue;
 			}
-			if (truthy(rt.getLen(f, rt.fv(f, "include_modes", live(I))))) {
-				if (((!truthy(live(gamemode)) && truthy(rt.gl("SSticker"))) && !truthy((rt.isIn(f, rt.gv(f, "type", rt.fv(f, "mode", rt.gl("SSticker"))), rt.fv(f, "include_modes", live(I))) ? 1 : 0)))) {
+			if (rt.len(f, I.include_modes)) {
+				if (!gamemode && GLOB.SSticker && !rt.isIn(f, GLOB.SSticker.mode.type, I.include_modes)) {
 					continue;
 				}
-				if ((truthy(live(gamemode)) && !truthy((rt.isIn(f, live(gamemode), rt.fv(f, "include_modes", live(I))) ? 1 : 0)))) {
-					continue;
-				}
-			}
-			if (truthy(rt.getLen(f, rt.fv(f, "exclude_modes", live(I))))) {
-				if (((!truthy(live(gamemode)) && truthy(rt.gl("SSticker"))) && truthy((rt.isIn(f, rt.gv(f, "type", rt.fv(f, "mode", rt.gl("SSticker"))), rt.fv(f, "exclude_modes", live(I))) ? 1 : 0)))) {
-					continue;
-				}
-				if ((truthy(live(gamemode)) && truthy((rt.isIn(f, live(gamemode), rt.fv(f, "exclude_modes", live(I))) ? 1 : 0)))) {
+				if (gamemode && !rt.isIn(f, gamemode, I.include_modes)) {
 					continue;
 				}
 			}
-			if ((truthy(rt.fv(f, "player_minimum", live(I))) && rt.gt(rt.fv(f, "player_minimum", live(I)), rt.len(f, rt.gl("joined_player_list"))))) {
+			if (rt.len(f, I.exclude_modes)) {
+				if (!gamemode && GLOB.SSticker && rt.isIn(f, GLOB.SSticker.mode.type, I.exclude_modes)) {
+					continue;
+				}
+				if (gamemode && rt.isIn(f, gamemode, I.exclude_modes)) {
+					continue;
+				}
+			}
+			if (I.player_minimum && I.player_minimum > rt.len(f, GLOB.joined_player_list)) {
 				continue;
 			}
-			if (!truthy(rt.index(live(filtered_uplink_items), live(category)))) {
-				rt.setAt(live(filtered_uplink_items), live(category), rt.list());
+			if (!rt.index(filtered_uplink_items, category)) {
+				rt.setAt(filtered_uplink_items, category, list());
 			}
-			rt.setAt(rt.index(live(filtered_uplink_items), live(category)), live(item), live(I));
-			if ((((rt.lt(rt.fv(f, "limited_stock", live(I)), 0) && !truthy(rt.fv(f, "cant_discount", live(I)))) && truthy(rt.fv(f, "item", live(I)))) && rt.gt(rt.fv(f, "cost", live(I)), 1))) {
-				sale_items = rt.modify(live(sale_items), live(I), add);
+			rt.setAt(rt.index(filtered_uplink_items, category), item, I);
+			if (I.limited_stock < 0 && !I.cant_discount && I.item && I.cost > 1) {
+				sale_items += I;
 			}
 		}
-		rt.endFor(f, 1);
 	}
-	rt.endFor(f, 0);
-	i = null;
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		I_3 = (yield* g.call(f, P("/proc/pick_n_take"), null, [live(sale_items)]));
-		A = (yield* g.new_(f, rt.fv(f, "type", live(I_3)), []));
-		discount = (yield* g.callName(f, live(A), "get_discount", []));
-		disclaimer = rt.list("Void where prohibited.", "Not recommended for children.", "Contains small parts.", "Check local laws for legality in region.", "Do not taunt.", "Not responsible for direct, indirect, incidental or consequential damages resulting from any defect, error or failure to perform.", "Keep away from fire or flames.", "Product is provided \"as is\" without any implied or expressed warranties.", "As seen on TV.", "For recreational use only.", "Use only as directed.", "16% sales tax will be charged for orders originating within Space Nebraska.");
-		rt.setFv(f, "limited_stock", live(A), 1);
-		rt.setFv(f, "refundable", live(I_3), 0);
-		rt.setFv(f, "refundable", live(A), 0);
-		if (rt.ge(rt.fv(f, "cost", live(A)), 20)) {
-			(discount = rt.modify(live(discount), 0.5, multiply));
+		I_3 = pick_n_take(sale_items);
+		A = (yield* new_(I_3.type));
+		discount = A.get_discount();
+		disclaimer = list("Void where prohibited.", "Not recommended for children.", "Contains small parts.", "Check local laws for legality in region.", "Do not taunt.", "Not responsible for direct, indirect, incidental or consequential damages resulting from any defect, error or failure to perform.", "Keep away from fire or flames.", "Product is provided \"as is\" without any implied or expressed warranties.", "As seen on TV.", "For recreational use only.", "Use only as directed.", "16% sales tax will be charged for orders originating within Space Nebraska.");
+		A.limited_stock = 1;
+		I_3.refundable = 0;
+		A.refundable = 0;
+		if (A.cost >= 20) {
+			discount *= 0.5;
 		}
-		rt.setFv(f, "cost", live(A), (yield* g.call(f, P("/proc/max"), null, [(yield* g.call(f, P("/proc/round"), null, [multiply(rt.fv(f, "cost", live(A)), live(discount))])), 1])));
-		rt.setFv(f, "category", live(A), "Discounted Gear");
-		rt.modField(f, live(A), "name", fmt(" (＀% off!)", [(yield* g.call(f, P("/proc/round"), null, [multiply(divide(subtract(rt.initial(f, live(A), "cost"), rt.fv(f, "cost", live(A))), rt.initial(f, live(A), "cost")), 100)]))]), add);
-		rt.modField(f, live(A), "desc", fmt(" Normally costs ＀ TC. All sales final. ＀", [rt.initial(f, live(A), "cost"), rt.op(f, "PickUnweighted", [1], [live(disclaimer)])]), add);
-		rt.setFv(f, "item", live(A), rt.fv(f, "item", live(I_3)));
-		if (!truthy(rt.index(live(filtered_uplink_items), rt.fv(f, "category", live(A))))) {
-			rt.setAt(live(filtered_uplink_items), rt.fv(f, "category", live(A)), rt.list());
+		A.cost = max(round(A.cost * discount), 1);
+		A.category = "Discounted Gear";
+		A.name += ` (${round((rt.initial(f, A, "cost") - A.cost) / rt.initial(f, A, "cost") * 100)}% off!)`;
+		A.desc += ` Normally costs ${rt.initial(f, A, "cost")} TC. All sales final. ${pick(disclaimer)}`;
+		A.item = I_3.item;
+		if (!rt.index(filtered_uplink_items, A.category)) {
+			rt.setAt(filtered_uplink_items, A.category, list());
 		}
-		rt.setAt(rt.index(live(filtered_uplink_items), rt.fv(f, "category", live(A))), rt.fv(f, "name", live(A)), live(A));
+		rt.setAt(rt.index(filtered_uplink_items, A.category), A.name, A);
 	}
 	rt.endFor(f, 0);
-	return live(filtered_uplink_items);
+	return filtered_uplink_items;
 }, true);
 
 rt.type(4244, "/datum/uplink_item", "/datum", {
@@ -134,81 +116,70 @@ rt.type(4244, "/datum/uplink_item", "/datum", {
 	purchase_log_vis: 1,
 });
 
-// /datum/uplink_item/proc/<init>  (code/modules/uplink/uplink_item.dm:83)
+// uplink_item.dm:83
 rt.def("/datum/uplink_item/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list());
-	$0 = $0;
-	rt.setSv(f, "exclude_modes", rt.list());
-	$0 = $0;
-	rt.setSv(f, "restricted_roles", rt.list());
+	parent_proc();
+	this.include_modes = list();
+
+	this.exclude_modes = list();
+
+	this.restricted_roles = list();
 	return f.dot;
 });
 
-// /datum/uplink_item/proc/get_discount  (code/modules/uplink/uplink_item.dm:90)
+// uplink_item.dm:90
 rt.def("/datum/uplink_item/proc/get_discount", function get_discount(f: Frame) {
 	return rt.op(f, "PickWeighted", [3], [4, 0.75, 2, 0.5, 1, 0.25]);
 });
 
-// /datum/uplink_item/proc/spawn_item  (code/modules/uplink/uplink_item.dm:94)  may sleep
+// uplink_item.dm:94
 rt.def("/datum/uplink_item/proc/spawn_item", function* spawn_item(f: Frame, loc: Value, U: Value) {
-	f.vars = () => [loc, U];
-	if (!truthy(rt.sv(f, "item"))) return f.dot;
-	return (yield* g.new_(f, rt.sv(f, "item"), [live(loc)]));
+	if (!this.item) return f.dot;
+	return (yield* new_(this.item, loc));
 }, true);
 
-// /datum/uplink_item/proc/buy  (code/modules/uplink/uplink_item.dm:98)  may sleep
+// uplink_item.dm:98
 rt.def("/datum/uplink_item/proc/buy", function* buy(f: Frame, user: Value, U: Value) {
-	let A: Value = null, B: Value = null, I: Value = null, H: Value = null;
-	let $e: any;
-	f.vars = () => [user, U, A, B, I, H, $e];
-	if (!truthy((rt.istype(live(U), T("/obj/item/device/uplink")) ? 1 : 0))) {
-		return live(f.dot);
+	let B: Value = null, I: Value = null, H: Value = null;
+	if (!rt.istype(U, T("/obj/item/device/uplink"))) {
+		return f.dot;
 	}
-	if ((!truthy(live(user)) || truthy((yield* g.callName(f, live(user), "incapacitated", []))))) {
-		return live(f.dot);
+	if (!user || user.incapacitated()) {
+		return f.dot;
 	}
-	if ((rt.lt(rt.fv(f, "telecrystals", live(U)), rt.sv(f, "cost")) || isEqual(rt.sv(f, "limited_stock"), 0))) {
-		return live(f.dot);
+	if (U.telecrystals < this.cost || this.limited_stock == 0) {
+		return f.dot;
 	} else {
-		(rt.modField(f, live(U), "telecrystals", rt.sv(f, "cost"), subtract));
-		rt.modField(f, live(U), "spent_telecrystals", rt.sv(f, "cost"), add);
+		U.telecrystals -= this.cost;
+		U.spent_telecrystals += this.cost;
 	}
-	A = (yield* g.srcCall(f, "spawn_item", rt.getStep(f, live(user), 0), live(U)));
-	if ((truthy((rt.istype((B = live(A)), T("/obj/item/weapon/storage/box")) ? 1 : 0)) && rt.gt(rt.getLen(f, rt.fv(f, "contents", live(B))), 0))) {
-		I = null;
-		rt.forList(f, 0, live(B), T("/obj/item"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			I = $e;
-			rt.modField(f, live(U), "purchase_log", fmt("<big>＀</big>", [(yield* g.call(f, P("/proc/bicon"), null, [live(I)]))]), add);
+	let A: Value = (yield* this.spawn_item(rt.getStep(f, user, 0), U));
+	if (rt.istype((B = A), T("/obj/item/weapon/storage/box")) && rt.len(f, B.contents) > 0) {
+		for (I of each(B, T("/obj/item"))) {
+			U.purchase_log += `<big>${bicon(I)}</big>`;
 		}
-		rt.endFor(f, 0);
-	} else {
-		if (truthy(rt.sv(f, "purchase_log_vis"))) {
-			rt.modField(f, live(U), "purchase_log", fmt("<big>＀</big>", [(yield* g.call(f, P("/proc/bicon"), null, [live(A)]))]), add);
-		}
+	} else if (this.purchase_log_vis) {
+		U.purchase_log += `<big>${bicon(A)}</big>`;
 	}
-	if (rt.gt(rt.sv(f, "limited_stock"), 0)) {
-		(rt.modSrcVar(f, "limited_stock", 1, subtract));
+	if (this.limited_stock > 0) {
+		this.limited_stock -= 1;
 	}
-	if ((truthy((rt.istype(live(user), T("/mob/living/carbon/human")) ? 1 : 0)) && truthy((rt.istype(live(A), T("/obj/item")) ? 1 : 0)))) {
-		if (truthy((yield* g.callName(f, (H = live(user)), "put_in_hands", [live(A)])))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(H), fmt("＀ materializes into your hands!", [live(A)])]);
+	if (rt.istype(user, T("/mob/living/carbon/human")) && rt.istype(A, T("/obj/item"))) {
+		if (yield* (H = user).put_in_hands(A)) {
+			to_chat(H, `${A} materializes into your hands!`);
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(H), fmt("＄！ materializes onto the floor.", [live(A)])]);
+			to_chat(H, fmt("＄！ materializes onto the floor.", [A]));
 		}
 	}
 	return 1;
 }, true);
 
-// /datum/uplink_item/proc/Destroy  (code/modules/uplink/uplink_item.dm:130)  may sleep
+// uplink_item.dm:130
 rt.def("/datum/uplink_item/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy((rt.isIn(f, live(f.src), rt.gl("uplink_items")) ? 1 : 0))) {
-		(rt.modGl("uplink_items", live(f.src), subtract));
+	if (rt.isIn(f, this, GLOB.uplink_items)) {
+		GLOB.uplink_items -= this;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);
 
 rt.type(4246, "/datum/uplink_item/nukeoffer", "/datum/uplink_item", {
@@ -218,12 +189,10 @@ rt.type(4246, "/datum/uplink_item/nukeoffer", "/datum/uplink_item", {
 	cant_discount: 1,
 });
 
-// /datum/uplink_item/nukeoffer/proc/<init>  (code/modules/uplink/uplink_item.dm:142)
+// uplink_item.dm:142
 rt.def("/datum/uplink_item/nukeoffer/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear")));
+	parent_proc();
+	this.include_modes = list(T("/datum/game_mode/nuclear"));
 	return f.dot;
 });
 
@@ -236,12 +205,10 @@ rt.type(4256, "/datum/uplink_item/dangerous/shotgun", "/datum/uplink_item/danger
 	item: rt.typePath("/obj/item/weapon/gun/ballistic/automatic/shotgun/bulldog"),
 });
 
-// /datum/uplink_item/dangerous/shotgun/proc/<init>  (code/modules/uplink/uplink_item.dm:210)
+// uplink_item.dm:210
 rt.def("/datum/uplink_item/dangerous/shotgun/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear")));
+	parent_proc();
+	this.include_modes = list(T("/datum/game_mode/nuclear"));
 	return f.dot;
 });
 
@@ -254,12 +221,10 @@ rt.type(4257, "/datum/uplink_item/dangerous/smg", "/datum/uplink_item/dangerous"
 	item: rt.typePath("/obj/item/weapon/gun/ballistic/automatic/c20r"),
 });
 
-// /datum/uplink_item/dangerous/smg/proc/<init>  (code/modules/uplink/uplink_item.dm:219)
+// uplink_item.dm:219
 rt.def("/datum/uplink_item/dangerous/smg/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear")));
+	parent_proc();
+	this.include_modes = list(T("/datum/game_mode/nuclear"));
 	return f.dot;
 });
 
@@ -268,12 +233,10 @@ rt.type(4258, "/datum/uplink_item/dangerous/smg/unrestricted", "/datum/uplink_it
 	item: rt.typePath("/obj/item/weapon/gun/ballistic/automatic/c20r/unrestricted"),
 });
 
-// /datum/uplink_item/dangerous/smg/unrestricted/proc/<init>  (code/modules/uplink/uplink_item.dm:223)
+// uplink_item.dm:223
 rt.def("/datum/uplink_item/dangerous/smg/unrestricted/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/gang")));
+	parent_proc();
+	this.include_modes = list(T("/datum/game_mode/gang"));
 	return f.dot;
 });
 
@@ -286,12 +249,10 @@ rt.type(4259, "/datum/uplink_item/dangerous/machinegun", "/datum/uplink_item/dan
 	item: rt.typePath("/obj/item/weapon/gun/ballistic/automatic/l6_saw"),
 });
 
-// /datum/uplink_item/dangerous/machinegun/proc/<init>  (code/modules/uplink/uplink_item.dm:232)
+// uplink_item.dm:232
 rt.def("/datum/uplink_item/dangerous/machinegun/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear")));
+	parent_proc();
+	this.include_modes = list(T("/datum/game_mode/nuclear"));
 	return f.dot;
 });
 
@@ -304,12 +265,10 @@ rt.type(4260, "/datum/uplink_item/dangerous/grenadier", "/datum/uplink_item/dang
 	item: rt.typePath("/obj/item/weapon/storage/belt/grenade/full"),
 });
 
-// /datum/uplink_item/dangerous/grenadier/proc/<init>  (code/modules/uplink/uplink_item.dm:238)
+// uplink_item.dm:238
 rt.def("/datum/uplink_item/dangerous/grenadier/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear")));
+	parent_proc();
+	this.include_modes = list(T("/datum/game_mode/nuclear"));
 	return f.dot;
 });
 
@@ -322,12 +281,10 @@ rt.type(4261, "/datum/uplink_item/dangerous/sniper", "/datum/uplink_item/dangero
 	item: rt.typePath("/obj/item/weapon/gun/ballistic/automatic/sniper_rifle/syndicate"),
 });
 
-// /datum/uplink_item/dangerous/sniper/proc/<init>  (code/modules/uplink/uplink_item.dm:248)
+// uplink_item.dm:248
 rt.def("/datum/uplink_item/dangerous/sniper/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear")));
+	parent_proc();
+	this.include_modes = list(T("/datum/game_mode/nuclear"));
 	return f.dot;
 });
 
@@ -339,12 +296,10 @@ rt.type(4262, "/datum/uplink_item/dangerous/bolt_action", "/datum/uplink_item/da
 	item: rt.typePath("/obj/item/weapon/gun/ballistic/shotgun/boltaction"),
 });
 
-// /datum/uplink_item/dangerous/bolt_action/proc/<init>  (code/modules/uplink/uplink_item.dm:255)
+// uplink_item.dm:255
 rt.def("/datum/uplink_item/dangerous/bolt_action/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear")));
+	parent_proc();
+	this.include_modes = list(T("/datum/game_mode/nuclear"));
 	return f.dot;
 });
 
@@ -357,12 +312,10 @@ rt.type(4263, "/datum/uplink_item/dangerous/crossbow", "/datum/uplink_item/dange
 	item: rt.typePath("/obj/item/weapon/gun/energy/kinetic_accelerator/crossbow"),
 });
 
-// /datum/uplink_item/dangerous/crossbow/proc/<init>  (code/modules/uplink/uplink_item.dm:268)
+// uplink_item.dm:268
 rt.def("/datum/uplink_item/dangerous/crossbow/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "exclude_modes", rt.list(T("/datum/game_mode/nuclear"), T("/datum/game_mode/gang")));
+	parent_proc();
+	this.exclude_modes = list(T("/datum/game_mode/nuclear"), T("/datum/game_mode/gang"));
 	return f.dot;
 });
 
@@ -375,12 +328,10 @@ rt.type(4264, "/datum/uplink_item/dangerous/flamethrower", "/datum/uplink_item/d
 	item: rt.typePath("/obj/item/weapon/flamethrower/full/tank"),
 });
 
-// /datum/uplink_item/dangerous/flamethrower/proc/<init>  (code/modules/uplink/uplink_item.dm:277)
+// uplink_item.dm:277
 rt.def("/datum/uplink_item/dangerous/flamethrower/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear"), T("/datum/game_mode/gang")));
+	parent_proc();
+	this.include_modes = list(T("/datum/game_mode/nuclear"), T("/datum/game_mode/gang"));
 	return f.dot;
 });
 
@@ -392,9 +343,9 @@ rt.type(4266, "/datum/uplink_item/dangerous/doublesword", "/datum/uplink_item/da
 	item: rt.typePath("/obj/item/weapon/twohanded/dualsaber"),
 });
 
-// /datum/uplink_item/dangerous/doublesword/proc/get_discount  (code/modules/uplink/uplink_item.dm:295)
+// uplink_item.dm:295
 rt.def("/datum/uplink_item/dangerous/doublesword/proc/get_discount", function get_discount(f: Frame) {
-	return rt.op(f, "PickWeighted", [3], [4, 0.800000011920929, 2, 0.6499999761581421, 1, 0.5]);
+	return rt.op(f, "PickWeighted", [3], [4, 0.8, 2, 0.65, 1, 0.5]);
 });
 
 rt.type(4270, "/datum/uplink_item/dangerous/foamsmg", "/datum/uplink_item/dangerous", {
@@ -406,12 +357,10 @@ rt.type(4270, "/datum/uplink_item/dangerous/foamsmg", "/datum/uplink_item/danger
 	item: rt.typePath("/obj/item/weapon/gun/ballistic/automatic/c20r/toy"),
 });
 
-// /datum/uplink_item/dangerous/foamsmg/proc/<init>  (code/modules/uplink/uplink_item.dm:326)
+// uplink_item.dm:326
 rt.def("/datum/uplink_item/dangerous/foamsmg/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear")));
+	parent_proc();
+	this.include_modes = list(T("/datum/game_mode/nuclear"));
 	return f.dot;
 });
 
@@ -424,12 +373,10 @@ rt.type(4271, "/datum/uplink_item/dangerous/foammachinegun", "/datum/uplink_item
 	item: rt.typePath("/obj/item/weapon/gun/ballistic/automatic/l6_saw/toy"),
 });
 
-// /datum/uplink_item/dangerous/foammachinegun/proc/<init>  (code/modules/uplink/uplink_item.dm:335)
+// uplink_item.dm:335
 rt.def("/datum/uplink_item/dangerous/foammachinegun/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear")));
+	parent_proc();
+	this.include_modes = list(T("/datum/game_mode/nuclear"));
 	return f.dot;
 });
 
@@ -442,12 +389,10 @@ rt.type(4272, "/datum/uplink_item/dangerous/viscerators", "/datum/uplink_item/da
 	item: rt.typePath("/obj/item/weapon/grenade/spawnergrenade/manhacks"),
 });
 
-// /datum/uplink_item/dangerous/viscerators/proc/<init>  (code/modules/uplink/uplink_item.dm:344)
+// uplink_item.dm:344
 rt.def("/datum/uplink_item/dangerous/viscerators/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear")));
+	parent_proc();
+	this.include_modes = list(T("/datum/game_mode/nuclear"));
 	return f.dot;
 });
 
@@ -460,12 +405,10 @@ rt.type(4273, "/datum/uplink_item/dangerous/bioterrorfoam", "/datum/uplink_item/
 	item: rt.typePath("/obj/item/weapon/grenade/chem_grenade/bioterrorfoam"),
 });
 
-// /datum/uplink_item/dangerous/bioterrorfoam/proc/<init>  (code/modules/uplink/uplink_item.dm:354)
+// uplink_item.dm:354
 rt.def("/datum/uplink_item/dangerous/bioterrorfoam/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear")));
+	parent_proc();
+	this.include_modes = list(T("/datum/game_mode/nuclear"));
 	return f.dot;
 });
 
@@ -478,12 +421,10 @@ rt.type(4274, "/datum/uplink_item/dangerous/bioterror", "/datum/uplink_item/dang
 	item: rt.typePath("/obj/item/weapon/reagent_containers/spray/chemsprayer/bioterror"),
 });
 
-// /datum/uplink_item/dangerous/bioterror/proc/<init>  (code/modules/uplink/uplink_item.dm:364)
+// uplink_item.dm:364
 rt.def("/datum/uplink_item/dangerous/bioterror/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear"), T("/datum/game_mode/gang")));
+	parent_proc();
+	this.include_modes = list(T("/datum/game_mode/nuclear"), T("/datum/game_mode/gang"));
 	return f.dot;
 });
 
@@ -496,12 +437,10 @@ rt.type(4276, "/datum/uplink_item/stealthy_weapons/virus_grenade", "/datum/uplin
 	item: rt.typePath("/obj/item/weapon/storage/box/syndie_kit/tuberculosisgrenade"),
 });
 
-// /datum/uplink_item/stealthy_weapons/virus_grenade/proc/<init>  (code/modules/uplink/uplink_item.dm:374)
+// uplink_item.dm:374
 rt.def("/datum/uplink_item/stealthy_weapons/virus_grenade/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear")));
+	parent_proc();
+	this.include_modes = list(T("/datum/game_mode/nuclear"));
 	return f.dot;
 });
 
@@ -513,12 +452,10 @@ rt.type(4297, "/datum/uplink_item/ammo/bolt_action", "/datum/uplink_item/ammo", 
 	item: rt.typePath("/obj/item/ammo_box/a762"),
 });
 
-// /datum/uplink_item/ammo/bolt_action/proc/<init>  (code/modules/uplink/uplink_item.dm:411)
+// uplink_item.dm:411
 rt.def("/datum/uplink_item/ammo/bolt_action/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear")));
+	parent_proc();
+	this.include_modes = list(T("/datum/game_mode/nuclear"));
 	return f.dot;
 });
 
@@ -527,12 +464,10 @@ rt.type(4299, "/datum/uplink_item/ammo/shotgun", "/datum/uplink_item/ammo", {
 	include_modes: null,
 });
 
-// /datum/uplink_item/ammo/shotgun/proc/<init>  (code/modules/uplink/uplink_item.dm:422)
+// uplink_item.dm:422
 rt.def("/datum/uplink_item/ammo/shotgun/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear")));
+	parent_proc();
+	this.include_modes = list(T("/datum/game_mode/nuclear"));
 	return f.dot;
 });
 
@@ -543,12 +478,10 @@ rt.type(4302, "/datum/uplink_item/ammo/shotgun/stun", "/datum/uplink_item/ammo/s
 	item: rt.typePath("/obj/item/ammo_box/magazine/m12g"),
 });
 
-// /datum/uplink_item/ammo/shotgun/stun/proc/<init>  (code/modules/uplink/uplink_item.dm:441)
+// uplink_item.dm:441
 rt.def("/datum/uplink_item/ammo/shotgun/stun/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear")));
+	parent_proc();
+	this.include_modes = list(T("/datum/game_mode/nuclear"));
 	return f.dot;
 });
 
@@ -559,12 +492,10 @@ rt.type(4303, "/datum/uplink_item/ammo/shotgun/dragon", "/datum/uplink_item/ammo
 	item: rt.typePath("/obj/item/ammo_box/magazine/m12g/dragon"),
 });
 
-// /datum/uplink_item/ammo/shotgun/dragon/proc/<init>  (code/modules/uplink/uplink_item.dm:448)
+// uplink_item.dm:448
 rt.def("/datum/uplink_item/ammo/shotgun/dragon/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear")));
+	parent_proc();
+	this.include_modes = list(T("/datum/game_mode/nuclear"));
 	return f.dot;
 });
 
@@ -575,12 +506,10 @@ rt.type(4304, "/datum/uplink_item/ammo/shotgun/breach", "/datum/uplink_item/ammo
 	item: rt.typePath("/obj/item/ammo_box/magazine/m12g/breach"),
 });
 
-// /datum/uplink_item/ammo/shotgun/breach/proc/<init>  (code/modules/uplink/uplink_item.dm:455)
+// uplink_item.dm:455
 rt.def("/datum/uplink_item/ammo/shotgun/breach/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear")));
+	parent_proc();
+	this.include_modes = list(T("/datum/game_mode/nuclear"));
 	return f.dot;
 });
 
@@ -592,12 +521,10 @@ rt.type(4306, "/datum/uplink_item/ammo/smg", "/datum/uplink_item/ammo", {
 	item: rt.typePath("/obj/item/ammo_box/magazine/smgm45"),
 });
 
-// /datum/uplink_item/ammo/smg/proc/<init>  (code/modules/uplink/uplink_item.dm:469)
+// uplink_item.dm:469
 rt.def("/datum/uplink_item/ammo/smg/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear"), T("/datum/game_mode/gang")));
+	parent_proc();
+	this.include_modes = list(T("/datum/game_mode/nuclear"), T("/datum/game_mode/gang"));
 	return f.dot;
 });
 
@@ -609,12 +536,10 @@ rt.type(4307, "/datum/uplink_item/ammo/smg/bag", "/datum/uplink_item/ammo/smg", 
 	item: rt.typePath("/obj/item/weapon/storage/backpack/duffelbag/syndie/ammo/smg"),
 });
 
-// /datum/uplink_item/ammo/smg/bag/proc/<init>  (code/modules/uplink/uplink_item.dm:476)
+// uplink_item.dm:476
 rt.def("/datum/uplink_item/ammo/smg/bag/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear")));
+	parent_proc();
+	this.include_modes = list(T("/datum/game_mode/nuclear"));
 	return f.dot;
 });
 
@@ -624,12 +549,10 @@ rt.type(4308, "/datum/uplink_item/ammo/machinegun", "/datum/uplink_item/ammo", {
 	include_modes: null,
 });
 
-// /datum/uplink_item/ammo/machinegun/proc/<init>  (code/modules/uplink/uplink_item.dm:481)
+// uplink_item.dm:481
 rt.def("/datum/uplink_item/ammo/machinegun/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear")));
+	parent_proc();
+	this.include_modes = list(T("/datum/game_mode/nuclear"));
 	return f.dot;
 });
 
@@ -638,12 +561,10 @@ rt.type(4314, "/datum/uplink_item/ammo/sniper", "/datum/uplink_item/ammo", {
 	include_modes: null,
 });
 
-// /datum/uplink_item/ammo/sniper/proc/<init>  (code/modules/uplink/uplink_item.dm:515)
+// uplink_item.dm:515
 rt.def("/datum/uplink_item/ammo/sniper/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear")));
+	parent_proc();
+	this.include_modes = list(T("/datum/game_mode/nuclear"));
 	return f.dot;
 });
 
@@ -655,12 +576,10 @@ rt.type(4320, "/datum/uplink_item/ammo/bioterror", "/datum/uplink_item/ammo", {
 	item: rt.typePath("/obj/item/weapon/storage/box/syndie_kit/bioterror"),
 });
 
-// /datum/uplink_item/ammo/bioterror/proc/<init>  (code/modules/uplink/uplink_item.dm:554)
+// uplink_item.dm:554
 rt.def("/datum/uplink_item/ammo/bioterror/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear")));
+	parent_proc();
+	this.include_modes = list(T("/datum/game_mode/nuclear"));
 	return f.dot;
 });
 
@@ -670,12 +589,10 @@ rt.type(4321, "/datum/uplink_item/support", "/datum/uplink_item", {
 	include_modes: null,
 });
 
-// /datum/uplink_item/support/proc/<init>  (code/modules/uplink/uplink_item.dm:560)
+// uplink_item.dm:560
 rt.def("/datum/uplink_item/support/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear")));
+	parent_proc();
+	this.include_modes = list(T("/datum/game_mode/nuclear"));
 	return f.dot;
 });
 
@@ -688,12 +605,10 @@ rt.type(4277, "/datum/uplink_item/stealthy_weapons/martialarts", "/datum/uplink_
 	item: rt.typePath("/obj/item/weapon/sleeping_carp_scroll"),
 });
 
-// /datum/uplink_item/stealthy_weapons/martialarts/proc/<init>  (code/modules/uplink/uplink_item.dm:610)
+// uplink_item.dm:610
 rt.def("/datum/uplink_item/stealthy_weapons/martialarts/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "exclude_modes", rt.list(T("/datum/game_mode/nuclear"), T("/datum/game_mode/gang")));
+	parent_proc();
+	this.exclude_modes = list(T("/datum/game_mode/nuclear"), T("/datum/game_mode/gang"));
 	return f.dot;
 });
 
@@ -706,12 +621,10 @@ rt.type(4278, "/datum/uplink_item/stealthy_weapons/cqc", "/datum/uplink_item/ste
 	item: rt.typePath("/obj/item/weapon/cqc_manual"),
 });
 
-// /datum/uplink_item/stealthy_weapons/cqc/proc/<init>  (code/modules/uplink/uplink_item.dm:616)
+// uplink_item.dm:616
 rt.def("/datum/uplink_item/stealthy_weapons/cqc/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear")));
+	parent_proc();
+	this.include_modes = list(T("/datum/game_mode/nuclear"));
 	return f.dot;
 });
 
@@ -724,12 +637,10 @@ rt.type(4281, "/datum/uplink_item/stealthy_weapons/foampistol", "/datum/uplink_i
 	item: rt.typePath("/obj/item/weapon/gun/ballistic/automatic/toy/pistol/riot"),
 });
 
-// /datum/uplink_item/stealthy_weapons/foampistol/proc/<init>  (code/modules/uplink/uplink_item.dm:640)
+// uplink_item.dm:640
 rt.def("/datum/uplink_item/stealthy_weapons/foampistol/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "exclude_modes", rt.list(T("/datum/game_mode/gang")));
+	parent_proc();
+	this.exclude_modes = list(T("/datum/game_mode/gang"));
 	return f.dot;
 });
 
@@ -741,12 +652,10 @@ rt.type(4282, "/datum/uplink_item/stealthy_weapons/sleepy_pen", "/datum/uplink_i
 	item: rt.typePath("/obj/item/weapon/pen/sleepy"),
 });
 
-// /datum/uplink_item/stealthy_weapons/sleepy_pen/proc/<init>  (code/modules/uplink/uplink_item.dm:650)
+// uplink_item.dm:650
 rt.def("/datum/uplink_item/stealthy_weapons/sleepy_pen/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "exclude_modes", rt.list(T("/datum/game_mode/nuclear"), T("/datum/game_mode/gang")));
+	parent_proc();
+	this.exclude_modes = list(T("/datum/game_mode/nuclear"), T("/datum/game_mode/gang"));
 	return f.dot;
 });
 
@@ -759,12 +668,10 @@ rt.type(4285, "/datum/uplink_item/stealthy_weapons/romerol_kit", "/datum/uplink_
 	item: rt.typePath("/obj/item/weapon/storage/box/syndie_kit/romerol"),
 });
 
-// /datum/uplink_item/stealthy_weapons/romerol_kit/proc/<init>  (code/modules/uplink/uplink_item.dm:673)
+// uplink_item.dm:673
 rt.def("/datum/uplink_item/stealthy_weapons/romerol_kit/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "exclude_modes", rt.list(T("/datum/game_mode/nuclear"), T("/datum/game_mode/gang")));
+	parent_proc();
+	this.exclude_modes = list(T("/datum/game_mode/nuclear"), T("/datum/game_mode/gang"));
 	return f.dot;
 });
 
@@ -777,12 +684,10 @@ rt.type(4328, "/datum/uplink_item/stealthy_tools/chameleon", "/datum/uplink_item
 	item: rt.typePath("/obj/item/weapon/storage/box/syndie_kit/chameleon"),
 });
 
-// /datum/uplink_item/stealthy_tools/chameleon/proc/<init>  (code/modules/uplink/uplink_item.dm:730)
+// uplink_item.dm:730
 rt.def("/datum/uplink_item/stealthy_tools/chameleon/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "exclude_modes", rt.list(T("/datum/game_mode/nuclear")));
+	parent_proc();
+	this.exclude_modes = list(T("/datum/game_mode/nuclear"));
 	return f.dot;
 });
 
@@ -792,14 +697,12 @@ rt.type(4329, "/datum/uplink_item/stealthy_tools/chameleon/nuke", "/datum/uplink
 	include_modes: null,
 });
 
-// /datum/uplink_item/stealthy_tools/chameleon/nuke/proc/<init>  (code/modules/uplink/uplink_item.dm:735)
+// uplink_item.dm:735
 rt.def("/datum/uplink_item/stealthy_tools/chameleon/nuke/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "exclude_modes", rt.list());
-	$0 = $0;
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear")));
+	parent_proc();
+	this.exclude_modes = list();
+
+	this.include_modes = list(T("/datum/game_mode/nuclear"));
 	return f.dot;
 });
 
@@ -812,12 +715,10 @@ rt.type(4330, "/datum/uplink_item/stealthy_tools/syndigaloshes", "/datum/uplink_
 	item: rt.typePath("/obj/item/clothing/shoes/chameleon"),
 });
 
-// /datum/uplink_item/stealthy_tools/syndigaloshes/proc/<init>  (code/modules/uplink/uplink_item.dm:744)
+// uplink_item.dm:744
 rt.def("/datum/uplink_item/stealthy_tools/syndigaloshes/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "exclude_modes", rt.list(T("/datum/game_mode/nuclear")));
+	parent_proc();
+	this.exclude_modes = list(T("/datum/game_mode/nuclear"));
 	return f.dot;
 });
 
@@ -830,14 +731,12 @@ rt.type(4331, "/datum/uplink_item/stealthy_tools/syndigaloshes/nuke", "/datum/up
 	item: rt.typePath("/obj/item/clothing/shoes/chameleon"),
 });
 
-// /datum/uplink_item/stealthy_tools/syndigaloshes/nuke/proc/<init>  (code/modules/uplink/uplink_item.dm:762)
+// uplink_item.dm:762
 rt.def("/datum/uplink_item/stealthy_tools/syndigaloshes/nuke/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "exclude_modes", rt.list());
-	$0 = $0;
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear")));
+	parent_proc();
+	this.exclude_modes = list();
+
+	this.include_modes = list(T("/datum/game_mode/nuclear"));
 	return f.dot;
 });
 
@@ -849,12 +748,10 @@ rt.type(4334, "/datum/uplink_item/stealthy_tools/chameleon_proj", "/datum/uplink
 	item: rt.typePath("/obj/item/device/chameleon"),
 });
 
-// /datum/uplink_item/stealthy_tools/chameleon_proj/proc/<init>  (code/modules/uplink/uplink_item.dm:781)
+// uplink_item.dm:781
 rt.def("/datum/uplink_item/stealthy_tools/chameleon_proj/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "exclude_modes", rt.list(T("/datum/game_mode/gang")));
+	parent_proc();
+	this.exclude_modes = list(T("/datum/game_mode/gang"));
 	return f.dot;
 });
 
@@ -867,12 +764,10 @@ rt.type(4338, "/datum/uplink_item/stealthy_tools/mulligan", "/datum/uplink_item/
 	item: rt.typePath("/obj/item/weapon/reagent_containers/syringe/mulligan"),
 });
 
-// /datum/uplink_item/stealthy_tools/mulligan/proc/<init>  (code/modules/uplink/uplink_item.dm:815)
+// uplink_item.dm:815
 rt.def("/datum/uplink_item/stealthy_tools/mulligan/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "exclude_modes", rt.list(T("/datum/game_mode/nuclear"), T("/datum/game_mode/gang")));
+	parent_proc();
+	this.exclude_modes = list(T("/datum/game_mode/nuclear"), T("/datum/game_mode/gang"));
 	return f.dot;
 });
 
@@ -882,12 +777,10 @@ rt.type(4342, "/datum/uplink_item/suits", "/datum/uplink_item", {
 	surplus: 40,
 });
 
-// /datum/uplink_item/suits/proc/<init>  (code/modules/uplink/uplink_item.dm:843)
+// uplink_item.dm:843
 rt.def("/datum/uplink_item/suits/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "exclude_modes", rt.list(T("/datum/game_mode/gang")));
+	parent_proc();
+	this.exclude_modes = list(T("/datum/game_mode/gang"));
 	return f.dot;
 });
 
@@ -899,12 +792,10 @@ rt.type(4344, "/datum/uplink_item/suits/hardsuit", "/datum/uplink_item/suits", {
 	item: rt.typePath("/obj/item/clothing/suit/space/hardsuit/syndi"),
 });
 
-// /datum/uplink_item/suits/hardsuit/proc/<init>  (code/modules/uplink/uplink_item.dm:864)
+// uplink_item.dm:864
 rt.def("/datum/uplink_item/suits/hardsuit/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "exclude_modes", rt.list(T("/datum/game_mode/nuclear")));
+	parent_proc();
+	this.exclude_modes = list(T("/datum/game_mode/nuclear"));
 	return f.dot;
 });
 
@@ -917,14 +808,12 @@ rt.type(4345, "/datum/uplink_item/suits/hardsuit/elite", "/datum/uplink_item/sui
 	item: rt.typePath("/obj/item/clothing/suit/space/hardsuit/syndi/elite"),
 });
 
-// /datum/uplink_item/suits/hardsuit/elite/proc/<init>  (code/modules/uplink/uplink_item.dm:872)
+// uplink_item.dm:872
 rt.def("/datum/uplink_item/suits/hardsuit/elite/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear")));
-	$0 = $0;
-	rt.setSv(f, "exclude_modes", rt.list());
+	parent_proc();
+	this.include_modes = list(T("/datum/game_mode/nuclear"));
+
+	this.exclude_modes = list();
 	return f.dot;
 });
 
@@ -937,14 +826,12 @@ rt.type(4346, "/datum/uplink_item/suits/hardsuit/shielded", "/datum/uplink_item/
 	item: rt.typePath("/obj/item/clothing/suit/space/hardsuit/shielded/syndi"),
 });
 
-// /datum/uplink_item/suits/hardsuit/shielded/proc/<init>  (code/modules/uplink/uplink_item.dm:881)
+// uplink_item.dm:881
 rt.def("/datum/uplink_item/suits/hardsuit/shielded/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear")));
-	$0 = $0;
-	rt.setSv(f, "exclude_modes", rt.list());
+	parent_proc();
+	this.include_modes = list(T("/datum/game_mode/nuclear"));
+
+	this.exclude_modes = list();
 	return f.dot;
 });
 
@@ -956,12 +843,10 @@ rt.type(4348, "/datum/uplink_item/device_tools/emag", "/datum/uplink_item/device
 	item: rt.typePath("/obj/item/weapon/card/emag"),
 });
 
-// /datum/uplink_item/device_tools/emag/proc/<init>  (code/modules/uplink/uplink_item.dm:894)
+// uplink_item.dm:894
 rt.def("/datum/uplink_item/device_tools/emag/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "exclude_modes", rt.list(T("/datum/game_mode/gang")));
+	parent_proc();
+	this.exclude_modes = list(T("/datum/game_mode/gang"));
 	return f.dot;
 });
 
@@ -973,12 +858,10 @@ rt.type(4351, "/datum/uplink_item/device_tools/military_belt", "/datum/uplink_it
 	item: rt.typePath("/obj/item/weapon/storage/belt/military"),
 });
 
-// /datum/uplink_item/device_tools/military_belt/proc/<init>  (code/modules/uplink/uplink_item.dm:915)
+// uplink_item.dm:915
 rt.def("/datum/uplink_item/device_tools/military_belt/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "exclude_modes", rt.list(T("/datum/game_mode/nuclear")));
+	parent_proc();
+	this.exclude_modes = list(T("/datum/game_mode/nuclear"));
 	return f.dot;
 });
 
@@ -990,12 +873,10 @@ rt.type(4352, "/datum/uplink_item/device_tools/medkit", "/datum/uplink_item/devi
 	item: rt.typePath("/obj/item/weapon/storage/firstaid/tactical"),
 });
 
-// /datum/uplink_item/device_tools/medkit/proc/<init>  (code/modules/uplink/uplink_item.dm:924)
+// uplink_item.dm:924
 rt.def("/datum/uplink_item/device_tools/medkit/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear"), T("/datum/game_mode/gang")));
+	parent_proc();
+	this.include_modes = list(T("/datum/game_mode/nuclear"), T("/datum/game_mode/gang"));
 	return f.dot;
 });
 
@@ -1007,20 +888,19 @@ rt.type(4359, "/datum/uplink_item/device_tools/briefcase_launchpad", "/datum/upl
 	item: rt.typePath("/obj/item/briefcase_launchpad"),
 });
 
-// /datum/uplink_item/device_tools/briefcase_launchpad/proc/buy  (code/modules/uplink/uplink_item.dm:984)  may sleep
-rt.def("/datum/uplink_item/device_tools/briefcase_launchpad/proc/buy", function* buy(f: Frame) {
-	let L: Value = null, H: Value = null;
-	f.vars = () => [L, H];
-	L = (yield* g.new_(f, T("/obj/item/device/launchpad_remote"), [rt.getStep(f, live(f.args[0]), 0)]));
-	if (truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		if (truthy((yield* g.callName(f, (H = live(f.args[0])), "put_in_hands", [live(L)])))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(H), fmt("＀ materializes into your hands!", [live(L)])]);
+// uplink_item.dm:984
+rt.def("/datum/uplink_item/device_tools/briefcase_launchpad/proc/buy", function* buy(f: Frame, user: Value, U: Value) {
+	let H: Value = null;
+	let L: Value = (yield* new_(T("/obj/item/device/launchpad_remote"), rt.getStep(f, user, 0)));
+	if (rt.istype(user, T("/mob/living/carbon/human"))) {
+		if (yield* (H = user).put_in_hands(L)) {
+			to_chat(H, `${L} materializes into your hands!`);
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(H), fmt("＄！ materializes onto the floor.", [live(L)])]);
+			to_chat(H, fmt("＄！ materializes onto the floor.", [L]));
 		}
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["user", "U"] });
+	return (yield* parent_proc());
+}, true);
 
 rt.type(4360, "/datum/uplink_item/device_tools/magboots", "/datum/uplink_item/device_tools", {
 	name: "Blood-Red Magboots",
@@ -1030,12 +910,10 @@ rt.type(4360, "/datum/uplink_item/device_tools/magboots", "/datum/uplink_item/de
 	item: rt.typePath("/obj/item/clothing/shoes/magboots/syndie"),
 });
 
-// /datum/uplink_item/device_tools/magboots/proc/<init>  (code/modules/uplink/uplink_item.dm:1000)
+// uplink_item.dm:1000
 rt.def("/datum/uplink_item/device_tools/magboots/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear")));
+	parent_proc();
+	this.include_modes = list(T("/datum/game_mode/nuclear"));
 	return f.dot;
 });
 
@@ -1047,12 +925,10 @@ rt.type(4365, "/datum/uplink_item/device_tools/singularity_beacon", "/datum/upli
 	item: rt.typePath("/obj/item/device/sbeacondrop"),
 });
 
-// /datum/uplink_item/device_tools/singularity_beacon/proc/<init>  (code/modules/uplink/uplink_item.dm:1041)
+// uplink_item.dm:1041
 rt.def("/datum/uplink_item/device_tools/singularity_beacon/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "exclude_modes", rt.list(T("/datum/game_mode/gang")));
+	parent_proc();
+	this.exclude_modes = list(T("/datum/game_mode/gang"));
 	return f.dot;
 });
 
@@ -1064,12 +940,10 @@ rt.type(4367, "/datum/uplink_item/device_tools/syndicate_detonator", "/datum/upl
 	item: rt.typePath("/obj/item/device/syndicatedetonator"),
 });
 
-// /datum/uplink_item/device_tools/syndicate_detonator/proc/<init>  (code/modules/uplink/uplink_item.dm:1061)
+// uplink_item.dm:1061
 rt.def("/datum/uplink_item/device_tools/syndicate_detonator/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear")));
+	parent_proc();
+	this.include_modes = list(T("/datum/game_mode/nuclear"));
 	return f.dot;
 });
 
@@ -1082,12 +956,10 @@ rt.type(4369, "/datum/uplink_item/device_tools/assault_pod", "/datum/uplink_item
 	item: rt.typePath("/obj/item/device/assault_pod"),
 });
 
-// /datum/uplink_item/device_tools/assault_pod/proc/<init>  (code/modules/uplink/uplink_item.dm:1078)
+// uplink_item.dm:1078
 rt.def("/datum/uplink_item/device_tools/assault_pod/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear")));
+	parent_proc();
+	this.include_modes = list(T("/datum/game_mode/nuclear"));
 	return f.dot;
 });
 
@@ -1100,12 +972,10 @@ rt.type(4370, "/datum/uplink_item/device_tools/shield", "/datum/uplink_item/devi
 	item: rt.typePath("/obj/item/weapon/shield/energy"),
 });
 
-// /datum/uplink_item/device_tools/shield/proc/<init>  (code/modules/uplink/uplink_item.dm:1087)
+// uplink_item.dm:1087
 rt.def("/datum/uplink_item/device_tools/shield/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear"), T("/datum/game_mode/gang")));
+	parent_proc();
+	this.include_modes = list(T("/datum/game_mode/nuclear"), T("/datum/game_mode/gang"));
 	return f.dot;
 });
 
@@ -1117,12 +987,10 @@ rt.type(4371, "/datum/uplink_item/device_tools/medgun", "/datum/uplink_item/devi
 	item: rt.typePath("/obj/item/weapon/gun/medbeam"),
 });
 
-// /datum/uplink_item/device_tools/medgun/proc/<init>  (code/modules/uplink/uplink_item.dm:1095)
+// uplink_item.dm:1095
 rt.def("/datum/uplink_item/device_tools/medgun/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear")));
+	parent_proc();
+	this.include_modes = list(T("/datum/game_mode/nuclear"));
 	return f.dot;
 });
 
@@ -1134,12 +1002,10 @@ rt.type(4372, "/datum/uplink_item/device_tools/potion", "/datum/uplink_item/devi
 	item: rt.typePath("/obj/item/slimepotion/sentience"),
 });
 
-// /datum/uplink_item/device_tools/potion/proc/<init>  (code/modules/uplink/uplink_item.dm:1102)
+// uplink_item.dm:1102
 rt.def("/datum/uplink_item/device_tools/potion/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear")));
+	parent_proc();
+	this.include_modes = list(T("/datum/game_mode/nuclear"));
 	return f.dot;
 });
 
@@ -1151,12 +1017,10 @@ rt.type(4377, "/datum/uplink_item/device_tools/codespeak_manual", "/datum/uplink
 	item: rt.typePath("/obj/item/weapon/codespeak_manual"),
 });
 
-// /datum/uplink_item/device_tools/codespeak_manual/proc/<init>  (code/modules/uplink/uplink_item.dm:1138)
+// uplink_item.dm:1138
 rt.def("/datum/uplink_item/device_tools/codespeak_manual/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "exclude_modes", rt.list(T("/datum/game_mode/nuclear")));
+	parent_proc();
+	this.exclude_modes = list(T("/datum/game_mode/nuclear"));
 	return f.dot;
 });
 
@@ -1167,12 +1031,10 @@ rt.type(4378, "/datum/uplink_item/device_tools/codespeak_manual_deluxe", "/datum
 	include_modes: null,
 });
 
-// /datum/uplink_item/device_tools/codespeak_manual_deluxe/proc/<init>  (code/modules/uplink/uplink_item.dm:1144)
+// uplink_item.dm:1144
 rt.def("/datum/uplink_item/device_tools/codespeak_manual_deluxe/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear")));
+	parent_proc();
+	this.include_modes = list(T("/datum/game_mode/nuclear"));
 	return f.dot;
 });
 
@@ -1184,12 +1046,10 @@ rt.type(4384, "/datum/uplink_item/implants/microbomb", "/datum/uplink_item/impla
 	item: rt.typePath("/obj/item/weapon/storage/box/syndie_kit/imp_microbomb"),
 });
 
-// /datum/uplink_item/implants/microbomb/proc/<init>  (code/modules/uplink/uplink_item.dm:1188)
+// uplink_item.dm:1188
 rt.def("/datum/uplink_item/implants/microbomb/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear")));
+	parent_proc();
+	this.include_modes = list(T("/datum/game_mode/nuclear"));
 	return f.dot;
 });
 
@@ -1201,12 +1061,10 @@ rt.type(4385, "/datum/uplink_item/implants/macrobomb", "/datum/uplink_item/impla
 	item: rt.typePath("/obj/item/weapon/storage/box/syndie_kit/imp_macrobomb"),
 });
 
-// /datum/uplink_item/implants/macrobomb/proc/<init>  (code/modules/uplink/uplink_item.dm:1196)
+// uplink_item.dm:1196
 rt.def("/datum/uplink_item/implants/macrobomb/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear")));
+	parent_proc();
+	this.include_modes = list(T("/datum/game_mode/nuclear"));
 	return f.dot;
 });
 
@@ -1216,23 +1074,21 @@ rt.type(4386, "/datum/uplink_item/cyber_implants", "/datum/uplink_item", {
 	include_modes: null,
 });
 
-// /datum/uplink_item/cyber_implants/proc/<init>  (code/modules/uplink/uplink_item.dm:1203)
+// uplink_item.dm:1203
 rt.def("/datum/uplink_item/cyber_implants/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "include_modes", rt.list(T("/datum/game_mode/nuclear")));
+	parent_proc();
+	this.include_modes = list(T("/datum/game_mode/nuclear"));
 	return f.dot;
 });
 
-// /datum/uplink_item/cyber_implants/proc/spawn_item  (code/modules/uplink/uplink_item.dm:1207)  may sleep
-rt.def("/datum/uplink_item/cyber_implants/proc/spawn_item", function* spawn_item(f: Frame) {
-	if (!truthy(rt.sv(f, "item"))) return f.dot;
-	if (truthy((rt.istype(rt.sv(f, "item"), T("/obj/item/organ")) ? 1 : 0))) {
-		return (yield* g.new_(f, T("/obj/item/weapon/storage/box/cyber_implants"), [live(f.args[0]), rt.sv(f, "item")]));
+// uplink_item.dm:1207
+rt.def("/datum/uplink_item/cyber_implants/proc/spawn_item", function* spawn_item(f: Frame, loc: Value, U: Value) {
+	if (!this.item) return f.dot;
+	if (rt.istype(this.item, T("/obj/item/organ"))) {
+		return (yield* new_(T("/obj/item/weapon/storage/box/cyber_implants"), loc, this.item));
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["loc", "U"] });
+	return (yield* parent_proc());
+}, true);
 
 rt.type(4392, "/datum/uplink_item/role_restricted", "/datum/uplink_item", {
 	category: "Role-Restricted",
@@ -1240,12 +1096,10 @@ rt.type(4392, "/datum/uplink_item/role_restricted", "/datum/uplink_item", {
 	surplus: 0,
 });
 
-// /datum/uplink_item/role_restricted/proc/<init>  (code/modules/uplink/uplink_item.dm:1248)
+// uplink_item.dm:1248
 rt.def("/datum/uplink_item/role_restricted/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "exclude_modes", rt.list(T("/datum/game_mode/nuclear")));
+	parent_proc();
+	this.exclude_modes = list(T("/datum/game_mode/nuclear"));
 	return f.dot;
 });
 
@@ -1257,12 +1111,10 @@ rt.type(4393, "/datum/uplink_item/role_restricted/reverse_revolver", "/datum/upl
 	item: rt.typePath("/obj/item/weapon/storage/box/hug/reverse_revolver"),
 });
 
-// /datum/uplink_item/role_restricted/reverse_revolver/proc/<init>  (code/modules/uplink/uplink_item.dm:1257)
+// uplink_item.dm:1257
 rt.def("/datum/uplink_item/role_restricted/reverse_revolver/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "restricted_roles", rt.list("Clown"));
+	parent_proc();
+	this.restricted_roles = list("Clown");
 	return f.dot;
 });
 
@@ -1275,12 +1127,10 @@ rt.type(4394, "/datum/uplink_item/role_restricted/mimery", "/datum/uplink_item/r
 	item: rt.typePath("/obj/item/weapon/storage/box/syndie_kit/mimery"),
 });
 
-// /datum/uplink_item/role_restricted/mimery/proc/<init>  (code/modules/uplink/uplink_item.dm:1264)
+// uplink_item.dm:1264
 rt.def("/datum/uplink_item/role_restricted/mimery/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "restricted_roles", rt.list("Mime"));
+	parent_proc();
+	this.restricted_roles = list("Mime");
 	return f.dot;
 });
 
@@ -1293,12 +1143,10 @@ rt.type(4395, "/datum/uplink_item/role_restricted/ez_clean_bundle", "/datum/upli
 	item: rt.typePath("/obj/item/weapon/storage/box/syndie_kit/ez_clean"),
 });
 
-// /datum/uplink_item/role_restricted/ez_clean_bundle/proc/<init>  (code/modules/uplink/uplink_item.dm:1273)
+// uplink_item.dm:1273
 rt.def("/datum/uplink_item/role_restricted/ez_clean_bundle/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "restricted_roles", rt.list("Janitor"));
+	parent_proc();
+	this.restricted_roles = list("Janitor");
 	return f.dot;
 });
 
@@ -1311,12 +1159,10 @@ rt.type(4396, "/datum/uplink_item/role_restricted/his_grace", "/datum/uplink_ite
 	item: rt.typePath("/obj/item/weapon/his_grace"),
 });
 
-// /datum/uplink_item/role_restricted/his_grace/proc/<init>  (code/modules/uplink/uplink_item.dm:1283)
+// uplink_item.dm:1283
 rt.def("/datum/uplink_item/role_restricted/his_grace/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "restricted_roles", rt.list("Chaplain"));
+	parent_proc();
+	this.restricted_roles = list("Chaplain");
 	return f.dot;
 });
 
@@ -1329,12 +1175,10 @@ rt.type(4397, "/datum/uplink_item/role_restricted/pie_cannon", "/datum/uplink_it
 	item: rt.typePath("/obj/item/weapon/pneumatic_cannon/pie/selfcharge"),
 });
 
-// /datum/uplink_item/role_restricted/pie_cannon/proc/<init>  (code/modules/uplink/uplink_item.dm:1291)
+// uplink_item.dm:1291
 rt.def("/datum/uplink_item/role_restricted/pie_cannon/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "restricted_roles", rt.list("Clown"));
+	parent_proc();
+	this.restricted_roles = list("Clown");
 	return f.dot;
 });
 
@@ -1347,12 +1191,10 @@ rt.type(4398, "/datum/uplink_item/role_restricted/ancient_jumpsuit", "/datum/upl
 	item: rt.typePath("/obj/item/clothing/under/color/grey/glorf"),
 });
 
-// /datum/uplink_item/role_restricted/ancient_jumpsuit/proc/<init>  (code/modules/uplink/uplink_item.dm:1299)
+// uplink_item.dm:1299
 rt.def("/datum/uplink_item/role_restricted/ancient_jumpsuit/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "restricted_roles", rt.list("Assistant"));
+	parent_proc();
+	this.restricted_roles = list("Assistant");
 	return f.dot;
 });
 
@@ -1365,12 +1207,10 @@ rt.type(4399, "/datum/uplink_item/role_restricted/haunted_magic_eightball", "/da
 	item: rt.typePath("/obj/item/toy/eightball/haunted"),
 });
 
-// /datum/uplink_item/role_restricted/haunted_magic_eightball/proc/<init>  (code/modules/uplink/uplink_item.dm:1307)
+// uplink_item.dm:1307
 rt.def("/datum/uplink_item/role_restricted/haunted_magic_eightball/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "restricted_roles", rt.list("Curator"));
+	parent_proc();
+	this.restricted_roles = list("Curator");
 	return f.dot;
 });
 
@@ -1383,12 +1223,10 @@ rt.type(4401, "/datum/uplink_item/role_restricted/pressure_mod", "/datum/uplink_
 	item: rt.typePath("/obj/item/borg/upgrade/modkit/indoors"),
 });
 
-// /datum/uplink_item/role_restricted/pressure_mod/proc/<init>  (code/modules/uplink/uplink_item.dm:1323)
+// uplink_item.dm:1323
 rt.def("/datum/uplink_item/role_restricted/pressure_mod/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "restricted_roles", rt.list("Shaft Miner"));
+	parent_proc();
+	this.restricted_roles = list("Shaft Miner");
 	return f.dot;
 });
 
@@ -1401,12 +1239,10 @@ rt.type(4407, "/datum/uplink_item/badass/bundle", "/datum/uplink_item/badass", {
 	item: rt.typePath("/obj/item/weapon/storage/box/syndicate"),
 });
 
-// /datum/uplink_item/badass/bundle/proc/<init>  (code/modules/uplink/uplink_item.dm:1368)
+// uplink_item.dm:1368
 rt.def("/datum/uplink_item/badass/bundle/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "exclude_modes", rt.list(T("/datum/game_mode/nuclear"), T("/datum/game_mode/gang")));
+	parent_proc();
+	this.exclude_modes = list(T("/datum/game_mode/nuclear"), T("/datum/game_mode/gang"));
 	return f.dot;
 });
 
@@ -1420,36 +1256,33 @@ rt.type(4408, "/datum/uplink_item/badass/surplus", "/datum/uplink_item/badass", 
 	item: rt.typePath("/obj/structure/closet/crate"),
 });
 
-// /datum/uplink_item/badass/surplus/proc/<init>  (code/modules/uplink/uplink_item.dm:1378)
+// uplink_item.dm:1378
 rt.def("/datum/uplink_item/badass/surplus/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "exclude_modes", rt.list(T("/datum/game_mode/nuclear"), T("/datum/game_mode/gang")));
+	parent_proc();
+	this.exclude_modes = list(T("/datum/game_mode/nuclear"), T("/datum/game_mode/gang"));
 	return f.dot;
 });
 
-// /datum/uplink_item/badass/surplus/proc/spawn_item  (code/modules/uplink/uplink_item.dm:1382)  may sleep
+// uplink_item.dm:1382
 rt.def("/datum/uplink_item/badass/surplus/proc/spawn_item", function* spawn_item(f: Frame, loc: Value, U: Value) {
-	let uplink_items: Value = null, crate_value: Value = null, C: Value = null, category: Value = null, item: Value = null, I: Value = null;
-	f.vars = () => [loc, U, uplink_items, crate_value, C, category, item, I];
-	uplink_items = (yield* g.call(f, P("/proc/get_uplink_items"), null, [rt.fv(f, "mode", rt.gl("SSticker"))]));
-	crate_value = 50;
-	C = (yield* g.new_(f, T("/obj/structure/closet/crate"), [live(loc)]));
-	while (truthy(live(crate_value))) {
-		category = rt.op(f, "PickUnweighted", [1], [live(uplink_items)]);
-		item = rt.op(f, "PickUnweighted", [1], [rt.index(live(uplink_items), live(category))]);
-		if ((!truthy(rt.gv(f, "surplus", (I = rt.index(rt.index(live(uplink_items), live(category)), live(item))))) || truthy(rt.op(f, "Prob", [], [subtract(100, rt.fv(f, "surplus", live(I)))])))) {
+	let category: Value = null, item: Value = null, I: Value = null;
+	let uplink_items: Value = (yield* get_uplink_items(GLOB.SSticker.mode));
+	let crate_value: Value = 50;
+	let C: Value = (yield* new_(T("/obj/structure/closet/crate"), loc));
+	while (crate_value) {
+		category = pick(uplink_items);
+		item = pick(rt.index(uplink_items, category));
+		if (!(I = rt.index(rt.index(uplink_items, category), item)).surplus || prob(100 - I.surplus)) {
 			continue;
 		}
-		if (rt.lt(live(crate_value), rt.fv(f, "cost", live(I)))) {
+		if (crate_value < I.cost) {
 			continue;
 		}
-		(crate_value = rt.modify(live(crate_value), rt.fv(f, "cost", live(I)), subtract));
-		yield* g.new_(f, rt.fv(f, "item", live(I)), [live(C)]);
-		rt.modField(f, live(U), "purchase_log", fmt("<big>＀</big>", [(yield* g.call(f, P("/proc/bicon"), null, [rt.fv(f, "item", live(I))]))]), add);
+		crate_value -= I.cost;
+		yield* new_(I.item, C);
+		U.purchase_log += `<big>${bicon(I.item)}</big>`;
 	}
-	return live(C);
+	return C;
 }, true);
 
 rt.type(4409, "/datum/uplink_item/badass/random", "/datum/uplink_item/badass", {
@@ -1460,36 +1293,27 @@ rt.type(4409, "/datum/uplink_item/badass/random", "/datum/uplink_item/badass", {
 	item: rt.typePath("/obj/item/weapon/paper"),
 });
 
-// /datum/uplink_item/badass/random/proc/spawn_item  (code/modules/uplink/uplink_item.dm:1410)  may sleep
+// uplink_item.dm:1410
 rt.def("/datum/uplink_item/badass/random/proc/spawn_item", function* spawn_item(f: Frame, loc: Value, U: Value) {
-	let uplink_items: Value = null, possible_items: Value = null, category: Value = null, item: Value = null, I: Value = null, I_2: Value = null;
-	let $e: any;
-	f.vars = () => [loc, U, uplink_items, possible_items, category, item, I, I_2, $e];
-	uplink_items = (yield* g.call(f, P("/proc/get_uplink_items"), null, [rt.fv(f, "mode", rt.gl("SSticker"))]));
-	possible_items = rt.list();
-	category = null;
-	rt.forList(f, 0, live(uplink_items));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		category = $e;
+	let category: Value = null, item: Value = null, I: Value = null;
+	let uplink_items: Value = (yield* get_uplink_items(GLOB.SSticker.mode));
+	let possible_items: Value = list();
+	for (category of each(uplink_items)) {
 		item = null;
-		rt.forList(f, 1, rt.index(live(uplink_items), live(category)));
-		while (($e = rt.next(f, 1)) !== undefined) {
-			item = $e;
-			I = rt.index(rt.index(live(uplink_items), live(category)), live(item));
-			if ((isEqual(live(f.src), live(I)) || !truthy(rt.fv(f, "item", live(I))))) {
+		for (item of each(rt.index(uplink_items, category))) {
+			I = rt.index(rt.index(uplink_items, category), item);
+			if (this == I || !I.item) {
 				continue;
 			}
-			if (rt.lt(rt.fv(f, "telecrystals", live(U)), rt.fv(f, "cost", live(I)))) {
+			if (U.telecrystals < I.cost) {
 				continue;
 			}
-			possible_items = rt.modify(live(possible_items), live(I), add);
+			possible_items += I;
 		}
-		rt.endFor(f, 1);
 	}
-	rt.endFor(f, 0);
-	if (!truthy(rt.len(f, live(possible_items)))) return f.dot;
-	I_2 = rt.op(f, "PickUnweighted", [1], [live(possible_items)]);
-	(rt.modField(f, live(U), "telecrystals", rt.fv(f, "cost", live(I_2)), subtract));
-	rt.modField(f, live(U), "spent_telecrystals", rt.fv(f, "cost", live(I_2)), add);
-	return (yield* g.new_(f, rt.fv(f, "item", live(I_2)), [live(loc)]));
+	if (!rt.len(f, possible_items)) return f.dot;
+	let I_2: Value = pick(possible_items);
+	U.telecrystals -= I_2.cost;
+	U.spent_telecrystals += I_2.cost;
+	return (yield* new_(I_2.item, loc));
 }, true);

@@ -1,7 +1,7 @@
-// From code/modules/mob/living/simple_animal/friendly/butterfly.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/simple_animal/friendly/butterfly.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(5078, "/mob/living/simple_animal/butterfly", "/mob/living/simple_animal", {
@@ -31,20 +31,17 @@ rt.type(5078, "/mob/living/simple_animal/butterfly", "/mob/living/simple_animal"
 	mob_size: 0,
 });
 
-// /mob/living/simple_animal/butterfly/proc/<init>  (code/modules/mob/living/simple_animal/friendly/butterfly.dm:11)
+// butterfly.dm:11
 rt.def("/mob/living/simple_animal/butterfly/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "speak_emote", rt.list("flutters"));
+	parent_proc();
+	this.speak_emote = list("flutters");
 	return f.dot;
 });
 
-// /mob/living/simple_animal/butterfly/proc/Initialize  (code/modules/mob/living/simple_animal/friendly/butterfly.dm:28)  may sleep
+// butterfly.dm:28
 rt.def("/mob/living/simple_animal/butterfly/proc/Initialize", function* Initialize(f: Frame) {
 	let newcolor: Value = null;
-	f.vars = () => [newcolor];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "add_atom_colour", (newcolor = rt.op(f, "Rgb", [1, 3], [(yield* g.call(f, P("/proc/rand"), null, [0, 255])), (yield* g.call(f, P("/proc/rand"), null, [0, 255])), (yield* g.call(f, P("/proc/rand"), null, [0, 255]))])), 4);
+	yield* parent_proc();
+	this.add_atom_colour((newcolor = rt.op(f, "Rgb", [1, 3], [rand(0, 255), rand(0, 255), rand(0, 255)])), FIXED_COLOUR_PRIORITY);
 	return f.dot;
 }, true);

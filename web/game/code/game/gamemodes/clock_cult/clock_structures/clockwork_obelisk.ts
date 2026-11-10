@@ -1,7 +1,7 @@
-// From code/game/gamemodes/clock_cult/clock_structures/clockwork_obelisk.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/gamemodes/clock_cult/clock_structures/clockwork_obelisk.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(12153, "/obj/structure/destructible/clockwork/powered/clockwork_obelisk", "/obj/structure/destructible/clockwork/powered", {
@@ -21,143 +21,132 @@ rt.type(12153, "/obj/structure/destructible/clockwork/powered/clockwork_obelisk"
 	debris: null,
 });
 
-// /obj/structure/destructible/clockwork/powered/clockwork_obelisk/proc/<init>  (code/game/gamemodes/clock_cult/clock_structures/clockwork_obelisk.dm:14)
+// clockwork_obelisk.dm:14
 rt.def("/obj/structure/destructible/clockwork/powered/clockwork_obelisk/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "debris", rt.alist(f, [T("/obj/item/clockwork/alloy_shards/small"), 4, T("/obj/item/clockwork/alloy_shards/medium"), 2, T("/obj/item/clockwork/component/hierophant_ansible/obelisk"), 1]));
+	parent_proc();
+	this.debris = rt.alist(f, [T("/obj/item/clockwork/alloy_shards/small"), 4, T("/obj/item/clockwork/alloy_shards/medium"), 2, T("/obj/item/clockwork/component/hierophant_ansible/obelisk"), 1]);
 	return f.dot;
 });
 
-// /obj/structure/destructible/clockwork/powered/clockwork_obelisk/proc/Initialize  (code/game/gamemodes/clock_cult/clock_structures/clockwork_obelisk.dm:21)
+// clockwork_obelisk.dm:21
 rt.def("/obj/structure/destructible/clockwork/powered/clockwork_obelisk/proc/Initialize", function Initialize(f: Frame) {
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	rt.callSrc(f, "toggle", [1]);
+	f.dot = parent_proc();
+	this.toggle(1);
 	return f.dot;
 });
 
-// /obj/structure/destructible/clockwork/powered/clockwork_obelisk/proc/examine  (code/game/gamemodes/clock_cult/clock_structures/clockwork_obelisk.dm:25)
-rt.def("/obj/structure/destructible/clockwork/powered/clockwork_obelisk/proc/examine", function examine(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	if (!(truthy(rt.call(f, P("/proc/is_servant_of_ratvar"), null, [live(f.args[0])])) || truthy((rt.istype(live(f.args[0]), T("/mob/dead/observer")) ? 1 : 0)))) return f.dot;
-	rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='nzcrentr_small'>It requires <b>＀W</b> to broadcast over the Hierophant Network, and <b>＀W</b> to open a Spatial Gateway.</span>", [rt.sv(f, "hierophant_cost"), rt.sv(f, "gateway_cost")])]);
+// clockwork_obelisk.dm:25
+rt.def("/obj/structure/destructible/clockwork/powered/clockwork_obelisk/proc/examine", function examine(f: Frame, user: Value) {
+	parent_proc();
+	if (!(is_servant_of_ratvar(user) || rt.istype(user, T("/mob/dead/observer")))) return f.dot;
+	to_chat(user, `<span class='nzcrentr_small'>It requires <b>${this.hierophant_cost}W</b> to broadcast over the Hierophant Network, and <b>${this.gateway_cost}W</b> to open a Spatial Gateway.</span>`);
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/structure/destructible/clockwork/powered/clockwork_obelisk/proc/can_be_unfasten_wrench  (code/game/gamemodes/clock_cult/clock_structures/clockwork_obelisk.dm:31)
-rt.def("/obj/structure/destructible/clockwork/powered/clockwork_obelisk/proc/can_be_unfasten_wrench", function can_be_unfasten_wrench(f: Frame) {
-	if (truthy(rt.sv(f, "active"))) {
-		if (!truthy(live(f.args[1]))) {
-			rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='warning'>＀ is currently sustaining a gateway!</span>", [live(f.src)])]);
+// clockwork_obelisk.dm:31
+rt.def("/obj/structure/destructible/clockwork/powered/clockwork_obelisk/proc/can_be_unfasten_wrench", function can_be_unfasten_wrench(f: Frame, user: Value, silent: Value) {
+	if (this.active) {
+		if (!silent) {
+			to_chat(user, `<span class='warning'>${this} is currently sustaining a gateway!</span>`);
 		}
-		return 1;
+		return FAILED_UNFASTEN;
 	}
-	return rt.callSuper(f, [], rt.Args.Same);
-}, false, { args: ["user", "silent"] });
+	return parent_proc();
+}, false);
 
-// /obj/structure/destructible/clockwork/powered/clockwork_obelisk/proc/forced_disable  (code/game/gamemodes/clock_cult/clock_structures/clockwork_obelisk.dm:38)  may sleep
+// clockwork_obelisk.dm:38
 rt.def("/obj/structure/destructible/clockwork/powered/clockwork_obelisk/proc/forced_disable", function* forced_disable(f: Frame, bad_effects: Value) {
-	let affected: Value = null, SG: Value = null;
-	let $e: any;
-	f.vars = () => [bad_effects, affected, SG, $e];
-	affected = 0;
-	SG = null;
-	rt.forList(f, 0, rt.sv(f, "loc"), T("/obj/effect/clockwork/spatial_gateway"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		SG = $e;
-		yield* g.callName(f, live(SG), "ex_act", [1]);
-		affected = rt.inc(live(affected), 1);
+	let SG: Value = null;
+	let affected: Value = 0;
+	for (SG of each(this.loc, T("/obj/effect/clockwork/spatial_gateway"))) {
+		yield* SG.ex_act(1);
+		affected++;
 	}
-	rt.endFor(f, 0);
-	if (truthy(live(bad_effects))) {
-		affected = rt.modify(live(affected), (yield* g.srcCall(f, "try_use_power", 100)), add);
+	if (bad_effects) {
+		affected += (yield* this.try_use_power(100));
 	}
-	return live(affected);
+	return affected;
 }, true);
 
-// /obj/structure/destructible/clockwork/powered/clockwork_obelisk/proc/attack_hand  (code/game/gamemodes/clock_cult/clock_structures/clockwork_obelisk.dm:46)  may sleep
+// clockwork_obelisk.dm:46
 rt.def("/obj/structure/destructible/clockwork/powered/clockwork_obelisk/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
 	let choice: Value = null, input: Value = null;
-	let $0: any;
-	f.vars = () => [user, choice, input, $0];
-	if (((!truthy((yield* g.call(f, P("/proc/is_servant_of_ratvar"), null, [live(user)]))) || rt.lt((yield* g.srcCall(f, "total_accessable_power")), rt.sv(f, "hierophant_cost"))) || !truthy(rt.sv(f, "anchored")))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>You place your hand on ＀, but it doesn't react.</span>", [live(f.src)])]);
-		return live(f.dot);
+	if (!is_servant_of_ratvar(user) || this.total_accessable_power() < this.hierophant_cost || !this.anchored) {
+		to_chat(user, `<span class='warning'>You place your hand on ${this}, but it doesn't react.</span>`);
+		return f.dot;
 	}
-	$0 = (choice = (yield* g.call(f, P("/proc/alert"), null, [live(user), fmt("You place your hand on ＀...", [live(f.src)]), null, "Hierophant Broadcast", "Spatial Gateway", "Cancel"])));
-	if ($0 === "Hierophant Broadcast") {
-		if (truthy(rt.sv(f, "active"))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ is sustaining a gateway and cannot broadcast!</span>", [live(f.src)])]);
-			return live(f.dot);
+	const subject = (choice = (yield* alert(user, `You place your hand on ${this}...`, null, "Hierophant Broadcast", "Spatial Gateway", "Cancel")));
+	if (subject === "Hierophant Broadcast") {
+		if (this.active) {
+			to_chat(user, `<span class='warning'>${this} is sustaining a gateway and cannot broadcast!</span>`);
+			return f.dot;
 		}
-		if (!truthy((yield* g.callName(f, live(user), "can_speak_vocal", [])))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>You cannot speak through ＀!</span>", [live(f.src)])]);
-			return live(f.dot);
+		if (!user.can_speak_vocal()) {
+			to_chat(user, `<span class='warning'>You cannot speak through ${this}!</span>`);
+			return f.dot;
 		}
-		input = (yield* g.call(f, P("/proc/stripped_input"), null, [live(f.usr), "Please choose a message to send over the Hierophant Network.", "Hierophant Broadcast", ""]));
-		if (((!truthy((yield* g.call(f, P("/proc/is_servant_of_ratvar"), null, [live(user)]))) || !truthy(live(input))) || !truthy((yield* g.callName(f, live(user), "canUseTopic", [live(f.src), (!truthy((rt.istype(live(user), T("/mob/living/silicon")) ? 1 : 0)) ? 1 : 0)]))))) {
-			return live(f.dot);
+		input = (yield* stripped_input(f.usr, "Please choose a message to send over the Hierophant Network.", "Hierophant Broadcast", ""));
+		if (!is_servant_of_ratvar(user) || !input || !user.canUseTopic(this, (!rt.istype(user, T("/mob/living/silicon")) ? 1 : 0))) {
+			return f.dot;
 		}
-		if (!truthy(rt.sv(f, "anchored"))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ is no longer secured!</span>", [live(f.src)])]);
+		if (!this.anchored) {
+			to_chat(user, `<span class='warning'>${this} is no longer secured!</span>`);
 			return 0;
 		}
-		if (truthy(rt.sv(f, "active"))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ is sustaining a gateway and cannot broadcast!</span>", [live(f.src)])]);
-			return live(f.dot);
+		if (this.active) {
+			to_chat(user, `<span class='warning'>${this} is sustaining a gateway and cannot broadcast!</span>`);
+			return f.dot;
 		}
-		if (!truthy((yield* g.callName(f, live(user), "can_speak_vocal", [])))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>You cannot speak through ＀!</span>", [live(f.src)])]);
-			return live(f.dot);
+		if (!user.can_speak_vocal()) {
+			to_chat(user, `<span class='warning'>You cannot speak through ${this}!</span>`);
+			return f.dot;
 		}
-		if (!truthy((yield* g.srcCall(f, "try_use_power", rt.sv(f, "hierophant_cost"))))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ lacks the power to broadcast!</span>", [live(f.src)])]);
-			return live(f.dot);
+		if (!(yield* this.try_use_power(this.hierophant_cost))) {
+			to_chat(user, `<span class='warning'>${this} lacks the power to broadcast!</span>`);
+			return f.dot;
 		}
-		yield* g.call(f, P("/proc/clockwork_say"), null, [live(user), (yield* g.call(f, P("/proc/text2ratvar"), null, [fmt("Hierophant Broadcast, activate! ＀", [(yield* g.call(f, P("/proc/html_decode"), null, [live(input)]))])]))]);
-		yield* g.call(f, P("/proc/titled_hierophant_message"), null, [live(user), live(input), "big_brass", "large_brass"]);
-	} else if ($0 === "Spatial Gateway") {
-		if (truthy(rt.sv(f, "active"))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ is already sustaining a gateway!</span>", [live(f.src)])]);
-			return live(f.dot);
+		yield* clockwork_say(user, text2ratvar(`Hierophant Broadcast, activate! ${html_decode(input)}`));
+		titled_hierophant_message(user, input, "big_brass", "large_brass");
+	} else if (subject === "Spatial Gateway") {
+		if (this.active) {
+			to_chat(user, `<span class='warning'>${this} is already sustaining a gateway!</span>`);
+			return f.dot;
 		}
-		if (!truthy((yield* g.callName(f, live(user), "can_speak_vocal", [])))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>You need to be able to speak to open a gateway!</span>"]);
-			return live(f.dot);
+		if (!user.can_speak_vocal()) {
+			to_chat(user, "<span class='warning'>You need to be able to speak to open a gateway!</span>");
+			return f.dot;
 		}
-		if (!truthy((yield* g.srcCall(f, "try_use_power", rt.sv(f, "gateway_cost"))))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ lacks the power to open a gateway!</span>", [live(f.src)])]);
-			return live(f.dot);
+		if (!(yield* this.try_use_power(this.gateway_cost))) {
+			to_chat(user, `<span class='warning'>${this} lacks the power to open a gateway!</span>`);
+			return f.dot;
 		}
-		if (truthy((yield* g.srcCall(f, "procure_gateway", live(user), (yield* g.call(f, P("/proc/round"), null, [multiply(100, (yield* g.srcCall(f, "get_efficiency_mod"))), 1])), (yield* g.call(f, P("/proc/round"), null, [multiply(5, (yield* g.srcCall(f, "get_efficiency_mod"))), 1])), 1)))) {
-			yield* g.srcCall(f, "process");
-			if (!truthy(rt.sv(f, "active"))) {
-				rt.setSv(f, "active", 1);
-				yield* g.call(f, P("/proc/clockwork_say"), null, [live(user), (yield* g.call(f, P("/proc/text2ratvar"), null, ["Spatial Gateway, activate!"]))]);
-				return live(f.dot);
+		if (yield* this.procure_gateway(user, round(100 * this.get_efficiency_mod(), 1), round(5 * this.get_efficiency_mod(), 1), 1)) {
+			yield* this.process();
+			if (!this.active) {
+				this.active = 1;
+				yield* clockwork_say(user, text2ratvar("Spatial Gateway, activate!"));
+				return f.dot;
 			}
 		}
-		yield* g.srcCall(f, "return_power", rt.sv(f, "gateway_cost"));
+		yield* this.return_power(this.gateway_cost);
 	}
 	return f.dot;
 }, true);
 
-// /obj/structure/destructible/clockwork/powered/clockwork_obelisk/proc/process  (code/game/gamemodes/clock_cult/clock_structures/clockwork_obelisk.dm:94)
+// clockwork_obelisk.dm:94
 rt.def("/obj/structure/destructible/clockwork/powered/clockwork_obelisk/proc/process", function process(f: Frame) {
 	let SG: Value = null;
-	f.vars = () => [SG];
-	if (!truthy(rt.sv(f, "anchored"))) {
-		return live(f.dot);
+	if (!this.anchored) {
+		return f.dot;
 	}
-	if ((truthy((SG = rt.locateIn(f, T("/obj/effect/clockwork/spatial_gateway"), rt.sv(f, "loc")))) && truthy(rt.fv(f, "timerid", live(SG))))) {
-		rt.setSv(f, "icon_state", rt.sv(f, "active_icon"));
-		rt.setSv(f, "density", 0);
-		rt.setSv(f, "active", 1);
+	if ((SG = rt.locateIn(f, T("/obj/effect/clockwork/spatial_gateway"), this.loc)) && SG.timerid) {
+		this.icon_state = this.active_icon;
+		this.density = 0;
+		this.active = 1;
 	} else {
-		rt.setSv(f, "icon_state", rt.sv(f, "inactive_icon"));
-		rt.setSv(f, "density", 1);
-		rt.setSv(f, "active", 0);
+		this.icon_state = this.inactive_icon;
+		this.density = 1;
+		this.active = 0;
 	}
 	return f.dot;
 }, false, { waitfor: false });

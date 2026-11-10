@@ -1,7 +1,7 @@
-// From code/modules/hydroponics/gene_modder.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/hydroponics/gene_modder.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(10921, "/obj/machinery/plantgenes", "/obj/machinery", {
@@ -26,25 +26,22 @@ rt.type(10921, "/obj/machinery/plantgenes", "/obj/machinery", {
 	density: 1,
 });
 
-// /obj/machinery/plantgenes/proc/<init>  (code/modules/hydroponics/gene_modder.dm:12)
+// gene_modder.dm:12
 rt.def("/obj/machinery/plantgenes/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "core_genes", rt.list());
-	$0 = $0;
-	rt.setSv(f, "reagent_genes", rt.list());
-	$0 = $0;
-	rt.setSv(f, "trait_genes", rt.list());
+	parent_proc();
+	this.core_genes = list();
+
+	this.reagent_genes = list();
+
+	this.trait_genes = list();
 	return f.dot;
 });
 
-// /obj/machinery/plantgenes/proc/New  (code/modules/hydroponics/gene_modder.dm:26)  may sleep
+// gene_modder.dm:26
 rt.def("/obj/machinery/plantgenes/proc/New", function* New(f: Frame) {
 	let B: Value = null;
-	f.vars = () => [B];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.callName(f, (B = (yield* g.new_(f, T("/obj/item/weapon/circuitboard/machine/plantgenes"), [null]))), "apply_default_parts", [live(f.src)]);
+	yield* parent_proc();
+	yield* (B = (yield* new_(T("/obj/item/weapon/circuitboard/machine/plantgenes"), null))).apply_default_parts(this);
 	return f.dot;
 }, true);
 
@@ -55,563 +52,468 @@ rt.type(6756, "/obj/item/weapon/circuitboard/machine/plantgenes", "/obj/item/wea
 	origin_tech: "programming=3;biotech=3",
 });
 
-// /obj/item/weapon/circuitboard/machine/plantgenes/proc/<init>  (code/modules/hydroponics/gene_modder.dm:34)
+// gene_modder.dm:34
 rt.def("/obj/item/weapon/circuitboard/machine/plantgenes/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_components", rt.alist(f, [T("/obj/item/weapon/stock_parts/manipulator"), 1, T("/obj/item/weapon/stock_parts/micro_laser"), 1, T("/obj/item/weapon/stock_parts/console_screen"), 1, T("/obj/item/weapon/stock_parts/scanning_module"), 1]));
+	parent_proc();
+	this.req_components = rt.alist(f, [T("/obj/item/weapon/stock_parts/manipulator"), 1, T("/obj/item/weapon/stock_parts/micro_laser"), 1, T("/obj/item/weapon/stock_parts/console_screen"), 1, T("/obj/item/weapon/stock_parts/scanning_module"), 1]);
 	return f.dot;
 });
 
-// /obj/machinery/plantgenes/proc/RefreshParts  (code/modules/hydroponics/gene_modder.dm:41)
+// gene_modder.dm:41
 rt.def("/obj/machinery/plantgenes/proc/RefreshParts", function RefreshParts(f: Frame) {
 	let M: Value = null, SM: Value = null, ML: Value = null, wratemod: Value = null, vaultcheck: Value = null;
-	let $e: any;
-	f.vars = () => [M, SM, ML, wratemod, vaultcheck, $e];
-	M = null;
-	rt.forList(f, 0, rt.sv(f, "component_parts"), T("/obj/item/weapon/stock_parts/manipulator"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if (rt.gt(rt.fv(f, "rating", live(M)), 3)) {
-			rt.setSv(f, "max_potency", 95);
+	for (M of each(this.component_parts, T("/obj/item/weapon/stock_parts/manipulator"))) {
+		if (M.rating > 3) {
+			this.max_potency = 95;
 		} else {
-			rt.setSv(f, "max_potency", add(rt.initial(f, live(f.src), "max_potency"), rt.power(rt.fv(f, "rating", live(M)), 3)));
+			this.max_potency = rt.initial(f, this, "max_potency") + M.rating ** 3;
 		}
-		rt.setSv(f, "max_yield", add(rt.initial(f, live(f.src), "max_yield"), multiply(rt.fv(f, "rating", live(M)), 2)));
+		this.max_yield = rt.initial(f, this, "max_yield") + M.rating * 2;
 	}
-	rt.endFor(f, 0);
-	SM = null;
-	rt.forList(f, 0, rt.sv(f, "component_parts"), T("/obj/item/weapon/stock_parts/scanning_module"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		SM = $e;
-		if (rt.gt(rt.fv(f, "rating", live(SM)), 3)) {
-			rt.setSv(f, "min_production", 1);
+	for (SM of each(this.component_parts, T("/obj/item/weapon/stock_parts/scanning_module"))) {
+		if (SM.rating > 3) {
+			this.min_production = 1;
 		} else {
-			rt.setSv(f, "min_production", subtract(12, multiply(rt.fv(f, "rating", live(SM)), 3)));
+			this.min_production = 12 - SM.rating * 3;
 		}
-		rt.setSv(f, "max_endurance", add(rt.initial(f, live(f.src), "max_endurance"), multiply(rt.fv(f, "rating", live(SM)), 25)));
+		this.max_endurance = rt.initial(f, this, "max_endurance") + SM.rating * 25;
 	}
-	rt.endFor(f, 0);
-	ML = null;
-	rt.forList(f, 0, rt.sv(f, "component_parts"), T("/obj/item/weapon/stock_parts/micro_laser"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		ML = $e;
-		wratemod = multiply(rt.fv(f, "rating", live(ML)), 2.5);
-		rt.setSv(f, "min_wrate", rt.call(f, P("/proc/Floor"), null, [subtract(10, live(wratemod)), 1]));
-		rt.setSv(f, "min_wchance", subtract(67, multiply(rt.fv(f, "rating", live(ML)), 16)));
+	for (ML of each(this.component_parts, T("/obj/item/weapon/stock_parts/micro_laser"))) {
+		wratemod = ML.rating * 2.5;
+		this.min_wrate = Floor(10 - wratemod, 1);
+		this.min_wchance = 67 - ML.rating * 16;
 	}
-	rt.endFor(f, 0);
-	vaultcheck = null;
-	rt.forList(f, 0, rt.sv(f, "component_parts"), T("/obj/item/weapon/circuitboard/machine/plantgenes"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		vaultcheck = $e;
-		if (truthy((rt.istype(live(vaultcheck), T("/obj/item/weapon/circuitboard/machine/plantgenes/vault")) ? 1 : 0))) {
-			rt.setSv(f, "max_potency", 100);
-			rt.setSv(f, "max_yield", 10);
-			rt.setSv(f, "min_production", 1);
-			rt.setSv(f, "max_endurance", 100);
-			rt.setSv(f, "min_wchance", 0);
-			rt.setSv(f, "min_wrate", 0);
+	for (vaultcheck of each(this.component_parts, T("/obj/item/weapon/circuitboard/machine/plantgenes"))) {
+		if (rt.istype(vaultcheck, T("/obj/item/weapon/circuitboard/machine/plantgenes/vault"))) {
+			this.max_potency = 100;
+			this.max_yield = 10;
+			this.min_production = 1;
+			this.max_endurance = 100;
+			this.min_wchance = 0;
+			this.min_wrate = 0;
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /obj/machinery/plantgenes/proc/update_icon  (code/modules/hydroponics/gene_modder.dm:71)
+// gene_modder.dm:71
 rt.def("/obj/machinery/plantgenes/proc/update_icon", function update_icon(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.callSrc(f, "cut_overlays", []);
-	if (truthy(rt.bitAnd(rt.sv(f, "stat"), 3))) {
-		rt.setSv(f, "icon_state", "dnamod-off");
+	parent_proc();
+	this.cut_overlays();
+	if (rt.bitAnd(this.stat, 3)) {
+		this.icon_state = "dnamod-off";
 	} else {
-		rt.setSv(f, "icon_state", "dnamod");
+		this.icon_state = "dnamod";
 	}
-	if (truthy(rt.sv(f, "seed"))) {
-		rt.callSrc(f, "add_overlay", ["dnamod-dna"]);
+	if (this.seed) {
+		this.add_overlay("dnamod-dna");
 	}
-	if (!truthy(rt.sv(f, "panel_open"))) return f.dot;
-	rt.callSrc(f, "add_overlay", ["dnamod-open"]);
+	if (!this.panel_open) return f.dot;
+	this.add_overlay("dnamod-open");
 	return f.dot;
 });
 
-// /obj/machinery/plantgenes/proc/attackby  (code/modules/hydroponics/gene_modder.dm:83)  may sleep
-rt.def("/obj/machinery/plantgenes/proc/attackby", function* attackby(f: Frame) {
-	if (truthy((yield* g.srcCall(f, "default_deconstruction_screwdriver", live(f.args[1]), "dnamod", "dnamod", live(f.args[0]))))) {
-		yield* g.srcCall(f, "update_icon");
-		return live(f.dot);
+// gene_modder.dm:83
+rt.def("/obj/machinery/plantgenes/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
+	if (this.default_deconstruction_screwdriver(user, "dnamod", "dnamod", I)) {
+		yield* this.update_icon();
+		return f.dot;
 	}
-	if (truthy((yield* g.srcCall(f, "exchange_parts", live(f.args[1]), live(f.args[0]))))) {
-		return live(f.dot);
+	if (yield* this.exchange_parts(user, I)) {
+		return f.dot;
 	}
-	if (truthy((yield* g.srcCall(f, "default_deconstruction_crowbar", live(f.args[0]))))) {
-		return live(f.dot);
+	if (yield* this.default_deconstruction_crowbar(I)) {
+		return f.dot;
 	}
-	if (truthy((rt.istype(live(f.args[1]), T("/mob/living/silicon/robot")) ? 1 : 0))) {
-		return live(f.dot);
+	if (rt.istype(user, T("/mob/living/silicon/robot"))) {
+		return f.dot;
 	}
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/seeds")) ? 1 : 0))) {
-		if (truthy(rt.sv(f, "seed"))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>A sample is already loaded into the machine!</span>"]);
+	if (rt.istype(I, T("/obj/item/seeds"))) {
+		if (this.seed) {
+			to_chat(user, "<span class='warning'>A sample is already loaded into the machine!</span>");
 		} else {
-			if (!truthy((yield* g.callName(f, live(f.args[1]), "drop_item", [])))) {
-				return live(f.dot);
+			if (!(yield* user.drop_item())) {
+				return f.dot;
 			}
-			yield* g.srcCall(f, "insert_seed", live(f.args[0]));
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You add ＀ to the machine.</span>", [live(f.args[0])])]);
-			yield* g.srcCall(f, "interact", live(f.args[1]));
+			this.insert_seed(I);
+			to_chat(user, `<span class='notice'>You add ${I} to the machine.</span>`);
+			yield* this.interact(user);
 		}
-		return live(f.dot);
-	} else {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/disk/plantgene")) ? 1 : 0))) {
-			if (truthy(rt.sv(f, "disk"))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>A data disk is already loaded into the machine!</span>"]);
-			} else {
-				if (!truthy((yield* g.callName(f, live(f.args[1]), "drop_item", [])))) {
-					return live(f.dot);
-				}
-				rt.setSv(f, "disk", live(f.args[0]));
-				rt.setFv(f, "loc", rt.sv(f, "disk"), live(f.src));
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You add ＀ to the machine.</span>", [live(f.args[0])])]);
-				yield* g.srcCall(f, "interact", live(f.args[1]));
-			}
+		return f.dot;
+	} else if (rt.istype(I, T("/obj/item/weapon/disk/plantgene"))) {
+		if (this.disk) {
+			to_chat(user, "<span class='warning'>A data disk is already loaded into the machine!</span>");
 		} else {
-			yield* g.callSuper(f, [], rt.Args.Same);
-		}
-	}
-	return f.dot;
-}, true, { args: ["I", "user", "params"] });
-
-// /obj/machinery/plantgenes/proc/attack_hand  (code/modules/hydroponics/gene_modder.dm:118)  may sleep
-rt.def("/obj/machinery/plantgenes/proc/attack_hand", function* attack_hand(f: Frame) {
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		return live(f.dot);
-	}
-	yield* g.srcCall(f, "interact", live(f.args[0]));
-	return f.dot;
-}, true, { args: ["user"] });
-
-// /obj/machinery/plantgenes/proc/interact  (code/modules/hydroponics/gene_modder.dm:123)  may sleep
-rt.def("/obj/machinery/plantgenes/proc/interact", function* interact(f: Frame, user: Value) {
-	let popup: Value = null, dat: Value = null, gene: Value = null, can_insert: Value = null, can_extract: Value = null, a: Value = null, G: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [user, popup, dat, gene, can_insert, can_extract, a, G, $0, $e];
-	yield* g.callName(f, live(user), "set_machine", [live(f.src)]);
-	if (!truthy(live(user))) {
-		return live(f.dot);
-	}
-	popup = (yield* g.new_(f, T("/datum/browser"), [live(user), "plantdna", "Plant DNA Manipulator", 450, 600]));
-	if (!(rt.le((yield* g.call(f, P("/proc/get_dist"), null, [live(f.src), live(user)])), 1) || truthy((rt.istype(live(user), T("/mob/living/silicon")) ? 1 : 0)))) {
-		yield* g.callName(f, live(popup), "close", []);
-		return live(f.dot);
-	}
-	dat = "";
-	if (truthy(rt.sv(f, "operation"))) {
-		if ((!truthy(rt.sv(f, "seed")) || (!truthy(rt.sv(f, "target")) && !isEqual(rt.sv(f, "operation"), "insert")))) {
-			rt.setSv(f, "operation", "");
-			rt.setSv(f, "target", null);
-			yield* g.srcCall(f, "interact", live(user));
-			return live(f.dot);
-		}
-		if (((isEqual(rt.sv(f, "operation"), "replace") || isEqual(rt.sv(f, "operation"), "insert")) && (!truthy(rt.sv(f, "disk")) || !truthy(rt.fv(f, "gene", rt.sv(f, "disk")))))) {
-			rt.setSv(f, "operation", "");
-			rt.setSv(f, "target", null);
-			yield* g.srcCall(f, "interact", live(user));
-			return live(f.dot);
-		}
-		dat = rt.modify(live(dat), "<div class='line'><h3>Confirm Operation</h3></div>", add);
-		dat = rt.modify(live(dat), fmt("<div class='statusDisplay'>Are you sure you want to ＀ ", [rt.sv(f, "operation")]), add);
-		$0 = rt.sv(f, "operation");
-		if ($0 === "remove") {
-			dat = rt.modify(live(dat), fmt("<span class='highlight'>＀</span> gene from ％<span class='highlight'>！</span>?<br>", [(yield* g.callName(f, rt.sv(f, "target"), "get_name", [])), rt.sv(f, "seed")]), add);
-		} else if ($0 === "extract") {
-			dat = rt.modify(live(dat), fmt("<span class='highlight'>＀</span> gene from ％<span class='highlight'>！</span>?<br>", [(yield* g.callName(f, rt.sv(f, "target"), "get_name", [])), rt.sv(f, "seed")]), add);
-			dat = rt.modify(live(dat), "<span class='bad'>The sample will be destroyed in process!</span>", add);
-			if (truthy((rt.istype(rt.sv(f, "target"), T("/datum/plant_gene/core")) ? 1 : 0))) {
-				gene = rt.sv(f, "target");
-				if (truthy((rt.istype(rt.sv(f, "target"), T("/datum/plant_gene/core/potency")) ? 1 : 0))) {
-					if (rt.gt(rt.fv(f, "value", live(gene)), rt.sv(f, "max_potency"))) {
-						dat = rt.modify(live(dat), fmt("<br><br>This device's extraction capabilities are currently limited to <span class='highlight'>＀</span> potency. ", [rt.sv(f, "max_potency")]), add);
-						dat = rt.modify(live(dat), fmt("Target gene will be degraded to <span class='highlight'>＀</span> potency on extraction.", [rt.sv(f, "max_potency")]), add);
-					}
-				} else {
-					if (truthy((rt.istype(rt.sv(f, "target"), T("/datum/plant_gene/core/lifespan")) ? 1 : 0))) {
-						if (rt.gt(rt.fv(f, "value", live(gene)), rt.sv(f, "max_endurance"))) {
-							dat = rt.modify(live(dat), fmt("<br><br>This device's extraction capabilities are currently limited to <span class='highlight'>＀</span> lifespan. ", [rt.sv(f, "max_endurance")]), add);
-							dat = rt.modify(live(dat), fmt("Target gene will be degraded to <span class='highlight'>＀</span> Lifespan on extraction.", [rt.sv(f, "max_endurance")]), add);
-						}
-					} else {
-						if (truthy((rt.istype(rt.sv(f, "target"), T("/datum/plant_gene/core/endurance")) ? 1 : 0))) {
-							if (rt.gt(rt.fv(f, "value", live(gene)), rt.sv(f, "max_endurance"))) {
-								dat = rt.modify(live(dat), fmt("<br><br>This device's extraction capabilities are currently limited to <span class='highlight'>＀</span> endurance. ", [rt.sv(f, "max_endurance")]), add);
-								dat = rt.modify(live(dat), fmt("Target gene will be degraded to <span class='highlight'>＀</span> endurance on extraction.", [rt.sv(f, "max_endurance")]), add);
-							}
-						} else {
-							if (truthy((rt.istype(rt.sv(f, "target"), T("/datum/plant_gene/core/yield")) ? 1 : 0))) {
-								if (rt.gt(rt.fv(f, "value", live(gene)), rt.sv(f, "max_yield"))) {
-									dat = rt.modify(live(dat), fmt("<br><br>This device's extraction capabilities are currently limited to <span class='highlight'>＀</span> yield. ", [rt.sv(f, "max_yield")]), add);
-									dat = rt.modify(live(dat), fmt("Target gene will be degraded to <span class='highlight'>＀</span> yield on extraction.", [rt.sv(f, "max_yield")]), add);
-								}
-							} else {
-								if (truthy((rt.istype(rt.sv(f, "target"), T("/datum/plant_gene/core/production")) ? 1 : 0))) {
-									if (rt.lt(rt.fv(f, "value", live(gene)), rt.sv(f, "min_production"))) {
-										dat = rt.modify(live(dat), fmt("<br><br>This device's extraction capabilities are currently limited to <span class='highlight'>＀</span> production. ", [rt.sv(f, "min_production")]), add);
-										dat = rt.modify(live(dat), fmt("Target gene will be degraded to <span class='highlight'>＀</span> production on extraction.", [rt.sv(f, "min_production")]), add);
-									}
-								} else {
-									if (truthy((rt.istype(rt.sv(f, "target"), T("/datum/plant_gene/core/weed_rate")) ? 1 : 0))) {
-										if (rt.lt(rt.fv(f, "value", live(gene)), rt.sv(f, "min_wrate"))) {
-											dat = rt.modify(live(dat), fmt("<br><br>This device's extraction capabilities are currently limited to <span class='highlight'>＀</span> weed rate. ", [rt.sv(f, "min_wrate")]), add);
-											dat = rt.modify(live(dat), fmt("Target gene will be degraded to <span class='highlight'>＀</span> weed rate on extraction.", [rt.sv(f, "min_wrate")]), add);
-										}
-									} else {
-										if (truthy((rt.istype(rt.sv(f, "target"), T("/datum/plant_gene/core/weed_chance")) ? 1 : 0))) {
-											if (rt.lt(rt.fv(f, "value", live(gene)), rt.sv(f, "min_wchance"))) {
-												dat = rt.modify(live(dat), fmt("<br><br>This device's extraction capabilities are currently limited to <span class='highlight'>＀</span> weed chance. ", [rt.sv(f, "min_wchance")]), add);
-												dat = rt.modify(live(dat), fmt("Target gene will be degraded to <span class='highlight'>＀</span> weed chance on extraction.", [rt.sv(f, "min_wchance")]), add);
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-				}
+			if (!(yield* user.drop_item())) {
+				return f.dot;
 			}
-		} else if ($0 === "replace") {
-			dat = rt.modify(live(dat), fmt("<span class='highlight'>＀</span> gene with <span class='highlight'>＀</span>?<br>", [(yield* g.callName(f, rt.sv(f, "target"), "get_name", [])), (yield* g.callName(f, rt.fv(f, "gene", rt.sv(f, "disk")), "get_name", []))]), add);
-		} else if ($0 === "insert") {
-			dat = rt.modify(live(dat), fmt("<span class='highlight'>＀</span> gene into ％<span class='highlight'>！</span>?<br>", [(yield* g.callName(f, rt.fv(f, "gene", rt.sv(f, "disk")), "get_name", [])), rt.sv(f, "seed")]), add);
-		}
-		dat = rt.modify(live(dat), fmt("</div><div class='line'><a href='?src=＃;gene=＃;op=＀'>Confirm</a> ", [live(f.src), rt.sv(f, "target"), rt.sv(f, "operation")]), add);
-		dat = rt.modify(live(dat), fmt("<a href='?src=＃;abort=1'>Abort</a></div>", [live(f.src)]), add);
-		yield* g.callName(f, live(popup), "set_content", [live(dat)]);
-		yield* g.callName(f, live(popup), "open", []);
-		return live(f.dot);
-	}
-	dat = rt.modify(live(dat), "<div class='statusDisplay'>", add);
-	dat = rt.modify(live(dat), fmt("<div class='line'><div class='statusLabel'>Plant Sample:</div><div class='statusValue'><a href='?src=＃;eject_seed=1'>", [live(f.src)]), add);
-	if (truthy(rt.sv(f, "seed"))) {
-		$0 = rt.fv(f, "name", rt.sv(f, "seed"));
-	} else {
-		$0 = "None";
-	}
-	dat = rt.modify(live(dat), $0, add);
-	dat = rt.modify(live(dat), "</a></div></div>", add);
-	dat = rt.modify(live(dat), fmt("<div class='line'><div class='statusLabel'>Data Disk:</div><div class='statusValue'><a href='?src=＃;eject_disk=1'>", [live(f.src)]), add);
-	if (!truthy(rt.sv(f, "disk"))) {
-		dat = rt.modify(live(dat), "None", add);
-	} else {
-		if (!truthy(rt.fv(f, "gene", rt.sv(f, "disk")))) {
-			dat = rt.modify(live(dat), "Empty Disk", add);
-		} else {
-			dat = rt.modify(live(dat), (yield* g.callName(f, rt.fv(f, "gene", rt.sv(f, "disk")), "get_name", [])), add);
-		}
-	}
-	if ((truthy(rt.sv(f, "disk")) && truthy(rt.fv(f, "read_only", rt.sv(f, "disk"))))) {
-		dat = rt.modify(live(dat), " (RO)", add);
-	}
-	dat = rt.modify(live(dat), "</a></div></div>", add);
-	dat = rt.modify(live(dat), "<br></div>", add);
-	if (truthy(rt.sv(f, "seed"))) {
-		can_insert = ((rt.sv(f, "disk") && rt.fv(f, "gene", rt.sv(f, "disk"))) && (yield* g.callName(f, rt.fv(f, "gene", rt.sv(f, "disk")), "can_add", [rt.sv(f, "seed")])));
-		can_extract = (rt.sv(f, "disk") && (!truthy(rt.fv(f, "read_only", rt.sv(f, "disk"))) ? 1 : 0));
-		dat = rt.modify(live(dat), "<div class='line'><h3>Core Genes</h3></div><div class='statusDisplay'><table>", add);
-		a = null;
-		rt.forList(f, 0, rt.sv(f, "core_genes"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			a = $e;
-			if (!truthy((G = live(a)))) {
-				continue;
-			}
-			dat = rt.modify(live(dat), fmt("<tr><td width='260px'>＀</td><td>", [(yield* g.callName(f, live(G), "get_name", []))]), add);
-			if (truthy(live(can_extract))) {
-				dat = rt.modify(live(dat), fmt("<a href='?src=＃;gene=＃;op=extract'>Extract</a>", [live(f.src), live(G)]), add);
-			}
-			if ((truthy(live(can_insert)) && truthy(rt.op(f, "IsType", [], [rt.fv(f, "gene", rt.sv(f, "disk")), rt.fv(f, "type", live(G))])))) {
-				dat = rt.modify(live(dat), fmt("<a href='?src=＃;gene=＃;op=replace'>Replace</a>", [live(f.src), live(G)]), add);
-			}
-			dat = rt.modify(live(dat), "</td></tr>", add);
-		}
-		rt.endFor(f, 0);
-		dat = rt.modify(live(dat), "</table></div>", add);
-		if (!isEqual(rt.fv(f, "yield", rt.sv(f, "seed")), -1)) {
-			dat = rt.modify(live(dat), "<div class='line'><h3>Content Genes</h3></div><div class='statusDisplay'>", add);
-			if (truthy(rt.len(f, rt.sv(f, "reagent_genes")))) {
-				dat = rt.modify(live(dat), "<table>", add);
-				a = null;
-				rt.forList(f, 0, rt.sv(f, "reagent_genes"));
-				while (($e = rt.next(f, 0)) !== undefined) {
-					a = $e;
-					dat = rt.modify(live(dat), fmt("<tr><td width='260px'>＀</td><td>", [(yield* g.callName(f, (G = live(a)), "get_name", []))]), add);
-					if (truthy(live(can_extract))) {
-						dat = rt.modify(live(dat), fmt("<a href='?src=＃;gene=＃;op=extract'>Extract</a>", [live(f.src), live(G)]), add);
-					}
-					dat = rt.modify(live(dat), fmt("<a href='?src=＃;gene=＃;op=remove'>Remove</a>", [live(f.src), live(G)]), add);
-					dat = rt.modify(live(dat), "</td></tr>", add);
-				}
-				rt.endFor(f, 0);
-				dat = rt.modify(live(dat), "</table>", add);
-			} else {
-				dat = rt.modify(live(dat), "No content-related genes detected in sample.<br>", add);
-			}
-			dat = rt.modify(live(dat), "</div>", add);
-			if ((truthy(live(can_insert)) && truthy((rt.istype(rt.fv(f, "gene", rt.sv(f, "disk")), T("/datum/plant_gene/reagent")) ? 1 : 0)))) {
-				dat = rt.modify(live(dat), fmt("<a href='?src=＃;op=insert'>Insert: ＀</a>", [live(f.src), (yield* g.callName(f, rt.fv(f, "gene", rt.sv(f, "disk")), "get_name", []))]), add);
-			}
-			dat = rt.modify(live(dat), "<div class='line'><h3>Trait Genes</h3></div><div class='statusDisplay'>", add);
-			if (truthy(rt.len(f, rt.sv(f, "trait_genes")))) {
-				dat = rt.modify(live(dat), "<table>", add);
-				a = null;
-				rt.forList(f, 0, rt.sv(f, "trait_genes"));
-				while (($e = rt.next(f, 0)) !== undefined) {
-					a = $e;
-					dat = rt.modify(live(dat), fmt("<tr><td width='260px'>＀</td><td>", [(yield* g.callName(f, (G = live(a)), "get_name", []))]), add);
-					if (truthy(live(can_extract))) {
-						dat = rt.modify(live(dat), fmt("<a href='?src=＃;gene=＃;op=extract'>Extract</a>", [live(f.src), live(G)]), add);
-					}
-					dat = rt.modify(live(dat), fmt("<a href='?src=＃;gene=＃;op=remove'>Remove</a>", [live(f.src), live(G)]), add);
-					dat = rt.modify(live(dat), "</td></tr>", add);
-				}
-				rt.endFor(f, 0);
-				dat = rt.modify(live(dat), "</table>", add);
-			} else {
-				dat = rt.modify(live(dat), "No trait-related genes detected in sample.<br>", add);
-			}
-			if ((truthy(live(can_insert)) && truthy((rt.istype(rt.fv(f, "gene", rt.sv(f, "disk")), T("/datum/plant_gene/trait")) ? 1 : 0)))) {
-				dat = rt.modify(live(dat), fmt("<a href='?src=＃;op=insert'>Insert: ＀</a>", [live(f.src), (yield* g.callName(f, rt.fv(f, "gene", rt.sv(f, "disk")), "get_name", []))]), add);
-			}
-			dat = rt.modify(live(dat), "</div>", add);
+			this.disk = I;
+			this.disk.loc = this;
+			to_chat(user, `<span class='notice'>You add ${I} to the machine.</span>`);
+			yield* this.interact(user);
 		}
 	} else {
-		dat = rt.modify(live(dat), "<br>No sample found.<br><span class='highlight'>Please, insert a plant sample to use this device.</span>", add);
+		yield* parent_proc();
 	}
-	yield* g.callName(f, live(popup), "set_content", [live(dat)]);
-	yield* g.callName(f, live(popup), "open", []);
 	return f.dot;
 }, true);
 
-// /obj/machinery/plantgenes/proc/Topic  (code/modules/hydroponics/gene_modder.dm:272)  may sleep
-rt.def("/obj/machinery/plantgenes/proc/Topic", function* Topic(f: Frame) {
-	let I: Value = null, G: Value = null, gene: Value = null, C: Value = null;
-	let $0: any;
-	f.vars = () => [I, G, gene, C, $0];
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		return live(f.dot);
+// gene_modder.dm:118
+rt.def("/obj/machinery/plantgenes/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
+	if (yield* parent_proc()) {
+		return f.dot;
 	}
-	yield* g.callName(f, live(f.usr), "set_machine", [live(f.src)]);
-	if ((truthy(rt.at(live(f.args[1]), "eject_seed")) && !truthy(rt.sv(f, "operation")))) {
-		if (truthy(rt.sv(f, "seed"))) {
-			rt.setFv(f, "loc", rt.sv(f, "seed"), rt.fv(f, "loc", live(f.src)));
-			yield* g.callName(f, rt.sv(f, "seed"), "verb_pickup", []);
-			rt.setSv(f, "seed", null);
-			yield* g.srcCall(f, "update_genes");
-			yield* g.srcCall(f, "update_icon");
-		} else {
-			if (truthy((rt.istype((I = (yield* g.callName(f, live(f.usr), "get_active_held_item", []))), T("/obj/item/seeds")) ? 1 : 0))) {
-				if (!truthy((yield* g.callName(f, live(f.usr), "drop_item", [])))) {
-					return live(f.dot);
-				}
-				yield* g.srcCall(f, "insert_seed", live(I));
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), fmt("<span class='notice'>You add ＀ to the machine.</span>", [live(I)])]);
-			}
-		}
-		yield* g.srcCall(f, "update_icon");
-	} else {
-		if ((truthy(rt.at(live(f.args[1]), "eject_disk")) && !truthy(rt.sv(f, "operation")))) {
-			if (truthy(rt.sv(f, "disk"))) {
-				rt.setFv(f, "loc", rt.sv(f, "disk"), rt.fv(f, "loc", live(f.src)));
-				yield* g.callName(f, rt.sv(f, "disk"), "verb_pickup", []);
-				rt.setSv(f, "disk", null);
-				yield* g.srcCall(f, "update_genes");
-			} else {
-				if (truthy((rt.istype((I = (yield* g.callName(f, live(f.usr), "get_active_held_item", []))), T("/obj/item/weapon/disk/plantgene")) ? 1 : 0))) {
-					if (!truthy((yield* g.callName(f, live(f.usr), "drop_item", [])))) {
-						return live(f.dot);
-					}
-					rt.setSv(f, "disk", live(I));
-					rt.setFv(f, "loc", rt.sv(f, "disk"), live(f.src));
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), fmt("<span class='notice'>You add ＀ to the machine.</span>", [live(I)])]);
-				}
-			}
-		} else {
-			if ((((isEqual(rt.at(live(f.args[1]), "op"), "insert") && truthy(rt.sv(f, "disk"))) && truthy(rt.fv(f, "gene", rt.sv(f, "disk")))) && truthy(rt.sv(f, "seed")))) {
-				if (!truthy(rt.sv(f, "operation"))) {
-					rt.setSv(f, "operation", "insert");
-				} else {
-					if ((!truthy((rt.istype(rt.fv(f, "gene", rt.sv(f, "disk")), T("/datum/plant_gene/core")) ? 1 : 0)) && truthy((yield* g.callName(f, rt.fv(f, "gene", rt.sv(f, "disk")), "can_add", [rt.sv(f, "seed")]))))) {
-						rt.modField(f, rt.sv(f, "seed"), "genes", (yield* g.callName(f, rt.fv(f, "gene", rt.sv(f, "disk")), "Copy", [])), add);
-						if (truthy((rt.istype(rt.fv(f, "gene", rt.sv(f, "disk")), T("/datum/plant_gene/reagent")) ? 1 : 0))) {
-							yield* g.callName(f, rt.sv(f, "seed"), "reagents_from_genes", []);
-						}
-					}
-					yield* g.srcCall(f, "update_genes");
-					yield* g.srcCall(f, "repaint_seed");
-					rt.setSv(f, "operation", "");
-					rt.setSv(f, "target", null);
-				}
-			} else {
-				if ((truthy(rt.at(live(f.args[1]), "gene")) && truthy(rt.sv(f, "seed")))) {
-					if (((!truthy((G = (yield* g.callName(f, rt.sv(f, "seed"), "get_gene", [rt.at(live(f.args[1]), "gene")])))) || !truthy(rt.at(live(f.args[1]), "op"))) || !truthy((rt.isIn(f, rt.at(live(f.args[1]), "op"), rt.list("remove", "extract", "replace")) ? 1 : 0)))) {
-						yield* g.srcCall(f, "interact", live(f.usr));
-						return live(f.dot);
-					}
-					if ((!truthy(rt.sv(f, "operation")) || !isEqual(rt.sv(f, "target"), live(G)))) {
-						rt.setSv(f, "target", live(G));
-						rt.setSv(f, "operation", rt.at(live(f.args[1]), "op"));
-					} else {
-						if ((isEqual(rt.sv(f, "operation"), rt.at(live(f.args[1]), "op")) && isEqual(rt.sv(f, "target"), live(G)))) {
-							$0 = rt.at(live(f.args[1]), "op");
-							if ($0 === "remove") {
-								if (!truthy((rt.istype(live(G), T("/datum/plant_gene/core")) ? 1 : 0))) {
-									(rt.modField(f, rt.sv(f, "seed"), "genes", live(G), subtract));
-									if (truthy((rt.istype(live(G), T("/datum/plant_gene/reagent")) ? 1 : 0))) {
-										yield* g.callName(f, rt.sv(f, "seed"), "reagents_from_genes", []);
-									}
-								}
-								yield* g.srcCall(f, "repaint_seed");
-							} else if ($0 === "extract") {
-								if ((truthy(rt.sv(f, "disk")) && !truthy(rt.fv(f, "read_only", rt.sv(f, "disk"))))) {
-									rt.setFv(f, "gene", rt.sv(f, "disk"), live(G));
-									if (truthy((rt.istype(live(G), T("/datum/plant_gene/core")) ? 1 : 0))) {
-										gene = live(G);
-										if (truthy((rt.istype(live(G), T("/datum/plant_gene/core/potency")) ? 1 : 0))) {
-											rt.setFv(f, "value", live(gene), (yield* g.call(f, P("/proc/min"), null, [rt.fv(f, "value", live(gene)), rt.sv(f, "max_potency")])));
-										} else {
-											if (truthy((rt.istype(live(G), T("/datum/plant_gene/core/lifespan")) ? 1 : 0))) {
-												rt.setFv(f, "value", live(gene), (yield* g.call(f, P("/proc/min"), null, [rt.fv(f, "value", live(gene)), rt.sv(f, "max_endurance")])));
-											} else {
-												if (truthy((rt.istype(live(G), T("/datum/plant_gene/core/endurance")) ? 1 : 0))) {
-													rt.setFv(f, "value", live(gene), (yield* g.call(f, P("/proc/min"), null, [rt.fv(f, "value", live(gene)), rt.sv(f, "max_endurance")])));
-												} else {
-													if (truthy((rt.istype(live(G), T("/datum/plant_gene/core/production")) ? 1 : 0))) {
-														rt.setFv(f, "value", live(gene), (yield* g.call(f, P("/proc/max"), null, [rt.fv(f, "value", live(gene)), rt.sv(f, "min_production")])));
-													} else {
-														if (truthy((rt.istype(live(G), T("/datum/plant_gene/core/yield")) ? 1 : 0))) {
-															rt.setFv(f, "value", live(gene), (yield* g.call(f, P("/proc/min"), null, [rt.fv(f, "value", live(gene)), rt.sv(f, "max_yield")])));
-														} else {
-															if (truthy((rt.istype(live(G), T("/datum/plant_gene/core/weed_rate")) ? 1 : 0))) {
-																rt.setFv(f, "value", live(gene), (yield* g.call(f, P("/proc/max"), null, [rt.fv(f, "value", live(gene)), rt.sv(f, "min_wrate")])));
-															} else {
-																if (truthy((rt.istype(live(G), T("/datum/plant_gene/core/weed_chance")) ? 1 : 0))) {
-																	rt.setFv(f, "value", live(gene), (yield* g.call(f, P("/proc/max"), null, [rt.fv(f, "value", live(gene)), rt.sv(f, "min_wchance")])));
-																}
-															}
-														}
-													}
-												}
-											}
-										}
-									}
-									yield* g.callName(f, rt.sv(f, "disk"), "update_name", []);
-									yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "seed")]);
-									rt.setSv(f, "seed", null);
-									yield* g.srcCall(f, "update_icon");
-								}
-							} else if ($0 === "replace") {
-								if ((((truthy(rt.sv(f, "disk")) && truthy(rt.fv(f, "gene", rt.sv(f, "disk")))) && truthy(rt.op(f, "IsType", [], [rt.fv(f, "gene", rt.sv(f, "disk")), rt.fv(f, "type", live(G))]))) && truthy((rt.istype(live(G), T("/datum/plant_gene/core")) ? 1 : 0)))) {
-									(rt.modField(f, rt.sv(f, "seed"), "genes", live(G), subtract));
-									C = (yield* g.callName(f, rt.fv(f, "gene", rt.sv(f, "disk")), "Copy", []));
-									rt.modField(f, rt.sv(f, "seed"), "genes", live(C), add);
-									yield* g.callName(f, live(C), "apply_stat", [rt.sv(f, "seed")]);
-									yield* g.srcCall(f, "repaint_seed");
-								}
-							} else if ($0 === "insert") {
-								if ((((truthy(rt.sv(f, "disk")) && truthy(rt.fv(f, "gene", rt.sv(f, "disk")))) && !truthy((rt.istype(rt.fv(f, "gene", rt.sv(f, "disk")), T("/datum/plant_gene/core")) ? 1 : 0))) && truthy((yield* g.callName(f, rt.fv(f, "gene", rt.sv(f, "disk")), "can_add", [rt.sv(f, "seed")]))))) {
-									rt.modField(f, rt.sv(f, "seed"), "genes", (yield* g.callName(f, rt.fv(f, "gene", rt.sv(f, "disk")), "Copy", [])), add);
-									if (truthy((rt.istype(rt.fv(f, "gene", rt.sv(f, "disk")), T("/datum/plant_gene/reagent")) ? 1 : 0))) {
-										yield* g.callName(f, rt.sv(f, "seed"), "reagents_from_genes", []);
-									}
-									yield* g.callName(f, rt.fv(f, "gene", rt.sv(f, "disk")), "apply_vars", [rt.sv(f, "seed")]);
-									yield* g.srcCall(f, "repaint_seed");
-								}
-							}
-							yield* g.srcCall(f, "update_genes");
-							rt.setSv(f, "operation", "");
-							rt.setSv(f, "target", null);
-						}
-					}
-				} else {
-					if (truthy(rt.at(live(f.args[1]), "abort"))) {
-						rt.setSv(f, "operation", "");
-						rt.setSv(f, "target", null);
-					}
-				}
-			}
-		}
-	}
-	yield* g.srcCall(f, "interact", live(f.usr));
+	yield* this.interact(user);
 	return f.dot;
-}, true, { args: ["href", "href_list"] });
+}, true);
 
-// /obj/machinery/plantgenes/proc/insert_seed  (code/modules/hydroponics/gene_modder.dm:385)
-rt.def("/obj/machinery/plantgenes/proc/insert_seed", function insert_seed(f: Frame, S: Value) {
-	if ((!truthy((rt.istype(live(S), T("/obj/item/seeds")) ? 1 : 0)) || truthy(rt.sv(f, "seed")))) {
-		return live(f.dot);
-	}
-	rt.setFv(f, "loc", live(S), live(f.src));
-	rt.setSv(f, "seed", live(S));
-	rt.callSrc(f, "update_genes", []);
-	rt.callSrc(f, "update_icon", []);
-	return f.dot;
-});
-
-// /obj/machinery/plantgenes/proc/update_genes  (code/modules/hydroponics/gene_modder.dm:393)
-rt.def("/obj/machinery/plantgenes/proc/update_genes", function update_genes(f: Frame) {
-	let gene_paths: Value = null, a: Value = null, G: Value = null;
+// gene_modder.dm:123
+rt.def("/obj/machinery/plantgenes/proc/interact", function* interact(f: Frame, user: Value) {
+	let gene: Value = null, can_insert: Value = null, can_extract: Value = null, a: Value = null, G: Value = null;
 	let $e: any;
-	f.vars = () => [gene_paths, a, G, $e];
-	rt.setSv(f, "core_genes", rt.list());
-	rt.setSv(f, "reagent_genes", rt.list());
-	rt.setSv(f, "trait_genes", rt.list());
-	if (!truthy(rt.sv(f, "seed"))) return f.dot;
-	gene_paths = rt.list(T("/datum/plant_gene/core/potency"), T("/datum/plant_gene/core/yield"), T("/datum/plant_gene/core/production"), T("/datum/plant_gene/core/endurance"), T("/datum/plant_gene/core/lifespan"), T("/datum/plant_gene/core/weed_rate"), T("/datum/plant_gene/core/weed_chance"));
-	a = null;
-	rt.forList(f, 0, live(gene_paths));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		a = $e;
-		rt.modSrcVar(f, "core_genes", rt.callName(f, rt.sv(f, "seed"), "get_gene", [live(a)]), add);
+	yield* user.set_machine(this);
+	if (!user) {
+		return f.dot;
 	}
-	rt.endFor(f, 0);
-	G = null;
-	rt.forList(f, 0, rt.fv(f, "genes", rt.sv(f, "seed")), T("/datum/plant_gene/reagent"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		G = $e;
-		rt.modSrcVar(f, "reagent_genes", live(G), add);
+	let popup: Value = (yield* new_(T("/datum/browser"), user, "plantdna", "Plant DNA Manipulator", 450, 600));
+	if (!(get_dist(this, user) <= 1 || rt.istype(user, T("/mob/living/silicon")))) {
+		yield* popup.close();
+		return f.dot;
 	}
-	rt.endFor(f, 0);
-	G = null;
-	rt.forList(f, 0, rt.fv(f, "genes", rt.sv(f, "seed")), T("/datum/plant_gene/trait"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		G = $e;
-		rt.modSrcVar(f, "trait_genes", live(G), add);
+	let dat: Value = "";
+	if (this.operation) {
+		if (!this.seed || !this.target && this.operation != "insert") {
+			this.operation = "";
+			this.target = null;
+			yield* this.interact(user);
+			return f.dot;
+		}
+		if ((this.operation == "replace" || this.operation == "insert") && (!this.disk || !this.disk.gene)) {
+			this.operation = "";
+			this.target = null;
+			yield* this.interact(user);
+			return f.dot;
+		}
+		dat += "<div class='line'><h3>Confirm Operation</h3></div>";
+		dat += `<div class='statusDisplay'>Are you sure you want to ${this.operation} `;
+		if (this.operation === "remove") {
+			dat += fmt("<span class='highlight'>＀</span> gene from ％<span class='highlight'>！</span>?<br>", [this.target.get_name(), this.seed]);
+		} else if (this.operation === "extract") {
+			dat += fmt("<span class='highlight'>＀</span> gene from ％<span class='highlight'>！</span>?<br>", [this.target.get_name(), this.seed]);
+			dat += "<span class='bad'>The sample will be destroyed in process!</span>";
+			if (rt.istype(this.target, T("/datum/plant_gene/core"))) {
+				gene = this.target;
+				if (rt.istype(this.target, T("/datum/plant_gene/core/potency"))) {
+					if (rt.fv(f, "value", gene) > this.max_potency) {
+						dat += `<br><br>This device's extraction capabilities are currently limited to <span class='highlight'>${this.max_potency}</span> potency. `;
+						dat += `Target gene will be degraded to <span class='highlight'>${this.max_potency}</span> potency on extraction.`;
+					}
+				} else if (rt.istype(this.target, T("/datum/plant_gene/core/lifespan"))) {
+					if (rt.fv(f, "value", gene) > this.max_endurance) {
+						dat += `<br><br>This device's extraction capabilities are currently limited to <span class='highlight'>${this.max_endurance}</span> lifespan. `;
+						dat += `Target gene will be degraded to <span class='highlight'>${this.max_endurance}</span> Lifespan on extraction.`;
+					}
+				} else if (rt.istype(this.target, T("/datum/plant_gene/core/endurance"))) {
+					if (rt.fv(f, "value", gene) > this.max_endurance) {
+						dat += `<br><br>This device's extraction capabilities are currently limited to <span class='highlight'>${this.max_endurance}</span> endurance. `;
+						dat += `Target gene will be degraded to <span class='highlight'>${this.max_endurance}</span> endurance on extraction.`;
+					}
+				} else if (rt.istype(this.target, T("/datum/plant_gene/core/yield"))) {
+					if (rt.fv(f, "value", gene) > this.max_yield) {
+						dat += `<br><br>This device's extraction capabilities are currently limited to <span class='highlight'>${this.max_yield}</span> yield. `;
+						dat += `Target gene will be degraded to <span class='highlight'>${this.max_yield}</span> yield on extraction.`;
+					}
+				} else if (rt.istype(this.target, T("/datum/plant_gene/core/production"))) {
+					if (rt.fv(f, "value", gene) < this.min_production) {
+						dat += `<br><br>This device's extraction capabilities are currently limited to <span class='highlight'>${this.min_production}</span> production. `;
+						dat += `Target gene will be degraded to <span class='highlight'>${this.min_production}</span> production on extraction.`;
+					}
+				} else if (rt.istype(this.target, T("/datum/plant_gene/core/weed_rate"))) {
+					if (rt.fv(f, "value", gene) < this.min_wrate) {
+						dat += `<br><br>This device's extraction capabilities are currently limited to <span class='highlight'>${this.min_wrate}</span> weed rate. `;
+						dat += `Target gene will be degraded to <span class='highlight'>${this.min_wrate}</span> weed rate on extraction.`;
+					}
+				} else if (rt.istype(this.target, T("/datum/plant_gene/core/weed_chance"))) {
+					if (rt.fv(f, "value", gene) < this.min_wchance) {
+						dat += `<br><br>This device's extraction capabilities are currently limited to <span class='highlight'>${this.min_wchance}</span> weed chance. `;
+						dat += `Target gene will be degraded to <span class='highlight'>${this.min_wchance}</span> weed chance on extraction.`;
+					}
+				}
+			}
+		} else if (this.operation === "replace") {
+			dat += `<span class='highlight'>${this.target.get_name()}</span> gene with <span class='highlight'>${this.disk.gene.get_name()}</span>?<br>`;
+		} else if (this.operation === "insert") {
+			dat += fmt("<span class='highlight'>＀</span> gene into ％<span class='highlight'>！</span>?<br>", [this.disk.gene.get_name(), this.seed]);
+		}
+		dat += fmt("</div><div class='line'><a href='?src=＃;gene=＃;op=＀'>Confirm</a> ", [this, this.target, this.operation]);
+		dat += fmt("<a href='?src=＃;abort=1'>Abort</a></div>", [this]);
+		popup.set_content(dat);
+		yield* popup.open();
+		return f.dot;
 	}
-	rt.endFor(f, 0);
+	dat += "<div class='statusDisplay'>";
+	dat += fmt("<div class='line'><div class='statusLabel'>Plant Sample:</div><div class='statusValue'><a href='?src=＃;eject_seed=1'>", [this]);
+	dat += this.seed ? this.seed.name : "None";
+	dat += "</a></div></div>";
+	dat += fmt("<div class='line'><div class='statusLabel'>Data Disk:</div><div class='statusValue'><a href='?src=＃;eject_disk=1'>", [this]);
+	if (!this.disk) {
+		dat += "None";
+	} else if (!this.disk.gene) {
+		dat += "Empty Disk";
+	} else {
+		dat += this.disk.gene.get_name();
+	}
+	if (this.disk && this.disk.read_only) {
+		dat += " (RO)";
+	}
+	dat += "</a></div></div>";
+	dat += "<br></div>";
+	if (this.seed) {
+		can_insert = ((this.disk && this.disk.gene) && this.disk.gene.can_add(this.seed));
+		can_extract = (this.disk && (!this.disk.read_only ? 1 : 0));
+		dat += "<div class='line'><h3>Core Genes</h3></div><div class='statusDisplay'><table>";
+		for (a of each(this.core_genes)) {
+			if (!(G = a)) {
+				continue;
+			}
+			dat += `<tr><td width='260px'>${G.get_name()}</td><td>`;
+			if (can_extract) {
+				dat += fmt("<a href='?src=＃;gene=＃;op=extract'>Extract</a>", [this, G]);
+			}
+			if (can_insert && rt.op(f, "IsType", [], [this.disk.gene, G.type])) {
+				dat += fmt("<a href='?src=＃;gene=＃;op=replace'>Replace</a>", [this, G]);
+			}
+			dat += "</td></tr>";
+		}
+		dat += "</table></div>";
+		if (this.seed.yield != -1) {
+			dat += "<div class='line'><h3>Content Genes</h3></div><div class='statusDisplay'>";
+			if (rt.len(f, this.reagent_genes)) {
+				dat += "<table>";
+				a = null;
+				for (a of each(this.reagent_genes)) {
+					dat += `<tr><td width='260px'>${(G = a).get_name()}</td><td>`;
+					if (can_extract) {
+						dat += fmt("<a href='?src=＃;gene=＃;op=extract'>Extract</a>", [this, G]);
+					}
+					dat += fmt("<a href='?src=＃;gene=＃;op=remove'>Remove</a>", [this, G]);
+					dat += "</td></tr>";
+				}
+				dat += "</table>";
+			} else {
+				dat += "No content-related genes detected in sample.<br>";
+			}
+			dat += "</div>";
+			if (can_insert && rt.istype(this.disk.gene, T("/datum/plant_gene/reagent"))) {
+				dat += fmt("<a href='?src=＃;op=insert'>Insert: ＀</a>", [this, this.disk.gene.get_name()]);
+			}
+			dat += "<div class='line'><h3>Trait Genes</h3></div><div class='statusDisplay'>";
+			if (rt.len(f, this.trait_genes)) {
+				dat += "<table>";
+				a = null;
+				for (a of each(this.trait_genes)) {
+					dat += `<tr><td width='260px'>${(G = a).get_name()}</td><td>`;
+					if (can_extract) {
+						dat += fmt("<a href='?src=＃;gene=＃;op=extract'>Extract</a>", [this, G]);
+					}
+					dat += fmt("<a href='?src=＃;gene=＃;op=remove'>Remove</a>", [this, G]);
+					dat += "</td></tr>";
+				}
+				dat += "</table>";
+			} else {
+				dat += "No trait-related genes detected in sample.<br>";
+			}
+			if (can_insert && rt.istype(this.disk.gene, T("/datum/plant_gene/trait"))) {
+				dat += fmt("<a href='?src=＃;op=insert'>Insert: ＀</a>", [this, this.disk.gene.get_name()]);
+			}
+			dat += "</div>";
+		}
+	} else {
+		dat += "<br>No sample found.<br><span class='highlight'>Please, insert a plant sample to use this device.</span>";
+	}
+	popup.set_content(dat);
+	yield* popup.open();
+	return f.dot;
+}, true);
+
+// gene_modder.dm:272
+rt.def("/obj/machinery/plantgenes/proc/Topic", function* Topic(f: Frame, href: Value, href_list: Value) {
+	let I: Value = null, G: Value = null, gene: Value = null, C: Value = null;
+	if (yield* parent_proc()) {
+		return f.dot;
+	}
+	yield* f.usr.set_machine(this);
+	if (rt.at(href_list, "eject_seed") && !this.operation) {
+		if (this.seed) {
+			this.seed.loc = this.loc;
+			yield* this.seed.verb_pickup();
+			this.seed = null;
+			this.update_genes();
+			yield* this.update_icon();
+		} else if (rt.istype((I = f.usr.get_active_held_item()), T("/obj/item/seeds"))) {
+			if (!(yield* f.usr.drop_item())) {
+				return f.dot;
+			}
+			this.insert_seed(I);
+			to_chat(f.usr, `<span class='notice'>You add ${I} to the machine.</span>`);
+		}
+		yield* this.update_icon();
+	} else if (rt.at(href_list, "eject_disk") && !this.operation) {
+		if (this.disk) {
+			this.disk.loc = this.loc;
+			yield* this.disk.verb_pickup();
+			this.disk = null;
+			this.update_genes();
+		} else if (rt.istype((I = f.usr.get_active_held_item()), T("/obj/item/weapon/disk/plantgene"))) {
+			if (!(yield* f.usr.drop_item())) {
+				return f.dot;
+			}
+			this.disk = I;
+			this.disk.loc = this;
+			to_chat(f.usr, `<span class='notice'>You add ${I} to the machine.</span>`);
+		}
+	} else if (rt.at(href_list, "op") == "insert" && this.disk && this.disk.gene && this.seed) {
+		if (!this.operation) {
+			this.operation = "insert";
+		} else {
+			if (!rt.istype(this.disk.gene, T("/datum/plant_gene/core")) && this.disk.gene.can_add(this.seed)) {
+				this.seed.genes += (yield* this.disk.gene.Copy());
+				if (rt.istype(this.disk.gene, T("/datum/plant_gene/reagent"))) {
+					this.seed.reagents_from_genes();
+				}
+			}
+			this.update_genes();
+			this.repaint_seed();
+			this.operation = "";
+			this.target = null;
+		}
+	} else if (rt.at(href_list, "gene") && this.seed) {
+		if (!(G = this.seed.get_gene(rt.at(href_list, "gene"))) || !rt.at(href_list, "op") || !rt.isIn(f, rt.at(href_list, "op"), list("remove", "extract", "replace"))) {
+			yield* this.interact(f.usr);
+			return f.dot;
+		}
+		if (!this.operation || this.target != G) {
+			this.target = G;
+			this.operation = rt.at(href_list, "op");
+		} else if (this.operation == rt.at(href_list, "op") && this.target == G) {
+			const item = rt.at(href_list, "op");
+			if (item === "remove") {
+				if (!rt.istype(G, T("/datum/plant_gene/core"))) {
+					this.seed.genes -= G;
+					if (rt.istype(G, T("/datum/plant_gene/reagent"))) {
+						this.seed.reagents_from_genes();
+					}
+				}
+				this.repaint_seed();
+			} else if (item === "extract") {
+				if (this.disk && !this.disk.read_only) {
+					this.disk.gene = G;
+					if (rt.istype(G, T("/datum/plant_gene/core"))) {
+						gene = G;
+						if (rt.istype(G, T("/datum/plant_gene/core/potency"))) {
+							rt.setFv(f, "value", gene, min(rt.fv(f, "value", gene), this.max_potency));
+						} else if (rt.istype(G, T("/datum/plant_gene/core/lifespan"))) {
+							rt.setFv(f, "value", gene, min(rt.fv(f, "value", gene), this.max_endurance));
+						} else if (rt.istype(G, T("/datum/plant_gene/core/endurance"))) {
+							rt.setFv(f, "value", gene, min(rt.fv(f, "value", gene), this.max_endurance));
+						} else if (rt.istype(G, T("/datum/plant_gene/core/production"))) {
+							rt.setFv(f, "value", gene, max(rt.fv(f, "value", gene), this.min_production));
+						} else if (rt.istype(G, T("/datum/plant_gene/core/yield"))) {
+							rt.setFv(f, "value", gene, min(rt.fv(f, "value", gene), this.max_yield));
+						} else if (rt.istype(G, T("/datum/plant_gene/core/weed_rate"))) {
+							rt.setFv(f, "value", gene, max(rt.fv(f, "value", gene), this.min_wrate));
+						} else if (rt.istype(G, T("/datum/plant_gene/core/weed_chance"))) {
+							rt.setFv(f, "value", gene, max(rt.fv(f, "value", gene), this.min_wchance));
+						}
+					}
+					this.disk.update_name();
+					yield* qdel(this.seed);
+					this.seed = null;
+					yield* this.update_icon();
+				}
+			} else if (item === "replace") {
+				if (this.disk && this.disk.gene && rt.op(f, "IsType", [], [this.disk.gene, G.type]) && rt.istype(G, T("/datum/plant_gene/core"))) {
+					this.seed.genes -= G;
+					C = (yield* this.disk.gene.Copy());
+					this.seed.genes += C;
+					C.apply_stat(this.seed);
+					this.repaint_seed();
+				}
+			} else if (item === "insert") {
+				if (this.disk && this.disk.gene && !rt.istype(this.disk.gene, T("/datum/plant_gene/core")) && this.disk.gene.can_add(this.seed)) {
+					this.seed.genes += (yield* this.disk.gene.Copy());
+					if (rt.istype(this.disk.gene, T("/datum/plant_gene/reagent"))) {
+						this.seed.reagents_from_genes();
+					}
+					this.disk.gene.apply_vars(this.seed);
+					this.repaint_seed();
+				}
+			}
+			this.update_genes();
+			this.operation = "";
+			this.target = null;
+		}
+	} else if (rt.at(href_list, "abort")) {
+		this.operation = "";
+		this.target = null;
+	}
+	yield* this.interact(f.usr);
+	return f.dot;
+}, true);
+
+// gene_modder.dm:385
+rt.def("/obj/machinery/plantgenes/proc/insert_seed", function insert_seed(f: Frame, S: Value) {
+	if (!rt.istype(S, T("/obj/item/seeds")) || this.seed) {
+		return f.dot;
+	}
+	S.loc = this;
+	this.seed = S;
+	this.update_genes();
+	this.update_icon();
 	return f.dot;
 });
 
-// /obj/machinery/plantgenes/proc/repaint_seed  (code/modules/hydroponics/gene_modder.dm:417)
+// gene_modder.dm:393
+rt.def("/obj/machinery/plantgenes/proc/update_genes", function update_genes(f: Frame) {
+	let a: Value = null, G: Value = null;
+	this.core_genes = list();
+	this.reagent_genes = list();
+	this.trait_genes = list();
+	if (!this.seed) return f.dot;
+	let gene_paths: Value = list(T("/datum/plant_gene/core/potency"), T("/datum/plant_gene/core/yield"), T("/datum/plant_gene/core/production"), T("/datum/plant_gene/core/endurance"), T("/datum/plant_gene/core/lifespan"), T("/datum/plant_gene/core/weed_rate"), T("/datum/plant_gene/core/weed_chance"));
+	for (a of each(gene_paths)) {
+		this.core_genes += this.seed.get_gene(a);
+	}
+	for (G of each(this.seed.genes, T("/datum/plant_gene/reagent"))) {
+		this.reagent_genes += G;
+	}
+	G = null;
+	for (G of each(this.seed.genes, T("/datum/plant_gene/trait"))) {
+		this.trait_genes += G;
+	}
+	return f.dot;
+});
+
+// gene_modder.dm:417
 rt.def("/obj/machinery/plantgenes/proc/repaint_seed", function repaint_seed(f: Frame) {
-	if (!truthy(rt.sv(f, "seed"))) {
-		return live(f.dot);
+	if (!this.seed) {
+		return f.dot;
 	}
-	if (isEqual(rt.call(f, P("/proc/copytext"), null, [rt.fv(f, "name", rt.sv(f, "seed")), 1, 13]), "experimental")) {
-		return live(f.dot);
+	if (copytext(this.seed.name, 1, 13) == "experimental") {
+		return f.dot;
 	}
-	rt.setFv(f, "name", rt.sv(f, "seed"), add("experimental ", rt.fv(f, "name", rt.sv(f, "seed"))));
-	rt.setFv(f, "icon_state", rt.sv(f, "seed"), "seed-x");
+	this.seed.name = "experimental " + this.seed.name;
+	this.seed.icon_state = "seed-x";
 	return f.dot;
 });
 
 rt.type(10922, "/obj/machinery/plantgenes/seedvault", "/obj/machinery/plantgenes", {});
 
-// /obj/machinery/plantgenes/seedvault/proc/New  (code/modules/hydroponics/gene_modder.dm:428)  may sleep
+// gene_modder.dm:428
 rt.def("/obj/machinery/plantgenes/seedvault/proc/New", function* New(f: Frame) {
 	let B: Value = null;
-	f.vars = () => [B];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.callName(f, (B = (yield* g.new_(f, T("/obj/item/weapon/circuitboard/machine/plantgenes/vault"), [null]))), "apply_default_parts", [live(f.src)]);
+	yield* parent_proc();
+	yield* (B = (yield* new_(T("/obj/item/weapon/circuitboard/machine/plantgenes/vault"), null))).apply_default_parts(this);
 	return f.dot;
 }, true);
 
@@ -622,12 +524,10 @@ rt.type(6757, "/obj/item/weapon/circuitboard/machine/plantgenes/vault", "/obj/it
 	origin_tech: "programming=5;biotech=5",
 });
 
-// /obj/item/weapon/circuitboard/machine/plantgenes/vault/proc/<init>  (code/modules/hydroponics/gene_modder.dm:437)
+// gene_modder.dm:437
 rt.def("/obj/item/weapon/circuitboard/machine/plantgenes/vault/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "def_components", rt.alist(f, [T("/obj/item/weapon/stock_parts/manipulator"), T("/obj/item/weapon/stock_parts/manipulator/femto"), T("/obj/item/weapon/stock_parts/micro_laser"), T("/obj/item/weapon/stock_parts/micro_laser/quadultra"), T("/obj/item/weapon/stock_parts/scanning_module"), T("/obj/item/weapon/stock_parts/scanning_module/triphasic")]));
+	parent_proc();
+	this.def_components = rt.alist(f, [T("/obj/item/weapon/stock_parts/manipulator"), T("/obj/item/weapon/stock_parts/manipulator/femto"), T("/obj/item/weapon/stock_parts/micro_laser"), T("/obj/item/weapon/stock_parts/micro_laser/quadultra"), T("/obj/item/weapon/stock_parts/scanning_module"), T("/obj/item/weapon/stock_parts/scanning_module/triphasic")]);
 	return f.dot;
 });
 
@@ -641,60 +541,50 @@ rt.type(6675, "/obj/item/weapon/disk/plantgene", "/obj/item/weapon/disk", {
 	unique_rename: 1,
 });
 
-// /obj/item/weapon/disk/plantgene/proc/<init>  (code/modules/hydroponics/gene_modder.dm:450)
+// gene_modder.dm:450
 rt.def("/obj/item/weapon/disk/plantgene/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 30, "$glass", 10]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 30, "$glass", 10]);
 	return f.dot;
 });
 
-// /obj/item/weapon/disk/plantgene/proc/New  (code/modules/hydroponics/gene_modder.dm:456)  may sleep
+// gene_modder.dm:456
 rt.def("/obj/item/weapon/disk/plantgene/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "add_overlay", "datadisk_gene");
-	rt.setFv(f, "pixel_x", live(f.src), (yield* g.call(f, P("/proc/rand"), null, [-5, 5])));
-	rt.setFv(f, "pixel_y", live(f.src), (yield* g.call(f, P("/proc/rand"), null, [-5, 5])));
+	yield* parent_proc();
+	this.add_overlay("datadisk_gene");
+	this.pixel_x = rand(-5, 5);
+	this.pixel_y = rand(-5, 5);
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/disk/plantgene/proc/update_name  (code/modules/hydroponics/gene_modder.dm:463)
+// gene_modder.dm:463
 rt.def("/obj/item/weapon/disk/plantgene/proc/update_name", function update_name(f: Frame) {
-	if (truthy(rt.sv(f, "gene"))) {
-		rt.setSv(f, "name", fmt("＀ (Plant Data Disk)", [rt.callName(f, rt.sv(f, "gene"), "get_name", [])]));
+	if (this.gene) {
+		this.name = `${this.gene.get_name()} (Plant Data Disk)`;
 	} else {
-		rt.setSv(f, "name", "plant data disk");
+		this.name = "plant data disk";
 	}
 	return f.dot;
 });
 
-// /obj/item/weapon/disk/plantgene/proc/attack_self  (code/modules/hydroponics/gene_modder.dm:468)
+// gene_modder.dm:468
 rt.def("/obj/item/weapon/disk/plantgene/proc/attack_self", function attack_self(f: Frame, user: Value) {
-	let $0: any, $1: any;
-	f.vars = () => [$0, $1];
-	rt.setSv(f, "read_only", (!truthy(rt.sv(f, "read_only")) ? 1 : 0));
-	$0 = live(user);
-	if (truthy(rt.fv(f, "read_only", live(f.src)))) {
+	let $1: any;
+	this.read_only = (!this.read_only ? 1 : 0);
+	let $0: any = user;
+	if (this.read_only) {
 		$1 = "protected";
 	} else {
 		$1 = "unprotected";
 	}
-	rt.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='notice'>You flip the write-protect tab to ＀.</span>", [$1])]);
+	to_chat($0, `<span class='notice'>You flip the write-protect tab to ${$1}.</span>`);
 	return f.dot;
 });
 
-// /obj/item/weapon/disk/plantgene/proc/examine  (code/modules/hydroponics/gene_modder.dm:472)
-rt.def("/obj/item/weapon/disk/plantgene/proc/examine", function examine(f: Frame) {
-	let $0: any, $1: any;
-	f.vars = () => [$0, $1];
-	rt.callSuper(f, [], rt.Args.Same);
-	$0 = live(f.args[0]);
-	if (truthy(rt.fv(f, "read_only", live(f.src)))) {
-		$1 = "protected";
-	} else {
-		$1 = "unprotected";
-	}
-	rt.call(f, P("/proc/to_chat"), null, [$0, fmt("The write-protect tab is set to ＀.", [$1])]);
+// gene_modder.dm:472
+rt.def("/obj/item/weapon/disk/plantgene/proc/examine", function examine(f: Frame, user: Value) {
+	parent_proc();
+	let $0: any = user;
+	to_chat($0, `The write-protect tab is set to ${this.read_only ? "protected" : "unprotected"}.`);
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);

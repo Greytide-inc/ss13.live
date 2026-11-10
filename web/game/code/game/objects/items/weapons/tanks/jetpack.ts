@@ -1,7 +1,7 @@
-// From code/game/objects/items/weapons/tanks/jetpack.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/weapons/tanks/jetpack.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(7447, "/obj/item/weapon/tank/jetpack", "/obj/item/weapon/tank", {
@@ -19,126 +19,106 @@ rt.type(7447, "/obj/item/weapon/tank/jetpack", "/obj/item/weapon/tank", {
 	actions_types: null,
 });
 
-// /obj/item/weapon/tank/jetpack/proc/<init>  (code/game/objects/items/weapons/tanks/jetpack.dm:8)
+// jetpack.dm:8
 rt.def("/obj/item/weapon/tank/jetpack/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "actions_types", rt.list(T("/datum/action/item_action/set_internals"), T("/datum/action/item_action/toggle_jetpack"), T("/datum/action/item_action/jetpack_stabilization")));
+	parent_proc();
+	this.actions_types = list(T("/datum/action/item_action/set_internals"), T("/datum/action/item_action/toggle_jetpack"), T("/datum/action/item_action/jetpack_stabilization"));
 	return f.dot;
 });
 
-// /obj/item/weapon/tank/jetpack/proc/New  (code/game/objects/items/weapons/tanks/jetpack.dm:16)  may sleep
+// jetpack.dm:16
 rt.def("/obj/item/weapon/tank/jetpack/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.sv(f, "gas_type"))) {
-		yield* g.callName(f, rt.sv(f, "air_contents"), "assert_gas", [rt.sv(f, "gas_type")]);
-		rt.setAt(rt.index(rt.fv(f, "gases", rt.sv(f, "air_contents")), rt.sv(f, "gas_type")), 1, divide(multiply(607.949951171875, rt.sv(f, "volume")), 2436.07666015625));
+	yield* parent_proc();
+	if (this.gas_type) {
+		this.air_contents.assert_gas(this.gas_type);
+		rt.setAt(rt.index(this.air_contents.gases, this.gas_type), 1, 607.94995 * this.volume / 2436.0767);
 	}
-	rt.setSv(f, "ion_trail", (yield* g.new_(f, T("/datum/effect_system/trail_follow/ion"), [])));
-	yield* g.callName(f, rt.sv(f, "ion_trail"), "set_up", [live(f.src)]);
+	this.ion_trail = (yield* new_(T("/datum/effect_system/trail_follow/ion")));
+	yield* this.ion_trail.set_up(this);
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/tank/jetpack/proc/ui_action_click  (code/game/objects/items/weapons/tanks/jetpack.dm:25)  may sleep
+// jetpack.dm:25
 rt.def("/obj/item/weapon/tank/jetpack/proc/ui_action_click", function* ui_action_click(f: Frame, user: Value, action: Value) {
-	let $0: any, $1: any;
-	f.vars = () => [user, action, $0, $1];
-	if (truthy((rt.istype(live(action), T("/datum/action/item_action/toggle_jetpack")) ? 1 : 0))) {
-		yield* g.srcCall(f, "cycle", live(user));
-	} else {
-		if (truthy((rt.istype(live(action), T("/datum/action/item_action/jetpack_stabilization")) ? 1 : 0))) {
-			if (truthy(rt.sv(f, "on"))) {
-				rt.setSv(f, "stabilizers", (!truthy(rt.sv(f, "stabilizers")) ? 1 : 0));
-				$0 = live(user);
-				if (truthy(rt.sv(f, "stabilizers"))) {
-					$1 = "on";
-				} else {
-					$1 = "off";
-				}
-				yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='notice'>You turn the jetpack stabilization ＀.</span>", [$1])]);
-			}
-		} else {
-			yield* g.srcCall(f, "toggle_internals", live(user));
+	if (rt.istype(action, T("/datum/action/item_action/toggle_jetpack"))) {
+		yield* this.cycle(user);
+	} else if (rt.istype(action, T("/datum/action/item_action/jetpack_stabilization"))) {
+		if (this.on) {
+			this.stabilizers = (!this.stabilizers ? 1 : 0);
+			to_chat(user, `<span class='notice'>You turn the jetpack stabilization ${this.stabilizers ? "on" : "off"}.</span>`);
 		}
+	} else {
+		yield* this.toggle_internals(user);
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/tank/jetpack/proc/cycle  (code/game/objects/items/weapons/tanks/jetpack.dm:36)  may sleep
+// jetpack.dm:36
 rt.def("/obj/item/weapon/tank/jetpack/proc/cycle", function* cycle(f: Frame, user: Value) {
 	let X: Value = null, A: Value = null;
-	let $e: any;
-	f.vars = () => [user, X, A, $e];
-	if (truthy((yield* g.callName(f, live(user), "incapacitated", [])))) {
-		return live(f.dot);
+	if (user.incapacitated()) {
+		return f.dot;
 	}
-	if (!truthy(rt.sv(f, "on"))) {
-		yield* g.srcCall(f, "turn_on");
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>You turn the jetpack on.</span>"]);
+	if (!this.on) {
+		yield* this.turn_on();
+		to_chat(user, "<span class='notice'>You turn the jetpack on.</span>");
 	} else {
-		yield* g.srcCall(f, "turn_off");
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>You turn the jetpack off.</span>"]);
+		yield* this.turn_off();
+		to_chat(user, "<span class='notice'>You turn the jetpack off.</span>");
 	}
-	X = null;
-	rt.forList(f, 0, rt.sv(f, "actions"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		X = $e;
-		yield* g.callName(f, (A = live(X)), "UpdateButtonIcon", []);
+	for (X of each(this.actions)) {
+		yield* (A = X).UpdateButtonIcon();
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/tank/jetpack/proc/turn_on  (code/game/objects/items/weapons/tanks/jetpack.dm:52)  may sleep
+// jetpack.dm:52
 rt.def("/obj/item/weapon/tank/jetpack/proc/turn_on", function* turn_on(f: Frame) {
-	rt.setSv(f, "on", 1);
-	rt.setSv(f, "icon_state", fmt("＀-on", [rt.initial(f, live(f.src), "icon_state")]));
-	yield* g.callName(f, rt.sv(f, "ion_trail"), "start", []);
+	this.on = 1;
+	this.icon_state = `${rt.initial(f, this, "icon_state")}-on`;
+	yield* this.ion_trail.start();
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/tank/jetpack/proc/turn_off  (code/game/objects/items/weapons/tanks/jetpack.dm:58)
+// jetpack.dm:58
 rt.def("/obj/item/weapon/tank/jetpack/proc/turn_off", function turn_off(f: Frame) {
-	rt.setSv(f, "on", 0);
-	rt.setSv(f, "stabilizers", 0);
-	rt.setSv(f, "icon_state", rt.initial(f, live(f.src), "icon_state"));
-	rt.callName(f, rt.sv(f, "ion_trail"), "stop", []);
+	this.on = 0;
+	this.stabilizers = 0;
+	this.icon_state = rt.initial(f, this, "icon_state");
+	this.ion_trail.stop();
 	return f.dot;
 });
 
-// /obj/item/weapon/tank/jetpack/proc/allow_thrust  (code/game/objects/items/weapons/tanks/jetpack.dm:62)  may sleep
+// jetpack.dm:62
 rt.def("/obj/item/weapon/tank/jetpack/proc/allow_thrust", function* allow_thrust(f: Frame, num: Value, user: Value) {
 	let removed: Value = null, _T: Value = null;
-	f.vars = () => [num, user, removed, _T];
-	if (!truthy(rt.sv(f, "on"))) {
-		return live(f.dot);
+	if (!this.on) {
+		return f.dot;
 	}
-	if ((rt.lt(live(num), 0.004999999888241291) || rt.lt((yield* g.callName(f, rt.sv(f, "air_contents"), "total_moles", [])), live(num)))) {
-		yield* g.srcCall(f, "turn_off");
-		return live(f.dot);
+	if (num < 0.005 || this.air_contents.total_moles() < num) {
+		yield* this.turn_off();
+		return f.dot;
 	}
-	if (rt.lt((yield* g.callName(f, (removed = (yield* g.callName(f, rt.sv(f, "air_contents"), "remove", [live(num)]))), "total_moles", [])), 0.004999999888241291)) {
-		yield* g.srcCall(f, "turn_off");
-		return live(f.dot);
+	if ((removed = (yield* this.air_contents.remove(num))).total_moles() < 0.005) {
+		yield* this.turn_off();
+		return f.dot;
 	}
-	yield* g.callName(f, (_T = rt.getStep(f, live(user), 0)), "assume_air", [live(removed)]);
+	yield* (_T = rt.getStep(f, user, 0)).assume_air(removed);
 	return 1;
 }, true);
 
-// /obj/item/weapon/tank/jetpack/proc/suicide_act  (code/game/objects/items/weapons/tanks/jetpack.dm:79)  may sleep
-rt.def("/obj/item/weapon/tank/jetpack/proc/suicide_act", function* suicide_act(f: Frame) {
+// jetpack.dm:79
+rt.def("/obj/item/weapon/tank/jetpack/proc/suicide_act", function* suicide_act(f: Frame, user: Value) {
 	let H: Value = null;
-	f.vars = () => [H];
-	if (truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		yield* g.callName(f, (H = live(f.args[0])), "forcesay", ["WHAT THE FUCK IS CARBON DIOXIDE?"]);
-		yield* g.callName(f, live(H), "visible_message", [fmt("<span class='suicide'>＀ is suffocating ＀self with ＀! It looks like ＀ didn't read what that jetpack says!</span>", [live(f.args[0]), (yield* g.callName(f, live(f.args[0]), "p_them", [])), live(f.src), (yield* g.callName(f, live(f.args[0]), "p_they", []))])]);
+	if (rt.istype(user, T("/mob/living/carbon/human"))) {
+		yield* (H = user).forcesay("WHAT THE FUCK IS CARBON DIOXIDE?");
+		H.visible_message(`<span class='suicide'>${user} is suffocating ${user.p_them()}self with ${this}! It looks like ${user.p_they()} didn't read what that jetpack says!</span>`);
 		return 8;
 	} else {
-		yield* g.callSuper(f, [], rt.Args.Same);
+		yield* parent_proc();
 	}
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
 rt.type(7454, "/obj/item/weapon/tank/jetpack/suit", "/obj/item/weapon/tank/jetpack", {
 	temp_air_contents: null,
@@ -156,98 +136,90 @@ rt.type(7454, "/obj/item/weapon/tank/jetpack/suit", "/obj/item/weapon/tank/jetpa
 	slot_flags: null,
 });
 
-// /obj/item/weapon/tank/jetpack/suit/proc/<init>  (code/game/objects/items/weapons/tanks/jetpack.dm:139)
+// jetpack.dm:139
 rt.def("/obj/item/weapon/tank/jetpack/suit/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "actions_types", rt.list(T("/datum/action/item_action/toggle_jetpack"), T("/datum/action/item_action/jetpack_stabilization")));
+	parent_proc();
+	this.actions_types = list(T("/datum/action/item_action/toggle_jetpack"), T("/datum/action/item_action/jetpack_stabilization"));
 	return f.dot;
 });
 
-// /obj/item/weapon/tank/jetpack/suit/proc/New  (code/game/objects/items/weapons/tanks/jetpack.dm:148)  may sleep
+// jetpack.dm:148
 rt.def("/obj/item/weapon/tank/jetpack/suit/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setFv(f, "isprocessing", live(f.src), 0);
-	(rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), subtract));
-	rt.setSv(f, "temp_air_contents", rt.sv(f, "air_contents"));
+	yield* parent_proc();
+	this.isprocessing = 0;
+	GLOB.SSobj.processing -= this;
+	this.temp_air_contents = this.air_contents;
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/tank/jetpack/suit/proc/cycle  (code/game/objects/items/weapons/tanks/jetpack.dm:156)  may sleep
-rt.def("/obj/item/weapon/tank/jetpack/suit/proc/cycle", function* cycle(f: Frame) {
+// jetpack.dm:156
+rt.def("/obj/item/weapon/tank/jetpack/suit/proc/cycle", function* cycle(f: Frame, user: Value) {
 	let H: Value = null;
-	f.vars = () => [H];
-	if (!truthy((rt.istype(rt.sv(f, "loc"), T("/obj/item/clothing/suit/space/hardsuit")) ? 1 : 0))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='warning'>＄！ must be connected to a hardsuit!</span>", [live(f.src)])]);
-		return live(f.dot);
+	if (!rt.istype(this.loc, T("/obj/item/clothing/suit/space/hardsuit"))) {
+		to_chat(user, fmt("<span class='warning'>＄！ must be connected to a hardsuit!</span>", [this]));
+		return f.dot;
 	}
-	if (!truthy((rt.istype(rt.gv(f, "s_store", (H = live(f.args[0]))), T("/obj/item/weapon/tank/internals")) ? 1 : 0))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='warning'>You need a tank in your suit storage!</span>"]);
-		return live(f.dot);
+	if (!rt.istype((H = user).s_store, T("/obj/item/weapon/tank/internals"))) {
+		to_chat(user, "<span class='warning'>You need a tank in your suit storage!</span>");
+		return f.dot;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /obj/item/weapon/tank/jetpack/suit/proc/turn_on  (code/game/objects/items/weapons/tanks/jetpack.dm:167)  may sleep
+// jetpack.dm:167
 rt.def("/obj/item/weapon/tank/jetpack/suit/proc/turn_on", function* turn_on(f: Frame) {
 	let H: Value = null;
-	f.vars = () => [H];
-	if ((!truthy((rt.istype(rt.sv(f, "loc"), T("/obj/item/clothing/suit/space/hardsuit")) ? 1 : 0)) || !truthy((rt.istype(rt.fv(f, "loc", rt.sv(f, "loc")), T("/mob/living/carbon/human")) ? 1 : 0)))) {
-		return live(f.dot);
+	if (!rt.istype(this.loc, T("/obj/item/clothing/suit/space/hardsuit")) || !rt.istype(this.loc.loc, T("/mob/living/carbon/human"))) {
+		return f.dot;
 	}
-	rt.setSv(f, "tank", rt.gv(f, "s_store", (H = rt.fv(f, "loc", rt.sv(f, "loc")))));
-	rt.setSv(f, "air_contents", rt.fv(f, "air_contents", rt.sv(f, "tank")));
-	if (!truthy(rt.fv(f, "isprocessing", live(f.src)))) {
-		rt.setFv(f, "isprocessing", live(f.src), 1);
-		rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), add);
+	this.tank = (H = this.loc.loc).s_store;
+	this.air_contents = this.tank.air_contents;
+	if (!this.isprocessing) {
+		this.isprocessing = 1;
+		GLOB.SSobj.processing += this;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/tank/jetpack/suit/proc/turn_off  (code/game/objects/items/weapons/tanks/jetpack.dm:177)
+// jetpack.dm:177
 rt.def("/obj/item/weapon/tank/jetpack/suit/proc/turn_off", function turn_off(f: Frame) {
-	rt.setSv(f, "tank", null);
-	rt.setSv(f, "air_contents", rt.sv(f, "temp_air_contents"));
-	rt.setFv(f, "isprocessing", live(f.src), 0);
-	(rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), subtract));
-	rt.callSuper(f, [], rt.Args.Same);
+	this.tank = null;
+	this.air_contents = this.temp_air_contents;
+	this.isprocessing = 0;
+	GLOB.SSobj.processing -= this;
+	parent_proc();
 	return f.dot;
 });
 
-// /obj/item/weapon/tank/jetpack/suit/proc/process  (code/game/objects/items/weapons/tanks/jetpack.dm:182)
+// jetpack.dm:182
 rt.def("/obj/item/weapon/tank/jetpack/suit/proc/process", function process(f: Frame) {
-	let H: Value = null;
-	f.vars = () => [H];
-	if ((!truthy((rt.istype(rt.sv(f, "loc"), T("/obj/item/clothing/suit/space/hardsuit")) ? 1 : 0)) || !truthy((rt.istype(rt.fv(f, "loc", rt.sv(f, "loc")), T("/mob/living/carbon/human")) ? 1 : 0)))) {
-		rt.callSrc(f, "turn_off", []);
-		return live(f.dot);
+	if (!rt.istype(this.loc, T("/obj/item/clothing/suit/space/hardsuit")) || !rt.istype(this.loc.loc, T("/mob/living/carbon/human"))) {
+		this.turn_off();
+		return f.dot;
 	}
-	H = rt.fv(f, "loc", rt.sv(f, "loc"));
-	if ((!truthy(rt.sv(f, "tank")) || !isEqual(rt.sv(f, "tank"), rt.fv(f, "s_store", live(H))))) {
-		rt.callSrc(f, "turn_off", []);
-		return live(f.dot);
+	let H: Value = this.loc.loc;
+	if (!this.tank || this.tank != H.s_store) {
+		this.turn_off();
+		return f.dot;
 	}
-	rt.callSuper(f, [], rt.Args.Same);
+	parent_proc();
 	return f.dot;
 }, false, { waitfor: false });
 
-// /mob/living/carbon/proc/get_jetpack  (code/game/objects/items/weapons/tanks/jetpack.dm:200)
+// jetpack.dm:200
 rt.def("/mob/living/carbon/proc/get_jetpack", function get_jetpack(f: Frame) {
 	let J: Value = null;
-	f.vars = () => [J];
-	if (!truthy((rt.istype((J = rt.sv(f, "back")), T("/obj/item/weapon/tank/jetpack")) ? 1 : 0))) return f.dot;
-	return live(J);
+	if (!rt.istype((J = this.back), T("/obj/item/weapon/tank/jetpack"))) return f.dot;
+	return J;
 });
 
-// /mob/living/carbon/human/proc/get_jetpack  (code/game/objects/items/weapons/tanks/jetpack.dm:205)
+// jetpack.dm:205
 rt.def("/mob/living/carbon/human/proc/get_jetpack", function get_jetpack(f: Frame) {
 	let J: Value = null, C: Value = null;
-	f.vars = () => [J, C];
-	if ((!truthy((rt.istype((J = rt.callSuper(f, [], rt.Args.Same)), T("/obj/item/weapon/tank/jetpack")) ? 1 : 0)) && truthy((rt.istype(rt.sv(f, "wear_suit"), T("/obj/item/clothing/suit/space/hardsuit")) ? 1 : 0)))) {
-		J = rt.gv(f, "jetpack", (C = rt.sv(f, "wear_suit")));
+	if (!rt.istype((J = parent_proc()), T("/obj/item/weapon/tank/jetpack")) && rt.istype(this.wear_suit, T("/obj/item/clothing/suit/space/hardsuit"))) {
+		J = (C = this.wear_suit).jetpack;
 	}
-	return live(J);
+	return J;
 });

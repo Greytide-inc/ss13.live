@@ -1,37 +1,26 @@
-// From code/datums/explosion.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/datums/explosion.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, g } = rt;
 
 
-// /datum/controller/global_vars/proc/InitGlobalexplosions  (code/datums/explosion.dm:3)
+// explosion.dm:3
 rt.def("/datum/controller/global_vars/proc/InitGlobalexplosions", function InitGlobalexplosions(f: Frame) {
-	rt.setGl("explosions", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "explosions", add);
+	GLOB.explosions = list();
+	this.gvars_datum_init_order += "explosions";
 	return f.dot;
 });
 
-// /proc/explosion  (code/datums/explosion.dm:8)  may sleep
+// explosion.dm:8
 rt.def("/proc/explosion", function* explosion(f: Frame, epicenter: Value, devastation_range: Value, heavy_impact_range: Value, light_impact_range: Value, flash_range: Value, adminlog: Value, ignorecap: Value, flame_range: Value, silent: Value, smoke: Value) {
-	f.vars = () => [adminlog, ignorecap, flame_range, silent, smoke];
-	if (live(adminlog) === null) {
-		adminlog = 1;
-	}
-	if (live(ignorecap) === null) {
-		ignorecap = 0;
-	}
-	if (live(flame_range) === null) {
-		flame_range = 0;
-	}
-	if (live(silent) === null) {
-		silent = 0;
-	}
-	if (live(smoke) === null) {
-		smoke = 0;
-	}
+	adminlog ??= 1;
+	ignorecap ??= 0;
+	flame_range ??= 0;
+	silent ??= 0;
+	smoke ??= 0;
 	// A generator because /datum/explosion/New sleeps (stoplag) on big or busy blasts; a plain proc's new can't sleep.
 	// (The admin drop-bomb verb crashed the page here, 2026-10-06.)
-	return (yield* g.new_(f, T("/datum/explosion"), [live(epicenter), live(devastation_range), live(heavy_impact_range), live(light_impact_range), live(flash_range), live(adminlog), live(ignorecap), live(flame_range), live(silent), live(smoke)]));
+	return (yield* new_(T("/datum/explosion"), epicenter, devastation_range, heavy_impact_range, light_impact_range, flash_range, adminlog, ignorecap, flame_range, silent, smoke));
 }, true, { argTypes: [{ path: "/atom" }, {  }, {  }, {  }, {  }, {  }, {  }, {  }, {  }, {  }] });
 
 rt.type(545, "/datum/explosion", "/datum", {
@@ -41,390 +30,339 @@ rt.type(545, "/datum/explosion", "/datum", {
 	stopped: 0,
 }, { global: { id_counter: 635 } });
 
-// /datum/explosion/proc/New  (code/datums/explosion.dm:38)  may sleep
+// explosion.dm:38
 rt.def("/datum/explosion/proc/New", function* New(f: Frame, epicenter: Value, devastation_range: Value, heavy_impact_range: Value, light_impact_range: Value, flash_range: Value, adminlog: Value, ignorecap: Value, flame_range: Value, silent: Value, smoke: Value) {
-	let id: Value = null, orig_dev_range: Value = null, orig_heavy_range: Value = null, orig_light_range: Value = null, max_range: Value = null, far_dist: Value = null, x0: Value = null, y0: Value = null, z0: Value = null, frequency: Value = null, ex_sound: Value = null, M: Value = null, M_turf: Value = null, dist: Value = null, far_volume: Value = null, postponeCycles: Value = null, E: Value = null, L: Value = null, exploded_this_tick: Value = null, affected_turfs: Value = null, reactionary: Value = null, cached_exp_block: Value = null, iteration: Value = null, affTurfLen: Value = null, expBlockLen: Value = null, TI: Value = null, _T: Value = null, init_dist: Value = null, dist_20: Value = null, Trajectory: Value = null, flame_dist: Value = null, throw_dist: Value = null, throw_dir: Value = null, I: Value = null, throw_range: Value = null, throw_at: Value = null, break_condition: Value = null, circumference: Value = null, Unexplode: Value = null, UnexplodeT: Value = null, Unexplode_17: Value = null, UnexplodeT_18: Value = null, took: Value = null, array: Value = null, A: Value = null, seen_turfs: Value = null, flung: Value = null, near: Value = null, C: Value = null;
-	let $0: any, $1: any, $2: any, $3: any, $4: any, $5: any, $e: any;
-	f.vars = () => [epicenter, devastation_range, heavy_impact_range, light_impact_range, flash_range, adminlog, ignorecap, flame_range, silent, smoke, id, orig_dev_range, orig_heavy_range, orig_light_range, max_range, far_dist, x0, y0, z0, frequency, ex_sound, M, M_turf, dist, far_volume, postponeCycles, E, L, exploded_this_tick, affected_turfs, reactionary, cached_exp_block, iteration, affTurfLen, expBlockLen, TI, _T, init_dist, dist_20, Trajectory, flame_dist, throw_dist, throw_dir, I, throw_range, throw_at, break_condition, circumference, Unexplode, UnexplodeT, Unexplode_17, UnexplodeT_18, took, array, A, seen_turfs, flung, near, C, $0, $1, $2, $3, $4, $5, $e];
-	rt.setSv(f, "explosion_id", (id = rt.incGl("id_counter", 1, false)));
-	if (!truthy((epicenter = rt.getStep(f, live(epicenter), 0)))) {
-		return live(f.dot);
+	let id: Value = null, frequency: Value = null, ex_sound: Value = null, M: Value = null, M_turf: Value = null, dist: Value = null, far_volume: Value = null, E: Value = null, L: Value = null, cached_exp_block: Value = null, TI: Value = null, _T: Value = null, init_dist: Value = null, dist_20: Value = null, Trajectory: Value = null, flame_dist: Value = null, throw_dist: Value = null, throw_dir: Value = null, I: Value = null, throw_range: Value = null, throw_at: Value = null, break_condition: Value = null, circumference: Value = null, Unexplode: Value = null, UnexplodeT: Value = null, Unexplode_17: Value = null, UnexplodeT_18: Value = null, array: Value = null, A: Value = null, near: Value = null, C: Value = null;
+	let $2: any, $3: any, $4: any, $5: any, $e: any;
+	this.explosion_id = (id = rt.incGl("id_counter", 1, false));
+	if (!(epicenter = rt.getStep(f, epicenter, 0))) {
+		return f.dot;
 	}
-	rt.modGl("explosions", live(f.src), add);
-	if (live(flame_range) === null) {
-		flame_range = live(light_impact_range);
+	GLOB.explosions += this;
+	flame_range ??= light_impact_range;
+	flash_range ??= devastation_range;
+	let orig_dev_range: Value = devastation_range;
+	let orig_heavy_range: Value = heavy_impact_range;
+	let orig_light_range: Value = light_impact_range;
+	if (!ignorecap && epicenter.z != 5) {
+		devastation_range = min(GLOB.MAX_EX_DEVESTATION_RANGE, devastation_range);
+		heavy_impact_range = min(GLOB.MAX_EX_HEAVY_RANGE, heavy_impact_range);
+		light_impact_range = min(GLOB.MAX_EX_LIGHT_RANGE, light_impact_range);
+		flash_range = min(GLOB.MAX_EX_FLASH_RANGE, flash_range);
+		flame_range = min(GLOB.MAX_EX_FLAME_RANGE, flame_range);
 	}
-	if (live(flash_range) === null) {
-		flash_range = live(devastation_range);
+	yield* stoplag();
+	if (!this.running) {
+		this.stopped = 2;
+		yield* qdel(this);
+		return f.dot;
 	}
-	orig_dev_range = live(devastation_range);
-	orig_heavy_range = live(heavy_impact_range);
-	orig_light_range = live(light_impact_range);
-	if ((!truthy(live(ignorecap)) && !isEqual(rt.fv(f, "z", live(epicenter)), 5))) {
-		devastation_range = (yield* g.call(f, P("/proc/min"), null, [rt.gl("MAX_EX_DEVESTATION_RANGE"), live(devastation_range)]));
-		heavy_impact_range = (yield* g.call(f, P("/proc/min"), null, [rt.gl("MAX_EX_HEAVY_RANGE"), live(heavy_impact_range)]));
-		light_impact_range = (yield* g.call(f, P("/proc/min"), null, [rt.gl("MAX_EX_LIGHT_RANGE"), live(light_impact_range)]));
-		flash_range = (yield* g.call(f, P("/proc/min"), null, [rt.gl("MAX_EX_FLASH_RANGE"), live(flash_range)]));
-		flame_range = (yield* g.call(f, P("/proc/min"), null, [rt.gl("MAX_EX_FLAME_RANGE"), live(flame_range)]));
-	}
-	yield* g.call(f, P("/proc/stoplag"), null, []);
-	if (!truthy(rt.sv(f, "running"))) {
-		rt.setSv(f, "stopped", 2);
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-		return live(f.dot);
-	}
-	$0 = rt.fv(f, "timeofday", rt.world());
-	$1 = 864000;
-	if (!isEqual(rt.gl("rollovercheck_last_timeofday"), rt.fv(f, "timeofday", rt.world()))) {
-		$2 = (yield* g.call(f, P("/proc/update_midnight_rollover"), null, []));
+	let $0: any = rt.world().timeofday;
+	let $1: any = 864000;
+	if (GLOB.rollovercheck_last_timeofday != rt.world().timeofday) {
+		$2 = update_midnight_rollover();
 	} else {
-		$2 = rt.gl("midnight_rollovers");
+		$2 = GLOB.midnight_rollovers;
 	}
-	rt.setSv(f, "started_at", add($0, multiply($1, $2)));
-	max_range = (yield* g.call(f, P("/proc/max"), null, [live(devastation_range), live(heavy_impact_range), live(light_impact_range), live(flame_range)]));
-	if (truthy(live(adminlog))) {
-		$0 = live(devastation_range);
-		$1 = live(heavy_impact_range);
-		$2 = live(light_impact_range);
-		$3 = live(flame_range);
-		$4 = (yield* g.call(f, P("/proc/get_area"), null, [live(epicenter)]));
-		if (truthy(live(epicenter))) {
-			$5 = fmt("＀ ＀", [fmt("(＀,＀,＀)", [rt.fv(f, "x", live(epicenter)), rt.fv(f, "y", live(epicenter)), rt.fv(f, "z", live(epicenter))]), fmt("(<a href='?_src_=holder;adminplayerobservecoodjump=1;X=＀;Y=＀;Z=＀'>JMP</a>)", [rt.fv(f, "x", live(epicenter)), rt.fv(f, "y", live(epicenter)), rt.fv(f, "z", live(epicenter))])]);
+	this.started_at = $0 + $1 * $2;
+	let max_range: Value = max(devastation_range, heavy_impact_range, light_impact_range, flame_range);
+	if (adminlog) {
+		$0 = devastation_range;
+		$1 = heavy_impact_range;
+		$2 = light_impact_range;
+		$3 = flame_range;
+		$4 = get_area(epicenter);
+		if (epicenter) {
+			$5 = `${`(${epicenter.x},${epicenter.y},${epicenter.z})`} ${`(<a href='?_src_=holder;adminplayerobservecoodjump=1;X=${epicenter.x};Y=${epicenter.y};Z=${epicenter.z}'>JMP</a>)`}`;
 		} else {
 			$5 = "nonexistent location";
 		}
-		yield* g.call(f, P("/proc/message_admins"), null, [fmt("Explosion with size (＀, ＀, ＀, ＀) in area: ＀ ＀", [$0, $1, $2, $3, $4, fmt("＀", [$5])])]);
-		yield* g.call(f, P("/proc/log_game"), null, [fmt("Explosion with size (＀, ＀, ＀, ＀) in area ＀ (＀,＀,＀)", [live(devastation_range), live(heavy_impact_range), live(light_impact_range), live(flame_range), rt.gv(f, "name", rt.fv(f, "loc", live(epicenter))), rt.fv(f, "x", live(epicenter)), rt.fv(f, "y", live(epicenter)), rt.fv(f, "z", live(epicenter))])]);
+		message_admins(`Explosion with size (${$0}, ${$1}, ${$2}, ${$3}) in area: ${$4} ${`${$5}`}`);
+		log_game(`Explosion with size (${devastation_range}, ${heavy_impact_range}, ${light_impact_range}, ${flame_range}) in area ${epicenter.loc.name} (${epicenter.x},${epicenter.y},${epicenter.z})`);
 	}
-	far_dist = 0;
-	far_dist = rt.modify(live(far_dist), multiply(live(heavy_impact_range), 5), add);
-	far_dist = rt.modify(live(far_dist), multiply(live(devastation_range), 20), add);
-	x0 = rt.fv(f, "x", live(epicenter));
-	y0 = rt.fv(f, "y", live(epicenter));
-	z0 = rt.fv(f, "z", live(epicenter));
-	if (!truthy(live(silent))) {
-		frequency = (yield* g.call(f, P("/proc/get_rand_frequency"), null, []));
-		ex_sound = (yield* g.call(f, P("/proc/get_sfx"), null, ["explosion"]));
-		M = null;
-		rt.forList(f, 0, rt.gl("player_list"), T("/mob"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			M = $e;
-			if ((truthy((M_turf = rt.getStep(f, live(M), 0))) && isEqual(rt.fv(f, "z", live(M_turf)), live(z0)))) {
-				if (rt.le((dist = (yield* g.call(f, P("/proc/get_dist"), null, [live(M_turf), live(epicenter)]))), (yield* g.call(f, P("/proc/round"), null, [subtract(add(live(max_range), rt.fv(f, "view", rt.world())), 2), 1])))) {
-					yield* g.callName(f, live(M), "playsound_local", [null, live(epicenter), null, live(ex_sound), null, 100, null, 1, null, live(frequency), "falloff", 5], rt.Args.Named);
-				} else {
-					if (rt.le(live(dist), live(far_dist))) {
-						far_volume = (yield* g.call(f, P("/proc/max"), null, [30, (yield* g.call(f, P("/proc/min"), null, [live(far_dist), 50]))]));
-						if (rt.le(live(dist), multiply(live(far_dist), 0.5))) {
-							$0 = 50;
-						} else {
-							$0 = 0;
-						}
-						far_volume = rt.modify(live(far_volume), $0, add);
-						yield* g.callName(f, live(M), "playsound_local", [null, live(epicenter), null, rt.rsc("sound/effects/explosionfar.ogg"), null, live(far_volume), null, 1, null, live(frequency), "falloff", 5], rt.Args.Named);
-					}
+	let far_dist: Value = 0;
+	far_dist += heavy_impact_range * 5;
+	far_dist += devastation_range * 20;
+	let x0: Value = epicenter.x;
+	let y0: Value = epicenter.y;
+	let z0: Value = epicenter.z;
+	if (!silent) {
+		frequency = get_rand_frequency();
+		ex_sound = get_sfx("explosion");
+		for (M of each(GLOB.player_list, T("/mob"))) {
+			if ((M_turf = rt.getStep(f, M, 0)) && M_turf.z == z0) {
+				if ((dist = get_dist(M_turf, epicenter)) <= round(max_range + rt.world().view - 2, 1)) {
+					yield* M.playsound_local(epicenter, ex_sound, 100, 1, frequency, { falloff: 5 });
+				} else if (dist <= far_dist) {
+					far_volume = max(30, min(far_dist, 50));
+					far_volume += dist <= far_dist * 0.5 ? 50 : 0;
+					yield* M.playsound_local(epicenter, rt.rsc("sound/effects/explosionfar.ogg"), far_volume, 1, frequency, { falloff: 5 });
 				}
 			}
-			if (rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit"))) {
-				yield* g.call(f, P("/proc/stoplag"), null, []);
-				if (!truthy(rt.sv(f, "running"))) {
-					rt.setSv(f, "stopped", 2);
-					yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-					return live(f.dot);
+			if (rt.tickUsage(f) > GLOB.current_ticklimit) {
+				yield* stoplag();
+				if (!this.running) {
+					this.stopped = 2;
+					yield* qdel(this);
+					return f.dot;
 				}
 			}
 		}
-		rt.endFor(f, 0);
 	}
-	postponeCycles = (yield* g.call(f, P("/proc/max"), null, [(yield* g.call(f, P("/proc/round"), null, [divide(live(devastation_range), 8)])), 1]));
-	yield* g.callName(f, rt.gl("SSlighting"), "postpone", [live(postponeCycles)]);
-	yield* g.callName(f, rt.gl("SSmachines"), "postpone", [live(postponeCycles)]);
-	if (rt.gt(live(heavy_impact_range), 1)) {
-		E = null;
-		if (truthy(live(smoke))) {
-			E = (yield* g.new_(f, T("/datum/effect_system/explosion/smoke"), []));
+	let postponeCycles: Value = max(round(devastation_range / 8), 1);
+	GLOB.SSlighting.postpone(postponeCycles);
+	GLOB.SSmachines.postpone(postponeCycles);
+	if (heavy_impact_range > 1) {
+		if (smoke) {
+			E = (yield* new_(T("/datum/effect_system/explosion/smoke")));
 		} else {
-			E = (yield* g.new_(f, T("/datum/effect_system/explosion"), []));
+			E = (yield* new_(T("/datum/effect_system/explosion")));
 		}
-		yield* g.callName(f, live(E), "set_up", [live(epicenter)]);
-		yield* g.callName(f, live(E), "start", []);
+		yield* E.set_up(epicenter);
+		yield* E.start();
 	}
-	if (rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit"))) {
-		yield* g.call(f, P("/proc/stoplag"), null, []);
-		if (!truthy(rt.sv(f, "running"))) {
-			rt.setSv(f, "stopped", 2);
-			yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-			return live(f.dot);
-		}
-	}
-	if (truthy(live(flash_range))) {
-		L = null;
-		rt.forList(f, 0, (yield* g.call(f, P("/proc/viewers"), null, [live(flash_range), live(epicenter)])), T("/mob/living"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			L = $e;
-			yield* g.callName(f, live(L), "flash_act", []);
-		}
-		rt.endFor(f, 0);
-	}
-	if (rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit"))) {
-		yield* g.call(f, P("/proc/stoplag"), null, []);
-		if (!truthy(rt.sv(f, "running"))) {
-			rt.setSv(f, "stopped", 2);
-			yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-			return live(f.dot);
+	if (rt.tickUsage(f) > GLOB.current_ticklimit) {
+		yield* stoplag();
+		if (!this.running) {
+			this.stopped = 2;
+			yield* qdel(this);
+			return f.dot;
 		}
 	}
-	exploded_this_tick = rt.list();
+	if (flash_range) {
+		for (L of each(viewers(flash_range, epicenter), T("/mob/living"))) {
+			yield* L.flash_act();
+		}
+	}
+	if (rt.tickUsage(f) > GLOB.current_ticklimit) {
+		yield* stoplag();
+		if (!this.running) {
+			this.stopped = 2;
+			yield* qdel(this);
+			return f.dot;
+		}
+	}
+	let exploded_this_tick: Value = list();
 	// stress-throw: where the players are looking from (every client's eye, several may be connected): items flung from tiles near one of
 	// them fly for real (throw_at); the rest of the blast's items are moved to where the flight would end in one go (blast_fling).
-	seen_turfs = rt.list();
-	flung = rt.list();
-	C = null;
-	rt.forList(f, 1, rt.gl("clients"));
+	let seen_turfs: Value = list();
+	let flung: Value = list();
+	rt.forList(f, 1, GLOB.clients);
 	while (($e = rt.next(f, 1)) !== undefined) {
 		C = $e;
-		near = rt.getStep(f, rt.fv(f, "eye", live(C)) || rt.fv(f, "mob", live(C)), 0);
-		if (near) seen_turfs = rt.modify(live(seen_turfs), live(near), add);
+		near = rt.getStep(f, C.eye || C.mob, 0);
+		if (near) seen_turfs += near;
 	}
 	rt.endFor(f, 1);
-	affected_turfs = (yield* g.srcCall(f, "GatherSpiralTurfs", live(max_range), live(epicenter)));
-	reactionary = rt.fv(f, "reactionary_explosions", rt.gl("config"));
-	cached_exp_block = null;
-	if (truthy(live(reactionary))) {
-		cached_exp_block = (yield* g.srcCall(f, "CaculateExplosionBlock", live(affected_turfs)));
+	let affected_turfs: Value = (yield* this.GatherSpiralTurfs(max_range, epicenter));
+	let reactionary: Value = GLOB.config.reactionary_explosions;
+	if (reactionary) {
+		cached_exp_block = (yield* this.CaculateExplosionBlock(affected_turfs));
 	}
-	iteration = 0;
-	affTurfLen = rt.len(f, live(affected_turfs));
-	expBlockLen = rt.len(f, live(cached_exp_block));
-	TI = null;
+	let iteration: Value = 0;
+	let affTurfLen: Value = rt.len(f, affected_turfs);
+	let expBlockLen: Value = rt.len(f, cached_exp_block);
 	// atmos-pipeq: pipes broken by the blast rebuild their neighbours' pipelines once at the end (flush_pipe_rebuilds below), not
 	// once per broken pipe (each rebuild walks the whole pipe network and stores its air again). Back on after every stoplag, as
 	// singularity eat does (another pass may have finished and turned it off). TG_PIPE_BATCH=0 turns it off.
-	if (rt.gl("pipe_rebuild_defer") === null && truthy(rt.call(f, P("/proc/pipe_batch_on"), null, []))) rt.setGl("pipe_rebuild_defer", rt.list());
-	rt.forList(f, 0, live(affected_turfs));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		TI = $e;
-		_T = live(TI);
-		iteration = rt.inc(live(iteration), 1);
-		init_dist = (yield* g.call(f, P("/proc/cheap_hypotenuse"), null, [rt.fv(f, "x", live(_T)), rt.fv(f, "y", live(_T)), live(x0), live(y0)]));
-		dist_20 = live(init_dist);
-		if (truthy(live(reactionary))) {
-			Trajectory = live(_T);
-			while (!isEqual(live(Trajectory), live(epicenter))) {
-				Trajectory = (yield* g.call(f, P("/proc/get_step_towards"), null, [live(Trajectory), live(epicenter)]));
-				dist_20 = rt.modify(live(dist_20), rt.index(live(cached_exp_block), live(Trajectory)), add);
+	if (GLOB.pipe_rebuild_defer === null && rt.call(f, P("/proc/pipe_batch_on"), null, [])) GLOB.pipe_rebuild_defer = list();
+	for (TI of each(affected_turfs)) {
+		_T = TI;
+		iteration++;
+		init_dist = cheap_hypotenuse(_T.x, _T.y, x0, y0);
+		dist_20 = init_dist;
+		if (reactionary) {
+			Trajectory = _T;
+			while (Trajectory != epicenter) {
+				Trajectory = get_step_towards(Trajectory, epicenter);
+				dist_20 += rt.index(cached_exp_block, Trajectory);
 			}
 		}
-		flame_dist = (rt.lt(live(dist_20), live(flame_range)) ? 1 : 0);
-		throw_dist = live(dist_20);
-		if (rt.lt(live(dist_20), live(devastation_range))) {
+		flame_dist = (dist_20 < flame_range ? 1 : 0);
+		throw_dist = dist_20;
+		if (dist_20 < devastation_range) {
 			dist_20 = 1;
+		} else if (dist_20 < heavy_impact_range) {
+			dist_20 = 2;
+		} else if (dist_20 < light_impact_range) {
+			dist_20 = 3;
 		} else {
-			if (rt.lt(live(dist_20), live(heavy_impact_range))) {
-				dist_20 = 2;
-			} else {
-				if (rt.lt(live(dist_20), live(light_impact_range))) {
-					dist_20 = 3;
-				} else {
-					dist_20 = 0;
-				}
-			}
+			dist_20 = 0;
 		}
-		if ((((truthy(live(flame_dist)) && truthy(rt.op(f, "Prob", [], [40]))) && !truthy((rt.istype(live(_T), T("/turf/open/space")) ? 1 : 0))) && !truthy(rt.fv(f, "density", live(_T))))) {
-			yield* g.new_(f, T("/obj/effect/hotspot"), [live(_T)]);
+		if (flame_dist && prob(40) && !rt.istype(_T, T("/turf/open/space")) && !_T.density) {
+			yield* new_(T("/obj/effect/hotspot"), _T);
 		}
-		if (rt.gt(live(dist_20), 0)) {
-			rt.setFv(f, "explosion_level", live(_T), (yield* g.call(f, P("/proc/max"), null, [rt.fv(f, "explosion_level", live(_T)), live(dist_20)])));
-			rt.setFv(f, "explosion_id", live(_T), live(id));
-			yield* g.callName(f, live(_T), "ex_act", [live(dist_20)]);
-			exploded_this_tick = rt.modify(live(exploded_this_tick), live(_T), add);
+		if (dist_20 > 0) {
+			_T.explosion_level = max(_T.explosion_level, dist_20);
+			_T.explosion_id = id;
+			yield* _T.ex_act(dist_20);
+			exploded_this_tick += _T;
 		}
-		throw_dir = rt.getDir(f, live(epicenter), live(_T));
+		throw_dir = rt.getDir(f, epicenter, _T);
 		I = null;
 		near = 0;
-		rt.forList(f, 1, live(seen_turfs));
+		rt.forList(f, 1, seen_turfs);
 		while (($e = rt.next(f, 1)) !== undefined) {
-			if (rt.fv(f, "z", live($e)) === rt.fv(f, "z", live(_T)) && Math.abs(rt.fv(f, "x", live($e)) - rt.fv(f, "x", live(_T))) <= 15 && Math.abs(rt.fv(f, "y", live($e)) - rt.fv(f, "y", live(_T))) <= 15) {
+			if ($e.z === _T.z && Math.abs($e.x - _T.x) <= 15 && Math.abs($e.y - _T.y) <= 15) {
 				near = 1;
 			}
 		}
 		rt.endFor(f, 1);
-		rt.forList(f, 1, live(_T), T("/obj/item"));
-		while (($e = rt.next(f, 1)) !== undefined) {
-			I = $e;
-			if (!truthy(rt.fv(f, "anchored", live(I))) && (rt.index(live(flung), live(I)) === null || truthy(rt.call(f, P("/proc/blast_throw_old"), null, [])))) { // stress-throw: an item already flung by this blast stays where it landed
-				if (rt.index(live(flung), live(I)) === null && truthy(rt.call(f, P("/proc/stress_counts_on"), null, []))) rt.call(f, P("/proc/stress_count"), null, ["blast_unique_items", 1]);
-				rt.setAt(live(flung), live(I), 1);
-				throw_range = (yield* g.call(f, P("/proc/rand"), null, [live(throw_dist), live(max_range)]));
-				throw_at = (yield* g.call(f, P("/proc/get_ranged_target_turf"), null, [live(I), live(throw_dir), live(throw_range)]));
-				if (near || truthy(rt.call(f, P("/proc/blast_throw_old"), null, []))) {
-					if (truthy(rt.call(f, P("/proc/stress_counts_on"), null, []))) { rt.call(f, P("/proc/stress_count"), null, ["blast_thrown", 1]); rt.call(f, P("/proc/stress_count"), null, ["blast_range_sum", throw_range]); }
-					rt.setFv(f, "throw_speed", live(I), 4);
-					rt.setGl("blast_throw_epi", live(epicenter));
-					yield* g.callName(f, live(I), "throw_at", [live(throw_at), live(throw_range), 4]);
-					rt.setGl("blast_throw_epi", null);
+		for (I of each(_T, T("/obj/item"))) {
+			if (!I.anchored && (rt.index(flung, I) === null || rt.call(f, P("/proc/blast_throw_old"), null, []))) { // stress-throw: an item already flung by this blast stays where it landed
+				if (rt.index(flung, I) === null && rt.call(f, P("/proc/stress_counts_on"), null, [])) rt.call(f, P("/proc/stress_count"), null, ["blast_unique_items", 1]);
+				rt.setAt(flung, I, 1);
+				throw_range = rand(throw_dist, max_range);
+				throw_at = get_ranged_target_turf(I, throw_dir, throw_range);
+				if (near || rt.call(f, P("/proc/blast_throw_old"), null, [])) {
+					if (rt.call(f, P("/proc/stress_counts_on"), null, [])) { rt.call(f, P("/proc/stress_count"), null, ["blast_thrown", 1]); rt.call(f, P("/proc/stress_count"), null, ["blast_range_sum", throw_range]); }
+					I.throw_speed = 4;
+					GLOB.blast_throw_epi = epicenter;
+					yield* I.throw_at(throw_at, throw_range, 4);
+					GLOB.blast_throw_epi = null;
 				} else {
-					yield* g.callName(f, live(I), "blast_fling", [live(throw_at), live(throw_range), live(epicenter)]);
+					yield* I.blast_fling(throw_at, throw_range, epicenter);
 				}
 			}
 		}
-		rt.endFor(f, 1);
 		break_condition = null;
-		if (truthy(live(reactionary))) {
-			break_condition = ((isEqual(live(iteration), live(expBlockLen)) ? 1 : 0) && (rt.lt(live(iteration), live(affTurfLen)) ? 1 : 0));
+		if (reactionary) {
+			break_condition = ((iteration == expBlockLen ? 1 : 0) && (iteration < affTurfLen ? 1 : 0));
 		} else {
-			break_condition = ((isEqual(live(iteration), live(affTurfLen)) ? 1 : 0) && (!truthy(rt.sv(f, "stopped")) ? 1 : 0));
+			break_condition = ((iteration == affTurfLen ? 1 : 0) && (!this.stopped ? 1 : 0));
 		}
-		if ((truthy(live(break_condition)) || rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit")))) {
-			yield* g.call(f, P("/proc/stoplag"), null, []);
-			if (!truthy(rt.sv(f, "running"))) {
+		if (break_condition || rt.tickUsage(f) > GLOB.current_ticklimit) {
+			yield* stoplag();
+			if (!this.running) {
 				break;
 			}
-			affTurfLen = rt.len(f, live(affected_turfs));
-			expBlockLen = rt.len(f, live(cached_exp_block));
-			if (truthy(live(break_condition))) {
-				if (truthy(live(reactionary))) {
-					while (!(rt.lt(live(iteration), live(affTurfLen)) || !truthy(rt.sv(f, "running")))) {
-						yield* g.call(f, P("/proc/stoplag"), null, []);
+			affTurfLen = rt.len(f, affected_turfs);
+			expBlockLen = rt.len(f, cached_exp_block);
+			if (break_condition) {
+				if (reactionary) {
+					while (!(iteration < affTurfLen || !this.running)) {
+						yield* stoplag();
 					}
 				} else {
-					while (!(rt.lt(live(iteration), live(expBlockLen)) || truthy(rt.sv(f, "stopped")))) {
-						yield* g.call(f, P("/proc/stoplag"), null, []);
+					while (!(iteration < expBlockLen || this.stopped)) {
+						yield* stoplag();
 					}
 				}
-				if (!truthy(rt.sv(f, "running"))) {
+				if (!this.running) {
 					break;
 				}
-				affTurfLen = rt.len(f, live(affected_turfs));
-				expBlockLen = rt.len(f, live(cached_exp_block));
+				affTurfLen = rt.len(f, affected_turfs);
+				expBlockLen = rt.len(f, cached_exp_block);
 			}
-			circumference = multiply(multiply(3.1414999961853027, add(live(init_dist), 4)), 2);
-			if (rt.gt(rt.len(f, live(exploded_this_tick)), live(circumference))) {
+			circumference = 3.1415 * (init_dist + 4) * 2;
+			if (rt.len(f, exploded_this_tick) > circumference) {
 				Unexplode = null;
-				rt.forList(f, 1, live(exploded_this_tick));
-				while (($e = rt.next(f, 1)) !== undefined) {
-					Unexplode = $e;
-					rt.setFv(f, "explosion_level", (UnexplodeT = live(Unexplode)), 0);
+				for (Unexplode of each(exploded_this_tick)) {
+					(UnexplodeT = Unexplode).explosion_level = 0;
 				}
-				rt.endFor(f, 1);
-				yield* g.callName(f, live(exploded_this_tick), "Cut", []);
+				exploded_this_tick.Cut();
 			}
-			if (rt.gl("pipe_rebuild_defer") === null && truthy(rt.call(f, P("/proc/pipe_batch_on"), null, []))) rt.setGl("pipe_rebuild_defer", rt.list());
+			if (GLOB.pipe_rebuild_defer === null && rt.call(f, P("/proc/pipe_batch_on"), null, [])) GLOB.pipe_rebuild_defer = list();
 		}
 	}
-	rt.endFor(f, 0);
 	rt.call(f, P("/proc/flush_pipe_rebuilds"), null, []);
-	rt.setGl("pipe_rebuild_defer", null);
-	Unexplode_17 = null;
-	rt.forList(f, 0, live(exploded_this_tick));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		Unexplode_17 = $e;
-		rt.setFv(f, "explosion_level", (UnexplodeT_18 = live(Unexplode_17)), 0);
+	GLOB.pipe_rebuild_defer = null;
+	for (Unexplode_17 of each(exploded_this_tick)) {
+		(UnexplodeT_18 = Unexplode_17).explosion_level = 0;
 	}
-	rt.endFor(f, 0);
-	yield* g.callName(f, live(exploded_this_tick), "Cut", []);
-	$0 = rt.fv(f, "timeofday", rt.world());
+	exploded_this_tick.Cut();
+	$0 = rt.world().timeofday;
 	$1 = 864000;
-	if (!isEqual(rt.gl("rollovercheck_last_timeofday"), rt.fv(f, "timeofday", rt.world()))) {
-		$2 = (yield* g.call(f, P("/proc/update_midnight_rollover"), null, []));
+	if (GLOB.rollovercheck_last_timeofday != rt.world().timeofday) {
+		$2 = update_midnight_rollover();
 	} else {
-		$2 = rt.gl("midnight_rollovers");
+		$2 = GLOB.midnight_rollovers;
 	}
-	took = divide(subtract(add($0, multiply($1, $2)), rt.sv(f, "started_at")), 10);
-	if (truthy(rt.gl("Debug2"))) {
-		yield* g.call(f, P("/proc/log_world"), null, [fmt("## DEBUG: Explosion(＀,＀,＀)(d＀,h＀,l＀): Took ＀ seconds.", [live(x0), live(y0), live(z0), live(devastation_range), live(heavy_impact_range), live(light_impact_range), live(took)])]);
+	let took: Value = ($0 + $1 * $2 - this.started_at) / 10;
+	if (GLOB.Debug2) {
+		log_world(`## DEBUG: Explosion(${x0},${y0},${z0})(d${devastation_range},h${heavy_impact_range},l${light_impact_range}): Took ${took} seconds.`);
 	}
-	if (truthy(rt.sv(f, "running"))) {
-		array = null;
-		rt.forList(f, 0, rt.gl("doppler_arrays"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			array = $e;
-			yield* g.callName(f, (A = live(array)), "sense_explosion", [live(epicenter), live(devastation_range), live(heavy_impact_range), live(light_impact_range), live(took), live(orig_dev_range), live(orig_heavy_range), live(orig_light_range)]);
+	if (this.running) {
+		for (array of each(GLOB.doppler_arrays)) {
+			yield* (A = array).sense_explosion(epicenter, devastation_range, heavy_impact_range, light_impact_range, took, orig_dev_range, orig_heavy_range, orig_light_range);
 		}
-		rt.endFor(f, 0);
 	}
-	rt.incSrcVar(f, "stopped", 1, false);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	++this.stopped;
+	yield* qdel(this);
 	return f.dot;
 }, true, { waitfor: false });
 
-// /datum/explosion/proc/GatherSpiralTurfs  (code/datums/explosion.dm:267)  may sleep
+// explosion.dm:267
 rt.def("/datum/explosion/proc/GatherSpiralTurfs", function* GatherSpiralTurfs(f: Frame, range: Value, epicenter: Value) {
-	f.vars = () => [range, epicenter];
-	f.dot = rt.list();
-	yield* g.call(f, P("/proc/spiral_range_turfs"), null, [null, live(range), null, live(epicenter), "outlist", live(f.dot), "tick_checked", 1], rt.Args.Named);
-	rt.incSrcVar(f, "stopped", 1, false);
+	f.dot = list();
+	yield* spiral_range_turfs(range, epicenter, { outlist: f.dot, tick_checked: 1 });
+	++this.stopped;
 	return f.dot;
 }, true, { waitfor: false });
 
-// /datum/explosion/proc/CaculateExplosionBlock  (code/datums/explosion.dm:274)  may sleep
+// explosion.dm:274
 rt.def("/datum/explosion/proc/CaculateExplosionBlock", function* CaculateExplosionBlock(f: Frame, affected_turfs: Value) {
-	let processed: Value = null, I: Value = null, _T: Value = null, current_exp_block: Value = null, O: Value = null, the_block: Value = null;
+	let I: Value = null, _T: Value = null, current_exp_block: Value = null, O: Value = null, the_block: Value = null;
 	let $0: any, $e: any;
-	f.vars = () => [affected_turfs, processed, I, _T, current_exp_block, O, the_block, $0, $e];
-	f.dot = rt.list();
-	processed = 0;
-	while (!truthy(rt.sv(f, "stopped")) && truthy(rt.sv(f, "running"))) {
+	f.dot = list();
+	let processed: Value = 0;
+	while (!this.stopped && this.running) {
 		I = null;
-		rt.forRange(f, 0, add(live(processed), 1), rt.len(f, live(affected_turfs)), 1);
+		rt.forRange(f, 0, processed + 1, rt.len(f, affected_turfs), 1);
 		while (($e = rt.next(f, 0)) !== undefined) {
 			I = $e;
-			_T = rt.index(live(affected_turfs), live(I));
-			if (truthy(rt.fv(f, "density", live(_T)))) {
-				$0 = rt.fv(f, "explosion_block", live(_T));
+			_T = rt.index(affected_turfs, I);
+			if (_T.density) {
+				$0 = _T.explosion_block;
 			} else {
 				$0 = 0;
 			}
 			current_exp_block = $0;
 			O = null;
-			rt.forList(f, 1, live(_T), T("/obj"));
-			while (($e = rt.next(f, 1)) !== undefined) {
-				O = $e;
-				if (isEqual((the_block = rt.fv(f, "explosion_block", live(O))), -1)) {
-					$0 = (yield* g.callName(f, live(O), "GetExplosionBlock", []));
+			for (O of each(_T, T("/obj"))) {
+				if ((the_block = O.explosion_block) == EXPLOSION_BLOCK_PROC) {
+					$0 = O.GetExplosionBlock();
 				} else {
-					$0 = live(the_block);
+					$0 = the_block;
 				}
-				current_exp_block = rt.modify(live(current_exp_block), $0, add);
+				current_exp_block += $0;
 			}
-			rt.endFor(f, 1);
-			rt.setAt(live(f.dot), live(_T), live(current_exp_block));
-			if (rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit"))) {
+			rt.setAt(f.dot, _T, current_exp_block);
+			if (rt.tickUsage(f) > GLOB.current_ticklimit) {
 				break;
 			}
 		}
 		rt.endFor(f, 0);
-		processed = live(I);
-		yield* g.call(f, P("/proc/stoplag"), null, []);
+		processed = I;
+		yield* stoplag();
 	}
 	return f.dot;
 }, true, { waitfor: false });
 
-// /datum/explosion/proc/Destroy  (code/datums/explosion.dm:296)  may sleep
+// explosion.dm:296
 rt.def("/datum/explosion/proc/Destroy", function* Destroy(f: Frame) {
-	rt.setSv(f, "running", 0);
-	if (rt.lt(rt.sv(f, "stopped"), 2)) {
-		return 2;
+	this.running = 0;
+	if (this.stopped < QDEL_HINT_IWILLGC) {
+		return QDEL_HINT_IWILLGC;
 	}
-	(rt.modGl("explosions", live(f.src), subtract));
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	GLOB.explosions -= this;
+	return (yield* parent_proc());
 }, true);
 
-// /client/proc/check_bomb_impacts  (code/datums/explosion.dm:305)  may sleep
+// explosion.dm:305
 rt.def("/client/proc/check_bomb_impacts", function* check_bomb_impacts(f: Frame) {
-	let newmode: Value = null, epicenter: Value = null, dev: Value = null, heavy: Value = null, light: Value = null, choices: Value = null, choice: Value = null, max_range: Value = null, x0: Value = null, y0: Value = null, wipe_colours: Value = null, _T: Value = null, dist: Value = null, TT: Value = null, O: Value = null, the_block: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [newmode, epicenter, dev, heavy, light, choices, choice, max_range, x0, y0, wipe_colours, _T, dist, TT, O, the_block, $0, $e];
-	newmode = (yield* g.call(f, P("/proc/alert"), null, ["Use reactionary explosions?", "Check Bomb Impact", "Yes", "No"]));
-	if (!truthy((epicenter = rt.getStep(f, rt.sv(f, "mob"), 0)))) {
-		return live(f.dot);
+	let epicenter: Value = null, choice: Value = null, _T: Value = null, dist: Value = null, TT: Value = null, O: Value = null, the_block: Value = null;
+	let $e: any;
+	let newmode: Value = (yield* alert("Use reactionary explosions?", "Check Bomb Impact", "Yes", "No"));
+	if (!(epicenter = rt.getStep(f, this.mob, 0))) {
+		return f.dot;
 	}
-	dev = 0;
-	heavy = 0;
-	light = 0;
-	choices = rt.list("Small Bomb", "Medium Bomb", "Big Bomb", "Custom Bomb");
-	$0 = (choice = (yield* g.op(f, "Prompt", [0], [null, null, null, "Bomb Size?", live(choices)])));
-	if (isEqual($0, null)) {
+	let dev: Value = 0;
+	let heavy: Value = 0;
+	let light: Value = 0;
+	let choices: Value = list("Small Bomb", "Medium Bomb", "Big Bomb", "Custom Bomb");
+	let $0: any = (choice = (yield* g.op(f, "Prompt", [0], [null, null, null, "Bomb Size?", choices])));
+	if ($0 == null) {
 		return 0;
 	} else if ($0 === "Small Bomb") {
 		dev = 1;
@@ -443,90 +381,58 @@ rt.def("/client/proc/check_bomb_impacts", function* check_bomb_impacts(f: Frame)
 		heavy = (yield* g.op(f, "Prompt", [32], [null, null, null, "Heavy impact range (Tiles):", null]));
 		light = (yield* g.op(f, "Prompt", [32], [null, null, null, "Light impact range (Tiles):", null]));
 	}
-	max_range = (yield* g.call(f, P("/proc/max"), null, [live(dev), live(heavy), live(light)]));
-	x0 = rt.fv(f, "x", live(epicenter));
-	y0 = rt.fv(f, "y", live(epicenter));
-	wipe_colours = rt.list();
-	_T = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/spiral_range_turfs"), null, [live(max_range), live(epicenter)])), T("/turf"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_T = $e;
-		wipe_colours = rt.modify(live(wipe_colours), live(_T), add);
-		dist = (yield* g.call(f, P("/proc/cheap_hypotenuse"), null, [rt.fv(f, "x", live(_T)), rt.fv(f, "y", live(_T)), live(x0), live(y0)]));
-		if (isEqual(live(newmode), "Yes")) {
-			TT = live(_T);
-			while (!isEqual(live(TT), live(epicenter))) {
-				if (truthy(rt.gv(f, "density", (TT = (yield* g.call(f, P("/proc/get_step_towards"), null, [live(TT), live(epicenter)])))))) {
-					dist = rt.modify(live(dist), rt.fv(f, "explosion_block", live(TT)), add);
+	let max_range: Value = max(dev, heavy, light);
+	let x0: Value = epicenter.x;
+	let y0: Value = epicenter.y;
+	let wipe_colours: Value = list();
+	for (_T of each((yield* spiral_range_turfs(max_range, epicenter)), T("/turf"))) {
+		wipe_colours += _T;
+		dist = cheap_hypotenuse(_T.x, _T.y, x0, y0);
+		if (newmode == "Yes") {
+			TT = _T;
+			while (TT != epicenter) {
+				if ((TT = get_step_towards(TT, epicenter)).density) {
+					dist += TT.explosion_block;
 				}
 				O = null;
-				rt.forList(f, 1, live(_T), T("/obj"));
-				while (($e = rt.next(f, 1)) !== undefined) {
-					O = $e;
-					if (isEqual((the_block = rt.fv(f, "explosion_block", live(O))), -1)) {
-						$0 = (yield* g.callName(f, live(O), "GetExplosionBlock", []));
-					} else {
-						$0 = live(the_block);
-					}
-					dist = rt.modify(live(dist), $0, add);
+				for (O of each(_T, T("/obj"))) {
+					dist += (the_block = O.explosion_block) == EXPLOSION_BLOCK_PROC ? O.GetExplosionBlock() : the_block;
 				}
-				rt.endFor(f, 1);
 			}
 		}
-		if (rt.lt(live(dist), live(dev))) {
-			rt.setFv(f, "color", live(_T), "red");
-			rt.setFv(f, "maptext", live(_T), "Dev");
+		if (dist < dev) {
+			_T.color = "red";
+			_T.maptext = "Dev";
+		} else if (dist < heavy) {
+			_T.color = "yellow";
+			_T.maptext = "Heavy";
+		} else if (dist < light) {
+			_T.color = "blue";
+			_T.maptext = "Light";
 		} else {
-			if (rt.lt(live(dist), live(heavy))) {
-				rt.setFv(f, "color", live(_T), "yellow");
-				rt.setFv(f, "maptext", live(_T), "Heavy");
-			} else {
-				if (rt.lt(live(dist), live(light))) {
-					rt.setFv(f, "color", live(_T), "blue");
-					rt.setFv(f, "maptext", live(_T), "Light");
-				} else {
-					continue;
-				}
-			}
+			continue;
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/sleep"), null, [100]);
+	yield* sleep(100);
 	_T = null;
-	rt.forList(f, 0, live(wipe_colours), T("/turf"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_T = $e;
-		rt.setFv(f, "color", live(_T), null);
-		rt.setFv(f, "maptext", live(_T), "");
+	for (_T of each(wipe_colours, T("/turf"))) {
+		_T.color = null;
+		_T.maptext = "";
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true, { verb: { name: "Check Bomb Impact", category: "Debug" } });
 
-// /proc/dyn_explosion  (code/datums/explosion.dm:372)
+// explosion.dm:372
 rt.def("/proc/dyn_explosion", function dyn_explosion(f: Frame, epicenter: Value, power: Value, flash_range: Value, adminlog: Value, ignorecap: Value, flame_range: Value, silent: Value, smoke: Value) {
-	let range: Value = null;
-	f.vars = () => [adminlog, ignorecap, flame_range, silent, smoke, range];
-	if (live(adminlog) === null) {
-		adminlog = 1;
+	adminlog ??= 1;
+	ignorecap ??= 1;
+	flame_range ??= 0;
+	silent ??= 0;
+	smoke ??= 1;
+	if (!power) {
+		return f.dot;
 	}
-	if (live(ignorecap) === null) {
-		ignorecap = 1;
-	}
-	if (live(flame_range) === null) {
-		flame_range = 0;
-	}
-	if (live(silent) === null) {
-		silent = 0;
-	}
-	if (live(smoke) === null) {
-		smoke = 1;
-	}
-	if (!truthy(live(power))) {
-		return live(f.dot);
-	}
-	range = 0;
-	range = rt.call(f, P("/proc/round"), null, [rt.power(multiply(2, live(power)), rt.gl("DYN_EX_SCALE"))]);
-	rt.call(f, P("/proc/explosion"), null, [live(epicenter), rt.call(f, P("/proc/round"), null, [multiply(live(range), 0.25)]), rt.call(f, P("/proc/round"), null, [multiply(live(range), 0.5)]), rt.call(f, P("/proc/round"), null, [live(range)]), multiply(live(flash_range), live(range)), live(adminlog), live(ignorecap), multiply(live(flame_range), live(range)), live(silent), live(smoke)]);
+	let range: Value = round((2 * power) ** GLOB.DYN_EX_SCALE);
+	explosion(epicenter, round(range * 0.25), round(range * 0.5), round(range), flash_range * range, adminlog, ignorecap, flame_range * range, silent, smoke);
 	return f.dot;
 });

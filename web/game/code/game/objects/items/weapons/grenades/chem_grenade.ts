@@ -1,7 +1,7 @@
-// From code/game/objects/items/weapons/grenades/chem_grenade.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/weapons/grenades/chem_grenade.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, fmt } = rt;
 
 
 rt.type(6881, "/obj/item/weapon/grenade/chem_grenade", "/obj/item/weapon/grenade", {
@@ -22,254 +22,211 @@ rt.type(6881, "/obj/item/weapon/grenade/chem_grenade", "/obj/item/weapon/grenade
 	force: 2,
 });
 
-// /obj/item/weapon/grenade/chem_grenade/proc/<init>  (code/game/objects/items/weapons/grenades/chem_grenade.dm:13)
+// chem_grenade.dm:13
 rt.def("/obj/item/weapon/grenade/chem_grenade/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "beakers", rt.list());
-	$0 = $0;
-	rt.setSv(f, "allowed_containers", rt.list(T("/obj/item/weapon/reagent_containers/glass/beaker"), T("/obj/item/weapon/reagent_containers/glass/bottle")));
+	parent_proc();
+	this.beakers = list();
+
+	this.allowed_containers = list(T("/obj/item/weapon/reagent_containers/glass/beaker"), T("/obj/item/weapon/reagent_containers/glass/bottle"));
 	return f.dot;
 });
 
-// /obj/item/weapon/grenade/chem_grenade/proc/Initialize  (code/game/objects/items/weapons/grenades/chem_grenade.dm:23)  may sleep
+// chem_grenade.dm:23
 rt.def("/obj/item/weapon/grenade/chem_grenade/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.srcCall(f, "create_reagents", 1000);
-	yield* g.srcCall(f, "stage_change");
+	f.dot = (yield* parent_proc());
+	yield* this.create_reagents(1000);
+	this.stage_change();
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/grenade/chem_grenade/proc/examine  (code/game/objects/items/weapons/grenades/chem_grenade.dm:28)
-rt.def("/obj/item/weapon/grenade/chem_grenade/proc/examine", function examine(f: Frame) {
-	rt.setSv(f, "display_timer", ((isEqual(rt.sv(f, "stage"), 3) ? 1 : 0) && (!truthy(rt.sv(f, "nadeassembly")) ? 1 : 0)));
-	rt.callSuper(f, [], rt.Args.Same);
+// chem_grenade.dm:28
+rt.def("/obj/item/weapon/grenade/chem_grenade/proc/examine", function examine(f: Frame, user: Value) {
+	this.display_timer = ((this.stage == 3 ? 1 : 0) && (!this.nadeassembly ? 1 : 0));
+	parent_proc();
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/item/weapon/grenade/chem_grenade/proc/attack_self  (code/game/objects/items/weapons/grenades/chem_grenade.dm:33)  may sleep
+// chem_grenade.dm:33
 rt.def("/obj/item/weapon/grenade/chem_grenade/proc/attack_self", function* attack_self(f: Frame, user: Value) {
 	let bombturf: Value = null, A: Value = null, C: Value = null;
-	f.vars = () => [user, bombturf, A, C];
-	if (!(isEqual(rt.sv(f, "stage"), 3) && !truthy(rt.sv(f, "active")))) return f.dot;
-	if (truthy(rt.sv(f, "nadeassembly"))) {
-		yield* g.callName(f, rt.sv(f, "nadeassembly"), "attack_self", [live(user)]);
+	if (!(this.stage == 3 && !this.active)) return f.dot;
+	if (this.nadeassembly) {
+		yield* this.nadeassembly.attack_self(user);
 	} else {
-		if (!truthy((yield* g.srcCall(f, "clown_check", live(user))))) return f.dot;
-		bombturf = rt.getStep(f, live(f.src), 0);
-		A = (yield* g.call(f, P("/proc/get_area"), null, [live(bombturf)]));
-		yield* g.call(f, P("/proc/message_admins"), null, [fmt("＀ has primed a ＀ for detonation at ＀＀.", [fmt("＀＀ ＀", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.usr)])), fmt("(<a href='?_src_=holder;adminmoreinfo=＃'>?</a>)", [live(f.usr)]), fmt("(<a href='?_src_=holder;adminplayerobservefollow=＃'>FLW</a>)", [live(f.usr)])]), rt.sv(f, "name"), rt.fv(f, "name", live(A)), fmt("(<a href='?_src_=holder;adminplayerobservecoodjump=1;X=＀;Y=＀;Z=＀'>JMP</a>)", [rt.fv(f, "x", live(bombturf)), rt.fv(f, "y", live(bombturf)), rt.fv(f, "z", live(bombturf))])])]);
-		yield* g.call(f, P("/proc/log_game"), null, [fmt("＀ has primed a ＀ for detonation at ＀ ＀.", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.usr)])), rt.sv(f, "name"), rt.fv(f, "name", live(A)), fmt("(＀,＀,＀)", [rt.fv(f, "x", live(bombturf)), rt.fv(f, "y", live(bombturf)), rt.fv(f, "z", live(bombturf))])])]);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>You prime the ＀! ＀ second５!</span>", [rt.sv(f, "name"), divide(rt.sv(f, "det_time"), 10)])]);
-		yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(user)), rt.rsc("sound/weapons/armbomb.ogg"), 60, 1]);
-		rt.setSv(f, "active", 1);
-		rt.setSv(f, "icon_state", add(rt.initial(f, live(f.src), "icon_state"), "_active"));
-		if (truthy((rt.istype(live(user), T("/mob/living/carbon")) ? 1 : 0))) {
-			yield* g.callName(f, (C = live(user)), "throw_mode_on", []);
+		if (!(yield* this.clown_check(user))) return f.dot;
+		bombturf = rt.getStep(f, this, 0);
+		A = get_area(bombturf);
+		message_admins(`${`${key_name_admin(f.usr)}${fmt("(<a href='?_src_=holder;adminmoreinfo=＃'>?</a>)", [f.usr])} ${fmt("(<a href='?_src_=holder;adminplayerobservefollow=＃'>FLW</a>)", [f.usr])}`} has primed a ${this.name} for detonation at ${A.name}${`(<a href='?_src_=holder;adminplayerobservecoodjump=1;X=${bombturf.x};Y=${bombturf.y};Z=${bombturf.z}'>JMP</a>)`}.`);
+		log_game(`${key_name(f.usr)} has primed a ${this.name} for detonation at ${A.name} ${`(${bombturf.x},${bombturf.y},${bombturf.z})`}.`);
+		to_chat(user, fmt("<span class='warning'>You prime the ＀! ＀ second５!</span>", [this.name, this.det_time / 10]));
+		playsound(user.loc, rt.rsc("sound/weapons/armbomb.ogg"), 60, 1);
+		this.active = 1;
+		this.icon_state = rt.initial(f, this, "icon_state") + "_active";
+		if (rt.istype(user, T("/mob/living/carbon"))) {
+			(C = user).throw_mode_on();
 		}
-		yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/item/weapon/grenade/chem_grenade/proc/prime")])), rt.sv(f, "det_time")]);
+		yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/item/weapon/grenade/chem_grenade/proc/prime"))), this.det_time);
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/grenade/chem_grenade/proc/attackby  (code/game/objects/items/weapons/grenades/chem_grenade.dm:53)  may sleep
-rt.def("/obj/item/weapon/grenade/chem_grenade/proc/attackby", function* attackby(f: Frame) {
+// chem_grenade.dm:53
+rt.def("/obj/item/weapon/grenade/chem_grenade/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
 	let A: Value = null, C: Value = null, O: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [A, C, O, $0, $e];
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/screwdriver")) ? 1 : 0))) {
-		if (isEqual(rt.sv(f, "stage"), 2)) {
-			if (truthy(rt.len(f, rt.sv(f, "beakers")))) {
-				yield* g.srcCall(f, "stage_change", 3);
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You lock the ＀ assembly.</span>", [rt.initial(f, live(f.src), "name")])]);
-				yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.fv(f, "usesound", live(f.args[0])), 25, -3]);
+	let $e: any;
+	if (rt.istype(I, T("/obj/item/weapon/screwdriver"))) {
+		if (this.stage == 2) {
+			if (rt.len(f, this.beakers)) {
+				this.stage_change(3);
+				to_chat(user, `<span class='notice'>You lock the ${rt.initial(f, this, "name")} assembly.</span>`);
+				playsound(this.loc, I.usesound, 25, -3);
 			} else {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>You need to add at least one beaker before locking the ＀ assembly!</span>", [rt.initial(f, live(f.src), "name")])]);
+				to_chat(user, `<span class='warning'>You need to add at least one beaker before locking the ${rt.initial(f, this, "name")} assembly!</span>`);
 			}
-		} else {
-			if ((isEqual(rt.sv(f, "stage"), 3) && !truthy(rt.sv(f, "nadeassembly")))) {
-				if (isEqual(rt.sv(f, "det_time"), 50)) {
-					$0 = 30;
-				} else {
-					$0 = 50;
-				}
-				rt.setSv(f, "det_time", $0);
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You modify the time delay. It's set for ＀ second５.</span>", [divide(rt.sv(f, "det_time"), 10)])]);
-			} else {
-				if (isEqual(rt.sv(f, "stage"), 1)) {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You need to add an activation mechanism!</span>"]);
-				}
-			}
+		} else if (this.stage == 3 && !this.nadeassembly) {
+			this.det_time = this.det_time == 50 ? 30 : 50;
+			to_chat(user, fmt("<span class='notice'>You modify the time delay. It's set for ＀ second５.</span>", [this.det_time / 10]));
+		} else if (this.stage == 1) {
+			to_chat(user, "<span class='warning'>You need to add an activation mechanism!</span>");
 		}
+	} else if (this.stage == 2 && is_type_in_list(I, this.allowed_containers)) {
+		f.dot = 1;
+		if (rt.len(f, this.beakers) == 2) {
+			to_chat(user, `<span class='warning'>${this} can not hold more containers!</span>`);
+			return f.dot;
+		} else if (I.reagents.total_volume) {
+			if (!(yield* user.transferItemToLoc(I, this))) {
+				return f.dot;
+			}
+			to_chat(user, `<span class='notice'>You add ${I} to the ${rt.initial(f, this, "name")} assembly.</span>`);
+			this.beakers += I;
+		} else {
+			to_chat(user, `<span class='warning'>${I} is empty!</span>`);
+		}
+	} else if (this.stage == 1 && rt.istype(I, T("/obj/item/device/assembly_holder"))) {
+		f.dot = 1;
+		if ((rt.istype((A = I).a_left, T("/obj/item/device/assembly/igniter")) ? 1 : 0) == (rt.istype(A.a_right, T("/obj/item/device/assembly/igniter")) ? 1 : 0)) {
+			return f.dot;
+		}
+		if (!(yield* user.transferItemToLoc(I, this))) {
+			return f.dot;
+		}
+		this.nadeassembly = A;
+		A.master = this;
+		this.assemblyattacher = user.ckey;
+		this.stage_change(2);
+		to_chat(user, `<span class='notice'>You add ${A} to the ${rt.initial(f, this, "name")} assembly.</span>`);
+	} else if (this.stage == 1 && rt.istype(I, T("/obj/item/stack/cable_coil"))) {
+		if (yield* (C = I).use(1)) {
+			this.det_time = 50;
+			this.stage_change(2);
+			to_chat(user, `<span class='notice'>You rig the ${rt.initial(f, this, "name")} assembly.</span>`);
+		} else {
+			to_chat(user, "<span class='warning'>You need one length of coil to wire the assembly!</span>");
+			return f.dot;
+		}
+	} else if (this.stage == 3 && rt.istype(I, T("/obj/item/weapon/wirecutters")) && !this.active) {
+		this.stage_change(2);
+		to_chat(user, `<span class='notice'>You unlock the ${rt.initial(f, this, "name")} assembly.</span>`);
+	} else if (this.stage == 2 && rt.istype(I, T("/obj/item/weapon/wrench"))) {
+		if (rt.len(f, this.beakers)) {
+			for (O of each(this.beakers, T("/obj"))) {
+				O.loc = rt.getStep(f, this, 0);
+			}
+			this.beakers = list();
+			to_chat(user, `<span class='notice'>You open the ${rt.initial(f, this, "name")} assembly and remove the payload.</span>`);
+			return f.dot;
+		}
+		if (this.nadeassembly) {
+			this.nadeassembly.loc = rt.getStep(f, this, 0);
+			this.nadeassembly.master = null;
+			this.nadeassembly = null;
+		} else {
+			yield* new_(T("/obj/item/stack/cable_coil"), rt.getStep(f, this, 0), 1);
+		}
+		this.stage_change(1);
+		to_chat(user, `<span class='notice'>You remove the activation mechanism from the ${rt.initial(f, this, "name")} assembly.</span>`);
 	} else {
-		if ((isEqual(rt.sv(f, "stage"), 2) && truthy((yield* g.call(f, P("/proc/is_type_in_list"), null, [live(f.args[0]), rt.sv(f, "allowed_containers")]))))) {
-			f.dot = 1;
-			if (isEqual(rt.len(f, rt.sv(f, "beakers")), 2)) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>＀ can not hold more containers!</span>", [live(f.src)])]);
-				return live(f.dot);
-			} else {
-				if (truthy(rt.gv(f, "total_volume", rt.fv(f, "reagents", live(f.args[0]))))) {
-					if (!truthy((yield* g.callName(f, live(f.args[1]), "transferItemToLoc", [live(f.args[0]), live(f.src)])))) {
-						return live(f.dot);
-					}
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You add ＀ to the ＀ assembly.</span>", [live(f.args[0]), rt.initial(f, live(f.src), "name")])]);
-					rt.modSrcVar(f, "beakers", live(f.args[0]), add);
-				} else {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>＀ is empty!</span>", [live(f.args[0])])]);
-				}
-			}
-		} else {
-			if ((isEqual(rt.sv(f, "stage"), 1) && truthy((rt.istype(live(f.args[0]), T("/obj/item/device/assembly_holder")) ? 1 : 0)))) {
-				f.dot = 1;
-				if (isEqual((rt.istype(rt.gv(f, "a_left", (A = live(f.args[0]))), T("/obj/item/device/assembly/igniter")) ? 1 : 0), (rt.istype(rt.fv(f, "a_right", live(A)), T("/obj/item/device/assembly/igniter")) ? 1 : 0))) {
-					return live(f.dot);
-				}
-				if (!truthy((yield* g.callName(f, live(f.args[1]), "transferItemToLoc", [live(f.args[0]), live(f.src)])))) {
-					return live(f.dot);
-				}
-				rt.setSv(f, "nadeassembly", live(A));
-				rt.setFv(f, "master", live(A), live(f.src));
-				rt.setSv(f, "assemblyattacher", rt.fv(f, "ckey", live(f.args[1])));
-				yield* g.srcCall(f, "stage_change", 2);
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You add ＀ to the ＀ assembly.</span>", [live(A), rt.initial(f, live(f.src), "name")])]);
-			} else {
-				if ((isEqual(rt.sv(f, "stage"), 1) && truthy((rt.istype(live(f.args[0]), T("/obj/item/stack/cable_coil")) ? 1 : 0)))) {
-					if (truthy((yield* g.callName(f, (C = live(f.args[0])), "use", [1])))) {
-						rt.setSv(f, "det_time", 50);
-						yield* g.srcCall(f, "stage_change", 2);
-						yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You rig the ＀ assembly.</span>", [rt.initial(f, live(f.src), "name")])]);
-					} else {
-						yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You need one length of coil to wire the assembly!</span>"]);
-						return live(f.dot);
-					}
-				} else {
-					if (((isEqual(rt.sv(f, "stage"), 3) && truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/wirecutters")) ? 1 : 0))) && !truthy(rt.sv(f, "active")))) {
-						yield* g.srcCall(f, "stage_change", 2);
-						yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You unlock the ＀ assembly.</span>", [rt.initial(f, live(f.src), "name")])]);
-					} else {
-						if ((isEqual(rt.sv(f, "stage"), 2) && truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/wrench")) ? 1 : 0)))) {
-							if (truthy(rt.len(f, rt.sv(f, "beakers")))) {
-								O = null;
-								rt.forList(f, 0, rt.sv(f, "beakers"), T("/obj"));
-								while (($e = rt.next(f, 0)) !== undefined) {
-									O = $e;
-									rt.setFv(f, "loc", live(O), rt.getStep(f, live(f.src), 0));
-								}
-								rt.endFor(f, 0);
-								rt.setSv(f, "beakers", rt.list());
-								yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You open the ＀ assembly and remove the payload.</span>", [rt.initial(f, live(f.src), "name")])]);
-								return live(f.dot);
-							}
-							if (truthy(rt.sv(f, "nadeassembly"))) {
-								rt.setFv(f, "loc", rt.sv(f, "nadeassembly"), rt.getStep(f, live(f.src), 0));
-								rt.setFv(f, "master", rt.sv(f, "nadeassembly"), null);
-								rt.setSv(f, "nadeassembly", null);
-							} else {
-								yield* g.new_(f, T("/obj/item/stack/cable_coil"), [rt.getStep(f, live(f.src), 0), 1]);
-							}
-							yield* g.srcCall(f, "stage_change", 1);
-							yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You remove the activation mechanism from the ＀ assembly.</span>", [rt.initial(f, live(f.src), "name")])]);
-						} else {
-							return (yield* g.callSuper(f, [], rt.Args.Same));
-						}
-					}
-				}
-			}
-		}
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["I", "user", "params"] });
+}, true);
 
-// /obj/item/weapon/grenade/chem_grenade/proc/stage_change  (code/game/objects/items/weapons/grenades/chem_grenade.dm:130)
+// chem_grenade.dm:130
 rt.def("/obj/item/weapon/grenade/chem_grenade/proc/stage_change", function stage_change(f: Frame, N: Value) {
-	if (truthy(live(N))) {
-		rt.setSv(f, "stage", live(N));
+	if (N) {
+		this.stage = N;
 	}
-	if (isEqual(rt.sv(f, "stage"), 1)) {
-		rt.setSv(f, "name", fmt("＀ casing", [rt.initial(f, live(f.src), "name")]));
-		rt.setSv(f, "desc", fmt("A do it yourself ＀!", [rt.initial(f, live(f.src), "name")]));
-		rt.setSv(f, "icon_state", rt.initial(f, live(f.src), "icon_state"));
+	if (this.stage == 1) {
+		this.name = `${rt.initial(f, this, "name")} casing`;
+		this.desc = `A do it yourself ${rt.initial(f, this, "name")}!`;
+		this.icon_state = rt.initial(f, this, "icon_state");
+	} else if (this.stage == 2) {
+		this.name = `unsecured ${rt.initial(f, this, "name")}`;
+		this.desc = `An unsecured ${rt.initial(f, this, "name")} assembly.`;
+		this.icon_state = `${rt.initial(f, this, "icon_state")}_ass`;
 	} else {
-		if (isEqual(rt.sv(f, "stage"), 2)) {
-			rt.setSv(f, "name", fmt("unsecured ＀", [rt.initial(f, live(f.src), "name")]));
-			rt.setSv(f, "desc", fmt("An unsecured ＀ assembly.", [rt.initial(f, live(f.src), "name")]));
-			rt.setSv(f, "icon_state", fmt("＀_ass", [rt.initial(f, live(f.src), "icon_state")]));
-		} else {
-			if (!isEqual(rt.sv(f, "stage"), 3)) return f.dot;
-			rt.setSv(f, "name", rt.initial(f, live(f.src), "name"));
-			rt.setSv(f, "desc", rt.initial(f, live(f.src), "desc"));
-			rt.setSv(f, "icon_state", fmt("＀_locked", [rt.initial(f, live(f.src), "icon_state")]));
-		}
+		if (this.stage != 3) return f.dot;
+		this.name = rt.initial(f, this, "name");
+		this.desc = rt.initial(f, this, "desc");
+		this.icon_state = `${rt.initial(f, this, "icon_state")}_locked`;
 	}
 	return f.dot;
 });
 
-// /obj/item/weapon/grenade/chem_grenade/proc/receive_signal  (code/game/objects/items/weapons/grenades/chem_grenade.dm:147)  may sleep
+// chem_grenade.dm:147
 rt.def("/obj/item/weapon/grenade/chem_grenade/proc/receive_signal", function* receive_signal(f: Frame) {
-	yield* g.srcCall(f, "prime");
+	yield* this.prime();
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/grenade/chem_grenade/proc/Crossed  (code/game/objects/items/weapons/grenades/chem_grenade.dm:152)  may sleep
+// chem_grenade.dm:152
 rt.def("/obj/item/weapon/grenade/chem_grenade/proc/Crossed", function* Crossed(f: Frame, AM: Value) {
-	f.vars = () => [AM];
-	if (!truthy(rt.sv(f, "nadeassembly"))) return f.dot;
-	yield* g.callName(f, rt.sv(f, "nadeassembly"), "Crossed", [live(AM)]);
+	if (!this.nadeassembly) return f.dot;
+	yield* this.nadeassembly.Crossed(AM);
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/grenade/chem_grenade/proc/on_found  (code/game/objects/items/weapons/grenades/chem_grenade.dm:156)  may sleep
+// chem_grenade.dm:156
 rt.def("/obj/item/weapon/grenade/chem_grenade/proc/on_found", function* on_found(f: Frame, finder: Value) {
-	f.vars = () => [finder];
-	if (!truthy(rt.sv(f, "nadeassembly"))) return f.dot;
-	yield* g.callName(f, rt.sv(f, "nadeassembly"), "on_found", [live(finder)]);
+	if (!this.nadeassembly) return f.dot;
+	yield* this.nadeassembly.on_found(finder);
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/grenade/chem_grenade/proc/prime  (code/game/objects/items/weapons/grenades/chem_grenade.dm:159)  may sleep
+// chem_grenade.dm:159
 rt.def("/obj/item/weapon/grenade/chem_grenade/proc/prime", function* prime(f: Frame) {
-	let reactants: Value = null, G: Value = null, O: Value = null, M: Value = null, last: Value = null, _T: Value = null, A: Value = null, DT: Value = null, DA: Value = null;
-	let $e: any;
-	f.vars = () => [reactants, G, O, M, last, _T, A, DT, DA, $e];
-	if (!isEqual(rt.sv(f, "stage"), 3)) {
-		return live(f.dot);
+	let G: Value = null, O: Value = null, M: Value = null, last: Value = null, _T: Value = null, A: Value = null, DA: Value = null;
+	if (this.stage != 3) {
+		return f.dot;
 	}
-	reactants = rt.list();
-	G = null;
-	rt.forList(f, 0, rt.sv(f, "beakers"), T("/obj/item/weapon/reagent_containers/glass"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		G = $e;
-		reactants = rt.modify(live(reactants), rt.fv(f, "reagents", live(G)), add);
+	let reactants: Value = list();
+	for (G of each(this.beakers, T("/obj/item/weapon/reagent_containers/glass"))) {
+		reactants += G.reagents;
 	}
-	rt.endFor(f, 0);
-	if ((!truthy((yield* g.call(f, P("/proc/chem_splash"), null, [rt.getStep(f, live(f.src), 0), rt.sv(f, "affected_area"), live(reactants), rt.sv(f, "ignition_temp"), rt.sv(f, "threatscale")]))) && !truthy(rt.sv(f, "no_splash")))) {
-		yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/items/screwdriver2.ogg"), 50, 1]);
-		if (truthy(rt.len(f, rt.sv(f, "beakers")))) {
-			O = null;
-			rt.forList(f, 0, rt.sv(f, "beakers"), T("/obj"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				O = $e;
-				rt.setFv(f, "loc", live(O), rt.getStep(f, live(f.src), 0));
+	if (!(yield* chem_splash(rt.getStep(f, this, 0), this.affected_area, reactants, this.ignition_temp, this.threatscale)) && !this.no_splash) {
+		playsound(this.loc, rt.rsc("sound/items/screwdriver2.ogg"), 50, 1);
+		if (rt.len(f, this.beakers)) {
+			for (O of each(this.beakers, T("/obj"))) {
+				O.loc = rt.getStep(f, this, 0);
 			}
-			rt.endFor(f, 0);
-			rt.setSv(f, "beakers", rt.list());
+			this.beakers = list();
 		}
-		yield* g.srcCall(f, "stage_change", 1);
-		return live(f.dot);
+		this.stage_change(1);
+		return f.dot;
 	}
-	if (truthy(rt.sv(f, "nadeassembly"))) {
-		M = (yield* g.call(f, P("/proc/get_mob_by_ckey"), null, [rt.sv(f, "assemblyattacher")]));
-		last = (yield* g.call(f, P("/proc/get_mob_by_ckey"), null, [rt.fv(f, "fingerprintslast", rt.sv(f, "nadeassembly"))]));
-		_T = rt.getStep(f, live(f.src), 0);
-		A = (yield* g.call(f, P("/proc/get_area"), null, [live(_T)]));
-		yield* g.call(f, P("/proc/message_admins"), null, [fmt("grenade primed by an assembly, attached by ＀ and last touched by ＀ (＀ and ＀) at ＀ ＀</a>.", [fmt("＀＀ ＀", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(M)])), fmt("(<a href='?_src_=holder;adminmoreinfo=＃'>?</a>)", [live(M)]), fmt("(<a href='?_src_=holder;adminplayerobservefollow=＃'>FLW</a>)", [live(M)])]), fmt("＀＀ ＀", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(last)])), fmt("(<a href='?_src_=holder;adminmoreinfo=＃'>?</a>)", [live(last)]), fmt("(<a href='?_src_=holder;adminplayerobservefollow=＃'>FLW</a>)", [live(last)])]), rt.gv(f, "name", rt.fv(f, "a_left", rt.sv(f, "nadeassembly"))), rt.gv(f, "name", rt.fv(f, "a_right", rt.sv(f, "nadeassembly"))), rt.fv(f, "name", live(A)), fmt("(<a href='?_src_=holder;adminplayerobservecoodjump=1;X=＀;Y=＀;Z=＀'>JMP</a>)", [rt.fv(f, "x", live(_T)), rt.fv(f, "y", live(_T)), rt.fv(f, "z", live(_T))])])]);
-		yield* g.call(f, P("/proc/log_game"), null, [fmt("grenade primed by an assembly, attached by ＀ and last touched by ＀ (＀ and ＀) at ＀ ＀", [(yield* g.call(f, P("/proc/key_name"), null, [live(M)])), (yield* g.call(f, P("/proc/key_name"), null, [live(last)])), rt.gv(f, "name", rt.fv(f, "a_left", rt.sv(f, "nadeassembly"))), rt.gv(f, "name", rt.fv(f, "a_right", rt.sv(f, "nadeassembly"))), rt.fv(f, "name", live(A)), fmt("(＀,＀,＀)", [rt.fv(f, "x", live(_T)), rt.fv(f, "y", live(_T)), rt.fv(f, "z", live(_T))])])]);
+	if (this.nadeassembly) {
+		M = (yield* get_mob_by_ckey(this.assemblyattacher));
+		last = (yield* get_mob_by_ckey(this.nadeassembly.fingerprintslast));
+		_T = rt.getStep(f, this, 0);
+		A = get_area(_T);
+		message_admins(`grenade primed by an assembly, attached by ${`${key_name_admin(M)}${fmt("(<a href='?_src_=holder;adminmoreinfo=＃'>?</a>)", [M])} ${fmt("(<a href='?_src_=holder;adminplayerobservefollow=＃'>FLW</a>)", [M])}`} and last touched by ${`${key_name_admin(last)}${fmt("(<a href='?_src_=holder;adminmoreinfo=＃'>?</a>)", [last])} ${fmt("(<a href='?_src_=holder;adminplayerobservefollow=＃'>FLW</a>)", [last])}`} (${this.nadeassembly.a_left.name} and ${this.nadeassembly.a_right.name}) at ${A.name} ${`(<a href='?_src_=holder;adminplayerobservecoodjump=1;X=${_T.x};Y=${_T.y};Z=${_T.z}'>JMP</a>)`}</a>.`);
+		log_game(`grenade primed by an assembly, attached by ${key_name(M)} and last touched by ${key_name(last)} (${this.nadeassembly.a_left.name} and ${this.nadeassembly.a_right.name}) at ${A.name} ${`(${_T.x},${_T.y},${_T.z})`}`);
 	}
-	DT = rt.getStep(f, live(f.src), 0);
-	yield* g.call(f, P("/proc/log_game"), null, [fmt("A grenade detonated at ＀ ＀", [rt.gv(f, "name", (DA = (yield* g.call(f, P("/proc/get_area"), null, [live(DT)])))), fmt("(＀,＀,＀)", [rt.fv(f, "x", live(DT)), rt.fv(f, "y", live(DT)), rt.fv(f, "z", live(DT))])])]);
-	yield* g.srcCall(f, "update_mob");
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	let DT: Value = rt.getStep(f, this, 0);
+	log_game(`A grenade detonated at ${(DA = get_area(DT)).name} ${`(${DT.x},${DT.y},${DT.z})`}`);
+	yield* this.update_mob();
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
@@ -284,69 +241,55 @@ rt.type(6882, "/obj/item/weapon/grenade/chem_grenade/large", "/obj/item/weapon/g
 	origin_tech: "combat=3;engineering=3",
 });
 
-// /obj/item/weapon/grenade/chem_grenade/large/proc/<init>  (code/game/objects/items/weapons/grenades/chem_grenade.dm:196)
+// chem_grenade.dm:196
 rt.def("/obj/item/weapon/grenade/chem_grenade/large/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed_containers", rt.list(T("/obj/item/weapon/reagent_containers/glass"), T("/obj/item/weapon/reagent_containers/food/condiment"), T("/obj/item/weapon/reagent_containers/food/drinks")));
+	parent_proc();
+	this.allowed_containers = list(T("/obj/item/weapon/reagent_containers/glass"), T("/obj/item/weapon/reagent_containers/food/condiment"), T("/obj/item/weapon/reagent_containers/food/drinks"));
 	return f.dot;
 });
 
-// /obj/item/weapon/grenade/chem_grenade/large/proc/prime  (code/game/objects/items/weapons/grenades/chem_grenade.dm:204)  may sleep
+// chem_grenade.dm:204
 rt.def("/obj/item/weapon/grenade/chem_grenade/large/proc/prime", function* prime(f: Frame) {
 	let S: Value = null, G: Value = null;
-	let $e: any;
-	f.vars = () => [S, G, $e];
-	if (!isEqual(rt.sv(f, "stage"), 3)) {
-		return live(f.dot);
+	if (this.stage != 3) {
+		return f.dot;
 	}
-	S = null;
-	rt.forList(f, 0, rt.sv(f, "beakers"), T("/obj/item/slime_extract"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		S = $e;
-		if (truthy(rt.fv(f, "Uses", live(S)))) {
+	for (S of each(this.beakers, T("/obj/item/slime_extract"))) {
+		if (S.Uses) {
 			G = null;
-			rt.forList(f, 1, rt.sv(f, "beakers"), T("/obj/item/weapon/reagent_containers/glass"));
-			while (($e = rt.next(f, 1)) !== undefined) {
-				G = $e;
-				yield* g.callName(f, rt.fv(f, "reagents", live(G)), "trans_to", [live(S), rt.gv(f, "total_volume", rt.fv(f, "reagents", live(G)))]);
+			for (G of each(this.beakers, T("/obj/item/weapon/reagent_containers/glass"))) {
+				yield* G.reagents.trans_to(S, G.reagents.total_volume);
 			}
-			rt.endFor(f, 1);
-			if (truthy(live(S))) {
-				if ((truthy(rt.fv(f, "reagents", live(S))) && truthy(rt.gv(f, "total_volume", rt.fv(f, "reagents", live(S)))))) {
+			if (S) {
+				if (S.reagents && S.reagents.total_volume) {
 					G = null;
-					rt.forList(f, 1, rt.sv(f, "beakers"), T("/obj/item/weapon/reagent_containers/glass"));
-					while (($e = rt.next(f, 1)) !== undefined) {
-						G = $e;
-						yield* g.callName(f, rt.fv(f, "reagents", live(S)), "trans_to", [live(G), rt.gv(f, "total_volume", rt.fv(f, "reagents", live(S)))]);
+					for (G of each(this.beakers, T("/obj/item/weapon/reagent_containers/glass"))) {
+						yield* S.reagents.trans_to(G, S.reagents.total_volume);
 					}
-					rt.endFor(f, 1);
 				} else {
-					yield* g.callName(f, live(S), "forceMove", [rt.getStep(f, live(f.src), 0)]);
-					rt.setSv(f, "no_splash", 1);
+					yield* S.forceMove(rt.getStep(f, this, 0));
+					this.no_splash = 1;
 				}
 			}
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/grenade/chem_grenade/large/proc/attackby  (code/game/objects/items/weapons/grenades/chem_grenade.dm:229)  may sleep
-rt.def("/obj/item/weapon/grenade/chem_grenade/large/proc/attackby", function* attackby(f: Frame) {
-	if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/slime_extract")) ? 1 : 0)) && isEqual(rt.sv(f, "stage"), 2))) {
-		if (!truthy((yield* g.callName(f, live(f.args[1]), "transferItemToLoc", [live(f.args[0]), live(f.src)])))) {
-			return live(f.dot);
+// chem_grenade.dm:229
+rt.def("/obj/item/weapon/grenade/chem_grenade/large/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
+	if (rt.istype(I, T("/obj/item/slime_extract")) && this.stage == 2) {
+		if (!(yield* user.transferItemToLoc(I, this))) {
+			return f.dot;
 		}
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You add ＀ to the ＀ assembly.</span>", [live(f.args[0]), rt.initial(f, live(f.src), "name")])]);
-		rt.modSrcVar(f, "beakers", live(f.args[0]), add);
+		to_chat(user, `<span class='notice'>You add ${I} to the ${rt.initial(f, this, "name")} assembly.</span>`);
+		this.beakers += I;
 	} else {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["I", "user", "params"] });
+}, true);
 
 rt.type(6885, "/obj/item/weapon/grenade/chem_grenade/adv_release", "/obj/item/weapon/grenade/chem_grenade", {
 	unit_spread: 10,
@@ -356,69 +299,56 @@ rt.type(6885, "/obj/item/weapon/grenade/chem_grenade/adv_release", "/obj/item/we
 	origin_tech: "combat=3;engineering=4",
 });
 
-// /obj/item/weapon/grenade/chem_grenade/adv_release/proc/attackby  (code/game/objects/items/weapons/grenades/chem_grenade.dm:260)  may sleep
-rt.def("/obj/item/weapon/grenade/chem_grenade/adv_release/proc/attackby", function* attackby(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/device/multitool")) ? 1 : 0))) {
-		$0 = rt.sv(f, "unit_spread");
-		if (rt.inRange($0, 0, 24)) {
-			rt.modSrcVar(f, "unit_spread", 5, add);
-		} else if (rt.inRange($0, 25, 99)) {
-			rt.modSrcVar(f, "unit_spread", 25, add);
+// chem_grenade.dm:260
+rt.def("/obj/item/weapon/grenade/chem_grenade/adv_release/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
+	if (rt.istype(I, T("/obj/item/device/multitool"))) {
+		if (rt.inRange(this.unit_spread, 0, 24)) {
+			this.unit_spread += 5;
+		} else if (rt.inRange(this.unit_spread, 25, 99)) {
+			this.unit_spread += 25;
 		} else {
-			rt.setSv(f, "unit_spread", 5);
+			this.unit_spread = 5;
 		}
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'> You set the time release to ＀ units per detonation.</span>", [rt.sv(f, "unit_spread")])]);
-		return live(f.dot);
+		to_chat(user, `<span class='notice'> You set the time release to ${this.unit_spread} units per detonation.</span>`);
+		return f.dot;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["I", "user", "params"] });
+}, true);
 
-// /obj/item/weapon/grenade/chem_grenade/adv_release/proc/prime  (code/game/objects/items/weapons/grenades/chem_grenade.dm:273)  may sleep
+// chem_grenade.dm:273
 rt.def("/obj/item/weapon/grenade/chem_grenade/adv_release/proc/prime", function* prime(f: Frame) {
-	let total_volume: Value = null, RC: Value = null, fraction: Value = null, reactants: Value = null, RC_3: Value = null, M: Value = null, last: Value = null, _T: Value = null, A: Value = null, DT: Value = null, DA: Value = null;
-	let $e: any;
-	f.vars = () => [total_volume, RC, fraction, reactants, RC_3, M, last, _T, A, DT, DA, $e];
-	if (!isEqual(rt.sv(f, "stage"), 3)) {
-		return live(f.dot);
+	let RC: Value = null, reactants: Value = null, RC_3: Value = null, M: Value = null, last: Value = null, _T: Value = null, A: Value = null, DA: Value = null;
+	if (this.stage != 3) {
+		return f.dot;
 	}
-	total_volume = 0;
-	RC = null;
-	rt.forList(f, 0, rt.sv(f, "beakers"), T("/obj/item/weapon/reagent_containers"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		RC = $e;
-		total_volume = rt.modify(live(total_volume), rt.gv(f, "total_volume", rt.fv(f, "reagents", live(RC))), add);
+	let total_volume: Value = 0;
+	for (RC of each(this.beakers, T("/obj/item/weapon/reagent_containers"))) {
+		total_volume += RC.reagents.total_volume;
 	}
-	rt.endFor(f, 0);
-	if (!truthy(live(total_volume))) {
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "nadeassembly")]);
-		return live(f.dot);
+	if (!total_volume) {
+		yield* qdel(this);
+		yield* qdel(this.nadeassembly);
+		return f.dot;
 	}
-	fraction = divide(rt.sv(f, "unit_spread"), live(total_volume));
-	rt.setFv(f, "my_atom", (reactants = (yield* g.new_(f, T("/datum/reagents"), [rt.sv(f, "unit_spread")]))), live(f.src));
-	RC_3 = null;
-	rt.forList(f, 0, rt.sv(f, "beakers"), T("/obj/item/weapon/reagent_containers"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		RC_3 = $e;
-		yield* g.callName(f, rt.fv(f, "reagents", live(RC_3)), "trans_to", [live(reactants), multiply(rt.gv(f, "total_volume", rt.fv(f, "reagents", live(RC_3))), live(fraction)), rt.sv(f, "threatscale"), 1, 1]);
+	let fraction: Value = this.unit_spread / total_volume;
+	(reactants = (yield* new_(T("/datum/reagents"), this.unit_spread))).my_atom = this;
+	for (RC_3 of each(this.beakers, T("/obj/item/weapon/reagent_containers"))) {
+		yield* RC_3.reagents.trans_to(reactants, RC_3.reagents.total_volume * fraction, this.threatscale, 1, 1);
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/chem_splash"), null, [rt.getStep(f, live(f.src), 0), rt.sv(f, "affected_area"), rt.list(live(reactants)), rt.sv(f, "ignition_temp"), rt.sv(f, "threatscale")]);
-	if (truthy(rt.sv(f, "nadeassembly"))) {
-		M = (yield* g.call(f, P("/proc/get_mob_by_ckey"), null, [rt.sv(f, "assemblyattacher")]));
-		last = (yield* g.call(f, P("/proc/get_mob_by_ckey"), null, [rt.fv(f, "fingerprintslast", rt.sv(f, "nadeassembly"))]));
-		_T = rt.getStep(f, live(f.src), 0);
-		A = (yield* g.call(f, P("/proc/get_area"), null, [live(_T)]));
-		yield* g.call(f, P("/proc/message_admins"), null, [fmt("grenade primed by an assembly, attached by ＀<A HREF='?_src_=holder;adminmoreinfo=＃'>(?)</A> (<A HREF='?_src_=holder;adminplayerobservefollow=＃'>FLW</A>) and last touched by ＀<A HREF='?_src_=holder;adminmoreinfo=＃'>(?)</A> (<A HREF='?_src_=holder;adminplayerobservefollow=＃'>FLW</A>) (＀ and ＀) at <A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=＀;Y=＀;Z=＀'>＀ (JMP)</a>.", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(M)])), live(M), live(M), (yield* g.call(f, P("/proc/key_name_admin"), null, [live(last)])), live(last), live(last), rt.gv(f, "name", rt.fv(f, "a_left", rt.sv(f, "nadeassembly"))), rt.gv(f, "name", rt.fv(f, "a_right", rt.sv(f, "nadeassembly"))), rt.fv(f, "x", live(_T)), rt.fv(f, "y", live(_T)), rt.fv(f, "z", live(_T)), rt.fv(f, "name", live(A))])]);
-		yield* g.call(f, P("/proc/log_game"), null, [fmt("grenade primed by an assembly, attached by ＀ and last touched by ＀ (＀ and ＀) at ＀ (＀, ＀, ＀)", [(yield* g.call(f, P("/proc/key_name"), null, [live(M)])), (yield* g.call(f, P("/proc/key_name"), null, [live(last)])), rt.gv(f, "name", rt.fv(f, "a_left", rt.sv(f, "nadeassembly"))), rt.gv(f, "name", rt.fv(f, "a_right", rt.sv(f, "nadeassembly"))), rt.fv(f, "name", live(A)), rt.fv(f, "x", live(_T)), rt.fv(f, "y", live(_T)), rt.fv(f, "z", live(_T))])]);
+	yield* chem_splash(rt.getStep(f, this, 0), this.affected_area, list(reactants), this.ignition_temp, this.threatscale);
+	if (this.nadeassembly) {
+		M = (yield* get_mob_by_ckey(this.assemblyattacher));
+		last = (yield* get_mob_by_ckey(this.nadeassembly.fingerprintslast));
+		_T = rt.getStep(f, this, 0);
+		A = get_area(_T);
+		message_admins(fmt("grenade primed by an assembly, attached by ＀<A HREF='?_src_=holder;adminmoreinfo=＃'>(?)</A> (<A HREF='?_src_=holder;adminplayerobservefollow=＃'>FLW</A>) and last touched by ＀<A HREF='?_src_=holder;adminmoreinfo=＃'>(?)</A> (<A HREF='?_src_=holder;adminplayerobservefollow=＃'>FLW</A>) (＀ and ＀) at <A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=＀;Y=＀;Z=＀'>＀ (JMP)</a>.", [key_name_admin(M), M, M, key_name_admin(last), last, last, this.nadeassembly.a_left.name, this.nadeassembly.a_right.name, _T.x, _T.y, _T.z, A.name]));
+		log_game(`grenade primed by an assembly, attached by ${key_name(M)} and last touched by ${key_name(last)} (${this.nadeassembly.a_left.name} and ${this.nadeassembly.a_right.name}) at ${A.name} (${_T.x}, ${_T.y}, ${_T.z})`);
 	} else {
-		yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/item/weapon/grenade/chem_grenade/adv_release/proc/prime")])), rt.sv(f, "det_time")]);
+		yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/item/weapon/grenade/chem_grenade/adv_release/proc/prime"))), this.det_time);
 	}
-	DT = rt.getStep(f, live(f.src), 0);
-	yield* g.call(f, P("/proc/log_game"), null, [fmt("A grenade detonated at ＀ (＀, ＀, ＀)", [rt.gv(f, "name", (DA = (yield* g.call(f, P("/proc/get_area"), null, [live(DT)])))), rt.fv(f, "x", live(DT)), rt.fv(f, "y", live(DT)), rt.fv(f, "z", live(DT))])]);
+	let DT: Value = rt.getStep(f, this, 0);
+	log_game(`A grenade detonated at ${(DA = get_area(DT)).name} (${DT.x}, ${DT.y}, ${DT.z})`);
 	return f.dot;
 }, true);
 
@@ -428,18 +358,16 @@ rt.type(6886, "/obj/item/weapon/grenade/chem_grenade/metalfoam", "/obj/item/weap
 	desc: "Used for emergency sealing of air breaches.",
 });
 
-// /obj/item/weapon/grenade/chem_grenade/metalfoam/proc/Initialize  (code/game/objects/items/weapons/grenades/chem_grenade.dm:317)  may sleep
+// chem_grenade.dm:317
 rt.def("/obj/item/weapon/grenade/chem_grenade/metalfoam/proc/Initialize", function* Initialize(f: Frame) {
-	let B1: Value = null, B2: Value = null;
-	f.vars = () => [B1, B2];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	B1 = (yield* g.new_(f, T("/obj/item/weapon/reagent_containers/glass/beaker"), [live(f.src)]));
-	B2 = (yield* g.new_(f, T("/obj/item/weapon/reagent_containers/glass/beaker"), [live(f.src)]));
-	yield* g.callName(f, rt.fv(f, "reagents", live(B1)), "add_reagent", ["aluminium", 30]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(B2)), "add_reagent", ["foaming_agent", 10]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(B2)), "add_reagent", ["facid", 10]);
-	rt.modSrcVar(f, "beakers", live(B1), add);
-	rt.modSrcVar(f, "beakers", live(B2), add);
+	f.dot = (yield* parent_proc());
+	let B1: Value = (yield* new_(T("/obj/item/weapon/reagent_containers/glass/beaker"), this));
+	let B2: Value = (yield* new_(T("/obj/item/weapon/reagent_containers/glass/beaker"), this));
+	yield* B1.reagents.add_reagent("aluminium", 30);
+	yield* B2.reagents.add_reagent("foaming_agent", 10);
+	yield* B2.reagents.add_reagent("facid", 10);
+	this.beakers += B1;
+	this.beakers += B2;
 	return f.dot;
 }, true);
 
@@ -449,18 +377,16 @@ rt.type(6887, "/obj/item/weapon/grenade/chem_grenade/incendiary", "/obj/item/wea
 	desc: "Used for clearing rooms of living things.",
 });
 
-// /obj/item/weapon/grenade/chem_grenade/incendiary/proc/Initialize  (code/game/objects/items/weapons/grenades/chem_grenade.dm:335)  may sleep
+// chem_grenade.dm:335
 rt.def("/obj/item/weapon/grenade/chem_grenade/incendiary/proc/Initialize", function* Initialize(f: Frame) {
-	let B1: Value = null, B2: Value = null;
-	f.vars = () => [B1, B2];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	B1 = (yield* g.new_(f, T("/obj/item/weapon/reagent_containers/glass/beaker"), [live(f.src)]));
-	B2 = (yield* g.new_(f, T("/obj/item/weapon/reagent_containers/glass/beaker"), [live(f.src)]));
-	yield* g.callName(f, rt.fv(f, "reagents", live(B1)), "add_reagent", ["phosphorus", 25]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(B2)), "add_reagent", ["stable_plasma", 25]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(B2)), "add_reagent", ["sacid", 25]);
-	rt.modSrcVar(f, "beakers", live(B1), add);
-	rt.modSrcVar(f, "beakers", live(B2), add);
+	f.dot = (yield* parent_proc());
+	let B1: Value = (yield* new_(T("/obj/item/weapon/reagent_containers/glass/beaker"), this));
+	let B2: Value = (yield* new_(T("/obj/item/weapon/reagent_containers/glass/beaker"), this));
+	yield* B1.reagents.add_reagent("phosphorus", 25);
+	yield* B2.reagents.add_reagent("stable_plasma", 25);
+	yield* B2.reagents.add_reagent("sacid", 25);
+	this.beakers += B1;
+	this.beakers += B2;
 	return f.dot;
 }, true);
 
@@ -470,19 +396,17 @@ rt.type(6888, "/obj/item/weapon/grenade/chem_grenade/antiweed", "/obj/item/weapo
 	desc: "Used for purging large areas of invasive plant species. Contents under pressure. Do not directly inhale contents.",
 });
 
-// /obj/item/weapon/grenade/chem_grenade/antiweed/proc/Initialize  (code/game/objects/items/weapons/grenades/chem_grenade.dm:353)  may sleep
+// chem_grenade.dm:353
 rt.def("/obj/item/weapon/grenade/chem_grenade/antiweed/proc/Initialize", function* Initialize(f: Frame) {
-	let B1: Value = null, B2: Value = null;
-	f.vars = () => [B1, B2];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	B1 = (yield* g.new_(f, T("/obj/item/weapon/reagent_containers/glass/beaker"), [live(f.src)]));
-	B2 = (yield* g.new_(f, T("/obj/item/weapon/reagent_containers/glass/beaker"), [live(f.src)]));
-	yield* g.callName(f, rt.fv(f, "reagents", live(B1)), "add_reagent", ["plantbgone", 25]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(B1)), "add_reagent", ["potassium", 25]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(B2)), "add_reagent", ["phosphorus", 25]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(B2)), "add_reagent", ["sugar", 25]);
-	rt.modSrcVar(f, "beakers", live(B1), add);
-	rt.modSrcVar(f, "beakers", live(B2), add);
+	f.dot = (yield* parent_proc());
+	let B1: Value = (yield* new_(T("/obj/item/weapon/reagent_containers/glass/beaker"), this));
+	let B2: Value = (yield* new_(T("/obj/item/weapon/reagent_containers/glass/beaker"), this));
+	yield* B1.reagents.add_reagent("plantbgone", 25);
+	yield* B1.reagents.add_reagent("potassium", 25);
+	yield* B2.reagents.add_reagent("phosphorus", 25);
+	yield* B2.reagents.add_reagent("sugar", 25);
+	this.beakers += B1;
+	this.beakers += B2;
 	return f.dot;
 }, true);
 
@@ -492,18 +416,16 @@ rt.type(6889, "/obj/item/weapon/grenade/chem_grenade/cleaner", "/obj/item/weapon
 	desc: "BLAM!-brand foaming space cleaner. In a special applicator for rapid cleaning of wide areas.",
 });
 
-// /obj/item/weapon/grenade/chem_grenade/cleaner/proc/Initialize  (code/game/objects/items/weapons/grenades/chem_grenade.dm:372)  may sleep
+// chem_grenade.dm:372
 rt.def("/obj/item/weapon/grenade/chem_grenade/cleaner/proc/Initialize", function* Initialize(f: Frame) {
-	let B1: Value = null, B2: Value = null;
-	f.vars = () => [B1, B2];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	B1 = (yield* g.new_(f, T("/obj/item/weapon/reagent_containers/glass/beaker"), [live(f.src)]));
-	B2 = (yield* g.new_(f, T("/obj/item/weapon/reagent_containers/glass/beaker"), [live(f.src)]));
-	yield* g.callName(f, rt.fv(f, "reagents", live(B1)), "add_reagent", ["fluorosurfactant", 40]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(B2)), "add_reagent", ["water", 40]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(B2)), "add_reagent", ["cleaner", 10]);
-	rt.modSrcVar(f, "beakers", live(B1), add);
-	rt.modSrcVar(f, "beakers", live(B2), add);
+	f.dot = (yield* parent_proc());
+	let B1: Value = (yield* new_(T("/obj/item/weapon/reagent_containers/glass/beaker"), this));
+	let B2: Value = (yield* new_(T("/obj/item/weapon/reagent_containers/glass/beaker"), this));
+	yield* B1.reagents.add_reagent("fluorosurfactant", 40);
+	yield* B2.reagents.add_reagent("water", 40);
+	yield* B2.reagents.add_reagent("cleaner", 10);
+	this.beakers += B1;
+	this.beakers += B2;
 	return f.dot;
 }, true);
 
@@ -513,18 +435,16 @@ rt.type(6890, "/obj/item/weapon/grenade/chem_grenade/ez_clean", "/obj/item/weapo
 	desc: "Waffle Co.-brand foaming space cleaner. In a special applicator for rapid cleaning of wide areas.",
 });
 
-// /obj/item/weapon/grenade/chem_grenade/ez_clean/proc/Initialize  (code/game/objects/items/weapons/grenades/chem_grenade.dm:390)  may sleep
+// chem_grenade.dm:390
 rt.def("/obj/item/weapon/grenade/chem_grenade/ez_clean/proc/Initialize", function* Initialize(f: Frame) {
-	let B1: Value = null, B2: Value = null;
-	f.vars = () => [B1, B2];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	B1 = (yield* g.new_(f, T("/obj/item/weapon/reagent_containers/glass/beaker/large"), [live(f.src)]));
-	B2 = (yield* g.new_(f, T("/obj/item/weapon/reagent_containers/glass/beaker/large"), [live(f.src)]));
-	yield* g.callName(f, rt.fv(f, "reagents", live(B1)), "add_reagent", ["fluorosurfactant", 40]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(B2)), "add_reagent", ["water", 40]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(B2)), "add_reagent", ["ez_clean", 60]);
-	rt.modSrcVar(f, "beakers", live(B1), add);
-	rt.modSrcVar(f, "beakers", live(B2), add);
+	f.dot = (yield* parent_proc());
+	let B1: Value = (yield* new_(T("/obj/item/weapon/reagent_containers/glass/beaker/large"), this));
+	let B2: Value = (yield* new_(T("/obj/item/weapon/reagent_containers/glass/beaker/large"), this));
+	yield* B1.reagents.add_reagent("fluorosurfactant", 40);
+	yield* B2.reagents.add_reagent("water", 40);
+	yield* B2.reagents.add_reagent("ez_clean", 60);
+	this.beakers += B1;
+	this.beakers += B2;
 	return f.dot;
 }, true);
 
@@ -534,19 +454,17 @@ rt.type(6891, "/obj/item/weapon/grenade/chem_grenade/teargas", "/obj/item/weapon
 	desc: "Used for nonlethal riot control. Contents under pressure. Do not directly inhale contents.",
 });
 
-// /obj/item/weapon/grenade/chem_grenade/teargas/proc/Initialize  (code/game/objects/items/weapons/grenades/chem_grenade.dm:409)  may sleep
+// chem_grenade.dm:409
 rt.def("/obj/item/weapon/grenade/chem_grenade/teargas/proc/Initialize", function* Initialize(f: Frame) {
-	let B1: Value = null, B2: Value = null;
-	f.vars = () => [B1, B2];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	B1 = (yield* g.new_(f, T("/obj/item/weapon/reagent_containers/glass/beaker/large"), [live(f.src)]));
-	B2 = (yield* g.new_(f, T("/obj/item/weapon/reagent_containers/glass/beaker/large"), [live(f.src)]));
-	yield* g.callName(f, rt.fv(f, "reagents", live(B1)), "add_reagent", ["condensedcapsaicin", 60]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(B1)), "add_reagent", ["potassium", 40]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(B2)), "add_reagent", ["phosphorus", 40]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(B2)), "add_reagent", ["sugar", 40]);
-	rt.modSrcVar(f, "beakers", live(B1), add);
-	rt.modSrcVar(f, "beakers", live(B2), add);
+	f.dot = (yield* parent_proc());
+	let B1: Value = (yield* new_(T("/obj/item/weapon/reagent_containers/glass/beaker/large"), this));
+	let B2: Value = (yield* new_(T("/obj/item/weapon/reagent_containers/glass/beaker/large"), this));
+	yield* B1.reagents.add_reagent("condensedcapsaicin", 60);
+	yield* B1.reagents.add_reagent("potassium", 40);
+	yield* B2.reagents.add_reagent("phosphorus", 40);
+	yield* B2.reagents.add_reagent("sugar", 40);
+	this.beakers += B1;
+	this.beakers += B2;
 	return f.dot;
 }, true);
 
@@ -556,20 +474,18 @@ rt.type(6892, "/obj/item/weapon/grenade/chem_grenade/facid", "/obj/item/weapon/g
 	desc: "Used for melting armoured opponents.",
 });
 
-// /obj/item/weapon/grenade/chem_grenade/facid/proc/Initialize  (code/game/objects/items/weapons/grenades/chem_grenade.dm:428)  may sleep
+// chem_grenade.dm:428
 rt.def("/obj/item/weapon/grenade/chem_grenade/facid/proc/Initialize", function* Initialize(f: Frame) {
-	let B1: Value = null, B2: Value = null;
-	f.vars = () => [B1, B2];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	B1 = (yield* g.new_(f, T("/obj/item/weapon/reagent_containers/glass/beaker/bluespace"), [live(f.src)]));
-	B2 = (yield* g.new_(f, T("/obj/item/weapon/reagent_containers/glass/beaker/bluespace"), [live(f.src)]));
-	yield* g.callName(f, rt.fv(f, "reagents", live(B1)), "add_reagent", ["facid", 290]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(B1)), "add_reagent", ["potassium", 10]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(B2)), "add_reagent", ["phosphorus", 10]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(B2)), "add_reagent", ["sugar", 10]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(B2)), "add_reagent", ["facid", 280]);
-	rt.modSrcVar(f, "beakers", live(B1), add);
-	rt.modSrcVar(f, "beakers", live(B2), add);
+	f.dot = (yield* parent_proc());
+	let B1: Value = (yield* new_(T("/obj/item/weapon/reagent_containers/glass/beaker/bluespace"), this));
+	let B2: Value = (yield* new_(T("/obj/item/weapon/reagent_containers/glass/beaker/bluespace"), this));
+	yield* B1.reagents.add_reagent("facid", 290);
+	yield* B1.reagents.add_reagent("potassium", 10);
+	yield* B2.reagents.add_reagent("phosphorus", 10);
+	yield* B2.reagents.add_reagent("sugar", 10);
+	yield* B2.reagents.add_reagent("facid", 280);
+	this.beakers += B1;
+	this.beakers += B2;
 	return f.dot;
 }, true);
 
@@ -579,19 +495,17 @@ rt.type(6893, "/obj/item/weapon/grenade/chem_grenade/colorful", "/obj/item/weapo
 	desc: "Used for wide scale painting projects.",
 });
 
-// /obj/item/weapon/grenade/chem_grenade/colorful/proc/Initialize  (code/game/objects/items/weapons/grenades/chem_grenade.dm:448)  may sleep
+// chem_grenade.dm:448
 rt.def("/obj/item/weapon/grenade/chem_grenade/colorful/proc/Initialize", function* Initialize(f: Frame) {
-	let B1: Value = null, B2: Value = null;
-	f.vars = () => [B1, B2];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	B1 = (yield* g.new_(f, T("/obj/item/weapon/reagent_containers/glass/beaker"), [live(f.src)]));
-	B2 = (yield* g.new_(f, T("/obj/item/weapon/reagent_containers/glass/beaker"), [live(f.src)]));
-	yield* g.callName(f, rt.fv(f, "reagents", live(B1)), "add_reagent", ["colorful_reagent", 25]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(B1)), "add_reagent", ["potassium", 25]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(B2)), "add_reagent", ["phosphorus", 25]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(B2)), "add_reagent", ["sugar", 25]);
-	rt.modSrcVar(f, "beakers", live(B1), add);
-	rt.modSrcVar(f, "beakers", live(B2), add);
+	f.dot = (yield* parent_proc());
+	let B1: Value = (yield* new_(T("/obj/item/weapon/reagent_containers/glass/beaker"), this));
+	let B2: Value = (yield* new_(T("/obj/item/weapon/reagent_containers/glass/beaker"), this));
+	yield* B1.reagents.add_reagent("colorful_reagent", 25);
+	yield* B1.reagents.add_reagent("potassium", 25);
+	yield* B2.reagents.add_reagent("phosphorus", 25);
+	yield* B2.reagents.add_reagent("sugar", 25);
+	this.beakers += B1;
+	this.beakers += B2;
 	return f.dot;
 }, true);
 
@@ -602,19 +516,17 @@ rt.type(6894, "/obj/item/weapon/grenade/chem_grenade/glitter", "/obj/item/weapon
 	desc: "You shouldn't see this description.",
 });
 
-// /obj/item/weapon/grenade/chem_grenade/glitter/proc/Initialize  (code/game/objects/items/weapons/grenades/chem_grenade.dm:467)  may sleep
+// chem_grenade.dm:467
 rt.def("/obj/item/weapon/grenade/chem_grenade/glitter/proc/Initialize", function* Initialize(f: Frame) {
-	let B1: Value = null, B2: Value = null;
-	f.vars = () => [B1, B2];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	B1 = (yield* g.new_(f, T("/obj/item/weapon/reagent_containers/glass/beaker"), [live(f.src)]));
-	B2 = (yield* g.new_(f, T("/obj/item/weapon/reagent_containers/glass/beaker"), [live(f.src)]));
-	yield* g.callName(f, rt.fv(f, "reagents", live(B1)), "add_reagent", [rt.sv(f, "glitter_type"), 25]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(B1)), "add_reagent", ["potassium", 25]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(B2)), "add_reagent", ["phosphorus", 25]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(B2)), "add_reagent", ["sugar", 25]);
-	rt.modSrcVar(f, "beakers", live(B1), add);
-	rt.modSrcVar(f, "beakers", live(B2), add);
+	f.dot = (yield* parent_proc());
+	let B1: Value = (yield* new_(T("/obj/item/weapon/reagent_containers/glass/beaker"), this));
+	let B2: Value = (yield* new_(T("/obj/item/weapon/reagent_containers/glass/beaker"), this));
+	yield* B1.reagents.add_reagent(this.glitter_type, 25);
+	yield* B1.reagents.add_reagent("potassium", 25);
+	yield* B2.reagents.add_reagent("phosphorus", 25);
+	yield* B2.reagents.add_reagent("sugar", 25);
+	this.beakers += B1;
+	this.beakers += B2;
 	return f.dot;
 }, true);
 
@@ -624,19 +536,17 @@ rt.type(6898, "/obj/item/weapon/grenade/chem_grenade/clf3", "/obj/item/weapon/gr
 	desc: "BURN!-brand foaming clf3. In a special applicator for rapid purging of wide areas.",
 });
 
-// /obj/item/weapon/grenade/chem_grenade/clf3/proc/Initialize  (code/game/objects/items/weapons/grenades/chem_grenade.dm:500)  may sleep
+// chem_grenade.dm:500
 rt.def("/obj/item/weapon/grenade/chem_grenade/clf3/proc/Initialize", function* Initialize(f: Frame) {
-	let B1: Value = null, B2: Value = null;
-	f.vars = () => [B1, B2];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	B1 = (yield* g.new_(f, T("/obj/item/weapon/reagent_containers/glass/beaker/bluespace"), [live(f.src)]));
-	B2 = (yield* g.new_(f, T("/obj/item/weapon/reagent_containers/glass/beaker/bluespace"), [live(f.src)]));
-	yield* g.callName(f, rt.fv(f, "reagents", live(B1)), "add_reagent", ["fluorosurfactant", 250]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(B1)), "add_reagent", ["clf3", 50]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(B2)), "add_reagent", ["water", 250]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(B2)), "add_reagent", ["clf3", 50]);
-	rt.modSrcVar(f, "beakers", live(B1), add);
-	rt.modSrcVar(f, "beakers", live(B2), add);
+	f.dot = (yield* parent_proc());
+	let B1: Value = (yield* new_(T("/obj/item/weapon/reagent_containers/glass/beaker/bluespace"), this));
+	let B2: Value = (yield* new_(T("/obj/item/weapon/reagent_containers/glass/beaker/bluespace"), this));
+	yield* B1.reagents.add_reagent("fluorosurfactant", 250);
+	yield* B1.reagents.add_reagent("clf3", 50);
+	yield* B2.reagents.add_reagent("water", 250);
+	yield* B2.reagents.add_reagent("clf3", 50);
+	this.beakers += B1;
+	this.beakers += B2;
 	return f.dot;
 }, true);
 
@@ -646,22 +556,20 @@ rt.type(6899, "/obj/item/weapon/grenade/chem_grenade/bioterrorfoam", "/obj/item/
 	desc: "Tiger Cooperative chemical foam grenade. Causes temporary irration, blindness, confusion, mutism, and mutations to carbon based life forms. Contains additional spore toxin",
 });
 
-// /obj/item/weapon/grenade/chem_grenade/bioterrorfoam/proc/Initialize  (code/game/objects/items/weapons/grenades/chem_grenade.dm:518)  may sleep
+// chem_grenade.dm:518
 rt.def("/obj/item/weapon/grenade/chem_grenade/bioterrorfoam/proc/Initialize", function* Initialize(f: Frame) {
-	let B1: Value = null, B2: Value = null;
-	f.vars = () => [B1, B2];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	B1 = (yield* g.new_(f, T("/obj/item/weapon/reagent_containers/glass/beaker/bluespace"), [live(f.src)]));
-	B2 = (yield* g.new_(f, T("/obj/item/weapon/reagent_containers/glass/beaker/bluespace"), [live(f.src)]));
-	yield* g.callName(f, rt.fv(f, "reagents", live(B1)), "add_reagent", ["cryptobiolin", 75]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(B1)), "add_reagent", ["water", 50]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(B1)), "add_reagent", ["mutetoxin", 50]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(B1)), "add_reagent", ["spore", 75]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(B1)), "add_reagent", ["itching_powder", 50]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(B2)), "add_reagent", ["fluorosurfactant", 150]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(B2)), "add_reagent", ["mutagen", 150]);
-	rt.modSrcVar(f, "beakers", live(B1), add);
-	rt.modSrcVar(f, "beakers", live(B2), add);
+	f.dot = (yield* parent_proc());
+	let B1: Value = (yield* new_(T("/obj/item/weapon/reagent_containers/glass/beaker/bluespace"), this));
+	let B2: Value = (yield* new_(T("/obj/item/weapon/reagent_containers/glass/beaker/bluespace"), this));
+	yield* B1.reagents.add_reagent("cryptobiolin", 75);
+	yield* B1.reagents.add_reagent("water", 50);
+	yield* B1.reagents.add_reagent("mutetoxin", 50);
+	yield* B1.reagents.add_reagent("spore", 75);
+	yield* B1.reagents.add_reagent("itching_powder", 50);
+	yield* B2.reagents.add_reagent("fluorosurfactant", 150);
+	yield* B2.reagents.add_reagent("mutagen", 150);
+	this.beakers += B1;
+	this.beakers += B2;
 	return f.dot;
 }, true);
 
@@ -671,19 +579,17 @@ rt.type(6900, "/obj/item/weapon/grenade/chem_grenade/tuberculosis", "/obj/item/w
 	desc: "WARNING: GRENADE WILL RELEASE DEADLY SPORES CONTAINING ACTIVE AGENTS. SEAL SUIT AND AIRFLOW BEFORE USE.",
 });
 
-// /obj/item/weapon/grenade/chem_grenade/tuberculosis/proc/Initialize  (code/game/objects/items/weapons/grenades/chem_grenade.dm:538)  may sleep
+// chem_grenade.dm:538
 rt.def("/obj/item/weapon/grenade/chem_grenade/tuberculosis/proc/Initialize", function* Initialize(f: Frame) {
-	let B1: Value = null, B2: Value = null;
-	f.vars = () => [B1, B2];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	B1 = (yield* g.new_(f, T("/obj/item/weapon/reagent_containers/glass/beaker/bluespace"), [live(f.src)]));
-	B2 = (yield* g.new_(f, T("/obj/item/weapon/reagent_containers/glass/beaker/bluespace"), [live(f.src)]));
-	yield* g.callName(f, rt.fv(f, "reagents", live(B1)), "add_reagent", ["potassium", 50]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(B1)), "add_reagent", ["phosphorus", 50]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(B1)), "add_reagent", ["fungalspores", 200]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(B2)), "add_reagent", ["blood", 250]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(B2)), "add_reagent", ["sugar", 50]);
-	rt.modSrcVar(f, "beakers", live(B1), add);
-	rt.modSrcVar(f, "beakers", live(B2), add);
+	f.dot = (yield* parent_proc());
+	let B1: Value = (yield* new_(T("/obj/item/weapon/reagent_containers/glass/beaker/bluespace"), this));
+	let B2: Value = (yield* new_(T("/obj/item/weapon/reagent_containers/glass/beaker/bluespace"), this));
+	yield* B1.reagents.add_reagent("potassium", 50);
+	yield* B1.reagents.add_reagent("phosphorus", 50);
+	yield* B1.reagents.add_reagent("fungalspores", 200);
+	yield* B2.reagents.add_reagent("blood", 250);
+	yield* B2.reagents.add_reagent("sugar", 50);
+	this.beakers += B1;
+	this.beakers += B2;
 	return f.dot;
 }, true);

@@ -1,7 +1,7 @@
-// From code/modules/modular_computers/file_system/programs/antagonist/dos.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/modular_computers/file_system/programs/antagonist/dos.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, add } = rt;
 
 
 rt.type(4171, "/datum/computer_file/program/ntnet_dos", "/datum/computer_file/program", {
@@ -23,134 +23,110 @@ rt.type(4171, "/datum/computer_file/program/ntnet_dos", "/datum/computer_file/pr
 	ui_y: 250,
 });
 
-// /datum/computer_file/program/ntnet_dos/proc/process_tick  (code/modules/modular_computers/file_system/programs/antagonist/dos.dm:22)
+// dos.dm:22
 rt.def("/datum/computer_file/program/ntnet_dos/proc/process_tick", function process_tick(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	rt.setSv(f, "dos_speed", 0);
-	$0 = rt.sv(f, "ntnet_status");
-	if ($0 === 1) {
-		rt.setSv(f, "dos_speed", 5);
-	} else if ($0 === 2) {
-		rt.setSv(f, "dos_speed", 10);
-	} else if ($0 === 3) {
-		rt.setSv(f, "dos_speed", 20);
+	this.dos_speed = 0;
+	if (this.ntnet_status === 1) {
+		this.dos_speed = 5;
+	} else if (this.ntnet_status === 2) {
+		this.dos_speed = 10;
+	} else if (this.ntnet_status === 3) {
+		this.dos_speed = 20;
 	}
-	if (!(truthy(rt.sv(f, "target")) && truthy(rt.sv(f, "executed")))) return f.dot;
-	rt.modField(f, rt.sv(f, "target"), "dos_overload", rt.sv(f, "dos_speed"), add);
-	if (truthy(rt.callName(f, rt.sv(f, "target"), "is_operational", []))) return f.dot;
-	rt.callName(f, rt.fv(f, "dos_sources", rt.sv(f, "target")), "Remove", [live(f.src)]);
-	rt.setSv(f, "target", null);
-	rt.setSv(f, "error", "Connection to destination relay lost.");
+	if (!(this.target && this.executed)) return f.dot;
+	this.target.dos_overload += this.dos_speed;
+	if (this.target.is_operational()) return f.dot;
+	this.target.dos_sources.Remove(this);
+	this.target = null;
+	this.error = "Connection to destination relay lost.";
 	return f.dot;
 });
 
-// /datum/computer_file/program/ntnet_dos/proc/kill_program  (code/modules/modular_computers/file_system/programs/antagonist/dos.dm:38)
+// dos.dm:38
 rt.def("/datum/computer_file/program/ntnet_dos/proc/kill_program", function kill_program(f: Frame) {
-	if (live(f.args[0]) === null) {
+	if (f.args[0] === null) {
 		f.args[0] = 0;
 	}
-	if (truthy(rt.sv(f, "target"))) {
-		rt.callName(f, rt.fv(f, "dos_sources", rt.sv(f, "target")), "Remove", [live(f.src)]);
+	if (this.target) {
+		this.target.dos_sources.Remove(this);
 	}
-	rt.setSv(f, "target", null);
-	rt.setSv(f, "executed", 0);
-	rt.callSuper(f, [], rt.Args.Same);
+	this.target = null;
+	this.executed = 0;
+	parent_proc();
 	return f.dot;
 }, false, { args: ["forced"] });
 
-// /datum/computer_file/program/ntnet_dos/proc/ui_act  (code/modules/modular_computers/file_system/programs/antagonist/dos.dm:45)  may sleep
-rt.def("/datum/computer_file/program/ntnet_dos/proc/ui_act", function* ui_act(f: Frame) {
+// dos.dm:45
+rt.def("/datum/computer_file/program/ntnet_dos/proc/ui_act", function* ui_act(f: Frame, action: Value, params: Value) {
 	let R: Value = null, network_card: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [R, network_card, $0, $e];
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
+	let $e: any;
+	if (yield* parent_proc()) {
 		return 1;
 	}
-	$0 = live(f.args[0]);
-	if ($0 === "PRG_target_relay") {
-		R = null;
-		rt.forList(f, 0, rt.fv(f, "relays", rt.gl("ntnet_global")), T("/obj/machinery/ntnet_relay"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			R = $e;
-			if (isEqual(fmt("＀", [rt.fv(f, "uid", live(R))]), rt.at(live(f.args[1]), "targid"))) {
-				rt.setSv(f, "target", live(R));
+	if (action === "PRG_target_relay") {
+		for (R of each(GLOB.ntnet_global.relays, T("/obj/machinery/ntnet_relay"))) {
+			if (`${R.uid}` == rt.at(params, "targid")) {
+				this.target = R;
 			}
 		}
-		rt.endFor(f, 0);
 		return 1;
-	} else if ($0 === "PRG_reset") {
-		if (truthy(rt.sv(f, "target"))) {
-			yield* g.callName(f, rt.fv(f, "dos_sources", rt.sv(f, "target")), "Remove", [live(f.src)]);
-			rt.setSv(f, "target", null);
+	} else if (action === "PRG_reset") {
+		if (this.target) {
+			yield* this.target.dos_sources.Remove(this);
+			this.target = null;
 		}
-		rt.setSv(f, "executed", 0);
-		rt.setSv(f, "error", "");
+		this.executed = 0;
+		this.error = "";
 		return 1;
-	} else if ($0 === "PRG_execute") {
-		if (truthy(rt.sv(f, "target"))) {
-			rt.setSv(f, "executed", 1);
-			yield* g.callName(f, rt.fv(f, "dos_sources", rt.sv(f, "target")), "Add", [live(f.src)]);
-			if (truthy(rt.fv(f, "intrusion_detection_enabled", rt.gl("ntnet_global")))) {
-				network_card = rt.index(rt.fv(f, "all_components", rt.sv(f, "computer")), "NET");
-				yield* g.callName(f, rt.gl("ntnet_global"), "add_log", [fmt("IDS WARNING - Excess traffic flood targeting relay ＀ detected from device: ＀", [rt.fv(f, "uid", rt.sv(f, "target")), (yield* g.callName(f, live(network_card), "get_network_tag", []))])]);
-				rt.setFv(f, "intrusion_detection_alarm", rt.gl("ntnet_global"), 1);
+	} else if (action === "PRG_execute") {
+		if (this.target) {
+			this.executed = 1;
+			this.target.dos_sources.Add(this);
+			if (GLOB.ntnet_global.intrusion_detection_enabled) {
+				network_card = rt.index(this.computer.all_components, "NET");
+				yield* GLOB.ntnet_global.add_log(`IDS WARNING - Excess traffic flood targeting relay ${this.target.uid} detected from device: ${network_card.get_network_tag()}`);
+				GLOB.ntnet_global.intrusion_detection_alarm = 1;
 			}
 		}
 		return 1;
 	}
 	return f.dot;
-}, true, { args: ["action", "params"] });
+}, true);
 
-// /datum/computer_file/program/ntnet_dos/proc/ui_data  (code/modules/modular_computers/file_system/programs/antagonist/dos.dm:71)
+// dos.dm:71
 rt.def("/datum/computer_file/program/ntnet_dos/proc/ui_data", function ui_data(f: Frame, user: Value) {
-	let data: Value = null, percentage: Value = null, j: Value = null, string: Value = null, i: Value = null, R: Value = null;
-	let $0: any, $1: any, $2: any, $e: any;
-	f.vars = () => [data, percentage, j, string, i, R, $0, $1, $2, $e];
-	if (!truthy(rt.gl("ntnet_global"))) {
-		return live(f.dot);
+	let percentage: Value = null, j: Value = null, string: Value = null, i: Value = null, R: Value = null;
+	let $e: any;
+	if (!GLOB.ntnet_global) {
+		return f.dot;
 	}
-	data = rt.list();
-	data = rt.callSrc(f, "get_header_data", []);
-	if (truthy(rt.sv(f, "error"))) {
-		rt.setAt(live(data), "error", rt.sv(f, "error"));
-	} else {
-		if ((truthy(rt.sv(f, "target")) && truthy(rt.sv(f, "executed")))) {
-			rt.setAt(live(data), "target", 1);
-			rt.setAt(live(data), "speed", rt.sv(f, "dos_speed"));
-			percentage = divide(multiply(rt.fv(f, "dos_overload", rt.sv(f, "target")), 100), rt.fv(f, "dos_capacity", rt.sv(f, "target")));
-			rt.setAt(live(data), "dos_strings", rt.list());
-			j = null;
-			live(j);
-			while (rt.lt(live(j), 10)) {
-				string = "";
-				i = null;
-				live(i);
-				while (rt.lt(live(i), 20)) {
-					string = fmt("＀＀", [live(string), rt.op(f, "Prob", [], [live(percentage)])]);
-					i = rt.inc(live(i), 1);
-				}
-				rt.modAt(live(data), "dos_strings", rt.list(rt.alist(f, ["nums", live(string)])), add);
-				j = rt.inc(live(j), 1);
+	let data: Value = list();
+	data = this.get_header_data();
+	if (this.error) {
+		rt.setAt(data, "error", this.error);
+	} else if (this.target && this.executed) {
+		rt.setAt(data, "target", 1);
+		rt.setAt(data, "speed", this.dos_speed);
+		percentage = this.target.dos_overload * 100 / this.target.dos_capacity;
+		rt.setAt(data, "dos_strings", list());
+		j;
+		while (j < 10) {
+			string = "";
+			i = null;
+			i;
+			while (i < 20) {
+				string = `${string}${prob(percentage)}`;
+				i++;
 			}
-		} else {
-			rt.setAt(live(data), "relays", rt.list());
-			R = null;
-			rt.forList(f, 0, rt.fv(f, "relays", rt.gl("ntnet_global")), T("/obj/machinery/ntnet_relay"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				R = $e;
-				rt.modAt(live(data), "relays", rt.list(rt.alist(f, ["id", rt.fv(f, "uid", live(R))])), add);
-			}
-			rt.endFor(f, 0);
-			$0 = live(data);
-			$1 = "focus";
-			if (truthy(rt.sv(f, "target"))) {
-				$2 = rt.fv(f, "uid", rt.sv(f, "target"));
-			} else {
-				$2 = null;
-			}
-			rt.setAt($0, $1, $2);
+			rt.modAt(data, "dos_strings", list(rt.alist(f, ["nums", string])), add);
+			j++;
 		}
+	} else {
+		rt.setAt(data, "relays", list());
+		for (R of each(GLOB.ntnet_global.relays, T("/obj/machinery/ntnet_relay"))) {
+			rt.modAt(data, "relays", list(rt.alist(f, ["id", R.uid])), add);
+		}
+		rt.setAt(data, "focus", this.target ? this.target.uid : null);
 	}
-	return live(data);
+	return data;
 });

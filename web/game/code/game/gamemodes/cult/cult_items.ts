@@ -1,7 +1,7 @@
-// From code/game/gamemodes/cult/cult_items.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/gamemodes/cult/cult_items.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, g, fmt } = rt;
 
 
 rt.type(5657, "/obj/item/weapon/melee/cultblade", "/obj/item/weapon/melee", {
@@ -18,42 +18,41 @@ rt.type(5657, "/obj/item/weapon/melee/cultblade", "/obj/item/weapon/melee", {
 	attack_verb: null,
 });
 
-// /obj/item/weapon/melee/cultblade/proc/attack  (code/game/gamemodes/cult/cult_items.dm:16)  may sleep
-rt.def("/obj/item/weapon/melee/cultblade/proc/attack", function* attack(f: Frame) {
+// cult_items.dm:16
+rt.def("/obj/item/weapon/melee/cultblade/proc/attack", function* attack(f: Frame, target: Value, user: Value) {
 	let H: Value = null;
-	f.vars = () => [H];
-	if (!truthy((yield* g.call(f, P("/proc/iscultist"), null, [live(f.args[1])])))) {
-		yield* g.callName(f, live(f.args[1]), "Knockdown", [100]);
-		yield* g.callName(f, live(f.args[1]), "dropItemToGround", [live(f.src), 1]);
-		yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='warning'>A powerful force shoves ＀ away from ＀!</span>", [live(f.args[1]), live(f.args[0])]), "<span class='cultlarge'>\"You shouldn't play with sharp things. You'll poke someone's eye out.\"</span>"]);
-		if (truthy((rt.istype(live(f.args[1]), T("/mob/living/carbon/human")) ? 1 : 0))) {
-			yield* g.callName(f, (H = live(f.args[1])), "apply_damage", [(yield* g.call(f, P("/proc/rand"), null, [divide(rt.sv(f, "force"), 2), rt.sv(f, "force")])), "brute", rt.op(f, "PickUnweighted", [2], ["l_arm", "r_arm"])]);
+	if (!iscultist(user)) {
+		yield* user.Knockdown(100);
+		yield* user.dropItemToGround(this, 1);
+		user.visible_message(`<span class='warning'>A powerful force shoves ${user} away from ${target}!</span>`, "<span class='cultlarge'>\"You shouldn't play with sharp things. You'll poke someone's eye out.\"</span>");
+		if (rt.istype(user, T("/mob/living/carbon/human"))) {
+			yield* (H = user).apply_damage(rand(this.force / 2, this.force), "brute", pick("l_arm", "r_arm"));
 		} else {
-			yield* g.callName(f, live(f.args[1]), "adjustBruteLoss", [(yield* g.call(f, P("/proc/rand"), null, [divide(rt.sv(f, "force"), 2), rt.sv(f, "force")]))]);
+			yield* user.adjustBruteLoss(rand(this.force / 2, this.force));
 		}
-		return live(f.dot);
+		return f.dot;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["target", "user"] });
+}, true);
 
-// /obj/item/weapon/melee/cultblade/proc/pickup  (code/game/gamemodes/cult/cult_items.dm:35)  may sleep
-rt.def("/obj/item/weapon/melee/cultblade/proc/pickup", function* pickup(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy((yield* g.call(f, P("/proc/iscultist"), null, [live(f.args[0])])))) return f.dot;
-	if (!truthy((yield* g.call(f, P("/proc/is_servant_of_ratvar"), null, [live(f.args[0])])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='cultlarge'>\"I wouldn't advise that.\"</span>"]);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='warning'>An overwhelming sense of nausea overpowers you!</span>"]);
-		yield* g.callName(f, live(f.args[0]), "Dizzy", [120]);
+// cult_items.dm:35
+rt.def("/obj/item/weapon/melee/cultblade/proc/pickup", function* pickup(f: Frame, user: Value) {
+	yield* parent_proc();
+	if (iscultist(user)) return f.dot;
+	if (!is_servant_of_ratvar(user)) {
+		to_chat(user, "<span class='cultlarge'>\"I wouldn't advise that.\"</span>");
+		to_chat(user, "<span class='warning'>An overwhelming sense of nausea overpowers you!</span>");
+		user.Dizzy(120);
 	} else {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='cultlarge'>\"One of Ratvar's toys is trying to play with things ＀ shouldn't. Cute.\"</span>", [(yield* g.callName(f, live(f.args[0]), "p_they", []))])]);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='userdanger'>A horrible force yanks at your arm!</span>"]);
-		yield* g.callName(f, live(f.args[0]), "emote", ["scream"]);
-		yield* g.callName(f, live(f.args[0]), "apply_damage", [30, "brute", rt.op(f, "PickUnweighted", [2], ["l_arm", "r_arm"])]);
-		yield* g.callName(f, live(f.args[0]), "dropItemToGround", [live(f.src)]);
+		to_chat(user, `<span class='cultlarge'>"One of Ratvar's toys is trying to play with things ${user.p_they()} shouldn't. Cute."</span>`);
+		to_chat(user, "<span class='userdanger'>A horrible force yanks at your arm!</span>");
+		yield* user.emote("scream");
+		yield* user.apply_damage(30, "brute", pick("l_arm", "r_arm"));
+		yield* user.dropItemToGround(this);
 	}
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
 rt.type(5659, "/obj/item/weapon/melee/cultblade/dagger", "/obj/item/weapon/melee/cultblade", {
 	name: "sacrificial dagger",
@@ -66,17 +65,16 @@ rt.type(5659, "/obj/item/weapon/melee/cultblade/dagger", "/obj/item/weapon/melee
 	embed_chance: 75,
 });
 
-// /obj/item/weapon/melee/cultblade/dagger/proc/attack  (code/game/gamemodes/cult/cult_items.dm:59)  may sleep
-rt.def("/obj/item/weapon/melee/cultblade/dagger/proc/attack", function* attack(f: Frame) {
+// cult_items.dm:59
+rt.def("/obj/item/weapon/melee/cultblade/dagger/proc/attack", function* attack(f: Frame, target: Value, user: Value) {
 	let C: Value = null;
-	f.vars = () => [C];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon")) ? 1 : 0))) return f.dot;
-	yield* g.callName(f, (C = live(f.args[0])), "bleed", [50]);
-	if (!(truthy((yield* g.call(f, P("/proc/is_servant_of_ratvar"), null, [live(C)]))) && truthy(rt.fv(f, "reagents", live(C))))) return f.dot;
-	yield* g.callName(f, rt.fv(f, "reagents", live(C)), "add_reagent", ["heparin", 1]);
+	yield* parent_proc();
+	if (!rt.istype(target, T("/mob/living/carbon"))) return f.dot;
+	yield* (C = target).bleed(50);
+	if (!(is_servant_of_ratvar(C) && C.reagents)) return f.dot;
+	yield* C.reagents.add_reagent("heparin", 1);
 	return f.dot;
-}, true, { args: ["target", "user"] });
+}, true);
 
 rt.type(8025, "/obj/item/clothing/head/culthood", "/obj/item/clothing/head", {
 	name: "ancient cultist hood",
@@ -91,12 +89,10 @@ rt.type(8025, "/obj/item/clothing/head/culthood", "/obj/item/clothing/head", {
 	max_heat_protection_temperature: 600,
 });
 
-// /obj/item/clothing/head/culthood/proc/<init>  (code/game/gamemodes/cult/cult_items.dm:81)
+// cult_items.dm:81
 rt.def("/obj/item/clothing/head/culthood/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 30, "bullet", 10, "laser", 5, "energy", 5, "bomb", 0, "bio", 0, "rad", 0, "fire", 10, "acid", 10]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 30, "bullet", 10, "laser", 5, "energy", 5, "bomb", 0, "bio", 0, "rad", 0, "fire", 10, "acid", 10]);
 	return f.dot;
 });
 
@@ -115,13 +111,11 @@ rt.type(7805, "/obj/item/clothing/suit/cultrobes", "/obj/item/clothing/suit", {
 	max_heat_protection_temperature: 600,
 });
 
-// /obj/item/clothing/suit/cultrobes/proc/<init>  (code/game/gamemodes/cult/cult_items.dm:93)
+// cult_items.dm:93
 rt.def("/obj/item/clothing/suit/cultrobes/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/weapon/tome"), T("/obj/item/weapon/melee/cultblade")));
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 50, "bullet", 30, "laser", 50, "energy", 20, "bomb", 25, "bio", 10, "rad", 0, "fire", 10, "acid", 10]));
+	parent_proc();
+	this.allowed = list(T("/obj/item/weapon/tome"), T("/obj/item/weapon/melee/cultblade"));
+	this.armor = rt.alist(f, ["melee", 50, "bullet", 30, "laser", 50, "energy", 20, "bomb", 25, "bio", 10, "rad", 0, "fire", 10, "acid", 10]);
 	return f.dot;
 });
 
@@ -135,12 +129,10 @@ rt.type(8028, "/obj/item/clothing/head/magus", "/obj/item/clothing/head", {
 	flags_cover: 20,
 });
 
-// /obj/item/clothing/head/magus/proc/<init>  (code/game/gamemodes/cult/cult_items.dm:127)
+// cult_items.dm:127
 rt.def("/obj/item/clothing/head/magus/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 30, "bullet", 30, "laser", 30, "energy", 20, "bomb", 0, "bio", 0, "rad", 0, "fire", 10, "acid", 10]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 30, "bullet", 30, "laser", 30, "energy", 20, "bomb", 0, "bio", 0, "rad", 0, "fire", 10, "acid", 10]);
 	return f.dot;
 });
 
@@ -155,13 +147,11 @@ rt.type(7808, "/obj/item/clothing/suit/magusred", "/obj/item/clothing/suit", {
 	flags_inv: 13,
 });
 
-// /obj/item/clothing/suit/magusred/proc/<init>  (code/game/gamemodes/cult/cult_items.dm:136)
+// cult_items.dm:136
 rt.def("/obj/item/clothing/suit/magusred/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/weapon/tome"), T("/obj/item/weapon/melee/cultblade")));
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 50, "bullet", 30, "laser", 50, "energy", 20, "bomb", 25, "bio", 10, "rad", 0, "fire", 10, "acid", 10]));
+	parent_proc();
+	this.allowed = list(T("/obj/item/weapon/tome"), T("/obj/item/weapon/melee/cultblade"));
+	this.armor = rt.alist(f, ["melee", 50, "bullet", 30, "laser", 50, "energy", 20, "bomb", 25, "bio", 10, "rad", 0, "fire", 10, "acid", 10]);
 	return f.dot;
 });
 
@@ -175,14 +165,12 @@ rt.type(7936, "/obj/item/clothing/head/helmet/space/hardsuit/cult", "/obj/item/c
 	actions_types: null,
 });
 
-// /obj/item/clothing/head/helmet/space/hardsuit/cult/proc/<init>  (code/game/gamemodes/cult/cult_items.dm:145)
+// cult_items.dm:145
 rt.def("/obj/item/clothing/head/helmet/space/hardsuit/cult/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 60, "bullet", 50, "laser", 30, "energy", 15, "bomb", 30, "bio", 30, "rad", 30, "fire", 40, "acid", 75]));
-	$0 = $0;
-	rt.setSv(f, "actions_types", rt.list());
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 60, "bullet", 50, "laser", 30, "energy", 15, "bomb", 30, "bio", 30, "rad", 30, "fire", 40, "acid", 75]);
+
+	this.actions_types = list();
 	return f.dot;
 });
 
@@ -197,13 +185,11 @@ rt.type(7703, "/obj/item/clothing/suit/space/hardsuit/cult", "/obj/item/clothing
 	helmettype: rt.typePath("/obj/item/clothing/head/helmet/space/hardsuit/cult"),
 });
 
-// /obj/item/clothing/suit/space/hardsuit/cult/proc/<init>  (code/game/gamemodes/cult/cult_items.dm:155)
+// cult_items.dm:155
 rt.def("/obj/item/clothing/suit/space/hardsuit/cult/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/weapon/tome"), T("/obj/item/weapon/melee/cultblade"), T("/obj/item/weapon/tank/internals")));
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 70, "bullet", 50, "laser", 30, "energy", 15, "bomb", 30, "bio", 30, "rad", 30, "fire", 40, "acid", 75]));
+	parent_proc();
+	this.allowed = list(T("/obj/item/weapon/tome"), T("/obj/item/weapon/melee/cultblade"), T("/obj/item/weapon/tank/internals"));
+	this.armor = rt.alist(f, ["melee", 70, "bullet", 50, "laser", 30, "energy", 15, "bomb", 30, "bio", 30, "rad", 30, "fire", 40, "acid", 75]);
 	return f.dot;
 });
 
@@ -220,14 +206,12 @@ rt.type(7811, "/obj/item/clothing/suit/hooded/cultrobes/cult_shield", "/obj/item
 	hoodtype: rt.typePath("/obj/item/clothing/head/hooded/cult_hoodie"),
 });
 
-// /obj/item/clothing/suit/hooded/cultrobes/cult_shield/proc/<init>  (code/game/gamemodes/cult/cult_items.dm:173)
+// cult_items.dm:173
 rt.def("/obj/item/clothing/suit/hooded/cultrobes/cult_shield/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 50, "bullet", 40, "laser", 50, "energy", 30, "bomb", 50, "bio", 30, "rad", 30, "fire", 50, "acid", 60]));
-	$0 = $0;
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/weapon/tome"), T("/obj/item/weapon/melee/cultblade")));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 50, "bullet", 40, "laser", 50, "energy", 30, "bomb", 50, "bio", 30, "rad", 30, "fire", 50, "acid", 60]);
+
+	this.allowed = list(T("/obj/item/weapon/tome"), T("/obj/item/weapon/melee/cultblade"));
 	return f.dot;
 });
 
@@ -240,68 +224,57 @@ rt.type(8030, "/obj/item/clothing/head/hooded/cult_hoodie", "/obj/item/clothing/
 	flags_inv: 416,
 });
 
-// /obj/item/clothing/head/hooded/cult_hoodie/proc/<init>  (code/game/gamemodes/cult/cult_items.dm:183)
+// cult_items.dm:183
 rt.def("/obj/item/clothing/head/hooded/cult_hoodie/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 50, "bullet", 40, "laser", 50, "energy", 30, "bomb", 50, "bio", 30, "rad", 30, "fire", 50, "acid", 50]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 50, "bullet", 40, "laser", 50, "energy", 30, "bomb", 50, "bio", 30, "rad", 30, "fire", 50, "acid", 50]);
 	return f.dot;
 });
 
-// /obj/item/clothing/suit/hooded/cultrobes/cult_shield/proc/equipped  (code/game/gamemodes/cult/cult_items.dm:188)  may sleep
-rt.def("/obj/item/clothing/suit/hooded/cultrobes/cult_shield/proc/equipped", function* equipped(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy((yield* g.call(f, P("/proc/iscultist"), null, [live(f.args[0])])))) return f.dot;
-	if (!truthy((yield* g.call(f, P("/proc/is_servant_of_ratvar"), null, [live(f.args[0])])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='cultlarge'>\"I wouldn't advise that.\"</span>"]);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='warning'>An overwhelming sense of nausea overpowers you!</span>"]);
-		yield* g.callName(f, live(f.args[0]), "dropItemToGround", [live(f.src), 1]);
-		yield* g.callName(f, live(f.args[0]), "Dizzy", [30]);
-		yield* g.callName(f, live(f.args[0]), "Knockdown", [100]);
+// cult_items.dm:188
+rt.def("/obj/item/clothing/suit/hooded/cultrobes/cult_shield/proc/equipped", function* equipped(f: Frame, user: Value, slot: Value) {
+	yield* parent_proc();
+	if (iscultist(user)) return f.dot;
+	if (!is_servant_of_ratvar(user)) {
+		to_chat(user, "<span class='cultlarge'>\"I wouldn't advise that.\"</span>");
+		to_chat(user, "<span class='warning'>An overwhelming sense of nausea overpowers you!</span>");
+		yield* user.dropItemToGround(this, 1);
+		user.Dizzy(30);
+		yield* user.Knockdown(100);
 	} else {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='cultlarge'>\"Trying to use things you don't own is bad, you know.\"</span>"]);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='userdanger'>The armor squeezes at your body!</span>"]);
-		yield* g.callName(f, live(f.args[0]), "emote", ["scream"]);
-		yield* g.callName(f, live(f.args[0]), "adjustBruteLoss", [25]);
-		yield* g.callName(f, live(f.args[0]), "dropItemToGround", [live(f.src), 1]);
+		to_chat(user, "<span class='cultlarge'>\"Trying to use things you don't own is bad, you know.\"</span>");
+		to_chat(user, "<span class='userdanger'>The armor squeezes at your body!</span>");
+		yield* user.emote("scream");
+		yield* user.adjustBruteLoss(25);
+		yield* user.dropItemToGround(this, 1);
 	}
 	return f.dot;
-}, true, { args: ["user", "slot"] });
+}, true);
 
-// /obj/item/clothing/suit/hooded/cultrobes/cult_shield/proc/hit_reaction  (code/game/gamemodes/cult/cult_items.dm:205)  may sleep
+// cult_items.dm:205
 rt.def("/obj/item/clothing/suit/hooded/cultrobes/cult_shield/proc/hit_reaction", function* hit_reaction(f: Frame, owner: Value, hitby: Value, attack_text: Value, final_block_chance: Value, damage: Value, attack_type: Value) {
-	f.vars = () => [owner, hitby, attack_text, final_block_chance, damage, attack_type];
-	if (live(attack_text) === null) {
-		attack_text = "the attack";
-	}
-	if (live(final_block_chance) === null) {
-		final_block_chance = 0;
-	}
-	if (live(damage) === null) {
-		damage = 0;
-	}
-	if (live(attack_type) === null) {
-		attack_type = 1;
-	}
-	if (truthy(rt.sv(f, "current_charges"))) {
-		yield* g.callName(f, live(owner), "visible_message", [fmt("<span class='danger'>＄！ is deflected in a burst of blood-red sparks!</span>", [live(attack_text)])]);
-		rt.incSrcVar(f, "current_charges", -1, true);
-		yield* g.new_(f, T("/obj/effect/temp_visual/cult/sparks"), [rt.getStep(f, live(owner), 0)]);
-		if (!truthy(rt.sv(f, "current_charges"))) {
-			yield* g.callName(f, live(owner), "visible_message", [fmt("<span class='danger'>The runed shield around ＀ suddenly disappears!</span>", [live(owner)])]);
-			yield* g.callName(f, live(owner), "update_inv_wear_suit", []);
+	attack_text ??= "the attack";
+	final_block_chance ??= 0;
+	damage ??= 0;
+	attack_type ??= 1;
+	if (this.current_charges) {
+		owner.visible_message(fmt("<span class='danger'>＄！ is deflected in a burst of blood-red sparks!</span>", [attack_text]));
+		this.current_charges--;
+		yield* new_(T("/obj/effect/temp_visual/cult/sparks"), rt.getStep(f, owner, 0));
+		if (!this.current_charges) {
+			owner.visible_message(`<span class='danger'>The runed shield around ${owner} suddenly disappears!</span>`);
+			yield* owner.update_inv_wear_suit();
 		}
 		return 1;
 	}
 	return 0;
 }, true);
 
-// /obj/item/clothing/suit/hooded/cultrobes/cult_shield/proc/worn_overlays  (code/game/gamemodes/cult/cult_items.dm:215)
+// cult_items.dm:215
 rt.def("/obj/item/clothing/suit/hooded/cultrobes/cult_shield/proc/worn_overlays", function worn_overlays(f: Frame, isinhands: Value) {
-	f.dot = rt.list();
-	if (!(!truthy(live(isinhands)) && truthy(rt.sv(f, "current_charges")))) return f.dot;
-	f.dot = rt.modify(live(f.dot), rt.call(f, P("/proc/mutable_appearance"), null, [rt.rsc("icons/effects/cult_effects.dmi"), "shield-cult", 4.010000228881836]), add);
+	f.dot = list();
+	if (!(!isinhands && this.current_charges)) return f.dot;
+	f.dot += mutable_appearance(rt.rsc("icons/effects/cult_effects.dmi"), "shield-cult", 4.01);
 	return f.dot;
 });
 
@@ -318,13 +291,11 @@ rt.type(7812, "/obj/item/clothing/suit/hooded/cultrobes/berserker", "/obj/item/c
 	hoodtype: rt.typePath("/obj/item/clothing/head/hooded/berserkerhood"),
 });
 
-// /obj/item/clothing/suit/hooded/cultrobes/berserker/proc/<init>  (code/game/gamemodes/cult/cult_items.dm:225)
+// cult_items.dm:225
 rt.def("/obj/item/clothing/suit/hooded/cultrobes/berserker/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/weapon/tome"), T("/obj/item/weapon/melee/cultblade")));
-	rt.setSv(f, "armor", rt.alist(f, ["melee", -50, "bullet", -50, "laser", -50, "energy", -50, "bomb", -50, "bio", -50, "rad", -50, "fire", 0, "acid", 0]));
+	parent_proc();
+	this.allowed = list(T("/obj/item/weapon/tome"), T("/obj/item/weapon/melee/cultblade"));
+	this.armor = rt.alist(f, ["melee", -50, "bullet", -50, "laser", -50, "energy", -50, "bomb", -50, "bio", -50, "rad", -50, "fire", 0, "acid", 0]);
 	return f.dot;
 });
 
@@ -337,34 +308,32 @@ rt.type(8031, "/obj/item/clothing/head/hooded/berserkerhood", "/obj/item/clothin
 	armor: null,
 });
 
-// /obj/item/clothing/head/hooded/berserkerhood/proc/<init>  (code/game/gamemodes/cult/cult_items.dm:237)
+// cult_items.dm:237
 rt.def("/obj/item/clothing/head/hooded/berserkerhood/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", -50, "bullet", -50, "laser", -50, "energy", -50, "bomb", -50, "bio", -50, "rad", -50, "fire", 0, "acid", 0]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", -50, "bullet", -50, "laser", -50, "energy", -50, "bomb", -50, "bio", -50, "rad", -50, "fire", 0, "acid", 0]);
 	return f.dot;
 });
 
-// /obj/item/clothing/suit/hooded/cultrobes/berserker/proc/equipped  (code/game/gamemodes/cult/cult_items.dm:240)  may sleep
-rt.def("/obj/item/clothing/suit/hooded/cultrobes/berserker/proc/equipped", function* equipped(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy((yield* g.call(f, P("/proc/iscultist"), null, [live(f.args[0])])))) return f.dot;
-	if (!truthy((yield* g.call(f, P("/proc/is_servant_of_ratvar"), null, [live(f.args[0])])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='cultlarge'>\"I wouldn't advise that.\"</span>"]);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='warning'>An overwhelming sense of nausea overpowers you!</span>"]);
-		yield* g.callName(f, live(f.args[0]), "dropItemToGround", [live(f.src), 1]);
-		yield* g.callName(f, live(f.args[0]), "Dizzy", [30]);
-		yield* g.callName(f, live(f.args[0]), "Knockdown", [100]);
+// cult_items.dm:240
+rt.def("/obj/item/clothing/suit/hooded/cultrobes/berserker/proc/equipped", function* equipped(f: Frame, user: Value, slot: Value) {
+	yield* parent_proc();
+	if (iscultist(user)) return f.dot;
+	if (!is_servant_of_ratvar(user)) {
+		to_chat(user, "<span class='cultlarge'>\"I wouldn't advise that.\"</span>");
+		to_chat(user, "<span class='warning'>An overwhelming sense of nausea overpowers you!</span>");
+		yield* user.dropItemToGround(this, 1);
+		user.Dizzy(30);
+		yield* user.Knockdown(100);
 	} else {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='cultlarge'>\"Trying to use things you don't own is bad, you know.\"</span>"]);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='userdanger'>The robes squeeze at your body!</span>"]);
-		yield* g.callName(f, live(f.args[0]), "emote", ["scream"]);
-		yield* g.callName(f, live(f.args[0]), "adjustBruteLoss", [25]);
-		yield* g.callName(f, live(f.args[0]), "dropItemToGround", [live(f.src), 1]);
+		to_chat(user, "<span class='cultlarge'>\"Trying to use things you don't own is bad, you know.\"</span>");
+		to_chat(user, "<span class='userdanger'>The robes squeeze at your body!</span>");
+		yield* user.emote("scream");
+		yield* user.adjustBruteLoss(25);
+		yield* user.dropItemToGround(this, 1);
 	}
 	return f.dot;
-}, true, { args: ["user", "slot"] });
+}, true);
 
 rt.type(8209, "/obj/item/clothing/glasses/night/cultblind", "/obj/item/clothing/glasses/night", {
 	desc: "May nar-sie guide you through the darkness and shield you from the light.",
@@ -375,17 +344,17 @@ rt.type(8209, "/obj/item/clothing/glasses/night/cultblind", "/obj/item/clothing/
 	flash_protect: 1,
 });
 
-// /obj/item/clothing/glasses/night/cultblind/proc/equipped  (code/game/gamemodes/cult/cult_items.dm:264)  may sleep
-rt.def("/obj/item/clothing/glasses/night/cultblind/proc/equipped", function* equipped(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy((yield* g.call(f, P("/proc/iscultist"), null, [live(f.args[0])])))) return f.dot;
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='cultlarge'>\"You want to be blind, do you?\"</span>"]);
-	yield* g.callName(f, live(f.args[0]), "dropItemToGround", [live(f.src), 1]);
-	yield* g.callName(f, live(f.args[0]), "Dizzy", [30]);
-	yield* g.callName(f, live(f.args[0]), "Knockdown", [100]);
-	yield* g.callName(f, live(f.args[0]), "blind_eyes", [30]);
+// cult_items.dm:264
+rt.def("/obj/item/clothing/glasses/night/cultblind/proc/equipped", function* equipped(f: Frame, user: Value, slot: Value) {
+	yield* parent_proc();
+	if (iscultist(user)) return f.dot;
+	to_chat(user, "<span class='cultlarge'>\"You want to be blind, do you?\"</span>");
+	yield* user.dropItemToGround(this, 1);
+	user.Dizzy(30);
+	yield* user.Knockdown(100);
+	yield* user.blind_eyes(30);
 	return f.dot;
-}, true, { args: ["user", "slot"] });
+}, true);
 
 rt.type(5803, "/obj/item/weapon/reagent_containers/food/drinks/bottle/unholywater", "/obj/item/weapon/reagent_containers/food/drinks/bottle", {
 	name: "flask of unholy water",
@@ -395,12 +364,10 @@ rt.type(5803, "/obj/item/weapon/reagent_containers/food/drinks/bottle/unholywate
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/food/drinks/bottle/unholywater/proc/<init>  (code/game/gamemodes/cult/cult_items.dm:277)
+// cult_items.dm:277
 rt.def("/obj/item/weapon/reagent_containers/food/drinks/bottle/unholywater/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["unholywater", 40]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["unholywater", 40]);
 	return f.dot;
 });
 
@@ -411,37 +378,36 @@ rt.type(9119, "/obj/item/device/shuttle_curse", "/obj/item/device", {
 	icon_state: "shuttlecurse",
 }, { global: { curselimit: 736 } });
 
-// /obj/item/device/shuttle_curse/proc/attack_self  (code/game/gamemodes/cult/cult_items.dm:287)  may sleep
+// cult_items.dm:287
 rt.def("/obj/item/device/shuttle_curse/proc/attack_self", function* attack_self(f: Frame, user: Value) {
-	let cursetime: Value = null, timer: Value = null, message: Value = null;
-	f.vars = () => [user, cursetime, timer, message];
-	if (!truthy((yield* g.call(f, P("/proc/iscultist"), null, [live(user)])))) {
-		yield* g.callName(f, live(user), "dropItemToGround", [live(f.src), 1]);
-		yield* g.callName(f, live(user), "Knockdown", [100]);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>A powerful force shoves you away from ＀!</span>", [live(f.src)])]);
-		return live(f.dot);
+	let message: Value = null;
+	if (!iscultist(user)) {
+		yield* user.dropItemToGround(this, 1);
+		yield* user.Knockdown(100);
+		to_chat(user, `<span class='warning'>A powerful force shoves you away from ${this}!</span>`);
+		return f.dot;
 	}
-	if (rt.gt(rt.gl("curselimit"), 1)) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>We have exhausted our ability to curse the shuttle.</span>"]);
-		return live(f.dot);
+	if (GLOB.curselimit > 1) {
+		to_chat(user, "<span class='notice'>We have exhausted our ability to curse the shuttle.</span>");
+		return f.dot;
 	}
-	if (truthy(rt.locateIn(f, T("/obj/singularity/narsie"), rt.gl("poi_list")))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>Nar-Sie is already on this plane, there is no delaying the end of all things.</span>"]);
-		return live(f.dot);
+	if (rt.locateIn(f, T("/obj/singularity/narsie"), GLOB.poi_list)) {
+		to_chat(user, "<span class='warning'>Nar-Sie is already on this plane, there is no delaying the end of all things.</span>");
+		return f.dot;
 	}
-	if (!isEqual(rt.gv(f, "mode", rt.fv(f, "emergency", rt.gl("SSshuttle"))), "call")) return f.dot;
-	cursetime = 1800;
-	timer = add((yield* g.callName(f, rt.fv(f, "emergency", rt.gl("SSshuttle")), "timeLeft", [1])), live(cursetime));
-	yield* g.callName(f, rt.fv(f, "emergency", rt.gl("SSshuttle")), "setTimer", [live(timer)]);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='danger'>You shatter the orb! A dark essence spirals into the air, then disappears.</span>"]);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(user)), rt.rsc("sound/effects/glassbr1.ogg"), 50, 1]);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-	yield* g.call(f, P("/proc/sleep"), null, [20]);
-	if (!truthy(rt.gl("curses"))) {
-		rt.setGl("curses", rt.list("A fuel technician just slit his own throat and begged for death. The shuttle will be delayed by three minutes.", "The shuttle's navigation programming was replaced by a file containing two words, IT COMES. The shuttle will be delayed by three minutes.", "The shuttle's custodian tore out his guts and began painting strange shapes on the floor. The shuttle will be delayed by three minutes.", "A shuttle engineer began screaming 'DEATH IS NOT THE END' and ripped out wires until an arc flash seared off her flesh. The shuttle will be delayed by three minutes.", "A shuttle inspector started laughing madly over the radio and then threw herself into an engine turbine. The shuttle will be delayed by three minutes.", "The shuttle dispatcher was found dead with bloody symbols carved into their flesh. The shuttle will be delayed by three minutes."));
+	if (GLOB.SSshuttle.emergency.mode != "call") return f.dot;
+	let cursetime: Value = 1800;
+	let timer: Value = GLOB.SSshuttle.emergency.timeLeft(1) + cursetime;
+	GLOB.SSshuttle.emergency.setTimer(timer);
+	to_chat(user, "<span class='danger'>You shatter the orb! A dark essence spirals into the air, then disappears.</span>");
+	playsound(user.loc, rt.rsc("sound/effects/glassbr1.ogg"), 50, 1);
+	yield* qdel(this);
+	yield* sleep(20);
+	if (!GLOB.curses) {
+		GLOB.curses = list("A fuel technician just slit his own throat and begged for death. The shuttle will be delayed by three minutes.", "The shuttle's navigation programming was replaced by a file containing two words, IT COMES. The shuttle will be delayed by three minutes.", "The shuttle's custodian tore out his guts and began painting strange shapes on the floor. The shuttle will be delayed by three minutes.", "A shuttle engineer began screaming 'DEATH IS NOT THE END' and ripped out wires until an arc flash seared off her flesh. The shuttle will be delayed by three minutes.", "A shuttle inspector started laughing madly over the radio and then threw herself into an engine turbine. The shuttle will be delayed by three minutes.", "The shuttle dispatcher was found dead with bloody symbols carved into their flesh. The shuttle will be delayed by three minutes.");
 	}
-	yield* g.call(f, P("/proc/priority_announce"), null, [fmt("＀", [(message = (yield* g.call(f, P("/proc/pick_n_take"), null, [rt.gl("curses")])))]), "System Failure", rt.rsc("sound/misc/notice1.ogg")]);
-	rt.incGl("curselimit", 1, true);
+	yield* priority_announce(`${(message = pick_n_take(GLOB.curses))}`, "System Failure", rt.rsc("sound/misc/notice1.ogg"));
+	GLOB.curselimit++;
 	return f.dot;
 }, true);
 
@@ -453,60 +419,58 @@ rt.type(9120, "/obj/item/device/cult_shift", "/obj/item/device", {
 	icon_state: "shifter",
 });
 
-// /obj/item/device/cult_shift/proc/examine  (code/game/gamemodes/cult/cult_items.dm:327)
-rt.def("/obj/item/device/cult_shift/proc/examine", function examine(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.sv(f, "uses"))) {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='cult'>It has ＀ uses remaining.</span>", [rt.sv(f, "uses")])]);
+// cult_items.dm:327
+rt.def("/obj/item/device/cult_shift/proc/examine", function examine(f: Frame, user: Value) {
+	parent_proc();
+	if (this.uses) {
+		to_chat(user, `<span class='cult'>It has ${this.uses} uses remaining.</span>`);
 	} else {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='cult'>It seems drained.</span>"]);
+		to_chat(user, "<span class='cult'>It seems drained.</span>");
 	}
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/item/device/cult_shift/proc/handle_teleport_grab  (code/game/gamemodes/cult/cult_items.dm:334)  may sleep
+// cult_items.dm:334
 rt.def("/obj/item/device/cult_shift/proc/handle_teleport_grab", function* handle_teleport_grab(f: Frame, _T: Value, user: Value) {
 	let C: Value = null, pulled: Value = null;
-	f.vars = () => [_T, user, C, pulled];
-	if (!truthy(rt.gv(f, "pulling", (C = live(user))))) return f.dot;
-	yield* g.callName(f, (pulled = rt.fv(f, "pulling", live(C))), "forceMove", [live(_T)]);
-	f.dot = live(pulled);
+	if (!(C = user).pulling) return f.dot;
+	yield* (pulled = C.pulling).forceMove(_T);
+	f.dot = pulled;
 	return f.dot;
 }, true);
 
-// /obj/item/device/cult_shift/proc/attack_self  (code/game/gamemodes/cult/cult_items.dm:341)  may sleep
+// cult_items.dm:341
 rt.def("/obj/item/device/cult_shift/proc/attack_self", function* attack_self(f: Frame, user: Value) {
-	let C: Value = null, mobloc: Value = null, destination: Value = null, pulled: Value = null;
-	f.vars = () => [user, C, mobloc, destination, pulled];
-	if ((!truthy(rt.sv(f, "uses")) || !truthy((rt.istype(live(user), T("/mob/living/carbon")) ? 1 : 0)))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＄！ is dull and unmoving in your hands.</span>", [live(f.src)])]);
-		return live(f.dot);
+	let destination: Value = null, pulled: Value = null;
+	if (!this.uses || !rt.istype(user, T("/mob/living/carbon"))) {
+		to_chat(user, fmt("<span class='warning'>＄！ is dull and unmoving in your hands.</span>", [this]));
+		return f.dot;
 	}
-	if (!truthy((yield* g.call(f, P("/proc/iscultist"), null, [live(user)])))) {
-		yield* g.callName(f, live(user), "dropItemToGround", [live(f.src), 1]);
-		yield* g.call(f, P("/proc/step"), null, [live(f.src), rt.op(f, "PickUnweighted", [1], [rt.gl("alldirs")])]);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＄！ flickers out of your hands, your connection to this dimension is too strong!</span>", [live(f.src)])]);
-		return live(f.dot);
+	if (!iscultist(user)) {
+		yield* user.dropItemToGround(this, 1);
+		yield* step(this, pick(GLOB.alldirs));
+		to_chat(user, fmt("<span class='warning'>＄！ flickers out of your hands, your connection to this dimension is too strong!</span>", [this]));
+		return f.dot;
 	}
-	C = live(user);
-	mobloc = rt.getStep(f, live(C), 0);
-	if (truthy((destination = (yield* g.call(f, P("/proc/get_teleport_loc"), null, [live(mobloc), live(C), 9, 1, 3, 1, 0, 1]))))) {
-		rt.incSrcVar(f, "uses", -1, true);
-		if (rt.le(rt.sv(f, "uses"), 0)) {
-			rt.setSv(f, "icon_state", "shifter_drained");
+	let C: Value = user;
+	let mobloc: Value = rt.getStep(f, C, 0);
+	if (destination = get_teleport_loc(mobloc, C, 9, 1, 3, 1, 0, 1)) {
+		this.uses--;
+		if (this.uses <= 0) {
+			this.icon_state = "shifter_drained";
 		}
-		yield* g.call(f, P("/proc/playsound"), null, [live(mobloc), "sparks", 50, 1]);
-		yield* g.new_(f, T("/obj/effect/temp_visual/dir_setting/cult/phase/out"), [live(mobloc), rt.fv(f, "dir", live(C))]);
-		pulled = (yield* g.srcCall(f, "handle_teleport_grab", live(destination), live(C)));
-		yield* g.callName(f, live(C), "forceMove", [live(destination)]);
-		if (truthy(live(pulled))) {
-			yield* g.callName(f, live(C), "start_pulling", [live(pulled)]);
+		playsound(mobloc, "sparks", 50, 1);
+		yield* new_(T("/obj/effect/temp_visual/dir_setting/cult/phase/out"), mobloc, C.dir);
+		pulled = (yield* this.handle_teleport_grab(destination, C));
+		yield* C.forceMove(destination);
+		if (pulled) {
+			yield* C.start_pulling(pulled);
 		}
-		yield* g.new_(f, T("/obj/effect/temp_visual/dir_setting/cult/phase"), [live(destination), rt.fv(f, "dir", live(C))]);
-		yield* g.call(f, P("/proc/playsound"), null, [live(destination), rt.rsc("sound/effects/phasein.ogg"), 25, 1]);
-		yield* g.call(f, P("/proc/playsound"), null, [live(destination), "sparks", 50, 1]);
+		yield* new_(T("/obj/effect/temp_visual/dir_setting/cult/phase"), destination, C.dir);
+		playsound(destination, rt.rsc("sound/effects/phasein.ogg"), 25, 1);
+		playsound(destination, "sparks", 50, 1);
 	} else {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(C), "<span class='danger'>The veil cannot be torn here!</span>"]);
+		to_chat(C, "<span class='danger'>The veil cannot be torn here!</span>");
 	}
 	return f.dot;
 }, true);
@@ -525,58 +489,52 @@ rt.type(9123, "/obj/item/device/flashlight/flare/culttorch", "/obj/item/device/f
 	on: 1,
 });
 
-// /obj/item/device/flashlight/flare/culttorch/proc/afterattack  (code/game/gamemodes/cult/cult_items.dm:387)  may sleep
-rt.def("/obj/item/device/flashlight/flare/culttorch/proc/afterattack", function* afterattack(f: Frame) {
+// cult_items.dm:387
+rt.def("/obj/item/device/flashlight/flare/culttorch/proc/afterattack", function* afterattack(f: Frame, A: Value, user: Value, proximity: Value) {
 	let cultists: Value = null, M: Value = null, cultist_to_receive: Value = null;
-	let $e: any;
-	f.vars = () => [cultists, M, cultist_to_receive, $e];
-	if (!truthy(live(f.args[2]))) {
-		return live(f.dot);
+	if (!proximity) {
+		return f.dot;
 	}
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item")) ? 1 : 0))) {
-		cultists = rt.list();
-		M = null;
-		rt.forList(f, 0, rt.gv(f, "cult", rt.fv(f, "mode", rt.gl("SSticker"))), T("/datum/mind"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			M = $e;
-			if ((truthy(rt.fv(f, "current", live(M))) && !isEqual(rt.gv(f, "stat", rt.fv(f, "current", live(M))), 2))) {
-				(cultists = rt.modify(live(cultists), rt.fv(f, "current", live(M)), rt.bitOr));
+	if (rt.istype(A, T("/obj/item"))) {
+		cultists = list();
+		for (M of each(GLOB.SSticker.mode.cult, T("/datum/mind"))) {
+			if (M.current && M.current.stat != 2) {
+				(cultists = rt.modify(cultists, M.current, rt.bitOr));
 			}
 		}
-		rt.endFor(f, 0);
-		cultist_to_receive = (yield* g.op(f, "Prompt", [1], [null, "Followers of the Geometer", fmt("Who do you wish to call to ＀?", [live(f.src)]), live(f.args[1]), subtract(live(cultists), live(f.args[1]))]));
-		if ((((!truthy((yield* g.srcCall(f, "Adjacent", live(f.args[1])))) || !truthy(live(f.src))) || (!truthy(live(f.src)) || truthy(rt.fv(f, "gc_destroyed", live(f.src))))) || truthy((yield* g.callName(f, live(f.args[1]), "incapacitated", []))))) {
-			return live(f.dot);
+		cultist_to_receive = (yield* g.op(f, "Prompt", [1], [null, "Followers of the Geometer", `Who do you wish to call to ${this}?`, user, cultists - user]));
+		if (!this.Adjacent(user) || !this || !this || this.gc_destroyed || user.incapacitated()) {
+			return f.dot;
 		}
-		if (!truthy(live(cultist_to_receive))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='cultitalic'>You require a destination!</span>"]);
-			yield* g.call(f, P("/proc/log_game"), null, ["Void torch failed - no target"]);
-			return live(f.dot);
+		if (!cultist_to_receive) {
+			to_chat(user, "<span class='cultitalic'>You require a destination!</span>");
+			log_game("Void torch failed - no target");
+			return f.dot;
 		}
-		if (isEqual(rt.fv(f, "stat", live(cultist_to_receive)), 2)) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='cultitalic'>＀ has died!</span>", [live(cultist_to_receive)])]);
-			yield* g.call(f, P("/proc/log_game"), null, ["Void torch failed  - target died"]);
-			return live(f.dot);
+		if (cultist_to_receive.stat == 2) {
+			to_chat(user, `<span class='cultitalic'>${cultist_to_receive} has died!</span>`);
+			log_game("Void torch failed  - target died");
+			return f.dot;
 		}
-		if (!truthy((yield* g.call(f, P("/proc/iscultist"), null, [live(cultist_to_receive)])))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='cultitalic'>＀ is not a follower of the Geometer!</span>", [live(cultist_to_receive)])]);
-			yield* g.call(f, P("/proc/log_game"), null, ["Void torch failed - target was deconverted"]);
-			return live(f.dot);
+		if (!iscultist(cultist_to_receive)) {
+			to_chat(user, `<span class='cultitalic'>${cultist_to_receive} is not a follower of the Geometer!</span>`);
+			log_game("Void torch failed - target was deconverted");
+			return f.dot;
 		}
-		if (truthy((rt.isIn(f, live(f.args[0]), (yield* g.callName(f, live(f.args[1]), "GetAllContents", []))) ? 1 : 0))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='cultitalic'>＀ must be on a surface in order to teleport it!</span>", [live(f.args[0])])]);
-			return live(f.dot);
+		if (rt.isIn(f, A, user.GetAllContents())) {
+			to_chat(user, `<span class='cultitalic'>${A} must be on a surface in order to teleport it!</span>`);
+			return f.dot;
 		}
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='cultitalic'>You ignite ＀ with ％！, turning it to ash, but through the torch's flames you see that ＀ has reached ＀!", [live(f.args[0]), live(f.src), live(f.args[0]), live(cultist_to_receive)])]);
-		yield* g.callName(f, live(cultist_to_receive), "put_in_hands", [live(f.args[0])]);
-		rt.incSrcVar(f, "charges", -1, true);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("＄！ now has ＀ charge５.", [live(f.src), rt.sv(f, "charges")])]);
-		if (isEqual(rt.sv(f, "charges"), 0)) {
-			yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+		to_chat(user, fmt("<span class='cultitalic'>You ignite ＀ with ％！, turning it to ash, but through the torch's flames you see that ＀ has reached ＀!", [A, this, A, cultist_to_receive]));
+		yield* cultist_to_receive.put_in_hands(A);
+		this.charges--;
+		to_chat(user, fmt("＄！ now has ＀ charge５.", [this, this.charges]));
+		if (this.charges == 0) {
+			yield* qdel(this);
 		}
 	} else {
-		yield* g.callSuper(f, [], rt.Args.Same);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>＄！ can only transport items!</span>", [live(f.src)])]);
+		yield* parent_proc();
+		to_chat(user, fmt("<span class='warning'>＄！ can only transport items!</span>", [this]));
 	}
 	return f.dot;
-}, true, { args: ["A", "user", "proximity"] });
+}, true);

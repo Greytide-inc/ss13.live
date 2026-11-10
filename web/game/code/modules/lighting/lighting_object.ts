@@ -1,13 +1,13 @@
-// From code/modules/lighting/lighting_object.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/lighting/lighting_object.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, g } = rt;
 
 
-// /datum/controller/global_vars/proc/InitGlobalall_lighting_objects  (code/modules/lighting/lighting_object.dm:1)
+// lighting_object.dm:1
 rt.def("/datum/controller/global_vars/proc/InitGlobalall_lighting_objects", function InitGlobalall_lighting_objects(f: Frame) {
-	rt.setGl("all_lighting_objects", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "all_lighting_objects", add);
+	GLOB.all_lighting_objects = list();
+	this.gvars_datum_init_order += "all_lighting_objects";
 	return f.dot;
 });
 
@@ -25,107 +25,96 @@ rt.type(4805, "/atom/movable/lighting_object", "/atom/movable", {
 	blend_mode: 2,
 });
 
-// /atom/movable/lighting_object/proc/Initialize  (code/modules/lighting/lighting_object.dm:21)
-rt.def("/atom/movable/lighting_object/proc/Initialize", function Initialize(f: Frame) {
+// lighting_object.dm:21
+rt.def("/atom/movable/lighting_object/proc/Initialize", function Initialize(f: Frame, mapload: Value) {
 	let _T: Value = null, S: Value = null;
-	let $e: any;
-	f.vars = () => [_T, S, $e];
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	rt.callName(f, rt.sv(f, "verbs"), "Cut", []);
-	rt.setFv(f, "lighting_object", (_T = rt.sv(f, "loc")), live(f.src));
-	rt.setFv(f, "luminosity", live(_T), 0);
-	S = null;
-	rt.forList(f, 0, rt.call(f, P("/proc/block"), null, [rt.locate(rt.call(f, P("/proc/max"), null, [subtract(rt.fv(f, "x", live(f.src)), 1), 1]), rt.call(f, P("/proc/max"), null, [subtract(rt.fv(f, "y", live(f.src)), 1), 1]), rt.fv(f, "z", live(f.src))), rt.locate(rt.call(f, P("/proc/min"), null, [add(rt.fv(f, "x", live(f.src)), 1), rt.fv(f, "maxx", rt.world())]), rt.call(f, P("/proc/min"), null, [add(rt.fv(f, "y", live(f.src)), 1), rt.fv(f, "maxy", rt.world())]), rt.fv(f, "z", live(f.src)))]), T("/turf/open/space"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		S = $e;
-		rt.callName(f, live(S), "update_starlight", []);
+	f.dot = parent_proc();
+	this.verbs.Cut();
+	(_T = this.loc).lighting_object = this;
+	_T.luminosity = 0;
+	for (S of each(block(rt.locate(max(this.x - 1, 1), max(this.y - 1, 1), this.z), rt.locate(min(this.x + 1, rt.world().maxx), min(this.y + 1, rt.world().maxy), this.z)), T("/turf/open/space"))) {
+		S.update_starlight();
 	}
-	rt.endFor(f, 0);
-	rt.setSv(f, "needs_update", 1);
-	rt.modGl("lighting_update_objects", live(f.src), add);
+	this.needs_update = 1;
+	GLOB.lighting_update_objects += this;
 	return f.dot;
-}, false, { args: ["mapload"] });
+}, false);
 
-// /atom/movable/lighting_object/proc/Destroy  (code/modules/lighting/lighting_object.dm:37)  may sleep
-rt.def("/atom/movable/lighting_object/proc/Destroy", function* Destroy(f: Frame) {
+// lighting_object.dm:37
+rt.def("/atom/movable/lighting_object/proc/Destroy", function* Destroy(f: Frame, force: Value) {
 	let _T: Value = null;
-	f.vars = () => [_T];
-	if (truthy(live(f.args[0]))) {
-		(rt.modGl("lighting_update_objects", live(f.src), subtract));
-		if (truthy((rt.istype((_T = rt.sv(f, "loc")), T("/turf")) ? 1 : 0))) {
-			rt.setFv(f, "lighting_object", live(_T), null);
-			rt.setFv(f, "luminosity", live(_T), 1);
+	if (force) {
+		GLOB.lighting_update_objects -= this;
+		if (rt.istype((_T = this.loc), T("/turf"))) {
+			_T.lighting_object = null;
+			_T.luminosity = 1;
 		}
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+		return (yield* parent_proc());
 	} else {
 		return 1;
 	}
-	return f.dot;
-}, true, { args: ["force"] });
+}, true);
 
-// /atom/movable/lighting_object/proc/update  (code/modules/lighting/lighting_object.dm:50)  may sleep
+// lighting_object.dm:50
 rt.def("/atom/movable/lighting_object/proc/update", function* update(f: Frame) {
-	let _T: Value = null, corners: Value = null, cr: Value = null, cg: Value = null, cb: Value = null, ca: Value = null, max: Value = null, rr: Value = null, rg: Value = null, rb: Value = null, gr: Value = null, gg: Value = null, gb: Value = null, br: Value = null, bg: Value = null, bb: Value = null, ar: Value = null, ag: Value = null, ab: Value = null, set_luminosity: Value = null;
-	f.vars = () => [_T, corners, cr, cg, cb, ca, max, rr, rg, rb, gr, gg, gb, br, bg, bb, ar, ag, ab, set_luminosity];
-	if (!truthy((rt.istype((_T = rt.sv(f, "loc")), T("/turf")) ? 1 : 0))) {
-		if (truthy(rt.sv(f, "loc"))) {
-			yield* g.call(f, P("/proc/warning"), null, [fmt("A lighting object realised its loc was NOT a turf (actual loc: ＀, ＀) in update()!", [rt.sv(f, "loc"), rt.fv(f, "type", rt.sv(f, "loc"))])]);
+	let _T: Value = null;
+	if (!rt.istype((_T = this.loc), T("/turf"))) {
+		if (this.loc) {
+			warning(`A lighting object realised its loc was NOT a turf (actual loc: ${this.loc}, ${this.loc.type}) in update()!`);
 		} else {
-			yield* g.call(f, P("/proc/warning"), null, ["A lighting object realised it was in nullspace in update()!"]);
+			warning("A lighting object realised it was in nullspace in update()!");
 		}
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src), 1]);
-		return live(f.dot);
+		yield* qdel(this, 1);
+		return f.dot;
 	}
-	corners = rt.fv(f, "corners", live(_T));
-	cr = rt.gl("dummy_lighting_corner");
-	cg = rt.gl("dummy_lighting_corner");
-	cb = rt.gl("dummy_lighting_corner");
-	ca = rt.gl("dummy_lighting_corner");
-	if (truthy(live(corners))) {
-		cr = (rt.index(live(corners), 3) || rt.gl("dummy_lighting_corner"));
-		cg = (rt.index(live(corners), 2) || rt.gl("dummy_lighting_corner"));
-		cb = (rt.index(live(corners), 4) || rt.gl("dummy_lighting_corner"));
-		ca = (rt.index(live(corners), 1) || rt.gl("dummy_lighting_corner"));
+	let corners: Value = _T.corners;
+	let cr: Value = GLOB.dummy_lighting_corner;
+	let cg: Value = GLOB.dummy_lighting_corner;
+	let cb: Value = GLOB.dummy_lighting_corner;
+	let ca: Value = GLOB.dummy_lighting_corner;
+	if (corners) {
+		cr = (rt.index(corners, 3) || GLOB.dummy_lighting_corner);
+		cg = (rt.index(corners, 2) || GLOB.dummy_lighting_corner);
+		cb = (rt.index(corners, 4) || GLOB.dummy_lighting_corner);
+		ca = (rt.index(corners, 1) || GLOB.dummy_lighting_corner);
 	}
-	max = (yield* g.call(f, P("/proc/max"), null, [rt.fv(f, "cache_mx", live(cr)), rt.fv(f, "cache_mx", live(cg)), rt.fv(f, "cache_mx", live(cb)), rt.fv(f, "cache_mx", live(ca))]));
-	rr = rt.fv(f, "cache_r", live(cr));
-	rg = rt.fv(f, "cache_g", live(cr));
-	rb = rt.fv(f, "cache_b", live(cr));
-	gr = rt.fv(f, "cache_r", live(cg));
-	gg = rt.fv(f, "cache_g", live(cg));
-	gb = rt.fv(f, "cache_b", live(cg));
-	br = rt.fv(f, "cache_r", live(cb));
-	bg = rt.fv(f, "cache_g", live(cb));
-	bb = rt.fv(f, "cache_b", live(cb));
-	ar = rt.fv(f, "cache_r", live(ca));
-	ag = rt.fv(f, "cache_g", live(ca));
-	ab = rt.fv(f, "cache_b", live(ca));
-	set_luminosity = (rt.gt(live(max), 9.999999974752427e-7) ? 1 : 0);
-	if ((truthy(rt.bitAnd(rt.bitAnd(rt.bitAnd(live(rr), live(gr)), live(br)), live(ar))) && isEqual(add(add(add(add(add(add(add(live(rg), live(gg)), live(bg)), live(ag)), live(rb)), live(gb)), live(bb)), live(ab)), 8))) {
-		rt.setSv(f, "icon_state", "transparent");
-		rt.setSv(f, "color", null);
+	let max: Value = (yield* g.call(f, P("/proc/max"), null, [cr.cache_mx, cg.cache_mx, cb.cache_mx, ca.cache_mx]));
+	let rr: Value = cr.cache_r;
+	let rg: Value = cr.cache_g;
+	let rb: Value = cr.cache_b;
+	let gr: Value = cg.cache_r;
+	let gg: Value = cg.cache_g;
+	let gb: Value = cg.cache_b;
+	let br: Value = cb.cache_r;
+	let bg: Value = cb.cache_g;
+	let bb: Value = cb.cache_b;
+	let ar: Value = ca.cache_r;
+	let ag: Value = ca.cache_g;
+	let ab: Value = ca.cache_b;
+	let set_luminosity: Value = (max > 0.000001 ? 1 : 0);
+	if (rt.bitAnd(rt.bitAnd(rt.bitAnd(rr, gr), br), ar) && rg + gg + bg + ag + rb + gb + bb + ab == 8) {
+		this.icon_state = "transparent";
+		this.color = null;
+	} else if (!set_luminosity) {
+		this.icon_state = "dark";
+		this.color = null;
 	} else {
-		if (!truthy(live(set_luminosity))) {
-			rt.setSv(f, "icon_state", "dark");
-			rt.setSv(f, "color", null);
-		} else {
-			rt.setSv(f, "icon_state", null);
-			rt.setSv(f, "color", rt.list(live(rr), live(rg), live(rb), 0, live(gr), live(gg), live(gb), 0, live(br), live(bg), live(bb), 0, live(ar), live(ag), live(ab), 0, 0, 0, 0, 1));
-		}
+		this.icon_state = null;
+		this.color = list(rr, rg, rb, 0, gr, gg, gb, 0, br, bg, bb, 0, ar, ag, ab, 0, 0, 0, 0, 1);
 	}
-	rt.setSv(f, "luminosity", live(set_luminosity));
+	this.luminosity = set_luminosity;
 	return f.dot;
 }, true);
 
-// /atom/movable/lighting_object/proc/forceMove  (code/modules/lighting/lighting_object.dm:149)  may sleep
+// lighting_object.dm:149
 rt.def("/atom/movable/lighting_object/proc/forceMove", function* forceMove(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 0;
 	}
-	if (!truthy(live(f.args[2]))) return f.dot;
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	if (!f.args[2]) return f.dot;
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true, { args: ["destination", "no_tp", "harderforce"] });

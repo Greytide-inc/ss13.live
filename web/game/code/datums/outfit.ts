@@ -1,7 +1,7 @@
-// From code/datums/outfit.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/datums/outfit.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(615, "/datum/outfit", "/datum", {
@@ -31,187 +31,162 @@ rt.type(615, "/datum/outfit", "/datum", {
 	can_be_admin_equipped: 1,
 });
 
-// /datum/outfit/proc/equip  (code/datums/outfit.dm:38)  may sleep
+// outfit.dm:38
 rt.def("/datum/outfit/proc/equip", function* equip(f: Frame, H: Value, visualsOnly: Value) {
 	let U: Value = null, path: Value = null, number: Value = null, i: Value = null, HS: Value = null, implant_type: Value = null, I: Value = null;
-	let $e: any;
-	f.vars = () => [H, visualsOnly, U, path, number, i, HS, implant_type, I, $e];
-	if (live(visualsOnly) === null) {
-		visualsOnly = 0;
+	visualsOnly ??= 0;
+	yield* this.pre_equip(H, visualsOnly);
+	if (this.uniform) {
+		yield* H.equip_to_slot_or_del((yield* new_(this.uniform, H)), slot_w_uniform);
 	}
-	yield* g.srcCall(f, "pre_equip", live(H), live(visualsOnly));
-	if (truthy(rt.sv(f, "uniform"))) {
-		yield* g.callName(f, live(H), "equip_to_slot_or_del", [(yield* g.new_(f, rt.sv(f, "uniform"), [live(H)])), 14]);
+	if (this.suit) {
+		yield* H.equip_to_slot_or_del((yield* new_(this.suit, H)), slot_wear_suit);
 	}
-	if (truthy(rt.sv(f, "suit"))) {
-		yield* g.callName(f, live(H), "equip_to_slot_or_del", [(yield* g.new_(f, rt.sv(f, "suit"), [live(H)])), 13]);
+	if (this.back) {
+		yield* H.equip_to_slot_or_del((yield* new_(this.back, H)), slot_back);
 	}
-	if (truthy(rt.sv(f, "back"))) {
-		yield* g.callName(f, live(H), "equip_to_slot_or_del", [(yield* g.new_(f, rt.sv(f, "back"), [live(H)])), 1]);
+	if (this.belt) {
+		yield* H.equip_to_slot_or_del((yield* new_(this.belt, H)), slot_belt);
 	}
-	if (truthy(rt.sv(f, "belt"))) {
-		yield* g.callName(f, live(H), "equip_to_slot_or_del", [(yield* g.new_(f, rt.sv(f, "belt"), [live(H)])), 5]);
+	if (this.gloves) {
+		yield* H.equip_to_slot_or_del((yield* new_(this.gloves, H)), slot_gloves);
 	}
-	if (truthy(rt.sv(f, "gloves"))) {
-		yield* g.callName(f, live(H), "equip_to_slot_or_del", [(yield* g.new_(f, rt.sv(f, "gloves"), [live(H)])), 9]);
+	if (this.shoes) {
+		yield* H.equip_to_slot_or_del((yield* new_(this.shoes, H)), slot_shoes);
 	}
-	if (truthy(rt.sv(f, "shoes"))) {
-		yield* g.callName(f, live(H), "equip_to_slot_or_del", [(yield* g.new_(f, rt.sv(f, "shoes"), [live(H)])), 12]);
+	if (this.head) {
+		yield* H.equip_to_slot_or_del((yield* new_(this.head, H)), slot_head);
 	}
-	if (truthy(rt.sv(f, "head"))) {
-		yield* g.callName(f, live(H), "equip_to_slot_or_del", [(yield* g.new_(f, rt.sv(f, "head"), [live(H)])), 11]);
+	if (this.mask) {
+		yield* H.equip_to_slot_or_del((yield* new_(this.mask, H)), slot_wear_mask);
 	}
-	if (truthy(rt.sv(f, "mask"))) {
-		yield* g.callName(f, live(H), "equip_to_slot_or_del", [(yield* g.new_(f, rt.sv(f, "mask"), [live(H)])), 2]);
+	if (this.neck) {
+		yield* H.equip_to_slot_or_del((yield* new_(this.neck, H)), slot_neck);
 	}
-	if (truthy(rt.sv(f, "neck"))) {
-		yield* g.callName(f, live(H), "equip_to_slot_or_del", [(yield* g.new_(f, rt.sv(f, "neck"), [live(H)])), 10]);
+	if (this.ears) {
+		yield* H.equip_to_slot_or_del((yield* new_(this.ears, H)), slot_ears);
 	}
-	if (truthy(rt.sv(f, "ears"))) {
-		yield* g.callName(f, live(H), "equip_to_slot_or_del", [(yield* g.new_(f, rt.sv(f, "ears"), [live(H)])), 7]);
+	if (this.glasses) {
+		yield* H.equip_to_slot_or_del((yield* new_(this.glasses, H)), slot_glasses);
 	}
-	if (truthy(rt.sv(f, "glasses"))) {
-		yield* g.callName(f, live(H), "equip_to_slot_or_del", [(yield* g.new_(f, rt.sv(f, "glasses"), [live(H)])), 8]);
+	if (this.id) {
+		yield* H.equip_to_slot_or_del((yield* new_(this.id, H)), slot_wear_id);
 	}
-	if (truthy(rt.sv(f, "id"))) {
-		yield* g.callName(f, live(H), "equip_to_slot_or_del", [(yield* g.new_(f, rt.sv(f, "id"), [live(H)])), 6]);
+	if (this.suit_store) {
+		yield* H.equip_to_slot_or_del((yield* new_(this.suit_store, H)), slot_s_store);
 	}
-	if (truthy(rt.sv(f, "suit_store"))) {
-		yield* g.callName(f, live(H), "equip_to_slot_or_del", [(yield* g.new_(f, rt.sv(f, "suit_store"), [live(H)])), 17]);
-	}
-	if (truthy(rt.sv(f, "accessory"))) {
-		if (truthy((U = rt.fv(f, "w_uniform", live(H))))) {
-			yield* g.callName(f, live(U), "attach_accessory", [(yield* g.new_(f, rt.sv(f, "accessory"), [live(H)]))]);
+	if (this.accessory) {
+		if (U = H.w_uniform) {
+			yield* U.attach_accessory((yield* new_(this.accessory, H)));
 		} else {
-			yield* g.call(f, P("/proc/warning"), null, [fmt("＀ in ＀ at line ＀ src: ＀ usr: ＀.", [fmt("Unable to equip accessory ＀ in outfit ＀. No uniform present!", [rt.sv(f, "accessory"), rt.sv(f, "name")]), "code/datums/outfit.dm", 73, live(f.src), live(f.usr)])]);
+			warning(`${`Unable to equip accessory ${this.accessory} in outfit ${this.name}. No uniform present!`} in ${"code/datums/outfit.dm"} at line ${73} src: ${this} usr: ${f.usr}.`);
 		}
 	}
-	if (truthy(rt.sv(f, "l_hand"))) {
-		yield* g.callName(f, live(H), "put_in_l_hand", [(yield* g.new_(f, rt.sv(f, "l_hand"), [live(H)]))]);
+	if (this.l_hand) {
+		yield* H.put_in_l_hand((yield* new_(this.l_hand, H)));
 	}
-	if (truthy(rt.sv(f, "r_hand"))) {
-		yield* g.callName(f, live(H), "put_in_r_hand", [(yield* g.new_(f, rt.sv(f, "r_hand"), [live(H)]))]);
+	if (this.r_hand) {
+		yield* H.put_in_r_hand((yield* new_(this.r_hand, H)));
 	}
-	if (!truthy(live(visualsOnly))) {
-		if (truthy(rt.sv(f, "l_pocket"))) {
-			yield* g.callName(f, live(H), "equip_to_slot_or_del", [(yield* g.new_(f, rt.sv(f, "l_pocket"), [live(H)])), 15]);
+	if (!visualsOnly) {
+		if (this.l_pocket) {
+			yield* H.equip_to_slot_or_del((yield* new_(this.l_pocket, H)), slot_l_store);
 		}
-		if (truthy(rt.sv(f, "r_pocket"))) {
-			yield* g.callName(f, live(H), "equip_to_slot_or_del", [(yield* g.new_(f, rt.sv(f, "r_pocket"), [live(H)])), 16]);
+		if (this.r_pocket) {
+			yield* H.equip_to_slot_or_del((yield* new_(this.r_pocket, H)), slot_r_store);
 		}
-		if (truthy(rt.sv(f, "backpack_contents"))) {
-			path = null;
-			rt.forList(f, 0, rt.sv(f, "backpack_contents"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				path = $e;
-				number = rt.index(rt.sv(f, "backpack_contents"), live(path));
-				i = null;
+		if (this.backpack_contents) {
+			for (path of each(this.backpack_contents)) {
+				number = rt.index(this.backpack_contents, path);
 				i = 0;
-				while (rt.lt(live(i), live(number))) {
-					yield* g.callName(f, live(H), "equip_to_slot_or_del", [(yield* g.new_(f, live(path), [live(H)])), 18]);
-					i = rt.inc(live(i), 1);
+				while (i < number) {
+					yield* H.equip_to_slot_or_del((yield* new_(path, H)), slot_in_backpack);
+					i++;
 				}
 			}
-			rt.endFor(f, 0);
 		}
 	}
-	if (((!truthy(rt.fv(f, "head", live(H))) && truthy(rt.sv(f, "toggle_helmet"))) && truthy((rt.istype(rt.fv(f, "wear_suit", live(H)), T("/obj/item/clothing/suit/space/hardsuit")) ? 1 : 0)))) {
-		yield* g.callName(f, (HS = rt.fv(f, "wear_suit", live(H))), "ToggleHelmet", []);
+	if (!H.head && this.toggle_helmet && rt.istype(H.wear_suit, T("/obj/item/clothing/suit/space/hardsuit"))) {
+		yield* (HS = H.wear_suit).ToggleHelmet();
 	}
-	yield* g.srcCall(f, "post_equip", live(H), live(visualsOnly));
-	if (!truthy(live(visualsOnly))) {
-		yield* g.srcCall(f, "apply_fingerprints", live(H));
-		if (truthy(rt.sv(f, "internals_slot"))) {
-			rt.setFv(f, "internal", live(H), (yield* g.callName(f, live(H), "get_item_by_slot", [rt.sv(f, "internals_slot")])));
-			yield* g.callName(f, live(H), "update_action_buttons_icon", []);
+	yield* this.post_equip(H, visualsOnly);
+	if (!visualsOnly) {
+		yield* this.apply_fingerprints(H);
+		if (this.internals_slot) {
+			H.internal = H.get_item_by_slot(this.internals_slot);
+			yield* H.update_action_buttons_icon();
 		}
-		if (truthy(rt.sv(f, "implants"))) {
-			implant_type = null;
-			rt.forList(f, 0, rt.sv(f, "implants"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				implant_type = $e;
-				yield* g.callName(f, (I = (yield* g.new_(f, live(implant_type), [live(H)]))), "implant", [null, live(H), null, null, "silent", 1], rt.Args.Named);
+		if (this.implants) {
+			for (implant_type of each(this.implants)) {
+				yield* (I = (yield* new_(implant_type, H))).implant(H, null, { silent: 1 });
 			}
-			rt.endFor(f, 0);
 		}
 	}
-	yield* g.callName(f, live(H), "update_body", []);
+	yield* H.update_body();
 	return 1;
 }, true);
 
-// /datum/outfit/proc/apply_fingerprints  (code/datums/outfit.dm:111)  may sleep
+// outfit.dm:111
 rt.def("/datum/outfit/proc/apply_fingerprints", function* apply_fingerprints(f: Frame, H: Value) {
 	let I: Value = null;
-	let $e: any;
-	f.vars = () => [H, I, $e];
-	if (!truthy((rt.istype(live(H), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		return live(f.dot);
+	if (!rt.istype(H, T("/mob/living/carbon/human"))) {
+		return f.dot;
 	}
-	if (truthy(rt.fv(f, "back", live(H)))) {
-		yield* g.callName(f, rt.fv(f, "back", live(H)), "add_fingerprint", [live(H), 1]);
-		I = null;
-		rt.forList(f, 0, rt.gv(f, "contents", rt.fv(f, "back", live(H))), T("/obj/item"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			I = $e;
-			yield* g.callName(f, live(I), "add_fingerprint", [live(H), 1]);
+	if (H.back) {
+		yield* H.back.add_fingerprint(H, 1);
+		for (I of each(H.back.contents, T("/obj/item"))) {
+			yield* I.add_fingerprint(H, 1);
 		}
-		rt.endFor(f, 0);
 	}
-	if (truthy(rt.fv(f, "wear_id", live(H)))) {
-		yield* g.callName(f, rt.fv(f, "wear_id", live(H)), "add_fingerprint", [live(H), 1]);
+	if (H.wear_id) {
+		yield* H.wear_id.add_fingerprint(H, 1);
 	}
-	if (truthy(rt.fv(f, "w_uniform", live(H)))) {
-		yield* g.callName(f, rt.fv(f, "w_uniform", live(H)), "add_fingerprint", [live(H), 1]);
+	if (H.w_uniform) {
+		yield* H.w_uniform.add_fingerprint(H, 1);
 	}
-	if (truthy(rt.fv(f, "wear_suit", live(H)))) {
-		yield* g.callName(f, rt.fv(f, "wear_suit", live(H)), "add_fingerprint", [live(H), 1]);
+	if (H.wear_suit) {
+		yield* H.wear_suit.add_fingerprint(H, 1);
 	}
-	if (truthy(rt.fv(f, "wear_mask", live(H)))) {
-		yield* g.callName(f, rt.fv(f, "wear_mask", live(H)), "add_fingerprint", [live(H), 1]);
+	if (H.wear_mask) {
+		yield* H.wear_mask.add_fingerprint(H, 1);
 	}
-	if (truthy(rt.fv(f, "wear_neck", live(H)))) {
-		yield* g.callName(f, rt.fv(f, "wear_neck", live(H)), "add_fingerprint", [live(H), 1]);
+	if (H.wear_neck) {
+		yield* H.wear_neck.add_fingerprint(H, 1);
 	}
-	if (truthy(rt.fv(f, "head", live(H)))) {
-		yield* g.callName(f, rt.fv(f, "head", live(H)), "add_fingerprint", [live(H), 1]);
+	if (H.head) {
+		yield* H.head.add_fingerprint(H, 1);
 	}
-	if (truthy(rt.fv(f, "shoes", live(H)))) {
-		yield* g.callName(f, rt.fv(f, "shoes", live(H)), "add_fingerprint", [live(H), 1]);
+	if (H.shoes) {
+		yield* H.shoes.add_fingerprint(H, 1);
 	}
-	if (truthy(rt.fv(f, "gloves", live(H)))) {
-		yield* g.callName(f, rt.fv(f, "gloves", live(H)), "add_fingerprint", [live(H), 1]);
+	if (H.gloves) {
+		yield* H.gloves.add_fingerprint(H, 1);
 	}
-	if (truthy(rt.fv(f, "ears", live(H)))) {
-		yield* g.callName(f, rt.fv(f, "ears", live(H)), "add_fingerprint", [live(H), 1]);
+	if (H.ears) {
+		yield* H.ears.add_fingerprint(H, 1);
 	}
-	if (truthy(rt.fv(f, "glasses", live(H)))) {
-		yield* g.callName(f, rt.fv(f, "glasses", live(H)), "add_fingerprint", [live(H), 1]);
+	if (H.glasses) {
+		yield* H.glasses.add_fingerprint(H, 1);
 	}
-	if (truthy(rt.fv(f, "belt", live(H)))) {
-		yield* g.callName(f, rt.fv(f, "belt", live(H)), "add_fingerprint", [live(H), 1]);
+	if (H.belt) {
+		yield* H.belt.add_fingerprint(H, 1);
 		I = null;
-		rt.forList(f, 0, rt.gv(f, "contents", rt.fv(f, "belt", live(H))), T("/obj/item"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			I = $e;
-			yield* g.callName(f, live(I), "add_fingerprint", [live(H), 1]);
+		for (I of each(H.belt.contents, T("/obj/item"))) {
+			yield* I.add_fingerprint(H, 1);
 		}
-		rt.endFor(f, 0);
 	}
-	if (truthy(rt.fv(f, "s_store", live(H)))) {
-		yield* g.callName(f, rt.fv(f, "s_store", live(H)), "add_fingerprint", [live(H), 1]);
+	if (H.s_store) {
+		yield* H.s_store.add_fingerprint(H, 1);
 	}
-	if (truthy(rt.fv(f, "l_store", live(H)))) {
-		yield* g.callName(f, rt.fv(f, "l_store", live(H)), "add_fingerprint", [live(H), 1]);
+	if (H.l_store) {
+		yield* H.l_store.add_fingerprint(H, 1);
 	}
-	if (truthy(rt.fv(f, "r_store", live(H)))) {
-		yield* g.callName(f, rt.fv(f, "r_store", live(H)), "add_fingerprint", [live(H), 1]);
+	if (H.r_store) {
+		yield* H.r_store.add_fingerprint(H, 1);
 	}
 	I = null;
-	rt.forList(f, 0, rt.fv(f, "held_items", live(H)), T("/obj/item"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		yield* g.callName(f, live(I), "add_fingerprint", [live(H), 1]);
+	for (I of each(H.held_items, T("/obj/item"))) {
+		yield* I.add_fingerprint(H, 1);
 	}
-	rt.endFor(f, 0);
 	return 1;
 }, true);

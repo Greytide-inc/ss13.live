@@ -1,7 +1,7 @@
-// From code/game/gamemodes/changeling/powers/strained_muscles.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/gamemodes/changeling/powers/strained_muscles.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { P } = rt;
 
 
 rt.type(11252, "/obj/effect/proc_holder/changeling/strained_muscles", "/obj/effect/proc_holder/changeling", {
@@ -15,47 +15,45 @@ rt.type(11252, "/obj/effect/proc_holder/changeling/strained_muscles", "/obj/effe
 	active: 0,
 });
 
-// /obj/effect/proc_holder/changeling/strained_muscles/proc/sting_action  (code/game/gamemodes/changeling/powers/strained_muscles.dm:15)  may sleep
+// strained_muscles.dm:15
 rt.def("/obj/effect/proc_holder/changeling/strained_muscles/proc/sting_action", function* sting_action(f: Frame, user: Value) {
-	f.vars = () => [user];
-	rt.setSv(f, "active", (!truthy(rt.sv(f, "active")) ? 1 : 0));
-	if (truthy(rt.sv(f, "active"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>Our muscles tense and strengthen.</span>"]);
+	this.active = (!this.active ? 1 : 0);
+	if (this.active) {
+		to_chat(user, "<span class='notice'>Our muscles tense and strengthen.</span>");
 	} else {
-		(rt.modField(f, live(user), "status_flags", 16777183, rt.bitAnd));
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>Our muscles relax.</span>"]);
-		if (rt.ge(rt.sv(f, "stacks"), 10)) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='danger'>We collapse in exhaustion.</span>"]);
-			yield* g.callName(f, live(user), "Knockdown", [60]);
-			yield* g.callName(f, live(user), "emote", ["gasp"]);
+		(rt.modField(f, user, "status_flags", 16777183, rt.bitAnd));
+		to_chat(user, "<span class='notice'>Our muscles relax.</span>");
+		if (this.stacks >= 10) {
+			to_chat(user, "<span class='danger'>We collapse in exhaustion.</span>");
+			yield* user.Knockdown(60);
+			yield* user.emote("gasp");
 		}
 	}
-	yield* g.call(f, P("/proc/ImmediateInvokeAsync"), null, [live(f.src), P("/obj/effect/proc_holder/changeling/strained_muscles/proc/muscle_loop"), live(user)]);
+	yield* ImmediateInvokeAsync(this, P("/obj/effect/proc_holder/changeling/strained_muscles/proc/muscle_loop"), user);
 	return 1;
 }, true);
 
-// /obj/effect/proc_holder/changeling/strained_muscles/proc/muscle_loop  (code/game/gamemodes/changeling/powers/strained_muscles.dm:32)  may sleep
+// strained_muscles.dm:32
 rt.def("/obj/effect/proc_holder/changeling/strained_muscles/proc/muscle_loop", function* muscle_loop(f: Frame, user: Value) {
-	f.vars = () => [user];
-	while (truthy(rt.sv(f, "active"))) {
-		(rt.modField(f, live(user), "status_flags", 32, rt.bitOr));
-		if ((!isEqual(rt.fv(f, "stat", live(user)), 0) || rt.ge(rt.fv(f, "staminaloss", live(user)), 90))) {
-			rt.setSv(f, "active", (!truthy(rt.sv(f, "active")) ? 1 : 0));
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>Our muscles relax without the energy to strengthen them.</span>"]);
-			yield* g.callName(f, live(user), "Knockdown", [40]);
-			(rt.modField(f, live(user), "status_flags", 16777183, rt.bitAnd));
+	while (this.active) {
+		(rt.modField(f, user, "status_flags", 32, rt.bitOr));
+		if (user.stat != 0 || user.staminaloss >= 90) {
+			this.active = (!this.active ? 1 : 0);
+			to_chat(user, "<span class='notice'>Our muscles relax without the energy to strengthen them.</span>");
+			yield* user.Knockdown(40);
+			(rt.modField(f, user, "status_flags", 16777183, rt.bitAnd));
 			break;
 		}
-		rt.incSrcVar(f, "stacks", 1, true);
-		rt.modField(f, live(user), "staminaloss", multiply(rt.sv(f, "stacks"), 1.2999999523162842), add);
-		if (isEqual(rt.sv(f, "stacks"), 11)) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>Our legs are really starting to hurt...</span>"]);
+		this.stacks++;
+		user.staminaloss += this.stacks * 1.3;
+		if (this.stacks == 11) {
+			to_chat(user, "<span class='warning'>Our legs are really starting to hurt...</span>");
 		}
-		yield* g.call(f, P("/proc/sleep"), null, [40]);
+		yield* sleep(40);
 	}
-	while (!truthy(rt.sv(f, "active")) && truthy(rt.sv(f, "stacks"))) {
-		rt.incSrcVar(f, "stacks", -1, true);
-		yield* g.call(f, P("/proc/sleep"), null, [20]);
+	while (!this.active && this.stacks) {
+		this.stacks--;
+		yield* sleep(20);
 	}
 	return f.dot;
 }, true, { argTypes: [{ type: 8, path: "/mob/living/carbon" }] });

@@ -1,7 +1,7 @@
-// From code/datums/diseases/tuberculosis.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/datums/diseases/tuberculosis.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(970, "/datum/disease/tuberculosis", "/datum/disease", {
@@ -18,77 +18,72 @@ rt.type(970, "/datum/disease/tuberculosis", "/datum/disease", {
 	required_organs: null,
 });
 
-// /datum/disease/tuberculosis/proc/<init>  (code/datums/diseases/tuberculosis.dm:8)
+// tuberculosis.dm:8
 rt.def("/datum/disease/tuberculosis/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "cures", rt.list("spaceacillin", "salbutamol"));
-	$0 = $0;
-	rt.setSv(f, "viable_mobtypes", rt.list(T("/mob/living/carbon/human")));
-	$0 = $0;
-	rt.setSv(f, "required_organs", rt.list(T("/obj/item/bodypart/head")));
+	parent_proc();
+	this.cures = list("spaceacillin", "salbutamol");
+
+	this.viable_mobtypes = list(T("/mob/living/carbon/human"));
+
+	this.required_organs = list(T("/obj/item/bodypart/head"));
 	return f.dot;
 });
 
-// /datum/disease/tuberculosis/proc/stage_act  (code/datums/diseases/tuberculosis.dm:15)  may sleep
+// tuberculosis.dm:15
 rt.def("/datum/disease/tuberculosis/proc/stage_act", function* stage_act(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	$0 = rt.sv(f, "stage");
-	if ($0 === 2) {
-		if (truthy(rt.op(f, "Prob", [], [2]))) {
-			yield* g.callName(f, rt.sv(f, "affected_mob"), "emote", ["cough"]);
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "affected_mob"), "<span class='danger'>Your chest hurts.</span>"]);
+	yield* parent_proc();
+	if (this.stage === 2) {
+		if (prob(2)) {
+			yield* this.affected_mob.emote("cough");
+			to_chat(this.affected_mob, "<span class='danger'>Your chest hurts.</span>");
 		}
-		if (truthy(rt.op(f, "Prob", [], [2]))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "affected_mob"), "<span class='danger'>Your stomach violently rumbles!</span>"]);
+		if (prob(2)) {
+			to_chat(this.affected_mob, "<span class='danger'>Your stomach violently rumbles!</span>");
 		}
-		if (truthy(rt.op(f, "Prob", [], [5]))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "affected_mob"), "<span class='danger'>You feel a cold sweat form.</span>"]);
+		if (prob(5)) {
+			to_chat(this.affected_mob, "<span class='danger'>You feel a cold sweat form.</span>");
 		}
-	} else if ($0 === 4) {
-		if (truthy(rt.op(f, "Prob", [], [2]))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "affected_mob"), "<span class='userdanger'>You see four of everything</span>"]);
-			yield* g.callName(f, rt.sv(f, "affected_mob"), "Dizzy", [5]);
+	} else if (this.stage === 4) {
+		if (prob(2)) {
+			to_chat(this.affected_mob, "<span class='userdanger'>You see four of everything</span>");
+			this.affected_mob.Dizzy(5);
 		}
-		if (truthy(rt.op(f, "Prob", [], [2]))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "affected_mob"), "<span class='danger'>You feel a sharp pain from your lower chest!</span>"]);
-			yield* g.callName(f, rt.sv(f, "affected_mob"), "adjustOxyLoss", [5]);
-			yield* g.callName(f, rt.sv(f, "affected_mob"), "emote", ["gasp"]);
+		if (prob(2)) {
+			to_chat(this.affected_mob, "<span class='danger'>You feel a sharp pain from your lower chest!</span>");
+			yield* this.affected_mob.adjustOxyLoss(5);
+			yield* this.affected_mob.emote("gasp");
 		}
-		if (truthy(rt.op(f, "Prob", [], [10]))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "affected_mob"), "<span class='danger'>You feel air escape from your lungs painfully.</span>"]);
-			yield* g.callName(f, rt.sv(f, "affected_mob"), "adjustOxyLoss", [25]);
-			yield* g.callName(f, rt.sv(f, "affected_mob"), "emote", ["gasp"]);
+		if (prob(10)) {
+			to_chat(this.affected_mob, "<span class='danger'>You feel air escape from your lungs painfully.</span>");
+			yield* this.affected_mob.adjustOxyLoss(25);
+			yield* this.affected_mob.emote("gasp");
 		}
-	} else if ($0 === 5) {
-		if (truthy(rt.op(f, "Prob", [], [2]))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "affected_mob"), fmt("<span class='userdanger'>＀</span>", [rt.op(f, "PickUnweighted", [2], ["You feel your heart slowing...", "You relax and slow your heartbeat."])])]);
-			yield* g.callName(f, rt.sv(f, "affected_mob"), "adjustStaminaLoss", [70]);
+	} else if (this.stage === 5) {
+		if (prob(2)) {
+			to_chat(this.affected_mob, `<span class='userdanger'>${pick("You feel your heart slowing...", "You relax and slow your heartbeat.")}</span>`);
+			yield* this.affected_mob.adjustStaminaLoss(70);
 		}
-		if (truthy(rt.op(f, "Prob", [], [10]))) {
-			yield* g.callName(f, rt.sv(f, "affected_mob"), "adjustStaminaLoss", [100]);
-			yield* g.callName(f, rt.sv(f, "affected_mob"), "visible_message", [fmt("<span class='warning'>＀ faints!</span>", [rt.sv(f, "affected_mob")]), "<span class='userdanger'>You surrender yourself and feel at peace...</span>"]);
-			yield* g.callName(f, rt.sv(f, "affected_mob"), "AdjustSleeping", [100]);
+		if (prob(10)) {
+			yield* this.affected_mob.adjustStaminaLoss(100);
+			this.affected_mob.visible_message(`<span class='warning'>${this.affected_mob} faints!</span>`, "<span class='userdanger'>You surrender yourself and feel at peace...</span>");
+			yield* this.affected_mob.AdjustSleeping(100);
 		}
-		if (truthy(rt.op(f, "Prob", [], [2]))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "affected_mob"), "<span class='userdanger'>You feel your mind relax and your thoughts drift!</span>"]);
-			rt.setFv(f, "confused", rt.sv(f, "affected_mob"), (yield* g.call(f, P("/proc/min"), null, [100, add(rt.fv(f, "confused", rt.sv(f, "affected_mob")), 8)])));
+		if (prob(2)) {
+			to_chat(this.affected_mob, "<span class='userdanger'>You feel your mind relax and your thoughts drift!</span>");
+			this.affected_mob.confused = min(100, this.affected_mob.confused + 8);
 		}
-		if (truthy(rt.op(f, "Prob", [], [10]))) {
-			yield* g.callName(f, rt.sv(f, "affected_mob"), "vomit", [20]);
+		if (prob(10)) {
+			yield* this.affected_mob.vomit(20);
 		}
-		if (truthy(rt.op(f, "Prob", [], [3]))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "affected_mob"), fmt("<span class='warning'><i>＀</i></span>", [rt.op(f, "PickUnweighted", [3], ["Your stomach silently rumbles...", "Your stomach seizes up and falls limp, muscles dead and lifeless.", "You could eat a crayon"])])]);
-			rt.setFv(f, "overeatduration", rt.sv(f, "affected_mob"), (yield* g.call(f, P("/proc/max"), null, [subtract(rt.fv(f, "overeatduration", rt.sv(f, "affected_mob")), 100), 0])));
-			rt.setFv(f, "nutrition", rt.sv(f, "affected_mob"), (yield* g.call(f, P("/proc/max"), null, [subtract(rt.fv(f, "nutrition", rt.sv(f, "affected_mob")), 100), 0])));
+		if (prob(3)) {
+			to_chat(this.affected_mob, `<span class='warning'><i>${pick("Your stomach silently rumbles...", "Your stomach seizes up and falls limp, muscles dead and lifeless.", "You could eat a crayon")}</i></span>`);
+			this.affected_mob.overeatduration = max(this.affected_mob.overeatduration - 100, 0);
+			this.affected_mob.nutrition = max(this.affected_mob.nutrition - 100, 0);
 		}
-		if (truthy(rt.op(f, "Prob", [], [15]))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "affected_mob"), fmt("<span class='danger'>＀</span>", [rt.op(f, "PickUnweighted", [3], ["You feel uncomfortably hot...", "You feel like unzipping your jumpsuit", "You feel like taking off some clothes..."])])]);
-			rt.modField(f, rt.sv(f, "affected_mob"), "bodytemperature", 40, add);
+		if (prob(15)) {
+			to_chat(this.affected_mob, `<span class='danger'>${pick("You feel uncomfortably hot...", "You feel like unzipping your jumpsuit", "You feel like taking off some clothes...")}</span>`);
+			this.affected_mob.bodytemperature += 40;
 		}
 	}
-	return live(f.dot);
+	return f.dot;
 }, true);

@@ -1,7 +1,7 @@
-// From code/modules/mob/living/simple_animal/bot/secbot.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/simple_animal/bot/secbot.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, fmt } = rt;
 
 
 rt.type(5042, "/mob/living/simple_animal/bot/secbot", "/mob/living/simple_animal/bot", {
@@ -37,12 +37,10 @@ rt.type(5042, "/mob/living/simple_animal/bot/secbot", "/mob/living/simple_animal
 	bot_core_type: rt.typePath("/obj/machinery/bot_core/secbot"),
 });
 
-// /mob/living/simple_animal/bot/secbot/proc/<init>  (code/modules/mob/living/simple_animal/bot/secbot.dm:10)
+// secbot.dm:10
 rt.def("/mob/living/simple_animal/bot/secbot/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "damage_coeff", rt.alist(f, ["brute", 0.5, "fire", 0.699999988079071, "tox", 0, "clone", 0, "stamina", 0, "oxy", 0]));
+	parent_proc();
+	this.damage_coeff = rt.alist(f, ["brute", 0.5, "fire", 0.7, "tox", 0, "clone", 0, "stamina", 0, "oxy", 0]);
 	return f.dot;
 });
 
@@ -51,11 +49,11 @@ rt.type(5044, "/mob/living/simple_animal/bot/secbot/beepsky/jr", "/mob/living/si
 	desc: "It's Officer Beep O'sky's smaller, just-as aggressive cousin, Pipsqueak.",
 });
 
-// /mob/living/simple_animal/bot/secbot/beepsky/jr/proc/Initialize  (code/modules/mob/living/simple_animal/bot/secbot.dm:47)  may sleep
+// secbot.dm:47
 rt.def("/mob/living/simple_animal/bot/secbot/beepsky/jr/proc/Initialize", function* Initialize(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "resize", 0.800000011920929);
-	yield* g.srcCall(f, "update_transform");
+	yield* parent_proc();
+	this.resize = 0.8;
+	yield* this.update_transform();
 	return f.dot;
 }, true);
 
@@ -67,580 +65,523 @@ rt.type(5043, "/mob/living/simple_animal/bot/secbot/beepsky", "/mob/living/simpl
 	desc: "It's Officer Beep O'sky! Powered by a potato and a shot of whiskey.",
 });
 
-// /mob/living/simple_animal/bot/secbot/beepsky/proc/explode  (code/modules/mob/living/simple_animal/bot/secbot.dm:53)  may sleep
+// secbot.dm:53
 rt.def("/mob/living/simple_animal/bot/secbot/beepsky/proc/explode", function* explode(f: Frame) {
 	let Tsec: Value = null, S: Value = null;
-	f.vars = () => [Tsec, S];
-	yield* g.new_(f, T("/obj/item/weapon/stock_parts/cell/potato"), [(Tsec = rt.getStep(f, live(f.src), 0))]);
-	yield* g.callName(f, rt.gv(f, "reagents", (S = (yield* g.new_(f, T("/obj/item/weapon/reagent_containers/food/drinks/drinkingglass/shotglass"), [live(Tsec)])))), "add_reagent", ["whiskey", 15]);
-	yield* g.callName(f, live(S), "on_reagent_change", []);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* new_(T("/obj/item/weapon/stock_parts/cell/potato"), (Tsec = rt.getStep(f, this, 0)));
+	yield* (S = (yield* new_(T("/obj/item/weapon/reagent_containers/food/drinks/drinkingglass/shotglass"), Tsec))).reagents.add_reagent("whiskey", 15);
+	S.on_reagent_change();
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/bot/secbot/proc/Initialize  (code/modules/mob/living/simple_animal/bot/secbot.dm:66)  may sleep
+// secbot.dm:66
 rt.def("/mob/living/simple_animal/bot/secbot/proc/Initialize", function* Initialize(f: Frame) {
 	let J: Value = null, secsensor: Value = null;
-	f.vars = () => [J, secsensor];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "icon_state", fmt("secbot＀", [rt.sv(f, "on")]));
+	yield* parent_proc();
+	this.icon_state = `secbot${this.on}`;
 	rt.spawnTail(f, 3, "/mob/living/simple_animal/bot/secbot/proc/Initialize: spawn at modules/mob/living/simple_animal/bot/secbot.dm:68", J, secsensor);
-	yield* g.callName(f, (secsensor = rt.index(rt.gl("huds"), 2)), "add_hud_to", [live(f.src)]);
+	(secsensor = rt.index(GLOB.huds, DATA_HUD_SECURITY_ADVANCED)).add_hud_to(this);
 	return f.dot;
 }, true);
 
 // a spawn(3) body of /mob/living/simple_animal/bot/secbot/proc/Initialize, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/mob/living/simple_animal/bot/secbot/proc/Initialize: spawn at modules/mob/living/simple_animal/bot/secbot.dm:68", function* (f: Frame, J: Value, secsensor: Value) {
-	f.vars = () => [J, secsensor];
-	J = (yield* g.new_(f, T("/datum/job/detective"), []));
-	rt.modField(f, rt.sv(f, "access_card"), "access", (yield* g.callName(f, live(J), "get_access", [])), add);
-	rt.setSv(f, "prev_access", rt.fv(f, "access", rt.sv(f, "access_card")));
+	J = (yield* new_(T("/datum/job/detective")));
+	this.access_card.access += J.get_access();
+	this.prev_access = this.access_card.access;
 	return null;
 });
 
-// /mob/living/simple_animal/bot/secbot/proc/turn_on  (code/modules/mob/living/simple_animal/bot/secbot.dm:78)
+// secbot.dm:78
 rt.def("/mob/living/simple_animal/bot/secbot/proc/turn_on", function turn_on(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "icon_state", fmt("secbot＀", [rt.sv(f, "on")]));
+	parent_proc();
+	this.icon_state = `secbot${this.on}`;
 	return f.dot;
 });
 
-// /mob/living/simple_animal/bot/secbot/proc/turn_off  (code/modules/mob/living/simple_animal/bot/secbot.dm:82)
+// secbot.dm:82
 rt.def("/mob/living/simple_animal/bot/secbot/proc/turn_off", function turn_off(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "icon_state", fmt("secbot＀", [rt.sv(f, "on")]));
+	parent_proc();
+	this.icon_state = `secbot${this.on}`;
 	return f.dot;
 });
 
-// /mob/living/simple_animal/bot/secbot/proc/bot_reset  (code/modules/mob/living/simple_animal/bot/secbot.dm:86)
+// secbot.dm:86
 rt.def("/mob/living/simple_animal/bot/secbot/proc/bot_reset", function bot_reset(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "target", null);
-	rt.setSv(f, "oldtarget_name", null);
-	rt.setSv(f, "anchored", 0);
-	rt.call(f, P("/proc/walk_to"), null, [live(f.src), 0]);
-	rt.setSv(f, "last_found", rt.worldTime(f));
+	parent_proc();
+	this.target = null;
+	this.oldtarget_name = null;
+	this.anchored = 0;
+	walk_to(this, 0);
+	this.last_found = rt.worldTime(f);
 	return f.dot;
 });
 
-// /mob/living/simple_animal/bot/secbot/proc/set_custom_texts  (code/modules/mob/living/simple_animal/bot/secbot.dm:95)
+// secbot.dm:95
 rt.def("/mob/living/simple_animal/bot/secbot/proc/set_custom_texts", function set_custom_texts(f: Frame) {
-	rt.setSv(f, "text_hack", fmt("You overload ＀'s target identification system.", [rt.sv(f, "name")]));
-	rt.setSv(f, "text_dehack", fmt("You reboot ＀ and restore the target identification.", [rt.sv(f, "name")]));
-	rt.setSv(f, "text_dehack_fail", fmt("＀ refuses to accept your authority!", [rt.sv(f, "name")]));
+	this.text_hack = `You overload ${this.name}'s target identification system.`;
+	this.text_dehack = `You reboot ${this.name} and restore the target identification.`;
+	this.text_dehack_fail = `${this.name} refuses to accept your authority!`;
 	return f.dot;
 });
 
-// /mob/living/simple_animal/bot/secbot/proc/get_controls  (code/modules/mob/living/simple_animal/bot/secbot.dm:101)
+// secbot.dm:101
 rt.def("/mob/living/simple_animal/bot/secbot/proc/get_controls", function get_controls(f: Frame, user: Value) {
 	let dat: Value = null;
-	let $0: any, $1: any, $2: any, $3: any, $4: any, $5: any, $6: any;
-	f.vars = () => [dat, $0, $1, $2, $3, $4, $5, $6];
-	dat = null;
-	dat = rt.modify(live(dat), rt.callSrc(f, "hack", [live(user)]), add);
-	dat = rt.modify(live(dat), rt.callSrc(f, "showpai", [live(user)]), add);
-	$0 = live(f.src);
-	if (truthy(rt.sv(f, "on"))) {
+	let $1: any, $2: any, $3: any, $4: any, $5: any, $6: any;
+	dat += this.hack(user);
+	dat += this.showpai(user);
+	let $0: any = this;
+	if (this.on) {
 		$1 = "On";
 	} else {
 		$1 = "Off";
 	}
 	$0 = fmt("<A href='?src=＃;power=1'>＀</A>", [$0, $1]);
-	if (truthy(rt.sv(f, "locked"))) {
+	if (this.locked) {
 		$1 = "locked";
 	} else {
 		$1 = "unlocked";
 	}
-	if (truthy(rt.sv(f, "open"))) {
+	if (this.open) {
 		$2 = "opened";
 	} else {
 		$2 = "closed";
 	}
-	dat = rt.modify(live(dat), fmt("\n<TT><B>Securitron v1.6 controls</B></TT><BR><BR>\nStatus: ＀<BR>\nBehaviour controls are ＀<BR>\nMaintenance panel panel is ＀", [$0, $1, $2]), add);
-	if (((!truthy(rt.sv(f, "locked")) || truthy((rt.istype(live(user), T("/mob/living/silicon")) ? 1 : 0))) || truthy(rt.call(f, P("/proc/IsAdminGhost"), null, [live(user)])))) {
-		$0 = live(f.src);
-		if (truthy(rt.sv(f, "idcheck"))) {
-			$1 = "Yes";
-		} else {
-			$1 = "No";
-		}
-		$0 = fmt("<A href='?src=＃;operation=idcheck'>＀</A>", [$0, $1]);
-		$1 = live(f.src);
-		if (truthy(rt.sv(f, "weaponscheck"))) {
-			$2 = "Yes";
-		} else {
-			$2 = "No";
-		}
-		$1 = fmt("<A href='?src=＃;operation=weaponscheck'>＀</A>", [$1, $2]);
-		$2 = live(f.src);
-		if (truthy(rt.sv(f, "check_records"))) {
-			$3 = "Yes";
-		} else {
-			$3 = "No";
-		}
-		$2 = fmt("<A href='?src=＃;operation=ignorerec'>＀</A>", [$2, $3]);
-		$3 = live(f.src);
-		if (truthy(rt.sv(f, "arrest_type"))) {
-			$4 = "Detain";
-		} else {
-			$4 = "Arrest";
-		}
-		$3 = fmt("<A href='?src=＃;operation=switchmode'>＀</A>", [$3, $4]);
-		$4 = live(f.src);
-		if (truthy(rt.sv(f, "declare_arrests"))) {
-			$5 = "Yes";
-		} else {
-			$5 = "No";
-		}
-		$4 = fmt("<A href='?src=＃;operation=declarearrests'>＀</A>", [$4, $5]);
-		$5 = live(f.src);
-		if (truthy(rt.sv(f, "auto_patrol"))) {
+	dat += `\n<TT><B>Securitron v1.6 controls</B></TT><BR><BR>\nStatus: ${$0}<BR>\nBehaviour controls are ${$1}<BR>\nMaintenance panel panel is ${$2}`;
+	if (!this.locked || rt.istype(user, T("/mob/living/silicon")) || IsAdminGhost(user)) {
+		$0 = this;
+		$0 = fmt("<A href='?src=＃;operation=idcheck'>＀</A>", [$0, this.idcheck ? "Yes" : "No"]);
+		$1 = this;
+		$1 = fmt("<A href='?src=＃;operation=weaponscheck'>＀</A>", [$1, this.weaponscheck ? "Yes" : "No"]);
+		$2 = this;
+		$2 = fmt("<A href='?src=＃;operation=ignorerec'>＀</A>", [$2, this.check_records ? "Yes" : "No"]);
+		$3 = this;
+		$3 = fmt("<A href='?src=＃;operation=switchmode'>＀</A>", [$3, this.arrest_type ? "Detain" : "Arrest"]);
+		$4 = this;
+		$4 = fmt("<A href='?src=＃;operation=declarearrests'>＀</A>", [$4, this.declare_arrests ? "Yes" : "No"]);
+		$5 = this;
+		if (this.auto_patrol) {
 			$6 = "On";
 		} else {
 			$6 = "Off";
 		}
-		dat = rt.modify(live(dat), fmt("<BR>\nArrest Unidentifiable Persons: ＀<BR>\nArrest for Unauthorized Weapons: ＀<BR>\nArrest for Warrant: ＀<BR>\nOperating Mode: ＀<BR>\nReport Arrests＀<BR>\nAuto Patrol: ＀", [$0, $1, $2, $3, $4, fmt("<A href='?src=＃;operation=patrol'>＀</A>", [$5, $6])]), add);
+		dat += `<BR>\nArrest Unidentifiable Persons: ${$0}<BR>\nArrest for Unauthorized Weapons: ${$1}<BR>\nArrest for Warrant: ${$2}<BR>\nOperating Mode: ${$3}<BR>\nReport Arrests${$4}<BR>\nAuto Patrol: ${fmt("<A href='?src=＃;operation=patrol'>＀</A>", [$5, $6])}`;
 	}
-	return live(dat);
+	return dat;
 });
 
-// /mob/living/simple_animal/bot/secbot/proc/Topic  (code/modules/mob/living/simple_animal/bot/secbot.dm:130)  may sleep
-rt.def("/mob/living/simple_animal/bot/secbot/proc/Topic", function* Topic(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
+// secbot.dm:130
+rt.def("/mob/living/simple_animal/bot/secbot/proc/Topic", function* Topic(f: Frame, href: Value, href_list: Value) {
+	if (yield* parent_proc()) {
 		return 1;
 	}
-	$0 = rt.at(live(f.args[1]), "operation");
-	if ($0 === "idcheck") {
-		rt.setSv(f, "idcheck", (!truthy(rt.sv(f, "idcheck")) ? 1 : 0));
-		yield* g.srcCall(f, "update_controls");
-	} else if ($0 === "weaponscheck") {
-		rt.setSv(f, "weaponscheck", (!truthy(rt.sv(f, "weaponscheck")) ? 1 : 0));
-		yield* g.srcCall(f, "update_controls");
-	} else if ($0 === "ignorerec") {
-		rt.setSv(f, "check_records", (!truthy(rt.sv(f, "check_records")) ? 1 : 0));
-		yield* g.srcCall(f, "update_controls");
-	} else if ($0 === "switchmode") {
-		rt.setSv(f, "arrest_type", (!truthy(rt.sv(f, "arrest_type")) ? 1 : 0));
-		yield* g.srcCall(f, "update_controls");
-	} else if ($0 === "declarearrests") {
-		rt.setSv(f, "declare_arrests", (!truthy(rt.sv(f, "declare_arrests")) ? 1 : 0));
-		yield* g.srcCall(f, "update_controls");
+	const item = rt.at(href_list, "operation");
+	if (item === "idcheck") {
+		this.idcheck = (!this.idcheck ? 1 : 0);
+		yield* this.update_controls();
+	} else if (item === "weaponscheck") {
+		this.weaponscheck = (!this.weaponscheck ? 1 : 0);
+		yield* this.update_controls();
+	} else if (item === "ignorerec") {
+		this.check_records = (!this.check_records ? 1 : 0);
+		yield* this.update_controls();
+	} else if (item === "switchmode") {
+		this.arrest_type = (!this.arrest_type ? 1 : 0);
+		yield* this.update_controls();
+	} else if (item === "declarearrests") {
+		this.declare_arrests = (!this.declare_arrests ? 1 : 0);
+		yield* this.update_controls();
 	}
-	return f.dot;
-}, true, { args: ["href", "href_list"] });
-
-// /mob/living/simple_animal/bot/secbot/proc/retaliate  (code/modules/mob/living/simple_animal/bot/secbot.dm:151)  may sleep
-rt.def("/mob/living/simple_animal/bot/secbot/proc/retaliate", function* retaliate(f: Frame, H: Value) {
-	let judgement_criteria: Value = null;
-	f.vars = () => [H, judgement_criteria];
-	judgement_criteria = (yield* g.srcCall(f, "judgement_criteria"));
-	rt.setSv(f, "threatlevel", (yield* g.callName(f, live(H), "assess_threat", [null, live(judgement_criteria), "weaponcheck", (yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/mob/living/simple_animal/bot/secbot/proc/check_for_weapons")]))], rt.Args.Named)));
-	if (!rt.ge((rt.modSrcVar(f, "threatlevel", 6, add)), 4)) return f.dot;
-	rt.setSv(f, "target", live(H));
-	rt.setSv(f, "mode", 1);
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/bot/secbot/proc/judgement_criteria  (code/modules/mob/living/simple_animal/bot/secbot.dm:161)
+// secbot.dm:151
+rt.def("/mob/living/simple_animal/bot/secbot/proc/retaliate", function* retaliate(f: Frame, H: Value) {
+	let judgement_criteria: Value = this.judgement_criteria();
+	this.threatlevel = (yield* H.assess_threat(judgement_criteria, { weaponcheck: (yield* new_(T("/datum/callback"), this, P("/mob/living/simple_animal/bot/secbot/proc/check_for_weapons"))) }));
+	if (!((this.threatlevel += 6) >= 4)) return f.dot;
+	this.target = H;
+	this.mode = BOT_HUNT;
+	return f.dot;
+}, true);
+
+// secbot.dm:161
 rt.def("/mob/living/simple_animal/bot/secbot/proc/judgement_criteria", function judgement_criteria(f: Frame) {
-	let final: Value = null;
-	f.vars = () => [final];
-	final = 0;
-	if (truthy(rt.sv(f, "idcheck"))) {
-		final = rt.bitOr(live(final), 2);
+	let final: Value = 0;
+	if (this.idcheck) {
+		final = rt.bitOr(final, DATA_HUD_SECURITY_ADVANCED);
 	}
-	if (truthy(rt.sv(f, "check_records"))) {
-		final = rt.bitOr(live(final), 8);
+	if (this.check_records) {
+		final = rt.bitOr(final, 8);
 	}
-	if (truthy(rt.sv(f, "weaponscheck"))) {
-		final = rt.bitOr(live(final), 4);
+	if (this.weaponscheck) {
+		final = rt.bitOr(final, 4);
 	}
-	if (truthy(rt.sv(f, "emagged"))) {
-		final = rt.bitOr(live(final), 1);
+	if (this.emagged) {
+		final = rt.bitOr(final, 1);
 	}
-	return live(final);
+	return final;
 });
 
-// /mob/living/simple_animal/bot/secbot/proc/attack_hand  (code/modules/mob/living/simple_animal/bot/secbot.dm:171)  may sleep
-rt.def("/mob/living/simple_animal/bot/secbot/proc/attack_hand", function* attack_hand(f: Frame) {
-	if ((isEqual(rt.fv(f, "a_intent", live(f.args[0])), "harm") || isEqual(rt.fv(f, "a_intent", live(f.args[0])), "disarm"))) {
-		yield* g.srcCall(f, "retaliate", live(f.args[0]));
+// secbot.dm:171
+rt.def("/mob/living/simple_animal/bot/secbot/proc/attack_hand", function* attack_hand(f: Frame, H: Value) {
+	if (H.a_intent == "harm" || H.a_intent == "disarm") {
+		yield* this.retaliate(H);
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["H"] });
+	return (yield* parent_proc());
+}, true);
 
-// /mob/living/simple_animal/bot/secbot/proc/attackby  (code/modules/mob/living/simple_animal/bot/secbot.dm:177)  may sleep
-rt.def("/mob/living/simple_animal/bot/secbot/proc/attackby", function* attackby(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/weldingtool")) ? 1 : 0)) && !isEqual(rt.fv(f, "a_intent", live(f.args[1])), "harm"))) {
-		return live(f.dot);
+// secbot.dm:177
+rt.def("/mob/living/simple_animal/bot/secbot/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
+	yield* parent_proc();
+	if (rt.istype(W, T("/obj/item/weapon/weldingtool")) && user.a_intent != "harm") {
+		return f.dot;
 	}
-	if (!(((!truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/screwdriver")) ? 1 : 0)) && truthy(rt.fv(f, "force", live(f.args[0])))) && !truthy(rt.sv(f, "target"))) && !isEqual(rt.fv(f, "damtype", live(f.args[0])), "stamina"))) return f.dot;
-	yield* g.srcCall(f, "retaliate", live(f.args[1]));
+	if (!(!rt.istype(W, T("/obj/item/weapon/screwdriver")) && W.force && !this.target && W.damtype != "stamina")) return f.dot;
+	yield* this.retaliate(user);
 	return f.dot;
-}, true, { args: ["W", "user", "params"] });
+}, true);
 
-// /mob/living/simple_animal/bot/secbot/proc/emag_act  (code/modules/mob/living/simple_animal/bot/secbot.dm:184)  may sleep
-rt.def("/mob/living/simple_animal/bot/secbot/proc/emag_act", function* emag_act(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!isEqual(rt.sv(f, "emagged"), 2)) return f.dot;
-	if (truthy(live(f.args[0]))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='danger'>You short out ＀'s target assessment circuits.</span>", [live(f.src)])]);
-		rt.setSv(f, "oldtarget_name", rt.fv(f, "name", live(f.args[0])));
+// secbot.dm:184
+rt.def("/mob/living/simple_animal/bot/secbot/proc/emag_act", function* emag_act(f: Frame, user: Value) {
+	yield* parent_proc();
+	if (this.emagged != 2) return f.dot;
+	if (user) {
+		to_chat(user, `<span class='danger'>You short out ${this}'s target assessment circuits.</span>`);
+		this.oldtarget_name = user.name;
 	}
-	yield* g.srcCall(f, "audible_message", fmt("<span class='danger'>＀ buzzes oddly!</span>", [live(f.src)]));
-	rt.setSv(f, "declare_arrests", 0);
-	rt.setSv(f, "icon_state", fmt("secbot＀", [rt.sv(f, "on")]));
+	this.audible_message(`<span class='danger'>${this} buzzes oddly!</span>`);
+	this.declare_arrests = 0;
+	this.icon_state = `secbot${this.on}`;
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /mob/living/simple_animal/bot/secbot/proc/bullet_act  (code/modules/mob/living/simple_animal/bot/secbot.dm:194)  may sleep
-rt.def("/mob/living/simple_animal/bot/secbot/proc/bullet_act", function* bullet_act(f: Frame) {
-	if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/projectile/beam")) ? 1 : 0)) || truthy((rt.istype(live(f.args[0]), T("/obj/item/projectile/bullet")) ? 1 : 0)))) {
-		if ((isEqual(rt.fv(f, "damage_type", live(f.args[0])), "fire") || isEqual(rt.fv(f, "damage_type", live(f.args[0])), "brute"))) {
-			if ((!truthy(rt.fv(f, "nodamage", live(f.args[0]))) && rt.lt(rt.fv(f, "damage", live(f.args[0])), rt.fv(f, "health", live(f.src))))) {
-				yield* g.srcCall(f, "retaliate", rt.fv(f, "firer", live(f.args[0])));
+// secbot.dm:194
+rt.def("/mob/living/simple_animal/bot/secbot/proc/bullet_act", function* bullet_act(f: Frame, Proj: Value) {
+	if (rt.istype(Proj, T("/obj/item/projectile/beam")) || rt.istype(Proj, T("/obj/item/projectile/bullet"))) {
+		if (Proj.damage_type == "fire" || Proj.damage_type == "brute") {
+			if (!Proj.nodamage && Proj.damage < this.health) {
+				yield* this.retaliate(Proj.firer);
 			}
 		}
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["Proj"] });
+}, true);
 
-// /mob/living/simple_animal/bot/secbot/proc/UnarmedAttack  (code/modules/mob/living/simple_animal/bot/secbot.dm:202)  may sleep
-rt.def("/mob/living/simple_animal/bot/secbot/proc/UnarmedAttack", function* UnarmedAttack(f: Frame) {
+// secbot.dm:202
+rt.def("/mob/living/simple_animal/bot/secbot/proc/UnarmedAttack", function* UnarmedAttack(f: Frame, A: Value) {
 	let C: Value = null;
-	f.vars = () => [C];
-	if (!truthy(rt.sv(f, "on"))) {
-		return live(f.dot);
+	if (!this.on) {
+		return f.dot;
 	}
-	if (truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon")) ? 1 : 0))) {
-		if ((!truthy((yield* g.callName(f, (C = live(f.args[0])), "IsStun", []))) || truthy(rt.sv(f, "arrest_type")))) {
-			yield* g.srcCall(f, "stun_attack", live(f.args[0]));
-		} else {
-			if ((truthy((yield* g.callName(f, live(C), "canBeHandcuffed", []))) && !truthy(rt.fv(f, "handcuffed", live(C))))) {
-				yield* g.srcCall(f, "cuff", live(f.args[0]));
-			}
+	if (rt.istype(A, T("/mob/living/carbon"))) {
+		if (!(C = A).IsStun() || this.arrest_type) {
+			yield* this.stun_attack(A);
+		} else if (C.canBeHandcuffed() && !C.handcuffed) {
+			this.cuff(A);
 		}
 	} else {
-		yield* g.callSuper(f, [], rt.Args.Same);
+		yield* parent_proc();
 	}
 	return f.dot;
-}, true, { args: ["A"] });
+}, true);
 
-// /mob/living/simple_animal/bot/secbot/proc/hitby  (code/modules/mob/living/simple_animal/bot/secbot.dm:215)  may sleep
+// secbot.dm:215
 rt.def("/mob/living/simple_animal/bot/secbot/proc/hitby", function* hitby(f: Frame) {
 	let I: Value = null, H: Value = null;
-	f.vars = () => [I, H];
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 1;
 	}
-	if (live(f.args[3]) === null) {
+	if (f.args[3] === null) {
 		f.args[3] = 0;
 	}
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item")) ? 1 : 0))) {
-		if (((rt.lt(rt.gv(f, "throwforce", (I = live(f.args[0]))), rt.fv(f, "health", live(f.src))) && truthy(rt.fv(f, "thrownby", live(I)))) && truthy((rt.istype(rt.fv(f, "thrownby", live(I)), T("/mob/living/carbon/human")) ? 1 : 0)))) {
-			yield* g.srcCall(f, "retaliate", (H = rt.fv(f, "thrownby", live(I))));
+	if (rt.istype(f.args[0], T("/obj/item"))) {
+		if ((I = f.args[0]).throwforce < this.health && I.thrownby && rt.istype(I.thrownby, T("/mob/living/carbon/human"))) {
+			yield* this.retaliate((H = I.thrownby));
 		}
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true, { args: ["AM", "skipcatch", "hitpush", "blocked"] });
 
-// /mob/living/simple_animal/bot/secbot/proc/cuff  (code/modules/mob/living/simple_animal/bot/secbot.dm:225)
+// secbot.dm:225
 rt.def("/mob/living/simple_animal/bot/secbot/proc/cuff", function cuff(f: Frame, C: Value) {
-	rt.setSv(f, "mode", 3);
-	rt.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/weapons/cablecuff.ogg"), 30, 1, -2]);
-	rt.callName(f, live(C), "visible_message", [fmt("<span class='danger'>＀ is trying to put zipties on ＀!</span>", [live(f.src), live(C)]), fmt("<span class='userdanger'>＀ is trying to put zipties on you!</span>", [live(f.src)])]);
+	this.mode = BOT_ARREST;
+	playsound(this.loc, rt.rsc("sound/weapons/cablecuff.ogg"), 30, 1, -2);
+	C.visible_message(`<span class='danger'>${this} is trying to put zipties on ${C}!</span>`, `<span class='userdanger'>${this} is trying to put zipties on you!</span>`);
 	rt.spawnTail(f, 60, "/mob/living/simple_animal/bot/secbot/proc/cuff: spawn at modules/mob/living/simple_animal/bot/secbot.dm:228", C);
 	return f.dot;
 });
 
 // a spawn(60) body of /mob/living/simple_animal/bot/secbot/proc/cuff, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/mob/living/simple_animal/bot/secbot/proc/cuff: spawn at modules/mob/living/simple_animal/bot/secbot.dm:228", function* (f: Frame, C: Value) {
-	f.vars = () => [C];
-	if ((!truthy((yield* g.srcCall(f, "Adjacent", live(C)))) || !truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.fv(f, "loc", live(C))]))))) {
-		return live(f.dot);
+	if (!this.Adjacent(C) || !isturf(C.loc)) {
+		return f.dot;
 	}
-	if (!truthy(rt.fv(f, "handcuffed", live(C)))) {
-		rt.setFv(f, "handcuffed", live(C), (yield* g.new_(f, T("/obj/item/weapon/restraints/handcuffs/cable/zipties/used"), [live(C)])));
-		yield* g.callName(f, live(C), "update_handcuffed", []);
-		yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.op(f, "PickUnweighted", [6], [rt.rsc("sound/voice/bgod.ogg"), rt.rsc("sound/voice/biamthelaw.ogg"), rt.rsc("sound/voice/bsecureday.ogg"), rt.rsc("sound/voice/bradio.ogg"), rt.rsc("sound/voice/binsult.ogg"), rt.rsc("sound/voice/bcreep.ogg")]), 50, 0]);
-		yield* g.srcCall(f, "back_to_idle");
+	if (!C.handcuffed) {
+		C.handcuffed = (yield* new_(T("/obj/item/weapon/restraints/handcuffs/cable/zipties/used"), C));
+		yield* C.update_handcuffed();
+		playsound(this.loc, pick(rt.rsc("sound/voice/bgod.ogg"), rt.rsc("sound/voice/biamthelaw.ogg"), rt.rsc("sound/voice/bsecureday.ogg"), rt.rsc("sound/voice/bradio.ogg"), rt.rsc("sound/voice/binsult.ogg"), rt.rsc("sound/voice/bcreep.ogg")), 50, 0);
+		yield* this.back_to_idle();
 	}
 	return null;
 });
 
-// /mob/living/simple_animal/bot/secbot/proc/stun_attack  (code/modules/mob/living/simple_animal/bot/secbot.dm:238)  may sleep
+// secbot.dm:238
 rt.def("/mob/living/simple_animal/bot/secbot/proc/stun_attack", function* stun_attack(f: Frame, C: Value) {
-	let judgement_criteria: Value = null, threat: Value = null, H: Value = null, location: Value = null;
+	let threat: Value = null, H: Value = null, location: Value = null;
 	let $0: any;
-	f.vars = () => [C, judgement_criteria, threat, H, location, $0];
-	judgement_criteria = (yield* g.srcCall(f, "judgement_criteria"));
-	yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/weapons/egloves.ogg"), 50, 1, -1]);
-	rt.setSv(f, "icon_state", "secbot-c");
+	let judgement_criteria: Value = this.judgement_criteria();
+	playsound(this.loc, rt.rsc("sound/weapons/egloves.ogg"), 50, 1, -1);
+	this.icon_state = "secbot-c";
 	rt.spawnTail(f, 2, "/mob/living/simple_animal/bot/secbot/proc/stun_attack: spawn at modules/mob/living/simple_animal/bot/secbot.dm:241", C, judgement_criteria, threat, H, location);
 	threat = 5;
-	if (truthy((rt.istype(live(C), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		rt.setFv(f, "stuttering", live(C), 5);
-		yield* g.callName(f, live(C), "Knockdown", [100]);
-		threat = (yield* g.callName(f, (H = live(C)), "assess_threat", [null, live(judgement_criteria), "weaponcheck", (yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/mob/living/simple_animal/bot/secbot/proc/check_for_weapons")]))], rt.Args.Named));
+	if (rt.istype(C, T("/mob/living/carbon/human"))) {
+		C.stuttering = 5;
+		yield* C.Knockdown(100);
+		threat = (yield* (H = C).assess_threat(judgement_criteria, { weaponcheck: (yield* new_(T("/datum/callback"), this, P("/mob/living/simple_animal/bot/secbot/proc/check_for_weapons"))) }));
 	} else {
-		yield* g.callName(f, live(C), "Knockdown", [100]);
-		rt.setFv(f, "stuttering", live(C), 5);
-		threat = (yield* g.callName(f, live(C), "assess_threat", [null, live(judgement_criteria), "weaponcheck", (yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/mob/living/simple_animal/bot/secbot/proc/check_for_weapons")]))], rt.Args.Named));
+		yield* C.Knockdown(100);
+		C.stuttering = 5;
+		threat = (yield* C.assess_threat(judgement_criteria, { weaponcheck: (yield* new_(T("/datum/callback"), this, P("/mob/living/simple_animal/bot/secbot/proc/check_for_weapons"))) }));
 	}
-	yield* g.call(f, P("/proc/add_logs"), null, [live(f.src), live(C), "stunned"]);
-	if (truthy(rt.sv(f, "declare_arrests"))) {
-		location = (yield* g.call(f, P("/proc/get_area"), null, [live(f.src)]));
-		if (truthy(rt.sv(f, "arrest_type"))) {
+	add_logs(this, C, "stunned");
+	if (this.declare_arrests) {
+		location = get_area(this);
+		if (this.arrest_type) {
 			$0 = "Detaining";
 		} else {
 			$0 = "Arresting";
 		}
-		yield* g.srcCall(f, "speak", fmt("＀ level ＀ scumbag <b>＀</b> in ＀.", [$0, live(threat), live(C), live(location)]), rt.sv(f, "radio_channel"));
+		yield* this.speak(`${$0} level ${threat} scumbag <b>${C}</b> in ${location}.`, this.radio_channel);
 	}
-	yield* g.callName(f, live(C), "visible_message", [fmt("<span class='danger'>＀ has stunned ＀!</span>", [live(f.src), live(C)]), fmt("<span class='userdanger'>＀ has stunned you!</span>", [live(f.src)])]);
+	C.visible_message(`<span class='danger'>${this} has stunned ${C}!</span>`, `<span class='userdanger'>${this} has stunned you!</span>`);
 	return f.dot;
 }, true);
 
 // a spawn(2) body of /mob/living/simple_animal/bot/secbot/proc/stun_attack, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/mob/living/simple_animal/bot/secbot/proc/stun_attack: spawn at modules/mob/living/simple_animal/bot/secbot.dm:241", function* (f: Frame, C: Value, judgement_criteria: Value, threat: Value, H: Value, location: Value) {
-	f.vars = () => [C, judgement_criteria, threat, H, location];
-	rt.setSv(f, "icon_state", fmt("secbot＀", [rt.sv(f, "on")]));
+	this.icon_state = `secbot${this.on}`;
 	return null;
 });
 
-// /mob/living/simple_animal/bot/secbot/proc/handle_automated_action  (code/modules/mob/living/simple_animal/bot/secbot.dm:262)  may sleep
+// secbot.dm:262
 rt.def("/mob/living/simple_animal/bot/secbot/proc/handle_automated_action", function* handle_automated_action(f: Frame) {
 	let olddist: Value = null;
-	let $0: any;
-	f.vars = () => [olddist, $0];
-	if (!truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		return live(f.dot);
+	if (!(yield* parent_proc())) {
+		return f.dot;
 	}
-	$0 = rt.sv(f, "mode");
-	if ($0 === 0) {
-		yield* g.call(f, P("/proc/walk_to"), null, [live(f.src), 0]);
-		yield* g.srcCall(f, "look_for_perp");
-		if ((!truthy(rt.sv(f, "mode")) && truthy(rt.sv(f, "auto_patrol")))) {
-			rt.setSv(f, "mode", 4);
+	if (this.mode === BOT_IDLE) {
+		walk_to(this, 0);
+		yield* this.look_for_perp();
+		if (!this.mode && this.auto_patrol) {
+			this.mode = BOT_START_PATROL;
 		}
-	} else if ($0 === 1) {
-		if (rt.ge(rt.sv(f, "frustration"), 8)) {
-			yield* g.call(f, P("/proc/walk_to"), null, [live(f.src), 0]);
-			yield* g.srcCall(f, "back_to_idle");
-			return live(f.dot);
+	} else if (this.mode === BOT_HUNT) {
+		if (this.frustration >= 8) {
+			walk_to(this, 0);
+			yield* this.back_to_idle();
+			return f.dot;
 		}
-		if (truthy(rt.sv(f, "target"))) {
-			if ((truthy((yield* g.srcCall(f, "Adjacent", rt.sv(f, "target")))) && truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.fv(f, "loc", rt.sv(f, "target"))]))))) {
-				yield* g.srcCall(f, "stun_attack", rt.sv(f, "target"));
-				rt.setSv(f, "mode", 2);
-				rt.setSv(f, "anchored", 1);
-				rt.setSv(f, "target_lastloc", rt.fv(f, "loc", rt.sv(f, "target")));
-				return live(f.dot);
+		if (this.target) {
+			if (this.Adjacent(this.target) && isturf(this.target.loc)) {
+				yield* this.stun_attack(this.target);
+				this.mode = BOT_PREP_ARREST;
+				this.anchored = 1;
+				this.target_lastloc = this.target.loc;
+				return f.dot;
 			} else {
-				olddist = (yield* g.call(f, P("/proc/get_dist"), null, [live(f.src), rt.sv(f, "target")]));
-				yield* g.call(f, P("/proc/walk_to"), null, [live(f.src), rt.sv(f, "target"), 1, 4]);
-				if (rt.ge((yield* g.call(f, P("/proc/get_dist"), null, [live(f.src), rt.sv(f, "target")])), live(olddist))) {
-					rt.incSrcVar(f, "frustration", 1, true);
+				olddist = get_dist(this, this.target);
+				walk_to(this, this.target, 1, 4);
+				if (get_dist(this, this.target) >= olddist) {
+					this.frustration++;
 				} else {
-					rt.setSv(f, "frustration", 0);
+					this.frustration = 0;
 				}
 			}
 		} else {
-			yield* g.srcCall(f, "back_to_idle");
+			yield* this.back_to_idle();
 		}
-	} else if ($0 === 2) {
-		if (((!truthy((yield* g.srcCall(f, "Adjacent", rt.sv(f, "target")))) || !truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.fv(f, "loc", rt.sv(f, "target"))])))) || rt.lt((yield* g.callName(f, rt.sv(f, "target"), "AmountKnockdown", [])), 40))) {
-			yield* g.srcCall(f, "back_to_hunt");
-			return live(f.dot);
+	} else if (this.mode === BOT_PREP_ARREST) {
+		if (!this.Adjacent(this.target) || !isturf(this.target.loc) || this.target.AmountKnockdown() < 40) {
+			this.back_to_hunt();
+			return f.dot;
 		}
-		if ((truthy((rt.istype(rt.sv(f, "target"), T("/mob/living/carbon")) ? 1 : 0)) && truthy((yield* g.callName(f, rt.sv(f, "target"), "canBeHandcuffed", []))))) {
-			if (!truthy(rt.sv(f, "arrest_type"))) {
-				if (!truthy(rt.fv(f, "handcuffed", rt.sv(f, "target")))) {
-					yield* g.srcCall(f, "cuff", rt.sv(f, "target"));
+		if (rt.istype(this.target, T("/mob/living/carbon")) && this.target.canBeHandcuffed()) {
+			if (!this.arrest_type) {
+				if (!this.target.handcuffed) {
+					this.cuff(this.target);
 				} else {
-					yield* g.srcCall(f, "back_to_idle");
-					return live(f.dot);
+					yield* this.back_to_idle();
+					return f.dot;
 				}
 			}
 		} else {
-			yield* g.srcCall(f, "back_to_idle");
-			return live(f.dot);
+			yield* this.back_to_idle();
+			return f.dot;
 		}
-	} else if ($0 === 3) {
-		if (!truthy(rt.sv(f, "target"))) {
-			rt.setSv(f, "anchored", 0);
-			rt.setSv(f, "mode", 0);
-			rt.setSv(f, "last_found", rt.worldTime(f));
-			rt.setSv(f, "frustration", 0);
-			return live(f.dot);
+	} else if (this.mode === BOT_ARREST) {
+		if (!this.target) {
+			this.anchored = 0;
+			this.mode = BOT_IDLE;
+			this.last_found = rt.worldTime(f);
+			this.frustration = 0;
+			return f.dot;
 		}
-		if (truthy(rt.fv(f, "handcuffed", rt.sv(f, "target")))) {
-			yield* g.srcCall(f, "back_to_idle");
-			return live(f.dot);
+		if (this.target.handcuffed) {
+			yield* this.back_to_idle();
+			return f.dot;
 		}
-		if (((!truthy((yield* g.srcCall(f, "Adjacent", rt.sv(f, "target")))) || !truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.fv(f, "loc", rt.sv(f, "target"))])))) || (!isEqual(rt.fv(f, "loc", rt.sv(f, "target")), rt.sv(f, "target_lastloc")) && rt.lt((yield* g.callName(f, rt.sv(f, "target"), "AmountKnockdown", [])), 40)))) {
-			yield* g.srcCall(f, "back_to_hunt");
-			return live(f.dot);
+		if (!this.Adjacent(this.target) || !isturf(this.target.loc) || this.target.loc != this.target_lastloc && this.target.AmountKnockdown() < 40) {
+			this.back_to_hunt();
+			return f.dot;
 		} else {
-			rt.setSv(f, "mode", 2);
-			rt.setSv(f, "anchored", 0);
+			this.mode = BOT_PREP_ARREST;
+			this.anchored = 0;
 		}
-	} else if ($0 === 4) {
-		yield* g.srcCall(f, "look_for_perp");
-		yield* g.srcCall(f, "start_patrol");
-	} else if ($0 === 5) {
-		yield* g.srcCall(f, "look_for_perp");
-		yield* g.srcCall(f, "bot_patrol");
+	} else if (this.mode === BOT_START_PATROL) {
+		yield* this.look_for_perp();
+		yield* this.start_patrol();
+	} else if (this.mode === BOT_PATROL) {
+		yield* this.look_for_perp();
+		yield* this.bot_patrol();
 	}
-	return live(f.dot);
+	return f.dot;
 }, true, { waitfor: false });
 
-// /mob/living/simple_animal/bot/secbot/proc/back_to_idle  (code/modules/mob/living/simple_animal/bot/secbot.dm:355)
+// secbot.dm:355
 rt.def("/mob/living/simple_animal/bot/secbot/proc/back_to_idle", function back_to_idle(f: Frame) {
-	rt.setSv(f, "anchored", 0);
-	rt.setSv(f, "mode", 0);
-	rt.setSv(f, "target", null);
-	rt.setSv(f, "last_found", rt.worldTime(f));
-	rt.setSv(f, "frustration", 0);
+	this.anchored = 0;
+	this.mode = BOT_IDLE;
+	this.target = null;
+	this.last_found = rt.worldTime(f);
+	this.frustration = 0;
 	rt.spawnTail(f, 0, "/mob/living/simple_animal/bot/secbot/proc/back_to_idle: spawn at modules/mob/living/simple_animal/bot/secbot.dm:355");
 	return f.dot;
 });
 
 // a spawn(0) body of /mob/living/simple_animal/bot/secbot/proc/back_to_idle, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/mob/living/simple_animal/bot/secbot/proc/back_to_idle: spawn at modules/mob/living/simple_animal/bot/secbot.dm:355", function* (f: Frame) {
-	yield* g.srcCall(f, "handle_automated_action");
+	yield* this.handle_automated_action();
 	return null;
 });
 
-// /mob/living/simple_animal/bot/secbot/proc/back_to_hunt  (code/modules/mob/living/simple_animal/bot/secbot.dm:362)
+// secbot.dm:362
 rt.def("/mob/living/simple_animal/bot/secbot/proc/back_to_hunt", function back_to_hunt(f: Frame) {
-	rt.setSv(f, "anchored", 0);
-	rt.setSv(f, "frustration", 0);
-	rt.setSv(f, "mode", 1);
+	this.anchored = 0;
+	this.frustration = 0;
+	this.mode = BOT_HUNT;
 	rt.spawnTail(f, 0, "/mob/living/simple_animal/bot/secbot/proc/back_to_hunt: spawn at modules/mob/living/simple_animal/bot/secbot.dm:362");
 	return f.dot;
 });
 
 // a spawn(0) body of /mob/living/simple_animal/bot/secbot/proc/back_to_hunt, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/mob/living/simple_animal/bot/secbot/proc/back_to_hunt: spawn at modules/mob/living/simple_animal/bot/secbot.dm:362", function* (f: Frame) {
-	yield* g.srcCall(f, "handle_automated_action");
+	yield* this.handle_automated_action();
 	return null;
 });
 
-// /mob/living/simple_animal/bot/secbot/proc/look_for_perp  (code/modules/mob/living/simple_animal/bot/secbot.dm:368)  may sleep
+// secbot.dm:368
 rt.def("/mob/living/simple_animal/bot/secbot/proc/look_for_perp", function* look_for_perp(f: Frame) {
-	let judgement_criteria: Value = null, C: Value = null;
-	let $e: any;
-	f.vars = () => [judgement_criteria, C, $e];
-	rt.setSv(f, "anchored", 0);
-	judgement_criteria = (yield* g.srcCall(f, "judgement_criteria"));
-	C = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/view"), null, [7, live(f.src)])), T("/mob/living/carbon"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		C = $e;
-		if ((truthy(rt.fv(f, "stat", live(C))) || truthy(rt.fv(f, "handcuffed", live(C))))) {
+	let C: Value = null;
+	this.anchored = 0;
+	let judgement_criteria: Value = this.judgement_criteria();
+	for (C of each(view(7, this), T("/mob/living/carbon"))) {
+		if (C.stat || C.handcuffed) {
 			continue;
 		}
-		if ((isEqual(rt.fv(f, "name", live(C)), rt.sv(f, "oldtarget_name")) && rt.lt(rt.worldTime(f), add(rt.sv(f, "last_found"), 100)))) {
+		if (C.name == this.oldtarget_name && rt.worldTime(f) < this.last_found + 100) {
 			continue;
 		}
-		rt.setSv(f, "threatlevel", (yield* g.callName(f, live(C), "assess_threat", [null, live(judgement_criteria), "weaponcheck", (yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/mob/living/simple_animal/bot/secbot/proc/check_for_weapons")]))], rt.Args.Named)));
-		if (!truthy(rt.sv(f, "threatlevel"))) {
+		this.threatlevel = (yield* C.assess_threat(judgement_criteria, { weaponcheck: (yield* new_(T("/datum/callback"), this, P("/mob/living/simple_animal/bot/secbot/proc/check_for_weapons"))) }));
+		if (!this.threatlevel) {
 			continue;
 		}
-		if (rt.ge(rt.sv(f, "threatlevel"), 4)) {
-			rt.setSv(f, "target", live(C));
-			rt.setSv(f, "oldtarget_name", rt.fv(f, "name", live(C)));
-			yield* g.srcCall(f, "speak", fmt("Level ＀ infraction alert!", [rt.sv(f, "threatlevel")]));
-			yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.op(f, "PickUnweighted", [3], [rt.rsc("sound/voice/bcriminal.ogg"), rt.rsc("sound/voice/bjustice.ogg"), rt.rsc("sound/voice/bfreeze.ogg")]), 50, 0]);
-			yield* g.srcCall(f, "visible_message", fmt("<b>＀</b> points at ＀!", [live(f.src), rt.fv(f, "name", live(C))]));
-			rt.setSv(f, "mode", 1);
+		if (this.threatlevel >= 4) {
+			this.target = C;
+			this.oldtarget_name = C.name;
+			yield* this.speak(`Level ${this.threatlevel} infraction alert!`);
+			playsound(this.loc, pick(rt.rsc("sound/voice/bcriminal.ogg"), rt.rsc("sound/voice/bjustice.ogg"), rt.rsc("sound/voice/bfreeze.ogg")), 50, 0);
+			this.visible_message(`<b>${this}</b> points at ${C.name}!`);
+			this.mode = BOT_HUNT;
 			rt.spawnTail(f, 0, "/mob/living/simple_animal/bot/secbot/proc/look_for_perp: spawn at modules/mob/living/simple_animal/bot/secbot.dm:388", judgement_criteria, C);
 			break;
 		}
 		continue;
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
 // a spawn(0) body of /mob/living/simple_animal/bot/secbot/proc/look_for_perp, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/mob/living/simple_animal/bot/secbot/proc/look_for_perp: spawn at modules/mob/living/simple_animal/bot/secbot.dm:388", function* (f: Frame, judgement_criteria: Value, C: Value) {
-	f.vars = () => [judgement_criteria, C];
-	yield* g.srcCall(f, "handle_automated_action");
+	yield* this.handle_automated_action();
 	return null;
 });
 
-// /mob/living/simple_animal/bot/secbot/proc/check_for_weapons  (code/modules/mob/living/simple_animal/bot/secbot.dm:394)
+// secbot.dm:394
 rt.def("/mob/living/simple_animal/bot/secbot/proc/check_for_weapons", function check_for_weapons(f: Frame, slot_item: Value) {
-	if ((truthy(live(slot_item)) && truthy(rt.fv(f, "needs_permit", live(slot_item))))) {
+	if (slot_item && slot_item.needs_permit) {
 		return 1;
 	}
 	return 0;
 }, false, { argTypes: [{ type: 4, path: "/obj/item" }] });
 
-// /mob/living/simple_animal/bot/secbot/proc/explode  (code/modules/mob/living/simple_animal/bot/secbot.dm:400)  may sleep
+// secbot.dm:400
 rt.def("/mob/living/simple_animal/bot/secbot/proc/explode", function* explode(f: Frame) {
-	let Tsec: Value = null, Sa: Value = null;
-	f.vars = () => [Tsec, Sa];
-	yield* g.call(f, P("/proc/walk_to"), null, [live(f.src), 0]);
-	yield* g.srcCall(f, "visible_message", fmt("<span class='boldannounce'>＀ blows apart!</span>", [live(f.src)]));
-	Tsec = rt.getStep(f, live(f.src), 0);
-	rt.setFv(f, "build_step", (Sa = (yield* g.new_(f, T("/obj/item/weapon/secbot_assembly"), [live(Tsec)]))), 1);
-	yield* g.callName(f, live(Sa), "add_overlay", ["hs_hole"]);
-	rt.setFv(f, "created_name", live(Sa), rt.sv(f, "name"));
-	yield* g.new_(f, T("/obj/item/device/assembly/prox_sensor"), [live(Tsec)]);
-	yield* g.new_(f, rt.sv(f, "baton_type"), [live(Tsec)]);
-	if (truthy(rt.op(f, "Prob", [], [50]))) {
-		yield* g.new_(f, T("/obj/item/bodypart/l_arm/robot"), [live(Tsec)]);
+	let Sa: Value = null;
+	walk_to(this, 0);
+	this.visible_message(`<span class='boldannounce'>${this} blows apart!</span>`);
+	let Tsec: Value = rt.getStep(f, this, 0);
+	(Sa = (yield* new_(T("/obj/item/weapon/secbot_assembly"), Tsec))).build_step = 1;
+	Sa.add_overlay("hs_hole");
+	Sa.created_name = this.name;
+	yield* new_(T("/obj/item/device/assembly/prox_sensor"), Tsec);
+	yield* new_(this.baton_type, Tsec);
+	if (prob(50)) {
+		yield* new_(T("/obj/item/bodypart/l_arm/robot"), Tsec);
 	}
-	yield* g.call(f, P("/proc/do_sparks"), null, [3, 1, live(f.src)]);
-	yield* g.new_(f, T("/obj/effect/decal/cleanable/oil"), [rt.sv(f, "loc")]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* do_sparks(3, 1, this);
+	yield* new_(T("/obj/effect/decal/cleanable/oil"), this.loc);
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/bot/secbot/proc/attack_alien  (code/modules/mob/living/simple_animal/bot/secbot.dm:420)  may sleep
-rt.def("/mob/living/simple_animal/bot/secbot/proc/attack_alien", function* attack_alien(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy((rt.istype(rt.sv(f, "target"), T("/mob/living/carbon/alien")) ? 1 : 0))) return f.dot;
-	rt.setSv(f, "target", live(f.args[0]));
-	rt.setSv(f, "mode", 1);
+// secbot.dm:420
+rt.def("/mob/living/simple_animal/bot/secbot/proc/attack_alien", function* attack_alien(f: Frame, user: Value) {
+	yield* parent_proc();
+	if (rt.istype(this.target, T("/mob/living/carbon/alien"))) return f.dot;
+	this.target = user;
+	this.mode = BOT_HUNT;
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /mob/living/simple_animal/bot/secbot/proc/Crossed  (code/modules/mob/living/simple_animal/bot/secbot.dm:426)  may sleep
-rt.def("/mob/living/simple_animal/bot/secbot/proc/Crossed", function* Crossed(f: Frame) {
+// secbot.dm:426
+rt.def("/mob/living/simple_animal/bot/secbot/proc/Crossed", function* Crossed(f: Frame, AM: Value) {
 	let C: Value = null;
-	f.vars = () => [C];
-	if ((truthy((yield* g.call(f, P("/proc/ismob"), null, [live(f.args[0])]))) && truthy(rt.sv(f, "target")))) {
-		if (((!truthy((rt.istype((C = live(f.args[0])), T("/mob/living/carbon")) ? 1 : 0)) || !truthy(live(C))) || rt.le((yield* g.call(f, P("/proc/get_dist"), null, [live(f.src), rt.sv(f, "target")])), 1))) {
-			return live(f.dot);
+	if (ismob(AM) && this.target) {
+		if (!rt.istype((C = AM), T("/mob/living/carbon")) || !C || get_dist(this, this.target) <= 1) {
+			return f.dot;
 		}
-		yield* g.srcCall(f, "knockOver", live(C));
-		return live(f.dot);
+		yield* this.knockOver(C);
+		return f.dot;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["AM"] });
+}, true);
 
 rt.type(10946, "/obj/machinery/bot_core/secbot", "/obj/machinery/bot_core", {
 	req_access: null,
 });
 
-// /obj/machinery/bot_core/secbot/proc/<init>  (code/modules/mob/living/simple_animal/bot/secbot.dm:435)
+// secbot.dm:435
 rt.def("/obj/machinery/bot_core/secbot/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_access", rt.list(1));
+	parent_proc();
+	this.req_access = list(1);
 	return f.dot;
 });

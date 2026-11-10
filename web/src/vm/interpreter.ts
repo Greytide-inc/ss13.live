@@ -47,11 +47,11 @@ import { Scheduler, Thread, realTime, timeOfDay } from "./scheduler.js";
 import { diffHook } from "./clockhook.js";
 import { DMAtom, GameMap, Kind, isAtom } from "./world.js";
 import {
+	asDMError,
 	DMRuntimeError,
 	NotImplementedError,
 	describe,
 	formatNumber,
-	fround,
 	stringify,
 	toInt,
 	type Value,
@@ -67,10 +67,10 @@ export interface PromptReq { thread?: Thread }
 export class RangeEnumerator {
 	current: number;
 	constructor(start: number, readonly end: number, readonly step: number) {
-		this.current = fround(start - step);
+		this.current = start - step;
 	}
 	next(): number | undefined {
-		this.current = fround(this.current + this.step);
+		this.current += this.step;
 		const ok = this.step > 0 ? this.current <= this.end : this.current >= this.end;
 		return ok ? this.current : undefined;
 	}
@@ -376,6 +376,14 @@ export class VM {
 	 */
 	lenient = false;
 	readonly notImplemented: RuntimeErrorRecord[] = [];
+	/** Reads and writes of a deleted object's vars (each the runtime error null gives): since detranslate step 6b only a proc's
+	 * own locals, args, `.` and usr can still hold one. Never seen in testing; boot logs and the end summary show any, `type.var`. */
+	deletedUses = 0;
+	readonly deletedUseNames = new Set<string>();
+	private deletedUse(o: DMObject, what: string): void {
+		this.deletedUses++;
+		this.deletedUseNames.add(`${o.type.path}.${what}`);
+	}
 
 	constructor(readonly tree: ObjectTree) {
 		heap.zct = []; // one VM at a time: a previous VM's objects are its own business
@@ -1305,7 +1313,7 @@ export class VM {
 			}
 		}
 		if (owner instanceof DMObject) {
-			if (owner.deleted) throw new DMRuntimeError(`Cannot read null.${name}`);
+			if (owner.deleted) { this.deletedUse(owner, name); throw new DMRuntimeError(`Cannot read null.${name}`); }
 			if (owner.type.special) {
 				const r = owner.type.special.get(owner, name);
 				if (r !== undefined) return r;
@@ -1369,7 +1377,7 @@ export class VM {
 					if (typeof v === "number" && v > 0) this.sched.tickLag = v;
 					return;
 				case "fps":
-					if (typeof v === "number" && v > 0) this.sched.tickLag = fround(10 / v);
+					if (typeof v === "number" && v > 0) this.sched.tickLag = 10 / v;
 					return;
 				case "time": case "tick_usage": case "cpu": case "timeofday": case "realtime":
 					return;
@@ -1477,6 +1485,7 @@ export class VM {
 			}
 			throw new DMRuntimeError(`Cannot write to list.${name}.`); // measured
 		}
+		if (owner instanceof DMObject && owner.deleted) this.deletedUse(owner, `${name} =`);
 		if (owner === null || owner instanceof DMObject) throw new DMRuntimeError(`Cannot modify null.${name}.`);
 		throw new DMRuntimeError(`Cannot modify ${describe(owner)}.${name}.`); // unverified wording
 	}
@@ -1560,6 +1569,7 @@ export class VM {
 
 	/** An error out of a step of `thread`'s top frame: handled (the loop goes on), or thrown on (not a DM error; a stand-in's rethrow). */
 	private caught(thread: Thread, e: unknown): void {
+		e = asDMError(e); // a JS error from game code is a DM one
 		const frames = thread.frames;
 		if (e instanceof NotImplementedError && this.lenient && frames.length > 0) {
 			this.yieldDelay = null;
@@ -2422,7 +2432,7 @@ function undefinedOp(a: Value, op: string, b: Value): DMRuntimeError {
 }
 
 export function add(a: Value, b: Value): Value {
-	if (typeof a === "number" && typeof b === "number") return fround(a + b);
+	if (typeof a === "number" && typeof b === "number") return a + b;
 	if (a instanceof DMList) return listAdd(a, b);
 	if (typeof a === "string" && typeof b === "string") return a + b;
 	if (a === null) return b;
@@ -2433,9 +2443,9 @@ export function add(a: Value, b: Value): Value {
 }
 
 export function subtract(a: Value, b: Value): Value {
-	if (typeof a === "number" && typeof b === "number") return fround(a - b);
+	if (typeof a === "number" && typeof b === "number") return a - b;
 	if (a instanceof DMList) return listSubtract(a, b);
-	if (a === null && (typeof b === "number" || b === null)) return fround(-num(b));
+	if (a === null && (typeof b === "number" || b === null)) return -num(b);
 	if (b === null && typeof a === "number") return a;
 	const o = objectOp("-", a, b);
 	if (o !== undefined) return o;
@@ -2448,7 +2458,7 @@ export function multiply(a: Value, b: Value): Value {
 		const y = num(b);
 		// Measured: BYOND 511 gives 0 (not NaN) for inf * 0.
 		if (x === 0 || y === 0) return 0;
-		return fround(x * y);
+		return x * y;
 	}
 	// Measured: an object operand says "type mismatch", while text and lists say "Undefined operation".
 	if (a instanceof DMObject || b instanceof DMObject) {
@@ -2464,7 +2474,7 @@ export function divide(a: Value, b: Value): Value {
 	if (typeof a === "number" && (typeof b === "number" || b === null)) {
 		const y = num(b);
 		if (y === 0) throw new DMRuntimeError("Division by zero");
-		return fround(a / y);
+		return a / y;
 	}
 	const o = objectOp("/", a, b);
 	if (o !== undefined) return o;
@@ -2482,7 +2492,7 @@ export function modulus(a: Value, b: Value): Value {
 }
 
 export function power(a: Value, b: Value): Value {
-	if ((typeof a === "number" || a === null) && (typeof b === "number" || b === null)) return fround(Math.pow(num(a), num(b)));
+	if ((typeof a === "number" || a === null) && (typeof b === "number" || b === null)) return Math.pow(num(a), num(b));
 	throw typeMismatch(a, "**", b);
 }
 

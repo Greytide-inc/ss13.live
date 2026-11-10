@@ -1,7 +1,7 @@
-// From code/game/machinery/computer/gulag_teleporter.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/machinery/computer/gulag_teleporter.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, g } = rt;
 
 
 rt.type(10381, "/obj/machinery/computer/gulag_teleporter_computer", "/obj/machinery/computer", {
@@ -20,227 +20,198 @@ rt.type(10381, "/obj/machinery/computer/gulag_teleporter_computer", "/obj/machin
 	req_access: null,
 });
 
-// /obj/machinery/computer/gulag_teleporter_computer/proc/<init>  (code/game/machinery/computer/gulag_teleporter.dm:7)
+// gulag_teleporter.dm:7
 rt.def("/obj/machinery/computer/gulag_teleporter_computer/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_access", rt.list(3));
+	parent_proc();
+	this.req_access = list(3);
 	return f.dot;
 });
 
-// /obj/machinery/computer/gulag_teleporter_computer/proc/New  (code/game/machinery/computer/gulag_teleporter.dm:19)  may sleep
+// gulag_teleporter.dm:19
 rt.def("/obj/machinery/computer/gulag_teleporter_computer/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/machinery/computer/gulag_teleporter_computer/proc/scan_machinery")])), 5]);
+	yield* parent_proc();
+	yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/machinery/computer/gulag_teleporter_computer/proc/scan_machinery"))), 5);
 	return f.dot;
 }, true);
 
-// /obj/machinery/computer/gulag_teleporter_computer/proc/Destroy  (code/game/machinery/computer/gulag_teleporter.dm:24)  may sleep
+// gulag_teleporter.dm:24
 rt.def("/obj/machinery/computer/gulag_teleporter_computer/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.sv(f, "id"))) {
-		yield* g.callName(f, rt.sv(f, "id"), "forceMove", [rt.getStep(f, live(f.src), 0)]);
+	if (this.id) {
+		yield* this.id.forceMove(rt.getStep(f, this, 0));
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);
 
-// /obj/machinery/computer/gulag_teleporter_computer/proc/attackby  (code/game/machinery/computer/gulag_teleporter.dm:28)  may sleep
-rt.def("/obj/machinery/computer/gulag_teleporter_computer/proc/attackby", function* attackby(f: Frame) {
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/card/id/prisoner")) ? 1 : 0))) {
-		if (!truthy(rt.sv(f, "id"))) {
-			if (!truthy((yield* g.callName(f, live(f.args[1]), "drop_item", [])))) {
-				return live(f.dot);
+// gulag_teleporter.dm:28
+rt.def("/obj/machinery/computer/gulag_teleporter_computer/proc/attackby", function* attackby(f: Frame, W: Value, user: Value) {
+	if (rt.istype(W, T("/obj/item/weapon/card/id/prisoner"))) {
+		if (!this.id) {
+			if (!(yield* user.drop_item())) {
+				return f.dot;
 			}
-			yield* g.callName(f, live(f.args[0]), "forceMove", [live(f.src)]);
-			rt.setSv(f, "id", live(f.args[0]));
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You insert ＀.</span>", [live(f.args[0])])]);
-			return live(f.dot);
+			yield* W.forceMove(this);
+			this.id = W;
+			to_chat(user, `<span class='notice'>You insert ${W}.</span>`);
+			return f.dot;
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>There's an ID inserted already.</span>"]);
+			to_chat(user, "<span class='notice'>There's an ID inserted already.</span>");
 		}
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["W", "user"] });
+	return (yield* parent_proc());
+}, true);
 
-// /obj/machinery/computer/gulag_teleporter_computer/proc/ui_interact  (code/game/machinery/computer/gulag_teleporter.dm:42)  may sleep
+// gulag_teleporter.dm:42
 rt.def("/obj/machinery/computer/gulag_teleporter_computer/proc/ui_interact", function* ui_interact(f: Frame, user: Value, ui_key: Value, ui: Value, force_open: Value, master_ui: Value, state: Value) {
-	f.vars = () => [user, ui_key, ui, force_open, master_ui, state];
-	if (live(ui_key) === null) {
-		ui_key = "main";
-	}
-	if (live(ui) === null) {
-		ui = null;
-	}
-	if (live(force_open) === null) {
-		force_open = 0;
-	}
-	if (live(master_ui) === null) {
-		master_ui = null;
-	}
-	if (live(state) === null) {
-		state = rt.gl("default_state");
-	}
-	if (truthy((ui = (yield* g.callName(f, rt.gl("SStgui"), "try_update_ui", [live(user), live(f.src), live(ui_key), live(ui), live(force_open)]))))) return f.dot;
-	yield* g.callName(f, (ui = (yield* g.new_(f, T("/datum/tgui"), [live(user), live(f.src), live(ui_key), "gulag_console", rt.sv(f, "name"), 455, 440, live(master_ui), live(state)]))), "open", []);
+	ui_key ??= "main";
+	force_open ??= 0;
+	state ??= GLOB.default_state;
+	if (ui = (yield* GLOB.SStgui.try_update_ui(user, this, ui_key, ui, force_open))) return f.dot;
+	yield* (ui = (yield* new_(T("/datum/tgui"), user, this, ui_key, "gulag_console", this.name, 455, 440, master_ui, state))).open();
 	return f.dot;
 }, true);
 
-// /obj/machinery/computer/gulag_teleporter_computer/proc/ui_data  (code/game/machinery/computer/gulag_teleporter.dm:48)
+// gulag_teleporter.dm:48
 rt.def("/obj/machinery/computer/gulag_teleporter_computer/proc/ui_data", function ui_data(f: Frame, user: Value) {
-	let data: Value = null, prisoner_list: Value = null, can_teleport: Value = null, r: Value = null, R: Value = null;
-	let $e: any;
-	f.vars = () => [data, prisoner_list, can_teleport, r, R, $e];
-	data = rt.list();
-	prisoner_list = rt.list();
-	can_teleport = 0;
-	if ((truthy(rt.sv(f, "teleporter")) && (truthy(rt.fv(f, "occupant", rt.sv(f, "teleporter"))) && truthy((rt.istype(rt.fv(f, "occupant", rt.sv(f, "teleporter")), T("/mob/living/carbon/human")) ? 1 : 0))))) {
-		rt.setSv(f, "prisoner", rt.fv(f, "occupant", rt.sv(f, "teleporter")));
-		rt.setAt(live(prisoner_list), "name", rt.fv(f, "real_name", rt.sv(f, "prisoner")));
-		if (truthy(rt.sv(f, "id"))) {
+	let r: Value = null, R: Value = null;
+	let data: Value = list();
+	let prisoner_list: Value = list();
+	let can_teleport: Value = 0;
+	if (this.teleporter && this.teleporter.occupant && rt.istype(this.teleporter.occupant, T("/mob/living/carbon/human"))) {
+		this.prisoner = this.teleporter.occupant;
+		rt.setAt(prisoner_list, "name", this.prisoner.real_name);
+		if (this.id) {
 			can_teleport = 1;
 		}
-		if (rt.fv(f, "general", rt.gl("data_core")) !== null) {
-			r = null;
-			rt.forList(f, 0, rt.fv(f, "security", rt.gl("data_core")));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				r = $e;
-				if (isEqual(rt.index(rt.gv(f, "fields", (R = live(r))), "name"), rt.at(live(prisoner_list), "name"))) {
-					rt.setSv(f, "temporary_record", live(R));
-					rt.setAt(live(prisoner_list), "crimstat", rt.index(rt.fv(f, "fields", rt.sv(f, "temporary_record")), "criminal"));
+		if (GLOB.data_core.general !== null) {
+			for (r of each(GLOB.data_core.security)) {
+				if (rt.index((R = r).fields, "name") == rt.at(prisoner_list, "name")) {
+					this.temporary_record = R;
+					rt.setAt(prisoner_list, "crimstat", rt.index(this.temporary_record.fields, "criminal"));
 				}
 			}
-			rt.endFor(f, 0);
 		}
 	}
-	rt.setAt(live(data), "prisoner", live(prisoner_list));
-	if (truthy(rt.sv(f, "teleporter"))) {
-		rt.setAt(live(data), "teleporter", rt.sv(f, "teleporter"));
-		rt.setAt(live(data), "teleporter_location", fmt("(＀, ＀, ＀)", [rt.fv(f, "x", rt.sv(f, "teleporter")), rt.fv(f, "y", rt.sv(f, "teleporter")), rt.fv(f, "z", rt.sv(f, "teleporter"))]));
-		rt.setAt(live(data), "teleporter_lock", rt.fv(f, "locked", rt.sv(f, "teleporter")));
-		rt.setAt(live(data), "teleporter_state_open", rt.fv(f, "state_open", rt.sv(f, "teleporter")));
+	rt.setAt(data, "prisoner", prisoner_list);
+	if (this.teleporter) {
+		rt.setAt(data, "teleporter", this.teleporter);
+		rt.setAt(data, "teleporter_location", `(${this.teleporter.x}, ${this.teleporter.y}, ${this.teleporter.z})`);
+		rt.setAt(data, "teleporter_lock", this.teleporter.locked);
+		rt.setAt(data, "teleporter_state_open", this.teleporter.state_open);
 	}
-	if (truthy(rt.sv(f, "beacon"))) {
-		rt.setAt(live(data), "beacon", rt.sv(f, "beacon"));
-		rt.setAt(live(data), "beacon_location", fmt("(＀, ＀, ＀)", [rt.fv(f, "x", rt.sv(f, "beacon")), rt.fv(f, "y", rt.sv(f, "beacon")), rt.fv(f, "z", rt.sv(f, "beacon"))]));
+	if (this.beacon) {
+		rt.setAt(data, "beacon", this.beacon);
+		rt.setAt(data, "beacon_location", `(${this.beacon.x}, ${this.beacon.y}, ${this.beacon.z})`);
 	}
-	if (truthy(rt.sv(f, "id"))) {
-		rt.setAt(live(data), "id", rt.sv(f, "id"));
-		rt.setAt(live(data), "id_name", rt.fv(f, "registered_name", rt.sv(f, "id")));
-		rt.setAt(live(data), "goal", rt.fv(f, "goal", rt.sv(f, "id")));
+	if (this.id) {
+		rt.setAt(data, "id", this.id);
+		rt.setAt(data, "id_name", this.id.registered_name);
+		rt.setAt(data, "goal", this.id.goal);
 	}
-	rt.setAt(live(data), "can_teleport", live(can_teleport));
-	return live(data);
+	rt.setAt(data, "can_teleport", can_teleport);
+	return data;
 });
 
-// /obj/machinery/computer/gulag_teleporter_computer/proc/ui_act  (code/game/machinery/computer/gulag_teleporter.dm:84)  may sleep
-rt.def("/obj/machinery/computer/gulag_teleporter_computer/proc/ui_act", function* ui_act(f: Frame) {
+// gulag_teleporter.dm:84
+rt.def("/obj/machinery/computer/gulag_teleporter_computer/proc/ui_act", function* ui_act(f: Frame, action: Value, params: Value) {
 	let I: Value = null, new_goal: Value = null;
-	let $0: any;
-	f.vars = () => [I, new_goal, $0];
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		return live(f.dot);
+	if (yield* parent_proc()) {
+		return f.dot;
 	}
-	if (!truthy((yield* g.srcCall(f, "allowed", live(f.usr))))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), "<span class='warning'>Access denied.</span>"]);
-		return live(f.dot);
+	if (!(yield* this.allowed(f.usr))) {
+		to_chat(f.usr, "<span class='warning'>Access denied.</span>");
+		return f.dot;
 	}
-	$0 = live(f.args[0]);
-	if ($0 === "scan_teleporter") {
-		rt.setSv(f, "teleporter", (yield* g.srcCall(f, "findteleporter")));
-	} else if ($0 === "scan_beacon") {
-		rt.setSv(f, "beacon", (yield* g.srcCall(f, "findbeacon")));
-	} else if ($0 === "handle_id") {
-		if (truthy(rt.sv(f, "id"))) {
-			if (!truthy((yield* g.callName(f, live(f.usr), "get_active_held_item", [])))) {
-				yield* g.callName(f, live(f.usr), "put_in_hands", [rt.sv(f, "id")]);
-				rt.setSv(f, "id", null);
+	if (action === "scan_teleporter") {
+		this.teleporter = this.findteleporter();
+	} else if (action === "scan_beacon") {
+		this.beacon = this.findbeacon();
+	} else if (action === "handle_id") {
+		if (this.id) {
+			if (!f.usr.get_active_held_item()) {
+				yield* f.usr.put_in_hands(this.id);
+				this.id = null;
 			} else {
-				yield* g.callName(f, rt.sv(f, "id"), "forceMove", [rt.getStep(f, live(f.src), 0)]);
-				rt.setSv(f, "id", null);
+				yield* this.id.forceMove(rt.getStep(f, this, 0));
+				this.id = null;
 			}
-		} else {
-			if (truthy((rt.istype((I = (yield* g.callName(f, live(f.usr), "get_active_held_item", []))), T("/obj/item/weapon/card/id/prisoner")) ? 1 : 0))) {
-				if (!truthy((yield* g.callName(f, live(f.usr), "drop_item", [])))) {
-					return live(f.dot);
-				}
-				yield* g.callName(f, live(I), "forceMove", [live(f.src)]);
-				rt.setSv(f, "id", live(I));
+		} else if (rt.istype((I = f.usr.get_active_held_item()), T("/obj/item/weapon/card/id/prisoner"))) {
+			if (!(yield* f.usr.drop_item())) {
+				return f.dot;
 			}
+			yield* I.forceMove(this);
+			this.id = I;
 		}
-	} else if ($0 === "set_goal") {
-		if (!truthy((yield* g.call(f, P("/proc/isnum"), null, [(new_goal = (yield* g.op(f, "Prompt", [33], [null, rt.fv(f, "goal", rt.sv(f, "id")), "Points", "Set the amount of points:", null])))])))) {
-			return live(f.dot);
+	} else if (action === "set_goal") {
+		if (!isnum((new_goal = (yield* g.op(f, "Prompt", [33], [null, this.id.goal, "Points", "Set the amount of points:", null]))))) {
+			return f.dot;
 		}
-		if (!truthy(live(new_goal))) {
-			new_goal = rt.sv(f, "default_goal");
+		if (!new_goal) {
+			new_goal = this.default_goal;
 		}
-		rt.setFv(f, "goal", rt.sv(f, "id"), (yield* g.call(f, P("/proc/max"), null, [0, (yield* g.call(f, P("/proc/min"), null, [live(new_goal), 1000]))])));
-	} else if ($0 === "toggle_open") {
-		if (truthy(rt.fv(f, "locked", rt.sv(f, "teleporter")))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), "The teleporter is locked"]);
-			return live(f.dot);
+		this.id.goal = max(0, min(new_goal, 1000));
+	} else if (action === "toggle_open") {
+		if (this.teleporter.locked) {
+			to_chat(f.usr, "The teleporter is locked");
+			return f.dot;
 		}
-		yield* g.callName(f, rt.sv(f, "teleporter"), "toggle_open", []);
-	} else if ($0 === "teleporter_lock") {
-		if (truthy(rt.fv(f, "state_open", rt.sv(f, "teleporter")))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), "Close the teleporter before locking!"]);
-			return live(f.dot);
+		yield* this.teleporter.toggle_open();
+	} else if (action === "teleporter_lock") {
+		if (this.teleporter.state_open) {
+			to_chat(f.usr, "Close the teleporter before locking!");
+			return f.dot;
 		}
-		rt.setFv(f, "locked", rt.sv(f, "teleporter"), (!truthy(rt.fv(f, "locked", rt.sv(f, "teleporter"))) ? 1 : 0));
-	} else if ($0 === "teleport") {
-		if ((!truthy(rt.sv(f, "teleporter")) || !truthy(rt.sv(f, "beacon")))) {
-			return live(f.dot);
+		this.teleporter.locked = (!this.teleporter.locked ? 1 : 0);
+	} else if (action === "teleport") {
+		if (!this.teleporter || !this.beacon) {
+			return f.dot;
 		}
-		yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/machinery/computer/gulag_teleporter_computer/proc/teleport"), live(f.usr)])), 5]);
+		yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/machinery/computer/gulag_teleporter_computer/proc/teleport"), f.usr)), 5);
 	}
 	return f.dot;
-}, true, { args: ["action", "params"] });
+}, true);
 
-// /obj/machinery/computer/gulag_teleporter_computer/proc/scan_machinery  (code/game/machinery/computer/gulag_teleporter.dm:132)
+// gulag_teleporter.dm:132
 rt.def("/obj/machinery/computer/gulag_teleporter_computer/proc/scan_machinery", function scan_machinery(f: Frame) {
-	rt.setSv(f, "teleporter", rt.callSrc(f, "findteleporter", []));
-	rt.setSv(f, "beacon", rt.callSrc(f, "findbeacon", []));
+	this.teleporter = this.findteleporter();
+	this.beacon = this.findbeacon();
 	return f.dot;
 });
 
-// /obj/machinery/computer/gulag_teleporter_computer/proc/findteleporter  (code/game/machinery/computer/gulag_teleporter.dm:138)
+// gulag_teleporter.dm:138
 rt.def("/obj/machinery/computer/gulag_teleporter_computer/proc/findteleporter", function findteleporter(f: Frame) {
 	let teleporterf: Value = null;
 	let $e: any;
-	f.vars = () => [teleporterf, $e];
-	teleporterf = null;
-	rt.forList(f, 0, rt.gl("cardinal"));
+	rt.forList(f, 0, GLOB.cardinal);
 	while (($e = rt.next(f, 0)) !== undefined) {
-		rt.setSv(f, "dir", $e);
-		if ((truthy((teleporterf = rt.locateIn(f, T("/obj/machinery/gulag_teleporter"), rt.getStep(f, live(f.src), rt.sv(f, "dir"))))) && truthy(rt.callName(f, live(teleporterf), "is_operational", [])))) {
-			return live(teleporterf);
+		this.dir = $e;
+		if ((teleporterf = rt.locateIn(f, T("/obj/machinery/gulag_teleporter"), rt.getStep(f, this, this.dir))) && teleporterf.is_operational()) {
+			return teleporterf;
 		}
 	}
 	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /obj/machinery/computer/gulag_teleporter_computer/proc/findbeacon  (code/game/machinery/computer/gulag_teleporter.dm:144)
+// gulag_teleporter.dm:144
 rt.def("/obj/machinery/computer/gulag_teleporter_computer/proc/findbeacon", function findbeacon(f: Frame) {
 	return rt.locateIn(f, T("/obj/structure/gulag_beacon"), rt.world());
 });
 
-// /obj/machinery/computer/gulag_teleporter_computer/proc/teleport  (code/game/machinery/computer/gulag_teleporter.dm:147)  may sleep
+// gulag_teleporter.dm:147
 rt.def("/obj/machinery/computer/gulag_teleporter_computer/proc/teleport", function* teleport(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.call(f, P("/proc/log_game"), null, [fmt("＀(＀ teleported ＀(＀) to the Labor Camp (＀, ＀, ＀) for ＀ points.", [live(user), rt.fv(f, "ckey", live(user)), rt.sv(f, "prisoner"), rt.fv(f, "ckey", rt.sv(f, "prisoner")), rt.fv(f, "x", rt.sv(f, "beacon")), rt.fv(f, "y", rt.sv(f, "beacon")), rt.fv(f, "z", rt.sv(f, "beacon")), rt.fv(f, "goal", rt.sv(f, "id"))])]);
-	yield* g.callName(f, rt.sv(f, "teleporter"), "handle_prisoner", [rt.sv(f, "id"), rt.sv(f, "temporary_record")]);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/weapons/emitter.ogg"), 50, 1]);
-	yield* g.callName(f, rt.sv(f, "prisoner"), "forceMove", [rt.getStep(f, rt.sv(f, "beacon"), 0)]);
-	yield* g.callName(f, rt.sv(f, "prisoner"), "Knockdown", [40]);
-	yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "prisoner"), "<span class='warning'>The teleportation makes you a little dizzy.</span>"]);
-	yield* g.new_(f, T("/obj/effect/particle_effect/sparks"), [rt.fv(f, "loc", rt.sv(f, "prisoner"))]);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), "sparks", 50, 1]);
-	if (truthy(rt.fv(f, "locked", rt.sv(f, "teleporter")))) {
-		rt.setFv(f, "locked", rt.sv(f, "teleporter"), 0);
+	log_game(`${user}(${user.ckey} teleported ${this.prisoner}(${this.prisoner.ckey}) to the Labor Camp (${this.beacon.x}, ${this.beacon.y}, ${this.beacon.z}) for ${this.id.goal} points.`);
+	yield* this.teleporter.handle_prisoner(this.id, this.temporary_record);
+	playsound(this.loc, rt.rsc("sound/weapons/emitter.ogg"), 50, 1);
+	yield* this.prisoner.forceMove(rt.getStep(f, this.beacon, 0));
+	yield* this.prisoner.Knockdown(40);
+	to_chat(this.prisoner, "<span class='warning'>The teleportation makes you a little dizzy.</span>");
+	yield* new_(T("/obj/effect/particle_effect/sparks"), this.prisoner.loc);
+	playsound(this.loc, "sparks", 50, 1);
+	if (this.teleporter.locked) {
+		this.teleporter.locked = 0;
 	}
-	yield* g.callName(f, rt.sv(f, "teleporter"), "toggle_open", []);
-	rt.setSv(f, "id", null);
-	rt.setSv(f, "temporary_record", null);
+	yield* this.teleporter.toggle_open();
+	this.id = null;
+	this.temporary_record = null;
 	return f.dot;
 }, true, { argTypes: [{ type: 8, path: "/mob" }] });

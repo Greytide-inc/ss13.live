@@ -1,7 +1,7 @@
-// From code/game/turfs/simulated/floor/plating/asteroid.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/turfs/simulated/floor/plating/asteroid.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(4508, "/turf/open/floor/plating/asteroid", "/turf/open/floor/plating", {
@@ -17,114 +17,99 @@ rt.type(4508, "/turf/open/floor/plating/asteroid", "/turf/open/floor/plating", {
 	icon_plating: "asteroid",
 });
 
-// /turf/open/floor/plating/asteroid/proc/Initialize  (code/game/turfs/simulated/floor/plating/asteroid.dm:19)  may sleep
+// asteroid.dm:19
 rt.def("/turf/open/floor/plating/asteroid/proc/Initialize", function* Initialize(f: Frame) {
-	let proper_name: Value = null;
-	f.vars = () => [proper_name];
-	proper_name = rt.sv(f, "name");
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "name", live(proper_name));
-	if (!truthy(rt.op(f, "Prob", [], [rt.sv(f, "floor_variance")]))) return f.dot;
-	rt.setSv(f, "icon_state", fmt("＀＀", [rt.sv(f, "environment_type"), (yield* g.call(f, P("/proc/rand"), null, [0, 12]))]));
+	let proper_name: Value = this.name;
+	yield* parent_proc();
+	this.name = proper_name;
+	if (!prob(this.floor_variance)) return f.dot;
+	this.icon_state = `${this.environment_type}${rand(0, 12)}`;
 	return f.dot;
 }, true);
 
-// /turf/open/floor/plating/asteroid/proc/ex_act  (code/game/turfs/simulated/floor/plating/asteroid.dm:29)  may sleep
+// asteroid.dm:29
 rt.def("/turf/open/floor/plating/asteroid/proc/ex_act", function* ex_act(f: Frame, severity: Value, target: Value) {
-	let $0: any;
-	f.vars = () => [severity, target, $0];
-	yield* g.srcCall(f, "contents_explosion", live(severity), live(target));
-	$0 = live(severity);
-	if ($0 === 3) {
-		return live(f.dot);
-	} else if ($0 === 2) {
-		if (truthy(rt.op(f, "Prob", [], [20]))) {
-			yield* g.callName(f, live(f.src), "gets_dug", []);
+	yield* this.contents_explosion(severity, target);
+	if (severity === 3) {
+		return f.dot;
+	} else if (severity === 2) {
+		if (prob(20)) {
+			yield* this.gets_dug();
 		}
-	} else if ($0 === 1) {
-		yield* g.callName(f, live(f.src), "gets_dug", []);
+	} else if (severity === 1) {
+		yield* this.gets_dug();
 	}
 	return f.dot;
 }, true, { waitfor: false });
 
-// /turf/open/floor/plating/asteroid/proc/attackby  (code/game/turfs/simulated/floor/plating/asteroid.dm:41)  may sleep
+// asteroid.dm:41
 rt.def("/turf/open/floor/plating/asteroid/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
-	let digging_speed: Value = null, S: Value = null, _P: Value = null, _T: Value = null, O: Value = null, Z: Value = null, _T_2: Value = null, L: Value = null, F: Value = null;
-	let $e: any;
-	f.vars = () => [W, user, params, digging_speed, S, _P, _T, O, Z, _T_2, L, F, $e];
-	if ((!truthy(live(W)) || !truthy(live(user)))) {
+	let S: Value = null, _P: Value = null, _T: Value = null, O: Value = null, Z: Value = null, L: Value = null, F: Value = null;
+	if (!W || !user) {
 		return 0;
 	}
-	digging_speed = 0;
-	if (truthy((rt.istype(live(W), T("/obj/item/weapon/shovel")) ? 1 : 0))) {
-		digging_speed = rt.gv(f, "digspeed", (S = live(W)));
-	} else {
-		if (truthy((rt.istype(live(W), T("/obj/item/weapon/pickaxe")) ? 1 : 0))) {
-			digging_speed = rt.gv(f, "digspeed", (_P = live(W)));
-		}
+	let digging_speed: Value = 0;
+	if (rt.istype(W, T("/obj/item/weapon/shovel"))) {
+		digging_speed = (S = W).digspeed;
+	} else if (rt.istype(W, T("/obj/item/weapon/pickaxe"))) {
+		digging_speed = (_P = W).digspeed;
 	}
-	if (truthy(live(digging_speed))) {
-		if (!truthy((yield* g.call(f, P("/proc/isturf"), null, [(_T = rt.fv(f, "loc", live(user)))])))) {
-			return live(f.dot);
+	if (digging_speed) {
+		if (!isturf((_T = user.loc))) {
+			return f.dot;
 		}
-		if (truthy(rt.sv(f, "dug"))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>This area has already been dug!</span>"]);
-			return live(f.dot);
+		if (this.dug) {
+			to_chat(user, "<span class='warning'>This area has already been dug!</span>");
+			return f.dot;
 		}
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>You start digging...</span>"]);
-		yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/effects/shovel_dig.ogg"), 50, 1]);
-		if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(user), null, live(digging_speed), "target", live(f.src)], rt.Args.Named)))) {
-			if (truthy((rt.istype(live(f.src), T("/turf/open/floor/plating/asteroid")) ? 1 : 0))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>You dig a hole.</span>"]);
-				yield* g.srcCall(f, "gets_dug");
+		to_chat(user, "<span class='notice'>You start digging...</span>");
+		playsound(this, rt.rsc("sound/effects/shovel_dig.ogg"), 50, 1);
+		if (yield* do_after(user, digging_speed, { target: this })) {
+			if (rt.istype(this, T("/turf/open/floor/plating/asteroid"))) {
+				to_chat(user, "<span class='notice'>You dig a hole.</span>");
+				yield* this.gets_dug();
 			}
 		}
 	}
-	if (truthy((rt.istype(live(W), T("/obj/item/weapon/storage/bag/ore")) ? 1 : 0))) {
-		if (isEqual(rt.gv(f, "collection_mode", (S = live(W))), 1)) {
-			O = null;
-			rt.forList(f, 0, rt.fv(f, "contents", live(f.src)), T("/obj/item/weapon/ore"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				O = $e;
-				yield* g.callName(f, live(O), "attackby", [live(W), live(user)]);
-				return live(f.dot);
+	if (rt.istype(W, T("/obj/item/weapon/storage/bag/ore"))) {
+		if ((S = W).collection_mode == 1) {
+			for (O of each(this.contents, T("/obj/item/weapon/ore"))) {
+				yield* O.attackby(W, user);
+				return f.dot;
 			}
-			rt.endFor(f, 0);
 		}
 	}
-	if (!truthy((rt.istype(live(W), T("/obj/item/stack/tile")) ? 1 : 0))) return f.dot;
-	if (!truthy((yield* g.callName(f, (Z = live(W)), "use", [1])))) {
-		return live(f.dot);
+	if (!rt.istype(W, T("/obj/item/stack/tile"))) return f.dot;
+	if (!(yield* (Z = W).use(1))) {
+		return f.dot;
 	}
-	_T_2 = (yield* g.srcCall(f, "ChangeTurf", rt.fv(f, "turf_type", live(Z))));
-	if (truthy((rt.istype(live(Z), T("/obj/item/stack/tile/light")) ? 1 : 0))) {
-		L = live(Z);
-		rt.setFv(f, "state", (F = live(_T_2)), rt.fv(f, "state", live(L)));
+	let _T_2: Value = (yield* this.ChangeTurf(Z.turf_type));
+	if (rt.istype(Z, T("/obj/item/stack/tile/light"))) {
+		L = Z;
+		(F = _T_2).state = L.state;
 	}
-	yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/weapons/genhit.ogg"), 50, 1]);
+	playsound(this, rt.rsc("sound/weapons/genhit.ogg"), 50, 1);
 	return f.dot;
 }, true);
 
-// /turf/open/floor/plating/asteroid/proc/gets_dug  (code/game/turfs/simulated/floor/plating/asteroid.dm:89)  may sleep
+// asteroid.dm:89
 rt.def("/turf/open/floor/plating/asteroid/proc/gets_dug", function* gets_dug(f: Frame) {
 	let i: Value = null;
 	let $e: any;
-	f.vars = () => [i, $e];
-	if (truthy(rt.sv(f, "dug"))) {
-		return live(f.dot);
+	if (this.dug) {
+		return f.dot;
 	}
-	i = null;
 	rt.forRange(f, 0, 1, 5, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, rt.sv(f, "sand_type"), [live(f.src)]);
+		yield* new_(this.sand_type, this);
 	}
 	rt.endFor(f, 0);
-	rt.setSv(f, "dug", 1);
-	rt.setSv(f, "icon_plating", fmt("＀_dug", [rt.sv(f, "environment_type")]));
-	rt.setSv(f, "icon_state", fmt("＀_dug", [rt.sv(f, "environment_type")]));
-	rt.setSv(f, "slowdown", 0);
-	return live(f.dot);
+	this.dug = 1;
+	this.icon_plating = `${this.environment_type}_dug`;
+	this.icon_state = `${this.environment_type}_dug`;
+	this.slowdown = 0;
+	return f.dot;
 }, true);
 
 rt.type(4509, "/turf/open/floor/plating/asteroid/basalt", "/turf/open/floor/plating/asteroid", {
@@ -138,32 +123,29 @@ rt.type(4509, "/turf/open/floor/plating/asteroid/basalt", "/turf/open/floor/plat
 	sand_type: rt.typePath("/obj/item/weapon/ore/glass/basalt"),
 });
 
-// /turf/open/floor/plating/asteroid/basalt/proc/Initialize  (code/game/turfs/simulated/floor/plating/asteroid.dm:121)  may sleep
+// asteroid.dm:121
 rt.def("/turf/open/floor/plating/asteroid/basalt/proc/Initialize", function* Initialize(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.call(f, P("/proc/set_basalt_light"), null, [live(f.src)]);
+	yield* parent_proc();
+	set_basalt_light(this);
 	return f.dot;
 }, true);
 
-// /proc/set_basalt_light  (code/game/turfs/simulated/floor/plating/asteroid.dm:125)
+// asteroid.dm:125
 rt.def("/proc/set_basalt_light", function set_basalt_light(f: Frame, B: Value) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.fv(f, "icon_state", live(B));
-	if ($0 === "basalt1" || $0 === "basalt2" || $0 === "basalt3") {
-		rt.callName(f, live(B), "set_light", [2, 0.6000000238418579, "#C48A18"]);
-	} else if ($0 === "basalt5" || $0 === "basalt9") {
-		rt.callName(f, live(B), "set_light", [1.399999976158142, 0.6000000238418579, "#C48A18"]);
+	if (B.icon_state === "basalt1" || B.icon_state === "basalt2" || B.icon_state === "basalt3") {
+		B.set_light(2, 0.6, "#C48A18");
+	} else if (B.icon_state === "basalt5" || B.icon_state === "basalt9") {
+		B.set_light(1.4, 0.6, "#C48A18");
 	}
 	return f.dot;
 });
 
-// /turf/open/floor/plating/asteroid/basalt/proc/gets_dug  (code/game/turfs/simulated/floor/plating/asteroid.dm:132)  may sleep
+// asteroid.dm:132
 rt.def("/turf/open/floor/plating/asteroid/basalt/proc/gets_dug", function* gets_dug(f: Frame) {
-	if (!truthy(rt.sv(f, "dug"))) {
-		yield* g.srcCall(f, "set_light", 0);
+	if (!this.dug) {
+		this.set_light(0);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
@@ -174,12 +156,10 @@ rt.type(4516, "/turf/open/floor/plating/asteroid/airless/cave/volcanic", "/turf/
 	initial_gas_mix: "o2=14;n2=23;TEMP=300",
 });
 
-// /turf/open/floor/plating/asteroid/airless/cave/volcanic/proc/<init>  (code/game/turfs/simulated/floor/plating/asteroid.dm:172)
+// asteroid.dm:172
 rt.def("/turf/open/floor/plating/asteroid/airless/cave/volcanic/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "mob_spawn_list", rt.alist(f, [T("/mob/living/simple_animal/hostile/asteroid/goliath/beast"), 50, T("/mob/living/simple_animal/hostile/spawner/lavaland/goliath"), 3, T("/mob/living/simple_animal/hostile/asteroid/basilisk/watcher"), 40, T("/mob/living/simple_animal/hostile/spawner/lavaland"), 2, T("/mob/living/simple_animal/hostile/asteroid/hivelord/legion"), 30, T("/mob/living/simple_animal/hostile/spawner/lavaland/legion"), 3, "bluh bluh huge boss", 6, T("/mob/living/simple_animal/hostile/asteroid/goldgrub"), 10]));
+	parent_proc();
+	this.mob_spawn_list = rt.alist(f, [T("/mob/living/simple_animal/hostile/asteroid/goliath/beast"), 50, T("/mob/living/simple_animal/hostile/spawner/lavaland/goliath"), 3, T("/mob/living/simple_animal/hostile/asteroid/basilisk/watcher"), 40, T("/mob/living/simple_animal/hostile/spawner/lavaland"), 2, T("/mob/living/simple_animal/hostile/asteroid/hivelord/legion"), 30, T("/mob/living/simple_animal/hostile/spawner/lavaland/legion"), 3, "bluh bluh huge boss", 6, T("/mob/living/simple_animal/hostile/asteroid/goldgrub"), 10]);
 	return f.dot;
 });
 
@@ -197,194 +177,164 @@ rt.type(4514, "/turf/open/floor/plating/asteroid/airless/cave", "/turf/open/floo
 	turf_type: rt.typePath("/turf/open/floor/plating/asteroid/airless"),
 });
 
-// /turf/open/floor/plating/asteroid/airless/cave/proc/Initialize  (code/game/turfs/simulated/floor/plating/asteroid.dm:185)  may sleep
+// asteroid.dm:185
 rt.def("/turf/open/floor/plating/asteroid/airless/cave/proc/Initialize", function* Initialize(f: Frame) {
-	if (!truthy(rt.sv(f, "mob_spawn_list"))) {
-		rt.setSv(f, "mob_spawn_list", rt.alist(f, [T("/mob/living/simple_animal/hostile/asteroid/goldgrub"), 1, T("/mob/living/simple_animal/hostile/asteroid/goliath"), 5, T("/mob/living/simple_animal/hostile/asteroid/basilisk"), 4, T("/mob/living/simple_animal/hostile/asteroid/hivelord"), 3]));
+	if (!this.mob_spawn_list) {
+		this.mob_spawn_list = rt.alist(f, [T("/mob/living/simple_animal/hostile/asteroid/goldgrub"), 1, T("/mob/living/simple_animal/hostile/asteroid/goliath"), 5, T("/mob/living/simple_animal/hostile/asteroid/basilisk"), 4, T("/mob/living/simple_animal/hostile/asteroid/hivelord"), 3]);
 	}
-	if (!truthy(rt.sv(f, "megafauna_spawn_list"))) {
-		rt.setSv(f, "megafauna_spawn_list", rt.alist(f, [T("/mob/living/simple_animal/hostile/megafauna/dragon"), 4, T("/mob/living/simple_animal/hostile/megafauna/colossus"), 2, T("/mob/living/simple_animal/hostile/megafauna/bubblegum"), 6]));
+	if (!this.megafauna_spawn_list) {
+		this.megafauna_spawn_list = rt.alist(f, [T("/mob/living/simple_animal/hostile/megafauna/dragon"), 4, T("/mob/living/simple_animal/hostile/megafauna/colossus"), 2, T("/mob/living/simple_animal/hostile/megafauna/bubblegum"), SPAWN_BUBBLEGUM]);
 	}
-	if (!truthy(rt.sv(f, "flora_spawn_list"))) {
-		rt.setSv(f, "flora_spawn_list", rt.alist(f, [T("/obj/structure/flora/ash/leaf_shroom"), 2, T("/obj/structure/flora/ash/cap_shroom"), 2, T("/obj/structure/flora/ash/stem_shroom"), 2, T("/obj/structure/flora/ash/cacti"), 1, T("/obj/structure/flora/ash/tall_shroom"), 2]));
+	if (!this.flora_spawn_list) {
+		this.flora_spawn_list = rt.alist(f, [T("/obj/structure/flora/ash/leaf_shroom"), 2, T("/obj/structure/flora/ash/cap_shroom"), 2, T("/obj/structure/flora/ash/stem_shroom"), 2, T("/obj/structure/flora/ash/cacti"), 1, T("/obj/structure/flora/ash/tall_shroom"), 2]);
 	}
-	if (!truthy(rt.sv(f, "has_data"))) {
-		yield* g.srcCall(f, "produce_tunnel_from_data");
+	if (!this.has_data) {
+		yield* this.produce_tunnel_from_data();
 	} else {
-		yield* g.callSuper(f, [], rt.Args.Same);
+		yield* parent_proc();
 	}
 	return f.dot;
 }, true);
 
-// /turf/open/floor/plating/asteroid/airless/cave/proc/get_cave_data  (code/game/turfs/simulated/floor/plating/asteroid.dm:199)
+// asteroid.dm:199
 rt.def("/turf/open/floor/plating/asteroid/airless/cave/proc/get_cave_data", function get_cave_data(f: Frame, set_length: Value, exclude_dir: Value) {
-	f.vars = () => [exclude_dir];
-	if (live(exclude_dir) === null) {
-		exclude_dir = -1;
-	}
-	if (!truthy(live(set_length))) {
-		rt.setSv(f, "length", rt.call(f, P("/proc/rand"), null, [25, 50]));
+	exclude_dir ??= -1;
+	if (!set_length) {
+		rt.setSv(f, "length", rand(25, 50));
 	} else {
-		rt.setSv(f, "length", live(set_length));
+		rt.setSv(f, "length", set_length);
 	}
-	rt.setSv(f, "forward_cave_dir", rt.op(f, "PickUnweighted", [1], [subtract(rt.gl("alldirs"), live(exclude_dir))]));
-	rt.setSv(f, "backward_cave_dir", rt.call(f, P("/proc/angle2dir"), null, [add(rt.call(f, P("/proc/dir2angle"), null, [rt.sv(f, "forward_cave_dir")]), 180)]));
+	this.forward_cave_dir = pick(GLOB.alldirs - exclude_dir);
+	this.backward_cave_dir = angle2dir(dir2angle(this.forward_cave_dir) + 180);
 	return f.dot;
 });
 
-// /turf/open/floor/plating/asteroid/airless/cave/proc/produce_tunnel_from_data  (code/game/turfs/simulated/floor/plating/asteroid.dm:210)  may sleep
+// asteroid.dm:210
 rt.def("/turf/open/floor/plating/asteroid/airless/cave/proc/produce_tunnel_from_data", function* produce_tunnel_from_data(f: Frame, tunnel_length: Value, excluded_dir: Value) {
-	f.vars = () => [tunnel_length, excluded_dir];
-	if (live(excluded_dir) === null) {
-		excluded_dir = -1;
+	excluded_dir ??= -1;
+	this.get_cave_data(tunnel_length, excluded_dir);
+	yield* this.make_tunnel(this.forward_cave_dir);
+	if (this.going_backwards) {
+		yield* this.make_tunnel(this.backward_cave_dir);
 	}
-	yield* g.srcCall(f, "get_cave_data", live(tunnel_length), live(excluded_dir));
-	yield* g.srcCall(f, "make_tunnel", rt.sv(f, "forward_cave_dir"));
-	if (truthy(rt.sv(f, "going_backwards"))) {
-		yield* g.srcCall(f, "make_tunnel", rt.sv(f, "backward_cave_dir"));
-	}
-	yield* g.srcCall(f, "SpawnFloor", live(f.src));
+	yield* this.SpawnFloor(this);
 	return f.dot;
 }, true);
 
-// /turf/open/floor/plating/asteroid/airless/cave/proc/make_tunnel  (code/game/turfs/simulated/floor/plating/asteroid.dm:219)  may sleep
+// asteroid.dm:219
 rt.def("/turf/open/floor/plating/asteroid/airless/cave/proc/make_tunnel", function* make_tunnel(f: Frame, dir: Value) {
-	let tunnel: Value = null, next_angle: Value = null, i: Value = null, L: Value = null, edge_angle: Value = null, edge: Value = null, C: Value = null;
-	let $e: any;
-	f.vars = () => [dir, tunnel, next_angle, i, L, edge_angle, edge, C, $e];
-	tunnel = live(f.src);
-	next_angle = rt.op(f, "PickUnweighted", [2], [45, -45]);
-	i = null;
-	i = 0;
-	while (rt.lt(live(i), rt.sv(f, "length"))) {
-		if (!truthy(rt.sv(f, "sanity"))) {
+	let L: Value = null, edge_angle: Value = null, edge: Value = null, C: Value = null;
+	let tunnel: Value = this;
+	let next_angle: Value = pick(45, -45);
+	let i: Value = 0;
+	while (i < rt.sv(f, "length")) {
+		if (!this.sanity) {
 			break;
 		}
-		L = rt.list(45);
-		if (truthy((yield* g.call(f, P("/proc/IsOdd"), null, [(yield* g.call(f, P("/proc/dir2angle"), null, [live(dir)]))])))) {
-			L = rt.modify(live(L), -45, add);
+		L = list(45);
+		if (IsOdd(dir2angle(dir))) {
+			L += -45;
 		}
 		edge_angle = null;
-		rt.forList(f, 0, live(L));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			edge_angle = $e;
-			if (truthy((rt.istype((edge = rt.getStep(f, live(tunnel), (yield* g.call(f, P("/proc/angle2dir"), null, [add((yield* g.call(f, P("/proc/dir2angle"), null, [live(dir)])), live(edge_angle))])))), T("/turf/closed/mineral")) ? 1 : 0))) {
-				yield* g.srcCall(f, "SpawnFloor", live(edge));
+		for (edge_angle of each(L)) {
+			if (rt.istype((edge = rt.getStep(f, tunnel, angle2dir(dir2angle(dir) + edge_angle))), T("/turf/closed/mineral"))) {
+				yield* this.SpawnFloor(edge);
 			}
 		}
-		rt.endFor(f, 0);
-		if (!truthy(rt.sv(f, "sanity"))) {
+		if (!this.sanity) {
 			break;
 		}
-		if (truthy((rt.istype((tunnel = rt.getStep(f, live(tunnel), live(dir))), T("/turf/closed/mineral")) ? 1 : 0))) {
-			if ((rt.gt(live(i), 3) && truthy(rt.op(f, "Prob", [], [20])))) {
-				rt.setFv(f, "going_backwards", (C = (yield* g.callName(f, live(tunnel), "ChangeTurf", [rt.sv(f, "data_having_type"), 0, 1]))), 0);
-				yield* g.callName(f, live(C), "produce_tunnel_from_data", [(yield* g.call(f, P("/proc/rand"), null, [10, 15])), live(dir)]);
+		if (rt.istype((tunnel = rt.getStep(f, tunnel, dir)), T("/turf/closed/mineral"))) {
+			if (i > 3 && prob(20)) {
+				(C = (yield* tunnel.ChangeTurf(this.data_having_type, 0, 1))).going_backwards = 0;
+				yield* C.produce_tunnel_from_data(rand(10, 15), dir);
 			} else {
-				yield* g.srcCall(f, "SpawnFloor", live(tunnel));
+				yield* this.SpawnFloor(tunnel);
 			}
 		} else {
 			break;
 		}
-		if ((rt.gt(live(i), 2) && truthy(rt.op(f, "Prob", [], [33])))) {
-			next_angle = rt.neg(live(next_angle));
-			yield* g.srcCall(f, "setDir", add((yield* g.call(f, P("/proc/angle2dir"), null, [(yield* g.call(f, P("/proc/dir2angle"), null, [live(dir)]))])), live(next_angle)));
+		if (i > 2 && prob(33)) {
+			next_angle = -next_angle;
+			yield* this.setDir(angle2dir(dir2angle(dir)) + next_angle);
 		}
-		i = rt.inc(live(i), 1);
+		i++;
 	}
 	return f.dot;
 }, true);
 
-// /turf/open/floor/plating/asteroid/airless/cave/proc/SpawnFloor  (code/game/turfs/simulated/floor/plating/asteroid.dm:261)  may sleep
+// asteroid.dm:261
 rt.def("/turf/open/floor/plating/asteroid/airless/cave/proc/SpawnFloor", function* SpawnFloor(f: Frame, _T: Value) {
 	let S: Value = null, NT: Value = null;
-	let $e: any;
-	f.vars = () => [_T, S, NT, $e];
-	S = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/block"), null, [rt.locate((yield* g.call(f, P("/proc/max"), null, [subtract(rt.fv(f, "x", live(f.src)), 1), 1])), (yield* g.call(f, P("/proc/max"), null, [subtract(rt.fv(f, "y", live(f.src)), 1), 1])), rt.fv(f, "z", live(f.src))), rt.locate((yield* g.call(f, P("/proc/min"), null, [add(rt.fv(f, "x", live(f.src)), 1), rt.fv(f, "maxx", rt.world())])), (yield* g.call(f, P("/proc/min"), null, [add(rt.fv(f, "y", live(f.src)), 1), rt.fv(f, "maxy", rt.world())])), rt.fv(f, "z", live(f.src)))])));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		S = $e;
-		if ((((!truthy((NT = live(S))) || truthy((rt.istype(live(NT), T("/turf/open/space")) ? 1 : 0))) || truthy((rt.istype(rt.fv(f, "loc", live(NT)), T("/area/mine/explored")) ? 1 : 0))) || truthy((rt.istype(rt.fv(f, "loc", live(NT)), T("/area/lavaland/surface/outdoors/explored")) ? 1 : 0)))) {
-			rt.setSv(f, "sanity", 0);
+	for (S of each(block(rt.locate(max(this.x - 1, 1), max(this.y - 1, 1), this.z), rt.locate(min(this.x + 1, rt.world().maxx), min(this.y + 1, rt.world().maxy), this.z)))) {
+		if (!(NT = S) || rt.istype(NT, T("/turf/open/space")) || rt.istype(NT.loc, T("/area/mine/explored")) || rt.istype(NT.loc, T("/area/lavaland/surface/outdoors/explored"))) {
+			this.sanity = 0;
 			break;
 		}
 	}
-	rt.endFor(f, 0);
-	if (!truthy(rt.sv(f, "sanity"))) {
+	if (!this.sanity) {
 		// tg's bug: a starter tile that can't dig stayed a cave, which never ran Initialize, so no air and runtimes at world start.
-		if (isEqual(live(_T), live(f.src))) {
-			yield* g.callName(f, live(_T), "ChangeTurf", [rt.sv(f, "turf_type"), 0, 1]);
+		if (_T == this) {
+			yield* _T.ChangeTurf(this.turf_type, 0, 1);
 		}
-		return live(f.dot);
+		return f.dot;
 	}
-	yield* g.srcCall(f, "SpawnFlora", live(_T));
-	yield* g.srcCall(f, "SpawnMonster", live(_T));
-	yield* g.callName(f, live(_T), "ChangeTurf", [rt.sv(f, "turf_type"), 0, 1]);
+	yield* this.SpawnFlora(_T);
+	yield* this.SpawnMonster(_T);
+	yield* _T.ChangeTurf(this.turf_type, 0, 1);
 	return f.dot;
 }, true);
 
-// /turf/open/floor/plating/asteroid/airless/cave/proc/SpawnMonster  (code/game/turfs/simulated/floor/plating/asteroid.dm:274)  may sleep
+// asteroid.dm:274
 rt.def("/turf/open/floor/plating/asteroid/airless/cave/proc/SpawnMonster", function* SpawnMonster(f: Frame, _T: Value) {
 	let randumb: Value = null, maybe_boss: Value = null, H: Value = null;
-	let $e: any;
-	f.vars = () => [_T, randumb, maybe_boss, H, $e];
-	if (truthy(rt.op(f, "Prob", [], [30]))) {
-		if ((truthy((rt.istype(rt.sv(f, "loc"), T("/area/mine/explored")) ? 1 : 0)) || !truthy((rt.istype(rt.sv(f, "loc"), T("/area/lavaland/surface/outdoors/unexplored")) ? 1 : 0)))) {
-			return live(f.dot);
+	if (prob(30)) {
+		if (rt.istype(this.loc, T("/area/mine/explored")) || !rt.istype(this.loc, T("/area/lavaland/surface/outdoors/unexplored"))) {
+			return f.dot;
 		}
-		randumb = (yield* g.call(f, P("/proc/pickweight"), null, [rt.sv(f, "mob_spawn_list")]));
-		while (isEqual(live(randumb), "bluh bluh huge boss")) {
-			if (truthy((rt.istype(rt.sv(f, "loc"), T("/area/lavaland/surface/outdoors/unexplored/danger")) ? 1 : 0))) {
-				maybe_boss = (yield* g.call(f, P("/proc/pickweight"), null, [rt.sv(f, "megafauna_spawn_list")]));
-				if (truthy(rt.index(rt.sv(f, "megafauna_spawn_list"), live(maybe_boss)))) {
-					randumb = live(maybe_boss);
-					if (truthy((yield* g.call(f, P("/proc/ispath"), null, [live(maybe_boss), T("/mob/living/simple_animal/hostile/megafauna/bubblegum")])))) {
-						rt.setAt(rt.sv(f, "megafauna_spawn_list"), live(maybe_boss), 0);
+		randumb = pickweight(this.mob_spawn_list);
+		while (randumb == "bluh bluh huge boss") {
+			if (rt.istype(this.loc, T("/area/lavaland/surface/outdoors/unexplored/danger"))) {
+				maybe_boss = pickweight(this.megafauna_spawn_list);
+				if (rt.index(this.megafauna_spawn_list, maybe_boss)) {
+					randumb = maybe_boss;
+					if (ispath(maybe_boss, T("/mob/living/simple_animal/hostile/megafauna/bubblegum"))) {
+						rt.setAt(this.megafauna_spawn_list, maybe_boss, 0);
 					}
 				}
 			} else {
-				randumb = (yield* g.call(f, P("/proc/pickweight"), null, [rt.sv(f, "mob_spawn_list")]));
+				randumb = pickweight(this.mob_spawn_list);
 			}
 		}
-		H = null;
-		rt.forList(f, 0, (yield* g.call(f, P("/proc/urange"), null, [12, live(_T)])), T("/mob/living/simple_animal/hostile"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			H = $e;
-			if (((truthy((yield* g.call(f, P("/proc/ispath"), null, [live(randumb), T("/mob/living/simple_animal/hostile/megafauna")]))) || truthy((rt.istype(live(H), T("/mob/living/simple_animal/hostile/megafauna")) ? 1 : 0))) && rt.le((yield* g.call(f, P("/proc/get_dist"), null, [live(f.src), live(H)])), 7))) {
-				return live(f.dot);
+		for (H of each(urange(12, _T), T("/mob/living/simple_animal/hostile"))) {
+			if ((ispath(randumb, T("/mob/living/simple_animal/hostile/megafauna")) || rt.istype(H, T("/mob/living/simple_animal/hostile/megafauna"))) && get_dist(this, H) <= 7) {
+				return f.dot;
 			}
-			if ((truthy((yield* g.call(f, P("/proc/ispath"), null, [live(randumb), T("/mob/living/simple_animal/hostile/asteroid")]))) || truthy((rt.istype(live(H), T("/mob/living/simple_animal/hostile/asteroid")) ? 1 : 0)))) {
-				return live(f.dot);
+			if (ispath(randumb, T("/mob/living/simple_animal/hostile/asteroid")) || rt.istype(H, T("/mob/living/simple_animal/hostile/asteroid"))) {
+				return f.dot;
 			}
-			if (((truthy((yield* g.call(f, P("/proc/ispath"), null, [live(randumb), T("/mob/living/simple_animal/hostile/spawner/lavaland")]))) || truthy((rt.istype(live(H), T("/mob/living/simple_animal/hostile/spawner/lavaland")) ? 1 : 0))) && rt.le((yield* g.call(f, P("/proc/get_dist"), null, [live(f.src), live(H)])), 2))) {
-				return live(f.dot);
+			if ((ispath(randumb, T("/mob/living/simple_animal/hostile/spawner/lavaland")) || rt.istype(H, T("/mob/living/simple_animal/hostile/spawner/lavaland"))) && get_dist(this, H) <= 2) {
+				return f.dot;
 			}
 		}
-		rt.endFor(f, 0);
-		yield* g.new_(f, live(randumb), [live(_T)]);
+		yield* new_(randumb, _T);
 	}
-	return live(f.dot);
+	return f.dot;
 }, true);
 
-// /turf/open/floor/plating/asteroid/airless/cave/proc/SpawnFlora  (code/game/turfs/simulated/floor/plating/asteroid.dm:303)  may sleep
+// asteroid.dm:303
 rt.def("/turf/open/floor/plating/asteroid/airless/cave/proc/SpawnFlora", function* SpawnFlora(f: Frame, _T: Value) {
-	let randumb: Value = null, F: Value = null;
-	let $e: any;
-	f.vars = () => [_T, randumb, F, $e];
-	if (!truthy(rt.op(f, "Prob", [], [12]))) return f.dot;
-	if ((truthy((rt.istype(rt.sv(f, "loc"), T("/area/mine/explored")) ? 1 : 0)) || truthy((rt.istype(rt.sv(f, "loc"), T("/area/lavaland/surface/outdoors/explored")) ? 1 : 0)))) {
-		return live(f.dot);
+	let F: Value = null;
+	if (!prob(12)) return f.dot;
+	if (rt.istype(this.loc, T("/area/mine/explored")) || rt.istype(this.loc, T("/area/lavaland/surface/outdoors/explored"))) {
+		return f.dot;
 	}
-	randumb = (yield* g.call(f, P("/proc/pickweight"), null, [rt.sv(f, "flora_spawn_list")]));
-	F = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/range"), null, [4, live(_T)])), T("/obj/structure/flora/ash"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		F = $e;
-		if (!truthy(rt.op(f, "IsType", [], [live(F), live(randumb)]))) {
-			return live(f.dot);
+	let randumb: Value = pickweight(this.flora_spawn_list);
+	for (F of each(range(4, _T), T("/obj/structure/flora/ash"))) {
+		if (!rt.op(f, "IsType", [], [F, randumb])) {
+			return f.dot;
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.new_(f, live(randumb), [live(_T)]);
+	yield* new_(randumb, _T);
 	return f.dot;
 }, true);

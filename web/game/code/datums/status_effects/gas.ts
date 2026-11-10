@@ -1,7 +1,7 @@
-// From code/datums/status_effects/gas.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/datums/status_effects/gas.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(939, "/datum/status_effect/freon", "/datum/status_effect", {
@@ -12,32 +12,32 @@ rt.type(939, "/datum/status_effect/freon", "/datum/status_effect", {
 	alert_type: rt.typePath("/obj/screen/alert/status_effect/freon"),
 });
 
-// /datum/status_effect/freon/proc/on_apply  (code/datums/status_effects/gas.dm:14)  may sleep
+// gas.dm:14
 rt.def("/datum/status_effect/freon/proc/on_apply", function* on_apply(f: Frame) {
-	if (!truthy(rt.fv(f, "stat", rt.sv(f, "owner")))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "owner"), "<span class='userdanger'>You become frozen in a cube!</span>"]);
+	if (!this.owner.stat) {
+		to_chat(this.owner, "<span class='userdanger'>You become frozen in a cube!</span>");
 	}
-	rt.setSv(f, "cube", (yield* g.call(f, P("/proc/icon"), null, [rt.rsc("icons/effects/freeze.dmi"), "ice_cube"])));
-	yield* g.callName(f, rt.sv(f, "owner"), "add_overlay", [rt.sv(f, "cube")]);
-	yield* g.callName(f, rt.sv(f, "owner"), "update_canmove", []);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	this.cube = icon(rt.rsc("icons/effects/freeze.dmi"), "ice_cube");
+	this.owner.add_overlay(this.cube);
+	yield* this.owner.update_canmove();
+	return (yield* parent_proc());
 }, true);
 
-// /datum/status_effect/freon/proc/tick  (code/datums/status_effects/gas.dm:22)  may sleep
+// gas.dm:22
 rt.def("/datum/status_effect/freon/proc/tick", function* tick(f: Frame) {
-	yield* g.callName(f, rt.sv(f, "owner"), "update_canmove", []);
-	if (!(truthy(rt.sv(f, "owner")) && rt.ge(rt.fv(f, "bodytemperature", rt.sv(f, "owner")), 310.05499267578125))) return f.dot;
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* this.owner.update_canmove();
+	if (!(this.owner && this.owner.bodytemperature >= 310.055)) return f.dot;
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
-// /datum/status_effect/freon/proc/on_remove  (code/datums/status_effects/gas.dm:27)  may sleep
+// gas.dm:27
 rt.def("/datum/status_effect/freon/proc/on_remove", function* on_remove(f: Frame) {
-	if (!truthy(rt.fv(f, "stat", rt.sv(f, "owner")))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "owner"), "The cube melts!"]);
+	if (!this.owner.stat) {
+		to_chat(this.owner, "The cube melts!");
 	}
-	yield* g.callName(f, rt.sv(f, "owner"), "cut_overlay", [rt.sv(f, "cube")]);
-	rt.modField(f, rt.sv(f, "owner"), "bodytemperature", 100, add);
-	yield* g.callName(f, rt.sv(f, "owner"), "update_canmove", []);
+	this.owner.cut_overlay(this.cube);
+	this.owner.bodytemperature += 100;
+	yield* this.owner.update_canmove();
 	return f.dot;
 }, true);

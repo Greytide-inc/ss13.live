@@ -1,7 +1,7 @@
-// From code/modules/mob/living/simple_animal/hostile/tree.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/simple_animal/hostile/tree.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, subtract, fmt } = rt;
 
 
 rt.type(4994, "/mob/living/simple_animal/hostile/tree", "/mob/living/simple_animal/hostile", {
@@ -42,47 +42,42 @@ rt.type(4994, "/mob/living/simple_animal/hostile/tree", "/mob/living/simple_anim
 	del_on_death: 1,
 });
 
-// /mob/living/simple_animal/hostile/tree/proc/<init>  (code/modules/mob/living/simple_animal/hostile/tree.dm:28)
+// tree.dm:28
 rt.def("/mob/living/simple_animal/hostile/tree/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "emote_taunt", rt.list("growls"));
-	$0 = $0;
-	rt.setSv(f, "speak_emote", rt.list("pines"));
-	rt.setSv(f, "atmos_requirements", rt.alist(f, ["min_oxy", 2, "max_oxy", 0, "min_tox", 0, "max_tox", 0, "min_co2", 0, "max_co2", 0, "min_n2", 0, "max_n2", 0]));
-	$0 = $0;
-	rt.setSv(f, "faction", rt.list("hostile"));
-	$0 = $0;
-	rt.setSv(f, "loot", rt.list(T("/obj/item/stack/sheet/mineral/wood")));
+	parent_proc();
+	this.emote_taunt = list("growls");
+
+	this.speak_emote = list("pines");
+	this.atmos_requirements = rt.alist(f, ["min_oxy", 2, "max_oxy", 0, "min_tox", 0, "max_tox", 0, "min_co2", 0, "max_co2", 0, "min_n2", 0, "max_n2", 0]);
+
+	this.faction = list("hostile");
+
+	this.loot = list(T("/obj/item/stack/sheet/mineral/wood"));
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/tree/proc/Life  (code/modules/mob/living/simple_animal/hostile/tree.dm:43)
+// tree.dm:43
 rt.def("/mob/living/simple_animal/hostile/tree/proc/Life", function Life(f: Frame) {
-	let _T: Value = null, co2: Value = null, amt: Value = null;
-	f.vars = () => [_T, co2, amt];
-	rt.callSuper(f, [], rt.Args.Same);
-	if (!truthy((rt.istype(rt.sv(f, "loc"), T("/turf/open")) ? 1 : 0))) return f.dot;
-	if (!(truthy(rt.gv(f, "air", (_T = rt.fv(f, "loc", live(f.src))))) && truthy(rt.index(rt.gv(f, "gases", rt.fv(f, "air", live(_T))), "co2")))) return f.dot;
-	if (!rt.gt((co2 = rt.index(rt.index(rt.gv(f, "gases", rt.fv(f, "air", live(_T))), "co2"), 1)), 0)) return f.dot;
-	if (!truthy(rt.op(f, "Prob", [], [25]))) return f.dot;
-	amt = rt.call(f, P("/proc/min"), null, [live(co2), 9]);
-	(rt.modAt(rt.index(rt.gv(f, "gases", rt.fv(f, "air", live(_T))), "co2"), 1, live(amt), subtract));
-	rt.callName(f, live(_T), "atmos_spawn_air", [fmt("o2=＀", [live(amt)])]);
+	let _T: Value = null, co2: Value = null;
+	parent_proc();
+	if (!rt.istype(this.loc, T("/turf/open"))) return f.dot;
+	if (!((_T = this.loc).air && rt.index(_T.air.gases, "co2"))) return f.dot;
+	if (!((co2 = rt.index(rt.index(_T.air.gases, "co2"), 1)) > 0)) return f.dot;
+	if (!prob(25)) return f.dot;
+	let amt: Value = min(co2, 9);
+	(rt.modAt(rt.index(_T.air.gases, "co2"), 1, amt, subtract));
+	_T.atmos_spawn_air(`o2=${amt}`);
 	return f.dot;
 }, false, { waitfor: false });
 
-// /mob/living/simple_animal/hostile/tree/proc/AttackingTarget  (code/modules/mob/living/simple_animal/hostile/tree.dm:55)  may sleep
+// tree.dm:55
 rt.def("/mob/living/simple_animal/hostile/tree/proc/AttackingTarget", function* AttackingTarget(f: Frame) {
-	let C: Value = null;
-	f.vars = () => [C];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy((rt.istype(rt.sv(f, "target"), T("/mob/living/carbon")) ? 1 : 0))) return f.dot;
-	C = rt.sv(f, "target");
-	if (!truthy(rt.op(f, "Prob", [], [15]))) return f.dot;
-	yield* g.callName(f, live(C), "Knockdown", [60]);
-	yield* g.callName(f, live(C), "visible_message", [fmt("<span class='danger'>＄！ knocks down ％！!</span>", [live(f.src), live(C)]), fmt("<span class='userdanger'>＄！ knocks you down!</span>", [live(f.src)])]);
+	f.dot = (yield* parent_proc());
+	if (!rt.istype(this.target, T("/mob/living/carbon"))) return f.dot;
+	let C: Value = this.target;
+	if (!prob(15)) return f.dot;
+	yield* C.Knockdown(60);
+	C.visible_message(fmt("<span class='danger'>＄！ knocks down ％！!</span>", [this, C]), fmt("<span class='userdanger'>＄！ knocks you down!</span>", [this]));
 	return f.dot;
 }, true);
 
@@ -97,13 +92,11 @@ rt.type(4995, "/mob/living/simple_animal/hostile/tree/festivus", "/mob/living/si
 	speak_emote: null,
 });
 
-// /mob/living/simple_animal/hostile/tree/festivus/proc/<init>  (code/modules/mob/living/simple_animal/hostile/tree.dm:70)
+// tree.dm:70
 rt.def("/mob/living/simple_animal/hostile/tree/festivus/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "loot", rt.list(T("/obj/item/stack/rods")));
-	$0 = $0;
-	rt.setSv(f, "speak_emote", rt.list("polls"));
+	parent_proc();
+	this.loot = list(T("/obj/item/stack/rods"));
+
+	this.speak_emote = list("polls");
 	return f.dot;
 });

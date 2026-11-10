@@ -1,5 +1,5 @@
 // Types declared in code/game/gamemodes/cult that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(99, "/datum/action/innate/cult/create_rune/tele", "/datum/action/innate/cult/create_rune", {
 	rune_color: "#551A8B",

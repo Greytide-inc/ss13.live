@@ -1,7 +1,7 @@
-// From code/modules/ruins/objects_and_mobs/ash_walker_den.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/ruins/objects_and_mobs/ash_walker_den.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(4932, "/mob/living/simple_animal/hostile/spawner/ash_walker", "/mob/living/simple_animal/hostile/spawner", {
@@ -19,78 +19,67 @@ rt.type(4932, "/mob/living/simple_animal/hostile/spawner/ash_walker", "/mob/livi
 	del_on_death: 1,
 });
 
-// /mob/living/simple_animal/hostile/spawner/ash_walker/proc/<init>  (code/modules/ruins/objects_and_mobs/ash_walker_den.dm:9)
+// ash_walker_den.dm:9
 rt.def("/mob/living/simple_animal/hostile/spawner/ash_walker/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "faction", rt.list("ashwalker"));
-	$0 = $0;
-	rt.setSv(f, "loot", rt.list(T("/obj/effect/gibspawner"), T("/obj/item/device/assembly/signaler/anomaly")));
+	parent_proc();
+	this.faction = list("ashwalker");
+
+	this.loot = list(T("/obj/effect/gibspawner"), T("/obj/item/device/assembly/signaler/anomaly"));
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/spawner/ash_walker/proc/Initialize  (code/modules/ruins/objects_and_mobs/ash_walker_den.dm:18)  may sleep
+// ash_walker_den.dm:18
 rt.def("/mob/living/simple_animal/hostile/spawner/ash_walker/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "emitted_light", (yield* g.new_(f, T("/obj/effect/light_emitter/tendril"), [rt.sv(f, "loc")])));
+	f.dot = (yield* parent_proc());
+	this.emitted_light = (yield* new_(T("/obj/effect/light_emitter/tendril"), this.loc));
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/spawner/ash_walker/proc/Destroy  (code/modules/ruins/objects_and_mobs/ash_walker_den.dm:22)  may sleep
+// ash_walker_den.dm:22
 rt.def("/mob/living/simple_animal/hostile/spawner/ash_walker/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "emitted_light")]);
-	rt.setSv(f, "emitted_light", null);
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* qdel(this.emitted_light);
+	this.emitted_light = null;
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/spawner/ash_walker/proc/Life  (code/modules/ruins/objects_and_mobs/ash_walker_den.dm:26)  may sleep
+// ash_walker_den.dm:26
 rt.def("/mob/living/simple_animal/hostile/spawner/ash_walker/proc/Life", function* Life(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.sv(f, "stat"))) return f.dot;
-	yield* g.srcCall(f, "consume");
-	yield* g.srcCall(f, "spawn_mob");
+	yield* parent_proc();
+	if (this.stat) return f.dot;
+	yield* this.consume();
+	yield* this.spawn_mob();
 	return f.dot;
 }, true, { waitfor: false });
 
-// /mob/living/simple_animal/hostile/spawner/ash_walker/proc/consume  (code/modules/ruins/objects_and_mobs/ash_walker_den.dm:32)  may sleep
+// ash_walker_den.dm:32
 rt.def("/mob/living/simple_animal/hostile/spawner/ash_walker/proc/consume", function* consume(f: Frame) {
 	let H: Value = null, W: Value = null;
-	let $e: any;
-	f.vars = () => [H, W, $e];
-	H = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/view"), null, [live(f.src), 1])), T("/mob/living"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		H = $e;
-		if (truthy(rt.fv(f, "stat", live(H)))) {
-			yield* g.srcCall(f, "visible_message", fmt("<span class='warning'>Serrated tendrils eagerly pull ＀ to ＀, tearing the body apart as its blood seeps over the eggs.</span>", [live(H), live(f.src)]));
-			yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/magic/demon_consume.ogg"), 100, 1]);
-			if (truthy((rt.istype(live(H), T("/mob/living/simple_animal/hostile/megafauna")) ? 1 : 0))) {
-				rt.modSrcVar(f, "meat_counter", 20, add);
+	for (H of each(view(this, 1), T("/mob/living"))) {
+		if (H.stat) {
+			this.visible_message(`<span class='warning'>Serrated tendrils eagerly pull ${H} to ${this}, tearing the body apart as its blood seeps over the eggs.</span>`);
+			playsound(rt.getStep(f, this, 0), rt.rsc("sound/magic/demon_consume.ogg"), 100, 1);
+			if (rt.istype(H, T("/mob/living/simple_animal/hostile/megafauna"))) {
+				this.meat_counter += 20;
 			} else {
-				rt.incSrcVar(f, "meat_counter", 1, true);
+				this.meat_counter++;
 			}
 			W = null;
-			rt.forList(f, 1, live(H), T("/obj/item"));
-			while (($e = rt.next(f, 1)) !== undefined) {
-				W = $e;
-				yield* g.callName(f, live(H), "dropItemToGround", [live(W)]);
+			for (W of each(H, T("/obj/item"))) {
+				yield* H.dropItemToGround(W);
 			}
-			rt.endFor(f, 1);
-			yield* g.callName(f, live(H), "gib", []);
-			yield* g.srcCall(f, "adjustHealth", multiply(rt.neg(rt.sv(f, "maxHealth")), 0.05000000074505806));
+			yield* H.gib();
+			yield* this.adjustHealth(-this.maxHealth * 0.05);
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/spawner/ash_walker/proc/spawn_mob  (code/modules/ruins/objects_and_mobs/ash_walker_den.dm:46)  may sleep
+// ash_walker_den.dm:46
 rt.def("/mob/living/simple_animal/hostile/spawner/ash_walker/proc/spawn_mob", function* spawn_mob(f: Frame) {
-	if (!rt.ge(rt.sv(f, "meat_counter"), 2)) return f.dot;
-	yield* g.new_(f, T("/obj/effect/mob_spawn/human/ash_walker"), [rt.getStep(f, rt.fv(f, "loc", live(f.src)), 2)]);
-	yield* g.srcCall(f, "visible_message", "<span class='danger'>One of the eggs swells to an unnatural size and tumbles free. It's ready to hatch!</span>");
-	(rt.modSrcVar(f, "meat_counter", 2, subtract));
+	if (!(this.meat_counter >= 2)) return f.dot;
+	yield* new_(T("/obj/effect/mob_spawn/human/ash_walker"), rt.getStep(f, this.loc, 2));
+	this.visible_message("<span class='danger'>One of the eggs swells to an unnatural size and tumbles free. It's ready to hatch!</span>");
+	this.meat_counter -= 2;
 	return f.dot;
 }, true);

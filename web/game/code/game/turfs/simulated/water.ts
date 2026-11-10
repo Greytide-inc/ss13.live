@@ -1,7 +1,7 @@
-// From code/game/turfs/simulated/water.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/turfs/simulated/water.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(4799, "/turf/open/water", "/turf/open", {
@@ -16,12 +16,12 @@ rt.type(4799, "/turf/open/water", "/turf/open", {
 	planetary_atmos: 1,
 });
 
-// /turf/open/water/proc/HandleWet  (code/game/turfs/simulated/water.dm:13)  may sleep
+// water.dm:13
 rt.def("/turf/open/water/proc/HandleWet", function* HandleWet(f: Frame) {
-	if (isEqual(rt.sv(f, "wet"), 1)) {
-		return live(f.dot);
+	if (this.wet == 1) {
+		return f.dot;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "MakeSlippery", 1);
+	yield* parent_proc();
+	yield* this.MakeSlippery(TURF_WET_WATER);
 	return f.dot;
 }, true);

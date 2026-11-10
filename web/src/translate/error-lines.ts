@@ -1,5 +1,6 @@
 // error-lines.ts - where a runtime error in translated code happened, read off the JS stack only when one happens.
-// tools/translate-tg.mjs builds translated-tg.js with every game file at the same lines and columns, and writes
+// tools/translate-tg.mjs builds translated-tg.js with every game file at the same lines (and columns, but where it lowers a
+// plain proc call: there it moves the file's DM columns to the bundle's), and writes
 // translated-tg.lines.json next to it: each file's first bundle line, its rt.def lines, and game/_dm-lines.json (each
 // proc's DM file:line by game line and column, kept from the old `f.at = N` statements by tools/strip-at.mjs). So the
 // innermost translated-tg.js frame of the error's stack gives the game/ file:line, and from there the DM file:line,

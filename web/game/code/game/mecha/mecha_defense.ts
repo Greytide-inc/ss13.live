@@ -1,522 +1,455 @@
-// From code/game/mecha/mecha_defense.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/mecha/mecha_defense.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
-// /obj/mecha/proc/get_armour_facing  (code/game/mecha/mecha_defense.dm:2)
+// mecha_defense.dm:2
 rt.def("/obj/mecha/proc/get_armour_facing", function get_armour_facing(f: Frame, relative_dir: Value) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = live(relative_dir);
-	if ($0 === 0) {
-		return rt.index(rt.sv(f, "facing_modifiers"), 3);
-	} else if ($0 === 45 || $0 === 90 || $0 === 270 || $0 === 315) {
-		return rt.index(rt.sv(f, "facing_modifiers"), 2);
-	} else if ($0 === 225 || $0 === 180 || $0 === 135) {
-		return rt.index(rt.sv(f, "facing_modifiers"), 1);
+	if (relative_dir === 0) {
+		return rt.index(this.facing_modifiers, 3);
+	} else if (relative_dir === 45 || relative_dir === 90 || relative_dir === 270 || relative_dir === 315) {
+		return rt.index(this.facing_modifiers, 2);
+	} else if (relative_dir === 225 || relative_dir === 180 || relative_dir === 135) {
+		return rt.index(this.facing_modifiers, 1);
 	}
 	return 1;
 });
 
-// /obj/mecha/proc/take_damage  (code/game/mecha/mecha_defense.dm:12)  may sleep
+// mecha_defense.dm:12
 rt.def("/obj/mecha/proc/take_damage", function* take_damage(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = "brute";
 	}
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 0;
 	}
-	if (live(f.args[3]) === null) {
+	if (f.args[3] === null) {
 		f.args[3] = 1;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!(truthy(live(f.dot)) && rt.gt(rt.sv(f, "obj_integrity"), 0))) return f.dot;
-	yield* g.callName(f, rt.sv(f, "spark_system"), "start", []);
-	$0 = live(f.args[2]);
-	if ($0 === "fire") {
-		yield* g.srcCall(f, "check_for_internal_damage", rt.list(1, 2));
-	} else if ($0 === "melee") {
-		yield* g.srcCall(f, "check_for_internal_damage", rt.list(2, 8, 16));
+	f.dot = (yield* parent_proc());
+	if (!(f.dot && this.obj_integrity > 0)) return f.dot;
+	yield* this.spark_system.start();
+	const subject = f.args[2];
+	if (subject === "fire") {
+		yield* this.check_for_internal_damage(list(1, 2));
+	} else if (subject === "melee") {
+		yield* this.check_for_internal_damage(list(2, 8, 16));
 	} else {
-		yield* g.srcCall(f, "check_for_internal_damage", rt.list(1, 2, 8, 16, 4));
+		yield* this.check_for_internal_damage(list(1, 2, 8, 16, 4));
 	}
-	if ((rt.ge(live(f.dot), 5) || truthy(rt.op(f, "Prob", [], [33])))) {
-		yield* g.srcCall(f, "occupant_message", "<span class='userdanger'>Taking damage!</span>");
+	if (f.dot >= 5 || prob(33)) {
+		this.occupant_message("<span class='userdanger'>Taking damage!</span>");
 	}
-	yield* g.srcCall(f, "log_append_to_last", fmt("Took ＀ points of damage. Damage type: \"＀\".", [live(f.args[0]), live(f.args[1])]), 1);
+	this.log_append_to_last(`Took ${f.args[0]} points of damage. Damage type: "${f.args[1]}".`, 1);
 	return f.dot;
 }, true, { args: ["damage_amount", "damage_type", "damage_flag", "sound_effect", "attack_dir"] });
 
-// /obj/mecha/proc/run_obj_armor  (code/game/mecha/mecha_defense.dm:27)  may sleep
+// mecha_defense.dm:27
 rt.def("/obj/mecha/proc/run_obj_armor", function* run_obj_armor(f: Frame) {
-	let booster_deflection_modifier: Value = null, booster_damage_modifier: Value = null, B: Value = null, facing_modifier: Value = null;
-	let $e: any;
-	f.vars = () => [booster_deflection_modifier, booster_damage_modifier, B, facing_modifier, $e];
-	if (live(f.args[2]) === null) {
+	let B: Value = null, facing_modifier: Value = null;
+	if (f.args[2] === null) {
 		f.args[2] = 0;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	booster_deflection_modifier = 1;
-	booster_damage_modifier = 1;
-	if (((isEqual(live(f.args[2]), "bullet") || isEqual(live(f.args[2]), "laser")) || isEqual(live(f.args[2]), "energy"))) {
-		B = null;
-		rt.forList(f, 0, rt.sv(f, "equipment"), T("/obj/item/mecha_parts/mecha_equipment/antiproj_armor_booster"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			B = $e;
-			if (truthy((yield* g.callName(f, live(B), "projectile_react", [])))) {
-				booster_deflection_modifier = rt.fv(f, "deflect_coeff", live(B));
-				booster_damage_modifier = rt.fv(f, "damage_coeff", live(B));
+	f.dot = (yield* parent_proc());
+	let booster_deflection_modifier: Value = 1;
+	let booster_damage_modifier: Value = 1;
+	if (f.args[2] == "bullet" || f.args[2] == "laser" || f.args[2] == "energy") {
+		for (B of each(this.equipment, T("/obj/item/mecha_parts/mecha_equipment/antiproj_armor_booster"))) {
+			if (yield* B.projectile_react()) {
+				booster_deflection_modifier = B.deflect_coeff;
+				booster_damage_modifier = B.damage_coeff;
 				break;
 			}
 		}
-		rt.endFor(f, 0);
-	} else {
-		if (isEqual(live(f.args[2]), "melee")) {
-			B = null;
-			rt.forList(f, 0, rt.sv(f, "equipment"), T("/obj/item/mecha_parts/mecha_equipment/anticcw_armor_booster"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				B = $e;
-				if (truthy((yield* g.callName(f, live(B), "attack_react", [])))) {
-					(booster_deflection_modifier = rt.modify(live(booster_deflection_modifier), rt.fv(f, "deflect_coeff", live(B)), multiply));
-					(booster_damage_modifier = rt.modify(live(booster_damage_modifier), rt.fv(f, "damage_coeff", live(B)), multiply));
-					break;
-				}
+	} else if (f.args[2] == "melee") {
+		B = null;
+		for (B of each(this.equipment, T("/obj/item/mecha_parts/mecha_equipment/anticcw_armor_booster"))) {
+			if (yield* B.attack_react()) {
+				booster_deflection_modifier *= B.deflect_coeff;
+				booster_damage_modifier *= B.damage_coeff;
+				break;
 			}
-			rt.endFor(f, 0);
 		}
 	}
-	if (truthy(live(f.args[3]))) {
-		(booster_damage_modifier = rt.modify(live(booster_damage_modifier), (facing_modifier = (yield* g.srcCall(f, "get_armour_facing", subtract((yield* g.call(f, P("/proc/dir2angle"), null, [live(f.args[3])])), (yield* g.call(f, P("/proc/dir2angle"), null, [live(f.src)])))))), divide));
-		(booster_deflection_modifier = rt.modify(live(booster_deflection_modifier), live(facing_modifier), multiply));
+	if (f.args[3]) {
+		booster_damage_modifier /= (facing_modifier = this.get_armour_facing(dir2angle(f.args[3]) - dir2angle(this)));
+		booster_deflection_modifier *= facing_modifier;
 	}
-	if (truthy(rt.op(f, "Prob", [], [multiply(rt.sv(f, "deflect_chance"), live(booster_deflection_modifier))]))) {
-		yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＀'s armour deflects the attack!</span>", [live(f.src)]));
-		yield* g.srcCall(f, "log_append_to_last", "Armor saved.");
+	if (prob(this.deflect_chance * booster_deflection_modifier)) {
+		this.visible_message(`<span class='danger'>${this}'s armour deflects the attack!</span>`);
+		this.log_append_to_last("Armor saved.");
 		return 0;
 	}
-	if (!truthy(live(f.dot))) return f.dot;
-	(f.dot = rt.modify(live(f.dot), live(booster_damage_modifier), multiply));
+	if (!f.dot) return f.dot;
+	f.dot *= booster_damage_modifier;
 	return f.dot;
 }, true, { args: ["damage_amount", "damage_type", "damage_flag", "attack_dir"] });
 
-// /obj/mecha/proc/attack_hand  (code/game/mecha/mecha_defense.dm:56)  may sleep
+// mecha_defense.dm:56
 rt.def("/obj/mecha/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.callName(f, live(user), "changeNext_move", [8]);
-	yield* g.callName(f, live(user), "do_attack_animation", [live(f.src), "punch"]);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/weapons/tap.ogg"), 40, 1, -1]);
-	yield* g.callName(f, live(user), "visible_message", [fmt("<span class='danger'>＀ hits ＀. Nothing happens</span>", [live(user), rt.sv(f, "name")]), null, null, 3]);
-	yield* g.srcCall(f, "log_message", fmt("Attack by hand/paw. Attacker - ＀.", [live(user)]), 1);
-	yield* g.srcCall(f, "log_append_to_last", "Armor saved.");
+	user.changeNext_move(8);
+	yield* user.do_attack_animation(this, "punch");
+	playsound(this.loc, rt.rsc("sound/weapons/tap.ogg"), 40, 1, -1);
+	user.visible_message(`<span class='danger'>${user} hits ${this.name}. Nothing happens</span>`, null, null, 3);
+	this.log_message(`Attack by hand/paw. Attacker - ${user}.`, 1);
+	this.log_append_to_last("Armor saved.");
 	return f.dot;
 }, true);
 
-// /obj/mecha/proc/attack_paw  (code/game/mecha/mecha_defense.dm:64)  may sleep
+// mecha_defense.dm:64
 rt.def("/obj/mecha/proc/attack_paw", function* attack_paw(f: Frame, user: Value) {
-	f.vars = () => [user];
-	return (yield* g.srcCall(f, "attack_hand", live(user)));
+	return (yield* this.attack_hand(user));
 }, true);
 
-// /obj/mecha/proc/attack_alien  (code/game/mecha/mecha_defense.dm:68)  may sleep
+// mecha_defense.dm:68
 rt.def("/obj/mecha/proc/attack_alien", function* attack_alien(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.srcCall(f, "log_message", fmt("Attack by alien. Attacker - ＀.", [live(user)]), 1);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/weapons/slash.ogg"), 100, 1]);
-	yield* g.srcCall(f, "attack_generic", live(user), 15, "brute", "melee", 0);
+	this.log_message(`Attack by alien. Attacker - ${user}.`, 1);
+	playsound(this.loc, rt.rsc("sound/weapons/slash.ogg"), 100, 1);
+	yield* this.attack_generic(user, 15, "brute", "melee", 0);
 	return f.dot;
 }, true);
 
-// /obj/mecha/proc/attack_animal  (code/game/mecha/mecha_defense.dm:73)  may sleep
+// mecha_defense.dm:73
 rt.def("/obj/mecha/proc/attack_animal", function* attack_animal(f: Frame, user: Value) {
 	let play_soundeffect: Value = null, animal_damage: Value = null;
-	f.vars = () => [user, play_soundeffect, animal_damage];
-	yield* g.srcCall(f, "log_message", fmt("Attack by simple animal. Attacker - ＀.", [live(user)]), 1);
-	if ((!truthy(rt.fv(f, "melee_damage_upper", live(user))) && !truthy(rt.fv(f, "obj_damage", live(user))))) {
-		yield* g.callName(f, live(user), "emote", [null, "custom", "message", fmt("＀ ＀.", [rt.fv(f, "friendly", live(user)), live(f.src)])], rt.Args.Named);
+	this.log_message(`Attack by simple animal. Attacker - ${user}.`, 1);
+	if (!user.melee_damage_upper && !user.obj_damage) {
+		yield* user.emote("custom", { message: `${user.friendly} ${this}.` });
 		return 0;
 	} else {
 		play_soundeffect = 1;
-		if (truthy(rt.fv(f, "environment_smash", live(user)))) {
+		if (user.environment_smash) {
 			play_soundeffect = 0;
-			yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/effects/bang.ogg"), 50, 1]);
+			playsound(this, rt.rsc("sound/effects/bang.ogg"), 50, 1);
 		}
-		animal_damage = (yield* g.call(f, P("/proc/rand"), null, [rt.fv(f, "melee_damage_lower", live(user)), rt.fv(f, "melee_damage_upper", live(user))]));
-		if (truthy(rt.fv(f, "obj_damage", live(user)))) {
-			animal_damage = rt.fv(f, "obj_damage", live(user));
+		animal_damage = rand(user.melee_damage_lower, user.melee_damage_upper);
+		if (user.obj_damage) {
+			animal_damage = user.obj_damage;
 		}
-		animal_damage = (yield* g.call(f, P("/proc/min"), null, [live(animal_damage), multiply(20, rt.fv(f, "environment_smash", live(user)))]));
-		yield* g.srcCall(f, "attack_generic", live(user), live(animal_damage), rt.fv(f, "melee_damage_type", live(user)), "melee", live(play_soundeffect));
-		yield* g.call(f, P("/proc/add_logs"), null, [live(user), live(f.src), "attacked"]);
+		animal_damage = min(animal_damage, 20 * user.environment_smash);
+		yield* this.attack_generic(user, animal_damage, user.melee_damage_type, "melee", play_soundeffect);
+		add_logs(user, this, "attacked");
 		return 1;
 	}
+}, true);
+
+// mecha_defense.dm:95
+rt.def("/obj/mecha/proc/attack_hulk", function* attack_hulk(f: Frame, user: Value) {
+	f.dot = (yield* parent_proc());
+	if (!f.dot) return f.dot;
+	this.log_message(`Attack by hulk. Attacker - ${user}.`, 1);
+	add_logs(user, this, "punched", "hulk powers");
 	return f.dot;
 }, true);
 
-// /obj/mecha/proc/attack_hulk  (code/game/mecha/mecha_defense.dm:95)  may sleep
-rt.def("/obj/mecha/proc/attack_hulk", function* attack_hulk(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(live(f.dot))) return f.dot;
-	yield* g.srcCall(f, "log_message", fmt("Attack by hulk. Attacker - ＀.", [live(f.args[0])]), 1);
-	yield* g.call(f, P("/proc/add_logs"), null, [live(f.args[0]), live(f.src), "punched", "hulk powers"]);
-	return f.dot;
-}, true, { args: ["user"] });
-
-// /obj/mecha/proc/blob_act  (code/game/mecha/mecha_defense.dm:101)  may sleep
+// mecha_defense.dm:101
 rt.def("/obj/mecha/proc/blob_act", function* blob_act(f: Frame, B: Value) {
-	f.vars = () => [B];
-	yield* g.srcCall(f, "take_damage", 30, "brute", "melee", 0, rt.getDir(f, live(f.src), live(B)));
+	yield* this.take_damage(30, "brute", "melee", 0, rt.getDir(f, this, B));
 	return f.dot;
 }, true);
 
-// /obj/mecha/proc/hitby  (code/game/mecha/mecha_defense.dm:107)  may sleep
-rt.def("/obj/mecha/proc/hitby", function* hitby(f: Frame) {
-	yield* g.srcCall(f, "log_message", fmt("Hit by ＀.", [live(f.args[0])]), 1);
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+// mecha_defense.dm:107
+rt.def("/obj/mecha/proc/hitby", function* hitby(f: Frame, A: Value) {
+	this.log_message(`Hit by ${A}.`, 1);
+	f.dot = (yield* parent_proc());
 	return f.dot;
-}, true, { args: ["A"] });
+}, true);
 
-// /obj/mecha/proc/bullet_act  (code/game/mecha/mecha_defense.dm:112)  may sleep
-rt.def("/obj/mecha/proc/bullet_act", function* bullet_act(f: Frame) {
-	yield* g.srcCall(f, "log_message", fmt("Hit by projectile. Type: ＀(＀).", [rt.fv(f, "name", live(f.args[0])), rt.fv(f, "flag", live(f.args[0]))]), 1);
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+// mecha_defense.dm:112
+rt.def("/obj/mecha/proc/bullet_act", function* bullet_act(f: Frame, Proj: Value) {
+	this.log_message(`Hit by projectile. Type: ${Proj.name}(${Proj.flag}).`, 1);
+	f.dot = (yield* parent_proc());
 	return f.dot;
-}, true, { args: ["Proj"] });
+}, true);
 
-// /obj/mecha/proc/ex_act  (code/game/mecha/mecha_defense.dm:116)
+// mecha_defense.dm:116
 rt.def("/obj/mecha/proc/ex_act", function ex_act(f: Frame) {
-	rt.callSrc(f, "log_message", [fmt("Affected by explosion of severity: ＀.", [live(f.args[0])]), 1]);
-	if (truthy(rt.op(f, "Prob", [], [rt.sv(f, "deflect_chance")]))) {
-		f.args[0] = rt.inc(live(f.args[0]), 1);
-		rt.callSrc(f, "log_append_to_last", [fmt("Armor saved, changing severity to ＀.", [live(f.args[0])])]);
+	this.log_message(`Affected by explosion of severity: ${f.args[0]}.`, 1);
+	if (prob(this.deflect_chance)) {
+		f.args[0]++;
+		this.log_append_to_last(`Armor saved, changing severity to ${f.args[0]}.`);
 	}
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
+	f.dot = parent_proc();
 	return f.dot;
 }, false, { args: ["severity", "target"], waitfor: false });
 
-// /obj/mecha/proc/contents_explosion  (code/game/mecha/mecha_defense.dm:123)
+// mecha_defense.dm:123
 rt.def("/obj/mecha/proc/contents_explosion", function contents_explosion(f: Frame, severity: Value, target: Value) {
 	let X: Value = null, ME: Value = null, Y: Value = null, MT: Value = null;
-	let $e: any;
-	f.vars = () => [severity, X, ME, Y, MT, $e];
-	severity = rt.inc(live(severity), 1);
-	X = null;
-	rt.forList(f, 0, rt.sv(f, "equipment"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		X = $e;
-		rt.callName(f, (ME = live(X)), "ex_act", [live(severity), live(target)]);
+	severity++;
+	for (X of each(this.equipment)) {
+		(ME = X).ex_act(severity, target);
 	}
-	rt.endFor(f, 0);
-	Y = null;
-	rt.forList(f, 0, rt.sv(f, "trackers"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		Y = $e;
-		rt.callName(f, (MT = live(Y)), "ex_act", [live(severity), live(target)]);
+	for (Y of each(this.trackers)) {
+		(MT = Y).ex_act(severity, target);
 	}
-	rt.endFor(f, 0);
-	if (!truthy(rt.sv(f, "occupant"))) return f.dot;
-	rt.callName(f, rt.sv(f, "occupant"), "ex_act", [live(severity), live(target)]);
+	if (!this.occupant) return f.dot;
+	this.occupant.ex_act(severity, target);
 	return f.dot;
 });
 
-// /obj/mecha/proc/handle_atom_del  (code/game/mecha/mecha_defense.dm:134)
+// mecha_defense.dm:134
 rt.def("/obj/mecha/proc/handle_atom_del", function handle_atom_del(f: Frame, A: Value) {
-	if (!isEqual(live(A), rt.sv(f, "occupant"))) return f.dot;
-	rt.setSv(f, "occupant", null);
-	rt.setSv(f, "icon_state", add(rt.initial(f, live(f.src), "icon_state"), "-open"));
-	rt.callSrc(f, "setDir", [rt.sv(f, "dir_in")]);
+	if (A != this.occupant) return f.dot;
+	this.occupant = null;
+	this.icon_state = rt.initial(f, this, "icon_state") + "-open";
+	this.setDir(this.dir_in);
 	return f.dot;
 });
 
-// /obj/mecha/proc/emp_act  (code/game/mecha/mecha_defense.dm:140)  may sleep
+// mecha_defense.dm:140
 rt.def("/obj/mecha/proc/emp_act", function* emp_act(f: Frame, severity: Value) {
-	f.vars = () => [severity];
-	if (truthy((yield* g.srcCall(f, "get_charge")))) {
-		yield* g.srcCall(f, "use_power", divide(divide(rt.fv(f, "charge", rt.sv(f, "cell")), 3), multiply(live(severity), 2)));
-		yield* g.srcCall(f, "take_damage", divide(30, live(severity)), "fire", "energy", 1);
+	if (this.get_charge()) {
+		yield* this.use_power(this.cell.charge / 3 / (severity * 2));
+		yield* this.take_damage(30 / severity, "fire", "energy", 1);
 	}
-	yield* g.srcCall(f, "log_message", "EMP detected", 1);
-	yield* g.srcCall(f, "check_for_internal_damage", rt.list(1, 2, 16, 4), 1);
+	this.log_message("EMP detected", 1);
+	yield* this.check_for_internal_damage(list(1, 2, 16, 4), 1);
 	return f.dot;
 }, true);
 
-// /obj/mecha/proc/temperature_expose  (code/game/mecha/mecha_defense.dm:147)  may sleep
+// mecha_defense.dm:147
 rt.def("/obj/mecha/proc/temperature_expose", function* temperature_expose(f: Frame, air: Value, exposed_temperature: Value, exposed_volume: Value) {
-	f.vars = () => [air, exposed_temperature, exposed_volume];
-	if (!rt.gt(live(exposed_temperature), rt.sv(f, "max_temperature"))) return f.dot;
-	yield* g.srcCall(f, "log_message", "Exposed to dangerous temperature.", 1);
-	yield* g.srcCall(f, "take_damage", 5, "fire", 0, 1);
+	if (!(exposed_temperature > this.max_temperature)) return f.dot;
+	this.log_message("Exposed to dangerous temperature.", 1);
+	yield* this.take_damage(5, "fire", 0, 1);
 	return f.dot;
 }, true);
 
-// /obj/mecha/proc/attackby  (code/game/mecha/mecha_defense.dm:153)  may sleep
-rt.def("/obj/mecha/proc/attackby", function* attackby(f: Frame) {
+// mecha_defense.dm:153
+rt.def("/obj/mecha/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
 	let E: Value = null, id_card: Value = null, pda: Value = null, CC: Value = null, C: Value = null, WT: Value = null;
-	f.vars = () => [E, id_card, pda, CC, C, WT];
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/device/mmi")) ? 1 : 0))) {
-		if (truthy((yield* g.srcCall(f, "mmi_move_inside", live(f.args[0]), live(f.args[1]))))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("＀-＀ interface initialized successfully.", [live(f.src), live(f.args[0])])]);
+	if (rt.istype(W, T("/obj/item/device/mmi"))) {
+		if (yield* this.mmi_move_inside(W, user)) {
+			to_chat(user, `${this}-${W} interface initialized successfully.`);
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("＀-＀ interface initialization failed.", [live(f.src), live(f.args[0])])]);
+			to_chat(user, `${this}-${W} interface initialization failed.`);
 		}
-		return live(f.dot);
+		return f.dot;
 	}
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/mecha_parts/mecha_equipment")) ? 1 : 0))) {
-		E = live(f.args[0]);
+	if (rt.istype(W, T("/obj/item/mecha_parts/mecha_equipment"))) {
+		E = W;
 		rt.spawnTail(f, 0, "/obj/mecha/proc/attackby: spawn at game/mecha/mecha_defense.dm:162", E, id_card, pda, CC, C, WT);
-		return live(f.dot);
+		return f.dot;
 	}
-	if (truthy((yield* g.callName(f, live(f.args[0]), "GetID", [])))) {
-		if ((truthy(rt.sv(f, "add_req_access")) || truthy(rt.sv(f, "maint_access")))) {
-			if (truthy((yield* g.srcCall(f, "internals_access_allowed", live(f.args[1]))))) {
-				id_card = null;
-				if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/card/id")) ? 1 : 0))) {
-					id_card = live(f.args[0]);
+	if (W.GetID()) {
+		if (this.add_req_access || this.maint_access) {
+			if (this.internals_access_allowed(user)) {
+				if (rt.istype(W, T("/obj/item/weapon/card/id"))) {
+					id_card = W;
 				} else {
-					id_card = rt.gv(f, "id", (pda = live(f.args[0])));
+					id_card = (pda = W).id;
 				}
-				yield* g.srcCall(f, "output_maintenance_dialog", live(id_card), live(f.args[1]));
-				return live(f.dot);
+				this.output_maintenance_dialog(id_card, user);
+				return f.dot;
 			} else {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>Invalid ID: Access denied.</span>"]);
+				to_chat(user, "<span class='warning'>Invalid ID: Access denied.</span>");
 			}
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>Maintenance protocols disabled by operator.</span>"]);
+			to_chat(user, "<span class='warning'>Maintenance protocols disabled by operator.</span>");
 		}
+	} else if (rt.istype(W, T("/obj/item/weapon/wrench"))) {
+		if (this.state == 1) {
+			this.state = 2;
+			to_chat(user, "<span class='notice'>You undo the securing bolts.</span>");
+		} else if (this.state == 2) {
+			this.state = 1;
+			to_chat(user, "<span class='notice'>You tighten the securing bolts.</span>");
+		}
+		return f.dot;
+	} else if (rt.istype(W, T("/obj/item/weapon/crowbar"))) {
+		if (this.state == 2) {
+			this.state = 3;
+			to_chat(user, "<span class='notice'>You open the hatch to the power unit.</span>");
+		} else if (this.state == 3) {
+			this.state = 2;
+			to_chat(user, "<span class='notice'>You close the hatch to the power unit.</span>");
+		}
+		return f.dot;
+	} else if (rt.istype(W, T("/obj/item/stack/cable_coil"))) {
+		if (this.state == 3 && rt.bitAnd(this.internal_damage, 4)) {
+			if (yield* (CC = W).use(2)) {
+				this.clearInternalDamage(4);
+				to_chat(user, "<span class='notice'>You replace the fused wires.</span>");
+			} else {
+				to_chat(user, "<span class='warning'>You need two lengths of cable to fix this mech!</span>");
+			}
+		}
+		return f.dot;
+	} else if (rt.istype(W, T("/obj/item/weapon/screwdriver")) && user.a_intent != "harm") {
+		if (rt.bitAnd(this.internal_damage, 2)) {
+			this.clearInternalDamage(2);
+			to_chat(user, "<span class='notice'>You repair the damaged temperature controller.</span>");
+		} else if (this.state == 3 && this.cell) {
+			yield* this.cell.forceMove(this.loc);
+			this.cell = null;
+			this.state = 4;
+			to_chat(user, "<span class='notice'>You unscrew and pry out the powercell.</span>");
+			this.log_message("Powercell removed");
+		} else if (this.state == 4 && this.cell) {
+			this.state = 3;
+			to_chat(user, "<span class='notice'>You screw the cell in place.</span>");
+		}
+		return f.dot;
+	} else if (rt.istype(W, T("/obj/item/weapon/stock_parts/cell"))) {
+		if (this.state == 4) {
+			if (!this.cell) {
+				if (!(yield* user.drop_item())) {
+					return f.dot;
+				}
+				C = W;
+				to_chat(user, "<span class='notice'>You install the powercell.</span>");
+				yield* C.forceMove(this);
+				this.cell = C;
+				this.log_message("Powercell installed");
+			} else {
+				to_chat(user, "<span class='notice'>There's already a powercell installed.</span>");
+			}
+		}
+		return f.dot;
+	} else if (rt.istype(W, T("/obj/item/weapon/weldingtool")) && user.a_intent != "harm") {
+		user.changeNext_move(8);
+		WT = W;
+		if (this.obj_integrity < this.max_integrity) {
+			if (yield* WT.remove_fuel(0, user)) {
+				if (rt.bitAnd(this.internal_damage, 8)) {
+					this.clearInternalDamage(8);
+					to_chat(user, "<span class='notice'>You repair the damaged gas tank.</span>");
+				} else {
+					user.visible_message(`<span class='notice'>${user} repairs some damage to ${this.name}.</span>`);
+					this.obj_integrity += min(10, this.max_integrity - this.obj_integrity);
+				}
+			} else {
+				to_chat(user, "<span class='warning'>The welder must be on for this task!</span>");
+				return 1;
+			}
+		} else {
+			to_chat(user, `<span class='warning'>The ${this.name} is at full integrity!</span>`);
+		}
+		return 1;
+	} else if (rt.istype(W, T("/obj/item/mecha_parts/mecha_tracking"))) {
+		if (!(yield* user.transferItemToLoc(W, this))) {
+			to_chat(user, fmt("<span class='warning'>％！ is stuck to your hand, you cannot put it in ％！!</span>", [W, this]));
+			return f.dot;
+		}
+		this.trackers += W;
+		user.visible_message(`${user} attaches ${W} to ${this}.`, `<span class='notice'>You attach ${W} to ${this}.</span>`);
+		this.diag_hud_set_mechtracking();
+		return f.dot;
 	} else {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/wrench")) ? 1 : 0))) {
-			if (isEqual(rt.sv(f, "state"), 1)) {
-				rt.setSv(f, "state", 2);
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You undo the securing bolts.</span>"]);
-			} else {
-				if (isEqual(rt.sv(f, "state"), 2)) {
-					rt.setSv(f, "state", 1);
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You tighten the securing bolts.</span>"]);
-				}
-			}
-			return live(f.dot);
-		} else {
-			if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/crowbar")) ? 1 : 0))) {
-				if (isEqual(rt.sv(f, "state"), 2)) {
-					rt.setSv(f, "state", 3);
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You open the hatch to the power unit.</span>"]);
-				} else {
-					if (isEqual(rt.sv(f, "state"), 3)) {
-						rt.setSv(f, "state", 2);
-						yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You close the hatch to the power unit.</span>"]);
-					}
-				}
-				return live(f.dot);
-			} else {
-				if (truthy((rt.istype(live(f.args[0]), T("/obj/item/stack/cable_coil")) ? 1 : 0))) {
-					if ((isEqual(rt.sv(f, "state"), 3) && truthy(rt.bitAnd(rt.sv(f, "internal_damage"), 4)))) {
-						if (truthy((yield* g.callName(f, (CC = live(f.args[0])), "use", [2])))) {
-							yield* g.srcCall(f, "clearInternalDamage", 4);
-							yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You replace the fused wires.</span>"]);
-						} else {
-							yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You need two lengths of cable to fix this mech!</span>"]);
-						}
-					}
-					return live(f.dot);
-				} else {
-					if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/screwdriver")) ? 1 : 0)) && !isEqual(rt.fv(f, "a_intent", live(f.args[1])), "harm"))) {
-						if (truthy(rt.bitAnd(rt.sv(f, "internal_damage"), 2))) {
-							yield* g.srcCall(f, "clearInternalDamage", 2);
-							yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You repair the damaged temperature controller.</span>"]);
-						} else {
-							if ((isEqual(rt.sv(f, "state"), 3) && truthy(rt.sv(f, "cell")))) {
-								yield* g.callName(f, rt.sv(f, "cell"), "forceMove", [rt.sv(f, "loc")]);
-								rt.setSv(f, "cell", null);
-								rt.setSv(f, "state", 4);
-								yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You unscrew and pry out the powercell.</span>"]);
-								yield* g.srcCall(f, "log_message", "Powercell removed");
-							} else {
-								if ((isEqual(rt.sv(f, "state"), 4) && truthy(rt.sv(f, "cell")))) {
-									rt.setSv(f, "state", 3);
-									yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You screw the cell in place.</span>"]);
-								}
-							}
-						}
-						return live(f.dot);
-					} else {
-						if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/stock_parts/cell")) ? 1 : 0))) {
-							if (isEqual(rt.sv(f, "state"), 4)) {
-								if (!truthy(rt.sv(f, "cell"))) {
-									if (!truthy((yield* g.callName(f, live(f.args[1]), "drop_item", [])))) {
-										return live(f.dot);
-									}
-									C = live(f.args[0]);
-									yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You install the powercell.</span>"]);
-									yield* g.callName(f, live(C), "forceMove", [live(f.src)]);
-									rt.setSv(f, "cell", live(C));
-									yield* g.srcCall(f, "log_message", "Powercell installed");
-								} else {
-									yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>There's already a powercell installed.</span>"]);
-								}
-							}
-							return live(f.dot);
-						} else {
-							if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/weldingtool")) ? 1 : 0)) && !isEqual(rt.fv(f, "a_intent", live(f.args[1])), "harm"))) {
-								yield* g.callName(f, live(f.args[1]), "changeNext_move", [8]);
-								WT = live(f.args[0]);
-								if (rt.lt(rt.sv(f, "obj_integrity"), rt.sv(f, "max_integrity"))) {
-									if (truthy((yield* g.callName(f, live(WT), "remove_fuel", [0, live(f.args[1])])))) {
-										if (truthy(rt.bitAnd(rt.sv(f, "internal_damage"), 8))) {
-											yield* g.srcCall(f, "clearInternalDamage", 8);
-											yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You repair the damaged gas tank.</span>"]);
-										} else {
-											yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='notice'>＀ repairs some damage to ＀.</span>", [live(f.args[1]), rt.sv(f, "name")])]);
-											rt.modSrcVar(f, "obj_integrity", (yield* g.call(f, P("/proc/min"), null, [10, subtract(rt.sv(f, "max_integrity"), rt.sv(f, "obj_integrity"))])), add);
-										}
-									} else {
-										yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>The welder must be on for this task!</span>"]);
-										return 1;
-									}
-								} else {
-									yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>The ＀ is at full integrity!</span>", [rt.sv(f, "name")])]);
-								}
-								return 1;
-							} else {
-								if (truthy((rt.istype(live(f.args[0]), T("/obj/item/mecha_parts/mecha_tracking")) ? 1 : 0))) {
-									if (!truthy((yield* g.callName(f, live(f.args[1]), "transferItemToLoc", [live(f.args[0]), live(f.src)])))) {
-										yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>％！ is stuck to your hand, you cannot put it in ％！!</span>", [live(f.args[0]), live(f.src)])]);
-										return live(f.dot);
-									}
-									rt.modSrcVar(f, "trackers", live(f.args[0]), add);
-									yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("＀ attaches ＀ to ＀.", [live(f.args[1]), live(f.args[0]), live(f.src)]), fmt("<span class='notice'>You attach ＀ to ＀.</span>", [live(f.args[0]), live(f.src)])]);
-									yield* g.srcCall(f, "diag_hud_set_mechtracking");
-									return live(f.dot);
-								} else {
-									return (yield* g.callSuper(f, [], rt.Args.Same));
-								}
-							}
-						}
-					}
-				}
-			}
-		}
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["W", "user", "params"] });
+}, true);
 
 // a spawn(0) body of /obj/mecha/proc/attackby, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/obj/mecha/proc/attackby: spawn at game/mecha/mecha_defense.dm:162", function* (f: Frame, E: Value, id_card: Value, pda: Value, CC: Value, C: Value, WT: Value) {
-	f.vars = () => [E, id_card, pda, CC, C, WT];
-	if (truthy((yield* g.callName(f, live(E), "can_attach", [live(f.src)])))) {
-		if (!truthy((yield* g.callName(f, live(f.args[1]), "drop_item", [])))) {
-			return live(f.dot);
+	if (E.can_attach(this)) {
+		if (!(yield* f.args[1].drop_item())) {
+			return f.dot;
 		}
-		yield* g.callName(f, live(E), "attach", [live(f.src)]);
-		yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("＀ attaches ＀ to ＀.", [live(f.args[1]), live(f.args[0]), live(f.src)]), fmt("<span class='notice'>You attach ＀ to ＀.</span>", [live(f.args[0]), live(f.src)])]);
+		yield* E.attach(this);
+		f.args[1].visible_message(`${f.args[1]} attaches ${f.args[0]} to ${this}.`, `<span class='notice'>You attach ${f.args[0]} to ${this}.</span>`);
 	} else {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>You were unable to attach ＀ to ＀!</span>", [live(f.args[0]), live(f.src)])]);
+		to_chat(f.args[1], `<span class='warning'>You were unable to attach ${f.args[0]} to ${this}!</span>`);
 	}
 	return null;
 });
 
-// /obj/mecha/proc/attacked_by  (code/game/mecha/mecha_defense.dm:270)  may sleep
-rt.def("/obj/mecha/proc/attacked_by", function* attacked_by(f: Frame) {
-	yield* g.srcCall(f, "log_message", fmt("Attacked by ＀. Attacker - ＀", [live(f.args[0]), live(f.args[1])]));
-	yield* g.callSuper(f, [], rt.Args.Same);
-	return f.dot;
-}, true, { args: ["I", "user"] });
-
-// /obj/mecha/proc/mech_toxin_damage  (code/game/mecha/mecha_defense.dm:274)  may sleep
-rt.def("/obj/mecha/proc/mech_toxin_damage", function* mech_toxin_damage(f: Frame, target: Value) {
-	f.vars = () => [target];
-	yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/effects/spray2.ogg"), 50, 1]);
-	if (!truthy(rt.fv(f, "reagents", live(target)))) return f.dot;
-	if (rt.lt(add((yield* g.callName(f, rt.fv(f, "reagents", live(target)), "get_reagent_amount", ["cryptobiolin"])), rt.sv(f, "force")), multiply(rt.sv(f, "force"), 2))) {
-		yield* g.callName(f, rt.fv(f, "reagents", live(target)), "add_reagent", ["cryptobiolin", divide(rt.sv(f, "force"), 2)]);
-	}
-	if (!rt.lt(add((yield* g.callName(f, rt.fv(f, "reagents", live(target)), "get_reagent_amount", ["toxin"])), rt.sv(f, "force")), multiply(rt.sv(f, "force"), 2))) return f.dot;
-	yield* g.callName(f, rt.fv(f, "reagents", live(target)), "add_reagent", ["toxin", divide(rt.sv(f, "force"), 2.5)]);
+// mecha_defense.dm:270
+rt.def("/obj/mecha/proc/attacked_by", function* attacked_by(f: Frame, I: Value, user: Value) {
+	this.log_message(`Attacked by ${I}. Attacker - ${user}`);
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /obj/mecha/proc/mech_melee_attack  (code/game/mecha/mecha_defense.dm:283)  may sleep
-rt.def("/obj/mecha/proc/mech_melee_attack", function* mech_melee_attack(f: Frame) {
-	if (!truthy((yield* g.srcCall(f, "has_charge", rt.sv(f, "melee_energy_drain"))))) {
+// mecha_defense.dm:274
+rt.def("/obj/mecha/proc/mech_toxin_damage", function* mech_toxin_damage(f: Frame, target: Value) {
+	playsound(this, rt.rsc("sound/effects/spray2.ogg"), 50, 1);
+	if (!target.reagents) return f.dot;
+	if (target.reagents.get_reagent_amount("cryptobiolin") + this.force < this.force * 2) {
+		yield* target.reagents.add_reagent("cryptobiolin", this.force / 2);
+	}
+	if (!(target.reagents.get_reagent_amount("toxin") + this.force < this.force * 2)) return f.dot;
+	yield* target.reagents.add_reagent("toxin", this.force / 2.5);
+	return f.dot;
+}, true);
+
+// mecha_defense.dm:283
+rt.def("/obj/mecha/proc/mech_melee_attack", function* mech_melee_attack(f: Frame, M: Value) {
+	if (!this.has_charge(this.melee_energy_drain)) {
 		return 0;
 	}
-	yield* g.srcCall(f, "use_power", rt.sv(f, "melee_energy_drain"));
-	if (!(isEqual(rt.fv(f, "damtype", live(f.args[0])), "brute") || isEqual(rt.fv(f, "damtype", live(f.args[0])), "fire"))) return f.dot;
-	yield* g.call(f, P("/proc/add_logs"), null, [rt.fv(f, "occupant", live(f.args[0])), live(f.src), "attacked", live(f.args[0]), fmt("(INTENT: ＀) (DAMTYPE: ＀)", [(yield* g.call(f, P("/proc/uppertext"), null, [rt.gv(f, "a_intent", rt.fv(f, "occupant", live(f.args[0])))])), (yield* g.call(f, P("/proc/uppertext"), null, [rt.fv(f, "damtype", live(f.args[0]))]))])]);
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* this.use_power(this.melee_energy_drain);
+	if (!(M.damtype == "brute" || M.damtype == "fire")) return f.dot;
+	add_logs(M.occupant, this, "attacked", M, `(INTENT: ${uppertext(M.occupant.a_intent)}) (DAMTYPE: ${uppertext(M.damtype)})`);
+	f.dot = (yield* parent_proc());
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /obj/mecha/proc/full_repair  (code/game/mecha/mecha_defense.dm:291)
+// mecha_defense.dm:291
 rt.def("/obj/mecha/proc/full_repair", function full_repair(f: Frame, charge_cell: Value) {
-	rt.setSv(f, "obj_integrity", rt.sv(f, "max_integrity"));
-	if ((truthy(rt.sv(f, "cell")) && truthy(live(charge_cell)))) {
-		rt.setFv(f, "charge", rt.sv(f, "cell"), rt.fv(f, "maxcharge", rt.sv(f, "cell")));
+	this.obj_integrity = this.max_integrity;
+	if (this.cell && charge_cell) {
+		this.cell.charge = this.cell.maxcharge;
 	}
-	if (truthy(rt.bitAnd(rt.sv(f, "internal_damage"), 1))) {
-		rt.callSrc(f, "clearInternalDamage", [1]);
+	if (rt.bitAnd(this.internal_damage, 1)) {
+		this.clearInternalDamage(1);
 	}
-	if (truthy(rt.bitAnd(rt.sv(f, "internal_damage"), 2))) {
-		rt.callSrc(f, "clearInternalDamage", [2]);
+	if (rt.bitAnd(this.internal_damage, 2)) {
+		this.clearInternalDamage(2);
 	}
-	if (truthy(rt.bitAnd(rt.sv(f, "internal_damage"), 4))) {
-		rt.callSrc(f, "clearInternalDamage", [4]);
+	if (rt.bitAnd(this.internal_damage, 4)) {
+		this.clearInternalDamage(4);
 	}
-	if (truthy(rt.bitAnd(rt.sv(f, "internal_damage"), 8))) {
-		rt.callSrc(f, "clearInternalDamage", [8]);
+	if (rt.bitAnd(this.internal_damage, 8)) {
+		this.clearInternalDamage(8);
 	}
-	if (!truthy(rt.bitAnd(rt.sv(f, "internal_damage"), 16))) return f.dot;
-	rt.callSrc(f, "clearInternalDamage", [16]);
+	if (!rt.bitAnd(this.internal_damage, 16)) return f.dot;
+	this.clearInternalDamage(16);
 	return f.dot;
 });
 
-// /obj/mecha/proc/narsie_act  (code/game/mecha/mecha_defense.dm:307)  may sleep
+// mecha_defense.dm:307
 rt.def("/obj/mecha/proc/narsie_act", function* narsie_act(f: Frame) {
-	let L: Value = null;
-	f.vars = () => [L];
-	if (!truthy(rt.sv(f, "occupant"))) return f.dot;
-	L = rt.sv(f, "occupant");
-	yield* g.srcCall(f, "go_out", 1);
-	if (!truthy(live(L))) return f.dot;
-	yield* g.callName(f, live(L), "narsie_act", []);
+	if (!this.occupant) return f.dot;
+	let L: Value = this.occupant;
+	yield* this.go_out(1);
+	if (!L) return f.dot;
+	yield* L.narsie_act();
 	return f.dot;
 }, true);
 
-// /obj/mecha/proc/ratvar_act  (code/game/mecha/mecha_defense.dm:313)  may sleep
+// mecha_defense.dm:313
 rt.def("/obj/mecha/proc/ratvar_act", function* ratvar_act(f: Frame) {
 	let L: Value = null;
-	f.vars = () => [L];
-	if (!((truthy(rt.gl("ratvar_awakens")) || truthy(rt.gl("clockwork_gateway_activated"))) && truthy(rt.sv(f, "occupant")))) return f.dot;
-	if (truthy((yield* g.call(f, P("/proc/is_servant_of_ratvar"), null, [rt.sv(f, "occupant")])))) {
-		yield* g.srcCall(f, "full_repair", 1);
+	if (!((GLOB.ratvar_awakens || GLOB.clockwork_gateway_activated) && this.occupant)) return f.dot;
+	if (is_servant_of_ratvar(this.occupant)) {
+		this.full_repair(1);
 	} else {
-		L = rt.sv(f, "occupant");
-		yield* g.srcCall(f, "go_out", 1);
-		if (!truthy(live(L))) return f.dot;
-		yield* g.callName(f, live(L), "ratvar_act", []);
+		L = this.occupant;
+		yield* this.go_out(1);
+		if (!L) return f.dot;
+		yield* L.ratvar_act();
 	}
 	return f.dot;
 }, true);
 
-// /obj/mecha/proc/do_attack_animation  (code/game/mecha/mecha_defense.dm:323)  may sleep
+// mecha_defense.dm:323
 rt.def("/obj/mecha/proc/do_attack_animation", function* do_attack_animation(f: Frame) {
-	if (!truthy(live(f.args[3]))) {
-		if (truthy(rt.sv(f, "selected"))) {
-			f.args[2] = rt.sv(f, "selected");
-		} else {
-			if (!truthy(live(f.args[1]))) {
-				f.args[1] = "smash";
-				if (isEqual(rt.sv(f, "damtype"), "fire")) {
-					f.args[1] = "mech_fire";
-				} else {
-					if (isEqual(rt.sv(f, "damtype"), "tox")) {
-						f.args[1] = "mech_toxin";
-					}
-				}
+	if (!f.args[3]) {
+		if (this.selected) {
+			f.args[2] = this.selected;
+		} else if (!f.args[1]) {
+			f.args[1] = "smash";
+			if (this.damtype == "fire") {
+				f.args[1] = "mech_fire";
+			} else if (this.damtype == "tox") {
+				f.args[1] = "mech_toxin";
 			}
 		}
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true, { args: ["A", "visual_effect_icon", "used_item", "no_effect", "end_pixel_y"] });

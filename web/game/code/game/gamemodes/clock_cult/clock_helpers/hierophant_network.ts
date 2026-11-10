@@ -1,67 +1,52 @@
-// From code/game/gamemodes/clock_cult/clock_helpers/hierophant_network.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/gamemodes/clock_cult/clock_helpers/hierophant_network.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
-// /proc/hierophant_message  (code/game/gamemodes/clock_cult/clock_helpers/hierophant_network.dm:3)
+// hierophant_network.dm:3
 rt.def("/proc/hierophant_message", function hierophant_message(f: Frame, message: Value, servantsonly: Value, target: Value) {
 	let M: Value = null, link: Value = null;
-	let $e: any;
-	f.vars = () => [M, link, $e];
-	if (!truthy(live(message))) {
+	if (!message) {
 		return 0;
 	}
-	M = null;
-	rt.forList(f, 0, rt.gl("mob_list"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if ((!truthy(live(servantsonly)) && truthy((rt.istype(live(M), T("/mob/dead/observer")) ? 1 : 0)))) {
-			if (truthy(live(target))) {
-				link = fmt("<a href=?src=＃;follow=＃>(F)</a>", [live(M), live(target)]);
-				rt.call(f, P("/proc/to_chat"), null, [live(M), fmt("＀ ＀", [live(link), live(message)])]);
+	for (M of each(GLOB.mob_list)) {
+		if (!servantsonly && rt.istype(M, T("/mob/dead/observer"))) {
+			if (target) {
+				link = fmt("<a href=?src=＃;follow=＃>(F)</a>", [M, target]);
+				to_chat(M, `${link} ${message}`);
 			} else {
-				rt.call(f, P("/proc/to_chat"), null, [live(M), live(message)]);
+				to_chat(M, message);
 			}
-		} else {
-			if (truthy(rt.call(f, P("/proc/is_servant_of_ratvar"), null, [live(M)]))) {
-				rt.call(f, P("/proc/to_chat"), null, [live(M), live(message)]);
-			}
+		} else if (is_servant_of_ratvar(M)) {
+			to_chat(M, message);
 		}
 	}
-	rt.endFor(f, 0);
 	return 1;
 });
 
-// /proc/titled_hierophant_message  (code/game/gamemodes/clock_cult/clock_helpers/hierophant_network.dm:18)
+// hierophant_network.dm:18
 rt.def("/proc/titled_hierophant_message", function titled_hierophant_message(f: Frame, user: Value, message: Value, name_span: Value, message_span: Value, user_title: Value) {
 	let parsed_message: Value = null;
-	let $0: any, $1: any, $2: any;
-	f.vars = () => [name_span, message_span, user_title, parsed_message, $0, $1, $2];
-	if (live(name_span) === null) {
-		name_span = "heavy_brass";
-	}
-	if (live(message_span) === null) {
-		message_span = "brass";
-	}
-	if (live(user_title) === null) {
-		user_title = "Servant";
-	}
-	if ((!truthy(live(user)) || !truthy(live(message)))) {
+	let $1: any, $2: any;
+	name_span ??= "heavy_brass";
+	message_span ??= "brass";
+	user_title ??= "Servant";
+	if (!user || !message) {
 		return 0;
 	}
-	$0 = live(name_span);
-	if (truthy(live(user_title))) {
-		$1 = fmt("＀ ", [live(user_title)]);
+	let $0: any = name_span;
+	if (user_title) {
+		$1 = `${user_title} `;
 	} else {
 		$1 = "";
 	}
-	if (truthy(rt.call(f, P("/proc/findtextEx"), null, [rt.fv(f, "name", live(user)), rt.fv(f, "real_name", live(user))]))) {
-		$2 = rt.fv(f, "name", live(user));
+	if (findtextEx(user.name, user.real_name)) {
+		$2 = user.name;
 	} else {
-		$2 = fmt("＀ (as ＀)", [rt.fv(f, "real_name", live(user)), rt.fv(f, "name", live(user))]);
+		$2 = `${user.real_name} (as ${user.name})`;
 	}
-	rt.call(f, P("/proc/hierophant_message"), null, [(parsed_message = fmt("<span class='＀'>＀＀: </span><span class='＀'>\"＀\"</span>", [$0, $1, $2, live(message_span), live(message)])), 0, live(user)]);
+	hierophant_message((parsed_message = `<span class='${$0}'>${$1}${$2}: </span><span class='${message_span}'>"${message}"</span>`), 0, user);
 	return 1;
 });
 
@@ -77,21 +62,20 @@ rt.type(87, "/datum/action/innate/hierophant", "/datum/action/innate", {
 	buttontooltipstyle: "clockcult",
 });
 
-// /datum/action/innate/hierophant/proc/IsAvailable  (code/game/gamemodes/clock_cult/clock_helpers/hierophant_network.dm:38)
+// hierophant_network.dm:38
 rt.def("/datum/action/innate/hierophant/proc/IsAvailable", function IsAvailable(f: Frame) {
-	if (!truthy(rt.call(f, P("/proc/is_servant_of_ratvar"), null, [rt.sv(f, "owner")]))) {
+	if (!is_servant_of_ratvar(this.owner)) {
 		return 0;
 	}
-	return rt.callSuper(f, [], rt.Args.Same);
+	return parent_proc();
 });
 
-// /datum/action/innate/hierophant/proc/Activate  (code/game/gamemodes/clock_cult/clock_helpers/hierophant_network.dm:43)  may sleep
+// hierophant_network.dm:43
 rt.def("/datum/action/innate/hierophant/proc/Activate", function* Activate(f: Frame) {
 	let input: Value = null;
-	f.vars = () => [input];
-	if ((!truthy((input = (yield* g.call(f, P("/proc/stripped_input"), null, [live(f.usr), "Please enter a message to send to other servants.", "Hierophant Network", ""])))) || !truthy((yield* g.srcCall(f, "IsAvailable"))))) {
-		return live(f.dot);
+	if (!(input = (yield* stripped_input(f.usr, "Please enter a message to send to other servants.", "Hierophant Network", ""))) || !(yield* this.IsAvailable())) {
+		return f.dot;
 	}
-	yield* g.call(f, P("/proc/titled_hierophant_message"), null, [rt.sv(f, "owner"), live(input), rt.sv(f, "span_for_name"), rt.sv(f, "span_for_message"), rt.sv(f, "title")]);
+	titled_hierophant_message(this.owner, input, this.span_for_name, this.span_for_message, this.title);
 	return f.dot;
 }, true);

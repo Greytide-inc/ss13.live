@@ -1,7 +1,7 @@
-// From code/game/objects/structures/crates_lockers/closets/secure/security.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/structures/crates_lockers/closets/secure/security.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(12388, "/obj/structure/closet/secure_closet/captains", "/obj/structure/closet/secure_closet", {
@@ -10,43 +10,41 @@ rt.type(12388, "/obj/structure/closet/secure_closet/captains", "/obj/structure/c
 	icon_state: "cap",
 });
 
-// /obj/structure/closet/secure_closet/captains/proc/<init>  (code/game/objects/structures/crates_lockers/closets/secure/security.dm:3)
+// security.dm:3
 rt.def("/obj/structure/closet/secure_closet/captains/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_access", rt.list(20));
+	parent_proc();
+	this.req_access = list(20);
 	return f.dot;
 });
 
-// /obj/structure/closet/secure_closet/captains/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/secure/security.dm:7)  may sleep
+// security.dm:7
 rt.def("/obj/structure/closet/secure_closet/captains/proc/PopulateContents", function* PopulateContents(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.new_(f, T("/obj/item/clothing/suit/hooded/wintercoat/captain"), [live(f.src)]);
-	if (truthy(rt.op(f, "Prob", [], [50]))) {
-		yield* g.new_(f, T("/obj/item/weapon/storage/backpack/captain"), [live(f.src)]);
+	yield* parent_proc();
+	yield* new_(T("/obj/item/clothing/suit/hooded/wintercoat/captain"), this);
+	if (prob(50)) {
+		yield* new_(T("/obj/item/weapon/storage/backpack/captain"), this);
 	} else {
-		yield* g.new_(f, T("/obj/item/weapon/storage/backpack/satchel/cap"), [live(f.src)]);
+		yield* new_(T("/obj/item/weapon/storage/backpack/satchel/cap"), this);
 	}
-	yield* g.new_(f, T("/obj/item/clothing/neck/cloak/cap"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/backpack/duffelbag/captain"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/head/crown/fancy"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/captunic"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/under/captainparade"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/head/caphat/parade"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/under/rank/captain"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/armor/vest/capcarapace/alt"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/cartridge/captain"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/shoes/sneakers/brown"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/box/silver_ids"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/device/radio/headset/heads/captain/alt"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/device/radio/headset/heads/captain"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/glasses/sunglasses/gar/supergar"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/gloves/color/captain"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/restraints/handcuffs/cable/zipties"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/belt/sabre"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/gun/energy/e_gun"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/door_remote/captain"), [live(f.src)]);
+	yield* new_(T("/obj/item/clothing/neck/cloak/cap"), this);
+	yield* new_(T("/obj/item/weapon/storage/backpack/duffelbag/captain"), this);
+	yield* new_(T("/obj/item/clothing/head/crown/fancy"), this);
+	yield* new_(T("/obj/item/clothing/suit/captunic"), this);
+	yield* new_(T("/obj/item/clothing/under/captainparade"), this);
+	yield* new_(T("/obj/item/clothing/head/caphat/parade"), this);
+	yield* new_(T("/obj/item/clothing/under/rank/captain"), this);
+	yield* new_(T("/obj/item/clothing/suit/armor/vest/capcarapace/alt"), this);
+	yield* new_(T("/obj/item/weapon/cartridge/captain"), this);
+	yield* new_(T("/obj/item/clothing/shoes/sneakers/brown"), this);
+	yield* new_(T("/obj/item/weapon/storage/box/silver_ids"), this);
+	yield* new_(T("/obj/item/device/radio/headset/heads/captain/alt"), this);
+	yield* new_(T("/obj/item/device/radio/headset/heads/captain"), this);
+	yield* new_(T("/obj/item/clothing/glasses/sunglasses/gar/supergar"), this);
+	yield* new_(T("/obj/item/clothing/gloves/color/captain"), this);
+	yield* new_(T("/obj/item/weapon/restraints/handcuffs/cable/zipties"), this);
+	yield* new_(T("/obj/item/weapon/storage/belt/sabre"), this);
+	yield* new_(T("/obj/item/weapon/gun/energy/e_gun"), this);
+	yield* new_(T("/obj/item/weapon/door_remote/captain"), this);
 	return f.dot;
 }, true);
 
@@ -56,34 +54,32 @@ rt.type(12389, "/obj/structure/closet/secure_closet/hop", "/obj/structure/closet
 	icon_state: "hop",
 });
 
-// /obj/structure/closet/secure_closet/hop/proc/<init>  (code/game/objects/structures/crates_lockers/closets/secure/security.dm:35)
+// security.dm:35
 rt.def("/obj/structure/closet/secure_closet/hop/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_access", rt.list(57));
+	parent_proc();
+	this.req_access = list(57);
 	return f.dot;
 });
 
-// /obj/structure/closet/secure_closet/hop/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/secure/security.dm:39)  may sleep
+// security.dm:39
 rt.def("/obj/structure/closet/secure_closet/hop/proc/PopulateContents", function* PopulateContents(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.new_(f, T("/obj/item/clothing/neck/cloak/hop"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/under/rank/head_of_personnel"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/head/hopcap"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/cartridge/hop"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/device/radio/headset/heads/hop"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/shoes/sneakers/brown"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/box/ids"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/box/ids"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/device/megaphone/command"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/armor/vest/alt"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/device/assembly/flash/handheld"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/glasses/sunglasses"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/restraints/handcuffs/cable/zipties"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/gun/energy/e_gun"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/neck/petcollar"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/door_remote/civillian"), [live(f.src)]);
+	yield* parent_proc();
+	yield* new_(T("/obj/item/clothing/neck/cloak/hop"), this);
+	yield* new_(T("/obj/item/clothing/under/rank/head_of_personnel"), this);
+	yield* new_(T("/obj/item/clothing/head/hopcap"), this);
+	yield* new_(T("/obj/item/weapon/cartridge/hop"), this);
+	yield* new_(T("/obj/item/device/radio/headset/heads/hop"), this);
+	yield* new_(T("/obj/item/clothing/shoes/sneakers/brown"), this);
+	yield* new_(T("/obj/item/weapon/storage/box/ids"), this);
+	yield* new_(T("/obj/item/weapon/storage/box/ids"), this);
+	yield* new_(T("/obj/item/device/megaphone/command"), this);
+	yield* new_(T("/obj/item/clothing/suit/armor/vest/alt"), this);
+	yield* new_(T("/obj/item/device/assembly/flash/handheld"), this);
+	yield* new_(T("/obj/item/clothing/glasses/sunglasses"), this);
+	yield* new_(T("/obj/item/weapon/restraints/handcuffs/cable/zipties"), this);
+	yield* new_(T("/obj/item/weapon/gun/energy/e_gun"), this);
+	yield* new_(T("/obj/item/clothing/neck/petcollar"), this);
+	yield* new_(T("/obj/item/weapon/door_remote/civillian"), this);
 	return f.dot;
 }, true);
 
@@ -93,41 +89,39 @@ rt.type(12390, "/obj/structure/closet/secure_closet/hos", "/obj/structure/closet
 	icon_state: "hos",
 });
 
-// /obj/structure/closet/secure_closet/hos/proc/<init>  (code/game/objects/structures/crates_lockers/closets/secure/security.dm:59)
+// security.dm:59
 rt.def("/obj/structure/closet/secure_closet/hos/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_access", rt.list(58));
+	parent_proc();
+	this.req_access = list(58);
 	return f.dot;
 });
 
-// /obj/structure/closet/secure_closet/hos/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/secure/security.dm:63)  may sleep
+// security.dm:63
 rt.def("/obj/structure/closet/secure_closet/hos/proc/PopulateContents", function* PopulateContents(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.new_(f, T("/obj/item/clothing/neck/cloak/hos"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/cartridge/hos"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/device/radio/headset/heads/hos"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/under/hosparadefem"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/under/hosparademale"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/armor/vest/leather"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/armor/hos"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/under/rank/head_of_security/alt"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/head/HoS"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/glasses/hud/security/sunglasses/eyepatch"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/glasses/hud/security/sunglasses/gars/supergars"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/under/rank/head_of_security/grey"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/lockbox/medal/sec"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/device/megaphone/sec"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/holosign_creator/security"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/lockbox/loyalty"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/mask/gas/sechailer/swat"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/box/flashbangs"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/shield/riot/tele"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/belt/security/full"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/gun/energy/e_gun/hos"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/device/flashlight/seclite"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/pinpointer"), [live(f.src)]);
+	yield* parent_proc();
+	yield* new_(T("/obj/item/clothing/neck/cloak/hos"), this);
+	yield* new_(T("/obj/item/weapon/cartridge/hos"), this);
+	yield* new_(T("/obj/item/device/radio/headset/heads/hos"), this);
+	yield* new_(T("/obj/item/clothing/under/hosparadefem"), this);
+	yield* new_(T("/obj/item/clothing/under/hosparademale"), this);
+	yield* new_(T("/obj/item/clothing/suit/armor/vest/leather"), this);
+	yield* new_(T("/obj/item/clothing/suit/armor/hos"), this);
+	yield* new_(T("/obj/item/clothing/under/rank/head_of_security/alt"), this);
+	yield* new_(T("/obj/item/clothing/head/HoS"), this);
+	yield* new_(T("/obj/item/clothing/glasses/hud/security/sunglasses/eyepatch"), this);
+	yield* new_(T("/obj/item/clothing/glasses/hud/security/sunglasses/gars/supergars"), this);
+	yield* new_(T("/obj/item/clothing/under/rank/head_of_security/grey"), this);
+	yield* new_(T("/obj/item/weapon/storage/lockbox/medal/sec"), this);
+	yield* new_(T("/obj/item/device/megaphone/sec"), this);
+	yield* new_(T("/obj/item/weapon/holosign_creator/security"), this);
+	yield* new_(T("/obj/item/weapon/storage/lockbox/loyalty"), this);
+	yield* new_(T("/obj/item/clothing/mask/gas/sechailer/swat"), this);
+	yield* new_(T("/obj/item/weapon/storage/box/flashbangs"), this);
+	yield* new_(T("/obj/item/weapon/shield/riot/tele"), this);
+	yield* new_(T("/obj/item/weapon/storage/belt/security/full"), this);
+	yield* new_(T("/obj/item/weapon/gun/energy/e_gun/hos"), this);
+	yield* new_(T("/obj/item/device/flashlight/seclite"), this);
+	yield* new_(T("/obj/item/weapon/pinpointer"), this);
 	return f.dot;
 }, true);
 
@@ -137,34 +131,32 @@ rt.type(12391, "/obj/structure/closet/secure_closet/warden", "/obj/structure/clo
 	icon_state: "warden",
 });
 
-// /obj/structure/closet/secure_closet/warden/proc/<init>  (code/game/objects/structures/crates_lockers/closets/secure/security.dm:90)
+// security.dm:90
 rt.def("/obj/structure/closet/secure_closet/warden/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_access", rt.list(3));
+	parent_proc();
+	this.req_access = list(3);
 	return f.dot;
 });
 
-// /obj/structure/closet/secure_closet/warden/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/secure/security.dm:94)  may sleep
+// security.dm:94
 rt.def("/obj/structure/closet/secure_closet/warden/proc/PopulateContents", function* PopulateContents(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.new_(f, T("/obj/item/device/radio/headset/headset_sec"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/armor/vest/warden"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/head/warden"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/head/beret/sec/navywarden"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/armor/vest/warden/alt"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/under/rank/warden/navyblue"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/glasses/hud/security/sunglasses"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/holosign_creator/security"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/mask/gas/sechailer"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/box/zipties"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/box/flashbangs"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/belt/security/full"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/device/flashlight/seclite"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/gloves/krav_maga/sec"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/door_remote/head_of_security"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/gun/ballistic/shotgun/automatic/combat/compact"), [live(f.src)]);
+	yield* parent_proc();
+	yield* new_(T("/obj/item/device/radio/headset/headset_sec"), this);
+	yield* new_(T("/obj/item/clothing/suit/armor/vest/warden"), this);
+	yield* new_(T("/obj/item/clothing/head/warden"), this);
+	yield* new_(T("/obj/item/clothing/head/beret/sec/navywarden"), this);
+	yield* new_(T("/obj/item/clothing/suit/armor/vest/warden/alt"), this);
+	yield* new_(T("/obj/item/clothing/under/rank/warden/navyblue"), this);
+	yield* new_(T("/obj/item/clothing/glasses/hud/security/sunglasses"), this);
+	yield* new_(T("/obj/item/weapon/holosign_creator/security"), this);
+	yield* new_(T("/obj/item/clothing/mask/gas/sechailer"), this);
+	yield* new_(T("/obj/item/weapon/storage/box/zipties"), this);
+	yield* new_(T("/obj/item/weapon/storage/box/flashbangs"), this);
+	yield* new_(T("/obj/item/weapon/storage/belt/security/full"), this);
+	yield* new_(T("/obj/item/device/flashlight/seclite"), this);
+	yield* new_(T("/obj/item/clothing/gloves/krav_maga/sec"), this);
+	yield* new_(T("/obj/item/weapon/door_remote/head_of_security"), this);
+	yield* new_(T("/obj/item/weapon/gun/ballistic/shotgun/automatic/combat/compact"), this);
 	return f.dot;
 }, true);
 
@@ -174,73 +166,71 @@ rt.type(12392, "/obj/structure/closet/secure_closet/security", "/obj/structure/c
 	icon_state: "sec",
 });
 
-// /obj/structure/closet/secure_closet/security/proc/<init>  (code/game/objects/structures/crates_lockers/closets/secure/security.dm:114)
+// security.dm:114
 rt.def("/obj/structure/closet/secure_closet/security/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_access", rt.list(1));
+	parent_proc();
+	this.req_access = list(1);
 	return f.dot;
 });
 
-// /obj/structure/closet/secure_closet/security/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/secure/security.dm:118)  may sleep
+// security.dm:118
 rt.def("/obj/structure/closet/secure_closet/security/proc/PopulateContents", function* PopulateContents(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.new_(f, T("/obj/item/clothing/suit/armor/vest"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/head/helmet/sec"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/device/radio/headset/headset_sec"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/device/radio/headset/headset_sec/alt"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/glasses/hud/security/sunglasses"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/device/flashlight/seclite"), [live(f.src)]);
+	yield* parent_proc();
+	yield* new_(T("/obj/item/clothing/suit/armor/vest"), this);
+	yield* new_(T("/obj/item/clothing/head/helmet/sec"), this);
+	yield* new_(T("/obj/item/device/radio/headset/headset_sec"), this);
+	yield* new_(T("/obj/item/device/radio/headset/headset_sec/alt"), this);
+	yield* new_(T("/obj/item/clothing/glasses/hud/security/sunglasses"), this);
+	yield* new_(T("/obj/item/device/flashlight/seclite"), this);
 	return f.dot;
 }, true);
 
 rt.type(12393, "/obj/structure/closet/secure_closet/security/sec", "/obj/structure/closet/secure_closet/security", {});
 
-// /obj/structure/closet/secure_closet/security/sec/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/secure/security.dm:129)  may sleep
+// security.dm:129
 rt.def("/obj/structure/closet/secure_closet/security/sec/proc/PopulateContents", function* PopulateContents(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.new_(f, T("/obj/item/weapon/storage/belt/security/full"), [live(f.src)]);
+	yield* parent_proc();
+	yield* new_(T("/obj/item/weapon/storage/belt/security/full"), this);
 	return f.dot;
 }, true);
 
 rt.type(12394, "/obj/structure/closet/secure_closet/security/cargo", "/obj/structure/closet/secure_closet/security", {});
 
-// /obj/structure/closet/secure_closet/security/cargo/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/secure/security.dm:135)  may sleep
+// security.dm:135
 rt.def("/obj/structure/closet/secure_closet/security/cargo/proc/PopulateContents", function* PopulateContents(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.new_(f, T("/obj/item/clothing/accessory/armband/cargo"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/device/encryptionkey/headset_cargo"), [live(f.src)]);
+	yield* parent_proc();
+	yield* new_(T("/obj/item/clothing/accessory/armband/cargo"), this);
+	yield* new_(T("/obj/item/device/encryptionkey/headset_cargo"), this);
 	return f.dot;
 }, true);
 
 rt.type(12395, "/obj/structure/closet/secure_closet/security/engine", "/obj/structure/closet/secure_closet/security", {});
 
-// /obj/structure/closet/secure_closet/security/engine/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/secure/security.dm:142)  may sleep
+// security.dm:142
 rt.def("/obj/structure/closet/secure_closet/security/engine/proc/PopulateContents", function* PopulateContents(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.new_(f, T("/obj/item/clothing/accessory/armband/engine"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/device/encryptionkey/headset_eng"), [live(f.src)]);
+	yield* parent_proc();
+	yield* new_(T("/obj/item/clothing/accessory/armband/engine"), this);
+	yield* new_(T("/obj/item/device/encryptionkey/headset_eng"), this);
 	return f.dot;
 }, true);
 
 rt.type(12396, "/obj/structure/closet/secure_closet/security/science", "/obj/structure/closet/secure_closet/security", {});
 
-// /obj/structure/closet/secure_closet/security/science/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/secure/security.dm:149)  may sleep
+// security.dm:149
 rt.def("/obj/structure/closet/secure_closet/security/science/proc/PopulateContents", function* PopulateContents(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.new_(f, T("/obj/item/clothing/accessory/armband/science"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/device/encryptionkey/headset_sci"), [live(f.src)]);
+	yield* parent_proc();
+	yield* new_(T("/obj/item/clothing/accessory/armband/science"), this);
+	yield* new_(T("/obj/item/device/encryptionkey/headset_sci"), this);
 	return f.dot;
 }, true);
 
 rt.type(12397, "/obj/structure/closet/secure_closet/security/med", "/obj/structure/closet/secure_closet/security", {});
 
-// /obj/structure/closet/secure_closet/security/med/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/secure/security.dm:156)  may sleep
+// security.dm:156
 rt.def("/obj/structure/closet/secure_closet/security/med/proc/PopulateContents", function* PopulateContents(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.new_(f, T("/obj/item/clothing/accessory/armband/medblue"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/device/encryptionkey/headset_med"), [live(f.src)]);
+	yield* parent_proc();
+	yield* new_(T("/obj/item/clothing/accessory/armband/medblue"), this);
+	yield* new_(T("/obj/item/device/encryptionkey/headset_med"), this);
 	return f.dot;
 }, true);
 
@@ -253,35 +243,33 @@ rt.type(12398, "/obj/structure/closet/secure_closet/detective", "/obj/structure/
 	max_integrity: 70,
 });
 
-// /obj/structure/closet/secure_closet/detective/proc/<init>  (code/game/objects/structures/crates_lockers/closets/secure/security.dm:162)
+// security.dm:162
 rt.def("/obj/structure/closet/secure_closet/detective/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_access", rt.list(4));
+	parent_proc();
+	this.req_access = list(4);
 	return f.dot;
 });
 
-// /obj/structure/closet/secure_closet/detective/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/secure/security.dm:169)  may sleep
+// security.dm:169
 rt.def("/obj/structure/closet/secure_closet/detective/proc/PopulateContents", function* PopulateContents(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.new_(f, T("/obj/item/clothing/under/rank/det"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/det_suit"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/head/fedora/det_hat"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/gloves/color/black"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/under/rank/det/grey"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/accessory/waistcoat"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/det_suit/grey"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/head/fedora"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/shoes/laceup"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/box/evidence"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/device/radio/headset/headset_sec"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/device/detective_scanner"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/device/flashlight/seclite"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/holosign_creator/security"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/reagent_containers/spray/pepper"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/armor/vest/det_suit"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/belt/holster/full"), [live(f.src)]);
+	yield* parent_proc();
+	yield* new_(T("/obj/item/clothing/under/rank/det"), this);
+	yield* new_(T("/obj/item/clothing/suit/det_suit"), this);
+	yield* new_(T("/obj/item/clothing/head/fedora/det_hat"), this);
+	yield* new_(T("/obj/item/clothing/gloves/color/black"), this);
+	yield* new_(T("/obj/item/clothing/under/rank/det/grey"), this);
+	yield* new_(T("/obj/item/clothing/accessory/waistcoat"), this);
+	yield* new_(T("/obj/item/clothing/suit/det_suit/grey"), this);
+	yield* new_(T("/obj/item/clothing/head/fedora"), this);
+	yield* new_(T("/obj/item/clothing/shoes/laceup"), this);
+	yield* new_(T("/obj/item/weapon/storage/box/evidence"), this);
+	yield* new_(T("/obj/item/device/radio/headset/headset_sec"), this);
+	yield* new_(T("/obj/item/device/detective_scanner"), this);
+	yield* new_(T("/obj/item/device/flashlight/seclite"), this);
+	yield* new_(T("/obj/item/weapon/holosign_creator/security"), this);
+	yield* new_(T("/obj/item/weapon/reagent_containers/spray/pepper"), this);
+	yield* new_(T("/obj/item/clothing/suit/armor/vest/det_suit"), this);
+	yield* new_(T("/obj/item/weapon/storage/belt/holster/full"), this);
 	return f.dot;
 }, true);
 
@@ -290,26 +278,22 @@ rt.type(12399, "/obj/structure/closet/secure_closet/injection", "/obj/structure/
 	req_access: null,
 });
 
-// /obj/structure/closet/secure_closet/injection/proc/<init>  (code/game/objects/structures/crates_lockers/closets/secure/security.dm:190)
+// security.dm:190
 rt.def("/obj/structure/closet/secure_closet/injection/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_access", rt.list(58));
+	parent_proc();
+	this.req_access = list(58);
 	return f.dot;
 });
 
-// /obj/structure/closet/secure_closet/injection/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/secure/security.dm:193)  may sleep
+// security.dm:193
 rt.def("/obj/structure/closet/secure_closet/injection/proc/PopulateContents", function* PopulateContents(f: Frame) {
 	let i: Value = null;
 	let $e: any;
-	f.vars = () => [i, $e];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	i = null;
+	yield* parent_proc();
 	rt.forRange(f, 0, 1, 5, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/weapon/reagent_containers/syringe/lethal/execution"), [live(f.src)]);
+		yield* new_(T("/obj/item/weapon/reagent_containers/syringe/lethal/execution"), this);
 	}
 	rt.endFor(f, 0);
 	return f.dot;
@@ -322,20 +306,18 @@ rt.type(12400, "/obj/structure/closet/secure_closet/brig", "/obj/structure/close
 	req_access: null,
 });
 
-// /obj/structure/closet/secure_closet/brig/proc/<init>  (code/game/objects/structures/crates_lockers/closets/secure/security.dm:199)
+// security.dm:199
 rt.def("/obj/structure/closet/secure_closet/brig/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_access", rt.list(2));
+	parent_proc();
+	this.req_access = list(2);
 	return f.dot;
 });
 
-// /obj/structure/closet/secure_closet/brig/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/secure/security.dm:204)  may sleep
+// security.dm:204
 rt.def("/obj/structure/closet/secure_closet/brig/proc/PopulateContents", function* PopulateContents(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.new_(f, T("/obj/item/clothing/under/rank/prisoner"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/shoes/sneakers/orange"), [live(f.src)]);
+	yield* parent_proc();
+	yield* new_(T("/obj/item/clothing/under/rank/prisoner"), this);
+	yield* new_(T("/obj/item/clothing/shoes/sneakers/orange"), this);
 	return f.dot;
 }, true);
 
@@ -344,33 +326,29 @@ rt.type(12401, "/obj/structure/closet/secure_closet/courtroom", "/obj/structure/
 	req_access: null,
 });
 
-// /obj/structure/closet/secure_closet/courtroom/proc/<init>  (code/game/objects/structures/crates_lockers/closets/secure/security.dm:210)
+// security.dm:210
 rt.def("/obj/structure/closet/secure_closet/courtroom/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_access", rt.list(42));
+	parent_proc();
+	this.req_access = list(42);
 	return f.dot;
 });
 
-// /obj/structure/closet/secure_closet/courtroom/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/secure/security.dm:213)  may sleep
+// security.dm:213
 rt.def("/obj/structure/closet/secure_closet/courtroom/proc/PopulateContents", function* PopulateContents(f: Frame) {
 	let i: Value = null;
 	let $e: any;
-	f.vars = () => [i, $e];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.new_(f, T("/obj/item/clothing/shoes/sneakers/brown"), [live(f.src)]);
-	i = null;
+	yield* parent_proc();
+	yield* new_(T("/obj/item/clothing/shoes/sneakers/brown"), this);
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/weapon/paper/Court"), [live(f.src)]);
+		yield* new_(T("/obj/item/weapon/paper/Court"), this);
 	}
 	rt.endFor(f, 0);
-	yield* g.new_(f, T("/obj/item/weapon/pen"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/judgerobe"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/head/powdered_wig"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/briefcase"), [live(f.src)]);
+	yield* new_(T("/obj/item/weapon/pen"), this);
+	yield* new_(T("/obj/item/clothing/suit/judgerobe"), this);
+	yield* new_(T("/obj/item/clothing/head/powdered_wig"), this);
+	yield* new_(T("/obj/item/weapon/storage/briefcase"), this);
 	return f.dot;
 }, true);
 
@@ -380,41 +358,37 @@ rt.type(12402, "/obj/structure/closet/secure_closet/armory1", "/obj/structure/cl
 	icon_state: "armory",
 });
 
-// /obj/structure/closet/secure_closet/armory1/proc/<init>  (code/game/objects/structures/crates_lockers/closets/secure/security.dm:224)
+// security.dm:224
 rt.def("/obj/structure/closet/secure_closet/armory1/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_access", rt.list(3));
+	parent_proc();
+	this.req_access = list(3);
 	return f.dot;
 });
 
-// /obj/structure/closet/secure_closet/armory1/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/secure/security.dm:228)  may sleep
+// security.dm:228
 rt.def("/obj/structure/closet/secure_closet/armory1/proc/PopulateContents", function* PopulateContents(f: Frame) {
 	let i: Value = null;
 	let $e: any;
-	f.vars = () => [i, $e];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.new_(f, T("/obj/item/clothing/suit/armor/laserproof"), [live(f.src)]);
-	i = null;
+	yield* parent_proc();
+	yield* new_(T("/obj/item/clothing/suit/armor/laserproof"), this);
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/clothing/suit/armor/riot"), [live(f.src)]);
+		yield* new_(T("/obj/item/clothing/suit/armor/riot"), this);
 	}
 	rt.endFor(f, 0);
 	i = null;
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/clothing/head/helmet/riot"), [live(f.src)]);
+		yield* new_(T("/obj/item/clothing/head/helmet/riot"), this);
 	}
 	rt.endFor(f, 0);
 	i = null;
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/weapon/shield/riot"), [live(f.src)]);
+		yield* new_(T("/obj/item/weapon/shield/riot"), this);
 	}
 	rt.endFor(f, 0);
 	return f.dot;
@@ -426,34 +400,30 @@ rt.type(12403, "/obj/structure/closet/secure_closet/armory2", "/obj/structure/cl
 	icon_state: "armory",
 });
 
-// /obj/structure/closet/secure_closet/armory2/proc/<init>  (code/game/objects/structures/crates_lockers/closets/secure/security.dm:239)
+// security.dm:239
 rt.def("/obj/structure/closet/secure_closet/armory2/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_access", rt.list(3));
+	parent_proc();
+	this.req_access = list(3);
 	return f.dot;
 });
 
-// /obj/structure/closet/secure_closet/armory2/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/secure/security.dm:243)  may sleep
+// security.dm:243
 rt.def("/obj/structure/closet/secure_closet/armory2/proc/PopulateContents", function* PopulateContents(f: Frame) {
 	let i: Value = null;
 	let $e: any;
-	f.vars = () => [i, $e];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.new_(f, T("/obj/item/weapon/storage/box/firingpins"), [live(f.src)]);
-	i = null;
+	yield* parent_proc();
+	yield* new_(T("/obj/item/weapon/storage/box/firingpins"), this);
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/weapon/storage/box/rubbershot"), [live(f.src)]);
+		yield* new_(T("/obj/item/weapon/storage/box/rubbershot"), this);
 	}
 	rt.endFor(f, 0);
 	i = null;
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/weapon/gun/ballistic/shotgun/riot"), [live(f.src)]);
+		yield* new_(T("/obj/item/weapon/gun/ballistic/shotgun/riot"), this);
 	}
 	rt.endFor(f, 0);
 	return f.dot;
@@ -465,35 +435,31 @@ rt.type(12404, "/obj/structure/closet/secure_closet/armory3", "/obj/structure/cl
 	icon_state: "armory",
 });
 
-// /obj/structure/closet/secure_closet/armory3/proc/<init>  (code/game/objects/structures/crates_lockers/closets/secure/security.dm:252)
+// security.dm:252
 rt.def("/obj/structure/closet/secure_closet/armory3/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_access", rt.list(3));
+	parent_proc();
+	this.req_access = list(3);
 	return f.dot;
 });
 
-// /obj/structure/closet/secure_closet/armory3/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/secure/security.dm:256)  may sleep
+// security.dm:256
 rt.def("/obj/structure/closet/secure_closet/armory3/proc/PopulateContents", function* PopulateContents(f: Frame) {
 	let i: Value = null;
 	let $e: any;
-	f.vars = () => [i, $e];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.new_(f, T("/obj/item/weapon/storage/box/firingpins"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/gun/energy/ionrifle"), [live(f.src)]);
-	i = null;
+	yield* parent_proc();
+	yield* new_(T("/obj/item/weapon/storage/box/firingpins"), this);
+	yield* new_(T("/obj/item/weapon/gun/energy/ionrifle"), this);
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/weapon/gun/energy/e_gun"), [live(f.src)]);
+		yield* new_(T("/obj/item/weapon/gun/energy/e_gun"), this);
 	}
 	rt.endFor(f, 0);
 	i = null;
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/weapon/gun/energy/laser"), [live(f.src)]);
+		yield* new_(T("/obj/item/weapon/gun/energy/laser"), this);
 	}
 	rt.endFor(f, 0);
 	return f.dot;
@@ -505,22 +471,20 @@ rt.type(12405, "/obj/structure/closet/secure_closet/tac", "/obj/structure/closet
 	icon_state: "tac",
 });
 
-// /obj/structure/closet/secure_closet/tac/proc/<init>  (code/game/objects/structures/crates_lockers/closets/secure/security.dm:266)
+// security.dm:266
 rt.def("/obj/structure/closet/secure_closet/tac/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_access", rt.list(3));
+	parent_proc();
+	this.req_access = list(3);
 	return f.dot;
 });
 
-// /obj/structure/closet/secure_closet/tac/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/secure/security.dm:270)  may sleep
+// security.dm:270
 rt.def("/obj/structure/closet/secure_closet/tac/proc/PopulateContents", function* PopulateContents(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.new_(f, T("/obj/item/weapon/gun/ballistic/automatic/wt550"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/head/helmet/alt"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/mask/gas/sechailer"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/armor/bulletproof"), [live(f.src)]);
+	yield* parent_proc();
+	yield* new_(T("/obj/item/weapon/gun/ballistic/automatic/wt550"), this);
+	yield* new_(T("/obj/item/clothing/head/helmet/alt"), this);
+	yield* new_(T("/obj/item/clothing/mask/gas/sechailer"), this);
+	yield* new_(T("/obj/item/clothing/suit/armor/bulletproof"), this);
 	return f.dot;
 }, true);
 
@@ -530,26 +494,22 @@ rt.type(12406, "/obj/structure/closet/secure_closet/lethalshots", "/obj/structur
 	icon_state: "tac",
 });
 
-// /obj/structure/closet/secure_closet/lethalshots/proc/<init>  (code/game/objects/structures/crates_lockers/closets/secure/security.dm:278)
+// security.dm:278
 rt.def("/obj/structure/closet/secure_closet/lethalshots/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_access", rt.list(3));
+	parent_proc();
+	this.req_access = list(3);
 	return f.dot;
 });
 
-// /obj/structure/closet/secure_closet/lethalshots/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/secure/security.dm:282)  may sleep
+// security.dm:282
 rt.def("/obj/structure/closet/secure_closet/lethalshots/proc/PopulateContents", function* PopulateContents(f: Frame) {
 	let i: Value = null;
 	let $e: any;
-	f.vars = () => [i, $e];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	i = null;
+	yield* parent_proc();
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/weapon/storage/box/lethalshot"), [live(f.src)]);
+		yield* new_(T("/obj/item/weapon/storage/box/lethalshot"), this);
 	}
 	rt.endFor(f, 0);
 	return f.dot;

@@ -1,7 +1,7 @@
-// From code/game/gamemodes/clock_cult/clock_scriptures/scripture_drivers.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/gamemodes/clock_cult/clock_scriptures/scripture_drivers.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, add } = rt;
 
 
 rt.type(1199, "/datum/clockwork_scripture/channeled/belligerent", "/datum/clockwork_scripture/channeled", {
@@ -20,18 +20,12 @@ rt.type(1199, "/datum/clockwork_scripture/channeled/belligerent", "/datum/clockw
 	quickbind_desc: "Forces nearby non-Servants to walk, doing minor damage with each chant.<br><b>Maximum 15 chants.</b>",
 });
 
-// /datum/clockwork_scripture/channeled/belligerent/proc/chant_effects  (code/game/gamemodes/clock_cult/clock_scriptures/scripture_drivers.dm:22)  may sleep
+// scripture_drivers.dm:22
 rt.def("/datum/clockwork_scripture/channeled/belligerent/proc/chant_effects", function* chant_effects(f: Frame, chant_number: Value) {
 	let C: Value = null;
-	let $e: any;
-	f.vars = () => [chant_number, C, $e];
-	C = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/hearers"), null, [7, rt.sv(f, "invoker")])), T("/mob/living/carbon"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		C = $e;
-		yield* g.callName(f, live(C), "apply_status_effect", [T("/datum/status_effect/belligerent")]);
+	for (C of each(hearers(7, this.invoker), T("/mob/living/carbon"))) {
+		yield* C.apply_status_effect(T("/datum/status_effect/belligerent"));
 	}
-	rt.endFor(f, 0);
 	return 1;
 }, true);
 
@@ -54,13 +48,11 @@ rt.type(1212, "/datum/clockwork_scripture/create_object/judicial_visor", "/datum
 	object_path: rt.typePath("/obj/item/clothing/glasses/judicial_visor"),
 });
 
-// /datum/clockwork_scripture/create_object/judicial_visor/proc/<init>  (code/game/gamemodes/clock_cult/clock_scriptures/scripture_drivers.dm:32)
+// scripture_drivers.dm:32
 rt.def("/datum/clockwork_scripture/create_object/judicial_visor/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "invocations", rt.list("Grant me the flames of Engine!"));
-	rt.setSv(f, "consumed_components", rt.alist(f, ["belligerent_eye", 1]));
+	parent_proc();
+	this.invocations = list("Grant me the flames of Engine!");
+	this.consumed_components = rt.alist(f, ["belligerent_eye", 1]);
 	return f.dot;
 });
 
@@ -78,35 +70,29 @@ rt.type(1232, "/datum/clockwork_scripture/vanguard", "/datum/clockwork_scripture
 	quickbind_desc: "Allows you to temporarily absorb stuns. All stuns absorbed will affect you when disabled.",
 });
 
-// /datum/clockwork_scripture/vanguard/proc/check_special_requirements  (code/game/gamemodes/clock_cult/clock_scriptures/scripture_drivers.dm:63)
+// scripture_drivers.dm:63
 rt.def("/datum/clockwork_scripture/vanguard/proc/check_special_requirements", function check_special_requirements(f: Frame) {
-	if ((((!truthy(rt.gl("ratvar_awakens")) && truthy((rt.istype(rt.fv(f, "stun_absorption", rt.sv(f, "invoker")), T("/list")) ? 1 : 0))) && truthy(rt.index(rt.fv(f, "stun_absorption", rt.sv(f, "invoker")), "vanguard"))) && rt.gt(rt.index(rt.index(rt.fv(f, "stun_absorption", rt.sv(f, "invoker")), "vanguard"), "end_time"), rt.worldTime(f)))) {
-		rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "invoker"), "<span class='warning'>You are already shielded by a Vanguard!</span>"]);
+	if (!GLOB.ratvar_awakens && rt.istype(this.invoker.stun_absorption, T("/list")) && rt.index(this.invoker.stun_absorption, "vanguard") && rt.index(rt.index(this.invoker.stun_absorption, "vanguard"), "end_time") > rt.worldTime(f)) {
+		to_chat(this.invoker, "<span class='warning'>You are already shielded by a Vanguard!</span>");
 		return 0;
 	}
 	return 1;
 });
 
-// /datum/clockwork_scripture/vanguard/proc/scripture_effects  (code/game/gamemodes/clock_cult/clock_scriptures/scripture_drivers.dm:70)  may sleep
+// scripture_drivers.dm:70
 rt.def("/datum/clockwork_scripture/vanguard/proc/scripture_effects", function* scripture_effects(f: Frame) {
 	let L: Value = null;
-	let $e: any;
-	f.vars = () => [L, $e];
-	if (truthy(rt.gl("ratvar_awakens"))) {
-		L = null;
-		rt.forList(f, 0, (yield* g.call(f, P("/proc/view"), null, [7, rt.getStep(f, rt.sv(f, "invoker"), 0)])), T("/mob/living"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			L = $e;
-			if ((!isEqual(rt.fv(f, "stat", live(L)), 2) && truthy((yield* g.call(f, P("/proc/is_servant_of_ratvar"), null, [live(L)]))))) {
-				yield* g.callName(f, live(L), "apply_status_effect", [T("/datum/status_effect/vanguard_shield")]);
+	if (GLOB.ratvar_awakens) {
+		for (L of each(view(7, rt.getStep(f, this.invoker, 0)), T("/mob/living"))) {
+			if (L.stat != 2 && is_servant_of_ratvar(L)) {
+				yield* L.apply_status_effect(T("/datum/status_effect/vanguard_shield"));
 			}
-			if (rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit"))) {
-				yield* g.call(f, P("/proc/stoplag"), null, []);
+			if (rt.tickUsage(f) > GLOB.current_ticklimit) {
+				yield* stoplag();
 			}
 		}
-		rt.endFor(f, 0);
 	} else {
-		yield* g.callName(f, rt.sv(f, "invoker"), "apply_status_effect", [T("/datum/status_effect/vanguard_shield")]);
+		yield* this.invoker.apply_status_effect(T("/datum/status_effect/vanguard_shield"));
 	}
 	return 1;
 }, true);
@@ -129,13 +115,11 @@ rt.type(1227, "/datum/clockwork_scripture/ranged_ability/sentinels_compromise", 
 	ranged_type: rt.typePath("/obj/effect/proc_holder/slab/compromise"),
 });
 
-// /datum/clockwork_scripture/ranged_ability/sentinels_compromise/proc/<init>  (code/game/gamemodes/clock_cult/clock_scriptures/scripture_drivers.dm:86)
+// scripture_drivers.dm:86
 rt.def("/datum/clockwork_scripture/ranged_ability/sentinels_compromise/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "invocations", rt.list("Mend the wounds of...", "...my inferior flesh."));
-	rt.setSv(f, "consumed_components", rt.alist(f, ["vanguard_cogwheel", 1]));
+	parent_proc();
+	this.invocations = list("Mend the wounds of...", "...my inferior flesh.");
+	this.consumed_components = rt.alist(f, ["vanguard_cogwheel", 1]);
 	return f.dot;
 });
 
@@ -158,29 +142,23 @@ rt.type(1228, "/datum/clockwork_scripture/ranged_ability/geis_prep", "/datum/clo
 	ranged_type: rt.typePath("/obj/effect/proc_holder/slab/geis"),
 });
 
-// /datum/clockwork_scripture/ranged_ability/geis_prep/proc/run_scripture  (code/game/gamemodes/clock_cult/clock_scriptures/scripture_drivers.dm:123)  may sleep
+// scripture_drivers.dm:123
 rt.def("/datum/clockwork_scripture/ranged_ability/geis_prep/proc/run_scripture", function* run_scripture(f: Frame) {
-	let servants: Value = null, M: Value = null;
-	let $e: any;
-	f.vars = () => [servants, M, $e];
-	servants = 0;
-	if (!truthy(rt.gl("ratvar_awakens"))) {
-		M = null;
-		rt.forList(f, 0, rt.gl("living_mob_list"), T("/mob/living"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			M = $e;
-			if (truthy((yield* g.call(f, P("/proc/can_recite_scripture"), null, [live(M), 1])))) {
-				servants = rt.inc(live(servants), 1);
+	let M: Value = null;
+	let servants: Value = 0;
+	if (!GLOB.ratvar_awakens) {
+		for (M of each(GLOB.living_mob_list, T("/mob/living"))) {
+			if (can_recite_scripture(M, 1)) {
+				servants++;
 			}
 		}
-		rt.endFor(f, 0);
 	}
-	if (rt.gt(live(servants), 6)) {
-		rt.setSv(f, "whispered", 0);
-		(servants = rt.modify(live(servants), 6, subtract));
-		rt.setSv(f, "channel_time", (yield* g.call(f, P("/proc/min"), null, [add(rt.sv(f, "channel_time"), multiply(live(servants), 3)), 50])));
+	if (servants > SCRIPT_SERVANT_REQ) {
+		this.whispered = 0;
+		servants -= SCRIPT_SERVANT_REQ;
+		this.channel_time = min(this.channel_time + servants * 3, 50);
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);
 
 rt.type(1233, "/datum/clockwork_scripture/geis", "/datum/clockwork_scripture", {
@@ -192,61 +170,55 @@ rt.type(1233, "/datum/clockwork_scripture/geis", "/datum/clockwork_scripture", {
 	tier: "Peripheral",
 });
 
-// /datum/clockwork_scripture/geis/proc/Destroy  (code/game/gamemodes/clock_cult/clock_scriptures/scripture_drivers.dm:143)  may sleep
+// scripture_drivers.dm:143
 rt.def("/datum/clockwork_scripture/geis/proc/Destroy", function* Destroy(f: Frame) {
-	if ((truthy(rt.sv(f, "binding")) && !(!truthy(rt.sv(f, "binding")) || truthy(rt.fv(f, "gc_destroyed", rt.sv(f, "binding")))))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "binding")]);
+	if (this.binding && !(!this.binding || this.binding.gc_destroyed)) {
+		yield* qdel(this.binding);
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);
 
-// /datum/clockwork_scripture/geis/proc/can_recite  (code/game/gamemodes/clock_cult/clock_scriptures/scripture_drivers.dm:148)
+// scripture_drivers.dm:148
 rt.def("/datum/clockwork_scripture/geis/proc/can_recite", function can_recite(f: Frame) {
-	if (!truthy(rt.sv(f, "target"))) {
+	if (!this.target) {
 		return 0;
 	}
-	return rt.callSuper(f, [], rt.Args.Same);
+	return parent_proc();
 });
 
-// /datum/clockwork_scripture/geis/proc/run_scripture  (code/game/gamemodes/clock_cult/clock_scriptures/scripture_drivers.dm:154)  may sleep
+// scripture_drivers.dm:154
 rt.def("/datum/clockwork_scripture/geis/proc/run_scripture", function* run_scripture(f: Frame) {
-	let servants: Value = null, M: Value = null;
-	let $e: any;
-	f.vars = () => [servants, M, $e];
-	servants = 0;
-	if (!truthy(rt.gl("ratvar_awakens"))) {
-		M = null;
-		rt.forList(f, 0, rt.gl("living_mob_list"), T("/mob/living"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			M = $e;
-			if (truthy((yield* g.call(f, P("/proc/can_recite_scripture"), null, [live(M), 1])))) {
-				servants = rt.inc(live(servants), 1);
+	let M: Value = null;
+	let servants: Value = 0;
+	if (!GLOB.ratvar_awakens) {
+		for (M of each(GLOB.living_mob_list, T("/mob/living"))) {
+			if (can_recite_scripture(M, 1)) {
+				servants++;
 			}
 		}
-		rt.endFor(f, 0);
 	}
-	if (truthy(rt.fv(f, "buckled", rt.sv(f, "target")))) {
-		yield* g.callName(f, rt.fv(f, "buckled", rt.sv(f, "target")), "unbuckle_mob", [rt.sv(f, "target"), 1]);
+	if (this.target.buckled) {
+		yield* this.target.buckled.unbuckle_mob(this.target, 1);
 	}
-	rt.setSv(f, "binding", (yield* g.new_(f, T("/obj/structure/destructible/clockwork/geis_binding"), [rt.getStep(f, rt.sv(f, "target"), 0)])));
-	if (rt.gt(live(servants), 6)) {
-		(servants = rt.modify(live(servants), 6, subtract));
-		rt.setSv(f, "channel_time", (yield* g.call(f, P("/proc/min"), null, [add(rt.sv(f, "channel_time"), multiply(live(servants), 7)), 120])));
-		rt.setFv(f, "can_resist", rt.sv(f, "binding"), 1);
+	this.binding = (yield* new_(T("/obj/structure/destructible/clockwork/geis_binding"), rt.getStep(f, this.target, 0)));
+	if (servants > SCRIPT_SERVANT_REQ) {
+		servants -= SCRIPT_SERVANT_REQ;
+		this.channel_time = min(this.channel_time + servants * 7, 120);
+		this.binding.can_resist = 1;
 	}
-	yield* g.callName(f, rt.sv(f, "binding"), "setDir", [rt.fv(f, "dir", rt.sv(f, "target"))]);
-	yield* g.callName(f, rt.sv(f, "binding"), "buckle_mob", [rt.sv(f, "target"), 1]);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* this.binding.setDir(this.target.dir);
+	yield* this.binding.buckle_mob(this.target, 1);
+	return (yield* parent_proc());
 }, true);
 
-// /datum/clockwork_scripture/geis/proc/check_special_requirements  (code/game/gamemodes/clock_cult/clock_scriptures/scripture_drivers.dm:170)
+// scripture_drivers.dm:170
 rt.def("/datum/clockwork_scripture/geis/proc/check_special_requirements", function check_special_requirements(f: Frame) {
-	return ((((rt.sv(f, "target") && rt.sv(f, "binding")) && (isEqual(rt.fv(f, "buckled", rt.sv(f, "target")), rt.sv(f, "binding")) ? 1 : 0)) && (!truthy(rt.call(f, P("/proc/is_servant_of_ratvar"), null, [rt.sv(f, "target")])) ? 1 : 0)) && (!isEqual(rt.fv(f, "stat", rt.sv(f, "target")), 2) ? 1 : 0));
+	return ((((this.target && this.binding) && (this.target.buckled == this.binding ? 1 : 0)) && (!is_servant_of_ratvar(this.target) ? 1 : 0)) && (this.target.stat != 2 ? 1 : 0));
 });
 
-// /datum/clockwork_scripture/geis/proc/scripture_effects  (code/game/gamemodes/clock_cult/clock_scriptures/scripture_drivers.dm:173)  may sleep
+// scripture_drivers.dm:173
 rt.def("/datum/clockwork_scripture/geis/proc/scripture_effects", function* scripture_effects(f: Frame) {
-	return (yield* g.call(f, P("/proc/add_servant_of_ratvar"), null, [rt.sv(f, "target")]));
+	return (yield* add_servant_of_ratvar(this.target));
 }, true);
 
 rt.type(1200, "/datum/clockwork_scripture/channeled/taunting_tirade", "/datum/clockwork_scripture/channeled", {
@@ -268,46 +240,42 @@ rt.type(1200, "/datum/clockwork_scripture/channeled/taunting_tirade", "/datum/cl
 	quickbind_desc: "Allows movement for five seconds, leaving a trail that confuses and knocks down.<br><b>Maximum 5 chants.</b>",
 });
 
-// /datum/clockwork_scripture/channeled/taunting_tirade/proc/<init>  (code/game/gamemodes/clock_cult/clock_scriptures/scripture_drivers.dm:184)
+// scripture_drivers.dm:184
 rt.def("/datum/clockwork_scripture/channeled/taunting_tirade/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "chant_invocations", rt.list("Hostiles on my back!", "Enemies on my trail!", "Gonna try and shake my tail.", "Bogeys on my six!"));
-	rt.setSv(f, "consumed_components", rt.alist(f, ["geis_capacitor", 1]));
+	parent_proc();
+	this.chant_invocations = list("Hostiles on my back!", "Enemies on my trail!", "Gonna try and shake my tail.", "Bogeys on my six!");
+	this.consumed_components = rt.alist(f, ["geis_capacitor", 1]);
 	return f.dot;
 });
 
-// /datum/clockwork_scripture/channeled/taunting_tirade/proc/chant_effects  (code/game/gamemodes/clock_cult/clock_scriptures/scripture_drivers.dm:196)  may sleep
+// scripture_drivers.dm:196
 rt.def("/datum/clockwork_scripture/channeled/taunting_tirade/proc/chant_effects", function* chant_effects(f: Frame, chant_number: Value) {
-	let invoker_old_color: Value = null, endtime: Value = null;
-	f.vars = () => [chant_number, invoker_old_color, endtime];
-	yield* g.callName(f, rt.sv(f, "invoker"), "visible_message", [fmt("<span class='warning'>＀ is suddenly covered with a thin layer of purple smoke!</span>", [rt.sv(f, "invoker")])]);
-	invoker_old_color = rt.fv(f, "color", rt.sv(f, "invoker"));
-	rt.setFv(f, "color", rt.sv(f, "invoker"), rt.list("#AF0AAF", "#AF0AAF", "#AF0AAF", "#000000"));
-	rt.op(f, "Animate", [2, 6], [null, rt.sv(f, "invoker"), "color", live(invoker_old_color), "time", add(rt.sv(f, "flee_time"), rt.sv(f, "grace_period"))]);
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [rt.sv(f, "invoker"), P("/atom/proc/update_atom_colour")])), add(rt.sv(f, "flee_time"), rt.sv(f, "grace_period"))]);
-	endtime = add(rt.worldTime(f), rt.sv(f, "flee_time"));
-	rt.setSv(f, "progbar", (yield* g.new_(f, T("/datum/progressbar"), [rt.sv(f, "invoker"), rt.sv(f, "flee_time"), rt.sv(f, "invoker")])));
-	rt.setFv(f, "color", rt.fv(f, "bar", rt.sv(f, "progbar")), rt.list("#AF0AAF", "#AF0AAF", "#AF0AAF", "#000000"));
-	rt.op(f, "Animate", [2, 6], [null, rt.fv(f, "bar", rt.sv(f, "progbar")), "color", rt.initial(f, rt.fv(f, "bar", rt.sv(f, "progbar")), "color"), "time", add(rt.sv(f, "flee_time"), rt.sv(f, "grace_period"))]);
-	while (rt.lt(rt.worldTime(f), live(endtime)) && truthy((yield* g.srcCall(f, "can_recite")))) {
-		yield* g.call(f, P("/proc/sleep"), null, [1]);
-		yield* g.new_(f, T("/obj/structure/destructible/clockwork/taunting_trail"), [rt.fv(f, "loc", rt.sv(f, "invoker"))]);
-		yield* g.callName(f, rt.sv(f, "progbar"), "update", [subtract(live(endtime), rt.worldTime(f))]);
+	this.invoker.visible_message(`<span class='warning'>${this.invoker} is suddenly covered with a thin layer of purple smoke!</span>`);
+	let invoker_old_color: Value = this.invoker.color;
+	this.invoker.color = list("#AF0AAF", "#AF0AAF", "#AF0AAF", "#000000");
+	rt.op(f, "Animate", [2, 6], [null, this.invoker, "color", invoker_old_color, "time", this.flee_time + this.grace_period]);
+	yield* addtimer((yield* new_(T("/datum/callback"), this.invoker, P("/atom/proc/update_atom_colour"))), this.flee_time + this.grace_period);
+	let endtime: Value = rt.worldTime(f) + this.flee_time;
+	this.progbar = (yield* new_(T("/datum/progressbar"), this.invoker, this.flee_time, this.invoker));
+	this.progbar.bar.color = list("#AF0AAF", "#AF0AAF", "#AF0AAF", "#000000");
+	rt.op(f, "Animate", [2, 6], [null, this.progbar.bar, "color", rt.initial(f, this.progbar.bar, "color"), "time", this.flee_time + this.grace_period]);
+	while (rt.worldTime(f) < endtime && this.can_recite()) {
+		yield* sleep(1);
+		yield* new_(T("/obj/structure/destructible/clockwork/taunting_trail"), this.invoker.loc);
+		yield* this.progbar.update(endtime - rt.worldTime(f));
 	}
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "progbar")]);
-	if ((truthy((yield* g.srcCall(f, "can_recite"))) && !isEqual(live(chant_number), rt.sv(f, "chant_amount")))) {
-		yield* g.call(f, P("/proc/sleep"), null, [rt.sv(f, "grace_period")]);
+	yield* qdel(this.progbar);
+	if (this.can_recite() && chant_number != this.chant_amount) {
+		yield* sleep(this.grace_period);
 	} else {
 		return 0;
 	}
 	return 1;
 }, true);
 
-// /datum/clockwork_scripture/channeled/taunting_tirade/proc/chant_end_effects  (code/game/gamemodes/clock_cult/clock_scriptures/scripture_drivers.dm:217)  may sleep
+// scripture_drivers.dm:217
 rt.def("/datum/clockwork_scripture/channeled/taunting_tirade/proc/chant_end_effects", function* chant_end_effects(f: Frame) {
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "progbar")]);
+	yield* qdel(this.progbar);
 	return f.dot;
 }, true);
 
@@ -329,12 +297,10 @@ rt.type(1213, "/datum/clockwork_scripture/create_object/replicant", "/datum/cloc
 	object_path: rt.typePath("/obj/item/clockwork/slab"),
 });
 
-// /datum/clockwork_scripture/create_object/replicant/proc/<init>  (code/game/gamemodes/clock_cult/clock_scriptures/scripture_drivers.dm:225)
+// scripture_drivers.dm:225
 rt.def("/datum/clockwork_scripture/create_object/replicant/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "invocations", rt.list("Metal, become greater!"));
+	parent_proc();
+	this.invocations = list("Metal, become greater!");
 	return f.dot;
 });
 
@@ -357,33 +323,25 @@ rt.type(1214, "/datum/clockwork_scripture/create_object/tinkerers_cache", "/datu
 	object_path: rt.typePath("/obj/structure/destructible/clockwork/cache"),
 }, { global: { prev_cost: 653 } });
 
-// /datum/clockwork_scripture/create_object/tinkerers_cache/proc/<init>  (code/game/gamemodes/clock_cult/clock_scriptures/scripture_drivers.dm:247)
+// scripture_drivers.dm:247
 rt.def("/datum/clockwork_scripture/create_object/tinkerers_cache/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "invocations", rt.list("Constructing...", "...a cache!"));
-	rt.setSv(f, "consumed_components", rt.alist(f, ["belligerent_eye", 0, "vanguard_cogwheel", 0, "geis_capacitor", 0, "replicant_alloy", 1, "hierophant_ansible", 0]));
+	parent_proc();
+	this.invocations = list("Constructing...", "...a cache!");
+	this.consumed_components = rt.alist(f, ["belligerent_eye", 0, "vanguard_cogwheel", 0, "geis_capacitor", 0, "replicant_alloy", 1, "hierophant_ansible", 0]);
 	return f.dot;
 });
 
-// /datum/clockwork_scripture/create_object/tinkerers_cache/proc/creation_update  (code/game/gamemodes/clock_cult/clock_scriptures/scripture_drivers.dm:261)
+// scripture_drivers.dm:261
 rt.def("/datum/clockwork_scripture/create_object/tinkerers_cache/proc/creation_update", function creation_update(f: Frame) {
 	let cache_cost_increase: Value = null, i: Value = null;
-	let $e: any;
-	f.vars = () => [cache_cost_increase, i, $e];
-	if (!isEqual((cache_cost_increase = rt.call(f, P("/proc/min"), null, [rt.call(f, P("/proc/round"), null, [multiply(rt.gl("clockwork_caches"), 0.4000000059604645)]), 10])), rt.gl("prev_cost"))) {
-		rt.setGl("prev_cost", live(cache_cost_increase));
-		rt.setSv(f, "consumed_components", rt.alist(f, ["belligerent_eye", 0, "vanguard_cogwheel", 0, "geis_capacitor", 0, "replicant_alloy", 1, "hierophant_ansible", 0]));
-		i = null;
-		rt.forList(f, 0, rt.sv(f, "consumed_components"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			i = $e;
-			if (!isEqual(live(i), "replicant_alloy")) {
-				rt.modAt(rt.sv(f, "consumed_components"), live(i), live(cache_cost_increase), add);
+	if ((cache_cost_increase = min(round(GLOB.clockwork_caches * 0.4), 10)) != GLOB.prev_cost) {
+		GLOB.prev_cost = cache_cost_increase;
+		this.consumed_components = rt.alist(f, ["belligerent_eye", 0, "vanguard_cogwheel", 0, "geis_capacitor", 0, "replicant_alloy", 1, "hierophant_ansible", 0]);
+		for (i of each(this.consumed_components)) {
+			if (i != "replicant_alloy") {
+				rt.modAt(this.consumed_components, i, cache_cost_increase, add);
 			}
 		}
-		rt.endFor(f, 0);
 		return 1;
 	}
 	return 0;
@@ -407,12 +365,10 @@ rt.type(1215, "/datum/clockwork_scripture/create_object/wraith_spectacles", "/da
 	object_path: rt.typePath("/obj/item/clothing/glasses/wraith_spectacles"),
 });
 
-// /datum/clockwork_scripture/create_object/wraith_spectacles/proc/<init>  (code/game/gamemodes/clock_cult/clock_scriptures/scripture_drivers.dm:277)
+// scripture_drivers.dm:277
 rt.def("/datum/clockwork_scripture/create_object/wraith_spectacles/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "invocations", rt.list("Show the truth of this world to me!"));
+	parent_proc();
+	this.invocations = list("Show the truth of this world to me!");
 	return f.dot;
 });
 
@@ -435,12 +391,10 @@ rt.type(1216, "/datum/clockwork_scripture/create_object/sigil_of_transgression",
 	object_path: rt.typePath("/obj/effect/clockwork/sigil/transgression"),
 });
 
-// /datum/clockwork_scripture/create_object/sigil_of_transgression/proc/<init>  (code/game/gamemodes/clock_cult/clock_scriptures/scripture_drivers.dm:298)
+// scripture_drivers.dm:298
 rt.def("/datum/clockwork_scripture/create_object/sigil_of_transgression/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "invocations", rt.list("Divinity, smite...", "...those who tresspass here!"));
-	rt.setSv(f, "consumed_components", rt.alist(f, ["hierophant_ansible", 1]));
+	parent_proc();
+	this.invocations = list("Divinity, smite...", "...those who tresspass here!");
+	this.consumed_components = rt.alist(f, ["hierophant_ansible", 1]);
 	return f.dot;
 });

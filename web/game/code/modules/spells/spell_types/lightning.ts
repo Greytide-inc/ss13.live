@@ -1,7 +1,7 @@
-// From code/modules/spells/spell_types/lightning.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/spells/spell_types/lightning.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(11326, "/obj/effect/proc_holder/spell/targeted/tesla", "/obj/effect/proc_holder/spell/targeted", {
@@ -21,120 +21,102 @@ rt.type(11326, "/obj/effect/proc_holder/spell/targeted/tesla", "/obj/effect/proc
 	action_icon_state: "lightning",
 }, { global: { halo: 775 } });
 
-// /obj/effect/proc_holder/spell/targeted/tesla/proc/Click  (code/modules/spells/spell_types/lightning.dm:20)  may sleep
+// lightning.dm:20
 rt.def("/obj/effect/proc_holder/spell/targeted/tesla/proc/Click", function* Click(f: Frame) {
-	if ((!truthy(rt.sv(f, "ready")) && truthy((yield* g.srcCall(f, "cast_check"))))) {
-		yield* g.srcCall(f, "StartChargeup");
+	if (!this.ready && (yield* this.cast_check())) {
+		yield* this.StartChargeup();
 	}
 	return 1;
 }, true);
 
-// /obj/effect/proc_holder/spell/targeted/tesla/proc/StartChargeup  (code/modules/spells/spell_types/lightning.dm:26)  may sleep
+// lightning.dm:26
 rt.def("/obj/effect/proc_holder/spell/targeted/tesla/proc/StartChargeup", function* StartChargeup(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (live(user) === null) {
-		user = live(f.usr);
-	}
-	rt.setSv(f, "ready", 1);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>You start gathering the power.</span>"]);
-	rt.setSv(f, "Snd", (yield* g.new_(f, T("/sound"), [null, rt.rsc("sound/magic/lightning_chargeup.ogg"), "channel", 7], rt.Args.Named)));
-	rt.setGl("halo", (rt.gl("halo") || (yield* g.call(f, P("/proc/mutable_appearance"), null, [rt.rsc("icons/effects/effects.dmi"), "electricity", 5000]))));
-	yield* g.callName(f, live(user), "add_overlay", [rt.gl("halo")]);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(user), 0), rt.sv(f, "Snd"), 50, 0]);
-	if (truthy((yield* g.call(f, P("/proc/do_mob"), null, [live(user), live(user), 100, 1])))) {
-		if ((truthy(rt.sv(f, "ready")) && truthy((yield* g.callSrc(f, "cast_check", ["skipcharge", 1], rt.Args.Named))))) {
-			yield* g.srcCall(f, "choose_targets");
+	user ??= f.usr;
+	this.ready = 1;
+	to_chat(user, "<span class='notice'>You start gathering the power.</span>");
+	this.Snd = (yield* new_(T("/sound"), rt.rsc("sound/magic/lightning_chargeup.ogg"), { channel: 7 }));
+	GLOB.halo = (GLOB.halo || mutable_appearance(rt.rsc("icons/effects/effects.dmi"), "electricity", 5000));
+	user.add_overlay(GLOB.halo);
+	playsound(rt.getStep(f, user, 0), this.Snd, 50, 0);
+	if (yield* do_mob(user, user, 100, 1)) {
+		if (this.ready && (yield* this.cast_check({ skipcharge: 1 }))) {
+			yield* this.choose_targets();
 		} else {
-			yield* g.srcCall(f, "revert_cast", live(user), 0);
+			yield* this.revert_cast(user, 0);
 		}
 	} else {
-		yield* g.srcCall(f, "revert_cast", live(user), 0);
+		yield* this.revert_cast(user, 0);
 	}
 	return f.dot;
 }, true);
 
-// /obj/effect/proc_holder/spell/targeted/tesla/proc/Reset  (code/modules/spells/spell_types/lightning.dm:41)
+// lightning.dm:41
 rt.def("/obj/effect/proc_holder/spell/targeted/tesla/proc/Reset", function Reset(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (live(user) === null) {
-		user = live(f.usr);
-	}
-	rt.setSv(f, "ready", 0);
-	rt.callName(f, live(user), "cut_overlay", [rt.gl("halo")]);
+	user ??= f.usr;
+	this.ready = 0;
+	user.cut_overlay(GLOB.halo);
 	return f.dot;
 });
 
-// /obj/effect/proc_holder/spell/targeted/tesla/proc/revert_cast  (code/modules/spells/spell_types/lightning.dm:45)  may sleep
+// lightning.dm:45
 rt.def("/obj/effect/proc_holder/spell/targeted/tesla/proc/revert_cast", function* revert_cast(f: Frame) {
-	if (live(f.args[0]) === null) {
-		f.args[0] = live(f.usr);
+	if (f.args[0] === null) {
+		f.args[0] = f.usr;
 	}
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 1;
 	}
-	if (truthy(live(f.args[1]))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='notice'>No target found in range.</span>"]);
+	if (f.args[1]) {
+		to_chat(f.args[0], "<span class='notice'>No target found in range.</span>");
 	}
-	yield* g.srcCall(f, "Reset", live(f.args[0]));
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* this.Reset(f.args[0]);
+	yield* parent_proc();
 	return f.dot;
 }, true, { args: ["user", "message"] });
 
-// /obj/effect/proc_holder/spell/targeted/tesla/proc/cast  (code/modules/spells/spell_types/lightning.dm:51)  may sleep
+// lightning.dm:51
 rt.def("/obj/effect/proc_holder/spell/targeted/tesla/proc/cast", function* cast(f: Frame, targets: Value, user: Value) {
-	let target: Value = null;
-	f.vars = () => [targets, user, target];
-	if (live(user) === null) {
-		user = live(f.usr);
+	user ??= f.usr;
+	this.ready = 0;
+	let target: Value = rt.index(targets, 1);
+	this.Snd = (yield* sound(null, { repeat: 0, wait: 1, channel: this.Snd.channel }));
+	playsound(rt.getStep(f, user, 0), this.Snd, 50, 0);
+	if (get_dist(user, target) > this.range) {
+		to_chat(user, "<span class='notice'>They are too far away!</span>");
+		yield* this.Reset(user);
+		return f.dot;
 	}
-	rt.setSv(f, "ready", 0);
-	target = rt.index(live(targets), 1);
-	rt.setSv(f, "Snd", (yield* g.call(f, P("/proc/sound"), null, [null, null, "repeat", 0, "wait", 1, "channel", rt.fv(f, "channel", rt.sv(f, "Snd"))], rt.Args.Named)));
-	yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(user), 0), rt.sv(f, "Snd"), 50, 0]);
-	if (rt.gt((yield* g.call(f, P("/proc/get_dist"), null, [live(user), live(target)])), rt.sv(f, "range"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>They are too far away!</span>"]);
-		yield* g.srcCall(f, "Reset", live(user));
-		return live(f.dot);
-	}
-	yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(user), 0), rt.rsc("sound/magic/lightningbolt.ogg"), 50, 1]);
-	yield* g.callName(f, live(user), "Beam", [null, live(target), "icon_state", fmt("lightning＀", [(yield* g.call(f, P("/proc/rand"), null, [1, 12]))]), "time", 5], rt.Args.Named);
-	yield* g.srcCall(f, "Bolt", live(user), live(target), 30, 5, live(user));
-	yield* g.srcCall(f, "Reset", live(user));
+	playsound(rt.getStep(f, user, 0), rt.rsc("sound/magic/lightningbolt.ogg"), 50, 1);
+	yield* user.Beam(target, { icon_state: `lightning${rand(1, 12)}`, time: 5 });
+	yield* this.Bolt(user, target, 30, 5, user);
+	yield* this.Reset(user);
 	return f.dot;
 }, true);
 
-// /obj/effect/proc_holder/spell/targeted/tesla/proc/Bolt  (code/modules/spells/spell_types/lightning.dm:66)  may sleep
+// lightning.dm:66
 rt.def("/obj/effect/proc_holder/spell/targeted/tesla/proc/Bolt", function* Bolt(f: Frame, origin: Value, target: Value, bolt_energy: Value, bounces: Value, user: Value) {
-	let current: Value = null, possible_targets: Value = null, M: Value = null, next: Value = null;
-	let $e: any;
-	f.vars = () => [origin, target, bolt_energy, bounces, user, current, possible_targets, M, next, $e];
-	if (live(user) === null) {
-		user = live(f.usr);
-	}
-	yield* g.callName(f, live(origin), "Beam", [null, live(target), "icon_state", fmt("lightning＀", [(yield* g.call(f, P("/proc/rand"), null, [1, 12]))]), "time", 5], rt.Args.Named);
-	current = live(target);
-	if (rt.lt(live(bounces), 1)) {
-		yield* g.callName(f, live(current), "electrocute_act", [null, live(bolt_energy), null, "Lightning Bolt", "safety", 1], rt.Args.Named);
-		yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(current), 0), rt.rsc("sound/magic/lightningshock.ogg"), 50, 1, -1]);
+	let possible_targets: Value = null, M: Value = null, next: Value = null;
+	user ??= f.usr;
+	yield* origin.Beam(target, { icon_state: `lightning${rand(1, 12)}`, time: 5 });
+	let current: Value = target;
+	if (bounces < 1) {
+		yield* current.electrocute_act(bolt_energy, "Lightning Bolt", { safety: 1 });
+		playsound(rt.getStep(f, current, 0), rt.rsc("sound/magic/lightningshock.ogg"), 50, 1, -1);
 	} else {
-		yield* g.callName(f, live(current), "electrocute_act", [null, live(bolt_energy), null, "Lightning Bolt", "safety", 1], rt.Args.Named);
-		yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(current), 0), rt.rsc("sound/magic/lightningshock.ogg"), 50, 1, -1]);
-		possible_targets = (yield* g.new_(f, T("/list"), []));
-		M = null;
-		rt.forList(f, 0, (yield* g.call(f, P("/proc/view_or_range"), null, [rt.sv(f, "range"), live(target), "view"])), T("/mob/living"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			M = $e;
-			if ((isEqual(live(user), live(M)) || (isEqual(live(target), live(M)) && truthy((yield* g.srcCall(f, "los_check", live(current), live(M))))))) {
+		yield* current.electrocute_act(bolt_energy, "Lightning Bolt", { safety: 1 });
+		playsound(rt.getStep(f, current, 0), rt.rsc("sound/magic/lightningshock.ogg"), 50, 1, -1);
+		possible_targets = (yield* new_(T("/list")));
+		for (M of each(view_or_range(this.range, target, "view"), T("/mob/living"))) {
+			if (user == M || target == M && (yield* this.los_check(current, M))) {
 				continue;
 			}
-			possible_targets = rt.modify(live(possible_targets), live(M), add);
+			possible_targets += M;
 		}
-		rt.endFor(f, 0);
-		if (!truthy(rt.len(f, live(possible_targets)))) {
-			return live(f.dot);
+		if (!rt.len(f, possible_targets)) {
+			return f.dot;
 		}
-		if (!truthy((next = rt.op(f, "PickUnweighted", [1], [live(possible_targets)])))) return f.dot;
-		yield* g.srcCall(f, "Bolt", live(current), live(next), (yield* g.call(f, P("/proc/max"), null, [subtract(live(bolt_energy), 5), 5])), subtract(live(bounces), 1), live(user));
+		if (!(next = pick(possible_targets))) return f.dot;
+		yield* this.Bolt(current, next, max(bolt_energy - 5, 5), bounces - 1, user);
 	}
 	return f.dot;
 }, true);

@@ -1,7 +1,7 @@
-// From code/game/objects/items/stacks/sheets/light.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/stacks/sheets/light.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(9110, "/obj/item/stack/light_w", "/obj/item/stack", {
@@ -19,31 +19,28 @@ rt.type(9110, "/obj/item/stack/light_w", "/obj/item/stack", {
 	throwforce: 5,
 });
 
-// /obj/item/stack/light_w/proc/attackby  (code/game/objects/items/stacks/sheets/light.dm:17)  may sleep
-rt.def("/obj/item/stack/light_w/proc/attackby", function* attackby(f: Frame) {
+// light.dm:17
+rt.def("/obj/item/stack/light_w/proc/attackby", function* attackby(f: Frame, O: Value, user: Value, params: Value) {
 	let CC: Value = null, G: Value = null, M: Value = null, L: Value = null;
-	f.vars = () => [CC, G, M, L];
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/wirecutters")) ? 1 : 0))) {
-		rt.setFv(f, "amount", (CC = (yield* g.new_(f, T("/obj/item/stack/cable_coil"), [rt.fv(f, "loc", live(f.args[1]))]))), 5);
-		yield* g.callName(f, live(CC), "add_fingerprint", [live(f.args[1])]);
-		rt.incSrcVar(f, "amount", -1, true);
-		yield* g.callName(f, (G = (yield* g.new_(f, T("/obj/item/stack/sheet/glass"), [rt.fv(f, "loc", live(f.args[1]))]))), "add_fingerprint", [live(f.args[1])]);
-		if (rt.le(rt.sv(f, "amount"), 0)) {
-			yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	if (rt.istype(O, T("/obj/item/weapon/wirecutters"))) {
+		(CC = (yield* new_(T("/obj/item/stack/cable_coil"), user.loc))).amount = 5;
+		yield* CC.add_fingerprint(user);
+		this.amount--;
+		yield* (G = (yield* new_(T("/obj/item/stack/sheet/glass"), user.loc))).add_fingerprint(user);
+		if (this.amount <= 0) {
+			yield* qdel(this);
+		}
+	} else if (rt.istype(O, T("/obj/item/stack/sheet/metal"))) {
+		if (yield* (M = O).use(1)) {
+			yield* this.use(1);
+			L = (yield* new_(T("/obj/item/stack/tile/light"), user.loc));
+			to_chat(user, "<span class='notice'>You make a light tile.</span>");
+			yield* L.add_fingerprint(user);
+		} else {
+			to_chat(user, "<span class='warning'>You need one metal sheet to finish the light tile!</span>");
 		}
 	} else {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/stack/sheet/metal")) ? 1 : 0))) {
-			if (truthy((yield* g.callName(f, (M = live(f.args[0])), "use", [1])))) {
-				yield* g.srcCall(f, "use", 1);
-				L = (yield* g.new_(f, T("/obj/item/stack/tile/light"), [rt.fv(f, "loc", live(f.args[1]))]));
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You make a light tile.</span>"]);
-				yield* g.callName(f, live(L), "add_fingerprint", [live(f.args[1])]);
-			} else {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You need one metal sheet to finish the light tile!</span>"]);
-			}
-		} else {
-			return (yield* g.callSuper(f, [], rt.Args.Same));
-		}
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["O", "user", "params"] });
+}, true);

@@ -1,7 +1,7 @@
-// From code/modules/research/xenobiology/xenobiology.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/research/xenobiology/xenobiology.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, g } = rt;
 
 
 rt.type(10137, "/obj/item/slime_extract", "/obj/item", {
@@ -20,25 +20,25 @@ rt.type(10137, "/obj/item/slime_extract", "/obj/item", {
 	throwforce: 0,
 });
 
-// /obj/item/slime_extract/proc/attackby  (code/modules/research/xenobiology/xenobiology.dm:20)  may sleep
-rt.def("/obj/item/slime_extract/proc/attackby", function* attackby(f: Frame) {
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/slimepotion/enhancer")) ? 1 : 0))) {
-		if (rt.ge(rt.sv(f, "Uses"), 5)) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You cannot enhance this extract further!</span>"]);
-			return (yield* g.callSuper(f, [], rt.Args.Same));
+// xenobiology.dm:20
+rt.def("/obj/item/slime_extract/proc/attackby", function* attackby(f: Frame, O: Value, user: Value) {
+	if (rt.istype(O, T("/obj/item/slimepotion/enhancer"))) {
+		if (this.Uses >= 5) {
+			to_chat(user, "<span class='warning'>You cannot enhance this extract further!</span>");
+			return (yield* parent_proc());
 		}
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You apply the enhancer to the slime extract. It may now be reused one more time.</span>"]);
-		rt.incSrcVar(f, "Uses", 1, true);
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.args[0])]);
+		to_chat(user, "<span class='notice'>You apply the enhancer to the slime extract. It may now be reused one more time.</span>");
+		this.Uses++;
+		yield* qdel(O);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["O", "user"] });
+}, true);
 
-// /obj/item/slime_extract/proc/Initialize  (code/modules/research/xenobiology/xenobiology.dm:30)  may sleep
+// xenobiology.dm:30
 rt.def("/obj/item/slime_extract/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.srcCall(f, "create_reagents", 100);
+	f.dot = (yield* parent_proc());
+	yield* this.create_reagents(100);
 	return f.dot;
 }, true);
 
@@ -49,11 +49,11 @@ rt.type(10093, "/obj/item/slimepotion", "/obj/item", {
 	desc: "A hard yet gelatinous capsule excreted by a slime, containing mysterious substances.",
 });
 
-// /obj/item/slimepotion/proc/afterattack  (code/modules/research/xenobiology/xenobiology.dm:130)
+// xenobiology.dm:130
 rt.def("/obj/item/slimepotion/proc/afterattack", function afterattack(f: Frame, target: Value, user: Value, proximity: Value) {
-	if (!truthy((rt.istype(live(target), T("/obj/item/weapon/reagent_containers")) ? 1 : 0))) return f.dot;
-	rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You cannot transfer ＀ to ＀! It appears the potion must be given directly to a slime to absorb.</span>", [live(f.src), live(target)])]);
-	return live(f.dot);
+	if (!rt.istype(target, T("/obj/item/weapon/reagent_containers"))) return f.dot;
+	to_chat(user, `<span class='notice'>You cannot transfer ${this} to ${target}! It appears the potion must be given directly to a slime to absorb.</span>`);
+	return f.dot;
 });
 
 rt.type(10096, "/obj/item/slimepotion/docility", "/obj/item/slimepotion", {
@@ -63,30 +63,29 @@ rt.type(10096, "/obj/item/slimepotion/docility", "/obj/item/slimepotion", {
 	icon_state: "potsilver",
 });
 
-// /obj/item/slimepotion/docility/proc/attack  (code/modules/research/xenobiology/xenobiology.dm:141)  may sleep
-rt.def("/obj/item/slimepotion/docility/proc/attack", function* attack(f: Frame) {
+// xenobiology.dm:141
+rt.def("/obj/item/slimepotion/docility/proc/attack", function* attack(f: Frame, M: Value, user: Value) {
 	let newname: Value = null;
-	f.vars = () => [newname];
-	if (!truthy((rt.istype(live(f.args[0]), T("/mob/living/simple_animal/slime")) ? 1 : 0))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>The potion only works on slimes!</span>"]);
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+	if (!rt.istype(M, T("/mob/living/simple_animal/slime"))) {
+		to_chat(user, "<span class='warning'>The potion only works on slimes!</span>");
+		return (yield* parent_proc());
 	}
-	if (truthy(rt.fv(f, "stat", live(f.args[0])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>The slime is dead!</span>"]);
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+	if (M.stat) {
+		to_chat(user, "<span class='warning'>The slime is dead!</span>");
+		return (yield* parent_proc());
 	}
-	rt.setFv(f, "docile", live(f.args[0]), 1);
-	rt.setFv(f, "nutrition", live(f.args[0]), 700);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='warning'>You absorb the potion and feel your intense desire to feed melt away.</span>"]);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You feed the slime the potion, removing its hunger and calming it.</span>"]);
-	if (!truthy((newname = (yield* g.call(f, P("/proc/copytext"), null, [(yield* g.call(f, P("/proc/sanitize"), null, [(yield* g.op(f, "Prompt", [3], ["pet slime", "Name your new pet", "Would you like to give the slime a name?", live(f.args[1]), null]))])), 1, 42]))))) {
+	M.docile = 1;
+	M.nutrition = 700;
+	to_chat(M, "<span class='warning'>You absorb the potion and feel your intense desire to feed melt away.</span>");
+	to_chat(user, "<span class='notice'>You feed the slime the potion, removing its hunger and calming it.</span>");
+	if (!(newname = copytext(sanitize((yield* g.op(f, "Prompt", [3], ["pet slime", "Name your new pet", "Would you like to give the slime a name?", user, null]))), 1, 42))) {
 		newname = "pet slime";
 	}
-	rt.setFv(f, "name", live(f.args[0]), live(newname));
-	rt.setFv(f, "real_name", live(f.args[0]), live(newname));
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	M.name = newname;
+	M.real_name = newname;
+	yield* qdel(this);
 	return f.dot;
-}, true, { args: ["M", "user"] });
+}, true);
 
 rt.type(10094, "/obj/item/slimepotion/sentience", "/obj/item/slimepotion", {
 	not_interested: null,
@@ -99,54 +98,50 @@ rt.type(10094, "/obj/item/slimepotion/sentience", "/obj/item/slimepotion", {
 	icon_state: "potpink",
 });
 
-// /obj/item/slimepotion/sentience/proc/<init>  (code/modules/research/xenobiology/xenobiology.dm:166)
+// xenobiology.dm:166
 rt.def("/obj/item/slimepotion/sentience/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "not_interested", rt.list());
+	parent_proc();
+	this.not_interested = list();
 	return f.dot;
 });
 
-// /obj/item/slimepotion/sentience/proc/afterattack  (code/modules/research/xenobiology/xenobiology.dm:171)  may sleep
-rt.def("/obj/item/slimepotion/sentience/proc/afterattack", function* afterattack(f: Frame) {
-	let SM: Value = null, candidates: Value = null, theghost: Value = null;
-	f.vars = () => [SM, candidates, theghost];
-	if ((truthy(rt.sv(f, "being_used")) || !truthy((yield* g.call(f, P("/proc/ismob"), null, [live(f.args[0])]))))) {
-		return live(f.dot);
+// xenobiology.dm:171
+rt.def("/obj/item/slimepotion/sentience/proc/afterattack", function* afterattack(f: Frame, M: Value, user: Value) {
+	let SM: Value = null, theghost: Value = null;
+	if (this.being_used || !ismob(M)) {
+		return f.dot;
 	}
-	if ((!truthy((rt.istype(live(f.args[0]), T("/mob/living/simple_animal")) ? 1 : 0)) || truthy(rt.fv(f, "ckey", live(f.args[0]))))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>＀ is already too intelligent for this to work!</span>", [live(f.args[0])])]);
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+	if (!rt.istype(M, T("/mob/living/simple_animal")) || M.ckey) {
+		to_chat(user, `<span class='warning'>${M} is already too intelligent for this to work!</span>`);
+		return (yield* parent_proc());
 	}
-	if (truthy(rt.fv(f, "stat", live(f.args[0])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>＀ is dead!</span>", [live(f.args[0])])]);
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+	if (M.stat) {
+		to_chat(user, `<span class='warning'>${M} is dead!</span>`);
+		return (yield* parent_proc());
 	}
-	if (!isEqual(rt.gv(f, "sentience_type", (SM = live(f.args[0]))), rt.sv(f, "sentience_type"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>＀ won't work on ＀.</span>", [live(f.src), live(SM)])]);
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+	if ((SM = M).sentience_type != this.sentience_type) {
+		to_chat(user, `<span class='warning'>${this} won't work on ${SM}.</span>`);
+		return (yield* parent_proc());
 	}
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You offer ＀ to ＀...</span>", [live(f.src), live(SM)])]);
-	rt.setSv(f, "being_used", 1);
-	candidates = (yield* g.call(f, P("/proc/pollCandidatesForMob"), null, [fmt("Do you want to play as ＀?", [rt.fv(f, "name", live(SM))]), "xenomorph", null, "xenomorph", 50, live(SM), "sentience_potion"]));
-	theghost = null;
-	if (truthy(rt.len(f, live(candidates)))) {
-		theghost = rt.op(f, "PickUnweighted", [1], [live(candidates)]);
-		rt.setFv(f, "key", live(SM), rt.fv(f, "key", live(theghost)));
-		yield* g.callName(f, rt.fv(f, "mind", live(SM)), "enslave_mind_to_creator", [live(f.args[1])]);
-		yield* g.callName(f, live(SM), "sentience_act", []);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(SM), "<span class='warning'>All at once it makes sense: you know what you are and who you are! Self awareness is yours!</span>"]);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(SM), fmt("<span class='userdanger'>You are grateful to be self aware and owe ＀ a great debt. Serve ＀, and assist ＀ in completing ＀ goals at any cost.</span>", [live(f.args[1]), live(f.args[1]), (yield* g.callName(f, live(f.args[1]), "p_them", [])), (yield* g.callName(f, live(f.args[1]), "p_their", []))])]);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>＀ accepts ＀ and suddenly becomes attentive and aware. It worked!</span>", [live(SM), live(f.src)])]);
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	to_chat(user, `<span class='notice'>You offer ${this} to ${SM}...</span>`);
+	this.being_used = 1;
+	let candidates: Value = (yield* pollCandidatesForMob(`Do you want to play as ${SM.name}?`, "xenomorph", null, "xenomorph", 50, SM, "sentience_potion"));
+	if (rt.len(f, candidates)) {
+		theghost = pick(candidates);
+		SM.key = theghost.key;
+		yield* SM.mind.enslave_mind_to_creator(user);
+		SM.sentience_act();
+		to_chat(SM, "<span class='warning'>All at once it makes sense: you know what you are and who you are! Self awareness is yours!</span>");
+		to_chat(SM, `<span class='userdanger'>You are grateful to be self aware and owe ${user} a great debt. Serve ${user}, and assist ${user.p_them()} in completing ${user.p_their()} goals at any cost.</span>`);
+		to_chat(user, `<span class='notice'>${SM} accepts ${this} and suddenly becomes attentive and aware. It worked!</span>`);
+		yield* qdel(this);
 	} else {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>＀ looks interested for a moment, but then looks back down. Maybe you should try again later.</span>", [live(SM)])]);
-		rt.setSv(f, "being_used", 0);
-		yield* g.callSuper(f, [], rt.Args.Same);
+		to_chat(user, `<span class='notice'>${SM} looks interested for a moment, but then looks back down. Maybe you should try again later.</span>`);
+		this.being_used = 0;
+		yield* parent_proc();
 	}
 	return f.dot;
-}, true, { args: ["M", "user"] });
+}, true);
 
 rt.type(10097, "/obj/item/slimepotion/transference", "/obj/item/slimepotion", {
 	prompted: 0,
@@ -158,45 +153,44 @@ rt.type(10097, "/obj/item/slimepotion/transference", "/obj/item/slimepotion", {
 	icon_state: "potorange",
 });
 
-// /obj/item/slimepotion/transference/proc/afterattack  (code/modules/research/xenobiology/xenobiology.dm:215)  may sleep
-rt.def("/obj/item/slimepotion/transference/proc/afterattack", function* afterattack(f: Frame) {
+// xenobiology.dm:215
+rt.def("/obj/item/slimepotion/transference/proc/afterattack", function* afterattack(f: Frame, M: Value, user: Value) {
 	let SM: Value = null;
-	f.vars = () => [SM];
-	if ((truthy(rt.sv(f, "prompted")) || !truthy((yield* g.call(f, P("/proc/ismob"), null, [live(f.args[0])]))))) {
-		return live(f.dot);
+	if (this.prompted || !ismob(M)) {
+		return f.dot;
 	}
-	if ((!truthy((rt.istype(live(f.args[0]), T("/mob/living/simple_animal")) ? 1 : 0)) || truthy(rt.fv(f, "ckey", live(f.args[0]))))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>＀ already has a higher consciousness!</span>", [live(f.args[0])])]);
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+	if (!rt.istype(M, T("/mob/living/simple_animal")) || M.ckey) {
+		to_chat(user, `<span class='warning'>${M} already has a higher consciousness!</span>`);
+		return (yield* parent_proc());
 	}
-	if (truthy(rt.fv(f, "stat", live(f.args[0])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>＀ is dead!</span>", [live(f.args[0])])]);
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+	if (M.stat) {
+		to_chat(user, `<span class='warning'>${M} is dead!</span>`);
+		return (yield* parent_proc());
 	}
-	if (!isEqual(rt.gv(f, "sentience_type", (SM = live(f.args[0]))), rt.sv(f, "animal_type"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>You cannot transfer your consciousness to ＀.</span>", [live(SM)])]);
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+	if ((SM = M).sentience_type != this.animal_type) {
+		to_chat(user, `<span class='warning'>You cannot transfer your consciousness to ${SM}.</span>`);
+		return (yield* parent_proc());
 	}
-	if (truthy((yield* g.call(f, P("/proc/jobban_isbanned"), null, [live(f.args[1]), "xenomorph"])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>Your mind goes blank as you attempt to use the potion.</span>"]);
-		return live(f.dot);
+	if (jobban_isbanned(user, "xenomorph")) {
+		to_chat(user, "<span class='warning'>Your mind goes blank as you attempt to use the potion.</span>");
+		return f.dot;
 	}
-	rt.setSv(f, "prompted", 1);
-	if (isEqual((yield* g.call(f, P("/proc/alert"), null, [fmt("This will permanently transfer your consciousness to ＀. Are you sure you want to do this?", [live(SM)]), null, "Yes", "No"])), "No")) {
-		rt.setSv(f, "prompted", 0);
-		return live(f.dot);
+	this.prompted = 1;
+	if ((yield* alert(`This will permanently transfer your consciousness to ${SM}. Are you sure you want to do this?`, null, "Yes", "No")) == "No") {
+		this.prompted = 0;
+		return f.dot;
 	}
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You drink the potion then place your hands on ＀...</span>", [live(SM)])]);
-	yield* g.callName(f, rt.fv(f, "mind", live(f.args[1])), "transfer_to", [live(SM)]);
-	rt.setFv(f, "faction", live(SM), (yield* g.callName(f, rt.fv(f, "faction", live(f.args[1])), "Copy", [])));
-	yield* g.callName(f, live(SM), "sentience_act", []);
-	yield* g.callName(f, live(f.args[1]), "death", []);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(SM), fmt("<span class='notice'>In a quick flash, you feel your consciousness flow into ＀!</span>", [live(SM)])]);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(SM), fmt("<span class='warning'>You are now ＀. Your allegiances, alliances, and role is still the same as it was prior to consciousness transfer!</span>", [live(SM)])]);
-	rt.setFv(f, "name", live(SM), fmt("＀ as ＀", [rt.fv(f, "name", live(SM)), rt.fv(f, "real_name", live(f.args[1]))]));
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	to_chat(user, `<span class='notice'>You drink the potion then place your hands on ${SM}...</span>`);
+	yield* user.mind.transfer_to(SM);
+	SM.faction = (yield* user.faction.Copy());
+	SM.sentience_act();
+	yield* user.death();
+	to_chat(SM, `<span class='notice'>In a quick flash, you feel your consciousness flow into ${SM}!</span>`);
+	to_chat(SM, `<span class='warning'>You are now ${SM}. Your allegiances, alliances, and role is still the same as it was prior to consciousness transfer!</span>`);
+	SM.name = `${SM.name} as ${user.real_name}`;
+	yield* qdel(this);
 	return f.dot;
-}, true, { args: ["M", "user"] });
+}, true);
 
 rt.type(10098, "/obj/item/slimepotion/steroid", "/obj/item/slimepotion", {
 	name: "slime steroid",
@@ -205,29 +199,29 @@ rt.type(10098, "/obj/item/slimepotion/steroid", "/obj/item/slimepotion", {
 	icon_state: "potred",
 });
 
-// /obj/item/slimepotion/steroid/proc/attack  (code/modules/research/xenobiology/xenobiology.dm:255)  may sleep
-rt.def("/obj/item/slimepotion/steroid/proc/attack", function* attack(f: Frame) {
-	if (!truthy((rt.istype(live(f.args[0]), T("/mob/living/simple_animal/slime")) ? 1 : 0))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>The steroid only works on baby slimes!</span>"]);
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+// xenobiology.dm:255
+rt.def("/obj/item/slimepotion/steroid/proc/attack", function* attack(f: Frame, M: Value, user: Value) {
+	if (!rt.istype(M, T("/mob/living/simple_animal/slime"))) {
+		to_chat(user, "<span class='warning'>The steroid only works on baby slimes!</span>");
+		return (yield* parent_proc());
 	}
-	if (truthy(rt.fv(f, "is_adult", live(f.args[0])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>Only baby slimes can use the steroid!</span>"]);
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+	if (M.is_adult) {
+		to_chat(user, "<span class='warning'>Only baby slimes can use the steroid!</span>");
+		return (yield* parent_proc());
 	}
-	if (truthy(rt.fv(f, "stat", live(f.args[0])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>The slime is dead!</span>"]);
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+	if (M.stat) {
+		to_chat(user, "<span class='warning'>The slime is dead!</span>");
+		return (yield* parent_proc());
 	}
-	if (rt.ge(rt.fv(f, "cores", live(f.args[0])), 5)) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>The slime already has the maximum amount of extract!</span>"]);
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+	if (M.cores >= 5) {
+		to_chat(user, "<span class='warning'>The slime already has the maximum amount of extract!</span>");
+		return (yield* parent_proc());
 	}
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You feed the slime the steroid. It will now produce one more extract.</span>"]);
-	rt.incField(f, live(f.args[0]), "cores", 1, true);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	to_chat(user, "<span class='notice'>You feed the slime the steroid. It will now produce one more extract.</span>");
+	M.cores++;
+	yield* qdel(this);
 	return f.dot;
-}, true, { args: ["M", "user"] });
+}, true);
 
 rt.type(10100, "/obj/item/slimepotion/stabilizer", "/obj/item/slimepotion", {
 	name: "slime stabilizer",
@@ -236,25 +230,25 @@ rt.type(10100, "/obj/item/slimepotion/stabilizer", "/obj/item/slimepotion", {
 	icon_state: "potcyan",
 });
 
-// /obj/item/slimepotion/stabilizer/proc/attack  (code/modules/research/xenobiology/xenobiology.dm:285)  may sleep
-rt.def("/obj/item/slimepotion/stabilizer/proc/attack", function* attack(f: Frame) {
-	if (!truthy((rt.istype(live(f.args[0]), T("/mob/living/simple_animal/slime")) ? 1 : 0))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>The stabilizer only works on slimes!</span>"]);
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+// xenobiology.dm:285
+rt.def("/obj/item/slimepotion/stabilizer/proc/attack", function* attack(f: Frame, M: Value, user: Value) {
+	if (!rt.istype(M, T("/mob/living/simple_animal/slime"))) {
+		to_chat(user, "<span class='warning'>The stabilizer only works on slimes!</span>");
+		return (yield* parent_proc());
 	}
-	if (truthy(rt.fv(f, "stat", live(f.args[0])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>The slime is dead!</span>"]);
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+	if (M.stat) {
+		to_chat(user, "<span class='warning'>The slime is dead!</span>");
+		return (yield* parent_proc());
 	}
-	if (isEqual(rt.fv(f, "mutation_chance", live(f.args[0])), 0)) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>The slime already has no chance of mutating!</span>"]);
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+	if (M.mutation_chance == 0) {
+		to_chat(user, "<span class='warning'>The slime already has no chance of mutating!</span>");
+		return (yield* parent_proc());
 	}
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You feed the slime the stabilizer. It is now less likely to mutate.</span>"]);
-	rt.setFv(f, "mutation_chance", live(f.args[0]), (yield* g.call(f, P("/proc/max"), null, [0, (yield* g.call(f, P("/proc/min"), null, [subtract(rt.fv(f, "mutation_chance", live(f.args[0])), 15), 100]))])));
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	to_chat(user, "<span class='notice'>You feed the slime the stabilizer. It is now less likely to mutate.</span>");
+	M.mutation_chance = max(0, min(M.mutation_chance - 15, 100));
+	yield* qdel(this);
 	return f.dot;
-}, true, { args: ["M", "user"] });
+}, true);
 
 rt.type(10101, "/obj/item/slimepotion/mutator", "/obj/item/slimepotion", {
 	name: "slime mutator",
@@ -263,30 +257,30 @@ rt.type(10101, "/obj/item/slimepotion/mutator", "/obj/item/slimepotion", {
 	icon_state: "potgreen",
 });
 
-// /obj/item/slimepotion/mutator/proc/attack  (code/modules/research/xenobiology/xenobiology.dm:306)  may sleep
-rt.def("/obj/item/slimepotion/mutator/proc/attack", function* attack(f: Frame) {
-	if (!truthy((rt.istype(live(f.args[0]), T("/mob/living/simple_animal/slime")) ? 1 : 0))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>The mutator only works on slimes!</span>"]);
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+// xenobiology.dm:306
+rt.def("/obj/item/slimepotion/mutator/proc/attack", function* attack(f: Frame, M: Value, user: Value) {
+	if (!rt.istype(M, T("/mob/living/simple_animal/slime"))) {
+		to_chat(user, "<span class='warning'>The mutator only works on slimes!</span>");
+		return (yield* parent_proc());
 	}
-	if (truthy(rt.fv(f, "stat", live(f.args[0])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>The slime is dead!</span>"]);
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+	if (M.stat) {
+		to_chat(user, "<span class='warning'>The slime is dead!</span>");
+		return (yield* parent_proc());
 	}
-	if (truthy(rt.fv(f, "mutator_used", live(f.args[0])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>This slime has already consumed a mutator, any more would be far too unstable!</span>"]);
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+	if (M.mutator_used) {
+		to_chat(user, "<span class='warning'>This slime has already consumed a mutator, any more would be far too unstable!</span>");
+		return (yield* parent_proc());
 	}
-	if (isEqual(rt.fv(f, "mutation_chance", live(f.args[0])), 100)) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>The slime is already guaranteed to mutate!</span>"]);
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+	if (M.mutation_chance == 100) {
+		to_chat(user, "<span class='warning'>The slime is already guaranteed to mutate!</span>");
+		return (yield* parent_proc());
 	}
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You feed the slime the mutator. It is now more likely to mutate.</span>"]);
-	rt.setFv(f, "mutation_chance", live(f.args[0]), (yield* g.call(f, P("/proc/max"), null, [0, (yield* g.call(f, P("/proc/min"), null, [add(rt.fv(f, "mutation_chance", live(f.args[0])), 12), 100]))])));
-	rt.setFv(f, "mutator_used", live(f.args[0]), 1);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	to_chat(user, "<span class='notice'>You feed the slime the mutator. It is now more likely to mutate.</span>");
+	M.mutation_chance = max(0, min(M.mutation_chance + 12, 100));
+	M.mutator_used = 1;
+	yield* qdel(this);
 	return f.dot;
-}, true, { args: ["M", "user"] });
+}, true);
 
 rt.type(10102, "/obj/item/slimepotion/speed", "/obj/item/slimepotion", {
 	origin_tech: "biotech=5",
@@ -296,39 +290,38 @@ rt.type(10102, "/obj/item/slimepotion/speed", "/obj/item/slimepotion", {
 	icon_state: "potyellow",
 });
 
-// /obj/item/slimepotion/speed/proc/afterattack  (code/modules/research/xenobiology/xenobiology.dm:332)  may sleep
-rt.def("/obj/item/slimepotion/speed/proc/afterattack", function* afterattack(f: Frame) {
+// xenobiology.dm:332
+rt.def("/obj/item/slimepotion/speed/proc/afterattack", function* afterattack(f: Frame, C: Value, user: Value) {
 	let I: Value = null, V: Value = null, R: Value = null;
-	f.vars = () => [I, V, R];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy((rt.istype(live(f.args[0]), T("/obj")) ? 1 : 0))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>The potion can only be used on items or vehicles!</span>"]);
-		return live(f.dot);
+	yield* parent_proc();
+	if (!rt.istype(C, T("/obj"))) {
+		to_chat(user, "<span class='warning'>The potion can only be used on items or vehicles!</span>");
+		return f.dot;
 	}
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item")) ? 1 : 0))) {
-		if (rt.le(rt.gv(f, "slowdown", (I = live(f.args[0]))), 0)) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>The ＀ can't be made any faster!</span>", [live(f.args[0])])]);
-			return (yield* g.callSuper(f, [], rt.Args.Same));
+	if (rt.istype(C, T("/obj/item"))) {
+		if ((I = C).slowdown <= 0) {
+			to_chat(user, `<span class='warning'>The ${C} can't be made any faster!</span>`);
+			return (yield* parent_proc());
 		}
-		rt.setFv(f, "slowdown", live(I), 0);
+		I.slowdown = 0;
 	}
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/vehicle")) ? 1 : 0))) {
-		V = live(f.args[0]);
-		R = rt.fv(f, "riding_datum", live(V));
-		if (truthy(rt.fv(f, "riding_datum", live(V)))) {
-			if (rt.le(rt.fv(f, "vehicle_move_delay", live(R)), 0)) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>The ＀ can't be made any faster!</span>", [live(f.args[0])])]);
-				return (yield* g.callSuper(f, [], rt.Args.Same));
+	if (rt.istype(C, T("/obj/vehicle"))) {
+		V = C;
+		R = V.riding_datum;
+		if (V.riding_datum) {
+			if (R.vehicle_move_delay <= 0) {
+				to_chat(user, `<span class='warning'>The ${C} can't be made any faster!</span>`);
+				return (yield* parent_proc());
 			}
-			rt.setFv(f, "vehicle_move_delay", live(R), 0);
+			R.vehicle_move_delay = 0;
 		}
 	}
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You slather the red gunk over the ＀, making it faster.</span>", [live(f.args[0])])]);
-	yield* g.callName(f, live(f.args[0]), "remove_atom_colour", [3]);
-	yield* g.callName(f, live(f.args[0]), "add_atom_colour", ["#FF0000", 4]);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	to_chat(user, `<span class='notice'>You slather the red gunk over the ${C}, making it faster.</span>`);
+	C.remove_atom_colour(WASHABLE_COLOUR_PRIORITY);
+	C.add_atom_colour("#FF0000", FIXED_COLOUR_PRIORITY);
+	yield* qdel(this);
 	return f.dot;
-}, true, { args: ["C", "user"] });
+}, true);
 
 rt.type(10103, "/obj/item/slimepotion/fireproof", "/obj/item/slimepotion", {
 	uses: 3,
@@ -339,33 +332,33 @@ rt.type(10103, "/obj/item/slimepotion/fireproof", "/obj/item/slimepotion", {
 	icon_state: "potblue",
 });
 
-// /obj/item/slimepotion/fireproof/proc/afterattack  (code/modules/research/xenobiology/xenobiology.dm:367)  may sleep
-rt.def("/obj/item/slimepotion/fireproof/proc/afterattack", function* afterattack(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.sv(f, "uses"))) {
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-		return live(f.dot);
+// xenobiology.dm:367
+rt.def("/obj/item/slimepotion/fireproof/proc/afterattack", function* afterattack(f: Frame, C: Value, user: Value) {
+	yield* parent_proc();
+	if (!this.uses) {
+		yield* qdel(this);
+		return f.dot;
 	}
-	if (!truthy((rt.istype(live(f.args[0]), T("/obj/item/clothing")) ? 1 : 0))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>The potion can only be used on clothing!</span>"]);
-		return live(f.dot);
+	if (!rt.istype(C, T("/obj/item/clothing"))) {
+		to_chat(user, "<span class='warning'>The potion can only be used on clothing!</span>");
+		return f.dot;
 	}
-	if (isEqual(rt.fv(f, "max_heat_protection_temperature", live(f.args[0])), 35000)) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>The ＀ is already fireproof!</span>", [live(f.args[0])])]);
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+	if (C.max_heat_protection_temperature == FIRE_IMMUNITY_SUIT_MAX_TEMP_PROTECT) {
+		to_chat(user, `<span class='warning'>The ${C} is already fireproof!</span>`);
+		return (yield* parent_proc());
 	}
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You slather the blue gunk over the ＀, fireproofing it.</span>", [live(f.args[0])])]);
-	rt.setFv(f, "name", live(f.args[0]), fmt("fireproofed ＀", [rt.fv(f, "name", live(f.args[0]))]));
-	yield* g.callName(f, live(f.args[0]), "remove_atom_colour", [3]);
-	yield* g.callName(f, live(f.args[0]), "add_atom_colour", ["#000080", 4]);
-	rt.setFv(f, "max_heat_protection_temperature", live(f.args[0]), 35000);
-	rt.setFv(f, "heat_protection", live(f.args[0]), rt.fv(f, "body_parts_covered", live(f.args[0])));
-	(rt.modField(f, live(f.args[0]), "resistance_flags", 2, rt.bitOr));
-	rt.incSrcVar(f, "uses", -1, true);
-	if (truthy(rt.sv(f, "uses"))) return f.dot;
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	to_chat(user, `<span class='notice'>You slather the blue gunk over the ${C}, fireproofing it.</span>`);
+	C.name = `fireproofed ${C.name}`;
+	C.remove_atom_colour(WASHABLE_COLOUR_PRIORITY);
+	C.add_atom_colour("#000080", FIXED_COLOUR_PRIORITY);
+	C.max_heat_protection_temperature = FIRE_IMMUNITY_SUIT_MAX_TEMP_PROTECT;
+	C.heat_protection = C.body_parts_covered;
+	(rt.modField(f, C, "resistance_flags", FIRE_PROOF, rt.bitOr));
+	this.uses--;
+	if (this.uses) return f.dot;
+	yield* qdel(this);
 	return f.dot;
-}, true, { args: ["C", "user"] });
+}, true);
 
 rt.type(10104, "/obj/item/slimepotion/genderchange", "/obj/item/slimepotion", {
 	name: "gender change potion",
@@ -374,26 +367,25 @@ rt.type(10104, "/obj/item/slimepotion/genderchange", "/obj/item/slimepotion", {
 	icon_state: "potlightpink",
 });
 
-// /obj/item/slimepotion/genderchange/proc/attack  (code/modules/research/xenobiology/xenobiology.dm:395)  may sleep
+// xenobiology.dm:395
 rt.def("/obj/item/slimepotion/genderchange/proc/attack", function* attack(f: Frame, L: Value, user: Value) {
-	f.vars = () => [L, user];
-	if ((!truthy((rt.istype(live(L), T("/mob/living")) ? 1 : 0)) || isEqual(rt.fv(f, "stat", live(L)), 2))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>The potion can only be used on living things!</span>"]);
-		return live(f.dot);
+	if (!rt.istype(L, T("/mob/living")) || L.stat == 2) {
+		to_chat(user, "<span class='warning'>The potion can only be used on living things!</span>");
+		return f.dot;
 	}
-	if ((!isEqual(rt.fv(f, "gender", live(L)), "male") && !isEqual(rt.fv(f, "gender", live(L)), "female"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>The potion can only be used on gendered things!</span>"]);
-		return live(f.dot);
+	if (L.gender != "male" && L.gender != "female") {
+		to_chat(user, "<span class='warning'>The potion can only be used on gendered things!</span>");
+		return f.dot;
 	}
-	if (isEqual(rt.fv(f, "gender", live(L)), "male")) {
-		rt.setFv(f, "gender", live(L), "female");
-		yield* g.callName(f, live(L), "visible_message", [fmt("<span class='boldnotice'>＀ suddenly looks more feminine!</span>", [live(L)]), "<span class='boldwarning'>You suddenly feel more feminine!</span>"]);
+	if (L.gender == "male") {
+		L.gender = "female";
+		L.visible_message(`<span class='boldnotice'>${L} suddenly looks more feminine!</span>`, "<span class='boldwarning'>You suddenly feel more feminine!</span>");
 	} else {
-		rt.setFv(f, "gender", live(L), "male");
-		yield* g.callName(f, live(L), "visible_message", [fmt("<span class='boldnotice'>＀ suddenly looks more masculine!</span>", [live(L)]), "<span class='boldwarning'>You suddenly feel more masculine!</span>"]);
+		L.gender = "male";
+		L.visible_message(`<span class='boldnotice'>${L} suddenly looks more masculine!</span>`, "<span class='boldwarning'>You suddenly feel more masculine!</span>");
 	}
-	yield* g.callName(f, live(L), "regenerate_icons", []);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* L.regenerate_icons();
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
@@ -407,96 +399,82 @@ rt.type(12095, "/obj/effect/golemrune", "/obj/effect", {
 	layer: 2,
 });
 
-// /obj/effect/golemrune/proc/Initialize  (code/modules/research/xenobiology/xenobiology.dm:487)  may sleep
+// xenobiology.dm:487
 rt.def("/obj/effect/golemrune/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(rt.fv(f, "isprocessing", live(f.src)))) {
-		rt.setFv(f, "isprocessing", live(f.src), 1);
-		rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), add);
+	f.dot = (yield* parent_proc());
+	if (!this.isprocessing) {
+		this.isprocessing = 1;
+		GLOB.SSobj.processing += this;
 	}
-	yield* g.call(f, P("/proc/notify_ghosts"), null, [null, fmt("Golem rune created in ＀.", [(yield* g.call(f, P("/proc/get_area"), null, [live(f.src)]))]), null, rt.rsc("sound/effects/ghost2.ogg"), "source", live(f.src)], rt.Args.Named);
+	yield* notify_ghosts(`Golem rune created in ${get_area(this)}.`, rt.rsc("sound/effects/ghost2.ogg"), { source: this });
 	return f.dot;
 }, true);
 
-// /obj/effect/golemrune/proc/Destroy  (code/modules/research/xenobiology/xenobiology.dm:492)  may sleep
+// xenobiology.dm:492
 rt.def("/obj/effect/golemrune/proc/Destroy", function* Destroy(f: Frame) {
-	rt.setFv(f, "isprocessing", live(f.src), 0);
-	(rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), subtract));
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	this.isprocessing = 0;
+	GLOB.SSobj.processing -= this;
+	return (yield* parent_proc());
 }, true);
 
-// /obj/effect/golemrune/proc/process  (code/modules/research/xenobiology/xenobiology.dm:497)
+// xenobiology.dm:497
 rt.def("/obj/effect/golemrune/proc/process", function process(f: Frame) {
 	let ghost: Value = null, O: Value = null;
-	let $e: any;
-	f.vars = () => [ghost, O, $e];
-	ghost = null;
-	O = null;
-	rt.forList(f, 0, rt.fv(f, "loc", live(f.src)), T("/mob/dead/observer"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		O = $e;
-		if (!truthy(rt.fv(f, "client", live(O)))) {
+	for (O of each(this.loc, T("/mob/dead/observer"))) {
+		if (!O.client) {
 			continue;
 		}
-		if (((truthy(rt.fv(f, "mind", live(O))) && truthy(rt.gv(f, "current", rt.fv(f, "mind", live(O))))) && !isEqual(rt.gv(f, "stat", rt.gv(f, "current", rt.fv(f, "mind", live(O)))), 2))) {
+		if (O.mind && O.mind.current && O.mind.current.stat != 2) {
 			continue;
 		}
-		if (truthy(rt.fv(f, "orbiting", live(O)))) {
+		if (O.orbiting) {
 			continue;
 		}
-		ghost = live(O);
+		ghost = O;
 		break;
 	}
-	rt.endFor(f, 0);
-	if (truthy(live(ghost))) {
-		rt.setSv(f, "icon_state", "golem2");
+	if (ghost) {
+		this.icon_state = "golem2";
 	} else {
-		rt.setSv(f, "icon_state", "golem");
+		this.icon_state = "golem";
 	}
 	return f.dot;
 }, false, { waitfor: false });
 
-// /obj/effect/golemrune/proc/attack_hand  (code/modules/research/xenobiology/xenobiology.dm:513)  may sleep
+// xenobiology.dm:513
 rt.def("/obj/effect/golemrune/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
 	let ghost: Value = null, O: Value = null, G: Value = null;
-	let $e: any;
-	f.vars = () => [user, ghost, O, G, $e];
-	ghost = null;
-	O = null;
-	rt.forList(f, 0, rt.fv(f, "loc", live(f.src)), T("/mob/dead/observer"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		O = $e;
-		if (!truthy(rt.fv(f, "client", live(O)))) {
+	for (O of each(this.loc, T("/mob/dead/observer"))) {
+		if (!O.client) {
 			continue;
 		}
-		if (((truthy(rt.fv(f, "mind", live(O))) && truthy(rt.gv(f, "current", rt.fv(f, "mind", live(O))))) && !isEqual(rt.gv(f, "stat", rt.gv(f, "current", rt.fv(f, "mind", live(O)))), 2))) {
+		if (O.mind && O.mind.current && O.mind.current.stat != 2) {
 			continue;
 		}
-		if (truthy(rt.fv(f, "orbiting", live(O)))) {
+		if (O.orbiting) {
 			continue;
 		}
-		ghost = live(O);
+		ghost = O;
 		break;
 	}
-	rt.endFor(f, 0);
-	if (!truthy(live(ghost))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>The rune fizzles uselessly! There is no spirit nearby.</span>"]);
-		return live(f.dot);
+	if (!ghost) {
+		to_chat(user, "<span class='warning'>The rune fizzles uselessly! There is no spirit nearby.</span>");
+		return f.dot;
 	}
-	yield* g.callName(f, (G = (yield* g.new_(f, T("/mob/living/carbon/human"), []))), "set_species", [T("/datum/species/golem/adamantine")]);
-	yield* g.callName(f, live(G), "set_cloned_appearance", []);
-	rt.setFv(f, "real_name", live(G), (yield* g.callName(f, rt.gv(f, "species", rt.fv(f, "dna", live(G))), "random_name", [])));
-	rt.setFv(f, "name", live(G), rt.fv(f, "real_name", live(G)));
-	rt.setFv(f, "unique_enzymes", rt.fv(f, "dna", live(G)), (yield* g.callName(f, rt.fv(f, "dna", live(G)), "generate_unique_enzymes", [])));
-	yield* g.callName(f, rt.gv(f, "species", rt.fv(f, "dna", live(G))), "auto_equip", [live(G)]);
-	rt.setFv(f, "loc", live(G), rt.fv(f, "loc", live(f.src)));
-	rt.setFv(f, "key", live(G), rt.fv(f, "key", live(ghost)));
-	yield* g.call(f, P("/proc/to_chat"), null, [live(G), fmt("You are an adamantine golem. You move slowly, but are highly resistant to heat and cold as well as blunt trauma. You are unable to wear clothes, but can still use most tools. Serve ＀, and assist ＀ in completing their goals at any cost.", [live(user), (yield* g.callName(f, live(user), "p_them", []))])]);
-	yield* g.callName(f, rt.fv(f, "mind", live(G)), "store_memory", [fmt("<b>Serve ＀, your creator.</b>", [rt.fv(f, "real_name", live(user))])]);
-	yield* g.callName(f, rt.fv(f, "mind", live(G)), "enslave_mind_to_creator", [live(user)]);
-	yield* g.call(f, P("/proc/log_game"), null, [fmt("＀ was made a golem by ＀.", [(yield* g.call(f, P("/proc/key_name"), null, [live(G)])), (yield* g.call(f, P("/proc/key_name"), null, [live(user)]))])]);
-	yield* g.call(f, P("/proc/log_admin"), null, [fmt("＀ was made a golem by ＀.", [(yield* g.call(f, P("/proc/key_name"), null, [live(G)])), (yield* g.call(f, P("/proc/key_name"), null, [live(user)]))])]);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* (G = (yield* new_(T("/mob/living/carbon/human")))).set_species(T("/datum/species/golem/adamantine"));
+	yield* G.set_cloned_appearance();
+	G.real_name = G.dna.species.random_name();
+	G.name = G.real_name;
+	G.dna.unique_enzymes = G.dna.generate_unique_enzymes();
+	G.dna.species.auto_equip(G);
+	G.loc = this.loc;
+	G.key = ghost.key;
+	to_chat(G, `You are an adamantine golem. You move slowly, but are highly resistant to heat and cold as well as blunt trauma. You are unable to wear clothes, but can still use most tools. Serve ${user}, and assist ${user.p_them()} in completing their goals at any cost.`);
+	G.mind.store_memory(`<b>Serve ${user.real_name}, your creator.</b>`);
+	yield* G.mind.enslave_mind_to_creator(user);
+	log_game(`${key_name(G)} was made a golem by ${key_name(user)}.`);
+	log_admin(`${key_name(G)} was made a golem by ${key_name(user)}.`);
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
@@ -517,113 +495,83 @@ rt.type(12096, "/obj/effect/timestop", "/obj/effect", {
 	alpha: 125,
 });
 
-// /obj/effect/timestop/proc/<init>  (code/modules/research/xenobiology/xenobiology.dm:557)
+// xenobiology.dm:557
 rt.def("/obj/effect/timestop/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "immune", rt.list());
-	$0 = $0;
-	rt.setSv(f, "stopped_atoms", rt.list());
+	parent_proc();
+	this.immune = list();
+
+	this.stopped_atoms = list();
 	return f.dot;
 });
 
-// /obj/effect/timestop/proc/Initialize  (code/modules/research/xenobiology/xenobiology.dm:564)
+// xenobiology.dm:564
 rt.def("/obj/effect/timestop/proc/Initialize", function Initialize(f: Frame) {
 	let M: Value = null, L: Value = null, _T: Value = null;
-	let $e: any;
-	f.vars = () => [M, L, _T, $e];
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	M = null;
-	rt.forList(f, 0, rt.gl("living_mob_list"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		L = live(M);
+	f.dot = parent_proc();
+	for (M of each(GLOB.living_mob_list)) {
+		L = M;
 		_T = null;
-		rt.forList(f, 1, rt.gv(f, "spell_list", rt.fv(f, "mind", live(L))), T("/obj/effect/proc_holder/spell/aoe_turf/conjure/timestop"));
-		while (($e = rt.next(f, 1)) !== undefined) {
-			_T = $e;
-			(rt.modSrcVar(f, "immune", live(L), rt.bitOr));
+		for (_T of each(L.mind.spell_list, T("/obj/effect/proc_holder/spell/aoe_turf/conjure/timestop"))) {
+			(rt.modSrcVar(f, "immune", L, rt.bitOr));
 		}
-		rt.endFor(f, 1);
 	}
-	rt.endFor(f, 0);
-	rt.callSrc(f, "timestop", []);
+	this.timestop();
 	return f.dot;
 });
 
-// /obj/effect/timestop/proc/timestop  (code/modules/research/xenobiology/xenobiology.dm:574)  may sleep
+// xenobiology.dm:574
 rt.def("/obj/effect/timestop/proc/timestop", function* timestop(f: Frame) {
 	let i: Value = null, A: Value = null, M: Value = null, H: Value = null, _P: Value = null, M_1: Value = null, M_0: Value = null, _P_0: Value = null;
 	let $e: any;
-	f.vars = () => [i, A, M, H, _P, M_1, M_0, _P_0, $e];
-	yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/magic/timeparadox2.ogg"), 100, 1, -1]);
-	i = null;
-	rt.forRange(f, 0, 1, subtract(rt.sv(f, "duration"), 1), 1);
+	playsound(rt.getStep(f, this, 0), rt.rsc("sound/magic/timeparadox2.ogg"), 100, 1, -1);
+	rt.forRange(f, 0, 1, this.duration - 1, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
 		A = null;
-		rt.forList(f, 1, (yield* g.call(f, P("/proc/orange"), null, [rt.sv(f, "freezerange"), rt.fv(f, "loc", live(f.src))])), T("/atom"));
-		while (($e = rt.next(f, 1)) !== undefined) {
-			A = $e;
-			if (truthy((rt.istype(live(A), T("/mob/living")) ? 1 : 0))) {
-				if (truthy((rt.isIn(f, (M = live(A)), rt.sv(f, "immune")) ? 1 : 0))) {
+		for (A of each(orange(this.freezerange, this.loc), T("/atom"))) {
+			if (rt.istype(A, T("/mob/living"))) {
+				if (rt.isIn(f, (M = A), this.immune)) {
 					continue;
 				}
-				yield* g.callName(f, live(M), "Stun", [200, 1, 1]);
-				rt.setFv(f, "anchored", live(M), 1);
-				if (truthy((rt.istype(live(M), T("/mob/living/simple_animal/hostile")) ? 1 : 0))) {
-					rt.setFv(f, "AIStatus", (H = live(M)), 3);
-					yield* g.callName(f, live(H), "LoseTarget", []);
+				yield* M.Stun(200, 1, 1);
+				M.anchored = 1;
+				if (rt.istype(M, T("/mob/living/simple_animal/hostile"))) {
+					(H = M).AIStatus = AI_OFF;
+					yield* H.LoseTarget();
 				}
-				(rt.modSrcVar(f, "stopped_atoms", live(M), rt.bitOr));
-			} else {
-				if (truthy((rt.istype(live(A), T("/obj/item/projectile")) ? 1 : 0))) {
-					rt.setFv(f, "paused", (_P = live(A)), 1);
-					(rt.modSrcVar(f, "stopped_atoms", live(_P), rt.bitOr));
-				}
+				(rt.modSrcVar(f, "stopped_atoms", M, rt.bitOr));
+			} else if (rt.istype(A, T("/obj/item/projectile"))) {
+				(_P = A).paused = 1;
+				(rt.modSrcVar(f, "stopped_atoms", _P, rt.bitOr));
 			}
 		}
-		rt.endFor(f, 1);
 		M_1 = null;
-		rt.forList(f, 1, rt.sv(f, "stopped_atoms"), T("/mob/living"));
-		while (($e = rt.next(f, 1)) !== undefined) {
-			M_1 = $e;
-			if (rt.gt((yield* g.call(f, P("/proc/get_dist"), null, [rt.getStep(f, live(M_1), 0), rt.getStep(f, live(f.src), 0)])), rt.sv(f, "freezerange"))) {
-				yield* g.srcCall(f, "unfreeze_mob", live(M_1));
-				(rt.modSrcVar(f, "stopped_atoms", live(M_1), subtract));
+		for (M_1 of each(this.stopped_atoms, T("/mob/living"))) {
+			if (get_dist(rt.getStep(f, M_1, 0), rt.getStep(f, this, 0)) > this.freezerange) {
+				yield* this.unfreeze_mob(M_1);
+				this.stopped_atoms -= M_1;
 			}
 		}
-		rt.endFor(f, 1);
-		yield* g.call(f, P("/proc/stoplag"), null, []);
+		yield* stoplag();
 	}
 	rt.endFor(f, 0);
-	M_0 = null;
-	rt.forList(f, 0, rt.sv(f, "stopped_atoms"), T("/mob/living"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M_0 = $e;
-		yield* g.srcCall(f, "unfreeze_mob", live(M_0));
+	for (M_0 of each(this.stopped_atoms, T("/mob/living"))) {
+		yield* this.unfreeze_mob(M_0);
 	}
-	rt.endFor(f, 0);
-	_P_0 = null;
-	rt.forList(f, 0, rt.sv(f, "stopped_atoms"), T("/obj/item/projectile"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_P_0 = $e;
-		rt.setFv(f, "paused", live(_P_0), 0);
+	for (_P_0 of each(this.stopped_atoms, T("/obj/item/projectile"))) {
+		_P_0.paused = 0;
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-	return live(f.dot);
+	yield* qdel(this);
+	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/effect/timestop/proc/unfreeze_mob  (code/modules/research/xenobiology/xenobiology.dm:611)  may sleep
+// xenobiology.dm:611
 rt.def("/obj/effect/timestop/proc/unfreeze_mob", function* unfreeze_mob(f: Frame, M: Value) {
 	let H: Value = null;
-	f.vars = () => [M, H];
-	yield* g.callName(f, live(M), "AdjustStun", [-200, 1, 1]);
-	rt.setFv(f, "anchored", live(M), 0);
-	if (!truthy((rt.istype(live(M), T("/mob/living/simple_animal/hostile")) ? 1 : 0))) return f.dot;
-	rt.setFv(f, "AIStatus", (H = live(M)), rt.initial(f, live(H), "AIStatus"));
+	yield* M.AdjustStun(-200, 1, 1);
+	M.anchored = 0;
+	if (!rt.istype(M, T("/mob/living/simple_animal/hostile"))) return f.dot;
+	(H = M).AIStatus = rt.initial(f, H, "AIStatus");
 	return f.dot;
 }, true);
 
@@ -643,12 +591,10 @@ rt.type(9004, "/obj/item/stack/tile/bluespace", "/obj/item/stack/tile", {
 	max_amount: 60,
 });
 
-// /obj/item/stack/tile/bluespace/proc/<init>  (code/modules/research/xenobiology/xenobiology.dm:629)
+// xenobiology.dm:629
 rt.def("/obj/item/stack/tile/bluespace/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 500]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 500]);
 	return f.dot;
 });
 
@@ -668,12 +614,10 @@ rt.type(9005, "/obj/item/stack/tile/sepia", "/obj/item/stack/tile", {
 	max_amount: 60,
 });
 
-// /obj/item/stack/tile/sepia/proc/<init>  (code/modules/research/xenobiology/xenobiology.dm:645)
+// xenobiology.dm:645
 rt.def("/obj/item/stack/tile/sepia/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 500]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 500]);
 	return f.dot;
 });
 
@@ -683,22 +627,16 @@ rt.type(9654, "/obj/item/areaeditor/blueprints/slime", "/obj/item/areaeditor/blu
 	color: "#2956B2",
 });
 
-// /obj/item/areaeditor/blueprints/slime/proc/edit_area  (code/modules/research/xenobiology/xenobiology.dm:660)  may sleep
+// xenobiology.dm:660
 rt.def("/obj/item/areaeditor/blueprints/slime/proc/edit_area", function* edit_area(f: Frame) {
-	let success: Value = null, A: Value = null, _T: Value = null;
-	let $e: any;
-	f.vars = () => [success, A, _T, $e];
-	success = (yield* g.callSuper(f, [], rt.Args.Same));
-	A = (yield* g.srcCall(f, "get_area", live(f.src)));
-	if (!truthy(live(success))) return f.dot;
-	_T = null;
-	rt.forList(f, 0, live(A), T("/turf"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_T = $e;
-		yield* g.callName(f, live(_T), "remove_atom_colour", [3]);
-		yield* g.callName(f, live(_T), "add_atom_colour", ["#2956B2", 4]);
+	let _T: Value = null;
+	let success: Value = (yield* parent_proc());
+	let A: Value = this.get_area(this);
+	if (!success) return f.dot;
+	for (_T of each(A, T("/turf"))) {
+		_T.remove_atom_colour(WASHABLE_COLOUR_PRIORITY);
+		_T.add_atom_colour("#2956B2", FIXED_COLOUR_PRIORITY);
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* qdel(this);
 	return f.dot;
 }, true);

@@ -1,7 +1,7 @@
-// From code/modules/clothing/spacesuits/flightsuit.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/clothing/spacesuits/flightsuit.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, g } = rt;
 
 
 rt.type(9389, "/obj/item/device/flightpack", "/obj/item/device", {
@@ -87,1115 +87,1040 @@ rt.type(9389, "/obj/item/device/flightpack", "/obj/item/device", {
 	resistance_flags: 2,
 });
 
-// /obj/item/device/flightpack/proc/<init>  (code/modules/clothing/spacesuits/flightsuit.dm:20)
+// flightsuit.dm:20
 rt.def("/obj/item/device/flightpack/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "actions_types", rt.list(T("/datum/action/item_action/flightpack/toggle_flight"), T("/datum/action/item_action/flightpack/engage_boosters"), T("/datum/action/item_action/flightpack/toggle_stabilizers"), T("/datum/action/item_action/flightpack/change_power"), T("/datum/action/item_action/flightpack/toggle_airbrake")));
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 20, "bullet", 20, "laser", 20, "energy", 10, "bomb", 30, "bio", 100, "rad", 75, "fire", 100, "acid", 75]));
+	parent_proc();
+	this.actions_types = list(T("/datum/action/item_action/flightpack/toggle_flight"), T("/datum/action/item_action/flightpack/engage_boosters"), T("/datum/action/item_action/flightpack/toggle_stabilizers"), T("/datum/action/item_action/flightpack/change_power"), T("/datum/action/item_action/flightpack/toggle_airbrake"));
+	this.armor = rt.alist(f, ["melee", 20, "bullet", 20, "laser", 20, "energy", 10, "bomb", 30, "bio", 100, "rad", 75, "fire", 100, "acid", 75]);
 	return f.dot;
 });
 
-// /obj/item/device/flightpack/proc/Initialize  (code/modules/clothing/spacesuits/flightsuit.dm:110)  may sleep
+// flightsuit.dm:110
 rt.def("/obj/item/device/flightpack/proc/Initialize", function* Initialize(f: Frame) {
-	rt.setSv(f, "ion_trail", (yield* g.new_(f, T("/datum/effect_system/trail_follow/ion/flight"), [])));
-	yield* g.callName(f, rt.sv(f, "ion_trail"), "set_up", [live(f.src)]);
-	if (!truthy(rt.fv(f, "isprocessing", live(f.src)))) {
-		rt.setFv(f, "isprocessing", live(f.src), 1);
-		rt.modField(f, rt.gl("SSflightpacks"), "processing", live(f.src), add);
+	this.ion_trail = (yield* new_(T("/datum/effect_system/trail_follow/ion/flight")));
+	yield* this.ion_trail.set_up(this);
+	if (!this.isprocessing) {
+		this.isprocessing = 1;
+		GLOB.SSflightpacks.processing += this;
 	}
-	yield* g.srcCall(f, "update_parts");
-	yield* g.srcCall(f, "sync_processing", rt.gl("SSflightpacks"));
-	yield* g.callSuper(f, [], rt.Args.Same);
+	this.update_parts();
+	this.sync_processing(GLOB.SSflightpacks);
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
 rt.type(9390, "/obj/item/device/flightpack/full", "/obj/item/device/flightpack", {});
 
-// /obj/item/device/flightpack/full/proc/Initialize  (code/modules/clothing/spacesuits/flightsuit.dm:118)  may sleep
+// flightsuit.dm:118
 rt.def("/obj/item/device/flightpack/full/proc/Initialize", function* Initialize(f: Frame) {
-	rt.setSv(f, "part_manip", (yield* g.new_(f, T("/obj/item/weapon/stock_parts/manipulator/pico"), [live(f.src)])));
-	rt.setSv(f, "part_scan", (yield* g.new_(f, T("/obj/item/weapon/stock_parts/scanning_module/phasic"), [live(f.src)])));
-	rt.setSv(f, "part_cap", (yield* g.new_(f, T("/obj/item/weapon/stock_parts/capacitor/super"), [live(f.src)])));
-	rt.setSv(f, "part_laser", (yield* g.new_(f, T("/obj/item/weapon/stock_parts/micro_laser/ultra"), [live(f.src)])));
-	rt.setSv(f, "part_bin", (yield* g.new_(f, T("/obj/item/weapon/stock_parts/matter_bin/super"), [live(f.src)])));
-	rt.setSv(f, "assembled", 1);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	this.part_manip = (yield* new_(T("/obj/item/weapon/stock_parts/manipulator/pico"), this));
+	this.part_scan = (yield* new_(T("/obj/item/weapon/stock_parts/scanning_module/phasic"), this));
+	this.part_cap = (yield* new_(T("/obj/item/weapon/stock_parts/capacitor/super"), this));
+	this.part_laser = (yield* new_(T("/obj/item/weapon/stock_parts/micro_laser/ultra"), this));
+	this.part_bin = (yield* new_(T("/obj/item/weapon/stock_parts/matter_bin/super"), this));
+	this.assembled = 1;
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /obj/item/device/flightpack/proc/sync_processing  (code/modules/clothing/spacesuits/flightsuit.dm:128)
+// flightsuit.dm:128
 rt.def("/obj/item/device/flightpack/proc/sync_processing", function sync_processing(f: Frame, FPS: Value) {
-	rt.setSv(f, "processing_mode", rt.fv(f, "flightsuit_processing", live(FPS)));
-	if (!isEqual(rt.sv(f, "processing_mode"), 0)) return f.dot;
-	rt.setSv(f, "momentum_x", 0);
-	rt.setSv(f, "momentum_y", 0);
-	rt.setSv(f, "momentum_speed_x", 0);
-	rt.setSv(f, "momentum_speed_y", 0);
-	rt.setSv(f, "momentum_speed", 0);
-	rt.setSv(f, "boost_charge", 0);
-	rt.setSv(f, "boost", 0);
-	rt.callSrc(f, "update_slowdown", []);
+	this.processing_mode = FPS.flightsuit_processing;
+	if (this.processing_mode != 0) return f.dot;
+	this.momentum_x = 0;
+	this.momentum_y = 0;
+	this.momentum_speed_x = 0;
+	this.momentum_speed_y = 0;
+	this.momentum_speed = 0;
+	this.boost_charge = 0;
+	this.boost = 0;
+	this.update_slowdown();
 	return f.dot;
 });
 
-// /obj/item/device/flightpack/proc/update_parts  (code/modules/clothing/spacesuits/flightsuit.dm:139)
+// flightsuit.dm:139
 rt.def("/obj/item/device/flightpack/proc/update_parts", function update_parts(f: Frame) {
-	let manip: Value = null, scan: Value = null, cap: Value = null, laser: Value = null, bin: Value = null;
-	f.vars = () => [manip, scan, cap, laser, bin];
-	rt.setSv(f, "boost_chargerate", rt.initial(f, live(f.src), "boost_chargerate"));
-	rt.setSv(f, "boost_drain", rt.initial(f, live(f.src), "boost_drain"));
-	rt.setSv(f, "powersetting_high", rt.initial(f, live(f.src), "powersetting_high"));
-	rt.setSv(f, "emp_disable_threshold", rt.initial(f, live(f.src), "emp_disable_threshold"));
-	rt.setSv(f, "crash_disable_threshold", rt.initial(f, live(f.src), "crash_disable_threshold"));
-	rt.setSv(f, "stabilizer_decay_amount", rt.initial(f, live(f.src), "stabilizer_decay_amount"));
-	rt.setSv(f, "airbrake_decay_amount", rt.initial(f, live(f.src), "airbrake_decay_amount"));
-	manip = 0;
-	scan = 0;
-	cap = 0;
-	laser = 0;
-	bin = 0;
-	rt.setSv(f, "assembled", 0);
-	if (((((truthy(rt.sv(f, "part_manip")) && truthy(rt.sv(f, "part_scan"))) && truthy(rt.sv(f, "part_cap"))) && truthy(rt.sv(f, "part_laser"))) && truthy(rt.sv(f, "part_bin")))) {
-		manip = rt.fv(f, "rating", rt.sv(f, "part_manip"));
-		scan = rt.fv(f, "rating", rt.sv(f, "part_scan"));
-		cap = rt.fv(f, "rating", rt.sv(f, "part_cap"));
-		laser = rt.fv(f, "rating", rt.sv(f, "part_laser"));
-		bin = rt.fv(f, "rating", rt.sv(f, "part_bin"));
-		rt.setSv(f, "assembled", 1);
+	this.boost_chargerate = rt.initial(f, this, "boost_chargerate");
+	this.boost_drain = rt.initial(f, this, "boost_drain");
+	this.powersetting_high = rt.initial(f, this, "powersetting_high");
+	this.emp_disable_threshold = rt.initial(f, this, "emp_disable_threshold");
+	this.crash_disable_threshold = rt.initial(f, this, "crash_disable_threshold");
+	this.stabilizer_decay_amount = rt.initial(f, this, "stabilizer_decay_amount");
+	this.airbrake_decay_amount = rt.initial(f, this, "airbrake_decay_amount");
+	let manip: Value = 0;
+	let scan: Value = 0;
+	let cap: Value = 0;
+	let laser: Value = 0;
+	let bin: Value = 0;
+	this.assembled = 0;
+	if (this.part_manip && this.part_scan && this.part_cap && this.part_laser && this.part_bin) {
+		manip = this.part_manip.rating;
+		scan = this.part_scan.rating;
+		cap = this.part_cap.rating;
+		laser = this.part_laser.rating;
+		bin = this.part_bin.rating;
+		this.assembled = 1;
 	}
-	(rt.modSrcVar(f, "boost_chargerate", live(cap), multiply));
-	(rt.modSrcVar(f, "boost_drain", live(manip), subtract));
-	rt.setSv(f, "powersetting_high", rt.call(f, P("/proc/max"), null, [0, rt.call(f, P("/proc/min"), null, [live(laser), 3])]));
-	rt.setSv(f, "emp_disable_threshold", multiply(live(bin), 1.25));
-	rt.setSv(f, "crash_disable_threshold", multiply(live(bin), 2));
-	rt.setSv(f, "stabilizer_decay_amount", multiply(live(scan), 3.5));
-	rt.setSv(f, "airbrake_decay_amount", multiply(live(manip), 8));
-	rt.setSv(f, "crash_dampening", live(bin));
+	this.boost_chargerate *= cap;
+	this.boost_drain -= manip;
+	this.powersetting_high = max(0, min(laser, 3));
+	this.emp_disable_threshold = bin * 1.25;
+	this.crash_disable_threshold = bin * 2;
+	this.stabilizer_decay_amount = scan * 3.5;
+	this.airbrake_decay_amount = manip * 8;
+	this.crash_dampening = bin;
 	return f.dot;
 });
 
-// /obj/item/device/flightpack/proc/Destroy  (code/modules/clothing/spacesuits/flightsuit.dm:170)  may sleep
+// flightsuit.dm:170
 rt.def("/obj/item/device/flightpack/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.sv(f, "suit"))) {
-		yield* g.srcCall(f, "delink_suit");
+	if (this.suit) {
+		this.delink_suit();
 	}
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "part_manip")]);
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "part_scan")]);
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "part_cap")]);
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "part_laser")]);
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "part_bin")]);
-	rt.setFv(f, "isprocessing", live(f.src), 0);
-	(rt.modField(f, rt.gl("SSflightpacks"), "processing", live(f.src), subtract));
-	rt.setSv(f, "part_manip", null);
-	rt.setSv(f, "part_scan", null);
-	rt.setSv(f, "part_cap", null);
-	rt.setSv(f, "part_laser", null);
-	rt.setSv(f, "part_bin", null);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* qdel(this.part_manip);
+	yield* qdel(this.part_scan);
+	yield* qdel(this.part_cap);
+	yield* qdel(this.part_laser);
+	yield* qdel(this.part_bin);
+	this.isprocessing = 0;
+	GLOB.SSflightpacks.processing -= this;
+	this.part_manip = null;
+	this.part_scan = null;
+	this.part_cap = null;
+	this.part_laser = null;
+	this.part_bin = null;
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /obj/item/device/flightpack/proc/emp_act  (code/modules/clothing/spacesuits/flightsuit.dm:186)
+// flightsuit.dm:186
 rt.def("/obj/item/device/flightpack/proc/emp_act", function emp_act(f: Frame, severity: Value) {
-	let damage: Value = null;
-	f.vars = () => [damage];
-	damage = 0;
-	if (isEqual(live(severity), 1)) {
-		damage = rt.sv(f, "emp_strong_damage");
+	let damage: Value = 0;
+	if (severity == 1) {
+		damage = this.emp_strong_damage;
 	} else {
-		damage = rt.sv(f, "emp_weak_damage");
+		damage = this.emp_weak_damage;
 	}
-	if (rt.le(rt.sv(f, "emp_damage"), multiply(rt.sv(f, "emp_disable_threshold"), 1.5))) {
-		rt.modSrcVar(f, "emp_damage", live(damage), add);
+	if (this.emp_damage <= this.emp_disable_threshold * 1.5) {
+		this.emp_damage += damage;
 	}
-	rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "wearer"), "<span class='userdanger'>Flightpack: BZZZZZZZZZZZT</span>"]);
-	rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "wearer"), fmt("<span class='warning'>Flightpack: WARNING: Class ＀ EMP detected! Circuit damage at ＀!</span>", [live(severity), multiply(divide(100, rt.sv(f, "emp_disable_threshold")), rt.sv(f, "emp_damage"))])]);
+	to_chat(this.wearer, "<span class='userdanger'>Flightpack: BZZZZZZZZZZZT</span>");
+	to_chat(this.wearer, `<span class='warning'>Flightpack: WARNING: Class ${severity} EMP detected! Circuit damage at ${100 / this.emp_disable_threshold * this.emp_damage}!</span>`);
 	return f.dot;
 });
 
-// /obj/item/device/flightpack/proc/ui_action_click  (code/modules/clothing/spacesuits/flightsuit.dm:197)  may sleep
+// flightsuit.dm:197
 rt.def("/obj/item/device/flightpack/proc/ui_action_click", function* ui_action_click(f: Frame, owner: Value, action: Value) {
-	f.vars = () => [owner, action];
-	if (!isEqual(rt.sv(f, "wearer"), live(owner))) {
-		rt.setSv(f, "wearer", live(owner));
+	if (this.wearer != owner) {
+		this.wearer = owner;
 	}
-	if (!truthy(rt.sv(f, "suit"))) {
-		yield* g.srcCall(f, "usermessage", "The flightpack will not work without being attached to a suit first!");
+	if (!this.suit) {
+		this.usermessage("The flightpack will not work without being attached to a suit first!");
 		return 0;
 	}
-	if (truthy((rt.istype(live(action), T("/datum/action/item_action/flightpack/toggle_flight")) ? 1 : 0))) {
-		if (!truthy(rt.sv(f, "flight"))) {
-			yield* g.srcCall(f, "enable_flight");
+	if (rt.istype(action, T("/datum/action/item_action/flightpack/toggle_flight"))) {
+		if (!this.flight) {
+			yield* this.enable_flight();
 		} else {
-			yield* g.srcCall(f, "disable_flight");
+			yield* this.disable_flight();
 		}
 	}
-	if (truthy((rt.istype(live(action), T("/datum/action/item_action/flightpack/engage_boosters")) ? 1 : 0))) {
-		if (!truthy(rt.sv(f, "boost"))) {
-			yield* g.srcCall(f, "activate_booster");
+	if (rt.istype(action, T("/datum/action/item_action/flightpack/engage_boosters"))) {
+		if (!this.boost) {
+			yield* this.activate_booster();
 		} else {
-			yield* g.srcCall(f, "deactivate_booster");
+			yield* this.deactivate_booster();
 		}
 	}
-	if (truthy((rt.istype(live(action), T("/datum/action/item_action/flightpack/toggle_stabilizers")) ? 1 : 0))) {
-		if (!truthy(rt.sv(f, "stabilizer"))) {
-			yield* g.srcCall(f, "enable_stabilizers");
+	if (rt.istype(action, T("/datum/action/item_action/flightpack/toggle_stabilizers"))) {
+		if (!this.stabilizer) {
+			this.enable_stabilizers();
 		} else {
-			yield* g.srcCall(f, "disable_stabilizers");
+			this.disable_stabilizers();
 		}
 	}
-	if (truthy((rt.istype(live(action), T("/datum/action/item_action/flightpack/change_power")) ? 1 : 0))) {
-		yield* g.srcCall(f, "cycle_power");
+	if (rt.istype(action, T("/datum/action/item_action/flightpack/change_power"))) {
+		this.cycle_power();
 	}
-	if (!truthy((rt.istype(live(action), T("/datum/action/item_action/flightpack/toggle_airbrake")) ? 1 : 0))) return f.dot;
-	if (!truthy(rt.sv(f, "brake"))) {
-		yield* g.srcCall(f, "enable_airbrake");
+	if (!rt.istype(action, T("/datum/action/item_action/flightpack/toggle_airbrake"))) return f.dot;
+	if (!this.brake) {
+		this.enable_airbrake();
 	} else {
-		yield* g.srcCall(f, "disable_airbrake");
+		this.disable_airbrake();
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/device/flightpack/proc/adjust_momentum  (code/modules/clothing/spacesuits/flightsuit.dm:227)
+// flightsuit.dm:227
 rt.def("/obj/item/device/flightpack/proc/adjust_momentum", function adjust_momentum(f: Frame, amountx: Value, amounty: Value, reduce_amount_total: Value) {
-	f.vars = () => [reduce_amount_total];
-	if (live(reduce_amount_total) === null) {
-		reduce_amount_total = 0;
-	}
-	if (!isEqual(live(reduce_amount_total), 0)) {
-		if (rt.gt(rt.sv(f, "momentum_x"), 0)) {
-			rt.setSv(f, "momentum_x", rt.call(f, P("/proc/max"), null, [0, rt.call(f, P("/proc/min"), null, [subtract(rt.sv(f, "momentum_x"), live(reduce_amount_total)), rt.sv(f, "momentum_max")])]));
-		} else {
-			if (rt.lt(rt.sv(f, "momentum_x"), 0)) {
-				rt.setSv(f, "momentum_x", rt.call(f, P("/proc/max"), null, [rt.neg(rt.sv(f, "momentum_max")), rt.call(f, P("/proc/min"), null, [add(rt.sv(f, "momentum_x"), live(reduce_amount_total)), 0])]));
-			}
+	reduce_amount_total ??= 0;
+	if (reduce_amount_total != 0) {
+		if (this.momentum_x > 0) {
+			this.momentum_x = max(0, min(this.momentum_x - reduce_amount_total, this.momentum_max));
+		} else if (this.momentum_x < 0) {
+			this.momentum_x = max(-this.momentum_max, min(this.momentum_x + reduce_amount_total, 0));
 		}
-		if (rt.gt(rt.sv(f, "momentum_y"), 0)) {
-			rt.setSv(f, "momentum_y", rt.call(f, P("/proc/max"), null, [0, rt.call(f, P("/proc/min"), null, [subtract(rt.sv(f, "momentum_y"), live(reduce_amount_total)), rt.sv(f, "momentum_max")])]));
-		} else {
-			if (rt.lt(rt.sv(f, "momentum_y"), 0)) {
-				rt.setSv(f, "momentum_y", rt.call(f, P("/proc/max"), null, [rt.neg(rt.sv(f, "momentum_max")), rt.call(f, P("/proc/min"), null, [add(rt.sv(f, "momentum_y"), live(reduce_amount_total)), 0])]));
-			}
+		if (this.momentum_y > 0) {
+			this.momentum_y = max(0, min(this.momentum_y - reduce_amount_total, this.momentum_max));
+		} else if (this.momentum_y < 0) {
+			this.momentum_y = max(-this.momentum_max, min(this.momentum_y + reduce_amount_total, 0));
 		}
 	}
-	rt.setSv(f, "momentum_x", rt.call(f, P("/proc/max"), null, [rt.neg(rt.sv(f, "momentum_max")), rt.call(f, P("/proc/min"), null, [add(rt.sv(f, "momentum_x"), live(amountx)), rt.sv(f, "momentum_max")])]));
-	rt.setSv(f, "momentum_y", rt.call(f, P("/proc/max"), null, [rt.neg(rt.sv(f, "momentum_max")), rt.call(f, P("/proc/min"), null, [add(rt.sv(f, "momentum_y"), live(amounty)), rt.sv(f, "momentum_max")])]));
-	rt.callSrc(f, "calculate_momentum_speed", []);
+	this.momentum_x = max(-this.momentum_max, min(this.momentum_x + amountx, this.momentum_max));
+	this.momentum_y = max(-this.momentum_max, min(this.momentum_y + amounty, this.momentum_max));
+	this.calculate_momentum_speed();
 	return f.dot;
 });
 
-// /obj/item/device/flightpack/proc/wearer_movement  (code/modules/clothing/spacesuits/flightsuit.dm:242)
+// flightsuit.dm:242
 rt.def("/obj/item/device/flightpack/proc/wearer_movement", function wearer_movement(f: Frame, dir: Value) {
-	let momentum_increment: Value = null;
-	let $0: any;
-	f.vars = () => [momentum_increment, $0];
-	if (!truthy(rt.sv(f, "flight"))) {
-		return live(f.dot);
+	if (!this.flight) {
+		return f.dot;
 	}
-	momentum_increment = rt.sv(f, "momentum_gain");
-	if (truthy(rt.sv(f, "boost"))) {
-		momentum_increment = rt.sv(f, "boost_power");
+	let momentum_increment: Value = this.momentum_gain;
+	if (this.boost) {
+		momentum_increment = this.boost_power;
 	}
-	if (truthy(rt.sv(f, "brake"))) {
+	if (this.brake) {
 		momentum_increment = 0;
 	}
-	if ((!truthy(rt.sv(f, "gravity")) && !truthy(rt.sv(f, "pressure")))) {
-		(momentum_increment = rt.modify(live(momentum_increment), 10, subtract));
+	if (!this.gravity && !this.pressure) {
+		momentum_increment -= 10;
 	}
-	$0 = live(dir);
-	if ($0 === 1) {
-		rt.callSrc(f, "adjust_momentum", [0, live(momentum_increment)]);
-	} else if ($0 === 2) {
-		rt.callSrc(f, "adjust_momentum", [0, rt.neg(live(momentum_increment))]);
-	} else if ($0 === 4) {
-		rt.callSrc(f, "adjust_momentum", [live(momentum_increment), 0]);
-	} else if ($0 === 8) {
-		rt.callSrc(f, "adjust_momentum", [rt.neg(live(momentum_increment)), 0]);
+	if (dir === 1) {
+		this.adjust_momentum(0, momentum_increment);
+	} else if (dir === 2) {
+		this.adjust_momentum(0, -momentum_increment);
+	} else if (dir === 4) {
+		this.adjust_momentum(momentum_increment, 0);
+	} else if (dir === 8) {
+		this.adjust_momentum(-momentum_increment, 0);
 	}
 	return f.dot;
 });
 
-// /obj/item/device/flightpack/proc/momentum_drift  (code/modules/clothing/spacesuits/flightsuit.dm:263)  may sleep
+// flightsuit.dm:263
 rt.def("/obj/item/device/flightpack/proc/momentum_drift", function* momentum_drift(f: Frame) {
-	let drift_dir_x: Value = null, drift_dir_y: Value = null, i: Value = null, oldturf: Value = null;
+	let i: Value = null, oldturf: Value = null;
 	let $e: any;
-	f.vars = () => [drift_dir_x, drift_dir_y, i, oldturf, $e];
-	if (!truthy(rt.sv(f, "flight"))) {
+	if (!this.flight) {
 		return 0;
 	}
-	if (truthy(rt.fv(f, "pulling", rt.sv(f, "wearer")))) {
-		rt.setSv(f, "dragging_through", rt.fv(f, "pulling", rt.sv(f, "wearer")));
-	} else {
-		if (truthy(rt.sv(f, "dragging_through"))) {
-			rt.setSv(f, "dragging_through", null);
-		}
+	if (this.wearer.pulling) {
+		this.dragging_through = this.wearer.pulling;
+	} else if (this.dragging_through) {
+		this.dragging_through = null;
 	}
-	drift_dir_x = 0;
-	drift_dir_y = 0;
-	if (rt.gt(rt.sv(f, "momentum_x"), 0)) {
+	let drift_dir_x: Value = 0;
+	let drift_dir_y: Value = 0;
+	if (this.momentum_x > 0) {
 		drift_dir_x = 4;
 	}
-	if (rt.lt(rt.sv(f, "momentum_x"), 0)) {
+	if (this.momentum_x < 0) {
 		drift_dir_x = 8;
 	}
-	if (rt.gt(rt.sv(f, "momentum_y"), 0)) {
+	if (this.momentum_y > 0) {
 		drift_dir_y = 1;
 	}
-	if (rt.lt(rt.sv(f, "momentum_y"), 0)) {
+	if (this.momentum_y < 0) {
 		drift_dir_y = 2;
 	}
-	if (isEqual(rt.sv(f, "momentum_speed"), 0)) {
+	if (this.momentum_speed == 0) {
 		return 0;
 	}
-	if (!truthy(rt.sv(f, "suit"))) return f.dot;
-	if (!truthy(rt.sv(f, "wearer"))) return f.dot;
-	if (!truthy(rt.fv(f, "canmove", rt.sv(f, "wearer")))) {
-		yield* g.srcCall(f, "losecontrol");
+	if (!this.suit) return f.dot;
+	if (!this.wearer) return f.dot;
+	if (!this.wearer.canmove) {
+		yield* this.losecontrol();
 	}
-	yield* g.srcCall(f, "momentum_decay");
-	i = null;
-	rt.forRange(f, 0, 1, rt.sv(f, "momentum_speed"), 1);
+	this.momentum_decay();
+	rt.forRange(f, 0, 1, this.momentum_speed, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		oldturf = rt.getStep(f, rt.sv(f, "wearer"), 0);
-		if (rt.ge(rt.sv(f, "momentum_speed_x"), live(i))) {
-			yield* g.call(f, P("/proc/step"), null, [rt.sv(f, "wearer"), live(drift_dir_x)]);
+		oldturf = rt.getStep(f, this.wearer, 0);
+		if (this.momentum_speed_x >= i) {
+			yield* step(this.wearer, drift_dir_x);
 		}
-		if (rt.ge(rt.sv(f, "momentum_speed_y"), live(i))) {
-			yield* g.call(f, P("/proc/step"), null, [rt.sv(f, "wearer"), live(drift_dir_y)]);
+		if (this.momentum_speed_y >= i) {
+			yield* step(this.wearer, drift_dir_y);
 		}
-		if ((truthy(rt.sv(f, "dragging_through")) && truthy(live(oldturf)))) {
-			yield* g.callName(f, rt.sv(f, "dragging_through"), "forceMove", [live(oldturf)]);
-			rt.setFv(f, "pulling", rt.sv(f, "wearer"), rt.sv(f, "dragging_through"));
+		if (this.dragging_through && oldturf) {
+			yield* this.dragging_through.forceMove(oldturf);
+			this.wearer.pulling = this.dragging_through;
 		}
-		yield* g.call(f, P("/proc/sleep"), null, [1]);
+		yield* sleep(1);
 	}
 	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /obj/item/device/flightpack/proc/momentum_decay  (code/modules/clothing/spacesuits/flightsuit.dm:300)
+// flightsuit.dm:300
 rt.def("/obj/item/device/flightpack/proc/momentum_decay", function momentum_decay(f: Frame) {
-	if (truthy(rt.sv(f, "brake"))) {
-		rt.callSrc(f, "adjust_momentum", [0, 0, rt.sv(f, "airbrake_decay_amount")]);
+	if (this.brake) {
+		this.adjust_momentum(0, 0, this.airbrake_decay_amount);
 	}
-	if (truthy(rt.sv(f, "gravity"))) {
-		rt.callSrc(f, "adjust_momentum", [0, 0, rt.sv(f, "gravity_decay_amount")]);
+	if (this.gravity) {
+		this.adjust_momentum(0, 0, this.gravity_decay_amount);
 	}
-	if (truthy(rt.sv(f, "stabilizer"))) {
-		rt.callSrc(f, "adjust_momentum", [0, 0, rt.sv(f, "stabilizer_decay_amount")]);
+	if (this.stabilizer) {
+		this.adjust_momentum(0, 0, this.stabilizer_decay_amount);
 	}
-	if (truthy(rt.sv(f, "pressure"))) {
-		rt.callSrc(f, "adjust_momentum", [0, 0, rt.sv(f, "pressure_decay_amount")]);
+	if (this.pressure) {
+		this.adjust_momentum(0, 0, this.pressure_decay_amount);
 	}
-	rt.callSrc(f, "adjust_momentum", [0, 0, rt.sv(f, "momentum_passive_loss")]);
+	this.adjust_momentum(0, 0, this.momentum_passive_loss);
 	return f.dot;
 });
 
-// /obj/item/device/flightpack/proc/check_conditions  (code/modules/clothing/spacesuits/flightsuit.dm:313)  may sleep
+// flightsuit.dm:313
 rt.def("/obj/item/device/flightpack/proc/check_conditions", function* check_conditions(f: Frame) {
 	let _T: Value = null, gas: Value = null, envpressure: Value = null;
-	f.vars = () => [_T, gas, envpressure];
-	if (truthy(rt.sv(f, "suit"))) {
-		if (truthy(rt.sv(f, "wearer"))) {
-			if (truthy((yield* g.callName(f, rt.sv(f, "wearer"), "has_gravity", [])))) {
-				rt.setSv(f, "gravity", 1);
+	if (this.suit) {
+		if (this.wearer) {
+			if (this.wearer.has_gravity()) {
+				this.gravity = 1;
 			} else {
-				rt.setSv(f, "gravity", 0);
+				this.gravity = 0;
 			}
-			_T = rt.getStep(f, rt.sv(f, "wearer"), 0);
-			gas = (yield* g.callName(f, live(_T), "return_air", []));
-			if (rt.ge((envpressure = (yield* g.callName(f, live(gas), "return_pressure", []))), rt.sv(f, "pressure_threshold"))) {
-				rt.setSv(f, "pressure", 1);
+			_T = rt.getStep(f, this.wearer, 0);
+			gas = _T.return_air();
+			if ((envpressure = gas.return_pressure()) >= this.pressure_threshold) {
+				this.pressure = 1;
 			} else {
-				rt.setSv(f, "pressure", 0);
+				this.pressure = 0;
 			}
 		}
 	}
-	if (truthy(rt.sv(f, "flight"))) {
-		if (!truthy(rt.sv(f, "assembled"))) {
-			yield* g.srcCall(f, "disable_flight", 1);
+	if (this.flight) {
+		if (!this.assembled) {
+			yield* this.disable_flight(1);
 		}
-		if (!truthy(rt.sv(f, "suit"))) {
-			yield* g.srcCall(f, "disable_flight", 1);
+		if (!this.suit) {
+			yield* this.disable_flight(1);
 		}
-		if (!truthy(rt.sv(f, "wearer"))) {
-			yield* g.srcCall(f, "disable_flight", 1);
+		if (!this.wearer) {
+			yield* this.disable_flight(1);
 		}
 	}
-	if ((!truthy(rt.sv(f, "pressure")) && truthy(rt.sv(f, "brake")))) {
-		rt.setSv(f, "brake", 0);
-		yield* g.srcCall(f, "usermessage", "Airbrakes deactivated due to lack of pressure!", 2);
+	if (!this.pressure && this.brake) {
+		this.brake = 0;
+		this.usermessage("Airbrakes deactivated due to lack of pressure!", 2);
 	}
-	if (truthy(rt.fv(f, "deployedshoes", rt.sv(f, "suit")))) return f.dot;
-	if (!(truthy(rt.sv(f, "brake")) || truthy(rt.sv(f, "stabilizer")))) return f.dot;
-	rt.setSv(f, "brake", 0);
-	rt.setSv(f, "stabilizer", 0);
-	yield* g.srcCall(f, "usermessage", "Warning: Sensor data is not being received from flight shoes. Stabilizers and airbrake modules OFFLINE!", 2);
+	if (this.suit.deployedshoes) return f.dot;
+	if (!(this.brake || this.stabilizer)) return f.dot;
+	this.brake = 0;
+	this.stabilizer = 0;
+	this.usermessage("Warning: Sensor data is not being received from flight shoes. Stabilizers and airbrake modules OFFLINE!", 2);
 	return f.dot;
 }, true);
 
-// /obj/item/device/flightpack/proc/update_slowdown  (code/modules/clothing/spacesuits/flightsuit.dm:341)
+// flightsuit.dm:341
 rt.def("/obj/item/device/flightpack/proc/update_slowdown", function update_slowdown(f: Frame) {
-	if (!truthy(rt.sv(f, "flight"))) {
-		rt.setFv(f, "slowdown", rt.sv(f, "suit"), rt.sv(f, "slowdown_ground"));
-		return live(f.dot);
+	if (!this.flight) {
+		this.suit.slowdown = this.slowdown_ground;
+		return f.dot;
 	} else {
-		rt.setFv(f, "slowdown", rt.sv(f, "suit"), rt.sv(f, "slowdown_air"));
+		this.suit.slowdown = this.slowdown_air;
 	}
 	return f.dot;
 });
 
-// /obj/item/device/flightpack/proc/process  (code/modules/clothing/spacesuits/flightsuit.dm:348)  may sleep
+// flightsuit.dm:348
 rt.def("/obj/item/device/flightpack/proc/process", function* process(f: Frame) {
-	if ((!truthy(rt.sv(f, "suit")) || isEqual(rt.sv(f, "processing_mode"), 0))) {
+	if (!this.suit || this.processing_mode == 0) {
 		return 0;
 	}
-	yield* g.srcCall(f, "check_conditions");
-	yield* g.srcCall(f, "calculate_momentum_speed");
-	yield* g.srcCall(f, "momentum_drift");
-	yield* g.srcCall(f, "handle_boost");
-	yield* g.srcCall(f, "handle_damage");
+	yield* this.check_conditions();
+	this.calculate_momentum_speed();
+	yield* this.momentum_drift();
+	yield* this.handle_boost();
+	yield* this.handle_damage();
 	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/item/device/flightpack/proc/handle_damage  (code/modules/clothing/spacesuits/flightsuit.dm:358)  may sleep
+// flightsuit.dm:358
 rt.def("/obj/item/device/flightpack/proc/handle_damage", function* handle_damage(f: Frame) {
-	if (truthy(rt.sv(f, "crash_damage"))) {
-		rt.setSv(f, "crash_damage", (yield* g.call(f, P("/proc/max"), null, [0, (yield* g.call(f, P("/proc/min"), null, [subtract(rt.sv(f, "crash_damage"), rt.sv(f, "crash_heal_amount")), multiply(rt.sv(f, "crash_disable_threshold"), 10)]))])));
-		if (rt.ge(rt.sv(f, "crash_damage"), rt.sv(f, "crash_disable_threshold"))) {
-			rt.setSv(f, "crash_disabled", 1);
+	if (this.crash_damage) {
+		this.crash_damage = max(0, min(this.crash_damage - this.crash_heal_amount, this.crash_disable_threshold * 10));
+		if (this.crash_damage >= this.crash_disable_threshold) {
+			this.crash_disabled = 1;
 		}
-		if ((truthy(rt.sv(f, "crash_disabled")) && rt.le(rt.sv(f, "crash_damage"), 1))) {
-			rt.setSv(f, "crash_disabled", 0);
-			rt.setSv(f, "crash_disable_message", 0);
-			yield* g.srcCall(f, "usermessage", "Gyroscopic sensors recalibrated. Flight systems re-enabled.");
-		}
-	}
-	if (truthy(rt.sv(f, "emp_damage"))) {
-		rt.setSv(f, "emp_damage", (yield* g.call(f, P("/proc/max"), null, [0, (yield* g.call(f, P("/proc/min"), null, [subtract(rt.sv(f, "emp_damage"), rt.sv(f, "emp_heal_amount")), multiply(rt.sv(f, "emp_disable_threshold"), 10)]))])));
-		if (rt.ge(rt.sv(f, "emp_damage"), rt.sv(f, "emp_disable_threshold"))) {
-			rt.setSv(f, "emp_disabled", 1);
-		}
-		if ((truthy(rt.sv(f, "emp_disabled")) && rt.le(rt.sv(f, "emp_damage"), 0.5))) {
-			rt.setSv(f, "emp_disabled", 0);
-			rt.setSv(f, "emp_disable_message", 0);
-			yield* g.srcCall(f, "usermessage", "Electromagnetic deflection system re-activated. Flight systems re-enabled.");
+		if (this.crash_disabled && this.crash_damage <= 1) {
+			this.crash_disabled = 0;
+			this.crash_disable_message = 0;
+			this.usermessage("Gyroscopic sensors recalibrated. Flight systems re-enabled.");
 		}
 	}
-	rt.setSv(f, "disabled", add(rt.sv(f, "crash_disabled"), rt.sv(f, "emp_disabled")));
-	if (!truthy(rt.sv(f, "disabled"))) return f.dot;
-	if ((truthy(rt.sv(f, "crash_disabled")) && !truthy(rt.sv(f, "crash_disable_message")))) {
-		yield* g.srcCall(f, "usermessage", "Internal gyroscopes scrambled from excessive impacts.", 2);
-		yield* g.srcCall(f, "usermessage", "Deactivating to recalibrate flight systems!", 2);
-		rt.setSv(f, "crash_disable_message", 1);
+	if (this.emp_damage) {
+		this.emp_damage = max(0, min(this.emp_damage - this.emp_heal_amount, this.emp_disable_threshold * 10));
+		if (this.emp_damage >= this.emp_disable_threshold) {
+			this.emp_disabled = 1;
+		}
+		if (this.emp_disabled && this.emp_damage <= 0.5) {
+			this.emp_disabled = 0;
+			this.emp_disable_message = 0;
+			this.usermessage("Electromagnetic deflection system re-activated. Flight systems re-enabled.");
+		}
 	}
-	if ((truthy(rt.sv(f, "emp_disabled")) && !truthy(rt.sv(f, "emp_disable_message")))) {
-		yield* g.srcCall(f, "usermessage", "Electromagnetic deflectors overloaded. Short circuit detected in internal systems!", 1);
-		yield* g.srcCall(f, "usermessage", "Deactivating to prevent fatal power overload!", 2);
-		rt.setSv(f, "emp_disable_message", 1);
+	this.disabled = this.crash_disabled + this.emp_disabled;
+	if (!this.disabled) return f.dot;
+	if (this.crash_disabled && !this.crash_disable_message) {
+		this.usermessage("Internal gyroscopes scrambled from excessive impacts.", 2);
+		this.usermessage("Deactivating to recalibrate flight systems!", 2);
+		this.crash_disable_message = 1;
 	}
-	if (!truthy(rt.sv(f, "flight"))) return f.dot;
-	yield* g.srcCall(f, "disable_flight", 1);
+	if (this.emp_disabled && !this.emp_disable_message) {
+		this.usermessage("Electromagnetic deflectors overloaded. Short circuit detected in internal systems!", 1);
+		this.usermessage("Deactivating to prevent fatal power overload!", 2);
+		this.emp_disable_message = 1;
+	}
+	if (!this.flight) return f.dot;
+	yield* this.disable_flight(1);
 	return f.dot;
 }, true);
 
-// /obj/item/device/flightpack/proc/update_icon  (code/modules/clothing/spacesuits/flightsuit.dm:387)  may sleep
+// flightsuit.dm:387
 rt.def("/obj/item/device/flightpack/proc/update_icon", function* update_icon(f: Frame) {
-	if (!truthy(rt.sv(f, "flight"))) {
-		rt.setSv(f, "icon_state", rt.initial(f, live(f.src), "icon_state"));
-		rt.setSv(f, "item_state", rt.initial(f, live(f.src), "item_state"));
+	if (!this.flight) {
+		this.icon_state = rt.initial(f, this, "icon_state");
+		this.item_state = rt.initial(f, this, "item_state");
 	}
-	if (truthy(rt.sv(f, "flight"))) {
-		rt.setSv(f, "icon_state", rt.sv(f, "icon_state_active"));
-		rt.setSv(f, "item_state", rt.sv(f, "item_state_active"));
-		if (truthy(rt.sv(f, "boost"))) {
-			rt.setSv(f, "icon_state", rt.sv(f, "icon_state_boost"));
-			rt.setSv(f, "item_state", rt.sv(f, "item_state_boost"));
+	if (this.flight) {
+		this.icon_state = this.icon_state_active;
+		this.item_state = this.item_state_active;
+		if (this.boost) {
+			this.icon_state = this.icon_state_boost;
+			this.item_state = this.item_state_boost;
 		}
 	}
-	if (truthy(rt.sv(f, "wearer"))) {
-		yield* g.callName(f, rt.sv(f, "wearer"), "update_inv_wear_suit", []);
-		yield* g.callName(f, rt.sv(f, "wearer"), "update_inv_back", []);
+	if (this.wearer) {
+		yield* this.wearer.update_inv_wear_suit();
+		this.wearer.update_inv_back();
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /obj/item/device/flightpack/proc/handle_boost  (code/modules/clothing/spacesuits/flightsuit.dm:403)  may sleep
+// flightsuit.dm:403
 rt.def("/obj/item/device/flightpack/proc/handle_boost", function* handle_boost(f: Frame) {
-	if (truthy(rt.sv(f, "boost"))) {
-		rt.setSv(f, "boost_charge", (yield* g.call(f, P("/proc/max"), null, [0, (yield* g.call(f, P("/proc/min"), null, [subtract(rt.sv(f, "boost_charge"), rt.sv(f, "boost_drain")), rt.sv(f, "boost_maxcharge")]))])));
-		if (rt.lt(rt.sv(f, "boost_charge"), 1)) {
-			yield* g.srcCall(f, "deactivate_booster");
+	if (this.boost) {
+		this.boost_charge = max(0, min(this.boost_charge - this.boost_drain, this.boost_maxcharge));
+		if (this.boost_charge < 1) {
+			yield* this.deactivate_booster();
 		}
 	}
-	if (!rt.lt(rt.sv(f, "boost_charge"), rt.sv(f, "boost_maxcharge"))) return f.dot;
-	rt.setSv(f, "boost_charge", (yield* g.call(f, P("/proc/max"), null, [0, (yield* g.call(f, P("/proc/min"), null, [add(rt.sv(f, "boost_charge"), rt.sv(f, "boost_chargerate")), rt.sv(f, "boost_maxcharge")]))])));
+	if (!(this.boost_charge < this.boost_maxcharge)) return f.dot;
+	this.boost_charge = max(0, min(this.boost_charge + this.boost_chargerate, this.boost_maxcharge));
 	return f.dot;
 }, true);
 
-// /obj/item/device/flightpack/proc/cycle_power  (code/modules/clothing/spacesuits/flightsuit.dm:410)
+// flightsuit.dm:410
 rt.def("/obj/item/device/flightpack/proc/cycle_power", function cycle_power(f: Frame) {
-	if (rt.lt(rt.sv(f, "powersetting"), rt.sv(f, "powersetting_high"))) {
-		rt.incSrcVar(f, "powersetting", 1, true);
+	if (this.powersetting < this.powersetting_high) {
+		this.powersetting++;
 	} else {
-		rt.setSv(f, "powersetting", 1);
+		this.powersetting = 1;
 	}
-	rt.setSv(f, "momentum_gain", multiply(rt.sv(f, "powersetting"), 10));
-	rt.callSrc(f, "usermessage", [fmt("Engine output set to ＀.", [rt.sv(f, "momentum_gain")])]);
-	rt.setSv(f, "momentum_drift_coeff", divide(multiply(rt.sv(f, "momentum_gain"), multiply(rt.sv(f, "drift_tolerance"), 1.100000023841858)), rt.sv(f, "momentum_max")));
+	this.momentum_gain = this.powersetting * 10;
+	this.usermessage(`Engine output set to ${this.momentum_gain}.`);
+	this.momentum_drift_coeff = this.momentum_gain * (this.drift_tolerance * 1.1) / this.momentum_max;
 	return f.dot;
 });
 
-// /obj/item/device/flightpack/proc/crash_damage  (code/modules/clothing/spacesuits/flightsuit.dm:419)  may sleep
+// flightsuit.dm:419
 rt.def("/obj/item/device/flightpack/proc/crash_damage", function* crash_damage(f: Frame, density: Value, anchored: Value, speed: Value, victim_name: Value) {
-	let crashmessagesrc: Value = null, userdamage: Value = null;
-	f.vars = () => [density, anchored, speed, victim_name, crashmessagesrc, userdamage];
-	crashmessagesrc = fmt("<span class='userdanger'>＀ violently crashes into ＀, ", [rt.sv(f, "wearer"), live(victim_name)]);
-	userdamage = 10;
-	(userdamage = rt.modify(live(userdamage), multiply(rt.sv(f, "stabilizer"), 3), subtract));
-	(userdamage = rt.modify(live(userdamage), rt.fv(f, "rating", rt.sv(f, "part_bin")), subtract));
-	(userdamage = rt.modify(live(userdamage), rt.fv(f, "rating", rt.sv(f, "part_scan")), subtract));
-	(userdamage = rt.modify(live(userdamage), rt.fv(f, "rating", rt.sv(f, "part_manip")), subtract));
-	userdamage = rt.modify(live(userdamage), multiply(live(anchored), 2), add);
-	userdamage = rt.modify(live(userdamage), multiply(rt.sv(f, "boost"), 2), add);
-	if (rt.lt((userdamage = rt.modify(live(userdamage), multiply(live(speed), 2), add)), 0)) {
+	let crashmessagesrc: Value = `<span class='userdanger'>${this.wearer} violently crashes into ${victim_name}, `;
+	let userdamage: Value = 10;
+	userdamage -= this.stabilizer * 3;
+	userdamage -= this.part_bin.rating;
+	userdamage -= this.part_scan.rating;
+	userdamage -= this.part_manip.rating;
+	userdamage += anchored * 2;
+	userdamage += this.boost * 2;
+	if ((userdamage += speed * 2) < 0) {
 		userdamage = 0;
 	}
-	if (truthy(live(userdamage))) {
-		crashmessagesrc = rt.modify(live(crashmessagesrc), "that really must have hurt!", add);
+	if (userdamage) {
+		crashmessagesrc += "that really must have hurt!";
 	} else {
-		crashmessagesrc = rt.modify(live(crashmessagesrc), fmt("but luckily ＀'s impact was absorbed by their suit's stabilizers!</span>", [rt.sv(f, "wearer")]), add);
+		crashmessagesrc += `but luckily ${this.wearer}'s impact was absorbed by their suit's stabilizers!</span>`;
 	}
-	yield* g.callName(f, rt.sv(f, "wearer"), "adjustBruteLoss", [live(userdamage)]);
-	yield* g.srcCall(f, "usermessage", "WARNING: Stabilizers taking damage!", 2);
-	yield* g.callName(f, rt.sv(f, "wearer"), "visible_message", [live(crashmessagesrc)]);
-	rt.setSv(f, "crash_damage", (yield* g.call(f, P("/proc/max"), null, [0, (yield* g.call(f, P("/proc/min"), null, [add(rt.sv(f, "crash_damage"), rt.sv(f, "crash_damage_high")), multiply(rt.sv(f, "crash_disable_threshold"), 1.5)]))])));
+	yield* this.wearer.adjustBruteLoss(userdamage);
+	this.usermessage("WARNING: Stabilizers taking damage!", 2);
+	this.wearer.visible_message(crashmessagesrc);
+	this.crash_damage = max(0, min(this.crash_damage + this.crash_damage_high, this.crash_disable_threshold * 1.5));
 	return f.dot;
 }, true);
 
-// /obj/item/device/flightpack/proc/userknockback  (code/modules/clothing/spacesuits/flightsuit.dm:440)  may sleep
+// flightsuit.dm:440
 rt.def("/obj/item/device/flightpack/proc/userknockback", function* userknockback(f: Frame, density: Value, anchored: Value, speed: Value, dir: Value) {
-	let angle: Value = null, target: Value = null;
-	f.vars = () => [density, anchored, speed, dir, angle, target];
-	angle = (yield* g.call(f, P("/proc/dir2angle"), null, [live(dir)]));
-	if (rt.gt((angle = rt.modify(live(angle), 180, add)), 360)) {
-		(angle = rt.modify(live(angle), 360, subtract));
+	let angle: Value = dir2angle(dir);
+	if ((angle += 180) > 360) {
+		angle -= 360;
 	}
-	dir = (yield* g.call(f, P("/proc/angle2dir"), null, [live(angle)]));
-	target = (yield* g.call(f, P("/proc/get_edge_target_turf"), null, [rt.getStep(f, rt.sv(f, "wearer"), 0), live(dir)]));
-	yield* g.callName(f, rt.sv(f, "wearer"), "throw_at", [live(target), add(add(live(speed), live(density)), live(anchored)), 2, rt.sv(f, "wearer")]);
-	yield* g.callName(f, rt.sv(f, "wearer"), "visible_message", [fmt("＀ is knocked flying by the impact!", [rt.sv(f, "wearer")])]);
+	dir = angle2dir(angle);
+	let target: Value = get_edge_target_turf(rt.getStep(f, this.wearer, 0), dir);
+	yield* this.wearer.throw_at(target, speed + density + anchored, 2, this.wearer);
+	this.wearer.visible_message(`${this.wearer} is knocked flying by the impact!`);
 	return f.dot;
 }, true);
 
-// /obj/item/device/flightpack/proc/flight_impact  (code/modules/clothing/spacesuits/flightsuit.dm:450)  may sleep
+// flightsuit.dm:450
 rt.def("/obj/item/device/flightpack/proc/flight_impact", function* flight_impact(f: Frame, unmovablevictim: Value, crashdir: Value) {
-	let crashpower: Value = null, density: Value = null, anchored: Value = null, damage: Value = null, L: Value = null, S: Value = null, D: Value = null, victim: Value = null;
-	f.vars = () => [unmovablevictim, crashdir, crashpower, density, anchored, damage, L, S, D, victim];
-	if (((isEqual(live(unmovablevictim), rt.sv(f, "wearer")) || truthy(rt.sv(f, "crashing"))) || isEqual(rt.sv(f, "processing_mode"), 0))) {
+	let L: Value = null, S: Value = null, D: Value = null, victim: Value = null;
+	if (unmovablevictim == this.wearer || this.crashing || this.processing_mode == 0) {
 		return 0;
 	}
-	rt.setSv(f, "crashing", 1);
-	crashpower = 0;
-	if ((isEqual(live(crashdir), 1) || isEqual(live(crashdir), 2))) {
-		crashpower = rt.sv(f, "momentum_speed_y");
-	} else {
-		if ((isEqual(live(crashdir), 4) || isEqual(live(crashdir), 8))) {
-			crashpower = rt.sv(f, "momentum_speed_x");
-		}
+	this.crashing = 1;
+	let crashpower: Value = 0;
+	if (crashdir == 1 || crashdir == 2) {
+		crashpower = this.momentum_speed_y;
+	} else if (crashdir == 4 || crashdir == 8) {
+		crashpower = this.momentum_speed_x;
 	}
-	if (!truthy(rt.sv(f, "flight"))) {
-		rt.setSv(f, "crashing", 0);
+	if (!this.flight) {
+		this.crashing = 0;
 		return 0;
 	}
-	if (truthy(rt.sv(f, "boost"))) {
+	if (this.boost) {
 		crashpower = 3;
 	}
-	if (!truthy(live(crashpower))) {
-		rt.setSv(f, "crashing", 0);
+	if (!crashpower) {
+		this.crashing = 0;
 		return 0;
 	}
-	density = 0;
-	anchored = 1;
-	damage = 0;
-	if (truthy((yield* g.call(f, P("/proc/ismob"), null, [live(unmovablevictim)])))) {
-		if ((truthy(rt.gv(f, "throwing", (L = live(unmovablevictim)))) || isEqual(rt.fv(f, "pulledby", live(L)), rt.sv(f, "wearer")))) {
-			rt.setSv(f, "crashing", 0);
+	let density: Value = 0;
+	let anchored: Value = 1;
+	let damage: Value = 0;
+	if (ismob(unmovablevictim)) {
+		if ((L = unmovablevictim).throwing || L.pulledby == this.wearer) {
+			this.crashing = 0;
 			return 0;
 		}
-		if (truthy(rt.fv(f, "buckled", live(L)))) {
-			yield* g.callName(f, rt.sv(f, "wearer"), "visible_message", [fmt("<span class='warning'>＀ reflexively flies over ＀!</span>", [rt.sv(f, "wearer"), live(L)])]);
-			yield* g.callName(f, rt.sv(f, "wearer"), "forceMove", [rt.getStep(f, live(L), 0)]);
-			rt.setSv(f, "crashing", 0);
+		if (L.buckled) {
+			this.wearer.visible_message(`<span class='warning'>${this.wearer} reflexively flies over ${L}!</span>`);
+			yield* this.wearer.forceMove(rt.getStep(f, L, 0));
+			this.crashing = 0;
 			return 0;
 		}
-		yield* g.callName(f, rt.fv(f, "user", rt.sv(f, "suit")), "forceMove", [rt.getStep(f, live(unmovablevictim), 0)]);
-		rt.setSv(f, "crashing", 0);
-		yield* g.srcCall(f, "mobknockback", live(L), live(crashpower), live(crashdir));
+		yield* this.suit.user.forceMove(rt.getStep(f, unmovablevictim, 0));
+		this.crashing = 0;
+		yield* this.mobknockback(L, crashpower, crashdir);
 		damage = 0;
 		density = 1;
 		anchored = 0;
-	} else {
-		if (truthy((rt.istype(live(unmovablevictim), T("/obj/structure/grille")) ? 1 : 0))) {
-			if (rt.gt(live(crashpower), 1)) {
-				yield* g.srcCall(f, "crash_grille", (S = live(unmovablevictim)));
-			}
-			rt.setSv(f, "crashing", 0);
+	} else if (rt.istype(unmovablevictim, T("/obj/structure/grille"))) {
+		if (crashpower > 1) {
+			yield* this.crash_grille((S = unmovablevictim));
+		}
+		this.crashing = 0;
+		return 0;
+	} else if (rt.istype(unmovablevictim, T("/obj/machinery/door")) && !rt.istype(unmovablevictim, T("/obj/machinery/door/poddoor"))) {
+		if (!(yield* this.airlock_hit((D = unmovablevictim)))) {
+			this.crashing = 0;
 			return 0;
-		} else {
-			if ((truthy((rt.istype(live(unmovablevictim), T("/obj/machinery/door")) ? 1 : 0)) && !truthy((rt.istype(live(unmovablevictim), T("/obj/machinery/door/poddoor")) ? 1 : 0)))) {
-				if (!truthy((yield* g.srcCall(f, "airlock_hit", (D = live(unmovablevictim)))))) {
-					rt.setSv(f, "crashing", 0);
-					return 0;
-				} else {
-					if (rt.lt(rt.sv(f, "momentum_speed"), 3)) {
-						rt.setSv(f, "crashing", 0);
-						return 0;
-					}
-				}
-				damage = 1;
-				anchored = 1;
-				density = 0;
-			} else {
-				if (truthy((rt.istype(live(unmovablevictim), T("/obj/structure/mineral_door")) ? 1 : 0))) {
-					yield* g.srcCall(f, "door_hit", (D = live(unmovablevictim)));
-					rt.setSv(f, "crashing", 0);
-					return 0;
-				} else {
-					if (truthy((rt.istype(live(unmovablevictim), T("/turf/closed")) ? 1 : 0))) {
-						if (rt.lt(live(crashpower), 3)) {
-							rt.setSv(f, "crashing", 0);
-							return 0;
-						}
-						damage = 1;
-						density = 1;
-						anchored = 1;
-					} else {
-						if (truthy((rt.istype(live(unmovablevictim), T("/atom/movable")) ? 1 : 0))) {
-							victim = live(unmovablevictim);
-							if ((rt.lt(live(crashpower), 3) || truthy(rt.fv(f, "throwing", live(victim))))) {
-								rt.setSv(f, "crashing", 0);
-								return 0;
-							}
-							density = rt.fv(f, "density", live(victim));
-							anchored = rt.fv(f, "anchored", live(victim));
-							yield* g.srcCall(f, "victimknockback", live(victim), live(crashpower), live(crashdir));
-							if (truthy(live(anchored))) {
-								damage = 1;
-							}
-						}
-					}
-				}
-			}
+		} else if (this.momentum_speed < 3) {
+			this.crashing = 0;
+			return 0;
+		}
+		damage = 1;
+		anchored = 1;
+		density = 0;
+	} else if (rt.istype(unmovablevictim, T("/obj/structure/mineral_door"))) {
+		yield* this.door_hit((D = unmovablevictim));
+		this.crashing = 0;
+		return 0;
+	} else if (rt.istype(unmovablevictim, T("/turf/closed"))) {
+		if (crashpower < 3) {
+			this.crashing = 0;
+			return 0;
+		}
+		damage = 1;
+		density = 1;
+		anchored = 1;
+	} else if (rt.istype(unmovablevictim, T("/atom/movable"))) {
+		victim = unmovablevictim;
+		if (crashpower < 3 || victim.throwing) {
+			this.crashing = 0;
+			return 0;
+		}
+		density = victim.density;
+		anchored = victim.anchored;
+		yield* this.victimknockback(victim, crashpower, crashdir);
+		if (anchored) {
+			damage = 1;
 		}
 	}
-	if (truthy(live(damage))) {
-		yield* g.srcCall(f, "crash_damage", live(density), live(anchored), rt.sv(f, "momentum_speed"), rt.fv(f, "name", live(unmovablevictim)));
-		yield* g.srcCall(f, "userknockback", live(density), live(anchored), rt.sv(f, "momentum_speed"), rt.sv(f, "dir"));
-		yield* g.callSrc(f, "losecontrol", ["knockdown", 0, "move", 0], rt.Args.Named);
+	if (damage) {
+		yield* this.crash_damage(density, anchored, this.momentum_speed, unmovablevictim.name);
+		yield* this.userknockback(density, anchored, this.momentum_speed, this.dir);
+		yield* this.losecontrol({ knockdown: 0, move: 0 });
 	}
-	rt.setSv(f, "crashing", 0);
+	this.crashing = 0;
 	return f.dot;
 }, true);
 
-// /obj/item/device/flightpack/proc/door_hit  (code/modules/clothing/spacesuits/flightsuit.dm:532)  may sleep
+// flightsuit.dm:532
 rt.def("/obj/item/device/flightpack/proc/door_hit", function* door_hit(f: Frame, door: Value) {
-	f.vars = () => [door];
 	rt.spawnTail(f, 0, "/obj/item/device/flightpack/proc/door_hit: spawn at modules/clothing/spacesuits/flightsuit.dm:532", door);
-	yield* g.callName(f, rt.sv(f, "wearer"), "forceMove", [rt.getStep(f, live(door), 0)]);
-	if (truthy(rt.sv(f, "dragging_through"))) {
-		yield* g.callName(f, rt.sv(f, "dragging_through"), "forceMove", [rt.getStep(f, live(door), 0)]);
-		rt.setFv(f, "pulling", rt.sv(f, "wearer"), rt.sv(f, "dragging_through"));
+	yield* this.wearer.forceMove(rt.getStep(f, door, 0));
+	if (this.dragging_through) {
+		yield* this.dragging_through.forceMove(rt.getStep(f, door, 0));
+		this.wearer.pulling = this.dragging_through;
 	}
-	yield* g.callName(f, rt.sv(f, "wearer"), "visible_message", [fmt("<span class='boldnotice'>＀ rolls to their sides and slips past ＀!</span>", [rt.sv(f, "wearer"), live(door)])]);
+	this.wearer.visible_message(`<span class='boldnotice'>${this.wearer} rolls to their sides and slips past ${door}!</span>`);
 	return f.dot;
 }, true);
 
 // a spawn(0) body of /obj/item/device/flightpack/proc/door_hit, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/obj/item/device/flightpack/proc/door_hit: spawn at modules/clothing/spacesuits/flightsuit.dm:532", function* (f: Frame, door: Value) {
-	f.vars = () => [door];
-	yield* g.callName(f, live(door), "Open", []);
+	yield* door.Open();
 	return null;
 });
 
-// /obj/item/device/flightpack/proc/crash_grille  (code/modules/clothing/spacesuits/flightsuit.dm:541)  may sleep
+// flightsuit.dm:541
 rt.def("/obj/item/device/flightpack/proc/crash_grille", function* crash_grille(f: Frame, target: Value) {
-	f.vars = () => [target];
-	yield* g.callName(f, live(target), "hitby", [rt.sv(f, "wearer")]);
-	yield* g.callName(f, live(target), "take_damage", [60, "brute", "melee", 1]);
-	if (!truthy((yield* g.callName(f, rt.sv(f, "wearer"), "Move", [rt.fv(f, "loc", live(target))])))) return f.dot;
-	yield* g.callName(f, rt.sv(f, "wearer"), "visible_message", [fmt("<span class='warning'>＀ smashes straight past ＀!</span>", [rt.sv(f, "wearer"), live(target)])]);
+	yield* target.hitby(this.wearer);
+	yield* target.take_damage(60, "brute", "melee", 1);
+	if (!(yield* this.wearer.Move(target.loc))) return f.dot;
+	this.wearer.visible_message(`<span class='warning'>${this.wearer} smashes straight past ${target}!</span>`);
 	return f.dot;
 }, true);
 
-// /obj/item/device/flightpack/proc/airlock_hit  (code/modules/clothing/spacesuits/flightsuit.dm:548)  may sleep
+// flightsuit.dm:548
 rt.def("/obj/item/device/flightpack/proc/airlock_hit", function* airlock_hit(f: Frame, A: Value) {
-	let pass: Value = null, target: Value = null;
-	f.vars = () => [A, pass, target];
-	pass = 0;
-	if (truthy(rt.fv(f, "density", live(A)))) {
-		pass = rt.modify(live(pass), rt.fv(f, "locked", live(A)), add);
-		pass = rt.modify(live(pass), rt.fv(f, "stat", live(A)), add);
-		pass = rt.modify(live(pass), rt.fv(f, "emagged", live(A)), add);
-		pass = rt.modify(live(pass), rt.fv(f, "welded", live(A)), add);
-		if (truthy((yield* g.callName(f, live(A), "requiresID", [])))) {
-			if ((!truthy((yield* g.callName(f, live(A), "allowed", [rt.sv(f, "wearer")]))) && !truthy(rt.fv(f, "emergency", live(A))))) {
-				pass = rt.modify(live(pass), 1, add);
+	let target: Value = null;
+	let pass: Value = 0;
+	if (A.density) {
+		pass += A.locked;
+		pass += A.stat;
+		pass += A.emagged;
+		pass += A.welded;
+		if (A.requiresID()) {
+			if (!(yield* A.allowed(this.wearer)) && !A.emergency) {
+				pass += 1;
 			}
 		}
 	} else {
-		return live(pass);
+		return pass;
 	}
-	if (!truthy(live(pass))) {
+	if (!pass) {
 		rt.spawnTail(f, 0, "/obj/item/device/flightpack/proc/airlock_hit: spawn at modules/clothing/spacesuits/flightsuit.dm:559", A, pass, target);
-		yield* g.callName(f, rt.sv(f, "wearer"), "visible_message", [fmt("<span class='warning'>＀ rolls sideways and slips past ＀</span>", [rt.sv(f, "wearer"), live(A)])]);
-		target = rt.getStep(f, live(A), 0);
-		if ((truthy((rt.istype(live(A), T("/obj/machinery/door/window")) ? 1 : 0)) && isEqual(rt.getStep(f, rt.sv(f, "wearer"), 0), rt.getStep(f, live(A), 0)))) {
-			target = rt.getStep(f, live(A), rt.fv(f, "dir", live(A)));
+		this.wearer.visible_message(`<span class='warning'>${this.wearer} rolls sideways and slips past ${A}</span>`);
+		target = rt.getStep(f, A, 0);
+		if (rt.istype(A, T("/obj/machinery/door/window")) && rt.getStep(f, this.wearer, 0) == rt.getStep(f, A, 0)) {
+			target = rt.getStep(f, A, A.dir);
 		}
-		yield* g.callName(f, rt.sv(f, "wearer"), "forceMove", [live(target)]);
-		if (truthy(rt.sv(f, "dragging_through"))) {
-			yield* g.callName(f, rt.sv(f, "dragging_through"), "forceMove", [live(target)]);
-			rt.setFv(f, "pulling", rt.sv(f, "wearer"), rt.sv(f, "dragging_through"));
+		yield* this.wearer.forceMove(target);
+		if (this.dragging_through) {
+			yield* this.dragging_through.forceMove(target);
+			this.wearer.pulling = this.dragging_through;
 		}
 	}
-	return live(pass);
+	return pass;
 }, true);
 
 // a spawn(0) body of /obj/item/device/flightpack/proc/airlock_hit, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/obj/item/device/flightpack/proc/airlock_hit: spawn at modules/clothing/spacesuits/flightsuit.dm:559", function* (f: Frame, A: Value, pass: Value, target: Value) {
-	f.vars = () => [A, pass, target];
-	yield* g.callName(f, live(A), "open", []);
+	yield* A.open();
 	return null;
 });
 
-// /obj/item/device/flightpack/proc/mobknockback  (code/modules/clothing/spacesuits/flightsuit.dm:573)  may sleep
+// flightsuit.dm:573
 rt.def("/obj/item/device/flightpack/proc/mobknockback", function* mobknockback(f: Frame, victim: Value, power: Value, direction: Value) {
-	f.vars = () => [victim, power, direction];
-	if (!truthy((yield* g.call(f, P("/proc/ismob"), null, [live(victim)])))) {
+	if (!ismob(victim)) {
 		return 0;
 	}
-	yield* g.callName(f, rt.sv(f, "wearer"), "forceMove", [rt.getStep(f, live(victim), 0)]);
-	yield* g.callName(f, rt.sv(f, "wearer"), "visible_message", [fmt("<span class='notice'>＀ flies over ＀!</span>", [rt.sv(f, "wearer"), live(victim)])]);
+	yield* this.wearer.forceMove(rt.getStep(f, victim, 0));
+	this.wearer.visible_message(`<span class='notice'>${this.wearer} flies over ${victim}!</span>`);
 	return f.dot;
 }, true);
 
-// /obj/item/device/flightpack/proc/victimknockback  (code/modules/clothing/spacesuits/flightsuit.dm:579)  may sleep
+// flightsuit.dm:579
 rt.def("/obj/item/device/flightpack/proc/victimknockback", function* victimknockback(f: Frame, victim: Value, power: Value, direction: Value) {
-	let knockback: Value = null, damage: Value = null, target: Value = null, i: Value = null, O: Value = null;
+	let i: Value = null, O: Value = null;
 	let $e: any;
-	f.vars = () => [victim, power, direction, knockback, damage, target, i, O, $e];
-	if (!truthy(live(victim))) {
+	if (!victim) {
 		return 0;
 	}
-	knockback = 0;
-	damage = 0;
-	(knockback = rt.modify(live(knockback), multiply(rt.sv(f, "density"), 2), subtract));
-	knockback = rt.modify(live(knockback), live(power), add);
-	knockback = rt.modify(live(knockback), divide(rt.fv(f, "rating", rt.sv(f, "part_manip")), 2), add);
-	knockback = rt.modify(live(knockback), divide(rt.fv(f, "rating", rt.sv(f, "part_bin")), 2), add);
-	(knockback = rt.modify(live(knockback), 4, multiply));
-	if (truthy(rt.fv(f, "anchored", live(victim)))) {
+	let knockback: Value = 0;
+	let damage: Value = 0;
+	knockback -= this.density * 2;
+	knockback += power;
+	knockback += this.part_manip.rating / 2;
+	knockback += this.part_bin.rating / 2;
+	knockback *= 4;
+	if (victim.anchored) {
 		knockback = 0;
 	}
-	damage = multiply(live(power), 14);
-	if (truthy((yield* g.call(f, P("/proc/ismob"), null, [live(victim)])))) {
-		yield* g.srcCall(f, "mobknockback", live(victim), live(power), live(direction));
+	damage = power * 14;
+	if (ismob(victim)) {
+		yield* this.mobknockback(victim, power, direction);
 		return 0;
 	}
-	if (truthy(rt.sv(f, "anchored"))) {
+	if (this.anchored) {
 		knockback = 0;
 	}
-	yield* g.callName(f, live(victim), "visible_message", [fmt("<span class='warning'>＀ is sent flying by the impact!</span>", [rt.fv(f, "name", live(victim))])]);
-	target = rt.getStep(f, live(victim), 0);
-	i = null;
-	rt.forRange(f, 0, 1, live(knockback), 1);
+	victim.visible_message(`<span class='warning'>${victim.name} is sent flying by the impact!</span>`);
+	let target: Value = rt.getStep(f, victim, 0);
+	rt.forRange(f, 0, 1, knockback, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		target = rt.getStep(f, live(target), live(direction));
+		target = rt.getStep(f, target, direction);
 	}
 	rt.endFor(f, 0);
 	i = null;
-	rt.forRange(f, 0, 1, divide(live(knockback), 3), 1);
+	rt.forRange(f, 0, 1, knockback / 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		target = rt.getStep(f, live(target), rt.op(f, "PickUnweighted", [1], [rt.gl("alldirs")]));
+		target = rt.getStep(f, target, pick(GLOB.alldirs));
 	}
 	rt.endFor(f, 0);
-	if (truthy(live(knockback))) {
-		yield* g.callName(f, live(victim), "throw_at", [live(target), live(knockback), rt.fv(f, "rating", rt.sv(f, "part_manip"))]);
+	if (knockback) {
+		yield* victim.throw_at(target, knockback, this.part_manip.rating);
 	}
-	if (!truthy((rt.istype(live(victim), T("/obj")) ? 1 : 0))) return f.dot;
-	yield* g.callName(f, (O = live(victim)), "take_damage", [live(damage)]);
+	if (!rt.istype(victim, T("/obj"))) return f.dot;
+	yield* (O = victim).take_damage(damage);
 	return f.dot;
 }, true);
 
-// /obj/item/device/flightpack/proc/losecontrol  (code/modules/clothing/spacesuits/flightsuit.dm:609)  may sleep
+// flightsuit.dm:609
 rt.def("/obj/item/device/flightpack/proc/losecontrol", function* losecontrol(f: Frame, knockdown: Value, move: Value) {
-	f.vars = () => [knockdown, move];
-	if (live(knockdown) === null) {
-		knockdown = 0;
+	knockdown ??= 0;
+	move ??= 1;
+	if (!move) {
+		this.momentum_x = 0;
+		this.momentum_y = 0;
+		this.calculate_momentum_speed();
 	}
-	if (live(move) === null) {
-		move = 1;
-	}
-	if (!truthy(live(move))) {
-		rt.setSv(f, "momentum_x", 0);
-		rt.setSv(f, "momentum_y", 0);
-		yield* g.srcCall(f, "calculate_momentum_speed");
-	}
-	yield* g.srcCall(f, "usermessage", "Warning: Control system not responding. Deactivating!", 3);
-	yield* g.callName(f, rt.sv(f, "wearer"), "visible_message", [fmt("<span class='warning'>＀'s flight suit abruptly shuts off and they lose control!</span>", [rt.sv(f, "wearer")])]);
-	if (truthy(rt.sv(f, "wearer"))) {
-		if (truthy(live(move))) {
-			while (!isEqual(rt.sv(f, "momentum_x"), 0) || !isEqual(rt.sv(f, "momentum_y"), 0)) {
-				yield* g.call(f, P("/proc/sleep"), null, [2]);
-				yield* g.call(f, P("/proc/step"), null, [rt.sv(f, "wearer"), rt.op(f, "PickUnweighted", [1], [rt.gl("cardinal")])]);
-				yield* g.srcCall(f, "momentum_decay");
-				yield* g.srcCall(f, "adjust_momentum", 0, 0, 10);
+	this.usermessage("Warning: Control system not responding. Deactivating!", 3);
+	this.wearer.visible_message(`<span class='warning'>${this.wearer}'s flight suit abruptly shuts off and they lose control!</span>`);
+	if (this.wearer) {
+		if (move) {
+			while (this.momentum_x != 0 || this.momentum_y != 0) {
+				yield* sleep(2);
+				yield* step(this.wearer, pick(GLOB.cardinal));
+				this.momentum_decay();
+				this.adjust_momentum(0, 0, 10);
 			}
 		}
-		yield* g.callName(f, rt.sv(f, "wearer"), "visible_message", [fmt("<span class='warning'>＀'s flight suit crashes into the ground!</span>", [rt.sv(f, "wearer")])]);
-		if (truthy(live(knockdown))) {
-			yield* g.callName(f, rt.sv(f, "wearer"), "Knockdown", [80]);
+		this.wearer.visible_message(`<span class='warning'>${this.wearer}'s flight suit crashes into the ground!</span>`);
+		if (knockdown) {
+			yield* this.wearer.Knockdown(80);
 		}
 	}
-	rt.setSv(f, "momentum_x", 0);
-	rt.setSv(f, "momentum_y", 0);
-	if (!truthy(rt.sv(f, "flight"))) return f.dot;
-	yield* g.srcCall(f, "disable_flight", 0);
+	this.momentum_x = 0;
+	this.momentum_y = 0;
+	if (!this.flight) return f.dot;
+	yield* this.disable_flight(0);
 	return f.dot;
 }, true);
 
-// /obj/item/device/flightpack/proc/enable_flight  (code/modules/clothing/spacesuits/flightsuit.dm:631)  may sleep
+// flightsuit.dm:631
 rt.def("/obj/item/device/flightpack/proc/enable_flight", function* enable_flight(f: Frame, forced: Value) {
-	f.vars = () => [forced];
-	if (live(forced) === null) {
-		forced = 0;
+	forced ??= 0;
+	if (!this.suit) {
+		this.usermessage("Warning: Flightpack not linked to compatible flight-suit mount!", 2);
 	}
-	if (!truthy(rt.sv(f, "suit"))) {
-		yield* g.srcCall(f, "usermessage", "Warning: Flightpack not linked to compatible flight-suit mount!", 2);
+	if (this.disabled) {
+		this.usermessage("Internal systems recalibrating. Unable to safely proceed.", 2);
 	}
-	if (truthy(rt.sv(f, "disabled"))) {
-		yield* g.srcCall(f, "usermessage", "Internal systems recalibrating. Unable to safely proceed.", 2);
+	(rt.modField(f, this.wearer, "movement_type", 2, rt.bitOr));
+	(rt.modField(f, this.wearer, "pass_flags", this.flight_passflags, rt.bitOr));
+	this.usermessage("ENGAGING FLIGHT ENGINES.");
+	this.update_slowdown();
+	this.wearer.floating = 1;
+	this.wearer.visible_message(`<font color='blue' size='2'>${this.wearer}'s flight engines activate as they lift into the air!</font>`);
+	this.flight = 1;
+	if (this.suit.shoes) {
+		yield* this.suit.shoes.toggle(1);
 	}
-	(rt.modField(f, rt.sv(f, "wearer"), "movement_type", 2, rt.bitOr));
-	(rt.modField(f, rt.sv(f, "wearer"), "pass_flags", rt.sv(f, "flight_passflags"), rt.bitOr));
-	yield* g.srcCall(f, "usermessage", "ENGAGING FLIGHT ENGINES.");
-	yield* g.srcCall(f, "update_slowdown");
-	rt.setFv(f, "floating", rt.sv(f, "wearer"), 1);
-	yield* g.callName(f, rt.sv(f, "wearer"), "visible_message", [fmt("<font color='blue' size='2'>＀'s flight engines activate as they lift into the air!</font>", [rt.sv(f, "wearer")])]);
-	rt.setSv(f, "flight", 1);
-	if (truthy(rt.fv(f, "shoes", rt.sv(f, "suit")))) {
-		yield* g.callName(f, rt.fv(f, "shoes", rt.sv(f, "suit")), "toggle", [1]);
-	}
-	yield* g.srcCall(f, "update_icon");
-	yield* g.callName(f, rt.sv(f, "ion_trail"), "start", []);
+	yield* this.update_icon();
+	yield* this.ion_trail.start();
 	return f.dot;
 }, true);
 
-// /obj/item/device/flightpack/proc/disable_flight  (code/modules/clothing/spacesuits/flightsuit.dm:650)  may sleep
+// flightsuit.dm:650
 rt.def("/obj/item/device/flightpack/proc/disable_flight", function* disable_flight(f: Frame, forced: Value) {
 	let _T: Value = null;
-	f.vars = () => [forced, _T];
-	if (live(forced) === null) {
-		forced = 0;
-	}
-	if (truthy(live(forced))) {
-		yield* g.callSrc(f, "losecontrol", ["knockdown", 1], rt.Args.Named);
+	forced ??= 0;
+	if (forced) {
+		yield* this.losecontrol({ knockdown: 1 });
 		return 1;
 	}
-	if (rt.le(rt.sv(f, "momentum_speed"), 1)) {
-		rt.setSv(f, "momentum_x", 0);
-		rt.setSv(f, "momentum_y", 0);
-		yield* g.srcCall(f, "usermessage", "DISENGAGING FLIGHT ENGINES.");
-		yield* g.srcCall(f, "update_slowdown");
-		rt.setFv(f, "floating", rt.sv(f, "wearer"), 0);
-		yield* g.callName(f, rt.sv(f, "wearer"), "visible_message", [fmt("<font color='blue' size='2'>＀ drops to the ground as their flight engines cut out!</font>", [rt.sv(f, "wearer")])]);
-		yield* g.callName(f, rt.sv(f, "ion_trail"), "stop", []);
-		(rt.modField(f, rt.sv(f, "wearer"), "movement_type", 16777213, rt.bitAnd));
-		(rt.modField(f, rt.sv(f, "wearer"), "pass_flags", rt.op(f, "BitNot", [], [rt.sv(f, "flight_passflags")]), rt.bitAnd));
-		rt.setSv(f, "flight", 0);
-		if (truthy(rt.fv(f, "shoes", rt.sv(f, "suit")))) {
-			yield* g.callName(f, rt.fv(f, "shoes", rt.sv(f, "suit")), "toggle", [0]);
+	if (this.momentum_speed <= 1) {
+		this.momentum_x = 0;
+		this.momentum_y = 0;
+		this.usermessage("DISENGAGING FLIGHT ENGINES.");
+		this.update_slowdown();
+		this.wearer.floating = 0;
+		this.wearer.visible_message(`<font color='blue' size='2'>${this.wearer} drops to the ground as their flight engines cut out!</font>`);
+		yield* this.ion_trail.stop();
+		(rt.modField(f, this.wearer, "movement_type", 16777213, rt.bitAnd));
+		(rt.modField(f, this.wearer, "pass_flags", rt.op(f, "BitNot", [], [this.flight_passflags]), rt.bitAnd));
+		this.flight = 0;
+		if (this.suit.shoes) {
+			yield* this.suit.shoes.toggle(0);
 		}
-		if (truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.fv(f, "loc", rt.sv(f, "wearer"))])))) {
-			yield* g.callName(f, (_T = rt.fv(f, "loc", rt.sv(f, "wearer"))), "Entered", [live(f.src)]);
+		if (isturf(this.wearer.loc)) {
+			yield* (_T = this.wearer.loc).Entered(this);
 		}
 	} else {
-		if (truthy(rt.sv(f, "override_safe"))) {
-			yield* g.srcCall(f, "disable_flight", 1);
+		if (this.override_safe) {
+			yield* this.disable_flight(1);
 			return 1;
 		}
-		yield* g.srcCall(f, "usermessage", "Warning: Velocity too high to safely disengage. Retry to confirm emergency shutoff.", 2);
-		rt.setSv(f, "override_safe", 1);
-		yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/item/device/flightpack/proc/enable_safe")])), 50]);
+		this.usermessage("Warning: Velocity too high to safely disengage. Retry to confirm emergency shutoff.", 2);
+		this.override_safe = 1;
+		yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/item/device/flightpack/proc/enable_safe"))), 50);
 		return 0;
 	}
-	yield* g.srcCall(f, "update_icon");
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/item/device/flightpack/proc/dropped  (code/modules/clothing/spacesuits/flightsuit.dm:684)  may sleep
-rt.def("/obj/item/device/flightpack/proc/dropped", function* dropped(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
+// flightsuit.dm:684
+rt.def("/obj/item/device/flightpack/proc/dropped", function* dropped(f: Frame, wearer: Value) {
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["wearer"] });
+}, true);
 
-// /obj/item/device/flightpack/proc/item_action_slot_check  (code/modules/clothing/spacesuits/flightsuit.dm:687)
+// flightsuit.dm:687
 rt.def("/obj/item/device/flightpack/proc/item_action_slot_check", function item_action_slot_check(f: Frame, slot: Value) {
-	if (!isEqual(live(slot), 1024)) return f.dot;
+	if (slot != SLOT_BACK) return f.dot;
 	return 1;
 });
 
-// /obj/item/device/flightpack/proc/equipped  (code/modules/clothing/spacesuits/flightsuit.dm:691)  may sleep
-rt.def("/obj/item/device/flightpack/proc/equipped", function* equipped(f: Frame) {
-	if (truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		rt.setSv(f, "wearer", live(f.args[0]));
+// flightsuit.dm:691
+rt.def("/obj/item/device/flightpack/proc/equipped", function* equipped(f: Frame, user: Value, slot: Value) {
+	if (rt.istype(user, T("/mob/living/carbon/human"))) {
+		this.wearer = user;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["user", "slot"] });
+}, true);
 
-// /obj/item/device/flightpack/proc/calculate_momentum_speed  (code/modules/clothing/spacesuits/flightsuit.dm:696)
+// flightsuit.dm:696
 rt.def("/obj/item/device/flightpack/proc/calculate_momentum_speed", function calculate_momentum_speed(f: Frame) {
-	if (rt.ge(rt.op(f, "Abs", [], [rt.sv(f, "momentum_x")]), multiply(rt.sv(f, "momentum_crash_coeff"), rt.sv(f, "momentum_max")))) {
-		rt.setSv(f, "momentum_speed_x", 3);
+	if (rt.op(f, "Abs", [], [this.momentum_x]) >= this.momentum_crash_coeff * this.momentum_max) {
+		this.momentum_speed_x = 3;
+	} else if (rt.op(f, "Abs", [], [this.momentum_x]) >= this.momentum_impact_coeff * this.momentum_max) {
+		this.momentum_speed_x = 2;
+	} else if (rt.op(f, "Abs", [], [this.momentum_x]) >= this.momentum_drift_coeff * this.momentum_max) {
+		this.momentum_speed_x = 1;
 	} else {
-		if (rt.ge(rt.op(f, "Abs", [], [rt.sv(f, "momentum_x")]), multiply(rt.sv(f, "momentum_impact_coeff"), rt.sv(f, "momentum_max")))) {
-			rt.setSv(f, "momentum_speed_x", 2);
-		} else {
-			if (rt.ge(rt.op(f, "Abs", [], [rt.sv(f, "momentum_x")]), multiply(rt.sv(f, "momentum_drift_coeff"), rt.sv(f, "momentum_max")))) {
-				rt.setSv(f, "momentum_speed_x", 1);
-			} else {
-				rt.setSv(f, "momentum_speed_x", 0);
-			}
-		}
+		this.momentum_speed_x = 0;
 	}
-	if (rt.ge(rt.op(f, "Abs", [], [rt.sv(f, "momentum_y")]), multiply(rt.sv(f, "momentum_crash_coeff"), rt.sv(f, "momentum_max")))) {
-		rt.setSv(f, "momentum_speed_y", 3);
+	if (rt.op(f, "Abs", [], [this.momentum_y]) >= this.momentum_crash_coeff * this.momentum_max) {
+		this.momentum_speed_y = 3;
+	} else if (rt.op(f, "Abs", [], [this.momentum_y]) >= this.momentum_impact_coeff * this.momentum_max) {
+		this.momentum_speed_y = 2;
+	} else if (rt.op(f, "Abs", [], [this.momentum_y]) >= this.momentum_drift_coeff * this.momentum_max) {
+		this.momentum_speed_y = 1;
 	} else {
-		if (rt.ge(rt.op(f, "Abs", [], [rt.sv(f, "momentum_y")]), multiply(rt.sv(f, "momentum_impact_coeff"), rt.sv(f, "momentum_max")))) {
-			rt.setSv(f, "momentum_speed_y", 2);
-		} else {
-			if (rt.ge(rt.op(f, "Abs", [], [rt.sv(f, "momentum_y")]), multiply(rt.sv(f, "momentum_drift_coeff"), rt.sv(f, "momentum_max")))) {
-				rt.setSv(f, "momentum_speed_y", 1);
-			} else {
-				rt.setSv(f, "momentum_speed_y", 0);
-			}
-		}
+		this.momentum_speed_y = 0;
 	}
-	rt.setSv(f, "momentum_speed", rt.call(f, P("/proc/max"), null, [rt.sv(f, "momentum_speed_x"), rt.sv(f, "momentum_speed_y")]));
+	this.momentum_speed = max(this.momentum_speed_x, this.momentum_speed_y);
 	return f.dot;
 });
 
-// /obj/item/device/flightpack/proc/item_action_slot_check  (code/modules/clothing/spacesuits/flightsuit.dm:715)
+// flightsuit.dm:715
 rt.def("/obj/item/device/flightpack/proc/item_action_slot_check", function item_action_slot_check(f: Frame, slot: Value) {
-	if (!isEqual(live(slot), 1)) return f.dot;
+	if (slot != 1) return f.dot;
 	return 1;
 });
 
-// /obj/item/device/flightpack/proc/enable_stabilizers  (code/modules/clothing/spacesuits/flightsuit.dm:719)
+// flightsuit.dm:719
 rt.def("/obj/item/device/flightpack/proc/enable_stabilizers", function enable_stabilizers(f: Frame) {
-	rt.callSrc(f, "usermessage", ["Activating automatic stabilization controller and enabling maneuvering assistance."]);
-	rt.setSv(f, "stabilizer", 1);
+	this.usermessage("Activating automatic stabilization controller and enabling maneuvering assistance.");
+	this.stabilizer = 1;
 	return f.dot;
 });
 
-// /obj/item/device/flightpack/proc/disable_stabilizers  (code/modules/clothing/spacesuits/flightsuit.dm:725)
+// flightsuit.dm:725
 rt.def("/obj/item/device/flightpack/proc/disable_stabilizers", function disable_stabilizers(f: Frame) {
-	if (truthy(rt.sv(f, "wearer"))) {
-		if (truthy(rt.sv(f, "brake"))) {
-			rt.callSrc(f, "disable_airbrake", []);
+	if (this.wearer) {
+		if (this.brake) {
+			this.disable_airbrake();
 		}
-		rt.callSrc(f, "usermessage", ["Deactivating stabilization controllers!", 2]);
+		this.usermessage("Deactivating stabilization controllers!", 2);
 	}
-	rt.setSv(f, "stabilizer", 0);
+	this.stabilizer = 0;
 	return f.dot;
 });
 
-// /obj/item/device/flightpack/proc/activate_booster  (code/modules/clothing/spacesuits/flightsuit.dm:730)  may sleep
+// flightsuit.dm:730
 rt.def("/obj/item/device/flightpack/proc/activate_booster", function* activate_booster(f: Frame) {
-	if (!truthy(rt.sv(f, "flight"))) {
-		yield* g.srcCall(f, "usermessage", "Error: Engines offline!", 2);
+	if (!this.flight) {
+		this.usermessage("Error: Engines offline!", 2);
 		return 0;
 	}
-	if (rt.lt(rt.sv(f, "boost_charge"), 5)) {
-		yield* g.srcCall(f, "usermessage", "Insufficient charge in boost capacitors to engage.", 2);
+	if (this.boost_charge < 5) {
+		this.usermessage("Insufficient charge in boost capacitors to engage.", 2);
 		return 0;
 	}
-	yield* g.srcCall(f, "usermessage", "Boosters engaged!");
-	yield* g.callName(f, rt.sv(f, "wearer"), "visible_message", [fmt("<span class='notice'>＀'s flightpack engines flare in intensity as they are rocketed forward by the immense thrust!</span>", [rt.fv(f, "name", rt.sv(f, "wearer"))])]);
-	rt.setSv(f, "boost", 1);
-	yield* g.srcCall(f, "update_slowdown");
-	yield* g.srcCall(f, "update_icon");
+	this.usermessage("Boosters engaged!");
+	this.wearer.visible_message(`<span class='notice'>${this.wearer.name}'s flightpack engines flare in intensity as they are rocketed forward by the immense thrust!</span>`);
+	this.boost = 1;
+	this.update_slowdown();
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/item/device/flightpack/proc/deactivate_booster  (code/modules/clothing/spacesuits/flightsuit.dm:743)  may sleep
+// flightsuit.dm:743
 rt.def("/obj/item/device/flightpack/proc/deactivate_booster", function* deactivate_booster(f: Frame) {
-	yield* g.srcCall(f, "usermessage", "Boosters disengaged!");
-	rt.setSv(f, "boost", 0);
-	yield* g.srcCall(f, "update_slowdown");
-	yield* g.srcCall(f, "update_icon");
+	this.usermessage("Boosters disengaged!");
+	this.boost = 0;
+	this.update_slowdown();
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/item/device/flightpack/proc/enable_airbrake  (code/modules/clothing/spacesuits/flightsuit.dm:750)
+// flightsuit.dm:750
 rt.def("/obj/item/device/flightpack/proc/enable_airbrake", function enable_airbrake(f: Frame) {
-	if (truthy(rt.sv(f, "wearer"))) {
-		if (!truthy(rt.sv(f, "stabilizer"))) {
-			rt.callSrc(f, "enable_stabilizers", []);
-			rt.callSrc(f, "usermessage", ["Stabilizers activated!"]);
+	if (this.wearer) {
+		if (!this.stabilizer) {
+			this.enable_stabilizers();
+			this.usermessage("Stabilizers activated!");
 		}
-		rt.callSrc(f, "usermessage", ["Airbrakes extended!"]);
+		this.usermessage("Airbrakes extended!");
 	}
-	rt.setSv(f, "brake", 1);
-	rt.callSrc(f, "update_slowdown", []);
+	this.brake = 1;
+	this.update_slowdown();
 	return f.dot;
 });
 
-// /obj/item/device/flightpack/proc/disable_airbrake  (code/modules/clothing/spacesuits/flightsuit.dm:759)
+// flightsuit.dm:759
 rt.def("/obj/item/device/flightpack/proc/disable_airbrake", function disable_airbrake(f: Frame) {
-	if (truthy(rt.sv(f, "wearer"))) {
-		rt.callSrc(f, "usermessage", ["Airbrakes retracted!"]);
+	if (this.wearer) {
+		this.usermessage("Airbrakes retracted!");
 	}
-	rt.setSv(f, "brake", 0);
-	rt.callSrc(f, "update_slowdown", []);
+	this.brake = 0;
+	this.update_slowdown();
 	return f.dot;
 });
 
-// /obj/item/device/flightpack/proc/on_mob_move  (code/modules/clothing/spacesuits/flightsuit.dm:764)
+// flightsuit.dm:764
 rt.def("/obj/item/device/flightpack/proc/on_mob_move", function on_mob_move(f: Frame, dir: Value, mob: Value) {
-	rt.callSrc(f, "wearer_movement", [live(dir)]);
+	this.wearer_movement(dir);
 	return f.dot;
 });
 
-// /obj/item/device/flightpack/proc/relink_suit  (code/modules/clothing/spacesuits/flightsuit.dm:767)
+// flightsuit.dm:767
 rt.def("/obj/item/device/flightpack/proc/relink_suit", function relink_suit(f: Frame, F: Value) {
-	if ((truthy(rt.sv(f, "suit")) && isEqual(rt.sv(f, "suit"), live(F)))) {
+	if (this.suit && this.suit == F) {
 		return 0;
 	} else {
-		rt.callSrc(f, "delink_suit", []);
+		this.delink_suit();
 	}
-	if (truthy((rt.istype(live(F), T("/obj/item/clothing/suit/space/hardsuit/flightsuit")) ? 1 : 0))) {
-		rt.setSv(f, "suit", live(F));
-		rt.setFv(f, "pack", rt.sv(f, "suit"), live(f.src));
+	if (rt.istype(F, T("/obj/item/clothing/suit/space/hardsuit/flightsuit"))) {
+		this.suit = F;
+		this.suit.pack = this;
 	} else {
-		rt.setSv(f, "suit", null);
+		this.suit = null;
 	}
 	return f.dot;
 });
 
-// /obj/item/device/flightpack/proc/delink_suit  (code/modules/clothing/spacesuits/flightsuit.dm:779)
+// flightsuit.dm:779
 rt.def("/obj/item/device/flightpack/proc/delink_suit", function delink_suit(f: Frame) {
-	if (truthy(rt.sv(f, "suit"))) {
-		if ((truthy(rt.fv(f, "pack", rt.sv(f, "suit"))) && isEqual(rt.fv(f, "pack", rt.sv(f, "suit")), live(f.src)))) {
-			rt.setFv(f, "pack", rt.sv(f, "suit"), null);
+	if (this.suit) {
+		if (this.suit.pack && this.suit.pack == this) {
+			this.suit.pack = null;
 		}
 	}
-	rt.setSv(f, "suit", null);
+	this.suit = null;
 	return f.dot;
 });
 
-// /obj/item/device/flightpack/proc/usermessage  (code/modules/clothing/spacesuits/flightsuit.dm:784)
+// flightsuit.dm:784
 rt.def("/obj/item/device/flightpack/proc/usermessage", function usermessage(f: Frame, message: Value, urgency: Value) {
-	f.vars = () => [urgency];
-	if (live(urgency) === null) {
-		urgency = 0;
+	urgency ??= 0;
+	if (urgency == 0) {
+		to_chat(this.wearer, `${bicon(this)}|<span class='boldnotice'>${message}</span>`);
 	}
-	if (isEqual(live(urgency), 0)) {
-		rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "wearer"), fmt("＀|<span class='boldnotice'>＀</span>", [rt.call(f, P("/proc/bicon"), null, [live(f.src)]), live(message)])]);
+	if (urgency == 1) {
+		to_chat(this.wearer, `${bicon(this)}|<span class='warning'>${message}</span>`);
 	}
-	if (isEqual(live(urgency), 1)) {
-		rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "wearer"), fmt("＀|<span class='warning'>＀</span>", [rt.call(f, P("/proc/bicon"), null, [live(f.src)]), live(message)])]);
+	if (urgency == 2) {
+		to_chat(this.wearer, `${bicon(this)}|<span class='boldwarning'>${message}</span>`);
 	}
-	if (isEqual(live(urgency), 2)) {
-		rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "wearer"), fmt("＀|<span class='boldwarning'>＀</span>", [rt.call(f, P("/proc/bicon"), null, [live(f.src)]), live(message)])]);
-	}
-	if (!isEqual(live(urgency), 3)) return f.dot;
-	rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "wearer"), fmt("＀|<span class='userdanger'>＀</span>", [rt.call(f, P("/proc/bicon"), null, [live(f.src)]), live(message)])]);
+	if (urgency != 3) return f.dot;
+	to_chat(this.wearer, `${bicon(this)}|<span class='userdanger'>${message}</span>`);
 	return f.dot;
 });
 
-// /obj/item/device/flightpack/proc/attackby  (code/modules/clothing/spacesuits/flightsuit.dm:794)  may sleep
-rt.def("/obj/item/device/flightpack/proc/attackby", function* attackby(f: Frame) {
+// flightsuit.dm:794
+rt.def("/obj/item/device/flightpack/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
 	let S: Value = null;
-	f.vars = () => [S];
-	if ((truthy((rt.istype(live(f.args[1]), T("/mob/living/carbon/human")) ? 1 : 0)) && !truthy((rt.istype(rt.fv(f, "loc", live(f.src)), T("/mob/living/carbon/human")) ? 1 : 0)))) {
-		rt.setSv(f, "wearer", live(f.args[1]));
+	if (rt.istype(user, T("/mob/living/carbon/human")) && !rt.istype(this.loc, T("/mob/living/carbon/human"))) {
+		this.wearer = user;
 	}
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/stock_parts")) ? 1 : 0))) {
-		if (truthy((rt.istype((S = live(f.args[0])), T("/obj/item/weapon/stock_parts/manipulator")) ? 1 : 0))) {
-			yield* g.srcCall(f, "usermessage", fmt("＀ has been sucessfully installed into systems.", [live(f.args[0])]));
-			if (truthy((yield* g.callName(f, live(f.args[1]), "transferItemToLoc", [live(f.args[0]), live(f.src)])))) {
-				if (truthy(rt.sv(f, "part_manip"))) {
-					yield* g.callName(f, rt.sv(f, "part_manip"), "forceMove", [rt.getStep(f, live(f.src), 0)]);
-					rt.setSv(f, "part_manip", null);
+	if (rt.istype(I, T("/obj/item/weapon/stock_parts"))) {
+		if (rt.istype((S = I), T("/obj/item/weapon/stock_parts/manipulator"))) {
+			this.usermessage(`${I} has been sucessfully installed into systems.`);
+			if (yield* user.transferItemToLoc(I, this)) {
+				if (this.part_manip) {
+					yield* this.part_manip.forceMove(rt.getStep(f, this, 0));
+					this.part_manip = null;
 				}
-				rt.setSv(f, "part_manip", live(f.args[0]));
+				this.part_manip = I;
 			}
 		}
-		if (truthy((rt.istype(live(S), T("/obj/item/weapon/stock_parts/scanning_module")) ? 1 : 0))) {
-			yield* g.srcCall(f, "usermessage", fmt("＀ has been sucessfully installed into systems.", [live(f.args[0])]));
-			if (truthy((yield* g.callName(f, live(f.args[1]), "transferItemToLoc", [live(f.args[0]), live(f.src)])))) {
-				if (truthy(rt.sv(f, "part_scan"))) {
-					yield* g.callName(f, rt.sv(f, "part_scan"), "forceMove", [rt.getStep(f, live(f.src), 0)]);
-					rt.setSv(f, "part_scan", null);
+		if (rt.istype(S, T("/obj/item/weapon/stock_parts/scanning_module"))) {
+			this.usermessage(`${I} has been sucessfully installed into systems.`);
+			if (yield* user.transferItemToLoc(I, this)) {
+				if (this.part_scan) {
+					yield* this.part_scan.forceMove(rt.getStep(f, this, 0));
+					this.part_scan = null;
 				}
-				rt.setSv(f, "part_scan", live(f.args[0]));
+				this.part_scan = I;
 			}
 		}
-		if (truthy((rt.istype(live(S), T("/obj/item/weapon/stock_parts/micro_laser")) ? 1 : 0))) {
-			yield* g.srcCall(f, "usermessage", fmt("＀ has been sucessfully installed into systems.", [live(f.args[0])]));
-			if (truthy((yield* g.callName(f, live(f.args[1]), "transferItemToLoc", [live(f.args[0]), live(f.src)])))) {
-				if (truthy(rt.sv(f, "part_laser"))) {
-					yield* g.callName(f, rt.sv(f, "part_laser"), "forceMove", [rt.getStep(f, live(f.src), 0)]);
-					rt.setSv(f, "part_laser", null);
+		if (rt.istype(S, T("/obj/item/weapon/stock_parts/micro_laser"))) {
+			this.usermessage(`${I} has been sucessfully installed into systems.`);
+			if (yield* user.transferItemToLoc(I, this)) {
+				if (this.part_laser) {
+					yield* this.part_laser.forceMove(rt.getStep(f, this, 0));
+					this.part_laser = null;
 				}
-				rt.setSv(f, "part_laser", live(f.args[0]));
+				this.part_laser = I;
 			}
 		}
-		if (truthy((rt.istype(live(S), T("/obj/item/weapon/stock_parts/matter_bin")) ? 1 : 0))) {
-			yield* g.srcCall(f, "usermessage", fmt("＀ has been sucessfully installed into systems.", [live(f.args[0])]));
-			if (truthy((yield* g.callName(f, live(f.args[1]), "transferItemToLoc", [live(f.args[0]), live(f.src)])))) {
-				if (truthy(rt.sv(f, "part_bin"))) {
-					yield* g.callName(f, rt.sv(f, "part_bin"), "forceMove", [rt.getStep(f, live(f.src), 0)]);
-					rt.setSv(f, "part_bin", null);
+		if (rt.istype(S, T("/obj/item/weapon/stock_parts/matter_bin"))) {
+			this.usermessage(`${I} has been sucessfully installed into systems.`);
+			if (yield* user.transferItemToLoc(I, this)) {
+				if (this.part_bin) {
+					yield* this.part_bin.forceMove(rt.getStep(f, this, 0));
+					this.part_bin = null;
 				}
-				rt.setSv(f, "part_bin", live(f.args[0]));
+				this.part_bin = I;
 			}
 		}
-		if (truthy((rt.istype(live(S), T("/obj/item/weapon/stock_parts/capacitor")) ? 1 : 0))) {
-			yield* g.srcCall(f, "usermessage", fmt("＀ has been sucessfully installed into systems.", [live(f.args[0])]));
-			if (truthy((yield* g.callName(f, live(f.args[1]), "transferItemToLoc", [live(f.args[0]), live(f.src)])))) {
-				if (truthy(rt.sv(f, "part_cap"))) {
-					yield* g.callName(f, rt.sv(f, "part_cap"), "forceMove", [rt.getStep(f, live(f.src), 0)]);
-					rt.setSv(f, "part_cap", null);
+		if (rt.istype(S, T("/obj/item/weapon/stock_parts/capacitor"))) {
+			this.usermessage(`${I} has been sucessfully installed into systems.`);
+			if (yield* user.transferItemToLoc(I, this)) {
+				if (this.part_cap) {
+					yield* this.part_cap.forceMove(rt.getStep(f, this, 0));
+					this.part_cap = null;
 				}
-				rt.setSv(f, "part_cap", live(f.args[0]));
+				this.part_cap = I;
 			}
 		}
 	}
-	yield* g.srcCall(f, "update_parts");
-	yield* g.callSuper(f, [], rt.Args.Same);
+	this.update_parts();
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["I", "user", "params"] });
+}, true);
 
-// /mob/living/carbon/proc/get_flightpack  (code/modules/clothing/spacesuits/flightsuit.dm:842)
+// flightsuit.dm:842
 rt.def("/mob/living/carbon/proc/get_flightpack", function get_flightpack(f: Frame) {
 	let F: Value = null;
-	f.vars = () => [F];
-	if (truthy((rt.istype((F = rt.sv(f, "back")), T("/obj/item/device/flightpack")) ? 1 : 0))) {
-		return live(F);
+	if (rt.istype((F = this.back), T("/obj/item/device/flightpack"))) {
+		return F;
 	} else {
 		return 0;
 	}
-	return f.dot;
 });
 
 rt.type(8512, "/obj/item/clothing/shoes/flightshoes", "/obj/item/clothing/shoes", {
@@ -1210,61 +1135,61 @@ rt.type(8512, "/obj/item/clothing/shoes/flightshoes", "/obj/item/clothing/shoes"
 	resistance_flags: 34,
 });
 
-// /obj/item/clothing/shoes/flightshoes/proc/Destroy  (code/modules/clothing/spacesuits/flightsuit.dm:867)  may sleep
+// flightsuit.dm:867
 rt.def("/obj/item/clothing/shoes/flightshoes/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.sv(f, "suit"))) {
-		rt.setFv(f, "shoes", rt.sv(f, "suit"), null);
+	if (this.suit) {
+		this.suit.shoes = null;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);
 
-// /obj/item/clothing/shoes/flightshoes/proc/toggle  (code/modules/clothing/spacesuits/flightsuit.dm:872)
+// flightsuit.dm:872
 rt.def("/obj/item/clothing/shoes/flightshoes/proc/toggle", function toggle(f: Frame, toggle: Value) {
-	if (!truthy(rt.sv(f, "suit"))) return f.dot;
-	rt.setSv(f, "active", live(toggle));
-	if (truthy(rt.sv(f, "active"))) {
-		(rt.modField(f, live(f.src), "flags", 1024, rt.bitOr));
+	if (!this.suit) return f.dot;
+	this.active = toggle;
+	if (this.active) {
+		(rt.modField(f, this, "flags", 1024, rt.bitOr));
 	}
-	if (truthy(rt.sv(f, "active"))) return f.dot;
-	(rt.modField(f, live(f.src), "flags", 16776191, rt.bitAnd));
+	if (this.active) return f.dot;
+	(rt.modField(f, this, "flags", 16776191, rt.bitAnd));
 	return f.dot;
 });
 
-// /obj/item/clothing/shoes/flightshoes/proc/dropped  (code/modules/clothing/spacesuits/flightsuit.dm:879)  may sleep
-rt.def("/obj/item/clothing/shoes/flightshoes/proc/dropped", function* dropped(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
+// flightsuit.dm:879
+rt.def("/obj/item/clothing/shoes/flightshoes/proc/dropped", function* dropped(f: Frame, wearer: Value) {
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["wearer"] });
+}, true);
 
-// /obj/item/clothing/shoes/flightshoes/proc/item_action_slot_check  (code/modules/clothing/spacesuits/flightsuit.dm:882)
+// flightsuit.dm:882
 rt.def("/obj/item/clothing/shoes/flightshoes/proc/item_action_slot_check", function item_action_slot_check(f: Frame, slot: Value) {
-	if (!isEqual(live(slot), 12)) return f.dot;
+	if (slot != slot_shoes) return f.dot;
 	return 1;
 });
 
-// /obj/item/clothing/shoes/flightshoes/proc/delink_suit  (code/modules/clothing/spacesuits/flightsuit.dm:887)
+// flightsuit.dm:887
 rt.def("/obj/item/clothing/shoes/flightshoes/proc/delink_suit", function delink_suit(f: Frame) {
-	if (truthy(rt.sv(f, "suit"))) {
-		if ((truthy(rt.fv(f, "shoes", rt.sv(f, "suit"))) && isEqual(rt.fv(f, "shoes", rt.sv(f, "suit")), live(f.src)))) {
-			rt.setFv(f, "shoes", rt.sv(f, "suit"), null);
+	if (this.suit) {
+		if (this.suit.shoes && this.suit.shoes == this) {
+			this.suit.shoes = null;
 		}
 	}
-	rt.setSv(f, "suit", null);
+	this.suit = null;
 	return f.dot;
 });
 
-// /obj/item/clothing/shoes/flightshoes/proc/relink_suit  (code/modules/clothing/spacesuits/flightsuit.dm:892)
+// flightsuit.dm:892
 rt.def("/obj/item/clothing/shoes/flightshoes/proc/relink_suit", function relink_suit(f: Frame, F: Value) {
-	if ((truthy(rt.sv(f, "suit")) && isEqual(rt.sv(f, "suit"), live(F)))) {
+	if (this.suit && this.suit == F) {
 		return 0;
 	} else {
-		rt.callSrc(f, "delink_suit", []);
+		this.delink_suit();
 	}
-	if (truthy((rt.istype(live(F), T("/obj/item/clothing/suit/space/hardsuit/flightsuit")) ? 1 : 0))) {
-		rt.setSv(f, "suit", live(F));
-		rt.setFv(f, "shoes", rt.sv(f, "suit"), live(f.src));
+	if (rt.istype(F, T("/obj/item/clothing/suit/space/hardsuit/flightsuit"))) {
+		this.suit = F;
+		this.suit.shoes = this;
 	} else {
-		rt.setSv(f, "suit", null);
+		this.suit = null;
 	}
 	return f.dot;
 });
@@ -1295,534 +1220,497 @@ rt.type(7704, "/obj/item/clothing/suit/space/hardsuit/flightsuit", "/obj/item/cl
 	helmettype: rt.typePath("/obj/item/clothing/head/helmet/space/hardsuit/flightsuit"),
 });
 
-// /obj/item/clothing/suit/space/hardsuit/flightsuit/proc/<init>  (code/modules/clothing/spacesuits/flightsuit.dm:924)
+// flightsuit.dm:924
 rt.def("/obj/item/clothing/suit/space/hardsuit/flightsuit/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/device/flashlight"), T("/obj/item/weapon/tank/internals"), T("/obj/item/weapon/gun"), T("/obj/item/weapon/reagent_containers/spray/pepper"), T("/obj/item/ammo_box"), T("/obj/item/ammo_casing"), T("/obj/item/weapon/melee/baton"), T("/obj/item/weapon/restraints/handcuffs")));
-	$0 = $0;
-	rt.setSv(f, "actions_types", rt.list(T("/datum/action/item_action/flightsuit/toggle_helmet"), T("/datum/action/item_action/flightsuit/toggle_boots"), T("/datum/action/item_action/flightsuit/toggle_flightpack"), T("/datum/action/item_action/flightsuit/lock_suit")));
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 20, "bullet", 20, "laser", 20, "energy", 10, "bomb", 30, "bio", 100, "rad", 75, "fire", 100, "acid", 100]));
+	parent_proc();
+	this.allowed = list(T("/obj/item/device/flashlight"), T("/obj/item/weapon/tank/internals"), T("/obj/item/weapon/gun"), T("/obj/item/weapon/reagent_containers/spray/pepper"), T("/obj/item/ammo_box"), T("/obj/item/ammo_casing"), T("/obj/item/weapon/melee/baton"), T("/obj/item/weapon/restraints/handcuffs"));
+
+	this.actions_types = list(T("/datum/action/item_action/flightsuit/toggle_helmet"), T("/datum/action/item_action/flightsuit/toggle_boots"), T("/datum/action/item_action/flightsuit/toggle_flightpack"), T("/datum/action/item_action/flightsuit/lock_suit"));
+	this.armor = rt.alist(f, ["melee", 20, "bullet", 20, "laser", 20, "energy", 10, "bomb", 30, "bio", 100, "rad", 75, "fire", 100, "acid", 100]);
 	return f.dot;
 });
 
 rt.type(7705, "/obj/item/clothing/suit/space/hardsuit/flightsuit/full", "/obj/item/clothing/suit/space/hardsuit/flightsuit", {});
 
-// /obj/item/clothing/suit/space/hardsuit/flightsuit/full/proc/New  (code/modules/clothing/spacesuits/flightsuit.dm:931)  may sleep
+// flightsuit.dm:931
 rt.def("/obj/item/clothing/suit/space/hardsuit/flightsuit/full/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "makepack");
-	yield* g.srcCall(f, "makeshoes");
-	yield* g.srcCall(f, "resync");
+	yield* parent_proc();
+	yield* this.makepack();
+	yield* this.makeshoes();
+	this.resync();
 	return f.dot;
 }, true);
 
-// /obj/item/clothing/suit/space/hardsuit/flightsuit/proc/usermessage  (code/modules/clothing/spacesuits/flightsuit.dm:937)
+// flightsuit.dm:937
 rt.def("/obj/item/clothing/suit/space/hardsuit/flightsuit/proc/usermessage", function usermessage(f: Frame, message: Value, urgency: Value) {
-	f.vars = () => [urgency];
-	if (live(urgency) === null) {
-		urgency = 0;
-	}
-	if (!truthy(live(urgency))) {
-		rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "user"), fmt("＀<span class='notice'>|＀</span>", [rt.call(f, P("/proc/bicon"), null, [live(f.src)]), live(message)])]);
+	urgency ??= 0;
+	if (!urgency) {
+		to_chat(this.user, `${bicon(this)}<span class='notice'>|${message}</span>`);
+	} else if (urgency == 1) {
+		to_chat(this.user, `${bicon(this)}<span class='warning'>|${message}</span>`);
 	} else {
-		if (isEqual(live(urgency), 1)) {
-			rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "user"), fmt("＀<span class='warning'>|＀</span>", [rt.call(f, P("/proc/bicon"), null, [live(f.src)]), live(message)])]);
-		} else {
-			if (!isEqual(live(urgency), 2)) return f.dot;
-			rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "user"), fmt("＀<span class='userdanger'>|＀</span>", [rt.call(f, P("/proc/bicon"), null, [live(f.src)]), live(message)])]);
-		}
+		if (urgency != 2) return f.dot;
+		to_chat(this.user, `${bicon(this)}<span class='userdanger'>|${message}</span>`);
 	}
 	return f.dot;
 });
 
-// /obj/item/clothing/suit/space/hardsuit/flightsuit/proc/examine  (code/modules/clothing/spacesuits/flightsuit.dm:945)
-rt.def("/obj/item/clothing/suit/space/hardsuit/flightsuit/proc/examine", function examine(f: Frame) {
-	let $0: any, $1: any, $2: any, $3: any;
-	f.vars = () => [$0, $1, $2, $3];
-	rt.callSuper(f, [], rt.Args.Same);
-	$0 = live(f.args[0]);
-	if (truthy(rt.sv(f, "locked"))) {
+// flightsuit.dm:945
+rt.def("/obj/item/clothing/suit/space/hardsuit/flightsuit/proc/examine", function examine(f: Frame, user: Value) {
+	let $1: any, $2: any, $3: any;
+	parent_proc();
+	let $0: any = user;
+	if (this.locked) {
 		$1 = "LOCKED";
 	} else {
 		$1 = "UNLOCKED";
 	}
-	rt.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='boldnotice'>SUIT: ＀</span>", [$1])]);
-	$0 = live(f.args[0]);
-	if (truthy(rt.sv(f, "deployedpack"))) {
+	to_chat($0, `<span class='boldnotice'>SUIT: ${$1}</span>`);
+	$0 = user;
+	if (this.deployedpack) {
 		$1 = "ENGAGED";
 	} else {
 		$1 = "DISENGAGED";
 	}
-	if (truthy(rt.sv(f, "deployedshoes"))) {
+	if (this.deployedshoes) {
 		$2 = "ENGAGED";
 	} else {
 		$2 = "DISENGAGED";
 	}
-	if (truthy(rt.sv(f, "suittoggled"))) {
+	if (this.suittoggled) {
 		$3 = "ENGAGED";
 	} else {
 		$3 = "DISENGAGED";
 	}
-	rt.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='boldnotice'>FLIGHTPACK: ＀ FLIGHTSHOES : ＀ HELMET : ＀</span>", [$1, $2, $3])]);
-	$0 = live(f.args[0]);
-	if (truthy(rt.sv(f, "maint_panel"))) {
-		$1 = "OPEN";
-	} else {
-		$1 = "CLOSED";
-	}
-	rt.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='boldnotice'>Its maintainence panel is ＀</span>", [$1])]);
+	to_chat($0, `<span class='boldnotice'>FLIGHTPACK: ${$1} FLIGHTSHOES : ${$2} HELMET : ${$3}</span>`);
+	to_chat(user, `<span class='boldnotice'>Its maintainence panel is ${this.maint_panel ? "OPEN" : "CLOSED"}</span>`);
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/item/clothing/suit/space/hardsuit/flightsuit/proc/Destroy  (code/modules/clothing/spacesuits/flightsuit.dm:951)  may sleep
+// flightsuit.dm:951
 rt.def("/obj/item/clothing/suit/space/hardsuit/flightsuit/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.srcCall(f, "dropped");
-	if (truthy(rt.sv(f, "pack"))) {
-		yield* g.callName(f, rt.sv(f, "pack"), "delink_suit", []);
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "pack")]);
+	yield* this.dropped();
+	if (this.pack) {
+		this.pack.delink_suit();
+		yield* qdel(this.pack);
 	}
-	if (truthy(rt.sv(f, "shoes"))) {
-		rt.setFv(f, "pack", rt.sv(f, "shoes"), null);
-		rt.setFv(f, "suit", rt.sv(f, "shoes"), null);
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "shoes")]);
+	if (this.shoes) {
+		this.shoes.pack = null;
+		this.shoes.suit = null;
+		yield* qdel(this.shoes);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /obj/item/clothing/suit/space/hardsuit/flightsuit/proc/resync  (code/modules/clothing/spacesuits/flightsuit.dm:963)
+// flightsuit.dm:963
 rt.def("/obj/item/clothing/suit/space/hardsuit/flightsuit/proc/resync", function resync(f: Frame) {
-	if (truthy(rt.sv(f, "pack"))) {
-		rt.callName(f, rt.sv(f, "pack"), "relink_suit", [live(f.src)]);
+	if (this.pack) {
+		this.pack.relink_suit(this);
 	}
-	if (truthy(rt.sv(f, "user"))) {
-		if (truthy(rt.sv(f, "pack"))) {
-			rt.setFv(f, "wearer", rt.sv(f, "pack"), rt.sv(f, "user"));
+	if (this.user) {
+		if (this.pack) {
+			this.pack.wearer = this.user;
 		}
-		if (truthy(rt.sv(f, "shoes"))) {
-			rt.setFv(f, "wearer", rt.sv(f, "shoes"), rt.sv(f, "user"));
+		if (this.shoes) {
+			this.shoes.wearer = this.user;
 		}
 	} else {
-		if (truthy(rt.sv(f, "pack"))) {
-			rt.setFv(f, "wearer", rt.sv(f, "pack"), null);
+		if (this.pack) {
+			this.pack.wearer = null;
 		}
-		if (truthy(rt.sv(f, "shoes"))) {
-			rt.setFv(f, "wearer", rt.sv(f, "shoes"), null);
+		if (this.shoes) {
+			this.shoes.wearer = null;
 		}
 	}
-	if (!truthy(rt.sv(f, "shoes"))) return f.dot;
-	rt.callName(f, rt.sv(f, "shoes"), "relink_suit", [live(f.src)]);
+	if (!this.shoes) return f.dot;
+	this.shoes.relink_suit(this);
 	return f.dot;
 });
 
-// /obj/item/clothing/suit/space/hardsuit/flightsuit/proc/attack_hand  (code/modules/clothing/spacesuits/flightsuit.dm:978)  may sleep
-rt.def("/obj/item/clothing/suit/space/hardsuit/flightsuit/proc/attack_hand", function* attack_hand(f: Frame) {
+// flightsuit.dm:978
+rt.def("/obj/item/clothing/suit/space/hardsuit/flightsuit/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
 	let H: Value = null;
-	f.vars = () => [H];
-	if (truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		H = live(f.args[0]);
-		if ((isEqual(live(f.src), rt.fv(f, "wear_suit", live(H))) && truthy(rt.sv(f, "locked")))) {
-			yield* g.srcCall(f, "usermessage", "You can not take a locked hardsuit off! Unlock it first!", 1);
-			return live(f.dot);
+	if (rt.istype(user, T("/mob/living/carbon/human"))) {
+		H = user;
+		if (this == H.wear_suit && this.locked) {
+			this.usermessage("You can not take a locked hardsuit off! Unlock it first!", 1);
+			return f.dot;
 		}
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /obj/item/clothing/suit/space/hardsuit/flightsuit/proc/ui_action_click  (code/modules/clothing/spacesuits/flightsuit.dm:986)  may sleep
+// flightsuit.dm:986
 rt.def("/obj/item/clothing/suit/space/hardsuit/flightsuit/proc/ui_action_click", function* ui_action_click(f: Frame, owner: Value, action: Value) {
-	f.vars = () => [owner, action];
-	if (truthy((rt.istype(live(action), T("/datum/action/item_action/flightsuit/lock_suit")) ? 1 : 0))) {
-		if (!truthy(rt.sv(f, "locked"))) {
-			yield* g.srcCall(f, "lock_suit", live(owner));
+	if (rt.istype(action, T("/datum/action/item_action/flightsuit/lock_suit"))) {
+		if (!this.locked) {
+			yield* this.lock_suit(owner);
 		} else {
-			yield* g.srcCall(f, "unlock_suit", live(owner));
+			this.unlock_suit(owner);
 		}
 	}
-	if (truthy((rt.istype(live(action), T("/datum/action/item_action/flightsuit/toggle_flightpack")) ? 1 : 0))) {
-		if (!truthy(rt.sv(f, "deployedpack"))) {
-			yield* g.srcCall(f, "extend_flightpack");
+	if (rt.istype(action, T("/datum/action/item_action/flightsuit/toggle_flightpack"))) {
+		if (!this.deployedpack) {
+			yield* this.extend_flightpack();
 		} else {
-			yield* g.srcCall(f, "retract_flightpack");
+			yield* this.retract_flightpack();
 		}
 	}
-	if (truthy((rt.istype(live(action), T("/datum/action/item_action/flightsuit/toggle_boots")) ? 1 : 0))) {
-		if (!truthy(rt.sv(f, "deployedshoes"))) {
-			yield* g.srcCall(f, "extend_flightshoes");
+	if (rt.istype(action, T("/datum/action/item_action/flightsuit/toggle_boots"))) {
+		if (!this.deployedshoes) {
+			yield* this.extend_flightshoes();
 		} else {
-			yield* g.srcCall(f, "retract_flightshoes");
+			yield* this.retract_flightshoes();
 		}
 	}
-	if (!truthy((rt.istype(live(action), T("/datum/action/item_action/flightsuit/toggle_helmet")) ? 1 : 0))) return f.dot;
-	yield* g.srcCall(f, "ToggleHelmet");
+	if (!rt.istype(action, T("/datum/action/item_action/flightsuit/toggle_helmet"))) return f.dot;
+	yield* this.ToggleHelmet();
 	return f.dot;
 }, true);
 
-// /obj/item/clothing/suit/space/hardsuit/flightsuit/proc/dropped  (code/modules/clothing/spacesuits/flightsuit.dm:1006)  may sleep
+// flightsuit.dm:1006
 rt.def("/obj/item/clothing/suit/space/hardsuit/flightsuit/proc/dropped", function* dropped(f: Frame) {
-	if (truthy(rt.sv(f, "deployedpack"))) {
-		yield* g.srcCall(f, "retract_flightpack", 1);
+	if (this.deployedpack) {
+		yield* this.retract_flightpack(1);
 	}
-	if (truthy(rt.sv(f, "deployedshoes"))) {
-		yield* g.srcCall(f, "retract_flightshoes", 1);
+	if (this.deployedshoes) {
+		yield* this.retract_flightshoes(1);
 	}
-	if (truthy(rt.sv(f, "locked"))) {
-		yield* g.srcCall(f, "unlock_suit", null);
+	if (this.locked) {
+		this.unlock_suit(null);
 	}
-	if (truthy(rt.sv(f, "user"))) {
-		rt.setSv(f, "user", null);
+	if (this.user) {
+		this.user = null;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /obj/item/clothing/suit/space/hardsuit/flightsuit/proc/ToggleHelmet  (code/modules/clothing/spacesuits/flightsuit.dm:1016)  may sleep
+// flightsuit.dm:1016
 rt.def("/obj/item/clothing/suit/space/hardsuit/flightsuit/proc/ToggleHelmet", function* ToggleHelmet(f: Frame) {
-	if (!truthy(rt.sv(f, "suittoggled"))) {
-		if (!truthy(rt.sv(f, "locked"))) {
-			yield* g.srcCall(f, "usermessage", "You must lock your suit before engaging the helmet!", 1);
+	if (!this.suittoggled) {
+		if (!this.locked) {
+			this.usermessage("You must lock your suit before engaging the helmet!", 1);
 			return 0;
 		}
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /obj/item/clothing/suit/space/hardsuit/flightsuit/proc/lock_suit  (code/modules/clothing/spacesuits/flightsuit.dm:1023)
+// flightsuit.dm:1023
 rt.def("/obj/item/clothing/suit/space/hardsuit/flightsuit/proc/lock_suit", function lock_suit(f: Frame, wearer: Value) {
-	rt.setSv(f, "user", live(wearer));
-	rt.callName(f, rt.sv(f, "user"), "visible_message", [fmt("<span class='notice'>＀'s flight suit locks around them, powered buckles and straps automatically adjusting to their body!</span>", [live(wearer)])]);
-	rt.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/items/rped.ogg"), 65, 1]);
-	rt.callSrc(f, "resync", []);
-	rt.setSv(f, "strip_delay", rt.sv(f, "locked_strip_delay"));
-	rt.setSv(f, "locked", 1);
+	this.user = wearer;
+	this.user.visible_message(`<span class='notice'>${wearer}'s flight suit locks around them, powered buckles and straps automatically adjusting to their body!</span>`);
+	playsound(this.loc, rt.rsc("sound/items/rped.ogg"), 65, 1);
+	this.resync();
+	this.strip_delay = this.locked_strip_delay;
+	this.locked = 1;
 	return 1;
 });
 
-// /obj/item/clothing/suit/space/hardsuit/flightsuit/proc/unlock_suit  (code/modules/clothing/spacesuits/flightsuit.dm:1033)
+// flightsuit.dm:1033
 rt.def("/obj/item/clothing/suit/space/hardsuit/flightsuit/proc/unlock_suit", function unlock_suit(f: Frame, wearer: Value) {
-	if (truthy(rt.sv(f, "suittoggled"))) {
-		rt.callSrc(f, "usermessage", ["You must retract the helmet before unlocking your suit!", 1]);
+	if (this.suittoggled) {
+		this.usermessage("You must retract the helmet before unlocking your suit!", 1);
 		return 0;
 	}
-	if ((truthy(rt.sv(f, "pack")) && truthy(rt.fv(f, "flight", rt.sv(f, "pack"))))) {
-		rt.callSrc(f, "usermessage", ["You must shut off the flight-pack before unlocking your suit!", 1]);
+	if (this.pack && this.pack.flight) {
+		this.usermessage("You must shut off the flight-pack before unlocking your suit!", 1);
 		return 0;
 	}
-	if (truthy(rt.sv(f, "deployedpack"))) {
-		rt.callSrc(f, "usermessage", ["Your flightpack must be fully retracted first!", 1]);
+	if (this.deployedpack) {
+		this.usermessage("Your flightpack must be fully retracted first!", 1);
 		return 0;
 	}
-	if (truthy(rt.sv(f, "deployedshoes"))) {
-		rt.callSrc(f, "usermessage", ["Your flight shoes must be fully retracted first!", 1]);
+	if (this.deployedshoes) {
+		this.usermessage("Your flight shoes must be fully retracted first!", 1);
 		return 0;
 	}
-	if (truthy(live(wearer))) {
-		rt.callName(f, rt.sv(f, "user"), "visible_message", [fmt("<span class='notice'>＀'s flight suit detaches from their body, becoming nothing more then a bulky metal skeleton.</span>", [live(wearer)])]);
+	if (wearer) {
+		this.user.visible_message(`<span class='notice'>${wearer}'s flight suit detaches from their body, becoming nothing more then a bulky metal skeleton.</span>`);
 	}
-	rt.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/items/rped.ogg"), 65, 1]);
-	rt.callSrc(f, "resync", []);
-	rt.setSv(f, "strip_delay", rt.initial(f, live(f.src), "strip_delay"));
-	rt.setSv(f, "locked", 0);
+	playsound(this.loc, rt.rsc("sound/items/rped.ogg"), 65, 1);
+	this.resync();
+	this.strip_delay = rt.initial(f, this, "strip_delay");
+	this.locked = 0;
 	return 1;
 });
 
-// /obj/item/clothing/suit/space/hardsuit/flightsuit/proc/extend_flightpack  (code/modules/clothing/spacesuits/flightsuit.dm:1053)  may sleep
+// flightsuit.dm:1053
 rt.def("/obj/item/clothing/suit/space/hardsuit/flightsuit/proc/extend_flightpack", function* extend_flightpack(f: Frame, forced: Value) {
-	f.vars = () => [forced];
-	if (live(forced) === null) {
-		forced = 0;
-	}
-	if (!truthy(rt.sv(f, "pack"))) {
-		yield* g.srcCall(f, "usermessage", "There is no attached flightpack!", 1);
+	forced ??= 0;
+	if (!this.pack) {
+		this.usermessage("There is no attached flightpack!", slot_back);
 		return 0;
 	}
-	if (truthy(rt.sv(f, "deployedpack"))) {
-		yield* g.srcCall(f, "retract_flightpack");
+	if (this.deployedpack) {
+		yield* this.retract_flightpack();
 	}
-	if (!truthy(rt.sv(f, "locked"))) {
-		yield* g.srcCall(f, "usermessage", "You must lock your flight suit first before deploying anything!", 1);
+	if (!this.locked) {
+		this.usermessage("You must lock your flight suit first before deploying anything!", slot_back);
 		return 0;
 	}
-	if (truthy((rt.istype(rt.sv(f, "user"), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		if (truthy(rt.fv(f, "back", rt.sv(f, "user")))) {
-			yield* g.srcCall(f, "usermessage", "You're already wearing something on your back!", 1);
+	if (rt.istype(this.user, T("/mob/living/carbon/human"))) {
+		if (this.user.back) {
+			this.usermessage("You're already wearing something on your back!", slot_back);
 			return 0;
 		}
-		yield* g.callName(f, rt.sv(f, "user"), "equip_to_slot_if_possible", [rt.sv(f, "pack"), 1, 0, 0, 1]);
-		(rt.modField(f, rt.sv(f, "pack"), "flags", 2, rt.bitOr));
-		yield* g.srcCall(f, "resync");
-		yield* g.callName(f, rt.sv(f, "user"), "visible_message", [fmt("<span class='notice'>A ＀ extends from ＀'s ＀ and clamps to their back!</span>", [rt.fv(f, "name", rt.sv(f, "pack")), rt.sv(f, "user"), rt.sv(f, "name")])]);
-		yield* g.callName(f, rt.sv(f, "user"), "update_inv_wear_suit", []);
+		yield* this.user.equip_to_slot_if_possible(this.pack, slot_back, 0, 0, 1);
+		(rt.modField(f, this.pack, "flags", NODROP, rt.bitOr));
+		this.resync();
+		this.user.visible_message(`<span class='notice'>A ${this.pack.name} extends from ${this.user}'s ${this.name} and clamps to their back!</span>`);
+		yield* this.user.update_inv_wear_suit();
 	}
-	yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/mecha/mechmove03.ogg"), 50, 1]);
-	rt.setSv(f, "deployedpack", 1);
+	playsound(this.loc, rt.rsc("sound/mecha/mechmove03.ogg"), 50, 1);
+	this.deployedpack = 1;
 	return f.dot;
 }, true);
 
-// /obj/item/clothing/suit/space/hardsuit/flightsuit/proc/retract_flightpack  (code/modules/clothing/spacesuits/flightsuit.dm:1074)  may sleep
+// flightsuit.dm:1074
 rt.def("/obj/item/clothing/suit/space/hardsuit/flightsuit/proc/retract_flightpack", function* retract_flightpack(f: Frame, forced: Value) {
-	f.vars = () => [forced];
-	if (live(forced) === null) {
-		forced = 0;
-	}
-	if (truthy((rt.istype(rt.sv(f, "user"), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		if ((truthy(rt.fv(f, "flight", rt.sv(f, "pack"))) && !truthy(live(forced)))) {
-			yield* g.srcCall(f, "usermessage", "You must disable the engines before retracting the flightpack!", 1);
+	forced ??= 0;
+	if (rt.istype(this.user, T("/mob/living/carbon/human"))) {
+		if (this.pack.flight && !forced) {
+			this.usermessage("You must disable the engines before retracting the flightpack!", 1);
 			return 0;
 		}
-		if ((truthy(rt.fv(f, "flight", rt.sv(f, "pack"))) && truthy(live(forced)))) {
-			yield* g.callName(f, rt.sv(f, "pack"), "disable_flight", [1]);
+		if (this.pack.flight && forced) {
+			yield* this.pack.disable_flight(1);
 		}
-		(rt.modField(f, rt.sv(f, "pack"), "flags", 16777213, rt.bitAnd));
-		yield* g.srcCall(f, "resync");
-		if (truthy(rt.sv(f, "user"))) {
-			yield* g.callName(f, rt.sv(f, "user"), "transferItemToLoc", [rt.sv(f, "pack"), live(f.src), 1]);
-			yield* g.callName(f, rt.sv(f, "user"), "update_inv_wear_suit", []);
-			yield* g.callName(f, rt.sv(f, "user"), "visible_message", [fmt("<span class='notice'>＀'s ＀ detaches from their back and retracts into their ＀!</span>", [rt.sv(f, "user"), rt.fv(f, "name", rt.sv(f, "pack")), live(f.src)])]);
+		(rt.modField(f, this.pack, "flags", 16777213, rt.bitAnd));
+		this.resync();
+		if (this.user) {
+			yield* this.user.transferItemToLoc(this.pack, this, 1);
+			yield* this.user.update_inv_wear_suit();
+			this.user.visible_message(`<span class='notice'>${this.user}'s ${this.pack.name} detaches from their back and retracts into their ${this}!</span>`);
 		}
 	}
-	rt.setFv(f, "loc", rt.sv(f, "pack"), live(f.src));
-	yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/mecha/mechmove03.ogg"), 50, 1]);
-	rt.setSv(f, "deployedpack", 0);
+	this.pack.loc = this;
+	playsound(this.loc, rt.rsc("sound/mecha/mechmove03.ogg"), 50, 1);
+	this.deployedpack = 0;
 	return f.dot;
 }, true);
 
-// /obj/item/clothing/suit/space/hardsuit/flightsuit/proc/extend_flightshoes  (code/modules/clothing/spacesuits/flightsuit.dm:1091)  may sleep
+// flightsuit.dm:1091
 rt.def("/obj/item/clothing/suit/space/hardsuit/flightsuit/proc/extend_flightshoes", function* extend_flightshoes(f: Frame, forced: Value) {
-	f.vars = () => [forced];
-	if (live(forced) === null) {
-		forced = 0;
-	}
-	if (!truthy(rt.sv(f, "shoes"))) {
-		yield* g.srcCall(f, "usermessage", "Flight shoes are not installed!", 1);
+	forced ??= 0;
+	if (!this.shoes) {
+		this.usermessage("Flight shoes are not installed!", 1);
 		return 0;
 	}
-	if (truthy(rt.sv(f, "deployedshoes"))) {
-		yield* g.srcCall(f, "retract_flightshoes");
+	if (this.deployedshoes) {
+		yield* this.retract_flightshoes();
 	}
-	if (!truthy(rt.sv(f, "locked"))) {
-		yield* g.srcCall(f, "usermessage", "You must lock your flight suit first before deploying anything!", 1);
+	if (!this.locked) {
+		this.usermessage("You must lock your flight suit first before deploying anything!", 1);
 		return 0;
 	}
-	if (truthy((rt.istype(rt.sv(f, "user"), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		if (truthy(rt.fv(f, "shoes", rt.sv(f, "user")))) {
-			yield* g.srcCall(f, "usermessage", "You're already wearing something on your feet!", 1);
+	if (rt.istype(this.user, T("/mob/living/carbon/human"))) {
+		if (this.user.shoes) {
+			this.usermessage("You're already wearing something on your feet!", 1);
 			return 0;
 		}
-		yield* g.callName(f, rt.sv(f, "user"), "equip_to_slot_if_possible", [rt.sv(f, "shoes"), 12, 0, 0, 1]);
-		(rt.modField(f, rt.sv(f, "shoes"), "flags", 2, rt.bitOr));
-		yield* g.callName(f, rt.sv(f, "user"), "visible_message", [fmt("<span class='notice'>＀'s ＀ extends a pair of ＀ over their feet!</span>", [rt.sv(f, "user"), rt.sv(f, "name"), rt.fv(f, "name", rt.sv(f, "shoes"))])]);
-		yield* g.callName(f, rt.sv(f, "user"), "update_inv_wear_suit", []);
+		yield* this.user.equip_to_slot_if_possible(this.shoes, slot_shoes, 0, 0, 1);
+		(rt.modField(f, this.shoes, "flags", NODROP, rt.bitOr));
+		this.user.visible_message(`<span class='notice'>${this.user}'s ${this.name} extends a pair of ${this.shoes.name} over their feet!</span>`);
+		yield* this.user.update_inv_wear_suit();
 	}
-	yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/mecha/mechmove03.ogg"), 50, 1]);
-	rt.setSv(f, "deployedshoes", 1);
+	playsound(this.loc, rt.rsc("sound/mecha/mechmove03.ogg"), 50, 1);
+	this.deployedshoes = 1;
 	return f.dot;
 }, true);
 
-// /obj/item/clothing/suit/space/hardsuit/flightsuit/proc/retract_flightshoes  (code/modules/clothing/spacesuits/flightsuit.dm:1111)  may sleep
+// flightsuit.dm:1111
 rt.def("/obj/item/clothing/suit/space/hardsuit/flightsuit/proc/retract_flightshoes", function* retract_flightshoes(f: Frame, forced: Value) {
-	f.vars = () => [forced];
-	if (live(forced) === null) {
-		forced = 0;
+	forced ??= 0;
+	(rt.modField(f, this.shoes, "flags", 16777213, rt.bitAnd));
+	playsound(this.loc, rt.rsc("sound/mecha/mechmove03.ogg"), 50, 1);
+	if (this.user) {
+		yield* this.user.transferItemToLoc(this.shoes, this, 1);
+		yield* this.user.update_inv_wear_suit();
+		this.user.visible_message(`<span class='notice'>${this.user}'s ${this.shoes.name} retracts back into their ${this.name}!</span>`);
 	}
-	(rt.modField(f, rt.sv(f, "shoes"), "flags", 16777213, rt.bitAnd));
-	yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/mecha/mechmove03.ogg"), 50, 1]);
-	if (truthy(rt.sv(f, "user"))) {
-		yield* g.callName(f, rt.sv(f, "user"), "transferItemToLoc", [rt.sv(f, "shoes"), live(f.src), 1]);
-		yield* g.callName(f, rt.sv(f, "user"), "update_inv_wear_suit", []);
-		yield* g.callName(f, rt.sv(f, "user"), "visible_message", [fmt("<span class='notice'>＀'s ＀ retracts back into their ＀!</span>", [rt.sv(f, "user"), rt.fv(f, "name", rt.sv(f, "shoes")), rt.sv(f, "name")])]);
-	}
-	rt.setFv(f, "loc", rt.sv(f, "shoes"), live(f.src));
-	rt.setSv(f, "deployedshoes", 0);
+	this.shoes.loc = this;
+	this.deployedshoes = 0;
 	return f.dot;
 }, true);
 
-// /obj/item/clothing/suit/space/hardsuit/flightsuit/proc/makepack  (code/modules/clothing/spacesuits/flightsuit.dm:1121)  may sleep
+// flightsuit.dm:1121
 rt.def("/obj/item/clothing/suit/space/hardsuit/flightsuit/proc/makepack", function* makepack(f: Frame) {
-	if (truthy(rt.sv(f, "pack"))) return f.dot;
-	rt.setSv(f, "pack", (yield* g.new_(f, T("/obj/item/device/flightpack/full"), [live(f.src)])));
-	yield* g.callName(f, rt.sv(f, "pack"), "relink_suit", [live(f.src)]);
+	if (this.pack) return f.dot;
+	this.pack = (yield* new_(T("/obj/item/device/flightpack/full"), this));
+	this.pack.relink_suit(this);
 	return f.dot;
 }, true);
 
-// /obj/item/clothing/suit/space/hardsuit/flightsuit/proc/makeshoes  (code/modules/clothing/spacesuits/flightsuit.dm:1126)  may sleep
+// flightsuit.dm:1126
 rt.def("/obj/item/clothing/suit/space/hardsuit/flightsuit/proc/makeshoes", function* makeshoes(f: Frame) {
-	if (truthy(rt.sv(f, "shoes"))) return f.dot;
-	rt.setSv(f, "shoes", (yield* g.new_(f, T("/obj/item/clothing/shoes/flightshoes"), [live(f.src)])));
-	rt.setFv(f, "pack", rt.sv(f, "shoes"), rt.sv(f, "pack"));
-	rt.setFv(f, "suit", rt.sv(f, "shoes"), live(f.src));
+	if (this.shoes) return f.dot;
+	this.shoes = (yield* new_(T("/obj/item/clothing/shoes/flightshoes"), this));
+	this.shoes.pack = this.pack;
+	this.shoes.suit = this;
 	return f.dot;
 }, true);
 
-// /obj/item/clothing/suit/space/hardsuit/flightsuit/proc/equipped  (code/modules/clothing/spacesuits/flightsuit.dm:1132)  may sleep
-rt.def("/obj/item/clothing/suit/space/hardsuit/flightsuit/proc/equipped", function* equipped(f: Frame) {
-	if (truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		rt.setSv(f, "user", live(f.args[0]));
+// flightsuit.dm:1132
+rt.def("/obj/item/clothing/suit/space/hardsuit/flightsuit/proc/equipped", function* equipped(f: Frame, M: Value, slot: Value) {
+	if (rt.istype(M, T("/mob/living/carbon/human"))) {
+		this.user = M;
 	}
-	if (!isEqual(live(f.args[1]), 13)) {
-		if (truthy(rt.sv(f, "deployedpack"))) {
-			yield* g.srcCall(f, "retract_flightpack", 1);
+	if (slot != slot_wear_suit) {
+		if (this.deployedpack) {
+			yield* this.retract_flightpack(1);
 		}
-		if (truthy(rt.sv(f, "deployedshoes"))) {
-			yield* g.srcCall(f, "retract_flightshoes", 1);
+		if (this.deployedshoes) {
+			yield* this.retract_flightshoes(1);
 		}
-		if (truthy(rt.sv(f, "locked"))) {
-			yield* g.srcCall(f, "unlock_suit", rt.sv(f, "user"));
+		if (this.locked) {
+			this.unlock_suit(this.user);
 		}
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M", "slot"] });
+}, true);
 
-// /obj/item/clothing/suit/space/hardsuit/flightsuit/proc/detach_pack  (code/modules/clothing/spacesuits/flightsuit.dm:1144)
+// flightsuit.dm:1144
 rt.def("/obj/item/clothing/suit/space/hardsuit/flightsuit/proc/detach_pack", function detach_pack(f: Frame) {
-	rt.callName(f, rt.sv(f, "pack"), "delink_suit", []);
-	rt.setFv(f, "loc", rt.sv(f, "pack"), rt.getStep(f, live(f.src), 0));
-	rt.setSv(f, "pack", null);
-	rt.callSrc(f, "usermessage", ["You detach the flightpack."]);
+	this.pack.delink_suit();
+	this.pack.loc = rt.getStep(f, this, 0);
+	this.pack = null;
+	this.usermessage("You detach the flightpack.");
 	return f.dot;
 });
 
-// /obj/item/clothing/suit/space/hardsuit/flightsuit/proc/attach_pack  (code/modules/clothing/spacesuits/flightsuit.dm:1150)  may sleep
+// flightsuit.dm:1150
 rt.def("/obj/item/clothing/suit/space/hardsuit/flightsuit/proc/attach_pack", function* attach_pack(f: Frame, F: Value) {
-	f.vars = () => [F];
-	yield* g.callName(f, live(F), "forceMove", [live(f.src)]);
-	rt.setSv(f, "pack", live(F));
-	yield* g.callName(f, rt.sv(f, "pack"), "relink_suit", [live(f.src)]);
-	yield* g.srcCall(f, "usermessage", "You attach and fasten the flightpack.");
+	yield* F.forceMove(this);
+	this.pack = F;
+	this.pack.relink_suit(this);
+	this.usermessage("You attach and fasten the flightpack.");
 	return f.dot;
 }, true);
 
-// /obj/item/clothing/suit/space/hardsuit/flightsuit/proc/detach_shoes  (code/modules/clothing/spacesuits/flightsuit.dm:1156)
+// flightsuit.dm:1156
 rt.def("/obj/item/clothing/suit/space/hardsuit/flightsuit/proc/detach_shoes", function detach_shoes(f: Frame) {
-	rt.callName(f, rt.sv(f, "shoes"), "delink_suit", []);
-	rt.setFv(f, "loc", rt.sv(f, "shoes"), rt.getStep(f, live(f.src), 0));
-	rt.setSv(f, "shoes", null);
-	rt.callSrc(f, "usermessage", ["You detach the flight shoes."]);
+	this.shoes.delink_suit();
+	this.shoes.loc = rt.getStep(f, this, 0);
+	this.shoes = null;
+	this.usermessage("You detach the flight shoes.");
 	return f.dot;
 });
 
-// /obj/item/clothing/suit/space/hardsuit/flightsuit/proc/attach_shoes  (code/modules/clothing/spacesuits/flightsuit.dm:1162)  may sleep
+// flightsuit.dm:1162
 rt.def("/obj/item/clothing/suit/space/hardsuit/flightsuit/proc/attach_shoes", function* attach_shoes(f: Frame, S: Value) {
-	f.vars = () => [S];
-	yield* g.callName(f, live(S), "forceMove", [live(f.src)]);
-	rt.setSv(f, "shoes", live(S));
-	yield* g.callName(f, rt.sv(f, "shoes"), "relink_suit", [live(f.src)]);
-	yield* g.srcCall(f, "usermessage", "You attach and fasten a pair of flight shoes.");
+	yield* S.forceMove(this);
+	this.shoes = S;
+	this.shoes.relink_suit(this);
+	this.usermessage("You attach and fasten a pair of flight shoes.");
 	return f.dot;
 }, true);
 
-// /obj/item/clothing/suit/space/hardsuit/flightsuit/proc/attackby  (code/modules/clothing/spacesuits/flightsuit.dm:1168)  may sleep
-rt.def("/obj/item/clothing/suit/space/hardsuit/flightsuit/proc/attackby", function* attackby(f: Frame) {
+// flightsuit.dm:1168
+rt.def("/obj/item/clothing/suit/space/hardsuit/flightsuit/proc/attackby", function* attackby(f: Frame, I: Value, wearer: Value, params: Value) {
 	let inputlist: Value = null, input: Value = null, F: Value = null, addmsg: Value = null, addmsglist: Value = null, S: Value = null;
-	let $0: any;
-	f.vars = () => [inputlist, input, F, addmsg, addmsglist, S, $0];
-	rt.setSv(f, "user", live(f.args[1]));
-	if (isEqual(live(f.src), (yield* g.callName(f, rt.sv(f, "user"), "get_item_by_slot", [13])))) {
-		yield* g.srcCall(f, "usermessage", "You can not perform any service without taking the suit off!", 1);
+	this.user = wearer;
+	if (this == this.user.get_item_by_slot(slot_wear_suit)) {
+		this.usermessage("You can not perform any service without taking the suit off!", 1);
 		return 0;
 	}
-	if (truthy(rt.sv(f, "locked"))) {
-		yield* g.srcCall(f, "usermessage", "You can not perform any service while the suit is locked!", 1);
+	if (this.locked) {
+		this.usermessage("You can not perform any service while the suit is locked!", 1);
 		return 0;
 	}
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/screwdriver")) ? 1 : 0))) {
-		if (!truthy(rt.sv(f, "maint_panel"))) {
-			rt.setSv(f, "maint_panel", 1);
+	if (rt.istype(I, T("/obj/item/weapon/screwdriver"))) {
+		if (!this.maint_panel) {
+			this.maint_panel = 1;
 		} else {
-			rt.setSv(f, "maint_panel", 0);
+			this.maint_panel = 0;
 		}
-		if (truthy(rt.sv(f, "maint_panel"))) {
-			$0 = "open";
-		} else {
-			$0 = "close";
-		}
-		yield* g.srcCall(f, "usermessage", fmt("You ＀ the maintainence panel.", [$0]));
+		this.usermessage(`You ${this.maint_panel ? "open" : "close"} the maintainence panel.`);
 	}
-	if (!truthy(rt.sv(f, "maint_panel"))) {
-		yield* g.srcCall(f, "usermessage", "The maintainence panel is closed!", 1);
+	if (!this.maint_panel) {
+		this.usermessage("The maintainence panel is closed!", 1);
 		return 0;
 	}
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/crowbar")) ? 1 : 0))) {
-		inputlist = rt.list();
-		if (truthy(rt.sv(f, "pack"))) {
-			inputlist = rt.modify(live(inputlist), "Pack", add);
+	if (rt.istype(I, T("/obj/item/weapon/crowbar"))) {
+		inputlist = list();
+		if (this.pack) {
+			inputlist += "Pack";
 		}
-		if (truthy(rt.sv(f, "shoes"))) {
-			inputlist = rt.modify(live(inputlist), "Shoes", add);
+		if (this.shoes) {
+			inputlist += "Shoes";
 		}
-		if (!truthy(rt.len(f, live(inputlist)))) {
-			yield* g.srcCall(f, "usermessage", "There is nothing inside the flightsuit to remove!", 1);
+		if (!rt.len(f, inputlist)) {
+			this.usermessage("There is nothing inside the flightsuit to remove!", 1);
 			return 0;
 		}
-		input = (yield* g.op(f, "Prompt", [1], [null, "Removing module", "What to remove?", rt.sv(f, "user"), rt.list("Pack", "Shoes")]));
-		if ((truthy(rt.sv(f, "pack")) && isEqual(live(input), "Pack"))) {
-			if (truthy(rt.fv(f, "flight", rt.sv(f, "pack")))) {
-				yield* g.srcCall(f, "usermessage", "You can not pry off an active flightpack!", 1);
+		input = (yield* g.op(f, "Prompt", [1], [null, "Removing module", "What to remove?", this.user, list("Pack", "Shoes")]));
+		if (this.pack && input == "Pack") {
+			if (this.pack.flight) {
+				this.usermessage("You can not pry off an active flightpack!", 1);
 				return 0;
 			}
-			if (truthy(rt.sv(f, "deployedpack"))) {
-				yield* g.srcCall(f, "usermessage", "Disengage the flightpack first!", 1);
+			if (this.deployedpack) {
+				this.usermessage("Disengage the flightpack first!", 1);
 				return 0;
 			}
-			yield* g.srcCall(f, "detach_pack");
+			this.detach_pack();
 		}
-		if ((truthy(rt.sv(f, "shoes")) && isEqual(live(input), "Shoes"))) {
-			if (truthy(rt.sv(f, "deployedshoes"))) {
-				yield* g.srcCall(f, "usermessage", "Disengage the shoes first!", 1);
+		if (this.shoes && input == "Shoes") {
+			if (this.deployedshoes) {
+				this.usermessage("Disengage the shoes first!", 1);
 				return 0;
 			}
-			yield* g.srcCall(f, "detach_shoes");
+			this.detach_shoes();
 		}
 	}
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/device/flightpack")) ? 1 : 0))) {
-		F = live(f.args[0]);
-		if (truthy(rt.sv(f, "pack"))) {
-			yield* g.srcCall(f, "usermessage", fmt("＀ already has a flightpack installed!", [live(f.src)]), 1);
+	if (rt.istype(I, T("/obj/item/device/flightpack"))) {
+		F = I;
+		if (this.pack) {
+			this.usermessage(`${this} already has a flightpack installed!`, 1);
 			return 0;
 		}
-		if (!truthy(rt.fv(f, "assembled", live(F)))) {
+		if (!F.assembled) {
 			addmsg = " It is missing a ";
-			addmsglist = rt.list();
-			if (!truthy(rt.fv(f, "part_manip", live(F)))) {
-				addmsglist = rt.modify(live(addmsglist), "manipulator", add);
+			addmsglist = list();
+			if (!F.part_manip) {
+				addmsglist += "manipulator";
 			}
-			if (!truthy(rt.fv(f, "part_cap", live(F)))) {
-				addmsglist = rt.modify(live(addmsglist), "capacitor", add);
+			if (!F.part_cap) {
+				addmsglist += "capacitor";
 			}
-			if (!truthy(rt.fv(f, "part_scan", live(F)))) {
-				addmsglist = rt.modify(live(addmsglist), "scanning module", add);
+			if (!F.part_scan) {
+				addmsglist += "scanning module";
 			}
-			if (!truthy(rt.fv(f, "part_laser", live(F)))) {
-				addmsglist = rt.modify(live(addmsglist), "micro-laser", add);
+			if (!F.part_laser) {
+				addmsglist += "micro-laser";
 			}
-			if (!truthy(rt.fv(f, "part_bin", live(F)))) {
-				addmsglist = rt.modify(live(addmsglist), "matter bin", add);
+			if (!F.part_bin) {
+				addmsglist += "matter bin";
 			}
-			yield* g.srcCall(f, "usermessage", fmt("The flightpack you are trying to install is not fully assembled and operational!＀.", [(addmsg = rt.modify(live(addmsg), (yield* g.call(f, P("/proc/english_list"), null, [live(addmsglist)])), add))]), 1);
+			this.usermessage(`The flightpack you are trying to install is not fully assembled and operational!${(addmsg += english_list(addmsglist))}.`, 1);
 			return 0;
 		}
-		if (truthy((yield* g.callName(f, rt.sv(f, "user"), "temporarilyRemoveItemFromInventory", [live(F)])))) {
-			yield* g.srcCall(f, "attach_pack", live(F));
+		if (yield* this.user.temporarilyRemoveItemFromInventory(F)) {
+			yield* this.attach_pack(F);
 		}
 	}
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/clothing/shoes/flightshoes")) ? 1 : 0))) {
-		S = live(f.args[0]);
-		if (truthy(rt.sv(f, "shoes"))) {
-			yield* g.srcCall(f, "usermessage", "There are already shoes installed!", 1);
+	if (rt.istype(I, T("/obj/item/clothing/shoes/flightshoes"))) {
+		S = I;
+		if (this.shoes) {
+			this.usermessage("There are already shoes installed!", 1);
 			return 0;
 		}
-		if (truthy((yield* g.callName(f, rt.sv(f, "user"), "temporarilyRemoveItemFromInventory", [live(S)])))) {
-			yield* g.srcCall(f, "attach_shoes", live(S));
+		if (yield* this.user.temporarilyRemoveItemFromInventory(S)) {
+			yield* this.attach_shoes(S);
 		}
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["I", "wearer", "params"] });
+}, true);
 
 rt.type(7937, "/obj/item/clothing/head/helmet/space/hardsuit/flightsuit", "/obj/item/clothing/head/helmet/space/hardsuit", {
 	datahuds: null,
@@ -1841,77 +1729,59 @@ rt.type(7937, "/obj/item/clothing/head/helmet/space/hardsuit/flightsuit", "/obj/
 	actions_types: null,
 });
 
-// /obj/item/clothing/head/helmet/space/hardsuit/flightsuit/proc/<init>  (code/modules/clothing/spacesuits/flightsuit.dm:1249)
+// flightsuit.dm:1249
 rt.def("/obj/item/clothing/head/helmet/space/hardsuit/flightsuit/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "datahuds", rt.list(2, 4, 5));
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 20, "bullet", 20, "laser", 20, "energy", 10, "bomb", 30, "bio", 100, "rad", 75, "fire", 100, "acid", 100]));
-	$0 = $0;
-	rt.setSv(f, "actions_types", rt.list(T("/datum/action/item_action/toggle_helmet_light"), T("/datum/action/item_action/flightpack/zoom")));
+	parent_proc();
+	this.datahuds = list(2, 4, 5);
+	this.armor = rt.alist(f, ["melee", 20, "bullet", 20, "laser", 20, "energy", 10, "bomb", 30, "bio", 100, "rad", 75, "fire", 100, "acid", 100]);
+
+	this.actions_types = list(T("/datum/action/item_action/toggle_helmet_light"), T("/datum/action/item_action/flightpack/zoom"));
 	return f.dot;
 });
 
-// /obj/item/clothing/head/helmet/space/hardsuit/flightsuit/proc/equipped  (code/modules/clothing/spacesuits/flightsuit.dm:1257)  may sleep
-rt.def("/obj/item/clothing/head/helmet/space/hardsuit/flightsuit/proc/equipped", function* equipped(f: Frame) {
+// flightsuit.dm:1257
+rt.def("/obj/item/clothing/head/helmet/space/hardsuit/flightsuit/proc/equipped", function* equipped(f: Frame, wearer: Value, slot: Value) {
 	let hudtype: Value = null, H: Value = null;
-	let $e: any;
-	f.vars = () => [hudtype, H, $e];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	hudtype = null;
-	rt.forList(f, 0, rt.sv(f, "datahuds"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		hudtype = $e;
-		yield* g.callName(f, (H = rt.index(rt.gl("huds"), live(hudtype))), "add_hud_to", [live(f.args[0])]);
+	yield* parent_proc();
+	for (hudtype of each(this.datahuds)) {
+		(H = rt.index(GLOB.huds, hudtype)).add_hud_to(wearer);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
-}, true, { args: ["wearer", "slot"] });
+}, true);
 
-// /obj/item/clothing/head/helmet/space/hardsuit/flightsuit/proc/dropped  (code/modules/clothing/spacesuits/flightsuit.dm:1263)  may sleep
-rt.def("/obj/item/clothing/head/helmet/space/hardsuit/flightsuit/proc/dropped", function* dropped(f: Frame) {
+// flightsuit.dm:1263
+rt.def("/obj/item/clothing/head/helmet/space/hardsuit/flightsuit/proc/dropped", function* dropped(f: Frame, wearer: Value) {
 	let hudtype: Value = null, H: Value = null;
-	let $e: any;
-	f.vars = () => [hudtype, H, $e];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	hudtype = null;
-	rt.forList(f, 0, rt.sv(f, "datahuds"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		hudtype = $e;
-		yield* g.callName(f, (H = rt.index(rt.gl("huds"), live(hudtype))), "remove_hud_from", [live(f.args[0])]);
+	yield* parent_proc();
+	for (hudtype of each(this.datahuds)) {
+		(H = rt.index(GLOB.huds, hudtype)).remove_hud_from(wearer);
 	}
-	rt.endFor(f, 0);
-	if (!truthy(rt.sv(f, "zoom"))) return f.dot;
-	yield* g.srcCall(f, "toggle_zoom", live(f.args[0]), 1);
+	if (!this.zoom) return f.dot;
+	yield* this.toggle_zoom(wearer, 1);
 	return f.dot;
-}, true, { args: ["wearer"] });
+}, true);
 
-// /obj/item/clothing/head/helmet/space/hardsuit/flightsuit/proc/ui_action_click  (code/modules/clothing/spacesuits/flightsuit.dm:1271)  may sleep
-rt.def("/obj/item/clothing/head/helmet/space/hardsuit/flightsuit/proc/ui_action_click", function* ui_action_click(f: Frame) {
-	if (truthy((rt.istype(live(f.args[1]), T("/datum/action/item_action/flightpack/zoom")) ? 1 : 0))) {
-		yield* g.srcCall(f, "toggle_zoom", live(f.args[0]));
+// flightsuit.dm:1271
+rt.def("/obj/item/clothing/head/helmet/space/hardsuit/flightsuit/proc/ui_action_click", function* ui_action_click(f: Frame, owner: Value, action: Value) {
+	if (rt.istype(action, T("/datum/action/item_action/flightpack/zoom"))) {
+		yield* this.toggle_zoom(owner);
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	f.dot = (yield* parent_proc());
 	return f.dot;
-}, true, { args: ["owner", "action"] });
+}, true);
 
-// /obj/item/clothing/head/helmet/space/hardsuit/flightsuit/proc/toggle_zoom  (code/modules/clothing/spacesuits/flightsuit.dm:1276)  may sleep
+// flightsuit.dm:1276
 rt.def("/obj/item/clothing/head/helmet/space/hardsuit/flightsuit/proc/toggle_zoom", function* toggle_zoom(f: Frame, user: Value, force_off: Value) {
-	f.vars = () => [user, force_off];
-	if (live(force_off) === null) {
-		force_off = 0;
-	}
-	if ((truthy(rt.sv(f, "zoom")) || truthy(live(force_off)))) {
-		yield* g.callName(f, rt.fv(f, "client", live(user)), "change_view", [(yield* g.callName(f, rt.fv(f, "client", live(user)), "default_view", []))]);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='boldnotice'>Disabling smart zooming image enhancement...</span>"]);
-		rt.setSv(f, "zoom", 0);
+	force_off ??= 0;
+	if (this.zoom || force_off) {
+		yield* user.client.change_view(user.client.default_view());
+		to_chat(user, "<span class='boldnotice'>Disabling smart zooming image enhancement...</span>");
+		this.zoom = 0;
 		return 0;
 	} else {
-		yield* g.callName(f, rt.fv(f, "client", live(user)), "change_view", [rt.sv(f, "zoom_range")]);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='boldnotice'>Enabling smart zooming image enhancement!</span>"]);
-		rt.setSv(f, "zoom", 1);
+		yield* user.client.change_view(this.zoom_range);
+		to_chat(user, "<span class='boldnotice'>Enabling smart zooming image enhancement!</span>");
+		this.zoom = 1;
 		return 1;
 	}
-	return f.dot;
 }, true);

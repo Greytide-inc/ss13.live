@@ -1,7 +1,7 @@
-// From code/game/machinery/telecomms/machines/hub.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/machinery/telecomms/machines/hub.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(10725, "/obj/machinery/telecomms/hub", "/obj/machinery/telecomms", {
@@ -17,25 +17,23 @@ rt.type(10725, "/obj/machinery/telecomms/hub", "/obj/machinery/telecomms", {
 	idle_power_usage: 80,
 });
 
-// /obj/machinery/telecomms/hub/proc/receive_information  (code/game/machinery/telecomms/machines/hub.dm:27)  may sleep
+// hub.dm:27
 rt.def("/obj/machinery/telecomms/hub/proc/receive_information", function* receive_information(f: Frame, signal: Value, machine_from: Value) {
-	f.vars = () => [signal, machine_from];
-	if (!truthy((yield* g.srcCall(f, "is_freq_listening", live(signal))))) return f.dot;
-	if (truthy((rt.istype(live(machine_from), T("/obj/machinery/telecomms/receiver")) ? 1 : 0))) {
-		yield* g.srcCall(f, "relay_information", live(signal), "/obj/machinery/telecomms/bus", 1);
+	if (!this.is_freq_listening(signal)) return f.dot;
+	if (rt.istype(machine_from, T("/obj/machinery/telecomms/receiver"))) {
+		yield* this.relay_information(signal, "/obj/machinery/telecomms/bus", 1);
 	} else {
-		yield* g.srcCall(f, "relay_information", live(signal), "/obj/machinery/telecomms/relay", 1);
-		yield* g.srcCall(f, "relay_information", live(signal), "/obj/machinery/telecomms/broadcaster", 1);
+		yield* this.relay_information(signal, "/obj/machinery/telecomms/relay", 1);
+		yield* this.relay_information(signal, "/obj/machinery/telecomms/broadcaster", 1);
 	}
 	return f.dot;
 }, true);
 
-// /obj/machinery/telecomms/hub/proc/New  (code/game/machinery/telecomms/machines/hub.dm:37)  may sleep
+// hub.dm:37
 rt.def("/obj/machinery/telecomms/hub/proc/New", function* New(f: Frame) {
 	let B: Value = null;
-	f.vars = () => [B];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.callName(f, (B = (yield* g.new_(f, T("/obj/item/weapon/circuitboard/machine/telecomms/hub"), [null]))), "apply_default_parts", [live(f.src)]);
+	yield* parent_proc();
+	yield* (B = (yield* new_(T("/obj/item/weapon/circuitboard/machine/telecomms/hub"), null))).apply_default_parts(this);
 	return f.dot;
 }, true);
 
@@ -46,11 +44,9 @@ rt.type(6737, "/obj/item/weapon/circuitboard/machine/telecomms/hub", "/obj/item/
 	req_components: null,
 });
 
-// /obj/item/weapon/circuitboard/machine/telecomms/hub/proc/<init>  (code/game/machinery/telecomms/machines/hub.dm:45)
+// hub.dm:45
 rt.def("/obj/item/weapon/circuitboard/machine/telecomms/hub/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_components", rt.alist(f, [T("/obj/item/weapon/stock_parts/manipulator"), 2, T("/obj/item/stack/cable_coil"), 2, T("/obj/item/weapon/stock_parts/subspace/filter"), 2]));
+	parent_proc();
+	this.req_components = rt.alist(f, [T("/obj/item/weapon/stock_parts/manipulator"), 2, T("/obj/item/stack/cable_coil"), 2, T("/obj/item/weapon/stock_parts/subspace/filter"), 2]);
 	return f.dot;
 });

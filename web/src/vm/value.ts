@@ -1,7 +1,7 @@
 // Value representation and the primitive semantics that BYOND 511 gives them.
 //
 //   null        -> JS null
-//   number      -> JS number, always a 32-bit float (every arithmetic result goes through Math.fround)
+//   number      -> JS number (a normal 64-bit double: BYOND's 32-bit rounding was dropped on purpose)
 //   text        -> JS string
 //   type path   -> the DMType object itself          (e.g. /obj/item)
 //   proc path   -> the DMProc object itself          (e.g. /proc/foo)
@@ -14,8 +14,6 @@ import { DMProc, DMType, ListLiteral, Resource } from "./objtree.js";
 import { DMList, DMObject } from "./objects.js";
 
 export type Value = null | number | string | DMType | DMProc | Resource | ListLiteral | DMObject | DMList;
-
-export const fround = Math.fround;
 
 /** A DM runtime error: BYOND logs it, aborts the current proc (which returns its `.`), and the caller continues. */
 export class DMRuntimeError extends Error {
@@ -43,6 +41,21 @@ export class DMRuntimeError extends Error {
 	}
 }
 
+/**
+ * A JS error out of game code (`o.health` with o null, calling something that isn't a function) is a DM runtime error:
+ * logged, that proc ends, the caller goes on. Worded as BYOND's where the JS wording is known (V8, SpiderMonkey); the
+ * stack stays the JS one, which error-lines.ts reads. Anything else comes back as it is.
+ */
+export function asDMError(e: unknown): unknown {
+	if (!(e instanceof TypeError || e instanceof ReferenceError)) return e;
+	const m = e.message;
+	const read = /^Cannot read properties of (?:null|undefined) \(reading '(.*)'\)$/.exec(m) ?? /^can't access property "(.*)", .* is (?:null|undefined)$/.exec(m);
+	const write = /^Cannot set properties of (?:null|undefined) \(setting '(.*)'\)$/.exec(m);
+	const d = new DMRuntimeError(read ? `Cannot read null.${read[1]}` : write ? `Cannot modify null.${write[1]}` : m);
+	d.stack = e.stack;
+	return d;
+}
+
 /** A feature the VM doesn't have yet. Never caught by DM-level error handling: it stops the VM. */
 export class NotImplementedError extends Error {
 	constructor(what: string) {
@@ -50,11 +63,9 @@ export class NotImplementedError extends Error {
 	}
 }
 
+/** DM's true/false is JavaScript's: null, 0, NaN and "" are false, everything else true. */
 export function isTruthy(v: Value): boolean {
-	if (v === null) return false;
-	if (typeof v === "number") return v !== 0; // NaN is true, as in C (unverified in BYOND)
-	if (typeof v === "string") return v.length > 0;
-	return true;
+	return !!v;
 }
 
 export function typeName(v: Value): string {
@@ -131,8 +142,8 @@ function formatG(x: number, precision: number): string {
 	if (cached !== undefined) return cached;
 
 	const neg = x < 0;
-	// Exact decimal digits of the value: toExponential(99) gives 100 significant digits, which is
-	// exact for any float32 in the normal range.
+	// Exact decimal digits of the value: toExponential(99) gives 100 significant digits, enough to
+	// round any double correctly at up to 99.
 	const exact = Math.abs(x).toExponential(99);
 	const ePos = exact.indexOf("e");
 	let digits = exact.slice(0, ePos).replace(".", "");

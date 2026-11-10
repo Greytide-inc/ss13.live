@@ -1,7 +1,7 @@
-// From code/modules/mob/living/simple_animal/hostile/faithless.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/simple_animal/hostile/faithless.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(4956, "/mob/living/simple_animal/hostile/faithless", "/mob/living/simple_animal/hostile", {
@@ -36,27 +36,24 @@ rt.type(4956, "/mob/living/simple_animal/hostile/faithless", "/mob/living/simple
 	gold_core_spawnable: 1,
 });
 
-// /mob/living/simple_animal/hostile/faithless/proc/<init>  (code/modules/mob/living/simple_animal/hostile/faithless.dm:13)
+// faithless.dm:13
 rt.def("/mob/living/simple_animal/hostile/faithless/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "emote_taunt", rt.list("wails"));
-	$0 = $0;
-	rt.setSv(f, "speak_emote", rt.list("growls"));
-	rt.setSv(f, "atmos_requirements", rt.alist(f, ["min_oxy", 0, "max_oxy", 0, "min_tox", 0, "max_tox", 0, "min_co2", 0, "max_co2", 0, "min_n2", 0, "max_n2", 0]));
-	$0 = $0;
-	rt.setSv(f, "faction", rt.list("faithless"));
+	parent_proc();
+	this.emote_taunt = list("wails");
+
+	this.speak_emote = list("growls");
+	this.atmos_requirements = rt.alist(f, ["min_oxy", 0, "max_oxy", 0, "min_tox", 0, "max_tox", 0, "min_co2", 0, "max_co2", 0, "min_n2", 0, "max_n2", 0]);
+
+	this.faction = list("faithless");
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/faithless/proc/AttackingTarget  (code/modules/mob/living/simple_animal/hostile/faithless.dm:39)  may sleep
+// faithless.dm:39
 rt.def("/mob/living/simple_animal/hostile/faithless/proc/AttackingTarget", function* AttackingTarget(f: Frame) {
 	let C: Value = null;
-	f.vars = () => [C];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!((truthy(live(f.dot)) && truthy(rt.op(f, "Prob", [], [12]))) && truthy((rt.istype(rt.sv(f, "target"), T("/mob/living/carbon")) ? 1 : 0)))) return f.dot;
-	yield* g.callName(f, (C = rt.sv(f, "target")), "Knockdown", [60]);
-	yield* g.callName(f, live(C), "visible_message", [fmt("<span class='danger'>＄！ knocks down ％！!</span>", [live(f.src), live(C)]), fmt("<span class='userdanger'>＄！ knocks you down!</span>", [live(f.src)])]);
+	f.dot = (yield* parent_proc());
+	if (!(f.dot && prob(12) && rt.istype(this.target, T("/mob/living/carbon")))) return f.dot;
+	yield* (C = this.target).Knockdown(60);
+	C.visible_message(fmt("<span class='danger'>＄！ knocks down ％！!</span>", [this, C]), fmt("<span class='userdanger'>＄！ knocks you down!</span>", [this]));
 	return f.dot;
 }, true);

@@ -1,7 +1,7 @@
-// From code/game/machinery/embedded_controller/access_controller.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/machinery/embedded_controller/access_controller.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(10860, "/obj/machinery/doorButtons", "/obj/machinery", {
@@ -14,33 +14,32 @@ rt.type(10860, "/obj/machinery/doorButtons", "/obj/machinery", {
 	resistance_flags: 115,
 });
 
-// /obj/machinery/doorButtons/proc/attackby  (code/game/machinery/embedded_controller/access_controller.dm:17)  may sleep
+// access_controller.dm:17
 rt.def("/obj/machinery/doorButtons/proc/attackby", function* attackby(f: Frame, O: Value, user: Value) {
-	f.vars = () => [O, user];
-	yield* g.srcCall(f, "attack_hand", live(user));
+	yield* this.attack_hand(user);
 	return f.dot;
 }, true);
 
-// /obj/machinery/doorButtons/proc/Initialize  (code/game/machinery/embedded_controller/access_controller.dm:23)  may sleep
+// access_controller.dm:23
 rt.def("/obj/machinery/doorButtons/proc/Initialize", function* Initialize(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	return 1;
+	yield* parent_proc();
+	return INITIALIZE_HINT_LATELOAD;
 }, true);
 
-// /obj/machinery/doorButtons/proc/LateInitialize  (code/game/machinery/embedded_controller/access_controller.dm:27)
+// access_controller.dm:27
 rt.def("/obj/machinery/doorButtons/proc/LateInitialize", function LateInitialize(f: Frame) {
-	rt.callSrc(f, "findObjsByTag", []);
+	this.findObjsByTag();
 	return f.dot;
 });
 
-// /obj/machinery/doorButtons/proc/emag_act  (code/game/machinery/embedded_controller/access_controller.dm:30)
+// access_controller.dm:30
 rt.def("/obj/machinery/doorButtons/proc/emag_act", function emag_act(f: Frame, user: Value) {
-	if (truthy(rt.sv(f, "emagged"))) return f.dot;
-	rt.setSv(f, "emagged", 1);
-	rt.setSv(f, "req_access", rt.list());
-	rt.setSv(f, "req_one_access", rt.list());
-	rt.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), "sparks", 100, 1]);
-	rt.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>You short out the access controller.</span>"]);
+	if (this.emagged) return f.dot;
+	this.emagged = 1;
+	this.req_access = list();
+	this.req_one_access = list();
+	playsound(this.loc, "sparks", 100, 1);
+	to_chat(user, "<span class='warning'>You short out the access controller.</span>");
 	return f.dot;
 });
 
@@ -54,96 +53,82 @@ rt.type(10861, "/obj/machinery/doorButtons/access_button", "/obj/machinery/doorB
 	name: "access button",
 });
 
-// /obj/machinery/doorButtons/access_button/proc/findObjsByTag  (code/game/machinery/embedded_controller/access_controller.dm:50)
+// access_controller.dm:50
 rt.def("/obj/machinery/doorButtons/access_button/proc/findObjsByTag", function findObjsByTag(f: Frame) {
 	let A: Value = null, I: Value = null;
-	let $e: any;
-	f.vars = () => [A, I, $e];
-	A = null;
-	rt.forList(f, 0, rt.gl("machines"), T("/obj/machinery/doorButtons/airlock_controller"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		A = $e;
-		if (isEqual(rt.fv(f, "idSelf", live(A)), rt.sv(f, "idSelf"))) {
-			rt.setSv(f, "controller", live(A));
+	for (A of each(GLOB.machines, T("/obj/machinery/doorButtons/airlock_controller"))) {
+		if (A.idSelf == this.idSelf) {
+			this.controller = A;
 			break;
 		}
 	}
-	rt.endFor(f, 0);
-	I = null;
-	rt.forList(f, 0, rt.gl("machines"), T("/obj/machinery/door/airlock"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		if (isEqual(rt.fv(f, "id_tag", live(I)), rt.sv(f, "idDoor"))) {
-			rt.setSv(f, "door", live(I));
+	for (I of each(GLOB.machines, T("/obj/machinery/door/airlock"))) {
+		if (I.id_tag == this.idDoor) {
+			this.door = I;
 			break;
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /obj/machinery/doorButtons/access_button/proc/attack_hand  (code/game/machinery/embedded_controller/access_controller.dm:60)  may sleep
-rt.def("/obj/machinery/doorButtons/access_button/proc/attack_hand", function* attack_hand(f: Frame) {
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		return live(f.dot);
+// access_controller.dm:60
+rt.def("/obj/machinery/doorButtons/access_button/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
+	if (yield* parent_proc()) {
+		return f.dot;
 	}
-	if (truthy(rt.sv(f, "busy"))) {
-		return live(f.dot);
+	if (this.busy) {
+		return f.dot;
 	}
-	if (!truthy((yield* g.srcCall(f, "allowed", live(f.args[0]))))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='warning'>Access denied.</span>"]);
-		return live(f.dot);
+	if (!(yield* this.allowed(user))) {
+		to_chat(user, "<span class='warning'>Access denied.</span>");
+		return f.dot;
 	}
-	if (!((truthy(rt.sv(f, "controller")) && !truthy(rt.fv(f, "busy", rt.sv(f, "controller")))) && truthy(rt.sv(f, "door")))) return f.dot;
-	if (truthy(rt.bitAnd(rt.fv(f, "stat", rt.sv(f, "controller")), 2))) {
-		return live(f.dot);
+	if (!(this.controller && !this.controller.busy && this.door)) return f.dot;
+	if (rt.bitAnd(this.controller.stat, 2)) {
+		return f.dot;
 	}
-	rt.setSv(f, "busy", 1);
-	yield* g.srcCall(f, "update_icon");
-	if (truthy(rt.fv(f, "density", rt.sv(f, "door")))) {
-		if ((!truthy(rt.fv(f, "exteriorAirlock", rt.sv(f, "controller"))) || !truthy(rt.fv(f, "interiorAirlock", rt.sv(f, "controller"))))) {
-			yield* g.callName(f, rt.sv(f, "controller"), "onlyOpen", [rt.sv(f, "door")]);
+	this.busy = 1;
+	yield* this.update_icon();
+	if (this.door.density) {
+		if (!this.controller.exteriorAirlock || !this.controller.interiorAirlock) {
+			yield* this.controller.onlyOpen(this.door);
+		} else if (this.controller.exteriorAirlock.density && this.controller.interiorAirlock.density) {
+			yield* this.controller.onlyOpen(this.door);
 		} else {
-			if ((truthy(rt.gv(f, "density", rt.fv(f, "exteriorAirlock", rt.sv(f, "controller")))) && truthy(rt.gv(f, "density", rt.fv(f, "interiorAirlock", rt.sv(f, "controller")))))) {
-				yield* g.callName(f, rt.sv(f, "controller"), "onlyOpen", [rt.sv(f, "door")]);
-			} else {
-				yield* g.callName(f, rt.sv(f, "controller"), "cycleClose", [rt.sv(f, "door")]);
-			}
+			this.controller.cycleClose(this.door);
 		}
 	} else {
-		yield* g.callName(f, rt.sv(f, "controller"), "onlyClose", [rt.sv(f, "door")]);
+		this.controller.onlyClose(this.door);
 	}
-	yield* g.call(f, P("/proc/sleep"), null, [20]);
-	rt.setSv(f, "busy", 0);
-	yield* g.srcCall(f, "update_icon");
+	yield* sleep(20);
+	this.busy = 0;
+	yield* this.update_icon();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /obj/machinery/doorButtons/access_button/proc/update_icon  (code/game/machinery/embedded_controller/access_controller.dm:87)
+// access_controller.dm:87
 rt.def("/obj/machinery/doorButtons/access_button/proc/update_icon", function update_icon(f: Frame) {
-	if (truthy(rt.bitAnd(rt.sv(f, "stat"), 2))) {
-		rt.setSv(f, "icon_state", "access_button_off");
+	if (rt.bitAnd(this.stat, 2)) {
+		this.icon_state = "access_button_off";
+	} else if (this.busy) {
+		this.icon_state = "access_button_cycle";
 	} else {
-		if (truthy(rt.sv(f, "busy"))) {
-			rt.setSv(f, "icon_state", "access_button_cycle");
-		} else {
-			rt.setSv(f, "icon_state", "access_button_standby");
-		}
+		this.icon_state = "access_button_standby";
 	}
 	return f.dot;
 });
 
-// /obj/machinery/doorButtons/access_button/proc/power_change  (code/game/machinery/embedded_controller/access_controller.dm:96)
+// access_controller.dm:96
 rt.def("/obj/machinery/doorButtons/access_button/proc/power_change", function power_change(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.callSrc(f, "update_icon", []);
+	parent_proc();
+	this.update_icon();
 	return f.dot;
 });
 
-// /obj/machinery/doorButtons/access_button/proc/removeMe  (code/game/machinery/embedded_controller/access_controller.dm:100)
+// access_controller.dm:100
 rt.def("/obj/machinery/doorButtons/access_button/proc/removeMe", function removeMe(f: Frame, O: Value) {
-	if (!isEqual(live(O), rt.sv(f, "door"))) return f.dot;
-	rt.setSv(f, "door", null);
+	if (O != this.door) return f.dot;
+	this.door = null;
 	return f.dot;
 });
 
@@ -159,324 +144,276 @@ rt.type(10862, "/obj/machinery/doorButtons/airlock_controller", "/obj/machinery/
 	name: "access console",
 });
 
-// /obj/machinery/doorButtons/airlock_controller/proc/removeMe  (code/game/machinery/embedded_controller/access_controller.dm:117)
+// access_controller.dm:117
 rt.def("/obj/machinery/doorButtons/airlock_controller/proc/removeMe", function removeMe(f: Frame, O: Value) {
-	if (isEqual(live(O), rt.sv(f, "interiorAirlock"))) {
-		rt.setSv(f, "interiorAirlock", null);
+	if (O == this.interiorAirlock) {
+		this.interiorAirlock = null;
 	} else {
-		if (!isEqual(live(O), rt.sv(f, "exteriorAirlock"))) return f.dot;
-		rt.setSv(f, "exteriorAirlock", null);
+		if (O != this.exteriorAirlock) return f.dot;
+		this.exteriorAirlock = null;
 	}
 	return f.dot;
 });
 
-// /obj/machinery/doorButtons/airlock_controller/proc/Destroy  (code/game/machinery/embedded_controller/access_controller.dm:123)  may sleep
+// access_controller.dm:123
 rt.def("/obj/machinery/doorButtons/airlock_controller/proc/Destroy", function* Destroy(f: Frame) {
 	let A: Value = null;
-	let $e: any;
-	f.vars = () => [A, $e];
-	A = null;
-	rt.forList(f, 0, rt.gl("machines"), T("/obj/machinery/doorButtons/access_button"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		A = $e;
-		if (isEqual(rt.fv(f, "controller", live(A)), live(f.src))) {
-			rt.setFv(f, "controller", live(A), null);
+	for (A of each(GLOB.machines, T("/obj/machinery/doorButtons/access_button"))) {
+		if (A.controller == this) {
+			A.controller = null;
 		}
 	}
-	rt.endFor(f, 0);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);
 
-// /obj/machinery/doorButtons/airlock_controller/proc/Topic  (code/game/machinery/embedded_controller/access_controller.dm:129)  may sleep
-rt.def("/obj/machinery/doorButtons/airlock_controller/proc/Topic", function* Topic(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		return live(f.dot);
+// access_controller.dm:129
+rt.def("/obj/machinery/doorButtons/airlock_controller/proc/Topic", function* Topic(f: Frame, href: Value, href_list: Value) {
+	if (yield* parent_proc()) {
+		return f.dot;
 	}
-	if (truthy(rt.sv(f, "busy"))) {
-		return live(f.dot);
+	if (this.busy) {
+		return f.dot;
 	}
-	if (!truthy((yield* g.srcCall(f, "allowed", live(f.usr))))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), "<span class='warning'>Access denied.</span>"]);
-		return live(f.dot);
+	if (!(yield* this.allowed(f.usr))) {
+		to_chat(f.usr, "<span class='warning'>Access denied.</span>");
+		return f.dot;
 	}
-	$0 = rt.at(live(f.args[1]), "command");
-	if ($0 === "close_exterior") {
-		yield* g.srcCall(f, "onlyClose", rt.sv(f, "exteriorAirlock"));
-	} else if ($0 === "close_interior") {
-		yield* g.srcCall(f, "onlyClose", rt.sv(f, "interiorAirlock"));
-	} else if ($0 === "cycle_exterior") {
-		yield* g.srcCall(f, "cycleClose", rt.sv(f, "exteriorAirlock"));
-	} else if ($0 === "cycle_interior") {
-		yield* g.srcCall(f, "cycleClose", rt.sv(f, "interiorAirlock"));
-	} else if ($0 === "open_exterior") {
-		yield* g.srcCall(f, "onlyOpen", rt.sv(f, "exteriorAirlock"));
-	} else if ($0 === "open_interior") {
-		yield* g.srcCall(f, "onlyOpen", rt.sv(f, "interiorAirlock"));
+	const item = rt.at(href_list, "command");
+	if (item === "close_exterior") {
+		this.onlyClose(this.exteriorAirlock);
+	} else if (item === "close_interior") {
+		this.onlyClose(this.interiorAirlock);
+	} else if (item === "cycle_exterior") {
+		this.cycleClose(this.exteriorAirlock);
+	} else if (item === "cycle_interior") {
+		this.cycleClose(this.interiorAirlock);
+	} else if (item === "open_exterior") {
+		yield* this.onlyOpen(this.exteriorAirlock);
+	} else if (item === "open_interior") {
+		yield* this.onlyOpen(this.interiorAirlock);
 	}
 	return f.dot;
-}, true, { args: ["href", "href_list"] });
+}, true);
 
-// /obj/machinery/doorButtons/airlock_controller/proc/onlyOpen  (code/game/machinery/embedded_controller/access_controller.dm:153)  may sleep
+// access_controller.dm:153
 rt.def("/obj/machinery/doorButtons/airlock_controller/proc/onlyOpen", function* onlyOpen(f: Frame, A: Value) {
-	f.vars = () => [A];
-	if (!truthy(live(A))) return f.dot;
-	rt.setSv(f, "busy", 1);
-	yield* g.srcCall(f, "update_icon");
-	yield* g.srcCall(f, "openDoor", live(A));
+	if (!A) return f.dot;
+	this.busy = 1;
+	yield* this.update_icon();
+	yield* this.openDoor(A);
 	return f.dot;
 }, true);
 
-// /obj/machinery/doorButtons/airlock_controller/proc/onlyClose  (code/game/machinery/embedded_controller/access_controller.dm:159)
+// access_controller.dm:159
 rt.def("/obj/machinery/doorButtons/airlock_controller/proc/onlyClose", function onlyClose(f: Frame, A: Value) {
-	if (!truthy(live(A))) return f.dot;
-	rt.setSv(f, "busy", 1);
-	rt.callSrc(f, "closeDoor", [live(A)]);
+	if (!A) return f.dot;
+	this.busy = 1;
+	this.closeDoor(A);
 	return f.dot;
 });
 
-// /obj/machinery/doorButtons/airlock_controller/proc/closeDoor  (code/game/machinery/embedded_controller/access_controller.dm:163)  may sleep
+// access_controller.dm:163
 rt.def("/obj/machinery/doorButtons/airlock_controller/proc/closeDoor", function* closeDoor(f: Frame, A: Value) {
-	f.vars = () => [A];
-	if (truthy(rt.fv(f, "density", live(A)))) {
-		yield* g.srcCall(f, "goIdle");
+	if (A.density) {
+		yield* this.goIdle();
 		return 0;
 	}
-	yield* g.srcCall(f, "update_icon");
-	yield* g.callName(f, live(A), "unbolt", []);
+	yield* this.update_icon();
+	A.unbolt();
 	f.dot = 1;
-	if ((truthy(live(A)) && truthy((yield* g.callName(f, live(A), "close", []))))) {
-		if ((((truthy(rt.bitAnd(rt.sv(f, "stat"), 2)) || truthy(rt.sv(f, "lostPower"))) || !truthy(live(A))) || (!truthy(live(A)) || truthy(rt.fv(f, "gc_destroyed", live(A)))))) {
-			yield* g.srcCall(f, "goIdle", 1);
-			return live(f.dot);
+	if (A && (yield* A.close())) {
+		if (rt.bitAnd(this.stat, 2) || this.lostPower || !A || !A || A.gc_destroyed) {
+			yield* this.goIdle(1);
+			return f.dot;
 		}
-		yield* g.callName(f, live(A), "bolt", []);
-		if (isEqual(rt.sv(f, "busy"), 1)) {
-			yield* g.srcCall(f, "goIdle", 1);
+		A.bolt();
+		if (this.busy == 1) {
+			yield* this.goIdle(1);
 		}
 	} else {
-		yield* g.srcCall(f, "goIdle", 1);
+		yield* this.goIdle(1);
 	}
 	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/machinery/doorButtons/airlock_controller/proc/cycleClose  (code/game/machinery/embedded_controller/access_controller.dm:180)
+// access_controller.dm:180
 rt.def("/obj/machinery/doorButtons/airlock_controller/proc/cycleClose", function cycleClose(f: Frame, A: Value) {
-	if (((!truthy(live(A)) || !truthy(rt.sv(f, "exteriorAirlock"))) || !truthy(rt.sv(f, "interiorAirlock")))) {
-		return live(f.dot);
+	if (!A || !this.exteriorAirlock || !this.interiorAirlock) {
+		return f.dot;
 	}
-	if ((isEqual(rt.fv(f, "density", rt.sv(f, "exteriorAirlock")), rt.fv(f, "density", rt.sv(f, "interiorAirlock"))) || !truthy(rt.fv(f, "density", live(A))))) {
-		return live(f.dot);
+	if (this.exteriorAirlock.density == this.interiorAirlock.density || !A.density) {
+		return f.dot;
 	}
-	rt.setSv(f, "busy", 3);
-	rt.callSrc(f, "update_icon", []);
-	if (isEqual(live(A), rt.sv(f, "interiorAirlock"))) {
-		if (truthy(rt.callSrc(f, "closeDoor", [rt.sv(f, "exteriorAirlock")]))) {
-			rt.setSv(f, "busy", 5);
+	this.busy = 3;
+	this.update_icon();
+	if (A == this.interiorAirlock) {
+		if (this.closeDoor(this.exteriorAirlock)) {
+			this.busy = 5;
 		}
 	} else {
-		if (!truthy(rt.callSrc(f, "closeDoor", [rt.sv(f, "interiorAirlock")]))) return f.dot;
-		rt.setSv(f, "busy", 4);
+		if (!this.closeDoor(this.interiorAirlock)) return f.dot;
+		this.busy = 4;
 	}
 	return f.dot;
 });
 
-// /obj/machinery/doorButtons/airlock_controller/proc/cycleOpen  (code/game/machinery/embedded_controller/access_controller.dm:194)  may sleep
+// access_controller.dm:194
 rt.def("/obj/machinery/doorButtons/airlock_controller/proc/cycleOpen", function* cycleOpen(f: Frame, A: Value) {
-	f.vars = () => [A];
-	if (!truthy(live(A))) {
-		yield* g.srcCall(f, "goIdle", 1);
+	if (!A) {
+		yield* this.goIdle(1);
 	}
-	if (isEqual(live(A), rt.sv(f, "exteriorAirlock"))) {
-		if (truthy(rt.sv(f, "interiorAirlock"))) {
-			if ((!truthy(rt.fv(f, "density", rt.sv(f, "interiorAirlock"))) || !truthy(rt.fv(f, "locked", rt.sv(f, "interiorAirlock"))))) {
-				return live(f.dot);
+	if (A == this.exteriorAirlock) {
+		if (this.interiorAirlock) {
+			if (!this.interiorAirlock.density || !this.interiorAirlock.locked) {
+				return f.dot;
 			}
 		}
-	} else {
-		if (truthy(rt.sv(f, "exteriorAirlock"))) {
-			if ((!truthy(rt.fv(f, "density", rt.sv(f, "exteriorAirlock"))) || !truthy(rt.fv(f, "locked", rt.sv(f, "exteriorAirlock"))))) {
-				return live(f.dot);
-			}
+	} else if (this.exteriorAirlock) {
+		if (!this.exteriorAirlock.density || !this.exteriorAirlock.locked) {
+			return f.dot;
 		}
 	}
-	if (isEqual(rt.sv(f, "busy"), 2)) return f.dot;
-	rt.setSv(f, "busy", 2);
-	yield* g.srcCall(f, "openDoor", live(A));
+	if (this.busy == 2) return f.dot;
+	this.busy = 2;
+	yield* this.openDoor(A);
 	return f.dot;
 }, true);
 
-// /obj/machinery/doorButtons/airlock_controller/proc/openDoor  (code/game/machinery/embedded_controller/access_controller.dm:209)  may sleep
+// access_controller.dm:209
 rt.def("/obj/machinery/doorButtons/airlock_controller/proc/openDoor", function* openDoor(f: Frame, A: Value) {
-	f.vars = () => [A];
-	if (((truthy(rt.sv(f, "exteriorAirlock")) && truthy(rt.sv(f, "interiorAirlock"))) && (!truthy(rt.fv(f, "density", rt.sv(f, "exteriorAirlock"))) || !truthy(rt.fv(f, "density", rt.sv(f, "interiorAirlock")))))) {
-		yield* g.srcCall(f, "goIdle", 1);
-		return live(f.dot);
+	if (this.exteriorAirlock && this.interiorAirlock && (!this.exteriorAirlock.density || !this.interiorAirlock.density)) {
+		yield* this.goIdle(1);
+		return f.dot;
 	}
-	yield* g.callName(f, live(A), "unbolt", []);
+	A.unbolt();
 	rt.spawnTail(f, 0, "/obj/machinery/doorButtons/airlock_controller/proc/openDoor: spawn at game/machinery/embedded_controller/access_controller.dm:213", A);
 	return f.dot;
 }, true);
 
 // a spawn(0) body of /obj/machinery/doorButtons/airlock_controller/proc/openDoor, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/obj/machinery/doorButtons/airlock_controller/proc/openDoor: spawn at game/machinery/embedded_controller/access_controller.dm:213", function* (f: Frame, A: Value) {
-	f.vars = () => [A];
-	if ((truthy(live(A)) && truthy((yield* g.callName(f, live(A), "open", []))))) {
-		if ((((truthy(rt.bitOr(rt.sv(f, "stat"), 2)) && !truthy(rt.sv(f, "lostPower"))) && truthy(live(A))) && !(!truthy(live(A)) || truthy(rt.fv(f, "gc_destroyed", live(A)))))) {
-			yield* g.callName(f, live(A), "bolt", []);
+	if (A && (yield* A.open())) {
+		if (rt.bitOr(this.stat, 2) && !this.lostPower && A && !(!A || A.gc_destroyed)) {
+			A.bolt();
 		}
 	}
-	yield* g.srcCall(f, "goIdle", 1);
+	yield* this.goIdle(1);
 	return null;
 });
 
-// /obj/machinery/doorButtons/airlock_controller/proc/goIdle  (code/game/machinery/embedded_controller/access_controller.dm:223)  may sleep
+// access_controller.dm:223
 rt.def("/obj/machinery/doorButtons/airlock_controller/proc/goIdle", function* goIdle(f: Frame, update: Value) {
-	f.vars = () => [update];
-	rt.setSv(f, "lostPower", 0);
-	rt.setSv(f, "busy", 0);
-	if (truthy(live(update))) {
-		yield* g.srcCall(f, "update_icon");
+	this.lostPower = 0;
+	this.busy = 0;
+	if (update) {
+		yield* this.update_icon();
 	}
-	yield* g.srcCall(f, "updateUsrDialog");
+	yield* this.updateUsrDialog();
 	return f.dot;
 }, true);
 
-// /obj/machinery/doorButtons/airlock_controller/proc/process  (code/game/machinery/embedded_controller/access_controller.dm:227)  may sleep
+// access_controller.dm:227
 rt.def("/obj/machinery/doorButtons/airlock_controller/proc/process", function* process(f: Frame) {
-	if (truthy(rt.bitAnd(rt.sv(f, "stat"), 2))) {
-		return live(f.dot);
+	if (rt.bitAnd(this.stat, 2)) {
+		return f.dot;
 	}
-	if (isEqual(rt.sv(f, "busy"), 4)) {
-		yield* g.srcCall(f, "cycleOpen", rt.sv(f, "exteriorAirlock"));
+	if (this.busy == 4) {
+		yield* this.cycleOpen(this.exteriorAirlock);
 	} else {
-		if (!isEqual(rt.sv(f, "busy"), 5)) return f.dot;
-		yield* g.srcCall(f, "cycleOpen", rt.sv(f, "interiorAirlock"));
+		if (this.busy != 5) return f.dot;
+		yield* this.cycleOpen(this.interiorAirlock);
 	}
 	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/machinery/doorButtons/airlock_controller/proc/power_change  (code/game/machinery/embedded_controller/access_controller.dm:235)
+// access_controller.dm:235
 rt.def("/obj/machinery/doorButtons/airlock_controller/proc/power_change", function power_change(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.bitAnd(rt.sv(f, "stat"), 2))) {
-		rt.setSv(f, "lostPower", 1);
-	} else {
-		if (!truthy(rt.sv(f, "busy"))) {
-			rt.setSv(f, "lostPower", 0);
-		}
+	parent_proc();
+	if (rt.bitAnd(this.stat, 2)) {
+		this.lostPower = 1;
+	} else if (!this.busy) {
+		this.lostPower = 0;
 	}
-	rt.callSrc(f, "update_icon", []);
+	this.update_icon();
 	return f.dot;
 });
 
-// /obj/machinery/doorButtons/airlock_controller/proc/findObjsByTag  (code/game/machinery/embedded_controller/access_controller.dm:244)
+// access_controller.dm:244
 rt.def("/obj/machinery/doorButtons/airlock_controller/proc/findObjsByTag", function findObjsByTag(f: Frame) {
 	let A: Value = null;
-	let $e: any;
-	f.vars = () => [A, $e];
-	A = null;
-	rt.forList(f, 0, rt.gl("machines"), T("/obj/machinery/door/airlock"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		A = $e;
-		if (isEqual(rt.fv(f, "id_tag", live(A)), rt.sv(f, "idInterior"))) {
-			rt.setSv(f, "interiorAirlock", live(A));
-		} else {
-			if (isEqual(rt.fv(f, "id_tag", live(A)), rt.sv(f, "idExterior"))) {
-				rt.setSv(f, "exteriorAirlock", live(A));
-			}
+	for (A of each(GLOB.machines, T("/obj/machinery/door/airlock"))) {
+		if (A.id_tag == this.idInterior) {
+			this.interiorAirlock = A;
+		} else if (A.id_tag == this.idExterior) {
+			this.exteriorAirlock = A;
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /obj/machinery/doorButtons/airlock_controller/proc/update_icon  (code/game/machinery/embedded_controller/access_controller.dm:251)
+// access_controller.dm:251
 rt.def("/obj/machinery/doorButtons/airlock_controller/proc/update_icon", function update_icon(f: Frame) {
-	if (truthy(rt.bitAnd(rt.sv(f, "stat"), 2))) {
-		rt.setSv(f, "icon_state", "access_control_off");
-		return live(f.dot);
+	if (rt.bitAnd(this.stat, 2)) {
+		this.icon_state = "access_control_off";
+		return f.dot;
 	}
-	if ((truthy(rt.sv(f, "busy")) || truthy(rt.sv(f, "lostPower")))) {
-		rt.setSv(f, "icon_state", "access_control_process");
+	if (this.busy || this.lostPower) {
+		this.icon_state = "access_control_process";
 	} else {
-		rt.setSv(f, "icon_state", "access_control_standby");
+		this.icon_state = "access_control_standby";
 	}
 	return f.dot;
 });
 
-// /obj/machinery/doorButtons/airlock_controller/proc/attack_hand  (code/game/machinery/embedded_controller/access_controller.dm:260)  may sleep
-rt.def("/obj/machinery/doorButtons/airlock_controller/proc/attack_hand", function* attack_hand(f: Frame) {
+// access_controller.dm:260
+rt.def("/obj/machinery/doorButtons/airlock_controller/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
 	let popup: Value = null;
-	f.vars = () => [popup];
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		return live(f.dot);
+	if (yield* parent_proc()) {
+		return f.dot;
 	}
-	yield* g.callName(f, (popup = (yield* g.new_(f, T("/datum/browser"), [live(f.args[0]), "computer", rt.sv(f, "name")]))), "set_title_image", [(yield* g.callName(f, live(f.args[0]), "browse_rsc_icon", [rt.fv(f, "icon", live(f.src)), rt.fv(f, "icon_state", live(f.src))]))]);
-	yield* g.callName(f, live(popup), "set_content", [(yield* g.srcCall(f, "returnText"))]);
-	yield* g.callName(f, live(popup), "open", []);
+	(popup = (yield* new_(T("/datum/browser"), user, "computer", this.name))).set_title_image(user.browse_rsc_icon(this.icon, this.icon_state));
+	popup.set_content(this.returnText());
+	yield* popup.open();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /obj/machinery/doorButtons/airlock_controller/proc/returnText  (code/game/machinery/embedded_controller/access_controller.dm:269)
+// access_controller.dm:269
 rt.def("/obj/machinery/doorButtons/airlock_controller/proc/returnText", function returnText(f: Frame) {
 	let output: Value = null;
-	let $0: any;
-	f.vars = () => [output, $0];
-	output = null;
-	if ((!truthy(rt.sv(f, "exteriorAirlock")) && !truthy(rt.sv(f, "interiorAirlock")))) {
+	if (!this.exteriorAirlock && !this.interiorAirlock) {
 		return "ERROR ERROR ERROR ERROR";
 	}
-	if (truthy(rt.sv(f, "lostPower"))) {
+	if (this.lostPower) {
 		output = "Initializing...";
+	} else if (!this.exteriorAirlock || !this.interiorAirlock) {
+		if (!this.exteriorAirlock) {
+			if (this.interiorAirlock.density) {
+				output = fmt("<A href='?src=＃;command=open_interior'>Open Interior Airlock</A><BR>", [this]);
+			} else {
+				output = fmt("<A href='?src=＃;command=close_interior'>Close Interior Airlock</A><BR>", [this]);
+			}
+		} else if (this.exteriorAirlock.density) {
+			output = fmt("<A href='?src=＃;command=open_exterior'>Open Exterior Airlock</A><BR>", [this]);
+		} else {
+			output = fmt("<A href='?src=＃;command=close_exterior'>Close Exterior Airlock</A><BR>", [this]);
+		}
+	} else if (this.exteriorAirlock.density) {
+		if (this.interiorAirlock.density) {
+			output = fmt("<A href='?src=＃;command=open_exterior'>Open Exterior Airlock</A><BR>\n\t\t\t\t\t<A href='?src=＃;command=open_interior'>Open Interior Airlock</A><BR>", [this, this]);
+		} else {
+			output = fmt("<A href='?src=＃;command=cycle_exterior'>Cycle to Exterior Airlock</A><BR>\n\t\t\t\t\t<A href='?src=＃;command=close_interior'>Close Interior Airlock</A><BR>", [this, this]);
+		}
+	} else if (this.interiorAirlock.density) {
+		output = fmt("<A href='?src=＃;command=close_exterior'>Close Exterior Airlock</A><BR>\n\t\t\t\t\t<A href='?src=＃;command=cycle_interior'>Cycle to Interior Airlock</A><BR>", [this, this]);
 	} else {
-		if ((!truthy(rt.sv(f, "exteriorAirlock")) || !truthy(rt.sv(f, "interiorAirlock")))) {
-			if (!truthy(rt.sv(f, "exteriorAirlock"))) {
-				if (truthy(rt.fv(f, "density", rt.sv(f, "interiorAirlock")))) {
-					output = fmt("<A href='?src=＃;command=open_interior'>Open Interior Airlock</A><BR>", [live(f.src)]);
-				} else {
-					output = fmt("<A href='?src=＃;command=close_interior'>Close Interior Airlock</A><BR>", [live(f.src)]);
-				}
-			} else {
-				if (truthy(rt.fv(f, "density", rt.sv(f, "exteriorAirlock")))) {
-					output = fmt("<A href='?src=＃;command=open_exterior'>Open Exterior Airlock</A><BR>", [live(f.src)]);
-				} else {
-					output = fmt("<A href='?src=＃;command=close_exterior'>Close Exterior Airlock</A><BR>", [live(f.src)]);
-				}
-			}
-		} else {
-			if (truthy(rt.fv(f, "density", rt.sv(f, "exteriorAirlock")))) {
-				if (truthy(rt.fv(f, "density", rt.sv(f, "interiorAirlock")))) {
-					output = fmt("<A href='?src=＃;command=open_exterior'>Open Exterior Airlock</A><BR>\n\t\t\t\t\t<A href='?src=＃;command=open_interior'>Open Interior Airlock</A><BR>", [live(f.src), live(f.src)]);
-				} else {
-					output = fmt("<A href='?src=＃;command=cycle_exterior'>Cycle to Exterior Airlock</A><BR>\n\t\t\t\t\t<A href='?src=＃;command=close_interior'>Close Interior Airlock</A><BR>", [live(f.src), live(f.src)]);
-				}
-			} else {
-				if (truthy(rt.fv(f, "density", rt.sv(f, "interiorAirlock")))) {
-					output = fmt("<A href='?src=＃;command=close_exterior'>Close Exterior Airlock</A><BR>\n\t\t\t\t\t<A href='?src=＃;command=cycle_interior'>Cycle to Interior Airlock</A><BR>", [live(f.src), live(f.src)]);
-				} else {
-					output = fmt("<A href='?src=＃;command=close_exterior'>Close Exterior Airlock</A><BR>\n\t\t\t\t\t<A href='?src=＃;command=close_interior'>Close Interior Airlock</A><BR>", [live(f.src), live(f.src)]);
-				}
-			}
-		}
+		output = fmt("<A href='?src=＃;command=close_exterior'>Close Exterior Airlock</A><BR>\n\t\t\t\t\t<A href='?src=＃;command=close_interior'>Close Interior Airlock</A><BR>", [this, this]);
 	}
-	output = fmt("<B>Access Control Console</B><HR>\n\t\t\t\t＀<HR>", [live(output)]);
-	if (truthy(rt.sv(f, "exteriorAirlock"))) {
-		if (truthy(rt.fv(f, "density", rt.sv(f, "exteriorAirlock")))) {
-			$0 = "closed";
-		} else {
-			$0 = "open";
-		}
-		output = rt.modify(live(output), fmt("<B>Exterior Door: </B> ＀<BR>", [$0]), add);
+	output = `<B>Access Control Console</B><HR>\n\t\t\t\t${output}<HR>`;
+	if (this.exteriorAirlock) {
+		output += `<B>Exterior Door: </B> ${this.exteriorAirlock.density ? "closed" : "open"}<BR>`;
 	}
-	if (truthy(rt.sv(f, "interiorAirlock"))) {
-		if (truthy(rt.fv(f, "density", rt.sv(f, "interiorAirlock")))) {
-			$0 = "closed";
-		} else {
-			$0 = "open";
-		}
-		output = rt.modify(live(output), fmt("<B>Interior Door: </B> ＀<BR>", [$0]), add);
+	if (this.interiorAirlock) {
+		output += `<B>Interior Door: </B> ${this.interiorAirlock.density ? "closed" : "open"}<BR>`;
 	}
-	return live(output);
+	return output;
 });

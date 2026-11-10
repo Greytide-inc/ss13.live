@@ -1,7 +1,7 @@
-// From code/modules/mob/living/simple_animal/constructs.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/simple_animal/constructs.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(4863, "/mob/living/simple_animal/hostile/construct", "/mob/living/simple_animal/hostile", {
@@ -44,110 +44,97 @@ rt.type(4863, "/mob/living/simple_animal/hostile/construct", "/mob/living/simple
 	deathmessage: "collapses in a shattered heap.",
 });
 
-// /mob/living/simple_animal/hostile/construct/proc/<init>  (code/modules/mob/living/simple_animal/constructs.dm:33)
+// constructs.dm:33
 rt.def("/mob/living/simple_animal/hostile/construct/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "construct_spells", rt.list());
-	$0 = $0;
-	rt.setSv(f, "speak_emote", rt.list("hisses"));
-	rt.setSv(f, "damage_coeff", rt.alist(f, ["brute", 1, "fire", 1, "tox", 0, "clone", 0, "stamina", 0, "oxy", 0]));
-	rt.setSv(f, "atmos_requirements", rt.alist(f, ["min_oxy", 0, "max_oxy", 0, "min_tox", 0, "max_tox", 0, "min_co2", 0, "max_co2", 0, "min_n2", 0, "max_n2", 0]));
-	$0 = $0;
-	rt.setSv(f, "faction", rt.list("cult"));
-	$0 = $0;
-	rt.setSv(f, "loot", rt.list(T("/obj/item/weapon/ectoplasm")));
+	parent_proc();
+	this.construct_spells = list();
+
+	this.speak_emote = list("hisses");
+	this.damage_coeff = rt.alist(f, ["brute", 1, "fire", 1, "tox", 0, "clone", 0, "stamina", 0, "oxy", 0]);
+	this.atmos_requirements = rt.alist(f, ["min_oxy", 0, "max_oxy", 0, "min_tox", 0, "max_tox", 0, "min_co2", 0, "max_co2", 0, "min_n2", 0, "max_n2", 0]);
+
+	this.faction = list("cult");
+
+	this.loot = list(T("/obj/item/weapon/ectoplasm"));
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/construct/proc/Initialize  (code/modules/mob/living/simple_animal/constructs.dm:41)  may sleep
+// constructs.dm:41
 rt.def("/mob/living/simple_animal/hostile/construct/proc/Initialize", function* Initialize(f: Frame) {
 	let spell: Value = null;
-	let $e: any;
-	f.vars = () => [spell, $e];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.srcCall(f, "update_health_hud");
-	spell = null;
-	rt.forList(f, 0, rt.sv(f, "construct_spells"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		spell = $e;
-		yield* g.srcCall(f, "AddSpell", (yield* g.new_(f, live(spell), [null])));
+	f.dot = (yield* parent_proc());
+	this.update_health_hud();
+	for (spell of each(this.construct_spells)) {
+		yield* this.AddSpell((yield* new_(spell, null)));
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/construct/proc/Login  (code/modules/mob/living/simple_animal/constructs.dm:47)  may sleep
+// constructs.dm:47
 rt.def("/mob/living/simple_animal/hostile/construct/proc/Login", function* Login(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), rt.sv(f, "playstyle_string")]);
+	yield* parent_proc();
+	to_chat(this, this.playstyle_string);
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/construct/proc/examine  (code/modules/mob/living/simple_animal/constructs.dm:51)
+// constructs.dm:51
 rt.def("/mob/living/simple_animal/hostile/construct/proc/examine", function examine(f: Frame, user: Value) {
-	let t_He: Value = null, t_s: Value = null, msg: Value = null;
-	f.vars = () => [t_He, t_s, msg];
-	t_He = rt.callSrc(f, "p_they", [1]);
-	t_s = rt.callSrc(f, "p_s", []);
-	msg = fmt("<span class='cult'>*---------*\nThis is ＀ ＇<b>！</b>!\n", [rt.call(f, P("/proc/bicon"), null, [live(f.src)]), live(f.src)]);
-	msg = rt.modify(live(msg), fmt("＀\n", [rt.sv(f, "desc")]), add);
-	if (rt.lt(rt.sv(f, "health"), rt.sv(f, "maxHealth"))) {
-		msg = rt.modify(live(msg), "<span class='warning'>", add);
-		if (rt.ge(rt.sv(f, "health"), divide(rt.sv(f, "maxHealth"), 2))) {
-			msg = rt.modify(live(msg), fmt("＀ look＀ slightly dented.\n", [live(t_He), live(t_s)]), add);
+	let t_He: Value = this.p_they(1);
+	let t_s: Value = this.p_s();
+	let msg: Value = fmt("<span class='cult'>*---------*\nThis is ＀ ＇<b>！</b>!\n", [bicon(this), this]);
+	msg += `${this.desc}\n`;
+	if (this.health < this.maxHealth) {
+		msg += "<span class='warning'>";
+		if (this.health >= this.maxHealth / 2) {
+			msg += `${t_He} look${t_s} slightly dented.\n`;
 		} else {
-			msg = rt.modify(live(msg), fmt("<b>＀ look＀ severely dented!</b>\n", [live(t_He), live(t_s)]), add);
+			msg += `<b>${t_He} look${t_s} severely dented!</b>\n`;
 		}
-		msg = rt.modify(live(msg), "</span>", add);
+		msg += "</span>";
 	}
-	msg = rt.modify(live(msg), "*---------*</span>", add);
-	rt.call(f, P("/proc/to_chat"), null, [live(user), live(msg)]);
+	msg += "*---------*</span>";
+	to_chat(user, msg);
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/construct/proc/attack_animal  (code/modules/mob/living/simple_animal/constructs.dm:67)  may sleep
-rt.def("/mob/living/simple_animal/hostile/construct/proc/attack_animal", function* attack_animal(f: Frame) {
+// constructs.dm:67
+rt.def("/mob/living/simple_animal/hostile/construct/proc/attack_animal", function* attack_animal(f: Frame, M: Value) {
 	let C: Value = null;
-	f.vars = () => [C];
-	if (truthy((rt.istype(live(f.args[0]), T("/mob/living/simple_animal/hostile/construct")) ? 1 : 0))) {
-		if ((!truthy(rt.gv(f, "can_repair_constructs", (C = live(f.args[0])))) || (isEqual(live(C), live(f.src)) && !truthy(rt.fv(f, "can_repair_self", live(C)))))) {
-			return live(f.dot);
+	if (rt.istype(M, T("/mob/living/simple_animal/hostile/construct"))) {
+		if (!(C = M).can_repair_constructs || C == this && !C.can_repair_self) {
+			return f.dot;
 		}
-		if (rt.lt(rt.sv(f, "health"), rt.sv(f, "maxHealth"))) {
-			yield* g.srcCall(f, "adjustHealth", -5);
-			if (!isEqual(live(f.src), live(f.args[0]))) {
-				yield* g.callSrc(f, "Beam", [null, live(f.args[0]), "icon_state", "sendbeam", "time", 4], rt.Args.Named);
-				yield* g.callName(f, live(f.args[0]), "visible_message", [fmt("<span class='danger'>＀ repairs some of ％<b>！'s</b> dents.</span>", [live(f.args[0]), live(f.src)]), fmt("<span class='cult'>You repair some of <b>＀'s</b> dents, leaving <b>＀</b> at <b>＀/＀</b> health.</span>", [live(f.src), live(f.src), rt.sv(f, "health"), rt.sv(f, "maxHealth")])]);
+		if (this.health < this.maxHealth) {
+			yield* this.adjustHealth(-5);
+			if (this != M) {
+				yield* this.Beam(M, { icon_state: "sendbeam", time: 4 });
+				M.visible_message(fmt("<span class='danger'>＀ repairs some of ％<b>！'s</b> dents.</span>", [M, this]), `<span class='cult'>You repair some of <b>${this}'s</b> dents, leaving <b>${this}</b> at <b>${this.health}/${this.maxHealth}</b> health.</span>`);
 			} else {
-				yield* g.callName(f, live(f.args[0]), "visible_message", [fmt("<span class='danger'>＀ repairs some of ＀ own dents.</span>", [live(f.args[0]), (yield* g.srcCall(f, "p_their"))]), fmt("<span class='cult'>You repair some of your own dents, leaving you at <b>＀/＀</b> health.</span>", [rt.fv(f, "health", live(f.args[0])), rt.fv(f, "maxHealth", live(f.args[0]))])]);
+				M.visible_message(`<span class='danger'>${M} repairs some of ${this.p_their()} own dents.</span>`, `<span class='cult'>You repair some of your own dents, leaving you at <b>${M.health}/${M.maxHealth}</b> health.</span>`);
 			}
+		} else if (this != M) {
+			to_chat(M, `<span class='cult'>You cannot repair <b>${this}'s</b> dents, as ${this.p_they()} ${this.p_have()} none!</span>`);
 		} else {
-			if (!isEqual(live(f.src), live(f.args[0]))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='cult'>You cannot repair <b>＀'s</b> dents, as ＀ ＀ none!</span>", [live(f.src), (yield* g.srcCall(f, "p_they")), (yield* g.srcCall(f, "p_have"))])]);
-			} else {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='cult'>You cannot repair your own dents, as you have none!</span>"]);
-			}
+			to_chat(M, "<span class='cult'>You cannot repair your own dents, as you have none!</span>");
 		}
 	} else {
-		if (isEqual(live(f.src), live(f.args[0]))) return f.dot;
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+		if (this == M) return f.dot;
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /mob/living/simple_animal/hostile/construct/proc/adjustHealth  (code/modules/mob/living/simple_animal/constructs.dm:98)  may sleep
+// constructs.dm:98
 rt.def("/mob/living/simple_animal/hostile/construct/proc/adjustHealth", function* adjustHealth(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 1;
 	}
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 0;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(live(f.args[1]))) return f.dot;
-	yield* g.srcCall(f, "update_health_hud");
+	f.dot = (yield* parent_proc());
+	if (!f.args[1]) return f.dot;
+	this.update_health_hud();
 	return f.dot;
 }, true, { args: ["amount", "updating_health", "forced"] });
 
@@ -175,38 +162,35 @@ rt.type(4864, "/mob/living/simple_animal/hostile/construct/armored", "/mob/livin
 	construct_spells: null,
 });
 
-// /mob/living/simple_animal/hostile/construct/armored/proc/<init>  (code/modules/mob/living/simple_animal/constructs.dm:123)
+// constructs.dm:123
 rt.def("/mob/living/simple_animal/hostile/construct/armored/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "construct_spells", rt.list(T("/obj/effect/proc_holder/spell/aoe_turf/conjure/lesserforcewall")));
+	parent_proc();
+	this.construct_spells = list(T("/obj/effect/proc_holder/spell/aoe_turf/conjure/lesserforcewall"));
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/construct/armored/proc/bullet_act  (code/modules/mob/living/simple_animal/constructs.dm:132)  may sleep
+// constructs.dm:132
 rt.def("/mob/living/simple_animal/hostile/construct/armored/proc/bullet_act", function* bullet_act(f: Frame, _P: Value) {
 	let reflectchance: Value = null, new_x: Value = null, new_y: Value = null, curloc: Value = null;
-	f.vars = () => [_P, reflectchance, new_x, new_y, curloc];
-	if ((truthy((rt.istype(live(_P), T("/obj/item/projectile/energy")) ? 1 : 0)) || truthy((rt.istype(live(_P), T("/obj/item/projectile/beam")) ? 1 : 0)))) {
-		if (truthy(rt.op(f, "Prob", [], [(reflectchance = subtract(80, (yield* g.call(f, P("/proc/round"), null, [divide(rt.fv(f, "damage", live(_P)), 3)]))))]))) {
-			yield* g.srcCall(f, "apply_damage", multiply(rt.fv(f, "damage", live(_P)), 0.5), rt.fv(f, "damage_type", live(_P)));
-			yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>The ＀ is reflected by ＀'s armored shell!</span>", [rt.fv(f, "name", live(_P)), live(f.src)]), fmt("<span class='userdanger'>The ＀ is reflected by your armored shell!</span>", [rt.fv(f, "name", live(_P))]));
-			if (truthy(rt.fv(f, "starting", live(_P)))) {
-				new_x = add(rt.gv(f, "x", rt.fv(f, "starting", live(_P))), rt.op(f, "PickUnweighted", [14], [0, 0, -1, 1, -2, 2, -2, 2, -2, 2, -3, 3, -3, 3]));
-				new_y = add(rt.gv(f, "y", rt.fv(f, "starting", live(_P))), rt.op(f, "PickUnweighted", [14], [0, 0, -1, 1, -2, 2, -2, 2, -2, 2, -3, 3, -3, 3]));
-				curloc = rt.getStep(f, live(f.src), 0);
-				rt.setFv(f, "original", live(_P), rt.locate(live(new_x), live(new_y), rt.fv(f, "z", live(_P))));
-				rt.setFv(f, "starting", live(_P), live(curloc));
-				rt.setFv(f, "current", live(_P), live(curloc));
-				rt.setFv(f, "firer", live(_P), live(f.src));
-				rt.setFv(f, "yo", live(_P), subtract(live(new_y), rt.fv(f, "y", live(curloc))));
-				rt.setFv(f, "xo", live(_P), subtract(live(new_x), rt.fv(f, "x", live(curloc))));
+	if (rt.istype(_P, T("/obj/item/projectile/energy")) || rt.istype(_P, T("/obj/item/projectile/beam"))) {
+		if (prob((reflectchance = 80 - round(_P.damage / 3)))) {
+			yield* this.apply_damage(_P.damage * 0.5, _P.damage_type);
+			this.visible_message(`<span class='danger'>The ${_P.name} is reflected by ${this}'s armored shell!</span>`, `<span class='userdanger'>The ${_P.name} is reflected by your armored shell!</span>`);
+			if (_P.starting) {
+				new_x = _P.starting.x + pick(0, 0, -1, 1, -2, 2, -2, 2, -2, 2, -3, 3, -3, 3);
+				new_y = _P.starting.y + pick(0, 0, -1, 1, -2, 2, -2, 2, -2, 2, -3, 3, -3, 3);
+				curloc = rt.getStep(f, this, 0);
+				_P.original = rt.locate(new_x, new_y, _P.z);
+				_P.starting = curloc;
+				_P.current = curloc;
+				_P.firer = this;
+				_P.yo = new_y - curloc.y;
+				_P.xo = new_x - curloc.x;
 			}
 			return -1;
 		}
 	}
-	return (yield* g.callSuper(f, [live(_P)]));
+	return (yield* parent_proc(_P));
 }, true);
 
 rt.type(4866, "/mob/living/simple_animal/hostile/construct/wraith", "/mob/living/simple_animal/hostile/construct", {
@@ -229,45 +213,34 @@ rt.type(4866, "/mob/living/simple_animal/hostile/construct/wraith", "/mob/living
 	construct_spells: null,
 });
 
-// /mob/living/simple_animal/hostile/construct/wraith/proc/<init>  (code/modules/mob/living/simple_animal/constructs.dm:173)
+// constructs.dm:173
 rt.def("/mob/living/simple_animal/hostile/construct/wraith/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "construct_spells", rt.list(T("/obj/effect/proc_holder/spell/targeted/ethereal_jaunt/shift")));
+	parent_proc();
+	this.construct_spells = list(T("/obj/effect/proc_holder/spell/targeted/ethereal_jaunt/shift"));
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/construct/wraith/proc/AttackingTarget  (code/modules/mob/living/simple_animal/constructs.dm:181)  may sleep
+// constructs.dm:181
 rt.def("/mob/living/simple_animal/hostile/construct/wraith/proc/AttackingTarget", function* AttackingTarget(f: Frame) {
-	let prev_stat: Value = null, L: Value = null, refund: Value = null, S: Value = null;
-	let $e: any;
-	f.vars = () => [prev_stat, L, refund, S, $e];
-	prev_stat = null;
-	if ((truthy((rt.istype(rt.sv(f, "target"), T("/mob/living")) ? 1 : 0)) && !truthy((yield* g.call(f, P("/proc/iscultist"), null, [rt.sv(f, "target")]))))) {
-		prev_stat = rt.gv(f, "stat", (L = rt.sv(f, "target")));
+	let prev_stat: Value = null, L: Value = null, S: Value = null;
+	if (rt.istype(this.target, T("/mob/living")) && !iscultist(this.target)) {
+		prev_stat = (L = this.target).stat;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!(truthy(live(f.dot)) && truthy((yield* g.call(f, P("/proc/isnum"), null, [live(prev_stat)]))))) return f.dot;
-	L = rt.sv(f, "target");
-	refund = 0;
-	if (((!truthy(live(L)) || truthy(rt.fv(f, "gc_destroyed", live(L)))) || (isEqual(rt.fv(f, "stat", live(L)), 2) && !isEqual(live(prev_stat), 2)))) {
-		refund = rt.modify(live(refund), rt.sv(f, "kill_refund"), add);
-	} else {
-		if ((truthy((yield* g.callName(f, live(L), "InCritical", []))) && isEqual(live(prev_stat), 0))) {
-			refund = rt.modify(live(refund), rt.sv(f, "crit_refund"), add);
-		}
+	f.dot = (yield* parent_proc());
+	if (!(f.dot && isnum(prev_stat))) return f.dot;
+	L = this.target;
+	let refund: Value = 0;
+	if (!L || L.gc_destroyed || L.stat == 2 && prev_stat != 2) {
+		refund += this.kill_refund;
+	} else if (L.InCritical() && prev_stat == 0) {
+		refund += this.crit_refund;
 	}
-	if ((!isEqual(rt.fv(f, "stat", live(L)), 2) && !isEqual(live(prev_stat), 2))) {
-		refund = rt.modify(live(refund), rt.sv(f, "attack_refund"), add);
+	if (L.stat != 2 && prev_stat != 2) {
+		refund += this.attack_refund;
 	}
-	S = null;
-	rt.forList(f, 0, rt.sv(f, "mob_spell_list"), T("/obj/effect/proc_holder/spell/targeted/ethereal_jaunt/shift"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		S = $e;
-		rt.setFv(f, "charge_counter", live(S), (yield* g.call(f, P("/proc/min"), null, [add(rt.fv(f, "charge_counter", live(S)), live(refund)), rt.fv(f, "charge_max", live(S))])));
+	for (S of each(this.mob_spell_list, T("/obj/effect/proc_holder/spell/targeted/ethereal_jaunt/shift"))) {
+		S.charge_counter = min(S.charge_counter + refund, S.charge_max);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
@@ -295,21 +268,18 @@ rt.type(4868, "/mob/living/simple_animal/hostile/construct/builder", "/mob/livin
 	construct_spells: null,
 });
 
-// /mob/living/simple_animal/hostile/construct/builder/proc/<init>  (code/modules/mob/living/simple_animal/constructs.dm:223)
+// constructs.dm:223
 rt.def("/mob/living/simple_animal/hostile/construct/builder/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "construct_spells", rt.list(T("/obj/effect/proc_holder/spell/aoe_turf/conjure/wall"), T("/obj/effect/proc_holder/spell/aoe_turf/conjure/floor"), T("/obj/effect/proc_holder/spell/aoe_turf/conjure/soulstone"), T("/obj/effect/proc_holder/spell/aoe_turf/conjure/construct/lesser"), T("/obj/effect/proc_holder/spell/targeted/projectile/magic_missile/lesser")));
+	parent_proc();
+	this.construct_spells = list(T("/obj/effect/proc_holder/spell/aoe_turf/conjure/wall"), T("/obj/effect/proc_holder/spell/aoe_turf/conjure/floor"), T("/obj/effect/proc_holder/spell/aoe_turf/conjure/soulstone"), T("/obj/effect/proc_holder/spell/aoe_turf/conjure/construct/lesser"), T("/obj/effect/proc_holder/spell/targeted/projectile/magic_missile/lesser"));
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/construct/builder/proc/Found  (code/modules/mob/living/simple_animal/constructs.dm:236)
+// constructs.dm:236
 rt.def("/mob/living/simple_animal/hostile/construct/builder/proc/Found", function Found(f: Frame, A: Value) {
 	let C: Value = null;
-	f.vars = () => [C];
-	if (truthy((rt.istype(live(A), T("/mob/living/simple_animal/hostile/construct")) ? 1 : 0))) {
-		if (rt.lt(rt.gv(f, "health", (C = live(A))), rt.fv(f, "maxHealth", live(C)))) {
+	if (rt.istype(A, T("/mob/living/simple_animal/hostile/construct"))) {
+		if ((C = A).health < C.maxHealth) {
 			return 1;
 		} else {
 			return 0;
@@ -317,48 +287,46 @@ rt.def("/mob/living/simple_animal/hostile/construct/builder/proc/Found", functio
 	} else {
 		return 0;
 	}
-	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/construct/builder/proc/CanAttack  (code/modules/mob/living/simple_animal/constructs.dm:246)
-rt.def("/mob/living/simple_animal/hostile/construct/builder/proc/CanAttack", function CanAttack(f: Frame) {
-	if (rt.lt(rt.sv(f, "see_invisible"), rt.fv(f, "invisibility", live(f.args[0])))) {
+// constructs.dm:246
+rt.def("/mob/living/simple_animal/hostile/construct/builder/proc/CanAttack", function CanAttack(f: Frame, the_target: Value) {
+	if (this.see_invisible < the_target.invisibility) {
 		return 0;
 	}
-	if (!(truthy(rt.callSrc(f, "Found", [live(f.args[0])])) || truthy(rt.callSuper(f, [], rt.Args.Same)))) return f.dot;
+	if (!(this.Found(the_target) || parent_proc())) return f.dot;
 	return 1;
-}, false, { args: ["the_target"] });
+}, false);
 
-// /mob/living/simple_animal/hostile/construct/builder/proc/MoveToTarget  (code/modules/mob/living/simple_animal/constructs.dm:252)  may sleep
-rt.def("/mob/living/simple_animal/hostile/construct/builder/proc/MoveToTarget", function* MoveToTarget(f: Frame) {
+// constructs.dm:252
+rt.def("/mob/living/simple_animal/hostile/construct/builder/proc/MoveToTarget", function* MoveToTarget(f: Frame, possible_targets: Value) {
 	let L: Value = null;
-	f.vars = () => [L];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy((rt.istype(rt.sv(f, "target"), T("/mob/living")) ? 1 : 0))) return f.dot;
-	if ((truthy((rt.istype((L = rt.sv(f, "target")), T("/mob/living/simple_animal/hostile/construct")) ? 1 : 0)) && rt.ge(rt.fv(f, "health", live(L)), rt.fv(f, "maxHealth", live(L))))) {
-		yield* g.srcCall(f, "LoseTarget");
+	yield* parent_proc();
+	if (!rt.istype(this.target, T("/mob/living"))) return f.dot;
+	if (rt.istype((L = this.target), T("/mob/living/simple_animal/hostile/construct")) && L.health >= L.maxHealth) {
+		yield* this.LoseTarget();
 		return 0;
 	}
-	if (!rt.le(rt.fv(f, "health", live(L)), add(rt.sv(f, "melee_damage_lower"), rt.sv(f, "melee_damage_upper")))) return f.dot;
-	rt.setSv(f, "retreat_distance", null);
-	rt.setSv(f, "minimum_distance", 1);
-	return f.dot;
-}, true, { args: ["possible_targets"] });
-
-// /mob/living/simple_animal/hostile/construct/builder/proc/Aggro  (code/modules/mob/living/simple_animal/constructs.dm:263)  may sleep
-rt.def("/mob/living/simple_animal/hostile/construct/builder/proc/Aggro", function* Aggro(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy((rt.istype(rt.sv(f, "target"), T("/mob/living/simple_animal/hostile/construct")) ? 1 : 0))) return f.dot;
-	rt.setSv(f, "retreat_distance", null);
-	rt.setSv(f, "minimum_distance", 1);
+	if (!(L.health <= this.melee_damage_lower + this.melee_damage_upper)) return f.dot;
+	this.retreat_distance = null;
+	this.minimum_distance = 1;
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/construct/builder/proc/LoseAggro  (code/modules/mob/living/simple_animal/constructs.dm:269)
+// constructs.dm:263
+rt.def("/mob/living/simple_animal/hostile/construct/builder/proc/Aggro", function* Aggro(f: Frame) {
+	yield* parent_proc();
+	if (!rt.istype(this.target, T("/mob/living/simple_animal/hostile/construct"))) return f.dot;
+	this.retreat_distance = null;
+	this.minimum_distance = 1;
+	return f.dot;
+}, true);
+
+// constructs.dm:269
 rt.def("/mob/living/simple_animal/hostile/construct/builder/proc/LoseAggro", function LoseAggro(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "retreat_distance", rt.initial(f, live(f.src), "retreat_distance"));
-	rt.setSv(f, "minimum_distance", rt.initial(f, live(f.src), "minimum_distance"));
+	parent_proc();
+	this.retreat_distance = rt.initial(f, this, "retreat_distance");
+	this.minimum_distance = rt.initial(f, this, "minimum_distance");
 	return f.dot;
 });
 
@@ -366,12 +334,10 @@ rt.type(4870, "/mob/living/simple_animal/hostile/construct/builder/noncult", "/m
 	construct_spells: null,
 });
 
-// /mob/living/simple_animal/hostile/construct/builder/noncult/proc/<init>  (code/modules/mob/living/simple_animal/constructs.dm:279)
+// constructs.dm:279
 rt.def("/mob/living/simple_animal/hostile/construct/builder/noncult/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "construct_spells", rt.list(T("/obj/effect/proc_holder/spell/aoe_turf/conjure/wall"), T("/obj/effect/proc_holder/spell/aoe_turf/conjure/floor"), T("/obj/effect/proc_holder/spell/aoe_turf/conjure/soulstone/noncult"), T("/obj/effect/proc_holder/spell/aoe_turf/conjure/construct/lesser"), T("/obj/effect/proc_holder/spell/targeted/projectile/magic_missile/lesser")));
+	parent_proc();
+	this.construct_spells = list(T("/obj/effect/proc_holder/spell/aoe_turf/conjure/wall"), T("/obj/effect/proc_holder/spell/aoe_turf/conjure/floor"), T("/obj/effect/proc_holder/spell/aoe_turf/conjure/soulstone/noncult"), T("/obj/effect/proc_holder/spell/aoe_turf/conjure/construct/lesser"), T("/obj/effect/proc_holder/spell/targeted/projectile/magic_missile/lesser"));
 	return f.dot;
 });
 
@@ -393,77 +359,67 @@ rt.type(4871, "/mob/living/simple_animal/hostile/construct/harvester", "/mob/liv
 	construct_spells: null,
 });
 
-// /mob/living/simple_animal/hostile/construct/harvester/proc/<init>  (code/modules/mob/living/simple_animal/constructs.dm:300)
+// constructs.dm:300
 rt.def("/mob/living/simple_animal/hostile/construct/harvester/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "construct_spells", rt.list(T("/obj/effect/proc_holder/spell/aoe_turf/area_conversion"), T("/obj/effect/proc_holder/spell/aoe_turf/conjure/lesserforcewall")));
+	parent_proc();
+	this.construct_spells = list(T("/obj/effect/proc_holder/spell/aoe_turf/area_conversion"), T("/obj/effect/proc_holder/spell/aoe_turf/conjure/lesserforcewall"));
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/construct/harvester/proc/Bump  (code/modules/mob/living/simple_animal/constructs.dm:308)  may sleep
-rt.def("/mob/living/simple_animal/hostile/construct/harvester/proc/Bump", function* Bump(f: Frame) {
+// constructs.dm:308
+rt.def("/mob/living/simple_animal/hostile/construct/harvester/proc/Bump", function* Bump(f: Frame, AM: Value) {
 	let stored_pulling: Value = null;
-	f.vars = () => [stored_pulling];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!(truthy((rt.istype(live(f.args[0]), T("/turf/closed/wall/mineral/cult")) ? 1 : 0)) && !isEqual(live(f.args[0]), rt.sv(f, "loc")))) return f.dot;
-	if (truthy((stored_pulling = rt.sv(f, "pulling")))) {
-		yield* g.callName(f, live(stored_pulling), "setDir", [rt.getDir(f, rt.fv(f, "loc", live(stored_pulling)), rt.sv(f, "loc"))]);
-		yield* g.callName(f, live(stored_pulling), "forceMove", [rt.sv(f, "loc")]);
+	f.dot = (yield* parent_proc());
+	if (!(rt.istype(AM, T("/turf/closed/wall/mineral/cult")) && AM != this.loc)) return f.dot;
+	if (stored_pulling = this.pulling) {
+		yield* stored_pulling.setDir(rt.getDir(f, stored_pulling.loc, this.loc));
+		yield* stored_pulling.forceMove(this.loc);
 	}
-	yield* g.srcCall(f, "forceMove", live(f.args[0]));
-	if (!truthy(live(stored_pulling))) return f.dot;
-	yield* g.srcCall(f, "start_pulling", live(stored_pulling), 1);
-	return f.dot;
-}, true, { args: ["AM"] });
-
-// /mob/living/simple_animal/hostile/construct/harvester/proc/AttackingTarget  (code/modules/mob/living/simple_animal/constructs.dm:319)  may sleep
-rt.def("/mob/living/simple_animal/hostile/construct/harvester/proc/AttackingTarget", function* AttackingTarget(f: Frame) {
-	let C: Value = null, parts: Value = null, undismembermerable_limbs: Value = null, X: Value = null, BP: Value = null, BP_3: Value = null;
-	let $e: any;
-	f.vars = () => [C, parts, undismembermerable_limbs, X, BP, BP_3, $e];
-	if (truthy((rt.istype(rt.sv(f, "target"), T("/mob/living/carbon")) ? 1 : 0))) {
-		C = rt.sv(f, "target");
-		parts = rt.list();
-		undismembermerable_limbs = 0;
-		X = null;
-		rt.forList(f, 0, rt.fv(f, "bodyparts", live(C)));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			X = $e;
-			if ((!isEqual(rt.gv(f, "body_part", (BP = live(X))), 1) && !isEqual(rt.fv(f, "body_part", live(BP)), 2))) {
-				if (truthy(rt.fv(f, "dismemberable", live(BP)))) {
-					parts = rt.modify(live(parts), live(BP), add);
-				} else {
-					undismembermerable_limbs = rt.inc(live(undismembermerable_limbs), 1);
-				}
-			}
-		}
-		rt.endFor(f, 0);
-		if (!truthy(rt.length(live(parts)))) {
-			if (truthy(live(undismembermerable_limbs))) {
-				return (yield* g.callSuper(f, [], rt.Args.Same));
-			}
-			yield* g.callName(f, live(C), "Knockdown", [60]);
-			yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＀ knocks ＀ down!</span>", [live(f.src), live(C)]));
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), fmt("<span class='cultlarge'>\"Bring ＀ to me.\"</span>", [(yield* g.callName(f, live(C), "p_them", []))])]);
-			return 0;
-		}
-		yield* g.srcCall(f, "do_attack_animation", live(C));
-		yield* g.callName(f, (BP_3 = rt.op(f, "PickUnweighted", [1], [live(parts)])), "dismember", []);
-		return 0;
-	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* this.forceMove(AM);
+	if (!stored_pulling) return f.dot;
+	yield* this.start_pulling(stored_pulling, 1);
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/construct/harvester/proc/Initialize  (code/modules/mob/living/simple_animal/constructs.dm:344)  may sleep
+// constructs.dm:319
+rt.def("/mob/living/simple_animal/hostile/construct/harvester/proc/AttackingTarget", function* AttackingTarget(f: Frame) {
+	let C: Value = null, parts: Value = null, undismembermerable_limbs: Value = null, X: Value = null, BP: Value = null, BP_3: Value = null;
+	if (rt.istype(this.target, T("/mob/living/carbon"))) {
+		C = this.target;
+		parts = list();
+		undismembermerable_limbs = 0;
+		for (X of each(C.bodyparts)) {
+			if ((BP = X).body_part != HEAD && BP.body_part != CHEST) {
+				if (BP.dismemberable) {
+					parts += BP;
+				} else {
+					undismembermerable_limbs++;
+				}
+			}
+		}
+		if (!rt.length(parts)) {
+			if (undismembermerable_limbs) {
+				return (yield* parent_proc());
+			}
+			yield* C.Knockdown(60);
+			this.visible_message(`<span class='danger'>${this} knocks ${C} down!</span>`);
+			to_chat(this, `<span class='cultlarge'>"Bring ${C.p_them()} to me."</span>`);
+			return 0;
+		}
+		yield* this.do_attack_animation(C);
+		yield* (BP_3 = pick(parts)).dismember();
+		return 0;
+	}
+	f.dot = (yield* parent_proc());
+	return f.dot;
+}, true);
+
+// constructs.dm:344
 rt.def("/mob/living/simple_animal/hostile/construct/harvester/proc/Initialize", function* Initialize(f: Frame) {
 	let seek: Value = null;
-	f.vars = () => [seek];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.callName(f, (seek = (yield* g.new_(f, T("/datum/action/innate/seek_prey"), []))), "Grant", [live(f.src)]);
-	yield* g.callName(f, live(seek), "Activate", []);
+	f.dot = (yield* parent_proc());
+	yield* (seek = (yield* new_(T("/datum/action/innate/seek_prey")))).Grant(this);
+	yield* seek.Activate();
 	return f.dot;
 }, true);
 
@@ -477,32 +433,32 @@ rt.type(163, "/datum/action/innate/seek_master", "/datum/action/innate", {
 	button_icon_state: "cult_mark",
 });
 
-// /datum/action/innate/seek_master/proc/Grant  (code/modules/mob/living/simple_animal/constructs.dm:362)  may sleep
-rt.def("/datum/action/innate/seek_master/proc/Grant", function* Grant(f: Frame) {
-	rt.setSv(f, "the_construct", live(f.args[0]));
-	yield* g.callSuper(f, [], rt.Args.Same);
+// constructs.dm:362
+rt.def("/datum/action/innate/seek_master/proc/Grant", function* Grant(f: Frame, C: Value) {
+	this.the_construct = C;
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["C"] });
+}, true);
 
-// /datum/action/innate/seek_master/proc/Activate  (code/modules/mob/living/simple_animal/constructs.dm:366)
+// constructs.dm:366
 rt.def("/datum/action/innate/seek_master/proc/Activate", function Activate(f: Frame) {
-	if (!truthy(rt.gv(f, "eldergod", rt.fv(f, "mode", rt.gl("SSticker"))))) {
-		rt.setFv(f, "master", rt.sv(f, "the_construct"), rt.gl("blood_target"));
+	if (!GLOB.SSticker.mode.eldergod) {
+		this.the_construct.master = GLOB.blood_target;
 	}
-	if (!truthy(rt.fv(f, "master", rt.sv(f, "the_construct")))) {
-		rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "the_construct"), "<span class='cultitalic'>You have no master to seek!</span>"]);
-		rt.setFv(f, "seeking", rt.sv(f, "the_construct"), 0);
-		return live(f.dot);
+	if (!this.the_construct.master) {
+		to_chat(this.the_construct, "<span class='cultitalic'>You have no master to seek!</span>");
+		this.the_construct.seeking = 0;
+		return f.dot;
 	}
-	if (truthy(rt.sv(f, "tracking"))) {
-		rt.setSv(f, "tracking", 0);
-		rt.setFv(f, "seeking", rt.sv(f, "the_construct"), 0);
-		rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "the_construct"), "<span class='cultitalic'>You are no longer tracking your master.</span>"]);
-		return live(f.dot);
+	if (this.tracking) {
+		this.tracking = 0;
+		this.the_construct.seeking = 0;
+		to_chat(this.the_construct, "<span class='cultitalic'>You are no longer tracking your master.</span>");
+		return f.dot;
 	} else {
-		rt.setSv(f, "tracking", 1);
-		rt.setFv(f, "seeking", rt.sv(f, "the_construct"), 1);
-		rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "the_construct"), "<span class='cultitalic'>You are now tracking your master.</span>"]);
+		this.tracking = 1;
+		this.the_construct.seeking = 1;
+		to_chat(this.the_construct, "<span class='cultitalic'>You are now tracking your master.</span>");
 	}
 	return f.dot;
 });
@@ -516,62 +472,54 @@ rt.type(164, "/datum/action/innate/seek_prey", "/datum/action/innate", {
 	button_icon_state: "cult_mark",
 });
 
-// /datum/action/innate/seek_prey/proc/Grant  (code/modules/mob/living/simple_animal/constructs.dm:392)  may sleep
-rt.def("/datum/action/innate/seek_prey/proc/Grant", function* Grant(f: Frame) {
-	rt.setSv(f, "the_construct", live(f.args[0]));
-	yield* g.callSuper(f, [], rt.Args.Same);
+// constructs.dm:392
+rt.def("/datum/action/innate/seek_prey/proc/Grant", function* Grant(f: Frame, C: Value) {
+	this.the_construct = C;
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["C"] });
+}, true);
 
-// /datum/action/innate/seek_prey/proc/Activate  (code/modules/mob/living/simple_animal/constructs.dm:396)
+// constructs.dm:396
 rt.def("/datum/action/innate/seek_prey/proc/Activate", function Activate(f: Frame) {
-	if (rt.gl("cult_narsie") === null) {
-		return live(f.dot);
+	if (GLOB.cult_narsie === null) {
+		return f.dot;
 	}
-	if (truthy(rt.fv(f, "seeking", rt.sv(f, "the_construct")))) {
-		rt.setSv(f, "desc", "None can hide from Nar'Sie, activate to track a survivor attempting to flee the red harvest!");
-		rt.setSv(f, "button_icon_state", "cult_mark");
-		rt.setFv(f, "seeking", rt.sv(f, "the_construct"), 0);
-		rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "the_construct"), "<span class='cultitalic'>You are now tracking Nar'Sie, return to reap the harvest!</span>"]);
-		return live(f.dot);
+	if (this.the_construct.seeking) {
+		this.desc = "None can hide from Nar'Sie, activate to track a survivor attempting to flee the red harvest!";
+		this.button_icon_state = "cult_mark";
+		this.the_construct.seeking = 0;
+		to_chat(this.the_construct, "<span class='cultitalic'>You are now tracking Nar'Sie, return to reap the harvest!</span>");
+		return f.dot;
 	} else {
-		if (truthy(rt.length(rt.fv(f, "souls_needed", rt.gl("cult_narsie"))))) {
-			rt.setFv(f, "master", rt.sv(f, "the_construct"), rt.op(f, "PickUnweighted", [1], [rt.fv(f, "souls_needed", rt.gl("cult_narsie"))]));
-			rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "the_construct"), fmt("<span class='cultitalic'>You are now tracking your prey, ＀ - harvest them!</span>", [rt.fv(f, "master", rt.sv(f, "the_construct"))])]);
+		if (rt.length(GLOB.cult_narsie.souls_needed)) {
+			this.the_construct.master = pick(GLOB.cult_narsie.souls_needed);
+			to_chat(this.the_construct, `<span class='cultitalic'>You are now tracking your prey, ${this.the_construct.master} - harvest them!</span>`);
 		} else {
-			rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "the_construct"), "<span class='cultitalic'>Nar'Sie has completed her harvest!</span>"]);
-			return live(f.dot);
+			to_chat(this.the_construct, "<span class='cultitalic'>Nar'Sie has completed her harvest!</span>");
+			return f.dot;
 		}
-		rt.setSv(f, "desc", "Activate to track Nar'Sie!");
-		rt.setSv(f, "button_icon_state", "sintouch");
-		rt.setFv(f, "seeking", rt.sv(f, "the_construct"), 1);
+		this.desc = "Activate to track Nar'Sie!";
+		this.button_icon_state = "sintouch";
+		this.the_construct.seeking = 1;
 	}
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/construct/proc/update_health_hud  (code/modules/mob/living/simple_animal/constructs.dm:420)
+// constructs.dm:420
 rt.def("/mob/living/simple_animal/hostile/construct/proc/update_health_hud", function update_health_hud(f: Frame) {
-	if (!truthy(rt.sv(f, "hud_used"))) return f.dot;
-	if (rt.ge(rt.sv(f, "health"), rt.sv(f, "maxHealth"))) {
-		rt.setFv(f, "icon_state", rt.fv(f, "healths", rt.sv(f, "hud_used")), fmt("＀_health0", [rt.sv(f, "icon_state")]));
+	if (!this.hud_used) return f.dot;
+	if (this.health >= this.maxHealth) {
+		this.hud_used.healths.icon_state = `${this.icon_state}_health0`;
+	} else if (this.health > this.maxHealth * 0.8) {
+		this.hud_used.healths.icon_state = `${this.icon_state}_health2`;
+	} else if (this.health > this.maxHealth * 0.6) {
+		this.hud_used.healths.icon_state = `${this.icon_state}_health3`;
+	} else if (this.health > this.maxHealth * 0.4) {
+		this.hud_used.healths.icon_state = `${this.icon_state}_health4`;
+	} else if (this.health > this.maxHealth * 0.2) {
+		this.hud_used.healths.icon_state = `${this.icon_state}_health5`;
 	} else {
-		if (rt.gt(rt.sv(f, "health"), multiply(rt.sv(f, "maxHealth"), 0.800000011920929))) {
-			rt.setFv(f, "icon_state", rt.fv(f, "healths", rt.sv(f, "hud_used")), fmt("＀_health2", [rt.sv(f, "icon_state")]));
-		} else {
-			if (rt.gt(rt.sv(f, "health"), multiply(rt.sv(f, "maxHealth"), 0.6000000238418579))) {
-				rt.setFv(f, "icon_state", rt.fv(f, "healths", rt.sv(f, "hud_used")), fmt("＀_health3", [rt.sv(f, "icon_state")]));
-			} else {
-				if (rt.gt(rt.sv(f, "health"), multiply(rt.sv(f, "maxHealth"), 0.4000000059604645))) {
-					rt.setFv(f, "icon_state", rt.fv(f, "healths", rt.sv(f, "hud_used")), fmt("＀_health4", [rt.sv(f, "icon_state")]));
-				} else {
-					if (rt.gt(rt.sv(f, "health"), multiply(rt.sv(f, "maxHealth"), 0.20000000298023224))) {
-						rt.setFv(f, "icon_state", rt.fv(f, "healths", rt.sv(f, "hud_used")), fmt("＀_health5", [rt.sv(f, "icon_state")]));
-					} else {
-						rt.setFv(f, "icon_state", rt.fv(f, "healths", rt.sv(f, "hud_used")), fmt("＀_health6", [rt.sv(f, "icon_state")]));
-					}
-				}
-			}
-		}
+		this.hud_used.healths.icon_state = `${this.icon_state}_health6`;
 	}
 	return f.dot;
 });

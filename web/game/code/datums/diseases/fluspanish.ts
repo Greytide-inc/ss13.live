@@ -1,7 +1,7 @@
-// From code/datums/diseases/fluspanish.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/datums/diseases/fluspanish.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(955, "/datum/disease/fluspanish", "/datum/disease", {
@@ -18,47 +18,42 @@ rt.type(955, "/datum/disease/fluspanish", "/datum/disease", {
 	viable_mobtypes: null,
 });
 
-// /datum/disease/fluspanish/proc/<init>  (code/datums/diseases/fluspanish.dm:6)
+// fluspanish.dm:6
 rt.def("/datum/disease/fluspanish/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "cures", rt.list("spaceacillin"));
-	$0 = $0;
-	rt.setSv(f, "viable_mobtypes", rt.list(T("/mob/living/carbon/human")));
+	parent_proc();
+	this.cures = list("spaceacillin");
+
+	this.viable_mobtypes = list(T("/mob/living/carbon/human"));
 	return f.dot;
 });
 
-// /datum/disease/fluspanish/proc/stage_act  (code/datums/diseases/fluspanish.dm:15)  may sleep
+// fluspanish.dm:15
 rt.def("/datum/disease/fluspanish/proc/stage_act", function* stage_act(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	$0 = rt.sv(f, "stage");
-	if ($0 === 2) {
-		rt.modField(f, rt.sv(f, "affected_mob"), "bodytemperature", 10, add);
-		if (truthy(rt.op(f, "Prob", [], [5]))) {
-			yield* g.callName(f, rt.sv(f, "affected_mob"), "emote", ["sneeze"]);
+	yield* parent_proc();
+	if (this.stage === 2) {
+		this.affected_mob.bodytemperature += 10;
+		if (prob(5)) {
+			yield* this.affected_mob.emote("sneeze");
 		}
-		if (truthy(rt.op(f, "Prob", [], [5]))) {
-			yield* g.callName(f, rt.sv(f, "affected_mob"), "emote", ["cough"]);
+		if (prob(5)) {
+			yield* this.affected_mob.emote("cough");
 		}
-		if (truthy(rt.op(f, "Prob", [], [1]))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "affected_mob"), "<span class='danger'>You're burning in your own skin!</span>"]);
-			yield* g.callName(f, rt.sv(f, "affected_mob"), "take_bodypart_damage", [0, 5]);
+		if (prob(1)) {
+			to_chat(this.affected_mob, "<span class='danger'>You're burning in your own skin!</span>");
+			yield* this.affected_mob.take_bodypart_damage(0, 5);
 		}
-	} else if ($0 === 3) {
-		rt.modField(f, rt.sv(f, "affected_mob"), "bodytemperature", 20, add);
-		if (truthy(rt.op(f, "Prob", [], [5]))) {
-			yield* g.callName(f, rt.sv(f, "affected_mob"), "emote", ["sneeze"]);
+	} else if (this.stage === 3) {
+		this.affected_mob.bodytemperature += 20;
+		if (prob(5)) {
+			yield* this.affected_mob.emote("sneeze");
 		}
-		if (truthy(rt.op(f, "Prob", [], [5]))) {
-			yield* g.callName(f, rt.sv(f, "affected_mob"), "emote", ["cough"]);
+		if (prob(5)) {
+			yield* this.affected_mob.emote("cough");
 		}
-		if (truthy(rt.op(f, "Prob", [], [5]))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "affected_mob"), "<span class='danger'>You're burning in your own skin!</span>"]);
-			yield* g.callName(f, rt.sv(f, "affected_mob"), "take_bodypart_damage", [0, 5]);
+		if (prob(5)) {
+			to_chat(this.affected_mob, "<span class='danger'>You're burning in your own skin!</span>");
+			yield* this.affected_mob.take_bodypart_damage(0, 5);
 		}
 	}
-	return live(f.dot);
+	return f.dot;
 }, true);

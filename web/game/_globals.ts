@@ -1,7 +1,7 @@
 // Global variables, in the order the bytecode numbers them, with their starting values (step 3; src/vm/typedefs.ts).
 // Initialisers that aren't constants run in the global init below (`var/global x = expr`; translated once from the bytecode, now the source).
-import * as rt from "../build/dist/src/translate/runtime.js";
-import type { Frame } from "../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
+import type { Frame } from "#runtime";
 
 rt.globals([
 	["last_irc_status", null],
@@ -1070,6 +1070,7 @@ rt.globals([
 	["plating_broken_states", null],
 	["plating_burnt_states", null],
 	["plasteel_burnt_states", null],
+	["creative_fight_mode", null], // tg_js: Creative's mob fight mode, 1-3 (modules/creative/creative.ts); null counts as 2
 ]);
 
 rt.globalInit(function (f: Frame) {
@@ -1197,9 +1198,9 @@ rt.globalInit(function (f: Frame) {
 	rt.setGl("component_glow", rt.call(f, P("/proc/mutable_appearance"), null, [rt.rsc("icons/obj/clockwork_objects.dmi"), "t_random_component"])); // code/game/gamemodes/clock_cult/clock_structures/tinkerers_daemon.dm:18
 	rt.setGl("blacklisted_pylon_turfs", rt.call(f, P("/proc/typecacheof"), null, [rt.list(T("/turf/closed"), T("/turf/open/floor/engine/cult"), T("/turf/open/space"), T("/turf/open/floor/plating/lava"), T("/turf/open/chasm"))])); // code/game/gamemodes/cult/cult_structures.dm:174
 	rt.setGl("injected_reagents", rt.list("corazone")); // code/game/gamemodes/miniantags/abduction/abduction_gear.dm:662
-	rt.setGl("torn", rt.call(f, P("/proc/mutable_appearance"), null, [null, rt.rsc("icons/obj/smooth_structures/paperframes.dmi"), "icon_state", "torn", "layer", 3.1000001430511475], rt.Args.Named)); // code/game/objects/structures/window.dm:624
-	rt.setGl("paper", rt.call(f, P("/proc/mutable_appearance"), null, [null, rt.rsc("icons/obj/smooth_structures/paperframes.dmi"), "icon_state", "paper", "layer", 3.1000001430511475], rt.Args.Named)); // code/game/objects/structures/window.dm:625
-	rt.setGl("nest_overlay", rt.call(f, P("/proc/mutable_appearance"), null, [rt.rsc("icons/mob/alien.dmi"), "nestoverlay", 3.799999952316284])); // code/game/objects/structures/beds_chairs/alien_nest.dm:15
+	rt.setGl("torn", rt.call(f, P("/proc/mutable_appearance"), null, [null, rt.rsc("icons/obj/smooth_structures/paperframes.dmi"), "icon_state", "torn", "layer", 3.1000001], rt.Args.Named)); // code/game/objects/structures/window.dm:624
+	rt.setGl("paper", rt.call(f, P("/proc/mutable_appearance"), null, [null, rt.rsc("icons/obj/smooth_structures/paperframes.dmi"), "icon_state", "paper", "layer", 3.1000001], rt.Args.Named)); // code/game/objects/structures/window.dm:625
+	rt.setGl("nest_overlay", rt.call(f, P("/proc/mutable_appearance"), null, [rt.rsc("icons/mob/alien.dmi"), "nestoverlay", 3.8])); // code/game/objects/structures/beds_chairs/alien_nest.dm:15
 	rt.setGl("possible_upgrades", rt.call(f, P("/proc/typecacheof"), null, [rt.list(T("/obj/item/device/assembly/prox_sensor"), T("/obj/item/stack/sheet/mineral/plasma"), T("/obj/item/device/analyzer"))])); // code/game/machinery/camera/camera_assembly.dm:18
 	rt.setGl("blacklisted_glowshroom_turfs", rt.call(f, P("/proc/typecacheof"), null, [rt.list(T("/turf/open/floor/plating/lava"), T("/turf/open/floor/plating/beach/water"))])); // code/game/objects/effects/glowshroom.dm:19
 	rt.setGl("rotations", rt.alist(f, [fmt("＀", [1]), rt.alist(f, [fmt("＀", [2]), 8, fmt("＀", [4]), 1]), fmt("＀", [4]), rt.alist(f, [fmt("＀", [2]), 4, fmt("＀", [8]), 1]), fmt("＀", [2]), rt.alist(f, [fmt("＀", [1]), 4, fmt("＀", [8]), 2]), fmt("＀", [8]), rt.alist(f, [fmt("＀", [1]), 8, fmt("＀", [4]), 2])])); // code/game/objects/structures/reflector.dm:144

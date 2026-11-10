@@ -1,7 +1,7 @@
-// From code/controllers/subsystem/minimap.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/controllers/subsystem/minimap.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(29, "/datum/controller/subsystem/minimap", "/datum/controller/subsystem", {
@@ -13,214 +13,162 @@ rt.type(29, "/datum/controller/subsystem/minimap", "/datum/controller/subsystem"
 	flags: 2,
 }, { const: ["MINIMAP_SIZE","TILE_SIZE"] });
 
-// /datum/controller/subsystem/minimap/proc/New  (code/controllers/subsystem/minimap.dm:1)  may sleep
+// minimap.dm:1
 rt.def("/datum/controller/subsystem/minimap/proc/New", function* New(f: Frame) {
-	if (!isEqual(rt.gl("SSminimap"), live(f.src))) {
-		if (truthy((rt.istype(rt.gl("SSminimap"), T("/datum/controller/subsystem/minimap")) ? 1 : 0))) {
-			yield* g.srcCall(f, "Recover");
-			yield* g.call(f, P("/proc/qdel"), null, [rt.gl("SSminimap")]);
+	if (GLOB.SSminimap != this) {
+		if (rt.istype(GLOB.SSminimap, T("/datum/controller/subsystem/minimap"))) {
+			yield* this.Recover();
+			yield* qdel(GLOB.SSminimap);
 		}
-		rt.setGl("SSminimap", live(f.src));
+		GLOB.SSminimap = this;
 	}
-	yield* g.srcCall(f, "PreInit");
+	this.PreInit();
 	return f.dot;
 }, true);
 
-// /datum/controller/subsystem/minimap/proc/<init>  (code/controllers/subsystem/minimap.dm:8)
+// minimap.dm:8
 rt.def("/datum/controller/subsystem/minimap/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "z_levels", rt.list(2));
+	parent_proc();
+	this.z_levels = list(2);
 	return f.dot;
 });
 
-// /datum/controller/subsystem/minimap/proc/Initialize  (code/controllers/subsystem/minimap.dm:11)
-rt.def("/datum/controller/subsystem/minimap/proc/Initialize", function Initialize(f: Frame) {
-	let hash: Value = null, z: Value = null, fileloc: Value = null, z_2: Value = null;
-	let $e: any;
-	f.vars = () => [hash, z, fileloc, z_2, $e];
-	hash = rt.call(f, P("/proc/md5"), null, [rt.callName(f, rt.fv(f, "config", rt.gl("SSmapping")), "GetFullMapPath", [])]);
-	if (truthy(rt.fv(f, "generate_minimaps", rt.gl("config")))) {
-		if (isEqual(live(hash), rt.call(f, P("/proc/trim"), null, [rt.call(f, P("/proc/file2text"), null, [rt.callSrc(f, "hash_path", [])])]))) {
-			z = null;
-			rt.forList(f, 0, rt.sv(f, "z_levels"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				z = $e;
-				rt.call(f, P("/proc/register_asset"), null, [fmt("minimap_＀.png", [live(z)]), rt.call(f, P("/proc/fcopy_rsc"), null, [rt.callSrc(f, "map_path", [live(z)])])]);
+// minimap.dm:11
+rt.def("/datum/controller/subsystem/minimap/proc/Initialize", function Initialize(f: Frame, timeofday: Value) {
+	let z: Value = null, fileloc: Value = null, z_2: Value = null;
+	let hash: Value = md5(GLOB.SSmapping.config.GetFullMapPath());
+	if (GLOB.config.generate_minimaps) {
+		if (hash == trim(file2text(this.hash_path()))) {
+			for (z of each(this.z_levels)) {
+				register_asset(`minimap_${z}.png`, fcopy_rsc(this.map_path(z)));
 			}
-			rt.endFor(f, 0);
-			return rt.callSuper(f, [], rt.Args.Same);
+			return parent_proc();
 		}
 		z = null;
-		rt.forList(f, 0, rt.sv(f, "z_levels"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			z = $e;
-			rt.callSrc(f, "generate", [live(z)]);
-			rt.call(f, P("/proc/register_asset"), null, [fmt("minimap_＀.png", [live(z)]), rt.call(f, P("/proc/fcopy_rsc"), null, [rt.callSrc(f, "map_path", [live(z)])])]);
+		for (z of each(this.z_levels)) {
+			this.generate(z);
+			register_asset(`minimap_${z}.png`, fcopy_rsc(this.map_path(z)));
 		}
-		rt.endFor(f, 0);
-		rt.call(f, P("/proc/fdel"), null, [rt.callSrc(f, "hash_path", [])]);
-		rt.call(f, P("/proc/text2file"), null, [live(hash), rt.callSrc(f, "hash_path", [])]);
+		fdel(this.hash_path());
+		text2file(hash, this.hash_path());
 	} else {
-		rt.call(f, P("/proc/to_chat"), null, [rt.world(), "<span class='boldannounce'>Minimap generation disabled. Loading from cache...</span>"]);
+		to_chat(rt.world(), "<span class='boldannounce'>Minimap generation disabled. Loading from cache...</span>");
 		fileloc = 0;
-		if (truthy(rt.callSrc(f, "check_files", [0]))) {
-			if (!isEqual(live(hash), rt.call(f, P("/proc/trim"), null, [rt.call(f, P("/proc/file2text"), null, [rt.callSrc(f, "hash_path", [])])]))) {
-				rt.call(f, P("/proc/to_chat"), null, [rt.world(), "<span class='boldannounce'>Loaded cached minimap is outdated. There may be minor discrepancies in layout.</span>"]);
+		if (this.check_files(0)) {
+			if (hash != trim(file2text(this.hash_path()))) {
+				to_chat(rt.world(), "<span class='boldannounce'>Loaded cached minimap is outdated. There may be minor discrepancies in layout.</span>");
 			}
 			fileloc = 0;
 		} else {
-			if (!truthy(rt.callSrc(f, "check_files", [1]))) {
-				rt.call(f, P("/proc/to_chat"), null, [rt.world(), "<span class='boldannounce'>Failed to load backup minimap file. Aborting.</span>"]);
-				return live(f.dot);
+			if (!this.check_files(1)) {
+				to_chat(rt.world(), "<span class='boldannounce'>Failed to load backup minimap file. Aborting.</span>");
+				return f.dot;
 			}
 			fileloc = 1;
-			rt.call(f, P("/proc/to_chat"), null, [rt.world(), "<span class='boldannounce'>No cached minimaps detected. Backup files loaded.</span>"]);
+			to_chat(rt.world(), "<span class='boldannounce'>No cached minimaps detected. Backup files loaded.</span>");
 		}
-		z_2 = null;
-		rt.forList(f, 0, rt.sv(f, "z_levels"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			z_2 = $e;
-			rt.call(f, P("/proc/register_asset"), null, [fmt("minimap_＀.png", [live(z_2)]), rt.call(f, P("/proc/fcopy_rsc"), null, [rt.callSrc(f, "map_path", [live(z_2), live(fileloc)])])]);
+		for (z_2 of each(this.z_levels)) {
+			register_asset(`minimap_${z_2}.png`, fcopy_rsc(this.map_path(z_2, fileloc)));
 		}
-		rt.endFor(f, 0);
 	}
-	rt.callSuper(f, [], rt.Args.Same);
+	parent_proc();
 	return f.dot;
-}, false, { args: ["timeofday"] });
+}, false);
 
-// /datum/controller/subsystem/minimap/proc/check_files  (code/controllers/subsystem/minimap.dm:40)
+// minimap.dm:40
 rt.def("/datum/controller/subsystem/minimap/proc/check_files", function check_files(f: Frame, backup: Value) {
 	let z: Value = null;
-	let $e: any;
-	f.vars = () => [z, $e];
-	z = null;
-	rt.forList(f, 0, rt.sv(f, "z_levels"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		z = $e;
-		if (!truthy(rt.call(f, P("/proc/fexists"), null, [rt.call(f, P("/proc/file"), null, [rt.callSrc(f, "map_path", [live(z), live(backup)])])]))) {
-			if (truthy(live(backup))) {
-				rt.call(f, P("/proc/log_world"), null, [fmt("Failed to find backup file for map ＀ on zlevel ＀.", [rt.gv(f, "map_name", rt.fv(f, "config", rt.gl("SSmapping"))), live(z)])]);
+	for (z of each(this.z_levels)) {
+		if (!fexists(file(this.map_path(z, backup)))) {
+			if (backup) {
+				log_world(`Failed to find backup file for map ${GLOB.SSmapping.config.map_name} on zlevel ${z}.`);
 			}
 			return 0;
 		}
 	}
-	rt.endFor(f, 0);
 	return 1;
 });
 
-// /datum/controller/subsystem/minimap/proc/hash_path  (code/controllers/subsystem/minimap.dm:50)
+// minimap.dm:50
 rt.def("/datum/controller/subsystem/minimap/proc/hash_path", function hash_path(f: Frame, backup: Value) {
-	if (truthy(live(backup))) {
-		return fmt("icons/minimaps/＀.md5", [rt.gv(f, "map_name", rt.fv(f, "config", rt.gl("SSmapping")))]);
+	if (backup) {
+		return `icons/minimaps/${GLOB.SSmapping.config.map_name}.md5`;
 	}
-	return fmt("data/minimaps/＀.md5", [rt.gv(f, "map_name", rt.fv(f, "config", rt.gl("SSmapping")))]);
+	return `data/minimaps/${GLOB.SSmapping.config.map_name}.md5`;
 });
 
-// /datum/controller/subsystem/minimap/proc/map_path  (code/controllers/subsystem/minimap.dm:56)
+// minimap.dm:56
 rt.def("/datum/controller/subsystem/minimap/proc/map_path", function map_path(f: Frame, z: Value, backup: Value) {
-	if (truthy(live(backup))) {
-		return fmt("icons/minimaps/＀_＀.png", [rt.gv(f, "map_name", rt.fv(f, "config", rt.gl("SSmapping"))), live(z)]);
+	if (backup) {
+		return `icons/minimaps/${GLOB.SSmapping.config.map_name}_${z}.png`;
 	}
-	return fmt("data/minimaps/＀_＀.png", [rt.gv(f, "map_name", rt.fv(f, "config", rt.gl("SSmapping"))), live(z)]);
+	return `data/minimaps/${GLOB.SSmapping.config.map_name}_${z}.png`;
 });
 
-// /datum/controller/subsystem/minimap/proc/send  (code/controllers/subsystem/minimap.dm:61)  may sleep
+// minimap.dm:61
 rt.def("/datum/controller/subsystem/minimap/proc/send", function* send(f: Frame, client: Value) {
 	let z: Value = null;
-	let $e: any;
-	f.vars = () => [client, z, $e];
-	z = null;
-	rt.forList(f, 0, rt.sv(f, "z_levels"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		z = $e;
-		yield* g.call(f, P("/proc/send_asset"), null, [live(client), fmt("minimap_＀.png", [live(z)])]);
+	for (z of each(this.z_levels)) {
+		yield* send_asset(client, `minimap_${z}.png`);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /datum/controller/subsystem/minimap/proc/generate  (code/controllers/subsystem/minimap.dm:66)
+// minimap.dm:66
 rt.def("/datum/controller/subsystem/minimap/proc/generate", function generate(f: Frame, z: Value, x1: Value, y1: Value, x2: Value, y2: Value) {
 	let minimap: Value = null, _T: Value = null, final: Value = null;
-	let $e: any;
-	f.vars = () => [z, x1, y1, x2, y2, minimap, _T, final, $e];
-	if (live(z) === null) {
-		z = 1;
+	z ??= 1;
+	x1 ??= 1;
+	y1 ??= 1;
+	x2 ??= rt.world().maxx;
+	y2 ??= rt.world().maxy;
+	(minimap = new_(T("/icon"), rt.rsc("icons/minimap.dmi"))).Scale(2048, 2048);
+	for (_T of each(block(rt.locate(x1, y1, z), rt.locate(x2, y2, z)))) {
+		this.generate_tile(_T, minimap);
 	}
-	if (live(x1) === null) {
-		x1 = 1;
-	}
-	if (live(y1) === null) {
-		y1 = 1;
-	}
-	if (live(x2) === null) {
-		x2 = rt.fv(f, "maxx", rt.world());
-	}
-	if (live(y2) === null) {
-		y2 = rt.fv(f, "maxy", rt.world());
-	}
-	rt.callName(f, (minimap = rt.new_(f, T("/icon"), [rt.rsc("icons/minimap.dmi")])), "Scale", [2048, 2048]);
-	_T = null;
-	rt.forList(f, 0, rt.call(f, P("/proc/block"), null, [rt.locate(live(x1), live(y1), live(z)), rt.locate(live(x2), live(y2), live(z))]));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_T = $e;
-		rt.callSrc(f, "generate_tile", [live(_T), live(minimap)]);
-	}
-	rt.endFor(f, 0);
-	rt.callName(f, (final = rt.new_(f, T("/icon"), [])), "Insert", [live(minimap), "", 2, 1, 0]);
-	rt.call(f, P("/proc/fcopy"), null, [live(final), rt.callSrc(f, "map_path", [live(z)])]);
+	(final = new_(T("/icon"))).Insert(minimap, "", 2, 1, 0);
+	fcopy(final, this.map_path(z));
 	return f.dot;
 });
 
-// /datum/controller/subsystem/minimap/proc/generate_tile  (code/controllers/subsystem/minimap.dm:84)
+// minimap.dm:84
 rt.def("/datum/controller/subsystem/minimap/proc/generate_tile", function generate_tile(f: Frame, tile: Value, minimap: Value) {
 	let tile_icon: Value = null, obj: Value = null, obj_icons: Value = null, I: Value = null, obj_icon: Value = null;
-	let $e: any;
-	f.vars = () => [tile_icon, obj, obj_icons, I, obj_icon, $e];
-	tile_icon = null;
-	obj = null;
-	obj_icons = null;
-	if (truthy((rt.istype(live(tile), T("/turf/open/space")) ? 1 : 0))) {
-		if (truthy((obj = rt.locateIn(f, T("/obj/structure/lattice/catwalk"), live(tile))))) {
-			tile_icon = rt.new_(f, T("/icon"), [rt.rsc("icons/obj/smooth_structures/catwalk.dmi"), "catwalk", 2]);
+	if (rt.istype(tile, T("/turf/open/space"))) {
+		if (obj = rt.locateIn(f, T("/obj/structure/lattice/catwalk"), tile)) {
+			tile_icon = new_(T("/icon"), rt.rsc("icons/obj/smooth_structures/catwalk.dmi"), "catwalk", 2);
 		}
-		if (truthy((obj = rt.locateIn(f, T("/obj/structure/lattice"), live(tile))))) {
-			tile_icon = rt.new_(f, T("/icon"), [rt.rsc("icons/obj/smooth_structures/lattice.dmi"), "lattice", 2]);
+		if (obj = rt.locateIn(f, T("/obj/structure/lattice"), tile)) {
+			tile_icon = new_(T("/icon"), rt.rsc("icons/obj/smooth_structures/lattice.dmi"), "lattice", 2);
 		}
-		if (truthy((obj = rt.locateIn(f, T("/obj/structure/grille"), live(tile))))) {
-			tile_icon = rt.new_(f, T("/icon"), [rt.rsc("icons/obj/structures.dmi"), "grille", 2]);
+		if (obj = rt.locateIn(f, T("/obj/structure/grille"), tile)) {
+			tile_icon = new_(T("/icon"), rt.rsc("icons/obj/structures.dmi"), "grille", 2);
 		}
-		if (truthy((obj = rt.locateIn(f, T("/obj/structure/transit_tube"), live(tile))))) {
-			tile_icon = rt.new_(f, T("/icon"), [rt.rsc("icons/obj/atmospherics/pipes/transit_tube.dmi"), rt.fv(f, "icon_state", live(obj)), rt.fv(f, "dir", live(obj))]);
+		if (obj = rt.locateIn(f, T("/obj/structure/transit_tube"), tile)) {
+			tile_icon = new_(T("/icon"), rt.rsc("icons/obj/atmospherics/pipes/transit_tube.dmi"), obj.icon_state, obj.dir);
 		}
 	} else {
-		tile_icon = rt.new_(f, T("/icon"), [rt.fv(f, "icon", live(tile)), rt.fv(f, "icon_state", live(tile)), rt.fv(f, "dir", live(tile))]);
-		obj_icons = rt.list();
-		if (truthy((obj = rt.locateIn(f, T("/obj/structure"), live(tile))))) {
-			obj_icons = rt.modify(live(obj_icons), rt.new_(f, T("/icon"), [rt.fv(f, "icon", live(obj)), rt.fv(f, "icon_state", live(obj)), rt.fv(f, "dir", live(obj)), 1, 0]), add);
+		tile_icon = new_(T("/icon"), tile.icon, tile.icon_state, tile.dir);
+		obj_icons = list();
+		if (obj = rt.locateIn(f, T("/obj/structure"), tile)) {
+			obj_icons += new_(T("/icon"), obj.icon, obj.icon_state, obj.dir, 1, 0);
 		}
-		if (truthy((obj = rt.locateIn(f, T("/obj/machinery"), live(tile))))) {
-			obj_icons = rt.modify(live(obj_icons), rt.new_(f, T("/icon"), [rt.fv(f, "icon", live(obj)), rt.fv(f, "icon_state", live(obj)), rt.fv(f, "dir", live(obj)), 1, 0]), add);
+		if (obj = rt.locateIn(f, T("/obj/machinery"), tile)) {
+			obj_icons += new_(T("/icon"), obj.icon, obj.icon_state, obj.dir, 1, 0);
 		}
-		if (truthy((obj = rt.locateIn(f, T("/obj/structure/window"), live(tile))))) {
-			obj_icons = rt.modify(live(obj_icons), rt.new_(f, T("/icon"), [rt.rsc("icons/obj/smooth_structures/window.dmi"), "window", 2]), add);
+		if (obj = rt.locateIn(f, T("/obj/structure/window"), tile)) {
+			obj_icons += new_(T("/icon"), rt.rsc("icons/obj/smooth_structures/window.dmi"), "window", 2);
 		}
-		if (truthy((obj = rt.locateIn(f, T("/obj/structure/table"), live(tile))))) {
-			obj_icons = rt.modify(live(obj_icons), rt.new_(f, T("/icon"), [rt.rsc("icons/obj/smooth_structures/table.dmi"), "table", 2]), add);
+		if (obj = rt.locateIn(f, T("/obj/structure/table"), tile)) {
+			obj_icons += new_(T("/icon"), rt.rsc("icons/obj/smooth_structures/table.dmi"), "table", 2);
 		}
-		I = null;
-		rt.forList(f, 0, live(obj_icons));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			I = $e;
-			obj_icon = live(I);
-			rt.callName(f, live(tile_icon), "Blend", [live(obj_icon), 3]);
+		for (I of each(obj_icons)) {
+			obj_icon = I;
+			tile_icon.Blend(obj_icon, 3);
 		}
-		rt.endFor(f, 0);
 	}
-	if (!truthy(live(tile_icon))) return f.dot;
-	rt.callName(f, live(tile_icon), "Scale", [8, 8]);
-	rt.callName(f, live(minimap), "Blend", [live(tile_icon), 3, multiply(subtract(rt.fv(f, "x", live(tile)), 1), 8), multiply(subtract(rt.fv(f, "y", live(tile)), 1), 8)]);
+	if (!tile_icon) return f.dot;
+	tile_icon.Scale(8, 8);
+	minimap.Blend(tile_icon, 3, (tile.x - 1) * 8, (tile.y - 1) * 8);
 	return f.dot;
 });

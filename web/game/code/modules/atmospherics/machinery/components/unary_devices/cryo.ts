@@ -1,7 +1,7 @@
-// From code/modules/atmospherics/machinery/components/unary_devices/cryo.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/atmospherics/machinery/components/unary_devices/cryo.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, subtract } = rt;
 
 
 rt.type(10583, "/obj/machinery/atmospherics/components/unary/cryo_cell", "/obj/machinery/atmospherics/components/unary", {
@@ -31,27 +31,24 @@ rt.type(10583, "/obj/machinery/atmospherics/components/unary/cryo_cell", "/obj/m
 	state_open: 0,
 });
 
-// /obj/machinery/atmospherics/components/unary/cryo_cell/proc/<init>  (code/modules/atmospherics/machinery/components/unary_devices/cryo.dm:11)
+// cryo.dm:11
 rt.def("/obj/machinery/atmospherics/components/unary/cryo_cell/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 100, "bomb", 0, "bio", 100, "rad", 100, "fire", 30, "acid", 30]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 100, "bomb", 0, "bio", 100, "rad", 100, "fire", 30, "acid", 30]);
 	return f.dot;
 });
 
-// /obj/machinery/atmospherics/components/unary/cryo_cell/proc/Initialize  (code/modules/atmospherics/machinery/components/unary_devices/cryo.dm:35)  may sleep
+// cryo.dm:35
 rt.def("/obj/machinery/atmospherics/components/unary/cryo_cell/proc/Initialize", function* Initialize(f: Frame) {
 	let B: Value = null;
-	f.vars = () => [B];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "initialize_directions", rt.sv(f, "dir"));
-	yield* g.callName(f, (B = (yield* g.new_(f, T("/obj/item/weapon/circuitboard/machine/cryo_tube"), []))), "apply_default_parts", [live(f.src)]);
-	rt.setSv(f, "radio", (yield* g.new_(f, T("/obj/item/device/radio"), [live(f.src)])));
-	rt.setFv(f, "keyslot", rt.sv(f, "radio"), (yield* g.new_(f, rt.sv(f, "radio_key"), [])));
-	rt.setFv(f, "subspace_transmission", rt.sv(f, "radio"), 1);
-	rt.setFv(f, "canhear_range", rt.sv(f, "radio"), 0);
-	yield* g.callName(f, rt.sv(f, "radio"), "recalculateChannels", []);
+	f.dot = (yield* parent_proc());
+	this.initialize_directions = this.dir;
+	yield* (B = (yield* new_(T("/obj/item/weapon/circuitboard/machine/cryo_tube")))).apply_default_parts(this);
+	this.radio = (yield* new_(T("/obj/item/device/radio"), this));
+	this.radio.keyslot = (yield* new_(this.radio_key));
+	this.radio.subspace_transmission = 1;
+	this.radio.canhear_range = 0;
+	this.radio.recalculateChannels();
 	return f.dot;
 }, true);
 
@@ -62,209 +59,182 @@ rt.type(6744, "/obj/item/weapon/circuitboard/machine/cryo_tube", "/obj/item/weap
 	req_components: null,
 });
 
-// /obj/item/weapon/circuitboard/machine/cryo_tube/proc/<init>  (code/modules/atmospherics/machinery/components/unary_devices/cryo.dm:50)
+// cryo.dm:50
 rt.def("/obj/item/weapon/circuitboard/machine/cryo_tube/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_components", rt.alist(f, [T("/obj/item/weapon/stock_parts/matter_bin"), 1, T("/obj/item/stack/cable_coil"), 1, T("/obj/item/weapon/stock_parts/console_screen"), 1, T("/obj/item/stack/sheet/glass"), 2]));
+	parent_proc();
+	this.req_components = rt.alist(f, [T("/obj/item/weapon/stock_parts/matter_bin"), 1, T("/obj/item/stack/cable_coil"), 1, T("/obj/item/weapon/stock_parts/console_screen"), 1, T("/obj/item/stack/sheet/glass"), 2]);
 	return f.dot;
 });
 
-// /obj/machinery/atmospherics/components/unary/cryo_cell/proc/on_construction  (code/modules/atmospherics/machinery/components/unary_devices/cryo.dm:57)  may sleep
+// cryo.dm:57
 rt.def("/obj/machinery/atmospherics/components/unary/cryo_cell/proc/on_construction", function* on_construction(f: Frame) {
-	yield* g.callSuper(f, [rt.sv(f, "dir"), rt.sv(f, "dir")]);
+	yield* parent_proc(this.dir, this.dir);
 	return f.dot;
 }, true);
 
-// /obj/machinery/atmospherics/components/unary/cryo_cell/proc/RefreshParts  (code/modules/atmospherics/machinery/components/unary_devices/cryo.dm:61)
+// cryo.dm:61
 rt.def("/obj/machinery/atmospherics/components/unary/cryo_cell/proc/RefreshParts", function RefreshParts(f: Frame) {
 	let C: Value = null, M: Value = null;
-	let $e: any;
-	f.vars = () => [C, M, $e];
-	C = null;
-	M = null;
-	rt.forList(f, 0, rt.sv(f, "component_parts"), T("/obj/item/weapon/stock_parts/matter_bin"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		C = rt.modify(live(C), rt.fv(f, "rating", live(M)), add);
+	for (M of each(this.component_parts, T("/obj/item/weapon/stock_parts/matter_bin"))) {
+		C += M.rating;
 	}
-	rt.endFor(f, 0);
-	rt.setSv(f, "efficiency", multiply(rt.initial(f, live(f.src), "efficiency"), live(C)));
-	rt.setSv(f, "sleep_factor", multiply(rt.initial(f, live(f.src), "sleep_factor"), live(C)));
-	rt.setSv(f, "unconscious_factor", multiply(rt.initial(f, live(f.src), "unconscious_factor"), live(C)));
-	rt.setSv(f, "heat_capacity", divide(rt.initial(f, live(f.src), "heat_capacity"), live(C)));
-	rt.setSv(f, "conduction_coefficient", multiply(rt.initial(f, live(f.src), "conduction_coefficient"), live(C)));
+	this.efficiency = rt.initial(f, this, "efficiency") * C;
+	this.sleep_factor = rt.initial(f, this, "sleep_factor") * C;
+	this.unconscious_factor = rt.initial(f, this, "unconscious_factor") * C;
+	this.heat_capacity = rt.initial(f, this, "heat_capacity") / C;
+	this.conduction_coefficient = rt.initial(f, this, "conduction_coefficient") * C;
 	return f.dot;
 });
 
-// /obj/machinery/atmospherics/components/unary/cryo_cell/proc/Destroy  (code/modules/atmospherics/machinery/components/unary_devices/cryo.dm:71)  may sleep
+// cryo.dm:71
 rt.def("/obj/machinery/atmospherics/components/unary/cryo_cell/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "radio")]);
-	rt.setSv(f, "radio", null);
-	if (truthy(rt.sv(f, "beaker"))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "beaker")]);
-		rt.setSv(f, "beaker", null);
+	yield* qdel(this.radio);
+	this.radio = null;
+	if (this.beaker) {
+		yield* qdel(this.beaker);
+		this.beaker = null;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);
 
-// /obj/machinery/atmospherics/components/unary/cryo_cell/proc/contents_explosion  (code/modules/atmospherics/machinery/components/unary_devices/cryo.dm:79)
-rt.def("/obj/machinery/atmospherics/components/unary/cryo_cell/proc/contents_explosion", function contents_explosion(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.sv(f, "beaker"))) return f.dot;
-	rt.callName(f, rt.sv(f, "beaker"), "ex_act", [live(f.args[0]), live(f.args[1])]);
+// cryo.dm:79
+rt.def("/obj/machinery/atmospherics/components/unary/cryo_cell/proc/contents_explosion", function contents_explosion(f: Frame, severity: Value, target: Value) {
+	parent_proc();
+	if (!this.beaker) return f.dot;
+	this.beaker.ex_act(severity, target);
 	return f.dot;
-}, false, { args: ["severity", "target"] });
+}, false);
 
-// /obj/machinery/atmospherics/components/unary/cryo_cell/proc/handle_atom_del  (code/modules/atmospherics/machinery/components/unary_devices/cryo.dm:84)  may sleep
-rt.def("/obj/machinery/atmospherics/components/unary/cryo_cell/proc/handle_atom_del", function* handle_atom_del(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!isEqual(live(f.args[0]), rt.sv(f, "beaker"))) return f.dot;
-	rt.setSv(f, "beaker", null);
-	yield* g.srcCall(f, "updateUsrDialog");
+// cryo.dm:84
+rt.def("/obj/machinery/atmospherics/components/unary/cryo_cell/proc/handle_atom_del", function* handle_atom_del(f: Frame, A: Value) {
+	yield* parent_proc();
+	if (A != this.beaker) return f.dot;
+	this.beaker = null;
+	yield* this.updateUsrDialog();
 	return f.dot;
-}, true, { args: ["A"] });
+}, true);
 
-// /obj/machinery/atmospherics/components/unary/cryo_cell/proc/on_deconstruction  (code/modules/atmospherics/machinery/components/unary_devices/cryo.dm:91)  may sleep
+// cryo.dm:91
 rt.def("/obj/machinery/atmospherics/components/unary/cryo_cell/proc/on_deconstruction", function* on_deconstruction(f: Frame) {
-	if (!truthy(rt.sv(f, "beaker"))) return f.dot;
-	yield* g.callName(f, rt.sv(f, "beaker"), "forceMove", [rt.sv(f, "loc")]);
-	rt.setSv(f, "beaker", null);
+	if (!this.beaker) return f.dot;
+	yield* this.beaker.forceMove(this.loc);
+	this.beaker = null;
 	return f.dot;
 }, true);
 
-// /obj/machinery/atmospherics/components/unary/cryo_cell/proc/update_icon  (code/modules/atmospherics/machinery/components/unary_devices/cryo.dm:95)  may sleep
+// cryo.dm:95
 rt.def("/obj/machinery/atmospherics/components/unary/cryo_cell/proc/update_icon", function* update_icon(f: Frame) {
 	let occupant_overlay: Value = null;
-	f.vars = () => [occupant_overlay];
-	yield* g.srcCall(f, "cut_overlays");
-	if (truthy(rt.sv(f, "state_open"))) {
-		rt.setSv(f, "icon_state", "pod-open");
-	} else {
-		if (truthy(rt.sv(f, "occupant"))) {
-			occupant_overlay = null;
-			if (truthy((rt.istype(rt.sv(f, "occupant"), T("/mob/living/carbon/monkey")) ? 1 : 0))) {
-				occupant_overlay = (yield* g.call(f, P("/proc/mutable_appearance"), null, [rt.rsc("icons/obj/cryo_mobs.dmi"), "monkey"]));
+	this.cut_overlays();
+	if (this.state_open) {
+		this.icon_state = "pod-open";
+	} else if (this.occupant) {
+		if (rt.istype(this.occupant, T("/mob/living/carbon/monkey"))) {
+			occupant_overlay = mutable_appearance(rt.rsc("icons/obj/cryo_mobs.dmi"), "monkey");
+		} else if (rt.istype(this.occupant, T("/mob/living/carbon/alien/humanoid"))) {
+			if (rt.istype(this.occupant, T("/mob/living/carbon/alien/humanoid/royal"))) {
+				occupant_overlay = image(rt.rsc("icons/obj/cryo_mobs.dmi"), "alienq");
+			} else if (rt.istype(this.occupant, T("/mob/living/carbon/alien/humanoid/hunter"))) {
+				occupant_overlay = image(rt.rsc("icons/obj/cryo_mobs.dmi"), "alienh");
+			} else if (rt.istype(this.occupant, T("/mob/living/carbon/alien/humanoid/sentinel"))) {
+				occupant_overlay = image(rt.rsc("icons/obj/cryo_mobs.dmi"), "aliens");
 			} else {
-				if (truthy((rt.istype(rt.sv(f, "occupant"), T("/mob/living/carbon/alien/humanoid")) ? 1 : 0))) {
-					if (truthy((rt.istype(rt.sv(f, "occupant"), T("/mob/living/carbon/alien/humanoid/royal")) ? 1 : 0))) {
-						occupant_overlay = (yield* g.call(f, P("/proc/image"), null, [rt.rsc("icons/obj/cryo_mobs.dmi"), "alienq"]));
-					} else {
-						if (truthy((rt.istype(rt.sv(f, "occupant"), T("/mob/living/carbon/alien/humanoid/hunter")) ? 1 : 0))) {
-							occupant_overlay = (yield* g.call(f, P("/proc/image"), null, [rt.rsc("icons/obj/cryo_mobs.dmi"), "alienh"]));
-						} else {
-							if (truthy((rt.istype(rt.sv(f, "occupant"), T("/mob/living/carbon/alien/humanoid/sentinel")) ? 1 : 0))) {
-								occupant_overlay = (yield* g.call(f, P("/proc/image"), null, [rt.rsc("icons/obj/cryo_mobs.dmi"), "aliens"]));
-							} else {
-								occupant_overlay = (yield* g.call(f, P("/proc/image"), null, [rt.rsc("icons/obj/cryo_mobs.dmi"), "aliend"]));
-							}
-						}
-					}
-				} else {
-					if (((truthy((rt.istype(rt.sv(f, "occupant"), T("/mob/living/carbon/human")) ? 1 : 0)) || truthy((rt.istype(rt.sv(f, "occupant"), T("/mob/living/carbon/alien/larva")) ? 1 : 0))) || (truthy((rt.istype(rt.sv(f, "occupant"), T("/mob/living/simple_animal")) ? 1 : 0)) && !truthy((rt.istype(rt.sv(f, "occupant"), T("/mob/living/simple_animal/hostile/megafauna")) ? 1 : 0))))) {
-						yield* g.callName(f, (occupant_overlay = (yield* g.call(f, P("/proc/image"), null, [rt.fv(f, "icon", rt.sv(f, "occupant")), rt.fv(f, "icon_state", rt.sv(f, "occupant"))]))), "copy_overlays", [rt.sv(f, "occupant")]);
-					} else {
-						occupant_overlay = (yield* g.call(f, P("/proc/image"), null, [rt.rsc("icons/obj/cryo_mobs.dmi"), "generic"]));
-					}
-				}
+				occupant_overlay = image(rt.rsc("icons/obj/cryo_mobs.dmi"), "aliend");
 			}
-			rt.setFv(f, "dir", live(occupant_overlay), 2);
-			rt.setFv(f, "pixel_y", live(occupant_overlay), 22);
-			if (((truthy(rt.sv(f, "on")) && truthy((yield* g.srcCall(f, "is_operational")))) && !truthy(rt.sv(f, "running_bob_anim")))) {
-				rt.setSv(f, "icon_state", "pod-on");
-				rt.setSv(f, "running_bob_anim", 1);
-				yield* g.srcCall(f, "run_bob_anim", 1, live(occupant_overlay));
-			} else {
-				rt.setSv(f, "icon_state", "pod-off");
-				yield* g.srcCall(f, "add_overlay", live(occupant_overlay));
-				yield* g.srcCall(f, "add_overlay", "cover-off");
-			}
+		} else if (rt.istype(this.occupant, T("/mob/living/carbon/human")) || rt.istype(this.occupant, T("/mob/living/carbon/alien/larva")) || rt.istype(this.occupant, T("/mob/living/simple_animal")) && !rt.istype(this.occupant, T("/mob/living/simple_animal/hostile/megafauna"))) {
+			(occupant_overlay = image(this.occupant.icon, this.occupant.icon_state)).copy_overlays(this.occupant);
 		} else {
-			if ((truthy(rt.sv(f, "on")) && truthy((yield* g.srcCall(f, "is_operational"))))) {
-				rt.setSv(f, "icon_state", "pod-on");
-				yield* g.srcCall(f, "add_overlay", "cover-on");
-			} else {
-				rt.setSv(f, "icon_state", "pod-off");
-				yield* g.srcCall(f, "add_overlay", "cover-off");
-			}
+			occupant_overlay = image(rt.rsc("icons/obj/cryo_mobs.dmi"), "generic");
 		}
+		occupant_overlay.dir = 2;
+		occupant_overlay.pixel_y = 22;
+		if (this.on && this.is_operational() && !this.running_bob_anim) {
+			this.icon_state = "pod-on";
+			this.running_bob_anim = 1;
+			yield* this.run_bob_anim(1, occupant_overlay);
+		} else {
+			this.icon_state = "pod-off";
+			this.add_overlay(occupant_overlay);
+			this.add_overlay("cover-off");
+		}
+	} else if (this.on && this.is_operational()) {
+		this.icon_state = "pod-on";
+		this.add_overlay("cover-on");
+	} else {
+		this.icon_state = "pod-off";
+		this.add_overlay("cover-off");
 	}
-	if (!truthy(rt.sv(f, "panel_open"))) return f.dot;
-	yield* g.srcCall(f, "add_overlay", "pod-panel");
+	if (!this.panel_open) return f.dot;
+	this.add_overlay("pod-panel");
 	return f.dot;
 }, true);
 
-// /obj/machinery/atmospherics/components/unary/cryo_cell/proc/run_bob_anim  (code/modules/atmospherics/machinery/components/unary_devices/cryo.dm:148)  may sleep
+// cryo.dm:148
 rt.def("/obj/machinery/atmospherics/components/unary/cryo_cell/proc/run_bob_anim", function* run_bob_anim(f: Frame, anim_up: Value, occupant_overlay: Value) {
-	f.vars = () => [anim_up, occupant_overlay];
-	if (((!truthy(rt.sv(f, "on")) || !truthy(rt.sv(f, "occupant"))) || !truthy((yield* g.srcCall(f, "is_operational"))))) {
-		rt.setSv(f, "running_bob_anim", 0);
-		return live(f.dot);
+	if (!this.on || !this.occupant || !this.is_operational()) {
+		this.running_bob_anim = 0;
+		return f.dot;
 	}
-	yield* g.srcCall(f, "cut_overlays");
-	if (!isEqual(rt.fv(f, "pixel_y", live(occupant_overlay)), 23)) {
-		anim_up = (isEqual(rt.fv(f, "pixel_y", live(occupant_overlay)), 22) ? 1 : 0);
+	this.cut_overlays();
+	if (occupant_overlay.pixel_y != 23) {
+		anim_up = (occupant_overlay.pixel_y == 22 ? 1 : 0);
 	}
-	if (truthy(live(anim_up))) {
-		rt.incField(f, live(occupant_overlay), "pixel_y", 1, true);
+	if (anim_up) {
+		occupant_overlay.pixel_y++;
 	} else {
-		rt.incField(f, live(occupant_overlay), "pixel_y", -1, true);
+		occupant_overlay.pixel_y--;
 	}
-	yield* g.srcCall(f, "add_overlay", live(occupant_overlay));
-	yield* g.srcCall(f, "add_overlay", "cover-on");
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/machinery/atmospherics/components/unary/cryo_cell/proc/run_bob_anim"), live(anim_up), live(occupant_overlay)])), 7, 1]);
+	this.add_overlay(occupant_overlay);
+	this.add_overlay("cover-on");
+	yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/machinery/atmospherics/components/unary/cryo_cell/proc/run_bob_anim"), anim_up, occupant_overlay)), 7, 1);
 	return f.dot;
 }, true, { argTypes: [{  }, { path: "/image" }] });
 
-// /obj/machinery/atmospherics/components/unary/cryo_cell/proc/process  (code/modules/atmospherics/machinery/components/unary_devices/cryo.dm:163)  may sleep
+// cryo.dm:163
 rt.def("/obj/machinery/atmospherics/components/unary/cryo_cell/proc/process", function* process(f: Frame) {
-	let air1: Value = null, _T: Value = null, mob_occupant: Value = null;
-	f.vars = () => [air1, _T, mob_occupant];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.sv(f, "on"))) {
-		return live(f.dot);
+	let mob_occupant: Value = null;
+	yield* parent_proc();
+	if (!this.on) {
+		return f.dot;
 	}
-	if (!truthy((yield* g.srcCall(f, "is_operational")))) {
-		rt.setSv(f, "on", 0);
-		yield* g.srcCall(f, "update_icon");
-		return live(f.dot);
+	if (!this.is_operational()) {
+		this.on = 0;
+		yield* this.update_icon();
+		return f.dot;
 	}
-	air1 = rt.index(rt.sv(f, "airs"), 1);
-	_T = rt.getStep(f, live(f.src), 0);
-	if (truthy(rt.sv(f, "occupant"))) {
-		if (rt.ge(rt.gv(f, "health", (mob_occupant = rt.sv(f, "occupant"))), (yield* g.callName(f, live(mob_occupant), "getMaxHealth", [])))) {
-			rt.setSv(f, "on", 0);
-			yield* g.srcCall(f, "update_icon");
-			yield* g.call(f, P("/proc/playsound"), null, [live(_T), rt.rsc("sound/machines/cryo_warning.ogg"), rt.sv(f, "volume")]);
-			yield* g.callName(f, rt.sv(f, "radio"), "talk_into", [live(f.src), "Patient fully restored", rt.sv(f, "radio_channel"), (yield* g.srcCall(f, "get_spans")), (yield* g.srcCall(f, "get_default_language"))]);
-			if (truthy(rt.sv(f, "autoeject"))) {
-				yield* g.callName(f, rt.sv(f, "radio"), "talk_into", [live(f.src), "Auto ejecting patient now", rt.sv(f, "radio_channel"), (yield* g.srcCall(f, "get_spans")), (yield* g.srcCall(f, "get_default_language"))]);
-				yield* g.srcCall(f, "open_machine");
+	let air1: Value = rt.index(this.airs, 1);
+	let _T: Value = rt.getStep(f, this, 0);
+	if (this.occupant) {
+		if ((mob_occupant = this.occupant).health >= mob_occupant.getMaxHealth()) {
+			this.on = 0;
+			yield* this.update_icon();
+			playsound(_T, rt.rsc("sound/machines/cryo_warning.ogg"), this.volume);
+			yield* this.radio.talk_into(this, "Patient fully restored", this.radio_channel, this.get_spans(), (yield* this.get_default_language()));
+			if (this.autoeject) {
+				yield* this.radio.talk_into(this, "Auto ejecting patient now", this.radio_channel, this.get_spans(), (yield* this.get_default_language()));
+				yield* this.open_machine();
 			}
-			return live(f.dot);
-		} else {
-			if (isEqual(rt.fv(f, "stat", live(mob_occupant)), 2)) {
-				// tg bug: a `return` here made the auto-eject below unreachable, so a dead patient stayed in (modern tg ejects)
-				if (truthy(rt.sv(f, "autoeject"))) {
-					yield* g.srcCall(f, "open_machine");
-				}
-				return live(f.dot);
+			return f.dot;
+		} else if (mob_occupant.stat == 2) {
+			// tg bug: a `return` here made the auto-eject below unreachable, so a dead patient stayed in (modern tg ejects)
+			if (this.autoeject) {
+				yield* this.open_machine();
 			}
+			return f.dot;
 		}
-		if (truthy(rt.getLen(f, rt.fv(f, "gases", live(air1))))) {
-			if (rt.lt(rt.fv(f, "bodytemperature", live(mob_occupant)), 273.1499938964844)) {
-				yield* g.callName(f, live(mob_occupant), "Sleeping", [multiply(divide(rt.fv(f, "bodytemperature", live(mob_occupant)), rt.sv(f, "sleep_factor")), 2000)]);
-				yield* g.callName(f, live(mob_occupant), "Unconscious", [multiply(divide(rt.fv(f, "bodytemperature", live(mob_occupant)), rt.sv(f, "unconscious_factor")), 2000)]);
+		if (rt.len(f, air1.gases)) {
+			if (mob_occupant.bodytemperature < T0C) {
+				yield* mob_occupant.Sleeping(mob_occupant.bodytemperature / this.sleep_factor * 2000);
+				yield* mob_occupant.Unconscious(mob_occupant.bodytemperature / this.unconscious_factor * 2000);
 			}
-			if (truthy(rt.sv(f, "beaker"))) {
-				if (isEqual(rt.sv(f, "reagent_transfer"), 0)) {
-					yield* g.callName(f, rt.fv(f, "reagents", rt.sv(f, "beaker")), "trans_to", [rt.sv(f, "occupant"), 1, multiply(10, rt.sv(f, "efficiency"))]);
-					yield* g.callName(f, rt.fv(f, "reagents", rt.sv(f, "beaker")), "reaction", [rt.sv(f, "occupant"), 3]);
-					(rt.modAt(rt.index(rt.fv(f, "gases", live(air1)), "o2"), 1, divide(2, rt.sv(f, "efficiency")), subtract));
+			if (this.beaker) {
+				if (this.reagent_transfer == 0) {
+					yield* this.beaker.reagents.trans_to(this.occupant, 1, 10 * this.efficiency);
+					yield* this.beaker.reagents.reaction(this.occupant, VAPOR);
+					(rt.modAt(rt.index(air1.gases, "o2"), 1, 2 / this.efficiency, subtract));
 				}
-				if (rt.ge(rt.incSrcVar(f, "reagent_transfer", 1, false), multiply(10, rt.sv(f, "efficiency")))) {
-					rt.setSv(f, "reagent_transfer", 0);
+				if (++this.reagent_transfer >= 10 * this.efficiency) {
+					this.reagent_transfer = 0;
 				}
 			}
 		}
@@ -272,280 +242,232 @@ rt.def("/obj/machinery/atmospherics/components/unary/cryo_cell/proc/process", fu
 	return 1;
 }, true, { waitfor: false });
 
-// /obj/machinery/atmospherics/components/unary/cryo_cell/proc/process_atmos  (code/modules/atmospherics/machinery/components/unary_devices/cryo.dm:204)  may sleep
+// cryo.dm:204
 rt.def("/obj/machinery/atmospherics/components/unary/cryo_cell/proc/process_atmos", function* process_atmos(f: Frame) {
-	let air1: Value = null, mob_occupant: Value = null, cold_protection: Value = null, H: Value = null, temperature_delta: Value = null, air_heat_capacity: Value = null, heat: Value = null;
-	f.vars = () => [air1, mob_occupant, cold_protection, H, temperature_delta, air_heat_capacity, heat];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.sv(f, "on"))) {
-		return live(f.dot);
+	let H: Value = null, temperature_delta: Value = null, air_heat_capacity: Value = null, heat: Value = null;
+	yield* parent_proc();
+	if (!this.on) {
+		return f.dot;
 	}
-	air1 = rt.index(rt.sv(f, "airs"), 1);
-	if ((((!truthy(rt.index(rt.sv(f, "nodes"), 1)) || !truthy(rt.index(rt.sv(f, "airs"), 1))) || !truthy(rt.getLen(f, rt.fv(f, "gases", live(air1))))) || rt.lt(rt.index(rt.index(rt.fv(f, "gases", live(air1)), "o2"), 1), 5))) {
-		rt.setSv(f, "on", 0);
-		yield* g.srcCall(f, "update_icon");
-		return live(f.dot);
+	let air1: Value = rt.index(this.airs, 1);
+	if (!rt.index(this.nodes, 1) || !rt.index(this.airs, 1) || !rt.len(f, air1.gases) || rt.index(rt.index(air1.gases, "o2"), 1) < 5) {
+		this.on = 0;
+		yield* this.update_icon();
+		return f.dot;
 	}
-	if (!truthy(rt.sv(f, "occupant"))) return f.dot;
-	mob_occupant = rt.sv(f, "occupant");
-	cold_protection = 0;
-	if (truthy((rt.istype((H = rt.sv(f, "occupant")), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		cold_protection = (yield* g.callName(f, live(H), "get_cold_protection", [rt.fv(f, "temperature", live(air1))]));
+	if (!this.occupant) return f.dot;
+	let mob_occupant: Value = this.occupant;
+	let cold_protection: Value = 0;
+	if (rt.istype((H = this.occupant), T("/mob/living/carbon/human"))) {
+		cold_protection = H.get_cold_protection(air1.temperature);
 	}
-	if (rt.gt(rt.op(f, "Abs", [], [(temperature_delta = subtract(rt.fv(f, "temperature", live(air1)), rt.fv(f, "bodytemperature", live(mob_occupant))))]), 1)) {
-		air_heat_capacity = (yield* g.callName(f, live(air1), "heat_capacity", []));
-		heat = multiply(multiply(add(divide(subtract(1, live(cold_protection)), 10), rt.sv(f, "conduction_coefficient")), live(temperature_delta)), divide(multiply(live(air_heat_capacity), rt.sv(f, "heat_capacity")), add(live(air_heat_capacity), rt.sv(f, "heat_capacity"))));
-		rt.setFv(f, "temperature", live(air1), (yield* g.call(f, P("/proc/max"), null, [subtract(rt.fv(f, "temperature", live(air1)), divide(live(heat), live(air_heat_capacity))), 2.700000047683716])));
-		rt.setFv(f, "bodytemperature", live(mob_occupant), (yield* g.call(f, P("/proc/max"), null, [add(rt.fv(f, "bodytemperature", live(mob_occupant)), divide(live(heat), rt.sv(f, "heat_capacity"))), 2.700000047683716])));
+	if (rt.op(f, "Abs", [], [(temperature_delta = air1.temperature - mob_occupant.bodytemperature)]) > 1) {
+		air_heat_capacity = air1.heat_capacity();
+		heat = ((1 - cold_protection) / 10 + this.conduction_coefficient) * temperature_delta * (air_heat_capacity * this.heat_capacity / (air_heat_capacity + this.heat_capacity));
+		air1.temperature = max(air1.temperature - heat / air_heat_capacity, TCMB);
+		mob_occupant.bodytemperature = max(mob_occupant.bodytemperature + heat / this.heat_capacity, TCMB);
 	}
-	(rt.modAt(rt.index(rt.fv(f, "gases", live(air1)), "o2"), 1, divide(0.5, rt.sv(f, "efficiency")), subtract));
+	(rt.modAt(rt.index(air1.gases, "o2"), 1, 0.5 / this.efficiency, subtract));
 	return f.dot;
 }, true);
 
-// /obj/machinery/atmospherics/components/unary/cryo_cell/proc/power_change  (code/modules/atmospherics/machinery/components/unary_devices/cryo.dm:231)  may sleep
+// cryo.dm:231
 rt.def("/obj/machinery/atmospherics/components/unary/cryo_cell/proc/power_change", function* power_change(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "update_icon");
+	yield* parent_proc();
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/machinery/atmospherics/components/unary/cryo_cell/proc/relaymove  (code/modules/atmospherics/machinery/components/unary_devices/cryo.dm:235)  may sleep
+// cryo.dm:235
 rt.def("/obj/machinery/atmospherics/components/unary/cryo_cell/proc/relaymove", function* relaymove(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.srcCall(f, "container_resist", live(user));
+	yield* this.container_resist(user);
 	return f.dot;
 }, true);
 
-// /obj/machinery/atmospherics/components/unary/cryo_cell/proc/open_machine  (code/modules/atmospherics/machinery/components/unary_devices/cryo.dm:238)  may sleep
+// cryo.dm:238
 rt.def("/obj/machinery/atmospherics/components/unary/cryo_cell/proc/open_machine", function* open_machine(f: Frame) {
 	let M: Value = null, L: Value = null;
-	let $e: any;
-	f.vars = () => [M, L, $e];
-	if (live(f.args[0]) === null) {
+	if (f.args[0] === null) {
 		f.args[0] = 0;
 	}
-	if ((!truthy(rt.sv(f, "state_open")) && !truthy(rt.sv(f, "panel_open")))) {
-		rt.setSv(f, "on", 0);
-		yield* g.callSuper(f, [], rt.Args.Same);
+	if (!this.state_open && !this.panel_open) {
+		this.on = 0;
+		yield* parent_proc();
 	}
-	M = null;
-	rt.forList(f, 0, rt.sv(f, "contents"), T("/mob"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		yield* g.callName(f, live(M), "forceMove", [rt.getStep(f, live(f.src), 0)]);
-		if (truthy((rt.istype(live(M), T("/mob/living")) ? 1 : 0))) {
-			yield* g.callName(f, (L = live(M)), "update_canmove", []);
+	for (M of each(this.contents, T("/mob"))) {
+		yield* M.forceMove(rt.getStep(f, this, 0));
+		if (rt.istype(M, T("/mob/living"))) {
+			yield* (L = M).update_canmove();
 		}
 	}
-	rt.endFor(f, 0);
-	rt.setSv(f, "occupant", null);
-	yield* g.srcCall(f, "update_icon");
+	this.occupant = null;
+	yield* this.update_icon();
 	return f.dot;
 }, true, { args: ["drop"] });
 
-// /obj/machinery/atmospherics/components/unary/cryo_cell/proc/close_machine  (code/modules/atmospherics/machinery/components/unary_devices/cryo.dm:250)  may sleep
+// cryo.dm:250
 rt.def("/obj/machinery/atmospherics/components/unary/cryo_cell/proc/close_machine", function* close_machine(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (!(((live(user) === null || truthy((rt.istype(live(user), T("/mob/living/carbon")) ? 1 : 0))) && truthy(rt.sv(f, "state_open"))) && !truthy(rt.sv(f, "panel_open")))) return f.dot;
-	yield* g.callSuper(f, [live(user)]);
-	return rt.sv(f, "occupant");
+	if (!((user === null || rt.istype(user, T("/mob/living/carbon"))) && this.state_open && !this.panel_open)) return f.dot;
+	yield* parent_proc(user);
+	return this.occupant;
 }, true);
 
-// /obj/machinery/atmospherics/components/unary/cryo_cell/proc/container_resist  (code/modules/atmospherics/machinery/components/unary_devices/cryo.dm:255)  may sleep
+// cryo.dm:255
 rt.def("/obj/machinery/atmospherics/components/unary/cryo_cell/proc/container_resist", function* container_resist(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>You struggle inside the cryotube, kicking the release with your foot... (This will take around 30 seconds.)</span>"]);
-	yield* g.srcCall(f, "audible_message", fmt("<span class='notice'>You hear a thump from ＀.</span>", [live(f.src)]));
-	if (!truthy((yield* g.call(f, P("/proc/do_after"), null, [live(user), 300])))) return f.dot;
-	if (!isEqual(rt.sv(f, "occupant"), live(user))) return f.dot;
-	yield* g.srcCall(f, "open_machine");
+	to_chat(user, "<span class='notice'>You struggle inside the cryotube, kicking the release with your foot... (This will take around 30 seconds.)</span>");
+	this.audible_message(`<span class='notice'>You hear a thump from ${this}.</span>`);
+	if (!(yield* do_after(user, 300))) return f.dot;
+	if (this.occupant != user) return f.dot;
+	yield* this.open_machine();
 	return f.dot;
 }, true);
 
-// /obj/machinery/atmospherics/components/unary/cryo_cell/proc/examine  (code/modules/atmospherics/machinery/components/unary_devices/cryo.dm:262)
-rt.def("/obj/machinery/atmospherics/components/unary/cryo_cell/proc/examine", function examine(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.sv(f, "occupant"))) {
-		if (truthy(rt.sv(f, "on"))) {
-			rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("Someone's inside ＀!", [live(f.src)])]);
+// cryo.dm:262
+rt.def("/obj/machinery/atmospherics/components/unary/cryo_cell/proc/examine", function examine(f: Frame, user: Value) {
+	parent_proc();
+	if (this.occupant) {
+		if (this.on) {
+			to_chat(user, `Someone's inside ${this}!`);
 		} else {
-			rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("You can barely make out a form floating in ＀.", [live(f.src)])]);
+			to_chat(user, `You can barely make out a form floating in ${this}.`);
 		}
 	} else {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("＀ seems empty.", [live(f.src)])]);
+		to_chat(user, `${this} seems empty.`);
 	}
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/machinery/atmospherics/components/unary/cryo_cell/proc/MouseDrop_T  (code/modules/atmospherics/machinery/components/unary_devices/cryo.dm:272)  may sleep
+// cryo.dm:272
 rt.def("/obj/machinery/atmospherics/components/unary/cryo_cell/proc/MouseDrop_T", function* MouseDrop_T(f: Frame, target: Value, user: Value) {
-	f.vars = () => [target, user];
-	if ((((((truthy(rt.fv(f, "stat", live(user))) || truthy(rt.fv(f, "lying", live(user)))) || !truthy((yield* g.srcCall(f, "Adjacent", live(user))))) || !truthy((yield* g.callName(f, live(user), "Adjacent", [live(target)])))) || !truthy((rt.istype(live(target), T("/mob/living/carbon")) ? 1 : 0))) || !truthy((yield* g.callName(f, live(user), "IsAdvancedToolUser", []))))) {
-		return live(f.dot);
+	if (user.stat || user.lying || !this.Adjacent(user) || !user.Adjacent(target) || !rt.istype(target, T("/mob/living/carbon")) || !user.IsAdvancedToolUser()) {
+		return f.dot;
 	}
-	yield* g.srcCall(f, "close_machine", live(target));
+	yield* this.close_machine(target);
 	return f.dot;
 }, true);
 
-// /obj/machinery/atmospherics/components/unary/cryo_cell/proc/attackby  (code/modules/atmospherics/machinery/components/unary_devices/cryo.dm:277)  may sleep
-rt.def("/obj/machinery/atmospherics/components/unary/cryo_cell/proc/attackby", function* attackby(f: Frame) {
+// cryo.dm:277
+rt.def("/obj/machinery/atmospherics/components/unary/cryo_cell/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
 	let reagentlist: Value = null;
-	f.vars = () => [reagentlist];
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/reagent_containers/glass")) ? 1 : 0))) {
+	if (rt.istype(I, T("/obj/item/weapon/reagent_containers/glass"))) {
 		f.dot = 1;
-		if (truthy(rt.sv(f, "beaker"))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>A beaker is already loaded into ＀!</span>", [live(f.src)])]);
-			return live(f.dot);
+		if (this.beaker) {
+			to_chat(user, `<span class='warning'>A beaker is already loaded into ${this}!</span>`);
+			return f.dot;
 		}
-		if (!truthy((yield* g.callName(f, live(f.args[1]), "drop_item", [])))) {
-			return live(f.dot);
+		if (!(yield* user.drop_item())) {
+			return f.dot;
 		}
-		rt.setSv(f, "beaker", live(f.args[0]));
-		rt.setFv(f, "loc", live(f.args[0]), live(f.src));
-		yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("＀ places ＀ in ＀.", [live(f.args[1]), live(f.args[0]), live(f.src)]), fmt("<span class='notice'>You place ＀ in ＀.</span>", [live(f.args[0]), live(f.src)])]);
-		reagentlist = (yield* g.call(f, P("/proc/pretty_string_from_reagent_list"), null, [rt.gv(f, "reagent_list", rt.fv(f, "reagents", live(f.args[0])))]));
-		yield* g.call(f, P("/proc/log_game"), null, [fmt("＀ added an ＀ to cyro containing ＀", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.args[1])])), live(f.args[0]), live(reagentlist)])]);
-		return live(f.dot);
+		this.beaker = I;
+		I.loc = this;
+		user.visible_message(`${user} places ${I} in ${this}.`, `<span class='notice'>You place ${I} in ${this}.</span>`);
+		reagentlist = pretty_string_from_reagent_list(I.reagents.reagent_list);
+		log_game(`${key_name(user)} added an ${I} to cyro containing ${reagentlist}`);
+		return f.dot;
 	}
-	if (((!truthy(rt.sv(f, "on")) && !truthy(rt.sv(f, "occupant"))) && !truthy(rt.sv(f, "state_open")))) {
-		if (truthy((yield* g.srcCall(f, "default_deconstruction_screwdriver", live(f.args[1]), "cell-o", "cell-off", live(f.args[0]))))) {
-			return live(f.dot);
+	if (!this.on && !this.occupant && !this.state_open) {
+		if (this.default_deconstruction_screwdriver(user, "cell-o", "cell-off", I)) {
+			return f.dot;
 		}
-		if (truthy((yield* g.srcCall(f, "exchange_parts", live(f.args[1]), live(f.args[0]))))) {
-			return live(f.dot);
+		if (yield* this.exchange_parts(user, I)) {
+			return f.dot;
 		}
 	}
-	if (truthy((yield* g.srcCall(f, "default_change_direction_wrench", live(f.args[1]), live(f.args[0]))))) {
-		return live(f.dot);
+	if (yield* this.default_change_direction_wrench(user, I)) {
+		return f.dot;
 	}
-	if (truthy((yield* g.srcCall(f, "default_pry_open", live(f.args[0]))))) {
-		return live(f.dot);
+	if (yield* this.default_pry_open(I)) {
+		return f.dot;
 	}
-	if (truthy((yield* g.srcCall(f, "default_deconstruction_crowbar", live(f.args[0]))))) {
-		return live(f.dot);
+	if (yield* this.default_deconstruction_crowbar(I)) {
+		return f.dot;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["I", "user", "params"] });
+	return (yield* parent_proc());
+}, true);
 
-// /obj/machinery/atmospherics/components/unary/cryo_cell/proc/ui_interact  (code/modules/atmospherics/machinery/components/unary_devices/cryo.dm:306)  may sleep
+// cryo.dm:306
 rt.def("/obj/machinery/atmospherics/components/unary/cryo_cell/proc/ui_interact", function* ui_interact(f: Frame, user: Value, ui_key: Value, ui: Value, force_open: Value, master_ui: Value, state: Value) {
-	f.vars = () => [user, ui_key, ui, force_open, master_ui, state];
-	if (live(ui_key) === null) {
-		ui_key = "main";
-	}
-	if (live(ui) === null) {
-		ui = null;
-	}
-	if (live(force_open) === null) {
-		force_open = 0;
-	}
-	if (live(master_ui) === null) {
-		master_ui = null;
-	}
-	if (live(state) === null) {
-		state = rt.gl("notcontained_state");
-	}
-	if (truthy((ui = (yield* g.callName(f, rt.gl("SStgui"), "try_update_ui", [live(user), live(f.src), live(ui_key), live(ui), live(force_open)]))))) return f.dot;
-	yield* g.callName(f, (ui = (yield* g.new_(f, T("/datum/tgui"), [live(user), live(f.src), live(ui_key), "cryo", rt.sv(f, "name"), 400, 550, live(master_ui), live(state)]))), "open", []);
+	ui_key ??= "main";
+	force_open ??= 0;
+	state ??= GLOB.notcontained_state;
+	if (ui = (yield* GLOB.SStgui.try_update_ui(user, this, ui_key, ui, force_open))) return f.dot;
+	yield* (ui = (yield* new_(T("/datum/tgui"), user, this, ui_key, "cryo", this.name, 400, 550, master_ui, state))).open();
 	return f.dot;
 }, true);
 
-// /obj/machinery/atmospherics/components/unary/cryo_cell/proc/ui_data  (code/modules/atmospherics/machinery/components/unary_devices/cryo.dm:312)
+// cryo.dm:312
 rt.def("/obj/machinery/atmospherics/components/unary/cryo_cell/proc/ui_data", function ui_data(f: Frame) {
-	let data: Value = null, occupantData: Value = null, mob_occupant: Value = null, air1: Value = null, beakerContents: Value = null, R: Value = null;
-	let $0: any, $1: any, $2: any, $e: any;
-	f.vars = () => [data, occupantData, mob_occupant, air1, beakerContents, R, $0, $1, $2, $e];
-	rt.setAt((data = rt.list()), "isOperating", rt.sv(f, "on"));
-	$0 = live(data);
-	$1 = "hasOccupant";
-	if (truthy(rt.sv(f, "occupant"))) {
-		$2 = 1;
-	} else {
-		$2 = 0;
+	let data: Value = null, mob_occupant: Value = null, R: Value = null;
+	let $e: any;
+	rt.setAt((data = list()), "isOperating", this.on);
+	let $0: any = data;
+	let $1: any = "hasOccupant";
+	rt.setAt($0, $1, this.occupant ? 1 : 0);
+	rt.setAt(data, "isOpen", this.state_open);
+	rt.setAt(data, "autoEject", this.autoeject);
+	let occupantData: Value = list();
+	if (this.occupant) {
+		mob_occupant = this.occupant;
+		rt.setAt(occupantData, "name", mob_occupant.name);
+		rt.setAt(occupantData, "stat", mob_occupant.stat);
+		rt.setAt(occupantData, "health", mob_occupant.health);
+		rt.setAt(occupantData, "maxHealth", mob_occupant.maxHealth);
+		rt.setAt(occupantData, "minHealth", -100);
+		rt.setAt(occupantData, "bruteLoss", mob_occupant.getBruteLoss());
+		rt.setAt(occupantData, "oxyLoss", mob_occupant.getOxyLoss());
+		rt.setAt(occupantData, "toxLoss", mob_occupant.getToxLoss());
+		rt.setAt(occupantData, "fireLoss", mob_occupant.getFireLoss());
+		rt.setAt(occupantData, "bodyTemperature", mob_occupant.bodytemperature);
 	}
-	rt.setAt($0, $1, $2);
-	rt.setAt(live(data), "isOpen", rt.sv(f, "state_open"));
-	rt.setAt(live(data), "autoEject", rt.sv(f, "autoeject"));
-	occupantData = rt.list();
-	if (truthy(rt.sv(f, "occupant"))) {
-		mob_occupant = rt.sv(f, "occupant");
-		rt.setAt(live(occupantData), "name", rt.fv(f, "name", live(mob_occupant)));
-		rt.setAt(live(occupantData), "stat", rt.fv(f, "stat", live(mob_occupant)));
-		rt.setAt(live(occupantData), "health", rt.fv(f, "health", live(mob_occupant)));
-		rt.setAt(live(occupantData), "maxHealth", rt.fv(f, "maxHealth", live(mob_occupant)));
-		rt.setAt(live(occupantData), "minHealth", -100);
-		rt.setAt(live(occupantData), "bruteLoss", rt.callName(f, live(mob_occupant), "getBruteLoss", []));
-		rt.setAt(live(occupantData), "oxyLoss", rt.callName(f, live(mob_occupant), "getOxyLoss", []));
-		rt.setAt(live(occupantData), "toxLoss", rt.callName(f, live(mob_occupant), "getToxLoss", []));
-		rt.setAt(live(occupantData), "fireLoss", rt.callName(f, live(mob_occupant), "getFireLoss", []));
-		rt.setAt(live(occupantData), "bodyTemperature", rt.fv(f, "bodytemperature", live(mob_occupant)));
-	}
-	rt.setAt(live(data), "occupant", live(occupantData));
-	air1 = rt.index(rt.sv(f, "airs"), 1);
-	rt.setAt(live(data), "cellTemperature", rt.call(f, P("/proc/round"), null, [rt.fv(f, "temperature", live(air1))]));
-	$0 = live(data);
-	$1 = "isBeakerLoaded";
-	if (truthy(rt.sv(f, "beaker"))) {
-		$2 = 1;
-	} else {
-		$2 = 0;
-	}
-	rt.setAt($0, $1, $2);
-	beakerContents = rt.list();
-	if (((truthy(rt.sv(f, "beaker")) && truthy(rt.fv(f, "reagents", rt.sv(f, "beaker")))) && truthy(rt.getLen(f, rt.gv(f, "reagent_list", rt.fv(f, "reagents", rt.sv(f, "beaker"))))))) {
-		R = null;
-		rt.forList(f, 0, rt.gv(f, "reagent_list", rt.fv(f, "reagents", rt.sv(f, "beaker"))), T("/datum/reagent"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			R = $e;
-			beakerContents = rt.modify(live(beakerContents), rt.list(rt.alist(f, ["name", rt.fv(f, "name", live(R)), "volume", rt.fv(f, "volume", live(R))])), add);
+	rt.setAt(data, "occupant", occupantData);
+	let air1: Value = rt.index(this.airs, 1);
+	rt.setAt(data, "cellTemperature", round(air1.temperature));
+	rt.setAt(data, "isBeakerLoaded", this.beaker ? 1 : 0);
+	let beakerContents: Value = list();
+	if (this.beaker && this.beaker.reagents && rt.len(f, this.beaker.reagents.reagent_list)) {
+		for (R of each(this.beaker.reagents.reagent_list, T("/datum/reagent"))) {
+			beakerContents += list(rt.alist(f, ["name", R.name, "volume", R.volume]));
 		}
-		rt.endFor(f, 0);
 	}
-	rt.setAt(live(data), "beakerContents", live(beakerContents));
-	return live(data);
+	rt.setAt(data, "beakerContents", beakerContents);
+	return data;
 });
 
-// /obj/machinery/atmospherics/components/unary/cryo_cell/proc/ui_act  (code/modules/atmospherics/machinery/components/unary_devices/cryo.dm:346)  may sleep
-rt.def("/obj/machinery/atmospherics/components/unary/cryo_cell/proc/ui_act", function* ui_act(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		return live(f.dot);
+// cryo.dm:346
+rt.def("/obj/machinery/atmospherics/components/unary/cryo_cell/proc/ui_act", function* ui_act(f: Frame, action: Value, params: Value) {
+	if (yield* parent_proc()) {
+		return f.dot;
 	}
-	$0 = live(f.args[0]);
-	if ($0 === "power") {
-		if (truthy(rt.sv(f, "on"))) {
-			rt.setSv(f, "on", 0);
-		} else {
-			if (!truthy(rt.sv(f, "state_open"))) {
-				rt.setSv(f, "on", 1);
-			}
+	if (action === "power") {
+		if (this.on) {
+			this.on = 0;
+		} else if (!this.state_open) {
+			this.on = 1;
 		}
 		f.dot = 1;
-	} else if ($0 === "door") {
-		if (truthy(rt.sv(f, "state_open"))) {
-			yield* g.srcCall(f, "close_machine");
+	} else if (action === "door") {
+		if (this.state_open) {
+			yield* this.close_machine();
 		} else {
-			yield* g.srcCall(f, "open_machine");
+			yield* this.open_machine();
 		}
 		f.dot = 1;
-	} else if ($0 === "autoeject") {
-		rt.setSv(f, "autoeject", (!truthy(rt.sv(f, "autoeject")) ? 1 : 0));
+	} else if (action === "autoeject") {
+		this.autoeject = (!this.autoeject ? 1 : 0);
 		f.dot = 1;
-	} else if ($0 === "ejectbeaker") {
-		if (truthy(rt.sv(f, "beaker"))) {
-			yield* g.callName(f, rt.sv(f, "beaker"), "forceMove", [rt.sv(f, "loc")]);
-			rt.setSv(f, "beaker", null);
+	} else if (action === "ejectbeaker") {
+		if (this.beaker) {
+			yield* this.beaker.forceMove(this.loc);
+			this.beaker = null;
 			f.dot = 1;
 		}
 	}
-	yield* g.srcCall(f, "update_icon");
+	yield* this.update_icon();
 	return f.dot;
-}, true, { args: ["action", "params"] });
+}, true);
 
-// /obj/machinery/atmospherics/components/unary/cryo_cell/proc/get_remote_view_fullscreens  (code/modules/atmospherics/machinery/components/unary_devices/cryo.dm:375)  may sleep
+// cryo.dm:375
 rt.def("/obj/machinery/atmospherics/components/unary/cryo_cell/proc/get_remote_view_fullscreens", function* get_remote_view_fullscreens(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.callName(f, live(user), "overlay_fullscreen", ["remote_view", T("/obj/screen/fullscreen/impaired"), 1]);
+	yield* user.overlay_fullscreen("remote_view", T("/obj/screen/fullscreen/impaired"), 1);
 	return f.dot;
 }, true);

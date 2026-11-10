@@ -1,124 +1,113 @@
-// From code/modules/mob/living/carbon/examine.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/carbon/examine.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
-// /mob/living/carbon/proc/examine  (code/modules/mob/living/carbon/examine.dm:2)
+// examine.dm:2
 rt.def("/mob/living/carbon/proc/examine", function examine(f: Frame, user: Value) {
-	let t_He: Value = null, t_His: Value = null, t_his: Value = null, t_him: Value = null, t_has: Value = null, t_is: Value = null, msg: Value = null, I: Value = null, appears_dead: Value = null, missing: Value = null, t: Value = null, temp: Value = null;
+	let I: Value = null, t: Value = null, temp: Value = null;
 	let $0: any, $1: any, $2: any, $3: any, $e: any;
-	f.vars = () => [t_He, t_His, t_his, t_him, t_has, t_is, msg, I, appears_dead, missing, t, temp, $0, $1, $2, $3, $e];
-	t_He = rt.callSrc(f, "p_they", [1]);
-	t_His = rt.callSrc(f, "p_their", [1]);
-	t_his = rt.callSrc(f, "p_their", []);
-	t_him = rt.callSrc(f, "p_them", []);
-	t_has = rt.callSrc(f, "p_have", []);
-	t_is = rt.callSrc(f, "p_are", []);
-	msg = fmt("<span class='info'>*---------*\nThis is ＀ ＇<EM>！</EM>!\n", [rt.call(f, P("/proc/bicon"), null, [live(f.src)]), live(f.src)]);
-	if (truthy(rt.sv(f, "handcuffed"))) {
-		msg = rt.modify(live(msg), fmt("<span class='warning'>＀ ＀ ＀ handcuffed!</span>\n", [live(t_He), live(t_is), rt.call(f, P("/proc/bicon"), null, [rt.sv(f, "handcuffed")])]), add);
+	let t_He: Value = this.p_they(1);
+	let t_His: Value = this.p_their(1);
+	let t_his: Value = this.p_their();
+	let t_him: Value = this.p_them();
+	let t_has: Value = this.p_have();
+	let t_is: Value = this.p_are();
+	let msg: Value = fmt("<span class='info'>*---------*\nThis is ＀ ＇<EM>！</EM>!\n", [bicon(this), this]);
+	if (this.handcuffed) {
+		msg += `<span class='warning'>${t_He} ${t_is} ${bicon(this.handcuffed)} handcuffed!</span>\n`;
 	}
-	if (truthy(rt.sv(f, "head"))) {
-		msg = rt.modify(live(msg), fmt("＀ ＀ wearing ＀ ＇！ on ＀ head. \n", [live(t_He), live(t_is), rt.call(f, P("/proc/bicon"), null, [rt.sv(f, "head")]), rt.fv(f, "head", live(f.src)), live(t_his)]), add);
+	if (this.head) {
+		msg += fmt("＀ ＀ wearing ＀ ＇！ on ＀ head. \n", [t_He, t_is, bicon(this.head), this.head, t_his]);
 	}
-	if (truthy(rt.sv(f, "wear_mask"))) {
-		msg = rt.modify(live(msg), fmt("＀ ＀ wearing ＀ ＇！ on ＀ face.\n", [live(t_He), live(t_is), rt.call(f, P("/proc/bicon"), null, [rt.sv(f, "wear_mask")]), rt.fv(f, "wear_mask", live(f.src)), live(t_his)]), add);
+	if (this.wear_mask) {
+		msg += fmt("＀ ＀ wearing ＀ ＇！ on ＀ face.\n", [t_He, t_is, bicon(this.wear_mask), this.wear_mask, t_his]);
 	}
-	if (truthy(rt.sv(f, "wear_neck"))) {
-		msg = rt.modify(live(msg), fmt("＀ ＀ wearing ＀ ＇！ around ＀ neck.\n", [live(t_He), live(t_is), rt.call(f, P("/proc/bicon"), null, [rt.sv(f, "wear_neck")]), rt.fv(f, "wear_neck", live(f.src)), live(t_his)]), add);
+	if (this.wear_neck) {
+		msg += fmt("＀ ＀ wearing ＀ ＇！ around ＀ neck.\n", [t_He, t_is, bicon(this.wear_neck), this.wear_neck, t_his]);
 	}
-	I = null;
-	rt.forList(f, 0, rt.sv(f, "held_items"), T("/obj/item"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		if (!truthy(rt.bitAnd(rt.fv(f, "flags", live(I)), 128))) {
-			if (truthy(rt.fv(f, "blood_DNA", live(I)))) {
-				$0 = live(t_He);
-				$1 = live(t_is);
-				$2 = rt.call(f, P("/proc/bicon"), null, [live(I)]);
-				if (isEqual(rt.fv(f, "gender", live(I)), "plural")) {
+	for (I of each(this.held_items, T("/obj/item"))) {
+		if (!rt.bitAnd(I.flags, ABSTRACT)) {
+			if (I.blood_DNA) {
+				$0 = t_He;
+				$1 = t_is;
+				$2 = bicon(I);
+				if (I.gender == "plural") {
 					$3 = "some";
 				} else {
 					$3 = "a";
 				}
-				msg = rt.modify(live(msg), fmt("<span class='warning'>＀ ＀ holding ＀ ＀ blood-stained ＀ in ＀ ＀!</span>\n", [$0, $1, $2, $3, rt.fv(f, "name", live(I)), live(t_his), rt.callSrc(f, "get_held_index_name", [rt.callSrc(f, "get_held_index_of_item", [live(I)])])]), add);
+				msg += `<span class='warning'>${$0} ${$1} holding ${$2} ${$3} blood-stained ${I.name} in ${t_his} ${this.get_held_index_name(this.get_held_index_of_item(I))}!</span>\n`;
 			} else {
-				msg = rt.modify(live(msg), fmt("＀ ＀ holding ＀ ＇！ in ＀ ＀.\n", [live(t_He), live(t_is), rt.call(f, P("/proc/bicon"), null, [live(I)]), live(I), live(t_his), rt.callSrc(f, "get_held_index_name", [rt.callSrc(f, "get_held_index_of_item", [live(I)])])]), add);
+				msg += fmt("＀ ＀ holding ＀ ＇！ in ＀ ＀.\n", [t_He, t_is, bicon(I), I, t_his, this.get_held_index_name(this.get_held_index_of_item(I))]);
 			}
 		}
 	}
-	rt.endFor(f, 0);
-	if (truthy(rt.sv(f, "back"))) {
-		msg = rt.modify(live(msg), fmt("＀ ＀ ＀ ＇！ on ＀ back.\n", [live(t_He), live(t_has), rt.call(f, P("/proc/bicon"), null, [rt.sv(f, "back")]), rt.fv(f, "back", live(f.src)), live(t_his)]), add);
+	if (this.back) {
+		msg += fmt("＀ ＀ ＀ ＇！ on ＀ back.\n", [t_He, t_has, bicon(this.back), this.back, t_his]);
 	}
-	appears_dead = 0;
-	if (isEqual(rt.sv(f, "stat"), 2)) {
+	let appears_dead: Value = 0;
+	if (this.stat == 2) {
 		appears_dead = 1;
-		if (truthy(rt.callSrc(f, "getorgan", [T("/obj/item/organ/brain")]))) {
-			msg = rt.modify(live(msg), fmt("<span class='deadsay'>＀ ＀ limp and unresponsive, with no signs of life.</span>\n", [live(t_He), live(t_is)]), add);
-		} else {
-			if (truthy(rt.callSrc(f, "get_bodypart", ["head"]))) {
-				msg = rt.modify(live(msg), fmt("<span class='deadsay'>＀ appears that ＀ brain is missing...</span>\n", [live(t_He), live(t_his)]), add);
-			}
+		if (this.getorgan(T("/obj/item/organ/brain"))) {
+			msg += `<span class='deadsay'>${t_He} ${t_is} limp and unresponsive, with no signs of life.</span>\n`;
+		} else if (this.get_bodypart("head")) {
+			msg += `<span class='deadsay'>${t_He} appears that ${t_his} brain is missing...</span>\n`;
 		}
 	}
-	missing = rt.callSrc(f, "get_missing_limbs", []);
-	t = null;
-	rt.forList(f, 0, live(missing));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		t = $e;
-		if (isEqual(live(t), "head")) {
-			msg = rt.modify(live(msg), fmt("<span class='deadsay'><B>＀ ＀ is missing!</B></span>\n", [live(t_His), rt.call(f, P("/proc/parse_zone"), null, [live(t)])]), add);
+	let missing: Value = this.get_missing_limbs();
+	for (t of each(missing)) {
+		if (t == "head") {
+			msg += `<span class='deadsay'><B>${t_His} ${parse_zone(t)} is missing!</B></span>\n`;
 			continue;
 		}
-		msg = rt.modify(live(msg), fmt("<span class='warning'><B>＀ ＀ is missing!</B></span>\n", [live(t_His), rt.call(f, P("/proc/parse_zone"), null, [live(t)])]), add);
+		msg += `<span class='warning'><B>${t_His} ${parse_zone(t)} is missing!</B></span>\n`;
 	}
-	rt.endFor(f, 0);
-	msg = rt.modify(live(msg), "<span class='warning'>", add);
-	if (truthy((temp = rt.callSrc(f, "getBruteLoss", [])))) {
-		if (rt.lt(live(temp), 30)) {
-			msg = rt.modify(live(msg), fmt("＀ ＀ minor bruising.\n", [live(t_He), live(t_has)]), add);
+	msg += "<span class='warning'>";
+	if (temp = this.getBruteLoss()) {
+		if (temp < 30) {
+			msg += `${t_He} ${t_has} minor bruising.\n`;
 		} else {
-			msg = rt.modify(live(msg), fmt("<B>＀ ＀ severe bruising!</B>\n", [live(t_He), live(t_has)]), add);
+			msg += `<B>${t_He} ${t_has} severe bruising!</B>\n`;
 		}
 	}
-	if (truthy((temp = rt.callSrc(f, "getFireLoss", [])))) {
-		if (rt.lt(live(temp), 30)) {
-			msg = rt.modify(live(msg), fmt("＀ ＀ minor burns.\n", [live(t_He), live(t_has)]), add);
+	if (temp = this.getFireLoss()) {
+		if (temp < 30) {
+			msg += `${t_He} ${t_has} minor burns.\n`;
 		} else {
-			msg = rt.modify(live(msg), fmt("<B>＀ ＀ severe burns!</B>\n", [live(t_He), live(t_has)]), add);
+			msg += `<B>${t_He} ${t_has} severe burns!</B>\n`;
 		}
 	}
-	if (truthy((temp = rt.callSrc(f, "getCloneLoss", [])))) {
-		if (rt.lt(rt.callSrc(f, "getCloneLoss", []), 30)) {
-			msg = rt.modify(live(msg), fmt("＀ ＀ slightly deformed.\n", [live(t_He), live(t_is)]), add);
+	if (temp = this.getCloneLoss()) {
+		if (this.getCloneLoss() < 30) {
+			msg += `${t_He} ${t_is} slightly deformed.\n`;
 		} else {
-			msg = rt.modify(live(msg), fmt("<b>＀ ＀ severely deformed.</b>\n", [live(t_He), live(t_is)]), add);
+			msg += `<b>${t_He} ${t_is} severely deformed.</b>\n`;
 		}
 	}
-	if (rt.gt(rt.callSrc(f, "getBrainLoss", []), 60)) {
-		msg = rt.modify(live(msg), fmt("＀ seems to be clumsy and unable to think.\n", [live(t_He)]), add);
+	if (this.getBrainLoss() > 60) {
+		msg += `${t_He} seems to be clumsy and unable to think.\n`;
 	}
-	if (rt.gt(rt.sv(f, "fire_stacks"), 0)) {
-		msg = rt.modify(live(msg), fmt("＀ ＀ covered in something flammable.\n", [live(t_He), live(t_is)]), add);
+	if (this.fire_stacks > 0) {
+		msg += `${t_He} ${t_is} covered in something flammable.\n`;
 	}
-	if (rt.lt(rt.sv(f, "fire_stacks"), 0)) {
-		msg = rt.modify(live(msg), fmt("＀ ＀ looks a little soaked.\n", [live(t_He), live(t_is)]), add);
+	if (this.fire_stacks < 0) {
+		msg += `${t_He} ${t_is} looks a little soaked.\n`;
 	}
-	if ((truthy(rt.sv(f, "pulledby")) && truthy(rt.fv(f, "grab_state", rt.sv(f, "pulledby"))))) {
-		msg = rt.modify(live(msg), fmt("＀ ＀ restrained by ＀'s grip.\n", [live(t_He), live(t_is), rt.sv(f, "pulledby")]), add);
+	if (this.pulledby && this.pulledby.grab_state) {
+		msg += `${t_He} ${t_is} restrained by ${this.pulledby}'s grip.\n`;
 	}
-	msg = rt.modify(live(msg), "</span>", add);
-	if (!truthy(live(appears_dead))) {
-		if (isEqual(rt.sv(f, "stat"), 1)) {
-			msg = rt.modify(live(msg), fmt("＀ ＀n't responding to anything around ＀ and seems to be asleep.\n", [live(t_He), live(t_is), live(t_him)]), add);
+	msg += "</span>";
+	if (!appears_dead) {
+		if (this.stat == 1) {
+			msg += `${t_He} ${t_is}n't responding to anything around ${t_him} and seems to be asleep.\n`;
 		}
-		if (truthy(rt.sv(f, "digitalcamo"))) {
-			msg = rt.modify(live(msg), fmt("＀ ＀ moving ＀ body in an unnatural and blatantly unsimian manner.\n", [live(t_He), live(t_is), live(t_his)]), add);
+		if (this.digitalcamo) {
+			msg += `${t_He} ${t_is} moving ${t_his} body in an unnatural and blatantly unsimian manner.\n`;
 		}
 	}
-	msg = rt.modify(live(msg), "*---------*</span>", add);
-	rt.call(f, P("/proc/to_chat"), null, [live(user), live(msg)]);
+	msg += "*---------*</span>";
+	to_chat(user, msg);
 	return f.dot;
 });

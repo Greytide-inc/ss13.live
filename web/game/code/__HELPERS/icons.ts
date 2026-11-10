@@ -1,978 +1,832 @@
-// From code/__HELPERS/icons.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/__HELPERS/icons.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, fmt } = rt;
 
 
 rt.type(4807, "/icon", "/datum", {
 	icon: null,
 });
 
-// /icon/proc/ChangeOpacity  (code/__HELPERS/icons.dm:221)
+// icons.dm:221
 rt.def("/icon/proc/ChangeOpacity", function ChangeOpacity(f: Frame, opacity: Value) {
-	f.vars = () => [opacity];
-	if (live(opacity) === null) {
-		opacity = 1;
-	}
-	rt.callSrc(f, "MapColors", [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, live(opacity), 0, 0, 0, 0]);
+	opacity ??= 1;
+	this.MapColors(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, opacity, 0, 0, 0, 0);
 	return f.dot;
 });
 
-// /icon/proc/GrayScale  (code/__HELPERS/icons.dm:225)
+// icons.dm:225
 rt.def("/icon/proc/GrayScale", function GrayScale(f: Frame) {
-	rt.callSrc(f, "MapColors", [0.30000001192092896, 0.30000001192092896, 0.30000001192092896, 0.5899999737739563, 0.5899999737739563, 0.5899999737739563, 0.10999999940395355, 0.10999999940395355, 0.10999999940395355, 0, 0, 0]);
+	this.MapColors(0.3, 0.3, 0.3, 0.59, 0.59, 0.59, 0.11, 0.11, 0.11, 0, 0, 0);
 	return f.dot;
 });
 
-// /icon/proc/ColorTone  (code/__HELPERS/icons.dm:228)
+// icons.dm:228
 rt.def("/icon/proc/ColorTone", function ColorTone(f: Frame, tone: Value) {
-	let TONE: Value = null, gray: Value = null, upper: Value = null;
-	let $0: any;
-	f.vars = () => [TONE, gray, upper, $0];
-	rt.callSrc(f, "GrayScale", []);
-	TONE = rt.call(f, P("/proc/ReadRGB"), null, [live(tone)]);
-	gray = rt.call(f, P("/proc/round"), null, [add(add(multiply(rt.index(live(TONE), 1), 0.30000001192092896), multiply(rt.index(live(TONE), 2), 0.5899999737739563)), multiply(rt.index(live(TONE), 3), 0.10999999940395355)), 1]);
-	if (truthy(subtract(255, live(gray)))) {
-		$0 = rt.new_(f, T("/icon"), [live(f.src)]);
+	this.GrayScale();
+	let TONE: Value = ReadRGB(tone);
+	let gray: Value = round(rt.index(TONE, 1) * 0.3 + rt.index(TONE, 2) * 0.59 + rt.index(TONE, 3) * 0.11, 1);
+	let upper: Value = 255 - gray ? new_(T("/icon"), this) : null;
+	if (gray) {
+		this.MapColors(255 / gray, 0, 0, 0, 255 / gray, 0, 0, 0, 255 / gray, 0, 0, 0);
+		this.Blend(tone, 2);
 	} else {
-		$0 = null;
+		this.SetIntensity(0);
 	}
-	upper = $0;
-	if (truthy(live(gray))) {
-		rt.callSrc(f, "MapColors", [divide(255, live(gray)), 0, 0, 0, divide(255, live(gray)), 0, 0, 0, divide(255, live(gray)), 0, 0, 0]);
-		rt.callSrc(f, "Blend", [live(tone), 2]);
-	} else {
-		rt.callSrc(f, "SetIntensity", [0]);
-	}
-	if (!truthy(subtract(255, live(gray)))) return f.dot;
-	rt.callName(f, live(upper), "Blend", [rt.op(f, "Rgb", [1, 3], [live(gray), live(gray), live(gray)]), 1]);
-	rt.callName(f, live(upper), "MapColors", [divide(subtract(255, rt.index(live(TONE), 1)), subtract(255, live(gray))), 0, 0, 0, 0, divide(subtract(255, rt.index(live(TONE), 2)), subtract(255, live(gray))), 0, 0, 0, 0, divide(subtract(255, rt.index(live(TONE), 3)), subtract(255, live(gray))), 0, 0, 0, 0, 0, 0, 0, 0, 1]);
-	rt.callSrc(f, "Blend", [live(upper), 0]);
+	if (!(255 - gray)) return f.dot;
+	upper.Blend(rt.op(f, "Rgb", [1, 3], [gray, gray, gray]), 1);
+	upper.MapColors((255 - rt.index(TONE, 1)) / (255 - gray), 0, 0, 0, 0, (255 - rt.index(TONE, 2)) / (255 - gray), 0, 0, 0, 0, (255 - rt.index(TONE, 3)) / (255 - gray), 0, 0, 0, 0, 0, 0, 0, 0, 1);
+	this.Blend(upper, 0);
 	return f.dot;
 });
 
-// /icon/proc/BecomeAlphaMask  (code/__HELPERS/icons.dm:275)
+// icons.dm:275
 rt.def("/icon/proc/BecomeAlphaMask", function BecomeAlphaMask(f: Frame) {
-	rt.callSrc(f, "SwapColor", [null, "#000000ff"]);
-	rt.callSrc(f, "MapColors", [0, 0, 0, 0.30000001192092896, 0, 0, 0, 0.5899999737739563, 0, 0, 0, 0.10999999940395355, 0, 0, 0, 0, 1, 1, 1, 0]);
+	this.SwapColor(null, "#000000ff");
+	this.MapColors(0, 0, 0, 0.3, 0, 0, 0, 0.59, 0, 0, 0, 0.11, 0, 0, 0, 0, 1, 1, 1, 0);
 	return f.dot;
 });
 
-// /icon/proc/AddAlphaMask  (code/__HELPERS/icons.dm:283)
+// icons.dm:283
 rt.def("/icon/proc/AddAlphaMask", function AddAlphaMask(f: Frame, mask: Value) {
 	let M: Value = null;
-	f.vars = () => [M];
-	rt.callName(f, (M = rt.new_(f, T("/icon"), [live(mask)])), "Blend", ["#ffffff", 1]);
-	rt.callSrc(f, "Blend", [live(M), 0]);
+	(M = new_(T("/icon"), mask)).Blend("#ffffff", 1);
+	this.Blend(M, 0);
 	return f.dot;
 });
 
-// /proc/ReadRGB  (code/__HELPERS/icons.dm:311)
+// icons.dm:311
 rt.def("/proc/ReadRGB", function ReadRGB(f: Frame, rgb: Value) {
-	let i: Value = null, start: Value = null, ch: Value = null, which: Value = null, r: Value = null, _g: Value = null, b: Value = null, alpha: Value = null, usealpha: Value = null, digits: Value = null, single: Value = null;
-	let $0: any;
-	f.vars = () => [i, start, ch, which, r, _g, b, alpha, usealpha, digits, single, $0];
-	if (!truthy(live(rgb))) {
-		return live(f.dot);
+	let ch: Value = null, usealpha: Value = null;
+	if (!rgb) {
+		return f.dot;
 	}
-	i = 1;
-	start = 1;
-	if (isEqual(rt.call(f, P("/proc/text2ascii"), null, [live(rgb)]), 35)) {
-		start = rt.inc(live(start), 1);
+	let i: Value = 1;
+	let start: Value = 1;
+	if (text2ascii(rgb) == 35) {
+		start++;
 	}
-	ch = null;
-	which = 0;
-	r = 0;
-	_g = 0;
-	b = 0;
-	alpha = 0;
-	usealpha = null;
-	digits = 0;
-	i = live(start);
-	while (rt.le(live(i), rt.length(live(rgb)))) {
-		if ((((rt.lt((ch = rt.call(f, P("/proc/text2ascii"), null, [live(rgb), live(i)])), 48) || (rt.gt(live(ch), 57) && rt.lt(live(ch), 65))) || (rt.gt(live(ch), 70) && rt.lt(live(ch), 97))) || rt.gt(live(ch), 102))) {
+	let which: Value = 0;
+	let r: Value = 0;
+	let _g: Value = 0;
+	let b: Value = 0;
+	let alpha: Value = 0;
+	let digits: Value = 0;
+	i = start;
+	while (i <= rt.length(rgb)) {
+		if ((ch = text2ascii(rgb, i)) < 48 || ch > 57 && ch < 65 || ch > 70 && ch < 97 || ch > 102) {
 			break;
 		}
-		digits = rt.inc(live(digits), 1);
-		if (isEqual(live(digits), 8)) {
+		digits++;
+		if (digits == 8) {
 			break;
 		}
-		i = rt.inc(live(i), 1);
+		i++;
 	}
-	single = (rt.lt(live(digits), 6) ? 1 : 0);
-	if ((((!isEqual(live(digits), 3) && !isEqual(live(digits), 4)) && !isEqual(live(digits), 6)) && !isEqual(live(digits), 8))) {
-		return live(f.dot);
+	let single: Value = (digits < 6 ? 1 : 0);
+	if (digits != 3 && digits != 4 && digits != 6 && digits != 8) {
+		return f.dot;
 	}
-	if ((isEqual(live(digits), 4) || isEqual(live(digits), 8))) {
+	if (digits == 4 || digits == 8) {
 		usealpha = 1;
 	}
-	i = live(start);
-	while (rt.gt(live(digits), 0)) {
-		if ((rt.ge((ch = rt.call(f, P("/proc/text2ascii"), null, [live(rgb), live(i)])), 48) && rt.le(live(ch), 57))) {
-			(ch = rt.modify(live(ch), 48, subtract));
+	i = start;
+	while (digits > 0) {
+		if ((ch = text2ascii(rgb, i)) >= 48 && ch <= 57) {
+			ch -= 48;
+		} else if (ch >= 65 && ch <= 70) {
+			ch -= 55;
+		} else if (ch >= 97 && ch <= 102) {
+			ch -= 87;
 		} else {
-			if ((rt.ge(live(ch), 65) && rt.le(live(ch), 70))) {
-				(ch = rt.modify(live(ch), 55, subtract));
-			} else {
-				if ((rt.ge(live(ch), 97) && rt.le(live(ch), 102))) {
-					(ch = rt.modify(live(ch), 87, subtract));
-				} else {
-					break;
-				}
+			break;
+		}
+		digits--;
+		if (which === 0) {
+			r = rt.bitOr(rt.shiftLeft(r, 4), ch);
+			if (single) {
+				(r = rt.modify(r, rt.shiftLeft(r, 4), rt.bitOr));
+				which++;
+			} else if (!rt.bitAnd(digits, 1)) {
+				which++;
+			}
+		} else if (which === 1) {
+			_g = rt.bitOr(rt.shiftLeft(_g, 4), ch);
+			if (single) {
+				(_g = rt.modify(_g, rt.shiftLeft(_g, 4), rt.bitOr));
+				which++;
+			} else if (!rt.bitAnd(digits, 1)) {
+				which++;
+			}
+		} else if (which === 2) {
+			b = rt.bitOr(rt.shiftLeft(b, 4), ch);
+			if (single) {
+				(b = rt.modify(b, rt.shiftLeft(b, 4), rt.bitOr));
+				which++;
+			} else if (!rt.bitAnd(digits, 1)) {
+				which++;
+			}
+		} else if (which === 3) {
+			alpha = rt.bitOr(rt.shiftLeft(alpha, 4), ch);
+			if (single) {
+				(alpha = rt.modify(alpha, rt.shiftLeft(alpha, 4), rt.bitOr));
 			}
 		}
-		digits = rt.inc(live(digits), -1);
-		$0 = live(which);
-		if ($0 === 0) {
-			r = rt.bitOr(rt.shiftLeft(live(r), 4), live(ch));
-			if (truthy(live(single))) {
-				(r = rt.modify(live(r), rt.shiftLeft(live(r), 4), rt.bitOr));
-				which = rt.inc(live(which), 1);
-			} else {
-				if (!truthy(rt.bitAnd(live(digits), 1))) {
-					which = rt.inc(live(which), 1);
-				}
-			}
-		} else if ($0 === 1) {
-			_g = rt.bitOr(rt.shiftLeft(live(_g), 4), live(ch));
-			if (truthy(live(single))) {
-				(_g = rt.modify(live(_g), rt.shiftLeft(live(_g), 4), rt.bitOr));
-				which = rt.inc(live(which), 1);
-			} else {
-				if (!truthy(rt.bitAnd(live(digits), 1))) {
-					which = rt.inc(live(which), 1);
-				}
-			}
-		} else if ($0 === 2) {
-			b = rt.bitOr(rt.shiftLeft(live(b), 4), live(ch));
-			if (truthy(live(single))) {
-				(b = rt.modify(live(b), rt.shiftLeft(live(b), 4), rt.bitOr));
-				which = rt.inc(live(which), 1);
-			} else {
-				if (!truthy(rt.bitAnd(live(digits), 1))) {
-					which = rt.inc(live(which), 1);
-				}
-			}
-		} else if ($0 === 3) {
-			alpha = rt.bitOr(rt.shiftLeft(live(alpha), 4), live(ch));
-			if (truthy(live(single))) {
-				(alpha = rt.modify(live(alpha), rt.shiftLeft(live(alpha), 4), rt.bitOr));
-			}
-		}
-		i = rt.inc(live(i), 1);
+		i++;
 	}
-	f.dot = rt.list(live(r), live(_g), live(b));
-	if (!truthy(live(usealpha))) return f.dot;
-	f.dot = rt.modify(live(f.dot), live(alpha), add);
+	f.dot = list(r, _g, b);
+	if (!usealpha) return f.dot;
+	f.dot += alpha;
 	return f.dot;
 });
 
-// /proc/ReadHSV  (code/__HELPERS/icons.dm:361)
+// icons.dm:361
 rt.def("/proc/ReadHSV", function ReadHSV(f: Frame, hsv: Value) {
-	let i: Value = null, start: Value = null, ch: Value = null, which: Value = null, hue: Value = null, sat: Value = null, val: Value = null, alpha: Value = null, usealpha: Value = null, digits: Value = null;
+	let ch: Value = null, usealpha: Value = null;
 	let $0: any, $1: any;
-	f.vars = () => [i, start, ch, which, hue, sat, val, alpha, usealpha, digits, $0, $1];
-	if (!truthy(live(hsv))) {
-		return live(f.dot);
+	if (!hsv) {
+		return f.dot;
 	}
-	i = 1;
-	start = 1;
-	if (isEqual(rt.call(f, P("/proc/text2ascii"), null, [live(hsv)]), 35)) {
-		start = rt.inc(live(start), 1);
+	let i: Value = 1;
+	let start: Value = 1;
+	if (text2ascii(hsv) == 35) {
+		start++;
 	}
-	ch = null;
-	which = 0;
-	hue = 0;
-	sat = 0;
-	val = 0;
-	alpha = 0;
-	usealpha = null;
-	digits = 0;
-	i = live(start);
-	while (rt.le(live(i), rt.length(live(hsv)))) {
-		if ((((rt.lt((ch = rt.call(f, P("/proc/text2ascii"), null, [live(hsv), live(i)])), 48) || (rt.gt(live(ch), 57) && rt.lt(live(ch), 65))) || (rt.gt(live(ch), 70) && rt.lt(live(ch), 97))) || rt.gt(live(ch), 102))) {
+	let which: Value = 0;
+	let hue: Value = 0;
+	let sat: Value = 0;
+	let val: Value = 0;
+	let alpha: Value = 0;
+	let digits: Value = 0;
+	i = start;
+	while (i <= rt.length(hsv)) {
+		if ((ch = text2ascii(hsv, i)) < 48 || ch > 57 && ch < 65 || ch > 70 && ch < 97 || ch > 102) {
 			break;
 		}
-		digits = rt.inc(live(digits), 1);
-		if (isEqual(live(digits), 9)) {
+		digits++;
+		if (digits == 9) {
 			break;
 		}
-		i = rt.inc(live(i), 1);
+		i++;
 	}
-	if (rt.gt(live(digits), 7)) {
+	if (digits > 7) {
 		usealpha = 1;
 	}
-	if (rt.le(live(digits), 4)) {
-		which = rt.inc(live(which), 1);
+	if (digits <= 4) {
+		which++;
 	}
-	if (rt.le(live(digits), 2)) {
-		which = rt.inc(live(which), 1);
+	if (digits <= 2) {
+		which++;
 	}
-	i = live(start);
-	while (rt.gt(live(digits), 0)) {
-		if ((rt.ge((ch = rt.call(f, P("/proc/text2ascii"), null, [live(hsv), live(i)])), 48) && rt.le(live(ch), 57))) {
-			(ch = rt.modify(live(ch), 48, subtract));
+	i = start;
+	while (digits > 0) {
+		if ((ch = text2ascii(hsv, i)) >= 48 && ch <= 57) {
+			ch -= 48;
+		} else if (ch >= 65 && ch <= 70) {
+			ch -= 55;
+		} else if (ch >= 97 && ch <= 102) {
+			ch -= 87;
 		} else {
-			if ((rt.ge(live(ch), 65) && rt.le(live(ch), 70))) {
-				(ch = rt.modify(live(ch), 55, subtract));
-			} else {
-				if ((rt.ge(live(ch), 97) && rt.le(live(ch), 102))) {
-					(ch = rt.modify(live(ch), 87, subtract));
-				} else {
-					break;
-				}
-			}
+			break;
 		}
-		digits = rt.inc(live(digits), -1);
-		$0 = live(which);
-		if ($0 === 0) {
-			hue = rt.bitOr(rt.shiftLeft(live(hue), 4), live(ch));
-			$0 = live(digits);
-			if (truthy(live(usealpha))) {
+		digits--;
+		if (which === 0) {
+			hue = rt.bitOr(rt.shiftLeft(hue, 4), ch);
+			$0 = digits;
+			if (usealpha) {
 				$1 = 6;
 			} else {
 				$1 = 4;
 			}
-			if (isEqual($0, $1)) {
-				which = rt.inc(live(which), 1);
+			if ($0 == $1) {
+				which++;
 			}
-		} else if ($0 === 1) {
-			sat = rt.bitOr(rt.shiftLeft(live(sat), 4), live(ch));
-			$0 = live(digits);
-			if (truthy(live(usealpha))) {
+		} else if (which === 1) {
+			sat = rt.bitOr(rt.shiftLeft(sat, 4), ch);
+			$0 = digits;
+			if (usealpha) {
 				$1 = 4;
 			} else {
 				$1 = 2;
 			}
-			if (isEqual($0, $1)) {
-				which = rt.inc(live(which), 1);
+			if ($0 == $1) {
+				which++;
 			}
-		} else if ($0 === 2) {
-			val = rt.bitOr(rt.shiftLeft(live(val), 4), live(ch));
-			$0 = live(digits);
-			if (truthy(live(usealpha))) {
+		} else if (which === 2) {
+			val = rt.bitOr(rt.shiftLeft(val, 4), ch);
+			$0 = digits;
+			if (usealpha) {
 				$1 = 2;
 			} else {
 				$1 = 0;
 			}
-			if (isEqual($0, $1)) {
-				which = rt.inc(live(which), 1);
+			if ($0 == $1) {
+				which++;
 			}
-		} else if ($0 === 3) {
-			alpha = rt.bitOr(rt.shiftLeft(live(alpha), 4), live(ch));
+		} else if (which === 3) {
+			alpha = rt.bitOr(rt.shiftLeft(alpha, 4), ch);
 		}
-		i = rt.inc(live(i), 1);
+		i++;
 	}
-	f.dot = rt.list(live(hue), live(sat), live(val));
-	if (!truthy(live(usealpha))) return f.dot;
-	f.dot = rt.modify(live(f.dot), live(alpha), add);
+	f.dot = list(hue, sat, val);
+	if (!usealpha) return f.dot;
+	f.dot += alpha;
 	return f.dot;
 });
 
-// /proc/RGBtoHSV  (code/__HELPERS/icons.dm:428)
+// icons.dm:428
 rt.def("/proc/RGBtoHSV", function RGBtoHSV(f: Frame, rgb: Value) {
-	let RGB: Value = null, r: Value = null, _g: Value = null, b: Value = null, hi: Value = null, lo: Value = null, val: Value = null, sat: Value = null, hue: Value = null, dir: Value = null, mid: Value = null;
-	let $0: any, $1: any, $2: any, $3: any;
-	f.vars = () => [RGB, r, _g, b, hi, lo, val, sat, hue, dir, mid, $0, $1, $2, $3];
-	if (!truthy(live(rgb))) {
+	let RGB: Value = null, dir: Value = null, mid: Value = null;
+	let $0: any;
+	if (!rgb) {
 		return "#0000000";
 	}
-	if (!truthy((RGB = rt.call(f, P("/proc/ReadRGB"), null, [live(rgb)])))) {
+	if (!(RGB = ReadRGB(rgb))) {
 		return "#0000000";
 	}
-	r = rt.index(live(RGB), 1);
-	_g = rt.index(live(RGB), 2);
-	b = rt.index(live(RGB), 3);
-	hi = rt.call(f, P("/proc/max"), null, [live(r), live(_g), live(b)]);
-	lo = rt.call(f, P("/proc/min"), null, [live(r), live(_g), live(b)]);
-	val = live(hi);
-	if (truthy(live(hi))) {
-		$0 = rt.call(f, P("/proc/round"), null, [divide(multiply(subtract(live(hi), live(lo)), 255), live(hi)), 1]);
-	} else {
-		$0 = 0;
-	}
-	sat = $0;
-	hue = 0;
-	if (truthy(live(sat))) {
-		dir = null;
-		mid = null;
-		if (isEqual(live(hi), live(r))) {
-			if (isEqual(live(lo), live(b))) {
+	let r: Value = rt.index(RGB, 1);
+	let _g: Value = rt.index(RGB, 2);
+	let b: Value = rt.index(RGB, 3);
+	let hi: Value = max(r, _g, b);
+	let lo: Value = min(r, _g, b);
+	let val: Value = hi;
+	let sat: Value = hi ? round((hi - lo) * 255 / hi, 1) : 0;
+	let hue: Value = 0;
+	if (sat) {
+		if (hi == r) {
+			if (lo == b) {
 				hue = 0;
 				dir = 1;
-				mid = live(_g);
+				mid = _g;
 			} else {
 				hue = 1535;
 				dir = -1;
-				mid = live(b);
+				mid = b;
 			}
-		} else {
-			if (isEqual(live(hi), live(_g))) {
-				if (isEqual(live(lo), live(r))) {
-					hue = 512;
-					dir = 1;
-					mid = live(b);
-				} else {
-					hue = 511;
-					dir = -1;
-					mid = live(r);
-				}
+		} else if (hi == _g) {
+			if (lo == r) {
+				hue = 512;
+				dir = 1;
+				mid = b;
 			} else {
-				if (isEqual(live(hi), live(b))) {
-					if (isEqual(live(lo), live(_g))) {
-						hue = 1024;
-						dir = 1;
-						mid = live(r);
-					} else {
-						hue = 1023;
-						dir = -1;
-						mid = live(_g);
-					}
-				}
+				hue = 511;
+				dir = -1;
+				mid = r;
+			}
+		} else if (hi == b) {
+			if (lo == _g) {
+				hue = 1024;
+				dir = 1;
+				mid = r;
+			} else {
+				hue = 1023;
+				dir = -1;
+				mid = _g;
 			}
 		}
-		hue = rt.modify(live(hue), multiply(live(dir), rt.call(f, P("/proc/round"), null, [divide(multiply(subtract(live(mid), live(lo)), 255), subtract(live(hi), live(lo))), 1])), add);
+		hue += dir * round((mid - lo) * 255 / (hi - lo), 1);
 	}
-	$0 = live(hue);
-	$1 = live(sat);
-	$2 = live(val);
-	if (rt.gt(rt.len(f, live(RGB)), 3)) {
-		$3 = rt.index(live(RGB), 4);
-	} else {
-		$3 = null;
-	}
-	return rt.call(f, P("/proc/hsv"), null, [$0, $1, $2, $3]);
+	$0 = hue;
+	let $1: any = sat;
+	let $2: any = val;
+	return hsv($0, $1, $2, rt.len(f, RGB) > 3 ? rt.index(RGB, 4) : null);
 });
 
-// /proc/hsv  (code/__HELPERS/icons.dm:459)
+// icons.dm:459
 rt.def("/proc/hsv", function hsv(f: Frame, hue: Value, sat: Value, val: Value, alpha: Value) {
-	let $0: any, $1: any;
-	f.vars = () => [hue, sat, val, alpha, $0, $1];
-	if ((rt.lt(live(hue), 0) || rt.ge(live(hue), 1536))) {
-		(hue = rt.modify(live(hue), 1536, rt.modulus));
+	let $1: any;
+	if (hue < 0 || hue >= 1536) {
+		hue %= 1536;
 	}
-	if (rt.lt(live(hue), 0)) {
-		hue = rt.modify(live(hue), 1536, add);
+	if (hue < 0) {
+		hue += 1536;
 	}
-	if (isEqual(rt.bitAnd(live(hue), 255), 255)) {
-		hue = rt.inc(live(hue), 1);
-		if (rt.ge(live(hue), 1536)) {
+	if (rt.bitAnd(hue, 255) == 255) {
+		hue++;
+		if (hue >= 1536) {
 			hue = 0;
 		}
 	}
-	if (rt.lt(live(sat), 0)) {
+	if (sat < 0) {
 		sat = 0;
 	}
-	if (rt.gt(live(sat), 255)) {
+	if (sat > 255) {
 		sat = 255;
 	}
-	if (rt.lt(live(val), 0)) {
+	if (val < 0) {
 		val = 0;
 	}
-	if (rt.gt(live(val), 255)) {
+	if (val > 255) {
 		val = 255;
 	}
 	f.dot = "#";
-	$0 = rt.bitAnd(rt.shiftRight(live(hue), 8), 15);
-	if (rt.lt(rt.bitAnd(rt.shiftRight(live(hue), 8), 15), 10)) {
+	let $0: any = rt.bitAnd(rt.shiftRight(hue, 8), 15);
+	if (rt.bitAnd(rt.shiftRight(hue, 8), 15) < 10) {
 		$1 = 48;
 	} else {
 		$1 = 87;
 	}
-	f.dot = rt.modify(live(f.dot), rt.call(f, P("/proc/ascii2text"), null, [add($0, $1)]), add);
-	$0 = rt.bitAnd(rt.shiftRight(live(hue), 4), 15);
-	if (rt.lt(rt.bitAnd(rt.shiftRight(live(hue), 4), 15), 10)) {
+	f.dot += ascii2text($0 + $1);
+	$0 = rt.bitAnd(rt.shiftRight(hue, 4), 15);
+	if (rt.bitAnd(rt.shiftRight(hue, 4), 15) < 10) {
 		$1 = 48;
 	} else {
 		$1 = 87;
 	}
-	f.dot = rt.modify(live(f.dot), rt.call(f, P("/proc/ascii2text"), null, [add($0, $1)]), add);
-	$0 = rt.bitAnd(live(hue), 15);
-	if (rt.lt(rt.bitAnd(live(hue), 15), 10)) {
+	f.dot += ascii2text($0 + $1);
+	$0 = rt.bitAnd(hue, 15);
+	if (rt.bitAnd(hue, 15) < 10) {
 		$1 = 48;
 	} else {
 		$1 = 87;
 	}
-	f.dot = rt.modify(live(f.dot), rt.call(f, P("/proc/ascii2text"), null, [add($0, $1)]), add);
-	$0 = rt.bitAnd(rt.shiftRight(live(sat), 4), 15);
-	if (rt.lt(rt.bitAnd(rt.shiftRight(live(sat), 4), 15), 10)) {
+	f.dot += ascii2text($0 + $1);
+	$0 = rt.bitAnd(rt.shiftRight(sat, 4), 15);
+	if (rt.bitAnd(rt.shiftRight(sat, 4), 15) < 10) {
 		$1 = 48;
 	} else {
 		$1 = 87;
 	}
-	f.dot = rt.modify(live(f.dot), rt.call(f, P("/proc/ascii2text"), null, [add($0, $1)]), add);
-	$0 = rt.bitAnd(live(sat), 15);
-	if (rt.lt(rt.bitAnd(live(sat), 15), 10)) {
+	f.dot += ascii2text($0 + $1);
+	$0 = rt.bitAnd(sat, 15);
+	if (rt.bitAnd(sat, 15) < 10) {
 		$1 = 48;
 	} else {
 		$1 = 87;
 	}
-	f.dot = rt.modify(live(f.dot), rt.call(f, P("/proc/ascii2text"), null, [add($0, $1)]), add);
-	$0 = rt.bitAnd(rt.shiftRight(live(val), 4), 15);
-	if (rt.lt(rt.bitAnd(rt.shiftRight(live(val), 4), 15), 10)) {
+	f.dot += ascii2text($0 + $1);
+	$0 = rt.bitAnd(rt.shiftRight(val, 4), 15);
+	if (rt.bitAnd(rt.shiftRight(val, 4), 15) < 10) {
 		$1 = 48;
 	} else {
 		$1 = 87;
 	}
-	f.dot = rt.modify(live(f.dot), rt.call(f, P("/proc/ascii2text"), null, [add($0, $1)]), add);
-	$0 = rt.bitAnd(live(val), 15);
-	if (rt.lt(rt.bitAnd(live(val), 15), 10)) {
+	f.dot += ascii2text($0 + $1);
+	$0 = rt.bitAnd(val, 15);
+	if (rt.bitAnd(val, 15) < 10) {
 		$1 = 48;
 	} else {
 		$1 = 87;
 	}
-	f.dot = rt.modify(live(f.dot), rt.call(f, P("/proc/ascii2text"), null, [add($0, $1)]), add);
-	if (live(alpha) === null) return f.dot;
-	if (rt.lt(live(alpha), 0)) {
+	f.dot += ascii2text($0 + $1);
+	if (alpha === null) return f.dot;
+	if (alpha < 0) {
 		alpha = 0;
 	}
-	if (rt.gt(live(alpha), 255)) {
+	if (alpha > 255) {
 		alpha = 255;
 	}
-	$0 = rt.bitAnd(rt.shiftRight(live(alpha), 4), 15);
-	if (rt.lt(rt.bitAnd(rt.shiftRight(live(alpha), 4), 15), 10)) {
+	$0 = rt.bitAnd(rt.shiftRight(alpha, 4), 15);
+	if (rt.bitAnd(rt.shiftRight(alpha, 4), 15) < 10) {
 		$1 = 48;
 	} else {
 		$1 = 87;
 	}
-	f.dot = rt.modify(live(f.dot), rt.call(f, P("/proc/ascii2text"), null, [add($0, $1)]), add);
-	$0 = rt.bitAnd(live(alpha), 15);
-	if (rt.lt(rt.bitAnd(live(alpha), 15), 10)) {
+	f.dot += ascii2text($0 + $1);
+	$0 = rt.bitAnd(alpha, 15);
+	if (rt.bitAnd(alpha, 15) < 10) {
 		$1 = 48;
 	} else {
 		$1 = 87;
 	}
-	f.dot = rt.modify(live(f.dot), rt.call(f, P("/proc/ascii2text"), null, [add($0, $1)]), add);
+	f.dot += ascii2text($0 + $1);
 	return f.dot;
 });
 
-// /proc/BlendRGB  (code/__HELPERS/icons.dm:546)
+// icons.dm:546
 rt.def("/proc/BlendRGB", function BlendRGB(f: Frame, rgb1: Value, rgb2: Value, amount: Value) {
-	let RGB1: Value = null, RGB2: Value = null, usealpha: Value = null, r: Value = null, _g: Value = null, b: Value = null, alpha: Value = null;
+	let alpha: Value = null;
 	let $0: any;
-	f.vars = () => [RGB1, RGB2, usealpha, r, _g, b, alpha, $0];
-	RGB1 = rt.call(f, P("/proc/ReadRGB"), null, [live(rgb1)]);
-	RGB2 = rt.call(f, P("/proc/ReadRGB"), null, [live(rgb2)]);
-	if (rt.lt(rt.len(f, live(RGB1)), rt.len(f, live(RGB2)))) {
-		RGB1 = rt.modify(live(RGB1), 255, add);
-	} else {
-		if (rt.lt(rt.len(f, live(RGB2)), rt.len(f, live(RGB1)))) {
-			RGB2 = rt.modify(live(RGB2), 255, add);
-		}
+	let RGB1: Value = ReadRGB(rgb1);
+	let RGB2: Value = ReadRGB(rgb2);
+	if (rt.len(f, RGB1) < rt.len(f, RGB2)) {
+		RGB1 += 255;
+	} else if (rt.len(f, RGB2) < rt.len(f, RGB1)) {
+		RGB2 += 255;
 	}
-	usealpha = (rt.gt(rt.len(f, live(RGB1)), 3) ? 1 : 0);
-	r = rt.call(f, P("/proc/round"), null, [add(rt.index(live(RGB1), 1), multiply(subtract(rt.index(live(RGB2), 1), rt.index(live(RGB1), 1)), live(amount))), 1]);
-	_g = rt.call(f, P("/proc/round"), null, [add(rt.index(live(RGB1), 2), multiply(subtract(rt.index(live(RGB2), 2), rt.index(live(RGB1), 2)), live(amount))), 1]);
-	b = rt.call(f, P("/proc/round"), null, [add(rt.index(live(RGB1), 3), multiply(subtract(rt.index(live(RGB2), 3), rt.index(live(RGB1), 3)), live(amount))), 1]);
-	if (truthy(live(usealpha))) {
-		$0 = rt.call(f, P("/proc/round"), null, [add(rt.index(live(RGB1), 4), multiply(subtract(rt.index(live(RGB2), 4), rt.index(live(RGB1), 4)), live(amount))), 1]);
+	let usealpha: Value = (rt.len(f, RGB1) > 3 ? 1 : 0);
+	let r: Value = round(rt.index(RGB1, 1) + (rt.index(RGB2, 1) - rt.index(RGB1, 1)) * amount, 1);
+	let _g: Value = round(rt.index(RGB1, 2) + (rt.index(RGB2, 2) - rt.index(RGB1, 2)) * amount, 1);
+	let b: Value = round(rt.index(RGB1, 3) + (rt.index(RGB2, 3) - rt.index(RGB1, 3)) * amount, 1);
+	if (usealpha) {
+		$0 = round(rt.index(RGB1, 4) + (rt.index(RGB2, 4) - rt.index(RGB1, 4)) * amount, 1);
 	} else {
 		$0 = null;
 	}
 	if ((alpha = $0) === null) {
-		$0 = rt.op(f, "Rgb", [1, 3], [live(r), live(_g), live(b)]);
+		$0 = rt.op(f, "Rgb", [1, 3], [r, _g, b]);
 	} else {
-		$0 = rt.op(f, "Rgb", [1, 4], [live(r), live(_g), live(b), live(alpha)]);
+		$0 = rt.op(f, "Rgb", [1, 4], [r, _g, b, alpha]);
 	}
 	return $0;
 });
 
-// /proc/GrayScale  (code/__HELPERS/icons.dm:605)
+// icons.dm:605
 rt.def("/proc/GrayScale", function GrayScale(f: Frame, rgb: Value) {
-	let RGB: Value = null, gray: Value = null;
 	let $0: any;
-	f.vars = () => [RGB, gray, $0];
-	RGB = rt.call(f, P("/proc/ReadRGB"), null, [live(rgb)]);
-	gray = add(add(multiply(rt.index(live(RGB), 1), 0.30000001192092896), multiply(rt.index(live(RGB), 2), 0.5899999737739563)), multiply(rt.index(live(RGB), 3), 0.10999999940395355));
-	if (rt.gt(rt.len(f, live(RGB)), 3)) {
-		$0 = rt.op(f, "Rgb", [1, 4], [live(gray), live(gray), live(gray), rt.index(live(RGB), 4)]);
+	let RGB: Value = ReadRGB(rgb);
+	let gray: Value = rt.index(RGB, 1) * 0.3 + rt.index(RGB, 2) * 0.59 + rt.index(RGB, 3) * 0.11;
+	if (rt.len(f, RGB) > 3) {
+		$0 = rt.op(f, "Rgb", [1, 4], [gray, gray, gray, rt.index(RGB, 4)]);
 	} else {
-		$0 = rt.op(f, "Rgb", [1, 3], [live(gray), live(gray), live(gray)]);
+		$0 = rt.op(f, "Rgb", [1, 3], [gray, gray, gray]);
 	}
 	return $0;
 });
 
-// /proc/ColorTone  (code/__HELPERS/icons.dm:611)
+// icons.dm:611
 rt.def("/proc/ColorTone", function ColorTone(f: Frame, rgb: Value, tone: Value) {
-	let RGB: Value = null, TONE: Value = null, gray: Value = null, tone_gray: Value = null;
-	f.vars = () => [RGB, TONE, gray, tone_gray];
-	RGB = rt.call(f, P("/proc/ReadRGB"), null, [live(rgb)]);
-	TONE = rt.call(f, P("/proc/ReadRGB"), null, [live(tone)]);
-	gray = add(add(multiply(rt.index(live(RGB), 1), 0.30000001192092896), multiply(rt.index(live(RGB), 2), 0.5899999737739563)), multiply(rt.index(live(RGB), 3), 0.10999999940395355));
-	tone_gray = add(add(multiply(rt.index(live(TONE), 1), 0.30000001192092896), multiply(rt.index(live(TONE), 2), 0.5899999737739563)), multiply(rt.index(live(TONE), 3), 0.10999999940395355));
-	if (rt.le(live(gray), live(tone_gray))) {
-		return rt.call(f, P("/proc/BlendRGB"), null, ["#000000", live(tone), divide(live(gray), (live(tone_gray) || 1))]);
+	let RGB: Value = ReadRGB(rgb);
+	let TONE: Value = ReadRGB(tone);
+	let gray: Value = rt.index(RGB, 1) * 0.3 + rt.index(RGB, 2) * 0.59 + rt.index(RGB, 3) * 0.11;
+	let tone_gray: Value = rt.index(TONE, 1) * 0.3 + rt.index(TONE, 2) * 0.59 + rt.index(TONE, 3) * 0.11;
+	if (gray <= tone_gray) {
+		return BlendRGB("#000000", tone, gray / (tone_gray || 1));
 	}
-	return rt.call(f, P("/proc/BlendRGB"), null, [live(tone), "#ffffff", divide(subtract(live(gray), live(tone_gray)), (subtract(255, live(tone_gray)) || 1))]);
+	return BlendRGB(tone, "#ffffff", (gray - tone_gray) / (255 - tone_gray || 1));
 });
 
-// /proc/GetColors  (code/__HELPERS/icons.dm:623)
+// icons.dm:623
 rt.def("/proc/GetColors", function GetColors(f: Frame, hex: Value) {
-	let hi1: Value = null, lo1: Value = null, hi2: Value = null, lo2: Value = null, hi3: Value = null, lo3: Value = null, hi4: Value = null, lo4: Value = null;
-	let $0: any, $1: any, $2: any, $3: any, $4: any;
-	f.vars = () => [hex, hi1, lo1, hi2, lo2, hi3, lo3, hi4, lo4, $0, $1, $2, $3, $4];
-	if (isEqual(rt.length((hex = rt.call(f, P("/proc/uppertext"), null, [live(hex)]))), 7)) {
-		hex = rt.modify(live(hex), "FF", add);
+	let $0: any, $1: any, $2: any, $3: any;
+	if (rt.length((hex = uppertext(hex))) == 7) {
+		hex += "FF";
 	}
-	hi1 = rt.call(f, P("/proc/text2ascii"), null, [live(hex), 2]);
-	lo1 = rt.call(f, P("/proc/text2ascii"), null, [live(hex), 3]);
-	hi2 = rt.call(f, P("/proc/text2ascii"), null, [live(hex), 4]);
-	lo2 = rt.call(f, P("/proc/text2ascii"), null, [live(hex), 5]);
-	hi3 = rt.call(f, P("/proc/text2ascii"), null, [live(hex), 6]);
-	lo3 = rt.call(f, P("/proc/text2ascii"), null, [live(hex), 7]);
-	hi4 = rt.call(f, P("/proc/text2ascii"), null, [live(hex), 8]);
-	lo4 = rt.call(f, P("/proc/text2ascii"), null, [live(hex), 9]);
-	if (rt.ge(live(hi1), 65)) {
-		$0 = subtract(live(hi1), 55);
+	let hi1: Value = text2ascii(hex, 2);
+	let lo1: Value = text2ascii(hex, 3);
+	let hi2: Value = text2ascii(hex, 4);
+	let lo2: Value = text2ascii(hex, 5);
+	let hi3: Value = text2ascii(hex, 6);
+	let lo3: Value = text2ascii(hex, 7);
+	let hi4: Value = text2ascii(hex, 8);
+	let lo4: Value = text2ascii(hex, 9);
+	if (hi1 >= 65) {
+		$0 = hi1 - 55;
 	} else {
-		$0 = subtract(live(hi1), 48);
+		$0 = hi1 - 48;
 	}
 	$0 = rt.shiftLeft($0, 4);
-	if (rt.ge(live(lo1), 65)) {
-		$1 = subtract(live(lo1), 55);
+	if (lo1 >= 65) {
+		$1 = lo1 - 55;
 	} else {
-		$1 = subtract(live(lo1), 48);
+		$1 = lo1 - 48;
 	}
 	$0 = rt.bitOr($0, $1);
-	if (rt.ge(live(hi2), 65)) {
-		$1 = subtract(live(hi2), 55);
+	if (hi2 >= 65) {
+		$1 = hi2 - 55;
 	} else {
-		$1 = subtract(live(hi2), 48);
+		$1 = hi2 - 48;
 	}
 	$1 = rt.shiftLeft($1, 4);
-	if (rt.ge(live(lo2), 65)) {
-		$2 = subtract(live(lo2), 55);
+	if (lo2 >= 65) {
+		$2 = lo2 - 55;
 	} else {
-		$2 = subtract(live(lo2), 48);
+		$2 = lo2 - 48;
 	}
 	$1 = rt.bitOr($1, $2);
-	if (rt.ge(live(hi3), 65)) {
-		$2 = subtract(live(hi3), 55);
+	if (hi3 >= 65) {
+		$2 = hi3 - 55;
 	} else {
-		$2 = subtract(live(hi3), 48);
+		$2 = hi3 - 48;
 	}
 	$2 = rt.shiftLeft($2, 4);
-	if (rt.ge(live(lo3), 65)) {
-		$3 = subtract(live(lo3), 55);
+	if (lo3 >= 65) {
+		$3 = lo3 - 55;
 	} else {
-		$3 = subtract(live(lo3), 48);
+		$3 = lo3 - 48;
 	}
 	$2 = rt.bitOr($2, $3);
-	if (rt.ge(live(hi4), 65)) {
-		$3 = subtract(live(hi4), 55);
+	if (hi4 >= 65) {
+		$3 = hi4 - 55;
 	} else {
-		$3 = subtract(live(hi4), 48);
+		$3 = hi4 - 48;
 	}
 	$3 = rt.shiftLeft($3, 4);
-	if (rt.ge(live(lo4), 65)) {
-		$4 = subtract(live(lo4), 55);
-	} else {
-		$4 = subtract(live(lo4), 48);
-	}
-	return rt.list($0, $1, $2, rt.bitOr($3, $4));
+	return list($0, $1, $2, rt.bitOr($3, lo4 >= 65 ? lo4 - 55 : lo4 - 48));
 });
 
-// /proc/getFlatIcon  (code/__HELPERS/icons.dm:650)
+// icons.dm:650
 rt.def("/proc/getFlatIcon", function getFlatIcon(f: Frame, A: Value, defdir: Value, deficon: Value, defstate: Value, defblend: Value) {
-	let flat: Value = null, noIcon: Value = null, curicon: Value = null, curstate: Value = null, curdir: Value = null, curblend: Value = null, layers: Value = null, copy: Value = null, process: Value = null, pSet: Value = null, curIndex: Value = null, current: Value = null, currentLayer: Value = null, compare: Value = null, cmpIndex: Value = null, _add: Value = null, flatX1: Value = null, flatX2: Value = null, flatY1: Value = null, flatY2: Value = null, addX1: Value = null, addX2: Value = null, addY1: Value = null, addY2: Value = null, I: Value = null;
-	let $e: any;
-	f.vars = () => [defdir, deficon, defstate, defblend, flat, noIcon, curicon, curstate, curdir, curblend, layers, copy, process, pSet, curIndex, current, currentLayer, compare, cmpIndex, _add, flatX1, flatX2, flatY1, flatY2, addX1, addX2, addY1, addY2, I, $e];
-	if (live(defdir) === null) {
-		defdir = rt.fv(f, "dir", live(A));
+	let curicon: Value = null, curstate: Value = null, curdir: Value = null, curblend: Value = null, copy: Value = null, current: Value = null, currentLayer: Value = null, compare: Value = null, cmpIndex: Value = null, _add: Value = null, addX1: Value = null, addX2: Value = null, addY1: Value = null, addY2: Value = null, I: Value = null;
+	defdir ??= A.dir;
+	deficon ??= A.icon;
+	defstate ??= A.icon_state;
+	defblend ??= A.blend_mode;
+	let flat: Value = icon(rt.rsc("icons/effects/effects.dmi"), "nothing");
+	if (!A) {
+		return flat;
 	}
-	if (live(deficon) === null) {
-		deficon = rt.fv(f, "icon", live(A));
+	if (A.alpha <= 0) {
+		return flat;
 	}
-	if (live(defstate) === null) {
-		defstate = rt.fv(f, "icon_state", live(A));
-	}
-	if (live(defblend) === null) {
-		defblend = rt.fv(f, "blend_mode", live(A));
-	}
-	flat = rt.call(f, P("/proc/icon"), null, [rt.rsc("icons/effects/effects.dmi"), "nothing"]);
-	if (!truthy(live(A))) {
-		return live(flat);
-	}
-	if (rt.le(rt.fv(f, "alpha", live(A)), 0)) {
-		return live(flat);
-	}
-	noIcon = 0;
-	curicon = null;
-	if (truthy(rt.fv(f, "icon", live(A)))) {
-		curicon = rt.fv(f, "icon", live(A));
+	let noIcon: Value = 0;
+	if (A.icon) {
+		curicon = A.icon;
 	} else {
-		curicon = live(deficon);
+		curicon = deficon;
 	}
-	if (!truthy(live(curicon))) {
+	if (!curicon) {
 		noIcon = 1;
 	}
-	curstate = null;
-	if (truthy(rt.fv(f, "icon_state", live(A)))) {
-		curstate = rt.fv(f, "icon_state", live(A));
+	if (A.icon_state) {
+		curstate = A.icon_state;
 	} else {
-		curstate = live(defstate);
+		curstate = defstate;
 	}
-	if ((!truthy(live(noIcon)) && !truthy((rt.isIn(f, live(curstate), rt.call(f, P("/proc/icon_states"), null, [live(curicon)])) ? 1 : 0)))) {
-		if (truthy((rt.isIn(f, "", rt.call(f, P("/proc/icon_states"), null, [live(curicon)])) ? 1 : 0))) {
+	if (!noIcon && !rt.isIn(f, curstate, icon_states(curicon))) {
+		if (rt.isIn(f, "", icon_states(curicon))) {
 			curstate = "";
 		} else {
 			noIcon = 1;
 		}
 	}
-	curdir = null;
-	if (!isEqual(rt.fv(f, "dir", live(A)), 2)) {
-		curdir = rt.fv(f, "dir", live(A));
+	if (A.dir != 2) {
+		curdir = A.dir;
 	} else {
-		curdir = live(defdir);
+		curdir = defdir;
 	}
-	curblend = null;
-	if (isEqual(rt.fv(f, "blend_mode", live(A)), 0)) {
-		curblend = live(defblend);
+	if (A.blend_mode == 0) {
+		curblend = defblend;
 	} else {
-		curblend = rt.fv(f, "blend_mode", live(A));
+		curblend = A.blend_mode;
 	}
-	layers = rt.list();
-	copy = null;
-	if (!truthy(live(noIcon))) {
-		rt.setFv(f, "color", (copy = rt.call(f, P("/proc/image"), null, ["icon", live(curicon), "icon_state", live(curstate), "layer", rt.fv(f, "layer", live(A)), "dir", live(curdir)], rt.Args.Named)), rt.fv(f, "color", live(A)));
-		rt.setFv(f, "alpha", live(copy), rt.fv(f, "alpha", live(A)));
-		rt.setFv(f, "blend_mode", live(copy), live(curblend));
-		rt.setAt(live(layers), live(copy), rt.fv(f, "layer", live(A)));
+	let layers: Value = list();
+	if (!noIcon) {
+		(copy = image({ icon: curicon, icon_state: curstate, layer: A.layer, dir: curdir })).color = A.color;
+		copy.alpha = A.alpha;
+		copy.blend_mode = curblend;
+		rt.setAt(layers, copy, A.layer);
 	}
-	process = rt.fv(f, "underlays", live(A));
-	pSet = 0;
-	curIndex = 1;
-	current = null;
-	currentLayer = null;
-	compare = null;
-	cmpIndex = null;
+	let process: Value = A.underlays;
+	let pSet: Value = 0;
+	let curIndex: Value = 1;
 	while (true) {
-		if (rt.le(live(curIndex), rt.len(f, live(process)))) {
-			if (!truthy((current = rt.index(live(process), live(curIndex))))) {
-				curIndex = rt.inc(live(curIndex), 1);
+		if (curIndex <= rt.len(f, process)) {
+			if (!(current = rt.index(process, curIndex))) {
+				curIndex++;
 				continue;
 			}
-			if (rt.lt((currentLayer = rt.fv(f, "layer", live(current))), 0)) {
-				if (rt.le(live(currentLayer), -1000)) {
-					return live(flat);
+			if ((currentLayer = current.layer) < 0) {
+				if (currentLayer <= -1000) {
+					return flat;
 				}
-				if (isEqual(live(pSet), 0)) {
-					currentLayer = add(rt.fv(f, "layer", live(A)), divide(live(currentLayer), 1000));
+				if (pSet == 0) {
+					currentLayer = A.layer + currentLayer / 1000;
 				} else {
-					currentLayer = add(rt.fv(f, "layer", live(A)), divide(add(1000, live(currentLayer)), 1000));
+					currentLayer = A.layer + (1000 + currentLayer) / 1000;
 				}
 			}
 			cmpIndex = 1;
-			while (rt.le(live(cmpIndex), rt.len(f, live(layers)))) {
-				compare = rt.index(live(layers), live(cmpIndex));
-				if (rt.lt(live(currentLayer), rt.index(live(layers), live(compare)))) {
-					rt.callName(f, live(layers), "Insert", [live(cmpIndex), live(current)]);
-					rt.setAt(live(layers), live(current), live(currentLayer));
+			while (cmpIndex <= rt.len(f, layers)) {
+				compare = rt.index(layers, cmpIndex);
+				if (currentLayer < rt.index(layers, compare)) {
+					layers.Insert(cmpIndex, current);
+					rt.setAt(layers, current, currentLayer);
 					break;
 				}
-				cmpIndex = rt.inc(live(cmpIndex), 1);
+				cmpIndex++;
 			}
-			if (rt.gt(live(cmpIndex), rt.len(f, live(layers)))) {
-				rt.setAt(live(layers), live(current), live(currentLayer));
+			if (cmpIndex > rt.len(f, layers)) {
+				rt.setAt(layers, current, currentLayer);
 			}
-			curIndex = rt.inc(live(curIndex), 1);
+			curIndex++;
 		}
-		if (rt.gt(live(curIndex), rt.len(f, live(process)))) {
-			if (isEqual(live(pSet), 0)) {
+		if (curIndex > rt.len(f, process)) {
+			if (pSet == 0) {
 				curIndex = 1;
 				pSet = 1;
-				process = rt.fv(f, "overlays", live(A));
+				process = A.overlays;
 			} else {
 				break;
 			}
 		}
 	}
-	_add = null;
-	flatX1 = 1;
-	flatX2 = rt.callName(f, live(flat), "Width", []);
-	flatY1 = 1;
-	flatY2 = rt.callName(f, live(flat), "Height", []);
-	addX1 = null;
-	addX2 = null;
-	addY1 = null;
-	addY2 = null;
-	I = null;
-	rt.forList(f, 0, live(layers));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		if (isEqual(rt.fv(f, "alpha", live(I)), 0)) {
+	let flatX1: Value = 1;
+	let flatX2: Value = flat.Width();
+	let flatY1: Value = 1;
+	let flatY2: Value = flat.Height();
+	for (I of each(layers)) {
+		if (I.alpha == 0) {
 			continue;
 		}
-		if (isEqual(live(I), live(copy))) {
+		if (I == copy) {
 			curblend = 1;
-			_add = rt.call(f, P("/proc/icon"), null, [rt.fv(f, "icon", live(I)), rt.fv(f, "icon_state", live(I)), rt.fv(f, "dir", live(I))]);
+			_add = icon(I.icon, I.icon_state, I.dir);
 		} else {
-			_add = rt.call(f, P("/proc/getFlatIcon"), null, [rt.new_(f, T("/image"), [live(I)]), live(curdir), live(curicon), live(curstate), live(curblend)]);
+			_add = rt.call(f, P("/proc/getFlatIcon"), null, [new_(T("/image"), I), curdir, curicon, curstate, curblend]);
 		}
-		addX1 = rt.call(f, P("/proc/min"), null, [live(flatX1), add(rt.fv(f, "pixel_x", live(I)), 1)]);
-		addX2 = rt.call(f, P("/proc/max"), null, [live(flatX2), add(rt.fv(f, "pixel_x", live(I)), rt.callName(f, live(_add), "Width", []))]);
-		addY1 = rt.call(f, P("/proc/min"), null, [live(flatY1), add(rt.fv(f, "pixel_y", live(I)), 1)]);
-		addY2 = rt.call(f, P("/proc/max"), null, [live(flatY2), add(rt.fv(f, "pixel_y", live(I)), rt.callName(f, live(_add), "Height", []))]);
-		if ((((!isEqual(live(addX1), live(flatX1)) || !isEqual(live(addX2), live(flatX2))) || !isEqual(live(addY1), live(flatY1))) || !isEqual(live(addY2), live(flatY2)))) {
-			rt.callName(f, live(flat), "Crop", [add(subtract(live(addX1), live(flatX1)), 1), add(subtract(live(addY1), live(flatY1)), 1), add(subtract(live(addX2), live(flatX1)), 1), add(subtract(live(addY2), live(flatY1)), 1)]);
-			flatX1 = live(addX1);
-			flatX2 = live(addX2);
-			flatY1 = live(addY1);
-			flatY2 = live(addY2);
+		addX1 = min(flatX1, I.pixel_x + 1);
+		addX2 = max(flatX2, I.pixel_x + _add.Width());
+		addY1 = min(flatY1, I.pixel_y + 1);
+		addY2 = max(flatY2, I.pixel_y + _add.Height());
+		if (addX1 != flatX1 || addX2 != flatX2 || addY1 != flatY1 || addY2 != flatY2) {
+			flat.Crop(addX1 - flatX1 + 1, addY1 - flatY1 + 1, addX2 - flatX1 + 1, addY2 - flatY1 + 1);
+			flatX1 = addX1;
+			flatX2 = addX2;
+			flatY1 = addY1;
+			flatY2 = addY2;
 		}
-		rt.callName(f, live(flat), "Blend", [live(_add), rt.call(f, P("/proc/blendMode2iconMode"), null, [live(curblend)]), subtract(add(rt.fv(f, "pixel_x", live(I)), 2), live(flatX1)), subtract(add(rt.fv(f, "pixel_y", live(I)), 2), live(flatY1))]);
+		flat.Blend(_add, blendMode2iconMode(curblend), I.pixel_x + 2 - flatX1, I.pixel_y + 2 - flatY1);
 	}
-	rt.endFor(f, 0);
-	if (truthy(rt.fv(f, "color", live(A)))) {
-		rt.callName(f, live(flat), "Blend", [rt.fv(f, "color", live(A)), 2]);
+	if (A.color) {
+		flat.Blend(A.color, 2);
 	}
-	if (rt.lt(rt.fv(f, "alpha", live(A)), 255)) {
-		rt.callName(f, live(flat), "Blend", [rt.op(f, "Rgb", [1, 4], [255, 255, 255, rt.fv(f, "alpha", live(A))]), 2]);
+	if (A.alpha < 255) {
+		flat.Blend(rt.op(f, "Rgb", [1, 4], [255, 255, 255, A.alpha]), 2);
 	}
-	return rt.call(f, P("/proc/icon"), null, [live(flat), "", 2]);
+	return icon(flat, "", 2);
 });
 
-// /proc/getHologramIcon  (code/__HELPERS/icons.dm:814)
+// icons.dm:814
 rt.def("/proc/getHologramIcon", function getHologramIcon(f: Frame, A: Value, safety: Value) {
-	let flat_icon: Value = null, alpha_mask: Value = null;
-	let $0: any;
-	f.vars = () => [safety, flat_icon, alpha_mask, $0];
-	if (live(safety) === null) {
-		safety = 1;
-	}
-	if (truthy(live(safety))) {
-		$0 = live(A);
-	} else {
-		$0 = rt.new_(f, T("/icon"), [live(A)]);
-	}
-	rt.callName(f, (flat_icon = $0), "ColorTone", ["#7db4e1"]);
-	rt.callName(f, live(flat_icon), "ChangeOpacity", [0.5]);
-	alpha_mask = rt.new_(f, T("/icon"), [rt.rsc("icons/effects/effects.dmi"), "scanline"]);
-	rt.callName(f, live(flat_icon), "AddAlphaMask", [live(alpha_mask)]);
-	return live(flat_icon);
+	let flat_icon: Value = null;
+	safety ??= 1;
+	(flat_icon = safety ? A : new_(T("/icon"), A)).ColorTone("#7db4e1");
+	flat_icon.ChangeOpacity(0.5);
+	let alpha_mask: Value = new_(T("/icon"), rt.rsc("icons/effects/effects.dmi"), "scanline");
+	flat_icon.AddAlphaMask(alpha_mask);
+	return flat_icon;
 });
 
-// /proc/getStaticIcon  (code/__HELPERS/icons.dm:833)
+// icons.dm:833
 rt.def("/proc/getStaticIcon", function getStaticIcon(f: Frame, A: Value, safety: Value) {
 	let flat_icon: Value = null, static_icon: Value = null;
-	let $0: any;
-	f.vars = () => [safety, flat_icon, static_icon, $0];
-	if (live(safety) === null) {
-		safety = 1;
-	}
-	if (truthy(live(safety))) {
-		$0 = live(A);
-	} else {
-		$0 = rt.new_(f, T("/icon"), [live(A)]);
-	}
-	rt.callName(f, (flat_icon = $0), "Blend", ["#ffffff"]);
-	rt.callName(f, live(flat_icon), "BecomeAlphaMask", []);
-	rt.callName(f, (static_icon = rt.new_(f, T("/icon"), [rt.rsc("icons/effects/effects.dmi"), "static_base"])), "AddAlphaMask", [live(flat_icon)]);
-	return live(static_icon);
+	safety ??= 1;
+	(flat_icon = safety ? A : new_(T("/icon"), A)).Blend("#ffffff");
+	flat_icon.BecomeAlphaMask();
+	(static_icon = new_(T("/icon"), rt.rsc("icons/effects/effects.dmi"), "static_base")).AddAlphaMask(flat_icon);
+	return static_icon;
 });
 
-// /proc/getBlankIcon  (code/__HELPERS/icons.dm:844)
+// icons.dm:844
 rt.def("/proc/getBlankIcon", function getBlankIcon(f: Frame, A: Value, safety: Value) {
 	let flat_icon: Value = null, blank_icon: Value = null;
-	let $0: any;
-	f.vars = () => [safety, flat_icon, blank_icon, $0];
-	if (live(safety) === null) {
-		safety = 1;
-	}
-	if (truthy(live(safety))) {
-		$0 = live(A);
-	} else {
-		$0 = rt.new_(f, T("/icon"), [live(A)]);
-	}
-	rt.callName(f, (flat_icon = $0), "Blend", ["#ffffff"]);
-	rt.callName(f, live(flat_icon), "BecomeAlphaMask", []);
-	rt.callName(f, (blank_icon = rt.new_(f, T("/icon"), [rt.rsc("icons/effects/effects.dmi"), "blank_base"])), "AddAlphaMask", [live(flat_icon)]);
-	return live(blank_icon);
+	safety ??= 1;
+	(flat_icon = safety ? A : new_(T("/icon"), A)).Blend("#ffffff");
+	flat_icon.BecomeAlphaMask();
+	(blank_icon = new_(T("/icon"), rt.rsc("icons/effects/effects.dmi"), "blank_base")).AddAlphaMask(flat_icon);
+	return blank_icon;
 });
 
-// /proc/getLetterImage  (code/__HELPERS/icons.dm:855)  may sleep
+// icons.dm:855
 rt.def("/proc/getLetterImage", function* getLetterImage(f: Frame, A: Value, letter: Value, uppercase: Value) {
-	let atom_icon: Value = null, text_image: Value = null;
-	f.vars = () => [A, letter, uppercase, atom_icon, text_image];
-	if (live(letter) === null) {
-		letter = "";
+	let text_image: Value = null;
+	letter ??= "";
+	uppercase ??= 0;
+	if (!A) {
+		return f.dot;
 	}
-	if (live(uppercase) === null) {
-		uppercase = 0;
-	}
-	if (!truthy(live(A))) {
-		return live(f.dot);
-	}
-	atom_icon = (yield* g.new_(f, T("/icon"), [rt.fv(f, "icon", live(A)), rt.fv(f, "icon_state", live(A))]));
-	if (!truthy(live(letter))) {
-		letter = (yield* g.call(f, P("/proc/copytext"), null, [rt.fv(f, "name", live(A)), 1, 2]));
-		if (isEqual(live(uppercase), 1)) {
-			letter = (yield* g.call(f, P("/proc/uppertext"), null, [live(letter)]));
-		} else {
-			if (isEqual(live(uppercase), -1)) {
-				letter = (yield* g.call(f, P("/proc/lowertext"), null, [live(letter)]));
-			}
+	let atom_icon: Value = (yield* new_(T("/icon"), A.icon, A.icon_state));
+	if (!letter) {
+		letter = copytext(A.name, 1, 2);
+		if (uppercase == 1) {
+			letter = uppertext(letter);
+		} else if (uppercase == -1) {
+			letter = lowertext(letter);
 		}
 	}
-	rt.setFv(f, "maptext", (text_image = (yield* g.new_(f, T("/image"), ["loc", live(A)], rt.Args.Named))), fmt("<font size = 4>＀</font>", [live(letter)]));
-	rt.setFv(f, "pixel_x", live(text_image), 7);
-	rt.setFv(f, "pixel_y", live(text_image), 5);
-	yield* g.call(f, P("/proc/qdel"), null, [live(atom_icon)]);
-	return live(text_image);
+	(text_image = (yield* new_(T("/image"), { loc: A }))).maptext = `<font size = 4>${letter}</font>`;
+	text_image.pixel_x = 7;
+	text_image.pixel_y = 5;
+	yield* qdel(atom_icon);
+	return text_image;
 }, true);
 
-// /datum/controller/global_vars/proc/InitGlobalfriendly_animal_types  (code/__HELPERS/icons.dm:874)
+// icons.dm:874
 rt.def("/datum/controller/global_vars/proc/InitGlobalfriendly_animal_types", function InitGlobalfriendly_animal_types(f: Frame) {
-	rt.setGl("friendly_animal_types", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "friendly_animal_types", add);
+	GLOB.friendly_animal_types = list();
+	this.gvars_datum_init_order += "friendly_animal_types";
 	return f.dot;
 });
 
-// /proc/getRandomAnimalImage  (code/__HELPERS/icons.dm:878)
+// icons.dm:878
 rt.def("/proc/getRandomAnimalImage", function getRandomAnimalImage(f: Frame, A: Value) {
-	let _T: Value = null, SA: Value = null, SA_0: Value = null, icon: Value = null, icon_state: Value = null, final_image: Value = null;
-	let $e: any;
-	f.vars = () => [_T, SA, SA_0, icon, icon_state, final_image, $e];
-	if (!truthy(rt.len(f, rt.gl("friendly_animal_types")))) {
-		_T = null;
-		rt.forList(f, 0, rt.call(f, P("/proc/typesof"), null, [T("/mob/living/simple_animal")]));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			_T = $e;
-			if (isEqual(rt.initial(f, (SA = live(_T)), "gold_core_spawnable"), 2)) {
-				rt.modGl("friendly_animal_types", live(SA), add);
+	let _T: Value = null, SA: Value = null;
+	if (!rt.len(f, GLOB.friendly_animal_types)) {
+		for (_T of each(typesof(T("/mob/living/simple_animal")))) {
+			if (rt.initial(f, (SA = _T), "gold_core_spawnable") == 2) {
+				GLOB.friendly_animal_types += SA;
 			}
 		}
-		rt.endFor(f, 0);
 	}
-	SA_0 = rt.op(f, "PickUnweighted", [1], [rt.gl("friendly_animal_types")]);
-	icon = rt.initial(f, live(SA_0), "icon");
-	icon_state = rt.initial(f, live(SA_0), "icon_state");
-	final_image = rt.call(f, P("/proc/image"), null, [null, live(icon), "icon_state", live(icon_state), "loc", live(A)], rt.Args.Named);
-	if (truthy(rt.call(f, P("/proc/ispath"), null, [live(SA_0), T("/mob/living/simple_animal/butterfly")]))) {
-		rt.setFv(f, "color", live(final_image), rt.op(f, "Rgb", [1, 3], [rt.call(f, P("/proc/rand"), null, [0, 255]), rt.call(f, P("/proc/rand"), null, [0, 255]), rt.call(f, P("/proc/rand"), null, [0, 255])]));
+	let SA_0: Value = pick(GLOB.friendly_animal_types);
+	let icon: Value = rt.initial(f, SA_0, "icon");
+	let icon_state: Value = rt.initial(f, SA_0, "icon_state");
+	let final_image: Value = image(icon, { icon_state: icon_state, loc: A });
+	if (ispath(SA_0, T("/mob/living/simple_animal/butterfly"))) {
+		final_image.color = rt.op(f, "Rgb", [1, 3], [rand(0, 255), rand(0, 255), rand(0, 255)]);
 	}
-	rt.setFv(f, "text", live(final_image), rt.initial(f, live(SA_0), "name"));
-	return live(final_image);
+	final_image.text = rt.initial(f, SA_0, "name");
+	return final_image;
 });
 
-// /proc/DrawPixel  (code/__HELPERS/icons.dm:902)
+// icons.dm:902
 rt.def("/proc/DrawPixel", function DrawPixel(f: Frame, I: Value, colour: Value, drawX: Value, drawY: Value) {
-	let Iwidth: Value = null, Iheight: Value = null;
-	f.vars = () => [Iwidth, Iheight];
-	if (!truthy(live(I))) {
+	if (!I) {
 		return 0;
 	}
-	Iwidth = rt.callName(f, live(I), "Width", []);
-	Iheight = rt.callName(f, live(I), "Height", []);
-	if ((rt.gt(live(drawX), live(Iwidth)) || rt.le(live(drawX), 0))) {
+	let Iwidth: Value = I.Width();
+	let Iheight: Value = I.Height();
+	if (drawX > Iwidth || drawX <= 0) {
 		return 0;
 	}
-	if ((rt.gt(live(drawY), live(Iheight)) || rt.le(live(drawY), 0))) {
+	if (drawY > Iheight || drawY <= 0) {
 		return 0;
 	}
-	rt.callName(f, live(I), "DrawBox", [live(colour), live(drawX), live(drawY)]);
-	return live(I);
+	I.DrawBox(colour, drawX, drawY);
+	return I;
 });
 
-// /atom/proc/DrawPixelOn  (code/__HELPERS/icons.dm:919)
+// icons.dm:919
 rt.def("/atom/proc/DrawPixelOn", function DrawPixelOn(f: Frame, colour: Value, drawX: Value, drawY: Value) {
-	let I: Value = null, J: Value = null;
-	f.vars = () => [I, J];
-	I = rt.new_(f, T("/icon"), [rt.sv(f, "icon")]);
-	if (truthy((J = rt.call(f, P("/proc/DrawPixel"), null, [live(I), live(colour), live(drawX), live(drawY)])))) {
-		rt.setSv(f, "icon", live(J));
-		return live(J);
+	let J: Value = null;
+	let I: Value = new_(T("/icon"), this.icon);
+	if (J = DrawPixel(I, colour, drawX, drawY)) {
+		this.icon = J;
+		return J;
 	}
 	return 0;
 });
 
-// /proc/get_flat_human_icon  (code/__HELPERS/icons.dm:929)  may sleep
+// icons.dm:929
 rt.def("/proc/get_flat_human_icon", function* get_flat_human_icon(f: Frame, icon_id: Value, J: Value, prefs: Value) {
 	let body: Value = null, out_icon: Value = null, partial: Value = null;
-	f.vars = () => [icon_id, J, prefs, body, out_icon, partial];
-	if ((!truthy(live(icon_id)) || !truthy(rt.index(rt.gl("humanoid_icon_cache"), live(icon_id))))) {
-		body = (yield* g.new_(f, T("/mob/living/carbon/human/dummy"), []));
-		if (truthy(live(prefs))) {
-			yield* g.callName(f, live(prefs), "copy_to", [live(body)]);
+	if (!icon_id || !rt.index(GLOB.humanoid_icon_cache, icon_id)) {
+		body = (yield* new_(T("/mob/living/carbon/human/dummy")));
+		if (prefs) {
+			yield* prefs.copy_to(body);
 		}
-		if (truthy(live(J))) {
-			yield* g.callName(f, live(J), "equip", [live(body), 1, 0]);
+		if (J) {
+			yield* J.equip(body, 1, 0);
 		}
-		yield* g.callName(f, rt.gl("SSoverlays"), "Flush", []);
-		out_icon = (yield* g.call(f, P("/proc/icon"), null, [rt.rsc("icons/effects/effects.dmi"), "nothing"]));
-		yield* g.callName(f, live(body), "setDir", [1]);
-		partial = (yield* g.call(f, P("/proc/getFlatIcon"), null, [live(body)]));
-		yield* g.callName(f, live(out_icon), "Insert", [null, live(partial), "dir", 1], rt.Args.Named);
-		yield* g.callName(f, live(body), "setDir", [2]);
-		partial = (yield* g.call(f, P("/proc/getFlatIcon"), null, [live(body)]));
-		yield* g.callName(f, live(out_icon), "Insert", [null, live(partial), "dir", 2], rt.Args.Named);
-		yield* g.callName(f, live(body), "setDir", [8]);
-		partial = (yield* g.call(f, P("/proc/getFlatIcon"), null, [live(body)]));
-		yield* g.callName(f, live(out_icon), "Insert", [null, live(partial), "dir", 8], rt.Args.Named);
-		yield* g.callName(f, live(body), "setDir", [4]);
-		partial = (yield* g.call(f, P("/proc/getFlatIcon"), null, [live(body)]));
-		yield* g.callName(f, live(out_icon), "Insert", [null, live(partial), "dir", 4], rt.Args.Named);
-		yield* g.call(f, P("/proc/qdel"), null, [live(body)]);
-		rt.setAt(rt.gl("humanoid_icon_cache"), live(icon_id), live(out_icon));
-		return live(out_icon);
+		yield* GLOB.SSoverlays.Flush();
+		out_icon = icon(rt.rsc("icons/effects/effects.dmi"), "nothing");
+		yield* body.setDir(1);
+		partial = getFlatIcon(body);
+		yield* out_icon.Insert(partial, { dir: 1 });
+		yield* body.setDir(2);
+		partial = getFlatIcon(body);
+		yield* out_icon.Insert(partial, { dir: 2 });
+		yield* body.setDir(8);
+		partial = getFlatIcon(body);
+		yield* out_icon.Insert(partial, { dir: 8 });
+		yield* body.setDir(4);
+		partial = getFlatIcon(body);
+		yield* out_icon.Insert(partial, { dir: 4 });
+		yield* qdel(body);
+		rt.setAt(GLOB.humanoid_icon_cache, icon_id, out_icon);
+		return out_icon;
 	} else {
-		return rt.index(rt.gl("humanoid_icon_cache"), live(icon_id));
+		return rt.index(GLOB.humanoid_icon_cache, icon_id);
 	}
-	return f.dot;
 }, true);
 
-// /image/proc/setDir  (code/__HELPERS/icons.dm:969)
+// icons.dm:969
 rt.def("/image/proc/setDir", function setDir(f: Frame, newdir: Value) {
-	rt.setSv(f, "dir", live(newdir));
+	this.dir = newdir;
 	return f.dot;
 });
 
-// /atom/proc/freeze_icon_index  (code/__HELPERS/icons.dm:972)
+// icons.dm:972
 rt.def("/atom/proc/freeze_icon_index", function freeze_icon_index(f: Frame) {
-	return fmt("＃-＀", [rt.initial(f, live(f.src), "icon"), rt.initial(f, live(f.src), "icon_state")]);
+	return fmt("＃-＀", [rt.initial(f, this, "icon"), rt.initial(f, this, "icon_state")]);
 });
 
-// /obj/proc/make_frozen_visual  (code/__HELPERS/icons.dm:977)
+// icons.dm:977
 rt.def("/obj/proc/make_frozen_visual", function make_frozen_visual(f: Frame) {
-	let index: Value = null, IC: Value = null, _P: Value = null, iconstate: Value = null, O: Value = null;
+	let IC: Value = null, _P: Value = null, iconstate: Value = null, O: Value = null;
 	let $0: any, $e: any;
-	f.vars = () => [index, IC, _P, iconstate, O, $0, $e];
-	if (truthy(rt.fv(f, "secondary_flags", live(f.src)))) {
-		$0 = rt.index(rt.fv(f, "secondary_flags", live(f.src)), "frozen");
+	if (this.secondary_flags) {
+		$0 = rt.index(this.secondary_flags, "frozen");
 	} else {
 		$0 = 0;
 	}
-	if (!(!truthy($0) && (truthy(rt.initial(f, live(f.src), "icon")) && truthy(rt.initial(f, live(f.src), "icon_state"))))) return f.dot;
-	index = rt.callSrc(f, "freeze_icon_index", []);
-	IC = null;
-	if (!truthy((_P = rt.index(rt.gl("freeze_item_icons"), live(index))))) {
-		_P = rt.new_(f, T("/icon"), []);
-		iconstate = null;
-		rt.forList(f, 0, rt.call(f, P("/proc/icon_states"), null, [rt.sv(f, "icon")]));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			iconstate = $e;
-			O = rt.new_(f, T("/icon"), [rt.rsc("icons/effects/freeze.dmi"), "ice_cube"]);
-			IC = rt.new_(f, T("/icon"), [rt.sv(f, "icon"), live(iconstate)]);
-			rt.callName(f, live(O), "Blend", [live(IC), 0]);
-			rt.callName(f, live(_P), "Insert", [live(O), live(iconstate)]);
+	if (!(!$0 && rt.initial(f, this, "icon") && rt.initial(f, this, "icon_state"))) return f.dot;
+	let index: Value = this.freeze_icon_index();
+	if (!(_P = rt.index(GLOB.freeze_item_icons, index))) {
+		_P = new_(T("/icon"));
+		for (iconstate of each(icon_states(this.icon))) {
+			O = new_(T("/icon"), rt.rsc("icons/effects/freeze.dmi"), "ice_cube");
+			IC = new_(T("/icon"), this.icon, iconstate);
+			O.Blend(IC, 0);
+			_P.Insert(O, iconstate);
 		}
-		rt.endFor(f, 0);
-		rt.setAt(rt.gl("freeze_item_icons"), live(index), live(_P));
+		rt.setAt(GLOB.freeze_item_icons, index, _P);
 	}
-	rt.setSv(f, "icon", live(_P));
-	rt.setSv(f, "name", fmt("frozen ＀", [rt.sv(f, "name")]));
-	if (!truthy(rt.fv(f, "secondary_flags", live(f.src)))) {
-		rt.setFv(f, "secondary_flags", live(f.src), rt.list());
+	this.icon = _P;
+	this.name = `frozen ${this.name}`;
+	if (!this.secondary_flags) {
+		this.secondary_flags = list();
 	}
-	rt.setAt(rt.fv(f, "secondary_flags", live(f.src)), "frozen", 1);
+	rt.setAt(this.secondary_flags, "frozen", 1);
 	return f.dot;
 });
 
-// /obj/proc/make_unfrozen  (code/__HELPERS/icons.dm:995)
+// icons.dm:995
 rt.def("/obj/proc/make_unfrozen", function make_unfrozen(f: Frame) {
-	rt.setSv(f, "icon", rt.initial(f, live(f.src), "icon"));
-	rt.setSv(f, "name", rt.call(f, P("/proc/replacetext"), null, [rt.sv(f, "name"), "frozen ", ""]));
-	if (!truthy(rt.fv(f, "secondary_flags", live(f.src)))) return f.dot;
-	rt.setAt(rt.fv(f, "secondary_flags", live(f.src)), "frozen", null);
+	this.icon = rt.initial(f, this, "icon");
+	this.name = replacetext(this.name, "frozen ", "");
+	if (!this.secondary_flags) return f.dot;
+	rt.setAt(this.secondary_flags, "frozen", null);
 	return f.dot;
 });

@@ -1,7 +1,7 @@
-// From code/modules/vehicles/speedbike.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/vehicles/speedbike.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(13069, "/obj/vehicle/space/speedbike", "/obj/vehicle/space", {
@@ -12,35 +12,35 @@ rt.type(13069, "/obj/vehicle/space/speedbike", "/obj/vehicle/space", {
 	layer: 3.8,
 }, { global: { overlay: 811 } });
 
-// /obj/vehicle/space/speedbike/proc/buckle_mob  (code/modules/vehicles/speedbike.dm:10)  may sleep
+// speedbike.dm:10
 rt.def("/obj/vehicle/space/speedbike/proc/buckle_mob", function* buckle_mob(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 1;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "riding_datum", (yield* g.new_(f, T("/datum/riding/space/speedbike"), [])));
+	f.dot = (yield* parent_proc());
+	this.riding_datum = (yield* new_(T("/datum/riding/space/speedbike")));
 	return f.dot;
 }, true, { args: ["M", "force", "check_loc"] });
 
-// /obj/vehicle/space/speedbike/proc/New  (code/modules/vehicles/speedbike.dm:14)  may sleep
+// speedbike.dm:14
 rt.def("/obj/vehicle/space/speedbike/proc/New", function* New(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setGl("overlay", (rt.gl("overlay") || (yield* g.call(f, P("/proc/mutable_appearance"), null, [rt.sv(f, "icon"), rt.sv(f, "overlay_state"), 4.099999904632568]))));
-	yield* g.srcCall(f, "add_overlay", rt.gl("overlay"));
+	f.dot = (yield* parent_proc());
+	GLOB.overlay = (GLOB.overlay || mutable_appearance(this.icon, this.overlay_state, ABOVE_MOB_LAYER));
+	this.add_overlay(GLOB.overlay);
 	return f.dot;
 }, true);
 
-// /obj/vehicle/space/speedbike/proc/Move  (code/modules/vehicles/speedbike.dm:19)  may sleep
-rt.def("/obj/vehicle/space/speedbike/proc/Move", function* Move(f: Frame) {
-	if (truthy((yield* g.srcCall(f, "has_buckled_mobs")))) {
-		yield* g.new_(f, T("/obj/effect/temp_visual/dir_setting/speedbike_trail"), [rt.sv(f, "loc"), live(f.args[1])]);
+// speedbike.dm:19
+rt.def("/obj/vehicle/space/speedbike/proc/Move", function* Move(f: Frame, newloc: Value, move_dir: Value) {
+	if (this.has_buckled_mobs()) {
+		yield* new_(T("/obj/effect/temp_visual/dir_setting/speedbike_trail"), this.loc, move_dir);
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	f.dot = (yield* parent_proc());
 	return f.dot;
-}, true, { args: ["newloc", "move_dir"] });
+}, true);
 
 rt.type(13071, "/obj/vehicle/space/speedbike/speedwagon", "/obj/vehicle/space/speedbike", {
 	crash_all: 0,
@@ -55,57 +55,50 @@ rt.type(13071, "/obj/vehicle/space/speedbike/speedwagon", "/obj/vehicle/space/sp
 	pixel_x: -48,
 });
 
-// /obj/vehicle/space/speedbike/speedwagon/proc/Bump  (code/modules/vehicles/speedbike.dm:42)  may sleep
-rt.def("/obj/vehicle/space/speedbike/speedwagon/proc/Bump", function* Bump(f: Frame) {
-	let throw_target: Value = null, H: Value = null;
-	f.vars = () => [throw_target, H];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!(truthy(rt.fv(f, "density", live(f.args[0]))) && truthy((yield* g.srcCall(f, "has_buckled_mobs"))))) return f.dot;
-	throw_target = (yield* g.call(f, P("/proc/get_edge_target_turf"), null, [live(f.args[0]), rt.fv(f, "dir", live(f.src))]));
-	if (truthy(rt.sv(f, "crash_all"))) {
-		yield* g.callName(f, live(f.args[0]), "throw_at", [live(throw_target), 4, 3]);
-		yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＀ crashes into ＀!</span>", [live(f.src), live(f.args[0])]));
-		yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/effects/bang.ogg"), 50, 1]);
+// speedbike.dm:42
+rt.def("/obj/vehicle/space/speedbike/speedwagon/proc/Bump", function* Bump(f: Frame, A: Value) {
+	let H: Value = null;
+	f.dot = (yield* parent_proc());
+	if (!(A.density && this.has_buckled_mobs())) return f.dot;
+	let throw_target: Value = get_edge_target_turf(A, this.dir);
+	if (this.crash_all) {
+		yield* A.throw_at(throw_target, 4, 3);
+		this.visible_message(`<span class='danger'>${this} crashes into ${A}!</span>`);
+		playsound(this, rt.rsc("sound/effects/bang.ogg"), 50, 1);
 	}
-	if (!truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon/human")) ? 1 : 0))) return f.dot;
-	yield* g.callName(f, (H = live(f.args[0])), "Knockdown", [100]);
-	yield* g.callName(f, live(H), "adjustStaminaLoss", [30]);
-	yield* g.callName(f, live(H), "apply_damage", [(yield* g.call(f, P("/proc/rand"), null, [20, 35])), "brute"]);
-	if (truthy(rt.sv(f, "crash_all"))) return f.dot;
-	yield* g.callName(f, live(H), "throw_at", [live(throw_target), 4, 3]);
-	yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＀ crashes into ＀!</span>", [live(f.src), live(H)]));
-	yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/effects/bang.ogg"), 50, 1]);
+	if (!rt.istype(A, T("/mob/living/carbon/human"))) return f.dot;
+	yield* (H = A).Knockdown(100);
+	yield* H.adjustStaminaLoss(30);
+	yield* H.apply_damage(rand(20, 35), "brute");
+	if (this.crash_all) return f.dot;
+	yield* H.throw_at(throw_target, 4, 3);
+	this.visible_message(`<span class='danger'>${this} crashes into ${H}!</span>`);
+	playsound(this, rt.rsc("sound/effects/bang.ogg"), 50, 1);
 	return f.dot;
-}, true, { args: ["A"] });
+}, true);
 
-// /obj/vehicle/space/speedbike/speedwagon/proc/buckle_mob  (code/modules/vehicles/speedbike.dm:60)  may sleep
+// speedbike.dm:60
 rt.def("/obj/vehicle/space/speedbike/speedwagon/proc/buckle_mob", function* buckle_mob(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 1;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "riding_datum", (yield* g.new_(f, T("/datum/riding/space/speedwagon"), [])));
+	f.dot = (yield* parent_proc());
+	this.riding_datum = (yield* new_(T("/datum/riding/space/speedwagon")));
 	return f.dot;
 }, true, { args: ["M", "force", "check_loc"] });
 
-// /obj/vehicle/space/speedbike/speedwagon/proc/Moved  (code/modules/vehicles/speedbike.dm:64)  may sleep
+// speedbike.dm:64
 rt.def("/obj/vehicle/space/speedbike/speedwagon/proc/Moved", function* Moved(f: Frame) {
 	let A: Value = null;
-	let $e: any;
-	f.vars = () => [A, $e];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy((yield* g.callName(f, live(f.src), "has_buckled_mobs", [])))) return f.dot;
-	A = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/range"), null, [2, live(f.src)])), T("/atom"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		A = $e;
-		if (!truthy((rt.isIn(f, live(A), rt.fv(f, "buckled_mobs", live(f.src))) ? 1 : 0))) {
-			yield* g.srcCall(f, "Bump", live(A));
+	f.dot = (yield* parent_proc());
+	if (!this.has_buckled_mobs()) return f.dot;
+	for (A of each(range(2, this), T("/atom"))) {
+		if (!rt.isIn(f, A, this.buckled_mobs)) {
+			yield* this.Bump(A);
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);

@@ -1,22 +1,22 @@
-// From code/_onclick/hud/revenanthud.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/_onclick/hud/revenanthud.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(77, "/datum/hud/revenant", "/datum/hud", {});
 
-// /datum/hud/revenant/proc/New  (code/_onclick/hud/revenanthud.dm:3)  may sleep
-rt.def("/datum/hud/revenant/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "healths", (yield* g.new_(f, T("/obj/screen/healths/revenant"), [])));
-	rt.modSrcVar(f, "infodisplay", rt.sv(f, "healths"), add);
+// revenanthud.dm:3
+rt.def("/datum/hud/revenant/proc/New", function* New(f: Frame, owner: Value) {
+	yield* parent_proc();
+	this.healths = (yield* new_(T("/obj/screen/healths/revenant")));
+	this.infodisplay += this.healths;
 	return f.dot;
-}, true, { args: ["owner"] });
+}, true);
 
-// /mob/living/simple_animal/revenant/proc/create_mob_hud  (code/_onclick/hud/revenanthud.dm:9)  may sleep
+// revenanthud.dm:9
 rt.def("/mob/living/simple_animal/revenant/proc/create_mob_hud", function* create_mob_hud(f: Frame) {
-	if (!(truthy(rt.sv(f, "client")) && !truthy(rt.sv(f, "hud_used")))) return f.dot;
-	rt.setSv(f, "hud_used", (yield* g.new_(f, T("/datum/hud/revenant"), [live(f.src)])));
+	if (!(this.client && !this.hud_used)) return f.dot;
+	this.hud_used = (yield* new_(T("/datum/hud/revenant"), this));
 	return f.dot;
 }, true);

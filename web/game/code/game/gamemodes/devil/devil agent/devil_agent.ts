@@ -1,7 +1,7 @@
-// From code/game/gamemodes/devil/devil agent/devil_agent.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/gamemodes/devil/devil agent/devil_agent.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(1090, "/datum/game_mode/devil/devil_agents", "/datum/game_mode/devil", {
@@ -20,55 +20,45 @@ rt.type(1090, "/datum/game_mode/devil/devil_agents", "/datum/game_mode/devil", {
 	announce_text: "There are devil agents onboard the station, trying to outbid each other!\n+\t<span class='danger'>Devils</span>: Purchase souls and interfere with your rivals!\n+\t<span class='notice'>Crew</span>: Resist the lure of sin and remain pure!",
 });
 
-// /datum/game_mode/devil/devil_agents/proc/<init>  (code/game/gamemodes/devil/devil agent/devil_agent.dm:13)
+// devil_agent.dm:13
 rt.def("/datum/game_mode/devil/devil_agents/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "devil_target_list", rt.list());
-	$0 = $0;
-	rt.setSv(f, "devil_late_joining_list", rt.list());
+	parent_proc();
+	this.devil_target_list = list();
+
+	this.devil_late_joining_list = list();
 	return f.dot;
 });
 
-// /datum/game_mode/devil/devil_agents/proc/post_setup  (code/game/gamemodes/devil/devil agent/devil_agent.dm:23)  may sleep
+// devil_agent.dm:23
 rt.def("/datum/game_mode/devil/devil_agents/proc/post_setup", function* post_setup(f: Frame) {
-	let i: Value = null, devil: Value = null;
-	let $e: any;
-	f.vars = () => [i, devil, $e];
-	i = 0;
-	devil = null;
-	rt.forList(f, 0, rt.sv(f, "devils"), T("/datum/mind"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		devil = $e;
-		i = rt.inc(live(i), 1);
-		if (rt.gt(add(live(i), 1), rt.len(f, rt.sv(f, "devils")))) {
+	let devil: Value = null;
+	let i: Value = 0;
+	for (devil of each(this.devils, T("/datum/mind"))) {
+		i++;
+		if (i + 1 > rt.len(f, this.devils)) {
 			i = 0;
 		}
-		rt.setAt(rt.sv(f, "devil_target_list"), live(devil), rt.index(rt.sv(f, "devils"), add(live(i), 1)));
+		rt.setAt(this.devil_target_list, devil, rt.index(this.devils, i + 1));
 	}
-	rt.endFor(f, 0);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /datum/game_mode/devil/devil_agents/proc/add_devil_objectives  (code/game/gamemodes/devil/devil agent/devil_agent.dm:31)  may sleep
+// devil_agent.dm:31
 rt.def("/datum/game_mode/devil/devil_agents/proc/add_devil_objectives", function* add_devil_objectives(f: Frame, devil_mind: Value, quantity: Value) {
-	f.vars = () => [devil_mind, quantity];
-	yield* g.callSuper(f, [live(devil_mind), subtract(live(quantity), (yield* g.srcCall(f, "give_outsell_objective", live(devil_mind))))]);
+	yield* parent_proc(devil_mind, quantity - this.give_outsell_objective(devil_mind));
 	return f.dot;
 }, true);
 
-// /datum/game_mode/devil/devil_agents/proc/give_outsell_objective  (code/game/gamemodes/devil/devil agent/devil_agent.dm:35)
+// devil_agent.dm:35
 rt.def("/datum/game_mode/devil/devil_agents/proc/give_outsell_objective", function give_outsell_objective(f: Frame, devil: Value) {
 	let target_mind: Value = null, outsellobjective: Value = null;
-	f.vars = () => [target_mind, outsellobjective];
-	if ((truthy(rt.len(f, rt.sv(f, "devil_target_list"))) && truthy(rt.index(rt.sv(f, "devil_target_list"), live(devil))))) {
-		target_mind = rt.index(rt.sv(f, "devil_target_list"), live(devil));
-		rt.setFv(f, "owner", (outsellobjective = rt.new_(f, T("/datum/objective/devil/outsell"), [])), live(devil));
-		rt.setFv(f, "target", live(outsellobjective), live(target_mind));
-		rt.callName(f, live(outsellobjective), "update_explanation_text", []);
-		rt.modField(f, live(devil), "objectives", live(outsellobjective), add);
+	if (rt.len(f, this.devil_target_list) && rt.index(this.devil_target_list, devil)) {
+		target_mind = rt.index(this.devil_target_list, devil);
+		(outsellobjective = new_(T("/datum/objective/devil/outsell"))).owner = devil;
+		outsellobjective.target = target_mind;
+		outsellobjective.update_explanation_text();
+		devil.objectives += outsellobjective;
 		return 1;
 	}
 	return 0;

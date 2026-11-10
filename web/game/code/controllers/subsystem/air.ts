@@ -1,7 +1,7 @@
-// From code/controllers/subsystem/air.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/controllers/subsystem/air.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(13, "/datum/controller/subsystem/air", "/datum/controller/subsystem", {
@@ -32,645 +32,508 @@ rt.type(13, "/datum/controller/subsystem/air", "/datum/controller/subsystem", {
 	runlevels: 12,
 });
 
-// /datum/controller/subsystem/air/proc/New  (code/controllers/subsystem/air.dm:9)  may sleep
+// air.dm:9
 rt.def("/datum/controller/subsystem/air/proc/New", function* New(f: Frame) {
-	if (!isEqual(rt.gl("SSair"), live(f.src))) {
-		if (truthy((rt.istype(rt.gl("SSair"), T("/datum/controller/subsystem/air")) ? 1 : 0))) {
-			yield* g.srcCall(f, "Recover");
-			yield* g.call(f, P("/proc/qdel"), null, [rt.gl("SSair")]);
+	if (GLOB.SSair != this) {
+		if (rt.istype(GLOB.SSair, T("/datum/controller/subsystem/air"))) {
+			yield* this.Recover();
+			yield* qdel(GLOB.SSair);
 		}
-		rt.setGl("SSair", live(f.src));
+		GLOB.SSair = this;
 	}
-	yield* g.srcCall(f, "PreInit");
+	this.PreInit();
 	return f.dot;
 }, true);
 
-// /datum/controller/subsystem/air/proc/<init>  (code/controllers/subsystem/air.dm:25)
+// air.dm:25
 rt.def("/datum/controller/subsystem/air/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "excited_groups", rt.list());
-	$0 = $0;
-	rt.setSv(f, "active_turfs", rt.list());
-	$0 = $0;
-	rt.setSv(f, "hotspots", rt.list());
-	$0 = $0;
-	rt.setSv(f, "networks", rt.list());
-	$0 = $0;
-	rt.setSv(f, "atmos_machinery", rt.list());
-	$0 = $0;
-	rt.setSv(f, "active_super_conductivity", rt.list());
-	$0 = $0;
-	rt.setSv(f, "high_pressure_delta", rt.list());
-	$0 = $0;
-	rt.setSv(f, "currentrun", rt.list());
+	parent_proc();
+	this.excited_groups = list();
+
+	this.active_turfs = list();
+
+	this.hotspots = list();
+
+	this.networks = list();
+
+	this.atmos_machinery = list();
+
+	this.active_super_conductivity = list();
+
+	this.high_pressure_delta = list();
+
+	this.currentrun = list();
 	return f.dot;
 });
 
-// /datum/controller/subsystem/air/proc/stat_entry  (code/controllers/subsystem/air.dm:45)  may sleep
+// air.dm:45
 rt.def("/datum/controller/subsystem/air/proc/stat_entry", function* stat_entry(f: Frame, msg: Value) {
 	let $0: any;
-	f.vars = () => [msg, $0];
-	msg = rt.modify(live(msg), "C:{", add);
-	msg = rt.modify(live(msg), fmt("AT:＀|", [(yield* g.call(f, P("/proc/round"), null, [rt.sv(f, "cost_turfs"), 1]))]), add);
-	msg = rt.modify(live(msg), fmt("EG:＀|", [(yield* g.call(f, P("/proc/round"), null, [rt.sv(f, "cost_groups"), 1]))]), add);
-	msg = rt.modify(live(msg), fmt("HP:＀|", [(yield* g.call(f, P("/proc/round"), null, [rt.sv(f, "cost_highpressure"), 1]))]), add);
-	msg = rt.modify(live(msg), fmt("HS:＀|", [(yield* g.call(f, P("/proc/round"), null, [rt.sv(f, "cost_hotspots"), 1]))]), add);
-	msg = rt.modify(live(msg), fmt("SC:＀|", [(yield* g.call(f, P("/proc/round"), null, [rt.sv(f, "cost_superconductivity"), 1]))]), add);
-	msg = rt.modify(live(msg), fmt("PN:＀|", [(yield* g.call(f, P("/proc/round"), null, [rt.sv(f, "cost_pipenets"), 1]))]), add);
-	msg = rt.modify(live(msg), fmt("AM:＀", [(yield* g.call(f, P("/proc/round"), null, [rt.sv(f, "cost_atmos_machinery"), 1]))]), add);
-	msg = rt.modify(live(msg), "} ", add);
-	msg = rt.modify(live(msg), fmt("AT:＀|", [rt.len(f, rt.sv(f, "active_turfs"))]), add);
-	msg = rt.modify(live(msg), fmt("EG:＀|", [rt.len(f, rt.sv(f, "excited_groups"))]), add);
-	msg = rt.modify(live(msg), fmt("HS:＀|", [rt.len(f, rt.sv(f, "hotspots"))]), add);
-	msg = rt.modify(live(msg), fmt("PN:＀|", [rt.len(f, rt.sv(f, "networks"))]), add);
-	msg = rt.modify(live(msg), fmt("HP:＀|", [rt.len(f, rt.sv(f, "high_pressure_delta"))]), add);
-	msg = rt.modify(live(msg), fmt("AS:＀|", [rt.len(f, rt.sv(f, "active_super_conductivity"))]), add);
-	if (truthy(rt.sv(f, "cost"))) {
-		$0 = divide(rt.len(f, rt.sv(f, "active_turfs")), rt.sv(f, "cost"));
+	msg += "C:{";
+	msg += `AT:${round(this.cost_turfs, 1)}|`;
+	msg += `EG:${round(this.cost_groups, 1)}|`;
+	msg += `HP:${round(this.cost_highpressure, 1)}|`;
+	msg += `HS:${round(this.cost_hotspots, 1)}|`;
+	msg += `SC:${round(this.cost_superconductivity, 1)}|`;
+	msg += `PN:${round(this.cost_pipenets, 1)}|`;
+	msg += `AM:${round(this.cost_atmos_machinery, 1)}`;
+	msg += "} ";
+	msg += `AT:${rt.len(f, this.active_turfs)}|`;
+	msg += `EG:${rt.len(f, this.excited_groups)}|`;
+	msg += `HS:${rt.len(f, this.hotspots)}|`;
+	msg += `PN:${rt.len(f, this.networks)}|`;
+	msg += `HP:${rt.len(f, this.high_pressure_delta)}|`;
+	msg += `AS:${rt.len(f, this.active_super_conductivity)}|`;
+	if (this.cost) {
+		$0 = rt.len(f, this.active_turfs) / this.cost;
 	} else {
 		$0 = 0;
 	}
-	yield* g.callSuper(f, [(msg = rt.modify(live(msg), fmt("AT/MS:＀", [(yield* g.call(f, P("/proc/round"), null, [$0, 0.10000000149011612]))]), add))]);
+	yield* parent_proc((msg += `AT/MS:${round($0, 0.1)}`));
 	return f.dot;
 }, true);
 
-// /datum/controller/subsystem/air/proc/Initialize  (code/controllers/subsystem/air.dm:66)  may sleep
-rt.def("/datum/controller/subsystem/air/proc/Initialize", function* Initialize(f: Frame) {
-	rt.setSv(f, "map_loading", 0);
-	yield* g.srcCall(f, "setup_allturfs");
-	yield* g.srcCall(f, "setup_atmos_machinery");
-	yield* g.srcCall(f, "setup_pipenets");
-	rt.setSv(f, "gas_reactions", (yield* g.call(f, P("/proc/init_gas_reactions"), null, [])));
-	yield* g.callSuper(f, [], rt.Args.Same);
+// air.dm:66
+rt.def("/datum/controller/subsystem/air/proc/Initialize", function* Initialize(f: Frame, timeofday: Value) {
+	this.map_loading = 0;
+	yield* this.setup_allturfs();
+	yield* this.setup_atmos_machinery();
+	yield* this.setup_pipenets();
+	this.gas_reactions = (yield* init_gas_reactions());
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["timeofday"] });
+}, true);
 
-// /datum/controller/subsystem/air/proc/fire  (code/controllers/subsystem/air.dm:76)  may sleep
+// air.dm:76
 rt.def("/datum/controller/subsystem/air/proc/fire", function* fire(f: Frame, resumed: Value) {
-	let timer: Value = null;
-	f.vars = () => [resumed, timer];
-	if (live(resumed) === null) {
-		resumed = 0;
-	}
+	resumed ??= 0;
 	// stress2c: no pipe may be without its pipeline when the pipenets and atmos machines run (a singularity pass that slept
 	// somewhere unexpected with its rebuilds still waiting)
-	if (rt.gl("pipe_rebuild_defer") !== null) rt.call(f, P("/proc/flush_pipe_rebuilds"), null, []);
-	if (!truthy(live(resumed)) && truthy(rt.call(f, P("/proc/stress_counts_on"), null, []))) {
+	if (GLOB.pipe_rebuild_defer !== null) rt.call(f, P("/proc/flush_pipe_rebuilds"), null, []);
+	if (!resumed && rt.call(f, P("/proc/stress_counts_on"), null, [])) {
 		let moles = 0, nopipes = 0, members = 0, machines = 0, net: Value = null, $e: any;
-		rt.forList(f, 0, rt.sv(f, "networks"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			net = $e;
-			if (truthy(rt.fv(f, "air", live(net)))) moles += Number(rt.callName(f, rt.fv(f, "air", live(net)), "total_moles", []));
-			const m = Number(rt.len(f, rt.fv(f, "members", live(net))));
+		for (net of each(this.networks)) {
+			if (net.air) moles += Number(rt.callName(f, net.air, "total_moles", []));
+			const m = Number(rt.len(f, net.members));
 			members += m; if (!m) nopipes++;
-			machines += Number(rt.len(f, rt.fv(f, "other_atmosmch", live(net))));
+			machines += Number(rt.len(f, net.other_atmosmch));
 		}
-		rt.endFor(f, 0);
 		rt.call(f, P("/proc/stress_set"), null, ["pipelines_without_pipes", nopipes]);
 		rt.call(f, P("/proc/stress_set"), null, ["pipeline_pipes", members]);
 		rt.call(f, P("/proc/stress_set"), null, ["pipeline_machines", machines]);
-		rt.call(f, P("/proc/stress_set"), null, ["pipelines", rt.len(f, rt.sv(f, "networks"))]);
+		rt.call(f, P("/proc/stress_set"), null, ["pipelines", rt.len(f, this.networks)]);
 		rt.call(f, P("/proc/stress_set"), null, ["pipeline_moles", moles]);
 	}
-	timer = rt.tickUsage(f);
-	if ((isEqual(rt.sv(f, "currentpart"), 1) || !truthy(live(resumed)))) {
-		yield* g.srcCall(f, "process_pipenets", live(resumed));
-		rt.setSv(f, "cost_pipenets", add(multiply(0.800000011920929, rt.sv(f, "cost_pipenets")), multiply(0.20000000298023224, multiply(subtract(rt.tickUsage(f), live(timer)), rt.fv(f, "tick_lag", rt.world())))));
-		if (!isEqual(rt.sv(f, "state"), 2)) {
-			return live(f.dot);
+	let timer: Value = rt.tickUsage(f);
+	if (this.currentpart == 1 || !resumed) {
+		this.process_pipenets(resumed);
+		this.cost_pipenets = 0.8 * this.cost_pipenets + 0.2 * ((rt.tickUsage(f) - timer) * rt.world().tick_lag);
+		if (this.state != 2) {
+			return f.dot;
 		}
 		resumed = 0;
-		rt.setSv(f, "currentpart", 2);
+		this.currentpart = 2;
 	}
-	if (isEqual(rt.sv(f, "currentpart"), 2)) {
+	if (this.currentpart == 2) {
 		timer = rt.tickUsage(f);
-		yield* g.srcCall(f, "process_atmos_machinery", live(resumed));
-		rt.setSv(f, "cost_atmos_machinery", add(multiply(0.800000011920929, rt.sv(f, "cost_atmos_machinery")), multiply(0.20000000298023224, multiply(subtract(rt.tickUsage(f), live(timer)), rt.fv(f, "tick_lag", rt.world())))));
-		if (!isEqual(rt.sv(f, "state"), 2)) {
-			return live(f.dot);
+		yield* this.process_atmos_machinery(resumed);
+		this.cost_atmos_machinery = 0.8 * this.cost_atmos_machinery + 0.2 * ((rt.tickUsage(f) - timer) * rt.world().tick_lag);
+		if (this.state != 2) {
+			return f.dot;
 		}
 		resumed = 0;
-		rt.setSv(f, "currentpart", 3);
+		this.currentpart = 3;
 	}
-	if (isEqual(rt.sv(f, "currentpart"), 3)) {
+	if (this.currentpart == 3) {
 		timer = rt.tickUsage(f);
-		yield* g.srcCall(f, "process_active_turfs", live(resumed));
-		rt.setSv(f, "cost_turfs", add(multiply(0.800000011920929, rt.sv(f, "cost_turfs")), multiply(0.20000000298023224, multiply(subtract(rt.tickUsage(f), live(timer)), rt.fv(f, "tick_lag", rt.world())))));
-		if (!isEqual(rt.sv(f, "state"), 2)) {
-			return live(f.dot);
+		yield* this.process_active_turfs(resumed);
+		this.cost_turfs = 0.8 * this.cost_turfs + 0.2 * ((rt.tickUsage(f) - timer) * rt.world().tick_lag);
+		if (this.state != 2) {
+			return f.dot;
 		}
 		resumed = 0;
-		rt.setSv(f, "currentpart", 4);
+		this.currentpart = 4;
 	}
-	if (isEqual(rt.sv(f, "currentpart"), 4)) {
+	if (this.currentpart == 4) {
 		timer = rt.tickUsage(f);
-		yield* g.srcCall(f, "process_excited_groups", live(resumed));
-		rt.setSv(f, "cost_groups", add(multiply(0.800000011920929, rt.sv(f, "cost_groups")), multiply(0.20000000298023224, multiply(subtract(rt.tickUsage(f), live(timer)), rt.fv(f, "tick_lag", rt.world())))));
-		if (!isEqual(rt.sv(f, "state"), 2)) {
-			return live(f.dot);
+		yield* this.process_excited_groups(resumed);
+		this.cost_groups = 0.8 * this.cost_groups + 0.2 * ((rt.tickUsage(f) - timer) * rt.world().tick_lag);
+		if (this.state != 2) {
+			return f.dot;
 		}
 		resumed = 0;
-		rt.setSv(f, "currentpart", 5);
+		this.currentpart = 5;
 	}
-	if (isEqual(rt.sv(f, "currentpart"), 5)) {
+	if (this.currentpart == 5) {
 		timer = rt.tickUsage(f);
-		yield* g.srcCall(f, "process_high_pressure_delta", live(resumed));
-		rt.setSv(f, "cost_highpressure", add(multiply(0.800000011920929, rt.sv(f, "cost_highpressure")), multiply(0.20000000298023224, multiply(subtract(rt.tickUsage(f), live(timer)), rt.fv(f, "tick_lag", rt.world())))));
-		if (!isEqual(rt.sv(f, "state"), 2)) {
-			return live(f.dot);
+		this.process_high_pressure_delta(resumed);
+		this.cost_highpressure = 0.8 * this.cost_highpressure + 0.2 * ((rt.tickUsage(f) - timer) * rt.world().tick_lag);
+		if (this.state != 2) {
+			return f.dot;
 		}
 		resumed = 0;
-		rt.setSv(f, "currentpart", 6);
+		this.currentpart = 6;
 	}
-	if (isEqual(rt.sv(f, "currentpart"), 6)) {
+	if (this.currentpart == 6) {
 		timer = rt.tickUsage(f);
-		yield* g.srcCall(f, "process_hotspots", live(resumed));
-		rt.setSv(f, "cost_hotspots", add(multiply(0.800000011920929, rt.sv(f, "cost_hotspots")), multiply(0.20000000298023224, multiply(subtract(rt.tickUsage(f), live(timer)), rt.fv(f, "tick_lag", rt.world())))));
-		if (!isEqual(rt.sv(f, "state"), 2)) {
-			return live(f.dot);
+		this.process_hotspots(resumed);
+		this.cost_hotspots = 0.8 * this.cost_hotspots + 0.2 * ((rt.tickUsage(f) - timer) * rt.world().tick_lag);
+		if (this.state != 2) {
+			return f.dot;
 		}
 		resumed = 0;
-		rt.setSv(f, "currentpart", 7);
+		this.currentpart = 7;
 	}
-	if (isEqual(rt.sv(f, "currentpart"), 7)) {
+	if (this.currentpart == 7) {
 		timer = rt.tickUsage(f);
-		yield* g.srcCall(f, "process_super_conductivity", live(resumed));
-		rt.setSv(f, "cost_superconductivity", add(multiply(0.800000011920929, rt.sv(f, "cost_superconductivity")), multiply(0.20000000298023224, multiply(subtract(rt.tickUsage(f), live(timer)), rt.fv(f, "tick_lag", rt.world())))));
-		if (!isEqual(rt.sv(f, "state"), 2)) {
-			return live(f.dot);
+		yield* this.process_super_conductivity(resumed);
+		this.cost_superconductivity = 0.8 * this.cost_superconductivity + 0.2 * ((rt.tickUsage(f) - timer) * rt.world().tick_lag);
+		if (this.state != 2) {
+			return f.dot;
 		}
 		resumed = 0;
 	}
-	rt.setSv(f, "currentpart", 1);
+	this.currentpart = 1;
 	return f.dot;
 }, true);
 
-// /datum/controller/subsystem/air/proc/process_pipenets  (code/controllers/subsystem/air.dm:141)
+// air.dm:141
 rt.def("/datum/controller/subsystem/air/proc/process_pipenets", function process_pipenets(f: Frame, resumed: Value) {
-	let currentrun: Value = null, thing: Value = null;
-	let $0: any;
-	f.vars = () => [resumed, currentrun, thing, $0];
-	if (live(resumed) === null) {
-		resumed = 0;
+	let thing: Value = null;
+	resumed ??= 0;
+	if (!resumed) {
+		this.currentrun = this.networks.Copy();
 	}
-	if (!truthy(live(resumed))) {
-		rt.setFv(f, "currentrun", live(f.src), rt.callName(f, rt.sv(f, "networks"), "Copy", []));
-	}
-	currentrun = rt.fv(f, "currentrun", live(f.src));
-	while (truthy(rt.len(f, live(currentrun)))) {
-		thing = rt.index(live(currentrun), rt.len(f, live(currentrun)));
-		rt.incField(f, live(currentrun), "len", -1, true);
-		if (truthy(live(thing))) {
-			rt.callName(f, live(thing), "process", []);
+	let currentrun: Value = this.currentrun;
+	while (rt.len(f, currentrun)) {
+		thing = rt.index(currentrun, rt.len(f, currentrun));
+		currentrun.len--;
+		if (thing) {
+			thing.process();
 		} else {
-			rt.callName(f, rt.sv(f, "networks"), "Remove", [live(thing)]);
+			this.networks.Remove(thing);
 		}
-		if ((rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit")) || !isEqual(rt.fv(f, "state", live(f.src)), 2))) {
-			$0 = rt.callSrc(f, "pause", []);
-		} else {
-			$0 = 0;
-		}
-		if (truthy($0)) {
-			return live(f.dot);
+		if (rt.tickUsage(f) > GLOB.current_ticklimit || this.state != 2 ? this.pause() : 0) {
+			return f.dot;
 		}
 	}
 	return f.dot;
 });
 
-// /datum/controller/subsystem/air/proc/process_atmos_machinery  (code/controllers/subsystem/air.dm:157)  may sleep
+// air.dm:157
 rt.def("/datum/controller/subsystem/air/proc/process_atmos_machinery", function* process_atmos_machinery(f: Frame, resumed: Value) {
-	let seconds: Value = null, currentrun: Value = null, M: Value = null;
-	let $0: any;
-	f.vars = () => [resumed, seconds, currentrun, M, $0];
-	if (live(resumed) === null) {
-		resumed = 0;
+	let M: Value = null;
+	resumed ??= 0;
+	let seconds: Value = this.wait * 0.1;
+	if (!resumed) {
+		this.currentrun = (yield* this.atmos_machinery.Copy());
 	}
-	seconds = multiply(rt.sv(f, "wait"), 0.10000000149011612);
-	if (!truthy(live(resumed))) {
-		rt.setFv(f, "currentrun", live(f.src), (yield* g.callName(f, rt.sv(f, "atmos_machinery"), "Copy", [])));
-	}
-	currentrun = rt.fv(f, "currentrun", live(f.src));
-	while (truthy(rt.len(f, live(currentrun)))) {
-		M = rt.index(live(currentrun), rt.len(f, live(currentrun)));
-		rt.incField(f, live(currentrun), "len", -1, true);
-		if ((!truthy(live(M)) || isEqual((yield* g.callName(f, live(M), "process_atmos", [live(seconds)])), 26))) {
-			yield* g.callName(f, rt.sv(f, "atmos_machinery"), "Remove", [live(M)]);
+	let currentrun: Value = this.currentrun;
+	while (rt.len(f, currentrun)) {
+		M = rt.index(currentrun, rt.len(f, currentrun));
+		currentrun.len--;
+		if (!M || (yield* M.process_atmos(seconds)) == PROCESS_KILL) {
+			yield* this.atmos_machinery.Remove(M);
 		}
-		if ((rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit")) || !isEqual(rt.fv(f, "state", live(f.src)), 2))) {
-			$0 = (yield* g.srcCall(f, "pause"));
-		} else {
-			$0 = 0;
-		}
-		if (truthy($0)) {
-			return live(f.dot);
+		if (rt.tickUsage(f) > GLOB.current_ticklimit || this.state != 2 ? this.pause() : 0) {
+			return f.dot;
 		}
 	}
 	return f.dot;
 }, true);
 
-// /datum/controller/subsystem/air/proc/process_super_conductivity  (code/controllers/subsystem/air.dm:172)  may sleep
+// air.dm:172
 rt.def("/datum/controller/subsystem/air/proc/process_super_conductivity", function* process_super_conductivity(f: Frame, resumed: Value) {
-	let currentrun: Value = null, _T: Value = null;
-	let $0: any;
-	f.vars = () => [resumed, currentrun, _T, $0];
-	if (live(resumed) === null) {
-		resumed = 0;
+	let _T: Value = null;
+	resumed ??= 0;
+	if (!resumed) {
+		this.currentrun = (yield* this.active_super_conductivity.Copy());
 	}
-	if (!truthy(live(resumed))) {
-		rt.setFv(f, "currentrun", live(f.src), (yield* g.callName(f, rt.sv(f, "active_super_conductivity"), "Copy", [])));
-	}
-	currentrun = rt.fv(f, "currentrun", live(f.src));
-	while (truthy(rt.len(f, live(currentrun)))) {
-		_T = rt.index(live(currentrun), rt.len(f, live(currentrun)));
-		rt.incField(f, live(currentrun), "len", -1, true);
-		yield* g.callName(f, live(_T), "super_conduct", []);
-		if ((rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit")) || !isEqual(rt.fv(f, "state", live(f.src)), 2))) {
-			$0 = (yield* g.srcCall(f, "pause"));
-		} else {
-			$0 = 0;
-		}
-		if (truthy($0)) {
-			return live(f.dot);
+	let currentrun: Value = this.currentrun;
+	while (rt.len(f, currentrun)) {
+		_T = rt.index(currentrun, rt.len(f, currentrun));
+		currentrun.len--;
+		yield* _T.super_conduct();
+		if (rt.tickUsage(f) > GLOB.current_ticklimit || this.state != 2 ? this.pause() : 0) {
+			return f.dot;
 		}
 	}
 	return f.dot;
 }, true);
 
-// /datum/controller/subsystem/air/proc/process_hotspots  (code/controllers/subsystem/air.dm:184)
+// air.dm:184
 rt.def("/datum/controller/subsystem/air/proc/process_hotspots", function process_hotspots(f: Frame, resumed: Value) {
-	let currentrun: Value = null, H: Value = null;
-	let $0: any;
-	f.vars = () => [resumed, currentrun, H, $0];
-	if (live(resumed) === null) {
-		resumed = 0;
+	let H: Value = null;
+	resumed ??= 0;
+	if (!resumed) {
+		this.currentrun = this.hotspots.Copy();
 	}
-	if (!truthy(live(resumed))) {
-		rt.setFv(f, "currentrun", live(f.src), rt.callName(f, rt.sv(f, "hotspots"), "Copy", []));
-	}
-	currentrun = rt.fv(f, "currentrun", live(f.src));
-	while (truthy(rt.len(f, live(currentrun)))) {
-		H = rt.index(live(currentrun), rt.len(f, live(currentrun)));
-		rt.incField(f, live(currentrun), "len", -1, true);
-		if (truthy(live(H))) {
-			rt.callName(f, live(H), "process", []);
+	let currentrun: Value = this.currentrun;
+	while (rt.len(f, currentrun)) {
+		H = rt.index(currentrun, rt.len(f, currentrun));
+		currentrun.len--;
+		if (H) {
+			H.process();
 		} else {
-			(rt.modSrcVar(f, "hotspots", live(H), subtract));
+			this.hotspots -= H;
 		}
-		if ((rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit")) || !isEqual(rt.fv(f, "state", live(f.src)), 2))) {
-			$0 = rt.callSrc(f, "pause", []);
-		} else {
-			$0 = 0;
-		}
-		if (truthy($0)) {
-			return live(f.dot);
+		if (rt.tickUsage(f) > GLOB.current_ticklimit || this.state != 2 ? this.pause() : 0) {
+			return f.dot;
 		}
 	}
 	return f.dot;
 });
 
-// /datum/controller/subsystem/air/proc/process_high_pressure_delta  (code/controllers/subsystem/air.dm:200)
+// air.dm:200
 rt.def("/datum/controller/subsystem/air/proc/process_high_pressure_delta", function process_high_pressure_delta(f: Frame, resumed: Value) {
 	let _T: Value = null;
-	let $0: any;
-	f.vars = () => [resumed, _T, $0];
-	if (live(resumed) === null) {
-		resumed = 0;
-	}
-	while (truthy(rt.len(f, rt.sv(f, "high_pressure_delta")))) {
-		_T = rt.index(rt.sv(f, "high_pressure_delta"), rt.len(f, rt.sv(f, "high_pressure_delta")));
-		rt.incField(f, rt.sv(f, "high_pressure_delta"), "len", -1, true);
-		rt.callName(f, live(_T), "high_pressure_movements", []);
-		rt.setFv(f, "pressure_difference", live(_T), 0);
-		if ((rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit")) || !isEqual(rt.fv(f, "state", live(f.src)), 2))) {
-			$0 = rt.callSrc(f, "pause", []);
-		} else {
-			$0 = 0;
-		}
-		if (truthy($0)) {
-			return live(f.dot);
+	resumed ??= 0;
+	while (rt.len(f, this.high_pressure_delta)) {
+		_T = rt.index(this.high_pressure_delta, rt.len(f, this.high_pressure_delta));
+		this.high_pressure_delta.len--;
+		_T.high_pressure_movements();
+		_T.pressure_difference = 0;
+		if (rt.tickUsage(f) > GLOB.current_ticklimit || this.state != 2 ? this.pause() : 0) {
+			return f.dot;
 		}
 	}
 	return f.dot;
 });
 
-// /datum/controller/subsystem/air/proc/process_active_turfs  (code/controllers/subsystem/air.dm:210)  may sleep
+// air.dm:210
 rt.def("/datum/controller/subsystem/air/proc/process_active_turfs", function* process_active_turfs(f: Frame, resumed: Value) {
-	let fire_count: Value = null, currentrun: Value = null, _T: Value = null;
-	let $0: any;
-	f.vars = () => [resumed, fire_count, currentrun, _T, $0];
-	if (live(resumed) === null) {
-		resumed = 0;
+	let _T: Value = null;
+	resumed ??= 0;
+	let fire_count: Value = this.times_fired;
+	if (!resumed) {
+		this.currentrun = (yield* this.active_turfs.Copy());
 	}
-	fire_count = rt.sv(f, "times_fired");
-	if (!truthy(live(resumed))) {
-		rt.setFv(f, "currentrun", live(f.src), (yield* g.callName(f, rt.sv(f, "active_turfs"), "Copy", [])));
-	}
-	currentrun = rt.fv(f, "currentrun", live(f.src));
-	while (truthy(rt.len(f, live(currentrun)))) {
-		_T = rt.index(live(currentrun), rt.len(f, live(currentrun)));
-		rt.incField(f, live(currentrun), "len", -1, true);
-		if (truthy(live(_T))) {
-			yield* g.callName(f, live(_T), "process_cell", [live(fire_count)]);
+	let currentrun: Value = this.currentrun;
+	while (rt.len(f, currentrun)) {
+		_T = rt.index(currentrun, rt.len(f, currentrun));
+		currentrun.len--;
+		if (_T) {
+			yield* _T.process_cell(fire_count);
 		}
-		if ((rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit")) || !isEqual(rt.fv(f, "state", live(f.src)), 2))) {
-			$0 = (yield* g.srcCall(f, "pause"));
-		} else {
-			$0 = 0;
-		}
-		if (truthy($0)) {
-			return live(f.dot);
+		if (rt.tickUsage(f) > GLOB.current_ticklimit || this.state != 2 ? this.pause() : 0) {
+			return f.dot;
 		}
 	}
 	return f.dot;
 }, true);
 
-// /datum/controller/subsystem/air/proc/process_excited_groups  (code/controllers/subsystem/air.dm:224)  may sleep
+// air.dm:224
 rt.def("/datum/controller/subsystem/air/proc/process_excited_groups", function* process_excited_groups(f: Frame, resumed: Value) {
-	let currentrun: Value = null, EG: Value = null;
-	let $0: any;
-	f.vars = () => [resumed, currentrun, EG, $0];
-	if (live(resumed) === null) {
-		resumed = 0;
+	let EG: Value = null;
+	resumed ??= 0;
+	if (!resumed) {
+		this.currentrun = (yield* this.excited_groups.Copy());
 	}
-	if (!truthy(live(resumed))) {
-		rt.setFv(f, "currentrun", live(f.src), (yield* g.callName(f, rt.sv(f, "excited_groups"), "Copy", [])));
-	}
-	currentrun = rt.fv(f, "currentrun", live(f.src));
-	while (truthy(rt.len(f, live(currentrun)))) {
-		EG = rt.index(live(currentrun), rt.len(f, live(currentrun)));
-		rt.incField(f, live(currentrun), "len", -1, true);
-		rt.incField(f, live(EG), "breakdown_cooldown", 1, true);
-		rt.incField(f, live(EG), "dismantle_cooldown", 1, true);
-		if (rt.ge(rt.fv(f, "breakdown_cooldown", live(EG)), 4)) {
-			yield* g.callName(f, live(EG), "self_breakdown", []);
-		} else {
-			if (rt.ge(rt.fv(f, "dismantle_cooldown", live(EG)), 16)) {
-				yield* g.callName(f, live(EG), "dismantle", []);
-			}
+	let currentrun: Value = this.currentrun;
+	while (rt.len(f, currentrun)) {
+		EG = rt.index(currentrun, rt.len(f, currentrun));
+		currentrun.len--;
+		EG.breakdown_cooldown++;
+		EG.dismantle_cooldown++;
+		if (EG.breakdown_cooldown >= 4) {
+			yield* EG.self_breakdown();
+		} else if (EG.dismantle_cooldown >= 16) {
+			yield* EG.dismantle();
 		}
-		if ((rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit")) || !isEqual(rt.fv(f, "state", live(f.src)), 2))) {
-			$0 = (yield* g.srcCall(f, "pause"));
-		} else {
-			$0 = 0;
-		}
-		if (truthy($0)) {
-			return live(f.dot);
+		if (rt.tickUsage(f) > GLOB.current_ticklimit || this.state != 2 ? this.pause() : 0) {
+			return f.dot;
 		}
 	}
 	return f.dot;
 }, true);
 
-// /datum/controller/subsystem/air/proc/remove_from_active  (code/controllers/subsystem/air.dm:242)
+// air.dm:242
 rt.def("/datum/controller/subsystem/air/proc/remove_from_active", function remove_from_active(f: Frame, _T: Value) {
-	(rt.modSrcVar(f, "active_turfs", live(_T), subtract));
-	if (isEqual(rt.sv(f, "currentpart"), 3)) {
-		(rt.modSrcVar(f, "currentrun", live(_T), subtract));
+	this.active_turfs -= _T;
+	if (this.currentpart == SSAIR_ACTIVETURFS) {
+		this.currentrun -= _T;
 	}
-	if (!truthy((rt.istype(live(_T), T("/turf/open")) ? 1 : 0))) return f.dot;
-	rt.setFv(f, "excited", live(_T), 0);
-	if (!truthy(rt.fv(f, "excited_group", live(_T)))) return f.dot;
-	rt.callName(f, rt.fv(f, "excited_group", live(_T)), "garbage_collect", []);
+	if (!rt.istype(_T, T("/turf/open"))) return f.dot;
+	_T.excited = 0;
+	if (!_T.excited_group) return f.dot;
+	_T.excited_group.garbage_collect();
 	return f.dot;
 });
 
-// /datum/controller/subsystem/air/proc/add_to_active  (code/controllers/subsystem/air.dm:254)
+// air.dm:254
 rt.def("/datum/controller/subsystem/air/proc/add_to_active", function add_to_active(f: Frame, _T: Value, blockchanges: Value) {
 	let S: Value = null;
-	let $e: any;
-	f.vars = () => [blockchanges, S, $e];
-	if (live(blockchanges) === null) {
-		blockchanges = 1;
-	}
-	if ((truthy((rt.istype(live(_T), T("/turf/open")) ? 1 : 0)) && truthy(rt.fv(f, "air", live(_T))))) {
-		rt.setFv(f, "excited", live(_T), 1);
-		(rt.modSrcVar(f, "active_turfs", live(_T), rt.bitOr));
-		if (isEqual(rt.sv(f, "currentpart"), 3)) {
-			(rt.modSrcVar(f, "currentrun", live(_T), rt.bitOr));
+	blockchanges ??= 1;
+	if (rt.istype(_T, T("/turf/open")) && _T.air) {
+		_T.excited = 1;
+		(rt.modSrcVar(f, "active_turfs", _T, rt.bitOr));
+		if (this.currentpart == SSAIR_ACTIVETURFS) {
+			(rt.modSrcVar(f, "currentrun", _T, rt.bitOr));
 		}
-		if ((truthy(live(blockchanges)) && truthy(rt.fv(f, "excited_group", live(_T))))) {
-			rt.callName(f, rt.fv(f, "excited_group", live(_T)), "garbage_collect", []);
+		if (blockchanges && _T.excited_group) {
+			_T.excited_group.garbage_collect();
 		}
+	} else if (_T.initialized) {
+		for (S of each(_T.atmos_adjacent_turfs, T("/turf"))) {
+			this.add_to_active(S);
+		}
+	} else if (this.map_loading) {
+		if (this.queued_for_activation) {
+			rt.setAt(this.queued_for_activation, _T, _T);
+		}
+		return f.dot;
 	} else {
-		if (truthy(rt.fv(f, "initialized", live(_T)))) {
-			S = null;
-			rt.forList(f, 0, rt.fv(f, "atmos_adjacent_turfs", live(_T)), T("/turf"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				S = $e;
-				rt.callSrc(f, "add_to_active", [live(S)]);
-			}
-			rt.endFor(f, 0);
-		} else {
-			if (truthy(rt.sv(f, "map_loading"))) {
-				if (truthy(rt.sv(f, "queued_for_activation"))) {
-					rt.setAt(rt.sv(f, "queued_for_activation"), live(_T), live(_T));
-				}
-				return live(f.dot);
-			} else {
-				rt.setFv(f, "requires_activation", live(_T), 1);
-			}
-		}
+		_T.requires_activation = 1;
 	}
 	return f.dot;
 });
 
-// /datum/controller/subsystem/air/proc/StartLoadingMap  (code/controllers/subsystem/air.dm:275)
+// air.dm:275
 rt.def("/datum/controller/subsystem/air/proc/StartLoadingMap", function StartLoadingMap(f: Frame) {
-	if (!truthy(rt.sv(f, "queued_for_activation"))) {
-		rt.setSv(f, "queued_for_activation", rt.list());
+	if (!this.queued_for_activation) {
+		this.queued_for_activation = list();
 	}
-	rt.setSv(f, "map_loading", 1);
+	this.map_loading = 1;
 	return f.dot;
 });
 
-// /datum/controller/subsystem/air/proc/StopLoadingMap  (code/controllers/subsystem/air.dm:280)
+// air.dm:280
 rt.def("/datum/controller/subsystem/air/proc/StopLoadingMap", function StopLoadingMap(f: Frame) {
 	let _T: Value = null;
-	let $e: any;
-	f.vars = () => [_T, $e];
-	rt.setSv(f, "map_loading", 0);
-	_T = null;
-	rt.forList(f, 0, rt.sv(f, "queued_for_activation"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_T = $e;
-		rt.callSrc(f, "add_to_active", [live(_T)]);
+	this.map_loading = 0;
+	for (_T of each(this.queued_for_activation)) {
+		this.add_to_active(_T);
 	}
-	rt.endFor(f, 0);
-	rt.callName(f, rt.sv(f, "queued_for_activation"), "Cut", []);
+	this.queued_for_activation.Cut();
 	return f.dot;
 });
 
-// /datum/controller/subsystem/air/proc/setup_allturfs  (code/controllers/subsystem/air.dm:285)  may sleep
+// air.dm:285
 rt.def("/datum/controller/subsystem/air/proc/setup_allturfs", function* setup_allturfs(f: Frame) {
-	let turfs_to_init: Value = null, active_turfs: Value = null, times_fired: Value = null, thing: Value = null, _T: Value = null, starting_ats: Value = null, timer: Value = null, _T_5: Value = null, turfs_to_check: Value = null, new_turfs_to_check: Value = null, _T_7: Value = null, ending_ats: Value = null, thing_7: Value = null, EG: Value = null, msg: Value = null;
-	let $e: any;
-	f.vars = () => [turfs_to_init, active_turfs, times_fired, thing, _T, starting_ats, timer, _T_5, turfs_to_check, new_turfs_to_check, _T_7, ending_ats, thing_7, EG, msg, $e];
-	turfs_to_init = (yield* g.call(f, P("/proc/block"), null, [rt.locate(1, 1, 1), rt.locate(rt.fv(f, "maxx", rt.world()), rt.fv(f, "maxy", rt.world()), rt.fv(f, "maxz", rt.world()))]));
-	active_turfs = rt.fv(f, "active_turfs", live(f.src));
-	times_fired = rt.incField(f, live(f.src), "times_fired", 1, false);
-	thing = null;
-	rt.forList(f, 0, live(turfs_to_init));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		thing = $e;
-		(active_turfs = rt.modify(live(active_turfs), (_T = live(thing)), subtract));
-		if (truthy(rt.fv(f, "blocks_air", live(_T)))) {
+	let thing: Value = null, _T: Value = null, _T_5: Value = null, new_turfs_to_check: Value = null, _T_7: Value = null, thing_7: Value = null, EG: Value = null;
+	let turfs_to_init: Value = block(rt.locate(1, 1, 1), rt.locate(rt.world().maxx, rt.world().maxy, rt.world().maxz));
+	let active_turfs: Value = this.active_turfs;
+	let times_fired: Value = rt.incField(f, this, "times_fired", 1, false);
+	for (thing of each(turfs_to_init)) {
+		active_turfs -= (_T = thing);
+		if (_T.blocks_air) {
 			continue;
 		}
-		yield* g.callName(f, live(_T), "Initalize_Atmos", [live(times_fired)]);
-		if (rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit"))) {
-			yield* g.call(f, P("/proc/stoplag"), null, []);
+		_T.Initalize_Atmos(times_fired);
+		if (rt.tickUsage(f) > GLOB.current_ticklimit) {
+			yield* stoplag();
 		}
 	}
-	rt.endFor(f, 0);
-	if (!truthy(rt.len(f, live(active_turfs)))) return f.dot;
-	starting_ats = rt.len(f, live(active_turfs));
-	yield* g.call(f, P("/proc/sleep"), null, [rt.fv(f, "tick_lag", rt.world())]);
-	timer = rt.fv(f, "timeofday", rt.world());
-	yield* g.call(f, P("/proc/warning"), null, [fmt("There are ＀ active turfs at roundstart, this is a mapping error caused by a difference of the air between the adjacent turfs. You can see its coordinates using \"Mapping -> Show roundstart AT list\" verb (debug verbs required)", [live(starting_ats)])]);
-	_T_5 = null;
-	rt.forList(f, 0, live(active_turfs), T("/turf"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_T_5 = $e;
-		rt.modGl("active_turfs_startlist", live(_T_5), add);
+	if (!rt.len(f, active_turfs)) return f.dot;
+	let starting_ats: Value = rt.len(f, active_turfs);
+	yield* sleep(rt.world().tick_lag);
+	let timer: Value = rt.world().timeofday;
+	warning(`There are ${starting_ats} active turfs at roundstart, this is a mapping error caused by a difference of the air between the adjacent turfs. You can see its coordinates using "Mapping -> Show roundstart AT list" verb (debug verbs required)`);
+	for (_T_5 of each(active_turfs, T("/turf"))) {
+		GLOB.active_turfs_startlist += _T_5;
 	}
-	rt.endFor(f, 0);
-	turfs_to_check = (yield* g.callName(f, live(active_turfs), "Copy", []));
+	let turfs_to_check: Value = (yield* active_turfs.Copy());
 	while (true) {
-		new_turfs_to_check = rt.list();
+		new_turfs_to_check = list();
 		_T_7 = null;
-		rt.forList(f, 0, live(turfs_to_check), T("/turf/open"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			_T_7 = $e;
-			new_turfs_to_check = rt.modify(live(new_turfs_to_check), (yield* g.callName(f, live(_T_7), "resolve_active_graph", [])), add);
+		for (_T_7 of each(turfs_to_check, T("/turf/open"))) {
+			new_turfs_to_check += _T_7.resolve_active_graph();
 		}
-		rt.endFor(f, 0);
-		if (rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit"))) {
-			yield* g.call(f, P("/proc/stoplag"), null, []);
+		if (rt.tickUsage(f) > GLOB.current_ticklimit) {
+			yield* stoplag();
 		}
-		active_turfs = rt.modify(live(active_turfs), live(new_turfs_to_check), add);
-		if (!truthy(rt.getLen(f, (turfs_to_check = live(new_turfs_to_check))))) break;
+		active_turfs += new_turfs_to_check;
+		if (!rt.len(f, (turfs_to_check = new_turfs_to_check))) break;
 	}
-	ending_ats = rt.len(f, live(active_turfs));
-	thing_7 = null;
-	rt.forList(f, 0, rt.sv(f, "excited_groups"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		thing_7 = $e;
-		yield* g.callName(f, (EG = live(thing_7)), "self_breakdown", ["space_is_all_consuming", 1], rt.Args.Named);
-		yield* g.callName(f, live(EG), "dismantle", []);
-		if (rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit"))) {
-			yield* g.call(f, P("/proc/stoplag"), null, []);
+	let ending_ats: Value = rt.len(f, active_turfs);
+	for (thing_7 of each(this.excited_groups)) {
+		yield* (EG = thing_7).self_breakdown({ space_is_all_consuming: 1 });
+		yield* EG.dismantle();
+		if (rt.tickUsage(f) > GLOB.current_ticklimit) {
+			yield* stoplag();
 		}
 	}
-	rt.endFor(f, 0);
-	msg = fmt("HEY! LISTEN! ＀ Seconds were wasted processing ＀ turf(s) (connected to ＀ other turfs) with atmos differences at round start.", [divide(subtract(rt.fv(f, "timeofday", rt.world()), live(timer)), 10), live(starting_ats), live(ending_ats)]);
-	yield* g.call(f, P("/proc/to_chat"), null, [rt.world(), fmt("<span class='boldannounce'>＀</span>", [live(msg)])]);
-	yield* g.call(f, P("/proc/warning"), null, [live(msg)]);
+	let msg: Value = `HEY! LISTEN! ${(rt.world().timeofday - timer) / 10} Seconds were wasted processing ${starting_ats} turf(s) (connected to ${ending_ats} other turfs) with atmos differences at round start.`;
+	to_chat(rt.world(), `<span class='boldannounce'>${msg}</span>`);
+	warning(msg);
 	return f.dot;
 }, true);
 
-// /turf/open/proc/resolve_active_graph  (code/controllers/subsystem/air.dm:329)
+// air.dm:329
 rt.def("/turf/open/proc/resolve_active_graph", function resolve_active_graph(f: Frame) {
-	let EG: Value = null, ET: Value = null, ET_EG: Value = null;
-	let $e: any;
-	f.vars = () => [EG, ET, ET_EG, $e];
-	f.dot = rt.list();
-	EG = rt.sv(f, "excited_group");
-	if ((truthy(rt.sv(f, "blocks_air")) || !truthy(rt.sv(f, "air")))) {
-		return live(f.dot);
+	let ET: Value = null, ET_EG: Value = null;
+	f.dot = list();
+	let EG: Value = this.excited_group;
+	if (this.blocks_air || !this.air) {
+		return f.dot;
 	}
-	if (!truthy(live(EG))) {
-		rt.callName(f, (EG = rt.new_(f, T("/datum/excited_group"), [])), "add_turf", [live(f.src)]);
+	if (!EG) {
+		(EG = new_(T("/datum/excited_group"))).add_turf(this);
 	}
-	ET = null;
-	rt.forList(f, 0, rt.sv(f, "atmos_adjacent_turfs"), T("/turf/open"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		ET = $e;
-		if ((truthy(rt.fv(f, "blocks_air", live(ET))) || !truthy(rt.fv(f, "air", live(ET))))) {
+	for (ET of each(this.atmos_adjacent_turfs, T("/turf/open"))) {
+		if (ET.blocks_air || !ET.air) {
 			continue;
 		}
-		if (truthy((ET_EG = rt.fv(f, "excited_group", live(ET))))) {
-			if (!isEqual(live(ET_EG), live(EG))) {
-				rt.callName(f, live(EG), "merge_groups", [live(ET_EG)]);
-				EG = rt.sv(f, "excited_group");
+		if (ET_EG = ET.excited_group) {
+			if (ET_EG != EG) {
+				EG.merge_groups(ET_EG);
+				EG = this.excited_group;
 			}
 		} else {
-			rt.callName(f, live(EG), "add_turf", [live(ET)]);
+			EG.add_turf(ET);
 		}
-		if (!truthy(rt.fv(f, "excited", live(ET)))) {
-			rt.setFv(f, "excited", live(ET), 1);
-			f.dot = rt.modify(live(f.dot), live(ET), add);
+		if (!ET.excited) {
+			ET.excited = 1;
+			f.dot += ET;
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /turf/open/space/proc/resolve_active_graph  (code/controllers/subsystem/air.dm:352)
+// air.dm:352
 rt.def("/turf/open/space/proc/resolve_active_graph", function resolve_active_graph(f: Frame) {
-	return rt.list();
+	return list();
 });
 
-// /datum/controller/subsystem/air/proc/setup_atmos_machinery  (code/controllers/subsystem/air.dm:355)  may sleep
+// air.dm:355
 rt.def("/datum/controller/subsystem/air/proc/setup_atmos_machinery", function* setup_atmos_machinery(f: Frame) {
 	let AM: Value = null;
-	let $e: any;
-	f.vars = () => [AM, $e];
-	AM = null;
-	rt.forList(f, 0, rt.sv(f, "atmos_machinery"), T("/obj/machinery/atmospherics"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		AM = $e;
-		yield* g.callName(f, live(AM), "atmosinit", []);
-		if (rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit"))) {
-			yield* g.call(f, P("/proc/stoplag"), null, []);
+	for (AM of each(this.atmos_machinery, T("/obj/machinery/atmospherics"))) {
+		yield* AM.atmosinit();
+		if (rt.tickUsage(f) > GLOB.current_ticklimit) {
+			yield* stoplag();
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /datum/controller/subsystem/air/proc/setup_pipenets  (code/controllers/subsystem/air.dm:363)  may sleep
+// air.dm:363
 rt.def("/datum/controller/subsystem/air/proc/setup_pipenets", function* setup_pipenets(f: Frame) {
 	let AM: Value = null;
-	let $e: any;
-	f.vars = () => [AM, $e];
-	AM = null;
-	rt.forList(f, 0, rt.sv(f, "atmos_machinery"), T("/obj/machinery/atmospherics"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		AM = $e;
-		yield* g.callName(f, live(AM), "build_network", []);
-		if (rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit"))) {
-			yield* g.call(f, P("/proc/stoplag"), null, []);
+	for (AM of each(this.atmos_machinery, T("/obj/machinery/atmospherics"))) {
+		AM.build_network();
+		if (rt.tickUsage(f) > GLOB.current_ticklimit) {
+			yield* stoplag();
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /datum/controller/subsystem/air/proc/setup_template_machinery  (code/controllers/subsystem/air.dm:368)  may sleep
+// air.dm:368
 rt.def("/datum/controller/subsystem/air/proc/setup_template_machinery", function* setup_template_machinery(f: Frame, atmos_machines: Value) {
 	let A: Value = null, AM: Value = null;
-	let $e: any;
-	f.vars = () => [atmos_machines, A, AM, $e];
-	A = null;
-	rt.forList(f, 0, live(atmos_machines));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		A = $e;
-		yield* g.callName(f, (AM = live(A)), "atmosinit", []);
-		if (rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit"))) {
-			yield* g.call(f, P("/proc/stoplag"), null, []);
+	for (A of each(atmos_machines)) {
+		yield* (AM = A).atmosinit();
+		if (rt.tickUsage(f) > GLOB.current_ticklimit) {
+			yield* stoplag();
 		}
 	}
-	rt.endFor(f, 0);
 	A = null;
-	rt.forList(f, 0, live(atmos_machines));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		A = $e;
-		yield* g.callName(f, (AM = live(A)), "build_network", []);
-		if (rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit"))) {
-			yield* g.call(f, P("/proc/stoplag"), null, []);
+	for (A of each(atmos_machines)) {
+		(AM = A).build_network();
+		if (rt.tickUsage(f) > GLOB.current_ticklimit) {
+			yield* stoplag();
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);

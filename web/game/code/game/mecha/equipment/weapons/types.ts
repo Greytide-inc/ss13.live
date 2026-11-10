@@ -1,5 +1,5 @@
 // Types declared in code/game/mecha/equipment/weapons that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(9630, "/obj/item/mecha_parts/mecha_equipment/weapon/energy/laser", "/obj/item/mecha_parts/mecha_equipment/weapon/energy", {
 	equip_cooldown: 8,

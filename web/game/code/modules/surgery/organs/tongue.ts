@@ -1,7 +1,7 @@
-// From code/modules/surgery/organs/tongue.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/surgery/organs/tongue.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(9523, "/obj/item/organ/tongue", "/obj/item/organ", {
@@ -16,43 +16,43 @@ rt.type(9523, "/obj/item/organ/tongue", "/obj/item/organ", {
 	attack_verb: null,
 });
 
-// /obj/item/organ/tongue/proc/Initialize  (code/modules/surgery/organs/tongue.dm:13)  may sleep
-rt.def("/obj/item/organ/tongue/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "languages_possible", (yield* g.call(f, P("/proc/typecacheof"), null, [rt.list(T("/datum/language/common"), T("/datum/language/draconic"), T("/datum/language/codespeak"), T("/datum/language/monkey"), T("/datum/language/narsie"), T("/datum/language/beachbum"), T("/datum/language/ratvar"))])));
+// tongue.dm:13
+rt.def("/obj/item/organ/tongue/proc/Initialize", function* Initialize(f: Frame, mapload: Value) {
+	f.dot = (yield* parent_proc());
+	this.languages_possible = typecacheof(list(T("/datum/language/common"), T("/datum/language/draconic"), T("/datum/language/codespeak"), T("/datum/language/monkey"), T("/datum/language/narsie"), T("/datum/language/beachbum"), T("/datum/language/ratvar")));
 	return f.dot;
-}, true, { args: ["mapload"] });
+}, true);
 
-// /obj/item/organ/tongue/proc/get_spans  (code/modules/surgery/organs/tongue.dm:25)
+// tongue.dm:25
 rt.def("/obj/item/organ/tongue/proc/get_spans", function get_spans(f: Frame) {
-	return rt.list();
+	return list();
 });
 
-// /obj/item/organ/tongue/proc/Insert  (code/modules/surgery/organs/tongue.dm:31)  may sleep
+// tongue.dm:31
 rt.def("/obj/item/organ/tongue/proc/Insert", function* Insert(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!((truthy(rt.sv(f, "say_mod")) && truthy(rt.fv(f, "dna", live(f.args[0])))) && truthy(rt.gv(f, "species", rt.fv(f, "dna", live(f.args[0])))))) return f.dot;
-	rt.setFv(f, "say_mod", rt.gv(f, "species", rt.fv(f, "dna", live(f.args[0]))), rt.sv(f, "say_mod"));
+	yield* parent_proc();
+	if (!(this.say_mod && f.args[0].dna && f.args[0].dna.species)) return f.dot;
+	f.args[0].dna.species.say_mod = this.say_mod;
 	return f.dot;
 }, true, { args: ["M", "special"] });
 
-// /obj/item/organ/tongue/proc/Remove  (code/modules/surgery/organs/tongue.dm:36)  may sleep
+// tongue.dm:36
 rt.def("/obj/item/organ/tongue/proc/Remove", function* Remove(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!((truthy(rt.sv(f, "say_mod")) && truthy(rt.fv(f, "dna", live(f.args[0])))) && truthy(rt.gv(f, "species", rt.fv(f, "dna", live(f.args[0])))))) return f.dot;
-	rt.setFv(f, "say_mod", rt.gv(f, "species", rt.fv(f, "dna", live(f.args[0]))), rt.initial(f, rt.gv(f, "species", rt.fv(f, "dna", live(f.args[0]))), "say_mod"));
+	yield* parent_proc();
+	if (!(this.say_mod && f.args[0].dna && f.args[0].dna.species)) return f.dot;
+	f.args[0].dna.species.say_mod = rt.initial(f, f.args[0].dna.species, "say_mod");
 	return f.dot;
 }, true, { args: ["M", "special"] });
 
-// /obj/item/organ/tongue/proc/could_speak_in_language  (code/modules/surgery/organs/tongue.dm:41)
+// tongue.dm:41
 rt.def("/obj/item/organ/tongue/proc/could_speak_in_language", function could_speak_in_language(f: Frame, dt: Value) {
-	f.dot = rt.call(f, P("/proc/is_type_in_typecache"), null, [live(dt), rt.sv(f, "languages_possible")]);
+	f.dot = is_type_in_typecache(dt, this.languages_possible);
 	return f.dot;
 });
 
@@ -64,17 +64,15 @@ rt.type(9524, "/obj/item/organ/tongue/lizard", "/obj/item/organ/tongue", {
 	icon_state: "tonguelizard",
 });
 
-// /obj/item/organ/tongue/lizard/proc/TongueSpeech  (code/modules/surgery/organs/tongue.dm:51)
+// tongue.dm:51
 rt.def("/obj/item/organ/tongue/lizard/proc/TongueSpeech", function TongueSpeech(f: Frame, message: Value) {
-	let lizard_hiss: Value = null, lizard_hiSS: Value = null;
-	f.vars = () => [message, lizard_hiss, lizard_hiSS];
-	lizard_hiss = rt.new_(f, T("/regex"), ["s+", "g"]);
-	lizard_hiSS = rt.new_(f, T("/regex"), ["S+", "g"]);
-	if (!isEqual(rt.call(f, P("/proc/copytext"), null, [live(message), 1, 2]), "*")) {
-		message = rt.callName(f, live(lizard_hiss), "Replace", [live(message), "sss"]);
-		message = rt.callName(f, live(lizard_hiSS), "Replace", [live(message), "SSS"]);
+	let lizard_hiss: Value = new_(T("/regex"), "s+", "g");
+	let lizard_hiSS: Value = new_(T("/regex"), "S+", "g");
+	if (copytext(message, 1, 2) != "*") {
+		message = lizard_hiss.Replace(message, "sss");
+		message = lizard_hiSS.Replace(message, "SSS");
 	}
-	return live(message);
+	return message;
 });
 
 rt.type(9525, "/obj/item/organ/tongue/fly", "/obj/item/organ/tongue", {
@@ -85,17 +83,15 @@ rt.type(9525, "/obj/item/organ/tongue/fly", "/obj/item/organ/tongue", {
 	icon_state: "tonguefly",
 });
 
-// /obj/item/organ/tongue/fly/proc/TongueSpeech  (code/modules/surgery/organs/tongue.dm:66)
+// tongue.dm:66
 rt.def("/obj/item/organ/tongue/fly/proc/TongueSpeech", function TongueSpeech(f: Frame, message: Value) {
-	let fly_buzz: Value = null, fly_buZZ: Value = null;
-	f.vars = () => [message, fly_buzz, fly_buZZ];
-	fly_buzz = rt.new_(f, T("/regex"), ["z+", "g"]);
-	fly_buZZ = rt.new_(f, T("/regex"), ["Z+", "g"]);
-	if (!isEqual(rt.call(f, P("/proc/copytext"), null, [live(message), 1, 2]), "*")) {
-		message = rt.callName(f, live(fly_buzz), "Replace", [live(message), "zzz"]);
-		message = rt.callName(f, live(fly_buZZ), "Replace", [live(message), "ZZZ"]);
+	let fly_buzz: Value = new_(T("/regex"), "z+", "g");
+	let fly_buZZ: Value = new_(T("/regex"), "Z+", "g");
+	if (copytext(message, 1, 2) != "*") {
+		message = fly_buzz.Replace(message, "zzz");
+		message = fly_buZZ.Replace(message, "ZZZ");
 	}
-	return live(message);
+	return message;
 });
 
 rt.type(9526, "/obj/item/organ/tongue/abductor", "/obj/item/organ/tongue", {
@@ -106,38 +102,28 @@ rt.type(9526, "/obj/item/organ/tongue/abductor", "/obj/item/organ/tongue", {
 	icon_state: "tongueayylmao",
 });
 
-// /obj/item/organ/tongue/abductor/proc/TongueSpeech  (code/modules/surgery/organs/tongue.dm:82)
+// tongue.dm:82
 rt.def("/obj/item/organ/tongue/abductor/proc/TongueSpeech", function TongueSpeech(f: Frame, message: Value) {
-	let user: Value = null, rendered: Value = null, H: Value = null, _T: Value = null, Ayy: Value = null, Byy: Value = null, M: Value = null, link: Value = null;
-	let $e: any;
-	f.vars = () => [user, rendered, H, _T, Ayy, Byy, M, link, $e];
-	user = live(f.usr);
-	rendered = fmt("<span class='abductor'><b>＀:</b> ＀</span>", [rt.fv(f, "name", live(user)), live(message)]);
-	H = null;
-	rt.forList(f, 0, rt.gl("living_mob_list"), T("/mob/living/carbon/human"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		H = $e;
-		if ((!truthy((_T = rt.callName(f, live(H), "getorganslot", ["tongue"]))) || !isEqual(rt.fv(f, "type", live(_T)), rt.sv(f, "type")))) {
+	let H: Value = null, _T: Value = null, Ayy: Value = null, Byy: Value = null, M: Value = null, link: Value = null;
+	let user: Value = f.usr;
+	let rendered: Value = `<span class='abductor'><b>${user.name}:</b> ${message}</span>`;
+	for (H of each(GLOB.living_mob_list, T("/mob/living/carbon/human"))) {
+		if (!(_T = H.getorganslot("tongue")) || _T.type != this.type) {
 			continue;
 		}
-		if ((((truthy(rt.fv(f, "dna", live(H))) && isEqual(rt.gv(f, "id", rt.gv(f, "species", rt.fv(f, "dna", live(H)))), "abductor")) && truthy(rt.fv(f, "dna", live(user)))) && isEqual(rt.gv(f, "id", rt.gv(f, "species", rt.fv(f, "dna", live(user)))), "abductor"))) {
-			Ayy = rt.gv(f, "species", rt.fv(f, "dna", live(user)));
-			Byy = rt.gv(f, "species", rt.fv(f, "dna", live(H)));
-			if (!isEqual(rt.fv(f, "team", live(Ayy)), rt.fv(f, "team", live(Byy)))) {
+		if (H.dna && H.dna.species.id == "abductor" && user.dna && user.dna.species.id == "abductor") {
+			Ayy = user.dna.species;
+			Byy = H.dna.species;
+			if (Ayy.team != Byy.team) {
 				continue;
 			}
 		}
-		rt.call(f, P("/proc/to_chat"), null, [live(H), live(rendered)]);
+		to_chat(H, rendered);
 	}
-	rt.endFor(f, 0);
-	M = null;
-	rt.forList(f, 0, rt.gl("dead_mob_list"), T("/mob"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		link = fmt("<a href=?src=＃;follow=＃>(F)</a>", [live(M), live(user)]);
-		rt.call(f, P("/proc/to_chat"), null, [live(M), fmt("＀ ＀", [live(link), live(rendered)])]);
+	for (M of each(GLOB.dead_mob_list, T("/mob"))) {
+		link = fmt("<a href=?src=＃;follow=＃>(F)</a>", [M, user]);
+		to_chat(M, `${link} ${rendered}`);
 	}
-	rt.endFor(f, 0);
 	return "";
 });
 
@@ -149,25 +135,23 @@ rt.type(9527, "/obj/item/organ/tongue/zombie", "/obj/item/organ/tongue", {
 	icon_state: "tonguezombie",
 });
 
-// /obj/item/organ/tongue/zombie/proc/TongueSpeech  (code/modules/surgery/organs/tongue.dm:107)
+// tongue.dm:107
 rt.def("/obj/item/organ/tongue/zombie/proc/TongueSpeech", function TongueSpeech(f: Frame, message: Value) {
-	let message_list: Value = null, maxchanges: Value = null, i: Value = null, insertpos: Value = null, inserttext: Value = null;
-	f.vars = () => [message_list, maxchanges, i, insertpos, inserttext];
-	message_list = rt.call(f, P("/proc/splittext"), null, [live(message), " "]);
-	maxchanges = rt.call(f, P("/proc/max"), null, [rt.call(f, P("/proc/round"), null, [divide(rt.len(f, live(message_list)), 1.5)]), 2]);
-	i = null;
-	i = rt.call(f, P("/proc/rand"), null, [divide(live(maxchanges), 2), live(maxchanges)]);
-	while (rt.gt(live(i), 0)) {
-		insertpos = rt.call(f, P("/proc/rand"), null, [1, subtract(rt.len(f, live(message_list)), 1)]);
-		if (!isEqual(rt.call(f, P("/proc/copytext"), null, [(inserttext = rt.index(live(message_list), live(insertpos))), subtract(rt.length(live(inserttext)), 2)]), "...")) {
-			rt.setAt(live(message_list), live(insertpos), add(live(inserttext), "..."));
+	let insertpos: Value = null, inserttext: Value = null;
+	let message_list: Value = splittext(message, " ");
+	let maxchanges: Value = max(round(rt.len(f, message_list) / 1.5), 2);
+	let i: Value = rand(maxchanges / 2, maxchanges);
+	while (i > 0) {
+		insertpos = rand(1, rt.len(f, message_list) - 1);
+		if (copytext((inserttext = rt.index(message_list, insertpos)), rt.length(inserttext) - 2) != "...") {
+			rt.setAt(message_list, insertpos, inserttext + "...");
 		}
-		if ((truthy(rt.op(f, "Prob", [], [20])) && rt.gt(rt.len(f, live(message_list)), 3))) {
-			rt.callName(f, live(message_list), "Insert", [live(insertpos), fmt("＀...", [rt.op(f, "PickUnweighted", [4], ["BRAINS", "Brains", "Braaaiinnnsss", "BRAAAIIINNSSS"])])]);
+		if (prob(20) && rt.len(f, message_list) > 3) {
+			message_list.Insert(insertpos, `${pick("BRAINS", "Brains", "Braaaiinnnsss", "BRAAAIIINNSSS")}...`);
 		}
-		i = rt.inc(live(i), -1);
+		i--;
 	}
-	return rt.call(f, P("/proc/jointext"), null, [live(message_list), " "]);
+	return jointext(message_list, " ");
 });
 
 rt.type(9528, "/obj/item/organ/tongue/alien", "/obj/item/organ/tongue", {
@@ -178,17 +162,17 @@ rt.type(9528, "/obj/item/organ/tongue/alien", "/obj/item/organ/tongue", {
 	icon_state: "tonguexeno",
 });
 
-// /obj/item/organ/tongue/alien/proc/Initialize  (code/modules/surgery/organs/tongue.dm:130)  may sleep
-rt.def("/obj/item/organ/tongue/alien/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "languages_possible", (yield* g.call(f, P("/proc/typecacheof"), null, [rt.list(T("/datum/language/xenocommon"), T("/datum/language/common"), T("/datum/language/draconic"), T("/datum/language/ratvar"), T("/datum/language/monkey"))])));
+// tongue.dm:130
+rt.def("/obj/item/organ/tongue/alien/proc/Initialize", function* Initialize(f: Frame, mapload: Value) {
+	f.dot = (yield* parent_proc());
+	this.languages_possible = typecacheof(list(T("/datum/language/xenocommon"), T("/datum/language/common"), T("/datum/language/draconic"), T("/datum/language/ratvar"), T("/datum/language/monkey")));
 	return f.dot;
-}, true, { args: ["mapload"] });
+}, true);
 
-// /obj/item/organ/tongue/alien/proc/TongueSpeech  (code/modules/surgery/organs/tongue.dm:139)
+// tongue.dm:139
 rt.def("/obj/item/organ/tongue/alien/proc/TongueSpeech", function TongueSpeech(f: Frame, message: Value) {
-	rt.call(f, P("/proc/playsound"), null, [rt.sv(f, "owner"), "hiss", 25, 1, 1]);
-	return live(message);
+	playsound(this.owner, "hiss", 25, 1, 1);
+	return message;
 });
 
 rt.type(9529, "/obj/item/organ/tongue/bone", "/obj/item/organ/tongue", {
@@ -203,31 +187,28 @@ rt.type(9529, "/obj/item/organ/tongue/bone", "/obj/item/organ/tongue", {
 	attack_verb: null,
 });
 
-// /obj/item/organ/tongue/bone/proc/Initialize  (code/modules/surgery/organs/tongue.dm:155)  may sleep
+// tongue.dm:155
 rt.def("/obj/item/organ/tongue/bone/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "phomeme_type", rt.op(f, "PickUnweighted", [1], [rt.sv(f, "phomeme_types")]));
+	f.dot = (yield* parent_proc());
+	this.phomeme_type = pick(this.phomeme_types);
 	return f.dot;
 }, true);
 
-// /obj/item/organ/tongue/bone/proc/TongueSpeech  (code/modules/surgery/organs/tongue.dm:159)
+// tongue.dm:159
 rt.def("/obj/item/organ/tongue/bone/proc/TongueSpeech", function TongueSpeech(f: Frame, message: Value) {
-	f.dot = live(message);
-	if (!truthy(rt.sv(f, "chattering"))) return f.dot;
-	rt.call(f, P("/proc/chatter"), null, [live(message), rt.sv(f, "phomeme_type"), live(f.usr)]);
+	f.dot = message;
+	if (!this.chattering) return f.dot;
+	chatter(message, this.phomeme_type, f.usr);
 	return f.dot;
 });
 
-// /obj/item/organ/tongue/bone/proc/get_spans  (code/modules/surgery/organs/tongue.dm:166)
+// tongue.dm:166
 rt.def("/obj/item/organ/tongue/bone/proc/get_spans", function get_spans(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	$0 = rt.sv(f, "phomeme_type");
-	if ($0 === "sans") {
-		(f.dot = rt.modify(live(f.dot), "sans", rt.bitOr));
-	} else if ($0 === "papyrus") {
-		(f.dot = rt.modify(live(f.dot), "papyrus", rt.bitOr));
+	f.dot = parent_proc();
+	if (this.phomeme_type === "sans") {
+		(f.dot = rt.modify(f.dot, "sans", rt.bitOr));
+	} else if (this.phomeme_type === "papyrus") {
+		(f.dot = rt.modify(f.dot, "papyrus", rt.bitOr));
 	}
 	return f.dot;
 });
@@ -242,7 +223,7 @@ rt.type(9531, "/obj/item/organ/tongue/robot", "/obj/item/organ/tongue", {
 	attack_verb: null,
 });
 
-// /obj/item/organ/tongue/robot/proc/get_spans  (code/modules/surgery/organs/tongue.dm:195)
+// tongue.dm:195
 rt.def("/obj/item/organ/tongue/robot/proc/get_spans", function get_spans(f: Frame) {
-	return rt.bitOr(rt.callSuper(f, [], rt.Args.Same), "robot");
+	return rt.bitOr(parent_proc(), "robot");
 });

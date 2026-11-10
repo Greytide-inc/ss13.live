@@ -1,7 +1,7 @@
-// From code/game/gamemodes/blob/blobs/blob_mobs.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/gamemodes/blob/blobs/blob_mobs.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, fmt } = rt;
 
 
 rt.type(4855, "/mob/living/simple_animal/hostile/blob", "/mob/living/simple_animal/hostile", {
@@ -19,128 +19,112 @@ rt.type(4855, "/mob/living/simple_animal/hostile/blob", "/mob/living/simple_anim
 	a_intent: "harm",
 });
 
-// /mob/living/simple_animal/hostile/blob/proc/<init>  (code/game/gamemodes/blob/blobs/blob_mobs.dm:10)
+// blob_mobs.dm:10
 rt.def("/mob/living/simple_animal/hostile/blob/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "faction", rt.list("blob"));
-	rt.setSv(f, "speak_emote", null);
-	rt.setSv(f, "atmos_requirements", rt.alist(f, ["min_oxy", 0, "max_oxy", 0, "min_tox", 0, "max_tox", 0, "min_co2", 0, "max_co2", 0, "min_n2", 0, "max_n2", 0]));
+	parent_proc();
+	this.faction = list("blob");
+	this.speak_emote = null;
+	this.atmos_requirements = rt.alist(f, ["min_oxy", 0, "max_oxy", 0, "min_tox", 0, "max_tox", 0, "min_co2", 0, "max_co2", 0, "min_n2", 0, "max_n2", 0]);
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/blob/proc/update_icons  (code/game/gamemodes/blob/blobs/blob_mobs.dm:23)
+// blob_mobs.dm:23
 rt.def("/mob/living/simple_animal/hostile/blob/proc/update_icons", function update_icons(f: Frame) {
-	if (truthy(rt.sv(f, "overmind"))) {
-		rt.callSrc(f, "add_atom_colour", [rt.gv(f, "color", rt.fv(f, "blob_reagent_datum", rt.sv(f, "overmind"))), 4]);
+	if (this.overmind) {
+		this.add_atom_colour(this.overmind.blob_reagent_datum.color, 4);
 	} else {
-		rt.callSrc(f, "remove_atom_colour", [4]);
+		this.remove_atom_colour(4);
 	}
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/blob/proc/Destroy  (code/game/gamemodes/blob/blobs/blob_mobs.dm:29)  may sleep
+// blob_mobs.dm:29
 rt.def("/mob/living/simple_animal/hostile/blob/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.sv(f, "overmind"))) {
-		(rt.modField(f, rt.sv(f, "overmind"), "blob_mobs", live(f.src), subtract));
+	if (this.overmind) {
+		this.overmind.blob_mobs -= this;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);
 
-// /mob/living/simple_animal/hostile/blob/proc/blob_act  (code/game/gamemodes/blob/blobs/blob_mobs.dm:33)  may sleep
+// blob_mobs.dm:33
 rt.def("/mob/living/simple_animal/hostile/blob/proc/blob_act", function* blob_act(f: Frame, B: Value) {
 	let i: Value = null, H: Value = null;
 	let $e: any;
-	f.vars = () => [B, i, H, $e];
-	if (!(!isEqual(rt.sv(f, "stat"), 2) && rt.lt(rt.sv(f, "health"), rt.sv(f, "maxHealth")))) return f.dot;
-	i = null;
+	if (!(this.stat != 2 && this.health < this.maxHealth)) return f.dot;
 	rt.forRange(f, 0, 1, 2, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		H = (yield* g.new_(f, T("/obj/effect/temp_visual/heal"), [rt.getStep(f, live(f.src), 0)]));
-		if (truthy(rt.sv(f, "overmind"))) {
-			rt.setFv(f, "color", live(H), rt.gv(f, "complementary_color", rt.fv(f, "blob_reagent_datum", rt.sv(f, "overmind"))));
+		H = (yield* new_(T("/obj/effect/temp_visual/heal"), rt.getStep(f, this, 0)));
+		if (this.overmind) {
+			H.color = this.overmind.blob_reagent_datum.complementary_color;
 		} else {
-			rt.setFv(f, "color", live(H), "#000000");
+			H.color = "#000000";
 		}
 	}
 	rt.endFor(f, 0);
-	yield* g.srcCall(f, "adjustHealth", multiply(rt.neg(rt.sv(f, "maxHealth")), 0.012500000186264515));
+	yield* this.adjustHealth(-this.maxHealth * 0.0125);
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/blob/proc/fire_act  (code/game/gamemodes/blob/blobs/blob_mobs.dm:43)  may sleep
-rt.def("/mob/living/simple_animal/hostile/blob/proc/fire_act", function* fire_act(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy(live(f.args[0]))) {
-		yield* g.srcCall(f, "adjustFireLoss", (yield* g.call(f, P("/proc/max"), null, [1, (yield* g.call(f, P("/proc/min"), null, [multiply(0.009999999776482582, live(f.args[0])), 5]))])));
+// blob_mobs.dm:43
+rt.def("/mob/living/simple_animal/hostile/blob/proc/fire_act", function* fire_act(f: Frame, exposed_temperature: Value, exposed_volume: Value) {
+	yield* parent_proc();
+	if (exposed_temperature) {
+		yield* this.adjustFireLoss(max(1, min(0.01 * exposed_temperature, 5)));
 	} else {
-		yield* g.srcCall(f, "adjustFireLoss", 5);
+		yield* this.adjustFireLoss(5);
 	}
 	return f.dot;
-}, true, { args: ["exposed_temperature", "exposed_volume"] });
+}, true);
 
-// /mob/living/simple_animal/hostile/blob/proc/CanPass  (code/game/gamemodes/blob/blobs/blob_mobs.dm:50)
+// blob_mobs.dm:50
 rt.def("/mob/living/simple_animal/hostile/blob/proc/CanPass", function CanPass(f: Frame) {
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 0;
 	}
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/structure/blob")) ? 1 : 0))) {
+	if (rt.istype(f.args[0], T("/obj/structure/blob"))) {
 		return 1;
 	}
-	return rt.callSuper(f, [], rt.Args.Same);
+	return parent_proc();
 }, false, { args: ["mover", "target", "height"] });
 
-// /mob/living/simple_animal/hostile/blob/proc/Process_Spacemove  (code/game/gamemodes/blob/blobs/blob_mobs.dm:55)  may sleep
+// blob_mobs.dm:55
 rt.def("/mob/living/simple_animal/hostile/blob/proc/Process_Spacemove", function* Process_Spacemove(f: Frame) {
 	let B: Value = null;
-	let $e: any;
-	f.vars = () => [B, $e];
-	if (live(f.args[0]) === null) {
+	if (f.args[0] === null) {
 		f.args[0] = 0;
 	}
-	B = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/range"), null, [1, live(f.src)])), T("/obj/structure/blob"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		B = $e;
+	for (B of each(range(1, this), T("/obj/structure/blob"))) {
 		return 1;
 	}
-	rt.endFor(f, 0);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true, { args: ["movement_dir"] });
 
-// /mob/living/simple_animal/hostile/blob/proc/handle_inherent_channels  (code/game/gamemodes/blob/blobs/blob_mobs.dm:60)  may sleep
-rt.def("/mob/living/simple_animal/hostile/blob/proc/handle_inherent_channels", function* handle_inherent_channels(f: Frame) {
-	if (isEqual(live(f.args[1]), "binary")) {
-		yield* g.srcCall(f, "blob_chat", live(f.args[0]));
+// blob_mobs.dm:60
+rt.def("/mob/living/simple_animal/hostile/blob/proc/handle_inherent_channels", function* handle_inherent_channels(f: Frame, message: Value, message_mode: Value) {
+	if (message_mode == "binary") {
+		this.blob_chat(message);
 		return 1;
 	} else {
-		yield* g.callSuper(f, [], rt.Args.Same);
+		yield* parent_proc();
 	}
 	return f.dot;
-}, true, { args: ["message", "message_mode"] });
+}, true);
 
-// /mob/living/simple_animal/hostile/blob/proc/blob_chat  (code/game/gamemodes/blob/blobs/blob_mobs.dm:67)
+// blob_mobs.dm:67
 rt.def("/mob/living/simple_animal/hostile/blob/proc/blob_chat", function blob_chat(f: Frame, msg: Value) {
-	let spanned_message: Value = null, rendered: Value = null, M: Value = null, link: Value = null;
-	let $e: any;
-	f.vars = () => [spanned_message, rendered, M, link, $e];
-	spanned_message = rt.callSrc(f, "say_quote", [live(msg), rt.callSrc(f, "get_spans", [])]);
-	rendered = fmt("<font color=\"#EE4000\"><b>[Blob Telepathy] ＀</b> ＀</font>", [rt.sv(f, "real_name"), live(spanned_message)]);
-	M = null;
-	rt.forList(f, 0, rt.gl("mob_list"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if ((truthy((rt.istype(live(M), T("/mob/camera/blob")) ? 1 : 0)) || truthy((rt.istype(live(M), T("/mob/living/simple_animal/hostile/blob")) ? 1 : 0)))) {
-			rt.call(f, P("/proc/to_chat"), null, [live(M), live(rendered)]);
+	let M: Value = null, link: Value = null;
+	let spanned_message: Value = this.say_quote(msg, this.get_spans());
+	let rendered: Value = `<font color="#EE4000"><b>[Blob Telepathy] ${this.real_name}</b> ${spanned_message}</font>`;
+	for (M of each(GLOB.mob_list)) {
+		if (rt.istype(M, T("/mob/camera/blob")) || rt.istype(M, T("/mob/living/simple_animal/hostile/blob"))) {
+			to_chat(M, rendered);
 		}
-		if (truthy((rt.istype(live(M), T("/mob/dead/observer")) ? 1 : 0))) {
-			link = fmt("<a href=?src=＃;follow=＃>(F)</a>", [live(M), live(f.src)]);
-			rt.call(f, P("/proc/to_chat"), null, [live(M), fmt("＀ ＀", [live(link), live(rendered)])]);
+		if (rt.istype(M, T("/mob/dead/observer"))) {
+			link = fmt("<a href=?src=＃;follow=＃>(F)</a>", [M, this]);
+			to_chat(M, `${link} ${rendered}`);
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
@@ -170,120 +154,109 @@ rt.type(4858, "/mob/living/simple_animal/hostile/blob/blobspore", "/mob/living/s
 	gold_core_spawnable: 1,
 });
 
-// /mob/living/simple_animal/hostile/blob/blobspore/proc/Initialize  (code/game/gamemodes/blob/blobs/blob_mobs.dm:106)  may sleep
-rt.def("/mob/living/simple_animal/hostile/blob/blobspore/proc/Initialize", function* Initialize(f: Frame) {
-	if (truthy((rt.istype(live(f.args[1]), T("/obj/structure/blob/factory")) ? 1 : 0))) {
-		rt.setSv(f, "factory", live(f.args[1]));
-		rt.modField(f, rt.sv(f, "factory"), "spores", live(f.src), add);
+// blob_mobs.dm:106
+rt.def("/mob/living/simple_animal/hostile/blob/blobspore/proc/Initialize", function* Initialize(f: Frame, mapload: Value, linked_node: Value) {
+	if (rt.istype(linked_node, T("/obj/structure/blob/factory"))) {
+		this.factory = linked_node;
+		this.factory.spores += this;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["mapload", "linked_node"] });
+}, true);
 
-// /mob/living/simple_animal/hostile/blob/blobspore/proc/Life  (code/game/gamemodes/blob/blobs/blob_mobs.dm:112)  may sleep
+// blob_mobs.dm:112
 rt.def("/mob/living/simple_animal/hostile/blob/blobspore/proc/Life", function* Life(f: Frame) {
 	let H: Value = null;
-	let $e: any;
-	f.vars = () => [H, $e];
-	if ((!truthy(rt.sv(f, "is_zombie")) && truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.fv(f, "loc", live(f.src))]))))) {
-		H = null;
-		rt.forList(f, 0, (yield* g.call(f, P("/proc/view"), null, [live(f.src), 1])), T("/mob/living/carbon/human"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			H = $e;
-			if (isEqual(rt.fv(f, "stat", live(H)), 2)) {
-				yield* g.srcCall(f, "Zombify", live(H));
+	if (!this.is_zombie && isturf(this.loc)) {
+		for (H of each(view(this, 1), T("/mob/living/carbon/human"))) {
+			if (H.stat == 2) {
+				yield* this.Zombify(H);
 				break;
 			}
 		}
-		rt.endFor(f, 0);
 	}
-	if ((truthy(rt.sv(f, "factory")) && !isEqual(rt.sv(f, "z"), rt.fv(f, "z", rt.sv(f, "factory"))))) {
-		yield* g.srcCall(f, "death");
+	if (this.factory && this.z != this.factory.z) {
+		yield* this.death();
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true, { waitfor: false });
 
-// /mob/living/simple_animal/hostile/blob/blobspore/proc/Zombify  (code/game/gamemodes/blob/blobs/blob_mobs.dm:123)  may sleep
+// blob_mobs.dm:123
 rt.def("/mob/living/simple_animal/hostile/blob/blobspore/proc/Zombify", function* Zombify(f: Frame, H: Value) {
 	let A: Value = null;
-	f.vars = () => [H, A];
-	rt.setSv(f, "is_zombie", 1);
-	if (truthy(rt.fv(f, "wear_suit", live(H)))) {
-		if ((truthy(rt.gv(f, "armor", (A = rt.fv(f, "wear_suit", live(H))))) && truthy(rt.index(rt.fv(f, "armor", live(A)), "melee")))) {
-			rt.modSrcVar(f, "maxHealth", rt.index(rt.fv(f, "armor", live(A)), "melee"), add);
+	this.is_zombie = 1;
+	if (H.wear_suit) {
+		if ((A = H.wear_suit).armor && rt.index(A.armor, "melee")) {
+			this.maxHealth += rt.index(A.armor, "melee");
 		}
 	}
-	rt.setSv(f, "health", (rt.modSrcVar(f, "maxHealth", 40, add)));
-	rt.setSv(f, "name", "blob zombie");
-	rt.setSv(f, "desc", "A shambling corpse animated by the blob.");
-	rt.modSrcVar(f, "melee_damage_lower", 8, add);
-	rt.modSrcVar(f, "melee_damage_upper", 11, add);
-	rt.setSv(f, "movement_type", 1);
-	rt.setSv(f, "death_cloud_size", 0);
-	rt.setSv(f, "icon", rt.fv(f, "icon", live(H)));
-	rt.setSv(f, "icon_state", "zombie");
-	rt.setFv(f, "hair_style", live(H), null);
-	yield* g.callName(f, live(H), "update_hair", []);
-	yield* g.callName(f, live(H), "forceMove", [live(f.src)]);
-	rt.setSv(f, "oldguy", live(H));
-	yield* g.srcCall(f, "update_icons");
-	yield* g.srcCall(f, "visible_message", fmt("<span class='warning'>The corpse of ＀ suddenly rises!</span>", [rt.fv(f, "name", live(H))]));
+	this.health = (this.maxHealth += 40);
+	this.name = "blob zombie";
+	this.desc = "A shambling corpse animated by the blob.";
+	this.melee_damage_lower += 8;
+	this.melee_damage_upper += 11;
+	this.movement_type = 1;
+	this.death_cloud_size = 0;
+	this.icon = H.icon;
+	this.icon_state = "zombie";
+	H.hair_style = null;
+	yield* H.update_hair();
+	yield* H.forceMove(this);
+	this.oldguy = H;
+	yield* this.update_icons();
+	this.visible_message(`<span class='warning'>The corpse of ${H.name} suddenly rises!</span>`);
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/blob/blobspore/proc/death  (code/game/gamemodes/blob/blobs/blob_mobs.dm:146)  may sleep
-rt.def("/mob/living/simple_animal/hostile/blob/blobspore/proc/death", function* death(f: Frame) {
-	let S: Value = null, location: Value = null;
-	f.vars = () => [S, location];
-	S = (yield* g.new_(f, T("/datum/effect_system/smoke_spread/chem"), []));
-	location = rt.getStep(f, live(f.src), 0);
-	yield* g.srcCall(f, "create_reagents", 10);
-	if ((truthy(rt.sv(f, "overmind")) && truthy(rt.fv(f, "blob_reagent_datum", rt.sv(f, "overmind"))))) {
-		yield* g.callName(f, rt.sv(f, "reagents"), "add_reagent", [rt.gv(f, "id", rt.fv(f, "blob_reagent_datum", rt.sv(f, "overmind"))), 10]);
+// blob_mobs.dm:146
+rt.def("/mob/living/simple_animal/hostile/blob/blobspore/proc/death", function* death(f: Frame, gibbed: Value) {
+	let S: Value = (yield* new_(T("/datum/effect_system/smoke_spread/chem")));
+	let location: Value = rt.getStep(f, this, 0);
+	yield* this.create_reagents(10);
+	if (this.overmind && this.overmind.blob_reagent_datum) {
+		yield* this.reagents.add_reagent(this.overmind.blob_reagent_datum.id, 10);
 	} else {
-		yield* g.callName(f, rt.sv(f, "reagents"), "add_reagent", ["spore", 10]);
+		yield* this.reagents.add_reagent("spore", 10);
 	}
-	yield* g.callName(f, live(S), "attach", [live(location)]);
-	yield* g.callName(f, live(S), "set_up", [null, rt.sv(f, "reagents"), null, rt.sv(f, "death_cloud_size"), null, live(location), "silent", 1], rt.Args.Named);
-	yield* g.callName(f, live(S), "start", []);
-	if (truthy(rt.sv(f, "factory"))) {
-		rt.setFv(f, "spore_delay", rt.sv(f, "factory"), add(rt.worldTime(f), rt.fv(f, "spore_cooldown", rt.sv(f, "factory"))));
+	yield* S.attach(location);
+	yield* S.set_up(this.reagents, this.death_cloud_size, location, { silent: 1 });
+	yield* S.start();
+	if (this.factory) {
+		this.factory.spore_delay = rt.worldTime(f) + this.factory.spore_cooldown;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["gibbed"] });
+}, true);
 
-// /mob/living/simple_animal/hostile/blob/blobspore/proc/Destroy  (code/game/gamemodes/blob/blobs/blob_mobs.dm:168)  may sleep
+// blob_mobs.dm:168
 rt.def("/mob/living/simple_animal/hostile/blob/blobspore/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.sv(f, "factory"))) {
-		(rt.modField(f, rt.sv(f, "factory"), "spores", live(f.src), subtract));
+	if (this.factory) {
+		this.factory.spores -= this;
 	}
-	rt.setSv(f, "factory", null);
-	if (truthy(rt.sv(f, "oldguy"))) {
-		yield* g.callName(f, rt.sv(f, "oldguy"), "forceMove", [rt.getStep(f, live(f.src), 0)]);
-		rt.setSv(f, "oldguy", null);
+	this.factory = null;
+	if (this.oldguy) {
+		yield* this.oldguy.forceMove(rt.getStep(f, this, 0));
+		this.oldguy = null;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);
 
-// /mob/living/simple_animal/hostile/blob/blobspore/proc/update_icons  (code/game/gamemodes/blob/blobs/blob_mobs.dm:177)
+// blob_mobs.dm:177
 rt.def("/mob/living/simple_animal/hostile/blob/blobspore/proc/update_icons", function update_icons(f: Frame) {
-	let blob_head_overlay: Value = null;
-	f.vars = () => [blob_head_overlay];
-	if (truthy(rt.sv(f, "overmind"))) {
-		rt.callSrc(f, "add_atom_colour", [rt.gv(f, "complementary_color", rt.fv(f, "blob_reagent_datum", rt.sv(f, "overmind"))), 4]);
+	if (this.overmind) {
+		this.add_atom_colour(this.overmind.blob_reagent_datum.complementary_color, 4);
 	} else {
-		rt.callSrc(f, "remove_atom_colour", [4]);
+		this.remove_atom_colour(4);
 	}
-	if (!truthy(rt.sv(f, "is_zombie"))) return f.dot;
-	rt.callSrc(f, "copy_overlays", [rt.sv(f, "oldguy"), 1]);
-	blob_head_overlay = rt.call(f, P("/proc/mutable_appearance"), null, [rt.rsc("icons/mob/blob.dmi"), "blob_head"]);
-	if (truthy(rt.sv(f, "overmind"))) {
-		rt.setFv(f, "color", live(blob_head_overlay), rt.gv(f, "complementary_color", rt.fv(f, "blob_reagent_datum", rt.sv(f, "overmind"))));
+	if (!this.is_zombie) return f.dot;
+	this.copy_overlays(this.oldguy, 1);
+	let blob_head_overlay: Value = mutable_appearance(rt.rsc("icons/mob/blob.dmi"), "blob_head");
+	if (this.overmind) {
+		blob_head_overlay.color = this.overmind.blob_reagent_datum.complementary_color;
 	}
-	rt.setSv(f, "color", rt.initial(f, live(f.src), "color"));
-	rt.callSrc(f, "add_overlay", [live(blob_head_overlay)]);
+	this.color = rt.initial(f, this, "color");
+	this.add_overlay(blob_head_overlay);
 	return f.dot;
 });
 
@@ -313,111 +286,104 @@ rt.type(4856, "/mob/living/simple_animal/hostile/blob/blobbernaut", "/mob/living
 	lighting_alpha: 128,
 });
 
-// /mob/living/simple_animal/hostile/blob/blobbernaut/proc/<init>  (code/game/gamemodes/blob/blobs/blob_mobs.dm:208)
+// blob_mobs.dm:208
 rt.def("/mob/living/simple_animal/hostile/blob/blobbernaut/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "damage_coeff", rt.alist(f, ["brute", 0.5, "fire", 1, "tox", 1, "clone", 1, "stamina", 0, "oxy", 1]));
+	parent_proc();
+	this.damage_coeff = rt.alist(f, ["brute", 0.5, "fire", 1, "tox", 1, "clone", 1, "stamina", 0, "oxy", 1]);
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/blob/blobbernaut/proc/Initialize  (code/game/gamemodes/blob/blobs/blob_mobs.dm:226)  may sleep
+// blob_mobs.dm:226
 rt.def("/mob/living/simple_animal/hostile/blob/blobbernaut/proc/Initialize", function* Initialize(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.sv(f, "independent"))) return f.dot;
-	(rt.modSrcVar(f, "verbs", P("/mob/living/verb/pulled"), subtract));
+	yield* parent_proc();
+	if (this.independent) return f.dot;
+	this.verbs -= P("/mob/living/verb/pulled");
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/blob/blobbernaut/proc/Life  (code/game/gamemodes/blob/blobs/blob_mobs.dm:231)  may sleep
+// blob_mobs.dm:231
 rt.def("/mob/living/simple_animal/hostile/blob/blobbernaut/proc/Life", function* Life(f: Frame) {
-	let damagesources: Value = null, i: Value = null, I: Value = null;
+	let i: Value = null, I: Value = null;
 	let $e: any;
-	f.vars = () => [damagesources, i, I, $e];
-	if (!truthy((yield* g.callSuper(f, [], rt.Args.Same)))) return f.dot;
-	if (truthy(rt.sv(f, "independent"))) {
-		return live(f.dot);
+	if (!(yield* parent_proc())) return f.dot;
+	if (this.independent) {
+		return f.dot;
 	}
-	damagesources = 0;
-	if (!truthy(rt.locateIn(f, T("/obj/structure/blob"), (yield* g.call(f, P("/proc/range"), null, [2, live(f.src)]))))) {
-		damagesources = rt.inc(live(damagesources), 1);
+	let damagesources: Value = 0;
+	if (!rt.locateIn(f, T("/obj/structure/blob"), range(2, this))) {
+		damagesources++;
 	}
-	if (!truthy(rt.sv(f, "factory"))) {
-		damagesources = rt.inc(live(damagesources), 1);
+	if (!this.factory) {
+		damagesources++;
 	}
-	if (!truthy(live(damagesources))) return f.dot;
-	i = null;
-	rt.forRange(f, 0, 1, live(damagesources), 1);
+	if (!damagesources) return f.dot;
+	rt.forRange(f, 0, 1, damagesources, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.srcCall(f, "adjustHealth", multiply(rt.sv(f, "maxHealth"), 0.02500000037252903));
+		yield* this.adjustHealth(this.maxHealth * 0.025);
 	}
 	rt.endFor(f, 0);
-	rt.setFv(f, "appearance_flags", (I = (yield* g.new_(f, T("/image"), [rt.rsc("icons/mob/blob.dmi"), live(f.src), "nautdamage", 4.010000228881836]))), 2);
-	if (truthy(rt.sv(f, "overmind"))) {
-		rt.setFv(f, "color", live(I), rt.gv(f, "complementary_color", rt.fv(f, "blob_reagent_datum", rt.sv(f, "overmind"))));
+	(I = (yield* new_(T("/image"), rt.rsc("icons/mob/blob.dmi"), this, "nautdamage", 4.01))).appearance_flags = 2;
+	if (this.overmind) {
+		I.color = this.overmind.blob_reagent_datum.complementary_color;
 	}
-	yield* g.call(f, P("/proc/flick_overlay_view"), null, [live(I), live(f.src), 8]);
+	yield* flick_overlay_view(I, this, 8);
 	return f.dot;
 }, true, { waitfor: false });
 
-// /mob/living/simple_animal/hostile/blob/blobbernaut/proc/adjustHealth  (code/game/gamemodes/blob/blobs/blob_mobs.dm:249)  may sleep
+// blob_mobs.dm:249
 rt.def("/mob/living/simple_animal/hostile/blob/blobbernaut/proc/adjustHealth", function* adjustHealth(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 1;
 	}
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 0;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(live(f.args[1]))) return f.dot;
-	yield* g.srcCall(f, "update_health_hud");
+	f.dot = (yield* parent_proc());
+	if (!f.args[1]) return f.dot;
+	this.update_health_hud();
 	return f.dot;
 }, true, { args: ["amount", "updating_health", "forced"] });
 
-// /mob/living/simple_animal/hostile/blob/blobbernaut/proc/update_health_hud  (code/game/gamemodes/blob/blobs/blob_mobs.dm:255)
+// blob_mobs.dm:255
 rt.def("/mob/living/simple_animal/hostile/blob/blobbernaut/proc/update_health_hud", function update_health_hud(f: Frame) {
-	if (!truthy(rt.sv(f, "hud_used"))) return f.dot;
-	rt.setFv(f, "maptext", rt.fv(f, "healths", rt.sv(f, "hud_used")), fmt("<div align='center' valign='middle' style='position:relative; top:0px; left:6px'><font color='#e36600'>＀%</font></div>", [rt.call(f, P("/proc/round"), null, [multiply(divide(rt.sv(f, "health"), rt.sv(f, "maxHealth")), 100), 0.5])]));
+	if (!this.hud_used) return f.dot;
+	this.hud_used.healths.maptext = `<div align='center' valign='middle' style='position:relative; top:0px; left:6px'><font color='#e36600'>${round(this.health / this.maxHealth * 100, 0.5)}%</font></div>`;
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/blob/blobbernaut/proc/AttackingTarget  (code/game/gamemodes/blob/blobs/blob_mobs.dm:258)  may sleep
+// blob_mobs.dm:258
 rt.def("/mob/living/simple_animal/hostile/blob/blobbernaut/proc/AttackingTarget", function* AttackingTarget(f: Frame) {
-	let L: Value = null, mob_protection: Value = null;
-	f.vars = () => [L, mob_protection];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!((truthy(live(f.dot)) && truthy((rt.istype(rt.sv(f, "target"), T("/mob/living")) ? 1 : 0))) && truthy(rt.sv(f, "overmind")))) return f.dot;
-	L = rt.sv(f, "target");
-	mob_protection = (yield* g.callName(f, live(L), "get_permeability_protection", []));
-	yield* g.callName(f, rt.fv(f, "blob_reagent_datum", rt.sv(f, "overmind")), "reaction_mob", [live(L), 3, 20, 0, live(mob_protection), rt.sv(f, "overmind")]);
+	f.dot = (yield* parent_proc());
+	if (!(f.dot && rt.istype(this.target, T("/mob/living")) && this.overmind)) return f.dot;
+	let L: Value = this.target;
+	let mob_protection: Value = L.get_permeability_protection();
+	yield* this.overmind.blob_reagent_datum.reaction_mob(L, VAPOR, 20, 0, mob_protection, this.overmind);
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/blob/blobbernaut/proc/update_icons  (code/game/gamemodes/blob/blobs/blob_mobs.dm:265)
+// blob_mobs.dm:265
 rt.def("/mob/living/simple_animal/hostile/blob/blobbernaut/proc/update_icons", function update_icons(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.sv(f, "overmind"))) {
-		rt.setSv(f, "melee_damage_lower", 4);
-		rt.setSv(f, "melee_damage_upper", 4);
-		rt.setSv(f, "attacktext", rt.gv(f, "blobbernaut_message", rt.fv(f, "blob_reagent_datum", rt.sv(f, "overmind"))));
+	parent_proc();
+	if (this.overmind) {
+		this.melee_damage_lower = 4;
+		this.melee_damage_upper = 4;
+		this.attacktext = this.overmind.blob_reagent_datum.blobbernaut_message;
 	} else {
-		rt.setSv(f, "melee_damage_lower", rt.initial(f, live(f.src), "melee_damage_lower"));
-		rt.setSv(f, "melee_damage_upper", rt.initial(f, live(f.src), "melee_damage_upper"));
-		rt.setSv(f, "attacktext", rt.initial(f, live(f.src), "attacktext"));
+		this.melee_damage_lower = rt.initial(f, this, "melee_damage_lower");
+		this.melee_damage_upper = rt.initial(f, this, "melee_damage_upper");
+		this.attacktext = rt.initial(f, this, "attacktext");
 	}
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/blob/blobbernaut/proc/death  (code/game/gamemodes/blob/blobs/blob_mobs.dm:276)  may sleep
+// blob_mobs.dm:276
 rt.def("/mob/living/simple_animal/hostile/blob/blobbernaut/proc/death", function* death(f: Frame, gibbed: Value) {
-	f.vars = () => [gibbed];
-	yield* g.callSuper(f, [live(gibbed)]);
-	if (truthy(rt.sv(f, "factory"))) {
-		rt.setFv(f, "naut", rt.sv(f, "factory"), null);
-		rt.setFv(f, "max_integrity", rt.sv(f, "factory"), rt.initial(f, rt.sv(f, "factory"), "max_integrity"));
+	yield* parent_proc(gibbed);
+	if (this.factory) {
+		this.factory.naut = null;
+		this.factory.max_integrity = rt.initial(f, this.factory, "max_integrity");
 	}
-	yield* g.call(f, P("/proc/flick"), null, ["blobbernaut_death", live(f.src)]);
+	flick("blobbernaut_death", this);
 	return f.dot;
 }, true);

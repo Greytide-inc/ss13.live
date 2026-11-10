@@ -1,7 +1,7 @@
-// From code/datums/ruins.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/datums/ruins.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(756, "/datum/map_template/ruin", "/datum/map_template", {
@@ -14,12 +14,12 @@ rt.type(756, "/datum/map_template/ruin", "/datum/map_template", {
 	name: null,
 });
 
-// /datum/map_template/ruin/proc/New  (code/datums/ruins.dm:16)  may sleep
+// ruins.dm:16
 rt.def("/datum/map_template/ruin/proc/New", function* New(f: Frame) {
-	if ((!truthy(rt.sv(f, "name")) && truthy(rt.sv(f, "id")))) {
-		rt.setSv(f, "name", rt.sv(f, "id"));
+	if (!this.name && this.id) {
+		this.name = this.id;
 	}
-	rt.setSv(f, "mappath", add(rt.sv(f, "prefix"), rt.sv(f, "suffix")));
-	yield* g.callSuper(f, ["path", rt.sv(f, "mappath")], rt.Args.Named);
+	this.mappath = this.prefix + this.suffix;
+	yield* parent_proc({ path: this.mappath });
 	return f.dot;
 }, true);

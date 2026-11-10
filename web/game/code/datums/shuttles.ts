@@ -1,7 +1,7 @@
-// From code/datums/shuttles.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/datums/shuttles.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(822, "/datum/map_template/shuttle", "/datum/map_template", {
@@ -17,11 +17,11 @@ rt.type(822, "/datum/map_template/shuttle", "/datum/map_template", {
 	name: "Base Shuttle Template",
 });
 
-// /datum/map_template/shuttle/proc/New  (code/datums/shuttles.dm:20)  may sleep
+// shuttles.dm:20
 rt.def("/datum/map_template/shuttle/proc/New", function* New(f: Frame) {
-	rt.setSv(f, "shuttle_id", fmt("＀_＀", [rt.sv(f, "port_id"), rt.sv(f, "suffix")]));
-	rt.setSv(f, "mappath", fmt("＀＀.dmm", [rt.sv(f, "prefix"), rt.sv(f, "shuttle_id")]));
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	this.shuttle_id = `${this.port_id}_${this.suffix}`;
+	this.mappath = `${this.prefix}${this.shuttle_id}.dmm`;
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true);
 
@@ -33,16 +33,15 @@ rt.type(824, "/datum/map_template/shuttle/emergency/airless", "/datum/map_templa
 	name: "Build your own shuttle kit",
 });
 
-// /datum/map_template/shuttle/emergency/airless/proc/prerequisites_met  (code/datums/shuttles.dm:54)
+// shuttles.dm:54
 rt.def("/datum/map_template/shuttle/emergency/airless/proc/prerequisites_met", function prerequisites_met(f: Frame) {
-	return (rt.lt(subtract(rt.worldTime(f), rt.fv(f, "round_start_time", rt.gl("SSticker"))), 6000) ? 1 : 0);
+	return (rt.worldTime(f) - GLOB.SSticker.round_start_time < 6000 ? 1 : 0);
 });
 
-// /datum/map_template/shuttle/emergency/airless/proc/on_bought  (code/datums/shuttles.dm:58)
+// shuttles.dm:58
 rt.def("/datum/map_template/shuttle/emergency/airless/proc/on_bought", function on_bought(f: Frame) {
 	let _P: Value = null;
-	f.vars = () => [_P];
-	rt.setFv(f, "special_enabled", (_P = rt.index(rt.fv(f, "supply_packs", rt.gl("SSshuttle")), T("/datum/supply_pack/engineering/shuttle_engine"))), 1);
+	(_P = rt.index(GLOB.SSshuttle.supply_packs, T("/datum/supply_pack/engineering/shuttle_engine"))).special_enabled = 1;
 	return f.dot;
 });
 
@@ -54,9 +53,9 @@ rt.type(830, "/datum/map_template/shuttle/emergency/arena", "/datum/map_template
 	name: "The Arena",
 });
 
-// /datum/map_template/shuttle/emergency/arena/proc/prerequisites_met  (code/datums/shuttles.dm:106)
+// shuttles.dm:106
 rt.def("/datum/map_template/shuttle/emergency/arena/proc/prerequisites_met", function prerequisites_met(f: Frame) {
-	if (truthy((rt.isIn(f, "bubblegum", rt.fv(f, "shuttle_purchase_requirements_met", rt.gl("SSshuttle"))) ? 1 : 0))) {
+	if (rt.isIn(f, "bubblegum", GLOB.SSshuttle.shuttle_purchase_requirements_met)) {
 		return 1;
 	}
 	return 0;

@@ -1,7 +1,7 @@
-// From code/modules/mob/living/carbon/human/interactive.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/carbon/human/interactive.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, g, add } = rt;
 
 
 rt.type(4813, "/mob/living/carbon/human/interactive", "/mob/living/carbon/human", {
@@ -53,943 +53,835 @@ rt.type(4813, "/mob/living/carbon/human/interactive", "/mob/living/carbon/human"
 	faction: null,
 });
 
-// /mob/living/carbon/human/interactive/proc/<init>  (code/modules/mob/living/carbon/human/interactive.dm:40)
+// interactive.dm:40
 rt.def("/mob/living/carbon/human/interactive/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "nearby", rt.list());
-	$0 = $0;
-	rt.setSv(f, "blacklistItems", rt.list());
-	$0 = $0;
-	rt.setSv(f, "myPath", rt.list());
-	$0 = $0;
-	rt.setSv(f, "favoured_types", rt.list());
-	rt.setSv(f, "functions", rt.list("nearbyscan", "combat", "shitcurity", "chatter"));
-	$0 = $0;
-	rt.setSv(f, "knownStrings", rt.list());
-	$0 = $0;
-	rt.setSv(f, "faction", rt.list("synth"));
+	parent_proc();
+	this.nearby = list();
+
+	this.blacklistItems = list();
+
+	this.myPath = list();
+
+	this.favoured_types = list();
+	this.functions = list("nearbyscan", "combat", "shitcurity", "chatter");
+
+	this.knownStrings = list();
+
+	this.faction = list("synth");
 	return f.dot;
 });
 
-// /mob/living/carbon/human/interactive/proc/loadVoice  (code/modules/mob/living/carbon/human/interactive.dm:90)
+// interactive.dm:90
 rt.def("/mob/living/carbon/human/interactive/proc/loadVoice", function loadVoice(f: Frame) {
 	let S: Value = null;
-	f.vars = () => [S];
-	rt.setSv(f, "knownStrings", rt.input(f, rt.R.index, null, [(S = rt.new_(f, T("/savefile"), ["data/npc_saves/snpc.sav"])), "knownStrings"]));
-	if (rt.sv(f, "knownStrings") !== null) return f.dot;
-	rt.setSv(f, "knownStrings", rt.list());
+	this.knownStrings = rt.input(f, rt.R.index, null, [(S = new_(T("/savefile"), "data/npc_saves/snpc.sav")), "knownStrings"]);
+	if (this.knownStrings !== null) return f.dot;
+	this.knownStrings = list();
 	return f.dot;
 });
 
-// /mob/living/carbon/human/interactive/proc/saveVoice  (code/modules/mob/living/carbon/human/interactive.dm:99)
+// interactive.dm:99
 rt.def("/mob/living/carbon/human/interactive/proc/saveVoice", function saveVoice(f: Frame) {
 	let S: Value = null;
-	f.vars = () => [S];
-	if (truthy(rt.sv(f, "voice_saved"))) {
-		return live(f.dot);
+	if (this.voice_saved) {
+		return f.dot;
 	}
-	rt.op(f, "OutputReference", [rt.R.index], [(S = rt.new_(f, T("/savefile"), ["data/npc_saves/snpc.sav"])), "knownStrings", rt.sv(f, "knownStrings")], false);
+	rt.op(f, "OutputReference", [rt.R.index], [(S = new_(T("/savefile"), "data/npc_saves/snpc.sav")), "knownStrings", this.knownStrings], false);
 	return f.dot;
 });
 
-// /mob/living/carbon/human/interactive/proc/takeDelegate  (code/modules/mob/living/carbon/human/interactive.dm:104)
+// interactive.dm:104
 rt.def("/mob/living/carbon/human/interactive/proc/takeDelegate", function takeDelegate(f: Frame, from: Value, doReset: Value) {
-	f.vars = () => [doReset];
-	if (live(doReset) === null) {
-		doReset = 1;
-	}
-	rt.setSv(f, "eye_color", "red");
-	if (isEqual(live(from), live(f.src))) {
+	doReset ??= 1;
+	this.eye_color = "red";
+	if (from == this) {
 		return 0;
 	}
-	rt.setSv(f, "TARGET", rt.fv(f, "TARGET", live(from)));
-	rt.setSv(f, "LAST_TARGET", rt.fv(f, "LAST_TARGET", live(from)));
-	rt.setSv(f, "retal", rt.fv(f, "retal", live(from)));
-	rt.setSv(f, "retal_target", rt.fv(f, "retal_target", live(from)));
-	rt.setSv(f, "doing", rt.fv(f, "doing", live(from)));
-	rt.setSv(f, "timeout", 0);
-	rt.setSv(f, "inactivity_period", 0);
-	rt.setSv(f, "interest", rt.sv(f, "maxInterest"));
-	rt.callSrc(f, "update_icons", []);
-	if (truthy(live(doReset))) {
-		rt.setFv(f, "TARGET", live(from), null);
-		rt.setFv(f, "LAST_TARGET", live(from), null);
-		rt.setFv(f, "retal", live(from), 0);
-		rt.setFv(f, "retal_target", live(from), null);
-		rt.setFv(f, "doing", live(from), 0);
+	this.TARGET = from.TARGET;
+	this.LAST_TARGET = from.LAST_TARGET;
+	this.retal = from.retal;
+	this.retal_target = from.retal_target;
+	this.doing = from.doing;
+	this.timeout = 0;
+	this.inactivity_period = 0;
+	this.interest = this.maxInterest;
+	this.update_icons();
+	if (doReset) {
+		from.TARGET = null;
+		from.LAST_TARGET = null;
+		from.retal = 0;
+		from.retal_target = null;
+		from.doing = 0;
 	}
 	return 1;
 });
 
-// /mob/living/carbon/human/interactive/proc/random  (code/modules/mob/living/carbon/human/interactive.dm:130)  may sleep
+// interactive.dm:130
 rt.def("/mob/living/carbon/human/interactive/proc/random", function* random(f: Frame) {
-	rt.setSv(f, "age", (yield* g.call(f, P("/proc/rand"), null, [17, 85])));
-	rt.setSv(f, "myjob", (yield* g.new_(f, T("/datum/job/assistant"), [])));
-	rt.setSv(f, "job", rt.fv(f, "title", rt.sv(f, "myjob")));
-	yield* g.callName(f, rt.sv(f, "myjob"), "equip", [live(f.src)]);
+	this.age = rand(AGE_MIN, AGE_MAX);
+	this.myjob = (yield* new_(T("/datum/job/assistant")));
+	this.job = this.myjob.title;
+	yield* this.myjob.equip(this);
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/human/interactive/proc/attacked_by  (code/modules/mob/living/carbon/human/interactive.dm:137)  may sleep
-rt.def("/mob/living/carbon/human/interactive/proc/attacked_by", function* attacked_by(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "retal", 1);
-	rt.setSv(f, "retal_target", live(f.args[1]));
+// interactive.dm:137
+rt.def("/mob/living/carbon/human/interactive/proc/attacked_by", function* attacked_by(f: Frame, I: Value, user: Value, def_zone: Value) {
+	f.dot = (yield* parent_proc());
+	this.retal = 1;
+	this.retal_target = user;
 	return f.dot;
-}, true, { args: ["I", "user", "def_zone"] });
+}, true);
 
-// /mob/living/carbon/human/interactive/proc/bullet_act  (code/modules/mob/living/carbon/human/interactive.dm:142)  may sleep
+// interactive.dm:142
 rt.def("/mob/living/carbon/human/interactive/proc/bullet_act", function* bullet_act(f: Frame) {
 	let potentialAssault: Value = null;
-	f.vars = () => [potentialAssault];
-	if (truthy((potentialAssault = rt.locateIn(f, T("/mob/living"), (yield* g.call(f, P("/proc/view"), null, [2, rt.fv(f, "starting", live(f.args[0]))])))))) {
-		rt.setSv(f, "retal", 1);
-		rt.setSv(f, "retal_target", live(potentialAssault));
+	if (potentialAssault = rt.locateIn(f, T("/mob/living"), view(2, f.args[0].starting))) {
+		this.retal = 1;
+		this.retal_target = potentialAssault;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true, { args: ["P", "def_zone"] });
 
-// /client/proc/resetSNPC  (code/modules/mob/living/carbon/human/interactive.dm:153)
+// interactive.dm:153
 rt.def("/client/proc/resetSNPC", function resetSNPC(f: Frame, A: Value) {
 	let _T: Value = null;
-	f.vars = () => [_T];
-	if (!truthy(rt.sv(f, "holder"))) {
-		return live(f.dot);
+	if (!this.holder) {
+		return f.dot;
 	}
-	if (!truthy(live(A))) return f.dot;
-	if (!truthy((rt.istype(live(A), T("/mob/living/carbon/human/interactive")) ? 1 : 0))) {
-		return live(f.dot);
+	if (!A) return f.dot;
+	if (!rt.istype(A, T("/mob/living/carbon/human/interactive"))) {
+		return f.dot;
 	}
-	if (!truthy((_T = live(A)))) return f.dot;
-	rt.setFv(f, "timeout", live(_T), 100);
-	rt.setFv(f, "retal", live(_T), 0);
-	rt.setFv(f, "doing", live(_T), 0);
+	if (!(_T = A)) return f.dot;
+	_T.timeout = 100;
+	_T.retal = 0;
+	_T.doing = 0;
 	return f.dot;
 }, false, { verb: { name: "Reset SNPC", category: "Debug", desc: "Reset the SNPC" }, argTypes: [{ type: 8, path: "/mob", source: "?" }] });
 
-// /client/proc/customiseSNPC  (code/modules/mob/living/carbon/human/interactive.dm:170)  may sleep
+// interactive.dm:170
 rt.def("/client/proc/customiseSNPC", function* customiseSNPC(f: Frame, A: Value) {
-	let _T: Value = null, choice: Value = null, job: Value = null, j: Value = null, J: Value = null, W: Value = null, W_2: Value = null, validchoices: Value = null, M: Value = null, chosen: Value = null, toDoppel: Value = null, cType: Value = null, cjob: Value = null, W_3: Value = null, shouldDoppel: Value = null, validchoices_4: Value = null, M_5: Value = null, chosen_5: Value = null, toDoppel_6: Value = null, doTrait: Value = null, tType: Value = null, cType_6: Value = null, value: Value = null, doTele: Value = null;
+	let choice: Value = null, job: Value = null, j: Value = null, J: Value = null, W: Value = null, W_2: Value = null, validchoices: Value = null, M: Value = null, chosen: Value = null, toDoppel: Value = null, cType: Value = null, cjob: Value = null, W_3: Value = null, shouldDoppel: Value = null, validchoices_4: Value = null, M_5: Value = null, chosen_5: Value = null, toDoppel_6: Value = null, doTrait: Value = null, tType: Value = null, cType_6: Value = null, value: Value = null, doTele: Value = null;
 	let $0: any, $e: any;
-	f.vars = () => [A, _T, choice, job, j, J, W, W_2, validchoices, M, chosen, toDoppel, cType, cjob, W_3, shouldDoppel, validchoices_4, M_5, chosen_5, toDoppel_6, doTrait, tType, cType_6, value, doTele, $0, $e];
-	if (!truthy(rt.sv(f, "holder"))) {
-		return live(f.dot);
+	if (!this.holder) {
+		return f.dot;
 	}
-	if (!truthy(live(A))) return f.dot;
-	if (!truthy((rt.istype(live(A), T("/mob/living/carbon/human/interactive")) ? 1 : 0))) {
-		return live(f.dot);
+	if (!A) return f.dot;
+	if (!rt.istype(A, T("/mob/living/carbon/human/interactive"))) {
+		return f.dot;
 	}
-	_T = live(A);
-	if (!truthy((choice = (yield* g.op(f, "Prompt", [1], [null, null, null, "Customization Choices", rt.list("Service NPC", "Security NPC", "Random", "Custom")]))))) return f.dot;
-	if ((isEqual(live(choice), "Service NPC") || isEqual(live(choice), "Security NPC"))) {
-		if (isEqual(live(choice), "Service NPC")) {
-			$0 = rt.op(f, "PickUnweighted", [4], ["Bartender", "Cook", "Botanist", "Janitor"]);
+	let _T: Value = A;
+	if (!(choice = (yield* g.op(f, "Prompt", [1], [null, null, null, "Customization Choices", list("Service NPC", "Security NPC", "Random", "Custom")])))) return f.dot;
+	if (choice == "Service NPC" || choice == "Security NPC") {
+		if (choice == "Service NPC") {
+			$0 = pick("Bartender", "Cook", "Botanist", "Janitor");
 		} else {
-			$0 = rt.op(f, "PickUnweighted", [3], ["Warden", "Detective", "Security Officer"]);
+			$0 = pick("Warden", "Detective", "Security Officer");
 		}
 		job = $0;
-		j = null;
-		rt.forList(f, 0, rt.fv(f, "occupations", rt.gl("SSjob")));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			j = $e;
-			if (isEqual(rt.gv(f, "title", (J = live(j))), live(job))) {
-				rt.setFv(f, "myjob", live(_T), live(J));
-				rt.setFv(f, "job", live(_T), rt.gv(f, "title", rt.fv(f, "myjob", live(_T))));
+		for (j of each(GLOB.SSjob.occupations)) {
+			if ((J = j).title == job) {
+				_T.myjob = J;
+				_T.job = _T.myjob.title;
 				W = null;
-				rt.forList(f, 1, live(_T), T("/obj/item"));
-				while (($e = rt.next(f, 1)) !== undefined) {
-					W = $e;
-					yield* g.call(f, P("/proc/qdel"), null, [live(W)]);
+				for (W of each(_T, T("/obj/item"))) {
+					yield* qdel(W);
 				}
-				rt.endFor(f, 1);
-				yield* g.callName(f, rt.fv(f, "myjob", live(_T)), "equip", [live(_T)]);
-				yield* g.callName(f, live(_T), "doSetup", []);
+				yield* _T.myjob.equip(_T);
+				yield* _T.doSetup();
 				break;
 			}
 		}
-		rt.endFor(f, 0);
 	}
-	if (isEqual(live(choice), "Random")) {
-		rt.setFv(f, "myjob", live(_T), rt.op(f, "PickUnweighted", [1], [rt.fv(f, "occupations", rt.gl("SSjob"))]));
-		rt.setFv(f, "job", live(_T), rt.gv(f, "title", rt.fv(f, "myjob", live(_T))));
-		W_2 = null;
-		rt.forList(f, 0, live(_T), T("/obj/item"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			W_2 = $e;
-			yield* g.call(f, P("/proc/qdel"), null, [live(W_2)]);
+	if (choice == "Random") {
+		_T.myjob = pick(GLOB.SSjob.occupations);
+		_T.job = _T.myjob.title;
+		for (W_2 of each(_T, T("/obj/item"))) {
+			yield* qdel(W_2);
 		}
-		rt.endFor(f, 0);
-		yield* g.callName(f, rt.fv(f, "myjob", live(_T)), "equip", [live(_T)]);
-		yield* g.callName(f, live(_T), "doSetup", []);
-		if (truthy(rt.op(f, "Prob", [], [25]))) {
-			validchoices = rt.list();
-			M = null;
-			rt.forList(f, 0, rt.gl("mob_list"), T("/mob/living/carbon/human"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				M = $e;
-				validchoices = rt.modify(live(validchoices), live(M), add);
+		yield* _T.myjob.equip(_T);
+		yield* _T.doSetup();
+		if (prob(25)) {
+			validchoices = list();
+			for (M of each(GLOB.mob_list, T("/mob/living/carbon/human"))) {
+				validchoices += M;
 			}
-			rt.endFor(f, 0);
-			chosen = rt.op(f, "PickUnweighted", [1], [live(validchoices)]);
-			toDoppel = rt.fv(f, "dna", live(chosen));
-			rt.setFv(f, "real_name", live(_T), rt.fv(f, "real_name", live(toDoppel)));
-			yield* g.callName(f, live(toDoppel), "transfer_identity", [null, live(_T), "transfer_SE", 1], rt.Args.Named);
-			yield* g.callName(f, live(_T), "updateappearance", ["mutcolor_update", 1], rt.Args.Named);
-			yield* g.callName(f, live(_T), "domutcheck", []);
+			chosen = pick(validchoices);
+			toDoppel = chosen.dna;
+			_T.real_name = toDoppel.real_name;
+			yield* toDoppel.transfer_identity(_T, { transfer_SE: 1 });
+			yield* _T.updateappearance({ mutcolor_update: 1 });
+			yield* _T.domutcheck();
 		}
-		if (truthy(rt.op(f, "Prob", [], [25]))) {
-			cType = rt.op(f, "PickUnweighted", [1], [rt.list(1, 2, 3, 4)]);
-			yield* g.callName(f, live(_T), "makeTraitor", [live(cType)]);
+		if (prob(25)) {
+			cType = pick(list(SNPC_BRUTE, SNPC_STEALTH, SNPC_MARTYR, SNPC_PSYCHO));
+			yield* _T.makeTraitor(cType);
 		}
-		rt.setFv(f, "loc", live(_T), rt.op(f, "PickUnweighted", [1], [(yield* g.call(f, P("/proc/get_area_turfs"), null, [(yield* g.callName(f, live(_T), "job2area", [rt.fv(f, "myjob", live(_T))]))]))]));
+		_T.loc = pick(get_area_turfs(_T.job2area(_T.myjob)));
 	}
-	if (!isEqual(live(choice), "Custom")) return f.dot;
-	if (truthy((cjob = (yield* g.op(f, "Prompt", [1], [null, null, null, "Choose Job", rt.fv(f, "occupations", rt.gl("SSjob"))]))))) {
-		rt.setFv(f, "myjob", live(_T), live(cjob));
-		rt.setFv(f, "job", live(_T), rt.gv(f, "title", rt.fv(f, "myjob", live(_T))));
-		W_3 = null;
-		rt.forList(f, 0, live(_T), T("/obj/item"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			W_3 = $e;
-			yield* g.call(f, P("/proc/qdel"), null, [live(W_3)]);
+	if (choice != "Custom") return f.dot;
+	if (cjob = (yield* g.op(f, "Prompt", [1], [null, null, null, "Choose Job", GLOB.SSjob.occupations]))) {
+		_T.myjob = cjob;
+		_T.job = _T.myjob.title;
+		for (W_3 of each(_T, T("/obj/item"))) {
+			yield* qdel(W_3);
 		}
-		rt.endFor(f, 0);
-		yield* g.callName(f, rt.fv(f, "myjob", live(_T)), "equip", [live(_T)]);
-		yield* g.callName(f, live(_T), "doSetup", []);
+		yield* _T.myjob.equip(_T);
+		yield* _T.doSetup();
 	}
-	if (truthy((shouldDoppel = (yield* g.op(f, "Prompt", [1], [null, null, null, "Do you want the SNPC to disguise themself as a crewmember?", rt.list("Yes", "No")]))))) {
-		if (isEqual(live(shouldDoppel), "Yes")) {
-			validchoices_4 = rt.list();
-			M_5 = null;
-			rt.forList(f, 0, rt.gl("mob_list"), T("/mob/living/carbon/human"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				M_5 = $e;
-				validchoices_4 = rt.modify(live(validchoices_4), live(M_5), add);
+	if (shouldDoppel = (yield* g.op(f, "Prompt", [1], [null, null, null, "Do you want the SNPC to disguise themself as a crewmember?", list("Yes", "No")]))) {
+		if (shouldDoppel == "Yes") {
+			validchoices_4 = list();
+			for (M_5 of each(GLOB.mob_list, T("/mob/living/carbon/human"))) {
+				validchoices_4 += M_5;
 			}
-			rt.endFor(f, 0);
-			if (truthy((chosen_5 = (yield* g.op(f, "Prompt", [1], [null, null, null, "Which crewmember?", live(validchoices_4)]))))) {
-				toDoppel_6 = rt.fv(f, "dna", live(chosen_5));
-				rt.setFv(f, "real_name", live(_T), rt.fv(f, "real_name", live(toDoppel_6)));
-				yield* g.callName(f, live(toDoppel_6), "transfer_identity", [null, live(_T), "transfer_SE", 1], rt.Args.Named);
-				yield* g.callName(f, live(_T), "updateappearance", ["mutcolor_update", 1], rt.Args.Named);
-				yield* g.callName(f, live(_T), "domutcheck", []);
+			if (chosen_5 = (yield* g.op(f, "Prompt", [1], [null, null, null, "Which crewmember?", validchoices_4]))) {
+				toDoppel_6 = chosen_5.dna;
+				_T.real_name = toDoppel_6.real_name;
+				yield* toDoppel_6.transfer_identity(_T, { transfer_SE: 1 });
+				yield* _T.updateappearance({ mutcolor_update: 1 });
+				yield* _T.domutcheck();
 			}
 		}
 	}
-	if (truthy((doTrait = (yield* g.op(f, "Prompt", [1], [null, null, null, "Do you want the SNPC to be a traitor?", rt.list("Yes", "No")]))))) {
-		if (isEqual(live(doTrait), "Yes")) {
-			tType = rt.alist(f, ["Brute", 1, "Stealth", 2, "Martyr", 3, "Psycho", 4]);
-			if (truthy((cType_6 = (yield* g.op(f, "Prompt", [1], [null, null, null, "Choose the traitor personality.", live(tType)]))))) {
-				value = rt.index(live(tType), live(cType_6));
-				yield* g.callName(f, live(_T), "makeTraitor", [live(value)]);
+	if (doTrait = (yield* g.op(f, "Prompt", [1], [null, null, null, "Do you want the SNPC to be a traitor?", list("Yes", "No")]))) {
+		if (doTrait == "Yes") {
+			tType = rt.alist(f, ["Brute", 1, "Stealth", SNPC_STEALTH, "Martyr", SNPC_MARTYR, "Psycho", SNPC_PSYCHO]);
+			if (cType_6 = (yield* g.op(f, "Prompt", [1], [null, null, null, "Choose the traitor personality.", tType]))) {
+				value = rt.index(tType, cType_6);
+				yield* _T.makeTraitor(value);
 			}
 		}
 	}
-	if (!truthy((doTele = (yield* g.op(f, "Prompt", [1], [null, null, null, "Place the SNPC in their department?", rt.list("Yes", "No")]))))) return f.dot;
-	if (!isEqual(live(doTele), "Yes")) return f.dot;
-	rt.setFv(f, "loc", live(_T), rt.op(f, "PickUnweighted", [1], [(yield* g.call(f, P("/proc/get_area_turfs"), null, [(yield* g.callName(f, live(_T), "job2area", [rt.fv(f, "myjob", live(_T))]))]))]));
+	if (!(doTele = (yield* g.op(f, "Prompt", [1], [null, null, null, "Place the SNPC in their department?", list("Yes", "No")])))) return f.dot;
+	if (doTele != "Yes") return f.dot;
+	_T.loc = pick(get_area_turfs(_T.job2area(_T.myjob)));
 	return f.dot;
 }, true, { verb: { name: "Customize SNPC", category: "Debug", desc: "Customise the SNPC" }, argTypes: [{ type: 8, path: "/mob", source: "?" }] });
 
-// /mob/living/carbon/human/interactive/proc/doSetup  (code/modules/mob/living/carbon/human/interactive.dm:252)  may sleep
+// interactive.dm:252
 rt.def("/mob/living/carbon/human/interactive/proc/doSetup", function* doSetup(f: Frame) {
-	let C: Value = null, X: Value = null, BP: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [C, X, BP, $0, $e];
-	rt.setSv(f, "Path_ID", (yield* g.new_(f, T("/obj/item/weapon/card/id"), [live(f.src)])));
-	C = (yield* g.new_(f, T("/datum/job/captain"), []));
-	rt.setFv(f, "access", rt.sv(f, "Path_ID"), (yield* g.callName(f, live(C), "get_access", [])));
-	rt.setSv(f, "MYID", (yield* g.new_(f, T("/obj/item/weapon/card/id"), [live(f.src)])));
-	rt.setFv(f, "name", rt.sv(f, "MYID"), fmt("＀'s ID Card (＀)", [rt.fv(f, "real_name", live(f.src)), rt.fv(f, "title", rt.sv(f, "myjob"))]));
-	rt.setFv(f, "assignment", rt.sv(f, "MYID"), fmt("＀", [rt.fv(f, "title", rt.sv(f, "myjob"))]));
-	rt.setFv(f, "registered_name", rt.sv(f, "MYID"), rt.fv(f, "real_name", live(f.src)));
-	rt.setFv(f, "access", rt.sv(f, "MYID"), rt.fv(f, "access", rt.sv(f, "Path_ID")));
-	rt.setSv(f, "RPID", (yield* g.new_(f, T("/obj/item/weapon/card/id"), [live(f.src)])));
-	rt.setFv(f, "name", rt.sv(f, "RPID"), fmt("＀'s ID Card (＀)", [rt.fv(f, "real_name", live(f.src)), rt.fv(f, "title", rt.sv(f, "myjob"))]));
-	rt.setFv(f, "assignment", rt.sv(f, "RPID"), fmt("＀", [rt.fv(f, "title", rt.sv(f, "myjob"))]));
-	rt.setFv(f, "registered_name", rt.sv(f, "RPID"), rt.fv(f, "real_name", live(f.src)));
-	rt.setFv(f, "access", rt.sv(f, "RPID"), (yield* g.callName(f, rt.sv(f, "myjob"), "get_access", [])));
-	yield* g.srcCall(f, "equip_to_slot_or_del", rt.sv(f, "MYID"), 6);
-	rt.setSv(f, "MYPDA", (yield* g.new_(f, T("/obj/item/device/pda"), [live(f.src)])));
-	rt.setFv(f, "owner", rt.sv(f, "MYPDA"), rt.sv(f, "real_name"));
-	rt.setFv(f, "ownjob", rt.sv(f, "MYPDA"), "Crew");
-	rt.setFv(f, "name", rt.sv(f, "MYPDA"), fmt("PDA-＀ (＀)", [rt.sv(f, "real_name"), rt.fv(f, "title", rt.sv(f, "myjob"))]));
-	yield* g.srcCall(f, "equip_to_slot_or_del", rt.sv(f, "MYPDA"), 5);
-	rt.setSv(f, "zone_selected", "chest");
-	X = null;
-	rt.forList(f, 0, rt.sv(f, "bodyparts"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		X = $e;
-		BP = live(X);
-		if (truthy(rt.op(f, "Prob", [], [33.75]))) {
-			yield* g.callName(f, live(BP), "change_bodypart_status", [2, 0, 1]);
+	let X: Value = null, BP: Value = null;
+	let $e: any;
+	this.Path_ID = (yield* new_(T("/obj/item/weapon/card/id"), this));
+	let C: Value = (yield* new_(T("/datum/job/captain")));
+	this.Path_ID.access = C.get_access();
+	this.MYID = (yield* new_(T("/obj/item/weapon/card/id"), this));
+	this.MYID.name = `${this.real_name}'s ID Card (${this.myjob.title})`;
+	this.MYID.assignment = `${this.myjob.title}`;
+	this.MYID.registered_name = this.real_name;
+	this.MYID.access = this.Path_ID.access;
+	this.RPID = (yield* new_(T("/obj/item/weapon/card/id"), this));
+	this.RPID.name = `${this.real_name}'s ID Card (${this.myjob.title})`;
+	this.RPID.assignment = `${this.myjob.title}`;
+	this.RPID.registered_name = this.real_name;
+	this.RPID.access = this.myjob.get_access();
+	yield* this.equip_to_slot_or_del(this.MYID, slot_wear_id);
+	this.MYPDA = (yield* new_(T("/obj/item/device/pda"), this));
+	this.MYPDA.owner = this.real_name;
+	this.MYPDA.ownjob = "Crew";
+	this.MYPDA.name = `PDA-${this.real_name} (${this.myjob.title})`;
+	yield* this.equip_to_slot_or_del(this.MYPDA, slot_belt);
+	this.zone_selected = "chest";
+	for (X of each(this.bodyparts)) {
+		BP = X;
+		if (prob(33.75)) {
+			yield* BP.change_bodypart_status(BODYPART_ROBOTIC, 0, 1);
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.srcCall(f, "update_icons");
-	yield* g.srcCall(f, "update_damage_overlays");
-	rt.setSv(f, "functions", rt.list("nearbyscan", "combat", "shitcurity", "chatter"));
-	$0 = rt.fv(f, "title", rt.sv(f, "myjob"));
-	if ($0 === "Assistant") {
-		rt.setSv(f, "favoured_types", rt.list(T("/obj/item/clothing"), T("/obj/item/weapon")));
-	} else if ($0 === "Captain" || $0 === "Head of Personnel") {
-		rt.setSv(f, "favoured_types", rt.list(T("/obj/item/clothing"), T("/obj/item/weapon/stamp/captain"), T("/obj/item/weapon/disk/nuclear")));
-	} else if ($0 === "Cook") {
-		rt.setSv(f, "favoured_types", rt.list(T("/obj/item/weapon/reagent_containers/food"), T("/obj/item/weapon/kitchen")));
-		rt.modSrcVar(f, "functions", "souschef", add);
-		rt.setSv(f, "restrictedJob", 1);
-	} else if ($0 === "Bartender") {
-		rt.setSv(f, "favoured_types", rt.list(T("/obj/item/weapon/reagent_containers/food"), T("/obj/item/weapon/kitchen")));
-		rt.modSrcVar(f, "functions", "bartend", add);
-		rt.setSv(f, "restrictedJob", 1);
-	} else if ($0 === "Station Engineer" || $0 === "Chief Engineer" || $0 === "Atmospheric Technician") {
-		rt.setSv(f, "favoured_types", rt.list(T("/obj/item/stack"), T("/obj/item/weapon"), T("/obj/item/clothing")));
-	} else if ($0 === "Chief Medical Officer" || $0 === "Medical Doctor" || $0 === "Chemist" || $0 === "Virologist" || $0 === "Geneticist") {
-		rt.setSv(f, "favoured_types", rt.list(T("/obj/item/weapon/reagent_containers/glass/beaker"), T("/obj/item/weapon/storage/firstaid"), T("/obj/item/stack/medical"), T("/obj/item/weapon/reagent_containers/syringe")));
-		rt.modSrcVar(f, "functions", "healpeople", add);
-	} else if ($0 === "Research Director" || $0 === "Scientist" || $0 === "Roboticist") {
-		rt.setSv(f, "favoured_types", rt.list(T("/obj/item/weapon/reagent_containers/glass/beaker"), T("/obj/item/stack"), T("/obj/item/weapon/reagent_containers")));
-	} else if ($0 === "Head of Security" || $0 === "Warden" || $0 === "Security Officer" || $0 === "Detective") {
-		rt.setSv(f, "favoured_types", rt.list(T("/obj/item/clothing"), T("/obj/item/weapon"), T("/obj/item/weapon/restraints")));
-	} else if ($0 === "Janitor") {
-		rt.setSv(f, "favoured_types", rt.list(T("/obj/item/weapon/mop"), T("/obj/item/weapon/reagent_containers/glass/bucket"), T("/obj/item/weapon/reagent_containers/spray/cleaner"), T("/obj/effect/decal/cleanable")));
-		rt.modSrcVar(f, "functions", "dojanitor", add);
-	} else if ($0 === "Clown") {
-		rt.setSv(f, "favoured_types", rt.list(T("/obj/item/weapon/soap"), T("/obj/item/weapon/reagent_containers/food/snacks/grown/banana"), T("/obj/item/weapon/grown/bananapeel")));
-		rt.modSrcVar(f, "functions", "clowning", add);
-	} else if ($0 === "Mime") {
-		(rt.modSrcVar(f, "functions", "chatter", subtract));
-	} else if ($0 === "Botanist") {
-		rt.setSv(f, "favoured_types", rt.list(T("/obj/machinery/hydroponics"), T("/obj/item/weapon/reagent_containers"), T("/obj/item/weapon")));
-		rt.modSrcVar(f, "functions", "botany", add);
-		rt.setSv(f, "restrictedJob", 1);
+	yield* this.update_icons();
+	this.update_damage_overlays();
+	this.functions = list("nearbyscan", "combat", "shitcurity", "chatter");
+	if (this.myjob.title === "Assistant") {
+		this.favoured_types = list(T("/obj/item/clothing"), T("/obj/item/weapon"));
+	} else if (this.myjob.title === "Captain" || this.myjob.title === "Head of Personnel") {
+		this.favoured_types = list(T("/obj/item/clothing"), T("/obj/item/weapon/stamp/captain"), T("/obj/item/weapon/disk/nuclear"));
+	} else if (this.myjob.title === "Cook") {
+		this.favoured_types = list(T("/obj/item/weapon/reagent_containers/food"), T("/obj/item/weapon/kitchen"));
+		this.functions += "souschef";
+		this.restrictedJob = 1;
+	} else if (this.myjob.title === "Bartender") {
+		this.favoured_types = list(T("/obj/item/weapon/reagent_containers/food"), T("/obj/item/weapon/kitchen"));
+		this.functions += "bartend";
+		this.restrictedJob = 1;
+	} else if (this.myjob.title === "Station Engineer" || this.myjob.title === "Chief Engineer" || this.myjob.title === "Atmospheric Technician") {
+		this.favoured_types = list(T("/obj/item/stack"), T("/obj/item/weapon"), T("/obj/item/clothing"));
+	} else if (this.myjob.title === "Chief Medical Officer" || this.myjob.title === "Medical Doctor" || this.myjob.title === "Chemist" || this.myjob.title === "Virologist" || this.myjob.title === "Geneticist") {
+		this.favoured_types = list(T("/obj/item/weapon/reagent_containers/glass/beaker"), T("/obj/item/weapon/storage/firstaid"), T("/obj/item/stack/medical"), T("/obj/item/weapon/reagent_containers/syringe"));
+		this.functions += "healpeople";
+	} else if (this.myjob.title === "Research Director" || this.myjob.title === "Scientist" || this.myjob.title === "Roboticist") {
+		this.favoured_types = list(T("/obj/item/weapon/reagent_containers/glass/beaker"), T("/obj/item/stack"), T("/obj/item/weapon/reagent_containers"));
+	} else if (this.myjob.title === "Head of Security" || this.myjob.title === "Warden" || this.myjob.title === "Security Officer" || this.myjob.title === "Detective") {
+		this.favoured_types = list(T("/obj/item/clothing"), T("/obj/item/weapon"), T("/obj/item/weapon/restraints"));
+	} else if (this.myjob.title === "Janitor") {
+		this.favoured_types = list(T("/obj/item/weapon/mop"), T("/obj/item/weapon/reagent_containers/glass/bucket"), T("/obj/item/weapon/reagent_containers/spray/cleaner"), T("/obj/effect/decal/cleanable"));
+		this.functions += "dojanitor";
+	} else if (this.myjob.title === "Clown") {
+		this.favoured_types = list(T("/obj/item/weapon/soap"), T("/obj/item/weapon/reagent_containers/food/snacks/grown/banana"), T("/obj/item/weapon/grown/bananapeel"));
+		this.functions += "clowning";
+	} else if (this.myjob.title === "Mime") {
+		this.functions -= "chatter";
+	} else if (this.myjob.title === "Botanist") {
+		this.favoured_types = list(T("/obj/machinery/hydroponics"), T("/obj/item/weapon/reagent_containers"), T("/obj/item/weapon"));
+		this.functions += "botany";
+		this.restrictedJob = 1;
 	} else {
-		rt.setSv(f, "favoured_types", rt.list(T("/obj/item/clothing")));
+		this.favoured_types = list(T("/obj/item/clothing"));
 	}
-	if (truthy(rt.bitAnd(rt.sv(f, "TRAITS"), 2))) {
-		rt.setSv(f, "robustness", 75);
-	} else {
-		if (truthy(rt.bitAnd(rt.sv(f, "TRAITS"), 4))) {
-			rt.setSv(f, "robustness", 25);
-		}
+	if (rt.bitAnd(this.TRAITS, TRAIT_ROBUST)) {
+		this.robustness = 75;
+	} else if (rt.bitAnd(this.TRAITS, TRAIT_UNROBUST)) {
+		this.robustness = 25;
 	}
-	if (truthy(rt.bitAnd(rt.sv(f, "TRAITS"), 8))) {
-		rt.setSv(f, "smartness", 75);
-	} else {
-		if (truthy(rt.bitAnd(rt.sv(f, "TRAITS"), 16))) {
-			(rt.modSrcVar(f, "disabilities", 256, rt.bitOr));
-			rt.setSv(f, "smartness", 25);
-		}
+	if (rt.bitAnd(this.TRAITS, TRAIT_SMART)) {
+		this.smartness = 75;
+	} else if (rt.bitAnd(this.TRAITS, TRAIT_DUMB)) {
+		(rt.modSrcVar(f, "disabilities", 256, rt.bitOr));
+		this.smartness = 25;
 	}
-	if (truthy(rt.bitAnd(rt.sv(f, "TRAITS"), 32))) {
-		rt.setSv(f, "attitude", 75);
-	} else {
-		if (truthy(rt.bitAnd(rt.sv(f, "TRAITS"), 64))) {
-			rt.setSv(f, "attitude", 1);
-		}
+	if (rt.bitAnd(this.TRAITS, TRAIT_MEAN)) {
+		this.attitude = 75;
+	} else if (rt.bitAnd(this.TRAITS, TRAIT_FRIENDLY)) {
+		this.attitude = 1;
 	}
-	if (!truthy(rt.bitAnd(rt.sv(f, "TRAITS"), 128))) return f.dot;
-	rt.setSv(f, "slyness", 75);
+	if (!rt.bitAnd(this.TRAITS, TRAIT_THIEVING)) return f.dot;
+	this.slyness = 75;
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/human/interactive/proc/makeTraitor  (code/modules/mob/living/carbon/human/interactive.dm:346)  may sleep
+// interactive.dm:346
 rt.def("/mob/living/carbon/human/interactive/proc/makeTraitor", function* makeTraitor(f: Frame, inPers: Value) {
 	let A: Value = null, S: Value = null, targetType: Value = null;
-	let $0: any;
-	f.vars = () => [inPers, A, S, targetType, $0];
-	rt.setSv(f, "isTraitor", 1);
-	rt.setSv(f, "traitorScale", add(add(rt.sv(f, "slyness"), rt.sv(f, "smartness")), (yield* g.call(f, P("/proc/rand"), null, [-10, 10]))));
-	rt.setSv(f, "traitorType", live(inPers));
-	$0 = rt.sv(f, "traitorType");
-	if ($0 === 1) {
-		rt.setSv(f, "traitorTarget", rt.op(f, "PickUnweighted", [1], [rt.gl("mob_list")]));
-	} else if ($0 === 2) {
-		A = rt.op(f, "PickUnweighted", [1], [subtract((yield* g.call(f, P("/proc/typesof"), null, [T("/datum/objective_item/steal")])), T("/datum/objective_item/steal"))]);
-		rt.setSv(f, "traitorTarget", rt.locateIn(f, rt.gv(f, "targetitem", (S = (yield* g.new_(f, live(A), [])))), rt.world()));
-	} else if ($0 === 3) {
-		rt.setSv(f, "traitorTarget", rt.locateIn(f, (targetType = rt.op(f, "PickUnweighted", [3], [T("/obj/machinery/gravity_generator/main/station"), T("/obj/machinery/power/smes/engineering"), T("/obj/machinery/telecomms/hub")])), rt.gl("machines")));
-	} else if ($0 === 4) {
-		rt.setSv(f, "traitorTarget", null);
+	this.isTraitor = 1;
+	this.traitorScale = this.slyness + this.smartness + rand(-10, 10);
+	this.traitorType = inPers;
+	if (this.traitorType === SNPC_BRUTE) {
+		this.traitorTarget = pick(GLOB.mob_list);
+	} else if (this.traitorType === SNPC_STEALTH) {
+		A = pick(typesof(T("/datum/objective_item/steal")) - T("/datum/objective_item/steal"));
+		this.traitorTarget = rt.locateIn(f, (S = (yield* new_(A))).targetitem, rt.world());
+	} else if (this.traitorType === SNPC_MARTYR) {
+		this.traitorTarget = rt.locateIn(f, (targetType = pick(T("/obj/machinery/gravity_generator/main/station"), T("/obj/machinery/power/smes/engineering"), T("/obj/machinery/telecomms/hub"))), GLOB.machines);
+	} else if (this.traitorType === SNPC_PSYCHO) {
+		this.traitorTarget = null;
 	}
-	rt.modSrcVar(f, "functions", "traitor", add);
-	(rt.modSrcVar(f, "faction", "neutral", subtract));
-	rt.modSrcVar(f, "faction", "hostile", add);
+	this.functions += "traitor";
+	this.faction -= "neutral";
+	this.faction += "hostile";
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/human/interactive/proc/Initialize  (code/modules/mob/living/carbon/human/interactive.dm:367)  may sleep
+// interactive.dm:367
 rt.def("/mob/living/carbon/human/interactive/proc/Initialize", function* Initialize(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "set_species", T("/datum/species/synth"));
-	yield* g.srcCall(f, "random");
-	yield* g.srcCall(f, "doSetup");
-	if (!truthy(rt.fv(f, "isprocessing", live(f.src)))) {
-		rt.setFv(f, "isprocessing", live(f.src), 1);
-		rt.modField(f, rt.gl("SSnpcpool"), "processing", live(f.src), add);
+	yield* parent_proc();
+	yield* this.set_species(T("/datum/species/synth"));
+	yield* this.random();
+	yield* this.doSetup();
+	if (!this.isprocessing) {
+		this.isprocessing = 1;
+		GLOB.SSnpcpool.processing += this;
 	}
-	yield* g.srcCall(f, "loadVoice");
-	rt.modSrcVar(f, "robustness", (yield* g.call(f, P("/proc/rand"), null, [-10, 10])), add);
-	rt.modSrcVar(f, "smartness", (yield* g.call(f, P("/proc/rand"), null, [-10, 10])), add);
-	rt.modSrcVar(f, "attitude", (yield* g.call(f, P("/proc/rand"), null, [-10, 10])), add);
-	rt.modSrcVar(f, "slyness", (yield* g.call(f, P("/proc/rand"), null, [-10, 10])), add);
+	this.loadVoice();
+	this.robustness += rand(-10, 10);
+	this.smartness += rand(-10, 10);
+	this.attitude += rand(-10, 10);
+	this.slyness += rand(-10, 10);
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/human/interactive/proc/Destroy  (code/modules/mob/living/carbon/human/interactive.dm:386)  may sleep
+// interactive.dm:386
 rt.def("/mob/living/carbon/human/interactive/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.callName(f, rt.gl("SSnpcpool"), "stop_processing", [live(f.src)]);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	GLOB.SSnpcpool.stop_processing(this);
+	return (yield* parent_proc());
 }, true);
 
-// /mob/living/carbon/human/interactive/proc/retalTarget  (code/modules/mob/living/carbon/human/interactive.dm:390)  may sleep
+// interactive.dm:390
 rt.def("/mob/living/carbon/human/interactive/proc/retalTarget", function* retalTarget(f: Frame, target: Value) {
-	let M: Value = null;
-	f.vars = () => [target, M];
-	M = live(target);
-	if (!truthy(live(target))) return f.dot;
-	if (!rt.gt(rt.sv(f, "health"), 0)) return f.dot;
-	if (isEqual(rt.fv(f, "a_intent", live(M)), "help")) {
-		yield* g.srcCall(f, "chatter");
+	let M: Value = target;
+	if (!target) return f.dot;
+	if (!(this.health > 0)) return f.dot;
+	if (M.a_intent == "help") {
+		yield* this.chatter();
 	}
-	if (!isEqual(rt.fv(f, "a_intent", live(M)), "harm")) return f.dot;
-	rt.setSv(f, "retal", 1);
-	rt.setSv(f, "retal_target", live(target));
+	if (M.a_intent != "harm") return f.dot;
+	this.retal = 1;
+	this.retal_target = target;
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/human/interactive/proc/hitby  (code/modules/mob/living/carbon/human/interactive.dm:402)  may sleep
+// interactive.dm:402
 rt.def("/mob/living/carbon/human/interactive/proc/hitby", function* hitby(f: Frame, AM: Value, skipcatch: Value, hitpush: Value, blocked: Value) {
 	let C: Value = null;
-	f.vars = () => [AM, skipcatch, hitpush, blocked, C];
-	yield* g.callSuper(f, [live(AM), live(skipcatch), live(hitpush), live(blocked)]);
-	if (!truthy((C = rt.locateIn(f, T("/mob/living/carbon"), (yield* g.call(f, P("/proc/view"), null, [16, live(f.src)])))))) return f.dot;
-	yield* g.srcCall(f, "retalTarget", live(C));
+	yield* parent_proc(AM, skipcatch, hitpush, blocked);
+	if (!(C = rt.locateIn(f, T("/mob/living/carbon"), view(MIN_RANGE_FIND, this)))) return f.dot;
+	yield* this.retalTarget(C);
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/human/interactive/proc/attack_hand  (code/modules/mob/living/carbon/human/interactive.dm:408)  may sleep
+// interactive.dm:408
 rt.def("/mob/living/carbon/human/interactive/proc/attack_hand", function* attack_hand(f: Frame, M: Value) {
-	f.vars = () => [M];
-	yield* g.callSuper(f, [live(M)]);
-	yield* g.srcCall(f, "retalTarget", live(M));
+	yield* parent_proc(M);
+	yield* this.retalTarget(M);
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/human/interactive/proc/show_inv  (code/modules/mob/living/carbon/human/interactive.dm:412)  may sleep
+// interactive.dm:412
 rt.def("/mob/living/carbon/human/interactive/proc/show_inv", function* show_inv(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.callSuper(f, [live(user)]);
-	yield* g.srcCall(f, "retalTarget", live(user));
+	yield* parent_proc(user);
+	yield* this.retalTarget(user);
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/human/interactive/proc/can_inject  (code/modules/mob/living/carbon/human/interactive.dm:416)  may sleep
+// interactive.dm:416
 rt.def("/mob/living/carbon/human/interactive/proc/can_inject", function* can_inject(f: Frame, user: Value, error_msg: Value, target_zone: Value, penetrate_thick: Value) {
-	f.vars = () => [user, error_msg, target_zone, penetrate_thick];
-	if (live(penetrate_thick) === null) {
-		penetrate_thick = 0;
-	}
-	yield* g.callSuper(f, [live(user), live(error_msg), live(target_zone), live(penetrate_thick)]);
-	yield* g.srcCall(f, "retalTarget", live(user));
+	penetrate_thick ??= 0;
+	yield* parent_proc(user, error_msg, target_zone, penetrate_thick);
+	yield* this.retalTarget(user);
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/human/interactive/proc/doing2string  (code/modules/mob/living/carbon/human/interactive.dm:422)
+// interactive.dm:422
 rt.def("/mob/living/carbon/human/interactive/proc/doing2string", function doing2string(f: Frame, doin: Value) {
-	let toReturn: Value = null;
-	f.vars = () => [toReturn];
-	toReturn = "";
-	if (!truthy(live(doin))) {
+	let toReturn: Value = "";
+	if (!doin) {
 		toReturn = "not doing anything";
 	}
-	if (truthy(rt.bitAnd(live(doin), 2))) {
-		toReturn = rt.modify(live(toReturn), "interacting with something, ", add);
+	if (rt.bitAnd(doin, INTERACTING)) {
+		toReturn += "interacting with something, ";
 	}
-	if (truthy(rt.bitAnd(live(doin), 8))) {
-		toReturn = rt.modify(live(toReturn), "engaging in combat, ", add);
+	if (rt.bitAnd(doin, FIGHTING)) {
+		toReturn += "engaging in combat, ";
 	}
-	if (truthy(rt.bitAnd(live(doin), 4))) {
-		toReturn = rt.modify(live(toReturn), "and going somewhere", add);
+	if (rt.bitAnd(doin, TRAVEL)) {
+		toReturn += "and going somewhere";
 	}
-	return live(toReturn);
+	return toReturn;
 });
 
-// /mob/living/carbon/human/interactive/proc/interest2string  (code/modules/mob/living/carbon/human/interactive.dm:434)
+// interactive.dm:434
 rt.def("/mob/living/carbon/human/interactive/proc/interest2string", function interest2string(f: Frame, inter: Value) {
-	let toReturn: Value = null;
-	f.vars = () => [toReturn];
-	toReturn = "Flatlined";
-	if ((rt.ge(live(inter), 0) && rt.le(live(inter), 25))) {
+	let toReturn: Value = "Flatlined";
+	if (inter >= 0 && inter <= 25) {
 		toReturn = "Very Bored";
 	}
-	if ((rt.ge(live(inter), 26) && rt.le(live(inter), 50))) {
+	if (inter >= 26 && inter <= 50) {
 		toReturn = "Bored";
 	}
-	if ((rt.ge(live(inter), 51) && rt.le(live(inter), 75))) {
+	if (inter >= 51 && inter <= 75) {
 		toReturn = "Content";
 	}
-	if (rt.ge(live(inter), 76)) {
+	if (inter >= 76) {
 		toReturn = "Excited";
 	}
-	return live(toReturn);
+	return toReturn;
 });
 
-// /mob/living/carbon/human/interactive/proc/IsDeadOrIncap  (code/modules/mob/living/carbon/human/interactive.dm:447)
+// interactive.dm:447
 rt.def("/mob/living/carbon/human/interactive/proc/IsDeadOrIncap", function IsDeadOrIncap(f: Frame, checkDead: Value) {
-	f.vars = () => [checkDead];
-	if (live(checkDead) === null) {
-		checkDead = 1;
-	}
-	if (!truthy(rt.sv(f, "canmove"))) {
+	checkDead ??= 1;
+	if (!this.canmove) {
 		return 1;
 	}
-	if ((rt.le(rt.sv(f, "health"), 0) && truthy(live(checkDead)))) {
+	if (this.health <= 0 && checkDead) {
 		return 1;
 	}
-	if (truthy(rt.callSrc(f, "restrained", []))) {
+	if (this.restrained()) {
 		return 1;
 	}
-	if (truthy(rt.callSrc(f, "IsUnconscious", []))) {
+	if (this.IsUnconscious()) {
 		return 1;
 	}
-	if (truthy(rt.callSrc(f, "IsStun", []))) {
+	if (this.IsStun()) {
 		return 1;
 	}
-	if (truthy(rt.sv(f, "stat"))) {
+	if (this.stat) {
 		return 1;
 	}
-	if (rt.gt(rt.sv(f, "inactivity_period"), 0)) {
+	if (this.inactivity_period > 0) {
 		return 1;
 	}
 	return 0;
 });
 
-// /mob/living/carbon/human/interactive/proc/enforce_hands  (code/modules/mob/living/carbon/human/interactive.dm:465)
+// interactive.dm:465
 rt.def("/mob/living/carbon/human/interactive/proc/enforce_hands", function enforce_hands(f: Frame) {
-	let L: Value = null, R: Value = null;
-	f.vars = () => [L, R];
-	if (truthy(rt.sv(f, "main_hand"))) {
-		if (!isEqual(rt.fv(f, "loc", rt.sv(f, "main_hand")), live(f.src))) {
-			rt.setSv(f, "main_hand", null);
+	if (this.main_hand) {
+		if (this.main_hand.loc != this) {
+			this.main_hand = null;
 		}
 	}
-	if (truthy(rt.sv(f, "other_hand"))) {
-		if (!isEqual(rt.fv(f, "loc", rt.sv(f, "other_hand")), live(f.src))) {
-			rt.setSv(f, "other_hand", null);
+	if (this.other_hand) {
+		if (this.other_hand.loc != this) {
+			this.other_hand = null;
 		}
 	}
-	L = rt.callSrc(f, "get_item_for_held_index", [1]);
-	R = rt.callSrc(f, "get_item_for_held_index", [2]);
-	if (isEqual(rt.sv(f, "active_hand_index"), 1)) {
-		if (!truthy(live(L))) {
-			rt.setSv(f, "main_hand", null);
-			if (truthy(live(R))) {
-				rt.callSrc(f, "swap_hands", []);
+	let L: Value = this.get_item_for_held_index(1);
+	let R: Value = this.get_item_for_held_index(2);
+	if (this.active_hand_index == 1) {
+		if (!L) {
+			this.main_hand = null;
+			if (R) {
+				this.swap_hands();
 			}
 		}
 	} else {
-		if (truthy(live(R))) return f.dot;
-		rt.setSv(f, "main_hand", null);
-		if (!truthy(live(L))) return f.dot;
-		rt.callSrc(f, "swap_hands", []);
+		if (R) return f.dot;
+		this.main_hand = null;
+		if (!L) return f.dot;
+		this.swap_hands();
 	}
 	return f.dot;
 });
 
-// /mob/living/carbon/human/interactive/proc/swap_hands  (code/modules/mob/living/carbon/human/interactive.dm:486)
+// interactive.dm:486
 rt.def("/mob/living/carbon/human/interactive/proc/swap_hands", function swap_hands(f: Frame) {
-	let oindex: Value = null;
-	f.vars = () => [oindex];
-	oindex = rt.sv(f, "active_hand_index");
-	if (isEqual(rt.sv(f, "active_hand_index"), 1)) {
-		rt.setSv(f, "active_hand_index", 2);
+	let oindex: Value = this.active_hand_index;
+	if (this.active_hand_index == 1) {
+		this.active_hand_index = 2;
 	} else {
-		rt.setSv(f, "active_hand_index", 1);
+		this.active_hand_index = 1;
 	}
-	rt.setSv(f, "main_hand", rt.callSrc(f, "get_active_held_item", []));
-	rt.setSv(f, "other_hand", rt.callSrc(f, "get_item_for_held_index", [live(oindex)]));
-	rt.setSv(f, "update_hands", 1);
+	this.main_hand = this.get_active_held_item();
+	this.other_hand = this.get_item_for_held_index(oindex);
+	this.update_hands = 1;
 	return f.dot;
 });
 
-// /mob/living/carbon/human/interactive/proc/take_to_slot  (code/modules/mob/living/carbon/human/interactive.dm:496)  may sleep
+// interactive.dm:496
 rt.def("/mob/living/carbon/human/interactive/proc/take_to_slot", function* take_to_slot(f: Frame, G: Value, hands: Value) {
-	let slots: Value = null;
-	f.vars = () => [G, hands, slots];
-	if (live(hands) === null) {
-		hands = 0;
+	hands ??= 0;
+	let slots: Value = rt.alist(f, ["left pocket", slot_l_store, "right pocket", slot_r_store, "left hand", slot_hands, "right hand", slot_hands]);
+	if (hands) {
+		slots = rt.alist(f, ["left hand", slot_hands, "right hand", slot_hands]);
 	}
-	slots = rt.alist(f, ["left pocket", 15, "right pocket", 16, "left hand", 4, "right hand", 4]);
-	if (truthy(live(hands))) {
-		slots = rt.alist(f, ["left hand", 4, "right hand", 4]);
+	G.loc = this;
+	if (G.force && G.force > this.best_force) {
+		this.best_force = G.force;
 	}
-	rt.setFv(f, "loc", live(G), live(f.src));
-	if ((truthy(rt.fv(f, "force", live(G))) && rt.gt(rt.fv(f, "force", live(G)), rt.sv(f, "best_force")))) {
-		rt.setSv(f, "best_force", rt.fv(f, "force", live(G)));
-	}
-	yield* g.srcCall(f, "equip_in_one_of_slots", live(G), live(slots));
-	rt.setSv(f, "update_hands", 1);
+	yield* this.equip_in_one_of_slots(G, slots);
+	this.update_hands = 1;
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/human/interactive/proc/insert_into_backpack  (code/modules/mob/living/carbon/human/interactive.dm:506)  may sleep
+// interactive.dm:506
 rt.def("/mob/living/carbon/human/interactive/proc/insert_into_backpack", function* insert_into_backpack(f: Frame) {
-	let slots: Value = null, I: Value = null, BP: Value = null;
-	f.vars = () => [slots, I, BP];
-	slots = rt.alist(f, ["left pocket", 15, "right pocket", 16, "left hand", 4, "right hand", 4]);
-	I = (yield* g.srcCall(f, "get_item_by_slot", rt.op(f, "PickUnweighted", [1], [live(slots)])));
-	BP = (yield* g.srcCall(f, "get_item_by_slot", 1));
-	if (((truthy(rt.sv(f, "back")) && truthy(live(BP))) && truthy(live(I)))) {
-		if (truthy((yield* g.callName(f, live(BP), "can_be_inserted", [live(I), 0])))) {
-			yield* g.callName(f, live(BP), "handle_item_insertion", [live(I), 0]);
+	let slots: Value = rt.alist(f, ["left pocket", slot_l_store, "right pocket", slot_r_store, "left hand", slot_hands, "right hand", slot_hands]);
+	let I: Value = this.get_item_by_slot(pick(slots));
+	let BP: Value = this.get_item_by_slot(slot_back);
+	if (this.back && BP && I) {
+		if (BP.can_be_inserted(I, 0)) {
+			yield* BP.handle_item_insertion(I, 0);
 		}
 	} else {
-		yield* g.srcCall(f, "dropItemToGround", live(I), 1);
+		yield* this.dropItemToGround(I, 1);
 	}
-	rt.setSv(f, "update_hands", 1);
+	this.update_hands = 1;
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/human/interactive/proc/targetRange  (code/modules/mob/living/carbon/human/interactive.dm:517)
+// interactive.dm:517
 rt.def("/mob/living/carbon/human/interactive/proc/targetRange", function targetRange(f: Frame, towhere: Value) {
-	return rt.call(f, P("/proc/get_dist"), null, [rt.getStep(f, live(towhere), 0), rt.getStep(f, live(f.src), 0)]);
+	return get_dist(rt.getStep(f, towhere, 0), rt.getStep(f, this, 0));
 });
 
-// /mob/living/carbon/human/interactive/proc/InteractiveProcess  (code/modules/mob/living/carbon/human/interactive.dm:520)
+// interactive.dm:520
 rt.def("/mob/living/carbon/human/interactive/proc/InteractiveProcess", function InteractiveProcess(f: Frame) {
-	if (isEqual(rt.fv(f, "current_state", rt.gl("SSticker")), 4)) {
-		rt.callSrc(f, "saveVoice", []);
+	if (GLOB.SSticker.current_state == GAME_STATE_FINISHED) {
+		this.saveVoice();
 	}
-	rt.callSrc(f, "doProcess", []);
+	this.doProcess();
 	return f.dot;
 });
 
-// /mob/living/carbon/human/interactive/proc/death  (code/modules/mob/living/carbon/human/interactive.dm:525)  may sleep
+// interactive.dm:525
 rt.def("/mob/living/carbon/human/interactive/proc/death", function* death(f: Frame) {
-	yield* g.srcCall(f, "saveVoice");
-	yield* g.callSuper(f, [], rt.Args.Same);
+	this.saveVoice();
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/human/interactive/proc/Hear  (code/modules/mob/living/carbon/human/interactive.dm:529)  may sleep
-rt.def("/mob/living/carbon/human/interactive/proc/Hear", function* Hear(f: Frame) {
-	if (!isEqual(live(f.args[1]), live(f.src))) {
-		(rt.modSrcVar(f, "knownStrings", (yield* g.call(f, P("/proc/html_decode"), null, [live(f.args[3])])), rt.bitOr));
+// interactive.dm:529
+rt.def("/mob/living/carbon/human/interactive/proc/Hear", function* Hear(f: Frame, message: Value, speaker: Value, message_langs: Value, raw_message: Value, radio_freq: Value, spans: Value, message_mode: Value) {
+	if (speaker != this) {
+		(rt.modSrcVar(f, "knownStrings", html_decode(raw_message), rt.bitOr));
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["message", "speaker", "message_langs", "raw_message", "radio_freq", "spans", "message_mode"] });
+}, true);
 
-// /mob/living/carbon/human/interactive/proc/doProcess  (code/modules/mob/living/carbon/human/interactive.dm:537)  may sleep
+// interactive.dm:537
 rt.def("/mob/living/carbon/human/interactive/proc/doProcess", function* doProcess(f: Frame) {
 	let dir: Value = null, _T: Value = null, D: Value = null, AL: Value = null, l_hand: Value = null, r_hand: Value = null, Proc: Value = null, D_0: Value = null, W: Value = null, STR: Value = null, W_1: Value = null, choice: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [dir, _T, D, AL, l_hand, r_hand, Proc, D_0, W, STR, W_1, choice, $0, $e];
-	if ((rt.lt(rt.sv(f, "interest"), 0) || rt.lt(rt.sv(f, "inactivity_period"), 0))) {
-		if (rt.lt(rt.sv(f, "interest"), 0)) {
-			rt.setSv(f, "interest", 0);
+	let $e: any;
+	if (this.interest < 0 || this.inactivity_period < 0) {
+		if (this.interest < 0) {
+			this.interest = 0;
 		}
-		if (rt.lt(rt.sv(f, "inactivity_period"), 0)) {
-			rt.setSv(f, "inactivity_period", 0);
+		if (this.inactivity_period < 0) {
+			this.inactivity_period = 0;
 		}
 	}
-	if (rt.gt(rt.sv(f, "interest"), rt.sv(f, "maxInterest"))) {
-		rt.setSv(f, "interest", rt.sv(f, "maxInterest"));
+	if (this.interest > this.maxInterest) {
+		this.interest = this.maxInterest;
 	}
-	dir = null;
-	rt.forList(f, 0, rt.gl("alldirs"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		dir = $e;
-		if (truthy((_T = rt.getStep(f, live(f.src), live(dir))))) {
+	for (dir of each(GLOB.alldirs)) {
+		if (_T = rt.getStep(f, this, dir)) {
 			D = null;
-			rt.forList(f, 1, rt.fv(f, "contents", live(_T)), T("/obj/machinery/door"));
-			while (($e = rt.next(f, 1)) !== undefined) {
-				D = $e;
-				if ((!truthy((rt.istype(live(D), T("/obj/machinery/door/poddoor")) ? 1 : 0)) && truthy(rt.fv(f, "density", live(D))))) {
-					if (truthy((rt.istype(live(D), T("/obj/machinery/door/airlock")) ? 1 : 0))) {
-						if (!truthy((yield* g.callName(f, (AL = live(D)), "CanAStarPass", [rt.sv(f, "RPID")])))) {
-							rt.setSv(f, "inactivity_period", 20);
-							rt.setFv(f, "panel_open", live(AL), 1);
-							yield* g.callName(f, live(AL), "update_icon", []);
-							yield* g.callName(f, live(AL), "shock", [live(f.src), divide(subtract(100, rt.sv(f, "smartness")), 2)]);
-							yield* g.call(f, P("/proc/sleep"), null, [5]);
-							if ((!truthy(live(AL)) || truthy(rt.fv(f, "gc_destroyed", live(AL))))) {
-								return live(f.dot);
+			for (D of each(_T.contents, T("/obj/machinery/door"))) {
+				if (!rt.istype(D, T("/obj/machinery/door/poddoor")) && D.density) {
+					if (rt.istype(D, T("/obj/machinery/door/airlock"))) {
+						if (!(AL = D).CanAStarPass(this.RPID)) {
+							this.inactivity_period = 20;
+							AL.panel_open = 1;
+							yield* AL.update_icon();
+							yield* AL.shock(this, (100 - this.smartness) / 2);
+							yield* sleep(5);
+							if (!AL || AL.gc_destroyed) {
+								return f.dot;
 							}
-							yield* g.callName(f, live(AL), "unbolt", []);
-							if (!truthy((yield* g.callName(f, rt.fv(f, "wires", live(AL)), "is_cut", ["Bolts"])))) {
-								yield* g.callName(f, rt.fv(f, "wires", live(AL)), "cut", ["Bolts"]);
+							AL.unbolt();
+							if (!AL.wires.is_cut("Bolts")) {
+								yield* AL.wires.cut("Bolts");
 							}
-							if (!truthy((yield* g.callName(f, rt.fv(f, "wires", live(AL)), "is_cut", ["Main Power 1"])))) {
-								yield* g.callName(f, rt.fv(f, "wires", live(AL)), "cut", ["Main Power 1"]);
+							if (!AL.wires.is_cut("Main Power 1")) {
+								yield* AL.wires.cut("Main Power 1");
 							}
-							if (!truthy((yield* g.callName(f, rt.fv(f, "wires", live(AL)), "is_cut", ["Main Power 2"])))) {
-								yield* g.callName(f, rt.fv(f, "wires", live(AL)), "cut", ["Main Power 2"]);
+							if (!AL.wires.is_cut("Main Power 2")) {
+								yield* AL.wires.cut("Main Power 2");
 							}
-							yield* g.call(f, P("/proc/sleep"), null, [5]);
-							if ((!truthy(live(AL)) || truthy(rt.fv(f, "gc_destroyed", live(AL))))) {
-								return live(f.dot);
+							yield* sleep(5);
+							if (!AL || AL.gc_destroyed) {
+								return f.dot;
 							}
-							rt.setFv(f, "panel_open", live(AL), 0);
-							yield* g.callName(f, live(AL), "update_icon", []);
-							yield* g.callName(f, live(D), "open", [2]);
+							AL.panel_open = 0;
+							yield* AL.update_icon();
+							yield* D.open(2);
 						} else {
-							yield* g.callName(f, live(D), "open", []);
+							yield* D.open();
 						}
 					} else {
-						yield* g.callName(f, live(D), "open", []);
+						yield* D.open();
 					}
 				}
 			}
-			rt.endFor(f, 1);
 		}
 	}
-	rt.endFor(f, 0);
-	if (truthy(rt.sv(f, "update_hands"))) {
-		l_hand = (yield* g.srcCall(f, "get_item_for_held_index", 1));
-		r_hand = (yield* g.srcCall(f, "get_item_for_held_index", 2));
-		if ((truthy(live(l_hand)) || truthy(live(r_hand)))) {
-			if (truthy(live(l_hand))) {
-				rt.setSv(f, "active_hand_index", 1);
-				rt.setSv(f, "main_hand", live(l_hand));
-				if (truthy(live(r_hand))) {
-					rt.setSv(f, "other_hand", live(r_hand));
+	if (this.update_hands) {
+		l_hand = this.get_item_for_held_index(1);
+		r_hand = this.get_item_for_held_index(2);
+		if (l_hand || r_hand) {
+			if (l_hand) {
+				this.active_hand_index = 1;
+				this.main_hand = l_hand;
+				if (r_hand) {
+					this.other_hand = r_hand;
 				}
-			} else {
-				if (truthy(live(r_hand))) {
-					rt.setSv(f, "active_hand_index", 2);
-					rt.setSv(f, "main_hand", live(r_hand));
-					if (truthy(live(l_hand))) {
-						rt.setSv(f, "other_hand", live(l_hand));
-					}
+			} else if (r_hand) {
+				this.active_hand_index = 2;
+				this.main_hand = r_hand;
+				if (l_hand) {
+					this.other_hand = l_hand;
 				}
 			}
-			yield* g.srcCall(f, "update_icons");
+			yield* this.update_icons();
 		}
-		rt.setSv(f, "update_hands", 0);
+		this.update_hands = 0;
 	}
-	if (truthy(rt.sv(f, "pulledby"))) {
-		if (truthy((yield* g.srcCall(f, "Adjacent", rt.sv(f, "pulledby"))))) {
-			rt.setSv(f, "a_intent", "disarm");
-			yield* g.callName(f, rt.sv(f, "pulledby"), "attack_hand", [live(f.src)]);
-			rt.setSv(f, "inactivity_period", 10);
-		}
-	}
-	if (truthy(rt.sv(f, "buckled"))) {
-		yield* g.srcCall(f, "resist");
-		rt.setSv(f, "inactivity_period", 10);
-	}
-	Proc = null;
-	rt.forList(f, 0, rt.sv(f, "functions"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		Proc = $e;
-		if (!truthy((yield* g.srcCall(f, "IsDeadOrIncap")))) {
-			yield* g.call(f, P("/proc/ImmediateInvokeAsync"), null, [live(f.src), live(Proc)]);
+	if (this.pulledby) {
+		if (this.Adjacent(this.pulledby)) {
+			this.a_intent = "disarm";
+			yield* this.pulledby.attack_hand(this);
+			this.inactivity_period = 10;
 		}
 	}
-	rt.endFor(f, 0);
-	if (truthy(rt.sv(f, "TARGET"))) {
-		if (truthy((rt.isIn(f, rt.sv(f, "TARGET"), rt.sv(f, "blacklistItems")) ? 1 : 0))) {
-			rt.setSv(f, "TARGET", null);
+	if (this.buckled) {
+		yield* this.resist();
+		this.inactivity_period = 10;
+	}
+	for (Proc of each(this.functions)) {
+		if (!this.IsDeadOrIncap()) {
+			yield* ImmediateInvokeAsync(this, Proc);
 		}
 	}
-	if ((truthy(rt.sv(f, "TARGET")) && truthy((yield* g.srcCall(f, "Adjacent", rt.sv(f, "TARGET")))))) {
-		(rt.modSrcVar(f, "doing", 2, rt.bitOr));
-		if (truthy((rt.istype(rt.sv(f, "TARGET"), T("/obj/machinery/door")) ? 1 : 0))) {
-			if ((truthy((yield* g.callName(f, (D_0 = rt.sv(f, "TARGET")), "check_access", [rt.sv(f, "MYID")]))) && !truthy((rt.istype(live(D_0), T("/obj/machinery/door/poddoor")) ? 1 : 0)))) {
-				rt.setSv(f, "inactivity_period", 10);
-				yield* g.callName(f, live(D_0), "open", []);
-				yield* g.srcCall(f, "tryWalk", (_T = rt.getStep(f, rt.getStep(f, rt.fv(f, "loc", live(D_0)), rt.sv(f, "dir")), rt.sv(f, "dir"))));
+	if (this.TARGET) {
+		if (rt.isIn(f, this.TARGET, this.blacklistItems)) {
+			this.TARGET = null;
+		}
+	}
+	if (this.TARGET && this.Adjacent(this.TARGET)) {
+		(rt.modSrcVar(f, "doing", INTERACTING, rt.bitOr));
+		if (rt.istype(this.TARGET, T("/obj/machinery/door"))) {
+			if ((D_0 = this.TARGET).check_access(this.MYID) && !rt.istype(D_0, T("/obj/machinery/door/poddoor"))) {
+				this.inactivity_period = 10;
+				yield* D_0.open();
+				yield* this.tryWalk((_T = rt.getStep(f, rt.getStep(f, D_0.loc, this.dir), this.dir)));
 			}
 		}
-		if (truthy((rt.isIn(f, (!truthy(rt.sv(f, "TARGET")) ? 1 : 0), rt.sv(f, "blacklistItems")) ? 1 : 0))) {
-			yield* g.srcCall(f, "insert_into_backpack");
-			if (truthy((rt.istype(rt.sv(f, "TARGET"), T("/obj/item")) ? 1 : 0))) {
-				if (truthy((rt.istype(rt.sv(f, "TARGET"), T("/obj/item/weapon")) ? 1 : 0))) {
-					if ((rt.ge(rt.gv(f, "force", (W = rt.sv(f, "TARGET"))), rt.sv(f, "best_force")) || truthy(rt.op(f, "Prob", [], [67.5])))) {
-						if ((!truthy((yield* g.srcCall(f, "get_item_for_held_index", 1))) || !truthy((yield* g.srcCall(f, "get_item_for_held_index", 2))))) {
-							yield* g.srcCall(f, "put_in_hands", live(W));
+		if (rt.isIn(f, (!this.TARGET ? 1 : 0), this.blacklistItems)) {
+			yield* this.insert_into_backpack();
+			if (rt.istype(this.TARGET, T("/obj/item"))) {
+				if (rt.istype(this.TARGET, T("/obj/item/weapon"))) {
+					if ((W = this.TARGET).force >= this.best_force || prob(67.5)) {
+						if (!this.get_item_for_held_index(1) || !this.get_item_for_held_index(2)) {
+							yield* this.put_in_hands(W);
 						} else {
-							yield* g.srcCall(f, "insert_into_backpack");
+							yield* this.insert_into_backpack();
 						}
 					}
+				} else if (!this.get_item_for_held_index(1) || !this.get_item_for_held_index(2)) {
+					yield* this.put_in_hands(this.TARGET);
 				} else {
-					if ((!truthy((yield* g.srcCall(f, "get_item_for_held_index", 1))) || !truthy((yield* g.srcCall(f, "get_item_for_held_index", 2))))) {
-						yield* g.srcCall(f, "put_in_hands", rt.sv(f, "TARGET"));
-					} else {
-						yield* g.srcCall(f, "insert_into_backpack");
-					}
+					yield* this.insert_into_backpack();
 				}
 			}
-			if (truthy((rt.istype(rt.sv(f, "TARGET"), T("/obj/item/clothing")) ? 1 : 0))) {
-				yield* g.srcCall(f, "drop_item");
-				yield* g.srcCall(f, "dressup", rt.sv(f, "TARGET"));
-				rt.setSv(f, "update_hands", 1);
-				if (truthy((rt.isIn(f, (rt.isIn(f, rt.sv(f, "MYPDA"), (rt.fv(f, "loc", live(f.src)) || rt.sv(f, "MYID"))) ? 1 : 0), rt.fv(f, "loc", live(f.src))) ? 1 : 0))) {
-					if (truthy((rt.isIn(f, rt.sv(f, "MYPDA"), rt.fv(f, "loc", live(f.src))) ? 1 : 0))) {
-						yield* g.srcCall(f, "equip_to_appropriate_slot", rt.sv(f, "MYPDA"));
+			if (rt.istype(this.TARGET, T("/obj/item/clothing"))) {
+				yield* this.drop_item();
+				yield* this.dressup(this.TARGET);
+				this.update_hands = 1;
+				if (rt.isIn(f, (rt.isIn(f, this.MYPDA, (this.loc || this.MYID)) ? 1 : 0), this.loc)) {
+					if (rt.isIn(f, this.MYPDA, this.loc)) {
+						yield* this.equip_to_appropriate_slot(this.MYPDA);
 					}
-					if (truthy((rt.isIn(f, rt.sv(f, "MYID"), rt.fv(f, "loc", live(f.src))) ? 1 : 0))) {
-						yield* g.srcCall(f, "equip_to_appropriate_slot", rt.sv(f, "MYID"));
+					if (rt.isIn(f, this.MYID, this.loc)) {
+						yield* this.equip_to_appropriate_slot(this.MYID);
 					}
 				}
 			}
 		}
-		if (truthy((rt.istype(rt.sv(f, "TARGET"), T("/obj/structure")) ? 1 : 0))) {
-			STR = rt.sv(f, "TARGET");
-			if (truthy(rt.sv(f, "main_hand"))) {
-				W_1 = rt.sv(f, "main_hand");
-				yield* g.callName(f, live(STR), "attackby", [live(W_1), live(f.src)]);
+		if (rt.istype(this.TARGET, T("/obj/structure"))) {
+			STR = this.TARGET;
+			if (this.main_hand) {
+				W_1 = this.main_hand;
+				yield* STR.attackby(W_1, this);
 			} else {
-				yield* g.callName(f, live(STR), "attack_hand", [live(f.src)]);
+				yield* STR.attack_hand(this);
 			}
 		}
-		rt.modSrcVar(f, "interest", rt.sv(f, "targetInterestShift"), add);
-		rt.setSv(f, "doing", rt.bitAnd(rt.sv(f, "doing"), 16777213));
-		rt.setSv(f, "timeout", 0);
-		rt.setSv(f, "TARGET", null);
+		this.interest += this.targetInterestShift;
+		this.doing = rt.bitAnd(this.doing, 16777213);
+		this.timeout = 0;
+		this.TARGET = null;
+	} else if (this.TARGET) {
+		yield* this.tryWalk(this.TARGET);
+		this.timeout++;
+	}
+	if (this.doing == 0) {
+		this.interest--;
 	} else {
-		if (truthy(rt.sv(f, "TARGET"))) {
-			yield* g.srcCall(f, "tryWalk", rt.sv(f, "TARGET"));
-			rt.incSrcVar(f, "timeout", 1, true);
-		}
+		this.interest++;
 	}
-	if (isEqual(rt.sv(f, "doing"), 0)) {
-		rt.incSrcVar(f, "interest", -1, true);
-	} else {
-		rt.incSrcVar(f, "interest", 1, true);
+	if (this.inactivity_period > 0) {
+		this.inactivity_period--;
 	}
-	if (rt.gt(rt.sv(f, "inactivity_period"), 0)) {
-		rt.incSrcVar(f, "inactivity_period", -1, true);
+	if (this.interest <= 0 || this.timeout >= 10) {
+		this.TARGET = null;
+		this.doing = 0;
+		this.timeout = 0;
+		this.myPath = list();
 	}
-	if ((rt.le(rt.sv(f, "interest"), 0) || rt.ge(rt.sv(f, "timeout"), 10))) {
-		rt.setSv(f, "TARGET", null);
-		rt.setSv(f, "doing", 0);
-		rt.setSv(f, "timeout", 0);
-		rt.setSv(f, "myPath", rt.list());
-	}
-	if (((!truthy(rt.sv(f, "doing")) && !truthy((yield* g.srcCall(f, "IsDeadOrIncap")))) && !truthy(rt.sv(f, "TARGET")))) {
-		(rt.modSrcVar(f, "doing", 4, rt.bitOr));
-		if ((!truthy(rt.sv(f, "isTraitor")) || !truthy(rt.sv(f, "traitorTarget")))) {
-			$0 = (choice = (yield* g.call(f, P("/proc/rand"), null, [1, 50])));
-			if (rt.inRange($0, 1, 30)) {
-				rt.setSv(f, "TARGET", rt.locateIn(f, T("/obj/item"), (yield* g.srcCall(f, "favouredObjIn", (yield* g.call(f, P("/proc/oview"), null, [16, live(f.src)]))))));
-			} else if (rt.inRange($0, 31, 40)) {
-				rt.setSv(f, "TARGET", (yield* g.call(f, P("/proc/safepick"), null, [(yield* g.call(f, P("/proc/get_area_turfs"), null, [(yield* g.srcCall(f, "job2area", rt.sv(f, "myjob")))]))])));
-			} else if (rt.inRange($0, 41, 45)) {
-				rt.setSv(f, "TARGET", rt.op(f, "PickUnweighted", [1], [(yield* g.srcCall(f, "target_filter", (yield* g.srcCall(f, "favouredObjIn", (yield* g.call(f, P("/proc/urange"), null, [32, live(f.src), 1]))))))]));
-			} else if (rt.inRange($0, 46, 50)) {
-				rt.setSv(f, "TARGET", rt.op(f, "PickUnweighted", [1], [(yield* g.srcCall(f, "target_filter", (yield* g.call(f, P("/proc/oview"), null, [16, live(f.src)]))))]));
+	if (!this.doing && !this.IsDeadOrIncap() && !this.TARGET) {
+		(rt.modSrcVar(f, "doing", TRAVEL, rt.bitOr));
+		if (!this.isTraitor || !this.traitorTarget) {
+			const subject = (choice = rand(1, 50));
+			if (rt.inRange(subject, 1, 30)) {
+				this.TARGET = rt.locateIn(f, T("/obj/item"), this.favouredObjIn(oview(MIN_RANGE_FIND, this)));
+			} else if (rt.inRange(subject, 31, 40)) {
+				this.TARGET = safepick(get_area_turfs(this.job2area(this.myjob)));
+			} else if (rt.inRange(subject, 41, 45)) {
+				this.TARGET = pick(this.target_filter(this.favouredObjIn(urange(MAX_RANGE_FIND, this, 1))));
+			} else if (rt.inRange(subject, 46, 50)) {
+				this.TARGET = pick(this.target_filter(oview(MIN_RANGE_FIND, this)));
 			}
-		} else {
-			if ((truthy(rt.sv(f, "isTraitor")) && truthy(rt.sv(f, "traitorTarget")))) {
-				rt.setSv(f, "TARGET", rt.sv(f, "traitorTarget"));
-			}
+		} else if (this.isTraitor && this.traitorTarget) {
+			this.TARGET = this.traitorTarget;
 		}
-		yield* g.srcCall(f, "tryWalk", rt.sv(f, "TARGET"));
+		yield* this.tryWalk(this.TARGET);
 	}
-	rt.setSv(f, "LAST_TARGET", rt.sv(f, "TARGET"));
+	this.LAST_TARGET = this.TARGET;
 	return f.dot;
 }, true, { waitfor: false });
 
-// /mob/living/carbon/human/interactive/proc/dressup  (code/modules/mob/living/carbon/human/interactive.dm:713)  may sleep
+// interactive.dm:713
 rt.def("/mob/living/carbon/human/interactive/proc/dressup", function* dressup(f: Frame, C: Value) {
 	let I: Value = null;
-	f.vars = () => [C, I];
-	rt.setSv(f, "inactivity_period", 12);
-	yield* g.call(f, P("/proc/sleep"), null, [5]);
-	if (!(!(!truthy(live(C)) || truthy(rt.fv(f, "gc_destroyed", live(C)))) && !(!truthy(live(f.src)) || truthy(rt.fv(f, "gc_destroyed", live(f.src)))))) return f.dot;
-	yield* g.srcCall(f, "take_to_slot", live(C), 1);
-	if (truthy((yield* g.srcCall(f, "equip_to_appropriate_slot", live(C))))) return f.dot;
-	yield* g.srcCall(f, "dropItemToGround", (I = (yield* g.srcCall(f, "get_item_by_slot", live(C)))));
-	yield* g.call(f, P("/proc/sleep"), null, [5]);
-	if (!(!(!truthy(live(f.src)) || truthy(rt.fv(f, "gc_destroyed", live(f.src)))) && !(!truthy(live(C)) || truthy(rt.fv(f, "gc_destroyed", live(C)))))) return f.dot;
-	yield* g.srcCall(f, "equip_to_appropriate_slot", live(C));
+	this.inactivity_period = 12;
+	yield* sleep(5);
+	if (!(!(!C || C.gc_destroyed) && !(!this || this.gc_destroyed))) return f.dot;
+	yield* this.take_to_slot(C, 1);
+	if (yield* this.equip_to_appropriate_slot(C)) return f.dot;
+	yield* this.dropItemToGround((I = this.get_item_by_slot(C)));
+	yield* sleep(5);
+	if (!(!(!this || this.gc_destroyed) && !(!C || C.gc_destroyed))) return f.dot;
+	yield* this.equip_to_appropriate_slot(C);
 	return f.dot;
 }, true, { waitfor: false });
 
-// /mob/living/carbon/human/interactive/proc/favouredObjIn  (code/modules/mob/living/carbon/human/interactive.dm:724)
+// interactive.dm:724
 rt.def("/mob/living/carbon/human/interactive/proc/favouredObjIn", function favouredObjIn(f: Frame, inList: Value) {
-	let outList: Value = null, i: Value = null, path: Value = null;
-	let $e: any;
-	f.vars = () => [outList, i, path, $e];
-	outList = rt.list();
-	i = null;
-	rt.forList(f, 0, live(inList));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		i = $e;
+	let i: Value = null, path: Value = null;
+	let outList: Value = list();
+	for (i of each(inList)) {
 		path = null;
-		rt.forList(f, 1, rt.sv(f, "favoured_types"));
-		while (($e = rt.next(f, 1)) !== undefined) {
-			path = $e;
-			if (truthy(rt.call(f, P("/proc/ispath"), null, [live(i), live(path)]))) {
-				outList = rt.modify(live(outList), live(i), add);
+		for (path of each(this.favoured_types)) {
+			if (ispath(i, path)) {
+				outList += i;
 			}
 		}
-		rt.endFor(f, 1);
 	}
-	rt.endFor(f, 0);
-	if (rt.le(rt.len(f, live(outList)), 0)) {
-		outList = live(inList);
+	if (rt.len(f, outList) <= 0) {
+		outList = inList;
 	}
-	return live(outList);
+	return outList;
 });
 
-// /mob/living/carbon/human/interactive/proc/tryWalk  (code/modules/mob/living/carbon/human/interactive.dm:734)  may sleep
+// interactive.dm:734
 rt.def("/mob/living/carbon/human/interactive/proc/tryWalk", function* tryWalk(f: Frame, inTarget: Value, override: Value) {
-	f.vars = () => [inTarget, override];
-	if (live(override) === null) {
-		override = 0;
-	}
-	if ((truthy(rt.sv(f, "restrictedJob")) && !truthy(live(override)))) {
-		if (!truthy((rt.isIn(f, rt.getStep(f, live(inTarget), 0), (yield* g.call(f, P("/proc/get_area_turfs"), null, [(yield* g.srcCall(f, "job2area", rt.sv(f, "myjob")))]))) ? 1 : 0))) {
-			rt.setSv(f, "TARGET", null);
-			return live(f.dot);
+	override ??= 0;
+	if (this.restrictedJob && !override) {
+		if (!rt.isIn(f, rt.getStep(f, inTarget, 0), get_area_turfs(this.job2area(this.myjob)))) {
+			this.TARGET = null;
+			return f.dot;
 		}
 	}
-	if (!truthy((yield* g.srcCall(f, "IsDeadOrIncap")))) {
-		if (!truthy((yield* g.srcCall(f, "walk2derpless", live(inTarget))))) {
-			rt.incSrcVar(f, "timeout", 1, true);
+	if (!this.IsDeadOrIncap()) {
+		if (!(yield* this.walk2derpless(inTarget))) {
+			this.timeout++;
 		}
 	} else {
-		rt.incSrcVar(f, "timeout", 1, true);
+		this.timeout++;
 	}
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/human/interactive/proc/walk2derpless  (code/modules/mob/living/carbon/human/interactive.dm:773)  may sleep
+// interactive.dm:773
 rt.def("/mob/living/carbon/human/interactive/proc/walk2derpless", function* walk2derpless(f: Frame, target: Value) {
 	let spark_system: Value = null, i: Value = null;
-	f.vars = () => [target, spark_system, i];
-	if (!truthy(live(target))) {
+	if (!target) {
 		return 0;
 	}
-	if (truthy(rt.sv(f, "walkdebug"))) {
-		yield* g.callName(f, (spark_system = (yield* g.new_(f, T("/datum/effect_system/spark_spread"), []))), "set_up", [5, 0, live(target)]);
-		yield* g.callName(f, live(spark_system), "attach", [live(target)]);
-		yield* g.callName(f, live(spark_system), "start", []);
+	if (this.walkdebug) {
+		yield* (spark_system = (yield* new_(T("/datum/effect_system/spark_spread")))).set_up(5, 0, target);
+		yield* spark_system.attach(target);
+		yield* spark_system.start();
 	}
-	if (rt.le(rt.len(f, rt.sv(f, "myPath")), 0)) {
-		rt.setSv(f, "myPath", (yield* g.call(f, P("/proc/get_path_to"), null, [null, live(f.src), null, rt.getStep(f, live(target), 0), null, P("/turf/proc/Distance"), null, 33, null, 250, null, 1, "id", rt.sv(f, "Path_ID")], rt.Args.Named)));
+	if (rt.len(f, this.myPath) <= 0) {
+		this.myPath = (yield* get_path_to(this, rt.getStep(f, target, 0), P("/turf/proc/Distance"), 33, 250, 1, { id: this.Path_ID }));
 	}
-	if (truthy(rt.sv(f, "myPath"))) {
-		if (rt.gt(rt.len(f, rt.sv(f, "myPath")), 0)) {
-			rt.setSv(f, "doing", rt.bitAnd(rt.sv(f, "doing"), 16777211));
-			i = null;
+	if (this.myPath) {
+		if (rt.len(f, this.myPath) > 0) {
+			this.doing = rt.bitAnd(this.doing, 16777211);
 			i = 0;
-			while (rt.lt(live(i), rt.sv(f, "maxStepsTick"))) {
-				if (!truthy((yield* g.srcCall(f, "IsDeadOrIncap")))) {
-					if (rt.ge(rt.len(f, rt.sv(f, "myPath")), 1)) {
-						yield* g.call(f, P("/proc/walk_to"), null, [live(f.src), rt.index(rt.sv(f, "myPath"), 1), 0, 5]);
-						(rt.modSrcVar(f, "myPath", rt.index(rt.sv(f, "myPath"), 1), subtract));
+			while (i < this.maxStepsTick) {
+				if (!this.IsDeadOrIncap()) {
+					if (rt.len(f, this.myPath) >= 1) {
+						walk_to(this, rt.index(this.myPath, 1), 0, 5);
+						this.myPath -= rt.index(this.myPath, 1);
 					}
 				}
-				i = rt.inc(live(i), 1);
-				yield* g.call(f, P("/proc/sleep"), null, [-1]);
+				i++;
+				yield* sleep(-1);
 			}
 			return 1;
 		}
@@ -997,970 +889,788 @@ rt.def("/mob/living/carbon/human/interactive/proc/walk2derpless", function* walk
 	return 0;
 }, true);
 
-// /mob/living/carbon/human/interactive/proc/job2area  (code/modules/mob/living/carbon/human/interactive.dm:798)
+// interactive.dm:798
 rt.def("/mob/living/carbon/human/interactive/proc/job2area", function job2area(f: Frame, target: Value) {
 	let _T: Value = null;
-	f.vars = () => [_T];
-	if (isEqual(rt.gv(f, "title", (_T = live(target))), "Assistant")) {
+	if ((_T = target).title == "Assistant") {
 		return T("/area/hallway/primary");
 	}
-	if ((isEqual(rt.fv(f, "title", live(_T)), "Captain") || isEqual(rt.fv(f, "title", live(_T)), "Head of Personnel"))) {
+	if (_T.title == "Captain" || _T.title == "Head of Personnel") {
 		return T("/area/bridge");
 	}
-	if (isEqual(rt.fv(f, "title", live(_T)), "Bartender")) {
+	if (_T.title == "Bartender") {
 		return T("/area/crew_quarters/bar");
 	}
-	if (isEqual(rt.fv(f, "title", live(_T)), "Cook")) {
+	if (_T.title == "Cook") {
 		return T("/area/crew_quarters/kitchen");
 	}
-	if (((isEqual(rt.fv(f, "title", live(_T)), "Station Engineer") || isEqual(rt.fv(f, "title", live(_T)), "Chief Engineer")) || isEqual(rt.fv(f, "title", live(_T)), "Atmospheric Technician"))) {
+	if (_T.title == "Station Engineer" || _T.title == "Chief Engineer" || _T.title == "Atmospheric Technician") {
 		return T("/area/engine");
 	}
-	if (((((isEqual(rt.fv(f, "title", live(_T)), "Chief Medical Officer") || isEqual(rt.fv(f, "title", live(_T)), "Medical Doctor")) || isEqual(rt.fv(f, "title", live(_T)), "Chemist")) || isEqual(rt.fv(f, "title", live(_T)), "Virologist")) || isEqual(rt.fv(f, "title", live(_T)), "Geneticist"))) {
+	if (_T.title == "Chief Medical Officer" || _T.title == "Medical Doctor" || _T.title == "Chemist" || _T.title == "Virologist" || _T.title == "Geneticist") {
 		return T("/area/medical");
 	}
-	if (((isEqual(rt.fv(f, "title", live(_T)), "Research Director") || isEqual(rt.fv(f, "title", live(_T)), "Scientist")) || isEqual(rt.fv(f, "title", live(_T)), "Roboticist"))) {
+	if (_T.title == "Research Director" || _T.title == "Scientist" || _T.title == "Roboticist") {
 		return T("/area/science");
 	}
-	if ((((isEqual(rt.fv(f, "title", live(_T)), "Head of Security") || isEqual(rt.fv(f, "title", live(_T)), "Warden")) || isEqual(rt.fv(f, "title", live(_T)), "Security Officer")) || isEqual(rt.fv(f, "title", live(_T)), "Detective"))) {
+	if (_T.title == "Head of Security" || _T.title == "Warden" || _T.title == "Security Officer" || _T.title == "Detective") {
 		return T("/area/security");
 	}
-	if (isEqual(rt.fv(f, "title", live(_T)), "Botanist")) {
+	if (_T.title == "Botanist") {
 		return T("/area/hydroponics");
 	}
-	return rt.op(f, "PickUnweighted", [2], [T("/area/hallway"), T("/area/crew_quarters/locker")]);
+	return pick(T("/area/hallway"), T("/area/crew_quarters/locker"));
 });
 
-// /mob/living/carbon/human/interactive/proc/target_filter  (code/modules/mob/living/carbon/human/interactive.dm:821)
+// interactive.dm:821
 rt.def("/mob/living/carbon/human/interactive/proc/target_filter", function target_filter(f: Frame, target: Value) {
-	let filtered_targets: Value = null, L: Value = null, A: Value = null;
-	let $e: any;
-	f.vars = () => [filtered_targets, L, A, $e];
-	filtered_targets = rt.list(T("/area"), T("/turf"), T("/obj/machinery/door"), T("/atom/movable/light"), T("/obj/structure/cable"), T("/obj/machinery/atmospherics"));
-	L = live(target);
-	A = null;
-	rt.forList(f, 0, live(target), T("/atom"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		A = $e;
-		if (truthy(rt.call(f, P("/proc/is_type_in_list"), null, [live(A), live(filtered_targets)]))) {
-			(L = rt.modify(live(L), live(A), subtract));
+	let A: Value = null;
+	let filtered_targets: Value = list(T("/area"), T("/turf"), T("/obj/machinery/door"), T("/atom/movable/light"), T("/obj/structure/cable"), T("/obj/machinery/atmospherics"));
+	let L: Value = target;
+	for (A of each(target, T("/atom"))) {
+		if (is_type_in_list(A, filtered_targets)) {
+			L -= A;
 		}
 	}
-	rt.endFor(f, 0);
-	return live(L);
+	return L;
 });
 
-// /mob/living/carbon/human/interactive/proc/shouldModulePass  (code/modules/mob/living/carbon/human/interactive.dm:829)
+// interactive.dm:829
 rt.def("/mob/living/carbon/human/interactive/proc/shouldModulePass", function shouldModulePass(f: Frame) {
-	if (truthy(rt.bitAnd(rt.sv(f, "doing"), 8))) {
+	if (rt.bitAnd(this.doing, FIGHTING)) {
 		return 1;
 	}
-	if (truthy(rt.sv(f, "retal"))) {
+	if (this.retal) {
 		return 1;
 	}
 	return 0;
 });
 
-// /mob/living/carbon/human/interactive/proc/chatter  (code/modules/mob/living/carbon/human/interactive.dm:837)  may sleep
+// interactive.dm:837
 rt.def("/mob/living/carbon/human/interactive/proc/chatter", function* chatter(f: Frame, obj: Value) {
-	let verbs_use: Value = null, verbs_touch: Value = null, verbs_move: Value = null, nouns_insult: Value = null, nouns_generic: Value = null, nouns_objects: Value = null, nouns_body: Value = null, adjective_insult: Value = null, adjective_objects: Value = null, adjective_generic: Value = null, curse_words: Value = null, chatmsg: Value = null, what: Value = null, toSay: Value = null, i: Value = null;
-	let $0: any;
-	f.vars = () => [obj, verbs_use, verbs_touch, verbs_move, nouns_insult, nouns_generic, nouns_objects, nouns_body, adjective_insult, adjective_objects, adjective_generic, curse_words, chatmsg, what, toSay, i, $0];
-	verbs_use = rt.op(f, "PickUnweighted", [1], [(yield* g.call(f, P("/proc/strings"), null, ["npc_chatter.json", "verbs_use"]))]);
-	verbs_touch = rt.op(f, "PickUnweighted", [1], [(yield* g.call(f, P("/proc/strings"), null, ["npc_chatter.json", "verbs_touch"]))]);
-	verbs_move = rt.op(f, "PickUnweighted", [1], [(yield* g.call(f, P("/proc/strings"), null, ["npc_chatter.json", "verbs_move"]))]);
-	nouns_insult = rt.op(f, "PickUnweighted", [1], [(yield* g.call(f, P("/proc/strings"), null, ["npc_chatter.json", "nouns_insult"]))]);
-	nouns_generic = rt.op(f, "PickUnweighted", [1], [(yield* g.call(f, P("/proc/strings"), null, ["npc_chatter.json", "nouns_generic"]))]);
-	nouns_objects = rt.op(f, "PickUnweighted", [1], [(yield* g.call(f, P("/proc/strings"), null, ["npc_chatter.json", "nouns_objects"]))]);
-	nouns_body = rt.op(f, "PickUnweighted", [1], [(yield* g.call(f, P("/proc/strings"), null, ["npc_chatter.json", "nouns_body"]))]);
-	adjective_insult = rt.op(f, "PickUnweighted", [1], [(yield* g.call(f, P("/proc/strings"), null, ["npc_chatter.json", "adjective_insult"]))]);
-	adjective_objects = rt.op(f, "PickUnweighted", [1], [(yield* g.call(f, P("/proc/strings"), null, ["npc_chatter.json", "adjective_objects"]))]);
-	adjective_generic = rt.op(f, "PickUnweighted", [1], [(yield* g.call(f, P("/proc/strings"), null, ["npc_chatter.json", "adjective_generic"]))]);
-	curse_words = rt.op(f, "PickUnweighted", [1], [(yield* g.call(f, P("/proc/strings"), null, ["npc_chatter.json", "curse_words"]))]);
-	chatmsg = "";
-	if (truthy(rt.op(f, "Prob", [], [10]))) {
+	let what: Value = null, toSay: Value = null, i: Value = null;
+	let verbs_use: Value = pick(strings("npc_chatter.json", "verbs_use"));
+	let verbs_touch: Value = pick(strings("npc_chatter.json", "verbs_touch"));
+	let verbs_move: Value = pick(strings("npc_chatter.json", "verbs_move"));
+	let nouns_insult: Value = pick(strings("npc_chatter.json", "nouns_insult"));
+	let nouns_generic: Value = pick(strings("npc_chatter.json", "nouns_generic"));
+	let nouns_objects: Value = pick(strings("npc_chatter.json", "nouns_objects"));
+	let nouns_body: Value = pick(strings("npc_chatter.json", "nouns_body"));
+	let adjective_insult: Value = pick(strings("npc_chatter.json", "adjective_insult"));
+	let adjective_objects: Value = pick(strings("npc_chatter.json", "adjective_objects"));
+	let adjective_generic: Value = pick(strings("npc_chatter.json", "adjective_generic"));
+	let curse_words: Value = pick(strings("npc_chatter.json", "curse_words"));
+	let chatmsg: Value = "";
+	if (prob(10)) {
 		chatmsg = ";";
 	}
-	if ((truthy(rt.op(f, "Prob", [], [rt.sv(f, "chattyness")])) || rt.lt(rt.len(f, rt.sv(f, "knownStrings")), 10))) {
-		if (truthy(rt.bitAnd(rt.sv(f, "doing"), 2))) {
-			if (truthy(rt.op(f, "Prob", [], [rt.sv(f, "chattyness")]))) {
-				chatmsg = rt.modify(live(chatmsg), rt.op(f, "PickUnweighted", [3], [fmt("This ＀ is a little ＀.", [live(nouns_objects), live(adjective_objects)]), fmt("Well ＀ my ＀, this ＀ is pretty ＀.", [live(verbs_use), live(nouns_body), live(nouns_insult), live(adjective_insult)]), fmt("＀, what am I meant to do with this ＀ ＀.", [(yield* g.call(f, P("/proc/capitalize"), null, [live(curse_words)])), live(adjective_insult), live(nouns_objects)])]), add);
+	if (prob(this.chattyness) || rt.len(f, this.knownStrings) < 10) {
+		if (rt.bitAnd(this.doing, INTERACTING)) {
+			if (prob(this.chattyness)) {
+				chatmsg += pick(`This ${nouns_objects} is a little ${adjective_objects}.`, `Well ${verbs_use} my ${nouns_body}, this ${nouns_insult} is pretty ${adjective_insult}.`, `${capitalize(curse_words)}, what am I meant to do with this ${adjective_insult} ${nouns_objects}.`);
 			}
-		} else {
-			if (truthy(rt.bitAnd(rt.sv(f, "doing"), 4))) {
-				if (truthy(rt.op(f, "Prob", [], [rt.sv(f, "chattyness")]))) {
-					chatmsg = rt.modify(live(chatmsg), rt.op(f, "PickUnweighted", [3], [fmt("Oh ＀, ＀!", [live(curse_words), live(verbs_move)]), fmt("Time to get my ＀ ＀ ＀ elsewhere.", [live(adjective_generic), live(adjective_insult), live(nouns_body)]), fmt("I wonder if there is anything to ＀ and ＀ somewhere else..", [live(verbs_use), live(verbs_touch)])]), add);
-				}
-			} else {
-				if (truthy(rt.bitAnd(rt.sv(f, "doing"), 8))) {
-					if (truthy(rt.op(f, "Prob", [], [rt.sv(f, "chattyness")]))) {
-						chatmsg = rt.modify(live(chatmsg), rt.op(f, "PickUnweighted", [3], [fmt("I'm going to ＀ you, you ＀ ＀!", [live(verbs_use), live(adjective_insult), live(nouns_insult)]), fmt("Rend and ＀, rend and ＀!", [live(verbs_touch), live(verbs_use)]), fmt("You ＀, I'm going to ＀ you right in the ＀. JUST YOU WAIT!", [live(nouns_insult), live(verbs_use), live(nouns_body)])]), add);
-					}
-				}
+		} else if (rt.bitAnd(this.doing, TRAVEL)) {
+			if (prob(this.chattyness)) {
+				chatmsg += pick(`Oh ${curse_words}, ${verbs_move}!`, `Time to get my ${adjective_generic} ${adjective_insult} ${nouns_body} elsewhere.`, `I wonder if there is anything to ${verbs_use} and ${verbs_touch} somewhere else..`);
+			}
+		} else if (rt.bitAnd(this.doing, FIGHTING)) {
+			if (prob(this.chattyness)) {
+				chatmsg += pick(`I'm going to ${verbs_use} you, you ${adjective_insult} ${nouns_insult}!`, `Rend and ${verbs_touch}, rend and ${verbs_use}!`, `You ${nouns_insult}, I'm going to ${verbs_use} you right in the ${nouns_body}. JUST YOU WAIT!`);
 			}
 		}
-		if (truthy(rt.op(f, "Prob", [], [divide(rt.sv(f, "chattyness"), 2)]))) {
+		if (prob(this.chattyness / 2)) {
 			chatmsg = ";";
-			$0 = (what = rt.op(f, "PickUnweighted", [5], [1, 2, 3, 4, 5]));
-			if ($0 === 1) {
-				chatmsg = rt.modify(live(chatmsg), fmt("Well ＀, this is a ＀ situation.", [live(curse_words), live(adjective_generic)]), add);
-			} else if ($0 === 2) {
-				chatmsg = rt.modify(live(chatmsg), fmt("Oh ＀, that ＀ was one hell of an ＀ ＀.", [live(curse_words), live(nouns_insult), live(adjective_insult), live(nouns_body)]), add);
-			} else if ($0 === 3) {
-				chatmsg = rt.modify(live(chatmsg), fmt("I want to ＀ that ＀ when I find them.", [live(verbs_use), live(nouns_insult)]), add);
-			} else if ($0 === 4) {
-				chatmsg = rt.modify(live(chatmsg), fmt("＀ until proven ＀!", [rt.op(f, "PickUnweighted", [4], ["Innocent", "Guilty", "Traitorous", "Honk"]), live(adjective_generic)]), add);
-			} else if ($0 === 5) {
+			const subject = (what = pick(1, 2, 3, 4, 5));
+			if (subject === 1) {
+				chatmsg += `Well ${curse_words}, this is a ${adjective_generic} situation.`;
+			} else if (subject === 2) {
+				chatmsg += `Oh ${curse_words}, that ${nouns_insult} was one hell of an ${adjective_insult} ${nouns_body}.`;
+			} else if (subject === 3) {
+				chatmsg += `I want to ${verbs_use} that ${nouns_insult} when I find them.`;
+			} else if (subject === 4) {
+				chatmsg += `${pick("Innocent", "Guilty", "Traitorous", "Honk")} until proven ${adjective_generic}!`;
+			} else if (subject === 5) {
 				toSay = "";
-				i = null;
 				i = 0;
-				while (rt.lt(live(i), 5)) {
-					toSay = rt.modify(live(toSay), fmt("＀ ", [(curse_words = rt.op(f, "PickUnweighted", [1], [(yield* g.call(f, P("/proc/strings"), null, ["npc_chatter.json", "curse_words"]))]))]), add);
-					i = rt.inc(live(i), 1);
+				while (i < 5) {
+					toSay += `${(curse_words = pick(strings("npc_chatter.json", "curse_words")))} `;
+					i++;
 				}
-				chatmsg = rt.modify(live(chatmsg), fmt("Hey ＀, why dont you go ＀, you ＀!", [live(nouns_generic), live(toSay), live(nouns_insult)]), add);
+				chatmsg += `Hey ${nouns_generic}, why dont you go ${toSay}, you ${nouns_insult}!`;
 			}
 		}
-	} else {
-		if (truthy(rt.op(f, "Prob", [], [rt.sv(f, "chattyness")]))) {
-			chatmsg = rt.modify(live(chatmsg), rt.op(f, "PickUnweighted", [1], [rt.sv(f, "knownStrings")]), add);
-			if (truthy(rt.op(f, "Prob", [], [25]))) {
-				(rt.modSrcVar(f, "knownStrings", rt.op(f, "PickUnweighted", [1], [live(chatmsg)]), subtract));
-			}
+	} else if (prob(this.chattyness)) {
+		chatmsg += pick(this.knownStrings);
+		if (prob(25)) {
+			this.knownStrings -= pick(chatmsg);
 		}
 	}
-	if (!(!isEqual(live(chatmsg), ";") && !isEqual(live(chatmsg), ""))) return f.dot;
-	yield* g.callName(f, live(f.src), "say", [live(chatmsg)]);
+	if (!(chatmsg != ";" && chatmsg != "")) return f.dot;
+	yield* this.say(chatmsg);
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/human/interactive/proc/getAllContents  (code/modules/mob/living/carbon/human/interactive.dm:898)
+// interactive.dm:898
 rt.def("/mob/living/carbon/human/interactive/proc/getAllContents", function getAllContents(f: Frame) {
-	let allContents: Value = null, A: Value = null, B: Value = null;
-	let $e: any;
-	f.vars = () => [allContents, A, B, $e];
-	allContents = rt.list();
-	A = null;
-	rt.forList(f, 0, rt.sv(f, "contents"), T("/atom"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		A = $e;
-		allContents = rt.modify(live(allContents), live(A), add);
-		if (rt.gt(rt.getLen(f, rt.fv(f, "contents", live(A))), 0)) {
+	let A: Value = null, B: Value = null;
+	let allContents: Value = list();
+	for (A of each(this.contents, T("/atom"))) {
+		allContents += A;
+		if (rt.len(f, A.contents) > 0) {
 			B = null;
-			rt.forList(f, 1, live(A), T("/atom"));
-			while (($e = rt.next(f, 1)) !== undefined) {
-				B = $e;
-				allContents = rt.modify(live(allContents), live(B), add);
+			for (B of each(A, T("/atom"))) {
+				allContents += B;
 			}
-			rt.endFor(f, 1);
 		}
 	}
-	rt.endFor(f, 0);
-	return live(allContents);
+	return allContents;
 });
 
-// /mob/living/carbon/human/interactive/proc/enforceHome  (code/modules/mob/living/carbon/human/interactive.dm:907)  may sleep
+// interactive.dm:907
 rt.def("/mob/living/carbon/human/interactive/proc/enforceHome", function* enforceHome(f: Frame) {
-	let validHome: Value = null, tcheck: Value = null;
-	f.vars = () => [validHome, tcheck];
-	validHome = (yield* g.call(f, P("/proc/get_area_turfs"), null, [(yield* g.srcCall(f, "job2area", rt.sv(f, "myjob")))]));
-	if (truthy(rt.sv(f, "TARGET"))) {
-		if (truthy((tcheck = rt.sv(f, "TARGET")))) {
-			if (!truthy((rt.isIn(f, rt.getStep(f, live(tcheck), 0), live(validHome)) ? 1 : 0))) {
-				rt.setSv(f, "TARGET", null);
+	let tcheck: Value = null;
+	let validHome: Value = get_area_turfs(this.job2area(this.myjob));
+	if (this.TARGET) {
+		if (tcheck = this.TARGET) {
+			if (!rt.isIn(f, rt.getStep(f, tcheck, 0), validHome)) {
+				this.TARGET = null;
 				return 1;
 			}
 		}
 	}
-	if (!truthy((rt.isIn(f, rt.getStep(f, live(f.src), 0), live(validHome)) ? 1 : 0))) {
-		yield* g.srcCall(f, "tryWalk", rt.op(f, "PickUnweighted", [1], [(yield* g.call(f, P("/proc/get_area_turfs"), null, [(yield* g.srcCall(f, "job2area", rt.sv(f, "myjob")))]))]));
+	if (!rt.isIn(f, rt.getStep(f, this, 0), validHome)) {
+		yield* this.tryWalk(pick(get_area_turfs(this.job2area(this.myjob))));
 		return 1;
 	}
 	return 0;
 }, true);
 
-// /mob/living/carbon/human/interactive/proc/npcDrop  (code/modules/mob/living/carbon/human/interactive.dm:923)
+// interactive.dm:923
 rt.def("/mob/living/carbon/human/interactive/proc/npcDrop", function npcDrop(f: Frame, A: Value, blacklist: Value) {
-	f.vars = () => [blacklist];
-	if (live(blacklist) === null) {
-		blacklist = 0;
+	blacklist ??= 0;
+	if (blacklist) {
+		this.blacklistItems += A;
 	}
-	if (truthy(live(blacklist))) {
-		rt.modSrcVar(f, "blacklistItems", live(A), add);
-	}
-	rt.setFv(f, "loc", live(A), rt.getStep(f, live(f.src), 0));
-	rt.callSrc(f, "enforce_hands", []);
-	rt.callSrc(f, "update_icons", []);
+	A.loc = rt.getStep(f, this, 0);
+	this.enforce_hands();
+	this.update_icons();
 	return f.dot;
 });
 
-// /mob/living/carbon/human/interactive/proc/traitor  (code/modules/mob/living/carbon/human/interactive.dm:930)  may sleep
+// interactive.dm:930
 rt.def("/mob/living/carbon/human/interactive/proc/traitor", function* traitor(f: Frame, obj: Value) {
 	let M: Value = null, I: Value = null, choice: Value = null;
-	let $0: any;
-	f.vars = () => [obj, M, I, choice, $0];
-	if (isEqual(rt.sv(f, "traitorType"), 4)) {
-		rt.setSv(f, "traitorTarget", rt.op(f, "PickUnweighted", [1], [rt.sv(f, "nearby")]));
+	if (this.traitorType == SNPC_PSYCHO) {
+		this.traitorTarget = pick(this.nearby);
 	}
-	if (!truthy(rt.op(f, "Prob", [], [rt.sv(f, "traitorScale")]))) return f.dot;
-	if ((!truthy((yield* g.srcCall(f, "Adjacent", rt.sv(f, "traitorTarget")))) && !isEqual(rt.sv(f, "traitorType"), 4))) {
-		yield* g.srcCall(f, "tryWalk", rt.getStep(f, rt.sv(f, "traitorTarget"), 0));
-	} else {
-		$0 = rt.sv(f, "traitorType");
-		if ($0 === 1) {
-			rt.setSv(f, "retal", 1);
-			rt.setSv(f, "retal_target", rt.sv(f, "traitorTarget"));
-		} else if ($0 === 2) {
-			if (truthy((yield* g.call(f, P("/proc/ismob"), null, [rt.sv(f, "traitorTarget")])))) {
-				if (!truthy(rt.gv(f, "stat", (M = rt.sv(f, "traitorTarget"))))) {
-					rt.setSv(f, "retal", 1);
-					rt.setSv(f, "retal_target", rt.sv(f, "traitorTarget"));
-				} else {
-					rt.setFv(f, "loc", (I = rt.sv(f, "traitorTarget")), rt.getStep(f, rt.sv(f, "traitorTarget"), 0));
-				}
+	if (!prob(this.traitorScale)) return f.dot;
+	if (!this.Adjacent(this.traitorTarget) && this.traitorType != SNPC_PSYCHO) {
+		yield* this.tryWalk(rt.getStep(f, this.traitorTarget, 0));
+	} else if (this.traitorType === SNPC_BRUTE) {
+		this.retal = 1;
+		this.retal_target = this.traitorTarget;
+	} else if (this.traitorType === SNPC_STEALTH) {
+		if (ismob(this.traitorTarget)) {
+			if (!(M = this.traitorTarget).stat) {
+				this.retal = 1;
+				this.retal_target = this.traitorTarget;
 			} else {
-				yield* g.srcCall(f, "take_to_slot", rt.sv(f, "traitorTarget"));
+				(I = this.traitorTarget).loc = rt.getStep(f, this.traitorTarget, 0);
 			}
-		} else if ($0 === 3) {
-			yield* g.srcCall(f, "customEmote", fmt("＀'s chest opens up, revealing a large mass of explosives and tangled wires!", [live(f.src)]));
-			if (rt.le(rt.sv(f, "inactivity_period"), 0)) {
-				rt.setSv(f, "inactivity_period", 9999);
-				if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.src), null, 60, "target", rt.sv(f, "traitorTarget")], rt.Args.Named)))) {
-					yield* g.srcCall(f, "customEmote", fmt("A fire bursts from ＀'s eyes, igniting white hot and consuming their body in a flaming explosion!", [live(f.src)]));
-					yield* g.call(f, P("/proc/explosion"), null, [live(f.src), 6, 6, 6]);
-				} else {
-					rt.setSv(f, "inactivity_period", 0);
-					yield* g.srcCall(f, "customEmote", fmt("＀'s chest closes, hiding their insides.", [live(f.src)]));
-				}
-			}
-		} else if ($0 === 4) {
-			choice = rt.op(f, "PickUnweighted", [1], [subtract((yield* g.call(f, P("/proc/typesof"), null, [T("/obj/item/weapon/grenade/chem_grenade")])), T("/obj/item/weapon/grenade/chem_grenade"))]);
-			yield* g.new_(f, live(choice), [live(f.src)]);
-			rt.setSv(f, "retal", 1);
-			rt.setSv(f, "retal_target", rt.sv(f, "traitorTarget"));
+		} else {
+			yield* this.take_to_slot(this.traitorTarget);
 		}
+	} else if (this.traitorType === SNPC_MARTYR) {
+		this.customEmote(`${this}'s chest opens up, revealing a large mass of explosives and tangled wires!`);
+		if (this.inactivity_period <= 0) {
+			this.inactivity_period = 9999;
+			if (yield* do_after(this, 60, { target: this.traitorTarget })) {
+				this.customEmote(`A fire bursts from ${this}'s eyes, igniting white hot and consuming their body in a flaming explosion!`);
+				yield* explosion(this, 6, 6, 6);
+			} else {
+				this.inactivity_period = 0;
+				this.customEmote(`${this}'s chest closes, hiding their insides.`);
+			}
+		}
+	} else if (this.traitorType === SNPC_PSYCHO) {
+		choice = pick(typesof(T("/obj/item/weapon/grenade/chem_grenade")) - T("/obj/item/weapon/grenade/chem_grenade"));
+		yield* new_(choice, this);
+		this.retal = 1;
+		this.retal_target = this.traitorTarget;
 	}
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/human/interactive/proc/botany  (code/modules/mob/living/carbon/human/interactive.dm:971)  may sleep
+// interactive.dm:971
 rt.def("/mob/living/carbon/human/interactive/proc/botany", function* botany(f: Frame, obj: Value) {
-	let allContents: Value = null, internalBeaker: Value = null, internalBag: Value = null, HP: Value = null, considered: Value = null, tester: Value = null, index: Value = null, A: Value = null, seedType: Value = null, SEED: Value = null, change: Value = null, GF: Value = null, SF: Value = null, toLoad: Value = null;
-	let $e: any;
-	f.vars = () => [obj, allContents, internalBeaker, internalBag, HP, considered, tester, index, A, seedType, SEED, change, GF, SF, toLoad, $e];
-	if (truthy((yield* g.srcCall(f, "shouldModulePass")))) {
-		return live(f.dot);
+	let internalBag: Value = null, HP: Value = null, tester: Value = null, A: Value = null, seedType: Value = null, SEED: Value = null, change: Value = null, GF: Value = null, SF: Value = null, toLoad: Value = null;
+	if (this.shouldModulePass()) {
+		return f.dot;
 	}
-	if (truthy((yield* g.srcCall(f, "enforceHome")))) {
-		return live(f.dot);
+	if (yield* this.enforceHome()) {
+		return f.dot;
 	}
-	allContents = (yield* g.srcCall(f, "getAllContents"));
-	internalBeaker = rt.locateIn(f, T("/obj/item/weapon/reagent_containers/glass/beaker/bluespace"), live(allContents));
-	if (!truthy((internalBag = rt.locateIn(f, T("/obj/item/weapon/storage/bag/plants"), live(allContents))))) {
-		internalBag = (yield* g.new_(f, T("/obj/item/weapon/storage/bag/plants"), [live(f.src)]));
+	let allContents: Value = this.getAllContents();
+	let internalBeaker: Value = rt.locateIn(f, T("/obj/item/weapon/reagent_containers/glass/beaker/bluespace"), allContents);
+	if (!(internalBag = rt.locateIn(f, T("/obj/item/weapon/storage/bag/plants"), allContents))) {
+		internalBag = (yield* new_(T("/obj/item/weapon/storage/bag/plants"), this));
 	}
-	if (!truthy(live(internalBeaker))) {
-		rt.setFv(f, "name", (internalBeaker = (yield* g.new_(f, T("/obj/item/weapon/reagent_containers/glass/beaker/bluespace"), [live(f.src)]))), "Grow-U-All Super Spray");
+	if (!internalBeaker) {
+		(internalBeaker = (yield* new_(T("/obj/item/weapon/reagent_containers/glass/beaker/bluespace"), this))).name = "Grow-U-All Super Spray";
 	}
-	if (!(truthy(live(internalBeaker)) && truthy(live(internalBag)))) return f.dot;
-	HP = null;
-	considered = rt.list();
-	tester = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/view"), null, [12, live(f.src)])), T("/obj/machinery/hydroponics"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		tester = $e;
-		rt.setAt(live(considered), live(tester), 1);
-		if (!truthy(rt.fv(f, "myseed", live(tester)))) {
-			rt.modAt(live(considered), live(tester), 50, add);
+	if (!(internalBeaker && internalBag)) return f.dot;
+	let considered: Value = list();
+	for (tester of each(view(12, this), T("/obj/machinery/hydroponics"))) {
+		rt.setAt(considered, tester, 1);
+		if (!tester.myseed) {
+			rt.modAt(considered, tester, 50, add);
 		}
-		if (rt.gt(rt.fv(f, "weedlevel", live(tester)), 0)) {
-			rt.modAt(live(considered), live(tester), 5, add);
+		if (tester.weedlevel > 0) {
+			rt.modAt(considered, tester, 5, add);
 		}
-		if (rt.gt(rt.fv(f, "pestlevel", live(tester)), 0)) {
-			rt.modAt(live(considered), live(tester), 5, add);
+		if (tester.pestlevel > 0) {
+			rt.modAt(considered, tester, 5, add);
 		}
-		if (rt.lt(rt.fv(f, "nutrilevel", live(tester)), rt.fv(f, "maxnutri", live(tester)))) {
-			rt.modAt(live(considered), live(tester), 15, add);
+		if (tester.nutrilevel < tester.maxnutri) {
+			rt.modAt(considered, tester, 15, add);
 		}
-		if (rt.lt(rt.fv(f, "waterlevel", live(tester)), rt.fv(f, "maxwater", live(tester)))) {
-			rt.modAt(live(considered), live(tester), 15, add);
+		if (tester.waterlevel < tester.maxwater) {
+			rt.modAt(considered, tester, 15, add);
 		}
-		if ((truthy(rt.fv(f, "harvest", live(tester))) || truthy(rt.fv(f, "dead", live(tester))))) {
-			rt.modAt(live(considered), live(tester), 100, add);
+		if (tester.harvest || tester.dead) {
+			rt.modAt(considered, tester, 100, add);
 		}
-		rt.setAt(live(considered), live(tester), (yield* g.call(f, P("/proc/max"), null, [1, subtract(rt.index(live(considered), live(tester)), (yield* g.call(f, P("/proc/get_dist"), null, [live(f.src), live(tester)])))])));
+		rt.setAt(considered, tester, max(1, rt.index(considered, tester) - get_dist(this, tester)));
 	}
-	rt.endFor(f, 0);
-	index = 0;
-	A = null;
-	rt.forList(f, 0, live(considered));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		A = $e;
-		index = rt.inc(live(index), 1);
-		if ((rt.gt(rt.index(live(considered), live(A)), rt.index(live(considered), live(HP))) || !truthy(live(HP)))) {
-			HP = rt.index(live(considered), live(index));
+	let index: Value = 0;
+	for (A of each(considered)) {
+		index++;
+		if (rt.index(considered, A) > rt.index(considered, HP) || !HP) {
+			HP = rt.index(considered, index);
 		}
 	}
-	rt.endFor(f, 0);
-	if (truthy(live(HP))) {
-		rt.setSv(f, "TARGET", live(HP));
-		if (!truthy((yield* g.srcCall(f, "Adjacent", live(HP))))) {
-			yield* g.srcCall(f, "tryWalk", rt.getStep(f, live(HP), 0));
+	if (HP) {
+		this.TARGET = HP;
+		if (!this.Adjacent(HP)) {
+			yield* this.tryWalk(rt.getStep(f, HP, 0));
+		} else if (HP.harvest || HP.dead) {
+			yield* HP.attack_hand(this);
+		} else if (!HP.myseed) {
+			seedType = pick(typesof(T("/obj/item/seeds")) - T("/obj/item/seeds"));
+			SEED = (yield* new_(seedType, this));
+			this.customEmote(`${this} ${pick("gibbers", "drools", "slobbers", "claps wildly", "spits")} towards ${this.TARGET}, producing a ${SEED}!`);
+			yield* HP.attackby(SEED, this);
 		} else {
-			if ((truthy(rt.fv(f, "harvest", live(HP))) || truthy(rt.fv(f, "dead", live(HP))))) {
-				yield* g.callName(f, live(HP), "attack_hand", [live(f.src)]);
-			} else {
-				if (!truthy(rt.fv(f, "myseed", live(HP)))) {
-					seedType = rt.op(f, "PickUnweighted", [1], [subtract((yield* g.call(f, P("/proc/typesof"), null, [T("/obj/item/seeds")])), T("/obj/item/seeds"))]);
-					SEED = (yield* g.new_(f, live(seedType), [live(f.src)]));
-					yield* g.srcCall(f, "customEmote", fmt("＀ ＀ towards ＀, producing a ＀!", [live(f.src), rt.op(f, "PickUnweighted", [5], ["gibbers", "drools", "slobbers", "claps wildly", "spits"]), rt.sv(f, "TARGET"), live(SEED)]));
-					yield* g.callName(f, live(HP), "attackby", [live(SEED), live(f.src)]);
-				} else {
-					change = 0;
-					if (rt.gt(rt.fv(f, "weedlevel", live(HP)), 0)) {
-						change = 1;
-						if (!truthy((yield* g.callName(f, rt.fv(f, "reagents", live(internalBeaker)), "has_reagent", ["weedkiller", 10])))) {
-							yield* g.callName(f, rt.fv(f, "reagents", live(internalBeaker)), "add_reagent", ["weedkiller", 10]);
-						}
-					}
-					if (rt.gt(rt.fv(f, "pestlevel", live(HP)), 0)) {
-						change = 1;
-						if (!truthy((yield* g.callName(f, rt.fv(f, "reagents", live(internalBeaker)), "has_reagent", ["pestkiller", 10])))) {
-							yield* g.callName(f, rt.fv(f, "reagents", live(internalBeaker)), "add_reagent", ["pestkiller", 10]);
-						}
-					}
-					if (rt.lt(rt.fv(f, "nutrilevel", live(HP)), rt.fv(f, "maxnutri", live(HP)))) {
-						change = 1;
-						if (!truthy((yield* g.callName(f, rt.fv(f, "reagents", live(internalBeaker)), "has_reagent", ["eznutriment", 15])))) {
-							yield* g.callName(f, rt.fv(f, "reagents", live(internalBeaker)), "add_reagent", ["eznutriment", 15]);
-						}
-						if (!truthy((yield* g.callName(f, rt.fv(f, "reagents", live(internalBeaker)), "has_reagent", ["diethylamine", 15])))) {
-							yield* g.callName(f, rt.fv(f, "reagents", live(internalBeaker)), "add_reagent", ["diethylamine", 15]);
-						}
-					}
-					if (rt.lt(rt.fv(f, "waterlevel", live(HP)), rt.fv(f, "maxwater", live(HP)))) {
-						change = 1;
-						if (!truthy((yield* g.callName(f, rt.fv(f, "reagents", live(internalBeaker)), "has_reagent", ["holywater", 50])))) {
-							yield* g.callName(f, rt.fv(f, "reagents", live(internalBeaker)), "add_reagent", ["holywater", 50]);
-						}
-					}
-					if (truthy(live(change))) {
-						yield* g.callName(f, live(HP), "attackby", [live(internalBeaker), live(f.src)]);
-					}
+			change = 0;
+			if (HP.weedlevel > 0) {
+				change = 1;
+				if (!internalBeaker.reagents.has_reagent("weedkiller", 10)) {
+					yield* internalBeaker.reagents.add_reagent("weedkiller", 10);
 				}
+			}
+			if (HP.pestlevel > 0) {
+				change = 1;
+				if (!internalBeaker.reagents.has_reagent("pestkiller", 10)) {
+					yield* internalBeaker.reagents.add_reagent("pestkiller", 10);
+				}
+			}
+			if (HP.nutrilevel < HP.maxnutri) {
+				change = 1;
+				if (!internalBeaker.reagents.has_reagent("eznutriment", 15)) {
+					yield* internalBeaker.reagents.add_reagent("eznutriment", 15);
+				}
+				if (!internalBeaker.reagents.has_reagent("diethylamine", 15)) {
+					yield* internalBeaker.reagents.add_reagent("diethylamine", 15);
+				}
+			}
+			if (HP.waterlevel < HP.maxwater) {
+				change = 1;
+				if (!internalBeaker.reagents.has_reagent("holywater", 50)) {
+					yield* internalBeaker.reagents.add_reagent("holywater", 50);
+				}
+			}
+			if (change) {
+				yield* HP.attackby(internalBeaker, this);
 			}
 		}
 	}
-	if (truthy((GF = rt.locateIn(f, T("/obj/item/weapon/reagent_containers/food/snacks/grown"), (yield* g.call(f, P("/proc/view"), null, [12, live(f.src)])))))) {
-		if (!truthy((yield* g.srcCall(f, "Adjacent", live(GF))))) {
-			yield* g.srcCall(f, "tryWalk", rt.getStep(f, live(GF), 0));
+	if (GF = rt.locateIn(f, T("/obj/item/weapon/reagent_containers/food/snacks/grown"), view(12, this))) {
+		if (!this.Adjacent(GF)) {
+			yield* this.tryWalk(rt.getStep(f, GF, 0));
 		} else {
-			yield* g.callName(f, live(GF), "attackby", [live(internalBag), live(f.src)]);
+			yield* GF.attackby(internalBag, this);
 		}
 	}
-	if (!rt.gt(rt.getLen(f, rt.fv(f, "contents", live(internalBag))), 0)) return f.dot;
-	if (!truthy((yield* g.srcCall(f, "Adjacent", (SF = rt.locateIn(f, T("/obj/machinery/smartfridge"), (yield* g.call(f, P("/proc/range"), null, [12, live(f.src)])))))))) {
-		yield* g.srcCall(f, "tryWalk", rt.getStep(f, live(SF), 0), 1);
+	if (!(rt.len(f, internalBag.contents) > 0)) return f.dot;
+	if (!this.Adjacent((SF = rt.locateIn(f, T("/obj/machinery/smartfridge"), range(12, this))))) {
+		yield* this.tryWalk(rt.getStep(f, SF, 0), 1);
 	} else {
-		yield* g.srcCall(f, "customEmote", fmt("＀ ＀, upending the ＀'s contents all over the ＀!", [live(f.src), rt.op(f, "PickUnweighted", [5], ["gibbers", "drools", "slobbers", "claps wildly", "spits"]), live(internalBag), live(SF)]));
-		toLoad = null;
-		rt.forList(f, 0, rt.fv(f, "contents", live(internalBag)), T("/obj"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			toLoad = $e;
-			if (rt.ge(rt.len(f, rt.sv(f, "contents")), rt.fv(f, "max_n_of_items", live(SF)))) {
+		this.customEmote(`${this} ${pick("gibbers", "drools", "slobbers", "claps wildly", "spits")}, upending the ${internalBag}'s contents all over the ${SF}!`);
+		for (toLoad of each(internalBag.contents, T("/obj"))) {
+			if (rt.len(f, this.contents) >= SF.max_n_of_items) {
 				break;
 			}
-			if (truthy((yield* g.callName(f, live(SF), "accept_check", [live(toLoad)])))) {
-				yield* g.callName(f, live(SF), "load", [live(toLoad)]);
+			if (SF.accept_check(toLoad)) {
+				yield* SF.load(toLoad);
 			} else {
-				yield* g.call(f, P("/proc/qdel"), null, [live(toLoad)]);
+				yield* qdel(toLoad);
 			}
 		}
-		rt.endFor(f, 0);
 	}
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/human/interactive/proc/bartend  (code/modules/mob/living/carbon/human/interactive.dm:1075)  may sleep
+// interactive.dm:1075
 rt.def("/mob/living/carbon/human/interactive/proc/bartend", function* bartend(f: Frame, obj: Value) {
-	let rangeCheck: Value = null, RT: Value = null, serveTarget: Value = null, H: Value = null, drinkChoice: Value = null, D: Value = null;
-	let $e: any;
-	f.vars = () => [obj, rangeCheck, RT, serveTarget, H, drinkChoice, D, $e];
-	if (truthy((yield* g.srcCall(f, "shouldModulePass")))) {
-		return live(f.dot);
+	let RT: Value = null, serveTarget: Value = null, H: Value = null, drinkChoice: Value = null, D: Value = null;
+	if (this.shouldModulePass()) {
+		return f.dot;
 	}
-	if (truthy((yield* g.srcCall(f, "enforceHome")))) {
-		return live(f.dot);
+	if (yield* this.enforceHome()) {
+		return f.dot;
 	}
-	rangeCheck = (yield* g.call(f, P("/proc/oview"), null, [6, live(f.src)]));
-	RT = null;
-	serveTarget = null;
-	H = null;
-	rt.forList(f, 0, live(rangeCheck), T("/mob/living/carbon/human"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		H = $e;
-		if (!truthy(rt.locateIn(f, T("/obj/item/weapon/reagent_containers/food/drinks"), (yield* g.call(f, P("/proc/orange"), null, [1, live(H)]))))) {
-			serveTarget = live(H);
+	let rangeCheck: Value = oview(6, this);
+	for (H of each(rangeCheck, T("/mob/living/carbon/human"))) {
+		if (!rt.locateIn(f, T("/obj/item/weapon/reagent_containers/food/drinks"), orange(1, H))) {
+			serveTarget = H;
 		}
 	}
-	rt.endFor(f, 0);
-	if (truthy(live(serveTarget))) {
-		RT = rt.locateIn(f, T("/obj/structure/table"), (yield* g.call(f, P("/proc/orange"), null, [1, live(serveTarget)])));
+	if (serveTarget) {
+		RT = rt.locateIn(f, T("/obj/structure/table"), orange(1, serveTarget));
 	}
-	if (!(truthy(live(RT)) && truthy(live(serveTarget)))) return f.dot;
-	if (!truthy((yield* g.srcCall(f, "Adjacent", live(RT))))) {
-		yield* g.srcCall(f, "tryWalk", rt.getStep(f, live(RT), 0));
+	if (!(RT && serveTarget)) return f.dot;
+	if (!this.Adjacent(RT)) {
+		yield* this.tryWalk(rt.getStep(f, RT, 0));
 	} else {
-		if (!truthy((drinkChoice = rt.op(f, "PickUnweighted", [1], [subtract((yield* g.call(f, P("/proc/typesof"), null, [T("/obj/item/weapon/reagent_containers/food/drinks")])), T("/obj/item/weapon/reagent_containers/food/drinks"))])))) return f.dot;
-		D = (yield* g.new_(f, live(drinkChoice), [rt.getStep(f, live(f.src), 0)]));
-		yield* g.callName(f, live(RT), "attackby", [live(D), live(f.src)]);
-		yield* g.callName(f, live(f.src), "say", [fmt("＀", [rt.op(f, "PickUnweighted", [5], ["Something to wet your whistle!", "Down the hatch, a tasty beverage!", "One drink, coming right up!", "Tasty liquid for your oral intake!", "Enjoy!"])])]);
-		yield* g.srcCall(f, "customEmote", fmt("＀ ＀, serving up a ＀!", [live(f.src), rt.op(f, "PickUnweighted", [5], ["gibbers", "drools", "slobbers", "claps wildly", "spits"]), live(D)]));
+		if (!(drinkChoice = pick(typesof(T("/obj/item/weapon/reagent_containers/food/drinks")) - T("/obj/item/weapon/reagent_containers/food/drinks")))) return f.dot;
+		D = (yield* new_(drinkChoice, rt.getStep(f, this, 0)));
+		yield* RT.attackby(D, this);
+		yield* this.say(`${pick("Something to wet your whistle!", "Down the hatch, a tasty beverage!", "One drink, coming right up!", "Tasty liquid for your oral intake!", "Enjoy!")}`);
+		this.customEmote(`${this} ${pick("gibbers", "drools", "slobbers", "claps wildly", "spits")}, serving up a ${D}!`);
 	}
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/human/interactive/proc/shitcurity  (code/modules/mob/living/carbon/human/interactive.dm:1106)  may sleep
+// interactive.dm:1106
 rt.def("/mob/living/carbon/human/interactive/proc/shitcurity", function* shitcurity(f: Frame, obj: Value) {
-	let allContents: Value = null, C: Value = null, perpname: Value = null, R: Value = null, I: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [obj, allContents, C, perpname, R, I, $0, $e];
-	allContents = (yield* g.srcCall(f, "getAllContents"));
-	C = null;
-	rt.forList(f, 0, rt.sv(f, "nearby"), T("/mob/living/carbon/human"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		C = $e;
-		perpname = (yield* g.callName(f, live(C), "get_face_name", [(yield* g.callName(f, live(C), "get_id_name", []))]));
-		if ((truthy((R = (yield* g.call(f, P("/proc/find_record"), null, ["name", live(perpname), rt.fv(f, "security", rt.gl("data_core"))])))) && truthy(rt.index(rt.fv(f, "fields", live(R)), "criminal")))) {
-			$0 = rt.index(rt.fv(f, "fields", live(R)), "criminal");
-			if ($0 === "*Arrest*") {
-				yield* g.srcCall(f, "retalTarget", live(C));
+	let C: Value = null, perpname: Value = null, R: Value = null, I: Value = null;
+	let $e: any;
+	let allContents: Value = this.getAllContents();
+	for (C of each(this.nearby, T("/mob/living/carbon/human"))) {
+		perpname = C.get_face_name(C.get_id_name());
+		if ((R = find_record("name", perpname, GLOB.data_core.security)) && rt.index(R.fields, "criminal")) {
+			if (rt.index(R.fields, "criminal") === "*Arrest*") {
+				yield* this.retalTarget(C);
 			}
 		}
 	}
-	rt.endFor(f, 0);
-	if (!(truthy(rt.sv(f, "retal")) && truthy(rt.sv(f, "TARGET")))) return f.dot;
-	I = null;
-	rt.forList(f, 0, live(allContents), T("/obj/item"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		if (truthy((rt.istype(live(I), T("/obj/item/weapon/restraints")) ? 1 : 0))) {
-			yield* g.callName(f, live(I), "attack", [rt.sv(f, "TARGET"), live(f.src)]);
-			rt.setSv(f, "inactivity_period", 25);
+	if (!(this.retal && this.TARGET)) return f.dot;
+	for (I of each(allContents, T("/obj/item"))) {
+		if (rt.istype(I, T("/obj/item/weapon/restraints"))) {
+			yield* I.attack(this.TARGET, this);
+			this.inactivity_period = 25;
 			break;
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/human/interactive/proc/clowning  (code/modules/mob/living/carbon/human/interactive.dm:1124)  may sleep
+// interactive.dm:1124
 rt.def("/mob/living/carbon/human/interactive/proc/clowning", function* clowning(f: Frame, obj: Value) {
-	let allContents: Value = null, rangeCheck: Value = null, clownTarget: Value = null, clownPriority: Value = null, S: Value = null, C: Value = null, pranksNearby: Value = null, _T: Value = null, A: Value = null, A_5: Value = null, hasPranked: Value = null, A_6: Value = null, B: Value = null;
-	let $e: any;
-	f.vars = () => [obj, allContents, rangeCheck, clownTarget, clownPriority, S, C, pranksNearby, _T, A, A_5, hasPranked, A_6, B, $e];
-	if (truthy((yield* g.srcCall(f, "shouldModulePass")))) {
-		return live(f.dot);
+	let clownTarget: Value = null, S: Value = null, C: Value = null, pranksNearby: Value = null, _T: Value = null, A: Value = null, A_5: Value = null, hasPranked: Value = null, A_6: Value = null, B: Value = null;
+	if (this.shouldModulePass()) {
+		return f.dot;
 	}
-	allContents = (yield* g.srcCall(f, "getAllContents"));
-	rangeCheck = (yield* g.call(f, P("/proc/orange"), null, [12, live(f.src)]));
-	clownTarget = null;
-	clownPriority = rt.list();
-	if (!truthy((S = rt.locateIn(f, T("/obj/item/weapon/reagent_containers/spray"), live(allContents))))) {
-		rt.setFv(f, "amount_per_transfer_from_this", (S = (yield* g.new_(f, T("/obj/item/weapon/reagent_containers/spray"), [live(f.src)]))), 10);
+	let allContents: Value = this.getAllContents();
+	let rangeCheck: Value = orange(12, this);
+	let clownPriority: Value = list();
+	if (!(S = rt.locateIn(f, T("/obj/item/weapon/reagent_containers/spray"), allContents))) {
+		(S = (yield* new_(T("/obj/item/weapon/reagent_containers/spray"), this))).amount_per_transfer_from_this = 10;
 	}
-	C = null;
-	rt.forList(f, 0, live(rangeCheck), T("/mob/living/carbon/human"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		C = $e;
+	for (C of each(rangeCheck, T("/mob/living/carbon/human"))) {
 		pranksNearby = 100;
 		_T = null;
-		rt.forList(f, 1, (yield* g.call(f, P("/proc/orange"), null, [1, live(C)])), T("/turf/open"));
-		while (($e = rt.next(f, 1)) !== undefined) {
-			_T = $e;
+		for (_T of each(orange(1, C), T("/turf/open"))) {
 			A = null;
-			rt.forList(f, 2, live(_T), T("/obj/item"));
-			while (($e = rt.next(f, 2)) !== undefined) {
-				A = $e;
-				if (((truthy((rt.istype(live(A), T("/obj/item/weapon/soap")) ? 1 : 0)) || truthy((rt.istype(live(A), T("/obj/item/weapon/reagent_containers/food/snacks/grown/banana")) ? 1 : 0))) || truthy((rt.istype(live(A), T("/obj/item/weapon/grown/bananapeel")) ? 1 : 0)))) {
-					pranksNearby = rt.inc(live(pranksNearby), -1);
+			for (A of each(_T, T("/obj/item"))) {
+				if (rt.istype(A, T("/obj/item/weapon/soap")) || rt.istype(A, T("/obj/item/weapon/reagent_containers/food/snacks/grown/banana")) || rt.istype(A, T("/obj/item/weapon/grown/bananapeel"))) {
+					pranksNearby--;
 				}
 			}
-			rt.endFor(f, 2);
-			if (truthy(rt.fv(f, "wet", live(_T)))) {
-				(pranksNearby = rt.modify(live(pranksNearby), 10, subtract));
+			if (_T.wet) {
+				pranksNearby -= 10;
 			}
 		}
-		rt.endFor(f, 1);
-		rt.setAt(live(clownPriority), live(C), live(pranksNearby));
+		rt.setAt(clownPriority, C, pranksNearby);
 	}
-	rt.endFor(f, 0);
-	A_5 = null;
-	rt.forList(f, 0, live(clownPriority));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		A_5 = $e;
-		if (!truthy(live(clownTarget))) {
-			clownTarget = live(A_5);
-		} else {
-			if (rt.gt(rt.index(live(clownPriority), live(A_5)), rt.index(live(clownPriority), live(clownTarget)))) {
-				clownTarget = rt.index(live(clownPriority), live(A_5));
-			}
+	for (A_5 of each(clownPriority)) {
+		if (!clownTarget) {
+			clownTarget = A_5;
+		} else if (rt.index(clownPriority, A_5) > rt.index(clownPriority, clownTarget)) {
+			clownTarget = rt.index(clownPriority, A_5);
 		}
 	}
-	rt.endFor(f, 0);
-	if (!truthy(live(clownTarget))) return f.dot;
-	if (!truthy((yield* g.srcCall(f, "Adjacent", live(clownTarget))))) {
-		yield* g.srcCall(f, "tryWalk", live(clownTarget));
+	if (!clownTarget) return f.dot;
+	if (!this.Adjacent(clownTarget)) {
+		yield* this.tryWalk(clownTarget);
 	} else {
 		hasPranked = 0;
-		A_6 = null;
-		rt.forList(f, 0, live(allContents));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			A_6 = $e;
-			if ((truthy(rt.op(f, "Prob", [], [divide(rt.sv(f, "smartness"), 2)])) && !truthy(live(hasPranked)))) {
-				if (truthy((rt.istype(live(A_6), T("/obj/item/weapon/soap")) ? 1 : 0))) {
-					yield* g.srcCall(f, "npcDrop", live(A_6));
+		for (A_6 of each(allContents)) {
+			if (prob(this.smartness / 2) && !hasPranked) {
+				if (rt.istype(A_6, T("/obj/item/weapon/soap"))) {
+					this.npcDrop(A_6);
 					hasPranked = 1;
 				}
-				if (truthy((rt.istype(live(A_6), T("/obj/item/weapon/reagent_containers/food/snacks/grown/banana")) ? 1 : 0))) {
-					yield* g.callName(f, (B = live(A_6)), "attack", [live(f.src), live(f.src)]);
+				if (rt.istype(A_6, T("/obj/item/weapon/reagent_containers/food/snacks/grown/banana"))) {
+					yield* (B = A_6).attack(this, this);
 				}
-				if (truthy((rt.istype(live(A_6), T("/obj/item/weapon/grown/bananapeel")) ? 1 : 0))) {
-					yield* g.srcCall(f, "npcDrop", live(A_6));
+				if (rt.istype(A_6, T("/obj/item/weapon/grown/bananapeel"))) {
+					this.npcDrop(A_6);
 					hasPranked = 1;
 				}
 			}
 		}
-		rt.endFor(f, 0);
-		if (truthy(live(hasPranked))) return f.dot;
-		if (rt.le(rt.gv(f, "total_volume", rt.fv(f, "reagents", live(S))), 5)) {
-			yield* g.callName(f, rt.fv(f, "reagents", live(S)), "add_reagent", ["water", 25]);
+		if (hasPranked) return f.dot;
+		if (S.reagents.total_volume <= 5) {
+			yield* S.reagents.add_reagent("water", 25);
 		}
-		yield* g.callName(f, live(S), "afterattack", [rt.getStep(f, rt.op(f, "PickUnweighted", [1], [(yield* g.call(f, P("/proc/orange"), null, [1, live(clownTarget)]))]), 0), live(f.src)]);
+		yield* S.afterattack(rt.getStep(f, pick(orange(1, clownTarget)), 0), this);
 	}
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/human/interactive/proc/healpeople  (code/modules/mob/living/carbon/human/interactive.dm:1181)  may sleep
+// interactive.dm:1181
 rt.def("/mob/living/carbon/human/interactive/proc/healpeople", function* healpeople(f: Frame, obj: Value) {
-	let shouldTryHeal: Value = null, M: Value = null, allContents: Value = null, A: Value = null, HPS: Value = null, C: Value = null;
-	let $e: any;
-	f.vars = () => [obj, shouldTryHeal, M, allContents, A, HPS, C, $e];
-	shouldTryHeal = 0;
-	M = null;
-	allContents = (yield* g.srcCall(f, "getAllContents"));
-	A = null;
-	rt.forList(f, 0, live(allContents));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		A = $e;
-		if (truthy((rt.istype(live(A), T("/obj/item/stack/medical")) ? 1 : 0))) {
+	let M: Value = null, A: Value = null, HPS: Value = null, C: Value = null;
+	let shouldTryHeal: Value = 0;
+	let allContents: Value = this.getAllContents();
+	for (A of each(allContents)) {
+		if (rt.istype(A, T("/obj/item/stack/medical"))) {
 			shouldTryHeal = 1;
-			M = live(A);
+			M = A;
 		}
 	}
-	rt.endFor(f, 0);
-	HPS = null;
-	if (!truthy(rt.locateIn(f, T("/obj/item/weapon/reagent_containers/hypospray"), live(allContents)))) {
-		yield* g.new_(f, T("/obj/item/weapon/reagent_containers/hypospray"), [live(f.src)]);
+	if (!rt.locateIn(f, T("/obj/item/weapon/reagent_containers/hypospray"), allContents)) {
+		yield* new_(T("/obj/item/weapon/reagent_containers/hypospray"), this);
 	} else {
-		HPS = rt.locateIn(f, T("/obj/item/weapon/reagent_containers/hypospray"), live(allContents));
-		if (!truthy(live(shouldTryHeal))) {
+		HPS = rt.locateIn(f, T("/obj/item/weapon/reagent_containers/hypospray"), allContents);
+		if (!shouldTryHeal) {
 			shouldTryHeal = 2;
 		}
 	}
-	if (isEqual(live(shouldTryHeal), 1)) {
-		C = null;
-		rt.forList(f, 0, rt.sv(f, "nearby"), T("/mob/living/carbon/human"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			C = $e;
-			if (rt.le(rt.fv(f, "health", live(C)), 75)) {
-				if (rt.le((yield* g.call(f, P("/proc/get_dist"), null, [live(f.src), live(C)])), 2)) {
-					yield* g.callName(f, live(f.src), "say", [fmt("Wait, ＀, let me heal you!", [live(C)])]);
-					yield* g.callName(f, live(M), "attack", [live(C), live(f.src)]);
-					rt.setSv(f, "inactivity_period", 25);
+	if (shouldTryHeal == 1) {
+		for (C of each(this.nearby, T("/mob/living/carbon/human"))) {
+			if (C.health <= 75) {
+				if (get_dist(this, C) <= 2) {
+					yield* this.say(`Wait, ${C}, let me heal you!`);
+					yield* M.attack(C, this);
+					this.inactivity_period = 25;
 				} else {
-					yield* g.srcCall(f, "tryWalk", rt.getStep(f, live(C), 0));
+					yield* this.tryWalk(rt.getStep(f, C, 0));
 				}
 			}
 		}
-		rt.endFor(f, 0);
 	} else {
-		if (!isEqual(live(shouldTryHeal), 2)) return f.dot;
-		if (!truthy(live(HPS))) return f.dot;
-		if (rt.le(rt.gv(f, "total_volume", rt.fv(f, "reagents", live(HPS))), 0)) {
-			yield* g.callName(f, rt.fv(f, "reagents", live(HPS)), "add_reagent", ["tricordrazine", 30]);
+		if (shouldTryHeal != 2) return f.dot;
+		if (!HPS) return f.dot;
+		if (HPS.reagents.total_volume <= 0) {
+			yield* HPS.reagents.add_reagent("tricordrazine", 30);
 		}
 		C = null;
-		rt.forList(f, 0, rt.sv(f, "nearby"), T("/mob/living/carbon/human"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			C = $e;
-			if ((rt.le(rt.fv(f, "health", live(C)), 75) && rt.le((yield* g.callName(f, rt.fv(f, "reagents", live(C)), "get_reagent_amount", ["tricordrazine"])), 0))) {
-				if (rt.le((yield* g.call(f, P("/proc/get_dist"), null, [live(f.src), live(C)])), 2)) {
-					yield* g.callName(f, live(f.src), "say", [fmt("Wait, ＀, let me heal you!", [live(C)])]);
-					yield* g.callName(f, live(HPS), "attack", [live(C), live(f.src)]);
-					rt.setSv(f, "inactivity_period", 25);
+		for (C of each(this.nearby, T("/mob/living/carbon/human"))) {
+			if (C.health <= 75 && C.reagents.get_reagent_amount("tricordrazine") <= 0) {
+				if (get_dist(this, C) <= 2) {
+					yield* this.say(`Wait, ${C}, let me heal you!`);
+					yield* HPS.attack(C, this);
+					this.inactivity_period = 25;
 				} else {
-					yield* g.srcCall(f, "tryWalk", rt.getStep(f, live(C), 0));
+					yield* this.tryWalk(rt.getStep(f, C, 0));
 				}
 			}
 		}
-		rt.endFor(f, 0);
 	}
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/human/interactive/proc/dojanitor  (code/modules/mob/living/carbon/human/interactive.dm:1221)  may sleep
+// interactive.dm:1221
 rt.def("/mob/living/carbon/human/interactive/proc/dojanitor", function* dojanitor(f: Frame, obj: Value) {
-	let allContents: Value = null, S: Value = null, TC: Value = null;
-	f.vars = () => [obj, allContents, S, TC];
-	if (truthy((yield* g.srcCall(f, "shouldModulePass")))) {
-		return live(f.dot);
+	let S: Value = null, TC: Value = null;
+	if (this.shouldModulePass()) {
+		return f.dot;
 	}
-	allContents = (yield* g.srcCall(f, "getAllContents"));
-	S = null;
-	if (!truthy(rt.locateIn(f, T("/obj/item/weapon/reagent_containers/spray"), live(allContents)))) {
-		yield* g.new_(f, T("/obj/item/weapon/reagent_containers/spray"), [live(f.src)]);
+	let allContents: Value = this.getAllContents();
+	if (!rt.locateIn(f, T("/obj/item/weapon/reagent_containers/spray"), allContents)) {
+		yield* new_(T("/obj/item/weapon/reagent_containers/spray"), this);
 	} else {
-		S = rt.locateIn(f, T("/obj/item/weapon/reagent_containers/spray"), live(allContents));
+		S = rt.locateIn(f, T("/obj/item/weapon/reagent_containers/spray"), allContents);
 	}
-	if (!truthy(live(S))) return f.dot;
-	if (rt.le(rt.gv(f, "total_volume", rt.fv(f, "reagents", live(S))), 5)) {
-		yield* g.callName(f, rt.fv(f, "reagents", live(S)), "add_reagent", ["cleaner", 25]);
+	if (!S) return f.dot;
+	if (S.reagents.total_volume <= 5) {
+		yield* S.reagents.add_reagent("cleaner", 25);
 	}
-	TC = null;
-	if (!truthy((TC = rt.locateIn(f, T("/obj/effect/decal/cleanable"), (yield* g.call(f, P("/proc/range"), null, [32, live(f.src)])))))) return f.dot;
-	if (!truthy((yield* g.srcCall(f, "Adjacent", live(TC))))) {
-		yield* g.srcCall(f, "tryWalk", live(TC));
+	if (!(TC = rt.locateIn(f, T("/obj/effect/decal/cleanable"), range(MAX_RANGE_FIND, this)))) return f.dot;
+	if (!this.Adjacent(TC)) {
+		yield* this.tryWalk(TC);
 	} else {
-		yield* g.callName(f, live(S), "afterattack", [live(TC), live(f.src)]);
-		rt.setSv(f, "inactivity_period", 25);
+		yield* S.afterattack(TC, this);
+		this.inactivity_period = 25;
 	}
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/human/interactive/proc/customEmote  (code/modules/mob/living/carbon/human/interactive.dm:1246)
+// interactive.dm:1246
 rt.def("/mob/living/carbon/human/interactive/proc/customEmote", function customEmote(f: Frame, text: Value) {
-	rt.callSrc(f, "visible_message", [fmt("<span class='notice'>＀</span>", [live(text)])]);
+	this.visible_message(`<span class='notice'>${text}</span>`);
 	return f.dot;
 });
 
-// /mob/living/carbon/human/interactive/proc/cookingwithmagic  (code/modules/mob/living/carbon/human/interactive.dm:1250)  may sleep
+// interactive.dm:1250
 rt.def("/mob/living/carbon/human/interactive/proc/cookingwithmagic", function* cookingwithmagic(f: Frame, target: Value) {
 	let S: Value = null;
-	f.vars = () => [target, S];
-	if (truthy((yield* g.srcCall(f, "Adjacent", live(target))))) {
-		yield* g.srcCall(f, "customEmote", fmt("＀ ＀ towards ＀, and with a bang, it's instantly cooked!", [live(f.src), rt.op(f, "PickUnweighted", [5], ["gibbers", "drools", "slobbers", "claps wildly", "spits"]), live(target)]));
-		S = (yield* g.new_(f, rt.fv(f, "cooked_type", live(target)), [rt.getStep(f, live(f.src), 0)]));
-		yield* g.callName(f, live(target), "initialize_cooked_food", [live(S), 100]);
-		if (truthy(live(target))) {
-			yield* g.call(f, P("/proc/qdel"), null, [live(target)]);
+	if (this.Adjacent(target)) {
+		this.customEmote(`${this} ${pick("gibbers", "drools", "slobbers", "claps wildly", "spits")} towards ${target}, and with a bang, it's instantly cooked!`);
+		S = (yield* new_(target.cooked_type, rt.getStep(f, this, 0)));
+		yield* target.initialize_cooked_food(S, 100);
+		if (target) {
+			yield* qdel(target);
 		}
 	} else {
-		yield* g.srcCall(f, "tryWalk", live(target));
+		yield* this.tryWalk(target);
 	}
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/human/interactive/proc/souschef  (code/modules/mob/living/carbon/human/interactive.dm:1260)  may sleep
+// interactive.dm:1260
 rt.def("/mob/living/carbon/human/interactive/proc/souschef", function* souschef(f: Frame, obj: Value) {
-	let allContents: Value = null, RP: Value = null, KK: Value = null, foundCookable: Value = null, rangeCheck: Value = null, customableTypes: Value = null, foundCustom: Value = null, DP: Value = null, customType: Value = null, A: Value = null, SF: Value = null, FC: Value = null, toMake: Value = null, D: Value = null, FD: Value = null, CB: Value = null, PD: Value = null, choice: Value = null, toCook: Value = null, finishedList: Value = null, toDisplay: Value = null, toGrab: Value = null, RT: Value = null, toCheck: Value = null, counted: Value = null, S: Value = null, toPlop: Value = null, allTypes: Value = null, A_15: Value = null, O: Value = null, chosenType: Value = null, newSnack: Value = null;
-	let $e: any;
-	f.vars = () => [obj, allContents, RP, KK, foundCookable, rangeCheck, customableTypes, foundCustom, DP, customType, A, SF, FC, toMake, D, FD, CB, PD, choice, toCook, finishedList, toDisplay, toGrab, RT, toCheck, counted, S, toPlop, allTypes, A_15, O, chosenType, newSnack, $e];
-	if (truthy((yield* g.srcCall(f, "shouldModulePass")))) {
-		return live(f.dot);
+	let RP: Value = null, KK: Value = null, foundCustom: Value = null, DP: Value = null, customType: Value = null, A: Value = null, SF: Value = null, FC: Value = null, toMake: Value = null, choice: Value = null, toCook: Value = null, toDisplay: Value = null, toGrab: Value = null, RT: Value = null, toCheck: Value = null, counted: Value = null, S: Value = null, toPlop: Value = null, A_15: Value = null, O: Value = null, newSnack: Value = null;
+	if (this.shouldModulePass()) {
+		return f.dot;
 	}
-	if (truthy((yield* g.srcCall(f, "enforceHome")))) {
-		return live(f.dot);
+	if (yield* this.enforceHome()) {
+		return f.dot;
 	}
-	allContents = (yield* g.srcCall(f, "getAllContents"));
-	if (!truthy((RP = rt.locateIn(f, T("/obj/item/weapon/kitchen/rollingpin"), live(allContents))))) {
-		yield* g.new_(f, T("/obj/item/weapon/kitchen/rollingpin"), [live(f.src)]);
+	let allContents: Value = this.getAllContents();
+	if (!(RP = rt.locateIn(f, T("/obj/item/weapon/kitchen/rollingpin"), allContents))) {
+		yield* new_(T("/obj/item/weapon/kitchen/rollingpin"), this);
 	}
-	if (!truthy((KK = rt.locateIn(f, T("/obj/item/weapon/kitchen/knife"), live(allContents))))) {
-		yield* g.new_(f, T("/obj/item/weapon/kitchen/knife"), [live(f.src)]);
+	if (!(KK = rt.locateIn(f, T("/obj/item/weapon/kitchen/knife"), allContents))) {
+		yield* new_(T("/obj/item/weapon/kitchen/knife"), this);
 	}
-	foundCookable = 0;
-	if (!(truthy(live(RP)) && truthy(live(KK)))) return f.dot;
-	rangeCheck = (yield* g.call(f, P("/proc/view"), null, [6, live(f.src)]));
-	customableTypes = rt.list(T("/obj/item/weapon/reagent_containers/food/snacks/customizable"), T("/obj/item/weapon/reagent_containers/food/snacks/store/bread/plain"), T("/obj/item/weapon/reagent_containers/food/snacks/pizzabread"), T("/obj/item/weapon/reagent_containers/food/snacks/bun"), T("/obj/item/weapon/reagent_containers/food/snacks/store/cake/plain"), T("/obj/item/weapon/reagent_containers/food/snacks/pie/plain"), T("/obj/item/weapon/reagent_containers/food/snacks/pastrybase"));
-	foundCustom = null;
-	DP = null;
-	rt.forList(f, 0, live(rangeCheck), T("/obj/item/weapon/reagent_containers/food/snacks/donkpocket"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		DP = $e;
-		if (truthy(rt.op(f, "Prob", [], [50]))) {
-			yield* g.srcCall(f, "customEmote", fmt("＀ points at the ＀, emitting a loud ＀, and it bursts into flame.", [live(f.src), live(DP), rt.op(f, "PickUnweighted", [4], ["bellow", "screech", "yell", "scream"])]));
-			yield* g.call(f, P("/proc/qdel"), null, [live(DP)]);
+	let foundCookable: Value = 0;
+	if (!(RP && KK)) return f.dot;
+	let rangeCheck: Value = view(6, this);
+	let customableTypes: Value = list(T("/obj/item/weapon/reagent_containers/food/snacks/customizable"), T("/obj/item/weapon/reagent_containers/food/snacks/store/bread/plain"), T("/obj/item/weapon/reagent_containers/food/snacks/pizzabread"), T("/obj/item/weapon/reagent_containers/food/snacks/bun"), T("/obj/item/weapon/reagent_containers/food/snacks/store/cake/plain"), T("/obj/item/weapon/reagent_containers/food/snacks/pie/plain"), T("/obj/item/weapon/reagent_containers/food/snacks/pastrybase"));
+	for (DP of each(rangeCheck, T("/obj/item/weapon/reagent_containers/food/snacks/donkpocket"))) {
+		if (prob(50)) {
+			this.customEmote(`${this} points at the ${DP}, emitting a loud ${pick("bellow", "screech", "yell", "scream")}, and it bursts into flame.`);
+			yield* qdel(DP);
 		}
 	}
-	rt.endFor(f, 0);
-	customType = null;
-	rt.forList(f, 0, live(customableTypes));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		customType = $e;
-		if (truthy((A = rt.locateIn(f, live(customType), live(rangeCheck))))) {
-			foundCustom = live(A);
+	for (customType of each(customableTypes)) {
+		if (A = rt.locateIn(f, customType, rangeCheck)) {
+			foundCustom = A;
 		}
 	}
-	rt.endFor(f, 0);
-	if (truthy((SF = rt.locateIn(f, T("/obj/machinery/smartfridge"), live(rangeCheck))))) {
-		if (rt.gt(rt.getLen(f, rt.fv(f, "contents", live(SF))), 0)) {
-			if (!truthy((yield* g.srcCall(f, "Adjacent", live(SF))))) {
-				yield* g.srcCall(f, "tryWalk", rt.getStep(f, live(SF), 0), 1);
+	if (SF = rt.locateIn(f, T("/obj/machinery/smartfridge"), rangeCheck)) {
+		if (rt.len(f, SF.contents) > 0) {
+			if (!this.Adjacent(SF)) {
+				yield* this.tryWalk(rt.getStep(f, SF, 0), 1);
 			} else {
-				yield* g.srcCall(f, "customEmote", fmt("＀ ＀, grabbing various foodstuffs from ＀ and sticking them in it's mouth!", [live(f.src), rt.op(f, "PickUnweighted", [5], ["gibbers", "drools", "slobbers", "claps wildly", "spits"]), live(SF)]));
+				this.customEmote(`${this} ${pick("gibbers", "drools", "slobbers", "claps wildly", "spits")}, grabbing various foodstuffs from ${SF} and sticking them in it's mouth!`);
 				A = null;
-				rt.forList(f, 0, rt.fv(f, "contents", live(SF)), T("/obj/item"));
-				while (($e = rt.next(f, 0)) !== undefined) {
-					A = $e;
-					if (truthy(rt.op(f, "Prob", [], [divide(rt.sv(f, "smartness"), 2)]))) {
-						rt.setFv(f, "loc", live(A), live(f.src));
+				for (A of each(SF.contents, T("/obj/item"))) {
+					if (prob(this.smartness / 2)) {
+						A.loc = this;
 					}
 				}
-				rt.endFor(f, 0);
 			}
 		}
 	}
-	if (truthy(live(foundCustom))) {
-		FC = live(foundCustom);
-		toMake = null;
-		rt.forList(f, 0, live(allContents), T("/obj/item/weapon/reagent_containers/food/snacks"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			toMake = $e;
-			if (truthy(rt.op(f, "Prob", [], [rt.sv(f, "smartness")]))) {
-				if (truthy(rt.fv(f, "reagents", live(FC)))) {
-					yield* g.callName(f, live(FC), "attackby", [live(toMake), live(f.src)]);
+	if (foundCustom) {
+		FC = foundCustom;
+		for (toMake of each(allContents, T("/obj/item/weapon/reagent_containers/food/snacks"))) {
+			if (prob(this.smartness)) {
+				if (FC.reagents) {
+					yield* FC.attackby(toMake, this);
 				} else {
-					yield* g.call(f, P("/proc/qdel"), null, [live(FC)]);
+					yield* qdel(FC);
 				}
 			}
 		}
-		rt.endFor(f, 0);
 	}
-	D = rt.locateIn(f, T("/obj/item/weapon/reagent_containers/food/snacks/dough"), live(rangeCheck));
-	FD = rt.locateIn(f, T("/obj/item/weapon/reagent_containers/food/snacks/flatdough"), live(rangeCheck));
-	CB = rt.locateIn(f, T("/obj/item/weapon/reagent_containers/food/snacks/cakebatter"), live(rangeCheck));
-	PD = rt.locateIn(f, T("/obj/item/weapon/reagent_containers/food/snacks/piedough"), live(rangeCheck));
-	if (truthy(live(D))) {
-		rt.setSv(f, "TARGET", live(D));
-		if (isEqual((choice = rt.op(f, "PickUnweighted", [2], [1, 2])), 1)) {
-			yield* g.srcCall(f, "tryWalk", rt.getStep(f, live(D), 0));
-			rt.setSv(f, "inactivity_period", (yield* g.call(f, P("/proc/get_dist"), null, [live(f.src), live(D)])));
-			yield* g.callName(f, live(D), "attackby", [live(RP), live(f.src)]);
+	let D: Value = rt.locateIn(f, T("/obj/item/weapon/reagent_containers/food/snacks/dough"), rangeCheck);
+	let FD: Value = rt.locateIn(f, T("/obj/item/weapon/reagent_containers/food/snacks/flatdough"), rangeCheck);
+	let CB: Value = rt.locateIn(f, T("/obj/item/weapon/reagent_containers/food/snacks/cakebatter"), rangeCheck);
+	let PD: Value = rt.locateIn(f, T("/obj/item/weapon/reagent_containers/food/snacks/piedough"), rangeCheck);
+	if (D) {
+		this.TARGET = D;
+		if ((choice = pick(1, 2)) == 1) {
+			yield* this.tryWalk(rt.getStep(f, D, 0));
+			this.inactivity_period = get_dist(this, D);
+			yield* D.attackby(RP, this);
 		} else {
-			yield* g.srcCall(f, "cookingwithmagic", live(D));
+			yield* this.cookingwithmagic(D);
 		}
 		foundCookable = 1;
-	} else {
-		if (truthy(live(FD))) {
-			rt.setSv(f, "TARGET", live(FD));
-			if (isEqual((choice = rt.op(f, "PickUnweighted", [2], [1, 2])), 1)) {
-				yield* g.srcCall(f, "tryWalk", rt.getStep(f, live(D), 0));
-				rt.setSv(f, "inactivity_period", (yield* g.call(f, P("/proc/get_dist"), null, [live(f.src), live(D)])));
-				yield* g.callName(f, live(FD), "attackby", [live(KK), live(f.src)]);
-			} else {
-				yield* g.srcCall(f, "cookingwithmagic", live(FD));
-			}
-			foundCookable = 1;
+	} else if (FD) {
+		this.TARGET = FD;
+		if ((choice = pick(1, 2)) == 1) {
+			yield* this.tryWalk(rt.getStep(f, D, 0));
+			this.inactivity_period = get_dist(this, D);
+			yield* FD.attackby(KK, this);
 		} else {
-			if (truthy(live(CB))) {
-				rt.setSv(f, "TARGET", live(CB));
-				if (isEqual((choice = rt.op(f, "PickUnweighted", [2], [1, 2])), 1)) {
-					yield* g.srcCall(f, "tryWalk", rt.getStep(f, live(D), 0));
-					rt.setSv(f, "inactivity_period", (yield* g.call(f, P("/proc/get_dist"), null, [live(f.src), live(D)])));
-					yield* g.callName(f, live(CB), "attackby", [live(RP), live(f.src)]);
-				} else {
-					yield* g.srcCall(f, "cookingwithmagic", live(CB));
-				}
-				foundCookable = 1;
-			} else {
-				if (truthy(live(PD))) {
-					rt.setSv(f, "TARGET", live(PD));
-					if (isEqual((choice = rt.op(f, "PickUnweighted", [2], [1, 2])), 1)) {
-						yield* g.srcCall(f, "tryWalk", rt.getStep(f, live(D), 0));
-						rt.setSv(f, "inactivity_period", (yield* g.call(f, P("/proc/get_dist"), null, [live(f.src), live(D)])));
-						yield* g.callName(f, live(PD), "attackby", [live(KK), live(f.src)]);
-					} else {
-						yield* g.srcCall(f, "cookingwithmagic", live(PD));
-					}
-					foundCookable = 1;
-				}
-			}
+			yield* this.cookingwithmagic(FD);
 		}
+		foundCookable = 1;
+	} else if (CB) {
+		this.TARGET = CB;
+		if ((choice = pick(1, 2)) == 1) {
+			yield* this.tryWalk(rt.getStep(f, D, 0));
+			this.inactivity_period = get_dist(this, D);
+			yield* CB.attackby(RP, this);
+		} else {
+			yield* this.cookingwithmagic(CB);
+		}
+		foundCookable = 1;
+	} else if (PD) {
+		this.TARGET = PD;
+		if ((choice = pick(1, 2)) == 1) {
+			yield* this.tryWalk(rt.getStep(f, D, 0));
+			this.inactivity_period = get_dist(this, D);
+			yield* PD.attackby(KK, this);
+		} else {
+			yield* this.cookingwithmagic(PD);
+		}
+		foundCookable = 1;
 	}
-	if (truthy((toCook = rt.locateIn(f, T("/obj/item/weapon/reagent_containers/food/snacks"), live(rangeCheck))))) {
-		if (truthy(rt.fv(f, "cooked_type", live(toCook)))) {
-			rt.setSv(f, "TARGET", live(toCook));
+	if (toCook = rt.locateIn(f, T("/obj/item/weapon/reagent_containers/food/snacks"), rangeCheck)) {
+		if (toCook.cooked_type) {
+			this.TARGET = toCook;
 			foundCookable = 1;
-			if (truthy((yield* g.srcCall(f, "Adjacent", live(toCook))))) {
-				yield* g.srcCall(f, "cookingwithmagic", live(toCook));
+			if (this.Adjacent(toCook)) {
+				yield* this.cookingwithmagic(toCook);
 			} else {
-				yield* g.srcCall(f, "tryWalk", rt.getStep(f, live(toCook), 0));
+				yield* this.tryWalk(rt.getStep(f, toCook, 0));
 			}
 		}
 	}
-	finishedList = rt.list();
-	toDisplay = null;
-	rt.forList(f, 0, live(allContents), T("/obj/item/weapon/reagent_containers/food/snacks"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		toDisplay = $e;
-		if ((!truthy(rt.fv(f, "cooked_type", live(toDisplay))) && !truthy((rt.istype(live(toDisplay), T("/obj/item/weapon/reagent_containers/food/snacks/grown")) ? 1 : 0)))) {
-			finishedList = rt.modify(live(finishedList), live(toDisplay), add);
+	let finishedList: Value = list();
+	for (toDisplay of each(allContents, T("/obj/item/weapon/reagent_containers/food/snacks"))) {
+		if (!toDisplay.cooked_type && !rt.istype(toDisplay, T("/obj/item/weapon/reagent_containers/food/snacks/grown"))) {
+			finishedList += toDisplay;
 		}
 	}
-	rt.endFor(f, 0);
-	toGrab = null;
-	rt.forList(f, 0, live(rangeCheck), T("/obj/item/weapon/reagent_containers/food/snacks"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		toGrab = $e;
-		if (!truthy(rt.locateIn(f, T("/obj/structure/table/reinforced"), rt.getStep(f, live(toGrab), 0)))) {
+	for (toGrab of each(rangeCheck, T("/obj/item/weapon/reagent_containers/food/snacks"))) {
+		if (!rt.locateIn(f, T("/obj/structure/table/reinforced"), rt.getStep(f, toGrab, 0))) {
 			foundCookable = 1;
-			if (!truthy((yield* g.srcCall(f, "Adjacent", live(toGrab))))) {
-				yield* g.srcCall(f, "tryWalk", live(toGrab));
+			if (!this.Adjacent(toGrab)) {
+				yield* this.tryWalk(toGrab);
 			} else {
-				rt.setFv(f, "loc", live(toGrab), live(f.src));
+				toGrab.loc = this;
 			}
 		}
 	}
-	rt.endFor(f, 0);
-	if (rt.gt(rt.len(f, live(finishedList)), 0)) {
-		RT = null;
-		toCheck = null;
-		rt.forList(f, 0, live(rangeCheck), T("/obj/structure/table/reinforced"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			toCheck = $e;
+	if (rt.len(f, finishedList) > 0) {
+		for (toCheck of each(rangeCheck, T("/obj/structure/table/reinforced"))) {
 			counted = 0;
 			S = null;
-			rt.forList(f, 1, rt.getStep(f, live(toCheck), 0), T("/obj/item/weapon/reagent_containers/food/snacks"));
-			while (($e = rt.next(f, 1)) !== undefined) {
-				S = $e;
-				counted = rt.inc(live(counted), 1);
+			for (S of each(rt.getStep(f, toCheck, 0), T("/obj/item/weapon/reagent_containers/food/snacks"))) {
+				counted++;
 			}
-			rt.endFor(f, 1);
-			if (rt.lt(live(counted), 12)) {
-				RT = live(toCheck);
+			if (counted < 12) {
+				RT = toCheck;
 				break;
 			}
 		}
-		rt.endFor(f, 0);
-		if (truthy(live(RT))) {
+		if (RT) {
 			foundCookable = 1;
-			if (!truthy((yield* g.srcCall(f, "Adjacent", live(RT))))) {
-				yield* g.srcCall(f, "tryWalk", rt.getStep(f, live(RT), 0));
+			if (!this.Adjacent(RT)) {
+				yield* this.tryWalk(rt.getStep(f, RT, 0));
 			} else {
-				toPlop = null;
-				rt.forList(f, 0, live(allContents), T("/obj/item/weapon/reagent_containers/food/snacks"));
-				while (($e = rt.next(f, 0)) !== undefined) {
-					toPlop = $e;
-					yield* g.callName(f, live(RT), "attackby", [live(toPlop), live(f.src)]);
+				for (toPlop of each(allContents, T("/obj/item/weapon/reagent_containers/food/snacks"))) {
+					yield* RT.attackby(toPlop, this);
 				}
-				rt.endFor(f, 0);
 			}
 		}
 	}
-	if (truthy(live(foundCookable))) return f.dot;
-	allTypes = rt.list(T("/obj/item/weapon/reagent_containers/food/snacks/piedough"), T("/obj/item/weapon/reagent_containers/food/snacks/cakebatter"), T("/obj/item/weapon/reagent_containers/food/snacks/dough"), T("/obj/item/weapon/reagent_containers/food/snacks/flatdough"));
-	A_15 = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/typesof"), null, [T("/obj/item/weapon/reagent_containers/food/snacks")])));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		A_15 = $e;
-		if (truthy(rt.initial(f, (O = live(A_15)), "cooked_type"))) {
-			allTypes = rt.modify(live(allTypes), live(A_15), add);
+	if (foundCookable) return f.dot;
+	let allTypes: Value = list(T("/obj/item/weapon/reagent_containers/food/snacks/piedough"), T("/obj/item/weapon/reagent_containers/food/snacks/cakebatter"), T("/obj/item/weapon/reagent_containers/food/snacks/dough"), T("/obj/item/weapon/reagent_containers/food/snacks/flatdough"));
+	for (A_15 of each(typesof(T("/obj/item/weapon/reagent_containers/food/snacks")))) {
+		if (rt.initial(f, (O = A_15), "cooked_type")) {
+			allTypes += A_15;
 		}
 	}
-	rt.endFor(f, 0);
-	chosenType = rt.op(f, "PickUnweighted", [1], [live(allTypes)]);
-	rt.setSv(f, "TARGET", (newSnack = (yield* g.new_(f, live(chosenType), [rt.getStep(f, live(f.src), 0)]))));
-	yield* g.callName(f, rt.fv(f, "reagents", live(newSnack)), "remove_any", [subtract(divide(rt.gv(f, "total_volume", rt.fv(f, "reagents", live(newSnack))), 2), 1)]);
-	rt.setFv(f, "name", live(newSnack), fmt("Synthetic ＀", [rt.fv(f, "name", live(newSnack))]));
-	yield* g.srcCall(f, "customEmote", fmt("＀ ＀ as they vomit ＀ from their mouth!", [live(f.src), rt.op(f, "PickUnweighted", [5], ["gibbers", "drools", "slobbers", "claps wildly", "spits"]), live(newSnack)]));
+	let chosenType: Value = pick(allTypes);
+	this.TARGET = (newSnack = (yield* new_(chosenType, rt.getStep(f, this, 0))));
+	yield* newSnack.reagents.remove_any(newSnack.reagents.total_volume / 2 - 1);
+	newSnack.name = `Synthetic ${newSnack.name}`;
+	this.customEmote(`${this} ${pick("gibbers", "drools", "slobbers", "claps wildly", "spits")} as they vomit ${newSnack} from their mouth!`);
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/human/interactive/proc/compareFaction  (code/modules/mob/living/carbon/human/interactive.dm:1432)
+// interactive.dm:1432
 rt.def("/mob/living/carbon/human/interactive/proc/compareFaction", function compareFaction(f: Frame, targetFactions: Value) {
-	let hasSame: Value = null, A: Value = null;
-	let $e: any;
-	f.vars = () => [hasSame, A, $e];
-	hasSame = 0;
-	A = null;
-	rt.forList(f, 0, live(targetFactions));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		A = $e;
-		if (truthy((rt.isIn(f, live(A), rt.sv(f, "faction")) ? 1 : 0))) {
+	let A: Value = null;
+	let hasSame: Value = 0;
+	for (A of each(targetFactions)) {
+		if (rt.isIn(f, A, this.faction)) {
 			hasSame = 1;
 		}
 	}
-	rt.endFor(f, 0);
-	return live(hasSame);
+	return hasSame;
 });
 
-// /mob/living/carbon/human/interactive/proc/combat  (code/modules/mob/living/carbon/human/interactive.dm:1439)  may sleep
+// interactive.dm:1439
 rt.def("/mob/living/carbon/human/interactive/proc/combat", function* combat(f: Frame, obj: Value) {
-	let M: Value = null, best: Value = null, foundFav: Value = null, allContents: Value = null, test: Value = null, a: Value = null, R: Value = null, G: Value = null, M_3: Value = null, A: Value = null, W: Value = null, G_4: Value = null, _P: Value = null, stunning: Value = null, A_7: Value = null, shouldFire: Value = null, stunCheck: Value = null;
-	let $e: any;
-	f.vars = () => [obj, M, best, foundFav, allContents, test, a, R, G, M_3, A, W, G_4, _P, stunning, A_7, shouldFire, stunCheck, $e];
-	yield* g.srcCall(f, "enforce_hands");
-	if (truthy(rt.sv(f, "canmove"))) {
-		if (((truthy(rt.sv(f, "graytide")) || truthy(rt.bitAnd(rt.sv(f, "TRAITS"), 32))) || truthy(rt.sv(f, "retal")))) {
-			rt.modSrcVar(f, "interest", rt.sv(f, "targetInterestShift"), add);
-			rt.setSv(f, "a_intent", "harm");
-			rt.setSv(f, "zone_selected", rt.op(f, "PickUnweighted", [6], ["chest", "r_leg", "l_leg", "r_arm", "l_arm", "head"]));
-			(rt.modSrcVar(f, "doing", 8, rt.bitOr));
-			if (truthy(rt.sv(f, "retal"))) {
-				rt.setSv(f, "TARGET", rt.sv(f, "retal_target"));
-			} else {
-				if (!truthy((M = rt.locateIn(f, T("/mob/living"), (yield* g.call(f, P("/proc/oview"), null, [7, live(f.src)])))))) {
-					rt.setSv(f, "doing", rt.bitAnd(rt.sv(f, "doing"), 16777207));
-				} else {
-					if ((!isEqual(live(M), live(f.src)) && !truthy((yield* g.srcCall(f, "compareFaction", rt.fv(f, "faction", live(M))))))) {
-						rt.setSv(f, "TARGET", live(M));
-					}
-				}
+	let M: Value = null, best: Value = null, test: Value = null, a: Value = null, R: Value = null, G: Value = null, M_3: Value = null, A: Value = null, W: Value = null, G_4: Value = null, _P: Value = null, stunning: Value = null, A_7: Value = null, shouldFire: Value = null, stunCheck: Value = null;
+	this.enforce_hands();
+	if (this.canmove) {
+		if (this.graytide || rt.bitAnd(this.TRAITS, TRAIT_MEAN) || this.retal) {
+			this.interest += this.targetInterestShift;
+			this.a_intent = "harm";
+			this.zone_selected = pick("chest", "r_leg", "l_leg", "r_arm", "l_arm", "head");
+			(rt.modSrcVar(f, "doing", FIGHTING, rt.bitOr));
+			if (this.retal) {
+				this.TARGET = this.retal_target;
+			} else if (!(M = rt.locateIn(f, T("/mob/living"), oview(7, this)))) {
+				this.doing = rt.bitAnd(this.doing, 16777207);
+			} else if (M != this && !this.compareFaction(M.faction)) {
+				this.TARGET = M;
 			}
 		}
 	}
-	if (truthy(rt.sv(f, "retal"))) {
-		if (truthy(rt.sv(f, "retal_target"))) {
-			if (truthy((yield* g.srcCall(f, "compareFaction", rt.fv(f, "faction", rt.sv(f, "retal_target")))))) {
-				rt.setSv(f, "retal", 0);
-				rt.setSv(f, "retal_target", null);
-				rt.setSv(f, "TARGET", null);
-				rt.setSv(f, "doing", 0);
+	if (this.retal) {
+		if (this.retal_target) {
+			if (this.compareFaction(this.retal_target.faction)) {
+				this.retal = 0;
+				this.retal_target = null;
+				this.TARGET = null;
+				this.doing = 0;
 			}
 		}
 	}
-	best = null;
-	foundFav = 0;
-	allContents = (yield* g.srcCall(f, "getAllContents"));
-	test = null;
-	rt.forList(f, 0, live(allContents));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		test = $e;
+	let foundFav: Value = 0;
+	let allContents: Value = this.getAllContents();
+	for (test of each(allContents)) {
 		a = null;
-		rt.forList(f, 1, rt.sv(f, "favoured_types"));
-		while (($e = rt.next(f, 1)) !== undefined) {
-			a = $e;
-			if ((truthy((yield* g.call(f, P("/proc/ispath"), null, [live(test), live(a)]))) && !truthy(rt.bitAnd(rt.sv(f, "doing"), 8)))) {
-				best = live(test);
+		for (a of each(this.favoured_types)) {
+			if (ispath(test, a) && !rt.bitAnd(this.doing, FIGHTING)) {
+				best = test;
 				foundFav = 1;
-				return live(f.dot);
+				return f.dot;
 			}
 		}
-		rt.endFor(f, 1);
-		if (!truthy(live(foundFav))) {
-			if (truthy((rt.istype(live(test), T("/obj/item/weapon")) ? 1 : 0))) {
-				if (rt.gt(rt.gv(f, "force", (R = live(test))), 2)) {
-					if (!truthy(live(best))) {
-						best = live(R);
-					} else {
-						if (rt.lt(rt.fv(f, "force", live(best)), rt.fv(f, "force", live(R)))) {
-							best = live(R);
-						}
+		if (!foundFav) {
+			if (rt.istype(test, T("/obj/item/weapon"))) {
+				if ((R = test).force > 2) {
+					if (!best) {
+						best = R;
+					} else if (best.force < R.force) {
+						best = R;
 					}
-					if (truthy((rt.istype(live(R), T("/obj/item/weapon/gun")) ? 1 : 0))) {
-						if (truthy((yield* g.callName(f, (G = live(R)), "can_shoot", [])))) {
-							best = live(R);
+					if (rt.istype(R, T("/obj/item/weapon/gun"))) {
+						if ((G = R).can_shoot()) {
+							best = R;
 							break;
 						}
 					}
@@ -1968,193 +1678,166 @@ rt.def("/mob/living/carbon/human/interactive/proc/combat", function* combat(f: F
 			}
 		}
 	}
-	rt.endFor(f, 0);
-	if (truthy(live(best))) {
-		yield* g.srcCall(f, "take_to_slot", live(best), 1);
+	if (best) {
+		yield* this.take_to_slot(best, 1);
 	}
-	if (!(truthy(rt.sv(f, "TARGET")) && truthy(rt.bitAnd(rt.sv(f, "doing"), 8)))) return f.dot;
-	if (truthy((rt.istype((M_3 = rt.sv(f, "TARGET")), T("/mob/living")) ? 1 : 0))) {
-		if (rt.gt(rt.fv(f, "health", live(M_3)), 1)) {
-			A = null;
-			rt.forList(f, 0, live(allContents));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				A = $e;
-				if (truthy((rt.istype(live(A), T("/obj/item/weapon/gun")) ? 1 : 0))) {
+	if (!(this.TARGET && rt.bitAnd(this.doing, FIGHTING))) return f.dot;
+	if (rt.istype((M_3 = this.TARGET), T("/mob/living"))) {
+		if (M_3.health > 1) {
+			for (A of each(allContents)) {
+				if (rt.istype(A, T("/obj/item/weapon/gun"))) {
 					continue;
 				}
-				if (truthy(rt.op(f, "Prob", [], [rt.sv(f, "robustness")]))) {
-					if (truthy((rt.istype(live(A), T("/obj/item/weapon")) ? 1 : 0))) {
-						if (rt.gt(rt.gv(f, "throwforce", (W = live(A))), 19)) {
-							yield* g.srcCall(f, "npcDrop", live(W), 1);
-							yield* g.srcCall(f, "throw_item", rt.sv(f, "TARGET"));
+				if (prob(this.robustness)) {
+					if (rt.istype(A, T("/obj/item/weapon"))) {
+						if ((W = A).throwforce > 19) {
+							this.npcDrop(W, 1);
+							yield* this.throw_item(this.TARGET);
 						}
 					}
-					if (truthy((rt.istype(live(A), T("/obj/item/weapon/grenade")) ? 1 : 0))) {
-						yield* g.callName(f, (G = live(A)), "attack_self", [live(f.src)]);
-						if (truthy(rt.op(f, "Prob", [], [rt.sv(f, "smartness")]))) {
-							yield* g.srcCall(f, "npcDrop", live(G), 1);
-							rt.setSv(f, "inactivity_period", 15);
-							yield* g.call(f, P("/proc/sleep"), null, [15]);
-							yield* g.srcCall(f, "throw_item", rt.sv(f, "TARGET"));
+					if (rt.istype(A, T("/obj/item/weapon/grenade"))) {
+						yield* (G = A).attack_self(this);
+						if (prob(this.smartness)) {
+							this.npcDrop(G, 1);
+							this.inactivity_period = 15;
+							yield* sleep(15);
+							yield* this.throw_item(this.TARGET);
 						}
 					}
 				}
 			}
-			rt.endFor(f, 0);
-			if ((!truthy(rt.sv(f, "main_hand")) && truthy(rt.sv(f, "other_hand")))) {
-				yield* g.srcCall(f, "swap_hands");
+			if (!this.main_hand && this.other_hand) {
+				this.swap_hands();
 			}
-			if (truthy(rt.sv(f, "main_hand"))) {
-				if (!isEqual(rt.fv(f, "force", rt.sv(f, "main_hand")), 0)) {
-					if (truthy((rt.istype(rt.sv(f, "main_hand"), T("/obj/item/weapon/gun")) ? 1 : 0))) {
-						if (truthy((yield* g.callName(f, (G_4 = rt.sv(f, "main_hand")), "can_trigger_gun", [live(f.src)])))) {
-							if (truthy((rt.istype(rt.sv(f, "main_hand"), T("/obj/item/weapon/gun/ballistic")) ? 1 : 0))) {
-								if (!truthy(rt.gv(f, "chambered", (_P = rt.sv(f, "main_hand"))))) {
-									yield* g.callName(f, live(_P), "chamber_round", []);
-									yield* g.callName(f, live(_P), "update_icon", []);
+			if (this.main_hand) {
+				if (this.main_hand.force != 0) {
+					if (rt.istype(this.main_hand, T("/obj/item/weapon/gun"))) {
+						if (yield* (G_4 = this.main_hand).can_trigger_gun(this)) {
+							if (rt.istype(this.main_hand, T("/obj/item/weapon/gun/ballistic"))) {
+								if (!(_P = this.main_hand).chambered) {
+									yield* _P.chamber_round();
+									yield* _P.update_icon();
+								} else if (_P.get_ammo(1) == 0) {
+									yield* _P.update_icon();
+									this.npcDrop(_P, 1);
 								} else {
-									if (isEqual((yield* g.callName(f, live(_P), "get_ammo", [1])), 0)) {
-										yield* g.callName(f, live(_P), "update_icon", []);
-										yield* g.srcCall(f, "npcDrop", live(_P), 1);
-									} else {
-										yield* g.callName(f, live(_P), "afterattack", [rt.sv(f, "TARGET"), live(f.src)]);
+									yield* _P.afterattack(this.TARGET, this);
+								}
+							} else if (rt.istype(this.main_hand, T("/obj/item/weapon/gun/energy"))) {
+								_P = this.main_hand;
+								stunning = 0;
+								for (A_7 of each(_P.ammo_type)) {
+									if (ispath(A_7, T("/obj/item/ammo_casing/energy/electrode"))) {
+										stunning = 1;
 									}
+								}
+								shouldFire = 1;
+								stunCheck = this.TARGET;
+								if (stunning && rt.istype(stunCheck, T("/mob/living")) && stunCheck.IsStun()) {
+									shouldFire = 0;
+								}
+								if (shouldFire) {
+									if (_P.cell.charge <= 10) {
+										yield* _P.update_icon();
+										this.npcDrop(_P, 1);
+									} else {
+										yield* _P.afterattack(this.TARGET, this);
+									}
+								}
+							} else if (get_dist(this, this.TARGET) > 6) {
+								if (!(yield* this.walk2derpless(this.TARGET))) {
+									this.timeout++;
 								}
 							} else {
-								if (truthy((rt.istype(rt.sv(f, "main_hand"), T("/obj/item/weapon/gun/energy")) ? 1 : 0))) {
-									_P = rt.sv(f, "main_hand");
-									stunning = 0;
-									A_7 = null;
-									rt.forList(f, 0, rt.fv(f, "ammo_type", live(_P)));
-									while (($e = rt.next(f, 0)) !== undefined) {
-										A_7 = $e;
-										if (truthy((yield* g.call(f, P("/proc/ispath"), null, [live(A_7), T("/obj/item/ammo_casing/energy/electrode")])))) {
-											stunning = 1;
-										}
-									}
-									rt.endFor(f, 0);
-									shouldFire = 1;
-									stunCheck = rt.sv(f, "TARGET");
-									if (((truthy(live(stunning)) && truthy((rt.istype(live(stunCheck), T("/mob/living")) ? 1 : 0))) && truthy((yield* g.callName(f, live(stunCheck), "IsStun", []))))) {
-										shouldFire = 0;
-									}
-									if (truthy(live(shouldFire))) {
-										if (rt.le(rt.gv(f, "charge", rt.fv(f, "cell", live(_P))), 10)) {
-											yield* g.callName(f, live(_P), "update_icon", []);
-											yield* g.srcCall(f, "npcDrop", live(_P), 1);
-										} else {
-											yield* g.callName(f, live(_P), "afterattack", [rt.sv(f, "TARGET"), live(f.src)]);
-										}
-									}
-								} else {
-									if (rt.gt((yield* g.call(f, P("/proc/get_dist"), null, [live(f.src), rt.sv(f, "TARGET")])), 6)) {
-										if (!truthy((yield* g.srcCall(f, "walk2derpless", rt.sv(f, "TARGET"))))) {
-											rt.incSrcVar(f, "timeout", 1, true);
-										}
-									} else {
-										yield* g.callName(f, (W = rt.sv(f, "main_hand")), "attack", [rt.sv(f, "TARGET"), live(f.src)]);
-									}
-								}
+								yield* (W = this.main_hand).attack(this.TARGET, this);
 							}
 						} else {
-							rt.setFv(f, "loc", live(G_4), rt.getStep(f, live(f.src), 0));
-							yield* g.srcCall(f, "enforce_hands");
-							yield* g.srcCall(f, "update_icons");
+							G_4.loc = rt.getStep(f, this, 0);
+							this.enforce_hands();
+							yield* this.update_icons();
 						}
 					}
 				}
-			} else {
-				if (rt.gt((yield* g.srcCall(f, "targetRange", rt.sv(f, "TARGET"))), 2)) {
-					yield* g.srcCall(f, "tryWalk", rt.sv(f, "TARGET"));
-				} else {
-					if (truthy((yield* g.srcCall(f, "Adjacent", rt.sv(f, "TARGET"))))) {
-						rt.setSv(f, "a_intent", rt.op(f, "PickUnweighted", [2], ["disarm", "harm"]));
-						yield* g.callName(f, live(M_3), "attack_hand", [live(f.src)]);
-					}
-				}
+			} else if (this.targetRange(this.TARGET) > 2) {
+				yield* this.tryWalk(this.TARGET);
+			} else if (this.Adjacent(this.TARGET)) {
+				this.a_intent = pick("disarm", "harm");
+				yield* M_3.attack_hand(this);
 			}
 		}
-		rt.incSrcVar(f, "timeout", 1, true);
+		this.timeout++;
+	} else if (this.timeout >= 10 || !(this.targetRange(M_3) > 14)) {
+		this.doing = rt.bitAnd(this.doing, 16777207);
+		this.timeout = 0;
+		this.TARGET = null;
+		this.retal = 0;
+		this.retal_target = null;
 	} else {
-		if ((rt.ge(rt.sv(f, "timeout"), 10) || !rt.gt((yield* g.srcCall(f, "targetRange", live(M_3))), 14))) {
-			rt.setSv(f, "doing", rt.bitAnd(rt.sv(f, "doing"), 16777207));
-			rt.setSv(f, "timeout", 0);
-			rt.setSv(f, "TARGET", null);
-			rt.setSv(f, "retal", 0);
-			rt.setSv(f, "retal_target", null);
-		} else {
-			rt.incSrcVar(f, "timeout", 1, true);
-		}
+		this.timeout++;
 	}
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/human/interactive/proc/nearbyscan  (code/modules/mob/living/carbon/human/interactive.dm:1578)
+// interactive.dm:1578
 rt.def("/mob/living/carbon/human/interactive/proc/nearbyscan", function nearbyscan(f: Frame, obj: Value) {
 	let M: Value = null;
-	let $e: any;
-	f.vars = () => [M, $e];
-	rt.setSv(f, "nearby", rt.list());
-	M = null;
-	rt.forList(f, 0, rt.call(f, P("/proc/view"), null, [4, live(f.src)]), T("/mob/living"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if (!isEqual(live(M), live(f.src))) {
-			rt.modSrcVar(f, "nearby", live(M), add);
+	this.nearby = list();
+	for (M of each(view(4, this), T("/mob/living"))) {
+		if (M != this) {
+			this.nearby += M;
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
 rt.type(4814, "/mob/living/carbon/human/interactive/angry", "/mob/living/carbon/human/interactive", {});
 
-// /mob/living/carbon/human/interactive/angry/proc/Initialize  (code/modules/mob/living/carbon/human/interactive.dm:1585)  may sleep
+// interactive.dm:1585
 rt.def("/mob/living/carbon/human/interactive/angry/proc/Initialize", function* Initialize(f: Frame) {
-	(rt.modSrcVar(f, "TRAITS", 2, rt.bitOr));
-	(rt.modSrcVar(f, "TRAITS", 32, rt.bitOr));
-	rt.modSrcVar(f, "faction", "bot_angry", add);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	(rt.modSrcVar(f, "TRAITS", TRAIT_ROBUST, rt.bitOr));
+	(rt.modSrcVar(f, "TRAITS", TRAIT_MEAN, rt.bitOr));
+	this.faction += "bot_angry";
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
 rt.type(4815, "/mob/living/carbon/human/interactive/friendly", "/mob/living/carbon/human/interactive", {});
 
-// /mob/living/carbon/human/interactive/friendly/proc/Initialize  (code/modules/mob/living/carbon/human/interactive.dm:1591)  may sleep
+// interactive.dm:1591
 rt.def("/mob/living/carbon/human/interactive/friendly/proc/Initialize", function* Initialize(f: Frame) {
-	(rt.modSrcVar(f, "TRAITS", 64, rt.bitOr));
-	(rt.modSrcVar(f, "TRAITS", 4, rt.bitOr));
-	rt.modSrcVar(f, "faction", "bot_friendly", add);
-	rt.modSrcVar(f, "faction", "neutral", add);
-	(rt.modSrcVar(f, "functions", "combat", subtract));
-	yield* g.callSuper(f, [], rt.Args.Same);
+	(rt.modSrcVar(f, "TRAITS", TRAIT_FRIENDLY, rt.bitOr));
+	(rt.modSrcVar(f, "TRAITS", TRAIT_UNROBUST, rt.bitOr));
+	this.faction += "bot_friendly";
+	this.faction += "neutral";
+	this.functions -= "combat";
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
 rt.type(4816, "/mob/living/carbon/human/interactive/greytide", "/mob/living/carbon/human/interactive", {});
 
-// /mob/living/carbon/human/interactive/greytide/proc/Initialize  (code/modules/mob/living/carbon/human/interactive.dm:1599)  may sleep
+// interactive.dm:1599
 rt.def("/mob/living/carbon/human/interactive/greytide/proc/Initialize", function* Initialize(f: Frame) {
-	(rt.modSrcVar(f, "TRAITS", 2, rt.bitOr));
-	(rt.modSrcVar(f, "TRAITS", 32, rt.bitOr));
-	(rt.modSrcVar(f, "TRAITS", 128, rt.bitOr));
-	(rt.modSrcVar(f, "TRAITS", 16, rt.bitOr));
-	rt.setSv(f, "maxInterest", 5);
-	rt.setSv(f, "targetInterestShift", 2);
-	rt.modSrcVar(f, "faction", "bot_grey", add);
-	rt.setSv(f, "graytide", 1);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	(rt.modSrcVar(f, "TRAITS", TRAIT_ROBUST, rt.bitOr));
+	(rt.modSrcVar(f, "TRAITS", TRAIT_MEAN, rt.bitOr));
+	(rt.modSrcVar(f, "TRAITS", TRAIT_THIEVING, rt.bitOr));
+	(rt.modSrcVar(f, "TRAITS", TRAIT_DUMB, rt.bitOr));
+	this.maxInterest = 5;
+	this.targetInterestShift = 2;
+	this.faction += "bot_grey";
+	this.graytide = 1;
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
 rt.type(4817, "/mob/living/carbon/human/interactive/robust", "/mob/living/carbon/human/interactive", {});
 
-// /mob/living/carbon/human/interactive/robust/proc/Initialize  (code/modules/mob/living/carbon/human/interactive.dm:1611)  may sleep
+// interactive.dm:1611
 rt.def("/mob/living/carbon/human/interactive/robust/proc/Initialize", function* Initialize(f: Frame) {
-	(rt.modSrcVar(f, "TRAITS", 64, rt.bitOr));
-	(rt.modSrcVar(f, "TRAITS", 2, rt.bitOr));
-	(rt.modSrcVar(f, "TRAITS", 8, rt.bitOr));
-	rt.modSrcVar(f, "faction", "bot_power", add);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	(rt.modSrcVar(f, "TRAITS", TRAIT_FRIENDLY, rt.bitOr));
+	(rt.modSrcVar(f, "TRAITS", TRAIT_ROBUST, rt.bitOr));
+	(rt.modSrcVar(f, "TRAITS", TRAIT_SMART, rt.bitOr));
+	this.faction += "bot_power";
+	yield* parent_proc();
 	return f.dot;
 }, true);

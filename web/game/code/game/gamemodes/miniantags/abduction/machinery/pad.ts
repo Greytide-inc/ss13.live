@@ -1,7 +1,7 @@
-// From code/game/gamemodes/miniantags/abduction/machinery/pad.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/gamemodes/miniantags/abduction/machinery/pad.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(10441, "/obj/machinery/abductor/pad", "/obj/machinery/abductor", {
@@ -13,72 +13,57 @@ rt.type(10441, "/obj/machinery/abductor/pad", "/obj/machinery/abductor", {
 	icon_state: "alien-pad-idle",
 });
 
-// /obj/machinery/abductor/pad/proc/Warp  (code/game/gamemodes/miniantags/abduction/machinery/pad.dm:10)  may sleep
+// pad.dm:10
 rt.def("/obj/machinery/abductor/pad/proc/Warp", function* Warp(f: Frame, target: Value) {
-	f.vars = () => [target];
-	if (truthy(rt.fv(f, "buckled", live(target)))) return f.dot;
-	yield* g.callName(f, live(target), "forceMove", [rt.getStep(f, live(f.src), 0)]);
+	if (target.buckled) return f.dot;
+	yield* target.forceMove(rt.getStep(f, this, 0));
 	return f.dot;
 }, true);
 
-// /obj/machinery/abductor/pad/proc/Send  (code/game/gamemodes/miniantags/abduction/machinery/pad.dm:14)  may sleep
+// pad.dm:14
 rt.def("/obj/machinery/abductor/pad/proc/Send", function* Send(f: Frame) {
 	let target: Value = null;
-	let $e: any;
-	f.vars = () => [target, $e];
-	if (rt.sv(f, "teleport_target") === null) {
-		rt.setSv(f, "teleport_target", rt.index(rt.gl("teleportlocs"), rt.op(f, "PickUnweighted", [1], [rt.gl("teleportlocs")])));
+	if (this.teleport_target === null) {
+		this.teleport_target = rt.index(GLOB.teleportlocs, pick(GLOB.teleportlocs));
 	}
-	yield* g.call(f, P("/proc/flick"), null, ["alien-pad", live(f.src)]);
-	target = null;
-	rt.forList(f, 0, rt.sv(f, "loc"), T("/mob/living"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		target = $e;
-		yield* g.callName(f, live(target), "forceMove", [rt.sv(f, "teleport_target")]);
-		yield* g.new_(f, T("/obj/effect/temp_visual/dir_setting/ninja"), [rt.getStep(f, live(target), 0), rt.fv(f, "dir", live(target))]);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(target), "<span class='warning'>The instability of the warp leaves you disoriented!</span>"]);
-		yield* g.callName(f, live(target), "Stun", [60]);
+	flick("alien-pad", this);
+	for (target of each(this.loc, T("/mob/living"))) {
+		yield* target.forceMove(this.teleport_target);
+		yield* new_(T("/obj/effect/temp_visual/dir_setting/ninja"), rt.getStep(f, target, 0), target.dir);
+		to_chat(target, "<span class='warning'>The instability of the warp leaves you disoriented!</span>");
+		yield* target.Stun(60);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /obj/machinery/abductor/pad/proc/Retrieve  (code/game/gamemodes/miniantags/abduction/machinery/pad.dm:24)  may sleep
+// pad.dm:24
 rt.def("/obj/machinery/abductor/pad/proc/Retrieve", function* Retrieve(f: Frame, target: Value) {
-	f.vars = () => [target];
-	yield* g.call(f, P("/proc/flick"), null, ["alien-pad", live(f.src)]);
-	yield* g.new_(f, T("/obj/effect/temp_visual/dir_setting/ninja"), [rt.getStep(f, live(target), 0), rt.fv(f, "dir", live(target))]);
-	yield* g.srcCall(f, "Warp", live(target));
+	flick("alien-pad", this);
+	yield* new_(T("/obj/effect/temp_visual/dir_setting/ninja"), rt.getStep(f, target, 0), target.dir);
+	yield* this.Warp(target);
 	return f.dot;
 }, true);
 
-// /obj/machinery/abductor/pad/proc/MobToLoc  (code/game/gamemodes/miniantags/abduction/machinery/pad.dm:29)  may sleep
+// pad.dm:29
 rt.def("/obj/machinery/abductor/pad/proc/MobToLoc", function* MobToLoc(f: Frame, place: Value, target: Value) {
-	f.vars = () => [place, target];
-	yield* g.new_(f, T("/obj/effect/temp_visual/teleport_abductor"), [live(place)]);
-	yield* g.call(f, P("/proc/sleep"), null, [80]);
-	yield* g.call(f, P("/proc/flick"), null, ["alien-pad", live(f.src)]);
-	yield* g.callName(f, live(target), "forceMove", [live(place)]);
-	yield* g.new_(f, T("/obj/effect/temp_visual/dir_setting/ninja"), [rt.getStep(f, live(target), 0), rt.fv(f, "dir", live(target))]);
+	yield* new_(T("/obj/effect/temp_visual/teleport_abductor"), place);
+	yield* sleep(80);
+	flick("alien-pad", this);
+	yield* target.forceMove(place);
+	yield* new_(T("/obj/effect/temp_visual/dir_setting/ninja"), rt.getStep(f, target, 0), target.dir);
 	return f.dot;
 }, true);
 
-// /obj/machinery/abductor/pad/proc/PadToLoc  (code/game/gamemodes/miniantags/abduction/machinery/pad.dm:36)  may sleep
+// pad.dm:36
 rt.def("/obj/machinery/abductor/pad/proc/PadToLoc", function* PadToLoc(f: Frame, place: Value) {
 	let target: Value = null;
-	let $e: any;
-	f.vars = () => [place, target, $e];
-	yield* g.new_(f, T("/obj/effect/temp_visual/teleport_abductor"), [live(place)]);
-	yield* g.call(f, P("/proc/sleep"), null, [80]);
-	yield* g.call(f, P("/proc/flick"), null, ["alien-pad", live(f.src)]);
-	target = null;
-	rt.forList(f, 0, rt.getStep(f, live(f.src), 0), T("/mob/living"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		target = $e;
-		yield* g.callName(f, live(target), "forceMove", [live(place)]);
-		yield* g.new_(f, T("/obj/effect/temp_visual/dir_setting/ninja"), [rt.getStep(f, live(target), 0), rt.fv(f, "dir", live(target))]);
+	yield* new_(T("/obj/effect/temp_visual/teleport_abductor"), place);
+	yield* sleep(80);
+	flick("alien-pad", this);
+	for (target of each(rt.getStep(f, this, 0), T("/mob/living"))) {
+		yield* target.forceMove(place);
+		yield* new_(T("/obj/effect/temp_visual/dir_setting/ninja"), rt.getStep(f, target, 0), target.dir);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
@@ -89,12 +74,11 @@ rt.type(11528, "/obj/effect/temp_visual/teleport_abductor", "/obj/effect/temp_vi
 	duration: 80,
 });
 
-// /obj/effect/temp_visual/teleport_abductor/proc/Initialize  (code/game/gamemodes/miniantags/abduction/machinery/pad.dm:51)  may sleep
+// pad.dm:51
 rt.def("/obj/effect/temp_visual/teleport_abductor/proc/Initialize", function* Initialize(f: Frame) {
 	let S: Value = null;
-	f.vars = () => [S];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.callName(f, (S = (yield* g.new_(f, T("/datum/effect_system/spark_spread"), []))), "set_up", [10, 0, rt.sv(f, "loc")]);
-	yield* g.callName(f, live(S), "start", []);
+	f.dot = (yield* parent_proc());
+	yield* (S = (yield* new_(T("/datum/effect_system/spark_spread")))).set_up(10, 0, this.loc);
+	yield* S.start();
 	return f.dot;
 }, true);

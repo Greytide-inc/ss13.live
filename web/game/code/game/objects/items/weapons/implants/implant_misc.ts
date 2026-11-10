@@ -1,7 +1,7 @@
-// From code/game/objects/items/weapons/implants/implant_misc.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/weapons/implants/implant_misc.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(7410, "/obj/item/weapon/implant/weapons_auth", "/obj/item/weapon/implant", {
@@ -12,10 +12,9 @@ rt.type(7410, "/obj/item/weapon/implant/weapons_auth", "/obj/item/weapon/implant
 	origin_tech: "magnets=2;programming=7;biotech=5;syndicate=5",
 });
 
-// /obj/item/weapon/implant/weapons_auth/proc/get_data  (code/game/objects/items/weapons/implants/implant_misc.dm:9)
+// implant_misc.dm:9
 rt.def("/obj/item/weapon/implant/weapons_auth/proc/get_data", function get_data(f: Frame) {
 	let dat: Value = null;
-	f.vars = () => [dat];
 	return (dat = "<b>Implant Specifications:</b><BR>\n\t\t\t\t<b>Name:</b> Firearms Authentication Implant<BR>\n\t\t\t\t<b>Life:</b> 4 hours after death of host<BR>\n\t\t\t\t<b>Implant Details:</b> <BR>\n\t\t\t\t<b>Function:</b> Allows operation of implant-locked weaponry, preventing equipment from falling into enemy hands.");
 });
 
@@ -27,28 +26,27 @@ rt.type(7411, "/obj/item/weapon/implant/adrenalin", "/obj/item/weapon/implant", 
 	origin_tech: "materials=2;biotech=4;combat=3;syndicate=4",
 });
 
-// /obj/item/weapon/implant/adrenalin/proc/get_data  (code/game/objects/items/weapons/implants/implant_misc.dm:25)
+// implant_misc.dm:25
 rt.def("/obj/item/weapon/implant/adrenalin/proc/get_data", function get_data(f: Frame) {
 	let dat: Value = null;
-	f.vars = () => [dat];
 	return (dat = "<b>Implant Specifications:</b><BR>\n\t\t\t\t<b>Name:</b> Cybersun Industries Adrenaline Implant<BR>\n\t\t\t\t<b>Life:</b> Five days.<BR>\n\t\t\t\t<b>Important Notes:</b> <font color='red'>Illegal</font><BR>\n\t\t\t\t<HR>\n\t\t\t\t<b>Implant Details:</b> Subjects injected with implant can activate an injection of medical cocktails.<BR>\n\t\t\t\t<b>Function:</b> Removes stuns, increases speed, and has a mild healing effect.<BR>\n\t\t\t\t<b>Integrity:</b> Implant can only be used three times before reserves are depleted.");
 });
 
-// /obj/item/weapon/implant/adrenalin/proc/activate  (code/game/objects/items/weapons/implants/implant_misc.dm:36)  may sleep
+// implant_misc.dm:36
 rt.def("/obj/item/weapon/implant/adrenalin/proc/activate", function* activate(f: Frame) {
-	rt.incSrcVar(f, "uses", -1, true);
-	yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "imp_in"), "<span class='notice'>You feel a sudden surge of energy!</span>"]);
-	yield* g.callName(f, rt.sv(f, "imp_in"), "SetStun", [0]);
-	yield* g.callName(f, rt.sv(f, "imp_in"), "SetKnockdown", [0]);
-	yield* g.callName(f, rt.sv(f, "imp_in"), "SetUnconscious", [0]);
-	yield* g.callName(f, rt.sv(f, "imp_in"), "adjustStaminaLoss", [-75]);
-	rt.setFv(f, "lying", rt.sv(f, "imp_in"), 0);
-	yield* g.callName(f, rt.sv(f, "imp_in"), "update_canmove", []);
-	yield* g.callName(f, rt.fv(f, "reagents", rt.sv(f, "imp_in")), "add_reagent", ["synaptizine", 10]);
-	yield* g.callName(f, rt.fv(f, "reagents", rt.sv(f, "imp_in")), "add_reagent", ["omnizine", 10]);
-	yield* g.callName(f, rt.fv(f, "reagents", rt.sv(f, "imp_in")), "add_reagent", ["stimulants", 10]);
-	if (truthy(rt.sv(f, "uses"))) return f.dot;
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	this.uses--;
+	to_chat(this.imp_in, "<span class='notice'>You feel a sudden surge of energy!</span>");
+	yield* this.imp_in.SetStun(0);
+	yield* this.imp_in.SetKnockdown(0);
+	yield* this.imp_in.SetUnconscious(0);
+	yield* this.imp_in.adjustStaminaLoss(-75);
+	this.imp_in.lying = 0;
+	yield* this.imp_in.update_canmove();
+	yield* this.imp_in.reagents.add_reagent("synaptizine", 10);
+	yield* this.imp_in.reagents.add_reagent("omnizine", 10);
+	yield* this.imp_in.reagents.add_reagent("stimulants", 10);
+	if (this.uses) return f.dot;
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
@@ -60,12 +58,12 @@ rt.type(7412, "/obj/item/weapon/implant/emp", "/obj/item/weapon/implant", {
 	origin_tech: "biotech=3;magnets=4;syndicate=1",
 });
 
-// /obj/item/weapon/implant/emp/proc/activate  (code/game/objects/items/weapons/implants/implant_misc.dm:60)  may sleep
+// implant_misc.dm:60
 rt.def("/obj/item/weapon/implant/emp/proc/activate", function* activate(f: Frame) {
-	rt.incSrcVar(f, "uses", -1, true);
-	yield* g.call(f, P("/proc/empulse"), null, [rt.sv(f, "imp_in"), 3, 5]);
-	if (truthy(rt.sv(f, "uses"))) return f.dot;
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	this.uses--;
+	yield* empulse(this.imp_in, 3, 5);
+	if (this.uses) return f.dot;
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
@@ -75,18 +73,17 @@ rt.type(7413, "/obj/item/weapon/implant/health", "/obj/item/weapon/implant", {
 	name: "health implant",
 });
 
-// /obj/item/weapon/implant/health/proc/sensehealth  (code/game/objects/items/weapons/implants/implant_misc.dm:74)
+// implant_misc.dm:74
 rt.def("/obj/item/weapon/implant/health/proc/sensehealth", function sensehealth(f: Frame) {
 	let L: Value = null;
-	f.vars = () => [L];
-	if (!truthy(rt.sv(f, "imp_in"))) {
+	if (!this.imp_in) {
 		return "ERROR";
 	}
-	if (truthy((rt.istype(rt.sv(f, "imp_in"), T("/mob/living")) ? 1 : 0))) {
-		rt.setSv(f, "healthstring", fmt("<small>Oxygen Deprivation Damage => ＀<br />Fire Damage => ＀<br />Toxin Damage => ＀<br />Brute Force Damage => ＀</small>", [rt.call(f, P("/proc/round"), null, [rt.callName(f, (L = rt.sv(f, "imp_in")), "getOxyLoss", [])]), rt.call(f, P("/proc/round"), null, [rt.callName(f, live(L), "getFireLoss", [])]), rt.call(f, P("/proc/round"), null, [rt.callName(f, live(L), "getToxLoss", [])]), rt.call(f, P("/proc/round"), null, [rt.callName(f, live(L), "getBruteLoss", [])])]));
+	if (rt.istype(this.imp_in, T("/mob/living"))) {
+		this.healthstring = `<small>Oxygen Deprivation Damage => ${round((L = this.imp_in).getOxyLoss())}<br />Fire Damage => ${round(L.getFireLoss())}<br />Toxin Damage => ${round(L.getToxLoss())}<br />Brute Force Damage => ${round(L.getBruteLoss())}</small>`;
 	}
-	if (!truthy(rt.sv(f, "healthstring"))) {
-		rt.setSv(f, "healthstring", "ERROR");
+	if (!this.healthstring) {
+		this.healthstring = "ERROR";
 	}
-	return rt.sv(f, "healthstring");
+	return this.healthstring;
 });

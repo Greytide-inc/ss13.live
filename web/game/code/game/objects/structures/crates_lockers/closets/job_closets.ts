@@ -1,7 +1,7 @@
-// From code/game/objects/structures/crates_lockers/closets/job_closets.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/structures/crates_lockers/closets/job_closets.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(12309, "/obj/structure/closet/gmcloset", "/obj/structure/closet", {
@@ -10,29 +10,29 @@ rt.type(12309, "/obj/structure/closet/gmcloset", "/obj/structure/closet", {
 	desc: "It's a storage unit for formal clothing.",
 });
 
-// /obj/structure/closet/gmcloset/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/job_closets.dm:9)  may sleep
+// job_closets.dm:9
 rt.def("/obj/structure/closet/gmcloset/proc/PopulateContents", function* PopulateContents(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.new_(f, T("/obj/item/clothing/head/that"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/device/radio/headset/headset_srv"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/device/radio/headset/headset_srv"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/head/that"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/under/sl_suit"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/under/sl_suit"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/under/rank/bartender"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/under/rank/bartender"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/accessory/waistcoat"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/accessory/waistcoat"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/head/soft/black"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/head/soft/black"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/shoes/sneakers/black"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/shoes/sneakers/black"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/reagent_containers/glass/rag"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/reagent_containers/glass/rag"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/box/beanbag"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/armor/vest/alt"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/glasses/sunglasses/reagent"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/belt/bandolier"), [live(f.src)]);
+	yield* parent_proc();
+	yield* new_(T("/obj/item/clothing/head/that"), this);
+	yield* new_(T("/obj/item/device/radio/headset/headset_srv"), this);
+	yield* new_(T("/obj/item/device/radio/headset/headset_srv"), this);
+	yield* new_(T("/obj/item/clothing/head/that"), this);
+	yield* new_(T("/obj/item/clothing/under/sl_suit"), this);
+	yield* new_(T("/obj/item/clothing/under/sl_suit"), this);
+	yield* new_(T("/obj/item/clothing/under/rank/bartender"), this);
+	yield* new_(T("/obj/item/clothing/under/rank/bartender"), this);
+	yield* new_(T("/obj/item/clothing/accessory/waistcoat"), this);
+	yield* new_(T("/obj/item/clothing/accessory/waistcoat"), this);
+	yield* new_(T("/obj/item/clothing/head/soft/black"), this);
+	yield* new_(T("/obj/item/clothing/head/soft/black"), this);
+	yield* new_(T("/obj/item/clothing/shoes/sneakers/black"), this);
+	yield* new_(T("/obj/item/clothing/shoes/sneakers/black"), this);
+	yield* new_(T("/obj/item/weapon/reagent_containers/glass/rag"), this);
+	yield* new_(T("/obj/item/weapon/reagent_containers/glass/rag"), this);
+	yield* new_(T("/obj/item/weapon/storage/box/beanbag"), this);
+	yield* new_(T("/obj/item/clothing/suit/armor/vest/alt"), this);
+	yield* new_(T("/obj/item/clothing/glasses/sunglasses/reagent"), this);
+	yield* new_(T("/obj/item/weapon/storage/belt/bandolier"), this);
 	return f.dot;
 }, true);
 
@@ -42,33 +42,31 @@ rt.type(12310, "/obj/structure/closet/chefcloset", "/obj/structure/closet", {
 	desc: "It's a storage unit for foodservice garments and mouse traps.",
 });
 
-// /obj/structure/closet/chefcloset/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/job_closets.dm:37)  may sleep
+// job_closets.dm:37
 rt.def("/obj/structure/closet/chefcloset/proc/PopulateContents", function* PopulateContents(f: Frame) {
 	let i: Value = null;
 	let $e: any;
-	f.vars = () => [i, $e];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.new_(f, T("/obj/item/clothing/under/waiter"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/under/waiter"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/device/radio/headset/headset_srv"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/device/radio/headset/headset_srv"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/accessory/waistcoat"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/accessory/waistcoat"), [live(f.src)]);
-	i = null;
+	yield* parent_proc();
+	yield* new_(T("/obj/item/clothing/under/waiter"), this);
+	yield* new_(T("/obj/item/clothing/under/waiter"), this);
+	yield* new_(T("/obj/item/device/radio/headset/headset_srv"), this);
+	yield* new_(T("/obj/item/device/radio/headset/headset_srv"), this);
+	yield* new_(T("/obj/item/clothing/accessory/waistcoat"), this);
+	yield* new_(T("/obj/item/clothing/accessory/waistcoat"), this);
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/clothing/suit/apron/chef"), [live(f.src)]);
+		yield* new_(T("/obj/item/clothing/suit/apron/chef"), this);
 	}
 	rt.endFor(f, 0);
-	yield* g.new_(f, T("/obj/item/clothing/head/soft/mime"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/head/soft/mime"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/box/mousetraps"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/box/mousetraps"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/toggle/chef"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/under/rank/chef"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/head/chefhat"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/reagent_containers/glass/rag"), [live(f.src)]);
+	yield* new_(T("/obj/item/clothing/head/soft/mime"), this);
+	yield* new_(T("/obj/item/clothing/head/soft/mime"), this);
+	yield* new_(T("/obj/item/weapon/storage/box/mousetraps"), this);
+	yield* new_(T("/obj/item/weapon/storage/box/mousetraps"), this);
+	yield* new_(T("/obj/item/clothing/suit/toggle/chef"), this);
+	yield* new_(T("/obj/item/clothing/under/rank/chef"), this);
+	yield* new_(T("/obj/item/clothing/head/chefhat"), this);
+	yield* new_(T("/obj/item/weapon/reagent_containers/glass/rag"), this);
 	return f.dot;
 }, true);
 
@@ -78,33 +76,31 @@ rt.type(12311, "/obj/structure/closet/jcloset", "/obj/structure/closet", {
 	desc: "It's a storage unit for janitorial clothes and gear.",
 });
 
-// /obj/structure/closet/jcloset/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/job_closets.dm:61)  may sleep
+// job_closets.dm:61
 rt.def("/obj/structure/closet/jcloset/proc/PopulateContents", function* PopulateContents(f: Frame) {
 	let i: Value = null;
 	let $e: any;
-	f.vars = () => [i, $e];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.new_(f, T("/obj/item/clothing/under/rank/janitor"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/cartridge/janitor"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/gloves/color/black"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/head/soft/purple"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/paint/paint_remover"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/melee/flyswatter"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/device/flashlight"), [live(f.src)]);
-	i = null;
+	yield* parent_proc();
+	yield* new_(T("/obj/item/clothing/under/rank/janitor"), this);
+	yield* new_(T("/obj/item/weapon/cartridge/janitor"), this);
+	yield* new_(T("/obj/item/clothing/gloves/color/black"), this);
+	yield* new_(T("/obj/item/clothing/head/soft/purple"), this);
+	yield* new_(T("/obj/item/weapon/paint/paint_remover"), this);
+	yield* new_(T("/obj/item/weapon/melee/flyswatter"), this);
+	yield* new_(T("/obj/item/device/flashlight"), this);
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/weapon/caution"), [live(f.src)]);
+		yield* new_(T("/obj/item/weapon/caution"), this);
 	}
 	rt.endFor(f, 0);
-	yield* g.new_(f, T("/obj/item/weapon/holosign_creator"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/device/lightreplacer"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/soap"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/bag/trash"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/shoes/galoshes"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/watertank/janitor"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/belt/janitor"), [live(f.src)]);
+	yield* new_(T("/obj/item/weapon/holosign_creator"), this);
+	yield* new_(T("/obj/item/device/lightreplacer"), this);
+	yield* new_(T("/obj/item/weapon/soap"), this);
+	yield* new_(T("/obj/item/weapon/storage/bag/trash"), this);
+	yield* new_(T("/obj/item/clothing/shoes/galoshes"), this);
+	yield* new_(T("/obj/item/weapon/watertank/janitor"), this);
+	yield* new_(T("/obj/item/weapon/storage/belt/janitor"), this);
 	return f.dot;
 }, true);
 
@@ -114,22 +110,22 @@ rt.type(12312, "/obj/structure/closet/lawcloset", "/obj/structure/closet", {
 	desc: "It's a storage unit for courtroom apparel and items.",
 });
 
-// /obj/structure/closet/lawcloset/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/job_closets.dm:86)  may sleep
+// job_closets.dm:86
 rt.def("/obj/structure/closet/lawcloset/proc/PopulateContents", function* PopulateContents(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.new_(f, T("/obj/item/clothing/under/lawyer/female"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/under/lawyer/black"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/under/lawyer/red"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/under/lawyer/bluesuit"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/toggle/lawyer"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/under/lawyer/purpsuit"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/toggle/lawyer/purple"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/under/lawyer/blacksuit"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/toggle/lawyer/black"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/shoes/laceup"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/shoes/laceup"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/accessory/lawyers_badge"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/accessory/lawyers_badge"), [live(f.src)]);
+	yield* parent_proc();
+	yield* new_(T("/obj/item/clothing/under/lawyer/female"), this);
+	yield* new_(T("/obj/item/clothing/under/lawyer/black"), this);
+	yield* new_(T("/obj/item/clothing/under/lawyer/red"), this);
+	yield* new_(T("/obj/item/clothing/under/lawyer/bluesuit"), this);
+	yield* new_(T("/obj/item/clothing/suit/toggle/lawyer"), this);
+	yield* new_(T("/obj/item/clothing/under/lawyer/purpsuit"), this);
+	yield* new_(T("/obj/item/clothing/suit/toggle/lawyer/purple"), this);
+	yield* new_(T("/obj/item/clothing/under/lawyer/blacksuit"), this);
+	yield* new_(T("/obj/item/clothing/suit/toggle/lawyer/black"), this);
+	yield* new_(T("/obj/item/clothing/shoes/laceup"), this);
+	yield* new_(T("/obj/item/clothing/shoes/laceup"), this);
+	yield* new_(T("/obj/item/clothing/accessory/lawyers_badge"), this);
+	yield* new_(T("/obj/item/clothing/accessory/lawyers_badge"), this);
 	return f.dot;
 }, true);
 
@@ -139,24 +135,24 @@ rt.type(12314, "/obj/structure/closet/wardrobe/chaplain_black", "/obj/structure/
 	desc: "It's a storage unit for Nanotrasen-approved religious attire.",
 });
 
-// /obj/structure/closet/wardrobe/chaplain_black/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/job_closets.dm:107)  may sleep
+// job_closets.dm:107
 rt.def("/obj/structure/closet/wardrobe/chaplain_black/proc/PopulateContents", function* PopulateContents(f: Frame) {
-	yield* g.new_(f, T("/obj/item/clothing/under/rank/chaplain"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/shoes/sneakers/black"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/nun"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/head/nun_hood"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/studentuni"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/head/cage"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/witchhunter"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/head/witchunter_hat"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/hooded/chaplain_hoodie"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/holidaypriest"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/backpack/cultpack"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/head/helmet/knight/templar"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/armor/riot/knight/templar"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/fancy/candle_box"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/fancy/candle_box"), [live(f.src)]);
-	return live(f.dot);
+	yield* new_(T("/obj/item/clothing/under/rank/chaplain"), this);
+	yield* new_(T("/obj/item/clothing/shoes/sneakers/black"), this);
+	yield* new_(T("/obj/item/clothing/suit/nun"), this);
+	yield* new_(T("/obj/item/clothing/head/nun_hood"), this);
+	yield* new_(T("/obj/item/clothing/suit/studentuni"), this);
+	yield* new_(T("/obj/item/clothing/head/cage"), this);
+	yield* new_(T("/obj/item/clothing/suit/witchhunter"), this);
+	yield* new_(T("/obj/item/clothing/head/witchunter_hat"), this);
+	yield* new_(T("/obj/item/clothing/suit/hooded/chaplain_hoodie"), this);
+	yield* new_(T("/obj/item/clothing/suit/holidaypriest"), this);
+	yield* new_(T("/obj/item/weapon/storage/backpack/cultpack"), this);
+	yield* new_(T("/obj/item/clothing/head/helmet/knight/templar"), this);
+	yield* new_(T("/obj/item/clothing/suit/armor/riot/knight/templar"), this);
+	yield* new_(T("/obj/item/weapon/storage/fancy/candle_box"), this);
+	yield* new_(T("/obj/item/weapon/storage/fancy/candle_box"), this);
+	return f.dot;
 }, true);
 
 rt.type(12315, "/obj/structure/closet/wardrobe/red", "/obj/structure/closet/wardrobe", {
@@ -164,47 +160,45 @@ rt.type(12315, "/obj/structure/closet/wardrobe/red", "/obj/structure/closet/ward
 	name: "security wardrobe",
 });
 
-// /obj/structure/closet/wardrobe/red/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/job_closets.dm:141)  may sleep
+// job_closets.dm:141
 rt.def("/obj/structure/closet/wardrobe/red/proc/PopulateContents", function* PopulateContents(f: Frame) {
 	let i: Value = null;
 	let $e: any;
-	f.vars = () => [i, $e];
-	yield* g.new_(f, T("/obj/item/clothing/suit/hooded/wintercoat/security"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/backpack/security"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/backpack/satchel/sec"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/backpack/duffelbag/sec"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/backpack/duffelbag/sec"), [live(f.src)]);
-	i = null;
+	yield* new_(T("/obj/item/clothing/suit/hooded/wintercoat/security"), this);
+	yield* new_(T("/obj/item/weapon/storage/backpack/security"), this);
+	yield* new_(T("/obj/item/weapon/storage/backpack/satchel/sec"), this);
+	yield* new_(T("/obj/item/weapon/storage/backpack/duffelbag/sec"), this);
+	yield* new_(T("/obj/item/weapon/storage/backpack/duffelbag/sec"), this);
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/clothing/under/rank/security"), [live(f.src)]);
+		yield* new_(T("/obj/item/clothing/under/rank/security"), this);
 	}
 	rt.endFor(f, 0);
 	i = null;
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/clothing/shoes/jackboots"), [live(f.src)]);
+		yield* new_(T("/obj/item/clothing/shoes/jackboots"), this);
 	}
 	rt.endFor(f, 0);
 	i = null;
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/clothing/head/beret/sec"), [live(f.src)]);
+		yield* new_(T("/obj/item/clothing/head/beret/sec"), this);
 	}
 	rt.endFor(f, 0);
 	i = null;
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/clothing/head/soft/sec"), [live(f.src)]);
+		yield* new_(T("/obj/item/clothing/head/soft/sec"), this);
 	}
 	rt.endFor(f, 0);
-	yield* g.new_(f, T("/obj/item/clothing/mask/bandana/red"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/mask/bandana/red"), [live(f.src)]);
-	return live(f.dot);
+	yield* new_(T("/obj/item/clothing/mask/bandana/red"), this);
+	yield* new_(T("/obj/item/clothing/mask/bandana/red"), this);
+	return f.dot;
 }, true);
 
 rt.type(12316, "/obj/structure/closet/wardrobe/cargotech", "/obj/structure/closet/wardrobe", {
@@ -212,41 +206,39 @@ rt.type(12316, "/obj/structure/closet/wardrobe/cargotech", "/obj/structure/close
 	name: "cargo wardrobe",
 });
 
-// /obj/structure/closet/wardrobe/cargotech/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/job_closets.dm:164)  may sleep
+// job_closets.dm:164
 rt.def("/obj/structure/closet/wardrobe/cargotech/proc/PopulateContents", function* PopulateContents(f: Frame) {
 	let i: Value = null;
 	let $e: any;
-	f.vars = () => [i, $e];
-	yield* g.new_(f, T("/obj/item/clothing/suit/hooded/wintercoat/cargo"), [live(f.src)]);
-	i = null;
+	yield* new_(T("/obj/item/clothing/suit/hooded/wintercoat/cargo"), this);
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/clothing/under/rank/cargotech"), [live(f.src)]);
+		yield* new_(T("/obj/item/clothing/under/rank/cargotech"), this);
 	}
 	rt.endFor(f, 0);
 	i = null;
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/clothing/shoes/sneakers/black"), [live(f.src)]);
+		yield* new_(T("/obj/item/clothing/shoes/sneakers/black"), this);
 	}
 	rt.endFor(f, 0);
 	i = null;
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/clothing/gloves/fingerless"), [live(f.src)]);
+		yield* new_(T("/obj/item/clothing/gloves/fingerless"), this);
 	}
 	rt.endFor(f, 0);
 	i = null;
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/clothing/head/soft"), [live(f.src)]);
+		yield* new_(T("/obj/item/clothing/head/soft"), this);
 	}
 	rt.endFor(f, 0);
-	yield* g.new_(f, T("/obj/item/device/radio/headset/headset_cargo"), [live(f.src)]);
+	yield* new_(T("/obj/item/device/radio/headset/headset_cargo"), this);
 	return f.dot;
 }, true);
 
@@ -255,36 +247,34 @@ rt.type(12317, "/obj/structure/closet/wardrobe/atmospherics_yellow", "/obj/struc
 	name: "atmospherics wardrobe",
 });
 
-// /obj/structure/closet/wardrobe/atmospherics_yellow/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/job_closets.dm:180)  may sleep
+// job_closets.dm:180
 rt.def("/obj/structure/closet/wardrobe/atmospherics_yellow/proc/PopulateContents", function* PopulateContents(f: Frame) {
 	let i: Value = null;
 	let $e: any;
-	f.vars = () => [i, $e];
-	yield* g.new_(f, T("/obj/item/weapon/storage/backpack/duffelbag/engineering"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/backpack/satchel/eng"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/backpack/industrial"), [live(f.src)]);
-	i = null;
+	yield* new_(T("/obj/item/weapon/storage/backpack/duffelbag/engineering"), this);
+	yield* new_(T("/obj/item/weapon/storage/backpack/satchel/eng"), this);
+	yield* new_(T("/obj/item/weapon/storage/backpack/industrial"), this);
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/clothing/suit/hooded/wintercoat/engineering/atmos"), [live(f.src)]);
+		yield* new_(T("/obj/item/clothing/suit/hooded/wintercoat/engineering/atmos"), this);
 	}
 	rt.endFor(f, 0);
 	i = null;
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/clothing/under/rank/atmospheric_technician"), [live(f.src)]);
+		yield* new_(T("/obj/item/clothing/under/rank/atmospheric_technician"), this);
 	}
 	rt.endFor(f, 0);
 	i = null;
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/clothing/shoes/sneakers/black"), [live(f.src)]);
+		yield* new_(T("/obj/item/clothing/shoes/sneakers/black"), this);
 	}
 	rt.endFor(f, 0);
-	return live(f.dot);
+	return f.dot;
 }, true);
 
 rt.type(12318, "/obj/structure/closet/wardrobe/engineering_yellow", "/obj/structure/closet/wardrobe", {
@@ -292,90 +282,86 @@ rt.type(12318, "/obj/structure/closet/wardrobe/engineering_yellow", "/obj/struct
 	name: "engineering wardrobe",
 });
 
-// /obj/structure/closet/wardrobe/engineering_yellow/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/job_closets.dm:196)  may sleep
+// job_closets.dm:196
 rt.def("/obj/structure/closet/wardrobe/engineering_yellow/proc/PopulateContents", function* PopulateContents(f: Frame) {
 	let i: Value = null;
 	let $e: any;
-	f.vars = () => [i, $e];
-	yield* g.new_(f, T("/obj/item/weapon/storage/backpack/duffelbag/engineering"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/backpack/industrial"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/backpack/satchel/eng"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/hooded/wintercoat/engineering"), [live(f.src)]);
-	i = null;
+	yield* new_(T("/obj/item/weapon/storage/backpack/duffelbag/engineering"), this);
+	yield* new_(T("/obj/item/weapon/storage/backpack/industrial"), this);
+	yield* new_(T("/obj/item/weapon/storage/backpack/satchel/eng"), this);
+	yield* new_(T("/obj/item/clothing/suit/hooded/wintercoat/engineering"), this);
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/clothing/under/rank/engineer"), [live(f.src)]);
+		yield* new_(T("/obj/item/clothing/under/rank/engineer"), this);
 	}
 	rt.endFor(f, 0);
 	i = null;
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/clothing/suit/hazardvest"), [live(f.src)]);
+		yield* new_(T("/obj/item/clothing/suit/hazardvest"), this);
 	}
 	rt.endFor(f, 0);
 	i = null;
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/clothing/shoes/workboots"), [live(f.src)]);
+		yield* new_(T("/obj/item/clothing/shoes/workboots"), this);
 	}
 	rt.endFor(f, 0);
 	i = null;
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/clothing/head/hardhat"), [live(f.src)]);
+		yield* new_(T("/obj/item/clothing/head/hardhat"), this);
 	}
 	rt.endFor(f, 0);
-	return live(f.dot);
+	return f.dot;
 }, true);
 
 rt.type(12320, "/obj/structure/closet/wardrobe/white/medical", "/obj/structure/closet/wardrobe/white", {
 	name: "medical doctor's wardrobe",
 });
 
-// /obj/structure/closet/wardrobe/white/medical/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/job_closets.dm:214)  may sleep
+// job_closets.dm:214
 rt.def("/obj/structure/closet/wardrobe/white/medical/proc/PopulateContents", function* PopulateContents(f: Frame) {
 	let i: Value = null;
 	let $e: any;
-	f.vars = () => [i, $e];
-	yield* g.new_(f, T("/obj/item/weapon/storage/backpack/duffelbag/med"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/backpack/medic"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/backpack/satchel/med"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/hooded/wintercoat/medical"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/under/rank/nursesuit"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/head/nursehat"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/under/rank/medical/blue"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/under/rank/medical/green"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/under/rank/medical/purple"), [live(f.src)]);
+	yield* new_(T("/obj/item/weapon/storage/backpack/duffelbag/med"), this);
+	yield* new_(T("/obj/item/weapon/storage/backpack/medic"), this);
+	yield* new_(T("/obj/item/weapon/storage/backpack/satchel/med"), this);
+	yield* new_(T("/obj/item/clothing/suit/hooded/wintercoat/medical"), this);
+	yield* new_(T("/obj/item/clothing/under/rank/nursesuit"), this);
+	yield* new_(T("/obj/item/clothing/head/nursehat"), this);
+	yield* new_(T("/obj/item/clothing/under/rank/medical/blue"), this);
+	yield* new_(T("/obj/item/clothing/under/rank/medical/green"), this);
+	yield* new_(T("/obj/item/clothing/under/rank/medical/purple"), this);
+	rt.forRange(f, 0, 1, 3, 1);
+	while (($e = rt.next(f, 0)) !== undefined) {
+		i = $e;
+		yield* new_(T("/obj/item/clothing/under/rank/medical"), this);
+	}
+	rt.endFor(f, 0);
+	yield* new_(T("/obj/item/clothing/suit/toggle/labcoat"), this);
+	yield* new_(T("/obj/item/clothing/suit/toggle/labcoat"), this);
+	yield* new_(T("/obj/item/clothing/suit/toggle/labcoat/emt"), this);
+	yield* new_(T("/obj/item/clothing/suit/toggle/labcoat/emt"), this);
 	i = null;
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/clothing/under/rank/medical"), [live(f.src)]);
-	}
-	rt.endFor(f, 0);
-	yield* g.new_(f, T("/obj/item/clothing/suit/toggle/labcoat"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/toggle/labcoat"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/toggle/labcoat/emt"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/toggle/labcoat/emt"), [live(f.src)]);
-	i = null;
-	rt.forRange(f, 0, 1, 3, 1);
-	while (($e = rt.next(f, 0)) !== undefined) {
-		i = $e;
-		yield* g.new_(f, T("/obj/item/clothing/shoes/sneakers/white"), [live(f.src)]);
+		yield* new_(T("/obj/item/clothing/shoes/sneakers/white"), this);
 	}
 	rt.endFor(f, 0);
 	i = null;
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/clothing/head/soft/emt"), [live(f.src)]);
+		yield* new_(T("/obj/item/clothing/head/soft/emt"), this);
 	}
 	rt.endFor(f, 0);
-	return live(f.dot);
+	return f.dot;
 }, true);
 
 rt.type(12321, "/obj/structure/closet/wardrobe/robotics_black", "/obj/structure/closet/wardrobe", {
@@ -383,27 +369,27 @@ rt.type(12321, "/obj/structure/closet/wardrobe/robotics_black", "/obj/structure/
 	name: "robotics wardrobe",
 });
 
-// /obj/structure/closet/wardrobe/robotics_black/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/job_closets.dm:240)  may sleep
+// job_closets.dm:240
 rt.def("/obj/structure/closet/wardrobe/robotics_black/proc/PopulateContents", function* PopulateContents(f: Frame) {
-	yield* g.new_(f, T("/obj/item/clothing/glasses/hud/diagnostic"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/glasses/hud/diagnostic"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/under/rank/roboticist"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/under/rank/roboticist"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/toggle/labcoat"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/toggle/labcoat"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/shoes/sneakers/black"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/shoes/sneakers/black"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/gloves/fingerless"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/gloves/fingerless"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/head/soft/black"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/head/soft/black"), [live(f.src)]);
-	if (truthy(rt.op(f, "Prob", [], [40]))) {
-		yield* g.new_(f, T("/obj/item/clothing/mask/bandana/skull"), [live(f.src)]);
+	yield* new_(T("/obj/item/clothing/glasses/hud/diagnostic"), this);
+	yield* new_(T("/obj/item/clothing/glasses/hud/diagnostic"), this);
+	yield* new_(T("/obj/item/clothing/under/rank/roboticist"), this);
+	yield* new_(T("/obj/item/clothing/under/rank/roboticist"), this);
+	yield* new_(T("/obj/item/clothing/suit/toggle/labcoat"), this);
+	yield* new_(T("/obj/item/clothing/suit/toggle/labcoat"), this);
+	yield* new_(T("/obj/item/clothing/shoes/sneakers/black"), this);
+	yield* new_(T("/obj/item/clothing/shoes/sneakers/black"), this);
+	yield* new_(T("/obj/item/clothing/gloves/fingerless"), this);
+	yield* new_(T("/obj/item/clothing/gloves/fingerless"), this);
+	yield* new_(T("/obj/item/clothing/head/soft/black"), this);
+	yield* new_(T("/obj/item/clothing/head/soft/black"), this);
+	if (prob(40)) {
+		yield* new_(T("/obj/item/clothing/mask/bandana/skull"), this);
 	}
-	if (truthy(rt.op(f, "Prob", [], [40]))) {
-		yield* g.new_(f, T("/obj/item/clothing/mask/bandana/skull"), [live(f.src)]);
+	if (prob(40)) {
+		yield* new_(T("/obj/item/clothing/mask/bandana/skull"), this);
 	}
-	return live(f.dot);
+	return f.dot;
 }, true);
 
 rt.type(12322, "/obj/structure/closet/wardrobe/chemistry_white", "/obj/structure/closet/wardrobe", {
@@ -411,21 +397,21 @@ rt.type(12322, "/obj/structure/closet/wardrobe/chemistry_white", "/obj/structure
 	name: "chemistry wardrobe",
 });
 
-// /obj/structure/closet/wardrobe/chemistry_white/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/job_closets.dm:264)  may sleep
+// job_closets.dm:264
 rt.def("/obj/structure/closet/wardrobe/chemistry_white/proc/PopulateContents", function* PopulateContents(f: Frame) {
-	yield* g.new_(f, T("/obj/item/clothing/under/rank/chemist"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/under/rank/chemist"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/shoes/sneakers/white"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/shoes/sneakers/white"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/toggle/labcoat/chemist"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/toggle/labcoat/chemist"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/backpack/chemistry"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/backpack/chemistry"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/backpack/satchel/chem"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/backpack/satchel/chem"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/bag/chemistry"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/bag/chemistry"), [live(f.src)]);
-	return live(f.dot);
+	yield* new_(T("/obj/item/clothing/under/rank/chemist"), this);
+	yield* new_(T("/obj/item/clothing/under/rank/chemist"), this);
+	yield* new_(T("/obj/item/clothing/shoes/sneakers/white"), this);
+	yield* new_(T("/obj/item/clothing/shoes/sneakers/white"), this);
+	yield* new_(T("/obj/item/clothing/suit/toggle/labcoat/chemist"), this);
+	yield* new_(T("/obj/item/clothing/suit/toggle/labcoat/chemist"), this);
+	yield* new_(T("/obj/item/weapon/storage/backpack/chemistry"), this);
+	yield* new_(T("/obj/item/weapon/storage/backpack/chemistry"), this);
+	yield* new_(T("/obj/item/weapon/storage/backpack/satchel/chem"), this);
+	yield* new_(T("/obj/item/weapon/storage/backpack/satchel/chem"), this);
+	yield* new_(T("/obj/item/weapon/storage/bag/chemistry"), this);
+	yield* new_(T("/obj/item/weapon/storage/bag/chemistry"), this);
+	return f.dot;
 }, true);
 
 rt.type(12323, "/obj/structure/closet/wardrobe/genetics_white", "/obj/structure/closet/wardrobe", {
@@ -433,19 +419,19 @@ rt.type(12323, "/obj/structure/closet/wardrobe/genetics_white", "/obj/structure/
 	name: "genetics wardrobe",
 });
 
-// /obj/structure/closet/wardrobe/genetics_white/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/job_closets.dm:284)  may sleep
+// job_closets.dm:284
 rt.def("/obj/structure/closet/wardrobe/genetics_white/proc/PopulateContents", function* PopulateContents(f: Frame) {
-	yield* g.new_(f, T("/obj/item/clothing/under/rank/geneticist"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/under/rank/geneticist"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/shoes/sneakers/white"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/shoes/sneakers/white"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/toggle/labcoat/genetics"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/toggle/labcoat/genetics"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/backpack/genetics"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/backpack/genetics"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/backpack/satchel/gen"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/backpack/satchel/gen"), [live(f.src)]);
-	return live(f.dot);
+	yield* new_(T("/obj/item/clothing/under/rank/geneticist"), this);
+	yield* new_(T("/obj/item/clothing/under/rank/geneticist"), this);
+	yield* new_(T("/obj/item/clothing/shoes/sneakers/white"), this);
+	yield* new_(T("/obj/item/clothing/shoes/sneakers/white"), this);
+	yield* new_(T("/obj/item/clothing/suit/toggle/labcoat/genetics"), this);
+	yield* new_(T("/obj/item/clothing/suit/toggle/labcoat/genetics"), this);
+	yield* new_(T("/obj/item/weapon/storage/backpack/genetics"), this);
+	yield* new_(T("/obj/item/weapon/storage/backpack/genetics"), this);
+	yield* new_(T("/obj/item/weapon/storage/backpack/satchel/gen"), this);
+	yield* new_(T("/obj/item/weapon/storage/backpack/satchel/gen"), this);
+	return f.dot;
 }, true);
 
 rt.type(12324, "/obj/structure/closet/wardrobe/virology_white", "/obj/structure/closet/wardrobe", {
@@ -453,21 +439,21 @@ rt.type(12324, "/obj/structure/closet/wardrobe/virology_white", "/obj/structure/
 	name: "virology wardrobe",
 });
 
-// /obj/structure/closet/wardrobe/virology_white/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/job_closets.dm:302)  may sleep
+// job_closets.dm:302
 rt.def("/obj/structure/closet/wardrobe/virology_white/proc/PopulateContents", function* PopulateContents(f: Frame) {
-	yield* g.new_(f, T("/obj/item/clothing/under/rank/virologist"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/under/rank/virologist"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/shoes/sneakers/white"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/shoes/sneakers/white"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/toggle/labcoat/virologist"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/toggle/labcoat/virologist"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/mask/surgical"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/mask/surgical"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/backpack/virology"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/backpack/virology"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/backpack/satchel/vir"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/backpack/satchel/vir"), [live(f.src)]);
-	return live(f.dot);
+	yield* new_(T("/obj/item/clothing/under/rank/virologist"), this);
+	yield* new_(T("/obj/item/clothing/under/rank/virologist"), this);
+	yield* new_(T("/obj/item/clothing/shoes/sneakers/white"), this);
+	yield* new_(T("/obj/item/clothing/shoes/sneakers/white"), this);
+	yield* new_(T("/obj/item/clothing/suit/toggle/labcoat/virologist"), this);
+	yield* new_(T("/obj/item/clothing/suit/toggle/labcoat/virologist"), this);
+	yield* new_(T("/obj/item/clothing/mask/surgical"), this);
+	yield* new_(T("/obj/item/clothing/mask/surgical"), this);
+	yield* new_(T("/obj/item/weapon/storage/backpack/virology"), this);
+	yield* new_(T("/obj/item/weapon/storage/backpack/virology"), this);
+	yield* new_(T("/obj/item/weapon/storage/backpack/satchel/vir"), this);
+	yield* new_(T("/obj/item/weapon/storage/backpack/satchel/vir"), this);
+	return f.dot;
 }, true);
 
 rt.type(12325, "/obj/structure/closet/wardrobe/science_white", "/obj/structure/closet/wardrobe", {
@@ -475,47 +461,45 @@ rt.type(12325, "/obj/structure/closet/wardrobe/science_white", "/obj/structure/c
 	name: "science wardrobe",
 });
 
-// /obj/structure/closet/wardrobe/science_white/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/job_closets.dm:321)  may sleep
+// job_closets.dm:321
 rt.def("/obj/structure/closet/wardrobe/science_white/proc/PopulateContents", function* PopulateContents(f: Frame) {
 	let i: Value = null;
 	let $e: any;
-	f.vars = () => [i, $e];
-	yield* g.new_(f, T("/obj/item/weapon/storage/backpack/science"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/backpack/science"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/backpack/satchel/tox"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/backpack/satchel/tox"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/hooded/wintercoat/science"), [live(f.src)]);
-	i = null;
+	yield* new_(T("/obj/item/weapon/storage/backpack/science"), this);
+	yield* new_(T("/obj/item/weapon/storage/backpack/science"), this);
+	yield* new_(T("/obj/item/weapon/storage/backpack/satchel/tox"), this);
+	yield* new_(T("/obj/item/weapon/storage/backpack/satchel/tox"), this);
+	yield* new_(T("/obj/item/clothing/suit/hooded/wintercoat/science"), this);
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/clothing/under/rank/scientist"), [live(f.src)]);
+		yield* new_(T("/obj/item/clothing/under/rank/scientist"), this);
 	}
 	rt.endFor(f, 0);
 	i = null;
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/clothing/suit/toggle/labcoat/science"), [live(f.src)]);
+		yield* new_(T("/obj/item/clothing/suit/toggle/labcoat/science"), this);
 	}
 	rt.endFor(f, 0);
 	i = null;
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/clothing/shoes/sneakers/white"), [live(f.src)]);
+		yield* new_(T("/obj/item/clothing/shoes/sneakers/white"), this);
 	}
 	rt.endFor(f, 0);
-	yield* g.new_(f, T("/obj/item/device/radio/headset/headset_sci"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/device/radio/headset/headset_sci"), [live(f.src)]);
+	yield* new_(T("/obj/item/device/radio/headset/headset_sci"), this);
+	yield* new_(T("/obj/item/device/radio/headset/headset_sci"), this);
 	i = null;
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/clothing/mask/gas"), [live(f.src)]);
+		yield* new_(T("/obj/item/clothing/mask/gas"), this);
 	}
 	rt.endFor(f, 0);
-	return live(f.dot);
+	return f.dot;
 }, true);
 
 rt.type(12326, "/obj/structure/closet/wardrobe/botanist", "/obj/structure/closet/wardrobe", {
@@ -523,32 +507,30 @@ rt.type(12326, "/obj/structure/closet/wardrobe/botanist", "/obj/structure/closet
 	name: "botanist wardrobe",
 });
 
-// /obj/structure/closet/wardrobe/botanist/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/job_closets.dm:343)  may sleep
+// job_closets.dm:343
 rt.def("/obj/structure/closet/wardrobe/botanist/proc/PopulateContents", function* PopulateContents(f: Frame) {
 	let i: Value = null;
 	let $e: any;
-	f.vars = () => [i, $e];
-	yield* g.new_(f, T("/obj/item/weapon/storage/backpack/botany"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/backpack/botany"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/backpack/satchel/hyd"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/backpack/satchel/hyd"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/hooded/wintercoat/hydro"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/apron"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/apron"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/apron/overalls"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/apron/overalls"), [live(f.src)]);
-	i = null;
+	yield* new_(T("/obj/item/weapon/storage/backpack/botany"), this);
+	yield* new_(T("/obj/item/weapon/storage/backpack/botany"), this);
+	yield* new_(T("/obj/item/weapon/storage/backpack/satchel/hyd"), this);
+	yield* new_(T("/obj/item/weapon/storage/backpack/satchel/hyd"), this);
+	yield* new_(T("/obj/item/clothing/suit/hooded/wintercoat/hydro"), this);
+	yield* new_(T("/obj/item/clothing/suit/apron"), this);
+	yield* new_(T("/obj/item/clothing/suit/apron"), this);
+	yield* new_(T("/obj/item/clothing/suit/apron/overalls"), this);
+	yield* new_(T("/obj/item/clothing/suit/apron/overalls"), this);
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/clothing/under/rank/hydroponics"), [live(f.src)]);
+		yield* new_(T("/obj/item/clothing/under/rank/hydroponics"), this);
 	}
 	rt.endFor(f, 0);
 	i = null;
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/clothing/mask/bandana"), [live(f.src)]);
+		yield* new_(T("/obj/item/clothing/mask/bandana"), this);
 	}
 	rt.endFor(f, 0);
 	return f.dot;
@@ -559,12 +541,12 @@ rt.type(12327, "/obj/structure/closet/wardrobe/curator", "/obj/structure/closet/
 	name: "treasure hunting wardrobe",
 });
 
-// /obj/structure/closet/wardrobe/curator/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/job_closets.dm:363)  may sleep
+// job_closets.dm:363
 rt.def("/obj/structure/closet/wardrobe/curator/proc/PopulateContents", function* PopulateContents(f: Frame) {
-	yield* g.new_(f, T("/obj/item/clothing/head/fedora/curator"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/curator"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/under/rank/curator/treasure_hunter"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/shoes/workboots/mining"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/backpack/satchel/explorer"), [live(f.src)]);
+	yield* new_(T("/obj/item/clothing/head/fedora/curator"), this);
+	yield* new_(T("/obj/item/clothing/suit/curator"), this);
+	yield* new_(T("/obj/item/clothing/under/rank/curator/treasure_hunter"), this);
+	yield* new_(T("/obj/item/clothing/shoes/workboots/mining"), this);
+	yield* new_(T("/obj/item/weapon/storage/backpack/satchel/explorer"), this);
 	return f.dot;
 }, true);

@@ -1,5 +1,5 @@
 // Types declared in code/modules/vehicles that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(13064, "/obj/vehicle/janicart/upgraded", "/obj/vehicle/janicart", {
 	floorbuffer: 1,

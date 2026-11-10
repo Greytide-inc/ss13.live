@@ -1,7 +1,7 @@
-// From code/datums/diseases/advance/symptoms/heal.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/datums/diseases/advance/symptoms/heal.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(997, "/datum/symptom/heal", "/datum/symptom", {
@@ -13,29 +13,23 @@ rt.type(997, "/datum/symptom/heal", "/datum/symptom", {
 	level: 6,
 });
 
-// /datum/symptom/heal/proc/Activate  (code/datums/diseases/advance/symptoms/heal.dm:28)  may sleep
-rt.def("/datum/symptom/heal/proc/Activate", function* Activate(f: Frame) {
-	let M: Value = null;
-	let $0: any;
-	f.vars = () => [M, $0];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	M = rt.fv(f, "affected_mob", live(f.args[0]));
-	$0 = rt.fv(f, "stage", live(f.args[0]));
-	if ($0 === 4 || $0 === 5) {
-		yield* g.srcCall(f, "Heal", live(M), live(f.args[0]));
+// heal.dm:28
+rt.def("/datum/symptom/heal/proc/Activate", function* Activate(f: Frame, A: Value) {
+	yield* parent_proc();
+	let M: Value = A.affected_mob;
+	if (A.stage === 4 || A.stage === 5) {
+		yield* this.Heal(M, A);
 	}
-	return live(f.dot);
-}, true, { args: ["A"] });
+	return f.dot;
+}, true);
 
-// /datum/symptom/heal/proc/Heal  (code/datums/diseases/advance/symptoms/heal.dm:38)  may sleep
+// heal.dm:38
 rt.def("/datum/symptom/heal/proc/Heal", function* Heal(f: Frame, M: Value, A: Value) {
-	let heal_amt: Value = null;
-	f.vars = () => [M, A, heal_amt];
-	heal_amt = 0.5;
-	if ((rt.gt(rt.fv(f, "toxloss", live(M)), 0) && truthy(rt.op(f, "Prob", [], [20])))) {
-		yield* g.new_(f, T("/obj/effect/temp_visual/heal"), [rt.getStep(f, live(M), 0), "#66FF99"]);
+	let heal_amt: Value = 0.5;
+	if (M.toxloss > 0 && prob(20)) {
+		yield* new_(T("/obj/effect/temp_visual/heal"), rt.getStep(f, M, 0), "#66FF99");
 	}
-	yield* g.callName(f, live(M), "adjustToxLoss", [rt.neg(live(heal_amt))]);
+	yield* M.adjustToxLoss(-heal_amt);
 	return 1;
 }, true);
 
@@ -48,15 +42,13 @@ rt.type(998, "/datum/symptom/heal/plus", "/datum/symptom/heal", {
 	level: 8,
 });
 
-// /datum/symptom/heal/plus/proc/Heal  (code/datums/diseases/advance/symptoms/heal.dm:69)  may sleep
+// heal.dm:69
 rt.def("/datum/symptom/heal/plus/proc/Heal", function* Heal(f: Frame, M: Value, A: Value) {
-	let heal_amt: Value = null;
-	f.vars = () => [M, A, heal_amt];
-	heal_amt = 1;
-	if ((rt.gt(rt.fv(f, "toxloss", live(M)), 0) && truthy(rt.op(f, "Prob", [], [20])))) {
-		yield* g.new_(f, T("/obj/effect/temp_visual/heal"), [rt.getStep(f, live(M), 0), "#00FF00"]);
+	let heal_amt: Value = 1;
+	if (M.toxloss > 0 && prob(20)) {
+		yield* new_(T("/obj/effect/temp_visual/heal"), rt.getStep(f, M, 0), "#00FF00");
 	}
-	yield* g.callName(f, live(M), "adjustToxLoss", [rt.neg(live(heal_amt))]);
+	yield* M.adjustToxLoss(-heal_amt);
 	return 1;
 }, true);
 
@@ -69,26 +61,20 @@ rt.type(999, "/datum/symptom/heal/brute", "/datum/symptom/heal", {
 	level: 6,
 });
 
-// /datum/symptom/heal/brute/proc/Heal  (code/datums/diseases/advance/symptoms/heal.dm:103)  may sleep
+// heal.dm:103
 rt.def("/datum/symptom/heal/brute/proc/Heal", function* Heal(f: Frame, M: Value, A: Value) {
-	let heal_amt: Value = null, parts: Value = null, L: Value = null;
-	let $e: any;
-	f.vars = () => [M, A, heal_amt, parts, L, $e];
-	heal_amt = 1;
-	if (!truthy(rt.getLen(f, (parts = (yield* g.callName(f, live(M), "get_damaged_bodyparts", [1, 1])))))) {
-		return live(f.dot);
+	let parts: Value = null, L: Value = null;
+	let heal_amt: Value = 1;
+	if (!rt.len(f, (parts = M.get_damaged_bodyparts(1, 1)))) {
+		return f.dot;
 	}
-	L = null;
-	rt.forList(f, 0, live(parts), T("/obj/item/bodypart"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		L = $e;
-		if (truthy((yield* g.callName(f, live(L), "heal_damage", [divide(live(heal_amt), rt.len(f, live(parts))), 0])))) {
-			yield* g.callName(f, live(M), "update_damage_overlays", []);
+	for (L of each(parts, T("/obj/item/bodypart"))) {
+		if (yield* L.heal_damage(heal_amt / rt.len(f, parts), 0)) {
+			M.update_damage_overlays();
 		}
 	}
-	rt.endFor(f, 0);
-	if (truthy(rt.op(f, "Prob", [], [20]))) {
-		yield* g.new_(f, T("/obj/effect/temp_visual/heal"), [rt.getStep(f, live(M), 0), "#FF3333"]);
+	if (prob(20)) {
+		yield* new_(T("/obj/effect/temp_visual/heal"), rt.getStep(f, M, 0), "#FF3333");
 	}
 	return 1;
 }, true);
@@ -102,32 +88,26 @@ rt.type(1000, "/datum/symptom/heal/brute/plus", "/datum/symptom/heal/brute", {
 	level: 8,
 });
 
-// /datum/symptom/heal/brute/plus/proc/Heal  (code/datums/diseases/advance/symptoms/heal.dm:146)  may sleep
+// heal.dm:146
 rt.def("/datum/symptom/heal/brute/plus/proc/Heal", function* Heal(f: Frame, M: Value, A: Value) {
-	let heal_amt: Value = null, parts: Value = null, L: Value = null;
-	let $e: any;
-	f.vars = () => [M, A, heal_amt, parts, L, $e];
-	heal_amt = 2;
-	parts = (yield* g.callName(f, live(M), "get_damaged_bodyparts", [1, 1]));
-	if (rt.gt((yield* g.callName(f, live(M), "getCloneLoss", [])), 0)) {
-		yield* g.callName(f, live(M), "adjustCloneLoss", [-1]);
-		yield* g.callName(f, live(M), "take_bodypart_damage", [0, 1]);
-		yield* g.new_(f, T("/obj/effect/temp_visual/heal"), [rt.getStep(f, live(M), 0), "#33FFCC"]);
+	let L: Value = null;
+	let heal_amt: Value = 2;
+	let parts: Value = M.get_damaged_bodyparts(1, 1);
+	if (M.getCloneLoss() > 0) {
+		yield* M.adjustCloneLoss(-1);
+		yield* M.take_bodypart_damage(0, 1);
+		yield* new_(T("/obj/effect/temp_visual/heal"), rt.getStep(f, M, 0), "#33FFCC");
 	}
-	if (!truthy(rt.len(f, live(parts)))) {
-		return live(f.dot);
+	if (!rt.len(f, parts)) {
+		return f.dot;
 	}
-	L = null;
-	rt.forList(f, 0, live(parts), T("/obj/item/bodypart"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		L = $e;
-		if (truthy((yield* g.callName(f, live(L), "heal_damage", [divide(live(heal_amt), rt.len(f, live(parts))), 0])))) {
-			yield* g.callName(f, live(M), "update_damage_overlays", []);
+	for (L of each(parts, T("/obj/item/bodypart"))) {
+		if (yield* L.heal_damage(heal_amt / rt.len(f, parts), 0)) {
+			M.update_damage_overlays();
 		}
 	}
-	rt.endFor(f, 0);
-	if (truthy(rt.op(f, "Prob", [], [20]))) {
-		yield* g.new_(f, T("/obj/effect/temp_visual/heal"), [rt.getStep(f, live(M), 0), "#CC1100"]);
+	if (prob(20)) {
+		yield* new_(T("/obj/effect/temp_visual/heal"), rt.getStep(f, M, 0), "#CC1100");
 	}
 	return 1;
 }, true);
@@ -141,26 +121,20 @@ rt.type(1001, "/datum/symptom/heal/burn", "/datum/symptom/heal", {
 	level: 6,
 });
 
-// /datum/symptom/heal/burn/proc/Heal  (code/datums/diseases/advance/symptoms/heal.dm:194)  may sleep
+// heal.dm:194
 rt.def("/datum/symptom/heal/burn/proc/Heal", function* Heal(f: Frame, M: Value, A: Value) {
-	let heal_amt: Value = null, parts: Value = null, L: Value = null;
-	let $e: any;
-	f.vars = () => [M, A, heal_amt, parts, L, $e];
-	heal_amt = 1;
-	if (!truthy(rt.getLen(f, (parts = (yield* g.callName(f, live(M), "get_damaged_bodyparts", [1, 1])))))) {
-		return live(f.dot);
+	let parts: Value = null, L: Value = null;
+	let heal_amt: Value = 1;
+	if (!rt.len(f, (parts = M.get_damaged_bodyparts(1, 1)))) {
+		return f.dot;
 	}
-	L = null;
-	rt.forList(f, 0, live(parts), T("/obj/item/bodypart"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		L = $e;
-		if (truthy((yield* g.callName(f, live(L), "heal_damage", [0, divide(live(heal_amt), rt.len(f, live(parts)))])))) {
-			yield* g.callName(f, live(M), "update_damage_overlays", []);
+	for (L of each(parts, T("/obj/item/bodypart"))) {
+		if (yield* L.heal_damage(0, heal_amt / rt.len(f, parts))) {
+			M.update_damage_overlays();
 		}
 	}
-	rt.endFor(f, 0);
-	if (truthy(rt.op(f, "Prob", [], [20]))) {
-		yield* g.new_(f, T("/obj/effect/temp_visual/heal"), [rt.getStep(f, live(M), 0), "#FF9933"]);
+	if (prob(20)) {
+		yield* new_(T("/obj/effect/temp_visual/heal"), rt.getStep(f, M, 0), "#FF9933");
 	}
 	return 1;
 }, true);
@@ -174,34 +148,26 @@ rt.type(1002, "/datum/symptom/heal/burn/plus", "/datum/symptom/heal/burn", {
 	level: 8,
 });
 
-// /datum/symptom/heal/burn/plus/proc/Heal  (code/datums/diseases/advance/symptoms/heal.dm:236)  may sleep
+// heal.dm:236
 rt.def("/datum/symptom/heal/burn/plus/proc/Heal", function* Heal(f: Frame, M: Value, A: Value) {
-	let heal_amt: Value = null, parts: Value = null, L: Value = null;
-	let $e: any;
-	f.vars = () => [M, A, heal_amt, parts, L, $e];
-	heal_amt = 2;
-	parts = (yield* g.callName(f, live(M), "get_damaged_bodyparts", [1, 1]));
-	if (rt.gt(rt.fv(f, "bodytemperature", live(M)), 310)) {
-		rt.setFv(f, "bodytemperature", live(M), (yield* g.call(f, P("/proc/max"), null, [310, subtract(rt.fv(f, "bodytemperature", live(M)), multiply(multiply(10, live(heal_amt)), 1.5))])));
-	} else {
-		if (rt.lt(rt.fv(f, "bodytemperature", live(M)), 311)) {
-			rt.setFv(f, "bodytemperature", live(M), (yield* g.call(f, P("/proc/min"), null, [310, add(rt.fv(f, "bodytemperature", live(M)), multiply(multiply(10, live(heal_amt)), 1.5))])));
+	let L: Value = null;
+	let heal_amt: Value = 2;
+	let parts: Value = M.get_damaged_bodyparts(1, 1);
+	if (M.bodytemperature > 310) {
+		M.bodytemperature = max(310, M.bodytemperature - 10 * heal_amt * TEMPERATURE_DAMAGE_COEFFICIENT);
+	} else if (M.bodytemperature < 311) {
+		M.bodytemperature = min(310, M.bodytemperature + 10 * heal_amt * TEMPERATURE_DAMAGE_COEFFICIENT);
+	}
+	if (!rt.len(f, parts)) {
+		return f.dot;
+	}
+	for (L of each(parts, T("/obj/item/bodypart"))) {
+		if (yield* L.heal_damage(0, heal_amt / rt.len(f, parts))) {
+			M.update_damage_overlays();
 		}
 	}
-	if (!truthy(rt.len(f, live(parts)))) {
-		return live(f.dot);
-	}
-	L = null;
-	rt.forList(f, 0, live(parts), T("/obj/item/bodypart"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		L = $e;
-		if (truthy((yield* g.callName(f, live(L), "heal_damage", [0, divide(live(heal_amt), rt.len(f, live(parts)))])))) {
-			yield* g.callName(f, live(M), "update_damage_overlays", []);
-		}
-	}
-	rt.endFor(f, 0);
-	if (truthy(rt.op(f, "Prob", [], [20]))) {
-		yield* g.new_(f, T("/obj/effect/temp_visual/heal"), [rt.getStep(f, live(M), 0), "#CC6600"]);
+	if (prob(20)) {
+		yield* new_(T("/obj/effect/temp_visual/heal"), rt.getStep(f, M, 0), "#CC6600");
 	}
 	return 1;
 }, true);
@@ -215,14 +181,12 @@ rt.type(1003, "/datum/symptom/heal/dna", "/datum/symptom/heal", {
 	level: 5,
 });
 
-// /datum/symptom/heal/dna/proc/Heal  (code/datums/diseases/advance/symptoms/heal.dm:283)  may sleep
+// heal.dm:283
 rt.def("/datum/symptom/heal/dna/proc/Heal", function* Heal(f: Frame, M: Value, A: Value) {
-	let amt_healed: Value = null, unclean_mutations: Value = null;
-	f.vars = () => [M, A, amt_healed, unclean_mutations];
-	amt_healed = 1;
-	yield* g.callName(f, live(M), "adjustBrainLoss", [rt.neg(live(amt_healed))]);
-	unclean_mutations = subtract(rt.bitOr(rt.gl("not_good_mutations"), rt.gl("bad_mutations")), rt.at(rt.gl("mutations_list"), "Monkified"));
-	yield* g.callName(f, rt.fv(f, "dna", live(M)), "remove_mutation_group", [live(unclean_mutations)]);
-	rt.setFv(f, "radiation", live(M), (yield* g.call(f, P("/proc/max"), null, [subtract(rt.fv(f, "radiation", live(M)), multiply(2, live(amt_healed))), 0])));
+	let amt_healed: Value = 1;
+	yield* M.adjustBrainLoss(-amt_healed);
+	let unclean_mutations: Value = rt.bitOr(GLOB.not_good_mutations, GLOB.bad_mutations) - rt.at(GLOB.mutations_list, "Monkified");
+	yield* M.dna.remove_mutation_group(unclean_mutations);
+	M.radiation = max(M.radiation - 2 * amt_healed, 0);
 	return 1;
 }, true);

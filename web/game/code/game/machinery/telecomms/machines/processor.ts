@@ -1,7 +1,7 @@
-// From code/game/machinery/telecomms/machines/processor.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/machinery/telecomms/machines/processor.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, add } = rt;
 
 
 rt.type(10727, "/obj/machinery/telecomms/processor", "/obj/machinery/telecomms", {
@@ -16,30 +16,28 @@ rt.type(10727, "/obj/machinery/telecomms/processor", "/obj/machinery/telecomms",
 	idle_power_usage: 30,
 });
 
-// /obj/machinery/telecomms/processor/proc/receive_information  (code/game/machinery/telecomms/machines/processor.dm:25)  may sleep
+// processor.dm:25
 rt.def("/obj/machinery/telecomms/processor/proc/receive_information", function* receive_information(f: Frame, signal: Value, machine_from: Value) {
-	f.vars = () => [signal, machine_from];
-	if (!truthy((yield* g.srcCall(f, "is_freq_listening", live(signal))))) return f.dot;
-	if (truthy(rt.sv(f, "process_mode"))) {
-		rt.setAt(rt.fv(f, "data", live(signal)), "compression", 0);
+	if (!this.is_freq_listening(signal)) return f.dot;
+	if (this.process_mode) {
+		rt.setAt(signal.data, "compression", 0);
 	} else {
-		rt.setAt(rt.fv(f, "data", live(signal)), "compression", 100);
+		rt.setAt(signal.data, "compression", 100);
 	}
-	if (truthy((rt.istype(live(machine_from), T("/obj/machinery/telecomms/bus")) ? 1 : 0))) {
-		yield* g.srcCall(f, "relay_direct_information", live(signal), live(machine_from));
+	if (rt.istype(machine_from, T("/obj/machinery/telecomms/bus"))) {
+		yield* this.relay_direct_information(signal, machine_from);
 	} else {
-		rt.modAt(rt.fv(f, "data", live(signal)), "slow", (yield* g.call(f, P("/proc/rand"), null, [5, 10])), add);
-		yield* g.srcCall(f, "relay_information", live(signal), "/obj/machinery/telecomms/server");
+		rt.modAt(signal.data, "slow", rand(5, 10), add);
+		yield* this.relay_information(signal, "/obj/machinery/telecomms/server");
 	}
 	return f.dot;
 }, true);
 
-// /obj/machinery/telecomms/processor/proc/New  (code/game/machinery/telecomms/machines/processor.dm:39)  may sleep
+// processor.dm:39
 rt.def("/obj/machinery/telecomms/processor/proc/New", function* New(f: Frame) {
 	let B: Value = null;
-	f.vars = () => [B];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.callName(f, (B = (yield* g.new_(f, T("/obj/item/weapon/circuitboard/machine/telecomms/processor"), [null]))), "apply_default_parts", [live(f.src)]);
+	yield* parent_proc();
+	yield* (B = (yield* new_(T("/obj/item/weapon/circuitboard/machine/telecomms/processor"), null))).apply_default_parts(this);
 	return f.dot;
 }, true);
 
@@ -50,12 +48,10 @@ rt.type(6738, "/obj/item/weapon/circuitboard/machine/telecomms/processor", "/obj
 	req_components: null,
 });
 
-// /obj/item/weapon/circuitboard/machine/telecomms/processor/proc/<init>  (code/game/machinery/telecomms/machines/processor.dm:47)
+// processor.dm:47
 rt.def("/obj/item/weapon/circuitboard/machine/telecomms/processor/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_components", rt.alist(f, [T("/obj/item/weapon/stock_parts/manipulator"), 3, T("/obj/item/weapon/stock_parts/subspace/filter"), 1, T("/obj/item/weapon/stock_parts/subspace/treatment"), 2, T("/obj/item/weapon/stock_parts/subspace/analyzer"), 1, T("/obj/item/stack/cable_coil"), 2, T("/obj/item/weapon/stock_parts/subspace/amplifier"), 1]));
+	parent_proc();
+	this.req_components = rt.alist(f, [T("/obj/item/weapon/stock_parts/manipulator"), 3, T("/obj/item/weapon/stock_parts/subspace/filter"), 1, T("/obj/item/weapon/stock_parts/subspace/treatment"), 2, T("/obj/item/weapon/stock_parts/subspace/analyzer"), 1, T("/obj/item/stack/cable_coil"), 2, T("/obj/item/weapon/stock_parts/subspace/amplifier"), 1]);
 	return f.dot;
 });
 
@@ -65,12 +61,10 @@ rt.type(10728, "/obj/machinery/telecomms/processor/preset_one", "/obj/machinery/
 	autolinkers: null,
 });
 
-// /obj/machinery/telecomms/processor/preset_one/proc/<init>  (code/game/machinery/telecomms/machines/processor.dm:61)
+// processor.dm:61
 rt.def("/obj/machinery/telecomms/processor/preset_one/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "autolinkers", rt.list("processor1"));
+	parent_proc();
+	this.autolinkers = list("processor1");
 	return f.dot;
 });
 
@@ -80,12 +74,10 @@ rt.type(10730, "/obj/machinery/telecomms/processor/preset_two", "/obj/machinery/
 	autolinkers: null,
 });
 
-// /obj/machinery/telecomms/processor/preset_two/proc/<init>  (code/game/machinery/telecomms/machines/processor.dm:66)
+// processor.dm:66
 rt.def("/obj/machinery/telecomms/processor/preset_two/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "autolinkers", rt.list("processor2"));
+	parent_proc();
+	this.autolinkers = list("processor2");
 	return f.dot;
 });
 
@@ -95,12 +87,10 @@ rt.type(10731, "/obj/machinery/telecomms/processor/preset_three", "/obj/machiner
 	autolinkers: null,
 });
 
-// /obj/machinery/telecomms/processor/preset_three/proc/<init>  (code/game/machinery/telecomms/machines/processor.dm:71)
+// processor.dm:71
 rt.def("/obj/machinery/telecomms/processor/preset_three/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "autolinkers", rt.list("processor3"));
+	parent_proc();
+	this.autolinkers = list("processor3");
 	return f.dot;
 });
 
@@ -110,11 +100,9 @@ rt.type(10732, "/obj/machinery/telecomms/processor/preset_four", "/obj/machinery
 	autolinkers: null,
 });
 
-// /obj/machinery/telecomms/processor/preset_four/proc/<init>  (code/game/machinery/telecomms/machines/processor.dm:76)
+// processor.dm:76
 rt.def("/obj/machinery/telecomms/processor/preset_four/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "autolinkers", rt.list("processor4"));
+	parent_proc();
+	this.autolinkers = list("processor4");
 	return f.dot;
 });

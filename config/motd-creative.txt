@@ -1,0 +1,9 @@
+<!-- Shown in chat when you join Creative. Most valid html will work in here, excluding images. -->
+
+<h1>Welcome to SS13.LIVE: Creative</h1>
+<p>Tips:</p>
+<ul>
+<li>Press <b>F8</b> for build mode: left click builds (floor into wall, wall into reinforced wall), right click removes. Ctrl+left click puts a window, Alt+left click an airlock. The buttons at the top left change the mode and the direction things face, and the ? button explains the current mode. Press F8 again to leave.</li>
+<li>You start as a ghost. The buttons along the bottom: <b>Spawn</b> (any item or mob), <b>Spawn Rings</b> (a field of rings), <b>Drop DynEx Bomb</b>, <b>Become human</b> (get a body to walk around in), then Jump to mob, Orbit, Teleport and the zoom buttons.</li>
+<li>Nothing can hurt you as a human here, and the floor can't be destroyed.</li>
+</ul>

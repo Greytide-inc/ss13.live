@@ -1,399 +1,360 @@
-// From code/modules/mob/mob_movement.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/mob_movement.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
-// /mob/proc/CanPass  (code/modules/mob/mob_movement.dm:2)
+// mob_movement.dm:2
 rt.def("/mob/proc/CanPass", function CanPass(f: Frame, mover: Value, target: Value, height: Value) {
-	f.vars = () => [height];
-	if (live(height) === null) {
-		height = 0;
-	}
-	if (isEqual(live(height), 0)) {
+	height ??= 0;
+	if (height == 0) {
 		return 1;
 	}
-	if ((truthy((rt.istype(live(mover), T("/obj/item/projectile")) ? 1 : 0)) || truthy(rt.fv(f, "throwing", live(mover))))) {
-		return ((!truthy(rt.sv(f, "density")) ? 1 : 0) || rt.sv(f, "lying"));
+	if (rt.istype(mover, T("/obj/item/projectile")) || mover.throwing) {
+		return ((!this.density ? 1 : 0) || this.lying);
 	}
-	if (truthy(rt.callName(f, live(mover), "checkpass", [16]))) {
+	if (mover.checkpass(16)) {
 		return 1;
 	}
-	if (isEqual(rt.sv(f, "buckled"), live(mover))) {
+	if (this.buckled == mover) {
 		return 1;
 	}
-	if (truthy(rt.call(f, P("/proc/ismob"), null, [live(mover)]))) {
-		if (truthy((rt.isIn(f, live(mover), rt.sv(f, "buckled_mobs")) ? 1 : 0))) {
+	if (ismob(mover)) {
+		if (rt.isIn(f, mover, this.buckled_mobs)) {
 			return 1;
 		}
 	}
-	return (((!truthy(rt.fv(f, "density", live(mover))) ? 1 : 0) || (!truthy(rt.sv(f, "density")) ? 1 : 0)) || rt.sv(f, "lying"));
+	return (((!mover.density ? 1 : 0) || (!this.density ? 1 : 0)) || this.lying);
 });
 
-// /client/verb/moveup  (code/modules/mob/mob_movement.dm:21)  may sleep
+// mob_movement.dm:21
 rt.def("/client/verb/moveup", function* moveup(f: Frame) {
-	yield* g.srcCall(f, "Move", rt.getStep(f, rt.sv(f, "mob"), 1), 1);
+	yield* this.Move(rt.getStep(f, this.mob, 1), 1);
 	return f.dot;
 }, true, { verb: { name: ".moveup" } });
 
-// /client/verb/movedown  (code/modules/mob/mob_movement.dm:26)  may sleep
+// mob_movement.dm:26
 rt.def("/client/verb/movedown", function* movedown(f: Frame) {
-	yield* g.srcCall(f, "Move", rt.getStep(f, rt.sv(f, "mob"), 2), 2);
+	yield* this.Move(rt.getStep(f, this.mob, 2), 2);
 	return f.dot;
 }, true, { verb: { name: ".movedown" } });
 
-// /client/verb/moveright  (code/modules/mob/mob_movement.dm:31)  may sleep
+// mob_movement.dm:31
 rt.def("/client/verb/moveright", function* moveright(f: Frame) {
-	yield* g.srcCall(f, "Move", rt.getStep(f, rt.sv(f, "mob"), 4), 4);
+	yield* this.Move(rt.getStep(f, this.mob, 4), 4);
 	return f.dot;
 }, true, { verb: { name: ".moveright" } });
 
-// /client/verb/moveleft  (code/modules/mob/mob_movement.dm:36)  may sleep
+// mob_movement.dm:36
 rt.def("/client/verb/moveleft", function* moveleft(f: Frame) {
-	yield* g.srcCall(f, "Move", rt.getStep(f, rt.sv(f, "mob"), 8), 8);
+	yield* this.Move(rt.getStep(f, this.mob, 8), 8);
 	return f.dot;
 }, true, { verb: { name: ".moveleft" } });
 
-// /client/proc/Northeast  (code/modules/mob/mob_movement.dm:39)
+// mob_movement.dm:39
 rt.def("/client/proc/Northeast", function Northeast(f: Frame) {
-	rt.callSrc(f, "swap_hand", []);
-	return live(f.dot);
+	this.swap_hand();
+	return f.dot;
 });
 
-// /client/proc/Southeast  (code/modules/mob/mob_movement.dm:44)  may sleep
+// mob_movement.dm:44
 rt.def("/client/proc/Southeast", function* Southeast(f: Frame) {
-	yield* g.srcCall(f, "attack_self");
-	return live(f.dot);
-}, true);
-
-// /client/proc/Southwest  (code/modules/mob/mob_movement.dm:49)
-rt.def("/client/proc/Southwest", function Southwest(f: Frame) {
-	let C: Value = null;
-	f.vars = () => [C];
-	if (truthy((rt.istype(live(f.usr), T("/mob/living/carbon")) ? 1 : 0))) {
-		rt.callName(f, (C = live(f.usr)), "toggle_throw_mode", []);
-	} else {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.usr), "<span class='danger'>This mob type cannot throw items.</span>"]);
-	}
-	return live(f.dot);
-});
-
-// /client/proc/Northwest  (code/modules/mob/mob_movement.dm:58)  may sleep
-rt.def("/client/proc/Northwest", function* Northwest(f: Frame) {
-	if (!truthy((yield* g.callName(f, live(f.usr), "get_active_held_item", [])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), "<span class='warning'>You have nothing to drop in your hand!</span>"]);
-		return live(f.dot);
-	}
-	yield* g.callName(f, live(f.usr), "drop_item", []);
+	yield* this.attack_self();
 	return f.dot;
 }, true);
 
-// /client/verb/delete_key_pressed  (code/modules/mob/mob_movement.dm:67)  may sleep
-rt.def("/client/verb/delete_key_pressed", function* delete_key_pressed(f: Frame) {
-	if (!truthy(rt.fv(f, "pulling", live(f.usr)))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), "<span class='notice'>You are not pulling anything.</span>"]);
-		return live(f.dot);
+// mob_movement.dm:49
+rt.def("/client/proc/Southwest", function Southwest(f: Frame) {
+	let C: Value = null;
+	if (rt.istype(f.usr, T("/mob/living/carbon"))) {
+		(C = f.usr).toggle_throw_mode();
+	} else {
+		to_chat(f.usr, "<span class='danger'>This mob type cannot throw items.</span>");
 	}
-	yield* g.callName(f, live(f.usr), "stop_pulling", []);
+	return f.dot;
+});
+
+// mob_movement.dm:58
+rt.def("/client/proc/Northwest", function* Northwest(f: Frame) {
+	if (!f.usr.get_active_held_item()) {
+		to_chat(f.usr, "<span class='warning'>You have nothing to drop in your hand!</span>");
+		return f.dot;
+	}
+	yield* f.usr.drop_item();
+	return f.dot;
+}, true);
+
+// mob_movement.dm:67
+rt.def("/client/verb/delete_key_pressed", function* delete_key_pressed(f: Frame) {
+	if (!f.usr.pulling) {
+		to_chat(f.usr, "<span class='notice'>You are not pulling anything.</span>");
+		return f.dot;
+	}
+	yield* f.usr.stop_pulling();
 	return f.dot;
 }, true, { hidden: true });
 
-// /client/verb/swap_hand  (code/modules/mob/mob_movement.dm:77)
+// mob_movement.dm:77
 rt.def("/client/verb/swap_hand", function swap_hand(f: Frame) {
-	if (!truthy(rt.sv(f, "mob"))) return f.dot;
-	rt.callName(f, rt.sv(f, "mob"), "swap_hand", []);
+	if (!this.mob) return f.dot;
+	this.mob.swap_hand();
 	return f.dot;
 }, false, { verb: { name: "Swap hands", category: "IC" } });
 
-// /client/verb/attack_self  (code/modules/mob/mob_movement.dm:82)  may sleep
+// mob_movement.dm:82
 rt.def("/client/verb/attack_self", function* attack_self(f: Frame) {
-	if (truthy(rt.sv(f, "mob"))) {
-		yield* g.callName(f, rt.sv(f, "mob"), "mode", []);
+	if (this.mob) {
+		yield* this.mob.mode();
 	}
-	return live(f.dot);
+	return f.dot;
 }, true, { hidden: true });
 
-// /client/verb/drop_item  (code/modules/mob/mob_movement.dm:88)  may sleep
+// mob_movement.dm:88
 rt.def("/client/verb/drop_item", function* drop_item(f: Frame) {
-	if (!truthy((rt.istype(rt.sv(f, "mob"), T("/mob/living/silicon/robot")) ? 1 : 0))) {
-		yield* g.callName(f, rt.sv(f, "mob"), "drop_item_v", []);
+	if (!rt.istype(this.mob, T("/mob/living/silicon/robot"))) {
+		yield* this.mob.drop_item_v();
 	}
-	return live(f.dot);
+	return f.dot;
 }, true, { hidden: true });
 
-// /client/verb/Center  empty
+// Empty in tg.
 rt.def("/client/verb/Center", undefined, false, { verb: { name: ".center" } });
 
-// /client/proc/Center  (code/modules/mob/mob_movement.dm:94)  may sleep
+// mob_movement.dm:94
 rt.def("/client/proc/Center", function* Center(f: Frame) {
 	let O: Value = null;
-	f.vars = () => [O];
-	if (truthy((rt.istype(rt.fv(f, "loc", rt.sv(f, "mob")), T("/obj")) ? 1 : 0))) {
-		O = rt.fv(f, "loc", rt.sv(f, "mob"));
-		if (truthy(rt.fv(f, "canmove", rt.sv(f, "mob")))) {
-			return (yield* g.callName(f, live(O), "relaymove", [rt.sv(f, "mob"), 0]));
+	if (rt.istype(this.mob.loc, T("/obj"))) {
+		O = this.mob.loc;
+		if (this.mob.canmove) {
+			return (yield* O.relaymove(this.mob, 0));
 		}
 	}
-	return live(f.dot);
+	return f.dot;
 }, true);
 
-// /client/proc/Move_object  (code/modules/mob/mob_movement.dm:102)  may sleep
+// mob_movement.dm:102
 rt.def("/client/proc/Move_object", function* Move_object(f: Frame, direct: Value) {
-	f.vars = () => [direct];
-	if ((truthy(rt.sv(f, "mob")) && truthy(rt.fv(f, "control_object", rt.sv(f, "mob"))))) {
-		if (truthy(rt.gv(f, "density", rt.fv(f, "control_object", rt.sv(f, "mob"))))) {
-			yield* g.call(f, P("/proc/step"), null, [rt.fv(f, "control_object", rt.sv(f, "mob")), live(direct)]);
-			if (!truthy(rt.fv(f, "control_object", rt.sv(f, "mob")))) {
-				return live(f.dot);
+	if (this.mob && this.mob.control_object) {
+		if (this.mob.control_object.density) {
+			yield* step(this.mob.control_object, direct);
+			if (!this.mob.control_object) {
+				return f.dot;
 			}
-			yield* g.callName(f, rt.fv(f, "control_object", rt.sv(f, "mob")), "setDir", [live(direct)]);
+			yield* this.mob.control_object.setDir(direct);
 		} else {
-			rt.setFv(f, "loc", rt.fv(f, "control_object", rt.sv(f, "mob")), rt.getStep(f, rt.fv(f, "control_object", rt.sv(f, "mob")), live(direct)));
+			this.mob.control_object.loc = rt.getStep(f, this.mob.control_object, direct);
 		}
 	}
-	return live(f.dot);
+	return f.dot;
 }, true);
 
-// /client/proc/Move  (code/modules/mob/mob_movement.dm:115)  may sleep
-rt.def("/client/proc/Move", function* Move(f: Frame) {
-	let old_move_delay: Value = null, L: Value = null, O: Value = null, delay: Value = null;
-	f.vars = () => [old_move_delay, L, O, delay];
-	if (rt.lt(rt.worldTime(f), rt.sv(f, "move_delay"))) {
+// mob_movement.dm:115
+rt.def("/client/proc/Move", function* Move(f: Frame, n: Value, direct: Value) {
+	let L: Value = null, O: Value = null;
+	if (rt.worldTime(f) < this.move_delay) {
 		return 0;
 	}
-	old_move_delay = rt.sv(f, "move_delay");
-	rt.setSv(f, "move_delay", add(rt.worldTime(f), rt.fv(f, "tick_lag", rt.world())));
-	if ((!truthy(rt.sv(f, "mob")) || !truthy(rt.fv(f, "loc", rt.sv(f, "mob"))))) {
+	let old_move_delay: Value = this.move_delay;
+	this.move_delay = rt.worldTime(f) + rt.world().tick_lag;
+	if (!this.mob || !this.mob.loc) {
 		return 0;
 	}
-	if (truthy(rt.fv(f, "notransform", rt.sv(f, "mob")))) {
+	if (this.mob.notransform) {
 		return 0;
 	}
-	if (truthy(rt.fv(f, "control_object", rt.sv(f, "mob")))) {
-		return (yield* g.srcCall(f, "Move_object", live(f.args[1])));
+	if (this.mob.control_object) {
+		return (yield* this.Move_object(direct));
 	}
-	if (!truthy((rt.istype(rt.sv(f, "mob"), T("/mob/living")) ? 1 : 0))) {
-		rt.setFv(f, "glide_size", rt.sv(f, "mob"), (yield* g.call(f, P("/proc/max"), null, [1, (yield* g.call(f, P("/proc/min"), null, [divide(32, (yield* g.call(f, P("/proc/max"), null, [divide((yield* g.callName(f, rt.sv(f, "mob"), "movement_delay", [])), rt.fv(f, "tick_lag", rt.world())), 1]))), 32]))])));
-		return (yield* g.callName(f, rt.sv(f, "mob"), "Move", [live(f.args[0]), live(f.args[1])]));
+	if (!rt.istype(this.mob, T("/mob/living"))) {
+		this.mob.glide_size = max(1, min(32 / max((yield* this.mob.movement_delay()) / rt.world().tick_lag, 1), 32));
+		return (yield* this.mob.Move(n, direct));
 	}
-	if (isEqual(rt.fv(f, "stat", rt.sv(f, "mob")), 2)) {
-		yield* g.callName(f, rt.sv(f, "mob"), "ghostize", []);
+	if (this.mob.stat == 2) {
+		yield* this.mob.ghostize();
 		return 0;
 	}
-	if (truthy(rt.sv(f, "moving"))) {
+	if (this.moving) {
 		return 0;
 	}
-	if (truthy(rt.fv(f, "force_moving", rt.sv(f, "mob")))) {
+	if (this.mob.force_moving) {
 		return 0;
 	}
-	if (truthy((rt.istype(rt.sv(f, "mob"), T("/mob/living")) ? 1 : 0))) {
-		if (truthy(rt.gv(f, "incorporeal_move", (L = rt.sv(f, "mob"))))) {
-			yield* g.srcCall(f, "Process_Incorpmove", live(f.args[1]));
+	if (rt.istype(this.mob, T("/mob/living"))) {
+		if ((L = this.mob).incorporeal_move) {
+			yield* this.Process_Incorpmove(direct);
 			return 0;
 		}
 	}
-	if (truthy(rt.fv(f, "remote_control", rt.sv(f, "mob")))) {
-		return (yield* g.callName(f, rt.fv(f, "remote_control", rt.sv(f, "mob")), "relaymove", [rt.sv(f, "mob"), live(f.args[1])]));
+	if (this.mob.remote_control) {
+		return (yield* this.mob.remote_control.relaymove(this.mob, direct));
 	}
-	if (truthy((rt.istype(rt.sv(f, "mob"), T("/mob/living/silicon/ai")) ? 1 : 0))) {
-		return (yield* g.srcCall(f, "AIMove", live(f.args[0]), live(f.args[1]), rt.sv(f, "mob")));
+	if (rt.istype(this.mob, T("/mob/living/silicon/ai"))) {
+		return (yield* this.AIMove(n, direct, this.mob));
 	}
-	if (truthy((yield* g.srcCall(f, "Process_Grab")))) {
-		return live(f.dot);
+	if (yield* this.Process_Grab()) {
+		return f.dot;
 	}
-	if (truthy(rt.fv(f, "buckled", rt.sv(f, "mob")))) {
-		return (yield* g.callName(f, rt.fv(f, "buckled", rt.sv(f, "mob")), "relaymove", [rt.sv(f, "mob"), live(f.args[1])]));
+	if (this.mob.buckled) {
+		return (yield* this.mob.buckled.relaymove(this.mob, direct));
 	}
-	if (!truthy(rt.fv(f, "canmove", rt.sv(f, "mob")))) {
+	if (!this.mob.canmove) {
 		return 0;
 	}
-	if ((truthy((rt.istype(rt.fv(f, "loc", rt.sv(f, "mob")), T("/obj")) ? 1 : 0)) || truthy((yield* g.call(f, P("/proc/ismob"), null, [rt.fv(f, "loc", rt.sv(f, "mob"))]))))) {
-		return (yield* g.callName(f, (O = rt.fv(f, "loc", rt.sv(f, "mob"))), "relaymove", [rt.sv(f, "mob"), live(f.args[1])]));
+	if (rt.istype(this.mob.loc, T("/obj")) || ismob(this.mob.loc)) {
+		return (yield* (O = this.mob.loc).relaymove(this.mob, direct));
 	}
-	if (!truthy((yield* g.callName(f, rt.sv(f, "mob"), "Process_Spacemove", [live(f.args[1])])))) {
+	if (!(yield* this.mob.Process_Spacemove(direct))) {
 		return 0;
 	}
-	rt.setSv(f, "moving", 1);
-	delay = (yield* g.callName(f, rt.sv(f, "mob"), "movement_delay", []));
-	rt.setFv(f, "glide_size", rt.sv(f, "mob"), (yield* g.call(f, P("/proc/max"), null, [1, (yield* g.call(f, P("/proc/min"), null, [divide(32, (yield* g.call(f, P("/proc/max"), null, [divide(live(delay), rt.fv(f, "tick_lag", rt.world())), 1]))), 32]))])));
-	if (rt.gt(add(add(live(old_move_delay), multiply(live(delay), 1.25)), 0.75), rt.worldTime(f))) {
-		rt.setSv(f, "move_delay", add(live(old_move_delay), live(delay)));
+	this.moving = 1;
+	let delay: Value = (yield* this.mob.movement_delay());
+	this.mob.glide_size = max(1, min(32 / max(delay / rt.world().tick_lag, 1), 32));
+	if (old_move_delay + delay * 1.25 + 0.75 > rt.worldTime(f)) {
+		this.move_delay = old_move_delay + delay;
 	} else {
-		rt.setSv(f, "move_delay", add(live(delay), rt.worldTime(f)));
+		this.move_delay = delay + rt.worldTime(f);
 	}
-	if (truthy(rt.fv(f, "confused", rt.sv(f, "mob")))) {
-		if (rt.gt(rt.fv(f, "confused", rt.sv(f, "mob")), 40)) {
-			yield* g.call(f, P("/proc/step"), null, [rt.sv(f, "mob"), rt.op(f, "PickUnweighted", [1], [rt.gl("cardinal")])]);
+	if (this.mob.confused) {
+		if (this.mob.confused > 40) {
+			yield* step(this.mob, pick(GLOB.cardinal));
+		} else if (prob(this.mob.confused * 1.5)) {
+			yield* step(this.mob, angle2dir(dir2angle(direct) + pick(90, -90)));
+		} else if (prob(this.mob.confused * 3)) {
+			yield* step(this.mob, angle2dir(dir2angle(direct) + pick(45, -45)));
 		} else {
-			if (truthy(rt.op(f, "Prob", [], [multiply(rt.fv(f, "confused", rt.sv(f, "mob")), 1.5)]))) {
-				yield* g.call(f, P("/proc/step"), null, [rt.sv(f, "mob"), (yield* g.call(f, P("/proc/angle2dir"), null, [add((yield* g.call(f, P("/proc/dir2angle"), null, [live(f.args[1])])), rt.op(f, "PickUnweighted", [2], [90, -90]))]))]);
-			} else {
-				if (truthy(rt.op(f, "Prob", [], [multiply(rt.fv(f, "confused", rt.sv(f, "mob")), 3)]))) {
-					yield* g.call(f, P("/proc/step"), null, [rt.sv(f, "mob"), (yield* g.call(f, P("/proc/angle2dir"), null, [add((yield* g.call(f, P("/proc/dir2angle"), null, [live(f.args[1])])), rt.op(f, "PickUnweighted", [2], [45, -45]))]))]);
-				} else {
-					yield* g.call(f, P("/proc/step"), null, [rt.sv(f, "mob"), live(f.args[1])]);
-				}
-			}
+			yield* step(this.mob, direct);
 		}
 	} else {
-		f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+		f.dot = (yield* parent_proc());
 	}
-	rt.setSv(f, "moving", 0);
-	if ((truthy(rt.sv(f, "mob")) && truthy(live(f.dot)))) {
-		if (truthy(rt.fv(f, "throwing", rt.sv(f, "mob")))) {
-			yield* g.callName(f, rt.fv(f, "throwing", rt.sv(f, "mob")), "finalize", [0]);
-		}
-	}
-	return live(f.dot);
-}, true, { args: ["n", "direct"] });
-
-// /mob/proc/Moved  (code/modules/mob/mob_movement.dm:192)  may sleep
-rt.def("/mob/proc/Moved", function* Moved(f: Frame) {
-	let O: Value = null;
-	let $e: any;
-	f.vars = () => [O, $e];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	O = null;
-	rt.forList(f, 0, rt.sv(f, "contents"), T("/obj"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		O = $e;
-		yield* g.callName(f, live(O), "on_mob_move", [live(f.args[1]), live(f.src), live(f.args[0])]);
-	}
-	rt.endFor(f, 0);
-	return f.dot;
-}, true, { args: ["oldLoc", "dir"] });
-
-// /mob/proc/setDir  (code/modules/mob/mob_movement.dm:197)  may sleep
-rt.def("/mob/proc/setDir", function* setDir(f: Frame) {
-	let O: Value = null;
-	let $e: any;
-	f.vars = () => [O, $e];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	O = null;
-	rt.forList(f, 0, rt.sv(f, "contents"), T("/obj"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		O = $e;
-		yield* g.callName(f, live(O), "on_mob_turn", [live(f.args[0]), live(f.src)]);
-	}
-	rt.endFor(f, 0);
-	return f.dot;
-}, true, { args: ["newDir"] });
-
-// /client/proc/Process_Grab  (code/modules/mob/mob_movement.dm:206)  may sleep
-rt.def("/client/proc/Process_Grab", function* Process_Grab(f: Frame) {
-	if (!truthy(rt.fv(f, "pulledby", rt.sv(f, "mob")))) return f.dot;
-	if (truthy((yield* g.callName(f, rt.sv(f, "mob"), "incapacitated", ["ignore_restraints", 1], rt.Args.Named)))) {
-		rt.setSv(f, "move_delay", add(rt.worldTime(f), 10));
-		return 1;
-	} else {
-		if (truthy((yield* g.callName(f, rt.sv(f, "mob"), "restrained", ["ignore_grab", 1], rt.Args.Named)))) {
-			rt.setSv(f, "move_delay", add(rt.worldTime(f), 10));
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='warning'>You're restrained! You can't move!</span>"]);
-			return 1;
-		} else {
-			return (yield* g.callName(f, rt.sv(f, "mob"), "resist_grab", [1]));
+	this.moving = 0;
+	if (this.mob && f.dot) {
+		if (this.mob.throwing) {
+			yield* this.mob.throwing.finalize(0);
 		}
 	}
 	return f.dot;
 }, true);
 
-// /client/proc/Process_Incorpmove  (code/modules/mob/mob_movement.dm:222)  may sleep
-rt.def("/client/proc/Process_Incorpmove", function* Process_Incorpmove(f: Frame, direct: Value) {
-	let mobloc: Value = null, L: Value = null, locx: Value = null, locy: Value = null, limit: Value = null, _T: Value = null, stepTurf: Value = null, S: Value = null, R: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [direct, mobloc, L, locx, locy, limit, _T, stepTurf, S, R, $0, $e];
-	mobloc = rt.getStep(f, rt.sv(f, "mob"), 0);
-	if (!truthy((rt.istype(rt.sv(f, "mob"), T("/mob/living")) ? 1 : 0))) {
-		return live(f.dot);
+// mob_movement.dm:192
+rt.def("/mob/proc/Moved", function* Moved(f: Frame, oldLoc: Value, dir: Value) {
+	let O: Value = null;
+	f.dot = (yield* parent_proc());
+	for (O of each(this.contents, T("/obj"))) {
+		yield* O.on_mob_move(dir, this, oldLoc);
 	}
-	$0 = rt.gv(f, "incorporeal_move", (L = rt.sv(f, "mob")));
-	if ($0 === 1) {
-		rt.setFv(f, "loc", live(L), rt.getStep(f, live(L), live(direct)));
-		yield* g.callName(f, live(L), "setDir", [live(direct)]);
-	} else if ($0 === 2) {
-		if (truthy(rt.op(f, "Prob", [], [50]))) {
-			locx = null;
-			locy = null;
-			$0 = live(direct);
-			if ($0 === 1) {
-				locx = rt.fv(f, "x", live(mobloc));
-				if (rt.gt((locy = add(rt.fv(f, "y", live(mobloc)), 2)), rt.fv(f, "maxy", rt.world()))) {
-					return live(f.dot);
+	return f.dot;
+}, true);
+
+// mob_movement.dm:197
+rt.def("/mob/proc/setDir", function* setDir(f: Frame, newDir: Value) {
+	let O: Value = null;
+	f.dot = (yield* parent_proc());
+	for (O of each(this.contents, T("/obj"))) {
+		yield* O.on_mob_turn(newDir, this);
+	}
+	return f.dot;
+}, true);
+
+// mob_movement.dm:206
+rt.def("/client/proc/Process_Grab", function* Process_Grab(f: Frame) {
+	if (!this.mob.pulledby) return f.dot;
+	if (yield* this.mob.incapacitated({ ignore_restraints: 1 })) {
+		this.move_delay = rt.worldTime(f) + 10;
+		return 1;
+	} else if (yield* this.mob.restrained({ ignore_grab: 1 })) {
+		this.move_delay = rt.worldTime(f) + 10;
+		to_chat(this, "<span class='warning'>You're restrained! You can't move!</span>");
+		return 1;
+	} else {
+		return (yield* this.mob.resist_grab(1));
+	}
+}, true);
+
+// mob_movement.dm:222
+rt.def("/client/proc/Process_Incorpmove", function* Process_Incorpmove(f: Frame, direct: Value) {
+	let L: Value = null, locx: Value = null, locy: Value = null, limit: Value = null, _T: Value = null, stepTurf: Value = null, S: Value = null, R: Value = null;
+	let $e: any;
+	let mobloc: Value = rt.getStep(f, this.mob, 0);
+	if (!rt.istype(this.mob, T("/mob/living"))) {
+		return f.dot;
+	}
+	const incorporeal_move = (L = this.mob).incorporeal_move;
+	if (incorporeal_move === INCORPOREAL_MOVE_BASIC) {
+		L.loc = rt.getStep(f, L, direct);
+		yield* L.setDir(direct);
+	} else if (incorporeal_move === INCORPOREAL_MOVE_SHADOW) {
+		if (prob(50)) {
+			if (direct === INCORPOREAL_MOVE_BASIC) {
+				locx = mobloc.x;
+				if ((locy = mobloc.y + INCORPOREAL_MOVE_SHADOW) > rt.world().maxy) {
+					return f.dot;
 				}
-			} else if ($0 === 2) {
-				locx = rt.fv(f, "x", live(mobloc));
-				if (rt.lt((locy = subtract(rt.fv(f, "y", live(mobloc)), 2)), 1)) {
-					return live(f.dot);
+			} else if (direct === 2) {
+				locx = mobloc.x;
+				if ((locy = mobloc.y - 2) < 1) {
+					return f.dot;
 				}
-			} else if ($0 === 4) {
-				locy = rt.fv(f, "y", live(mobloc));
-				if (rt.gt((locx = add(rt.fv(f, "x", live(mobloc)), 2)), rt.fv(f, "maxx", rt.world()))) {
-					return live(f.dot);
+			} else if (direct === 4) {
+				locy = mobloc.y;
+				if ((locx = mobloc.x + 2) > rt.world().maxx) {
+					return f.dot;
 				}
-			} else if ($0 === 8) {
-				locy = rt.fv(f, "y", live(mobloc));
-				if (rt.lt((locx = subtract(rt.fv(f, "x", live(mobloc)), 2)), 1)) {
-					return live(f.dot);
+			} else if (direct === 8) {
+				locy = mobloc.y;
+				if ((locx = mobloc.x - 2) < 1) {
+					return f.dot;
 				}
 			} else {
-				return live(f.dot);
+				return f.dot;
 			}
-			rt.setFv(f, "loc", live(L), rt.locate(live(locx), live(locy), rt.fv(f, "z", live(mobloc))));
+			L.loc = rt.locate(locx, locy, mobloc.z);
 			limit = 2;
-			_T = null;
-			rt.forList(f, 0, (yield* g.call(f, P("/proc/getline"), null, [live(mobloc), rt.fv(f, "loc", live(L))])), T("/turf"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				_T = $e;
-				yield* g.new_(f, T("/obj/effect/temp_visual/dir_setting/ninja/shadow"), [live(_T), rt.fv(f, "dir", live(L))]);
-				limit = rt.inc(live(limit), -1);
-				if (rt.le(live(limit), 0)) {
+			for (_T of each(getline(mobloc, L.loc), T("/turf"))) {
+				yield* new_(T("/obj/effect/temp_visual/dir_setting/ninja/shadow"), _T, L.dir);
+				limit--;
+				if (limit <= 0) {
 					break;
 				}
 			}
-			rt.endFor(f, 0);
 		} else {
-			yield* g.new_(f, T("/obj/effect/temp_visual/dir_setting/ninja/shadow"), [live(mobloc), rt.fv(f, "dir", live(L))]);
-			rt.setFv(f, "loc", live(L), rt.getStep(f, live(L), live(direct)));
+			yield* new_(T("/obj/effect/temp_visual/dir_setting/ninja/shadow"), mobloc, L.dir);
+			L.loc = rt.getStep(f, L, direct);
 		}
-		yield* g.callName(f, live(L), "setDir", [live(direct)]);
-	} else if ($0 === 3) {
-		stepTurf = rt.getStep(f, live(L), live(direct));
-		S = null;
-		rt.forList(f, 0, live(stepTurf), T("/obj/effect/decal/cleanable/salt"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			S = $e;
-			yield* g.call(f, P("/proc/to_chat"), null, [live(L), fmt("<span class='warning'>＀ bars your passage!</span>", [live(S)])]);
-			if (truthy((rt.istype(live(L), T("/mob/living/simple_animal/revenant")) ? 1 : 0))) {
-				yield* g.callName(f, (R = live(L)), "reveal", [20]);
-				yield* g.callName(f, live(R), "stun", [20]);
+		yield* L.setDir(direct);
+	} else if (incorporeal_move === INCORPOREAL_MOVE_JAUNT) {
+		stepTurf = rt.getStep(f, L, direct);
+		for (S of each(stepTurf, T("/obj/effect/decal/cleanable/salt"))) {
+			to_chat(L, `<span class='warning'>${S} bars your passage!</span>`);
+			if (rt.istype(L, T("/mob/living/simple_animal/revenant"))) {
+				(R = L).reveal(20);
+				R.stun(20);
 			}
-			return live(f.dot);
+			return f.dot;
 		}
-		rt.endFor(f, 0);
-		if (truthy(rt.bitAnd(rt.fv(f, "flags", live(stepTurf)), 1))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(L), "<span class='warning'>Holy energies block your path.</span>"]);
+		if (rt.bitAnd(stepTurf.flags, 1)) {
+			to_chat(L, "<span class='warning'>Holy energies block your path.</span>");
 		} else {
-			rt.setFv(f, "loc", live(L), rt.getStep(f, live(L), live(direct)));
-			yield* g.callName(f, live(L), "setDir", [live(direct)]);
+			L.loc = rt.getStep(f, L, direct);
+			yield* L.setDir(direct);
 		}
 	}
 	return 1;
 }, true);
 
-// /mob/proc/Process_Spacemove  (code/modules/mob/mob_movement.dm:290)  may sleep
+// mob_movement.dm:290
 rt.def("/mob/proc/Process_Spacemove", function* Process_Spacemove(f: Frame) {
 	let backup: Value = null;
-	f.vars = () => [backup];
-	if (live(f.args[0]) === null) {
+	if (f.args[0] === null) {
 		f.args[0] = 0;
 	}
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
+	if (yield* parent_proc()) {
 		return 1;
 	}
-	if (truthy((backup = (yield* g.srcCall(f, "get_spacemove_backup"))))) {
-		if (((truthy((rt.istype(live(backup), T("/atom/movable")) ? 1 : 0)) && truthy(live(f.args[0]))) && !truthy(rt.fv(f, "anchored", live(backup))))) {
-			if (truthy((yield* g.callName(f, live(backup), "newtonian_move", [(yield* g.call(f, P("/proc/turn"), null, [live(f.args[0]), 180]))])))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), fmt("<span class='info'>You push off of ＀ to propel yourself.</span>", [live(backup)])]);
+	if (backup = (yield* this.get_spacemove_backup())) {
+		if (rt.istype(backup, T("/atom/movable")) && f.args[0] && !backup.anchored) {
+			if (yield* backup.newtonian_move(turn(f.args[0], 180))) {
+				to_chat(this, `<span class='info'>You push off of ${backup} to propel yourself.</span>`);
 			}
 		}
 		return 1;
@@ -401,193 +362,170 @@ rt.def("/mob/proc/Process_Spacemove", function* Process_Spacemove(f: Frame) {
 	return 0;
 }, true, { args: ["movement_dir"] });
 
-// /mob/proc/get_spacemove_backup  (code/modules/mob/mob_movement.dm:301)  may sleep
+// mob_movement.dm:301
 rt.def("/mob/proc/get_spacemove_backup", function* get_spacemove_backup(f: Frame) {
 	let A: Value = null, turf: Value = null, AM: Value = null, M: Value = null;
-	let $e: any;
-	f.vars = () => [A, turf, AM, M, $e];
-	A = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/orange"), null, [1, rt.getStep(f, live(f.src), 0)])));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		A = $e;
-		if (truthy((yield* g.call(f, P("/proc/isarea"), null, [live(A)])))) {
+	for (A of each(orange(1, rt.getStep(f, this, 0)))) {
+		if (isarea(A)) {
 			continue;
 		}
-		if (truthy((yield* g.call(f, P("/proc/isturf"), null, [live(A)])))) {
-			if (truthy((rt.istype((turf = live(A)), T("/turf/open/space")) ? 1 : 0))) {
+		if (isturf(A)) {
+			if (rt.istype((turf = A), T("/turf/open/space"))) {
 				continue;
 			}
-			if ((!truthy(rt.fv(f, "density", live(turf))) && !truthy((yield* g.srcCall(f, "mob_negates_gravity"))))) {
+			if (!turf.density && !this.mob_negates_gravity()) {
 				continue;
 			}
-			return live(A);
+			return A;
 		} else {
-			if (isEqual((AM = live(A)), rt.sv(f, "buckled"))) {
+			if ((AM = A) == this.buckled) {
 				continue;
 			}
-			if (truthy((yield* g.call(f, P("/proc/ismob"), null, [live(AM)])))) {
-				if (truthy(rt.gv(f, "buckled", (M = live(AM))))) {
+			if (ismob(AM)) {
+				if ((M = AM).buckled) {
 					continue;
 				}
 			}
-			if ((!truthy((yield* g.callName(f, live(AM), "CanPass", [live(f.src)]))) || truthy(rt.fv(f, "density", live(AM))))) {
-				if (truthy(rt.fv(f, "anchored", live(AM)))) {
-					return live(AM);
+			if (!(yield* AM.CanPass(this)) || AM.density) {
+				if (AM.anchored) {
+					return AM;
 				}
-				if (isEqual(rt.sv(f, "pulling"), live(AM))) {
+				if (this.pulling == AM) {
 					continue;
 				}
-				f.dot = live(AM);
+				f.dot = AM;
 			}
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /mob/proc/mob_has_gravity  (code/modules/mob/mob_movement.dm:327)
+// mob_movement.dm:327
 rt.def("/mob/proc/mob_has_gravity", function mob_has_gravity(f: Frame) {
-	return rt.callSrc(f, "has_gravity", []);
+	return this.has_gravity();
 });
 
-// /mob/proc/Move_Pulled  (code/modules/mob/mob_movement.dm:334)  may sleep
+// mob_movement.dm:334
 rt.def("/mob/proc/Move_Pulled", function* Move_Pulled(f: Frame, A: Value) {
 	let L: Value = null;
-	f.vars = () => [A, L];
-	if (!truthy(rt.sv(f, "pulling"))) {
-		return live(f.dot);
+	if (!this.pulling) {
+		return f.dot;
 	}
-	if ((truthy(rt.fv(f, "anchored", rt.sv(f, "pulling"))) || !truthy((yield* g.callName(f, rt.sv(f, "pulling"), "Adjacent", [live(f.src)]))))) {
-		yield* g.srcCall(f, "stop_pulling");
-		return live(f.dot);
+	if (this.pulling.anchored || !this.pulling.Adjacent(this)) {
+		yield* this.stop_pulling();
+		return f.dot;
 	}
-	if (truthy((rt.istype(rt.sv(f, "pulling"), T("/mob/living")) ? 1 : 0))) {
-		if ((truthy(rt.gv(f, "buckled", (L = rt.sv(f, "pulling")))) && truthy(rt.gv(f, "buckle_prevents_pull", rt.fv(f, "buckled", live(L)))))) {
-			yield* g.srcCall(f, "stop_pulling");
-			return live(f.dot);
+	if (rt.istype(this.pulling, T("/mob/living"))) {
+		if ((L = this.pulling).buckled && L.buckled.buckle_prevents_pull) {
+			yield* this.stop_pulling();
+			return f.dot;
 		}
 	}
-	if ((isEqual(live(A), rt.sv(f, "loc")) && truthy(rt.fv(f, "density", rt.sv(f, "pulling"))))) {
-		return live(f.dot);
+	if (A == this.loc && this.pulling.density) {
+		return f.dot;
 	}
-	if (!truthy((yield* g.srcCall(f, "Process_Spacemove", rt.getDir(f, rt.fv(f, "loc", rt.sv(f, "pulling")), live(A)))))) {
-		return live(f.dot);
+	if (!(yield* this.Process_Spacemove(rt.getDir(f, this.pulling.loc, A)))) {
+		return f.dot;
 	}
-	yield* g.call(f, P("/proc/step"), null, [rt.sv(f, "pulling"), rt.getDir(f, rt.fv(f, "loc", rt.sv(f, "pulling")), live(A))]);
+	yield* step(this.pulling, rt.getDir(f, this.pulling.loc, A));
 	return f.dot;
 }, true);
 
-// /client/proc/check_has_body_select  (code/modules/mob/mob_movement.dm:363)
+// mob_movement.dm:363
 rt.def("/client/proc/check_has_body_select", function check_has_body_select(f: Frame) {
-	return (((rt.sv(f, "mob") && rt.fv(f, "hud_used", rt.sv(f, "mob"))) && rt.gv(f, "zone_select", rt.fv(f, "hud_used", rt.sv(f, "mob")))) && (rt.istype(rt.gv(f, "zone_select", rt.fv(f, "hud_used", rt.sv(f, "mob"))), T("/obj/screen/zone_sel")) ? 1 : 0));
+	return (((this.mob && this.mob.hud_used) && this.mob.hud_used.zone_select) && (rt.istype(this.mob.hud_used.zone_select, T("/obj/screen/zone_sel")) ? 1 : 0));
 });
 
-// /client/verb/body_toggle_head  (code/modules/mob/mob_movement.dm:369)
+// mob_movement.dm:369
 rt.def("/client/verb/body_toggle_head", function body_toggle_head(f: Frame) {
 	let next_in_line: Value = null, selector: Value = null;
-	let $0: any;
-	f.vars = () => [next_in_line, selector, $0];
-	if (!truthy(rt.callSrc(f, "check_has_body_select", []))) {
-		return live(f.dot);
+	if (!this.check_has_body_select()) {
+		return f.dot;
 	}
-	next_in_line = null;
-	$0 = rt.fv(f, "zone_selected", rt.sv(f, "mob"));
-	if ($0 === "head") {
+	if (this.mob.zone_selected === "head") {
 		next_in_line = "eyes";
-	} else if ($0 === "eyes") {
+	} else if (this.mob.zone_selected === "eyes") {
 		next_in_line = "mouth";
 	} else {
 		next_in_line = "head";
 	}
-	rt.callName(f, (selector = rt.gv(f, "zone_select", rt.fv(f, "hud_used", rt.sv(f, "mob")))), "set_selected_zone", [live(next_in_line), rt.sv(f, "mob")]);
+	(selector = this.mob.hud_used.zone_select).set_selected_zone(next_in_line, this.mob);
 	return f.dot;
 }, false, { hidden: true, verb: { name: "body-toggle-head" } });
 
-// /client/verb/body_r_arm  (code/modules/mob/mob_movement.dm:388)
+// mob_movement.dm:388
 rt.def("/client/verb/body_r_arm", function body_r_arm(f: Frame) {
 	let selector: Value = null;
-	f.vars = () => [selector];
-	if (!truthy(rt.callSrc(f, "check_has_body_select", []))) {
-		return live(f.dot);
+	if (!this.check_has_body_select()) {
+		return f.dot;
 	}
-	rt.callName(f, (selector = rt.gv(f, "zone_select", rt.fv(f, "hud_used", rt.sv(f, "mob")))), "set_selected_zone", ["r_arm", rt.sv(f, "mob")]);
+	(selector = this.mob.hud_used.zone_select).set_selected_zone("r_arm", this.mob);
 	return f.dot;
 }, false, { hidden: true, verb: { name: "body-r-arm" } });
 
-// /client/verb/body_chest  (code/modules/mob/mob_movement.dm:398)
+// mob_movement.dm:398
 rt.def("/client/verb/body_chest", function body_chest(f: Frame) {
 	let selector: Value = null;
-	f.vars = () => [selector];
-	if (!truthy(rt.callSrc(f, "check_has_body_select", []))) {
-		return live(f.dot);
+	if (!this.check_has_body_select()) {
+		return f.dot;
 	}
-	rt.callName(f, (selector = rt.gv(f, "zone_select", rt.fv(f, "hud_used", rt.sv(f, "mob")))), "set_selected_zone", ["chest", rt.sv(f, "mob")]);
+	(selector = this.mob.hud_used.zone_select).set_selected_zone("chest", this.mob);
 	return f.dot;
 }, false, { hidden: true, verb: { name: "body-chest" } });
 
-// /client/verb/body_l_arm  (code/modules/mob/mob_movement.dm:408)
+// mob_movement.dm:408
 rt.def("/client/verb/body_l_arm", function body_l_arm(f: Frame) {
 	let selector: Value = null;
-	f.vars = () => [selector];
-	if (!truthy(rt.callSrc(f, "check_has_body_select", []))) {
-		return live(f.dot);
+	if (!this.check_has_body_select()) {
+		return f.dot;
 	}
-	rt.callName(f, (selector = rt.gv(f, "zone_select", rt.fv(f, "hud_used", rt.sv(f, "mob")))), "set_selected_zone", ["l_arm", rt.sv(f, "mob")]);
+	(selector = this.mob.hud_used.zone_select).set_selected_zone("l_arm", this.mob);
 	return f.dot;
 }, false, { hidden: true, verb: { name: "body-l-arm" } });
 
-// /client/verb/body_r_leg  (code/modules/mob/mob_movement.dm:418)
+// mob_movement.dm:418
 rt.def("/client/verb/body_r_leg", function body_r_leg(f: Frame) {
 	let selector: Value = null;
-	f.vars = () => [selector];
-	if (!truthy(rt.callSrc(f, "check_has_body_select", []))) {
-		return live(f.dot);
+	if (!this.check_has_body_select()) {
+		return f.dot;
 	}
-	rt.callName(f, (selector = rt.gv(f, "zone_select", rt.fv(f, "hud_used", rt.sv(f, "mob")))), "set_selected_zone", ["r_leg", rt.sv(f, "mob")]);
+	(selector = this.mob.hud_used.zone_select).set_selected_zone("r_leg", this.mob);
 	return f.dot;
 }, false, { hidden: true, verb: { name: "body-r-leg" } });
 
-// /client/verb/body_groin  (code/modules/mob/mob_movement.dm:428)
+// mob_movement.dm:428
 rt.def("/client/verb/body_groin", function body_groin(f: Frame) {
 	let selector: Value = null;
-	f.vars = () => [selector];
-	if (!truthy(rt.callSrc(f, "check_has_body_select", []))) {
-		return live(f.dot);
+	if (!this.check_has_body_select()) {
+		return f.dot;
 	}
-	rt.callName(f, (selector = rt.gv(f, "zone_select", rt.fv(f, "hud_used", rt.sv(f, "mob")))), "set_selected_zone", ["groin", rt.sv(f, "mob")]);
+	(selector = this.mob.hud_used.zone_select).set_selected_zone("groin", this.mob);
 	return f.dot;
 }, false, { hidden: true, verb: { name: "body-groin" } });
 
-// /client/verb/body_l_leg  (code/modules/mob/mob_movement.dm:438)
+// mob_movement.dm:438
 rt.def("/client/verb/body_l_leg", function body_l_leg(f: Frame) {
 	let selector: Value = null;
-	f.vars = () => [selector];
-	if (!truthy(rt.callSrc(f, "check_has_body_select", []))) {
-		return live(f.dot);
+	if (!this.check_has_body_select()) {
+		return f.dot;
 	}
-	rt.callName(f, (selector = rt.gv(f, "zone_select", rt.fv(f, "hud_used", rt.sv(f, "mob")))), "set_selected_zone", ["l_leg", rt.sv(f, "mob")]);
+	(selector = this.mob.hud_used.zone_select).set_selected_zone("l_leg", this.mob);
 	return f.dot;
 }, false, { hidden: true, verb: { name: "body-l-leg" } });
 
-// /client/verb/toggle_walk_run  (code/modules/mob/mob_movement.dm:449)  may sleep
+// mob_movement.dm:449
 rt.def("/client/verb/toggle_walk_run", function* toggle_walk_run(f: Frame) {
-	if (!truthy(rt.sv(f, "mob"))) return f.dot;
-	yield* g.callName(f, rt.sv(f, "mob"), "toggle_move_intent", []);
+	if (!this.mob) return f.dot;
+	yield* this.mob.toggle_move_intent();
 	return f.dot;
 }, true, { hidden: true, verb: { name: "toggle-walk-run" } });
 
-// /mob/proc/toggle_move_intent  (code/modules/mob/mob_movement.dm:452)  may sleep
+// mob_movement.dm:452
 rt.def("/mob/proc/toggle_move_intent", function* toggle_move_intent(f: Frame) {
 	let selector: Value = null;
-	let $e: any;
-	f.vars = () => [selector, $e];
-	if (!(truthy(rt.sv(f, "hud_used")) && truthy(rt.fv(f, "static_inventory", rt.sv(f, "hud_used"))))) return f.dot;
-	selector = null;
-	rt.forList(f, 0, rt.fv(f, "static_inventory", rt.sv(f, "hud_used")), T("/obj/screen/mov_intent"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		selector = $e;
-		yield* g.callName(f, live(selector), "toggle", [live(f.src)]);
+	if (!(this.hud_used && this.hud_used.static_inventory)) return f.dot;
+	for (selector of each(this.hud_used.static_inventory, T("/obj/screen/mov_intent"))) {
+		yield* selector.toggle(this);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);

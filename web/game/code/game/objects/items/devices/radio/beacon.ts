@@ -1,7 +1,7 @@
-// From code/game/objects/items/devices/radio/beacon.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/devices/radio/beacon.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(9204, "/obj/item/device/radio/beacon", "/obj/item/device/radio", {
@@ -14,28 +14,27 @@ rt.type(9204, "/obj/item/device/radio/beacon", "/obj/item/device/radio", {
 	dog_fashion: null,
 });
 
-// /obj/item/device/radio/beacon/proc/Initialize  (code/game/objects/items/devices/radio/beacon.dm:11)  may sleep
+// beacon.dm:11
 rt.def("/obj/item/device/radio/beacon/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.modGl("teleportbeacons", live(f.src), add);
+	f.dot = (yield* parent_proc());
+	GLOB.teleportbeacons += this;
 	return f.dot;
 }, true);
 
-// /obj/item/device/radio/beacon/proc/Destroy  (code/game/objects/items/devices/radio/beacon.dm:15)  may sleep
+// beacon.dm:15
 rt.def("/obj/item/device/radio/beacon/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.callName(f, rt.gl("teleportbeacons"), "Remove", [live(f.src)]);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* GLOB.teleportbeacons.Remove(this);
+	return (yield* parent_proc());
 }, true);
 
-// /obj/item/device/radio/beacon/verb/alter_signal  (code/game/objects/items/devices/radio/beacon.dm:30)  may sleep
+// beacon.dm:30
 rt.def("/obj/item/device/radio/beacon/verb/alter_signal", function* alter_signal(f: Frame, t: Value) {
-	f.vars = () => [t];
-	if ((truthy(rt.fv(f, "canmove", live(f.usr))) && !truthy((yield* g.callName(f, live(f.usr), "restrained", []))))) {
-		rt.setFv(f, "code", live(f.src), live(t));
+	if (f.usr.canmove && !f.usr.restrained()) {
+		this.code = t;
 	}
-	if (!truthy(rt.fv(f, "code", live(f.src)))) {
-		rt.setFv(f, "code", live(f.src), "beacon");
+	if (!this.code) {
+		this.code = "beacon";
 	}
-	yield* g.callName(f, live(f.src), "add_fingerprint", [live(f.usr)]);
-	return live(f.dot);
+	yield* this.add_fingerprint(f.usr);
+	return f.dot;
 }, true, { verb: { name: "Alter Beacon's Signal", category: "Object", src: 11 }, argTypes: [{ type: 2 }] });

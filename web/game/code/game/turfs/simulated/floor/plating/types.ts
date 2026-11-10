@@ -1,5 +1,5 @@
 // Types declared in code/game/turfs/simulated/floor/plating that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(4510, "/turf/open/floor/plating/asteroid/basalt/lava", "/turf/open/floor/plating/asteroid/basalt", {
 	baseturf: rt.typePath("/turf/open/floor/plating/lava/smooth"),

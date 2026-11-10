@@ -1,110 +1,105 @@
-// From code/game/turfs/simulated/dirtystation.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/turfs/simulated/dirtystation.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
-// /turf/open/floor/proc/MakeDirty  (code/game/turfs/simulated/dirtystation.dm:11)  may sleep
+// dirtystation.dm:11
 rt.def("/turf/open/floor/proc/MakeDirty", function* MakeDirty(f: Frame) {
 	let A: Value = null;
-	f.vars = () => [A];
-	if (truthy(rt.op(f, "Prob", [], [66]))) {
-		return live(f.dot);
+	if (prob(66)) {
+		return f.dot;
 	}
-	if (!truthy(rt.bitAnd(rt.sv(f, "flags"), 4))) {
-		return live(f.dot);
+	if (!rt.bitAnd(this.flags, CAN_BE_DIRTY)) {
+		return f.dot;
 	}
-	if (truthy(rt.locateIn(f, T("/obj/structure/grille"), rt.sv(f, "contents")))) {
-		return live(f.dot);
+	if (rt.locateIn(f, T("/obj/structure/grille"), this.contents)) {
+		return f.dot;
 	}
-	if ((truthy((A = (yield* g.call(f, P("/proc/get_area"), null, [live(f.src)])))) && !truthy(rt.bitAnd(rt.fv(f, "flags", live(A)), 4)))) {
-		return live(f.dot);
+	if ((A = get_area(this)) && !rt.bitAnd(A.flags, CAN_BE_DIRTY)) {
+		return f.dot;
 	}
-	if ((((((((truthy((rt.istype(live(A), T("/area/science/test_area")) ? 1 : 0)) || truthy((rt.istype(live(A), T("/area/mine/production")) ? 1 : 0))) || truthy((rt.istype(live(A), T("/area/mine/living_quarters")) ? 1 : 0))) || truthy((rt.istype(live(A), T("/area/mine/north_outpost")) ? 1 : 0))) || truthy((rt.istype(live(A), T("/area/mine/west_outpost")) ? 1 : 0))) || truthy((rt.istype(live(A), T("/area/wreck")) ? 1 : 0))) || truthy((rt.istype(live(A), T("/area/derelict")) ? 1 : 0))) || truthy((rt.istype(live(A), T("/area/djstation")) ? 1 : 0)))) {
-		yield* g.new_(f, T("/obj/effect/decal/cleanable/dirt"), [live(f.src)]);
-		return live(f.dot);
+	if (rt.istype(A, T("/area/science/test_area")) || rt.istype(A, T("/area/mine/production")) || rt.istype(A, T("/area/mine/living_quarters")) || rt.istype(A, T("/area/mine/north_outpost")) || rt.istype(A, T("/area/mine/west_outpost")) || rt.istype(A, T("/area/wreck")) || rt.istype(A, T("/area/derelict")) || rt.istype(A, T("/area/djstation"))) {
+		yield* new_(T("/obj/effect/decal/cleanable/dirt"), this);
+		return f.dot;
 	}
-	if (truthy(rt.op(f, "Prob", [], [80]))) {
-		return live(f.dot);
+	if (prob(80)) {
+		return f.dot;
 	}
-	if ((((((truthy((rt.istype(live(A), T("/area/engine")) ? 1 : 0)) || truthy((rt.istype(live(A), T("/area/crew_quarters/heads/chief")) ? 1 : 0))) || truthy((rt.istype(live(A), T("/area/assembly")) ? 1 : 0))) || truthy((rt.istype(live(A), T("/area/science/robotics")) ? 1 : 0))) || truthy((rt.istype(live(A), T("/area/maintenance")) ? 1 : 0))) || truthy((rt.istype(live(A), T("/area/construction")) ? 1 : 0)))) {
-		if (truthy(rt.op(f, "Prob", [], [3]))) {
-			yield* g.new_(f, T("/obj/effect/decal/cleanable/blood/old"), [live(f.src)]);
-		} else {
-			if (truthy(rt.op(f, "Prob", [], [35]))) {
-				if (truthy(rt.op(f, "Prob", [], [4]))) {
-					yield* g.new_(f, T("/obj/effect/decal/cleanable/robot_debris/old"), [live(f.src)]);
-				} else {
-					yield* g.new_(f, T("/obj/effect/decal/cleanable/oil"), [live(f.src)]);
-				}
+	if (rt.istype(A, T("/area/engine")) || rt.istype(A, T("/area/crew_quarters/heads/chief")) || rt.istype(A, T("/area/assembly")) || rt.istype(A, T("/area/science/robotics")) || rt.istype(A, T("/area/maintenance")) || rt.istype(A, T("/area/construction"))) {
+		if (prob(3)) {
+			yield* new_(T("/obj/effect/decal/cleanable/blood/old"), this);
+		} else if (prob(35)) {
+			if (prob(4)) {
+				yield* new_(T("/obj/effect/decal/cleanable/robot_debris/old"), this);
 			} else {
-				yield* g.new_(f, T("/obj/effect/decal/cleanable/dirt"), [live(f.src)]);
-			}
-		}
-		return live(f.dot);
-	}
-	if (truthy((rt.istype(live(A), T("/area/crew_quarters/toilet")) ? 1 : 0))) {
-		if (truthy(rt.op(f, "Prob", [], [40]))) {
-			if (truthy(rt.op(f, "Prob", [], [90]))) {
-				yield* g.new_(f, T("/obj/effect/decal/cleanable/vomit/old"), [live(f.src)]);
-			} else {
-				yield* g.new_(f, T("/obj/effect/decal/cleanable/blood/old"), [live(f.src)]);
-			}
-		}
-		return live(f.dot);
-	}
-	if (truthy((rt.istype(live(A), T("/area/quartermaster")) ? 1 : 0))) {
-		if (truthy(rt.op(f, "Prob", [], [25]))) {
-			yield* g.new_(f, T("/obj/effect/decal/cleanable/oil"), [live(f.src)]);
-		}
-		return live(f.dot);
-	}
-	if (truthy(rt.op(f, "Prob", [], [75]))) {
-		return live(f.dot);
-	}
-	if ((((truthy((rt.istype(live(A), T("/area/ai_monitored/turret_protected")) ? 1 : 0)) || truthy((rt.istype(live(A), T("/area/prison")) ? 1 : 0))) || truthy((rt.istype(live(A), T("/area/security")) ? 1 : 0))) || truthy((rt.istype(live(A), T("/area/crew_quarters/heads/hos")) ? 1 : 0)))) {
-		if (truthy(rt.op(f, "Prob", [], [20]))) {
-			if (truthy(rt.op(f, "Prob", [], [5]))) {
-				yield* g.new_(f, T("/obj/effect/decal/cleanable/blood/gibs/old"), [live(f.src)]);
-			} else {
-				yield* g.new_(f, T("/obj/effect/decal/cleanable/blood/old"), [live(f.src)]);
-			}
-		}
-		return live(f.dot);
-	}
-	if ((truthy((rt.istype(live(A), T("/area/crew_quarters/kitchen")) ? 1 : 0)) || truthy((rt.istype(live(A), T("/area/crew_quarters/cafeteria")) ? 1 : 0)))) {
-		if (truthy(rt.op(f, "Prob", [], [60]))) {
-			if (truthy(rt.op(f, "Prob", [], [50]))) {
-				yield* g.new_(f, T("/obj/effect/decal/cleanable/egg_smudge"), [live(f.src)]);
-			} else {
-				yield* g.new_(f, T("/obj/effect/decal/cleanable/flour"), [live(f.src)]);
-			}
-		}
-		return live(f.dot);
-	}
-	if ((truthy((rt.istype(live(A), T("/area/medical")) ? 1 : 0)) || truthy((rt.istype(live(A), T("/area/crew_quarters/heads/cmo")) ? 1 : 0)))) {
-		if (truthy(rt.op(f, "Prob", [], [66]))) {
-			if (truthy(rt.op(f, "Prob", [], [5]))) {
-				yield* g.new_(f, T("/obj/effect/decal/cleanable/blood/gibs/old"), [live(f.src)]);
-			} else {
-				yield* g.new_(f, T("/obj/effect/decal/cleanable/blood/old"), [live(f.src)]);
+				yield* new_(T("/obj/effect/decal/cleanable/oil"), this);
 			}
 		} else {
-			if (truthy(rt.op(f, "Prob", [], [30]))) {
-				if (truthy((rt.istype(live(A), T("/area/medical/morgue")) ? 1 : 0))) {
-					yield* g.new_(f, T("/obj/item/weapon/ectoplasm"), [live(f.src)]);
-				} else {
-					yield* g.new_(f, T("/obj/effect/decal/cleanable/vomit/old"), [live(f.src)]);
-				}
+			yield* new_(T("/obj/effect/decal/cleanable/dirt"), this);
+		}
+		return f.dot;
+	}
+	if (rt.istype(A, T("/area/crew_quarters/toilet"))) {
+		if (prob(40)) {
+			if (prob(90)) {
+				yield* new_(T("/obj/effect/decal/cleanable/vomit/old"), this);
+			} else {
+				yield* new_(T("/obj/effect/decal/cleanable/blood/old"), this);
 			}
 		}
-		return live(f.dot);
+		return f.dot;
 	}
-	if ((truthy((rt.istype(live(A), T("/area/science")) ? 1 : 0)) || truthy((rt.istype(live(A), T("/area/crew_quarters/heads/hor")) ? 1 : 0)))) {
-		if (truthy(rt.op(f, "Prob", [], [20]))) {
-			yield* g.new_(f, T("/obj/effect/decal/cleanable/greenglow"), [live(f.src)]);
+	if (rt.istype(A, T("/area/quartermaster"))) {
+		if (prob(25)) {
+			yield* new_(T("/obj/effect/decal/cleanable/oil"), this);
 		}
-		return live(f.dot);
+		return f.dot;
+	}
+	if (prob(75)) {
+		return f.dot;
+	}
+	if (rt.istype(A, T("/area/ai_monitored/turret_protected")) || rt.istype(A, T("/area/prison")) || rt.istype(A, T("/area/security")) || rt.istype(A, T("/area/crew_quarters/heads/hos"))) {
+		if (prob(20)) {
+			if (prob(5)) {
+				yield* new_(T("/obj/effect/decal/cleanable/blood/gibs/old"), this);
+			} else {
+				yield* new_(T("/obj/effect/decal/cleanable/blood/old"), this);
+			}
+		}
+		return f.dot;
+	}
+	if (rt.istype(A, T("/area/crew_quarters/kitchen")) || rt.istype(A, T("/area/crew_quarters/cafeteria"))) {
+		if (prob(60)) {
+			if (prob(50)) {
+				yield* new_(T("/obj/effect/decal/cleanable/egg_smudge"), this);
+			} else {
+				yield* new_(T("/obj/effect/decal/cleanable/flour"), this);
+			}
+		}
+		return f.dot;
+	}
+	if (rt.istype(A, T("/area/medical")) || rt.istype(A, T("/area/crew_quarters/heads/cmo"))) {
+		if (prob(66)) {
+			if (prob(5)) {
+				yield* new_(T("/obj/effect/decal/cleanable/blood/gibs/old"), this);
+			} else {
+				yield* new_(T("/obj/effect/decal/cleanable/blood/old"), this);
+			}
+		} else if (prob(30)) {
+			if (rt.istype(A, T("/area/medical/morgue"))) {
+				yield* new_(T("/obj/item/weapon/ectoplasm"), this);
+			} else {
+				yield* new_(T("/obj/effect/decal/cleanable/vomit/old"), this);
+			}
+		}
+		return f.dot;
+	}
+	if (rt.istype(A, T("/area/science")) || rt.istype(A, T("/area/crew_quarters/heads/hor"))) {
+		if (prob(20)) {
+			yield* new_(T("/obj/effect/decal/cleanable/greenglow"), this);
+		}
+		return f.dot;
 	}
 	return 1;
 }, true);

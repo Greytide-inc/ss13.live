@@ -1,7 +1,7 @@
-// From code/game/gamemodes/clock_cult/clock_items/clock_components.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/gamemodes/clock_cult/clock_items/clock_components.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(8935, "/obj/item/clockwork/component", "/obj/item/clockwork", {
@@ -15,50 +15,47 @@ rt.type(8935, "/obj/item/clockwork/component", "/obj/item/clockwork", {
 	resistance_flags: 35,
 });
 
-// /obj/item/clockwork/component/proc/<init>  (code/game/gamemodes/clock_cult/clock_items/clock_components.dm:9)
+// clock_components.dm:9
 rt.def("/obj/item/clockwork/component/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "servant_of_ratvar_messages", rt.alist(f, ["ayy", 0, "lmao", 1]));
+	parent_proc();
+	this.servant_of_ratvar_messages = rt.alist(f, ["ayy", 0, "lmao", 1]);
 	return f.dot;
 });
 
-// /obj/item/clockwork/component/proc/pickup  (code/game/gamemodes/clock_cult/clock_items/clock_components.dm:13)  may sleep
-rt.def("/obj/item/clockwork/component/proc/pickup", function* pickup(f: Frame) {
-	let wrath: Value = null, pickedmessage: Value = null;
-	let $0: any, $1: any, $2: any;
-	f.vars = () => [wrath, pickedmessage, $0, $1, $2];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if ((truthy((yield* g.call(f, P("/proc/iscultist"), null, [live(f.args[0])]))) || (truthy(rt.fv(f, "mind", live(f.args[0]))) && truthy(rt.gv(f, "isholy", rt.fv(f, "mind", live(f.args[0]))))))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='＀'>＀</span>", [rt.sv(f, "message_span"), rt.sv(f, "cultist_message")])]);
-		if ((truthy(rt.fv(f, "mind", live(f.args[0]))) && truthy(rt.gv(f, "isholy", rt.fv(f, "mind", live(f.args[0])))))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='boldannounce'>The power of your faith melts away the ＀!</span>", [live(f.src)])]);
-			wrath = (yield* g.new_(f, T("/obj/item/weapon/ore/slag"), []));
-			yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-			yield* g.callName(f, live(f.args[0]), "put_in_active_hand", [live(wrath)]);
+// clock_components.dm:13
+rt.def("/obj/item/clockwork/component/proc/pickup", function* pickup(f: Frame, user: Value) {
+	let wrath: Value = null;
+	let $2: any;
+	yield* parent_proc();
+	if (iscultist(user) || user.mind && user.mind.isholy) {
+		to_chat(user, `<span class='${this.message_span}'>${this.cultist_message}</span>`);
+		if (user.mind && user.mind.isholy) {
+			to_chat(user, `<span class='boldannounce'>The power of your faith melts away the ${this}!</span>`);
+			wrath = (yield* new_(T("/obj/item/weapon/ore/slag")));
+			yield* qdel(this);
+			yield* user.put_in_active_hand(wrath);
 		}
 	}
-	if (!(truthy((yield* g.call(f, P("/proc/is_servant_of_ratvar"), null, [live(f.args[0])]))) && truthy(rt.op(f, "Prob", [], [20])))) return f.dot;
-	pickedmessage = rt.op(f, "PickUnweighted", [1], [rt.sv(f, "servant_of_ratvar_messages")]);
-	$0 = live(f.args[0]);
-	$1 = rt.sv(f, "message_span");
-	if (truthy(rt.index(rt.sv(f, "servant_of_ratvar_messages"), live(pickedmessage)))) {
-		$2 = fmt("＀", [(yield* g.call(f, P("/proc/text2ratvar"), null, [live(pickedmessage)]))]);
+	if (!(is_servant_of_ratvar(user) && prob(20))) return f.dot;
+	let pickedmessage: Value = pick(this.servant_of_ratvar_messages);
+	let $0: any = user;
+	let $1: any = this.message_span;
+	if (rt.index(this.servant_of_ratvar_messages, pickedmessage)) {
+		$2 = `${text2ratvar(pickedmessage)}`;
 	} else {
-		$2 = live(pickedmessage);
+		$2 = pickedmessage;
 	}
-	yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='＀'>＀</span>", [$1, $2])]);
+	to_chat($0, `<span class='${$1}'>${$2}</span>`);
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /obj/item/clockwork/component/proc/examine  (code/game/gamemodes/clock_cult/clock_items/clock_components.dm:26)
-rt.def("/obj/item/clockwork/component/proc/examine", function examine(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.call(f, P("/proc/is_servant_of_ratvar"), null, [live(f.args[0])]))) return f.dot;
-	rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='＀'>You should put this in a slab or cache immediately.</span>", [rt.sv(f, "message_span")])]);
+// clock_components.dm:26
+rt.def("/obj/item/clockwork/component/proc/examine", function examine(f: Frame, user: Value) {
+	parent_proc();
+	if (!is_servant_of_ratvar(user)) return f.dot;
+	to_chat(user, `<span class='${this.message_span}'>You should put this in a slab or cache immediately.</span>`);
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
 rt.type(8936, "/obj/item/clockwork/component/belligerent_eye", "/obj/item/clockwork/component", {
 	component_id: "belligerent_eye",
@@ -70,12 +67,10 @@ rt.type(8936, "/obj/item/clockwork/component/belligerent_eye", "/obj/item/clockw
 	icon_state: "belligerent_eye",
 });
 
-// /obj/item/clockwork/component/belligerent_eye/proc/<init>  (code/game/gamemodes/clock_cult/clock_items/clock_components.dm:36)
+// clock_components.dm:36
 rt.def("/obj/item/clockwork/component/belligerent_eye/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "servant_of_ratvar_messages", rt.alist(f, ["\"...\"", 0, "For a moment, your mind is flooded with extremely violent thoughts.", 0, "\"...Die.\"", 1]));
+	parent_proc();
+	this.servant_of_ratvar_messages = rt.alist(f, ["\"...\"", 0, "For a moment, your mind is flooded with extremely violent thoughts.", 0, "\"...Die.\"", 1]);
 	return f.dot;
 });
 
@@ -89,12 +84,10 @@ rt.type(8937, "/obj/item/clockwork/component/belligerent_eye/blind_eye", "/obj/i
 	w_class: 3,
 });
 
-// /obj/item/clockwork/component/belligerent_eye/blind_eye/proc/<init>  (code/game/gamemodes/clock_cult/clock_items/clock_components.dm:45)
+// clock_components.dm:45
 rt.def("/obj/item/clockwork/component/belligerent_eye/blind_eye/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "servant_of_ratvar_messages", rt.alist(f, ["The eye flickers before falling dark.", 0, "You feel watched.", 0, "\"...\"", 0]));
+	parent_proc();
+	this.servant_of_ratvar_messages = rt.alist(f, ["The eye flickers before falling dark.", 0, "You feel watched.", 0, "\"...\"", 0]);
 	return f.dot;
 });
 
@@ -111,12 +104,10 @@ rt.type(8938, "/obj/item/clockwork/component/belligerent_eye/lens_gem", "/obj/it
 	w_class: 1,
 });
 
-// /obj/item/clockwork/component/belligerent_eye/lens_gem/proc/<init>  (code/game/gamemodes/clock_cult/clock_items/clock_components.dm:54)
+// clock_components.dm:54
 rt.def("/obj/item/clockwork/component/belligerent_eye/lens_gem/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "servant_of_ratvar_messages", rt.alist(f, ["\"Disgusting failure.\"", 1, "You feel scrutinized.", 0, "\"Weaklings.\"", 1, "\"Pathetic defenses.\"", 1]));
+	parent_proc();
+	this.servant_of_ratvar_messages = rt.alist(f, ["\"Disgusting failure.\"", 1, "You feel scrutinized.", 0, "\"Weaklings.\"", 1, "\"Pathetic defenses.\"", 1]);
 	return f.dot;
 });
 
@@ -130,12 +121,10 @@ rt.type(8939, "/obj/item/clockwork/component/vanguard_cogwheel", "/obj/item/cloc
 	icon_state: "vanguard_cogwheel",
 });
 
-// /obj/item/clockwork/component/vanguard_cogwheel/proc/<init>  (code/game/gamemodes/clock_cult/clock_items/clock_components.dm:66)
+// clock_components.dm:66
 rt.def("/obj/item/clockwork/component/vanguard_cogwheel/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "servant_of_ratvar_messages", rt.alist(f, ["\"Be safe, child.\"", 0, "You feel unexplainably comforted.", 0, "\"Never forget: Pain is temporary. What you do for the Justiciar is eternal.\"", 0]));
+	parent_proc();
+	this.servant_of_ratvar_messages = rt.alist(f, ["\"Be safe, child.\"", 0, "You feel unexplainably comforted.", 0, "\"Never forget: Pain is temporary. What you do for the Justiciar is eternal.\"", 0]);
 	return f.dot;
 });
 
@@ -149,12 +138,10 @@ rt.type(8940, "/obj/item/clockwork/component/vanguard_cogwheel/onyx_prism", "/ob
 	w_class: 3,
 });
 
-// /obj/item/clockwork/component/vanguard_cogwheel/onyx_prism/proc/<init>  (code/game/gamemodes/clock_cult/clock_items/clock_components.dm:75)
+// clock_components.dm:75
 rt.def("/obj/item/clockwork/component/vanguard_cogwheel/onyx_prism/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "servant_of_ratvar_messages", rt.alist(f, ["The prism isn't getting any lighter.", 0, "\"So... you haven't failed yet. Have hope, child.\"", 1, "\"Better these machines break than you do.\"", 1]));
+	parent_proc();
+	this.servant_of_ratvar_messages = rt.alist(f, ["The prism isn't getting any lighter.", 0, "\"So... you haven't failed yet. Have hope, child.\"", 1, "\"Better these machines break than you do.\"", 1]);
 	return f.dot;
 });
 
@@ -168,12 +155,10 @@ rt.type(8941, "/obj/item/clockwork/component/geis_capacitor", "/obj/item/clockwo
 	icon_state: "geis_capacitor",
 });
 
-// /obj/item/clockwork/component/geis_capacitor/proc/<init>  (code/game/gamemodes/clock_cult/clock_items/clock_components.dm:85)
+// clock_components.dm:85
 rt.def("/obj/item/clockwork/component/geis_capacitor/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "servant_of_ratvar_messages", rt.alist(f, ["\"Disgusting.\"", 0, "\"Well, aren't you an inquisitive fellow?\"", 0, "A foul presence pervades your mind, then vanishes.", 0, "\"The fact that Ratvar has to depend on simpletons like you is appalling.\"", 0]));
+	parent_proc();
+	this.servant_of_ratvar_messages = rt.alist(f, ["\"Disgusting.\"", 0, "\"Well, aren't you an inquisitive fellow?\"", 0, "A foul presence pervades your mind, then vanishes.", 0, "\"The fact that Ratvar has to depend on simpletons like you is appalling.\"", 0]);
 	return f.dot;
 });
 
@@ -187,12 +172,10 @@ rt.type(8942, "/obj/item/clockwork/component/geis_capacitor/fallen_armor", "/obj
 	w_class: 3,
 });
 
-// /obj/item/clockwork/component/geis_capacitor/fallen_armor/proc/<init>  (code/game/gamemodes/clock_cult/clock_items/clock_components.dm:95)
+// clock_components.dm:95
 rt.def("/obj/item/clockwork/component/geis_capacitor/fallen_armor/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "servant_of_ratvar_messages", rt.alist(f, ["A piece of armor hovers away from the others for a moment.", 0, "Red flame appears in the cuirass before sputtering out.", 0]));
+	parent_proc();
+	this.servant_of_ratvar_messages = rt.alist(f, ["A piece of armor hovers away from the others for a moment.", 0, "Red flame appears in the cuirass before sputtering out.", 0]);
 	return f.dot;
 });
 
@@ -205,12 +188,10 @@ rt.type(8943, "/obj/item/clockwork/component/geis_capacitor/antennae", "/obj/ite
 	icon_state: "mania_motor_antennae",
 });
 
-// /obj/item/clockwork/component/geis_capacitor/antennae/proc/<init>  (code/game/gamemodes/clock_cult/clock_items/clock_components.dm:104)
+// clock_components.dm:104
 rt.def("/obj/item/clockwork/component/geis_capacitor/antennae/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "servant_of_ratvar_messages", rt.alist(f, ["\"Who broke this.\"", 1, "\"Did you break these off YOURSELF?\"", 1, "\"Why did we give this to such simpletons, anyway?\"", 1, "\"At least we can use these for something - unlike you.\"", 1]));
+	parent_proc();
+	this.servant_of_ratvar_messages = rt.alist(f, ["\"Who broke this.\"", 1, "\"Did you break these off YOURSELF?\"", 1, "\"Why did we give this to such simpletons, anyway?\"", 1, "\"At least we can use these for something - unlike you.\"", 1]);
 	return f.dot;
 });
 
@@ -224,12 +205,10 @@ rt.type(8944, "/obj/item/clockwork/component/replicant_alloy", "/obj/item/clockw
 	icon_state: "replicant_alloy",
 });
 
-// /obj/item/clockwork/component/replicant_alloy/proc/<init>  (code/game/gamemodes/clock_cult/clock_items/clock_components.dm:113)
+// clock_components.dm:113
 rt.def("/obj/item/clockwork/component/replicant_alloy/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "servant_of_ratvar_messages", rt.alist(f, ["\"There's always something to be done. Get to it.\"", 0, "\"Idle hands are worse than broken ones. Get to work.\"", 0, "A detailed image of Ratvar appears in the alloy for a moment.", 0]));
+	parent_proc();
+	this.servant_of_ratvar_messages = rt.alist(f, ["\"There's always something to be done. Get to it.\"", 0, "\"Idle hands are worse than broken ones. Get to work.\"", 0, "A detailed image of Ratvar appears in the alloy for a moment.", 0]);
 	return f.dot;
 });
 
@@ -243,12 +222,10 @@ rt.type(8945, "/obj/item/clockwork/component/replicant_alloy/smashed_anima_fragm
 	w_class: 3,
 });
 
-// /obj/item/clockwork/component/replicant_alloy/smashed_anima_fragment/proc/<init>  (code/game/gamemodes/clock_cult/clock_items/clock_components.dm:123)
+// clock_components.dm:123
 rt.def("/obj/item/clockwork/component/replicant_alloy/smashed_anima_fragment/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "servant_of_ratvar_messages", rt.alist(f, ["\"...still fight...\"", 0, "\"...where am I...?\"", 0, "\"...put me... slab...\"", 0]));
+	parent_proc();
+	this.servant_of_ratvar_messages = rt.alist(f, ["\"...still fight...\"", 0, "\"...where am I...?\"", 0, "\"...put me... slab...\"", 0]);
 	return f.dot;
 });
 
@@ -262,12 +239,10 @@ rt.type(8946, "/obj/item/clockwork/component/replicant_alloy/replication_plate",
 	w_class: 3,
 });
 
-// /obj/item/clockwork/component/replicant_alloy/replication_plate/proc/<init>  (code/game/gamemodes/clock_cult/clock_items/clock_components.dm:132)
+// clock_components.dm:132
 rt.def("/obj/item/clockwork/component/replicant_alloy/replication_plate/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "servant_of_ratvar_messages", rt.alist(f, ["\"Put this in a slab and get back to work.\"", 0, "\"Worse servants than you have held these.\"", 1, "\"It would be wise to protect these better, friend.\"", 1]));
+	parent_proc();
+	this.servant_of_ratvar_messages = rt.alist(f, ["\"Put this in a slab and get back to work.\"", 0, "\"Worse servants than you have held these.\"", 1, "\"It would be wise to protect these better, friend.\"", 1]);
 	return f.dot;
 });
 
@@ -281,12 +256,10 @@ rt.type(8947, "/obj/item/clockwork/component/hierophant_ansible", "/obj/item/clo
 	icon_state: "hierophant_ansible",
 });
 
-// /obj/item/clockwork/component/hierophant_ansible/proc/<init>  (code/game/gamemodes/clock_cult/clock_items/clock_components.dm:142)
+// clock_components.dm:142
 rt.def("/obj/item/clockwork/component/hierophant_ansible/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "servant_of_ratvar_messages", rt.alist(f, ["\"Exile is such a bore. There's nothing I can hunt in here.\"", 1, "\"What's keeping you? I want to go kill something.\"", 1, "\"HEHEHEHEHEHEH!\"", 0, "\"If I killed you fast enough, do you think the boss would notice?\"", 1]));
+	parent_proc();
+	this.servant_of_ratvar_messages = rt.alist(f, ["\"Exile is such a bore. There's nothing I can hunt in here.\"", 1, "\"What's keeping you? I want to go kill something.\"", 1, "\"HEHEHEHEHEHEH!\"", 0, "\"If I killed you fast enough, do you think the boss would notice?\"", 1]);
 	return f.dot;
 });
 
@@ -300,12 +273,10 @@ rt.type(8948, "/obj/item/clockwork/component/hierophant_ansible/obelisk", "/obj/
 	w_class: 3,
 });
 
-// /obj/item/clockwork/component/hierophant_ansible/obelisk/proc/<init>  (code/game/gamemodes/clock_cult/clock_items/clock_components.dm:151)
+// clock_components.dm:151
 rt.def("/obj/item/clockwork/component/hierophant_ansible/obelisk/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "servant_of_ratvar_messages", rt.alist(f, ["You hear the distinctive sound of the Hierophant Network for a moment.", 0, "\"Hieroph'ant Br'o'adcas't fail'ure.\"", 1, "The obelisk flickers wildly, as if trying to open a gateway.", 0, "\"Spa'tial Ga'tewa'y fai'lure.\"", 1]));
+	parent_proc();
+	this.servant_of_ratvar_messages = rt.alist(f, ["You hear the distinctive sound of the Hierophant Network for a moment.", 0, "\"Hieroph'ant Br'o'adcas't fail'ure.\"", 1, "The obelisk flickers wildly, as if trying to open a gateway.", 0, "\"Spa'tial Ga'tewa'y fai'lure.\"", 1]);
 	return f.dot;
 });
 
@@ -320,30 +291,30 @@ rt.type(8928, "/obj/item/clockwork/alloy_shards", "/obj/item/clockwork", {
 	resistance_flags: 35,
 });
 
-// /obj/item/clockwork/alloy_shards/proc/Initialize  (code/game/gamemodes/clock_cult/clock_items/clock_components.dm:168)  may sleep
+// clock_components.dm:168
 rt.def("/obj/item/clockwork/alloy_shards/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(rt.sv(f, "randomsinglesprite"))) return f.dot;
-	yield* g.srcCall(f, "replace_name_desc");
-	rt.setSv(f, "icon_state", fmt("＀＀", [rt.sv(f, "icon_state"), (yield* g.call(f, P("/proc/rand"), null, [1, rt.sv(f, "randomspritemax")]))]));
-	rt.setSv(f, "pixel_x", (yield* g.call(f, P("/proc/rand"), null, [rt.neg(rt.sv(f, "sprite_shift")), rt.sv(f, "sprite_shift")])));
-	rt.setSv(f, "pixel_y", (yield* g.call(f, P("/proc/rand"), null, [rt.neg(rt.sv(f, "sprite_shift")), rt.sv(f, "sprite_shift")])));
+	f.dot = (yield* parent_proc());
+	if (!this.randomsinglesprite) return f.dot;
+	this.replace_name_desc();
+	this.icon_state = `${this.icon_state}${rand(1, this.randomspritemax)}`;
+	this.pixel_x = rand(-this.sprite_shift, this.sprite_shift);
+	this.pixel_y = rand(-this.sprite_shift, this.sprite_shift);
 	return f.dot;
 }, true);
 
-// /obj/item/clockwork/alloy_shards/proc/examine  (code/game/gamemodes/clock_cult/clock_items/clock_components.dm:176)
-rt.def("/obj/item/clockwork/alloy_shards/proc/examine", function examine(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	if (!(truthy(rt.call(f, P("/proc/is_servant_of_ratvar"), null, [live(f.args[0])])) || truthy((rt.istype(live(f.args[0]), T("/mob/dead/observer")) ? 1 : 0)))) return f.dot;
-	rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='brass'>Can be consumed by a replica fabricator as a source of power.</span>"]);
+// clock_components.dm:176
+rt.def("/obj/item/clockwork/alloy_shards/proc/examine", function examine(f: Frame, user: Value) {
+	parent_proc();
+	if (!(is_servant_of_ratvar(user) || rt.istype(user, T("/mob/dead/observer")))) return f.dot;
+	to_chat(user, "<span class='brass'>Can be consumed by a replica fabricator as a source of power.</span>");
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/item/clockwork/alloy_shards/proc/replace_name_desc  (code/game/gamemodes/clock_cult/clock_items/clock_components.dm:181)
+// clock_components.dm:181
 rt.def("/obj/item/clockwork/alloy_shards/proc/replace_name_desc", function replace_name_desc(f: Frame) {
-	rt.setSv(f, "name", "replicant alloy shard");
-	rt.setSv(f, "desc", "A broken shard of some oddly malleable metal. It occasionally moves and seems to glow.");
-	rt.setSv(f, "clockwork_desc", "A broken shard of replicant alloy.");
+	this.name = "replicant alloy shard";
+	this.desc = "A broken shard of some oddly malleable metal. It occasionally moves and seems to glow.";
+	this.clockwork_desc = "A broken shard of replicant alloy.";
 	return f.dot;
 });
 
@@ -353,17 +324,17 @@ rt.type(8930, "/obj/item/clockwork/alloy_shards/medium/gear_bit", "/obj/item/clo
 	sprite_shift: 12,
 });
 
-// /obj/item/clockwork/alloy_shards/medium/gear_bit/proc/replace_name_desc  (code/game/gamemodes/clock_cult/clock_items/clock_components.dm:203)
+// clock_components.dm:203
 rt.def("/obj/item/clockwork/alloy_shards/medium/gear_bit/proc/replace_name_desc", function replace_name_desc(f: Frame) {
-	rt.setSv(f, "name", "gear bit");
-	rt.setSv(f, "desc", "A broken chunk of a gear. You want it.");
-	rt.setSv(f, "clockwork_desc", "A broken chunk of a gear.");
+	this.name = "gear bit";
+	this.desc = "A broken chunk of a gear. You want it.";
+	this.clockwork_desc = "A broken chunk of a gear.";
 	return f.dot;
 });
 
-// /obj/item/clockwork/alloy_shards/medium/gear_bit/large/proc/replace_name_desc  (code/game/gamemodes/clock_cult/clock_items/clock_components.dm:210)
+// clock_components.dm:210
 rt.def("/obj/item/clockwork/alloy_shards/medium/gear_bit/large/proc/replace_name_desc", function replace_name_desc(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "name", "complex gear bit");
+	parent_proc();
+	this.name = "complex gear bit";
 	return f.dot;
 });

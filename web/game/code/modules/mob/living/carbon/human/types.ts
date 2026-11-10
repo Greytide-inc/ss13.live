@@ -1,5 +1,5 @@
 // Types declared in code/modules/mob/living/carbon/human that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(508, "/datum/emote/living/carbon/human/cry", "/datum/emote/living/carbon/human", {
 	key: "cry",

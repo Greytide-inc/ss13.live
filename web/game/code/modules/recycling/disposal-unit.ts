@@ -1,7 +1,7 @@
-// From code/modules/recycling/disposal-unit.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/recycling/disposal-unit.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, fmt } = rt;
 
 
 rt.type(10984, "/obj/machinery/disposal", "/obj/machinery", {
@@ -26,385 +26,336 @@ rt.type(10984, "/obj/machinery/disposal", "/obj/machinery", {
 	resistance_flags: 2,
 });
 
-// /obj/machinery/disposal/proc/<init>  (code/modules/recycling/disposal-unit.dm:11)
+// disposal-unit.dm:11
 rt.def("/obj/machinery/disposal/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 25, "bullet", 10, "laser", 10, "energy", 100, "bomb", 0, "bio", 100, "rad", 100, "fire", 90, "acid", 30]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 25, "bullet", 10, "laser", 10, "energy", 100, "bomb", 0, "bio", 100, "rad", 100, "fire", 90, "acid", 30]);
 	return f.dot;
 });
 
-// /obj/machinery/disposal/proc/Initialize  (code/modules/recycling/disposal-unit.dm:30)  may sleep
-rt.def("/obj/machinery/disposal/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (truthy(live(f.args[1]))) {
-		yield* g.srcCall(f, "setDir", rt.fv(f, "dir", live(f.args[1])));
-		rt.setFv(f, "loc", live(f.args[1]), 0);
-		rt.setSv(f, "stored", live(f.args[1]));
+// disposal-unit.dm:30
+rt.def("/obj/machinery/disposal/proc/Initialize", function* Initialize(f: Frame, mapload: Value, make_from: Value) {
+	f.dot = (yield* parent_proc());
+	if (make_from) {
+		yield* this.setDir(make_from.dir);
+		make_from.loc = 0;
+		this.stored = make_from;
 	} else {
-		rt.setSv(f, "stored", (yield* g.new_(f, T("/obj/structure/disposalconstruct"), [0, 6, rt.sv(f, "dir")])));
+		this.stored = (yield* new_(T("/obj/structure/disposalconstruct"), 0, DISP_END_BIN, this.dir));
 	}
-	yield* g.srcCall(f, "trunk_check");
-	rt.setSv(f, "air_contents", (yield* g.new_(f, T("/datum/gas_mixture"), [])));
-	yield* g.srcCall(f, "update_icon");
+	this.trunk_check();
+	this.air_contents = (yield* new_(T("/datum/gas_mixture")));
+	yield* this.update_icon();
 	return f.dot;
-}, true, { args: ["mapload", "make_from"] });
+}, true);
 
-// /obj/machinery/disposal/proc/trunk_check  (code/modules/recycling/disposal-unit.dm:45)
+// disposal-unit.dm:45
 rt.def("/obj/machinery/disposal/proc/trunk_check", function trunk_check(f: Frame) {
-	rt.setSv(f, "trunk", rt.locateIn(f, T("/obj/structure/disposalpipe/trunk"), rt.sv(f, "loc")));
-	if (!truthy(rt.sv(f, "trunk"))) {
-		rt.setSv(f, "pressure_charging", 0);
-		rt.setSv(f, "flush", 0);
+	this.trunk = rt.locateIn(f, T("/obj/structure/disposalpipe/trunk"), this.loc);
+	if (!this.trunk) {
+		this.pressure_charging = 0;
+		this.flush = 0;
 	} else {
-		if (truthy(rt.initial(f, live(f.src), "pressure_charging"))) {
-			rt.setSv(f, "pressure_charging", 1);
+		if (rt.initial(f, this, "pressure_charging")) {
+			this.pressure_charging = 1;
 		}
-		rt.setSv(f, "flush", rt.initial(f, live(f.src), "flush"));
-		rt.setFv(f, "linked", rt.sv(f, "trunk"), live(f.src));
+		this.flush = rt.initial(f, this, "flush");
+		this.trunk.linked = this;
 	}
 	return f.dot;
 });
 
-// /obj/machinery/disposal/proc/Destroy  (code/modules/recycling/disposal-unit.dm:56)  may sleep
+// disposal-unit.dm:56
 rt.def("/obj/machinery/disposal/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.srcCall(f, "eject");
-	if (truthy(rt.sv(f, "trunk"))) {
-		rt.setFv(f, "linked", rt.sv(f, "trunk"), null);
+	yield* this.eject();
+	if (this.trunk) {
+		this.trunk.linked = null;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);
 
-// /obj/machinery/disposal/proc/singularity_pull  (code/modules/recycling/disposal-unit.dm:62)  may sleep
+// disposal-unit.dm:62
 rt.def("/obj/machinery/disposal/proc/singularity_pull", function* singularity_pull(f: Frame, S: Value, current_size: Value) {
-	f.vars = () => [S, current_size];
-	if (!rt.ge(live(current_size), 9)) return f.dot;
-	yield* g.srcCall(f, "deconstruct");
+	if (!(current_size >= STAGE_FIVE)) return f.dot;
+	yield* this.deconstruct();
 	return f.dot;
 }, true);
 
-// /obj/machinery/disposal/proc/Initialize  (code/modules/recycling/disposal-unit.dm:66)  may sleep
-rt.def("/obj/machinery/disposal/proc/Initialize", function* Initialize(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	return 1;
-}, true, { args: ["mapload"] });
+// disposal-unit.dm:66
+rt.def("/obj/machinery/disposal/proc/Initialize", function* Initialize(f: Frame, mapload: Value) {
+	yield* parent_proc();
+	return INITIALIZE_HINT_LATELOAD;
+}, true);
 
-// /obj/machinery/disposal/proc/LateInitialize  (code/modules/recycling/disposal-unit.dm:71)  may sleep
+// disposal-unit.dm:71
 rt.def("/obj/machinery/disposal/proc/LateInitialize", function* LateInitialize(f: Frame) {
-	let L: Value = null, env: Value = null, removed: Value = null;
-	f.vars = () => [L, env, removed];
-	L = rt.sv(f, "loc");
-	yield* g.callName(f, (env = (yield* g.new_(f, T("/datum/gas_mixture"), []))), "copy_from", [(yield* g.callName(f, live(L), "return_air", []))]);
-	removed = (yield* g.callName(f, live(env), "remove", [6.066249847412109]));
-	yield* g.callName(f, rt.sv(f, "air_contents"), "merge", [live(removed)]);
-	yield* g.srcCall(f, "trunk_check");
+	let env: Value = null;
+	let L: Value = this.loc;
+	(env = (yield* new_(T("/datum/gas_mixture")))).copy_from(L.return_air());
+	let removed: Value = (yield* env.remove(6.06625));
+	yield* this.air_contents.merge(removed);
+	this.trunk_check();
 	return f.dot;
 }, true);
 
-// /obj/machinery/disposal/proc/attackby  (code/modules/recycling/disposal-unit.dm:79)  may sleep
-rt.def("/obj/machinery/disposal/proc/attackby", function* attackby(f: Frame) {
+// disposal-unit.dm:79
+rt.def("/obj/machinery/disposal/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
 	let W: Value = null;
 	let $0: any, $1: any;
-	f.vars = () => [W, $0, $1];
-	yield* g.srcCall(f, "add_fingerprint", live(f.args[1]));
-	if (((!truthy(rt.sv(f, "pressure_charging")) && !truthy(rt.sv(f, "full_pressure"))) && !truthy(rt.sv(f, "flush")))) {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/screwdriver")) ? 1 : 0))) {
-			rt.setSv(f, "panel_open", (!truthy(rt.sv(f, "panel_open")) ? 1 : 0));
-			yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.fv(f, "usesound", live(f.args[0])), 50, 1]);
-			$0 = live(f.args[1]);
-			if (truthy(rt.sv(f, "panel_open"))) {
+	yield* this.add_fingerprint(user);
+	if (!this.pressure_charging && !this.full_pressure && !this.flush) {
+		if (rt.istype(I, T("/obj/item/weapon/screwdriver"))) {
+			this.panel_open = (!this.panel_open ? 1 : 0);
+			playsound(rt.getStep(f, this, 0), I.usesound, 50, 1);
+			$0 = user;
+			if (this.panel_open) {
 				$1 = "remove";
 			} else {
 				$1 = "attach";
 			}
-			yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='notice'>You ＀ the screws around the power connection.</span>", [$1])]);
-			return live(f.dot);
-		} else {
-			if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/weldingtool")) ? 1 : 0)) && truthy(rt.sv(f, "panel_open")))) {
-				if (truthy((yield* g.callName(f, (W = live(f.args[0])), "remove_fuel", [0, live(f.args[1])])))) {
-					yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/items/welder2.ogg"), 100, 1]);
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You start slicing the floorweld off ％！...</span>", [live(f.src)])]);
-					if ((truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, multiply(20, rt.fv(f, "toolspeed", live(f.args[0]))), "target", live(f.src)], rt.Args.Named))) && truthy(rt.sv(f, "panel_open")))) {
-						if (!truthy((yield* g.callName(f, live(W), "isOn", [])))) {
-							return live(f.dot);
-						}
-						yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You slice the floorweld off ％！.</span>", [live(f.src)])]);
-						yield* g.srcCall(f, "deconstruct");
+			to_chat($0, `<span class='notice'>You ${$1} the screws around the power connection.</span>`);
+			return f.dot;
+		} else if (rt.istype(I, T("/obj/item/weapon/weldingtool")) && this.panel_open) {
+			if (yield* (W = I).remove_fuel(0, user)) {
+				playsound(this.loc, rt.rsc("sound/items/welder2.ogg"), 100, 1);
+				to_chat(user, fmt("<span class='notice'>You start slicing the floorweld off ％！...</span>", [this]));
+				if ((yield* do_after(user, 20 * I.toolspeed, { target: this })) && this.panel_open) {
+					if (!W.isOn()) {
+						return f.dot;
 					}
+					to_chat(user, fmt("<span class='notice'>You slice the floorweld off ％！.</span>", [this]));
+					yield* this.deconstruct();
 				}
-				return live(f.dot);
 			}
+			return f.dot;
 		}
 	}
-	if (!isEqual(rt.fv(f, "a_intent", live(f.args[1])), "harm")) {
-		if ((!truthy((yield* g.callName(f, live(f.args[1]), "drop_item", []))) || truthy(rt.bitAnd(rt.fv(f, "flags", live(f.args[0])), 128)))) {
-			return live(f.dot);
+	if (user.a_intent != "harm") {
+		if (!(yield* user.drop_item()) || rt.bitAnd(I.flags, ABSTRACT)) {
+			return f.dot;
 		}
-		yield* g.srcCall(f, "place_item_in_disposal", live(f.args[0]), live(f.args[1]));
-		yield* g.srcCall(f, "update_icon");
+		yield* this.place_item_in_disposal(I, user);
+		yield* this.update_icon();
 		return 1;
 	} else {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+		return (yield* parent_proc());
 	}
-	return f.dot;
-}, true, { args: ["I", "user", "params"] });
+}, true);
 
-// /obj/machinery/disposal/proc/place_item_in_disposal  (code/modules/recycling/disposal-unit.dm:108)  may sleep
+// disposal-unit.dm:108
 rt.def("/obj/machinery/disposal/proc/place_item_in_disposal", function* place_item_in_disposal(f: Frame, I: Value, user: Value) {
-	f.vars = () => [I, user];
-	yield* g.callName(f, live(I), "forceMove", [live(f.src)]);
-	yield* g.callName(f, live(user), "visible_message", [fmt("＀ places ％！ into ％！.", [rt.fv(f, "name", live(user)), live(I), live(f.src)]), fmt("<span class='notice'>You place ％！ into ％！.</span>", [live(I), live(f.src)])]);
+	yield* I.forceMove(this);
+	user.visible_message(fmt("＀ places ％！ into ％！.", [user.name, I, this]), fmt("<span class='notice'>You place ％！ into ％！.</span>", [I, this]));
 	return f.dot;
 }, true);
 
-// /obj/machinery/disposal/proc/MouseDrop_T  (code/modules/recycling/disposal-unit.dm:113)  may sleep
+// disposal-unit.dm:113
 rt.def("/obj/machinery/disposal/proc/MouseDrop_T", function* MouseDrop_T(f: Frame, target: Value, user: Value) {
-	f.vars = () => [target, user];
-	if (!truthy((rt.istype(live(target), T("/mob/living")) ? 1 : 0))) return f.dot;
-	yield* g.srcCall(f, "stuff_mob_in", live(target), live(user));
+	if (!rt.istype(target, T("/mob/living"))) return f.dot;
+	yield* this.stuff_mob_in(target, user);
 	return f.dot;
 }, true);
 
-// /obj/machinery/disposal/proc/stuff_mob_in  (code/modules/recycling/disposal-unit.dm:117)  may sleep
+// disposal-unit.dm:117
 rt.def("/obj/machinery/disposal/proc/stuff_mob_in", function* stuff_mob_in(f: Frame, target: Value, user: Value) {
-	f.vars = () => [target, user];
-	if ((!truthy((rt.istype(live(user), T("/mob/living/carbon")) ? 1 : 0)) && !truthy(rt.fv(f, "ventcrawler", live(user))))) {
-		return live(f.dot);
+	if (!rt.istype(user, T("/mob/living/carbon")) && !user.ventcrawler) {
+		return f.dot;
 	}
-	if (!truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.fv(f, "loc", live(user))])))) {
-		return live(f.dot);
+	if (!isturf(user.loc)) {
+		return f.dot;
 	}
-	if ((truthy(rt.fv(f, "buckled", live(target))) || truthy((yield* g.callName(f, live(target), "has_buckled_mobs", []))))) {
-		return live(f.dot);
+	if (target.buckled || target.has_buckled_mobs()) {
+		return f.dot;
 	}
-	if (rt.gt(rt.fv(f, "mob_size", live(target)), 2)) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ doesn't fit inside ＀!</span>", [live(target), live(f.src)])]);
-		return live(f.dot);
+	if (target.mob_size > MOB_SIZE_HUMAN) {
+		to_chat(user, `<span class='warning'>${target} doesn't fit inside ${this}!</span>`);
+		return f.dot;
 	}
-	yield* g.srcCall(f, "add_fingerprint", live(user));
-	if (isEqual(live(user), live(target))) {
-		yield* g.callName(f, live(user), "visible_message", [fmt("＀ starts climbing into ＀.", [live(user), live(f.src)]), fmt("<span class='notice'>You start climbing into ＀...</span>", [live(f.src)])]);
+	yield* this.add_fingerprint(user);
+	if (user == target) {
+		user.visible_message(`${user} starts climbing into ${this}.`, `<span class='notice'>You start climbing into ${this}...</span>`);
 	} else {
-		yield* g.callName(f, live(target), "visible_message", [fmt("<span class='danger'>＀ starts putting ＀ into ＀.</span>", [live(user), live(target), live(f.src)]), fmt("<span class='userdanger'>＀ starts putting you into ＀!</span>", [live(user), live(f.src)])]);
+		target.visible_message(`<span class='danger'>${user} starts putting ${target} into ${this}.</span>`, `<span class='userdanger'>${user} starts putting you into ${this}!</span>`);
 	}
-	if (!truthy((yield* g.call(f, P("/proc/do_mob"), null, [live(user), live(target), 20])))) return f.dot;
-	if (!truthy(rt.sv(f, "loc"))) {
-		return live(f.dot);
+	if (!(yield* do_mob(user, target, 20))) return f.dot;
+	if (!this.loc) {
+		return f.dot;
 	}
-	yield* g.callName(f, live(target), "forceMove", [live(f.src)]);
-	if (isEqual(live(user), live(target))) {
-		yield* g.callName(f, live(user), "visible_message", [fmt("＀ climbs into ＀.", [live(user), live(f.src)]), fmt("<span class='notice'>You climb into ＀.</span>", [live(f.src)])]);
+	yield* target.forceMove(this);
+	if (user == target) {
+		user.visible_message(`${user} climbs into ${this}.`, `<span class='notice'>You climb into ${this}.</span>`);
 	} else {
-		yield* g.callName(f, live(target), "visible_message", [fmt("<span class='danger'>＀ has placed ＀ in ＀.</span>", [live(user), live(target), live(f.src)]), fmt("<span class='userdanger'>＀ has placed ＀ in ＀.</span>", [live(user), live(target), live(f.src)])]);
-		yield* g.call(f, P("/proc/add_logs"), null, [null, live(user), null, live(target), null, "stuffed", "addition", fmt("into ＀", [live(f.src)])], rt.Args.Named);
-		rt.setFv(f, "LAssailant", live(target), live(user));
+		target.visible_message(`<span class='danger'>${user} has placed ${target} in ${this}.</span>`, `<span class='userdanger'>${user} has placed ${target} in ${this}.</span>`);
+		yield* add_logs(user, target, "stuffed", { addition: `into ${this}` });
+		target.LAssailant = user;
 	}
-	yield* g.srcCall(f, "update_icon");
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/machinery/disposal/proc/relaymove  (code/modules/recycling/disposal-unit.dm:144)  may sleep
+// disposal-unit.dm:144
 rt.def("/obj/machinery/disposal/proc/relaymove", function* relaymove(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.srcCall(f, "attempt_escape", live(user));
+	yield* this.attempt_escape(user);
 	return f.dot;
 }, true);
 
-// /obj/machinery/disposal/proc/container_resist  (code/modules/recycling/disposal-unit.dm:148)  may sleep
+// disposal-unit.dm:148
 rt.def("/obj/machinery/disposal/proc/container_resist", function* container_resist(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.srcCall(f, "attempt_escape", live(user));
+	yield* this.attempt_escape(user);
 	return f.dot;
 }, true);
 
-// /obj/machinery/disposal/proc/attempt_escape  (code/modules/recycling/disposal-unit.dm:153)  may sleep
+// disposal-unit.dm:153
 rt.def("/obj/machinery/disposal/proc/attempt_escape", function* attempt_escape(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (truthy(rt.sv(f, "flushing"))) {
-		return live(f.dot);
+	if (this.flushing) {
+		return f.dot;
 	}
-	yield* g.srcCall(f, "go_out", live(user));
+	yield* this.go_out(user);
 	return f.dot;
 }, true);
 
-// /obj/machinery/disposal/proc/go_out  (code/modules/recycling/disposal-unit.dm:157)  may sleep
+// disposal-unit.dm:157
 rt.def("/obj/machinery/disposal/proc/go_out", function* go_out(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.callName(f, live(user), "forceMove", [rt.sv(f, "loc")]);
-	yield* g.srcCall(f, "update_icon");
+	yield* user.forceMove(this.loc);
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/machinery/disposal/proc/attack_paw  (code/modules/recycling/disposal-unit.dm:162)
+// disposal-unit.dm:162
 rt.def("/obj/machinery/disposal/proc/attack_paw", function attack_paw(f: Frame, user: Value) {
-	if (truthy(rt.bitAnd(rt.sv(f, "stat"), 1))) {
-		return live(f.dot);
+	if (rt.bitAnd(this.stat, 1)) {
+		return f.dot;
 	}
-	rt.setSv(f, "flush", (!truthy(rt.sv(f, "flush")) ? 1 : 0));
-	rt.callSrc(f, "update_icon", []);
+	this.flush = (!this.flush ? 1 : 0);
+	this.update_icon();
 	return f.dot;
 });
 
-// /obj/machinery/disposal/proc/attack_ai  (code/modules/recycling/disposal-unit.dm:169)  may sleep
+// disposal-unit.dm:169
 rt.def("/obj/machinery/disposal/proc/attack_ai", function* attack_ai(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.srcCall(f, "interact", live(user), 1);
+	yield* this.interact(user, 1);
 	return f.dot;
 }, true);
 
-// /obj/machinery/disposal/proc/attack_hand  (code/modules/recycling/disposal-unit.dm:173)  may sleep
+// disposal-unit.dm:173
 rt.def("/obj/machinery/disposal/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if ((truthy(live(user)) && isEqual(rt.fv(f, "loc", live(user)), live(f.src)))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), "<span class='warning'>You cannot reach the controls from inside!</span>"]);
-		return live(f.dot);
+	if (user && user.loc == this) {
+		to_chat(f.usr, "<span class='warning'>You cannot reach the controls from inside!</span>");
+		return f.dot;
 	}
-	yield* g.srcCall(f, "interact", live(user), 0);
+	yield* this.interact(user, 0);
 	return f.dot;
 }, true);
 
-// /obj/machinery/disposal/proc/eject  (code/modules/recycling/disposal-unit.dm:180)  may sleep
+// disposal-unit.dm:180
 rt.def("/obj/machinery/disposal/proc/eject", function* eject(f: Frame) {
-	let _T: Value = null, AM: Value = null;
-	let $e: any;
-	f.vars = () => [_T, AM, $e];
-	_T = rt.getStep(f, live(f.src), 0);
-	AM = null;
-	rt.forList(f, 0, live(f.src), T("/atom/movable"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		AM = $e;
-		yield* g.callName(f, live(AM), "forceMove", [live(_T)]);
-		yield* g.callName(f, live(AM), "pipe_eject", [0]);
+	let AM: Value = null;
+	let _T: Value = rt.getStep(f, this, 0);
+	for (AM of each(this, T("/atom/movable"))) {
+		yield* AM.forceMove(_T);
+		AM.pipe_eject(0);
 	}
-	rt.endFor(f, 0);
-	yield* g.srcCall(f, "update_icon");
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/machinery/disposal/proc/flush  (code/modules/recycling/disposal-unit.dm:192)  may sleep
+// disposal-unit.dm:192
 rt.def("/obj/machinery/disposal/proc/flush", function* flush(f: Frame) {
 	let H: Value = null;
-	f.vars = () => [H];
-	rt.setSv(f, "flushing", 1);
-	yield* g.srcCall(f, "flushAnimation");
-	yield* g.call(f, P("/proc/sleep"), null, [10]);
-	if (rt.lt(rt.sv(f, "last_sound"), add(rt.worldTime(f), 1))) {
-		yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/machines/disposalflush.ogg"), 50, 0, 0]);
-		rt.setSv(f, "last_sound", rt.worldTime(f));
+	this.flushing = 1;
+	this.flushAnimation();
+	yield* sleep(10);
+	if (this.last_sound < rt.worldTime(f) + 1) {
+		playsound(this, rt.rsc("sound/machines/disposalflush.ogg"), 50, 0, 0);
+		this.last_sound = rt.worldTime(f);
 	}
-	yield* g.call(f, P("/proc/sleep"), null, [5]);
-	if ((!truthy(live(f.src)) || truthy(rt.fv(f, "gc_destroyed", live(f.src))))) {
-		return live(f.dot);
+	yield* sleep(5);
+	if (!this || this.gc_destroyed) {
+		return f.dot;
 	}
-	yield* g.srcCall(f, "newHolderDestination", (H = (yield* g.new_(f, T("/obj/structure/disposalholder"), []))));
-	yield* g.callName(f, live(H), "init", [live(f.src)]);
-	rt.setSv(f, "air_contents", (yield* g.new_(f, T("/datum/gas_mixture"), [])));
-	yield* g.callName(f, live(H), "start", [live(f.src)]);
-	rt.setSv(f, "flushing", 0);
-	rt.setSv(f, "flush", 0);
+	this.newHolderDestination((H = (yield* new_(T("/obj/structure/disposalholder")))));
+	yield* H.init(this);
+	this.air_contents = (yield* new_(T("/datum/gas_mixture")));
+	yield* H.start(this);
+	this.flushing = 0;
+	this.flush = 0;
 	return f.dot;
 }, true);
 
-// /obj/machinery/disposal/proc/newHolderDestination  (code/modules/recycling/disposal-unit.dm:209)
+// disposal-unit.dm:209
 rt.def("/obj/machinery/disposal/proc/newHolderDestination", function newHolderDestination(f: Frame, H: Value) {
 	let O: Value = null;
-	let $e: any;
-	f.vars = () => [O, $e];
-	O = null;
-	rt.forList(f, 0, live(f.src), T("/obj/item/smallDelivery"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		O = $e;
-		rt.setFv(f, "tomail", live(H), 1);
-		return live(f.dot);
+	for (O of each(this, T("/obj/item/smallDelivery"))) {
+		H.tomail = 1;
+		return f.dot;
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /obj/machinery/disposal/proc/flushAnimation  (code/modules/recycling/disposal-unit.dm:214)
+// disposal-unit.dm:214
 rt.def("/obj/machinery/disposal/proc/flushAnimation", function flushAnimation(f: Frame) {
-	rt.call(f, P("/proc/flick"), null, [fmt("＀-flush", [rt.sv(f, "icon_state")]), live(f.src)]);
+	flick(`${this.icon_state}-flush`, this);
 	return f.dot;
 });
 
-// /obj/machinery/disposal/proc/power_change  (code/modules/recycling/disposal-unit.dm:218)
+// disposal-unit.dm:218
 rt.def("/obj/machinery/disposal/proc/power_change", function power_change(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.callSrc(f, "update_icon", []);
+	parent_proc();
+	this.update_icon();
 	return f.dot;
 });
 
-// /obj/machinery/disposal/proc/expel  (code/modules/recycling/disposal-unit.dm:224)  may sleep
+// disposal-unit.dm:224
 rt.def("/obj/machinery/disposal/proc/expel", function* expel(f: Frame, H: Value) {
-	let _T: Value = null, target: Value = null, AM: Value = null;
-	let $e: any;
-	f.vars = () => [H, _T, target, AM, $e];
-	_T = rt.getStep(f, live(f.src), 0);
-	target = null;
-	yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/machines/hiss.ogg"), 50, 0, 0]);
-	if (!truthy(live(H))) return f.dot;
-	AM = null;
-	rt.forList(f, 0, live(H), T("/atom/movable"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		AM = $e;
-		target = (yield* g.call(f, P("/proc/get_offset_target_turf"), null, [rt.fv(f, "loc", live(f.src)), subtract((yield* g.call(f, P("/proc/rand"), null, [5])), (yield* g.call(f, P("/proc/rand"), null, [5]))), subtract((yield* g.call(f, P("/proc/rand"), null, [5])), (yield* g.call(f, P("/proc/rand"), null, [5])))]));
-		yield* g.callName(f, live(AM), "forceMove", [live(_T)]);
-		yield* g.callName(f, live(AM), "pipe_eject", [0]);
-		yield* g.callName(f, live(AM), "throw_at", [live(target), 5, 1]);
+	let target: Value = null, AM: Value = null;
+	let _T: Value = rt.getStep(f, this, 0);
+	playsound(this, rt.rsc("sound/machines/hiss.ogg"), 50, 0, 0);
+	if (!H) return f.dot;
+	for (AM of each(H, T("/atom/movable"))) {
+		target = get_offset_target_turf(this.loc, rand(5) - rand(5), rand(5) - rand(5));
+		yield* AM.forceMove(_T);
+		AM.pipe_eject(0);
+		yield* AM.throw_at(target, 5, 1);
 	}
-	rt.endFor(f, 0);
-	yield* g.callName(f, live(H), "vent_gas", [rt.sv(f, "loc")]);
-	yield* g.call(f, P("/proc/qdel"), null, [live(H)]);
+	yield* H.vent_gas(this.loc);
+	yield* qdel(H);
 	return f.dot;
 }, true);
 
-// /obj/machinery/disposal/proc/deconstruct  (code/modules/recycling/disposal-unit.dm:239)  may sleep
+// disposal-unit.dm:239
 rt.def("/obj/machinery/disposal/proc/deconstruct", function* deconstruct(f: Frame) {
-	let _T: Value = null, AM: Value = null;
-	let $e: any;
-	f.vars = () => [_T, AM, $e];
-	if (live(f.args[0]) === null) {
+	let AM: Value = null;
+	if (f.args[0] === null) {
 		f.args[0] = 1;
 	}
-	_T = rt.sv(f, "loc");
-	if (!truthy(rt.bitAnd(rt.sv(f, "flags"), 128))) {
-		if (truthy(rt.sv(f, "stored"))) {
-			yield* g.callName(f, rt.sv(f, "stored"), "forceMove", [live(_T)]);
-			yield* g.callName(f, live(f.src), "transfer_fingerprints_to", [rt.sv(f, "stored")]);
-			rt.setFv(f, "anchored", rt.sv(f, "stored"), 0);
-			rt.setFv(f, "density", rt.sv(f, "stored"), 1);
-			yield* g.callName(f, rt.sv(f, "stored"), "update_icon", []);
+	let _T: Value = this.loc;
+	if (!rt.bitAnd(this.flags, NODECONSTRUCT)) {
+		if (this.stored) {
+			yield* this.stored.forceMove(_T);
+			this.transfer_fingerprints_to(this.stored);
+			this.stored.anchored = 0;
+			this.stored.density = 1;
+			yield* this.stored.update_icon();
 		}
 	}
-	AM = null;
-	rt.forList(f, 0, live(f.src), T("/atom/movable"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		AM = $e;
-		yield* g.callName(f, live(AM), "forceMove", [live(_T)]);
+	for (AM of each(this, T("/atom/movable"))) {
+		yield* AM.forceMove(_T);
 	}
-	rt.endFor(f, 0);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true, { args: ["disassembled"] });
 
-// /obj/machinery/disposal/proc/storage_contents_dump_act  (code/modules/recycling/disposal-unit.dm:253)  may sleep
+// disposal-unit.dm:253
 rt.def("/obj/machinery/disposal/proc/storage_contents_dump_act", function* storage_contents_dump_act(f: Frame, src_object: Value, user: Value) {
 	let I: Value = null;
-	let $e: any;
-	f.vars = () => [src_object, user, I, $e];
-	I = null;
-	rt.forList(f, 0, live(src_object), T("/obj/item"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		if (!isEqual(rt.fv(f, "s_active", live(user)), live(src_object))) {
-			if (truthy((yield* g.callName(f, live(I), "on_found", [live(user)])))) {
-				return live(f.dot);
+	for (I of each(src_object, T("/obj/item"))) {
+		if (user.s_active != src_object) {
+			if (yield* I.on_found(user)) {
+				return f.dot;
 			}
 		}
-		yield* g.callName(f, live(src_object), "remove_from_storage", [live(I), live(f.src)]);
+		yield* src_object.remove_from_storage(I, this);
 	}
-	rt.endFor(f, 0);
 	return 1;
 }, true);
 
@@ -414,227 +365,197 @@ rt.type(10985, "/obj/machinery/disposal/bin", "/obj/machinery/disposal", {
 	icon_state: "disposal",
 });
 
-// /obj/machinery/disposal/bin/proc/attackby  (code/modules/recycling/disposal-unit.dm:274)  may sleep
-rt.def("/obj/machinery/disposal/bin/proc/attackby", function* attackby(f: Frame) {
+// disposal-unit.dm:274
+rt.def("/obj/machinery/disposal/bin/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
 	let _T: Value = null, O: Value = null;
-	let $e: any;
-	f.vars = () => [_T, O, $e];
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/storage/bag/trash")) ? 1 : 0))) {
-		_T = live(f.args[0]);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You empty the bag.</span>"]);
-		O = null;
-		rt.forList(f, 0, rt.fv(f, "contents", live(_T)), T("/obj/item"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			O = $e;
-			yield* g.callName(f, live(_T), "remove_from_storage", [live(O), live(f.src)]);
+	if (rt.istype(I, T("/obj/item/weapon/storage/bag/trash"))) {
+		_T = I;
+		to_chat(user, "<span class='warning'>You empty the bag.</span>");
+		for (O of each(_T.contents, T("/obj/item"))) {
+			yield* _T.remove_from_storage(O, this);
 		}
-		rt.endFor(f, 0);
-		yield* g.callName(f, live(_T), "update_icon", []);
-		yield* g.srcCall(f, "update_icon");
+		yield* _T.update_icon();
+		yield* this.update_icon();
 	} else {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+		return (yield* parent_proc());
 	}
-	return f.dot;
-}, true, { args: ["I", "user", "params"] });
-
-// /obj/machinery/disposal/bin/proc/ui_interact  (code/modules/recycling/disposal-unit.dm:288)  may sleep
-rt.def("/obj/machinery/disposal/bin/proc/ui_interact", function* ui_interact(f: Frame, user: Value, ui_key: Value, ui: Value, force_open: Value, master_ui: Value, state: Value) {
-	f.vars = () => [user, ui_key, ui, force_open, master_ui, state];
-	if (live(ui_key) === null) {
-		ui_key = "main";
-	}
-	if (live(ui) === null) {
-		ui = null;
-	}
-	if (live(force_open) === null) {
-		force_open = 0;
-	}
-	if (live(master_ui) === null) {
-		master_ui = null;
-	}
-	if (live(state) === null) {
-		state = rt.gl("default_state");
-	}
-	if (truthy(rt.bitAnd(rt.sv(f, "stat"), 1))) {
-		return live(f.dot);
-	}
-	if (isEqual(rt.fv(f, "loc", live(user)), live(f.src))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>You cannot reach the controls from inside!</span>"]);
-		return live(f.dot);
-	}
-	if (truthy((ui = (yield* g.callName(f, rt.gl("SStgui"), "try_update_ui", [live(user), live(f.src), live(ui_key), live(ui), live(force_open)]))))) return f.dot;
-	yield* g.callName(f, (ui = (yield* g.new_(f, T("/datum/tgui"), [live(user), live(f.src), live(ui_key), "disposal_unit", rt.sv(f, "name"), 300, 200, live(master_ui), live(state)]))), "open", []);
 	return f.dot;
 }, true);
 
-// /obj/machinery/disposal/bin/proc/ui_data  (code/modules/recycling/disposal-unit.dm:299)
+// disposal-unit.dm:288
+rt.def("/obj/machinery/disposal/bin/proc/ui_interact", function* ui_interact(f: Frame, user: Value, ui_key: Value, ui: Value, force_open: Value, master_ui: Value, state: Value) {
+	ui_key ??= "main";
+	force_open ??= 0;
+	state ??= GLOB.default_state;
+	if (rt.bitAnd(this.stat, 1)) {
+		return f.dot;
+	}
+	if (user.loc == this) {
+		to_chat(user, "<span class='warning'>You cannot reach the controls from inside!</span>");
+		return f.dot;
+	}
+	if (ui = (yield* GLOB.SStgui.try_update_ui(user, this, ui_key, ui, force_open))) return f.dot;
+	yield* (ui = (yield* new_(T("/datum/tgui"), user, this, ui_key, "disposal_unit", this.name, 300, 200, master_ui, state))).open();
+	return f.dot;
+}, true);
+
+// disposal-unit.dm:299
 rt.def("/obj/machinery/disposal/bin/proc/ui_data", function ui_data(f: Frame, user: Value) {
-	let data: Value = null, per: Value = null;
-	f.vars = () => [data, per];
-	rt.setAt((data = rt.list()), "flush", rt.sv(f, "flush"));
-	rt.setAt(live(data), "full_pressure", rt.sv(f, "full_pressure"));
-	rt.setAt(live(data), "pressure_charging", rt.sv(f, "pressure_charging"));
-	rt.setAt(live(data), "panel_open", rt.sv(f, "panel_open"));
-	per = rt.call(f, P("/proc/max"), null, [0, rt.call(f, P("/proc/min"), null, [divide(multiply(100, rt.callName(f, rt.sv(f, "air_contents"), "return_pressure", [])), 5.066249847412109), 100])]);
-	rt.setAt(live(data), "per", rt.call(f, P("/proc/round"), null, [live(per), 1]));
-	rt.setAt(live(data), "isai", (rt.istype(live(user), T("/mob/living/silicon/ai")) ? 1 : 0));
-	return live(data);
+	let data: Value = null;
+	rt.setAt((data = list()), "flush", this.flush);
+	rt.setAt(data, "full_pressure", this.full_pressure);
+	rt.setAt(data, "pressure_charging", this.pressure_charging);
+	rt.setAt(data, "panel_open", this.panel_open);
+	let per: Value = max(0, min(100 * this.air_contents.return_pressure() / 5.06625, 100));
+	rt.setAt(data, "per", round(per, 1));
+	rt.setAt(data, "isai", (rt.istype(user, T("/mob/living/silicon/ai")) ? 1 : 0));
+	return data;
 });
 
-// /obj/machinery/disposal/bin/proc/ui_act  (code/modules/recycling/disposal-unit.dm:310)  may sleep
-rt.def("/obj/machinery/disposal/bin/proc/ui_act", function* ui_act(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		return live(f.dot);
+// disposal-unit.dm:310
+rt.def("/obj/machinery/disposal/bin/proc/ui_act", function* ui_act(f: Frame, action: Value, params: Value) {
+	if (yield* parent_proc()) {
+		return f.dot;
 	}
-	$0 = live(f.args[0]);
-	if ($0 === "handle-0") {
-		rt.setSv(f, "flush", 0);
-		yield* g.srcCall(f, "update_icon");
+	if (action === "handle-0") {
+		this.flush = 0;
+		yield* this.update_icon();
 		f.dot = 1;
-	} else if ($0 === "handle-1") {
-		if (!truthy(rt.sv(f, "panel_open"))) {
-			rt.setSv(f, "flush", 1);
-			yield* g.srcCall(f, "update_icon");
+	} else if (action === "handle-1") {
+		if (!this.panel_open) {
+			this.flush = 1;
+			yield* this.update_icon();
 		}
 		f.dot = 1;
-	} else if ($0 === "pump-0") {
-		if (truthy(rt.sv(f, "pressure_charging"))) {
-			rt.setSv(f, "pressure_charging", 0);
-			yield* g.srcCall(f, "update_icon");
+	} else if (action === "pump-0") {
+		if (this.pressure_charging) {
+			this.pressure_charging = 0;
+			yield* this.update_icon();
 		}
 		f.dot = 1;
-	} else if ($0 === "pump-1") {
-		if (!truthy(rt.sv(f, "pressure_charging"))) {
-			rt.setSv(f, "pressure_charging", 1);
-			yield* g.srcCall(f, "update_icon");
+	} else if (action === "pump-1") {
+		if (!this.pressure_charging) {
+			this.pressure_charging = 1;
+			yield* this.update_icon();
 		}
 		f.dot = 1;
-	} else if ($0 === "eject") {
-		yield* g.srcCall(f, "eject");
+	} else if (action === "eject") {
+		yield* this.eject();
 		f.dot = 1;
 	}
 	return f.dot;
-}, true, { args: ["action", "params"] });
+}, true);
 
-// /obj/machinery/disposal/bin/proc/CanPass  (code/modules/recycling/disposal-unit.dm:337)  may sleep
+// disposal-unit.dm:337
 rt.def("/obj/machinery/disposal/bin/proc/CanPass", function* CanPass(f: Frame, mover: Value, target: Value, height: Value) {
 	let I: Value = null;
-	f.vars = () => [mover, target, height, I];
-	if (live(height) === null) {
-		height = 0;
-	}
-	if ((truthy((rt.istype(live(mover), T("/obj/item")) ? 1 : 0)) && truthy(rt.fv(f, "throwing", live(mover))))) {
-		if (truthy((rt.istype((I = live(mover)), T("/obj/item/projectile")) ? 1 : 0))) {
-			return live(f.dot);
+	height ??= 0;
+	if (rt.istype(mover, T("/obj/item")) && mover.throwing) {
+		if (rt.istype((I = mover), T("/obj/item/projectile"))) {
+			return f.dot;
 		}
-		if (truthy(rt.op(f, "Prob", [], [75]))) {
-			yield* g.callName(f, live(I), "forceMove", [live(f.src)]);
-			yield* g.srcCall(f, "visible_message", fmt("<span class='notice'>＀ lands in ＀.</span>", [live(I), live(f.src)]));
-			yield* g.srcCall(f, "update_icon");
+		if (prob(75)) {
+			yield* I.forceMove(this);
+			this.visible_message(`<span class='notice'>${I} lands in ${this}.</span>`);
+			yield* this.update_icon();
 		} else {
-			yield* g.srcCall(f, "visible_message", fmt("<span class='notice'>＀ bounces off of ＀'s rim!</span>", [live(I), live(f.src)]));
+			this.visible_message(`<span class='notice'>${I} bounces off of ${this}'s rim!</span>`);
 		}
 		return 0;
 	} else {
-		return (yield* g.callSuper(f, [live(mover), live(target), live(height)]));
+		return (yield* parent_proc(mover, target, height));
 	}
-	return f.dot;
 }, true);
 
-// /obj/machinery/disposal/bin/proc/flush  (code/modules/recycling/disposal-unit.dm:352)  may sleep
+// disposal-unit.dm:352
 rt.def("/obj/machinery/disposal/bin/proc/flush", function* flush(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "full_pressure", 0);
-	rt.setSv(f, "pressure_charging", 1);
-	yield* g.srcCall(f, "update_icon");
+	yield* parent_proc();
+	this.full_pressure = 0;
+	this.pressure_charging = 1;
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/machinery/disposal/bin/proc/update_icon  (code/modules/recycling/disposal-unit.dm:358)
+// disposal-unit.dm:358
 rt.def("/obj/machinery/disposal/bin/proc/update_icon", function update_icon(f: Frame) {
-	rt.callSrc(f, "cut_overlays", []);
-	if (truthy(rt.bitAnd(rt.sv(f, "stat"), 1))) {
-		rt.setSv(f, "pressure_charging", 0);
-		rt.setSv(f, "flush", 0);
-		return live(f.dot);
+	this.cut_overlays();
+	if (rt.bitAnd(this.stat, 1)) {
+		this.pressure_charging = 0;
+		this.flush = 0;
+		return f.dot;
 	}
-	if (truthy(rt.sv(f, "flush"))) {
-		rt.callSrc(f, "add_overlay", ["dispover-handle"]);
+	if (this.flush) {
+		this.add_overlay("dispover-handle");
 	}
-	if ((truthy(rt.bitAnd(rt.sv(f, "stat"), 2)) || truthy(rt.sv(f, "panel_open")))) {
-		return live(f.dot);
+	if (rt.bitAnd(this.stat, 2) || this.panel_open) {
+		return f.dot;
 	}
-	if (rt.gt(rt.len(f, rt.sv(f, "contents")), 0)) {
-		rt.callSrc(f, "add_overlay", ["dispover-full"]);
+	if (rt.len(f, this.contents) > 0) {
+		this.add_overlay("dispover-full");
 	}
-	if (truthy(rt.sv(f, "pressure_charging"))) {
-		rt.callSrc(f, "add_overlay", ["dispover-charge"]);
+	if (this.pressure_charging) {
+		this.add_overlay("dispover-charge");
 	} else {
-		if (!truthy(rt.sv(f, "full_pressure"))) return f.dot;
-		rt.callSrc(f, "add_overlay", ["dispover-ready"]);
+		if (!this.full_pressure) return f.dot;
+		this.add_overlay("dispover-ready");
 	}
 	return f.dot;
 });
 
-// /obj/machinery/disposal/bin/proc/process  (code/modules/recycling/disposal-unit.dm:385)  may sleep
+// disposal-unit.dm:385
 rt.def("/obj/machinery/disposal/bin/proc/process", function* process(f: Frame) {
 	let L: Value = null, env: Value = null, pressure_delta: Value = null, transfer_moles: Value = null, removed: Value = null;
-	f.vars = () => [L, env, pressure_delta, transfer_moles, removed];
-	if (truthy(rt.bitAnd(rt.sv(f, "stat"), 1))) {
-		return live(f.dot);
+	if (rt.bitAnd(this.stat, 1)) {
+		return f.dot;
 	}
-	rt.incSrcVar(f, "flush_count", 1, true);
-	if (rt.ge(rt.sv(f, "flush_count"), rt.sv(f, "flush_every_ticks"))) {
-		if (truthy(rt.len(f, rt.sv(f, "contents")))) {
-			if (truthy(rt.sv(f, "full_pressure"))) {
+	this.flush_count++;
+	if (this.flush_count >= this.flush_every_ticks) {
+		if (rt.len(f, this.contents)) {
+			if (this.full_pressure) {
 				rt.spawnTail(f, 0, "/obj/machinery/disposal/bin/proc/process: spawn at modules/recycling/disposal-unit.dm:392", L, env, pressure_delta, transfer_moles, removed);
 			}
 		}
-		rt.setSv(f, "flush_count", 0);
+		this.flush_count = 0;
 	}
-	yield* g.srcCall(f, "updateDialog");
-	if ((truthy(rt.sv(f, "flush")) && rt.ge((yield* g.callName(f, rt.sv(f, "air_contents"), "return_pressure", [])), 5.066249847412109))) {
-		yield* g.call(f, P("/proc/ImmediateInvokeAsync"), null, [live(f.src), P("/obj/machinery/disposal/bin/proc/flush")]);
+	yield* this.updateDialog();
+	if (this.flush && this.air_contents.return_pressure() >= 5.06625) {
+		yield* ImmediateInvokeAsync(this, P("/obj/machinery/disposal/bin/proc/flush"));
 	}
-	if (truthy(rt.bitAnd(rt.sv(f, "stat"), 2))) {
-		return live(f.dot);
+	if (rt.bitAnd(this.stat, 2)) {
+		return f.dot;
 	}
-	yield* g.srcCall(f, "use_power", 100);
-	if (!truthy(rt.sv(f, "pressure_charging"))) {
-		return live(f.dot);
+	yield* this.use_power(100);
+	if (!this.pressure_charging) {
+		return f.dot;
 	}
-	yield* g.srcCall(f, "use_power", 500);
-	L = rt.sv(f, "loc");
-	env = (yield* g.callName(f, live(L), "return_air", []));
-	pressure_delta = subtract(5.116912364959717, (yield* g.callName(f, rt.sv(f, "air_contents"), "return_pressure", [])));
-	if (rt.gt(rt.fv(f, "temperature", live(env)), 0)) {
-		transfer_moles = divide(multiply(multiply(0.10000000149011612, live(pressure_delta)), rt.fv(f, "volume", rt.sv(f, "air_contents"))), multiply(rt.fv(f, "temperature", live(env)), 8.3100004196167));
-		removed = (yield* g.callName(f, live(env), "remove", [live(transfer_moles)]));
-		yield* g.callName(f, rt.sv(f, "air_contents"), "merge", [live(removed)]);
-		yield* g.srcCall(f, "air_update_turf");
+	yield* this.use_power(500);
+	L = this.loc;
+	env = L.return_air();
+	pressure_delta = 5.1169124 - this.air_contents.return_pressure();
+	if (env.temperature > 0) {
+		transfer_moles = 0.1 * pressure_delta * this.air_contents.volume / (env.temperature * R_IDEAL_GAS_EQUATION);
+		removed = (yield* env.remove(transfer_moles));
+		yield* this.air_contents.merge(removed);
+		this.air_update_turf();
 	}
-	if (rt.ge((yield* g.callName(f, rt.sv(f, "air_contents"), "return_pressure", [])), 5.066249847412109)) {
-		rt.setSv(f, "full_pressure", 1);
-		rt.setSv(f, "pressure_charging", 0);
-		yield* g.srcCall(f, "update_icon");
+	if (this.air_contents.return_pressure() >= 5.06625) {
+		this.full_pressure = 1;
+		this.pressure_charging = 0;
+		yield* this.update_icon();
 	}
-	return live(f.dot);
+	return f.dot;
 }, true, { waitfor: false });
 
 // a spawn(0) body of /obj/machinery/disposal/bin/proc/process, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/obj/machinery/disposal/bin/proc/process: spawn at modules/recycling/disposal-unit.dm:392", function* (f: Frame, L: Value, env: Value, pressure_delta: Value, transfer_moles: Value, removed: Value) {
-	f.vars = () => [L, env, pressure_delta, transfer_moles, removed];
-	yield* g.srcCall(f, "flush");
+	yield* this.flush();
 	return null;
 });
 
-// /obj/machinery/disposal/bin/proc/get_remote_view_fullscreens  (code/modules/recycling/disposal-unit.dm:435)  may sleep
+// disposal-unit.dm:435
 rt.def("/obj/machinery/disposal/bin/proc/get_remote_view_fullscreens", function* get_remote_view_fullscreens(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (!(isEqual(rt.fv(f, "stat", live(user)), 2) || !truthy(rt.bitAnd(rt.fv(f, "sight", live(user)), 12)))) return f.dot;
-	yield* g.callName(f, live(user), "overlay_fullscreen", ["remote_view", T("/obj/screen/fullscreen/impaired"), 2]);
+	if (!(user.stat == 2 || !rt.bitAnd(user.sight, 12))) return f.dot;
+	yield* user.overlay_fullscreen("remote_view", T("/obj/screen/fullscreen/impaired"), 2);
 	return f.dot;
 }, true);
 
@@ -646,75 +567,70 @@ rt.type(10986, "/obj/machinery/disposal/deliveryChute", "/obj/machinery/disposal
 	icon_state: "intake",
 });
 
-// /obj/machinery/disposal/deliveryChute/proc/Initialize  (code/modules/recycling/disposal-unit.dm:448)  may sleep
-rt.def("/obj/machinery/disposal/deliveryChute/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setFv(f, "ptype", rt.sv(f, "stored"), 8);
+// disposal-unit.dm:448
+rt.def("/obj/machinery/disposal/deliveryChute/proc/Initialize", function* Initialize(f: Frame, mapload: Value, make_from: Value) {
+	f.dot = (yield* parent_proc());
+	this.stored.ptype = DISP_END_CHUTE;
 	rt.spawnTail(f, 5, "/obj/machinery/disposal/deliveryChute/proc/Initialize: spawn at modules/recycling/disposal-unit.dm:450");
 	return f.dot;
-}, true, { args: ["mapload", "make_from"] });
+}, true);
 
 // a spawn(5) body of /obj/machinery/disposal/deliveryChute/proc/Initialize, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/obj/machinery/disposal/deliveryChute/proc/Initialize: spawn at modules/recycling/disposal-unit.dm:450", function* (f: Frame) {
-	rt.setSv(f, "trunk", rt.locateIn(f, T("/obj/structure/disposalpipe/trunk"), rt.sv(f, "loc")));
-	if (truthy(rt.sv(f, "trunk"))) {
-		rt.setFv(f, "linked", rt.sv(f, "trunk"), live(f.src));
+	this.trunk = rt.locateIn(f, T("/obj/structure/disposalpipe/trunk"), this.loc);
+	if (this.trunk) {
+		this.trunk.linked = this;
 	}
 	return null;
 });
 
-// /obj/machinery/disposal/deliveryChute/proc/place_item_in_disposal  (code/modules/recycling/disposal-unit.dm:456)  may sleep
-rt.def("/obj/machinery/disposal/deliveryChute/proc/place_item_in_disposal", function* place_item_in_disposal(f: Frame) {
-	if (!truthy((yield* g.callName(f, live(f.args[0]), "disposalEnterTry", [])))) return f.dot;
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "flush");
-	return f.dot;
-}, true, { args: ["I", "user"] });
-
-// /obj/machinery/disposal/deliveryChute/proc/Bumped  (code/modules/recycling/disposal-unit.dm:461)  may sleep
-rt.def("/obj/machinery/disposal/deliveryChute/proc/Bumped", function* Bumped(f: Frame, AM: Value) {
-	let O: Value = null, M: Value = null;
-	let $0: any;
-	f.vars = () => [AM, O, M, $0];
-	if (!truthy((yield* g.callName(f, live(AM), "disposalEnterTry", [])))) {
-		return live(f.dot);
-	}
-	$0 = rt.sv(f, "dir");
-	if ($0 === 1) {
-		if (!isEqual(rt.gv(f, "y", rt.fv(f, "loc", live(AM))), add(rt.fv(f, "y", rt.sv(f, "loc")), 1))) {
-			return live(f.dot);
-		}
-	} else if ($0 === 4) {
-		if (!isEqual(rt.gv(f, "x", rt.fv(f, "loc", live(AM))), add(rt.fv(f, "x", rt.sv(f, "loc")), 1))) {
-			return live(f.dot);
-		}
-	} else if ($0 === 2) {
-		if (!isEqual(rt.gv(f, "y", rt.fv(f, "loc", live(AM))), subtract(rt.fv(f, "y", rt.sv(f, "loc")), 1))) {
-			return live(f.dot);
-		}
-	} else if ($0 === 8) {
-		if (!isEqual(rt.gv(f, "x", rt.fv(f, "loc", live(AM))), subtract(rt.fv(f, "x", rt.sv(f, "loc")), 1))) {
-			return live(f.dot);
-		}
-	}
-	if (truthy((rt.istype(live(AM), T("/obj")) ? 1 : 0))) {
-		rt.setFv(f, "loc", (O = live(AM)), live(f.src));
-	} else {
-		if (truthy((yield* g.call(f, P("/proc/ismob"), null, [live(AM)])))) {
-			M = live(AM);
-			if (truthy(rt.op(f, "Prob", [], [2]))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(M), "<span class='warning'>You hit the edge of the chute.</span>"]);
-				return live(f.dot);
-			}
-			yield* g.callName(f, live(M), "forceMove", [live(f.src)]);
-		}
-	}
-	yield* g.srcCall(f, "flush");
+// disposal-unit.dm:456
+rt.def("/obj/machinery/disposal/deliveryChute/proc/place_item_in_disposal", function* place_item_in_disposal(f: Frame, I: Value, user: Value) {
+	if (!I.disposalEnterTry()) return f.dot;
+	yield* parent_proc();
+	yield* this.flush();
 	return f.dot;
 }, true);
 
-// /obj/machinery/disposal/deliveryChute/proc/newHolderDestination  (code/modules/recycling/disposal-unit.dm:497)
+// disposal-unit.dm:461
+rt.def("/obj/machinery/disposal/deliveryChute/proc/Bumped", function* Bumped(f: Frame, AM: Value) {
+	let O: Value = null, M: Value = null;
+	if (!AM.disposalEnterTry()) {
+		return f.dot;
+	}
+	if (this.dir === 1) {
+		if (AM.loc.y != this.loc.y + 1) {
+			return f.dot;
+		}
+	} else if (this.dir === 4) {
+		if (AM.loc.x != this.loc.x + 1) {
+			return f.dot;
+		}
+	} else if (this.dir === 2) {
+		if (AM.loc.y != this.loc.y - 1) {
+			return f.dot;
+		}
+	} else if (this.dir === 8) {
+		if (AM.loc.x != this.loc.x - 1) {
+			return f.dot;
+		}
+	}
+	if (rt.istype(AM, T("/obj"))) {
+		(O = AM).loc = this;
+	} else if (ismob(AM)) {
+		M = AM;
+		if (prob(2)) {
+			to_chat(M, "<span class='warning'>You hit the edge of the chute.</span>");
+			return f.dot;
+		}
+		yield* M.forceMove(this);
+	}
+	yield* this.flush();
+	return f.dot;
+}, true);
+
+// disposal-unit.dm:497
 rt.def("/obj/machinery/disposal/deliveryChute/proc/newHolderDestination", function newHolderDestination(f: Frame, H: Value) {
-	rt.setFv(f, "destinationTag", live(H), 1);
+	H.destinationTag = 1;
 	return f.dot;
 });

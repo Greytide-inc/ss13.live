@@ -1,7 +1,7 @@
-// From code/game/gamemodes/devil/objectives.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/gamemodes/devil/objectives.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(1135, "/datum/objective/devil/soulquantity", "/datum/objective/devil", {
@@ -9,37 +9,31 @@ rt.type(1135, "/datum/objective/devil/soulquantity", "/datum/objective/devil", {
 	target_amount: 4,
 });
 
-// /datum/objective/devil/soulquantity/proc/New  (code/game/gamemodes/devil/objectives.dm:9)
+// objectives.dm:9
 rt.def("/datum/objective/devil/soulquantity/proc/New", function New(f: Frame) {
-	rt.setSv(f, "target_amount", rt.op(f, "PickUnweighted", [3], [6, 7, 8]));
-	rt.callSrc(f, "update_explanation_text", []);
+	this.target_amount = pick(6, 7, 8);
+	this.update_explanation_text();
 	return f.dot;
 });
 
-// /datum/objective/devil/soulquantity/proc/update_explanation_text  (code/game/gamemodes/devil/objectives.dm:13)
+// objectives.dm:13
 rt.def("/datum/objective/devil/soulquantity/proc/update_explanation_text", function update_explanation_text(f: Frame) {
-	rt.setSv(f, "explanation_text", fmt("Purchase, and retain control over at least ＀ souls.", [rt.sv(f, "target_amount")]));
+	this.explanation_text = `Purchase, and retain control over at least ${this.target_amount} souls.`;
 	return f.dot;
 });
 
-// /datum/objective/devil/soulquantity/proc/check_completion  (code/game/gamemodes/devil/objectives.dm:17)
+// objectives.dm:17
 rt.def("/datum/objective/devil/soulquantity/proc/check_completion", function check_completion(f: Frame) {
-	let count: Value = null, devilDatum: Value = null, souls: Value = null, S: Value = null, L: Value = null;
-	let $e: any;
-	f.vars = () => [count, devilDatum, souls, S, L, $e];
-	count = 0;
-	devilDatum = rt.callName(f, rt.sv(f, "owner"), "has_antag_datum", [T("/datum/antagonist/devil")]);
-	souls = rt.fv(f, "soulsOwned", live(devilDatum));
-	S = null;
-	rt.forList(f, 0, live(souls));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		S = $e;
-		if (isEqual(rt.gv(f, "soulOwner", (L = live(S))), rt.sv(f, "owner"))) {
-			count = rt.inc(live(count), 1);
+	let S: Value = null, L: Value = null;
+	let count: Value = 0;
+	let devilDatum: Value = this.owner.has_antag_datum(T("/datum/antagonist/devil"));
+	let souls: Value = devilDatum.soulsOwned;
+	for (S of each(souls)) {
+		if ((L = S).soulOwner == this.owner) {
+			count++;
 		}
 	}
-	rt.endFor(f, 0);
-	return (rt.ge(live(count), rt.sv(f, "target_amount")) ? 1 : 0);
+	return (count >= this.target_amount ? 1 : 0);
 });
 
 rt.type(1136, "/datum/objective/devil/soulquality", "/datum/objective/devil", {
@@ -48,133 +42,113 @@ rt.type(1136, "/datum/objective/devil/soulquality", "/datum/objective/devil", {
 	explanation_text: "You shouldn't see this text.  Error:DEVIL2",
 });
 
-// /datum/objective/devil/soulquality/proc/New  (code/game/gamemodes/devil/objectives.dm:33)
+// objectives.dm:33
 rt.def("/datum/objective/devil/soulquality/proc/New", function New(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	rt.setSv(f, "contractType", rt.op(f, "PickUnweighted", [6], ["power", "wealth", "prestige", "magic", "revive", "knowledge"]));
-	rt.setSv(f, "target_amount", rt.op(f, "PickUnweighted", [2], [1, 2]));
-	$0 = rt.sv(f, "contractType");
-	if ($0 === "power") {
-		rt.setSv(f, "contractName", "for power");
-	} else if ($0 === "wealth") {
-		rt.setSv(f, "contractName", "for wealth");
-	} else if ($0 === "prestige") {
-		rt.setSv(f, "contractName", "for prestige");
-	} else if ($0 === "magic") {
-		rt.setSv(f, "contractName", "for magic");
-	} else if ($0 === "revive") {
-		rt.setSv(f, "contractName", "of revival");
-	} else if ($0 === "knowledge") {
-		rt.setSv(f, "contractName", "for knowledge");
+	this.contractType = pick("power", "wealth", "prestige", "magic", "revive", "knowledge");
+	this.target_amount = pick(1, 2);
+	if (this.contractType === "power") {
+		this.contractName = "for power";
+	} else if (this.contractType === "wealth") {
+		this.contractName = "for wealth";
+	} else if (this.contractType === "prestige") {
+		this.contractName = "for prestige";
+	} else if (this.contractType === "magic") {
+		this.contractName = "for magic";
+	} else if (this.contractType === "revive") {
+		this.contractName = "of revival";
+	} else if (this.contractType === "knowledge") {
+		this.contractName = "for knowledge";
 	}
-	rt.callSrc(f, "update_explanation_text", []);
+	this.update_explanation_text();
 	return f.dot;
 });
 
-// /datum/objective/devil/soulquality/proc/update_explanation_text  (code/game/gamemodes/devil/objectives.dm:53)
+// objectives.dm:53
 rt.def("/datum/objective/devil/soulquality/proc/update_explanation_text", function update_explanation_text(f: Frame) {
-	rt.setSv(f, "explanation_text", fmt("Have mortals sign at least ＀ contracts ＀", [rt.sv(f, "target_amount"), rt.sv(f, "contractName")]));
+	this.explanation_text = `Have mortals sign at least ${this.target_amount} contracts ${this.contractName}`;
 	return f.dot;
 });
 
-// /datum/objective/devil/soulquality/proc/check_completion  (code/game/gamemodes/devil/objectives.dm:57)
+// objectives.dm:57
 rt.def("/datum/objective/devil/soulquality/proc/check_completion", function check_completion(f: Frame) {
-	let count: Value = null, devilDatum: Value = null, souls: Value = null, S: Value = null, L: Value = null;
-	let $e: any;
-	f.vars = () => [count, devilDatum, souls, S, L, $e];
-	count = 0;
-	devilDatum = rt.callName(f, rt.sv(f, "owner"), "has_antag_datum", [T("/datum/antagonist/devil")]);
-	souls = rt.fv(f, "soulsOwned", live(devilDatum));
-	S = null;
-	rt.forList(f, 0, live(souls));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		S = $e;
-		if ((!truthy(rt.callName(f, (L = live(S)), "owns_soul", [])) && isEqual(rt.fv(f, "damnation_type", live(L)), rt.sv(f, "contractType")))) {
-			count = rt.inc(live(count), 1);
+	let S: Value = null, L: Value = null;
+	let count: Value = 0;
+	let devilDatum: Value = this.owner.has_antag_datum(T("/datum/antagonist/devil"));
+	let souls: Value = devilDatum.soulsOwned;
+	for (S of each(souls)) {
+		if (!(L = S).owns_soul() && L.damnation_type == this.contractType) {
+			count++;
 		}
 	}
-	rt.endFor(f, 0);
-	return (rt.ge(live(count), rt.sv(f, "target_amount")) ? 1 : 0);
+	return (count >= this.target_amount ? 1 : 0);
 });
 
 rt.type(1137, "/datum/objective/devil/sintouch", "/datum/objective/devil", {
 	explanation_text: "You shouldn't see this text.  Error:DEVIL3",
 });
 
-// /datum/objective/devil/sintouch/proc/New  (code/game/gamemodes/devil/objectives.dm:71)
+// objectives.dm:71
 rt.def("/datum/objective/devil/sintouch/proc/New", function New(f: Frame) {
-	rt.setSv(f, "target_amount", rt.op(f, "PickUnweighted", [2], [4, 5]));
-	rt.setSv(f, "explanation_text", fmt("Ensure at least ＀ mortals are sintouched.", [rt.sv(f, "target_amount")]));
+	this.target_amount = pick(4, 5);
+	this.explanation_text = `Ensure at least ${this.target_amount} mortals are sintouched.`;
 	return f.dot;
 });
 
-// /datum/objective/devil/sintouch/proc/check_completion  (code/game/gamemodes/devil/objectives.dm:75)
+// objectives.dm:75
 rt.def("/datum/objective/devil/sintouch/proc/check_completion", function check_completion(f: Frame) {
-	return (rt.ge(rt.sv(f, "target_amount"), rt.getLen(f, rt.gv(f, "sintouched", rt.fv(f, "mode", rt.gl("SSticker"))))) ? 1 : 0);
+	return (this.target_amount >= rt.len(f, GLOB.SSticker.mode.sintouched) ? 1 : 0);
 });
 
 rt.type(1138, "/datum/objective/devil/buy_target", "/datum/objective/devil", {
 	explanation_text: "You shouldn't see this text.  Error:DEVIL4",
 });
 
-// /datum/objective/devil/buy_target/proc/update_explanation_text  (code/game/gamemodes/devil/objectives.dm:84)
+// objectives.dm:84
 rt.def("/datum/objective/devil/buy_target/proc/update_explanation_text", function update_explanation_text(f: Frame) {
-	if (truthy(rt.sv(f, "target"))) {
-		rt.setSv(f, "explanation_text", fmt("Purchase and retain the soul of ＀, the ＀.", [rt.fv(f, "name", rt.sv(f, "target")), rt.fv(f, "assigned_role", rt.sv(f, "target"))]));
+	if (this.target) {
+		this.explanation_text = `Purchase and retain the soul of ${this.target.name}, the ${this.target.assigned_role}.`;
 	} else {
-		rt.setSv(f, "explanation_text", "Free objective.");
+		this.explanation_text = "Free objective.";
 	}
 	return f.dot;
 });
 
-// /datum/objective/devil/buy_target/proc/check_completion  (code/game/gamemodes/devil/objectives.dm:89)
+// objectives.dm:89
 rt.def("/datum/objective/devil/buy_target/proc/check_completion", function check_completion(f: Frame) {
-	return (isEqual(rt.fv(f, "soulOwner", rt.sv(f, "target")), rt.sv(f, "owner")) ? 1 : 0);
+	return (this.target.soulOwner == this.owner ? 1 : 0);
 });
 
 rt.type(1139, "/datum/objective/devil/outsell", "/datum/objective/devil", {
 	explanation_text: "You shouldn't see this text.  Error:DEVIL5",
 });
 
-// /datum/objective/devil/outsell/proc/New  empty
+// Empty in tg.
 rt.def("/datum/objective/devil/outsell/proc/New");
 
-// /datum/objective/devil/outsell/proc/update_explanation_text  (code/game/gamemodes/devil/objectives.dm:98)
+// objectives.dm:98
 rt.def("/datum/objective/devil/outsell/proc/update_explanation_text", function update_explanation_text(f: Frame) {
 	let opponent: Value = null;
-	f.vars = () => [opponent];
-	rt.setSv(f, "explanation_text", fmt("Purchase and retain control over more souls than ＀, known to mortals as ＀, the ＀.", [rt.gv(f, "truename", (opponent = rt.callName(f, rt.sv(f, "target"), "has_antag_datum", [T("/datum/antagonist/devil")]))), rt.fv(f, "name", rt.sv(f, "target")), rt.fv(f, "assigned_role", rt.sv(f, "target"))]));
+	this.explanation_text = `Purchase and retain control over more souls than ${(opponent = this.target.has_antag_datum(T("/datum/antagonist/devil"))).truename}, known to mortals as ${this.target.name}, the ${this.target.assigned_role}.`;
 	return f.dot;
 });
 
-// /datum/objective/devil/outsell/proc/check_completion  (code/game/gamemodes/devil/objectives.dm:103)
+// objectives.dm:103
 rt.def("/datum/objective/devil/outsell/proc/check_completion", function check_completion(f: Frame) {
-	let selfcount: Value = null, devilDatum: Value = null, souls: Value = null, S: Value = null, L: Value = null, targetcount: Value = null, S_4: Value = null, L_5: Value = null;
-	let $e: any;
-	f.vars = () => [selfcount, devilDatum, souls, S, L, targetcount, S_4, L_5, $e];
-	selfcount = 0;
-	devilDatum = rt.callName(f, rt.sv(f, "owner"), "has_antag_datum", [T("/datum/antagonist/devil")]);
-	souls = rt.fv(f, "soulsOwned", live(devilDatum));
-	S = null;
-	rt.forList(f, 0, live(souls));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		S = $e;
-		if (isEqual(rt.gv(f, "soulOwner", (L = live(S))), rt.sv(f, "owner"))) {
-			selfcount = rt.inc(live(selfcount), 1);
+	let S: Value = null, L: Value = null, S_4: Value = null, L_5: Value = null;
+	let selfcount: Value = 0;
+	let devilDatum: Value = this.owner.has_antag_datum(T("/datum/antagonist/devil"));
+	let souls: Value = devilDatum.soulsOwned;
+	for (S of each(souls)) {
+		if ((L = S).soulOwner == this.owner) {
+			selfcount++;
 		}
 	}
-	rt.endFor(f, 0);
-	targetcount = 0;
-	souls = rt.gv(f, "soulsOwned", (devilDatum = rt.callName(f, rt.sv(f, "target"), "has_antag_datum", [T("/datum/antagonist/devil")])));
-	S_4 = null;
-	rt.forList(f, 0, live(souls));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		S_4 = $e;
-		if (isEqual(rt.gv(f, "soulOwner", (L_5 = live(S_4))), rt.sv(f, "target"))) {
-			targetcount = rt.inc(live(targetcount), 1);
+	let targetcount: Value = 0;
+	souls = (devilDatum = this.target.has_antag_datum(T("/datum/antagonist/devil"))).soulsOwned;
+	for (S_4 of each(souls)) {
+		if ((L_5 = S_4).soulOwner == this.target) {
+			targetcount++;
 		}
 	}
-	rt.endFor(f, 0);
-	return (rt.gt(live(selfcount), live(targetcount)) ? 1 : 0);
+	return (selfcount > targetcount ? 1 : 0);
 });

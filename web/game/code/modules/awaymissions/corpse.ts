@@ -1,7 +1,7 @@
-// From code/modules/awaymissions/corpse.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/awaymissions/corpse.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(11954, "/obj/effect/mob_spawn", "/obj/effect", {
@@ -27,103 +27,89 @@ rt.type(11954, "/obj/effect/mob_spawn", "/obj/effect", {
 	density: 1,
 });
 
-// /obj/effect/mob_spawn/proc/attack_ghost  (code/modules/awaymissions/corpse.dm:28)  may sleep
+// corpse.dm:28
 rt.def("/obj/effect/mob_spawn/proc/attack_ghost", function* attack_ghost(f: Frame, user: Value) {
 	let ghost_role: Value = null;
-	f.vars = () => [user, ghost_role];
-	if ((!truthy((yield* g.callName(f, rt.gl("SSticker"), "HasRoundStarted", []))) || !truthy(rt.sv(f, "loc")))) {
-		return live(f.dot);
+	if (!GLOB.SSticker.HasRoundStarted() || !this.loc) {
+		return f.dot;
 	}
-	if (!truthy(rt.sv(f, "uses"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>This spawner is out of charges!</span>"]);
-		return live(f.dot);
+	if (!this.uses) {
+		to_chat(user, "<span class='warning'>This spawner is out of charges!</span>");
+		return f.dot;
 	}
-	if (truthy((yield* g.call(f, P("/proc/jobban_isbanned"), null, [live(user), rt.sv(f, "banType")])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>You are jobanned!</span>"]);
-		return live(f.dot);
+	if (jobban_isbanned(user, this.banType)) {
+		to_chat(user, "<span class='warning'>You are jobanned!</span>");
+		return f.dot;
 	}
-	if ((isEqual((ghost_role = (yield* g.call(f, P("/proc/alert"), null, [fmt("Become ＀? (Warning, You can no longer be cloned!)", [rt.sv(f, "mob_name")]), null, "Yes", "No"]))), "No") || !truthy(rt.sv(f, "loc")))) {
-		return live(f.dot);
+	if ((ghost_role = (yield* alert(`Become ${this.mob_name}? (Warning, You can no longer be cloned!)`, null, "Yes", "No"))) == "No" || !this.loc) {
+		return f.dot;
 	}
-	yield* g.call(f, P("/proc/log_game"), null, [fmt("＀ became ＀", [rt.fv(f, "ckey", live(user)), rt.sv(f, "mob_name")])]);
-	yield* g.callSrc(f, "create", ["ckey", rt.fv(f, "ckey", live(user))], rt.Args.Named);
+	log_game(`${user.ckey} became ${this.mob_name}`);
+	yield* this.create({ ckey: user.ckey });
 	return f.dot;
 }, true);
 
-// /obj/effect/mob_spawn/proc/Initialize  (code/modules/awaymissions/corpse.dm:43)  may sleep
-rt.def("/obj/effect/mob_spawn/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if ((truthy(rt.sv(f, "instant")) || (truthy(rt.sv(f, "roundstart")) && (truthy(live(f.args[0])) || (truthy(rt.gl("SSticker")) && rt.gt(rt.fv(f, "current_state", rt.gl("SSticker")), 2)))))) {
-		yield* g.srcCall(f, "create");
+// corpse.dm:43
+rt.def("/obj/effect/mob_spawn/proc/Initialize", function* Initialize(f: Frame, mapload: Value) {
+	f.dot = (yield* parent_proc());
+	if (this.instant || this.roundstart && (mapload || GLOB.SSticker && GLOB.SSticker.current_state > GAME_STATE_SETTING_UP)) {
+		yield* this.create();
 	} else {
-		(rt.modGl("poi_list", live(f.src), rt.bitOr));
+		(rt.modGl("poi_list", this, rt.bitOr));
 	}
-	return f.dot;
-}, true, { args: ["mapload"] });
-
-// /obj/effect/mob_spawn/proc/Destroy  (code/modules/awaymissions/corpse.dm:50)  may sleep
-rt.def("/obj/effect/mob_spawn/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.callName(f, rt.gl("poi_list"), "Remove", [live(f.src)]);
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
 	return f.dot;
 }, true);
 
-// /obj/effect/mob_spawn/proc/create  (code/modules/awaymissions/corpse.dm:60)  may sleep
+// corpse.dm:50
+rt.def("/obj/effect/mob_spawn/proc/Destroy", function* Destroy(f: Frame) {
+	yield* GLOB.poi_list.Remove(this);
+	f.dot = (yield* parent_proc());
+	return f.dot;
+}, true);
+
+// corpse.dm:60
 rt.def("/obj/effect/mob_spawn/proc/create", function* create(f: Frame, ckey: Value, flavour: Value, name: Value) {
-	let M: Value = null, MM: Value = null, objective: Value = null;
-	let $0: any, $1: any, $e: any;
-	f.vars = () => [ckey, flavour, name, M, MM, objective, $0, $1, $e];
-	if (live(flavour) === null) {
-		flavour = 1;
-	}
-	M = (yield* g.new_(f, rt.sv(f, "mob_type"), [rt.getStep(f, live(f.src), 0)]));
-	if (!truthy(rt.sv(f, "random"))) {
-		$0 = live(M);
-		if (truthy(rt.sv(f, "mob_name"))) {
-			$1 = rt.sv(f, "mob_name");
-		} else {
-			$1 = rt.fv(f, "name", live(M));
+	let MM: Value = null, objective: Value = null;
+	let $e: any;
+	flavour ??= 1;
+	let M: Value = (yield* new_(this.mob_type, rt.getStep(f, this, 0)));
+	if (!this.random) {
+		M.real_name = this.mob_name ? this.mob_name : M.name;
+		if (!this.mob_gender) {
+			this.mob_gender = pick("male", "female");
 		}
-		rt.setFv(f, "real_name", $0, $1);
-		if (!truthy(rt.sv(f, "mob_gender"))) {
-			rt.setSv(f, "mob_gender", rt.op(f, "PickUnweighted", [2], ["male", "female"]));
+		M.gender = this.mob_gender;
+	}
+	if (this.faction) {
+		M.faction = list(this.faction);
+	}
+	if (this.death) {
+		yield* M.death(1);
+	}
+	yield* M.adjustOxyLoss(this.oxy_damage);
+	yield* M.adjustBruteLoss(this.brute_damage);
+	yield* M.adjustFireLoss(this.burn_damage);
+	M.color = this.mob_color;
+	yield* this.equip(M);
+	if (ckey) {
+		M.ckey = ckey;
+		if (flavour) {
+			to_chat(M, `${this.flavour_text}`);
 		}
-		rt.setFv(f, "gender", live(M), rt.sv(f, "mob_gender"));
-	}
-	if (truthy(rt.sv(f, "faction"))) {
-		rt.setFv(f, "faction", live(M), rt.list(rt.sv(f, "faction")));
-	}
-	if (truthy(rt.sv(f, "death"))) {
-		yield* g.callName(f, live(M), "death", [1]);
-	}
-	yield* g.callName(f, live(M), "adjustOxyLoss", [rt.sv(f, "oxy_damage")]);
-	yield* g.callName(f, live(M), "adjustBruteLoss", [rt.sv(f, "brute_damage")]);
-	yield* g.callName(f, live(M), "adjustFireLoss", [rt.sv(f, "burn_damage")]);
-	rt.setFv(f, "color", live(M), rt.sv(f, "mob_color"));
-	yield* g.srcCall(f, "equip", live(M));
-	if (truthy(live(ckey))) {
-		rt.setFv(f, "ckey", live(M), live(ckey));
-		if (truthy(live(flavour))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(M), fmt("＀", [rt.sv(f, "flavour_text")])]);
-		}
-		MM = rt.fv(f, "mind", live(M));
-		if (truthy(rt.sv(f, "objectives"))) {
-			objective = null;
-			rt.forList(f, 0, rt.sv(f, "objectives"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				objective = $e;
-				rt.modField(f, live(MM), "objectives", (yield* g.new_(f, T("/datum/objective"), [live(objective)])), add);
+		MM = M.mind;
+		if (this.objectives) {
+			for (objective of each(this.objectives)) {
+				MM.objectives += (yield* new_(T("/datum/objective"), objective));
 			}
-			rt.endFor(f, 0);
 		}
-		yield* g.srcCall(f, "special", live(M), live(name));
-		rt.setFv(f, "name", live(MM), rt.fv(f, "real_name", live(M)));
+		yield* this.special(M, name);
+		MM.name = M.real_name;
 	}
-	if (rt.gt(rt.sv(f, "uses"), 0)) {
-		rt.incSrcVar(f, "uses", -1, true);
+	if (this.uses > 0) {
+		this.uses--;
 	}
-	if (!(!truthy(rt.sv(f, "permanent")) && !truthy(rt.sv(f, "uses")))) return f.dot;
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	if (!(!this.permanent && !this.uses)) return f.dot;
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
@@ -156,103 +142,91 @@ rt.type(11955, "/obj/effect/mob_spawn/human", "/obj/effect/mob_spawn", {
 	mob_type: rt.typePath("/mob/living/carbon/human"),
 });
 
-// /obj/effect/mob_spawn/human/proc/Initialize  (code/modules/awaymissions/corpse.dm:127)  may sleep
+// corpse.dm:127
 rt.def("/obj/effect/mob_spawn/human/proc/Initialize", function* Initialize(f: Frame) {
-	if (truthy((yield* g.call(f, P("/proc/ispath"), null, [rt.sv(f, "outfit")])))) {
-		rt.setSv(f, "outfit", (yield* g.new_(f, rt.sv(f, "outfit"), [])));
+	if (ispath(this.outfit)) {
+		this.outfit = (yield* new_(this.outfit));
 	}
-	if (!truthy(rt.sv(f, "outfit"))) {
-		rt.setSv(f, "outfit", (yield* g.new_(f, T("/datum/outfit"), [])));
+	if (!this.outfit) {
+		this.outfit = (yield* new_(T("/datum/outfit")));
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);
 
-// /obj/effect/mob_spawn/human/proc/equip  (code/modules/awaymissions/corpse.dm:135)  may sleep
+// corpse.dm:135
 rt.def("/obj/effect/mob_spawn/human/proc/equip", function* equip(f: Frame, H: Value) {
 	let slot: Value = null, _T: Value = null, PDA: Value = null, W: Value = null, jobtype: Value = null, J: Value = null;
-	let $e: any;
-	f.vars = () => [H, slot, _T, PDA, W, jobtype, J, $e];
-	if (truthy(rt.sv(f, "mob_species"))) {
-		yield* g.callName(f, live(H), "set_species", [rt.sv(f, "mob_species")]);
+	if (this.mob_species) {
+		yield* H.set_species(this.mob_species);
 	}
-	if (truthy(rt.sv(f, "husk"))) {
-		yield* g.callName(f, live(H), "Drain", []);
+	if (this.husk) {
+		yield* H.Drain();
 	} else {
-		yield* g.callName(f, live(H), "cure_husk", []);
+		yield* H.cure_husk();
 	}
-	rt.setFv(f, "underwear", live(H), "Nude");
-	rt.setFv(f, "undershirt", live(H), "Nude");
-	rt.setFv(f, "socks", live(H), "Nude");
-	if (truthy(rt.sv(f, "outfit"))) {
-		slot = null;
-		rt.forList(f, 0, rt.gl("slots#2"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			slot = $e;
-			if (!truthy((yield* g.call(f, P("/proc/isnum"), null, [(_T = rt.index(rt.sv(f, "vars"), live(slot)))])))) {
-				rt.setAt(rt.fv(f, "vars", rt.sv(f, "outfit")), live(slot), live(_T));
+	H.underwear = "Nude";
+	H.undershirt = "Nude";
+	H.socks = "Nude";
+	if (this.outfit) {
+		for (slot of each(rt.gl("slots#2"))) {
+			if (!isnum((_T = rt.index(this.vars, slot)))) {
+				rt.setAt(this.outfit.vars, slot, _T);
 			}
 		}
-		rt.endFor(f, 0);
-		yield* g.callName(f, live(H), "equipOutfit", [rt.sv(f, "outfit")]);
-		if (truthy(rt.sv(f, "disable_pda"))) {
-			if (truthy((PDA = rt.locateIn(f, T("/obj/item/device/pda"), live(H))))) {
-				rt.setFv(f, "toff", live(PDA), 1);
+		yield* H.equipOutfit(this.outfit);
+		if (this.disable_pda) {
+			if (PDA = rt.locateIn(f, T("/obj/item/device/pda"), H)) {
+				PDA.toff = 1;
 			}
 		}
 	}
-	if (!truthy((W = rt.fv(f, "wear_id", live(H))))) return f.dot;
-	if (truthy(rt.sv(f, "id_access"))) {
-		jobtype = null;
-		rt.forList(f, 0, (yield* g.call(f, P("/proc/typesof"), null, [T("/datum/job")])));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			jobtype = $e;
-			if (isEqual(rt.gv(f, "title", (J = (yield* g.new_(f, live(jobtype), [])))), rt.sv(f, "id_access"))) {
-				rt.setFv(f, "access", live(W), (yield* g.callName(f, live(J), "get_access", [])));
+	if (!(W = H.wear_id)) return f.dot;
+	if (this.id_access) {
+		for (jobtype of each(typesof(T("/datum/job")))) {
+			if ((J = (yield* new_(jobtype))).title == this.id_access) {
+				W.access = J.get_access();
 				break;
 			}
 		}
-		rt.endFor(f, 0);
 	}
-	if (truthy(rt.sv(f, "id_access_list"))) {
-		if (!truthy((rt.istype(rt.fv(f, "access", live(W)), T("/list")) ? 1 : 0))) {
-			rt.setFv(f, "access", live(W), rt.list());
+	if (this.id_access_list) {
+		if (!rt.istype(W.access, T("/list"))) {
+			W.access = list();
 		}
-		(rt.modField(f, live(W), "access", rt.sv(f, "id_access_list"), rt.bitOr));
+		(rt.modField(f, W, "access", this.id_access_list, rt.bitOr));
 	}
-	if (truthy(rt.sv(f, "id_job"))) {
-		rt.setFv(f, "assignment", live(W), rt.sv(f, "id_job"));
+	if (this.id_job) {
+		W.assignment = this.id_job;
 	}
-	rt.setFv(f, "registered_name", live(W), rt.fv(f, "real_name", live(H)));
-	yield* g.callName(f, live(W), "update_label", []);
+	W.registered_name = H.real_name;
+	W.update_label();
 	return f.dot;
 }, true);
 
 rt.type(12025, "/obj/effect/mob_spawn/AICorpse", "/obj/effect/mob_spawn", {});
 
-// /obj/effect/mob_spawn/AICorpse/proc/create  (code/modules/awaymissions/corpse.dm:190)  may sleep
+// corpse.dm:190
 rt.def("/obj/effect/mob_spawn/AICorpse/proc/create", function* create(f: Frame) {
 	let A: Value = null, M: Value = null;
-	f.vars = () => [A, M];
-	if (truthy((A = rt.locateIn(f, T("/mob/living/silicon/ai"), rt.sv(f, "loc"))))) {
-		return live(f.dot);
+	if (A = rt.locateIn(f, T("/mob/living/silicon/ai"), this.loc)) {
+		return f.dot;
 	}
-	rt.setFv(f, "name", (M = (yield* g.new_(f, T("/mob/living/silicon/ai/spawned"), [rt.sv(f, "loc")]))), rt.fv(f, "name", live(f.src)));
-	rt.setFv(f, "real_name", live(M), rt.fv(f, "name", live(f.src)));
-	rt.setFv(f, "toff", rt.fv(f, "aiPDA", live(M)), 1);
-	yield* g.callName(f, live(M), "death", []);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	(M = (yield* new_(T("/mob/living/silicon/ai/spawned"), this.loc))).name = this.name;
+	M.real_name = this.name;
+	M.aiPDA.toff = 1;
+	yield* M.death();
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
 rt.type(11994, "/obj/effect/mob_spawn/human/facehugger", "/obj/effect/mob_spawn/human", {});
 
-// /obj/effect/mob_spawn/human/facehugger/proc/create  (code/modules/awaymissions/corpse.dm:210)  may sleep
+// corpse.dm:210
 rt.def("/obj/effect/mob_spawn/human/facehugger/proc/create", function* create(f: Frame) {
 	let O: Value = null;
-	f.vars = () => [O];
-	rt.setFv(f, "name", (O = (yield* g.new_(f, T("/obj/item/clothing/mask/facehugger"), [rt.fv(f, "loc", live(f.src))]))), rt.fv(f, "name", live(f.src)));
-	yield* g.callName(f, live(O), "Die", []);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	(O = (yield* new_(T("/obj/item/clothing/mask/facehugger"), this.loc))).name = this.name;
+	O.Die();
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
@@ -266,22 +240,16 @@ rt.type(11964, "/obj/effect/mob_spawn/human/doctor/alive", "/obj/effect/mob_spaw
 	flavour_text: "You are a space doctor!",
 });
 
-// /obj/effect/mob_spawn/human/doctor/alive/proc/equip  (code/modules/awaymissions/corpse.dm:256)  may sleep
-rt.def("/obj/effect/mob_spawn/human/doctor/alive/proc/equip", function* equip(f: Frame) {
-	let del_types: Value = null, del_type: Value = null, I: Value = null;
-	let $e: any;
-	f.vars = () => [del_types, del_type, I, $e];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	del_types = rt.list(T("/obj/item/device/pda"), T("/obj/item/device/radio/headset"));
-	del_type = null;
-	rt.forList(f, 0, live(del_types));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		del_type = $e;
-		yield* g.call(f, P("/proc/qdel"), null, [(I = rt.locateIn(f, live(del_type), live(f.args[0])))]);
+// corpse.dm:256
+rt.def("/obj/effect/mob_spawn/human/doctor/alive/proc/equip", function* equip(f: Frame, H: Value) {
+	let del_type: Value = null, I: Value = null;
+	yield* parent_proc();
+	let del_types: Value = list(T("/obj/item/device/pda"), T("/obj/item/device/radio/headset"));
+	for (del_type of each(del_types)) {
+		yield* qdel((I = rt.locateIn(f, del_type, H)));
 	}
-	rt.endFor(f, 0);
 	return f.dot;
-}, true, { args: ["H"] });
+}, true);
 
 rt.type(12005, "/obj/effect/mob_spawn/human/bartender", "/obj/effect/mob_spawn/human", {
 	id_job: "Bartender",
@@ -290,12 +258,10 @@ rt.type(12005, "/obj/effect/mob_spawn/human/bartender", "/obj/effect/mob_spawn/h
 	id_access_list: null,
 });
 
-// /obj/effect/mob_spawn/human/bartender/proc/<init>  (code/modules/awaymissions/corpse.dm:297)
+// corpse.dm:297
 rt.def("/obj/effect/mob_spawn/human/bartender/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "id_access_list", rt.list(25));
+	parent_proc();
+	this.id_access_list = list(25);
 	return f.dot;
 });
 
@@ -306,16 +272,16 @@ rt.type(638, "/datum/outfit/beachbum", "/datum/outfit", {
 	r_pocket: rt.typePath("/obj/item/weapon/storage/wallet/random"),
 });
 
-// /datum/outfit/beachbum/proc/post_equip  (code/modules/awaymissions/corpse.dm:339)  may sleep
+// corpse.dm:339
 rt.def("/datum/outfit/beachbum/proc/post_equip", function* post_equip(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy(live(f.args[1]))) {
-		return live(f.dot);
+	yield* parent_proc();
+	if (f.args[1]) {
+		return f.dot;
 	}
-	yield* g.callName(f, rt.fv(f, "dna", live(f.args[0])), "add_mutation", ["Stoner"]);
+	yield* f.args[0].dna.add_mutation("Stoner");
 	return f.dot;
 }, true, { args: ["H", "visualsOnly"] });
 
@@ -326,12 +292,10 @@ rt.type(12009, "/obj/effect/mob_spawn/human/bridgeofficer", "/obj/effect/mob_spa
 	id_access_list: null,
 });
 
-// /obj/effect/mob_spawn/human/bridgeofficer/proc/<init>  (code/modules/awaymissions/corpse.dm:349)
+// corpse.dm:349
 rt.def("/obj/effect/mob_spawn/human/bridgeofficer/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "id_access_list", rt.list(109));
+	parent_proc();
+	this.id_access_list = list(109);
 	return f.dot;
 });
 
@@ -344,14 +308,13 @@ rt.type(11993, "/obj/effect/mob_spawn/human/alive/space_bar_patron", "/obj/effec
 	uses: -1,
 });
 
-// /obj/effect/mob_spawn/human/alive/space_bar_patron/proc/attack_hand  (code/modules/awaymissions/corpse.dm:470)  may sleep
+// corpse.dm:470
 rt.def("/obj/effect/mob_spawn/human/alive/space_bar_patron/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
 	let despawn: Value = null;
-	f.vars = () => [user, despawn];
-	if (((isEqual((despawn = (yield* g.call(f, P("/proc/alert"), null, ["Return to cryosleep? (Warning, Your mob will be deleted!)", null, "Yes", "No"]))), "No") || !truthy(rt.sv(f, "loc"))) || !truthy((yield* g.srcCall(f, "Adjacent", live(user)))))) {
-		return live(f.dot);
+	if ((despawn = (yield* alert("Return to cryosleep? (Warning, Your mob will be deleted!)", null, "Yes", "No"))) == "No" || !this.loc || !this.Adjacent(user)) {
+		return f.dot;
 	}
-	yield* g.callName(f, live(user), "visible_message", [fmt("<span class='notice'>＀ climbs back into cryosleep...</span>", [rt.fv(f, "name", live(user))])]);
-	yield* g.call(f, P("/proc/qdel"), null, [live(user)]);
+	user.visible_message(`<span class='notice'>${user.name} climbs back into cryosleep...</span>`);
+	yield* qdel(user);
 	return f.dot;
 }, true);

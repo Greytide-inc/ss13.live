@@ -1,7 +1,7 @@
-// From code/game/atoms_movable.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/atoms_movable.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, truthy, fmt } = rt;
 
 
 rt.type(4803, "/atom/movable", "/atom", {
@@ -54,530 +54,445 @@ rt.type(4803, "/atom/movable", "/atom", {
 	appearance_flags: 768,
 }, { tmp: ["bound_x","bound_y","bound_width","bound_height"] });
 
-// /atom/movable/proc/vv_edit_var  (code/game/atoms_movable.dm:41)  may sleep
-rt.def("/atom/movable/proc/vv_edit_var", function* vv_edit_var(f: Frame) {
+// atoms_movable.dm:41
+rt.def("/atom/movable/proc/vv_edit_var", function* vv_edit_var(f: Frame, var_name: Value, var_value: Value) {
 	let _T: Value = null;
-	let $0: any;
-	f.vars = () => [_T, $0];
-	if (truthy((rt.isIn(f, live(f.args[0]), rt.gl("banned_edits#2")) ? 1 : 0))) {
+	if (rt.isIn(f, var_name, rt.gl("banned_edits#2"))) {
 		return 0;
 	}
-	if ((truthy((rt.isIn(f, live(f.args[0]), rt.gl("careful_edits")) ? 1 : 0)) && !isEqual(rt.modulus(live(f.args[1]), rt.fv(f, "icon_size", rt.world())), 0))) {
+	if (rt.isIn(f, var_name, GLOB.careful_edits) && var_value % rt.world().icon_size != 0) {
 		return 0;
 	}
-	$0 = live(f.args[0]);
-	if ($0 === "x") {
-		if (truthy((_T = rt.locate(live(f.args[1]), rt.sv(f, "y"), rt.sv(f, "z"))))) {
-			yield* g.srcCall(f, "forceMove", live(_T));
+	if (var_name === "x") {
+		if (_T = rt.locate(var_value, this.y, this.z)) {
+			yield* this.forceMove(_T);
 			return 1;
 		}
 		return 0;
-	} else if ($0 === "y") {
-		if (truthy((_T = rt.locate(rt.sv(f, "x"), live(f.args[1]), rt.sv(f, "z"))))) {
-			yield* g.srcCall(f, "forceMove", live(_T));
+	} else if (var_name === "y") {
+		if (_T = rt.locate(this.x, var_value, this.z)) {
+			yield* this.forceMove(_T);
 			return 1;
 		}
 		return 0;
-	} else if ($0 === "z") {
-		if (truthy((_T = rt.locate(rt.sv(f, "x"), rt.sv(f, "y"), live(f.args[1]))))) {
-			yield* g.srcCall(f, "forceMove", live(_T));
+	} else if (var_name === "z") {
+		if (_T = rt.locate(this.x, this.y, var_value)) {
+			yield* this.forceMove(_T);
 			return 1;
 		}
 		return 0;
-	} else if ($0 === "loc") {
-		if ((live(f.args[1]) === null || truthy((rt.istype(live(f.args[1]), T("/atom")) ? 1 : 0)))) {
-			yield* g.srcCall(f, "forceMove", live(f.args[1]));
+	} else if (var_name === "loc") {
+		if (var_value === null || rt.istype(var_value, T("/atom"))) {
+			yield* this.forceMove(var_value);
 			return 1;
 		}
 		return 0;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["var_name", "var_value"] });
+	return (yield* parent_proc());
+}, true);
 
-// /atom/movable/proc/Move  (code/game/atoms_movable.dm:72)  may sleep
+// atoms_movable.dm:72
 rt.def("/atom/movable/proc/Move", function* Move(f: Frame) {
-	let oldloc: Value = null;
-	f.vars = () => [oldloc];
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	if ((!truthy(rt.sv(f, "loc")) || !truthy(live(f.args[0])))) {
+	if (!this.loc || !f.args[0]) {
 		return 0;
 	}
-	oldloc = rt.sv(f, "loc");
-	if (!isEqual(rt.sv(f, "loc"), live(f.args[0]))) {
-		if (!truthy(rt.bitAnd(live(f.args[1]), subtract(live(f.args[1]), 1)))) {
-			f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	let oldloc: Value = this.loc;
+	if (this.loc != f.args[0]) {
+		if (!rt.bitAnd(f.args[1], f.args[1] - 1)) {
+			f.dot = (yield* parent_proc());
 		} else {
-			rt.setSv(f, "moving_diagonally", 1);
-			if (truthy(rt.bitAnd(live(f.args[1]), 1))) {
-				if (truthy(rt.bitAnd(live(f.args[1]), 4))) {
-					if (truthy((yield* g.call(f, P("/proc/step"), null, [live(f.src), 1])))) {
-						rt.setSv(f, "moving_diagonally", 2);
-						f.dot = (yield* g.call(f, P("/proc/step"), null, [live(f.src), 4]));
-					} else {
-						if (truthy((yield* g.call(f, P("/proc/step"), null, [live(f.src), 4])))) {
-							rt.setSv(f, "moving_diagonally", 2);
-							f.dot = (yield* g.call(f, P("/proc/step"), null, [live(f.src), 1]));
-						}
+			this.moving_diagonally = 1;
+			if (rt.bitAnd(f.args[1], 1)) {
+				if (rt.bitAnd(f.args[1], 4)) {
+					if (yield* step(this, 1)) {
+						this.moving_diagonally = 2;
+						f.dot = (yield* step(this, 4));
+					} else if (yield* step(this, 4)) {
+						this.moving_diagonally = 2;
+						f.dot = (yield* step(this, 1));
 					}
-				} else {
-					if (truthy(rt.bitAnd(live(f.args[1]), 8))) {
-						if (truthy((yield* g.call(f, P("/proc/step"), null, [live(f.src), 1])))) {
-							rt.setSv(f, "moving_diagonally", 2);
-							f.dot = (yield* g.call(f, P("/proc/step"), null, [live(f.src), 8]));
-						} else {
-							if (truthy((yield* g.call(f, P("/proc/step"), null, [live(f.src), 8])))) {
-								rt.setSv(f, "moving_diagonally", 2);
-								f.dot = (yield* g.call(f, P("/proc/step"), null, [live(f.src), 1]));
-							}
-						}
+				} else if (rt.bitAnd(f.args[1], 8)) {
+					if (yield* step(this, 1)) {
+						this.moving_diagonally = 2;
+						f.dot = (yield* step(this, 8));
+					} else if (yield* step(this, 8)) {
+						this.moving_diagonally = 2;
+						f.dot = (yield* step(this, 1));
 					}
 				}
-			} else {
-				if (truthy(rt.bitAnd(live(f.args[1]), 2))) {
-					if (truthy(rt.bitAnd(live(f.args[1]), 4))) {
-						if (truthy((yield* g.call(f, P("/proc/step"), null, [live(f.src), 2])))) {
-							rt.setSv(f, "moving_diagonally", 2);
-							f.dot = (yield* g.call(f, P("/proc/step"), null, [live(f.src), 4]));
-						} else {
-							if (truthy((yield* g.call(f, P("/proc/step"), null, [live(f.src), 4])))) {
-								rt.setSv(f, "moving_diagonally", 2);
-								f.dot = (yield* g.call(f, P("/proc/step"), null, [live(f.src), 2]));
-							}
-						}
-					} else {
-						if (truthy(rt.bitAnd(live(f.args[1]), 8))) {
-							if (truthy((yield* g.call(f, P("/proc/step"), null, [live(f.src), 2])))) {
-								rt.setSv(f, "moving_diagonally", 2);
-								f.dot = (yield* g.call(f, P("/proc/step"), null, [live(f.src), 8]));
-							} else {
-								if (truthy((yield* g.call(f, P("/proc/step"), null, [live(f.src), 8])))) {
-									rt.setSv(f, "moving_diagonally", 2);
-									f.dot = (yield* g.call(f, P("/proc/step"), null, [live(f.src), 2]));
-								}
-							}
-						}
+			} else if (rt.bitAnd(f.args[1], 2)) {
+				if (rt.bitAnd(f.args[1], 4)) {
+					if (yield* step(this, 2)) {
+						this.moving_diagonally = 2;
+						f.dot = (yield* step(this, 4));
+					} else if (yield* step(this, 4)) {
+						this.moving_diagonally = 2;
+						f.dot = (yield* step(this, 2));
+					}
+				} else if (rt.bitAnd(f.args[1], 8)) {
+					if (yield* step(this, 2)) {
+						this.moving_diagonally = 2;
+						f.dot = (yield* step(this, 8));
+					} else if (yield* step(this, 8)) {
+						this.moving_diagonally = 2;
+						f.dot = (yield* step(this, 2));
 					}
 				}
 			}
-			rt.setSv(f, "moving_diagonally", 0);
-			return live(f.dot);
+			this.moving_diagonally = 0;
+			return f.dot;
 		}
 	}
-	if ((!truthy(rt.sv(f, "loc")) || (isEqual(rt.sv(f, "loc"), live(oldloc)) && !isEqual(live(oldloc), live(f.args[0]))))) {
-		rt.setSv(f, "last_move", 0);
-		return live(f.dot);
+	if (!this.loc || this.loc == oldloc && oldloc != f.args[0]) {
+		this.last_move = 0;
+		return f.dot;
 	}
-	if (truthy(live(f.dot))) {
-		yield* g.srcCall(f, "Moved", live(oldloc), live(f.args[1]));
+	if (f.dot) {
+		yield* this.Moved(oldloc, f.args[1]);
 	}
-	rt.setSv(f, "last_move", live(f.args[1]));
-	yield* g.srcCall(f, "setDir", live(f.args[1]));
-	if (!((truthy(live(f.dot)) && truthy((yield* g.srcCall(f, "has_buckled_mobs")))) && !truthy((yield* g.srcCall(f, "handle_buckled_mob_movement", rt.sv(f, "loc"), live(f.args[1])))))) return f.dot;
+	this.last_move = f.args[1];
+	yield* this.setDir(f.args[1]);
+	if (!(f.dot && this.has_buckled_mobs() && !(yield* this.handle_buckled_mob_movement(this.loc, f.args[1])))) return f.dot;
 	f.dot = 0;
 	return f.dot;
 }, true, { args: ["newloc", "direct"] });
 
-// /atom/movable/proc/Moved  (code/game/atoms_movable.dm:127)  may sleep
+// atoms_movable.dm:127
 rt.def("/atom/movable/proc/Moved", function* Moved(f: Frame, OldLoc: Value, Dir: Value) {
 	let thing: Value = null, O: Value = null, proximity_monitor: Value = null;
-	let $e: any;
-	f.vars = () => [OldLoc, Dir, thing, O, proximity_monitor, $e];
-	if (!truthy(rt.sv(f, "inertia_moving"))) {
-		rt.setSv(f, "inertia_next_move", add(rt.worldTime(f), rt.sv(f, "inertia_move_delay")));
-		yield* g.srcCall(f, "newtonian_move", live(Dir));
+	if (!this.inertia_moving) {
+		this.inertia_next_move = rt.worldTime(f) + this.inertia_move_delay;
+		yield* this.newtonian_move(Dir);
 	}
-	if (truthy(rt.length(rt.sv(f, "client_mobs_in_contents")))) {
-		yield* g.srcCall(f, "update_parallax_contents");
+	if (rt.length(this.client_mobs_in_contents)) {
+		yield* this.update_parallax_contents();
 	}
-	if (truthy(rt.sv(f, "orbiters"))) {
-		thing = null;
-		rt.forList(f, 0, rt.sv(f, "orbiters"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			thing = $e;
-			yield* g.callName(f, (O = live(thing)), "Check", []);
+	if (this.orbiters) {
+		for (thing of each(this.orbiters)) {
+			yield* (O = thing).Check();
 		}
-		rt.endFor(f, 0);
 	}
-	if (truthy(rt.sv(f, "orbiting"))) {
-		yield* g.callName(f, rt.sv(f, "orbiting"), "Check", []);
+	if (this.orbiting) {
+		yield* this.orbiting.Check();
 	}
-	if (truthy(rt.bitAnd(rt.sv(f, "flags"), 2048))) {
-		yield* g.srcCall(f, "clean_on_move");
+	if (rt.bitAnd(this.flags, 2048)) {
+		yield* this.clean_on_move();
 	}
-	if (truthy((proximity_monitor = rt.fv(f, "proximity_monitor", live(f.src))))) {
-		yield* g.callName(f, live(proximity_monitor), "HandleMove", []);
+	if (proximity_monitor = this.proximity_monitor) {
+		yield* proximity_monitor.HandleMove();
 	}
 	return 1;
 }, true);
 
-// /atom/movable/proc/clean_on_move  (code/game/atoms_movable.dm:150)  may sleep
+// atoms_movable.dm:150
 rt.def("/atom/movable/proc/clean_on_move", function* clean_on_move(f: Frame) {
 	let tile: Value = null, A: Value = null, cleaned_item: Value = null, cleaned_human: Value = null;
-	let $e: any;
-	f.vars = () => [tile, A, cleaned_item, cleaned_human, $e];
-	if (!truthy((yield* g.call(f, P("/proc/isturf"), null, [(tile = rt.sv(f, "loc"))])))) return f.dot;
-	yield* g.callName(f, live(tile), "clean_blood", []);
-	A = null;
-	rt.forList(f, 0, live(tile));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		A = $e;
-		if ((truthy((rt.istype(live(A), T("/obj/effect/decal/cleanable")) ? 1 : 0)) || truthy((rt.istype(live(A), T("/obj/effect/rune")) ? 1 : 0)))) {
-			yield* g.call(f, P("/proc/qdel"), null, [live(A)]);
-		} else {
-			if (truthy((rt.istype(live(A), T("/obj/item")) ? 1 : 0))) {
-				yield* g.callName(f, (cleaned_item = live(A)), "clean_blood", []);
-			} else {
-				if (truthy((rt.istype(live(A), T("/mob/living/carbon/human")) ? 1 : 0))) {
-					if (truthy(rt.gv(f, "lying", (cleaned_human = live(A))))) {
-						if (truthy(rt.fv(f, "head", live(cleaned_human)))) {
-							yield* g.callName(f, rt.fv(f, "head", live(cleaned_human)), "clean_blood", []);
-							yield* g.callName(f, live(cleaned_human), "update_inv_head", []);
-						}
-						if (truthy(rt.fv(f, "wear_suit", live(cleaned_human)))) {
-							yield* g.callName(f, rt.fv(f, "wear_suit", live(cleaned_human)), "clean_blood", []);
-							yield* g.callName(f, live(cleaned_human), "update_inv_wear_suit", []);
-						} else {
-							if (truthy(rt.fv(f, "w_uniform", live(cleaned_human)))) {
-								yield* g.callName(f, rt.fv(f, "w_uniform", live(cleaned_human)), "clean_blood", []);
-								yield* g.callName(f, live(cleaned_human), "update_inv_w_uniform", []);
-							}
-						}
-						if (truthy(rt.fv(f, "shoes", live(cleaned_human)))) {
-							yield* g.callName(f, rt.fv(f, "shoes", live(cleaned_human)), "clean_blood", []);
-							yield* g.callName(f, live(cleaned_human), "update_inv_shoes", []);
-						}
-						yield* g.callName(f, live(cleaned_human), "clean_blood", []);
-						yield* g.callName(f, live(cleaned_human), "wash_cream", []);
-						yield* g.call(f, P("/proc/to_chat"), null, [live(cleaned_human), fmt("<span class='danger'>＀ cleans your face!</span>", [live(f.src)])]);
-					}
+	if (!isturf((tile = this.loc))) return f.dot;
+	tile.clean_blood();
+	for (A of each(tile)) {
+		if (rt.istype(A, T("/obj/effect/decal/cleanable")) || rt.istype(A, T("/obj/effect/rune"))) {
+			yield* qdel(A);
+		} else if (rt.istype(A, T("/obj/item"))) {
+			(cleaned_item = A).clean_blood();
+		} else if (rt.istype(A, T("/mob/living/carbon/human"))) {
+			if ((cleaned_human = A).lying) {
+				if (cleaned_human.head) {
+					cleaned_human.head.clean_blood();
+					yield* cleaned_human.update_inv_head();
 				}
+				if (cleaned_human.wear_suit) {
+					cleaned_human.wear_suit.clean_blood();
+					yield* cleaned_human.update_inv_wear_suit();
+				} else if (cleaned_human.w_uniform) {
+					cleaned_human.w_uniform.clean_blood();
+					yield* cleaned_human.update_inv_w_uniform();
+				}
+				if (cleaned_human.shoes) {
+					cleaned_human.shoes.clean_blood();
+					cleaned_human.update_inv_shoes();
+				}
+				cleaned_human.clean_blood();
+				cleaned_human.wash_cream();
+				to_chat(cleaned_human, `<span class='danger'>${this} cleans your face!</span>`);
 			}
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /atom/movable/proc/Destroy  (code/game/atoms_movable.dm:179)  may sleep
-rt.def("/atom/movable/proc/Destroy", function* Destroy(f: Frame) {
-	let inform_admins: Value = null, stationloving: Value = null, _T: Value = null, currentturf: Value = null, targetturf: Value = null, AM: Value = null;
+// atoms_movable.dm:179
+rt.def("/atom/movable/proc/Destroy", function* Destroy(f: Frame, force: Value) {
+	let _T: Value = null, currentturf: Value = null, targetturf: Value = null, AM: Value = null;
 	let $0: any, $1: any, $2: any, $e: any;
-	f.vars = () => [inform_admins, stationloving, _T, currentturf, targetturf, AM, $0, $1, $2, $e];
-	if (truthy(rt.fv(f, "secondary_flags", live(f.src)))) {
-		$0 = rt.index(rt.fv(f, "secondary_flags", live(f.src)), "inform_admins_on_relocate");
-	} else {
-		$0 = 0;
-	}
-	inform_admins = $0;
-	if (truthy(rt.fv(f, "secondary_flags", live(f.src)))) {
-		$0 = rt.index(rt.fv(f, "secondary_flags", live(f.src)), "stationloving");
-	} else {
-		$0 = 0;
-	}
-	stationloving = $0;
-	if ((truthy(live(inform_admins)) && truthy(live(f.args[0])))) {
-		_T = rt.getStep(f, live(f.src), 0);
-		$0 = live(f.src);
-		if (truthy(live(_T))) {
-			$1 = fmt("＀ ＀", [fmt("(＀,＀,＀)", [rt.fv(f, "x", live(_T)), rt.fv(f, "y", live(_T)), rt.fv(f, "z", live(_T))]), fmt("(<a href='?_src_=holder;adminplayerobservecoodjump=1;X=＀;Y=＀;Z=＀'>JMP</a>)", [rt.fv(f, "x", live(_T)), rt.fv(f, "y", live(_T)), rt.fv(f, "z", live(_T))])]);
+	let inform_admins: Value = this.secondary_flags ? rt.index(this.secondary_flags, "inform_admins_on_relocate") : 0;
+	let stationloving: Value = this.secondary_flags ? rt.index(this.secondary_flags, "stationloving") : 0;
+	if (inform_admins && force) {
+		_T = rt.getStep(f, this, 0);
+		$0 = this;
+		if (_T) {
+			$1 = `${`(${_T.x},${_T.y},${_T.z})`} ${`(<a href='?_src_=holder;adminplayerobservecoodjump=1;X=${_T.x};Y=${_T.y};Z=${_T.z}'>JMP</a>)`}`;
 		} else {
 			$1 = "nonexistent location";
 		}
-		yield* g.call(f, P("/proc/message_admins"), null, [fmt("＀ has been !!force deleted!! in ＀.", [$0, fmt("＀", [$1])])]);
-		yield* g.call(f, P("/proc/log_game"), null, [fmt("＀ has been !!force deleted!! in ＀.", [live(f.src), fmt("(＀,＀,＀)", [rt.fv(f, "x", live(_T)), rt.fv(f, "y", live(_T)), rt.fv(f, "z", live(_T))])])]);
+		message_admins(`${$0} has been !!force deleted!! in ${`${$1}`}.`);
+		log_game(`${this} has been !!force deleted!! in ${`(${_T.x},${_T.y},${_T.z})`}.`);
 	}
-	if ((truthy(live(stationloving)) && !truthy(live(f.args[0])))) {
-		currentturf = rt.getStep(f, live(f.src), 0);
-		targetturf = (yield* g.srcCall(f, "relocate"));
-		yield* g.call(f, P("/proc/log_game"), null, [fmt("＀ has been destroyed in ＀. Moving it to ＀.", [live(f.src), fmt("(＀,＀,＀)", [rt.fv(f, "x", live(currentturf)), rt.fv(f, "y", live(currentturf)), rt.fv(f, "z", live(currentturf))]), fmt("(＀,＀,＀)", [rt.fv(f, "x", live(targetturf)), rt.fv(f, "y", live(targetturf)), rt.fv(f, "z", live(targetturf))])])]);
-		if (truthy(live(inform_admins))) {
-			$0 = live(f.src);
-			if (truthy(live(currentturf))) {
-				$1 = fmt("＀ ＀", [fmt("(＀,＀,＀)", [rt.fv(f, "x", live(currentturf)), rt.fv(f, "y", live(currentturf)), rt.fv(f, "z", live(currentturf))]), fmt("(<a href='?_src_=holder;adminplayerobservecoodjump=1;X=＀;Y=＀;Z=＀'>JMP</a>)", [rt.fv(f, "x", live(currentturf)), rt.fv(f, "y", live(currentturf)), rt.fv(f, "z", live(currentturf))])]);
+	if (stationloving && !force) {
+		currentturf = rt.getStep(f, this, 0);
+		targetturf = (yield* this.relocate());
+		log_game(`${this} has been destroyed in ${`(${currentturf.x},${currentturf.y},${currentturf.z})`}. Moving it to ${`(${targetturf.x},${targetturf.y},${targetturf.z})`}.`);
+		if (inform_admins) {
+			$0 = this;
+			if (currentturf) {
+				$1 = `${`(${currentturf.x},${currentturf.y},${currentturf.z})`} ${`(<a href='?_src_=holder;adminplayerobservecoodjump=1;X=${currentturf.x};Y=${currentturf.y};Z=${currentturf.z}'>JMP</a>)`}`;
 			} else {
 				$1 = "nonexistent location";
 			}
-			$1 = fmt("＀", [$1]);
-			if (truthy(live(targetturf))) {
-				$2 = fmt("＀ ＀", [fmt("(＀,＀,＀)", [rt.fv(f, "x", live(targetturf)), rt.fv(f, "y", live(targetturf)), rt.fv(f, "z", live(targetturf))]), fmt("(<a href='?_src_=holder;adminplayerobservecoodjump=1;X=＀;Y=＀;Z=＀'>JMP</a>)", [rt.fv(f, "x", live(targetturf)), rt.fv(f, "y", live(targetturf)), rt.fv(f, "z", live(targetturf))])]);
+			$1 = `${$1}`;
+			if (targetturf) {
+				$2 = `${`(${targetturf.x},${targetturf.y},${targetturf.z})`} ${`(<a href='?_src_=holder;adminplayerobservecoodjump=1;X=${targetturf.x};Y=${targetturf.y};Z=${targetturf.z}'>JMP</a>)`}`;
 			} else {
 				$2 = "nonexistent location";
 			}
-			yield* g.call(f, P("/proc/message_admins"), null, [fmt("＀ has been destroyed in ＀. Moving it to ＀.", [$0, $1, fmt("＀", [$2])])]);
+			message_admins(`${$0} has been destroyed in ${$1}. Moving it to ${`${$2}`}.`);
 		}
-		return 1;
+		return QDEL_HINT_LETMELIVE;
 	}
-	if ((truthy(live(stationloving)) && truthy(live(f.args[0])))) {
-		rt.setFv(f, "isprocessing", live(f.src), 0);
-		(rt.modField(f, rt.gl("SSinbounds"), "processing", live(f.src), subtract));
+	if (stationloving && force) {
+		this.isprocessing = 0;
+		GLOB.SSinbounds.processing -= this;
 	}
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "proximity_monitor")]);
-	rt.setSv(f, "proximity_monitor", null);
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "language_holder")]);
-	rt.setSv(f, "language_holder", null);
-	yield* g.callSrc(f, "unbuckle_all_mobs", ["force", 1], rt.Args.Named);
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (truthy(rt.sv(f, "loc"))) {
-		yield* g.callName(f, rt.sv(f, "loc"), "handle_atom_del", [live(f.src)]);
+	yield* qdel(this.proximity_monitor);
+	this.proximity_monitor = null;
+	yield* qdel(this.language_holder);
+	this.language_holder = null;
+	yield* this.unbuckle_all_mobs({ force: 1 });
+	f.dot = (yield* parent_proc());
+	if (this.loc) {
+		yield* this.loc.handle_atom_del(this);
 	}
-	AM = null;
-	rt.forList(f, 0, rt.sv(f, "contents"), T("/atom/movable"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		AM = $e;
-		yield* g.call(f, P("/proc/qdel"), null, [live(AM)]);
+	for (AM of each(this.contents, T("/atom/movable"))) {
+		yield* qdel(AM);
 	}
-	rt.endFor(f, 0);
-	rt.setSv(f, "loc", null);
-	rt.setSv(f, "invisibility", 101);
-	if (!truthy(rt.sv(f, "pulledby"))) return f.dot;
-	yield* g.callName(f, rt.sv(f, "pulledby"), "stop_pulling", []);
-	return f.dot;
-}, true, { args: ["force"] });
-
-// /atom/movable/proc/Bump  built in (BYOND provides it)
-rt.def("/atom/movable/proc/Bump", undefined, false, { args: ["Obstacle"] });
-
-// /atom/movable/proc/Bump  (code/game/atoms_movable.dm:221)  may sleep
-rt.def("/atom/movable/proc/Bump", function* Bump(f: Frame, A: Value, yes: Value) {
-	f.vars = () => [A, yes];
-	if (!(truthy(live(A)) && truthy(live(yes)))) return f.dot;
-	if (truthy(rt.sv(f, "throwing"))) {
-		yield* g.callName(f, rt.sv(f, "throwing"), "hit_atom", [live(A)]);
-		f.dot = 1;
-		if ((!truthy(live(A)) || (!truthy(live(A)) || truthy(rt.fv(f, "gc_destroyed", live(A)))))) {
-			return live(f.dot);
-		}
-	}
-	yield* g.callName(f, live(A), "Bumped", [live(f.src)]);
+	this.loc = null;
+	this.invisibility = INVISIBILITY_ABSTRACT;
+	if (!this.pulledby) return f.dot;
+	yield* this.pulledby.stop_pulling();
 	return f.dot;
 }, true);
 
-// /atom/movable/proc/forceMove  (code/game/atoms_movable.dm:232)  may sleep
+// BYOND built-in.
+rt.def("/atom/movable/proc/Bump", undefined, false, { args: ["Obstacle"] });
+
+// atoms_movable.dm:221
+rt.def("/atom/movable/proc/Bump", function* Bump(f: Frame, A: Value, yes: Value) {
+	if (!(A && yes)) return f.dot;
+	if (this.throwing) {
+		yield* this.throwing.hit_atom(A);
+		f.dot = 1;
+		if (!A || !A || A.gc_destroyed) {
+			return f.dot;
+		}
+	}
+	yield* A.Bumped(this);
+	return f.dot;
+}, true);
+
+// atoms_movable.dm:232
 rt.def("/atom/movable/proc/forceMove", function* forceMove(f: Frame, destination: Value) {
 	let oldloc: Value = null, same_loc: Value = null, old_area: Value = null, destarea: Value = null, AM: Value = null;
-	let $e: any;
-	f.vars = () => [destination, oldloc, same_loc, old_area, destarea, AM, $e];
-	if (truthy(live(destination))) {
-		if (truthy(rt.sv(f, "pulledby"))) {
-			yield* g.callName(f, rt.sv(f, "pulledby"), "stop_pulling", []);
+	if (destination) {
+		if (this.pulledby) {
+			yield* this.pulledby.stop_pulling();
 		}
-		oldloc = rt.sv(f, "loc");
-		same_loc = (isEqual(live(oldloc), live(destination)) ? 1 : 0);
-		old_area = (yield* g.call(f, P("/proc/get_area"), null, [live(oldloc)]));
-		destarea = (yield* g.call(f, P("/proc/get_area"), null, [live(destination)]));
-		if ((truthy(live(oldloc)) && !truthy(live(same_loc)))) {
-			yield* g.callName(f, live(oldloc), "Exited", [live(f.src), live(destination)]);
-			if (truthy(live(old_area))) {
-				yield* g.callName(f, live(old_area), "Exited", [live(f.src), live(destination)]);
+		oldloc = this.loc;
+		same_loc = (oldloc == destination ? 1 : 0);
+		old_area = get_area(oldloc);
+		destarea = get_area(destination);
+		if (oldloc && !same_loc) {
+			yield* oldloc.Exited(this, destination);
+			if (old_area) {
+				yield* old_area.Exited(this, destination);
 			}
 		}
-		rt.setSv(f, "loc", live(destination));
-		if (!truthy(live(same_loc))) {
-			yield* g.callName(f, live(destination), "Entered", [live(f.src), live(oldloc)]);
-			if ((truthy(live(destarea)) && !isEqual(live(old_area), live(destarea)))) {
-				yield* g.callName(f, live(destarea), "Entered", [live(f.src), live(oldloc)]);
+		this.loc = destination;
+		if (!same_loc) {
+			yield* destination.Entered(this, oldloc);
+			if (destarea && old_area != destarea) {
+				yield* destarea.Entered(this, oldloc);
 			}
-			AM = null;
-			rt.forList(f, 0, live(destination), T("/atom/movable"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				AM = $e;
-				if (isEqual(live(AM), live(f.src))) {
+			for (AM of each(destination, T("/atom/movable"))) {
+				if (AM == this) {
 					continue;
 				}
-				yield* g.callName(f, live(AM), "Crossed", [live(f.src), live(oldloc)]);
+				yield* AM.Crossed(this, oldloc);
 			}
-			rt.endFor(f, 0);
 		}
-		yield* g.srcCall(f, "Moved", live(oldloc), 0);
+		yield* this.Moved(oldloc, 0);
 		return 1;
 	}
 	return 0;
 }, true);
 
-// /mob/living/proc/forceMove  (code/game/atoms_movable.dm:260)  may sleep
-rt.def("/mob/living/proc/forceMove", function* forceMove(f: Frame) {
-	yield* g.srcCall(f, "stop_pulling");
-	if (truthy(rt.sv(f, "buckled"))) {
-		yield* g.callName(f, rt.sv(f, "buckled"), "unbuckle_mob", [null, live(f.src), "force", 1], rt.Args.Named);
+// atoms_movable.dm:260
+rt.def("/mob/living/proc/forceMove", function* forceMove(f: Frame, destination: Value) {
+	yield* this.stop_pulling();
+	if (this.buckled) {
+		yield* this.buckled.unbuckle_mob(this, { force: 1 });
 	}
-	if (truthy((yield* g.srcCall(f, "has_buckled_mobs")))) {
-		yield* g.callSrc(f, "unbuckle_all_mobs", ["force", 1], rt.Args.Named);
+	if (this.has_buckled_mobs()) {
+		yield* this.unbuckle_all_mobs({ force: 1 });
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (truthy(rt.sv(f, "client"))) {
-		yield* g.srcCall(f, "reset_perspective", live(f.args[0]));
+	f.dot = (yield* parent_proc());
+	if (this.client) {
+		yield* this.reset_perspective(destination);
 	}
-	yield* g.srcCall(f, "update_canmove");
-	return f.dot;
-}, true, { args: ["destination"] });
-
-// /mob/living/brain/proc/forceMove  (code/game/atoms_movable.dm:272)  may sleep
-rt.def("/mob/living/brain/proc/forceMove", function* forceMove(f: Frame, destination: Value) {
-	f.vars = () => [destination];
-	if (truthy(rt.sv(f, "container"))) {
-		return (yield* g.callName(f, rt.sv(f, "container"), "forceMove", [live(destination)]));
-	}
-	yield* g.call(f, P("/proc/CRASH"), null, ["Brainmob without container."]);
+	yield* this.update_canmove();
 	return f.dot;
 }, true);
 
-// /atom/movable/proc/Process_Spacemove  (code/game/atoms_movable.dm:282)
+// atoms_movable.dm:272
+rt.def("/mob/living/brain/proc/forceMove", function* forceMove(f: Frame, destination: Value) {
+	if (this.container) {
+		return (yield* this.container.forceMove(destination));
+	}
+	CRASH("Brainmob without container.");
+	return f.dot;
+}, true);
+
+// atoms_movable.dm:282
 rt.def("/atom/movable/proc/Process_Spacemove", function Process_Spacemove(f: Frame, movement_dir: Value) {
-	f.vars = () => [movement_dir];
-	if (live(movement_dir) === null) {
-		movement_dir = 0;
-	}
-	if (truthy(rt.callSrc(f, "has_gravity", [live(f.src)]))) {
+	movement_dir ??= 0;
+	if (this.has_gravity(this)) {
 		return 1;
 	}
-	if (truthy(rt.sv(f, "pulledby"))) {
+	if (this.pulledby) {
 		return 1;
 	}
-	if (truthy(rt.sv(f, "throwing"))) {
+	if (this.throwing) {
 		return 1;
 	}
-	if (truthy(rt.locateIn(f, T("/obj/structure/lattice"), rt.call(f, P("/proc/range"), null, [1, rt.getStep(f, live(f.src), 0)])))) {
+	if (rt.locateIn(f, T("/obj/structure/lattice"), range(1, rt.getStep(f, this, 0)))) {
 		return 1;
 	}
 	return 0;
 });
 
-// /atom/movable/proc/newtonian_move  (code/game/atoms_movable.dm:298)  may sleep
+// atoms_movable.dm:298
 rt.def("/atom/movable/proc/newtonian_move", function* newtonian_move(f: Frame, direction: Value) {
-	f.vars = () => [direction];
-	if ((!truthy(rt.sv(f, "loc")) || truthy((yield* g.srcCall(f, "Process_Spacemove", 0))))) {
-		rt.setSv(f, "inertia_dir", 0);
+	if (!this.loc || (yield* this.Process_Spacemove(0))) {
+		this.inertia_dir = 0;
 		return 0;
 	}
-	rt.setSv(f, "inertia_dir", live(direction));
-	if (!truthy(live(direction))) {
+	this.inertia_dir = direction;
+	if (!direction) {
 		return 1;
 	}
-	rt.setSv(f, "inertia_last_loc", rt.sv(f, "loc"));
-	rt.setAt(rt.fv(f, "processing", rt.gl("SSspacedrift")), live(f.src), live(f.src));
+	this.inertia_last_loc = this.loc;
+	rt.setAt(GLOB.SSspacedrift.processing, this, this);
 	return 1;
 }, true);
 
-// /atom/movable/proc/checkpass  (code/game/atoms_movable.dm:310)
+// atoms_movable.dm:310
 rt.def("/atom/movable/proc/checkpass", function checkpass(f: Frame, passflag: Value) {
-	return rt.bitAnd(rt.sv(f, "pass_flags"), live(passflag));
+	return rt.bitAnd(this.pass_flags, passflag);
 });
 
-// /atom/movable/proc/throw_impact  (code/game/atoms_movable.dm:314)  may sleep
+// atoms_movable.dm:314
 rt.def("/atom/movable/proc/throw_impact", function* throw_impact(f: Frame, hit_atom: Value, throwingdatum: Value) {
-	f.vars = () => [hit_atom, throwingdatum];
-	return (yield* g.callName(f, live(hit_atom), "hitby", [live(f.src)]));
+	return (yield* hit_atom.hitby(this));
 }, true, { waitfor: false });
 
-// /atom/movable/proc/hitby  (code/game/atoms_movable.dm:317)  may sleep
+// atoms_movable.dm:317
 rt.def("/atom/movable/proc/hitby", function* hitby(f: Frame) {
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 1;
 	}
-	if ((!truthy(rt.sv(f, "anchored")) && truthy(live(f.args[2])))) {
-		yield* g.call(f, P("/proc/step"), null, [live(f.src), rt.fv(f, "dir", live(f.args[0]))]);
+	if (!this.anchored && f.args[2]) {
+		yield* step(this, f.args[0].dir);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true, { args: ["AM", "skipcatch", "hitpush", "blocked"] });
 
-// /atom/movable/proc/throw_at  (code/game/atoms_movable.dm:322)  may sleep
+// atoms_movable.dm:322
 rt.def("/atom/movable/proc/throw_at", function* throw_at(f: Frame, target: Value, range: Value, speed: Value, thrower: Value, spin: Value, diagonals_first: Value, callback: Value) {
-	let user_momentum: Value = null, TT: Value = null, dist_x: Value = null, dist_y: Value = null, dx: Value = null, dy: Value = null, olddist_x: Value = null, olddx: Value = null;
-	let $0: any;
-	f.vars = () => [target, range, speed, thrower, spin, diagonals_first, callback, user_momentum, TT, dist_x, dist_y, dx, dy, olddist_x, olddx, $0];
-	if (live(spin) === null) {
-		spin = 1;
+	let user_momentum: Value = null, TT: Value = null, olddist_x: Value = null, olddx: Value = null;
+	spin ??= 1;
+	diagonals_first ??= 0;
+	if (!target || rt.bitAnd(this.flags, 2) || speed <= 0) {
+		return f.dot;
 	}
-	if (live(diagonals_first) === null) {
-		diagonals_first = 0;
+	if (this.pulledby) {
+		yield* this.pulledby.stop_pulling();
 	}
-	if (((!truthy(live(target)) || truthy(rt.bitAnd(rt.sv(f, "flags"), 2))) || rt.le(live(speed), 0))) {
-		return live(f.dot);
-	}
-	if (truthy(rt.sv(f, "pulledby"))) {
-		yield* g.callName(f, rt.sv(f, "pulledby"), "stop_pulling", []);
-	}
-	if ((((truthy(live(thrower)) && truthy(rt.fv(f, "last_move", live(thrower)))) && truthy(rt.fv(f, "client", live(thrower)))) && rt.ge(rt.gv(f, "move_delay", rt.fv(f, "client", live(thrower))), add(rt.worldTime(f), multiply(rt.fv(f, "tick_lag", rt.world()), 2))))) {
-		if (!truthy((user_momentum = (yield* g.callName(f, live(thrower), "movement_delay", []))))) {
-			user_momentum = rt.fv(f, "tick_lag", rt.world());
+	if (thrower && thrower.last_move && thrower.client && thrower.client.move_delay >= rt.worldTime(f) + rt.world().tick_lag * 2) {
+		if (!(user_momentum = (yield* thrower.movement_delay()))) {
+			user_momentum = rt.world().tick_lag;
 		}
-		user_momentum = divide(1, live(user_momentum));
-		if (truthy(rt.bitAnd(rt.getDir(f, live(thrower), live(target)), rt.sv(f, "last_move")))) {
-			user_momentum = live(user_momentum);
+		user_momentum = 1 / user_momentum;
+		if (rt.bitAnd(rt.getDir(f, thrower, target), this.last_move)) {
+
+		} else if (rt.bitAnd(rt.getDir(f, target, thrower), this.last_move)) {
+			user_momentum = -user_momentum;
 		} else {
-			if (truthy(rt.bitAnd(rt.getDir(f, live(target), live(thrower)), rt.sv(f, "last_move")))) {
-				user_momentum = rt.neg(live(user_momentum));
-			} else {
-				user_momentum = 0;
-			}
+			user_momentum = 0;
 		}
-		if (truthy(live(user_momentum))) {
-			(range = rt.modify(live(range), add(divide(live(user_momentum), live(speed)), 1), multiply));
-			if (rt.le((speed = rt.modify(live(speed), live(user_momentum), add)), 0)) {
-				return live(f.dot);
+		if (user_momentum) {
+			range *= user_momentum / speed + 1;
+			if ((speed += user_momentum) <= 0) {
+				return f.dot;
 			}
 		}
 	}
-	rt.setFv(f, "thrownthing", (TT = (yield* g.new_(f, T("/datum/thrownthing"), []))), live(f.src));
-	rt.setFv(f, "target", live(TT), live(target));
-	rt.setFv(f, "target_turf", live(TT), rt.getStep(f, live(target), 0));
-	rt.setFv(f, "init_dir", live(TT), rt.getDir(f, live(f.src), live(target)));
-	rt.setFv(f, "maxrange", live(TT), live(range));
-	rt.setFv(f, "speed", live(TT), live(speed));
-	rt.setFv(f, "thrower", live(TT), live(thrower));
-	rt.setFv(f, "diagonals_first", live(TT), live(diagonals_first));
-	rt.setFv(f, "callback", live(TT), live(callback));
-	rt.setFv(f, "start_loc", live(TT), rt.sv(f, "loc"));
-	rt.setFv(f, "blast_epi", live(TT), rt.gl("blast_throw_epi"));
-	rt.setGl("blast_throw_epi", null);
-	dist_x = rt.op(f, "Abs", [], [subtract(rt.fv(f, "x", live(target)), rt.fv(f, "x", live(f.src)))]);
-	dist_y = rt.op(f, "Abs", [], [subtract(rt.fv(f, "y", live(target)), rt.fv(f, "y", live(f.src)))]);
-	if (rt.gt(rt.fv(f, "x", live(target)), rt.fv(f, "x", live(f.src)))) {
-		$0 = 4;
-	} else {
-		$0 = 8;
+	(TT = (yield* new_(T("/datum/thrownthing")))).thrownthing = this;
+	TT.target = target;
+	TT.target_turf = rt.getStep(f, target, 0);
+	TT.init_dir = rt.getDir(f, this, target);
+	TT.maxrange = range;
+	TT.speed = speed;
+	TT.thrower = thrower;
+	TT.diagonals_first = diagonals_first;
+	TT.callback = callback;
+	TT.start_loc = this.loc;
+	TT.blast_epi = GLOB.blast_throw_epi;
+	GLOB.blast_throw_epi = null;
+	let dist_x: Value = rt.op(f, "Abs", [], [target.x - this.x]);
+	let dist_y: Value = rt.op(f, "Abs", [], [target.y - this.y]);
+	let dx: Value = target.x > this.x ? 4 : 8;
+	let dy: Value = target.y > this.y ? 1 : 2;
+	if (dist_x == dist_y) {
+		TT.pure_diagonal = 1;
+	} else if (dist_x <= dist_y) {
+		olddist_x = dist_x;
+		olddx = dx;
+		dist_x = dist_y;
+		dist_y = olddist_x;
+		dx = dy;
+		dy = olddx;
 	}
-	dx = $0;
-	if (rt.gt(rt.fv(f, "y", live(target)), rt.fv(f, "y", live(f.src)))) {
-		$0 = 1;
-	} else {
-		$0 = 2;
+	TT.dist_x = dist_x;
+	TT.dist_y = dist_y;
+	TT.dx = dx;
+	TT.dy = dy;
+	TT.diagonal_error = dist_x / 2 - dist_y;
+	TT.start_time = rt.worldTime(f);
+	if (this.pulledby) {
+		yield* this.pulledby.stop_pulling();
 	}
-	dy = $0;
-	if (isEqual(live(dist_x), live(dist_y))) {
-		rt.setFv(f, "pure_diagonal", live(TT), 1);
-	} else {
-		if (rt.le(live(dist_x), live(dist_y))) {
-			olddist_x = live(dist_x);
-			olddx = live(dx);
-			dist_x = live(dist_y);
-			dist_y = live(olddist_x);
-			dx = live(dy);
-			dy = live(olddx);
-		}
+	this.throwing = TT;
+	this.glide_size = max(1, min(32 / max(1 / speed / rt.world().tick_lag, 1), 32));
+	if (spin) {
+		this.SpinAnimation(5, 1);
 	}
-	rt.setFv(f, "dist_x", live(TT), live(dist_x));
-	rt.setFv(f, "dist_y", live(TT), live(dist_y));
-	rt.setFv(f, "dx", live(TT), live(dx));
-	rt.setFv(f, "dy", live(TT), live(dy));
-	rt.setFv(f, "diagonal_error", live(TT), subtract(divide(live(dist_x), 2), live(dist_y)));
-	rt.setFv(f, "start_time", live(TT), rt.worldTime(f));
-	if (truthy(rt.sv(f, "pulledby"))) {
-		yield* g.callName(f, rt.sv(f, "pulledby"), "stop_pulling", []);
+	rt.setAt(GLOB.SSthrowing.processing, this, TT);
+	if (GLOB.SSthrowing.state == 3 && rt.length(GLOB.SSthrowing.currentrun)) {
+		rt.setAt(GLOB.SSthrowing.currentrun, this, TT);
 	}
-	rt.setSv(f, "throwing", live(TT));
-	rt.setSv(f, "glide_size", (yield* g.call(f, P("/proc/max"), null, [1, (yield* g.call(f, P("/proc/min"), null, [divide(32, (yield* g.call(f, P("/proc/max"), null, [divide(divide(1, live(speed)), rt.fv(f, "tick_lag", rt.world())), 1]))), 32]))])));
-	if (truthy(live(spin))) {
-		yield* g.srcCall(f, "SpinAnimation", 5, 1);
-	}
-	rt.setAt(rt.fv(f, "processing", rt.gl("SSthrowing")), live(f.src), live(TT));
-	if ((isEqual(rt.fv(f, "state", rt.gl("SSthrowing")), 3) && truthy(rt.length(rt.fv(f, "currentrun", rt.gl("SSthrowing")))))) {
-		rt.setAt(rt.fv(f, "currentrun", rt.gl("SSthrowing")), live(f.src), live(TT));
-	}
-	yield* g.callName(f, live(TT), "tick", []);
+	yield* TT.tick();
 	return f.dot;
 }, true);
 
@@ -588,15 +503,14 @@ rt.def("/atom/movable/proc/throw_at", function* throw_at(f: Frame, target: Value
 // No thrownthing, callback, spin, per-step Move/Entered/Crossed, and nothing is hit at the end (no throw_impact on the thing that
 // stopped it). Space drift (newtonian_move) still happens at the end like in thrownthing/finalize.
 rt.def("/atom/movable/proc/blast_fling", function* blast_fling(f: Frame, target: Value, range: Value, epi: Value) {
-	let start: Value = null, cur: Value = null, step: Value = null, target_turf: Value = null, L: Value = null, O: Value = null;
+	let step: Value = null, L: Value = null, O: Value = null;
 	let $e: any;
-	f.vars = () => [target, range, epi, start, cur, step, target_turf, L, O, $e];
-	start = rt.sv(f, "loc");
-	if (!target || !truthy(rt.call(f, P("/proc/isturf"), null, [start]))) {
+	let start: Value = this.loc;
+	if (!target || !rt.call(f, P("/proc/isturf"), null, [start])) {
 		return 0;
 	}
 	const counting = truthy(rt.call(f, P("/proc/stress_counts_on"), null, []));
-	const tx = rt.fv(f, "x", target), ty = rt.fv(f, "y", target), sx = rt.fv(f, "x", start), sy = rt.fv(f, "y", start);
+	const tx = target.x, ty = target.y, sx = start.x, sy = start.y;
 	let dist_x = Math.abs(tx - sx), dist_y = Math.abs(ty - sy), dx = tx > sx ? 4 : 8, dy = ty > sy ? 1 : 2, pure_diagonal = false;
 	if (dist_x === dist_y) {
 		pure_diagonal = true;
@@ -606,11 +520,11 @@ rt.def("/atom/movable/proc/blast_fling", function* blast_fling(f: Frame, target:
 	}
 	let err = dist_x / 2 - dist_y;
 	const init_dir = rt.getDir(f, start, target), maxd = Math.max(dist_x, dist_y);
-	target_turf = rt.getStep(f, target, 0);
-	cur = start;
+	let target_turf: Value = rt.getStep(f, target, 0);
+	let cur: Value = start;
 	let travelled = 0;
 	while (travelled < range) {
-		if (cur === target_turf && truthy(yield* g.callName(f, live(f.src), "has_gravity", [cur]))) break;
+		if (cur === target_turf && this.has_gravity(cur)) break;
 		step = rt.getStep(f, cur, travelled <= maxd ? rt.getDir(f, cur, target_turf) : init_dir);
 		if (!pure_diagonal) {
 			if (err >= 0 && maxd - travelled !== 1) step = rt.getStep(f, cur, dx);
@@ -619,477 +533,388 @@ rt.def("/atom/movable/proc/blast_fling", function* blast_fling(f: Frame, target:
 		if (!step) break;
 		let blocked = false;
 		if ((L = rt.call(f, P("/proc/hook_list"), null, [cur, 4])) !== null) {
-			rt.forList(f, 0, live(L), T("/obj"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				O = $e;
-				if (O !== f.src && !truthy(yield* g.callName(f, live(O), "CheckExit", [live(f.src), step]))) blocked = true;
+			for (O of each(L, T("/obj"))) {
+				if (O !== f.src && !O.CheckExit(this, step)) blocked = true;
 			}
-			rt.endFor(f, 0);
 		}
 		if (!blocked && (L = rt.call(f, P("/proc/hook_list"), null, [step, 5])) !== null) {
-			rt.forList(f, 0, live(L), T("/atom/movable"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				O = $e;
-				if (!truthy(yield* g.callName(f, live(O), "CanPass", [live(f.src), cur, 1]))) blocked = true;
+			for (O of each(L, T("/atom/movable"))) {
+				if (!(yield* O.CanPass(this, cur, 1))) blocked = true;
 			}
-			rt.endFor(f, 0);
 		}
-		if (!blocked && !truthy(yield* g.callName(f, live(step), "CanPass", [live(f.src), step]))) blocked = true;
+		if (!blocked && !(yield* step.CanPass(this, step))) blocked = true;
 		if (blocked) break;
 		cur = step;
 		travelled++;
 	}
-	if (cur !== start) yield* g.callName(f, live(f.src), "Move", [cur, rt.getDir(f, start, cur)]);
+	if (cur !== start) yield* this.Move(cur, rt.getDir(f, start, cur));
 	if (counting) {
 		rt.call(f, P("/proc/stress_count"), null, ["blast_flung", 1]);
 		rt.call(f, P("/proc/stress_count"), null, ["blast_flung_range_sum", range]);
-		if (rt.sv(f, "loc") !== start) rt.call(f, P("/proc/stress_count"), null, ["blast_flung_moved", 1]);
+		if (this.loc !== start) rt.call(f, P("/proc/stress_count"), null, ["blast_flung_moved", 1]);
 		rt.call(f, P("/proc/stress_count"), null, ["blast_flung_dist_sum", travelled]);
-		if (truthy(rt.le(rt.call(f, P("/proc/get_dist"), null, [rt.sv(f, "loc"), epi]), 28))) rt.call(f, P("/proc/stress_count"), null, ["blast_flung_end_in_area", 1]);
+		if (rt.call(f, P("/proc/get_dist"), null, [this.loc, epi]) <= 28) rt.call(f, P("/proc/stress_count"), null, ["blast_flung_end_in_area", 1]);
 	}
-	yield* g.callName(f, live(f.src), "newtonian_move", [init_dir]);
+	yield* this.newtonian_move(init_dir);
 	return f.dot;
 }, true);
 
-// /atom/movable/proc/handle_buckled_mob_movement  (code/game/atoms_movable.dm:400)  may sleep
+// atoms_movable.dm:400
 rt.def("/atom/movable/proc/handle_buckled_mob_movement", function* handle_buckled_mob_movement(f: Frame, newloc: Value, direct: Value) {
 	let m: Value = null, buckled_mob: Value = null;
-	let $e: any;
-	f.vars = () => [newloc, direct, m, buckled_mob, $e];
-	m = null;
-	rt.forList(f, 0, rt.sv(f, "buckled_mobs"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		m = $e;
-		if (!truthy((yield* g.callName(f, (buckled_mob = live(m)), "Move", [live(newloc), live(direct)])))) {
-			rt.setSv(f, "loc", rt.fv(f, "loc", live(buckled_mob)));
-			rt.setSv(f, "last_move", rt.fv(f, "last_move", live(buckled_mob)));
-			rt.setSv(f, "inertia_dir", rt.sv(f, "last_move"));
-			rt.setFv(f, "inertia_dir", live(buckled_mob), rt.sv(f, "last_move"));
+	for (m of each(this.buckled_mobs)) {
+		if (!(yield* (buckled_mob = m).Move(newloc, direct))) {
+			this.loc = buckled_mob.loc;
+			this.last_move = buckled_mob.last_move;
+			this.inertia_dir = this.last_move;
+			buckled_mob.inertia_dir = this.last_move;
 			return 0;
 		}
-		rt.setFv(f, "glide_size", live(buckled_mob), rt.sv(f, "glide_size"));
+		buckled_mob.glide_size = this.glide_size;
 	}
-	rt.endFor(f, 0);
 	return 1;
 }, true);
 
-// /atom/movable/proc/CanPass  (code/game/atoms_movable.dm:412)
+// atoms_movable.dm:412
 rt.def("/atom/movable/proc/CanPass", function CanPass(f: Frame) {
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 1.5;
 	}
-	if (truthy((rt.isIn(f, live(f.args[0]), rt.sv(f, "buckled_mobs")) ? 1 : 0))) {
+	if (rt.isIn(f, f.args[0], this.buckled_mobs)) {
 		return 1;
 	}
-	return rt.callSuper(f, [], rt.Args.Same);
+	return parent_proc();
 }, false, { args: ["mover", "target", "height"] });
 
-// /atom/movable/proc/get_spacemove_backup  (code/game/atoms_movable.dm:419)  may sleep
+// atoms_movable.dm:419
 rt.def("/atom/movable/proc/get_spacemove_backup", function* get_spacemove_backup(f: Frame) {
 	let dense_object_backup: Value = null, A: Value = null, turf: Value = null, AM: Value = null;
-	let $e: any;
-	f.vars = () => [dense_object_backup, A, turf, AM, $e];
-	dense_object_backup = null;
-	A = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/orange"), null, [1, rt.getStep(f, live(f.src), 0)])));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		A = $e;
-		if (truthy((yield* g.call(f, P("/proc/isarea"), null, [live(A)])))) {
+	for (A of each(orange(1, rt.getStep(f, this, 0)))) {
+		if (isarea(A)) {
 			continue;
 		}
-		if (truthy((yield* g.call(f, P("/proc/isturf"), null, [live(A)])))) {
-			if (!truthy(rt.gv(f, "density", (turf = live(A))))) {
+		if (isturf(A)) {
+			if (!(turf = A).density) {
 				continue;
 			}
-			return live(turf);
-		} else {
-			if ((!truthy((yield* g.callName(f, (AM = live(A)), "CanPass", [live(f.src)]))) || truthy(rt.fv(f, "density", live(AM))))) {
-				if (truthy(rt.fv(f, "anchored", live(AM)))) {
-					return live(AM);
-				}
-				dense_object_backup = live(AM);
-				break;
+			return turf;
+		} else if (!(yield* (AM = A).CanPass(this)) || AM.density) {
+			if (AM.anchored) {
+				return AM;
 			}
+			dense_object_backup = AM;
+			break;
 		}
 	}
-	rt.endFor(f, 0);
-	f.dot = live(dense_object_backup);
+	f.dot = dense_object_backup;
 	return f.dot;
 }, true);
 
-// /atom/movable/proc/do_attack_animation  (code/game/atoms_movable.dm:442)  may sleep
+// atoms_movable.dm:442
 rt.def("/atom/movable/proc/do_attack_animation", function* do_attack_animation(f: Frame, A: Value, visual_effect_icon: Value, used_item: Value, no_effect: Value, end_pixel_y: Value) {
-	let pixel_x_diff: Value = null, pixel_y_diff: Value = null, final_pixel_y: Value = null, direction: Value = null;
-	f.vars = () => [A, visual_effect_icon, used_item, no_effect, end_pixel_y, pixel_x_diff, pixel_y_diff, final_pixel_y, direction];
-	if ((!truthy(live(no_effect)) && (truthy(live(visual_effect_icon)) || truthy(live(used_item))))) {
-		yield* g.srcCall(f, "do_item_attack_animation", live(A), live(visual_effect_icon), live(used_item));
+	let direction: Value = null;
+	if (!no_effect && (visual_effect_icon || used_item)) {
+		yield* this.do_item_attack_animation(A, visual_effect_icon, used_item);
 	}
-	if (isEqual(live(A), live(f.src))) {
-		return live(f.dot);
+	if (A == this) {
+		return f.dot;
 	}
-	pixel_x_diff = 0;
-	pixel_y_diff = 0;
-	final_pixel_y = rt.initial(f, live(f.src), "pixel_y");
-	if (truthy(live(end_pixel_y))) {
-		final_pixel_y = live(end_pixel_y);
+	let pixel_x_diff: Value = 0;
+	let pixel_y_diff: Value = 0;
+	let final_pixel_y: Value = rt.initial(f, this, "pixel_y");
+	if (end_pixel_y) {
+		final_pixel_y = end_pixel_y;
 	}
-	if (truthy(rt.bitAnd((direction = rt.getDir(f, live(f.src), live(A))), 1))) {
+	if (rt.bitAnd((direction = rt.getDir(f, this, A)), 1)) {
 		pixel_y_diff = 8;
-	} else {
-		if (truthy(rt.bitAnd(live(direction), 2))) {
-			pixel_y_diff = -8;
-		}
+	} else if (rt.bitAnd(direction, 2)) {
+		pixel_y_diff = -8;
 	}
-	if (truthy(rt.bitAnd(live(direction), 4))) {
+	if (rt.bitAnd(direction, 4)) {
 		pixel_x_diff = 8;
-	} else {
-		if (truthy(rt.bitAnd(live(direction), 8))) {
-			pixel_x_diff = -8;
-		}
+	} else if (rt.bitAnd(direction, 8)) {
+		pixel_x_diff = -8;
 	}
-	rt.op(f, "Animate", [2, 8], [null, live(f.src), "pixel_x", add(rt.sv(f, "pixel_x"), live(pixel_x_diff)), "pixel_y", add(rt.sv(f, "pixel_y"), live(pixel_y_diff)), "time", 2]);
-	rt.op(f, "Animate", [2, 6], ["pixel_x", rt.initial(f, live(f.src), "pixel_x"), "pixel_y", live(final_pixel_y), "time", 2]);
+	rt.op(f, "Animate", [2, 8], [null, this, "pixel_x", this.pixel_x + pixel_x_diff, "pixel_y", this.pixel_y + pixel_y_diff, "time", 2]);
+	rt.op(f, "Animate", [2, 6], ["pixel_x", rt.initial(f, this, "pixel_x"), "pixel_y", final_pixel_y, "time", 2]);
 	return f.dot;
 }, true);
 
-// /atom/movable/proc/do_item_attack_animation  (code/game/atoms_movable.dm:470)  may sleep
+// atoms_movable.dm:470
 rt.def("/atom/movable/proc/do_item_attack_animation", function* do_item_attack_animation(f: Frame, A: Value, visual_effect_icon: Value, used_item: Value) {
 	let I: Value = null, direction: Value = null;
-	f.vars = () => [A, visual_effect_icon, used_item, I, direction];
-	I = null;
-	if (truthy(live(visual_effect_icon))) {
-		I = (yield* g.call(f, P("/proc/image"), null, [rt.rsc("icons/effects/effects.dmi"), live(A), live(visual_effect_icon), add(rt.fv(f, "layer", live(A)), 0.10000000149011612)]));
-	} else {
-		if (truthy(live(used_item))) {
-			(rt.modField(f, (I = (yield* g.call(f, P("/proc/image"), null, [rt.fv(f, "icon", live(used_item)), live(A), rt.fv(f, "icon_state", live(used_item)), add(rt.fv(f, "layer", live(A)), 0.10000000149011612)]))), "transform", 0.75, multiply));
-			rt.setFv(f, "appearance_flags", live(I), 30);
-			if (truthy(rt.bitAnd((direction = rt.getDir(f, live(f.src), live(A))), 1))) {
-				rt.setFv(f, "pixel_y", live(I), -16);
-			} else {
-				if (truthy(rt.bitAnd(live(direction), 2))) {
-					rt.setFv(f, "pixel_y", live(I), 16);
-				}
-			}
-			if (truthy(rt.bitAnd(live(direction), 4))) {
-				rt.setFv(f, "pixel_x", live(I), -16);
-			} else {
-				if (truthy(rt.bitAnd(live(direction), 8))) {
-					rt.setFv(f, "pixel_x", live(I), 16);
-				}
-			}
-			if (!truthy(live(direction))) {
-				rt.setFv(f, "pixel_z", live(I), 16);
-			}
+	if (visual_effect_icon) {
+		I = image(rt.rsc("icons/effects/effects.dmi"), A, visual_effect_icon, A.layer + 0.1);
+	} else if (used_item) {
+		(I = image(used_item.icon, A, used_item.icon_state, A.layer + 0.1)).transform *= 0.75;
+		I.appearance_flags = 30;
+		if (rt.bitAnd((direction = rt.getDir(f, this, A)), 1)) {
+			I.pixel_y = -16;
+		} else if (rt.bitAnd(direction, 2)) {
+			I.pixel_y = 16;
+		}
+		if (rt.bitAnd(direction, 4)) {
+			I.pixel_x = -16;
+		} else if (rt.bitAnd(direction, 8)) {
+			I.pixel_x = 16;
+		}
+		if (!direction) {
+			I.pixel_z = 16;
 		}
 	}
-	if (!truthy(live(I))) {
-		return live(f.dot);
+	if (!I) {
+		return f.dot;
 	}
-	yield* g.call(f, P("/proc/flick_overlay"), null, [live(I), rt.gl("clients"), 5]);
-	rt.op(f, "Animate", [2, 12], [null, live(I), "alpha", 175, "pixel_x", 0, "pixel_y", 0, "pixel_z", 0, "time", 3]);
+	yield* flick_overlay(I, GLOB.clients, 5);
+	rt.op(f, "Animate", [2, 12], [null, I, "alpha", 175, "pixel_x", 0, "pixel_y", 0, "pixel_z", 0, "time", 3]);
 	return f.dot;
 }, true);
 
-// /atom/movable/proc/vv_get_dropdown  (code/game/atoms_movable.dm:503)
+// atoms_movable.dm:503
 rt.def("/atom/movable/proc/vv_get_dropdown", function vv_get_dropdown(f: Frame) {
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	(f.dot = rt.modify(live(f.dot), "Jump to", subtract));
-	rt.setAt(live(f.dot), "Follow", fmt("?_src_=holder;adminplayerobservefollow=＃", [live(f.src)]));
+	f.dot = parent_proc();
+	f.dot -= "Jump to";
+	rt.setAt(f.dot, "Follow", fmt("?_src_=holder;adminplayerobservefollow=＃", [this]));
 	return f.dot;
 });
 
-// /atom/movable/proc/ex_check  (code/game/atoms_movable.dm:508)
+// atoms_movable.dm:508
 rt.def("/atom/movable/proc/ex_check", function ex_check(f: Frame, ex_id: Value) {
-	if (!truthy(live(ex_id))) {
+	if (!ex_id) {
 		return 1;
 	}
-	if (!truthy(rt.sv(f, "acted_explosions"))) {
-		rt.setSv(f, "acted_explosions", rt.list());
+	if (!this.acted_explosions) {
+		this.acted_explosions = list();
 	}
-	if (truthy((rt.isIn(f, live(ex_id), rt.sv(f, "acted_explosions")) ? 1 : 0))) {
+	if (rt.isIn(f, ex_id, this.acted_explosions)) {
 		return 0;
 	}
-	rt.modSrcVar(f, "acted_explosions", live(ex_id), add);
+	this.acted_explosions += ex_id;
 	return 1;
 });
 
-// /atom/movable/proc/float  (code/game/atoms_movable.dm:519)  may sleep
+// atoms_movable.dm:519
 rt.def("/atom/movable/proc/float", function* float(f: Frame, on: Value) {
-	f.vars = () => [on];
-	if (truthy(rt.sv(f, "throwing"))) {
-		return live(f.dot);
+	if (this.throwing) {
+		return f.dot;
 	}
-	if ((truthy(live(on)) && !truthy(rt.sv(f, "floating")))) {
-		rt.op(f, "Animate", [2, 8], [null, live(f.src), "pixel_y", add(rt.sv(f, "pixel_y"), 2), "time", 10, "loop", -1]);
-		yield* g.call(f, P("/proc/sleep"), null, [10]);
-		rt.op(f, "Animate", [2, 8], [null, live(f.src), "pixel_y", subtract(rt.sv(f, "pixel_y"), 2), "time", 10, "loop", -1]);
-		rt.setSv(f, "floating", 1);
+	if (on && !this.floating) {
+		rt.op(f, "Animate", [2, 8], [null, this, "pixel_y", this.pixel_y + 2, "time", 10, "loop", -1]);
+		yield* sleep(10);
+		rt.op(f, "Animate", [2, 8], [null, this, "pixel_y", this.pixel_y - 2, "time", 10, "loop", -1]);
+		this.floating = 1;
 	} else {
-		if (!(!truthy(live(on)) && truthy(rt.sv(f, "floating")))) return f.dot;
-		rt.op(f, "Animate", [2, 6], [null, live(f.src), "pixel_y", rt.initial(f, live(f.src), "pixel_y"), "time", 10]);
-		rt.setSv(f, "floating", 0);
+		if (!(!on && this.floating)) return f.dot;
+		rt.op(f, "Animate", [2, 6], [null, this, "pixel_y", rt.initial(f, this, "pixel_y"), "time", 10]);
+		this.floating = 0;
 	}
 	return f.dot;
 }, true);
 
-// /atom/movable/proc/set_stationloving  (code/game/atoms_movable.dm:551)
+// atoms_movable.dm:551
 rt.def("/atom/movable/proc/set_stationloving", function set_stationloving(f: Frame, state: Value, inform_admins: Value) {
-	let currently: Value = null;
-	let $0: any;
-	f.vars = () => [inform_admins, currently, $0];
-	if (live(inform_admins) === null) {
-		inform_admins = 0;
-	}
-	if (truthy(rt.fv(f, "secondary_flags", live(f.src)))) {
-		$0 = rt.index(rt.fv(f, "secondary_flags", live(f.src)), "stationloving");
-	} else {
-		$0 = 0;
-	}
-	currently = $0;
-	if (truthy(live(inform_admins))) {
-		if (!truthy(rt.fv(f, "secondary_flags", live(f.src)))) {
-			rt.setFv(f, "secondary_flags", live(f.src), rt.list());
+	inform_admins ??= 0;
+	let currently: Value = this.secondary_flags ? rt.index(this.secondary_flags, "stationloving") : 0;
+	if (inform_admins) {
+		if (!this.secondary_flags) {
+			this.secondary_flags = list();
 		}
-		rt.setAt(rt.fv(f, "secondary_flags", live(f.src)), "inform_admins_on_relocate", 1);
-	} else {
-		if (truthy(rt.fv(f, "secondary_flags", live(f.src)))) {
-			rt.setAt(rt.fv(f, "secondary_flags", live(f.src)), "inform_admins_on_relocate", null);
-		}
+		rt.setAt(this.secondary_flags, "inform_admins_on_relocate", 1);
+	} else if (this.secondary_flags) {
+		rt.setAt(this.secondary_flags, "inform_admins_on_relocate", null);
 	}
-	if (isEqual(live(state), live(currently))) {
-		return live(f.dot);
-	} else {
-		if (!truthy(live(state))) {
-			rt.setFv(f, "isprocessing", live(f.src), 0);
-			(rt.modField(f, rt.gl("SSinbounds"), "processing", live(f.src), subtract));
-			if (truthy(rt.fv(f, "secondary_flags", live(f.src)))) {
-				rt.setAt(rt.fv(f, "secondary_flags", live(f.src)), "stationloving", null);
-			}
-		} else {
-			if (!truthy(rt.fv(f, "isprocessing", live(f.src)))) {
-				rt.setFv(f, "isprocessing", live(f.src), 1);
-				rt.modField(f, rt.gl("SSinbounds"), "processing", live(f.src), add);
-			}
-			if (!truthy(rt.fv(f, "secondary_flags", live(f.src)))) {
-				rt.setFv(f, "secondary_flags", live(f.src), rt.list());
-			}
-			rt.setAt(rt.fv(f, "secondary_flags", live(f.src)), "stationloving", 1);
+	if (state == currently) {
+		return f.dot;
+	} else if (!state) {
+		this.isprocessing = 0;
+		GLOB.SSinbounds.processing -= this;
+		if (this.secondary_flags) {
+			rt.setAt(this.secondary_flags, "stationloving", null);
 		}
+	} else {
+		if (!this.isprocessing) {
+			this.isprocessing = 1;
+			GLOB.SSinbounds.processing += this;
+		}
+		if (!this.secondary_flags) {
+			this.secondary_flags = list();
+		}
+		rt.setAt(this.secondary_flags, "stationloving", 1);
 	}
 	return f.dot;
 });
 
-// /atom/movable/proc/relocate  (code/game/atoms_movable.dm:568)  may sleep
+// atoms_movable.dm:568
 rt.def("/atom/movable/proc/relocate", function* relocate(f: Frame) {
 	let targetturf: Value = null, M: Value = null, S: Value = null;
-	f.vars = () => [targetturf, M, S];
-	if (!truthy((targetturf = (yield* g.call(f, P("/proc/find_safe_turf"), null, [2]))))) {
-		if (rt.gt(rt.len(f, rt.gl("blobstart")), 0)) {
-			targetturf = rt.getStep(f, rt.op(f, "PickUnweighted", [1], [rt.gl("blobstart")]), 0);
+	if (!(targetturf = find_safe_turf(ZLEVEL_STATION))) {
+		if (rt.len(f, GLOB.blobstart) > 0) {
+			targetturf = rt.getStep(f, pick(GLOB.blobstart), 0);
 		} else {
-			rt.throw_(f, (yield* g.new_(f, T("/exception"), ["Unable to find a blobstart landmark", "code/game/atoms_movable.dm", 573])));
+			rt.throw_(f, (yield* new_(T("/exception"), "Unable to find a blobstart landmark", "code/game/atoms_movable.dm", 573)));
 		}
 	}
-	if (truthy((yield* g.call(f, P("/proc/ismob"), null, [rt.sv(f, "loc")])))) {
-		yield* g.callName(f, (M = rt.sv(f, "loc")), "transferItemToLoc", [live(f.src), live(targetturf), 1]);
+	if (ismob(this.loc)) {
+		yield* (M = this.loc).transferItemToLoc(this, targetturf, 1);
+	} else if (rt.istype(this.loc, T("/obj/item/weapon/storage"))) {
+		yield* (S = this.loc).remove_from_storage(this, targetturf);
 	} else {
-		if (truthy((rt.istype(rt.sv(f, "loc"), T("/obj/item/weapon/storage")) ? 1 : 0))) {
-			yield* g.callName(f, (S = rt.sv(f, "loc")), "remove_from_storage", [live(f.src), live(targetturf)]);
-		} else {
-			yield* g.srcCall(f, "forceMove", live(targetturf));
-		}
+		yield* this.forceMove(targetturf);
 	}
-	return live(targetturf);
+	return targetturf;
 }, true);
 
-// /atom/movable/proc/check_in_bounds  (code/game/atoms_movable.dm:587)  may sleep
+// atoms_movable.dm:587
 rt.def("/atom/movable/proc/check_in_bounds", function* check_in_bounds(f: Frame) {
 	let currentturf: Value = null, targetturf: Value = null;
 	let $0: any, $1: any, $2: any;
-	f.vars = () => [currentturf, targetturf, $0, $1, $2];
-	if (truthy((yield* g.srcCall(f, "in_bounds")))) {
-		return live(f.dot);
+	if (this.in_bounds()) {
+		return f.dot;
 	} else {
-		currentturf = rt.getStep(f, live(f.src), 0);
-		yield* g.call(f, P("/proc/to_chat"), null, [(yield* g.call(f, P("/proc/get"), null, [live(f.src), T("/mob")])), "<span class='danger'>You can't help but feel that you just lost something back there...</span>"]);
-		targetturf = (yield* g.srcCall(f, "relocate"));
-		yield* g.call(f, P("/proc/log_game"), null, [fmt("＀ has been moved out of bounds in ＀. Moving it to ＀.", [live(f.src), fmt("(＀,＀,＀)", [rt.fv(f, "x", live(currentturf)), rt.fv(f, "y", live(currentturf)), rt.fv(f, "z", live(currentturf))]), fmt("(＀,＀,＀)", [rt.fv(f, "x", live(targetturf)), rt.fv(f, "y", live(targetturf)), rt.fv(f, "z", live(targetturf))])])]);
-		if (truthy(rt.fv(f, "secondary_flags", live(f.src)))) {
-			$0 = rt.index(rt.fv(f, "secondary_flags", live(f.src)), "inform_admins_on_relocate");
-		} else {
-			$0 = 0;
-		}
-		if (!truthy($0)) return f.dot;
-		$0 = live(f.src);
-		if (truthy(live(currentturf))) {
-			$1 = fmt("＀ ＀", [fmt("(＀,＀,＀)", [rt.fv(f, "x", live(currentturf)), rt.fv(f, "y", live(currentturf)), rt.fv(f, "z", live(currentturf))]), fmt("(<a href='?_src_=holder;adminplayerobservecoodjump=1;X=＀;Y=＀;Z=＀'>JMP</a>)", [rt.fv(f, "x", live(currentturf)), rt.fv(f, "y", live(currentturf)), rt.fv(f, "z", live(currentturf))])]);
+		currentturf = rt.getStep(f, this, 0);
+		to_chat(get(this, T("/mob")), "<span class='danger'>You can't help but feel that you just lost something back there...</span>");
+		targetturf = (yield* this.relocate());
+		log_game(`${this} has been moved out of bounds in ${`(${currentturf.x},${currentturf.y},${currentturf.z})`}. Moving it to ${`(${targetturf.x},${targetturf.y},${targetturf.z})`}.`);
+		if (!(this.secondary_flags ? rt.index(this.secondary_flags, "inform_admins_on_relocate") : 0)) return f.dot;
+		$0 = this;
+		if (currentturf) {
+			$1 = `${`(${currentturf.x},${currentturf.y},${currentturf.z})`} ${`(<a href='?_src_=holder;adminplayerobservecoodjump=1;X=${currentturf.x};Y=${currentturf.y};Z=${currentturf.z}'>JMP</a>)`}`;
 		} else {
 			$1 = "nonexistent location";
 		}
-		$1 = fmt("＀", [$1]);
-		if (truthy(live(targetturf))) {
-			$2 = fmt("＀ ＀", [fmt("(＀,＀,＀)", [rt.fv(f, "x", live(targetturf)), rt.fv(f, "y", live(targetturf)), rt.fv(f, "z", live(targetturf))]), fmt("(<a href='?_src_=holder;adminplayerobservecoodjump=1;X=＀;Y=＀;Z=＀'>JMP</a>)", [rt.fv(f, "x", live(targetturf)), rt.fv(f, "y", live(targetturf)), rt.fv(f, "z", live(targetturf))])]);
+		$1 = `${$1}`;
+		if (targetturf) {
+			$2 = `${`(${targetturf.x},${targetturf.y},${targetturf.z})`} ${`(<a href='?_src_=holder;adminplayerobservecoodjump=1;X=${targetturf.x};Y=${targetturf.y};Z=${targetturf.z}'>JMP</a>)`}`;
 		} else {
 			$2 = "nonexistent location";
 		}
-		yield* g.call(f, P("/proc/message_admins"), null, [fmt("＀ has been moved out of bounds in ＀. Moving it to ＀.", [$0, $1, fmt("＀", [$2])])]);
+		message_admins(`${$0} has been moved out of bounds in ${$1}. Moving it to ${`${$2}`}.`);
 	}
 	return f.dot;
 }, true);
 
-// /atom/movable/proc/in_bounds  (code/game/atoms_movable.dm:599)
+// atoms_movable.dm:599
 rt.def("/atom/movable/proc/in_bounds", function in_bounds(f: Frame) {
 	let currentturf: Value = null;
-	f.vars = () => [currentturf];
 	f.dot = 0;
-	if (!(truthy((currentturf = rt.getStep(f, live(f.src), 0))) && ((isEqual(rt.fv(f, "z", live(currentturf)), 1) || isEqual(rt.fv(f, "z", live(currentturf)), 2)) || isEqual(rt.fv(f, "z", live(currentturf)), 11)))) return f.dot;
-	f.dot = 1;
+	if (!((currentturf = rt.getStep(f, this, 0)) && (currentturf.z == ZLEVEL_CENTCOM || currentturf.z == ZLEVEL_STATION || currentturf.z == ZLEVEL_TRANSIT))) return f.dot;
+	f.dot = ZLEVEL_CENTCOM;
 	return f.dot;
 });
 
-// /atom/movable/proc/get_language_holder  (code/game/atoms_movable.dm:607)  may sleep
+// atoms_movable.dm:607
 rt.def("/atom/movable/proc/get_language_holder", function* get_language_holder(f: Frame, shadow: Value) {
-	f.vars = () => [shadow];
-	if (live(shadow) === null) {
-		shadow = 1;
-	}
-	if (truthy(rt.sv(f, "language_holder"))) {
-		return rt.sv(f, "language_holder");
+	shadow ??= 1;
+	if (this.language_holder) {
+		return this.language_holder;
 	} else {
-		rt.setSv(f, "language_holder", (yield* g.new_(f, rt.sv(f, "initial_language_holder"), [live(f.src)])));
-		return rt.sv(f, "language_holder");
+		this.language_holder = (yield* new_(this.initial_language_holder, this));
+		return this.language_holder;
 	}
-	return f.dot;
 }, true);
 
-// /atom/movable/proc/grant_language  (code/game/atoms_movable.dm:613)  may sleep
+// atoms_movable.dm:613
 rt.def("/atom/movable/proc/grant_language", function* grant_language(f: Frame, dt: Value) {
 	let H: Value = null;
-	f.vars = () => [dt, H];
-	yield* g.callName(f, (H = (yield* g.srcCall(f, "get_language_holder"))), "grant_language", [live(dt)]);
+	yield* (H = (yield* this.get_language_holder())).grant_language(dt);
 	return f.dot;
 }, true);
 
-// /atom/movable/proc/grant_all_languages  (code/game/atoms_movable.dm:617)  may sleep
+// atoms_movable.dm:617
 rt.def("/atom/movable/proc/grant_all_languages", function* grant_all_languages(f: Frame, omnitongue: Value) {
 	let H: Value = null;
-	f.vars = () => [omnitongue, H];
-	if (live(omnitongue) === null) {
-		omnitongue = 0;
-	}
-	yield* g.callName(f, (H = (yield* g.srcCall(f, "get_language_holder"))), "grant_all_languages", [live(omnitongue)]);
+	omnitongue ??= 0;
+	yield* (H = (yield* this.get_language_holder())).grant_all_languages(omnitongue);
 	return f.dot;
 }, true);
 
-// /atom/movable/proc/get_random_understood_language  (code/game/atoms_movable.dm:621)  may sleep
+// atoms_movable.dm:621
 rt.def("/atom/movable/proc/get_random_understood_language", function* get_random_understood_language(f: Frame) {
 	let H: Value = null;
-	f.vars = () => [H];
-	f.dot = (yield* g.callName(f, (H = (yield* g.srcCall(f, "get_language_holder"))), "get_random_understood_language", []));
+	f.dot = (yield* (H = (yield* this.get_language_holder())).get_random_understood_language());
 	return f.dot;
 }, true);
 
-// /atom/movable/proc/remove_language  (code/game/atoms_movable.dm:625)  may sleep
+// atoms_movable.dm:625
 rt.def("/atom/movable/proc/remove_language", function* remove_language(f: Frame, dt: Value) {
 	let H: Value = null;
-	f.vars = () => [dt, H];
-	yield* g.callName(f, (H = (yield* g.srcCall(f, "get_language_holder"))), "remove_language", [live(dt)]);
+	yield* (H = (yield* this.get_language_holder())).remove_language(dt);
 	return f.dot;
 }, true);
 
-// /atom/movable/proc/remove_all_languages  (code/game/atoms_movable.dm:629)  may sleep
+// atoms_movable.dm:629
 rt.def("/atom/movable/proc/remove_all_languages", function* remove_all_languages(f: Frame) {
 	let H: Value = null;
-	f.vars = () => [H];
-	yield* g.callName(f, (H = (yield* g.srcCall(f, "get_language_holder"))), "remove_all_languages", []);
+	yield* (H = (yield* this.get_language_holder())).remove_all_languages();
 	return f.dot;
 }, true);
 
-// /atom/movable/proc/has_language  (code/game/atoms_movable.dm:633)  may sleep
+// atoms_movable.dm:633
 rt.def("/atom/movable/proc/has_language", function* has_language(f: Frame, dt: Value) {
 	let H: Value = null;
-	f.vars = () => [dt, H];
-	f.dot = (yield* g.callName(f, (H = (yield* g.srcCall(f, "get_language_holder"))), "has_language", [live(dt)]));
+	f.dot = (yield* (H = (yield* this.get_language_holder())).has_language(dt));
 	return f.dot;
 }, true);
 
-// /atom/movable/proc/copy_known_languages_from  (code/game/atoms_movable.dm:637)  may sleep
+// atoms_movable.dm:637
 rt.def("/atom/movable/proc/copy_known_languages_from", function* copy_known_languages_from(f: Frame, thing: Value, replace: Value) {
 	let H: Value = null;
-	f.vars = () => [thing, replace, H];
-	if (live(replace) === null) {
-		replace = 0;
-	}
-	f.dot = (yield* g.callName(f, (H = (yield* g.srcCall(f, "get_language_holder"))), "copy_known_languages_from", [live(thing), live(replace)]));
+	replace ??= 0;
+	f.dot = (yield* (H = (yield* this.get_language_holder())).copy_known_languages_from(thing, replace));
 	return f.dot;
 }, true);
 
-// /atom/movable/proc/can_speak_in_language  (code/game/atoms_movable.dm:646)  may sleep
+// atoms_movable.dm:646
 rt.def("/atom/movable/proc/can_speak_in_language", function* can_speak_in_language(f: Frame, dt: Value) {
 	let H: Value = null;
-	f.vars = () => [dt, H];
-	if (!truthy((yield* g.callName(f, (H = (yield* g.srcCall(f, "get_language_holder"))), "has_language", [live(dt)])))) {
+	if (!(yield* (H = (yield* this.get_language_holder())).has_language(dt))) {
 		return 0;
+	} else if (H.omnitongue) {
+		return 1;
+	} else if (this.could_speak_in_language(dt) && (!H.only_speaks_language || H.only_speaks_language == dt)) {
+		return 1;
 	} else {
-		if (truthy(rt.fv(f, "omnitongue", live(H)))) {
-			return 1;
-		} else {
-			if ((truthy((yield* g.srcCall(f, "could_speak_in_language", live(dt)))) && (!truthy(rt.fv(f, "only_speaks_language", live(H))) || isEqual(rt.fv(f, "only_speaks_language", live(H)), live(dt))))) {
-				return 1;
-			} else {
-				return 0;
-			}
-		}
+		return 0;
 	}
-	return f.dot;
 }, true);
 
-// /atom/movable/proc/get_default_language  (code/game/atoms_movable.dm:660)  may sleep
+// atoms_movable.dm:660
 rt.def("/atom/movable/proc/get_default_language", function* get_default_language(f: Frame) {
 	let H: Value = null, chosen_langtype: Value = null, highest_priority: Value = null, lt: Value = null, langtype: Value = null, pri: Value = null;
-	let $e: any;
-	f.vars = () => [H, chosen_langtype, highest_priority, lt, langtype, pri, $e];
-	if (truthy(rt.gv(f, "selected_default_language", (H = (yield* g.srcCall(f, "get_language_holder")))))) {
-		if (truthy((yield* g.srcCall(f, "can_speak_in_language", rt.fv(f, "selected_default_language", live(H)))))) {
-			return rt.fv(f, "selected_default_language", live(H));
+	if ((H = (yield* this.get_language_holder())).selected_default_language) {
+		if (yield* this.can_speak_in_language(H.selected_default_language)) {
+			return H.selected_default_language;
 		}
-		rt.setFv(f, "selected_default_language", live(H), null);
+		H.selected_default_language = null;
 	}
-	chosen_langtype = null;
-	highest_priority = null;
-	lt = null;
-	rt.forList(f, 0, rt.fv(f, "languages", live(H)));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		lt = $e;
-		if (!truthy((yield* g.srcCall(f, "can_speak_in_language", (langtype = live(lt)))))) {
+	for (lt of each(H.languages)) {
+		if (!(yield* this.can_speak_in_language((langtype = lt)))) {
 			continue;
 		}
-		pri = rt.initial(f, live(langtype), "default_priority");
-		if ((!truthy(live(highest_priority)) || rt.gt(live(pri), live(highest_priority)))) {
-			chosen_langtype = live(langtype);
-			highest_priority = live(pri);
+		pri = rt.initial(f, langtype, "default_priority");
+		if (!highest_priority || pri > highest_priority) {
+			chosen_langtype = langtype;
+			highest_priority = pri;
 		}
 	}
-	rt.endFor(f, 0);
-	rt.setFv(f, "selected_default_language", live(H), live(f.dot));
-	f.dot = live(chosen_langtype);
+	H.selected_default_language = f.dot;
+	f.dot = chosen_langtype;
 	return f.dot;
 }, true);
 
-// /atom/movable/proc/ConveyorMove  (code/game/atoms_movable.dm:688)  may sleep
+// atoms_movable.dm:688
 rt.def("/atom/movable/proc/ConveyorMove", function* ConveyorMove(f: Frame, movedir: Value) {
-	f.vars = () => [movedir];
-	if (!(!truthy(rt.sv(f, "anchored")) && truthy((yield* g.srcCall(f, "has_gravity"))))) return f.dot;
-	yield* g.call(f, P("/proc/step"), null, [live(f.src), live(movedir)]);
+	if (!(!this.anchored && this.has_gravity())) return f.dot;
+	yield* step(this, movedir);
 	return f.dot;
 }, true, { waitfor: false });
 
-// /atom/movable/proc/can_be_pulled  (code/game/atoms_movable.dm:696)
+// atoms_movable.dm:696
 rt.def("/atom/movable/proc/can_be_pulled", function can_be_pulled(f: Frame, user: Value) {
-	if ((isEqual(live(f.src), live(user)) || !truthy(rt.call(f, P("/proc/isturf"), null, [rt.sv(f, "loc")])))) {
+	if (this == user || !isturf(this.loc)) {
 		return 0;
 	}
-	if ((truthy(rt.sv(f, "anchored")) || truthy(rt.sv(f, "throwing")))) {
+	if (this.anchored || this.throwing) {
 		return 0;
 	}
 	return 1;

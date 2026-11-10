@@ -1,102 +1,94 @@
-// From code/_onclick/hud/guardian.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/_onclick/hud/guardian.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(73, "/datum/hud/guardian", "/datum/hud", {});
 
-// /datum/hud/guardian/proc/New  (code/_onclick/hud/guardian.dm:3)  may sleep
-rt.def("/datum/hud/guardian/proc/New", function* New(f: Frame) {
+// guardian.dm:3
+rt.def("/datum/hud/guardian/proc/New", function* New(f: Frame, owner: Value) {
 	let using: Value = null;
-	f.vars = () => [using];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	using = null;
-	rt.setSv(f, "healths", (yield* g.new_(f, T("/obj/screen/healths/guardian"), [])));
-	rt.modSrcVar(f, "infodisplay", rt.sv(f, "healths"), add);
-	rt.setFv(f, "screen_loc", (using = (yield* g.new_(f, T("/obj/screen/guardian/Manifest"), []))), (yield* g.call(f, P("/proc/ui_hand_position"), null, [2])));
-	rt.modSrcVar(f, "static_inventory", live(using), add);
-	rt.setFv(f, "screen_loc", (using = (yield* g.new_(f, T("/obj/screen/guardian/Recall"), []))), (yield* g.call(f, P("/proc/ui_hand_position"), null, [1])));
-	rt.modSrcVar(f, "static_inventory", live(using), add);
-	rt.setFv(f, "screen_loc", (using = (yield* g.new_(f, rt.fv(f, "toggle_button_type", live(f.args[0])), []))), "CENTER+1:18,SOUTH:5");
-	rt.modSrcVar(f, "static_inventory", live(using), add);
-	rt.setFv(f, "screen_loc", (using = (yield* g.new_(f, T("/obj/screen/guardian/ToggleLight"), []))), "WEST:6,SOUTH:5");
-	rt.modSrcVar(f, "static_inventory", live(using), add);
-	rt.setFv(f, "screen_loc", (using = (yield* g.new_(f, T("/obj/screen/guardian/Communicate"), []))), "CENTER-2:14,SOUTH:5");
-	rt.modSrcVar(f, "static_inventory", live(using), add);
+	yield* parent_proc();
+	this.healths = (yield* new_(T("/obj/screen/healths/guardian")));
+	this.infodisplay += this.healths;
+	(using = (yield* new_(T("/obj/screen/guardian/Manifest")))).screen_loc = ui_hand_position(2);
+	this.static_inventory += using;
+	(using = (yield* new_(T("/obj/screen/guardian/Recall")))).screen_loc = ui_hand_position(1);
+	this.static_inventory += using;
+	(using = (yield* new_(owner.toggle_button_type))).screen_loc = "CENTER+1:18,SOUTH:5";
+	this.static_inventory += using;
+	(using = (yield* new_(T("/obj/screen/guardian/ToggleLight")))).screen_loc = "WEST:6,SOUTH:5";
+	this.static_inventory += using;
+	(using = (yield* new_(T("/obj/screen/guardian/Communicate")))).screen_loc = "CENTER-2:14,SOUTH:5";
+	this.static_inventory += using;
 	return f.dot;
-}, true, { args: ["owner"] });
+}, true);
 
-// /mob/living/simple_animal/hostile/guardian/proc/create_mob_hud  (code/_onclick/hud/guardian.dm:31)  may sleep
+// guardian.dm:31
 rt.def("/mob/living/simple_animal/hostile/guardian/proc/create_mob_hud", function* create_mob_hud(f: Frame) {
-	if (!(truthy(rt.sv(f, "client")) && !truthy(rt.sv(f, "hud_used")))) return f.dot;
-	if (truthy(rt.sv(f, "dextrous"))) {
-		yield* g.callSuper(f, [], rt.Args.Same);
+	if (!(this.client && !this.hud_used)) return f.dot;
+	if (this.dextrous) {
+		yield* parent_proc();
 	} else {
-		rt.setSv(f, "hud_used", (yield* g.new_(f, T("/datum/hud/guardian"), [live(f.src), (yield* g.call(f, P("/proc/ui_style2icon"), null, [rt.gv(f, "UI_style", rt.fv(f, "prefs", rt.sv(f, "client")))]))])));
+		this.hud_used = (yield* new_(T("/datum/hud/guardian"), this, ui_style2icon(this.client.prefs.UI_style)));
 	}
 	return f.dot;
 }, true);
 
 rt.type(71, "/datum/hud/dextrous/guardian", "/datum/hud/dextrous", {});
 
-// /datum/hud/dextrous/guardian/proc/New  (code/_onclick/hud/guardian.dm:38)  may sleep
+// guardian.dm:38
 rt.def("/datum/hud/dextrous/guardian/proc/New", function* New(f: Frame) {
 	let using: Value = null, inv_box: Value = null;
-	f.vars = () => [using, inv_box];
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = rt.rsc("icons/mob/screen_midnight.dmi");
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	using = null;
-	if (truthy((rt.istype(live(f.args[0]), T("/mob/living/simple_animal/hostile/guardian/dextrous")) ? 1 : 0))) {
-		inv_box = null;
-		rt.setFv(f, "name", (inv_box = (yield* g.new_(f, T("/obj/screen/inventory"), []))), "internal storage");
-		rt.setFv(f, "icon", live(inv_box), live(f.args[1]));
-		rt.setFv(f, "icon_state", live(inv_box), "suit_storage");
-		rt.setFv(f, "screen_loc", live(inv_box), "CENTER-4:12,SOUTH:5");
-		rt.setFv(f, "slot_id", live(inv_box), 20);
-		rt.modSrcVar(f, "static_inventory", live(inv_box), add);
-		rt.setFv(f, "screen_loc", (using = (yield* g.new_(f, T("/obj/screen/guardian/Communicate"), []))), "CENTER-5:10,SOUTH:5");
-		rt.modSrcVar(f, "static_inventory", live(using), add);
+	yield* parent_proc();
+	if (rt.istype(f.args[0], T("/mob/living/simple_animal/hostile/guardian/dextrous"))) {
+		(inv_box = (yield* new_(T("/obj/screen/inventory")))).name = "internal storage";
+		inv_box.icon = f.args[1];
+		inv_box.icon_state = "suit_storage";
+		inv_box.screen_loc = "CENTER-4:12,SOUTH:5";
+		inv_box.slot_id = slot_generic_dextrous_storage;
+		this.static_inventory += inv_box;
+		(using = (yield* new_(T("/obj/screen/guardian/Communicate")))).screen_loc = "CENTER-5:10,SOUTH:5";
+		this.static_inventory += using;
 	} else {
-		rt.setFv(f, "screen_loc", (using = (yield* g.new_(f, T("/obj/screen/guardian/Communicate"), []))), "CENTER-4:12,SOUTH:5");
-		rt.modSrcVar(f, "static_inventory", live(using), add);
+		(using = (yield* new_(T("/obj/screen/guardian/Communicate")))).screen_loc = "CENTER-4:12,SOUTH:5";
+		this.static_inventory += using;
 	}
-	rt.setSv(f, "healths", (yield* g.new_(f, T("/obj/screen/healths/guardian"), [])));
-	rt.modSrcVar(f, "infodisplay", rt.sv(f, "healths"), add);
-	rt.setFv(f, "screen_loc", (using = (yield* g.new_(f, T("/obj/screen/guardian/Manifest"), []))), "CENTER-3:14,SOUTH:5");
-	rt.modSrcVar(f, "static_inventory", live(using), add);
-	rt.setFv(f, "screen_loc", (using = (yield* g.new_(f, T("/obj/screen/guardian/Recall"), []))), "CENTER-2:14,SOUTH:5");
-	rt.modSrcVar(f, "static_inventory", live(using), add);
-	rt.setFv(f, "screen_loc", (using = (yield* g.new_(f, rt.fv(f, "toggle_button_type", live(f.args[0])), []))), "CENTER+2:20,SOUTH:5");
-	rt.modSrcVar(f, "static_inventory", live(using), add);
-	rt.setFv(f, "screen_loc", (using = (yield* g.new_(f, T("/obj/screen/guardian/ToggleLight"), []))), "WEST:6,SOUTH:5");
-	rt.modSrcVar(f, "static_inventory", live(using), add);
+	this.healths = (yield* new_(T("/obj/screen/healths/guardian")));
+	this.infodisplay += this.healths;
+	(using = (yield* new_(T("/obj/screen/guardian/Manifest")))).screen_loc = "CENTER-3:14,SOUTH:5";
+	this.static_inventory += using;
+	(using = (yield* new_(T("/obj/screen/guardian/Recall")))).screen_loc = "CENTER-2:14,SOUTH:5";
+	this.static_inventory += using;
+	(using = (yield* new_(f.args[0].toggle_button_type))).screen_loc = "CENTER+2:20,SOUTH:5";
+	this.static_inventory += using;
+	(using = (yield* new_(T("/obj/screen/guardian/ToggleLight")))).screen_loc = "WEST:6,SOUTH:5";
+	this.static_inventory += using;
 	return f.dot;
 }, true, { args: ["owner", "ui_style"] });
 
-// /datum/hud/dextrous/guardian/proc/persistent_inventory_update  (code/_onclick/hud/guardian.dm:81)
+// guardian.dm:81
 rt.def("/datum/hud/dextrous/guardian/proc/persistent_inventory_update", function persistent_inventory_update(f: Frame) {
 	let D: Value = null;
-	f.vars = () => [D];
-	if (!truthy(rt.sv(f, "mymob"))) {
-		return live(f.dot);
+	if (!this.mymob) {
+		return f.dot;
 	}
-	if (truthy((rt.istype(rt.sv(f, "mymob"), T("/mob/living/simple_animal/hostile/guardian/dextrous")) ? 1 : 0))) {
-		D = rt.sv(f, "mymob");
-		if (truthy(rt.sv(f, "hud_shown"))) {
-			if (truthy(rt.fv(f, "internal_storage", live(D)))) {
-				rt.setFv(f, "screen_loc", rt.fv(f, "internal_storage", live(D)), "CENTER-4:12,SOUTH:5");
-				rt.modField(f, rt.fv(f, "client", live(D)), "screen", rt.fv(f, "internal_storage", live(D)), add);
+	if (rt.istype(this.mymob, T("/mob/living/simple_animal/hostile/guardian/dextrous"))) {
+		D = this.mymob;
+		if (this.hud_shown) {
+			if (D.internal_storage) {
+				D.internal_storage.screen_loc = "CENTER-4:12,SOUTH:5";
+				D.client.screen += D.internal_storage;
 			}
-		} else {
-			if (truthy(rt.fv(f, "internal_storage", live(D)))) {
-				rt.setFv(f, "screen_loc", rt.fv(f, "internal_storage", live(D)), null);
-			}
+		} else if (D.internal_storage) {
+			D.internal_storage.screen_loc = null;
 		}
 	}
-	rt.callSuper(f, [], rt.Args.Same);
+	parent_proc();
 	return f.dot;
 });
 
@@ -106,12 +98,11 @@ rt.type(11122, "/obj/screen/guardian/Manifest", "/obj/screen/guardian", {
 	desc: "Spring forth into battle!",
 });
 
-// /obj/screen/guardian/Manifest/proc/Click  (code/_onclick/hud/guardian.dm:105)  may sleep
+// guardian.dm:105
 rt.def("/obj/screen/guardian/Manifest/proc/Click", function* Click(f: Frame) {
 	let G: Value = null;
-	f.vars = () => [G];
-	if (!truthy((rt.istype(live(f.usr), T("/mob/living/simple_animal/hostile/guardian")) ? 1 : 0))) return f.dot;
-	yield* g.callName(f, (G = live(f.usr)), "Manifest", []);
+	if (!rt.istype(f.usr, T("/mob/living/simple_animal/hostile/guardian"))) return f.dot;
+	yield* (G = f.usr).Manifest();
 	return f.dot;
 }, true);
 
@@ -121,12 +112,11 @@ rt.type(11123, "/obj/screen/guardian/Recall", "/obj/screen/guardian", {
 	desc: "Return to your user.",
 });
 
-// /obj/screen/guardian/Recall/proc/Click  (code/_onclick/hud/guardian.dm:116)  may sleep
+// guardian.dm:116
 rt.def("/obj/screen/guardian/Recall/proc/Click", function* Click(f: Frame) {
 	let G: Value = null;
-	f.vars = () => [G];
-	if (!truthy((rt.istype(live(f.usr), T("/mob/living/simple_animal/hostile/guardian")) ? 1 : 0))) return f.dot;
-	yield* g.callName(f, (G = live(f.usr)), "Recall", []);
+	if (!rt.istype(f.usr, T("/mob/living/simple_animal/hostile/guardian"))) return f.dot;
+	yield* (G = f.usr).Recall();
 	return f.dot;
 }, true);
 
@@ -136,12 +126,11 @@ rt.type(11124, "/obj/screen/guardian/ToggleMode", "/obj/screen/guardian", {
 	desc: "Switch between ability modes.",
 });
 
-// /obj/screen/guardian/ToggleMode/proc/Click  (code/_onclick/hud/guardian.dm:126)  may sleep
+// guardian.dm:126
 rt.def("/obj/screen/guardian/ToggleMode/proc/Click", function* Click(f: Frame) {
 	let G: Value = null;
-	f.vars = () => [G];
-	if (!truthy((rt.istype(live(f.usr), T("/mob/living/simple_animal/hostile/guardian")) ? 1 : 0))) return f.dot;
-	yield* g.callName(f, (G = live(f.usr)), "ToggleMode", []);
+	if (!rt.istype(f.usr, T("/mob/living/simple_animal/hostile/guardian"))) return f.dot;
+	yield* (G = f.usr).ToggleMode();
 	return f.dot;
 }, true);
 
@@ -151,12 +140,11 @@ rt.type(11127, "/obj/screen/guardian/Communicate", "/obj/screen/guardian", {
 	desc: "Communicate telepathically with your user.",
 });
 
-// /obj/screen/guardian/Communicate/proc/Click  (code/_onclick/hud/guardian.dm:144)  may sleep
+// guardian.dm:144
 rt.def("/obj/screen/guardian/Communicate/proc/Click", function* Click(f: Frame) {
 	let G: Value = null;
-	f.vars = () => [G];
-	if (!truthy((rt.istype(live(f.usr), T("/mob/living/simple_animal/hostile/guardian")) ? 1 : 0))) return f.dot;
-	yield* g.callName(f, (G = live(f.usr)), "Communicate", []);
+	if (!rt.istype(f.usr, T("/mob/living/simple_animal/hostile/guardian"))) return f.dot;
+	yield* (G = f.usr).Communicate();
 	return f.dot;
 }, true);
 
@@ -166,11 +154,10 @@ rt.type(11128, "/obj/screen/guardian/ToggleLight", "/obj/screen/guardian", {
 	desc: "Glow like star dust.",
 });
 
-// /obj/screen/guardian/ToggleLight/proc/Click  (code/_onclick/hud/guardian.dm:155)
+// guardian.dm:155
 rt.def("/obj/screen/guardian/ToggleLight/proc/Click", function Click(f: Frame) {
 	let G: Value = null;
-	f.vars = () => [G];
-	if (!truthy((rt.istype(live(f.usr), T("/mob/living/simple_animal/hostile/guardian")) ? 1 : 0))) return f.dot;
-	rt.callName(f, (G = live(f.usr)), "ToggleLight", []);
+	if (!rt.istype(f.usr, T("/mob/living/simple_animal/hostile/guardian"))) return f.dot;
+	(G = f.usr).ToggleLight();
 	return f.dot;
 });

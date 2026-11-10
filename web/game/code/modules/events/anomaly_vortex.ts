@@ -1,7 +1,7 @@
-// From code/modules/events/anomaly_vortex.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/events/anomaly_vortex.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(291, "/datum/round_event/anomaly/anomaly_vortex", "/datum/round_event/anomaly", {
@@ -9,17 +9,16 @@ rt.type(291, "/datum/round_event/anomaly/anomaly_vortex", "/datum/round_event/an
 	announceWhen: 3,
 });
 
-// /datum/round_event/anomaly/anomaly_vortex/proc/announce  (code/modules/events/anomaly_vortex.dm:14)  may sleep
+// anomaly_vortex.dm:14
 rt.def("/datum/round_event/anomaly/anomaly_vortex/proc/announce", function* announce(f: Frame) {
-	yield* g.call(f, P("/proc/priority_announce"), null, [fmt("Localized high-intensity vortex anomaly detected on long range scanners. Expected location: ＀", [rt.fv(f, "name", rt.sv(f, "impact_area"))]), "Anomaly Alert"]);
+	yield* priority_announce(`Localized high-intensity vortex anomaly detected on long range scanners. Expected location: ${this.impact_area.name}`, "Anomaly Alert");
 	return f.dot;
 }, true);
 
-// /datum/round_event/anomaly/anomaly_vortex/proc/start  (code/modules/events/anomaly_vortex.dm:17)  may sleep
+// anomaly_vortex.dm:17
 rt.def("/datum/round_event/anomaly/anomaly_vortex/proc/start", function* start(f: Frame) {
 	let _T: Value = null;
-	f.vars = () => [_T];
-	if (!truthy((_T = (yield* g.call(f, P("/proc/safepick"), null, [(yield* g.call(f, P("/proc/get_area_turfs"), null, [rt.sv(f, "impact_area")]))]))))) return f.dot;
-	rt.setSv(f, "newAnomaly", (yield* g.new_(f, T("/obj/effect/anomaly/bhole"), [live(_T)])));
+	if (!(_T = safepick(get_area_turfs(this.impact_area)))) return f.dot;
+	this.newAnomaly = (yield* new_(T("/obj/effect/anomaly/bhole"), _T));
 	return f.dot;
 }, true);

@@ -1,7 +1,7 @@
-// From code/modules/research/designs/comp_board_designs.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/research/designs/comp_board_designs.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(2864, "/datum/design/board", "/datum/design", {
@@ -16,16 +16,14 @@ rt.type(2864, "/datum/design/board", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/computer/arcade/battle"),
 });
 
-// /datum/design/board/proc/<init>  (code/modules/research/designs/comp_board_designs.dm:7)
+// comp_board_designs.dm:7
 rt.def("/datum/design/board/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 1]));
-	rt.setSv(f, "materials", rt.alist(f, ["$glass", 1000]));
-	rt.setSv(f, "reagents_list", rt.alist(f, ["sacid", 20]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Computer Boards"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 1]);
+	this.materials = rt.alist(f, ["$glass", 1000]);
+	this.reagents_list = rt.alist(f, ["sacid", 20]);
+
+	this.category = list("Computer Boards");
 	return f.dot;
 });
 
@@ -38,14 +36,12 @@ rt.type(2881, "/datum/design/board/orion_trail", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/computer/arcade/orion_trail"),
 });
 
-// /datum/design/board/orion_trail/proc/<init>  (code/modules/research/designs/comp_board_designs.dm:18)
+// comp_board_designs.dm:18
 rt.def("/datum/design/board/orion_trail/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 1]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Computer Boards"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 1]);
+
+	this.category = list("Computer Boards");
 	return f.dot;
 });
 
@@ -58,14 +54,12 @@ rt.type(2882, "/datum/design/board/seccamera", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/computer/security"),
 });
 
-// /datum/design/board/seccamera/proc/<init>  (code/modules/research/designs/comp_board_designs.dm:27)
+// comp_board_designs.dm:27
 rt.def("/datum/design/board/seccamera/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 2, "combat", 2]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Computer Boards"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 2, "combat", 2]);
+
+	this.category = list("Computer Boards");
 	return f.dot;
 });
 
@@ -78,14 +72,12 @@ rt.type(2883, "/datum/design/board/xenobiocamera", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/computer/xenobiology"),
 });
 
-// /datum/design/board/xenobiocamera/proc/<init>  (code/modules/research/designs/comp_board_designs.dm:35)
+// comp_board_designs.dm:35
 rt.def("/datum/design/board/xenobiocamera/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 3, "biotech", 3]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Computer Boards"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 3, "biotech", 3]);
+
+	this.category = list("Computer Boards");
 	return f.dot;
 });
 
@@ -98,14 +90,12 @@ rt.type(2884, "/datum/design/board/aiupload", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/computer/aiupload"),
 });
 
-// /datum/design/board/aiupload/proc/<init>  (code/modules/research/designs/comp_board_designs.dm:43)
+// comp_board_designs.dm:43
 rt.def("/datum/design/board/aiupload/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 5, "engineering", 4]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Computer Boards"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 5, "engineering", 4]);
+
+	this.category = list("Computer Boards");
 	return f.dot;
 });
 
@@ -118,14 +108,12 @@ rt.type(2885, "/datum/design/board/borgupload", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/computer/borgupload"),
 });
 
-// /datum/design/board/borgupload/proc/<init>  (code/modules/research/designs/comp_board_designs.dm:51)
+// comp_board_designs.dm:51
 rt.def("/datum/design/board/borgupload/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 5, "engineering", 4]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Computer Boards"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 5, "engineering", 4]);
+
+	this.category = list("Computer Boards");
 	return f.dot;
 });
 
@@ -138,14 +126,12 @@ rt.type(2886, "/datum/design/board/med_data", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/computer/med_data"),
 });
 
-// /datum/design/board/med_data/proc/<init>  (code/modules/research/designs/comp_board_designs.dm:59)
+// comp_board_designs.dm:59
 rt.def("/datum/design/board/med_data/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 2, "biotech", 2]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Computer Boards"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 2, "biotech", 2]);
+
+	this.category = list("Computer Boards");
 	return f.dot;
 });
 
@@ -158,14 +144,12 @@ rt.type(2887, "/datum/design/board/operating", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/computer/operating"),
 });
 
-// /datum/design/board/operating/proc/<init>  (code/modules/research/designs/comp_board_designs.dm:67)
+// comp_board_designs.dm:67
 rt.def("/datum/design/board/operating/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 2, "biotech", 3]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Computer Boards"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 2, "biotech", 3]);
+
+	this.category = list("Computer Boards");
 	return f.dot;
 });
 
@@ -178,14 +162,12 @@ rt.type(2888, "/datum/design/board/pandemic", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/computer/pandemic"),
 });
 
-// /datum/design/board/pandemic/proc/<init>  (code/modules/research/designs/comp_board_designs.dm:75)
+// comp_board_designs.dm:75
 rt.def("/datum/design/board/pandemic/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 3, "biotech", 3]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Computer Boards"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 3, "biotech", 3]);
+
+	this.category = list("Computer Boards");
 	return f.dot;
 });
 
@@ -198,14 +180,12 @@ rt.type(2889, "/datum/design/board/scan_console", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/computer/scan_consolenew"),
 });
 
-// /datum/design/board/scan_console/proc/<init>  (code/modules/research/designs/comp_board_designs.dm:83)
+// comp_board_designs.dm:83
 rt.def("/datum/design/board/scan_console/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 2, "biotech", 2]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Computer Boards"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 2, "biotech", 2]);
+
+	this.category = list("Computer Boards");
 	return f.dot;
 });
 
@@ -218,14 +198,12 @@ rt.type(2890, "/datum/design/board/comconsole", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/computer/communications"),
 });
 
-// /datum/design/board/comconsole/proc/<init>  (code/modules/research/designs/comp_board_designs.dm:91)
+// comp_board_designs.dm:91
 rt.def("/datum/design/board/comconsole/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 3, "magnets", 3]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Computer Boards"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 3, "magnets", 3]);
+
+	this.category = list("Computer Boards");
 	return f.dot;
 });
 
@@ -238,14 +216,12 @@ rt.type(2891, "/datum/design/board/idcardconsole", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/computer/card"),
 });
 
-// /datum/design/board/idcardconsole/proc/<init>  (code/modules/research/designs/comp_board_designs.dm:99)
+// comp_board_designs.dm:99
 rt.def("/datum/design/board/idcardconsole/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 3]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Computer Boards"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 3]);
+
+	this.category = list("Computer Boards");
 	return f.dot;
 });
 
@@ -258,14 +234,12 @@ rt.type(2892, "/datum/design/board/crewconsole", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/computer/crew"),
 });
 
-// /datum/design/board/crewconsole/proc/<init>  (code/modules/research/designs/comp_board_designs.dm:107)
+// comp_board_designs.dm:107
 rt.def("/datum/design/board/crewconsole/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 3, "magnets", 2, "biotech", 2]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Computer Boards"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 3, "magnets", 2, "biotech", 2]);
+
+	this.category = list("Computer Boards");
 	return f.dot;
 });
 
@@ -278,14 +252,12 @@ rt.type(2893, "/datum/design/board/secdata", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/computer/secure_data"),
 });
 
-// /datum/design/board/secdata/proc/<init>  (code/modules/research/designs/comp_board_designs.dm:115)
+// comp_board_designs.dm:115
 rt.def("/datum/design/board/secdata/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 2, "combat", 2]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Computer Boards"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 2, "combat", 2]);
+
+	this.category = list("Computer Boards");
 	return f.dot;
 });
 
@@ -298,14 +270,12 @@ rt.type(2894, "/datum/design/board/atmosalerts", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/computer/atmos_alert"),
 });
 
-// /datum/design/board/atmosalerts/proc/<init>  (code/modules/research/designs/comp_board_designs.dm:123)
+// comp_board_designs.dm:123
 rt.def("/datum/design/board/atmosalerts/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 2]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Computer Boards"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 2]);
+
+	this.category = list("Computer Boards");
 	return f.dot;
 });
 
@@ -318,14 +288,12 @@ rt.type(2895, "/datum/design/board/atmos_control", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/computer/atmos_control"),
 });
 
-// /datum/design/board/atmos_control/proc/<init>  (code/modules/research/designs/comp_board_designs.dm:131)
+// comp_board_designs.dm:131
 rt.def("/datum/design/board/atmos_control/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 2]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Computer Boards"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 2]);
+
+	this.category = list("Computer Boards");
 	return f.dot;
 });
 
@@ -338,14 +306,12 @@ rt.type(2896, "/datum/design/board/robocontrol", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/computer/robotics"),
 });
 
-// /datum/design/board/robocontrol/proc/<init>  (code/modules/research/designs/comp_board_designs.dm:139)
+// comp_board_designs.dm:139
 rt.def("/datum/design/board/robocontrol/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 4]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Computer Boards"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 4]);
+
+	this.category = list("Computer Boards");
 	return f.dot;
 });
 
@@ -358,14 +324,12 @@ rt.type(2897, "/datum/design/board/slot_machine", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/computer/slot_machine"),
 });
 
-// /datum/design/board/slot_machine/proc/<init>  (code/modules/research/designs/comp_board_designs.dm:147)
+// comp_board_designs.dm:147
 rt.def("/datum/design/board/slot_machine/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 1]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Computer Boards"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 1]);
+
+	this.category = list("Computer Boards");
 	return f.dot;
 });
 
@@ -378,14 +342,12 @@ rt.type(2898, "/datum/design/board/powermonitor", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/computer/powermonitor"),
 });
 
-// /datum/design/board/powermonitor/proc/<init>  (code/modules/research/designs/comp_board_designs.dm:155)
+// comp_board_designs.dm:155
 rt.def("/datum/design/board/powermonitor/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 2, "powerstorage", 2]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Computer Boards"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 2, "powerstorage", 2]);
+
+	this.category = list("Computer Boards");
 	return f.dot;
 });
 
@@ -398,14 +360,12 @@ rt.type(2899, "/datum/design/board/solarcontrol", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/computer/solar_control"),
 });
 
-// /datum/design/board/solarcontrol/proc/<init>  (code/modules/research/designs/comp_board_designs.dm:163)
+// comp_board_designs.dm:163
 rt.def("/datum/design/board/solarcontrol/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 2, "powerstorage", 2]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Computer Boards"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 2, "powerstorage", 2]);
+
+	this.category = list("Computer Boards");
 	return f.dot;
 });
 
@@ -418,14 +378,12 @@ rt.type(2900, "/datum/design/board/prisonmanage", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/computer/prisoner"),
 });
 
-// /datum/design/board/prisonmanage/proc/<init>  (code/modules/research/designs/comp_board_designs.dm:171)
+// comp_board_designs.dm:171
 rt.def("/datum/design/board/prisonmanage/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 2]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Computer Boards"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 2]);
+
+	this.category = list("Computer Boards");
 	return f.dot;
 });
 
@@ -438,14 +396,12 @@ rt.type(2901, "/datum/design/board/mechacontrol", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/computer/mecha_control"),
 });
 
-// /datum/design/board/mechacontrol/proc/<init>  (code/modules/research/designs/comp_board_designs.dm:179)
+// comp_board_designs.dm:179
 rt.def("/datum/design/board/mechacontrol/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 3]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Computer Boards"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 3]);
+
+	this.category = list("Computer Boards");
 	return f.dot;
 });
 
@@ -458,14 +414,12 @@ rt.type(2902, "/datum/design/board/mechapower", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/computer/mech_bay_power_console"),
 });
 
-// /datum/design/board/mechapower/proc/<init>  (code/modules/research/designs/comp_board_designs.dm:187)
+// comp_board_designs.dm:187
 rt.def("/datum/design/board/mechapower/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 3, "powerstorage", 3]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Computer Boards"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 3, "powerstorage", 3]);
+
+	this.category = list("Computer Boards");
 	return f.dot;
 });
 
@@ -478,14 +432,12 @@ rt.type(2903, "/datum/design/board/rdconsole", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/computer/rdconsole"),
 });
 
-// /datum/design/board/rdconsole/proc/<init>  (code/modules/research/designs/comp_board_designs.dm:195)
+// comp_board_designs.dm:195
 rt.def("/datum/design/board/rdconsole/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 4]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Computer Boards"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 4]);
+
+	this.category = list("Computer Boards");
 	return f.dot;
 });
 
@@ -498,14 +450,12 @@ rt.type(2904, "/datum/design/board/cargo", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/computer/cargo"),
 });
 
-// /datum/design/board/cargo/proc/<init>  (code/modules/research/designs/comp_board_designs.dm:203)
+// comp_board_designs.dm:203
 rt.def("/datum/design/board/cargo/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 3]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Computer Boards"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 3]);
+
+	this.category = list("Computer Boards");
 	return f.dot;
 });
 
@@ -518,14 +468,12 @@ rt.type(2905, "/datum/design/board/cargorequest", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/computer/cargo/request"),
 });
 
-// /datum/design/board/cargorequest/proc/<init>  (code/modules/research/designs/comp_board_designs.dm:211)
+// comp_board_designs.dm:211
 rt.def("/datum/design/board/cargorequest/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 2]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Computer Boards"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 2]);
+
+	this.category = list("Computer Boards");
 	return f.dot;
 });
 
@@ -538,14 +486,12 @@ rt.type(2906, "/datum/design/board/stockexchange", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/computer/stockexchange"),
 });
 
-// /datum/design/board/stockexchange/proc/<init>  (code/modules/research/designs/comp_board_designs.dm:219)
+// comp_board_designs.dm:219
 rt.def("/datum/design/board/stockexchange/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 3]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Computer Boards"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 3]);
+
+	this.category = list("Computer Boards");
 	return f.dot;
 });
 
@@ -558,14 +504,12 @@ rt.type(2907, "/datum/design/board/mining", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/computer/mining"),
 });
 
-// /datum/design/board/mining/proc/<init>  (code/modules/research/designs/comp_board_designs.dm:227)
+// comp_board_designs.dm:227
 rt.def("/datum/design/board/mining/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 2]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Computer Boards"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 2]);
+
+	this.category = list("Computer Boards");
 	return f.dot;
 });
 
@@ -578,14 +522,12 @@ rt.type(2908, "/datum/design/board/comm_monitor", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/computer/comm_monitor"),
 });
 
-// /datum/design/board/comm_monitor/proc/<init>  (code/modules/research/designs/comp_board_designs.dm:235)
+// comp_board_designs.dm:235
 rt.def("/datum/design/board/comm_monitor/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 3, "magnets", 3, "bluespace", 2]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Computer Boards"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 3, "magnets", 3, "bluespace", 2]);
+
+	this.category = list("Computer Boards");
 	return f.dot;
 });
 
@@ -598,14 +540,12 @@ rt.type(2909, "/datum/design/board/comm_server", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/computer/comm_server"),
 });
 
-// /datum/design/board/comm_server/proc/<init>  (code/modules/research/designs/comp_board_designs.dm:243)
+// comp_board_designs.dm:243
 rt.def("/datum/design/board/comm_server/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 3, "magnets", 3, "bluespace", 2]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Computer Boards"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 3, "magnets", 3, "bluespace", 2]);
+
+	this.category = list("Computer Boards");
 	return f.dot;
 });
 
@@ -618,14 +558,12 @@ rt.type(2910, "/datum/design/board/message_monitor", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/computer/message_monitor"),
 });
 
-// /datum/design/board/message_monitor/proc/<init>  (code/modules/research/designs/comp_board_designs.dm:251)
+// comp_board_designs.dm:251
 rt.def("/datum/design/board/message_monitor/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 5]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Computer Boards"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 5]);
+
+	this.category = list("Computer Boards");
 	return f.dot;
 });
 
@@ -638,14 +576,12 @@ rt.type(2911, "/datum/design/board/aifixer", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/computer/aifixer"),
 });
 
-// /datum/design/board/aifixer/proc/<init>  (code/modules/research/designs/comp_board_designs.dm:259)
+// comp_board_designs.dm:259
 rt.def("/datum/design/board/aifixer/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 4, "magnets", 3]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Computer Boards"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 4, "magnets", 3]);
+
+	this.category = list("Computer Boards");
 	return f.dot;
 });
 
@@ -658,14 +594,12 @@ rt.type(2912, "/datum/design/board/libraryconsole", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/computer/libraryconsole"),
 });
 
-// /datum/design/board/libraryconsole/proc/<init>  (code/modules/research/designs/comp_board_designs.dm:267)
+// comp_board_designs.dm:267
 rt.def("/datum/design/board/libraryconsole/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 1]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Computer Boards"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 1]);
+
+	this.category = list("Computer Boards");
 	return f.dot;
 });
 
@@ -678,13 +612,11 @@ rt.type(2913, "/datum/design/board/apc_control", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/computer/apc_control"),
 });
 
-// /datum/design/board/apc_control/proc/<init>  (code/modules/research/designs/comp_board_designs.dm:275)
+// comp_board_designs.dm:275
 rt.def("/datum/design/board/apc_control/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 4, "engineering", 4, "powerstorage", 5]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Computer Boards"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 4, "engineering", 4, "powerstorage", 5]);
+
+	this.category = list("Computer Boards");
 	return f.dot;
 });

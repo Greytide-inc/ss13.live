@@ -1,7 +1,7 @@
-// From code/modules/clothing/suits/miscellaneous.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/clothing/suits/miscellaneous.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(7874, "/obj/item/clothing/suit/bluetag", "/obj/item/clothing/suit", {
@@ -15,12 +15,10 @@ rt.type(7874, "/obj/item/clothing/suit/bluetag", "/obj/item/clothing/suit", {
 	resistance_flags: 0,
 });
 
-// /obj/item/clothing/suit/bluetag/proc/<init>  (code/modules/clothing/suits/miscellaneous.dm:18)
+// miscellaneous.dm:18
 rt.def("/obj/item/clothing/suit/bluetag/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/weapon/gun/energy/laser/bluetag")));
+	parent_proc();
+	this.allowed = list(T("/obj/item/weapon/gun/energy/laser/bluetag"));
 	return f.dot;
 });
 
@@ -35,12 +33,10 @@ rt.type(7875, "/obj/item/clothing/suit/redtag", "/obj/item/clothing/suit", {
 	resistance_flags: 0,
 });
 
-// /obj/item/clothing/suit/redtag/proc/<init>  (code/modules/clothing/suits/miscellaneous.dm:28)
+// miscellaneous.dm:28
 rt.def("/obj/item/clothing/suit/redtag/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/weapon/gun/energy/laser/redtag")));
+	parent_proc();
+	this.allowed = list(T("/obj/item/weapon/gun/energy/laser/redtag"));
 	return f.dot;
 });
 
@@ -52,12 +48,10 @@ rt.type(7876, "/obj/item/clothing/suit/pirate", "/obj/item/clothing/suit", {
 	allowed: null,
 });
 
-// /obj/item/clothing/suit/pirate/proc/<init>  (code/modules/clothing/suits/miscellaneous.dm:39)
+// miscellaneous.dm:39
 rt.def("/obj/item/clothing/suit/pirate/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/weapon/melee/energy/sword/pirate"), T("/obj/item/clothing/glasses/eyepatch"), T("/obj/item/weapon/reagent_containers/food/drinks/bottle/rum")));
+	parent_proc();
+	this.allowed = list(T("/obj/item/weapon/melee/energy/sword/pirate"), T("/obj/item/clothing/glasses/eyepatch"), T("/obj/item/weapon/reagent_containers/food/drinks/bottle/rum"));
 	return f.dot;
 });
 
@@ -71,12 +65,10 @@ rt.type(7880, "/obj/item/clothing/suit/judgerobe", "/obj/item/clothing/suit", {
 	flags_inv: 4,
 });
 
-// /obj/item/clothing/suit/judgerobe/proc/<init>  (code/modules/clothing/suits/miscellaneous.dm:72)
+// miscellaneous.dm:72
 rt.def("/obj/item/clothing/suit/judgerobe/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/weapon/storage/fancy/cigarettes"), T("/obj/item/stack/spacecash")));
+	parent_proc();
+	this.allowed = list(T("/obj/item/weapon/storage/fancy/cigarettes"), T("/obj/item/stack/spacecash"));
 	return f.dot;
 });
 
@@ -91,12 +83,10 @@ rt.type(7881, "/obj/item/clothing/suit/syndicatefake", "/obj/item/clothing/suit"
 	resistance_flags: 0,
 });
 
-// /obj/item/clothing/suit/syndicatefake/proc/<init>  (code/modules/clothing/suits/miscellaneous.dm:90)
+// miscellaneous.dm:90
 rt.def("/obj/item/clothing/suit/syndicatefake/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/device/flashlight"), T("/obj/item/weapon/tank/internals/emergency_oxygen"), T("/obj/item/toy")));
+	parent_proc();
+	this.allowed = list(T("/obj/item/device/flashlight"), T("/obj/item/weapon/tank/internals/emergency_oxygen"), T("/obj/item/toy"));
 	return f.dot;
 });
 
@@ -110,12 +100,10 @@ rt.type(7883, "/obj/item/clothing/suit/imperium_monk", "/obj/item/clothing/suit"
 	allowed: null,
 });
 
-// /obj/item/clothing/suit/imperium_monk/proc/<init>  (code/modules/clothing/suits/miscellaneous.dm:110)
+// miscellaneous.dm:110
 rt.def("/obj/item/clothing/suit/imperium_monk/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/weapon/storage/book/bible"), T("/obj/item/weapon/nullrod"), T("/obj/item/weapon/reagent_containers/food/drinks/bottle/holywater"), T("/obj/item/weapon/storage/fancy/candle_box"), T("/obj/item/candle"), T("/obj/item/weapon/tank/internals/emergency_oxygen")));
+	parent_proc();
+	this.allowed = list(T("/obj/item/weapon/storage/book/bible"), T("/obj/item/weapon/nullrod"), T("/obj/item/weapon/reagent_containers/food/drinks/bottle/holywater"), T("/obj/item/weapon/storage/fancy/candle_box"), T("/obj/item/candle"), T("/obj/item/weapon/tank/internals/emergency_oxygen"));
 	return f.dot;
 });
 
@@ -130,14 +118,12 @@ rt.type(7862, "/obj/item/clothing/suit/toggle/owlwings", "/obj/item/clothing/sui
 	actions_types: null,
 });
 
-// /obj/item/clothing/suit/toggle/owlwings/proc/<init>  (code/modules/clothing/suits/miscellaneous.dm:137)
+// miscellaneous.dm:137
 rt.def("/obj/item/clothing/suit/toggle/owlwings/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/weapon/gun/energy"), T("/obj/item/weapon/reagent_containers/spray/pepper"), T("/obj/item/weapon/gun/ballistic"), T("/obj/item/ammo_box"), T("/obj/item/ammo_casing"), T("/obj/item/weapon/melee/baton"), T("/obj/item/weapon/restraints/handcuffs"), T("/obj/item/device/flashlight/seclite"), T("/obj/item/weapon/melee/classic_baton/telescopic")));
-	$0 = $0;
-	rt.setSv(f, "actions_types", rt.list(T("/datum/action/item_action/toggle_wings")));
+	parent_proc();
+	this.allowed = list(T("/obj/item/weapon/gun/energy"), T("/obj/item/weapon/reagent_containers/spray/pepper"), T("/obj/item/weapon/gun/ballistic"), T("/obj/item/ammo_box"), T("/obj/item/ammo_casing"), T("/obj/item/weapon/melee/baton"), T("/obj/item/weapon/restraints/handcuffs"), T("/obj/item/device/flashlight/seclite"), T("/obj/item/weapon/melee/classic_baton/telescopic"));
+
+	this.actions_types = list(T("/datum/action/item_action/toggle_wings"));
 	return f.dot;
 });
 
@@ -151,12 +137,10 @@ rt.type(7886, "/obj/item/clothing/suit/holidaypriest", "/obj/item/clothing/suit"
 	allowed: null,
 });
 
-// /obj/item/clothing/suit/holidaypriest/proc/<init>  (code/modules/clothing/suits/miscellaneous.dm:154)
+// miscellaneous.dm:154
 rt.def("/obj/item/clothing/suit/holidaypriest/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/weapon/storage/book/bible"), T("/obj/item/weapon/nullrod"), T("/obj/item/weapon/reagent_containers/food/drinks/bottle/holywater"), T("/obj/item/weapon/storage/fancy/candle_box"), T("/obj/item/candle"), T("/obj/item/weapon/tank/internals/emergency_oxygen")));
+	parent_proc();
+	this.allowed = list(T("/obj/item/weapon/storage/book/bible"), T("/obj/item/weapon/nullrod"), T("/obj/item/weapon/reagent_containers/food/drinks/bottle/holywater"), T("/obj/item/weapon/storage/fancy/candle_box"), T("/obj/item/candle"), T("/obj/item/weapon/tank/internals/emergency_oxygen"));
 	return f.dot;
 });
 
@@ -170,33 +154,32 @@ rt.type(7887, "/obj/item/clothing/suit/cardborg", "/obj/item/clothing/suit", {
 	dog_fashion: rt.typePath("/datum/dog_fashion/back"),
 });
 
-// /obj/item/clothing/suit/cardborg/proc/equipped  (code/modules/clothing/suits/miscellaneous.dm:166)  may sleep
-rt.def("/obj/item/clothing/suit/cardborg/proc/equipped", function* equipped(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!isEqual(live(f.args[1]), 13)) return f.dot;
-	yield* g.srcCall(f, "disguise", live(f.args[0]));
+// miscellaneous.dm:166
+rt.def("/obj/item/clothing/suit/cardborg/proc/equipped", function* equipped(f: Frame, user: Value, slot: Value) {
+	yield* parent_proc();
+	if (slot != slot_wear_suit) return f.dot;
+	yield* this.disguise(user);
 	return f.dot;
-}, true, { args: ["user", "slot"] });
+}, true);
 
-// /obj/item/clothing/suit/cardborg/proc/dropped  (code/modules/clothing/suits/miscellaneous.dm:171)  may sleep
-rt.def("/obj/item/clothing/suit/cardborg/proc/dropped", function* dropped(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.callName(f, live(f.args[0]), "remove_alt_appearance", ["standard_borg_disguise"]);
+// miscellaneous.dm:171
+rt.def("/obj/item/clothing/suit/cardborg/proc/dropped", function* dropped(f: Frame, user: Value) {
+	yield* parent_proc();
+	yield* user.remove_alt_appearance("standard_borg_disguise");
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /obj/item/clothing/suit/cardborg/proc/disguise  (code/modules/clothing/suits/miscellaneous.dm:175)  may sleep
+// miscellaneous.dm:175
 rt.def("/obj/item/clothing/suit/cardborg/proc/disguise", function* disguise(f: Frame, H: Value, borghead: Value) {
 	let I: Value = null;
-	f.vars = () => [H, borghead, I];
-	if (!truthy((rt.istype(live(H), T("/mob/living/carbon/human")) ? 1 : 0))) return f.dot;
-	if (!truthy(live(borghead))) {
-		borghead = rt.fv(f, "head", live(H));
+	if (!rt.istype(H, T("/mob/living/carbon/human"))) return f.dot;
+	if (!borghead) {
+		borghead = H.head;
 	}
-	if (!truthy((rt.istype(live(borghead), T("/obj/item/clothing/head/cardborg")) ? 1 : 0))) return f.dot;
-	rt.setFv(f, "override", (I = (yield* g.call(f, P("/proc/image"), null, ["icon", rt.rsc("icons/mob/robots.dmi"), "icon_state", "robot", "loc", live(H)], rt.Args.Named))), 1);
-	yield* g.callName(f, live(I), "add_overlay", [(yield* g.call(f, P("/proc/mutable_appearance"), null, [rt.rsc("icons/mob/robots.dmi"), "robot_e"]))]);
-	yield* g.srcCall(f, "add_alt_appearance", T("/datum/atom_hud/alternate_appearance/basic/silicons"), "standard_borg_disguise", live(I));
+	if (!rt.istype(borghead, T("/obj/item/clothing/head/cardborg"))) return f.dot;
+	(I = (yield* image({ icon: rt.rsc("icons/mob/robots.dmi"), icon_state: "robot", loc: H }))).override = 1;
+	I.add_overlay(mutable_appearance(rt.rsc("icons/mob/robots.dmi"), "robot_e"));
+	yield* this.add_alt_appearance(T("/datum/atom_hud/alternate_appearance/basic/silicons"), "standard_borg_disguise", I);
 	return f.dot;
 }, true);
 
@@ -212,12 +195,10 @@ rt.type(7818, "/obj/item/clothing/suit/hooded/carp_costume", "/obj/item/clothing
 	hoodtype: rt.typePath("/obj/item/clothing/head/hooded/carp_hood"),
 });
 
-// /obj/item/clothing/suit/hooded/carp_costume/proc/<init>  (code/modules/clothing/suits/miscellaneous.dm:234)
+// miscellaneous.dm:234
 rt.def("/obj/item/clothing/suit/hooded/carp_costume/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/weapon/tank/internals/emergency_oxygen"), T("/obj/item/weapon/gun/ballistic/automatic/speargun")));
+	parent_proc();
+	this.allowed = list(T("/obj/item/weapon/tank/internals/emergency_oxygen"), T("/obj/item/weapon/gun/ballistic/automatic/speargun"));
 	return f.dot;
 });
 
@@ -232,12 +213,10 @@ rt.type(7813, "/obj/item/clothing/suit/hooded/ian_costume", "/obj/item/clothing/
 	hoodtype: rt.typePath("/obj/item/clothing/head/hooded/ian_hood"),
 });
 
-// /obj/item/clothing/suit/hooded/ian_costume/proc/<init>  (code/modules/clothing/suits/miscellaneous.dm:254)
+// miscellaneous.dm:254
 rt.def("/obj/item/clothing/suit/hooded/ian_costume/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list());
+	parent_proc();
+	this.allowed = list();
 	return f.dot;
 });
 
@@ -252,14 +231,12 @@ rt.type(7820, "/obj/item/clothing/suit/hooded/bloated_human", "/obj/item/clothin
 	hoodtype: rt.typePath("/obj/item/clothing/head/hooded/human_head"),
 });
 
-// /obj/item/clothing/suit/hooded/bloated_human/proc/<init>  (code/modules/clothing/suits/miscellaneous.dm:290)
+// miscellaneous.dm:290
 rt.def("/obj/item/clothing/suit/hooded/bloated_human/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list());
-	$0 = $0;
-	rt.setSv(f, "actions_types", rt.list(T("/datum/action/item_action/toggle_human_head")));
+	parent_proc();
+	this.allowed = list();
+
+	this.actions_types = list(T("/datum/action/item_action/toggle_human_head"));
 	return f.dot;
 });
 
@@ -274,12 +251,10 @@ rt.type(7898, "/obj/item/clothing/suit/jacket", "/obj/item/clothing/suit", {
 	min_cold_protection_temperature: 60,
 });
 
-// /obj/item/clothing/suit/jacket/proc/<init>  (code/modules/clothing/suits/miscellaneous.dm:348)
+// miscellaneous.dm:348
 rt.def("/obj/item/clothing/suit/jacket/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/device/flashlight"), T("/obj/item/weapon/tank/internals/emergency_oxygen"), T("/obj/item/toy"), T("/obj/item/weapon/storage/fancy/cigarettes"), T("/obj/item/weapon/lighter"), T("/obj/item/device/radio")));
+	parent_proc();
+	this.allowed = list(T("/obj/item/device/flashlight"), T("/obj/item/weapon/tank/internals/emergency_oxygen"), T("/obj/item/toy"), T("/obj/item/weapon/storage/fancy/cigarettes"), T("/obj/item/weapon/lighter"), T("/obj/item/device/radio"));
 	return f.dot;
 });
 
@@ -293,12 +268,10 @@ rt.type(7899, "/obj/item/clothing/suit/jacket/leather", "/obj/item/clothing/suit
 	allowed: null,
 });
 
-// /obj/item/clothing/suit/jacket/leather/proc/<init>  (code/modules/clothing/suits/miscellaneous.dm:360)
+// miscellaneous.dm:360
 rt.def("/obj/item/clothing/suit/jacket/leather/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/device/flashlight"), T("/obj/item/weapon/tank/internals/emergency_oxygen"), T("/obj/item/toy"), T("/obj/item/weapon/storage/fancy/cigarettes"), T("/obj/item/weapon/lighter"), T("/obj/item/weapon/gun/ballistic/automatic/pistol"), T("/obj/item/weapon/gun/ballistic/revolver"), T("/obj/item/weapon/gun/ballistic/revolver/detective"), T("/obj/item/device/radio")));
+	parent_proc();
+	this.allowed = list(T("/obj/item/device/flashlight"), T("/obj/item/weapon/tank/internals/emergency_oxygen"), T("/obj/item/toy"), T("/obj/item/weapon/storage/fancy/cigarettes"), T("/obj/item/weapon/lighter"), T("/obj/item/weapon/gun/ballistic/automatic/pistol"), T("/obj/item/weapon/gun/ballistic/revolver"), T("/obj/item/weapon/gun/ballistic/revolver/detective"), T("/obj/item/device/radio"));
 	return f.dot;
 });
 
@@ -310,12 +283,10 @@ rt.type(7901, "/obj/item/clothing/suit/jacket/puffer", "/obj/item/clothing/suit/
 	armor: null,
 });
 
-// /obj/item/clothing/suit/jacket/puffer/proc/<init>  (code/modules/clothing/suits/miscellaneous.dm:374)
+// miscellaneous.dm:374
 rt.def("/obj/item/clothing/suit/jacket/puffer/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 50, "rad", 0, "fire", 0, "acid", 0]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 50, "rad", 0, "fire", 0, "acid", 0]);
 	return f.dot;
 });
 
@@ -329,12 +300,10 @@ rt.type(7902, "/obj/item/clothing/suit/jacket/puffer/vest", "/obj/item/clothing/
 	armor: null,
 });
 
-// /obj/item/clothing/suit/jacket/puffer/vest/proc/<init>  (code/modules/clothing/suits/miscellaneous.dm:383)
+// miscellaneous.dm:383
 rt.def("/obj/item/clothing/suit/jacket/puffer/vest/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 30, "rad", 0, "fire", 0, "acid", 0]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 30, "rad", 0, "fire", 0, "acid", 0]);
 	return f.dot;
 });
 
@@ -346,12 +315,10 @@ rt.type(7903, "/obj/item/clothing/suit/jacket/miljacket", "/obj/item/clothing/su
 	allowed: null,
 });
 
-// /obj/item/clothing/suit/jacket/miljacket/proc/<init>  (code/modules/clothing/suits/miscellaneous.dm:390)
+// miscellaneous.dm:390
 rt.def("/obj/item/clothing/suit/jacket/miljacket/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/device/flashlight"), T("/obj/item/weapon/tank/internals/emergency_oxygen"), T("/obj/item/toy"), T("/obj/item/weapon/storage/fancy/cigarettes"), T("/obj/item/weapon/lighter"), T("/obj/item/weapon/gun/ballistic/automatic/pistol"), T("/obj/item/weapon/gun/ballistic/revolver"), T("/obj/item/weapon/gun/ballistic/revolver/detective"), T("/obj/item/device/radio")));
+	parent_proc();
+	this.allowed = list(T("/obj/item/device/flashlight"), T("/obj/item/weapon/tank/internals/emergency_oxygen"), T("/obj/item/toy"), T("/obj/item/weapon/storage/fancy/cigarettes"), T("/obj/item/weapon/lighter"), T("/obj/item/weapon/gun/ballistic/automatic/pistol"), T("/obj/item/weapon/gun/ballistic/revolver"), T("/obj/item/weapon/gun/ballistic/revolver/detective"), T("/obj/item/device/radio"));
 	return f.dot;
 });
 
@@ -365,12 +332,10 @@ rt.type(7908, "/obj/item/clothing/suit/xenos", "/obj/item/clothing/suit", {
 	allowed: null,
 });
 
-// /obj/item/clothing/suit/xenos/proc/<init>  (code/modules/clothing/suits/miscellaneous.dm:423)
+// miscellaneous.dm:423
 rt.def("/obj/item/clothing/suit/xenos/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/clothing/mask/facehugger/toy")));
+	parent_proc();
+	this.allowed = list(T("/obj/item/clothing/mask/facehugger/toy"));
 	return f.dot;
 });
 
@@ -386,14 +351,12 @@ rt.type(7821, "/obj/item/clothing/suit/hooded/wintercoat", "/obj/item/clothing/s
 	allowed: null,
 });
 
-// /obj/item/clothing/suit/hooded/wintercoat/proc/<init>  (code/modules/clothing/suits/miscellaneous.dm:436)
+// miscellaneous.dm:436
 rt.def("/obj/item/clothing/suit/hooded/wintercoat/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 10, "rad", 0, "fire", 0, "acid", 0]));
-	$0 = $0;
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/device/flashlight"), T("/obj/item/weapon/tank/internals/emergency_oxygen"), T("/obj/item/toy"), T("/obj/item/weapon/storage/fancy/cigarettes"), T("/obj/item/weapon/lighter")));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 10, "rad", 0, "fire", 0, "acid", 0]);
+
+	this.allowed = list(T("/obj/item/device/flashlight"), T("/obj/item/weapon/tank/internals/emergency_oxygen"), T("/obj/item/toy"), T("/obj/item/weapon/storage/fancy/cigarettes"), T("/obj/item/weapon/lighter"));
 	return f.dot;
 });
 
@@ -406,14 +369,12 @@ rt.type(7822, "/obj/item/clothing/suit/hooded/wintercoat/captain", "/obj/item/cl
 	hoodtype: rt.typePath("/obj/item/clothing/head/hooded/winterhood/captain"),
 });
 
-// /obj/item/clothing/suit/hooded/wintercoat/captain/proc/<init>  (code/modules/clothing/suits/miscellaneous.dm:452)
+// miscellaneous.dm:452
 rt.def("/obj/item/clothing/suit/hooded/wintercoat/captain/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 25, "bullet", 30, "laser", 30, "energy", 10, "bomb", 25, "bio", 0, "rad", 0, "fire", 0, "acid", 50]));
-	$0 = $0;
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/weapon/gun/energy"), T("/obj/item/weapon/reagent_containers/spray/pepper"), T("/obj/item/weapon/gun/ballistic"), T("/obj/item/ammo_box"), T("/obj/item/ammo_casing"), T("/obj/item/weapon/melee/baton"), T("/obj/item/weapon/restraints/handcuffs"), T("/obj/item/device/flashlight/seclite"), T("/obj/item/weapon/melee/classic_baton/telescopic")));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 25, "bullet", 30, "laser", 30, "energy", 10, "bomb", 25, "bio", 0, "rad", 0, "fire", 0, "acid", 50]);
+
+	this.allowed = list(T("/obj/item/weapon/gun/energy"), T("/obj/item/weapon/reagent_containers/spray/pepper"), T("/obj/item/weapon/gun/ballistic"), T("/obj/item/ammo_box"), T("/obj/item/ammo_casing"), T("/obj/item/weapon/melee/baton"), T("/obj/item/weapon/restraints/handcuffs"), T("/obj/item/device/flashlight/seclite"), T("/obj/item/weapon/melee/classic_baton/telescopic"));
 	return f.dot;
 });
 
@@ -426,14 +387,12 @@ rt.type(7823, "/obj/item/clothing/suit/hooded/wintercoat/security", "/obj/item/c
 	hoodtype: rt.typePath("/obj/item/clothing/head/hooded/winterhood/security"),
 });
 
-// /obj/item/clothing/suit/hooded/wintercoat/security/proc/<init>  (code/modules/clothing/suits/miscellaneous.dm:463)
+// miscellaneous.dm:463
 rt.def("/obj/item/clothing/suit/hooded/wintercoat/security/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 25, "bullet", 15, "laser", 30, "energy", 10, "bomb", 25, "bio", 0, "rad", 0, "fire", 0, "acid", 45]));
-	$0 = $0;
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/weapon/gun/energy"), T("/obj/item/weapon/reagent_containers/spray/pepper"), T("/obj/item/weapon/gun/ballistic"), T("/obj/item/ammo_box"), T("/obj/item/ammo_casing"), T("/obj/item/weapon/melee/baton"), T("/obj/item/weapon/restraints/handcuffs"), T("/obj/item/device/flashlight/seclite"), T("/obj/item/weapon/melee/classic_baton/telescopic")));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 25, "bullet", 15, "laser", 30, "energy", 10, "bomb", 25, "bio", 0, "rad", 0, "fire", 0, "acid", 45]);
+
+	this.allowed = list(T("/obj/item/weapon/gun/energy"), T("/obj/item/weapon/reagent_containers/spray/pepper"), T("/obj/item/weapon/gun/ballistic"), T("/obj/item/ammo_box"), T("/obj/item/ammo_casing"), T("/obj/item/weapon/melee/baton"), T("/obj/item/weapon/restraints/handcuffs"), T("/obj/item/device/flashlight/seclite"), T("/obj/item/weapon/melee/classic_baton/telescopic"));
 	return f.dot;
 });
 
@@ -446,13 +405,11 @@ rt.type(7824, "/obj/item/clothing/suit/hooded/wintercoat/medical", "/obj/item/cl
 	hoodtype: rt.typePath("/obj/item/clothing/head/hooded/winterhood/medical"),
 });
 
-// /obj/item/clothing/suit/hooded/wintercoat/medical/proc/<init>  (code/modules/clothing/suits/miscellaneous.dm:474)
+// miscellaneous.dm:474
 rt.def("/obj/item/clothing/suit/hooded/wintercoat/medical/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/device/analyzer"), T("/obj/item/stack/medical"), T("/obj/item/weapon/dnainjector"), T("/obj/item/weapon/reagent_containers/dropper"), T("/obj/item/weapon/reagent_containers/syringe"), T("/obj/item/weapon/reagent_containers/hypospray"), T("/obj/item/device/healthanalyzer"), T("/obj/item/device/flashlight/pen"), T("/obj/item/weapon/reagent_containers/glass/bottle"), T("/obj/item/weapon/reagent_containers/glass/beaker"), T("/obj/item/weapon/reagent_containers/pill"), T("/obj/item/weapon/storage/pill_bottle"), T("/obj/item/weapon/paper"), T("/obj/item/weapon/melee/classic_baton/telescopic")));
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 50, "rad", 0, "fire", 0, "acid", 45]));
+	parent_proc();
+	this.allowed = list(T("/obj/item/device/analyzer"), T("/obj/item/stack/medical"), T("/obj/item/weapon/dnainjector"), T("/obj/item/weapon/reagent_containers/dropper"), T("/obj/item/weapon/reagent_containers/syringe"), T("/obj/item/weapon/reagent_containers/hypospray"), T("/obj/item/device/healthanalyzer"), T("/obj/item/device/flashlight/pen"), T("/obj/item/weapon/reagent_containers/glass/bottle"), T("/obj/item/weapon/reagent_containers/glass/beaker"), T("/obj/item/weapon/reagent_containers/pill"), T("/obj/item/weapon/storage/pill_bottle"), T("/obj/item/weapon/paper"), T("/obj/item/weapon/melee/classic_baton/telescopic"));
+	this.armor = rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 50, "rad", 0, "fire", 0, "acid", 45]);
 	return f.dot;
 });
 
@@ -465,13 +422,11 @@ rt.type(7825, "/obj/item/clothing/suit/hooded/wintercoat/science", "/obj/item/cl
 	hoodtype: rt.typePath("/obj/item/clothing/head/hooded/winterhood/science"),
 });
 
-// /obj/item/clothing/suit/hooded/wintercoat/science/proc/<init>  (code/modules/clothing/suits/miscellaneous.dm:485)
+// miscellaneous.dm:485
 rt.def("/obj/item/clothing/suit/hooded/wintercoat/science/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/device/analyzer"), T("/obj/item/stack/medical"), T("/obj/item/weapon/dnainjector"), T("/obj/item/weapon/reagent_containers/dropper"), T("/obj/item/weapon/reagent_containers/syringe"), T("/obj/item/weapon/reagent_containers/hypospray"), T("/obj/item/device/healthanalyzer"), T("/obj/item/device/flashlight/pen"), T("/obj/item/weapon/reagent_containers/glass/bottle"), T("/obj/item/weapon/reagent_containers/glass/beaker"), T("/obj/item/weapon/reagent_containers/pill"), T("/obj/item/weapon/storage/pill_bottle"), T("/obj/item/weapon/paper"), T("/obj/item/weapon/melee/classic_baton/telescopic")));
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 10, "bio", 0, "rad", 0, "fire", 0, "acid", 0]));
+	parent_proc();
+	this.allowed = list(T("/obj/item/device/analyzer"), T("/obj/item/stack/medical"), T("/obj/item/weapon/dnainjector"), T("/obj/item/weapon/reagent_containers/dropper"), T("/obj/item/weapon/reagent_containers/syringe"), T("/obj/item/weapon/reagent_containers/hypospray"), T("/obj/item/device/healthanalyzer"), T("/obj/item/device/flashlight/pen"), T("/obj/item/weapon/reagent_containers/glass/bottle"), T("/obj/item/weapon/reagent_containers/glass/beaker"), T("/obj/item/weapon/reagent_containers/pill"), T("/obj/item/weapon/storage/pill_bottle"), T("/obj/item/weapon/paper"), T("/obj/item/weapon/melee/classic_baton/telescopic"));
+	this.armor = rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 10, "bio", 0, "rad", 0, "fire", 0, "acid", 0]);
 	return f.dot;
 });
 
@@ -484,14 +439,12 @@ rt.type(7826, "/obj/item/clothing/suit/hooded/wintercoat/engineering", "/obj/ite
 	hoodtype: rt.typePath("/obj/item/clothing/head/hooded/winterhood/engineering"),
 });
 
-// /obj/item/clothing/suit/hooded/wintercoat/engineering/proc/<init>  (code/modules/clothing/suits/miscellaneous.dm:496)
+// miscellaneous.dm:496
 rt.def("/obj/item/clothing/suit/hooded/wintercoat/engineering/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 20, "fire", 30, "acid", 45]));
-	$0 = $0;
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/device/flashlight"), T("/obj/item/weapon/tank/internals/emergency_oxygen"), T("/obj/item/device/t_scanner"), T("/obj/item/weapon/construction/rcd"), T("/obj/item/weapon/pipe_dispenser")));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 20, "fire", 30, "acid", 45]);
+
+	this.allowed = list(T("/obj/item/device/flashlight"), T("/obj/item/weapon/tank/internals/emergency_oxygen"), T("/obj/item/device/t_scanner"), T("/obj/item/weapon/construction/rcd"), T("/obj/item/weapon/pipe_dispenser"));
 	return f.dot;
 });
 
@@ -503,12 +456,10 @@ rt.type(7828, "/obj/item/clothing/suit/hooded/wintercoat/hydro", "/obj/item/clot
 	hoodtype: rt.typePath("/obj/item/clothing/head/hooded/winterhood/hydro"),
 });
 
-// /obj/item/clothing/suit/hooded/wintercoat/hydro/proc/<init>  (code/modules/clothing/suits/miscellaneous.dm:516)
+// miscellaneous.dm:516
 rt.def("/obj/item/clothing/suit/hooded/wintercoat/hydro/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/weapon/reagent_containers/spray/plantbgone"), T("/obj/item/device/plant_analyzer"), T("/obj/item/seeds"), T("/obj/item/weapon/reagent_containers/glass/bottle"), T("/obj/item/weapon/cultivator"), T("/obj/item/weapon/reagent_containers/spray/pestspray"), T("/obj/item/weapon/hatchet"), T("/obj/item/weapon/storage/bag/plants")));
+	parent_proc();
+	this.allowed = list(T("/obj/item/weapon/reagent_containers/spray/plantbgone"), T("/obj/item/device/plant_analyzer"), T("/obj/item/seeds"), T("/obj/item/weapon/reagent_containers/glass/bottle"), T("/obj/item/weapon/cultivator"), T("/obj/item/weapon/reagent_containers/spray/pestspray"), T("/obj/item/weapon/hatchet"), T("/obj/item/weapon/storage/bag/plants"));
 	return f.dot;
 });
 
@@ -521,13 +472,11 @@ rt.type(7830, "/obj/item/clothing/suit/hooded/wintercoat/miner", "/obj/item/clot
 	hoodtype: rt.typePath("/obj/item/clothing/head/hooded/winterhood/miner"),
 });
 
-// /obj/item/clothing/suit/hooded/wintercoat/miner/proc/<init>  (code/modules/clothing/suits/miscellaneous.dm:535)
+// miscellaneous.dm:535
 rt.def("/obj/item/clothing/suit/hooded/wintercoat/miner/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/weapon/pickaxe"), T("/obj/item/device/flashlight"), T("/obj/item/weapon/tank/internals/emergency_oxygen"), T("/obj/item/toy"), T("/obj/item/weapon/storage/fancy/cigarettes"), T("/obj/item/weapon/lighter")));
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 10, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 0, "acid", 0]));
+	parent_proc();
+	this.allowed = list(T("/obj/item/weapon/pickaxe"), T("/obj/item/device/flashlight"), T("/obj/item/weapon/tank/internals/emergency_oxygen"), T("/obj/item/toy"), T("/obj/item/weapon/storage/fancy/cigarettes"), T("/obj/item/weapon/lighter"));
+	this.armor = rt.alist(f, ["melee", 10, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 0, "acid", 0]);
 	return f.dot;
 });
 
@@ -539,11 +488,9 @@ rt.type(7909, "/obj/item/clothing/suit/spookyghost", "/obj/item/clothing/suit", 
 	alternate_worn_layer: 1,
 });
 
-// /obj/item/clothing/suit/spookyghost/proc/<init>  (code/modules/clothing/suits/miscellaneous.dm:546)
+// miscellaneous.dm:546
 rt.def("/obj/item/clothing/suit/spookyghost/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "user_vars_to_edit", rt.alist(f, ["name", "Spooky Ghost", "real_name", "Spooky Ghost", "incorporeal_move", 1, "appearance_flags", 288, "alpha", 150]));
+	parent_proc();
+	this.user_vars_to_edit = rt.alist(f, ["name", "Spooky Ghost", "real_name", "Spooky Ghost", "incorporeal_move", 1, "appearance_flags", 288, "alpha", 150]);
 	return f.dot;
 });

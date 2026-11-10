@@ -1,7 +1,7 @@
-// From code/game/machinery/telecomms/machines/server.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/machinery/telecomms/machines/server.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(10737, "/obj/machinery/telecomms/server", "/obj/machinery/telecomms", {
@@ -26,28 +26,25 @@ rt.type(10737, "/obj/machinery/telecomms/server", "/obj/machinery/telecomms", {
 	idle_power_usage: 15,
 });
 
-// /obj/machinery/telecomms/server/proc/<init>  (code/game/machinery/telecomms/machines/server.dm:20)
+// server.dm:20
 rt.def("/obj/machinery/telecomms/server/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "log_entries", rt.list());
-	$0 = $0;
-	rt.setSv(f, "stored_names", rt.list());
-	$0 = $0;
-	rt.setSv(f, "TrafficActions", rt.list());
-	$0 = $0;
-	rt.setSv(f, "memory", rt.list());
+	parent_proc();
+	this.log_entries = list();
+
+	this.stored_names = list();
+
+	this.TrafficActions = list();
+
+	this.memory = list();
 	return f.dot;
 });
 
-// /obj/machinery/telecomms/server/proc/New  (code/game/machinery/telecomms/machines/server.dm:36)  may sleep
+// server.dm:36
 rt.def("/obj/machinery/telecomms/server/proc/New", function* New(f: Frame) {
 	let B: Value = null;
-	f.vars = () => [B];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.callName(f, (B = (yield* g.new_(f, T("/obj/item/weapon/circuitboard/machine/telecomms/server"), [null]))), "apply_default_parts", [live(f.src)]);
-	rt.setSv(f, "server_radio", (yield* g.new_(f, T("/obj/item/device/radio/headset"), [])));
+	yield* parent_proc();
+	yield* (B = (yield* new_(T("/obj/item/weapon/circuitboard/machine/telecomms/server"), null))).apply_default_parts(this);
+	this.server_radio = (yield* new_(T("/obj/item/device/radio/headset")));
 	return f.dot;
 }, true);
 
@@ -58,67 +55,62 @@ rt.type(6741, "/obj/item/weapon/circuitboard/machine/telecomms/server", "/obj/it
 	req_components: null,
 });
 
-// /obj/item/weapon/circuitboard/machine/telecomms/server/proc/<init>  (code/game/machinery/telecomms/machines/server.dm:45)
+// server.dm:45
 rt.def("/obj/item/weapon/circuitboard/machine/telecomms/server/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_components", rt.alist(f, [T("/obj/item/weapon/stock_parts/manipulator"), 2, T("/obj/item/stack/cable_coil"), 1, T("/obj/item/weapon/stock_parts/subspace/filter"), 1]));
+	parent_proc();
+	this.req_components = rt.alist(f, [T("/obj/item/weapon/stock_parts/manipulator"), 2, T("/obj/item/stack/cable_coil"), 1, T("/obj/item/weapon/stock_parts/subspace/filter"), 1]);
 	return f.dot;
 });
 
-// /obj/machinery/telecomms/server/proc/receive_information  (code/game/machinery/telecomms/machines/server.dm:51)  may sleep
+// server.dm:51
 rt.def("/obj/machinery/telecomms/server/proc/receive_information", function* receive_information(f: Frame, signal: Value, machine_from: Value) {
 	let log: Value = null, identifier: Value = null, can_send: Value = null;
-	f.vars = () => [signal, machine_from, log, identifier, can_send];
-	if (!truthy(rt.index(rt.fv(f, "data", live(signal)), "message"))) return f.dot;
-	if (!truthy((yield* g.srcCall(f, "is_freq_listening", live(signal))))) return f.dot;
-	if (rt.gt(rt.sv(f, "traffic"), 0)) {
-		rt.modSrcVar(f, "totaltraffic", rt.sv(f, "traffic"), add);
+	if (!rt.index(signal.data, "message")) return f.dot;
+	if (!this.is_freq_listening(signal)) return f.dot;
+	if (this.traffic > 0) {
+		this.totaltraffic += this.traffic;
 	}
-	if (!isEqual(rt.index(rt.fv(f, "data", live(signal)), "type"), 4)) {
-		yield* g.srcCall(f, "update_logs");
-		rt.setAt(rt.gv(f, "parameters", (log = (yield* g.new_(f, T("/datum/comm_log_entry"), [])))), "mobtype", rt.index(rt.fv(f, "data", live(signal)), "mobtype"));
-		rt.setAt(rt.fv(f, "parameters", live(log)), "job", rt.index(rt.fv(f, "data", live(signal)), "job"));
-		rt.setAt(rt.fv(f, "parameters", live(log)), "key", rt.index(rt.fv(f, "data", live(signal)), "key"));
-		rt.setAt(rt.fv(f, "parameters", live(log)), "message", rt.index(rt.fv(f, "data", live(signal)), "message"));
-		rt.setAt(rt.fv(f, "parameters", live(log)), "name", rt.index(rt.fv(f, "data", live(signal)), "name"));
-		rt.setAt(rt.fv(f, "parameters", live(log)), "realname", rt.index(rt.fv(f, "data", live(signal)), "realname"));
-		if (rt.gt(rt.index(rt.fv(f, "data", live(signal)), "compression"), 0)) {
-			rt.setAt(rt.fv(f, "parameters", live(log)), "message", (yield* g.call(f, P("/proc/Gibberish"), null, [rt.index(rt.fv(f, "data", live(signal)), "message"), add(rt.index(rt.fv(f, "data", live(signal)), "compression"), 50)])));
-			rt.setAt(rt.fv(f, "parameters", live(log)), "job", (yield* g.call(f, P("/proc/Gibberish"), null, [rt.index(rt.fv(f, "data", live(signal)), "job"), add(rt.index(rt.fv(f, "data", live(signal)), "compression"), 50)])));
-			rt.setAt(rt.fv(f, "parameters", live(log)), "name", (yield* g.call(f, P("/proc/Gibberish"), null, [rt.index(rt.fv(f, "data", live(signal)), "name"), add(rt.index(rt.fv(f, "data", live(signal)), "compression"), 50)])));
-			rt.setAt(rt.fv(f, "parameters", live(log)), "realname", (yield* g.call(f, P("/proc/Gibberish"), null, [rt.index(rt.fv(f, "data", live(signal)), "realname"), add(rt.index(rt.fv(f, "data", live(signal)), "compression"), 50)])));
-			rt.setFv(f, "input_type", live(log), "Corrupt File");
+	if (rt.index(signal.data, "type") != 4) {
+		this.update_logs();
+		rt.setAt((log = (yield* new_(T("/datum/comm_log_entry")))).parameters, "mobtype", rt.index(signal.data, "mobtype"));
+		rt.setAt(log.parameters, "job", rt.index(signal.data, "job"));
+		rt.setAt(log.parameters, "key", rt.index(signal.data, "key"));
+		rt.setAt(log.parameters, "message", rt.index(signal.data, "message"));
+		rt.setAt(log.parameters, "name", rt.index(signal.data, "name"));
+		rt.setAt(log.parameters, "realname", rt.index(signal.data, "realname"));
+		if (rt.index(signal.data, "compression") > 0) {
+			rt.setAt(log.parameters, "message", Gibberish(rt.index(signal.data, "message"), rt.index(signal.data, "compression") + 50));
+			rt.setAt(log.parameters, "job", Gibberish(rt.index(signal.data, "job"), rt.index(signal.data, "compression") + 50));
+			rt.setAt(log.parameters, "name", Gibberish(rt.index(signal.data, "name"), rt.index(signal.data, "compression") + 50));
+			rt.setAt(log.parameters, "realname", Gibberish(rt.index(signal.data, "realname"), rt.index(signal.data, "compression") + 50));
+			log.input_type = "Corrupt File";
 		}
-		yield* g.callName(f, rt.sv(f, "log_entries"), "Add", [live(log)]);
-		if (!truthy((rt.isIn(f, rt.index(rt.fv(f, "data", live(signal)), "name"), rt.sv(f, "stored_names")) ? 1 : 0))) {
-			yield* g.callName(f, rt.sv(f, "stored_names"), "Add", [rt.index(rt.fv(f, "data", live(signal)), "name")]);
+		this.log_entries.Add(log);
+		if (!rt.isIn(f, rt.index(signal.data, "name"), this.stored_names)) {
+			this.stored_names.Add(rt.index(signal.data, "name"));
 		}
-		rt.incSrcVar(f, "logs", 1, true);
-		rt.setAt(rt.fv(f, "data", live(signal)), "server", live(f.src));
-		identifier = (yield* g.call(f, P("/proc/num2text"), null, [add((yield* g.call(f, P("/proc/rand"), null, [-1000, 1000])), rt.worldTime(f))]));
-		rt.setFv(f, "name", live(log), fmt("data packet (＀)", [(yield* g.call(f, P("/proc/md5"), null, [live(identifier)]))]));
+		this.logs++;
+		rt.setAt(signal.data, "server", this);
+		identifier = num2text(rand(-1000, 1000) + rt.worldTime(f));
+		log.name = `data packet (${md5(identifier)})`;
 	}
-	if (truthy((can_send = (yield* g.srcCall(f, "relay_information", live(signal), "/obj/machinery/telecomms/hub"))))) return f.dot;
-	yield* g.srcCall(f, "relay_information", live(signal), "/obj/machinery/telecomms/broadcaster");
+	if (can_send = (yield* this.relay_information(signal, "/obj/machinery/telecomms/hub"))) return f.dot;
+	yield* this.relay_information(signal, "/obj/machinery/telecomms/broadcaster");
 	return f.dot;
 }, true);
 
-// /obj/machinery/telecomms/server/proc/update_logs  (code/game/machinery/telecomms/machines/server.dm:103)
+// server.dm:103
 rt.def("/obj/machinery/telecomms/server/proc/update_logs", function update_logs(f: Frame) {
-	let i: Value = null, L: Value = null;
-	f.vars = () => [i, L];
-	if (!rt.ge(rt.sv(f, "logs"), 400)) return f.dot;
-	i = null;
-	i = 1;
-	while (rt.le(live(i), rt.sv(f, "logs"))) {
-		if (truthy(rt.gv(f, "garbage_collector", (L = rt.index(rt.sv(f, "log_entries"), live(i)))))) {
-			rt.callName(f, rt.sv(f, "log_entries"), "Remove", [live(L)]);
-			rt.incSrcVar(f, "logs", -1, true);
+	let L: Value = null;
+	if (!(this.logs >= 400)) return f.dot;
+	let i: Value = 1;
+	while (i <= this.logs) {
+		if ((L = rt.index(this.log_entries, i)).garbage_collector) {
+			this.log_entries.Remove(L);
+			this.logs--;
 			break;
 		}
-		i = rt.inc(live(i), 1);
+		i++;
 	}
 	return f.dot;
 });
@@ -130,12 +122,10 @@ rt.type(1505, "/datum/comm_log_entry", "/datum", {
 	input_type: "Speech File",
 });
 
-// /datum/comm_log_entry/proc/<init>  (code/game/machinery/telecomms/machines/server.dm:125)
+// server.dm:125
 rt.def("/datum/comm_log_entry/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "parameters", rt.list());
+	parent_proc();
+	this.parameters = list();
 	return f.dot;
 });
 
@@ -143,10 +133,10 @@ rt.type(10738, "/obj/machinery/telecomms/server/presets", "/obj/machinery/teleco
 	network: "tcommsat",
 });
 
-// /obj/machinery/telecomms/server/presets/proc/New  (code/game/machinery/telecomms/machines/server.dm:139)  may sleep
+// server.dm:139
 rt.def("/obj/machinery/telecomms/server/presets/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "name", rt.sv(f, "id"));
+	yield* parent_proc();
+	this.name = this.id;
 	return f.dot;
 }, true);
 
@@ -156,14 +146,12 @@ rt.type(10739, "/obj/machinery/telecomms/server/presets/science", "/obj/machiner
 	freq_listening: null,
 });
 
-// /obj/machinery/telecomms/server/presets/science/proc/<init>  (code/game/machinery/telecomms/machines/server.dm:146)
+// server.dm:146
 rt.def("/obj/machinery/telecomms/server/presets/science/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "autolinkers", rt.list("science"));
-	$0 = $0;
-	rt.setSv(f, "freq_listening", rt.list(1351));
+	parent_proc();
+	this.autolinkers = list("science");
+
+	this.freq_listening = list(1351);
 	return f.dot;
 });
 
@@ -173,14 +161,12 @@ rt.type(10740, "/obj/machinery/telecomms/server/presets/medical", "/obj/machiner
 	freq_listening: null,
 });
 
-// /obj/machinery/telecomms/server/presets/medical/proc/<init>  (code/game/machinery/telecomms/machines/server.dm:151)
+// server.dm:151
 rt.def("/obj/machinery/telecomms/server/presets/medical/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "autolinkers", rt.list("medical"));
-	$0 = $0;
-	rt.setSv(f, "freq_listening", rt.list(1355));
+	parent_proc();
+	this.autolinkers = list("medical");
+
+	this.freq_listening = list(1355);
 	return f.dot;
 });
 
@@ -190,14 +176,12 @@ rt.type(10741, "/obj/machinery/telecomms/server/presets/supply", "/obj/machinery
 	freq_listening: null,
 });
 
-// /obj/machinery/telecomms/server/presets/supply/proc/<init>  (code/game/machinery/telecomms/machines/server.dm:156)
+// server.dm:156
 rt.def("/obj/machinery/telecomms/server/presets/supply/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "autolinkers", rt.list("supply"));
-	$0 = $0;
-	rt.setSv(f, "freq_listening", rt.list(1347));
+	parent_proc();
+	this.autolinkers = list("supply");
+
+	this.freq_listening = list(1347);
 	return f.dot;
 });
 
@@ -207,14 +191,12 @@ rt.type(10742, "/obj/machinery/telecomms/server/presets/service", "/obj/machiner
 	freq_listening: null,
 });
 
-// /obj/machinery/telecomms/server/presets/service/proc/<init>  (code/game/machinery/telecomms/machines/server.dm:161)
+// server.dm:161
 rt.def("/obj/machinery/telecomms/server/presets/service/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "autolinkers", rt.list("service"));
-	$0 = $0;
-	rt.setSv(f, "freq_listening", rt.list(1349));
+	parent_proc();
+	this.autolinkers = list("service");
+
+	this.freq_listening = list(1349);
 	return f.dot;
 });
 
@@ -224,28 +206,23 @@ rt.type(10743, "/obj/machinery/telecomms/server/presets/common", "/obj/machinery
 	autolinkers: null,
 });
 
-// /obj/machinery/telecomms/server/presets/common/proc/<init>  (code/game/machinery/telecomms/machines/server.dm:165)
+// server.dm:165
 rt.def("/obj/machinery/telecomms/server/presets/common/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "freq_listening", rt.list());
-	$0 = $0;
-	rt.setSv(f, "autolinkers", rt.list("common"));
+	parent_proc();
+	this.freq_listening = list();
+
+	this.autolinkers = list("common");
 	return f.dot;
 });
 
-// /obj/machinery/telecomms/server/presets/common/proc/New  (code/game/machinery/telecomms/machines/server.dm:171)  may sleep
+// server.dm:171
 rt.def("/obj/machinery/telecomms/server/presets/common/proc/New", function* New(f: Frame) {
-	let i: Value = null;
-	f.vars = () => [i];
-	i = null;
-	i = 1441;
-	while (rt.lt(live(i), 1489)) {
-		(rt.modSrcVar(f, "freq_listening", live(i), rt.bitOr));
-		i = rt.modify(live(i), 2, add);
+	let i: Value = 1441;
+	while (i < 1489) {
+		(rt.modSrcVar(f, "freq_listening", i, rt.bitOr));
+		i += 2;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
@@ -255,14 +232,12 @@ rt.type(10745, "/obj/machinery/telecomms/server/presets/command", "/obj/machiner
 	freq_listening: null,
 });
 
-// /obj/machinery/telecomms/server/presets/command/proc/<init>  (code/game/machinery/telecomms/machines/server.dm:178)
+// server.dm:178
 rt.def("/obj/machinery/telecomms/server/presets/command/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "autolinkers", rt.list("command"));
-	$0 = $0;
-	rt.setSv(f, "freq_listening", rt.list(1353));
+	parent_proc();
+	this.autolinkers = list("command");
+
+	this.freq_listening = list(1353);
 	return f.dot;
 });
 
@@ -272,14 +247,12 @@ rt.type(10746, "/obj/machinery/telecomms/server/presets/engineering", "/obj/mach
 	freq_listening: null,
 });
 
-// /obj/machinery/telecomms/server/presets/engineering/proc/<init>  (code/game/machinery/telecomms/machines/server.dm:183)
+// server.dm:183
 rt.def("/obj/machinery/telecomms/server/presets/engineering/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "autolinkers", rt.list("engineering"));
-	$0 = $0;
-	rt.setSv(f, "freq_listening", rt.list(1357));
+	parent_proc();
+	this.autolinkers = list("engineering");
+
+	this.freq_listening = list(1357);
 	return f.dot;
 });
 
@@ -289,22 +262,20 @@ rt.type(10747, "/obj/machinery/telecomms/server/presets/security", "/obj/machine
 	freq_listening: null,
 });
 
-// /obj/machinery/telecomms/server/presets/security/proc/<init>  (code/game/machinery/telecomms/machines/server.dm:188)
+// server.dm:188
 rt.def("/obj/machinery/telecomms/server/presets/security/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "autolinkers", rt.list("security"));
-	$0 = $0;
-	rt.setSv(f, "freq_listening", rt.list(1359));
+	parent_proc();
+	this.autolinkers = list("security");
+
+	this.freq_listening = list(1359);
 	return f.dot;
 });
 
 rt.type(10744, "/obj/machinery/telecomms/server/presets/common/birdstation", "/obj/machinery/telecomms/server/presets/common", {});
 
-// /obj/machinery/telecomms/server/presets/common/birdstation/proc/New  (code/game/machinery/telecomms/machines/server.dm:191)  may sleep
+// server.dm:191
 rt.def("/obj/machinery/telecomms/server/presets/common/birdstation/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "freq_listening", rt.list());
+	yield* parent_proc();
+	this.freq_listening = list();
 	return f.dot;
 }, true);

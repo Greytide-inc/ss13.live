@@ -1,7 +1,7 @@
-// From code/modules/vehicles/pimpin_ride.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/vehicles/pimpin_ride.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(13063, "/obj/vehicle/janicart", "/obj/vehicle", {
@@ -12,97 +12,95 @@ rt.type(13063, "/obj/vehicle/janicart", "/obj/vehicle", {
 	icon_state: "pussywagon",
 });
 
-// /obj/vehicle/janicart/proc/Initialize  (code/modules/vehicles/pimpin_ride.dm:11)
-rt.def("/obj/vehicle/janicart/proc/Initialize", function Initialize(f: Frame) {
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	rt.callSrc(f, "update_icon", []);
+// pimpin_ride.dm:11
+rt.def("/obj/vehicle/janicart/proc/Initialize", function Initialize(f: Frame, mapload: Value) {
+	f.dot = parent_proc();
+	this.update_icon();
 	return f.dot;
-}, false, { args: ["mapload"] });
+}, false);
 
-// /obj/vehicle/janicart/proc/Destroy  (code/modules/vehicles/pimpin_ride.dm:16)  may sleep
+// pimpin_ride.dm:16
 rt.def("/obj/vehicle/janicart/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.sv(f, "mybag"))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "mybag")]);
-		rt.setSv(f, "mybag", null);
+	if (this.mybag) {
+		yield* qdel(this.mybag);
+		this.mybag = null;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true);
 
-// /obj/vehicle/janicart/proc/buckle_mob  (code/modules/vehicles/pimpin_ride.dm:21)  may sleep
+// pimpin_ride.dm:21
 rt.def("/obj/vehicle/janicart/proc/buckle_mob", function* buckle_mob(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 0;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "riding_datum", (yield* g.new_(f, T("/datum/riding/janicart"), [])));
+	f.dot = (yield* parent_proc());
+	this.riding_datum = (yield* new_(T("/datum/riding/janicart")));
 	return f.dot;
 }, true, { args: ["buckled_mob", "force", "check_loc"] });
 
-// /obj/vehicle/janicart/proc/examine  (code/modules/vehicles/pimpin_ride.dm:40)
-rt.def("/obj/vehicle/janicart/proc/examine", function examine(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.sv(f, "floorbuffer"))) return f.dot;
-	rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "It has been upgraded with a floor buffer."]);
+// pimpin_ride.dm:40
+rt.def("/obj/vehicle/janicart/proc/examine", function examine(f: Frame, user: Value) {
+	parent_proc();
+	if (!this.floorbuffer) return f.dot;
+	to_chat(user, "It has been upgraded with a floor buffer.");
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/vehicle/janicart/proc/attackby  (code/modules/vehicles/pimpin_ride.dm:46)  may sleep
-rt.def("/obj/vehicle/janicart/proc/attackby", function* attackby(f: Frame) {
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/storage/bag/trash")) ? 1 : 0))) {
-		if (truthy(rt.sv(f, "mybag"))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>＀ already has a trashbag hooked!</span>", [live(f.src)])]);
-			return live(f.dot);
+// pimpin_ride.dm:46
+rt.def("/obj/vehicle/janicart/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
+	if (rt.istype(I, T("/obj/item/weapon/storage/bag/trash"))) {
+		if (this.mybag) {
+			to_chat(user, `<span class='warning'>${this} already has a trashbag hooked!</span>`);
+			return f.dot;
 		}
-		if (!truthy((yield* g.callName(f, live(f.args[1]), "drop_item", [])))) {
-			return live(f.dot);
+		if (!(yield* user.drop_item())) {
+			return f.dot;
 		}
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You hook the trashbag onto ＀.</span>", [live(f.src)])]);
-		rt.setFv(f, "loc", live(f.args[0]), live(f.src));
-		rt.setSv(f, "mybag", live(f.args[0]));
-		yield* g.srcCall(f, "update_icon");
+		to_chat(user, `<span class='notice'>You hook the trashbag onto ${this}.</span>`);
+		I.loc = this;
+		this.mybag = I;
+		yield* this.update_icon();
+	} else if (rt.istype(I, T("/obj/item/janiupgrade"))) {
+		if (this.floorbuffer) {
+			to_chat(user, `<span class='warning'>${this} already has a floor buffer!</span>`);
+			return f.dot;
+		}
+		this.floorbuffer = 1;
+		yield* qdel(I);
+		to_chat(user, `<span class='notice'>You upgrade ${this} with the floor buffer.</span>`);
+		(rt.modSrcVar(f, "flags", 2048, rt.bitOr));
+		yield* this.update_icon();
 	} else {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/janiupgrade")) ? 1 : 0))) {
-			if (truthy(rt.sv(f, "floorbuffer"))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>＀ already has a floor buffer!</span>", [live(f.src)])]);
-				return live(f.dot);
-			}
-			rt.setSv(f, "floorbuffer", 1);
-			yield* g.call(f, P("/proc/qdel"), null, [live(f.args[0])]);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You upgrade ＀ with the floor buffer.</span>", [live(f.src)])]);
-			(rt.modSrcVar(f, "flags", 2048, rt.bitOr));
-			yield* g.srcCall(f, "update_icon");
-		} else {
-			return (yield* g.callSuper(f, [], rt.Args.Same));
-		}
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["I", "user", "params"] });
+}, true);
 
-// /obj/vehicle/janicart/proc/update_icon  (code/modules/vehicles/pimpin_ride.dm:70)
+// pimpin_ride.dm:70
 rt.def("/obj/vehicle/janicart/proc/update_icon", function update_icon(f: Frame) {
-	rt.callSrc(f, "cut_overlays", []);
-	if (truthy(rt.sv(f, "mybag"))) {
-		rt.callSrc(f, "add_overlay", ["cart_garbage"]);
+	this.cut_overlays();
+	if (this.mybag) {
+		this.add_overlay("cart_garbage");
 	}
-	if (!truthy(rt.sv(f, "floorbuffer"))) return f.dot;
-	rt.callSrc(f, "add_overlay", ["cart_buffer"]);
+	if (!this.floorbuffer) return f.dot;
+	this.add_overlay("cart_buffer");
 	return f.dot;
 });
 
-// /obj/vehicle/janicart/proc/attack_hand  (code/modules/vehicles/pimpin_ride.dm:78)  may sleep
-rt.def("/obj/vehicle/janicart/proc/attack_hand", function* attack_hand(f: Frame) {
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
+// pimpin_ride.dm:78
+rt.def("/obj/vehicle/janicart/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
+	if (yield* parent_proc()) {
 		return 1;
 	} else {
-		if (!truthy(rt.sv(f, "mybag"))) return f.dot;
-		rt.setFv(f, "loc", rt.sv(f, "mybag"), rt.getStep(f, live(f.args[0]), 0));
-		yield* g.callName(f, live(f.args[0]), "put_in_hands", [rt.sv(f, "mybag")]);
-		rt.setSv(f, "mybag", null);
-		yield* g.srcCall(f, "update_icon");
+		if (!this.mybag) return f.dot;
+		this.mybag.loc = rt.getStep(f, user, 0);
+		yield* user.put_in_hands(this.mybag);
+		this.mybag = null;
+		yield* this.update_icon();
 	}
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);

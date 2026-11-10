@@ -1,7 +1,7 @@
-// From code/game/objects/effects/temporary_visuals/miscellaneous.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/effects/temporary_visuals/miscellaneous.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(11604, "/obj/effect/temp_visual/dir_setting/bloodsplatter", "/obj/effect/temp_visual/dir_setting", {
@@ -12,47 +12,43 @@ rt.type(11604, "/obj/effect/temp_visual/dir_setting/bloodsplatter", "/obj/effect
 	layer: 3.7,
 });
 
-// /obj/effect/temp_visual/dir_setting/bloodsplatter/proc/Initialize  (code/game/objects/effects/temporary_visuals/miscellaneous.dm:10)  may sleep
-rt.def("/obj/effect/temp_visual/dir_setting/bloodsplatter/proc/Initialize", function* Initialize(f: Frame) {
-	let target_pixel_x: Value = null, target_pixel_y: Value = null;
-	let $0: any;
-	f.vars = () => [target_pixel_x, target_pixel_y, $0];
-	if (truthy((rt.isIn(f, live(f.args[1]), rt.gl("diagonals")) ? 1 : 0))) {
-		rt.setSv(f, "icon_state", fmt("＀＀", [rt.sv(f, "splatter_type"), rt.op(f, "PickUnweighted", [3], [1, 2, 6])]));
+// miscellaneous.dm:10
+rt.def("/obj/effect/temp_visual/dir_setting/bloodsplatter/proc/Initialize", function* Initialize(f: Frame, mapload: Value, set_dir: Value) {
+	if (rt.isIn(f, set_dir, GLOB.diagonals)) {
+		this.icon_state = `${this.splatter_type}${pick(1, 2, 6)}`;
 	} else {
-		rt.setSv(f, "icon_state", fmt("＀＀", [rt.sv(f, "splatter_type"), rt.op(f, "PickUnweighted", [3], [3, 4, 5])]));
+		this.icon_state = `${this.splatter_type}${pick(3, 4, 5)}`;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	target_pixel_x = 0;
-	target_pixel_y = 0;
-	$0 = live(f.args[1]);
-	if ($0 === 1) {
+	f.dot = (yield* parent_proc());
+	let target_pixel_x: Value = 0;
+	let target_pixel_y: Value = 0;
+	if (set_dir === 1) {
 		target_pixel_y = 16;
-	} else if ($0 === 2) {
+	} else if (set_dir === 2) {
 		target_pixel_y = -16;
-		rt.setSv(f, "layer", 4.099999904632568);
-	} else if ($0 === 4) {
+		this.layer = ABOVE_MOB_LAYER;
+	} else if (set_dir === 4) {
 		target_pixel_x = 16;
-	} else if ($0 === 8) {
+	} else if (set_dir === 8) {
 		target_pixel_x = -16;
-	} else if ($0 === 5) {
+	} else if (set_dir === 5) {
 		target_pixel_x = 16;
 		target_pixel_y = 16;
-	} else if ($0 === 9) {
+	} else if (set_dir === 9) {
 		target_pixel_x = -16;
 		target_pixel_y = 16;
-	} else if ($0 === 6) {
+	} else if (set_dir === 6) {
 		target_pixel_x = 16;
 		target_pixel_y = -16;
-		rt.setSv(f, "layer", 4.099999904632568);
-	} else if ($0 === 10) {
+		this.layer = ABOVE_MOB_LAYER;
+	} else if (set_dir === 10) {
 		target_pixel_x = -16;
 		target_pixel_y = -16;
-		rt.setSv(f, "layer", 4.099999904632568);
+		this.layer = ABOVE_MOB_LAYER;
 	}
-	rt.op(f, "Animate", [2, 10], [null, live(f.src), "pixel_x", live(target_pixel_x), "pixel_y", live(target_pixel_y), "alpha", 0, "time", rt.sv(f, "duration")]);
+	rt.op(f, "Animate", [2, 10], [null, this, "pixel_x", target_pixel_x, "pixel_y", target_pixel_y, "alpha", 0, "time", this.duration]);
 	return f.dot;
-}, true, { args: ["mapload", "set_dir"] });
+}, true);
 
 rt.type(11607, "/obj/effect/temp_visual/dir_setting/firing_effect", "/obj/effect/temp_visual/dir_setting", {
 	icon: rt.rsc("icons/effects/effects.dmi"),
@@ -60,75 +56,72 @@ rt.type(11607, "/obj/effect/temp_visual/dir_setting/firing_effect", "/obj/effect
 	duration: 2,
 });
 
-// /obj/effect/temp_visual/dir_setting/firing_effect/proc/setDir  (code/game/objects/effects/temporary_visuals/miscellaneous.dm:59)
-rt.def("/obj/effect/temp_visual/dir_setting/firing_effect/proc/setDir", function setDir(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = live(f.args[0]);
-	if ($0 === 1) {
-		rt.setSv(f, "layer", 3.700000047683716);
-		rt.setSv(f, "pixel_x", rt.call(f, P("/proc/rand"), null, [-3, 3]));
-		rt.setSv(f, "pixel_y", rt.call(f, P("/proc/rand"), null, [4, 6]));
-	} else if ($0 === 2) {
-		rt.setSv(f, "pixel_x", rt.call(f, P("/proc/rand"), null, [-3, 3]));
-		rt.setSv(f, "pixel_y", rt.call(f, P("/proc/rand"), null, [-1, 1]));
+// miscellaneous.dm:59
+rt.def("/obj/effect/temp_visual/dir_setting/firing_effect/proc/setDir", function setDir(f: Frame, newdir: Value) {
+	if (newdir === 1) {
+		this.layer = BELOW_MOB_LAYER;
+		this.pixel_x = rand(-3, 3);
+		this.pixel_y = rand(4, 6);
+	} else if (newdir === 2) {
+		this.pixel_x = rand(-3, 3);
+		this.pixel_y = rand(-1, 1);
 	} else {
-		rt.setSv(f, "pixel_x", rt.call(f, P("/proc/rand"), null, [-1, 1]));
-		rt.setSv(f, "pixel_y", rt.call(f, P("/proc/rand"), null, [-1, 1]));
+		this.pixel_x = rand(-1, 1);
+		this.pixel_y = rand(-1, 1);
 	}
-	rt.callSuper(f, [], rt.Args.Same);
+	parent_proc();
 	return f.dot;
-}, false, { args: ["newdir"] });
+}, false);
 
 rt.type(11627, "/obj/effect/temp_visual/decoy", "/obj/effect/temp_visual", {
 	desc: "It's a decoy!",
 	duration: 15,
 });
 
-// /obj/effect/temp_visual/decoy/proc/Initialize  (code/game/objects/effects/temporary_visuals/miscellaneous.dm:150)  may sleep
-rt.def("/obj/effect/temp_visual/decoy/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "alpha", rt.initial(f, live(f.src), "alpha"));
-	if (!truthy(live(f.args[1]))) return f.dot;
-	rt.setSv(f, "name", rt.fv(f, "name", live(f.args[1])));
-	rt.setSv(f, "appearance", rt.fv(f, "appearance", live(f.args[1])));
-	yield* g.srcCall(f, "setDir", rt.fv(f, "dir", live(f.args[1])));
-	rt.setSv(f, "mouse_opacity", 0);
+// miscellaneous.dm:150
+rt.def("/obj/effect/temp_visual/decoy/proc/Initialize", function* Initialize(f: Frame, mapload: Value, mimiced_atom: Value) {
+	f.dot = (yield* parent_proc());
+	this.alpha = rt.initial(f, this, "alpha");
+	if (!mimiced_atom) return f.dot;
+	this.name = mimiced_atom.name;
+	this.appearance = mimiced_atom.appearance;
+	yield* this.setDir(mimiced_atom.dir);
+	this.mouse_opacity = 0;
 	return f.dot;
-}, true, { args: ["mapload", "mimiced_atom"] });
+}, true);
 
 rt.type(11628, "/obj/effect/temp_visual/decoy/fading", "/obj/effect/temp_visual/decoy", {});
 
-// /obj/effect/temp_visual/decoy/fading/proc/Initialize  (code/game/objects/effects/temporary_visuals/miscellaneous.dm:159)  may sleep
-rt.def("/obj/effect/temp_visual/decoy/fading/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.op(f, "Animate", [2, 6], [null, live(f.src), "alpha", 0, "time", rt.sv(f, "duration")]);
+// miscellaneous.dm:159
+rt.def("/obj/effect/temp_visual/decoy/fading/proc/Initialize", function* Initialize(f: Frame, mapload: Value, mimiced_atom: Value) {
+	f.dot = (yield* parent_proc());
+	rt.op(f, "Animate", [2, 6], [null, this, "alpha", 0, "time", this.duration]);
 	return f.dot;
-}, true, { args: ["mapload", "mimiced_atom"] });
+}, true);
 
 rt.type(11640, "/obj/effect/temp_visual/gib_animation", "/obj/effect/temp_visual", {
 	icon: rt.rsc("icons/mob/mob.dmi"),
 	duration: 15,
 });
 
-// /obj/effect/temp_visual/gib_animation/proc/Initialize  (code/game/objects/effects/temporary_visuals/miscellaneous.dm:216)  may sleep
-rt.def("/obj/effect/temp_visual/gib_animation/proc/Initialize", function* Initialize(f: Frame) {
-	rt.setSv(f, "icon_state", live(f.args[1]));
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+// miscellaneous.dm:216
+rt.def("/obj/effect/temp_visual/gib_animation/proc/Initialize", function* Initialize(f: Frame, mapload: Value, gib_icon: Value) {
+	this.icon_state = gib_icon;
+	f.dot = (yield* parent_proc());
 	return f.dot;
-}, true, { args: ["mapload", "gib_icon"] });
+}, true);
 
 rt.type(11642, "/obj/effect/temp_visual/dust_animation", "/obj/effect/temp_visual", {
 	icon: rt.rsc("icons/mob/mob.dmi"),
 	duration: 15,
 });
 
-// /obj/effect/temp_visual/dust_animation/proc/Initialize  (code/game/objects/effects/temporary_visuals/miscellaneous.dm:227)  may sleep
-rt.def("/obj/effect/temp_visual/dust_animation/proc/Initialize", function* Initialize(f: Frame) {
-	rt.setSv(f, "icon_state", live(f.args[1]));
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+// miscellaneous.dm:227
+rt.def("/obj/effect/temp_visual/dust_animation/proc/Initialize", function* Initialize(f: Frame, mapload: Value, dust_icon: Value) {
+	this.icon_state = dust_icon;
+	f.dot = (yield* parent_proc());
 	return f.dot;
-}, true, { args: ["mapload", "dust_icon"] });
+}, true);
 
 rt.type(11644, "/obj/effect/temp_visual/heal", "/obj/effect/temp_visual", {
 	name: "healing glow",
@@ -136,32 +129,32 @@ rt.type(11644, "/obj/effect/temp_visual/heal", "/obj/effect/temp_visual", {
 	duration: 15,
 });
 
-// /obj/effect/temp_visual/heal/proc/Initialize  (code/game/objects/effects/temporary_visuals/miscellaneous.dm:242)  may sleep
-rt.def("/obj/effect/temp_visual/heal/proc/Initialize", function* Initialize(f: Frame) {
-	if (truthy(live(f.args[1]))) {
-		yield* g.srcCall(f, "add_atom_colour", live(f.args[1]), 4);
+// miscellaneous.dm:242
+rt.def("/obj/effect/temp_visual/heal/proc/Initialize", function* Initialize(f: Frame, mapload: Value, set_color: Value) {
+	if (set_color) {
+		this.add_atom_colour(set_color, FIXED_COLOUR_PRIORITY);
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "pixel_x", (yield* g.call(f, P("/proc/rand"), null, [-12, 12])));
-	rt.setSv(f, "pixel_y", (yield* g.call(f, P("/proc/rand"), null, [-9, 0])));
+	f.dot = (yield* parent_proc());
+	this.pixel_x = rand(-12, 12);
+	this.pixel_y = rand(-9, 0);
 	return f.dot;
-}, true, { args: ["mapload", "set_color"] });
+}, true);
 
 rt.type(11649, "/obj/effect/temp_visual/impact_effect", "/obj/effect/temp_visual", {
 	icon_state: "impact_bullet",
 	duration: 5,
 });
 
-// /obj/effect/temp_visual/impact_effect/proc/Initialize  (code/game/objects/effects/temporary_visuals/miscellaneous.dm:278)  may sleep
+// miscellaneous.dm:278
 rt.def("/obj/effect/temp_visual/impact_effect/proc/Initialize", function* Initialize(f: Frame) {
-	if (isEqual(live(f.args[1]), rt.fv(f, "original", live(f.args[2])))) {
-		rt.setSv(f, "pixel_x", add(subtract(add(rt.fv(f, "p_x", live(f.args[2])), rt.fv(f, "pixel_x", live(f.args[1]))), 16), (yield* g.call(f, P("/proc/rand"), null, [-4, 4]))));
-		rt.setSv(f, "pixel_y", add(subtract(add(rt.fv(f, "p_y", live(f.args[2])), rt.fv(f, "pixel_y", live(f.args[1]))), 16), (yield* g.call(f, P("/proc/rand"), null, [-4, 4]))));
+	if (f.args[1] == f.args[2].original) {
+		this.pixel_x = f.args[2].p_x + f.args[1].pixel_x - 16 + rand(-4, 4);
+		this.pixel_y = f.args[2].p_y + f.args[1].pixel_y - 16 + rand(-4, 4);
 	} else {
-		rt.setSv(f, "pixel_x", add(rt.fv(f, "pixel_x", live(f.args[1])), (yield* g.call(f, P("/proc/rand"), null, [-4, 4]))));
-		rt.setSv(f, "pixel_y", add(rt.fv(f, "pixel_y", live(f.args[1])), (yield* g.call(f, P("/proc/rand"), null, [-4, 4]))));
+		this.pixel_x = f.args[1].pixel_x + rand(-4, 4);
+		this.pixel_y = f.args[1].pixel_y + rand(-4, 4);
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true, { args: ["mapload", "target", "P"] });
 
@@ -172,14 +165,14 @@ rt.type(11656, "/obj/effect/temp_visual/heart", "/obj/effect/temp_visual", {
 	duration: 25,
 });
 
-// /obj/effect/temp_visual/heart/proc/Initialize  (code/game/objects/effects/temporary_visuals/miscellaneous.dm:317)  may sleep
-rt.def("/obj/effect/temp_visual/heart/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "pixel_x", (yield* g.call(f, P("/proc/rand"), null, [-4, 4])));
-	rt.setSv(f, "pixel_y", (yield* g.call(f, P("/proc/rand"), null, [-4, 4])));
-	rt.op(f, "Animate", [2, 8], [null, live(f.src), "pixel_y", add(rt.sv(f, "pixel_y"), 32), "alpha", 0, "time", 25]);
+// miscellaneous.dm:317
+rt.def("/obj/effect/temp_visual/heart/proc/Initialize", function* Initialize(f: Frame, mapload: Value) {
+	f.dot = (yield* parent_proc());
+	this.pixel_x = rand(-4, 4);
+	this.pixel_y = rand(-4, 4);
+	rt.op(f, "Animate", [2, 8], [null, this, "pixel_y", this.pixel_y + 32, "alpha", 0, "time", 25]);
 	return f.dot;
-}, true, { args: ["mapload"] });
+}, true);
 
 rt.type(11657, "/obj/effect/temp_visual/bleed", "/obj/effect/temp_visual", {
 	shrink: 1,
@@ -189,23 +182,22 @@ rt.type(11657, "/obj/effect/temp_visual/bleed", "/obj/effect/temp_visual", {
 	duration: 10,
 });
 
-// /obj/effect/temp_visual/bleed/proc/Initialize  (code/game/objects/effects/temporary_visuals/miscellaneous.dm:330)  may sleep
-rt.def("/obj/effect/temp_visual/bleed/proc/Initialize", function* Initialize(f: Frame) {
-	let size_matrix: Value = null, I: Value = null, M: Value = null;
-	f.vars = () => [size_matrix, I, M];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	size_matrix = (yield* g.call(f, P("/proc/matrix"), null, []));
-	if (truthy(live(f.args[1]))) {
-		rt.setSv(f, "layer", add(rt.fv(f, "layer", live(f.args[1])), 0.009999999776482582));
-		I = (yield* g.call(f, P("/proc/icon"), null, [rt.fv(f, "icon", live(f.args[1])), rt.fv(f, "icon_state", live(f.args[1])), rt.fv(f, "dir", live(f.args[1]))]));
-		rt.setSv(f, "transform", (size_matrix = multiply((yield* g.call(f, P("/proc/matrix"), null, [])), divide((yield* g.callName(f, live(I), "Height", [])), rt.fv(f, "icon_size", rt.world())))));
+// miscellaneous.dm:330
+rt.def("/obj/effect/temp_visual/bleed/proc/Initialize", function* Initialize(f: Frame, mapload: Value, size_calc_target: Value) {
+	let I: Value = null;
+	f.dot = (yield* parent_proc());
+	let size_matrix: Value = matrix();
+	if (size_calc_target) {
+		this.layer = size_calc_target.layer + 0.01;
+		I = icon(size_calc_target.icon, size_calc_target.icon_state, size_calc_target.dir);
+		this.transform = (size_matrix = matrix() * (I.Height() / rt.world().icon_size));
 	}
-	M = rt.sv(f, "transform");
-	if (truthy(rt.sv(f, "shrink"))) {
-		M = multiply(live(size_matrix), 0.10000000149011612);
+	let M: Value = this.transform;
+	if (this.shrink) {
+		M = size_matrix * 0.1;
 	} else {
-		M = multiply(live(size_matrix), 2);
+		M = size_matrix * 2;
 	}
-	rt.op(f, "Animate", [2, 10], [null, live(f.src), "alpha", 20, "transform", live(M), "time", rt.sv(f, "duration"), "flags", 4]);
+	rt.op(f, "Animate", [2, 10], [null, this, "alpha", 20, "transform", M, "time", this.duration, "flags", 4]);
 	return f.dot;
-}, true, { args: ["mapload", "size_calc_target"] });
+}, true);

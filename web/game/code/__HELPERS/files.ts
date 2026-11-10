@@ -1,87 +1,67 @@
-// From code/__HELPERS/files.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/__HELPERS/files.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, g } = rt;
 
 
-// /client/proc/getFiles  (code/__HELPERS/files.dm:3)
+// files.dm:3
 rt.def("/client/proc/getFiles", function getFiles(f: Frame) {
 	let file: Value = null;
-	let $e: any;
-	f.vars = () => [file, $e];
-	file = null;
-	rt.forList(f, 0, f.argsList);
-	while (($e = rt.next(f, 0)) !== undefined) {
-		file = $e;
-		rt.op(f, "BrowseResource", [], [live(f.src), live(file), null], false);
+	for (file of each(f.argsList)) {
+		rt.op(f, "BrowseResource", [], [this, file, null], false);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /client/proc/browse_files  (code/__HELPERS/files.dm:7)  may sleep
+// files.dm:7
 rt.def("/client/proc/browse_files", function* browse_files(f: Frame, root: Value, max_iterations: Value, valid_extensions: Value) {
-	let path: Value = null, i: Value = null, choices: Value = null, choice: Value = null, extensions: Value = null, i_2: Value = null, valid_ext: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [root, max_iterations, valid_extensions, path, i, choices, choice, extensions, i_2, valid_ext, $0, $e];
-	if (live(root) === null) {
-		root = "data/logs/";
-	}
-	if (live(max_iterations) === null) {
-		max_iterations = 10;
-	}
-	if (live(valid_extensions) === null) {
-		valid_extensions = rt.list("txt", "log", "htm", "html");
-	}
-	path = live(root);
-	i = null;
-	i = 0;
-	while (rt.lt(live(i), live(max_iterations))) {
-		choices = (yield* g.call(f, P("/proc/flist"), null, [live(path)]));
-		if (!isEqual(live(path), live(root))) {
-			yield* g.callName(f, live(choices), "Insert", [1, "/"]);
+	let choices: Value = null, choice: Value = null, extensions: Value = null, i_2: Value = null;
+	let $e: any;
+	root ??= "data/logs/";
+	max_iterations ??= 10;
+	valid_extensions ??= list("txt", "log", "htm", "html");
+	let path: Value = root;
+	let i: Value = 0;
+	while (i < max_iterations) {
+		choices = flist(path);
+		if (path != root) {
+			yield* choices.Insert(1, "/");
 		}
 		blk55: {
-			$0 = (choice = (yield* g.op(f, "Prompt", [1], [null, "Download", "Choose a file to access:", live(f.src), live(choices)])));
-			if (isEqual($0, null)) {
-				return live(f.dot);
-			} else if ($0 === "/") {
-				path = live(root);
+			const subject = (choice = (yield* g.op(f, "Prompt", [1], [null, "Download", "Choose a file to access:", this, choices])));
+			if (subject == null) {
+				return f.dot;
+			} else if (subject === "/") {
+				path = root;
 				break blk55;
 			}
-			if (!isEqual((yield* g.call(f, P("/proc/copytext"), null, [(path = rt.modify(live(path), live(choice), add)), -1, 0])), "/")) {
+			if (copytext((path += choice), -1, 0) != "/") {
 				break;
 			}
 		}
-		i = rt.inc(live(i), 1);
+		i++;
 	}
-	extensions = null;
-	i_2 = null;
-	rt.forList(f, 0, live(valid_extensions));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		i_2 = $e;
-		if (truthy(live(extensions))) {
-			extensions = rt.modify(live(extensions), "|", add);
+	for (i_2 of each(valid_extensions)) {
+		if (extensions) {
+			extensions += "|";
 		}
-		extensions = rt.modify(live(extensions), fmt("＀", [live(i_2)]), add);
+		extensions += `${i_2}`;
 	}
-	rt.endFor(f, 0);
-	valid_ext = (yield* g.new_(f, T("/regex"), [fmt("\\.(＀)$", [live(extensions)]), "i"]));
-	if ((!truthy((yield* g.call(f, P("/proc/fexists"), null, [live(path)]))) || !truthy((yield* g.callName(f, live(valid_ext), "Find", [live(path)]))))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), fmt("<font color='red'>Error: browse_files(): File not found/Invalid file(＀).</font>", [live(path)])]);
-		return live(f.dot);
+	let valid_ext: Value = (yield* new_(T("/regex"), `\\.(${extensions})$`, "i"));
+	if (!fexists(path) || !valid_ext.Find(path)) {
+		to_chat(this, `<font color='red'>Error: browse_files(): File not found/Invalid file(${path}).</font>`);
+		return f.dot;
 	}
-	return live(path);
+	return path;
 }, true);
 
-// /client/proc/file_spam_check  (code/__HELPERS/files.dm:44)
+// files.dm:44
 rt.def("/client/proc/file_spam_check", function file_spam_check(f: Frame) {
 	let time_to_wait: Value = null;
-	f.vars = () => [time_to_wait];
-	if (rt.gt((time_to_wait = subtract(rt.gl("fileaccess_timer"), rt.worldTime(f))), 0)) {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.src), fmt("<font color='red'>Error: file_spam_check(): Spam. Please wait ＀ seconds.</font>", [rt.call(f, P("/proc/round"), null, [divide(live(time_to_wait), 10)])])]);
+	if ((time_to_wait = GLOB.fileaccess_timer - rt.worldTime(f)) > 0) {
+		to_chat(this, `<font color='red'>Error: file_spam_check(): Spam. Please wait ${round(time_to_wait / 10)} seconds.</font>`);
 		return 1;
 	}
-	rt.setGl("fileaccess_timer", add(rt.worldTime(f), 200));
+	GLOB.fileaccess_timer = rt.worldTime(f) + FTPDELAY;
 	return 0;
 });

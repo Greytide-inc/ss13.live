@@ -1,7 +1,7 @@
-// From code/game/objects/items/weapons/airlock_painter.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/weapons/airlock_painter.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(7087, "/obj/item/weapon/airlock_painter", "/obj/item/weapon", {
@@ -18,138 +18,121 @@ rt.type(7087, "/obj/item/weapon/airlock_painter", "/obj/item/weapon", {
 	slot_flags: 512,
 });
 
-// /obj/item/weapon/airlock_painter/proc/<init>  (code/game/objects/items/weapons/airlock_painter.dm:10)
+// airlock_painter.dm:10
 rt.def("/obj/item/weapon/airlock_painter/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 50, "$glass", 50]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 50, "$glass", 50]);
 	return f.dot;
 });
 
-// /obj/item/weapon/airlock_painter/proc/New  (code/game/objects/items/weapons/airlock_painter.dm:19)  may sleep
+// airlock_painter.dm:19
 rt.def("/obj/item/weapon/airlock_painter/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "ink", (yield* g.new_(f, T("/obj/item/device/toner"), [live(f.src)])));
+	yield* parent_proc();
+	this.ink = (yield* new_(T("/obj/item/device/toner"), this));
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/airlock_painter/proc/use  (code/game/objects/items/weapons/airlock_painter.dm:25)
+// airlock_painter.dm:25
 rt.def("/obj/item/weapon/airlock_painter/proc/use", function use(f: Frame, user: Value) {
-	if (truthy(rt.callSrc(f, "can_use", [live(user)]))) {
-		rt.incField(f, rt.sv(f, "ink"), "charges", -1, true);
-		rt.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/effects/spray2.ogg"), 50, 1]);
+	if (this.can_use(user)) {
+		this.ink.charges--;
+		playsound(this.loc, rt.rsc("sound/effects/spray2.ogg"), 50, 1);
 		return 1;
 	} else {
 		return 0;
 	}
-	return f.dot;
 });
 
-// /obj/item/weapon/airlock_painter/proc/can_use  (code/game/objects/items/weapons/airlock_painter.dm:36)
+// airlock_painter.dm:36
 rt.def("/obj/item/weapon/airlock_painter/proc/can_use", function can_use(f: Frame, user: Value) {
-	if (!truthy(rt.sv(f, "ink"))) {
-		rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>There is no toner cartridge installed in ＀!</span>", [live(f.src)])]);
+	if (!this.ink) {
+		to_chat(user, `<span class='notice'>There is no toner cartridge installed in ${this}!</span>`);
+		return 0;
+	} else if (this.ink.charges < 1) {
+		to_chat(user, `<span class='notice'>${this} is out of ink!</span>`);
 		return 0;
 	} else {
-		if (rt.lt(rt.fv(f, "charges", rt.sv(f, "ink")), 1)) {
-			rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>＀ is out of ink!</span>", [live(f.src)])]);
-			return 0;
-		} else {
-			return 1;
-		}
+		return 1;
 	}
-	return f.dot;
 });
 
-// /obj/item/weapon/airlock_painter/proc/suicide_act  (code/game/objects/items/weapons/airlock_painter.dm:46)  may sleep
+// airlock_painter.dm:46
 rt.def("/obj/item/weapon/airlock_painter/proc/suicide_act", function* suicide_act(f: Frame, user: Value) {
-	let L: Value = null, _T: Value = null;
-	f.vars = () => [user, L, _T];
-	L = (yield* g.callName(f, live(user), "getorganslot", ["lungs"]));
-	if ((truthy((yield* g.srcCall(f, "can_use", live(user)))) && truthy(live(L)))) {
-		yield* g.callName(f, live(user), "visible_message", [fmt("<span class='suicide'>＀ is inhaling toner from ＀! It looks like ＀ trying to commit suicide!</span>", [live(user), live(f.src), (yield* g.callName(f, live(user), "p_theyre", []))])]);
-		yield* g.srcCall(f, "use", live(user));
-		if (!truthy((rt.istype((_T = rt.getStep(f, rt.getStep(f, live(f.src), 0), rt.fv(f, "dir", live(user)))), T("/turf/open")) ? 1 : 0))) {
-			_T = rt.getStep(f, live(f.src), 0);
+	let _T: Value = null;
+	let L: Value = user.getorganslot("lungs");
+	if (this.can_use(user) && L) {
+		user.visible_message(`<span class='suicide'>${user} is inhaling toner from ${this}! It looks like ${user.p_theyre()} trying to commit suicide!</span>`);
+		yield* this.use(user);
+		if (!rt.istype((_T = rt.getStep(f, rt.getStep(f, this, 0), user.dir)), T("/turf/open"))) {
+			_T = rt.getStep(f, this, 0);
 		}
-		if (!truthy(live(L))) {
+		if (!L) {
 			return 8;
 		}
-		yield* g.callName(f, live(L), "Remove", [live(user)]);
-		yield* g.callName(f, live(L), "create_reagents", [10]);
-		yield* g.callName(f, rt.fv(f, "reagents", live(L)), "add_reagent", ["colorful_reagent", 10]);
-		yield* g.callName(f, rt.fv(f, "reagents", live(L)), "reaction", [live(L), 1, 1]);
-		yield* g.callName(f, live(user), "visible_message", [fmt("<span class='suicide'>＀ vomits out their ＀!</span>", [live(user), live(L)])]);
-		yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(user)), rt.rsc("sound/effects/splat.ogg"), 50, 1]);
-		yield* g.callName(f, live(L), "forceMove", [live(_T)]);
+		yield* L.Remove(user);
+		yield* L.create_reagents(10);
+		yield* L.reagents.add_reagent("colorful_reagent", 10);
+		yield* L.reagents.reaction(L, TOUCH, 1);
+		user.visible_message(`<span class='suicide'>${user} vomits out their ${L}!</span>`);
+		playsound(user.loc, rt.rsc("sound/effects/splat.ogg"), 50, 1);
+		yield* L.forceMove(_T);
 		return 12;
+	} else if (this.can_use(user) && !L) {
+		user.visible_message(`<span class='suicide'>${user} is spraying toner on ${user.p_them()}self from ${this}! It looks like ${user.p_theyre()} trying to commit suicide.</span>`);
+		yield* user.reagents.add_reagent("colorful_reagent", TOUCH);
+		yield* user.reagents.reaction(user, TOUCH, 1);
+		return 4;
 	} else {
-		if ((truthy((yield* g.srcCall(f, "can_use", live(user)))) && !truthy(live(L)))) {
-			yield* g.callName(f, live(user), "visible_message", [fmt("<span class='suicide'>＀ is spraying toner on ＀self from ＀! It looks like ＀ trying to commit suicide.</span>", [live(user), (yield* g.callName(f, live(user), "p_them", [])), live(f.src), (yield* g.callName(f, live(user), "p_theyre", []))])]);
-			yield* g.callName(f, rt.fv(f, "reagents", live(user)), "add_reagent", ["colorful_reagent", 1]);
-			yield* g.callName(f, rt.fv(f, "reagents", live(user)), "reaction", [live(user), 1, 1]);
-			return 4;
-		} else {
-			yield* g.callName(f, live(user), "visible_message", [fmt("<span class='suicide'>＀ is trying to inhale toner from ＀! It might be a suicide attempt if ＀ had any toner.</span>", [live(user), live(f.src), live(f.src)])]);
-			return 16;
+		user.visible_message(`<span class='suicide'>${user} is trying to inhale toner from ${this}! It might be a suicide attempt if ${this} had any toner.</span>`);
+		return 16;
+	}
+}, true);
+
+// airlock_painter.dm:93
+rt.def("/obj/item/weapon/airlock_painter/proc/examine", function examine(f: Frame, user: Value) {
+	parent_proc();
+	if (!this.ink) {
+		to_chat(user, "<span class='notice'>It doesn't have a toner cartridge installed.</span>");
+		return f.dot;
+	}
+	let ink_level: Value = "high";
+	if (this.ink.charges < 1) {
+		ink_level = "empty";
+	} else if (this.ink.charges / this.ink.max_charges <= 0.25) {
+		ink_level = "low";
+	} else if (this.ink.charges / this.ink.max_charges > 1) {
+		ink_level = "dangerously high";
+	}
+	to_chat(user, `<span class='notice'>Its ink levels look ${ink_level}.</span>`);
+	return f.dot;
+}, false);
+
+// airlock_painter.dm:108
+rt.def("/obj/item/weapon/airlock_painter/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
+	if (rt.istype(W, T("/obj/item/device/toner"))) {
+		if (this.ink) {
+			to_chat(user, fmt("<span class='notice'>＀ already contains ＇！.</span>", [this, this.ink]));
+			return f.dot;
 		}
+		if (!(yield* user.transferItemToLoc(W, this))) {
+			return f.dot;
+		}
+		to_chat(user, `<span class='notice'>You install ${W} into ${this}.</span>`);
+		this.ink = W;
+		playsound(this.loc, rt.rsc("sound/machines/click.ogg"), 50, 1);
+	} else {
+		return (yield* parent_proc());
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/airlock_painter/proc/examine  (code/game/objects/items/weapons/airlock_painter.dm:93)
-rt.def("/obj/item/weapon/airlock_painter/proc/examine", function examine(f: Frame) {
-	let ink_level: Value = null;
-	f.vars = () => [ink_level];
-	rt.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.sv(f, "ink"))) {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='notice'>It doesn't have a toner cartridge installed.</span>"]);
-		return live(f.dot);
-	}
-	ink_level = "high";
-	if (rt.lt(rt.fv(f, "charges", rt.sv(f, "ink")), 1)) {
-		ink_level = "empty";
-	} else {
-		if (rt.le(divide(rt.fv(f, "charges", rt.sv(f, "ink")), rt.fv(f, "max_charges", rt.sv(f, "ink"))), 0.25)) {
-			ink_level = "low";
-		} else {
-			if (rt.gt(divide(rt.fv(f, "charges", rt.sv(f, "ink")), rt.fv(f, "max_charges", rt.sv(f, "ink"))), 1)) {
-				ink_level = "dangerously high";
-			}
-		}
-	}
-	rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='notice'>Its ink levels look ＀.</span>", [live(ink_level)])]);
-	return f.dot;
-}, false, { args: ["user"] });
-
-// /obj/item/weapon/airlock_painter/proc/attackby  (code/game/objects/items/weapons/airlock_painter.dm:108)  may sleep
-rt.def("/obj/item/weapon/airlock_painter/proc/attackby", function* attackby(f: Frame) {
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/device/toner")) ? 1 : 0))) {
-		if (truthy(rt.sv(f, "ink"))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>＀ already contains ＇！.</span>", [live(f.src), rt.sv(f, "ink")])]);
-			return live(f.dot);
-		}
-		if (!truthy((yield* g.callName(f, live(f.args[1]), "transferItemToLoc", [live(f.args[0]), live(f.src)])))) {
-			return live(f.dot);
-		}
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You install ＀ into ＀.</span>", [live(f.args[0]), live(f.src)])]);
-		rt.setSv(f, "ink", live(f.args[0]));
-		yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/machines/click.ogg"), 50, 1]);
-	} else {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
-	}
-	return f.dot;
-}, true, { args: ["W", "user", "params"] });
-
-// /obj/item/weapon/airlock_painter/proc/attack_self  (code/game/objects/items/weapons/airlock_painter.dm:122)  may sleep
+// airlock_painter.dm:122
 rt.def("/obj/item/weapon/airlock_painter/proc/attack_self", function* attack_self(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (!truthy(rt.sv(f, "ink"))) return f.dot;
-	yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/machines/click.ogg"), 50, 1]);
-	rt.setFv(f, "loc", rt.sv(f, "ink"), rt.fv(f, "loc", live(user)));
-	yield* g.callName(f, live(user), "put_in_hands", [rt.sv(f, "ink")]);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You remove ＀ from ＀.</span>", [rt.sv(f, "ink"), live(f.src)])]);
-	rt.setSv(f, "ink", null);
+	if (!this.ink) return f.dot;
+	playsound(this.loc, rt.rsc("sound/machines/click.ogg"), 50, 1);
+	this.ink.loc = user.loc;
+	yield* user.put_in_hands(this.ink);
+	to_chat(user, `<span class='notice'>You remove ${this.ink} from ${this}.</span>`);
+	this.ink = null;
 	return f.dot;
 }, true);

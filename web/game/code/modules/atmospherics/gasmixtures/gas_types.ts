@@ -1,38 +1,32 @@
-// From code/modules/atmospherics/gasmixtures/gas_types.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/atmospherics/gasmixtures/gas_types.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
-// /datum/controller/global_vars/proc/InitGlobalhardcoded_gases  (code/modules/atmospherics/gasmixtures/gas_types.dm:1)
+// gas_types.dm:1
 rt.def("/datum/controller/global_vars/proc/InitGlobalhardcoded_gases", function InitGlobalhardcoded_gases(f: Frame) {
-	rt.setGl("hardcoded_gases", rt.list("o2", "n2", "co2", "plasma"));
-	rt.modSrcVar(f, "gvars_datum_init_order", "hardcoded_gases", add);
+	GLOB.hardcoded_gases = list("o2", "n2", "co2", "plasma");
+	this.gvars_datum_init_order += "hardcoded_gases";
 	return f.dot;
 });
 
-// /proc/meta_gas_list  (code/modules/atmospherics/gasmixtures/gas_types.dm:4)  may sleep
+// gas_types.dm:4
 rt.def("/proc/meta_gas_list", function* meta_gas_list(f: Frame) {
 	let gas_path: Value = null, gas_info: Value = null, gas: Value = null;
-	let $e: any;
-	f.vars = () => [gas_path, gas_info, gas, $e];
-	f.dot = (yield* g.new_(f, T("/list"), []));
-	gas_path = null;
-	rt.forList(f, 0, subtract((yield* g.call(f, P("/proc/typesof"), null, [T("/datum/gas")])), T("/datum/gas")));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		gas_path = $e;
-		gas_info = (yield* g.new_(f, T("/list"), [5]));
-		gas = live(gas_path);
-		rt.setAt(live(gas_info), 1, rt.initial(f, live(gas), "specific_heat"));
-		rt.setAt(live(gas_info), 2, rt.initial(f, live(gas), "name"));
-		rt.setAt(live(gas_info), 3, rt.initial(f, live(gas), "moles_visible"));
-		if (rt.initial(f, live(gas), "moles_visible") !== null) {
-			rt.setAt(live(gas_info), 4, (yield* g.new_(f, T("/obj/effect/overlay/gas"), [rt.initial(f, live(gas), "gas_overlay")])));
+	f.dot = (yield* new_(T("/list")));
+	for (gas_path of each(typesof(T("/datum/gas")) - T("/datum/gas"))) {
+		gas_info = (yield* new_(T("/list"), 5));
+		gas = gas_path;
+		rt.setAt(gas_info, 1, rt.initial(f, gas, "specific_heat"));
+		rt.setAt(gas_info, 2, rt.initial(f, gas, "name"));
+		rt.setAt(gas_info, 3, rt.initial(f, gas, "moles_visible"));
+		if (rt.initial(f, gas, "moles_visible") !== null) {
+			rt.setAt(gas_info, 4, (yield* new_(T("/obj/effect/overlay/gas"), rt.initial(f, gas, "gas_overlay"))));
 		}
-		rt.setAt(live(gas_info), 5, rt.initial(f, live(gas), "dangerous"));
-		rt.setAt(live(f.dot), rt.initial(f, live(gas), "id"), live(gas_info));
+		rt.setAt(gas_info, 5, rt.initial(f, gas, "dangerous"));
+		rt.setAt(f.dot, rt.initial(f, gas, "id"), gas_info);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
@@ -43,9 +37,9 @@ rt.type(11781, "/obj/effect/overlay/gas", "/obj/effect/overlay", {
 	appearance_flags: 256,
 });
 
-// /obj/effect/overlay/gas/proc/New  (code/modules/atmospherics/gasmixtures/gas_types.dm:103)  may sleep
-rt.def("/obj/effect/overlay/gas/proc/New", function* New(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "icon_state", live(f.args[0]));
+// gas_types.dm:103
+rt.def("/obj/effect/overlay/gas/proc/New", function* New(f: Frame, state: Value) {
+	f.dot = (yield* parent_proc());
+	this.icon_state = state;
 	return f.dot;
-}, true, { args: ["state"] });
+}, true);

@@ -1,7 +1,7 @@
-// From code/modules/atmospherics/machinery/components/unary_devices/oxygen_generator.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/atmospherics/machinery/components/unary_devices/oxygen_generator.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { add } = rt;
 
 
 rt.type(10588, "/obj/machinery/atmospherics/components/unary/oxygen_generator", "/obj/machinery/atmospherics/components/unary", {
@@ -15,47 +15,45 @@ rt.type(10588, "/obj/machinery/atmospherics/components/unary/oxygen_generator", 
 	layer: 2.46,
 });
 
-// /obj/machinery/atmospherics/components/unary/oxygen_generator/proc/update_icon_nopipes  (code/modules/atmospherics/machinery/components/unary_devices/oxygen_generator.dm:18)
+// oxygen_generator.dm:18
 rt.def("/obj/machinery/atmospherics/components/unary/oxygen_generator/proc/update_icon_nopipes", function update_icon_nopipes(f: Frame) {
-	rt.callSrc(f, "cut_overlays", []);
-	if (truthy(rt.sv(f, "showpipe"))) {
-		rt.callSrc(f, "add_overlay", [rt.callSrc(f, "getpipeimage", [rt.rsc("icons/obj/atmospherics/components/unary_devices.dmi"), "scrub_cap", rt.sv(f, "initialize_directions")])]);
+	this.cut_overlays();
+	if (this.showpipe) {
+		this.add_overlay(this.getpipeimage(rt.rsc("icons/obj/atmospherics/components/unary_devices.dmi"), "scrub_cap", this.initialize_directions));
 	}
-	if (((!truthy(rt.index(rt.sv(f, "nodes"), 1)) || !truthy(rt.sv(f, "on"))) || truthy(rt.bitAnd(rt.sv(f, "stat"), 1)))) {
-		rt.setSv(f, "icon_state", "o2gen_off");
-		return live(f.dot);
+	if (!rt.index(this.nodes, 1) || !this.on || rt.bitAnd(this.stat, 1)) {
+		this.icon_state = "o2gen_off";
+		return f.dot;
 	} else {
-		rt.setSv(f, "icon_state", "o2gen_on");
+		this.icon_state = "o2gen_on";
 	}
 	return f.dot;
 });
 
-// /obj/machinery/atmospherics/components/unary/oxygen_generator/proc/New  (code/modules/atmospherics/machinery/components/unary_devices/oxygen_generator.dm:30)  may sleep
+// oxygen_generator.dm:30
 rt.def("/obj/machinery/atmospherics/components/unary/oxygen_generator/proc/New", function* New(f: Frame) {
 	let air_contents: Value = null;
-	f.vars = () => [air_contents];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setFv(f, "volume", (air_contents = rt.index(rt.sv(f, "airs"), 1)), 50);
-	rt.setAt(rt.sv(f, "airs"), 1, live(air_contents));
+	yield* parent_proc();
+	(air_contents = rt.index(this.airs, 1)).volume = 50;
+	rt.setAt(this.airs, 1, air_contents);
 	return f.dot;
 }, true);
 
-// /obj/machinery/atmospherics/components/unary/oxygen_generator/proc/process_atmos  (code/modules/atmospherics/machinery/components/unary_devices/oxygen_generator.dm:36)
+// oxygen_generator.dm:36
 rt.def("/obj/machinery/atmospherics/components/unary/oxygen_generator/proc/process_atmos", function process_atmos(f: Frame) {
-	let air_contents: Value = null, total_moles: Value = null, current_heat_capacity: Value = null, added_oxygen: Value = null;
-	f.vars = () => [air_contents, total_moles, current_heat_capacity, added_oxygen];
-	rt.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.sv(f, "on"))) {
+	let total_moles: Value = null, current_heat_capacity: Value = null, added_oxygen: Value = null;
+	parent_proc();
+	if (!this.on) {
 		return 0;
 	}
-	air_contents = rt.index(rt.sv(f, "airs"), 1);
-	if (rt.lt((total_moles = rt.callName(f, live(air_contents), "total_moles", [])), rt.sv(f, "oxygen_content"))) {
-		current_heat_capacity = rt.callName(f, live(air_contents), "heat_capacity", []);
-		added_oxygen = subtract(rt.sv(f, "oxygen_content"), live(total_moles));
-		rt.setFv(f, "temperature", live(air_contents), divide(add(multiply(live(current_heat_capacity), rt.fv(f, "temperature", live(air_contents))), multiply(multiply(20, live(added_oxygen)), 273.1499938964844)), add(live(current_heat_capacity), multiply(20, live(added_oxygen)))));
-		rt.callName(f, live(air_contents), "assert_gas", ["o2"]);
-		rt.modAt(rt.index(rt.fv(f, "gases", live(air_contents)), "o2"), 1, live(added_oxygen), add);
-		rt.callSrc(f, "update_parents", []);
+	let air_contents: Value = rt.index(this.airs, 1);
+	if ((total_moles = air_contents.total_moles()) < this.oxygen_content) {
+		current_heat_capacity = air_contents.heat_capacity();
+		added_oxygen = this.oxygen_content - total_moles;
+		air_contents.temperature = (current_heat_capacity * air_contents.temperature + 20 * added_oxygen * T0C) / (current_heat_capacity + 20 * added_oxygen);
+		air_contents.assert_gas("o2");
+		rt.modAt(rt.index(air_contents.gases, "o2"), 1, added_oxygen, add);
+		this.update_parents();
 	}
 	return 1;
 });

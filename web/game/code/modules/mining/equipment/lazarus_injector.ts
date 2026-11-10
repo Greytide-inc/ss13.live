@@ -1,7 +1,7 @@
-// From code/modules/mining/equipment/lazarus_injector.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mining/equipment/lazarus_injector.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(7528, "/obj/item/weapon/lazarus_injector", "/obj/item/weapon", {
@@ -20,64 +20,62 @@ rt.type(7528, "/obj/item/weapon/lazarus_injector", "/obj/item/weapon", {
 	origin_tech: "biotech=4;magnets=6",
 });
 
-// /obj/item/weapon/lazarus_injector/proc/afterattack  (code/modules/mining/equipment/lazarus_injector.dm:18)  may sleep
+// lazarus_injector.dm:18
 rt.def("/obj/item/weapon/lazarus_injector/proc/afterattack", function* afterattack(f: Frame, target: Value, user: Value, proximity_flag: Value) {
 	let M: Value = null, H: Value = null;
-	f.vars = () => [target, user, proximity_flag, M, H];
-	if (!truthy(rt.sv(f, "loaded"))) {
-		return live(f.dot);
+	if (!this.loaded) {
+		return f.dot;
 	}
-	if (!(truthy((rt.istype(live(target), T("/mob/living")) ? 1 : 0)) && truthy(live(proximity_flag)))) return f.dot;
-	if (truthy((rt.istype(live(target), T("/mob/living/simple_animal")) ? 1 : 0))) {
-		if (!isEqual(rt.gv(f, "sentience_type", (M = live(target))), rt.sv(f, "revive_type"))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='info'>＀ does not work on this sort of creature.</span>", [live(f.src)])]);
-			return live(f.dot);
+	if (!(rt.istype(target, T("/mob/living")) && proximity_flag)) return f.dot;
+	if (rt.istype(target, T("/mob/living/simple_animal"))) {
+		if ((M = target).sentience_type != this.revive_type) {
+			to_chat(user, `<span class='info'>${this} does not work on this sort of creature.</span>`);
+			return f.dot;
 		}
-		if (isEqual(rt.fv(f, "stat", live(M)), 2)) {
-			rt.setFv(f, "faction", live(M), rt.list("neutral"));
-			yield* g.callName(f, live(M), "revive", ["full_heal", 1, "admin_revive", 1], rt.Args.Named);
-			if (truthy((rt.istype(live(target), T("/mob/living/simple_animal/hostile")) ? 1 : 0))) {
-				H = live(M);
-				if (truthy(rt.sv(f, "malfunctioning"))) {
-					(rt.modField(f, live(H), "faction", rt.list("lazarus", fmt("＃", [live(user)])), rt.bitOr));
-					rt.setFv(f, "robust_searching", live(H), 1);
-					rt.modField(f, live(H), "friends", live(user), add);
-					rt.setFv(f, "attack_same", live(H), 1);
-					yield* g.call(f, P("/proc/log_game"), null, [fmt("＀ has revived hostile mob ＀ with a malfunctioning lazarus injector", [live(user), live(target)])]);
+		if (M.stat == 2) {
+			M.faction = list("neutral");
+			yield* M.revive({ full_heal: 1, admin_revive: 1 });
+			if (rt.istype(target, T("/mob/living/simple_animal/hostile"))) {
+				H = M;
+				if (this.malfunctioning) {
+					(rt.modField(f, H, "faction", list("lazarus", fmt("＃", [user])), rt.bitOr));
+					H.robust_searching = 1;
+					H.friends += user;
+					H.attack_same = 1;
+					log_game(`${user} has revived hostile mob ${target} with a malfunctioning lazarus injector`);
 				} else {
-					rt.setFv(f, "attack_same", live(H), 0);
+					H.attack_same = 0;
 				}
 			}
-			rt.setSv(f, "loaded", 0);
-			yield* g.callName(f, live(user), "visible_message", [fmt("<span class='notice'>＀ injects ＀ with ＀, reviving it.</span>", [live(user), live(M), live(f.src)])]);
-			yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/effects/refill.ogg"), 50, 1]);
-			rt.setSv(f, "icon_state", "lazarus_empty");
-			return live(f.dot);
+			this.loaded = 0;
+			user.visible_message(`<span class='notice'>${user} injects ${M} with ${this}, reviving it.</span>`);
+			playsound(this, rt.rsc("sound/effects/refill.ogg"), 50, 1);
+			this.icon_state = "lazarus_empty";
+			return f.dot;
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='info'>＀ is only effective on the dead.</span>", [live(f.src)])]);
-			return live(f.dot);
+			to_chat(user, `<span class='info'>${this} is only effective on the dead.</span>`);
+			return f.dot;
 		}
 	} else {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='info'>＀ is only effective on lesser beings.</span>", [live(f.src)])]);
-		return live(f.dot);
+		to_chat(user, `<span class='info'>${this} is only effective on lesser beings.</span>`);
+		return f.dot;
 	}
-	return f.dot;
 }, true);
 
-// /obj/item/weapon/lazarus_injector/proc/emp_act  (code/modules/mining/equipment/lazarus_injector.dm:53)
+// lazarus_injector.dm:53
 rt.def("/obj/item/weapon/lazarus_injector/proc/emp_act", function emp_act(f: Frame) {
-	if (truthy(rt.sv(f, "malfunctioning"))) return f.dot;
-	rt.setSv(f, "malfunctioning", 1);
+	if (this.malfunctioning) return f.dot;
+	this.malfunctioning = 1;
 	return f.dot;
 });
 
-// /obj/item/weapon/lazarus_injector/proc/examine  (code/modules/mining/equipment/lazarus_injector.dm:57)
-rt.def("/obj/item/weapon/lazarus_injector/proc/examine", function examine(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.sv(f, "loaded"))) {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='info'>＀ is empty.</span>", [live(f.src)])]);
+// lazarus_injector.dm:57
+rt.def("/obj/item/weapon/lazarus_injector/proc/examine", function examine(f: Frame, user: Value) {
+	parent_proc();
+	if (!this.loaded) {
+		to_chat(user, `<span class='info'>${this} is empty.</span>`);
 	}
-	if (!truthy(rt.sv(f, "malfunctioning"))) return f.dot;
-	rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='info'>The display on ＀ seems to be flickering.</span>", [live(f.src)])]);
+	if (!this.malfunctioning) return f.dot;
+	to_chat(user, `<span class='info'>The display on ${this} seems to be flickering.</span>`);
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);

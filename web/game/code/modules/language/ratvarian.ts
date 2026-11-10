@@ -1,7 +1,7 @@
-// From code/modules/language/ratvarian.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/language/ratvarian.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(2784, "/datum/language/ratvar", "/datum/language", {
@@ -16,17 +16,15 @@ rt.type(2784, "/datum/language/ratvar", "/datum/language", {
 	icon_state: "ratvar",
 }, { global: { random_speech_verbs: 670 } });
 
-// /datum/language/ratvar/proc/<init>  (code/modules/language/ratvarian.dm:10)
+// ratvarian.dm:10
 rt.def("/datum/language/ratvar/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "spans", rt.list("robot"));
+	parent_proc();
+	this.spans = list("robot");
 	return f.dot;
 });
 
-// /datum/language/ratvar/proc/scramble  (code/modules/language/ratvarian.dm:14)
+// ratvarian.dm:14
 rt.def("/datum/language/ratvar/proc/scramble", function scramble(f: Frame, input: Value) {
-	f.dot = rt.call(f, P("/proc/text2ratvar"), null, [live(input)]);
+	f.dot = text2ratvar(input);
 	return f.dot;
 });

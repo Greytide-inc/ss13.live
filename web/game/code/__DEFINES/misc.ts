@@ -1,26 +1,26 @@
-// From code/__DEFINES/misc.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/__DEFINES/misc.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
 
 
-// /datum/controller/global_vars/proc/InitGlobalbloody_footprints_cache  (code/__DEFINES/misc.dm:199)
+
+// misc.dm:199
 rt.def("/datum/controller/global_vars/proc/InitGlobalbloody_footprints_cache", function InitGlobalbloody_footprints_cache(f: Frame) {
-	rt.setGl("bloody_footprints_cache", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "bloody_footprints_cache", add);
+	GLOB.bloody_footprints_cache = list();
+	this.gvars_datum_init_order += "bloody_footprints_cache";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalghost_accs_options  (code/__DEFINES/misc.dm:272)
+// misc.dm:272
 rt.def("/datum/controller/global_vars/proc/InitGlobalghost_accs_options", function InitGlobalghost_accs_options(f: Frame) {
-	rt.setGl("ghost_accs_options", rt.list(1, 50, 100));
-	rt.modSrcVar(f, "gvars_datum_init_order", "ghost_accs_options", add);
+	GLOB.ghost_accs_options = list(1, 50, 100);
+	this.gvars_datum_init_order += "ghost_accs_options";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalghost_others_options  (code/__DEFINES/misc.dm:288)
+// misc.dm:288
 rt.def("/datum/controller/global_vars/proc/InitGlobalghost_others_options", function InitGlobalghost_others_options(f: Frame) {
-	rt.setGl("ghost_others_options", rt.list(1, 50, 100));
-	rt.modSrcVar(f, "gvars_datum_init_order", "ghost_others_options", add);
+	GLOB.ghost_others_options = list(1, 50, 100);
+	this.gvars_datum_init_order += "ghost_others_options";
 	return f.dot;
 });

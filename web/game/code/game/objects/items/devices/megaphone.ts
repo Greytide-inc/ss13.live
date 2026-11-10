@@ -1,7 +1,7 @@
-// From code/game/objects/items/devices/megaphone.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/devices/megaphone.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { fmt } = rt;
 
 
 rt.type(9263, "/obj/item/device/megaphone", "/obj/item/device", {
@@ -16,32 +16,30 @@ rt.type(9263, "/obj/item/device/megaphone", "/obj/item/device", {
 	siemens_coefficient: 1,
 });
 
-// /obj/item/device/megaphone/proc/<init>  (code/game/objects/items/devices/megaphone.dm:10)
+// megaphone.dm:10
 rt.def("/obj/item/device/megaphone/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "voicespan", rt.list("command_headset"));
+	parent_proc();
+	this.voicespan = list("command_headset");
 	return f.dot;
 });
 
-// /obj/item/device/megaphone/proc/get_held_item_speechspans  (code/game/objects/items/devices/megaphone.dm:13)
+// megaphone.dm:13
 rt.def("/obj/item/device/megaphone/proc/get_held_item_speechspans", function get_held_item_speechspans(f: Frame, user: Value) {
-	if (rt.gt(rt.sv(f, "spamcheck"), rt.worldTime(f))) {
-		rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＄！ needs to recharge!</span>", [live(f.src)])]);
+	if (this.spamcheck > rt.worldTime(f)) {
+		to_chat(user, fmt("<span class='warning'>＄！ needs to recharge!</span>", [this]));
 	} else {
-		rt.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/items/megaphone.ogg"), 100, 0, 1]);
-		rt.setSv(f, "spamcheck", add(rt.worldTime(f), 50));
-		return rt.sv(f, "voicespan");
+		playsound(this.loc, rt.rsc("sound/items/megaphone.ogg"), 100, 0, 1);
+		this.spamcheck = rt.worldTime(f) + 50;
+		return this.voicespan;
 	}
 	return f.dot;
 });
 
-// /obj/item/device/megaphone/proc/emag_act  (code/game/objects/items/devices/megaphone.dm:21)
+// megaphone.dm:21
 rt.def("/obj/item/device/megaphone/proc/emag_act", function emag_act(f: Frame, user: Value) {
-	rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>You overload ％！'s voice synthesizer.</span>", [live(f.src)])]);
-	rt.setSv(f, "emagged", 1);
-	rt.setSv(f, "voicespan", rt.list("reallybig", "userdanger"));
+	to_chat(user, fmt("<span class='warning'>You overload ％！'s voice synthesizer.</span>", [this]));
+	this.emagged = 1;
+	this.voicespan = list("reallybig", "userdanger");
 	return f.dot;
 });
 
@@ -52,11 +50,9 @@ rt.type(9267, "/obj/item/device/megaphone/clown", "/obj/item/device/megaphone", 
 	icon_state: "megaphone-clown",
 });
 
-// /obj/item/device/megaphone/clown/proc/<init>  (code/game/objects/items/devices/megaphone.dm:41)
+// megaphone.dm:41
 rt.def("/obj/item/device/megaphone/clown/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "voicespan", rt.list("clown"));
+	parent_proc();
+	this.voicespan = list("clown");
 	return f.dot;
 });

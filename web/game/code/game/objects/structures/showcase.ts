@@ -1,7 +1,7 @@
-// From code/game/objects/structures/showcase.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/structures/showcase.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(12871, "/obj/structure/showcase/fakeid", "/obj/structure/showcase", {
@@ -11,11 +11,11 @@ rt.type(12871, "/obj/structure/showcase/fakeid", "/obj/structure/showcase", {
 	icon_state: "computer",
 });
 
-// /obj/structure/showcase/fakeid/proc/Initialize  (code/game/objects/structures/showcase.dm:21)
+// showcase.dm:21
 rt.def("/obj/structure/showcase/fakeid/proc/Initialize", function Initialize(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.callSrc(f, "add_overlay", ["id"]);
-	rt.callSrc(f, "add_overlay", ["id_key"]);
+	parent_proc();
+	this.add_overlay("id");
+	this.add_overlay("id_key");
 	return f.dot;
 });
 
@@ -26,11 +26,11 @@ rt.type(12872, "/obj/structure/showcase/fakesec", "/obj/structure/showcase", {
 	icon_state: "computer",
 });
 
-// /obj/structure/showcase/fakesec/proc/Initialize  (code/game/objects/structures/showcase.dm:32)
+// showcase.dm:32
 rt.def("/obj/structure/showcase/fakesec/proc/Initialize", function Initialize(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.callSrc(f, "add_overlay", ["security"]);
-	rt.callSrc(f, "add_overlay", ["security_key"]);
+	parent_proc();
+	this.add_overlay("security");
+	this.add_overlay("security_key");
 	return f.dot;
 });
 
@@ -44,46 +44,40 @@ rt.type(12870, "/obj/structure/showcase", "/obj/structure", {
 	density: 1,
 });
 
-// /obj/structure/showcase/proc/attackby  (code/game/objects/structures/showcase.dm:54)  may sleep
+// showcase.dm:54
 rt.def("/obj/structure/showcase/proc/attackby", function* attackby(f: Frame, W: Value, user: Value) {
-	f.vars = () => [W, user];
-	if ((truthy((rt.istype(live(W), T("/obj/item/weapon/screwdriver")) ? 1 : 0)) && !truthy(rt.sv(f, "anchored")))) {
-		if (isEqual(rt.sv(f, "deconstruction_state"), 2)) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>You screw the screws back into the showcase.</span>"]);
-			yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.fv(f, "usesound", live(W)), 100, 1]);
-			rt.setSv(f, "deconstruction_state", 1);
-		} else {
-			if (isEqual(rt.sv(f, "deconstruction_state"), 1)) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>You unscrew the screws.</span>"]);
-				yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.fv(f, "usesound", live(W)), 100, 1]);
-				rt.setSv(f, "deconstruction_state", 2);
-			}
+	if (rt.istype(W, T("/obj/item/weapon/screwdriver")) && !this.anchored) {
+		if (this.deconstruction_state == SHOWCASE_SCREWDRIVERED) {
+			to_chat(user, "<span class='notice'>You screw the screws back into the showcase.</span>");
+			playsound(this.loc, W.usesound, 100, 1);
+			this.deconstruction_state = SHOWCASE_CONSTRUCTED;
+		} else if (this.deconstruction_state == SHOWCASE_CONSTRUCTED) {
+			to_chat(user, "<span class='notice'>You unscrew the screws.</span>");
+			playsound(this.loc, W.usesound, 100, 1);
+			this.deconstruction_state = SHOWCASE_SCREWDRIVERED;
 		}
 	}
-	if ((truthy((rt.istype(live(W), T("/obj/item/weapon/crowbar")) ? 1 : 0)) && isEqual(rt.sv(f, "deconstruction_state"), 2))) {
-		if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(user), null, multiply(20, rt.fv(f, "toolspeed", live(W))), "target", live(f.src)], rt.Args.Named)))) {
-			yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.fv(f, "usesound", live(W)), 100, 1]);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>You start to crowbar the showcase apart...</span>"]);
-			yield* g.new_(f, T("/obj/item/stack/sheet/metal"), [rt.getStep(f, live(f.src), 0), 4]);
-			yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	if (rt.istype(W, T("/obj/item/weapon/crowbar")) && this.deconstruction_state == SHOWCASE_SCREWDRIVERED) {
+		if (yield* do_after(user, 20 * W.toolspeed, { target: this })) {
+			playsound(this.loc, W.usesound, 100, 1);
+			to_chat(user, "<span class='notice'>You start to crowbar the showcase apart...</span>");
+			yield* new_(T("/obj/item/stack/sheet/metal"), rt.getStep(f, this, 0), 4);
+			yield* qdel(this);
 		}
 	}
-	if (!(isEqual(rt.sv(f, "deconstruction_state"), 1) && truthy((yield* g.srcCall(f, "default_unfasten_wrench", live(user), live(W)))))) return f.dot;
-	return live(f.dot);
+	if (!(this.deconstruction_state == SHOWCASE_CONSTRUCTED && (yield* this.default_unfasten_wrench(user, W)))) return f.dot;
+	return f.dot;
 }, true);
 
-// /obj/structure/showcase/proc/examine  (code/game/objects/structures/showcase.dm:77)
-rt.def("/obj/structure/showcase/proc/examine", function examine(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	rt.callSuper(f, [], rt.Args.Same);
-	$0 = rt.sv(f, "deconstruction_state");
-	if ($0 === 1) {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "The showcase is fully constructed."]);
-	} else if ($0 === 2) {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "The showcase has its screws loosened."]);
+// showcase.dm:77
+rt.def("/obj/structure/showcase/proc/examine", function examine(f: Frame, user: Value) {
+	parent_proc();
+	if (this.deconstruction_state === SHOWCASE_CONSTRUCTED) {
+		to_chat(user, "The showcase is fully constructed.");
+	} else if (this.deconstruction_state === SHOWCASE_SCREWDRIVERED) {
+		to_chat(user, "The showcase has its screws loosened.");
 	} else {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "If you see this, something is wrong."]);
+		to_chat(user, "If you see this, something is wrong.");
 	}
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);

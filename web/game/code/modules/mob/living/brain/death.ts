@@ -1,34 +1,33 @@
-// From code/modules/mob/living/brain/death.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/brain/death.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
-// /mob/living/brain/proc/death  (code/modules/mob/living/brain/death.dm:2)  may sleep
-rt.def("/mob/living/brain/proc/death", function* death(f: Frame) {
+// death.dm:2
+rt.def("/mob/living/brain/proc/death", function* death(f: Frame, gibbed: Value) {
 	let mmi: Value = null;
-	f.vars = () => [mmi];
-	if (isEqual(rt.sv(f, "stat"), 2)) {
-		return live(f.dot);
+	if (this.stat == 2) {
+		return f.dot;
 	}
-	rt.setSv(f, "stat", 2);
-	if ((!truthy(live(f.args[0])) && truthy(rt.sv(f, "container")))) {
-		yield* g.callName(f, (mmi = rt.sv(f, "container")), "visible_message", [fmt("<span class='warning'>＀'s MMI flatlines!</span>", [live(f.src)]), "<span class='italics'>You hear something flatline.</span>"]);
-		yield* g.callName(f, live(mmi), "update_icon", []);
+	this.stat = 2;
+	if (!gibbed && this.container) {
+		(mmi = this.container).visible_message(`<span class='warning'>${this}'s MMI flatlines!</span>`, "<span class='italics'>You hear something flatline.</span>");
+		yield* mmi.update_icon();
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["gibbed"] });
+	return (yield* parent_proc());
+}, true);
 
-// /mob/living/brain/proc/gib  (code/modules/mob/living/brain/death.dm:16)  may sleep
+// death.dm:16
 rt.def("/mob/living/brain/proc/gib", function* gib(f: Frame) {
-	if (truthy(rt.sv(f, "container"))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "container")]);
+	if (this.container) {
+		yield* qdel(this.container);
 	}
-	if (truthy(rt.sv(f, "loc"))) {
-		if (truthy((rt.istype(rt.sv(f, "loc"), T("/obj/item/organ/brain")) ? 1 : 0))) {
-			yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "loc")]);
+	if (this.loc) {
+		if (rt.istype(this.loc, T("/obj/item/organ/brain"))) {
+			yield* qdel(this.loc);
 		}
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true);

@@ -1,7 +1,7 @@
-// From code/modules/jobs/job_types/cargo_service.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/jobs/job_types/cargo_service.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(2746, "/datum/job/qm", "/datum/job", {
@@ -19,14 +19,12 @@ rt.type(2746, "/datum/job/qm", "/datum/job", {
 	minimal_access: null,
 });
 
-// /datum/job/qm/proc/<init>  (code/modules/jobs/job_types/cargo_service.dm:7)
+// cargo_service.dm:7
 rt.def("/datum/job/qm/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "department_head", rt.list("Head of Personnel"));
-	rt.setSv(f, "access", rt.list(12, 50, 31, 34, 41, 48, 54, 64));
-	rt.setSv(f, "minimal_access", rt.list(12, 50, 31, 34, 41, 48, 54, 64));
+	parent_proc();
+	this.department_head = list("Head of Personnel");
+	this.access = list(12, 50, 31, 34, 41, 48, 54, 64);
+	this.minimal_access = list(12, 50, 31, 34, 41, 48, 54, 64);
 	return f.dot;
 });
 
@@ -45,14 +43,12 @@ rt.type(2747, "/datum/job/cargo_tech", "/datum/job", {
 	minimal_access: null,
 });
 
-// /datum/job/cargo_tech/proc/<init>  (code/modules/jobs/job_types/cargo_service.dm:37)
+// cargo_service.dm:37
 rt.def("/datum/job/cargo_tech/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "department_head", rt.list("Head of Personnel"));
-	rt.setSv(f, "access", rt.list(12, 50, 31, 34, 41, 48, 54, 64));
-	rt.setSv(f, "minimal_access", rt.list(12, 31, 34, 50, 64));
+	parent_proc();
+	this.department_head = list("Head of Personnel");
+	this.access = list(12, 50, 31, 34, 41, 48, 54, 64);
+	this.minimal_access = list(12, 31, 34, 50, 64);
 	return f.dot;
 });
 
@@ -71,14 +67,12 @@ rt.type(2748, "/datum/job/mining", "/datum/job", {
 	minimal_access: null,
 });
 
-// /datum/job/mining/proc/<init>  (code/modules/jobs/job_types/cargo_service.dm:65)
+// cargo_service.dm:65
 rt.def("/datum/job/mining/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "department_head", rt.list("Head of Personnel"));
-	rt.setSv(f, "access", rt.list(12, 50, 31, 34, 41, 48, 54, 64));
-	rt.setSv(f, "minimal_access", rt.list(48, 54, 50, 64));
+	parent_proc();
+	this.department_head = list("Head of Personnel");
+	this.access = list(12, 50, 31, 34, 41, 48, 54, 64);
+	this.minimal_access = list(48, 54, 50, 64);
 	return f.dot;
 });
 
@@ -99,12 +93,10 @@ rt.type(688, "/datum/outfit/job/miner", "/datum/outfit/job", {
 	box: rt.typePath("/obj/item/weapon/storage/box/survival_mining"),
 });
 
-// /datum/outfit/job/miner/proc/<init>  (code/modules/jobs/job_types/cargo_service.dm:89)
+// cargo_service.dm:89
 rt.def("/datum/outfit/job/miner/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "backpack_contents", rt.alist(f, [T("/obj/item/weapon/storage/bag/ore"), 1, T("/obj/item/weapon/kitchen/knife/combat/survival"), 1, T("/obj/item/weapon/mining_voucher"), 1, T("/obj/item/stack/marker_beacon/ten"), 1]));
+	parent_proc();
+	this.backpack_contents = rt.alist(f, [T("/obj/item/weapon/storage/bag/ore"), 1, T("/obj/item/weapon/kitchen/knife/combat/survival"), 1, T("/obj/item/weapon/mining_voucher"), 1, T("/obj/item/stack/marker_beacon/ten"), 1]);
 	return f.dot;
 });
 
@@ -118,28 +110,25 @@ rt.type(690, "/datum/outfit/job/miner/equipped", "/datum/outfit/job/miner", {
 	backpack_contents: null,
 });
 
-// /datum/outfit/job/miner/equipped/proc/<init>  (code/modules/jobs/job_types/cargo_service.dm:112)
+// cargo_service.dm:112
 rt.def("/datum/outfit/job/miner/equipped/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "backpack_contents", rt.alist(f, [T("/obj/item/weapon/storage/bag/ore"), 1, T("/obj/item/weapon/kitchen/knife/combat/survival"), 1, T("/obj/item/weapon/mining_voucher"), 1, T("/obj/item/device/t_scanner/adv_mining_scanner/lesser"), 1, T("/obj/item/weapon/gun/energy/kinetic_accelerator"), 1, T("/obj/item/stack/marker_beacon/ten"), 1]));
+	parent_proc();
+	this.backpack_contents = rt.alist(f, [T("/obj/item/weapon/storage/bag/ore"), 1, T("/obj/item/weapon/kitchen/knife/combat/survival"), 1, T("/obj/item/weapon/mining_voucher"), 1, T("/obj/item/device/t_scanner/adv_mining_scanner/lesser"), 1, T("/obj/item/weapon/gun/energy/kinetic_accelerator"), 1, T("/obj/item/stack/marker_beacon/ten"), 1]);
 	return f.dot;
 });
 
-// /datum/outfit/job/miner/equipped/proc/post_equip  (code/modules/jobs/job_types/cargo_service.dm:121)  may sleep
+// cargo_service.dm:121
 rt.def("/datum/outfit/job/miner/equipped/proc/post_equip", function* post_equip(f: Frame) {
 	let S: Value = null;
-	f.vars = () => [S];
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy(live(f.args[1]))) {
-		return live(f.dot);
+	yield* parent_proc();
+	if (f.args[1]) {
+		return f.dot;
 	}
-	if (!truthy((rt.istype(rt.fv(f, "wear_suit", live(f.args[0])), T("/obj/item/clothing/suit/hooded")) ? 1 : 0))) return f.dot;
-	yield* g.callName(f, (S = rt.fv(f, "wear_suit", live(f.args[0]))), "ToggleHood", []);
+	if (!rt.istype(f.args[0].wear_suit, T("/obj/item/clothing/suit/hooded"))) return f.dot;
+	yield* (S = f.args[0].wear_suit).ToggleHood();
 	return f.dot;
 }, true, { args: ["H", "visualsOnly"] });
 
@@ -158,15 +147,13 @@ rt.type(2749, "/datum/job/bartender", "/datum/job", {
 	minimal_access: null,
 });
 
-// /datum/job/bartender/proc/<init>  (code/modules/jobs/job_types/cargo_service.dm:143)
+// cargo_service.dm:143
 rt.def("/datum/job/bartender/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "department_head", rt.list("Head of Personnel"));
-	rt.setSv(f, "access", rt.list(35, 25, 28, 6, 66));
-	$0 = $0;
-	rt.setSv(f, "minimal_access", rt.list(25));
+	parent_proc();
+	this.department_head = list("Head of Personnel");
+	this.access = list(35, 25, 28, 6, 66);
+
+	this.minimal_access = list(25);
 	return f.dot;
 });
 
@@ -182,12 +169,10 @@ rt.type(692, "/datum/outfit/job/bartender", "/datum/outfit/job", {
 	shoes: rt.typePath("/obj/item/clothing/shoes/laceup"),
 });
 
-// /datum/outfit/job/bartender/proc/<init>  (code/modules/jobs/job_types/cargo_service.dm:166)
+// cargo_service.dm:166
 rt.def("/datum/outfit/job/bartender/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "backpack_contents", rt.alist(f, [T("/obj/item/weapon/storage/box/beanbag"), 1]));
+	parent_proc();
+	this.backpack_contents = rt.alist(f, [T("/obj/item/weapon/storage/box/beanbag"), 1]);
 	return f.dot;
 });
 
@@ -207,14 +192,12 @@ rt.type(2750, "/datum/job/cook", "/datum/job", {
 	minimal_access: null,
 });
 
-// /datum/job/cook/proc/<init>  (code/modules/jobs/job_types/cargo_service.dm:175)
+// cargo_service.dm:175
 rt.def("/datum/job/cook/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "department_head", rt.list("Head of Personnel"));
-	rt.setSv(f, "access", rt.list(35, 25, 28, 6));
-	rt.setSv(f, "minimal_access", rt.list(28, 6));
+	parent_proc();
+	this.department_head = list("Head of Personnel");
+	this.access = list(35, 25, 28, 6);
+	this.minimal_access = list(28, 6);
 	return f.dot;
 });
 
@@ -229,45 +212,40 @@ rt.type(693, "/datum/outfit/job/cook", "/datum/outfit/job", {
 	backpack_contents: null,
 });
 
-// /datum/outfit/job/cook/proc/<init>  (code/modules/jobs/job_types/cargo_service.dm:198)
+// cargo_service.dm:198
 rt.def("/datum/outfit/job/cook/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "backpack_contents", rt.alist(f, [T("/obj/item/weapon/sharpener"), 1]));
+	parent_proc();
+	this.backpack_contents = rt.alist(f, [T("/obj/item/weapon/sharpener"), 1]);
 	return f.dot;
 });
 
-// /datum/outfit/job/cook/proc/pre_equip  (code/modules/jobs/job_types/cargo_service.dm:201)  may sleep
+// cargo_service.dm:201
 rt.def("/datum/outfit/job/cook/proc/pre_equip", function* pre_equip(f: Frame) {
 	let J: Value = null;
-	f.vars = () => [J];
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy((J = (yield* g.callName(f, rt.gl("SSjob"), "GetJobType", [rt.sv(f, "jobtype")]))))) return f.dot;
-	if (rt.gt(rt.fv(f, "cooks", live(J)), 0)) {
-		rt.setSv(f, "suit", T("/obj/item/clothing/suit/apron/chef"));
-		rt.setSv(f, "head", T("/obj/item/clothing/head/soft/mime"));
+	yield* parent_proc();
+	if (!(J = (yield* GLOB.SSjob.GetJobType(this.jobtype)))) return f.dot;
+	if (J.cooks > 0) {
+		this.suit = T("/obj/item/clothing/suit/apron/chef");
+		this.head = T("/obj/item/clothing/head/soft/mime");
 	}
-	if (truthy(live(f.args[1]))) return f.dot;
-	rt.incField(f, live(J), "cooks", 1, true);
+	if (f.args[1]) return f.dot;
+	J.cooks++;
 	return f.dot;
 }, true, { args: ["H", "visualsOnly"] });
 
-// /datum/outfit/job/cook/proc/post_equip  (code/modules/jobs/job_types/cargo_service.dm:211)  may sleep
+// cargo_service.dm:211
 rt.def("/datum/outfit/job/cook/proc/post_equip", function* post_equip(f: Frame) {
-	let possible_boxes: Value = null, chosen_box: Value = null, I: Value = null;
-	f.vars = () => [possible_boxes, chosen_box, I];
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	possible_boxes = subtract((yield* g.call(f, P("/proc/typesof"), null, [T("/obj/item/weapon/storage/box/ingredients")])), T("/obj/item/weapon/storage/box/ingredients"));
-	chosen_box = rt.op(f, "PickUnweighted", [1], [live(possible_boxes)]);
-	I = (yield* g.new_(f, live(chosen_box), [live(f.src)]));
-	yield* g.callName(f, live(f.args[0]), "equip_to_slot_or_del", [live(I), 18]);
+	yield* parent_proc();
+	let possible_boxes: Value = typesof(T("/obj/item/weapon/storage/box/ingredients")) - T("/obj/item/weapon/storage/box/ingredients");
+	let chosen_box: Value = pick(possible_boxes);
+	let I: Value = (yield* new_(chosen_box, this));
+	yield* f.args[0].equip_to_slot_or_del(I, 18);
 	return f.dot;
 }, true, { args: ["H", "visualsOnly"] });
 
@@ -286,14 +264,12 @@ rt.type(2751, "/datum/job/hydro", "/datum/job", {
 	minimal_access: null,
 });
 
-// /datum/job/hydro/proc/<init>  (code/modules/jobs/job_types/cargo_service.dm:223)
+// cargo_service.dm:223
 rt.def("/datum/job/hydro/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "department_head", rt.list("Head of Personnel"));
-	rt.setSv(f, "access", rt.list(35, 25, 28, 6));
-	rt.setSv(f, "minimal_access", rt.list(35, 6));
+	parent_proc();
+	this.department_head = list("Head of Personnel");
+	this.access = list(35, 25, 28, 6);
+	this.minimal_access = list(35, 6);
 	return f.dot;
 });
 
@@ -312,14 +288,12 @@ rt.type(2752, "/datum/job/janitor", "/datum/job", {
 	minimal_access: null,
 }, { global: { janitors: 667 } });
 
-// /datum/job/janitor/proc/<init>  (code/modules/jobs/job_types/cargo_service.dm:261)
+// cargo_service.dm:261
 rt.def("/datum/job/janitor/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "department_head", rt.list("Head of Personnel"));
-	rt.setSv(f, "access", rt.list(26, 12));
-	rt.setSv(f, "minimal_access", rt.list(26, 12));
+	parent_proc();
+	this.department_head = list("Head of Personnel");
+	this.access = list(26, 12);
+	this.minimal_access = list(26, 12);
 	return f.dot;
 });
 
@@ -332,11 +306,9 @@ rt.type(695, "/datum/outfit/job/janitor", "/datum/outfit/job", {
 	backpack_contents: null,
 });
 
-// /datum/outfit/job/janitor/proc/<init>  (code/modules/jobs/job_types/cargo_service.dm:282)
+// cargo_service.dm:282
 rt.def("/datum/outfit/job/janitor/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "backpack_contents", rt.alist(f, [T("/obj/item/device/modular_computer/tablet/preset/advanced"), 1]));
+	parent_proc();
+	this.backpack_contents = rt.alist(f, [T("/obj/item/device/modular_computer/tablet/preset/advanced"), 1]);
 	return f.dot;
 });

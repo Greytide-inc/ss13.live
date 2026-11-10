@@ -1,7 +1,7 @@
-// From code/game/objects/items/weapons/mop.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/weapons/mop.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(7309, "/obj/item/weapon/mop", "/obj/item/weapon", {
@@ -23,77 +23,67 @@ rt.type(7309, "/obj/item/weapon/mop", "/obj/item/weapon", {
 	force_string: "robust... against germs",
 });
 
-// /obj/item/weapon/mop/proc/New  (code/game/objects/items/weapons/mop.dm:20)  may sleep
+// mop.dm:20
 rt.def("/obj/item/weapon/mop/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "create_reagents", rt.sv(f, "mopcap"));
+	yield* parent_proc();
+	yield* this.create_reagents(this.mopcap);
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/mop/proc/clean  (code/game/objects/items/weapons/mop.dm:25)  may sleep
+// mop.dm:25
 rt.def("/obj/item/weapon/mop/proc/clean", function* clean(f: Frame, A: Value) {
 	let O: Value = null, C: Value = null;
-	let $e: any;
-	f.vars = () => [A, O, C, $e];
-	if ((((truthy((yield* g.callName(f, rt.sv(f, "reagents"), "has_reagent", ["water", 1]))) || truthy((yield* g.callName(f, rt.sv(f, "reagents"), "has_reagent", ["holywater", 1])))) || truthy((yield* g.callName(f, rt.sv(f, "reagents"), "has_reagent", ["vodka", 1])))) || truthy((yield* g.callName(f, rt.sv(f, "reagents"), "has_reagent", ["cleaner", 1]))))) {
-		yield* g.callName(f, live(A), "clean_blood", []);
-		O = null;
-		rt.forList(f, 0, live(A), T("/obj/effect"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			O = $e;
-			if ((truthy((rt.istype(live(O), T("/obj/effect/decal/cleanable")) ? 1 : 0)) || truthy((rt.istype(live(O), T("/obj/effect/rune")) ? 1 : 0)))) {
-				yield* g.call(f, P("/proc/qdel"), null, [live(O)]);
+	if (this.reagents.has_reagent("water", 1) || this.reagents.has_reagent("holywater", 1) || this.reagents.has_reagent("vodka", 1) || this.reagents.has_reagent("cleaner", 1)) {
+		A.clean_blood();
+		for (O of each(A, T("/obj/effect"))) {
+			if (rt.istype(O, T("/obj/effect/decal/cleanable")) || rt.istype(O, T("/obj/effect/rune"))) {
+				yield* qdel(O);
 			}
 		}
-		rt.endFor(f, 0);
-		if (truthy((rt.istype(live(A), T("/turf/closed")) ? 1 : 0))) {
-			rt.setFv(f, "thermite", (C = live(A)), 0);
+		if (rt.istype(A, T("/turf/closed"))) {
+			(C = A).thermite = 0;
 		}
 	}
-	yield* g.callName(f, rt.sv(f, "reagents"), "reaction", [live(A), 1, 10]);
-	yield* g.callName(f, rt.sv(f, "reagents"), "remove_any", [1]);
+	yield* this.reagents.reaction(A, TOUCH, 10);
+	yield* this.reagents.remove_any(1);
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/mop/proc/afterattack  (code/game/objects/items/weapons/mop.dm:38)  may sleep
+// mop.dm:38
 rt.def("/obj/item/weapon/mop/proc/afterattack", function* afterattack(f: Frame, A: Value, user: Value, proximity: Value) {
-	let _T: Value = null;
-	f.vars = () => [A, user, proximity, _T];
-	if (!truthy(live(proximity))) {
-		return live(f.dot);
+	if (!proximity) {
+		return f.dot;
 	}
-	if (rt.lt(rt.fv(f, "total_volume", rt.sv(f, "reagents")), 1)) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>Your mop is dry!</span>"]);
-		return live(f.dot);
+	if (this.reagents.total_volume < 1) {
+		to_chat(user, "<span class='warning'>Your mop is dry!</span>");
+		return f.dot;
 	}
-	_T = rt.getStep(f, live(A), 0);
-	if ((truthy((rt.istype(live(A), T("/obj/item/weapon/reagent_containers/glass/bucket")) ? 1 : 0)) || truthy((rt.istype(live(A), T("/obj/structure/janitorialcart")) ? 1 : 0)))) {
-		return live(f.dot);
+	let _T: Value = rt.getStep(f, A, 0);
+	if (rt.istype(A, T("/obj/item/weapon/reagent_containers/glass/bucket")) || rt.istype(A, T("/obj/structure/janitorialcart"))) {
+		return f.dot;
 	}
-	if (!truthy(live(_T))) return f.dot;
-	yield* g.callName(f, live(user), "visible_message", [fmt("＀ begins to clean ％！ with ＀.", [live(user), live(_T), live(f.src)]), fmt("<span class='notice'>You begin to clean ％！ with ＀...</span>", [live(_T), live(f.src)])]);
-	if (!truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(user), null, rt.fv(f, "mopspeed", live(f.src)), "target", live(_T)], rt.Args.Named)))) return f.dot;
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>You finish mopping.</span>"]);
-	yield* g.srcCall(f, "clean", live(_T));
+	if (!_T) return f.dot;
+	user.visible_message(fmt("＀ begins to clean ％！ with ＀.", [user, _T, this]), fmt("<span class='notice'>You begin to clean ％！ with ＀...</span>", [_T, this]));
+	if (!(yield* do_after(user, this.mopspeed, { target: _T }))) return f.dot;
+	to_chat(user, "<span class='notice'>You finish mopping.</span>");
+	yield* this.clean(_T);
 	return f.dot;
 }, true);
 
-// /obj/effect/proc/attackby  (code/game/objects/items/weapons/mop.dm:58)
-rt.def("/obj/effect/proc/attackby", function attackby(f: Frame) {
-	if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/mop")) ? 1 : 0)) || truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/soap")) ? 1 : 0)))) {
-		return live(f.dot);
+// mop.dm:58
+rt.def("/obj/effect/proc/attackby", function attackby(f: Frame, I: Value, user: Value, params: Value) {
+	if (rt.istype(I, T("/obj/item/weapon/mop")) || rt.istype(I, T("/obj/item/weapon/soap"))) {
+		return f.dot;
 	} else {
-		return rt.callSuper(f, [], rt.Args.Same);
+		return parent_proc();
 	}
-	return f.dot;
-}, false, { args: ["I", "user", "params"] });
+}, false);
 
-// /obj/item/weapon/mop/proc/janicart_insert  (code/game/objects/items/weapons/mop.dm:65)  may sleep
+// mop.dm:65
 rt.def("/obj/item/weapon/mop/proc/janicart_insert", function* janicart_insert(f: Frame, user: Value, J: Value) {
-	f.vars = () => [user, J];
-	yield* g.callName(f, live(J), "put_in_cart", [live(f.src), live(user)]);
-	rt.setFv(f, "mymop", live(J), live(f.src));
-	yield* g.callName(f, live(J), "update_icon", []);
+	yield* J.put_in_cart(this, user);
+	J.mymop = this;
+	yield* J.update_icon();
 	return f.dot;
 }, true);
 
@@ -113,67 +103,65 @@ rt.type(7311, "/obj/item/weapon/mop/advanced", "/obj/item/weapon/mop", {
 	throwforce: 8,
 });
 
-// /obj/item/weapon/mop/advanced/proc/New  (code/game/objects/items/weapons/mop.dm:90)  may sleep
+// mop.dm:90
 rt.def("/obj/item/weapon/mop/advanced/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.fv(f, "isprocessing", live(f.src)))) return f.dot;
-	rt.setFv(f, "isprocessing", live(f.src), 1);
-	rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), add);
+	yield* parent_proc();
+	if (this.isprocessing) return f.dot;
+	this.isprocessing = 1;
+	GLOB.SSobj.processing += this;
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/mop/advanced/proc/attack_self  (code/game/objects/items/weapons/mop.dm:94)
+// mop.dm:94
 rt.def("/obj/item/weapon/mop/advanced/proc/attack_self", function attack_self(f: Frame, user: Value) {
-	let $0: any, $1: any;
-	f.vars = () => [$0, $1];
-	rt.setSv(f, "refill_enabled", (!truthy(rt.sv(f, "refill_enabled")) ? 1 : 0));
-	if (truthy(rt.sv(f, "refill_enabled"))) {
-		if (!truthy(rt.fv(f, "isprocessing", live(f.src)))) {
-			rt.setFv(f, "isprocessing", live(f.src), 1);
-			rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), add);
+	let $1: any;
+	this.refill_enabled = (!this.refill_enabled ? 1 : 0);
+	if (this.refill_enabled) {
+		if (!this.isprocessing) {
+			this.isprocessing = 1;
+			GLOB.SSobj.processing += this;
 		}
 	} else {
-		rt.setFv(f, "isprocessing", live(f.src), 0);
-		(rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), subtract));
+		this.isprocessing = 0;
+		GLOB.SSobj.processing -= this;
 	}
-	$0 = live(user);
-	if (truthy(rt.sv(f, "refill_enabled"))) {
+	let $0: any = user;
+	if (this.refill_enabled) {
 		$1 = "ON";
 	} else {
 		$1 = "OFF";
 	}
-	rt.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='notice'>You set the condenser switch to the '＀' position.</span>", [$1])]);
-	rt.call(f, P("/proc/playsound"), null, [live(user), rt.rsc("sound/machines/click.ogg"), 30, 1]);
+	to_chat($0, `<span class='notice'>You set the condenser switch to the '${$1}' position.</span>`);
+	playsound(user, rt.rsc("sound/machines/click.ogg"), 30, 1);
 	return f.dot;
 });
 
-// /obj/item/weapon/mop/advanced/proc/process  (code/game/objects/items/weapons/mop.dm:104)  may sleep
+// mop.dm:104
 rt.def("/obj/item/weapon/mop/advanced/proc/process", function* process(f: Frame) {
-	if (!rt.lt(rt.fv(f, "total_volume", rt.sv(f, "reagents")), rt.sv(f, "mopcap"))) return f.dot;
-	yield* g.callName(f, rt.sv(f, "reagents"), "add_reagent", [rt.sv(f, "refill_reagent"), rt.sv(f, "refill_rate")]);
+	if (!(this.reagents.total_volume < this.mopcap)) return f.dot;
+	yield* this.reagents.add_reagent(this.refill_reagent, this.refill_rate);
 	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/item/weapon/mop/advanced/proc/examine  (code/game/objects/items/weapons/mop.dm:108)
-rt.def("/obj/item/weapon/mop/advanced/proc/examine", function examine(f: Frame) {
-	let $0: any, $1: any;
-	f.vars = () => [$0, $1];
-	rt.callSuper(f, [], rt.Args.Same);
-	$0 = live(f.args[0]);
-	if (truthy(rt.sv(f, "refill_enabled"))) {
+// mop.dm:108
+rt.def("/obj/item/weapon/mop/advanced/proc/examine", function examine(f: Frame, user: Value) {
+	let $1: any;
+	parent_proc();
+	let $0: any = user;
+	if (this.refill_enabled) {
 		$1 = "ON";
 	} else {
 		$1 = "OFF";
 	}
-	rt.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='notice'>The condenser switch is set to <b>＀</b>.</span>", [$1])]);
+	to_chat($0, `<span class='notice'>The condenser switch is set to <b>${$1}</b>.</span>`);
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/item/weapon/mop/advanced/proc/Destroy  (code/game/objects/items/weapons/mop.dm:113)  may sleep
+// mop.dm:113
 rt.def("/obj/item/weapon/mop/advanced/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.sv(f, "refill_enabled"))) {
-		rt.setFv(f, "isprocessing", live(f.src), 0);
-		(rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), subtract));
+	if (this.refill_enabled) {
+		this.isprocessing = 0;
+		GLOB.SSobj.processing -= this;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);

@@ -1,65 +1,64 @@
-// From code/__HELPERS/_string_lists.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/__HELPERS/_string_lists.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
-// /datum/controller/global_vars/proc/InitGlobalstring_cache  (code/__HELPERS/_string_lists.dm:5)
+// _string_lists.dm:5
 rt.def("/datum/controller/global_vars/proc/InitGlobalstring_cache", function InitGlobalstring_cache(f: Frame) {
-	rt.setGl("string_cache", null);
-	rt.modSrcVar(f, "gvars_datum_init_order", "string_cache", add);
+	GLOB.string_cache = null;
+	this.gvars_datum_init_order += "string_cache";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalstring_filename_current_key  (code/__HELPERS/_string_lists.dm:6)
+// _string_lists.dm:6
 rt.def("/datum/controller/global_vars/proc/InitGlobalstring_filename_current_key", function InitGlobalstring_filename_current_key(f: Frame) {
-	rt.setGl("string_filename_current_key", null);
-	rt.modSrcVar(f, "gvars_datum_init_order", "string_filename_current_key", add);
+	GLOB.string_filename_current_key = null;
+	this.gvars_datum_init_order += "string_filename_current_key";
 	return f.dot;
 });
 
-// /proc/strings_replacement  (code/__HELPERS/_string_lists.dm:10)
+// _string_lists.dm:10
 rt.def("/proc/strings_replacement", function strings_replacement(f: Frame, filename: Value, key: Value) {
 	let response: Value = null, r: Value = null;
-	f.vars = () => [response, r];
-	rt.call(f, P("/proc/load_strings_file"), null, [live(filename)]);
-	if ((truthy((rt.isIn(f, live(filename), rt.gl("string_cache")) ? 1 : 0)) && truthy((rt.isIn(f, live(key), rt.index(rt.gl("string_cache"), live(filename))) ? 1 : 0)))) {
-		response = rt.op(f, "PickUnweighted", [1], [rt.index(rt.index(rt.gl("string_cache"), live(filename)), live(key))]);
-		return (response = rt.callName(f, (r = rt.call(f, P("/proc/regex"), null, ["@pick\\((\\D+?)\\)", "g"])), "Replace", [live(response), P("/proc/strings_subkey_lookup")]));
+	load_strings_file(filename);
+	if (rt.isIn(f, filename, GLOB.string_cache) && rt.isIn(f, key, rt.index(GLOB.string_cache, filename))) {
+		response = pick(rt.index(rt.index(GLOB.string_cache, filename), key));
+		return (response = (r = regex("@pick\\((\\D+?)\\)", "g")).Replace(response, P("/proc/strings_subkey_lookup")));
 	} else {
-		rt.call(f, P("/proc/CRASH"), null, [fmt("strings list not found: strings/＀, index=＀", [live(filename), live(key)])]);
+		CRASH(`strings list not found: strings/${filename}, index=${key}`);
 	}
 	return f.dot;
 });
 
-// /proc/strings  (code/__HELPERS/_string_lists.dm:21)
+// _string_lists.dm:21
 rt.def("/proc/strings", function strings(f: Frame, filename: Value, key: Value) {
-	rt.call(f, P("/proc/load_strings_file"), null, [live(filename)]);
-	if ((truthy((rt.isIn(f, live(filename), rt.gl("string_cache")) ? 1 : 0)) && truthy((rt.isIn(f, live(key), rt.index(rt.gl("string_cache"), live(filename))) ? 1 : 0)))) {
-		return rt.index(rt.index(rt.gl("string_cache"), live(filename)), live(key));
+	load_strings_file(filename);
+	if (rt.isIn(f, filename, GLOB.string_cache) && rt.isIn(f, key, rt.index(GLOB.string_cache, filename))) {
+		return rt.index(rt.index(GLOB.string_cache, filename), key);
 	}
-	rt.call(f, P("/proc/CRASH"), null, [fmt("strings list not found: strings/＀, index=＀", [live(filename), live(key)])]);
+	CRASH(`strings list not found: strings/${filename}, index=${key}`);
 	return f.dot;
 });
 
-// /proc/strings_subkey_lookup  (code/__HELPERS/_string_lists.dm:28)
+// _string_lists.dm:28
 rt.def("/proc/strings_subkey_lookup", function strings_subkey_lookup(f: Frame, match: Value, group1: Value) {
-	return rt.op(f, "PickUnweighted", [1], [rt.call(f, P("/proc/strings"), null, [rt.gl("string_filename_current_key"), live(group1)])]);
+	return pick(strings(GLOB.string_filename_current_key, group1));
 });
 
-// /proc/load_strings_file  (code/__HELPERS/_string_lists.dm:31)
+// _string_lists.dm:31
 rt.def("/proc/load_strings_file", function load_strings_file(f: Frame, filename: Value) {
-	rt.setGl("string_filename_current_key", live(filename));
-	if (truthy((rt.isIn(f, live(filename), rt.gl("string_cache")) ? 1 : 0))) {
-		return live(f.dot);
+	GLOB.string_filename_current_key = filename;
+	if (rt.isIn(f, filename, GLOB.string_cache)) {
+		return f.dot;
 	}
-	if (!truthy(rt.gl("string_cache"))) {
-		rt.setGl("string_cache", rt.new_(f, T("/list"), []));
+	if (!GLOB.string_cache) {
+		GLOB.string_cache = new_(T("/list"));
 	}
-	if (truthy(rt.call(f, P("/proc/fexists"), null, [fmt("strings/＀", [live(filename)])]))) {
-		rt.setAt(rt.gl("string_cache"), live(filename), rt.call(f, P("/proc/json_decode"), null, [rt.call(f, P("/proc/file2text"), null, [fmt("strings/＀", [live(filename)])])]));
+	if (fexists(`strings/${filename}`)) {
+		rt.setAt(GLOB.string_cache, filename, json_decode(file2text(`strings/${filename}`)));
 	} else {
-		rt.call(f, P("/proc/CRASH"), null, [fmt("file not found: strings/＀", [live(filename)])]);
+		CRASH(`file not found: strings/${filename}`);
 	}
 	return f.dot;
 });

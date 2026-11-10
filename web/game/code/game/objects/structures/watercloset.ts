@@ -1,7 +1,7 @@
-// From code/game/objects/structures/watercloset.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/structures/watercloset.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, g, fmt } = rt;
 
 
 rt.type(12890, "/obj/structure/toilet", "/obj/structure", {
@@ -17,167 +17,157 @@ rt.type(12890, "/obj/structure/toilet", "/obj/structure", {
 	density: 0,
 });
 
-// /obj/structure/toilet/proc/Initialize  (code/game/objects/structures/watercloset.dm:15)
+// watercloset.dm:15
 rt.def("/obj/structure/toilet/proc/Initialize", function Initialize(f: Frame) {
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "open", rt.call(f, P("/proc/round"), null, [rt.call(f, P("/proc/rand"), null, [0, 1])]));
-	rt.callSrc(f, "update_icon", []);
+	f.dot = parent_proc();
+	this.open = round(rand(0, 1));
+	this.update_icon();
 	return f.dot;
 });
 
-// /obj/structure/toilet/proc/attack_hand  (code/game/objects/structures/watercloset.dm:22)  may sleep
+// watercloset.dm:22
 rt.def("/obj/structure/toilet/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
 	let GM: Value = null, C: Value = null, I: Value = null;
-	f.vars = () => [user, GM, C, I];
-	if (truthy(rt.sv(f, "swirlie"))) {
-		yield* g.callName(f, live(user), "changeNext_move", [8]);
-		yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), "swing_hit", 25, 1]);
-		yield* g.callName(f, rt.sv(f, "swirlie"), "visible_message", [fmt("<span class='danger'>＀ slams the toilet seat onto ＀'s head!</span>", [live(user), rt.sv(f, "swirlie")]), fmt("<span class='userdanger'>＀ slams the toilet seat onto your head!</span>", [live(user)]), "<span class='italics'>You hear reverberating porcelain.</span>"]);
-		yield* g.callName(f, rt.sv(f, "swirlie"), "adjustBruteLoss", [5]);
-	} else {
-		if (((truthy(rt.fv(f, "pulling", live(user))) && isEqual(rt.fv(f, "a_intent", live(user)), "grab")) && truthy((rt.istype(rt.fv(f, "pulling", live(user)), T("/mob/living")) ? 1 : 0)))) {
-			yield* g.callName(f, live(user), "changeNext_move", [8]);
-			GM = rt.fv(f, "pulling", live(user));
-			if (rt.ge(rt.fv(f, "grab_state", live(user)), 1)) {
-				if (!isEqual(rt.fv(f, "loc", live(GM)), rt.getStep(f, live(f.src), 0))) {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ needs to be on ＀!</span>", [live(GM), live(f.src)])]);
-					return live(f.dot);
-				}
-				if (!truthy(rt.sv(f, "swirlie"))) {
-					if (truthy(rt.sv(f, "open"))) {
-						yield* g.callName(f, live(GM), "visible_message", [fmt("<span class='danger'>＀ starts to give ＀ a swirlie!</span>", [live(user), live(GM)]), fmt("<span class='userdanger'>＀ starts to give you a swirlie...</span>", [live(user)])]);
-						rt.setSv(f, "swirlie", live(GM));
-						if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(user), null, 30, null, 0, "target", live(f.src)], rt.Args.Named)))) {
-							yield* g.callName(f, live(GM), "visible_message", [fmt("<span class='danger'>＀ gives ＀ a swirlie!</span>", [live(user), live(GM)]), fmt("<span class='userdanger'>＀ gives you a swirlie!</span>", [live(user)]), "<span class='italics'>You hear a toilet flushing.</span>"]);
-							if (truthy((rt.istype(live(GM), T("/mob/living/carbon")) ? 1 : 0))) {
-								if (!truthy(rt.gv(f, "internal", (C = live(GM))))) {
-									yield* g.callName(f, live(C), "adjustOxyLoss", [5]);
-								}
-							} else {
-								yield* g.callName(f, live(GM), "adjustOxyLoss", [5]);
+	if (this.swirlie) {
+		user.changeNext_move(8);
+		playsound(this.loc, "swing_hit", 25, 1);
+		this.swirlie.visible_message(`<span class='danger'>${user} slams the toilet seat onto ${this.swirlie}'s head!</span>`, `<span class='userdanger'>${user} slams the toilet seat onto your head!</span>`, "<span class='italics'>You hear reverberating porcelain.</span>");
+		yield* this.swirlie.adjustBruteLoss(5);
+	} else if (user.pulling && user.a_intent == "grab" && rt.istype(user.pulling, T("/mob/living"))) {
+		user.changeNext_move(8);
+		GM = user.pulling;
+		if (user.grab_state >= 1) {
+			if (GM.loc != rt.getStep(f, this, 0)) {
+				to_chat(user, `<span class='warning'>${GM} needs to be on ${this}!</span>`);
+				return f.dot;
+			}
+			if (!this.swirlie) {
+				if (this.open) {
+					GM.visible_message(`<span class='danger'>${user} starts to give ${GM} a swirlie!</span>`, `<span class='userdanger'>${user} starts to give you a swirlie...</span>`);
+					this.swirlie = GM;
+					if (yield* do_after(user, 30, 0, { target: this })) {
+						GM.visible_message(`<span class='danger'>${user} gives ${GM} a swirlie!</span>`, `<span class='userdanger'>${user} gives you a swirlie!</span>`, "<span class='italics'>You hear a toilet flushing.</span>");
+						if (rt.istype(GM, T("/mob/living/carbon"))) {
+							if (!(C = GM).internal) {
+								yield* C.adjustOxyLoss(5);
 							}
+						} else {
+							yield* GM.adjustOxyLoss(5);
 						}
-						rt.setSv(f, "swirlie", null);
-					} else {
-						yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/effects/bang.ogg"), 25, 1]);
-						yield* g.callName(f, live(GM), "visible_message", [fmt("<span class='danger'>＀ slams ＀ into ＀!</span>", [live(user), rt.fv(f, "name", live(GM)), live(f.src)]), fmt("<span class='userdanger'>＀ slams you into ＀!</span>", [live(user), live(f.src)])]);
-						yield* g.callName(f, live(GM), "adjustBruteLoss", [5]);
 					}
+					this.swirlie = null;
+				} else {
+					playsound(this.loc, rt.rsc("sound/effects/bang.ogg"), 25, 1);
+					GM.visible_message(`<span class='danger'>${user} slams ${GM.name} into ${this}!</span>`, `<span class='userdanger'>${user} slams you into ${this}!</span>`);
+					yield* GM.adjustBruteLoss(5);
 				}
-			} else {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>You need a tighter grip!</span>"]);
 			}
 		} else {
-			if ((truthy(rt.sv(f, "cistern")) && !truthy(rt.sv(f, "open")))) {
-				if (!truthy(rt.len(f, rt.sv(f, "contents")))) {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>The cistern is empty.</span>"]);
-				} else {
-					I = rt.op(f, "PickUnweighted", [1], [rt.sv(f, "contents")]);
-					if (truthy((rt.istype(live(user), T("/mob/living/carbon/human")) ? 1 : 0))) {
-						yield* g.callName(f, live(user), "put_in_hands", [live(I)]);
-					} else {
-						rt.setFv(f, "loc", live(I), rt.getStep(f, live(f.src), 0));
-					}
-					yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You find ＀ in the cistern.</span>", [live(I)])]);
-					(rt.modSrcVar(f, "w_items", rt.fv(f, "w_class", live(I)), subtract));
-				}
-			} else {
-				rt.setSv(f, "open", (!truthy(rt.sv(f, "open")) ? 1 : 0));
-				yield* g.srcCall(f, "update_icon");
-			}
+			to_chat(user, "<span class='warning'>You need a tighter grip!</span>");
 		}
+	} else if (this.cistern && !this.open) {
+		if (!rt.len(f, this.contents)) {
+			to_chat(user, "<span class='notice'>The cistern is empty.</span>");
+		} else {
+			I = pick(this.contents);
+			if (rt.istype(user, T("/mob/living/carbon/human"))) {
+				yield* user.put_in_hands(I);
+			} else {
+				I.loc = rt.getStep(f, this, 0);
+			}
+			to_chat(user, `<span class='notice'>You find ${I} in the cistern.</span>`);
+			this.w_items -= I.w_class;
+		}
+	} else {
+		this.open = (!this.open ? 1 : 0);
+		yield* this.update_icon();
 	}
 	return f.dot;
 }, true);
 
-// /obj/structure/toilet/proc/update_icon  (code/game/objects/structures/watercloset.dm:71)
+// watercloset.dm:71
 rt.def("/obj/structure/toilet/proc/update_icon", function update_icon(f: Frame) {
-	rt.setSv(f, "icon_state", fmt("toilet＀＀", [rt.sv(f, "open"), rt.sv(f, "cistern")]));
+	this.icon_state = `toilet${this.open}${this.cistern}`;
 	return f.dot;
 });
 
-// /obj/structure/toilet/proc/attackby  (code/game/objects/structures/watercloset.dm:75)  may sleep
-rt.def("/obj/structure/toilet/proc/attackby", function* attackby(f: Frame) {
+// watercloset.dm:75
+rt.def("/obj/structure/toilet/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
 	let RG: Value = null;
 	let $0: any, $1: any, $2: any;
-	f.vars = () => [RG, $0, $1, $2];
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/crowbar")) ? 1 : 0))) {
-		$0 = live(f.args[1]);
-		if (truthy(rt.sv(f, "cistern"))) {
+	if (rt.istype(I, T("/obj/item/weapon/crowbar"))) {
+		$0 = user;
+		if (this.cistern) {
 			$1 = "replace the lid on the cistern";
 		} else {
 			$1 = "lift the lid off the cistern";
 		}
-		yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='notice'>You start to ＀...</span>", [$1])]);
-		yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/effects/stonedoor_openclose.ogg"), 50, 1]);
-		if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, multiply(30, rt.fv(f, "toolspeed", live(f.args[0]))), "target", live(f.src)], rt.Args.Named)))) {
-			$0 = live(f.args[1]);
-			$1 = live(f.args[1]);
-			if (truthy(rt.sv(f, "cistern"))) {
-				$1 = $1;
+		to_chat($0, `<span class='notice'>You start to ${$1}...</span>`);
+		playsound(this.loc, rt.rsc("sound/effects/stonedoor_openclose.ogg"), 50, 1);
+		if (yield* do_after(user, 30 * I.toolspeed, { target: this })) {
+			$0 = user;
+			$1 = user;
+			if (this.cistern) {
+
 				$2 = "replaces the lid on the cistern";
 			} else {
 				$2 = "lifts the lid off the cistern";
 			}
-			$1 = fmt("＀ ＀!", [$1, $2]);
-			if (truthy(rt.sv(f, "cistern"))) {
+			$1 = `${$1} ${$2}!`;
+			if (this.cistern) {
 				$2 = "replace the lid on the cistern";
 			} else {
 				$2 = "lift the lid off the cistern";
 			}
-			yield* g.callName(f, $0, "visible_message", [$1, fmt("<span class='notice'>You ＀!</span>", [$2]), "<span class='italics'>You hear grinding porcelain.</span>"]);
-			rt.setSv(f, "cistern", (!truthy(rt.sv(f, "cistern")) ? 1 : 0));
-			yield* g.srcCall(f, "update_icon");
+			$0.visible_message($1, `<span class='notice'>You ${$2}!</span>`, "<span class='italics'>You hear grinding porcelain.</span>");
+			this.cistern = (!this.cistern ? 1 : 0);
+			yield* this.update_icon();
 		}
+	} else if (this.cistern) {
+		if (user.a_intent != "harm") {
+			if (I.w_class > WEIGHT_CLASS_NORMAL) {
+				to_chat(user, `<span class='warning'>${I} does not fit!</span>`);
+				return f.dot;
+			}
+			if (this.w_items + I.w_class > WEIGHT_CLASS_HUGE) {
+				to_chat(user, "<span class='warning'>The cistern is full!</span>");
+				return f.dot;
+			}
+			if (!(yield* user.drop_item())) {
+				to_chat(user, fmt("<span class='warning'>＄！ is stuck to your hand, you cannot put it in the cistern!</span>", [I]));
+				return f.dot;
+			}
+			I.loc = this;
+			this.w_items += I.w_class;
+			to_chat(user, `<span class='notice'>You carefully place ${I} into the cistern.</span>`);
+		}
+	} else if (rt.istype(I, T("/obj/item/weapon/reagent_containers"))) {
+		if (!this.open) {
+			return f.dot;
+		}
+		yield* (RG = I).reagents.add_reagent("water", min(RG.volume - RG.reagents.total_volume, RG.amount_per_transfer_from_this));
+		to_chat(user, `<span class='notice'>You fill ${RG} from ${this}. Gross.</span>`);
 	} else {
-		if (truthy(rt.sv(f, "cistern"))) {
-			if (!isEqual(rt.fv(f, "a_intent", live(f.args[1])), "harm")) {
-				if (rt.gt(rt.fv(f, "w_class", live(f.args[0])), 3)) {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>＀ does not fit!</span>", [live(f.args[0])])]);
-					return live(f.dot);
-				}
-				if (rt.gt(add(rt.sv(f, "w_items"), rt.fv(f, "w_class", live(f.args[0]))), 5)) {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>The cistern is full!</span>"]);
-					return live(f.dot);
-				}
-				if (!truthy((yield* g.callName(f, live(f.args[1]), "drop_item", [])))) {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>＄！ is stuck to your hand, you cannot put it in the cistern!</span>", [live(f.args[0])])]);
-					return live(f.dot);
-				}
-				rt.setFv(f, "loc", live(f.args[0]), live(f.src));
-				rt.modSrcVar(f, "w_items", rt.fv(f, "w_class", live(f.args[0])), add);
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You carefully place ＀ into the cistern.</span>", [live(f.args[0])])]);
-			}
-		} else {
-			if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/reagent_containers")) ? 1 : 0))) {
-				if (!truthy(rt.sv(f, "open"))) {
-					return live(f.dot);
-				}
-				yield* g.callName(f, rt.gv(f, "reagents", (RG = live(f.args[0]))), "add_reagent", ["water", (yield* g.call(f, P("/proc/min"), null, [subtract(rt.fv(f, "volume", live(RG)), rt.gv(f, "total_volume", rt.fv(f, "reagents", live(RG)))), rt.fv(f, "amount_per_transfer_from_this", live(RG))]))]);
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You fill ＀ from ＀. Gross.</span>", [live(RG), live(f.src)])]);
-			} else {
-				return (yield* g.callSuper(f, [], rt.Args.Same));
-			}
-		}
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["I", "user", "params"] });
+}, true);
 
 rt.type(12891, "/obj/structure/toilet/secret", "/obj/structure/toilet", {
 	secret: null,
 	secret_type: null,
 });
 
-// /obj/structure/toilet/secret/proc/Initialize  (code/game/objects/structures/watercloset.dm:112)  may sleep
-rt.def("/obj/structure/toilet/secret/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(rt.sv(f, "secret_type"))) return f.dot;
-	rt.setSv(f, "secret", (yield* g.new_(f, rt.sv(f, "secret_type"), [live(f.src)])));
-	rt.modField(f, rt.sv(f, "secret"), "desc", " It's a secret!", add);
-	rt.modSrcVar(f, "w_items", rt.fv(f, "w_class", rt.sv(f, "secret")), add);
-	rt.modSrcVar(f, "contents", rt.sv(f, "secret"), add);
+// watercloset.dm:112
+rt.def("/obj/structure/toilet/secret/proc/Initialize", function* Initialize(f: Frame, mapload: Value) {
+	f.dot = (yield* parent_proc());
+	if (!this.secret_type) return f.dot;
+	this.secret = (yield* new_(this.secret_type, this));
+	this.secret.desc += " It's a secret!";
+	this.w_items += this.secret.w_class;
+	this.contents += this.secret;
 	return f.dot;
-}, true, { args: ["mapload"] });
+}, true);
 
 rt.type(12892, "/obj/structure/urinal", "/obj/structure", {
 	exposed: 0,
@@ -190,98 +180,94 @@ rt.type(12892, "/obj/structure/urinal", "/obj/structure", {
 	density: 0,
 });
 
-// /obj/structure/urinal/proc/New  (code/game/objects/structures/watercloset.dm:133)  may sleep
+// watercloset.dm:133
 rt.def("/obj/structure/urinal/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "hiddenitem", (yield* g.new_(f, T("/obj/item/weapon/reagent_containers/food/urinalcake"), [])));
+	yield* parent_proc();
+	this.hiddenitem = (yield* new_(T("/obj/item/weapon/reagent_containers/food/urinalcake")));
 	return f.dot;
 }, true);
 
-// /obj/structure/urinal/proc/attack_hand  (code/game/objects/structures/watercloset.dm:137)  may sleep
-rt.def("/obj/structure/urinal/proc/attack_hand", function* attack_hand(f: Frame) {
+// watercloset.dm:137
+rt.def("/obj/structure/urinal/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
 	let GM: Value = null;
-	f.vars = () => [GM];
-	if (((truthy(rt.fv(f, "pulling", live(f.args[0]))) && isEqual(rt.fv(f, "a_intent", live(f.args[0])), "grab")) && truthy((rt.istype(rt.fv(f, "pulling", live(f.args[0])), T("/mob/living")) ? 1 : 0)))) {
-		GM = rt.fv(f, "pulling", live(f.args[0]));
-		if (rt.ge(rt.fv(f, "grab_state", live(f.args[0])), 1)) {
-			if (!isEqual(rt.fv(f, "loc", live(GM)), rt.getStep(f, live(f.src), 0))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='notice'>＀ needs to be on ＀.</span>", [rt.fv(f, "name", live(GM)), live(f.src)])]);
-				return live(f.dot);
+	if (user.pulling && user.a_intent == "grab" && rt.istype(user.pulling, T("/mob/living"))) {
+		GM = user.pulling;
+		if (user.grab_state >= 1) {
+			if (GM.loc != rt.getStep(f, this, 0)) {
+				to_chat(user, `<span class='notice'>${GM.name} needs to be on ${this}.</span>`);
+				return f.dot;
 			}
-			yield* g.callName(f, live(f.args[0]), "changeNext_move", [8]);
-			yield* g.callName(f, live(f.args[0]), "visible_message", [fmt("<span class='danger'>＀ slams ＀ into ＀!</span>", [live(f.args[0]), live(GM), live(f.src)]), fmt("<span class='danger'>You slam ＀ into ＀!</span>", [live(GM), live(f.src)])]);
-			yield* g.callName(f, live(GM), "adjustBruteLoss", [8]);
+			user.changeNext_move(8);
+			user.visible_message(`<span class='danger'>${user} slams ${GM} into ${this}!</span>`, `<span class='danger'>You slam ${GM} into ${this}!</span>`);
+			yield* GM.adjustBruteLoss(8);
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='warning'>You need a tighter grip!</span>"]);
+			to_chat(user, "<span class='warning'>You need a tighter grip!</span>");
+		}
+	} else if (this.exposed) {
+		if (!this.hiddenitem) {
+			to_chat(user, "<span class='notice'>There is nothing in the drain holder.</span>");
+		} else {
+			if (rt.istype(user, T("/mob/living/carbon/human"))) {
+				yield* user.put_in_hands(this.hiddenitem);
+			} else {
+				yield* this.hiddenitem.forceMove(rt.getStep(f, this, 0));
+			}
+			to_chat(user, `<span class='notice'>You fish ${this.hiddenitem} out of the drain enclosure.</span>`);
+			this.hiddenitem = null;
 		}
 	} else {
-		if (truthy(rt.sv(f, "exposed"))) {
-			if (!truthy(rt.sv(f, "hiddenitem"))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='notice'>There is nothing in the drain holder.</span>"]);
-			} else {
-				if (truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon/human")) ? 1 : 0))) {
-					yield* g.callName(f, live(f.args[0]), "put_in_hands", [rt.sv(f, "hiddenitem")]);
-				} else {
-					yield* g.callName(f, rt.sv(f, "hiddenitem"), "forceMove", [rt.getStep(f, live(f.src), 0)]);
-				}
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='notice'>You fish ＀ out of the drain enclosure.</span>", [rt.sv(f, "hiddenitem")])]);
-				rt.setSv(f, "hiddenitem", null);
-			}
-		} else {
-			yield* g.callSuper(f, [], rt.Args.Same);
-		}
+		yield* parent_proc();
 	}
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /obj/structure/urinal/proc/attackby  (code/game/objects/structures/watercloset.dm:163)  may sleep
+// watercloset.dm:163
 rt.def("/obj/structure/urinal/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
 	let $0: any, $1: any, $2: any;
-	f.vars = () => [I, user, params, $0, $1, $2];
-	if (truthy((rt.istype(live(I), T("/obj/item/weapon/screwdriver")) ? 1 : 0))) {
-		$0 = live(user);
-		if (truthy(rt.sv(f, "exposed"))) {
+	if (rt.istype(I, T("/obj/item/weapon/screwdriver"))) {
+		$0 = user;
+		if (this.exposed) {
 			$1 = "screw the cap back into place";
 		} else {
 			$1 = "unscrew the cap to the drain protector";
 		}
-		yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='notice'>You start to ＀...</span>", [$1])]);
-		yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/effects/stonedoor_openclose.ogg"), 50, 1]);
-		if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(user), null, multiply(20, rt.fv(f, "toolspeed", live(I))), "target", live(f.src)], rt.Args.Named)))) {
-			$0 = live(user);
-			$1 = live(user);
-			if (truthy(rt.sv(f, "exposed"))) {
-				$1 = $1;
+		to_chat($0, `<span class='notice'>You start to ${$1}...</span>`);
+		playsound(this.loc, rt.rsc("sound/effects/stonedoor_openclose.ogg"), 50, 1);
+		if (yield* do_after(user, 20 * I.toolspeed, { target: this })) {
+			$0 = user;
+			$1 = user;
+			if (this.exposed) {
+
 				$2 = "screws the cap back into place";
 			} else {
 				$2 = "unscrew the cap to the drain protector";
 			}
-			$1 = fmt("＀ ＀!", [$1, $2]);
-			if (truthy(rt.sv(f, "exposed"))) {
+			$1 = `${$1} ${$2}!`;
+			if (this.exposed) {
 				$2 = "screw the cap back into place";
 			} else {
 				$2 = "unscrew the cap on the drain";
 			}
-			yield* g.callName(f, $0, "visible_message", [$1, fmt("<span class='notice'>You ＀!</span>", [$2]), "<span class='italics'>You hear metal and squishing noises.</span>"]);
-			rt.setSv(f, "exposed", (!truthy(rt.sv(f, "exposed")) ? 1 : 0));
+			$0.visible_message($1, `<span class='notice'>You ${$2}!</span>`, "<span class='italics'>You hear metal and squishing noises.</span>");
+			this.exposed = (!this.exposed ? 1 : 0);
 		}
 	} else {
-		if (!truthy(rt.sv(f, "exposed"))) return f.dot;
-		if (truthy(rt.sv(f, "hiddenitem"))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>There is already something in the drain enclosure.</span>"]);
-			return live(f.dot);
+		if (!this.exposed) return f.dot;
+		if (this.hiddenitem) {
+			to_chat(user, "<span class='warning'>There is already something in the drain enclosure.</span>");
+			return f.dot;
 		}
-		if (rt.gt(rt.fv(f, "w_class", live(I)), 1)) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ is too large for the drain enclosure.</span>", [live(I)])]);
-			return live(f.dot);
+		if (I.w_class > 1) {
+			to_chat(user, `<span class='warning'>${I} is too large for the drain enclosure.</span>`);
+			return f.dot;
 		}
-		if (!truthy((yield* g.callName(f, live(user), "drop_item", [])))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>[I] is stuck to your hand, you cannot put it in the drain enclosure!</span>"]);
-			return live(f.dot);
+		if (!(yield* user.drop_item())) {
+			to_chat(user, "<span class='warning'>[I] is stuck to your hand, you cannot put it in the drain enclosure!</span>");
+			return f.dot;
 		}
-		yield* g.callName(f, live(I), "forceMove", [live(f.src)]);
-		rt.setSv(f, "hiddenitem", live(I));
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You place ＀ into the drain enclosure.</span>", [live(I)])]);
+		yield* I.forceMove(this);
+		this.hiddenitem = I;
+		to_chat(user, `<span class='notice'>You place ${I} into the drain enclosure.</span>`);
 	}
 	return f.dot;
 }, true);
@@ -295,12 +281,10 @@ rt.type(5869, "/obj/item/weapon/reagent_containers/food/urinalcake", "/obj/item/
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/food/urinalcake/proc/<init>  (code/game/objects/structures/watercloset.dm:190)
+// watercloset.dm:190
 rt.def("/obj/item/weapon/reagent_containers/food/urinalcake/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["chlorine", 3, "ammonia", 1]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["chlorine", 3, "ammonia", 1]);
 	return f.dot;
 });
 
@@ -318,79 +302,70 @@ rt.type(10879, "/obj/machinery/shower", "/obj/machinery", {
 	density: 0,
 });
 
-// /obj/machinery/shower/proc/attack_hand  (code/game/objects/structures/watercloset.dm:216)  may sleep
+// watercloset.dm:216
 rt.def("/obj/machinery/shower/proc/attack_hand", function* attack_hand(f: Frame, M: Value) {
 	let G: Value = null, L: Value = null, tile: Value = null;
-	let $e: any;
-	f.vars = () => [M, G, L, tile, $e];
-	rt.setSv(f, "on", (!truthy(rt.sv(f, "on")) ? 1 : 0));
-	yield* g.srcCall(f, "update_icon");
-	yield* g.srcCall(f, "add_fingerprint", live(M));
-	if (truthy(rt.sv(f, "on"))) {
-		yield* g.srcCall(f, "wash_turf");
-		G = null;
-		rt.forList(f, 0, rt.sv(f, "loc"), T("/atom/movable"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			G = $e;
-			if (truthy((rt.istype(live(G), T("/mob/living")) ? 1 : 0))) {
-				yield* g.srcCall(f, "wash_mob", (L = live(G)));
+	this.on = (!this.on ? 1 : 0);
+	yield* this.update_icon();
+	yield* this.add_fingerprint(M);
+	if (this.on) {
+		yield* this.wash_turf();
+		for (G of each(this.loc, T("/atom/movable"))) {
+			if (rt.istype(G, T("/mob/living"))) {
+				yield* this.wash_mob((L = G));
 			} else {
-				yield* g.srcCall(f, "wash_obj", live(G));
+				this.wash_obj(G);
 			}
 		}
-		rt.endFor(f, 0);
 	} else {
-		if (!truthy((rt.istype(rt.sv(f, "loc"), T("/turf/open")) ? 1 : 0))) return f.dot;
-		yield* g.callName(f, (tile = rt.sv(f, "loc")), "MakeSlippery", ["min_wet_time", 5, "wet_time_to_add", 1], rt.Args.Named);
+		if (!rt.istype(this.loc, T("/turf/open"))) return f.dot;
+		yield* (tile = this.loc).MakeSlippery({ min_wet_time: 5, wet_time_to_add: 1 });
 	}
 	return f.dot;
 }, true);
 
-// /obj/machinery/shower/proc/attackby  (code/game/objects/structures/watercloset.dm:234)  may sleep
+// watercloset.dm:234
 rt.def("/obj/machinery/shower/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
-	let $0: any;
-	f.vars = () => [I, user, params, $0];
-	if (isEqual(rt.fv(f, "type", live(I)), T("/obj/item/device/analyzer"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>The water temperature seems to be ＀.</span>", [rt.sv(f, "watertemp")])]);
+	if (I.type == T("/obj/item/device/analyzer")) {
+		to_chat(user, `<span class='notice'>The water temperature seems to be ${this.watertemp}.</span>`);
 	}
-	if (!truthy((rt.istype(live(I), T("/obj/item/weapon/wrench")) ? 1 : 0))) return f.dot;
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You begin to adjust the temperature valve with ％！...</span>", [live(I)])]);
-	if (!truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(user), null, multiply(50, rt.fv(f, "toolspeed", live(I))), "target", live(f.src)], rt.Args.Named)))) return f.dot;
-	$0 = rt.sv(f, "watertemp");
-	if ($0 === "normal") {
-		rt.setSv(f, "watertemp", "freezing");
-	} else if ($0 === "freezing") {
-		rt.setSv(f, "watertemp", "boiling");
-	} else if ($0 === "boiling") {
-		rt.setSv(f, "watertemp", "normal");
+	if (!rt.istype(I, T("/obj/item/weapon/wrench"))) return f.dot;
+	to_chat(user, fmt("<span class='notice'>You begin to adjust the temperature valve with ％！...</span>", [I]));
+	if (!(yield* do_after(user, 50 * I.toolspeed, { target: this }))) return f.dot;
+	if (this.watertemp === "normal") {
+		this.watertemp = "freezing";
+	} else if (this.watertemp === "freezing") {
+		this.watertemp = "boiling";
+	} else if (this.watertemp === "boiling") {
+		this.watertemp = "normal";
 	}
-	yield* g.callName(f, live(user), "visible_message", [fmt("<span class='notice'>＀ adjusts the shower with ％！.</span>", [live(user), live(I)]), fmt("<span class='notice'>You adjust the shower with ％！ to ＀ temperature.</span>", [live(I), rt.sv(f, "watertemp")])]);
-	yield* g.call(f, P("/proc/log_game"), null, [fmt("＀ has wrenched a shower to ＀ at (＀,＀,＀)", [(yield* g.call(f, P("/proc/key_name"), null, [live(user)])), rt.sv(f, "watertemp"), rt.sv(f, "x"), rt.sv(f, "y"), rt.sv(f, "z")])]);
-	yield* g.srcCall(f, "add_hiddenprint", live(user));
+	user.visible_message(fmt("<span class='notice'>＀ adjusts the shower with ％！.</span>", [user, I]), fmt("<span class='notice'>You adjust the shower with ％！ to ＀ temperature.</span>", [I, this.watertemp]));
+	log_game(`${key_name(user)} has wrenched a shower to ${this.watertemp} at (${this.x},${this.y},${this.z})`);
+	this.add_hiddenprint(user);
 	return f.dot;
 }, true);
 
-// /obj/machinery/shower/proc/update_icon  (code/game/objects/structures/watercloset.dm:252)  may sleep
+// watercloset.dm:252
 rt.def("/obj/machinery/shower/proc/update_icon", function* update_icon(f: Frame) {
-	yield* g.srcCall(f, "cut_overlays");
-	if (truthy(rt.sv(f, "mymist"))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "mymist")]);
+	this.cut_overlays();
+	if (this.mymist) {
+		yield* qdel(this.mymist);
 	}
-	if (truthy(rt.sv(f, "on"))) {
-		yield* g.srcCall(f, "add_overlay", (yield* g.call(f, P("/proc/mutable_appearance"), null, [rt.rsc("icons/obj/watercloset.dmi"), "water", 4.099999904632568])));
-		if (isEqual(rt.sv(f, "watertemp"), "freezing")) {
-			return live(f.dot);
+	if (this.on) {
+		this.add_overlay(mutable_appearance(rt.rsc("icons/obj/watercloset.dmi"), "water", ABOVE_MOB_LAYER));
+		if (this.watertemp == "freezing") {
+			return f.dot;
 		}
-		if (!truthy(rt.sv(f, "ismist"))) {
+		if (!this.ismist) {
 			rt.spawnTail(f, 50, "/obj/machinery/shower/proc/update_icon: spawn at game/objects/structures/watercloset.dm:261");
 		} else {
-			rt.setSv(f, "ismist", 1);
-			rt.setSv(f, "mymist", (yield* g.new_(f, T("/obj/effect/mist"), [rt.sv(f, "loc")])));
+			this.ismist = 1;
+			this.mymist = (yield* new_(T("/obj/effect/mist"), this.loc));
 		}
 	} else {
-		if (!truthy(rt.sv(f, "ismist"))) return f.dot;
-		rt.setSv(f, "ismist", 1);
-		rt.setSv(f, "mymist", (yield* g.new_(f, T("/obj/effect/mist"), [rt.sv(f, "loc")])));
+		if (!this.ismist) return f.dot;
+		this.ismist = 1;
+		this.mymist = (yield* new_(T("/obj/effect/mist"), this.loc));
 		rt.spawnTail(f, 250, "/obj/machinery/shower/proc/update_icon: spawn at game/objects/structures/watercloset.dm:271");
 	}
 	return f.dot;
@@ -398,223 +373,197 @@ rt.def("/obj/machinery/shower/proc/update_icon", function* update_icon(f: Frame)
 
 // a spawn(250) body of /obj/machinery/shower/proc/update_icon, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/obj/machinery/shower/proc/update_icon: spawn at game/objects/structures/watercloset.dm:271", function* (f: Frame) {
-	if ((!truthy(rt.sv(f, "on")) && truthy(rt.sv(f, "mymist")))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "mymist")]);
-		rt.setSv(f, "ismist", 0);
+	if (!this.on && this.mymist) {
+		yield* qdel(this.mymist);
+		this.ismist = 0;
 	}
 	return null;
 });
 
 // a spawn(50) body of /obj/machinery/shower/proc/update_icon, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/obj/machinery/shower/proc/update_icon: spawn at game/objects/structures/watercloset.dm:261", function* (f: Frame) {
-	if ((truthy(live(f.src)) && truthy(rt.sv(f, "on")))) {
-		rt.setSv(f, "ismist", 1);
-		rt.setSv(f, "mymist", (yield* g.new_(f, T("/obj/effect/mist"), [rt.sv(f, "loc")])));
+	if (this && this.on) {
+		this.ismist = 1;
+		this.mymist = (yield* new_(T("/obj/effect/mist"), this.loc));
 	}
 	return null;
 });
 
-// /obj/machinery/shower/proc/Crossed  (code/game/objects/structures/watercloset.dm:278)  may sleep
-rt.def("/obj/machinery/shower/proc/Crossed", function* Crossed(f: Frame) {
+// watercloset.dm:278
+rt.def("/obj/machinery/shower/proc/Crossed", function* Crossed(f: Frame, O: Value) {
 	let L: Value = null, C: Value = null;
-	f.vars = () => [L, C];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.sv(f, "on"))) return f.dot;
-	if (truthy((rt.istype(live(f.args[0]), T("/mob/living")) ? 1 : 0))) {
-		if (truthy((yield* g.srcCall(f, "wash_mob", (L = live(f.args[0])))))) {
-			yield* g.callName(f, (C = live(L)), "slip", [80, null, 1]);
+	yield* parent_proc();
+	if (!this.on) return f.dot;
+	if (rt.istype(O, T("/mob/living"))) {
+		if (yield* this.wash_mob((L = O))) {
+			yield* (C = L).slip(80, null, NO_SLIP_WHEN_WALKING);
 		}
 	} else {
-		yield* g.srcCall(f, "wash_obj", live(f.args[0]));
+		this.wash_obj(O);
 	}
-	return f.dot;
-}, true, { args: ["O"] });
-
-// /obj/machinery/shower/proc/wash_obj  (code/game/objects/structures/watercloset.dm:290)
-rt.def("/obj/machinery/shower/proc/wash_obj", function wash_obj(f: Frame, O: Value) {
-	let I: Value = null;
-	f.vars = () => [I];
-	rt.callName(f, live(O), "clean_blood", []);
-	if (!truthy((rt.istype(live(O), T("/obj/item")) ? 1 : 0))) return f.dot;
-	rt.setFv(f, "acid_level", (I = live(O)), 0);
-	rt.callName(f, live(I), "extinguish", []);
-	return f.dot;
-});
-
-// /obj/machinery/shower/proc/wash_turf  (code/game/objects/structures/watercloset.dm:299)  may sleep
-rt.def("/obj/machinery/shower/proc/wash_turf", function* wash_turf(f: Frame) {
-	let tile: Value = null, E: Value = null;
-	let $e: any;
-	f.vars = () => [tile, E, $e];
-	if (!truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.sv(f, "loc")])))) return f.dot;
-	tile = rt.sv(f, "loc");
-	yield* g.callName(f, rt.sv(f, "loc"), "clean_blood", []);
-	E = null;
-	rt.forList(f, 0, live(tile), T("/obj/effect"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		E = $e;
-		if ((truthy((rt.istype(live(E), T("/obj/effect/decal/cleanable")) ? 1 : 0)) || truthy((rt.istype(live(E), T("/obj/effect/rune")) ? 1 : 0)))) {
-			yield* g.call(f, P("/proc/qdel"), null, [live(E)]);
-		}
-	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /obj/machinery/shower/proc/wash_mob  (code/game/objects/structures/watercloset.dm:308)  may sleep
+// watercloset.dm:290
+rt.def("/obj/machinery/shower/proc/wash_obj", function wash_obj(f: Frame, O: Value) {
+	let I: Value = null;
+	O.clean_blood();
+	if (!rt.istype(O, T("/obj/item"))) return f.dot;
+	(I = O).acid_level = 0;
+	I.extinguish();
+	return f.dot;
+});
+
+// watercloset.dm:299
+rt.def("/obj/machinery/shower/proc/wash_turf", function* wash_turf(f: Frame) {
+	let E: Value = null;
+	if (!isturf(this.loc)) return f.dot;
+	let tile: Value = this.loc;
+	this.loc.clean_blood();
+	for (E of each(tile, T("/obj/effect"))) {
+		if (rt.istype(E, T("/obj/effect/decal/cleanable")) || rt.istype(E, T("/obj/effect/rune"))) {
+			yield* qdel(E);
+		}
+	}
+	return f.dot;
+}, true);
+
+// watercloset.dm:308
 rt.def("/obj/machinery/shower/proc/wash_mob", function* wash_mob(f: Frame, L: Value) {
 	let M: Value = null, I: Value = null, H: Value = null, washgloves: Value = null, washshoes: Value = null, washmask: Value = null, washears: Value = null, washglasses: Value = null;
-	let $e: any;
-	f.vars = () => [L, M, I, H, washgloves, washshoes, washmask, washears, washglasses, $e];
-	yield* g.callName(f, live(L), "wash_cream", []);
-	yield* g.callName(f, live(L), "ExtinguishMob", []);
-	yield* g.callName(f, live(L), "adjust_fire_stacks", [-20]);
-	if (truthy((rt.istype(live(L), T("/mob/living/carbon")) ? 1 : 0))) {
-		M = live(L);
+	L.wash_cream();
+	yield* L.ExtinguishMob();
+	yield* L.adjust_fire_stacks(-20);
+	if (rt.istype(L, T("/mob/living/carbon"))) {
+		M = L;
 		f.dot = 1;
-		yield* g.srcCall(f, "check_heat", live(M));
-		I = null;
-		rt.forList(f, 0, rt.fv(f, "held_items", live(M)), T("/obj/item"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			I = $e;
-			yield* g.callName(f, live(I), "clean_blood", []);
+		yield* this.check_heat(M);
+		for (I of each(M.held_items, T("/obj/item"))) {
+			I.clean_blood();
 		}
-		rt.endFor(f, 0);
-		if (truthy(rt.fv(f, "back", live(M)))) {
-			if (truthy((yield* g.callName(f, rt.fv(f, "back", live(M)), "clean_blood", [])))) {
-				yield* g.callName(f, live(M), "update_inv_back", [0]);
+		if (M.back) {
+			if (M.back.clean_blood()) {
+				M.update_inv_back(0);
 			}
 		}
-		if (truthy((rt.istype(live(M), T("/mob/living/carbon/human")) ? 1 : 0))) {
-			H = live(M);
+		if (rt.istype(M, T("/mob/living/carbon/human"))) {
+			H = M;
 			washgloves = 1;
 			washshoes = 1;
 			washmask = 1;
 			washears = 1;
 			washglasses = 1;
-			if (truthy(rt.fv(f, "wear_suit", live(H)))) {
-				washgloves = (!truthy(rt.bitAnd(rt.gv(f, "flags_inv", rt.fv(f, "wear_suit", live(H))), 1)) ? 1 : 0);
-				washshoes = (!truthy(rt.bitAnd(rt.gv(f, "flags_inv", rt.fv(f, "wear_suit", live(H))), 8)) ? 1 : 0);
+			if (H.wear_suit) {
+				washgloves = (!rt.bitAnd(H.wear_suit.flags_inv, 1) ? 1 : 0);
+				washshoes = (!rt.bitAnd(H.wear_suit.flags_inv, HIDESHOES) ? 1 : 0);
 			}
-			if (truthy(rt.fv(f, "head", live(H)))) {
-				washmask = (!truthy(rt.bitAnd(rt.gv(f, "flags_inv", rt.fv(f, "head", live(H))), 16)) ? 1 : 0);
-				washglasses = (!truthy(rt.bitAnd(rt.gv(f, "flags_inv", rt.fv(f, "head", live(H))), 64)) ? 1 : 0);
-				washears = (!truthy(rt.bitAnd(rt.gv(f, "flags_inv", rt.fv(f, "head", live(H))), 32)) ? 1 : 0);
+			if (H.head) {
+				washmask = (!rt.bitAnd(H.head.flags_inv, HIDEMASK) ? 1 : 0);
+				washglasses = (!rt.bitAnd(H.head.flags_inv, HIDEEYES) ? 1 : 0);
+				washears = (!rt.bitAnd(H.head.flags_inv, HIDEEARS) ? 1 : 0);
 			}
-			if (truthy(rt.fv(f, "wear_mask", live(H)))) {
-				if (truthy(live(washears))) {
-					washears = (!truthy(rt.bitAnd(rt.gv(f, "flags_inv", rt.fv(f, "wear_mask", live(H))), 32)) ? 1 : 0);
+			if (H.wear_mask) {
+				if (washears) {
+					washears = (!rt.bitAnd(H.wear_mask.flags_inv, HIDEEARS) ? 1 : 0);
 				}
-				if (truthy(live(washglasses))) {
-					washglasses = (!truthy(rt.bitAnd(rt.gv(f, "flags_inv", rt.fv(f, "wear_mask", live(H))), 64)) ? 1 : 0);
-				}
-			}
-			if (truthy(rt.fv(f, "head", live(H)))) {
-				if (truthy((yield* g.callName(f, rt.fv(f, "head", live(H)), "clean_blood", [])))) {
-					yield* g.callName(f, live(H), "update_inv_head", []);
+				if (washglasses) {
+					washglasses = (!rt.bitAnd(H.wear_mask.flags_inv, HIDEEYES) ? 1 : 0);
 				}
 			}
-			if (truthy(rt.fv(f, "wear_suit", live(H)))) {
-				if (truthy((yield* g.callName(f, rt.fv(f, "wear_suit", live(H)), "clean_blood", [])))) {
-					yield* g.callName(f, live(H), "update_inv_wear_suit", []);
-				}
-			} else {
-				if (truthy(rt.fv(f, "w_uniform", live(H)))) {
-					if (truthy((yield* g.callName(f, rt.fv(f, "w_uniform", live(H)), "clean_blood", [])))) {
-						yield* g.callName(f, live(H), "update_inv_w_uniform", []);
-					}
+			if (H.head) {
+				if (H.head.clean_blood()) {
+					yield* H.update_inv_head();
 				}
 			}
-			if (truthy(live(washgloves))) {
-				yield* g.callName(f, live(H), "clean_blood", []);
-			}
-			if ((truthy(rt.fv(f, "shoes", live(H))) && truthy(live(washshoes)))) {
-				if (truthy((yield* g.callName(f, rt.fv(f, "shoes", live(H)), "clean_blood", [])))) {
-					yield* g.callName(f, live(H), "update_inv_shoes", []);
+			if (H.wear_suit) {
+				if (H.wear_suit.clean_blood()) {
+					yield* H.update_inv_wear_suit();
+				}
+			} else if (H.w_uniform) {
+				if (H.w_uniform.clean_blood()) {
+					yield* H.update_inv_w_uniform();
 				}
 			}
-			if (truthy(rt.fv(f, "wear_mask", live(H)))) {
-				if (truthy(live(washmask))) {
-					if (truthy((yield* g.callName(f, rt.fv(f, "wear_mask", live(H)), "clean_blood", [])))) {
-						yield* g.callName(f, live(H), "update_inv_wear_mask", []);
+			if (washgloves) {
+				H.clean_blood();
+			}
+			if (H.shoes && washshoes) {
+				if (H.shoes.clean_blood()) {
+					H.update_inv_shoes();
+				}
+			}
+			if (H.wear_mask) {
+				if (washmask) {
+					if (H.wear_mask.clean_blood()) {
+						yield* H.update_inv_wear_mask();
 					}
 				}
 			} else {
-				rt.setFv(f, "lip_style", live(H), null);
-				yield* g.callName(f, live(H), "update_body", []);
+				H.lip_style = null;
+				yield* H.update_body();
 			}
-			if ((truthy(rt.fv(f, "glasses", live(H))) && truthy(live(washglasses)))) {
-				if (truthy((yield* g.callName(f, rt.fv(f, "glasses", live(H)), "clean_blood", [])))) {
-					yield* g.callName(f, live(H), "update_inv_glasses", []);
+			if (H.glasses && washglasses) {
+				if (H.glasses.clean_blood()) {
+					H.update_inv_glasses();
 				}
 			}
-			if ((truthy(rt.fv(f, "ears", live(H))) && truthy(live(washears)))) {
-				if (truthy((yield* g.callName(f, rt.fv(f, "ears", live(H)), "clean_blood", [])))) {
-					yield* g.callName(f, live(H), "update_inv_ears", []);
+			if (H.ears && washears) {
+				if (H.ears.clean_blood()) {
+					H.update_inv_ears();
 				}
 			}
-			if (truthy(rt.fv(f, "belt", live(H)))) {
-				if (truthy((yield* g.callName(f, rt.fv(f, "belt", live(H)), "clean_blood", [])))) {
-					yield* g.callName(f, live(H), "update_inv_belt", []);
+			if (H.belt) {
+				if (H.belt.clean_blood()) {
+					H.update_inv_belt();
 				}
 			}
 		} else {
-			if (truthy(rt.fv(f, "wear_mask", live(M)))) {
-				if (truthy((yield* g.callName(f, rt.fv(f, "wear_mask", live(M)), "clean_blood", [])))) {
-					yield* g.callName(f, live(M), "update_inv_wear_mask", [0]);
+			if (M.wear_mask) {
+				if (M.wear_mask.clean_blood()) {
+					yield* M.update_inv_wear_mask(0);
 				}
 			}
-			yield* g.callName(f, live(M), "clean_blood", []);
+			M.clean_blood();
 		}
 	} else {
-		yield* g.callName(f, live(L), "clean_blood", []);
+		L.clean_blood();
 	}
 	return f.dot;
 }, true);
 
-// /obj/machinery/shower/proc/process  (code/game/objects/structures/watercloset.dm:384)  may sleep
+// watercloset.dm:384
 rt.def("/obj/machinery/shower/proc/process", function* process(f: Frame) {
 	let G: Value = null, L: Value = null;
-	let $e: any;
-	f.vars = () => [G, L, $e];
-	if (!truthy(rt.sv(f, "on"))) return f.dot;
-	yield* g.srcCall(f, "wash_turf");
-	G = null;
-	rt.forList(f, 0, rt.sv(f, "loc"), T("/atom/movable"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		G = $e;
-		if (truthy((rt.istype(live(G), T("/mob/living")) ? 1 : 0))) {
-			yield* g.srcCall(f, "wash_mob", (L = live(G)));
+	if (!this.on) return f.dot;
+	yield* this.wash_turf();
+	for (G of each(this.loc, T("/atom/movable"))) {
+		if (rt.istype(G, T("/mob/living"))) {
+			yield* this.wash_mob((L = G));
 		} else {
-			yield* g.srcCall(f, "wash_obj", live(G));
+			this.wash_obj(G);
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/machinery/shower/proc/deconstruct  (code/game/objects/structures/watercloset.dm:393)  may sleep
+// watercloset.dm:393
 rt.def("/obj/machinery/shower/proc/deconstruct", function* deconstruct(f: Frame, disassembled: Value) {
-	f.vars = () => [disassembled];
-	if (live(disassembled) === null) {
-		disassembled = 1;
-	}
-	yield* g.new_(f, T("/obj/item/stack/sheet/metal"), [rt.sv(f, "loc"), 3]);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	disassembled ??= 1;
+	yield* new_(T("/obj/item/stack/sheet/metal"), this.loc, 3);
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
-// /obj/machinery/shower/proc/check_heat  (code/game/objects/structures/watercloset.dm:397)  may sleep
+// watercloset.dm:397
 rt.def("/obj/machinery/shower/proc/check_heat", function* check_heat(f: Frame, C: Value) {
-	f.vars = () => [C];
-	if (isEqual(rt.sv(f, "watertemp"), "freezing")) {
-		rt.setFv(f, "bodytemperature", live(C), (yield* g.call(f, P("/proc/max"), null, [80, subtract(rt.fv(f, "bodytemperature", live(C)), 80)])));
-		yield* g.call(f, P("/proc/to_chat"), null, [live(C), "<span class='warning'>The water is freezing!</span>"]);
+	if (this.watertemp == "freezing") {
+		C.bodytemperature = max(80, C.bodytemperature - 80);
+		to_chat(C, "<span class='warning'>The water is freezing!</span>");
 	} else {
-		if (!isEqual(rt.sv(f, "watertemp"), "boiling")) return f.dot;
-		rt.setFv(f, "bodytemperature", live(C), (yield* g.call(f, P("/proc/min"), null, [500, add(rt.fv(f, "bodytemperature", live(C)), 35)])));
-		yield* g.callName(f, live(C), "adjustFireLoss", [5]);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(C), "<span class='danger'>The water is searing!</span>"]);
+		if (this.watertemp != "boiling") return f.dot;
+		C.bodytemperature = min(500, C.bodytemperature + 35);
+		yield* C.adjustFireLoss(5);
+		to_chat(C, "<span class='danger'>The water is searing!</span>");
 	}
 	return f.dot;
 }, true);
@@ -629,160 +578,149 @@ rt.type(12893, "/obj/structure/sink", "/obj/structure", {
 	desc: "A sink used for washing one's hands and face.",
 });
 
-// /obj/structure/sink/proc/attack_hand  (code/game/objects/structures/watercloset.dm:428)  may sleep
+// watercloset.dm:428
 rt.def("/obj/structure/sink/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
-	let selected_area: Value = null, washing_face: Value = null, H: Value = null;
-	let $0: any, $1: any, $2: any;
-	f.vars = () => [user, selected_area, washing_face, H, $0, $1, $2];
-	if ((!truthy(live(user)) || !truthy((rt.istype(live(user), T("/mob/living")) ? 1 : 0)))) {
-		return live(f.dot);
+	let H: Value = null;
+	let $2: any;
+	if (!user || !rt.istype(user, T("/mob/living"))) {
+		return f.dot;
 	}
-	if (!truthy((rt.istype(live(user), T("/mob/living/carbon")) ? 1 : 0))) {
-		return live(f.dot);
+	if (!rt.istype(user, T("/mob/living/carbon"))) {
+		return f.dot;
 	}
-	if (!truthy((yield* g.srcCall(f, "Adjacent", live(user))))) {
-		return live(f.dot);
+	if (!this.Adjacent(user)) {
+		return f.dot;
 	}
-	if (truthy(rt.sv(f, "busy"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>Someone's already washing here.</span>"]);
-		return live(f.dot);
+	if (this.busy) {
+		to_chat(user, "<span class='notice'>Someone's already washing here.</span>");
+		return f.dot;
 	}
-	selected_area = (yield* g.call(f, P("/proc/parse_zone"), null, [rt.fv(f, "zone_selected", live(user))]));
-	washing_face = 0;
-	if (truthy((rt.isIn(f, live(selected_area), rt.list("head", "mouth", "eyes")) ? 1 : 0))) {
+	let selected_area: Value = parse_zone(user.zone_selected);
+	let washing_face: Value = 0;
+	if (rt.isIn(f, selected_area, list("head", "mouth", "eyes"))) {
 		washing_face = 1;
 	}
-	$0 = live(user);
-	$1 = live(user);
-	if (truthy(live(washing_face))) {
-		$1 = $1;
+	let $0: any = user;
+	let $1: any = user;
+	if (washing_face) {
+
 		$2 = "face";
 	} else {
 		$2 = "hands";
 	}
-	$1 = fmt("<span class='notice'>＀ starts washing their ＀...</span>", [$1, $2]);
-	if (truthy(live(washing_face))) {
+	$1 = `<span class='notice'>${$1} starts washing their ${$2}...</span>`;
+	if (washing_face) {
 		$2 = "face";
 	} else {
 		$2 = "hands";
 	}
-	yield* g.callName(f, $0, "visible_message", [$1, fmt("<span class='notice'>You start washing your ＀...</span>", [$2])]);
-	rt.setSv(f, "busy", 1);
-	if (!truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(user), null, 40, "target", live(f.src)], rt.Args.Named)))) {
-		rt.setSv(f, "busy", 0);
-		return live(f.dot);
+	$0.visible_message($1, `<span class='notice'>You start washing your ${$2}...</span>`);
+	this.busy = 1;
+	if (!(yield* do_after(user, 40, { target: this }))) {
+		this.busy = 0;
+		return f.dot;
 	}
-	rt.setSv(f, "busy", 0);
-	$0 = live(user);
-	$1 = live(user);
-	if (truthy(live(washing_face))) {
-		$1 = $1;
+	this.busy = 0;
+	$0 = user;
+	$1 = user;
+	if (washing_face) {
+
 		$2 = "face";
 	} else {
 		$2 = "hands";
 	}
-	$1 = fmt("<span class='notice'>＀ washes their ＀ using ＀.</span>", [$1, $2, live(f.src)]);
-	if (truthy(live(washing_face))) {
-		$2 = "face";
-	} else {
-		$2 = "hands";
-	}
-	yield* g.callName(f, $0, "visible_message", [$1, fmt("<span class='notice'>You wash your ＀ using ＀.</span>", [$2, live(f.src)])]);
-	if (truthy(live(washing_face))) {
-		if (truthy((rt.istype(live(user), T("/mob/living/carbon/human")) ? 1 : 0))) {
-			rt.setFv(f, "lip_style", (H = live(user)), null);
-			rt.setFv(f, "lip_color", live(H), rt.initial(f, live(H), "lip_color"));
-			yield* g.callName(f, live(H), "wash_cream", []);
-			yield* g.callName(f, live(H), "regenerate_icons", []);
+	$1 = `<span class='notice'>${$1} washes their ${$2} using ${this}.</span>`;
+	$0.visible_message($1, `<span class='notice'>You wash your ${washing_face ? "face" : "hands"} using ${this}.</span>`);
+	if (washing_face) {
+		if (rt.istype(user, T("/mob/living/carbon/human"))) {
+			(H = user).lip_style = null;
+			H.lip_color = rt.initial(f, H, "lip_color");
+			H.wash_cream();
+			yield* H.regenerate_icons();
 		}
-		rt.setFv(f, "drowsyness", live(user), (yield* g.call(f, P("/proc/max"), null, [subtract(rt.fv(f, "drowsyness", live(user)), (yield* g.call(f, P("/proc/rand"), null, [2, 3]))), 0])));
+		user.drowsyness = max(user.drowsyness - rand(2, 3), 0);
 	} else {
-		yield* g.callName(f, live(user), "clean_blood", []);
+		user.clean_blood();
 	}
 	return f.dot;
 }, true);
 
-// /obj/structure/sink/proc/attackby  (code/game/objects/structures/watercloset.dm:468)  may sleep
-rt.def("/obj/structure/sink/proc/attackby", function* attackby(f: Frame) {
+// watercloset.dm:468
+rt.def("/obj/structure/sink/proc/attackby", function* attackby(f: Frame, O: Value, user: Value, params: Value) {
 	let RG: Value = null, B: Value = null, stunforce: Value = null, G: Value = null;
-	f.vars = () => [RG, B, stunforce, G];
-	if (truthy(rt.sv(f, "busy"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>Someone's already washing here!</span>"]);
-		return live(f.dot);
+	if (this.busy) {
+		to_chat(user, "<span class='warning'>Someone's already washing here!</span>");
+		return f.dot;
 	}
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/reagent_containers")) ? 1 : 0))) {
-		if (truthy(rt.bitAnd(rt.gv(f, "container_type", (RG = live(f.args[0]))), 4096))) {
-			if (!truthy((yield* g.callName(f, rt.fv(f, "reagents", live(RG)), "holder_full", [])))) {
-				yield* g.callName(f, rt.fv(f, "reagents", live(RG)), "add_reagent", [fmt("＀", [rt.sv(f, "dispensedreagent")]), (yield* g.call(f, P("/proc/min"), null, [subtract(rt.fv(f, "volume", live(RG)), rt.gv(f, "total_volume", rt.fv(f, "reagents", live(RG)))), rt.fv(f, "amount_per_transfer_from_this", live(RG))]))]);
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You fill ＀ from ＀.</span>", [live(RG), live(f.src)])]);
+	if (rt.istype(O, T("/obj/item/weapon/reagent_containers"))) {
+		if (rt.bitAnd((RG = O).container_type, 4096)) {
+			if (!RG.reagents.holder_full()) {
+				yield* RG.reagents.add_reagent(`${this.dispensedreagent}`, min(RG.volume - RG.reagents.total_volume, RG.amount_per_transfer_from_this));
+				to_chat(user, `<span class='notice'>You fill ${RG} from ${this}.</span>`);
 				return 1;
 			}
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>＄！ is full.</span>", [live(RG)])]);
+			to_chat(user, fmt("<span class='notice'>＄！ is full.</span>", [RG]));
 			return 0;
 		}
 	}
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/melee/baton")) ? 1 : 0))) {
-		if (truthy(rt.gv(f, "cell", (B = live(f.args[0]))))) {
-			if ((rt.gt(rt.gv(f, "charge", rt.fv(f, "cell", live(B))), 0) && isEqual(rt.fv(f, "status", live(B)), 1))) {
-				yield* g.call(f, P("/proc/flick"), null, ["baton_active", live(f.src)]);
-				stunforce = rt.fv(f, "stunforce", live(B));
-				yield* g.callName(f, live(f.args[1]), "Knockdown", [live(stunforce)]);
-				rt.setFv(f, "stuttering", live(f.args[1]), live(stunforce));
-				yield* g.callName(f, live(B), "deductcharge", [rt.fv(f, "hitcost", live(B))]);
-				yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='warning'>＀ shocks themself while attempting to wash the active ＀!</span>", [live(f.args[1]), rt.fv(f, "name", live(B))]), fmt("<span class='userdanger'>You unwisely attempt to wash ＀ while it's still on.</span>", [live(B)])]);
-				yield* g.call(f, P("/proc/playsound"), null, [live(f.src), "sparks", 50, 1]);
-				return live(f.dot);
+	if (rt.istype(O, T("/obj/item/weapon/melee/baton"))) {
+		if ((B = O).cell) {
+			if (B.cell.charge > 0 && B.status == 1) {
+				flick("baton_active", this);
+				stunforce = B.stunforce;
+				yield* user.Knockdown(stunforce);
+				user.stuttering = stunforce;
+				yield* B.deductcharge(B.hitcost);
+				user.visible_message(`<span class='warning'>${user} shocks themself while attempting to wash the active ${B.name}!</span>`, `<span class='userdanger'>You unwisely attempt to wash ${B} while it's still on.</span>`);
+				playsound(this, "sparks", 50, 1);
+				return f.dot;
 			}
 		}
 	}
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/mop")) ? 1 : 0))) {
-		yield* g.callName(f, rt.fv(f, "reagents", live(f.args[0])), "add_reagent", [fmt("＀", [rt.sv(f, "dispensedreagent")]), 5]);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You wet ＀ in ＀.</span>", [live(f.args[0]), live(f.src)])]);
-		yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/effects/slosh.ogg"), 25, 1]);
-		return live(f.dot);
+	if (rt.istype(O, T("/obj/item/weapon/mop"))) {
+		yield* O.reagents.add_reagent(`${this.dispensedreagent}`, 5);
+		to_chat(user, `<span class='notice'>You wet ${O} in ${this}.</span>`);
+		playsound(this.loc, rt.rsc("sound/effects/slosh.ogg"), 25, 1);
+		return f.dot;
 	}
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/stack/medical/gauze")) ? 1 : 0))) {
-		G = live(f.args[0]);
-		yield* g.new_(f, T("/obj/item/weapon/reagent_containers/glass/rag"), [rt.fv(f, "loc", live(f.src))]);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You tear off a strip of gauze and make a rag.</span>"]);
-		yield* g.callName(f, live(G), "use", [1]);
-		return live(f.dot);
+	if (rt.istype(O, T("/obj/item/stack/medical/gauze"))) {
+		G = O;
+		yield* new_(T("/obj/item/weapon/reagent_containers/glass/rag"), this.loc);
+		to_chat(user, "<span class='notice'>You tear off a strip of gauze and make a rag.</span>");
+		yield* G.use(1);
+		return f.dot;
 	}
-	if (!truthy((rt.istype(live(f.args[0]), T("/obj/item")) ? 1 : 0))) {
-		return live(f.dot);
+	if (!rt.istype(O, T("/obj/item"))) {
+		return f.dot;
 	}
-	if (truthy(rt.bitAnd(rt.fv(f, "flags", live(f.args[0])), 128))) {
-		return live(f.dot);
+	if (rt.bitAnd(O.flags, 128)) {
+		return f.dot;
 	}
-	if (!isEqual(rt.fv(f, "a_intent", live(f.args[1])), "harm")) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You start washing ＀...</span>", [live(f.args[0])])]);
-		rt.setSv(f, "busy", 1);
-		if (!truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, 40, "target", live(f.src)], rt.Args.Named)))) {
-			rt.setSv(f, "busy", 0);
+	if (user.a_intent != "harm") {
+		to_chat(user, `<span class='notice'>You start washing ${O}...</span>`);
+		this.busy = 1;
+		if (!(yield* do_after(user, 40, { target: this }))) {
+			this.busy = 0;
 			return 1;
 		}
-		rt.setSv(f, "busy", 0);
-		yield* g.callName(f, live(f.args[0]), "clean_blood", []);
-		rt.setFv(f, "acid_level", live(f.args[0]), 0);
-		yield* g.srcCall(f, "create_reagents", 5);
-		yield* g.callName(f, rt.sv(f, "reagents"), "add_reagent", [fmt("＀", [rt.sv(f, "dispensedreagent")]), 5]);
-		yield* g.callName(f, rt.sv(f, "reagents"), "reaction", [live(f.args[0]), 1]);
-		yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='notice'>＀ washes ＀ using ＀.</span>", [live(f.args[1]), live(f.args[0]), live(f.src)]), fmt("<span class='notice'>You wash ＀ using ＀.</span>", [live(f.args[0]), live(f.src)])]);
+		this.busy = 0;
+		O.clean_blood();
+		O.acid_level = 0;
+		yield* this.create_reagents(5);
+		yield* this.reagents.add_reagent(`${this.dispensedreagent}`, 5);
+		yield* this.reagents.reaction(O, 1);
+		user.visible_message(`<span class='notice'>${user} washes ${O} using ${this}.</span>`, `<span class='notice'>You wash ${O} using ${this}.</span>`);
 		return 1;
 	} else {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+		return (yield* parent_proc());
 	}
-	return f.dot;
-}, true, { args: ["O", "user", "params"] });
+}, true);
 
-// /obj/structure/sink/proc/deconstruct  (code/game/objects/structures/watercloset.dm:532)  may sleep
+// watercloset.dm:532
 rt.def("/obj/structure/sink/proc/deconstruct", function* deconstruct(f: Frame, disassembled: Value) {
-	f.vars = () => [disassembled];
-	if (live(disassembled) === null) {
-		disassembled = 1;
-	}
-	yield* g.new_(f, T("/obj/item/stack/sheet/metal"), [rt.sv(f, "loc"), 3]);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	disassembled ??= 1;
+	yield* new_(T("/obj/item/stack/sheet/metal"), this.loc, 3);
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
@@ -792,21 +730,21 @@ rt.type(12895, "/obj/structure/sink/puddle", "/obj/structure/sink", {
 	icon_state: "puddle",
 });
 
-// /obj/structure/sink/puddle/proc/attack_hand  (code/game/objects/structures/watercloset.dm:548)  may sleep
-rt.def("/obj/structure/sink/puddle/proc/attack_hand", function* attack_hand(f: Frame) {
-	rt.setSv(f, "icon_state", "puddle-splash");
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "icon_state", "puddle");
+// watercloset.dm:548
+rt.def("/obj/structure/sink/puddle/proc/attack_hand", function* attack_hand(f: Frame, M: Value) {
+	this.icon_state = "puddle-splash";
+	yield* parent_proc();
+	this.icon_state = "puddle";
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /obj/structure/sink/puddle/proc/attackby  (code/game/objects/structures/watercloset.dm:553)  may sleep
-rt.def("/obj/structure/sink/puddle/proc/attackby", function* attackby(f: Frame) {
-	rt.setSv(f, "icon_state", "puddle-splash");
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "icon_state", "puddle");
+// watercloset.dm:553
+rt.def("/obj/structure/sink/puddle/proc/attackby", function* attackby(f: Frame, O: Value, user: Value, params: Value) {
+	this.icon_state = "puddle-splash";
+	f.dot = (yield* parent_proc());
+	this.icon_state = "puddle";
 	return f.dot;
-}, true, { args: ["O", "user", "params"] });
+}, true);
 
 rt.type(12896, "/obj/structure/curtain", "/obj/structure", {
 	open: 1,
@@ -822,117 +760,103 @@ rt.type(12896, "/obj/structure/curtain", "/obj/structure", {
 	density: 0,
 });
 
-// /obj/structure/curtain/proc/toggle  (code/game/objects/structures/watercloset.dm:576)
+// watercloset.dm:576
 rt.def("/obj/structure/curtain/proc/toggle", function toggle(f: Frame) {
-	rt.setSv(f, "open", (!truthy(rt.sv(f, "open")) ? 1 : 0));
-	rt.callSrc(f, "update_icon", []);
+	this.open = (!this.open ? 1 : 0);
+	this.update_icon();
 	return f.dot;
 });
 
-// /obj/structure/curtain/proc/update_icon  (code/game/objects/structures/watercloset.dm:580)
+// watercloset.dm:580
 rt.def("/obj/structure/curtain/proc/update_icon", function update_icon(f: Frame) {
-	if (!truthy(rt.sv(f, "open"))) {
-		rt.setSv(f, "icon_state", "closed");
-		rt.setSv(f, "layer", 4.25);
-		rt.setSv(f, "density", 1);
-		rt.setSv(f, "open", 0);
+	if (!this.open) {
+		this.icon_state = "closed";
+		this.layer = WALL_OBJ_LAYER;
+		this.density = 1;
+		this.open = 0;
 	} else {
-		rt.setSv(f, "icon_state", "open");
-		rt.setSv(f, "layer", 3.4000000953674316);
-		rt.setSv(f, "density", 0);
-		rt.setSv(f, "open", 1);
+		this.icon_state = "open";
+		this.layer = SIGN_LAYER;
+		this.density = 0;
+		this.open = 1;
 	}
 	return f.dot;
 });
 
-// /obj/structure/curtain/proc/attackby  (code/game/objects/structures/watercloset.dm:593)  may sleep
-rt.def("/obj/structure/curtain/proc/attackby", function* attackby(f: Frame) {
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/toy/crayon")) ? 1 : 0))) {
-		rt.setSv(f, "color", (yield* g.op(f, "Prompt", [256], [null, null, "Choose Color", live(f.args[1]), null])));
-	} else {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/screwdriver")) ? 1 : 0))) {
-			if (truthy(rt.sv(f, "anchored"))) {
-				yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.fv(f, "usesound", live(f.args[0])), 100, 1]);
-				yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='warning'>＀ unscrews ＀ from the floor.</span>", [live(f.args[1]), live(f.src)]), fmt("<span class='notice'>You start to unscrew ＀ from the floor...</span>", [live(f.src)]), "You hear rustling noises."]);
-				if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, multiply(50, rt.fv(f, "toolspeed", live(f.args[0]))), "target", live(f.src)], rt.Args.Named)))) {
-					if (!truthy(rt.sv(f, "anchored"))) {
-						return live(f.dot);
-					}
-					rt.setSv(f, "anchored", 0);
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You unscrew ＀ from the floor.</span>", [live(f.src)])]);
+// watercloset.dm:593
+rt.def("/obj/structure/curtain/proc/attackby", function* attackby(f: Frame, W: Value, user: Value) {
+	if (rt.istype(W, T("/obj/item/toy/crayon"))) {
+		this.color = (yield* g.op(f, "Prompt", [256], [null, null, "Choose Color", user, null]));
+	} else if (rt.istype(W, T("/obj/item/weapon/screwdriver"))) {
+		if (this.anchored) {
+			playsound(this.loc, W.usesound, 100, 1);
+			user.visible_message(`<span class='warning'>${user} unscrews ${this} from the floor.</span>`, `<span class='notice'>You start to unscrew ${this} from the floor...</span>`, "You hear rustling noises.");
+			if (yield* do_after(user, 50 * W.toolspeed, { target: this })) {
+				if (!this.anchored) {
+					return f.dot;
 				}
-			} else {
-				yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.fv(f, "usesound", live(f.args[0])), 100, 1]);
-				yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='warning'>＀ screws ＀ to the floor.</span>", [live(f.args[1]), live(f.src)]), fmt("<span class='notice'>You start to screw ＀ to the floor...</span>", [live(f.src)]), "You hear rustling noises."]);
-				if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, multiply(50, rt.fv(f, "toolspeed", live(f.args[0]))), "target", live(f.src)], rt.Args.Named)))) {
-					if (truthy(rt.sv(f, "anchored"))) {
-						return live(f.dot);
-					}
-					rt.setSv(f, "anchored", 1);
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You screw ＀ to the floor.</span>", [live(f.src)])]);
-				}
+				this.anchored = 0;
+				to_chat(user, `<span class='notice'>You unscrew ${this} from the floor.</span>`);
 			}
 		} else {
-			if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/wirecutters")) ? 1 : 0))) {
-				if (!truthy(rt.sv(f, "anchored"))) {
-					yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.fv(f, "usesound", live(f.args[0])), 100, 1]);
-					yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='warning'>＀ cuts apart ＀.</span>", [live(f.args[1]), live(f.src)]), fmt("<span class='notice'>You start to cut apart ＀.</span>", [live(f.src)]), "You hear cutting."]);
-					if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, multiply(50, rt.fv(f, "toolspeed", live(f.args[0]))), "target", live(f.src)], rt.Args.Named)))) {
-						if (truthy(rt.sv(f, "anchored"))) {
-							return live(f.dot);
-						}
-						yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You cut apart ＀.</span>", [live(f.src)])]);
-						yield* g.srcCall(f, "deconstruct");
-					}
+			playsound(this.loc, W.usesound, 100, 1);
+			user.visible_message(`<span class='warning'>${user} screws ${this} to the floor.</span>`, `<span class='notice'>You start to screw ${this} to the floor...</span>`, "You hear rustling noises.");
+			if (yield* do_after(user, 50 * W.toolspeed, { target: this })) {
+				if (this.anchored) {
+					return f.dot;
 				}
-			} else {
-				f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+				this.anchored = 1;
+				to_chat(user, `<span class='notice'>You screw ${this} to the floor.</span>`);
 			}
 		}
+	} else if (rt.istype(W, T("/obj/item/weapon/wirecutters"))) {
+		if (!this.anchored) {
+			playsound(this.loc, W.usesound, 100, 1);
+			user.visible_message(`<span class='warning'>${user} cuts apart ${this}.</span>`, `<span class='notice'>You start to cut apart ${this}.</span>`, "You hear cutting.");
+			if (yield* do_after(user, 50 * W.toolspeed, { target: this })) {
+				if (this.anchored) {
+					return f.dot;
+				}
+				to_chat(user, `<span class='notice'>You cut apart ${this}.</span>`);
+				yield* this.deconstruct();
+			}
+		}
+	} else {
+		f.dot = (yield* parent_proc());
 	}
-	return f.dot;
-}, true, { args: ["W", "user"] });
-
-// /obj/structure/curtain/proc/attack_hand  (code/game/objects/structures/watercloset.dm:626)  may sleep
-rt.def("/obj/structure/curtain/proc/attack_hand", function* attack_hand(f: Frame) {
-	yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/effects/curtain.ogg"), 50, 1]);
-	yield* g.srcCall(f, "toggle");
-	yield* g.callSuper(f, [], rt.Args.Same);
-	return f.dot;
-}, true, { args: ["user"] });
-
-// /obj/structure/curtain/proc/deconstruct  (code/game/objects/structures/watercloset.dm:631)  may sleep
-rt.def("/obj/structure/curtain/proc/deconstruct", function* deconstruct(f: Frame, disassembled: Value) {
-	f.vars = () => [disassembled];
-	if (live(disassembled) === null) {
-		disassembled = 1;
-	}
-	yield* g.new_(f, T("/obj/item/stack/sheet/cloth"), [rt.sv(f, "loc"), 2]);
-	yield* g.new_(f, T("/obj/item/stack/sheet/plastic"), [rt.sv(f, "loc"), 2]);
-	yield* g.new_(f, T("/obj/item/stack/rods"), [rt.sv(f, "loc"), 1]);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
 	return f.dot;
 }, true);
 
-// /obj/structure/curtain/proc/play_attack_sound  (code/game/objects/structures/watercloset.dm:637)
+// watercloset.dm:626
+rt.def("/obj/structure/curtain/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
+	playsound(this.loc, rt.rsc("sound/effects/curtain.ogg"), 50, 1);
+	yield* this.toggle();
+	yield* parent_proc();
+	return f.dot;
+}, true);
+
+// watercloset.dm:631
+rt.def("/obj/structure/curtain/proc/deconstruct", function* deconstruct(f: Frame, disassembled: Value) {
+	disassembled ??= 1;
+	yield* new_(T("/obj/item/stack/sheet/cloth"), this.loc, 2);
+	yield* new_(T("/obj/item/stack/sheet/plastic"), this.loc, 2);
+	yield* new_(T("/obj/item/stack/rods"), this.loc, 1);
+	yield* qdel(this);
+	return f.dot;
+}, true);
+
+// watercloset.dm:637
 rt.def("/obj/structure/curtain/proc/play_attack_sound", function play_attack_sound(f: Frame, damage_amount: Value, damage_type: Value, damage_flag: Value) {
-	let $0: any;
-	f.vars = () => [damage_type, damage_flag, $0];
-	if (live(damage_type) === null) {
-		damage_type = "brute";
-	}
-	if (live(damage_flag) === null) {
-		damage_flag = 0;
-	}
-	$0 = live(damage_type);
-	if ($0 === "brute") {
-		if (truthy(live(damage_amount))) {
-			rt.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/weapons/slash.ogg"), 80, 1]);
+	damage_type ??= "brute";
+	damage_flag ??= 0;
+	if (damage_type === "brute") {
+		if (damage_amount) {
+			playsound(this.loc, rt.rsc("sound/weapons/slash.ogg"), 80, 1);
 		} else {
-			rt.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/weapons/tap.ogg"), 50, 1]);
+			playsound(this.loc, rt.rsc("sound/weapons/tap.ogg"), 50, 1);
 		}
-	} else if ($0 === "fire") {
-		rt.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/items/welder.ogg"), 80, 1]);
+	} else if (damage_type === "fire") {
+		playsound(this.loc, rt.rsc("sound/items/welder.ogg"), 80, 1);
 	}
 	return f.dot;
 });

@@ -1,7 +1,7 @@
-// From code/modules/research/stock_parts.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/research/stock_parts.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(5605, "/obj/item/weapon/storage/part_replacer", "/obj/item/weapon/storage", {
@@ -24,31 +24,26 @@ rt.type(5605, "/obj/item/weapon/storage/part_replacer", "/obj/item/weapon/storag
 	can_hold: null,
 });
 
-// /obj/item/weapon/storage/part_replacer/proc/<init>  (code/modules/research/stock_parts.dm:10)
+// stock_parts.dm:10
 rt.def("/obj/item/weapon/storage/part_replacer/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "can_hold", rt.list(T("/obj/item/weapon/stock_parts")));
+	parent_proc();
+	this.can_hold = list(T("/obj/item/weapon/stock_parts"));
 	return f.dot;
 });
 
-// /obj/item/weapon/storage/part_replacer/proc/afterattack  (code/modules/research/stock_parts.dm:25)  may sleep
+// stock_parts.dm:25
 rt.def("/obj/item/weapon/storage/part_replacer/proc/afterattack", function* afterattack(f: Frame, _T: Value, user: Value, flag: Value, params: Value) {
-	f.vars = () => [_T, user, flag, params];
-	if (truthy(live(flag))) {
-		return live(f.dot);
-	} else {
-		if (truthy(rt.sv(f, "works_from_distance"))) {
-			if (truthy((rt.istype(live(_T), T("/obj/machinery")) ? 1 : 0))) {
-				if (truthy(rt.fv(f, "component_parts", live(_T)))) {
-					yield* g.callName(f, live(_T), "exchange_parts", [live(user), live(f.src)]);
-					yield* g.callName(f, live(user), "Beam", [null, live(_T), "icon_state", "rped_upgrade", "time", 5], rt.Args.Named);
-				}
+	if (flag) {
+		return f.dot;
+	} else if (this.works_from_distance) {
+		if (rt.istype(_T, T("/obj/machinery"))) {
+			if (_T.component_parts) {
+				yield* _T.exchange_parts(user, this);
+				yield* user.Beam(_T, { icon_state: "rped_upgrade", time: 5 });
 			}
 		}
 	}
-	return live(f.dot);
+	return f.dot;
 }, true);
 
 rt.type(5606, "/obj/item/weapon/storage/part_replacer/bluespace", "/obj/item/weapon/storage/part_replacer", {
@@ -64,36 +59,35 @@ rt.type(5606, "/obj/item/weapon/storage/part_replacer/bluespace", "/obj/item/wea
 	w_class: 3,
 });
 
-// /obj/item/weapon/storage/part_replacer/bluespace/proc/content_can_dump  (code/modules/research/stock_parts.dm:46)  may sleep
+// stock_parts.dm:46
 rt.def("/obj/item/weapon/storage/part_replacer/bluespace/proc/content_can_dump", function* content_can_dump(f: Frame, dest_object: Value, user: Value) {
-	f.vars = () => [dest_object, user];
-	if (truthy((yield* g.srcCall(f, "Adjacent", live(user))))) {
-		if (rt.lt((yield* g.call(f, P("/proc/get_dist"), null, [live(user), live(dest_object)])), 8)) {
-			if (truthy((yield* g.callName(f, live(dest_object), "storage_contents_dump_act", [live(f.src), live(user)])))) {
-				yield* g.srcCall(f, "play_rped_sound");
-				yield* g.callName(f, live(user), "Beam", [null, live(dest_object), "icon_state", "rped_upgrade", "time", 5], rt.Args.Named);
+	if (this.Adjacent(user)) {
+		if (get_dist(user, dest_object) < 8) {
+			if (yield* dest_object.storage_contents_dump_act(this, user)) {
+				this.play_rped_sound();
+				yield* user.Beam(dest_object, { icon_state: "rped_upgrade", time: 5 });
 				return 1;
 			}
 		}
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("The ＀ buzzes.", [rt.fv(f, "name", live(f.src))])]);
-		yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/machines/buzz-sigh.ogg"), 50, 0]);
+		to_chat(user, `The ${this.name} buzzes.`);
+		playsound(this, rt.rsc("sound/machines/buzz-sigh.ogg"), 50, 0);
 	}
 	return 0;
 }, true);
 
-// /obj/item/weapon/storage/part_replacer/proc/play_rped_sound  (code/modules/research/stock_parts.dm:58)
+// stock_parts.dm:58
 rt.def("/obj/item/weapon/storage/part_replacer/proc/play_rped_sound", function play_rped_sound(f: Frame) {
-	if ((truthy(rt.sv(f, "alt_sound")) && truthy(rt.op(f, "Prob", [], [1])))) {
-		rt.call(f, P("/proc/playsound"), null, [live(f.src), rt.sv(f, "alt_sound"), 40, 1]);
+	if (this.alt_sound && prob(1)) {
+		playsound(this, this.alt_sound, 40, 1);
 	} else {
-		rt.call(f, P("/proc/playsound"), null, [live(f.src), rt.sv(f, "pshoom_or_beepboopblorpzingshadashwoosh"), 40, 1]);
+		playsound(this, this.pshoom_or_beepboopblorpzingshadashwoosh, 40, 1);
 	}
 	return f.dot;
 });
 
-// /proc/cmp_rped_sort  (code/modules/research/stock_parts.dm:66)
+// stock_parts.dm:66
 rt.def("/proc/cmp_rped_sort", function cmp_rped_sort(f: Frame, A: Value, B: Value) {
-	return subtract(rt.fv(f, "rating", live(B)), rt.fv(f, "rating", live(A)));
+	return B.rating - A.rating;
 }, false, { argTypes: [{ type: 4, path: "/obj/item/weapon/stock_parts" }, { type: 4, path: "/obj/item/weapon/stock_parts" }] });
 
 rt.type(5706, "/obj/item/weapon/stock_parts", "/obj/item/weapon", {
@@ -104,11 +98,11 @@ rt.type(5706, "/obj/item/weapon/stock_parts", "/obj/item/weapon", {
 	w_class: 2,
 });
 
-// /obj/item/weapon/stock_parts/proc/Initialize  (code/modules/research/stock_parts.dm:76)  may sleep
+// stock_parts.dm:76
 rt.def("/obj/item/weapon/stock_parts/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "pixel_x", (yield* g.call(f, P("/proc/rand"), null, [-5, 5])));
-	rt.setSv(f, "pixel_y", (yield* g.call(f, P("/proc/rand"), null, [-5, 5])));
+	f.dot = (yield* parent_proc());
+	this.pixel_x = rand(-5, 5);
+	this.pixel_y = rand(-5, 5);
 	return f.dot;
 }, true);
 
@@ -120,12 +114,10 @@ rt.type(5736, "/obj/item/weapon/stock_parts/console_screen", "/obj/item/weapon/s
 	materials: null,
 });
 
-// /obj/item/weapon/stock_parts/console_screen/proc/<init>  (code/modules/research/stock_parts.dm:87)
+// stock_parts.dm:87
 rt.def("/obj/item/weapon/stock_parts/console_screen/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$glass", 200]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$glass", 200]);
 	return f.dot;
 });
 
@@ -137,12 +129,10 @@ rt.type(5737, "/obj/item/weapon/stock_parts/capacitor", "/obj/item/weapon/stock_
 	materials: null,
 });
 
-// /obj/item/weapon/stock_parts/capacitor/proc/<init>  (code/modules/research/stock_parts.dm:94)
+// stock_parts.dm:94
 rt.def("/obj/item/weapon/stock_parts/capacitor/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 50, "$glass", 50]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 50, "$glass", 50]);
 	return f.dot;
 });
 
@@ -154,12 +144,10 @@ rt.type(5741, "/obj/item/weapon/stock_parts/scanning_module", "/obj/item/weapon/
 	materials: null,
 });
 
-// /obj/item/weapon/stock_parts/scanning_module/proc/<init>  (code/modules/research/stock_parts.dm:101)
+// stock_parts.dm:101
 rt.def("/obj/item/weapon/stock_parts/scanning_module/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 50, "$glass", 20]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 50, "$glass", 20]);
 	return f.dot;
 });
 
@@ -171,12 +159,10 @@ rt.type(5745, "/obj/item/weapon/stock_parts/manipulator", "/obj/item/weapon/stoc
 	materials: null,
 });
 
-// /obj/item/weapon/stock_parts/manipulator/proc/<init>  (code/modules/research/stock_parts.dm:108)
+// stock_parts.dm:108
 rt.def("/obj/item/weapon/stock_parts/manipulator/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 30]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 30]);
 	return f.dot;
 });
 
@@ -188,12 +174,10 @@ rt.type(5749, "/obj/item/weapon/stock_parts/micro_laser", "/obj/item/weapon/stoc
 	materials: null,
 });
 
-// /obj/item/weapon/stock_parts/micro_laser/proc/<init>  (code/modules/research/stock_parts.dm:115)
+// stock_parts.dm:115
 rt.def("/obj/item/weapon/stock_parts/micro_laser/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 10, "$glass", 20]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 10, "$glass", 20]);
 	return f.dot;
 });
 
@@ -205,12 +189,10 @@ rt.type(5753, "/obj/item/weapon/stock_parts/matter_bin", "/obj/item/weapon/stock
 	materials: null,
 });
 
-// /obj/item/weapon/stock_parts/matter_bin/proc/<init>  (code/modules/research/stock_parts.dm:122)
+// stock_parts.dm:122
 rt.def("/obj/item/weapon/stock_parts/matter_bin/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 80]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 80]);
 	return f.dot;
 });
 
@@ -223,12 +205,10 @@ rt.type(5738, "/obj/item/weapon/stock_parts/capacitor/adv", "/obj/item/weapon/st
 	materials: null,
 });
 
-// /obj/item/weapon/stock_parts/capacitor/adv/proc/<init>  (code/modules/research/stock_parts.dm:132)
+// stock_parts.dm:132
 rt.def("/obj/item/weapon/stock_parts/capacitor/adv/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 50, "$glass", 50]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 50, "$glass", 50]);
 	return f.dot;
 });
 
@@ -241,12 +221,10 @@ rt.type(5742, "/obj/item/weapon/stock_parts/scanning_module/adv", "/obj/item/wea
 	materials: null,
 });
 
-// /obj/item/weapon/stock_parts/scanning_module/adv/proc/<init>  (code/modules/research/stock_parts.dm:140)
+// stock_parts.dm:140
 rt.def("/obj/item/weapon/stock_parts/scanning_module/adv/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 50, "$glass", 20]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 50, "$glass", 20]);
 	return f.dot;
 });
 
@@ -259,12 +237,10 @@ rt.type(5746, "/obj/item/weapon/stock_parts/manipulator/nano", "/obj/item/weapon
 	materials: null,
 });
 
-// /obj/item/weapon/stock_parts/manipulator/nano/proc/<init>  (code/modules/research/stock_parts.dm:148)
+// stock_parts.dm:148
 rt.def("/obj/item/weapon/stock_parts/manipulator/nano/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 30]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 30]);
 	return f.dot;
 });
 
@@ -277,12 +253,10 @@ rt.type(5750, "/obj/item/weapon/stock_parts/micro_laser/high", "/obj/item/weapon
 	materials: null,
 });
 
-// /obj/item/weapon/stock_parts/micro_laser/high/proc/<init>  (code/modules/research/stock_parts.dm:156)
+// stock_parts.dm:156
 rt.def("/obj/item/weapon/stock_parts/micro_laser/high/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 10, "$glass", 20]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 10, "$glass", 20]);
 	return f.dot;
 });
 
@@ -295,12 +269,10 @@ rt.type(5754, "/obj/item/weapon/stock_parts/matter_bin/adv", "/obj/item/weapon/s
 	materials: null,
 });
 
-// /obj/item/weapon/stock_parts/matter_bin/adv/proc/<init>  (code/modules/research/stock_parts.dm:164)
+// stock_parts.dm:164
 rt.def("/obj/item/weapon/stock_parts/matter_bin/adv/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 80]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 80]);
 	return f.dot;
 });
 
@@ -313,12 +285,10 @@ rt.type(5739, "/obj/item/weapon/stock_parts/capacitor/super", "/obj/item/weapon/
 	materials: null,
 });
 
-// /obj/item/weapon/stock_parts/capacitor/super/proc/<init>  (code/modules/research/stock_parts.dm:174)
+// stock_parts.dm:174
 rt.def("/obj/item/weapon/stock_parts/capacitor/super/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 50, "$glass", 50]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 50, "$glass", 50]);
 	return f.dot;
 });
 
@@ -331,12 +301,10 @@ rt.type(5743, "/obj/item/weapon/stock_parts/scanning_module/phasic", "/obj/item/
 	materials: null,
 });
 
-// /obj/item/weapon/stock_parts/scanning_module/phasic/proc/<init>  (code/modules/research/stock_parts.dm:182)
+// stock_parts.dm:182
 rt.def("/obj/item/weapon/stock_parts/scanning_module/phasic/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 50, "$glass", 20]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 50, "$glass", 20]);
 	return f.dot;
 });
 
@@ -349,12 +317,10 @@ rt.type(5747, "/obj/item/weapon/stock_parts/manipulator/pico", "/obj/item/weapon
 	materials: null,
 });
 
-// /obj/item/weapon/stock_parts/manipulator/pico/proc/<init>  (code/modules/research/stock_parts.dm:190)
+// stock_parts.dm:190
 rt.def("/obj/item/weapon/stock_parts/manipulator/pico/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 30]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 30]);
 	return f.dot;
 });
 
@@ -367,12 +333,10 @@ rt.type(5751, "/obj/item/weapon/stock_parts/micro_laser/ultra", "/obj/item/weapo
 	materials: null,
 });
 
-// /obj/item/weapon/stock_parts/micro_laser/ultra/proc/<init>  (code/modules/research/stock_parts.dm:198)
+// stock_parts.dm:198
 rt.def("/obj/item/weapon/stock_parts/micro_laser/ultra/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 10, "$glass", 20]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 10, "$glass", 20]);
 	return f.dot;
 });
 
@@ -385,12 +349,10 @@ rt.type(5755, "/obj/item/weapon/stock_parts/matter_bin/super", "/obj/item/weapon
 	materials: null,
 });
 
-// /obj/item/weapon/stock_parts/matter_bin/super/proc/<init>  (code/modules/research/stock_parts.dm:206)
+// stock_parts.dm:206
 rt.def("/obj/item/weapon/stock_parts/matter_bin/super/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 80]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 80]);
 	return f.dot;
 });
 
@@ -403,12 +365,10 @@ rt.type(5740, "/obj/item/weapon/stock_parts/capacitor/quadratic", "/obj/item/wea
 	materials: null,
 });
 
-// /obj/item/weapon/stock_parts/capacitor/quadratic/proc/<init>  (code/modules/research/stock_parts.dm:216)
+// stock_parts.dm:216
 rt.def("/obj/item/weapon/stock_parts/capacitor/quadratic/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 50, "$glass", 50]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 50, "$glass", 50]);
 	return f.dot;
 });
 
@@ -421,12 +381,10 @@ rt.type(5744, "/obj/item/weapon/stock_parts/scanning_module/triphasic", "/obj/it
 	materials: null,
 });
 
-// /obj/item/weapon/stock_parts/scanning_module/triphasic/proc/<init>  (code/modules/research/stock_parts.dm:224)
+// stock_parts.dm:224
 rt.def("/obj/item/weapon/stock_parts/scanning_module/triphasic/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 50, "$glass", 20]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 50, "$glass", 20]);
 	return f.dot;
 });
 
@@ -439,12 +397,10 @@ rt.type(5748, "/obj/item/weapon/stock_parts/manipulator/femto", "/obj/item/weapo
 	materials: null,
 });
 
-// /obj/item/weapon/stock_parts/manipulator/femto/proc/<init>  (code/modules/research/stock_parts.dm:232)
+// stock_parts.dm:232
 rt.def("/obj/item/weapon/stock_parts/manipulator/femto/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 30]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 30]);
 	return f.dot;
 });
 
@@ -457,12 +413,10 @@ rt.type(5752, "/obj/item/weapon/stock_parts/micro_laser/quadultra", "/obj/item/w
 	materials: null,
 });
 
-// /obj/item/weapon/stock_parts/micro_laser/quadultra/proc/<init>  (code/modules/research/stock_parts.dm:240)
+// stock_parts.dm:240
 rt.def("/obj/item/weapon/stock_parts/micro_laser/quadultra/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 10, "$glass", 20]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 10, "$glass", 20]);
 	return f.dot;
 });
 
@@ -475,12 +429,10 @@ rt.type(5756, "/obj/item/weapon/stock_parts/matter_bin/bluespace", "/obj/item/we
 	materials: null,
 });
 
-// /obj/item/weapon/stock_parts/matter_bin/bluespace/proc/<init>  (code/modules/research/stock_parts.dm:248)
+// stock_parts.dm:248
 rt.def("/obj/item/weapon/stock_parts/matter_bin/bluespace/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 80]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 80]);
 	return f.dot;
 });
 
@@ -492,12 +444,10 @@ rt.type(5758, "/obj/item/weapon/stock_parts/subspace/ansible", "/obj/item/weapon
 	materials: null,
 });
 
-// /obj/item/weapon/stock_parts/subspace/ansible/proc/<init>  (code/modules/research/stock_parts.dm:257)
+// stock_parts.dm:257
 rt.def("/obj/item/weapon/stock_parts/subspace/ansible/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 30, "$glass", 10]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 30, "$glass", 10]);
 	return f.dot;
 });
 
@@ -509,12 +459,10 @@ rt.type(5759, "/obj/item/weapon/stock_parts/subspace/filter", "/obj/item/weapon/
 	materials: null,
 });
 
-// /obj/item/weapon/stock_parts/subspace/filter/proc/<init>  (code/modules/research/stock_parts.dm:264)
+// stock_parts.dm:264
 rt.def("/obj/item/weapon/stock_parts/subspace/filter/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 30, "$glass", 10]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 30, "$glass", 10]);
 	return f.dot;
 });
 
@@ -526,12 +474,10 @@ rt.type(5760, "/obj/item/weapon/stock_parts/subspace/amplifier", "/obj/item/weap
 	materials: null,
 });
 
-// /obj/item/weapon/stock_parts/subspace/amplifier/proc/<init>  (code/modules/research/stock_parts.dm:271)
+// stock_parts.dm:271
 rt.def("/obj/item/weapon/stock_parts/subspace/amplifier/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 30, "$glass", 10]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 30, "$glass", 10]);
 	return f.dot;
 });
 
@@ -543,12 +489,10 @@ rt.type(5761, "/obj/item/weapon/stock_parts/subspace/treatment", "/obj/item/weap
 	materials: null,
 });
 
-// /obj/item/weapon/stock_parts/subspace/treatment/proc/<init>  (code/modules/research/stock_parts.dm:278)
+// stock_parts.dm:278
 rt.def("/obj/item/weapon/stock_parts/subspace/treatment/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 30, "$glass", 10]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 30, "$glass", 10]);
 	return f.dot;
 });
 
@@ -560,12 +504,10 @@ rt.type(5762, "/obj/item/weapon/stock_parts/subspace/analyzer", "/obj/item/weapo
 	materials: null,
 });
 
-// /obj/item/weapon/stock_parts/subspace/analyzer/proc/<init>  (code/modules/research/stock_parts.dm:285)
+// stock_parts.dm:285
 rt.def("/obj/item/weapon/stock_parts/subspace/analyzer/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 30, "$glass", 10]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 30, "$glass", 10]);
 	return f.dot;
 });
 
@@ -577,12 +519,10 @@ rt.type(5763, "/obj/item/weapon/stock_parts/subspace/crystal", "/obj/item/weapon
 	materials: null,
 });
 
-// /obj/item/weapon/stock_parts/subspace/crystal/proc/<init>  (code/modules/research/stock_parts.dm:292)
+// stock_parts.dm:292
 rt.def("/obj/item/weapon/stock_parts/subspace/crystal/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$glass", 50]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$glass", 50]);
 	return f.dot;
 });
 
@@ -594,11 +534,9 @@ rt.type(5764, "/obj/item/weapon/stock_parts/subspace/transmitter", "/obj/item/we
 	materials: null,
 });
 
-// /obj/item/weapon/stock_parts/subspace/transmitter/proc/<init>  (code/modules/research/stock_parts.dm:299)
+// stock_parts.dm:299
 rt.def("/obj/item/weapon/stock_parts/subspace/transmitter/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 50]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 50]);
 	return f.dot;
 });

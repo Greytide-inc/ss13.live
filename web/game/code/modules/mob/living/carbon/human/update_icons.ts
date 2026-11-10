@@ -1,632 +1,556 @@
-// From code/modules/mob/living/carbon/human/update_icons.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/carbon/human/update_icons.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
-// /mob/living/carbon/human/proc/update_hair  (code/modules/mob/living/carbon/human/update_icons.dm:53)  may sleep
+// update_icons.dm:53
 rt.def("/mob/living/carbon/human/proc/update_hair", function* update_hair(f: Frame) {
-	yield* g.callName(f, rt.fv(f, "species", rt.sv(f, "dna")), "handle_hair", [live(f.src)]);
+	yield* this.dna.species.handle_hair(this);
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/human/proc/update_mutant_bodyparts  (code/modules/mob/living/carbon/human/update_icons.dm:57)  may sleep
+// update_icons.dm:57
 rt.def("/mob/living/carbon/human/proc/update_mutant_bodyparts", function* update_mutant_bodyparts(f: Frame) {
-	yield* g.callName(f, rt.fv(f, "species", rt.sv(f, "dna")), "handle_mutant_bodyparts", [live(f.src)]);
+	yield* this.dna.species.handle_mutant_bodyparts(this);
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/human/proc/update_body  (code/modules/mob/living/carbon/human/update_icons.dm:61)  may sleep
+// update_icons.dm:61
 rt.def("/mob/living/carbon/human/proc/update_body", function* update_body(f: Frame) {
-	yield* g.srcCall(f, "remove_overlay", 22);
-	yield* g.callName(f, rt.fv(f, "species", rt.sv(f, "dna")), "handle_body", [live(f.src)]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	this.remove_overlay(BODY_LAYER);
+	yield* this.dna.species.handle_body(this);
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/human/proc/update_fire  (code/modules/mob/living/carbon/human/update_icons.dm:66)
+// update_icons.dm:66
 rt.def("/mob/living/carbon/human/proc/update_fire", function update_fire(f: Frame) {
-	rt.callSuper(f, ["Standing"]);
+	parent_proc("Standing");
 	return f.dot;
 });
 
-// /mob/living/carbon/human/proc/regenerate_icons  (code/modules/mob/living/carbon/human/update_icons.dm:73)  may sleep
+// update_icons.dm:73
 rt.def("/mob/living/carbon/human/proc/regenerate_icons", function* regenerate_icons(f: Frame) {
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) return f.dot;
-	rt.setSv(f, "icon_render_key", null);
-	yield* g.srcCall(f, "update_body");
-	yield* g.srcCall(f, "update_hair");
-	yield* g.srcCall(f, "update_inv_w_uniform");
-	yield* g.srcCall(f, "update_inv_wear_id");
-	yield* g.srcCall(f, "update_inv_gloves");
-	yield* g.srcCall(f, "update_inv_glasses");
-	yield* g.srcCall(f, "update_inv_ears");
-	yield* g.srcCall(f, "update_inv_shoes");
-	yield* g.srcCall(f, "update_inv_s_store");
-	yield* g.srcCall(f, "update_inv_wear_mask");
-	yield* g.srcCall(f, "update_inv_head");
-	yield* g.srcCall(f, "update_inv_belt");
-	yield* g.srcCall(f, "update_inv_back");
-	yield* g.srcCall(f, "update_inv_wear_suit");
-	yield* g.srcCall(f, "update_inv_pockets");
-	yield* g.srcCall(f, "update_inv_neck");
-	yield* g.srcCall(f, "update_transform");
-	yield* g.srcCall(f, "update_mutations_overlay");
-	yield* g.srcCall(f, "update_damage_overlays");
+	if (yield* parent_proc()) return f.dot;
+	this.icon_render_key = null;
+	yield* this.update_body();
+	yield* this.update_hair();
+	yield* this.update_inv_w_uniform();
+	this.update_inv_wear_id();
+	this.update_inv_gloves();
+	this.update_inv_glasses();
+	this.update_inv_ears();
+	this.update_inv_shoes();
+	this.update_inv_s_store();
+	yield* this.update_inv_wear_mask();
+	yield* this.update_inv_head();
+	this.update_inv_belt();
+	this.update_inv_back();
+	yield* this.update_inv_wear_suit();
+	this.update_inv_pockets();
+	this.update_inv_neck();
+	yield* this.update_transform();
+	yield* this.update_mutations_overlay();
+	this.update_damage_overlays();
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/human/proc/update_inv_w_uniform  (code/modules/mob/living/carbon/human/update_icons.dm:101)  may sleep
+// update_icons.dm:101
 rt.def("/mob/living/carbon/human/proc/update_inv_w_uniform", function* update_inv_w_uniform(f: Frame, invdrop: Value) {
 	let inv: Value = null, U: Value = null, t_color: Value = null, uniform_overlay: Value = null, G: Value = null, thing: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [invdrop, inv, U, t_color, uniform_overlay, G, thing, $0, $e];
-	if (live(invdrop) === null) {
-		invdrop = 1;
+	let $e: any;
+	invdrop ??= 1;
+	this.remove_overlay(UNIFORM_LAYER);
+	if (this.client && this.hud_used) {
+		yield* (inv = rt.index(this.hud_used.inv_slots, slot_w_uniform)).update_icon();
 	}
-	yield* g.srcCall(f, "remove_overlay", 19);
-	if ((truthy(rt.sv(f, "client")) && truthy(rt.sv(f, "hud_used")))) {
-		yield* g.callName(f, (inv = rt.index(rt.fv(f, "inv_slots", rt.sv(f, "hud_used")), 14)), "update_icon", []);
-	}
-	if (truthy((rt.istype(rt.sv(f, "w_uniform"), T("/obj/item/clothing/under")) ? 1 : 0))) {
-		rt.setFv(f, "screen_loc", (U = rt.sv(f, "w_uniform")), "WEST:6,SOUTH+1:7");
-		if (((truthy(rt.sv(f, "client")) && truthy(rt.sv(f, "hud_used"))) && truthy(rt.fv(f, "hud_shown", rt.sv(f, "hud_used"))))) {
-			if (truthy(rt.fv(f, "inventory_shown", rt.sv(f, "hud_used")))) {
-				rt.modField(f, rt.sv(f, "client"), "screen", rt.sv(f, "w_uniform"), add);
+	if (rt.istype(this.w_uniform, T("/obj/item/clothing/under"))) {
+		(U = this.w_uniform).screen_loc = "WEST:6,SOUTH+1:7";
+		if (this.client && this.hud_used && this.hud_used.hud_shown) {
+			if (this.hud_used.inventory_shown) {
+				this.client.screen += this.w_uniform;
 			}
 		}
-		yield* g.srcCall(f, "update_observer_view", rt.sv(f, "w_uniform"), 1);
-		if ((truthy(rt.sv(f, "wear_suit")) && truthy(rt.bitAnd(rt.fv(f, "flags_inv", rt.sv(f, "wear_suit")), 4)))) {
-			return live(f.dot);
+		this.update_observer_view(this.w_uniform, ALT_STYLE);
+		if (this.wear_suit && rt.bitAnd(this.wear_suit.flags_inv, HIDEJUMPSUIT)) {
+			return f.dot;
 		}
-		if (!truthy((t_color = rt.fv(f, "item_color", live(U))))) {
-			t_color = rt.fv(f, "icon_state", live(U));
+		if (!(t_color = U.item_color)) {
+			t_color = U.icon_state;
 		}
-		if (isEqual(rt.fv(f, "adjusted", live(U)), 1)) {
-			t_color = fmt("＀_d", [live(t_color)]);
-		} else {
-			if (isEqual(rt.fv(f, "adjusted", live(U)), 2)) {
-				t_color = fmt("＀_l", [live(t_color)]);
+		if (U.adjusted == ALT_STYLE) {
+			t_color = `${t_color}_d`;
+		} else if (U.adjusted == DIGITIGRADE_STYLE) {
+			t_color = `${t_color}_l`;
+		}
+		if (this.dna && this.dna.species.sexes) {
+			if ((G = this.gender == "female" ? "f" : "m") == "f" && U.fitted != NO_FEMALE_UNIFORM) {
+				uniform_overlay = (yield* U.build_worn_icon({ state: `${t_color}`, default_layer: UNIFORM_LAYER, default_icon_file: rt.rsc("icons/mob/uniform.dmi"), isinhands: 0, femaleuniform: U.fitted }));
 			}
 		}
-		uniform_overlay = null;
-		if ((truthy(rt.sv(f, "dna")) && truthy(rt.gv(f, "sexes", rt.fv(f, "species", rt.sv(f, "dna")))))) {
-			if (isEqual(rt.sv(f, "gender"), "female")) {
-				$0 = "f";
-			} else {
-				$0 = "m";
-			}
-			if ((isEqual((G = $0), "f") && !isEqual(rt.fv(f, "fitted", live(U)), 0))) {
-				uniform_overlay = (yield* g.callName(f, live(U), "build_worn_icon", ["state", fmt("＀", [live(t_color)]), "default_layer", 19, "default_icon_file", rt.rsc("icons/mob/uniform.dmi"), "isinhands", 0, "femaleuniform", rt.fv(f, "fitted", live(U))], rt.Args.Named));
-			}
+		if (!uniform_overlay) {
+			uniform_overlay = (yield* U.build_worn_icon({ state: `${t_color}`, default_layer: UNIFORM_LAYER, default_icon_file: rt.rsc("icons/mob/uniform.dmi"), isinhands: 0 }));
 		}
-		if (!truthy(live(uniform_overlay))) {
-			uniform_overlay = (yield* g.callName(f, live(U), "build_worn_icon", ["state", fmt("＀", [live(t_color)]), "default_layer", 19, "default_icon_file", rt.rsc("icons/mob/uniform.dmi"), "isinhands", 0], rt.Args.Named));
-		}
-		rt.setAt(rt.sv(f, "overlays_standing"), 19, live(uniform_overlay));
-	} else {
-		if ((!(truthy(rt.sv(f, "dna")) && truthy(rt.gv(f, "nojumpsuit", rt.fv(f, "species", rt.sv(f, "dna"))))) && truthy(live(invdrop)))) {
-			thing = null;
-			rt.forList(f, 0, rt.list(rt.sv(f, "r_store"), rt.sv(f, "l_store"), rt.sv(f, "wear_id"), rt.sv(f, "belt")), T("/obj/item"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				thing = $e;
-				yield* g.srcCall(f, "dropItemToGround", live(thing));
-			}
-			rt.endFor(f, 0);
+		rt.setAt(this.overlays_standing, UNIFORM_LAYER, uniform_overlay);
+	} else if (!(this.dna && this.dna.species.nojumpsuit) && invdrop) {
+		for (thing of each(list(this.r_store, this.l_store, this.wear_id, this.belt), T("/obj/item"))) {
+			yield* this.dropItemToGround(thing);
 		}
 	}
-	yield* g.srcCall(f, "apply_overlay", 19);
-	yield* g.srcCall(f, "update_mutant_bodyparts");
+	this.apply_overlay(UNIFORM_LAYER);
+	yield* this.update_mutant_bodyparts();
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/human/proc/update_inv_wear_id  (code/modules/mob/living/carbon/human/update_icons.dm:149)
+// update_icons.dm:149
 rt.def("/mob/living/carbon/human/proc/update_inv_wear_id", function update_inv_wear_id(f: Frame) {
 	let inv: Value = null;
-	f.vars = () => [inv];
-	rt.callSrc(f, "remove_overlay", [18]);
-	if ((truthy(rt.sv(f, "client")) && truthy(rt.sv(f, "hud_used")))) {
-		rt.callName(f, (inv = rt.index(rt.fv(f, "inv_slots", rt.sv(f, "hud_used")), 6)), "update_icon", []);
+	this.remove_overlay(ID_LAYER);
+	if (this.client && this.hud_used) {
+		(inv = rt.index(this.hud_used.inv_slots, slot_wear_id)).update_icon();
 	}
-	if (truthy(rt.sv(f, "wear_id"))) {
-		rt.setFv(f, "screen_loc", rt.sv(f, "wear_id"), "CENTER-4:12,SOUTH:5");
-		if (((truthy(rt.sv(f, "client")) && truthy(rt.sv(f, "hud_used"))) && truthy(rt.fv(f, "hud_shown", rt.sv(f, "hud_used"))))) {
-			rt.modField(f, rt.sv(f, "client"), "screen", rt.sv(f, "wear_id"), add);
+	if (this.wear_id) {
+		this.wear_id.screen_loc = "CENTER-4:12,SOUTH:5";
+		if (this.client && this.hud_used && this.hud_used.hud_shown) {
+			this.client.screen += this.wear_id;
 		}
-		rt.callSrc(f, "update_observer_view", [rt.sv(f, "wear_id")]);
-		rt.setAt(rt.sv(f, "overlays_standing"), 18, rt.callName(f, rt.sv(f, "wear_id"), "build_worn_icon", ["state", rt.fv(f, "item_state", rt.sv(f, "wear_id")), "default_layer", 18, "default_icon_file", rt.rsc("icons/mob/mob.dmi")], rt.Args.Named));
+		this.update_observer_view(this.wear_id);
+		rt.setAt(this.overlays_standing, ID_LAYER, this.wear_id.build_worn_icon({ state: this.wear_id.item_state, default_layer: ID_LAYER, default_icon_file: rt.rsc("icons/mob/mob.dmi") }));
 	}
-	rt.callSrc(f, "apply_overlay", [18]);
+	this.apply_overlay(ID_LAYER);
 	return f.dot;
 });
 
-// /mob/living/carbon/human/proc/update_inv_gloves  (code/modules/mob/living/carbon/human/update_icons.dm:168)
+// update_icons.dm:168
 rt.def("/mob/living/carbon/human/proc/update_inv_gloves", function update_inv_gloves(f: Frame) {
 	let inv: Value = null, bloody_overlay: Value = null, t_state: Value = null;
-	f.vars = () => [inv, bloody_overlay, t_state];
-	rt.callSrc(f, "remove_overlay", [16]);
-	if (((truthy(rt.sv(f, "client")) && truthy(rt.sv(f, "hud_used"))) && truthy(rt.index(rt.fv(f, "inv_slots", rt.sv(f, "hud_used")), 9)))) {
-		rt.callName(f, (inv = rt.index(rt.fv(f, "inv_slots", rt.sv(f, "hud_used")), 9)), "update_icon", []);
+	this.remove_overlay(GLOVES_LAYER);
+	if (this.client && this.hud_used && rt.index(this.hud_used.inv_slots, slot_gloves)) {
+		(inv = rt.index(this.hud_used.inv_slots, slot_gloves)).update_icon();
 	}
-	if ((!truthy(rt.sv(f, "gloves")) && truthy(rt.sv(f, "blood_DNA")))) {
-		bloody_overlay = rt.call(f, P("/proc/mutable_appearance"), null, [rt.rsc("icons/effects/blood.dmi"), "bloodyhands", -16]);
-		if (rt.lt(rt.callSrc(f, "get_num_arms", []), 2)) {
-			if (truthy(rt.callSrc(f, "has_left_hand", []))) {
-				rt.setFv(f, "icon_state", live(bloody_overlay), "bloodyhands_left");
-			} else {
-				if (truthy(rt.callSrc(f, "has_right_hand", []))) {
-					rt.setFv(f, "icon_state", live(bloody_overlay), "bloodyhands_right");
-				}
+	if (!this.gloves && this.blood_DNA) {
+		bloody_overlay = mutable_appearance(rt.rsc("icons/effects/blood.dmi"), "bloodyhands", -16);
+		if (this.get_num_arms() < 2) {
+			if (this.has_left_hand()) {
+				bloody_overlay.icon_state = "bloodyhands_left";
+			} else if (this.has_right_hand()) {
+				bloody_overlay.icon_state = "bloodyhands_right";
 			}
 		}
-		rt.setAt(rt.sv(f, "overlays_standing"), 16, live(bloody_overlay));
+		rt.setAt(this.overlays_standing, GLOVES_LAYER, bloody_overlay);
 	}
-	if (truthy(rt.sv(f, "gloves"))) {
-		rt.setFv(f, "screen_loc", rt.sv(f, "gloves"), "WEST+2:10,SOUTH+1:7");
-		if (((truthy(rt.sv(f, "client")) && truthy(rt.sv(f, "hud_used"))) && truthy(rt.fv(f, "hud_shown", rt.sv(f, "hud_used"))))) {
-			if (truthy(rt.fv(f, "inventory_shown", rt.sv(f, "hud_used")))) {
-				rt.modField(f, rt.sv(f, "client"), "screen", rt.sv(f, "gloves"), add);
+	if (this.gloves) {
+		this.gloves.screen_loc = "WEST+2:10,SOUTH+1:7";
+		if (this.client && this.hud_used && this.hud_used.hud_shown) {
+			if (this.hud_used.inventory_shown) {
+				this.client.screen += this.gloves;
 			}
 		}
-		rt.callSrc(f, "update_observer_view", [rt.sv(f, "gloves"), 1]);
-		if (!truthy((t_state = rt.fv(f, "item_state", rt.sv(f, "gloves"))))) {
-			t_state = rt.fv(f, "icon_state", rt.sv(f, "gloves"));
+		this.update_observer_view(this.gloves, 1);
+		if (!(t_state = this.gloves.item_state)) {
+			t_state = this.gloves.icon_state;
 		}
-		rt.setAt(rt.sv(f, "overlays_standing"), 16, rt.callName(f, rt.sv(f, "gloves"), "build_worn_icon", ["state", live(t_state), "default_layer", 16, "default_icon_file", rt.rsc("icons/mob/hands.dmi")], rt.Args.Named));
+		rt.setAt(this.overlays_standing, GLOVES_LAYER, this.gloves.build_worn_icon({ state: t_state, default_layer: GLOVES_LAYER, default_icon_file: rt.rsc("icons/mob/hands.dmi") }));
 	}
-	rt.callSrc(f, "apply_overlay", [16]);
+	this.apply_overlay(GLOVES_LAYER);
 	return f.dot;
 });
 
-// /mob/living/carbon/human/proc/update_inv_glasses  (code/modules/mob/living/carbon/human/update_icons.dm:199)
+// update_icons.dm:199
 rt.def("/mob/living/carbon/human/proc/update_inv_glasses", function update_inv_glasses(f: Frame) {
 	let inv: Value = null;
-	f.vars = () => [inv];
-	rt.callSrc(f, "remove_overlay", [13]);
-	if (!truthy(rt.callSrc(f, "get_bodypart", ["head"]))) {
-		return live(f.dot);
+	this.remove_overlay(GLASSES_LAYER);
+	if (!this.get_bodypart("head")) {
+		return f.dot;
 	}
-	if ((truthy(rt.sv(f, "client")) && truthy(rt.sv(f, "hud_used")))) {
-		rt.callName(f, (inv = rt.index(rt.fv(f, "inv_slots", rt.sv(f, "hud_used")), 8)), "update_icon", []);
+	if (this.client && this.hud_used) {
+		(inv = rt.index(this.hud_used.inv_slots, slot_glasses)).update_icon();
 	}
-	if (truthy(rt.sv(f, "glasses"))) {
-		rt.setFv(f, "screen_loc", rt.sv(f, "glasses"), "WEST:6,SOUTH+3:11");
-		if (((truthy(rt.sv(f, "client")) && truthy(rt.sv(f, "hud_used"))) && truthy(rt.fv(f, "hud_shown", rt.sv(f, "hud_used"))))) {
-			if (truthy(rt.fv(f, "inventory_shown", rt.sv(f, "hud_used")))) {
-				rt.modField(f, rt.sv(f, "client"), "screen", rt.sv(f, "glasses"), add);
+	if (this.glasses) {
+		this.glasses.screen_loc = "WEST:6,SOUTH+3:11";
+		if (this.client && this.hud_used && this.hud_used.hud_shown) {
+			if (this.hud_used.inventory_shown) {
+				this.client.screen += this.glasses;
 			}
 		}
-		rt.callSrc(f, "update_observer_view", [rt.sv(f, "glasses"), 1]);
-		if ((!(truthy(rt.sv(f, "head")) && truthy(rt.bitAnd(rt.fv(f, "flags_inv", rt.sv(f, "head")), 64))) && !(truthy(rt.sv(f, "wear_mask")) && truthy(rt.bitAnd(rt.fv(f, "flags_inv", rt.sv(f, "wear_mask")), 64))))) {
-			rt.setAt(rt.sv(f, "overlays_standing"), 13, rt.callName(f, rt.sv(f, "glasses"), "build_worn_icon", ["state", rt.fv(f, "icon_state", rt.sv(f, "glasses")), "default_layer", 13, "default_icon_file", rt.rsc("icons/mob/eyes.dmi")], rt.Args.Named));
+		this.update_observer_view(this.glasses, 1);
+		if (!(this.head && rt.bitAnd(this.head.flags_inv, HIDEEYES)) && !(this.wear_mask && rt.bitAnd(this.wear_mask.flags_inv, HIDEEYES))) {
+			rt.setAt(this.overlays_standing, GLASSES_LAYER, this.glasses.build_worn_icon({ state: this.glasses.icon_state, default_layer: GLASSES_LAYER, default_icon_file: rt.rsc("icons/mob/eyes.dmi") }));
 		}
 	}
-	rt.callSrc(f, "apply_overlay", [13]);
+	this.apply_overlay(GLASSES_LAYER);
 	return f.dot;
 });
 
-// /mob/living/carbon/human/proc/update_inv_ears  (code/modules/mob/living/carbon/human/update_icons.dm:222)
+// update_icons.dm:222
 rt.def("/mob/living/carbon/human/proc/update_inv_ears", function update_inv_ears(f: Frame) {
 	let inv: Value = null;
-	f.vars = () => [inv];
-	rt.callSrc(f, "remove_overlay", [15]);
-	if (!truthy(rt.callSrc(f, "get_bodypart", ["head"]))) {
-		return live(f.dot);
+	this.remove_overlay(EARS_LAYER);
+	if (!this.get_bodypart("head")) {
+		return f.dot;
 	}
-	if ((truthy(rt.sv(f, "client")) && truthy(rt.sv(f, "hud_used")))) {
-		rt.callName(f, (inv = rt.index(rt.fv(f, "inv_slots", rt.sv(f, "hud_used")), 7)), "update_icon", []);
+	if (this.client && this.hud_used) {
+		(inv = rt.index(this.hud_used.inv_slots, slot_ears)).update_icon();
 	}
-	if (truthy(rt.sv(f, "ears"))) {
-		rt.setFv(f, "screen_loc", rt.sv(f, "ears"), "WEST+2:10,SOUTH+2:9");
-		if (((truthy(rt.sv(f, "client")) && truthy(rt.sv(f, "hud_used"))) && truthy(rt.fv(f, "hud_shown", rt.sv(f, "hud_used"))))) {
-			if (truthy(rt.fv(f, "inventory_shown", rt.sv(f, "hud_used")))) {
-				rt.modField(f, rt.sv(f, "client"), "screen", rt.sv(f, "ears"), add);
+	if (this.ears) {
+		this.ears.screen_loc = "WEST+2:10,SOUTH+2:9";
+		if (this.client && this.hud_used && this.hud_used.hud_shown) {
+			if (this.hud_used.inventory_shown) {
+				this.client.screen += this.ears;
 			}
 		}
-		rt.callSrc(f, "update_observer_view", [rt.sv(f, "ears"), 1]);
-		rt.setAt(rt.sv(f, "overlays_standing"), 15, rt.callName(f, rt.sv(f, "ears"), "build_worn_icon", ["state", rt.fv(f, "icon_state", rt.sv(f, "ears")), "default_layer", 15, "default_icon_file", rt.rsc("icons/mob/ears.dmi")], rt.Args.Named));
+		this.update_observer_view(this.ears, 1);
+		rt.setAt(this.overlays_standing, EARS_LAYER, this.ears.build_worn_icon({ state: this.ears.icon_state, default_layer: EARS_LAYER, default_icon_file: rt.rsc("icons/mob/ears.dmi") }));
 	}
-	rt.callSrc(f, "apply_overlay", [15]);
+	this.apply_overlay(EARS_LAYER);
 	return f.dot;
 });
 
-// /mob/living/carbon/human/proc/update_inv_shoes  (code/modules/mob/living/carbon/human/update_icons.dm:244)
+// update_icons.dm:244
 rt.def("/mob/living/carbon/human/proc/update_inv_shoes", function update_inv_shoes(f: Frame) {
 	let inv: Value = null;
-	f.vars = () => [inv];
-	rt.callSrc(f, "remove_overlay", [17]);
-	if (rt.lt(rt.callSrc(f, "get_num_legs", []), 2)) {
-		return live(f.dot);
+	this.remove_overlay(SHOES_LAYER);
+	if (this.get_num_legs() < 2) {
+		return f.dot;
 	}
-	if ((truthy(rt.sv(f, "client")) && truthy(rt.sv(f, "hud_used")))) {
-		rt.callName(f, (inv = rt.index(rt.fv(f, "inv_slots", rt.sv(f, "hud_used")), 12)), "update_icon", []);
+	if (this.client && this.hud_used) {
+		(inv = rt.index(this.hud_used.inv_slots, slot_shoes)).update_icon();
 	}
-	if (truthy(rt.sv(f, "shoes"))) {
-		rt.setFv(f, "screen_loc", rt.sv(f, "shoes"), "WEST+1:8,SOUTH:5");
-		if (((truthy(rt.sv(f, "client")) && truthy(rt.sv(f, "hud_used"))) && truthy(rt.fv(f, "hud_shown", rt.sv(f, "hud_used"))))) {
-			if (truthy(rt.fv(f, "inventory_shown", rt.sv(f, "hud_used")))) {
-				rt.modField(f, rt.sv(f, "client"), "screen", rt.sv(f, "shoes"), add);
+	if (this.shoes) {
+		this.shoes.screen_loc = "WEST+1:8,SOUTH:5";
+		if (this.client && this.hud_used && this.hud_used.hud_shown) {
+			if (this.hud_used.inventory_shown) {
+				this.client.screen += this.shoes;
 			}
 		}
-		rt.callSrc(f, "update_observer_view", [rt.sv(f, "shoes"), 1]);
-		rt.setAt(rt.sv(f, "overlays_standing"), 17, rt.callName(f, rt.sv(f, "shoes"), "build_worn_icon", ["state", rt.fv(f, "icon_state", rt.sv(f, "shoes")), "default_layer", 17, "default_icon_file", rt.rsc("icons/mob/feet.dmi")], rt.Args.Named));
+		this.update_observer_view(this.shoes, 1);
+		rt.setAt(this.overlays_standing, SHOES_LAYER, this.shoes.build_worn_icon({ state: this.shoes.icon_state, default_layer: SHOES_LAYER, default_icon_file: rt.rsc("icons/mob/feet.dmi") }));
 	}
-	rt.callSrc(f, "apply_overlay", [17]);
+	this.apply_overlay(SHOES_LAYER);
 	return f.dot;
 });
 
-// /mob/living/carbon/human/proc/update_inv_s_store  (code/modules/mob/living/carbon/human/update_icons.dm:265)
+// update_icons.dm:265
 rt.def("/mob/living/carbon/human/proc/update_inv_s_store", function update_inv_s_store(f: Frame) {
 	let inv: Value = null, t_state: Value = null;
-	f.vars = () => [inv, t_state];
-	rt.callSrc(f, "remove_overlay", [11]);
-	if ((truthy(rt.sv(f, "client")) && truthy(rt.sv(f, "hud_used")))) {
-		rt.callName(f, (inv = rt.index(rt.fv(f, "inv_slots", rt.sv(f, "hud_used")), 17)), "update_icon", []);
+	this.remove_overlay(SUIT_STORE_LAYER);
+	if (this.client && this.hud_used) {
+		(inv = rt.index(this.hud_used.inv_slots, slot_s_store)).update_icon();
 	}
-	if (truthy(rt.sv(f, "s_store"))) {
-		rt.setFv(f, "screen_loc", rt.sv(f, "s_store"), "CENTER-5:10,SOUTH:5");
-		if (((truthy(rt.sv(f, "client")) && truthy(rt.sv(f, "hud_used"))) && truthy(rt.fv(f, "hud_shown", rt.sv(f, "hud_used"))))) {
-			rt.modField(f, rt.sv(f, "client"), "screen", rt.sv(f, "s_store"), add);
+	if (this.s_store) {
+		this.s_store.screen_loc = "CENTER-5:10,SOUTH:5";
+		if (this.client && this.hud_used && this.hud_used.hud_shown) {
+			this.client.screen += this.s_store;
 		}
-		rt.callSrc(f, "update_observer_view", [rt.sv(f, "s_store")]);
-		if (!truthy((t_state = rt.fv(f, "item_state", rt.sv(f, "s_store"))))) {
-			t_state = rt.fv(f, "icon_state", rt.sv(f, "s_store"));
+		this.update_observer_view(this.s_store);
+		if (!(t_state = this.s_store.item_state)) {
+			t_state = this.s_store.icon_state;
 		}
-		rt.setAt(rt.sv(f, "overlays_standing"), 11, rt.call(f, P("/proc/mutable_appearance"), null, [rt.rsc("icons/mob/belt_mirror.dmi"), live(t_state), -11]));
+		rt.setAt(this.overlays_standing, SUIT_STORE_LAYER, mutable_appearance(rt.rsc("icons/mob/belt_mirror.dmi"), t_state, -11));
 	}
-	rt.callSrc(f, "apply_overlay", [11]);
+	this.apply_overlay(SUIT_STORE_LAYER);
 	return f.dot;
 });
 
-// /mob/living/carbon/human/proc/update_inv_head  (code/modules/mob/living/carbon/human/update_icons.dm:285)  may sleep
+// update_icons.dm:285
 rt.def("/mob/living/carbon/human/proc/update_inv_head", function* update_inv_head(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "update_mutant_bodyparts");
+	yield* parent_proc();
+	yield* this.update_mutant_bodyparts();
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/human/proc/update_inv_belt  (code/modules/mob/living/carbon/human/update_icons.dm:289)
+// update_icons.dm:289
 rt.def("/mob/living/carbon/human/proc/update_inv_belt", function update_inv_belt(f: Frame) {
 	let inv: Value = null, t_state: Value = null;
-	f.vars = () => [inv, t_state];
-	rt.callSrc(f, "remove_overlay", [12]);
-	if ((truthy(rt.sv(f, "client")) && truthy(rt.sv(f, "hud_used")))) {
-		rt.callName(f, (inv = rt.index(rt.fv(f, "inv_slots", rt.sv(f, "hud_used")), 5)), "update_icon", []);
+	this.remove_overlay(BELT_LAYER);
+	if (this.client && this.hud_used) {
+		(inv = rt.index(this.hud_used.inv_slots, slot_belt)).update_icon();
 	}
-	if (truthy(rt.sv(f, "belt"))) {
-		rt.setFv(f, "screen_loc", rt.sv(f, "belt"), "CENTER-3:14,SOUTH:5");
-		if (((truthy(rt.sv(f, "client")) && truthy(rt.sv(f, "hud_used"))) && truthy(rt.fv(f, "hud_shown", rt.sv(f, "hud_used"))))) {
-			rt.modField(f, rt.sv(f, "client"), "screen", rt.sv(f, "belt"), add);
+	if (this.belt) {
+		this.belt.screen_loc = "CENTER-3:14,SOUTH:5";
+		if (this.client && this.hud_used && this.hud_used.hud_shown) {
+			this.client.screen += this.belt;
 		}
-		rt.callSrc(f, "update_observer_view", [rt.sv(f, "belt")]);
-		if (!truthy((t_state = rt.fv(f, "item_state", rt.sv(f, "belt"))))) {
-			t_state = rt.fv(f, "icon_state", rt.sv(f, "belt"));
+		this.update_observer_view(this.belt);
+		if (!(t_state = this.belt.item_state)) {
+			t_state = this.belt.icon_state;
 		}
-		rt.setAt(rt.sv(f, "overlays_standing"), 12, rt.callName(f, rt.sv(f, "belt"), "build_worn_icon", ["state", live(t_state), "default_layer", 12, "default_icon_file", rt.rsc("icons/mob/belt.dmi")], rt.Args.Named));
+		rt.setAt(this.overlays_standing, BELT_LAYER, this.belt.build_worn_icon({ state: t_state, default_layer: BELT_LAYER, default_icon_file: rt.rsc("icons/mob/belt.dmi") }));
 	}
-	rt.callSrc(f, "apply_overlay", [12]);
+	this.apply_overlay(BELT_LAYER);
 	return f.dot;
 });
 
-// /mob/living/carbon/human/proc/update_inv_wear_suit  (code/modules/mob/living/carbon/human/update_icons.dm:313)  may sleep
+// update_icons.dm:313
 rt.def("/mob/living/carbon/human/proc/update_inv_wear_suit", function* update_inv_wear_suit(f: Frame) {
 	let inv: Value = null;
-	f.vars = () => [inv];
-	yield* g.srcCall(f, "remove_overlay", 14);
-	if ((truthy(rt.sv(f, "client")) && truthy(rt.sv(f, "hud_used")))) {
-		yield* g.callName(f, (inv = rt.index(rt.fv(f, "inv_slots", rt.sv(f, "hud_used")), 13)), "update_icon", []);
+	this.remove_overlay(SUIT_LAYER);
+	if (this.client && this.hud_used) {
+		yield* (inv = rt.index(this.hud_used.inv_slots, slot_wear_suit)).update_icon();
 	}
-	if (truthy((rt.istype(rt.sv(f, "wear_suit"), T("/obj/item/clothing/suit")) ? 1 : 0))) {
-		rt.setFv(f, "screen_loc", rt.sv(f, "wear_suit"), "WEST+1:8,SOUTH+1:7");
-		if (((truthy(rt.sv(f, "client")) && truthy(rt.sv(f, "hud_used"))) && truthy(rt.fv(f, "hud_shown", rt.sv(f, "hud_used"))))) {
-			if (truthy(rt.fv(f, "inventory_shown", rt.sv(f, "hud_used")))) {
-				rt.modField(f, rt.sv(f, "client"), "screen", rt.sv(f, "wear_suit"), add);
+	if (rt.istype(this.wear_suit, T("/obj/item/clothing/suit"))) {
+		this.wear_suit.screen_loc = "WEST+1:8,SOUTH+1:7";
+		if (this.client && this.hud_used && this.hud_used.hud_shown) {
+			if (this.hud_used.inventory_shown) {
+				this.client.screen += this.wear_suit;
 			}
 		}
-		yield* g.srcCall(f, "update_observer_view", rt.sv(f, "wear_suit"), 1);
-		rt.setAt(rt.sv(f, "overlays_standing"), 14, (yield* g.callName(f, rt.sv(f, "wear_suit"), "build_worn_icon", ["state", rt.fv(f, "icon_state", rt.sv(f, "wear_suit")), "default_layer", 14, "default_icon_file", rt.rsc("icons/mob/suit.dmi")], rt.Args.Named)));
-		if (truthy(rt.fv(f, "breakouttime", rt.sv(f, "wear_suit")))) {
-			yield* g.srcCall(f, "drop_all_held_items");
+		this.update_observer_view(this.wear_suit, 1);
+		rt.setAt(this.overlays_standing, SUIT_LAYER, (yield* this.wear_suit.build_worn_icon({ state: this.wear_suit.icon_state, default_layer: SUIT_LAYER, default_icon_file: rt.rsc("icons/mob/suit.dmi") })));
+		if (this.wear_suit.breakouttime) {
+			yield* this.drop_all_held_items();
 		}
 	}
-	yield* g.srcCall(f, "update_hair");
-	yield* g.srcCall(f, "update_mutant_bodyparts");
-	yield* g.srcCall(f, "apply_overlay", 14);
+	yield* this.update_hair();
+	yield* this.update_mutant_bodyparts();
+	this.apply_overlay(SUIT_LAYER);
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/human/proc/update_inv_pockets  (code/modules/mob/living/carbon/human/update_icons.dm:338)
+// update_icons.dm:338
 rt.def("/mob/living/carbon/human/proc/update_inv_pockets", function update_inv_pockets(f: Frame) {
 	let inv: Value = null;
-	f.vars = () => [inv];
-	if (!(truthy(rt.sv(f, "client")) && truthy(rt.sv(f, "hud_used")))) return f.dot;
-	inv = null;
-	rt.callName(f, (inv = rt.index(rt.fv(f, "inv_slots", rt.sv(f, "hud_used")), 15)), "update_icon", []);
-	rt.callName(f, (inv = rt.index(rt.fv(f, "inv_slots", rt.sv(f, "hud_used")), 16)), "update_icon", []);
-	if (truthy(rt.sv(f, "l_store"))) {
-		rt.setFv(f, "screen_loc", rt.sv(f, "l_store"), "CENTER+1:18,SOUTH:5");
-		if (truthy(rt.fv(f, "hud_shown", rt.sv(f, "hud_used")))) {
-			rt.modField(f, rt.sv(f, "client"), "screen", rt.sv(f, "l_store"), add);
+	if (!(this.client && this.hud_used)) return f.dot;
+	(inv = rt.index(this.hud_used.inv_slots, slot_l_store)).update_icon();
+	(inv = rt.index(this.hud_used.inv_slots, slot_r_store)).update_icon();
+	if (this.l_store) {
+		this.l_store.screen_loc = "CENTER+1:18,SOUTH:5";
+		if (this.hud_used.hud_shown) {
+			this.client.screen += this.l_store;
 		}
-		rt.callSrc(f, "update_observer_view", [rt.sv(f, "l_store")]);
+		this.update_observer_view(this.l_store);
 	}
-	if (!truthy(rt.sv(f, "r_store"))) return f.dot;
-	rt.setFv(f, "screen_loc", rt.sv(f, "r_store"), "CENTER+2:20,SOUTH:5");
-	if (truthy(rt.fv(f, "hud_shown", rt.sv(f, "hud_used")))) {
-		rt.modField(f, rt.sv(f, "client"), "screen", rt.sv(f, "r_store"), add);
+	if (!this.r_store) return f.dot;
+	this.r_store.screen_loc = "CENTER+2:20,SOUTH:5";
+	if (this.hud_used.hud_shown) {
+		this.client.screen += this.r_store;
 	}
-	rt.callSrc(f, "update_observer_view", [rt.sv(f, "r_store")]);
+	this.update_observer_view(this.r_store);
 	return f.dot;
 });
 
-// /mob/living/carbon/human/proc/update_inv_wear_mask  (code/modules/mob/living/carbon/human/update_icons.dm:361)  may sleep
+// update_icons.dm:361
 rt.def("/mob/living/carbon/human/proc/update_inv_wear_mask", function* update_inv_wear_mask(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "update_mutant_bodyparts");
+	yield* parent_proc();
+	yield* this.update_mutant_bodyparts();
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/human/proc/update_inv_legcuffed  (code/modules/mob/living/carbon/human/update_icons.dm:366)  may sleep
+// update_icons.dm:366
 rt.def("/mob/living/carbon/human/proc/update_inv_legcuffed", function* update_inv_legcuffed(f: Frame) {
-	yield* g.srcCall(f, "remove_overlay", 4);
-	yield* g.srcCall(f, "clear_alert", "legcuffed");
-	if (!truthy(rt.sv(f, "legcuffed"))) return f.dot;
-	rt.setAt(rt.sv(f, "overlays_standing"), 4, (yield* g.call(f, P("/proc/mutable_appearance"), null, [rt.rsc("icons/mob/mob.dmi"), "legcuff1", -4])));
-	yield* g.srcCall(f, "apply_overlay", 4);
-	yield* g.callSrc(f, "throw_alert", [null, "legcuffed", null, T("/obj/screen/alert/restrained/legcuffed"), "new_master", rt.fv(f, "legcuffed", live(f.src))], rt.Args.Named);
+	this.remove_overlay(LEGCUFF_LAYER);
+	yield* this.clear_alert("legcuffed");
+	if (!this.legcuffed) return f.dot;
+	rt.setAt(this.overlays_standing, LEGCUFF_LAYER, mutable_appearance(rt.rsc("icons/mob/mob.dmi"), "legcuff1", -4));
+	this.apply_overlay(LEGCUFF_LAYER);
+	yield* this.throw_alert("legcuffed", T("/obj/screen/alert/restrained/legcuffed"), { new_master: this.legcuffed });
 	return f.dot;
 }, true);
 
-// /proc/wear_female_version  (code/modules/mob/living/carbon/human/update_icons.dm:374)
+// update_icons.dm:374
 rt.def("/proc/wear_female_version", function wear_female_version(f: Frame, t_color: Value, icon: Value, layer: Value, type: Value) {
-	let index: Value = null, female_clothing_icon: Value = null;
-	f.vars = () => [index, female_clothing_icon];
-	index = live(t_color);
-	if (!truthy((female_clothing_icon = rt.index(rt.gl("female_clothing_icons"), live(index))))) {
-		rt.call(f, P("/proc/generate_female_clothing"), null, [live(index), live(t_color), live(icon), live(type)]);
+	let female_clothing_icon: Value = null;
+	let index: Value = t_color;
+	if (!(female_clothing_icon = rt.index(GLOB.female_clothing_icons, index))) {
+		generate_female_clothing(index, t_color, icon, type);
 	}
-	return rt.call(f, P("/proc/mutable_appearance"), null, [null, rt.index(rt.gl("female_clothing_icons"), live(t_color)), "layer", rt.neg(live(layer))], rt.Args.Named);
+	return mutable_appearance(rt.index(GLOB.female_clothing_icons, t_color), { layer: -layer });
 });
 
-// /mob/living/carbon/human/proc/get_overlays_copy  (code/modules/mob/living/carbon/human/update_icons.dm:381)
+// update_icons.dm:381
 rt.def("/mob/living/carbon/human/proc/get_overlays_copy", function get_overlays_copy(f: Frame, unwantedLayers: Value) {
-	let out: Value = null, i: Value = null;
+	let i: Value = null;
 	let $e: any;
-	f.vars = () => [out, i, $e];
-	out = rt.new_(f, T("/list"), []);
-	i = null;
-	rt.forRange(f, 0, 1, 26, 1);
+	let out: Value = new_(T("/list"));
+	rt.forRange(f, 0, 1, TOTAL_LAYERS, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		if (truthy(rt.index(rt.sv(f, "overlays_standing"), live(i)))) {
-			if (truthy((rt.isIn(f, live(i), live(unwantedLayers)) ? 1 : 0))) {
+		if (rt.index(this.overlays_standing, i)) {
+			if (rt.isIn(f, i, unwantedLayers)) {
 				continue;
 			}
-			out = rt.modify(live(out), rt.index(rt.sv(f, "overlays_standing"), live(i)), add);
+			out += rt.index(this.overlays_standing, i);
 		}
 	}
 	rt.endFor(f, 0);
-	return live(out);
+	return out;
 });
 
-// /mob/living/carbon/human/proc/update_hud_head  (code/modules/mob/living/carbon/human/update_icons.dm:394)
+// update_icons.dm:394
 rt.def("/mob/living/carbon/human/proc/update_hud_head", function update_hud_head(f: Frame, I: Value) {
-	rt.setFv(f, "screen_loc", live(I), "WEST+1:8,SOUTH+3:11");
-	if (((truthy(rt.sv(f, "client")) && truthy(rt.sv(f, "hud_used"))) && truthy(rt.fv(f, "hud_shown", rt.sv(f, "hud_used"))))) {
-		if (truthy(rt.fv(f, "inventory_shown", rt.sv(f, "hud_used")))) {
-			rt.modField(f, rt.sv(f, "client"), "screen", live(I), add);
+	I.screen_loc = "WEST+1:8,SOUTH+3:11";
+	if (this.client && this.hud_used && this.hud_used.hud_shown) {
+		if (this.hud_used.inventory_shown) {
+			this.client.screen += I;
 		}
 	}
-	rt.callSrc(f, "update_observer_view", [live(I), 1]);
+	this.update_observer_view(I, 1);
 	return f.dot;
 });
 
-// /mob/living/carbon/human/proc/update_hud_wear_mask  (code/modules/mob/living/carbon/human/update_icons.dm:402)
+// update_icons.dm:402
 rt.def("/mob/living/carbon/human/proc/update_hud_wear_mask", function update_hud_wear_mask(f: Frame, I: Value) {
-	rt.setFv(f, "screen_loc", live(I), "WEST+1:8,SOUTH+2:9");
-	if (((truthy(rt.sv(f, "client")) && truthy(rt.sv(f, "hud_used"))) && truthy(rt.fv(f, "hud_shown", rt.sv(f, "hud_used"))))) {
-		if (truthy(rt.fv(f, "inventory_shown", rt.sv(f, "hud_used")))) {
-			rt.modField(f, rt.sv(f, "client"), "screen", live(I), add);
+	I.screen_loc = "WEST+1:8,SOUTH+2:9";
+	if (this.client && this.hud_used && this.hud_used.hud_shown) {
+		if (this.hud_used.inventory_shown) {
+			this.client.screen += I;
 		}
 	}
-	rt.callSrc(f, "update_observer_view", [live(I), 1]);
+	this.update_observer_view(I, 1);
 	return f.dot;
 });
 
-// /mob/living/carbon/human/proc/update_hud_neck  (code/modules/mob/living/carbon/human/update_icons.dm:410)
+// update_icons.dm:410
 rt.def("/mob/living/carbon/human/proc/update_hud_neck", function update_hud_neck(f: Frame, I: Value) {
-	rt.setFv(f, "screen_loc", live(I), "WEST:6,SOUTH+2:9");
-	if (((truthy(rt.sv(f, "client")) && truthy(rt.sv(f, "hud_used"))) && truthy(rt.fv(f, "hud_shown", rt.sv(f, "hud_used"))))) {
-		if (truthy(rt.fv(f, "inventory_shown", rt.sv(f, "hud_used")))) {
-			rt.modField(f, rt.sv(f, "client"), "screen", live(I), add);
+	I.screen_loc = "WEST:6,SOUTH+2:9";
+	if (this.client && this.hud_used && this.hud_used.hud_shown) {
+		if (this.hud_used.inventory_shown) {
+			this.client.screen += I;
 		}
 	}
-	rt.callSrc(f, "update_observer_view", [live(I), 1]);
+	this.update_observer_view(I, 1);
 	return f.dot;
 });
 
-// /mob/living/carbon/human/proc/update_hud_back  (code/modules/mob/living/carbon/human/update_icons.dm:418)
+// update_icons.dm:418
 rt.def("/mob/living/carbon/human/proc/update_hud_back", function update_hud_back(f: Frame, I: Value) {
-	rt.setFv(f, "screen_loc", live(I), "CENTER-2:14,SOUTH:5");
-	if (((truthy(rt.sv(f, "client")) && truthy(rt.sv(f, "hud_used"))) && truthy(rt.fv(f, "hud_shown", rt.sv(f, "hud_used"))))) {
-		rt.modField(f, rt.sv(f, "client"), "screen", live(I), add);
+	I.screen_loc = "CENTER-2:14,SOUTH:5";
+	if (this.client && this.hud_used && this.hud_used.hud_shown) {
+		this.client.screen += I;
 	}
-	rt.callSrc(f, "update_observer_view", [live(I)]);
+	this.update_observer_view(I);
 	return f.dot;
 });
 
-// /obj/item/proc/build_worn_icon  (code/modules/mob/living/carbon/human/update_icons.dm:455)
+// update_icons.dm:455
 rt.def("/obj/item/proc/build_worn_icon", function build_worn_icon(f: Frame, state: Value, default_layer: Value, default_icon_file: Value, isinhands: Value, femaleuniform: Value) {
 	let file2use: Value = null, layer2use: Value = null, standing: Value = null, worn_overlays: Value = null, M: Value = null, L: Value = null;
-	let $0: any, $1: any, $2: any;
-	f.vars = () => [state, default_layer, default_icon_file, isinhands, femaleuniform, file2use, layer2use, standing, worn_overlays, M, L, $0, $1, $2];
-	if (live(state) === null) {
-		state = "";
+	let $1: any;
+	state ??= "";
+	default_layer ??= 0;
+	isinhands ??= 0;
+	femaleuniform ??= 0;
+	if (!isinhands && this.alternate_worn_icon) {
+		file2use = this.alternate_worn_icon;
 	}
-	if (live(default_layer) === null) {
-		default_layer = 0;
+	if (!file2use) {
+		file2use = default_icon_file;
 	}
-	if (live(default_icon_file) === null) {
-		default_icon_file = null;
+	if (this.alternate_worn_layer) {
+		layer2use = this.alternate_worn_layer;
 	}
-	if (live(isinhands) === null) {
-		isinhands = 0;
+	if (!layer2use) {
+		layer2use = default_layer;
 	}
-	if (live(femaleuniform) === null) {
-		femaleuniform = 0;
+	if (femaleuniform) {
+		standing = wear_female_version(state, file2use, layer2use, femaleuniform);
 	}
-	file2use = null;
-	if ((!truthy(live(isinhands)) && truthy(rt.sv(f, "alternate_worn_icon")))) {
-		file2use = rt.sv(f, "alternate_worn_icon");
+	if (!standing) {
+		standing = mutable_appearance(file2use, state, -layer2use);
 	}
-	if (!truthy(live(file2use))) {
-		file2use = live(default_icon_file);
+	if ((worn_overlays = this.worn_overlays(isinhands)) && rt.len(f, worn_overlays)) {
+		standing.overlays.Add(worn_overlays);
 	}
-	layer2use = null;
-	if (truthy(rt.sv(f, "alternate_worn_layer"))) {
-		layer2use = rt.sv(f, "alternate_worn_layer");
-	}
-	if (!truthy(live(layer2use))) {
-		layer2use = live(default_layer);
-	}
-	standing = null;
-	if (truthy(live(femaleuniform))) {
-		standing = rt.call(f, P("/proc/wear_female_version"), null, [live(state), live(file2use), live(layer2use), live(femaleuniform)]);
-	}
-	if (!truthy(live(standing))) {
-		standing = rt.call(f, P("/proc/mutable_appearance"), null, [live(file2use), live(state), rt.neg(live(layer2use))]);
-	}
-	if ((truthy((worn_overlays = rt.callSrc(f, "worn_overlays", [live(isinhands)]))) && truthy(rt.len(f, live(worn_overlays))))) {
-		rt.callName(f, rt.fv(f, "overlays", live(standing)), "Add", [live(worn_overlays)]);
-	}
-	$0 = live(standing);
-	if (truthy(live(isinhands))) {
-		$1 = rt.sv(f, "inhand_x_dimension");
+	let $0: any = standing;
+	if (isinhands) {
+		$1 = this.inhand_x_dimension;
 	} else {
-		$1 = rt.sv(f, "worn_x_dimension");
+		$1 = this.worn_x_dimension;
 	}
-	if (truthy(live(isinhands))) {
-		$2 = rt.sv(f, "inhand_y_dimension");
-	} else {
-		$2 = rt.sv(f, "worn_y_dimension");
-	}
-	standing = rt.call(f, P("/proc/center_image"), null, [$0, $1, $2]);
-	if (truthy((rt.istype((M = rt.sv(f, "loc")), T("/mob")) ? 1 : 0))) {
-		if (truthy((L = rt.callSrc(f, "get_held_offsets", [])))) {
-			rt.modField(f, live(standing), "pixel_x", rt.at(live(L), "x"), add);
-			rt.modField(f, live(standing), "pixel_y", rt.at(live(L), "y"), add);
+	standing = center_image($0, $1, isinhands ? this.inhand_y_dimension : this.worn_y_dimension);
+	if (rt.istype((M = this.loc), T("/mob"))) {
+		if (L = this.get_held_offsets()) {
+			standing.pixel_x += rt.at(L, "x");
+			standing.pixel_y += rt.at(L, "y");
 		}
 	}
-	rt.setFv(f, "alpha", live(standing), rt.sv(f, "alpha"));
-	rt.setFv(f, "color", live(standing), rt.sv(f, "color"));
-	return live(standing);
+	standing.alpha = this.alpha;
+	standing.color = this.color;
+	return standing;
 });
 
-// /obj/item/proc/get_held_offsets  (code/modules/mob/living/carbon/human/update_icons.dm:497)
+// update_icons.dm:497
 rt.def("/obj/item/proc/get_held_offsets", function get_held_offsets(f: Frame) {
 	let L: Value = null, M: Value = null;
-	f.vars = () => [L, M];
-	L = null;
-	if (truthy(rt.call(f, P("/proc/ismob"), null, [rt.sv(f, "loc")]))) {
-		L = rt.callName(f, (M = rt.sv(f, "loc")), "get_item_offsets_for_index", [rt.callName(f, live(M), "get_held_index_of_item", [live(f.src)])]);
+	if (ismob(this.loc)) {
+		L = (M = this.loc).get_item_offsets_for_index(M.get_held_index_of_item(this));
 	}
-	return live(L);
+	return L;
 });
 
-// /mob/proc/get_item_offsets_for_index  (code/modules/mob/living/carbon/human/update_icons.dm:505)
+// update_icons.dm:505
 rt.def("/mob/proc/get_item_offsets_for_index", function get_item_offsets_for_index(f: Frame, i: Value) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = live(i);
-	if ($0 === 3) {
+	if (i === 3) {
 		return rt.alist(f, ["x", 0, "y", 16]);
-	} else if ($0 === 4) {
+	} else if (i === 4) {
 		return rt.alist(f, ["x", 0, "y", 16]);
 	} else {
 		return rt.alist(f, ["x", 0, "y", 0]);
 	}
-	return f.dot;
 });
 
-// /mob/living/carbon/human/proc/generate_icon_render_key  (code/modules/mob/living/carbon/human/update_icons.dm:517)
+// update_icons.dm:517
 rt.def("/mob/living/carbon/human/proc/generate_icon_render_key", function generate_icon_render_key(f: Frame) {
 	let X: Value = null, BP: Value = null;
-	let $e: any;
-	f.vars = () => [X, BP, $e];
-	f.dot = fmt("＀", [rt.gv(f, "limbs_id", rt.fv(f, "species", rt.sv(f, "dna")))]);
-	if (truthy(rt.callName(f, rt.sv(f, "dna"), "check_mutation", ["Hulk"]))) {
-		f.dot = rt.modify(live(f.dot), "-coloured-hulk", add);
+	f.dot = `${this.dna.species.limbs_id}`;
+	if (this.dna.check_mutation("Hulk")) {
+		f.dot += "-coloured-hulk";
+	} else if (this.dna.species.use_skintones) {
+		f.dot += `-coloured-${this.skin_tone}`;
+	} else if (this.dna.species.fixed_mut_color) {
+		f.dot += `-coloured-${this.dna.species.fixed_mut_color}`;
+	} else if (rt.index(this.dna.features, "mcolor")) {
+		f.dot += `-coloured-${rt.index(this.dna.features, "mcolor")}`;
 	} else {
-		if (truthy(rt.gv(f, "use_skintones", rt.fv(f, "species", rt.sv(f, "dna"))))) {
-			f.dot = rt.modify(live(f.dot), fmt("-coloured-＀", [rt.sv(f, "skin_tone")]), add);
+		f.dot += "-not_coloured";
+	}
+	f.dot += `-${this.gender}`;
+	for (X of each(this.bodyparts)) {
+		f.dot += `-${(BP = X).body_zone}`;
+		if (BP.status == BODYPART_ORGANIC) {
+			f.dot += "-organic";
 		} else {
-			if (truthy(rt.gv(f, "fixed_mut_color", rt.fv(f, "species", rt.sv(f, "dna"))))) {
-				f.dot = rt.modify(live(f.dot), fmt("-coloured-＀", [rt.gv(f, "fixed_mut_color", rt.fv(f, "species", rt.sv(f, "dna")))]), add);
-			} else {
-				if (truthy(rt.index(rt.fv(f, "features", rt.sv(f, "dna")), "mcolor"))) {
-					f.dot = rt.modify(live(f.dot), fmt("-coloured-＀", [rt.index(rt.fv(f, "features", rt.sv(f, "dna")), "mcolor")]), add);
-				} else {
-					f.dot = rt.modify(live(f.dot), "-not_coloured", add);
-				}
-			}
+			f.dot += "-robotic";
+		}
+		if (BP.use_digitigrade) {
+			f.dot += `-digitigrade${BP.use_digitigrade}`;
+		}
+		if (BP.dmg_overlay_type) {
+			f.dot += `-${BP.dmg_overlay_type}`;
 		}
 	}
-	f.dot = rt.modify(live(f.dot), fmt("-＀", [rt.sv(f, "gender")]), add);
-	X = null;
-	rt.forList(f, 0, rt.sv(f, "bodyparts"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		X = $e;
-		f.dot = rt.modify(live(f.dot), fmt("-＀", [rt.gv(f, "body_zone", (BP = live(X)))]), add);
-		if (isEqual(rt.fv(f, "status", live(BP)), 1)) {
-			f.dot = rt.modify(live(f.dot), "-organic", add);
-		} else {
-			f.dot = rt.modify(live(f.dot), "-robotic", add);
-		}
-		if (truthy(rt.fv(f, "use_digitigrade", live(BP)))) {
-			f.dot = rt.modify(live(f.dot), fmt("-digitigrade＀", [rt.fv(f, "use_digitigrade", live(BP))]), add);
-		}
-		if (truthy(rt.fv(f, "dmg_overlay_type", live(BP)))) {
-			f.dot = rt.modify(live(f.dot), fmt("-＀", [rt.fv(f, "dmg_overlay_type", live(BP))]), add);
-		}
-	}
-	rt.endFor(f, 0);
-	if (!truthy(rt.bitAnd(rt.sv(f, "disabilities"), 64))) return f.dot;
-	f.dot = rt.modify(live(f.dot), "-husk", add);
+	if (!rt.bitAnd(this.disabilities, 64)) return f.dot;
+	f.dot += "-husk";
 	return f.dot;
 });
 
-// /mob/living/carbon/human/proc/load_limb_from_cache  (code/modules/mob/living/carbon/human/update_icons.dm:548)  may sleep
+// update_icons.dm:548
 rt.def("/mob/living/carbon/human/proc/load_limb_from_cache", function* load_limb_from_cache(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "update_hair");
+	yield* parent_proc();
+	yield* this.update_hair();
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/human/proc/update_observer_view  (code/modules/mob/living/carbon/human/update_icons.dm:554)
+// update_icons.dm:554
 rt.def("/mob/living/carbon/human/proc/update_observer_view", function update_observer_view(f: Frame, I: Value, inventory: Value) {
 	let M: Value = null, observe: Value = null;
-	let $e: any;
-	f.vars = () => [M, observe, $e];
-	if (!(truthy(rt.sv(f, "observers")) && truthy(rt.len(f, rt.sv(f, "observers"))))) return f.dot;
-	M = null;
-	rt.forList(f, 0, rt.sv(f, "observers"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if ((truthy(rt.gv(f, "client", (observe = live(M)))) && isEqual(rt.gv(f, "eye", rt.fv(f, "client", live(observe))), live(f.src)))) {
-			if (truthy(rt.fv(f, "hud_used", live(observe)))) {
-				if ((truthy(live(inventory)) && !truthy(rt.gv(f, "inventory_shown", rt.fv(f, "hud_used", live(observe)))))) {
+	if (!(this.observers && rt.len(f, this.observers))) return f.dot;
+	for (M of each(this.observers)) {
+		if ((observe = M).client && observe.client.eye == this) {
+			if (observe.hud_used) {
+				if (inventory && !observe.hud_used.inventory_shown) {
 					continue;
 				}
-				rt.modField(f, rt.fv(f, "client", live(observe)), "screen", live(I), add);
+				observe.client.screen += I;
 			}
 		} else {
-			(rt.modSrcVar(f, "observers", live(observe), subtract));
-			if (!truthy(rt.len(f, rt.sv(f, "observers")))) {
-				rt.setSv(f, "observers", null);
+			this.observers -= observe;
+			if (!rt.len(f, this.observers)) {
+				this.observers = null;
 				break;
 			}
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });

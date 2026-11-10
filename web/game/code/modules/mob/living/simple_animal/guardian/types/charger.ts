@@ -1,7 +1,7 @@
-// From code/modules/mob/living/simple_animal/guardian/types/charger.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/simple_animal/guardian/types/charger.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(4874, "/mob/living/simple_animal/hostile/guardian/charger", "/mob/living/simple_animal/hostile/guardian", {
@@ -20,93 +20,88 @@ rt.type(4874, "/mob/living/simple_animal/hostile/guardian/charger", "/mob/living
 	damage_coeff: null,
 });
 
-// /mob/living/simple_animal/hostile/guardian/charger/proc/<init>  (code/modules/mob/living/simple_animal/guardian/types/charger.dm:9)
+// charger.dm:9
 rt.def("/mob/living/simple_animal/hostile/guardian/charger/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "damage_coeff", rt.alist(f, ["brute", 0.6000000238418579, "fire", 0.6000000238418579, "tox", 0.6000000238418579, "clone", 0.6000000238418579, "stamina", 0, "oxy", 0.6000000238418579]));
+	parent_proc();
+	this.damage_coeff = rt.alist(f, ["brute", 0.6, "fire", 0.6, "tox", 0.6, "clone", 0.6, "stamina", 0, "oxy", 0.6]);
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/guardian/charger/proc/Life  (code/modules/mob/living/simple_animal/guardian/types/charger.dm:18)  may sleep
+// charger.dm:18
 rt.def("/mob/living/simple_animal/hostile/guardian/charger/proc/Life", function* Life(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (rt.le(rt.sv(f, "ranged_cooldown"), rt.worldTime(f))) {
-		if (!truthy(rt.sv(f, "chargealert"))) {
-			rt.setSv(f, "chargealert", (yield* g.srcCall(f, "throw_alert", "charge", T("/obj/screen/alert/cancharge"))));
+	f.dot = (yield* parent_proc());
+	if (this.ranged_cooldown <= rt.worldTime(f)) {
+		if (!this.chargealert) {
+			this.chargealert = (yield* this.throw_alert("charge", T("/obj/screen/alert/cancharge")));
 		}
 	} else {
-		yield* g.srcCall(f, "clear_alert", "charge");
-		rt.setSv(f, "chargealert", null);
+		yield* this.clear_alert("charge");
+		this.chargealert = null;
 	}
 	return f.dot;
 }, true, { waitfor: false });
 
-// /mob/living/simple_animal/hostile/guardian/charger/proc/OpenFire  (code/modules/mob/living/simple_animal/guardian/types/charger.dm:27)  may sleep
+// charger.dm:27
 rt.def("/mob/living/simple_animal/hostile/guardian/charger/proc/OpenFire", function* OpenFire(f: Frame, A: Value) {
-	f.vars = () => [A];
-	if (truthy(rt.sv(f, "charging"))) return f.dot;
-	yield* g.srcCall(f, "visible_message", fmt("<span class='danger'><b>＀</b> ＀ at ＀!</span>", [live(f.src), rt.sv(f, "ranged_message"), live(A)]));
-	rt.setSv(f, "ranged_cooldown", add(rt.worldTime(f), rt.sv(f, "ranged_cooldown_time")));
-	yield* g.srcCall(f, "clear_alert", "charge");
-	rt.setSv(f, "chargealert", null);
-	yield* g.srcCall(f, "Shoot", live(A));
+	if (this.charging) return f.dot;
+	this.visible_message(`<span class='danger'><b>${this}</b> ${this.ranged_message} at ${A}!</span>`);
+	this.ranged_cooldown = rt.worldTime(f) + this.ranged_cooldown_time;
+	yield* this.clear_alert("charge");
+	this.chargealert = null;
+	yield* this.Shoot(A);
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/guardian/charger/proc/Shoot  (code/modules/mob/living/simple_animal/guardian/types/charger.dm:36)  may sleep
+// charger.dm:36
 rt.def("/mob/living/simple_animal/hostile/guardian/charger/proc/Shoot", function* Shoot(f: Frame, targeted_atom: Value) {
-	f.vars = () => [targeted_atom];
-	rt.setSv(f, "charging", 1);
-	yield* g.callSrc(f, "throw_at", [null, live(targeted_atom), null, rt.sv(f, "range"), null, 1, null, live(f.src), null, 0, "callback", (yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/mob/living/simple_animal/hostile/guardian/charger/proc/charging_end")]))], rt.Args.Named);
+	this.charging = 1;
+	yield* this.throw_at(targeted_atom, this.range, 1, this, 0, { callback: (yield* new_(T("/datum/callback"), this, P("/mob/living/simple_animal/hostile/guardian/charger/proc/charging_end"))) });
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/guardian/charger/proc/Move  (code/modules/mob/living/simple_animal/guardian/types/charger.dm:43)  may sleep
+// charger.dm:43
 rt.def("/mob/living/simple_animal/hostile/guardian/charger/proc/Move", function* Move(f: Frame) {
-	if (truthy(rt.sv(f, "charging"))) {
-		yield* g.new_(f, T("/obj/effect/temp_visual/decoy/fading"), [rt.sv(f, "loc"), live(f.src)]);
+	if (this.charging) {
+		yield* new_(T("/obj/effect/temp_visual/decoy/fading"), this.loc, this);
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/guardian/charger/proc/snapback  (code/modules/mob/living/simple_animal/guardian/types/charger.dm:47)  may sleep
+// charger.dm:47
 rt.def("/mob/living/simple_animal/hostile/guardian/charger/proc/snapback", function* snapback(f: Frame) {
-	if (truthy(rt.sv(f, "charging"))) return f.dot;
-	yield* g.callSuper(f, [], rt.Args.Same);
+	if (this.charging) return f.dot;
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/guardian/charger/proc/throw_impact  (code/modules/mob/living/simple_animal/guardian/types/charger.dm:51)  may sleep
-rt.def("/mob/living/simple_animal/hostile/guardian/charger/proc/throw_impact", function* throw_impact(f: Frame) {
+// charger.dm:51
+rt.def("/mob/living/simple_animal/hostile/guardian/charger/proc/throw_impact", function* throw_impact(f: Frame, A: Value) {
 	let L: Value = null, blocked: Value = null, H: Value = null;
-	f.vars = () => [L, blocked, H];
-	if (!truthy(rt.sv(f, "charging"))) {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+	if (!this.charging) {
+		return (yield* parent_proc());
 	}
-	if (!truthy(live(f.args[0]))) return f.dot;
-	if ((truthy((rt.istype(live(f.args[0]), T("/mob/living")) ? 1 : 0)) && !isEqual(live(f.args[0]), rt.sv(f, "summoner")))) {
-		L = live(f.args[0]);
+	if (!A) return f.dot;
+	if (rt.istype(A, T("/mob/living")) && A != this.summoner) {
+		L = A;
 		blocked = 0;
-		if (truthy((yield* g.srcCall(f, "hasmatchingsummoner", live(f.args[0]))))) {
+		if (this.hasmatchingsummoner(A)) {
 			blocked = 1;
 		}
-		if (truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon/human")) ? 1 : 0))) {
-			if (truthy((yield* g.callName(f, (H = live(f.args[0])), "check_shields", [null, live(f.src), null, 90, null, fmt("＀", [rt.sv(f, "name")]), "attack_type", 4], rt.Args.Named)))) {
+		if (rt.istype(A, T("/mob/living/carbon/human"))) {
+			if (yield* (H = A).check_shields(this, 90, `${this.name}`, { attack_type: 4 })) {
 				blocked = 1;
 			}
 		}
-		if (!truthy(live(blocked))) {
-			yield* g.callName(f, live(L), "drop_all_held_items", []);
-			yield* g.callName(f, live(L), "visible_message", [fmt("<span class='danger'>＀ slams into ＀!</span>", [live(f.src), live(L)]), fmt("<span class='userdanger'>＀ slams into you!</span>", [live(f.src)])]);
-			yield* g.callName(f, live(L), "apply_damage", [20, "brute"]);
-			yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(L), 0), rt.rsc("sound/effects/meteorimpact.ogg"), 100, 1]);
-			yield* g.call(f, P("/proc/shake_camera"), null, [live(L), 4, 3]);
-			yield* g.call(f, P("/proc/shake_camera"), null, [live(f.src), 2, 3]);
+		if (!blocked) {
+			yield* L.drop_all_held_items();
+			L.visible_message(`<span class='danger'>${this} slams into ${L}!</span>`, `<span class='userdanger'>${this} slams into you!</span>`);
+			yield* L.apply_damage(20, "brute");
+			playsound(rt.getStep(f, L, 0), rt.rsc("sound/effects/meteorimpact.ogg"), 100, 1);
+			shake_camera(L, 4, 3);
+			shake_camera(this, 2, 3);
 		}
 	}
-	rt.setSv(f, "charging", 0);
+	this.charging = 0;
 	return f.dot;
-}, true, { args: ["A"], waitfor: false });
+}, true, { waitfor: false });

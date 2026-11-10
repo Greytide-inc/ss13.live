@@ -1,7 +1,7 @@
-// From code/game/objects/items/weapons/clown_items.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/weapons/clown_items.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(7135, "/obj/item/weapon/soap", "/obj/item/weapon", {
@@ -19,69 +19,60 @@ rt.type(7135, "/obj/item/weapon/soap", "/obj/item/weapon", {
 	force_string: "robust... against germs",
 });
 
-// /obj/item/weapon/soap/proc/suicide_act  (code/game/objects/items/weapons/clown_items.dm:46)  may sleep
+// clown_items.dm:46
 rt.def("/obj/item/weapon/soap/proc/suicide_act", function* suicide_act(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.callName(f, live(user), "say", [";FFFFFFFFFFFFFFFFUUUUUUUDGE!!"]);
-	yield* g.callName(f, live(user), "visible_message", [fmt("<span class='suicide'>＀ lifts ＀ to their mouth and gnaws on it furiously, producing a thick froth! ＀'ll never get that BB gun now!", [live(user), live(f.src), (yield* g.callName(f, live(user), "p_they", [1]))])]);
-	yield* g.new_(f, T("/obj/effect/particle_effect/foam"), [rt.sv(f, "loc")]);
+	yield* user.say(";FFFFFFFFFFFFFFFFUUUUUUUDGE!!");
+	user.visible_message(`<span class='suicide'>${user} lifts ${this} to their mouth and gnaws on it furiously, producing a thick froth! ${user.p_they(1)}'ll never get that BB gun now!`);
+	yield* new_(T("/obj/effect/particle_effect/foam"), this.loc);
 	return 4;
 }, true);
 
-// /obj/item/weapon/soap/proc/Crossed  (code/game/objects/items/weapons/clown_items.dm:52)  may sleep
+// clown_items.dm:52
 rt.def("/obj/item/weapon/soap/proc/Crossed", function* Crossed(f: Frame, AM: Value) {
 	let M: Value = null;
-	f.vars = () => [AM, M];
-	if (!truthy((rt.istype(live(AM), T("/mob/living/carbon")) ? 1 : 0))) return f.dot;
-	yield* g.callName(f, (M = live(AM)), "slip", [80, live(f.src)]);
+	if (!rt.istype(AM, T("/mob/living/carbon"))) return f.dot;
+	yield* (M = AM).slip(80, this);
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/soap/proc/afterattack  (code/game/objects/items/weapons/clown_items.dm:57)  may sleep
+// clown_items.dm:57
 rt.def("/obj/item/weapon/soap/proc/afterattack", function* afterattack(f: Frame, target: Value, user: Value, proximity: Value) {
 	let H: Value = null, C: Value = null;
-	f.vars = () => [target, user, proximity, H, C];
-	if ((!truthy(live(proximity)) || !truthy((yield* g.srcCall(f, "check_allowed_items", live(target)))))) {
-		return live(f.dot);
+	if (!proximity || !this.check_allowed_items(target)) {
+		return f.dot;
 	}
-	if ((truthy(rt.fv(f, "client", live(user))) && truthy((rt.isIn(f, live(target), rt.gv(f, "screen", rt.fv(f, "client", live(user)))) ? 1 : 0)))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>You need to take that ＀ off before cleaning it!</span>", [rt.fv(f, "name", live(target))])]);
+	if (user.client && rt.isIn(f, target, user.client.screen)) {
+		to_chat(user, `<span class='warning'>You need to take that ${target.name} off before cleaning it!</span>`);
+	} else if (rt.istype(target, T("/obj/effect/decal/cleanable"))) {
+		user.visible_message(fmt("＀ begins to scrub ％！ out with ＀.", [user, target.name, this]), fmt("<span class='warning'>You begin to scrub ％！ out with ＀...</span>", [target.name, this]));
+		if (yield* do_after(user, this.cleanspeed, { target: target })) {
+			to_chat(user, fmt("<span class='notice'>You scrub ％！ out.</span>", [target.name]));
+			yield* qdel(target);
+		}
+	} else if (rt.istype(target, T("/mob/living/carbon/human")) && user.zone_selected == "mouth") {
+		H = user;
+		user.visible_message(fmt("<span class='warning'>％！ washes ％！'s mouth out with ＀!</span>", [user, target, this.name]), fmt("<span class='notice'>You wash ％！'s mouth out with ＀!</span>", [target, this.name]));
+		H.lip_style = null;
+		yield* H.update_body();
+		return f.dot;
+	} else if (rt.istype(target, T("/obj/structure/window"))) {
+		user.visible_message(fmt("＀ begins to clean ％！ with ＀...", [user, target.name, this]), fmt("<span class='notice'>You begin to clean ％！ with ＀...</span>", [target.name, this]));
+		if (yield* do_after(user, this.cleanspeed, { target: target })) {
+			to_chat(user, fmt("<span class='notice'>You clean ％！.</span>", [target.name]));
+			target.remove_atom_colour(WASHABLE_COLOUR_PRIORITY);
+			target.set_opacity(rt.initial(f, target, "opacity"));
+		}
 	} else {
-		if (truthy((rt.istype(live(target), T("/obj/effect/decal/cleanable")) ? 1 : 0))) {
-			yield* g.callName(f, live(user), "visible_message", [fmt("＀ begins to scrub ％！ out with ＀.", [live(user), rt.fv(f, "name", live(target)), live(f.src)]), fmt("<span class='warning'>You begin to scrub ％！ out with ＀...</span>", [rt.fv(f, "name", live(target)), live(f.src)])]);
-			if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(user), null, rt.fv(f, "cleanspeed", live(f.src)), "target", live(target)], rt.Args.Named)))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You scrub ％！ out.</span>", [rt.fv(f, "name", live(target))])]);
-				yield* g.call(f, P("/proc/qdel"), null, [live(target)]);
-			}
-		} else {
-			if ((truthy((rt.istype(live(target), T("/mob/living/carbon/human")) ? 1 : 0)) && isEqual(rt.fv(f, "zone_selected", live(user)), "mouth"))) {
-				H = live(user);
-				yield* g.callName(f, live(user), "visible_message", [fmt("<span class='warning'>％！ washes ％！'s mouth out with ＀!</span>", [live(user), live(target), rt.fv(f, "name", live(f.src))]), fmt("<span class='notice'>You wash ％！'s mouth out with ＀!</span>", [live(target), rt.fv(f, "name", live(f.src))])]);
-				rt.setFv(f, "lip_style", live(H), null);
-				yield* g.callName(f, live(H), "update_body", []);
-				return live(f.dot);
-			} else {
-				if (truthy((rt.istype(live(target), T("/obj/structure/window")) ? 1 : 0))) {
-					yield* g.callName(f, live(user), "visible_message", [fmt("＀ begins to clean ％！ with ＀...", [live(user), rt.fv(f, "name", live(target)), live(f.src)]), fmt("<span class='notice'>You begin to clean ％！ with ＀...</span>", [rt.fv(f, "name", live(target)), live(f.src)])]);
-					if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(user), null, rt.fv(f, "cleanspeed", live(f.src)), "target", live(target)], rt.Args.Named)))) {
-						yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You clean ％！.</span>", [rt.fv(f, "name", live(target))])]);
-						yield* g.callName(f, live(target), "remove_atom_colour", [3]);
-						yield* g.callName(f, live(target), "set_opacity", [rt.initial(f, live(target), "opacity")]);
-					}
-				} else {
-					yield* g.callName(f, live(user), "visible_message", [fmt("＀ begins to clean ％！ with ＀...", [live(user), rt.fv(f, "name", live(target)), live(f.src)]), fmt("<span class='notice'>You begin to clean ％！ with ＀...</span>", [rt.fv(f, "name", live(target)), live(f.src)])]);
-					if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(user), null, rt.fv(f, "cleanspeed", live(f.src)), "target", live(target)], rt.Args.Named)))) {
-						yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You clean ％！.</span>", [rt.fv(f, "name", live(target))])]);
-						yield* g.call(f, P("/proc/qdel"), null, [(C = rt.locateIn(f, T("/obj/effect/decal/cleanable"), live(target)))]);
-						yield* g.callName(f, live(target), "remove_atom_colour", [3]);
-						yield* g.callName(f, live(target), "clean_blood", []);
-						yield* g.callName(f, live(target), "wash_cream", []);
-					}
-				}
-			}
+		user.visible_message(fmt("＀ begins to clean ％！ with ＀...", [user, target.name, this]), fmt("<span class='notice'>You begin to clean ％！ with ＀...</span>", [target.name, this]));
+		if (yield* do_after(user, this.cleanspeed, { target: target })) {
+			to_chat(user, fmt("<span class='notice'>You clean ％！.</span>", [target.name]));
+			yield* qdel((C = rt.locateIn(f, T("/obj/effect/decal/cleanable"), target)));
+			target.remove_atom_colour(WASHABLE_COLOUR_PRIORITY);
+			target.clean_blood();
+			target.wash_cream();
 		}
 	}
-	return live(f.dot);
+	return f.dot;
 }, true);
 
 rt.type(7140, "/obj/item/weapon/bikehorn", "/obj/item/weapon", {
@@ -101,48 +92,45 @@ rt.type(7140, "/obj/item/weapon/bikehorn", "/obj/item/weapon", {
 	attack_verb: null,
 });
 
-// /obj/item/weapon/bikehorn/proc/<init>  (code/game/objects/items/weapons/clown_items.dm:108)
+// clown_items.dm:108
 rt.def("/obj/item/weapon/bikehorn/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "attack_verb", rt.list("HONKED"));
+	parent_proc();
+	this.attack_verb = list("HONKED");
 	return f.dot;
 });
 
-// /obj/item/weapon/bikehorn/proc/suicide_act  (code/game/objects/items/weapons/clown_items.dm:114)
+// clown_items.dm:114
 rt.def("/obj/item/weapon/bikehorn/proc/suicide_act", function suicide_act(f: Frame, user: Value) {
-	rt.callName(f, live(user), "visible_message", [fmt("<span class='suicide'>＀ solemnly points the horn at ＀ temple! It looks like ＀ trying to commit suicide!</span>", [live(user), rt.callName(f, live(user), "p_their", []), rt.callName(f, live(user), "p_theyre", [])])]);
-	rt.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.sv(f, "honksound"), 50, 1]);
+	user.visible_message(`<span class='suicide'>${user} solemnly points the horn at ${user.p_their()} temple! It looks like ${user.p_theyre()} trying to commit suicide!</span>`);
+	playsound(this.loc, this.honksound, 50, 1);
 	return 1;
 });
 
-// /obj/item/weapon/bikehorn/proc/attack  (code/game/objects/items/weapons/clown_items.dm:119)  may sleep
-rt.def("/obj/item/weapon/bikehorn/proc/attack", function* attack(f: Frame) {
-	if (!rt.gt(rt.sv(f, "next_usable"), rt.worldTime(f))) {
-		yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.sv(f, "honksound"), 50, 1, -1]);
+// clown_items.dm:119
+rt.def("/obj/item/weapon/bikehorn/proc/attack", function* attack(f: Frame, M: Value, user: Value) {
+	if (!(this.next_usable > rt.worldTime(f))) {
+		playsound(this.loc, this.honksound, 50, 1, -1);
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["M", "user"] });
+	return (yield* parent_proc());
+}, true);
 
-// /obj/item/weapon/bikehorn/proc/attack_self  (code/game/objects/items/weapons/clown_items.dm:124)  may sleep
+// clown_items.dm:124
 rt.def("/obj/item/weapon/bikehorn/proc/attack_self", function* attack_self(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (rt.gt(rt.sv(f, "next_usable"), rt.worldTime(f))) return f.dot;
-	rt.setSv(f, "next_usable", add(rt.worldTime(f), rt.sv(f, "cooldowntime")));
-	yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.sv(f, "honksound"), 50, 1]);
-	yield* g.callName(f, live(f.src), "add_fingerprint", [live(user)]);
+	if (this.next_usable > rt.worldTime(f)) return f.dot;
+	this.next_usable = rt.worldTime(f) + this.cooldowntime;
+	playsound(this.loc, this.honksound, 50, 1);
+	yield* this.add_fingerprint(user);
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/bikehorn/proc/Crossed  (code/game/objects/items/weapons/clown_items.dm:130)
-rt.def("/obj/item/weapon/bikehorn/proc/Crossed", function Crossed(f: Frame) {
-	if (truthy((rt.istype(live(f.args[0]), T("/mob/living")) ? 1 : 0))) {
-		rt.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.sv(f, "honksound"), 50, 1, -1]);
+// clown_items.dm:130
+rt.def("/obj/item/weapon/bikehorn/proc/Crossed", function Crossed(f: Frame, L: Value) {
+	if (rt.istype(L, T("/mob/living"))) {
+		playsound(this.loc, this.honksound, 50, 1, -1);
 	}
-	rt.callSuper(f, [], rt.Args.Same);
+	parent_proc();
 	return f.dot;
-}, false, { args: ["L"] });
+}, false);
 
 rt.type(7142, "/obj/item/weapon/bikehorn/golden", "/obj/item/weapon/bikehorn", {
 	name: "golden bike horn",
@@ -151,37 +139,32 @@ rt.type(7142, "/obj/item/weapon/bikehorn/golden", "/obj/item/weapon/bikehorn", {
 	item_state: "gold_horn",
 });
 
-// /obj/item/weapon/bikehorn/golden/proc/attack  (code/game/objects/items/weapons/clown_items.dm:149)  may sleep
+// clown_items.dm:149
 rt.def("/obj/item/weapon/bikehorn/golden/proc/attack", function* attack(f: Frame) {
-	yield* g.srcCall(f, "flip_mobs");
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* this.flip_mobs();
+	return (yield* parent_proc());
 }, true);
 
-// /obj/item/weapon/bikehorn/golden/proc/attack_self  (code/game/objects/items/weapons/clown_items.dm:153)  may sleep
-rt.def("/obj/item/weapon/bikehorn/golden/proc/attack_self", function* attack_self(f: Frame) {
-	yield* g.srcCall(f, "flip_mobs");
-	yield* g.callSuper(f, [], rt.Args.Same);
+// clown_items.dm:153
+rt.def("/obj/item/weapon/bikehorn/golden/proc/attack_self", function* attack_self(f: Frame, user: Value) {
+	yield* this.flip_mobs();
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /obj/item/weapon/bikehorn/golden/proc/flip_mobs  (code/game/objects/items/weapons/clown_items.dm:157)  may sleep
+// clown_items.dm:157
 rt.def("/obj/item/weapon/bikehorn/golden/proc/flip_mobs", function* flip_mobs(f: Frame, M: Value, user: Value) {
-	let _T: Value = null, H: Value = null;
-	let $e: any;
-	f.vars = () => [M, user, _T, H, $e];
-	if (rt.gt(rt.sv(f, "next_usable"), rt.worldTime(f))) return f.dot;
-	_T = rt.getStep(f, live(f.src), 0);
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/ohearers"), null, [7, live(_T)])), T("/mob/living/carbon"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if ((truthy((rt.istype(live(M), T("/mob/living/carbon/human")) ? 1 : 0)) && truthy((yield* g.callName(f, live(M), "can_hear", []))))) {
-			if (truthy((rt.istype(rt.gv(f, "ears", (H = live(M))), T("/obj/item/clothing/ears/earmuffs")) ? 1 : 0))) {
+	let H: Value = null;
+	if (this.next_usable > rt.worldTime(f)) return f.dot;
+	let _T: Value = rt.getStep(f, this, 0);
+	for (M of each(ohearers(7, _T), T("/mob/living/carbon"))) {
+		if (rt.istype(M, T("/mob/living/carbon/human")) && M.can_hear()) {
+			if (rt.istype((H = M).ears, T("/obj/item/clothing/ears/earmuffs"))) {
 				continue;
 			}
 		}
-		yield* g.callName(f, live(M), "emote", ["flip"]);
+		yield* M.emote("flip");
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
@@ -192,11 +175,9 @@ rt.type(5830, "/obj/item/weapon/reagent_containers/food/drinks/soda_cans/canned_
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/food/drinks/soda_cans/canned_laughter/proc/<init>  (code/game/objects/items/weapons/clown_items.dm:170)
+// clown_items.dm:170
 rt.def("/obj/item/weapon/reagent_containers/food/drinks/soda_cans/canned_laughter/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["laughter", 50]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["laughter", 50]);
 	return f.dot;
 });

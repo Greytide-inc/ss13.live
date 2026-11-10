@@ -1,5 +1,5 @@
 // Types declared in code/modules/spells/spell_types that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(11282, "/obj/effect/proc_holder/spell/targeted/area_teleport/teleport", "/obj/effect/proc_holder/spell/targeted/area_teleport", {
 	include_user: 1,

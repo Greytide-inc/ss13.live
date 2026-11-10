@@ -1,7 +1,7 @@
-// From code/controllers/subsystem/job.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/controllers/subsystem/job.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(24, "/datum/controller/subsystem/job", "/datum/controller/subsystem", {
@@ -18,634 +18,528 @@ rt.type(24, "/datum/controller/subsystem/job", "/datum/controller/subsystem", {
 	flags: 2,
 });
 
-// /datum/controller/subsystem/job/proc/New  (code/controllers/subsystem/job.dm:1)  may sleep
+// job.dm:1
 rt.def("/datum/controller/subsystem/job/proc/New", function* New(f: Frame) {
-	if (!isEqual(rt.gl("SSjob"), live(f.src))) {
-		if (truthy((rt.istype(rt.gl("SSjob"), T("/datum/controller/subsystem/job")) ? 1 : 0))) {
-			yield* g.srcCall(f, "Recover");
-			yield* g.call(f, P("/proc/qdel"), null, [rt.gl("SSjob")]);
+	if (GLOB.SSjob != this) {
+		if (rt.istype(GLOB.SSjob, T("/datum/controller/subsystem/job"))) {
+			yield* this.Recover();
+			yield* qdel(GLOB.SSjob);
 		}
-		rt.setGl("SSjob", live(f.src));
+		GLOB.SSjob = this;
 	}
-	yield* g.srcCall(f, "PreInit");
+	this.PreInit();
 	return f.dot;
 }, true);
 
-// /datum/controller/subsystem/job/proc/<init>  (code/controllers/subsystem/job.dm:6)
+// job.dm:6
 rt.def("/datum/controller/subsystem/job/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "occupations", rt.list());
-	$0 = $0;
-	rt.setSv(f, "name_occupations", rt.list());
-	$0 = $0;
-	rt.setSv(f, "type_occupations", rt.list());
-	$0 = $0;
-	rt.setSv(f, "unassigned", rt.list());
-	$0 = $0;
-	rt.setSv(f, "job_debug", rt.list());
-	$0 = $0;
-	rt.setSv(f, "prioritized_jobs", rt.list());
-	$0 = $0;
-	rt.setSv(f, "latejoin_trackers", rt.list());
+	parent_proc();
+	this.occupations = list();
+
+	this.name_occupations = list();
+
+	this.type_occupations = list();
+
+	this.unassigned = list();
+
+	this.job_debug = list();
+
+	this.prioritized_jobs = list();
+
+	this.latejoin_trackers = list();
 	return f.dot;
 });
 
-// /datum/controller/subsystem/job/proc/Initialize  (code/controllers/subsystem/job.dm:17)  may sleep
-rt.def("/datum/controller/subsystem/job/proc/Initialize", function* Initialize(f: Frame) {
-	if (!truthy(rt.len(f, rt.sv(f, "occupations")))) {
-		yield* g.srcCall(f, "SetupOccupations");
+// job.dm:17
+rt.def("/datum/controller/subsystem/job/proc/Initialize", function* Initialize(f: Frame, timeofday: Value) {
+	if (!rt.len(f, this.occupations)) {
+		yield* this.SetupOccupations();
 	}
-	if (truthy(rt.fv(f, "load_jobs_from_txt", rt.gl("config")))) {
-		yield* g.srcCall(f, "LoadJobs");
+	if (GLOB.config.load_jobs_from_txt) {
+		this.LoadJobs();
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["timeofday"] });
+}, true);
 
-// /datum/controller/subsystem/job/proc/SetupOccupations  (code/controllers/subsystem/job.dm:25)  may sleep
+// job.dm:25
 rt.def("/datum/controller/subsystem/job/proc/SetupOccupations", function* SetupOccupations(f: Frame, faction: Value) {
 	let all_jobs: Value = null, J: Value = null, job: Value = null;
-	let $e: any;
-	f.vars = () => [faction, all_jobs, J, job, $e];
-	if (live(faction) === null) {
-		faction = "Station";
-	}
-	rt.setSv(f, "occupations", rt.list());
-	if (!truthy(rt.getLen(f, (all_jobs = subtract((yield* g.call(f, P("/proc/typesof"), null, [T("/datum/job")])), T("/datum/job")))))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [rt.world(), "<span class='boldannounce'>Error setting up jobs, no job datums found</span>"]);
+	faction ??= "Station";
+	this.occupations = list();
+	if (!rt.len(f, (all_jobs = typesof(T("/datum/job")) - T("/datum/job")))) {
+		to_chat(rt.world(), "<span class='boldannounce'>Error setting up jobs, no job datums found</span>");
 		return 0;
 	}
-	J = null;
-	rt.forList(f, 0, live(all_jobs));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		J = $e;
-		if (!truthy((job = (yield* g.new_(f, live(J), []))))) {
+	for (J of each(all_jobs)) {
+		if (!(job = (yield* new_(J)))) {
 			continue;
 		}
-		if (!isEqual(rt.fv(f, "faction", live(job)), live(faction))) {
+		if (job.faction != faction) {
 			continue;
 		}
-		if (!truthy((yield* g.callName(f, live(job), "config_check", [])))) {
+		if (!job.config_check()) {
 			continue;
 		}
-		if (!truthy((yield* g.callName(f, live(job), "map_check", [])))) {
+		if (!job.map_check()) {
 			continue;
 		}
-		rt.modSrcVar(f, "occupations", live(job), add);
-		rt.setAt(rt.sv(f, "name_occupations"), rt.fv(f, "title", live(job)), live(job));
-		rt.setAt(rt.sv(f, "type_occupations"), live(J), live(job));
+		this.occupations += job;
+		rt.setAt(this.name_occupations, job.title, job);
+		rt.setAt(this.type_occupations, J, job);
 	}
-	rt.endFor(f, 0);
 	return 1;
 }, true);
 
-// /datum/controller/subsystem/job/proc/Debug  (code/controllers/subsystem/job.dm:50)
+// job.dm:50
 rt.def("/datum/controller/subsystem/job/proc/Debug", function Debug(f: Frame, text: Value) {
-	if (!truthy(rt.gl("Debug2"))) {
+	if (!GLOB.Debug2) {
 		return 0;
 	}
-	rt.callName(f, rt.sv(f, "job_debug"), "Add", [live(text)]);
+	this.job_debug.Add(text);
 	return 1;
 });
 
-// /datum/controller/subsystem/job/proc/GetJob  (code/controllers/subsystem/job.dm:57)  may sleep
+// job.dm:57
 rt.def("/datum/controller/subsystem/job/proc/GetJob", function* GetJob(f: Frame, rank: Value) {
-	f.vars = () => [rank];
-	if (!truthy(rt.len(f, rt.sv(f, "occupations")))) {
-		yield* g.srcCall(f, "SetupOccupations");
+	if (!rt.len(f, this.occupations)) {
+		yield* this.SetupOccupations();
 	}
-	return rt.index(rt.sv(f, "name_occupations"), live(rank));
+	return rt.index(this.name_occupations, rank);
 }, true);
 
-// /datum/controller/subsystem/job/proc/GetJobType  (code/controllers/subsystem/job.dm:62)  may sleep
+// job.dm:62
 rt.def("/datum/controller/subsystem/job/proc/GetJobType", function* GetJobType(f: Frame, jobtype: Value) {
-	f.vars = () => [jobtype];
-	if (!truthy(rt.len(f, rt.sv(f, "occupations")))) {
-		yield* g.srcCall(f, "SetupOccupations");
+	if (!rt.len(f, this.occupations)) {
+		yield* this.SetupOccupations();
 	}
-	return rt.index(rt.sv(f, "type_occupations"), live(jobtype));
+	return rt.index(this.type_occupations, jobtype);
 }, true);
 
-// /datum/controller/subsystem/job/proc/AssignRole  (code/controllers/subsystem/job.dm:67)  may sleep
+// job.dm:67
 rt.def("/datum/controller/subsystem/job/proc/AssignRole", function* AssignRole(f: Frame, player: Value, rank: Value, latejoin: Value) {
 	let job: Value = null, position_limit: Value = null;
-	f.vars = () => [player, rank, latejoin, job, position_limit];
-	if (live(latejoin) === null) {
-		latejoin = 0;
-	}
-	yield* g.srcCall(f, "Debug", fmt("Running AR, Player: ＀, Rank: ＀, LJ: ＀", [live(player), live(rank), live(latejoin)]));
-	if (((truthy(live(player)) && truthy(rt.fv(f, "mind", live(player)))) && truthy(live(rank)))) {
-		if (!truthy((job = (yield* g.srcCall(f, "GetJob", live(rank)))))) {
+	latejoin ??= 0;
+	this.Debug(`Running AR, Player: ${player}, Rank: ${rank}, LJ: ${latejoin}`);
+	if (player && player.mind && rank) {
+		if (!(job = (yield* this.GetJob(rank)))) {
 			return 0;
 		}
-		if (truthy((yield* g.call(f, P("/proc/jobban_isbanned"), null, [live(player), live(rank)])))) {
+		if (jobban_isbanned(player, rank)) {
 			return 0;
 		}
-		position_limit = rt.fv(f, "total_positions", live(job));
-		if (!truthy(live(latejoin))) {
-			position_limit = rt.fv(f, "spawn_positions", live(job));
+		position_limit = job.total_positions;
+		if (!latejoin) {
+			position_limit = job.spawn_positions;
 		}
-		yield* g.srcCall(f, "Debug", fmt("Player: ＀ is now Rank: ＀, JCP:＀, JPL:＀", [live(player), live(rank), rt.fv(f, "current_positions", live(job)), live(position_limit)]));
-		rt.setFv(f, "assigned_role", rt.fv(f, "mind", live(player)), live(rank));
-		(rt.modSrcVar(f, "unassigned", live(player), subtract));
-		rt.incField(f, live(job), "current_positions", 1, true);
+		this.Debug(`Player: ${player} is now Rank: ${rank}, JCP:${job.current_positions}, JPL:${position_limit}`);
+		player.mind.assigned_role = rank;
+		this.unassigned -= player;
+		job.current_positions++;
 		return 1;
 	}
-	yield* g.srcCall(f, "Debug", fmt("AR has failed, Player: ＀, Rank: ＀", [live(player), live(rank)]));
+	this.Debug(`AR has failed, Player: ${player}, Rank: ${rank}`);
 	return 0;
 }, true);
 
-// /datum/controller/subsystem/job/proc/FindOccupationCandidates  (code/controllers/subsystem/job.dm:89)
+// job.dm:89
 rt.def("/datum/controller/subsystem/job/proc/FindOccupationCandidates", function FindOccupationCandidates(f: Frame, job: Value, level: Value, flag: Value) {
-	let candidates: Value = null, player: Value = null;
-	let $e: any;
-	f.vars = () => [candidates, player, $e];
-	rt.callSrc(f, "Debug", [fmt("Running FOC, Job: ＀, Level: ＀, Flag: ＀", [live(job), live(level), live(flag)])]);
-	candidates = rt.list();
-	player = null;
-	rt.forList(f, 0, rt.sv(f, "unassigned"), T("/mob/dead/new_player"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		player = $e;
-		if (truthy(rt.call(f, P("/proc/jobban_isbanned"), null, [live(player), rt.fv(f, "title", live(job))]))) {
-			rt.callSrc(f, "Debug", [fmt("FOC isbanned failed, Player: ＀", [live(player)])]);
+	let player: Value = null;
+	this.Debug(`Running FOC, Job: ${job}, Level: ${level}, Flag: ${flag}`);
+	let candidates: Value = list();
+	for (player of each(this.unassigned, T("/mob/dead/new_player"))) {
+		if (jobban_isbanned(player, job.title)) {
+			this.Debug(`FOC isbanned failed, Player: ${player}`);
 			continue;
 		}
-		if ((truthy(live(flag)) && !truthy((rt.isIn(f, live(flag), rt.gv(f, "be_special", rt.gv(f, "prefs", rt.fv(f, "client", live(player))))) ? 1 : 0)))) {
-			rt.callSrc(f, "Debug", [fmt("FOC flag failed, Player: ＀, Flag: ＀, ", [live(player), live(flag)])]);
+		if (flag && !rt.isIn(f, flag, player.client.prefs.be_special)) {
+			this.Debug(`FOC flag failed, Player: ${player}, Flag: ${flag}, `);
 			continue;
 		}
-		if (truthy((rt.isIn(f, (rt.fv(f, "mind", live(player)) && rt.fv(f, "title", live(job))), rt.gv(f, "restricted_roles", rt.fv(f, "mind", live(player)))) ? 1 : 0))) {
-			rt.callSrc(f, "Debug", [fmt("FOC incompatible with antagonist role, Player: ＀", [live(player)])]);
+		if (rt.isIn(f, (player.mind && job.title), player.mind.restricted_roles)) {
+			this.Debug(`FOC incompatible with antagonist role, Player: ${player}`);
 			continue;
 		}
-		if ((truthy(rt.fv(f, "enforce_human_authority", rt.gl("config"))) && !truthy(rt.callName(f, rt.gv(f, "pref_species", rt.gv(f, "prefs", rt.fv(f, "client", live(player)))), "qualifies_for_rank", [rt.fv(f, "title", live(job)), rt.gv(f, "features", rt.gv(f, "prefs", rt.fv(f, "client", live(player))))])))) {
-			rt.callSrc(f, "Debug", [fmt("FOC non-human failed, Player: ＀", [live(player)])]);
+		if (GLOB.config.enforce_human_authority && !player.client.prefs.pref_species.qualifies_for_rank(job.title, player.client.prefs.features)) {
+			this.Debug(`FOC non-human failed, Player: ${player}`);
 			continue;
 		}
-		if (truthy(rt.bitAnd(rt.callName(f, rt.gv(f, "prefs", rt.fv(f, "client", live(player))), "GetJobDepartment", [live(job), live(level)]), rt.fv(f, "flag", live(job))))) {
-			rt.callSrc(f, "Debug", [fmt("FOC pass, Player: ＀, Level:＀", [live(player), live(level)])]);
-			candidates = rt.modify(live(candidates), live(player), add);
+		if (rt.bitAnd(player.client.prefs.GetJobDepartment(job, level), job.flag)) {
+			this.Debug(`FOC pass, Player: ${player}, Level:${level}`);
+			candidates += player;
 		}
 	}
-	rt.endFor(f, 0);
-	return live(candidates);
+	return candidates;
 });
 
-// /datum/controller/subsystem/job/proc/GiveRandomJob  (code/controllers/subsystem/job.dm:113)  may sleep
+// job.dm:113
 rt.def("/datum/controller/subsystem/job/proc/GiveRandomJob", function* GiveRandomJob(f: Frame, player: Value) {
 	let job: Value = null;
-	let $e: any;
-	f.vars = () => [player, job, $e];
-	yield* g.srcCall(f, "Debug", fmt("GRJ Giving random job, Player: ＀", [live(player)]));
+	this.Debug(`GRJ Giving random job, Player: ${player}`);
 	f.dot = 0;
-	job = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/shuffle"), null, [rt.sv(f, "occupations")])), T("/datum/job"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		job = $e;
-		if (!truthy(live(job))) {
+	for (job of each(shuffle(this.occupations), T("/datum/job"))) {
+		if (!job) {
 			continue;
 		}
-		if (truthy(rt.op(f, "IsType", [], [live(job), (yield* g.srcCall(f, "GetJob", "Assistant"))]))) {
+		if (rt.op(f, "IsType", [], [job, (yield* this.GetJob("Assistant"))])) {
 			continue;
 		}
-		if (truthy((rt.isIn(f, rt.fv(f, "title", live(job)), rt.gl("command_positions")) ? 1 : 0))) {
+		if (rt.isIn(f, job.title, GLOB.command_positions)) {
 			continue;
 		}
-		if (truthy((yield* g.call(f, P("/proc/jobban_isbanned"), null, [live(player), rt.fv(f, "title", live(job))])))) {
-			yield* g.srcCall(f, "Debug", fmt("GRJ isbanned failed, Player: ＀, Job: ＀", [live(player), rt.fv(f, "title", live(job))]));
+		if (jobban_isbanned(player, job.title)) {
+			this.Debug(`GRJ isbanned failed, Player: ${player}, Job: ${job.title}`);
 			continue;
 		}
-		if (truthy((rt.isIn(f, (rt.fv(f, "mind", live(player)) && rt.fv(f, "title", live(job))), rt.gv(f, "restricted_roles", rt.fv(f, "mind", live(player)))) ? 1 : 0))) {
-			yield* g.srcCall(f, "Debug", fmt("GRJ incompatible with antagonist role, Player: ＀, Job: ＀", [live(player), rt.fv(f, "title", live(job))]));
+		if (rt.isIn(f, (player.mind && job.title), player.mind.restricted_roles)) {
+			this.Debug(`GRJ incompatible with antagonist role, Player: ${player}, Job: ${job.title}`);
 			continue;
 		}
-		if ((truthy(rt.fv(f, "enforce_human_authority", rt.gl("config"))) && !truthy((yield* g.callName(f, rt.gv(f, "pref_species", rt.gv(f, "prefs", rt.fv(f, "client", live(player)))), "qualifies_for_rank", [rt.fv(f, "title", live(job)), rt.gv(f, "features", rt.gv(f, "prefs", rt.fv(f, "client", live(player))))]))))) {
-			yield* g.srcCall(f, "Debug", fmt("GRJ non-human failed, Player: ＀", [live(player)]));
+		if (GLOB.config.enforce_human_authority && !player.client.prefs.pref_species.qualifies_for_rank(job.title, player.client.prefs.features)) {
+			this.Debug(`GRJ non-human failed, Player: ${player}`);
 			continue;
 		}
-		if ((rt.lt(rt.fv(f, "current_positions", live(job)), rt.fv(f, "spawn_positions", live(job))) || isEqual(rt.fv(f, "spawn_positions", live(job)), -1))) {
-			yield* g.srcCall(f, "Debug", fmt("GRJ Random job given, Player: ＀, Job: ＀", [live(player), live(job)]));
-			if (truthy((yield* g.srcCall(f, "AssignRole", live(player), rt.fv(f, "title", live(job)))))) {
+		if (job.current_positions < job.spawn_positions || job.spawn_positions == -1) {
+			this.Debug(`GRJ Random job given, Player: ${player}, Job: ${job}`);
+			if (yield* this.AssignRole(player, job.title)) {
 				return 1;
 			}
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /datum/controller/subsystem/job/proc/ResetOccupations  (code/controllers/subsystem/job.dm:148)  may sleep
+// job.dm:148
 rt.def("/datum/controller/subsystem/job/proc/ResetOccupations", function* ResetOccupations(f: Frame) {
 	let player: Value = null;
-	let $e: any;
-	f.vars = () => [player, $e];
-	player = null;
-	rt.forList(f, 0, rt.gl("player_list"), T("/mob/dead/new_player"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		player = $e;
-		if ((truthy(live(player)) && truthy(rt.fv(f, "mind", live(player))))) {
-			rt.setFv(f, "assigned_role", rt.fv(f, "mind", live(player)), null);
-			rt.setFv(f, "special_role", rt.fv(f, "mind", live(player)), null);
+	for (player of each(GLOB.player_list, T("/mob/dead/new_player"))) {
+		if (player && player.mind) {
+			player.mind.assigned_role = null;
+			player.mind.special_role = null;
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.srcCall(f, "SetupOccupations");
-	rt.setSv(f, "unassigned", rt.list());
-	return live(f.dot);
+	yield* this.SetupOccupations();
+	this.unassigned = list();
+	return f.dot;
 }, true);
 
-// /datum/controller/subsystem/job/proc/FillHeadPosition  (code/controllers/subsystem/job.dm:161)  may sleep
+// job.dm:161
 rt.def("/datum/controller/subsystem/job/proc/FillHeadPosition", function* FillHeadPosition(f: Frame) {
 	let level: Value = null, command_position: Value = null, job: Value = null, candidates: Value = null, candidate: Value = null;
 	let $e: any;
-	f.vars = () => [level, command_position, job, candidates, candidate, $e];
-	level = null;
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		level = $e;
 		command_position = null;
-		rt.forList(f, 1, rt.gl("command_positions"));
-		while (($e = rt.next(f, 1)) !== undefined) {
-			command_position = $e;
-			if (!truthy((job = (yield* g.srcCall(f, "GetJob", live(command_position)))))) {
+		for (command_position of each(GLOB.command_positions)) {
+			if (!(job = (yield* this.GetJob(command_position)))) {
 				continue;
 			}
-			if ((rt.ge(rt.fv(f, "current_positions", live(job)), rt.fv(f, "total_positions", live(job))) && !isEqual(rt.fv(f, "total_positions", live(job)), -1))) {
+			if (job.current_positions >= job.total_positions && job.total_positions != -1) {
 				continue;
 			}
-			if (!truthy(rt.getLen(f, (candidates = (yield* g.srcCall(f, "FindOccupationCandidates", live(job), live(level))))))) {
+			if (!rt.len(f, (candidates = this.FindOccupationCandidates(job, level)))) {
 				continue;
 			}
-			if (truthy((yield* g.srcCall(f, "AssignRole", (candidate = rt.op(f, "PickUnweighted", [1], [live(candidates)])), live(command_position))))) {
+			if (yield* this.AssignRole((candidate = pick(candidates)), command_position)) {
 				return 1;
 			}
 		}
-		rt.endFor(f, 1);
 	}
 	rt.endFor(f, 0);
 	return 0;
 }, true);
 
-// /datum/controller/subsystem/job/proc/CheckHeadPositions  (code/controllers/subsystem/job.dm:180)  may sleep
+// job.dm:180
 rt.def("/datum/controller/subsystem/job/proc/CheckHeadPositions", function* CheckHeadPositions(f: Frame, level: Value) {
 	let command_position: Value = null, job: Value = null, candidates: Value = null, candidate: Value = null;
-	let $e: any;
-	f.vars = () => [level, command_position, job, candidates, candidate, $e];
-	command_position = null;
-	rt.forList(f, 0, rt.gl("command_positions"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		command_position = $e;
-		if (!truthy((job = (yield* g.srcCall(f, "GetJob", live(command_position)))))) {
+	for (command_position of each(GLOB.command_positions)) {
+		if (!(job = (yield* this.GetJob(command_position)))) {
 			continue;
 		}
-		if ((rt.ge(rt.fv(f, "current_positions", live(job)), rt.fv(f, "total_positions", live(job))) && !isEqual(rt.fv(f, "total_positions", live(job)), -1))) {
+		if (job.current_positions >= job.total_positions && job.total_positions != -1) {
 			continue;
 		}
-		if (!truthy(rt.getLen(f, (candidates = (yield* g.srcCall(f, "FindOccupationCandidates", live(job), live(level))))))) {
+		if (!rt.len(f, (candidates = this.FindOccupationCandidates(job, level)))) {
 			continue;
 		}
-		yield* g.srcCall(f, "AssignRole", (candidate = rt.op(f, "PickUnweighted", [1], [live(candidates)])), live(command_position));
+		yield* this.AssignRole((candidate = pick(candidates)), command_position);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /datum/controller/subsystem/job/proc/FillAIPosition  (code/controllers/subsystem/job.dm:194)  may sleep
+// job.dm:194
 rt.def("/datum/controller/subsystem/job/proc/FillAIPosition", function* FillAIPosition(f: Frame) {
-	let ai_selected: Value = null, job: Value = null, i: Value = null, level: Value = null, candidates: Value = null, candidate: Value = null;
+	let job: Value = null, level: Value = null, candidates: Value = null, candidate: Value = null;
 	let $e: any;
-	f.vars = () => [ai_selected, job, i, level, candidates, candidate, $e];
-	ai_selected = 0;
-	if (!truthy((job = (yield* g.srcCall(f, "GetJob", "AI"))))) {
+	let ai_selected: Value = 0;
+	if (!(job = (yield* this.GetJob("AI")))) {
 		return 0;
 	}
-	i = null;
-	i = rt.fv(f, "total_positions", live(job));
-	while (rt.gt(live(i), 0)) {
+	let i: Value = job.total_positions;
+	while (i > 0) {
 		level = null;
 		rt.forRange(f, 0, 1, 3, 1);
 		while (($e = rt.next(f, 0)) !== undefined) {
 			level = $e;
-			candidates = rt.list();
-			if (truthy(rt.getLen(f, (candidates = (yield* g.srcCall(f, "FindOccupationCandidates", live(job), live(level))))))) {
-				if (truthy((yield* g.srcCall(f, "AssignRole", (candidate = rt.op(f, "PickUnweighted", [1], [live(candidates)])), "AI")))) {
-					ai_selected = rt.inc(live(ai_selected), 1);
+			candidates = list();
+			if (rt.len(f, (candidates = this.FindOccupationCandidates(job, level)))) {
+				if (yield* this.AssignRole((candidate = pick(candidates)), "AI")) {
+					ai_selected++;
 					break;
 				}
 			}
 		}
 		rt.endFor(f, 0);
-		i = rt.inc(live(i), -1);
+		i--;
 	}
-	if (truthy(live(ai_selected))) {
+	if (ai_selected) {
 		return 1;
 	}
 	return 0;
 }, true);
 
-// /datum/controller/subsystem/job/proc/DivideOccupations  (code/controllers/subsystem/job.dm:217)  may sleep
+// job.dm:217
 rt.def("/datum/controller/subsystem/job/proc/DivideOccupations", function* DivideOccupations(f: Frame) {
-	let A: Value = null, player: Value = null, assist: Value = null, assistant_candidates: Value = null, player_2: Value = null, shuffledoccupations: Value = null, level: Value = null, player_4: Value = null, job: Value = null, player_3: Value = null;
+	let A: Value = null, player: Value = null, assistant_candidates: Value = null, player_2: Value = null, level: Value = null, player_4: Value = null, job: Value = null, player_3: Value = null;
 	let $e: any;
-	f.vars = () => [A, player, assist, assistant_candidates, player_2, shuffledoccupations, level, player_4, job, player_3, $e];
-	yield* g.srcCall(f, "Debug", "Running DO");
-	if (truthy(rt.gl("SSticker"))) {
-		A = null;
-		rt.forList(f, 0, rt.sv(f, "occupations"), T("/datum/job/ai"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			A = $e;
-			if (truthy(rt.fv(f, "triai", rt.gl("SSticker")))) {
-				rt.setFv(f, "spawn_positions", live(A), 3);
+	this.Debug("Running DO");
+	if (GLOB.SSticker) {
+		for (A of each(this.occupations, T("/datum/job/ai"))) {
+			if (GLOB.SSticker.triai) {
+				A.spawn_positions = 3;
 			}
 		}
-		rt.endFor(f, 0);
 	}
-	player = null;
-	rt.forList(f, 0, rt.gl("player_list"), T("/mob/dead/new_player"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		player = $e;
-		if (((isEqual(rt.fv(f, "ready", live(player)), 1) && truthy(rt.fv(f, "mind", live(player)))) && !truthy(rt.gv(f, "assigned_role", rt.fv(f, "mind", live(player)))))) {
-			rt.modSrcVar(f, "unassigned", live(player), add);
+	for (player of each(GLOB.player_list, T("/mob/dead/new_player"))) {
+		if (player.ready == 1 && player.mind && !player.mind.assigned_role) {
+			this.unassigned += player;
 		}
 	}
-	rt.endFor(f, 0);
-	rt.setSv(f, "initial_players_to_assign", rt.len(f, rt.sv(f, "unassigned")));
-	yield* g.srcCall(f, "Debug", fmt("DO, Len: ＀", [rt.len(f, rt.sv(f, "unassigned"))]));
-	if (isEqual(rt.len(f, rt.sv(f, "unassigned")), 0)) {
+	this.initial_players_to_assign = rt.len(f, this.unassigned);
+	this.Debug(`DO, Len: ${rt.len(f, this.unassigned)}`);
+	if (rt.len(f, this.unassigned) == 0) {
 		return 0;
 	}
-	yield* g.srcCall(f, "setup_officer_positions");
-	if (truthy(rt.fv(f, "minimal_access_threshold", rt.gl("config")))) {
-		if (rt.gt(rt.fv(f, "minimal_access_threshold", rt.gl("config")), rt.len(f, rt.sv(f, "unassigned")))) {
-			rt.setFv(f, "jobs_have_minimal_access", rt.gl("config"), 0);
+	yield* this.setup_officer_positions();
+	if (GLOB.config.minimal_access_threshold) {
+		if (GLOB.config.minimal_access_threshold > rt.len(f, this.unassigned)) {
+			GLOB.config.jobs_have_minimal_access = 0;
 		} else {
-			rt.setFv(f, "jobs_have_minimal_access", rt.gl("config"), 1);
+			GLOB.config.jobs_have_minimal_access = 1;
 		}
 	}
-	rt.setSv(f, "unassigned", (yield* g.call(f, P("/proc/shuffle"), null, [rt.sv(f, "unassigned")])));
-	yield* g.srcCall(f, "HandleFeedbackGathering");
-	yield* g.srcCall(f, "Debug", "DO, Running Assistant Check 1");
-	assist = (yield* g.new_(f, T("/datum/job/assistant"), []));
-	yield* g.srcCall(f, "Debug", fmt("AC1, Candidates: ＀", [rt.getLen(f, (assistant_candidates = (yield* g.srcCall(f, "FindOccupationCandidates", live(assist), 3))))]));
-	player_2 = null;
-	rt.forList(f, 0, live(assistant_candidates), T("/mob/dead/new_player"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		player_2 = $e;
-		yield* g.srcCall(f, "Debug", fmt("AC1 pass, Player: ＀", [live(player_2)]));
-		yield* g.srcCall(f, "AssignRole", live(player_2), "Assistant");
-		(assistant_candidates = rt.modify(live(assistant_candidates), live(player_2), subtract));
+	this.unassigned = shuffle(this.unassigned);
+	this.HandleFeedbackGathering();
+	this.Debug("DO, Running Assistant Check 1");
+	let assist: Value = (yield* new_(T("/datum/job/assistant")));
+	this.Debug(`AC1, Candidates: ${rt.len(f, (assistant_candidates = this.FindOccupationCandidates(assist, 3)))}`);
+	for (player_2 of each(assistant_candidates, T("/mob/dead/new_player"))) {
+		this.Debug(`AC1 pass, Player: ${player_2}`);
+		yield* this.AssignRole(player_2, "Assistant");
+		assistant_candidates -= player_2;
 	}
-	rt.endFor(f, 0);
-	yield* g.srcCall(f, "Debug", "DO, AC1 end");
-	yield* g.srcCall(f, "Debug", "DO, Running Head Check");
-	yield* g.srcCall(f, "FillHeadPosition");
-	yield* g.srcCall(f, "Debug", "DO, Head Check end");
-	yield* g.srcCall(f, "Debug", "DO, Running AI Check");
-	yield* g.srcCall(f, "FillAIPosition");
-	yield* g.srcCall(f, "Debug", "DO, AI Check end");
-	yield* g.srcCall(f, "Debug", "DO, Running Standard Check");
-	shuffledoccupations = (yield* g.call(f, P("/proc/shuffle"), null, [rt.sv(f, "occupations")]));
-	level = null;
+	this.Debug("DO, AC1 end");
+	this.Debug("DO, Running Head Check");
+	yield* this.FillHeadPosition();
+	this.Debug("DO, Head Check end");
+	this.Debug("DO, Running AI Check");
+	yield* this.FillAIPosition();
+	this.Debug("DO, AI Check end");
+	this.Debug("DO, Running Standard Check");
+	let shuffledoccupations: Value = shuffle(this.occupations);
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		level = $e;
-		yield* g.srcCall(f, "CheckHeadPositions", live(level));
+		yield* this.CheckHeadPositions(level);
 		player_4 = null;
-		rt.forList(f, 1, rt.sv(f, "unassigned"), T("/mob/dead/new_player"));
-		while (($e = rt.next(f, 1)) !== undefined) {
-			player_4 = $e;
-			if (truthy((yield* g.srcCall(f, "PopcapReached")))) {
-				yield* g.srcCall(f, "RejectPlayer", live(player_4));
+		for (player_4 of each(this.unassigned, T("/mob/dead/new_player"))) {
+			if (this.PopcapReached()) {
+				this.RejectPlayer(player_4);
 			}
 			job = null;
-			rt.forList(f, 2, live(shuffledoccupations), T("/datum/job"));
-			while (($e = rt.next(f, 2)) !== undefined) {
-				job = $e;
-				if (!truthy(live(job))) {
+			for (job of each(shuffledoccupations, T("/datum/job"))) {
+				if (!job) {
 					continue;
 				}
-				if (truthy((yield* g.call(f, P("/proc/jobban_isbanned"), null, [live(player_4), rt.fv(f, "title", live(job))])))) {
-					yield* g.srcCall(f, "Debug", fmt("DO isbanned failed, Player: ＀, Job:＀", [live(player_4), rt.fv(f, "title", live(job))]));
+				if (jobban_isbanned(player_4, job.title)) {
+					this.Debug(`DO isbanned failed, Player: ${player_4}, Job:${job.title}`);
 					continue;
 				}
-				if (truthy((rt.isIn(f, (rt.fv(f, "mind", live(player_4)) && rt.fv(f, "title", live(job))), rt.gv(f, "restricted_roles", rt.fv(f, "mind", live(player_4)))) ? 1 : 0))) {
-					yield* g.srcCall(f, "Debug", fmt("DO incompatible with antagonist role, Player: ＀, Job:＀", [live(player_4), rt.fv(f, "title", live(job))]));
+				if (rt.isIn(f, (player_4.mind && job.title), player_4.mind.restricted_roles)) {
+					this.Debug(`DO incompatible with antagonist role, Player: ${player_4}, Job:${job.title}`);
 					continue;
 				}
-				if ((truthy(rt.fv(f, "enforce_human_authority", rt.gl("config"))) && !truthy((yield* g.callName(f, rt.gv(f, "pref_species", rt.gv(f, "prefs", rt.fv(f, "client", live(player_4)))), "qualifies_for_rank", [rt.fv(f, "title", live(job)), rt.gv(f, "features", rt.gv(f, "prefs", rt.fv(f, "client", live(player_4))))]))))) {
-					yield* g.srcCall(f, "Debug", fmt("DO non-human failed, Player: ＀, Job:＀", [live(player_4), rt.fv(f, "title", live(job))]));
+				if (GLOB.config.enforce_human_authority && !player_4.client.prefs.pref_species.qualifies_for_rank(job.title, player_4.client.prefs.features)) {
+					this.Debug(`DO non-human failed, Player: ${player_4}, Job:${job.title}`);
 					continue;
 				}
-				if (truthy(rt.bitAnd((yield* g.callName(f, rt.gv(f, "prefs", rt.fv(f, "client", live(player_4))), "GetJobDepartment", [live(job), live(level)])), rt.fv(f, "flag", live(job))))) {
-					if ((rt.lt(rt.fv(f, "current_positions", live(job)), rt.fv(f, "spawn_positions", live(job))) || isEqual(rt.fv(f, "spawn_positions", live(job)), -1))) {
-						yield* g.srcCall(f, "Debug", fmt("DO pass, Player: ＀, Level:＀, Job:＀", [live(player_4), live(level), rt.fv(f, "title", live(job))]));
-						yield* g.srcCall(f, "AssignRole", live(player_4), rt.fv(f, "title", live(job)));
-						(rt.modSrcVar(f, "unassigned", live(player_4), subtract));
+				if (rt.bitAnd(player_4.client.prefs.GetJobDepartment(job, level), job.flag)) {
+					if (job.current_positions < job.spawn_positions || job.spawn_positions == -1) {
+						this.Debug(`DO pass, Player: ${player_4}, Level:${level}, Job:${job.title}`);
+						yield* this.AssignRole(player_4, job.title);
+						this.unassigned -= player_4;
 						break;
 					}
 				}
 			}
-			rt.endFor(f, 2);
 		}
-		rt.endFor(f, 1);
 	}
 	rt.endFor(f, 0);
+	for (player_3 of each(this.unassigned, T("/mob/dead/new_player"))) {
+		if (this.PopcapReached()) {
+			this.RejectPlayer(player_3);
+		} else if (jobban_isbanned(player_3, "Assistant")) {
+			yield* this.GiveRandomJob(player_3);
+		}
+	}
 	player_3 = null;
-	rt.forList(f, 0, rt.sv(f, "unassigned"), T("/mob/dead/new_player"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		player_3 = $e;
-		if (truthy((yield* g.srcCall(f, "PopcapReached")))) {
-			yield* g.srcCall(f, "RejectPlayer", live(player_3));
+	for (player_3 of each(this.unassigned, T("/mob/dead/new_player"))) {
+		if (this.PopcapReached()) {
+			this.RejectPlayer(player_3);
+		} else if (player_3.client.prefs.joblessrole == 2) {
+			yield* this.GiveRandomJob(player_3);
+		}
+	}
+	this.Debug("DO, Standard Check end");
+	this.Debug("DO, Running AC2");
+	player_3 = null;
+	for (player_3 of each(this.unassigned, T("/mob/dead/new_player"))) {
+		if (this.PopcapReached()) {
+			this.RejectPlayer(player_3);
+		}
+		if (player_3.client.prefs.joblessrole == 1) {
+			this.Debug(`AC2 Assistant located, Player: ${player_3}`);
+			yield* this.AssignRole(player_3, "Assistant");
 		} else {
-			if (truthy((yield* g.call(f, P("/proc/jobban_isbanned"), null, [live(player_3), "Assistant"])))) {
-				yield* g.srcCall(f, "GiveRandomJob", live(player_3));
-			}
+			this.RejectPlayer(player_3);
 		}
 	}
-	rt.endFor(f, 0);
 	player_3 = null;
-	rt.forList(f, 0, rt.sv(f, "unassigned"), T("/mob/dead/new_player"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		player_3 = $e;
-		if (truthy((yield* g.srcCall(f, "PopcapReached")))) {
-			yield* g.srcCall(f, "RejectPlayer", live(player_3));
-		} else {
-			if (isEqual(rt.gv(f, "joblessrole", rt.gv(f, "prefs", rt.fv(f, "client", live(player_3)))), 2)) {
-				yield* g.srcCall(f, "GiveRandomJob", live(player_3));
-			}
+	for (player_3 of each(this.unassigned, T("/mob/dead/new_player"))) {
+		if (!(yield* this.GiveRandomJob(player_3))) {
+			yield* this.AssignRole(player_3, "Assistant");
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.srcCall(f, "Debug", "DO, Standard Check end");
-	yield* g.srcCall(f, "Debug", "DO, Running AC2");
-	player_3 = null;
-	rt.forList(f, 0, rt.sv(f, "unassigned"), T("/mob/dead/new_player"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		player_3 = $e;
-		if (truthy((yield* g.srcCall(f, "PopcapReached")))) {
-			yield* g.srcCall(f, "RejectPlayer", live(player_3));
-		}
-		if (isEqual(rt.gv(f, "joblessrole", rt.gv(f, "prefs", rt.fv(f, "client", live(player_3)))), 1)) {
-			yield* g.srcCall(f, "Debug", fmt("AC2 Assistant located, Player: ＀", [live(player_3)]));
-			yield* g.srcCall(f, "AssignRole", live(player_3), "Assistant");
-		} else {
-			yield* g.srcCall(f, "RejectPlayer", live(player_3));
-		}
-	}
-	rt.endFor(f, 0);
-	player_3 = null;
-	rt.forList(f, 0, rt.sv(f, "unassigned"), T("/mob/dead/new_player"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		player_3 = $e;
-		if (!truthy((yield* g.srcCall(f, "GiveRandomJob", live(player_3))))) {
-			yield* g.srcCall(f, "AssignRole", live(player_3), "Assistant");
-		}
-	}
-	rt.endFor(f, 0);
 	return 1;
 }, true);
 
-// /datum/controller/subsystem/job/proc/EquipRank  (code/controllers/subsystem/job.dm:361)  may sleep
+// job.dm:361
 rt.def("/datum/controller/subsystem/job/proc/EquipRank", function* EquipRank(f: Frame, M: Value, rank: Value, joined_late: Value) {
-	let N: Value = null, H: Value = null, job: Value = null, S: Value = null, sloc: Value = null, new_mob: Value = null;
+	let N: Value = null, H: Value = null, S: Value = null, sloc: Value = null, new_mob: Value = null;
 	let $0: any, $1: any, $e: any;
-	f.vars = () => [M, rank, joined_late, N, H, job, S, sloc, new_mob, $0, $1, $e];
-	if (live(joined_late) === null) {
-		joined_late = 0;
-	}
-	N = null;
-	H = null;
-	if (!truthy(live(joined_late))) {
-		H = rt.gv(f, "new_character", (N = live(M)));
+	joined_late ??= 0;
+	if (!joined_late) {
+		H = (N = M).new_character;
 	} else {
-		H = live(M);
+		H = M;
 	}
-	job = (yield* g.srcCall(f, "GetJob", live(rank)));
-	rt.setFv(f, "job", live(H), live(rank));
-	if (!truthy(live(joined_late))) {
-		S = null;
-		sloc = null;
-		rt.forList(f, 0, rt.gl("start_landmarks_list"), T("/obj/effect/landmark/start"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			sloc = $e;
-			if (!isEqual(rt.fv(f, "name", live(sloc)), live(rank))) {
-				S = live(sloc);
+	let job: Value = (yield* this.GetJob(rank));
+	H.job = rank;
+	if (!joined_late) {
+		for (sloc of each(GLOB.start_landmarks_list, T("/obj/effect/landmark/start"))) {
+			if (sloc.name != rank) {
+				S = sloc;
 				continue;
 			}
-			if (truthy(rt.locateIn(f, T("/mob/living"), rt.fv(f, "loc", live(sloc))))) {
+			if (rt.locateIn(f, T("/mob/living"), sloc.loc)) {
 				continue;
 			}
-			S = live(sloc);
+			S = sloc;
 			break;
 		}
-		rt.endFor(f, 0);
-		if (truthy(live(S))) {
-			yield* g.callSrc(f, "SendToAtom", [null, live(H), null, live(S), "buckle", 0], rt.Args.Named);
+		if (S) {
+			yield* this.SendToAtom(H, S, { buckle: 0 });
 		}
-		if (!truthy(live(S))) {
-			yield* g.call(f, P("/proc/log_world"), null, [fmt("Couldn't find a round start spawn point for ＀", [live(rank)])]);
-			yield* g.srcCall(f, "SendToLateJoin", live(H));
+		if (!S) {
+			log_world(`Couldn't find a round start spawn point for ${rank}`);
+			yield* this.SendToLateJoin(H);
 		}
 	}
-	if (truthy(rt.fv(f, "mind", live(H)))) {
-		rt.setFv(f, "assigned_role", rt.fv(f, "mind", live(H)), live(rank));
+	if (H.mind) {
+		H.mind.assigned_role = rank;
 	}
-	if (truthy(live(job))) {
-		if (truthy((yield* g.call(f, P("/proc/ismob"), null, [(new_mob = (yield* g.callName(f, live(job), "equip", [live(H)])))])))) {
-			H = live(new_mob);
-			if (!truthy(live(joined_late))) {
-				rt.setFv(f, "new_character", live(N), live(H));
+	if (job) {
+		if (ismob((new_mob = (yield* job.equip(H))))) {
+			H = new_mob;
+			if (!joined_late) {
+				N.new_character = H;
 			} else {
-				M = live(H);
+				M = H;
 			}
 		}
 	}
-	yield* g.call(f, P("/proc/to_chat"), null, [live(M), fmt("<b>You are the ＀.</b>", [live(rank)])]);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(M), fmt("<b>As the ＀ you answer directly to ＀. Special circumstances may change this.</b>", [live(rank), rt.fv(f, "supervisors", live(job))])]);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(M), "<b>To speak on your departments radio, use the :h button. To see others, look closely at your headset.</b>"]);
-	if (truthy(rt.fv(f, "req_admin_notify", live(job)))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(M), "<b>You are playing a job that is important for Game Progression. If you have to disconnect, please notify the admins via adminhelp.</b>"]);
+	to_chat(M, `<b>You are the ${rank}.</b>`);
+	to_chat(M, `<b>As the ${rank} you answer directly to ${job.supervisors}. Special circumstances may change this.</b>`);
+	to_chat(M, "<b>To speak on your departments radio, use the :h button. To see others, look closely at your headset.</b>");
+	if (job.req_admin_notify) {
+		to_chat(M, "<b>You are playing a job that is important for Game Progression. If you have to disconnect, please notify the admins via adminhelp.</b>");
 	}
-	if (truthy(rt.fv(f, "minimal_access_threshold", rt.gl("config")))) {
-		$0 = live(M);
-		if (truthy(rt.fv(f, "jobs_have_minimal_access", rt.gl("config")))) {
+	if (GLOB.config.minimal_access_threshold) {
+		$0 = M;
+		if (GLOB.config.jobs_have_minimal_access) {
 			$1 = "full crew, only your job's necessities";
 		} else {
 			$1 = "skeleton crew, additional access may";
 		}
-		yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<FONT color='blue'><B>As this station was initially staffed with a ＀ have been added to your ID card.</B></font>", [$1])]);
+		to_chat($0, `<FONT color='blue'><B>As this station was initially staffed with a ${$1} have been added to your ID card.</B></font>`);
 	}
-	if ((truthy(live(job)) && truthy(live(H)))) {
-		yield* g.callName(f, live(job), "after_spawn", [live(H), live(M)]);
+	if (job && H) {
+		yield* job.after_spawn(H, M);
 	}
 	// tg_js: in creative mode (src/vm/creative-map.ts) players can't be hurt: tg's admin Godmode flag (GODMODE), on from the start
-	if (truthy(live(H)) && truthy(yield* g.call(f, P("/proc/is_creative"), null, []))) {
-		rt.modField(f, live(H), "status_flags", 4096, rt.bitOr);
+	if (H && is_creative()) {
+		rt.modField(f, H, "status_flags", 4096, rt.bitOr);
 	}
-	return live(H);
+	return H;
 }, true);
 
-// /datum/controller/subsystem/job/proc/setup_officer_positions  (code/controllers/subsystem/job.dm:416)  may sleep
+// job.dm:416
 rt.def("/datum/controller/subsystem/job/proc/setup_officer_positions", function* setup_officer_positions(f: Frame) {
-	let J: Value = null, officer_positions: Value = null, equip_needed: Value = null, i: Value = null, spawnloc: Value = null;
-	f.vars = () => [J, officer_positions, equip_needed, i, spawnloc];
-	if (!truthy((J = (yield* g.callName(f, rt.gl("SSjob"), "GetJob", ["Security Officer"]))))) {
-		rt.throw_(f, (yield* g.new_(f, T("/exception"), ["setup_officer_positions(): Security officer job is missing", "code/controllers/subsystem/job.dm", 418])));
+	let J: Value = null, officer_positions: Value = null, equip_needed: Value = null, spawnloc: Value = null;
+	if (!(J = (yield* GLOB.SSjob.GetJob("Security Officer")))) {
+		rt.throw_(f, (yield* new_(T("/exception"), "setup_officer_positions(): Security officer job is missing", "code/controllers/subsystem/job.dm", 418)));
 	}
-	if (rt.gt(rt.fv(f, "security_scaling_coeff", rt.gl("config")), 0)) {
-		if (rt.gt(rt.fv(f, "spawn_positions", live(J)), 0)) {
-			yield* g.srcCall(f, "Debug", fmt("Setting open security officer positions to ＀", [(officer_positions = (yield* g.call(f, P("/proc/min"), null, [12, (yield* g.call(f, P("/proc/max"), null, [rt.fv(f, "spawn_positions", live(J)), (yield* g.call(f, P("/proc/round"), null, [divide(rt.len(f, rt.sv(f, "unassigned")), rt.fv(f, "security_scaling_coeff", rt.gl("config")))]))]))])))]));
-			rt.setFv(f, "total_positions", live(J), live(officer_positions));
-			rt.setFv(f, "spawn_positions", live(J), live(officer_positions));
+	if (GLOB.config.security_scaling_coeff > 0) {
+		if (J.spawn_positions > 0) {
+			this.Debug(`Setting open security officer positions to ${(officer_positions = min(12, max(J.spawn_positions, round(rt.len(f, this.unassigned) / GLOB.config.security_scaling_coeff))))}`);
+			J.total_positions = officer_positions;
+			J.spawn_positions = officer_positions;
 		}
 	}
-	if (rt.lt((equip_needed = rt.fv(f, "total_positions", live(J))), 0)) {
+	if ((equip_needed = J.total_positions) < 0) {
 		equip_needed = 12;
 	}
-	i = null;
-	i = subtract(live(equip_needed), 5);
-	while (rt.gt(live(i), 0)) {
-		if (truthy(rt.len(f, rt.gl("secequipment")))) {
-			yield* g.new_(f, T("/obj/structure/closet/secure_closet/security/sec"), [(spawnloc = rt.index(rt.gl("secequipment"), 1))]);
-			(rt.modGl("secequipment", live(spawnloc), subtract));
+	let i: Value = equip_needed - 5;
+	while (i > 0) {
+		if (rt.len(f, GLOB.secequipment)) {
+			yield* new_(T("/obj/structure/closet/secure_closet/security/sec"), (spawnloc = rt.index(GLOB.secequipment, 1)));
+			GLOB.secequipment -= spawnloc;
 		} else {
 			break;
 		}
-		i = rt.inc(live(i), -1);
+		i--;
 	}
 	return f.dot;
 }, true);
 
-// /datum/controller/subsystem/job/proc/LoadJobs  (code/controllers/subsystem/job.dm:441)
+// job.dm:441
 rt.def("/datum/controller/subsystem/job/proc/LoadJobs", function LoadJobs(f: Frame) {
-	let jobstext: Value = null, J: Value = null, jobs: Value = null;
-	let $e: any;
-	f.vars = () => [jobstext, J, jobs, $e];
-	jobstext = rt.call(f, P("/proc/file2text"), null, ["config/jobs.txt"]);
-	J = null;
-	rt.forList(f, 0, rt.sv(f, "occupations"), T("/datum/job"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		J = $e;
-		rt.callName(f, (jobs = rt.new_(f, T("/regex"), [fmt("＀=(-1|\\d+),(-1|\\d+)", [rt.fv(f, "title", live(J))])])), "Find", [live(jobstext)]);
-		rt.setFv(f, "total_positions", live(J), rt.call(f, P("/proc/text2num"), null, [rt.index(rt.fv(f, "group", live(jobs)), 1)]));
-		rt.setFv(f, "spawn_positions", live(J), rt.call(f, P("/proc/text2num"), null, [rt.index(rt.fv(f, "group", live(jobs)), 2)]));
+	let J: Value = null, jobs: Value = null;
+	let jobstext: Value = file2text("config/jobs.txt");
+	for (J of each(this.occupations, T("/datum/job"))) {
+		(jobs = new_(T("/regex"), `${J.title}=(-1|\\d+),(-1|\\d+)`)).Find(jobstext);
+		J.total_positions = text2num(rt.index(jobs.group, 1));
+		J.spawn_positions = text2num(rt.index(jobs.group, 2));
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /datum/controller/subsystem/job/proc/HandleFeedbackGathering  (code/controllers/subsystem/job.dm:449)
+// job.dm:449
 rt.def("/datum/controller/subsystem/job/proc/HandleFeedbackGathering", function HandleFeedbackGathering(f: Frame) {
 	let job: Value = null, tmp_str: Value = null, level1: Value = null, level2: Value = null, level3: Value = null, level4: Value = null, level5: Value = null, level6: Value = null, player: Value = null;
-	let $e: any;
-	f.vars = () => [job, tmp_str, level1, level2, level3, level4, level5, level6, player, $e];
-	job = null;
-	rt.forList(f, 0, rt.sv(f, "occupations"), T("/datum/job"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		job = $e;
-		tmp_str = fmt("|＀|", [rt.fv(f, "title", live(job))]);
+	for (job of each(this.occupations, T("/datum/job"))) {
+		tmp_str = `|${job.title}|`;
 		level1 = 0;
 		level2 = 0;
 		level3 = 0;
@@ -653,154 +547,125 @@ rt.def("/datum/controller/subsystem/job/proc/HandleFeedbackGathering", function 
 		level5 = 0;
 		level6 = 0;
 		player = null;
-		rt.forList(f, 1, rt.gl("player_list"), T("/mob/dead/new_player"));
-		while (($e = rt.next(f, 1)) !== undefined) {
-			player = $e;
-			if (!((isEqual(rt.fv(f, "ready", live(player)), 1) && truthy(rt.fv(f, "mind", live(player)))) && !truthy(rt.gv(f, "assigned_role", rt.fv(f, "mind", live(player)))))) {
+		for (player of each(GLOB.player_list, T("/mob/dead/new_player"))) {
+			if (!(player.ready == 1 && player.mind && !player.mind.assigned_role)) {
 				continue;
 			}
-			if (truthy(rt.call(f, P("/proc/jobban_isbanned"), null, [live(player), rt.fv(f, "title", live(job))]))) {
-				level5 = rt.inc(live(level5), 1);
+			if (jobban_isbanned(player, job.title)) {
+				level5++;
 				continue;
 			}
-			if (truthy(rt.bitAnd(rt.callName(f, rt.gv(f, "prefs", rt.fv(f, "client", live(player))), "GetJobDepartment", [live(job), 1]), rt.fv(f, "flag", live(job))))) {
-				level1 = rt.inc(live(level1), 1);
+			if (rt.bitAnd(player.client.prefs.GetJobDepartment(job, 1), job.flag)) {
+				level1++;
+			} else if (rt.bitAnd(player.client.prefs.GetJobDepartment(job, 2), job.flag)) {
+				level2++;
+			} else if (rt.bitAnd(player.client.prefs.GetJobDepartment(job, 3), job.flag)) {
+				level3++;
 			} else {
-				if (truthy(rt.bitAnd(rt.callName(f, rt.gv(f, "prefs", rt.fv(f, "client", live(player))), "GetJobDepartment", [live(job), 2]), rt.fv(f, "flag", live(job))))) {
-					level2 = rt.inc(live(level2), 1);
-				} else {
-					if (truthy(rt.bitAnd(rt.callName(f, rt.gv(f, "prefs", rt.fv(f, "client", live(player))), "GetJobDepartment", [live(job), 3]), rt.fv(f, "flag", live(job))))) {
-						level3 = rt.inc(live(level3), 1);
-					} else {
-						level4 = rt.inc(live(level4), 1);
-					}
-				}
+				level4++;
 			}
 		}
-		rt.endFor(f, 1);
-		tmp_str = rt.modify(live(tmp_str), fmt("HIGH=＀|MEDIUM=＀|LOW=＀|NEVER=＀|BANNED=＀|YOUNG=＀|-", [live(level1), live(level2), live(level3), live(level4), live(level5), live(level6)]), add);
+		tmp_str += `HIGH=${level1}|MEDIUM=${level2}|LOW=${level3}|NEVER=${level4}|BANNED=${level5}|YOUNG=${level6}|-`;
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /datum/controller/subsystem/job/proc/PopcapReached  (code/controllers/subsystem/job.dm:479)
+// job.dm:479
 rt.def("/datum/controller/subsystem/job/proc/PopcapReached", function PopcapReached(f: Frame) {
 	let relevent_cap: Value = null;
-	f.vars = () => [relevent_cap];
-	if ((truthy(rt.fv(f, "hard_popcap", rt.gl("config"))) || truthy(rt.fv(f, "extreme_popcap", rt.gl("config"))))) {
-		relevent_cap = rt.call(f, P("/proc/max"), null, [rt.fv(f, "hard_popcap", rt.gl("config")), rt.fv(f, "extreme_popcap", rt.gl("config"))]);
-		if (rt.ge(subtract(rt.sv(f, "initial_players_to_assign"), rt.len(f, rt.sv(f, "unassigned"))), live(relevent_cap))) {
+	if (GLOB.config.hard_popcap || GLOB.config.extreme_popcap) {
+		relevent_cap = max(GLOB.config.hard_popcap, GLOB.config.extreme_popcap);
+		if (this.initial_players_to_assign - rt.len(f, this.unassigned) >= relevent_cap) {
 			return 1;
 		}
 	}
 	return 0;
 });
 
-// /datum/controller/subsystem/job/proc/RejectPlayer  (code/controllers/subsystem/job.dm:486)
+// job.dm:486
 rt.def("/datum/controller/subsystem/job/proc/RejectPlayer", function RejectPlayer(f: Frame, player: Value) {
-	if ((truthy(rt.fv(f, "mind", live(player))) && truthy(rt.gv(f, "special_role", rt.fv(f, "mind", live(player)))))) {
-		return live(f.dot);
+	if (player.mind && player.mind.special_role) {
+		return f.dot;
 	}
-	if (truthy(rt.callSrc(f, "PopcapReached", []))) {
-		rt.callSrc(f, "Debug", [fmt("Popcap overflow Check observer located, Player: ＀", [live(player)])]);
+	if (this.PopcapReached()) {
+		this.Debug(`Popcap overflow Check observer located, Player: ${player}`);
 	}
-	rt.call(f, P("/proc/to_chat"), null, [live(player), "<b>You have failed to qualify for any job you desired.</b>"]);
-	(rt.modSrcVar(f, "unassigned", live(player), subtract));
-	rt.setFv(f, "ready", live(player), 0);
+	to_chat(player, "<b>You have failed to qualify for any job you desired.</b>");
+	this.unassigned -= player;
+	player.ready = PLAYER_NOT_READY;
 	return f.dot;
 });
 
-// /datum/controller/subsystem/job/proc/Recover  (code/controllers/subsystem/job.dm:498)  may sleep
+// job.dm:498
 rt.def("/datum/controller/subsystem/job/proc/Recover", function* Recover(f: Frame) {
-	let oldjobs: Value = null, J: Value = null;
-	let $e: any;
-	f.vars = () => [oldjobs, J, $e];
-	oldjobs = rt.fv(f, "occupations", rt.gl("SSjob"));
-	yield* g.call(f, P("/proc/sleep"), null, [20]);
-	J = null;
-	rt.forList(f, 0, live(oldjobs), T("/datum/job"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		J = $e;
-		yield* g.call(f, P("/proc/ImmediateInvokeAsync"), null, [live(f.src), P("/datum/controller/subsystem/job/proc/RecoverJob"), live(J)]);
+	let J: Value = null;
+	let oldjobs: Value = GLOB.SSjob.occupations;
+	yield* sleep(20);
+	for (J of each(oldjobs, T("/datum/job"))) {
+		yield* ImmediateInvokeAsync(this, P("/datum/controller/subsystem/job/proc/RecoverJob"), J);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true, { waitfor: false });
 
-// /datum/controller/subsystem/job/proc/RecoverJob  (code/controllers/subsystem/job.dm:503)  may sleep
+// job.dm:503
 rt.def("/datum/controller/subsystem/job/proc/RecoverJob", function* RecoverJob(f: Frame, J: Value) {
 	let newjob: Value = null;
-	f.vars = () => [J, newjob];
-	if (!truthy((rt.istype((newjob = (yield* g.srcCall(f, "GetJob", rt.fv(f, "title", live(J))))), T("/datum/job")) ? 1 : 0))) {
-		return live(f.dot);
+	if (!rt.istype((newjob = (yield* this.GetJob(J.title))), T("/datum/job"))) {
+		return f.dot;
 	}
-	rt.setFv(f, "total_positions", live(newjob), rt.fv(f, "total_positions", live(J)));
-	rt.setFv(f, "spawn_positions", live(newjob), rt.fv(f, "spawn_positions", live(J)));
-	rt.setFv(f, "current_positions", live(newjob), rt.fv(f, "current_positions", live(J)));
+	newjob.total_positions = J.total_positions;
+	newjob.spawn_positions = J.spawn_positions;
+	newjob.current_positions = J.current_positions;
 	return f.dot;
 }, true, { argTypes: [{ path: "/datum/job" }] });
 
-// /datum/controller/subsystem/job/proc/SendToAtom  (code/controllers/subsystem/job.dm:511)  may sleep
+// job.dm:511
 rt.def("/datum/controller/subsystem/job/proc/SendToAtom", function* SendToAtom(f: Frame, M: Value, A: Value, buckle: Value) {
 	let C: Value = null;
-	f.vars = () => [M, A, buckle, C];
-	if (((truthy(live(buckle)) && truthy((rt.istype(live(M), T("/mob/living")) ? 1 : 0))) && truthy((rt.istype(live(A), T("/obj/structure/chair")) ? 1 : 0)))) {
-		if (truthy((yield* g.callName(f, (C = live(A)), "buckle_mob", [live(M), 0, 0])))) {
-			return live(f.dot);
+	if (buckle && rt.istype(M, T("/mob/living")) && rt.istype(A, T("/obj/structure/chair"))) {
+		if (yield* (C = A).buckle_mob(M, 0, 0)) {
+			return f.dot;
 		}
 	}
-	yield* g.callName(f, live(M), "forceMove", [rt.getStep(f, live(A), 0)]);
+	yield* M.forceMove(rt.getStep(f, A, 0));
 	return f.dot;
 }, true);
 
-// /datum/controller/subsystem/job/proc/SendToLateJoin  (code/controllers/subsystem/job.dm:518)  may sleep
+// job.dm:518
 rt.def("/datum/controller/subsystem/job/proc/SendToLateJoin", function* SendToLateJoin(f: Frame, M: Value, buckle: Value) {
 	let A: Value = null, C: Value = null, avail: Value = null, _T: Value = null, arrivals_turfs: Value = null, _T_2: Value = null, msg: Value = null;
-	let $e: any;
-	f.vars = () => [M, buckle, A, C, avail, _T, arrivals_turfs, _T_2, msg, $e];
-	if (live(buckle) === null) {
-		buckle = 1;
-	}
-	if (truthy(rt.len(f, rt.sv(f, "latejoin_trackers")))) {
-		yield* g.srcCall(f, "SendToAtom", live(M), rt.op(f, "PickUnweighted", [1], [rt.sv(f, "latejoin_trackers")]), live(buckle));
+	buckle ??= 1;
+	if (rt.len(f, this.latejoin_trackers)) {
+		yield* this.SendToAtom(M, pick(this.latejoin_trackers), buckle);
 	} else {
-		if (truthy((A = rt.locateIn(f, T("/area/shuttle/arrival"), rt.gl("sortedAreas"))))) {
-			if (truthy((C = rt.locateIn(f, T("/obj/structure/chair"), live(A))))) {
-				yield* g.srcCall(f, "SendToAtom", live(M), live(C), live(buckle));
-				return live(f.dot);
+		if (A = rt.locateIn(f, T("/area/shuttle/arrival"), GLOB.sortedAreas)) {
+			if (C = rt.locateIn(f, T("/obj/structure/chair"), A)) {
+				yield* this.SendToAtom(M, C, buckle);
+				return f.dot;
 			} else {
-				avail = rt.list();
-				_T = null;
-				rt.forList(f, 0, live(A), T("/turf"));
-				while (($e = rt.next(f, 0)) !== undefined) {
-					_T = $e;
-					if (!truthy((yield* g.call(f, P("/proc/is_blocked_turf"), null, [live(_T), 1])))) {
-						avail = rt.modify(live(avail), live(_T), add);
+				avail = list();
+				for (_T of each(A, T("/turf"))) {
+					if (!is_blocked_turf(_T, 1)) {
+						avail += _T;
 					}
 				}
-				rt.endFor(f, 0);
-				if (truthy(rt.len(f, live(avail)))) {
-					yield* g.srcCall(f, "SendToAtom", live(M), rt.op(f, "PickUnweighted", [1], [live(avail)]), 0);
-					return live(f.dot);
+				if (rt.len(f, avail)) {
+					yield* this.SendToAtom(M, pick(avail), 0);
+					return f.dot;
 				}
 			}
 		}
-		if (truthy(rt.getLen(f, (arrivals_turfs = (yield* g.call(f, P("/proc/shuffle"), null, [(yield* g.call(f, P("/proc/get_area_turfs"), null, [T("/area/shuttle/arrival")]))])))))) {
-			_T_2 = null;
-			rt.forList(f, 0, live(arrivals_turfs), T("/turf"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				_T_2 = $e;
-				if (!truthy((yield* g.call(f, P("/proc/is_blocked_turf"), null, [live(_T_2), 1])))) {
-					yield* g.srcCall(f, "SendToAtom", live(M), live(_T_2), 0);
-					return live(f.dot);
+		if (rt.len(f, (arrivals_turfs = shuffle(get_area_turfs(T("/area/shuttle/arrival")))))) {
+			for (_T_2 of each(arrivals_turfs, T("/turf"))) {
+				if (!is_blocked_turf(_T_2, 1)) {
+					yield* this.SendToAtom(M, _T_2, 0);
+					return f.dot;
 				}
 			}
-			rt.endFor(f, 0);
-			yield* g.srcCall(f, "SendToAtom", live(M), rt.index(live(arrivals_turfs), 1), 0);
+			yield* this.SendToAtom(M, rt.index(arrivals_turfs, 1), 0);
 		} else {
-			yield* g.call(f, P("/proc/message_admins"), null, [(msg = fmt("Unable to send mob ＀ to late join!", [live(M)]))]);
-			yield* g.call(f, P("/proc/CRASH"), null, [live(msg)]);
+			message_admins((msg = `Unable to send mob ${M} to late join!`));
+			CRASH(msg);
 		}
 	}
 	return f.dot;

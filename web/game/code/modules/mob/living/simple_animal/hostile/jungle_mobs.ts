@@ -1,7 +1,7 @@
-// From code/modules/mob/living/simple_animal/hostile/jungle_mobs.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/simple_animal/hostile/jungle_mobs.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(4964, "/mob/living/simple_animal/hostile/jungle", "/mob/living/simple_animal/hostile", {
@@ -23,16 +23,14 @@ rt.type(4964, "/mob/living/simple_animal/hostile/jungle", "/mob/living/simple_an
 	mob_size: 3,
 });
 
-// /mob/living/simple_animal/hostile/jungle/proc/<init>  (code/modules/mob/living/simple_animal/hostile/jungle_mobs.dm:3)
+// jungle_mobs.dm:3
 rt.def("/mob/living/simple_animal/hostile/jungle/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "atmos_requirements", rt.alist(f, ["min_oxy", 0, "max_oxy", 0, "min_tox", 0, "max_tox", 0, "min_co2", 0, "max_co2", 0, "min_n2", 0, "max_n2", 0]));
-	$0 = $0;
-	rt.setSv(f, "faction", rt.list("jungle"));
-	$0 = $0;
-	rt.setSv(f, "weather_immunities", rt.list("acid"));
+	parent_proc();
+	this.atmos_requirements = rt.alist(f, ["min_oxy", 0, "max_oxy", 0, "min_tox", 0, "max_tox", 0, "min_co2", 0, "max_co2", 0, "min_n2", 0, "max_n2", 0]);
+
+	this.faction = list("jungle");
+
+	this.weather_immunities = list("acid");
 	return f.dot;
 });
 
@@ -60,45 +58,42 @@ rt.type(4965, "/mob/living/simple_animal/hostile/jungle/mega_arachnid", "/mob/li
 	alpha: 50,
 });
 
-// /mob/living/simple_animal/hostile/jungle/mega_arachnid/proc/<init>  (code/modules/mob/living/simple_animal/hostile/jungle_mobs.dm:35)
+// jungle_mobs.dm:35
 rt.def("/mob/living/simple_animal/hostile/jungle/mega_arachnid/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "speak_emote", rt.list("chitters"));
+	parent_proc();
+	this.speak_emote = list("chitters");
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/jungle/mega_arachnid/proc/Life  (code/modules/mob/living/simple_animal/hostile/jungle_mobs.dm:47)
+// jungle_mobs.dm:47
 rt.def("/mob/living/simple_animal/hostile/jungle/mega_arachnid/proc/Life", function Life(f: Frame) {
 	let C: Value = null;
-	f.vars = () => [C];
-	rt.callSuper(f, [], rt.Args.Same);
-	if (((truthy(rt.sv(f, "target")) && rt.gt(rt.sv(f, "ranged_cooldown"), rt.worldTime(f))) && truthy((rt.istype(rt.sv(f, "target"), T("/mob/living/carbon")) ? 1 : 0)))) {
-		if ((!truthy(rt.gv(f, "legcuffed", (C = rt.sv(f, "target")))) && rt.lt(rt.fv(f, "health", live(C)), 50))) {
-			rt.setSv(f, "retreat_distance", 9);
-			rt.setSv(f, "minimum_distance", 9);
-			rt.setSv(f, "alpha", 125);
-			return live(f.dot);
+	parent_proc();
+	if (this.target && this.ranged_cooldown > rt.worldTime(f) && rt.istype(this.target, T("/mob/living/carbon"))) {
+		if (!(C = this.target).legcuffed && C.health < 50) {
+			this.retreat_distance = 9;
+			this.minimum_distance = 9;
+			this.alpha = 125;
+			return f.dot;
 		}
 	}
-	rt.setSv(f, "retreat_distance", 0);
-	rt.setSv(f, "minimum_distance", 0);
-	rt.setSv(f, "alpha", 255);
+	this.retreat_distance = 0;
+	this.minimum_distance = 0;
+	this.alpha = 255;
 	return f.dot;
 }, false, { waitfor: false });
 
-// /mob/living/simple_animal/hostile/jungle/mega_arachnid/proc/Aggro  (code/modules/mob/living/simple_animal/hostile/jungle_mobs.dm:61)  may sleep
+// jungle_mobs.dm:61
 rt.def("/mob/living/simple_animal/hostile/jungle/mega_arachnid/proc/Aggro", function* Aggro(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "alpha", 255);
+	yield* parent_proc();
+	this.alpha = 255;
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/jungle/mega_arachnid/proc/LoseAggro  (code/modules/mob/living/simple_animal/hostile/jungle_mobs.dm:65)
+// jungle_mobs.dm:65
 rt.def("/mob/living/simple_animal/hostile/jungle/mega_arachnid/proc/LoseAggro", function LoseAggro(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "alpha", 50);
+	parent_proc();
+	this.alpha = 50;
 	return f.dot;
 });
 
@@ -109,16 +104,15 @@ rt.type(8895, "/obj/item/projectile/mega_arachnid", "/obj/item/projectile", {
 	icon_state: "tentacle_end",
 });
 
-// /obj/item/projectile/mega_arachnid/proc/on_hit  (code/modules/mob/living/simple_animal/hostile/jungle_mobs.dm:75)  may sleep
+// jungle_mobs.dm:75
 rt.def("/obj/item/projectile/mega_arachnid/proc/on_hit", function* on_hit(f: Frame) {
 	let B: Value = null;
-	f.vars = () => [B];
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	if ((truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon")) ? 1 : 0)) && rt.lt(live(f.args[1]), 100))) {
-		yield* g.callName(f, (B = (yield* g.new_(f, T("/obj/item/weapon/restraints/legcuffs/beartrap/mega_arachnid"), [rt.getStep(f, live(f.args[0]), 0)]))), "Crossed", [live(f.args[0])]);
+	if (rt.istype(f.args[0], T("/mob/living/carbon")) && f.args[1] < 100) {
+		yield* (B = (yield* new_(T("/obj/item/weapon/restraints/legcuffs/beartrap/mega_arachnid"), rt.getStep(f, f.args[0], 0)))).Crossed(f.args[0]);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true, { args: ["target", "blocked"] });

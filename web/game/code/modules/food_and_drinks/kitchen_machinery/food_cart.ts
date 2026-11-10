@@ -1,7 +1,7 @@
-// From code/modules/food_and_drinks/kitchen_machinery/food_cart.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/food_and_drinks/kitchen_machinery/food_cart.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, g, fmt } = rt;
 
 
 rt.type(10892, "/obj/machinery/food_cart", "/obj/machinery", {
@@ -21,238 +21,198 @@ rt.type(10892, "/obj/machinery/food_cart", "/obj/machinery", {
 	density: 1,
 });
 
-// /obj/machinery/food_cart/proc/<init>  (code/modules/food_and_drinks/kitchen_machinery/food_cart.dm:17)
+// food_cart.dm:17
 rt.def("/obj/machinery/food_cart/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "stored_food", rt.list());
+	parent_proc();
+	this.stored_food = list();
 	return f.dot;
 });
 
-// /obj/machinery/food_cart/proc/New  (code/modules/food_and_drinks/kitchen_machinery/food_cart.dm:22)  may sleep
+// food_cart.dm:22
 rt.def("/obj/machinery/food_cart/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "create_reagents", 200);
-	yield* g.callName(f, rt.sv(f, "reagents"), "set_reacting", [0]);
-	rt.setSv(f, "mixer", (yield* g.new_(f, T("/obj/item/weapon/reagent_containers"), [live(f.src), 100])));
-	rt.setFv(f, "name", rt.sv(f, "mixer"), "Mixer");
+	yield* parent_proc();
+	yield* this.create_reagents(LIQUID_CAPACIY);
+	this.reagents.set_reacting(0);
+	this.mixer = (yield* new_(T("/obj/item/weapon/reagent_containers"), this, MIXER_CAPACITY));
+	this.mixer.name = "Mixer";
 	return f.dot;
 }, true);
 
-// /obj/machinery/food_cart/proc/Destroy  (code/modules/food_and_drinks/kitchen_machinery/food_cart.dm:30)  may sleep
+// food_cart.dm:30
 rt.def("/obj/machinery/food_cart/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.sv(f, "mixer"))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "mixer")]);
-		rt.setSv(f, "mixer", null);
+	if (this.mixer) {
+		yield* qdel(this.mixer);
+		this.mixer = null;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);
 
-// /obj/machinery/food_cart/proc/attack_hand  (code/modules/food_and_drinks/kitchen_machinery/food_cart.dm:35)  may sleep
+// food_cart.dm:35
 rt.def("/obj/machinery/food_cart/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.callName(f, live(user), "set_machine", [live(f.src)]);
-	yield* g.srcCall(f, "interact", live(user));
+	yield* user.set_machine(this);
+	yield* this.interact(user);
 	return f.dot;
 }, true);
 
-// /obj/machinery/food_cart/proc/interact  (code/modules/food_and_drinks/kitchen_machinery/food_cart.dm:40)  may sleep
+// food_cart.dm:40
 rt.def("/obj/machinery/food_cart/proc/interact", function* interact(f: Frame, user: Value) {
 	let dat: Value = null, R: Value = null, V: Value = null, popup: Value = null;
-	let $e: any;
-	f.vars = () => [user, dat, R, V, popup, $e];
-	dat = null;
-	dat = rt.modify(live(dat), "<br><b>STORED INGREDIENTS AND DRINKS</b><br><div class='statusDisplay'>", add);
-	dat = rt.modify(live(dat), fmt("Remaining glasses: ＀<br>", [rt.sv(f, "glasses")]), add);
-	dat = rt.modify(live(dat), fmt("Portion: <a href='?src=＃;portion=1'>＀</a><br>", [live(f.src), rt.sv(f, "portion")]), add);
+	dat += "<br><b>STORED INGREDIENTS AND DRINKS</b><br><div class='statusDisplay'>";
+	dat += `Remaining glasses: ${this.glasses}<br>`;
+	dat += fmt("Portion: <a href='?src=＃;portion=1'>＀</a><br>", [this, this.portion]);
+	for (R of each(this.reagents.reagent_list, T("/datum/reagent"))) {
+		dat += `${R.name}: ${R.volume} `;
+		dat += fmt("<a href='?src=＃;disposeI=＀'>Purge</a>", [this, R.id]);
+		if (this.glasses > 0) {
+			dat += fmt("<a href='?src=＃;pour=＀'>Pour in a glass</a>", [this, R.id]);
+		}
+		dat += fmt("<a href='?src=＃;mix=＀'>Add to the mixer</a><br>", [this, R.id]);
+	}
+	dat += "</div><br><b>MIXER CONTENTS</b><br><div class='statusDisplay'>";
 	R = null;
-	rt.forList(f, 0, rt.fv(f, "reagent_list", rt.sv(f, "reagents")), T("/datum/reagent"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		R = $e;
-		dat = rt.modify(live(dat), fmt("＀: ＀ ", [rt.fv(f, "name", live(R)), rt.fv(f, "volume", live(R))]), add);
-		dat = rt.modify(live(dat), fmt("<a href='?src=＃;disposeI=＀'>Purge</a>", [live(f.src), rt.fv(f, "id", live(R))]), add);
-		if (rt.gt(rt.sv(f, "glasses"), 0)) {
-			dat = rt.modify(live(dat), fmt("<a href='?src=＃;pour=＀'>Pour in a glass</a>", [live(f.src), rt.fv(f, "id", live(R))]), add);
+	for (R of each(this.mixer.reagents.reagent_list, T("/datum/reagent"))) {
+		dat += `${R.name}: ${R.volume} `;
+		dat += fmt("<a href='?src=＃;transfer=＀'>Transfer back</a>", [this, R.id]);
+		if (this.glasses > 0) {
+			dat += fmt("<a href='?src=＃;m_pour=＀'>Pour in a glass</a>", [this, R.id]);
 		}
-		dat = rt.modify(live(dat), fmt("<a href='?src=＃;mix=＀'>Add to the mixer</a><br>", [live(f.src), rt.fv(f, "id", live(R))]), add);
+		dat += "<br>";
 	}
-	rt.endFor(f, 0);
-	dat = rt.modify(live(dat), "</div><br><b>MIXER CONTENTS</b><br><div class='statusDisplay'>", add);
-	R = null;
-	rt.forList(f, 0, rt.gv(f, "reagent_list", rt.fv(f, "reagents", rt.sv(f, "mixer"))), T("/datum/reagent"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		R = $e;
-		dat = rt.modify(live(dat), fmt("＀: ＀ ", [rt.fv(f, "name", live(R)), rt.fv(f, "volume", live(R))]), add);
-		dat = rt.modify(live(dat), fmt("<a href='?src=＃;transfer=＀'>Transfer back</a>", [live(f.src), rt.fv(f, "id", live(R))]), add);
-		if (rt.gt(rt.sv(f, "glasses"), 0)) {
-			dat = rt.modify(live(dat), fmt("<a href='?src=＃;m_pour=＀'>Pour in a glass</a>", [live(f.src), rt.fv(f, "id", live(R))]), add);
-		}
-		dat = rt.modify(live(dat), "<br>", add);
-	}
-	rt.endFor(f, 0);
-	dat = rt.modify(live(dat), "</div><br><b>STORED FOOD</b><br><div class='statusDisplay'>", add);
-	V = null;
-	rt.forList(f, 0, rt.sv(f, "stored_food"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		V = $e;
-		if (rt.gt(rt.index(rt.sv(f, "stored_food"), live(V)), 0)) {
-			dat = rt.modify(live(dat), fmt("<b>＀: ＀</b> <a href='?src=＃;dispense=＀'>Dispense</a><br>", [live(V), rt.index(rt.sv(f, "stored_food"), live(V)), live(f.src), live(V)]), add);
+	dat += "</div><br><b>STORED FOOD</b><br><div class='statusDisplay'>";
+	for (V of each(this.stored_food)) {
+		if (rt.index(this.stored_food, V) > 0) {
+			dat += fmt("<b>＀: ＀</b> <a href='?src=＃;dispense=＀'>Dispense</a><br>", [V, rt.index(this.stored_food, V), this, V]);
 		}
 	}
-	rt.endFor(f, 0);
-	dat = rt.modify(live(dat), fmt("</div><br><a href='?src=＃;refresh=1'>Refresh</a> <a href='?src=＃;close=1'>Close</a>", [live(f.src), live(f.src)]), add);
-	yield* g.callName(f, (popup = (yield* g.new_(f, T("/datum/browser"), [live(user), "foodcart", "Food Cart", 500, 350, live(f.src)]))), "set_content", [live(dat)]);
-	yield* g.callName(f, live(popup), "open", []);
+	dat += fmt("</div><br><a href='?src=＃;refresh=1'>Refresh</a> <a href='?src=＃;close=1'>Close</a>", [this, this]);
+	(popup = (yield* new_(T("/datum/browser"), user, "foodcart", "Food Cart", 500, 350, this))).set_content(dat);
+	yield* popup.open();
 	return f.dot;
 }, true);
 
-// /obj/machinery/food_cart/proc/isFull  (code/modules/food_and_drinks/kitchen_machinery/food_cart.dm:67)
+// food_cart.dm:67
 rt.def("/obj/machinery/food_cart/proc/isFull", function isFull(f: Frame) {
-	return (rt.ge(rt.sv(f, "food_stored"), 30) ? 1 : 0);
+	return (this.food_stored >= STORAGE_CAPACITY ? 1 : 0);
 });
 
-// /obj/machinery/food_cart/proc/attackby  (code/modules/food_and_drinks/kitchen_machinery/food_cart.dm:70)  may sleep
-rt.def("/obj/machinery/food_cart/proc/attackby", function* attackby(f: Frame) {
+// food_cart.dm:70
+rt.def("/obj/machinery/food_cart/proc/attackby", function* attackby(f: Frame, O: Value, user: Value, params: Value) {
 	let DG: Value = null, S: Value = null, G: Value = null, _T: Value = null, S_1: Value = null;
-	let $e: any;
-	f.vars = () => [DG, S, G, _T, S_1, $e];
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/reagent_containers/food/drinks/drinkingglass")) ? 1 : 0))) {
-		if (!truthy(rt.gv(f, "total_volume", rt.gv(f, "reagents", (DG = live(f.args[0])))))) {
-			if (!truthy((yield* g.callName(f, live(f.args[1]), "drop_item", [])))) {
-				return live(f.dot);
+	if (rt.istype(O, T("/obj/item/weapon/reagent_containers/food/drinks/drinkingglass"))) {
+		if (!(DG = O).reagents.total_volume) {
+			if (!(yield* user.drop_item())) {
+				return f.dot;
 			}
-			yield* g.call(f, P("/proc/qdel"), null, [live(DG)]);
-			rt.incSrcVar(f, "glasses", 1, true);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>The ＀ accepts the drinking glass, sterilizing it.</span>", [live(f.src)])]);
+			yield* qdel(DG);
+			this.glasses++;
+			to_chat(user, `<span class='notice'>The ${this} accepts the drinking glass, sterilizing it.</span>`);
 		}
+	} else if (rt.istype(O, T("/obj/item/weapon/reagent_containers/food/snacks"))) {
+		if (this.isFull()) {
+			to_chat(user, `<span class='warning'>The ${this} is at full capacity.</span>`);
+		} else {
+			S = O;
+			if (!(yield* user.drop_item())) {
+				return f.dot;
+			}
+			S.loc = this;
+			if (rt.index(this.stored_food, sanitize(S.name))) {
+				rt.incAt(this.stored_food, sanitize(S.name), 1, true);
+			} else {
+				rt.setAt(this.stored_food, sanitize(S.name), 1);
+			}
+		}
+	} else if (rt.istype(O, T("/obj/item/stack/sheet/glass"))) {
+		if ((G = O).get_amount() >= 1) {
+			yield* G.use(1);
+			this.glasses += 4;
+			to_chat(user, `<span class='notice'>The ${this} accepts a sheet of glass.</span>`);
+		}
+	} else if (rt.istype(O, T("/obj/item/weapon/storage/bag/tray"))) {
+		_T = O;
+		for (S_1 of each(_T.contents, T("/obj/item/weapon/reagent_containers/food/snacks"))) {
+			if (this.isFull()) {
+				to_chat(user, `<span class='warning'>The ${this} is at full capacity.</span>`);
+				break;
+			}
+			yield* _T.remove_from_storage(S_1, this);
+			if (rt.index(this.stored_food, sanitize(S_1.name))) {
+				rt.incAt(this.stored_food, sanitize(S_1.name), 1, true);
+			} else {
+				rt.setAt(this.stored_food, sanitize(S_1.name), 1);
+			}
+		}
+	} else if (O.is_open_container()) {
+		return f.dot;
 	} else {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/reagent_containers/food/snacks")) ? 1 : 0))) {
-			if (truthy((yield* g.srcCall(f, "isFull")))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>The ＀ is at full capacity.</span>", [live(f.src)])]);
-			} else {
-				S = live(f.args[0]);
-				if (!truthy((yield* g.callName(f, live(f.args[1]), "drop_item", [])))) {
-					return live(f.dot);
-				}
-				rt.setFv(f, "loc", live(S), live(f.src));
-				if (truthy(rt.index(rt.sv(f, "stored_food"), (yield* g.call(f, P("/proc/sanitize"), null, [rt.fv(f, "name", live(S))]))))) {
-					rt.incAt(rt.sv(f, "stored_food"), (yield* g.call(f, P("/proc/sanitize"), null, [rt.fv(f, "name", live(S))])), 1, true);
-				} else {
-					rt.setAt(rt.sv(f, "stored_food"), (yield* g.call(f, P("/proc/sanitize"), null, [rt.fv(f, "name", live(S))])), 1);
-				}
-			}
-		} else {
-			if (truthy((rt.istype(live(f.args[0]), T("/obj/item/stack/sheet/glass")) ? 1 : 0))) {
-				if (rt.ge((yield* g.callName(f, (G = live(f.args[0])), "get_amount", [])), 1)) {
-					yield* g.callName(f, live(G), "use", [1]);
-					rt.modSrcVar(f, "glasses", 4, add);
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>The ＀ accepts a sheet of glass.</span>", [live(f.src)])]);
-				}
-			} else {
-				if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/storage/bag/tray")) ? 1 : 0))) {
-					_T = live(f.args[0]);
-					S_1 = null;
-					rt.forList(f, 0, rt.fv(f, "contents", live(_T)), T("/obj/item/weapon/reagent_containers/food/snacks"));
-					while (($e = rt.next(f, 0)) !== undefined) {
-						S_1 = $e;
-						if (truthy((yield* g.srcCall(f, "isFull")))) {
-							yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>The ＀ is at full capacity.</span>", [live(f.src)])]);
-							break;
-						}
-						yield* g.callName(f, live(_T), "remove_from_storage", [live(S_1), live(f.src)]);
-						if (truthy(rt.index(rt.sv(f, "stored_food"), (yield* g.call(f, P("/proc/sanitize"), null, [rt.fv(f, "name", live(S_1))]))))) {
-							rt.incAt(rt.sv(f, "stored_food"), (yield* g.call(f, P("/proc/sanitize"), null, [rt.fv(f, "name", live(S_1))])), 1, true);
-						} else {
-							rt.setAt(rt.sv(f, "stored_food"), (yield* g.call(f, P("/proc/sanitize"), null, [rt.fv(f, "name", live(S_1))])), 1);
-						}
-					}
-					rt.endFor(f, 0);
-				} else {
-					if (truthy((yield* g.callName(f, live(f.args[0]), "is_open_container", [])))) {
-						return live(f.dot);
-					} else {
-						f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-					}
-				}
-			}
-		}
+		f.dot = (yield* parent_proc());
 	}
-	yield* g.srcCall(f, "updateDialog");
+	yield* this.updateDialog();
 	return f.dot;
-}, true, { args: ["O", "user", "params"] });
+}, true);
 
-// /obj/machinery/food_cart/proc/Topic  (code/modules/food_and_drinks/kitchen_machinery/food_cart.dm:115)  may sleep
-rt.def("/obj/machinery/food_cart/proc/Topic", function* Topic(f: Frame) {
+// food_cart.dm:115
+rt.def("/obj/machinery/food_cart/proc/Topic", function* Topic(f: Frame, href: Value, href_list: Value) {
 	let O: Value = null, DG: Value = null;
-	let $e: any;
-	f.vars = () => [O, DG, $e];
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		return live(f.dot);
+	if (yield* parent_proc()) {
+		return f.dot;
 	}
-	if (truthy(rt.at(live(f.args[1]), "disposeI"))) {
-		yield* g.callName(f, rt.sv(f, "reagents"), "del_reagent", [rt.at(live(f.args[1]), "disposeI")]);
+	if (rt.at(href_list, "disposeI")) {
+		yield* this.reagents.del_reagent(rt.at(href_list, "disposeI"));
 	}
-	if (truthy(rt.at(live(f.args[1]), "dispense"))) {
-		if (rt.le(rt.incAt(rt.sv(f, "stored_food"), rt.at(live(f.args[1]), "dispense"), -1, true), 0)) {
-			rt.setAt(rt.sv(f, "stored_food"), rt.at(live(f.args[1]), "dispense"), 0);
+	if (rt.at(href_list, "dispense")) {
+		if (rt.incAt(this.stored_food, rt.at(href_list, "dispense"), -1, true) <= 0) {
+			rt.setAt(this.stored_food, rt.at(href_list, "dispense"), 0);
 		} else {
-			O = null;
-			rt.forList(f, 0, rt.sv(f, "contents"), T("/obj"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				O = $e;
-				if (isEqual((yield* g.call(f, P("/proc/sanitize"), null, [rt.fv(f, "name", live(O))])), rt.at(live(f.args[1]), "dispense"))) {
-					rt.setFv(f, "loc", live(O), rt.fv(f, "loc", live(f.src)));
+			for (O of each(this.contents, T("/obj"))) {
+				if (sanitize(O.name) == rt.at(href_list, "dispense")) {
+					O.loc = this.loc;
 					break;
 				}
 			}
-			rt.endFor(f, 0);
 		}
 	}
-	if (truthy(rt.at(live(f.args[1]), "portion"))) {
-		rt.setSv(f, "portion", (yield* g.call(f, P("/proc/max"), null, [0, (yield* g.call(f, P("/proc/min"), null, [(yield* g.op(f, "Prompt", [32], [null, null, null, "How much drink do you want to dispense per glass?", null])), 50]))])));
+	if (rt.at(href_list, "portion")) {
+		this.portion = max(0, min((yield* g.op(f, "Prompt", [32], [null, null, null, "How much drink do you want to dispense per glass?", null])), 50));
 	}
-	if ((truthy(rt.at(live(f.args[1]), "pour")) || truthy(rt.at(live(f.args[1]), "m_pour")))) {
-		if (rt.le(rt.incSrcVar(f, "glasses", -1, true), 0)) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), "<span class='warning'>There are no glasses left!</span>"]);
-			rt.setSv(f, "glasses", 0);
+	if (rt.at(href_list, "pour") || rt.at(href_list, "m_pour")) {
+		if (this.glasses-- <= 0) {
+			to_chat(f.usr, "<span class='warning'>There are no glasses left!</span>");
+			this.glasses = 0;
 		} else {
-			DG = (yield* g.new_(f, T("/obj/item/weapon/reagent_containers/food/drinks/drinkingglass"), [rt.sv(f, "loc")]));
-			if (truthy(rt.at(live(f.args[1]), "pour"))) {
-				yield* g.callName(f, rt.sv(f, "reagents"), "trans_id_to", [live(DG), rt.at(live(f.args[1]), "pour"), rt.sv(f, "portion")]);
+			DG = (yield* new_(T("/obj/item/weapon/reagent_containers/food/drinks/drinkingglass"), this.loc));
+			if (rt.at(href_list, "pour")) {
+				yield* this.reagents.trans_id_to(DG, rt.at(href_list, "pour"), this.portion);
 			}
-			if (truthy(rt.at(live(f.args[1]), "m_pour"))) {
-				yield* g.callName(f, rt.fv(f, "reagents", rt.sv(f, "mixer")), "trans_id_to", [live(DG), rt.at(live(f.args[1]), "m_pour"), rt.sv(f, "portion")]);
+			if (rt.at(href_list, "m_pour")) {
+				yield* this.mixer.reagents.trans_id_to(DG, rt.at(href_list, "m_pour"), this.portion);
 			}
 		}
 	}
-	if (truthy(rt.at(live(f.args[1]), "mix"))) {
-		if (isEqual((yield* g.callName(f, rt.sv(f, "reagents"), "trans_id_to", [rt.sv(f, "mixer"), rt.at(live(f.args[1]), "mix"), rt.sv(f, "portion")])), 0)) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), fmt("<span class='warning'>The ＀ is full!</span>", [rt.sv(f, "mixer")])]);
+	if (rt.at(href_list, "mix")) {
+		if ((yield* this.reagents.trans_id_to(this.mixer, rt.at(href_list, "mix"), this.portion)) == 0) {
+			to_chat(f.usr, `<span class='warning'>The ${this.mixer} is full!</span>`);
 		}
 	}
-	if (truthy(rt.at(live(f.args[1]), "transfer"))) {
-		if (isEqual((yield* g.callName(f, rt.fv(f, "reagents", rt.sv(f, "mixer")), "trans_id_to", [live(f.src), rt.at(live(f.args[1]), "transfer"), rt.sv(f, "portion")])), 0)) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), fmt("<span class='warning'>The ＀ is full!</span>", [live(f.src)])]);
+	if (rt.at(href_list, "transfer")) {
+		if ((yield* this.mixer.reagents.trans_id_to(this, rt.at(href_list, "transfer"), this.portion)) == 0) {
+			to_chat(f.usr, `<span class='warning'>The ${this} is full!</span>`);
 		}
 	}
-	yield* g.srcCall(f, "updateDialog");
-	if (truthy(rt.at(live(f.args[1]), "close"))) {
-		yield* g.callName(f, live(f.usr), "unset_machine", []);
-		rt.op(f, "Browse", [], [live(f.usr), null, "window=foodcart"], false);
+	yield* this.updateDialog();
+	if (rt.at(href_list, "close")) {
+		yield* f.usr.unset_machine();
+		rt.op(f, "Browse", [], [f.usr, null, "window=foodcart"], false);
 	}
-	return live(f.dot);
-}, true, { args: ["href", "href_list"] });
+	return f.dot;
+}, true);
 
-// /obj/machinery/food_cart/proc/deconstruct  (code/modules/food_and_drinks/kitchen_machinery/food_cart.dm:160)  may sleep
+// food_cart.dm:160
 rt.def("/obj/machinery/food_cart/proc/deconstruct", function* deconstruct(f: Frame, disassembled: Value) {
-	f.vars = () => [disassembled];
-	if (live(disassembled) === null) {
-		disassembled = 1;
+	disassembled ??= 1;
+	if (!rt.bitAnd(this.flags, NODECONSTRUCT)) {
+		yield* new_(T("/obj/item/stack/sheet/metal"), this.loc, 4);
 	}
-	if (!truthy(rt.bitAnd(rt.sv(f, "flags"), 128))) {
-		yield* g.new_(f, T("/obj/item/stack/sheet/metal"), [rt.sv(f, "loc"), 4]);
-	}
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* qdel(this);
 	return f.dot;
 }, true);

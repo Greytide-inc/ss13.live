@@ -1,7 +1,7 @@
-// From code/modules/orbit/orbit.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/orbit/orbit.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(4175, "/datum/orbit", "/datum", {
@@ -12,158 +12,137 @@ rt.type(4175, "/datum/orbit", "/datum", {
 	lastprocess: null,
 });
 
-// /datum/orbit/proc/New  (code/modules/orbit/orbit.dm:9)  may sleep
+// orbit.dm:9
 rt.def("/datum/orbit/proc/New", function* New(f: Frame, _orbiter: Value, _orbiting: Value, _lock: Value) {
-	f.vars = () => [_orbiter, _orbiting, _lock];
-	rt.setSv(f, "orbiter", live(_orbiter));
-	rt.setSv(f, "orbiting", live(_orbiting));
-	rt.modField(f, rt.gl("SSorbit"), "processing", live(f.src), add);
-	if (!truthy(rt.fv(f, "orbiters", rt.sv(f, "orbiting")))) {
-		rt.setFv(f, "orbiters", rt.sv(f, "orbiting"), rt.list());
+	this.orbiter = _orbiter;
+	this.orbiting = _orbiting;
+	GLOB.SSorbit.processing += this;
+	if (!this.orbiting.orbiters) {
+		this.orbiting.orbiters = list();
 	}
-	rt.modField(f, rt.sv(f, "orbiting"), "orbiters", live(f.src), add);
-	if (truthy(rt.fv(f, "orbiting", rt.sv(f, "orbiter")))) {
-		yield* g.callName(f, rt.sv(f, "orbiter"), "stop_orbit", []);
+	this.orbiting.orbiters += this;
+	if (this.orbiter.orbiting) {
+		yield* this.orbiter.stop_orbit();
 	}
-	rt.setFv(f, "orbiting", rt.sv(f, "orbiter"), live(f.src));
-	yield* g.srcCall(f, "Check");
-	rt.setSv(f, "lock", live(_lock));
+	this.orbiter.orbiting = this;
+	yield* this.Check();
+	this.lock = _lock;
 	return f.dot;
 }, true);
 
-// /datum/orbit/proc/Destroy  (code/modules/orbit/orbit.dm:26)  may sleep
+// orbit.dm:26
 rt.def("/datum/orbit/proc/Destroy", function* Destroy(f: Frame) {
-	if (live(f.args[0]) === null) {
+	if (f.args[0] === null) {
 		f.args[0] = 0;
 	}
-	(rt.modField(f, rt.gl("SSorbit"), "processing", live(f.src), subtract));
-	if (truthy(rt.sv(f, "orbiter"))) {
-		rt.setFv(f, "orbiting", rt.sv(f, "orbiter"), null);
-		rt.setSv(f, "orbiter", null);
+	GLOB.SSorbit.processing -= this;
+	if (this.orbiter) {
+		this.orbiter.orbiting = null;
+		this.orbiter = null;
 	}
-	if (truthy(rt.sv(f, "orbiting"))) {
-		if (truthy(rt.fv(f, "orbiters", rt.sv(f, "orbiting")))) {
-			(rt.modField(f, rt.sv(f, "orbiting"), "orbiters", live(f.src), subtract));
-			if (!truthy(rt.getLen(f, rt.fv(f, "orbiters", rt.sv(f, "orbiting"))))) {
-				rt.setFv(f, "orbiters", rt.sv(f, "orbiting"), null);
+	if (this.orbiting) {
+		if (this.orbiting.orbiters) {
+			this.orbiting.orbiters -= this;
+			if (!rt.len(f, this.orbiting.orbiters)) {
+				this.orbiting.orbiters = null;
 			}
 		}
-		rt.setSv(f, "orbiting", null);
+		this.orbiting = null;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true, { args: ["force"] });
 
-// /datum/orbit/proc/Check  (code/modules/orbit/orbit.dm:39)  may sleep
+// orbit.dm:39
 rt.def("/datum/orbit/proc/Check", function* Check(f: Frame, targetloc: Value) {
-	f.vars = () => [targetloc];
-	if (!truthy(rt.sv(f, "orbiter"))) {
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-		return live(f.dot);
+	if (!this.orbiter) {
+		yield* qdel(this);
+		return f.dot;
 	}
-	if (!truthy(rt.sv(f, "orbiting"))) {
-		yield* g.callName(f, rt.sv(f, "orbiter"), "stop_orbit", []);
-		return live(f.dot);
+	if (!this.orbiting) {
+		yield* this.orbiter.stop_orbit();
+		return f.dot;
 	}
-	if (!truthy(rt.fv(f, "orbiting", rt.sv(f, "orbiter")))) {
-		rt.setFv(f, "orbiting", rt.sv(f, "orbiter"), live(f.src));
-		yield* g.callName(f, rt.sv(f, "orbiter"), "stop_orbit", []);
+	if (!this.orbiter.orbiting) {
+		this.orbiter.orbiting = this;
+		yield* this.orbiter.stop_orbit();
 	}
-	rt.setSv(f, "lastprocess", rt.worldTime(f));
-	if (!truthy(live(targetloc))) {
-		targetloc = rt.getStep(f, rt.sv(f, "orbiting"), 0);
+	this.lastprocess = rt.worldTime(f);
+	if (!targetloc) {
+		targetloc = rt.getStep(f, this.orbiting, 0);
 	}
-	if ((!truthy(live(targetloc)) || ((!truthy(rt.sv(f, "lock")) && !isEqual(rt.fv(f, "loc", rt.sv(f, "orbiter")), rt.sv(f, "lastloc"))) && !isEqual(rt.fv(f, "loc", rt.sv(f, "orbiter")), live(targetloc))))) {
-		yield* g.callName(f, rt.sv(f, "orbiter"), "stop_orbit", []);
-		return live(f.dot);
+	if (!targetloc || !this.lock && this.orbiter.loc != this.lastloc && this.orbiter.loc != targetloc) {
+		yield* this.orbiter.stop_orbit();
+		return f.dot;
 	}
-	rt.setFv(f, "loc", rt.sv(f, "orbiter"), live(targetloc));
-	yield* g.callName(f, rt.sv(f, "orbiter"), "update_parallax_contents", []);
-	rt.setSv(f, "lastloc", rt.fv(f, "loc", rt.sv(f, "orbiter")));
+	this.orbiter.loc = targetloc;
+	yield* this.orbiter.update_parallax_contents();
+	this.lastloc = this.orbiter.loc;
 	return f.dot;
 }, true);
 
-// /atom/movable/proc/orbit  (code/modules/orbit/orbit.dm:71)  may sleep
+// orbit.dm:71
 rt.def("/atom/movable/proc/orbit", function* orbit(f: Frame, A: Value, radius: Value, clockwise: Value, rotation_speed: Value, rotation_segments: Value, pre_rotation: Value, lockinorbit: Value) {
-	let initial_transform: Value = null, M: Value = null, pre_rot: Value = null, shift: Value = null;
-	f.vars = () => [A, radius, clockwise, rotation_speed, rotation_segments, pre_rotation, lockinorbit, initial_transform, M, pre_rot, shift];
-	if (live(radius) === null) {
-		radius = 10;
+	let M: Value = null, pre_rot: Value = null, shift: Value = null;
+	radius ??= 10;
+	clockwise ??= 0;
+	rotation_speed ??= 20;
+	rotation_segments ??= 36;
+	pre_rotation ??= 1;
+	lockinorbit ??= 0;
+	if (!rt.istype(A, T("/atom"))) {
+		return f.dot;
 	}
-	if (live(clockwise) === null) {
-		clockwise = 0;
+	yield* new_(T("/datum/orbit"), this, A, lockinorbit);
+	if (!this.orbiting) {
+		return f.dot;
 	}
-	if (live(rotation_speed) === null) {
-		rotation_speed = 20;
-	}
-	if (live(rotation_segments) === null) {
-		rotation_segments = 36;
-	}
-	if (live(pre_rotation) === null) {
-		pre_rotation = 1;
-	}
-	if (live(lockinorbit) === null) {
-		lockinorbit = 0;
-	}
-	if (!truthy((rt.istype(live(A), T("/atom")) ? 1 : 0))) {
-		return live(f.dot);
-	}
-	yield* g.new_(f, T("/datum/orbit"), [live(f.src), live(A), live(lockinorbit)]);
-	if (!truthy(rt.sv(f, "orbiting"))) {
-		return live(f.dot);
-	}
-	initial_transform = (yield* g.call(f, P("/proc/matrix"), null, [rt.sv(f, "transform")]));
-	if (truthy(live(pre_rotation))) {
-		M = (yield* g.call(f, P("/proc/matrix"), null, [rt.sv(f, "transform")]));
+	let initial_transform: Value = matrix(this.transform);
+	if (pre_rotation) {
+		M = matrix(this.transform);
 		pre_rot = 90;
-		if (!truthy(live(clockwise)) || rt.istype(live(f.src), T("/mob/dead/observer"))) { // tg_js: ghosts keep tg's -90 lean while orbiting clockwise
+		if (!clockwise || rt.istype(this, T("/mob/dead/observer"))) { // tg_js: ghosts keep tg's -90 lean while orbiting clockwise
 			pre_rot = -90;
 		}
-		yield* g.callName(f, live(M), "Turn", [live(pre_rot)]);
-		rt.setSv(f, "transform", live(M));
+		M.Turn(pre_rot);
+		this.transform = M;
 	}
-	yield* g.callName(f, (shift = (yield* g.call(f, P("/proc/matrix"), null, [rt.sv(f, "transform")]))), "Translate", [0, live(radius)]);
-	rt.setSv(f, "transform", live(shift));
-	yield* g.srcCall(f, "SpinAnimation", live(rotation_speed), -1, live(clockwise), live(rotation_segments));
-	rt.setSv(f, "transform", live(initial_transform));
+	(shift = matrix(this.transform)).Translate(0, radius);
+	this.transform = shift;
+	this.SpinAnimation(rotation_speed, -1, clockwise, rotation_segments);
+	this.transform = initial_transform;
 	return f.dot;
 }, true, { argTypes: [{ path: "/atom" }, {  }, {  }, {  }, {  }, {  }, {  }] });
 
-// /atom/movable/proc/stop_orbit  (code/modules/orbit/orbit.dm:98)  may sleep
+// orbit.dm:98
 rt.def("/atom/movable/proc/stop_orbit", function* stop_orbit(f: Frame) {
-	yield* g.srcCall(f, "SpinAnimation", 0, 0);
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "orbiting")]);
+	this.SpinAnimation(0, 0);
+	yield* qdel(this.orbiting);
 	return f.dot;
 }, true);
 
-// /atom/proc/Destroy  (code/modules/orbit/orbit.dm:102)  may sleep
+// orbit.dm:102
 rt.def("/atom/proc/Destroy", function* Destroy(f: Frame) {
 	let thing: Value = null, O: Value = null;
-	let $e: any;
-	f.vars = () => [thing, O, $e];
-	if (live(f.args[0]) === null) {
+	if (f.args[0] === null) {
 		f.args[0] = 0;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(rt.sv(f, "orbiters"))) return f.dot;
-	thing = null;
-	rt.forList(f, 0, rt.sv(f, "orbiters"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		thing = $e;
-		if (truthy(rt.gv(f, "orbiter", (O = live(thing))))) {
-			yield* g.callName(f, rt.fv(f, "orbiter", live(O)), "stop_orbit", []);
+	f.dot = (yield* parent_proc());
+	if (!this.orbiters) return f.dot;
+	for (thing of each(this.orbiters)) {
+		if ((O = thing).orbiter) {
+			yield* O.orbiter.stop_orbit();
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true, { args: ["force"] });
 
-// /atom/movable/proc/Destroy  (code/modules/orbit/orbit.dm:110)  may sleep
+// orbit.dm:110
 rt.def("/atom/movable/proc/Destroy", function* Destroy(f: Frame) {
-	if (live(f.args[0]) === null) {
+	if (f.args[0] === null) {
 		f.args[0] = 0;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(rt.sv(f, "orbiting"))) return f.dot;
-	yield* g.srcCall(f, "stop_orbit");
+	f.dot = (yield* parent_proc());
+	if (!this.orbiting) return f.dot;
+	yield* this.stop_orbit();
 	return f.dot;
 }, true, { args: ["force"] });

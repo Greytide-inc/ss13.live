@@ -1,7 +1,7 @@
-// From code/datums/diseases/_disease.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/datums/diseases/_disease.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(945, "/datum/disease", "/datum", {
@@ -32,239 +32,205 @@ rt.type(945, "/datum/disease", "/datum", {
 	strain_data: null,
 });
 
-// /datum/disease/proc/<init>  (code/datums/diseases/_disease.dm:50)
+// _disease.dm:50
 rt.def("/datum/disease/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "viable_mobtypes", rt.list());
-	$0 = $0;
-	rt.setSv(f, "cures", rt.list());
-	$0 = $0;
-	rt.setSv(f, "required_organs", rt.list());
-	$0 = $0;
-	rt.setSv(f, "strain_data", rt.list());
+	parent_proc();
+	this.viable_mobtypes = list();
+
+	this.cures = list();
+
+	this.required_organs = list();
+
+	this.strain_data = list();
 	return f.dot;
 });
 
-// /datum/disease/proc/stage_act  (code/datums/diseases/_disease.dm:66)  may sleep
+// _disease.dm:66
 rt.def("/datum/disease/proc/stage_act", function* stage_act(f: Frame) {
-	let cure: Value = null;
-	f.vars = () => [cure];
-	cure = (yield* g.srcCall(f, "has_cure"));
-	if ((truthy(rt.sv(f, "carrier")) && !truthy(live(cure)))) {
-		return live(f.dot);
+	let cure: Value = this.has_cure();
+	if (this.carrier && !cure) {
+		return f.dot;
 	}
-	rt.setSv(f, "stage", (yield* g.call(f, P("/proc/min"), null, [rt.sv(f, "stage"), rt.sv(f, "max_stages")])));
-	if (!truthy(live(cure))) {
-		if (truthy(rt.op(f, "Prob", [], [rt.sv(f, "stage_prob")]))) {
-			rt.setSv(f, "stage", (yield* g.call(f, P("/proc/min"), null, [add(rt.sv(f, "stage"), 1), rt.sv(f, "max_stages")])));
+	this.stage = min(this.stage, this.max_stages);
+	if (!cure) {
+		if (prob(this.stage_prob)) {
+			this.stage = min(this.stage + 1, this.max_stages);
 		}
-	} else {
-		if (truthy(rt.op(f, "Prob", [], [rt.sv(f, "cure_chance")]))) {
-			rt.setSv(f, "stage", (yield* g.call(f, P("/proc/max"), null, [subtract(rt.sv(f, "stage"), 1), 1])));
-		}
+	} else if (prob(this.cure_chance)) {
+		this.stage = max(this.stage - 1, 1);
 	}
-	if (!truthy(rt.bitAnd(rt.sv(f, "disease_flags"), 1))) return f.dot;
-	if (!(truthy(live(cure)) && truthy(rt.op(f, "Prob", [], [rt.sv(f, "cure_chance")])))) return f.dot;
-	yield* g.srcCall(f, "cure");
+	if (!rt.bitAnd(this.disease_flags, CURABLE)) return f.dot;
+	if (!(cure && prob(this.cure_chance))) return f.dot;
+	yield* this.cure();
 	return f.dot;
 }, true);
 
-// /datum/disease/proc/has_cure  (code/datums/diseases/_disease.dm:86)
+// _disease.dm:86
 rt.def("/datum/disease/proc/has_cure", function has_cure(f: Frame) {
 	let C_id: Value = null;
-	let $e: any;
-	f.vars = () => [C_id, $e];
-	if (!truthy(rt.bitAnd(rt.sv(f, "disease_flags"), 1))) {
+	if (!rt.bitAnd(this.disease_flags, CURABLE)) {
 		return 0;
 	}
-	f.dot = rt.len(f, rt.sv(f, "cures"));
-	C_id = null;
-	rt.forList(f, 0, rt.sv(f, "cures"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		C_id = $e;
-		if (!truthy(rt.callName(f, rt.fv(f, "reagents", rt.sv(f, "affected_mob")), "has_reagent", [live(C_id)]))) {
-			f.dot = rt.inc(live(f.dot), -1);
+	f.dot = rt.len(f, this.cures);
+	for (C_id of each(this.cures)) {
+		if (!this.affected_mob.reagents.has_reagent(C_id)) {
+			f.dot--;
 		}
 	}
-	rt.endFor(f, 0);
-	if (!(!truthy(live(f.dot)) || (truthy(rt.sv(f, "needs_all_cures")) && rt.lt(live(f.dot), rt.len(f, rt.sv(f, "cures")))))) return f.dot;
+	if (!(!f.dot || this.needs_all_cures && f.dot < rt.len(f, this.cures))) return f.dot;
 	return 0;
 });
 
-// /datum/disease/proc/spread  (code/datums/diseases/_disease.dm:97)  may sleep
+// _disease.dm:97
 rt.def("/datum/disease/proc/spread", function* spread(f: Frame, source: Value, force_spread: Value) {
-	let spread_range: Value = null, _T: Value = null, C: Value = null, V: Value = null, Temp: Value = null;
+	let _T: Value = null, C: Value = null, V: Value = null, Temp: Value = null;
 	let $0: any, $e: any;
-	f.vars = () => [source, force_spread, spread_range, _T, C, V, Temp, $0, $e];
-	if (live(force_spread) === null) {
-		force_spread = 0;
+	force_spread ??= 0;
+	if ((rt.bitAnd(this.spread_flags, SPECIAL) || rt.bitAnd(this.spread_flags, NON_CONTAGIOUS) || rt.bitAnd(this.spread_flags, BLOOD)) && !force_spread) {
+		return f.dot;
 	}
-	if ((((truthy(rt.bitAnd(rt.sv(f, "spread_flags"), 1)) || truthy(rt.bitAnd(rt.sv(f, "spread_flags"), 2))) || truthy(rt.bitAnd(rt.sv(f, "spread_flags"), 4))) && !truthy(live(force_spread)))) {
-		return live(f.dot);
-	}
-	if (truthy(rt.sv(f, "affected_mob"))) {
-		if ((truthy((yield* g.callName(f, rt.fv(f, "reagents", rt.sv(f, "affected_mob")), "has_reagent", ["spaceacillin"]))) || (rt.gt(rt.fv(f, "satiety", rt.sv(f, "affected_mob")), 0) && truthy(rt.op(f, "Prob", [], [divide(rt.fv(f, "satiety", rt.sv(f, "affected_mob")), 10)]))))) {
-			return live(f.dot);
+	if (this.affected_mob) {
+		if (this.affected_mob.reagents.has_reagent("spaceacillin") || this.affected_mob.satiety > 0 && prob(this.affected_mob.satiety / 10)) {
+			return f.dot;
 		}
 	}
-	spread_range = 1;
-	if (truthy(live(force_spread))) {
-		spread_range = live(force_spread);
+	let spread_range: Value = 1;
+	if (force_spread) {
+		spread_range = force_spread;
 	}
-	if (truthy(rt.bitAnd(rt.sv(f, "spread_flags"), 64))) {
-		spread_range = rt.inc(live(spread_range), 1);
+	if (rt.bitAnd(this.spread_flags, AIRBORNE)) {
+		spread_range++;
 	}
-	if (!truthy(live(source))) {
-		if (truthy(rt.sv(f, "affected_mob"))) {
-			source = rt.sv(f, "affected_mob");
+	if (!source) {
+		if (this.affected_mob) {
+			source = this.affected_mob;
 		} else {
-			return live(f.dot);
+			return f.dot;
 		}
 	}
-	if (!truthy((rt.istype((_T = rt.fv(f, "loc", live(source))), T("/turf")) ? 1 : 0))) return f.dot;
-	C = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/oview"), null, [live(spread_range), live(source)])), T("/mob/living/carbon"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		C = $e;
-		if (truthy((V = rt.getStep(f, live(C), 0)))) {
+	if (!rt.istype((_T = source.loc), T("/turf"))) return f.dot;
+	for (C of each(oview(spread_range, source), T("/mob/living/carbon"))) {
+		if (V = rt.getStep(f, C, 0)) {
 			while (true) {
-				if (isEqual(live(V), live(_T))) {
-					yield* g.callName(f, live(C), "ContractDisease", [live(f.src)]);
+				if (V == _T) {
+					yield* C.ContractDisease(this);
 					break;
 				}
-				Temp = (yield* g.call(f, P("/proc/get_step_towards"), null, [live(V), live(_T)]));
-				if (isEqual(rt.fv(f, "CanAtmosPass", live(V)), -1)) {
-					$0 = (yield* g.callName(f, live(V), "CanAtmosPass", [live(Temp)]));
+				Temp = get_step_towards(V, _T);
+				if (V.CanAtmosPass == -1) {
+					$0 = V.CanAtmosPass(Temp);
+				} else if (V.CanAtmosPass == -2) {
+					$0 = (!V.density ? 1 : 0);
 				} else {
-					if (isEqual(rt.fv(f, "CanAtmosPass", live(V)), -2)) {
-						$0 = (!truthy(rt.fv(f, "density", live(V))) ? 1 : 0);
-					} else {
-						$0 = rt.fv(f, "CanAtmosPass", live(V));
-					}
+					$0 = V.CanAtmosPass;
 				}
-				if (!truthy($0)) {
+				if (!$0) {
 					break;
 				}
-				V = live(Temp);
+				V = Temp;
 			}
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /datum/disease/proc/process  (code/datums/diseases/_disease.dm:133)  may sleep
+// _disease.dm:133
 rt.def("/datum/disease/proc/process", function* process(f: Frame) {
 	let D: Value = null;
-	let $e: any;
-	f.vars = () => [D, $e];
-	if (!truthy(rt.sv(f, "holder"))) {
-		(rt.modField(f, rt.gl("SSdisease"), "processing", live(f.src), subtract));
-		return live(f.dot);
+	if (!this.holder) {
+		GLOB.SSdisease.processing -= this;
+		return f.dot;
 	}
-	if (truthy(rt.op(f, "Prob", [], [rt.sv(f, "infectivity")]))) {
-		yield* g.srcCall(f, "spread", rt.sv(f, "holder"));
+	if (prob(this.infectivity)) {
+		yield* this.spread(this.holder);
 	}
-	if (truthy(rt.sv(f, "affected_mob"))) {
-		D = null;
-		rt.forList(f, 0, rt.fv(f, "viruses", rt.sv(f, "affected_mob")), T("/datum/disease"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			D = $e;
-			if (!isEqual(live(D), live(f.src))) {
-				if (truthy((yield* g.srcCall(f, "IsSame", live(D))))) {
-					yield* g.call(f, P("/proc/qdel"), null, [live(D)]);
+	if (this.affected_mob) {
+		for (D of each(this.affected_mob.viruses, T("/datum/disease"))) {
+			if (D != this) {
+				if (yield* this.IsSame(D)) {
+					yield* qdel(D);
 				}
 			}
 		}
-		rt.endFor(f, 0);
-		if (isEqual(rt.sv(f, "holder"), rt.sv(f, "affected_mob"))) {
-			if (!isEqual(rt.fv(f, "stat", rt.sv(f, "affected_mob")), 2)) {
-				yield* g.srcCall(f, "stage_act");
+		if (this.holder == this.affected_mob) {
+			if (this.affected_mob.stat != 2) {
+				yield* this.stage_act();
 			}
 		}
 	}
-	if (truthy(rt.sv(f, "affected_mob"))) return f.dot;
-	if (!truthy(rt.op(f, "Prob", [], [70]))) return f.dot;
-	if (!rt.le(rt.incSrcVar(f, "longevity", -1, false), 0)) return f.dot;
-	yield* g.srcCall(f, "cure");
+	if (this.affected_mob) return f.dot;
+	if (!prob(70)) return f.dot;
+	if (!(--this.longevity <= 0)) return f.dot;
+	yield* this.cure();
 	return f.dot;
 }, true, { waitfor: false });
 
-// /datum/disease/proc/cure  (code/datums/diseases/_disease.dm:158)  may sleep
+// _disease.dm:158
 rt.def("/datum/disease/proc/cure", function* cure(f: Frame) {
-	if (truthy(rt.sv(f, "affected_mob"))) {
-		if (truthy(rt.bitAnd(rt.sv(f, "disease_flags"), 4))) {
-			if (!truthy((rt.isIn(f, rt.sv(f, "type"), rt.fv(f, "resistances", rt.sv(f, "affected_mob"))) ? 1 : 0))) {
-				rt.modField(f, rt.sv(f, "affected_mob"), "resistances", rt.sv(f, "type"), add);
+	if (this.affected_mob) {
+		if (rt.bitAnd(this.disease_flags, CAN_RESIST)) {
+			if (!rt.isIn(f, this.type, this.affected_mob.resistances)) {
+				this.affected_mob.resistances += this.type;
 			}
 		}
-		yield* g.srcCall(f, "remove_virus");
+		this.remove_virus();
 	}
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
-// /datum/disease/proc/New  (code/datums/diseases/_disease.dm:166)  may sleep
+// _disease.dm:166
 rt.def("/datum/disease/proc/New", function* New(f: Frame) {
 	let H: Value = null, O: Value = null;
-	let $e: any;
-	f.vars = () => [H, O, $e];
-	if ((truthy(rt.sv(f, "required_organs")) && truthy(rt.len(f, rt.sv(f, "required_organs"))))) {
-		if (truthy((rt.istype(rt.sv(f, "affected_mob"), T("/mob/living/carbon/human")) ? 1 : 0))) {
-			H = rt.sv(f, "affected_mob");
-			O = null;
-			rt.forList(f, 0, rt.sv(f, "required_organs"), T("/obj/item/organ"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				O = $e;
-				if (!truthy(rt.locateIn(f, live(O), rt.fv(f, "bodyparts", live(H))))) {
-					if (!truthy(rt.locateIn(f, live(O), rt.fv(f, "internal_organs", live(H))))) {
-						yield* g.srcCall(f, "cure");
-						return live(f.dot);
+	if (this.required_organs && rt.len(f, this.required_organs)) {
+		if (rt.istype(this.affected_mob, T("/mob/living/carbon/human"))) {
+			H = this.affected_mob;
+			for (O of each(this.required_organs, T("/obj/item/organ"))) {
+				if (!rt.locateIn(f, O, H.bodyparts)) {
+					if (!rt.locateIn(f, O, H.internal_organs)) {
+						yield* this.cure();
+						return f.dot;
 					}
 				}
 			}
-			rt.endFor(f, 0);
 		}
 	}
-	rt.modField(f, rt.gl("SSdisease"), "processing", live(f.src), add);
+	GLOB.SSdisease.processing += this;
 	return f.dot;
 }, true);
 
-// /datum/disease/proc/IsSame  (code/datums/diseases/_disease.dm:179)
+// _disease.dm:179
 rt.def("/datum/disease/proc/IsSame", function IsSame(f: Frame, D: Value) {
-	if (truthy(rt.op(f, "IsType", [], [live(f.src), rt.fv(f, "type", live(D))]))) {
+	if (rt.op(f, "IsType", [], [this, D.type])) {
 		return 1;
 	}
 	return 0;
 });
 
-// /datum/disease/proc/Copy  (code/datums/diseases/_disease.dm:185)  may sleep
+// _disease.dm:185
 rt.def("/datum/disease/proc/Copy", function* Copy(f: Frame) {
 	let D: Value = null;
-	f.vars = () => [D];
-	rt.setFv(f, "strain_data", (D = (yield* g.new_(f, rt.sv(f, "type"), []))), (yield* g.callName(f, rt.sv(f, "strain_data"), "Copy", [])));
-	return live(D);
+	(D = (yield* new_(this.type))).strain_data = (yield* this.strain_data.Copy());
+	return D;
 }, true);
 
-// /datum/disease/proc/Destroy  (code/datums/diseases/_disease.dm:195)  may sleep
+// _disease.dm:195
 rt.def("/datum/disease/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.callName(f, rt.fv(f, "processing", rt.gl("SSdisease")), "Remove", [live(f.src)]);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* GLOB.SSdisease.processing.Remove(this);
+	return (yield* parent_proc());
 }, true);
 
-// /datum/disease/proc/IsSpreadByTouch  (code/datums/diseases/_disease.dm:200)
+// _disease.dm:200
 rt.def("/datum/disease/proc/IsSpreadByTouch", function IsSpreadByTouch(f: Frame) {
-	if (((truthy(rt.bitAnd(rt.sv(f, "spread_flags"), 8)) || truthy(rt.bitAnd(rt.sv(f, "spread_flags"), 16))) || truthy(rt.bitAnd(rt.sv(f, "spread_flags"), 32)))) {
+	if (rt.bitAnd(this.spread_flags, CONTACT_FEET) || rt.bitAnd(this.spread_flags, CONTACT_HANDS) || rt.bitAnd(this.spread_flags, CONTACT_GENERAL)) {
 		return 1;
 	}
 	return 0;
 });
 
-// /datum/disease/proc/remove_virus  (code/datums/diseases/_disease.dm:206)
+// _disease.dm:206
 rt.def("/datum/disease/proc/remove_virus", function remove_virus(f: Frame) {
-	(rt.modField(f, rt.sv(f, "affected_mob"), "viruses", live(f.src), subtract));
-	rt.callName(f, rt.sv(f, "affected_mob"), "med_hud_set_status", []);
+	this.affected_mob.viruses -= this;
+	this.affected_mob.med_hud_set_status();
 	return f.dot;
 });

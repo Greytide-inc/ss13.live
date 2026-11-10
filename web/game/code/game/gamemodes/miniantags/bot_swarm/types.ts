@@ -1,5 +1,5 @@
 // Types declared in code/game/gamemodes/miniantags/bot_swarm that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(9214, "/obj/item/device/unactivated_swarmer/deactivated", "/obj/item/device/unactivated_swarmer", {
 	name: "deactivated swarmer",

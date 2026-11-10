@@ -5,7 +5,7 @@
 // The floor is ringed by RIM tiles of indestructible wall: wider than half the 15-tile view, so space beyond is never in sight.
 // The area is tg's away-mission beach, renamed Creative: gravity, powered without an APC, and fully lit (dynamic_lighting 0), so no
 // tile gets a light overlay or shadows (the saved world ~12 MB smaller than with /area/ruin/unpowered's own lighting).
-// The floor is tg's unbreakable floor (/turf/open/indestructible/creative, game/.../environmental/types.ts): plasteel's look, but it can't be pried up, broken, burnt or bombed,
+// The floor is tg's unbreakable floor (/turf/open/indestructible/creative, game/.../environmental/types.ts): a dark grid look of its own, and it can't be pried up, broken, burnt or bombed,
 // and its baseturf (what's left when what's on top is destroyed) is itself, as on Lavaland: walls built on it carry that
 // baseturf, so bombing one leaves this floor, never space.
 // Everyone late-joins on the middle tile (/obj/effect/landmark/latejoin; ghosts start there too).

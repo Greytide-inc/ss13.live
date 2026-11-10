@@ -1,7 +1,7 @@
-// From code/modules/mob/living/carbon/carbon_defines.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/carbon/carbon_defines.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(4810, "/mob/living/carbon", "/mob/living", {
@@ -47,24 +47,22 @@ rt.type(4810, "/mob/living/carbon", "/mob/living", {
 	has_limbs: 1,
 }, { global: { limb_icon_cache: 711 } });
 
-// /mob/living/carbon/proc/<init>  (code/modules/mob/living/carbon/carbon_defines.dm:5)
+// carbon_defines.dm:5
 rt.def("/mob/living/carbon/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "stomach_contents", rt.list());
-	$0 = $0;
-	rt.setSv(f, "internal_organs", rt.list());
-	$0 = $0;
-	rt.setSv(f, "internal_organs_slot", rt.list());
-	$0 = $0;
-	rt.setSv(f, "abilities", rt.list());
-	$0 = $0;
-	rt.setSv(f, "hand_bodyparts", rt.list());
-	$0 = $0;
-	rt.setSv(f, "overlays_standing", rt.op(f, "CreateMultidimensionalList", [1], [26]));
-	rt.setSv(f, "possible_a_intents", rt.list("help", "harm"));
-	$0 = $0;
-	rt.setSv(f, "bodyparts", rt.list(T("/obj/item/bodypart/chest"), T("/obj/item/bodypart/head"), T("/obj/item/bodypart/l_arm"), T("/obj/item/bodypart/r_arm"), T("/obj/item/bodypart/r_leg"), T("/obj/item/bodypart/l_leg")));
+	parent_proc();
+	this.stomach_contents = list();
+
+	this.internal_organs = list();
+
+	this.internal_organs_slot = list();
+
+	this.abilities = list();
+
+	this.hand_bodyparts = list();
+
+	this.overlays_standing = rt.op(f, "CreateMultidimensionalList", [1], [26]);
+	this.possible_a_intents = list("help", "harm");
+
+	this.bodyparts = list(T("/obj/item/bodypart/chest"), T("/obj/item/bodypart/head"), T("/obj/item/bodypart/l_arm"), T("/obj/item/bodypart/r_arm"), T("/obj/item/bodypart/r_leg"), T("/obj/item/bodypart/l_leg"));
 	return f.dot;
 });

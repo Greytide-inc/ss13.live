@@ -1,7 +1,7 @@
-// From code/game/objects/items/crayons.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/crayons.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, g, fmt } = rt;
 
 
 rt.type(9662, "/obj/item/toy/crayon", "/obj/item/toy", {
@@ -44,143 +44,114 @@ rt.type(9662, "/obj/item/toy/crayon", "/obj/item/toy", {
 	icon_state: "crayonred",
 });
 
-// /obj/item/toy/crayon/proc/<init>  (code/game/objects/items/crayons.dm:56)
+// crayons.dm:56
 rt.def("/obj/item/toy/crayon/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "attack_verb", rt.list("attacked", "coloured"));
-	rt.setSv(f, "graffiti", rt.list("amyjon", "face", "matt", "revolution", "engie", "guy", "end", "dwarf", "uboa", "body", "cyka", "arrow", "star", "poseur tag"));
-	rt.setSv(f, "letters", rt.list("a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"));
-	rt.setSv(f, "numerals", rt.list("0", "1", "2", "3", "4", "5", "6", "7", "8", "9"));
-	rt.setSv(f, "oriented", rt.list("arrow", "body"));
-	rt.setSv(f, "runes", rt.list("rune1", "rune2", "rune3", "rune4", "rune5", "rune6"));
-	rt.setSv(f, "randoms", rt.list("Random Anything", "Random Rune", "Random Oriented", "Random Number", "Random Graffiti", "Random Letter"));
-	rt.setSv(f, "graffiti_large_h", rt.list("yiffhell", "secborg", "paint"));
-	$0 = $0;
-	rt.setSv(f, "validSurfaces", rt.list(T("/turf/open/floor")));
-	rt.setSv(f, "reagent_contents", rt.alist(f, ["nutriment", 1]));
+	parent_proc();
+	this.attack_verb = list("attacked", "coloured");
+	this.graffiti = list("amyjon", "face", "matt", "revolution", "engie", "guy", "end", "dwarf", "uboa", "body", "cyka", "arrow", "star", "poseur tag");
+	this.letters = list("a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z");
+	this.numerals = list("0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
+	this.oriented = list("arrow", "body");
+	this.runes = list("rune1", "rune2", "rune3", "rune4", "rune5", "rune6");
+	this.randoms = list("Random Anything", "Random Rune", "Random Oriented", "Random Number", "Random Graffiti", "Random Letter");
+	this.graffiti_large_h = list("yiffhell", "secborg", "paint");
+
+	this.validSurfaces = list(T("/turf/open/floor"));
+	this.reagent_contents = rt.alist(f, ["nutriment", 1]);
 	return f.dot;
 });
 
-// /obj/item/toy/crayon/proc/suicide_act  (code/game/objects/items/crayons.dm:73)
+// crayons.dm:73
 rt.def("/obj/item/toy/crayon/proc/suicide_act", function suicide_act(f: Frame, user: Value) {
-	rt.callName(f, live(user), "visible_message", [fmt("<span class='suicide'>＀ is jamming ＀ up ＀ nose and into ＀ brain. It looks like ＀ trying to commit suicide!</span>", [live(user), live(f.src), rt.callName(f, live(user), "p_their", []), rt.callName(f, live(user), "p_their", []), rt.callName(f, live(user), "p_theyre", [])])]);
+	user.visible_message(`<span class='suicide'>${user} is jamming ${this} up ${user.p_their()} nose and into ${user.p_their()} brain. It looks like ${user.p_theyre()} trying to commit suicide!</span>`);
 	return 9;
 });
 
-// /obj/item/toy/crayon/proc/New  (code/game/objects/items/crayons.dm:77)  may sleep
+// crayons.dm:77
 rt.def("/obj/item/toy/crayon/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (isEqual(rt.sv(f, "name"), "crayon")) {
-		rt.setSv(f, "name", fmt("＀ crayon", [rt.sv(f, "item_color")]));
+	yield* parent_proc();
+	if (this.name == "crayon") {
+		this.name = `${this.item_color} crayon`;
 	}
-	if (truthy(rt.gl("config"))) {
-		if (isEqual(rt.fv(f, "mutant_races", rt.gl("config")), 1)) {
+	if (GLOB.config) {
+		if (GLOB.config.mutant_races == 1) {
 			(rt.modSrcVar(f, "graffiti", "antilizard", rt.bitOr));
 			(rt.modSrcVar(f, "graffiti", "prolizard", rt.bitOr));
 		}
 	}
-	rt.setSv(f, "all_drawables", add(add(add(add(add(rt.sv(f, "graffiti"), rt.sv(f, "letters")), rt.sv(f, "numerals")), rt.sv(f, "oriented")), rt.sv(f, "runes")), rt.sv(f, "graffiti_large_h")));
-	rt.setSv(f, "drawtype", rt.op(f, "PickUnweighted", [1], [rt.sv(f, "all_drawables")]));
-	yield* g.srcCall(f, "refill");
+	this.all_drawables = this.graffiti + this.letters + this.numerals + this.oriented + this.runes + this.graffiti_large_h;
+	this.drawtype = pick(this.all_drawables);
+	yield* this.refill();
 	return f.dot;
 }, true);
 
-// /obj/item/toy/crayon/proc/refill  (code/game/objects/items/crayons.dm:93)  may sleep
+// crayons.dm:93
 rt.def("/obj/item/toy/crayon/proc/refill", function* refill(f: Frame) {
-	let total_weight: Value = null, key: Value = null, units_per_weight: Value = null, reagent: Value = null, weight: Value = null, amount: Value = null;
-	let $e: any;
-	f.vars = () => [total_weight, key, units_per_weight, reagent, weight, amount, $e];
-	if (isEqual(rt.sv(f, "charges"), -1)) {
-		rt.setSv(f, "charges_left", 100);
+	let key: Value = null, reagent: Value = null, weight: Value = null, amount: Value = null;
+	if (this.charges == -1) {
+		this.charges_left = 100;
 	} else {
-		rt.setSv(f, "charges_left", rt.sv(f, "charges"));
+		this.charges_left = this.charges;
 	}
-	if (!truthy(rt.sv(f, "reagents"))) {
-		yield* g.srcCall(f, "create_reagents", multiply(rt.sv(f, "charges_left"), rt.sv(f, "volume_multiplier")));
+	if (!this.reagents) {
+		yield* this.create_reagents(this.charges_left * this.volume_multiplier);
 	}
-	yield* g.callName(f, rt.sv(f, "reagents"), "clear_reagents", []);
-	total_weight = 0;
-	key = null;
-	rt.forList(f, 0, rt.sv(f, "reagent_contents"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		key = $e;
-		total_weight = rt.modify(live(total_weight), rt.index(rt.sv(f, "reagent_contents"), live(key)), add);
+	yield* this.reagents.clear_reagents();
+	let total_weight: Value = 0;
+	for (key of each(this.reagent_contents)) {
+		total_weight += rt.index(this.reagent_contents, key);
 	}
-	rt.endFor(f, 0);
-	units_per_weight = divide(rt.fv(f, "maximum_volume", rt.sv(f, "reagents")), live(total_weight));
-	reagent = null;
-	rt.forList(f, 0, rt.sv(f, "reagent_contents"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		reagent = $e;
-		weight = rt.index(rt.sv(f, "reagent_contents"), live(reagent));
-		amount = multiply(live(weight), live(units_per_weight));
-		yield* g.callName(f, rt.sv(f, "reagents"), "add_reagent", [live(reagent), live(amount)]);
+	let units_per_weight: Value = this.reagents.maximum_volume / total_weight;
+	for (reagent of each(this.reagent_contents)) {
+		weight = rt.index(this.reagent_contents, reagent);
+		amount = weight * units_per_weight;
+		yield* this.reagents.add_reagent(reagent, amount);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /obj/item/toy/crayon/proc/use_charges  (code/game/objects/items/crayons.dm:114)  may sleep
+// crayons.dm:114
 rt.def("/obj/item/toy/crayon/proc/use_charges", function* use_charges(f: Frame, amount: Value) {
-	let $0: any;
-	f.vars = () => [amount, $0];
-	$0 = rt.sv(f, "paint_mode");
-	if ($0 === 2) {
-		(amount = rt.modify(live(amount), 3, multiply));
+	if (this.paint_mode === PAINT_LARGE_HORIZONTAL) {
+		amount *= 3;
 	}
-	if (isEqual(rt.sv(f, "charges"), -1)) {
-		f.dot = live(amount);
-		yield* g.srcCall(f, "refill");
+	if (this.charges == -1) {
+		f.dot = amount;
+		yield* this.refill();
 	} else {
-		f.dot = (yield* g.call(f, P("/proc/min"), null, [rt.sv(f, "charges_left"), live(amount)]));
-		(rt.modSrcVar(f, "charges_left", live(f.dot), subtract));
+		f.dot = min(this.charges_left, amount);
+		this.charges_left -= f.dot;
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/toy/crayon/proc/check_empty  (code/game/objects/items/crayons.dm:128)  may sleep
+// crayons.dm:128
 rt.def("/obj/item/toy/crayon/proc/check_empty", function* check_empty(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if ((!truthy(live(f.src)) || truthy(rt.fv(f, "gc_destroyed", live(f.src))))) {
+	if (!this || this.gc_destroyed) {
 		return 1;
 	}
 	f.dot = 0;
-	if (isEqual(rt.sv(f, "charges"), -1)) {
+	if (this.charges == -1) {
 		f.dot = 0;
 	} else {
-		if (truthy(rt.sv(f, "charges_left"))) return f.dot;
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>There is no more of ％！ left!</span>", [rt.fv(f, "name", live(f.src))])]);
-		if (truthy(rt.sv(f, "self_contained"))) {
-			yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+		if (this.charges_left) return f.dot;
+		to_chat(user, fmt("<span class='warning'>There is no more of ％！ left!</span>", [this.name]));
+		if (this.self_contained) {
+			yield* qdel(this);
 		}
 		f.dot = 1;
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/toy/crayon/proc/ui_interact  (code/game/objects/items/crayons.dm:144)  may sleep
+// crayons.dm:144
 rt.def("/obj/item/toy/crayon/proc/ui_interact", function* ui_interact(f: Frame, user: Value, ui_key: Value, ui: Value, force_open: Value, master_ui: Value, state: Value) {
-	f.vars = () => [user, ui_key, ui, force_open, master_ui, state];
-	if (live(ui_key) === null) {
-		ui_key = "main";
-	}
-	if (live(ui) === null) {
-		ui = null;
-	}
-	if (live(force_open) === null) {
-		force_open = 0;
-	}
-	if (live(master_ui) === null) {
-		master_ui = null;
-	}
-	if (live(state) === null) {
-		state = rt.gl("hands_state");
-	}
-	yield* g.callName(f, rt.gl("SStgui"), "try_update_ui", [live(user), live(f.src), live(ui_key), live(ui), live(force_open)]);
-	if (truthy(live(ui))) return f.dot;
-	yield* g.callName(f, (ui = (yield* g.new_(f, T("/datum/tgui"), [live(user), live(f.src), live(ui_key), "crayon", rt.sv(f, "name"), 600, 600, live(master_ui), live(state)]))), "open", []);
+	ui_key ??= "main";
+	force_open ??= 0;
+	state ??= GLOB.hands_state;
+	yield* GLOB.SStgui.try_update_ui(user, this, ui_key, ui, force_open);
+	if (ui) return f.dot;
+	yield* (ui = (yield* new_(T("/datum/tgui"), user, this, ui_key, "crayon", this.name, 600, 600, master_ui, state))).open();
 	return f.dot;
 }, true);
 
@@ -205,396 +176,318 @@ rt.type(9663, "/obj/item/toy/crayon/spraycan", "/obj/item/toy/crayon", {
 	desc: "A metallic container containing tasty paint.\n Alt-click to toggle the cap.",
 });
 
-// /obj/item/toy/crayon/spraycan/proc/AltClick  (code/game/objects/items/crayons.dm:152)
+// crayons.dm:152
 rt.def("/obj/item/toy/crayon/spraycan/proc/AltClick", function AltClick(f: Frame, user: Value) {
-	let $0: any, $1: any, $2: any;
-	f.vars = () => [$0, $1, $2];
-	if (!truthy(rt.sv(f, "has_cap"))) return f.dot;
-	rt.setSv(f, "is_capped", (!truthy(rt.sv(f, "is_capped")) ? 1 : 0));
-	$0 = live(user);
-	$1 = live(f.src);
-	if (truthy(rt.sv(f, "is_capped"))) {
-		$1 = $1;
+	let $2: any;
+	if (!this.has_cap) return f.dot;
+	this.is_capped = (!this.is_capped ? 1 : 0);
+	let $0: any = user;
+	let $1: any = this;
+	if (this.is_capped) {
+
 		$2 = "on";
 	} else {
 		$2 = "off";
 	}
-	rt.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='notice'>The cap on ＀ is now ＀.</span>", [$1, $2])]);
-	rt.callSrc(f, "update_icon", []);
+	to_chat($0, `<span class='notice'>The cap on ${$1} is now ${$2}.</span>`);
+	this.update_icon();
 	return f.dot;
 });
 
-// /obj/item/toy/crayon/proc/ui_data  (code/game/objects/items/crayons.dm:157)
+// crayons.dm:157
 rt.def("/obj/item/toy/crayon/proc/ui_data", function ui_data(f: Frame) {
-	let data: Value = null, D: Value = null, g_items: Value = null, _g: Value = null, glh_items: Value = null, glh: Value = null, L_items: Value = null, L: Value = null, N_items: Value = null, N: Value = null, O_items: Value = null, O: Value = null, R_items: Value = null, R: Value = null, rand_items: Value = null, i: Value = null;
-	let $e: any;
-	f.vars = () => [data, D, g_items, _g, glh_items, glh, L_items, L, N_items, N, O_items, O, R_items, R, rand_items, i, $e];
-	rt.setAt((data = rt.list()), "drawables", rt.list());
-	D = rt.at(live(data), "drawables");
-	g_items = rt.list();
-	D = rt.modify(live(D), rt.list(rt.alist(f, ["name", "Graffiti", "items", live(g_items)])), add);
-	_g = null;
-	rt.forList(f, 0, rt.sv(f, "graffiti"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_g = $e;
-		g_items = rt.modify(live(g_items), rt.list(rt.alist(f, ["item", live(_g)])), add);
+	let data: Value = null, _g: Value = null, glh: Value = null, L: Value = null, N: Value = null, O: Value = null, R: Value = null, i: Value = null;
+	rt.setAt((data = list()), "drawables", list());
+	let D: Value = rt.at(data, "drawables");
+	let g_items: Value = list();
+	D += list(rt.alist(f, ["name", "Graffiti", "items", g_items]));
+	for (_g of each(this.graffiti)) {
+		g_items += list(rt.alist(f, ["item", _g]));
 	}
-	rt.endFor(f, 0);
-	glh_items = rt.list();
-	D = rt.modify(live(D), rt.list(rt.alist(f, ["name", "Graffiti Large Horizontal", "items", live(glh_items)])), add);
-	glh = null;
-	rt.forList(f, 0, rt.sv(f, "graffiti_large_h"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		glh = $e;
-		glh_items = rt.modify(live(glh_items), rt.list(rt.alist(f, ["item", live(glh)])), add);
+	let glh_items: Value = list();
+	D += list(rt.alist(f, ["name", "Graffiti Large Horizontal", "items", glh_items]));
+	for (glh of each(this.graffiti_large_h)) {
+		glh_items += list(rt.alist(f, ["item", glh]));
 	}
-	rt.endFor(f, 0);
-	L_items = rt.list();
-	D = rt.modify(live(D), rt.list(rt.alist(f, ["name", "Letters", "items", live(L_items)])), add);
-	L = null;
-	rt.forList(f, 0, rt.sv(f, "letters"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		L = $e;
-		L_items = rt.modify(live(L_items), rt.list(rt.alist(f, ["item", live(L)])), add);
+	let L_items: Value = list();
+	D += list(rt.alist(f, ["name", "Letters", "items", L_items]));
+	for (L of each(this.letters)) {
+		L_items += list(rt.alist(f, ["item", L]));
 	}
-	rt.endFor(f, 0);
-	N_items = rt.list();
-	D = rt.modify(live(D), rt.list(rt.alist(f, ["name", "Numerals", "items", live(N_items)])), add);
-	N = null;
-	rt.forList(f, 0, rt.sv(f, "numerals"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		N = $e;
-		N_items = rt.modify(live(N_items), rt.list(rt.alist(f, ["item", live(N)])), add);
+	let N_items: Value = list();
+	D += list(rt.alist(f, ["name", "Numerals", "items", N_items]));
+	for (N of each(this.numerals)) {
+		N_items += list(rt.alist(f, ["item", N]));
 	}
-	rt.endFor(f, 0);
-	O_items = rt.list();
-	D = rt.modify(live(D), rt.list(rt.alist(f, ["name", "Oriented", "items", live(O_items)])), add);
-	O = null;
-	rt.forList(f, 0, rt.sv(f, "oriented"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		O = $e;
-		O_items = rt.modify(live(O_items), rt.list(rt.alist(f, ["item", live(O)])), add);
+	let O_items: Value = list();
+	D += list(rt.alist(f, ["name", "Oriented", "items", O_items]));
+	for (O of each(this.oriented)) {
+		O_items += list(rt.alist(f, ["item", O]));
 	}
-	rt.endFor(f, 0);
-	R_items = rt.list();
-	D = rt.modify(live(D), rt.list(rt.alist(f, ["name", "Runes", "items", live(R_items)])), add);
-	R = null;
-	rt.forList(f, 0, rt.sv(f, "runes"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		R = $e;
-		R_items = rt.modify(live(R_items), rt.list(rt.alist(f, ["item", live(R)])), add);
+	let R_items: Value = list();
+	D += list(rt.alist(f, ["name", "Runes", "items", R_items]));
+	for (R of each(this.runes)) {
+		R_items += list(rt.alist(f, ["item", R]));
 	}
-	rt.endFor(f, 0);
-	rand_items = rt.list();
-	D = rt.modify(live(D), rt.list(rt.alist(f, ["name", "Random", "items", live(rand_items)])), add);
-	i = null;
-	rt.forList(f, 0, rt.sv(f, "randoms"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		i = $e;
-		rand_items = rt.modify(live(rand_items), rt.list(rt.alist(f, ["item", live(i)])), add);
+	let rand_items: Value = list();
+	D += list(rt.alist(f, ["name", "Random", "items", rand_items]));
+	for (i of each(this.randoms)) {
+		rand_items += list(rt.alist(f, ["item", i]));
 	}
-	rt.endFor(f, 0);
-	rt.setAt(live(data), "selected_stencil", rt.sv(f, "drawtype"));
-	rt.setAt(live(data), "text_buffer", rt.sv(f, "text_buffer"));
-	rt.setAt(live(data), "has_cap", rt.sv(f, "has_cap"));
-	rt.setAt(live(data), "is_capped", rt.sv(f, "is_capped"));
-	rt.setAt(live(data), "can_change_colour", rt.sv(f, "can_change_colour"));
-	rt.setAt(live(data), "current_colour", rt.sv(f, "paint_color"));
-	return live(data);
+	rt.setAt(data, "selected_stencil", this.drawtype);
+	rt.setAt(data, "text_buffer", this.text_buffer);
+	rt.setAt(data, "has_cap", this.has_cap);
+	rt.setAt(data, "is_capped", this.is_capped);
+	rt.setAt(data, "can_change_colour", this.can_change_colour);
+	rt.setAt(data, "current_colour", this.paint_color);
+	return data;
 });
 
-// /obj/item/toy/crayon/proc/ui_act  (code/game/objects/items/crayons.dm:207)  may sleep
-rt.def("/obj/item/toy/crayon/proc/ui_act", function* ui_act(f: Frame) {
+// crayons.dm:207
+rt.def("/obj/item/toy/crayon/proc/ui_act", function* ui_act(f: Frame, action: Value, params: Value) {
 	let stencil: Value = null, txt: Value = null;
-	let $0: any;
-	f.vars = () => [stencil, txt, $0];
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		return live(f.dot);
+	if (yield* parent_proc()) {
+		return f.dot;
 	}
-	$0 = live(f.args[0]);
-	if ($0 === "toggle_cap") {
-		if (truthy(rt.sv(f, "has_cap"))) {
-			rt.setSv(f, "is_capped", (!truthy(rt.sv(f, "is_capped")) ? 1 : 0));
+	if (action === "toggle_cap") {
+		if (this.has_cap) {
+			this.is_capped = (!this.is_capped ? 1 : 0);
 			f.dot = 1;
 		}
-	} else if ($0 === "select_stencil") {
-		if (truthy((rt.isIn(f, (stencil = rt.at(live(f.args[1]), "item")), add(rt.sv(f, "all_drawables"), rt.sv(f, "randoms"))) ? 1 : 0))) {
-			rt.setSv(f, "drawtype", live(stencil));
+	} else if (action === "select_stencil") {
+		if (rt.isIn(f, (stencil = rt.at(params, "item")), this.all_drawables + this.randoms)) {
+			this.drawtype = stencil;
 			f.dot = 1;
 		}
-		if (truthy((rt.isIn(f, live(stencil), rt.sv(f, "graffiti_large_h")) ? 1 : 0))) {
-			rt.setSv(f, "paint_mode", 2);
-			rt.setSv(f, "text_buffer", "");
+		if (rt.isIn(f, stencil, this.graffiti_large_h)) {
+			this.paint_mode = PAINT_LARGE_HORIZONTAL;
+			this.text_buffer = "";
 		} else {
-			rt.setSv(f, "paint_mode", 1);
+			this.paint_mode = 1;
 		}
-	} else if ($0 === "select_colour") {
-		if (truthy(rt.sv(f, "can_change_colour"))) {
-			rt.setSv(f, "paint_color", (yield* g.op(f, "Prompt", [256], [null, null, "Choose Color", live(f.usr), null])));
+	} else if (action === "select_colour") {
+		if (this.can_change_colour) {
+			this.paint_color = (yield* g.op(f, "Prompt", [256], [null, null, "Choose Color", f.usr, null]));
 			f.dot = 1;
 		}
-	} else if ($0 === "enter_text") {
-		rt.setSv(f, "text_buffer", (yield* g.srcCall(f, "crayon_text_strip", (txt = (yield* g.call(f, P("/proc/stripped_input"), null, [null, live(f.usr), null, "Choose what to write.", null, "Scribbles", "default", rt.sv(f, "text_buffer")], rt.Args.Named))))));
+	} else if (action === "enter_text") {
+		this.text_buffer = this.crayon_text_strip((txt = (yield* stripped_input(f.usr, "Choose what to write.", "Scribbles", { default: this.text_buffer }))));
 		f.dot = 1;
-		rt.setSv(f, "paint_mode", 1);
-		rt.setSv(f, "drawtype", "a");
+		this.paint_mode = 1;
+		this.drawtype = "a";
 	}
-	yield* g.srcCall(f, "update_icon");
+	yield* this.update_icon();
 	return f.dot;
-}, true, { args: ["action", "params"] });
+}, true);
 
-// /obj/item/toy/crayon/proc/crayon_text_strip  (code/game/objects/items/crayons.dm:238)
+// crayons.dm:238
 rt.def("/obj/item/toy/crayon/proc/crayon_text_strip", function crayon_text_strip(f: Frame, text: Value) {
-	let base: Value = null, out: Value = null, a: Value = null;
-	let $e: any;
-	f.vars = () => [base, out, a, $e];
-	base = subtract(rt.call(f, P("/proc/splittext"), null, [rt.call(f, P("/proc/lowertext"), null, [live(text)]), rt.call(f, P("/proc/regex"), null, ["(.)"])]), rt.call(f, P("/proc/splittext"), null, [rt.call(f, P("/proc/lowertext"), null, [live(text)]), ""]));
-	out = rt.list();
-	a = null;
-	rt.forList(f, 0, live(base));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		a = $e;
-		if (truthy((rt.isIn(f, live(a), rt.bitOr(rt.sv(f, "letters"), rt.sv(f, "numerals"))) ? 1 : 0))) {
-			out = rt.modify(live(out), live(a), add);
+	let a: Value = null;
+	let base: Value = splittext(lowertext(text), regex("(.)")) - splittext(lowertext(text), "");
+	let out: Value = list();
+	for (a of each(base)) {
+		if (rt.isIn(f, a, rt.bitOr(this.letters, this.numerals))) {
+			out += a;
 		}
 	}
-	rt.endFor(f, 0);
-	return rt.call(f, P("/proc/jointext"), null, [live(out), ""]);
+	return jointext(out, "");
 });
 
-// /obj/item/toy/crayon/proc/afterattack  (code/game/objects/items/crayons.dm:246)  may sleep
+// crayons.dm:246
 rt.def("/obj/item/toy/crayon/proc/afterattack", function* afterattack(f: Frame, target: Value, user: Value, proximity: Value) {
-	let drawing: Value = null, temp: Value = null, gang_mode: Value = null, graf_rot: Value = null, takes_time: Value = null, wait_time: Value = null, affected_turfs: Value = null, left: Value = null, right: Value = null, cost: Value = null, fraction: Value = null, t: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [target, user, proximity, drawing, temp, gang_mode, graf_rot, takes_time, wait_time, affected_turfs, left, right, cost, fraction, t, $0, $e];
-	if ((!truthy(live(proximity)) || !truthy((yield* g.srcCall(f, "check_allowed_items", live(target)))))) {
-		return live(f.dot);
+	let graf_rot: Value = null, left: Value = null, right: Value = null, t: Value = null;
+	let $e: any;
+	if (!proximity || !this.check_allowed_items(target)) {
+		return f.dot;
 	}
-	if (truthy((yield* g.srcCall(f, "check_empty", live(user))))) {
-		return live(f.dot);
+	if (yield* this.check_empty(user)) {
+		return f.dot;
 	}
-	if (truthy((rt.istype(live(target), T("/obj/effect/decal/cleanable")) ? 1 : 0))) {
-		target = rt.fv(f, "loc", live(target));
+	if (rt.istype(target, T("/obj/effect/decal/cleanable"))) {
+		target = target.loc;
 	}
-	if (!truthy((yield* g.call(f, P("/proc/is_type_in_list"), null, [live(target), rt.sv(f, "validSurfaces")])))) {
-		return live(f.dot);
+	if (!is_type_in_list(target, this.validSurfaces)) {
+		return f.dot;
 	}
-	drawing = rt.sv(f, "drawtype");
-	$0 = rt.sv(f, "drawtype");
-	if ($0 === "Random Letter") {
-		drawing = rt.op(f, "PickUnweighted", [1], [rt.sv(f, "letters")]);
-	} else if ($0 === "Random Graffiti") {
-		drawing = rt.op(f, "PickUnweighted", [1], [rt.sv(f, "graffiti")]);
-	} else if ($0 === "Random Rune") {
-		drawing = rt.op(f, "PickUnweighted", [1], [rt.sv(f, "runes")]);
-	} else if ($0 === "Random Oriented") {
-		drawing = rt.op(f, "PickUnweighted", [1], [rt.sv(f, "oriented")]);
-	} else if ($0 === "Random Number") {
-		drawing = rt.op(f, "PickUnweighted", [1], [rt.sv(f, "numerals")]);
-	} else if ($0 === "Random Anything") {
-		drawing = rt.op(f, "PickUnweighted", [1], [rt.sv(f, "all_drawables")]);
+	let drawing: Value = this.drawtype;
+	if (this.drawtype === "Random Letter") {
+		drawing = pick(this.letters);
+	} else if (this.drawtype === "Random Graffiti") {
+		drawing = pick(this.graffiti);
+	} else if (this.drawtype === "Random Rune") {
+		drawing = pick(this.runes);
+	} else if (this.drawtype === "Random Oriented") {
+		drawing = pick(this.oriented);
+	} else if (this.drawtype === "Random Number") {
+		drawing = pick(this.numerals);
+	} else if (this.drawtype === "Random Anything") {
+		drawing = pick(this.all_drawables);
 	}
-	temp = "rune";
-	if (truthy((rt.isIn(f, live(drawing), rt.sv(f, "letters")) ? 1 : 0))) {
+	let temp: Value = "rune";
+	if (rt.isIn(f, drawing, this.letters)) {
 		temp = "letter";
-	} else {
-		if (truthy((rt.isIn(f, live(drawing), rt.sv(f, "graffiti")) ? 1 : 0))) {
-			temp = "graffiti";
-		} else {
-			if (truthy((rt.isIn(f, live(drawing), rt.sv(f, "numerals")) ? 1 : 0))) {
-				temp = "number";
-			}
-		}
+	} else if (rt.isIn(f, drawing, this.graffiti)) {
+		temp = "graffiti";
+	} else if (rt.isIn(f, drawing, this.numerals)) {
+		temp = "number";
 	}
-	gang_mode = 0;
-	if (((truthy(rt.sv(f, "gang")) && truthy(rt.fv(f, "mind", live(user)))) && truthy(rt.gv(f, "gang_datum", rt.fv(f, "mind", live(user)))))) {
+	let gang_mode: Value = 0;
+	if (this.gang && user.mind && user.mind.gang_datum) {
 		gang_mode = 1;
 	}
-	if ((truthy(live(gang_mode)) && !truthy((yield* g.srcCall(f, "can_claim_for_gang", live(user), live(target)))))) {
-		return live(f.dot);
+	if (gang_mode && !this.can_claim_for_gang(user, target)) {
+		return f.dot;
 	}
-	graf_rot = null;
-	if (truthy((rt.isIn(f, live(drawing), rt.sv(f, "oriented")) ? 1 : 0))) {
-		$0 = rt.fv(f, "dir", live(user));
-		if ($0 === 4) {
+	if (rt.isIn(f, drawing, this.oriented)) {
+		if (user.dir === 4) {
 			graf_rot = 90;
-		} else if ($0 === 2) {
+		} else if (user.dir === 2) {
 			graf_rot = 180;
-		} else if ($0 === 8) {
+		} else if (user.dir === 8) {
 			graf_rot = 270;
 		} else {
 			graf_rot = 0;
 		}
 	}
-	if (!truthy(rt.sv(f, "instant"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You start drawing a ＀ on the\t＀...</span>", [live(temp), rt.fv(f, "name", live(target))])]);
+	if (!this.instant) {
+		to_chat(user, `<span class='notice'>You start drawing a ${temp} on the\t${target.name}...</span>`);
 	}
-	if (truthy(rt.sv(f, "pre_noise"))) {
-		yield* g.srcCall(f, "audible_message", "<span class='notice'>You hear spraying.</span>");
-		yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(user)), rt.rsc("sound/effects/spray.ogg"), 5, 1, 5]);
+	if (this.pre_noise) {
+		this.audible_message("<span class='notice'>You hear spraying.</span>");
+		playsound(user.loc, rt.rsc("sound/effects/spray.ogg"), 5, 1, 5);
 	}
-	takes_time = (!truthy(rt.sv(f, "instant")) ? 1 : 0);
-	if (truthy(live(gang_mode))) {
+	let takes_time: Value = (!this.instant ? 1 : 0);
+	if (gang_mode) {
 		takes_time = 1;
 	}
-	wait_time = 50;
-	if (truthy(2)) {
-		(wait_time = rt.modify(live(wait_time), 3, multiply));
+	let wait_time: Value = 50;
+	if (PAINT_LARGE_HORIZONTAL) {
+		wait_time *= 3;
 	}
-	if (truthy(live(takes_time))) {
-		if (!truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(user), null, 50, "target", live(target)], rt.Args.Named)))) {
-			return live(f.dot);
+	if (takes_time) {
+		if (!(yield* do_after(user, 50, { target: target }))) {
+			return f.dot;
 		}
 	}
-	if (truthy(rt.length(rt.sv(f, "text_buffer")))) {
-		drawing = (yield* g.call(f, P("/proc/copytext"), null, [rt.sv(f, "text_buffer"), 1, 2]));
+	if (rt.length(this.text_buffer)) {
+		drawing = copytext(this.text_buffer, 1, 2);
 	}
-	affected_turfs = rt.list();
-	if (truthy(rt.sv(f, "actually_paints"))) {
-		if (truthy(live(gang_mode))) {
-			if (!truthy((yield* g.srcCall(f, "can_claim_for_gang", live(user), live(target))))) {
-				return live(f.dot);
+	let affected_turfs: Value = list();
+	if (this.actually_paints) {
+		if (gang_mode) {
+			if (!this.can_claim_for_gang(user, target)) {
+				return f.dot;
 			}
-			yield* g.srcCall(f, "tag_for_gang", live(user), live(target));
-			affected_turfs = rt.modify(live(affected_turfs), live(target), add);
-		} else {
-			$0 = rt.sv(f, "paint_mode");
-			if ($0 === 1) {
-				yield* g.new_(f, T("/obj/effect/decal/cleanable/crayon"), [live(target), rt.sv(f, "paint_color"), live(drawing), live(temp), live(graf_rot)]);
-				affected_turfs = rt.modify(live(affected_turfs), live(target), add);
-			} else if ($0 === 2) {
-				left = rt.locate(subtract(rt.fv(f, "x", live(target)), 1), rt.fv(f, "y", live(target)), rt.fv(f, "z", live(target)));
-				right = rt.locate(add(rt.fv(f, "x", live(target)), 1), rt.fv(f, "y", live(target)), rt.fv(f, "z", live(target)));
-				if ((truthy((yield* g.call(f, P("/proc/is_type_in_list"), null, [live(left), rt.sv(f, "validSurfaces")]))) && truthy((yield* g.call(f, P("/proc/is_type_in_list"), null, [live(right), rt.sv(f, "validSurfaces")]))))) {
-					yield* g.new_(f, T("/obj/effect/decal/cleanable/crayon"), [live(left), rt.sv(f, "paint_color"), live(drawing), live(temp), live(graf_rot), rt.rsc("icons/effects/96x32.dmi")]);
-					affected_turfs = rt.modify(live(affected_turfs), live(left), add);
-					affected_turfs = rt.modify(live(affected_turfs), live(right), add);
-					affected_turfs = rt.modify(live(affected_turfs), live(target), add);
-				} else {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>There isn't enough space to paint!</span>"]);
-					return live(f.dot);
-				}
+			yield* this.tag_for_gang(user, target);
+			affected_turfs += target;
+		} else if (this.paint_mode === PAINT_NORMAL) {
+			yield* new_(T("/obj/effect/decal/cleanable/crayon"), target, this.paint_color, drawing, temp, graf_rot);
+			affected_turfs += target;
+		} else if (this.paint_mode === PAINT_LARGE_HORIZONTAL) {
+			left = rt.locate(target.x - 1, target.y, target.z);
+			right = rt.locate(target.x + 1, target.y, target.z);
+			if (is_type_in_list(left, this.validSurfaces) && is_type_in_list(right, this.validSurfaces)) {
+				yield* new_(T("/obj/effect/decal/cleanable/crayon"), left, this.paint_color, drawing, temp, graf_rot, rt.rsc("icons/effects/96x32.dmi"));
+				affected_turfs += left;
+				affected_turfs += right;
+				affected_turfs += target;
+			} else {
+				to_chat(user, "<span class='warning'>There isn't enough space to paint!</span>");
+				return f.dot;
 			}
 		}
 	}
-	if (!truthy(rt.sv(f, "instant"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You finish drawing ％！.</span>", [live(temp)])]);
+	if (!this.instant) {
+		to_chat(user, fmt("<span class='notice'>You finish drawing ％！.</span>", [temp]));
 	} else {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You spray a ＀ on ％！</span>", [live(temp), rt.fv(f, "name", live(target))])]);
+		to_chat(user, fmt("<span class='notice'>You spray a ＀ on ％！</span>", [temp, target.name]));
 	}
-	if (truthy(rt.length(rt.sv(f, "text_buffer")))) {
-		rt.setSv(f, "text_buffer", (yield* g.call(f, P("/proc/copytext"), null, [rt.sv(f, "text_buffer"), 2])));
+	if (rt.length(this.text_buffer)) {
+		this.text_buffer = copytext(this.text_buffer, 2);
 	}
-	if (truthy(rt.sv(f, "post_noise"))) {
-		yield* g.srcCall(f, "audible_message", "<span class='notice'>You hear spraying.</span>");
-		yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(user)), rt.rsc("sound/effects/spray.ogg"), 5, 1, 5]);
+	if (this.post_noise) {
+		this.audible_message("<span class='notice'>You hear spraying.</span>");
+		playsound(user.loc, rt.rsc("sound/effects/spray.ogg"), 5, 1, 5);
 	}
-	cost = 1;
-	if (isEqual(rt.sv(f, "paint_mode"), 2)) {
+	let cost: Value = 1;
+	if (this.paint_mode == PAINT_LARGE_HORIZONTAL) {
 		cost = 5;
 	}
-	f.dot = (yield* g.srcCall(f, "use_charges", live(cost)));
-	fraction = (yield* g.call(f, P("/proc/min"), null, [1, divide(live(f.dot), rt.fv(f, "maximum_volume", rt.sv(f, "reagents")))]));
-	if (truthy(rt.len(f, live(affected_turfs)))) {
-		(fraction = rt.modify(live(fraction), rt.len(f, live(affected_turfs)), divide));
+	f.dot = (yield* this.use_charges(cost));
+	let fraction: Value = min(1, f.dot / this.reagents.maximum_volume);
+	if (rt.len(f, affected_turfs)) {
+		fraction /= rt.len(f, affected_turfs);
 	}
-	t = null;
-	rt.forList(f, 0, live(affected_turfs));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		t = $e;
-		yield* g.callName(f, rt.sv(f, "reagents"), "reaction", [live(t), 1, multiply(live(fraction), rt.sv(f, "volume_multiplier"))]);
-		yield* g.callName(f, rt.sv(f, "reagents"), "trans_to", [live(t), live(f.dot), rt.sv(f, "volume_multiplier")]);
+	for (t of each(affected_turfs)) {
+		yield* this.reagents.reaction(t, TOUCH, fraction * this.volume_multiplier);
+		yield* this.reagents.trans_to(t, f.dot, this.volume_multiplier);
 	}
-	rt.endFor(f, 0);
-	yield* g.srcCall(f, "check_empty", live(user));
+	yield* this.check_empty(user);
 	return f.dot;
 }, true);
 
-// /obj/item/toy/crayon/proc/attack  (code/game/objects/items/crayons.dm:376)  may sleep
-rt.def("/obj/item/toy/crayon/proc/attack", function* attack(f: Frame) {
+// crayons.dm:376
+rt.def("/obj/item/toy/crayon/proc/attack", function* attack(f: Frame, M: Value, user: Value) {
 	let eaten: Value = null, fraction: Value = null;
-	f.vars = () => [eaten, fraction];
-	if ((truthy(rt.sv(f, "edible")) && isEqual(live(f.args[0]), live(f.args[1])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("You take a bite of the ＀. Delicious!", [rt.fv(f, "name", live(f.src))])]);
-		eaten = (yield* g.srcCall(f, "use_charges", 5));
-		if (truthy((yield* g.srcCall(f, "check_empty", live(f.args[1]))))) {
-			return live(f.dot);
+	if (this.edible && M == user) {
+		to_chat(user, `You take a bite of the ${this.name}. Delicious!`);
+		eaten = (yield* this.use_charges(5));
+		if (yield* this.check_empty(user)) {
+			return f.dot;
 		}
-		fraction = (yield* g.call(f, P("/proc/min"), null, [divide(live(eaten), rt.fv(f, "total_volume", rt.sv(f, "reagents"))), 1]));
-		yield* g.callName(f, rt.sv(f, "reagents"), "reaction", [live(f.args[0]), 2, multiply(live(fraction), rt.sv(f, "volume_multiplier"))]);
-		yield* g.callName(f, rt.sv(f, "reagents"), "trans_to", [live(f.args[0]), live(eaten), rt.sv(f, "volume_multiplier")]);
+		fraction = min(eaten / this.reagents.total_volume, 1);
+		yield* this.reagents.reaction(M, INGEST, fraction * this.volume_multiplier);
+		yield* this.reagents.trans_to(M, eaten, this.volume_multiplier);
 	} else {
-		yield* g.callSuper(f, [], rt.Args.Same);
+		yield* parent_proc();
 	}
 	return f.dot;
-}, true, { args: ["M", "user"] });
+}, true);
 
-// /obj/item/toy/crayon/proc/can_claim_for_gang  (code/game/objects/items/crayons.dm:391)
+// crayons.dm:391
 rt.def("/obj/item/toy/crayon/proc/can_claim_for_gang", function can_claim_for_gang(f: Frame, user: Value, target: Value) {
-	let A: Value = null, spraying_over: Value = null, G: Value = null, apc: Value = null, occupying_gang: Value = null;
-	let $e: any;
-	f.vars = () => [A, spraying_over, G, apc, occupying_gang, $e];
-	if (((!truthy((A = rt.call(f, P("/proc/get_area"), null, [live(target)]))) || !isEqual(rt.fv(f, "z", live(A)), 2)) || !truthy(rt.fv(f, "valid_territory", live(A))))) {
-		rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ is unsuitable for tagging.</span>", [live(A)])]);
+	let A: Value = null, G: Value = null, apc: Value = null, occupying_gang: Value = null;
+	if (!(A = get_area(target)) || A.z != ZLEVEL_STATION || !A.valid_territory) {
+		to_chat(user, `<span class='warning'>${A} is unsuitable for tagging.</span>`);
 		return 0;
 	}
-	spraying_over = 0;
-	G = null;
-	rt.forList(f, 0, live(target), T("/obj/effect/decal/cleanable/crayon/gang"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		G = $e;
+	let spraying_over: Value = 0;
+	for (G of each(target, T("/obj/effect/decal/cleanable/crayon/gang"))) {
 		spraying_over = 1;
 	}
-	rt.endFor(f, 0);
-	apc = null;
-	rt.forList(f, 0, live(target), T("/obj/machinery/power"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		apc = $e;
-		rt.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>You can't tag an APC.</span>"]);
+	for (apc of each(target, T("/obj/machinery/power"))) {
+		to_chat(user, "<span class='warning'>You can't tag an APC.</span>");
 		return 0;
 	}
-	rt.endFor(f, 0);
-	if ((truthy((occupying_gang = rt.callSrc(f, "territory_claimed", [live(A), live(user)]))) && !truthy(live(spraying_over)))) {
-		rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='danger'>＀ has already been tagged by the ＀ gang! You must get rid of or spray over the old tag first!</span>", [live(A), live(occupying_gang)])]);
+	if ((occupying_gang = this.territory_claimed(A, user)) && !spraying_over) {
+		to_chat(user, `<span class='danger'>${A} has already been tagged by the ${occupying_gang} gang! You must get rid of or spray over the old tag first!</span>`);
 		return 0;
 	}
 	return 1;
 });
 
-// /obj/item/toy/crayon/proc/territory_claimed  (code/game/objects/items/crayons.dm:413)
+// crayons.dm:413
 rt.def("/obj/item/toy/crayon/proc/territory_claimed", function territory_claimed(f: Frame, territory: Value, user: Value) {
 	let G: Value = null;
-	let $e: any;
-	f.vars = () => [G, $e];
-	G = null;
-	rt.forList(f, 0, rt.gv(f, "gangs", rt.fv(f, "mode", rt.gl("SSticker"))), T("/datum/gang"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		G = $e;
-		if (truthy((rt.isIn(f, rt.fv(f, "type", live(territory)), rt.bitOr(rt.fv(f, "territory", live(G)), rt.fv(f, "territory_new", live(G)))) ? 1 : 0))) {
-			f.dot = rt.fv(f, "name", live(G));
+	for (G of each(GLOB.SSticker.mode.gangs, T("/datum/gang"))) {
+		if (rt.isIn(f, territory.type, rt.bitOr(G.territory, G.territory_new))) {
+			f.dot = G.name;
 			break;
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /obj/item/toy/crayon/proc/tag_for_gang  (code/game/objects/items/crayons.dm:420)  may sleep
+// crayons.dm:420
 rt.def("/obj/item/toy/crayon/proc/tag_for_gang", function* tag_for_gang(f: Frame, user: Value, target: Value) {
-	let old_marking: Value = null, gangID: Value = null, territory: Value = null;
-	let $e: any;
-	f.vars = () => [user, target, old_marking, gangID, territory, $e];
-	old_marking = null;
-	rt.forList(f, 0, live(target), T("/obj/effect/decal/cleanable/crayon"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		old_marking = $e;
-		yield* g.call(f, P("/proc/qdel"), null, [live(old_marking)]);
+	let old_marking: Value = null;
+	for (old_marking of each(target, T("/obj/effect/decal/cleanable/crayon"))) {
+		yield* qdel(old_marking);
 	}
-	rt.endFor(f, 0);
-	gangID = rt.gv(f, "gang_datum", rt.fv(f, "mind", live(user)));
-	territory = (yield* g.call(f, P("/proc/get_area"), null, [live(target)]));
-	yield* g.new_(f, T("/obj/effect/decal/cleanable/crayon/gang"), [live(target), live(gangID), "graffiti", 0, live(user)]);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You tagged ＀ for your gang!</span>", [live(territory)])]);
+	let gangID: Value = user.mind.gang_datum;
+	let territory: Value = get_area(target);
+	yield* new_(T("/obj/effect/decal/cleanable/crayon/gang"), target, gangID, "graffiti", 0, user);
+	to_chat(user, `<span class='notice'>You tagged ${territory} for your gang!</span>`);
 	return f.dot;
 }, true);
 
@@ -605,12 +498,10 @@ rt.type(9669, "/obj/item/toy/crayon/red", "/obj/item/toy/crayon", {
 	icon_state: "crayonred",
 });
 
-// /obj/item/toy/crayon/red/proc/<init>  (code/game/objects/items/crayons.dm:433)
+// crayons.dm:433
 rt.def("/obj/item/toy/crayon/red/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "reagent_contents", rt.alist(f, ["nutriment", 1, "redcrayonpowder", 1]));
+	parent_proc();
+	this.reagent_contents = rt.alist(f, ["nutriment", 1, "redcrayonpowder", 1]);
 	return f.dot;
 });
 
@@ -621,12 +512,10 @@ rt.type(9670, "/obj/item/toy/crayon/orange", "/obj/item/toy/crayon", {
 	icon_state: "crayonorange",
 });
 
-// /obj/item/toy/crayon/orange/proc/<init>  (code/game/objects/items/crayons.dm:439)
+// crayons.dm:439
 rt.def("/obj/item/toy/crayon/orange/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "reagent_contents", rt.alist(f, ["nutriment", 1, "orangecrayonpowder", 1]));
+	parent_proc();
+	this.reagent_contents = rt.alist(f, ["nutriment", 1, "orangecrayonpowder", 1]);
 	return f.dot;
 });
 
@@ -637,12 +526,10 @@ rt.type(9671, "/obj/item/toy/crayon/yellow", "/obj/item/toy/crayon", {
 	icon_state: "crayonyellow",
 });
 
-// /obj/item/toy/crayon/yellow/proc/<init>  (code/game/objects/items/crayons.dm:445)
+// crayons.dm:445
 rt.def("/obj/item/toy/crayon/yellow/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "reagent_contents", rt.alist(f, ["nutriment", 1, "yellowcrayonpowder", 1]));
+	parent_proc();
+	this.reagent_contents = rt.alist(f, ["nutriment", 1, "yellowcrayonpowder", 1]);
 	return f.dot;
 });
 
@@ -653,12 +540,10 @@ rt.type(9672, "/obj/item/toy/crayon/green", "/obj/item/toy/crayon", {
 	icon_state: "crayongreen",
 });
 
-// /obj/item/toy/crayon/green/proc/<init>  (code/game/objects/items/crayons.dm:451)
+// crayons.dm:451
 rt.def("/obj/item/toy/crayon/green/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "reagent_contents", rt.alist(f, ["nutriment", 1, "greencrayonpowder", 1]));
+	parent_proc();
+	this.reagent_contents = rt.alist(f, ["nutriment", 1, "greencrayonpowder", 1]);
 	return f.dot;
 });
 
@@ -669,12 +554,10 @@ rt.type(9673, "/obj/item/toy/crayon/blue", "/obj/item/toy/crayon", {
 	icon_state: "crayonblue",
 });
 
-// /obj/item/toy/crayon/blue/proc/<init>  (code/game/objects/items/crayons.dm:457)
+// crayons.dm:457
 rt.def("/obj/item/toy/crayon/blue/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "reagent_contents", rt.alist(f, ["nutriment", 1, "bluecrayonpowder", 1]));
+	parent_proc();
+	this.reagent_contents = rt.alist(f, ["nutriment", 1, "bluecrayonpowder", 1]);
 	return f.dot;
 });
 
@@ -685,12 +568,10 @@ rt.type(9674, "/obj/item/toy/crayon/purple", "/obj/item/toy/crayon", {
 	icon_state: "crayonpurple",
 });
 
-// /obj/item/toy/crayon/purple/proc/<init>  (code/game/objects/items/crayons.dm:463)
+// crayons.dm:463
 rt.def("/obj/item/toy/crayon/purple/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "reagent_contents", rt.alist(f, ["nutriment", 1, "purplecrayonpowder", 1]));
+	parent_proc();
+	this.reagent_contents = rt.alist(f, ["nutriment", 1, "purplecrayonpowder", 1]);
 	return f.dot;
 });
 
@@ -701,12 +582,10 @@ rt.type(9675, "/obj/item/toy/crayon/black", "/obj/item/toy/crayon", {
 	icon_state: "crayonblack",
 });
 
-// /obj/item/toy/crayon/black/proc/<init>  (code/game/objects/items/crayons.dm:469)
+// crayons.dm:469
 rt.def("/obj/item/toy/crayon/black/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "reagent_contents", rt.alist(f, ["nutriment", 1, "blackcrayonpowder", 1]));
+	parent_proc();
+	this.reagent_contents = rt.alist(f, ["nutriment", 1, "blackcrayonpowder", 1]);
 	return f.dot;
 });
 
@@ -717,12 +596,10 @@ rt.type(9676, "/obj/item/toy/crayon/white", "/obj/item/toy/crayon", {
 	icon_state: "crayonwhite",
 });
 
-// /obj/item/toy/crayon/white/proc/<init>  (code/game/objects/items/crayons.dm:475)
+// crayons.dm:475
 rt.def("/obj/item/toy/crayon/white/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "reagent_contents", rt.alist(f, ["nutriment", 1, "whitecrayonpowder", 1]));
+	parent_proc();
+	this.reagent_contents = rt.alist(f, ["nutriment", 1, "whitecrayonpowder", 1]);
 	return f.dot;
 });
 
@@ -735,12 +612,10 @@ rt.type(9677, "/obj/item/toy/crayon/mime", "/obj/item/toy/crayon", {
 	desc: "A very sad-looking crayon.",
 });
 
-// /obj/item/toy/crayon/mime/proc/<init>  (code/game/objects/items/crayons.dm:482)
+// crayons.dm:482
 rt.def("/obj/item/toy/crayon/mime/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "reagent_contents", rt.alist(f, ["nutriment", 1, "invisiblecrayonpowder", 1]));
+	parent_proc();
+	this.reagent_contents = rt.alist(f, ["nutriment", 1, "invisiblecrayonpowder", 1]);
 	return f.dot;
 });
 
@@ -753,21 +628,19 @@ rt.type(9678, "/obj/item/toy/crayon/rainbow", "/obj/item/toy/crayon", {
 	icon_state: "crayonrainbow",
 });
 
-// /obj/item/toy/crayon/rainbow/proc/<init>  (code/game/objects/items/crayons.dm:489)
+// crayons.dm:489
 rt.def("/obj/item/toy/crayon/rainbow/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "reagent_contents", rt.alist(f, ["nutriment", 1, "colorful_reagent", 1]));
+	parent_proc();
+	this.reagent_contents = rt.alist(f, ["nutriment", 1, "colorful_reagent", 1]);
 	return f.dot;
 });
 
-// /obj/item/toy/crayon/rainbow/proc/afterattack  (code/game/objects/items/crayons.dm:495)  may sleep
-rt.def("/obj/item/toy/crayon/rainbow/proc/afterattack", function* afterattack(f: Frame) {
-	rt.setSv(f, "paint_color", rt.op(f, "Rgb", [1, 3], [(yield* g.call(f, P("/proc/rand"), null, [0, 255])), (yield* g.call(f, P("/proc/rand"), null, [0, 255])), (yield* g.call(f, P("/proc/rand"), null, [0, 255]))]));
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+// crayons.dm:495
+rt.def("/obj/item/toy/crayon/rainbow/proc/afterattack", function* afterattack(f: Frame, target: Value, user: Value, proximity: Value) {
+	this.paint_color = rt.op(f, "Rgb", [1, 3], [rand(0, 255), rand(0, 255), rand(0, 255)]);
+	f.dot = (yield* parent_proc());
 	return f.dot;
-}, true, { args: ["target", "user", "proximity"] });
+}, true);
 
 rt.type(5441, "/obj/item/weapon/storage/crayons", "/obj/item/weapon/storage", {
 	name: "box of crayons",
@@ -779,214 +652,193 @@ rt.type(5441, "/obj/item/weapon/storage/crayons", "/obj/item/weapon/storage", {
 	can_hold: null,
 });
 
-// /obj/item/weapon/storage/crayons/proc/<init>  (code/game/objects/items/crayons.dm:509)
+// crayons.dm:509
 rt.def("/obj/item/weapon/storage/crayons/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "can_hold", rt.list(T("/obj/item/toy/crayon")));
+	parent_proc();
+	this.can_hold = list(T("/obj/item/toy/crayon"));
 	return f.dot;
 });
 
-// /obj/item/weapon/storage/crayons/proc/New  (code/game/objects/items/crayons.dm:514)  may sleep
+// crayons.dm:514
 rt.def("/obj/item/weapon/storage/crayons/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.new_(f, T("/obj/item/toy/crayon/red"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/toy/crayon/orange"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/toy/crayon/yellow"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/toy/crayon/green"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/toy/crayon/blue"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/toy/crayon/purple"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/toy/crayon/black"), [live(f.src)]);
-	yield* g.srcCall(f, "update_icon");
+	yield* parent_proc();
+	yield* new_(T("/obj/item/toy/crayon/red"), this);
+	yield* new_(T("/obj/item/toy/crayon/orange"), this);
+	yield* new_(T("/obj/item/toy/crayon/yellow"), this);
+	yield* new_(T("/obj/item/toy/crayon/green"), this);
+	yield* new_(T("/obj/item/toy/crayon/blue"), this);
+	yield* new_(T("/obj/item/toy/crayon/purple"), this);
+	yield* new_(T("/obj/item/toy/crayon/black"), this);
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/storage/crayons/proc/update_icon  (code/game/objects/items/crayons.dm:525)
+// crayons.dm:525
 rt.def("/obj/item/weapon/storage/crayons/proc/update_icon", function update_icon(f: Frame) {
 	let crayon: Value = null;
-	let $e: any;
-	f.vars = () => [crayon, $e];
-	rt.callSrc(f, "cut_overlays", []);
-	crayon = null;
-	rt.forList(f, 0, rt.sv(f, "contents"), T("/obj/item/toy/crayon"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		crayon = $e;
-		rt.callSrc(f, "add_overlay", [rt.call(f, P("/proc/mutable_appearance"), null, [rt.rsc("icons/obj/crayons.dmi"), rt.fv(f, "item_color", live(crayon))])]);
+	this.cut_overlays();
+	for (crayon of each(this.contents, T("/obj/item/toy/crayon"))) {
+		this.add_overlay(mutable_appearance(rt.rsc("icons/obj/crayons.dmi"), crayon.item_color));
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /obj/item/weapon/storage/crayons/proc/attackby  (code/game/objects/items/crayons.dm:530)  may sleep
-rt.def("/obj/item/weapon/storage/crayons/proc/attackby", function* attackby(f: Frame) {
+// crayons.dm:530
+rt.def("/obj/item/weapon/storage/crayons/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
 	let C: Value = null;
-	let $0: any;
-	f.vars = () => [C, $0];
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/toy/crayon")) ? 1 : 0))) {
-		$0 = rt.gv(f, "item_color", (C = live(f.args[0])));
-		if ($0 === "mime") {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), "This crayon is too sad to be contained in this box."]);
-			return live(f.dot);
-		} else if ($0 === "rainbow") {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), "This crayon is too powerful to be contained in this box."]);
-			return live(f.dot);
+	if (rt.istype(W, T("/obj/item/toy/crayon"))) {
+		const item_color_2 = (C = W).item_color;
+		if (item_color_2 === "mime") {
+			to_chat(f.usr, "This crayon is too sad to be contained in this box.");
+			return f.dot;
+		} else if (item_color_2 === "rainbow") {
+			to_chat(f.usr, "This crayon is too powerful to be contained in this box.");
+			return f.dot;
 		}
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/toy/crayon/spraycan")) ? 1 : 0))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "Spraycans are not crayons."]);
-			return live(f.dot);
+		if (rt.istype(W, T("/obj/item/toy/crayon/spraycan"))) {
+			to_chat(user, "Spraycans are not crayons.");
+			return f.dot;
 		}
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["W", "user", "params"] });
+	return (yield* parent_proc());
+}, true);
 
-// /obj/item/toy/crayon/spraycan/proc/<init>  (code/game/objects/items/crayons.dm:565)
+// crayons.dm:565
 rt.def("/obj/item/toy/crayon/spraycan/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "validSurfaces", rt.list(T("/turf/open/floor"), T("/turf/closed/wall")));
-	rt.setSv(f, "reagent_contents", rt.alist(f, ["welding_fuel", 1, "ethanol", 1]));
+	parent_proc();
+	this.validSurfaces = list(T("/turf/open/floor"), T("/turf/closed/wall"));
+	this.reagent_contents = rt.alist(f, ["welding_fuel", 1, "ethanol", 1]);
 	return f.dot;
 });
 
-// /obj/item/toy/crayon/spraycan/proc/suicide_act  (code/game/objects/items/crayons.dm:572)  may sleep
+// crayons.dm:572
 rt.def("/obj/item/toy/crayon/spraycan/proc/suicide_act", function* suicide_act(f: Frame, user: Value) {
-	let H: Value = null, used: Value = null, fraction: Value = null;
-	f.vars = () => [user, H, used, fraction];
-	H = live(user);
-	if ((truthy(rt.sv(f, "is_capped")) || !truthy(rt.sv(f, "actually_paints")))) {
-		yield* g.callName(f, live(user), "visible_message", [fmt("<span class='suicide'>＀ shakes up ＀ with a rattle and lifts it to ＀ mouth, but nothing happens!</span>", [live(user), live(f.src), (yield* g.callName(f, live(user), "p_their", []))])]);
-		yield* g.callName(f, live(user), "say", ["MEDIOCRE!!"]);
+	let used: Value = null, fraction: Value = null;
+	let H: Value = user;
+	if (this.is_capped || !this.actually_paints) {
+		user.visible_message(`<span class='suicide'>${user} shakes up ${this} with a rattle and lifts it to ${user.p_their()} mouth, but nothing happens!</span>`);
+		yield* user.say("MEDIOCRE!!");
 		return 16;
 	} else {
-		yield* g.callName(f, live(user), "visible_message", [fmt("<span class='suicide'>＀ shakes up ＀ with a rattle and lifts it to ＀ mouth, spraying paint across ＀ teeth!</span>", [live(user), live(f.src), (yield* g.callName(f, live(user), "p_their", [])), (yield* g.callName(f, live(user), "p_their", []))])]);
-		yield* g.callName(f, live(user), "say", ["WITNESS ME!!"]);
-		if ((truthy(rt.sv(f, "pre_noise")) || truthy(rt.sv(f, "post_noise")))) {
-			yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/effects/spray.ogg"), 5, 1, 5]);
+		user.visible_message(`<span class='suicide'>${user} shakes up ${this} with a rattle and lifts it to ${user.p_their()} mouth, spraying paint across ${user.p_their()} teeth!</span>`);
+		yield* user.say("WITNESS ME!!");
+		if (this.pre_noise || this.post_noise) {
+			playsound(this.loc, rt.rsc("sound/effects/spray.ogg"), 5, 1, 5);
 		}
-		if (truthy(rt.sv(f, "can_change_colour"))) {
-			rt.setSv(f, "paint_color", "#C0C0C0");
+		if (this.can_change_colour) {
+			this.paint_color = "#C0C0C0";
 		}
-		yield* g.srcCall(f, "update_icon");
-		if (truthy(rt.sv(f, "actually_paints"))) {
-			rt.setFv(f, "lip_style", live(H), "spray_face");
-			rt.setFv(f, "lip_color", live(H), rt.sv(f, "paint_color"));
-			yield* g.callName(f, live(H), "update_body", []);
+		yield* this.update_icon();
+		if (this.actually_paints) {
+			H.lip_style = "spray_face";
+			H.lip_color = this.paint_color;
+			yield* H.update_body();
 		}
-		used = (yield* g.srcCall(f, "use_charges", 10));
-		fraction = (yield* g.call(f, P("/proc/min"), null, [1, divide(live(used), rt.fv(f, "maximum_volume", rt.sv(f, "reagents")))]));
-		yield* g.callName(f, rt.sv(f, "reagents"), "reaction", [live(user), 3, multiply(live(fraction), rt.sv(f, "volume_multiplier"))]);
-		yield* g.callName(f, rt.sv(f, "reagents"), "trans_to", [live(user), live(used), rt.sv(f, "volume_multiplier")]);
+		used = (yield* this.use_charges(10));
+		fraction = min(1, used / this.reagents.maximum_volume);
+		yield* this.reagents.reaction(user, VAPOR, fraction * this.volume_multiplier);
+		yield* this.reagents.trans_to(user, used, this.volume_multiplier);
 		return 8;
 	}
-	return f.dot;
 }, true);
 
-// /obj/item/toy/crayon/spraycan/proc/New  (code/game/objects/items/crayons.dm:597)  may sleep
+// crayons.dm:597
 rt.def("/obj/item/toy/crayon/spraycan/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.sv(f, "paint_color"))) {
-		rt.setSv(f, "paint_color", rt.op(f, "PickUnweighted", [6], ["#DA0000", "#FF9300", "#FFF200", "#A8E61D", "#00B7EF", "#DA00FF"]));
+	yield* parent_proc();
+	if (!this.paint_color) {
+		this.paint_color = pick("#DA0000", "#FF9300", "#FFF200", "#A8E61D", "#00B7EF", "#DA00FF");
 	}
-	yield* g.srcCall(f, "refill");
-	yield* g.srcCall(f, "update_icon");
+	yield* this.refill();
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/item/toy/crayon/spraycan/proc/examine  (code/game/objects/items/crayons.dm:607)
-rt.def("/obj/item/toy/crayon/spraycan/proc/examine", function examine(f: Frame) {
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.sv(f, "charges_left"))) {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("It has ＀ uses left.", [rt.sv(f, "charges_left")])]);
+// crayons.dm:607
+rt.def("/obj/item/toy/crayon/spraycan/proc/examine", function examine(f: Frame, user: Value) {
+	f.dot = parent_proc();
+	if (this.charges_left) {
+		to_chat(user, `It has ${this.charges_left} uses left.`);
 	} else {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "It is empty."]);
+		to_chat(user, "It is empty.");
 	}
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/item/toy/crayon/spraycan/proc/afterattack  (code/game/objects/items/crayons.dm:614)  may sleep
-rt.def("/obj/item/toy/crayon/spraycan/proc/afterattack", function* afterattack(f: Frame) {
+// crayons.dm:614
+rt.def("/obj/item/toy/crayon/spraycan/proc/afterattack", function* afterattack(f: Frame, target: Value, user: Value, proximity: Value) {
 	let C: Value = null, H: Value = null, fraction: Value = null, fraction_0: Value = null;
-	f.vars = () => [C, H, fraction, fraction_0];
-	if (!truthy(live(f.args[2]))) {
-		return live(f.dot);
+	if (!proximity) {
+		return f.dot;
 	}
-	if (truthy(rt.sv(f, "is_capped"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>Take the cap off first!</span>"]);
-		return live(f.dot);
+	if (this.is_capped) {
+		to_chat(user, "<span class='warning'>Take the cap off first!</span>");
+		return f.dot;
 	}
-	if (truthy((yield* g.srcCall(f, "check_empty", live(f.args[1]))))) {
-		return live(f.dot);
+	if (yield* this.check_empty(user)) {
+		return f.dot;
 	}
-	if (truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon")) ? 1 : 0))) {
-		if ((truthy(rt.sv(f, "pre_noise")) || truthy(rt.sv(f, "post_noise")))) {
-			yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.args[1])), rt.rsc("sound/effects/spray.ogg"), 25, 1, 5]);
+	if (rt.istype(target, T("/mob/living/carbon"))) {
+		if (this.pre_noise || this.post_noise) {
+			playsound(user.loc, rt.rsc("sound/effects/spray.ogg"), 25, 1, 5);
 		}
-		C = live(f.args[0]);
-		yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='danger'>＀ sprays ＀ into the face of ＀!</span>", [live(f.args[1]), live(f.src), live(f.args[0])])]);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='userdanger'>＀ sprays ＀ into your face!</span>", [live(f.args[1]), live(f.src)])]);
-		if (truthy(rt.fv(f, "client", live(C)))) {
-			yield* g.callName(f, live(C), "blur_eyes", [3]);
-			yield* g.callName(f, live(C), "blind_eyes", [1]);
+		C = target;
+		user.visible_message(`<span class='danger'>${user} sprays ${this} into the face of ${target}!</span>`);
+		to_chat(target, `<span class='userdanger'>${user} sprays ${this} into your face!</span>`);
+		if (C.client) {
+			yield* C.blur_eyes(3);
+			yield* C.blind_eyes(1);
 		}
-		if (rt.le((yield* g.callName(f, live(C), "get_eye_protection", [])), 0)) {
-			rt.setFv(f, "confused", live(C), (yield* g.call(f, P("/proc/max"), null, [rt.fv(f, "confused", live(C)), 3])));
-			yield* g.callName(f, live(C), "Knockdown", [60]);
+		if (C.get_eye_protection() <= 0) {
+			C.confused = max(C.confused, 3);
+			yield* C.Knockdown(60);
 		}
-		if ((truthy((rt.istype(live(C), T("/mob/living/carbon/human")) ? 1 : 0)) && truthy(rt.sv(f, "actually_paints")))) {
-			rt.setFv(f, "lip_style", (H = live(C)), "spray_face");
-			rt.setFv(f, "lip_color", live(H), rt.sv(f, "paint_color"));
-			yield* g.callName(f, live(H), "update_body", []);
+		if (rt.istype(C, T("/mob/living/carbon/human")) && this.actually_paints) {
+			(H = C).lip_style = "spray_face";
+			H.lip_color = this.paint_color;
+			yield* H.update_body();
 		}
-		f.dot = (yield* g.srcCall(f, "use_charges", 10));
-		fraction = (yield* g.call(f, P("/proc/min"), null, [1, divide(live(f.dot), rt.fv(f, "maximum_volume", rt.sv(f, "reagents")))]));
-		yield* g.callName(f, rt.sv(f, "reagents"), "reaction", [live(C), 3, multiply(live(fraction), rt.sv(f, "volume_multiplier"))]);
-		return live(f.dot);
+		f.dot = (yield* this.use_charges(10));
+		fraction = min(1, f.dot / this.reagents.maximum_volume);
+		yield* this.reagents.reaction(C, VAPOR, fraction * this.volume_multiplier);
+		return f.dot;
 	}
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/structure/window")) ? 1 : 0))) {
-		if (truthy(rt.sv(f, "actually_paints"))) {
-			yield* g.callName(f, live(f.args[0]), "add_atom_colour", [rt.sv(f, "paint_color"), 3]);
-			if (rt.lt((yield* g.call(f, P("/proc/color_hex2num"), null, [rt.sv(f, "paint_color")])), 255)) {
-				yield* g.callName(f, live(f.args[0]), "set_opacity", [255]);
+	if (rt.istype(target, T("/obj/structure/window"))) {
+		if (this.actually_paints) {
+			target.add_atom_colour(this.paint_color, WASHABLE_COLOUR_PRIORITY);
+			if (color_hex2num(this.paint_color) < 255) {
+				target.set_opacity(255);
 			} else {
-				yield* g.callName(f, live(f.args[0]), "set_opacity", [rt.initial(f, live(f.args[0]), "opacity")]);
+				target.set_opacity(rt.initial(f, target, "opacity"));
 			}
 		}
-		f.dot = (yield* g.srcCall(f, "use_charges", 2));
-		fraction_0 = (yield* g.call(f, P("/proc/min"), null, [1, divide(live(f.dot), rt.fv(f, "maximum_volume", rt.sv(f, "reagents")))]));
-		yield* g.callName(f, rt.sv(f, "reagents"), "reaction", [live(f.args[0]), 1, multiply(live(fraction_0), rt.sv(f, "volume_multiplier"))]);
-		yield* g.callName(f, rt.sv(f, "reagents"), "trans_to", [live(f.args[0]), live(f.dot), rt.sv(f, "volume_multiplier")]);
-		if ((truthy(rt.sv(f, "pre_noise")) || truthy(rt.sv(f, "post_noise")))) {
-			yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.args[1])), rt.rsc("sound/effects/spray.ogg"), 5, 1, 5]);
+		f.dot = (yield* this.use_charges(2));
+		fraction_0 = min(1, f.dot / this.reagents.maximum_volume);
+		yield* this.reagents.reaction(target, TOUCH, fraction_0 * this.volume_multiplier);
+		yield* this.reagents.trans_to(target, f.dot, this.volume_multiplier);
+		if (this.pre_noise || this.post_noise) {
+			playsound(user.loc, rt.rsc("sound/effects/spray.ogg"), 5, 1, 5);
 		}
-		return live(f.dot);
+		return f.dot;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	f.dot = (yield* parent_proc());
 	return f.dot;
-}, true, { args: ["target", "user", "proximity"] });
+}, true);
 
-// /obj/item/toy/crayon/spraycan/proc/update_icon  (code/game/objects/items/crayons.dm:670)
+// crayons.dm:670
 rt.def("/obj/item/toy/crayon/spraycan/proc/update_icon", function update_icon(f: Frame) {
 	let spray_overlay: Value = null;
 	let $0: any, $1: any;
-	f.vars = () => [spray_overlay, $0, $1];
-	if (truthy(rt.sv(f, "is_capped"))) {
-		$0 = rt.sv(f, "icon_capped");
-	} else {
-		$0 = rt.sv(f, "icon_uncapped");
-	}
-	rt.setSv(f, "icon_state", $0);
-	if (!truthy(rt.sv(f, "use_overlays"))) return f.dot;
-	rt.callSrc(f, "cut_overlays", []);
+	this.icon_state = this.is_capped ? this.icon_capped : this.icon_uncapped;
+	if (!this.use_overlays) return f.dot;
+	this.cut_overlays();
 	$0 = rt.rsc("icons/obj/crayons.dmi");
-	if (truthy(rt.sv(f, "is_capped"))) {
+	if (this.is_capped) {
 		$1 = "spraycan_cap_colors";
 	} else {
 		$1 = "spraycan_colors";
 	}
-	rt.setFv(f, "color", (spray_overlay = rt.call(f, P("/proc/mutable_appearance"), null, [$0, fmt("＀", [$1])])), rt.sv(f, "paint_color"));
-	rt.callSrc(f, "add_overlay", [live(spray_overlay)]);
+	(spray_overlay = mutable_appearance($0, `${$1}`)).color = this.paint_color;
+	this.add_overlay(spray_overlay);
 	return f.dot;
 });
 
@@ -997,22 +849,22 @@ rt.type(9664, "/obj/item/toy/crayon/spraycan/gang", "/obj/item/toy/crayon/sprayc
 	post_noise: 1,
 });
 
-// /obj/item/toy/crayon/spraycan/gang/proc/New  (code/game/objects/items/crayons.dm:686)  may sleep
-rt.def("/obj/item/toy/crayon/spraycan/gang/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy(live(f.args[1]))) return f.dot;
-	rt.setSv(f, "paint_color", rt.fv(f, "color_hex", live(f.args[1])));
-	yield* g.srcCall(f, "update_icon");
+// crayons.dm:686
+rt.def("/obj/item/toy/crayon/spraycan/gang/proc/New", function* New(f: Frame, loc: Value, G: Value) {
+	yield* parent_proc();
+	if (!G) return f.dot;
+	this.paint_color = G.color_hex;
+	yield* this.update_icon();
 	return f.dot;
-}, true, { args: ["loc", "G"] });
+}, true);
 
-// /obj/item/toy/crayon/spraycan/gang/proc/examine  (code/game/objects/items/crayons.dm:692)
-rt.def("/obj/item/toy/crayon/spraycan/gang/proc/examine", function examine(f: Frame) {
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	if (!((truthy(rt.fv(f, "mind", live(f.args[0]))) && truthy(rt.gv(f, "gang_datum", rt.fv(f, "mind", live(f.args[0]))))) || truthy((rt.istype(live(f.args[0]), T("/mob/dead/observer")) ? 1 : 0)))) return f.dot;
-	rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "This spraycan has been specially modified for tagging territory."]);
+// crayons.dm:692
+rt.def("/obj/item/toy/crayon/spraycan/gang/proc/examine", function examine(f: Frame, user: Value) {
+	f.dot = parent_proc();
+	if (!(user.mind && user.mind.gang_datum || rt.istype(user, T("/mob/dead/observer")))) return f.dot;
+	to_chat(user, "This spraycan has been specially modified for tagging territory.");
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
 rt.type(9665, "/obj/item/toy/crayon/spraycan/borg", "/obj/item/toy/crayon/spraycan", {
 	charges: -1,
@@ -1020,25 +872,23 @@ rt.type(9665, "/obj/item/toy/crayon/spraycan/borg", "/obj/item/toy/crayon/sprayc
 	desc: "A metallic container containing shiny synthesised paint.",
 });
 
-// /obj/item/toy/crayon/spraycan/borg/proc/afterattack  (code/game/objects/items/crayons.dm:702)  may sleep
-rt.def("/obj/item/toy/crayon/spraycan/borg/proc/afterattack", function* afterattack(f: Frame) {
-	let diff: Value = null, borgy: Value = null, cost: Value = null;
-	f.vars = () => [diff, borgy, cost];
-	diff = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy((rt.istype(live(f.args[1]), T("/mob/living/silicon/robot")) ? 1 : 0))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>How did you get this?</span>"]);
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+// crayons.dm:702
+rt.def("/obj/item/toy/crayon/spraycan/borg/proc/afterattack", function* afterattack(f: Frame, target: Value, user: Value, proximity: Value) {
+	let diff: Value = (yield* parent_proc());
+	if (!rt.istype(user, T("/mob/living/silicon/robot"))) {
+		to_chat(user, "<span class='notice'>How did you get this?</span>");
+		yield* qdel(this);
 		return 0;
 	}
-	borgy = live(f.args[1]);
-	if (!truthy(live(diff))) {
-		return live(f.dot);
+	let borgy: Value = user;
+	if (!diff) {
+		return f.dot;
 	}
-	cost = multiply(live(diff), 25);
-	if (!truthy(rt.fv(f, "cell", live(borgy)))) return f.dot;
-	yield* g.callName(f, rt.fv(f, "cell", live(borgy)), "use", [live(cost)]);
+	let cost: Value = diff * 25;
+	if (!borgy.cell) return f.dot;
+	yield* borgy.cell.use(cost);
 	return f.dot;
-}, true, { args: ["target", "user", "proximity"] });
+}, true);
 
 rt.type(9666, "/obj/item/toy/crayon/spraycan/hellcan", "/obj/item/toy/crayon/spraycan", {
 	icon_capped: "deathcan2_cap",
@@ -1054,12 +904,10 @@ rt.type(9666, "/obj/item/toy/crayon/spraycan/hellcan", "/obj/item/toy/crayon/spr
 	icon_state: "deathcan2_cap",
 });
 
-// /obj/item/toy/crayon/spraycan/hellcan/proc/<init>  (code/game/objects/items/crayons.dm:730)
+// crayons.dm:730
 rt.def("/obj/item/toy/crayon/spraycan/hellcan/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "reagent_contents", rt.alist(f, ["clf3", 1]));
+	parent_proc();
+	this.reagent_contents = rt.alist(f, ["clf3", 1]);
 	return f.dot;
 });
 
@@ -1075,14 +923,12 @@ rt.type(9667, "/obj/item/toy/crayon/spraycan/lubecan", "/obj/item/toy/crayon/spr
 	icon_state: "clowncan2_cap",
 });
 
-// /obj/item/toy/crayon/spraycan/lubecan/proc/<init>  (code/game/objects/items/crayons.dm:742)
+// crayons.dm:742
 rt.def("/obj/item/toy/crayon/spraycan/lubecan/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "reagent_contents", rt.alist(f, ["lube", 1, "banana", 1]));
-	$0 = $0;
-	rt.setSv(f, "validSurfaces", rt.list(T("/turf/open/floor")));
+	parent_proc();
+	this.reagent_contents = rt.alist(f, ["lube", 1, "banana", 1]);
+
+	this.validSurfaces = list(T("/turf/open/floor"));
 	return f.dot;
 });
 
@@ -1100,11 +946,9 @@ rt.type(9668, "/obj/item/toy/crayon/spraycan/mimecan", "/obj/item/toy/crayon/spr
 	icon_state: "mimecan_cap",
 });
 
-// /obj/item/toy/crayon/spraycan/mimecan/proc/<init>  (code/game/objects/items/crayons.dm:759)
+// crayons.dm:759
 rt.def("/obj/item/toy/crayon/spraycan/mimecan/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "reagent_contents", rt.alist(f, ["nothing", 1, "mutetoxin", 1]));
+	parent_proc();
+	this.reagent_contents = rt.alist(f, ["nothing", 1, "mutetoxin", 1]);
 	return f.dot;
 });

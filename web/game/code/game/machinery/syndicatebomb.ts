@@ -1,7 +1,7 @@
-// From code/game/machinery/syndicatebomb.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/machinery/syndicatebomb.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, g, fmt } = rt;
 
 
 rt.type(10849, "/obj/machinery/syndicatebomb", "/obj/machinery", {
@@ -30,308 +30,265 @@ rt.type(10849, "/obj/machinery/syndicatebomb", "/obj/machinery", {
 	resistance_flags: 34,
 });
 
-// /obj/machinery/syndicatebomb/proc/try_detonate  (code/game/machinery/syndicatebomb.dm:35)  may sleep
+// syndicatebomb.dm:35
 rt.def("/obj/machinery/syndicatebomb/proc/try_detonate", function* try_detonate(f: Frame, ignore_active: Value) {
-	f.vars = () => [ignore_active];
-	if (live(ignore_active) === null) {
-		ignore_active = 0;
-	}
-	f.dot = (((rt.isIn(f, rt.sv(f, "payload"), live(f.src)) ? 1 : 0) && (rt.sv(f, "active") || live(ignore_active))) && (!truthy(rt.sv(f, "defused")) ? 1 : 0));
-	if (!truthy(live(f.dot))) return f.dot;
-	yield* g.callName(f, rt.sv(f, "payload"), "detonate", []);
+	ignore_active ??= 0;
+	f.dot = (((rt.isIn(f, this.payload, this) ? 1 : 0) && (this.active || ignore_active)) && (!this.defused ? 1 : 0));
+	if (!f.dot) return f.dot;
+	yield* this.payload.detonate();
 	return f.dot;
 }, true);
 
-// /obj/machinery/syndicatebomb/proc/obj_break  (code/game/machinery/syndicatebomb.dm:40)  may sleep
+// syndicatebomb.dm:40
 rt.def("/obj/machinery/syndicatebomb/proc/obj_break", function* obj_break(f: Frame) {
-	if (truthy((yield* g.srcCall(f, "try_detonate")))) return f.dot;
-	yield* g.callSuper(f, [], rt.Args.Same);
+	if (yield* this.try_detonate()) return f.dot;
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /obj/machinery/syndicatebomb/proc/obj_destruction  (code/game/machinery/syndicatebomb.dm:44)  may sleep
+// syndicatebomb.dm:44
 rt.def("/obj/machinery/syndicatebomb/proc/obj_destruction", function* obj_destruction(f: Frame) {
-	if (truthy((yield* g.srcCall(f, "try_detonate")))) return f.dot;
-	yield* g.callSuper(f, [], rt.Args.Same);
+	if (yield* this.try_detonate()) return f.dot;
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /obj/machinery/syndicatebomb/proc/process  (code/game/machinery/syndicatebomb.dm:48)  may sleep
+// syndicatebomb.dm:48
 rt.def("/obj/machinery/syndicatebomb/proc/process", function* process(f: Frame) {
 	let volume: Value = null;
-	let $0: any;
-	f.vars = () => [volume, $0];
-	if (!truthy(rt.sv(f, "active"))) {
-		rt.setFv(f, "isprocessing", live(f.src), 0);
-		(rt.modField(f, rt.gl("SSfastprocess"), "processing", live(f.src), subtract));
-		rt.setSv(f, "detonation_timer", null);
-		rt.setSv(f, "next_beep", null);
-		yield* g.callName(f, rt.sv(f, "countdown"), "stop", []);
-		return live(f.dot);
+	if (!this.active) {
+		this.isprocessing = 0;
+		GLOB.SSfastprocess.processing -= this;
+		this.detonation_timer = null;
+		this.next_beep = null;
+		yield* this.countdown.stop();
+		return f.dot;
 	}
-	if ((rt.sv(f, "next_beep") !== null && rt.le(rt.sv(f, "next_beep"), rt.worldTime(f)))) {
-		volume = null;
-		$0 = (yield* g.srcCall(f, "seconds_remaining"));
-		if (rt.inRange($0, 0, 5)) {
+	if (this.next_beep !== null && this.next_beep <= rt.worldTime(f)) {
+		const seconds_remaining = this.seconds_remaining();
+		if (rt.inRange(seconds_remaining, 0, 5)) {
 			volume = 50;
-		} else if (rt.inRange($0, 5, 10)) {
+		} else if (rt.inRange(seconds_remaining, 5, 10)) {
 			volume = 40;
-		} else if (rt.inRange($0, 10, 15)) {
+		} else if (rt.inRange(seconds_remaining, 10, 15)) {
 			volume = 30;
-		} else if (rt.inRange($0, 15, 20)) {
+		} else if (rt.inRange(seconds_remaining, 15, 20)) {
 			volume = 20;
-		} else if (rt.inRange($0, 20, 25)) {
+		} else if (rt.inRange(seconds_remaining, 20, 25)) {
 			volume = 10;
 		} else {
 			volume = 5;
 		}
-		yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.sv(f, "beepsound"), live(volume), 0]);
-		rt.setSv(f, "next_beep", add(rt.worldTime(f), 10));
+		playsound(this.loc, this.beepsound, volume, 0);
+		this.next_beep = rt.worldTime(f) + 10;
 	}
-	if (((truthy(rt.sv(f, "active")) && !truthy(rt.sv(f, "defused"))) && (rt.le(rt.sv(f, "detonation_timer"), rt.worldTime(f)) || truthy(rt.sv(f, "explode_now"))))) {
-		rt.setSv(f, "active", 0);
-		rt.setSv(f, "timer_set", rt.initial(f, live(f.src), "timer_set"));
-		yield* g.srcCall(f, "update_icon");
-		yield* g.srcCall(f, "try_detonate", 1);
+	if (this.active && !this.defused && (this.detonation_timer <= rt.worldTime(f) || this.explode_now)) {
+		this.active = 0;
+		this.timer_set = rt.initial(f, this, "timer_set");
+		yield* this.update_icon();
+		yield* this.try_detonate(1);
 	} else {
-		if (!(!truthy(rt.sv(f, "active")) || truthy(rt.sv(f, "defused")))) return f.dot;
-		if (!truthy((rt.isIn(f, (rt.sv(f, "defused") && rt.sv(f, "payload")), live(f.src)) ? 1 : 0))) return f.dot;
-		yield* g.callName(f, rt.sv(f, "payload"), "defuse", []);
-		yield* g.callName(f, rt.sv(f, "countdown"), "stop", []);
-		rt.setFv(f, "isprocessing", live(f.src), 0);
-		(rt.modField(f, rt.gl("SSfastprocess"), "processing", live(f.src), subtract));
+		if (!(!this.active || this.defused)) return f.dot;
+		if (!rt.isIn(f, (this.defused && this.payload), this)) return f.dot;
+		yield* this.payload.defuse();
+		yield* this.countdown.stop();
+		this.isprocessing = 0;
+		GLOB.SSfastprocess.processing -= this;
 	}
 	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/machinery/syndicatebomb/proc/New  (code/game/machinery/syndicatebomb.dm:86)  may sleep
+// syndicatebomb.dm:86
 rt.def("/obj/machinery/syndicatebomb/proc/New", function* New(f: Frame) {
-	rt.setSv(f, "wires", (yield* g.new_(f, T("/datum/wires/syndicatebomb"), [live(f.src)])));
-	if (truthy(rt.fv(f, "payload", live(f.src)))) {
-		rt.setSv(f, "payload", (yield* g.new_(f, rt.sv(f, "payload"), [live(f.src)])));
+	this.wires = (yield* new_(T("/datum/wires/syndicatebomb"), this));
+	if (this.payload) {
+		this.payload = (yield* new_(this.payload, this));
 	}
-	yield* g.srcCall(f, "update_icon");
-	rt.setSv(f, "countdown", (yield* g.new_(f, T("/obj/effect/countdown/syndicatebomb"), [live(f.src)])));
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* this.update_icon();
+	this.countdown = (yield* new_(T("/obj/effect/countdown/syndicatebomb"), this));
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /obj/machinery/syndicatebomb/proc/Destroy  (code/game/machinery/syndicatebomb.dm:94)  may sleep
+// syndicatebomb.dm:94
 rt.def("/obj/machinery/syndicatebomb/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "wires")]);
-	rt.setSv(f, "wires", null);
-	if (truthy(rt.sv(f, "countdown"))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "countdown")]);
-		rt.setSv(f, "countdown", null);
+	yield* qdel(this.wires);
+	this.wires = null;
+	if (this.countdown) {
+		yield* qdel(this.countdown);
+		this.countdown = null;
 	}
-	rt.setFv(f, "isprocessing", live(f.src), 0);
-	(rt.modField(f, rt.gl("SSfastprocess"), "processing", live(f.src), subtract));
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	this.isprocessing = 0;
+	GLOB.SSfastprocess.processing -= this;
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true);
 
-// /obj/machinery/syndicatebomb/proc/examine  (code/game/machinery/syndicatebomb.dm:103)
-rt.def("/obj/machinery/syndicatebomb/proc/examine", function examine(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("A digital display on it reads \"＀\".", [rt.callSrc(f, "seconds_remaining", [])])]);
+// syndicatebomb.dm:103
+rt.def("/obj/machinery/syndicatebomb/proc/examine", function examine(f: Frame, user: Value) {
+	parent_proc();
+	to_chat(user, `A digital display on it reads "${this.seconds_remaining()}".`);
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/machinery/syndicatebomb/proc/update_icon  (code/game/machinery/syndicatebomb.dm:107)
+// syndicatebomb.dm:107
 rt.def("/obj/machinery/syndicatebomb/proc/update_icon", function update_icon(f: Frame) {
-	let $0: any, $1: any, $2: any;
-	f.vars = () => [$0, $1, $2];
-	$0 = rt.initial(f, live(f.src), "icon_state");
-	if (truthy(rt.sv(f, "active"))) {
-		$1 = "-active";
-	} else {
-		$1 = "-inactive";
-	}
-	if (truthy(rt.sv(f, "open_panel"))) {
-		$2 = "-wires";
-	} else {
-		$2 = "";
-	}
-	rt.setSv(f, "icon_state", fmt("＀＀＀", [$0, $1, $2]));
+	let $0: any = rt.initial(f, this, "icon_state");
+	this.icon_state = `${$0}${this.active ? "-active" : "-inactive"}${this.open_panel ? "-wires" : ""}`;
 	return f.dot;
 });
 
-// /obj/machinery/syndicatebomb/proc/seconds_remaining  (code/game/machinery/syndicatebomb.dm:111)
+// syndicatebomb.dm:111
 rt.def("/obj/machinery/syndicatebomb/proc/seconds_remaining", function seconds_remaining(f: Frame) {
-	if (truthy(rt.sv(f, "active"))) {
-		f.dot = rt.call(f, P("/proc/max"), null, [0, rt.call(f, P("/proc/round"), null, [divide(subtract(rt.sv(f, "detonation_timer"), rt.worldTime(f)), 10)])]);
+	if (this.active) {
+		f.dot = max(0, round((this.detonation_timer - rt.worldTime(f)) / 10));
 	} else {
-		f.dot = rt.sv(f, "timer_set");
+		f.dot = this.timer_set;
 	}
 	return f.dot;
 });
 
-// /obj/machinery/syndicatebomb/proc/attackby  (code/game/machinery/syndicatebomb.dm:116)  may sleep
-rt.def("/obj/machinery/syndicatebomb/proc/attackby", function* attackby(f: Frame) {
+// syndicatebomb.dm:116
+rt.def("/obj/machinery/syndicatebomb/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
 	let WT: Value = null, old_integ: Value = null;
-	let $0: any, $1: any;
-	f.vars = () => [WT, old_integ, $0, $1];
-	if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/wrench")) ? 1 : 0)) && truthy(rt.sv(f, "can_unanchor")))) {
-		if (!truthy(rt.sv(f, "anchored"))) {
-			if ((!truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.sv(f, "loc")]))) || truthy((rt.istype(rt.sv(f, "loc"), T("/turf/open/space")) ? 1 : 0)))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>The bomb must be placed on solid ground to attach it.</span>"]);
+	if (rt.istype(I, T("/obj/item/weapon/wrench")) && this.can_unanchor) {
+		if (!this.anchored) {
+			if (!isturf(this.loc) || rt.istype(this.loc, T("/turf/open/space"))) {
+				to_chat(user, "<span class='notice'>The bomb must be placed on solid ground to attach it.</span>");
 			} else {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You firmly wrench the bomb to the floor.</span>"]);
-				yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.fv(f, "usesound", live(f.args[0])), 50, 1]);
-				rt.setSv(f, "anchored", 1);
-				if (truthy(rt.sv(f, "active"))) {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>The bolts lock in place.</span>"]);
+				to_chat(user, "<span class='notice'>You firmly wrench the bomb to the floor.</span>");
+				playsound(this.loc, I.usesound, 50, 1);
+				this.anchored = 1;
+				if (this.active) {
+					to_chat(user, "<span class='notice'>The bolts lock in place.</span>");
 				}
 			}
+		} else if (!this.active) {
+			to_chat(user, "<span class='notice'>You wrench the bomb from the floor.</span>");
+			playsound(this.loc, I.usesound, 50, 1);
+			this.anchored = 0;
 		} else {
-			if (!truthy(rt.sv(f, "active"))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You wrench the bomb from the floor.</span>"]);
-				yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.fv(f, "usesound", live(f.args[0])), 50, 1]);
-				rt.setSv(f, "anchored", 0);
+			to_chat(user, "<span class='warning'>The bolts are locked down!</span>");
+		}
+	} else if (rt.istype(I, T("/obj/item/weapon/screwdriver"))) {
+		this.open_panel = (!this.open_panel ? 1 : 0);
+		yield* this.update_icon();
+		to_chat(user, `<span class='notice'>You ${this.open_panel ? "open" : "close"} the wire panel.</span>`);
+	} else if (is_wire_tool(I) && this.open_panel) {
+		yield* this.wires.interact(user);
+	} else if (rt.istype(I, T("/obj/item/weapon/crowbar"))) {
+		if (this.open_panel && this.wires.is_all_cut()) {
+			if (this.payload) {
+				to_chat(user, `<span class='notice'>You carefully pry out ${this.payload}.</span>`);
+				this.payload.loc = user.loc;
+				this.payload = null;
 			} else {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>The bolts are locked down!</span>"]);
+				to_chat(user, "<span class='warning'>There isn't anything in here to remove!</span>");
 			}
+		} else if (this.open_panel) {
+			to_chat(user, "<span class='warning'>The wires connecting the shell to the explosives are holding it down!</span>");
+		} else {
+			to_chat(user, "<span class='warning'>The cover is screwed on, it won't pry off!</span>");
+		}
+	} else if (rt.istype(I, T("/obj/item/weapon/bombcore"))) {
+		if (!this.payload) {
+			if (!(yield* user.drop_item())) {
+				return f.dot;
+			}
+			this.payload = I;
+			to_chat(user, `<span class='notice'>You place ${this.payload} into ${this}.</span>`);
+			this.payload.loc = this;
+		} else {
+			to_chat(user, `<span class='warning'>${this.payload} is already loaded into ${this}! You'll have to remove it first.</span>`);
+		}
+	} else if (rt.istype(I, T("/obj/item/weapon/weldingtool"))) {
+		if (this.payload || !this.wires.is_all_cut() || !this.open_panel) {
+			return f.dot;
+		}
+		if (!(WT = I).isOn()) {
+			return f.dot;
+		}
+		if (WT.get_fuel() < 5) {
+			to_chat(user, "<span class='warning'>You need more fuel to complete this task!</span>");
+			return f.dot;
+		}
+		playsound(this.loc, WT.usesound, 50, 1);
+		to_chat(user, `<span class='notice'>You start to cut the ${this} apart...</span>`);
+		if (yield* do_after(user, 20 * I.toolspeed, { target: this })) {
+			if (!WT.isOn() || !(yield* WT.remove_fuel(5, user))) {
+				return f.dot;
+			}
+			to_chat(user, `<span class='notice'>You cut the ${this} apart.</span>`);
+			yield* new_(T("/obj/item/stack/sheet/plasteel"), this.loc, 5);
+			yield* qdel(this);
 		}
 	} else {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/screwdriver")) ? 1 : 0))) {
-			rt.setSv(f, "open_panel", (!truthy(rt.sv(f, "open_panel")) ? 1 : 0));
-			yield* g.srcCall(f, "update_icon");
-			$0 = live(f.args[1]);
-			if (truthy(rt.sv(f, "open_panel"))) {
-				$1 = "open";
-			} else {
-				$1 = "close";
-			}
-			yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='notice'>You ＀ the wire panel.</span>", [$1])]);
-		} else {
-			if ((truthy((yield* g.call(f, P("/proc/is_wire_tool"), null, [live(f.args[0])]))) && truthy(rt.sv(f, "open_panel")))) {
-				yield* g.callName(f, rt.sv(f, "wires"), "interact", [live(f.args[1])]);
-			} else {
-				if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/crowbar")) ? 1 : 0))) {
-					if ((truthy(rt.sv(f, "open_panel")) && truthy((yield* g.callName(f, rt.sv(f, "wires"), "is_all_cut", []))))) {
-						if (truthy(rt.sv(f, "payload"))) {
-							yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You carefully pry out ＀.</span>", [rt.sv(f, "payload")])]);
-							rt.setFv(f, "loc", rt.sv(f, "payload"), rt.fv(f, "loc", live(f.args[1])));
-							rt.setSv(f, "payload", null);
-						} else {
-							yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>There isn't anything in here to remove!</span>"]);
-						}
-					} else {
-						if (truthy(rt.sv(f, "open_panel"))) {
-							yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>The wires connecting the shell to the explosives are holding it down!</span>"]);
-						} else {
-							yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>The cover is screwed on, it won't pry off!</span>"]);
-						}
-					}
-				} else {
-					if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/bombcore")) ? 1 : 0))) {
-						if (!truthy(rt.sv(f, "payload"))) {
-							if (!truthy((yield* g.callName(f, live(f.args[1]), "drop_item", [])))) {
-								return live(f.dot);
-							}
-							rt.setSv(f, "payload", live(f.args[0]));
-							yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You place ＀ into ＀.</span>", [rt.sv(f, "payload"), live(f.src)])]);
-							rt.setFv(f, "loc", rt.sv(f, "payload"), live(f.src));
-						} else {
-							yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>＀ is already loaded into ＀! You'll have to remove it first.</span>", [rt.sv(f, "payload"), live(f.src)])]);
-						}
-					} else {
-						if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/weldingtool")) ? 1 : 0))) {
-							if (((truthy(rt.sv(f, "payload")) || !truthy((yield* g.callName(f, rt.sv(f, "wires"), "is_all_cut", [])))) || !truthy(rt.sv(f, "open_panel")))) {
-								return live(f.dot);
-							}
-							if (!truthy((yield* g.callName(f, (WT = live(f.args[0])), "isOn", [])))) {
-								return live(f.dot);
-							}
-							if (rt.lt((yield* g.callName(f, live(WT), "get_fuel", [])), 5)) {
-								yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You need more fuel to complete this task!</span>"]);
-								return live(f.dot);
-							}
-							yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.fv(f, "usesound", live(WT)), 50, 1]);
-							yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You start to cut the ＀ apart...</span>", [live(f.src)])]);
-							if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, multiply(20, rt.fv(f, "toolspeed", live(f.args[0]))), "target", live(f.src)], rt.Args.Named)))) {
-								if ((!truthy((yield* g.callName(f, live(WT), "isOn", []))) || !truthy((yield* g.callName(f, live(WT), "remove_fuel", [5, live(f.args[1])]))))) {
-									return live(f.dot);
-								}
-								yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You cut the ＀ apart.</span>", [live(f.src)])]);
-								yield* g.new_(f, T("/obj/item/stack/sheet/plasteel"), [rt.sv(f, "loc"), 5]);
-								yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-							}
-						} else {
-							old_integ = rt.sv(f, "obj_integrity");
-							f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-							if (!(((rt.gt(live(old_integ), rt.sv(f, "obj_integrity")) && truthy(rt.sv(f, "active"))) && !truthy(rt.sv(f, "defused"))) && truthy((rt.isIn(f, rt.sv(f, "payload"), live(f.src)) ? 1 : 0)))) return f.dot;
-							yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>That seems like a really bad idea...</span>"]);
-						}
-					}
-				}
-			}
-		}
+		old_integ = this.obj_integrity;
+		f.dot = (yield* parent_proc());
+		if (!(old_integ > this.obj_integrity && this.active && !this.defused && rt.isIn(f, this.payload, this))) return f.dot;
+		to_chat(user, "<span class='warning'>That seems like a really bad idea...</span>");
 	}
 	return f.dot;
-}, true, { args: ["I", "user", "params"] });
+}, true);
 
-// /obj/machinery/syndicatebomb/proc/attack_hand  (code/game/machinery/syndicatebomb.dm:188)  may sleep
+// syndicatebomb.dm:188
 rt.def("/obj/machinery/syndicatebomb/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.srcCall(f, "interact", live(user));
+	yield* this.interact(user);
 	return f.dot;
 }, true);
 
-// /obj/machinery/syndicatebomb/proc/interact  (code/game/machinery/syndicatebomb.dm:194)  may sleep
+// syndicatebomb.dm:194
 rt.def("/obj/machinery/syndicatebomb/proc/interact", function* interact(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.callName(f, rt.sv(f, "wires"), "interact", [live(user)]);
-	if (truthy(rt.sv(f, "open_panel"))) return f.dot;
-	if (!truthy(rt.sv(f, "active"))) {
-		yield* g.srcCall(f, "settings", live(user));
+	yield* this.wires.interact(user);
+	if (this.open_panel) return f.dot;
+	if (!this.active) {
+		yield* this.settings(user);
 	} else {
-		if (!truthy(rt.sv(f, "anchored"))) return f.dot;
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>The bomb is bolted to the floor!</span>"]);
+		if (!this.anchored) return f.dot;
+		to_chat(user, "<span class='warning'>The bomb is bolted to the floor!</span>");
 	}
 	return f.dot;
 }, true);
 
-// /obj/machinery/syndicatebomb/proc/activate  (code/game/machinery/syndicatebomb.dm:203)
+// syndicatebomb.dm:203
 rt.def("/obj/machinery/syndicatebomb/proc/activate", function activate(f: Frame) {
-	rt.setSv(f, "active", 1);
-	if (!truthy(rt.fv(f, "isprocessing", live(f.src)))) {
-		rt.setFv(f, "isprocessing", live(f.src), 1);
-		rt.modField(f, rt.gl("SSfastprocess"), "processing", live(f.src), add);
+	this.active = 1;
+	if (!this.isprocessing) {
+		this.isprocessing = 1;
+		GLOB.SSfastprocess.processing += this;
 	}
-	rt.callName(f, rt.sv(f, "countdown"), "start", []);
-	rt.setSv(f, "next_beep", add(rt.worldTime(f), 10));
-	rt.setSv(f, "detonation_timer", add(rt.worldTime(f), multiply(rt.sv(f, "timer_set"), 10)));
-	rt.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/machines/click.ogg"), 30, 1]);
+	this.countdown.start();
+	this.next_beep = rt.worldTime(f) + 10;
+	this.detonation_timer = rt.worldTime(f) + this.timer_set * 10;
+	playsound(this.loc, rt.rsc("sound/machines/click.ogg"), 30, 1);
 	return f.dot;
 });
 
-// /obj/machinery/syndicatebomb/proc/settings  (code/game/machinery/syndicatebomb.dm:210)  may sleep
+// syndicatebomb.dm:210
 rt.def("/obj/machinery/syndicatebomb/proc/settings", function* settings(f: Frame, user: Value) {
-	let new_timer: Value = null, bombturf: Value = null, A: Value = null;
-	f.vars = () => [user, new_timer, bombturf, A];
-	new_timer = (yield* g.op(f, "Prompt", [32], [fmt("＀", [rt.sv(f, "timer_set")]), "Timer", "Please set the timer.", live(user), null]));
-	if ((rt.le((yield* g.call(f, P("/proc/get_dist"), null, [live(f.src), live(user)])), 1) && truthy((rt.istype(live(user), T("/mob/living")) ? 1 : 0)))) {
-		rt.setSv(f, "timer_set", (yield* g.call(f, P("/proc/max"), null, [rt.sv(f, "minimum_timer"), (yield* g.call(f, P("/proc/min"), null, [live(new_timer), rt.sv(f, "maximum_timer")]))])));
-		yield* g.callName(f, rt.fv(f, "loc", live(f.src)), "visible_message", [fmt("<span class='notice'>＀ timer set for ＀ seconds.</span>", [(yield* g.call(f, P("/proc/bicon"), null, [live(f.src)])), rt.sv(f, "timer_set")])]);
+	let bombturf: Value = null, A: Value = null;
+	let new_timer: Value = (yield* g.op(f, "Prompt", [32], [`${this.timer_set}`, "Timer", "Please set the timer.", user, null]));
+	if (get_dist(this, user) <= 1 && rt.istype(user, T("/mob/living"))) {
+		this.timer_set = max(this.minimum_timer, min(new_timer, this.maximum_timer));
+		this.loc.visible_message(`<span class='notice'>${bicon(this)} timer set for ${this.timer_set} seconds.</span>`);
 	}
-	if (!((isEqual((yield* g.call(f, P("/proc/alert"), null, [live(user), "Would you like to start the countdown now?", null, "Yes", "No"])), "Yes") && rt.le((yield* g.call(f, P("/proc/get_dist"), null, [live(f.src), live(user)])), 1)) && truthy((rt.istype(live(user), T("/mob/living")) ? 1 : 0)))) return f.dot;
-	if ((truthy(rt.sv(f, "defused")) || truthy(rt.sv(f, "active")))) {
-		if (truthy(rt.sv(f, "defused"))) {
-			yield* g.callName(f, rt.fv(f, "loc", live(f.src)), "visible_message", [fmt("<span class='warning'>＀ Device error: User intervention required.</span>", [(yield* g.call(f, P("/proc/bicon"), null, [live(f.src)]))])]);
+	if (!((yield* alert(user, "Would you like to start the countdown now?", null, "Yes", "No")) == "Yes" && get_dist(this, user) <= 1 && rt.istype(user, T("/mob/living")))) return f.dot;
+	if (this.defused || this.active) {
+		if (this.defused) {
+			this.loc.visible_message(`<span class='warning'>${bicon(this)} Device error: User intervention required.</span>`);
 		}
-		return live(f.dot);
+		return f.dot;
 	} else {
-		yield* g.callName(f, rt.fv(f, "loc", live(f.src)), "visible_message", [fmt("<span class='danger'>＀ ＀ seconds until detonation, please clear the area.</span>", [(yield* g.call(f, P("/proc/bicon"), null, [live(f.src)])), rt.sv(f, "timer_set")])]);
-		yield* g.srcCall(f, "activate");
-		yield* g.srcCall(f, "update_icon");
-		yield* g.srcCall(f, "add_fingerprint", live(user));
-		bombturf = rt.getStep(f, live(f.src), 0);
-		A = (yield* g.call(f, P("/proc/get_area"), null, [live(bombturf)]));
-		if (!(truthy(rt.sv(f, "payload")) && !truthy((rt.istype(rt.sv(f, "payload"), T("/obj/item/weapon/bombcore/training")) ? 1 : 0)))) return f.dot;
-		yield* g.call(f, P("/proc/message_admins"), null, [fmt("＀ has primed a ＀ (＀) for detonation at ＀ ＀</a>.", [fmt("＀＀ ＀", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(user)])), fmt("(<a href='?_src_=holder;adminmoreinfo=＃'>?</a>)", [live(user)]), fmt("(<a href='?_src_=holder;adminplayerobservefollow=＃'>FLW</a>)", [live(user)])]), rt.sv(f, "name"), rt.sv(f, "payload"), rt.fv(f, "name", live(A)), fmt("(<a href='?_src_=holder;adminplayerobservecoodjump=1;X=＀;Y=＀;Z=＀'>JMP</a>)", [rt.fv(f, "x", live(bombturf)), rt.fv(f, "y", live(bombturf)), rt.fv(f, "z", live(bombturf))])])]);
-		yield* g.call(f, P("/proc/log_game"), null, [fmt("＀ has primed a ＀ (＀) for detonation at ＀＀", [(yield* g.call(f, P("/proc/key_name"), null, [live(user)])), rt.sv(f, "name"), rt.sv(f, "payload"), rt.fv(f, "name", live(A)), fmt("(＀,＀,＀)", [rt.fv(f, "x", live(bombturf)), rt.fv(f, "y", live(bombturf)), rt.fv(f, "z", live(bombturf))])])]);
-		rt.setFv(f, "adminlog", rt.sv(f, "payload"), fmt("The ＀ that ＀ had primed detonated!", [rt.fv(f, "name", live(f.src)), (yield* g.call(f, P("/proc/key_name"), null, [live(user)]))]));
+		this.loc.visible_message(`<span class='danger'>${bicon(this)} ${this.timer_set} seconds until detonation, please clear the area.</span>`);
+		yield* this.activate();
+		yield* this.update_icon();
+		yield* this.add_fingerprint(user);
+		bombturf = rt.getStep(f, this, 0);
+		A = get_area(bombturf);
+		if (!(this.payload && !rt.istype(this.payload, T("/obj/item/weapon/bombcore/training")))) return f.dot;
+		message_admins(`${`${key_name_admin(user)}${fmt("(<a href='?_src_=holder;adminmoreinfo=＃'>?</a>)", [user])} ${fmt("(<a href='?_src_=holder;adminplayerobservefollow=＃'>FLW</a>)", [user])}`} has primed a ${this.name} (${this.payload}) for detonation at ${A.name} ${`(<a href='?_src_=holder;adminplayerobservecoodjump=1;X=${bombturf.x};Y=${bombturf.y};Z=${bombturf.z}'>JMP</a>)`}</a>.`);
+		log_game(`${key_name(user)} has primed a ${this.name} (${this.payload}) for detonation at ${A.name}${`(${bombturf.x},${bombturf.y},${bombturf.z})`}`);
+		this.payload.adminlog = `The ${this.name} that ${key_name(user)} had primed detonated!`;
 	}
 	return f.dot;
 }, true);
@@ -345,10 +302,10 @@ rt.type(10853, "/obj/machinery/syndicatebomb/empty", "/obj/machinery/syndicatebo
 	desc: "An ominous looking device designed to detonate an explosive payload. Can be bolted down using a wrench.",
 });
 
-// /obj/machinery/syndicatebomb/empty/proc/New  (code/game/machinery/syndicatebomb.dm:261)  may sleep
+// syndicatebomb.dm:261
 rt.def("/obj/machinery/syndicatebomb/empty/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.callName(f, rt.sv(f, "wires"), "cut_all", []);
+	yield* parent_proc();
+	yield* this.wires.cut_all();
 	return f.dot;
 }, true);
 
@@ -368,34 +325,33 @@ rt.type(6941, "/obj/item/weapon/bombcore", "/obj/item/weapon", {
 	resistance_flags: 4,
 });
 
-// /obj/item/weapon/bombcore/proc/defuse  empty
+// Empty in tg.
 rt.def("/obj/item/weapon/bombcore/proc/defuse");
 
-// /obj/item/weapon/bombcore/proc/ex_act  (code/game/machinery/syndicatebomb.dm:288)  may sleep
+// syndicatebomb.dm:288
 rt.def("/obj/item/weapon/bombcore/proc/ex_act", function* ex_act(f: Frame, severity: Value, target: Value) {
-	f.vars = () => [severity, target];
-	yield* g.srcCall(f, "detonate");
+	yield* this.detonate();
 	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/item/weapon/bombcore/proc/burn  (code/game/machinery/syndicatebomb.dm:292)  may sleep
+// syndicatebomb.dm:292
 rt.def("/obj/item/weapon/bombcore/proc/burn", function* burn(f: Frame) {
-	yield* g.srcCall(f, "detonate");
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* this.detonate();
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/bombcore/proc/detonate  (code/game/machinery/syndicatebomb.dm:297)  may sleep
+// syndicatebomb.dm:297
 rt.def("/obj/item/weapon/bombcore/proc/detonate", function* detonate(f: Frame) {
-	if (truthy(rt.sv(f, "adminlog"))) {
-		yield* g.call(f, P("/proc/message_admins"), null, [rt.sv(f, "adminlog")]);
-		yield* g.call(f, P("/proc/log_game"), null, [rt.sv(f, "adminlog")]);
+	if (this.adminlog) {
+		message_admins(this.adminlog);
+		log_game(this.adminlog);
 	}
-	yield* g.call(f, P("/proc/explosion"), null, [null, rt.getStep(f, live(f.src), 0), null, rt.sv(f, "range_heavy"), null, rt.sv(f, "range_medium"), null, rt.sv(f, "range_light"), "flame_range", rt.sv(f, "range_flame")], rt.Args.Named);
-	if ((truthy(rt.sv(f, "loc")) && truthy((rt.istype(rt.sv(f, "loc"), T("/obj/machinery/syndicatebomb")) ? 1 : 0)))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "loc")]);
+	yield* explosion(rt.getStep(f, this, 0), this.range_heavy, this.range_medium, this.range_light, { flame_range: this.range_flame });
+	if (this.loc && rt.istype(this.loc, T("/obj/machinery/syndicatebomb"))) {
+		yield* qdel(this.loc);
 	}
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
@@ -407,49 +363,46 @@ rt.type(6942, "/obj/item/weapon/bombcore/training", "/obj/item/weapon/bombcore",
 	origin_tech: null,
 });
 
-// /obj/item/weapon/bombcore/training/proc/reset  (code/game/machinery/syndicatebomb.dm:318)  may sleep
+// syndicatebomb.dm:318
 rt.def("/obj/item/weapon/bombcore/training/proc/reset", function* reset(f: Frame) {
 	let holder: Value = null;
-	f.vars = () => [holder];
-	if (!truthy((rt.istype((holder = rt.sv(f, "loc")), T("/obj/machinery/syndicatebomb")) ? 1 : 0))) return f.dot;
-	if (truthy(rt.fv(f, "wires", live(holder)))) {
-		yield* g.callName(f, rt.fv(f, "wires", live(holder)), "repair", []);
-		yield* g.callName(f, rt.fv(f, "wires", live(holder)), "shuffle_wires", []);
+	if (!rt.istype((holder = this.loc), T("/obj/machinery/syndicatebomb"))) return f.dot;
+	if (holder.wires) {
+		yield* holder.wires.repair();
+		holder.wires.shuffle_wires();
 	}
-	rt.setFv(f, "defused", live(holder), 0);
-	rt.setFv(f, "open_panel", live(holder), 0);
-	rt.setFv(f, "delayedbig", live(holder), 0);
-	rt.setFv(f, "delayedlittle", live(holder), 0);
-	yield* g.callName(f, live(holder), "update_icon", []);
-	yield* g.callName(f, live(holder), "updateDialog", []);
+	holder.defused = 0;
+	holder.open_panel = 0;
+	holder.delayedbig = 0;
+	holder.delayedlittle = 0;
+	yield* holder.update_icon();
+	yield* holder.updateDialog();
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/bombcore/training/proc/detonate  (code/game/machinery/syndicatebomb.dm:331)  may sleep
+// syndicatebomb.dm:331
 rt.def("/obj/item/weapon/bombcore/training/proc/detonate", function* detonate(f: Frame) {
 	let holder: Value = null;
-	f.vars = () => [holder];
-	if (truthy((rt.istype((holder = rt.sv(f, "loc")), T("/obj/machinery/syndicatebomb")) ? 1 : 0))) {
-		rt.incSrcVar(f, "attempts", 1, true);
-		yield* g.callName(f, rt.fv(f, "loc", live(holder)), "visible_message", [fmt("<span class='danger'>＀ Alert: Bomb has detonated. Your score is now ＀ for ＀. Resetting wires...</span>", [(yield* g.call(f, P("/proc/bicon"), null, [live(holder)])), rt.sv(f, "defusals"), rt.sv(f, "attempts")])]);
-		yield* g.srcCall(f, "reset");
+	if (rt.istype((holder = this.loc), T("/obj/machinery/syndicatebomb"))) {
+		this.attempts++;
+		holder.loc.visible_message(`<span class='danger'>${bicon(holder)} Alert: Bomb has detonated. Your score is now ${this.defusals} for ${this.attempts}. Resetting wires...</span>`);
+		yield* this.reset();
 	} else {
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+		yield* qdel(this);
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/bombcore/training/proc/defuse  (code/game/machinery/syndicatebomb.dm:340)  may sleep
+// syndicatebomb.dm:340
 rt.def("/obj/item/weapon/bombcore/training/proc/defuse", function* defuse(f: Frame) {
 	let holder: Value = null;
-	f.vars = () => [holder];
-	if (!truthy((rt.istype((holder = rt.sv(f, "loc")), T("/obj/machinery/syndicatebomb")) ? 1 : 0))) return f.dot;
-	rt.incSrcVar(f, "attempts", 1, true);
-	rt.incSrcVar(f, "defusals", 1, true);
-	yield* g.callName(f, rt.fv(f, "loc", live(holder)), "visible_message", [fmt("<span class='notice'>＀ Alert: Bomb has been defused. Your score is now ＀ for ＀! Resetting wires in 5 seconds...</span>", [(yield* g.call(f, P("/proc/bicon"), null, [live(holder)])), rt.sv(f, "defusals"), rt.sv(f, "attempts")])]);
-	yield* g.call(f, P("/proc/sleep"), null, [50]);
-	if (!truthy((rt.istype(live(holder), T("/obj/machinery/syndicatebomb")) ? 1 : 0))) return f.dot;
-	yield* g.srcCall(f, "reset");
+	if (!rt.istype((holder = this.loc), T("/obj/machinery/syndicatebomb"))) return f.dot;
+	this.attempts++;
+	this.defusals++;
+	holder.loc.visible_message(`<span class='notice'>${bicon(holder)} Alert: Bomb has been defused. Your score is now ${this.defusals} for ${this.attempts}! Resetting wires in 5 seconds...</span>`);
+	yield* sleep(50);
+	if (!rt.istype(holder, T("/obj/machinery/syndicatebomb"))) return f.dot;
+	yield* this.reset();
 	return f.dot;
 }, true);
 
@@ -459,12 +412,11 @@ rt.type(6943, "/obj/item/weapon/bombcore/badmin", "/obj/item/weapon/bombcore", {
 	origin_tech: null,
 });
 
-// /obj/item/weapon/bombcore/badmin/proc/defuse  (code/game/machinery/syndicatebomb.dm:355)  may sleep
+// syndicatebomb.dm:355
 rt.def("/obj/item/weapon/bombcore/badmin/proc/defuse", function* defuse(f: Frame) {
 	let B: Value = null;
-	f.vars = () => [B];
-	yield* g.call(f, P("/proc/qdel"), null, [(B = rt.sv(f, "loc"))]);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* qdel((B = this.loc));
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
@@ -473,14 +425,12 @@ rt.type(6944, "/obj/item/weapon/bombcore/badmin/summon", "/obj/item/weapon/bombc
 	amt_summon: 1,
 });
 
-// /obj/item/weapon/bombcore/badmin/summon/proc/detonate  (code/game/machinery/syndicatebomb.dm:365)  may sleep
+// syndicatebomb.dm:365
 rt.def("/obj/item/weapon/bombcore/badmin/summon/proc/detonate", function* detonate(f: Frame) {
-	let B: Value = null;
-	f.vars = () => [B];
-	B = rt.fv(f, "loc", live(f.src));
-	yield* g.call(f, P("/proc/spawn_and_random_walk"), null, [null, rt.sv(f, "summon_path"), null, live(f.src), null, rt.sv(f, "amt_summon"), "walk_chance", 50, "admin_spawn", 1], rt.Args.Named);
-	yield* g.call(f, P("/proc/qdel"), null, [live(B)]);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	let B: Value = this.loc;
+	yield* spawn_and_random_walk(this.summon_path, this, this.amt_summon, { walk_chance: 50, admin_spawn: 1 });
+	yield* qdel(B);
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
@@ -489,10 +439,10 @@ rt.type(6945, "/obj/item/weapon/bombcore/badmin/summon/clown", "/obj/item/weapon
 	amt_summon: 100,
 });
 
-// /obj/item/weapon/bombcore/badmin/summon/clown/proc/defuse  (code/game/machinery/syndicatebomb.dm:374)  may sleep
+// syndicatebomb.dm:374
 rt.def("/obj/item/weapon/bombcore/badmin/summon/clown/proc/defuse", function* defuse(f: Frame) {
-	yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/misc/sadtrombone.ogg"), 50]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	playsound(this.loc, rt.rsc("sound/misc/sadtrombone.ogg"), 50);
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
@@ -508,184 +458,141 @@ rt.type(6949, "/obj/item/weapon/bombcore/chemical", "/obj/item/weapon/bombcore",
 	icon_state: "chemcore",
 });
 
-// /obj/item/weapon/bombcore/chemical/proc/<init>  (code/game/machinery/syndicatebomb.dm:400)
+// syndicatebomb.dm:400
 rt.def("/obj/item/weapon/bombcore/chemical/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "beakers", rt.list());
+	parent_proc();
+	this.beakers = list();
 	return f.dot;
 });
 
-// /obj/item/weapon/bombcore/chemical/proc/detonate  (code/game/machinery/syndicatebomb.dm:408)  may sleep
+// syndicatebomb.dm:408
 rt.def("/obj/item/weapon/bombcore/chemical/proc/detonate", function* detonate(f: Frame) {
-	let total_volume: Value = null, RC: Value = null, fraction: Value = null, reactants: Value = null, RC_3: Value = null, reactants_0: Value = null, G: Value = null, S: Value = null, G_2: Value = null;
-	let $e: any;
-	f.vars = () => [total_volume, RC, fraction, reactants, RC_3, reactants_0, G, S, G_2, $e];
-	if (rt.gt(rt.sv(f, "time_release"), 0)) {
+	let total_volume: Value = null, RC: Value = null, fraction: Value = null, reactants: Value = null, RC_3: Value = null, G: Value = null, S: Value = null, G_2: Value = null;
+	if (this.time_release > 0) {
 		total_volume = 0;
-		RC = null;
-		rt.forList(f, 0, rt.sv(f, "beakers"), T("/obj/item/weapon/reagent_containers"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			RC = $e;
-			total_volume = rt.modify(live(total_volume), rt.gv(f, "total_volume", rt.fv(f, "reagents", live(RC))), add);
+		for (RC of each(this.beakers, T("/obj/item/weapon/reagent_containers"))) {
+			total_volume += RC.reagents.total_volume;
 		}
-		rt.endFor(f, 0);
-		if (rt.lt(live(total_volume), rt.sv(f, "time_release"))) {
-			if ((truthy(rt.sv(f, "loc")) && truthy((rt.istype(rt.sv(f, "loc"), T("/obj/machinery/syndicatebomb")) ? 1 : 0)))) {
-				yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "loc")]);
+		if (total_volume < this.time_release) {
+			if (this.loc && rt.istype(this.loc, T("/obj/machinery/syndicatebomb"))) {
+				yield* qdel(this.loc);
 			}
-			yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-			return live(f.dot);
+			yield* qdel(this);
+			return f.dot;
 		}
-		fraction = divide(rt.sv(f, "time_release"), live(total_volume));
-		rt.setFv(f, "my_atom", (reactants = (yield* g.new_(f, T("/datum/reagents"), [rt.sv(f, "time_release")]))), live(f.src));
-		RC_3 = null;
-		rt.forList(f, 0, rt.sv(f, "beakers"), T("/obj/item/weapon/reagent_containers"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			RC_3 = $e;
-			yield* g.callName(f, rt.fv(f, "reagents", live(RC_3)), "trans_to", [live(reactants), multiply(rt.gv(f, "total_volume", rt.fv(f, "reagents", live(RC_3))), live(fraction)), 1, 1, 1]);
+		fraction = this.time_release / total_volume;
+		(reactants = (yield* new_(T("/datum/reagents"), this.time_release))).my_atom = this;
+		for (RC_3 of each(this.beakers, T("/obj/item/weapon/reagent_containers"))) {
+			yield* RC_3.reagents.trans_to(reactants, RC_3.reagents.total_volume * fraction, 1, 1, 1);
 		}
-		rt.endFor(f, 0);
-		yield* g.call(f, P("/proc/chem_splash"), null, [rt.getStep(f, live(f.src), 0), rt.sv(f, "spread_range"), rt.list(live(reactants)), rt.sv(f, "temp_boost")]);
-		yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/item/weapon/bombcore/chemical/proc/detonate")])), 10]);
+		yield* chem_splash(rt.getStep(f, this, 0), this.spread_range, list(reactants), this.temp_boost);
+		yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/item/weapon/bombcore/chemical/proc/detonate"))), 10);
 	}
-	reactants_0 = rt.list();
-	G = null;
-	rt.forList(f, 0, rt.sv(f, "beakers"), T("/obj/item/weapon/reagent_containers/glass"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		G = $e;
-		reactants_0 = rt.modify(live(reactants_0), rt.fv(f, "reagents", live(G)), add);
+	let reactants_0: Value = list();
+	for (G of each(this.beakers, T("/obj/item/weapon/reagent_containers/glass"))) {
+		reactants_0 += G.reagents;
 	}
-	rt.endFor(f, 0);
-	S = null;
-	rt.forList(f, 0, rt.sv(f, "beakers"), T("/obj/item/slime_extract"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		S = $e;
-		if (truthy(rt.fv(f, "Uses", live(S)))) {
+	for (S of each(this.beakers, T("/obj/item/slime_extract"))) {
+		if (S.Uses) {
 			G_2 = null;
-			rt.forList(f, 1, rt.sv(f, "beakers"), T("/obj/item/weapon/reagent_containers/glass"));
-			while (($e = rt.next(f, 1)) !== undefined) {
-				G_2 = $e;
-				yield* g.callName(f, rt.fv(f, "reagents", live(G_2)), "trans_to", [live(S), rt.gv(f, "total_volume", rt.fv(f, "reagents", live(G_2)))]);
+			for (G_2 of each(this.beakers, T("/obj/item/weapon/reagent_containers/glass"))) {
+				yield* G_2.reagents.trans_to(S, G_2.reagents.total_volume);
 			}
-			rt.endFor(f, 1);
-			if (((truthy(live(S)) && truthy(rt.fv(f, "reagents", live(S)))) && truthy(rt.gv(f, "total_volume", rt.fv(f, "reagents", live(S)))))) {
-				reactants_0 = rt.modify(live(reactants_0), rt.fv(f, "reagents", live(S)), add);
+			if (S && S.reagents && S.reagents.total_volume) {
+				reactants_0 += S.reagents;
 			}
 		}
 	}
-	rt.endFor(f, 0);
-	if (!truthy((yield* g.call(f, P("/proc/chem_splash"), null, [rt.getStep(f, live(f.src), 0), rt.sv(f, "spread_range"), live(reactants_0), rt.sv(f, "temp_boost")])))) {
-		yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/items/screwdriver2.ogg"), 50, 1]);
-		return live(f.dot);
+	if (!(yield* chem_splash(rt.getStep(f, this, 0), this.spread_range, reactants_0, this.temp_boost))) {
+		playsound(this.loc, rt.rsc("sound/items/screwdriver2.ogg"), 50, 1);
+		return f.dot;
 	}
-	if (truthy(rt.sv(f, "adminlog"))) {
-		yield* g.call(f, P("/proc/message_admins"), null, [rt.sv(f, "adminlog")]);
-		yield* g.call(f, P("/proc/log_game"), null, [rt.sv(f, "adminlog")]);
+	if (this.adminlog) {
+		message_admins(this.adminlog);
+		log_game(this.adminlog);
 	}
-	yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/effects/bamf.ogg"), 75, 1, 5]);
-	if ((truthy(rt.sv(f, "loc")) && truthy((rt.istype(rt.sv(f, "loc"), T("/obj/machinery/syndicatebomb")) ? 1 : 0)))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "loc")]);
+	playsound(this.loc, rt.rsc("sound/effects/bamf.ogg"), 75, 1, 5);
+	if (this.loc && rt.istype(this.loc, T("/obj/machinery/syndicatebomb"))) {
+		yield* qdel(this.loc);
 	}
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/bombcore/chemical/proc/attackby  (code/game/machinery/syndicatebomb.dm:459)  may sleep
-rt.def("/obj/item/weapon/bombcore/chemical/proc/attackby", function* attackby(f: Frame) {
+// syndicatebomb.dm:459
+rt.def("/obj/item/weapon/bombcore/chemical/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
 	let B: Value = null;
-	let $e: any;
-	f.vars = () => [B, $e];
-	if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/crowbar")) ? 1 : 0)) && rt.gt(rt.len(f, rt.sv(f, "beakers")), 0))) {
-		yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.fv(f, "usesound", live(f.args[0])), 50, 1]);
-		B = null;
-		rt.forList(f, 0, rt.sv(f, "beakers"), T("/obj/item"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			B = $e;
-			rt.setFv(f, "loc", live(B), rt.getStep(f, live(f.src), 0));
-			(rt.modSrcVar(f, "beakers", live(B), subtract));
+	if (rt.istype(I, T("/obj/item/weapon/crowbar")) && rt.len(f, this.beakers) > 0) {
+		playsound(this.loc, I.usesound, 50, 1);
+		for (B of each(this.beakers, T("/obj/item"))) {
+			B.loc = rt.getStep(f, this, 0);
+			this.beakers -= B;
 		}
-		rt.endFor(f, 0);
-		return live(f.dot);
-	} else {
-		if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/reagent_containers/glass/beaker")) ? 1 : 0)) || truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/reagent_containers/glass/bottle")) ? 1 : 0)))) {
-			if (rt.lt(rt.len(f, rt.sv(f, "beakers")), rt.sv(f, "max_beakers"))) {
-				if (!truthy((yield* g.callName(f, live(f.args[1]), "drop_item", [])))) {
-					return live(f.dot);
-				}
-				rt.modSrcVar(f, "beakers", live(f.args[0]), add);
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You load ＀ with ＀.</span>", [live(f.src), live(f.args[0])])]);
-				rt.setFv(f, "loc", live(f.args[0]), live(f.src));
-			} else {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>The ＀ wont fit! The ＀ can only hold up to ＀ containers.</span>", [live(f.args[0]), live(f.src), rt.sv(f, "max_beakers")])]);
-				return live(f.dot);
+		return f.dot;
+	} else if (rt.istype(I, T("/obj/item/weapon/reagent_containers/glass/beaker")) || rt.istype(I, T("/obj/item/weapon/reagent_containers/glass/bottle"))) {
+		if (rt.len(f, this.beakers) < this.max_beakers) {
+			if (!(yield* user.drop_item())) {
+				return f.dot;
 			}
+			this.beakers += I;
+			to_chat(user, `<span class='notice'>You load ${this} with ${I}.</span>`);
+			I.loc = this;
+		} else {
+			to_chat(user, `<span class='warning'>The ${I} wont fit! The ${this} can only hold up to ${this.max_beakers} containers.</span>`);
+			return f.dot;
 		}
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["I", "user", "params"] });
+}, true);
 
-// /obj/item/weapon/bombcore/chemical/proc/CheckParts  (code/game/machinery/syndicatebomb.dm:478)  may sleep
-rt.def("/obj/item/weapon/bombcore/chemical/proc/CheckParts", function* CheckParts(f: Frame) {
+// syndicatebomb.dm:478
+rt.def("/obj/item/weapon/bombcore/chemical/proc/CheckParts", function* CheckParts(f: Frame, parts_list: Value) {
 	let MB: Value = null, G: Value = null, LG: Value = null, S: Value = null, B: Value = null;
-	let $e: any;
-	f.vars = () => [MB, G, LG, S, B, $e];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy((MB = rt.locateIn(f, T("/obj/item/weapon/stock_parts/matter_bin"), live(f.src))))) {
-		rt.modSrcVar(f, "max_beakers", rt.fv(f, "rating", live(MB)), add);
-		yield* g.call(f, P("/proc/qdel"), null, [live(MB)]);
+	yield* parent_proc();
+	if (MB = rt.locateIn(f, T("/obj/item/weapon/stock_parts/matter_bin"), this)) {
+		this.max_beakers += MB.rating;
+		yield* qdel(MB);
 	}
-	G = null;
-	rt.forList(f, 0, live(f.src), T("/obj/item/weapon/grenade/chem_grenade"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		G = $e;
-		if (truthy((rt.istype(live(G), T("/obj/item/weapon/grenade/chem_grenade/large")) ? 1 : 0))) {
-			LG = live(G);
-			rt.modSrcVar(f, "max_beakers", 1, add);
-			rt.modSrcVar(f, "spread_range", 2, add);
-			rt.modSrcVar(f, "temp_boost", 50, add);
+	for (G of each(this, T("/obj/item/weapon/grenade/chem_grenade"))) {
+		if (rt.istype(G, T("/obj/item/weapon/grenade/chem_grenade/large"))) {
+			LG = G;
+			this.max_beakers += 1;
+			this.spread_range += 2;
+			this.temp_boost += 50;
 			S = null;
-			rt.forList(f, 1, rt.fv(f, "beakers", live(LG)), T("/obj/item/slime_extract"));
-			while (($e = rt.next(f, 1)) !== undefined) {
-				S = $e;
-				if (rt.lt(rt.len(f, rt.sv(f, "beakers")), rt.sv(f, "max_beakers"))) {
-					rt.modSrcVar(f, "beakers", live(S), add);
-					rt.setFv(f, "loc", live(S), live(f.src));
+			for (S of each(LG.beakers, T("/obj/item/slime_extract"))) {
+				if (rt.len(f, this.beakers) < this.max_beakers) {
+					this.beakers += S;
+					S.loc = this;
 				} else {
-					rt.setFv(f, "loc", live(S), rt.getStep(f, live(f.src), 0));
+					S.loc = rt.getStep(f, this, 0);
 				}
 			}
-			rt.endFor(f, 1);
 		}
-		if (truthy((rt.istype(live(G), T("/obj/item/weapon/grenade/chem_grenade/cryo")) ? 1 : 0))) {
-			(rt.modSrcVar(f, "spread_range", 1, subtract));
-			(rt.modSrcVar(f, "temp_boost", 100, subtract));
+		if (rt.istype(G, T("/obj/item/weapon/grenade/chem_grenade/cryo"))) {
+			this.spread_range -= 1;
+			this.temp_boost -= 100;
 		}
-		if (truthy((rt.istype(live(G), T("/obj/item/weapon/grenade/chem_grenade/pyro")) ? 1 : 0))) {
-			rt.modSrcVar(f, "temp_boost", 150, add);
+		if (rt.istype(G, T("/obj/item/weapon/grenade/chem_grenade/pyro"))) {
+			this.temp_boost += 150;
 		}
-		if (truthy((rt.istype(live(G), T("/obj/item/weapon/grenade/chem_grenade/adv_release")) ? 1 : 0))) {
-			rt.modSrcVar(f, "time_release", 50, add);
+		if (rt.istype(G, T("/obj/item/weapon/grenade/chem_grenade/adv_release"))) {
+			this.time_release += 50;
 		}
 		B = null;
-		rt.forList(f, 1, live(G), T("/obj/item/weapon/reagent_containers/glass"));
-		while (($e = rt.next(f, 1)) !== undefined) {
-			B = $e;
-			if (rt.lt(rt.len(f, rt.sv(f, "beakers")), rt.sv(f, "max_beakers"))) {
-				rt.modSrcVar(f, "beakers", live(B), add);
-				rt.setFv(f, "loc", live(B), live(f.src));
+		for (B of each(G, T("/obj/item/weapon/reagent_containers/glass"))) {
+			if (rt.len(f, this.beakers) < this.max_beakers) {
+				this.beakers += B;
+				B.loc = this;
 			} else {
-				rt.setFv(f, "loc", live(B), rt.getStep(f, live(f.src), 0));
+				B.loc = rt.getStep(f, this, 0);
 			}
 		}
-		rt.endFor(f, 1);
-		yield* g.call(f, P("/proc/qdel"), null, [live(G)]);
+		yield* qdel(G);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
-}, true, { args: ["parts_list"] });
+}, true);
 
 rt.type(9225, "/obj/item/device/syndicatedetonator", "/obj/item/device", {
 	timer: 0,
@@ -700,47 +607,42 @@ rt.type(9225, "/obj/item/device/syndicatedetonator", "/obj/item/device", {
 	origin_tech: "syndicate=3",
 });
 
-// /obj/item/device/syndicatedetonator/proc/attack_self  (code/game/machinery/syndicatebomb.dm:535)
+// syndicatebomb.dm:535
 rt.def("/obj/item/device/syndicatedetonator/proc/attack_self", function attack_self(f: Frame, user: Value) {
 	let B: Value = null, _T: Value = null, A: Value = null, log_str: Value = null;
 	let $0: any, $1: any, $e: any;
-	f.vars = () => [B, _T, A, log_str, $0, $1, $e];
-	if (!rt.lt(rt.sv(f, "timer"), rt.worldTime(f))) return f.dot;
-	B = null;
-	rt.forList(f, 0, rt.gl("machines"), T("/obj/machinery/syndicatebomb"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		B = $e;
-		if (truthy(rt.fv(f, "active", live(B)))) {
-			rt.setFv(f, "detonation_timer", live(B), add(rt.worldTime(f), 50));
-			rt.incSrcVar(f, "detonated", 1, true);
+	if (!(this.timer < rt.worldTime(f))) return f.dot;
+	for (B of each(GLOB.machines, T("/obj/machinery/syndicatebomb"))) {
+		if (B.active) {
+			B.detonation_timer = rt.worldTime(f) + BUTTON_DELAY;
+			this.detonated++;
 		}
-		rt.incSrcVar(f, "existant", 1, true);
+		this.existant++;
 	}
-	rt.endFor(f, 0);
-	rt.call(f, P("/proc/playsound"), null, [live(user), rt.rsc("sound/machines/click.ogg"), 20, 1]);
-	rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>＀ found, ＀ triggered.</span>", [rt.sv(f, "existant"), rt.sv(f, "detonated")])]);
-	if (truthy(rt.sv(f, "detonated"))) {
-		_T = rt.getStep(f, live(f.src), 0);
-		A = rt.call(f, P("/proc/get_area"), null, [live(_T)]);
-		rt.incSrcVar(f, "detonated", -1, true);
-		$0 = fmt("＀＀ ＀", [rt.call(f, P("/proc/key_name_admin"), null, [live(user)]), fmt("(<a href='?_src_=holder;adminmoreinfo=＃'>?</a>)", [live(user)]), fmt("(<a href='?_src_=holder;adminplayerobservefollow=＃'>FLW</a>)", [live(user)])]);
-		if (truthy(rt.sv(f, "detonated"))) {
+	playsound(user, rt.rsc("sound/machines/click.ogg"), 20, 1);
+	to_chat(user, `<span class='notice'>${this.existant} found, ${this.detonated} triggered.</span>`);
+	if (this.detonated) {
+		_T = rt.getStep(f, this, 0);
+		A = get_area(_T);
+		this.detonated--;
+		$0 = `${key_name_admin(user)}${fmt("(<a href='?_src_=holder;adminmoreinfo=＃'>?</a>)", [user])} ${fmt("(<a href='?_src_=holder;adminplayerobservefollow=＃'>FLW</a>)", [user])}`;
+		if (this.detonated) {
 			$1 = "syndicate bombs";
 		} else {
 			$1 = "a syndicate bomb";
 		}
-		rt.modGl("bombers", (log_str = fmt("＀ has remotely detonated ＀ using a ＀ at ＀ ＀</a>.", [$0, $1, rt.sv(f, "name"), rt.fv(f, "name", live(A)), fmt("(<a href='?_src_=holder;adminplayerobservecoodjump=1;X=＀;Y=＀;Z=＀'>JMP</a>)", [rt.fv(f, "x", live(_T)), rt.fv(f, "y", live(_T)), rt.fv(f, "z", live(_T))])])), add);
-		rt.call(f, P("/proc/message_admins"), null, [live(log_str)]);
-		$0 = rt.call(f, P("/proc/key_name"), null, [live(user)]);
-		if (truthy(rt.sv(f, "detonated"))) {
+		GLOB.bombers += (log_str = `${$0} has remotely detonated ${$1} using a ${this.name} at ${A.name} ${`(<a href='?_src_=holder;adminplayerobservecoodjump=1;X=${_T.x};Y=${_T.y};Z=${_T.z}'>JMP</a>)`}</a>.`);
+		message_admins(log_str);
+		$0 = key_name(user);
+		if (this.detonated) {
 			$1 = "syndicate bombs";
 		} else {
 			$1 = "a syndicate bomb";
 		}
-		rt.call(f, P("/proc/log_game"), null, [fmt("＀ has remotely detonated ＀ using a ＀ at ＀＀", [$0, $1, rt.sv(f, "name"), rt.fv(f, "name", live(A)), fmt("(＀,＀,＀)", [rt.fv(f, "x", live(_T)), rt.fv(f, "y", live(_T)), rt.fv(f, "z", live(_T))])])]);
+		log_game(`${$0} has remotely detonated ${$1} using a ${this.name} at ${A.name}${`(${_T.x},${_T.y},${_T.z})`}`);
 	}
-	rt.setSv(f, "detonated", 0);
-	rt.setSv(f, "existant", 0);
-	rt.setSv(f, "timer", add(rt.worldTime(f), 60));
+	this.detonated = 0;
+	this.existant = 0;
+	this.timer = rt.worldTime(f) + 60;
 	return f.dot;
 });

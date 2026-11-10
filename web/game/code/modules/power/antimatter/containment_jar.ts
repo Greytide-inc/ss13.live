@@ -1,7 +1,7 @@
-// From code/modules/power/antimatter/containment_jar.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/power/antimatter/containment_jar.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(7641, "/obj/item/weapon/am_containment", "/obj/item/weapon", {
@@ -20,37 +20,33 @@ rt.type(7641, "/obj/item/weapon/am_containment", "/obj/item/weapon", {
 	throwforce: 10,
 });
 
-// /obj/item/weapon/am_containment/proc/ex_act  (code/modules/power/antimatter/containment_jar.dm:19)  may sleep
+// containment_jar.dm:19
 rt.def("/obj/item/weapon/am_containment/proc/ex_act", function* ex_act(f: Frame, severity: Value, target: Value) {
-	let $0: any;
-	f.vars = () => [severity, target, $0];
-	$0 = live(severity);
-	if ($0 === 1) {
-		yield* g.call(f, P("/proc/explosion"), null, [rt.getStep(f, live(f.src), 0), 1, 2, 3, 5]);
-		if (truthy(live(f.src))) {
-			yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	if (severity === 1) {
+		yield* explosion(rt.getStep(f, this, 0), 1, 2, 3, 5);
+		if (this) {
+			yield* qdel(this);
 		}
-	} else if ($0 === 2) {
-		if (truthy(rt.op(f, "Prob", [], [subtract(divide(rt.sv(f, "fuel"), 10), rt.sv(f, "stability"))]))) {
-			yield* g.call(f, P("/proc/explosion"), null, [rt.getStep(f, live(f.src), 0), 1, 2, 3, 5]);
-			if (truthy(live(f.src))) {
-				yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	} else if (severity === 2) {
+		if (prob(this.fuel / 10 - this.stability)) {
+			yield* explosion(rt.getStep(f, this, 0), 1, 2, 3, 5);
+			if (this) {
+				yield* qdel(this);
 			}
-			return live(f.dot);
+			return f.dot;
 		}
-		(rt.modSrcVar(f, "stability", 40, subtract));
-	} else if ($0 === 3) {
-		(rt.modSrcVar(f, "stability", 20, subtract));
+		this.stability -= 40;
+	} else if (severity === 3) {
+		this.stability -= 20;
 	}
-	return live(f.dot);
+	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/item/weapon/am_containment/proc/usefuel  (code/modules/power/antimatter/containment_jar.dm:37)
+// containment_jar.dm:37
 rt.def("/obj/item/weapon/am_containment/proc/usefuel", function usefuel(f: Frame, wanted: Value) {
-	f.vars = () => [wanted];
-	if (rt.lt(rt.sv(f, "fuel"), live(wanted))) {
-		wanted = rt.sv(f, "fuel");
+	if (this.fuel < wanted) {
+		wanted = this.fuel;
 	}
-	(rt.modSrcVar(f, "fuel", live(wanted), subtract));
-	return live(wanted);
+	this.fuel -= wanted;
+	return wanted;
 });

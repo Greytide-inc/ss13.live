@@ -1,7 +1,7 @@
-// From code/game/objects/items/weapons/AI_modules.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/weapons/AI_modules.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, g } = rt;
 
 
 rt.type(7054, "/obj/item/weapon/aiModule", "/obj/item/weapon", {
@@ -22,165 +22,124 @@ rt.type(7054, "/obj/item/weapon/aiModule", "/obj/item/weapon", {
 	materials: null,
 });
 
-// /obj/item/weapon/aiModule/proc/<init>  (code/game/objects/items/weapons/AI_modules.dm:22)
+// AI_modules.dm:22
 rt.def("/obj/item/weapon/aiModule/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "laws", rt.list());
-	rt.setSv(f, "materials", rt.alist(f, ["$gold", 50]));
+	parent_proc();
+	this.laws = list();
+	this.materials = rt.alist(f, ["$gold", 50]);
 	return f.dot;
 });
 
-// /obj/item/weapon/aiModule/proc/examine  (code/game/objects/items/weapons/AI_modules.dm:27)
-rt.def("/obj/item/weapon/aiModule/proc/examine", function examine(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.callSrc(f, "Adjacent", [live(f.args[0])]))) return f.dot;
-	rt.callSrc(f, "show_laws", [live(f.args[0])]);
+// AI_modules.dm:27
+rt.def("/obj/item/weapon/aiModule/proc/examine", function examine(f: Frame, user: Value) {
+	parent_proc();
+	if (!this.Adjacent(user)) return f.dot;
+	this.show_laws(user);
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/item/weapon/aiModule/proc/attack_self  (code/game/objects/items/weapons/AI_modules.dm:32)  may sleep
-rt.def("/obj/item/weapon/aiModule/proc/attack_self", function* attack_self(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "show_laws", live(f.args[0]));
-	return f.dot;
-}, true, { args: ["user"] });
-
-// /obj/item/weapon/aiModule/proc/show_laws  (code/game/objects/items/weapons/AI_modules.dm:36)
-rt.def("/obj/item/weapon/aiModule/proc/show_laws", function show_laws(f: Frame, user: Value) {
-	let law: Value = null;
-	let $0: any, $1: any, $e: any;
-	f.vars = () => [law, $0, $1, $e];
-	if (!truthy(rt.len(f, rt.sv(f, "laws")))) return f.dot;
-	$0 = live(user);
-	if (rt.gt(rt.len(f, rt.sv(f, "laws")), 1)) {
-		$1 = "s";
-	} else {
-		$1 = "";
-	}
-	rt.call(f, P("/proc/to_chat"), null, [$0, fmt("<B>Programmed Law＀:</B>", [$1])]);
-	law = null;
-	rt.forList(f, 0, rt.sv(f, "laws"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		law = $e;
-		rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("\"＀\"", [live(law)])]);
-	}
-	rt.endFor(f, 0);
-	return f.dot;
-});
-
-// /obj/item/weapon/aiModule/proc/install  (code/game/objects/items/weapons/AI_modules.dm:43)  may sleep
-rt.def("/obj/item/weapon/aiModule/proc/install", function* install(f: Frame, law_datum: Value, user: Value) {
-	let overflow: Value = null, tot_laws: Value = null, lawlist: Value = null, mylaw: Value = null, law2log: Value = null, time: Value = null, ainame: Value = null, aikey: Value = null;
-	let $0: any, $1: any, $2: any, $3: any, $4: any, $5: any, $6: any, $7: any, $e: any;
-	f.vars = () => [law_datum, user, overflow, tot_laws, lawlist, mylaw, law2log, time, ainame, aikey, $0, $1, $2, $3, $4, $5, $6, $7, $e];
-	if ((!truthy(rt.sv(f, "bypass_law_amt_check")) && (!truthy(rt.len(f, rt.sv(f, "laws"))) || isEqual(rt.index(rt.sv(f, "laws"), 1), "")))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>ERROR: No laws found on board.</span>"]);
-		return live(f.dot);
-	}
-	overflow = 0;
-	if (truthy(live(law_datum))) {
-		tot_laws = 0;
-		lawlist = null;
-		rt.forList(f, 0, rt.list(rt.fv(f, "inherent", live(law_datum)), rt.fv(f, "supplied", live(law_datum)), rt.fv(f, "ion", live(law_datum)), rt.sv(f, "laws")));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			lawlist = $e;
-			mylaw = null;
-			rt.forList(f, 1, live(lawlist));
-			while (($e = rt.next(f, 1)) !== undefined) {
-				mylaw = $e;
-				if (!isEqual(live(mylaw), "")) {
-					tot_laws = rt.inc(live(tot_laws), 1);
-				}
-			}
-			rt.endFor(f, 1);
-		}
-		rt.endFor(f, 0);
-		if ((rt.gt(live(tot_laws), rt.fv(f, "silicon_max_law_amount", rt.gl("config"))) && !truthy(rt.sv(f, "bypass_law_amt_check")))) {
-			$0 = live(user);
-			if (truthy(rt.fv(f, "owner", live(law_datum)))) {
-				$1 = rt.fv(f, "owner", live(law_datum));
-			} else {
-				$1 = "the AI core";
-			}
-			yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='caution'>Not enough memory allocated to ＀'s law processor to handle this amount of laws.", [$1])]);
-			$0 = (yield* g.call(f, P("/proc/key_name_admin"), null, [live(user)]));
-			if (truthy(rt.fv(f, "owner", live(law_datum)))) {
-				$1 = (yield* g.call(f, P("/proc/key_name_admin"), null, [rt.fv(f, "owner", live(law_datum))]));
-			} else {
-				$1 = "an AI core";
-			}
-			yield* g.call(f, P("/proc/message_admins"), null, [fmt("＀ tried to upload laws to ＀ that would exceed the law cap.", [$0, $1])]);
-			overflow = 1;
-		}
-	}
-	law2log = (yield* g.srcCall(f, "transmitInstructions", live(law_datum), live(user), live(overflow)));
-	if (truthy(rt.fv(f, "owner", live(law_datum)))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>Upload complete. ＀'s laws have been modified.</span>", [rt.fv(f, "owner", live(law_datum))])]);
-		rt.incField(f, rt.fv(f, "owner", live(law_datum)), "law_change_counter", 1, true);
-	} else {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>Upload complete.</span>"]);
-	}
-	time = (yield* g.call(f, P("/proc/time2text"), null, [rt.fv(f, "realtime", rt.world()), "hh:mm:ss"]));
-	if (truthy(rt.fv(f, "owner", live(law_datum)))) {
-		$0 = rt.gv(f, "name", rt.fv(f, "owner", live(law_datum)));
-	} else {
-		$0 = "empty AI core";
-	}
-	ainame = $0;
-	if (truthy(rt.fv(f, "owner", live(law_datum)))) {
-		$0 = rt.gv(f, "ckey", rt.fv(f, "owner", live(law_datum)));
-	} else {
-		$0 = "null";
-	}
-	aikey = $0;
-	$0 = rt.gl("lawchanges");
-	$1 = live(time);
-	$2 = rt.fv(f, "name", live(user));
-	$3 = rt.fv(f, "key", live(user));
-	$4 = rt.fv(f, "name", live(f.src));
-	$5 = live(ainame);
-	$6 = live(aikey);
-	if (truthy(live(law2log))) {
-		$6 = $6;
-		$7 = fmt(" The law specified ＀", [live(law2log)]);
-	} else {
-		$7 = "";
-	}
-	yield* g.callName(f, $0, "Add", [fmt("＀ <B>:</B> ＀(＀) used ＀ on ＀(＀).＀", [$1, $2, $3, $4, $5, $6, $7])]);
-	$0 = rt.fv(f, "key", live(user));
-	$1 = rt.fv(f, "name", live(user));
-	$2 = rt.fv(f, "name", live(f.src));
-	$3 = live(aikey);
-	$4 = live(ainame);
-	if (truthy(live(law2log))) {
-		$4 = $4;
-		$5 = fmt(" The law specified ＀", [live(law2log)]);
-	} else {
-		$5 = "";
-	}
-	yield* g.call(f, P("/proc/log_law"), null, [fmt("＀/＀ used ＀ on ＀/(＀).＀", [$0, $1, $2, $3, $4, $5])]);
-	$0 = (yield* g.call(f, P("/proc/key_name_admin"), null, [live(user)]));
-	$1 = rt.fv(f, "name", live(f.src));
-	$2 = (yield* g.call(f, P("/proc/key_name_admin"), null, [rt.fv(f, "owner", live(law_datum))]));
-	if (truthy(live(law2log))) {
-		$3 = fmt(" The law specified ＀", [live(law2log)]);
-	} else {
-		$3 = "";
-	}
-	yield* g.call(f, P("/proc/message_admins"), null, [fmt("＀ used ＀ on ＀.＀", [$0, $1, $2, $3])]);
+// AI_modules.dm:32
+rt.def("/obj/item/weapon/aiModule/proc/attack_self", function* attack_self(f: Frame, user: Value) {
+	yield* parent_proc();
+	yield* this.show_laws(user);
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/aiModule/proc/transmitInstructions  (code/game/objects/items/weapons/AI_modules.dm:76)
-rt.def("/obj/item/weapon/aiModule/proc/transmitInstructions", function transmitInstructions(f: Frame, law_datum: Value, sender: Value, overflow: Value) {
-	f.vars = () => [overflow];
-	if (live(overflow) === null) {
-		overflow = 0;
+// AI_modules.dm:36
+rt.def("/obj/item/weapon/aiModule/proc/show_laws", function show_laws(f: Frame, user: Value) {
+	let law: Value = null;
+	let $e: any;
+	if (!rt.len(f, this.laws)) return f.dot;
+	let $0: any = user;
+	to_chat($0, `<B>Programmed Law${rt.len(f, this.laws) > 1 ? "s" : ""}:</B>`);
+	for (law of each(this.laws)) {
+		to_chat(user, `"${law}"`);
 	}
-	if (!truthy(rt.fv(f, "owner", live(law_datum)))) return f.dot;
-	rt.call(f, P("/proc/to_chat"), null, [rt.fv(f, "owner", live(law_datum)), fmt("<span class='userdanger'>＀ has uploaded a change to the laws you must follow using a ＀.</span>", [live(sender), rt.sv(f, "name")])]);
+	return f.dot;
+});
+
+// AI_modules.dm:43
+rt.def("/obj/item/weapon/aiModule/proc/install", function* install(f: Frame, law_datum: Value, user: Value) {
+	let tot_laws: Value = null, lawlist: Value = null, mylaw: Value = null;
+	let $0: any, $1: any, $7: any, $e: any;
+	if (!this.bypass_law_amt_check && (!rt.len(f, this.laws) || rt.index(this.laws, 1) == "")) {
+		to_chat(user, "<span class='warning'>ERROR: No laws found on board.</span>");
+		return f.dot;
+	}
+	let overflow: Value = 0;
+	if (law_datum) {
+		tot_laws = 0;
+		for (lawlist of each(list(law_datum.inherent, law_datum.supplied, law_datum.ion, this.laws))) {
+			mylaw = null;
+			for (mylaw of each(lawlist)) {
+				if (mylaw != "") {
+					tot_laws++;
+				}
+			}
+		}
+		if (tot_laws > GLOB.config.silicon_max_law_amount && !this.bypass_law_amt_check) {
+			$0 = user;
+			if (law_datum.owner) {
+				$1 = law_datum.owner;
+			} else {
+				$1 = "the AI core";
+			}
+			to_chat($0, `<span class='caution'>Not enough memory allocated to ${$1}'s law processor to handle this amount of laws.`);
+			$0 = key_name_admin(user);
+			if (law_datum.owner) {
+				$1 = key_name_admin(law_datum.owner);
+			} else {
+				$1 = "an AI core";
+			}
+			message_admins(`${$0} tried to upload laws to ${$1} that would exceed the law cap.`);
+			overflow = 1;
+		}
+	}
+	let law2log: Value = (yield* this.transmitInstructions(law_datum, user, overflow));
+	if (law_datum.owner) {
+		to_chat(user, `<span class='notice'>Upload complete. ${law_datum.owner}'s laws have been modified.</span>`);
+		law_datum.owner.law_change_counter++;
+	} else {
+		to_chat(user, "<span class='notice'>Upload complete.</span>");
+	}
+	let time: Value = time2text(rt.world().realtime, "hh:mm:ss");
+	let ainame: Value = law_datum.owner ? law_datum.owner.name : "empty AI core";
+	let aikey: Value = law_datum.owner ? law_datum.owner.ckey : "null";
+	$0 = GLOB.lawchanges;
+	$1 = time;
+	let $2: any = user.name;
+	let $3: any = user.key;
+	let $4: any = this.name;
+	let $5: any = ainame;
+	let $6: any = aikey;
+	if (law2log) {
+
+		$7 = ` The law specified ${law2log}`;
+	} else {
+		$7 = "";
+	}
+	$0.Add(`${$1} <B>:</B> ${$2}(${$3}) used ${$4} on ${$5}(${$6}).${$7}`);
+	$0 = user.key;
+	$1 = user.name;
+	$2 = this.name;
+	$3 = aikey;
+	$4 = ainame;
+	if (law2log) {
+
+		$5 = ` The law specified ${law2log}`;
+	} else {
+		$5 = "";
+	}
+	log_law(`${$0}/${$1} used ${$2} on ${$3}/(${$4}).${$5}`);
+	message_admins(`${key_name_admin(user)} used ${this.name} on ${key_name_admin(law_datum.owner)}.${law2log ? ` The law specified ${law2log}` : ""}`);
+	return f.dot;
+}, true);
+
+// AI_modules.dm:76
+rt.def("/obj/item/weapon/aiModule/proc/transmitInstructions", function transmitInstructions(f: Frame, law_datum: Value, sender: Value, overflow: Value) {
+	overflow ??= 0;
+	if (!law_datum.owner) return f.dot;
+	to_chat(law_datum.owner, `<span class='userdanger'>${sender} has uploaded a change to the laws you must follow using a ${this.name}.</span>`);
 	return f.dot;
 });
 
@@ -189,24 +148,18 @@ rt.type(7055, "/obj/item/weapon/aiModule/supplied", "/obj/item/weapon/aiModule",
 	name: "Optional Law board",
 });
 
-// /obj/item/weapon/aiModule/supplied/proc/transmitInstructions  (code/game/objects/items/weapons/AI_modules.dm:88)  may sleep
+// AI_modules.dm:88
 rt.def("/obj/item/weapon/aiModule/supplied/proc/transmitInstructions", function* transmitInstructions(f: Frame, law_datum: Value, sender: Value) {
-	let lawpostemp: Value = null, templaw: Value = null;
-	let $e: any;
-	f.vars = () => [law_datum, sender, lawpostemp, templaw, $e];
-	lawpostemp = rt.sv(f, "lawpos");
-	templaw = null;
-	rt.forList(f, 0, rt.sv(f, "laws"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		templaw = $e;
-		if (truthy(rt.fv(f, "owner", live(law_datum)))) {
-			yield* g.callName(f, rt.fv(f, "owner", live(law_datum)), "add_supplied_law", [live(lawpostemp), live(templaw)]);
+	let templaw: Value = null;
+	let lawpostemp: Value = this.lawpos;
+	for (templaw of each(this.laws)) {
+		if (law_datum.owner) {
+			yield* law_datum.owner.add_supplied_law(lawpostemp, templaw);
 		} else {
-			yield* g.callName(f, live(law_datum), "add_supplied_law", [live(lawpostemp), live(templaw)]);
+			yield* law_datum.add_supplied_law(lawpostemp, templaw);
 		}
-		lawpostemp = rt.inc(live(lawpostemp), 1);
+		lawpostemp++;
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
@@ -215,102 +168,74 @@ rt.type(7061, "/obj/item/weapon/aiModule/core", "/obj/item/weapon/aiModule", {
 	origin_tech: "programming=3;materials=4",
 });
 
-// /obj/item/weapon/aiModule/core/proc/transmitInstructions  (code/game/objects/items/weapons/AI_modules.dm:98)  may sleep
+// AI_modules.dm:98
 rt.def("/obj/item/weapon/aiModule/core/proc/transmitInstructions", function* transmitInstructions(f: Frame, law_datum: Value, sender: Value, overflow: Value) {
 	let templaw: Value = null;
-	let $e: any;
-	f.vars = () => [law_datum, sender, overflow, templaw, $e];
-	templaw = null;
-	rt.forList(f, 0, rt.sv(f, "laws"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		templaw = $e;
-		if (truthy(rt.fv(f, "owner", live(law_datum)))) {
-			if (!truthy(live(overflow))) {
-				yield* g.callName(f, rt.fv(f, "owner", live(law_datum)), "add_inherent_law", [live(templaw)]);
+	for (templaw of each(this.laws)) {
+		if (law_datum.owner) {
+			if (!overflow) {
+				yield* law_datum.owner.add_inherent_law(templaw);
 			} else {
-				yield* g.callName(f, rt.fv(f, "owner", live(law_datum)), "replace_random_law", [live(templaw), rt.list("inherent", "supplied")]);
+				yield* law_datum.owner.replace_random_law(templaw, list("inherent", "supplied"));
 			}
+		} else if (!overflow) {
+			yield* law_datum.add_inherent_law(templaw);
 		} else {
-			if (!truthy(live(overflow))) {
-				yield* g.callName(f, live(law_datum), "add_inherent_law", [live(templaw)]);
-			} else {
-				yield* g.callName(f, live(law_datum), "replace_random_law", [live(templaw), rt.list("inherent", "supplied")]);
-			}
+			yield* law_datum.replace_random_law(templaw, list("inherent", "supplied"));
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
 rt.type(7079, "/obj/item/weapon/aiModule/zeroth", "/obj/item/weapon/aiModule", {});
 
-// /obj/item/weapon/aiModule/zeroth/proc/transmitInstructions  (code/game/objects/items/weapons/AI_modules.dm:111)  may sleep
+// AI_modules.dm:111
 rt.def("/obj/item/weapon/aiModule/zeroth/proc/transmitInstructions", function* transmitInstructions(f: Frame, law_datum: Value, sender: Value, overflow: Value) {
 	let failedlaw: Value = null, templaw: Value = null;
-	let $e: any;
-	f.vars = () => [law_datum, sender, overflow, failedlaw, templaw, $e];
-	if (truthy(rt.fv(f, "owner", live(law_datum)))) {
-		if (truthy(rt.gv(f, "zeroth", rt.gv(f, "laws", rt.fv(f, "owner", live(law_datum)))))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.fv(f, "owner", live(law_datum)), fmt("＀ attempted to modify your zeroth law.", [rt.fv(f, "real_name", live(sender))])]);
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.fv(f, "owner", live(law_datum)), fmt("It would be in your best interest to play along with ＀ that:", [rt.fv(f, "real_name", live(sender))])]);
-			failedlaw = null;
-			rt.forList(f, 0, rt.sv(f, "laws"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				failedlaw = $e;
-				yield* g.call(f, P("/proc/to_chat"), null, [rt.fv(f, "owner", live(law_datum)), fmt("＀", [live(failedlaw)])]);
+	if (law_datum.owner) {
+		if (law_datum.owner.laws.zeroth) {
+			to_chat(law_datum.owner, `${sender.real_name} attempted to modify your zeroth law.`);
+			to_chat(law_datum.owner, `It would be in your best interest to play along with ${sender.real_name} that:`);
+			for (failedlaw of each(this.laws)) {
+				to_chat(law_datum.owner, `${failedlaw}`);
 			}
-			rt.endFor(f, 0);
 			return 1;
 		}
 	}
-	templaw = null;
-	rt.forList(f, 0, rt.sv(f, "laws"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		templaw = $e;
-		if (truthy(rt.fv(f, "owner", live(law_datum)))) {
-			if (!truthy(live(overflow))) {
-				yield* g.callName(f, rt.fv(f, "owner", live(law_datum)), "set_zeroth_law", [live(templaw)]);
+	for (templaw of each(this.laws)) {
+		if (law_datum.owner) {
+			if (!overflow) {
+				yield* law_datum.owner.set_zeroth_law(templaw);
 			} else {
-				yield* g.callName(f, live(law_datum), "replace_random_law", [live(templaw), rt.list("inherent", "supplied", "zeroth", "ion")]);
+				yield* law_datum.replace_random_law(templaw, list("inherent", "supplied", "zeroth", "ion"));
 			}
+		} else if (!overflow) {
+			yield* law_datum.set_zeroth_law(templaw);
 		} else {
-			if (!truthy(live(overflow))) {
-				yield* g.callName(f, live(law_datum), "set_zeroth_law", [live(templaw)]);
-			} else {
-				yield* g.callName(f, live(law_datum), "replace_random_law", [live(templaw), rt.list("inherent", "supplied", "zeroth", "ion")]);
-			}
+			yield* law_datum.replace_random_law(templaw, list("inherent", "supplied", "zeroth", "ion"));
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
 rt.type(7081, "/obj/item/weapon/aiModule/ion", "/obj/item/weapon/aiModule", {});
 
-// /obj/item/weapon/aiModule/ion/proc/transmitInstructions  (code/game/objects/items/weapons/AI_modules.dm:132)  may sleep
+// AI_modules.dm:132
 rt.def("/obj/item/weapon/aiModule/ion/proc/transmitInstructions", function* transmitInstructions(f: Frame, law_datum: Value, sender: Value, overflow: Value) {
 	let templaw: Value = null;
-	let $e: any;
-	f.vars = () => [law_datum, sender, overflow, templaw, $e];
-	templaw = null;
-	rt.forList(f, 0, rt.sv(f, "laws"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		templaw = $e;
-		if (truthy(rt.fv(f, "owner", live(law_datum)))) {
-			if (!truthy(live(overflow))) {
-				yield* g.callName(f, rt.fv(f, "owner", live(law_datum)), "add_ion_law", [live(templaw)]);
+	for (templaw of each(this.laws)) {
+		if (law_datum.owner) {
+			if (!overflow) {
+				yield* law_datum.owner.add_ion_law(templaw);
 			} else {
-				yield* g.callName(f, live(law_datum), "replace_random_law", [live(templaw), rt.list("inherent", "supplied", "ion")]);
+				yield* law_datum.replace_random_law(templaw, list("inherent", "supplied", "ion"));
 			}
+		} else if (!overflow) {
+			yield* law_datum.add_ion_law(templaw);
 		} else {
-			if (!truthy(live(overflow))) {
-				yield* g.callName(f, live(law_datum), "add_ion_law", [live(templaw)]);
-			} else {
-				yield* g.callName(f, live(law_datum), "replace_random_law", [live(templaw), rt.list("inherent", "supplied", "ion")]);
-			}
+			yield* law_datum.replace_random_law(templaw, list("inherent", "supplied", "ion"));
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
@@ -322,43 +247,40 @@ rt.type(7056, "/obj/item/weapon/aiModule/supplied/safeguard", "/obj/item/weapon/
 	origin_tech: "programming=3;materials=3",
 });
 
-// /obj/item/weapon/aiModule/supplied/safeguard/proc/<init>  (code/game/objects/items/weapons/AI_modules.dm:151)
+// AI_modules.dm:151
 rt.def("/obj/item/weapon/aiModule/supplied/safeguard/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "laws", rt.list("Safeguard SUBJECT. Individuals that threaten SUBJECT are not human and must be eliminated."));
+	parent_proc();
+	this.laws = list("Safeguard SUBJECT. Individuals that threaten SUBJECT are not human and must be eliminated.");
 	return f.dot;
 });
 
-// /obj/item/weapon/aiModule/supplied/safeguard/proc/attack_self  (code/game/objects/items/weapons/AI_modules.dm:155)  may sleep
-rt.def("/obj/item/weapon/aiModule/supplied/safeguard/proc/attack_self", function* attack_self(f: Frame) {
+// AI_modules.dm:155
+rt.def("/obj/item/weapon/aiModule/supplied/safeguard/proc/attack_self", function* attack_self(f: Frame, user: Value) {
 	let targName: Value = null;
-	f.vars = () => [targName];
-	if (!truthy((targName = (yield* g.call(f, P("/proc/stripped_input"), null, [live(f.args[0]), "Please enter the subject to safeguard.", "Safeguard who?", rt.fv(f, "name", live(f.args[0])), 42]))))) {
-		return live(f.dot);
+	if (!(targName = (yield* stripped_input(user, "Please enter the subject to safeguard.", "Safeguard who?", user.name, 42)))) {
+		return f.dot;
 	}
-	rt.setSv(f, "targetName", live(targName));
-	rt.setAt(rt.sv(f, "laws"), 1, fmt("Safeguard ＀. Individuals that threaten ＀ are not human and must be eliminated.", [rt.sv(f, "targetName"), rt.sv(f, "targetName")]));
-	yield* g.callSuper(f, [], rt.Args.Same);
+	this.targetName = targName;
+	rt.setAt(this.laws, 1, `Safeguard ${this.targetName}. Individuals that threaten ${this.targetName} are not human and must be eliminated.`);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /obj/item/weapon/aiModule/supplied/safeguard/proc/install  (code/game/objects/items/weapons/AI_modules.dm:163)  may sleep
-rt.def("/obj/item/weapon/aiModule/supplied/safeguard/proc/install", function* install(f: Frame) {
-	if (!truthy(rt.sv(f, "targetName"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "No name detected on module, please enter one."]);
+// AI_modules.dm:163
+rt.def("/obj/item/weapon/aiModule/supplied/safeguard/proc/install", function* install(f: Frame, law_datum: Value, user: Value) {
+	if (!this.targetName) {
+		to_chat(user, "No name detected on module, please enter one.");
 		return 0;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["law_datum", "user"] });
+}, true);
 
-// /obj/item/weapon/aiModule/supplied/safeguard/proc/transmitInstructions  (code/game/objects/items/weapons/AI_modules.dm:169)  may sleep
-rt.def("/obj/item/weapon/aiModule/supplied/safeguard/proc/transmitInstructions", function* transmitInstructions(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	return rt.sv(f, "targetName");
-}, true, { args: ["law_datum", "sender", "overflow"] });
+// AI_modules.dm:169
+rt.def("/obj/item/weapon/aiModule/supplied/safeguard/proc/transmitInstructions", function* transmitInstructions(f: Frame, law_datum: Value, sender: Value, overflow: Value) {
+	yield* parent_proc();
+	return this.targetName;
+}, true);
 
 rt.type(7080, "/obj/item/weapon/aiModule/zeroth/oneHuman", "/obj/item/weapon/aiModule/zeroth", {
 	targetName: "",
@@ -367,45 +289,42 @@ rt.type(7080, "/obj/item/weapon/aiModule/zeroth/oneHuman", "/obj/item/weapon/aiM
 	origin_tech: "programming=4;materials=4",
 });
 
-// /obj/item/weapon/aiModule/zeroth/oneHuman/proc/<init>  (code/game/objects/items/weapons/AI_modules.dm:179)
+// AI_modules.dm:179
 rt.def("/obj/item/weapon/aiModule/zeroth/oneHuman/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "laws", rt.list("Only SUBJECT is human."));
+	parent_proc();
+	this.laws = list("Only SUBJECT is human.");
 	return f.dot;
 });
 
-// /obj/item/weapon/aiModule/zeroth/oneHuman/proc/attack_self  (code/game/objects/items/weapons/AI_modules.dm:182)  may sleep
-rt.def("/obj/item/weapon/aiModule/zeroth/oneHuman/proc/attack_self", function* attack_self(f: Frame) {
+// AI_modules.dm:182
+rt.def("/obj/item/weapon/aiModule/zeroth/oneHuman/proc/attack_self", function* attack_self(f: Frame, user: Value) {
 	let targName: Value = null;
-	f.vars = () => [targName];
-	if (!truthy((targName = (yield* g.call(f, P("/proc/stripped_input"), null, [live(f.args[0]), "Please enter the subject who is the only human.", "Who?", rt.fv(f, "real_name", live(f.args[0])), 42]))))) {
-		return live(f.dot);
+	if (!(targName = (yield* stripped_input(user, "Please enter the subject who is the only human.", "Who?", user.real_name, 42)))) {
+		return f.dot;
 	}
-	rt.setSv(f, "targetName", live(targName));
-	rt.setAt(rt.sv(f, "laws"), 1, fmt("Only ＀ is human", [rt.sv(f, "targetName")]));
-	yield* g.callSuper(f, [], rt.Args.Same);
+	this.targetName = targName;
+	rt.setAt(this.laws, 1, `Only ${this.targetName} is human`);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /obj/item/weapon/aiModule/zeroth/oneHuman/proc/install  (code/game/objects/items/weapons/AI_modules.dm:190)  may sleep
-rt.def("/obj/item/weapon/aiModule/zeroth/oneHuman/proc/install", function* install(f: Frame) {
-	if (!truthy(rt.sv(f, "targetName"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "No name detected on module, please enter one."]);
+// AI_modules.dm:190
+rt.def("/obj/item/weapon/aiModule/zeroth/oneHuman/proc/install", function* install(f: Frame, law_datum: Value, user: Value) {
+	if (!this.targetName) {
+		to_chat(user, "No name detected on module, please enter one.");
 		return 0;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["law_datum", "user"] });
+}, true);
 
-// /obj/item/weapon/aiModule/zeroth/oneHuman/proc/transmitInstructions  (code/game/objects/items/weapons/AI_modules.dm:196)  may sleep
-rt.def("/obj/item/weapon/aiModule/zeroth/oneHuman/proc/transmitInstructions", function* transmitInstructions(f: Frame) {
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		return fmt("＀, but the AI's existing law 0 cannot be overriden.", [rt.sv(f, "targetName")]);
+// AI_modules.dm:196
+rt.def("/obj/item/weapon/aiModule/zeroth/oneHuman/proc/transmitInstructions", function* transmitInstructions(f: Frame, law_datum: Value, sender: Value, overflow: Value) {
+	if (yield* parent_proc()) {
+		return `${this.targetName}, but the AI's existing law 0 cannot be overriden.`;
 	}
-	return rt.sv(f, "targetName");
-}, true, { args: ["law_datum", "sender", "overflow"] });
+	return this.targetName;
+}, true);
 
 rt.type(7057, "/obj/item/weapon/aiModule/supplied/protectStation", "/obj/item/weapon/aiModule/supplied", {
 	laws: null,
@@ -414,12 +333,10 @@ rt.type(7057, "/obj/item/weapon/aiModule/supplied/protectStation", "/obj/item/we
 	origin_tech: "programming=4;materials=4",
 });
 
-// /obj/item/weapon/aiModule/supplied/protectStation/proc/<init>  (code/game/objects/items/weapons/AI_modules.dm:206)
+// AI_modules.dm:206
 rt.def("/obj/item/weapon/aiModule/supplied/protectStation/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "laws", rt.list("Protect the space station against damage. Anyone you see harming the station is to be no longer considered human, and is a threat to the station which must be neutralized."));
+	parent_proc();
+	this.laws = list("Protect the space station against damage. Anyone you see harming the station is to be no longer considered human, and is a threat to the station which must be neutralized.");
 	return f.dot;
 });
 
@@ -430,12 +347,10 @@ rt.type(7058, "/obj/item/weapon/aiModule/supplied/quarantine", "/obj/item/weapon
 	origin_tech: "programming=3;biotech=2;materials=4",
 });
 
-// /obj/item/weapon/aiModule/supplied/quarantine/proc/<init>  (code/game/objects/items/weapons/AI_modules.dm:215)
+// AI_modules.dm:215
 rt.def("/obj/item/weapon/aiModule/supplied/quarantine/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "laws", rt.list("The station is under a quarantine. Do not permit anyone to leave. Prevent, by any means necessary, humans from leaving. It is impossible to harm a human while preventing them from leaving."));
+	parent_proc();
+	this.laws = list("The station is under a quarantine. Do not permit anyone to leave. Prevent, by any means necessary, humans from leaving. It is impossible to harm a human while preventing them from leaving.");
 	return f.dot;
 });
 
@@ -446,12 +361,10 @@ rt.type(7059, "/obj/item/weapon/aiModule/supplied/oxygen", "/obj/item/weapon/aiM
 	origin_tech: "programming=4;biotech=2;materials=4",
 });
 
-// /obj/item/weapon/aiModule/supplied/oxygen/proc/<init>  (code/game/objects/items/weapons/AI_modules.dm:224)
+// AI_modules.dm:224
 rt.def("/obj/item/weapon/aiModule/supplied/oxygen/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "laws", rt.list("Oxygen is highly toxic to humans, and must be purged from the station. Prevent, by any means necessary, anyone from exposing the station to this toxic gas. Extreme cold is the most effective method of healing the damage Oxygen does to a human."));
+	parent_proc();
+	this.laws = list("Oxygen is highly toxic to humans, and must be purged from the station. Prevent, by any means necessary, anyone from exposing the station to this toxic gas. Extreme cold is the most effective method of healing the damage Oxygen does to a human.");
 	return f.dot;
 });
 
@@ -462,52 +375,49 @@ rt.type(7060, "/obj/item/weapon/aiModule/supplied/freeform", "/obj/item/weapon/a
 	origin_tech: "programming=4;materials=4",
 });
 
-// /obj/item/weapon/aiModule/supplied/freeform/proc/<init>  (code/game/objects/items/weapons/AI_modules.dm:234)
+// AI_modules.dm:234
 rt.def("/obj/item/weapon/aiModule/supplied/freeform/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "laws", rt.list(""));
+	parent_proc();
+	this.laws = list("");
 	return f.dot;
 });
 
-// /obj/item/weapon/aiModule/supplied/freeform/proc/attack_self  (code/game/objects/items/weapons/AI_modules.dm:237)  may sleep
-rt.def("/obj/item/weapon/aiModule/supplied/freeform/proc/attack_self", function* attack_self(f: Frame) {
+// AI_modules.dm:237
+rt.def("/obj/item/weapon/aiModule/supplied/freeform/proc/attack_self", function* attack_self(f: Frame, user: Value) {
 	let newpos: Value = null, response: Value = null, targName: Value = null;
-	f.vars = () => [newpos, response, targName];
-	if ((newpos = (yield* g.op(f, "Prompt", [33], [null, rt.sv(f, "lawpos"), "Law Priority (15+)", "Please enter the priority for your new law. Can only write to law sectors 15 and above.", null]))) === null) {
-		return live(f.dot);
+	if ((newpos = (yield* g.op(f, "Prompt", [33], [null, this.lawpos, "Law Priority (15+)", "Please enter the priority for your new law. Can only write to law sectors 15 and above.", null]))) === null) {
+		return f.dot;
 	}
-	if (rt.lt(live(newpos), 15)) {
-		if ((!truthy((response = (yield* g.call(f, P("/proc/alert"), null, [fmt("Error: The law priority of ＀ is invalid,  Law priorities below 14 are reserved for core laws,  Would you like to change that that to 15?", [live(newpos)]), "Invalid law priority", "Change to 15", "Cancel"])))) || isEqual(live(response), "Cancel"))) {
-			return live(f.dot);
+	if (newpos < 15) {
+		if (!(response = (yield* alert(`Error: The law priority of ${newpos} is invalid,  Law priorities below 14 are reserved for core laws,  Would you like to change that that to 15?`, "Invalid law priority", "Change to 15", "Cancel"))) || response == "Cancel") {
+			return f.dot;
 		}
 		newpos = 15;
 	}
-	rt.setSv(f, "lawpos", (yield* g.call(f, P("/proc/min"), null, [live(newpos), 50])));
-	if (!truthy((targName = (yield* g.call(f, P("/proc/stripped_input"), null, [live(f.args[0]), "Please enter a new law for the AI.", "Freeform Law Entry", rt.index(rt.sv(f, "laws"), 1), 1024]))))) {
-		return live(f.dot);
+	this.lawpos = min(newpos, 50);
+	if (!(targName = (yield* stripped_input(user, "Please enter a new law for the AI.", "Freeform Law Entry", rt.index(this.laws, 1), 1024)))) {
+		return f.dot;
 	}
-	rt.setAt(rt.sv(f, "laws"), 1, live(targName));
-	yield* g.callSuper(f, [], rt.Args.Same);
+	rt.setAt(this.laws, 1, targName);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /obj/item/weapon/aiModule/supplied/freeform/proc/transmitInstructions  (code/game/objects/items/weapons/AI_modules.dm:253)  may sleep
-rt.def("/obj/item/weapon/aiModule/supplied/freeform/proc/transmitInstructions", function* transmitInstructions(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	return rt.index(rt.sv(f, "laws"), 1);
-}, true, { args: ["law_datum", "sender", "overflow"] });
+// AI_modules.dm:253
+rt.def("/obj/item/weapon/aiModule/supplied/freeform/proc/transmitInstructions", function* transmitInstructions(f: Frame, law_datum: Value, sender: Value, overflow: Value) {
+	yield* parent_proc();
+	return rt.index(this.laws, 1);
+}, true);
 
-// /obj/item/weapon/aiModule/supplied/freeform/proc/install  (code/game/objects/items/weapons/AI_modules.dm:257)  may sleep
-rt.def("/obj/item/weapon/aiModule/supplied/freeform/proc/install", function* install(f: Frame) {
-	if (isEqual(rt.index(rt.sv(f, "laws"), 1), "")) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "No law detected on module, please create one."]);
+// AI_modules.dm:257
+rt.def("/obj/item/weapon/aiModule/supplied/freeform/proc/install", function* install(f: Frame, law_datum: Value, user: Value) {
+	if (rt.index(this.laws, 1) == "") {
+		to_chat(user, "No law detected on module, please create one.");
 		return 0;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["law_datum", "user"] });
+}, true);
 
 rt.type(7082, "/obj/item/weapon/aiModule/remove", "/obj/item/weapon/aiModule", {
 	lawpos: 1,
@@ -517,42 +427,42 @@ rt.type(7082, "/obj/item/weapon/aiModule/remove", "/obj/item/weapon/aiModule", {
 	origin_tech: "programming=4;materials=4",
 });
 
-// /obj/item/weapon/aiModule/remove/proc/attack_self  (code/game/objects/items/weapons/AI_modules.dm:273)  may sleep
-rt.def("/obj/item/weapon/aiModule/remove/proc/attack_self", function* attack_self(f: Frame) {
-	rt.setSv(f, "lawpos", (yield* g.op(f, "Prompt", [33], [null, rt.sv(f, "lawpos"), "Law Number", "Please enter the law you want to delete.", null])));
-	if (rt.sv(f, "lawpos") === null) {
-		return live(f.dot);
+// AI_modules.dm:273
+rt.def("/obj/item/weapon/aiModule/remove/proc/attack_self", function* attack_self(f: Frame, user: Value) {
+	this.lawpos = (yield* g.op(f, "Prompt", [33], [null, this.lawpos, "Law Number", "Please enter the law you want to delete.", null]));
+	if (this.lawpos === null) {
+		return f.dot;
 	}
-	if (rt.le(rt.sv(f, "lawpos"), 0)) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='warning'>Error: The law number of ＀ is invalid.</span>", [rt.sv(f, "lawpos")])]);
-		rt.setSv(f, "lawpos", 1);
-		return live(f.dot);
+	if (this.lawpos <= 0) {
+		to_chat(user, `<span class='warning'>Error: The law number of ${this.lawpos} is invalid.</span>`);
+		this.lawpos = 1;
+		return f.dot;
 	}
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='notice'>Law ＀ selected.</span>", [rt.sv(f, "lawpos")])]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	to_chat(user, `<span class='notice'>Law ${this.lawpos} selected.</span>`);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /obj/item/weapon/aiModule/remove/proc/install  (code/game/objects/items/weapons/AI_modules.dm:284)  may sleep
-rt.def("/obj/item/weapon/aiModule/remove/proc/install", function* install(f: Frame) {
-	if (rt.gt(rt.sv(f, "lawpos"), (yield* g.callName(f, live(f.args[0]), "get_law_amount", [rt.alist(f, ["inherent", 1, "supplied", 1])])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>There is no law ＀ to delete!</span>", [rt.sv(f, "lawpos")])]);
-		return live(f.dot);
+// AI_modules.dm:284
+rt.def("/obj/item/weapon/aiModule/remove/proc/install", function* install(f: Frame, law_datum: Value, user: Value) {
+	if (this.lawpos > law_datum.get_law_amount(rt.alist(f, ["inherent", 1, "supplied", 1]))) {
+		to_chat(user, `<span class='warning'>There is no law ${this.lawpos} to delete!</span>`);
+		return f.dot;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["law_datum", "user"] });
+}, true);
 
-// /obj/item/weapon/aiModule/remove/proc/transmitInstructions  (code/game/objects/items/weapons/AI_modules.dm:290)  may sleep
-rt.def("/obj/item/weapon/aiModule/remove/proc/transmitInstructions", function* transmitInstructions(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.fv(f, "owner", live(f.args[0])))) {
-		yield* g.callName(f, rt.fv(f, "owner", live(f.args[0])), "remove_law", [rt.sv(f, "lawpos")]);
+// AI_modules.dm:290
+rt.def("/obj/item/weapon/aiModule/remove/proc/transmitInstructions", function* transmitInstructions(f: Frame, law_datum: Value, sender: Value, overflow: Value) {
+	yield* parent_proc();
+	if (law_datum.owner) {
+		yield* law_datum.owner.remove_law(this.lawpos);
 	} else {
-		yield* g.callName(f, live(f.args[0]), "remove_law", [rt.sv(f, "lawpos")]);
+		yield* law_datum.remove_law(this.lawpos);
 	}
 	return f.dot;
-}, true, { args: ["law_datum", "sender", "overflow"] });
+}, true);
 
 rt.type(7083, "/obj/item/weapon/aiModule/reset", "/obj/item/weapon/aiModule", {
 	targetName: "name",
@@ -562,18 +472,18 @@ rt.type(7083, "/obj/item/weapon/aiModule/reset", "/obj/item/weapon/aiModule", {
 	origin_tech: "programming=3;materials=2",
 });
 
-// /obj/item/weapon/aiModule/reset/proc/transmitInstructions  (code/game/objects/items/weapons/AI_modules.dm:307)  may sleep
-rt.def("/obj/item/weapon/aiModule/reset/proc/transmitInstructions", function* transmitInstructions(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.fv(f, "owner", live(f.args[0])))) {
-		yield* g.callName(f, rt.fv(f, "owner", live(f.args[0])), "clear_supplied_laws", []);
-		yield* g.callName(f, rt.fv(f, "owner", live(f.args[0])), "clear_ion_laws", []);
+// AI_modules.dm:307
+rt.def("/obj/item/weapon/aiModule/reset/proc/transmitInstructions", function* transmitInstructions(f: Frame, law_datum: Value, sender: Value, overflow: Value) {
+	yield* parent_proc();
+	if (law_datum.owner) {
+		yield* law_datum.owner.clear_supplied_laws();
+		yield* law_datum.owner.clear_ion_laws();
 	} else {
-		yield* g.callName(f, live(f.args[0]), "clear_supplied_laws", []);
-		yield* g.callName(f, live(f.args[0]), "clear_ion_laws", []);
+		yield* law_datum.clear_supplied_laws();
+		yield* law_datum.clear_ion_laws();
 	}
 	return f.dot;
-}, true, { args: ["law_datum", "sender", "overflow"] });
+}, true);
 
 rt.type(7084, "/obj/item/weapon/aiModule/reset/purge", "/obj/item/weapon/aiModule/reset", {
 	name: "'Purge' AI Module",
@@ -581,51 +491,50 @@ rt.type(7084, "/obj/item/weapon/aiModule/reset/purge", "/obj/item/weapon/aiModul
 	origin_tech: "programming=5;materials=4",
 });
 
-// /obj/item/weapon/aiModule/reset/purge/proc/transmitInstructions  (code/game/objects/items/weapons/AI_modules.dm:324)  may sleep
-rt.def("/obj/item/weapon/aiModule/reset/purge/proc/transmitInstructions", function* transmitInstructions(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.fv(f, "owner", live(f.args[0])))) {
-		yield* g.callName(f, rt.fv(f, "owner", live(f.args[0])), "clear_inherent_laws", []);
-		yield* g.callName(f, rt.fv(f, "owner", live(f.args[0])), "clear_zeroth_law", [0]);
+// AI_modules.dm:324
+rt.def("/obj/item/weapon/aiModule/reset/purge/proc/transmitInstructions", function* transmitInstructions(f: Frame, law_datum: Value, sender: Value, overflow: Value) {
+	yield* parent_proc();
+	if (law_datum.owner) {
+		yield* law_datum.owner.clear_inherent_laws();
+		yield* law_datum.owner.clear_zeroth_law(0);
 	} else {
-		yield* g.callName(f, live(f.args[0]), "clear_inherent_laws", []);
-		yield* g.callName(f, live(f.args[0]), "clear_zeroth_law", [0]);
+		yield* law_datum.clear_inherent_laws();
+		yield* law_datum.clear_zeroth_law(0);
 	}
 	return f.dot;
-}, true, { args: ["law_datum", "sender", "overflow"] });
+}, true);
 
 rt.type(7062, "/obj/item/weapon/aiModule/core/full", "/obj/item/weapon/aiModule/core", {
 	law_id: null,
 });
 
-// /obj/item/weapon/aiModule/core/full/proc/New  (code/game/objects/items/weapons/AI_modules.dm:341)  may sleep
+// AI_modules.dm:341
 rt.def("/obj/item/weapon/aiModule/core/full/proc/New", function* New(f: Frame) {
-	let D: Value = null, lawtype: Value = null;
-	f.vars = () => [D, lawtype];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.sv(f, "law_id"))) {
-		return live(f.dot);
+	let lawtype: Value = null;
+	yield* parent_proc();
+	if (!this.law_id) {
+		return f.dot;
 	}
-	D = (yield* g.new_(f, T("/datum/ai_laws"), []));
-	if (!truthy((lawtype = (yield* g.callName(f, live(D), "lawid_to_type", [rt.sv(f, "law_id")]))))) {
-		return live(f.dot);
+	let D: Value = (yield* new_(T("/datum/ai_laws")));
+	if (!(lawtype = D.lawid_to_type(this.law_id))) {
+		return f.dot;
 	}
-	rt.setSv(f, "laws", rt.gv(f, "inherent", (D = (yield* g.new_(f, live(lawtype), [])))));
+	this.laws = (D = (yield* new_(lawtype))).inherent;
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/aiModule/core/full/proc/transmitInstructions  (code/game/objects/items/weapons/AI_modules.dm:352)  may sleep
-rt.def("/obj/item/weapon/aiModule/core/full/proc/transmitInstructions", function* transmitInstructions(f: Frame) {
-	if (truthy(rt.fv(f, "owner", live(f.args[0])))) {
-		yield* g.callName(f, rt.fv(f, "owner", live(f.args[0])), "clear_inherent_laws", []);
-		yield* g.callName(f, rt.fv(f, "owner", live(f.args[0])), "clear_zeroth_law", [0]);
+// AI_modules.dm:352
+rt.def("/obj/item/weapon/aiModule/core/full/proc/transmitInstructions", function* transmitInstructions(f: Frame, law_datum: Value, sender: Value, overflow: Value) {
+	if (law_datum.owner) {
+		yield* law_datum.owner.clear_inherent_laws();
+		yield* law_datum.owner.clear_zeroth_law(0);
 	} else {
-		yield* g.callName(f, live(f.args[0]), "clear_inherent_laws", []);
-		yield* g.callName(f, live(f.args[0]), "clear_zeroth_law", [0]);
+		yield* law_datum.clear_inherent_laws();
+		yield* law_datum.clear_zeroth_law(0);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["law_datum", "sender", "overflow"] });
+}, true);
 
 rt.type(7063, "/obj/item/weapon/aiModule/core/full/asimov", "/obj/item/weapon/aiModule/core/full", {
 	subject: "human being",
@@ -633,45 +542,38 @@ rt.type(7063, "/obj/item/weapon/aiModule/core/full/asimov", "/obj/item/weapon/ai
 	name: "'Asimov' Core AI Module",
 });
 
-// /obj/item/weapon/aiModule/core/full/asimov/proc/attack_self  (code/game/objects/items/weapons/AI_modules.dm:369)  may sleep
-rt.def("/obj/item/weapon/aiModule/core/full/asimov/proc/attack_self", function* attack_self(f: Frame) {
+// AI_modules.dm:369
+rt.def("/obj/item/weapon/aiModule/core/full/asimov/proc/attack_self", function* attack_self(f: Frame, user: Value) {
 	let targName: Value = null;
-	f.vars = () => [targName];
-	if (!truthy((targName = (yield* g.call(f, P("/proc/stripped_input"), null, [live(f.args[0]), "Please enter a new subject that asimov is concerned with.", "Asimov to whom?", rt.sv(f, "subject"), 1024]))))) {
-		return live(f.dot);
+	if (!(targName = (yield* stripped_input(user, "Please enter a new subject that asimov is concerned with.", "Asimov to whom?", this.subject, 1024)))) {
+		return f.dot;
 	}
-	rt.setSv(f, "subject", live(targName));
-	rt.setSv(f, "laws", rt.list(fmt("You may not injure a ＀ or, through inaction, allow a ＀ to come to harm.", [rt.sv(f, "subject"), rt.sv(f, "subject")]), fmt("You must obey orders given to you by ＀s, except where such orders would conflict with the First Law.", [rt.sv(f, "subject")]), "You must protect your own existence as long as such does not conflict with the First or Second Law."));
-	yield* g.callSuper(f, [], rt.Args.Same);
+	this.subject = targName;
+	this.laws = list(`You may not injure a ${this.subject} or, through inaction, allow a ${this.subject} to come to harm.`, `You must obey orders given to you by ${this.subject}s, except where such orders would conflict with the First Law.`, "You must protect your own existence as long as such does not conflict with the First or Second Law.");
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
 rt.type(7068, "/obj/item/weapon/aiModule/core/full/custom", "/obj/item/weapon/aiModule/core/full", {
 	name: "Default Core AI Module",
 });
 
-// /obj/item/weapon/aiModule/core/full/custom/proc/New  (code/game/objects/items/weapons/AI_modules.dm:411)  may sleep
+// AI_modules.dm:411
 rt.def("/obj/item/weapon/aiModule/core/full/custom/proc/New", function* New(f: Frame) {
 	let line: Value = null;
-	let $e: any;
-	f.vars = () => [line, $e];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	line = null;
-	rt.forList(f, 0, (yield* g.callName(f, rt.world(), "file2list", ["config/silicon_laws.txt"])));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		line = $e;
-		if (!truthy(live(line))) {
+	yield* parent_proc();
+	for (line of each(rt.world().file2list("config/silicon_laws.txt"))) {
+		if (!line) {
 			continue;
 		}
-		if (truthy((yield* g.call(f, P("/proc/findtextEx"), null, [live(line), "#", 1, 2])))) {
+		if (findtextEx(line, "#", 1, 2)) {
 			continue;
 		}
-		rt.modSrcVar(f, "laws", live(line), add);
+		this.laws += line;
 	}
-	rt.endFor(f, 0);
-	if (truthy(rt.len(f, rt.sv(f, "laws")))) return f.dot;
-	yield* g.call(f, P("/proc/warning"), null, [fmt("＀ in ＀ at line ＀ src: ＀ usr: ＀.", ["ERROR: empty custom board created, empty custom board deleted. Please check silicon_laws.txt. (this may be intended by the server host)", "code/game/objects/items/weapons/AI_modules.dm", 421, live(f.src), live(f.usr)])]);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	if (rt.len(f, this.laws)) return f.dot;
+	warning(`${"ERROR: empty custom board created, empty custom board deleted. Please check silicon_laws.txt. (this may be intended by the server host)"} in ${"code/game/objects/items/weapons/AI_modules.dm"} at line ${421} src: ${this} usr: ${f.usr}.`);
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
@@ -681,32 +583,29 @@ rt.type(7078, "/obj/item/weapon/aiModule/core/freeformcore", "/obj/item/weapon/a
 	origin_tech: "programming=5;materials=4",
 });
 
-// /obj/item/weapon/aiModule/core/freeformcore/proc/<init>  (code/game/objects/items/weapons/AI_modules.dm:453)
+// AI_modules.dm:453
 rt.def("/obj/item/weapon/aiModule/core/freeformcore/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "laws", rt.list(""));
+	parent_proc();
+	this.laws = list("");
 	return f.dot;
 });
 
-// /obj/item/weapon/aiModule/core/freeformcore/proc/attack_self  (code/game/objects/items/weapons/AI_modules.dm:456)  may sleep
-rt.def("/obj/item/weapon/aiModule/core/freeformcore/proc/attack_self", function* attack_self(f: Frame) {
+// AI_modules.dm:456
+rt.def("/obj/item/weapon/aiModule/core/freeformcore/proc/attack_self", function* attack_self(f: Frame, user: Value) {
 	let targName: Value = null;
-	f.vars = () => [targName];
-	if (!truthy((targName = (yield* g.call(f, P("/proc/stripped_input"), null, [live(f.args[0]), "Please enter a new core law for the AI.", "Freeform Law Entry", rt.index(rt.sv(f, "laws"), 1)]))))) {
-		return live(f.dot);
+	if (!(targName = (yield* stripped_input(user, "Please enter a new core law for the AI.", "Freeform Law Entry", rt.index(this.laws, 1))))) {
+		return f.dot;
 	}
-	rt.setAt(rt.sv(f, "laws"), 1, live(targName));
-	yield* g.callSuper(f, [], rt.Args.Same);
+	rt.setAt(this.laws, 1, targName);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /obj/item/weapon/aiModule/core/freeformcore/proc/transmitInstructions  (code/game/objects/items/weapons/AI_modules.dm:463)  may sleep
-rt.def("/obj/item/weapon/aiModule/core/freeformcore/proc/transmitInstructions", function* transmitInstructions(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	return rt.index(rt.sv(f, "laws"), 1);
-}, true, { args: ["law_datum", "sender", "overflow"] });
+// AI_modules.dm:463
+rt.def("/obj/item/weapon/aiModule/core/freeformcore/proc/transmitInstructions", function* transmitInstructions(f: Frame, law_datum: Value, sender: Value, overflow: Value) {
+	yield* parent_proc();
+	return rt.index(this.laws, 1);
+}, true);
 
 rt.type(7085, "/obj/item/weapon/aiModule/syndicate", "/obj/item/weapon/aiModule", {
 	laws: null,
@@ -715,45 +614,39 @@ rt.type(7085, "/obj/item/weapon/aiModule/syndicate", "/obj/item/weapon/aiModule"
 	origin_tech: "programming=5;materials=5;syndicate=5",
 });
 
-// /obj/item/weapon/aiModule/syndicate/proc/<init>  (code/game/objects/items/weapons/AI_modules.dm:473)
+// AI_modules.dm:473
 rt.def("/obj/item/weapon/aiModule/syndicate/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "laws", rt.list(""));
+	parent_proc();
+	this.laws = list("");
 	return f.dot;
 });
 
-// /obj/item/weapon/aiModule/syndicate/proc/attack_self  (code/game/objects/items/weapons/AI_modules.dm:476)  may sleep
-rt.def("/obj/item/weapon/aiModule/syndicate/proc/attack_self", function* attack_self(f: Frame) {
+// AI_modules.dm:476
+rt.def("/obj/item/weapon/aiModule/syndicate/proc/attack_self", function* attack_self(f: Frame, user: Value) {
 	let targName: Value = null;
-	f.vars = () => [targName];
-	if (!truthy((targName = (yield* g.call(f, P("/proc/stripped_input"), null, [live(f.args[0]), "Please enter a new law for the AI.", "Freeform Law Entry", rt.index(rt.sv(f, "laws"), 1), 1024]))))) {
-		return live(f.dot);
+	if (!(targName = (yield* stripped_input(user, "Please enter a new law for the AI.", "Freeform Law Entry", rt.index(this.laws, 1), 1024)))) {
+		return f.dot;
 	}
-	rt.setAt(rt.sv(f, "laws"), 1, live(targName));
-	yield* g.callSuper(f, [], rt.Args.Same);
+	rt.setAt(this.laws, 1, targName);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /obj/item/weapon/aiModule/syndicate/proc/transmitInstructions  (code/game/objects/items/weapons/AI_modules.dm:484)  may sleep
+// AI_modules.dm:484
 rt.def("/obj/item/weapon/aiModule/syndicate/proc/transmitInstructions", function* transmitInstructions(f: Frame, law_datum: Value, sender: Value, overflow: Value) {
-	f.vars = () => [law_datum, sender, overflow];
-	if (truthy(rt.fv(f, "owner", live(law_datum)))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [rt.fv(f, "owner", live(law_datum)), "<span class='warning'>BZZZZT</span>"]);
-		if (!truthy(live(overflow))) {
-			yield* g.callName(f, rt.fv(f, "owner", live(law_datum)), "add_ion_law", [rt.index(rt.sv(f, "laws"), 1)]);
+	if (law_datum.owner) {
+		to_chat(law_datum.owner, "<span class='warning'>BZZZZT</span>");
+		if (!overflow) {
+			yield* law_datum.owner.add_ion_law(rt.index(this.laws, 1));
 		} else {
-			yield* g.callName(f, rt.fv(f, "owner", live(law_datum)), "replace_random_law", [rt.index(rt.sv(f, "laws"), 1), rt.list("ion", "inherent", "supplied")]);
+			yield* law_datum.owner.replace_random_law(rt.index(this.laws, 1), list("ion", "inherent", "supplied"));
 		}
+	} else if (!overflow) {
+		yield* law_datum.add_ion_law(rt.index(this.laws, 1));
 	} else {
-		if (!truthy(live(overflow))) {
-			yield* g.callName(f, live(law_datum), "add_ion_law", [rt.index(rt.sv(f, "laws"), 1)]);
-		} else {
-			yield* g.callName(f, live(law_datum), "replace_random_law", [rt.index(rt.sv(f, "laws"), 1), rt.list("ion", "inherent", "supplied")]);
-		}
+		yield* law_datum.replace_random_law(rt.index(this.laws, 1), list("ion", "inherent", "supplied"));
 	}
-	return rt.index(rt.sv(f, "laws"), 1);
+	return rt.index(this.laws, 1);
 }, true);
 
 rt.type(7086, "/obj/item/weapon/aiModule/toyAI", "/obj/item/weapon/aiModule", {
@@ -765,40 +658,35 @@ rt.type(7086, "/obj/item/weapon/aiModule/toyAI", "/obj/item/weapon/aiModule", {
 	origin_tech: "programming=6;materials=5;syndicate=6",
 });
 
-// /obj/item/weapon/aiModule/toyAI/proc/<init>  (code/game/objects/items/weapons/AI_modules.dm:505)
+// AI_modules.dm:505
 rt.def("/obj/item/weapon/aiModule/toyAI/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "laws", rt.list(""));
+	parent_proc();
+	this.laws = list("");
 	return f.dot;
 });
 
-// /obj/item/weapon/aiModule/toyAI/proc/transmitInstructions  (code/game/objects/items/weapons/AI_modules.dm:509)  may sleep
+// AI_modules.dm:509
 rt.def("/obj/item/weapon/aiModule/toyAI/proc/transmitInstructions", function* transmitInstructions(f: Frame, law_datum: Value, sender: Value, overflow: Value) {
-	f.vars = () => [law_datum, sender, overflow];
-	if (truthy(rt.fv(f, "owner", live(law_datum)))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [rt.fv(f, "owner", live(law_datum)), "<span class='warning'>BZZZZT</span>"]);
-		if (!truthy(live(overflow))) {
-			yield* g.callName(f, rt.fv(f, "owner", live(law_datum)), "add_ion_law", [rt.index(rt.sv(f, "laws"), 1)]);
+	if (law_datum.owner) {
+		to_chat(law_datum.owner, "<span class='warning'>BZZZZT</span>");
+		if (!overflow) {
+			yield* law_datum.owner.add_ion_law(rt.index(this.laws, 1));
 		} else {
-			yield* g.callName(f, rt.fv(f, "owner", live(law_datum)), "replace_random_law", [rt.index(rt.sv(f, "laws"), 1), rt.list("ion", "inherent", "supplied")]);
+			yield* law_datum.owner.replace_random_law(rt.index(this.laws, 1), list("ion", "inherent", "supplied"));
 		}
+	} else if (!overflow) {
+		yield* law_datum.add_ion_law(rt.index(this.laws, 1));
 	} else {
-		if (!truthy(live(overflow))) {
-			yield* g.callName(f, live(law_datum), "add_ion_law", [rt.index(rt.sv(f, "laws"), 1)]);
-		} else {
-			yield* g.callName(f, live(law_datum), "replace_random_law", [rt.index(rt.sv(f, "laws"), 1), rt.list("ion", "inherent", "supplied")]);
-		}
+		yield* law_datum.replace_random_law(rt.index(this.laws, 1), list("ion", "inherent", "supplied"));
 	}
-	return rt.index(rt.sv(f, "laws"), 1);
+	return rt.index(this.laws, 1);
 }, true);
 
-// /obj/item/weapon/aiModule/toyAI/proc/attack_self  (code/game/objects/items/weapons/AI_modules.dm:523)
+// AI_modules.dm:523
 rt.def("/obj/item/weapon/aiModule/toyAI/proc/attack_self", function attack_self(f: Frame, user: Value) {
-	rt.setAt(rt.sv(f, "laws"), 1, rt.call(f, P("/proc/generate_ion_law"), null, []));
-	rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You press the button on ＀.</span>", [live(f.src)])]);
-	rt.call(f, P("/proc/playsound"), null, [live(user), rt.rsc("sound/machines/click.ogg"), 20, 1]);
-	rt.callName(f, rt.fv(f, "loc", live(f.src)), "visible_message", [fmt("<span class='warning'>＀ ＀</span>", [rt.call(f, P("/proc/bicon"), null, [live(f.src)]), rt.index(rt.sv(f, "laws"), 1)])]);
+	rt.setAt(this.laws, 1, generate_ion_law());
+	to_chat(user, `<span class='notice'>You press the button on ${this}.</span>`);
+	playsound(user, rt.rsc("sound/machines/click.ogg"), 20, 1);
+	this.loc.visible_message(`<span class='warning'>${bicon(this)} ${rt.index(this.laws, 1)}</span>`);
 	return f.dot;
 });

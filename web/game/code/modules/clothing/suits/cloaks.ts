@@ -1,7 +1,7 @@
-// From code/modules/clothing/suits/cloaks.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/clothing/suits/cloaks.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(8618, "/obj/item/clothing/neck/cloak", "/obj/item/clothing/neck", {
@@ -14,9 +14,9 @@ rt.type(8618, "/obj/item/clothing/neck/cloak", "/obj/item/clothing/neck", {
 	body_parts_covered: 414,
 });
 
-// /obj/item/clothing/neck/cloak/proc/suicide_act  (code/modules/clothing/suits/cloaks.dm:22)
+// cloaks.dm:22
 rt.def("/obj/item/clothing/neck/cloak/proc/suicide_act", function suicide_act(f: Frame, user: Value) {
-	rt.callName(f, live(user), "visible_message", [fmt("<span class='suicide'>＀ is strangling ＀self with ＀! It looks like ＀ trying to commit suicide!</span>", [live(user), rt.callName(f, live(user), "p_them", []), live(f.src), rt.callName(f, live(user), "p_theyre", [])])]);
+	user.visible_message(`<span class='suicide'>${user} is strangling ${user.p_them()}self with ${this}! It looks like ${user.p_theyre()} trying to commit suicide!</span>`);
 	return 8;
 });
 
@@ -30,13 +30,11 @@ rt.type(7815, "/obj/item/clothing/suit/hooded/cloak/goliath", "/obj/item/clothin
 	hoodtype: rt.typePath("/obj/item/clothing/head/hooded/cloakhood/goliath"),
 });
 
-// /obj/item/clothing/suit/hooded/cloak/goliath/proc/<init>  (code/modules/clothing/suits/cloaks.dm:63)
+// cloaks.dm:63
 rt.def("/obj/item/clothing/suit/hooded/cloak/goliath/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/device/flashlight"), T("/obj/item/weapon/tank/internals"), T("/obj/item/weapon/pickaxe"), T("/obj/item/weapon/twohanded/spear"), T("/obj/item/weapon/twohanded/bonespear"), T("/obj/item/organ/regenerative_core/legion"), T("/obj/item/weapon/kitchen/knife/combat/bone"), T("/obj/item/weapon/kitchen/knife/combat/survival")));
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 35, "bullet", 10, "laser", 25, "energy", 10, "bomb", 25, "bio", 0, "rad", 0, "fire", 60, "acid", 60]));
+	parent_proc();
+	this.allowed = list(T("/obj/item/device/flashlight"), T("/obj/item/weapon/tank/internals"), T("/obj/item/weapon/pickaxe"), T("/obj/item/weapon/twohanded/spear"), T("/obj/item/weapon/twohanded/bonespear"), T("/obj/item/organ/regenerative_core/legion"), T("/obj/item/weapon/kitchen/knife/combat/bone"), T("/obj/item/weapon/kitchen/knife/combat/survival"));
+	this.armor = rt.alist(f, ["melee", 35, "bullet", 10, "laser", 25, "energy", 10, "bomb", 25, "bio", 0, "rad", 0, "fire", 60, "acid", 60]);
 	return f.dot;
 });
 
@@ -48,12 +46,10 @@ rt.type(8033, "/obj/item/clothing/head/hooded/cloakhood/goliath", "/obj/item/clo
 	flags_inv: 864,
 });
 
-// /obj/item/clothing/head/hooded/cloakhood/goliath/proc/<init>  (code/modules/clothing/suits/cloaks.dm:72)
+// cloaks.dm:72
 rt.def("/obj/item/clothing/head/hooded/cloakhood/goliath/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 35, "bullet", 10, "laser", 25, "energy", 10, "bomb", 25, "bio", 0, "rad", 0, "fire", 60, "acid", 60]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 35, "bullet", 10, "laser", 25, "energy", 10, "bomb", 25, "bio", 0, "rad", 0, "fire", 60, "acid", 60]);
 	return f.dot;
 });
 
@@ -70,13 +66,11 @@ rt.type(7816, "/obj/item/clothing/suit/hooded/cloak/drake", "/obj/item/clothing/
 	hoodtype: rt.typePath("/obj/item/clothing/head/hooded/cloakhood/drake"),
 });
 
-// /obj/item/clothing/suit/hooded/cloak/drake/proc/<init>  (code/modules/clothing/suits/cloaks.dm:79)
+// cloaks.dm:79
 rt.def("/obj/item/clothing/suit/hooded/cloak/drake/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/device/flashlight"), T("/obj/item/weapon/tank/internals"), T("/obj/item/weapon/resonator"), T("/obj/item/device/mining_scanner"), T("/obj/item/device/t_scanner/adv_mining_scanner"), T("/obj/item/weapon/gun/energy/kinetic_accelerator"), T("/obj/item/weapon/pickaxe"), T("/obj/item/weapon/twohanded/spear")));
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 70, "bullet", 30, "laser", 50, "energy", 40, "bomb", 70, "bio", 60, "rad", 50, "fire", 100, "acid", 100]));
+	parent_proc();
+	this.allowed = list(T("/obj/item/device/flashlight"), T("/obj/item/weapon/tank/internals"), T("/obj/item/weapon/resonator"), T("/obj/item/device/mining_scanner"), T("/obj/item/device/t_scanner/adv_mining_scanner"), T("/obj/item/weapon/gun/energy/kinetic_accelerator"), T("/obj/item/weapon/pickaxe"), T("/obj/item/weapon/twohanded/spear"));
+	this.armor = rt.alist(f, ["melee", 70, "bullet", 30, "laser", 50, "energy", 40, "bomb", 70, "bio", 60, "rad", 50, "fire", 100, "acid", 100]);
 	return f.dot;
 });
 
@@ -90,11 +84,9 @@ rt.type(8034, "/obj/item/clothing/head/hooded/cloakhood/drake", "/obj/item/cloth
 	resistance_flags: 34,
 });
 
-// /obj/item/clothing/head/hooded/cloakhood/drake/proc/<init>  (code/modules/clothing/suits/cloaks.dm:91)
+// cloaks.dm:91
 rt.def("/obj/item/clothing/head/hooded/cloakhood/drake/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 70, "bullet", 30, "laser", 50, "energy", 40, "bomb", 70, "bio", 60, "rad", 50, "fire", 100, "acid", 100]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 70, "bullet", 30, "laser", 50, "energy", 40, "bomb", 70, "bio", 60, "rad", 50, "fire", 100, "acid", 100]);
 	return f.dot;
 });

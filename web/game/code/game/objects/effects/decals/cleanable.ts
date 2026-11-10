@@ -1,7 +1,7 @@
-// From code/game/objects/effects/decals/cleanable.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/effects/decals/cleanable.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(11698, "/obj/effect/decal/cleanable", "/obj/effect/decal", {
@@ -13,144 +13,126 @@ rt.type(11698, "/obj/effect/decal/cleanable", "/obj/effect/decal", {
 	layer: 2.08,
 });
 
-// /obj/effect/decal/cleanable/proc/<init>  (code/game/objects/effects/decals/cleanable.dm:4)
+// cleanable.dm:4
 rt.def("/obj/effect/decal/cleanable/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "random_icon_states", rt.list());
+	parent_proc();
+	this.random_icon_states = list();
 	return f.dot;
 });
 
-// /obj/effect/decal/cleanable/proc/Initialize  (code/game/objects/effects/decals/cleanable.dm:10)  may sleep
-rt.def("/obj/effect/decal/cleanable/proc/Initialize", function* Initialize(f: Frame) {
+// cleanable.dm:10
+rt.def("/obj/effect/decal/cleanable/proc/Initialize", function* Initialize(f: Frame, mapload: Value) {
 	let C: Value = null;
-	let $e: any;
-	f.vars = () => [C, $e];
-	if ((truthy(rt.sv(f, "random_icon_states")) && rt.gt(rt.length(rt.fv(f, "random_icon_states", live(f.src))), 0))) {
-		rt.setFv(f, "icon_state", live(f.src), rt.op(f, "PickUnweighted", [1], [rt.fv(f, "random_icon_states", live(f.src))]));
+	if (this.random_icon_states && rt.length(this.random_icon_states) > 0) {
+		this.icon_state = pick(this.random_icon_states);
 	}
-	yield* g.srcCall(f, "create_reagents", 300);
-	if ((truthy(rt.fv(f, "loc", live(f.src))) && truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.fv(f, "loc", live(f.src))]))))) {
-		C = null;
-		rt.forList(f, 0, rt.fv(f, "loc", live(f.src)), T("/obj/effect/decal/cleanable"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			C = $e;
-			if ((!isEqual(live(C), live(f.src)) && isEqual(rt.fv(f, "type", live(C)), rt.fv(f, "type", live(f.src))))) {
-				yield* g.srcCall(f, "replace_decal", live(C));
+	yield* this.create_reagents(300);
+	if (this.loc && isturf(this.loc)) {
+		for (C of each(this.loc, T("/obj/effect/decal/cleanable"))) {
+			if (C != this && C.type == this.type) {
+				yield* this.replace_decal(C);
 			}
 		}
-		rt.endFor(f, 0);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	return f.dot;
-}, true, { args: ["mapload"] });
-
-// /obj/effect/decal/cleanable/proc/replace_decal  (code/game/objects/effects/decals/cleanable.dm:23)  may sleep
-rt.def("/obj/effect/decal/cleanable/proc/replace_decal", function* replace_decal(f: Frame, C: Value) {
-	f.vars = () => [C];
-	if (!truthy(rt.sv(f, "mergeable_decal"))) return f.dot;
-	yield* g.call(f, P("/proc/qdel"), null, [live(C)]);
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /obj/effect/decal/cleanable/proc/attackby  (code/game/objects/effects/decals/cleanable.dm:26)  may sleep
-rt.def("/obj/effect/decal/cleanable/proc/attackby", function* attackby(f: Frame) {
+// cleanable.dm:23
+rt.def("/obj/effect/decal/cleanable/proc/replace_decal", function* replace_decal(f: Frame, C: Value) {
+	if (!this.mergeable_decal) return f.dot;
+	yield* qdel(C);
+	return f.dot;
+}, true);
+
+// cleanable.dm:26
+rt.def("/obj/effect/decal/cleanable/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
 	let hotness: Value = null, added_heat: Value = null;
-	f.vars = () => [hotness, added_heat];
-	if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/reagent_containers/glass")) ? 1 : 0)) || truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/reagent_containers/food/drinks")) ? 1 : 0)))) {
-		if ((truthy(rt.fv(f, "reagents", live(f.src))) && truthy(rt.fv(f, "reagents", live(f.args[0]))))) {
+	if (rt.istype(W, T("/obj/item/weapon/reagent_containers/glass")) || rt.istype(W, T("/obj/item/weapon/reagent_containers/food/drinks"))) {
+		if (this.reagents && W.reagents) {
 			f.dot = 1;
-			if (!truthy(rt.gv(f, "total_volume", rt.fv(f, "reagents", live(f.src))))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>＀ isn't thick enough to scoop up!</span>", [live(f.src)])]);
-				return live(f.dot);
+			if (!this.reagents.total_volume) {
+				to_chat(user, `<span class='notice'>${this} isn't thick enough to scoop up!</span>`);
+				return f.dot;
 			}
-			if (rt.ge(rt.gv(f, "total_volume", rt.fv(f, "reagents", live(f.args[0]))), rt.gv(f, "maximum_volume", rt.fv(f, "reagents", live(f.args[0]))))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>＀ is full!</span>", [live(f.args[0])])]);
-				return live(f.dot);
+			if (W.reagents.total_volume >= W.reagents.maximum_volume) {
+				to_chat(user, `<span class='notice'>${W} is full!</span>`);
+				return f.dot;
 			}
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You scoop up ＀ into ＀!</span>", [live(f.src), live(f.args[0])])]);
-			yield* g.callName(f, rt.sv(f, "reagents"), "trans_to", [live(f.args[0]), rt.fv(f, "total_volume", rt.sv(f, "reagents"))]);
-			if (!truthy(rt.fv(f, "total_volume", rt.sv(f, "reagents")))) {
-				yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-				return live(f.dot);
+			to_chat(user, `<span class='notice'>You scoop up ${this} into ${W}!</span>`);
+			yield* this.reagents.trans_to(W, this.reagents.total_volume);
+			if (!this.reagents.total_volume) {
+				yield* qdel(this);
+				return f.dot;
 			}
 		}
 	}
-	if (truthy((yield* g.callName(f, live(f.args[0]), "is_hot", [])))) {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/clothing/mask/cigarette")) ? 1 : 0))) {
-			return live(f.dot);
+	if (W.is_hot()) {
+		if (rt.istype(W, T("/obj/item/clothing/mask/cigarette"))) {
+			return f.dot;
 		} else {
-			hotness = (yield* g.callName(f, live(f.args[0]), "is_hot", []));
-			added_heat = divide(live(hotness), 100);
-			rt.setFv(f, "chem_temp", rt.fv(f, "reagents", live(f.src)), (yield* g.call(f, P("/proc/min"), null, [add(rt.gv(f, "chem_temp", rt.fv(f, "reagents", live(f.src))), live(added_heat)), live(hotness)])));
-			yield* g.callName(f, rt.fv(f, "reagents", live(f.src)), "handle_reactions", []);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You heat ＀ with ＀!</span>", [live(f.src), live(f.args[0])])]);
+			hotness = W.is_hot();
+			added_heat = hotness / 100;
+			this.reagents.chem_temp = min(this.reagents.chem_temp + added_heat, hotness);
+			yield* this.reagents.handle_reactions();
+			to_chat(user, `<span class='notice'>You heat ${this} with ${W}!</span>`);
 		}
 	} else {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["W", "user", "params"] });
+}, true);
 
-// /obj/effect/decal/cleanable/proc/ex_act  (code/game/objects/effects/decals/cleanable.dm:54)  may sleep
+// cleanable.dm:54
 rt.def("/obj/effect/decal/cleanable/proc/ex_act", function* ex_act(f: Frame) {
 	let R: Value = null;
-	let $e: any;
-	f.vars = () => [R, $e];
-	if (truthy(rt.sv(f, "reagents"))) {
-		R = null;
-		rt.forList(f, 0, rt.fv(f, "reagent_list", rt.sv(f, "reagents")), T("/datum/reagent"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			R = $e;
-			yield* g.callName(f, live(R), "on_ex_act", []);
+	if (this.reagents) {
+		for (R of each(this.reagents.reagent_list, T("/datum/reagent"))) {
+			yield* R.on_ex_act();
 		}
-		rt.endFor(f, 0);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/effect/decal/cleanable/proc/fire_act  (code/game/objects/effects/decals/cleanable.dm:60)  may sleep
-rt.def("/obj/effect/decal/cleanable/proc/fire_act", function* fire_act(f: Frame) {
-	if (truthy(rt.sv(f, "reagents"))) {
-		rt.modField(f, rt.sv(f, "reagents"), "chem_temp", 30, add);
-		yield* g.callName(f, rt.sv(f, "reagents"), "handle_reactions", []);
+// cleanable.dm:60
+rt.def("/obj/effect/decal/cleanable/proc/fire_act", function* fire_act(f: Frame, exposed_temperature: Value, exposed_volume: Value) {
+	if (this.reagents) {
+		this.reagents.chem_temp += 30;
+		yield* this.reagents.handle_reactions();
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["exposed_temperature", "exposed_volume"] });
+}, true);
 
-// /obj/effect/decal/cleanable/proc/Crossed  (code/game/objects/effects/decals/cleanable.dm:68)
+// cleanable.dm:68
 rt.def("/obj/effect/decal/cleanable/proc/Crossed", function Crossed(f: Frame, O: Value) {
-	let H: Value = null, S: Value = null, add_blood: Value = null;
-	f.vars = () => [H, S, add_blood];
-	if (!truthy((rt.istype(live(O), T("/mob/living/carbon/human")) ? 1 : 0))) return f.dot;
-	if (!((truthy(rt.gv(f, "shoes", (H = live(O)))) && truthy(rt.sv(f, "blood_state"))) && truthy(rt.sv(f, "bloodiness")))) return f.dot;
-	S = rt.fv(f, "shoes", live(H));
-	add_blood = 0;
-	if (rt.ge(rt.sv(f, "bloodiness"), 100)) {
-		add_blood = 100;
+	let H: Value = null;
+	if (!rt.istype(O, T("/mob/living/carbon/human"))) return f.dot;
+	if (!((H = O).shoes && this.blood_state && this.bloodiness)) return f.dot;
+	let S: Value = H.shoes;
+	let add_blood: Value = 0;
+	if (this.bloodiness >= BLOOD_GAIN_PER_STEP) {
+		add_blood = BLOOD_GAIN_PER_STEP;
 	} else {
-		add_blood = rt.sv(f, "bloodiness");
+		add_blood = this.bloodiness;
 	}
-	(rt.modSrcVar(f, "bloodiness", live(add_blood), subtract));
-	rt.setAt(rt.fv(f, "bloody_shoes", live(S)), rt.sv(f, "blood_state"), rt.call(f, P("/proc/min"), null, [100, add(rt.index(rt.fv(f, "bloody_shoes", live(S)), rt.sv(f, "blood_state")), live(add_blood))]));
-	if ((truthy(rt.sv(f, "blood_DNA")) && truthy(rt.len(f, rt.sv(f, "blood_DNA"))))) {
-		rt.callName(f, live(S), "add_blood", [rt.sv(f, "blood_DNA")]);
+	this.bloodiness -= add_blood;
+	rt.setAt(S.bloody_shoes, this.blood_state, min(MAX_SHOE_BLOODINESS, rt.index(S.bloody_shoes, this.blood_state) + add_blood));
+	if (this.blood_DNA && rt.len(f, this.blood_DNA)) {
+		S.add_blood(this.blood_DNA);
 	}
-	rt.setFv(f, "blood_state", live(S), rt.sv(f, "blood_state"));
-	rt.callSrc(f, "update_icon", []);
-	rt.callName(f, live(H), "update_inv_shoes", []);
+	S.blood_state = this.blood_state;
+	this.update_icon();
+	H.update_inv_shoes();
 	return f.dot;
 });
 
-// /obj/effect/decal/cleanable/proc/can_bloodcrawl_in  (code/game/objects/effects/decals/cleanable.dm:88)
+// cleanable.dm:88
 rt.def("/obj/effect/decal/cleanable/proc/can_bloodcrawl_in", function can_bloodcrawl_in(f: Frame) {
-	if ((!isEqual(rt.sv(f, "blood_state"), "oil") && !isEqual(rt.sv(f, "blood_state"), "no blood whatsoever"))) {
-		return rt.sv(f, "bloodiness");
+	if (this.blood_state != "oil" && this.blood_state != "no blood whatsoever") {
+		return this.bloodiness;
 	} else {
 		return 0;
 	}
-	return f.dot;
 });

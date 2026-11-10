@@ -1,7 +1,7 @@
-// From code/game/objects/items/weapons/defib.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/weapons/defib.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(7152, "/obj/item/weapon/defibrillator", "/obj/item/weapon", {
@@ -26,297 +26,276 @@ rt.type(7152, "/obj/item/weapon/defibrillator", "/obj/item/weapon", {
 	armor: null,
 });
 
-// /obj/item/weapon/defibrillator/proc/<init>  (code/game/objects/items/weapons/defib.dm:15)
+// defib.dm:15
 rt.def("/obj/item/weapon/defibrillator/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "actions_types", rt.list(T("/datum/action/item_action/toggle_paddles")));
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 50, "acid", 50]));
+	parent_proc();
+	this.actions_types = list(T("/datum/action/item_action/toggle_paddles"));
+	this.armor = rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 50, "acid", 50]);
 	return f.dot;
 });
 
-// /obj/item/weapon/defibrillator/proc/Initialize  (code/game/objects/items/weapons/defib.dm:30)  may sleep
+// defib.dm:30
 rt.def("/obj/item/weapon/defibrillator/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "paddles", (yield* g.srcCall(f, "make_paddles")));
-	yield* g.srcCall(f, "update_icon");
-	return live(f.dot);
+	f.dot = (yield* parent_proc());
+	this.paddles = (yield* this.make_paddles());
+	yield* this.update_icon();
+	return f.dot;
 }, true);
 
 rt.type(7153, "/obj/item/weapon/defibrillator/loaded", "/obj/item/weapon/defibrillator", {});
 
-// /obj/item/weapon/defibrillator/loaded/proc/Initialize  (code/game/objects/items/weapons/defib.dm:36)  may sleep
+// defib.dm:36
 rt.def("/obj/item/weapon/defibrillator/loaded/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "paddles", (yield* g.srcCall(f, "make_paddles")));
-	rt.setSv(f, "cell", (yield* g.new_(f, T("/obj/item/weapon/stock_parts/cell/high"), [live(f.src)])));
-	yield* g.srcCall(f, "update_icon");
-	return live(f.dot);
+	f.dot = (yield* parent_proc());
+	this.paddles = (yield* this.make_paddles());
+	this.cell = (yield* new_(T("/obj/item/weapon/stock_parts/cell/high"), this));
+	yield* this.update_icon();
+	return f.dot;
 }, true);
 
-// /obj/item/weapon/defibrillator/proc/update_icon  (code/game/objects/items/weapons/defib.dm:43)
+// defib.dm:43
 rt.def("/obj/item/weapon/defibrillator/proc/update_icon", function update_icon(f: Frame) {
-	rt.callSrc(f, "update_power", []);
-	rt.callSrc(f, "update_overlays", []);
-	rt.callSrc(f, "update_charge", []);
+	this.update_power();
+	this.update_overlays();
+	this.update_charge();
 	return f.dot;
 });
 
-// /obj/item/weapon/defibrillator/proc/update_power  (code/game/objects/items/weapons/defib.dm:49)
+// defib.dm:49
 rt.def("/obj/item/weapon/defibrillator/proc/update_power", function update_power(f: Frame) {
-	if (truthy(rt.sv(f, "cell"))) {
-		if (rt.lt(rt.fv(f, "charge", rt.sv(f, "cell")), rt.fv(f, "revivecost", rt.sv(f, "paddles")))) {
-			rt.setSv(f, "powered", 0);
+	if (this.cell) {
+		if (this.cell.charge < this.paddles.revivecost) {
+			this.powered = 0;
 		} else {
-			rt.setSv(f, "powered", 1);
+			this.powered = 1;
 		}
 	} else {
-		rt.setSv(f, "powered", 0);
+		this.powered = 0;
 	}
 	return f.dot;
 });
 
-// /obj/item/weapon/defibrillator/proc/update_overlays  (code/game/objects/items/weapons/defib.dm:57)
+// defib.dm:57
 rt.def("/obj/item/weapon/defibrillator/proc/update_overlays", function update_overlays(f: Frame) {
-	rt.callSrc(f, "cut_overlays", []);
-	if (!truthy(rt.sv(f, "on"))) {
-		rt.callSrc(f, "add_overlay", [fmt("＀-paddles", [rt.initial(f, live(f.src), "icon_state")])]);
+	this.cut_overlays();
+	if (!this.on) {
+		this.add_overlay(`${rt.initial(f, this, "icon_state")}-paddles`);
 	}
-	if (truthy(rt.sv(f, "powered"))) {
-		rt.callSrc(f, "add_overlay", [fmt("＀-powered", [rt.initial(f, live(f.src), "icon_state")])]);
+	if (this.powered) {
+		this.add_overlay(`${rt.initial(f, this, "icon_state")}-powered`);
 	}
-	if (!truthy(rt.sv(f, "cell"))) {
-		rt.callSrc(f, "add_overlay", [fmt("＀-nocell", [rt.initial(f, live(f.src), "icon_state")])]);
+	if (!this.cell) {
+		this.add_overlay(`${rt.initial(f, this, "icon_state")}-nocell`);
 	}
-	if (truthy(rt.sv(f, "safety"))) return f.dot;
-	rt.callSrc(f, "add_overlay", [fmt("＀-emagged", [rt.initial(f, live(f.src), "icon_state")])]);
+	if (this.safety) return f.dot;
+	this.add_overlay(`${rt.initial(f, this, "icon_state")}-emagged`);
 	return f.dot;
 });
 
-// /obj/item/weapon/defibrillator/proc/update_charge  (code/game/objects/items/weapons/defib.dm:70)
+// defib.dm:70
 rt.def("/obj/item/weapon/defibrillator/proc/update_charge", function update_charge(f: Frame) {
 	let ratio: Value = null;
-	f.vars = () => [ratio];
-	if (!truthy(rt.sv(f, "powered"))) return f.dot;
-	if (!truthy(rt.sv(f, "cell"))) return f.dot;
-	ratio = multiply(rt.call(f, P("/proc/Ceiling"), null, [multiply((ratio = divide(rt.fv(f, "charge", rt.sv(f, "cell")), rt.fv(f, "maxcharge", rt.sv(f, "cell")))), 4)]), 25);
-	rt.callSrc(f, "add_overlay", [fmt("＀-charge＀", [rt.initial(f, live(f.src), "icon_state"), live(ratio)])]);
+	if (!this.powered) return f.dot;
+	if (!this.cell) return f.dot;
+	ratio = Ceiling((ratio = this.cell.charge / this.cell.maxcharge) * 4) * 25;
+	this.add_overlay(`${rt.initial(f, this, "icon_state")}-charge${ratio}`);
 	return f.dot;
 });
 
-// /obj/item/weapon/defibrillator/proc/CheckParts  (code/game/objects/items/weapons/defib.dm:75)  may sleep
-rt.def("/obj/item/weapon/defibrillator/proc/CheckParts", function* CheckParts(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "cell", rt.locateIn(f, T("/obj/item/weapon/stock_parts/cell"), rt.sv(f, "contents")));
-	yield* g.srcCall(f, "update_icon");
+// defib.dm:75
+rt.def("/obj/item/weapon/defibrillator/proc/CheckParts", function* CheckParts(f: Frame, parts_list: Value) {
+	yield* parent_proc();
+	this.cell = rt.locateIn(f, T("/obj/item/weapon/stock_parts/cell"), this.contents);
+	yield* this.update_icon();
 	return f.dot;
-}, true, { args: ["parts_list"] });
+}, true);
 
-// /obj/item/weapon/defibrillator/proc/ui_action_click  (code/game/objects/items/weapons/defib.dm:80)  may sleep
+// defib.dm:80
 rt.def("/obj/item/weapon/defibrillator/proc/ui_action_click", function* ui_action_click(f: Frame) {
-	yield* g.srcCall(f, "toggle_paddles");
+	yield* this.toggle_paddles();
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/defibrillator/proc/attack_hand  (code/game/objects/items/weapons/defib.dm:83)  may sleep
-rt.def("/obj/item/weapon/defibrillator/proc/attack_hand", function* attack_hand(f: Frame) {
-	if (isEqual(rt.sv(f, "loc"), live(f.args[0]))) {
-		if (isEqual(rt.sv(f, "slot_flags"), 1024)) {
-			if (isEqual((yield* g.callName(f, live(f.args[0]), "get_item_by_slot", [1])), live(f.src))) {
-				yield* g.srcCall(f, "ui_action_click");
+// defib.dm:83
+rt.def("/obj/item/weapon/defibrillator/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
+	if (this.loc == user) {
+		if (this.slot_flags == SLOT_BACK) {
+			if (user.get_item_by_slot(slot_back) == this) {
+				yield* this.ui_action_click();
 			} else {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='warning'>Put the defibrillator on your back first!</span>"]);
+				to_chat(user, "<span class='warning'>Put the defibrillator on your back first!</span>");
 			}
-		} else {
-			if (isEqual(rt.sv(f, "slot_flags"), 512)) {
-				if (isEqual((yield* g.callName(f, live(f.args[0]), "get_item_by_slot", [5])), live(f.src))) {
-					yield* g.srcCall(f, "ui_action_click");
-				} else {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='warning'>Strap the defibrillator's belt on first!</span>"]);
-				}
+		} else if (this.slot_flags == SLOT_BELT) {
+			if (user.get_item_by_slot(slot_belt) == this) {
+				yield* this.ui_action_click();
+			} else {
+				to_chat(user, "<span class='warning'>Strap the defibrillator's belt on first!</span>");
 			}
 		}
-		return live(f.dot);
+		return f.dot;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /obj/item/weapon/defibrillator/proc/MouseDrop  (code/game/objects/items/weapons/defib.dm:99)  may sleep
+// defib.dm:99
 rt.def("/obj/item/weapon/defibrillator/proc/MouseDrop", function* MouseDrop(f: Frame, over_object: Value) {
-	let M: Value = null, H: Value = null;
-	f.vars = () => [over_object, M, H];
-	if (!truthy((yield* g.call(f, P("/proc/ismob"), null, [rt.fv(f, "loc", live(f.src))])))) return f.dot;
-	if (!(!truthy((yield* g.callName(f, (M = rt.fv(f, "loc", live(f.src))), "incapacitated", []))) && truthy((rt.istype(live(over_object), T("/obj/screen/inventory/hand")) ? 1 : 0)))) return f.dot;
-	H = live(over_object);
-	yield* g.callName(f, live(M), "putItemFromInventoryInHandIfPossible", [live(f.src), rt.fv(f, "held_index", live(H))]);
+	let M: Value = null;
+	if (!ismob(this.loc)) return f.dot;
+	if (!(!(M = this.loc).incapacitated() && rt.istype(over_object, T("/obj/screen/inventory/hand")))) return f.dot;
+	let H: Value = over_object;
+	yield* M.putItemFromInventoryInHandIfPossible(this, H.held_index);
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/defibrillator/proc/attackby  (code/game/objects/items/weapons/defib.dm:106)  may sleep
-rt.def("/obj/item/weapon/defibrillator/proc/attackby", function* attackby(f: Frame) {
+// defib.dm:106
+rt.def("/obj/item/weapon/defibrillator/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
 	let C: Value = null;
-	f.vars = () => [C];
-	if (isEqual(live(f.args[0]), rt.sv(f, "paddles"))) {
-		yield* g.callName(f, rt.sv(f, "paddles"), "unwield", []);
-		yield* g.srcCall(f, "toggle_paddles");
-	} else {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/stock_parts/cell")) ? 1 : 0))) {
-			C = live(f.args[0]);
-			if (truthy(rt.sv(f, "cell"))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>＀ already has a cell.</span>", [live(f.src)])]);
-			} else {
-				if (rt.lt(rt.fv(f, "maxcharge", live(C)), rt.fv(f, "revivecost", rt.sv(f, "paddles")))) {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>＀ requires a higher capacity cell.</span>", [live(f.src)])]);
-					return live(f.dot);
-				}
-				if (!truthy((yield* g.callName(f, live(f.args[1]), "transferItemToLoc", [live(f.args[0]), live(f.src)])))) {
-					return live(f.dot);
-				}
-				rt.setSv(f, "cell", live(f.args[0]));
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You install a cell in ＀.</span>", [live(f.src)])]);
-				yield* g.srcCall(f, "update_icon");
-			}
+	if (W == this.paddles) {
+		yield* this.paddles.unwield();
+		yield* this.toggle_paddles();
+	} else if (rt.istype(W, T("/obj/item/weapon/stock_parts/cell"))) {
+		C = W;
+		if (this.cell) {
+			to_chat(user, `<span class='notice'>${this} already has a cell.</span>`);
 		} else {
-			if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/screwdriver")) ? 1 : 0))) {
-				if (truthy(rt.sv(f, "cell"))) {
-					yield* g.callName(f, rt.sv(f, "cell"), "update_icon", []);
-					yield* g.callName(f, rt.sv(f, "cell"), "forceMove", [rt.getStep(f, live(f.src), 0)]);
-					rt.setSv(f, "cell", null);
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You remove the cell from ＀.</span>", [live(f.src)])]);
-					yield* g.srcCall(f, "update_icon");
-				}
-			} else {
-				return (yield* g.callSuper(f, [], rt.Args.Same));
+			if (C.maxcharge < this.paddles.revivecost) {
+				to_chat(user, `<span class='notice'>${this} requires a higher capacity cell.</span>`);
+				return f.dot;
 			}
+			if (!(yield* user.transferItemToLoc(W, this))) {
+				return f.dot;
+			}
+			this.cell = W;
+			to_chat(user, `<span class='notice'>You install a cell in ${this}.</span>`);
+			yield* this.update_icon();
 		}
+	} else if (rt.istype(W, T("/obj/item/weapon/screwdriver"))) {
+		if (this.cell) {
+			yield* this.cell.update_icon();
+			yield* this.cell.forceMove(rt.getStep(f, this, 0));
+			this.cell = null;
+			to_chat(user, `<span class='notice'>You remove the cell from ${this}.</span>`);
+			yield* this.update_icon();
+		}
+	} else {
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["W", "user", "params"] });
+}, true);
 
-// /obj/item/weapon/defibrillator/proc/emag_act  (code/game/objects/items/weapons/defib.dm:136)
+// defib.dm:136
 rt.def("/obj/item/weapon/defibrillator/proc/emag_act", function emag_act(f: Frame, user: Value) {
-	if (truthy(rt.sv(f, "safety"))) {
-		rt.setSv(f, "safety", 0);
-		rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>You silently disable ＀'s safety protocols with the cryptographic sequencer.", [live(f.src)])]);
+	if (this.safety) {
+		this.safety = 0;
+		to_chat(user, `<span class='warning'>You silently disable ${this}'s safety protocols with the cryptographic sequencer.`);
 	} else {
-		rt.setSv(f, "safety", 1);
-		rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You silently enable ＀'s safety protocols with the cryptographic sequencer.", [live(f.src)])]);
+		this.safety = 1;
+		to_chat(user, `<span class='notice'>You silently enable ${this}'s safety protocols with the cryptographic sequencer.`);
 	}
 	return f.dot;
 });
 
-// /obj/item/weapon/defibrillator/proc/emp_act  (code/game/objects/items/weapons/defib.dm:143)  may sleep
-rt.def("/obj/item/weapon/defibrillator/proc/emp_act", function* emp_act(f: Frame) {
-	if (truthy(rt.sv(f, "cell"))) {
-		yield* g.srcCall(f, "deductcharge", divide(1000, live(f.args[0])));
+// defib.dm:143
+rt.def("/obj/item/weapon/defibrillator/proc/emp_act", function* emp_act(f: Frame, severity: Value) {
+	if (this.cell) {
+		yield* this.deductcharge(1000 / severity);
 	}
-	if (truthy(rt.sv(f, "safety"))) {
-		rt.setSv(f, "safety", 0);
-		yield* g.callName(f, live(f.src), "visible_message", [fmt("<span class='notice'>＀ beeps: Safety protocols disabled!</span>", [live(f.src)])]);
-		yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/machines/defib_saftyOff.ogg"), 50, 0]);
+	if (this.safety) {
+		this.safety = 0;
+		this.visible_message(`<span class='notice'>${this} beeps: Safety protocols disabled!</span>`);
+		playsound(rt.getStep(f, this, 0), rt.rsc("sound/machines/defib_saftyOff.ogg"), 50, 0);
 	} else {
-		rt.setSv(f, "safety", 1);
-		yield* g.callName(f, live(f.src), "visible_message", [fmt("<span class='notice'>＀ beeps: Safety protocols enabled!</span>", [live(f.src)])]);
-		yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/machines/defib_SaftyOn.ogg"), 50, 0]);
+		this.safety = 1;
+		this.visible_message(`<span class='notice'>${this} beeps: Safety protocols enabled!</span>`);
+		playsound(rt.getStep(f, this, 0), rt.rsc("sound/machines/defib_SaftyOn.ogg"), 50, 0);
 	}
-	yield* g.srcCall(f, "update_icon");
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* this.update_icon();
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["severity"] });
+}, true);
 
-// /obj/item/weapon/defibrillator/proc/toggle_paddles  (code/game/objects/items/weapons/defib.dm:158)  may sleep
+// defib.dm:158
 rt.def("/obj/item/weapon/defibrillator/proc/toggle_paddles", function* toggle_paddles(f: Frame) {
-	let user: Value = null, X: Value = null, A: Value = null;
-	let $e: any;
-	f.vars = () => [user, X, A, $e];
-	rt.setSv(f, "on", (!truthy(rt.sv(f, "on")) ? 1 : 0));
-	user = live(f.usr);
-	if (truthy(rt.sv(f, "on"))) {
-		if (!truthy((yield* g.callName(f, live(f.usr), "put_in_hands", [rt.sv(f, "paddles")])))) {
-			rt.setSv(f, "on", 0);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>You need a free hand to hold the paddles!</span>"]);
-			yield* g.srcCall(f, "update_icon");
-			return live(f.dot);
+	let X: Value = null, A: Value = null;
+	this.on = (!this.on ? 1 : 0);
+	let user: Value = f.usr;
+	if (this.on) {
+		if (!(yield* f.usr.put_in_hands(this.paddles))) {
+			this.on = 0;
+			to_chat(user, "<span class='warning'>You need a free hand to hold the paddles!</span>");
+			yield* this.update_icon();
+			return f.dot;
 		}
-		rt.setFv(f, "loc", rt.sv(f, "paddles"), live(user));
+		this.paddles.loc = user;
 	} else {
-		yield* g.callName(f, rt.sv(f, "paddles"), "unwield", []);
-		yield* g.srcCall(f, "remove_paddles", live(user));
+		yield* this.paddles.unwield();
+		yield* this.remove_paddles(user);
 	}
-	yield* g.srcCall(f, "update_icon");
-	X = null;
-	rt.forList(f, 0, rt.sv(f, "actions"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		X = $e;
-		yield* g.callName(f, (A = live(X)), "UpdateButtonIcon", []);
+	yield* this.update_icon();
+	for (X of each(this.actions)) {
+		yield* (A = X).UpdateButtonIcon();
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true, { verb: { name: "Toggle Paddles", category: "Object" } });
 
-// /obj/item/weapon/defibrillator/proc/make_paddles  (code/game/objects/items/weapons/defib.dm:180)  may sleep
+// defib.dm:180
 rt.def("/obj/item/weapon/defibrillator/proc/make_paddles", function* make_paddles(f: Frame) {
-	return (yield* g.new_(f, T("/obj/item/weapon/twohanded/shockpaddles"), [live(f.src)]));
+	return (yield* new_(T("/obj/item/weapon/twohanded/shockpaddles"), this));
 }, true);
 
-// /obj/item/weapon/defibrillator/proc/equipped  (code/game/objects/items/weapons/defib.dm:183)  may sleep
-rt.def("/obj/item/weapon/defibrillator/proc/equipped", function* equipped(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!((isEqual(rt.sv(f, "slot_flags"), 1024) && !isEqual(live(f.args[1]), 1)) || (isEqual(rt.sv(f, "slot_flags"), 512) && !isEqual(live(f.args[1]), 5)))) return f.dot;
-	yield* g.srcCall(f, "remove_paddles", live(f.args[0]));
-	yield* g.srcCall(f, "update_icon");
+// defib.dm:183
+rt.def("/obj/item/weapon/defibrillator/proc/equipped", function* equipped(f: Frame, user: Value, slot: Value) {
+	yield* parent_proc();
+	if (!(this.slot_flags == SLOT_BACK && slot != slot_back || this.slot_flags == SLOT_BELT && slot != slot_belt)) return f.dot;
+	yield* this.remove_paddles(user);
+	yield* this.update_icon();
 	return f.dot;
-}, true, { args: ["user", "slot"] });
+}, true);
 
-// /obj/item/weapon/defibrillator/proc/item_action_slot_check  (code/game/objects/items/weapons/defib.dm:189)
+// defib.dm:189
 rt.def("/obj/item/weapon/defibrillator/proc/item_action_slot_check", function item_action_slot_check(f: Frame, slot: Value, user: Value) {
-	if (!isEqual(live(slot), rt.callName(f, live(user), "getBackSlot", []))) return f.dot;
+	if (slot != user.getBackSlot()) return f.dot;
 	return 1;
 });
 
-// /obj/item/weapon/defibrillator/proc/remove_paddles  (code/game/objects/items/weapons/defib.dm:193)  may sleep
+// defib.dm:193
 rt.def("/obj/item/weapon/defibrillator/proc/remove_paddles", function* remove_paddles(f: Frame, user: Value) {
 	let M: Value = null;
-	f.vars = () => [user, M];
-	if (truthy((yield* g.call(f, P("/proc/ismob"), null, [rt.fv(f, "loc", rt.sv(f, "paddles"))])))) {
-		yield* g.callName(f, (M = rt.fv(f, "loc", rt.sv(f, "paddles"))), "dropItemToGround", [rt.sv(f, "paddles"), 1]);
+	if (ismob(this.paddles.loc)) {
+		yield* (M = this.paddles.loc).dropItemToGround(this.paddles, 1);
 	}
-	return live(f.dot);
+	return f.dot;
 }, true);
 
-// /obj/item/weapon/defibrillator/proc/Destroy  (code/game/objects/items/weapons/defib.dm:200)  may sleep
+// defib.dm:200
 rt.def("/obj/item/weapon/defibrillator/proc/Destroy", function* Destroy(f: Frame) {
 	let M: Value = null;
-	f.vars = () => [M];
-	if (truthy(rt.sv(f, "on"))) {
-		yield* g.srcCall(f, "remove_paddles", (M = (yield* g.call(f, P("/proc/get"), null, [rt.sv(f, "paddles"), T("/mob")]))));
+	if (this.on) {
+		yield* this.remove_paddles((M = get(this.paddles, T("/mob"))));
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.srcCall(f, "update_icon");
+	f.dot = (yield* parent_proc());
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/defibrillator/proc/deductcharge  (code/game/objects/items/weapons/defib.dm:207)  may sleep
+// defib.dm:207
 rt.def("/obj/item/weapon/defibrillator/proc/deductcharge", function* deductcharge(f: Frame, chrgdeductamt: Value) {
-	f.vars = () => [chrgdeductamt];
-	if (!truthy(rt.sv(f, "cell"))) return f.dot;
-	if (rt.lt(rt.fv(f, "charge", rt.sv(f, "cell")), add(rt.fv(f, "revivecost", rt.sv(f, "paddles")), live(chrgdeductamt)))) {
-		rt.setSv(f, "powered", 0);
-		yield* g.srcCall(f, "update_icon");
+	if (!this.cell) return f.dot;
+	if (this.cell.charge < this.paddles.revivecost + chrgdeductamt) {
+		this.powered = 0;
+		yield* this.update_icon();
 	}
-	if (truthy((yield* g.callName(f, rt.sv(f, "cell"), "use", [live(chrgdeductamt)])))) {
-		yield* g.srcCall(f, "update_icon");
+	if (yield* this.cell.use(chrgdeductamt)) {
+		yield* this.update_icon();
 		return 1;
 	} else {
-		yield* g.srcCall(f, "update_icon");
+		yield* this.update_icon();
 		return 0;
 	}
-	return f.dot;
 }, true);
 
-// /obj/item/weapon/defibrillator/proc/cooldowncheck  (code/game/objects/items/weapons/defib.dm:218)
+// defib.dm:218
 rt.def("/obj/item/weapon/defibrillator/proc/cooldowncheck", function cooldowncheck(f: Frame, user: Value) {
 	rt.spawnTail(f, 50, "/obj/item/weapon/defibrillator/proc/cooldowncheck: spawn at game/objects/items/weapons/defib.dm:218", user);
 	return f.dot;
@@ -324,19 +303,18 @@ rt.def("/obj/item/weapon/defibrillator/proc/cooldowncheck", function cooldownche
 
 // a spawn(50) body of /obj/item/weapon/defibrillator/proc/cooldowncheck, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/obj/item/weapon/defibrillator/proc/cooldowncheck: spawn at game/objects/items/weapons/defib.dm:218", function* (f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (truthy(rt.sv(f, "cell"))) {
-		if (rt.ge(rt.fv(f, "charge", rt.sv(f, "cell")), rt.fv(f, "revivecost", rt.sv(f, "paddles")))) {
-			yield* g.callName(f, live(user), "visible_message", [fmt("<span class='notice'>＀ beeps: Unit ready.</span>", [live(f.src)])]);
-			yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/machines/defib_ready.ogg"), 50, 0]);
+	if (this.cell) {
+		if (this.cell.charge >= this.paddles.revivecost) {
+			user.visible_message(`<span class='notice'>${this} beeps: Unit ready.</span>`);
+			playsound(rt.getStep(f, this, 0), rt.rsc("sound/machines/defib_ready.ogg"), 50, 0);
 		} else {
-			yield* g.callName(f, live(user), "visible_message", [fmt("<span class='notice'>＀ beeps: Charge depleted.</span>", [live(f.src)])]);
-			yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/machines/defib_failed.ogg"), 50, 0]);
+			user.visible_message(`<span class='notice'>${this} beeps: Charge depleted.</span>`);
+			playsound(rt.getStep(f, this, 0), rt.rsc("sound/machines/defib_failed.ogg"), 50, 0);
 		}
 	}
-	rt.setFv(f, "cooldown", rt.sv(f, "paddles"), 0);
-	yield* g.callName(f, rt.sv(f, "paddles"), "update_icon", []);
-	yield* g.srcCall(f, "update_icon");
+	this.paddles.cooldown = 0;
+	yield* this.paddles.update_icon();
+	yield* this.update_icon();
 	return null;
 });
 
@@ -350,42 +328,41 @@ rt.type(7154, "/obj/item/weapon/defibrillator/compact", "/obj/item/weapon/defibr
 	origin_tech: "biotech=5",
 });
 
-// /obj/item/weapon/defibrillator/compact/proc/item_action_slot_check  (code/game/objects/items/weapons/defib.dm:240)
+// defib.dm:240
 rt.def("/obj/item/weapon/defibrillator/compact/proc/item_action_slot_check", function item_action_slot_check(f: Frame, slot: Value, user: Value) {
-	if (!isEqual(live(slot), rt.callName(f, live(user), "getBeltSlot", []))) return f.dot;
+	if (slot != user.getBeltSlot()) return f.dot;
 	return 1;
 });
 
 rt.type(7155, "/obj/item/weapon/defibrillator/compact/loaded", "/obj/item/weapon/defibrillator/compact", {});
 
-// /obj/item/weapon/defibrillator/compact/loaded/proc/Initialize  (code/game/objects/items/weapons/defib.dm:244)  may sleep
+// defib.dm:244
 rt.def("/obj/item/weapon/defibrillator/compact/loaded/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "paddles", (yield* g.srcCall(f, "make_paddles")));
-	rt.setSv(f, "cell", (yield* g.new_(f, T("/obj/item/weapon/stock_parts/cell/high"), [live(f.src)])));
-	yield* g.srcCall(f, "update_icon");
+	f.dot = (yield* parent_proc());
+	this.paddles = (yield* this.make_paddles());
+	this.cell = (yield* new_(T("/obj/item/weapon/stock_parts/cell/high"), this));
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
 rt.type(7157, "/obj/item/weapon/defibrillator/compact/combat/loaded", "/obj/item/weapon/defibrillator/compact/combat", {});
 
-// /obj/item/weapon/defibrillator/compact/combat/loaded/proc/Initialize  (code/game/objects/items/weapons/defib.dm:256)  may sleep
+// defib.dm:256
 rt.def("/obj/item/weapon/defibrillator/compact/combat/loaded/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "paddles", (yield* g.srcCall(f, "make_paddles")));
-	rt.setSv(f, "cell", (yield* g.new_(f, T("/obj/item/weapon/stock_parts/cell/infinite"), [live(f.src)])));
-	yield* g.srcCall(f, "update_icon");
+	f.dot = (yield* parent_proc());
+	this.paddles = (yield* this.make_paddles());
+	this.cell = (yield* new_(T("/obj/item/weapon/stock_parts/cell/infinite"), this));
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/defibrillator/compact/combat/loaded/proc/attackby  (code/game/objects/items/weapons/defib.dm:262)  may sleep
+// defib.dm:262
 rt.def("/obj/item/weapon/defibrillator/compact/combat/loaded/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
-	f.vars = () => [W, user, params];
-	if (!isEqual(live(W), rt.sv(f, "paddles"))) return f.dot;
-	yield* g.callName(f, rt.sv(f, "paddles"), "unwield", []);
-	yield* g.srcCall(f, "toggle_paddles");
-	yield* g.srcCall(f, "update_icon");
-	return live(f.dot);
+	if (W != this.paddles) return f.dot;
+	yield* this.paddles.unwield();
+	yield* this.toggle_paddles();
+	yield* this.update_icon();
+	return f.dot;
 }, true);
 
 rt.type(5619, "/obj/item/weapon/twohanded/shockpaddles", "/obj/item/weapon/twohanded", {
@@ -406,433 +383,400 @@ rt.type(5619, "/obj/item/weapon/twohanded/shockpaddles", "/obj/item/weapon/twoha
 	w_class: 4,
 });
 
-// /obj/item/weapon/twohanded/shockpaddles/proc/recharge  (code/game/objects/items/weapons/defib.dm:289)  may sleep
+// defib.dm:289
 rt.def("/obj/item/weapon/twohanded/shockpaddles/proc/recharge", function* recharge(f: Frame, time: Value) {
 	let _T: Value = null;
-	f.vars = () => [time, _T];
-	if ((truthy(rt.sv(f, "req_defib")) || !truthy(live(time)))) {
-		return live(f.dot);
+	if (this.req_defib || !time) {
+		return f.dot;
 	}
-	rt.setSv(f, "cooldown", 1);
-	yield* g.srcCall(f, "update_icon");
-	yield* g.call(f, P("/proc/sleep"), null, [live(time)]);
-	yield* g.callName(f, (_T = rt.getStep(f, live(f.src), 0)), "audible_message", [fmt("<span class='notice'>＀ beeps: Unit is recharged.</span>", [live(f.src)])]);
-	yield* g.call(f, P("/proc/playsound"), null, [live(_T), rt.rsc("sound/machines/defib_ready.ogg"), 50, 0]);
-	rt.setSv(f, "cooldown", 0);
-	yield* g.srcCall(f, "update_icon");
+	this.cooldown = 1;
+	yield* this.update_icon();
+	yield* sleep(time);
+	(_T = rt.getStep(f, this, 0)).audible_message(`<span class='notice'>${this} beeps: Unit is recharged.</span>`);
+	playsound(_T, rt.rsc("sound/machines/defib_ready.ogg"), 50, 0);
+	this.cooldown = 0;
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/twohanded/shockpaddles/proc/New  (code/game/objects/items/weapons/defib.dm:301)  may sleep
-rt.def("/obj/item/weapon/twohanded/shockpaddles/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!(truthy((yield* g.srcCall(f, "check_defib_exists", live(f.args[0]), live(f.src)))) && truthy(rt.sv(f, "req_defib")))) return f.dot;
-	rt.setSv(f, "defib", live(f.args[0]));
-	rt.setSv(f, "loc", rt.sv(f, "defib"));
-	rt.setSv(f, "busy", 0);
-	yield* g.srcCall(f, "update_icon");
+// defib.dm:301
+rt.def("/obj/item/weapon/twohanded/shockpaddles/proc/New", function* New(f: Frame, mainunit: Value) {
+	yield* parent_proc();
+	if (!((yield* this.check_defib_exists(mainunit, this)) && this.req_defib)) return f.dot;
+	this.defib = mainunit;
+	this.loc = this.defib;
+	this.busy = 0;
+	yield* this.update_icon();
 	return f.dot;
-}, true, { args: ["mainunit"] });
+}, true);
 
-// /obj/item/weapon/twohanded/shockpaddles/proc/update_icon  (code/game/objects/items/weapons/defib.dm:309)
+// defib.dm:309
 rt.def("/obj/item/weapon/twohanded/shockpaddles/proc/update_icon", function update_icon(f: Frame) {
-	rt.setSv(f, "icon_state", fmt("defibpaddles＀", [rt.sv(f, "wielded")]));
-	rt.setSv(f, "item_state", fmt("defibpaddles＀", [rt.sv(f, "wielded")]));
-	if (!truthy(rt.sv(f, "cooldown"))) return f.dot;
-	rt.setSv(f, "icon_state", fmt("defibpaddles＀_cooldown", [rt.sv(f, "wielded")]));
+	this.icon_state = `defibpaddles${this.wielded}`;
+	this.item_state = `defibpaddles${this.wielded}`;
+	if (!this.cooldown) return f.dot;
+	this.icon_state = `defibpaddles${this.wielded}_cooldown`;
 	return f.dot;
 });
 
-// /obj/item/weapon/twohanded/shockpaddles/proc/suicide_act  (code/game/objects/items/weapons/defib.dm:315)  may sleep
+// defib.dm:315
 rt.def("/obj/item/weapon/twohanded/shockpaddles/proc/suicide_act", function* suicide_act(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.callName(f, live(user), "visible_message", [fmt("<span class='danger'>＀ is putting the live paddles on ＀ chest! It looks like ＀ trying to commit suicide!</span>", [live(user), (yield* g.callName(f, live(user), "p_their", [])), (yield* g.callName(f, live(user), "p_theyre", []))])]);
-	if (truthy(rt.sv(f, "req_defib"))) {
-		yield* g.callName(f, rt.sv(f, "defib"), "deductcharge", [rt.sv(f, "revivecost")]);
+	user.visible_message(`<span class='danger'>${user} is putting the live paddles on ${user.p_their()} chest! It looks like ${user.p_theyre()} trying to commit suicide!</span>`);
+	if (this.req_defib) {
+		yield* this.defib.deductcharge(this.revivecost);
 	}
-	yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/machines/defib_zap.ogg"), 50, 1, -1]);
+	playsound(rt.getStep(f, this, 0), rt.rsc("sound/machines/defib_zap.ogg"), 50, 1, -1);
 	return 8;
 }, true);
 
-// /obj/item/weapon/twohanded/shockpaddles/proc/dropped  (code/game/objects/items/weapons/defib.dm:322)  may sleep
-rt.def("/obj/item/weapon/twohanded/shockpaddles/proc/dropped", function* dropped(f: Frame) {
+// defib.dm:322
+rt.def("/obj/item/weapon/twohanded/shockpaddles/proc/dropped", function* dropped(f: Frame, user: Value) {
 	let O: Value = null;
-	f.vars = () => [O];
-	if (!truthy(rt.sv(f, "req_defib"))) {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+	if (!this.req_defib) {
+		return (yield* parent_proc());
 	}
-	if (truthy(live(f.args[0]))) {
-		if (truthy((rt.istype((O = (yield* g.callName(f, live(f.args[0]), "get_inactive_held_item", []))), T("/obj/item/weapon/twohanded/offhand")) ? 1 : 0))) {
-			yield* g.callName(f, live(O), "unwield", []);
+	if (user) {
+		if (rt.istype((O = user.get_inactive_held_item()), T("/obj/item/weapon/twohanded/offhand"))) {
+			yield* O.unwield();
 		}
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='notice'>The paddles snap back into the main unit.</span>"]);
-		rt.setFv(f, "on", rt.sv(f, "defib"), 0);
-		rt.setSv(f, "loc", rt.sv(f, "defib"));
-		yield* g.callName(f, rt.sv(f, "defib"), "update_icon", []);
+		to_chat(user, "<span class='notice'>The paddles snap back into the main unit.</span>");
+		this.defib.on = 0;
+		this.loc = this.defib;
+		yield* this.defib.update_icon();
 	}
-	return (yield* g.srcCall(f, "unwield", live(f.args[0])));
-}, true, { args: ["user"] });
+	return (yield* this.unwield(user));
+}, true);
 
-// /obj/item/weapon/twohanded/shockpaddles/proc/check_defib_exists  (code/game/objects/items/weapons/defib.dm:335)  may sleep
+// defib.dm:335
 rt.def("/obj/item/weapon/twohanded/shockpaddles/proc/check_defib_exists", function* check_defib_exists(f: Frame, mainunit: Value, M: Value, O: Value) {
-	f.vars = () => [mainunit, M, O];
-	if (!truthy(rt.sv(f, "req_defib"))) {
+	if (!this.req_defib) {
 		return 1;
 	}
-	if ((!truthy(live(mainunit)) || !truthy((rt.istype(live(mainunit), T("/obj/item/weapon/defibrillator")) ? 1 : 0)))) {
-		yield* g.call(f, P("/proc/qdel"), null, [live(O)]);
+	if (!mainunit || !rt.istype(mainunit, T("/obj/item/weapon/defibrillator"))) {
+		yield* qdel(O);
 		return 0;
 	} else {
 		return 1;
 	}
-	return f.dot;
 }, true);
 
-// /obj/item/weapon/twohanded/shockpaddles/proc/attack  (code/game/objects/items/weapons/defib.dm:347)  may sleep
+// defib.dm:347
 rt.def("/obj/item/weapon/twohanded/shockpaddles/proc/attack", function* attack(f: Frame, M: Value, user: Value) {
-	let H: Value = null;
-	f.vars = () => [M, user, H];
-	if (truthy(rt.sv(f, "busy"))) {
-		return live(f.dot);
+	if (this.busy) {
+		return f.dot;
 	}
-	if ((truthy(rt.sv(f, "req_defib")) && !truthy(rt.fv(f, "powered", rt.sv(f, "defib"))))) {
-		yield* g.callName(f, live(user), "visible_message", [fmt("<span class='notice'>＀ beeps: Unit is unpowered.</span>", [rt.sv(f, "defib")])]);
-		yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/machines/defib_failed.ogg"), 50, 0]);
-		return live(f.dot);
+	if (this.req_defib && !this.defib.powered) {
+		user.visible_message(`<span class='notice'>${this.defib} beeps: Unit is unpowered.</span>`);
+		playsound(rt.getStep(f, this, 0), rt.rsc("sound/machines/defib_failed.ogg"), 50, 0);
+		return f.dot;
 	}
-	if (!truthy(rt.sv(f, "wielded"))) {
-		if (truthy((rt.istype(live(user), T("/mob/living/silicon/robot")) ? 1 : 0))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>You must activate the paddles in your active module before you can use them on someone!</span>"]);
+	if (!this.wielded) {
+		if (rt.istype(user, T("/mob/living/silicon/robot"))) {
+			to_chat(user, "<span class='warning'>You must activate the paddles in your active module before you can use them on someone!</span>");
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>You need to wield the paddles in both hands before you can use them on someone!</span>"]);
+			to_chat(user, "<span class='warning'>You need to wield the paddles in both hands before you can use them on someone!</span>");
 		}
-		return live(f.dot);
+		return f.dot;
 	}
-	if (truthy(rt.sv(f, "cooldown"))) {
-		if (truthy(rt.sv(f, "req_defib"))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ is recharging!</span>", [rt.sv(f, "defib")])]);
+	if (this.cooldown) {
+		if (this.req_defib) {
+			to_chat(user, `<span class='warning'>${this.defib} is recharging!</span>`);
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ are recharging!</span>", [live(f.src)])]);
+			to_chat(user, `<span class='warning'>${this} are recharging!</span>`);
 		}
-		return live(f.dot);
+		return f.dot;
 	}
-	if (isEqual(rt.fv(f, "a_intent", live(user)), "disarm")) {
-		yield* g.srcCall(f, "do_disarm", live(M), live(user));
-		return live(f.dot);
+	if (user.a_intent == "disarm") {
+		yield* this.do_disarm(M, user);
+		return f.dot;
 	}
-	if (!truthy((rt.istype(live(M), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		if (truthy(rt.sv(f, "req_defib"))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>The instructions on ＀ don't mention how to revive that...</span>", [rt.sv(f, "defib")])]);
+	if (!rt.istype(M, T("/mob/living/carbon/human"))) {
+		if (this.req_defib) {
+			to_chat(user, `<span class='warning'>The instructions on ${this.defib} don't mention how to revive that...</span>`);
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>You aren't sure how to revive that...</span>"]);
+			to_chat(user, "<span class='warning'>You aren't sure how to revive that...</span>");
 		}
-		return live(f.dot);
+		return f.dot;
 	}
-	H = live(M);
-	if (!isEqual(rt.fv(f, "zone_selected", live(user)), "chest")) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>You need to target your patient's chest with ＀!</span>", [live(f.src)])]);
-		return live(f.dot);
+	let H: Value = M;
+	if (user.zone_selected != "chest") {
+		to_chat(user, `<span class='warning'>You need to target your patient's chest with ${this}!</span>`);
+		return f.dot;
 	}
-	if (isEqual(rt.fv(f, "a_intent", live(user)), "harm")) {
-		yield* g.srcCall(f, "do_harm", live(H), live(user));
-		return live(f.dot);
+	if (user.a_intent == "harm") {
+		yield* this.do_harm(H, user);
+		return f.dot;
 	}
-	if (((!truthy(rt.sv(f, "req_defib")) && truthy(rt.sv(f, "grab_ghost"))) || (truthy(rt.sv(f, "req_defib")) && truthy(rt.fv(f, "grab_ghost", rt.sv(f, "defib")))))) {
-		yield* g.callName(f, live(H), "notify_ghost_cloning", ["Your heart is being defibrillated!"]);
-		yield* g.callName(f, live(H), "grab_ghost", []);
-	} else {
-		if (((!truthy(rt.fv(f, "suiciding", live(H))) && !truthy(rt.bitAnd(rt.fv(f, "disabilities", live(H)), 128))) && !truthy(rt.fv(f, "hellbound", live(H))))) {
-			yield* g.callName(f, live(H), "notify_ghost_cloning", [null, "Your heart is being defibrillated. Re-enter your corpse if you want to be revived!", "source", live(f.src)], rt.Args.Named);
-		}
+	if (!this.req_defib && this.grab_ghost || this.req_defib && this.defib.grab_ghost) {
+		yield* H.notify_ghost_cloning("Your heart is being defibrillated!");
+		yield* H.grab_ghost();
+	} else if (!H.suiciding && !rt.bitAnd(H.disabilities, 128) && !H.hellbound) {
+		yield* H.notify_ghost_cloning("Your heart is being defibrillated. Re-enter your corpse if you want to be revived!", { source: this });
 	}
-	yield* g.srcCall(f, "do_help", live(H), live(user));
+	yield* this.do_help(H, user);
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/twohanded/shockpaddles/proc/do_disarm  (code/game/objects/items/weapons/defib.dm:395)  may sleep
+// defib.dm:395
 rt.def("/obj/item/weapon/twohanded/shockpaddles/proc/do_disarm", function* do_disarm(f: Frame, M: Value, user: Value) {
-	f.vars = () => [M, user];
-	if ((truthy(rt.sv(f, "req_defib")) && truthy(rt.fv(f, "safety", rt.sv(f, "defib"))))) {
-		return live(f.dot);
+	if (this.req_defib && this.defib.safety) {
+		return f.dot;
 	}
-	if ((!truthy(rt.sv(f, "req_defib")) && !truthy(rt.sv(f, "combat")))) {
-		return live(f.dot);
+	if (!this.req_defib && !this.combat) {
+		return f.dot;
 	}
-	rt.setSv(f, "busy", 1);
-	yield* g.callName(f, live(M), "visible_message", [fmt("<span class='danger'>＀ has touched ＀ with ＀!</span>", [live(user), live(M), live(f.src)]), fmt("<span class='userdanger'>＀ has touched ＀ with ＀!</span>", [live(user), live(M), live(f.src)])]);
-	yield* g.callName(f, live(M), "adjustStaminaLoss", [50]);
-	yield* g.callName(f, live(M), "Knockdown", [100]);
-	yield* g.callName(f, live(M), "updatehealth", []);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/machines/defib_zap.ogg"), 50, 1, -1]);
-	yield* g.callName(f, live(M), "emote", ["gasp"]);
-	yield* g.call(f, P("/proc/add_logs"), null, [live(user), live(M), "stunned", live(f.src)]);
-	if (truthy(rt.sv(f, "req_defib"))) {
-		yield* g.callName(f, rt.sv(f, "defib"), "deductcharge", [rt.sv(f, "revivecost")]);
-		rt.setSv(f, "cooldown", 1);
+	this.busy = 1;
+	M.visible_message(`<span class='danger'>${user} has touched ${M} with ${this}!</span>`, `<span class='userdanger'>${user} has touched ${M} with ${this}!</span>`);
+	yield* M.adjustStaminaLoss(50);
+	yield* M.Knockdown(100);
+	yield* M.updatehealth();
+	playsound(rt.getStep(f, this, 0), rt.rsc("sound/machines/defib_zap.ogg"), 50, 1, -1);
+	yield* M.emote("gasp");
+	add_logs(user, M, "stunned", this);
+	if (this.req_defib) {
+		yield* this.defib.deductcharge(this.revivecost);
+		this.cooldown = 1;
 	}
-	rt.setSv(f, "busy", 0);
-	yield* g.srcCall(f, "update_icon");
-	if (truthy(rt.sv(f, "req_defib"))) {
-		yield* g.callName(f, rt.sv(f, "defib"), "cooldowncheck", [live(user)]);
+	this.busy = 0;
+	yield* this.update_icon();
+	if (this.req_defib) {
+		this.defib.cooldowncheck(user);
 	} else {
-		yield* g.srcCall(f, "recharge", 60);
+		yield* this.recharge(60);
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/twohanded/shockpaddles/proc/do_harm  (code/game/objects/items/weapons/defib.dm:419)  may sleep
+// defib.dm:419
 rt.def("/obj/item/weapon/twohanded/shockpaddles/proc/do_harm", function* do_harm(f: Frame, H: Value, user: Value) {
 	let _T: Value = null;
-	f.vars = () => [H, user, _T];
-	if ((truthy(rt.sv(f, "req_defib")) && truthy(rt.fv(f, "safety", rt.sv(f, "defib"))))) {
-		return live(f.dot);
+	if (this.req_defib && this.defib.safety) {
+		return f.dot;
 	}
-	if ((!truthy(rt.sv(f, "req_defib")) && !truthy(rt.sv(f, "combat")))) {
-		return live(f.dot);
+	if (!this.req_defib && !this.combat) {
+		return f.dot;
 	}
-	yield* g.callName(f, live(user), "visible_message", [fmt("<span class='warning'>＀ begins to place ＀ on ＀'s chest.</span>", [live(user), live(f.src), live(H)]), fmt("<span class='warning'>You overcharge the paddles and begin to place them onto ＀'s chest...</span>", [live(H)])]);
-	rt.setSv(f, "busy", 1);
-	yield* g.srcCall(f, "update_icon");
-	if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(user), null, 30, "target", live(H)], rt.Args.Named)))) {
-		yield* g.callName(f, live(user), "visible_message", [fmt("<span class='notice'>＀ places ＀ on ＀'s chest.</span>", [live(user), live(f.src), live(H)]), fmt("<span class='warning'>You place ＀ on ＀'s chest and begin to charge them.</span>", [live(f.src), live(H)])]);
-		_T = rt.getStep(f, rt.sv(f, "defib"), 0);
-		yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/machines/defib_charge.ogg"), 50, 0]);
-		if (truthy(rt.sv(f, "req_defib"))) {
-			yield* g.callName(f, live(_T), "audible_message", [fmt("<span class='warning'>＄！ lets out an urgent beep and lets out a steadily rising hum...</span>", [rt.sv(f, "defib")])]);
+	user.visible_message(`<span class='warning'>${user} begins to place ${this} on ${H}'s chest.</span>`, `<span class='warning'>You overcharge the paddles and begin to place them onto ${H}'s chest...</span>`);
+	this.busy = 1;
+	yield* this.update_icon();
+	if (yield* do_after(user, 30, { target: H })) {
+		user.visible_message(`<span class='notice'>${user} places ${this} on ${H}'s chest.</span>`, `<span class='warning'>You place ${this} on ${H}'s chest and begin to charge them.</span>`);
+		_T = rt.getStep(f, this.defib, 0);
+		playsound(rt.getStep(f, this, 0), rt.rsc("sound/machines/defib_charge.ogg"), 50, 0);
+		if (this.req_defib) {
+			_T.audible_message(fmt("<span class='warning'>＄！ lets out an urgent beep and lets out a steadily rising hum...</span>", [this.defib]));
 		} else {
-			yield* g.callName(f, live(user), "audible_message", [fmt("<span class='warning'>＀ let out an urgent beep.</span>", [live(f.src)])]);
+			user.audible_message(`<span class='warning'>${this} let out an urgent beep.</span>`);
 		}
-		if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(user), null, 30, "target", live(H)], rt.Args.Named)))) {
-			if (!truthy(live(H))) {
-				rt.setSv(f, "busy", 0);
-				yield* g.srcCall(f, "update_icon");
-				return live(f.dot);
+		if (yield* do_after(user, 30, { target: H })) {
+			if (!H) {
+				this.busy = 0;
+				yield* this.update_icon();
+				return f.dot;
 			}
-			if ((truthy(live(H)) && isEqual(rt.fv(f, "stat", live(H)), 2))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ is dead.</span>", [live(H)])]);
-				yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/machines/defib_failed.ogg"), 50, 0]);
-				rt.setSv(f, "busy", 0);
-				yield* g.srcCall(f, "update_icon");
-				return live(f.dot);
+			if (H && H.stat == 2) {
+				to_chat(user, `<span class='warning'>${H} is dead.</span>`);
+				playsound(rt.getStep(f, this, 0), rt.rsc("sound/machines/defib_failed.ogg"), 50, 0);
+				this.busy = 0;
+				yield* this.update_icon();
+				return f.dot;
 			}
-			yield* g.callName(f, live(user), "visible_message", [fmt("<span class='boldannounce'><i>＀ shocks ＀ with ％！!</span>", [live(user), live(H), live(f.src)]), fmt("<span class='warning'>You shock ＀ with ％！!</span>", [live(H), live(f.src)])]);
-			yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/machines/defib_zap.ogg"), 100, 1, -1]);
-			yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/weapons/egloves.ogg"), 100, 1, -1]);
-			yield* g.callName(f, live(H), "emote", ["scream"]);
-			if ((truthy((yield* g.callName(f, live(H), "can_heartattack", []))) && !truthy((yield* g.callName(f, live(H), "undergoing_cardiac_arrest", []))))) {
-				if (!truthy(rt.fv(f, "stat", live(H)))) {
-					yield* g.callName(f, live(H), "visible_message", [fmt("<span class='warning'>＀ thrashes wildly, clutching at their chest!</span>", [live(H)]), "<span class='userdanger'>You feel a horrible agony in your chest!</span>"]);
+			user.visible_message(fmt("<span class='boldannounce'><i>＀ shocks ＀ with ％！!</span>", [user, H, this]), fmt("<span class='warning'>You shock ＀ with ％！!</span>", [H, this]));
+			playsound(rt.getStep(f, this, 0), rt.rsc("sound/machines/defib_zap.ogg"), 100, 1, -1);
+			playsound(this.loc, rt.rsc("sound/weapons/egloves.ogg"), 100, 1, -1);
+			yield* H.emote("scream");
+			if (H.can_heartattack() && !H.undergoing_cardiac_arrest()) {
+				if (!H.stat) {
+					H.visible_message(`<span class='warning'>${H} thrashes wildly, clutching at their chest!</span>`, "<span class='userdanger'>You feel a horrible agony in your chest!</span>");
 				}
-				yield* g.callName(f, live(H), "set_heartattack", [1]);
+				H.set_heartattack(1);
 			}
-			yield* g.callName(f, live(H), "apply_damage", [50, "fire", "chest"]);
-			yield* g.call(f, P("/proc/add_logs"), null, [live(user), live(H), "overloaded the heart of", rt.sv(f, "defib")]);
-			yield* g.callName(f, live(H), "Knockdown", [100]);
-			yield* g.callName(f, live(H), "Jitter", [100]);
-			if (truthy(rt.sv(f, "req_defib"))) {
-				yield* g.callName(f, rt.sv(f, "defib"), "deductcharge", [rt.sv(f, "revivecost")]);
-				rt.setSv(f, "cooldown", 1);
+			yield* H.apply_damage(50, "fire", "chest");
+			add_logs(user, H, "overloaded the heart of", this.defib);
+			yield* H.Knockdown(100);
+			H.Jitter(100);
+			if (this.req_defib) {
+				yield* this.defib.deductcharge(this.revivecost);
+				this.cooldown = 1;
 			}
-			rt.setSv(f, "busy", 0);
-			yield* g.srcCall(f, "update_icon");
-			if (!truthy(rt.sv(f, "req_defib"))) {
-				yield* g.srcCall(f, "recharge", 60);
+			this.busy = 0;
+			yield* this.update_icon();
+			if (!this.req_defib) {
+				yield* this.recharge(60);
 			}
-			if ((truthy(rt.sv(f, "req_defib")) && truthy((yield* g.callName(f, rt.sv(f, "defib"), "cooldowncheck", [live(user)]))))) {
-				return live(f.dot);
+			if (this.req_defib && this.defib.cooldowncheck(user)) {
+				return f.dot;
 			}
 		}
 	}
-	rt.setSv(f, "busy", 0);
-	yield* g.srcCall(f, "update_icon");
+	this.busy = 0;
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/twohanded/shockpaddles/proc/do_help  (code/game/objects/items/weapons/defib.dm:473)  may sleep
+// defib.dm:473
 rt.def("/obj/item/weapon/twohanded/shockpaddles/proc/do_help", function* do_help(f: Frame, H: Value, user: Value) {
 	let tplus: Value = null, tlimit: Value = null, tloss: Value = null, total_burn: Value = null, total_brute: Value = null, carried_item: Value = null, failed: Value = null, BR: Value = null, overall_damage: Value = null, mobhealth: Value = null;
 	let $0: any, $1: any, $e: any;
-	f.vars = () => [H, user, tplus, tlimit, tloss, total_burn, total_brute, carried_item, failed, BR, overall_damage, mobhealth, $0, $1, $e];
-	yield* g.callName(f, live(user), "visible_message", [fmt("<span class='warning'>＀ begins to place ＀ on ＀'s chest.</span>", [live(user), live(f.src), live(H)]), fmt("<span class='warning'>You begin to place ＀ on ＀'s chest...</span>", [live(f.src), live(H)])]);
-	rt.setSv(f, "busy", 1);
-	yield* g.srcCall(f, "update_icon");
-	if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(user), null, 30, "target", live(H)], rt.Args.Named)))) {
-		yield* g.callName(f, live(user), "visible_message", [fmt("<span class='notice'>＀ places ＀ on ＀'s chest.</span>", [live(user), live(f.src), live(H)]), fmt("<span class='warning'>You place ＀ on ＀'s chest.</span>", [live(f.src), live(H)])]);
-		yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/machines/defib_charge.ogg"), 50, 0]);
-		tplus = subtract(rt.worldTime(f), rt.fv(f, "timeofdeath", live(H)));
+	user.visible_message(`<span class='warning'>${user} begins to place ${this} on ${H}'s chest.</span>`, `<span class='warning'>You begin to place ${this} on ${H}'s chest...</span>`);
+	this.busy = 1;
+	yield* this.update_icon();
+	if (yield* do_after(user, 30, { target: H })) {
+		user.visible_message(`<span class='notice'>${user} places ${this} on ${H}'s chest.</span>`, `<span class='warning'>You place ${this} on ${H}'s chest.</span>`);
+		playsound(rt.getStep(f, this, 0), rt.rsc("sound/machines/defib_charge.ogg"), 50, 0);
+		tplus = rt.worldTime(f) - H.timeofdeath;
 		tlimit = 1200;
 		tloss = 600;
 		total_burn = 0;
 		total_brute = 0;
-		if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(user), null, 20, "target", live(H)], rt.Args.Named)))) {
-			carried_item = null;
-			rt.forList(f, 0, rt.fv(f, "contents", live(H)), T("/obj/item"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				carried_item = $e;
-				if (truthy((rt.istype(live(carried_item), T("/obj/item/clothing/suit/space")) ? 1 : 0))) {
-					if (((!truthy(rt.fv(f, "combat", live(f.src))) && !truthy(rt.sv(f, "req_defib"))) || (truthy(rt.sv(f, "req_defib")) && !truthy(rt.fv(f, "combat", rt.sv(f, "defib")))))) {
-						$0 = live(user);
-						if (truthy(rt.sv(f, "req_defib"))) {
-							$1 = fmt("＀", [rt.sv(f, "defib")]);
+		if (yield* do_after(user, 20, { target: H })) {
+			for (carried_item of each(H.contents, T("/obj/item"))) {
+				if (rt.istype(carried_item, T("/obj/item/clothing/suit/space"))) {
+					if (!this.combat && !this.req_defib || this.req_defib && !this.defib.combat) {
+						$0 = user;
+						if (this.req_defib) {
+							$1 = `${this.defib}`;
 						} else {
-							$1 = fmt("＀", [live(f.src)]);
+							$1 = `${this}`;
 						}
-						yield* g.callName(f, $0, "audible_message", [fmt("<span class='warning'>＀ buzzes: Patient's chest is obscured. Operation aborted.</span>", [$1])]);
-						yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/machines/defib_failed.ogg"), 50, 0]);
-						rt.setSv(f, "busy", 0);
-						yield* g.srcCall(f, "update_icon");
-						return live(f.dot);
+						$0.audible_message(`<span class='warning'>${$1} buzzes: Patient's chest is obscured. Operation aborted.</span>`);
+						playsound(rt.getStep(f, this, 0), rt.rsc("sound/machines/defib_failed.ogg"), 50, 0);
+						this.busy = 0;
+						yield* this.update_icon();
+						return f.dot;
 					}
 				}
 			}
-			rt.endFor(f, 0);
-			if (isEqual(rt.fv(f, "stat", live(H)), 2)) {
-				yield* g.callName(f, live(H), "visible_message", [fmt("<span class='warning'>＀'s body convulses a bit.", [live(H)])]);
-				yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), "bodyfall", 50, 1]);
-				yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/machines/defib_zap.ogg"), 50, 1, -1]);
-				total_brute = (yield* g.callName(f, live(H), "getBruteLoss", []));
-				total_burn = (yield* g.callName(f, live(H), "getFireLoss", []));
-				failed = null;
-				if ((truthy(rt.fv(f, "suiciding", live(H))) || truthy(rt.bitAnd(rt.fv(f, "disabilities", live(H)), 128)))) {
-					if (truthy(rt.sv(f, "req_defib"))) {
-						$0 = fmt("＀", [rt.sv(f, "defib")]);
+			if (H.stat == 2) {
+				H.visible_message(`<span class='warning'>${H}'s body convulses a bit.`);
+				playsound(rt.getStep(f, this, 0), "bodyfall", 50, 1);
+				playsound(rt.getStep(f, this, 0), rt.rsc("sound/machines/defib_zap.ogg"), 50, 1, -1);
+				total_brute = H.getBruteLoss();
+				total_burn = H.getFireLoss();
+				if (H.suiciding || rt.bitAnd(H.disabilities, 128)) {
+					if (this.req_defib) {
+						$0 = `${this.defib}`;
 					} else {
-						$0 = fmt("＀", [live(f.src)]);
+						$0 = `${this}`;
 					}
-					failed = fmt("<span class='warning'>＀ buzzes: Resuscitation failed - Recovery of patient impossible. Further attempts futile.</span>", [$0]);
+					failed = `<span class='warning'>${$0} buzzes: Resuscitation failed - Recovery of patient impossible. Further attempts futile.</span>`;
+				} else if (H.hellbound) {
+					if (this.req_defib) {
+						$0 = `${this.defib}`;
+					} else {
+						$0 = `${this}`;
+					}
+					failed = `<span class='warning'>${$0} buzzes: Resuscitation failed - Patient's soul appears to be on another plane of existence.  Further attempts futile.</span>`;
+				} else if (tplus > tlimit) {
+					if (this.req_defib) {
+						$0 = `${this.defib}`;
+					} else {
+						$0 = `${this}`;
+					}
+					failed = `<span class='warning'>${$0} buzzes: Resuscitation failed - Body has decayed for too long. Further attempts futile.</span>`;
+				} else if (!H.getorgan(T("/obj/item/organ/heart"))) {
+					if (this.req_defib) {
+						$0 = `${this.defib}`;
+					} else {
+						$0 = `${this}`;
+					}
+					failed = `<span class='warning'>${$0} buzzes: Resuscitation failed - Patient's heart is missing.</span>`;
+				} else if (total_burn >= 180 || total_brute >= 180) {
+					if (this.req_defib) {
+						$0 = `${this.defib}`;
+					} else {
+						$0 = `${this}`;
+					}
+					failed = `<span class='warning'>${$0} buzzes: Resuscitation failed - Severe tissue damage makes recovery of patient impossible via defibrillator. Further attempts futile.</span>`;
+				} else if (H.get_ghost()) {
+					if (this.req_defib) {
+						$0 = `${this.defib}`;
+					} else {
+						$0 = `${this}`;
+					}
+					failed = `<span class='warning'>${$0} buzzes: Resuscitation failed - No activity in patient's brain. Further attempts may be successful.</span>`;
+				} else if (!(BR = H.getorgan(T("/obj/item/organ/brain"))) || BR.damaged_brain) {
+					if (this.req_defib) {
+						$0 = `${this.defib}`;
+					} else {
+						$0 = `${this}`;
+					}
+					failed = `<span class='warning'>${$0} buzzes: Resuscitation failed - Patient's brain is missing or damaged beyond point of no return. Further attempts futile.</span>`;
+				}
+				if (failed) {
+					user.visible_message(failed);
+					playsound(rt.getStep(f, this, 0), rt.rsc("sound/machines/defib_failed.ogg"), 50, 0);
 				} else {
-					if (truthy(rt.fv(f, "hellbound", live(H)))) {
-						if (truthy(rt.sv(f, "req_defib"))) {
-							$0 = fmt("＀", [rt.sv(f, "defib")]);
-						} else {
-							$0 = fmt("＀", [live(f.src)]);
-						}
-						failed = fmt("<span class='warning'>＀ buzzes: Resuscitation failed - Patient's soul appears to be on another plane of existence.  Further attempts futile.</span>", [$0]);
+					if (H.health > -50) {
+						yield* H.adjustOxyLoss(H.health - -50, 0);
 					} else {
-						if (rt.gt(live(tplus), live(tlimit))) {
-							if (truthy(rt.sv(f, "req_defib"))) {
-								$0 = fmt("＀", [rt.sv(f, "defib")]);
-							} else {
-								$0 = fmt("＀", [live(f.src)]);
-							}
-							failed = fmt("<span class='warning'>＀ buzzes: Resuscitation failed - Body has decayed for too long. Further attempts futile.</span>", [$0]);
-						} else {
-							if (!truthy((yield* g.callName(f, live(H), "getorgan", [T("/obj/item/organ/heart")])))) {
-								if (truthy(rt.sv(f, "req_defib"))) {
-									$0 = fmt("＀", [rt.sv(f, "defib")]);
-								} else {
-									$0 = fmt("＀", [live(f.src)]);
-								}
-								failed = fmt("<span class='warning'>＀ buzzes: Resuscitation failed - Patient's heart is missing.</span>", [$0]);
-							} else {
-								if ((rt.ge(live(total_burn), 180) || rt.ge(live(total_brute), 180))) {
-									if (truthy(rt.sv(f, "req_defib"))) {
-										$0 = fmt("＀", [rt.sv(f, "defib")]);
-									} else {
-										$0 = fmt("＀", [live(f.src)]);
-									}
-									failed = fmt("<span class='warning'>＀ buzzes: Resuscitation failed - Severe tissue damage makes recovery of patient impossible via defibrillator. Further attempts futile.</span>", [$0]);
-								} else {
-									if (truthy((yield* g.callName(f, live(H), "get_ghost", [])))) {
-										if (truthy(rt.sv(f, "req_defib"))) {
-											$0 = fmt("＀", [rt.sv(f, "defib")]);
-										} else {
-											$0 = fmt("＀", [live(f.src)]);
-										}
-										failed = fmt("<span class='warning'>＀ buzzes: Resuscitation failed - No activity in patient's brain. Further attempts may be successful.</span>", [$0]);
-									} else {
-										if ((!truthy((BR = (yield* g.callName(f, live(H), "getorgan", [T("/obj/item/organ/brain")])))) || truthy(rt.fv(f, "damaged_brain", live(BR))))) {
-											if (truthy(rt.sv(f, "req_defib"))) {
-												$0 = fmt("＀", [rt.sv(f, "defib")]);
-											} else {
-												$0 = fmt("＀", [live(f.src)]);
-											}
-											failed = fmt("<span class='warning'>＀ buzzes: Resuscitation failed - Patient's brain is missing or damaged beyond point of no return. Further attempts futile.</span>", [$0]);
-										}
-									}
-								}
-							}
-						}
+						overall_damage = total_brute + total_burn + H.getToxLoss() + H.getOxyLoss();
+						mobhealth = H.health;
+						yield* H.adjustOxyLoss((mobhealth - -50) * (H.getOxyLoss() / overall_damage), 0);
+						yield* H.adjustToxLoss((mobhealth - -50) * (H.getToxLoss() / overall_damage), 0);
+						yield* H.adjustFireLoss((mobhealth - -50) * (total_burn / overall_damage), 0);
+						yield* H.adjustBruteLoss((mobhealth - -50) * (total_brute / overall_damage), 0);
 					}
+					yield* H.updatehealth();
+					$0 = user;
+					if (this.req_defib) {
+						$1 = `${this.defib}`;
+					} else {
+						$1 = `${this}`;
+					}
+					$0.visible_message(`<span class='notice'>${$1} pings: Resuscitation successful.</span>`);
+					playsound(rt.getStep(f, this, 0), rt.rsc("sound/machines/defib_success.ogg"), 50, 0);
+					H.set_heartattack(0);
+					yield* H.revive();
+					yield* H.emote("gasp");
+					if (tplus > tloss) {
+						H.setBrainLoss(max(0, min(99, (tlimit - tplus) / tlimit * 100)));
+					}
+					add_logs(user, H, "revived", this.defib);
 				}
-				if (truthy(live(failed))) {
-					yield* g.callName(f, live(user), "visible_message", [live(failed)]);
-					yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/machines/defib_failed.ogg"), 50, 0]);
+				if (this.req_defib) {
+					yield* this.defib.deductcharge(this.revivecost);
+					this.cooldown = 1;
+				}
+				yield* this.update_icon();
+				if (this.req_defib) {
+					this.defib.cooldowncheck(user);
 				} else {
-					if (rt.gt(rt.fv(f, "health", live(H)), -50)) {
-						yield* g.callName(f, live(H), "adjustOxyLoss", [subtract(rt.fv(f, "health", live(H)), -50), 0]);
-					} else {
-						overall_damage = add(add(add(live(total_brute), live(total_burn)), (yield* g.callName(f, live(H), "getToxLoss", []))), (yield* g.callName(f, live(H), "getOxyLoss", [])));
-						mobhealth = rt.fv(f, "health", live(H));
-						yield* g.callName(f, live(H), "adjustOxyLoss", [multiply(subtract(live(mobhealth), -50), divide((yield* g.callName(f, live(H), "getOxyLoss", [])), live(overall_damage))), 0]);
-						yield* g.callName(f, live(H), "adjustToxLoss", [multiply(subtract(live(mobhealth), -50), divide((yield* g.callName(f, live(H), "getToxLoss", [])), live(overall_damage))), 0]);
-						yield* g.callName(f, live(H), "adjustFireLoss", [multiply(subtract(live(mobhealth), -50), divide(live(total_burn), live(overall_damage))), 0]);
-						yield* g.callName(f, live(H), "adjustBruteLoss", [multiply(subtract(live(mobhealth), -50), divide(live(total_brute), live(overall_damage))), 0]);
-					}
-					yield* g.callName(f, live(H), "updatehealth", []);
-					$0 = live(user);
-					if (truthy(rt.sv(f, "req_defib"))) {
-						$1 = fmt("＀", [rt.sv(f, "defib")]);
-					} else {
-						$1 = fmt("＀", [live(f.src)]);
-					}
-					yield* g.callName(f, $0, "visible_message", [fmt("<span class='notice'>＀ pings: Resuscitation successful.</span>", [$1])]);
-					yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/machines/defib_success.ogg"), 50, 0]);
-					yield* g.callName(f, live(H), "set_heartattack", [0]);
-					yield* g.callName(f, live(H), "revive", []);
-					yield* g.callName(f, live(H), "emote", ["gasp"]);
-					if (rt.gt(live(tplus), live(tloss))) {
-						yield* g.callName(f, live(H), "setBrainLoss", [(yield* g.call(f, P("/proc/max"), null, [0, (yield* g.call(f, P("/proc/min"), null, [99, multiply(divide(subtract(live(tlimit), live(tplus)), live(tlimit)), 100)]))]))]);
-					}
-					yield* g.call(f, P("/proc/add_logs"), null, [live(user), live(H), "revived", rt.sv(f, "defib")]);
+					yield* this.recharge(60);
 				}
-				if (truthy(rt.sv(f, "req_defib"))) {
-					yield* g.callName(f, rt.sv(f, "defib"), "deductcharge", [rt.sv(f, "revivecost")]);
-					rt.setSv(f, "cooldown", 1);
-				}
-				yield* g.srcCall(f, "update_icon");
-				if (truthy(rt.sv(f, "req_defib"))) {
-					yield* g.callName(f, rt.sv(f, "defib"), "cooldowncheck", [live(user)]);
+			} else if (!H.getorgan(T("/obj/item/organ/heart"))) {
+				$0 = user;
+				if (this.req_defib) {
+					$1 = `${this.defib}`;
 				} else {
-					yield* g.srcCall(f, "recharge", 60);
+					$1 = `${this}`;
 				}
+				$0.visible_message(`<span class='warning'>${$1} buzzes: Patient's heart is missing. Operation aborted.</span>`);
+				playsound(rt.getStep(f, this, 0), rt.rsc("sound/machines/defib_failed.ogg"), 50, 0);
+			} else if (H.undergoing_cardiac_arrest()) {
+				H.set_heartattack(0);
+				$0 = user;
+				if (this.req_defib) {
+					$1 = `${this.defib}`;
+				} else {
+					$1 = `${this}`;
+				}
+				$0.visible_message(`<span class='notice'>${$1} pings: Patient's heart is now beating again.</span>`);
+				playsound(rt.getStep(f, this, 0), rt.rsc("sound/machines/defib_zap.ogg"), 50, 1, -1);
 			} else {
-				if (!truthy((yield* g.callName(f, live(H), "getorgan", [T("/obj/item/organ/heart")])))) {
-					$0 = live(user);
-					if (truthy(rt.sv(f, "req_defib"))) {
-						$1 = fmt("＀", [rt.sv(f, "defib")]);
-					} else {
-						$1 = fmt("＀", [live(f.src)]);
-					}
-					yield* g.callName(f, $0, "visible_message", [fmt("<span class='warning'>＀ buzzes: Patient's heart is missing. Operation aborted.</span>", [$1])]);
-					yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/machines/defib_failed.ogg"), 50, 0]);
+				$0 = user;
+				if (this.req_defib) {
+					$1 = `${this.defib}`;
 				} else {
-					if (truthy((yield* g.callName(f, live(H), "undergoing_cardiac_arrest", [])))) {
-						yield* g.callName(f, live(H), "set_heartattack", [0]);
-						$0 = live(user);
-						if (truthy(rt.sv(f, "req_defib"))) {
-							$1 = fmt("＀", [rt.sv(f, "defib")]);
-						} else {
-							$1 = fmt("＀", [live(f.src)]);
-						}
-						yield* g.callName(f, $0, "visible_message", [fmt("<span class='notice'>＀ pings: Patient's heart is now beating again.</span>", [$1])]);
-						yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/machines/defib_zap.ogg"), 50, 1, -1]);
-					} else {
-						$0 = live(user);
-						if (truthy(rt.sv(f, "req_defib"))) {
-							$1 = fmt("＀", [rt.sv(f, "defib")]);
-						} else {
-							$1 = fmt("＀", [live(f.src)]);
-						}
-						yield* g.callName(f, $0, "visible_message", [fmt("<span class='warning'>＀ buzzes: Patient is not in a valid state. Operation aborted.</span>", [$1])]);
-						yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/machines/defib_failed.ogg"), 50, 0]);
-					}
+					$1 = `${this}`;
 				}
+				$0.visible_message(`<span class='warning'>${$1} buzzes: Patient is not in a valid state. Operation aborted.</span>`);
+				playsound(rt.getStep(f, this, 0), rt.rsc("sound/machines/defib_failed.ogg"), 50, 0);
 			}
 		}
 	}
-	rt.setSv(f, "busy", 0);
-	yield* g.srcCall(f, "update_icon");
+	this.busy = 0;
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
@@ -844,19 +788,18 @@ rt.type(5620, "/obj/item/weapon/twohanded/shockpaddles/cyborg", "/obj/item/weapo
 	item_state: "defibpaddles0",
 });
 
-// /obj/item/weapon/twohanded/shockpaddles/cyborg/proc/attack  (code/game/objects/items/weapons/defib.dm:577)  may sleep
-rt.def("/obj/item/weapon/twohanded/shockpaddles/cyborg/proc/attack", function* attack(f: Frame) {
+// defib.dm:577
+rt.def("/obj/item/weapon/twohanded/shockpaddles/cyborg/proc/attack", function* attack(f: Frame, M: Value, user: Value) {
 	let R: Value = null;
-	f.vars = () => [R];
-	if (truthy((rt.istype(live(f.args[1]), T("/mob/living/silicon/robot")) ? 1 : 0))) {
-		if (truthy(rt.gv(f, "emagged", (R = live(f.args[1]))))) {
-			rt.setSv(f, "combat", 1);
+	if (rt.istype(user, T("/mob/living/silicon/robot"))) {
+		if ((R = user).emagged) {
+			this.combat = 1;
 		} else {
-			rt.setSv(f, "combat", 0);
+			this.combat = 0;
 		}
 	} else {
-		rt.setSv(f, "combat", 0);
+		this.combat = 0;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	f.dot = (yield* parent_proc());
 	return f.dot;
-}, true, { args: ["M", "user"] });
+}, true);

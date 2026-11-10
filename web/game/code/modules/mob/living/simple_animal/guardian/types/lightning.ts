@@ -1,7 +1,7 @@
-// From code/modules/mob/living/simple_animal/guardian/types/lightning.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/simple_animal/guardian/types/lightning.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(4878, "/mob/living/simple_animal/hostile/guardian/beam", "/mob/living/simple_animal/hostile/guardian", {
@@ -21,206 +21,163 @@ rt.type(4878, "/mob/living/simple_animal/hostile/guardian/beam", "/mob/living/si
 	damage_coeff: null,
 });
 
-// /mob/living/simple_animal/hostile/guardian/beam/proc/<init>  (code/modules/mob/living/simple_animal/guardian/types/lightning.dm:19)
+// lightning.dm:19
 rt.def("/mob/living/simple_animal/hostile/guardian/beam/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "enemychains", rt.list());
-	rt.setSv(f, "damage_coeff", rt.alist(f, ["brute", 0.699999988079071, "fire", 0.699999988079071, "tox", 0.699999988079071, "clone", 0.699999988079071, "stamina", 0, "oxy", 0.699999988079071]));
+	parent_proc();
+	this.enemychains = list();
+	this.damage_coeff = rt.alist(f, ["brute", 0.7, "fire", 0.7, "tox", 0.7, "clone", 0.7, "stamina", 0, "oxy", 0.7]);
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/guardian/beam/proc/AttackingTarget  (code/modules/mob/living/simple_animal/guardian/types/lightning.dm:23)  may sleep
+// lightning.dm:23
 rt.def("/mob/living/simple_animal/hostile/guardian/beam/proc/AttackingTarget", function* AttackingTarget(f: Frame) {
 	let chain: Value = null, B: Value = null, C: Value = null;
-	let $e: any;
-	f.vars = () => [chain, B, C, $e];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!(((truthy(live(f.dot)) && truthy((rt.istype(rt.sv(f, "target"), T("/mob/living")) ? 1 : 0))) && !isEqual(rt.sv(f, "target"), live(f.src))) && !isEqual(rt.sv(f, "target"), rt.sv(f, "summoner")))) return f.dot;
-	yield* g.srcCall(f, "cleardeletedchains");
-	chain = null;
-	rt.forList(f, 0, rt.sv(f, "enemychains"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		chain = $e;
-		if (isEqual(rt.gv(f, "target", (B = live(chain))), rt.sv(f, "target"))) {
-			return live(f.dot);
+	f.dot = (yield* parent_proc());
+	if (!(f.dot && rt.istype(this.target, T("/mob/living")) && this.target != this && this.target != this.summoner)) return f.dot;
+	this.cleardeletedchains();
+	for (chain of each(this.enemychains)) {
+		if ((B = chain).target == this.target) {
+			return f.dot;
 		}
 	}
-	rt.endFor(f, 0);
-	if (rt.gt(rt.len(f, rt.sv(f, "enemychains")), 2)) {
-		yield* g.call(f, P("/proc/qdel"), null, [(C = rt.op(f, "PickUnweighted", [1], [rt.sv(f, "enemychains")]))]);
-		(rt.modSrcVar(f, "enemychains", live(C), subtract));
+	if (rt.len(f, this.enemychains) > 2) {
+		yield* qdel((C = pick(this.enemychains)));
+		this.enemychains -= C;
 	}
-	rt.modSrcVar(f, "enemychains", (yield* g.callSrc(f, "Beam", [null, rt.sv(f, "target"), null, fmt("lightning＀", [(yield* g.call(f, P("/proc/rand"), null, [1, 12]))]), "time", 70, "maxdistance", 7, "beam_type", T("/obj/effect/ebeam/chain")], rt.Args.Named)), add);
+	this.enemychains += (yield* this.Beam(this.target, `lightning${rand(1, 12)}`, { time: 70, maxdistance: 7, beam_type: T("/obj/effect/ebeam/chain") }));
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/guardian/beam/proc/Destroy  (code/modules/mob/living/simple_animal/guardian/types/lightning.dm:37)  may sleep
+// lightning.dm:37
 rt.def("/mob/living/simple_animal/hostile/guardian/beam/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.srcCall(f, "removechains");
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* this.removechains();
+	return (yield* parent_proc());
 }, true);
 
-// /mob/living/simple_animal/hostile/guardian/beam/proc/Manifest  (code/modules/mob/living/simple_animal/guardian/types/lightning.dm:41)  may sleep
+// lightning.dm:41
 rt.def("/mob/living/simple_animal/hostile/guardian/beam/proc/Manifest", function* Manifest(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(live(f.dot))) return f.dot;
-	if (truthy(rt.sv(f, "summoner"))) {
-		rt.setSv(f, "summonerchain", (yield* g.callSrc(f, "Beam", [null, rt.sv(f, "summoner"), null, fmt("lightning＀", [(yield* g.call(f, P("/proc/rand"), null, [1, 12]))]), "time", 9.999999848243207e+30, "maxdistance", 9.999999848243207e+30, "beam_type", T("/obj/effect/ebeam/chain")], rt.Args.Named)));
+	f.dot = (yield* parent_proc());
+	if (!f.dot) return f.dot;
+	if (this.summoner) {
+		this.summonerchain = (yield* this.Beam(this.summoner, `lightning${rand(1, 12)}`, { time: 1e+31, maxdistance: 1e+31, beam_type: T("/obj/effect/ebeam/chain") }));
 	}
-	while (!isEqual(rt.sv(f, "loc"), rt.sv(f, "summoner"))) {
-		if (rt.gt(rt.sv(f, "successfulshocks"), 5)) {
-			rt.setSv(f, "successfulshocks", 0);
+	while (this.loc != this.summoner) {
+		if (this.successfulshocks > 5) {
+			this.successfulshocks = 0;
 		}
-		if (truthy((yield* g.srcCall(f, "shockallchains")))) {
-			rt.incSrcVar(f, "successfulshocks", 1, true);
+		if (yield* this.shockallchains()) {
+			this.successfulshocks++;
 		}
-		yield* g.call(f, P("/proc/sleep"), null, [3]);
+		yield* sleep(3);
 	}
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/guardian/beam/proc/Recall  (code/modules/mob/living/simple_animal/guardian/types/lightning.dm:53)  may sleep
+// lightning.dm:53
 rt.def("/mob/living/simple_animal/hostile/guardian/beam/proc/Recall", function* Recall(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(live(f.dot))) return f.dot;
-	yield* g.srcCall(f, "removechains");
+	f.dot = (yield* parent_proc());
+	if (!f.dot) return f.dot;
+	yield* this.removechains();
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/guardian/beam/proc/cleardeletedchains  (code/modules/mob/living/simple_animal/guardian/types/lightning.dm:58)
+// lightning.dm:58
 rt.def("/mob/living/simple_animal/hostile/guardian/beam/proc/cleardeletedchains", function cleardeletedchains(f: Frame) {
 	let chain: Value = null, cd: Value = null;
-	let $e: any;
-	f.vars = () => [chain, cd, $e];
-	if ((truthy(rt.sv(f, "summonerchain")) && (!truthy(rt.sv(f, "summonerchain")) || truthy(rt.fv(f, "gc_destroyed", rt.sv(f, "summonerchain")))))) {
-		rt.setSv(f, "summonerchain", null);
+	if (this.summonerchain && (!this.summonerchain || this.summonerchain.gc_destroyed)) {
+		this.summonerchain = null;
 	}
-	if (!truthy(rt.len(f, rt.sv(f, "enemychains")))) return f.dot;
-	chain = null;
-	rt.forList(f, 0, rt.sv(f, "enemychains"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		chain = $e;
-		cd = live(chain);
-		if ((!truthy(live(chain)) || (!truthy(live(cd)) || truthy(rt.fv(f, "gc_destroyed", live(cd)))))) {
-			(rt.modSrcVar(f, "enemychains", live(chain), subtract));
+	if (!rt.len(f, this.enemychains)) return f.dot;
+	for (chain of each(this.enemychains)) {
+		cd = chain;
+		if (!chain || !cd || cd.gc_destroyed) {
+			this.enemychains -= chain;
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/guardian/beam/proc/shockallchains  (code/modules/mob/living/simple_animal/guardian/types/lightning.dm:68)  may sleep
+// lightning.dm:68
 rt.def("/mob/living/simple_animal/hostile/guardian/beam/proc/shockallchains", function* shockallchains(f: Frame) {
 	let chain: Value = null;
-	let $e: any;
-	f.vars = () => [chain, $e];
 	f.dot = 0;
-	yield* g.srcCall(f, "cleardeletedchains");
-	if (truthy(rt.sv(f, "summoner"))) {
-		if (!truthy(rt.sv(f, "summonerchain"))) {
-			rt.setSv(f, "summonerchain", (yield* g.callSrc(f, "Beam", [null, rt.sv(f, "summoner"), null, fmt("lightning＀", [(yield* g.call(f, P("/proc/rand"), null, [1, 12]))]), "time", 9.999999848243207e+30, "maxdistance", 9.999999848243207e+30, "beam_type", T("/obj/effect/ebeam/chain")], rt.Args.Named)));
+	this.cleardeletedchains();
+	if (this.summoner) {
+		if (!this.summonerchain) {
+			this.summonerchain = (yield* this.Beam(this.summoner, `lightning${rand(1, 12)}`, { time: 1e+31, maxdistance: 1e+31, beam_type: T("/obj/effect/ebeam/chain") }));
 		}
-		f.dot = rt.modify(live(f.dot), (yield* g.srcCall(f, "chainshock", rt.sv(f, "summonerchain"))), add);
+		f.dot += (yield* this.chainshock(this.summonerchain));
 	}
-	if (!truthy(rt.len(f, rt.sv(f, "enemychains")))) return f.dot;
-	chain = null;
-	rt.forList(f, 0, rt.sv(f, "enemychains"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		chain = $e;
-		f.dot = rt.modify(live(f.dot), (yield* g.srcCall(f, "chainshock", live(chain))), add);
+	if (!rt.len(f, this.enemychains)) return f.dot;
+	for (chain of each(this.enemychains)) {
+		f.dot += (yield* this.chainshock(chain));
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/guardian/beam/proc/removechains  (code/modules/mob/living/simple_animal/guardian/types/lightning.dm:79)  may sleep
+// lightning.dm:79
 rt.def("/mob/living/simple_animal/hostile/guardian/beam/proc/removechains", function* removechains(f: Frame) {
 	let chain: Value = null;
-	let $e: any;
-	f.vars = () => [chain, $e];
-	if (truthy(rt.sv(f, "summonerchain"))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "summonerchain")]);
-		rt.setSv(f, "summonerchain", null);
+	if (this.summonerchain) {
+		yield* qdel(this.summonerchain);
+		this.summonerchain = null;
 	}
-	if (!truthy(rt.len(f, rt.sv(f, "enemychains")))) return f.dot;
-	chain = null;
-	rt.forList(f, 0, rt.sv(f, "enemychains"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		chain = $e;
-		yield* g.call(f, P("/proc/qdel"), null, [live(chain)]);
+	if (!rt.len(f, this.enemychains)) return f.dot;
+	for (chain of each(this.enemychains)) {
+		yield* qdel(chain);
 	}
-	rt.endFor(f, 0);
-	rt.setSv(f, "enemychains", rt.list());
+	this.enemychains = list();
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/guardian/beam/proc/chainshock  (code/modules/mob/living/simple_animal/guardian/types/lightning.dm:88)  may sleep
+// lightning.dm:88
 rt.def("/mob/living/simple_animal/hostile/guardian/beam/proc/chainshock", function* chainshock(f: Frame, B: Value) {
-	let turfs: Value = null, E: Value = null, chainpart: Value = null, _T: Value = null, TU: Value = null, turf: Value = null, _T_2: Value = null, L: Value = null, C: Value = null, H: Value = null;
-	let $e: any;
-	f.vars = () => [B, turfs, E, chainpart, _T, TU, turf, _T_2, L, C, H, $e];
+	let E: Value = null, chainpart: Value = null, _T: Value = null, TU: Value = null, turf: Value = null, _T_2: Value = null, L: Value = null, C: Value = null, H: Value = null;
 	f.dot = 0;
-	turfs = rt.list();
-	E = null;
-	rt.forList(f, 0, rt.fv(f, "elements", live(B)));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		E = $e;
-		if ((((truthy((chainpart = live(E))) && truthy(rt.fv(f, "x", live(chainpart)))) && truthy(rt.fv(f, "y", live(chainpart)))) && truthy(rt.fv(f, "z", live(chainpart))))) {
-			(turfs = rt.modify(live(turfs), (_T = (yield* g.call(f, P("/proc/get_turf_pixel"), null, [live(chainpart)]))), rt.bitOr));
-			if ((!isEqual(live(_T), rt.getStep(f, rt.fv(f, "origin", live(B)), 0)) && !isEqual(live(_T), rt.getStep(f, rt.fv(f, "target", live(B)), 0)))) {
+	let turfs: Value = list();
+	for (E of each(B.elements)) {
+		if ((chainpart = E) && chainpart.x && chainpart.y && chainpart.z) {
+			(turfs = rt.modify(turfs, (_T = get_turf_pixel(chainpart)), rt.bitOr));
+			if (_T != rt.getStep(f, B.origin, 0) && _T != rt.getStep(f, B.target, 0)) {
 				TU = null;
-				rt.forList(f, 1, (yield* g.call(f, P("/proc/circlerange"), null, [live(_T), 1])), T("/turf"));
-				while (($e = rt.next(f, 1)) !== undefined) {
-					TU = $e;
-					(turfs = rt.modify(live(turfs), live(TU), rt.bitOr));
+				for (TU of each(circlerange(_T, 1), T("/turf"))) {
+					(turfs = rt.modify(turfs, TU, rt.bitOr));
 				}
-				rt.endFor(f, 1);
 			}
 		}
 	}
-	rt.endFor(f, 0);
-	turf = null;
-	rt.forList(f, 0, live(turfs));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		turf = $e;
-		_T_2 = live(turf);
+	for (turf of each(turfs)) {
+		_T_2 = turf;
 		L = null;
-		rt.forList(f, 1, live(_T_2), T("/mob/living"));
-		while (($e = rt.next(f, 1)) !== undefined) {
-			L = $e;
-			if (((!isEqual(rt.fv(f, "stat", live(L)), 2) && !isEqual(live(L), live(f.src))) && !isEqual(live(L), rt.sv(f, "summoner")))) {
-				if (truthy((yield* g.srcCall(f, "hasmatchingsummoner", live(L))))) {
+		for (L of each(_T_2, T("/mob/living"))) {
+			if (L.stat != 2 && L != this && L != this.summoner) {
+				if (this.hasmatchingsummoner(L)) {
 					continue;
 				}
-				if (rt.gt(rt.sv(f, "successfulshocks"), 4)) {
-					if (truthy((rt.istype(live(L), T("/mob/living/carbon")) ? 1 : 0))) {
-						if (truthy((rt.istype((C = live(L)), T("/mob/living/carbon/human")) ? 1 : 0))) {
-							yield* g.callName(f, (H = live(C)), "electrocution_animation", [20]);
+				if (this.successfulshocks > 4) {
+					if (rt.istype(L, T("/mob/living/carbon"))) {
+						if (rt.istype((C = L), T("/mob/living/carbon/human"))) {
+							yield* (H = C).electrocution_animation(20);
 						}
-						rt.modField(f, live(C), "jitteriness", 1000, add);
-						yield* g.callName(f, live(C), "do_jitter_animation", [rt.sv(f, "jitteriness")]);
-						rt.modField(f, live(C), "stuttering", 1, add);
+						C.jitteriness += 1000;
+						C.do_jitter_animation(this.jitteriness);
+						C.stuttering += 1;
 						rt.spawnTail(f, 20, "/mob/living/simple_animal/hostile/guardian/beam/proc/chainshock: spawn at modules/mob/living/simple_animal/guardian/types/lightning.dm:112", B, turfs, E, chainpart, _T, TU, turf, _T_2, L, C, H);
 					}
-					yield* g.callName(f, live(L), "visible_message", [fmt("<span class='danger'>＀ was shocked by the lightning chain!</span>", [live(L)]), "<span class='userdanger'>You are shocked by the lightning chain!</span>", "<span class='italics'>You hear a heavy electrical crack.</span>"]);
+					L.visible_message(`<span class='danger'>${L} was shocked by the lightning chain!</span>`, "<span class='userdanger'>You are shocked by the lightning chain!</span>", "<span class='italics'>You hear a heavy electrical crack.</span>");
 				}
-				yield* g.callName(f, live(L), "adjustFireLoss", [1.2000000476837158]);
+				yield* L.adjustFireLoss(1.2);
 				f.dot = 1;
 			}
 		}
-		rt.endFor(f, 1);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
 // a spawn(20) body of /mob/living/simple_animal/hostile/guardian/beam/proc/chainshock, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/mob/living/simple_animal/hostile/guardian/beam/proc/chainshock: spawn at modules/mob/living/simple_animal/guardian/types/lightning.dm:112", function* (f: Frame, B: Value, turfs: Value, E: Value, chainpart: Value, _T: Value, TU: Value, turf: Value, _T_2: Value, L: Value, C: Value, H: Value) {
-	f.vars = () => [B, turfs, E, chainpart, _T, TU, turf, _T_2, L, C, H];
-	if (truthy(live(C))) {
-		rt.setFv(f, "jitteriness", live(C), (yield* g.call(f, P("/proc/max"), null, [subtract(rt.fv(f, "jitteriness", live(C)), 990), 10])));
+	if (C) {
+		C.jitteriness = max(C.jitteriness - 990, 10);
 	}
 	return null;
 });

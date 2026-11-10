@@ -1,31 +1,23 @@
-// From code/modules/mob/living/emote.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/emote.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, g } = rt;
 
 
-// /mob/living/proc/emote  (code/modules/mob/living/emote.dm:3)  may sleep
+// emote.dm:3
 rt.def("/mob/living/proc/emote", function* emote(f: Frame, act: Value, m_type: Value, message: Value) {
-	let param: Value = null, custom_param: Value = null, E: Value = null;
-	f.vars = () => [act, m_type, message, param, custom_param, E];
-	if (live(m_type) === null) {
-		m_type = null;
+	let custom_param: Value = null, E: Value = null;
+	act = lowertext(act);
+	let param: Value = message;
+	if (custom_param = findchar(act, " ")) {
+		param = copytext(act, custom_param + 1, rt.length(act) + 1);
+		act = copytext(act, 1, custom_param);
 	}
-	if (live(message) === null) {
-		message = null;
+	if (!(E = rt.index(GLOB.emote_list, act))) {
+		to_chat(this, `<span class='notice'>Unusable emote '${act}'. Say *help for a list.</span>`);
+		return f.dot;
 	}
-	act = (yield* g.call(f, P("/proc/lowertext"), null, [live(act)]));
-	param = live(message);
-	if (truthy((custom_param = (yield* g.call(f, P("/proc/findchar"), null, [live(act), " "]))))) {
-		param = (yield* g.call(f, P("/proc/copytext"), null, [live(act), add(live(custom_param), 1), add(rt.length(live(act)), 1)]));
-		act = (yield* g.call(f, P("/proc/copytext"), null, [live(act), 1, live(custom_param)]));
-	}
-	E = null;
-	if (!truthy((E = rt.index(rt.gl("emote_list"), live(act))))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), fmt("<span class='notice'>Unusable emote '＀'. Say *help for a list.</span>", [live(act)])]);
-		return live(f.dot);
-	}
-	yield* g.callName(f, live(E), "run_emote", [live(f.src), live(param), live(m_type)]);
+	yield* E.run_emote(this, param, m_type);
 	return f.dot;
 }, true);
 
@@ -34,14 +26,12 @@ rt.type(436, "/datum/emote/living", "/datum/emote", {
 	mob_type_blacklist_typecache: null,
 });
 
-// /datum/emote/living/proc/<init>  (code/modules/mob/living/emote.dm:19)
+// emote.dm:19
 rt.def("/datum/emote/living/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "mob_type_allowed_typecache", rt.list(T("/mob/living")));
-	$0 = $0;
-	rt.setSv(f, "mob_type_blacklist_typecache", rt.list(T("/mob/living/simple_animal/slime"), T("/mob/living/brain")));
+	parent_proc();
+	this.mob_type_allowed_typecache = list(T("/mob/living"));
+
+	this.mob_type_blacklist_typecache = list(T("/mob/living/simple_animal/slime"), T("/mob/living/brain"));
 	return f.dot;
 });
 
@@ -52,15 +42,14 @@ rt.type(443, "/datum/emote/living/collapse", "/datum/emote/living", {
 	emote_type: 2,
 });
 
-// /datum/emote/living/collapse/proc/run_emote  (code/modules/mob/living/emote.dm:64)  may sleep
-rt.def("/datum/emote/living/collapse/proc/run_emote", function* run_emote(f: Frame) {
+// emote.dm:64
+rt.def("/datum/emote/living/collapse/proc/run_emote", function* run_emote(f: Frame, user: Value, params: Value) {
 	let L: Value = null;
-	f.vars = () => [L];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!(truthy(live(f.dot)) && truthy((rt.istype(live(f.args[0]), T("/mob/living")) ? 1 : 0)))) return f.dot;
-	yield* g.callName(f, (L = live(f.args[0])), "Unconscious", [40]);
+	f.dot = (yield* parent_proc());
+	if (!(f.dot && rt.istype(user, T("/mob/living")))) return f.dot;
+	yield* (L = user).Unconscious(40);
 	return f.dot;
-}, true, { args: ["user", "params"] });
+}, true);
 
 rt.type(446, "/datum/emote/living/deathgasp", "/datum/emote/living", {
 	key: "deathgasp",
@@ -75,19 +64,18 @@ rt.type(446, "/datum/emote/living/deathgasp", "/datum/emote/living", {
 	stat_allowed: 1,
 });
 
-// /datum/emote/living/deathgasp/proc/run_emote  (code/modules/mob/living/emote.dm:94)  may sleep
-rt.def("/datum/emote/living/deathgasp/proc/run_emote", function* run_emote(f: Frame) {
+// emote.dm:94
+rt.def("/datum/emote/living/deathgasp/proc/run_emote", function* run_emote(f: Frame, user: Value, params: Value) {
 	let S: Value = null;
-	f.vars = () => [S];
-	if ((truthy((rt.istype((S = live(f.args[0])), T("/mob/living/simple_animal")) ? 1 : 0)) && truthy(rt.fv(f, "deathmessage", live(S))))) {
-		rt.setSv(f, "message_simple", rt.fv(f, "deathmessage", live(S)));
+	if (rt.istype((S = user), T("/mob/living/simple_animal")) && S.deathmessage) {
+		this.message_simple = S.deathmessage;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "message_simple", rt.initial(f, live(f.src), "message_simple"));
-	if (!(truthy(live(f.dot)) && truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon/alien/humanoid")) ? 1 : 0)))) return f.dot;
-	yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.args[0])), rt.rsc("sound/voice/hiss6.ogg"), 80, 1, 1]);
+	f.dot = (yield* parent_proc());
+	this.message_simple = rt.initial(f, this, "message_simple");
+	if (!(f.dot && rt.istype(user, T("/mob/living/carbon/alien/humanoid")))) return f.dot;
+	playsound(user.loc, rt.rsc("sound/voice/hiss6.ogg"), 80, 1, 1);
 	return f.dot;
-}, true, { args: ["user", "params"] });
+}, true);
 
 rt.type(448, "/datum/emote/living/faint", "/datum/emote/living", {
 	key: "faint",
@@ -95,15 +83,14 @@ rt.type(448, "/datum/emote/living/faint", "/datum/emote/living", {
 	message: "faints.",
 });
 
-// /datum/emote/living/faint/proc/run_emote  (code/modules/mob/living/emote.dm:113)  may sleep
-rt.def("/datum/emote/living/faint/proc/run_emote", function* run_emote(f: Frame) {
+// emote.dm:113
+rt.def("/datum/emote/living/faint/proc/run_emote", function* run_emote(f: Frame, user: Value, params: Value) {
 	let L: Value = null;
-	f.vars = () => [L];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!(truthy(live(f.dot)) && truthy((rt.istype(live(f.args[0]), T("/mob/living")) ? 1 : 0)))) return f.dot;
-	yield* g.callName(f, (L = live(f.args[0])), "SetSleeping", [200]);
+	f.dot = (yield* parent_proc());
+	if (!(f.dot && rt.istype(user, T("/mob/living")))) return f.dot;
+	yield* (L = user).SetSleeping(200);
 	return f.dot;
-}, true, { args: ["user", "params"] });
+}, true);
 
 rt.type(449, "/datum/emote/living/flap", "/datum/emote/living", {
 	wing_time: 20,
@@ -112,31 +99,29 @@ rt.type(449, "/datum/emote/living/flap", "/datum/emote/living", {
 	message: "flaps their wings.",
 });
 
-// /datum/emote/living/flap/proc/run_emote  (code/modules/mob/living/emote.dm:125)  may sleep
-rt.def("/datum/emote/living/flap/proc/run_emote", function* run_emote(f: Frame) {
-	let H: Value = null, open: Value = null;
-	let $0: any, $1: any;
-	f.vars = () => [H, open, $0, $1];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!(truthy(live(f.dot)) && truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon/human")) ? 1 : 0)))) return f.dot;
-	H = live(f.args[0]);
-	open = 0;
-	if (isEqual(rt.index(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "wings"), "None")) return f.dot;
-	if (truthy((rt.isIn(f, "wingsopen", rt.gv(f, "mutant_bodyparts", rt.gv(f, "species", rt.fv(f, "dna", live(H))))) ? 1 : 0))) {
+// emote.dm:125
+rt.def("/datum/emote/living/flap/proc/run_emote", function* run_emote(f: Frame, user: Value, params: Value) {
+	let $1: any;
+	f.dot = (yield* parent_proc());
+	if (!(f.dot && rt.istype(user, T("/mob/living/carbon/human")))) return f.dot;
+	let H: Value = user;
+	let open: Value = 0;
+	if (rt.index(H.dna.features, "wings") == "None") return f.dot;
+	if (rt.isIn(f, "wingsopen", H.dna.species.mutant_bodyparts)) {
 		open = 1;
-		yield* g.callName(f, live(H), "CloseWings", []);
+		yield* H.CloseWings();
 	} else {
-		yield* g.callName(f, live(H), "OpenWings", []);
+		yield* H.OpenWings();
 	}
-	$0 = live(H);
-	if (truthy(live(open))) {
+	let $0: any = H;
+	if (open) {
 		$1 = P("/mob/living/carbon/human/proc/OpenWings");
 	} else {
 		$1 = P("/mob/living/carbon/human/proc/CloseWings");
 	}
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [$0, $1])), rt.sv(f, "wing_time")]);
+	yield* addtimer((yield* new_(T("/datum/callback"), $0, $1)), this.wing_time);
 	return f.dot;
-}, true, { args: ["user", "params"] });
+}, true);
 
 rt.type(451, "/datum/emote/living/flip", "/datum/emote/living", {
 	key: "flip",
@@ -144,13 +129,13 @@ rt.type(451, "/datum/emote/living/flip", "/datum/emote/living", {
 	restraint_check: 1,
 });
 
-// /datum/emote/living/flip/proc/run_emote  (code/modules/mob/living/emote.dm:149)  may sleep
-rt.def("/datum/emote/living/flip/proc/run_emote", function* run_emote(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (truthy(live(f.dot))) return f.dot;
-	yield* g.callName(f, live(f.args[0]), "SpinAnimation", [7, 1]);
+// emote.dm:149
+rt.def("/datum/emote/living/flip/proc/run_emote", function* run_emote(f: Frame, user: Value, params: Value) {
+	f.dot = (yield* parent_proc());
+	if (f.dot) return f.dot;
+	user.SpinAnimation(7, 1);
 	return f.dot;
-}, true, { args: ["user", "params"] });
+}, true);
 
 rt.type(481, "/datum/emote/living/surrender", "/datum/emote/living", {
 	key: "surrender",
@@ -159,15 +144,14 @@ rt.type(481, "/datum/emote/living/surrender", "/datum/emote/living", {
 	emote_type: 2,
 });
 
-// /datum/emote/living/surrender/proc/run_emote  (code/modules/mob/living/emote.dm:333)  may sleep
-rt.def("/datum/emote/living/surrender/proc/run_emote", function* run_emote(f: Frame) {
+// emote.dm:333
+rt.def("/datum/emote/living/surrender/proc/run_emote", function* run_emote(f: Frame, user: Value, params: Value) {
 	let L: Value = null;
-	f.vars = () => [L];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!(truthy(live(f.dot)) && truthy((rt.istype(live(f.args[0]), T("/mob/living")) ? 1 : 0)))) return f.dot;
-	yield* g.callName(f, (L = live(f.args[0])), "Knockdown", [200]);
+	f.dot = (yield* parent_proc());
+	if (!(f.dot && rt.istype(user, T("/mob/living")))) return f.dot;
+	yield* (L = user).Knockdown(200);
 	return f.dot;
-}, true, { args: ["user", "params"] });
+}, true);
 
 rt.type(490, "/datum/emote/living/custom", "/datum/emote/living", {
 	key: "me",
@@ -175,69 +159,57 @@ rt.type(490, "/datum/emote/living/custom", "/datum/emote/living", {
 	message: null,
 });
 
-// /datum/emote/living/custom/proc/check_invalid  (code/modules/mob/living/emote.dm:386)
+// emote.dm:386
 rt.def("/datum/emote/living/custom/proc/check_invalid", function check_invalid(f: Frame, user: Value, input: Value) {
 	f.dot = 1;
-	if (isEqual(rt.call(f, P("/proc/copytext"), null, [live(input), 1, 5]), "says")) {
-		rt.call(f, P("/proc/to_chat"), null, [live(user), "<span class='danger'>Invalid emote.</span>"]);
+	if (copytext(input, 1, 5) == "says") {
+		to_chat(user, "<span class='danger'>Invalid emote.</span>");
+	} else if (copytext(input, 1, 9) == "exclaims") {
+		to_chat(user, "<span class='danger'>Invalid emote.</span>");
+	} else if (copytext(input, 1, 6) == "yells") {
+		to_chat(user, "<span class='danger'>Invalid emote.</span>");
+	} else if (copytext(input, 1, 5) == "asks") {
+		to_chat(user, "<span class='danger'>Invalid emote.</span>");
 	} else {
-		if (isEqual(rt.call(f, P("/proc/copytext"), null, [live(input), 1, 9]), "exclaims")) {
-			rt.call(f, P("/proc/to_chat"), null, [live(user), "<span class='danger'>Invalid emote.</span>"]);
-		} else {
-			if (isEqual(rt.call(f, P("/proc/copytext"), null, [live(input), 1, 6]), "yells")) {
-				rt.call(f, P("/proc/to_chat"), null, [live(user), "<span class='danger'>Invalid emote.</span>"]);
-			} else {
-				if (isEqual(rt.call(f, P("/proc/copytext"), null, [live(input), 1, 5]), "asks")) {
-					rt.call(f, P("/proc/to_chat"), null, [live(user), "<span class='danger'>Invalid emote.</span>"]);
-				} else {
-					f.dot = 0;
-				}
-			}
-		}
+		f.dot = 0;
 	}
 	return f.dot;
 });
 
-// /datum/emote/living/custom/proc/run_emote  (code/modules/mob/living/emote.dm:398)  may sleep
+// emote.dm:398
 rt.def("/datum/emote/living/custom/proc/run_emote", function* run_emote(f: Frame) {
 	let custom_emote: Value = null, type: Value = null;
-	let $0: any;
-	f.vars = () => [custom_emote, type, $0];
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = null;
 	}
-	if (truthy((yield* g.call(f, P("/proc/jobban_isbanned"), null, [live(f.args[0]), "emote"])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "You cannot send custom emotes (banned)."]);
+	if (jobban_isbanned(f.args[0], "emote")) {
+		to_chat(f.args[0], "You cannot send custom emotes (banned).");
 		return 0;
-	} else {
-		if ((truthy(rt.fv(f, "client", live(f.args[0]))) && truthy(rt.bitAnd(rt.gv(f, "muted", rt.gv(f, "prefs", rt.fv(f, "client", live(f.args[0])))), 1)))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "You cannot send IC messages (muted)."]);
-			return 0;
-		} else {
-			if (!truthy(live(f.args[1]))) {
-				if ((truthy((custom_emote = (yield* g.call(f, P("/proc/copytext"), null, [(yield* g.call(f, P("/proc/sanitize"), null, [(yield* g.op(f, "Prompt", [3], [null, null, null, "Choose an emote to display.", null]))])), 1, 1024])))) && !truthy((yield* g.srcCall(f, "check_invalid", live(f.args[0]), live(custom_emote)))))) {
-					$0 = (type = (yield* g.op(f, "Prompt", [1], [null, null, null, "Is this a visible or hearable emote?", rt.list("Visible", "Hearable")])));
-					if ($0 === "Visible") {
-						rt.setSv(f, "emote_type", 1);
-					} else if ($0 === "Hearable") {
-						rt.setSv(f, "emote_type", 2);
-					} else {
-						yield* g.call(f, P("/proc/alert"), null, ["Unable to use this emote, must be either hearable or visible."]);
-						return live(f.dot);
-					}
-					rt.setSv(f, "message", live(custom_emote));
-				}
+	} else if (f.args[0].client && rt.bitAnd(f.args[0].client.prefs.muted, 1)) {
+		to_chat(f.args[0], "You cannot send IC messages (muted).");
+		return 0;
+	} else if (!f.args[1]) {
+		if ((custom_emote = copytext(sanitize((yield* g.op(f, "Prompt", [3], [null, null, null, "Choose an emote to display.", null]))), 1, 1024)) && !this.check_invalid(f.args[0], custom_emote)) {
+			const subject = (type = (yield* g.op(f, "Prompt", [1], [null, null, null, "Is this a visible or hearable emote?", list("Visible", "Hearable")])));
+			if (subject === "Visible") {
+				this.emote_type = 1;
+			} else if (subject === "Hearable") {
+				this.emote_type = EMOTE_AUDIBLE;
 			} else {
-				rt.setSv(f, "message", live(f.args[1]));
-				if (truthy(live(f.args[2]))) {
-					rt.setSv(f, "emote_type", live(f.args[2]));
-				}
+				yield* alert("Unable to use this emote, must be either hearable or visible.");
+				return f.dot;
 			}
+			rt.setSv(f, "message", custom_emote);
+		}
+	} else {
+		rt.setSv(f, "message", f.args[1]);
+		if (f.args[2]) {
+			this.emote_type = f.args[2];
 		}
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	f.dot = (yield* parent_proc());
 	rt.setSv(f, "message", null);
-	rt.setSv(f, "emote_type", 1);
+	this.emote_type = EMOTE_VISIBLE;
 	return f.dot;
 }, true, { args: ["user", "params", "type_override"] });
 
@@ -245,41 +217,30 @@ rt.type(491, "/datum/emote/living/help", "/datum/emote/living", {
 	key: "help",
 });
 
-// /datum/emote/living/help/proc/run_emote  (code/modules/mob/living/emote.dm:432)  may sleep
+// emote.dm:432
 rt.def("/datum/emote/living/help/proc/run_emote", function* run_emote(f: Frame, user: Value, params: Value) {
-	let keys: Value = null, message: Value = null, E: Value = null, emote_list: Value = null, e: Value = null, emote: Value = null;
-	let $e: any;
-	f.vars = () => [user, params, keys, message, E, emote_list, e, emote, $e];
-	keys = rt.list();
-	message = rt.list("Available emotes, you can use them with say \"*emote\": ");
-	E = null;
-	emote_list = rt.gl("emote_list");
-	e = null;
-	rt.forList(f, 0, live(emote_list));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		e = $e;
-		if (truthy((rt.isIn(f, live(e), live(keys)) ? 1 : 0))) {
+	let E: Value = null, e: Value = null, emote: Value = null;
+	let keys: Value = list();
+	let message: Value = list("Available emotes, you can use them with say \"*emote\": ");
+	let emote_list: Value = GLOB.emote_list;
+	for (e of each(emote_list)) {
+		if (rt.isIn(f, e, keys)) {
 			continue;
 		}
-		if (truthy((yield* g.callName(f, (E = rt.index(live(emote_list), live(e))), "can_run_emote", [live(user), 1])))) {
-			keys = rt.modify(live(keys), rt.fv(f, "key", live(E)), add);
+		if ((E = rt.index(emote_list, e)).can_run_emote(user, 1)) {
+			keys += E.key;
 		}
 	}
-	rt.endFor(f, 0);
-	keys = (yield* g.call(f, P("/proc/sortList"), null, [live(keys)]));
-	emote = null;
-	rt.forList(f, 0, live(keys));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		emote = $e;
-		if (rt.gt(rt.length(live(message)), 1)) {
-			message = rt.modify(live(message), fmt(", ＀", [live(emote)]), add);
+	keys = (yield* sortList(keys));
+	for (emote of each(keys)) {
+		if (rt.length(message) > 1) {
+			message += `, ${emote}`;
 		} else {
-			message = rt.modify(live(message), fmt("＀", [live(emote)]), add);
+			message += `${emote}`;
 		}
 	}
-	rt.endFor(f, 0);
-	message = (yield* g.call(f, P("/proc/jointext"), null, [(message = rt.modify(live(message), ".", add)), ""]));
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), live(message)]);
+	message = jointext((message += "."), "");
+	to_chat(user, message);
 	return f.dot;
 }, true);
 
@@ -289,27 +250,21 @@ rt.type(492, "/datum/emote/living/spin", "/datum/emote/living", {
 	message: "spins around dizzily!",
 });
 
-// /datum/emote/living/spin/proc/run_emote  (code/modules/mob/living/emote.dm:471)  may sleep
-rt.def("/datum/emote/living/spin/proc/run_emote", function* run_emote(f: Frame) {
+// emote.dm:471
+rt.def("/datum/emote/living/spin/proc/run_emote", function* run_emote(f: Frame, user: Value) {
 	let R: Value = null, M: Value = null;
-	let $e: any;
-	f.vars = () => [R, M, $e];
-	yield* g.callName(f, live(f.args[0]), "spin", [20, 1]);
-	if (truthy((rt.istype(live(f.args[0]), T("/mob/living/silicon/robot")) ? 1 : 0))) {
-		if (truthy(rt.gv(f, "buckled_mobs", (R = live(f.args[0]))))) {
-			M = null;
-			rt.forList(f, 0, rt.fv(f, "buckled_mobs", live(R)), T("/mob"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				M = $e;
-				if (truthy(rt.fv(f, "riding_datum", live(R)))) {
-					yield* g.callName(f, rt.fv(f, "riding_datum", live(R)), "force_dismount", [live(M)]);
+	yield* user.spin(20, 1);
+	if (rt.istype(user, T("/mob/living/silicon/robot"))) {
+		if ((R = user).buckled_mobs) {
+			for (M of each(R.buckled_mobs, T("/mob"))) {
+				if (R.riding_datum) {
+					yield* R.riding_datum.force_dismount(M);
 				} else {
-					yield* g.callName(f, live(R), "unbuckle_all_mobs", []);
+					yield* R.unbuckle_all_mobs();
 				}
 			}
-			rt.endFor(f, 0);
 		}
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);

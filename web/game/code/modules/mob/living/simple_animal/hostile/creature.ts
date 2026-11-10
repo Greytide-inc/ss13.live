@@ -1,7 +1,7 @@
-// From code/modules/mob/living/simple_animal/hostile/creature.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/simple_animal/hostile/creature.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(4955, "/mob/living/simple_animal/hostile/creature", "/mob/living/simple_animal/hostile", {
@@ -24,14 +24,12 @@ rt.type(4955, "/mob/living/simple_animal/hostile/creature", "/mob/living/simple_
 	minbodytemp: 0,
 });
 
-// /mob/living/simple_animal/hostile/creature/proc/<init>  (code/modules/mob/living/simple_animal/hostile/creature.dm:14)
+// creature.dm:14
 rt.def("/mob/living/simple_animal/hostile/creature/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "faction", rt.list("creature"));
-	$0 = $0;
-	rt.setSv(f, "speak_emote", rt.list("screams"));
-	rt.setSv(f, "atmos_requirements", rt.alist(f, ["min_oxy", 0, "max_oxy", 0, "min_tox", 0, "max_tox", 0, "min_co2", 0, "max_co2", 0, "min_n2", 0, "max_n2", 0]));
+	parent_proc();
+	this.faction = list("creature");
+
+	this.speak_emote = list("screams");
+	this.atmos_requirements = rt.alist(f, ["min_oxy", 0, "max_oxy", 0, "min_tox", 0, "max_tox", 0, "min_co2", 0, "max_co2", 0, "min_n2", 0, "max_n2", 0]);
 	return f.dot;
 });

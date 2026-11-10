@@ -1,7 +1,7 @@
-// From code/datums/diseases/advance/symptoms/beard.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/datums/diseases/advance/symptoms/beard.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(982, "/datum/symptom/beard", "/datum/symptom", {
@@ -14,36 +14,33 @@ rt.type(982, "/datum/symptom/beard", "/datum/symptom", {
 	severity: 1,
 });
 
-// /datum/symptom/beard/proc/Activate  (code/datums/diseases/advance/symptoms/beard.dm:28)  may sleep
-rt.def("/datum/symptom/beard/proc/Activate", function* Activate(f: Frame) {
+// beard.dm:28
+rt.def("/datum/symptom/beard/proc/Activate", function* Activate(f: Frame, A: Value) {
 	let M: Value = null, H: Value = null;
-	let $0: any;
-	f.vars = () => [M, H, $0];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.op(f, "Prob", [], [rt.gl("SYMPTOM_ACTIVATION_PROB")]))) {
-		if (truthy((rt.istype((M = rt.fv(f, "affected_mob", live(f.args[0]))), T("/mob/living/carbon/human")) ? 1 : 0))) {
-			H = live(M);
-			$0 = rt.fv(f, "stage", live(f.args[0]));
-			if ($0 === 1 || $0 === 2) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(H), "<span class='warning'>Your chin itches.</span>"]);
-				if (isEqual(rt.fv(f, "facial_hair_style", live(H)), "Shaved")) {
-					rt.setFv(f, "facial_hair_style", live(H), "Jensen Beard");
-					yield* g.callName(f, live(H), "update_hair", []);
+	yield* parent_proc();
+	if (prob(GLOB.SYMPTOM_ACTIVATION_PROB)) {
+		if (rt.istype((M = A.affected_mob), T("/mob/living/carbon/human"))) {
+			H = M;
+			if (A.stage === 1 || A.stage === 2) {
+				to_chat(H, "<span class='warning'>Your chin itches.</span>");
+				if (H.facial_hair_style == "Shaved") {
+					H.facial_hair_style = "Jensen Beard";
+					yield* H.update_hair();
 				}
-			} else if ($0 === 3 || $0 === 4) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(H), "<span class='warning'>You feel tough.</span>"]);
-				if (((!isEqual(rt.fv(f, "facial_hair_style", live(H)), "Dwarf Beard") && !isEqual(rt.fv(f, "facial_hair_style", live(H)), "Very Long Beard")) && !isEqual(rt.fv(f, "facial_hair_style", live(H)), "Full Beard"))) {
-					rt.setFv(f, "facial_hair_style", live(H), "Full Beard");
-					yield* g.callName(f, live(H), "update_hair", []);
+			} else if (A.stage === 3 || A.stage === 4) {
+				to_chat(H, "<span class='warning'>You feel tough.</span>");
+				if (H.facial_hair_style != "Dwarf Beard" && H.facial_hair_style != "Very Long Beard" && H.facial_hair_style != "Full Beard") {
+					H.facial_hair_style = "Full Beard";
+					yield* H.update_hair();
 				}
 			} else {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(H), "<span class='warning'>You feel manly!</span>"]);
-				if ((!isEqual(rt.fv(f, "facial_hair_style", live(H)), "Dwarf Beard") && !isEqual(rt.fv(f, "facial_hair_style", live(H)), "Very Long Beard"))) {
-					rt.setFv(f, "facial_hair_style", live(H), rt.op(f, "PickUnweighted", [2], ["Dwarf Beard", "Very Long Beard"]));
-					yield* g.callName(f, live(H), "update_hair", []);
+				to_chat(H, "<span class='warning'>You feel manly!</span>");
+				if (H.facial_hair_style != "Dwarf Beard" && H.facial_hair_style != "Very Long Beard") {
+					H.facial_hair_style = pick("Dwarf Beard", "Very Long Beard");
+					yield* H.update_hair();
 				}
 			}
 		}
 	}
-	return live(f.dot);
-}, true, { args: ["A"] });
+	return f.dot;
+}, true);

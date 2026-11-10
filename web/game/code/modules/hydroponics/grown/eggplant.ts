@@ -1,7 +1,7 @@
-// From code/modules/hydroponics/grown/eggplant.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/hydroponics/grown/eggplant.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(10027, "/obj/item/seeds/eggplant", "/obj/item/seeds", {
@@ -21,15 +21,13 @@ rt.type(10027, "/obj/item/seeds/eggplant", "/obj/item/seeds", {
 	mutatelist: null,
 });
 
-// /obj/item/seeds/eggplant/proc/<init>  (code/modules/hydroponics/grown/eggplant.dm:14)
+// eggplant.dm:14
 rt.def("/obj/item/seeds/eggplant/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "genes", rt.list(T("/datum/plant_gene/trait/repeated_harvest")));
-	rt.setSv(f, "reagents_add", rt.alist(f, ["vitamin", 0.03999999910593033, "nutriment", 0.10000000149011612]));
-	$0 = $0;
-	rt.setSv(f, "mutatelist", rt.list(T("/obj/item/seeds/eggplant/eggy")));
+	parent_proc();
+	this.genes = list(T("/datum/plant_gene/trait/repeated_harvest"));
+	this.reagents_add = rt.alist(f, ["vitamin", 0.04, "nutriment", 0.1]);
+
+	this.mutatelist = list(T("/obj/item/seeds/eggplant/eggy"));
 	return f.dot;
 });
 
@@ -44,12 +42,10 @@ rt.type(10028, "/obj/item/seeds/eggplant/eggy", "/obj/item/seeds/eggplant", {
 	icon_state: "seed-eggy",
 });
 
-// /obj/item/seeds/eggplant/eggy/proc/<init>  (code/modules/hydroponics/grown/eggplant.dm:34)
+// eggplant.dm:34
 rt.def("/obj/item/seeds/eggplant/eggy/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "mutatelist", rt.list());
-	rt.setSv(f, "reagents_add", rt.alist(f, ["nutriment", 0.10000000149011612]));
+	parent_proc();
+	this.mutatelist = list();
+	this.reagents_add = rt.alist(f, ["nutriment", 0.1]);
 	return f.dot;
 });

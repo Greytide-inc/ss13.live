@@ -1,5 +1,5 @@
 // Types declared in code/game/mecha that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(4552, "/turf/open/floor/mech_bay_recharge_floor/airless", "/turf/open/floor/mech_bay_recharge_floor", {
 	icon_state: "recharge_floor_asteroid",

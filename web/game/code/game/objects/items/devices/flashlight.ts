@@ -1,7 +1,7 @@
-// From code/game/objects/items/devices/flashlight.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/devices/flashlight.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(9121, "/obj/item/device/flashlight", "/obj/item/device", {
@@ -20,253 +20,192 @@ rt.type(9121, "/obj/item/device/flashlight", "/obj/item/device", {
 	actions_types: null,
 });
 
-// /obj/item/device/flashlight/proc/<init>  (code/game/objects/items/devices/flashlight.dm:10)
+// flashlight.dm:10
 rt.def("/obj/item/device/flashlight/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 50, "$glass", 20]));
-	$0 = $0;
-	rt.setSv(f, "actions_types", rt.list(T("/datum/action/item_action/toggle_light")));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 50, "$glass", 20]);
+
+	this.actions_types = list(T("/datum/action/item_action/toggle_light"));
 	return f.dot;
 });
 
-// /obj/item/device/flashlight/proc/Initialize  (code/game/objects/items/devices/flashlight.dm:17)  may sleep
+// flashlight.dm:17
 rt.def("/obj/item/device/flashlight/proc/Initialize", function* Initialize(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "update_brightness");
+	yield* parent_proc();
+	this.update_brightness();
 	return f.dot;
 }, true);
 
-// /obj/item/device/flashlight/proc/update_brightness  (code/game/objects/items/devices/flashlight.dm:22)
+// flashlight.dm:22
 rt.def("/obj/item/device/flashlight/proc/update_brightness", function update_brightness(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (live(user) === null) {
-		user = null;
-	}
-	if (truthy(rt.sv(f, "on"))) {
-		rt.setSv(f, "icon_state", fmt("＀-on", [rt.initial(f, live(f.src), "icon_state")]));
-		if (truthy(rt.sv(f, "flashlight_power"))) {
-			rt.callSrc(f, "set_light", ["l_range", rt.sv(f, "brightness_on"), "l_power", rt.sv(f, "flashlight_power")], rt.Args.Named);
+	if (this.on) {
+		this.icon_state = `${rt.initial(f, this, "icon_state")}-on`;
+		if (this.flashlight_power) {
+			this.set_light({ l_range: this.brightness_on, l_power: this.flashlight_power });
 		} else {
-			rt.callSrc(f, "set_light", [rt.sv(f, "brightness_on")]);
+			this.set_light(this.brightness_on);
 		}
 	} else {
-		rt.setSv(f, "icon_state", rt.initial(f, live(f.src), "icon_state"));
-		rt.callSrc(f, "set_light", [0]);
+		this.icon_state = rt.initial(f, this, "icon_state");
+		this.set_light(0);
 	}
 	return f.dot;
 });
 
-// /obj/item/device/flashlight/proc/attack_self  (code/game/objects/items/devices/flashlight.dm:32)  may sleep
+// flashlight.dm:32
 rt.def("/obj/item/device/flashlight/proc/attack_self", function* attack_self(f: Frame, user: Value) {
 	let X: Value = null, A: Value = null;
-	let $e: any;
-	f.vars = () => [user, X, A, $e];
-	rt.setSv(f, "on", (!truthy(rt.sv(f, "on")) ? 1 : 0));
-	yield* g.srcCall(f, "update_brightness", live(user));
-	X = null;
-	rt.forList(f, 0, rt.sv(f, "actions"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		X = $e;
-		yield* g.callName(f, (A = live(X)), "UpdateButtonIcon", []);
+	this.on = (!this.on ? 1 : 0);
+	this.update_brightness(user);
+	for (X of each(this.actions)) {
+		yield* (A = X).UpdateButtonIcon();
 	}
-	rt.endFor(f, 0);
 	return 1;
 }, true);
 
-// /obj/item/device/flashlight/proc/suicide_act  (code/game/objects/items/devices/flashlight.dm:40)
+// flashlight.dm:40
 rt.def("/obj/item/device/flashlight/proc/suicide_act", function suicide_act(f: Frame, user: Value) {
-	rt.callName(f, live(user), "visible_message", [fmt("<span class='suicide'>＀ is putting ＀ close to ＀ eyes and turning it on! It looks like ＀ trying to commit suicide!</span>", [live(user), live(f.src), rt.callName(f, live(user), "p_their", []), rt.callName(f, live(user), "p_theyre", [])])]);
+	user.visible_message(`<span class='suicide'>${user} is putting ${this} close to ${user.p_their()} eyes and turning it on! It looks like ${user.p_theyre()} trying to commit suicide!</span>`);
 	return 2;
 });
 
-// /obj/item/device/flashlight/proc/attack  (code/game/objects/items/devices/flashlight.dm:46)  may sleep
-rt.def("/obj/item/device/flashlight/proc/attack", function* attack(f: Frame) {
+// flashlight.dm:46
+rt.def("/obj/item/device/flashlight/proc/attack", function* attack(f: Frame, M: Value, user: Value) {
 	let E: Value = null, their: Value = null, mouth_organs: Value = null, O: Value = null, organ_list: Value = null, organ_count: Value = null, I: Value = null, O_5: Value = null, pill_count: Value = null, AP: Value = null, can_use_mirror: Value = null, mirror: Value = null;
-	let $0: any, $1: any, $2: any, $3: any, $e: any;
-	f.vars = () => [E, their, mouth_organs, O, organ_list, organ_count, I, O_5, pill_count, AP, can_use_mirror, mirror, $0, $1, $2, $3, $e];
-	yield* g.srcCall(f, "add_fingerprint", live(f.args[1]));
-	if (truthy((rt.isIn(f, (((rt.istype(live(f.args[0]), T("/mob/living/carbon")) ? 1 : 0) && rt.sv(f, "on")) && rt.fv(f, "zone_selected", live(f.args[1]))), rt.list("eyes", "mouth")) ? 1 : 0))) {
-		if (((truthy(rt.bitAnd(rt.fv(f, "disabilities", live(f.args[1])), 256)) || rt.ge((yield* g.callName(f, live(f.args[1]), "getBrainLoss", [])), 60)) && truthy(rt.op(f, "Prob", [], [50])))) {
-			return (yield* g.callSuper(f, [], rt.Args.Same));
+	let $0: any, $1: any, $e: any;
+	yield* this.add_fingerprint(user);
+	if (rt.isIn(f, (((rt.istype(M, T("/mob/living/carbon")) ? 1 : 0) && this.on) && user.zone_selected), list("eyes", "mouth"))) {
+		if ((rt.bitAnd(user.disabilities, 256) || user.getBrainLoss() >= 60) && prob(50)) {
+			return (yield* parent_proc());
 		}
-		if (!truthy((yield* g.callName(f, live(f.args[1]), "IsAdvancedToolUser", [])))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You don't have the dexterity to do this!</span>"]);
-			return live(f.dot);
+		if (!user.IsAdvancedToolUser()) {
+			to_chat(user, "<span class='warning'>You don't have the dexterity to do this!</span>");
+			return f.dot;
 		}
-		if (!truthy((yield* g.callName(f, live(f.args[0]), "get_bodypart", ["head"])))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>＀ doesn't have a head!</span>", [live(f.args[0])])]);
-			return live(f.dot);
+		if (!M.get_bodypart("head")) {
+			to_chat(user, `<span class='warning'>${M} doesn't have a head!</span>`);
+			return f.dot;
 		}
-		if (rt.lt(rt.sv(f, "flashlight_power"), 1)) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>＄！ isn't bright enough to see anything!</span> ", [live(f.src)])]);
-			return live(f.dot);
+		if (this.flashlight_power < 1) {
+			to_chat(user, fmt("<span class='warning'>＄！ isn't bright enough to see anything!</span> ", [this]));
+			return f.dot;
 		}
-		$0 = rt.fv(f, "zone_selected", live(f.args[1]));
-		if ($0 === "eyes") {
-			if ((((truthy(rt.fv(f, "head", live(f.args[0]))) && truthy(rt.bitAnd(rt.gv(f, "flags_cover", rt.fv(f, "head", live(f.args[0]))), 4))) || (truthy(rt.fv(f, "wear_mask", live(f.args[0]))) && truthy(rt.bitAnd(rt.gv(f, "flags_cover", rt.fv(f, "wear_mask", live(f.args[0]))), 2)))) || (truthy(rt.fv(f, "glasses", live(f.args[0]))) && truthy(rt.bitAnd(rt.gv(f, "flags_cover", rt.fv(f, "glasses", live(f.args[0]))), 1))))) {
-				$0 = live(f.args[1]);
-				if ((truthy(rt.fv(f, "head", live(f.args[0]))) && truthy(rt.bitAnd(rt.gv(f, "flags_cover", rt.fv(f, "head", live(f.args[0]))), 4)))) {
+		if (user.zone_selected === "eyes") {
+			if (M.head && rt.bitAnd(M.head.flags_cover, HEADCOVERSEYES) || M.wear_mask && rt.bitAnd(M.wear_mask.flags_cover, MASKCOVERSEYES) || M.glasses && rt.bitAnd(M.glasses.flags_cover, GLASSESCOVERSEYES)) {
+				$0 = user;
+				if (M.head && rt.bitAnd(M.head.flags_cover, HEADCOVERSEYES)) {
 					$1 = "helmet";
+				} else if (M.wear_mask && rt.bitAnd(M.wear_mask.flags_cover, MASKCOVERSEYES)) {
+					$1 = "mask";
 				} else {
-					if ((truthy(rt.fv(f, "wear_mask", live(f.args[0]))) && truthy(rt.bitAnd(rt.gv(f, "flags_cover", rt.fv(f, "wear_mask", live(f.args[0]))), 2)))) {
-						$1 = "mask";
-					} else {
-						$1 = "glasses";
-					}
+					$1 = "glasses";
 				}
-				yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='notice'>You're going to need to remove that ＀ first.</span>", [$1])]);
-				return live(f.dot);
+				to_chat($0, `<span class='notice'>You're going to need to remove that ${$1} first.</span>`);
+				return f.dot;
 			}
-			if (!truthy((E = (yield* g.callName(f, live(f.args[0]), "getorganslot", ["eye_sight"]))))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='danger'>＀ doesn't have any eyes!</span>", [live(f.args[0])])]);
-				return live(f.dot);
+			if (!(E = M.getorganslot("eye_sight"))) {
+				to_chat(user, `<span class='danger'>${M} doesn't have any eyes!</span>`);
+				return f.dot;
 			}
-			if (isEqual(live(f.args[0]), live(f.args[1]))) {
-				if (truthy((yield* g.callName(f, live(f.args[0]), "flash_act", ["visual", 1], rt.Args.Named)))) {
-					yield* g.callName(f, live(f.args[0]), "visible_message", [fmt("＀ directs ＀ to ＀ eyes.", [live(f.args[0]), live(f.src), (yield* g.callName(f, live(f.args[0]), "p_their", []))]), "<span class='notice'>You wave the light in front of your eyes! Trippy!</span>"]);
+			if (M == user) {
+				if (yield* M.flash_act({ visual: GLASSESCOVERSEYES })) {
+					M.visible_message(`${M} directs ${this} to ${M.p_their()} eyes.`, "<span class='notice'>You wave the light in front of your eyes! Trippy!</span>");
 				} else {
-					yield* g.callName(f, live(f.args[0]), "visible_message", [fmt("＀ directs ＀ to ＀ eyes.", [live(f.args[0]), live(f.src), (yield* g.callName(f, live(f.args[0]), "p_their", []))]), "<span class='notice'>You wave the light in front of your eyes.</span>"]);
+					M.visible_message(`${M} directs ${this} to ${M.p_their()} eyes.`, "<span class='notice'>You wave the light in front of your eyes.</span>");
 				}
 			} else {
-				yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='warning'>＀ directs ＀ to ＀'s eyes.</span>", [live(f.args[1]), live(f.src), live(f.args[0])]), fmt("<span class='danger'>You direct ＀ to ＀'s eyes.</span>", [live(f.src), live(f.args[0])])]);
-				if (((isEqual(rt.fv(f, "stat", live(f.args[0])), 2) || truthy(rt.bitAnd(rt.fv(f, "disabilities", live(f.args[0])), 1))) || !truthy((yield* g.callName(f, live(f.args[0]), "flash_act", ["visual", 1], rt.Args.Named))))) {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>＀'s pupils don't react to the light!</span>", [live(f.args[0])])]);
+				user.visible_message(`<span class='warning'>${user} directs ${this} to ${M}'s eyes.</span>`, `<span class='danger'>You direct ${this} to ${M}'s eyes.</span>`);
+				if (M.stat == MASKCOVERSEYES || rt.bitAnd(M.disabilities, 1) || !(yield* M.flash_act({ visual: 1 }))) {
+					to_chat(user, `<span class='warning'>${M}'s pupils don't react to the light!</span>`);
+				} else if (M.dna && M.dna.check_mutation("X Ray Vision")) {
+					to_chat(user, `<span class='danger'>${M}'s pupils give an eerie glow!</span>`);
 				} else {
-					if ((truthy(rt.fv(f, "dna", live(f.args[0]))) && truthy((yield* g.callName(f, rt.fv(f, "dna", live(f.args[0])), "check_mutation", ["X Ray Vision"]))))) {
-						yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='danger'>＀'s pupils give an eerie glow!</span>", [live(f.args[0])])]);
-					} else {
-						yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>＀'s pupils narrow.</span>", [live(f.args[0])])]);
-					}
+					to_chat(user, `<span class='notice'>${M}'s pupils narrow.</span>`);
 				}
 			}
-		} else if ($0 === "mouth") {
-			if (((truthy(rt.fv(f, "head", live(f.args[0]))) && truthy(rt.bitAnd(rt.gv(f, "flags_cover", rt.fv(f, "head", live(f.args[0]))), 16))) || (truthy(rt.fv(f, "wear_mask", live(f.args[0]))) && truthy(rt.bitAnd(rt.gv(f, "flags_cover", rt.fv(f, "wear_mask", live(f.args[0]))), 8))))) {
-				$0 = live(f.args[1]);
-				if ((truthy(rt.fv(f, "head", live(f.args[0]))) && truthy(rt.bitAnd(rt.gv(f, "flags_cover", rt.fv(f, "head", live(f.args[0]))), 16)))) {
+		} else if (user.zone_selected === "mouth") {
+			if (M.head && rt.bitAnd(M.head.flags_cover, HEADCOVERSMOUTH) || M.wear_mask && rt.bitAnd(M.wear_mask.flags_cover, MASKCOVERSMOUTH)) {
+				$0 = user;
+				if (M.head && rt.bitAnd(M.head.flags_cover, HEADCOVERSMOUTH)) {
 					$1 = "helmet";
 				} else {
 					$1 = "mask";
 				}
-				yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='notice'>You're going to need to remove that ＀ first.</span>", [$1])]);
-				return live(f.dot);
+				to_chat($0, `<span class='notice'>You're going to need to remove that ${$1} first.</span>`);
+				return f.dot;
 			}
-			their = (yield* g.callName(f, live(f.args[0]), "p_their", []));
-			mouth_organs = (yield* g.new_(f, T("/list"), []));
-			O = null;
-			rt.forList(f, 0, rt.fv(f, "internal_organs", live(f.args[0])), T("/obj/item/organ"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				O = $e;
-				if (isEqual(rt.fv(f, "zone", live(O)), "mouth")) {
-					yield* g.callName(f, live(mouth_organs), "Add", [live(O)]);
+			their = M.p_their();
+			mouth_organs = (yield* new_(T("/list")));
+			for (O of each(M.internal_organs, T("/obj/item/organ"))) {
+				if (O.zone == "mouth") {
+					mouth_organs.Add(O);
 				}
 			}
-			rt.endFor(f, 0);
 			organ_list = "";
-			if (truthy((organ_count = rt.length(live(mouth_organs))))) {
-				I = null;
-				rt.forRange(f, 0, 1, live(organ_count), 1);
+			if (organ_count = rt.length(mouth_organs)) {
+				rt.forRange(f, 0, 1, organ_count, 1);
 				while (($e = rt.next(f, 0)) !== undefined) {
 					I = $e;
-					if (rt.gt(live(I), 1)) {
-						if (isEqual(live(I), rt.len(f, live(mouth_organs)))) {
-							organ_list = rt.modify(live(organ_list), ", and ", add);
+					if (I > 1) {
+						if (I == rt.len(f, mouth_organs)) {
+							organ_list += ", and ";
 						} else {
-							organ_list = rt.modify(live(organ_list), ", ", add);
+							organ_list += ", ";
 						}
 					}
-					if (isEqual(rt.gv(f, "gender", (O_5 = rt.index(live(mouth_organs), live(I)))), "plural")) {
-						$0 = rt.fv(f, "name", live(O_5));
-					} else {
-						$0 = fmt("＇！", [rt.fv(f, "name", live(O_5))]);
-					}
-					organ_list = rt.modify(live(organ_list), $0, add);
+					organ_list += (O_5 = rt.index(mouth_organs, I)).gender == "plural" ? O_5.name : fmt("＇！", [O_5.name]);
 				}
 				rt.endFor(f, 0);
 			}
 			pill_count = 0;
-			AP = null;
-			rt.forList(f, 0, rt.fv(f, "actions", live(f.args[0])), T("/datum/action/item_action/hands_free/activate_pill"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				AP = $e;
-				pill_count = rt.inc(live(pill_count), 1);
+			for (AP of each(M.actions, T("/datum/action/item_action/hands_free/activate_pill"))) {
+				pill_count++;
 			}
-			rt.endFor(f, 0);
-			if (isEqual(live(f.args[0]), live(f.args[1]))) {
+			if (M == user) {
 				can_use_mirror = 0;
-				if (truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.fv(f, "loc", live(f.args[1]))])))) {
-					if (truthy((mirror = rt.locateIn(f, T("/obj/structure/mirror"), rt.fv(f, "loc", live(f.args[1])))))) {
-						$0 = rt.fv(f, "dir", live(f.args[1]));
-						if ($0 === 1) {
-							can_use_mirror = (rt.gt(rt.fv(f, "pixel_y", live(mirror)), 0) ? 1 : 0);
-						} else if ($0 === 2) {
-							can_use_mirror = (rt.lt(rt.fv(f, "pixel_y", live(mirror)), 0) ? 1 : 0);
-						} else if ($0 === 4) {
-							can_use_mirror = (rt.gt(rt.fv(f, "pixel_x", live(mirror)), 0) ? 1 : 0);
-						} else if ($0 === 8) {
-							can_use_mirror = (rt.lt(rt.fv(f, "pixel_x", live(mirror)), 0) ? 1 : 0);
+				if (isturf(user.loc)) {
+					if (mirror = rt.locateIn(f, T("/obj/structure/mirror"), user.loc)) {
+						if (user.dir === 1) {
+							can_use_mirror = (mirror.pixel_y > 0 ? 1 : 0);
+						} else if (user.dir === 2) {
+							can_use_mirror = (mirror.pixel_y < 0 ? 1 : 0);
+						} else if (user.dir === 4) {
+							can_use_mirror = (mirror.pixel_x > 0 ? 1 : 0);
+						} else if (user.dir === 8) {
+							can_use_mirror = (mirror.pixel_x < 0 ? 1 : 0);
 						}
 					}
 				}
-				yield* g.callName(f, live(f.args[0]), "visible_message", [fmt("＀ directs ＀ to ＀ mouth.", [live(f.args[0]), live(f.src), live(their)]), fmt("<span class='notice'>You point ＀ into your mouth.</span>", [live(f.src)])]);
-				if (!truthy(live(can_use_mirror))) {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You can't see anything without a mirror.</span>"]);
-					return live(f.dot);
+				M.visible_message(`${M} directs ${this} to ${their} mouth.`, `<span class='notice'>You point ${this} into your mouth.</span>`);
+				if (!can_use_mirror) {
+					to_chat(user, "<span class='notice'>You can't see anything without a mirror.</span>");
+					return f.dot;
 				}
-				if (truthy(live(organ_count))) {
-					$0 = live(f.args[1]);
-					if (rt.gt(live(organ_count), 1)) {
-						$1 = "are";
-					} else {
-						$1 = "is";
-					}
-					yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='notice'>Inside your mouth ＀ ＀.</span>", [$1, live(organ_list)])]);
+				if (organ_count) {
+					to_chat(user, `<span class='notice'>Inside your mouth ${organ_count > 1 ? "are" : "is"} ${organ_list}.</span>`);
 				} else {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>There's nothing inside your mouth.</span>"]);
+					to_chat(user, "<span class='notice'>There's nothing inside your mouth.</span>");
 				}
-				if (truthy(live(pill_count))) {
-					$0 = live(f.args[1]);
-					$1 = live(pill_count);
-					if (rt.gt(live(pill_count), 1)) {
-						$2 = "s";
-					} else {
-						$2 = "";
-					}
-					yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='notice'>You have ＀ implanted pill＀.</span>", [$1, $2])]);
+				if (pill_count) {
+					to_chat(user, `<span class='notice'>You have ${pill_count} implanted pill${pill_count > 1 ? "s" : ""}.</span>`);
 				}
 			} else {
-				yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='notice'>＀ directs ＀ to ＀'s mouth.</span>", [live(f.args[1]), live(f.src), live(f.args[0])]), fmt("<span class='notice'>You direct ＀ to ＀'s mouth.</span>", [live(f.src), live(f.args[0])])]);
-				if (truthy(live(organ_count))) {
-					$0 = live(f.args[1]);
-					$1 = live(their);
-					if (rt.gt(live(organ_count), 1)) {
-						$2 = "are";
-					} else {
-						$2 = "is";
-					}
-					yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='notice'>Inside ＀ mouth ＀ ＀.</span>", [$1, $2, live(organ_list)])]);
+				user.visible_message(`<span class='notice'>${user} directs ${this} to ${M}'s mouth.</span>`, `<span class='notice'>You direct ${this} to ${M}'s mouth.</span>`);
+				if (organ_count) {
+					to_chat(user, `<span class='notice'>Inside ${their} mouth ${organ_count > 1 ? "are" : "is"} ${organ_list}.</span>`);
 				} else {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>＀ doesn't have any organs in ＀ mouth.</span>", [live(f.args[0]), live(their)])]);
+					to_chat(user, `<span class='notice'>${M} doesn't have any organs in ${their} mouth.</span>`);
 				}
-				if (truthy(live(pill_count))) {
-					$0 = live(f.args[1]);
-					$1 = live(f.args[0]);
-					$2 = live(pill_count);
-					if (rt.gt(live(pill_count), 1)) {
-						$3 = "s";
-					} else {
-						$3 = "";
-					}
-					yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='notice'>＀ has ＀ pill＀ implanted in ＀ teeth.", [$1, $2, $3, live(their)])]);
+				if (pill_count) {
+					to_chat(user, `<span class='notice'>${M} has ${pill_count} pill${pill_count > 1 ? "s" : ""} implanted in ${their} teeth.`);
 				}
 			}
 		}
 	} else {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["M", "user"] });
+}, true);
 
 rt.type(9125, "/obj/item/device/flashlight/pen", "/obj/item/device/flashlight", {
 	holo_cooldown: 0,
@@ -278,25 +217,24 @@ rt.type(9125, "/obj/item/device/flashlight/pen", "/obj/item/device/flashlight", 
 	item_state: "",
 });
 
-// /obj/item/device/flashlight/pen/proc/afterattack  (code/game/objects/items/devices/flashlight.dm:168)  may sleep
-rt.def("/obj/item/device/flashlight/pen/proc/afterattack", function* afterattack(f: Frame) {
+// flashlight.dm:168
+rt.def("/obj/item/device/flashlight/pen/proc/afterattack", function* afterattack(f: Frame, target: Value, user: Value, proximity_flag: Value) {
 	let _T: Value = null;
-	f.vars = () => [_T];
-	if (!truthy(live(f.args[2]))) {
-		if (rt.gt(rt.sv(f, "holo_cooldown"), rt.worldTime(f))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>＀ is not ready yet!</span>", [live(f.src)])]);
-			return live(f.dot);
+	if (!proximity_flag) {
+		if (this.holo_cooldown > rt.worldTime(f)) {
+			to_chat(user, `<span class='warning'>${this} is not ready yet!</span>`);
+			return f.dot;
 		}
-		_T = rt.getStep(f, live(f.args[0]), 0);
-		if (truthy(rt.locateIn(f, T("/mob/living"), live(_T)))) {
-			yield* g.new_(f, T("/obj/effect/temp_visual/medical_holosign"), [live(_T), live(f.args[1])]);
-			rt.setSv(f, "holo_cooldown", add(rt.worldTime(f), 100));
-			return live(f.dot);
+		_T = rt.getStep(f, target, 0);
+		if (rt.locateIn(f, T("/mob/living"), _T)) {
+			yield* new_(T("/obj/effect/temp_visual/medical_holosign"), _T, user);
+			this.holo_cooldown = rt.worldTime(f) + 100;
+			return f.dot;
 		}
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["target", "user", "proximity_flag"] });
+}, true);
 
 rt.type(11659, "/obj/effect/temp_visual/medical_holosign", "/obj/effect/temp_visual", {
 	duration: 30,
@@ -305,14 +243,14 @@ rt.type(11659, "/obj/effect/temp_visual/medical_holosign", "/obj/effect/temp_vis
 	icon_state: "medi_holo",
 });
 
-// /obj/effect/temp_visual/medical_holosign/proc/Initialize  (code/game/objects/items/devices/flashlight.dm:186)  may sleep
-rt.def("/obj/effect/temp_visual/medical_holosign/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/machines/ping.ogg"), 50, 0]);
-	if (!truthy(live(f.args[1]))) return f.dot;
-	yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＀ created a medical hologram!</span>", [live(f.args[1])]));
+// flashlight.dm:186
+rt.def("/obj/effect/temp_visual/medical_holosign/proc/Initialize", function* Initialize(f: Frame, mapload: Value, creator: Value) {
+	f.dot = (yield* parent_proc());
+	playsound(this.loc, rt.rsc("sound/machines/ping.ogg"), 50, 0);
+	if (!creator) return f.dot;
+	this.visible_message(`<span class='danger'>${creator} created a medical hologram!</span>`);
 	return f.dot;
-}, true, { args: ["mapload", "creator"] });
+}, true);
 
 rt.type(9127, "/obj/item/device/flashlight/lamp", "/obj/item/device/flashlight", {
 	brightness_on: 5,
@@ -326,19 +264,17 @@ rt.type(9127, "/obj/item/device/flashlight/lamp", "/obj/item/device/flashlight",
 	materials: null,
 });
 
-// /obj/item/device/flashlight/lamp/proc/<init>  (code/game/objects/items/devices/flashlight.dm:210)
+// flashlight.dm:210
 rt.def("/obj/item/device/flashlight/lamp/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.list());
+	parent_proc();
+	this.materials = list();
 	return f.dot;
 });
 
-// /obj/item/device/flashlight/lamp/verb/toggle_light  (code/game/objects/items/devices/flashlight.dm:227)  may sleep
+// flashlight.dm:227
 rt.def("/obj/item/device/flashlight/lamp/verb/toggle_light", function* toggle_light(f: Frame) {
-	if (truthy(rt.fv(f, "stat", live(f.usr)))) return f.dot;
-	yield* g.srcCall(f, "attack_self", live(f.usr));
+	if (f.usr.stat) return f.dot;
+	yield* this.attack_self(f.usr);
 	return f.dot;
 }, true, { verb: { name: "Toggle light", category: "Object", src: 3, range: 1 } });
 
@@ -357,99 +293,96 @@ rt.type(9122, "/obj/item/device/flashlight/flare", "/obj/item/device/flashlight"
 	heat: 1000,
 });
 
-// /obj/item/device/flashlight/flare/proc/<init>  (code/game/objects/items/devices/flashlight.dm:246)
+// flashlight.dm:246
 rt.def("/obj/item/device/flashlight/flare/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "actions_types", rt.list());
+	parent_proc();
+	this.actions_types = list();
 	return f.dot;
 });
 
-// /obj/item/device/flashlight/flare/proc/New  (code/game/objects/items/devices/flashlight.dm:254)  may sleep
+// flashlight.dm:254
 rt.def("/obj/item/device/flashlight/flare/proc/New", function* New(f: Frame) {
-	rt.setSv(f, "fuel", (yield* g.call(f, P("/proc/rand"), null, [800, 1000])));
-	yield* g.callSuper(f, [], rt.Args.Same);
+	this.fuel = rand(800, 1000);
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /obj/item/device/flashlight/flare/proc/process  (code/game/objects/items/devices/flashlight.dm:258)  may sleep
+// flashlight.dm:258
 rt.def("/obj/item/device/flashlight/flare/proc/process", function* process(f: Frame) {
-	yield* g.srcCall(f, "open_flame", rt.sv(f, "heat"));
-	rt.setSv(f, "fuel", (yield* g.call(f, P("/proc/max"), null, [subtract(rt.sv(f, "fuel"), 1), 0])));
-	if (!(!truthy(rt.sv(f, "fuel")) || !truthy(rt.sv(f, "on")))) return f.dot;
-	yield* g.srcCall(f, "turn_off");
-	if (!truthy(rt.sv(f, "fuel"))) {
-		rt.setSv(f, "icon_state", fmt("＀-empty", [rt.initial(f, live(f.src), "icon_state")]));
+	yield* this.open_flame(this.heat);
+	this.fuel = max(this.fuel - 1, 0);
+	if (!(!this.fuel || !this.on)) return f.dot;
+	yield* this.turn_off();
+	if (!this.fuel) {
+		this.icon_state = `${rt.initial(f, this, "icon_state")}-empty`;
 	}
-	rt.setFv(f, "isprocessing", live(f.src), 0);
-	(rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), subtract));
+	this.isprocessing = 0;
+	GLOB.SSobj.processing -= this;
 	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/item/device/flashlight/flare/proc/ignition_effect  (code/game/objects/items/devices/flashlight.dm:267)
+// flashlight.dm:267
 rt.def("/obj/item/device/flashlight/flare/proc/ignition_effect", function ignition_effect(f: Frame, A: Value, user: Value) {
-	if ((truthy(rt.sv(f, "fuel")) && truthy(rt.sv(f, "on")))) {
-		f.dot = fmt("<span class='notice'>＀ lights ＀ with ＀ like a real badass.</span>", [live(user), live(A), live(f.src)]);
+	if (this.fuel && this.on) {
+		f.dot = `<span class='notice'>${user} lights ${A} with ${this} like a real badass.</span>`;
 	} else {
 		f.dot = "";
 	}
 	return f.dot;
 });
 
-// /obj/item/device/flashlight/flare/proc/turn_off  (code/game/objects/items/devices/flashlight.dm:275)
+// flashlight.dm:275
 rt.def("/obj/item/device/flashlight/flare/proc/turn_off", function turn_off(f: Frame) {
 	let U: Value = null;
-	f.vars = () => [U];
-	rt.setSv(f, "on", 0);
-	rt.setSv(f, "force", rt.initial(f, live(f.src), "force"));
-	rt.setSv(f, "damtype", rt.initial(f, live(f.src), "damtype"));
-	if (truthy(rt.call(f, P("/proc/ismob"), null, [rt.sv(f, "loc")]))) {
-		rt.callSrc(f, "update_brightness", [(U = rt.sv(f, "loc"))]);
+	this.on = 0;
+	this.force = rt.initial(f, this, "force");
+	this.damtype = rt.initial(f, this, "damtype");
+	if (ismob(this.loc)) {
+		this.update_brightness((U = this.loc));
 	} else {
-		rt.callSrc(f, "update_brightness", [null]);
+		this.update_brightness(null);
 	}
 	return f.dot;
 });
 
-// /obj/item/device/flashlight/flare/proc/update_brightness  (code/game/objects/items/devices/flashlight.dm:284)
+// flashlight.dm:284
 rt.def("/obj/item/device/flashlight/flare/proc/update_brightness", function update_brightness(f: Frame) {
-	if (live(f.args[0]) === null) {
+	if (f.args[0] === null) {
 		f.args[0] = null;
 	}
-	rt.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.sv(f, "on"))) {
-		rt.setSv(f, "item_state", fmt("＀-on", [rt.initial(f, live(f.src), "item_state")]));
+	parent_proc();
+	if (this.on) {
+		this.item_state = `${rt.initial(f, this, "item_state")}-on`;
 	} else {
-		rt.setSv(f, "item_state", fmt("＀", [rt.initial(f, live(f.src), "item_state")]));
+		this.item_state = `${rt.initial(f, this, "item_state")}`;
 	}
 	return f.dot;
 }, false, { args: ["user"] });
 
-// /obj/item/device/flashlight/flare/proc/attack_self  (code/game/objects/items/devices/flashlight.dm:293)  may sleep
-rt.def("/obj/item/device/flashlight/flare/proc/attack_self", function* attack_self(f: Frame) {
-	if (!truthy(rt.sv(f, "fuel"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='warning'>＀ is out of fuel!</span>", [live(f.src)])]);
-		return live(f.dot);
+// flashlight.dm:293
+rt.def("/obj/item/device/flashlight/flare/proc/attack_self", function* attack_self(f: Frame, user: Value) {
+	if (!this.fuel) {
+		to_chat(user, `<span class='warning'>${this} is out of fuel!</span>`);
+		return f.dot;
 	}
-	if (truthy(rt.sv(f, "on"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='notice'>＀ is already on.</span>", [live(f.src)])]);
-		return live(f.dot);
+	if (this.on) {
+		to_chat(user, `<span class='notice'>${this} is already on.</span>`);
+		return f.dot;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(live(f.dot))) return f.dot;
-	yield* g.callName(f, live(f.args[0]), "visible_message", [fmt("<span class='notice'>＀ lights ％！.</span>", [live(f.args[0]), live(f.src)]), fmt("<span class='notice'>You light ％！!</span>", [live(f.src)])]);
-	rt.setSv(f, "force", rt.sv(f, "on_damage"));
-	rt.setSv(f, "damtype", "fire");
-	if (truthy(rt.fv(f, "isprocessing", live(f.src)))) return f.dot;
-	rt.setFv(f, "isprocessing", live(f.src), 1);
-	rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), add);
+	f.dot = (yield* parent_proc());
+	if (!f.dot) return f.dot;
+	user.visible_message(fmt("<span class='notice'>＀ lights ％！.</span>", [user, this]), fmt("<span class='notice'>You light ％！!</span>", [this]));
+	this.force = this.on_damage;
+	this.damtype = "fire";
+	if (this.isprocessing) return f.dot;
+	this.isprocessing = 1;
+	GLOB.SSobj.processing += this;
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /obj/item/device/flashlight/flare/proc/is_hot  (code/game/objects/items/devices/flashlight.dm:309)
+// flashlight.dm:309
 rt.def("/obj/item/device/flashlight/flare/proc/is_hot", function is_hot(f: Frame) {
-	return multiply(rt.sv(f, "on"), rt.sv(f, "heat"));
+	return this.on * this.heat;
 });
 
 rt.type(9131, "/obj/item/device/flashlight/slime", "/obj/item/device/flashlight", {
@@ -465,12 +398,10 @@ rt.type(9131, "/obj/item/device/flashlight/slime", "/obj/item/device/flashlight"
 	materials: null,
 });
 
-// /obj/item/device/flashlight/slime/proc/<init>  (code/game/objects/items/devices/flashlight.dm:338)
+// flashlight.dm:338
 rt.def("/obj/item/device/flashlight/slime/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.list());
+	parent_proc();
+	this.materials = list();
 	return f.dot;
 });
 
@@ -481,64 +412,63 @@ rt.type(9132, "/obj/item/device/flashlight/emp", "/obj/item/device/flashlight", 
 	origin_tech: "magnets=3;syndicate=1",
 });
 
-// /obj/item/device/flashlight/emp/proc/New  (code/game/objects/items/devices/flashlight.dm:349)  may sleep
+// flashlight.dm:349
 rt.def("/obj/item/device/flashlight/emp/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.fv(f, "isprocessing", live(f.src)))) return f.dot;
-	rt.setFv(f, "isprocessing", live(f.src), 1);
-	rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), add);
+	yield* parent_proc();
+	if (this.isprocessing) return f.dot;
+	this.isprocessing = 1;
+	GLOB.SSobj.processing += this;
 	return f.dot;
 }, true);
 
-// /obj/item/device/flashlight/emp/proc/Destroy  (code/game/objects/items/devices/flashlight.dm:353)  may sleep
+// flashlight.dm:353
 rt.def("/obj/item/device/flashlight/emp/proc/Destroy", function* Destroy(f: Frame) {
-	rt.setFv(f, "isprocessing", live(f.src), 0);
-	(rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), subtract));
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	this.isprocessing = 0;
+	GLOB.SSobj.processing -= this;
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true);
 
-// /obj/item/device/flashlight/emp/proc/process  (code/game/objects/items/devices/flashlight.dm:357)
+// flashlight.dm:357
 rt.def("/obj/item/device/flashlight/emp/proc/process", function process(f: Frame) {
-	rt.incSrcVar(f, "charge_tick", 1, true);
-	if (rt.lt(rt.sv(f, "charge_tick"), 10)) {
+	this.charge_tick++;
+	if (this.charge_tick < 10) {
 		return 0;
 	}
-	rt.setSv(f, "charge_tick", 0);
-	rt.setSv(f, "emp_cur_charges", rt.call(f, P("/proc/min"), null, [add(rt.sv(f, "emp_cur_charges"), 1), rt.sv(f, "emp_max_charges")]));
+	this.charge_tick = 0;
+	this.emp_cur_charges = min(this.emp_cur_charges + 1, this.emp_max_charges);
 	return 1;
 }, false, { waitfor: false });
 
-// /obj/item/device/flashlight/emp/proc/attack  (code/game/objects/items/devices/flashlight.dm:365)  may sleep
-rt.def("/obj/item/device/flashlight/emp/proc/attack", function* attack(f: Frame) {
-	if (truthy((rt.isIn(f, (rt.sv(f, "on") && rt.fv(f, "zone_selected", live(f.args[1]))), rt.list("eyes", "mouth")) ? 1 : 0))) {
-		yield* g.callSuper(f, [], rt.Args.Same);
+// flashlight.dm:365
+rt.def("/obj/item/device/flashlight/emp/proc/attack", function* attack(f: Frame, M: Value, user: Value) {
+	if (rt.isIn(f, (this.on && user.zone_selected), list("eyes", "mouth"))) {
+		yield* parent_proc();
 	}
-	return live(f.dot);
-}, true, { args: ["M", "user"] });
+	return f.dot;
+}, true);
 
-// /obj/item/device/flashlight/emp/proc/afterattack  (code/game/objects/items/devices/flashlight.dm:370)  may sleep
+// flashlight.dm:370
 rt.def("/obj/item/device/flashlight/emp/proc/afterattack", function* afterattack(f: Frame, A: Value, user: Value, proximity: Value) {
 	let M: Value = null;
-	f.vars = () => [A, user, proximity, M];
-	if (!truthy(live(proximity))) {
-		return live(f.dot);
+	if (!proximity) {
+		return f.dot;
 	}
-	if (rt.gt(rt.sv(f, "emp_cur_charges"), 0)) {
-		(rt.modSrcVar(f, "emp_cur_charges", 1, subtract));
-		if (truthy((yield* g.call(f, P("/proc/ismob"), null, [live(A)])))) {
-			M = live(A);
-			yield* g.call(f, P("/proc/add_logs"), null, [live(user), live(M), "attacked", "EMP-light"]);
-			yield* g.callName(f, live(M), "visible_message", [fmt("<span class='danger'>＀ blinks ％！ at ％！.", [live(user), live(f.src), live(A)]), fmt("<span class='userdanger'>＀ blinks ％！ at you.", [live(user), live(f.src)])]);
+	if (this.emp_cur_charges > 0) {
+		this.emp_cur_charges -= 1;
+		if (ismob(A)) {
+			M = A;
+			add_logs(user, M, "attacked", "EMP-light");
+			M.visible_message(fmt("<span class='danger'>＀ blinks ％！ at ％！.", [user, this, A]), fmt("<span class='userdanger'>＀ blinks ％！ at you.", [user, this]));
 		} else {
-			yield* g.callName(f, live(A), "visible_message", [fmt("<span class='danger'>＀ blinks ％！ at ％！.", [live(user), live(f.src), live(A)])]);
+			A.visible_message(fmt("<span class='danger'>＀ blinks ％！ at ％！.", [user, this, A]));
 		}
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("＄！ now has ＀ charge５.", [live(f.src), rt.sv(f, "emp_cur_charges")])]);
-		yield* g.callName(f, live(A), "emp_act", [1]);
+		to_chat(user, fmt("＄！ now has ＀ charge５.", [this, this.emp_cur_charges]));
+		yield* A.emp_act(1);
 	} else {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＄！ needs time to recharge!</span>", [live(f.src)])]);
+		to_chat(user, fmt("<span class='warning'>＄！ needs time to recharge!</span>", [this]));
 	}
-	return live(f.dot);
+	return f.dot;
 }, true);
 
 rt.type(9133, "/obj/item/device/flashlight/glowstick", "/obj/item/device/flashlight", {
@@ -552,88 +482,85 @@ rt.type(9133, "/obj/item/device/flashlight/glowstick", "/obj/item/device/flashli
 	item_state: "glowstick",
 });
 
-// /obj/item/device/flashlight/glowstick/proc/Initialize  (code/game/objects/items/devices/flashlight.dm:402)  may sleep
+// flashlight.dm:402
 rt.def("/obj/item/device/flashlight/glowstick/proc/Initialize", function* Initialize(f: Frame) {
-	rt.setSv(f, "fuel", (yield* g.call(f, P("/proc/rand"), null, [1600, 2000])));
-	rt.setSv(f, "light_color", rt.sv(f, "color"));
-	yield* g.callSuper(f, [], rt.Args.Same);
+	this.fuel = rand(1600, 2000);
+	this.light_color = this.color;
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /obj/item/device/flashlight/glowstick/proc/Destroy  (code/game/objects/items/devices/flashlight.dm:407)  may sleep
+// flashlight.dm:407
 rt.def("/obj/item/device/flashlight/glowstick/proc/Destroy", function* Destroy(f: Frame) {
-	rt.setFv(f, "isprocessing", live(f.src), 0);
-	(rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), subtract));
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	this.isprocessing = 0;
+	GLOB.SSobj.processing -= this;
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true);
 
-// /obj/item/device/flashlight/glowstick/proc/process  (code/game/objects/items/devices/flashlight.dm:411)
+// flashlight.dm:411
 rt.def("/obj/item/device/flashlight/glowstick/proc/process", function process(f: Frame) {
-	rt.setSv(f, "fuel", rt.call(f, P("/proc/max"), null, [subtract(rt.sv(f, "fuel"), 1), 0]));
-	if (truthy(rt.sv(f, "fuel"))) return f.dot;
-	rt.callSrc(f, "turn_off", []);
-	rt.setFv(f, "isprocessing", live(f.src), 0);
-	(rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), subtract));
-	rt.callSrc(f, "update_icon", []);
+	this.fuel = max(this.fuel - 1, 0);
+	if (this.fuel) return f.dot;
+	this.turn_off();
+	this.isprocessing = 0;
+	GLOB.SSobj.processing -= this;
+	this.update_icon();
 	return f.dot;
 }, false, { waitfor: false });
 
-// /obj/item/device/flashlight/glowstick/proc/turn_off  (code/game/objects/items/devices/flashlight.dm:419)
+// flashlight.dm:419
 rt.def("/obj/item/device/flashlight/glowstick/proc/turn_off", function turn_off(f: Frame) {
-	rt.setSv(f, "on", 0);
-	rt.callSrc(f, "update_icon", []);
+	this.on = 0;
+	this.update_icon();
 	return f.dot;
 });
 
-// /obj/item/device/flashlight/glowstick/proc/update_icon  (code/game/objects/items/devices/flashlight.dm:422)
+// flashlight.dm:422
 rt.def("/obj/item/device/flashlight/glowstick/proc/update_icon", function update_icon(f: Frame) {
 	let glowstick_overlay: Value = null;
-	f.vars = () => [glowstick_overlay];
-	rt.setSv(f, "item_state", "glowstick");
-	rt.callName(f, rt.sv(f, "overlays"), "Cut", []);
-	if (!truthy(rt.sv(f, "fuel"))) {
-		rt.setSv(f, "icon_state", "glowstick-empty");
-		rt.callSrc(f, "cut_overlays", []);
-		rt.callSrc(f, "set_light", [0]);
+	this.item_state = "glowstick";
+	this.overlays.Cut();
+	if (!this.fuel) {
+		this.icon_state = "glowstick-empty";
+		this.cut_overlays();
+		this.set_light(0);
+	} else if (this.on) {
+		(glowstick_overlay = mutable_appearance(this.icon, "glowstick-glow")).color = this.color;
+		this.add_overlay(glowstick_overlay);
+		this.item_state = "glowstick-on";
+		this.set_light(this.brightness_on);
 	} else {
-		if (truthy(rt.sv(f, "on"))) {
-			rt.setFv(f, "color", (glowstick_overlay = rt.call(f, P("/proc/mutable_appearance"), null, [rt.sv(f, "icon"), "glowstick-glow"])), rt.sv(f, "color"));
-			rt.callSrc(f, "add_overlay", [live(glowstick_overlay)]);
-			rt.setSv(f, "item_state", "glowstick-on");
-			rt.callSrc(f, "set_light", [rt.sv(f, "brightness_on")]);
-		} else {
-			rt.setSv(f, "icon_state", "glowstick");
-			rt.callSrc(f, "cut_overlays", []);
-		}
+		this.icon_state = "glowstick";
+		this.cut_overlays();
 	}
 	return f.dot;
 });
 
-// /obj/item/device/flashlight/glowstick/proc/attack_self  (code/game/objects/items/devices/flashlight.dm:439)  may sleep
-rt.def("/obj/item/device/flashlight/glowstick/proc/attack_self", function* attack_self(f: Frame) {
-	if (!truthy(rt.sv(f, "fuel"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='notice'>＀ is spent.</span>", [live(f.src)])]);
-		return live(f.dot);
+// flashlight.dm:439
+rt.def("/obj/item/device/flashlight/glowstick/proc/attack_self", function* attack_self(f: Frame, user: Value) {
+	if (!this.fuel) {
+		to_chat(user, `<span class='notice'>${this} is spent.</span>`);
+		return f.dot;
 	}
-	if (truthy(rt.sv(f, "on"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='notice'>＀ is already lit.</span>", [live(f.src)])]);
-		return live(f.dot);
+	if (this.on) {
+		to_chat(user, `<span class='notice'>${this} is already lit.</span>`);
+		return f.dot;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(live(f.dot))) return f.dot;
-	yield* g.callName(f, live(f.args[0]), "visible_message", [fmt("<span class='notice'>＀ cracks and shakes ＀.</span>", [live(f.args[0]), live(f.src)]), fmt("<span class='notice'>You crack and shake ＀, turning it on!</span>", [live(f.src)])]);
-	yield* g.srcCall(f, "activate");
+	f.dot = (yield* parent_proc());
+	if (!f.dot) return f.dot;
+	user.visible_message(`<span class='notice'>${user} cracks and shakes ${this}.</span>`, `<span class='notice'>You crack and shake ${this}, turning it on!</span>`);
+	yield* this.activate();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /obj/item/device/flashlight/glowstick/proc/activate  (code/game/objects/items/devices/flashlight.dm:452)
+// flashlight.dm:452
 rt.def("/obj/item/device/flashlight/glowstick/proc/activate", function activate(f: Frame) {
-	if (truthy(rt.sv(f, "on"))) return f.dot;
-	rt.setSv(f, "on", 1);
-	if (truthy(rt.fv(f, "isprocessing", live(f.src)))) return f.dot;
-	rt.setFv(f, "isprocessing", live(f.src), 1);
-	rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), add);
+	if (this.on) return f.dot;
+	this.on = 1;
+	if (this.isprocessing) return f.dot;
+	this.isprocessing = 1;
+	GLOB.SSobj.processing += this;
 	return f.dot;
 });
 
@@ -641,15 +568,14 @@ rt.type(9140, "/obj/item/device/flashlight/glowstick/random", "/obj/item/device/
 	name: "random colored glowstick",
 });
 
-// /obj/item/device/flashlight/glowstick/random/proc/Initialize  (code/game/objects/items/devices/flashlight.dm:484)  may sleep
+// flashlight.dm:484
 rt.def("/obj/item/device/flashlight/glowstick/random/proc/Initialize", function* Initialize(f: Frame) {
-	let glowtypes: Value = null, glowtype: Value = null;
-	f.vars = () => [glowtypes, glowtype];
-	glowtypes = (yield* g.call(f, P("/proc/typesof"), null, [T("/obj/item/device/flashlight/glowstick")]));
-	(glowtypes = rt.modify(live(glowtypes), T("/obj/item/device/flashlight/glowstick/random"), subtract));
-	rt.setSv(f, "name", rt.initial(f, (glowtype = rt.op(f, "PickUnweighted", [1], [live(glowtypes)])), "name"));
-	rt.setSv(f, "color", rt.initial(f, live(glowtype), "color"));
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	let glowtype: Value = null;
+	let glowtypes: Value = typesof(T("/obj/item/device/flashlight/glowstick"));
+	glowtypes -= T("/obj/item/device/flashlight/glowstick/random");
+	this.name = rt.initial(f, (glowtype = pick(glowtypes)), "name");
+	this.color = rt.initial(f, glowtype, "color");
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true);
 
@@ -662,11 +588,9 @@ rt.type(9143, "/obj/item/device/flashlight/eyelight", "/obj/item/device/flashlig
 	actions_types: null,
 });
 
-// /obj/item/device/flashlight/eyelight/proc/<init>  (code/game/objects/items/devices/flashlight.dm:522)
+// flashlight.dm:522
 rt.def("/obj/item/device/flashlight/eyelight/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "actions_types", rt.list());
+	parent_proc();
+	this.actions_types = list();
 	return f.dot;
 });

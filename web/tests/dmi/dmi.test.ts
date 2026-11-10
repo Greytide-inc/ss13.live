@@ -7,10 +7,10 @@
 // The frame-major/dir-minor cell order (see dmi.ts's header comment) was separately checked by
 // decoding real pixels; this test only re-checks the arithmetic, not pixel content.
 
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { cellRect, dirIndex } from "../../src/dmi/dmi.js";
+import { cellRect, dirIndex, readPngChunks } from "../../src/dmi/dmi.js";
 import { parseDmiFile, parseDmiBytes, decodePng, encodeDmi } from "../../src/dmi/dmi-node.js";
 import { encodeDmi as encodeDmiStored, zlibStored } from "../../src/dmi/png.js";
 import { iconFromSheet } from "../../src/dmi/icon-ops.js";
@@ -177,6 +177,15 @@ delay = 1,2
 	check("png.ts stored-zlib .dmi: same pixels as the zlib one", Buffer.compare(Buffer.from(pa.rgba), Buffer.from(pb.rgba)), 0);
 	check("png.ts stored-zlib .dmi: same states", JSON.stringify(parseDmiBytes(b)!.states), JSON.stringify(parseDmiBytes(a)!.states));
 	check("zlibStored round trip (70 KB, 2 blocks)", Buffer.compare(inflateSync(zlibStored(new Uint8Array(70000).fill(7))), Buffer.alloc(70000, 7)), 0);
+}
+
+// every .dmi keeps its sprite list in a zTXt chunk, the only kind the loader reads: an editor that saves it as
+// tEXt instead leaves the game drawing the whole sheet for each sprite (screen_ghost.dmi, 2026-11-09).
+{
+	const noList = (readdirSync(join(repoRoot, "icons"), { recursive: true }) as string[])
+		.filter((p) => p.endsWith(".dmi")).map((p) => [p, readPngChunks(readFileSync(join(repoRoot, "icons", p)))] as const)
+		.filter(([, png]) => png && !png.compressedDescription).map(([p]) => p); // png null: pipes/large.dmi, tg's unused pre-PNG file
+	check("every icons/ .dmi has a zTXt Description", noList, []);
 }
 
 console.log(failures === 0 ? "\nALL DMI TESTS PASSED" : `\n${failures} DMI TEST(S) FAILED`);

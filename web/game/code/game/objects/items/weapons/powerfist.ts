@@ -1,7 +1,7 @@
-// From code/game/objects/items/weapons/powerfist.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/weapons/powerfist.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(5660, "/obj/item/weapon/melee/powerfist", "/obj/item/weapon/melee", {
@@ -24,112 +24,100 @@ rt.type(5660, "/obj/item/weapon/melee/powerfist", "/obj/item/weapon/melee", {
 	resistance_flags: 2,
 });
 
-// /obj/item/weapon/melee/powerfist/proc/<init>  (code/game/objects/items/weapons/powerfist.dm:13)
+// powerfist.dm:13
 rt.def("/obj/item/weapon/melee/powerfist/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "attack_verb", rt.list("whacked", "fisted", "power-punched"));
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 100, "acid", 40]));
+	parent_proc();
+	this.attack_verb = list("whacked", "fisted", "power-punched");
+	this.armor = rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 100, "acid", 40]);
 	return f.dot;
 });
 
-// /obj/item/weapon/melee/powerfist/proc/examine  (code/game/objects/items/weapons/powerfist.dm:22)
-rt.def("/obj/item/weapon/melee/powerfist/proc/examine", function examine(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	if (!rt.le(rt.call(f, P("/proc/get_dist"), null, [live(f.args[0]), live(f.src)]), 1)) {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='notice'>You'll need to get closer to see any more.</span>"]);
-		return live(f.dot);
+// powerfist.dm:22
+rt.def("/obj/item/weapon/melee/powerfist/proc/examine", function examine(f: Frame, user: Value) {
+	parent_proc();
+	if (!(get_dist(user, this) <= 1)) {
+		to_chat(user, "<span class='notice'>You'll need to get closer to see any more.</span>");
+		return f.dot;
 	}
-	if (!truthy(rt.sv(f, "tank"))) return f.dot;
-	rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='notice'>＀ It has ％！ mounted onto it.</span>", [rt.call(f, P("/proc/bicon"), null, [rt.sv(f, "tank")]), rt.sv(f, "tank")])]);
+	if (!this.tank) return f.dot;
+	to_chat(user, fmt("<span class='notice'>＀ It has ％！ mounted onto it.</span>", [bicon(this.tank), this.tank]));
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/item/weapon/melee/powerfist/proc/attackby  (code/game/objects/items/weapons/powerfist.dm:31)  may sleep
+// powerfist.dm:31
 rt.def("/obj/item/weapon/melee/powerfist/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
 	let IT: Value = null;
-	let $0: any;
-	f.vars = () => [W, user, params, IT, $0];
-	if (truthy((rt.istype(live(W), T("/obj/item/weapon/tank/internals")) ? 1 : 0))) {
-		if (!truthy(rt.sv(f, "tank"))) {
-			if (rt.le(rt.gv(f, "volume", (IT = live(W))), 3)) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＄！ is too small for ％！.</span>", [live(IT), live(f.src)])]);
-				return live(f.dot);
+	if (rt.istype(W, T("/obj/item/weapon/tank/internals"))) {
+		if (!this.tank) {
+			if ((IT = W).volume <= 3) {
+				to_chat(user, fmt("<span class='warning'>＄！ is too small for ％！.</span>", [IT, this]));
+				return f.dot;
 			}
-			yield* g.srcCall(f, "updateTank", live(W), 0, live(user));
+			yield* this.updateTank(W, 0, user);
 		}
+	} else if (rt.istype(W, T("/obj/item/weapon/wrench"))) {
+		if (this.fisto_setting === 1) {
+			this.fisto_setting = 2;
+		} else if (this.fisto_setting === 2) {
+			this.fisto_setting = 3;
+		} else if (this.fisto_setting === 3) {
+			this.fisto_setting = 1;
+		}
+		playsound(this.loc, W.usesound, 50, 1);
+		to_chat(user, fmt("<span class='notice'>You tweak ％！'s piston valve to ＀.</span>", [this, this.fisto_setting]));
 	} else {
-		if (truthy((rt.istype(live(W), T("/obj/item/weapon/wrench")) ? 1 : 0))) {
-			$0 = rt.sv(f, "fisto_setting");
-			if ($0 === 1) {
-				rt.setSv(f, "fisto_setting", 2);
-			} else if ($0 === 2) {
-				rt.setSv(f, "fisto_setting", 3);
-			} else if ($0 === 3) {
-				rt.setSv(f, "fisto_setting", 1);
-			}
-			yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.fv(f, "usesound", live(W)), 50, 1]);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You tweak ％！'s piston valve to ＀.</span>", [live(f.src), rt.sv(f, "fisto_setting")])]);
-		} else {
-			if (!truthy((rt.istype(live(W), T("/obj/item/weapon/screwdriver")) ? 1 : 0))) return f.dot;
-			if (!truthy(rt.sv(f, "tank"))) return f.dot;
-			yield* g.srcCall(f, "updateTank", rt.sv(f, "tank"), 1, live(user));
-		}
+		if (!rt.istype(W, T("/obj/item/weapon/screwdriver"))) return f.dot;
+		if (!this.tank) return f.dot;
+		yield* this.updateTank(this.tank, 1, user);
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/melee/powerfist/proc/updateTank  (code/game/objects/items/weapons/powerfist.dm:55)  may sleep
+// powerfist.dm:55
 rt.def("/obj/item/weapon/melee/powerfist/proc/updateTank", function* updateTank(f: Frame, thetank: Value, removing: Value, user: Value) {
-	f.vars = () => [thetank, removing, user];
-	if (live(removing) === null) {
-		removing = 0;
-	}
-	if (truthy(live(removing))) {
-		if (!truthy(rt.sv(f, "tank"))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>＄！ currently has no tank attached to it.</span>", [live(f.src)])]);
-			return live(f.dot);
+	removing ??= 0;
+	if (removing) {
+		if (!this.tank) {
+			to_chat(user, fmt("<span class='notice'>＄！ currently has no tank attached to it.</span>", [this]));
+			return f.dot;
 		}
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You detach ％！ from ％！.</span>", [live(thetank), live(f.src)])]);
-		yield* g.callName(f, rt.sv(f, "tank"), "forceMove", [rt.getStep(f, live(user), 0)]);
-		yield* g.callName(f, live(user), "put_in_hands", [rt.sv(f, "tank")]);
-		rt.setSv(f, "tank", null);
+		to_chat(user, fmt("<span class='notice'>You detach ％！ from ％！.</span>", [thetank, this]));
+		yield* this.tank.forceMove(rt.getStep(f, user, 0));
+		yield* user.put_in_hands(this.tank);
+		this.tank = null;
 	}
-	if (truthy(live(removing))) return f.dot;
-	if (truthy(rt.sv(f, "tank"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＄！ already has a tank.</span>", [live(f.src)])]);
-		return live(f.dot);
+	if (removing) return f.dot;
+	if (this.tank) {
+		to_chat(user, fmt("<span class='warning'>＄！ already has a tank.</span>", [this]));
+		return f.dot;
 	}
-	if (!truthy((yield* g.callName(f, live(user), "transferItemToLoc", [live(thetank), live(f.src)])))) {
-		return live(f.dot);
+	if (!(yield* user.transferItemToLoc(thetank, this))) {
+		return f.dot;
 	}
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You hook ％！ up to ％！.</span>", [live(thetank), live(f.src)])]);
-	rt.setSv(f, "tank", live(thetank));
+	to_chat(user, fmt("<span class='notice'>You hook ％！ up to ％！.</span>", [thetank, this]));
+	this.tank = thetank;
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/melee/powerfist/proc/attack  (code/game/objects/items/weapons/powerfist.dm:73)  may sleep
+// powerfist.dm:73
 rt.def("/obj/item/weapon/melee/powerfist/proc/attack", function* attack(f: Frame, target: Value, user: Value) {
-	let throw_target: Value = null;
-	f.vars = () => [target, user, throw_target];
-	if (!truthy(rt.sv(f, "tank"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＄！ can't operate without a source of gas!</span>", [live(f.src)])]);
-		return live(f.dot);
+	if (!this.tank) {
+		to_chat(user, fmt("<span class='warning'>＄！ can't operate without a source of gas!</span>", [this]));
+		return f.dot;
 	}
-	if ((truthy(rt.sv(f, "tank")) && !truthy((yield* g.callName(f, rt.fv(f, "air_contents", rt.sv(f, "tank")), "remove", [multiply(rt.sv(f, "gasperfist"), rt.sv(f, "fisto_setting"))]))))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＄！'s piston-ram lets out a weak hiss, it needs more gas!</span>", [live(f.src)])]);
-		yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/effects/refill.ogg"), 50, 1]);
-		return live(f.dot);
+	if (this.tank && !(yield* this.tank.air_contents.remove(this.gasperfist * this.fisto_setting))) {
+		to_chat(user, fmt("<span class='warning'>＄！'s piston-ram lets out a weak hiss, it needs more gas!</span>", [this]));
+		playsound(this.loc, rt.rsc("sound/effects/refill.ogg"), 50, 1);
+		return f.dot;
 	}
-	yield* g.callName(f, live(target), "apply_damage", [multiply(rt.sv(f, "force"), rt.sv(f, "fisto_setting")), "brute"]);
-	yield* g.callName(f, live(target), "visible_message", [fmt("<span class='danger'>＀'s powerfist lets out a loud hiss as they punch ＀!</span>", [live(user), rt.fv(f, "name", live(target))]), fmt("<span class='userdanger'>You cry out in pain as ＀'s punch flings you backwards!</span>", [live(user)])]);
-	yield* g.new_(f, T("/obj/effect/temp_visual/kinetic_blast"), [rt.fv(f, "loc", live(target))]);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/weapons/resonator_blast.ogg"), 50, 1]);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/weapons/genhit2.ogg"), 50, 1]);
-	throw_target = (yield* g.call(f, P("/proc/get_edge_target_turf"), null, [live(target), rt.getDir(f, live(f.src), (yield* g.call(f, P("/proc/get_step_away"), null, [live(target), live(f.src)])))]));
-	yield* g.callName(f, live(target), "throw_at", [live(throw_target), multiply(5, rt.sv(f, "fisto_setting")), 0.20000000298023224]);
-	yield* g.call(f, P("/proc/add_logs"), null, [live(user), live(target), "power fisted", live(f.src)]);
-	yield* g.callName(f, live(user), "changeNext_move", [multiply(8, rt.sv(f, "click_delay"))]);
-	return live(f.dot);
+	yield* target.apply_damage(this.force * this.fisto_setting, "brute");
+	target.visible_message(`<span class='danger'>${user}'s powerfist lets out a loud hiss as they punch ${target.name}!</span>`, `<span class='userdanger'>You cry out in pain as ${user}'s punch flings you backwards!</span>`);
+	yield* new_(T("/obj/effect/temp_visual/kinetic_blast"), target.loc);
+	playsound(this.loc, rt.rsc("sound/weapons/resonator_blast.ogg"), 50, 1);
+	playsound(this.loc, rt.rsc("sound/weapons/genhit2.ogg"), 50, 1);
+	let throw_target: Value = get_edge_target_turf(target, rt.getDir(f, this, get_step_away(target, this)));
+	yield* target.throw_at(throw_target, 5 * this.fisto_setting, 0.2);
+	add_logs(user, target, "power fisted", this);
+	user.changeNext_move(8 * this.click_delay);
+	return f.dot;
 }, true);

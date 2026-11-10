@@ -1,7 +1,7 @@
-// From code/datums/diseases/retrovirus.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/datums/diseases/retrovirus.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(960, "/datum/disease/dna_retrovirus", "/datum/disease", {
@@ -22,102 +22,97 @@ rt.type(960, "/datum/disease/dna_retrovirus", "/datum/disease", {
 	viable_mobtypes: null,
 });
 
-// /datum/disease/dna_retrovirus/proc/<init>  (code/datums/diseases/retrovirus.dm:9)
+// retrovirus.dm:9
 rt.def("/datum/disease/dna_retrovirus/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "viable_mobtypes", rt.list(T("/mob/living/carbon/human")));
+	parent_proc();
+	this.viable_mobtypes = list(T("/mob/living/carbon/human"));
 	return f.dot;
 });
 
-// /datum/disease/dna_retrovirus/proc/New  (code/datums/diseases/retrovirus.dm:20)  may sleep
+// retrovirus.dm:20
 rt.def("/datum/disease/dna_retrovirus/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "agent", fmt("Virus class ＀＀-＀", [rt.op(f, "PickUnweighted", [6], ["A", "B", "C", "D", "E", "F"]), rt.op(f, "PickUnweighted", [6], ["A", "B", "C", "D", "E", "F"]), (yield* g.call(f, P("/proc/rand"), null, [50, 300]))]));
-	if (truthy(rt.op(f, "Prob", [], [40]))) {
-		rt.setSv(f, "cures", rt.list("mutadone"));
+	yield* parent_proc();
+	this.agent = `Virus class ${pick("A", "B", "C", "D", "E", "F")}${pick("A", "B", "C", "D", "E", "F")}-${rand(50, 300)}`;
+	if (prob(40)) {
+		this.cures = list("mutadone");
 	} else {
-		rt.setSv(f, "restcure", 1);
+		this.restcure = 1;
 	}
 	return f.dot;
 }, true);
 
-// /datum/disease/dna_retrovirus/proc/stage_act  (code/datums/diseases/retrovirus.dm:29)  may sleep
+// retrovirus.dm:29
 rt.def("/datum/disease/dna_retrovirus/proc/stage_act", function* stage_act(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	$0 = rt.sv(f, "stage");
-	if ($0 === 1) {
-		if (truthy(rt.sv(f, "restcure"))) {
-			if ((truthy(rt.fv(f, "lying", rt.sv(f, "affected_mob"))) && truthy(rt.op(f, "Prob", [], [30])))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "affected_mob"), "<span class='notice'>You feel better.</span>"]);
-				yield* g.srcCall(f, "cure");
-				return live(f.dot);
+	yield* parent_proc();
+	if (this.stage === 1) {
+		if (this.restcure) {
+			if (this.affected_mob.lying && prob(30)) {
+				to_chat(this.affected_mob, "<span class='notice'>You feel better.</span>");
+				yield* this.cure();
+				return f.dot;
 			}
 		}
-		if (truthy(rt.op(f, "Prob", [], [8]))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "affected_mob"), "<span class='danger'>Your head hurts.</span>"]);
+		if (prob(8)) {
+			to_chat(this.affected_mob, "<span class='danger'>Your head hurts.</span>");
 		}
-		if (truthy(rt.op(f, "Prob", [], [9]))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "affected_mob"), "You feel a tingling sensation in your chest."]);
+		if (prob(9)) {
+			to_chat(this.affected_mob, "You feel a tingling sensation in your chest.");
 		}
-		if (truthy(rt.op(f, "Prob", [], [9]))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "affected_mob"), "<span class='danger'>You feel angry.</span>"]);
+		if (prob(9)) {
+			to_chat(this.affected_mob, "<span class='danger'>You feel angry.</span>");
 		}
-	} else if ($0 === 2) {
-		if (truthy(rt.sv(f, "restcure"))) {
-			if ((truthy(rt.fv(f, "lying", rt.sv(f, "affected_mob"))) && truthy(rt.op(f, "Prob", [], [20])))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "affected_mob"), "<span class='notice'>You feel better.</span>"]);
-				yield* g.srcCall(f, "cure");
-				return live(f.dot);
+	} else if (this.stage === 2) {
+		if (this.restcure) {
+			if (this.affected_mob.lying && prob(20)) {
+				to_chat(this.affected_mob, "<span class='notice'>You feel better.</span>");
+				yield* this.cure();
+				return f.dot;
 			}
 		}
-		if (truthy(rt.op(f, "Prob", [], [8]))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "affected_mob"), "<span class='danger'>Your skin feels loose.</span>"]);
+		if (prob(8)) {
+			to_chat(this.affected_mob, "<span class='danger'>Your skin feels loose.</span>");
 		}
-		if (truthy(rt.op(f, "Prob", [], [10]))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "affected_mob"), "You feel very strange."]);
+		if (prob(10)) {
+			to_chat(this.affected_mob, "You feel very strange.");
 		}
-		if (truthy(rt.op(f, "Prob", [], [4]))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "affected_mob"), "<span class='danger'>You feel a stabbing pain in your head!</span>"]);
-			yield* g.callName(f, rt.sv(f, "affected_mob"), "Unconscious", [40]);
+		if (prob(4)) {
+			to_chat(this.affected_mob, "<span class='danger'>You feel a stabbing pain in your head!</span>");
+			yield* this.affected_mob.Unconscious(40);
 		}
-		if (truthy(rt.op(f, "Prob", [], [4]))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "affected_mob"), "<span class='danger'>Your stomach churns.</span>"]);
+		if (prob(4)) {
+			to_chat(this.affected_mob, "<span class='danger'>Your stomach churns.</span>");
 		}
-	} else if ($0 === 3) {
-		if (truthy(rt.sv(f, "restcure"))) {
-			if ((truthy(rt.fv(f, "lying", rt.sv(f, "affected_mob"))) && truthy(rt.op(f, "Prob", [], [20])))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "affected_mob"), "<span class='notice'>You feel better.</span>"]);
-				yield* g.srcCall(f, "cure");
-				return live(f.dot);
+	} else if (this.stage === 3) {
+		if (this.restcure) {
+			if (this.affected_mob.lying && prob(20)) {
+				to_chat(this.affected_mob, "<span class='notice'>You feel better.</span>");
+				yield* this.cure();
+				return f.dot;
 			}
 		}
-		if (truthy(rt.op(f, "Prob", [], [10]))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "affected_mob"), "<span class='danger'>Your entire body vibrates.</span>"]);
+		if (prob(10)) {
+			to_chat(this.affected_mob, "<span class='danger'>Your entire body vibrates.</span>");
 		}
-		if (truthy(rt.op(f, "Prob", [], [35]))) {
-			if (truthy(rt.op(f, "Prob", [], [50]))) {
-				yield* g.call(f, P("/proc/scramble_dna"), null, [rt.sv(f, "affected_mob"), 1, 0, (yield* g.call(f, P("/proc/rand"), null, [15, 45]))]);
+		if (prob(35)) {
+			if (prob(50)) {
+				yield* scramble_dna(this.affected_mob, 1, 0, rand(15, 45));
 			} else {
-				yield* g.call(f, P("/proc/scramble_dna"), null, [rt.sv(f, "affected_mob"), 0, 1, (yield* g.call(f, P("/proc/rand"), null, [15, 45]))]);
+				yield* scramble_dna(this.affected_mob, 0, 1, rand(15, 45));
 			}
 		}
-	} else if ($0 === 4) {
-		if (truthy(rt.sv(f, "restcure"))) {
-			if ((truthy(rt.fv(f, "lying", rt.sv(f, "affected_mob"))) && truthy(rt.op(f, "Prob", [], [5])))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "affected_mob"), "<span class='notice'>You feel better.</span>"]);
-				yield* g.srcCall(f, "cure");
-				return live(f.dot);
+	} else if (this.stage === 4) {
+		if (this.restcure) {
+			if (this.affected_mob.lying && prob(5)) {
+				to_chat(this.affected_mob, "<span class='notice'>You feel better.</span>");
+				yield* this.cure();
+				return f.dot;
 			}
 		}
-		if (!truthy(rt.op(f, "Prob", [], [60]))) return f.dot;
-		if (truthy(rt.op(f, "Prob", [], [50]))) {
-			yield* g.call(f, P("/proc/scramble_dna"), null, [rt.sv(f, "affected_mob"), 1, 0, (yield* g.call(f, P("/proc/rand"), null, [50, 75]))]);
+		if (!prob(60)) return f.dot;
+		if (prob(50)) {
+			yield* scramble_dna(this.affected_mob, 1, 0, rand(50, 75));
 		} else {
-			yield* g.call(f, P("/proc/scramble_dna"), null, [rt.sv(f, "affected_mob"), 0, 1, (yield* g.call(f, P("/proc/rand"), null, [50, 75]))]);
+			yield* scramble_dna(this.affected_mob, 0, 1, rand(50, 75));
 		}
 	}
 	return f.dot;

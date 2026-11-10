@@ -1,68 +1,62 @@
-// From code/modules/events/wizard/imposter.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/events/wizard/imposter.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(343, "/datum/round_event/wizard/imposter", "/datum/round_event/wizard", {});
 
-// /datum/round_event/wizard/imposter/proc/start  (code/modules/events/wizard/imposter.dm:10)  may sleep
+// imposter.dm:10
 rt.def("/datum/round_event/wizard/imposter/proc/start", function* start(f: Frame) {
 	let M: Value = null, W: Value = null, candidates: Value = null, C: Value = null, I: Value = null, protect_objective: Value = null;
-	let $e: any;
-	f.vars = () => [M, W, candidates, C, I, protect_objective, $e];
-	M = null;
-	rt.forList(f, 0, rt.gv(f, "wizards", rt.fv(f, "mode", rt.gl("SSticker"))), T("/datum/mind"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if (!truthy((rt.istype(rt.fv(f, "current", live(M)), T("/mob/living/carbon/human")) ? 1 : 0))) {
+	for (M of each(GLOB.SSticker.mode.wizards, T("/datum/mind"))) {
+		if (!rt.istype(M.current, T("/mob/living/carbon/human"))) {
 			continue;
 		}
-		W = rt.fv(f, "current", live(M));
-		if (!truthy((candidates = (yield* g.call(f, P("/proc/get_candidates"), null, ["wizard"]))))) {
-			return live(f.dot);
+		W = M.current;
+		if (!(candidates = get_candidates("wizard"))) {
+			return f.dot;
 		}
-		C = rt.op(f, "PickUnweighted", [1], [live(candidates)]);
-		yield* g.new_(f, T("/obj/effect/particle_effect/smoke"), [rt.fv(f, "loc", live(W))]);
-		I = (yield* g.new_(f, T("/mob/living/carbon/human"), [rt.fv(f, "loc", live(W))]));
-		yield* g.callName(f, rt.fv(f, "dna", live(W)), "transfer_identity", [null, live(I), "transfer_SE", 1], rt.Args.Named);
-		rt.setFv(f, "real_name", live(I), rt.gv(f, "real_name", rt.fv(f, "dna", live(I))));
-		rt.setFv(f, "name", live(I), rt.gv(f, "real_name", rt.fv(f, "dna", live(I))));
-		yield* g.callName(f, live(I), "updateappearance", ["mutcolor_update", 1], rt.Args.Named);
-		yield* g.callName(f, live(I), "domutcheck", []);
-		if (truthy(rt.fv(f, "ears", live(W)))) {
-			yield* g.callName(f, live(I), "equip_to_slot_or_del", [(yield* g.new_(f, rt.gv(f, "type", rt.fv(f, "ears", live(W))), [])), 7]);
+		C = pick(candidates);
+		yield* new_(T("/obj/effect/particle_effect/smoke"), W.loc);
+		I = (yield* new_(T("/mob/living/carbon/human"), W.loc));
+		yield* W.dna.transfer_identity(I, { transfer_SE: 1 });
+		I.real_name = I.dna.real_name;
+		I.name = I.dna.real_name;
+		yield* I.updateappearance({ mutcolor_update: 1 });
+		yield* I.domutcheck();
+		if (W.ears) {
+			yield* I.equip_to_slot_or_del((yield* new_(W.ears.type)), slot_ears);
 		}
-		if (truthy(rt.fv(f, "w_uniform", live(W)))) {
-			yield* g.callName(f, live(I), "equip_to_slot_or_del", [(yield* g.new_(f, rt.gv(f, "type", rt.fv(f, "w_uniform", live(W))), [])), 14]);
+		if (W.w_uniform) {
+			yield* I.equip_to_slot_or_del((yield* new_(W.w_uniform.type)), slot_w_uniform);
 		}
-		if (truthy(rt.fv(f, "shoes", live(W)))) {
-			yield* g.callName(f, live(I), "equip_to_slot_or_del", [(yield* g.new_(f, rt.gv(f, "type", rt.fv(f, "shoes", live(W))), [])), 12]);
+		if (W.shoes) {
+			yield* I.equip_to_slot_or_del((yield* new_(W.shoes.type)), slot_shoes);
 		}
-		if (truthy(rt.fv(f, "wear_suit", live(W)))) {
-			yield* g.callName(f, live(I), "equip_to_slot_or_del", [(yield* g.new_(f, rt.gv(f, "type", rt.fv(f, "wear_suit", live(W))), [])), 13]);
+		if (W.wear_suit) {
+			yield* I.equip_to_slot_or_del((yield* new_(W.wear_suit.type)), slot_wear_suit);
 		}
-		if (truthy(rt.fv(f, "head", live(W)))) {
-			yield* g.callName(f, live(I), "equip_to_slot_or_del", [(yield* g.new_(f, rt.gv(f, "type", rt.fv(f, "head", live(W))), [])), 11]);
+		if (W.head) {
+			yield* I.equip_to_slot_or_del((yield* new_(W.head.type)), slot_head);
 		}
-		if (truthy(rt.fv(f, "back", live(W)))) {
-			yield* g.callName(f, live(I), "equip_to_slot_or_del", [(yield* g.new_(f, rt.gv(f, "type", rt.fv(f, "back", live(W))), [])), 1]);
+		if (W.back) {
+			yield* I.equip_to_slot_or_del((yield* new_(W.back.type)), slot_back);
 		}
-		rt.setFv(f, "key", live(I), rt.fv(f, "key", live(C)));
-		yield* g.callName(f, rt.fv(f, "mind", live(I)), "AddSpell", [(yield* g.new_(f, T("/obj/effect/proc_holder/spell/targeted/area_teleport/teleport"), [null]))]);
-		yield* g.callName(f, rt.fv(f, "mind", live(I)), "AddSpell", [(yield* g.new_(f, T("/obj/effect/proc_holder/spell/targeted/turf_teleport/blink"), [null]))]);
-		yield* g.callName(f, rt.fv(f, "mind", live(I)), "AddSpell", [(yield* g.new_(f, T("/obj/effect/proc_holder/spell/targeted/ethereal_jaunt"), [null]))]);
-		rt.modField(f, rt.fv(f, "mode", rt.gl("SSticker")), "apprentices", rt.fv(f, "mind", live(I)), add);
-		rt.setFv(f, "special_role", rt.fv(f, "mind", live(I)), "imposter");
-		rt.setFv(f, "owner", (protect_objective = (yield* g.new_(f, T("/datum/objective/protect"), []))), rt.fv(f, "mind", live(I)));
-		rt.setFv(f, "target", live(protect_objective), rt.fv(f, "mind", live(W)));
-		rt.setFv(f, "explanation_text", live(protect_objective), fmt("Protect ＀, the wizard.", [rt.fv(f, "real_name", live(W))]));
-		rt.modField(f, rt.fv(f, "mind", live(I)), "objectives", live(protect_objective), add);
-		yield* g.callName(f, rt.fv(f, "mode", rt.gl("SSticker")), "update_wiz_icons_added", [rt.fv(f, "mind", live(I))]);
-		yield* g.callName(f, live(I), "log_message", ["<font color='red'>Is an imposter!</font>", "Attack log"]);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(I), "<B>You are an imposter! Trick and confuse the crew to misdirect malice from your handsome original!</B>"]);
-		rt.op(f, "Output", [], [live(I), (yield* g.call(f, P("/proc/sound"), null, [rt.rsc("sound/effects/magic.ogg")]))], false);
+		I.key = C.key;
+		yield* I.mind.AddSpell((yield* new_(T("/obj/effect/proc_holder/spell/targeted/area_teleport/teleport"), null)));
+		yield* I.mind.AddSpell((yield* new_(T("/obj/effect/proc_holder/spell/targeted/turf_teleport/blink"), null)));
+		yield* I.mind.AddSpell((yield* new_(T("/obj/effect/proc_holder/spell/targeted/ethereal_jaunt"), null)));
+		GLOB.SSticker.mode.apprentices += I.mind;
+		I.mind.special_role = "imposter";
+		(protect_objective = (yield* new_(T("/datum/objective/protect")))).owner = I.mind;
+		protect_objective.target = W.mind;
+		protect_objective.explanation_text = `Protect ${W.real_name}, the wizard.`;
+		I.mind.objectives += protect_objective;
+		GLOB.SSticker.mode.update_wiz_icons_added(I.mind);
+		I.log_message("<font color='red'>Is an imposter!</font>", "Attack log");
+		to_chat(I, "<B>You are an imposter! Trick and confuse the crew to misdirect malice from your handsome original!</B>");
+		rt.op(f, "Output", [], [I, sound(rt.rsc("sound/effects/magic.ogg"))], false);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);

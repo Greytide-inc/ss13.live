@@ -1,7 +1,7 @@
-// From code/game/machinery/mass_driver.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/machinery/mass_driver.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(10806, "/obj/machinery/mass_driver", "/obj/machinery", {
@@ -19,43 +19,35 @@ rt.type(10806, "/obj/machinery/mass_driver", "/obj/machinery", {
 	icon_state: "mass_driver",
 });
 
-// /obj/machinery/mass_driver/proc/drive  (code/game/machinery/mass_driver.dm:17)  may sleep
+// mass_driver.dm:17
 rt.def("/obj/machinery/mass_driver/proc/drive", function* drive(f: Frame, amount: Value) {
-	let O_limit: Value = null, target: Value = null, O: Value = null;
-	let $e: any;
-	f.vars = () => [amount, O_limit, target, O, $e];
-	if (truthy(rt.bitAnd(rt.sv(f, "stat"), 3))) {
-		return live(f.dot);
+	let O_limit: Value = null, O: Value = null;
+	if (rt.bitAnd(this.stat, 3)) {
+		return f.dot;
 	}
-	yield* g.srcCall(f, "use_power", 500);
-	O_limit = null;
-	target = (yield* g.call(f, P("/proc/get_edge_target_turf"), null, [live(f.src), rt.sv(f, "dir")]));
-	O = null;
-	rt.forList(f, 0, rt.sv(f, "loc"), T("/atom/movable"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		O = $e;
-		if ((!truthy(rt.fv(f, "anchored", live(O))) || truthy((rt.istype(live(O), T("/obj/mecha")) ? 1 : 0)))) {
-			O_limit = rt.inc(live(O_limit), 1);
-			if (rt.ge(live(O_limit), 20)) {
-				yield* g.srcCall(f, "audible_message", fmt("<span class='notice'>＀ lets out a screech, it doesn't seem to be able to handle the load.</span>", [live(f.src)]));
+	yield* this.use_power(500);
+	let target: Value = get_edge_target_turf(this, this.dir);
+	for (O of each(this.loc, T("/atom/movable"))) {
+		if (!O.anchored || rt.istype(O, T("/obj/mecha"))) {
+			O_limit++;
+			if (O_limit >= 20) {
+				this.audible_message(`<span class='notice'>${this} lets out a screech, it doesn't seem to be able to handle the load.</span>`);
 				break;
 			}
-			yield* g.srcCall(f, "use_power", 500);
-			yield* g.callName(f, live(O), "throw_at", [live(target), multiply(rt.sv(f, "drive_range"), rt.sv(f, "power")), rt.sv(f, "power")]);
+			yield* this.use_power(500);
+			yield* O.throw_at(target, this.drive_range * this.power, this.power);
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/flick"), null, ["mass_driver1", live(f.src)]);
+	flick("mass_driver1", this);
 	return f.dot;
 }, true);
 
-// /obj/machinery/mass_driver/proc/emp_act  (code/game/machinery/mass_driver.dm:34)  may sleep
+// mass_driver.dm:34
 rt.def("/obj/machinery/mass_driver/proc/emp_act", function* emp_act(f: Frame, severity: Value) {
-	f.vars = () => [severity];
-	if (truthy(rt.bitAnd(rt.sv(f, "stat"), 3))) {
-		return live(f.dot);
+	if (rt.bitAnd(this.stat, 3)) {
+		return f.dot;
 	}
-	yield* g.srcCall(f, "drive");
-	yield* g.callSuper(f, [live(severity)]);
+	yield* this.drive();
+	yield* parent_proc(severity);
 	return f.dot;
 }, true);

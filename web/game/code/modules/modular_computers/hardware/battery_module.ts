@@ -1,7 +1,7 @@
-// From code/modules/modular_computers/hardware/battery_module.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/modular_computers/hardware/battery_module.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(7580, "/obj/item/weapon/computer_hardware/battery", "/obj/item/weapon/computer_hardware", {
@@ -15,68 +15,56 @@ rt.type(7580, "/obj/item/weapon/computer_hardware/battery", "/obj/item/weapon/co
 	origin_tech: "powerstorage=1;engineering=1",
 });
 
-// /obj/item/weapon/computer_hardware/battery/proc/New  (code/modules/modular_computers/hardware/battery_module.dm:13)  may sleep
+// battery_module.dm:13
 rt.def("/obj/item/weapon/computer_hardware/battery/proc/New", function* New(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = null;
 	}
-	if (truthy(live(f.args[1]))) {
-		rt.setSv(f, "battery", (yield* g.new_(f, live(f.args[1]), [live(f.src)])));
+	if (f.args[1]) {
+		this.battery = (yield* new_(f.args[1], this));
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true, { args: ["loc", "battery_type"] });
 
-// /obj/item/weapon/computer_hardware/battery/proc/try_insert  (code/modules/modular_computers/hardware/battery_module.dm:17)  may sleep
+// battery_module.dm:17
 rt.def("/obj/item/weapon/computer_hardware/battery/proc/try_insert", function* try_insert(f: Frame, I: Value, user: Value) {
-	f.vars = () => [I, user];
-	if (live(user) === null) {
-		user = null;
-	}
-	if (!truthy(rt.sv(f, "holder"))) {
+	if (!this.holder) {
 		return 0;
 	}
-	if (!truthy((rt.istype(live(I), T("/obj/item/weapon/stock_parts/cell")) ? 1 : 0))) {
+	if (!rt.istype(I, T("/obj/item/weapon/stock_parts/cell"))) {
 		return 0;
 	}
-	if (truthy(rt.sv(f, "battery"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>You try to connect ％！ to ％！, but its connectors are occupied.</span>", [live(I), live(f.src)])]);
+	if (this.battery) {
+		to_chat(user, fmt("<span class='warning'>You try to connect ％！ to ％！, but its connectors are occupied.</span>", [I, this]));
 		return 0;
 	}
-	if (rt.gt(rt.fv(f, "w_class", live(I)), rt.fv(f, "max_hardware_size", rt.sv(f, "holder")))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>This power cell is too large for ％！!</span>", [rt.sv(f, "holder")])]);
+	if (I.w_class > this.holder.max_hardware_size) {
+		to_chat(user, fmt("<span class='warning'>This power cell is too large for ％！!</span>", [this.holder]));
 		return 0;
 	}
-	if ((truthy(live(user)) && !truthy((yield* g.callName(f, live(user), "transferItemToLoc", [live(I), live(f.src)]))))) {
+	if (user && !(yield* user.transferItemToLoc(I, this))) {
 		return 0;
 	}
-	rt.setSv(f, "battery", live(I));
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You connect ％！ to ％！.</span>", [live(I), live(f.src)])]);
+	this.battery = I;
+	to_chat(user, fmt("<span class='notice'>You connect ％！ to ％！.</span>", [I, this]));
 	return 1;
 }, true);
 
-// /obj/item/weapon/computer_hardware/battery/proc/try_eject  (code/modules/modular_computers/hardware/battery_module.dm:41)  may sleep
+// battery_module.dm:41
 rt.def("/obj/item/weapon/computer_hardware/battery/proc/try_eject", function* try_eject(f: Frame, slot: Value, user: Value, forced: Value) {
-	f.vars = () => [slot, user, forced];
-	if (live(slot) === null) {
-		slot = 0;
-	}
-	if (live(user) === null) {
-		user = null;
-	}
-	if (live(forced) === null) {
-		forced = 0;
-	}
-	if (!truthy(rt.sv(f, "battery"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>There is no power cell connected to ％！.</span>", [live(f.src)])]);
+	slot ??= 0;
+	forced ??= 0;
+	if (!this.battery) {
+		to_chat(user, fmt("<span class='warning'>There is no power cell connected to ％！.</span>", [this]));
 		return 0;
 	} else {
-		yield* g.callName(f, rt.sv(f, "battery"), "forceMove", [rt.getStep(f, live(f.src), 0)]);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You detach ％！ from ％！.</span>", [rt.sv(f, "battery"), live(f.src)])]);
-		rt.setSv(f, "battery", null);
-		if (truthy(rt.sv(f, "holder"))) {
-			if ((truthy(rt.fv(f, "enabled", rt.sv(f, "holder"))) && !truthy((yield* g.callName(f, rt.sv(f, "holder"), "use_power", []))))) {
-				yield* g.callName(f, rt.sv(f, "holder"), "shutdown_computer", []);
+		yield* this.battery.forceMove(rt.getStep(f, this, 0));
+		to_chat(user, fmt("<span class='notice'>You detach ％！ from ％！.</span>", [this.battery, this]));
+		this.battery = null;
+		if (this.holder) {
+			if (this.holder.enabled && !(yield* this.holder.use_power())) {
+				yield* this.holder.shutdown_computer();
 			}
 		}
 		return 1;

@@ -1,7 +1,7 @@
-// From code/modules/mob/living/carbon/monkey/punpun.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/carbon/monkey/punpun.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(4821, "/mob/living/carbon/monkey/punpun", "/mob/living/carbon/monkey", {
@@ -16,90 +16,87 @@ rt.type(4821, "/mob/living/carbon/monkey/punpun", "/mob/living/carbon/monkey", {
 	unique_name: 0,
 });
 
-// /mob/living/carbon/monkey/punpun/proc/Initialize  (code/modules/mob/living/carbon/monkey/punpun.dm:13)  may sleep
+// punpun.dm:13
 rt.def("/mob/living/carbon/monkey/punpun/proc/Initialize", function* Initialize(f: Frame) {
-	yield* g.srcCall(f, "Read_Memory");
-	if (truthy(rt.sv(f, "ancestor_name"))) {
-		rt.setSv(f, "name", rt.sv(f, "ancestor_name"));
-		if (rt.gt(rt.sv(f, "ancestor_chain"), 1)) {
-			rt.modSrcVar(f, "name", fmt(" ３！", [rt.sv(f, "ancestor_chain")]), add);
+	yield* this.Read_Memory();
+	if (this.ancestor_name) {
+		this.name = this.ancestor_name;
+		if (this.ancestor_chain > 1) {
+			this.name += fmt(" ３！", [this.ancestor_chain]);
 		}
 	} else {
-		if (truthy(rt.op(f, "Prob", [], [5]))) {
-			rt.setSv(f, "name", rt.op(f, "PickUnweighted", [1], [rt.sv(f, "rare_pet_monkey_names")]));
+		if (prob(5)) {
+			this.name = pick(this.rare_pet_monkey_names);
 		} else {
-			rt.setSv(f, "name", rt.op(f, "PickUnweighted", [1], [rt.sv(f, "pet_monkey_names")]));
+			this.name = pick(this.pet_monkey_names);
 		}
-		rt.setSv(f, "gender", rt.op(f, "PickUnweighted", [2], ["male", "female"]));
+		this.gender = pick("male", "female");
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.sv(f, "relic_hat"))) {
-		yield* g.srcCall(f, "equip_to_slot_or_del", (yield* g.new_(f, rt.sv(f, "relic_hat"), [])), 11);
+	yield* parent_proc();
+	if (this.relic_hat) {
+		yield* this.equip_to_slot_or_del((yield* new_(this.relic_hat)), slot_head);
 	}
-	if (!truthy(rt.sv(f, "relic_mask"))) return f.dot;
-	yield* g.srcCall(f, "equip_to_slot_or_del", (yield* g.new_(f, rt.sv(f, "relic_mask"), [])), 2);
+	if (!this.relic_mask) return f.dot;
+	yield* this.equip_to_slot_or_del((yield* new_(this.relic_mask)), slot_wear_mask);
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/monkey/punpun/proc/Life  (code/modules/mob/living/carbon/monkey/punpun.dm:35)
+// punpun.dm:35
 rt.def("/mob/living/carbon/monkey/punpun/proc/Life", function Life(f: Frame) {
-	if ((isEqual(rt.fv(f, "current_state", rt.gl("SSticker")), 4) && !truthy(rt.sv(f, "memory_saved")))) {
-		rt.callSrc(f, "Write_Memory", [0]);
+	if (GLOB.SSticker.current_state == GAME_STATE_FINISHED && !this.memory_saved) {
+		this.Write_Memory(0);
 	}
-	rt.callSuper(f, [], rt.Args.Same);
+	parent_proc();
 	return f.dot;
 }, false, { waitfor: false });
 
-// /mob/living/carbon/monkey/punpun/proc/death  (code/modules/mob/living/carbon/monkey/punpun.dm:40)  may sleep
-rt.def("/mob/living/carbon/monkey/punpun/proc/death", function* death(f: Frame) {
-	if ((!truthy(rt.sv(f, "memory_saved")) || truthy(live(f.args[0])))) {
-		yield* g.srcCall(f, "Write_Memory", 1, live(f.args[0]));
+// punpun.dm:40
+rt.def("/mob/living/carbon/monkey/punpun/proc/death", function* death(f: Frame, gibbed: Value) {
+	if (!this.memory_saved || gibbed) {
+		this.Write_Memory(1, gibbed);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["gibbed"] });
+}, true);
 
-// /mob/living/carbon/monkey/punpun/proc/Read_Memory  (code/modules/mob/living/carbon/monkey/punpun.dm:45)
+// punpun.dm:45
 rt.def("/mob/living/carbon/monkey/punpun/proc/Read_Memory", function Read_Memory(f: Frame) {
 	let S: Value = null;
-	f.vars = () => [S];
-	rt.setSv(f, "ancestor_name", rt.input(f, rt.R.index, null, [(S = rt.new_(f, T("/savefile"), ["data/npc_saves/Punpun.sav"])), "ancestor_name"]));
-	rt.setSv(f, "ancestor_chain", rt.input(f, rt.R.index, null, [live(S), "ancestor_chain"]));
-	rt.setSv(f, "relic_hat", rt.input(f, rt.R.index, null, [live(S), "relic_hat"]));
-	rt.setSv(f, "relic_mask", rt.input(f, rt.R.index, null, [live(S), "relic_mask"]));
+	this.ancestor_name = rt.input(f, rt.R.index, null, [(S = new_(T("/savefile"), "data/npc_saves/Punpun.sav")), "ancestor_name"]);
+	this.ancestor_chain = rt.input(f, rt.R.index, null, [S, "ancestor_chain"]);
+	this.relic_hat = rt.input(f, rt.R.index, null, [S, "relic_hat"]);
+	this.relic_mask = rt.input(f, rt.R.index, null, [S, "relic_mask"]);
 	return f.dot;
 });
 
-// /mob/living/carbon/monkey/punpun/proc/Write_Memory  (code/modules/mob/living/carbon/monkey/punpun.dm:52)
+// punpun.dm:52
 rt.def("/mob/living/carbon/monkey/punpun/proc/Write_Memory", function Write_Memory(f: Frame, dead: Value, gibbed: Value) {
-	let S: Value = null;
-	f.vars = () => [S];
-	S = rt.new_(f, T("/savefile"), ["data/npc_saves/Punpun.sav"]);
-	if (truthy(live(gibbed))) {
-		rt.op(f, "OutputReference", [rt.R.index], [live(S), "ancestor_name", null], false);
-		rt.op(f, "OutputReference", [rt.R.index], [live(S), "ancestor_chain", 1], false);
-		rt.op(f, "OutputReference", [rt.R.index], [live(S), "relic_hat", null], false);
-		rt.op(f, "OutputReference", [rt.R.index], [live(S), "relic_mask", null], false);
-		return live(f.dot);
+	let S: Value = new_(T("/savefile"), "data/npc_saves/Punpun.sav");
+	if (gibbed) {
+		rt.op(f, "OutputReference", [rt.R.index], [S, "ancestor_name", null], false);
+		rt.op(f, "OutputReference", [rt.R.index], [S, "ancestor_chain", 1], false);
+		rt.op(f, "OutputReference", [rt.R.index], [S, "relic_hat", null], false);
+		rt.op(f, "OutputReference", [rt.R.index], [S, "relic_mask", null], false);
+		return f.dot;
 	}
-	if (truthy(live(dead))) {
-		rt.op(f, "OutputReference", [rt.R.index], [live(S), "ancestor_name", rt.sv(f, "ancestor_name")], false);
-		rt.op(f, "OutputReference", [rt.R.index], [live(S), "ancestor_chain", add(rt.sv(f, "ancestor_chain"), 1)], false);
+	if (dead) {
+		rt.op(f, "OutputReference", [rt.R.index], [S, "ancestor_name", this.ancestor_name], false);
+		rt.op(f, "OutputReference", [rt.R.index], [S, "ancestor_chain", this.ancestor_chain + 1], false);
 	}
-	if (!truthy(rt.sv(f, "ancestor_name"))) {
-		rt.op(f, "OutputReference", [rt.R.index], [live(S), "ancestor_name", rt.sv(f, "name")], false);
+	if (!this.ancestor_name) {
+		rt.op(f, "OutputReference", [rt.R.index], [S, "ancestor_name", this.name], false);
 	}
-	if (truthy(rt.sv(f, "head"))) {
-		rt.op(f, "OutputReference", [rt.R.index], [live(S), "relic_hat", rt.fv(f, "type", rt.sv(f, "head"))], false);
+	if (this.head) {
+		rt.op(f, "OutputReference", [rt.R.index], [S, "relic_hat", this.head.type], false);
 	} else {
-		rt.op(f, "OutputReference", [rt.R.index], [live(S), "relic_hat", null], false);
+		rt.op(f, "OutputReference", [rt.R.index], [S, "relic_hat", null], false);
 	}
-	if (truthy(rt.sv(f, "wear_mask"))) {
-		rt.op(f, "OutputReference", [rt.R.index], [live(S), "relic_mask", rt.fv(f, "type", rt.sv(f, "wear_mask"))], false);
+	if (this.wear_mask) {
+		rt.op(f, "OutputReference", [rt.R.index], [S, "relic_mask", this.wear_mask.type], false);
 	} else {
-		rt.op(f, "OutputReference", [rt.R.index], [live(S), "relic_mask", null], false);
+		rt.op(f, "OutputReference", [rt.R.index], [S, "relic_mask", null], false);
 	}
-	if (truthy(live(dead))) return f.dot;
-	rt.setSv(f, "memory_saved", 1);
+	if (dead) return f.dot;
+	this.memory_saved = 1;
 	return f.dot;
 });

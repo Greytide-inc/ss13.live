@@ -1,7 +1,7 @@
-// From code/game/objects/items/devices/radio/headset.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/devices/radio/headset.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, add } = rt;
 
 
 rt.type(9167, "/obj/item/device/radio/headset", "/obj/item/device/radio", {
@@ -17,51 +17,46 @@ rt.type(9167, "/obj/item/device/radio/headset", "/obj/item/device/radio", {
 	dog_fashion: null,
 });
 
-// /obj/item/device/radio/headset/proc/<init>  (code/game/objects/items/devices/radio/headset.dm:6)
+// headset.dm:6
 rt.def("/obj/item/device/radio/headset/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 75]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 75]);
 	return f.dot;
 });
 
-// /obj/item/device/radio/headset/proc/Initialize  (code/game/objects/items/devices/radio/headset.dm:15)  may sleep
+// headset.dm:15
 rt.def("/obj/item/device/radio/headset/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.srcCall(f, "recalculateChannels");
+	f.dot = (yield* parent_proc());
+	this.recalculateChannels();
 	return f.dot;
 }, true);
 
-// /obj/item/device/radio/headset/proc/Destroy  (code/game/objects/items/devices/radio/headset.dm:19)  may sleep
+// headset.dm:19
 rt.def("/obj/item/device/radio/headset/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "keyslot")]);
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "keyslot2")]);
-	rt.setSv(f, "keyslot", null);
-	rt.setSv(f, "keyslot2", null);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* qdel(this.keyslot);
+	yield* qdel(this.keyslot2);
+	this.keyslot = null;
+	this.keyslot2 = null;
+	return (yield* parent_proc());
 }, true);
 
-// /obj/item/device/radio/headset/proc/talk_into  (code/game/objects/items/devices/radio/headset.dm:26)  may sleep
-rt.def("/obj/item/device/radio/headset/proc/talk_into", function* talk_into(f: Frame) {
-	if (!truthy(rt.sv(f, "listening"))) {
+// headset.dm:26
+rt.def("/obj/item/device/radio/headset/proc/talk_into", function* talk_into(f: Frame, M: Value, message: Value, channel: Value, spans: Value, language: Value) {
+	if (!this.listening) {
 		return 3;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["M", "message", "channel", "spans", "language"] });
+	return (yield* parent_proc());
+}, true);
 
-// /obj/item/device/radio/headset/proc/receive_range  (code/game/objects/items/devices/radio/headset.dm:31)
+// headset.dm:31
 rt.def("/obj/item/device/radio/headset/proc/receive_range", function receive_range(f: Frame, freq: Value, level: Value, AIuser: Value) {
 	let H: Value = null;
-	f.vars = () => [H];
-	if (truthy((rt.istype(rt.fv(f, "loc", live(f.src)), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		if (isEqual(rt.gv(f, "ears", (H = rt.fv(f, "loc", live(f.src)))), live(f.src))) {
-			return rt.callSuper(f, [live(freq), live(level)]);
+	if (rt.istype(this.loc, T("/mob/living/carbon/human"))) {
+		if ((H = this.loc).ears == this) {
+			return parent_proc(freq, level);
 		}
-	} else {
-		if (truthy(live(AIuser))) {
-			return rt.callSuper(f, [live(freq), live(level)]);
-		}
+	} else if (AIuser) {
+		return parent_proc(freq, level);
 	}
 	return -1;
 });
@@ -74,24 +69,24 @@ rt.type(9170, "/obj/item/device/radio/headset/syndicate/alt", "/obj/item/device/
 	item_state: "syndie_headset",
 });
 
-// /obj/item/device/radio/headset/syndicate/alt/proc/Initialize  (code/game/objects/items/devices/radio/headset.dm:50)  may sleep
-rt.def("/obj/item/device/radio/headset/syndicate/alt/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(rt.fv(f, "secondary_flags", live(f.src)))) {
-		rt.setFv(f, "secondary_flags", live(f.src), rt.list());
+// headset.dm:50
+rt.def("/obj/item/device/radio/headset/syndicate/alt/proc/Initialize", function* Initialize(f: Frame, mapload: Value) {
+	f.dot = (yield* parent_proc());
+	if (!this.secondary_flags) {
+		this.secondary_flags = list();
 	}
-	rt.setAt(rt.fv(f, "secondary_flags", live(f.src)), "bang_protect", 1);
+	rt.setAt(this.secondary_flags, "bang_protect", 1);
 	return f.dot;
-}, true, { args: ["mapload"] });
+}, true);
 
 rt.type(9169, "/obj/item/device/radio/headset/syndicate", "/obj/item/device/radio/headset", {
 	origin_tech: "syndicate=3",
 });
 
-// /obj/item/device/radio/headset/syndicate/proc/Initialize  (code/game/objects/items/devices/radio/headset.dm:58)  may sleep
+// headset.dm:58
 rt.def("/obj/item/device/radio/headset/syndicate/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.srcCall(f, "make_syndie");
+	f.dot = (yield* parent_proc());
+	yield* this.make_syndie();
 	return f.dot;
 }, true);
 
@@ -99,12 +94,12 @@ rt.type(9172, "/obj/item/device/radio/headset/binary", "/obj/item/device/radio/h
 	origin_tech: "syndicate=3",
 });
 
-// /obj/item/device/radio/headset/binary/proc/Initialize  (code/game/objects/items/devices/radio/headset.dm:64)  may sleep
+// headset.dm:64
 rt.def("/obj/item/device/radio/headset/binary/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "keyslot")]);
-	rt.setSv(f, "keyslot", (yield* g.new_(f, T("/obj/item/device/encryptionkey/binary"), [])));
-	yield* g.srcCall(f, "recalculateChannels");
+	f.dot = (yield* parent_proc());
+	yield* qdel(this.keyslot);
+	this.keyslot = (yield* new_(T("/obj/item/device/encryptionkey/binary")));
+	this.recalculateChannels();
 	return f.dot;
 }, true);
 
@@ -115,12 +110,10 @@ rt.type(9173, "/obj/item/device/radio/headset/headset_sec", "/obj/item/device/ra
 	keyslot: null,
 });
 
-// /obj/item/device/radio/headset/headset_sec/proc/<init>  (code/game/objects/items/devices/radio/headset.dm:73)  may sleep
+// headset.dm:73
 rt.def("/obj/item/device/radio/headset/headset_sec/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "keyslot", (yield* g.new_(f, T("/obj/item/device/encryptionkey/headset_sec"), [])));
+	yield* parent_proc();
+	this.keyslot = (yield* new_(T("/obj/item/device/encryptionkey/headset_sec")));
 	return f.dot;
 }, true);
 
@@ -131,15 +124,15 @@ rt.type(9174, "/obj/item/device/radio/headset/headset_sec/alt", "/obj/item/devic
 	item_state: "sec_headset_alt",
 });
 
-// /obj/item/device/radio/headset/headset_sec/alt/proc/Initialize  (code/game/objects/items/devices/radio/headset.dm:82)  may sleep
-rt.def("/obj/item/device/radio/headset/headset_sec/alt/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(rt.fv(f, "secondary_flags", live(f.src)))) {
-		rt.setFv(f, "secondary_flags", live(f.src), rt.list());
+// headset.dm:82
+rt.def("/obj/item/device/radio/headset/headset_sec/alt/proc/Initialize", function* Initialize(f: Frame, mapload: Value) {
+	f.dot = (yield* parent_proc());
+	if (!this.secondary_flags) {
+		this.secondary_flags = list();
 	}
-	rt.setAt(rt.fv(f, "secondary_flags", live(f.src)), "bang_protect", 1);
+	rt.setAt(this.secondary_flags, "bang_protect", 1);
 	return f.dot;
-}, true, { args: ["mapload"] });
+}, true);
 
 rt.type(9180, "/obj/item/device/radio/headset/headset_eng", "/obj/item/device/radio/headset", {
 	name: "engineering radio headset",
@@ -148,12 +141,10 @@ rt.type(9180, "/obj/item/device/radio/headset/headset_eng", "/obj/item/device/ra
 	keyslot: null,
 });
 
-// /obj/item/device/radio/headset/headset_eng/proc/<init>  (code/game/objects/items/devices/radio/headset.dm:89)  may sleep
+// headset.dm:89
 rt.def("/obj/item/device/radio/headset/headset_eng/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "keyslot", (yield* g.new_(f, T("/obj/item/device/encryptionkey/headset_eng"), [])));
+	yield* parent_proc();
+	this.keyslot = (yield* new_(T("/obj/item/device/encryptionkey/headset_eng")));
 	return f.dot;
 }, true);
 
@@ -164,12 +155,10 @@ rt.type(9181, "/obj/item/device/radio/headset/headset_rob", "/obj/item/device/ra
 	keyslot: null,
 });
 
-// /obj/item/device/radio/headset/headset_rob/proc/<init>  (code/game/objects/items/devices/radio/headset.dm:95)  may sleep
+// headset.dm:95
 rt.def("/obj/item/device/radio/headset/headset_rob/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "keyslot", (yield* g.new_(f, T("/obj/item/device/encryptionkey/headset_rob"), [])));
+	yield* parent_proc();
+	this.keyslot = (yield* new_(T("/obj/item/device/encryptionkey/headset_rob")));
 	return f.dot;
 }, true);
 
@@ -180,12 +169,10 @@ rt.type(9182, "/obj/item/device/radio/headset/headset_med", "/obj/item/device/ra
 	keyslot: null,
 });
 
-// /obj/item/device/radio/headset/headset_med/proc/<init>  (code/game/objects/items/devices/radio/headset.dm:101)  may sleep
+// headset.dm:101
 rt.def("/obj/item/device/radio/headset/headset_med/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "keyslot", (yield* g.new_(f, T("/obj/item/device/encryptionkey/headset_med"), [])));
+	yield* parent_proc();
+	this.keyslot = (yield* new_(T("/obj/item/device/encryptionkey/headset_med")));
 	return f.dot;
 }, true);
 
@@ -196,12 +183,10 @@ rt.type(9183, "/obj/item/device/radio/headset/headset_sci", "/obj/item/device/ra
 	keyslot: null,
 });
 
-// /obj/item/device/radio/headset/headset_sci/proc/<init>  (code/game/objects/items/devices/radio/headset.dm:107)  may sleep
+// headset.dm:107
 rt.def("/obj/item/device/radio/headset/headset_sci/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "keyslot", (yield* g.new_(f, T("/obj/item/device/encryptionkey/headset_sci"), [])));
+	yield* parent_proc();
+	this.keyslot = (yield* new_(T("/obj/item/device/encryptionkey/headset_sci")));
 	return f.dot;
 }, true);
 
@@ -212,12 +197,10 @@ rt.type(9184, "/obj/item/device/radio/headset/headset_medsci", "/obj/item/device
 	keyslot: null,
 });
 
-// /obj/item/device/radio/headset/headset_medsci/proc/<init>  (code/game/objects/items/devices/radio/headset.dm:113)  may sleep
+// headset.dm:113
 rt.def("/obj/item/device/radio/headset/headset_medsci/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "keyslot", (yield* g.new_(f, T("/obj/item/device/encryptionkey/headset_medsci"), [])));
+	yield* parent_proc();
+	this.keyslot = (yield* new_(T("/obj/item/device/encryptionkey/headset_medsci")));
 	return f.dot;
 }, true);
 
@@ -228,12 +211,10 @@ rt.type(9185, "/obj/item/device/radio/headset/headset_com", "/obj/item/device/ra
 	keyslot: null,
 });
 
-// /obj/item/device/radio/headset/headset_com/proc/<init>  (code/game/objects/items/devices/radio/headset.dm:119)  may sleep
+// headset.dm:119
 rt.def("/obj/item/device/radio/headset/headset_com/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "keyslot", (yield* g.new_(f, T("/obj/item/device/encryptionkey/headset_com"), [])));
+	yield* parent_proc();
+	this.keyslot = (yield* new_(T("/obj/item/device/encryptionkey/headset_com")));
 	return f.dot;
 }, true);
 
@@ -244,12 +225,10 @@ rt.type(9187, "/obj/item/device/radio/headset/heads/captain", "/obj/item/device/
 	keyslot: null,
 });
 
-// /obj/item/device/radio/headset/heads/captain/proc/<init>  (code/game/objects/items/devices/radio/headset.dm:128)  may sleep
+// headset.dm:128
 rt.def("/obj/item/device/radio/headset/heads/captain/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "keyslot", (yield* g.new_(f, T("/obj/item/device/encryptionkey/heads/captain"), [])));
+	yield* parent_proc();
+	this.keyslot = (yield* new_(T("/obj/item/device/encryptionkey/heads/captain")));
 	return f.dot;
 }, true);
 
@@ -260,15 +239,15 @@ rt.type(9188, "/obj/item/device/radio/headset/heads/captain/alt", "/obj/item/dev
 	item_state: "com_headset_alt",
 });
 
-// /obj/item/device/radio/headset/heads/captain/alt/proc/Initialize  (code/game/objects/items/devices/radio/headset.dm:137)  may sleep
-rt.def("/obj/item/device/radio/headset/heads/captain/alt/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(rt.fv(f, "secondary_flags", live(f.src)))) {
-		rt.setFv(f, "secondary_flags", live(f.src), rt.list());
+// headset.dm:137
+rt.def("/obj/item/device/radio/headset/heads/captain/alt/proc/Initialize", function* Initialize(f: Frame, mapload: Value) {
+	f.dot = (yield* parent_proc());
+	if (!this.secondary_flags) {
+		this.secondary_flags = list();
 	}
-	rt.setAt(rt.fv(f, "secondary_flags", live(f.src)), "bang_protect", 1);
+	rt.setAt(this.secondary_flags, "bang_protect", 1);
 	return f.dot;
-}, true, { args: ["mapload"] });
+}, true);
 
 rt.type(9189, "/obj/item/device/radio/headset/heads/rd", "/obj/item/device/radio/headset/heads", {
 	name: "０the research director's headset",
@@ -277,12 +256,10 @@ rt.type(9189, "/obj/item/device/radio/headset/heads/rd", "/obj/item/device/radio
 	keyslot: null,
 });
 
-// /obj/item/device/radio/headset/heads/rd/proc/<init>  (code/game/objects/items/devices/radio/headset.dm:144)  may sleep
+// headset.dm:144
 rt.def("/obj/item/device/radio/headset/heads/rd/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "keyslot", (yield* g.new_(f, T("/obj/item/device/encryptionkey/heads/rd"), [])));
+	yield* parent_proc();
+	this.keyslot = (yield* new_(T("/obj/item/device/encryptionkey/heads/rd")));
 	return f.dot;
 }, true);
 
@@ -293,12 +270,10 @@ rt.type(9190, "/obj/item/device/radio/headset/heads/hos", "/obj/item/device/radi
 	keyslot: null,
 });
 
-// /obj/item/device/radio/headset/heads/hos/proc/<init>  (code/game/objects/items/devices/radio/headset.dm:150)  may sleep
+// headset.dm:150
 rt.def("/obj/item/device/radio/headset/heads/hos/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "keyslot", (yield* g.new_(f, T("/obj/item/device/encryptionkey/heads/hos"), [])));
+	yield* parent_proc();
+	this.keyslot = (yield* new_(T("/obj/item/device/encryptionkey/heads/hos")));
 	return f.dot;
 }, true);
 
@@ -309,15 +284,15 @@ rt.type(9191, "/obj/item/device/radio/headset/heads/hos/alt", "/obj/item/device/
 	item_state: "com_headset_alt",
 });
 
-// /obj/item/device/radio/headset/heads/hos/alt/proc/Initialize  (code/game/objects/items/devices/radio/headset.dm:159)  may sleep
-rt.def("/obj/item/device/radio/headset/heads/hos/alt/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(rt.fv(f, "secondary_flags", live(f.src)))) {
-		rt.setFv(f, "secondary_flags", live(f.src), rt.list());
+// headset.dm:159
+rt.def("/obj/item/device/radio/headset/heads/hos/alt/proc/Initialize", function* Initialize(f: Frame, mapload: Value) {
+	f.dot = (yield* parent_proc());
+	if (!this.secondary_flags) {
+		this.secondary_flags = list();
 	}
-	rt.setAt(rt.fv(f, "secondary_flags", live(f.src)), "bang_protect", 1);
+	rt.setAt(this.secondary_flags, "bang_protect", 1);
 	return f.dot;
-}, true, { args: ["mapload"] });
+}, true);
 
 rt.type(9192, "/obj/item/device/radio/headset/heads/ce", "/obj/item/device/radio/headset/heads", {
 	name: "０the chief engineer's headset",
@@ -326,12 +301,10 @@ rt.type(9192, "/obj/item/device/radio/headset/heads/ce", "/obj/item/device/radio
 	keyslot: null,
 });
 
-// /obj/item/device/radio/headset/heads/ce/proc/<init>  (code/game/objects/items/devices/radio/headset.dm:166)  may sleep
+// headset.dm:166
 rt.def("/obj/item/device/radio/headset/heads/ce/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "keyslot", (yield* g.new_(f, T("/obj/item/device/encryptionkey/heads/ce"), [])));
+	yield* parent_proc();
+	this.keyslot = (yield* new_(T("/obj/item/device/encryptionkey/heads/ce")));
 	return f.dot;
 }, true);
 
@@ -342,12 +315,10 @@ rt.type(9193, "/obj/item/device/radio/headset/heads/cmo", "/obj/item/device/radi
 	keyslot: null,
 });
 
-// /obj/item/device/radio/headset/heads/cmo/proc/<init>  (code/game/objects/items/devices/radio/headset.dm:172)  may sleep
+// headset.dm:172
 rt.def("/obj/item/device/radio/headset/heads/cmo/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "keyslot", (yield* g.new_(f, T("/obj/item/device/encryptionkey/heads/cmo"), [])));
+	yield* parent_proc();
+	this.keyslot = (yield* new_(T("/obj/item/device/encryptionkey/heads/cmo")));
 	return f.dot;
 }, true);
 
@@ -358,12 +329,10 @@ rt.type(9194, "/obj/item/device/radio/headset/heads/hop", "/obj/item/device/radi
 	keyslot: null,
 });
 
-// /obj/item/device/radio/headset/heads/hop/proc/<init>  (code/game/objects/items/devices/radio/headset.dm:178)  may sleep
+// headset.dm:178
 rt.def("/obj/item/device/radio/headset/heads/hop/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "keyslot", (yield* g.new_(f, T("/obj/item/device/encryptionkey/heads/hop"), [])));
+	yield* parent_proc();
+	this.keyslot = (yield* new_(T("/obj/item/device/encryptionkey/heads/hop")));
 	return f.dot;
 }, true);
 
@@ -374,12 +343,10 @@ rt.type(9195, "/obj/item/device/radio/headset/headset_cargo", "/obj/item/device/
 	keyslot: null,
 });
 
-// /obj/item/device/radio/headset/headset_cargo/proc/<init>  (code/game/objects/items/devices/radio/headset.dm:184)  may sleep
+// headset.dm:184
 rt.def("/obj/item/device/radio/headset/headset_cargo/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "keyslot", (yield* g.new_(f, T("/obj/item/device/encryptionkey/headset_cargo"), [])));
+	yield* parent_proc();
+	this.keyslot = (yield* new_(T("/obj/item/device/encryptionkey/headset_cargo")));
 	return f.dot;
 }, true);
 
@@ -390,12 +357,10 @@ rt.type(9196, "/obj/item/device/radio/headset/headset_cargo/mining", "/obj/item/
 	keyslot: null,
 });
 
-// /obj/item/device/radio/headset/headset_cargo/mining/proc/<init>  (code/game/objects/items/devices/radio/headset.dm:190)  may sleep
+// headset.dm:190
 rt.def("/obj/item/device/radio/headset/headset_cargo/mining/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "keyslot", (yield* g.new_(f, T("/obj/item/device/encryptionkey/headset_mining"), [])));
+	yield* parent_proc();
+	this.keyslot = (yield* new_(T("/obj/item/device/encryptionkey/headset_mining")));
 	return f.dot;
 }, true);
 
@@ -406,12 +371,10 @@ rt.type(9197, "/obj/item/device/radio/headset/headset_srv", "/obj/item/device/ra
 	keyslot: null,
 });
 
-// /obj/item/device/radio/headset/headset_srv/proc/<init>  (code/game/objects/items/devices/radio/headset.dm:196)  may sleep
+// headset.dm:196
 rt.def("/obj/item/device/radio/headset/headset_srv/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "keyslot", (yield* g.new_(f, T("/obj/item/device/encryptionkey/headset_service"), [])));
+	yield* parent_proc();
+	this.keyslot = (yield* new_(T("/obj/item/device/encryptionkey/headset_service")));
 	return f.dot;
 }, true);
 
@@ -423,14 +386,12 @@ rt.type(9198, "/obj/item/device/radio/headset/headset_cent", "/obj/item/device/r
 	keyslot2: null,
 });
 
-// /obj/item/device/radio/headset/headset_cent/proc/<init>  (code/game/objects/items/devices/radio/headset.dm:202)  may sleep
+// headset.dm:202
 rt.def("/obj/item/device/radio/headset/headset_cent/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "keyslot", (yield* g.new_(f, T("/obj/item/device/encryptionkey/headset_com"), [])));
-	$0 = $0;
-	rt.setSv(f, "keyslot2", (yield* g.new_(f, T("/obj/item/device/encryptionkey/headset_cent"), [])));
+	yield* parent_proc();
+	this.keyslot = (yield* new_(T("/obj/item/device/encryptionkey/headset_com")));
+
+	this.keyslot2 = (yield* new_(T("/obj/item/device/encryptionkey/headset_cent")));
 	return f.dot;
 }, true);
 
@@ -438,12 +399,10 @@ rt.type(9199, "/obj/item/device/radio/headset/headset_cent/commander", "/obj/ite
 	keyslot: null,
 });
 
-// /obj/item/device/radio/headset/headset_cent/commander/proc/<init>  (code/game/objects/items/devices/radio/headset.dm:206)  may sleep
+// headset.dm:206
 rt.def("/obj/item/device/radio/headset/headset_cent/commander/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "keyslot", (yield* g.new_(f, T("/obj/item/device/encryptionkey/heads/captain"), [])));
+	yield* parent_proc();
+	this.keyslot = (yield* new_(T("/obj/item/device/encryptionkey/heads/captain")));
 	return f.dot;
 }, true);
 
@@ -455,155 +414,127 @@ rt.type(9200, "/obj/item/device/radio/headset/headset_cent/alt", "/obj/item/devi
 	keyslot: null,
 });
 
-// /obj/item/device/radio/headset/headset_cent/alt/proc/<init>  (code/game/objects/items/devices/radio/headset.dm:213)  may sleep
+// headset.dm:213
 rt.def("/obj/item/device/radio/headset/headset_cent/alt/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "keyslot", null);
+	yield* parent_proc();
+	this.keyslot = null;
 	return f.dot;
 }, true);
 
-// /obj/item/device/radio/headset/headset_cent/alt/proc/Initialize  (code/game/objects/items/devices/radio/headset.dm:216)  may sleep
-rt.def("/obj/item/device/radio/headset/headset_cent/alt/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(rt.fv(f, "secondary_flags", live(f.src)))) {
-		rt.setFv(f, "secondary_flags", live(f.src), rt.list());
+// headset.dm:216
+rt.def("/obj/item/device/radio/headset/headset_cent/alt/proc/Initialize", function* Initialize(f: Frame, mapload: Value) {
+	f.dot = (yield* parent_proc());
+	if (!this.secondary_flags) {
+		this.secondary_flags = list();
 	}
-	rt.setAt(rt.fv(f, "secondary_flags", live(f.src)), "bang_protect", 1);
+	rt.setAt(this.secondary_flags, "bang_protect", 1);
 	return f.dot;
-}, true, { args: ["mapload"] });
+}, true);
 
 rt.type(9201, "/obj/item/device/radio/headset/ai", "/obj/item/device/radio/headset", {
 	name: "０Integrated Subspace Transceiver ",
 	keyslot2: null,
 });
 
-// /obj/item/device/radio/headset/ai/proc/<init>  (code/game/objects/items/devices/radio/headset.dm:221)  may sleep
+// headset.dm:221
 rt.def("/obj/item/device/radio/headset/ai/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "keyslot2", (yield* g.new_(f, T("/obj/item/device/encryptionkey/ai"), [])));
+	yield* parent_proc();
+	this.keyslot2 = (yield* new_(T("/obj/item/device/encryptionkey/ai")));
 	return f.dot;
 }, true);
 
-// /obj/item/device/radio/headset/ai/proc/receive_range  (code/game/objects/items/devices/radio/headset.dm:224)
+// headset.dm:224
 rt.def("/obj/item/device/radio/headset/ai/proc/receive_range", function receive_range(f: Frame, freq: Value, level: Value) {
-	return rt.callSuper(f, [live(freq), live(level), 1]);
+	return parent_proc(freq, level, 1);
 });
 
-// /obj/item/device/radio/headset/proc/attackby  (code/game/objects/items/devices/radio/headset.dm:227)  may sleep
-rt.def("/obj/item/device/radio/headset/proc/attackby", function* attackby(f: Frame) {
+// headset.dm:227
+rt.def("/obj/item/device/radio/headset/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
 	let ch_name: Value = null, _T: Value = null;
-	let $e: any;
-	f.vars = () => [ch_name, _T, $e];
-	yield* g.callName(f, live(f.args[1]), "set_machine", [live(f.src)]);
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/screwdriver")) ? 1 : 0))) {
-		if ((truthy(rt.sv(f, "keyslot")) || truthy(rt.sv(f, "keyslot2")))) {
-			ch_name = null;
-			rt.forList(f, 0, rt.sv(f, "channels"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				ch_name = $e;
-				yield* g.callName(f, rt.gl("SSradio"), "remove_object", [live(f.src), rt.index(rt.gl("radiochannels"), live(ch_name))]);
-				rt.setAt(rt.sv(f, "secure_radio_connections"), live(ch_name), null);
+	yield* user.set_machine(this);
+	if (rt.istype(W, T("/obj/item/weapon/screwdriver"))) {
+		if (this.keyslot || this.keyslot2) {
+			for (ch_name of each(this.channels)) {
+				yield* GLOB.SSradio.remove_object(this, rt.index(GLOB.radiochannels, ch_name));
+				rt.setAt(this.secure_radio_connections, ch_name, null);
 			}
-			rt.endFor(f, 0);
-			if (truthy(rt.sv(f, "keyslot"))) {
-				if (truthy((_T = rt.getStep(f, live(f.args[1]), 0)))) {
-					rt.setFv(f, "loc", rt.sv(f, "keyslot"), live(_T));
-					rt.setSv(f, "keyslot", null);
+			if (this.keyslot) {
+				if (_T = rt.getStep(f, user, 0)) {
+					this.keyslot.loc = _T;
+					this.keyslot = null;
 				}
 			}
-			if (truthy(rt.sv(f, "keyslot2"))) {
-				if (truthy((_T = rt.getStep(f, live(f.args[1]), 0)))) {
-					rt.setFv(f, "loc", rt.sv(f, "keyslot2"), live(_T));
-					rt.setSv(f, "keyslot2", null);
+			if (this.keyslot2) {
+				if (_T = rt.getStep(f, user, 0)) {
+					this.keyslot2.loc = _T;
+					this.keyslot2 = null;
 				}
 			}
-			yield* g.srcCall(f, "recalculateChannels");
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You pop out the encryption keys in the headset.</span>"]);
+			this.recalculateChannels();
+			to_chat(user, "<span class='notice'>You pop out the encryption keys in the headset.</span>");
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>This headset doesn't have any unique encryption keys!  How useless...</span>"]);
+			to_chat(user, "<span class='warning'>This headset doesn't have any unique encryption keys!  How useless...</span>");
 		}
+	} else if (rt.istype(W, T("/obj/item/device/encryptionkey"))) {
+		if (this.keyslot && this.keyslot2) {
+			to_chat(user, "<span class='warning'>The headset can't hold another key!</span>");
+			return f.dot;
+		}
+		if (!this.keyslot) {
+			if (!(yield* user.transferItemToLoc(W, this))) {
+				return f.dot;
+			}
+			this.keyslot = W;
+		} else {
+			if (!(yield* user.transferItemToLoc(W, this))) {
+				return f.dot;
+			}
+			this.keyslot2 = W;
+		}
+		this.recalculateChannels();
 	} else {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/device/encryptionkey")) ? 1 : 0))) {
-			if ((truthy(rt.sv(f, "keyslot")) && truthy(rt.sv(f, "keyslot2")))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>The headset can't hold another key!</span>"]);
-				return live(f.dot);
-			}
-			if (!truthy(rt.sv(f, "keyslot"))) {
-				if (!truthy((yield* g.callName(f, live(f.args[1]), "transferItemToLoc", [live(f.args[0]), live(f.src)])))) {
-					return live(f.dot);
-				}
-				rt.setSv(f, "keyslot", live(f.args[0]));
-			} else {
-				if (!truthy((yield* g.callName(f, live(f.args[1]), "transferItemToLoc", [live(f.args[0]), live(f.src)])))) {
-					return live(f.dot);
-				}
-				rt.setSv(f, "keyslot2", live(f.args[0]));
-			}
-			yield* g.srcCall(f, "recalculateChannels");
-		} else {
-			return (yield* g.callSuper(f, [], rt.Args.Same));
-		}
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["W", "user", "params"] });
+}, true);
 
-// /obj/item/device/radio/headset/proc/recalculateChannels  (code/game/objects/items/devices/radio/headset.dm:280)
+// headset.dm:280
 rt.def("/obj/item/device/radio/headset/proc/recalculateChannels", function recalculateChannels(f: Frame) {
 	let ch_name: Value = null;
-	let $e: any;
-	f.vars = () => [ch_name, $e];
-	rt.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.sv(f, "keyslot2"))) {
-		ch_name = null;
-		rt.forList(f, 0, rt.fv(f, "channels", rt.sv(f, "keyslot2")));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			ch_name = $e;
-			if (truthy((rt.isIn(f, live(ch_name), rt.fv(f, "channels", live(f.src))) ? 1 : 0))) {
+	parent_proc();
+	if (this.keyslot2) {
+		for (ch_name of each(this.keyslot2.channels)) {
+			if (rt.isIn(f, ch_name, this.channels)) {
 				continue;
 			}
-			rt.modField(f, live(f.src), "channels", live(ch_name), add);
-			rt.setAt(rt.fv(f, "channels", live(f.src)), live(ch_name), rt.index(rt.fv(f, "channels", rt.sv(f, "keyslot2")), live(ch_name)));
+			rt.modField(f, this, "channels", ch_name, add);
+			rt.setAt(this.channels, ch_name, rt.index(this.keyslot2.channels, ch_name));
 		}
-		rt.endFor(f, 0);
-		if (truthy(rt.fv(f, "translate_binary", rt.sv(f, "keyslot2")))) {
-			rt.setFv(f, "translate_binary", live(f.src), 1);
+		if (this.keyslot2.translate_binary) {
+			this.translate_binary = 1;
 		}
-		if (truthy(rt.fv(f, "syndie", rt.sv(f, "keyslot2")))) {
-			rt.setFv(f, "syndie", live(f.src), 1);
+		if (this.keyslot2.syndie) {
+			this.syndie = 1;
 		}
-		if (truthy(rt.fv(f, "independent", rt.sv(f, "keyslot2")))) {
-			rt.setSv(f, "independent", 1);
+		if (this.keyslot2.independent) {
+			this.independent = 1;
 		}
 	}
 	ch_name = null;
-	rt.forList(f, 0, rt.sv(f, "channels"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		ch_name = $e;
-		rt.setAt(rt.sv(f, "secure_radio_connections"), live(ch_name), rt.call(f, P("/proc/add_radio"), null, [live(f.src), rt.index(rt.gl("radiochannels"), live(ch_name))]));
+	for (ch_name of each(this.channels)) {
+		rt.setAt(this.secure_radio_connections, ch_name, add_radio(this, rt.index(GLOB.radiochannels, ch_name)));
 	}
-	rt.endFor(f, 0);
-	return live(f.dot);
+	return f.dot;
 });
 
-// /obj/item/device/radio/headset/proc/AltClick  (code/game/objects/items/devices/radio/headset.dm:304)
+// headset.dm:304
 rt.def("/obj/item/device/radio/headset/proc/AltClick", function AltClick(f: Frame, user: Value) {
-	let $0: any, $1: any;
-	f.vars = () => [$0, $1];
-	if (((!truthy((rt.istype(live(user), T("/mob/living")) ? 1 : 0)) || !truthy(rt.callSrc(f, "Adjacent", [live(user)]))) || truthy(rt.callName(f, live(user), "incapacitated", [])))) {
-		return live(f.dot);
+	if (!rt.istype(user, T("/mob/living")) || !this.Adjacent(user) || user.incapacitated()) {
+		return f.dot;
 	}
-	if (!truthy(rt.sv(f, "command"))) return f.dot;
-	rt.setSv(f, "use_command", (!truthy(rt.sv(f, "use_command")) ? 1 : 0));
-	$0 = live(user);
-	if (truthy(rt.sv(f, "use_command"))) {
-		$1 = "on";
-	} else {
-		$1 = "off";
-	}
-	rt.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='notice'>You toggle high-volume mode ＀.</span>", [$1])]);
+	if (!this.command) return f.dot;
+	this.use_command = (!this.use_command ? 1 : 0);
+	let $0: any = user;
+	to_chat($0, `<span class='notice'>You toggle high-volume mode ${this.use_command ? "on" : "off"}.</span>`);
 	return f.dot;
 });

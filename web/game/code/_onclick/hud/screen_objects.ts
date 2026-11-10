@@ -1,7 +1,7 @@
-// From code/_onclick/hud/screen_objects.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/_onclick/hud/screen_objects.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(10999, "/obj/screen", "/obj", {
@@ -15,11 +15,11 @@ rt.type(10999, "/obj/screen", "/obj", {
 	appearance_flags: 26,
 });
 
-// /obj/screen/proc/Destroy  (code/_onclick/hud/screen_objects.dm:25)  may sleep
+// screen_objects.dm:25
 rt.def("/obj/screen/proc/Destroy", function* Destroy(f: Frame) {
-	rt.setSv(f, "master", null);
-	rt.setSv(f, "hud", null);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	this.master = null;
+	this.hud = null;
+	return (yield* parent_proc());
 }, true);
 
 rt.type(11156, "/obj/screen/swap_hand", "/obj/screen", {
@@ -28,18 +28,17 @@ rt.type(11156, "/obj/screen/swap_hand", "/obj/screen", {
 	name: "swap hand",
 });
 
-// /obj/screen/swap_hand/proc/Click  (code/_onclick/hud/screen_objects.dm:49)
+// screen_objects.dm:49
 rt.def("/obj/screen/swap_hand/proc/Click", function Click(f: Frame) {
 	let M: Value = null;
-	f.vars = () => [M];
-	if (rt.le(rt.worldTime(f), rt.fv(f, "next_move", live(f.usr)))) {
+	if (rt.worldTime(f) <= f.usr.next_move) {
 		return 1;
 	}
-	if (truthy(rt.callName(f, live(f.usr), "incapacitated", []))) {
+	if (f.usr.incapacitated()) {
 		return 1;
 	}
-	if (truthy(rt.call(f, P("/proc/ismob"), null, [live(f.usr)]))) {
-		rt.callName(f, (M = live(f.usr)), "swap_hand", []);
+	if (ismob(f.usr)) {
+		(M = f.usr).swap_hand();
 	}
 	return 1;
 });
@@ -51,15 +50,13 @@ rt.type(11157, "/obj/screen/craft", "/obj/screen", {
 	screen_loc: "EAST-4:22,SOUTH:5",
 });
 
-// /obj/screen/craft/proc/Click  (code/_onclick/hud/screen_objects.dm:67)  may sleep
+// screen_objects.dm:67
 rt.def("/obj/screen/craft/proc/Click", function* Click(f: Frame) {
-	let M: Value = null;
-	f.vars = () => [M];
-	M = live(f.usr);
-	if (truthy((rt.istype(live(f.usr), T("/mob/dead/observer")) ? 1 : 0))) {
-		return live(f.dot);
+	let M: Value = f.usr;
+	if (rt.istype(f.usr, T("/mob/dead/observer"))) {
+		return f.dot;
 	}
-	yield* g.callName(f, live(M), "OpenCraftingMenu", []);
+	yield* M.OpenCraftingMenu();
 	return f.dot;
 }, true);
 
@@ -70,18 +67,17 @@ rt.type(11158, "/obj/screen/area_creator", "/obj/screen", {
 	screen_loc: "EAST-4:22,SOUTH:21",
 });
 
-// /obj/screen/area_creator/proc/Click  (code/_onclick/hud/screen_objects.dm:79)  may sleep
+// screen_objects.dm:79
 rt.def("/obj/screen/area_creator/proc/Click", function* Click(f: Frame) {
 	let A: Value = null;
-	f.vars = () => [A];
-	if (truthy((yield* g.callName(f, live(f.usr), "incapacitated", [])))) {
+	if (f.usr.incapacitated()) {
 		return 1;
 	}
-	if (!truthy(rt.gv(f, "outdoors", (A = (yield* g.call(f, P("/proc/get_area"), null, [live(f.usr)])))))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), "<span class='warning'>There is already a defined structure here.</span>"]);
+	if (!(A = get_area(f.usr)).outdoors) {
+		to_chat(f.usr, "<span class='warning'>There is already a defined structure here.</span>");
 		return 1;
 	}
-	yield* g.call(f, P("/proc/create_area"), null, [live(f.usr)]);
+	yield* create_area(f.usr);
 	return f.dot;
 }, true);
 
@@ -92,12 +88,11 @@ rt.type(11159, "/obj/screen/language_menu", "/obj/screen", {
 	screen_loc: "EAST-4:6,SOUTH+1:-11",
 });
 
-// /obj/screen/language_menu/proc/Click  (code/_onclick/hud/screen_objects.dm:94)  may sleep
+// screen_objects.dm:94
 rt.def("/obj/screen/language_menu/proc/Click", function* Click(f: Frame) {
-	let M: Value = null, H: Value = null;
-	f.vars = () => [M, H];
-	M = live(f.usr);
-	yield* g.callName(f, (H = (yield* g.callName(f, live(M), "get_language_holder", []))), "open_language_menu", [live(f.usr)]);
+	let H: Value = null;
+	let M: Value = f.usr;
+	yield* (H = (yield* M.get_language_holder())).open_language_menu(f.usr);
 	return f.dot;
 }, true);
 
@@ -109,40 +104,39 @@ rt.type(11160, "/obj/screen/inventory", "/obj/screen", {
 	plane: 19,
 });
 
-// /obj/screen/inventory/proc/Click  (code/_onclick/hud/screen_objects.dm:108)  may sleep
+// screen_objects.dm:108
 rt.def("/obj/screen/inventory/proc/Click", function* Click(f: Frame, location: Value, control: Value, params: Value) {
 	let inv_item: Value = null;
-	f.vars = () => [location, control, params, inv_item];
-	if (rt.le(rt.worldTime(f), rt.fv(f, "next_move", live(f.usr)))) {
+	if (rt.worldTime(f) <= f.usr.next_move) {
 		return 1;
 	}
-	if (truthy((yield* g.callName(f, live(f.usr), "incapacitated", [])))) {
+	if (f.usr.incapacitated()) {
 		return 1;
 	}
-	if (truthy((rt.istype(rt.fv(f, "loc", live(f.usr)), T("/obj/mecha")) ? 1 : 0))) {
+	if (rt.istype(f.usr.loc, T("/obj/mecha"))) {
 		return 1;
 	}
-	if (((truthy(rt.sv(f, "hud")) && truthy(rt.fv(f, "mymob", rt.sv(f, "hud")))) && truthy(rt.sv(f, "slot_id")))) {
-		if (truthy((inv_item = (yield* g.callName(f, rt.fv(f, "mymob", rt.sv(f, "hud")), "get_item_by_slot", [rt.sv(f, "slot_id")]))))) {
-			return (yield* g.callName(f, live(inv_item), "Click", [live(location), live(control), live(params)]));
+	if (this.hud && this.hud.mymob && this.slot_id) {
+		if (inv_item = this.hud.mymob.get_item_by_slot(this.slot_id)) {
+			return (yield* inv_item.Click(location, control, params));
 		}
 	}
-	if (truthy((yield* g.callName(f, live(f.usr), "attack_ui", [rt.sv(f, "slot_id")])))) {
-		yield* g.callName(f, live(f.usr), "update_inv_hands", []);
+	if (yield* f.usr.attack_ui(this.slot_id)) {
+		yield* f.usr.update_inv_hands();
 	}
 	return 1;
 }, true);
 
-// /obj/screen/inventory/proc/update_icon  (code/_onclick/hud/screen_objects.dm:126)
+// screen_objects.dm:126
 rt.def("/obj/screen/inventory/proc/update_icon", function update_icon(f: Frame) {
-	if (!truthy(rt.sv(f, "icon_empty"))) {
-		rt.setSv(f, "icon_empty", rt.sv(f, "icon_state"));
+	if (!this.icon_empty) {
+		this.icon_empty = this.icon_state;
 	}
-	if (!(((truthy(rt.sv(f, "hud")) && truthy(rt.fv(f, "mymob", rt.sv(f, "hud")))) && truthy(rt.sv(f, "slot_id"))) && truthy(rt.sv(f, "icon_full")))) return f.dot;
-	if (truthy(rt.callName(f, rt.fv(f, "mymob", rt.sv(f, "hud")), "get_item_by_slot", [rt.sv(f, "slot_id")]))) {
-		rt.setSv(f, "icon_state", rt.sv(f, "icon_full"));
+	if (!(this.hud && this.hud.mymob && this.slot_id && this.icon_full)) return f.dot;
+	if (this.hud.mymob.get_item_by_slot(this.slot_id)) {
+		this.icon_state = this.icon_full;
 	} else {
-		rt.setSv(f, "icon_state", rt.sv(f, "icon_empty"));
+		this.icon_state = this.icon_empty;
 	}
 	return f.dot;
 });
@@ -152,57 +146,49 @@ rt.type(11161, "/obj/screen/inventory/hand", "/obj/screen/inventory", {
 	held_index: 0,
 }, { global: { blocked_overlay: 774 } });
 
-// /obj/screen/inventory/hand/proc/update_icon  (code/_onclick/hud/screen_objects.dm:141)
+// screen_objects.dm:141
 rt.def("/obj/screen/inventory/hand/proc/update_icon", function update_icon(f: Frame) {
 	let state: Value = null, C: Value = null;
-	let $0: any;
-	f.vars = () => [state, C, $0];
-	rt.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.sv(f, "handcuff_overlay"))) {
-		if (!truthy(rt.modulus(rt.sv(f, "held_index"), 2))) {
-			$0 = "markus";
-		} else {
-			$0 = "gabrielle";
-		}
-		state = $0;
-		rt.setSv(f, "handcuff_overlay", rt.call(f, P("/proc/mutable_appearance"), null, [rt.rsc("icons/mob/screen_gen.dmi"), live(state)]));
+	parent_proc();
+	if (!this.handcuff_overlay) {
+		state = !(this.held_index % 2) ? "markus" : "gabrielle";
+		this.handcuff_overlay = mutable_appearance(rt.rsc("icons/mob/screen_gen.dmi"), state);
 	}
-	rt.callSrc(f, "cut_overlays", []);
-	if (!(truthy(rt.sv(f, "hud")) && truthy(rt.fv(f, "mymob", rt.sv(f, "hud"))))) return f.dot;
-	if (truthy((rt.istype(rt.fv(f, "mymob", rt.sv(f, "hud")), T("/mob/living/carbon")) ? 1 : 0))) {
-		if (truthy(rt.gv(f, "handcuffed", (C = rt.fv(f, "mymob", rt.sv(f, "hud")))))) {
-			rt.callSrc(f, "add_overlay", [rt.sv(f, "handcuff_overlay")]);
+	this.cut_overlays();
+	if (!(this.hud && this.hud.mymob)) return f.dot;
+	if (rt.istype(this.hud.mymob, T("/mob/living/carbon"))) {
+		if ((C = this.hud.mymob).handcuffed) {
+			this.add_overlay(this.handcuff_overlay);
 		}
-		if (truthy(rt.sv(f, "held_index"))) {
-			if (!truthy(rt.callName(f, live(C), "has_hand_for_held_index", [rt.sv(f, "held_index")]))) {
-				rt.callSrc(f, "add_overlay", [rt.gl("blocked_overlay")]);
+		if (this.held_index) {
+			if (!C.has_hand_for_held_index(this.held_index)) {
+				this.add_overlay(GLOB.blocked_overlay);
 			}
 		}
 	}
-	if (!isEqual(rt.sv(f, "held_index"), rt.gv(f, "active_hand_index", rt.fv(f, "mymob", rt.sv(f, "hud"))))) return f.dot;
-	rt.callSrc(f, "add_overlay", ["hand_active"]);
+	if (this.held_index != this.hud.mymob.active_hand_index) return f.dot;
+	this.add_overlay("hand_active");
 	return f.dot;
 });
 
-// /obj/screen/inventory/hand/proc/Click  (code/_onclick/hud/screen_objects.dm:166)  may sleep
+// screen_objects.dm:166
 rt.def("/obj/screen/inventory/hand/proc/Click", function* Click(f: Frame, location: Value, control: Value, params: Value) {
 	let I: Value = null;
-	f.vars = () => [location, control, params, I];
-	if (rt.le(rt.worldTime(f), rt.fv(f, "next_move", live(f.usr)))) {
+	if (rt.worldTime(f) <= f.usr.next_move) {
 		return 1;
 	}
-	if ((truthy((yield* g.callName(f, live(f.usr), "incapacitated", []))) || truthy((rt.istype(live(f.usr), T("/mob/dead/observer")) ? 1 : 0)))) {
+	if (f.usr.incapacitated() || rt.istype(f.usr, T("/mob/dead/observer"))) {
 		return 1;
 	}
-	if (truthy((rt.istype(rt.fv(f, "loc", live(f.usr)), T("/obj/mecha")) ? 1 : 0))) {
+	if (rt.istype(f.usr.loc, T("/obj/mecha"))) {
 		return 1;
 	}
-	if (isEqual(rt.gv(f, "active_hand_index", rt.fv(f, "mymob", rt.sv(f, "hud"))), rt.sv(f, "held_index"))) {
-		if (truthy((I = (yield* g.callName(f, rt.fv(f, "mymob", rt.sv(f, "hud")), "get_active_held_item", []))))) {
-			yield* g.callName(f, live(I), "Click", [live(location), live(control), live(params)]);
+	if (this.hud.mymob.active_hand_index == this.held_index) {
+		if (I = this.hud.mymob.get_active_held_item()) {
+			yield* I.Click(location, control, params);
 		}
 	} else {
-		yield* g.callName(f, rt.fv(f, "mymob", rt.sv(f, "hud")), "swap_hand", [rt.sv(f, "held_index")]);
+		this.hud.mymob.swap_hand(this.held_index);
 	}
 	return 1;
 }, true);
@@ -211,12 +197,11 @@ rt.type(11162, "/obj/screen/close", "/obj/screen", {
 	name: "close",
 });
 
-// /obj/screen/close/proc/Click  (code/_onclick/hud/screen_objects.dm:185)
+// screen_objects.dm:185
 rt.def("/obj/screen/close/proc/Click", function Click(f: Frame) {
 	let S: Value = null;
-	f.vars = () => [S];
-	if (truthy((rt.istype(rt.sv(f, "master"), T("/obj/item/weapon/storage")) ? 1 : 0))) {
-		rt.callName(f, (S = rt.sv(f, "master")), "close", [live(f.usr)]);
+	if (rt.istype(this.master, T("/obj/item/weapon/storage"))) {
+		(S = this.master).close(f.usr);
 	}
 	return 1;
 });
@@ -229,9 +214,9 @@ rt.type(11163, "/obj/screen/drop", "/obj/screen", {
 	plane: 19,
 });
 
-// /obj/screen/drop/proc/Click  (code/_onclick/hud/screen_objects.dm:199)  may sleep
+// screen_objects.dm:199
 rt.def("/obj/screen/drop/proc/Click", function* Click(f: Frame) {
-	yield* g.callName(f, live(f.usr), "drop_item_v", []);
+	yield* f.usr.drop_item_v();
 	return f.dot;
 }, true);
 
@@ -241,41 +226,34 @@ rt.type(11164, "/obj/screen/act_intent", "/obj/screen", {
 	screen_loc: "EAST-3:24,SOUTH:5",
 });
 
-// /obj/screen/act_intent/proc/Click  (code/_onclick/hud/screen_objects.dm:207)
+// screen_objects.dm:207
 rt.def("/obj/screen/act_intent/proc/Click", function Click(f: Frame, location: Value, control: Value, params: Value) {
-	rt.callName(f, live(f.usr), "a_intent_change", ["right"]);
+	f.usr.a_intent_change("right");
 	return f.dot;
 });
 
 rt.type(11165, "/obj/screen/act_intent/segmented", "/obj/screen/act_intent", {});
 
-// /obj/screen/act_intent/segmented/proc/Click  (code/_onclick/hud/screen_objects.dm:210)
-rt.def("/obj/screen/act_intent/segmented/proc/Click", function Click(f: Frame) {
+// screen_objects.dm:210
+rt.def("/obj/screen/act_intent/segmented/proc/Click", function Click(f: Frame, location: Value, control: Value, params: Value) {
 	let _x: Value = null, _y: Value = null;
-	f.vars = () => [_x, _y];
-	if (truthy(rt.bitAnd(rt.gv(f, "toggles", rt.gv(f, "prefs", rt.fv(f, "client", live(f.usr)))), 32))) {
-		_x = rt.call(f, P("/proc/text2num"), null, [rt.index(rt.call(f, P("/proc/params2list"), null, [live(f.args[2])]), "icon-x")]);
-		_y = rt.call(f, P("/proc/text2num"), null, [rt.index(rt.call(f, P("/proc/params2list"), null, [live(f.args[2])]), "icon-y")]);
-		if ((rt.le(live(_x), 16) && rt.le(live(_y), 16))) {
-			rt.callName(f, live(f.usr), "a_intent_change", ["harm"]);
-		} else {
-			if ((rt.le(live(_x), 16) && rt.ge(live(_y), 17))) {
-				rt.callName(f, live(f.usr), "a_intent_change", ["help"]);
-			} else {
-				if ((rt.ge(live(_x), 17) && rt.le(live(_y), 16))) {
-					rt.callName(f, live(f.usr), "a_intent_change", ["grab"]);
-				} else {
-					if ((rt.ge(live(_x), 17) && rt.ge(live(_y), 17))) {
-						rt.callName(f, live(f.usr), "a_intent_change", ["disarm"]);
-					}
-				}
-			}
+	if (rt.bitAnd(f.usr.client.prefs.toggles, 32)) {
+		_x = text2num(rt.index(params2list(params), "icon-x"));
+		_y = text2num(rt.index(params2list(params), "icon-y"));
+		if (_x <= 16 && _y <= 16) {
+			f.usr.a_intent_change("harm");
+		} else if (_x <= 16 && _y >= 17) {
+			f.usr.a_intent_change("help");
+		} else if (_x >= 17 && _y <= 16) {
+			f.usr.a_intent_change("grab");
+		} else if (_x >= 17 && _y >= 17) {
+			f.usr.a_intent_change("disarm");
 		}
 	} else {
-		return rt.callSuper(f, [], rt.Args.Same);
+		return parent_proc();
 	}
 	return f.dot;
-}, false, { args: ["location", "control", "params"] });
+}, false);
 
 rt.type(11168, "/obj/screen/internals", "/obj/screen", {
 	name: "toggle internals",
@@ -283,73 +261,64 @@ rt.type(11168, "/obj/screen/internals", "/obj/screen", {
 	screen_loc: "EAST-1:28,CENTER:17",
 });
 
-// /obj/screen/internals/proc/Click  (code/_onclick/hud/screen_objects.dm:242)  may sleep
+// screen_objects.dm:242
 rt.def("/obj/screen/internals/proc/Click", function* Click(f: Frame) {
 	let C: Value = null, M: Value = null, I: Value = null, H: Value = null;
-	f.vars = () => [C, M, I, H];
-	if (!truthy((rt.istype(live(f.usr), T("/mob/living/carbon")) ? 1 : 0))) {
-		return live(f.dot);
+	if (!rt.istype(f.usr, T("/mob/living/carbon"))) {
+		return f.dot;
 	}
-	if (truthy((yield* g.callName(f, (C = live(f.usr)), "incapacitated", [])))) {
-		return live(f.dot);
+	if ((C = f.usr).incapacitated()) {
+		return f.dot;
 	}
-	if (truthy(rt.fv(f, "internal", live(C)))) {
-		rt.setFv(f, "internal", live(C), null);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(C), "<span class='notice'>You are no longer running on internals.</span>"]);
-		rt.setSv(f, "icon_state", "internal0");
+	if (C.internal) {
+		C.internal = null;
+		to_chat(C, "<span class='notice'>You are no longer running on internals.</span>");
+		this.icon_state = "internal0";
 	} else {
-		if (!truthy((yield* g.callName(f, live(C), "getorganslot", ["breathing_tube"])))) {
-			if (!truthy((rt.istype(rt.fv(f, "wear_mask", live(C)), T("/obj/item/clothing/mask")) ? 1 : 0))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(C), "<span class='warning'>You are not wearing an internals mask!</span>"]);
+		if (!C.getorganslot("breathing_tube")) {
+			if (!rt.istype(C.wear_mask, T("/obj/item/clothing/mask"))) {
+				to_chat(C, "<span class='warning'>You are not wearing an internals mask!</span>");
 				return 1;
 			} else {
-				if (truthy(rt.gv(f, "mask_adjusted", (M = rt.fv(f, "wear_mask", live(C)))))) {
-					yield* g.callName(f, live(M), "adjustmask", [live(C)]);
+				if ((M = C.wear_mask).mask_adjusted) {
+					yield* M.adjustmask(C);
 				}
-				if (!truthy(rt.bitAnd(rt.fv(f, "flags", live(M)), 8))) {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(C), "<span class='warning'>You are not wearing an internals mask!</span>"]);
-					return live(f.dot);
-				}
-			}
-		}
-		if (truthy((I = (yield* g.callName(f, live(C), "is_holding_item_of_type", [T("/obj/item/weapon/tank")]))))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(C), fmt("<span class='notice'>You are now running on internals from the ＀ on your ＀.</span>", [live(I), (yield* g.callName(f, live(C), "get_held_index_name", [(yield* g.callName(f, live(C), "get_held_index_of_item", [live(I)]))]))])]);
-			rt.setFv(f, "internal", live(C), live(I));
-		} else {
-			if (truthy((rt.istype(live(C), T("/mob/living/carbon/human")) ? 1 : 0))) {
-				if (truthy((rt.istype(rt.gv(f, "s_store", (H = live(C))), T("/obj/item/weapon/tank")) ? 1 : 0))) {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(H), fmt("<span class='notice'>You are now running on internals from the ＀ on your ＀.</span>", [rt.fv(f, "s_store", live(H)), rt.fv(f, "wear_suit", live(H))])]);
-					rt.setFv(f, "internal", live(H), rt.fv(f, "s_store", live(H)));
-				} else {
-					if (truthy((rt.istype(rt.fv(f, "belt", live(H)), T("/obj/item/weapon/tank")) ? 1 : 0))) {
-						yield* g.call(f, P("/proc/to_chat"), null, [live(H), fmt("<span class='notice'>You are now running on internals from the ＀ on your belt.</span>", [rt.fv(f, "belt", live(H))])]);
-						rt.setFv(f, "internal", live(H), rt.fv(f, "belt", live(H)));
-					} else {
-						if (truthy((rt.istype(rt.fv(f, "l_store", live(H)), T("/obj/item/weapon/tank")) ? 1 : 0))) {
-							yield* g.call(f, P("/proc/to_chat"), null, [live(H), fmt("<span class='notice'>You are now running on internals from the ＀ in your left pocket.</span>", [rt.fv(f, "l_store", live(H))])]);
-							rt.setFv(f, "internal", live(H), rt.fv(f, "l_store", live(H)));
-						} else {
-							if (truthy((rt.istype(rt.fv(f, "r_store", live(H)), T("/obj/item/weapon/tank")) ? 1 : 0))) {
-								yield* g.call(f, P("/proc/to_chat"), null, [live(H), fmt("<span class='notice'>You are now running on internals from the ＀ in your right pocket.</span>", [rt.fv(f, "r_store", live(H))])]);
-								rt.setFv(f, "internal", live(H), rt.fv(f, "r_store", live(H)));
-							}
-						}
-					}
+				if (!rt.bitAnd(M.flags, MASKINTERNALS)) {
+					to_chat(C, "<span class='warning'>You are not wearing an internals mask!</span>");
+					return f.dot;
 				}
 			}
 		}
-		if ((!truthy(rt.fv(f, "internal", live(C))) && truthy((rt.istype(rt.fv(f, "back", live(C)), T("/obj/item/weapon/tank")) ? 1 : 0)))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(C), fmt("<span class='notice'>You are now running on internals from the ＀ on your back.</span>", [rt.fv(f, "back", live(C))])]);
-			rt.setFv(f, "internal", live(C), rt.fv(f, "back", live(C)));
+		if (I = C.is_holding_item_of_type(T("/obj/item/weapon/tank"))) {
+			to_chat(C, `<span class='notice'>You are now running on internals from the ${I} on your ${C.get_held_index_name(C.get_held_index_of_item(I))}.</span>`);
+			C.internal = I;
+		} else if (rt.istype(C, T("/mob/living/carbon/human"))) {
+			if (rt.istype((H = C).s_store, T("/obj/item/weapon/tank"))) {
+				to_chat(H, `<span class='notice'>You are now running on internals from the ${H.s_store} on your ${H.wear_suit}.</span>`);
+				H.internal = H.s_store;
+			} else if (rt.istype(H.belt, T("/obj/item/weapon/tank"))) {
+				to_chat(H, `<span class='notice'>You are now running on internals from the ${H.belt} on your belt.</span>`);
+				H.internal = H.belt;
+			} else if (rt.istype(H.l_store, T("/obj/item/weapon/tank"))) {
+				to_chat(H, `<span class='notice'>You are now running on internals from the ${H.l_store} in your left pocket.</span>`);
+				H.internal = H.l_store;
+			} else if (rt.istype(H.r_store, T("/obj/item/weapon/tank"))) {
+				to_chat(H, `<span class='notice'>You are now running on internals from the ${H.r_store} in your right pocket.</span>`);
+				H.internal = H.r_store;
+			}
 		}
-		if (truthy(rt.fv(f, "internal", live(C)))) {
-			rt.setSv(f, "icon_state", "internal1");
+		if (!C.internal && rt.istype(C.back, T("/obj/item/weapon/tank"))) {
+			to_chat(C, `<span class='notice'>You are now running on internals from the ${C.back} on your back.</span>`);
+			C.internal = C.back;
+		}
+		if (C.internal) {
+			this.icon_state = "internal1";
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(C), "<span class='warning'>You don't have an oxygen tank!</span>"]);
-			return live(f.dot);
+			to_chat(C, "<span class='warning'>You don't have an oxygen tank!</span>");
+			return f.dot;
 		}
 	}
-	yield* g.callName(f, live(C), "update_action_buttons_icon", []);
+	yield* C.update_action_buttons_icon();
 	return f.dot;
 }, true);
 
@@ -359,28 +328,25 @@ rt.type(11169, "/obj/screen/mov_intent", "/obj/screen", {
 	icon_state: "running",
 });
 
-// /obj/screen/mov_intent/proc/Click  (code/_onclick/hud/screen_objects.dm:302)  may sleep
+// screen_objects.dm:302
 rt.def("/obj/screen/mov_intent/proc/Click", function* Click(f: Frame) {
-	yield* g.srcCall(f, "toggle", live(f.usr));
+	yield* this.toggle(f.usr);
 	return f.dot;
 }, true);
 
-// /obj/screen/mov_intent/proc/toggle  (code/_onclick/hud/screen_objects.dm:305)  may sleep
+// screen_objects.dm:305
 rt.def("/obj/screen/mov_intent/proc/toggle", function* toggle(f: Frame, user: Value) {
-	let $0: any;
-	f.vars = () => [user, $0];
-	if (truthy((rt.istype(live(user), T("/mob/dead/observer")) ? 1 : 0))) {
-		return live(f.dot);
+	if (rt.istype(user, T("/mob/dead/observer"))) {
+		return f.dot;
 	}
-	$0 = rt.fv(f, "m_intent", live(user));
-	if ($0 === "run") {
-		rt.setFv(f, "m_intent", live(user), "walk");
-		rt.setSv(f, "icon_state", "walking");
-	} else if ($0 === "walk") {
-		rt.setFv(f, "m_intent", live(user), "run");
-		rt.setSv(f, "icon_state", "running");
+	if (user.m_intent === "run") {
+		user.m_intent = "walk";
+		this.icon_state = "walking";
+	} else if (user.m_intent === "walk") {
+		user.m_intent = "run";
+		this.icon_state = "running";
 	}
-	yield* g.callName(f, live(user), "update_icons", []);
+	yield* user.update_icons();
 	return f.dot;
 }, true);
 
@@ -390,24 +356,24 @@ rt.type(11170, "/obj/screen/pull", "/obj/screen", {
 	icon_state: "pull",
 });
 
-// /obj/screen/pull/proc/Click  (code/_onclick/hud/screen_objects.dm:322)  may sleep
+// screen_objects.dm:322
 rt.def("/obj/screen/pull/proc/Click", function* Click(f: Frame) {
-	if (truthy((rt.istype(live(f.usr), T("/mob/dead/observer")) ? 1 : 0))) {
-		return live(f.dot);
+	if (rt.istype(f.usr, T("/mob/dead/observer"))) {
+		return f.dot;
 	}
-	yield* g.callName(f, live(f.usr), "stop_pulling", []);
+	yield* f.usr.stop_pulling();
 	return f.dot;
 }, true);
 
-// /obj/screen/pull/proc/update_icon  (code/_onclick/hud/screen_objects.dm:327)
+// screen_objects.dm:327
 rt.def("/obj/screen/pull/proc/update_icon", function update_icon(f: Frame, mymob: Value) {
-	if (!truthy(live(mymob))) {
-		return live(f.dot);
+	if (!mymob) {
+		return f.dot;
 	}
-	if (truthy(rt.fv(f, "pulling", live(mymob)))) {
-		rt.setSv(f, "icon_state", "pull");
+	if (mymob.pulling) {
+		this.icon_state = "pull";
 	} else {
-		rt.setSv(f, "icon_state", "pull0");
+		this.icon_state = "pull0";
 	}
 	return f.dot;
 });
@@ -420,12 +386,11 @@ rt.type(11171, "/obj/screen/resist", "/obj/screen", {
 	plane: 19,
 });
 
-// /obj/screen/resist/proc/Click  (code/_onclick/hud/screen_objects.dm:341)  may sleep
+// screen_objects.dm:341
 rt.def("/obj/screen/resist/proc/Click", function* Click(f: Frame) {
 	let L: Value = null;
-	f.vars = () => [L];
-	if (!truthy((rt.istype(live(f.usr), T("/mob/living")) ? 1 : 0))) return f.dot;
-	yield* g.callName(f, (L = live(f.usr)), "resist", []);
+	if (!rt.istype(f.usr, T("/mob/living"))) return f.dot;
+	yield* (L = f.usr).resist();
 	return f.dot;
 }, true);
 
@@ -433,22 +398,21 @@ rt.type(11172, "/obj/screen/storage", "/obj/screen", {
 	name: "storage",
 });
 
-// /obj/screen/storage/proc/Click  (code/_onclick/hud/screen_objects.dm:349)  may sleep
+// screen_objects.dm:349
 rt.def("/obj/screen/storage/proc/Click", function* Click(f: Frame, location: Value, control: Value, params: Value) {
 	let I: Value = null;
-	f.vars = () => [location, control, params, I];
-	if (rt.le(rt.worldTime(f), rt.fv(f, "next_move", live(f.usr)))) {
+	if (rt.worldTime(f) <= f.usr.next_move) {
 		return 1;
 	}
-	if ((((truthy(rt.fv(f, "stat", live(f.usr))) || truthy((yield* g.callName(f, live(f.usr), "IsUnconscious", [])))) || truthy((yield* g.callName(f, live(f.usr), "IsKnockdown", [])))) || truthy((yield* g.callName(f, live(f.usr), "IsStun", []))))) {
+	if (f.usr.stat || f.usr.IsUnconscious() || f.usr.IsKnockdown() || f.usr.IsStun()) {
 		return 1;
 	}
-	if (truthy((rt.istype(rt.fv(f, "loc", live(f.usr)), T("/obj/mecha")) ? 1 : 0))) {
+	if (rt.istype(f.usr.loc, T("/obj/mecha"))) {
 		return 1;
 	}
-	if (truthy(rt.sv(f, "master"))) {
-		if (truthy((I = (yield* g.callName(f, live(f.usr), "get_active_held_item", []))))) {
-			yield* g.callName(f, rt.sv(f, "master"), "attackby", [live(I), live(f.usr), live(params)]);
+	if (this.master) {
+		if (I = f.usr.get_active_held_item()) {
+			yield* this.master.attackby(I, f.usr, params);
 		}
 	}
 	return 1;
@@ -460,12 +424,11 @@ rt.type(11173, "/obj/screen/throw_catch", "/obj/screen", {
 	icon_state: "act_throw_off",
 });
 
-// /obj/screen/throw_catch/proc/Click  (code/_onclick/hud/screen_objects.dm:367)
+// screen_objects.dm:367
 rt.def("/obj/screen/throw_catch/proc/Click", function Click(f: Frame) {
 	let C: Value = null;
-	f.vars = () => [C];
-	if (!truthy((rt.istype(live(f.usr), T("/mob/living/carbon")) ? 1 : 0))) return f.dot;
-	rt.callName(f, (C = live(f.usr)), "toggle_throw_mode", []);
+	if (!rt.istype(f.usr, T("/mob/living/carbon"))) return f.dot;
+	(C = f.usr).toggle_throw_mode();
 	return f.dot;
 });
 
@@ -476,89 +439,81 @@ rt.type(11174, "/obj/screen/zone_sel", "/obj/screen", {
 	screen_loc: "EAST-1:28,SOUTH:5",
 });
 
-// /obj/screen/zone_sel/proc/Click  (code/_onclick/hud/screen_objects.dm:378)
+// screen_objects.dm:378
 rt.def("/obj/screen/zone_sel/proc/Click", function Click(f: Frame, location: Value, control: Value, params: Value) {
-	let PL: Value = null, icon_x: Value = null, icon_y: Value = null, choice: Value = null;
-	let $0: any;
-	f.vars = () => [PL, icon_x, icon_y, choice, $0];
-	if (truthy((rt.istype(live(f.usr), T("/mob/dead/observer")) ? 1 : 0))) {
-		return live(f.dot);
+	let choice: Value = null;
+	if (rt.istype(f.usr, T("/mob/dead/observer"))) {
+		return f.dot;
 	}
-	PL = rt.call(f, P("/proc/params2list"), null, [live(params)]);
-	icon_x = rt.call(f, P("/proc/text2num"), null, [rt.at(live(PL), "icon-x")]);
-	icon_y = rt.call(f, P("/proc/text2num"), null, [rt.at(live(PL), "icon-y")]);
-	choice = null;
-	$0 = live(icon_y);
-	if (rt.inRange($0, 1, 9)) {
-		$0 = live(icon_x);
-		if (rt.inRange($0, 10, 15)) {
+	let PL: Value = params2list(params);
+	let icon_x: Value = text2num(rt.at(PL, "icon-x"));
+	let icon_y: Value = text2num(rt.at(PL, "icon-y"));
+	if (rt.inRange(icon_y, 1, 9)) {
+		if (rt.inRange(icon_x, 10, 15)) {
 			choice = "r_leg";
-		} else if (rt.inRange($0, 17, 22)) {
+		} else if (rt.inRange(icon_x, 17, 22)) {
 			choice = "l_leg";
 		} else {
 			return 1;
 		}
-	} else if (rt.inRange($0, 10, 13)) {
-		$0 = live(icon_x);
-		if (rt.inRange($0, 8, 11)) {
+	} else if (rt.inRange(icon_y, 10, 13)) {
+		if (rt.inRange(icon_x, 8, 11)) {
 			choice = "r_arm";
-		} else if (rt.inRange($0, 12, 20)) {
+		} else if (rt.inRange(icon_x, 12, 20)) {
 			choice = "groin";
-		} else if (rt.inRange($0, 21, 24)) {
+		} else if (rt.inRange(icon_x, 21, 24)) {
 			choice = "l_arm";
 		} else {
 			return 1;
 		}
-	} else if (rt.inRange($0, 14, 22)) {
-		$0 = live(icon_x);
-		if (rt.inRange($0, 8, 11)) {
+	} else if (rt.inRange(icon_y, 14, 22)) {
+		if (rt.inRange(icon_x, 8, 11)) {
 			choice = "r_arm";
-		} else if (rt.inRange($0, 12, 20)) {
+		} else if (rt.inRange(icon_x, 12, 20)) {
 			choice = "chest";
-		} else if (rt.inRange($0, 21, 24)) {
+		} else if (rt.inRange(icon_x, 21, 24)) {
 			choice = "l_arm";
 		} else {
 			return 1;
 		}
-	} else if (rt.inRange($0, 23, 30)) {
-		if (truthy(rt.op(f, "IsInRange", [], [live(icon_x), 12, 20]))) {
+	} else if (rt.inRange(icon_y, 23, 30)) {
+		if (rt.op(f, "IsInRange", [], [icon_x, 12, 20])) {
 			choice = "head";
-			$0 = live(icon_y);
-			if (rt.inRange($0, 23, 24)) {
-				if (truthy(rt.op(f, "IsInRange", [], [live(icon_x), 15, 17]))) {
+			if (rt.inRange(icon_y, 23, 24)) {
+				if (rt.op(f, "IsInRange", [], [icon_x, 15, 17])) {
 					choice = "mouth";
 				}
-			} else if ($0 === 26) {
-				if (truthy(rt.op(f, "IsInRange", [], [live(icon_x), 14, 18]))) {
+			} else if (icon_y === 26) {
+				if (rt.op(f, "IsInRange", [], [icon_x, 14, 18])) {
 					choice = "eyes";
 				}
-			} else if (rt.inRange($0, 25, 27)) {
-				if (truthy(rt.op(f, "IsInRange", [], [live(icon_x), 15, 17]))) {
+			} else if (rt.inRange(icon_y, 25, 27)) {
+				if (rt.op(f, "IsInRange", [], [icon_x, 15, 17])) {
 					choice = "eyes";
 				}
 			}
 		}
 	}
-	return rt.callSrc(f, "set_selected_zone", [live(choice), live(f.usr)]);
+	return this.set_selected_zone(choice, f.usr);
 });
 
-// /obj/screen/zone_sel/proc/set_selected_zone  (code/_onclick/hud/screen_objects.dm:432)
+// screen_objects.dm:432
 rt.def("/obj/screen/zone_sel/proc/set_selected_zone", function set_selected_zone(f: Frame, choice: Value, user: Value) {
-	if (truthy((rt.istype(live(user), T("/mob/dead/observer")) ? 1 : 0))) {
-		return live(f.dot);
+	if (rt.istype(user, T("/mob/dead/observer"))) {
+		return f.dot;
 	}
-	if (!isEqual(live(choice), rt.sv(f, "selecting"))) {
-		rt.setSv(f, "selecting", live(choice));
-		rt.callSrc(f, "update_icon", [live(f.usr)]);
+	if (choice != this.selecting) {
+		this.selecting = choice;
+		this.update_icon(f.usr);
 	}
 	return 1;
 });
 
-// /obj/screen/zone_sel/proc/update_icon  (code/_onclick/hud/screen_objects.dm:441)
+// screen_objects.dm:441
 rt.def("/obj/screen/zone_sel/proc/update_icon", function update_icon(f: Frame, user: Value) {
-	rt.callSrc(f, "cut_overlays", []);
-	rt.callSrc(f, "add_overlay", [rt.call(f, P("/proc/mutable_appearance"), null, [rt.rsc("icons/mob/screen_gen.dmi"), fmt("＀", [rt.sv(f, "selecting")])])]);
-	rt.setFv(f, "zone_selected", live(user), rt.sv(f, "selecting"));
+	this.cut_overlays();
+	this.add_overlay(mutable_appearance(rt.rsc("icons/mob/screen_gen.dmi"), `${this.selecting}`));
+	user.zone_selected = this.selecting;
 	return f.dot;
 });
 
@@ -566,11 +521,11 @@ rt.type(11175, "/obj/screen/zone_sel/alien", "/obj/screen/zone_sel", {
 	icon: rt.rsc("icons/mob/screen_alien.dmi"),
 });
 
-// /obj/screen/zone_sel/alien/proc/update_icon  (code/_onclick/hud/screen_objects.dm:449)
+// screen_objects.dm:449
 rt.def("/obj/screen/zone_sel/alien/proc/update_icon", function update_icon(f: Frame, user: Value) {
-	rt.callSrc(f, "cut_overlays", []);
-	rt.callSrc(f, "add_overlay", [rt.call(f, P("/proc/mutable_appearance"), null, [rt.rsc("icons/mob/screen_alien.dmi"), fmt("＀", [rt.sv(f, "selecting")])])]);
-	rt.setFv(f, "zone_selected", live(user), rt.sv(f, "selecting"));
+	this.cut_overlays();
+	this.add_overlay(mutable_appearance(rt.rsc("icons/mob/screen_alien.dmi"), `${this.selecting}`));
+	user.zone_selected = this.selecting;
 	return f.dot;
 });
 
@@ -583,59 +538,55 @@ rt.type(11192, "/obj/screen/splash", "/obj/screen", {
 	plane: 21,
 });
 
-// /obj/screen/splash/proc/New  (code/_onclick/hud/screen_objects.dm:553)  may sleep
-rt.def("/obj/screen/splash/proc/New", function* New(f: Frame) {
-	let actualview: Value = null, scale: Value = null;
-	f.vars = () => [actualview, scale];
-	rt.setSv(f, "holder", live(f.args[0]));
-	if (!truthy(live(f.args[1]))) {
-		rt.setSv(f, "alpha", 0);
+// screen_objects.dm:553
+rt.def("/obj/screen/splash/proc/New", function* New(f: Frame, C: Value, visible: Value, use_previous_title: Value) {
+	let scale: Value = null;
+	this.holder = C;
+	if (!visible) {
+		this.alpha = 0;
 	}
-	if (!truthy(live(f.args[2]))) {
-		if (truthy(rt.fv(f, "icon", rt.gl("SStitle")))) {
-			rt.setSv(f, "icon", rt.fv(f, "icon", rt.gl("SStitle")));
+	if (!use_previous_title) {
+		if (GLOB.SStitle.icon) {
+			this.icon = GLOB.SStitle.icon;
 		}
 	} else {
-		if (!truthy(rt.fv(f, "previous_icon", rt.gl("SStitle")))) {
-			yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-			return live(f.dot);
+		if (!GLOB.SStitle.previous_icon) {
+			yield* qdel(this);
+			return f.dot;
 		}
-		rt.setSv(f, "icon", rt.fv(f, "previous_icon", rt.gl("SStitle")));
+		this.icon = GLOB.SStitle.previous_icon;
 	}
-	actualview = (yield* g.call(f, P("/proc/getviewsize"), null, [rt.fv(f, "view", live(f.args[0]))]));
-	if (!isEqual((scale = (yield* g.call(f, P("/proc/max"), null, [divide(rt.index(live(actualview), 1), 15), divide(rt.index(live(actualview), 2), 15)]))), 1)) {
-		rt.setSv(f, "transform", (yield* g.call(f, P("/proc/matrix"), null, [live(scale), 0, 0, 0, live(scale), 0])));
+	let actualview: Value = getviewsize(C.view);
+	if ((scale = max(rt.index(actualview, 1) / FULLSCREEN_OVERLAY_RESOLUTION_X, rt.index(actualview, 2) / FULLSCREEN_OVERLAY_RESOLUTION_Y)) != 1) {
+		this.transform = matrix(scale, 0, 0, 0, scale, 0);
 	}
-	rt.modField(f, rt.sv(f, "holder"), "screen", live(f.src), add);
-	yield* g.callSuper(f, [], rt.Args.Same);
-	return f.dot;
-}, true, { args: ["C", "visible", "use_previous_title"] });
-
-// /obj/screen/splash/proc/Fade  (code/_onclick/hud/screen_objects.dm:577)  may sleep
-rt.def("/obj/screen/splash/proc/Fade", function* Fade(f: Frame, out: Value, qdel_after: Value) {
-	f.vars = () => [out, qdel_after];
-	if (live(qdel_after) === null) {
-		qdel_after = 1;
-	}
-	if ((!truthy(live(f.src)) || truthy(rt.fv(f, "gc_destroyed", live(f.src))))) {
-		return live(f.dot);
-	}
-	if (truthy(live(out))) {
-		rt.op(f, "Animate", [2, 6], [null, live(f.src), "alpha", 0, "time", 30]);
-	} else {
-		rt.setSv(f, "alpha", 0);
-		rt.op(f, "Animate", [2, 6], [null, live(f.src), "alpha", 255, "time", 30]);
-	}
-	if (!truthy(live(qdel_after))) return f.dot;
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), ["some_magic_bullshit", P("/proc/qdel"), live(f.src)])), 30, 8]);
+	this.holder.screen += this;
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /obj/screen/splash/proc/Destroy  (code/_onclick/hud/screen_objects.dm:589)  may sleep
-rt.def("/obj/screen/splash/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.sv(f, "holder"))) {
-		(rt.modField(f, rt.sv(f, "holder"), "screen", live(f.src), subtract));
-		rt.setSv(f, "holder", null);
+// screen_objects.dm:577
+rt.def("/obj/screen/splash/proc/Fade", function* Fade(f: Frame, out: Value, qdel_after: Value) {
+	qdel_after ??= 1;
+	if (!this || this.gc_destroyed) {
+		return f.dot;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	if (out) {
+		rt.op(f, "Animate", [2, 6], [null, this, "alpha", 0, "time", 30]);
+	} else {
+		this.alpha = 0;
+		rt.op(f, "Animate", [2, 6], [null, this, "alpha", 255, "time", 30]);
+	}
+	if (!qdel_after) return f.dot;
+	yield* addtimer((yield* new_(T("/datum/callback"), "some_magic_bullshit", P("/proc/qdel"), this)), 30, 8);
+	return f.dot;
+}, true);
+
+// screen_objects.dm:589
+rt.def("/obj/screen/splash/proc/Destroy", function* Destroy(f: Frame) {
+	if (this.holder) {
+		this.holder.screen -= this;
+		this.holder = null;
+	}
+	return (yield* parent_proc());
 }, true);

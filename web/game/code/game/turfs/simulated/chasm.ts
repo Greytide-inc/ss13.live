@@ -1,7 +1,7 @@
-// From code/game/turfs/simulated/chasm.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/turfs/simulated/chasm.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(4793, "/turf/open/chasm", "/turf/open", {
@@ -18,163 +18,150 @@ rt.type(4793, "/turf/open/chasm", "/turf/open", {
 	density: 1,
 });
 
-// /turf/open/chasm/proc/<init>  (code/game/turfs/simulated/chasm.dm:11)
+// chasm.dm:11
 rt.def("/turf/open/chasm/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "canSmoothWith", rt.list(T("/turf/open/floor/fakepit"), T("/turf/open/chasm")));
+	parent_proc();
+	this.canSmoothWith = list(T("/turf/open/floor/fakepit"), T("/turf/open/chasm"));
 	return f.dot;
 });
 
-// /turf/open/chasm/proc/Entered  (code/game/turfs/simulated/chasm.dm:18)  may sleep
+// chasm.dm:18
 rt.def("/turf/open/chasm/proc/Entered", function* Entered(f: Frame, AM: Value) {
-	f.vars = () => [AM];
-	if (!truthy(rt.fv(f, "isprocessing", live(f.src)))) {
-		rt.setFv(f, "isprocessing", live(f.src), 1);
-		rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), add);
+	if (!this.isprocessing) {
+		this.isprocessing = 1;
+		GLOB.SSobj.processing += this;
 	}
-	yield* g.srcCall(f, "drop_stuff", live(AM));
+	yield* this.drop_stuff(AM);
 	return f.dot;
 }, true);
 
-// /turf/open/chasm/proc/process  (code/game/turfs/simulated/chasm.dm:22)  may sleep
+// chasm.dm:22
 rt.def("/turf/open/chasm/proc/process", function* process(f: Frame) {
-	if (truthy((yield* g.srcCall(f, "drop_stuff")))) return f.dot;
-	rt.setFv(f, "isprocessing", live(f.src), 0);
-	(rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), subtract));
+	if (yield* this.drop_stuff()) return f.dot;
+	this.isprocessing = 0;
+	GLOB.SSobj.processing -= this;
 	return f.dot;
 }, true, { waitfor: false });
 
-// /turf/open/chasm/proc/get_smooth_underlay_icon  (code/game/turfs/simulated/chasm.dm:26)
+// chasm.dm:26
 rt.def("/turf/open/chasm/proc/get_smooth_underlay_icon", function get_smooth_underlay_icon(f: Frame, underlay_appearance: Value, asking_turf: Value, adjacency_dir: Value) {
-	rt.setFv(f, "icon", live(underlay_appearance), rt.rsc("icons/turf/floors.dmi"));
-	rt.setFv(f, "icon_state", live(underlay_appearance), "basalt");
+	underlay_appearance.icon = rt.rsc("icons/turf/floors.dmi");
+	underlay_appearance.icon_state = "basalt";
 	return 1;
 });
 
-// /turf/open/chasm/proc/attackby  (code/game/turfs/simulated/chasm.dm:31)  may sleep
-rt.def("/turf/open/chasm/proc/attackby", function* attackby(f: Frame) {
+// chasm.dm:31
+rt.def("/turf/open/chasm/proc/attackby", function* attackby(f: Frame, C: Value, user: Value, params: Value, area_restriction: Value) {
 	let R: Value = null, L: Value = null, L_0: Value = null, S: Value = null;
-	f.vars = () => [R, L, L_0, S];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/stack/rods")) ? 1 : 0))) {
-		R = live(f.args[0]);
-		if (!truthy((L = rt.locateIn(f, T("/obj/structure/lattice"), live(f.src))))) {
-			if (truthy((yield* g.callName(f, live(R), "use", [1])))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You construct a lattice.</span>"]);
-				yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/weapons/genhit.ogg"), 50, 1]);
-				yield* g.srcCall(f, "ReplaceWithLattice");
+	yield* parent_proc();
+	if (rt.istype(C, T("/obj/item/stack/rods"))) {
+		R = C;
+		if (!(L = rt.locateIn(f, T("/obj/structure/lattice"), this))) {
+			if (yield* R.use(1)) {
+				to_chat(user, "<span class='notice'>You construct a lattice.</span>");
+				playsound(this, rt.rsc("sound/weapons/genhit.ogg"), 50, 1);
+				yield* this.ReplaceWithLattice();
 			} else {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You need one rod to build a lattice.</span>"]);
+				to_chat(user, "<span class='warning'>You need one rod to build a lattice.</span>");
 			}
-			return live(f.dot);
+			return f.dot;
 		}
 	}
-	if (!truthy((rt.istype(live(f.args[0]), T("/obj/item/stack/tile/plasteel")) ? 1 : 0))) return f.dot;
-	if (truthy((L_0 = rt.locateIn(f, T("/obj/structure/lattice"), live(f.src))))) {
-		if (truthy((yield* g.callName(f, (S = live(f.args[0])), "use", [1])))) {
-			yield* g.call(f, P("/proc/qdel"), null, [live(L_0)]);
-			yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/weapons/genhit.ogg"), 50, 1]);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You build a floor.</span>"]);
-			yield* g.srcCall(f, "ChangeTurf", T("/turf/open/floor/plating"));
+	if (!rt.istype(C, T("/obj/item/stack/tile/plasteel"))) return f.dot;
+	if (L_0 = rt.locateIn(f, T("/obj/structure/lattice"), this)) {
+		if (yield* (S = C).use(1)) {
+			yield* qdel(L_0);
+			playsound(this, rt.rsc("sound/weapons/genhit.ogg"), 50, 1);
+			to_chat(user, "<span class='notice'>You build a floor.</span>");
+			yield* this.ChangeTurf(T("/turf/open/floor/plating"));
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You need one floor tile to build a floor!</span>"]);
+			to_chat(user, "<span class='warning'>You need one floor tile to build a floor!</span>");
 		}
 	} else {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>The plating is going to need some support! Place metal rods first.</span>"]);
+		to_chat(user, "<span class='warning'>The plating is going to need some support! Place metal rods first.</span>");
 	}
-	return f.dot;
-}, true, { args: ["C", "user", "params", "area_restriction"] });
-
-// /turf/open/chasm/proc/is_safe  (code/game/turfs/simulated/chasm.dm:60)
-rt.def("/turf/open/chasm/proc/is_safe", function is_safe(f: Frame) {
-	let found_safeties: Value = null;
-	f.vars = () => [found_safeties];
-	return rt.length((found_safeties = rt.call(f, P("/proc/typecache_filter_list"), null, [rt.sv(f, "contents"), rt.gl("chasm_safeties_typecache")])));
-});
-
-// /turf/open/chasm/proc/drop_stuff  (code/game/turfs/simulated/chasm.dm:65)  may sleep
-rt.def("/turf/open/chasm/proc/drop_stuff", function* drop_stuff(f: Frame, AM: Value) {
-	let thing_to_check: Value = null, thing: Value = null;
-	let $e: any;
-	f.vars = () => [AM, thing_to_check, thing, $e];
-	f.dot = 0;
-	if (truthy((yield* g.srcCall(f, "is_safe")))) {
-		return 0;
-	}
-	thing_to_check = live(f.src);
-	if (truthy(live(AM))) {
-		thing_to_check = rt.list(live(AM));
-	}
-	thing = null;
-	rt.forList(f, 0, live(thing_to_check));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		thing = $e;
-		if (truthy((yield* g.srcCall(f, "droppable", live(thing))))) {
-			f.dot = 1;
-			yield* g.call(f, P("/proc/ImmediateInvokeAsync"), null, [live(f.src), P("/turf/open/chasm/proc/drop"), live(thing)]);
-		}
-	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /turf/open/chasm/proc/droppable  (code/game/turfs/simulated/chasm.dm:76)  may sleep
+// chasm.dm:60
+rt.def("/turf/open/chasm/proc/is_safe", function is_safe(f: Frame) {
+	let found_safeties: Value = null;
+	return rt.length((found_safeties = typecache_filter_list(this.contents, GLOB.chasm_safeties_typecache)));
+});
+
+// chasm.dm:65
+rt.def("/turf/open/chasm/proc/drop_stuff", function* drop_stuff(f: Frame, AM: Value) {
+	let thing: Value = null;
+	f.dot = 0;
+	if (this.is_safe()) {
+		return 0;
+	}
+	let thing_to_check: Value = this;
+	if (AM) {
+		thing_to_check = list(AM);
+	}
+	for (thing of each(thing_to_check)) {
+		if (yield* this.droppable(thing)) {
+			f.dot = 1;
+			yield* ImmediateInvokeAsync(this, P("/turf/open/chasm/proc/drop"), thing);
+		}
+	}
+	return f.dot;
+}, true);
+
+// chasm.dm:76
 rt.def("/turf/open/chasm/proc/droppable", function* droppable(f: Frame, AM: Value) {
 	let MM: Value = null, H: Value = null, J: Value = null;
-	f.vars = () => [AM, MM, H, J];
-	if ((!truthy((rt.istype(live(AM), T("/mob/living")) ? 1 : 0)) && !truthy((rt.istype(live(AM), T("/obj")) ? 1 : 0)))) {
+	if (!rt.istype(AM, T("/mob/living")) && !rt.istype(AM, T("/obj"))) {
 		return 0;
 	}
-	if (((truthy((rt.istype(live(AM), T("/obj/singularity")) ? 1 : 0)) || truthy((rt.istype(live(AM), T("/obj/item/projectile")) ? 1 : 0))) || truthy(rt.fv(f, "throwing", live(AM))))) {
+	if (rt.istype(AM, T("/obj/singularity")) || rt.istype(AM, T("/obj/item/projectile")) || AM.throwing) {
 		return 0;
 	}
-	if (truthy((rt.istype(live(AM), T("/obj/effect/portal")) ? 1 : 0))) {
+	if (rt.istype(AM, T("/obj/effect/portal"))) {
 		return 0;
 	}
-	if (truthy((rt.istype(live(AM), T("/mob/living")) ? 1 : 0))) {
-		if (truthy(rt.bitAnd(rt.gv(f, "movement_type", (MM = live(AM))), 2))) {
+	if (rt.istype(AM, T("/mob/living"))) {
+		if (rt.bitAnd((MM = AM).movement_type, 2)) {
 			return 0;
 		}
 	}
-	if (truthy((rt.istype(live(AM), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		if (truthy((rt.istype(rt.gv(f, "belt", (H = live(AM))), T("/obj/item/device/wormhole_jaunter")) ? 1 : 0))) {
-			J = rt.fv(f, "belt", live(H));
-			yield* g.srcCall(f, "visible_message", fmt("<span class='boldwarning'>＀ falls into ＀!</span>", [live(H), live(f.src)]));
-			yield* g.callName(f, live(J), "chasm_react", [live(H)]);
+	if (rt.istype(AM, T("/mob/living/carbon/human"))) {
+		if (rt.istype((H = AM).belt, T("/obj/item/device/wormhole_jaunter"))) {
+			J = H.belt;
+			this.visible_message(`<span class='boldwarning'>${H} falls into ${this}!</span>`);
+			yield* J.chasm_react(H);
 			return 0;
 		}
 	}
 	return 1;
 }, true);
 
-// /turf/open/chasm/proc/drop  (code/game/turfs/simulated/chasm.dm:100)  may sleep
+// chasm.dm:100
 rt.def("/turf/open/chasm/proc/drop", function* drop(f: Frame, AM: Value) {
 	let _T: Value = null, L: Value = null;
-	f.vars = () => [AM, _T, L];
-	if ((!truthy(live(AM)) || (!truthy(live(AM)) || truthy(rt.fv(f, "gc_destroyed", live(AM)))))) {
-		return live(f.dot);
+	if (!AM || !AM || AM.gc_destroyed) {
+		return f.dot;
 	}
-	if (!truthy((_T = rt.locate(rt.sv(f, "drop_x"), rt.sv(f, "drop_y"), rt.sv(f, "drop_z"))))) return f.dot;
-	yield* g.callName(f, live(AM), "visible_message", [fmt("<span class='boldwarning'>＀ falls into ＀!</span>", [live(AM), live(f.src)]), "<span class='userdanger'>GAH! Ah... where are you?</span>"]);
-	yield* g.callName(f, live(_T), "visible_message", [fmt("<span class='boldwarning'>＀ falls from above!</span>", [live(AM)])]);
-	yield* g.callName(f, live(AM), "forceMove", [live(_T)]);
-	if (!truthy((rt.istype(live(AM), T("/mob/living")) ? 1 : 0))) return f.dot;
-	yield* g.callName(f, (L = live(AM)), "Knockdown", [100]);
-	yield* g.callName(f, live(L), "adjustBruteLoss", [30]);
+	if (!(_T = rt.locate(this.drop_x, this.drop_y, this.drop_z))) return f.dot;
+	AM.visible_message(`<span class='boldwarning'>${AM} falls into ${this}!</span>`, "<span class='userdanger'>GAH! Ah... where are you?</span>");
+	_T.visible_message(`<span class='boldwarning'>${AM} falls from above!</span>`);
+	yield* AM.forceMove(_T);
+	if (!rt.istype(AM, T("/mob/living"))) return f.dot;
+	yield* (L = AM).Knockdown(100);
+	yield* L.adjustBruteLoss(30);
 	return f.dot;
 }, true, { argTypes: [{ path: "/atom/movable" }] });
 
 rt.type(4794, "/turf/open/chasm/straight_down", "/turf/open/chasm", {});
 
-// /turf/open/chasm/straight_down/proc/Initialize  (code/game/turfs/simulated/chasm.dm:115)  may sleep
+// chasm.dm:115
 rt.def("/turf/open/chasm/straight_down/proc/Initialize", function* Initialize(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "drop_x", rt.sv(f, "x"));
-	rt.setSv(f, "drop_y", rt.sv(f, "y"));
-	if (!rt.le(add(rt.sv(f, "z"), 1), rt.fv(f, "maxz", rt.world()))) return f.dot;
-	rt.setSv(f, "drop_z", add(rt.sv(f, "z"), 1));
+	yield* parent_proc();
+	this.drop_x = this.x;
+	this.drop_y = this.y;
+	if (!(this.z + 1 <= rt.world().maxz)) return f.dot;
+	this.drop_z = this.z + 1;
 	return f.dot;
 }, true);
 
@@ -187,48 +174,46 @@ rt.type(4795, "/turf/open/chasm/straight_down/lava_land_surface", "/turf/open/ch
 	light_color: "#C48A18",
 });
 
-// /turf/open/chasm/straight_down/lava_land_surface/proc/drop  (code/game/turfs/simulated/chasm.dm:132)  may sleep
+// chasm.dm:132
 rt.def("/turf/open/chasm/straight_down/lava_land_surface/proc/drop", function* drop(f: Frame, AM: Value) {
-	let L: Value = null, oldtransform: Value = null, oldcolor: Value = null, oldalpha: Value = null, i: Value = null, S: Value = null;
+	let L: Value = null, i: Value = null, S: Value = null;
 	let $e: any;
-	f.vars = () => [AM, L, oldtransform, oldcolor, oldalpha, i, S, $e];
-	if ((!truthy(live(AM)) || (!truthy(live(AM)) || truthy(rt.fv(f, "gc_destroyed", live(AM)))))) {
-		return live(f.dot);
+	if (!AM || !AM || AM.gc_destroyed) {
+		return f.dot;
 	}
-	yield* g.callName(f, live(AM), "visible_message", [fmt("<span class='boldwarning'>＀ falls into ＀!</span>", [live(AM), live(f.src)]), "<span class='userdanger'>You stumble and stare into an abyss before you. It stares back, and you fall into the enveloping dark.</span>"]);
-	if (truthy((rt.istype(live(AM), T("/mob/living")) ? 1 : 0))) {
-		rt.setFv(f, "notransform", (L = live(AM)), 1);
-		yield* g.callName(f, live(L), "Stun", [200]);
-		rt.setFv(f, "resting", live(L), 1);
+	AM.visible_message(`<span class='boldwarning'>${AM} falls into ${this}!</span>`, "<span class='userdanger'>You stumble and stare into an abyss before you. It stares back, and you fall into the enveloping dark.</span>");
+	if (rt.istype(AM, T("/mob/living"))) {
+		(L = AM).notransform = 1;
+		yield* L.Stun(200);
+		L.resting = 1;
 	}
-	oldtransform = rt.fv(f, "transform", live(AM));
-	oldcolor = rt.fv(f, "color", live(AM));
-	oldalpha = rt.fv(f, "alpha", live(AM));
-	rt.op(f, "Animate", [2, 10], [null, live(AM), "transform", subtract((yield* g.call(f, P("/proc/matrix"), null, [])), (yield* g.call(f, P("/proc/matrix"), null, []))), "alpha", 0, "color", rt.op(f, "Rgb", [1, 3], [0, 0, 0]), "time", 10]);
-	i = null;
+	let oldtransform: Value = AM.transform;
+	let oldcolor: Value = AM.color;
+	let oldalpha: Value = AM.alpha;
+	rt.op(f, "Animate", [2, 10], [null, AM, "transform", matrix() - matrix(), "alpha", 0, "color", rt.op(f, "Rgb", [1, 3], [0, 0, 0]), "time", 10]);
 	rt.forRange(f, 0, 1, 5, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		if ((!truthy(live(AM)) || (!truthy(live(AM)) || truthy(rt.fv(f, "gc_destroyed", live(AM)))))) {
-			return live(f.dot);
+		if (!AM || !AM || AM.gc_destroyed) {
+			return f.dot;
 		}
-		rt.incField(f, live(AM), "pixel_y", -1, true);
-		yield* g.call(f, P("/proc/sleep"), null, [2]);
+		AM.pixel_y--;
+		yield* sleep(2);
 	}
 	rt.endFor(f, 0);
-	if ((!truthy(live(AM)) || (!truthy(live(AM)) || truthy(rt.fv(f, "gc_destroyed", live(AM)))))) {
-		return live(f.dot);
+	if (!AM || !AM || AM.gc_destroyed) {
+		return f.dot;
 	}
-	if (truthy((rt.istype(live(AM), T("/mob/living/silicon/robot")) ? 1 : 0))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.gv(f, "mmi", (S = live(AM)))]);
+	if (rt.istype(AM, T("/mob/living/silicon/robot"))) {
+		yield* qdel((S = AM).mmi);
 	}
-	yield* g.call(f, P("/proc/qdel"), null, [live(AM)]);
-	if (!(truthy(live(AM)) && !(!truthy(live(AM)) || truthy(rt.fv(f, "gc_destroyed", live(AM)))))) return f.dot;
-	yield* g.srcCall(f, "visible_message", fmt("<span class='boldwarning'>＀ spits out the ＀!</span>", [live(f.src), live(AM)]));
-	rt.setFv(f, "alpha", live(AM), live(oldalpha));
-	rt.setFv(f, "color", live(AM), live(oldcolor));
-	rt.setFv(f, "transform", live(AM), live(oldtransform));
-	yield* g.callName(f, live(AM), "throw_at", [(yield* g.call(f, P("/proc/get_edge_target_turf"), null, [live(f.src), rt.op(f, "PickUnweighted", [1], [rt.gl("alldirs")])])), (yield* g.call(f, P("/proc/rand"), null, [1, 10])), (yield* g.call(f, P("/proc/rand"), null, [1, 10]))]);
+	yield* qdel(AM);
+	if (!(AM && !(!AM || AM.gc_destroyed))) return f.dot;
+	this.visible_message(`<span class='boldwarning'>${this} spits out the ${AM}!</span>`);
+	AM.alpha = oldalpha;
+	AM.color = oldcolor;
+	AM.transform = oldtransform;
+	yield* AM.throw_at(get_edge_target_turf(this, pick(GLOB.alldirs)), rand(1, 10), rand(1, 10));
 	return f.dot;
 }, true);
 
@@ -238,9 +223,9 @@ rt.type(4798, "/turf/open/chasm/jungle", "/turf/open/chasm", {
 	initial_gas_mix: "o2=14;n2=23;TEMP=300",
 });
 
-// /turf/open/chasm/jungle/proc/get_smooth_underlay_icon  (code/game/turfs/simulated/chasm.dm:187)
+// chasm.dm:187
 rt.def("/turf/open/chasm/jungle/proc/get_smooth_underlay_icon", function get_smooth_underlay_icon(f: Frame, underlay_appearance: Value, asking_turf: Value, adjacency_dir: Value) {
-	rt.setFv(f, "icon", live(underlay_appearance), rt.rsc("icons/turf/floors.dmi"));
-	rt.setFv(f, "icon_state", live(underlay_appearance), "dirt");
+	underlay_appearance.icon = rt.rsc("icons/turf/floors.dmi");
+	underlay_appearance.icon_state = "dirt";
 	return 1;
 });

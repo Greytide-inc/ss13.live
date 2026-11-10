@@ -1,7 +1,7 @@
-// From code/game/objects/items/weapons/paint.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/weapons/paint.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, g } = rt;
 
 
 rt.type(7320, "/obj/item/weapon/paint/anycolor", "/obj/item/weapon/paint", {
@@ -10,33 +10,29 @@ rt.type(7320, "/obj/item/weapon/paint/anycolor", "/obj/item/weapon/paint", {
 	icon_state: "paint_neutral",
 });
 
-// /obj/item/weapon/paint/anycolor/proc/attack_self  (code/game/objects/items/weapons/paint.dm:60)  may sleep
+// paint.dm:60
 rt.def("/obj/item/weapon/paint/anycolor/proc/attack_self", function* attack_self(f: Frame, user: Value) {
-	let t1: Value = null;
-	let $0: any;
-	f.vars = () => [user, t1, $0];
-	t1 = (yield* g.op(f, "Prompt", [0], [null, "Locking Computer", "Please select a color:", live(user), rt.list("red", "blue", "green", "yellow", "violet", "black", "white")]));
-	if (((!isEqual((yield* g.callName(f, live(user), "get_active_held_item", [])), live(f.src)) || truthy(rt.fv(f, "stat", live(user)))) || truthy((yield* g.callName(f, live(user), "restrained", []))))) {
-		return live(f.dot);
+	let t1: Value = (yield* g.op(f, "Prompt", [0], [null, "Locking Computer", "Please select a color:", user, list("red", "blue", "green", "yellow", "violet", "black", "white")]));
+	if (user.get_active_held_item() != this || user.stat || user.restrained()) {
+		return f.dot;
 	}
-	$0 = live(t1);
-	if ($0 === "red") {
-		rt.setSv(f, "item_color", "C73232");
-	} else if ($0 === "blue") {
-		rt.setSv(f, "item_color", "5998FF");
-	} else if ($0 === "green") {
-		rt.setSv(f, "item_color", "2A9C3B");
-	} else if ($0 === "yellow") {
-		rt.setSv(f, "item_color", "CFB52B");
-	} else if ($0 === "violet") {
-		rt.setSv(f, "item_color", "AE4CCD");
-	} else if ($0 === "white") {
-		rt.setSv(f, "item_color", "FFFFFF");
-	} else if ($0 === "black") {
-		rt.setSv(f, "item_color", "333333");
+	if (t1 === "red") {
+		this.item_color = "C73232";
+	} else if (t1 === "blue") {
+		this.item_color = "5998FF";
+	} else if (t1 === "green") {
+		this.item_color = "2A9C3B";
+	} else if (t1 === "yellow") {
+		this.item_color = "CFB52B";
+	} else if (t1 === "violet") {
+		this.item_color = "AE4CCD";
+	} else if (t1 === "white") {
+		this.item_color = "FFFFFF";
+	} else if (t1 === "black") {
+		this.item_color = "333333";
 	}
-	rt.setSv(f, "icon_state", fmt("paint_＀", [live(t1)]));
-	yield* g.srcCall(f, "add_fingerprint", live(user));
+	this.icon_state = `paint_${t1}`;
+	yield* this.add_fingerprint(user);
 	return f.dot;
 }, true);
 
@@ -55,22 +51,20 @@ rt.type(7312, "/obj/item/weapon/paint", "/obj/item/weapon", {
 	max_integrity: 100,
 });
 
-// /obj/item/weapon/paint/proc/afterattack  (code/game/objects/items/weapons/paint.dm:83)
+// paint.dm:83
 rt.def("/obj/item/weapon/paint/proc/afterattack", function afterattack(f: Frame, target: Value, user: Value, proximity: Value) {
-	let newcolor: Value = null;
-	f.vars = () => [newcolor];
-	if (!truthy(live(proximity))) {
-		return live(f.dot);
+	if (!proximity) {
+		return f.dot;
 	}
-	if (rt.le(rt.sv(f, "paintleft"), 0)) {
-		rt.setSv(f, "icon_state", "paint_empty");
-		return live(f.dot);
+	if (this.paintleft <= 0) {
+		this.icon_state = "paint_empty";
+		return f.dot;
 	}
-	if ((!truthy((rt.istype(live(target), T("/turf")) ? 1 : 0)) || truthy((rt.istype(live(target), T("/turf/open/space")) ? 1 : 0)))) {
-		return live(f.dot);
+	if (!rt.istype(target, T("/turf")) || rt.istype(target, T("/turf/open/space"))) {
+		return f.dot;
 	}
-	newcolor = add("#", rt.sv(f, "item_color"));
-	rt.callName(f, live(target), "add_atom_colour", [live(newcolor), 3]);
+	let newcolor: Value = "#" + this.item_color;
+	target.add_atom_colour(newcolor, WASHABLE_COLOUR_PRIORITY);
 	return f.dot;
 });
 
@@ -81,12 +75,12 @@ rt.type(7321, "/obj/item/weapon/paint/paint_remover", "/obj/item/weapon/paint", 
 	icon_state: "paint_neutral",
 });
 
-// /obj/item/weapon/paint/paint_remover/proc/afterattack  (code/game/objects/items/weapons/paint.dm:99)
+// paint.dm:99
 rt.def("/obj/item/weapon/paint/paint_remover/proc/afterattack", function afterattack(f: Frame, target: Value, user: Value, proximity: Value) {
-	if (!truthy(live(proximity))) {
-		return live(f.dot);
+	if (!proximity) {
+		return f.dot;
 	}
-	if (!(truthy((rt.istype(live(target), T("/turf")) ? 1 : 0)) && !isEqual(rt.fv(f, "color", live(target)), rt.initial(f, live(target), "color")))) return f.dot;
-	rt.callName(f, live(target), "remove_atom_colour", [3]);
+	if (!(rt.istype(target, T("/turf")) && target.color != rt.initial(f, target, "color"))) return f.dot;
+	target.remove_atom_colour(WASHABLE_COLOUR_PRIORITY);
 	return f.dot;
 });

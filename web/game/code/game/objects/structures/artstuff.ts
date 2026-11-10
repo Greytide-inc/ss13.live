@@ -1,7 +1,7 @@
-// From code/game/objects/structures/artstuff.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/structures/artstuff.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(12721, "/obj/structure/easel", "/obj/structure", {
@@ -16,41 +16,38 @@ rt.type(12721, "/obj/structure/easel", "/obj/structure", {
 	max_integrity: 60,
 });
 
-// /obj/structure/easel/proc/attackby  (code/game/objects/structures/artstuff.dm:20)  may sleep
-rt.def("/obj/structure/easel/proc/attackby", function* attackby(f: Frame) {
+// artstuff.dm:20
+rt.def("/obj/structure/easel/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
 	let C: Value = null;
-	f.vars = () => [C];
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/canvas")) ? 1 : 0))) {
-		C = live(f.args[0]);
-		yield* g.callName(f, live(f.args[1]), "dropItemToGround", [live(C)]);
-		rt.setSv(f, "painting", live(C));
-		rt.setFv(f, "loc", live(C), rt.getStep(f, live(f.src), 0));
-		rt.setFv(f, "layer", live(C), add(rt.sv(f, "layer"), 0.10000000149011612));
-		yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='notice'>＀ puts ％！ on ％！.</span>", [live(f.args[1]), live(C), live(f.src)]), fmt("<span class='notice'>You place ％！ on ％！.</span>", [live(C), live(f.src)])]);
+	if (rt.istype(I, T("/obj/item/weapon/canvas"))) {
+		C = I;
+		yield* user.dropItemToGround(C);
+		this.painting = C;
+		C.loc = rt.getStep(f, this, 0);
+		C.layer = this.layer + 0.1;
+		user.visible_message(fmt("<span class='notice'>＀ puts ％！ on ％！.</span>", [user, C, this]), fmt("<span class='notice'>You place ％！ on ％！.</span>", [C, this]));
 	} else {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
-	}
-	return f.dot;
-}, true, { args: ["I", "user", "params"] });
-
-// /obj/structure/easel/proc/Move  (code/game/objects/structures/artstuff.dm:33)  may sleep
-rt.def("/obj/structure/easel/proc/Move", function* Move(f: Frame) {
-	let _T: Value = null;
-	f.vars = () => [_T];
-	_T = rt.getStep(f, live(f.src), 0);
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if ((truthy(rt.sv(f, "painting")) && isEqual(rt.fv(f, "loc", rt.sv(f, "painting")), live(_T)))) {
-		rt.setFv(f, "loc", rt.sv(f, "painting"), rt.getStep(f, live(f.src), 0));
-	} else {
-		rt.setSv(f, "painting", null);
+		return (yield* parent_proc());
 	}
 	return f.dot;
 }, true);
 
-// /datum/controller/global_vars/proc/InitGlobalglobalBlankCanvases  (code/game/objects/structures/artstuff.dm:48)
+// artstuff.dm:33
+rt.def("/obj/structure/easel/proc/Move", function* Move(f: Frame) {
+	let _T: Value = rt.getStep(f, this, 0);
+	yield* parent_proc();
+	if (this.painting && this.painting.loc == _T) {
+		this.painting.loc = rt.getStep(f, this, 0);
+	} else {
+		this.painting = null;
+	}
+	return f.dot;
+}, true);
+
+// artstuff.dm:48
 rt.def("/datum/controller/global_vars/proc/InitGlobalglobalBlankCanvases", function InitGlobalglobalBlankCanvases(f: Frame) {
-	rt.setGl("globalBlankCanvases", rt.new_(f, T("/list"), [4]));
-	rt.modSrcVar(f, "gvars_datum_init_order", "globalBlankCanvases", add);
+	GLOB.globalBlankCanvases = new_(T("/list"), 4);
+	this.gvars_datum_init_order += "globalBlankCanvases";
 	return f.dot;
 });
 
@@ -63,62 +60,57 @@ rt.type(7474, "/obj/item/weapon/canvas", "/obj/item/weapon", {
 	resistance_flags: 4,
 });
 
-// /obj/item/weapon/canvas/proc/getGlobalBackup  (code/game/objects/structures/artstuff.dm:74)
+// artstuff.dm:74
 rt.def("/obj/item/weapon/canvas/proc/getGlobalBackup", function getGlobalBackup(f: Frame) {
 	let I: Value = null;
-	f.vars = () => [I];
 	f.dot = null;
-	if (truthy(rt.index(rt.gl("globalBlankCanvases"), rt.sv(f, "whichGlobalBackup")))) {
-		f.dot = rt.index(rt.gl("globalBlankCanvases"), rt.sv(f, "whichGlobalBackup"));
+	if (rt.index(GLOB.globalBlankCanvases, this.whichGlobalBackup)) {
+		f.dot = rt.index(GLOB.globalBlankCanvases, this.whichGlobalBackup);
 	} else {
-		I = rt.call(f, P("/proc/icon"), null, [rt.initial(f, live(f.src), "icon"), rt.initial(f, live(f.src), "icon_state")]);
-		rt.setAt(rt.gl("globalBlankCanvases"), rt.sv(f, "whichGlobalBackup"), live(I));
-		f.dot = live(I);
+		I = icon(rt.initial(f, this, "icon"), rt.initial(f, this, "icon_state"));
+		rt.setAt(GLOB.globalBlankCanvases, this.whichGlobalBackup, I);
+		f.dot = I;
 	}
 	return f.dot;
 });
 
-// /obj/item/weapon/canvas/proc/attackby  (code/game/objects/structures/artstuff.dm:86)  may sleep
-rt.def("/obj/item/weapon/canvas/proc/attackby", function* attackby(f: Frame) {
-	let click_params: Value = null, pixX: Value = null, pixY: Value = null, masterpiece: Value = null, thePix: Value = null, Ico: Value = null, theOriginalPix: Value = null, C: Value = null;
-	f.vars = () => [click_params, pixX, pixY, masterpiece, thePix, Ico, theOriginalPix, C];
-	click_params = (yield* g.call(f, P("/proc/params2list"), null, [live(f.args[2])]));
-	pixX = (yield* g.call(f, P("/proc/text2num"), null, [rt.at(live(click_params), "icon-x")]));
-	pixY = (yield* g.call(f, P("/proc/text2num"), null, [rt.at(live(click_params), "icon-y")]));
-	if (((!truthy(live(click_params)) || !truthy(rt.at(live(click_params), "icon-x"))) || !truthy(rt.at(live(click_params), "icon-y")))) {
-		return live(f.dot);
+// artstuff.dm:86
+rt.def("/obj/item/weapon/canvas/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
+	let masterpiece: Value = null, thePix: Value = null, Ico: Value = null, theOriginalPix: Value = null, C: Value = null;
+	let click_params: Value = params2list(params);
+	let pixX: Value = text2num(rt.at(click_params, "icon-x"));
+	let pixY: Value = text2num(rt.at(click_params, "icon-y"));
+	if (!click_params || !rt.at(click_params, "icon-x") || !rt.at(click_params, "icon-y")) {
+		return f.dot;
 	}
-	if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/soap")) ? 1 : 0)) || truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/reagent_containers/glass/rag")) ? 1 : 0)))) {
-		masterpiece = (yield* g.call(f, P("/proc/icon"), null, [rt.sv(f, "icon"), rt.sv(f, "icon_state")]));
-		thePix = (yield* g.callName(f, live(masterpiece), "GetPixel", [live(pixX), live(pixY)]));
-		if (!truthy((Ico = (yield* g.srcCall(f, "getGlobalBackup"))))) {
-			yield* g.call(f, P("/proc/qdel"), null, [live(masterpiece)]);
-			return live(f.dot);
+	if (rt.istype(I, T("/obj/item/weapon/soap")) || rt.istype(I, T("/obj/item/weapon/reagent_containers/glass/rag"))) {
+		masterpiece = icon(this.icon, this.icon_state);
+		thePix = masterpiece.GetPixel(pixX, pixY);
+		if (!(Ico = this.getGlobalBackup())) {
+			yield* qdel(masterpiece);
+			return f.dot;
 		}
-		theOriginalPix = (yield* g.callName(f, live(Ico), "GetPixel", [live(pixX), live(pixY)]));
-		if (!isEqual(live(thePix), live(theOriginalPix))) {
-			yield* g.srcCall(f, "DrawPixelOn", live(theOriginalPix), live(pixX), live(pixY));
+		theOriginalPix = Ico.GetPixel(pixX, pixY);
+		if (thePix != theOriginalPix) {
+			this.DrawPixelOn(theOriginalPix, pixX, pixY);
 		}
-		yield* g.call(f, P("/proc/qdel"), null, [live(masterpiece)]);
+		yield* qdel(masterpiece);
+	} else if (rt.istype(I, T("/obj/item/toy/crayon"))) {
+		this.DrawPixelOn((C = I).paint_color, pixX, pixY);
 	} else {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/toy/crayon")) ? 1 : 0))) {
-			yield* g.srcCall(f, "DrawPixelOn", rt.gv(f, "paint_color", (C = live(f.args[0]))), live(pixX), live(pixY));
-		} else {
-			return (yield* g.callSuper(f, [], rt.Args.Same));
-		}
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["I", "user", "params"] });
+}, true);
 
-// /obj/item/weapon/canvas/proc/attack_self  (code/game/objects/structures/artstuff.dm:119)
+// artstuff.dm:119
 rt.def("/obj/item/weapon/canvas/proc/attack_self", function attack_self(f: Frame, user: Value) {
 	let blank: Value = null;
-	f.vars = () => [blank];
-	if (!truthy(live(user))) {
-		return live(f.dot);
+	if (!user) {
+		return f.dot;
 	}
-	if (!truthy((blank = rt.callSrc(f, "getGlobalBackup", [])))) return f.dot;
-	rt.setSv(f, "icon", live(blank));
-	rt.callName(f, live(user), "visible_message", [fmt("<span class='notice'>＀ cleans the canvas.</span>", [live(user)]), "<span class='notice'>You clean the canvas.</span>"]);
+	if (!(blank = this.getGlobalBackup())) return f.dot;
+	this.icon = blank;
+	user.visible_message(`<span class='notice'>${user} cleans the canvas.</span>`, "<span class='notice'>You clean the canvas.</span>");
 	return f.dot;
 });

@@ -1,7 +1,7 @@
-// From code/modules/crafting/craft.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/crafting/craft.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, g, add, subtract, fmt } = rt;
 
 
 rt.type(2292, "/datum/personal_crafting", "/datum", {
@@ -15,205 +15,152 @@ rt.type(2292, "/datum/personal_crafting", "/datum", {
 	display_compact: 1,
 });
 
-// /datum/personal_crafting/proc/<init>  (code/modules/crafting/craft.dm:11)
+// craft.dm:11
 rt.def("/datum/personal_crafting/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "categories", rt.list("Weaponry", "Robots", "Misc", "Tribal", "Foods"));
-	rt.setSv(f, "subcategories", rt.list(rt.list("Weapons", "Ammunition"), "", "", "", rt.list("Breads", "Burgers", "Cakes", "Egg-Based Food", "Meats", "Misc. Food", "Pastries", "Pies", "Pizzas", "Salads", "Sandwiches", "Soups", "Spaghettis")));
+	parent_proc();
+	this.categories = list("Weaponry", "Robots", "Misc", "Tribal", "Foods");
+	this.subcategories = list(list("Weapons", "Ammunition"), "", "", "", list("Breads", "Burgers", "Cakes", "Egg-Based Food", "Meats", "Misc. Food", "Pastries", "Pies", "Pizzas", "Salads", "Sandwiches", "Soups", "Spaghettis"));
 	return f.dot;
 });
 
-// /datum/personal_crafting/proc/check_contents  (code/modules/crafting/craft.dm:54)
+// craft.dm:54
 rt.def("/datum/personal_crafting/proc/check_contents", function check_contents(f: Frame, R: Value, contents: Value) {
 	let A: Value = null, needed_amount: Value = null, B: Value = null;
 	let $e: any;
-	f.vars = () => [A, needed_amount, B, $e];
-	A = null;
-	rt.forList(f, 0, rt.fv(f, "reqs", live(R)));
+	rt.forList(f, 0, R.reqs);
 	loop3: while (true) {
 		if (($e = rt.next(f, 0)) === undefined) break;
 		A = $e;
-		needed_amount = rt.index(rt.fv(f, "reqs", live(R)), live(A));
+		needed_amount = rt.index(R.reqs, A);
 		B = null;
-		rt.forList(f, 1, live(contents));
-		while (($e = rt.next(f, 1)) !== undefined) {
-			B = $e;
-			if (truthy(rt.call(f, P("/proc/ispath"), null, [live(B), live(A)]))) {
-				if (rt.ge(rt.index(live(contents), live(B)), rt.index(rt.fv(f, "reqs", live(R)), live(A)))) {
+		for (B of each(contents)) {
+			if (ispath(B, A)) {
+				if (rt.index(contents, B) >= rt.index(R.reqs, A)) {
 					continue loop3;
 				}
-				(needed_amount = rt.modify(live(needed_amount), rt.index(live(contents), live(B)), subtract));
-				if (rt.le(live(needed_amount), 0)) {
+				needed_amount -= rt.index(contents, B);
+				if (needed_amount <= 0) {
 					continue loop3;
 				}
 				continue;
 			}
 		}
-		rt.endFor(f, 1);
 		return 0;
 	}
 	rt.endFor(f, 0);
 	A = null;
-	rt.forList(f, 0, rt.fv(f, "chem_catalysts", live(R)));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		A = $e;
-		if (rt.lt(rt.index(live(contents), live(A)), rt.index(rt.fv(f, "chem_catalysts", live(R)), live(A)))) {
+	for (A of each(R.chem_catalysts)) {
+		if (rt.index(contents, A) < rt.index(R.chem_catalysts, A)) {
 			return 0;
 		}
 	}
-	rt.endFor(f, 0);
 	return 1;
 });
 
-// /datum/personal_crafting/proc/get_environment  (code/modules/crafting/craft.dm:73)
+// craft.dm:73
 rt.def("/datum/personal_crafting/proc/get_environment", function get_environment(f: Frame, user: Value) {
-	let I: Value = null, L: Value = null, A: Value = null, _T: Value = null, B: Value = null, AM: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [I, L, A, _T, B, AM, $0, $e];
-	f.dot = rt.list();
-	I = null;
-	rt.forList(f, 0, rt.fv(f, "held_items", live(user)), T("/obj/item"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		f.dot = rt.modify(live(f.dot), live(I), add);
+	let I: Value = null, A: Value = null, _T: Value = null, B: Value = null, AM: Value = null;
+	let $e: any;
+	f.dot = list();
+	for (I of each(user.held_items, T("/obj/item"))) {
+		f.dot += I;
 	}
-	rt.endFor(f, 0);
-	if (!truthy(rt.call(f, P("/proc/isturf"), null, [rt.fv(f, "loc", live(user))]))) {
-		return live(f.dot);
+	if (!isturf(user.loc)) {
+		return f.dot;
 	}
-	L = rt.call(f, P("/proc/block"), null, [rt.getStep(f, live(user), 10), rt.getStep(f, live(user), 5)]);
-	A = null;
-	rt.forList(f, 0, live(L));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		A = $e;
-		if (truthy(rt.callName(f, (_T = live(A)), "Adjacent", [live(user)]))) {
+	let L: Value = block(rt.getStep(f, user, 10), rt.getStep(f, user, 5));
+	for (A of each(L)) {
+		if ((_T = A).Adjacent(user)) {
 			B = null;
-			rt.forList(f, 1, live(_T));
-			while (($e = rt.next(f, 1)) !== undefined) {
-				B = $e;
-				if (truthy(rt.gv(f, "secondary_flags", (AM = live(B))))) {
-					$0 = rt.index(rt.fv(f, "secondary_flags", live(AM)), "hologram");
-				} else {
-					$0 = 0;
-				}
-				if (truthy($0)) {
+			for (B of each(_T)) {
+				if ((AM = B).secondary_flags ? rt.index(AM.secondary_flags, "hologram") : 0) {
 					continue;
 				}
-				f.dot = rt.modify(live(f.dot), live(AM), add);
+				f.dot += AM;
 			}
-			rt.endFor(f, 1);
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /datum/personal_crafting/proc/get_surroundings  (code/modules/crafting/craft.dm:89)
+// craft.dm:89
 rt.def("/datum/personal_crafting/proc/get_surroundings", function get_surroundings(f: Frame, user: Value) {
 	let I: Value = null, S: Value = null, RC: Value = null, A: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [I, S, RC, A, $0, $e];
-	f.dot = rt.list();
-	I = null;
-	rt.forList(f, 0, rt.callSrc(f, "get_environment", [live(user)]), T("/obj/item"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		if (truthy(rt.fv(f, "secondary_flags", live(I)))) {
-			$0 = rt.index(rt.fv(f, "secondary_flags", live(I)), "hologram");
-		} else {
-			$0 = 0;
-		}
-		if (truthy($0)) {
+	let $e: any;
+	f.dot = list();
+	for (I of each(this.get_environment(user), T("/obj/item"))) {
+		if (I.secondary_flags ? rt.index(I.secondary_flags, "hologram") : 0) {
 			continue;
 		}
-		if (truthy((rt.istype(live(I), T("/obj/item/stack")) ? 1 : 0))) {
-			S = live(I);
-			rt.modAt(live(f.dot), rt.fv(f, "type", live(I)), rt.fv(f, "amount", live(S)), add);
+		if (rt.istype(I, T("/obj/item/stack"))) {
+			S = I;
+			rt.modAt(f.dot, I.type, S.amount, add);
 		} else {
-			if (truthy((rt.istype(live(I), T("/obj/item/weapon/reagent_containers")) ? 1 : 0))) {
-				if (truthy(rt.bitAnd(rt.gv(f, "container_type", (RC = live(I))), 4096))) {
+			if (rt.istype(I, T("/obj/item/weapon/reagent_containers"))) {
+				if (rt.bitAnd((RC = I).container_type, OPENCONTAINER)) {
 					A = null;
-					rt.forList(f, 1, rt.gv(f, "reagent_list", rt.fv(f, "reagents", live(RC))), T("/datum/reagent"));
-					while (($e = rt.next(f, 1)) !== undefined) {
-						A = $e;
-						rt.modAt(live(f.dot), rt.fv(f, "type", live(A)), rt.fv(f, "volume", live(A)), add);
+					for (A of each(RC.reagents.reagent_list, T("/datum/reagent"))) {
+						rt.modAt(f.dot, A.type, A.volume, add);
 					}
-					rt.endFor(f, 1);
 				}
 			}
-			rt.modAt(live(f.dot), rt.fv(f, "type", live(I)), 1, add);
+			rt.modAt(f.dot, I.type, 1, add);
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /datum/personal_crafting/proc/check_tools  (code/modules/crafting/craft.dm:105)
+// craft.dm:105
 rt.def("/datum/personal_crafting/proc/check_tools", function check_tools(f: Frame, user: Value, R: Value, contents: Value) {
-	let possible_tools: Value = null, I: Value = null, SI: Value = null, A: Value = null, I_2: Value = null;
+	let I: Value = null, SI: Value = null, A: Value = null, I_2: Value = null;
 	let $e: any;
-	f.vars = () => [possible_tools, I, SI, A, I_2, $e];
-	if (!truthy(rt.getLen(f, rt.fv(f, "tools", live(R))))) {
+	if (!rt.len(f, R.tools)) {
 		return 1;
 	}
-	possible_tools = rt.list();
-	I = null;
-	rt.forList(f, 0, rt.fv(f, "contents", live(user)), T("/obj/item"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		if (truthy((rt.istype(live(I), T("/obj/item/weapon/storage")) ? 1 : 0))) {
+	let possible_tools: Value = list();
+	for (I of each(user.contents, T("/obj/item"))) {
+		if (rt.istype(I, T("/obj/item/weapon/storage"))) {
 			SI = null;
-			rt.forList(f, 1, rt.fv(f, "contents", live(I)), T("/obj/item"));
-			while (($e = rt.next(f, 1)) !== undefined) {
-				SI = $e;
-				possible_tools = rt.modify(live(possible_tools), rt.fv(f, "type", live(SI)), add);
+			for (SI of each(I.contents, T("/obj/item"))) {
+				possible_tools += SI.type;
 			}
-			rt.endFor(f, 1);
 		}
-		possible_tools = rt.modify(live(possible_tools), rt.fv(f, "type", live(I)), add);
+		possible_tools += I.type;
 	}
-	rt.endFor(f, 0);
-	possible_tools = rt.modify(live(possible_tools), live(contents), add);
-	A = null;
-	rt.forList(f, 0, rt.fv(f, "tools", live(R)));
+	possible_tools += contents;
+	rt.forList(f, 0, R.tools);
 	loop31: while (true) {
 		if (($e = rt.next(f, 0)) === undefined) break;
 		A = $e;
 		I_2 = null;
-		rt.forList(f, 1, live(possible_tools));
-		while (($e = rt.next(f, 1)) !== undefined) {
-			I_2 = $e;
-			if (truthy(rt.call(f, P("/proc/ispath"), null, [live(I_2), live(A)]))) {
+		for (I_2 of each(possible_tools)) {
+			if (ispath(I_2, A)) {
 				continue loop31;
 			}
 		}
-		rt.endFor(f, 1);
 		return 0;
 	}
 	rt.endFor(f, 0);
 	return 1;
 });
 
-// /datum/personal_crafting/proc/construct_item  (code/modules/crafting/craft.dm:124)  may sleep
+// craft.dm:124
 rt.def("/datum/personal_crafting/proc/construct_item", function* construct_item(f: Frame, user: Value, R: Value) {
-	let contents: Value = null, send_feedback: Value = null, parts: Value = null, I: Value = null;
-	f.vars = () => [user, R, contents, send_feedback, parts, I];
-	contents = (yield* g.srcCall(f, "get_surroundings", live(user)));
-	send_feedback = 1;
-	if (truthy((yield* g.srcCall(f, "check_contents", live(R), live(contents))))) {
-		if (truthy((yield* g.srcCall(f, "check_tools", live(user), live(R), live(contents))))) {
-			if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(user), null, rt.fv(f, "time", live(R)), "target", live(user)], rt.Args.Named)))) {
-				contents = (yield* g.srcCall(f, "get_surroundings", live(user)));
-				if (!truthy((yield* g.srcCall(f, "check_contents", live(R), live(contents))))) {
+	let parts: Value = null, I: Value = null;
+	let contents: Value = this.get_surroundings(user);
+	let send_feedback: Value = 1;
+	if (this.check_contents(R, contents)) {
+		if (this.check_tools(user, R, contents)) {
+			if (yield* do_after(user, R.time, { target: user })) {
+				contents = this.get_surroundings(user);
+				if (!this.check_contents(R, contents)) {
 					return ", missing component.";
 				}
-				if (!truthy((yield* g.srcCall(f, "check_tools", live(user), live(R), live(contents))))) {
+				if (!this.check_tools(user, R, contents)) {
 					return ", missing tool.";
 				}
-				parts = (yield* g.srcCall(f, "del_reqs", live(R), live(user)));
-				yield* g.callName(f, (I = (yield* g.new_(f, rt.fv(f, "result", live(R)), [rt.getStep(f, rt.fv(f, "loc", live(user)), 0)]))), "CheckParts", [live(parts), live(R)]);
+				parts = (yield* this.del_reqs(R, user));
+				yield* (I = (yield* new_(R.result, rt.getStep(f, user.loc, 0)))).CheckParts(parts, R);
 				return 0;
 			}
 			return ".";
@@ -223,292 +170,244 @@ rt.def("/datum/personal_crafting/proc/construct_item", function* construct_item(
 	return ", missing component.";
 }, true);
 
-// /datum/personal_crafting/proc/del_reqs  (code/modules/crafting/craft.dm:171)  may sleep
+// craft.dm:171
 rt.def("/datum/personal_crafting/proc/del_reqs", function* del_reqs(f: Frame, R: Value, user: Value) {
-	let surroundings: Value = null, Deletion: Value = null, data: Value = null, amt: Value = null, A: Value = null, RG: Value = null, RGNT: Value = null, RC: Value = null, S: Value = null, SD: Value = null, I: Value = null, partlist: Value = null, M: Value = null, A_5: Value = null, RG_6: Value = null, ST: Value = null, AM: Value = null, DL: Value = null;
+	let surroundings: Value = null, data: Value = null, amt: Value = null, A: Value = null, RG: Value = null, RGNT: Value = null, RC: Value = null, S: Value = null, SD: Value = null, I: Value = null, M: Value = null, A_5: Value = null, RG_6: Value = null, ST: Value = null, AM: Value = null, DL: Value = null;
 	let $e: any;
-	f.vars = () => [R, user, surroundings, Deletion, data, amt, A, RG, RGNT, RC, S, SD, I, partlist, M, A_5, RG_6, ST, AM, DL, $e];
-	surroundings = null;
-	Deletion = rt.list();
-	f.dot = rt.list();
-	data = null;
-	amt = null;
-	A = null;
-	rt.forList(f, 0, rt.fv(f, "reqs", live(R)));
+	let Deletion: Value = list();
+	f.dot = list();
+	rt.forList(f, 0, R.reqs);
 	loop10: while (true) {
 		if (($e = rt.next(f, 0)) === undefined) break;
 		A = $e;
-		amt = rt.index(rt.fv(f, "reqs", live(R)), live(A));
-		surroundings = (yield* g.srcCall(f, "get_environment", live(user)));
-		(surroundings = rt.modify(live(surroundings), live(Deletion), subtract));
-		if (truthy((yield* g.call(f, P("/proc/ispath"), null, [live(A), T("/datum/reagent")])))) {
-			RG = (yield* g.new_(f, live(A), []));
+		amt = rt.index(R.reqs, A);
+		surroundings = this.get_environment(user);
+		surroundings -= Deletion;
+		if (ispath(A, T("/datum/reagent"))) {
+			RG = (yield* new_(A));
 			RGNT = null;
-			while (rt.gt(live(amt), 0)) {
-				if (truthy((RG = (yield* g.callName(f, rt.gv(f, "reagents", (RC = rt.locateIn(f, T("/obj/item/weapon/reagent_containers"), live(surroundings)))), "get_reagent", [live(A)]))))) {
-					if (!truthy(rt.locateIn(f, rt.fv(f, "type", live(RG)), live(Deletion)))) {
-						Deletion = rt.modify(live(Deletion), (yield* g.new_(f, rt.fv(f, "type", live(RG)), [])), add);
+			while (amt > 0) {
+				if (RG = (RC = rt.locateIn(f, T("/obj/item/weapon/reagent_containers"), surroundings)).reagents.get_reagent(A)) {
+					if (!rt.locateIn(f, RG.type, Deletion)) {
+						Deletion += (yield* new_(RG.type));
 					}
-					if (rt.gt(rt.fv(f, "volume", live(RG)), live(amt))) {
-						(rt.modField(f, live(RG), "volume", live(amt), subtract));
-						data = rt.fv(f, "data", live(RG));
-						yield* g.callName(f, rt.fv(f, "reagents", live(RC)), "conditional_update", [live(RC)]);
-						rt.setFv(f, "volume", (RG = rt.locateIn(f, rt.fv(f, "type", live(RG)), live(Deletion))), live(amt));
-						rt.modField(f, live(RG), "data", live(data), add);
+					if (RG.volume > amt) {
+						RG.volume -= amt;
+						data = RG.data;
+						yield* RC.reagents.conditional_update(RC);
+						(RG = rt.locateIn(f, RG.type, Deletion)).volume = amt;
+						RG.data += data;
 						continue loop10;
 					}
-					(surroundings = rt.modify(live(surroundings), live(RC), subtract));
-					(amt = rt.modify(live(amt), rt.fv(f, "volume", live(RG)), subtract));
-					(rt.modField(f, rt.fv(f, "reagents", live(RC)), "reagent_list", live(RG), subtract));
-					yield* g.callName(f, rt.fv(f, "reagents", live(RC)), "conditional_update", [live(RC)]);
-					rt.modField(f, (RGNT = rt.locateIn(f, rt.fv(f, "type", live(RG)), live(Deletion))), "volume", rt.fv(f, "volume", live(RG)), add);
-					rt.modField(f, live(RGNT), "data", rt.fv(f, "data", live(RG)), add);
-					yield* g.call(f, P("/proc/qdel"), null, [live(RG)]);
+					surroundings -= RC;
+					amt -= RG.volume;
+					RC.reagents.reagent_list -= RG;
+					yield* RC.reagents.conditional_update(RC);
+					(RGNT = rt.locateIn(f, RG.type, Deletion)).volume += RG.volume;
+					RGNT.data += RG.data;
+					yield* qdel(RG);
 				} else {
-					(surroundings = rt.modify(live(surroundings), live(RC), subtract));
+					surroundings -= RC;
 				}
 			}
+		} else if (ispath(A, T("/obj/item/stack"))) {
+			S = null;
+			SD = null;
+			while (amt > 0) {
+				if ((S = rt.locateIn(f, A, surroundings)).amount >= amt) {
+					if (!rt.locateIn(f, S.type, Deletion)) {
+						Deletion += (SD = (yield* new_(S.type)));
+					}
+					yield* S.use(amt);
+					(SD = rt.locateIn(f, S.type, Deletion)).amount += amt;
+					continue loop10;
+				}
+				amt -= S.amount;
+				if (!rt.locateIn(f, S.type, Deletion)) {
+					Deletion += S;
+				} else {
+					data = S.amount;
+					yield* g.callName(f, (S = rt.locateIn(f, S.type, Deletion)), "add", [data]);
+				}
+				surroundings -= S;
+			}
 		} else {
-			if (truthy((yield* g.call(f, P("/proc/ispath"), null, [live(A), T("/obj/item/stack")])))) {
-				S = null;
-				SD = null;
-				while (rt.gt(live(amt), 0)) {
-					if (rt.ge(rt.gv(f, "amount", (S = rt.locateIn(f, live(A), live(surroundings)))), live(amt))) {
-						if (!truthy(rt.locateIn(f, rt.fv(f, "type", live(S)), live(Deletion)))) {
-							Deletion = rt.modify(live(Deletion), (SD = (yield* g.new_(f, rt.fv(f, "type", live(S)), []))), add);
-						}
-						yield* g.callName(f, live(S), "use", [live(amt)]);
-						rt.modField(f, (SD = rt.locateIn(f, rt.fv(f, "type", live(S)), live(Deletion))), "amount", live(amt), add);
-						continue loop10;
-					}
-					(amt = rt.modify(live(amt), rt.fv(f, "amount", live(S)), subtract));
-					if (!truthy(rt.locateIn(f, rt.fv(f, "type", live(S)), live(Deletion)))) {
-						Deletion = rt.modify(live(Deletion), live(S), add);
-					} else {
-						data = rt.fv(f, "amount", live(S));
-						yield* g.callName(f, (S = rt.locateIn(f, rt.fv(f, "type", live(S)), live(Deletion))), "add", [live(data)]);
-					}
-					(surroundings = rt.modify(live(surroundings), live(S), subtract));
-				}
-			} else {
-				I = null;
-				while (rt.gt(live(amt), 0)) {
-					Deletion = rt.modify(live(Deletion), (I = rt.locateIn(f, live(A), live(surroundings))), add);
-					(surroundings = rt.modify(live(surroundings), live(I), subtract));
-					amt = rt.inc(live(amt), -1);
-				}
+			I = null;
+			while (amt > 0) {
+				Deletion += (I = rt.locateIn(f, A, surroundings));
+				surroundings -= I;
+				amt--;
 			}
 		}
 	}
 	rt.endFor(f, 0);
-	partlist = rt.list(rt.getLen(f, rt.fv(f, "parts", live(R))));
-	M = null;
-	rt.forList(f, 0, rt.fv(f, "parts", live(R)));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		rt.setAt(live(partlist), live(M), rt.index(rt.fv(f, "parts", live(R)), live(M)));
+	let partlist: Value = list(rt.len(f, R.parts));
+	for (M of each(R.parts)) {
+		rt.setAt(partlist, M, rt.index(R.parts, M));
 	}
-	rt.endFor(f, 0);
-	A_5 = null;
-	rt.forList(f, 0, rt.fv(f, "parts", live(R)));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		A_5 = $e;
-		if (truthy((rt.istype(live(A_5), T("/datum/reagent")) ? 1 : 0))) {
-			if (rt.gt(rt.gv(f, "volume", (RG_6 = rt.locateIn(f, live(A_5), live(Deletion)))), rt.index(live(partlist), live(A_5)))) {
-				rt.setFv(f, "volume", live(RG_6), rt.index(live(partlist), live(A_5)));
+	for (A_5 of each(R.parts)) {
+		if (rt.istype(A_5, T("/datum/reagent"))) {
+			if ((RG_6 = rt.locateIn(f, A_5, Deletion)).volume > rt.index(partlist, A_5)) {
+				RG_6.volume = rt.index(partlist, A_5);
 			}
-			f.dot = rt.modify(live(f.dot), live(RG_6), add);
-			(Deletion = rt.modify(live(Deletion), live(RG_6), subtract));
+			f.dot += RG_6;
+			Deletion -= RG_6;
+			continue;
+		} else if (rt.istype(A_5, T("/obj/item/stack"))) {
+			if ((ST = rt.locateIn(f, A_5, Deletion)).amount > rt.index(partlist, A_5)) {
+				ST.amount = rt.index(partlist, A_5);
+			}
+			f.dot += ST;
+			Deletion -= ST;
 			continue;
 		} else {
-			if (truthy((rt.istype(live(A_5), T("/obj/item/stack")) ? 1 : 0))) {
-				if (rt.gt(rt.gv(f, "amount", (ST = rt.locateIn(f, live(A_5), live(Deletion)))), rt.index(live(partlist), live(A_5)))) {
-					rt.setFv(f, "amount", live(ST), rt.index(live(partlist), live(A_5)));
-				}
-				f.dot = rt.modify(live(f.dot), live(ST), add);
-				(Deletion = rt.modify(live(Deletion), live(ST), subtract));
-				continue;
-			} else {
-				while (rt.gt(rt.index(live(partlist), live(A_5)), 0)) {
-					f.dot = rt.modify(live(f.dot), (AM = rt.locateIn(f, live(A_5), live(Deletion))), add);
-					(Deletion = rt.modify(live(Deletion), live(AM), subtract));
-					(rt.modAt(live(partlist), live(A_5), 1, subtract));
-				}
+			while (rt.index(partlist, A_5) > 0) {
+				f.dot += (AM = rt.locateIn(f, A_5, Deletion));
+				Deletion -= AM;
+				(rt.modAt(partlist, A_5, 1, subtract));
 			}
 		}
 	}
-	rt.endFor(f, 0);
-	while (truthy(rt.len(f, live(Deletion)))) {
-		DL = rt.index(live(Deletion), rt.len(f, live(Deletion)));
-		yield* g.callName(f, live(Deletion), "Cut", [rt.len(f, live(Deletion))]);
-		yield* g.call(f, P("/proc/qdel"), null, [live(DL)]);
+	while (rt.len(f, Deletion)) {
+		DL = rt.index(Deletion, rt.len(f, Deletion));
+		Deletion.Cut(rt.len(f, Deletion));
+		yield* qdel(DL);
 	}
 	return f.dot;
 }, true);
 
-// /datum/personal_crafting/proc/ui_interact  (code/modules/crafting/craft.dm:268)  may sleep
+// craft.dm:268
 rt.def("/datum/personal_crafting/proc/ui_interact", function* ui_interact(f: Frame, user: Value, ui_key: Value, ui: Value, force_open: Value, master_ui: Value, state: Value) {
-	f.vars = () => [user, ui_key, ui, force_open, master_ui, state];
-	if (live(ui_key) === null) {
-		ui_key = "main";
-	}
-	if (live(ui) === null) {
-		ui = null;
-	}
-	if (live(force_open) === null) {
-		force_open = 0;
-	}
-	if (live(master_ui) === null) {
-		master_ui = null;
-	}
-	if (live(state) === null) {
-		state = rt.gl("not_incapacitated_turf_state");
-	}
-	if (truthy((ui = (yield* g.callName(f, rt.gl("SStgui"), "try_update_ui", [live(user), live(f.src), live(ui_key), live(ui), live(force_open)]))))) return f.dot;
-	yield* g.callName(f, (ui = (yield* g.new_(f, T("/datum/tgui"), [live(user), live(f.src), live(ui_key), "personal_crafting", "Crafting Menu", 700, 800, live(master_ui), live(state)]))), "open", []);
+	ui_key ??= "main";
+	force_open ??= 0;
+	state ??= GLOB.not_incapacitated_turf_state;
+	if (ui = (yield* GLOB.SStgui.try_update_ui(user, this, ui_key, ui, force_open))) return f.dot;
+	yield* (ui = (yield* new_(T("/datum/tgui"), user, this, ui_key, "personal_crafting", "Crafting Menu", 700, 800, master_ui, state))).open();
 	return f.dot;
 }, true);
 
-// /datum/personal_crafting/proc/ui_data  (code/modules/crafting/craft.dm:275)
+// craft.dm:275
 rt.def("/datum/personal_crafting/proc/ui_data", function ui_data(f: Frame, user: Value) {
-	let data: Value = null, subs: Value = null, cur_subcategory: Value = null, cur_category: Value = null, surroundings: Value = null, can_craft: Value = null, cant_craft: Value = null, rec: Value = null, R: Value = null;
-	let $e: any;
-	f.vars = () => [data, subs, cur_subcategory, cur_category, surroundings, can_craft, cant_craft, rec, R, $e];
-	data = rt.list();
-	subs = rt.list();
-	cur_subcategory = "";
-	cur_category = rt.index(rt.sv(f, "categories"), rt.sv(f, "viewing_category"));
-	if (truthy((rt.istype(rt.index(rt.sv(f, "subcategories"), rt.sv(f, "viewing_category")), T("/list")) ? 1 : 0))) {
-		cur_subcategory = rt.index((subs = rt.index(rt.sv(f, "subcategories"), rt.sv(f, "viewing_category"))), rt.sv(f, "viewing_subcategory"));
+	let rec: Value = null, R: Value = null;
+	let data: Value = list();
+	let subs: Value = list();
+	let cur_subcategory: Value = "";
+	let cur_category: Value = rt.index(this.categories, this.viewing_category);
+	if (rt.istype(rt.index(this.subcategories, this.viewing_category), T("/list"))) {
+		cur_subcategory = rt.index((subs = rt.index(this.subcategories, this.viewing_category)), this.viewing_subcategory);
 	}
-	rt.setAt(live(data), "busy", rt.sv(f, "busy"));
-	rt.setAt(live(data), "prev_cat", rt.index(rt.sv(f, "categories"), rt.callSrc(f, "prev_cat", [])));
-	rt.setAt(live(data), "prev_subcat", rt.index(live(subs), rt.callSrc(f, "prev_subcat", [])));
-	rt.setAt(live(data), "category", live(cur_category));
-	rt.setAt(live(data), "subcategory", live(cur_subcategory));
-	rt.setAt(live(data), "next_cat", rt.index(rt.sv(f, "categories"), rt.callSrc(f, "next_cat", [])));
-	rt.setAt(live(data), "next_subcat", rt.index(live(subs), rt.callSrc(f, "next_subcat", [])));
-	rt.setAt(live(data), "display_craftable_only", rt.sv(f, "display_craftable_only"));
-	rt.setAt(live(data), "display_compact", rt.sv(f, "display_compact"));
-	surroundings = rt.callSrc(f, "get_surroundings", [live(user)]);
-	can_craft = rt.list();
-	cant_craft = rt.list();
-	rec = null;
-	rt.forList(f, 0, rt.gl("crafting_recipes"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		rec = $e;
-		if ((!isEqual(rt.gv(f, "category", (R = live(rec))), live(cur_category)) || !isEqual(rt.fv(f, "subcategory", live(R)), live(cur_subcategory)))) {
+	rt.setAt(data, "busy", this.busy);
+	rt.setAt(data, "prev_cat", rt.index(this.categories, this.prev_cat()));
+	rt.setAt(data, "prev_subcat", rt.index(subs, this.prev_subcat()));
+	rt.setAt(data, "category", cur_category);
+	rt.setAt(data, "subcategory", cur_subcategory);
+	rt.setAt(data, "next_cat", rt.index(this.categories, this.next_cat()));
+	rt.setAt(data, "next_subcat", rt.index(subs, this.next_subcat()));
+	rt.setAt(data, "display_craftable_only", this.display_craftable_only);
+	rt.setAt(data, "display_compact", this.display_compact);
+	let surroundings: Value = this.get_surroundings(user);
+	let can_craft: Value = list();
+	let cant_craft: Value = list();
+	for (rec of each(GLOB.crafting_recipes)) {
+		if ((R = rec).category != cur_category || R.subcategory != cur_subcategory) {
 			continue;
 		}
-		if (truthy(rt.callSrc(f, "check_contents", [live(R), live(surroundings)]))) {
-			can_craft = rt.modify(live(can_craft), rt.list(rt.callSrc(f, "build_recipe_data", [live(R)])), add);
+		if (this.check_contents(R, surroundings)) {
+			can_craft += list(this.build_recipe_data(R));
 		} else {
-			cant_craft = rt.modify(live(cant_craft), rt.list(rt.callSrc(f, "build_recipe_data", [live(R)])), add);
+			cant_craft += list(this.build_recipe_data(R));
 		}
 	}
-	rt.endFor(f, 0);
-	rt.setAt(live(data), "can_craft", live(can_craft));
-	rt.setAt(live(data), "cant_craft", live(cant_craft));
-	return live(data);
+	rt.setAt(data, "can_craft", can_craft);
+	rt.setAt(data, "cant_craft", cant_craft);
+	return data;
 });
 
-// /datum/personal_crafting/proc/ui_act  (code/modules/crafting/craft.dm:309)  may sleep
-rt.def("/datum/personal_crafting/proc/ui_act", function* ui_act(f: Frame) {
+// craft.dm:309
+rt.def("/datum/personal_crafting/proc/ui_act", function* ui_act(f: Frame, action: Value, params: Value) {
 	let TR: Value = null, fail_msg: Value = null;
-	let $0: any;
-	f.vars = () => [TR, fail_msg, $0];
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		return live(f.dot);
+	if (yield* parent_proc()) {
+		return f.dot;
 	}
-	$0 = live(f.args[0]);
-	if ($0 === "make") {
-		TR = rt.locateIn(f, rt.at(live(f.args[1]), "recipe"), rt.world());
-		rt.setSv(f, "busy", 1);
-		yield* g.srcCall(f, "ui_interact", live(f.usr));
-		if (!truthy((fail_msg = (yield* g.srcCall(f, "construct_item", live(f.usr), live(TR)))))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), fmt("<span class='notice'>＀ constructed.</span>", [rt.fv(f, "name", live(TR))])]);
+	if (action === "make") {
+		TR = rt.locateIn(f, rt.at(params, "recipe"), rt.world());
+		this.busy = 1;
+		yield* this.ui_interact(f.usr);
+		if (!(fail_msg = (yield* this.construct_item(f.usr, TR)))) {
+			to_chat(f.usr, `<span class='notice'>${TR.name} constructed.</span>`);
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), fmt("<span class='warning'>Construction failed＀</span>", [live(fail_msg)])]);
+			to_chat(f.usr, `<span class='warning'>Construction failed${fail_msg}</span>`);
 		}
-		rt.setSv(f, "busy", 0);
-		yield* g.srcCall(f, "ui_interact", live(f.usr));
-	} else if ($0 === "forwardCat") {
-		rt.setSv(f, "viewing_category", (yield* g.srcCall(f, "next_cat", 0)));
+		this.busy = 0;
+		yield* this.ui_interact(f.usr);
+	} else if (action === "forwardCat") {
+		this.viewing_category = this.next_cat(0);
 		f.dot = 1;
-	} else if ($0 === "backwardCat") {
-		rt.setSv(f, "viewing_category", (yield* g.srcCall(f, "prev_cat", 0)));
+	} else if (action === "backwardCat") {
+		this.viewing_category = this.prev_cat(0);
 		f.dot = 1;
-	} else if ($0 === "forwardSubCat") {
-		rt.setSv(f, "viewing_subcategory", (yield* g.srcCall(f, "next_subcat")));
+	} else if (action === "forwardSubCat") {
+		this.viewing_subcategory = this.next_subcat();
 		f.dot = 1;
-	} else if ($0 === "backwardSubCat") {
-		rt.setSv(f, "viewing_subcategory", (yield* g.srcCall(f, "prev_subcat")));
+	} else if (action === "backwardSubCat") {
+		this.viewing_subcategory = this.prev_subcat();
 		f.dot = 1;
-	} else if ($0 === "toggle_recipes") {
-		rt.setSv(f, "display_craftable_only", (!truthy(rt.sv(f, "display_craftable_only")) ? 1 : 0));
+	} else if (action === "toggle_recipes") {
+		this.display_craftable_only = (!this.display_craftable_only ? 1 : 0);
 		f.dot = 1;
-	} else if ($0 === "toggle_compact") {
-		rt.setSv(f, "display_compact", (!truthy(rt.sv(f, "display_compact")) ? 1 : 0));
+	} else if (action === "toggle_compact") {
+		this.display_compact = (!this.display_compact ? 1 : 0);
 		f.dot = 1;
 	}
 	return f.dot;
-}, true, { args: ["action", "params"] });
+}, true);
 
-// /datum/personal_crafting/proc/next_cat  (code/modules/crafting/craft.dm:345)
+// craft.dm:345
 rt.def("/datum/personal_crafting/proc/next_cat", function next_cat(f: Frame, readonly: Value) {
-	f.vars = () => [readonly];
-	if (live(readonly) === null) {
-		readonly = 1;
+	readonly ??= 1;
+	if (!readonly) {
+		this.viewing_subcategory = 1;
 	}
-	if (!truthy(live(readonly))) {
-		rt.setSv(f, "viewing_subcategory", 1);
-	}
-	f.dot = add(rt.modulus(rt.sv(f, "viewing_category"), rt.len(f, rt.sv(f, "categories"))), 1);
+	f.dot = this.viewing_category % rt.len(f, this.categories) + 1;
 	return f.dot;
 });
 
-// /datum/personal_crafting/proc/next_subcat  (code/modules/crafting/craft.dm:350)
+// craft.dm:350
 rt.def("/datum/personal_crafting/proc/next_subcat", function next_subcat(f: Frame) {
-	let subs: Value = null;
-	f.vars = () => [subs];
-	if (!truthy((rt.istype(rt.index(rt.sv(f, "subcategories"), rt.sv(f, "viewing_category")), T("/list")) ? 1 : 0))) return f.dot;
-	subs = rt.index(rt.sv(f, "subcategories"), rt.sv(f, "viewing_category"));
-	f.dot = add(rt.modulus(rt.sv(f, "viewing_subcategory"), rt.len(f, live(subs))), 1);
+	if (!rt.istype(rt.index(this.subcategories, this.viewing_category), T("/list"))) return f.dot;
+	let subs: Value = rt.index(this.subcategories, this.viewing_category);
+	f.dot = this.viewing_subcategory % rt.len(f, subs) + 1;
 	return f.dot;
 });
 
-// /datum/personal_crafting/proc/prev_cat  (code/modules/crafting/craft.dm:357)
+// craft.dm:357
 rt.def("/datum/personal_crafting/proc/prev_cat", function prev_cat(f: Frame, readonly: Value) {
-	f.vars = () => [readonly];
-	if (live(readonly) === null) {
-		readonly = 1;
+	readonly ??= 1;
+	if (!readonly) {
+		this.viewing_subcategory = 1;
 	}
-	if (!truthy(live(readonly))) {
-		rt.setSv(f, "viewing_subcategory", 1);
-	}
-	if (isEqual(rt.sv(f, "viewing_category"), rt.len(f, rt.sv(f, "categories")))) {
-		f.dot = subtract(rt.sv(f, "viewing_category"), 1);
+	if (this.viewing_category == rt.len(f, this.categories)) {
+		f.dot = this.viewing_category - 1;
 	} else {
-		f.dot = subtract(rt.modulus(rt.sv(f, "viewing_category"), rt.len(f, rt.sv(f, "categories"))), 1);
+		f.dot = this.viewing_category % rt.len(f, this.categories) - 1;
 	}
-	if (!rt.le(live(f.dot), 0)) return f.dot;
-	f.dot = rt.len(f, rt.sv(f, "categories"));
+	if (!(f.dot <= 0)) return f.dot;
+	f.dot = rt.len(f, this.categories);
 	return f.dot;
 });
 
-// /datum/personal_crafting/proc/prev_subcat  (code/modules/crafting/craft.dm:367)
+// craft.dm:367
 rt.def("/datum/personal_crafting/proc/prev_subcat", function prev_subcat(f: Frame) {
 	let subs: Value = null;
-	f.vars = () => [subs];
-	if (truthy((rt.istype(rt.index(rt.sv(f, "subcategories"), rt.sv(f, "viewing_category")), T("/list")) ? 1 : 0))) {
-		subs = rt.index(rt.sv(f, "subcategories"), rt.sv(f, "viewing_category"));
-		if (isEqual(rt.sv(f, "viewing_subcategory"), rt.len(f, live(subs)))) {
-			f.dot = subtract(rt.sv(f, "viewing_subcategory"), 1);
+	if (rt.istype(rt.index(this.subcategories, this.viewing_category), T("/list"))) {
+		subs = rt.index(this.subcategories, this.viewing_category);
+		if (this.viewing_subcategory == rt.len(f, subs)) {
+			f.dot = this.viewing_subcategory - 1;
 		} else {
-			f.dot = subtract(rt.modulus(rt.sv(f, "viewing_subcategory"), rt.len(f, live(subs))), 1);
+			f.dot = this.viewing_subcategory % rt.len(f, subs) - 1;
 		}
-		if (rt.le(live(f.dot), 0)) {
-			f.dot = rt.len(f, live(subs));
+		if (f.dot <= 0) {
+			f.dot = rt.len(f, subs);
 		}
 	} else {
 		f.dot = null;
@@ -516,45 +415,33 @@ rt.def("/datum/personal_crafting/proc/prev_subcat", function prev_subcat(f: Fram
 	return f.dot;
 });
 
-// /datum/personal_crafting/proc/build_recipe_data  (code/modules/crafting/craft.dm:380)
+// craft.dm:380
 rt.def("/datum/personal_crafting/proc/build_recipe_data", function build_recipe_data(f: Frame, R: Value) {
-	let data: Value = null, req_text: Value = null, tool_text: Value = null, catalyst_text: Value = null, a: Value = null, A: Value = null;
-	let $e: any;
-	f.vars = () => [data, req_text, tool_text, catalyst_text, a, A, $e];
-	rt.setAt((data = rt.list()), "name", rt.fv(f, "name", live(R)));
-	rt.setAt(live(data), "ref", fmt("＃", [live(R)]));
-	req_text = "";
-	tool_text = "";
-	catalyst_text = "";
-	a = null;
-	rt.forList(f, 0, rt.fv(f, "reqs", live(R)));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		a = $e;
-		A = live(a);
-		req_text = rt.modify(live(req_text), fmt(" ＀ ＀,", [rt.index(rt.fv(f, "reqs", live(R)), live(A)), rt.initial(f, live(A), "name")]), add);
+	let data: Value = null, a: Value = null, A: Value = null;
+	rt.setAt((data = list()), "name", R.name);
+	rt.setAt(data, "ref", fmt("＃", [R]));
+	let req_text: Value = "";
+	let tool_text: Value = "";
+	let catalyst_text: Value = "";
+	for (a of each(R.reqs)) {
+		A = a;
+		req_text += ` ${rt.index(R.reqs, A)} ${rt.initial(f, A, "name")},`;
 	}
-	rt.endFor(f, 0);
-	req_text = rt.call(f, P("/proc/replacetext"), null, [live(req_text), ",", "", -1]);
-	rt.setAt(live(data), "req_text", live(req_text));
+	req_text = replacetext(req_text, ",", "", -1);
+	rt.setAt(data, "req_text", req_text);
 	a = null;
-	rt.forList(f, 0, rt.fv(f, "chem_catalysts", live(R)));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		a = $e;
-		A = live(a);
-		catalyst_text = rt.modify(live(catalyst_text), fmt(" ＀ ＀,", [rt.index(rt.fv(f, "chem_catalysts", live(R)), live(A)), rt.initial(f, live(A), "name")]), add);
+	for (a of each(R.chem_catalysts)) {
+		A = a;
+		catalyst_text += ` ${rt.index(R.chem_catalysts, A)} ${rt.initial(f, A, "name")},`;
 	}
-	rt.endFor(f, 0);
-	catalyst_text = rt.call(f, P("/proc/replacetext"), null, [live(catalyst_text), ",", "", -1]);
-	rt.setAt(live(data), "catalyst_text", live(catalyst_text));
+	catalyst_text = replacetext(catalyst_text, ",", "", -1);
+	rt.setAt(data, "catalyst_text", catalyst_text);
 	a = null;
-	rt.forList(f, 0, rt.fv(f, "tools", live(R)));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		a = $e;
-		A = live(a);
-		tool_text = rt.modify(live(tool_text), fmt(" ＀ ＀,", [rt.index(rt.fv(f, "tools", live(R)), live(A)), rt.initial(f, live(A), "name")]), add);
+	for (a of each(R.tools)) {
+		A = a;
+		tool_text += ` ${rt.index(R.tools, A)} ${rt.initial(f, A, "name")},`;
 	}
-	rt.endFor(f, 0);
-	tool_text = rt.call(f, P("/proc/replacetext"), null, [live(tool_text), ",", "", -1]);
-	rt.setAt(live(data), "tool_text", live(tool_text));
-	return live(data);
+	tool_text = replacetext(tool_text, ",", "", -1);
+	rt.setAt(data, "tool_text", tool_text);
+	return data;
 });

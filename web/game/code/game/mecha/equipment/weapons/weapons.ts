@@ -1,7 +1,7 @@
-// From code/game/mecha/equipment/weapons/weapons.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/mecha/equipment/weapons/weapons.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, fmt } = rt;
 
 
 rt.type(9628, "/obj/item/mecha_parts/mecha_equipment/weapon", "/obj/item/mecha_parts/mecha_equipment", {
@@ -17,57 +17,55 @@ rt.type(9628, "/obj/item/mecha_parts/mecha_equipment/weapon", "/obj/item/mecha_p
 	origin_tech: "materials=3;combat=3",
 });
 
-// /obj/item/mecha_parts/mecha_equipment/weapon/proc/can_attach  (code/game/mecha/equipment/weapons/weapons.dm:14)
-rt.def("/obj/item/mecha_parts/mecha_equipment/weapon/proc/can_attach", function can_attach(f: Frame) {
-	if (truthy(rt.callSuper(f, [], rt.Args.Same))) {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/mecha/combat")) ? 1 : 0))) {
+// weapons.dm:14
+rt.def("/obj/item/mecha_parts/mecha_equipment/weapon/proc/can_attach", function can_attach(f: Frame, M: Value) {
+	if (parent_proc()) {
+		if (rt.istype(M, T("/obj/mecha/combat"))) {
 			return 1;
 		}
 	}
 	return 0;
-}, false, { args: ["M"] });
+}, false);
 
-// /obj/item/mecha_parts/mecha_equipment/weapon/proc/action  (code/game/mecha/equipment/weapons/weapons.dm:23)  may sleep
+// weapons.dm:23
 rt.def("/obj/item/mecha_parts/mecha_equipment/weapon/proc/action", function* action(f: Frame, target: Value, params: Value) {
-	let curloc: Value = null, targloc: Value = null, i: Value = null, A: Value = null, spread: Value = null;
+	let targloc: Value = null, i: Value = null, A: Value = null, spread: Value = null;
 	let $e: any;
-	f.vars = () => [target, params, curloc, targloc, i, A, spread, $e];
-	if (!truthy((yield* g.srcCall(f, "action_checks", live(target))))) {
+	if (!this.action_checks(target)) {
 		return 0;
 	}
-	curloc = rt.getStep(f, rt.sv(f, "chassis"), 0);
-	if (((!truthy((targloc = rt.getStep(f, live(target), 0))) || !truthy((rt.istype(live(targloc), T("/turf")) ? 1 : 0))) || !truthy(live(curloc)))) {
+	let curloc: Value = rt.getStep(f, this.chassis, 0);
+	if (!(targloc = rt.getStep(f, target, 0)) || !rt.istype(targloc, T("/turf")) || !curloc) {
 		return 0;
 	}
-	if (isEqual(live(targloc), live(curloc))) {
+	if (targloc == curloc) {
 		return 0;
 	}
-	yield* g.srcCall(f, "set_ready_state", 0);
-	i = null;
-	rt.forRange(f, 0, 1, (yield* g.srcCall(f, "get_shot_amount")), 1);
+	this.set_ready_state(0);
+	rt.forRange(f, 0, 1, this.get_shot_amount(), 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		rt.setFv(f, "firer", (A = (yield* g.new_(f, rt.sv(f, "projectile"), [live(curloc)]))), rt.fv(f, "occupant", rt.sv(f, "chassis")));
-		rt.setFv(f, "original", live(A), live(target));
-		rt.setFv(f, "current", live(A), live(curloc));
-		if ((!truthy(rt.fv(f, "suppressed", live(A))) && truthy(rt.sv(f, "firing_effect_type")))) {
-			yield* g.new_(f, rt.sv(f, "firing_effect_type"), [rt.getStep(f, live(f.src), 0), rt.fv(f, "dir", rt.sv(f, "chassis"))]);
+		(A = (yield* new_(this.projectile, curloc))).firer = this.chassis.occupant;
+		A.original = target;
+		A.current = curloc;
+		if (!A.suppressed && this.firing_effect_type) {
+			yield* new_(this.firing_effect_type, rt.getStep(f, this, 0), this.chassis.dir);
 		}
 		spread = 0;
-		if (truthy(rt.sv(f, "variance"))) {
-			if (truthy(rt.sv(f, "randomspread"))) {
-				spread = (yield* g.call(f, P("/proc/round"), null, [multiply(subtract((yield* g.call(f, P("/proc/rand"), null, [])), 0.5), rt.sv(f, "variance"))]));
+		if (this.variance) {
+			if (this.randomspread) {
+				spread = round((rand() - 0.5) * this.variance);
 			} else {
-				spread = (yield* g.call(f, P("/proc/round"), null, [multiply(subtract(divide(live(i), rt.sv(f, "projectiles_per_shot")), 0.5), rt.sv(f, "variance"))]));
+				spread = round((i / this.projectiles_per_shot - 0.5) * this.variance);
 			}
 		}
-		yield* g.callName(f, live(A), "preparePixelProjectile", [live(target), live(targloc), rt.fv(f, "occupant", rt.sv(f, "chassis")), live(params), live(spread)]);
-		yield* g.callName(f, live(A), "fire", []);
-		yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "chassis"), rt.sv(f, "fire_sound"), 50, 1]);
-		yield* g.call(f, P("/proc/sleep"), null, [(yield* g.call(f, P("/proc/max"), null, [0, rt.sv(f, "projectile_delay")]))]);
+		yield* A.preparePixelProjectile(target, targloc, this.chassis.occupant, params, spread);
+		yield* A.fire();
+		playsound(this.chassis, this.fire_sound, 50, 1);
+		yield* sleep(max(0, this.projectile_delay));
 	}
 	rt.endFor(f, 0);
-	yield* g.callName(f, rt.sv(f, "chassis"), "log_message", [fmt("Fired from ＀, targeting ＀.", [rt.fv(f, "name", live(f.src)), live(target)])]);
+	this.chassis.log_message(`Fired from ${this.name}, targeting ${target}.`);
 	return 1;
 }, true);
 
@@ -76,16 +74,16 @@ rt.type(9629, "/obj/item/mecha_parts/mecha_equipment/weapon/energy", "/obj/item/
 	firing_effect_type: rt.typePath("/obj/effect/temp_visual/dir_setting/firing_effect/energy"),
 });
 
-// /obj/item/mecha_parts/mecha_equipment/weapon/energy/proc/get_shot_amount  (code/game/mecha/equipment/weapons/weapons.dm:66)
+// weapons.dm:66
 rt.def("/obj/item/mecha_parts/mecha_equipment/weapon/energy/proc/get_shot_amount", function get_shot_amount(f: Frame) {
-	return rt.call(f, P("/proc/min"), null, [rt.call(f, P("/proc/round"), null, [divide(rt.gv(f, "charge", rt.fv(f, "cell", rt.sv(f, "chassis"))), rt.sv(f, "energy_drain"))]), rt.sv(f, "projectiles_per_shot")]);
+	return min(round(this.chassis.cell.charge / this.energy_drain), this.projectiles_per_shot);
 });
 
-// /obj/item/mecha_parts/mecha_equipment/weapon/energy/proc/start_cooldown  (code/game/mecha/equipment/weapons/weapons.dm:69)  may sleep
+// weapons.dm:69
 rt.def("/obj/item/mecha_parts/mecha_equipment/weapon/energy/proc/start_cooldown", function* start_cooldown(f: Frame) {
-	yield* g.srcCall(f, "set_ready_state", 0);
-	yield* g.callName(f, rt.sv(f, "chassis"), "use_power", [multiply(rt.sv(f, "energy_drain"), (yield* g.srcCall(f, "get_shot_amount")))]);
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/item/mecha_parts/mecha_equipment/proc/set_ready_state"), 1])), rt.sv(f, "equip_cooldown")]);
+	this.set_ready_state(0);
+	yield* this.chassis.use_power(this.energy_drain * this.get_shot_amount());
+	yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/item/mecha_parts/mecha_equipment/proc/set_ready_state"), 1)), this.equip_cooldown);
 	return f.dot;
 }, true);
 
@@ -101,17 +99,15 @@ rt.type(9635, "/obj/item/mecha_parts/mecha_equipment/weapon/energy/plasma", "/ob
 	origin_tech: "materials=3;plasmatech=4;engineering=3",
 });
 
-// /obj/item/mecha_parts/mecha_equipment/weapon/energy/plasma/proc/can_attach  (code/game/mecha/equipment/weapons/weapons.dm:136)
-rt.def("/obj/item/mecha_parts/mecha_equipment/weapon/energy/plasma/proc/can_attach", function can_attach(f: Frame) {
-	if (truthy(rt.callSuper(f, [], rt.Args.Same))) {
+// weapons.dm:136
+rt.def("/obj/item/mecha_parts/mecha_equipment/weapon/energy/plasma/proc/can_attach", function can_attach(f: Frame, M: Value) {
+	if (parent_proc()) {
 		return 1;
-	} else {
-		if ((rt.lt(rt.getLen(f, rt.fv(f, "equipment", live(f.args[0]))), rt.fv(f, "max_equip", live(f.args[0]))) && truthy((rt.istype(live(f.args[0]), T("/obj/mecha/working")) ? 1 : 0)))) {
-			return 1;
-		}
+	} else if (rt.len(f, M.equipment) < M.max_equip && rt.istype(M, T("/obj/mecha/working"))) {
+		return 1;
 	}
 	return 0;
-}, false, { args: ["M"] });
+}, false);
 
 rt.type(9637, "/obj/item/mecha_parts/mecha_equipment/weapon/honker", "/obj/item/mecha_parts/mecha_equipment/weapon", {
 	energy_drain: 200,
@@ -122,58 +118,53 @@ rt.type(9637, "/obj/item/mecha_parts/mecha_equipment/weapon/honker", "/obj/item/
 	icon_state: "mecha_honker",
 });
 
-// /obj/item/mecha_parts/mecha_equipment/weapon/honker/proc/can_attach  (code/game/mecha/equipment/weapons/weapons.dm:162)
-rt.def("/obj/item/mecha_parts/mecha_equipment/weapon/honker/proc/can_attach", function can_attach(f: Frame) {
-	if (truthy(rt.callSuper(f, [], rt.Args.Same))) {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/mecha/combat/honker")) ? 1 : 0))) {
+// weapons.dm:162
+rt.def("/obj/item/mecha_parts/mecha_equipment/weapon/honker/proc/can_attach", function can_attach(f: Frame, M: Value) {
+	if (parent_proc()) {
+		if (rt.istype(M, T("/obj/mecha/combat/honker"))) {
 			return 1;
 		}
 	}
 	return 0;
-}, false, { args: ["M"] });
+}, false);
 
-// /obj/item/mecha_parts/mecha_equipment/weapon/honker/proc/action  (code/game/mecha/equipment/weapons/weapons.dm:168)  may sleep
+// weapons.dm:168
 rt.def("/obj/item/mecha_parts/mecha_equipment/weapon/honker/proc/action", function* action(f: Frame, target: Value, params: Value) {
-	let M: Value = null, H: Value = null, _T: Value = null;
-	let $0: any, $1: any, $e: any;
-	f.vars = () => [target, params, M, H, _T, $0, $1, $e];
-	if (!truthy((yield* g.srcCall(f, "action_checks", live(target))))) {
-		return live(f.dot);
+	let M: Value = null, H: Value = null;
+	let $1: any, $e: any;
+	if (!this.action_checks(target)) {
+		return f.dot;
 	}
-	yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "chassis"), rt.rsc("sound/items/airhorn.ogg"), 100, 1]);
-	yield* g.callName(f, rt.sv(f, "chassis"), "occupant_message", ["<font color='red' size='5'>HONK</font>"]);
-	M = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/ohearers"), null, [6, rt.sv(f, "chassis")])), T("/mob/living/carbon"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if (truthy((rt.istype(live(M), T("/mob/living/carbon/human")) ? 1 : 0))) {
-			if (truthy((rt.istype(rt.gv(f, "ears", (H = live(M))), T("/obj/item/clothing/ears/earmuffs")) ? 1 : 0))) {
+	playsound(this.chassis, rt.rsc("sound/items/airhorn.ogg"), 100, 1);
+	this.chassis.occupant_message("<font color='red' size='5'>HONK</font>");
+	for (M of each(ohearers(6, this.chassis), T("/mob/living/carbon"))) {
+		if (rt.istype(M, T("/mob/living/carbon/human"))) {
+			if (rt.istype((H = M).ears, T("/obj/item/clothing/ears/earmuffs"))) {
 				continue;
 			}
 		}
-		yield* g.call(f, P("/proc/to_chat"), null, [live(M), "<font color='red' size='7'>HONK</font>"]);
-		yield* g.callName(f, live(M), "SetSleeping", [0]);
-		rt.modField(f, live(M), "stuttering", 20, add);
-		yield* g.callName(f, live(M), "adjustEarDamage", [0, 30]);
-		yield* g.callName(f, live(M), "Knockdown", [60]);
-		if (truthy(rt.op(f, "Prob", [], [30]))) {
-			yield* g.callName(f, live(M), "Stun", [200]);
-			yield* g.callName(f, live(M), "Unconscious", [80]);
+		to_chat(M, "<font color='red' size='7'>HONK</font>");
+		yield* M.SetSleeping(0);
+		M.stuttering += 20;
+		M.adjustEarDamage(0, 30);
+		yield* M.Knockdown(60);
+		if (prob(30)) {
+			yield* M.Stun(200);
+			yield* M.Unconscious(80);
 		} else {
-			yield* g.callName(f, live(M), "Jitter", [500]);
+			M.Jitter(500);
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.srcCall(f, "log_message", fmt("Honked from ＀. HONK!", [rt.fv(f, "name", live(f.src))]));
-	_T = rt.getStep(f, live(f.src), 0);
-	$0 = fmt("＀＀ ＀", [(yield* g.call(f, P("/proc/key_name_admin"), null, [rt.fv(f, "occupant", rt.sv(f, "chassis"))])), fmt("(<a href='?_src_=holder;adminmoreinfo=＃'>?</a>)", [rt.fv(f, "occupant", rt.sv(f, "chassis"))]), fmt("(<a href='?_src_=holder;adminplayerobservefollow=＃'>FLW</a>)", [rt.fv(f, "occupant", rt.sv(f, "chassis"))])]);
-	if (truthy(live(_T))) {
-		$1 = fmt("＀ ＀", [fmt("(＀,＀,＀)", [rt.fv(f, "x", live(_T)), rt.fv(f, "y", live(_T)), rt.fv(f, "z", live(_T))]), fmt("(<a href='?_src_=holder;adminplayerobservecoodjump=1;X=＀;Y=＀;Z=＀'>JMP</a>)", [rt.fv(f, "x", live(_T)), rt.fv(f, "y", live(_T)), rt.fv(f, "z", live(_T))])]);
+	this.log_message(`Honked from ${this.name}. HONK!`);
+	let _T: Value = rt.getStep(f, this, 0);
+	let $0: any = `${key_name_admin(this.chassis.occupant)}${fmt("(<a href='?_src_=holder;adminmoreinfo=＃'>?</a>)", [this.chassis.occupant])} ${fmt("(<a href='?_src_=holder;adminplayerobservefollow=＃'>FLW</a>)", [this.chassis.occupant])}`;
+	if (_T) {
+		$1 = `${`(${_T.x},${_T.y},${_T.z})`} ${`(<a href='?_src_=holder;adminplayerobservecoodjump=1;X=${_T.x};Y=${_T.y};Z=${_T.z}'>JMP</a>)`}`;
 	} else {
 		$1 = "nonexistent location";
 	}
-	yield* g.call(f, P("/proc/message_admins"), null, [fmt("＀ used a Mecha Honker in ＀", [$0, fmt("＀", [$1])]), 0, 1]);
-	yield* g.call(f, P("/proc/log_game"), null, [fmt("＀(＀) used a Mecha Honker in ＀", [rt.gv(f, "ckey", rt.fv(f, "occupant", rt.sv(f, "chassis"))), rt.fv(f, "occupant", rt.sv(f, "chassis")), fmt("(＀,＀,＀)", [rt.fv(f, "x", live(_T)), rt.fv(f, "y", live(_T)), rt.fv(f, "z", live(_T))])])]);
+	message_admins(`${$0} used a Mecha Honker in ${`${$1}`}`, 0, 1);
+	log_game(`${this.chassis.occupant.ckey}(${this.chassis.occupant}) used a Mecha Honker in ${`(${_T.x},${_T.y},${_T.z})`}`);
 	return 1;
 }, true);
 
@@ -184,75 +175,73 @@ rt.type(9638, "/obj/item/mecha_parts/mecha_equipment/weapon/ballistic", "/obj/it
 	name: "general ballisic weapon",
 });
 
-// /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/proc/get_shot_amount  (code/game/mecha/equipment/weapons/weapons.dm:203)
+// weapons.dm:203
 rt.def("/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/proc/get_shot_amount", function get_shot_amount(f: Frame) {
-	return rt.call(f, P("/proc/min"), null, [rt.sv(f, "projectiles"), rt.sv(f, "projectiles_per_shot")]);
+	return min(this.projectiles, this.projectiles_per_shot);
 });
 
-// /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/proc/action_checks  (code/game/mecha/equipment/weapons/weapons.dm:206)
-rt.def("/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/proc/action_checks", function action_checks(f: Frame) {
-	if (!truthy(rt.callSuper(f, [], rt.Args.Same))) {
+// weapons.dm:206
+rt.def("/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/proc/action_checks", function action_checks(f: Frame, target: Value) {
+	if (!parent_proc()) {
 		return 0;
 	}
-	if (rt.le(rt.sv(f, "projectiles"), 0)) {
+	if (this.projectiles <= 0) {
 		return 0;
 	}
 	return 1;
-}, false, { args: ["target"] });
+}, false);
 
-// /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/proc/get_equip_info  (code/game/mecha/equipment/weapons/weapons.dm:213)
+// weapons.dm:213
 rt.def("/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/proc/get_equip_info", function get_equip_info(f: Frame) {
-	let $0: any, $1: any, $2: any;
-	f.vars = () => [$0, $1, $2];
-	$0 = rt.callSuper(f, [], rt.Args.Same);
-	$1 = rt.fv(f, "projectiles", live(f.src));
-	if (rt.lt(rt.fv(f, "projectiles", live(f.src)), rt.initial(f, live(f.src), "projectiles"))) {
-		$2 = fmt(" - <a href='?src=＃;rearm=1'>Rearm</a>", [live(f.src)]);
+	let $2: any;
+	let $0: any = parent_proc();
+	let $1: any = this.projectiles;
+	if (this.projectiles < rt.initial(f, this, "projectiles")) {
+		$2 = fmt(" - <a href='?src=＃;rearm=1'>Rearm</a>", [this]);
 	} else {
 		$2 = null;
 	}
-	return fmt("＀ [＀]＀", [$0, $1, $2]);
+	return `${$0} [${$1}]${$2}`;
 });
 
-// /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/proc/rearm  (code/game/mecha/equipment/weapons/weapons.dm:217)  may sleep
+// weapons.dm:217
 rt.def("/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/proc/rearm", function* rearm(f: Frame) {
 	let projectiles_to_add: Value = null;
-	f.vars = () => [projectiles_to_add];
-	if (rt.lt(rt.sv(f, "projectiles"), rt.initial(f, live(f.src), "projectiles"))) {
-		projectiles_to_add = subtract(rt.initial(f, live(f.src), "projectiles"), rt.sv(f, "projectiles"));
-		while (rt.ge((yield* g.callName(f, rt.sv(f, "chassis"), "get_charge", [])), rt.sv(f, "projectile_energy_cost")) && truthy(live(projectiles_to_add))) {
-			rt.incSrcVar(f, "projectiles", 1, true);
-			projectiles_to_add = rt.inc(live(projectiles_to_add), -1);
-			yield* g.callName(f, rt.sv(f, "chassis"), "use_power", [rt.sv(f, "projectile_energy_cost")]);
+	if (this.projectiles < rt.initial(f, this, "projectiles")) {
+		projectiles_to_add = rt.initial(f, this, "projectiles") - this.projectiles;
+		while (this.chassis.get_charge() >= this.projectile_energy_cost && projectiles_to_add) {
+			this.projectiles++;
+			projectiles_to_add--;
+			yield* this.chassis.use_power(this.projectile_energy_cost);
 		}
 	}
-	yield* g.call(f, P("/proc/send_byjax"), null, [rt.fv(f, "occupant", rt.sv(f, "chassis")), "exosuit.browser", fmt("＃", [live(f.src)]), (yield* g.callName(f, live(f.src), "get_equip_info", []))]);
-	yield* g.srcCall(f, "log_message", fmt("Rearmed ＀.", [rt.fv(f, "name", live(f.src))]));
+	send_byjax(this.chassis.occupant, "exosuit.browser", fmt("＃", [this]), this.get_equip_info());
+	this.log_message(`Rearmed ${this.name}.`);
 	return 1;
 }, true);
 
-// /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/proc/needs_rearm  (code/game/mecha/equipment/weapons/weapons.dm:229)
+// weapons.dm:229
 rt.def("/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/proc/needs_rearm", function needs_rearm(f: Frame) {
-	f.dot = (!rt.gt(rt.sv(f, "projectiles"), 0) ? 1 : 0);
+	f.dot = (!(this.projectiles > 0) ? 1 : 0);
 	return f.dot;
 });
 
-// /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/proc/Topic  (code/game/mecha/equipment/weapons/weapons.dm:234)  may sleep
-rt.def("/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/proc/Topic", function* Topic(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.at(live(f.args[1]), "rearm"))) {
-		yield* g.callName(f, live(f.src), "rearm", []);
+// weapons.dm:234
+rt.def("/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/proc/Topic", function* Topic(f: Frame, href: Value, href_list: Value) {
+	yield* parent_proc();
+	if (rt.at(href_list, "rearm")) {
+		yield* this.rearm();
 	}
-	return live(f.dot);
-}, true, { args: ["href", "href_list"] });
+	return f.dot;
+}, true);
 
-// /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/proc/action  (code/game/mecha/equipment/weapons/weapons.dm:240)  may sleep
-rt.def("/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/proc/action", function* action(f: Frame) {
-	if (!truthy((yield* g.callSuper(f, [], rt.Args.Same)))) return f.dot;
-	(rt.modSrcVar(f, "projectiles", (yield* g.srcCall(f, "get_shot_amount")), subtract));
-	yield* g.call(f, P("/proc/send_byjax"), null, [rt.fv(f, "occupant", rt.sv(f, "chassis")), "exosuit.browser", fmt("＃", [live(f.src)]), (yield* g.callName(f, live(f.src), "get_equip_info", []))]);
+// weapons.dm:240
+rt.def("/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/proc/action", function* action(f: Frame, target: Value) {
+	if (!(yield* parent_proc())) return f.dot;
+	this.projectiles -= this.get_shot_amount();
+	send_byjax(this.chassis.occupant, "exosuit.browser", fmt("＃", [this]), this.get_equip_info());
 	return 1;
-}, true, { args: ["target"] });
+}, true);
 
 rt.type(9644, "/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/launcher", "/obj/item/mecha_parts/mecha_equipment/weapon/ballistic", {
 	missile_speed: 2,
@@ -260,19 +249,17 @@ rt.type(9644, "/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/launcher",
 	diags_first: 0,
 });
 
-// /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/launcher/proc/action  (code/game/mecha/equipment/weapons/weapons.dm:310)  may sleep
+// weapons.dm:310
 rt.def("/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/launcher/proc/action", function* action(f: Frame, target: Value) {
-	let O: Value = null;
-	f.vars = () => [target, O];
-	if (!truthy((yield* g.srcCall(f, "action_checks", live(target))))) {
-		return live(f.dot);
+	if (!this.action_checks(target)) {
+		return f.dot;
 	}
-	O = (yield* g.new_(f, rt.sv(f, "projectile"), [rt.fv(f, "loc", rt.sv(f, "chassis"))]));
-	yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "chassis"), rt.sv(f, "fire_sound"), 50, 1]);
-	yield* g.srcCall(f, "log_message", fmt("Launched a ＀ from ＀, targeting ＀.", [rt.fv(f, "name", live(O)), rt.sv(f, "name"), live(target)]));
-	rt.incSrcVar(f, "projectiles", -1, true);
-	yield* g.srcCall(f, "proj_init", live(O));
-	yield* g.callName(f, live(O), "throw_at", [null, live(target), null, rt.sv(f, "missile_range"), null, rt.sv(f, "missile_speed"), "spin", 0, "diagonals_first", rt.sv(f, "diags_first")], rt.Args.Named);
+	let O: Value = (yield* new_(this.projectile, this.chassis.loc));
+	playsound(this.chassis, this.fire_sound, 50, 1);
+	this.log_message(`Launched a ${O.name} from ${this.name}, targeting ${target}.`);
+	this.projectiles--;
+	yield* this.proj_init(O);
+	yield* O.throw_at(target, this.missile_range, this.missile_speed, { spin: 0, diagonals_first: this.diags_first });
 	return 1;
 }, true);
 
@@ -290,22 +277,20 @@ rt.type(9645, "/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/launcher/f
 	origin_tech: "combat=4;engineering=4",
 });
 
-// /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/launcher/flashbang/proc/proj_init  (code/game/mecha/equipment/weapons/weapons.dm:339)  may sleep
+// weapons.dm:339
 rt.def("/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/launcher/flashbang/proc/proj_init", function* proj_init(f: Frame, F: Value) {
-	let _T: Value = null;
-	let $0: any, $1: any, $2: any;
-	f.vars = () => [F, _T, $0, $1, $2];
-	_T = rt.getStep(f, live(f.src), 0);
-	$0 = fmt("＀＀ ＀", [(yield* g.call(f, P("/proc/key_name_admin"), null, [rt.fv(f, "occupant", rt.sv(f, "chassis"))])), fmt("(<a href='?_src_=holder;adminmoreinfo=＃'>?</a>)", [rt.fv(f, "occupant", rt.sv(f, "chassis"))]), fmt("(<a href='?_src_=holder;adminplayerobservefollow=＃'>FLW</a>)", [rt.fv(f, "occupant", rt.sv(f, "chassis"))])]);
-	$1 = live(f.src);
-	if (truthy(live(_T))) {
-		$2 = fmt("＀ ＀", [fmt("(＀,＀,＀)", [rt.fv(f, "x", live(_T)), rt.fv(f, "y", live(_T)), rt.fv(f, "z", live(_T))]), fmt("(<a href='?_src_=holder;adminplayerobservecoodjump=1;X=＀;Y=＀;Z=＀'>JMP</a>)", [rt.fv(f, "x", live(_T)), rt.fv(f, "y", live(_T)), rt.fv(f, "z", live(_T))])]);
+	let $2: any;
+	let _T: Value = rt.getStep(f, this, 0);
+	let $0: any = `${key_name_admin(this.chassis.occupant)}${fmt("(<a href='?_src_=holder;adminmoreinfo=＃'>?</a>)", [this.chassis.occupant])} ${fmt("(<a href='?_src_=holder;adminplayerobservefollow=＃'>FLW</a>)", [this.chassis.occupant])}`;
+	let $1: any = this;
+	if (_T) {
+		$2 = `${`(${_T.x},${_T.y},${_T.z})`} ${`(<a href='?_src_=holder;adminplayerobservecoodjump=1;X=${_T.x};Y=${_T.y};Z=${_T.z}'>JMP</a>)`}`;
 	} else {
 		$2 = "nonexistent location";
 	}
-	yield* g.call(f, P("/proc/message_admins"), null, [fmt("＀ fired a ＀ in ＀", [$0, $1, fmt("＀", [$2])]), 0, 1]);
-	yield* g.call(f, P("/proc/log_game"), null, [fmt("＀ fired a ＀ ＀", [(yield* g.call(f, P("/proc/key_name"), null, [rt.fv(f, "occupant", rt.sv(f, "chassis"))])), live(f.src), fmt("(＀,＀,＀)", [rt.fv(f, "x", live(_T)), rt.fv(f, "y", live(_T)), rt.fv(f, "z", live(_T))])])]);
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(F), P("/obj/item/weapon/grenade/flashbang/proc/prime")])), rt.sv(f, "det_time")]);
+	message_admins(`${$0} fired a ${$1} in ${`${$2}`}`, 0, 1);
+	log_game(`${key_name(this.chassis.occupant)} fired a ${this} ${`(${_T.x},${_T.y},${_T.z})`}`);
+	yield* addtimer((yield* new_(T("/datum/callback"), F, P("/obj/item/weapon/grenade/flashbang/proc/prime"))), this.det_time);
 	return f.dot;
 }, true);
 
@@ -321,15 +306,15 @@ rt.type(9647, "/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/launcher/b
 	icon_state: "mecha_bananamrtr",
 });
 
-// /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/launcher/banana_mortar/proc/can_attach  (code/game/mecha/equipment/weapons/weapons.dm:365)
-rt.def("/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/launcher/banana_mortar/proc/can_attach", function can_attach(f: Frame) {
-	if (truthy(rt.callSuper(f, [], rt.Args.Same))) {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/mecha/combat/honker")) ? 1 : 0))) {
+// weapons.dm:365
+rt.def("/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/launcher/banana_mortar/proc/can_attach", function can_attach(f: Frame, M: Value) {
+	if (parent_proc()) {
+		if (rt.istype(M, T("/obj/mecha/combat/honker"))) {
 			return 1;
 		}
 	}
 	return 0;
-}, false, { args: ["M"] });
+}, false);
 
 rt.type(9648, "/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/launcher/mousetrap_mortar", "/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/launcher", {
 	projectile: rt.typePath("/obj/item/device/assembly/mousetrap/armed"),
@@ -343,19 +328,19 @@ rt.type(9648, "/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/launcher/m
 	icon_state: "mecha_mousetrapmrtr",
 });
 
-// /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/launcher/mousetrap_mortar/proc/can_attach  (code/game/mecha/equipment/weapons/weapons.dm:382)
-rt.def("/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/launcher/mousetrap_mortar/proc/can_attach", function can_attach(f: Frame) {
-	if (truthy(rt.callSuper(f, [], rt.Args.Same))) {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/mecha/combat/honker")) ? 1 : 0))) {
+// weapons.dm:382
+rt.def("/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/launcher/mousetrap_mortar/proc/can_attach", function can_attach(f: Frame, M: Value) {
+	if (parent_proc()) {
+		if (rt.istype(M, T("/obj/mecha/combat/honker"))) {
 			return 1;
 		}
 	}
 	return 0;
-}, false, { args: ["M"] });
+}, false);
 
-// /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/launcher/mousetrap_mortar/proc/proj_init  (code/game/mecha/equipment/weapons/weapons.dm:388)
+// weapons.dm:388
 rt.def("/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/launcher/mousetrap_mortar/proc/proj_init", function proj_init(f: Frame, M: Value) {
-	rt.setFv(f, "secured", live(M), 1);
+	M.secured = 1;
 	return f.dot;
 });
 
@@ -374,31 +359,30 @@ rt.type(9649, "/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/launcher/p
 	projectile: rt.typePath("/obj/item/punching_glove"),
 });
 
-// /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/launcher/punching_glove/proc/can_attach  (code/game/mecha/equipment/weapons/weapons.dm:407)
-rt.def("/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/launcher/punching_glove/proc/can_attach", function can_attach(f: Frame) {
-	if (truthy(rt.callSuper(f, [], rt.Args.Same))) {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/mecha/combat/honker")) ? 1 : 0))) {
+// weapons.dm:407
+rt.def("/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/launcher/punching_glove/proc/can_attach", function can_attach(f: Frame, M: Value) {
+	if (parent_proc()) {
+		if (rt.istype(M, T("/obj/mecha/combat/honker"))) {
 			return 1;
 		}
 	}
 	return 0;
-}, false, { args: ["M"] });
+}, false);
 
-// /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/launcher/punching_glove/proc/action  (code/game/mecha/equipment/weapons/weapons.dm:413)  may sleep
-rt.def("/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/launcher/punching_glove/proc/action", function* action(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(live(f.dot))) return f.dot;
-	yield* g.callName(f, rt.sv(f, "chassis"), "occupant_message", ["<font color='red' size='5'>HONK</font>"]);
+// weapons.dm:413
+rt.def("/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/launcher/punching_glove/proc/action", function* action(f: Frame, target: Value) {
+	f.dot = (yield* parent_proc());
+	if (!f.dot) return f.dot;
+	this.chassis.occupant_message("<font color='red' size='5'>HONK</font>");
 	return f.dot;
-}, true, { args: ["target"] });
+}, true);
 
-// /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/launcher/punching_glove/proc/proj_init  (code/game/mecha/equipment/weapons/weapons.dm:418)  may sleep
+// weapons.dm:418
 rt.def("/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/launcher/punching_glove/proc/proj_init", function* proj_init(f: Frame, PG: Value) {
-	f.vars = () => [PG];
-	if (!truthy((rt.istype(live(PG), T("/obj/item/punching_glove")) ? 1 : 0))) {
-		return live(f.dot);
+	if (!rt.istype(PG, T("/obj/item/punching_glove"))) {
+		return f.dot;
 	}
-	yield* g.callName(f, rt.sv(f, "chassis"), "Beam", [null, live(PG), "icon_state", "chain", "time", multiply(rt.sv(f, "missile_range"), 20), "maxdistance", add(rt.sv(f, "missile_range"), 2), "beam_sleep_time", 1], rt.Args.Named);
+	yield* this.chassis.Beam(PG, { icon_state: "chain", time: this.missile_range * 20, maxdistance: this.missile_range + 2, beam_sleep_time: 1 });
 	return f.dot;
 }, true);
 
@@ -409,14 +393,13 @@ rt.type(9650, "/obj/item/punching_glove", "/obj/item", {
 	icon_state: "punching_glove",
 });
 
-// /obj/item/punching_glove/proc/throw_impact  (code/game/mecha/equipment/weapons/weapons.dm:430)  may sleep
-rt.def("/obj/item/punching_glove/proc/throw_impact", function* throw_impact(f: Frame) {
+// weapons.dm:430
+rt.def("/obj/item/punching_glove/proc/throw_impact", function* throw_impact(f: Frame, hit_atom: Value) {
 	let AM: Value = null;
-	f.vars = () => [AM];
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) return f.dot;
-	if (truthy((rt.istype(live(f.args[0]), T("/atom/movable")) ? 1 : 0))) {
-		yield* g.callName(f, (AM = live(f.args[0])), "throw_at", [(yield* g.call(f, P("/proc/get_edge_target_turf"), null, [live(AM), rt.getDir(f, live(f.src), live(AM))])), 7, 2]);
+	if (yield* parent_proc()) return f.dot;
+	if (rt.istype(hit_atom, T("/atom/movable"))) {
+		yield* (AM = hit_atom).throw_at(get_edge_target_turf(AM, rt.getDir(f, this, AM)), 7, 2);
 	}
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* qdel(this);
 	return f.dot;
-}, true, { args: ["hit_atom"], waitfor: false });
+}, true, { waitfor: false });

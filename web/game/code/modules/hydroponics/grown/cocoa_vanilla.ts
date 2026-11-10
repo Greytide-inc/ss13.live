@@ -1,7 +1,7 @@
-// From code/modules/hydroponics/grown/cocoa_vanilla.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/hydroponics/grown/cocoa_vanilla.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(10023, "/obj/item/seeds/cocoapod", "/obj/item/seeds", {
@@ -24,15 +24,13 @@ rt.type(10023, "/obj/item/seeds/cocoapod", "/obj/item/seeds", {
 	mutatelist: null,
 });
 
-// /obj/item/seeds/cocoapod/proc/<init>  (code/modules/hydroponics/grown/cocoa_vanilla.dm:17)
+// cocoa_vanilla.dm:17
 rt.def("/obj/item/seeds/cocoapod/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "genes", rt.list(T("/datum/plant_gene/trait/repeated_harvest")));
-	rt.setSv(f, "reagents_add", rt.alist(f, ["cocoa", 0.25, "nutriment", 0.10000000149011612]));
-	$0 = $0;
-	rt.setSv(f, "mutatelist", rt.list(T("/obj/item/seeds/cocoapod/vanillapod")));
+	parent_proc();
+	this.genes = list(T("/datum/plant_gene/trait/repeated_harvest"));
+	this.reagents_add = rt.alist(f, ["cocoa", 0.25, "nutriment", 0.1]);
+
+	this.mutatelist = list(T("/obj/item/seeds/cocoapod/vanillapod"));
 	return f.dot;
 });
 
@@ -48,14 +46,12 @@ rt.type(10024, "/obj/item/seeds/cocoapod/vanillapod", "/obj/item/seeds/cocoapod"
 	icon_state: "seed-vanillapod",
 });
 
-// /obj/item/seeds/cocoapod/vanillapod/proc/<init>  (code/modules/hydroponics/grown/cocoa_vanilla.dm:37)
+// cocoa_vanilla.dm:37
 rt.def("/obj/item/seeds/cocoapod/vanillapod/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "genes", rt.list(T("/datum/plant_gene/trait/repeated_harvest")));
-	$0 = $0;
-	rt.setSv(f, "mutatelist", rt.list());
-	rt.setSv(f, "reagents_add", rt.alist(f, ["vanilla", 0.25, "nutriment", 0.10000000149011612]));
+	parent_proc();
+	this.genes = list(T("/datum/plant_gene/trait/repeated_harvest"));
+
+	this.mutatelist = list();
+	this.reagents_add = rt.alist(f, ["vanilla", 0.25, "nutriment", 0.1]);
 	return f.dot;
 });

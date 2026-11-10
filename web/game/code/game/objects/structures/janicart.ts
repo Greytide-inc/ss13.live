@@ -1,7 +1,7 @@
-// From code/game/objects/structures/janicart.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/structures/janicart.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(12788, "/obj/structure/janitorialcart", "/obj/structure", {
@@ -21,209 +21,190 @@ rt.type(12788, "/obj/structure/janitorialcart", "/obj/structure", {
 	density: 1,
 }, { const: ["max_signs"] });
 
-// /obj/structure/janitorialcart/proc/New  (code/game/objects/structures/janicart.dm:20)  may sleep
+// janicart.dm:20
 rt.def("/obj/structure/janitorialcart/proc/New", function* New(f: Frame) {
-	yield* g.srcCall(f, "create_reagents", 100);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* this.create_reagents(100);
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /obj/structure/janitorialcart/proc/wet_mop  (code/game/objects/structures/janicart.dm:25)  may sleep
+// janicart.dm:25
 rt.def("/obj/structure/janitorialcart/proc/wet_mop", function* wet_mop(f: Frame, mop: Value, user: Value) {
-	f.vars = () => [mop, user];
-	if (rt.lt(rt.fv(f, "total_volume", rt.sv(f, "reagents")), 1)) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ is out of water!</span>", [live(f.src)])]);
+	if (this.reagents.total_volume < 1) {
+		to_chat(user, `<span class='warning'>${this} is out of water!</span>`);
 		return 0;
 	} else {
-		yield* g.callName(f, rt.sv(f, "reagents"), "trans_to", [live(mop), 5]);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You wet ＀ in ＀.</span>", [live(mop), live(f.src)])]);
-		yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/effects/slosh.ogg"), 25, 1]);
+		yield* this.reagents.trans_to(mop, 5);
+		to_chat(user, `<span class='notice'>You wet ${mop} in ${this}.</span>`);
+		playsound(this.loc, rt.rsc("sound/effects/slosh.ogg"), 25, 1);
 		return 1;
 	}
+}, true);
+
+// janicart.dm:35
+rt.def("/obj/structure/janitorialcart/proc/put_in_cart", function* put_in_cart(f: Frame, I: Value, user: Value) {
+	if (!(yield* user.drop_item())) {
+		return f.dot;
+	}
+	I.loc = this;
+	yield* this.updateUsrDialog();
+	to_chat(user, `<span class='notice'>You put ${I} into ${this}.</span>`);
 	return f.dot;
 }, true);
 
-// /obj/structure/janitorialcart/proc/put_in_cart  (code/game/objects/structures/janicart.dm:35)  may sleep
-rt.def("/obj/structure/janitorialcart/proc/put_in_cart", function* put_in_cart(f: Frame, I: Value, user: Value) {
-	f.vars = () => [I, user];
-	if (!truthy((yield* g.callName(f, live(user), "drop_item", [])))) {
-		return live(f.dot);
-	}
-	rt.setFv(f, "loc", live(I), live(f.src));
-	yield* g.srcCall(f, "updateUsrDialog");
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You put ＀ into ＀.</span>", [live(I), live(f.src)])]);
-	return live(f.dot);
-}, true);
-
-// /obj/structure/janitorialcart/proc/attackby  (code/game/objects/structures/janicart.dm:44)  may sleep
-rt.def("/obj/structure/janitorialcart/proc/attackby", function* attackby(f: Frame) {
-	let fail_msg: Value = null, m: Value = null, t: Value = null, l: Value = null;
-	f.vars = () => [fail_msg, m, t, l];
-	fail_msg = fmt("<span class='warning'>There is already one of those in ＀!</span>", [live(f.src)]);
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/mop")) ? 1 : 0))) {
-		if (rt.lt(rt.gv(f, "total_volume", rt.gv(f, "reagents", (m = live(f.args[0])))), rt.gv(f, "maximum_volume", rt.fv(f, "reagents", live(m))))) {
-			if (truthy((yield* g.srcCall(f, "wet_mop", live(m), live(f.args[1]))))) {
-				return live(f.dot);
+// janicart.dm:44
+rt.def("/obj/structure/janitorialcart/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
+	let m: Value = null, t: Value = null, l: Value = null;
+	let fail_msg: Value = `<span class='warning'>There is already one of those in ${this}!</span>`;
+	if (rt.istype(I, T("/obj/item/weapon/mop"))) {
+		if ((m = I).reagents.total_volume < m.reagents.maximum_volume) {
+			if (yield* this.wet_mop(m, user)) {
+				return f.dot;
 			}
 		}
-		if (!truthy(rt.sv(f, "mymop"))) {
-			yield* g.callName(f, live(m), "janicart_insert", [live(f.args[1]), live(f.src)]);
+		if (!this.mymop) {
+			yield* m.janicart_insert(user, this);
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), live(fail_msg)]);
+			to_chat(user, fail_msg);
+		}
+	} else if (rt.istype(I, T("/obj/item/weapon/storage/bag/trash"))) {
+		if (!this.mybag) {
+			yield* (t = I).janicart_insert(user, this);
+		} else {
+			to_chat(user, fail_msg);
+		}
+	} else if (rt.istype(I, T("/obj/item/weapon/reagent_containers/spray/cleaner"))) {
+		if (!this.myspray) {
+			yield* this.put_in_cart(I, user);
+			this.myspray = I;
+			yield* this.update_icon();
+		} else {
+			to_chat(user, fail_msg);
+		}
+	} else if (rt.istype(I, T("/obj/item/device/lightreplacer"))) {
+		if (!this.myreplacer) {
+			yield* (l = I).janicart_insert(user, this);
+		} else {
+			to_chat(user, fail_msg);
+		}
+	} else if (rt.istype(I, T("/obj/item/weapon/caution"))) {
+		if (this.signs < 4) {
+			yield* this.put_in_cart(I, user);
+			this.signs++;
+			yield* this.update_icon();
+		} else {
+			to_chat(user, `<span class='warning'>${this} can't hold any more signs!</span>`);
+		}
+	} else if (this.mybag) {
+		yield* this.mybag.attackby(I, user);
+	} else if (rt.istype(I, T("/obj/item/weapon/crowbar"))) {
+		user.visible_message(`${user} begins to empty the contents of ${this}.`, `<span class='notice'>You begin to empty the contents of ${this}...</span>`);
+		if (yield* do_after(user, 30 * I.toolspeed, { target: this })) {
+			to_chat(f.usr, `<span class='notice'>You empty the contents of ${this}'s bucket onto the floor.</span>`);
+			yield* this.reagents.reaction(this.loc);
+			yield* this.reagents.clear_reagents();
 		}
 	} else {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/storage/bag/trash")) ? 1 : 0))) {
-			if (!truthy(rt.sv(f, "mybag"))) {
-				yield* g.callName(f, (t = live(f.args[0])), "janicart_insert", [live(f.args[1]), live(f.src)]);
-			} else {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), live(fail_msg)]);
-			}
-		} else {
-			if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/reagent_containers/spray/cleaner")) ? 1 : 0))) {
-				if (!truthy(rt.sv(f, "myspray"))) {
-					yield* g.srcCall(f, "put_in_cart", live(f.args[0]), live(f.args[1]));
-					rt.setSv(f, "myspray", live(f.args[0]));
-					yield* g.srcCall(f, "update_icon");
-				} else {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), live(fail_msg)]);
-				}
-			} else {
-				if (truthy((rt.istype(live(f.args[0]), T("/obj/item/device/lightreplacer")) ? 1 : 0))) {
-					if (!truthy(rt.sv(f, "myreplacer"))) {
-						yield* g.callName(f, (l = live(f.args[0])), "janicart_insert", [live(f.args[1]), live(f.src)]);
-					} else {
-						yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), live(fail_msg)]);
-					}
-				} else {
-					if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/caution")) ? 1 : 0))) {
-						if (rt.lt(rt.sv(f, "signs"), 4)) {
-							yield* g.srcCall(f, "put_in_cart", live(f.args[0]), live(f.args[1]));
-							rt.incSrcVar(f, "signs", 1, true);
-							yield* g.srcCall(f, "update_icon");
-						} else {
-							yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>＀ can't hold any more signs!</span>", [live(f.src)])]);
-						}
-					} else {
-						if (truthy(rt.sv(f, "mybag"))) {
-							yield* g.callName(f, rt.sv(f, "mybag"), "attackby", [live(f.args[0]), live(f.args[1])]);
-						} else {
-							if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/crowbar")) ? 1 : 0))) {
-								yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("＀ begins to empty the contents of ＀.", [live(f.args[1]), live(f.src)]), fmt("<span class='notice'>You begin to empty the contents of ＀...</span>", [live(f.src)])]);
-								if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, multiply(30, rt.fv(f, "toolspeed", live(f.args[0]))), "target", live(f.src)], rt.Args.Named)))) {
-									yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), fmt("<span class='notice'>You empty the contents of ＀'s bucket onto the floor.</span>", [live(f.src)])]);
-									yield* g.callName(f, rt.sv(f, "reagents"), "reaction", [rt.fv(f, "loc", live(f.src))]);
-									yield* g.callName(f, rt.fv(f, "reagents", live(f.src)), "clear_reagents", []);
-								}
-							} else {
-								return (yield* g.callSuper(f, [], rt.Args.Same));
-							}
-						}
-					}
-				}
-			}
-		}
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["I", "user", "params"] });
+}, true);
 
-// /obj/structure/janitorialcart/proc/attack_hand  (code/game/objects/structures/janicart.dm:94)  may sleep
+// janicart.dm:94
 rt.def("/obj/structure/janitorialcart/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
 	let dat: Value = null, popup: Value = null;
-	f.vars = () => [user, dat, popup];
-	yield* g.callName(f, live(user), "set_machine", [live(f.src)]);
-	dat = null;
-	if (truthy(rt.sv(f, "mybag"))) {
-		dat = rt.modify(live(dat), fmt("<a href='?src=＃;garbage=1'>＀</a><br>", [live(f.src), rt.fv(f, "name", rt.sv(f, "mybag"))]), add);
+	yield* user.set_machine(this);
+	if (this.mybag) {
+		dat += fmt("<a href='?src=＃;garbage=1'>＀</a><br>", [this, this.mybag.name]);
 	}
-	if (truthy(rt.sv(f, "mymop"))) {
-		dat = rt.modify(live(dat), fmt("<a href='?src=＃;mop=1'>＀</a><br>", [live(f.src), rt.fv(f, "name", rt.sv(f, "mymop"))]), add);
+	if (this.mymop) {
+		dat += fmt("<a href='?src=＃;mop=1'>＀</a><br>", [this, this.mymop.name]);
 	}
-	if (truthy(rt.sv(f, "myspray"))) {
-		dat = rt.modify(live(dat), fmt("<a href='?src=＃;spray=1'>＀</a><br>", [live(f.src), rt.fv(f, "name", rt.sv(f, "myspray"))]), add);
+	if (this.myspray) {
+		dat += fmt("<a href='?src=＃;spray=1'>＀</a><br>", [this, this.myspray.name]);
 	}
-	if (truthy(rt.sv(f, "myreplacer"))) {
-		dat = rt.modify(live(dat), fmt("<a href='?src=＃;replacer=1'>＀</a><br>", [live(f.src), rt.fv(f, "name", rt.sv(f, "myreplacer"))]), add);
+	if (this.myreplacer) {
+		dat += fmt("<a href='?src=＃;replacer=1'>＀</a><br>", [this, this.myreplacer.name]);
 	}
-	if (truthy(rt.sv(f, "signs"))) {
-		dat = rt.modify(live(dat), fmt("<a href='?src=＃;sign=1'>＀ sign５</a><br>", [live(f.src), rt.sv(f, "signs")]), add);
+	if (this.signs) {
+		dat += fmt("<a href='?src=＃;sign=1'>＀ sign５</a><br>", [this, this.signs]);
 	}
-	yield* g.callName(f, (popup = (yield* g.new_(f, T("/datum/browser"), [live(user), "janicart", rt.sv(f, "name"), 240, 160]))), "set_content", [live(dat)]);
-	yield* g.callName(f, live(popup), "open", []);
+	(popup = (yield* new_(T("/datum/browser"), user, "janicart", this.name, 240, 160))).set_content(dat);
+	yield* popup.open();
 	return f.dot;
 }, true);
 
-// /obj/structure/janitorialcart/proc/Topic  (code/game/objects/structures/janicart.dm:112)  may sleep
+// janicart.dm:112
 rt.def("/obj/structure/janitorialcart/proc/Topic", function* Topic(f: Frame, href: Value, href_list: Value) {
-	let user: Value = null, Sign: Value = null;
-	f.vars = () => [href, href_list, user, Sign];
-	if (!rt.le((yield* g.call(f, P("/proc/get_dist"), null, [live(f.src), live(f.usr)])), 1)) {
-		return live(f.dot);
+	let Sign: Value = null;
+	if (!(get_dist(this, f.usr) <= 1)) {
+		return f.dot;
 	}
-	if (!truthy((rt.istype(live(f.usr), T("/mob/living")) ? 1 : 0))) {
-		return live(f.dot);
+	if (!rt.istype(f.usr, T("/mob/living"))) {
+		return f.dot;
 	}
-	user = live(f.usr);
-	if (truthy(rt.at(live(href_list), "garbage"))) {
-		if (truthy(rt.sv(f, "mybag"))) {
-			yield* g.callName(f, live(user), "put_in_hands", [rt.sv(f, "mybag")]);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You take ＀ from ＀.</span>", [rt.sv(f, "mybag"), live(f.src)])]);
-			rt.setSv(f, "mybag", null);
+	let user: Value = f.usr;
+	if (rt.at(href_list, "garbage")) {
+		if (this.mybag) {
+			yield* user.put_in_hands(this.mybag);
+			to_chat(user, `<span class='notice'>You take ${this.mybag} from ${this}.</span>`);
+			this.mybag = null;
 		}
 	}
-	if (truthy(rt.at(live(href_list), "mop"))) {
-		if (truthy(rt.sv(f, "mymop"))) {
-			yield* g.callName(f, live(user), "put_in_hands", [rt.sv(f, "mymop")]);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You take ＀ from ＀.</span>", [rt.sv(f, "mymop"), live(f.src)])]);
-			rt.setSv(f, "mymop", null);
+	if (rt.at(href_list, "mop")) {
+		if (this.mymop) {
+			yield* user.put_in_hands(this.mymop);
+			to_chat(user, `<span class='notice'>You take ${this.mymop} from ${this}.</span>`);
+			this.mymop = null;
 		}
 	}
-	if (truthy(rt.at(live(href_list), "spray"))) {
-		if (truthy(rt.sv(f, "myspray"))) {
-			yield* g.callName(f, live(user), "put_in_hands", [rt.sv(f, "myspray")]);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You take ＀ from ＀.</span>", [rt.sv(f, "myspray"), live(f.src)])]);
-			rt.setSv(f, "myspray", null);
+	if (rt.at(href_list, "spray")) {
+		if (this.myspray) {
+			yield* user.put_in_hands(this.myspray);
+			to_chat(user, `<span class='notice'>You take ${this.myspray} from ${this}.</span>`);
+			this.myspray = null;
 		}
 	}
-	if (truthy(rt.at(live(href_list), "replacer"))) {
-		if (truthy(rt.sv(f, "myreplacer"))) {
-			yield* g.callName(f, live(user), "put_in_hands", [rt.sv(f, "myreplacer")]);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You take ＀ from ＀.</span>", [rt.sv(f, "myreplacer"), live(f.src)])]);
-			rt.setSv(f, "myreplacer", null);
+	if (rt.at(href_list, "replacer")) {
+		if (this.myreplacer) {
+			yield* user.put_in_hands(this.myreplacer);
+			to_chat(user, `<span class='notice'>You take ${this.myreplacer} from ${this}.</span>`);
+			this.myreplacer = null;
 		}
 	}
-	if (truthy(rt.at(live(href_list), "sign"))) {
-		if (truthy(rt.sv(f, "signs"))) {
-			if (truthy((Sign = rt.locateIn(f, T("/obj/item/weapon/caution"), live(f.src))))) {
-				yield* g.callName(f, live(user), "put_in_hands", [live(Sign)]);
-				yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You take ＇！ from ＀.</span>", [live(Sign), live(f.src)])]);
-				rt.incSrcVar(f, "signs", -1, true);
+	if (rt.at(href_list, "sign")) {
+		if (this.signs) {
+			if (Sign = rt.locateIn(f, T("/obj/item/weapon/caution"), this)) {
+				yield* user.put_in_hands(Sign);
+				to_chat(user, fmt("<span class='notice'>You take ＇！ from ＀.</span>", [Sign, this]));
+				this.signs--;
 			} else {
-				yield* g.call(f, P("/proc/warning"), null, [fmt("＀ in ＀ at line ＀ src: ＀ usr: ＀.", [fmt("Signs (＀) didn't match contents", [rt.sv(f, "signs")]), "code/game/objects/structures/janicart.dm", 145, live(f.src), live(f.usr)])]);
-				rt.setSv(f, "signs", 0);
+				warning(`${`Signs (${this.signs}) didn't match contents`} in ${"code/game/objects/structures/janicart.dm"} at line ${145} src: ${this} usr: ${f.usr}.`);
+				this.signs = 0;
 			}
 		}
 	}
-	yield* g.srcCall(f, "update_icon");
-	yield* g.srcCall(f, "updateUsrDialog");
+	yield* this.update_icon();
+	yield* this.updateUsrDialog();
 	return f.dot;
 }, true);
 
-// /obj/structure/janitorialcart/proc/update_icon  (code/game/objects/structures/janicart.dm:153)
+// janicart.dm:153
 rt.def("/obj/structure/janitorialcart/proc/update_icon", function update_icon(f: Frame) {
-	rt.callSrc(f, "cut_overlays", []);
-	if (truthy(rt.sv(f, "mybag"))) {
-		rt.callSrc(f, "add_overlay", ["cart_garbage"]);
+	this.cut_overlays();
+	if (this.mybag) {
+		this.add_overlay("cart_garbage");
 	}
-	if (truthy(rt.sv(f, "mymop"))) {
-		rt.callSrc(f, "add_overlay", ["cart_mop"]);
+	if (this.mymop) {
+		this.add_overlay("cart_mop");
 	}
-	if (truthy(rt.sv(f, "myspray"))) {
-		rt.callSrc(f, "add_overlay", ["cart_spray"]);
+	if (this.myspray) {
+		this.add_overlay("cart_spray");
 	}
-	if (truthy(rt.sv(f, "myreplacer"))) {
-		rt.callSrc(f, "add_overlay", ["cart_replacer"]);
+	if (this.myreplacer) {
+		this.add_overlay("cart_replacer");
 	}
-	if (!truthy(rt.sv(f, "signs"))) return f.dot;
-	rt.callSrc(f, "add_overlay", [fmt("cart_sign＀", [rt.sv(f, "signs")])]);
+	if (!this.signs) return f.dot;
+	this.add_overlay(`cart_sign${this.signs}`);
 	return f.dot;
 });

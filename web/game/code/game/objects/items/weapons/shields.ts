@@ -1,7 +1,7 @@
-// From code/game/objects/items/weapons/shields.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/weapons/shields.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(5699, "/obj/item/weapon/shield", "/obj/item/weapon", {
@@ -10,12 +10,10 @@ rt.type(5699, "/obj/item/weapon/shield", "/obj/item/weapon", {
 	armor: null,
 });
 
-// /obj/item/weapon/shield/proc/<init>  (code/game/objects/items/weapons/shields.dm:4)
+// shields.dm:4
 rt.def("/obj/item/weapon/shield/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 50, "bullet", 50, "laser", 50, "energy", 0, "bomb", 30, "bio", 0, "rad", 0, "fire", 80, "acid", 70]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 50, "bullet", 50, "laser", 50, "energy", 0, "bomb", 30, "bio", 0, "rad", 0, "fire", 80, "acid", 70]);
 	return f.dot;
 });
 
@@ -36,51 +34,49 @@ rt.type(5701, "/obj/item/weapon/shield/riot", "/obj/item/weapon/shield", {
 	attack_verb: null,
 });
 
-// /obj/item/weapon/shield/riot/proc/<init>  (code/game/objects/items/weapons/shields.dm:17)
+// shields.dm:17
 rt.def("/obj/item/weapon/shield/riot/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$glass", 7500, "$metal", 1000]));
-	rt.setSv(f, "attack_verb", rt.list("shoved", "bashed"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$glass", 7500, "$metal", 1000]);
+	this.attack_verb = list("shoved", "bashed");
 	return f.dot;
 });
 
-// /obj/item/weapon/shield/riot/proc/attackby  (code/game/objects/items/weapons/shields.dm:24)  may sleep
-rt.def("/obj/item/weapon/shield/riot/proc/attackby", function* attackby(f: Frame) {
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/melee/baton")) ? 1 : 0))) {
-		if (rt.lt(rt.sv(f, "cooldown"), subtract(rt.worldTime(f), 25))) {
-			yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='warning'>＀ bashes ＀ with ＀!</span>", [live(f.args[1]), live(f.src), live(f.args[0])])]);
-			yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.args[1])), rt.rsc("sound/effects/shieldbash.ogg"), 50, 1]);
-			rt.setSv(f, "cooldown", rt.worldTime(f));
+// shields.dm:24
+rt.def("/obj/item/weapon/shield/riot/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
+	if (rt.istype(W, T("/obj/item/weapon/melee/baton"))) {
+		if (this.cooldown < rt.worldTime(f) - 25) {
+			user.visible_message(`<span class='warning'>${user} bashes ${this} with ${W}!</span>`);
+			playsound(user.loc, rt.rsc("sound/effects/shieldbash.ogg"), 50, 1);
+			this.cooldown = rt.worldTime(f);
 		}
 	} else {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["W", "user", "params"] });
+}, true);
 
-// /obj/item/weapon/shield/proc/hit_reaction  (code/game/objects/items/weapons/shields.dm:33)
+// shields.dm:33
 rt.def("/obj/item/weapon/shield/proc/hit_reaction", function hit_reaction(f: Frame) {
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = "the attack";
 	}
-	if (live(f.args[3]) === null) {
+	if (f.args[3] === null) {
 		f.args[3] = 0;
 	}
-	if (live(f.args[4]) === null) {
+	if (f.args[4] === null) {
 		f.args[4] = 0;
 	}
-	if (live(f.args[5]) === null) {
+	if (f.args[5] === null) {
 		f.args[5] = 1;
 	}
-	if (isEqual(live(f.args[5]), 4)) {
-		f.args[3] = rt.modify(live(f.args[3]), 30, add);
+	if (f.args[5] == 4) {
+		f.args[3] += 30;
 	}
-	if (isEqual(live(f.args[5]), 5)) {
+	if (f.args[5] == 5) {
 		f.args[3] = 100;
 	}
-	return rt.callSuper(f, [], rt.Args.Same);
+	return parent_proc();
 }, false, { args: ["owner", "hitby", "attack_text", "final_block_chance", "damage", "attack_type"] });
 
 rt.type(5703, "/obj/item/weapon/shield/riot/buckler", "/obj/item/weapon/shield/riot", {
@@ -94,12 +90,10 @@ rt.type(5703, "/obj/item/weapon/shield/riot/buckler", "/obj/item/weapon/shield/r
 	block_chance: 30,
 });
 
-// /obj/item/weapon/shield/riot/buckler/proc/<init>  (code/game/objects/items/weapons/shields.dm:50)
+// shields.dm:50
 rt.def("/obj/item/weapon/shield/riot/buckler/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.list());
+	parent_proc();
+	this.materials = list();
 	return f.dot;
 });
 
@@ -118,31 +112,30 @@ rt.type(5705, "/obj/item/weapon/shield/energy", "/obj/item/weapon/shield", {
 	attack_verb: null,
 });
 
-// /obj/item/weapon/shield/energy/proc/attack_self  (code/game/objects/items/weapons/shields.dm:76)  may sleep
+// shields.dm:76
 rt.def("/obj/item/weapon/shield/energy/proc/attack_self", function* attack_self(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if ((truthy(rt.bitAnd(rt.fv(f, "disabilities", live(user)), 256)) && truthy(rt.op(f, "Prob", [], [50])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>You beat yourself in the head with ＀.</span>", [live(f.src)])]);
-		yield* g.callName(f, live(user), "take_bodypart_damage", [5]);
+	if (rt.bitAnd(user.disabilities, 256) && prob(50)) {
+		to_chat(user, `<span class='warning'>You beat yourself in the head with ${this}.</span>`);
+		yield* user.take_bodypart_damage(5);
 	}
-	rt.setSv(f, "active", (!truthy(rt.sv(f, "active")) ? 1 : 0));
-	rt.setSv(f, "icon_state", fmt("eshield＀", [rt.sv(f, "active")]));
-	if (truthy(rt.sv(f, "active"))) {
-		rt.setSv(f, "force", 10);
-		rt.setSv(f, "throwforce", 8);
-		rt.setSv(f, "throw_speed", 2);
-		rt.setSv(f, "w_class", 4);
-		yield* g.call(f, P("/proc/playsound"), null, [live(user), rt.rsc("sound/weapons/saberon.ogg"), 35, 1]);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>＀ is now active.</span>", [live(f.src)])]);
+	this.active = (!this.active ? 1 : 0);
+	this.icon_state = `eshield${this.active}`;
+	if (this.active) {
+		this.force = 10;
+		this.throwforce = 8;
+		this.throw_speed = 2;
+		this.w_class = WEIGHT_CLASS_BULKY;
+		playsound(user, rt.rsc("sound/weapons/saberon.ogg"), 35, 1);
+		to_chat(user, `<span class='notice'>${this} is now active.</span>`);
 	} else {
-		rt.setSv(f, "force", 3);
-		rt.setSv(f, "throwforce", 3);
-		rt.setSv(f, "throw_speed", 3);
-		rt.setSv(f, "w_class", 1);
-		yield* g.call(f, P("/proc/playsound"), null, [live(user), rt.rsc("sound/weapons/saberoff.ogg"), 35, 1]);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>＀ can now be concealed.</span>", [live(f.src)])]);
+		this.force = 3;
+		this.throwforce = 3;
+		this.throw_speed = 3;
+		this.w_class = WEIGHT_CLASS_TINY;
+		playsound(user, rt.rsc("sound/weapons/saberoff.ogg"), 35, 1);
+		to_chat(user, `<span class='notice'>${this} can now be concealed.</span>`);
 	}
-	yield* g.srcCall(f, "add_fingerprint", live(user));
+	yield* this.add_fingerprint(user);
 	return f.dot;
 }, true);
 
@@ -161,47 +154,46 @@ rt.type(5704, "/obj/item/weapon/shield/riot/tele", "/obj/item/weapon/shield/riot
 	w_class: 3,
 });
 
-// /obj/item/weapon/shield/riot/tele/proc/hit_reaction  (code/game/objects/items/weapons/shields.dm:114)
+// shields.dm:114
 rt.def("/obj/item/weapon/shield/riot/tele/proc/hit_reaction", function hit_reaction(f: Frame) {
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = "the attack";
 	}
-	if (live(f.args[3]) === null) {
+	if (f.args[3] === null) {
 		f.args[3] = 0;
 	}
-	if (live(f.args[4]) === null) {
+	if (f.args[4] === null) {
 		f.args[4] = 0;
 	}
-	if (live(f.args[5]) === null) {
+	if (f.args[5] === null) {
 		f.args[5] = 1;
 	}
-	if (truthy(rt.sv(f, "active"))) {
-		return rt.callSuper(f, [], rt.Args.Same);
+	if (this.active) {
+		return parent_proc();
 	}
 	return 0;
 }, false, { args: ["owner", "hitby", "attack_text", "final_block_chance", "damage", "attack_type"] });
 
-// /obj/item/weapon/shield/riot/tele/proc/attack_self  (code/game/objects/items/weapons/shields.dm:118)  may sleep
+// shields.dm:118
 rt.def("/obj/item/weapon/shield/riot/tele/proc/attack_self", function* attack_self(f: Frame, user: Value) {
-	f.vars = () => [user];
-	rt.setSv(f, "active", (!truthy(rt.sv(f, "active")) ? 1 : 0));
-	rt.setSv(f, "icon_state", fmt("teleriot＀", [rt.sv(f, "active")]));
-	yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/weapons/batonextend.ogg"), 50, 1]);
-	if (truthy(rt.sv(f, "active"))) {
-		rt.setSv(f, "force", 8);
-		rt.setSv(f, "throwforce", 5);
-		rt.setSv(f, "throw_speed", 2);
-		rt.setSv(f, "w_class", 4);
-		rt.setSv(f, "slot_flags", 1024);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You extend ％！.</span>", [live(f.src)])]);
+	this.active = (!this.active ? 1 : 0);
+	this.icon_state = `teleriot${this.active}`;
+	playsound(this.loc, rt.rsc("sound/weapons/batonextend.ogg"), 50, 1);
+	if (this.active) {
+		this.force = 8;
+		this.throwforce = 5;
+		this.throw_speed = 2;
+		this.w_class = WEIGHT_CLASS_BULKY;
+		this.slot_flags = SLOT_BACK;
+		to_chat(user, fmt("<span class='notice'>You extend ％！.</span>", [this]));
 	} else {
-		rt.setSv(f, "force", 3);
-		rt.setSv(f, "throwforce", 3);
-		rt.setSv(f, "throw_speed", 3);
-		rt.setSv(f, "w_class", 3);
-		rt.setSv(f, "slot_flags", null);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>＀ can now be concealed.</span>", [live(f.src)])]);
+		this.force = 3;
+		this.throwforce = 3;
+		this.throw_speed = 3;
+		this.w_class = WEIGHT_CLASS_NORMAL;
+		this.slot_flags = null;
+		to_chat(user, `<span class='notice'>${this} can now be concealed.</span>`);
 	}
-	yield* g.srcCall(f, "add_fingerprint", live(user));
+	yield* this.add_fingerprint(user);
 	return f.dot;
 }, true);

@@ -1,5 +1,5 @@
 // Types declared in code/modules/clothing/under that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(8339, "/obj/item/clothing/under/syndicate/sniper", "/obj/item/clothing/under/syndicate", {
 	name: "Tactical turtleneck suit",

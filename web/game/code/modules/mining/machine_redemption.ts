@@ -1,7 +1,7 @@
-// From code/modules/mining/machine_redemption.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mining/machine_redemption.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, g, add, fmt } = rt;
 
 
 rt.type(10931, "/obj/machinery/mineral/ore_redemption", "/obj/machinery/mineral", {
@@ -29,37 +29,34 @@ rt.type(10931, "/obj/machinery/mineral/ore_redemption", "/obj/machinery/mineral"
 	req_access: null,
 });
 
-// /obj/machinery/mineral/ore_redemption/proc/<init>  (code/modules/mining/machine_redemption.dm:20)
+// machine_redemption.dm:20
 rt.def("/obj/machinery/mineral/ore_redemption/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "ore_values", rt.alist(f, ["$glass", 1, "$metal", 1, "$plasma", 15, "$silver", 16, "$gold", 18, "$titanium", 30, "$uranium", 30, "$diamond", 50, "$bluespace", 50, "$bananium", 60]));
-	$0 = $0;
-	rt.setSv(f, "ore_buffer", rt.list());
-	$0 = $0;
-	rt.setSv(f, "req_access", rt.list(64));
+	parent_proc();
+	this.ore_values = rt.alist(f, ["$glass", 1, "$metal", 1, "$plasma", 15, "$silver", 16, "$gold", 18, "$titanium", 30, "$uranium", 30, "$diamond", 50, "$bluespace", 50, "$bananium", 60]);
+
+	this.ore_buffer = list();
+
+	this.req_access = list(64);
 	return f.dot;
 });
 
-// /obj/machinery/mineral/ore_redemption/proc/Initialize  (code/modules/mining/machine_redemption.dm:29)  may sleep
+// machine_redemption.dm:29
 rt.def("/obj/machinery/mineral/ore_redemption/proc/Initialize", function* Initialize(f: Frame) {
 	let B: Value = null;
-	f.vars = () => [B];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.callName(f, (B = (yield* g.new_(f, T("/obj/item/weapon/circuitboard/machine/ore_redemption"), []))), "apply_default_parts", [live(f.src)]);
-	rt.setSv(f, "materials", (yield* g.new_(f, T("/datum/material_container"), [live(f.src), rt.list("$metal", "$glass", "$silver", "$gold", "$diamond", "$plasma", "$uranium", "$bananium", "$titanium", "$bluespace"), 9.999999848243207e+30])));
-	rt.setSv(f, "files", (yield* g.new_(f, T("/datum/research/smelter"), [live(f.src)])));
+	f.dot = (yield* parent_proc());
+	yield* (B = (yield* new_(T("/obj/item/weapon/circuitboard/machine/ore_redemption")))).apply_default_parts(this);
+	this.materials = (yield* new_(T("/datum/material_container"), this, list("$metal", "$glass", "$silver", "$gold", "$diamond", "$plasma", "$uranium", "$bananium", "$titanium", "$bluespace"), 1e+31));
+	this.files = (yield* new_(T("/datum/research/smelter"), this));
 	return f.dot;
 }, true);
 
-// /obj/machinery/mineral/ore_redemption/proc/Destroy  (code/modules/mining/machine_redemption.dm:36)  may sleep
+// machine_redemption.dm:36
 rt.def("/obj/machinery/mineral/ore_redemption/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "materials")]);
-	rt.setSv(f, "materials", null);
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "files")]);
-	rt.setSv(f, "files", null);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* qdel(this.materials);
+	this.materials = null;
+	yield* qdel(this.files);
+	this.files = null;
+	return (yield* parent_proc());
 }, true);
 
 rt.type(6760, "/obj/item/weapon/circuitboard/machine/ore_redemption", "/obj/item/weapon/circuitboard/machine", {
@@ -69,488 +66,406 @@ rt.type(6760, "/obj/item/weapon/circuitboard/machine/ore_redemption", "/obj/item
 	req_components: null,
 });
 
-// /obj/item/weapon/circuitboard/machine/ore_redemption/proc/<init>  (code/modules/mining/machine_redemption.dm:44)
+// machine_redemption.dm:44
 rt.def("/obj/item/weapon/circuitboard/machine/ore_redemption/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_components", rt.alist(f, [T("/obj/item/weapon/stock_parts/console_screen"), 1, T("/obj/item/weapon/stock_parts/matter_bin"), 1, T("/obj/item/weapon/stock_parts/micro_laser"), 1, T("/obj/item/weapon/stock_parts/manipulator"), 1, T("/obj/item/device/assembly/igniter"), 1]));
+	parent_proc();
+	this.req_components = rt.alist(f, [T("/obj/item/weapon/stock_parts/console_screen"), 1, T("/obj/item/weapon/stock_parts/matter_bin"), 1, T("/obj/item/weapon/stock_parts/micro_laser"), 1, T("/obj/item/weapon/stock_parts/manipulator"), 1, T("/obj/item/device/assembly/igniter"), 1]);
 	return f.dot;
 });
 
-// /obj/machinery/mineral/ore_redemption/proc/RefreshParts  (code/modules/mining/machine_redemption.dm:55)
+// machine_redemption.dm:55
 rt.def("/obj/machinery/mineral/ore_redemption/proc/RefreshParts", function RefreshParts(f: Frame) {
-	let ore_pickup_rate_temp: Value = null, point_upgrade_temp: Value = null, sheet_per_ore_temp: Value = null, B: Value = null, M: Value = null, L: Value = null;
-	let $e: any;
-	f.vars = () => [ore_pickup_rate_temp, point_upgrade_temp, sheet_per_ore_temp, B, M, L, $e];
-	ore_pickup_rate_temp = 15;
-	point_upgrade_temp = 1;
-	sheet_per_ore_temp = 1;
-	B = null;
-	rt.forList(f, 0, rt.sv(f, "component_parts"), T("/obj/item/weapon/stock_parts/matter_bin"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		B = $e;
-		sheet_per_ore_temp = add(0.6499999761581421, multiply(0.3499999940395355, rt.fv(f, "rating", live(B))));
+	let B: Value = null, M: Value = null, L: Value = null;
+	let ore_pickup_rate_temp: Value = 15;
+	let point_upgrade_temp: Value = 1;
+	let sheet_per_ore_temp: Value = 1;
+	for (B of each(this.component_parts, T("/obj/item/weapon/stock_parts/matter_bin"))) {
+		sheet_per_ore_temp = 0.65 + 0.35 * B.rating;
 	}
-	rt.endFor(f, 0);
-	M = null;
-	rt.forList(f, 0, rt.sv(f, "component_parts"), T("/obj/item/weapon/stock_parts/manipulator"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		ore_pickup_rate_temp = multiply(15, rt.fv(f, "rating", live(M)));
+	for (M of each(this.component_parts, T("/obj/item/weapon/stock_parts/manipulator"))) {
+		ore_pickup_rate_temp = 15 * M.rating;
 	}
-	rt.endFor(f, 0);
-	L = null;
-	rt.forList(f, 0, rt.sv(f, "component_parts"), T("/obj/item/weapon/stock_parts/micro_laser"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		L = $e;
-		point_upgrade_temp = add(0.6499999761581421, multiply(0.3499999940395355, rt.fv(f, "rating", live(L))));
+	for (L of each(this.component_parts, T("/obj/item/weapon/stock_parts/micro_laser"))) {
+		point_upgrade_temp = 0.65 + 0.35 * L.rating;
 	}
-	rt.endFor(f, 0);
-	rt.setSv(f, "ore_pickup_rate", live(ore_pickup_rate_temp));
-	rt.setSv(f, "point_upgrade", live(point_upgrade_temp));
-	rt.setSv(f, "sheet_per_ore", live(sheet_per_ore_temp));
+	this.ore_pickup_rate = ore_pickup_rate_temp;
+	this.point_upgrade = point_upgrade_temp;
+	this.sheet_per_ore = sheet_per_ore_temp;
 	return f.dot;
 });
 
-// /obj/machinery/mineral/ore_redemption/proc/smelt_ore  (code/modules/mining/machine_redemption.dm:67)  may sleep
+// machine_redemption.dm:67
 rt.def("/obj/machinery/mineral/ore_redemption/proc/smelt_ore", function* smelt_ore(f: Frame, O: Value) {
 	let material_amount: Value = null;
-	f.vars = () => [O, material_amount];
-	(rt.modSrcVar(f, "ore_buffer", live(O), subtract));
-	if ((truthy(live(O)) && truthy(rt.fv(f, "refined_type", live(O))))) {
-		rt.modSrcVar(f, "points", multiply(rt.fv(f, "points", live(O)), rt.sv(f, "point_upgrade")), add);
+	this.ore_buffer -= O;
+	if (O && O.refined_type) {
+		this.points += O.points * this.point_upgrade;
 	}
-	if (!truthy((material_amount = (yield* g.callName(f, rt.sv(f, "materials"), "get_item_material_amount", [live(O)]))))) {
-		yield* g.call(f, P("/proc/qdel"), null, [live(O)]);
+	if (!(material_amount = this.materials.get_item_material_amount(O))) {
+		yield* qdel(O);
+	} else if (!this.materials.has_space(material_amount * this.sheet_per_ore)) {
+		yield* this.unload_mineral(O);
 	} else {
-		if (!truthy((yield* g.callName(f, rt.sv(f, "materials"), "has_space", [multiply(live(material_amount), rt.sv(f, "sheet_per_ore"))])))) {
-			yield* g.srcCall(f, "unload_mineral", live(O));
-		} else {
-			yield* g.callName(f, rt.sv(f, "materials"), "insert_item", [live(O), rt.sv(f, "sheet_per_ore")]);
-			yield* g.call(f, P("/proc/qdel"), null, [live(O)]);
-		}
+		yield* this.materials.insert_item(O, this.sheet_per_ore);
+		yield* qdel(O);
 	}
 	return f.dot;
 }, true);
 
-// /obj/machinery/mineral/ore_redemption/proc/can_smelt_alloy  (code/modules/mining/machine_redemption.dm:85)
+// machine_redemption.dm:85
 rt.def("/obj/machinery/mineral/ore_redemption/proc/can_smelt_alloy", function can_smelt_alloy(f: Frame, D: Value) {
-	let build_amount: Value = null, mat_id: Value = null, M: Value = null, redemption_mat: Value = null, smeltable_sheets: Value = null;
-	let $e: any;
-	f.vars = () => [build_amount, mat_id, M, redemption_mat, smeltable_sheets, $e];
-	if (truthy(rt.getLen(f, rt.fv(f, "make_reagents", live(D))))) {
+	let mat_id: Value = null, M: Value = null, redemption_mat: Value = null, smeltable_sheets: Value = null;
+	if (rt.len(f, D.make_reagents)) {
 		return 0;
 	}
-	build_amount = 0;
-	mat_id = null;
-	rt.forList(f, 0, rt.fv(f, "materials", live(D)));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		mat_id = $e;
-		M = rt.index(rt.fv(f, "materials", live(D)), live(mat_id));
-		redemption_mat = rt.index(rt.fv(f, "materials", rt.sv(f, "materials")), live(mat_id));
-		if ((!truthy(live(M)) || !truthy(live(redemption_mat)))) {
+	let build_amount: Value = 0;
+	for (mat_id of each(D.materials)) {
+		M = rt.index(D.materials, mat_id);
+		redemption_mat = rt.index(this.materials.materials, mat_id);
+		if (!M || !redemption_mat) {
 			return 0;
 		}
-		if (!truthy((smeltable_sheets = rt.call(f, P("/proc/Floor"), null, [divide(rt.fv(f, "amount", live(redemption_mat)), live(M))])))) {
+		if (!(smeltable_sheets = Floor(redemption_mat.amount / M))) {
 			return 0;
 		}
-		if (!truthy(live(build_amount))) {
-			build_amount = live(smeltable_sheets);
+		if (!build_amount) {
+			build_amount = smeltable_sheets;
 		}
-		build_amount = rt.call(f, P("/proc/min"), null, [live(build_amount), live(smeltable_sheets)]);
+		build_amount = min(build_amount, smeltable_sheets);
 	}
-	rt.endFor(f, 0);
-	return live(build_amount);
+	return build_amount;
 });
 
-// /obj/machinery/mineral/ore_redemption/proc/process_ores  (code/modules/mining/machine_redemption.dm:111)  may sleep
+// machine_redemption.dm:111
 rt.def("/obj/machinery/mineral/ore_redemption/proc/process_ores", function* process_ores(f: Frame, ores_to_process: Value) {
-	let current_amount: Value = null, ore: Value = null;
-	let $e: any;
-	f.vars = () => [ores_to_process, current_amount, ore, $e];
-	current_amount = 0;
-	ore = null;
-	rt.forList(f, 0, live(ores_to_process));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		ore = $e;
-		if (rt.ge(live(current_amount), rt.sv(f, "ore_pickup_rate"))) {
+	let ore: Value = null;
+	let current_amount: Value = 0;
+	for (ore of each(ores_to_process)) {
+		if (current_amount >= this.ore_pickup_rate) {
 			break;
 		}
-		yield* g.srcCall(f, "smelt_ore", live(ore));
+		yield* this.smelt_ore(ore);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /obj/machinery/mineral/ore_redemption/proc/send_console_message  (code/modules/mining/machine_redemption.dm:117)  may sleep
+// machine_redemption.dm:117
 rt.def("/obj/machinery/mineral/ore_redemption/proc/send_console_message", function* send_console_message(f: Frame) {
-	let A: Value = null, msg: Value = null, has_minerals: Value = null, mat_id: Value = null, M: Value = null, mineral_amount: Value = null, D: Value = null;
-	let $e: any;
-	f.vars = () => [A, msg, has_minerals, mat_id, M, mineral_amount, D, $e];
-	if (!isEqual(rt.sv(f, "z"), 2)) {
-		return live(f.dot);
+	let mat_id: Value = null, M: Value = null, mineral_amount: Value = null, D: Value = null;
+	if (this.z != ZLEVEL_STATION) {
+		return f.dot;
 	}
-	rt.setSv(f, "message_sent", 1);
-	A = (yield* g.call(f, P("/proc/get_area"), null, [live(f.src)]));
-	msg = fmt("Now available in ＀:<br>", [live(A)]);
-	has_minerals = 0;
-	mat_id = null;
-	rt.forList(f, 0, rt.fv(f, "materials", rt.sv(f, "materials")));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		mat_id = $e;
-		M = rt.index(rt.fv(f, "materials", rt.sv(f, "materials")), live(mat_id));
-		if (truthy((mineral_amount = divide(rt.fv(f, "amount", live(M)), 2000)))) {
+	this.message_sent = 1;
+	let A: Value = get_area(this);
+	let msg: Value = `Now available in ${A}:<br>`;
+	let has_minerals: Value = 0;
+	for (mat_id of each(this.materials.materials)) {
+		M = rt.index(this.materials.materials, mat_id);
+		if (mineral_amount = M.amount / MINERAL_MATERIAL_AMOUNT) {
 			has_minerals = 1;
 		}
-		msg = rt.modify(live(msg), fmt("＀: ＀ sheets<br>", [(yield* g.call(f, P("/proc/capitalize"), null, [rt.fv(f, "name", live(M))])), live(mineral_amount)]), add);
+		msg += `${capitalize(M.name)}: ${mineral_amount} sheets<br>`;
 	}
-	rt.endFor(f, 0);
-	if (!truthy(live(has_minerals))) {
-		return live(f.dot);
+	if (!has_minerals) {
+		return f.dot;
 	}
-	D = null;
-	rt.forList(f, 0, rt.gl("allConsoles"), T("/obj/machinery/requests_console"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		D = $e;
-		if (truthy(rt.fv(f, "receive_ore_updates", live(D)))) {
-			yield* g.callName(f, live(D), "createmessage", ["Ore Redemption Machine", "New minerals available!", live(msg), 1, 0]);
+	for (D of each(GLOB.allConsoles, T("/obj/machinery/requests_console"))) {
+		if (D.receive_ore_updates) {
+			yield* D.createmessage("Ore Redemption Machine", "New minerals available!", msg, 1, 0);
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /obj/machinery/mineral/ore_redemption/proc/process  (code/modules/mining/machine_redemption.dm:140)  may sleep
+// machine_redemption.dm:140
 rt.def("/obj/machinery/mineral/ore_redemption/proc/process", function* process(f: Frame) {
-	let input: Value = null, OB: Value = null, O: Value = null;
-	let $e: any;
-	f.vars = () => [input, OB, O, $e];
-	if ((truthy(rt.sv(f, "panel_open")) || !truthy((yield* g.srcCall(f, "powered"))))) {
-		return live(f.dot);
+	let OB: Value = null, O: Value = null;
+	if (this.panel_open || !this.powered()) {
+		return f.dot;
 	}
-	input = rt.getStep(f, live(f.src), rt.sv(f, "input_dir"));
-	if (truthy((OB = rt.locateIn(f, T("/obj/structure/ore_box"), live(input))))) {
-		input = live(OB);
+	let input: Value = rt.getStep(f, this, this.input_dir);
+	if (OB = rt.locateIn(f, T("/obj/structure/ore_box"), input)) {
+		input = OB;
 	}
-	O = null;
-	rt.forList(f, 0, live(input), T("/obj/item/weapon/ore"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		O = $e;
-		if ((!truthy(live(O)) || truthy(rt.fv(f, "gc_destroyed", live(O))))) {
+	for (O of each(input, T("/obj/item/weapon/ore"))) {
+		if (!O || O.gc_destroyed) {
 			continue;
 		}
-		(rt.modSrcVar(f, "ore_buffer", live(O), rt.bitOr));
-		yield* g.callName(f, live(O), "forceMove", [live(f.src)]);
-		if (rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit"))) {
-			yield* g.call(f, P("/proc/stoplag"), null, []);
+		(rt.modSrcVar(f, "ore_buffer", O, rt.bitOr));
+		yield* O.forceMove(this);
+		if (rt.tickUsage(f) > GLOB.current_ticklimit) {
+			yield* stoplag();
 		}
 	}
-	rt.endFor(f, 0);
-	if (truthy(rt.length(rt.sv(f, "ore_buffer")))) {
-		rt.setSv(f, "message_sent", 0);
-		yield* g.srcCall(f, "process_ores", rt.sv(f, "ore_buffer"));
+	if (rt.length(this.ore_buffer)) {
+		this.message_sent = 0;
+		yield* this.process_ores(this.ore_buffer);
 	} else {
-		if (truthy(rt.sv(f, "message_sent"))) return f.dot;
-		yield* g.srcCall(f, "send_console_message");
+		if (this.message_sent) return f.dot;
+		yield* this.send_console_message();
 	}
 	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/machinery/mineral/ore_redemption/proc/attackby  (code/modules/mining/machine_redemption.dm:161)  may sleep
-rt.def("/obj/machinery/mineral/ore_redemption/proc/attackby", function* attackby(f: Frame) {
+// machine_redemption.dm:161
+rt.def("/obj/machinery/mineral/ore_redemption/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
 	let I: Value = null, S: Value = null, inserted: Value = null;
-	f.vars = () => [I, S, inserted];
-	if (truthy((yield* g.srcCall(f, "exchange_parts", live(f.args[1]), live(f.args[0]))))) {
-		return live(f.dot);
+	if (yield* this.exchange_parts(user, W)) {
+		return f.dot;
 	}
-	if (truthy((yield* g.srcCall(f, "default_pry_open", live(f.args[0]))))) {
-		yield* g.callName(f, rt.sv(f, "materials"), "retrieve_all", []);
-		return live(f.dot);
+	if (yield* this.default_pry_open(W)) {
+		yield* this.materials.retrieve_all();
+		return f.dot;
 	}
-	if (truthy((yield* g.srcCall(f, "default_unfasten_wrench", live(f.args[1]), live(f.args[0]))))) {
-		return live(f.dot);
+	if (yield* this.default_unfasten_wrench(user, W)) {
+		return f.dot;
 	}
-	if (truthy((yield* g.srcCall(f, "default_deconstruction_screwdriver", live(f.args[1]), "ore_redemption-open", "ore_redemption", live(f.args[0]))))) {
-		yield* g.srcCall(f, "updateUsrDialog");
-		return live(f.dot);
+	if (this.default_deconstruction_screwdriver(user, "ore_redemption-open", "ore_redemption", W)) {
+		yield* this.updateUsrDialog();
+		return f.dot;
 	}
-	if (truthy((yield* g.srcCall(f, "default_deconstruction_crowbar", live(f.args[0]))))) {
-		return live(f.dot);
+	if (yield* this.default_deconstruction_crowbar(W)) {
+		return f.dot;
 	}
-	if (!truthy((yield* g.srcCall(f, "powered")))) {
-		return live(f.dot);
+	if (!this.powered()) {
+		return f.dot;
 	}
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/card/id")) ? 1 : 0))) {
-		if ((truthy((rt.istype((I = (yield* g.callName(f, live(f.args[1]), "get_active_held_item", []))), T("/obj/item/weapon/card/id")) ? 1 : 0)) && !truthy((rt.istype(rt.sv(f, "inserted_id"), T("/obj/item/weapon/card/id")) ? 1 : 0)))) {
-			if (!truthy((yield* g.callName(f, live(f.args[1]), "drop_item", [])))) {
-				return live(f.dot);
+	if (rt.istype(W, T("/obj/item/weapon/card/id"))) {
+		if (rt.istype((I = user.get_active_held_item()), T("/obj/item/weapon/card/id")) && !rt.istype(this.inserted_id, T("/obj/item/weapon/card/id"))) {
+			if (!(yield* user.drop_item())) {
+				return f.dot;
 			}
-			yield* g.callName(f, live(I), "forceMove", [live(f.src)]);
-			rt.setSv(f, "inserted_id", live(I));
-			yield* g.srcCall(f, "interact", live(f.args[1]));
+			yield* I.forceMove(this);
+			this.inserted_id = I;
+			yield* this.interact(user);
 		}
-		return live(f.dot);
+		return f.dot;
 	}
-	if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/device/multitool")) ? 1 : 0)) && truthy(rt.sv(f, "panel_open")))) {
-		rt.setSv(f, "input_dir", (yield* g.call(f, P("/proc/turn"), null, [rt.sv(f, "input_dir"), -90])));
-		rt.setSv(f, "output_dir", (yield* g.call(f, P("/proc/turn"), null, [rt.sv(f, "output_dir"), -90])));
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You change ＀'s I/O settings, setting the input to ＀ and the output to ＀.</span>", [live(f.src), (yield* g.call(f, P("/proc/dir2text"), null, [rt.sv(f, "input_dir")])), (yield* g.call(f, P("/proc/dir2text"), null, [rt.sv(f, "output_dir")]))])]);
-		return live(f.dot);
+	if (rt.istype(W, T("/obj/item/device/multitool")) && this.panel_open) {
+		this.input_dir = turn(this.input_dir, -90);
+		this.output_dir = turn(this.output_dir, -90);
+		to_chat(user, `<span class='notice'>You change ${this}'s I/O settings, setting the input to ${dir2text(this.input_dir)} and the output to ${dir2text(this.output_dir)}.</span>`);
+		return f.dot;
 	}
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/disk/design_disk")) ? 1 : 0))) {
-		if (truthy((yield* g.callName(f, live(f.args[1]), "transferItemToLoc", [live(f.args[0]), live(f.src)])))) {
-			rt.setSv(f, "inserted_disk", live(f.args[0]));
+	if (rt.istype(W, T("/obj/item/weapon/disk/design_disk"))) {
+		if (yield* user.transferItemToLoc(W, this)) {
+			this.inserted_disk = W;
 			return 1;
 		}
 	}
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/stack/sheet")) ? 1 : 0))) {
-		S = live(f.args[0]);
-		inserted = (yield* g.callName(f, rt.sv(f, "materials"), "insert_stack", [live(S), rt.fv(f, "amount", live(S))]));
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You add ＀ ＀ sheets to ％！.</span>", [live(inserted), live(S), live(f.src)])]);
-		return live(f.dot);
+	if (rt.istype(W, T("/obj/item/stack/sheet"))) {
+		S = W;
+		inserted = (yield* this.materials.insert_stack(S, S.amount));
+		to_chat(user, fmt("<span class='notice'>You add ＀ ＀ sheets to ％！.</span>", [inserted, S, this]));
+		return f.dot;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["W", "user", "params"] });
+	return (yield* parent_proc());
+}, true);
 
-// /obj/machinery/mineral/ore_redemption/proc/on_deconstruction  (code/modules/mining/machine_redemption.dm:206)  may sleep
+// machine_redemption.dm:206
 rt.def("/obj/machinery/mineral/ore_redemption/proc/on_deconstruction", function* on_deconstruction(f: Frame) {
-	yield* g.callName(f, rt.sv(f, "materials"), "retrieve_all", []);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* this.materials.retrieve_all();
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /obj/machinery/mineral/ore_redemption/proc/attack_hand  (code/modules/mining/machine_redemption.dm:210)  may sleep
-rt.def("/obj/machinery/mineral/ore_redemption/proc/attack_hand", function* attack_hand(f: Frame) {
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		return live(f.dot);
+// machine_redemption.dm:210
+rt.def("/obj/machinery/mineral/ore_redemption/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
+	if (yield* parent_proc()) {
+		return f.dot;
 	}
-	yield* g.srcCall(f, "interact", live(f.args[0]));
+	yield* this.interact(user);
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /obj/machinery/mineral/ore_redemption/proc/ui_interact  (code/modules/mining/machine_redemption.dm:215)  may sleep
+// machine_redemption.dm:215
 rt.def("/obj/machinery/mineral/ore_redemption/proc/ui_interact", function* ui_interact(f: Frame, user: Value, ui_key: Value, ui: Value, force_open: Value, master_ui: Value, state: Value) {
-	f.vars = () => [user, ui_key, ui, force_open, master_ui, state];
-	if (live(ui_key) === null) {
-		ui_key = "main";
-	}
-	if (live(ui) === null) {
-		ui = null;
-	}
-	if (live(force_open) === null) {
-		force_open = 0;
-	}
-	if (live(master_ui) === null) {
-		master_ui = null;
-	}
-	if (live(state) === null) {
-		state = rt.gl("default_state");
-	}
-	if (truthy((ui = (yield* g.callName(f, rt.gl("SStgui"), "try_update_ui", [live(user), live(f.src), live(ui_key), live(ui), live(force_open)]))))) return f.dot;
-	yield* g.callName(f, (ui = (yield* g.new_(f, T("/datum/tgui"), [live(user), live(f.src), live(ui_key), "ore_redemption_machine", "Ore Redemption Machine", 440, 550, live(master_ui), live(state)]))), "open", []);
+	ui_key ??= "main";
+	force_open ??= 0;
+	state ??= GLOB.default_state;
+	if (ui = (yield* GLOB.SStgui.try_update_ui(user, this, ui_key, ui, force_open))) return f.dot;
+	yield* (ui = (yield* new_(T("/datum/tgui"), user, this, ui_key, "ore_redemption_machine", "Ore Redemption Machine", 440, 550, master_ui, state))).open();
 	return f.dot;
 }, true);
 
-// /obj/machinery/mineral/ore_redemption/proc/ui_data  (code/modules/mining/machine_redemption.dm:221)
+// machine_redemption.dm:221
 rt.def("/obj/machinery/mineral/ore_redemption/proc/ui_data", function ui_data(f: Frame, user: Value) {
 	let data: Value = null, mat_id: Value = null, M: Value = null, sheet_amount: Value = null, v: Value = null, D: Value = null, index: Value = null, thisdesign: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [data, mat_id, M, sheet_amount, v, D, index, thisdesign, $0, $e];
-	rt.setAt((data = rt.list()), "unclaimedPoints", rt.sv(f, "points"));
-	if (truthy(rt.sv(f, "inserted_id"))) {
-		rt.setAt(live(data), "hasID", 1);
-		rt.setAt(live(data), "claimedPoints", rt.fv(f, "mining_points", rt.sv(f, "inserted_id")));
+	let $e: any;
+	rt.setAt((data = list()), "unclaimedPoints", this.points);
+	if (this.inserted_id) {
+		rt.setAt(data, "hasID", 1);
+		rt.setAt(data, "claimedPoints", this.inserted_id.mining_points);
 	}
-	rt.setAt(live(data), "materials", rt.list());
-	mat_id = null;
-	rt.forList(f, 0, rt.fv(f, "materials", rt.sv(f, "materials")));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		mat_id = $e;
-		M = rt.index(rt.fv(f, "materials", rt.sv(f, "materials")), live(mat_id));
-		if (truthy(rt.fv(f, "amount", live(M)))) {
-			$0 = divide(rt.fv(f, "amount", live(M)), 2000);
-		} else {
-			$0 = "0";
-		}
-		sheet_amount = $0;
-		rt.modAt(live(data), "materials", rt.list(rt.alist(f, ["name", rt.fv(f, "name", live(M)), "id", rt.fv(f, "id", live(M)), "amount", live(sheet_amount), "value", multiply(rt.index(rt.sv(f, "ore_values"), rt.fv(f, "id", live(M))), rt.sv(f, "point_upgrade"))])), add);
+	rt.setAt(data, "materials", list());
+	for (mat_id of each(this.materials.materials)) {
+		M = rt.index(this.materials.materials, mat_id);
+		sheet_amount = M.amount ? M.amount / MINERAL_MATERIAL_AMOUNT : "0";
+		rt.modAt(data, "materials", list(rt.alist(f, ["name", M.name, "id", M.id, "amount", sheet_amount, "value", rt.index(this.ore_values, M.id) * this.point_upgrade])), add);
 	}
-	rt.endFor(f, 0);
-	rt.setAt(live(data), "alloys", rt.list());
-	v = null;
-	rt.forList(f, 0, rt.fv(f, "known_designs", rt.sv(f, "files")));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		v = $e;
-		D = rt.index(rt.fv(f, "known_designs", rt.sv(f, "files")), live(v));
-		rt.modAt(live(data), "alloys", rt.list(rt.alist(f, ["name", rt.fv(f, "name", live(D)), "id", rt.fv(f, "id", live(D)), "amount", rt.callSrc(f, "can_smelt_alloy", [live(D)])])), add);
+	rt.setAt(data, "alloys", list());
+	for (v of each(this.files.known_designs)) {
+		D = rt.index(this.files.known_designs, v);
+		rt.modAt(data, "alloys", list(rt.alist(f, ["name", D.name, "id", D.id, "amount", this.can_smelt_alloy(D)])), add);
 	}
-	rt.endFor(f, 0);
-	rt.setAt(live(data), "diskDesigns", rt.list());
-	if (truthy(rt.sv(f, "inserted_disk"))) {
-		rt.setAt(live(data), "hasDisk", 1);
-		if (truthy(rt.getLen(f, rt.fv(f, "blueprints", rt.sv(f, "inserted_disk"))))) {
+	rt.setAt(data, "diskDesigns", list());
+	if (this.inserted_disk) {
+		rt.setAt(data, "hasDisk", 1);
+		if (rt.len(f, this.inserted_disk.blueprints)) {
 			index = 1;
-			thisdesign = null;
-			rt.forList(f, 0, rt.fv(f, "blueprints", rt.sv(f, "inserted_disk")), T("/datum/design"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				thisdesign = $e;
-				if (truthy(live(thisdesign))) {
-					rt.modAt(live(data), "diskDesigns", rt.list(rt.alist(f, ["name", rt.fv(f, "name", live(thisdesign)), "index", live(index), "canupload", rt.bitAnd(rt.fv(f, "build_type", live(thisdesign)), 128)])), add);
+			for (thisdesign of each(this.inserted_disk.blueprints, T("/datum/design"))) {
+				if (thisdesign) {
+					rt.modAt(data, "diskDesigns", list(rt.alist(f, ["name", thisdesign.name, "index", index, "canupload", rt.bitAnd(thisdesign.build_type, SMELTER)])), add);
 				}
-				index = rt.inc(live(index), 1);
+				index++;
 			}
-			rt.endFor(f, 0);
 		}
 	}
-	return live(data);
+	return data;
 });
 
-// /obj/machinery/mineral/ore_redemption/proc/ui_act  (code/modules/mining/machine_redemption.dm:249)  may sleep
-rt.def("/obj/machinery/mineral/ore_redemption/proc/ui_act", function* ui_act(f: Frame) {
+// machine_redemption.dm:249
+rt.def("/obj/machinery/mineral/ore_redemption/proc/ui_act", function* ui_act(f: Frame, action: Value, params: Value) {
 	let I: Value = null, out: Value = null, mat_id: Value = null, mat: Value = null, stored_amount: Value = null, desired: Value = null, sheets_to_remove: Value = null, disk: Value = null, n: Value = null, alloy_id: Value = null, alloy: Value = null, smelt_amount: Value = null, desired_3: Value = null, amount: Value = null, output: Value = null, produced_alloy: Value = null, output_3: Value = null;
-	let $0: any;
-	f.vars = () => [I, out, mat_id, mat, stored_amount, desired, sheets_to_remove, disk, n, alloy_id, alloy, smelt_amount, desired_3, amount, output, produced_alloy, output_3, $0];
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		return live(f.dot);
+	if (yield* parent_proc()) {
+		return f.dot;
 	}
-	$0 = live(f.args[0]);
-	if ($0 === "Eject") {
-		if (!truthy(rt.sv(f, "inserted_id"))) {
-			return live(f.dot);
+	if (action === "Eject") {
+		if (!this.inserted_id) {
+			return f.dot;
 		}
-		yield* g.callName(f, live(f.usr), "put_in_hands", [rt.sv(f, "inserted_id")]);
-		rt.setSv(f, "inserted_id", null);
+		yield* f.usr.put_in_hands(this.inserted_id);
+		this.inserted_id = null;
 		return 1;
-	} else if ($0 === "Insert") {
-		if (truthy((rt.istype((I = (yield* g.callName(f, live(f.usr), "get_active_held_item", []))), T("/obj/item/weapon/card/id")) ? 1 : 0))) {
-			if (!truthy((yield* g.callName(f, live(f.usr), "transferItemToLoc", [live(I), live(f.src)])))) {
-				return live(f.dot);
+	} else if (action === "Insert") {
+		if (rt.istype((I = f.usr.get_active_held_item()), T("/obj/item/weapon/card/id"))) {
+			if (!(yield* f.usr.transferItemToLoc(I, this))) {
+				return f.dot;
 			}
-			rt.setSv(f, "inserted_id", live(I));
+			this.inserted_id = I;
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), "<span class='warning'>Not a valid ID!</span>"]);
+			to_chat(f.usr, "<span class='warning'>Not a valid ID!</span>");
 		}
 		return 1;
-	} else if ($0 === "Claim") {
-		if (truthy(rt.sv(f, "inserted_id"))) {
-			rt.modField(f, rt.sv(f, "inserted_id"), "mining_points", rt.sv(f, "points"), add);
-			rt.setSv(f, "points", 0);
+	} else if (action === "Claim") {
+		if (this.inserted_id) {
+			this.inserted_id.mining_points += this.points;
+			this.points = 0;
 		}
 		return 1;
-	} else if ($0 === "Release") {
-		if ((truthy((yield* g.srcCall(f, "check_access", rt.sv(f, "inserted_id")))) || truthy((yield* g.srcCall(f, "allowed", live(f.usr)))))) {
-			out = rt.getStep(f, live(f.src), rt.sv(f, "output_dir"));
-			if (isEqual(rt.at(live(f.args[1]), "id"), "all")) {
-				yield* g.callName(f, rt.sv(f, "materials"), "retrieve_all", [live(out)]);
+	} else if (action === "Release") {
+		if (this.check_access(this.inserted_id) || (yield* this.allowed(f.usr))) {
+			out = rt.getStep(f, this, this.output_dir);
+			if (rt.at(params, "id") == "all") {
+				yield* this.materials.retrieve_all(out);
 			} else {
-				mat_id = rt.at(live(f.args[1]), "id");
-				if (!truthy(rt.index(rt.fv(f, "materials", rt.sv(f, "materials")), live(mat_id)))) {
-					return live(f.dot);
+				mat_id = rt.at(params, "id");
+				if (!rt.index(this.materials.materials, mat_id)) {
+					return f.dot;
 				}
-				mat = rt.index(rt.fv(f, "materials", rt.sv(f, "materials")), live(mat_id));
-				if (!truthy((stored_amount = divide(rt.fv(f, "amount", live(mat)), 2000)))) {
-					return live(f.dot);
+				mat = rt.index(this.materials.materials, mat_id);
+				if (!(stored_amount = mat.amount / MINERAL_MATERIAL_AMOUNT)) {
+					return f.dot;
 				}
 				desired = 0;
-				if (truthy(rt.at(live(f.args[1]), "sheets"))) {
-					desired = (yield* g.call(f, P("/proc/text2num"), null, [rt.at(live(f.args[1]), "sheets")]));
+				if (rt.at(params, "sheets")) {
+					desired = text2num(rt.at(params, "sheets"));
 				} else {
 					desired = (yield* g.op(f, "Prompt", [33], [null, 1, "How many sheets would you like to smelt?", "How many sheets?", null]));
 				}
-				sheets_to_remove = (yield* g.call(f, P("/proc/round"), null, [(yield* g.call(f, P("/proc/min"), null, [live(desired), 50, live(stored_amount)]))]));
-				yield* g.callName(f, rt.sv(f, "materials"), "retrieve_sheets", [live(sheets_to_remove), live(mat_id), live(out)]);
+				sheets_to_remove = round(min(desired, 50, stored_amount));
+				yield* this.materials.retrieve_sheets(sheets_to_remove, mat_id, out);
 			}
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), "<span class='warning'>Required access not found.</span>"]);
+			to_chat(f.usr, "<span class='warning'>Required access not found.</span>");
 		}
 		return 1;
-	} else if ($0 === "diskInsert") {
-		if (truthy((rt.istype((disk = (yield* g.callName(f, live(f.usr), "get_active_held_item", []))), T("/obj/item/weapon/disk/design_disk")) ? 1 : 0))) {
-			if (!truthy((yield* g.callName(f, live(f.usr), "transferItemToLoc", [live(disk), live(f.src)])))) {
-				return live(f.dot);
+	} else if (action === "diskInsert") {
+		if (rt.istype((disk = f.usr.get_active_held_item()), T("/obj/item/weapon/disk/design_disk"))) {
+			if (!(yield* f.usr.transferItemToLoc(disk, this))) {
+				return f.dot;
 			}
-			rt.setSv(f, "inserted_disk", live(disk));
+			this.inserted_disk = disk;
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), "<span class='warning'>Not a valid Design Disk!</span>"]);
+			to_chat(f.usr, "<span class='warning'>Not a valid Design Disk!</span>");
 		}
 		return 1;
-	} else if ($0 === "diskEject") {
-		if (truthy(rt.sv(f, "inserted_disk"))) {
-			yield* g.callName(f, live(f.usr), "put_in_hands", [rt.sv(f, "inserted_disk")]);
-			rt.setSv(f, "inserted_disk", null);
+	} else if (action === "diskEject") {
+		if (this.inserted_disk) {
+			yield* f.usr.put_in_hands(this.inserted_disk);
+			this.inserted_disk = null;
 		}
 		return 1;
-	} else if ($0 === "diskUpload") {
-		n = (yield* g.call(f, P("/proc/text2num"), null, [rt.at(live(f.args[1]), "design")]));
-		if (((truthy(rt.sv(f, "inserted_disk")) && truthy(rt.fv(f, "blueprints", rt.sv(f, "inserted_disk")))) && truthy(rt.index(rt.fv(f, "blueprints", rt.sv(f, "inserted_disk")), live(n))))) {
-			yield* g.callName(f, rt.sv(f, "files"), "AddDesign2Known", [rt.index(rt.fv(f, "blueprints", rt.sv(f, "inserted_disk")), live(n))]);
+	} else if (action === "diskUpload") {
+		n = text2num(rt.at(params, "design"));
+		if (this.inserted_disk && this.inserted_disk.blueprints && rt.index(this.inserted_disk.blueprints, n)) {
+			this.files.AddDesign2Known(rt.index(this.inserted_disk.blueprints, n));
 		}
 		return 1;
-	} else if ($0 === "Smelt") {
-		alloy_id = rt.at(live(f.args[1]), "id");
-		alloy = (yield* g.callName(f, rt.sv(f, "files"), "FindDesignByID", [live(alloy_id)]));
-		if (((truthy((yield* g.srcCall(f, "check_access", rt.sv(f, "inserted_id")))) || truthy((yield* g.srcCall(f, "allowed", live(f.usr))))) && truthy(live(alloy)))) {
-			smelt_amount = (yield* g.srcCall(f, "can_smelt_alloy", live(alloy)));
+	} else if (action === "Smelt") {
+		alloy_id = rt.at(params, "id");
+		alloy = this.files.FindDesignByID(alloy_id);
+		if ((this.check_access(this.inserted_id) || (yield* this.allowed(f.usr))) && alloy) {
+			smelt_amount = this.can_smelt_alloy(alloy);
 			desired_3 = 0;
-			if (truthy(rt.at(live(f.args[1]), "sheets"))) {
-				desired_3 = (yield* g.call(f, P("/proc/text2num"), null, [rt.at(live(f.args[1]), "sheets")]));
+			if (rt.at(params, "sheets")) {
+				desired_3 = text2num(rt.at(params, "sheets"));
 			} else {
 				desired_3 = (yield* g.op(f, "Prompt", [33], [null, 1, "How many sheets would you like to smelt?", "How many sheets?", null]));
 			}
-			amount = (yield* g.call(f, P("/proc/round"), null, [(yield* g.call(f, P("/proc/min"), null, [live(desired_3), 50, live(smelt_amount)]))]));
-			yield* g.callName(f, rt.sv(f, "materials"), "use_amount", [rt.fv(f, "materials", live(alloy)), live(amount)]);
-			if (truthy((rt.istype((output = (yield* g.new_(f, rt.fv(f, "build_path", live(alloy)), [live(f.src)]))), T("/obj/item/stack/sheet")) ? 1 : 0))) {
-				rt.setFv(f, "amount", (produced_alloy = live(output)), live(amount));
-				yield* g.srcCall(f, "unload_mineral", live(produced_alloy));
+			amount = round(min(desired_3, 50, smelt_amount));
+			this.materials.use_amount(alloy.materials, amount);
+			if (rt.istype((output = (yield* new_(alloy.build_path, this))), T("/obj/item/stack/sheet"))) {
+				(produced_alloy = output).amount = amount;
+				yield* this.unload_mineral(produced_alloy);
 			} else {
-				yield* g.srcCall(f, "unload_mineral", live(output));
+				yield* this.unload_mineral(output);
 			}
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), "<span class='warning'>Required access not found.</span>"]);
+			to_chat(f.usr, "<span class='warning'>Required access not found.</span>");
 		}
 		return 1;
-	} else if ($0 === "SmeltAll") {
-		alloy_id = rt.at(live(f.args[1]), "id");
-		alloy = (yield* g.callName(f, rt.sv(f, "files"), "FindDesignByID", [live(alloy_id)]));
-		if (((truthy((yield* g.srcCall(f, "check_access", rt.sv(f, "inserted_id")))) || truthy((yield* g.srcCall(f, "allowed", live(f.usr))))) && truthy(live(alloy)))) {
-			smelt_amount = (yield* g.srcCall(f, "can_smelt_alloy", live(alloy)));
-			while (rt.gt(live(smelt_amount), 0)) {
-				yield* g.callName(f, rt.sv(f, "materials"), "use_amount", [rt.fv(f, "materials", live(alloy))]);
-				smelt_amount = rt.inc(live(smelt_amount), -1);
-				yield* g.srcCall(f, "unload_mineral", (output_3 = (yield* g.new_(f, rt.fv(f, "build_path", live(alloy)), [live(f.src)]))));
-				if (rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit"))) {
-					yield* g.call(f, P("/proc/stoplag"), null, []);
+	} else if (action === "SmeltAll") {
+		alloy_id = rt.at(params, "id");
+		alloy = this.files.FindDesignByID(alloy_id);
+		if ((this.check_access(this.inserted_id) || (yield* this.allowed(f.usr))) && alloy) {
+			smelt_amount = this.can_smelt_alloy(alloy);
+			while (smelt_amount > 0) {
+				this.materials.use_amount(alloy.materials);
+				smelt_amount--;
+				yield* this.unload_mineral((output_3 = (yield* new_(alloy.build_path, this))));
+				if (rt.tickUsage(f) > GLOB.current_ticklimit) {
+					yield* stoplag();
 				}
 			}
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), "<span class='warning'>Required access not found.</span>"]);
+			to_chat(f.usr, "<span class='warning'>Required access not found.</span>");
 		}
 		return 1;
 	}
 	return f.dot;
-}, true, { args: ["action", "params"] });
+}, true);
 
-// /obj/machinery/mineral/ore_redemption/proc/ex_act  (code/modules/mining/machine_redemption.dm:357)  may sleep
-rt.def("/obj/machinery/mineral/ore_redemption/proc/ex_act", function* ex_act(f: Frame) {
-	yield* g.call(f, P("/proc/do_sparks"), null, [5, 1, live(f.src)]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+// machine_redemption.dm:357
+rt.def("/obj/machinery/mineral/ore_redemption/proc/ex_act", function* ex_act(f: Frame, severity: Value, target: Value) {
+	yield* do_sparks(5, 1, this);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["severity", "target"], waitfor: false });
+}, true, { waitfor: false });
 
-// /obj/machinery/mineral/ore_redemption/proc/power_change  (code/modules/mining/machine_redemption.dm:361)
+// machine_redemption.dm:361
 rt.def("/obj/machinery/mineral/ore_redemption/proc/power_change", function power_change(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.callSrc(f, "update_icon", []);
+	parent_proc();
+	this.update_icon();
 	return f.dot;
 });
 
-// /obj/machinery/mineral/ore_redemption/proc/update_icon  (code/modules/mining/machine_redemption.dm:365)
+// machine_redemption.dm:365
 rt.def("/obj/machinery/mineral/ore_redemption/proc/update_icon", function update_icon(f: Frame) {
-	if (truthy(rt.callSrc(f, "powered", []))) {
-		rt.setSv(f, "icon_state", rt.initial(f, live(f.src), "icon_state"));
+	if (this.powered()) {
+		this.icon_state = rt.initial(f, this, "icon_state");
 	} else {
-		rt.setSv(f, "icon_state", fmt("＀-off", [rt.initial(f, live(f.src), "icon_state")]));
+		this.icon_state = `${rt.initial(f, this, "icon_state")}-off`;
 	}
-	return live(f.dot);
+	return f.dot;
 });

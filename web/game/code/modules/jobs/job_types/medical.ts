@@ -1,7 +1,7 @@
-// From code/modules/jobs/job_types/medical.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/jobs/job_types/medical.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(2761, "/datum/job/cmo", "/datum/job", {
@@ -21,16 +21,14 @@ rt.type(2761, "/datum/job/cmo", "/datum/job", {
 	minimal_access: null,
 });
 
-// /datum/job/cmo/proc/<init>  (code/modules/jobs/job_types/medical.dm:7)
+// medical.dm:7
 rt.def("/datum/job/cmo/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "department_head", rt.list("Captain"));
-	$0 = $0;
-	rt.setSv(f, "head_announce", rt.list("Medical"));
-	rt.setSv(f, "access", rt.list(5, 6, 9, 68, 19, 64, 33, 39, 40, 45, 59, 60, 63, 12));
-	rt.setSv(f, "minimal_access", rt.list(5, 6, 9, 68, 19, 64, 33, 39, 40, 45, 59, 60, 63, 12));
+	parent_proc();
+	this.department_head = list("Captain");
+
+	this.head_announce = list("Medical");
+	this.access = list(5, 6, 9, 68, 19, 64, 33, 39, 40, 45, 59, 60, 63, 12);
+	this.minimal_access = list(5, 6, 9, 68, 19, 64, 33, 39, 40, 45, 59, 60, 63, 12);
 	return f.dot;
 });
 
@@ -51,12 +49,10 @@ rt.type(708, "/datum/outfit/job/cmo", "/datum/outfit/job", {
 	duffelbag: rt.typePath("/obj/item/weapon/storage/backpack/duffelbag/med"),
 });
 
-// /datum/outfit/job/cmo/proc/<init>  (code/modules/jobs/job_types/medical.dm:39)
+// medical.dm:39
 rt.def("/datum/outfit/job/cmo/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "backpack_contents", rt.alist(f, [T("/obj/item/weapon/melee/classic_baton/telescopic"), 1]));
+	parent_proc();
+	this.backpack_contents = rt.alist(f, [T("/obj/item/weapon/melee/classic_baton/telescopic"), 1]);
 	return f.dot;
 });
 
@@ -75,14 +71,12 @@ rt.type(2762, "/datum/job/doctor", "/datum/job", {
 	minimal_access: null,
 });
 
-// /datum/job/doctor/proc/<init>  (code/modules/jobs/job_types/medical.dm:51)
+// medical.dm:51
 rt.def("/datum/job/doctor/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "department_head", rt.list("Chief Medical Officer"));
-	rt.setSv(f, "access", rt.list(5, 6, 45, 33, 9, 68, 64));
-	rt.setSv(f, "minimal_access", rt.list(5, 6, 45, 68));
+	parent_proc();
+	this.department_head = list("Chief Medical Officer");
+	this.access = list(5, 6, 45, 33, 9, 68, 64);
+	this.minimal_access = list(5, 6, 45, 68);
 	return f.dot;
 });
 
@@ -101,14 +95,12 @@ rt.type(2763, "/datum/job/chemist", "/datum/job", {
 	minimal_access: null,
 });
 
-// /datum/job/chemist/proc/<init>  (code/modules/jobs/job_types/medical.dm:86)
+// medical.dm:86
 rt.def("/datum/job/chemist/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "department_head", rt.list("Chief Medical Officer"));
-	rt.setSv(f, "access", rt.list(5, 6, 45, 33, 9, 68, 64));
-	rt.setSv(f, "minimal_access", rt.list(5, 33, 64));
+	parent_proc();
+	this.department_head = list("Chief Medical Officer");
+	this.access = list(5, 6, 45, 33, 9, 68, 64);
+	this.minimal_access = list(5, 33, 64);
 	return f.dot;
 });
 
@@ -127,13 +119,11 @@ rt.type(2765, "/datum/job/virologist", "/datum/job", {
 	minimal_access: null,
 });
 
-// /datum/job/virologist/proc/<init>  (code/modules/jobs/job_types/medical.dm:154)
+// medical.dm:154
 rt.def("/datum/job/virologist/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "department_head", rt.list("Chief Medical Officer"));
-	rt.setSv(f, "access", rt.list(5, 6, 45, 33, 39, 9, 68, 64));
-	rt.setSv(f, "minimal_access", rt.list(5, 39, 64));
+	parent_proc();
+	this.department_head = list("Chief Medical Officer");
+	this.access = list(5, 6, 45, 33, 39, 9, 68, 64);
+	this.minimal_access = list(5, 39, 64);
 	return f.dot;
 });

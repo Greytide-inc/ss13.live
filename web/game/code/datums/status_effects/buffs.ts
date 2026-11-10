@@ -1,7 +1,7 @@
-// From code/datums/status_effects/buffs.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/datums/status_effects/buffs.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, fmt } = rt;
 
 
 rt.type(919, "/datum/status_effect/shadow_mend", "/datum/status_effect", {
@@ -10,25 +10,25 @@ rt.type(919, "/datum/status_effect/shadow_mend", "/datum/status_effect", {
 	alert_type: rt.typePath("/obj/screen/alert/status_effect/shadow_mend"),
 });
 
-// /datum/status_effect/shadow_mend/proc/on_apply  (code/datums/status_effects/buffs.dm:14)
+// buffs.dm:14
 rt.def("/datum/status_effect/shadow_mend/proc/on_apply", function on_apply(f: Frame) {
-	rt.callName(f, rt.sv(f, "owner"), "visible_message", [fmt("<span class='notice'>Violet light wraps around ＀'s body!</span>", [rt.sv(f, "owner")]), "<span class='notice'>Violet light wraps around your body!</span>"]);
-	rt.call(f, P("/proc/playsound"), null, [rt.sv(f, "owner"), rt.rsc("sound/magic/teleport_app.ogg"), 50, 1]);
-	return rt.callSuper(f, [], rt.Args.Same);
+	this.owner.visible_message(`<span class='notice'>Violet light wraps around ${this.owner}'s body!</span>`, "<span class='notice'>Violet light wraps around your body!</span>");
+	playsound(this.owner, rt.rsc("sound/magic/teleport_app.ogg"), 50, 1);
+	return parent_proc();
 });
 
-// /datum/status_effect/shadow_mend/proc/tick  (code/datums/status_effects/buffs.dm:19)  may sleep
+// buffs.dm:19
 rt.def("/datum/status_effect/shadow_mend/proc/tick", function* tick(f: Frame) {
-	yield* g.callName(f, rt.sv(f, "owner"), "adjustBruteLoss", [-15]);
-	yield* g.callName(f, rt.sv(f, "owner"), "adjustFireLoss", [-15]);
+	yield* this.owner.adjustBruteLoss(-15);
+	yield* this.owner.adjustFireLoss(-15);
 	return f.dot;
 }, true);
 
-// /datum/status_effect/shadow_mend/proc/on_remove  (code/datums/status_effects/buffs.dm:23)  may sleep
+// buffs.dm:23
 rt.def("/datum/status_effect/shadow_mend/proc/on_remove", function* on_remove(f: Frame) {
-	yield* g.callName(f, rt.sv(f, "owner"), "visible_message", [fmt("<span class='warning'>The violet light around ＀ glows black!</span>", [rt.sv(f, "owner")]), "<span class='warning'>The tendrils around you cinch tightly and reap their toll...</span>"]);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "owner"), rt.rsc("sound/magic/teleport_diss.ogg"), 50, 1]);
-	yield* g.callName(f, rt.sv(f, "owner"), "apply_status_effect", [T("/datum/status_effect/void_price")]);
+	this.owner.visible_message(`<span class='warning'>The violet light around ${this.owner} glows black!</span>`, "<span class='warning'>The tendrils around you cinch tightly and reap their toll...</span>");
+	playsound(this.owner, rt.rsc("sound/magic/teleport_diss.ogg"), 50, 1);
+	yield* this.owner.apply_status_effect(T("/datum/status_effect/void_price"));
 	return f.dot;
 }, true);
 
@@ -39,10 +39,10 @@ rt.type(920, "/datum/status_effect/void_price", "/datum/status_effect", {
 	alert_type: rt.typePath("/obj/screen/alert/status_effect/void_price"),
 });
 
-// /datum/status_effect/void_price/proc/tick  (code/datums/status_effects/buffs.dm:40)  may sleep
+// buffs.dm:40
 rt.def("/datum/status_effect/void_price/proc/tick", function* tick(f: Frame) {
-	rt.op(f, "OutputReference", [rt.R.srcVar("owner")], [(yield* g.call(f, P("/proc/sound"), null, [null, rt.rsc("sound/magic/summon_karp.ogg"), "volume", 25], rt.Args.Named))], false);
-	yield* g.callName(f, rt.sv(f, "owner"), "adjustBruteLoss", [3]);
+	rt.op(f, "OutputReference", [rt.R.srcVar("owner")], [(yield* sound(rt.rsc("sound/magic/summon_karp.ogg"), { volume: 25 }))], false);
+	yield* this.owner.adjustBruteLoss(3);
 	return f.dot;
 }, true);
 
@@ -53,25 +53,24 @@ rt.type(11070, "/obj/screen/alert/status_effect/vanguard", "/obj/screen/alert/st
 	icon_state: "vanguard",
 });
 
-// /obj/screen/alert/status_effect/vanguard/proc/MouseEntered  (code/datums/status_effects/buffs.dm:59)
-rt.def("/obj/screen/alert/status_effect/vanguard/proc/MouseEntered", function MouseEntered(f: Frame) {
+// buffs.dm:59
+rt.def("/obj/screen/alert/status_effect/vanguard/proc/MouseEntered", function MouseEntered(f: Frame, location: Value, control: Value, params: Value) {
 	let L: Value = null, vanguard: Value = null;
 	let $0: any, $1: any;
-	f.vars = () => [L, vanguard, $0, $1];
-	if (truthy((rt.istype((L = live(f.usr)), T("/mob/living")) ? 1 : 0))) {
-		vanguard = rt.index(rt.fv(f, "stun_absorption", live(L)), "vanguard");
-		rt.setSv(f, "desc", rt.initial(f, live(f.src), "desc"));
-		$0 = rt.call(f, P("/proc/Floor"), null, [multiply(rt.at(live(vanguard), "stuns_absorbed"), 0.10000000149011612)]);
-		if (truthy(rt.gl("ratvar_awakens"))) {
+	if (rt.istype((L = f.usr), T("/mob/living"))) {
+		vanguard = rt.index(L.stun_absorption, "vanguard");
+		this.desc = rt.initial(f, this, "desc");
+		$0 = Floor(rt.at(vanguard, "stuns_absorbed") * 0.1);
+		if (GLOB.ratvar_awakens) {
 			$1 = "";
 		} else {
-			$1 = fmt("<br><b>＀</b> seconds of stun will affect you.", [rt.call(f, P("/proc/Floor"), null, [rt.call(f, P("/proc/min"), null, [multiply(rt.at(live(vanguard), "stuns_absorbed"), 0.02500000037252903), 20])])]);
+			$1 = `<br><b>${Floor(min(rt.at(vanguard, "stuns_absorbed") * 0.025, 20))}</b> seconds of stun will affect you.`;
 		}
-		rt.modSrcVar(f, "desc", fmt("<br><b>＀</b> seconds of stuns held back.＀", [$0, $1]), add);
+		this.desc += `<br><b>${$0}</b> seconds of stuns held back.${$1}`;
 	}
-	rt.callSuper(f, [], rt.Args.Same);
+	parent_proc();
 	return f.dot;
-}, false, { args: ["location", "control", "params"] });
+}, false);
 
 rt.type(921, "/datum/status_effect/vanguard_shield", "/datum/status_effect", {
 	progbar: null,
@@ -82,74 +81,69 @@ rt.type(921, "/datum/status_effect/vanguard_shield", "/datum/status_effect", {
 	alert_type: rt.typePath("/obj/screen/alert/status_effect/vanguard"),
 });
 
-// /datum/status_effect/vanguard_shield/proc/Destroy  (code/datums/status_effects/buffs.dm:68)  may sleep
+// buffs.dm:68
 rt.def("/datum/status_effect/vanguard_shield/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "progbar")]);
-	rt.setSv(f, "progbar", null);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* qdel(this.progbar);
+	this.progbar = null;
+	return (yield* parent_proc());
 }, true);
 
-// /datum/status_effect/vanguard_shield/proc/on_apply  (code/datums/status_effects/buffs.dm:73)  may sleep
+// buffs.dm:73
 rt.def("/datum/status_effect/vanguard_shield/proc/on_apply", function* on_apply(f: Frame) {
-	yield* g.callName(f, rt.sv(f, "owner"), "log_message", ["gained Vanguard stun immunity", "Attack log"]);
-	yield* g.callName(f, rt.sv(f, "owner"), "add_stun_absorption", ["vanguard", 200, 1, "'s yellow aura momentarily intensifies!", "Your ward absorbs the stun!", " radiating with a soft yellow light!"]);
-	yield* g.callName(f, rt.sv(f, "owner"), "visible_message", [fmt("<span class='warning'>＀ begins to faintly glow!</span>", [rt.sv(f, "owner")]), "<span class='brass'>You will absorb all stuns for the next twenty seconds.</span>"]);
-	yield* g.callName(f, rt.sv(f, "owner"), "SetStun", [0, 0]);
-	yield* g.callName(f, rt.sv(f, "owner"), "SetKnockdown", [0]);
-	rt.setSv(f, "progbar", (yield* g.new_(f, T("/datum/progressbar"), [rt.sv(f, "owner"), rt.sv(f, "duration"), rt.sv(f, "owner")])));
-	rt.setFv(f, "color", rt.fv(f, "bar", rt.sv(f, "progbar")), rt.list("#FAE48C", "#FAE48C", "#FAE48C", "#000000"));
-	yield* g.callName(f, rt.sv(f, "progbar"), "update", [subtract(rt.sv(f, "duration"), rt.worldTime(f))]);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	this.owner.log_message("gained Vanguard stun immunity", "Attack log");
+	this.owner.add_stun_absorption("vanguard", 200, 1, "'s yellow aura momentarily intensifies!", "Your ward absorbs the stun!", " radiating with a soft yellow light!");
+	this.owner.visible_message(`<span class='warning'>${this.owner} begins to faintly glow!</span>`, "<span class='brass'>You will absorb all stuns for the next twenty seconds.</span>");
+	yield* this.owner.SetStun(0, 0);
+	yield* this.owner.SetKnockdown(0);
+	this.progbar = (yield* new_(T("/datum/progressbar"), this.owner, this.duration, this.owner));
+	this.progbar.bar.color = list("#FAE48C", "#FAE48C", "#FAE48C", "#000000");
+	yield* this.progbar.update(this.duration - rt.worldTime(f));
+	return (yield* parent_proc());
 }, true);
 
-// /datum/status_effect/vanguard_shield/proc/tick  (code/datums/status_effects/buffs.dm:84)
+// buffs.dm:84
 rt.def("/datum/status_effect/vanguard_shield/proc/tick", function tick(f: Frame) {
-	rt.callName(f, rt.sv(f, "progbar"), "update", [subtract(rt.sv(f, "duration"), rt.worldTime(f))]);
+	this.progbar.update(this.duration - rt.worldTime(f));
 	return f.dot;
 });
 
-// /datum/status_effect/vanguard_shield/proc/on_remove  (code/datums/status_effects/buffs.dm:87)  may sleep
+// buffs.dm:87
 rt.def("/datum/status_effect/vanguard_shield/proc/on_remove", function* on_remove(f: Frame) {
-	let vanguard: Value = null, stuns_blocked: Value = null, message_to_owner: Value = null, otheractiveabsorptions: Value = null, i: Value = null;
-	let $0: any, $1: any, $e: any;
-	f.vars = () => [vanguard, stuns_blocked, message_to_owner, otheractiveabsorptions, i, $0, $1, $e];
-	vanguard = rt.index(rt.fv(f, "stun_absorption", rt.sv(f, "owner")), "vanguard");
-	stuns_blocked = 0;
-	if (truthy(live(vanguard))) {
-		stuns_blocked = (yield* g.call(f, P("/proc/round"), null, [(yield* g.call(f, P("/proc/min"), null, [multiply(rt.at(live(vanguard), "stuns_absorbed"), 0.25), 20]))]));
+	let i: Value = null;
+	let $1: any, $e: any;
+	let vanguard: Value = rt.index(this.owner.stun_absorption, "vanguard");
+	let stuns_blocked: Value = 0;
+	if (vanguard) {
+		stuns_blocked = round(min(rt.at(vanguard, "stuns_absorbed") * 0.25, 20));
 	}
-	if (isEqual(rt.fv(f, "stat", rt.sv(f, "owner")), 2)) return f.dot;
-	message_to_owner = "<span class='warning'>You feel your Vanguard quietly fade...</span>";
-	otheractiveabsorptions = 0;
-	i = null;
-	rt.forList(f, 0, rt.fv(f, "stun_absorption", rt.sv(f, "owner")));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		i = $e;
-		if ((rt.gt(rt.index(rt.index(rt.fv(f, "stun_absorption", rt.sv(f, "owner")), live(i)), "end_time"), rt.worldTime(f)) && rt.gt(rt.index(rt.index(rt.fv(f, "stun_absorption", rt.sv(f, "owner")), live(i)), "priority"), rt.at(live(vanguard), "priority")))) {
+	if (this.owner.stat == 2) return f.dot;
+	let message_to_owner: Value = "<span class='warning'>You feel your Vanguard quietly fade...</span>";
+	let otheractiveabsorptions: Value = 0;
+	for (i of each(this.owner.stun_absorption)) {
+		if (rt.index(rt.index(this.owner.stun_absorption, i), "end_time") > rt.worldTime(f) && rt.index(rt.index(this.owner.stun_absorption, i), "priority") > rt.at(vanguard, "priority")) {
 			otheractiveabsorptions = 1;
 		}
 	}
-	rt.endFor(f, 0);
-	if (((!truthy(rt.gl("ratvar_awakens")) && truthy(live(stuns_blocked))) && !truthy(live(otheractiveabsorptions)))) {
-		rt.setAt(live(vanguard), "end_time", 0);
-		yield* g.callName(f, rt.sv(f, "owner"), "Knockdown", [live(stuns_blocked)]);
+	if (!GLOB.ratvar_awakens && stuns_blocked && !otheractiveabsorptions) {
+		rt.setAt(vanguard, "end_time", 0);
+		yield* this.owner.Knockdown(stuns_blocked);
 		message_to_owner = "<span class='boldwarning'>The weight of the Vanguard's protection crashes down upon you!</span>";
-		if (rt.ge(live(stuns_blocked), 300)) {
-			message_to_owner = rt.modify(live(message_to_owner), "\n<span class='userdanger'>You faint from the exertion!</span>", add);
-			(stuns_blocked = rt.modify(live(stuns_blocked), 2, multiply));
-			yield* g.callName(f, rt.sv(f, "owner"), "Unconscious", [live(stuns_blocked)]);
+		if (stuns_blocked >= 300) {
+			message_to_owner += "\n<span class='userdanger'>You faint from the exertion!</span>";
+			stuns_blocked *= 2;
+			yield* this.owner.Unconscious(stuns_blocked);
 		}
 	} else {
 		stuns_blocked = 0;
 	}
-	yield* g.callName(f, rt.sv(f, "owner"), "visible_message", [fmt("<span class='warning'>＀'s glowing aura fades!</span>", [rt.sv(f, "owner")]), live(message_to_owner)]);
-	$0 = rt.sv(f, "owner");
-	if (truthy(live(stuns_blocked))) {
-		$1 = fmt("and was stunned for ＀", [live(stuns_blocked)]);
+	this.owner.visible_message(`<span class='warning'>${this.owner}'s glowing aura fades!</span>`, message_to_owner);
+	let $0: any = this.owner;
+	if (stuns_blocked) {
+		$1 = `and was stunned for ${stuns_blocked}`;
 	} else {
 		$1 = "";
 	}
-	yield* g.callName(f, $0, "log_message", [fmt("lost Vanguard stun immunity＀", [$1]), "Attack log"]);
+	$0.log_message(`lost Vanguard stun immunity${$1}`, "Attack log");
 	return f.dot;
 }, true);
 
@@ -159,29 +153,27 @@ rt.type(922, "/datum/status_effect/inathneqs_endowment", "/datum/status_effect",
 	alert_type: rt.typePath("/obj/screen/alert/status_effect/inathneqs_endowment"),
 });
 
-// /datum/status_effect/inathneqs_endowment/proc/on_apply  (code/datums/status_effects/buffs.dm:123)  may sleep
+// buffs.dm:123
 rt.def("/datum/status_effect/inathneqs_endowment/proc/on_apply", function* on_apply(f: Frame) {
-	let oldcolor: Value = null;
-	f.vars = () => [oldcolor];
-	yield* g.callName(f, rt.sv(f, "owner"), "log_message", ["gained Inath-neq's invulnerability", "Attack log"]);
-	yield* g.callName(f, rt.sv(f, "owner"), "visible_message", [fmt("<span class='warning'>＀ shines with azure light!</span>", [rt.sv(f, "owner")]), "<span class='notice'>You feel Inath-neq's power flow through you! You're invincible!</span>"]);
-	oldcolor = rt.fv(f, "color", rt.sv(f, "owner"));
-	rt.setFv(f, "color", rt.sv(f, "owner"), "#1E8CE1");
-	yield* g.callName(f, rt.sv(f, "owner"), "fully_heal", []);
-	yield* g.callName(f, rt.sv(f, "owner"), "add_stun_absorption", ["inathneq", 150, 2, "'s flickering blue aura momentarily intensifies!", "Inath-neq's power absorbs the stun!", " glowing with a flickering blue light!"]);
-	(rt.modField(f, rt.sv(f, "owner"), "status_flags", 4096, rt.bitOr));
-	rt.op(f, "Animate", [2, 8], [null, rt.sv(f, "owner"), "color", live(oldcolor), "time", 150, "easing", 64]);
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [rt.sv(f, "owner"), P("/atom/proc/update_atom_colour")])), 150]);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "owner"), rt.rsc("sound/magic/ethereal_enter.ogg"), 50, 1]);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	this.owner.log_message("gained Inath-neq's invulnerability", "Attack log");
+	this.owner.visible_message(`<span class='warning'>${this.owner} shines with azure light!</span>`, "<span class='notice'>You feel Inath-neq's power flow through you! You're invincible!</span>");
+	let oldcolor: Value = this.owner.color;
+	this.owner.color = "#1E8CE1";
+	yield* this.owner.fully_heal();
+	this.owner.add_stun_absorption("inathneq", 150, 2, "'s flickering blue aura momentarily intensifies!", "Inath-neq's power absorbs the stun!", " glowing with a flickering blue light!");
+	(rt.modField(f, this.owner, "status_flags", 4096, rt.bitOr));
+	rt.op(f, "Animate", [2, 8], [null, this.owner, "color", oldcolor, "time", 150, "easing", 64]);
+	yield* addtimer((yield* new_(T("/datum/callback"), this.owner, P("/atom/proc/update_atom_colour"))), 150);
+	playsound(this.owner, rt.rsc("sound/magic/ethereal_enter.ogg"), 50, 1);
+	return (yield* parent_proc());
 }, true);
 
-// /datum/status_effect/inathneqs_endowment/proc/on_remove  (code/datums/status_effects/buffs.dm:136)
+// buffs.dm:136
 rt.def("/datum/status_effect/inathneqs_endowment/proc/on_remove", function on_remove(f: Frame) {
-	rt.callName(f, rt.sv(f, "owner"), "log_message", ["lost Inath-neq's invulnerability", "Attack log"]);
-	rt.callName(f, rt.sv(f, "owner"), "visible_message", [fmt("<span class='warning'>The light around ＀ flickers and dissipates!</span>", [rt.sv(f, "owner")]), "<span class='boldwarning'>You feel Inath-neq's power fade from your body!</span>"]);
-	(rt.modField(f, rt.sv(f, "owner"), "status_flags", 16773119, rt.bitAnd));
-	rt.call(f, P("/proc/playsound"), null, [rt.sv(f, "owner"), rt.rsc("sound/magic/ethereal_exit.ogg"), 50, 1]);
+	this.owner.log_message("lost Inath-neq's invulnerability", "Attack log");
+	this.owner.visible_message(`<span class='warning'>The light around ${this.owner} flickers and dissipates!</span>`, "<span class='boldwarning'>You feel Inath-neq's power fade from your body!</span>");
+	(rt.modField(f, this.owner, "status_flags", 16773119, rt.bitAnd));
+	playsound(this.owner, rt.rsc("sound/magic/ethereal_exit.ogg"), 50, 1);
 	return f.dot;
 });
 
@@ -192,24 +184,23 @@ rt.type(923, "/datum/status_effect/cyborg_power_regen", "/datum/status_effect", 
 	alert_type: rt.typePath("/obj/screen/alert/status_effect/power_regen"),
 });
 
-// /datum/status_effect/cyborg_power_regen/proc/on_creation  (code/datums/status_effects/buffs.dm:149)  may sleep
-rt.def("/datum/status_effect/cyborg_power_regen/proc/on_creation", function* on_creation(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!(truthy(live(f.dot)) && truthy((yield* g.call(f, P("/proc/isnum"), null, [live(f.args[1])]))))) return f.dot;
-	rt.setSv(f, "power_to_give", live(f.args[1]));
+// buffs.dm:149
+rt.def("/datum/status_effect/cyborg_power_regen/proc/on_creation", function* on_creation(f: Frame, new_owner: Value, new_power_per_tick: Value) {
+	f.dot = (yield* parent_proc());
+	if (!(f.dot && isnum(new_power_per_tick))) return f.dot;
+	this.power_to_give = new_power_per_tick;
 	return f.dot;
-}, true, { args: ["new_owner", "new_power_per_tick"] });
+}, true);
 
-// /datum/status_effect/cyborg_power_regen/proc/tick  (code/datums/status_effects/buffs.dm:159)  may sleep
+// buffs.dm:159
 rt.def("/datum/status_effect/cyborg_power_regen/proc/tick", function* tick(f: Frame) {
 	let cyborg: Value = null;
-	f.vars = () => [cyborg];
-	if ((!truthy((rt.istype((cyborg = rt.sv(f, "owner")), T("/mob/living/silicon/robot")) ? 1 : 0)) || !truthy(rt.fv(f, "cell", live(cyborg))))) {
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-		return live(f.dot);
+	if (!rt.istype((cyborg = this.owner), T("/mob/living/silicon/robot")) || !cyborg.cell) {
+		yield* qdel(this);
+		return f.dot;
 	}
-	yield* g.call(f, P("/proc/playsound"), null, [live(cyborg), rt.rsc("sound/effects/light_flicker.ogg"), 50, 1]);
-	yield* g.callName(f, rt.fv(f, "cell", live(cyborg)), "give", [rt.sv(f, "power_to_give")]);
+	playsound(cyborg, rt.rsc("sound/effects/light_flicker.ogg"), 50, 1);
+	yield* cyborg.cell.give(this.power_to_give);
 	return f.dot;
 }, true);
 
@@ -220,15 +211,14 @@ rt.type(11073, "/obj/screen/alert/status_effect/his_grace", "/obj/screen/alert/s
 	icon_state: "his_grace",
 });
 
-// /obj/screen/alert/status_effect/his_grace/proc/MouseEntered  (code/datums/status_effects/buffs.dm:180)
-rt.def("/obj/screen/alert/status_effect/his_grace/proc/MouseEntered", function MouseEntered(f: Frame) {
+// buffs.dm:180
+rt.def("/obj/screen/alert/status_effect/his_grace/proc/MouseEntered", function MouseEntered(f: Frame, location: Value, control: Value, params: Value) {
 	let HG: Value = null;
-	f.vars = () => [HG];
-	rt.setSv(f, "desc", rt.initial(f, live(f.src), "desc"));
-	rt.modSrcVar(f, "desc", fmt("<br><font size=3><b>Current Bloodthirst: ＀</b></font><br>Becomes undroppable at <b>＀</b><br>Will consume you at <b>＀</b>", [rt.gv(f, "bloodlust", (HG = rt.sv(f, "attached_effect"))), 100, 140]), add);
-	rt.callSuper(f, [], rt.Args.Same);
+	this.desc = rt.initial(f, this, "desc");
+	this.desc += `<br><font size=3><b>Current Bloodthirst: ${(HG = this.attached_effect).bloodlust}</b></font><br>Becomes undroppable at <b>${HIS_GRACE_FAMISHED}</b><br>Will consume you at <b>${HIS_GRACE_CONSUME_OWNER}</b>`;
+	parent_proc();
 	return f.dot;
-}, false, { args: ["location", "control", "params"] });
+}, false);
 
 rt.type(924, "/datum/status_effect/his_grace", "/datum/status_effect", {
 	bloodlust: 0,
@@ -238,51 +228,45 @@ rt.type(924, "/datum/status_effect/his_grace", "/datum/status_effect", {
 	alert_type: rt.typePath("/obj/screen/alert/status_effect/his_grace"),
 });
 
-// /datum/status_effect/his_grace/proc/on_apply  (code/datums/status_effects/buffs.dm:188)
+// buffs.dm:188
 rt.def("/datum/status_effect/his_grace/proc/on_apply", function on_apply(f: Frame) {
-	rt.callName(f, rt.sv(f, "owner"), "log_message", ["gained His Grace's stun immunity", "Attack log"]);
-	rt.callName(f, rt.sv(f, "owner"), "add_stun_absorption", ["hisgrace", 9.999999848243207e+30, 3, null, "His Grace protects you from the stun!"]);
-	return rt.callSuper(f, [], rt.Args.Same);
+	this.owner.log_message("gained His Grace's stun immunity", "Attack log");
+	this.owner.add_stun_absorption("hisgrace", 1e+31, 3, null, "His Grace protects you from the stun!");
+	return parent_proc();
 });
 
-// /datum/status_effect/his_grace/proc/tick  (code/datums/status_effects/buffs.dm:195)  may sleep
+// buffs.dm:195
 rt.def("/datum/status_effect/his_grace/proc/tick", function* tick(f: Frame) {
-	let graces: Value = null, HG: Value = null, grace_heal: Value = null;
-	let $e: any;
-	f.vars = () => [graces, HG, grace_heal, $e];
-	rt.setSv(f, "bloodlust", 0);
-	graces = 0;
-	HG = null;
-	rt.forList(f, 0, rt.fv(f, "held_items", rt.sv(f, "owner")), T("/obj/item/weapon/his_grace"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		HG = $e;
-		if (rt.gt(rt.fv(f, "bloodthirst", live(HG)), rt.sv(f, "bloodlust"))) {
-			rt.setSv(f, "bloodlust", rt.fv(f, "bloodthirst", live(HG)));
+	let HG: Value = null;
+	this.bloodlust = 0;
+	let graces: Value = 0;
+	for (HG of each(this.owner.held_items, T("/obj/item/weapon/his_grace"))) {
+		if (HG.bloodthirst > this.bloodlust) {
+			this.bloodlust = HG.bloodthirst;
 		}
-		if (truthy(rt.fv(f, "awakened", live(HG)))) {
-			graces = rt.inc(live(graces), 1);
+		if (HG.awakened) {
+			graces++;
 		}
 	}
-	rt.endFor(f, 0);
-	if (!truthy(live(graces))) {
-		yield* g.callName(f, rt.sv(f, "owner"), "apply_status_effect", [T("/datum/status_effect/his_wrath")]);
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-		return live(f.dot);
+	if (!graces) {
+		yield* this.owner.apply_status_effect(T("/datum/status_effect/his_wrath"));
+		yield* qdel(this);
+		return f.dot;
 	}
-	grace_heal = multiply(rt.sv(f, "bloodlust"), 0.05000000074505806);
-	yield* g.callName(f, rt.sv(f, "owner"), "adjustBruteLoss", [rt.neg(live(grace_heal))]);
-	yield* g.callName(f, rt.sv(f, "owner"), "adjustFireLoss", [rt.neg(live(grace_heal))]);
-	yield* g.callName(f, rt.sv(f, "owner"), "adjustToxLoss", [rt.neg(live(grace_heal)), 1, 1]);
-	yield* g.callName(f, rt.sv(f, "owner"), "adjustOxyLoss", [rt.neg(multiply(live(grace_heal), 2))]);
-	yield* g.callName(f, rt.sv(f, "owner"), "adjustCloneLoss", [rt.neg(live(grace_heal))]);
+	let grace_heal: Value = this.bloodlust * 0.05;
+	yield* this.owner.adjustBruteLoss(-grace_heal);
+	yield* this.owner.adjustFireLoss(-grace_heal);
+	yield* this.owner.adjustToxLoss(-grace_heal, 1, 1);
+	yield* this.owner.adjustOxyLoss(-(grace_heal * 2));
+	yield* this.owner.adjustCloneLoss(-grace_heal);
 	return f.dot;
 }, true);
 
-// /datum/status_effect/his_grace/proc/on_remove  (code/datums/status_effects/buffs.dm:212)
+// buffs.dm:212
 rt.def("/datum/status_effect/his_grace/proc/on_remove", function on_remove(f: Frame) {
-	rt.callName(f, rt.sv(f, "owner"), "log_message", ["lost His Grace's stun immunity", "Attack log"]);
-	if (!(truthy((rt.istype(rt.fv(f, "stun_absorption", rt.sv(f, "owner")), T("/list")) ? 1 : 0)) && truthy(rt.index(rt.fv(f, "stun_absorption", rt.sv(f, "owner")), "hisgrace")))) return f.dot;
-	(rt.modField(f, rt.sv(f, "owner"), "stun_absorption", "hisgrace", subtract));
+	this.owner.log_message("lost His Grace's stun immunity", "Attack log");
+	if (!(rt.istype(this.owner.stun_absorption, T("/list")) && rt.index(this.owner.stun_absorption, "hisgrace"))) return f.dot;
+	this.owner.stun_absorption -= "hisgrace";
 	return f.dot;
 });
 
@@ -292,17 +276,17 @@ rt.type(925, "/datum/status_effect/wish_granters_gift", "/datum/status_effect", 
 	alert_type: rt.typePath("/obj/screen/alert/status_effect/wish_granters_gift"),
 });
 
-// /datum/status_effect/wish_granters_gift/proc/on_apply  (code/datums/status_effects/buffs.dm:223)
+// buffs.dm:223
 rt.def("/datum/status_effect/wish_granters_gift/proc/on_apply", function on_apply(f: Frame) {
-	rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "owner"), "<span class='notice'>Death is not your end! The Wish Granter's energy suffuses you, and you begin to rise...</span>"]);
-	return rt.callSuper(f, [], rt.Args.Same);
+	to_chat(this.owner, "<span class='notice'>Death is not your end! The Wish Granter's energy suffuses you, and you begin to rise...</span>");
+	return parent_proc();
 });
 
-// /datum/status_effect/wish_granters_gift/proc/on_remove  (code/datums/status_effects/buffs.dm:227)  may sleep
+// buffs.dm:227
 rt.def("/datum/status_effect/wish_granters_gift/proc/on_remove", function* on_remove(f: Frame) {
-	yield* g.callName(f, rt.sv(f, "owner"), "revive", ["full_heal", 1, "admin_revive", 1], rt.Args.Named);
-	yield* g.callName(f, rt.sv(f, "owner"), "visible_message", [fmt("<span class='warning'>＀ appears to wake from the dead, having healed all wounds!</span>", [rt.sv(f, "owner")]), "<span class='notice'>You have regenerated.</span>"]);
-	yield* g.callName(f, rt.sv(f, "owner"), "update_canmove", []);
+	yield* this.owner.revive({ full_heal: 1, admin_revive: 1 });
+	this.owner.visible_message(`<span class='warning'>${this.owner} appears to wake from the dead, having healed all wounds!</span>`, "<span class='notice'>You have regenerated.</span>");
+	yield* this.owner.update_canmove();
 	return f.dot;
 }, true);
 
@@ -314,45 +298,39 @@ rt.type(926, "/datum/status_effect/cult_master", "/datum/status_effect", {
 	alert_type: null,
 });
 
-// /datum/status_effect/cult_master/proc/deathrattle  (code/datums/status_effects/buffs.dm:244)
+// buffs.dm:244
 rt.def("/datum/status_effect/cult_master/proc/deathrattle", function deathrattle(f: Frame) {
-	let A: Value = null, B: Value = null, M: Value = null;
-	let $e: any;
-	f.vars = () => [A, B, M, $e];
-	if (!(!truthy(rt.gl("cult_narsie")) || truthy(rt.fv(f, "gc_destroyed", rt.gl("cult_narsie"))))) {
-		return live(f.dot);
+	let B: Value = null, M: Value = null;
+	if (!(!GLOB.cult_narsie || GLOB.cult_narsie.gc_destroyed)) {
+		return f.dot;
 	}
-	A = rt.call(f, P("/proc/get_area"), null, [rt.sv(f, "owner")]);
-	B = null;
-	rt.forList(f, 0, rt.gv(f, "cult", rt.fv(f, "mode", rt.gl("SSticker"))), T("/datum/mind"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		B = $e;
-		if (truthy((rt.istype(rt.fv(f, "current", live(B)), T("/mob/living")) ? 1 : 0))) {
-			M = rt.fv(f, "current", live(B));
-			rt.op(f, "Output", [], [live(M), rt.rsc("sound/hallucinations/veryfar_noise.ogg")], false);
-			rt.call(f, P("/proc/to_chat"), null, [live(M), fmt("<span class='cultlarge'>The Cult's Master, ＀, has fallen in ％！!</span>", [rt.sv(f, "owner"), live(A)])]);
+	let A: Value = get_area(this.owner);
+	for (B of each(GLOB.SSticker.mode.cult, T("/datum/mind"))) {
+		if (rt.istype(B.current, T("/mob/living"))) {
+			M = B.current;
+			rt.op(f, "Output", [], [M, rt.rsc("sound/hallucinations/veryfar_noise.ogg")], false);
+			to_chat(M, fmt("<span class='cultlarge'>The Cult's Master, ＀, has fallen in ％！!</span>", [this.owner, A]));
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /datum/status_effect/cult_master/proc/tick  (code/datums/status_effects/buffs.dm:254)
+// buffs.dm:254
 rt.def("/datum/status_effect/cult_master/proc/tick", function tick(f: Frame) {
-	if ((!isEqual(rt.fv(f, "stat", rt.sv(f, "owner")), 2) && !truthy(rt.sv(f, "alive")))) {
-		rt.setSv(f, "alive", 1);
-		return live(f.dot);
+	if (this.owner.stat != 2 && !this.alive) {
+		this.alive = 1;
+		return f.dot;
 	}
-	if (!(isEqual(rt.fv(f, "stat", rt.sv(f, "owner")), 2) && truthy(rt.sv(f, "alive")))) return f.dot;
-	rt.setSv(f, "alive", 0);
-	rt.callSrc(f, "deathrattle", []);
+	if (!(this.owner.stat == 2 && this.alive)) return f.dot;
+	this.alive = 0;
+	this.deathrattle();
 	return f.dot;
 });
 
-// /datum/status_effect/cult_master/proc/on_remove  (code/datums/status_effects/buffs.dm:262)
+// buffs.dm:262
 rt.def("/datum/status_effect/cult_master/proc/on_remove", function on_remove(f: Frame) {
-	rt.callSrc(f, "deathrattle", []);
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
+	this.deathrattle();
+	f.dot = parent_proc();
 	return f.dot;
 });
 
@@ -370,101 +348,100 @@ rt.type(927, "/datum/status_effect/blooddrunk", "/datum/status_effect", {
 	alert_type: rt.typePath("/obj/screen/alert/status_effect/blooddrunk"),
 });
 
-// /datum/status_effect/blooddrunk/proc/on_apply  (code/datums/status_effects/buffs.dm:284)  may sleep
+// buffs.dm:284
 rt.def("/datum/status_effect/blooddrunk/proc/on_apply", function* on_apply(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(live(f.dot))) return f.dot;
-	(rt.modField(f, rt.sv(f, "owner"), "maxHealth", 10, multiply));
-	(rt.modField(f, rt.sv(f, "owner"), "bruteloss", 10, multiply));
-	(rt.modField(f, rt.sv(f, "owner"), "fireloss", 10, multiply));
-	(rt.modField(f, rt.sv(f, "owner"), "toxloss", 10, multiply));
-	(rt.modField(f, rt.sv(f, "owner"), "oxyloss", 10, multiply));
-	(rt.modField(f, rt.sv(f, "owner"), "cloneloss", 10, multiply));
-	(rt.modField(f, rt.sv(f, "owner"), "staminaloss", 10, multiply));
-	yield* g.callName(f, rt.sv(f, "owner"), "updatehealth", []);
-	rt.setSv(f, "last_health", rt.fv(f, "health", rt.sv(f, "owner")));
-	rt.setSv(f, "last_bruteloss", (yield* g.callName(f, rt.sv(f, "owner"), "getBruteLoss", [])));
-	rt.setSv(f, "last_fireloss", (yield* g.callName(f, rt.sv(f, "owner"), "getFireLoss", [])));
-	rt.setSv(f, "last_toxloss", (yield* g.callName(f, rt.sv(f, "owner"), "getToxLoss", [])));
-	rt.setSv(f, "last_oxyloss", (yield* g.callName(f, rt.sv(f, "owner"), "getOxyLoss", [])));
-	rt.setSv(f, "last_cloneloss", (yield* g.callName(f, rt.sv(f, "owner"), "getCloneLoss", [])));
-	rt.setSv(f, "last_staminaloss", (yield* g.callName(f, rt.sv(f, "owner"), "getStaminaLoss", [])));
-	yield* g.callName(f, rt.sv(f, "owner"), "log_message", ["gained blood-drunk stun immunity", "Attack log"]);
-	yield* g.callName(f, rt.sv(f, "owner"), "add_stun_absorption", ["blooddrunk", 9.999999848243207e+30, 4]);
-	yield* g.callName(f, rt.sv(f, "owner"), "playsound_local", [rt.getStep(f, rt.sv(f, "owner"), 0), rt.rsc("sound/effects/singlebeat.ogg"), 40, 1]);
+	f.dot = (yield* parent_proc());
+	if (!f.dot) return f.dot;
+	this.owner.maxHealth *= 10;
+	this.owner.bruteloss *= 10;
+	this.owner.fireloss *= 10;
+	this.owner.toxloss *= 10;
+	this.owner.oxyloss *= 10;
+	this.owner.cloneloss *= 10;
+	this.owner.staminaloss *= 10;
+	yield* this.owner.updatehealth();
+	this.last_health = this.owner.health;
+	this.last_bruteloss = this.owner.getBruteLoss();
+	this.last_fireloss = this.owner.getFireLoss();
+	this.last_toxloss = this.owner.getToxLoss();
+	this.last_oxyloss = this.owner.getOxyLoss();
+	this.last_cloneloss = this.owner.getCloneLoss();
+	this.last_staminaloss = this.owner.getStaminaLoss();
+	this.owner.log_message("gained blood-drunk stun immunity", "Attack log");
+	this.owner.add_stun_absorption("blooddrunk", 1e+31, 4);
+	this.owner.playsound_local(rt.getStep(f, this.owner, 0), rt.rsc("sound/effects/singlebeat.ogg"), 40, 1);
 	return f.dot;
 }, true);
 
-// /datum/status_effect/blooddrunk/proc/tick  (code/datums/status_effects/buffs.dm:306)  may sleep
+// buffs.dm:306
 rt.def("/datum/status_effect/blooddrunk/proc/tick", function* tick(f: Frame) {
 	let needs_health_update: Value = null, new_bruteloss: Value = null, heal_amount: Value = null, new_fireloss: Value = null, heal_amount_3: Value = null, new_toxloss: Value = null, heal_amount_4: Value = null, new_oxyloss: Value = null, heal_amount_5: Value = null, new_cloneloss: Value = null, heal_amount_6: Value = null, new_staminaloss: Value = null, heal_amount_7: Value = null;
-	f.vars = () => [needs_health_update, new_bruteloss, heal_amount, new_fireloss, heal_amount_3, new_toxloss, heal_amount_4, new_oxyloss, heal_amount_5, new_cloneloss, heal_amount_6, new_staminaloss, heal_amount_7];
-	if (rt.gt(rt.fv(f, "health", rt.sv(f, "owner")), rt.sv(f, "last_health"))) {
+	if (this.owner.health > this.last_health) {
 		needs_health_update = 0;
-		if (rt.lt((new_bruteloss = (yield* g.callName(f, rt.sv(f, "owner"), "getBruteLoss", []))), rt.sv(f, "last_bruteloss"))) {
-			heal_amount = multiply(subtract(live(new_bruteloss), rt.sv(f, "last_bruteloss")), 10);
-			yield* g.callName(f, rt.sv(f, "owner"), "adjustBruteLoss", [null, live(heal_amount), "updating_health", 0], rt.Args.Named);
-			new_bruteloss = (yield* g.callName(f, rt.sv(f, "owner"), "getBruteLoss", []));
+		if ((new_bruteloss = this.owner.getBruteLoss()) < this.last_bruteloss) {
+			heal_amount = (new_bruteloss - this.last_bruteloss) * 10;
+			yield* this.owner.adjustBruteLoss(heal_amount, { updating_health: 0 });
+			new_bruteloss = this.owner.getBruteLoss();
 			needs_health_update = 1;
 		}
-		rt.setSv(f, "last_bruteloss", live(new_bruteloss));
-		if (rt.lt((new_fireloss = (yield* g.callName(f, rt.sv(f, "owner"), "getFireLoss", []))), rt.sv(f, "last_fireloss"))) {
-			heal_amount_3 = multiply(subtract(live(new_fireloss), rt.sv(f, "last_fireloss")), 10);
-			yield* g.callName(f, rt.sv(f, "owner"), "adjustFireLoss", [null, live(heal_amount_3), "updating_health", 0], rt.Args.Named);
-			new_fireloss = (yield* g.callName(f, rt.sv(f, "owner"), "getFireLoss", []));
+		this.last_bruteloss = new_bruteloss;
+		if ((new_fireloss = this.owner.getFireLoss()) < this.last_fireloss) {
+			heal_amount_3 = (new_fireloss - this.last_fireloss) * 10;
+			yield* this.owner.adjustFireLoss(heal_amount_3, { updating_health: 0 });
+			new_fireloss = this.owner.getFireLoss();
 			needs_health_update = 1;
 		}
-		rt.setSv(f, "last_fireloss", live(new_fireloss));
-		if (rt.lt((new_toxloss = (yield* g.callName(f, rt.sv(f, "owner"), "getToxLoss", []))), rt.sv(f, "last_toxloss"))) {
-			heal_amount_4 = multiply(subtract(live(new_toxloss), rt.sv(f, "last_toxloss")), 10);
-			yield* g.callName(f, rt.sv(f, "owner"), "adjustToxLoss", [null, live(heal_amount_4), "updating_health", 0], rt.Args.Named);
-			new_toxloss = (yield* g.callName(f, rt.sv(f, "owner"), "getToxLoss", []));
+		this.last_fireloss = new_fireloss;
+		if ((new_toxloss = this.owner.getToxLoss()) < this.last_toxloss) {
+			heal_amount_4 = (new_toxloss - this.last_toxloss) * 10;
+			yield* this.owner.adjustToxLoss(heal_amount_4, { updating_health: 0 });
+			new_toxloss = this.owner.getToxLoss();
 			needs_health_update = 1;
 		}
-		rt.setSv(f, "last_toxloss", live(new_toxloss));
-		if (rt.lt((new_oxyloss = (yield* g.callName(f, rt.sv(f, "owner"), "getOxyLoss", []))), rt.sv(f, "last_oxyloss"))) {
-			heal_amount_5 = multiply(subtract(live(new_oxyloss), rt.sv(f, "last_oxyloss")), 10);
-			yield* g.callName(f, rt.sv(f, "owner"), "adjustOxyLoss", [null, live(heal_amount_5), "updating_health", 0], rt.Args.Named);
-			new_oxyloss = (yield* g.callName(f, rt.sv(f, "owner"), "getOxyLoss", []));
+		this.last_toxloss = new_toxloss;
+		if ((new_oxyloss = this.owner.getOxyLoss()) < this.last_oxyloss) {
+			heal_amount_5 = (new_oxyloss - this.last_oxyloss) * 10;
+			yield* this.owner.adjustOxyLoss(heal_amount_5, { updating_health: 0 });
+			new_oxyloss = this.owner.getOxyLoss();
 			needs_health_update = 1;
 		}
-		rt.setSv(f, "last_oxyloss", live(new_oxyloss));
-		if (rt.lt((new_cloneloss = (yield* g.callName(f, rt.sv(f, "owner"), "getCloneLoss", []))), rt.sv(f, "last_cloneloss"))) {
-			heal_amount_6 = multiply(subtract(live(new_cloneloss), rt.sv(f, "last_cloneloss")), 10);
-			yield* g.callName(f, rt.sv(f, "owner"), "adjustCloneLoss", [null, live(heal_amount_6), "updating_health", 0], rt.Args.Named);
-			new_cloneloss = (yield* g.callName(f, rt.sv(f, "owner"), "getCloneLoss", []));
+		this.last_oxyloss = new_oxyloss;
+		if ((new_cloneloss = this.owner.getCloneLoss()) < this.last_cloneloss) {
+			heal_amount_6 = (new_cloneloss - this.last_cloneloss) * 10;
+			yield* this.owner.adjustCloneLoss(heal_amount_6, { updating_health: 0 });
+			new_cloneloss = this.owner.getCloneLoss();
 			needs_health_update = 1;
 		}
-		rt.setSv(f, "last_cloneloss", live(new_cloneloss));
-		if (rt.lt((new_staminaloss = (yield* g.callName(f, rt.sv(f, "owner"), "getStaminaLoss", []))), rt.sv(f, "last_staminaloss"))) {
-			heal_amount_7 = multiply(subtract(live(new_staminaloss), rt.sv(f, "last_staminaloss")), 10);
-			yield* g.callName(f, rt.sv(f, "owner"), "adjustStaminaLoss", [null, live(heal_amount_7), "updating_health", 0], rt.Args.Named);
-			new_staminaloss = (yield* g.callName(f, rt.sv(f, "owner"), "getStaminaLoss", []));
+		this.last_cloneloss = new_cloneloss;
+		if ((new_staminaloss = this.owner.getStaminaLoss()) < this.last_staminaloss) {
+			heal_amount_7 = (new_staminaloss - this.last_staminaloss) * 10;
+			yield* this.owner.adjustStaminaLoss(heal_amount_7, { updating_health: 0 });
+			new_staminaloss = this.owner.getStaminaLoss();
 			needs_health_update = 1;
 		}
-		rt.setSv(f, "last_staminaloss", live(new_staminaloss));
-		if (truthy(live(needs_health_update))) {
-			yield* g.callName(f, rt.sv(f, "owner"), "updatehealth", []);
-			yield* g.callName(f, rt.sv(f, "owner"), "playsound_local", [rt.getStep(f, rt.sv(f, "owner"), 0), rt.rsc("sound/effects/singlebeat.ogg"), 40, 1]);
+		this.last_staminaloss = new_staminaloss;
+		if (needs_health_update) {
+			yield* this.owner.updatehealth();
+			this.owner.playsound_local(rt.getStep(f, this.owner, 0), rt.rsc("sound/effects/singlebeat.ogg"), 40, 1);
 		}
 	}
-	rt.setSv(f, "last_health", rt.fv(f, "health", rt.sv(f, "owner")));
+	this.last_health = this.owner.health;
 	return f.dot;
 }, true);
 
-// /datum/status_effect/blooddrunk/proc/on_remove  (code/datums/status_effects/buffs.dm:362)  may sleep
+// buffs.dm:362
 rt.def("/datum/status_effect/blooddrunk/proc/on_remove", function* on_remove(f: Frame) {
-	yield* g.srcCall(f, "tick");
-	(rt.modField(f, rt.sv(f, "owner"), "maxHealth", 0.10000000149011612, multiply));
-	(rt.modField(f, rt.sv(f, "owner"), "bruteloss", 0.10000000149011612, multiply));
-	(rt.modField(f, rt.sv(f, "owner"), "fireloss", 0.10000000149011612, multiply));
-	(rt.modField(f, rt.sv(f, "owner"), "toxloss", 0.10000000149011612, multiply));
-	(rt.modField(f, rt.sv(f, "owner"), "oxyloss", 0.10000000149011612, multiply));
-	(rt.modField(f, rt.sv(f, "owner"), "cloneloss", 0.10000000149011612, multiply));
-	(rt.modField(f, rt.sv(f, "owner"), "staminaloss", 0.10000000149011612, multiply));
-	yield* g.callName(f, rt.sv(f, "owner"), "updatehealth", []);
-	yield* g.callName(f, rt.sv(f, "owner"), "log_message", ["lost blood-drunk stun immunity", "Attack log"]);
-	if (!(truthy((rt.istype(rt.fv(f, "stun_absorption", rt.sv(f, "owner")), T("/list")) ? 1 : 0)) && truthy(rt.index(rt.fv(f, "stun_absorption", rt.sv(f, "owner")), "blooddrunk")))) return f.dot;
-	(rt.modField(f, rt.sv(f, "owner"), "stun_absorption", "blooddrunk", subtract));
+	yield* this.tick();
+	this.owner.maxHealth *= 0.1;
+	this.owner.bruteloss *= 0.1;
+	this.owner.fireloss *= 0.1;
+	this.owner.toxloss *= 0.1;
+	this.owner.oxyloss *= 0.1;
+	this.owner.cloneloss *= 0.1;
+	this.owner.staminaloss *= 0.1;
+	yield* this.owner.updatehealth();
+	this.owner.log_message("lost blood-drunk stun immunity", "Attack log");
+	if (!(rt.istype(this.owner.stun_absorption, T("/list")) && rt.index(this.owner.stun_absorption, "blooddrunk"))) return f.dot;
+	this.owner.stun_absorption -= "blooddrunk";
 	return f.dot;
 }, true);

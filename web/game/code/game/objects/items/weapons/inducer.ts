@@ -1,7 +1,7 @@
-// From code/game/objects/items/weapons/inducer.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/weapons/inducer.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(7267, "/obj/item/weapon/inducer", "/obj/item/weapon", {
@@ -19,205 +19,199 @@ rt.type(7267, "/obj/item/weapon/inducer", "/obj/item/weapon", {
 	force: 7,
 });
 
-// /obj/item/weapon/inducer/proc/Initialize  (code/game/objects/items/weapons/inducer.dm:16)  may sleep
+// inducer.dm:16
 rt.def("/obj/item/weapon/inducer/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!(!truthy(rt.sv(f, "cell")) && truthy(rt.sv(f, "cell_type")))) return f.dot;
-	rt.setSv(f, "cell", (yield* g.new_(f, rt.sv(f, "cell_type"), [])));
+	f.dot = (yield* parent_proc());
+	if (!(!this.cell && this.cell_type)) return f.dot;
+	this.cell = (yield* new_(this.cell_type));
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/inducer/proc/induce  (code/game/objects/items/weapons/inducer.dm:21)  may sleep
+// inducer.dm:21
 rt.def("/obj/item/weapon/inducer/proc/induce", function* induce(f: Frame, target: Value, coefficient: Value) {
-	let totransfer: Value = null, transferred: Value = null;
-	f.vars = () => [target, coefficient, totransfer, transferred];
-	totransfer = (yield* g.call(f, P("/proc/min"), null, [rt.fv(f, "charge", rt.sv(f, "cell")), multiply(rt.sv(f, "powertransfer"), live(coefficient))]));
-	transferred = (yield* g.callName(f, live(target), "give", [live(totransfer)]));
-	yield* g.callName(f, rt.sv(f, "cell"), "use", [live(transferred)]);
-	yield* g.callName(f, rt.sv(f, "cell"), "update_icon", []);
-	yield* g.callName(f, live(target), "update_icon", []);
+	let totransfer: Value = min(this.cell.charge, this.powertransfer * coefficient);
+	let transferred: Value = (yield* target.give(totransfer));
+	yield* this.cell.use(transferred);
+	yield* this.cell.update_icon();
+	yield* target.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/inducer/proc/emp_act  (code/game/objects/items/weapons/inducer.dm:31)  may sleep
-rt.def("/obj/item/weapon/inducer/proc/emp_act", function* emp_act(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.sv(f, "cell"))) return f.dot;
-	yield* g.callName(f, rt.sv(f, "cell"), "emp_act", [live(f.args[0])]);
+// inducer.dm:31
+rt.def("/obj/item/weapon/inducer/proc/emp_act", function* emp_act(f: Frame, severity: Value) {
+	yield* parent_proc();
+	if (!this.cell) return f.dot;
+	yield* this.cell.emp_act(severity);
 	return f.dot;
-}, true, { args: ["severity"] });
+}, true);
 
-// /obj/item/weapon/inducer/proc/attack_obj  (code/game/objects/items/weapons/inducer.dm:36)  may sleep
-rt.def("/obj/item/weapon/inducer/proc/attack_obj", function* attack_obj(f: Frame) {
-	if (isEqual(rt.fv(f, "a_intent", live(f.args[1])), "harm")) {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+// inducer.dm:36
+rt.def("/obj/item/weapon/inducer/proc/attack_obj", function* attack_obj(f: Frame, O: Value, user: Value) {
+	if (user.a_intent == "harm") {
+		return (yield* parent_proc());
 	}
-	if (truthy((yield* g.srcCall(f, "cantbeused", live(f.args[1]))))) {
-		return live(f.dot);
+	if (this.cantbeused(user)) {
+		return f.dot;
 	}
-	if (truthy((yield* g.srcCall(f, "recharge", live(f.args[0]), live(f.args[1]))))) {
-		return live(f.dot);
+	if (yield* this.recharge(O, user)) {
+		return f.dot;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["O", "user"] });
+	return (yield* parent_proc());
+}, true);
 
-// /obj/item/weapon/inducer/proc/cantbeused  (code/game/objects/items/weapons/inducer.dm:48)
+// inducer.dm:48
 rt.def("/obj/item/weapon/inducer/proc/cantbeused", function cantbeused(f: Frame, user: Value) {
-	if (!truthy(rt.callName(f, live(user), "IsAdvancedToolUser", []))) {
-		rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>You don't have the dexterity to use ％！!</span>", [live(f.src)])]);
+	if (!user.IsAdvancedToolUser()) {
+		to_chat(user, fmt("<span class='warning'>You don't have the dexterity to use ％！!</span>", [this]));
 		return 1;
 	}
-	if (!truthy(rt.sv(f, "cell"))) {
-		rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＄！ doesn't have a power cell installed!</span>", [live(f.src)])]);
+	if (!this.cell) {
+		to_chat(user, fmt("<span class='warning'>＄！ doesn't have a power cell installed!</span>", [this]));
 		return 1;
 	}
-	if (!truthy(rt.fv(f, "charge", rt.sv(f, "cell")))) {
-		rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＄！'s battery is dead!</span>", [live(f.src)])]);
+	if (!this.cell.charge) {
+		to_chat(user, fmt("<span class='warning'>＄！'s battery is dead!</span>", [this]));
 		return 1;
 	}
 	return 0;
 });
 
-// /obj/item/weapon/inducer/proc/attackby  (code/game/objects/items/weapons/inducer.dm:63)  may sleep
-rt.def("/obj/item/weapon/inducer/proc/attackby", function* attackby(f: Frame) {
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/screwdriver")) ? 1 : 0))) {
-		yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.fv(f, "usesound", live(f.args[0])), 50, 1]);
-		if (!truthy(rt.sv(f, "opened"))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You unscrew the battery compartment.</span>"]);
-			rt.setSv(f, "opened", 1);
-			yield* g.srcCall(f, "update_icon");
-			return live(f.dot);
+// inducer.dm:63
+rt.def("/obj/item/weapon/inducer/proc/attackby", function* attackby(f: Frame, W: Value, user: Value) {
+	if (rt.istype(W, T("/obj/item/weapon/screwdriver"))) {
+		playsound(this, W.usesound, 50, 1);
+		if (!this.opened) {
+			to_chat(user, "<span class='notice'>You unscrew the battery compartment.</span>");
+			this.opened = 1;
+			yield* this.update_icon();
+			return f.dot;
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You close the battery compartment.</span>"]);
-			rt.setSv(f, "opened", 0);
-			yield* g.srcCall(f, "update_icon");
-			return live(f.dot);
+			to_chat(user, "<span class='notice'>You close the battery compartment.</span>");
+			this.opened = 0;
+			yield* this.update_icon();
+			return f.dot;
 		}
 	}
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/stock_parts/cell")) ? 1 : 0))) {
-		if (truthy(rt.sv(f, "opened"))) {
-			if (!truthy(rt.sv(f, "cell"))) {
-				if (!truthy((yield* g.callName(f, live(f.args[1]), "transferItemToLoc", [live(f.args[0]), live(f.src)])))) {
-					return live(f.dot);
+	if (rt.istype(W, T("/obj/item/weapon/stock_parts/cell"))) {
+		if (this.opened) {
+			if (!this.cell) {
+				if (!(yield* user.transferItemToLoc(W, this))) {
+					return f.dot;
 				}
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You insert ％！ into ％！.</span>", [live(f.args[0]), live(f.src)])]);
-				rt.setSv(f, "cell", live(f.args[0]));
-				yield* g.srcCall(f, "update_icon");
-				return live(f.dot);
+				to_chat(user, fmt("<span class='notice'>You insert ％！ into ％！.</span>", [W, this]));
+				this.cell = W;
+				yield* this.update_icon();
+				return f.dot;
 			} else {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>＄！ already has ＇！ installed!</span>", [live(f.src), rt.sv(f, "cell")])]);
-				return live(f.dot);
+				to_chat(user, fmt("<span class='notice'>＄！ already has ＇！ installed!</span>", [this, this.cell]));
+				return f.dot;
 			}
 		}
 	}
-	if (truthy((yield* g.srcCall(f, "cantbeused", live(f.args[1]))))) {
-		return live(f.dot);
+	if (this.cantbeused(user)) {
+		return f.dot;
 	}
-	if (truthy((yield* g.srcCall(f, "recharge", live(f.args[0]), live(f.args[1]))))) {
-		return live(f.dot);
+	if (yield* this.recharge(W, user)) {
+		return f.dot;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["W", "user"] });
+	return (yield* parent_proc());
+}, true);
 
-// /obj/item/weapon/inducer/proc/recharge  (code/game/objects/items/weapons/inducer.dm:98)  may sleep
+// inducer.dm:98
 rt.def("/obj/item/weapon/inducer/proc/recharge", function* recharge(f: Frame, A: Value, user: Value) {
-	let C: Value = null, E: Value = null, O: Value = null, coefficient: Value = null;
-	f.vars = () => [A, user, C, E, O, coefficient];
-	if (truthy(rt.sv(f, "recharging"))) {
+	let E: Value = null, O: Value = null;
+	if (this.recharging) {
 		return 1;
 	} else {
-		rt.setSv(f, "recharging", 1);
+		this.recharging = 1;
 	}
-	C = (yield* g.callName(f, live(A), "get_cell", []));
-	E = null;
-	O = null;
-	coefficient = 1;
-	if (truthy((rt.istype(live(A), T("/obj/item/weapon/gun/energy")) ? 1 : 0))) {
-		coefficient = 0.07500000298023224;
-		E = live(A);
+	let C: Value = A.get_cell();
+	let coefficient: Value = 1;
+	if (rt.istype(A, T("/obj/item/weapon/gun/energy"))) {
+		coefficient = 0.075;
+		E = A;
 	}
-	if (truthy((rt.istype(live(A), T("/obj")) ? 1 : 0))) {
-		O = live(A);
+	if (rt.istype(A, T("/obj"))) {
+		O = A;
 	}
-	if (truthy(live(C))) {
-		if (rt.ge(rt.fv(f, "charge", live(C)), rt.fv(f, "maxcharge", live(C)))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>＄！ is fully charged!</span>", [live(A)])]);
-			rt.setSv(f, "recharging", 0);
+	if (C) {
+		if (C.charge >= C.maxcharge) {
+			to_chat(user, fmt("<span class='notice'>＄！ is fully charged!</span>", [A]));
+			this.recharging = 0;
 			return 1;
 		}
-		yield* g.callName(f, live(user), "visible_message", [fmt("＀ starts recharging ％！ with ％！", [live(user), live(A), live(f.src)]), fmt("<span class='notice'>You start recharging ＀ with ％！</span>", [live(A), live(f.src)])]);
-		while (rt.lt(rt.fv(f, "charge", live(C)), rt.fv(f, "maxcharge", live(C)))) {
-			if (truthy(live(E))) {
-				rt.setFv(f, "chambered", live(E), null);
+		user.visible_message(fmt("＀ starts recharging ％！ with ％！", [user, A, this]), fmt("<span class='notice'>You start recharging ＀ with ％！</span>", [A, this]));
+		while (C.charge < C.maxcharge) {
+			if (E) {
+				E.chambered = null;
 			}
-			if ((truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(user), null, 10, "target", live(user)], rt.Args.Named))) && truthy(rt.fv(f, "charge", rt.sv(f, "cell"))))) {
-				yield* g.srcCall(f, "induce", live(C), live(coefficient));
-				yield* g.call(f, P("/proc/do_sparks"), null, [1, 0, live(A)]);
-				if (truthy(live(O))) {
-					yield* g.callName(f, live(O), "update_icon", []);
+			if ((yield* do_after(user, 10, { target: user })) && this.cell.charge) {
+				yield* this.induce(C, coefficient);
+				yield* do_sparks(1, 0, A);
+				if (O) {
+					yield* O.update_icon();
 				}
 			} else {
 				break;
 			}
 		}
-		if (truthy(live(E))) {
-			yield* g.callName(f, live(E), "recharge_newshot", []);
+		if (E) {
+			yield* E.recharge_newshot();
 		}
-		yield* g.callName(f, live(user), "visible_message", [fmt("＀ recharged ％！!", [live(user), live(A)]), fmt("<span class='notice'>You recharged ％！!</span>", [live(A)])]);
-		rt.setSv(f, "recharging", 0);
+		user.visible_message(fmt("＀ recharged ％！!", [user, A]), fmt("<span class='notice'>You recharged ％！!</span>", [A]));
+		this.recharging = 0;
 		return 1;
 	}
-	rt.setSv(f, "recharging", 0);
+	this.recharging = 0;
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/inducer/proc/attack  (code/game/objects/items/weapons/inducer.dm:135)  may sleep
-rt.def("/obj/item/weapon/inducer/proc/attack", function* attack(f: Frame) {
-	if (isEqual(rt.fv(f, "a_intent", live(f.args[1])), "harm")) {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+// inducer.dm:135
+rt.def("/obj/item/weapon/inducer/proc/attack", function* attack(f: Frame, M: Value, user: Value) {
+	if (user.a_intent == "harm") {
+		return (yield* parent_proc());
 	}
-	if (truthy((yield* g.srcCall(f, "cantbeused", live(f.args[1]))))) {
-		return live(f.dot);
+	if (this.cantbeused(user)) {
+		return f.dot;
 	}
-	if (truthy((yield* g.srcCall(f, "recharge", live(f.args[0]), live(f.args[1]))))) {
-		return live(f.dot);
+	if (yield* this.recharge(M, user)) {
+		return f.dot;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["M", "user"] });
+	return (yield* parent_proc());
+}, true);
 
-// /obj/item/weapon/inducer/proc/attack_self  (code/game/objects/items/weapons/inducer.dm:147)  may sleep
+// inducer.dm:147
 rt.def("/obj/item/weapon/inducer/proc/attack_self", function* attack_self(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (!(truthy(rt.sv(f, "opened")) && truthy(rt.sv(f, "cell")))) return f.dot;
-	yield* g.callName(f, live(user), "visible_message", [fmt("＀ removes ％！ from ％！!", [live(user), rt.sv(f, "cell"), live(f.src)]), fmt("<span class='notice'>You remove ％！.</span>", [rt.sv(f, "cell")])]);
-	yield* g.callName(f, rt.sv(f, "cell"), "update_icon", []);
-	yield* g.callName(f, live(user), "put_in_hands", [rt.sv(f, "cell")]);
-	rt.setSv(f, "cell", null);
-	yield* g.srcCall(f, "update_icon");
+	if (!(this.opened && this.cell)) return f.dot;
+	user.visible_message(fmt("＀ removes ％！ from ％！!", [user, this.cell, this]), fmt("<span class='notice'>You remove ％！.</span>", [this.cell]));
+	yield* this.cell.update_icon();
+	yield* user.put_in_hands(this.cell);
+	this.cell = null;
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/inducer/proc/examine  (code/game/objects/items/weapons/inducer.dm:156)
-rt.def("/obj/item/weapon/inducer/proc/examine", function examine(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.sv(f, "cell"))) {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='notice'>It's display shows: ＀W</span>", [rt.fv(f, "charge", rt.sv(f, "cell"))])]);
+// inducer.dm:156
+rt.def("/obj/item/weapon/inducer/proc/examine", function examine(f: Frame, M: Value) {
+	parent_proc();
+	if (this.cell) {
+		to_chat(M, `<span class='notice'>It's display shows: ${this.cell.charge}W</span>`);
 	} else {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='notice'>It's display is dark.</span>"]);
+		to_chat(M, "<span class='notice'>It's display is dark.</span>");
 	}
-	if (!truthy(rt.sv(f, "opened"))) return f.dot;
-	rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='notice'>It's battery compartment is open.</span>"]);
+	if (!this.opened) return f.dot;
+	to_chat(M, "<span class='notice'>It's battery compartment is open.</span>");
 	return f.dot;
-}, false, { args: ["M"] });
+}, false);
 
-// /obj/item/weapon/inducer/proc/update_icon  (code/game/objects/items/weapons/inducer.dm:165)
+// inducer.dm:165
 rt.def("/obj/item/weapon/inducer/proc/update_icon", function update_icon(f: Frame) {
-	rt.callSrc(f, "cut_overlays", []);
-	if (!truthy(rt.sv(f, "opened"))) return f.dot;
-	if (!truthy(rt.sv(f, "cell"))) {
-		rt.callSrc(f, "add_overlay", ["inducer-nobat"]);
+	this.cut_overlays();
+	if (!this.opened) return f.dot;
+	if (!this.cell) {
+		this.add_overlay("inducer-nobat");
 	} else {
-		rt.callSrc(f, "add_overlay", ["inducer-bat"]);
+		this.add_overlay("inducer-bat");
 	}
 	return f.dot;
 });
@@ -231,9 +225,9 @@ rt.type(7268, "/obj/item/weapon/inducer/sci", "/obj/item/weapon/inducer", {
 	desc: "A tool for inductively charging internal power cells. This one has a science color scheme, and is less potent than it's engineering counterpart.",
 });
 
-// /obj/item/weapon/inducer/sci/proc/Initialize  (code/game/objects/items/weapons/inducer.dm:181)  may sleep
+// inducer.dm:181
 rt.def("/obj/item/weapon/inducer/sci/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.srcCall(f, "update_icon");
+	f.dot = (yield* parent_proc());
+	yield* this.update_icon();
 	return f.dot;
 }, true);

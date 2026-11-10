@@ -1,7 +1,7 @@
-// From code/game/gamemodes/gang/dominator.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/gamemodes/gang/dominator.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(10347, "/obj/machinery/dominator", "/obj/machinery", {
@@ -24,361 +24,321 @@ rt.type(10347, "/obj/machinery/dominator", "/obj/machinery", {
 	armor: null,
 });
 
-// /obj/machinery/dominator/proc/<init>  (code/game/gamemodes/gang/dominator.dm:16)
+// dominator.dm:16
 rt.def("/obj/machinery/dominator/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 20, "bullet", 50, "laser", 50, "energy", 50, "bomb", 10, "bio", 100, "rad", 100, "fire", 10, "acid", 70]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 20, "bullet", 50, "laser", 50, "energy", 50, "bomb", 10, "bio", 100, "rad", 100, "fire", 10, "acid", 70]);
 	return f.dot;
 });
 
-// /obj/machinery/dominator/proc/hulk_damage  (code/game/gamemodes/gang/dominator.dm:25)
+// dominator.dm:25
 rt.def("/obj/machinery/dominator/proc/hulk_damage", function hulk_damage(f: Frame) {
-	return divide(subtract(rt.sv(f, "max_integrity"), rt.sv(f, "integrity_failure")), 10);
+	return (this.max_integrity - this.integrity_failure) / DOM_HULK_HITS_REQUIRED;
 });
 
-// /proc/dominator_excessive_walls  (code/game/gamemodes/gang/dominator.dm:29)
+// dominator.dm:29
 rt.def("/proc/dominator_excessive_walls", function dominator_excessive_walls(f: Frame, A: Value) {
-	let open: Value = null, _T: Value = null;
-	let $e: any;
-	f.vars = () => [open, _T, $e];
-	open = 0;
-	_T = null;
-	rt.forList(f, 0, rt.call(f, P("/proc/view"), null, [3, live(A)]), T("/turf"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_T = $e;
-		if (!truthy((rt.istype(live(_T), T("/turf/closed")) ? 1 : 0))) {
-			open = rt.inc(live(open), 1);
+	let _T: Value = null;
+	let open: Value = 0;
+	for (_T of each(view(3, A), T("/turf"))) {
+		if (!rt.istype(_T, T("/turf/closed"))) {
+			open++;
 		}
 	}
-	rt.endFor(f, 0);
-	if (rt.lt(live(open), 30)) {
+	if (open < DOM_REQUIRED_TURFS) {
 		return 1;
 	} else {
 		return 0;
 	}
-	return f.dot;
 });
 
-// /obj/machinery/dominator/proc/tesla_act  (code/game/gamemodes/gang/dominator.dm:38)  may sleep
+// dominator.dm:38
 rt.def("/obj/machinery/dominator/proc/tesla_act", function* tesla_act(f: Frame) {
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
-// /obj/machinery/dominator/proc/Initialize  (code/game/gamemodes/gang/dominator.dm:41)  may sleep
+// dominator.dm:41
 rt.def("/obj/machinery/dominator/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.srcCall(f, "set_light", 2);
-	(rt.modGl("poi_list", live(f.src), rt.bitOr));
-	rt.setSv(f, "spark_system", (yield* g.new_(f, T("/datum/effect_system/spark_spread"), [])));
-	yield* g.callName(f, rt.sv(f, "spark_system"), "set_up", [5, 1, live(f.src)]);
-	rt.setSv(f, "countdown", (yield* g.new_(f, T("/obj/effect/countdown/dominator"), [live(f.src)])));
-	yield* g.srcCall(f, "update_icon");
+	f.dot = (yield* parent_proc());
+	this.set_light(2);
+	(rt.modGl("poi_list", this, rt.bitOr));
+	this.spark_system = (yield* new_(T("/datum/effect_system/spark_spread")));
+	yield* this.spark_system.set_up(5, 1, this);
+	this.countdown = (yield* new_(T("/obj/effect/countdown/dominator"), this));
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/machinery/dominator/proc/examine  (code/game/gamemodes/gang/dominator.dm:50)
-rt.def("/obj/machinery/dominator/proc/examine", function examine(f: Frame) {
+// dominator.dm:50
+rt.def("/obj/machinery/dominator/proc/examine", function examine(f: Frame, user: Value) {
 	let time: Value = null;
-	f.vars = () => [time];
-	rt.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.bitAnd(rt.sv(f, "stat"), 1))) {
-		return live(f.dot);
+	parent_proc();
+	if (rt.bitAnd(this.stat, 1)) {
+		return f.dot;
 	}
-	time = null;
-	if ((truthy(rt.sv(f, "gang")) && truthy(rt.fv(f, "is_dominating", rt.sv(f, "gang"))))) {
-		if (rt.gt((time = rt.callName(f, rt.sv(f, "gang"), "domination_time_remaining", [])), 0)) {
-			rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='notice'>Hostile Takeover in progress. Estimated ＀ seconds remain.</span>", [live(time)])]);
+	if (this.gang && this.gang.is_dominating) {
+		if ((time = this.gang.domination_time_remaining()) > 0) {
+			to_chat(user, `<span class='notice'>Hostile Takeover in progress. Estimated ${time} seconds remain.</span>`);
 		} else {
-			rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='notice'>Hostile Takeover of ＀ successful. Have a great day.</span>", [rt.call(f, P("/proc/station_name"), null, [])])]);
+			to_chat(user, `<span class='notice'>Hostile Takeover of ${station_name()} successful. Have a great day.</span>`);
 		}
 	} else {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='notice'>System on standby.</span>"]);
+		to_chat(user, "<span class='notice'>System on standby.</span>");
 	}
-	rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='danger'>System Integrity: ＀%</span>", [rt.call(f, P("/proc/round"), null, [multiply(divide(rt.sv(f, "obj_integrity"), rt.sv(f, "max_integrity")), 100), 1])])]);
+	to_chat(user, `<span class='danger'>System Integrity: ${round(this.obj_integrity / this.max_integrity * 100, 1)}%</span>`);
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/machinery/dominator/proc/process  (code/game/gamemodes/gang/dominator.dm:66)  may sleep
+// dominator.dm:66
 rt.def("/obj/machinery/dominator/proc/process", function* process(f: Frame) {
 	let time_remaining: Value = null, domloc: Value = null, G: Value = null;
-	let $e: any;
-	f.vars = () => [time_remaining, domloc, G, $e];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if ((truthy(rt.sv(f, "gang")) && truthy(rt.fv(f, "is_dominating", rt.sv(f, "gang"))))) {
-		if (rt.gt((time_remaining = (yield* g.callName(f, rt.sv(f, "gang"), "domination_time_remaining", []))), 0)) {
-			if (truthy((yield* g.call(f, P("/proc/dominator_excessive_walls"), null, [live(f.src)])))) {
-				rt.modField(f, rt.sv(f, "gang"), "domination_timer", 20, add);
-				yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/machines/buzz-two.ogg"), 50, 0]);
-				if (rt.lt(rt.sv(f, "spam_prevention"), 6)) {
-					rt.incSrcVar(f, "spam_prevention", 1, true);
+	yield* parent_proc();
+	if (this.gang && this.gang.is_dominating) {
+		if ((time_remaining = this.gang.domination_time_remaining()) > 0) {
+			if (dominator_excessive_walls(this)) {
+				this.gang.domination_timer += 20;
+				playsound(this.loc, rt.rsc("sound/machines/buzz-two.ogg"), 50, 0);
+				if (this.spam_prevention < DOM_BLOCKED_SPAM_CAP) {
+					this.spam_prevention++;
 				} else {
-					yield* g.callName(f, rt.sv(f, "gang"), "message_gangtools", ["Warning: There are too many walls around your gang's dominator, its signal is being blocked!"]);
-					yield* g.srcCall(f, "say", "Error: Takeover signal is currently blocked! There are too many walls within 3 standard units of this device.");
-					rt.setSv(f, "spam_prevention", 0);
+					this.gang.message_gangtools("Warning: There are too many walls around your gang's dominator, its signal is being blocked!");
+					yield* this.say("Error: Takeover signal is currently blocked! There are too many walls within 3 standard units of this device.");
+					this.spam_prevention = 0;
 				}
-				return live(f.dot);
+				return f.dot;
 			}
 			f.dot = 1;
-			yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/items/timer.ogg"), 10, 0]);
-			if ((!truthy(rt.sv(f, "warned")) && rt.lt(live(time_remaining), 180))) {
-				rt.setSv(f, "warned", 1);
-				domloc = (yield* g.call(f, P("/proc/get_area"), null, [rt.sv(f, "loc")]));
-				yield* g.callName(f, rt.sv(f, "gang"), "message_gangtools", [fmt("Less than 3 minutes remains in hostile takeover. Defend your dominator at ＀!", [rt.fv(f, "map_name", live(domloc))])]);
-				G = null;
-				rt.forList(f, 0, rt.gv(f, "gangs", rt.fv(f, "mode", rt.gl("SSticker"))), T("/datum/gang"));
-				while (($e = rt.next(f, 0)) !== undefined) {
-					G = $e;
-					if (!isEqual(live(G), rt.sv(f, "gang"))) {
-						yield* g.callName(f, live(G), "message_gangtools", [fmt("WARNING: ＀ Gang takeover imminent. Their dominator at ＀ must be destroyed!", [rt.fv(f, "name", rt.sv(f, "gang")), rt.fv(f, "map_name", live(domloc))]), 1, 1]);
+			playsound(this.loc, rt.rsc("sound/items/timer.ogg"), 10, 0);
+			if (!this.warned && time_remaining < 180) {
+				this.warned = 1;
+				domloc = get_area(this.loc);
+				this.gang.message_gangtools(`Less than 3 minutes remains in hostile takeover. Defend your dominator at ${domloc.map_name}!`);
+				for (G of each(GLOB.SSticker.mode.gangs, T("/datum/gang"))) {
+					if (G != this.gang) {
+						G.message_gangtools(`WARNING: ${this.gang.name} Gang takeover imminent. Their dominator at ${domloc.map_name} must be destroyed!`, 1, 1);
 					}
 				}
-				rt.endFor(f, 0);
 			}
 		}
 	}
-	if (truthy(live(f.dot))) return f.dot;
-	rt.setFv(f, "isprocessing", live(f.src), 0);
-	(rt.modField(f, rt.gl("SSmachines"), "processing", live(f.src), subtract));
+	if (f.dot) return f.dot;
+	this.isprocessing = 0;
+	GLOB.SSmachines.processing -= this;
 	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/machinery/dominator/proc/play_attack_sound  (code/game/gamemodes/gang/dominator.dm:94)
+// dominator.dm:94
 rt.def("/obj/machinery/dominator/proc/play_attack_sound", function play_attack_sound(f: Frame, damage_amount: Value, damage_type: Value, damage_flag: Value) {
-	let $0: any;
-	f.vars = () => [damage_type, damage_flag, $0];
-	if (live(damage_type) === null) {
-		damage_type = "brute";
-	}
-	if (live(damage_flag) === null) {
-		damage_flag = 0;
-	}
-	$0 = live(damage_type);
-	if ($0 === "brute") {
-		if (truthy(live(damage_amount))) {
-			rt.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/effects/bang.ogg"), 50, 1]);
+	damage_type ??= "brute";
+	damage_flag ??= 0;
+	if (damage_type === "brute") {
+		if (damage_amount) {
+			playsound(this, rt.rsc("sound/effects/bang.ogg"), 50, 1);
 		} else {
-			rt.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/weapons/tap.ogg"), 50, 1]);
+			playsound(this.loc, rt.rsc("sound/weapons/tap.ogg"), 50, 1);
 		}
-	} else if ($0 === "fire") {
-		rt.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/items/welder.ogg"), 100, 1]);
+	} else if (damage_type === "fire") {
+		playsound(this.loc, rt.rsc("sound/items/welder.ogg"), 100, 1);
 	}
 	return f.dot;
 });
 
-// /obj/machinery/dominator/proc/take_damage  (code/game/gamemodes/gang/dominator.dm:104)  may sleep
+// dominator.dm:104
 rt.def("/obj/machinery/dominator/proc/take_damage", function* take_damage(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = "brute";
 	}
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 0;
 	}
-	if (live(f.args[3]) === null) {
+	if (f.args[3] === null) {
 		f.args[3] = 1;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(live(f.dot))) return f.dot;
-	if (rt.gt(divide(rt.sv(f, "obj_integrity"), rt.sv(f, "max_integrity")), 0.6600000262260437)) {
-		if (truthy(rt.op(f, "Prob", [], [multiply(live(f.args[0]), 2)]))) {
-			yield* g.callName(f, rt.sv(f, "spark_system"), "start", []);
+	f.dot = (yield* parent_proc());
+	if (!f.dot) return f.dot;
+	if (this.obj_integrity / this.max_integrity > 0.66) {
+		if (prob(f.args[0] * 2)) {
+			yield* this.spark_system.start();
 		}
 	} else {
-		if (truthy(rt.bitAnd(rt.sv(f, "stat"), 1))) return f.dot;
-		yield* g.callName(f, rt.sv(f, "spark_system"), "start", []);
-		yield* g.srcCall(f, "update_icon");
+		if (rt.bitAnd(this.stat, 1)) return f.dot;
+		yield* this.spark_system.start();
+		yield* this.update_icon();
 	}
 	return f.dot;
 }, true, { args: ["damage_amount", "damage_type", "damage_flag", "sound_effect"] });
 
-// /obj/machinery/dominator/proc/update_icon  (code/game/gamemodes/gang/dominator.dm:114)
+// dominator.dm:114
 rt.def("/obj/machinery/dominator/proc/update_icon", function update_icon(f: Frame) {
 	let dominator_overlay: Value = null;
-	f.vars = () => [dominator_overlay];
-	rt.callSrc(f, "cut_overlays", []);
-	if (!truthy(rt.bitAnd(rt.sv(f, "stat"), 1))) {
-		rt.setSv(f, "icon_state", "dominator-active");
-		if (truthy(rt.sv(f, "operating"))) {
-			dominator_overlay = rt.call(f, P("/proc/mutable_appearance"), null, [rt.rsc("icons/obj/machines/dominator.dmi"), "dominator-overlay"]);
-			if (truthy(rt.sv(f, "gang"))) {
-				rt.setFv(f, "color", live(dominator_overlay), rt.fv(f, "color_hex", rt.sv(f, "gang")));
+	this.cut_overlays();
+	if (!rt.bitAnd(this.stat, 1)) {
+		this.icon_state = "dominator-active";
+		if (this.operating) {
+			dominator_overlay = mutable_appearance(rt.rsc("icons/obj/machines/dominator.dmi"), "dominator-overlay");
+			if (this.gang) {
+				dominator_overlay.color = this.gang.color_hex;
 			}
-			rt.callSrc(f, "add_overlay", [live(dominator_overlay)]);
+			this.add_overlay(dominator_overlay);
 		} else {
-			rt.setSv(f, "icon_state", "dominator");
+			this.icon_state = "dominator";
 		}
-		if (rt.lt(divide(rt.sv(f, "obj_integrity"), rt.sv(f, "max_integrity")), 0.6600000262260437)) {
-			rt.callSrc(f, "add_overlay", ["damage"]);
+		if (this.obj_integrity / this.max_integrity < 0.66) {
+			this.add_overlay("damage");
 		}
 	} else {
-		rt.setSv(f, "icon_state", "dominator-broken");
+		this.icon_state = "dominator-broken";
 	}
 	return f.dot;
 });
 
-// /obj/machinery/dominator/proc/obj_break  (code/game/gamemodes/gang/dominator.dm:130)  may sleep
+// dominator.dm:130
 rt.def("/obj/machinery/dominator/proc/obj_break", function* obj_break(f: Frame, damage_flag: Value) {
-	f.vars = () => [damage_flag];
-	if (!(!truthy(rt.bitAnd(rt.sv(f, "stat"), 1)) && !truthy(rt.bitAnd(rt.sv(f, "flags"), 128)))) return f.dot;
-	yield* g.srcCall(f, "set_broken");
+	if (!(!rt.bitAnd(this.stat, 1) && !rt.bitAnd(this.flags, NODECONSTRUCT))) return f.dot;
+	yield* this.set_broken();
 	return f.dot;
 }, true);
 
-// /obj/machinery/dominator/proc/deconstruct  (code/game/gamemodes/gang/dominator.dm:134)  may sleep
+// dominator.dm:134
 rt.def("/obj/machinery/dominator/proc/deconstruct", function* deconstruct(f: Frame, disassembled: Value) {
-	f.vars = () => [disassembled];
-	if (live(disassembled) === null) {
-		disassembled = 1;
-	}
-	if (!truthy(rt.bitAnd(rt.sv(f, "flags"), 128))) {
-		if (!truthy(rt.bitAnd(rt.sv(f, "stat"), 1))) {
-			yield* g.srcCall(f, "set_broken");
+	disassembled ??= 1;
+	if (!rt.bitAnd(this.flags, NODECONSTRUCT)) {
+		if (!rt.bitAnd(this.stat, 1)) {
+			yield* this.set_broken();
 		}
-		yield* g.new_(f, T("/obj/item/stack/sheet/plasteel"), [rt.fv(f, "loc", live(f.src))]);
+		yield* new_(T("/obj/item/stack/sheet/plasteel"), this.loc);
 	}
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
-// /obj/machinery/dominator/proc/attacked_by  (code/game/gamemodes/gang/dominator.dm:141)  may sleep
-rt.def("/obj/machinery/dominator/proc/attacked_by", function* attacked_by(f: Frame) {
-	yield* g.srcCall(f, "add_fingerprint", live(f.args[1]));
-	yield* g.callSuper(f, [], rt.Args.Same);
+// dominator.dm:141
+rt.def("/obj/machinery/dominator/proc/attacked_by", function* attacked_by(f: Frame, I: Value, user: Value) {
+	yield* this.add_fingerprint(user);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["I", "user"] });
+}, true);
 
-// /obj/machinery/dominator/proc/set_broken  (code/game/gamemodes/gang/dominator.dm:146)  may sleep
+// dominator.dm:146
 rt.def("/obj/machinery/dominator/proc/set_broken", function* set_broken(f: Frame) {
 	let takeover_in_progress: Value = null, G: Value = null, was_stranded: Value = null;
 	let $0: any, $1: any, $e: any;
-	f.vars = () => [takeover_in_progress, G, was_stranded, $0, $1, $e];
-	if (truthy(rt.sv(f, "gang"))) {
-		rt.setFv(f, "is_dominating", rt.sv(f, "gang"), 0);
+	if (this.gang) {
+		this.gang.is_dominating = 0;
 		takeover_in_progress = 0;
-		G = null;
-		rt.forList(f, 0, rt.gv(f, "gangs", rt.fv(f, "mode", rt.gl("SSticker"))), T("/datum/gang"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			G = $e;
-			if (truthy(rt.fv(f, "is_dominating", live(G)))) {
+		for (G of each(GLOB.SSticker.mode.gangs, T("/datum/gang"))) {
+			if (G.is_dominating) {
 				takeover_in_progress = 1;
 				break;
 			}
 		}
-		rt.endFor(f, 0);
-		if (!truthy(live(takeover_in_progress))) {
-			was_stranded = (isEqual(rt.gv(f, "mode", rt.fv(f, "emergency", rt.gl("SSshuttle"))), "stranded") ? 1 : 0);
-			yield* g.callName(f, rt.gl("SSshuttle"), "clearHostileEnvironment", [live(f.src)]);
-			if (!truthy(live(was_stranded))) {
-				yield* g.call(f, P("/proc/priority_announce"), null, ["All hostile activity within station systems has ceased.", "Network Alert"]);
+		if (!takeover_in_progress) {
+			was_stranded = (GLOB.SSshuttle.emergency.mode == "stranded" ? 1 : 0);
+			yield* GLOB.SSshuttle.clearHostileEnvironment(this);
+			if (!was_stranded) {
+				yield* priority_announce("All hostile activity within station systems has ceased.", "Network Alert");
 			}
-			if (isEqual((yield* g.call(f, P("/proc/get_security_level"), null, [])), "delta")) {
-				yield* g.call(f, P("/proc/set_security_level"), null, ["red"]);
+			if (get_security_level() == "delta") {
+				set_security_level("red");
 			}
 		}
-		$0 = rt.sv(f, "gang");
-		if (truthy(rt.fv(f, "dom_attempts", rt.sv(f, "gang")))) {
-			$1 = fmt(" You have ＀ attempt remaining.", [rt.fv(f, "dom_attempts", rt.sv(f, "gang"))]);
+		$0 = this.gang;
+		if (this.gang.dom_attempts) {
+			$1 = ` You have ${this.gang.dom_attempts} attempt remaining.`;
 		} else {
 			$1 = " The station network will have likely blocked any more attempts by us.";
 		}
-		yield* g.callName(f, $0, "message_gangtools", [fmt("Hostile takeover cancelled: Dominator is no longer operational.＀", [$1]), 1, 1]);
+		$0.message_gangtools(`Hostile takeover cancelled: Dominator is no longer operational.${$1}`, 1, 1);
 	}
-	yield* g.srcCall(f, "set_light", 0);
-	rt.setSv(f, "operating", 0);
+	this.set_light(0);
+	this.operating = 0;
 	(rt.modSrcVar(f, "stat", 1, rt.bitOr));
-	yield* g.srcCall(f, "update_icon");
-	rt.setFv(f, "isprocessing", live(f.src), 0);
-	(rt.modField(f, rt.gl("SSmachines"), "processing", live(f.src), subtract));
+	yield* this.update_icon();
+	this.isprocessing = 0;
+	GLOB.SSmachines.processing -= this;
 	return f.dot;
 }, true);
 
-// /obj/machinery/dominator/proc/Destroy  (code/game/gamemodes/gang/dominator.dm:171)  may sleep
+// dominator.dm:171
 rt.def("/obj/machinery/dominator/proc/Destroy", function* Destroy(f: Frame) {
-	if (!truthy(rt.bitAnd(rt.sv(f, "stat"), 1))) {
-		yield* g.srcCall(f, "set_broken");
+	if (!rt.bitAnd(this.stat, 1)) {
+		yield* this.set_broken();
 	}
-	yield* g.callName(f, rt.gl("poi_list"), "Remove", [live(f.src)]);
-	rt.setSv(f, "gang", null);
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "spark_system")]);
-	rt.setSv(f, "spark_system", null);
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "countdown")]);
-	rt.setSv(f, "countdown", null);
-	rt.setFv(f, "isprocessing", live(f.src), 0);
-	(rt.modField(f, rt.gl("SSmachines"), "processing", live(f.src), subtract));
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* GLOB.poi_list.Remove(this);
+	this.gang = null;
+	yield* qdel(this.spark_system);
+	this.spark_system = null;
+	yield* qdel(this.countdown);
+	this.countdown = null;
+	this.isprocessing = 0;
+	GLOB.SSmachines.processing -= this;
+	return (yield* parent_proc());
 }, true);
 
-// /obj/machinery/dominator/proc/emp_act  (code/game/gamemodes/gang/dominator.dm:181)  may sleep
-rt.def("/obj/machinery/dominator/proc/emp_act", function* emp_act(f: Frame) {
-	yield* g.srcCall(f, "take_damage", 100, "fire", "energy", 0);
-	yield* g.callSuper(f, [], rt.Args.Same);
+// dominator.dm:181
+rt.def("/obj/machinery/dominator/proc/emp_act", function* emp_act(f: Frame, severity: Value) {
+	yield* this.take_damage(100, "fire", "energy", 0);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["severity"] });
+}, true);
 
-// /obj/machinery/dominator/proc/attack_hand  (code/game/gamemodes/gang/dominator.dm:185)  may sleep
+// dominator.dm:185
 rt.def("/obj/machinery/dominator/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
-	let tempgang: Value = null, time: Value = null, A: Value = null, locname: Value = null, G: Value = null;
-	let $0: any, $1: any, $2: any, $e: any;
-	f.vars = () => [user, tempgang, time, A, locname, G, $0, $1, $2, $e];
-	if ((truthy(rt.sv(f, "operating")) || truthy(rt.bitAnd(rt.sv(f, "stat"), 1)))) {
-		yield* g.srcCall(f, "examine", live(user));
-		return live(f.dot);
+	let tempgang: Value = null, G: Value = null;
+	let $2: any, $e: any;
+	if (this.operating || rt.bitAnd(this.stat, 1)) {
+		yield* this.examine(user);
+		return f.dot;
 	}
-	tempgang = null;
-	if (truthy((rt.isIn(f, rt.fv(f, "mind", live(user)), (yield* g.callName(f, rt.fv(f, "mode", rt.gl("SSticker")), "get_all_gangsters", []))) ? 1 : 0))) {
-		tempgang = rt.gv(f, "gang_datum", rt.fv(f, "mind", live(user)));
+	if (rt.isIn(f, user.mind, GLOB.SSticker.mode.get_all_gangsters())) {
+		tempgang = user.mind.gang_datum;
 	} else {
-		yield* g.srcCall(f, "examine", live(user));
-		return live(f.dot);
+		yield* this.examine(user);
+		return f.dot;
 	}
-	if (truthy(rt.fv(f, "is_dominating", live(tempgang)))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>Error: Hostile Takeover is already in progress.</span>"]);
-		return live(f.dot);
+	if (tempgang.is_dominating) {
+		to_chat(user, "<span class='warning'>Error: Hostile Takeover is already in progress.</span>");
+		return f.dot;
 	}
-	if (!truthy(rt.fv(f, "dom_attempts", live(tempgang)))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>Error: Unable to breach station network. Firewall has logged our signature and is blocking all further attempts.</span>"]);
-		return live(f.dot);
+	if (!tempgang.dom_attempts) {
+		to_chat(user, "<span class='warning'>Error: Unable to breach station network. Firewall has logged our signature and is blocking all further attempts.</span>");
+		return f.dot;
 	}
-	time = (yield* g.call(f, P("/proc/round"), null, [divide((yield* g.call(f, P("/proc/determine_domination_time"), null, [live(tempgang)])), 60), 0.10000000149011612]));
-	if (!isEqual((yield* g.call(f, P("/proc/alert"), null, [live(user), fmt("With ＀% station control, a takeover will require ＀ minutes.\nYour gang will be unable to gain influence while it is active.\nThe entire station will likely be alerted to it once it starts.\nYou have ＀ attempt(s) remaining. Are you ready?", [(yield* g.call(f, P("/proc/round"), null, [multiply(divide(rt.getLen(f, rt.fv(f, "territory", live(tempgang))), rt.fv(f, "num_territories", rt.gl("start_state"))), 100), 1])), live(time), rt.fv(f, "dom_attempts", live(tempgang))]), "Confirm", "Ready", "Later"])), "Ready")) return f.dot;
-	if ((((truthy(rt.fv(f, "is_dominating", live(tempgang))) || !truthy(rt.fv(f, "dom_attempts", live(tempgang)))) || !rt.le((yield* g.call(f, P("/proc/get_dist"), null, [live(f.src), live(user)])), 1)) || !truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.sv(f, "loc")]))))) {
+	let time: Value = round(determine_domination_time(tempgang) / 60, 0.1);
+	if ((yield* alert(user, `With ${round(rt.len(f, tempgang.territory) / GLOB.start_state.num_territories * 100, 1)}% station control, a takeover will require ${time} minutes.\nYour gang will be unable to gain influence while it is active.\nThe entire station will likely be alerted to it once it starts.\nYou have ${tempgang.dom_attempts} attempt(s) remaining. Are you ready?`, "Confirm", "Ready", "Later")) != "Ready") return f.dot;
+	if (tempgang.is_dominating || !tempgang.dom_attempts || !(get_dist(this, user) <= 1) || !isturf(this.loc)) {
 		return 0;
 	}
-	A = (yield* g.call(f, P("/proc/get_area"), null, [rt.sv(f, "loc")]));
-	locname = rt.fv(f, "map_name", live(A));
-	rt.setSv(f, "gang", live(tempgang));
-	rt.incField(f, rt.sv(f, "gang"), "dom_attempts", -1, true);
-	yield* g.call(f, P("/proc/priority_announce"), null, [fmt("Network breach detected in ＀. The ＀ Gang is attempting to seize control of the station!", [live(locname), rt.fv(f, "name", rt.sv(f, "gang"))]), "Network Alert"]);
-	yield* g.callName(f, rt.sv(f, "gang"), "domination", []);
-	yield* g.callName(f, rt.gl("SSshuttle"), "registerHostileEnvironment", [live(f.src)]);
-	rt.setSv(f, "name", fmt("＀ Gang ＀", [rt.fv(f, "name", rt.sv(f, "gang")), rt.sv(f, "name")]));
-	rt.setSv(f, "operating", 1);
-	yield* g.srcCall(f, "update_icon");
-	rt.setFv(f, "color", rt.sv(f, "countdown"), rt.fv(f, "color_hex", rt.sv(f, "gang")));
-	yield* g.callName(f, rt.sv(f, "countdown"), "start", []);
-	yield* g.srcCall(f, "set_light", 3);
-	if (!truthy(rt.fv(f, "isprocessing", live(f.src)))) {
-		rt.setFv(f, "isprocessing", live(f.src), 1);
-		rt.modField(f, rt.gl("SSmachines"), "processing", live(f.src), add);
+	let A: Value = get_area(this.loc);
+	let locname: Value = A.map_name;
+	this.gang = tempgang;
+	this.gang.dom_attempts--;
+	yield* priority_announce(`Network breach detected in ${locname}. The ${this.gang.name} Gang is attempting to seize control of the station!`, "Network Alert");
+	this.gang.domination();
+	yield* GLOB.SSshuttle.registerHostileEnvironment(this);
+	this.name = `${this.gang.name} Gang ${this.name}`;
+	this.operating = 1;
+	yield* this.update_icon();
+	this.countdown.color = this.gang.color_hex;
+	yield* this.countdown.start();
+	this.set_light(3);
+	if (!this.isprocessing) {
+		this.isprocessing = 1;
+		GLOB.SSmachines.processing += this;
 	}
-	$0 = rt.sv(f, "gang");
-	$1 = live(time);
-	if (truthy(rt.fv(f, "dom_attempts", rt.sv(f, "gang")))) {
+	let $0: any = this.gang;
+	let $1: any = time;
+	if (this.gang.dom_attempts) {
 		$2 = "";
 	} else {
 		$2 = " This is your final attempt.";
 	}
-	yield* g.callName(f, $0, "message_gangtools", [fmt("Hostile takeover in progress: Estimated ＀ minutes until victory.＀", [$1, $2])]);
-	G = null;
-	rt.forList(f, 0, rt.gv(f, "gangs", rt.fv(f, "mode", rt.gl("SSticker"))), T("/datum/gang"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		G = $e;
-		if (!isEqual(live(G), rt.sv(f, "gang"))) {
-			yield* g.callName(f, live(G), "message_gangtools", [fmt("Enemy takeover attempt detected in ＀: Estimated ＀ minutes until our defeat.", [live(locname), live(time)]), 1, 1]);
+	$0.message_gangtools(`Hostile takeover in progress: Estimated ${$1} minutes until victory.${$2}`);
+	for (G of each(GLOB.SSticker.mode.gangs, T("/datum/gang"))) {
+		if (G != this.gang) {
+			G.message_gangtools(`Enemy takeover attempt detected in ${locname}: Estimated ${time} minutes until our defeat.`, 1, 1);
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);

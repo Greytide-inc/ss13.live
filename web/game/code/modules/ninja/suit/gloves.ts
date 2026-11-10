@@ -1,7 +1,7 @@
-// From code/modules/ninja/suit/gloves.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/ninja/suit/gloves.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(7697, "/obj/item/clothing/gloves/space_ninja", "/obj/item/clothing/gloves", {
@@ -22,35 +22,34 @@ rt.type(7697, "/obj/item/clothing/gloves/space_ninja", "/obj/item/clothing/glove
 	resistance_flags: 35,
 });
 
-// /obj/item/clothing/gloves/space_ninja/proc/Touch  (code/modules/ninja/suit/gloves.dm:42)  may sleep
+// gloves.dm:42
 rt.def("/obj/item/clothing/gloves/space_ninja/proc/Touch", function* Touch(f: Frame, A: Value, proximity: Value) {
-	let H: Value = null, suit: Value = null;
-	f.vars = () => [A, proximity, H, suit];
-	if ((!truthy(rt.sv(f, "candrain")) || truthy(rt.sv(f, "draining")))) {
+	let suit: Value = null;
+	if (!this.candrain || this.draining) {
 		return 0;
 	}
-	if (!truthy((rt.istype(rt.sv(f, "loc"), T("/mob/living/carbon/human")) ? 1 : 0))) {
+	if (!rt.istype(this.loc, T("/mob/living/carbon/human"))) {
 		return 0;
 	}
-	H = rt.sv(f, "loc");
-	if (!truthy((rt.istype((suit = rt.fv(f, "wear_suit", live(H))), T("/obj/item/clothing/suit/space/space_ninja")) ? 1 : 0))) {
+	let H: Value = this.loc;
+	if (!rt.istype((suit = H.wear_suit), T("/obj/item/clothing/suit/space/space_ninja"))) {
 		return 0;
 	}
-	if (truthy((yield* g.call(f, P("/proc/isturf"), null, [live(A)])))) {
+	if (isturf(A)) {
 		return 0;
 	}
-	if (!truthy(live(proximity))) {
+	if (!proximity) {
 		return 0;
 	}
-	yield* g.callName(f, live(A), "add_fingerprint", [live(H)]);
-	rt.setSv(f, "draining", 1);
-	f.dot = (yield* g.callName(f, live(A), "ninjadrain_act", [live(suit), live(H), live(f.src)]));
-	rt.setSv(f, "draining", 0);
-	if (truthy((yield* g.call(f, P("/proc/isnum"), null, [live(f.dot)])))) {
-		if (truthy(live(f.dot))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(H), fmt("<span class='notice'>Gained <B>＀</B> energy from ％！.</span>", [live(f.dot), live(A)])]);
+	yield* A.add_fingerprint(H);
+	this.draining = 1;
+	f.dot = (yield* A.ninjadrain_act(suit, H, this));
+	this.draining = 0;
+	if (isnum(f.dot)) {
+		if (f.dot) {
+			to_chat(H, fmt("<span class='notice'>Gained <B>＀</B> energy from ％！.</span>", [f.dot, A]));
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(H), fmt("<span class='danger'>＄！ has run dry of power, you must find another source!</span>", [live(A)])]);
+			to_chat(H, fmt("<span class='danger'>＄！ has run dry of power, you must find another source!</span>", [A]));
 		}
 	} else {
 		f.dot = 0;
@@ -58,35 +57,27 @@ rt.def("/obj/item/clothing/gloves/space_ninja/proc/Touch", function* Touch(f: Fr
 	return f.dot;
 }, true);
 
-// /obj/item/clothing/gloves/space_ninja/proc/toggledrain  (code/modules/ninja/suit/gloves.dm:74)
+// gloves.dm:74
 rt.def("/obj/item/clothing/gloves/space_ninja/proc/toggledrain", function toggledrain(f: Frame) {
 	let U: Value = null;
-	let $0: any, $1: any;
-	f.vars = () => [U, $0, $1];
-	$0 = (U = rt.sv(f, "loc"));
-	if (truthy(rt.sv(f, "candrain"))) {
-		$0 = $0;
+	let $1: any;
+	let $0: any = (U = this.loc);
+	if (this.candrain) {
+
 		$1 = "disable";
 	} else {
 		$1 = "enable";
 	}
-	rt.call(f, P("/proc/to_chat"), null, [$0, fmt("You <b>＀</b> special interaction.", [$1])]);
-	rt.setSv(f, "candrain", (!truthy(rt.sv(f, "candrain")) ? 1 : 0));
+	to_chat($0, `You <b>${$1}</b> special interaction.`);
+	this.candrain = (!this.candrain ? 1 : 0);
 	return f.dot;
 });
 
-// /obj/item/clothing/gloves/space_ninja/proc/examine  (code/modules/ninja/suit/gloves.dm:79)
-rt.def("/obj/item/clothing/gloves/space_ninja/proc/examine", function examine(f: Frame) {
-	let $0: any, $1: any;
-	f.vars = () => [$0, $1];
-	rt.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.bitAnd(rt.sv(f, "flags"), 2))) return f.dot;
-	$0 = live(f.args[0]);
-	if (truthy(rt.sv(f, "candrain"))) {
-		$1 = "active";
-	} else {
-		$1 = "inactive";
-	}
-	rt.call(f, P("/proc/to_chat"), null, [$0, fmt("The energy drain mechanism is: <B>＀</B>.", [$1])]);
+// gloves.dm:79
+rt.def("/obj/item/clothing/gloves/space_ninja/proc/examine", function examine(f: Frame, user: Value) {
+	parent_proc();
+	if (!rt.bitAnd(this.flags, NODROP)) return f.dot;
+	let $0: any = user;
+	to_chat($0, `The energy drain mechanism is: <B>${this.candrain ? "active" : "inactive"}</B>.`);
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);

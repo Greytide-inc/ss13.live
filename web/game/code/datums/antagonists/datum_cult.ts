@@ -1,7 +1,7 @@
-// From code/datums/antagonists/datum_cult.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/datums/antagonists/datum_cult.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(898, "/datum/antagonist/cult", "/datum/antagonist", {
@@ -9,194 +9,174 @@ rt.type(898, "/datum/antagonist/cult", "/datum/antagonist", {
 	vote: null,
 });
 
-// /datum/antagonist/cult/proc/<init>  (code/datums/antagonists/datum_cult.dm:4)  may sleep
+// datum_cult.dm:4
 rt.def("/datum/antagonist/cult/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "communion", (yield* g.new_(f, T("/datum/action/innate/cult/comm"), [])));
-	$0 = $0;
-	rt.setSv(f, "vote", (yield* g.new_(f, T("/datum/action/innate/cult/mastervote"), [])));
+	yield* parent_proc();
+	this.communion = (yield* new_(T("/datum/action/innate/cult/comm")));
+
+	this.vote = (yield* new_(T("/datum/action/innate/cult/mastervote")));
 	return f.dot;
 }, true);
 
-// /datum/antagonist/cult/proc/Destroy  (code/datums/antagonists/datum_cult.dm:8)  may sleep
+// datum_cult.dm:8
 rt.def("/datum/antagonist/cult/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "communion")]);
-	rt.setSv(f, "communion", null);
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "vote")]);
-	rt.setSv(f, "vote", null);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* qdel(this.communion);
+	this.communion = null;
+	yield* qdel(this.vote);
+	this.vote = null;
+	return (yield* parent_proc());
 }, true);
 
-// /datum/antagonist/cult/proc/add_objectives  (code/datums/antagonists/datum_cult.dm:13)  may sleep
+// datum_cult.dm:13
 rt.def("/datum/antagonist/cult/proc/add_objectives", function* add_objectives(f: Frame) {
-	let target_candidates: Value = null, player: Value = null, sacjob: Value = null, sacface: Value = null, reshape: Value = null, summon: Value = null;
-	let $e: any;
-	f.vars = () => [target_candidates, player, sacjob, sacface, reshape, summon, $e];
-	target_candidates = rt.list();
-	player = null;
-	rt.forList(f, 0, rt.gl("player_list"), T("/mob/living/carbon/human"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		player = $e;
-		if (((((truthy(rt.fv(f, "mind", live(player))) && !truthy((yield* g.callName(f, rt.fv(f, "mind", live(player)), "has_antag_datum", [T("/datum/antagonist/cult")])))) && !truthy((yield* g.call(f, P("/proc/is_convertable_to_cult"), null, [live(player)])))) && !isEqual(live(player), rt.sv(f, "owner"))) && !isEqual(rt.fv(f, "stat", live(player)), 2))) {
-			target_candidates = rt.modify(live(target_candidates), rt.fv(f, "mind", live(player)), add);
+	let player: Value = null, sacjob: Value = null, sacface: Value = null, reshape: Value = null, summon: Value = null;
+	let target_candidates: Value = list();
+	for (player of each(GLOB.player_list, T("/mob/living/carbon/human"))) {
+		if (player.mind && !player.mind.has_antag_datum(T("/datum/antagonist/cult")) && !is_convertable_to_cult(player) && player != this.owner && player.stat != 2) {
+			target_candidates += player.mind;
 		}
 	}
-	rt.endFor(f, 0);
-	if (isEqual(rt.len(f, live(target_candidates)), 0)) {
-		yield* g.call(f, P("/proc/message_admins"), null, ["Cult Sacrifice: Could not find unconvertable target, checking for convertable target."]);
+	if (rt.len(f, target_candidates) == 0) {
+		message_admins("Cult Sacrifice: Could not find unconvertable target, checking for convertable target.");
 		player = null;
-		rt.forList(f, 0, rt.gl("player_list"), T("/mob/living/carbon/human"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			player = $e;
-			if ((((truthy(rt.fv(f, "mind", live(player))) && !truthy((yield* g.callName(f, rt.fv(f, "mind", live(player)), "has_antag_datum", [T("/datum/antagonist/cult")])))) && !isEqual(live(player), rt.sv(f, "owner"))) && !isEqual(rt.fv(f, "stat", live(player)), 2))) {
-				target_candidates = rt.modify(live(target_candidates), rt.fv(f, "mind", live(player)), add);
+		for (player of each(GLOB.player_list, T("/mob/living/carbon/human"))) {
+			if (player.mind && !player.mind.has_antag_datum(T("/datum/antagonist/cult")) && player != this.owner && player.stat != 2) {
+				target_candidates += player.mind;
 			}
 		}
-		rt.endFor(f, 0);
 	}
-	yield* g.call(f, P("/proc/listclearnulls"), null, [live(target_candidates)]);
-	if (truthy(rt.length(live(target_candidates)))) {
-		rt.setGl("sac_mind", rt.op(f, "PickUnweighted", [1], [live(target_candidates)]));
-		if (!truthy(rt.gl("sac_mind"))) {
-			yield* g.call(f, P("/proc/message_admins"), null, ["Cult Sacrifice: ERROR -  Null target chosen!"]);
+	listclearnulls(target_candidates);
+	if (rt.length(target_candidates)) {
+		GLOB.sac_mind = pick(target_candidates);
+		if (!GLOB.sac_mind) {
+			message_admins("Cult Sacrifice: ERROR -  Null target chosen!");
 		} else {
-			sacjob = (yield* g.callName(f, rt.gl("SSjob"), "GetJob", [rt.fv(f, "assigned_role", rt.gl("sac_mind"))]));
-			sacface = rt.gv(f, "prefs", rt.gv(f, "client", rt.fv(f, "current", rt.gl("sac_mind"))));
-			yield* g.callName(f, (reshape = (yield* g.call(f, P("/proc/get_flat_human_icon"), null, [null, live(sacjob), live(sacface)]))), "Shift", [2, 4]);
-			yield* g.callName(f, live(reshape), "Shift", [4, 1]);
-			yield* g.callName(f, live(reshape), "Crop", [7, 4, 26, 31]);
-			yield* g.callName(f, live(reshape), "Crop", [-5, -3, 26, 30]);
-			rt.setGl("sac_image", live(reshape));
+			sacjob = (yield* GLOB.SSjob.GetJob(GLOB.sac_mind.assigned_role));
+			sacface = GLOB.sac_mind.current.client.prefs;
+			(reshape = (yield* get_flat_human_icon(null, sacjob, sacface))).Shift(2, 4);
+			reshape.Shift(4, 1);
+			reshape.Crop(7, 4, 26, 31);
+			reshape.Crop(-5, -3, 26, 30);
+			GLOB.sac_image = reshape;
 		}
 	} else {
-		yield* g.call(f, P("/proc/message_admins"), null, ["Cult Sacrifice: Could not find unconvertable or convertable target. WELP!"]);
-		rt.setGl("sac_complete", 1);
+		message_admins("Cult Sacrifice: Could not find unconvertable or convertable target. WELP!");
+		GLOB.sac_complete = 1;
 	}
-	rt.modField(f, rt.fv(f, "mode", rt.gl("SSticker")), "cult_objectives", "sacrifice", add);
-	if (!truthy(rt.len(f, rt.gl("summon_spots")))) {
-		while (rt.lt(rt.len(f, rt.gl("summon_spots")), 3)) {
-			if (((truthy((summon = rt.op(f, "PickUnweighted", [1], [subtract(rt.gl("sortedAreas"), rt.gl("summon_spots"))]))) && isEqual(rt.fv(f, "z", live(summon)), 2)) && truthy(rt.fv(f, "valid_territory", live(summon))))) {
-				rt.modGl("summon_spots", live(summon), add);
+	GLOB.SSticker.mode.cult_objectives += "sacrifice";
+	if (!rt.len(f, GLOB.summon_spots)) {
+		while (rt.len(f, GLOB.summon_spots) < SUMMON_POSSIBILITIES) {
+			if ((summon = pick(GLOB.sortedAreas - GLOB.summon_spots)) && summon.z == ZLEVEL_STATION && summon.valid_territory) {
+				GLOB.summon_spots += summon;
 			}
 		}
 	}
-	rt.modField(f, rt.fv(f, "mode", rt.gl("SSticker")), "cult_objectives", "eldergod", add);
+	GLOB.SSticker.mode.cult_objectives += "eldergod";
 	return f.dot;
 }, true);
 
-// /datum/antagonist/cult/proc/cult_memorization  (code/datums/antagonists/datum_cult.dm:49)
+// datum_cult.dm:49
 rt.def("/datum/antagonist/cult/proc/cult_memorization", function cult_memorization(f: Frame, cult_mind: Value) {
-	let current: Value = null, obj_count: Value = null, explanation: Value = null;
-	let $0: any;
-	f.vars = () => [current, obj_count, explanation, $0];
-	current = rt.fv(f, "current", live(cult_mind));
-	obj_count = null;
-	obj_count = 1;
-	while (rt.le(live(obj_count), rt.getLen(f, rt.gv(f, "cult_objectives", rt.fv(f, "mode", rt.gl("SSticker")))))) {
+	let explanation: Value = null;
+	let current: Value = cult_mind.current;
+	let obj_count: Value = 1;
+	while (obj_count <= rt.len(f, GLOB.SSticker.mode.cult_objectives)) {
 		explanation = null;
-		$0 = rt.index(rt.gv(f, "cult_objectives", rt.fv(f, "mode", rt.gl("SSticker"))), live(obj_count));
-		if ($0 === "sacrifice") {
-			if (truthy(rt.gl("sac_mind"))) {
-				explanation = fmt("Sacrifice ＀, the ＀ via invoking a Sacrifice rune with them on it and three acolytes around it.", [rt.gl("sac_mind"), rt.fv(f, "assigned_role", rt.gl("sac_mind"))]);
+		const item = rt.index(GLOB.SSticker.mode.cult_objectives, obj_count);
+		if (item === "sacrifice") {
+			if (GLOB.sac_mind) {
+				explanation = `Sacrifice ${GLOB.sac_mind}, the ${GLOB.sac_mind.assigned_role} via invoking a Sacrifice rune with them on it and three acolytes around it.`;
 			} else {
 				explanation = "The veil has already been weakened here, proceed to the final objective.";
-				rt.setGl("sac_complete", 1);
+				GLOB.sac_complete = 1;
 			}
-		} else if ($0 === "eldergod") {
-			explanation = fmt("Summon Nar-Sie by invoking the rune 'Summon Nar-Sie'. <b>The summoning can only be accomplished in ＀ - where the veil is weak enough for the ritual to begin.</b>", [rt.call(f, P("/proc/english_list"), null, [rt.gl("summon_spots")])]);
+		} else if (item === "eldergod") {
+			explanation = `Summon Nar-Sie by invoking the rune 'Summon Nar-Sie'. <b>The summoning can only be accomplished in ${english_list(GLOB.summon_spots)} - where the veil is weak enough for the ritual to begin.</b>`;
 		}
-		if (!truthy(rt.sv(f, "silent"))) {
-			rt.call(f, P("/proc/to_chat"), null, [live(current), fmt("<B>Objective #＀</B>: ＀", [live(obj_count), live(explanation)])]);
+		if (!this.silent) {
+			to_chat(current, `<B>Objective #${obj_count}</B>: ${explanation}`);
 		}
-		rt.modField(f, live(cult_mind), "memory", fmt("<B>Objective #＀</B>: ＀<BR>", [live(obj_count), live(explanation)]), add);
-		obj_count = rt.inc(live(obj_count), 1);
+		cult_mind.memory += `<B>Objective #${obj_count}</B>: ${explanation}<BR>`;
+		obj_count++;
 	}
 	return f.dot;
 });
 
-// /datum/antagonist/cult/proc/can_be_owned  (code/datums/antagonists/datum_cult.dm:65)
-rt.def("/datum/antagonist/cult/proc/can_be_owned", function can_be_owned(f: Frame) {
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	if (!truthy(live(f.dot))) return f.dot;
-	f.dot = rt.call(f, P("/proc/is_convertable_to_cult"), null, [rt.fv(f, "current", live(f.args[0]))]);
+// datum_cult.dm:65
+rt.def("/datum/antagonist/cult/proc/can_be_owned", function can_be_owned(f: Frame, new_owner: Value) {
+	f.dot = parent_proc();
+	if (!f.dot) return f.dot;
+	f.dot = is_convertable_to_cult(new_owner.current);
 	return f.dot;
-}, false, { args: ["new_owner"] });
+}, false);
 
-// /datum/antagonist/cult/proc/on_gain  (code/datums/antagonists/datum_cult.dm:70)  may sleep
+// datum_cult.dm:70
 rt.def("/datum/antagonist/cult/proc/on_gain", function* on_gain(f: Frame) {
-	let current: Value = null;
-	f.vars = () => [current];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	current = rt.fv(f, "current", rt.sv(f, "owner"));
-	if (!truthy(rt.length(rt.gv(f, "cult_objectives", rt.fv(f, "mode", rt.gl("SSticker")))))) {
-		yield* g.srcCall(f, "add_objectives");
+	f.dot = (yield* parent_proc());
+	let current: Value = this.owner.current;
+	if (!rt.length(GLOB.SSticker.mode.cult_objectives)) {
+		yield* this.add_objectives();
 	}
-	rt.modField(f, rt.fv(f, "mode", rt.gl("SSticker")), "cult", rt.sv(f, "owner"), add);
-	yield* g.srcCall(f, "cult_memorization", rt.sv(f, "owner"));
-	if (truthy((yield* g.call(f, P("/proc/jobban_isbanned"), null, [live(current), "cultist"])))) {
-		yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [rt.fv(f, "mode", rt.gl("SSticker")), P("/datum/game_mode/proc/replace_jobbaned_player"), live(current), "cultist", "cultist"])), 0]);
+	GLOB.SSticker.mode.cult += this.owner;
+	this.cult_memorization(this.owner);
+	if (jobban_isbanned(current, "cultist")) {
+		yield* addtimer((yield* new_(T("/datum/callback"), GLOB.SSticker.mode, P("/datum/game_mode/proc/replace_jobbaned_player"), current, "cultist", "cultist")), 0);
 	}
-	yield* g.callName(f, rt.fv(f, "mode", rt.gl("SSticker")), "update_cult_icons_added", [rt.sv(f, "owner")]);
-	yield* g.callName(f, live(current), "log_message", ["<font color=#960000>Has been converted to the cult of Nar'Sie!</font>", "Attack log"]);
-	if (!((truthy(rt.gl("blood_target")) && truthy(rt.gl("blood_target_image"))) && truthy(rt.fv(f, "client", live(current))))) return f.dot;
-	rt.modField(f, rt.fv(f, "client", live(current)), "images", rt.gl("blood_target_image"), add);
+	GLOB.SSticker.mode.update_cult_icons_added(this.owner);
+	current.log_message("<font color=#960000>Has been converted to the cult of Nar'Sie!</font>", "Attack log");
+	if (!(GLOB.blood_target && GLOB.blood_target_image && current.client)) return f.dot;
+	current.client.images += GLOB.blood_target_image;
 	return f.dot;
 }, true);
 
-// /datum/antagonist/cult/proc/apply_innate_effects  (code/datums/antagonists/datum_cult.dm:84)  may sleep
-rt.def("/datum/antagonist/cult/proc/apply_innate_effects", function* apply_innate_effects(f: Frame) {
-	let current: Value = null;
-	f.vars = () => [current];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	current = rt.fv(f, "current", rt.sv(f, "owner"));
-	if (truthy(live(f.args[0]))) {
-		current = live(f.args[0]);
+// datum_cult.dm:84
+rt.def("/datum/antagonist/cult/proc/apply_innate_effects", function* apply_innate_effects(f: Frame, mob_override: Value) {
+	f.dot = (yield* parent_proc());
+	let current: Value = this.owner.current;
+	if (mob_override) {
+		current = mob_override;
 	}
-	(rt.modField(f, live(current), "faction", "cult", rt.bitOr));
-	yield* g.callName(f, live(current), "grant_language", [T("/datum/language/narsie")]);
-	rt.modField(f, live(current), "verbs", P("/mob/living/proc/cult_help"), add);
-	if (!truthy(rt.gl("cult_mastered"))) {
-		yield* g.callName(f, rt.sv(f, "vote"), "Grant", [live(current)]);
+	(rt.modField(f, current, "faction", "cult", rt.bitOr));
+	yield* current.grant_language(T("/datum/language/narsie"));
+	current.verbs += P("/mob/living/proc/cult_help");
+	if (!GLOB.cult_mastered) {
+		yield* this.vote.Grant(current);
 	}
-	yield* g.callName(f, rt.sv(f, "communion"), "Grant", [live(current)]);
-	yield* g.callName(f, live(current), "throw_alert", ["bloodsense", T("/obj/screen/alert/bloodsense")]);
+	yield* this.communion.Grant(current);
+	yield* current.throw_alert("bloodsense", T("/obj/screen/alert/bloodsense"));
 	return f.dot;
-}, true, { args: ["mob_override"] });
+}, true);
 
-// /datum/antagonist/cult/proc/remove_innate_effects  (code/datums/antagonists/datum_cult.dm:97)  may sleep
-rt.def("/datum/antagonist/cult/proc/remove_innate_effects", function* remove_innate_effects(f: Frame) {
-	let current: Value = null;
-	f.vars = () => [current];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	current = rt.fv(f, "current", rt.sv(f, "owner"));
-	if (truthy(live(f.args[0]))) {
-		current = live(f.args[0]);
+// datum_cult.dm:97
+rt.def("/datum/antagonist/cult/proc/remove_innate_effects", function* remove_innate_effects(f: Frame, mob_override: Value) {
+	f.dot = (yield* parent_proc());
+	let current: Value = this.owner.current;
+	if (mob_override) {
+		current = mob_override;
 	}
-	(rt.modField(f, live(current), "faction", "cult", subtract));
-	yield* g.callName(f, live(current), "remove_language", [T("/datum/language/narsie")]);
-	(rt.modField(f, live(current), "verbs", P("/mob/living/proc/cult_help"), subtract));
-	yield* g.callName(f, rt.sv(f, "vote"), "Remove", [live(current)]);
-	yield* g.callName(f, rt.sv(f, "communion"), "Remove", [live(current)]);
-	yield* g.callName(f, live(current), "clear_alert", ["bloodsense"]);
+	current.faction -= "cult";
+	yield* current.remove_language(T("/datum/language/narsie"));
+	current.verbs -= P("/mob/living/proc/cult_help");
+	yield* this.vote.Remove(current);
+	yield* this.communion.Remove(current);
+	yield* current.clear_alert("bloodsense");
 	return f.dot;
-}, true, { args: ["mob_override"] });
+}, true);
 
-// /datum/antagonist/cult/proc/on_removal  (code/datums/antagonists/datum_cult.dm:109)  may sleep
+// datum_cult.dm:109
 rt.def("/datum/antagonist/cult/proc/on_removal", function* on_removal(f: Frame) {
-	yield* g.callName(f, rt.sv(f, "owner"), "wipe_memory", []);
-	(rt.modField(f, rt.fv(f, "mode", rt.gl("SSticker")), "cult", rt.sv(f, "owner"), subtract));
-	yield* g.callName(f, rt.fv(f, "mode", rt.gl("SSticker")), "update_cult_icons_removed", [rt.sv(f, "owner")]);
-	if (!truthy(rt.sv(f, "silent"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [rt.fv(f, "current", rt.sv(f, "owner")), "<span class='userdanger'>An unfamiliar white light flashes through your mind, cleansing the taint of the Geometer and all your memories as her servant.</span>"]);
-		yield* g.callName(f, rt.fv(f, "current", rt.sv(f, "owner")), "log_message", ["<font color=#960000>Has renounced the cult of Nar'Sie!</font>", "Attack log"]);
-		yield* g.callName(f, rt.fv(f, "current", rt.sv(f, "owner")), "visible_message", [fmt("<span class='big'>＀ looks like ＀ just reverted to their old faith!</span>", [rt.fv(f, "current", rt.sv(f, "owner")), (yield* g.callName(f, rt.fv(f, "current", rt.sv(f, "owner")), "p_they", []))])]);
+	this.owner.wipe_memory();
+	GLOB.SSticker.mode.cult -= this.owner;
+	GLOB.SSticker.mode.update_cult_icons_removed(this.owner);
+	if (!this.silent) {
+		to_chat(this.owner.current, "<span class='userdanger'>An unfamiliar white light flashes through your mind, cleansing the taint of the Geometer and all your memories as her servant.</span>");
+		this.owner.current.log_message("<font color=#960000>Has renounced the cult of Nar'Sie!</font>", "Attack log");
+		this.owner.current.visible_message(`<span class='big'>${this.owner.current} looks like ${this.owner.current.p_they()} just reverted to their old faith!</span>`);
 	}
-	if (((truthy(rt.gl("blood_target")) && truthy(rt.gl("blood_target_image"))) && truthy(rt.gv(f, "client", rt.fv(f, "current", rt.sv(f, "owner")))))) {
-		(rt.modField(f, rt.gv(f, "client", rt.fv(f, "current", rt.sv(f, "owner"))), "images", rt.gl("blood_target_image"), subtract));
+	if (GLOB.blood_target && GLOB.blood_target_image && this.owner.current.client) {
+		this.owner.current.client.images -= GLOB.blood_target_image;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true);
 
@@ -206,79 +186,71 @@ rt.type(899, "/datum/antagonist/cult/master", "/datum/antagonist/cult", {
 	throwing: null,
 });
 
-// /datum/antagonist/cult/master/proc/<init>  (code/datums/antagonists/datum_cult.dm:121)  may sleep
+// datum_cult.dm:121
 rt.def("/datum/antagonist/cult/master/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "reckoning", (yield* g.new_(f, T("/datum/action/innate/cult/master/finalreck"), [])));
-	$0 = $0;
-	rt.setSv(f, "bloodmark", (yield* g.new_(f, T("/datum/action/innate/cult/master/cultmark"), [])));
-	$0 = $0;
-	rt.setSv(f, "throwing", (yield* g.new_(f, T("/datum/action/innate/cult/master/pulse"), [])));
+	yield* parent_proc();
+	this.reckoning = (yield* new_(T("/datum/action/innate/cult/master/finalreck")));
+
+	this.bloodmark = (yield* new_(T("/datum/action/innate/cult/master/cultmark")));
+
+	this.throwing = (yield* new_(T("/datum/action/innate/cult/master/pulse")));
 	return f.dot;
 }, true);
 
-// /datum/antagonist/cult/master/proc/Destroy  (code/datums/antagonists/datum_cult.dm:126)  may sleep
+// datum_cult.dm:126
 rt.def("/datum/antagonist/cult/master/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "reckoning")]);
-	rt.setSv(f, "reckoning", null);
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "bloodmark")]);
-	rt.setSv(f, "bloodmark", null);
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "throwing")]);
-	rt.setSv(f, "throwing", null);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* qdel(this.reckoning);
+	this.reckoning = null;
+	yield* qdel(this.bloodmark);
+	this.bloodmark = null;
+	yield* qdel(this.throwing);
+	this.throwing = null;
+	return (yield* parent_proc());
 }, true);
 
-// /datum/antagonist/cult/master/proc/on_gain  (code/datums/antagonists/datum_cult.dm:132)  may sleep
+// datum_cult.dm:132
 rt.def("/datum/antagonist/cult/master/proc/on_gain", function* on_gain(f: Frame) {
-	let current: Value = null;
-	f.vars = () => [current];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	current = rt.fv(f, "current", rt.sv(f, "owner"));
-	yield* g.callName(f, rt.fv(f, "mode", rt.gl("SSticker")), "set_antag_hud", [live(current), "cultmaster"]);
+	f.dot = (yield* parent_proc());
+	let current: Value = this.owner.current;
+	GLOB.SSticker.mode.set_antag_hud(current, "cultmaster");
 	return f.dot;
 }, true);
 
-// /datum/antagonist/cult/master/proc/greet  (code/datums/antagonists/datum_cult.dm:137)
+// datum_cult.dm:137
 rt.def("/datum/antagonist/cult/master/proc/greet", function greet(f: Frame) {
-	rt.call(f, P("/proc/to_chat"), null, [rt.fv(f, "current", rt.sv(f, "owner")), "<span class='cultlarge'>You are the cult's Master</span>. As the cult's Master, you have a unique title and loud voice when communicating, are capable of marking targets, such as a location or a noncultist, to direct the cult to them, and, finally, you are capable of summoning the entire living cult to your location <b><i>once</i></b>."]);
-	rt.call(f, P("/proc/to_chat"), null, [rt.fv(f, "current", rt.sv(f, "owner")), "Use these abilities to direct the cult to victory at any cost."]);
+	to_chat(this.owner.current, "<span class='cultlarge'>You are the cult's Master</span>. As the cult's Master, you have a unique title and loud voice when communicating, are capable of marking targets, such as a location or a noncultist, to direct the cult to them, and, finally, you are capable of summoning the entire living cult to your location <b><i>once</i></b>.");
+	to_chat(this.owner.current, "Use these abilities to direct the cult to victory at any cost.");
 	return f.dot;
 });
 
-// /datum/antagonist/cult/master/proc/apply_innate_effects  (code/datums/antagonists/datum_cult.dm:142)  may sleep
-rt.def("/datum/antagonist/cult/master/proc/apply_innate_effects", function* apply_innate_effects(f: Frame) {
-	let current: Value = null;
-	f.vars = () => [current];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	current = rt.fv(f, "current", rt.sv(f, "owner"));
-	if (truthy(live(f.args[0]))) {
-		current = live(f.args[0]);
+// datum_cult.dm:142
+rt.def("/datum/antagonist/cult/master/proc/apply_innate_effects", function* apply_innate_effects(f: Frame, mob_override: Value) {
+	f.dot = (yield* parent_proc());
+	let current: Value = this.owner.current;
+	if (mob_override) {
+		current = mob_override;
 	}
-	if (!truthy(rt.gl("reckoning_complete"))) {
-		yield* g.callName(f, rt.sv(f, "reckoning"), "Grant", [live(current)]);
+	if (!GLOB.reckoning_complete) {
+		yield* this.reckoning.Grant(current);
 	}
-	yield* g.callName(f, rt.sv(f, "bloodmark"), "Grant", [live(current)]);
-	yield* g.callName(f, rt.sv(f, "throwing"), "Grant", [live(current)]);
-	yield* g.callName(f, live(current), "update_action_buttons_icon", []);
-	yield* g.callName(f, live(current), "apply_status_effect", [T("/datum/status_effect/cult_master")]);
+	yield* this.bloodmark.Grant(current);
+	yield* this.throwing.Grant(current);
+	yield* current.update_action_buttons_icon();
+	yield* current.apply_status_effect(T("/datum/status_effect/cult_master"));
 	return f.dot;
-}, true, { args: ["mob_override"] });
+}, true);
 
-// /datum/antagonist/cult/master/proc/remove_innate_effects  (code/datums/antagonists/datum_cult.dm:154)  may sleep
-rt.def("/datum/antagonist/cult/master/proc/remove_innate_effects", function* remove_innate_effects(f: Frame) {
-	let current: Value = null;
-	f.vars = () => [current];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	current = rt.fv(f, "current", rt.sv(f, "owner"));
-	if (truthy(live(f.args[0]))) {
-		current = live(f.args[0]);
+// datum_cult.dm:154
+rt.def("/datum/antagonist/cult/master/proc/remove_innate_effects", function* remove_innate_effects(f: Frame, mob_override: Value) {
+	f.dot = (yield* parent_proc());
+	let current: Value = this.owner.current;
+	if (mob_override) {
+		current = mob_override;
 	}
-	yield* g.callName(f, rt.sv(f, "reckoning"), "Remove", [live(current)]);
-	yield* g.callName(f, rt.sv(f, "bloodmark"), "Remove", [live(current)]);
-	yield* g.callName(f, rt.sv(f, "throwing"), "Remove", [live(current)]);
-	yield* g.callName(f, live(current), "update_action_buttons_icon", []);
-	yield* g.callName(f, live(current), "remove_status_effect", [T("/datum/status_effect/cult_master")]);
+	yield* this.reckoning.Remove(current);
+	yield* this.bloodmark.Remove(current);
+	yield* this.throwing.Remove(current);
+	yield* current.update_action_buttons_icon();
+	yield* current.remove_status_effect(T("/datum/status_effect/cult_master"));
 	return f.dot;
-}, true, { args: ["mob_override"] });
+}, true);

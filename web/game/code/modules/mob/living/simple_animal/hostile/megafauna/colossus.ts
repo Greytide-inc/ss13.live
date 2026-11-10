@@ -1,7 +1,7 @@
-// From code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, fmt } = rt;
 
 
 rt.type(5024, "/mob/living/simple_animal/hostile/megafauna/colossus", "/mob/living/simple_animal/hostile/megafauna", {
@@ -34,74 +34,67 @@ rt.type(5024, "/mob/living/simple_animal/hostile/megafauna/colossus", "/mob/livi
 	death_sound: rt.rsc("sound/magic/demon_dies.ogg"),
 });
 
-// /mob/living/simple_animal/hostile/megafauna/colossus/proc/<init>  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:38)
+// colossus.dm:38
 rt.def("/mob/living/simple_animal/hostile/megafauna/colossus/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "speak_emote", rt.list("roars"));
-	$0 = $0;
-	rt.setSv(f, "crusher_loot", rt.list(T("/obj/structure/closet/crate/necropolis/colossus/crusher")));
-	$0 = $0;
-	rt.setSv(f, "loot", rt.list(T("/obj/structure/closet/crate/necropolis/colossus")));
-	$0 = $0;
-	rt.setSv(f, "butcher_results", rt.alist(f, [T("/obj/item/weapon/ore/diamond"), 5, T("/obj/item/stack/sheet/sinew"), 5, T("/obj/item/stack/sheet/animalhide/ashdrake"), 10, T("/obj/item/stack/sheet/bone"), 30]));
+	parent_proc();
+	this.speak_emote = list("roars");
+
+	this.crusher_loot = list(T("/obj/structure/closet/crate/necropolis/colossus/crusher"));
+
+	this.loot = list(T("/obj/structure/closet/crate/necropolis/colossus"));
+
+	this.butcher_results = rt.alist(f, [T("/obj/item/weapon/ore/diamond"), 5, T("/obj/item/stack/sheet/sinew"), 5, T("/obj/item/stack/sheet/animalhide/ashdrake"), 10, T("/obj/item/stack/sheet/bone"), 30]);
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/megafauna/colossus/proc/devour  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:56)  may sleep
+// colossus.dm:56
 rt.def("/mob/living/simple_animal/hostile/megafauna/colossus/proc/devour", function* devour(f: Frame, L: Value) {
-	f.vars = () => [L];
-	yield* g.srcCall(f, "visible_message", fmt("<span class='colossus'>＀ disintegrates ＀!</span>", [live(f.src), live(L)]));
-	yield* g.callName(f, live(L), "dust", []);
+	this.visible_message(`<span class='colossus'>${this} disintegrates ${L}!</span>`);
+	yield* L.dust();
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/megafauna/colossus/proc/OpenFire  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:60)  may sleep
+// colossus.dm:60
 rt.def("/mob/living/simple_animal/hostile/megafauna/colossus/proc/OpenFire", function* OpenFire(f: Frame) {
-	rt.setSv(f, "anger_modifier", (yield* g.call(f, P("/proc/max"), null, [0, (yield* g.call(f, P("/proc/min"), null, [divide(subtract(rt.sv(f, "maxHealth"), rt.sv(f, "health")), 50), 20]))])));
-	rt.setSv(f, "ranged_cooldown", add(rt.worldTime(f), 120));
-	if (truthy((yield* g.srcCall(f, "enrage", rt.sv(f, "target"))))) {
-		if (isEqual(rt.sv(f, "move_to_delay"), rt.initial(f, live(f.src), "move_to_delay"))) {
-			yield* g.srcCall(f, "visible_message", "<span class='colossus'>\"<b>You can't dodge.</b>\"</span>");
+	this.anger_modifier = max(0, min((this.maxHealth - this.health) / 50, 20));
+	this.ranged_cooldown = rt.worldTime(f) + 120;
+	if (this.enrage(this.target)) {
+		if (this.move_to_delay == rt.initial(f, this, "move_to_delay")) {
+			this.visible_message("<span class='colossus'>\"<b>You can't dodge.</b>\"</span>");
 		}
-		rt.setSv(f, "ranged_cooldown", add(rt.worldTime(f), 30));
-		yield* g.srcCall(f, "telegraph");
-		yield* g.srcCall(f, "dir_shots", rt.gl("alldirs"));
-		rt.setSv(f, "move_to_delay", 3);
-		return live(f.dot);
+		this.ranged_cooldown = rt.worldTime(f) + 30;
+		yield* this.telegraph();
+		yield* this.dir_shots(GLOB.alldirs);
+		this.move_to_delay = 3;
+		return f.dot;
 	} else {
-		rt.setSv(f, "move_to_delay", rt.initial(f, live(f.src), "move_to_delay"));
+		this.move_to_delay = rt.initial(f, this, "move_to_delay");
 	}
-	if (truthy(rt.op(f, "Prob", [], [add(20, rt.sv(f, "anger_modifier"))]))) {
-		yield* g.srcCall(f, "telegraph");
-		if (rt.lt(rt.sv(f, "health"), divide(rt.sv(f, "maxHealth"), 3))) {
-			yield* g.srcCall(f, "double_spiral");
+	if (prob(20 + this.anger_modifier)) {
+		yield* this.telegraph();
+		if (this.health < this.maxHealth / 3) {
+			yield* this.double_spiral();
 		} else {
-			yield* g.srcCall(f, "visible_message", "<span class='colossus'>\"<b>Judgement.</b>\"</span>");
-			yield* g.call(f, P("/proc/ImmediateInvokeAsync"), null, [live(f.src), P("/mob/living/simple_animal/hostile/megafauna/colossus/proc/spiral_shoot"), (yield* g.call(f, P("/proc/rand"), null, [0, 1]))]);
+			this.visible_message("<span class='colossus'>\"<b>Judgement.</b>\"</span>");
+			yield* ImmediateInvokeAsync(this, P("/mob/living/simple_animal/hostile/megafauna/colossus/proc/spiral_shoot"), rand(0, 1));
 		}
+	} else if (prob(20)) {
+		this.ranged_cooldown = rt.worldTime(f) + 30;
+		yield* this.random_shots();
+	} else if (prob(70)) {
+		this.ranged_cooldown = rt.worldTime(f) + 20;
+		yield* this.blast();
 	} else {
-		if (truthy(rt.op(f, "Prob", [], [20]))) {
-			rt.setSv(f, "ranged_cooldown", add(rt.worldTime(f), 30));
-			yield* g.srcCall(f, "random_shots");
-		} else {
-			if (truthy(rt.op(f, "Prob", [], [70]))) {
-				rt.setSv(f, "ranged_cooldown", add(rt.worldTime(f), 20));
-				yield* g.srcCall(f, "blast");
-			} else {
-				rt.setSv(f, "ranged_cooldown", add(rt.worldTime(f), 40));
-				yield* g.call(f, P("/proc/ImmediateInvokeAsync"), null, [live(f.src), P("/mob/living/simple_animal/hostile/megafauna/colossus/proc/alternating_dir_shots")]);
-			}
-		}
+		this.ranged_cooldown = rt.worldTime(f) + 40;
+		yield* ImmediateInvokeAsync(this, P("/mob/living/simple_animal/hostile/megafauna/colossus/proc/alternating_dir_shots"));
 	}
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/megafauna/colossus/proc/Initialize  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:96)  may sleep
+// colossus.dm:96
 rt.def("/mob/living/simple_animal/hostile/megafauna/colossus/proc/Initialize", function* Initialize(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "internal", (yield* g.new_(f, T("/obj/item/device/gps/internal/colossus"), [live(f.src)])));
+	yield* parent_proc();
+	this.internal = (yield* new_(T("/obj/item/device/gps/internal/colossus"), this));
 	return f.dot;
 }, true);
 
@@ -116,223 +109,188 @@ rt.type(11686, "/obj/effect/temp_visual/at_shield", "/obj/effect/temp_visual", {
 	layer: 5,
 });
 
-// /obj/effect/temp_visual/at_shield/proc/Initialize  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:110)  may sleep
-rt.def("/obj/effect/temp_visual/at_shield/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "target", live(f.args[1]));
-	yield* g.call(f, P("/proc/ImmediateInvokeAsync"), null, [live(f.src), P("/atom/movable/proc/orbit"), rt.sv(f, "target"), 0, 0, 0, 0, 0, 1]);
+// colossus.dm:110
+rt.def("/obj/effect/temp_visual/at_shield/proc/Initialize", function* Initialize(f: Frame, mapload: Value, new_target: Value) {
+	f.dot = (yield* parent_proc());
+	this.target = new_target;
+	yield* ImmediateInvokeAsync(this, P("/atom/movable/proc/orbit"), this.target, 0, 0, 0, 0, 0, 1);
 	return f.dot;
-}, true, { args: ["mapload", "new_target"] });
+}, true);
 
-// /mob/living/simple_animal/hostile/megafauna/colossus/proc/bullet_act  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:115)  may sleep
+// colossus.dm:115
 rt.def("/mob/living/simple_animal/hostile/megafauna/colossus/proc/bullet_act", function* bullet_act(f: Frame) {
 	let AT: Value = null, random_x: Value = null, random_y: Value = null;
-	f.vars = () => [AT, random_x, random_y];
-	if (!truthy(rt.sv(f, "stat"))) {
-		AT = (yield* g.new_(f, T("/obj/effect/temp_visual/at_shield"), [rt.fv(f, "loc", live(f.src)), live(f.src)]));
-		random_x = (yield* g.call(f, P("/proc/rand"), null, [-32, 32]));
-		rt.modField(f, live(AT), "pixel_x", live(random_x), add);
-		random_y = (yield* g.call(f, P("/proc/rand"), null, [0, 72]));
-		rt.modField(f, live(AT), "pixel_y", live(random_y), add);
+	if (!this.stat) {
+		AT = (yield* new_(T("/obj/effect/temp_visual/at_shield"), this.loc, this));
+		random_x = rand(-32, 32);
+		AT.pixel_x += random_x;
+		random_y = rand(0, 72);
+		AT.pixel_y += random_y;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true, { args: ["P"] });
 
-// /mob/living/simple_animal/hostile/megafauna/colossus/proc/enrage  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:125)
+// colossus.dm:125
 rt.def("/mob/living/simple_animal/hostile/megafauna/colossus/proc/enrage", function enrage(f: Frame, L: Value) {
 	let H: Value = null;
-	f.vars = () => [H];
-	if (!truthy((rt.istype(live(L), T("/mob/living/carbon/human")) ? 1 : 0))) return f.dot;
-	if (!truthy(rt.gv(f, "mind", (H = live(L))))) return f.dot;
-	if (!(truthy(rt.gv(f, "martial_art", rt.fv(f, "mind", live(H)))) && truthy(rt.op(f, "Prob", [], [rt.gv(f, "deflection_chance", rt.gv(f, "martial_art", rt.fv(f, "mind", live(H))))])))) return f.dot;
+	if (!rt.istype(L, T("/mob/living/carbon/human"))) return f.dot;
+	if (!(H = L).mind) return f.dot;
+	if (!(H.mind.martial_art && prob(H.mind.martial_art.deflection_chance))) return f.dot;
 	f.dot = 1;
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/megafauna/colossus/proc/alternating_dir_shots  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:132)  may sleep
+// colossus.dm:132
 rt.def("/mob/living/simple_animal/hostile/megafauna/colossus/proc/alternating_dir_shots", function* alternating_dir_shots(f: Frame) {
-	yield* g.srcCall(f, "dir_shots", rt.gl("diagonals"));
-	yield* g.call(f, P("/proc/sleep"), null, [10]);
-	yield* g.srcCall(f, "dir_shots", rt.gl("cardinal"));
-	yield* g.call(f, P("/proc/sleep"), null, [10]);
-	yield* g.srcCall(f, "dir_shots", rt.gl("diagonals"));
-	yield* g.call(f, P("/proc/sleep"), null, [10]);
-	yield* g.srcCall(f, "dir_shots", rt.gl("cardinal"));
+	yield* this.dir_shots(GLOB.diagonals);
+	yield* sleep(10);
+	yield* this.dir_shots(GLOB.cardinal);
+	yield* sleep(10);
+	yield* this.dir_shots(GLOB.diagonals);
+	yield* sleep(10);
+	yield* this.dir_shots(GLOB.cardinal);
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/megafauna/colossus/proc/double_spiral  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:141)  may sleep
+// colossus.dm:141
 rt.def("/mob/living/simple_animal/hostile/megafauna/colossus/proc/double_spiral", function* double_spiral(f: Frame) {
-	yield* g.srcCall(f, "visible_message", "<span class='colossus'>\"<b>Die.</b>\"</span>");
-	yield* g.call(f, P("/proc/sleep"), null, [10]);
-	yield* g.call(f, P("/proc/ImmediateInvokeAsync"), null, [live(f.src), P("/mob/living/simple_animal/hostile/megafauna/colossus/proc/spiral_shoot")]);
-	yield* g.call(f, P("/proc/ImmediateInvokeAsync"), null, [live(f.src), P("/mob/living/simple_animal/hostile/megafauna/colossus/proc/spiral_shoot"), 1]);
+	this.visible_message("<span class='colossus'>\"<b>Die.</b>\"</span>");
+	yield* sleep(10);
+	yield* ImmediateInvokeAsync(this, P("/mob/living/simple_animal/hostile/megafauna/colossus/proc/spiral_shoot"));
+	yield* ImmediateInvokeAsync(this, P("/mob/living/simple_animal/hostile/megafauna/colossus/proc/spiral_shoot"), 1);
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/megafauna/colossus/proc/spiral_shoot  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:148)  may sleep
+// colossus.dm:148
 rt.def("/mob/living/simple_animal/hostile/megafauna/colossus/proc/spiral_shoot", function* spiral_shoot(f: Frame, negative: Value, counter_start: Value) {
-	let counter: Value = null, marker: Value = null, i: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [negative, counter_start, counter, marker, i, $0, $e];
-	if (live(negative) === null) {
-		negative = 0;
-	}
-	if (live(counter_start) === null) {
-		counter_start = 1;
-	}
-	counter = live(counter_start);
-	marker = null;
-	i = null;
+	let marker: Value = null, i: Value = null;
+	let $e: any;
+	negative ??= 0;
+	counter_start ??= 1;
+	let counter: Value = counter_start;
 	rt.forRange(f, 0, 1, 80, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		$0 = live(counter);
-		if ($0 === 1) {
-			marker = rt.locate(rt.sv(f, "x"), subtract(rt.sv(f, "y"), 2), rt.sv(f, "z"));
-		} else if ($0 === 2) {
-			marker = rt.locate(subtract(rt.sv(f, "x"), 1), subtract(rt.sv(f, "y"), 2), rt.sv(f, "z"));
-		} else if ($0 === 3) {
-			marker = rt.locate(subtract(rt.sv(f, "x"), 2), subtract(rt.sv(f, "y"), 2), rt.sv(f, "z"));
-		} else if ($0 === 4) {
-			marker = rt.locate(subtract(rt.sv(f, "x"), 2), subtract(rt.sv(f, "y"), 1), rt.sv(f, "z"));
-		} else if ($0 === 5) {
-			marker = rt.locate(subtract(rt.sv(f, "x"), 2), rt.sv(f, "y"), rt.sv(f, "z"));
-		} else if ($0 === 6) {
-			marker = rt.locate(subtract(rt.sv(f, "x"), 2), add(rt.sv(f, "y"), 1), rt.sv(f, "z"));
-		} else if ($0 === 7) {
-			marker = rt.locate(subtract(rt.sv(f, "x"), 2), add(rt.sv(f, "y"), 2), rt.sv(f, "z"));
-		} else if ($0 === 8) {
-			marker = rt.locate(subtract(rt.sv(f, "x"), 1), add(rt.sv(f, "y"), 2), rt.sv(f, "z"));
-		} else if ($0 === 9) {
-			marker = rt.locate(rt.sv(f, "x"), add(rt.sv(f, "y"), 2), rt.sv(f, "z"));
-		} else if ($0 === 10) {
-			marker = rt.locate(add(rt.sv(f, "x"), 1), add(rt.sv(f, "y"), 2), rt.sv(f, "z"));
-		} else if ($0 === 11) {
-			marker = rt.locate(add(rt.sv(f, "x"), 2), add(rt.sv(f, "y"), 2), rt.sv(f, "z"));
-		} else if ($0 === 12) {
-			marker = rt.locate(add(rt.sv(f, "x"), 2), add(rt.sv(f, "y"), 1), rt.sv(f, "z"));
-		} else if ($0 === 13) {
-			marker = rt.locate(add(rt.sv(f, "x"), 2), rt.sv(f, "y"), rt.sv(f, "z"));
-		} else if ($0 === 14) {
-			marker = rt.locate(add(rt.sv(f, "x"), 2), subtract(rt.sv(f, "y"), 1), rt.sv(f, "z"));
-		} else if ($0 === 15) {
-			marker = rt.locate(add(rt.sv(f, "x"), 2), subtract(rt.sv(f, "y"), 2), rt.sv(f, "z"));
-		} else if ($0 === 16) {
-			marker = rt.locate(add(rt.sv(f, "x"), 1), subtract(rt.sv(f, "y"), 2), rt.sv(f, "z"));
+		if (counter === 1) {
+			marker = rt.locate(this.x, this.y - 2, this.z);
+		} else if (counter === 2) {
+			marker = rt.locate(this.x - 1, this.y - 2, this.z);
+		} else if (counter === 3) {
+			marker = rt.locate(this.x - 2, this.y - 2, this.z);
+		} else if (counter === 4) {
+			marker = rt.locate(this.x - 2, this.y - 1, this.z);
+		} else if (counter === 5) {
+			marker = rt.locate(this.x - 2, this.y, this.z);
+		} else if (counter === 6) {
+			marker = rt.locate(this.x - 2, this.y + 1, this.z);
+		} else if (counter === 7) {
+			marker = rt.locate(this.x - 2, this.y + 2, this.z);
+		} else if (counter === 8) {
+			marker = rt.locate(this.x - 1, this.y + 2, this.z);
+		} else if (counter === 9) {
+			marker = rt.locate(this.x, this.y + 2, this.z);
+		} else if (counter === 10) {
+			marker = rt.locate(this.x + 1, this.y + 2, this.z);
+		} else if (counter === 11) {
+			marker = rt.locate(this.x + 2, this.y + 2, this.z);
+		} else if (counter === 12) {
+			marker = rt.locate(this.x + 2, this.y + 1, this.z);
+		} else if (counter === 13) {
+			marker = rt.locate(this.x + 2, this.y, this.z);
+		} else if (counter === 14) {
+			marker = rt.locate(this.x + 2, this.y - 1, this.z);
+		} else if (counter === 15) {
+			marker = rt.locate(this.x + 2, this.y - 2, this.z);
+		} else if (counter === 16) {
+			marker = rt.locate(this.x + 1, this.y - 2, this.z);
 		}
-		if (truthy(live(negative))) {
-			counter = rt.inc(live(counter), -1);
+		if (negative) {
+			counter--;
 		} else {
-			counter = rt.inc(live(counter), 1);
+			counter++;
 		}
-		if (rt.gt(live(counter), 16)) {
+		if (counter > 16) {
 			counter = 1;
 		}
-		if (rt.lt(live(counter), 1)) {
+		if (counter < 1) {
 			counter = 16;
 		}
-		yield* g.srcCall(f, "shoot_projectile", live(marker));
-		yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/magic/clockwork/invoke_general.ogg"), 20, 1]);
-		yield* g.call(f, P("/proc/sleep"), null, [1]);
+		yield* this.shoot_projectile(marker);
+		playsound(rt.getStep(f, this, 0), rt.rsc("sound/magic/clockwork/invoke_general.ogg"), 20, 1);
+		yield* sleep(1);
 	}
 	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/megafauna/colossus/proc/shoot_projectile  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:198)  may sleep
+// colossus.dm:198
 rt.def("/mob/living/simple_animal/hostile/megafauna/colossus/proc/shoot_projectile", function* shoot_projectile(f: Frame, marker: Value) {
-	let startloc: Value = null, _P: Value = null;
-	f.vars = () => [marker, startloc, _P];
-	if ((!truthy(live(marker)) || isEqual(live(marker), rt.sv(f, "loc")))) {
-		return live(f.dot);
+	let _P: Value = null;
+	if (!marker || marker == this.loc) {
+		return f.dot;
 	}
-	startloc = rt.getStep(f, live(f.src), 0);
-	rt.setFv(f, "current", (_P = (yield* g.new_(f, T("/obj/item/projectile/colossus"), [live(startloc)]))), live(startloc));
-	rt.setFv(f, "starting", live(_P), live(startloc));
-	rt.setFv(f, "firer", live(_P), live(f.src));
-	rt.setFv(f, "yo", live(_P), subtract(rt.fv(f, "y", live(marker)), rt.fv(f, "y", live(startloc))));
-	rt.setFv(f, "xo", live(_P), subtract(rt.fv(f, "x", live(marker)), rt.fv(f, "x", live(startloc))));
-	if (truthy(rt.sv(f, "target"))) {
-		rt.setFv(f, "original", live(_P), rt.sv(f, "target"));
+	let startloc: Value = rt.getStep(f, this, 0);
+	(_P = (yield* new_(T("/obj/item/projectile/colossus"), startloc))).current = startloc;
+	_P.starting = startloc;
+	_P.firer = this;
+	_P.yo = marker.y - startloc.y;
+	_P.xo = marker.x - startloc.x;
+	if (this.target) {
+		_P.original = this.target;
 	} else {
-		rt.setFv(f, "original", live(_P), live(marker));
+		_P.original = marker;
 	}
-	yield* g.callName(f, live(_P), "fire", []);
+	yield* _P.fire();
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/megafauna/colossus/proc/random_shots  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:214)  may sleep
+// colossus.dm:214
 rt.def("/mob/living/simple_animal/hostile/megafauna/colossus/proc/random_shots", function* random_shots(f: Frame) {
 	let U: Value = null, _T: Value = null;
-	let $e: any;
-	f.vars = () => [U, _T, $e];
-	yield* g.call(f, P("/proc/playsound"), null, [(U = rt.getStep(f, live(f.src), 0)), rt.rsc("sound/magic/clockwork/invoke_general.ogg"), 300, 1, 5]);
-	_T = null;
-	rt.forList(f, 0, subtract((yield* g.call(f, P("/proc/block"), null, [rt.locate((yield* g.call(f, P("/proc/max"), null, [subtract(rt.fv(f, "x", live(U)), 12), 1])), (yield* g.call(f, P("/proc/max"), null, [subtract(rt.fv(f, "y", live(U)), 12), 1])), rt.fv(f, "z", live(U))), rt.locate((yield* g.call(f, P("/proc/min"), null, [add(rt.fv(f, "x", live(U)), 12), rt.fv(f, "maxx", rt.world())])), (yield* g.call(f, P("/proc/min"), null, [add(rt.fv(f, "y", live(U)), 12), rt.fv(f, "maxy", rt.world())])), rt.fv(f, "z", live(U)))])), live(U)));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_T = $e;
-		if (truthy(rt.op(f, "Prob", [], [5]))) {
-			yield* g.srcCall(f, "shoot_projectile", live(_T));
+	playsound((U = rt.getStep(f, this, 0)), rt.rsc("sound/magic/clockwork/invoke_general.ogg"), 300, 1, 5);
+	for (_T of each(block(rt.locate(max(U.x - 12, 1), max(U.y - 12, 1), U.z), rt.locate(min(U.x + 12, rt.world().maxx), min(U.y + 12, rt.world().maxy), U.z)) - U)) {
+		if (prob(5)) {
+			yield* this.shoot_projectile(_T);
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/megafauna/colossus/proc/blast  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:221)  may sleep
+// colossus.dm:221
 rt.def("/mob/living/simple_animal/hostile/megafauna/colossus/proc/blast", function* blast(f: Frame) {
 	let _T: Value = null, turf: Value = null;
-	let $e: any;
-	f.vars = () => [_T, turf, $e];
-	yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/magic/clockwork/invoke_general.ogg"), 200, 1, 2]);
-	yield* g.srcCall(f, "newtonian_move", rt.getDir(f, (_T = rt.getStep(f, rt.sv(f, "target"), 0)), rt.sv(f, "targets_from")));
-	turf = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/range"), null, [1, live(_T)])), T("/turf"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		turf = $e;
-		yield* g.srcCall(f, "shoot_projectile", live(turf));
+	playsound(rt.getStep(f, this, 0), rt.rsc("sound/magic/clockwork/invoke_general.ogg"), 200, 1, 2);
+	yield* this.newtonian_move(rt.getDir(f, (_T = rt.getStep(f, this.target, 0)), this.targets_from));
+	for (turf of each(range(1, _T), T("/turf"))) {
+		yield* this.shoot_projectile(turf);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/megafauna/colossus/proc/dir_shots  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:228)  may sleep
+// colossus.dm:228
 rt.def("/mob/living/simple_animal/hostile/megafauna/colossus/proc/dir_shots", function* dir_shots(f: Frame, dirs: Value) {
 	let d: Value = null, E: Value = null;
-	let $e: any;
-	f.vars = () => [dirs, d, E, $e];
-	if (!truthy((rt.istype(live(dirs), T("/list")) ? 1 : 0))) {
-		dirs = (yield* g.callName(f, rt.gl("alldirs"), "Copy", []));
+	if (!rt.istype(dirs, T("/list"))) {
+		dirs = (yield* GLOB.alldirs.Copy());
 	}
-	yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/magic/clockwork/invoke_general.ogg"), 200, 1, 2]);
-	d = null;
-	rt.forList(f, 0, live(dirs));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		d = $e;
-		yield* g.srcCall(f, "shoot_projectile", (E = rt.getStep(f, live(f.src), live(d))));
+	playsound(rt.getStep(f, this, 0), rt.rsc("sound/magic/clockwork/invoke_general.ogg"), 200, 1, 2);
+	for (d of each(dirs)) {
+		yield* this.shoot_projectile((E = rt.getStep(f, this, d)));
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/megafauna/colossus/proc/telegraph  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:236)
+// colossus.dm:236
 rt.def("/mob/living/simple_animal/hostile/megafauna/colossus/proc/telegraph", function telegraph(f: Frame) {
 	let M: Value = null;
-	let $e: any;
-	f.vars = () => [M, $e];
-	M = null;
-	rt.forList(f, 0, rt.call(f, P("/proc/range"), null, [10, live(f.src)]), T("/mob"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if (truthy(rt.fv(f, "client", live(M)))) {
-			rt.call(f, P("/proc/flash_color"), null, [rt.fv(f, "client", live(M)), "#c80000", 1]);
-			rt.call(f, P("/proc/shake_camera"), null, [live(M), 4, 3]);
+	for (M of each(range(10, this), T("/mob"))) {
+		if (M.client) {
+			flash_color(M.client, "#c80000", 1);
+			shake_camera(M, 4, 3);
 		}
 	}
-	rt.endFor(f, 0);
-	rt.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/magic/clockwork/narsie_attack.ogg"), 200, 1]);
+	playsound(rt.getStep(f, this, 0), rt.rsc("sound/magic/clockwork/narsie_attack.ogg"), 200, 1);
 	return f.dot;
 });
 
@@ -347,14 +305,14 @@ rt.type(8898, "/obj/item/projectile/colossus", "/obj/item/projectile", {
 	damage_type: "brute",
 });
 
-// /obj/item/projectile/colossus/proc/on_hit  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:255)  may sleep
+// colossus.dm:255
 rt.def("/obj/item/projectile/colossus/proc/on_hit", function* on_hit(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!(truthy((yield* g.call(f, P("/proc/isturf"), null, [live(f.args[0])]))) || truthy((rt.istype(live(f.args[0]), T("/obj")) ? 1 : 0)))) return f.dot;
-	yield* g.callName(f, live(f.args[0]), "ex_act", [2]);
+	f.dot = (yield* parent_proc());
+	if (!(isturf(f.args[0]) || rt.istype(f.args[0], T("/obj")))) return f.dot;
+	yield* f.args[0].ex_act(2);
 	return f.dot;
 }, true, { args: ["target", "blocked"] });
 
@@ -374,108 +332,87 @@ rt.type(10914, "/obj/machinery/smartfridge/black_box", "/obj/machinery/smartfrid
 	pixel_y: -4,
 }, { global: { blacklist: 765 } });
 
-// /obj/machinery/smartfridge/black_box/proc/<init>  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:283)
+// colossus.dm:283
 rt.def("/obj/machinery/smartfridge/black_box/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "stored_items", rt.list());
+	parent_proc();
+	this.stored_items = list();
 	return f.dot;
 });
 
-// /obj/machinery/smartfridge/black_box/proc/accept_check  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:290)
+// colossus.dm:290
 rt.def("/obj/machinery/smartfridge/black_box/proc/accept_check", function accept_check(f: Frame, O: Value) {
-	if (!truthy((rt.istype(live(O), T("/obj/item")) ? 1 : 0))) {
+	if (!rt.istype(O, T("/obj/item"))) {
 		return 0;
 	}
-	if (truthy(rt.call(f, P("/proc/is_type_in_typecache"), null, [live(O), rt.gl("blacklist")]))) {
+	if (is_type_in_typecache(O, GLOB.blacklist)) {
 		return 0;
 	}
 	return 1;
 });
 
-// /obj/machinery/smartfridge/black_box/proc/New  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:298)  may sleep
+// colossus.dm:298
 rt.def("/obj/machinery/smartfridge/black_box/proc/New", function* New(f: Frame) {
-	if ((truthy(rt.gl("current")) && !isEqual(rt.gl("current"), live(f.src)))) {
-		yield* g.call(f, P("/proc/qdel"), null, [null, live(f.src), "force", 1], rt.Args.Named);
-		return live(f.dot);
+	if (GLOB.current && GLOB.current != this) {
+		yield* qdel(this, { force: 1 });
+		return f.dot;
 	}
-	rt.setGl("current", live(f.src));
-	yield* g.srcCall(f, "ReadMemory");
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	GLOB.current = this;
+	yield* this.ReadMemory();
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true);
 
-// /obj/machinery/smartfridge/black_box/proc/process  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:306)
+// colossus.dm:306
 rt.def("/obj/machinery/smartfridge/black_box/proc/process", function process(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	if (!(!truthy(rt.sv(f, "memory_saved")) && isEqual(rt.fv(f, "current_state", rt.gl("SSticker")), 4))) return f.dot;
-	rt.callSrc(f, "WriteMemory", []);
+	parent_proc();
+	if (!(!this.memory_saved && GLOB.SSticker.current_state == GAME_STATE_FINISHED)) return f.dot;
+	this.WriteMemory();
 	return f.dot;
 }, false, { waitfor: false });
 
-// /obj/machinery/smartfridge/black_box/proc/WriteMemory  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:311)
+// colossus.dm:311
 rt.def("/obj/machinery/smartfridge/black_box/proc/WriteMemory", function WriteMemory(f: Frame) {
-	let S: Value = null, O: Value = null;
-	let $e: any;
-	f.vars = () => [S, O, $e];
-	S = rt.new_(f, T("/savefile"), ["data/npc_saves/Blackbox.sav"]);
-	rt.setSv(f, "stored_items", rt.list());
-	O = null;
-	rt.forList(f, 0, subtract(rt.sv(f, "contents"), rt.sv(f, "component_parts")), T("/obj"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		O = $e;
-		rt.modSrcVar(f, "stored_items", rt.fv(f, "type", live(O)), add);
+	let O: Value = null;
+	let S: Value = new_(T("/savefile"), "data/npc_saves/Blackbox.sav");
+	this.stored_items = list();
+	for (O of each(this.contents - this.component_parts, T("/obj"))) {
+		this.stored_items += O.type;
 	}
-	rt.endFor(f, 0);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "stored_items", rt.sv(f, "stored_items")], false);
-	rt.setSv(f, "memory_saved", 1);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "stored_items", this.stored_items], false);
+	this.memory_saved = 1;
 	return f.dot;
 });
 
-// /obj/machinery/smartfridge/black_box/proc/ReadMemory  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:321)  may sleep
+// colossus.dm:321
 rt.def("/obj/machinery/smartfridge/black_box/proc/ReadMemory", function* ReadMemory(f: Frame) {
 	let S: Value = null, item: Value = null;
-	let $e: any;
-	f.vars = () => [S, item, $e];
-	rt.setSv(f, "stored_items", rt.input(f, rt.R.index, null, [(S = (yield* g.new_(f, T("/savefile"), ["data/npc_saves/Blackbox.sav"]))), "stored_items"]));
-	if (rt.sv(f, "stored_items") === null) {
-		rt.setSv(f, "stored_items", rt.list());
+	this.stored_items = rt.input(f, rt.R.index, null, [(S = (yield* new_(T("/savefile"), "data/npc_saves/Blackbox.sav"))), "stored_items"]);
+	if (this.stored_items === null) {
+		this.stored_items = list();
 	}
-	item = null;
-	rt.forList(f, 0, rt.sv(f, "stored_items"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		item = $e;
-		yield* g.srcCall(f, "create_item", live(item));
+	for (item of each(this.stored_items)) {
+		yield* this.create_item(item);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /obj/machinery/smartfridge/black_box/proc/create_item  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:333)  may sleep
+// colossus.dm:333
 rt.def("/obj/machinery/smartfridge/black_box/proc/create_item", function* create_item(f: Frame, item_type: Value) {
-	f.vars = () => [item_type];
-	yield* g.new_(f, live(item_type), [live(f.src)]);
+	yield* new_(item_type, this);
 	return f.dot;
 }, true);
 
-// /obj/machinery/smartfridge/black_box/proc/Destroy  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:337)  may sleep
+// colossus.dm:337
 rt.def("/obj/machinery/smartfridge/black_box/proc/Destroy", function* Destroy(f: Frame) {
 	let thing: Value = null;
-	let $e: any;
-	f.vars = () => [thing, $e];
-	if (live(f.args[0]) === null) {
+	if (f.args[0] === null) {
 		f.args[0] = 0;
 	}
-	if (truthy(live(f.args[0]))) {
-		thing = null;
-		rt.forList(f, 0, live(f.src));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			thing = $e;
-			yield* g.call(f, P("/proc/qdel"), null, [live(thing)]);
+	if (f.args[0]) {
+		for (thing of each(this)) {
+			yield* qdel(thing);
 		}
-		rt.endFor(f, 0);
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+		return (yield* parent_proc());
 	}
 	return 1;
 }, true, { args: ["force"] });
@@ -500,98 +437,96 @@ rt.type(10947, "/obj/machinery/anomalous_crystal", "/obj/machinery", {
 	density: 1,
 });
 
-// /obj/machinery/anomalous_crystal/proc/<init>  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:392)
+// colossus.dm:392
 rt.def("/obj/machinery/anomalous_crystal/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "possible_methods", rt.list("touch", "speech", "heat", "bullet", "energy", "bomb", "bumping", "weapon", "magic"));
-	$0 = $0;
-	rt.setSv(f, "affected_targets", rt.list());
+	parent_proc();
+	this.possible_methods = list("touch", "speech", "heat", "bullet", "energy", "bomb", "bumping", "weapon", "magic");
+
+	this.affected_targets = list();
 	return f.dot;
 });
 
-// /obj/machinery/anomalous_crystal/proc/Initialize  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:396)  may sleep
-rt.def("/obj/machinery/anomalous_crystal/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (truthy(rt.sv(f, "activation_method"))) return f.dot;
-	rt.setSv(f, "activation_method", rt.op(f, "PickUnweighted", [1], [rt.sv(f, "possible_methods")]));
+// colossus.dm:396
+rt.def("/obj/machinery/anomalous_crystal/proc/Initialize", function* Initialize(f: Frame, mapload: Value) {
+	f.dot = (yield* parent_proc());
+	if (this.activation_method) return f.dot;
+	this.activation_method = pick(this.possible_methods);
 	return f.dot;
-}, true, { args: ["mapload"] });
+}, true);
 
-// /obj/machinery/anomalous_crystal/proc/examine  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:401)
-rt.def("/obj/machinery/anomalous_crystal/proc/examine", function examine(f: Frame) {
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	if (!truthy((rt.istype(live(f.args[0]), T("/mob/dead/observer")) ? 1 : 0))) return f.dot;
-	rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), rt.sv(f, "observer_desc")]);
-	rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("It is activated by ＀.", [rt.sv(f, "activation_method")])]);
+// colossus.dm:401
+rt.def("/obj/machinery/anomalous_crystal/proc/examine", function examine(f: Frame, user: Value) {
+	f.dot = parent_proc();
+	if (!rt.istype(user, T("/mob/dead/observer"))) return f.dot;
+	to_chat(user, this.observer_desc);
+	to_chat(user, `It is activated by ${this.activation_method}.`);
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/machinery/anomalous_crystal/proc/Hear  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:407)  may sleep
-rt.def("/obj/machinery/anomalous_crystal/proc/Hear", function* Hear(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy((rt.istype(live(f.args[1]), T("/mob/living")) ? 1 : 0))) return f.dot;
-	yield* g.srcCall(f, "ActivationReaction", live(f.args[1]), "speech");
+// colossus.dm:407
+rt.def("/obj/machinery/anomalous_crystal/proc/Hear", function* Hear(f: Frame, message: Value, speaker: Value, message_langs: Value, raw_message: Value, radio_freq: Value, spans: Value, message_mode: Value) {
+	yield* parent_proc();
+	if (!rt.istype(speaker, T("/mob/living"))) return f.dot;
+	yield* this.ActivationReaction(speaker, "speech");
 	return f.dot;
-}, true, { args: ["message", "speaker", "message_langs", "raw_message", "radio_freq", "spans", "message_mode"] });
+}, true);
 
-// /obj/machinery/anomalous_crystal/proc/attack_hand  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:412)  may sleep
-rt.def("/obj/machinery/anomalous_crystal/proc/attack_hand", function* attack_hand(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "ActivationReaction", live(f.args[0]), "touch");
+// colossus.dm:412
+rt.def("/obj/machinery/anomalous_crystal/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
+	yield* parent_proc();
+	yield* this.ActivationReaction(user, "touch");
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /obj/machinery/anomalous_crystal/proc/attackby  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:416)  may sleep
-rt.def("/obj/machinery/anomalous_crystal/proc/attackby", function* attackby(f: Frame) {
-	if (truthy((yield* g.callName(f, live(f.args[0]), "is_hot", [])))) {
-		yield* g.srcCall(f, "ActivationReaction", live(f.args[1]), "heat");
+// colossus.dm:416
+rt.def("/obj/machinery/anomalous_crystal/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
+	if (I.is_hot()) {
+		yield* this.ActivationReaction(user, "heat");
 	} else {
-		yield* g.srcCall(f, "ActivationReaction", live(f.args[1]), "weapon");
+		yield* this.ActivationReaction(user, "weapon");
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["I", "user", "params"] });
+}, true);
 
-// /obj/machinery/anomalous_crystal/proc/bullet_act  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:423)  may sleep
-rt.def("/obj/machinery/anomalous_crystal/proc/bullet_act", function* bullet_act(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/projectile/magic")) ? 1 : 0))) {
-		yield* g.srcCall(f, "ActivationReaction", rt.fv(f, "firer", live(f.args[0])), "magic", rt.fv(f, "damage_type", live(f.args[0])));
-		return live(f.dot);
+// colossus.dm:423
+rt.def("/obj/machinery/anomalous_crystal/proc/bullet_act", function* bullet_act(f: Frame, P: Value, def_zone: Value) {
+	yield* parent_proc();
+	if (rt.istype(P, T("/obj/item/projectile/magic"))) {
+		yield* this.ActivationReaction(P.firer, "magic", P.damage_type);
+		return f.dot;
 	}
-	yield* g.srcCall(f, "ActivationReaction", rt.fv(f, "firer", live(f.args[0])), rt.fv(f, "flag", live(f.args[0])), rt.fv(f, "damage_type", live(f.args[0])));
+	yield* this.ActivationReaction(P.firer, P.flag, P.damage_type);
 	return f.dot;
-}, true, { args: ["P", "def_zone"] });
+}, true);
 
-// /obj/machinery/anomalous_crystal/proc/ActivationReaction  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:430)
+// colossus.dm:430
 rt.def("/obj/machinery/anomalous_crystal/proc/ActivationReaction", function ActivationReaction(f: Frame, user: Value, method: Value, damtype: Value) {
-	if (rt.lt(rt.worldTime(f), rt.sv(f, "last_use_timer"))) {
+	if (rt.worldTime(f) < this.last_use_timer) {
 		return 0;
 	}
-	if ((truthy(rt.sv(f, "activation_damage_type")) && !isEqual(rt.sv(f, "activation_damage_type"), live(damtype)))) {
+	if (this.activation_damage_type && this.activation_damage_type != damtype) {
 		return 0;
 	}
-	if (!isEqual(live(method), rt.sv(f, "activation_method"))) {
+	if (method != this.activation_method) {
 		return 0;
 	}
-	rt.setSv(f, "last_use_timer", add(rt.worldTime(f), rt.sv(f, "cooldown_add")));
-	rt.call(f, P("/proc/playsound"), null, [live(user), rt.sv(f, "activation_sound"), 100, 1]);
+	this.last_use_timer = rt.worldTime(f) + this.cooldown_add;
+	playsound(user, this.activation_sound, 100, 1);
 	return 1;
 });
 
-// /obj/machinery/anomalous_crystal/proc/Bumped  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:441)  may sleep
-rt.def("/obj/machinery/anomalous_crystal/proc/Bumped", function* Bumped(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy((yield* g.call(f, P("/proc/ismob"), null, [live(f.args[0])])))) return f.dot;
-	yield* g.srcCall(f, "ActivationReaction", live(f.args[0]), "bumping");
+// colossus.dm:441
+rt.def("/obj/machinery/anomalous_crystal/proc/Bumped", function* Bumped(f: Frame, AM: Value) {
+	yield* parent_proc();
+	if (!ismob(AM)) return f.dot;
+	yield* this.ActivationReaction(AM, "bumping");
 	return f.dot;
-}, true, { args: ["AM"] });
+}, true);
 
-// /obj/machinery/anomalous_crystal/proc/ex_act  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:446)  may sleep
+// colossus.dm:446
 rt.def("/obj/machinery/anomalous_crystal/proc/ex_act", function* ex_act(f: Frame) {
-	yield* g.srcCall(f, "ActivationReaction", null, "bomb");
+	yield* this.ActivationReaction(null, "bomb");
 	return f.dot;
 }, true, { waitfor: false });
 
@@ -601,25 +536,19 @@ rt.type(10948, "/obj/machinery/anomalous_crystal/honk", "/obj/machinery/anomalou
 	activation_sound: rt.rsc("sound/items/bikehorn.ogg"),
 });
 
-// /obj/machinery/anomalous_crystal/honk/proc/ActivationReaction  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:454)  may sleep
-rt.def("/obj/machinery/anomalous_crystal/honk/proc/ActivationReaction", function* ActivationReaction(f: Frame) {
-	let H: Value = null, W: Value = null, C: Value = null;
-	let $e: any;
-	f.vars = () => [H, W, C, $e];
-	if (!((truthy((yield* g.callSuper(f, [], rt.Args.Same))) && truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon/human")) ? 1 : 0))) && !truthy((rt.isIn(f, live(f.args[0]), rt.sv(f, "affected_targets")) ? 1 : 0)))) return f.dot;
-	H = live(f.args[0]);
-	W = null;
-	rt.forList(f, 0, live(H), T("/obj/item"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		W = $e;
-		yield* g.callName(f, live(H), "dropItemToGround", [live(W)]);
+// colossus.dm:454
+rt.def("/obj/machinery/anomalous_crystal/honk/proc/ActivationReaction", function* ActivationReaction(f: Frame, user: Value) {
+	let W: Value = null, C: Value = null;
+	if (!((yield* parent_proc()) && rt.istype(user, T("/mob/living/carbon/human")) && !rt.isIn(f, user, this.affected_targets))) return f.dot;
+	let H: Value = user;
+	for (W of each(H, T("/obj/item"))) {
+		yield* H.dropItemToGround(W);
 	}
-	rt.endFor(f, 0);
-	yield* g.callName(f, (C = (yield* g.new_(f, T("/datum/job/clown"), []))), "equip", [live(H)]);
-	yield* g.call(f, P("/proc/qdel"), null, [live(C)]);
-	yield* g.callName(f, rt.sv(f, "affected_targets"), "Add", [live(H)]);
+	yield* (C = (yield* new_(T("/datum/job/clown")))).equip(H);
+	yield* qdel(C);
+	this.affected_targets.Add(H);
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
 rt.type(10949, "/obj/machinery/anomalous_crystal/theme_warp", "/obj/machinery/anomalous_crystal", {
 	terrain_theme: "winter",
@@ -634,92 +563,81 @@ rt.type(10949, "/obj/machinery/anomalous_crystal/theme_warp", "/obj/machinery/an
 	cooldown_add: 200,
 });
 
-// /obj/machinery/anomalous_crystal/theme_warp/proc/<init>  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:472)
+// colossus.dm:472
 rt.def("/obj/machinery/anomalous_crystal/theme_warp/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "NewFlora", rt.list());
+	parent_proc();
+	this.NewFlora = list();
 	return f.dot;
 });
 
-// /obj/machinery/anomalous_crystal/theme_warp/proc/Initialize  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:476)  may sleep
+// colossus.dm:476
 rt.def("/obj/machinery/anomalous_crystal/theme_warp/proc/Initialize", function* Initialize(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "terrain_theme", rt.op(f, "PickUnweighted", [4], ["lavaland", "winter", "jungle", "ayy lmao"]));
-	rt.setSv(f, "observer_desc", fmt("This crystal changes the area around it to match the theme of \"＀\".", [rt.sv(f, "terrain_theme")]));
-	$0 = rt.sv(f, "terrain_theme");
-	if ($0 === "lavaland") {
-		rt.setSv(f, "NewTerrainFloors", T("/turf/open/floor/grass/snow/basalt"));
-		rt.setSv(f, "NewTerrainWalls", T("/turf/closed/wall/mineral/cult"));
-		rt.setSv(f, "NewFlora", rt.list(T("/mob/living/simple_animal/hostile/asteroid/goldgrub")));
-		rt.setSv(f, "florachance", 1);
-	} else if ($0 === "winter") {
-		rt.setSv(f, "NewTerrainFloors", T("/turf/open/floor/grass/snow"));
-		rt.setSv(f, "NewTerrainWalls", T("/turf/closed/wall/mineral/wood"));
-		rt.setSv(f, "NewTerrainChairs", T("/obj/structure/chair/wood/normal"));
-		rt.setSv(f, "NewTerrainTables", T("/obj/structure/table/glass"));
-		rt.setSv(f, "NewFlora", rt.list(T("/obj/structure/flora/grass/green"), T("/obj/structure/flora/grass/brown"), T("/obj/structure/flora/grass/both")));
-	} else if ($0 === "jungle") {
-		rt.setSv(f, "NewTerrainFloors", T("/turf/open/floor/grass"));
-		rt.setSv(f, "NewTerrainWalls", T("/turf/closed/wall/mineral/sandstone"));
-		rt.setSv(f, "NewTerrainChairs", T("/obj/structure/chair/wood"));
-		rt.setSv(f, "NewTerrainTables", T("/obj/structure/table/wood"));
-		rt.setSv(f, "NewFlora", rt.list(T("/obj/structure/flora/ausbushes/sparsegrass"), T("/obj/structure/flora/ausbushes/fernybush"), T("/obj/structure/flora/ausbushes/leafybush"), T("/obj/structure/flora/ausbushes/grassybush"), T("/obj/structure/flora/ausbushes/sunnybush"), T("/obj/structure/flora/tree/palm"), T("/mob/living/carbon/monkey"), T("/obj/item/weapon/gun/ballistic/bow"), T("/obj/item/weapon/storage/backpack/quiver/full")));
-		rt.setSv(f, "florachance", 20);
-	} else if ($0 === "ayy lmao") {
-		rt.setSv(f, "NewTerrainFloors", T("/turf/open/floor/plating/abductor"));
-		rt.setSv(f, "NewTerrainWalls", T("/turf/closed/wall/mineral/abductor"));
-		rt.setSv(f, "NewTerrainChairs", T("/obj/structure/bed/abductor"));
-		rt.setSv(f, "NewTerrainTables", T("/obj/structure/table/abductor"));
+	f.dot = (yield* parent_proc());
+	this.terrain_theme = pick("lavaland", "winter", "jungle", "ayy lmao");
+	this.observer_desc = `This crystal changes the area around it to match the theme of "${this.terrain_theme}".`;
+	if (this.terrain_theme === "lavaland") {
+		this.NewTerrainFloors = T("/turf/open/floor/grass/snow/basalt");
+		this.NewTerrainWalls = T("/turf/closed/wall/mineral/cult");
+		this.NewFlora = list(T("/mob/living/simple_animal/hostile/asteroid/goldgrub"));
+		this.florachance = 1;
+	} else if (this.terrain_theme === "winter") {
+		this.NewTerrainFloors = T("/turf/open/floor/grass/snow");
+		this.NewTerrainWalls = T("/turf/closed/wall/mineral/wood");
+		this.NewTerrainChairs = T("/obj/structure/chair/wood/normal");
+		this.NewTerrainTables = T("/obj/structure/table/glass");
+		this.NewFlora = list(T("/obj/structure/flora/grass/green"), T("/obj/structure/flora/grass/brown"), T("/obj/structure/flora/grass/both"));
+	} else if (this.terrain_theme === "jungle") {
+		this.NewTerrainFloors = T("/turf/open/floor/grass");
+		this.NewTerrainWalls = T("/turf/closed/wall/mineral/sandstone");
+		this.NewTerrainChairs = T("/obj/structure/chair/wood");
+		this.NewTerrainTables = T("/obj/structure/table/wood");
+		this.NewFlora = list(T("/obj/structure/flora/ausbushes/sparsegrass"), T("/obj/structure/flora/ausbushes/fernybush"), T("/obj/structure/flora/ausbushes/leafybush"), T("/obj/structure/flora/ausbushes/grassybush"), T("/obj/structure/flora/ausbushes/sunnybush"), T("/obj/structure/flora/tree/palm"), T("/mob/living/carbon/monkey"), T("/obj/item/weapon/gun/ballistic/bow"), T("/obj/item/weapon/storage/backpack/quiver/full"));
+		this.florachance = 20;
+	} else if (this.terrain_theme === "ayy lmao") {
+		this.NewTerrainFloors = T("/turf/open/floor/plating/abductor");
+		this.NewTerrainWalls = T("/turf/closed/wall/mineral/abductor");
+		this.NewTerrainChairs = T("/obj/structure/bed/abductor");
+		this.NewTerrainTables = T("/obj/structure/table/abductor");
 	}
 	return f.dot;
 }, true);
 
-// /obj/machinery/anomalous_crystal/theme_warp/proc/ActivationReaction  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:508)  may sleep
-rt.def("/obj/machinery/anomalous_crystal/theme_warp/proc/ActivationReaction", function* ActivationReaction(f: Frame) {
+// colossus.dm:508
+rt.def("/obj/machinery/anomalous_crystal/theme_warp/proc/ActivationReaction", function* ActivationReaction(f: Frame, user: Value, method: Value) {
 	let A: Value = null, Stuff: Value = null, _T: Value = null, O: Value = null, G: Value = null, Picked: Value = null, Original: Value = null, C: Value = null;
-	let $e: any;
-	f.vars = () => [A, Stuff, _T, O, G, Picked, Original, C, $e];
-	if (!truthy((yield* g.callSuper(f, [], rt.Args.Same)))) return f.dot;
-	if (!(!truthy(rt.gv(f, "outdoors", (A = (yield* g.call(f, P("/proc/get_area"), null, [live(f.src)]))))) && !truthy((rt.isIn(f, live(A), rt.sv(f, "affected_targets")) ? 1 : 0)))) return f.dot;
-	Stuff = null;
-	rt.forList(f, 0, live(A), T("/atom"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		Stuff = $e;
-		if (truthy((yield* g.call(f, P("/proc/isturf"), null, [live(Stuff)])))) {
-			if (((truthy((rt.istype((_T = live(Stuff)), T("/turf/open/space")) ? 1 : 0)) || truthy((rt.istype(live(_T), T("/turf/open/floor")) ? 1 : 0))) && truthy(rt.sv(f, "NewTerrainFloors")))) {
-				if (truthy(rt.gv(f, "air", (O = (yield* g.callName(f, live(_T), "ChangeTurf", [rt.sv(f, "NewTerrainFloors")])))))) {
-					yield* g.callName(f, (G = rt.fv(f, "air", live(O))), "copy_from_turf", [live(O)]);
+	if (!(yield* parent_proc())) return f.dot;
+	if (!(!(A = get_area(this)).outdoors && !rt.isIn(f, A, this.affected_targets))) return f.dot;
+	for (Stuff of each(A, T("/atom"))) {
+		if (isturf(Stuff)) {
+			if ((rt.istype((_T = Stuff), T("/turf/open/space")) || rt.istype(_T, T("/turf/open/floor"))) && this.NewTerrainFloors) {
+				if ((O = (yield* _T.ChangeTurf(this.NewTerrainFloors))).air) {
+					(G = O.air).copy_from_turf(O);
 				}
-				if (((truthy(rt.op(f, "Prob", [], [rt.sv(f, "florachance")])) && truthy(rt.len(f, rt.sv(f, "NewFlora")))) && !truthy((yield* g.call(f, P("/proc/is_blocked_turf"), null, [live(O), 1]))))) {
-					Picked = rt.op(f, "PickUnweighted", [1], [rt.sv(f, "NewFlora")]);
-					yield* g.new_(f, live(Picked), [live(O)]);
+				if (prob(this.florachance) && rt.len(f, this.NewFlora) && !is_blocked_turf(O, 1)) {
+					Picked = pick(this.NewFlora);
+					yield* new_(Picked, O);
 				}
 				continue;
 			}
-			if ((truthy((rt.istype(live(_T), T("/turf/closed/wall")) ? 1 : 0)) && truthy(rt.sv(f, "NewTerrainWalls")))) {
-				yield* g.callName(f, live(_T), "ChangeTurf", [rt.sv(f, "NewTerrainWalls")]);
+			if (rt.istype(_T, T("/turf/closed/wall")) && this.NewTerrainWalls) {
+				yield* _T.ChangeTurf(this.NewTerrainWalls);
 				continue;
 			}
 		}
-		if ((truthy((rt.istype(live(Stuff), T("/obj/structure/chair")) ? 1 : 0)) && truthy(rt.sv(f, "NewTerrainChairs")))) {
-			Original = live(Stuff);
-			yield* g.callName(f, (C = (yield* g.new_(f, rt.sv(f, "NewTerrainChairs"), [rt.fv(f, "loc", live(Original))]))), "setDir", [rt.fv(f, "dir", live(Original))]);
-			yield* g.call(f, P("/proc/qdel"), null, [live(Stuff)]);
+		if (rt.istype(Stuff, T("/obj/structure/chair")) && this.NewTerrainChairs) {
+			Original = Stuff;
+			yield* (C = (yield* new_(this.NewTerrainChairs, Original.loc))).setDir(Original.dir);
+			yield* qdel(Stuff);
 			continue;
 		}
-		if ((truthy((rt.istype(live(Stuff), T("/obj/structure/table")) ? 1 : 0)) && truthy(rt.sv(f, "NewTerrainTables")))) {
-			yield* g.new_(f, rt.sv(f, "NewTerrainTables"), [rt.fv(f, "loc", live(Stuff))]);
+		if (rt.istype(Stuff, T("/obj/structure/table")) && this.NewTerrainTables) {
+			yield* new_(this.NewTerrainTables, Stuff.loc);
 			continue;
 		}
 	}
-	rt.endFor(f, 0);
-	rt.modSrcVar(f, "affected_targets", live(A), add);
+	this.affected_targets += A;
 	return f.dot;
-}, true, { args: ["user", "method"] });
+}, true);
 
 rt.type(10950, "/obj/machinery/anomalous_crystal/emitter", "/obj/machinery/anomalous_crystal", {
 	generated_projectile: rt.typePath("/obj/item/projectile/beam/emitter"),
@@ -728,40 +646,36 @@ rt.type(10950, "/obj/machinery/anomalous_crystal/emitter", "/obj/machinery/anoma
 	cooldown_add: 50,
 });
 
-// /obj/machinery/anomalous_crystal/emitter/proc/Initialize  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:544)  may sleep
+// colossus.dm:544
 rt.def("/obj/machinery/anomalous_crystal/emitter/proc/Initialize", function* Initialize(f: Frame) {
 	let proj_name: Value = null;
-	f.vars = () => [proj_name];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "generated_projectile", rt.op(f, "PickUnweighted", [1], [T("/obj/item/projectile/colossus")]));
-	rt.setSv(f, "observer_desc", fmt("This crystal generates ＇！ when activated.", [(proj_name = rt.initial(f, rt.sv(f, "generated_projectile"), "name"))]));
+	f.dot = (yield* parent_proc());
+	this.generated_projectile = pick(T("/obj/item/projectile/colossus"));
+	this.observer_desc = fmt("This crystal generates ＇！ when activated.", [(proj_name = rt.initial(f, this.generated_projectile, "name"))]);
 	return f.dot;
 }, true);
 
-// /obj/machinery/anomalous_crystal/emitter/proc/ActivationReaction  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:551)  may sleep
-rt.def("/obj/machinery/anomalous_crystal/emitter/proc/ActivationReaction", function* ActivationReaction(f: Frame) {
+// colossus.dm:551
+rt.def("/obj/machinery/anomalous_crystal/emitter/proc/ActivationReaction", function* ActivationReaction(f: Frame, user: Value, method: Value) {
 	let _P: Value = null;
-	let $0: any;
-	f.vars = () => [_P, $0];
-	if (!truthy((yield* g.callSuper(f, [], rt.Args.Same)))) return f.dot;
-	yield* g.callName(f, (_P = (yield* g.new_(f, rt.sv(f, "generated_projectile"), [rt.getStep(f, live(f.src), 0)]))), "setDir", [rt.sv(f, "dir")]);
-	$0 = rt.sv(f, "dir");
-	if ($0 === 1) {
-		rt.setFv(f, "yo", live(_P), 20);
-		rt.setFv(f, "xo", live(_P), 0);
-	} else if ($0 === 4) {
-		rt.setFv(f, "yo", live(_P), 0);
-		rt.setFv(f, "xo", live(_P), 20);
-	} else if ($0 === 8) {
-		rt.setFv(f, "yo", live(_P), 0);
-		rt.setFv(f, "xo", live(_P), -20);
+	if (!(yield* parent_proc())) return f.dot;
+	yield* (_P = (yield* new_(this.generated_projectile, rt.getStep(f, this, 0)))).setDir(this.dir);
+	if (this.dir === 1) {
+		_P.yo = 20;
+		_P.xo = 0;
+	} else if (this.dir === 4) {
+		_P.yo = 0;
+		_P.xo = 20;
+	} else if (this.dir === 8) {
+		_P.yo = 0;
+		_P.xo = -20;
 	} else {
-		rt.setFv(f, "yo", live(_P), -20);
-		rt.setFv(f, "xo", live(_P), 0);
+		_P.yo = -20;
+		_P.xo = 0;
 	}
-	yield* g.callName(f, live(_P), "fire", []);
+	yield* _P.fire();
 	return f.dot;
-}, true, { args: ["user", "method"] });
+}, true);
 
 rt.type(10951, "/obj/machinery/anomalous_crystal/dark_reprise", "/obj/machinery/anomalous_crystal", {
 	observer_desc: "When activated, this crystal revives anyone nearby, but turns them into Shadowpeople and makes them unclonable, making the crystal their only hope of getting up again.",
@@ -769,34 +683,28 @@ rt.type(10951, "/obj/machinery/anomalous_crystal/dark_reprise", "/obj/machinery/
 	activation_sound: rt.rsc("sound/hallucinations/growl1.ogg"),
 });
 
-// /obj/machinery/anomalous_crystal/dark_reprise/proc/ActivationReaction  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:575)  may sleep
-rt.def("/obj/machinery/anomalous_crystal/dark_reprise/proc/ActivationReaction", function* ActivationReaction(f: Frame) {
+// colossus.dm:575
+rt.def("/obj/machinery/anomalous_crystal/dark_reprise/proc/ActivationReaction", function* ActivationReaction(f: Frame, user: Value, method: Value) {
 	let i: Value = null, H: Value = null;
-	let $e: any;
-	f.vars = () => [i, H, $e];
-	if (!truthy((yield* g.callSuper(f, [], rt.Args.Same)))) return f.dot;
-	i = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/range"), null, [1, live(f.src)])));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		i = $e;
-		if (truthy((yield* g.call(f, P("/proc/isturf"), null, [live(i)])))) {
-			yield* g.new_(f, T("/obj/effect/temp_visual/cult/sparks"), [live(i)]);
+	if (!(yield* parent_proc())) return f.dot;
+	for (i of each(range(1, this))) {
+		if (isturf(i)) {
+			yield* new_(T("/obj/effect/temp_visual/cult/sparks"), i);
 			continue;
 		}
-		if (truthy((rt.istype(live(i), T("/mob/living/carbon/human")) ? 1 : 0))) {
-			if (isEqual(rt.gv(f, "stat", (H = live(i))), 2)) {
-				yield* g.callName(f, live(H), "set_species", [T("/datum/species/shadow"), 1]);
-				yield* g.callName(f, live(H), "regenerate_limbs", []);
-				yield* g.callName(f, live(H), "regenerate_organs", []);
-				yield* g.callName(f, live(H), "revive", [1, 0]);
-				(rt.modField(f, live(H), "disabilities", 128, rt.bitOr));
-				yield* g.callName(f, live(H), "grab_ghost", ["force", 1], rt.Args.Named);
+		if (rt.istype(i, T("/mob/living/carbon/human"))) {
+			if ((H = i).stat == 2) {
+				yield* H.set_species(T("/datum/species/shadow"), 1);
+				yield* H.regenerate_limbs();
+				yield* H.regenerate_organs();
+				yield* H.revive(1, 0);
+				(rt.modField(f, H, "disabilities", 128, rt.bitOr));
+				yield* H.grab_ghost({ force: 1 });
 			}
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
-}, true, { args: ["user", "method"] });
+}, true);
 
 rt.type(10952, "/obj/machinery/anomalous_crystal/helpers", "/obj/machinery/anomalous_crystal", {
 	ready_to_deploy: 0,
@@ -805,40 +713,38 @@ rt.type(10952, "/obj/machinery/anomalous_crystal/helpers", "/obj/machinery/anoma
 	activation_sound: rt.rsc("sound/effects/ghost2.ogg"),
 });
 
-// /obj/machinery/anomalous_crystal/helpers/proc/Destroy  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:597)  may sleep
+// colossus.dm:597
 rt.def("/obj/machinery/anomalous_crystal/helpers/proc/Destroy", function* Destroy(f: Frame) {
-	(rt.modGl("poi_list", live(f.src), subtract));
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	GLOB.poi_list -= this;
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true);
 
-// /obj/machinery/anomalous_crystal/helpers/proc/ActivationReaction  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:601)  may sleep
-rt.def("/obj/machinery/anomalous_crystal/helpers/proc/ActivationReaction", function* ActivationReaction(f: Frame) {
-	if (!(truthy((yield* g.callSuper(f, [], rt.Args.Same))) && !truthy(rt.sv(f, "ready_to_deploy")))) return f.dot;
-	(rt.modGl("poi_list", live(f.src), rt.bitOr));
-	rt.setSv(f, "ready_to_deploy", 1);
-	yield* g.call(f, P("/proc/notify_ghosts"), null, [null, fmt("An anomalous crystal has been activated in ＀! This crystal can always be used by ghosts hereafter.", [(yield* g.call(f, P("/proc/get_area"), null, [live(f.src)]))]), "enter_link", fmt("<a href=?src=＃;ghostjoin=1>(Click to enter)</a>", [live(f.src)]), "ghost_sound", rt.rsc("sound/effects/ghost2.ogg"), "source", live(f.src), "action", "attack"], rt.Args.Named);
+// colossus.dm:601
+rt.def("/obj/machinery/anomalous_crystal/helpers/proc/ActivationReaction", function* ActivationReaction(f: Frame, user: Value, method: Value) {
+	if (!((yield* parent_proc()) && !this.ready_to_deploy)) return f.dot;
+	(rt.modGl("poi_list", this, rt.bitOr));
+	this.ready_to_deploy = 1;
+	yield* notify_ghosts(`An anomalous crystal has been activated in ${get_area(this)}! This crystal can always be used by ghosts hereafter.`, { enter_link: fmt("<a href=?src=＃;ghostjoin=1>(Click to enter)</a>", [this]), ghost_sound: rt.rsc("sound/effects/ghost2.ogg"), source: this, action: "attack" });
 	return f.dot;
-}, true, { args: ["user", "method"] });
+}, true);
 
-// /obj/machinery/anomalous_crystal/helpers/proc/attack_ghost  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:607)  may sleep
-rt.def("/obj/machinery/anomalous_crystal/helpers/proc/attack_ghost", function* attack_ghost(f: Frame) {
+// colossus.dm:607
+rt.def("/obj/machinery/anomalous_crystal/helpers/proc/attack_ghost", function* attack_ghost(f: Frame, user: Value) {
 	let be_helper: Value = null, W: Value = null;
-	f.vars = () => [be_helper, W];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.sv(f, "ready_to_deploy"))) return f.dot;
-	if (!((isEqual((be_helper = (yield* g.call(f, P("/proc/alert"), null, ["Become a Lightgeist? (Warning, You can no longer be cloned!)", null, "Yes", "No"]))), "Yes") && !(!truthy(live(f.src)) || truthy(rt.fv(f, "gc_destroyed", live(f.src))))) && truthy((rt.istype(live(f.args[0]), T("/mob/dead/observer")) ? 1 : 0)))) return f.dot;
-	rt.setFv(f, "key", (W = (yield* g.new_(f, T("/mob/living/simple_animal/hostile/lightgeist"), [rt.getStep(f, rt.sv(f, "loc"), 0)]))), rt.fv(f, "key", live(f.args[0])));
+	yield* parent_proc();
+	if (!this.ready_to_deploy) return f.dot;
+	if (!((be_helper = (yield* alert("Become a Lightgeist? (Warning, You can no longer be cloned!)", null, "Yes", "No"))) == "Yes" && !(!this || this.gc_destroyed) && rt.istype(user, T("/mob/dead/observer")))) return f.dot;
+	(W = (yield* new_(T("/mob/living/simple_animal/hostile/lightgeist"), rt.getStep(f, this.loc, 0)))).key = user.key;
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /obj/machinery/anomalous_crystal/helpers/proc/Topic  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:616)  may sleep
+// colossus.dm:616
 rt.def("/obj/machinery/anomalous_crystal/helpers/proc/Topic", function* Topic(f: Frame, href: Value, href_list: Value) {
 	let ghost: Value = null;
-	f.vars = () => [href, href_list, ghost];
-	if (!truthy(rt.at(live(href_list), "ghostjoin"))) return f.dot;
-	if (!truthy((rt.istype((ghost = live(f.usr)), T("/mob/dead/observer")) ? 1 : 0))) return f.dot;
-	yield* g.srcCall(f, "attack_ghost", live(ghost));
+	if (!rt.at(href_list, "ghostjoin")) return f.dot;
+	if (!rt.istype((ghost = f.usr), T("/mob/dead/observer"))) return f.dot;
+	yield* this.attack_ghost(ghost);
 	return f.dot;
 }, true);
 
@@ -882,46 +788,42 @@ rt.type(5030, "/mob/living/simple_animal/hostile/lightgeist", "/mob/living/simpl
 	stop_automated_movement: 1,
 });
 
-// /mob/living/simple_animal/hostile/lightgeist/proc/<init>  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:631)
+// colossus.dm:631
 rt.def("/mob/living/simple_animal/hostile/lightgeist/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "speak_emote", rt.list("oscillates"));
-	rt.setSv(f, "damage_coeff", rt.alist(f, ["brute", 1, "fire", 1, "tox", 0, "clone", 0, "stamina", 0, "oxy", 0]));
-	$0 = $0;
-	rt.setSv(f, "faction", rt.list("neutral"));
+	parent_proc();
+	this.speak_emote = list("oscillates");
+	this.damage_coeff = rt.alist(f, ["brute", 1, "fire", 1, "tox", 0, "clone", 0, "stamina", 0, "oxy", 0]);
+
+	this.faction = list("neutral");
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/lightgeist/proc/Initialize  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:662)  may sleep
+// colossus.dm:662
 rt.def("/mob/living/simple_animal/hostile/lightgeist/proc/Initialize", function* Initialize(f: Frame) {
 	let medsensor: Value = null;
-	f.vars = () => [medsensor];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	(rt.modSrcVar(f, "verbs", P("/mob/living/verb/pulled"), subtract));
-	(rt.modSrcVar(f, "verbs", P("/mob/verb/me_verb"), subtract));
-	yield* g.callName(f, (medsensor = rt.index(rt.gl("huds"), 4)), "add_hud_to", [live(f.src)]);
+	f.dot = (yield* parent_proc());
+	this.verbs -= P("/mob/living/verb/pulled");
+	this.verbs -= P("/mob/verb/me_verb");
+	(medsensor = rt.index(GLOB.huds, DATA_HUD_MEDICAL_ADVANCED)).add_hud_to(this);
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/lightgeist/proc/AttackingTarget  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:669)  may sleep
+// colossus.dm:669
 rt.def("/mob/living/simple_animal/hostile/lightgeist/proc/AttackingTarget", function* AttackingTarget(f: Frame) {
 	let L: Value = null;
-	f.vars = () => [L];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!(truthy((rt.istype(rt.sv(f, "target"), T("/mob/living")) ? 1 : 0)) && !isEqual(rt.sv(f, "target"), live(f.src)))) return f.dot;
-	if (isEqual(rt.gv(f, "stat", (L = rt.sv(f, "target"))), 2)) return f.dot;
-	yield* g.callName(f, live(L), "heal_overall_damage", [rt.sv(f, "heal_power"), rt.sv(f, "heal_power")]);
-	yield* g.new_(f, T("/obj/effect/temp_visual/heal"), [rt.getStep(f, rt.sv(f, "target"), 0), "#80F5FF"]);
+	f.dot = (yield* parent_proc());
+	if (!(rt.istype(this.target, T("/mob/living")) && this.target != this)) return f.dot;
+	if ((L = this.target).stat == 2) return f.dot;
+	yield* L.heal_overall_damage(this.heal_power, this.heal_power);
+	yield* new_(T("/obj/effect/temp_visual/heal"), rt.getStep(f, this.target, 0), "#80F5FF");
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/lightgeist/proc/ghostize  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:677)  may sleep
+// colossus.dm:677
 rt.def("/mob/living/simple_animal/hostile/lightgeist/proc/ghostize", function* ghostize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(live(f.dot))) return f.dot;
-	yield* g.srcCall(f, "death");
+	f.dot = (yield* parent_proc());
+	if (!f.dot) return f.dot;
+	yield* this.death();
 	return f.dot;
 }, true);
 
@@ -933,76 +835,66 @@ rt.type(10953, "/obj/machinery/anomalous_crystal/refresher", "/obj/machinery/ano
 	activation_sound: rt.rsc("sound/magic/timeparadox2.ogg"),
 });
 
-// /obj/machinery/anomalous_crystal/refresher/proc/<init>  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:687)
+// colossus.dm:687
 rt.def("/obj/machinery/anomalous_crystal/refresher/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "banned_items_typecache", rt.list(T("/obj/item/weapon/storage"), T("/obj/item/weapon/implant"), T("/obj/item/weapon/implanter"), T("/obj/item/weapon/disk/nuclear"), T("/obj/item/projectile"), T("/obj/item/weapon/spellbook")));
+	parent_proc();
+	this.banned_items_typecache = list(T("/obj/item/weapon/storage"), T("/obj/item/weapon/implant"), T("/obj/item/weapon/implanter"), T("/obj/item/weapon/disk/nuclear"), T("/obj/item/projectile"), T("/obj/item/weapon/spellbook"));
 	return f.dot;
 });
 
-// /obj/machinery/anomalous_crystal/refresher/proc/Initialize  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:690)  may sleep
+// colossus.dm:690
 rt.def("/obj/machinery/anomalous_crystal/refresher/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "banned_items_typecache", (yield* g.call(f, P("/proc/typecacheof"), null, [rt.sv(f, "banned_items_typecache")])));
+	f.dot = (yield* parent_proc());
+	this.banned_items_typecache = typecacheof(this.banned_items_typecache);
 	return f.dot;
 }, true);
 
-// /obj/machinery/anomalous_crystal/refresher/proc/ActivationReaction  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:695)  may sleep
-rt.def("/obj/machinery/anomalous_crystal/refresher/proc/ActivationReaction", function* ActivationReaction(f: Frame) {
-	let L: Value = null, _T: Value = null, i: Value = null, W: Value = null, CHOSEN: Value = null;
-	let $e: any;
-	f.vars = () => [L, _T, i, W, CHOSEN, $e];
-	if (!truthy((yield* g.callSuper(f, [], rt.Args.Same)))) return f.dot;
-	L = rt.list();
-	yield* g.new_(f, T("/obj/effect/temp_visual/emp/pulse"), [(_T = rt.getStep(f, live(f.src), rt.sv(f, "dir")))]);
-	i = null;
-	rt.forList(f, 0, live(_T));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		i = $e;
-		if ((truthy((rt.istype(live(i), T("/obj/item")) ? 1 : 0)) && !truthy((yield* g.call(f, P("/proc/is_type_in_typecache"), null, [live(i), rt.sv(f, "banned_items_typecache")]))))) {
-			if (!truthy(rt.gv(f, "admin_spawned", (W = live(i))))) {
-				L = rt.modify(live(L), live(W), add);
+// colossus.dm:695
+rt.def("/obj/machinery/anomalous_crystal/refresher/proc/ActivationReaction", function* ActivationReaction(f: Frame, user: Value, method: Value) {
+	let _T: Value = null, i: Value = null, W: Value = null;
+	if (!(yield* parent_proc())) return f.dot;
+	let L: Value = list();
+	yield* new_(T("/obj/effect/temp_visual/emp/pulse"), (_T = rt.getStep(f, this, this.dir)));
+	for (i of each(_T)) {
+		if (rt.istype(i, T("/obj/item")) && !is_type_in_typecache(i, this.banned_items_typecache)) {
+			if (!(W = i).admin_spawned) {
+				L += W;
 			}
 		}
 	}
-	rt.endFor(f, 0);
-	if (!truthy(rt.len(f, live(L)))) return f.dot;
-	CHOSEN = rt.op(f, "PickUnweighted", [1], [live(L)]);
-	yield* g.new_(f, rt.fv(f, "type", live(CHOSEN)), [live(_T)]);
-	yield* g.call(f, P("/proc/qdel"), null, [live(CHOSEN)]);
+	if (!rt.len(f, L)) return f.dot;
+	let CHOSEN: Value = pick(L);
+	yield* new_(CHOSEN.type, _T);
+	yield* qdel(CHOSEN);
 	return f.dot;
-}, true, { args: ["user", "method"] });
+}, true);
 
 rt.type(10954, "/obj/machinery/anomalous_crystal/possessor", "/obj/machinery/anomalous_crystal", {
 	observer_desc: "When activated, this crystal allows you to take over small animals, and then exit them at the possessors leisure. Exiting the animal kills it, and if you die while possessing the animal, you die as well.",
 	activation_method: "touch",
 });
 
-// /obj/machinery/anomalous_crystal/possessor/proc/ActivationReaction  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:714)  may sleep
-rt.def("/obj/machinery/anomalous_crystal/possessor/proc/ActivationReaction", function* ActivationReaction(f: Frame) {
-	let mobcheck: Value = null, A: Value = null, S: Value = null;
+// colossus.dm:714
+rt.def("/obj/machinery/anomalous_crystal/possessor/proc/ActivationReaction", function* ActivationReaction(f: Frame, user: Value, method: Value) {
+	let A: Value = null, S: Value = null;
 	let $e: any;
-	f.vars = () => [mobcheck, A, S, $e];
-	if (!truthy((yield* g.callSuper(f, [], rt.Args.Same)))) return f.dot;
-	if (!truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon/human")) ? 1 : 0))) return f.dot;
-	mobcheck = 0;
-	A = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/range"), null, [1, live(f.src)])), T("/mob/living/simple_animal"));
+	if (!(yield* parent_proc())) return f.dot;
+	if (!rt.istype(user, T("/mob/living/carbon/human"))) return f.dot;
+	let mobcheck: Value = 0;
+	rt.forList(f, 0, range(1, this), T("/mob/living/simple_animal"));
 	if (($e = rt.next(f, 0)) !== undefined) {
 		A = $e;
-		if (!(((rt.gt(rt.fv(f, "melee_damage_upper", live(A)), 5) || rt.ge(rt.fv(f, "mob_size", live(A)), 3)) || truthy(rt.fv(f, "ckey", live(A)))) || truthy(rt.fv(f, "stat", live(A))))) {
-			S = (yield* g.new_(f, T("/obj/structure/closet/stasis"), [live(A)]));
-			yield* g.callName(f, live(f.args[0]), "forceMove", [live(S)]);
+		if (!(A.melee_damage_upper > 5 || A.mob_size >= MOB_SIZE_LARGE || A.ckey || A.stat)) {
+			S = (yield* new_(T("/obj/structure/closet/stasis"), A));
+			yield* user.forceMove(S);
 			mobcheck = 1;
 		}
 	}
 	rt.endFor(f, 0);
-	if (truthy(live(mobcheck))) return f.dot;
-	yield* g.new_(f, T("/mob/living/simple_animal/cockroach"), [rt.getStep(f, live(f.src), rt.sv(f, "dir"))]);
+	if (mobcheck) return f.dot;
+	yield* new_(T("/mob/living/simple_animal/cockroach"), rt.getStep(f, this, this.dir));
 	return f.dot;
-}, true, { args: ["user", "method"] });
+}, true);
 
 rt.type(12409, "/obj/structure/closet/stasis", "/obj/structure/closet", {
 	holder_animal: null,
@@ -1014,69 +906,62 @@ rt.type(12409, "/obj/structure/closet/stasis", "/obj/structure/closet", {
 	obj_integrity: 999,
 });
 
-// /obj/structure/closet/stasis/proc/process  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:738)  may sleep
+// colossus.dm:738
 rt.def("/obj/structure/closet/stasis/proc/process", function* process(f: Frame) {
-	if (!truthy(rt.sv(f, "holder_animal"))) return f.dot;
-	if (!isEqual(rt.fv(f, "stat", rt.sv(f, "holder_animal")), 2)) return f.dot;
-	yield* g.srcCall(f, "dump_contents");
-	yield* g.callName(f, rt.sv(f, "holder_animal"), "gib", []);
-	return live(f.dot);
+	if (!this.holder_animal) return f.dot;
+	if (this.holder_animal.stat != 2) return f.dot;
+	yield* this.dump_contents();
+	yield* this.holder_animal.gib();
+	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/structure/closet/stasis/proc/New  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:744)  may sleep
+// colossus.dm:744
 rt.def("/obj/structure/closet/stasis/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy((rt.istype(rt.sv(f, "loc"), T("/mob/living/simple_animal")) ? 1 : 0))) {
-		rt.setSv(f, "holder_animal", rt.sv(f, "loc"));
+	yield* parent_proc();
+	if (rt.istype(this.loc, T("/mob/living/simple_animal"))) {
+		this.holder_animal = this.loc;
 	}
-	if (truthy(rt.fv(f, "isprocessing", live(f.src)))) return f.dot;
-	rt.setFv(f, "isprocessing", live(f.src), 1);
-	rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), add);
+	if (this.isprocessing) return f.dot;
+	this.isprocessing = 1;
+	GLOB.SSobj.processing += this;
 	return f.dot;
 }, true);
 
-// /obj/structure/closet/stasis/proc/Entered  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:750)  may sleep
+// colossus.dm:750
 rt.def("/obj/structure/closet/stasis/proc/Entered", function* Entered(f: Frame, A: Value) {
-	let L: Value = null, _P: Value = null;
-	f.vars = () => [A, L, _P];
-	if (!(truthy((rt.istype(live(A), T("/mob/living")) ? 1 : 0)) && truthy(rt.sv(f, "holder_animal")))) return f.dot;
-	rt.setFv(f, "notransform", (L = live(A)), 1);
-	(rt.modField(f, live(L), "disabilities", 2, rt.bitOr));
-	(rt.modField(f, live(L), "status_flags", 4096, rt.bitOr));
-	yield* g.callName(f, rt.fv(f, "mind", live(L)), "transfer_to", [rt.sv(f, "holder_animal")]);
-	_P = (yield* g.new_(f, T("/obj/effect/proc_holder/spell/targeted/exit_possession"), []));
-	yield* g.callName(f, rt.fv(f, "mind", rt.sv(f, "holder_animal")), "AddSpell", [live(_P)]);
-	(rt.modField(f, rt.sv(f, "holder_animal"), "verbs", P("/mob/living/verb/pulled"), subtract));
+	let L: Value = null;
+	if (!(rt.istype(A, T("/mob/living")) && this.holder_animal)) return f.dot;
+	(L = A).notransform = 1;
+	(rt.modField(f, L, "disabilities", 2, rt.bitOr));
+	(rt.modField(f, L, "status_flags", 4096, rt.bitOr));
+	yield* L.mind.transfer_to(this.holder_animal);
+	let _P: Value = (yield* new_(T("/obj/effect/proc_holder/spell/targeted/exit_possession")));
+	yield* this.holder_animal.mind.AddSpell(_P);
+	this.holder_animal.verbs -= P("/mob/living/verb/pulled");
 	return f.dot;
 }, true);
 
-// /obj/structure/closet/stasis/proc/dump_contents  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:761)  may sleep
+// colossus.dm:761
 rt.def("/obj/structure/closet/stasis/proc/dump_contents", function* dump_contents(f: Frame) {
 	let L: Value = null;
-	let $e: any;
-	f.vars = () => [L, $e];
-	if (live(f.args[0]) === null) {
+	if (f.args[0] === null) {
 		f.args[0] = 1;
 	}
-	rt.setFv(f, "isprocessing", live(f.src), 0);
-	(rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), subtract));
-	L = null;
-	rt.forList(f, 0, live(f.src), T("/mob/living"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		L = $e;
-		(rt.modField(f, live(L), "disabilities", 16777213, rt.bitAnd));
-		(rt.modField(f, live(L), "status_flags", 16773119, rt.bitAnd));
-		rt.setFv(f, "notransform", live(L), 0);
-		if (truthy(rt.sv(f, "holder_animal"))) {
-			yield* g.callName(f, rt.fv(f, "mind", rt.sv(f, "holder_animal")), "transfer_to", [live(L)]);
-			yield* g.callName(f, rt.fv(f, "mind", live(L)), "RemoveSpell", [T("/obj/effect/proc_holder/spell/targeted/exit_possession")]);
+	this.isprocessing = 0;
+	GLOB.SSobj.processing -= this;
+	for (L of each(this, T("/mob/living"))) {
+		(rt.modField(f, L, "disabilities", 16777213, rt.bitAnd));
+		(rt.modField(f, L, "status_flags", 16773119, rt.bitAnd));
+		L.notransform = 0;
+		if (this.holder_animal) {
+			yield* this.holder_animal.mind.transfer_to(L);
+			yield* L.mind.RemoveSpell(T("/obj/effect/proc_holder/spell/targeted/exit_possession"));
 		}
-		if ((truthy(live(f.args[0])) || !truthy((rt.istype(rt.sv(f, "loc"), T("/mob/living/simple_animal")) ? 1 : 0)))) {
-			yield* g.callName(f, live(L), "death", [0]);
+		if (f.args[0] || !rt.istype(this.loc, T("/mob/living/simple_animal"))) {
+			yield* L.death(0);
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true, { args: ["kill"] });
 
@@ -1094,30 +979,22 @@ rt.type(11280, "/obj/effect/proc_holder/spell/targeted/exit_possession", "/obj/e
 	sound: null,
 });
 
-// /obj/effect/proc_holder/spell/targeted/exit_possession/proc/cast  (code/modules/mob/living/simple_animal/hostile/megafauna/colossus.dm:793)  may sleep
+// colossus.dm:793
 rt.def("/obj/effect/proc_holder/spell/targeted/exit_possession/proc/cast", function* cast(f: Frame, targets: Value, user: Value) {
-	let target_mind: Value = null, i: Value = null, S: Value = null;
-	let $e: any;
-	f.vars = () => [targets, user, target_mind, i, S, $e];
-	if (live(user) === null) {
-		user = live(f.usr);
+	let i: Value = null, S: Value = null;
+	user ??= f.usr;
+	if (!rt.istype(user.loc, T("/turf/open/floor"))) {
+		return f.dot;
 	}
-	if (!truthy((rt.istype(rt.fv(f, "loc", live(user)), T("/turf/open/floor")) ? 1 : 0))) {
-		return live(f.dot);
-	}
-	target_mind = rt.fv(f, "mind", live(user));
-	i = null;
-	rt.forList(f, 0, live(user));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		i = $e;
-		if (truthy((rt.istype(live(i), T("/obj/structure/closet/stasis")) ? 1 : 0))) {
-			yield* g.callName(f, (S = live(i)), "dump_contents", [0]);
-			yield* g.call(f, P("/proc/qdel"), null, [live(S)]);
+	let target_mind: Value = user.mind;
+	for (i of each(user)) {
+		if (rt.istype(i, T("/obj/structure/closet/stasis"))) {
+			yield* (S = i).dump_contents(0);
+			yield* qdel(S);
 			break;
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.callName(f, live(user), "gib", []);
-	yield* g.callName(f, live(target_mind), "RemoveSpell", [T("/obj/effect/proc_holder/spell/targeted/exit_possession")]);
+	yield* user.gib();
+	yield* target_mind.RemoveSpell(T("/obj/effect/proc_holder/spell/targeted/exit_possession"));
 	return f.dot;
 }, true);

@@ -1,13 +1,13 @@
-// From code/modules/mob/living/brain/posibrain.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/brain/posibrain.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, g, fmt } = rt;
 
 
-// /datum/controller/global_vars/proc/InitGlobalposibrain_notify_cooldown  (code/modules/mob/living/brain/posibrain.dm:1)
+// posibrain.dm:1
 rt.def("/datum/controller/global_vars/proc/InitGlobalposibrain_notify_cooldown", function InitGlobalposibrain_notify_cooldown(f: Frame) {
-	rt.setGl("posibrain_notify_cooldown", null);
-	rt.modSrcVar(f, "gvars_datum_init_order", "posibrain_notify_cooldown", add);
+	GLOB.posibrain_notify_cooldown = null;
+	this.gvars_datum_init_order += "posibrain_notify_cooldown";
 	return f.dot;
 });
 
@@ -37,221 +37,205 @@ rt.type(9116, "/obj/item/device/mmi/posibrain", "/obj/item/device/mmi", {
 	braintype: "Android",
 });
 
-// /obj/item/device/mmi/posibrain/proc/<init>  (code/modules/mob/living/brain/posibrain.dm:14)
+// posibrain.dm:14
 rt.def("/obj/item/device/mmi/posibrain/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_access", rt.list(29));
+	parent_proc();
+	this.req_access = list(29);
 	return f.dot;
 });
 
-// /obj/item/device/mmi/posibrain/proc/Topic  (code/modules/mob/living/brain/posibrain.dm:32)  may sleep
+// posibrain.dm:32
 rt.def("/obj/item/device/mmi/posibrain/proc/Topic", function* Topic(f: Frame, href: Value, href_list: Value) {
 	let ghost: Value = null;
-	f.vars = () => [href, href_list, ghost];
-	if (!truthy(rt.at(live(href_list), "activate"))) return f.dot;
-	if (!truthy((rt.istype((ghost = live(f.usr)), T("/mob/dead/observer")) ? 1 : 0))) return f.dot;
-	yield* g.srcCall(f, "activate", live(ghost));
+	if (!rt.at(href_list, "activate")) return f.dot;
+	if (!rt.istype((ghost = f.usr), T("/mob/dead/observer"))) return f.dot;
+	yield* this.activate(ghost);
 	return f.dot;
 }, true);
 
-// /obj/item/device/mmi/posibrain/proc/ping_ghosts  (code/modules/mob/living/brain/posibrain.dm:38)  may sleep
+// posibrain.dm:38
 rt.def("/obj/item/device/mmi/posibrain/proc/ping_ghosts", function* ping_ghosts(f: Frame, msg: Value, newlymade: Value) {
-	let $0: any, $1: any, $2: any, $3: any;
-	f.vars = () => [msg, newlymade, $0, $1, $2, $3];
-	if (!(truthy(live(newlymade)) || rt.le(rt.gl("posibrain_notify_cooldown"), rt.worldTime(f)))) return f.dot;
-	$0 = null;
-	$1 = fmt("＀ ＀ in ＀!", [rt.sv(f, "name"), live(msg), (yield* g.call(f, P("/proc/get_area"), null, [live(f.src)]))]);
-	$2 = "ghost_sound";
-	if (!truthy(live(newlymade))) {
+	let $3: any;
+	if (!(newlymade || GLOB.posibrain_notify_cooldown <= rt.worldTime(f))) return f.dot;
+	let $0: any = null;
+	let $1: any = `${this.name} ${msg} in ${get_area(this)}!`;
+	let $2: any = "ghost_sound";
+	if (!newlymade) {
 		$3 = rt.rsc("sound/effects/ghost2.ogg");
 	} else {
 		$3 = null;
 	}
-	yield* g.call(f, P("/proc/notify_ghosts"), null, [$0, $1, $2, $3, "enter_link", fmt("<a href=?src=＃;activate=1>(Click to enter)</a>", [live(f.src)]), "source", live(f.src), "action", "attack", "flashwindow", 0], rt.Args.Named);
-	if (truthy(live(newlymade))) return f.dot;
-	rt.setGl("posibrain_notify_cooldown", add(rt.worldTime(f), rt.sv(f, "askDelay")));
+	yield* g.call(f, P("/proc/notify_ghosts"), null, [$0, $1, $2, $3, "enter_link", fmt("<a href=?src=＃;activate=1>(Click to enter)</a>", [this]), "source", this, "action", "attack", "flashwindow", 0], rt.Args.Named);
+	if (newlymade) return f.dot;
+	GLOB.posibrain_notify_cooldown = rt.worldTime(f) + this.askDelay;
 	return f.dot;
 }, true);
 
-// /obj/item/device/mmi/posibrain/proc/attack_self  (code/modules/mob/living/brain/posibrain.dm:44)  may sleep
+// posibrain.dm:44
 rt.def("/obj/item/device/mmi/posibrain/proc/attack_self", function* attack_self(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if ((!truthy(rt.sv(f, "brainmob")) || truthy(rt.fv(f, "key", rt.sv(f, "brainmob"))))) {
-		return live(f.dot);
+	if (!this.brainmob || this.brainmob.key) {
+		return f.dot;
 	}
-	if (rt.gt(rt.sv(f, "next_ask"), rt.worldTime(f))) {
-		return live(f.dot);
+	if (this.next_ask > rt.worldTime(f)) {
+		return f.dot;
 	}
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), rt.sv(f, "begin_activation_message")]);
-	yield* g.srcCall(f, "ping_ghosts", "requested", 0);
-	rt.setSv(f, "next_ask", add(rt.worldTime(f), rt.sv(f, "askDelay")));
-	rt.setSv(f, "searching", 1);
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/item/device/mmi/posibrain/proc/check_success")])), rt.sv(f, "askDelay")]);
+	to_chat(user, this.begin_activation_message);
+	yield* this.ping_ghosts("requested", 0);
+	this.next_ask = rt.worldTime(f) + this.askDelay;
+	this.searching = 1;
+	yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/item/device/mmi/posibrain/proc/check_success"))), this.askDelay);
 	return f.dot;
 }, true);
 
-// /obj/item/device/mmi/posibrain/proc/check_success  (code/modules/mob/living/brain/posibrain.dm:57)
+// posibrain.dm:57
 rt.def("/obj/item/device/mmi/posibrain/proc/check_success", function check_success(f: Frame) {
-	rt.setSv(f, "searching", 0);
-	rt.callSrc(f, "update_icon", []);
-	if ((!truthy(rt.sv(f, "brainmob")) || truthy(rt.fv(f, "gc_destroyed", rt.sv(f, "brainmob"))))) {
-		return live(f.dot);
+	this.searching = 0;
+	this.update_icon();
+	if (!this.brainmob || this.brainmob.gc_destroyed) {
+		return f.dot;
 	}
-	if (truthy(rt.fv(f, "client", rt.sv(f, "brainmob")))) {
-		rt.callSrc(f, "visible_message", [rt.sv(f, "success_message")]);
+	if (this.brainmob.client) {
+		this.visible_message(this.success_message);
 	} else {
-		rt.callSrc(f, "visible_message", [rt.sv(f, "fail_message")]);
+		this.visible_message(this.fail_message);
 	}
 	return f.dot;
 });
 
-// /obj/item/device/mmi/posibrain/proc/attack_ghost  (code/modules/mob/living/brain/posibrain.dm:66)  may sleep
+// posibrain.dm:66
 rt.def("/obj/item/device/mmi/posibrain/proc/attack_ghost", function* attack_ghost(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.srcCall(f, "activate", live(user));
+	yield* this.activate(user);
 	return f.dot;
 }, true);
 
-// /obj/item/device/mmi/posibrain/proc/is_occupied  (code/modules/mob/living/brain/posibrain.dm:69)
+// posibrain.dm:69
 rt.def("/obj/item/device/mmi/posibrain/proc/is_occupied", function is_occupied(f: Frame) {
 	let R: Value = null;
-	f.vars = () => [R];
-	if (truthy(rt.fv(f, "key", rt.sv(f, "brainmob")))) {
+	if (this.brainmob.key) {
 		return 1;
 	}
-	if (truthy((rt.istype(rt.sv(f, "loc"), T("/mob/living/silicon/robot")) ? 1 : 0))) {
-		if (isEqual(rt.gv(f, "mmi", (R = rt.sv(f, "loc"))), live(f.src))) {
+	if (rt.istype(this.loc, T("/mob/living/silicon/robot"))) {
+		if ((R = this.loc).mmi == this) {
 			return 1;
 		}
 	}
 	return 0;
 });
 
-// /obj/item/device/mmi/posibrain/proc/activate  (code/modules/mob/living/brain/posibrain.dm:79)  may sleep
+// posibrain.dm:79
 rt.def("/obj/item/device/mmi/posibrain/proc/activate", function* activate(f: Frame, user: Value) {
 	let posi_ask: Value = null;
-	f.vars = () => [user, posi_ask];
-	if ((!truthy(rt.sv(f, "brainmob")) || truthy(rt.fv(f, "gc_destroyed", rt.sv(f, "brainmob"))))) {
-		return live(f.dot);
+	if (!this.brainmob || this.brainmob.gc_destroyed) {
+		return f.dot;
 	}
-	if ((truthy((yield* g.srcCall(f, "is_occupied"))) || truthy((yield* g.call(f, P("/proc/jobban_isbanned"), null, [live(user), "posibrain"]))))) {
-		return live(f.dot);
+	if (this.is_occupied() || jobban_isbanned(user, "posibrain")) {
+		return f.dot;
 	}
-	if ((isEqual((posi_ask = (yield* g.call(f, P("/proc/alert"), null, [fmt("Become a ＀? (Warning, You can no longer be cloned, and all past lives will be forgotten!)", [rt.sv(f, "name")]), "Are you positive?", "Yes", "No"]))), "No") || (!truthy(live(f.src)) || truthy(rt.fv(f, "gc_destroyed", live(f.src)))))) {
-		return live(f.dot);
+	if ((posi_ask = (yield* alert(`Become a ${this.name}? (Warning, You can no longer be cloned, and all past lives will be forgotten!)`, "Are you positive?", "Yes", "No"))) == "No" || !this || this.gc_destroyed) {
+		return f.dot;
 	}
-	yield* g.srcCall(f, "transfer_personality", live(user));
+	yield* this.transfer_personality(user);
 	return f.dot;
 }, true);
 
-// /obj/item/device/mmi/posibrain/proc/transfer_identity  (code/modules/mob/living/brain/posibrain.dm:90)  may sleep
+// posibrain.dm:90
 rt.def("/obj/item/device/mmi/posibrain/proc/transfer_identity", function* transfer_identity(f: Frame, C: Value) {
-	f.vars = () => [C];
-	rt.setSv(f, "name", fmt("＀ (＀)", [rt.initial(f, live(f.src), "name"), live(C)]));
-	rt.setFv(f, "name", rt.sv(f, "brainmob"), rt.fv(f, "real_name", live(C)));
-	rt.setFv(f, "real_name", rt.sv(f, "brainmob"), rt.fv(f, "real_name", live(C)));
-	if (truthy((yield* g.callName(f, live(C), "has_dna", [])))) {
-		if (!truthy(rt.fv(f, "stored_dna", rt.sv(f, "brainmob")))) {
-			rt.setFv(f, "stored_dna", rt.sv(f, "brainmob"), (yield* g.new_(f, T("/datum/dna/stored"), [rt.sv(f, "brainmob")])));
+	this.name = `${rt.initial(f, this, "name")} (${C})`;
+	this.brainmob.name = C.real_name;
+	this.brainmob.real_name = C.real_name;
+	if (C.has_dna()) {
+		if (!this.brainmob.stored_dna) {
+			this.brainmob.stored_dna = (yield* new_(T("/datum/dna/stored"), this.brainmob));
 		}
-		yield* g.callName(f, rt.fv(f, "dna", live(C)), "copy_dna", [rt.fv(f, "stored_dna", rt.sv(f, "brainmob"))]);
+		yield* C.dna.copy_dna(this.brainmob.stored_dna);
 	}
-	rt.setFv(f, "timeofhostdeath", rt.sv(f, "brainmob"), rt.fv(f, "timeofdeath", live(C)));
-	rt.setFv(f, "stat", rt.sv(f, "brainmob"), 0);
-	if (truthy(rt.fv(f, "mind", rt.sv(f, "brainmob")))) {
-		rt.setFv(f, "assigned_role", rt.fv(f, "mind", rt.sv(f, "brainmob")), rt.sv(f, "new_role"));
+	this.brainmob.timeofhostdeath = C.timeofdeath;
+	this.brainmob.stat = 0;
+	if (this.brainmob.mind) {
+		this.brainmob.mind.assigned_role = this.new_role;
 	}
-	if (truthy(rt.fv(f, "mind", live(C)))) {
-		yield* g.callName(f, rt.fv(f, "mind", live(C)), "transfer_to", [rt.sv(f, "brainmob")]);
+	if (C.mind) {
+		yield* C.mind.transfer_to(this.brainmob);
 	}
-	yield* g.callName(f, rt.fv(f, "mind", rt.sv(f, "brainmob")), "remove_all_antag", []);
-	yield* g.callName(f, rt.fv(f, "mind", rt.sv(f, "brainmob")), "wipe_memory", []);
-	yield* g.srcCall(f, "update_icon");
+	yield* this.brainmob.mind.remove_all_antag();
+	this.brainmob.mind.wipe_memory();
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/item/device/mmi/posibrain/proc/transfer_personality  (code/modules/mob/living/brain/posibrain.dm:109)  may sleep
+// posibrain.dm:109
 rt.def("/obj/item/device/mmi/posibrain/proc/transfer_personality", function* transfer_personality(f: Frame, candidate: Value) {
-	f.vars = () => [candidate];
-	if ((!truthy(rt.sv(f, "brainmob")) || truthy(rt.fv(f, "gc_destroyed", rt.sv(f, "brainmob"))))) {
-		return live(f.dot);
+	if (!this.brainmob || this.brainmob.gc_destroyed) {
+		return f.dot;
 	}
-	if (truthy((yield* g.srcCall(f, "is_occupied")))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(candidate), "This brain has already been taken! Please try your possession again later!"]);
+	if (this.is_occupied()) {
+		to_chat(candidate, "This brain has already been taken! Please try your possession again later!");
 		return 0;
 	}
-	if ((truthy(rt.fv(f, "mind", live(candidate))) && !truthy((rt.istype(live(candidate), T("/mob/dead/observer")) ? 1 : 0)))) {
-		yield* g.callName(f, rt.fv(f, "mind", live(candidate)), "transfer_to", [rt.sv(f, "brainmob")]);
+	if (candidate.mind && !rt.istype(candidate, T("/mob/dead/observer"))) {
+		yield* candidate.mind.transfer_to(this.brainmob);
 	} else {
-		rt.setFv(f, "ckey", rt.sv(f, "brainmob"), rt.fv(f, "ckey", live(candidate)));
+		this.brainmob.ckey = candidate.ckey;
 	}
-	rt.setSv(f, "name", fmt("＀ (＀)", [rt.initial(f, live(f.src), "name"), rt.fv(f, "name", rt.sv(f, "brainmob"))]));
-	yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "brainmob"), rt.sv(f, "welcome_message")]);
-	rt.setFv(f, "assigned_role", rt.fv(f, "mind", rt.sv(f, "brainmob")), rt.sv(f, "new_role"));
-	rt.setFv(f, "stat", rt.sv(f, "brainmob"), 0);
-	(rt.modGl("dead_mob_list", rt.sv(f, "brainmob"), subtract));
-	rt.modGl("living_mob_list", rt.sv(f, "brainmob"), add);
-	yield* g.srcCall(f, "visible_message", rt.sv(f, "new_mob_message"));
-	yield* g.srcCall(f, "update_icon");
+	this.name = `${rt.initial(f, this, "name")} (${this.brainmob.name})`;
+	to_chat(this.brainmob, this.welcome_message);
+	this.brainmob.mind.assigned_role = this.new_role;
+	this.brainmob.stat = 0;
+	GLOB.dead_mob_list -= this.brainmob;
+	GLOB.living_mob_list += this.brainmob;
+	this.visible_message(this.new_mob_message);
+	yield* this.update_icon();
 	return 1;
 }, true);
 
-// /obj/item/device/mmi/posibrain/proc/examine  (code/modules/mob/living/brain/posibrain.dm:131)
-rt.def("/obj/item/device/mmi/posibrain/proc/examine", function examine(f: Frame) {
+// posibrain.dm:131
+rt.def("/obj/item/device/mmi/posibrain/proc/examine", function examine(f: Frame, user: Value) {
 	let msg: Value = null;
-	let $0: any;
-	f.vars = () => [msg, $0];
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	msg = null;
-	if ((truthy(rt.sv(f, "brainmob")) && truthy(rt.fv(f, "key", rt.sv(f, "brainmob"))))) {
-		$0 = rt.fv(f, "stat", rt.sv(f, "brainmob"));
-		if ($0 === 0) {
-			if (!truthy(rt.fv(f, "client", rt.sv(f, "brainmob")))) {
+	f.dot = parent_proc();
+	if (this.brainmob && this.brainmob.key) {
+		if (this.brainmob.stat === 0) {
+			if (!this.brainmob.client) {
 				msg = "It appears to be in stand-by mode.";
 			}
-		} else if ($0 === 2) {
+		} else if (this.brainmob.stat === 2) {
 			msg = "<span class='deadsay'>It appears to be completely inactive.</span>";
 		}
 	} else {
-		msg = fmt("＀", [rt.sv(f, "dead_message")]);
+		msg = `${this.dead_message}`;
 	}
-	rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), live(msg)]);
+	to_chat(user, msg);
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/item/device/mmi/posibrain/proc/Initialize  (code/modules/mob/living/brain/posibrain.dm:146)  may sleep
+// posibrain.dm:146
 rt.def("/obj/item/device/mmi/posibrain/proc/Initialize", function* Initialize(f: Frame) {
 	let new_name: Value = null;
-	f.vars = () => [new_name];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "brainmob", (yield* g.new_(f, T("/mob/living/brain"), [live(f.src)])));
-	new_name = null;
-	if (!truthy(rt.length(rt.sv(f, "possible_names")))) {
-		new_name = rt.op(f, "PickUnweighted", [1], [rt.gl("posibrain_names")]);
+	yield* parent_proc();
+	this.brainmob = (yield* new_(T("/mob/living/brain"), this));
+	if (!rt.length(this.possible_names)) {
+		new_name = pick(GLOB.posibrain_names);
 	} else {
-		new_name = rt.op(f, "PickUnweighted", [1], [rt.sv(f, "possible_names")]);
+		new_name = pick(this.possible_names);
 	}
-	rt.setFv(f, "name", rt.sv(f, "brainmob"), fmt("＀-＀", [live(new_name), (yield* g.call(f, P("/proc/rand"), null, [100, 999]))]));
-	rt.setFv(f, "real_name", rt.sv(f, "brainmob"), rt.fv(f, "name", rt.sv(f, "brainmob")));
-	rt.setFv(f, "loc", rt.sv(f, "brainmob"), live(f.src));
-	rt.setFv(f, "container", rt.sv(f, "brainmob"), live(f.src));
-	if (!truthy(rt.sv(f, "autoping"))) return f.dot;
-	yield* g.srcCall(f, "ping_ghosts", "created", 1);
+	this.brainmob.name = `${new_name}-${rand(100, 999)}`;
+	this.brainmob.real_name = this.brainmob.name;
+	this.brainmob.loc = this;
+	this.brainmob.container = this;
+	if (!this.autoping) return f.dot;
+	yield* this.ping_ghosts("created", 1);
 	return f.dot;
 }, true);
 
-// /obj/item/device/mmi/posibrain/proc/update_icon  (code/modules/mob/living/brain/posibrain.dm:166)
+// posibrain.dm:166
 rt.def("/obj/item/device/mmi/posibrain/proc/update_icon", function update_icon(f: Frame) {
-	if (truthy(rt.sv(f, "searching"))) {
-		rt.setSv(f, "icon_state", fmt("＀-searching", [rt.initial(f, live(f.src), "icon_state")]));
-		return live(f.dot);
+	if (this.searching) {
+		this.icon_state = `${rt.initial(f, this, "icon_state")}-searching`;
+		return f.dot;
 	}
-	if ((truthy(rt.sv(f, "brainmob")) && truthy(rt.fv(f, "key", rt.sv(f, "brainmob"))))) {
-		rt.setSv(f, "icon_state", fmt("＀-occupied", [rt.initial(f, live(f.src), "icon_state")]));
+	if (this.brainmob && this.brainmob.key) {
+		this.icon_state = `${rt.initial(f, this, "icon_state")}-occupied`;
 	} else {
-		rt.setSv(f, "icon_state", rt.initial(f, live(f.src), "icon_state"));
+		this.icon_state = rt.initial(f, this, "icon_state");
 	}
 	return f.dot;
 });

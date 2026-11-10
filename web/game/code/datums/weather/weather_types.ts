@@ -1,7 +1,7 @@
-// From code/datums/weather/weather_types.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/datums/weather/weather_types.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(1052, "/datum/weather/floor_is_lava", "/datum/weather", {
@@ -22,36 +22,28 @@ rt.type(1052, "/datum/weather/floor_is_lava", "/datum/weather", {
 	protected_areas: null,
 });
 
-// /datum/weather/floor_is_lava/proc/<init>  (code/datums/weather/weather_types.dm:19)
+// weather_types.dm:19
 rt.def("/datum/weather/floor_is_lava/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "protected_areas", rt.list(T("/area/space")));
+	parent_proc();
+	this.protected_areas = list(T("/area/space"));
 	return f.dot;
 });
 
-// /datum/weather/floor_is_lava/proc/impact  (code/datums/weather/weather_types.dm:26)  may sleep
+// weather_types.dm:26
 rt.def("/datum/weather/floor_is_lava/proc/impact", function* impact(f: Frame, L: Value) {
 	let O: Value = null;
-	let $e: any;
-	f.vars = () => [L, O, $e];
-	O = null;
-	rt.forList(f, 0, rt.fv(f, "loc", live(L)), T("/obj/structure"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		O = $e;
-		if (truthy(rt.fv(f, "density", live(O)))) {
-			return live(f.dot);
+	for (O of each(L.loc, T("/obj/structure"))) {
+		if (O.density) {
+			return f.dot;
 		}
 	}
-	rt.endFor(f, 0);
-	if (truthy(rt.gv(f, "density", rt.fv(f, "loc", live(L))))) {
-		return live(f.dot);
+	if (L.loc.density) {
+		return f.dot;
 	}
-	if (!truthy(rt.fv(f, "client", live(L)))) {
-		return live(f.dot);
+	if (!L.client) {
+		return f.dot;
 	}
-	yield* g.callName(f, live(L), "adjustFireLoss", [3]);
+	yield* L.adjustFireLoss(3);
 	return f.dot;
 }, true);
 
@@ -69,28 +61,22 @@ rt.type(1053, "/datum/weather/advanced_darkness", "/datum/weather", {
 	area_type: rt.typePath("/area"),
 });
 
-// /datum/weather/advanced_darkness/proc/update_areas  (code/datums/weather/weather_types.dm:54)
+// weather_types.dm:54
 rt.def("/datum/weather/advanced_darkness/proc/update_areas", function update_areas(f: Frame) {
 	let V: Value = null, A: Value = null;
-	let $e: any;
-	f.vars = () => [V, A, $e];
-	V = null;
-	rt.forList(f, 0, rt.sv(f, "impacted_areas"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		V = $e;
-		A = live(V);
-		if (isEqual(rt.sv(f, "stage"), 2)) {
-			rt.setFv(f, "invisibility", live(A), 0);
-			rt.callName(f, live(A), "set_opacity", [1]);
-			rt.setFv(f, "layer", live(A), rt.sv(f, "overlay_layer"));
-			rt.setFv(f, "icon", live(A), rt.rsc("icons/effects/weather_effects.dmi"));
-			rt.setFv(f, "icon_state", live(A), "darkness");
+	for (V of each(this.impacted_areas)) {
+		A = V;
+		if (this.stage == MAIN_STAGE) {
+			A.invisibility = 0;
+			A.set_opacity(1);
+			A.layer = this.overlay_layer;
+			A.icon = rt.rsc("icons/effects/weather_effects.dmi");
+			A.icon_state = "darkness";
 		} else {
-			rt.setFv(f, "invisibility", live(A), 100);
-			rt.callName(f, live(A), "set_opacity", [0]);
+			A.invisibility = INVISIBILITY_MAXIMUM;
+			A.set_opacity(0);
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
@@ -116,20 +102,19 @@ rt.type(1054, "/datum/weather/ash_storm", "/datum/weather", {
 	area_type: rt.typePath("/area/lavaland/surface/outdoors"),
 });
 
-// /datum/weather/ash_storm/proc/impact  (code/datums/weather/weather_types.dm:95)  may sleep
+// weather_types.dm:95
 rt.def("/datum/weather/ash_storm/proc/impact", function* impact(f: Frame, L: Value) {
 	let H: Value = null, thermal_protection: Value = null;
-	f.vars = () => [L, H, thermal_protection];
-	if (truthy((rt.istype(rt.fv(f, "loc", live(L)), T("/obj/mecha")) ? 1 : 0))) {
-		return live(f.dot);
+	if (rt.istype(L.loc, T("/obj/mecha"))) {
+		return f.dot;
 	}
-	if (truthy((rt.istype(live(L), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		H = live(L);
-		if (rt.ge((thermal_protection = (yield* g.callName(f, live(H), "get_thermal_protection", []))), 35000)) {
-			return live(f.dot);
+	if (rt.istype(L, T("/mob/living/carbon/human"))) {
+		H = L;
+		if ((thermal_protection = H.get_thermal_protection()) >= FIRE_IMMUNITY_SUIT_MAX_TEMP_PROTECT) {
+			return f.dot;
 		}
 	}
-	yield* g.callName(f, live(L), "adjustFireLoss", [4]);
+	yield* L.adjustFireLoss(4);
 	return f.dot;
 }, true);
 
@@ -152,76 +137,72 @@ rt.type(1056, "/datum/weather/rad_storm", "/datum/weather", {
 	protected_areas: null,
 });
 
-// /datum/weather/rad_storm/proc/<init>  (code/datums/weather/weather_types.dm:136)
+// weather_types.dm:136
 rt.def("/datum/weather/rad_storm/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "protected_areas", rt.list(T("/area/maintenance"), T("/area/ai_monitored/turret_protected/ai_upload"), T("/area/ai_monitored/turret_protected/ai_upload_foyer"), T("/area/ai_monitored/turret_protected/ai"), T("/area/storage/emergency/starboard"), T("/area/storage/emergency/port"), T("/area/shuttle")));
+	parent_proc();
+	this.protected_areas = list(T("/area/maintenance"), T("/area/ai_monitored/turret_protected/ai_upload"), T("/area/ai_monitored/turret_protected/ai_upload_foyer"), T("/area/ai_monitored/turret_protected/ai"), T("/area/storage/emergency/starboard"), T("/area/storage/emergency/port"), T("/area/shuttle"));
 	return f.dot;
 });
 
-// /datum/weather/rad_storm/proc/telegraph  (code/datums/weather/weather_types.dm:143)  may sleep
+// weather_types.dm:143
 rt.def("/datum/weather/rad_storm/proc/telegraph", function* telegraph(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "status_alarm", "alert");
+	yield* parent_proc();
+	yield* this.status_alarm("alert");
 	return f.dot;
 }, true);
 
-// /datum/weather/rad_storm/proc/impact  (code/datums/weather/weather_types.dm:148)  may sleep
+// weather_types.dm:148
 rt.def("/datum/weather/rad_storm/proc/impact", function* impact(f: Frame, L: Value) {
-	let resist: Value = null, H: Value = null;
-	f.vars = () => [L, resist, H];
-	resist = (yield* g.callName(f, live(L), "getarmor", [null, "rad"]));
-	if (!truthy(rt.op(f, "Prob", [], [40]))) return f.dot;
-	if (truthy((rt.istype(live(L), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		if ((truthy(rt.gv(f, "dna", (H = live(L)))) && truthy(rt.gv(f, "species", rt.fv(f, "dna", live(H)))))) {
-			if (!truthy((rt.isIn(f, 9, rt.gv(f, "species_traits", rt.gv(f, "species", rt.fv(f, "dna", live(H))))) ? 1 : 0))) {
-				if (truthy(rt.op(f, "Prob", [], [(yield* g.call(f, P("/proc/max"), null, [0, subtract(100, live(resist))]))]))) {
-					yield* g.callName(f, live(H), "randmuti", []);
-					if (truthy(rt.op(f, "Prob", [], [50]))) {
-						if (truthy(rt.op(f, "Prob", [], [90]))) {
-							yield* g.callName(f, live(H), "randmutb", []);
+	let H: Value = null;
+	let resist: Value = L.getarmor(null, "rad");
+	if (!prob(40)) return f.dot;
+	if (rt.istype(L, T("/mob/living/carbon/human"))) {
+		if ((H = L).dna && H.dna.species) {
+			if (!rt.isIn(f, RADIMMUNE, H.dna.species.species_traits)) {
+				if (prob(max(0, 100 - resist))) {
+					yield* H.randmuti();
+					if (prob(50)) {
+						if (prob(90)) {
+							yield* H.randmutb();
 						} else {
-							yield* g.callName(f, live(H), "randmutg", []);
+							yield* H.randmutg();
 						}
-						yield* g.callName(f, live(H), "domutcheck", []);
+						yield* H.domutcheck();
 					}
 				}
 			}
 		}
 	}
-	yield* g.callName(f, live(L), "rad_act", [20, 1]);
+	yield* L.rad_act(20, 1);
 	return f.dot;
 }, true);
 
-// /datum/weather/rad_storm/proc/end  (code/datums/weather/weather_types.dm:164)  may sleep
+// weather_types.dm:164
 rt.def("/datum/weather/rad_storm/proc/end", function* end(f: Frame) {
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		return live(f.dot);
+	if (yield* parent_proc()) {
+		return f.dot;
 	}
-	yield* g.call(f, P("/proc/priority_announce"), null, ["The radiation threat has passed. Please return to your workplaces.", "Anomaly Alert"]);
-	yield* g.srcCall(f, "status_alarm");
+	yield* priority_announce("The radiation threat has passed. Please return to your workplaces.", "Anomaly Alert");
+	yield* this.status_alarm();
 	return f.dot;
 }, true);
 
-// /datum/weather/rad_storm/proc/status_alarm  (code/datums/weather/weather_types.dm:171)  may sleep
+// weather_types.dm:171
 rt.def("/datum/weather/rad_storm/proc/status_alarm", function* status_alarm(f: Frame, command: Value) {
-	let frequency: Value = null, status_signal: Value = null, virt: Value = null;
-	f.vars = () => [command, frequency, status_signal, virt];
-	if (!truthy((frequency = (yield* g.callName(f, rt.gl("SSradio"), "return_frequency", [1435]))))) {
-		return live(f.dot);
+	let frequency: Value = null;
+	if (!(frequency = GLOB.SSradio.return_frequency(1435))) {
+		return f.dot;
 	}
-	status_signal = (yield* g.new_(f, T("/datum/signal"), []));
-	virt = (yield* g.new_(f, T("/atom/movable/virtualspeaker"), [null]));
-	rt.setFv(f, "source", live(status_signal), live(virt));
-	rt.setFv(f, "transmission_method", live(status_signal), 1);
-	rt.setAt(rt.fv(f, "data", live(status_signal)), "command", "shuttle");
-	if (isEqual(live(command), "alert")) {
-		rt.setAt(rt.fv(f, "data", live(status_signal)), "command", "alert");
-		rt.setAt(rt.fv(f, "data", live(status_signal)), "picture_state", "radiation");
+	let status_signal: Value = (yield* new_(T("/datum/signal")));
+	let virt: Value = (yield* new_(T("/atom/movable/virtualspeaker"), null));
+	status_signal.source = virt;
+	status_signal.transmission_method = 1;
+	rt.setAt(status_signal.data, "command", "shuttle");
+	if (command == "alert") {
+		rt.setAt(status_signal.data, "command", "alert");
+		rt.setAt(status_signal.data, "picture_state", "radiation");
 	}
-	yield* g.callName(f, live(frequency), "post_signal", [live(f.src), live(status_signal)]);
+	yield* frequency.post_signal(this, status_signal);
 	return f.dot;
 }, true);
 
@@ -244,12 +225,10 @@ rt.type(1057, "/datum/weather/acid_rain", "/datum/weather", {
 	area_type: rt.typePath("/area/lavaland/surface/outdoors"),
 });
 
-// /datum/weather/acid_rain/proc/impact  (code/datums/weather/weather_types.dm:214)  may sleep
+// weather_types.dm:214
 rt.def("/datum/weather/acid_rain/proc/impact", function* impact(f: Frame, L: Value) {
-	let resist: Value = null;
-	f.vars = () => [L, resist];
-	resist = (yield* g.callName(f, live(L), "getarmor", [null, "acid"]));
-	if (!truthy(rt.op(f, "Prob", [], [(yield* g.call(f, P("/proc/max"), null, [0, subtract(100, live(resist))]))]))) return f.dot;
-	yield* g.callName(f, live(L), "acid_act", [20, 20]);
+	let resist: Value = L.getarmor(null, "acid");
+	if (!prob(max(0, 100 - resist))) return f.dot;
+	yield* L.acid_act(20, 20);
 	return f.dot;
 }, true);

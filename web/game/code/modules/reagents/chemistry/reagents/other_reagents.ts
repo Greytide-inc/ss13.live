@@ -1,7 +1,7 @@
-// From code/modules/reagents/chemistry/reagents/other_reagents.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/reagents/chemistry/reagents/other_reagents.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, fmt } = rt;
 
 
 rt.type(3599, "/datum/reagent/blood", "/datum/reagent", {
@@ -18,126 +18,96 @@ rt.type(3599, "/datum/reagent/blood", "/datum/reagent", {
 	shot_glass_icon_state: "shotglassred",
 });
 
-// /datum/reagent/blood/proc/<init>  (code/modules/reagents/chemistry/reagents/other_reagents.dm:2)
+// other_reagents.dm:2
 rt.def("/datum/reagent/blood/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "data", rt.alist(f, ["donor", null, "viruses", null, "blood_DNA", null, "blood_type", null, "resistances", null, "trace_chem", null, "mind", null, "ckey", null, "gender", null, "real_name", null, "cloneable", null, "factions", null]));
+	parent_proc();
+	this.data = rt.alist(f, ["donor", null, "viruses", null, "blood_DNA", null, "blood_type", null, "resistances", null, "trace_chem", null, "mind", null, "ckey", null, "gender", null, "real_name", null, "cloneable", null, "factions", null]);
 	return f.dot;
 });
 
-// /datum/reagent/blood/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/other_reagents.dm:15)  may sleep
+// other_reagents.dm:15
 rt.def("/datum/reagent/blood/proc/reaction_mob", function* reaction_mob(f: Frame, M: Value, method: Value, reac_volume: Value) {
 	let D: Value = null, C: Value = null;
-	let $e: any;
-	f.vars = () => [M, method, reac_volume, D, C, $e];
-	if (live(method) === null) {
-		method = 1;
-	}
-	if ((truthy(rt.sv(f, "data")) && truthy(rt.at(rt.sv(f, "data"), "viruses")))) {
-		D = null;
-		rt.forList(f, 0, rt.at(rt.sv(f, "data"), "viruses"), T("/datum/disease"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			D = $e;
-			if ((truthy(rt.bitAnd(rt.fv(f, "spread_flags", live(D)), 1)) || truthy(rt.bitAnd(rt.fv(f, "spread_flags", live(D)), 2)))) {
+	method ??= TOUCH;
+	if (this.data && rt.at(this.data, "viruses")) {
+		for (D of each(rt.at(this.data, "viruses"), T("/datum/disease"))) {
+			if (rt.bitAnd(D.spread_flags, SPECIAL) || rt.bitAnd(D.spread_flags, NON_CONTAGIOUS)) {
 				continue;
 			}
-			if ((isEqual(live(method), 1) || isEqual(live(method), 3))) {
-				yield* g.callName(f, live(M), "ContractDisease", [live(D)]);
+			if (method == TOUCH || method == VAPOR) {
+				yield* M.ContractDisease(D);
 			} else {
-				yield* g.callName(f, live(M), "ForceContractDisease", [live(D)]);
+				yield* M.ForceContractDisease(D);
 			}
 		}
-		rt.endFor(f, 0);
 	}
-	if (!(isEqual(live(method), 5) && truthy((rt.istype(live(M), T("/mob/living/carbon")) ? 1 : 0)))) return f.dot;
-	if (!isEqual((yield* g.callName(f, (C = live(M)), "get_blood_id", [])), "blood")) return f.dot;
-	if ((!truthy(rt.sv(f, "data")) || !truthy((rt.isIn(f, rt.at(rt.sv(f, "data"), "blood_type"), (yield* g.call(f, P("/proc/get_safe_blood"), null, [rt.gv(f, "blood_type", rt.fv(f, "dna", live(C)))]))) ? 1 : 0)))) {
-		yield* g.callName(f, rt.fv(f, "reagents", live(C)), "add_reagent", ["toxin", multiply(live(reac_volume), 0.5)]);
+	if (!(method == INJECT && rt.istype(M, T("/mob/living/carbon")))) return f.dot;
+	if ((C = M).get_blood_id() != "blood") return f.dot;
+	if (!this.data || !rt.isIn(f, rt.at(this.data, "blood_type"), get_safe_blood(C.dna.blood_type))) {
+		yield* C.reagents.add_reagent("toxin", reac_volume * 0.5);
 	} else {
-		rt.setFv(f, "blood_volume", live(C), (yield* g.call(f, P("/proc/min"), null, [add(rt.fv(f, "blood_volume", live(C)), (yield* g.call(f, P("/proc/round"), null, [live(reac_volume), 0.10000000149011612]))), 2000])));
+		C.blood_volume = min(C.blood_volume + round(reac_volume, 0.1), BLOOD_VOLUME_MAXIMUM);
 	}
 	return f.dot;
 }, true);
 
-// /datum/reagent/blood/proc/on_new  (code/modules/reagents/chemistry/reagents/other_reagents.dm:36)  may sleep
+// other_reagents.dm:36
 rt.def("/datum/reagent/blood/proc/on_new", function* on_new(f: Frame, data: Value) {
-	f.vars = () => [data];
-	if (!truthy((rt.istype(live(data), T("/list")) ? 1 : 0))) return f.dot;
-	yield* g.call(f, P("/proc/SetViruses"), null, [live(f.src), live(data)]);
+	if (!rt.istype(data, T("/list"))) return f.dot;
+	yield* SetViruses(this, data);
 	return f.dot;
 }, true);
 
-// /datum/reagent/blood/proc/on_merge  (code/modules/reagents/chemistry/reagents/other_reagents.dm:40)  may sleep
+// other_reagents.dm:40
 rt.def("/datum/reagent/blood/proc/on_merge", function* on_merge(f: Frame, mix_data: Value) {
 	let mix1: Value = null, mix2: Value = null, to_mix: Value = null, AD: Value = null, preserve: Value = null, D: Value = null;
-	let $e: any;
-	f.vars = () => [mix_data, mix1, mix2, to_mix, AD, preserve, D, $e];
-	if ((truthy(rt.sv(f, "data")) && truthy(live(mix_data)))) {
-		rt.setAt(rt.sv(f, "data"), "cloneable", 0);
-		if ((truthy(rt.at(rt.sv(f, "data"), "viruses")) || truthy(rt.at(live(mix_data), "viruses")))) {
-			mix1 = rt.at(rt.sv(f, "data"), "viruses");
-			mix2 = rt.at(live(mix_data), "viruses");
-			to_mix = rt.list();
-			AD = null;
-			rt.forList(f, 0, live(mix1), T("/datum/disease/advance"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				AD = $e;
-				to_mix = rt.modify(live(to_mix), live(AD), add);
+	if (this.data && mix_data) {
+		rt.setAt(this.data, "cloneable", 0);
+		if (rt.at(this.data, "viruses") || rt.at(mix_data, "viruses")) {
+			mix1 = rt.at(this.data, "viruses");
+			mix2 = rt.at(mix_data, "viruses");
+			to_mix = list();
+			for (AD of each(mix1, T("/datum/disease/advance"))) {
+				to_mix += AD;
 			}
-			rt.endFor(f, 0);
 			AD = null;
-			rt.forList(f, 0, live(mix2), T("/datum/disease/advance"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				AD = $e;
-				to_mix = rt.modify(live(to_mix), live(AD), add);
+			for (AD of each(mix2, T("/datum/disease/advance"))) {
+				to_mix += AD;
 			}
-			rt.endFor(f, 0);
-			if (truthy((AD = (yield* g.call(f, P("/proc/Advance_Mix"), null, [live(to_mix)]))))) {
-				preserve = rt.list(live(AD));
-				D = null;
-				rt.forList(f, 0, rt.at(rt.sv(f, "data"), "viruses"));
-				while (($e = rt.next(f, 0)) !== undefined) {
-					D = $e;
-					if (!truthy((rt.istype(live(D), T("/datum/disease/advance")) ? 1 : 0))) {
-						preserve = rt.modify(live(preserve), live(D), add);
+			if (AD = (yield* Advance_Mix(to_mix))) {
+				preserve = list(AD);
+				for (D of each(rt.at(this.data, "viruses"))) {
+					if (!rt.istype(D, T("/datum/disease/advance"))) {
+						preserve += D;
 					}
 				}
-				rt.endFor(f, 0);
-				rt.setAt(rt.sv(f, "data"), "viruses", live(preserve));
+				rt.setAt(this.data, "viruses", preserve);
 			}
 		}
 	}
 	return 1;
 }, true);
 
-// /datum/reagent/blood/proc/reaction_turf  (code/modules/reagents/chemistry/reagents/other_reagents.dm:65)  may sleep
+// other_reagents.dm:65
 rt.def("/datum/reagent/blood/proc/reaction_turf", function* reaction_turf(f: Frame, _T: Value, reac_volume: Value) {
 	let B: Value = null, D: Value = null, newVirus: Value = null;
-	let $e: any;
-	f.vars = () => [_T, reac_volume, B, D, newVirus, $e];
-	if (!truthy((rt.istype(live(_T), T("/turf")) ? 1 : 0))) {
-		return live(f.dot);
+	if (!rt.istype(_T, T("/turf"))) {
+		return f.dot;
 	}
-	if (rt.lt(live(reac_volume), 3)) {
-		return live(f.dot);
+	if (reac_volume < 3) {
+		return f.dot;
 	}
-	if (!truthy((B = rt.locateIn(f, T("/obj/effect/decal/cleanable/blood"), live(_T))))) {
-		B = (yield* g.new_(f, T("/obj/effect/decal/cleanable/blood"), [live(_T)]));
+	if (!(B = rt.locateIn(f, T("/obj/effect/decal/cleanable/blood"), _T))) {
+		B = (yield* new_(T("/obj/effect/decal/cleanable/blood"), _T));
 	}
-	if (truthy(rt.at(rt.sv(f, "data"), "blood_DNA"))) {
-		rt.setAt(rt.fv(f, "blood_DNA", live(B)), rt.at(rt.sv(f, "data"), "blood_DNA"), rt.at(rt.sv(f, "data"), "blood_type"));
+	if (rt.at(this.data, "blood_DNA")) {
+		rt.setAt(B.blood_DNA, rt.at(this.data, "blood_DNA"), rt.at(this.data, "blood_type"));
 	}
-	D = null;
-	rt.forList(f, 0, rt.at(rt.sv(f, "data"), "viruses"), T("/datum/disease"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		D = $e;
-		newVirus = (yield* g.callName(f, live(D), "Copy", [1]));
-		rt.modField(f, live(B), "viruses", live(newVirus), add);
-		rt.setFv(f, "holder", live(newVirus), live(B));
+	for (D of each(rt.at(this.data, "viruses"), T("/datum/disease"))) {
+		newVirus = (yield* D.Copy(1));
+		B.viruses += newVirus;
+		newVirus.holder = B;
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
@@ -148,32 +118,24 @@ rt.type(3601, "/datum/reagent/vaccine", "/datum/reagent", {
 	taste_description: "slime",
 });
 
-// /datum/reagent/vaccine/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/other_reagents.dm:98)  may sleep
+// other_reagents.dm:98
 rt.def("/datum/reagent/vaccine/proc/reaction_mob", function* reaction_mob(f: Frame, M: Value, method: Value, reac_volume: Value) {
 	let D: Value = null;
-	let $e: any;
-	f.vars = () => [M, method, reac_volume, D, $e];
-	if (live(method) === null) {
-		method = 1;
-	}
-	if (!(truthy((rt.istype(rt.sv(f, "data"), T("/list")) ? 1 : 0)) && (isEqual(live(method), 2) || isEqual(live(method), 5)))) return f.dot;
-	D = null;
-	rt.forList(f, 0, rt.fv(f, "viruses", live(M)), T("/datum/disease"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		D = $e;
-		if (truthy((rt.isIn(f, (yield* g.callName(f, live(D), "GetDiseaseID", [])), rt.sv(f, "data")) ? 1 : 0))) {
-			yield* g.callName(f, live(D), "cure", []);
+	method ??= TOUCH;
+	if (!(rt.istype(this.data, T("/list")) && (method == INGEST || method == INJECT))) return f.dot;
+	for (D of each(M.viruses, T("/datum/disease"))) {
+		if (rt.isIn(f, (yield* D.GetDiseaseID()), this.data)) {
+			yield* D.cure();
 		}
 	}
-	rt.endFor(f, 0);
-	(rt.modField(f, live(M), "resistances", rt.sv(f, "data"), rt.bitOr));
+	(rt.modField(f, M, "resistances", this.data, rt.bitOr));
 	return f.dot;
 }, true);
 
-// /datum/reagent/vaccine/proc/on_merge  (code/modules/reagents/chemistry/reagents/other_reagents.dm:105)
+// other_reagents.dm:105
 rt.def("/datum/reagent/vaccine/proc/on_merge", function on_merge(f: Frame, data: Value) {
-	if (!truthy((rt.istype(live(data), T("/list")) ? 1 : 0))) return f.dot;
-	(rt.modField(f, live(f.src), "data", rt.callName(f, live(data), "Copy", []), rt.bitOr));
+	if (!rt.istype(data, T("/list"))) return f.dot;
+	(rt.modField(f, this, "data", data.Copy(), rt.bitOr));
 	return f.dot;
 });
 
@@ -190,71 +152,62 @@ rt.type(3602, "/datum/reagent/water", "/datum/reagent", {
 	shot_glass_icon_state: "shotglassclear",
 });
 
-// /datum/reagent/water/proc/reaction_turf  (code/modules/reagents/chemistry/reagents/other_reagents.dm:125)  may sleep
+// other_reagents.dm:125
 rt.def("/datum/reagent/water/proc/reaction_turf", function* reaction_turf(f: Frame, _T: Value, reac_volume: Value) {
-	let CT: Value = null, M: Value = null, hotspot: Value = null, G: Value = null, A: Value = null;
-	let $e: any;
-	f.vars = () => [_T, reac_volume, CT, M, hotspot, G, A, $e];
-	if (!truthy((rt.istype(live(_T), T("/turf/open")) ? 1 : 0))) {
-		return live(f.dot);
+	let M: Value = null, hotspot: Value = null, G: Value = null, A: Value = null;
+	if (!rt.istype(_T, T("/turf/open"))) {
+		return f.dot;
 	}
-	CT = rt.sv(f, "cooling_temperature");
-	if (rt.ge(live(reac_volume), 5)) {
-		yield* g.callName(f, live(_T), "MakeSlippery", ["min_wet_time", 10, "wet_time_to_add", (yield* g.call(f, P("/proc/min"), null, [multiply(live(reac_volume), 1.5), 60]))], rt.Args.Named);
+	let CT: Value = this.cooling_temperature;
+	if (reac_volume >= 5) {
+		yield* _T.MakeSlippery({ min_wet_time: 10, wet_time_to_add: min(reac_volume * 1.5, 60) });
 	}
-	M = null;
-	rt.forList(f, 0, live(_T), T("/mob/living/simple_animal/slime"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		yield* g.callName(f, live(M), "apply_water", []);
+	for (M of each(_T, T("/mob/living/simple_animal/slime"))) {
+		yield* M.apply_water();
 	}
-	rt.endFor(f, 0);
-	if ((truthy((hotspot = rt.locateIn(f, T("/obj/effect/hotspot"), live(_T)))) && !truthy((rt.istype(live(_T), T("/turf/open/space")) ? 1 : 0)))) {
-		if (truthy(rt.fv(f, "air", live(_T)))) {
-			rt.setFv(f, "temperature", (G = rt.fv(f, "air", live(_T))), (yield* g.call(f, P("/proc/max"), null, [(yield* g.call(f, P("/proc/min"), null, [subtract(rt.fv(f, "temperature", live(G)), multiply(live(CT), 1000)), divide(rt.fv(f, "temperature", live(G)), live(CT))])), 0])));
-			yield* g.callName(f, live(G), "react", []);
-			yield* g.call(f, P("/proc/qdel"), null, [live(hotspot)]);
+	if ((hotspot = rt.locateIn(f, T("/obj/effect/hotspot"), _T)) && !rt.istype(_T, T("/turf/open/space"))) {
+		if (_T.air) {
+			(G = _T.air).temperature = max(min(G.temperature - CT * 1000, G.temperature / CT), 0);
+			yield* G.react();
+			yield* qdel(hotspot);
 		}
 	}
-	if (!truthy((A = rt.locateIn(f, T("/obj/effect/acid"), live(_T))))) return f.dot;
-	rt.setFv(f, "acid_level", live(A), (yield* g.call(f, P("/proc/max"), null, [subtract(rt.fv(f, "acid_level", live(A)), multiply(live(reac_volume), 50)), 0])));
+	if (!(A = rt.locateIn(f, T("/obj/effect/acid"), _T))) return f.dot;
+	A.acid_level = max(A.acid_level - reac_volume * 50, 0);
 	return f.dot;
 }, true);
 
-// /datum/reagent/water/proc/reaction_obj  (code/modules/reagents/chemistry/reagents/other_reagents.dm:151)  may sleep
+// other_reagents.dm:151
 rt.def("/datum/reagent/water/proc/reaction_obj", function* reaction_obj(f: Frame, O: Value, reac_volume: Value) {
 	let cube: Value = null, dehy: Value = null, HH: Value = null, WL: Value = null;
-	f.vars = () => [O, reac_volume, cube, dehy, HH, WL];
-	yield* g.callName(f, live(O), "extinguish", []);
-	rt.setFv(f, "acid_level", live(O), 0);
-	if (truthy((rt.istype(live(O), T("/obj/item/weapon/reagent_containers/food/snacks/monkeycube")) ? 1 : 0))) {
-		yield* g.callName(f, (cube = live(O)), "Expand", []);
+	yield* O.extinguish();
+	O.acid_level = 0;
+	if (rt.istype(O, T("/obj/item/weapon/reagent_containers/food/snacks/monkeycube"))) {
+		yield* (cube = O).Expand();
+	} else if (rt.istype(O, T("/obj/item/toy/carpplushie/dehy_carp"))) {
+		yield* (dehy = O).Swell();
 	} else {
-		if (truthy((rt.istype(live(O), T("/obj/item/toy/carpplushie/dehy_carp")) ? 1 : 0))) {
-			yield* g.callName(f, (dehy = live(O)), "Swell", []);
-		} else {
-			if (!truthy((rt.istype(live(O), T("/obj/item/stack/sheet/hairlesshide")) ? 1 : 0))) return f.dot;
-			HH = live(O);
-			rt.setFv(f, "amount", (WL = (yield* g.new_(f, T("/obj/item/stack/sheet/wetleather"), [rt.getStep(f, live(HH), 0)]))), rt.fv(f, "amount", live(HH)));
-			yield* g.call(f, P("/proc/qdel"), null, [live(HH)]);
-		}
+		if (!rt.istype(O, T("/obj/item/stack/sheet/hairlesshide"))) return f.dot;
+		HH = O;
+		(WL = (yield* new_(T("/obj/item/stack/sheet/wetleather"), rt.getStep(f, HH, 0)))).amount = HH.amount;
+		yield* qdel(HH);
 	}
 	return f.dot;
 }, true);
 
-// /datum/reagent/water/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/other_reagents.dm:174)  may sleep
+// other_reagents.dm:174
 rt.def("/datum/reagent/water/proc/reaction_mob", function* reaction_mob(f: Frame) {
-	if (live(f.args[1]) === null) {
-		f.args[1] = 1;
+	if (f.args[1] === null) {
+		f.args[1] = TOUCH;
 	}
-	if (!truthy((rt.istype(live(f.args[0]), T("/mob/living")) ? 1 : 0))) {
-		return live(f.dot);
+	if (!rt.istype(f.args[0], T("/mob/living"))) {
+		return f.dot;
 	}
-	if (isEqual(live(f.args[1]), 1)) {
-		yield* g.callName(f, live(f.args[0]), "adjust_fire_stacks", [rt.neg(divide(live(f.args[2]), 10))]);
-		yield* g.callName(f, live(f.args[0]), "ExtinguishMob", []);
+	if (f.args[1] == TOUCH) {
+		yield* f.args[0].adjust_fire_stacks(-(f.args[2] / 10));
+		yield* f.args[0].ExtinguishMob();
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true, { args: ["M", "method", "reac_volume"] });
 
@@ -268,86 +221,74 @@ rt.type(3603, "/datum/reagent/water/holywater", "/datum/reagent/water", {
 	glass_desc: "A glass of holy water.",
 });
 
-// /datum/reagent/water/holywater/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/other_reagents.dm:191)  may sleep
+// other_reagents.dm:191
 rt.def("/datum/reagent/water/holywater/proc/reaction_mob", function* reaction_mob(f: Frame) {
-	if (live(f.args[1]) === null) {
-		f.args[1] = 1;
+	if (f.args[1] === null) {
+		f.args[1] = TOUCH;
 	}
-	if (truthy((yield* g.call(f, P("/proc/is_servant_of_ratvar"), null, [live(f.args[0])])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='userdanger'>A darkness begins to spread its unholy tendrils through your mind, purging the Justiciar's influence!</span>"]);
+	if (is_servant_of_ratvar(f.args[0])) {
+		to_chat(f.args[0], "<span class='userdanger'>A darkness begins to spread its unholy tendrils through your mind, purging the Justiciar's influence!</span>");
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true, { args: ["M", "method", "reac_volume"] });
 
-// /datum/reagent/water/holywater/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/other_reagents.dm:196)  may sleep
+// other_reagents.dm:196
 rt.def("/datum/reagent/water/holywater/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
-	let $0: any;
-	f.vars = () => [M, $0];
-	if (!truthy(rt.sv(f, "data"))) {
-		rt.setSv(f, "data", 1);
+	if (!this.data) {
+		this.data = 1;
 	}
-	rt.incSrcVar(f, "data", 1, true);
-	rt.setFv(f, "jitteriness", live(M), (yield* g.call(f, P("/proc/min"), null, [add(rt.fv(f, "jitteriness", live(M)), 4), 10])));
-	if (rt.ge(rt.sv(f, "data"), 30)) {
-		if (!truthy(rt.fv(f, "stuttering", live(M)))) {
-			rt.setFv(f, "stuttering", live(M), 1);
+	this.data++;
+	M.jitteriness = min(M.jitteriness + 4, 10);
+	if (this.data >= 30) {
+		if (!M.stuttering) {
+			M.stuttering = 1;
 		}
-		rt.setFv(f, "stuttering", live(M), (yield* g.call(f, P("/proc/min"), null, [add(rt.fv(f, "stuttering", live(M)), 4), 10])));
-		yield* g.callName(f, live(M), "Dizzy", [5]);
-		if ((truthy((yield* g.call(f, P("/proc/iscultist"), null, [live(M)]))) && truthy(rt.op(f, "Prob", [], [5])))) {
-			yield* g.callName(f, live(M), "say", [rt.op(f, "PickUnweighted", [8], ["Av'te Nar'sie", "Pa'lid Mors", "INO INO ORA ANA", "SAT ANA!", "Daim'niodeis Arc'iai Le'eones", "R'ge Na'sie", "Diabo us Vo'iscum", "Eld' Mon Nobis"])]);
-		} else {
-			if ((truthy((yield* g.call(f, P("/proc/is_servant_of_ratvar"), null, [live(M)]))) && truthy(rt.op(f, "Prob", [], [8])))) {
-				$0 = rt.op(f, "PickUnweighted", [3], ["speech", "message", "emote"]);
-				if ($0 === "speech") {
-					yield* g.call(f, P("/proc/clockwork_say"), null, [live(M), fmt("...＀", [(yield* g.call(f, P("/proc/text2ratvar"), null, [rt.op(f, "PickUnweighted", [4], ["Engine... your light grows dark...", "Where are you, master?", "He lies rusting in Error...", "Purge all untruths and... and... something..."])]))])]);
-				} else if ($0 === "message") {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(M), fmt("<span class='boldwarning'>＀.</span>", [rt.op(f, "PickUnweighted", [4], ["Ratvar's illumination of your mind has begun to flicker", "He lies rusting in Reebe, derelict and forgotten. And there he shall stay", "You can't save him. Nothing can save him now", "It seems that Nar-Sie will triumph after all"])])]);
-				} else if ($0 === "emote") {
-					yield* g.callName(f, live(M), "visible_message", [fmt("<span class='warning'>＀ ＀.</span>", [live(M), rt.op(f, "PickUnweighted", [3], ["whimpers quietly", "shivers as though cold", "glances around in paranoia"])])]);
-				}
+		M.stuttering = min(M.stuttering + 4, 10);
+		M.Dizzy(5);
+		if (iscultist(M) && prob(5)) {
+			yield* M.say(pick("Av'te Nar'sie", "Pa'lid Mors", "INO INO ORA ANA", "SAT ANA!", "Daim'niodeis Arc'iai Le'eones", "R'ge Na'sie", "Diabo us Vo'iscum", "Eld' Mon Nobis"));
+		} else if (is_servant_of_ratvar(M) && prob(8)) {
+			const chosen = pick("speech", "message", "emote");
+			if (chosen === "speech") {
+				yield* clockwork_say(M, `...${text2ratvar(pick("Engine... your light grows dark...", "Where are you, master?", "He lies rusting in Error...", "Purge all untruths and... and... something..."))}`);
+			} else if (chosen === "message") {
+				to_chat(M, `<span class='boldwarning'>${pick("Ratvar's illumination of your mind has begun to flicker", "He lies rusting in Reebe, derelict and forgotten. And there he shall stay", "You can't save him. Nothing can save him now", "It seems that Nar-Sie will triumph after all")}.</span>`);
+			} else if (chosen === "emote") {
+				M.visible_message(`<span class='warning'>${M} ${pick("whimpers quietly", "shivers as though cold", "glances around in paranoia")}.</span>`);
 			}
 		}
 	}
-	if (rt.ge(rt.sv(f, "data"), 75)) {
-		if ((truthy((yield* g.call(f, P("/proc/iscultist"), null, [live(M)]))) || truthy((yield* g.call(f, P("/proc/is_servant_of_ratvar"), null, [live(M)]))))) {
-			if (truthy((yield* g.call(f, P("/proc/iscultist"), null, [live(M)])))) {
-				yield* g.callName(f, rt.fv(f, "mode", rt.gl("SSticker")), "remove_cultist", [rt.fv(f, "mind", live(M)), 1, 1]);
-			} else {
-				if (truthy((yield* g.call(f, P("/proc/is_servant_of_ratvar"), null, [live(M)])))) {
-					yield* g.call(f, P("/proc/remove_servant_of_ratvar"), null, [live(M)]);
-				}
+	if (this.data >= 75) {
+		if (iscultist(M) || is_servant_of_ratvar(M)) {
+			if (iscultist(M)) {
+				yield* GLOB.SSticker.mode.remove_cultist(M.mind, 1, 1);
+			} else if (is_servant_of_ratvar(M)) {
+				yield* remove_servant_of_ratvar(M);
 			}
-			rt.setFv(f, "jitteriness", live(M), 0);
-			rt.setFv(f, "stuttering", live(M), 0);
-			yield* g.callName(f, rt.sv(f, "holder"), "remove_reagent", [rt.sv(f, "id"), rt.sv(f, "volume")]);
-			return live(f.dot);
+			M.jitteriness = 0;
+			M.stuttering = 0;
+			yield* this.holder.remove_reagent(this.id, this.volume);
+			return f.dot;
 		}
 	}
-	yield* g.callName(f, rt.sv(f, "holder"), "remove_reagent", [rt.sv(f, "id"), 0.4000000059604645]);
+	yield* this.holder.remove_reagent(this.id, 0.4);
 	return f.dot;
 }, true);
 
-// /datum/reagent/water/holywater/proc/reaction_turf  (code/modules/reagents/chemistry/reagents/other_reagents.dm:228)  may sleep
+// other_reagents.dm:228
 rt.def("/datum/reagent/water/holywater/proc/reaction_turf", function* reaction_turf(f: Frame) {
 	let R: Value = null;
-	let $e: any;
-	f.vars = () => [R, $e];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy((rt.istype(live(f.args[0]), T("/turf")) ? 1 : 0))) {
-		return live(f.dot);
+	yield* parent_proc();
+	if (!rt.istype(f.args[0], T("/turf"))) {
+		return f.dot;
 	}
-	if (rt.ge(live(f.args[1]), 10)) {
-		R = null;
-		rt.forList(f, 0, live(f.args[0]), T("/obj/effect/rune"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			R = $e;
-			yield* g.call(f, P("/proc/qdel"), null, [live(R)]);
+	if (f.args[1] >= 10) {
+		for (R of each(f.args[0], T("/obj/effect/rune"))) {
+			yield* qdel(R);
 		}
-		rt.endFor(f, 0);
 	}
-	yield* g.callName(f, live(f.args[0]), "Bless", []);
+	f.args[0].Bless();
 	return f.dot;
 }, true, { args: ["T", "reac_volume"] });
 
@@ -358,38 +299,37 @@ rt.type(3605, "/datum/reagent/fuel/unholywater", "/datum/reagent/fuel", {
 	taste_description: "suffering",
 });
 
-// /datum/reagent/fuel/unholywater/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/other_reagents.dm:242)  may sleep
+// other_reagents.dm:242
 rt.def("/datum/reagent/fuel/unholywater/proc/reaction_mob", function* reaction_mob(f: Frame) {
-	if (live(f.args[1]) === null) {
-		f.args[1] = 1;
+	if (f.args[1] === null) {
+		f.args[1] = TOUCH;
 	}
-	if ((isEqual(live(f.args[1]), 1) || isEqual(live(f.args[1]), 3))) {
-		yield* g.callName(f, rt.fv(f, "reagents", live(f.args[0])), "add_reagent", ["unholywater", divide(live(f.args[2]), 4)]);
-		return live(f.dot);
+	if (f.args[1] == TOUCH || f.args[1] == VAPOR) {
+		yield* f.args[0].reagents.add_reagent("unholywater", f.args[2] / 4);
+		return f.dot;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true, { args: ["M", "method", "reac_volume"] });
 
-// /datum/reagent/fuel/unholywater/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/other_reagents.dm:248)  may sleep
+// other_reagents.dm:248
 rt.def("/datum/reagent/fuel/unholywater/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
-	f.vars = () => [M];
-	if (truthy((yield* g.call(f, P("/proc/iscultist"), null, [live(M)])))) {
-		rt.setFv(f, "drowsyness", live(M), (yield* g.call(f, P("/proc/max"), null, [subtract(rt.fv(f, "drowsyness", live(M)), 5), 0])));
-		yield* g.callName(f, live(M), "AdjustUnconscious", [-20, 0]);
-		yield* g.callName(f, live(M), "AdjustStun", [-40, 0]);
-		yield* g.callName(f, live(M), "AdjustKnockdown", [-40, 0]);
-		yield* g.callName(f, live(M), "adjustToxLoss", [-2, 0]);
-		yield* g.callName(f, live(M), "adjustOxyLoss", [-2, 0]);
-		yield* g.callName(f, live(M), "adjustBruteLoss", [-2, 0]);
-		yield* g.callName(f, live(M), "adjustFireLoss", [-2, 0]);
+	if (iscultist(M)) {
+		M.drowsyness = max(M.drowsyness - 5, 0);
+		yield* M.AdjustUnconscious(-20, 0);
+		yield* M.AdjustStun(-40, 0);
+		yield* M.AdjustKnockdown(-40, 0);
+		yield* M.adjustToxLoss(-2, 0);
+		yield* M.adjustOxyLoss(-2, 0);
+		yield* M.adjustBruteLoss(-2, 0);
+		yield* M.adjustFireLoss(-2, 0);
 	} else {
-		yield* g.callName(f, live(M), "adjustBrainLoss", [3]);
-		yield* g.callName(f, live(M), "adjustToxLoss", [1, 0]);
-		yield* g.callName(f, live(M), "adjustFireLoss", [2, 0]);
-		yield* g.callName(f, live(M), "adjustOxyLoss", [2, 0]);
-		yield* g.callName(f, live(M), "adjustBruteLoss", [2, 0]);
+		yield* M.adjustBrainLoss(3);
+		yield* M.adjustToxLoss(1, 0);
+		yield* M.adjustFireLoss(2, 0);
+		yield* M.adjustOxyLoss(2, 0);
+		yield* M.adjustBruteLoss(2, 0);
 	}
-	yield* g.callName(f, rt.sv(f, "holder"), "remove_reagent", [rt.fv(f, "id", live(f.src)), 1]);
+	yield* this.holder.remove_reagent(this.id, 1);
 	f.dot = 1;
 	return f.dot;
 }, true);
@@ -401,15 +341,14 @@ rt.type(3606, "/datum/reagent/hellwater", "/datum/reagent", {
 	taste_description: "burning",
 });
 
-// /datum/reagent/hellwater/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/other_reagents.dm:273)  may sleep
+// other_reagents.dm:273
 rt.def("/datum/reagent/hellwater/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
-	f.vars = () => [M];
-	rt.setFv(f, "fire_stacks", live(M), (yield* g.call(f, P("/proc/min"), null, [5, add(rt.fv(f, "fire_stacks", live(M)), 3)])));
-	yield* g.callName(f, live(M), "IgniteMob", []);
-	yield* g.callName(f, live(M), "adjustToxLoss", [1, 0]);
-	yield* g.callName(f, live(M), "adjustFireLoss", [1, 0]);
-	yield* g.callName(f, live(M), "adjustBrainLoss", [5]);
-	yield* g.callName(f, rt.sv(f, "holder"), "remove_reagent", [rt.fv(f, "id", live(f.src)), 1]);
+	M.fire_stacks = min(5, M.fire_stacks + 3);
+	yield* M.IgniteMob();
+	yield* M.adjustToxLoss(1, 0);
+	yield* M.adjustFireLoss(1, 0);
+	yield* M.adjustBrainLoss(5);
+	yield* this.holder.remove_reagent(this.id, 1);
 	return f.dot;
 }, true);
 
@@ -421,14 +360,13 @@ rt.type(3607, "/datum/reagent/lube", "/datum/reagent", {
 	taste_description: "cherry",
 });
 
-// /datum/reagent/lube/proc/reaction_turf  (code/modules/reagents/chemistry/reagents/other_reagents.dm:294)  may sleep
+// other_reagents.dm:294
 rt.def("/datum/reagent/lube/proc/reaction_turf", function* reaction_turf(f: Frame, _T: Value, reac_volume: Value) {
-	f.vars = () => [_T, reac_volume];
-	if (!truthy((rt.istype(live(_T), T("/turf/open")) ? 1 : 0))) {
-		return live(f.dot);
+	if (!rt.istype(_T, T("/turf/open"))) {
+		return f.dot;
 	}
-	if (!rt.ge(live(reac_volume), 1)) return f.dot;
-	yield* g.callName(f, live(_T), "MakeSlippery", [2, 15, (yield* g.call(f, P("/proc/min"), null, [multiply(live(reac_volume), 2), 120]))]);
+	if (!(reac_volume >= 1)) return f.dot;
+	yield* _T.MakeSlippery(TURF_WET_LUBE, 15, min(reac_volume * 2, 120));
 	return f.dot;
 }, true);
 
@@ -442,122 +380,115 @@ rt.type(3608, "/datum/reagent/spraytan", "/datum/reagent", {
 	taste_description: "sour oranges",
 });
 
-// /datum/reagent/spraytan/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/other_reagents.dm:309)  may sleep
+// other_reagents.dm:309
 rt.def("/datum/reagent/spraytan/proc/reaction_mob", function* reaction_mob(f: Frame) {
 	let N: Value = null, newcolor: Value = null, len: Value = null, i: Value = null, ascii: Value = null;
-	let $0: any;
-	f.vars = () => [N, newcolor, len, i, ascii, $0];
-	if (live(f.args[1]) === null) {
-		f.args[1] = 1;
+	if (f.args[1] === null) {
+		f.args[1] = TOUCH;
 	}
-	if (live(f.args[3]) === null) {
+	if (f.args[3] === null) {
 		f.args[3] = 1;
 	}
-	if (truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		if ((isEqual(live(f.args[1]), 4) || isEqual(live(f.args[1]), 3))) {
-			if (isEqual(rt.gv(f, "id", rt.gv(f, "species", rt.gv(f, "dna", (N = live(f.args[0]))))), "human")) {
-				$0 = rt.fv(f, "skin_tone", live(N));
-				if ($0 === "african1") {
-					rt.setFv(f, "skin_tone", live(N), "african2");
-				} else if ($0 === "indian") {
-					rt.setFv(f, "skin_tone", live(N), "african1");
-				} else if ($0 === "arab") {
-					rt.setFv(f, "skin_tone", live(N), "indian");
-				} else if ($0 === "asian2") {
-					rt.setFv(f, "skin_tone", live(N), "arab");
-				} else if ($0 === "asian1") {
-					rt.setFv(f, "skin_tone", live(N), "asian2");
-				} else if ($0 === "mediterranean") {
-					rt.setFv(f, "skin_tone", live(N), "african1");
-				} else if ($0 === "latino") {
-					rt.setFv(f, "skin_tone", live(N), "mediterranean");
-				} else if ($0 === "caucasian3") {
-					rt.setFv(f, "skin_tone", live(N), "mediterranean");
-				} else if ($0 === "caucasian2") {
-					rt.setFv(f, "skin_tone", live(N), rt.op(f, "PickUnweighted", [2], ["caucasian3", "latino"]));
-				} else if ($0 === "caucasian1") {
-					rt.setFv(f, "skin_tone", live(N), "caucasian2");
-				} else if ($0 === "albino") {
-					rt.setFv(f, "skin_tone", live(N), "caucasian1");
+	if (rt.istype(f.args[0], T("/mob/living/carbon/human"))) {
+		if (f.args[1] == PATCH || f.args[1] == VAPOR) {
+			if ((N = f.args[0]).dna.species.id == "human") {
+				if (N.skin_tone === "african1") {
+					N.skin_tone = "african2";
+				} else if (N.skin_tone === "indian") {
+					N.skin_tone = "african1";
+				} else if (N.skin_tone === "arab") {
+					N.skin_tone = "indian";
+				} else if (N.skin_tone === "asian2") {
+					N.skin_tone = "arab";
+				} else if (N.skin_tone === "asian1") {
+					N.skin_tone = "asian2";
+				} else if (N.skin_tone === "mediterranean") {
+					N.skin_tone = "african1";
+				} else if (N.skin_tone === "latino") {
+					N.skin_tone = "mediterranean";
+				} else if (N.skin_tone === "caucasian3") {
+					N.skin_tone = "mediterranean";
+				} else if (N.skin_tone === "caucasian2") {
+					N.skin_tone = pick("caucasian3", "latino");
+				} else if (N.skin_tone === "caucasian1") {
+					N.skin_tone = "caucasian2";
+				} else if (N.skin_tone === "albino") {
+					N.skin_tone = "caucasian1";
 				}
 			}
-			if (truthy((rt.isIn(f, 1, rt.gv(f, "species_traits", rt.gv(f, "species", rt.fv(f, "dna", live(N))))) ? 1 : 0))) {
+			if (rt.isIn(f, 1, N.dna.species.species_traits)) {
 				newcolor = "";
-				len = rt.length(rt.index(rt.gv(f, "features", rt.fv(f, "dna", live(N))), "mcolor"));
-				i = null;
+				len = rt.length(rt.index(N.dna.features, "mcolor"));
 				i = 1;
-				while (rt.le(live(i), live(len))) {
-					$0 = (ascii = (yield* g.call(f, P("/proc/text2ascii"), null, [rt.index(rt.gv(f, "features", rt.fv(f, "dna", live(N))), "mcolor"), live(i)])));
-					if ($0 === 48) {
-						newcolor = rt.modify(live(newcolor), "0", add);
-					} else if (rt.inRange($0, 49, 57)) {
-						newcolor = rt.modify(live(newcolor), (yield* g.call(f, P("/proc/ascii2text"), null, [subtract(live(ascii), 1)])), add);
-					} else if ($0 === 97) {
-						newcolor = rt.modify(live(newcolor), "9", add);
-					} else if (rt.inRange($0, 98, 102)) {
-						newcolor = rt.modify(live(newcolor), (yield* g.call(f, P("/proc/ascii2text"), null, [subtract(live(ascii), 1)])), add);
-					} else if ($0 === 65) {
-						newcolor = rt.modify(live(newcolor), "9", add);
-					} else if (rt.inRange($0, 66, 70)) {
-						newcolor = rt.modify(live(newcolor), (yield* g.call(f, P("/proc/ascii2text"), null, [add(live(ascii), 31)])), add);
+				while (i <= len) {
+					const subject = (ascii = text2ascii(rt.index(N.dna.features, "mcolor"), i));
+					if (subject === 48) {
+						newcolor += "0";
+					} else if (rt.inRange(subject, 49, 57)) {
+						newcolor += ascii2text(ascii - 1);
+					} else if (subject === 97) {
+						newcolor += "9";
+					} else if (rt.inRange(subject, 98, 102)) {
+						newcolor += ascii2text(ascii - 1);
+					} else if (subject === 65) {
+						newcolor += "9";
+					} else if (rt.inRange(subject, 66, 70)) {
+						newcolor += ascii2text(ascii + 31);
 					} else {
 						break;
 					}
-					i = rt.modify(live(i), 1, add);
+					i += 1;
 				}
-				if (rt.ge(rt.index((yield* g.call(f, P("/proc/ReadHSV"), null, [live(newcolor)])), 3), rt.index((yield* g.call(f, P("/proc/ReadHSV"), null, ["#7F7F7F"])), 3))) {
-					rt.setAt(rt.gv(f, "features", rt.fv(f, "dna", live(N))), "mcolor", live(newcolor));
+				if (rt.index(ReadHSV(newcolor), 3) >= rt.index(ReadHSV("#7F7F7F"), 3)) {
+					rt.setAt(N.dna.features, "mcolor", newcolor);
 				}
 			}
-			yield* g.callName(f, live(N), "regenerate_icons", []);
+			yield* N.regenerate_icons();
 		}
-		if (isEqual(live(f.args[1]), 2)) {
-			if (truthy(live(f.args[3]))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='notice'>That tasted horrible.</span>"]);
+		if (f.args[1] == INGEST) {
+			if (f.args[3]) {
+				to_chat(f.args[0], "<span class='notice'>That tasted horrible.</span>");
 			}
-			yield* g.callName(f, live(f.args[0]), "AdjustStun", [40]);
-			yield* g.callName(f, live(f.args[0]), "AdjustKnockdown", [40]);
+			yield* f.args[0].AdjustStun(40);
+			yield* f.args[0].AdjustKnockdown(40);
 		}
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true, { args: ["M", "method", "reac_volume", "show_message"] });
 
-// /datum/reagent/spraytan/proc/overdose_process  (code/modules/reagents/chemistry/reagents/other_reagents.dm:374)  may sleep
-rt.def("/datum/reagent/spraytan/proc/overdose_process", function* overdose_process(f: Frame) {
+// other_reagents.dm:374
+rt.def("/datum/reagent/spraytan/proc/overdose_process", function* overdose_process(f: Frame, M: Value) {
 	let N: Value = null;
-	f.vars = () => [N];
-	rt.setSv(f, "metabolization_rate", 0.4000000059604645);
-	if (truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		rt.setFv(f, "hair_style", (N = live(f.args[0])), "Spiky");
-		rt.setFv(f, "facial_hair_style", live(N), "Shaved");
-		rt.setFv(f, "facial_hair_color", live(N), "000");
-		rt.setFv(f, "hair_color", live(N), "000");
-		if (!truthy((rt.isIn(f, 2, rt.gv(f, "species_traits", rt.gv(f, "species", rt.fv(f, "dna", live(N))))) ? 1 : 0))) {
-			rt.modField(f, rt.gv(f, "species", rt.fv(f, "dna", live(N))), "species_traits", 2, add);
+	this.metabolization_rate = REAGENTS_METABOLISM;
+	if (rt.istype(M, T("/mob/living/carbon/human"))) {
+		(N = M).hair_style = "Spiky";
+		N.facial_hair_style = "Shaved";
+		N.facial_hair_color = "000";
+		N.hair_color = "000";
+		if (!rt.isIn(f, HAIR, N.dna.species.species_traits)) {
+			N.dna.species.species_traits += HAIR;
 		}
-		if (truthy(rt.gv(f, "use_skintones", rt.gv(f, "species", rt.fv(f, "dna", live(N)))))) {
-			rt.setFv(f, "skin_tone", live(N), "orange");
-		} else {
-			if (truthy((rt.isIn(f, 1, rt.gv(f, "species_traits", rt.gv(f, "species", rt.fv(f, "dna", live(N))))) ? 1 : 0))) {
-				rt.setAt(rt.gv(f, "features", rt.fv(f, "dna", live(N))), "mcolor", "f80");
-			}
+		if (N.dna.species.use_skintones) {
+			N.skin_tone = "orange";
+		} else if (rt.isIn(f, MUTCOLORS, N.dna.species.species_traits)) {
+			rt.setAt(N.dna.features, "mcolor", "f80");
 		}
-		yield* g.callName(f, live(N), "regenerate_icons", []);
-		if (truthy(rt.op(f, "Prob", [], [7]))) {
-			if (truthy(rt.fv(f, "w_uniform", live(N)))) {
-				yield* g.callName(f, live(f.args[0]), "visible_message", [rt.op(f, "PickUnweighted", [2], [fmt("<b>＀</b>'s collar pops up without warning.</span>", [live(f.args[0])]), fmt("<b>＀</b> flexes ＀ arms.", [live(f.args[0]), (yield* g.callName(f, live(f.args[0]), "p_their", []))])])]);
+		yield* N.regenerate_icons();
+		if (prob(7)) {
+			if (N.w_uniform) {
+				M.visible_message(pick(`<b>${M}</b>'s collar pops up without warning.</span>`, `<b>${M}</b> flexes ${M.p_their()} arms.`));
 			} else {
-				yield* g.callName(f, live(f.args[0]), "visible_message", [fmt("<b>＀</b> flexes ＀ arms.", [live(f.args[0]), (yield* g.callName(f, live(f.args[0]), "p_their", []))])]);
+				M.visible_message(`<b>${M}</b> flexes ${M.p_their()} arms.`);
 			}
 		}
 	}
-	if (truthy(rt.op(f, "Prob", [], [10]))) {
-		yield* g.callName(f, live(f.args[0]), "say", [rt.op(f, "PickUnweighted", [5], ["Shit was SO cash.", "You are everything bad in the world.", "What sports do you play, other than 'jack off to naked drawn Japanese people?'", "Don’t be a stranger. Just hit me with your best shot.", "My name is John and I hate every single one of you."])]);
+	if (prob(10)) {
+		yield* M.say(pick("Shit was SO cash.", "You are everything bad in the world.", "What sports do you play, other than 'jack off to naked drawn Japanese people?'", "Don’t be a stranger. Just hit me with your best shot.", "My name is John and I hate every single one of you."));
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	return live(f.dot);
-}, true, { args: ["M"] });
+	yield* parent_proc();
+	return f.dot;
+}, true);
 
 rt.type(3609, "/datum/reagent/stableslimetoxin", "/datum/reagent", {
 	mutationtext: "<span class='danger'>The pain subsides. You feel... human.</span>",
@@ -570,32 +501,31 @@ rt.type(3609, "/datum/reagent/stableslimetoxin", "/datum/reagent", {
 	taste_description: "slime",
 });
 
-// /datum/reagent/stableslimetoxin/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/other_reagents.dm:408)  may sleep
-rt.def("/datum/reagent/stableslimetoxin/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		return live(f.dot);
+// other_reagents.dm:408
+rt.def("/datum/reagent/stableslimetoxin/proc/on_mob_life", function* on_mob_life(f: Frame, H: Value) {
+	yield* parent_proc();
+	if (!rt.istype(H, T("/mob/living/carbon/human"))) {
+		return f.dot;
 	}
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='warning'><b>You crumple in agony as your flesh wildly morphs into new forms!</b></span>"]);
-	yield* g.callName(f, live(f.args[0]), "visible_message", [fmt("<b>＀</b> falls to the ground and screams as ＀ skin bubbles and froths!", [live(f.args[0]), (yield* g.callName(f, live(f.args[0]), "p_their", []))])]);
-	yield* g.callName(f, live(f.args[0]), "Knockdown", [60, 0]);
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/datum/reagent/stableslimetoxin/proc/mutate"), live(f.args[0])])), 30]);
-	return live(f.dot);
-}, true, { args: ["H"] });
+	to_chat(H, "<span class='warning'><b>You crumple in agony as your flesh wildly morphs into new forms!</b></span>");
+	H.visible_message(`<b>${H}</b> falls to the ground and screams as ${H.p_their()} skin bubbles and froths!`);
+	yield* H.Knockdown(60, 0);
+	yield* addtimer((yield* new_(T("/datum/callback"), this, P("/datum/reagent/stableslimetoxin/proc/mutate"), H)), 30);
+	return f.dot;
+}, true);
 
-// /datum/reagent/stableslimetoxin/proc/mutate  (code/modules/reagents/chemistry/reagents/other_reagents.dm:418)  may sleep
+// other_reagents.dm:418
 rt.def("/datum/reagent/stableslimetoxin/proc/mutate", function* mutate(f: Frame, H: Value) {
-	let current_species: Value = null, mutation: Value = null;
-	f.vars = () => [H, current_species, mutation];
-	if ((!truthy(live(H)) || truthy(rt.fv(f, "gc_destroyed", live(H))))) {
-		return live(f.dot);
+	let mutation: Value = null;
+	if (!H || H.gc_destroyed) {
+		return f.dot;
 	}
-	current_species = rt.gv(f, "type", rt.gv(f, "species", rt.fv(f, "dna", live(H))));
-	if ((truthy((mutation = rt.sv(f, "race"))) && !isEqual(live(mutation), live(current_species)))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(H), rt.sv(f, "mutationtext")]);
-		yield* g.callName(f, live(H), "set_species", [live(mutation)]);
+	let current_species: Value = H.dna.species.type;
+	if ((mutation = this.race) && mutation != current_species) {
+		to_chat(H, this.mutationtext);
+		yield* H.set_species(mutation);
 	} else {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(H), "<span class='danger'>The pain vanishes suddenly. You feel no different.</span>"]);
+		to_chat(H, "<span class='danger'>The pain vanishes suddenly. You feel no different.</span>");
 	}
 	return f.dot;
 }, true, { argTypes: [{ type: 8, path: "/mob/living/carbon/human" }] });
@@ -608,26 +538,20 @@ rt.type(3623, "/datum/reagent/stableslimetoxin/unstable", "/datum/reagent/stable
 	mutationtext: "<span class='danger'>The pain subsides. You feel... different.</span>",
 });
 
-// /datum/reagent/stableslimetoxin/unstable/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/other_reagents.dm:544)  may sleep
-rt.def("/datum/reagent/stableslimetoxin/unstable/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	let possible_morphs: Value = null, type: Value = null, S: Value = null;
-	let $e: any;
-	f.vars = () => [possible_morphs, type, S, $e];
-	possible_morphs = rt.list();
-	type = null;
-	rt.forList(f, 0, subtract((yield* g.call(f, P("/proc/typesof"), null, [T("/datum/species")])), T("/datum/species")));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		type = $e;
-		if (truthy(rt.initial(f, (S = live(type)), "blacklisted"))) {
+// other_reagents.dm:544
+rt.def("/datum/reagent/stableslimetoxin/unstable/proc/on_mob_life", function* on_mob_life(f: Frame, H: Value) {
+	let type: Value = null, S: Value = null;
+	let possible_morphs: Value = list();
+	for (type of each(typesof(T("/datum/species")) - T("/datum/species"))) {
+		if (rt.initial(f, (S = type), "blacklisted")) {
 			continue;
 		}
-		possible_morphs = rt.modify(live(possible_morphs), live(S), add);
+		possible_morphs += S;
 	}
-	rt.endFor(f, 0);
-	rt.setSv(f, "race", rt.op(f, "PickUnweighted", [1], [live(possible_morphs)]));
-	yield* g.callSuper(f, [], rt.Args.Same);
+	this.race = pick(possible_morphs);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["H"] });
+}, true);
 
 rt.type(3624, "/datum/reagent/mulligan", "/datum/reagent", {
 	name: "Mulligan Toxin",
@@ -638,14 +562,14 @@ rt.type(3624, "/datum/reagent/mulligan", "/datum/reagent", {
 	taste_description: "slime",
 });
 
-// /datum/reagent/mulligan/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/other_reagents.dm:562)  may sleep
-rt.def("/datum/reagent/mulligan/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='warning'><b>You grit your teeth in pain as your body rapidly mutates!</b></span>"]);
-	yield* g.callName(f, live(f.args[0]), "visible_message", [fmt("<b>＀</b> suddenly transforms!", [live(f.args[0])])]);
-	yield* g.call(f, P("/proc/randomize_human"), null, [live(f.args[0])]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+// other_reagents.dm:562
+rt.def("/datum/reagent/mulligan/proc/on_mob_life", function* on_mob_life(f: Frame, H: Value) {
+	to_chat(H, "<span class='warning'><b>You grit your teeth in pain as your body rapidly mutates!</b></span>");
+	H.visible_message(`<b>${H}</b> suddenly transforms!`);
+	yield* randomize_human(H);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["H"] });
+}, true);
 
 rt.type(3625, "/datum/reagent/aslimetoxin", "/datum/reagent", {
 	name: "Advanced Mutation Toxin",
@@ -655,14 +579,11 @@ rt.type(3625, "/datum/reagent/aslimetoxin", "/datum/reagent", {
 	taste_description: "slime",
 });
 
-// /datum/reagent/aslimetoxin/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/other_reagents.dm:575)  may sleep
+// other_reagents.dm:575
 rt.def("/datum/reagent/aslimetoxin/proc/reaction_mob", function* reaction_mob(f: Frame, M: Value, method: Value, reac_volume: Value) {
-	f.vars = () => [M, method, reac_volume];
-	if (live(method) === null) {
-		method = 1;
-	}
-	if (isEqual(live(method), 1)) return f.dot;
-	yield* g.callName(f, live(M), "ForceContractDisease", [(yield* g.new_(f, T("/datum/disease/transformation/slime"), [0]))]);
+	method ??= TOUCH;
+	if (method == TOUCH) return f.dot;
+	yield* M.ForceContractDisease((yield* new_(T("/datum/disease/transformation/slime"), 0)));
 	return f.dot;
 }, true);
 
@@ -675,13 +596,10 @@ rt.type(3626, "/datum/reagent/gluttonytoxin", "/datum/reagent", {
 	taste_description: "decay",
 });
 
-// /datum/reagent/gluttonytoxin/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/other_reagents.dm:587)  may sleep
+// other_reagents.dm:587
 rt.def("/datum/reagent/gluttonytoxin/proc/reaction_mob", function* reaction_mob(f: Frame, M: Value, method: Value, reac_volume: Value) {
-	f.vars = () => [M, method, reac_volume];
-	if (live(method) === null) {
-		method = 1;
-	}
-	yield* g.callName(f, live(M), "ForceContractDisease", [(yield* g.new_(f, T("/datum/disease/transformation/morph"), [0]))]);
+	method ??= TOUCH;
+	yield* M.ForceContractDisease((yield* new_(T("/datum/disease/transformation/morph"), 0)));
 	return f.dot;
 }, true);
 
@@ -694,16 +612,16 @@ rt.type(3627, "/datum/reagent/serotrotium", "/datum/reagent", {
 	taste_description: "bitterness",
 });
 
-// /datum/reagent/serotrotium/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/other_reagents.dm:598)  may sleep
-rt.def("/datum/reagent/serotrotium/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	if (truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		if (truthy(rt.op(f, "Prob", [], [7]))) {
-			yield* g.callName(f, live(f.args[0]), "emote", [rt.op(f, "PickUnweighted", [4], ["twitch", "drool", "moan", "gasp"])]);
+// other_reagents.dm:598
+rt.def("/datum/reagent/serotrotium/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	if (rt.istype(M, T("/mob/living/carbon/human"))) {
+		if (prob(7)) {
+			yield* M.emote(pick("twitch", "drool", "moan", "gasp"));
 		}
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3628, "/datum/reagent/oxygen", "/datum/reagent", {
 	name: "Oxygen",
@@ -714,21 +632,21 @@ rt.type(3628, "/datum/reagent/oxygen", "/datum/reagent", {
 	taste_mult: 0,
 });
 
-// /datum/reagent/oxygen/proc/reaction_obj  (code/modules/reagents/chemistry/reagents/other_reagents.dm:612)
+// other_reagents.dm:612
 rt.def("/datum/reagent/oxygen/proc/reaction_obj", function reaction_obj(f: Frame, O: Value, reac_volume: Value) {
-	if ((!truthy(live(O)) || !truthy(live(reac_volume)))) {
+	if (!O || !reac_volume) {
 		return 0;
 	}
-	rt.callName(f, live(O), "atmos_spawn_air", [fmt("o2=＀;TEMP=＀", [divide(live(reac_volume), 2), 293.1499938964844])]);
+	O.atmos_spawn_air(`o2=${reac_volume / 2};TEMP=${T20C}`);
 	return f.dot;
 });
 
-// /datum/reagent/oxygen/proc/reaction_turf  (code/modules/reagents/chemistry/reagents/other_reagents.dm:617)
+// other_reagents.dm:617
 rt.def("/datum/reagent/oxygen/proc/reaction_turf", function reaction_turf(f: Frame, _T: Value, reac_volume: Value) {
-	if (truthy((rt.istype(live(_T), T("/turf/open")) ? 1 : 0))) {
-		rt.callName(f, live(_T), "atmos_spawn_air", [fmt("o2=＀;TEMP=＀", [divide(live(reac_volume), 2), 293.1499938964844])]);
+	if (rt.istype(_T, T("/turf/open"))) {
+		_T.atmos_spawn_air(`o2=${reac_volume / 2};TEMP=${T20C}`);
 	}
-	return live(f.dot);
+	return f.dot;
 });
 
 rt.type(3630, "/datum/reagent/nitrogen", "/datum/reagent", {
@@ -740,21 +658,21 @@ rt.type(3630, "/datum/reagent/nitrogen", "/datum/reagent", {
 	taste_mult: 0,
 });
 
-// /datum/reagent/nitrogen/proc/reaction_obj  (code/modules/reagents/chemistry/reagents/other_reagents.dm:638)
+// other_reagents.dm:638
 rt.def("/datum/reagent/nitrogen/proc/reaction_obj", function reaction_obj(f: Frame, O: Value, reac_volume: Value) {
-	if ((!truthy(live(O)) || !truthy(live(reac_volume)))) {
+	if (!O || !reac_volume) {
 		return 0;
 	}
-	rt.callName(f, live(O), "atmos_spawn_air", [fmt("n2=＀;TEMP=＀", [divide(live(reac_volume), 2), 293.1499938964844])]);
+	O.atmos_spawn_air(`n2=${reac_volume / 2};TEMP=${T20C}`);
 	return f.dot;
 });
 
-// /datum/reagent/nitrogen/proc/reaction_turf  (code/modules/reagents/chemistry/reagents/other_reagents.dm:643)
+// other_reagents.dm:643
 rt.def("/datum/reagent/nitrogen/proc/reaction_turf", function reaction_turf(f: Frame, _T: Value, reac_volume: Value) {
-	if (truthy((rt.istype(live(_T), T("/turf/open")) ? 1 : 0))) {
-		rt.callName(f, live(_T), "atmos_spawn_air", [fmt("n2=＀;TEMP=＀", [divide(live(reac_volume), 2), 293.1499938964844])]);
+	if (rt.istype(_T, T("/turf/open"))) {
+		_T.atmos_spawn_air(`n2=${reac_volume / 2};TEMP=${T20C}`);
 	}
-	return live(f.dot);
+	return f.dot;
 });
 
 rt.type(3633, "/datum/reagent/mercury", "/datum/reagent", {
@@ -765,18 +683,18 @@ rt.type(3633, "/datum/reagent/mercury", "/datum/reagent", {
 	taste_mult: 0,
 });
 
-// /datum/reagent/mercury/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/other_reagents.dm:671)  may sleep
-rt.def("/datum/reagent/mercury/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	if ((truthy(rt.fv(f, "canmove", live(f.args[0]))) && !truthy((rt.istype(rt.fv(f, "loc", live(f.args[0])), T("/turf/open/space")) ? 1 : 0)))) {
-		yield* g.call(f, P("/proc/step"), null, [live(f.args[0]), rt.op(f, "PickUnweighted", [1], [rt.gl("cardinal")])]);
+// other_reagents.dm:671
+rt.def("/datum/reagent/mercury/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	if (M.canmove && !rt.istype(M.loc, T("/turf/open/space"))) {
+		yield* step(M, pick(GLOB.cardinal));
 	}
-	if (truthy(rt.op(f, "Prob", [], [5]))) {
-		yield* g.callName(f, live(f.args[0]), "emote", [rt.op(f, "PickUnweighted", [3], ["twitch", "drool", "moan"])]);
+	if (prob(5)) {
+		yield* M.emote(pick("twitch", "drool", "moan"));
 	}
-	yield* g.callName(f, live(f.args[0]), "adjustBrainLoss", [2]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* M.adjustBrainLoss(2);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3635, "/datum/reagent/carbon", "/datum/reagent", {
 	name: "Carbon",
@@ -787,13 +705,12 @@ rt.type(3635, "/datum/reagent/carbon", "/datum/reagent", {
 	taste_description: "sour chalk",
 });
 
-// /datum/reagent/carbon/proc/reaction_turf  (code/modules/reagents/chemistry/reagents/other_reagents.dm:695)  may sleep
+// other_reagents.dm:695
 rt.def("/datum/reagent/carbon/proc/reaction_turf", function* reaction_turf(f: Frame, _T: Value, reac_volume: Value) {
 	let D: Value = null;
-	f.vars = () => [_T, reac_volume, D];
-	if (truthy((rt.istype(live(_T), T("/turf/open/space")) ? 1 : 0))) return f.dot;
-	if (truthy((D = rt.locateIn(f, T("/obj/effect/decal/cleanable/dirt"), rt.fv(f, "contents", live(_T)))))) return f.dot;
-	yield* g.new_(f, T("/obj/effect/decal/cleanable/dirt"), [live(_T)]);
+	if (rt.istype(_T, T("/turf/open/space"))) return f.dot;
+	if (D = rt.locateIn(f, T("/obj/effect/decal/cleanable/dirt"), _T.contents)) return f.dot;
+	yield* new_(T("/obj/effect/decal/cleanable/dirt"), _T);
 	return f.dot;
 }, true);
 
@@ -806,13 +723,13 @@ rt.type(3636, "/datum/reagent/chlorine", "/datum/reagent", {
 	taste_description: "chlorine",
 });
 
-// /datum/reagent/chlorine/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/other_reagents.dm:709)  may sleep
-rt.def("/datum/reagent/chlorine/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	yield* g.callName(f, live(f.args[0]), "take_bodypart_damage", [1, 0, 0]);
+// other_reagents.dm:709
+rt.def("/datum/reagent/chlorine/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	yield* M.take_bodypart_damage(1, 0, 0);
 	f.dot = 1;
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3637, "/datum/reagent/fluorine", "/datum/reagent", {
 	name: "Fluorine",
@@ -823,13 +740,13 @@ rt.type(3637, "/datum/reagent/fluorine", "/datum/reagent", {
 	taste_description: "acid",
 });
 
-// /datum/reagent/fluorine/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/other_reagents.dm:722)  may sleep
-rt.def("/datum/reagent/fluorine/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [1, 0]);
+// other_reagents.dm:722
+rt.def("/datum/reagent/fluorine/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	yield* M.adjustToxLoss(1, 0);
 	f.dot = 1;
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3640, "/datum/reagent/lithium", "/datum/reagent", {
 	name: "Lithium",
@@ -840,17 +757,17 @@ rt.type(3640, "/datum/reagent/lithium", "/datum/reagent", {
 	taste_description: "metal",
 });
 
-// /datum/reagent/lithium/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/other_reagents.dm:751)  may sleep
-rt.def("/datum/reagent/lithium/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	if ((truthy(rt.fv(f, "canmove", live(f.args[0]))) && !truthy((rt.istype(rt.fv(f, "loc", live(f.args[0])), T("/turf/open/space")) ? 1 : 0)))) {
-		yield* g.call(f, P("/proc/step"), null, [live(f.args[0]), rt.op(f, "PickUnweighted", [1], [rt.gl("cardinal")])]);
+// other_reagents.dm:751
+rt.def("/datum/reagent/lithium/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	if (M.canmove && !rt.istype(M.loc, T("/turf/open/space"))) {
+		yield* step(M, pick(GLOB.cardinal));
 	}
-	if (truthy(rt.op(f, "Prob", [], [5]))) {
-		yield* g.callName(f, live(f.args[0]), "emote", [rt.op(f, "PickUnweighted", [3], ["twitch", "drool", "moan"])]);
+	if (prob(5)) {
+		yield* M.emote(pick("twitch", "drool", "moan"));
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3642, "/datum/reagent/radium", "/datum/reagent", {
 	name: "Radium",
@@ -861,23 +778,22 @@ rt.type(3642, "/datum/reagent/radium", "/datum/reagent", {
 	taste_description: "the colour blue and regret",
 });
 
-// /datum/reagent/radium/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/other_reagents.dm:773)  may sleep
-rt.def("/datum/reagent/radium/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	yield* g.callName(f, live(f.args[0]), "apply_effect", [divide(2, rt.fv(f, "metabolism_efficiency", live(f.args[0]))), "irradiate", 0]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+// other_reagents.dm:773
+rt.def("/datum/reagent/radium/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	yield* M.apply_effect(2 / M.metabolism_efficiency, "irradiate", 0);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /datum/reagent/radium/proc/reaction_turf  (code/modules/reagents/chemistry/reagents/other_reagents.dm:777)  may sleep
+// other_reagents.dm:777
 rt.def("/datum/reagent/radium/proc/reaction_turf", function* reaction_turf(f: Frame, _T: Value, reac_volume: Value) {
 	let GG: Value = null;
-	f.vars = () => [_T, reac_volume, GG];
-	if (!rt.ge(live(reac_volume), 3)) return f.dot;
-	if (truthy((rt.istype(live(_T), T("/turf/open/space")) ? 1 : 0))) return f.dot;
-	if (!truthy((GG = rt.locateIn(f, T("/obj/effect/decal/cleanable/greenglow"), rt.fv(f, "contents", live(_T)))))) {
-		GG = (yield* g.new_(f, T("/obj/effect/decal/cleanable/greenglow"), [live(_T)]));
+	if (!(reac_volume >= 3)) return f.dot;
+	if (rt.istype(_T, T("/turf/open/space"))) return f.dot;
+	if (!(GG = rt.locateIn(f, T("/obj/effect/decal/cleanable/greenglow"), _T.contents))) {
+		GG = (yield* new_(T("/obj/effect/decal/cleanable/greenglow"), _T));
 	}
-	yield* g.callName(f, rt.fv(f, "reagents", live(GG)), "add_reagent", ["radium", live(reac_volume)]);
+	yield* GG.reagents.add_reagent("radium", reac_volume);
 	return f.dot;
 }, true);
 
@@ -889,25 +805,19 @@ rt.type(3644, "/datum/reagent/space_cleaner/sterilizine", "/datum/reagent/space_
 	taste_description: "bitterness",
 });
 
-// /datum/reagent/space_cleaner/sterilizine/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/other_reagents.dm:792)  may sleep
+// other_reagents.dm:792
 rt.def("/datum/reagent/space_cleaner/sterilizine/proc/reaction_mob", function* reaction_mob(f: Frame) {
 	let C: Value = null, s: Value = null, S: Value = null;
-	let $e: any;
-	f.vars = () => [C, s, S, $e];
-	if (live(f.args[1]) === null) {
-		f.args[1] = 1;
+	if (f.args[1] === null) {
+		f.args[1] = TOUCH;
 	}
-	if ((truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon")) ? 1 : 0)) && truthy((rt.isIn(f, live(f.args[1]), rt.list(1, 3, 4)) ? 1 : 0)))) {
-		C = live(f.args[0]);
-		s = null;
-		rt.forList(f, 0, rt.fv(f, "surgeries", live(C)));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			s = $e;
-			rt.setFv(f, "success_multiplier", (S = live(s)), (yield* g.call(f, P("/proc/max"), null, [0.20000000298023224, rt.fv(f, "success_multiplier", live(S))])));
+	if (rt.istype(f.args[0], T("/mob/living/carbon")) && rt.isIn(f, f.args[1], list(TOUCH, VAPOR, PATCH))) {
+		C = f.args[0];
+		for (s of each(C.surgeries)) {
+			(S = s).success_multiplier = max(0.2, S.success_multiplier);
 		}
-		rt.endFor(f, 0);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true, { args: ["M", "method", "reac_volume"] });
 
@@ -920,33 +830,32 @@ rt.type(3646, "/datum/reagent/iron", "/datum/reagent", {
 	color: "#C8A5DC",
 });
 
-// /datum/reagent/iron/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/other_reagents.dm:810)  may sleep
-rt.def("/datum/reagent/iron/proc/on_mob_life", function* on_mob_life(f: Frame) {
+// other_reagents.dm:810
+rt.def("/datum/reagent/iron/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
 	let C: Value = null;
-	f.vars = () => [C];
-	if (truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon")) ? 1 : 0))) {
-		if (rt.lt(rt.gv(f, "blood_volume", (C = live(f.args[0]))), 560)) {
-			rt.modField(f, live(C), "blood_volume", 0.5, add);
+	if (rt.istype(M, T("/mob/living/carbon"))) {
+		if ((C = M).blood_volume < BLOOD_VOLUME_NORMAL) {
+			C.blood_volume += 0.5;
 		}
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /datum/reagent/iron/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/other_reagents.dm:817)  may sleep
+// other_reagents.dm:817
 rt.def("/datum/reagent/iron/proc/reaction_mob", function* reaction_mob(f: Frame) {
-	if (live(f.args[1]) === null) {
-		f.args[1] = 1;
+	if (f.args[1] === null) {
+		f.args[1] = TOUCH;
 	}
-	if (!truthy((rt.istype(live(f.args[0]), T("/mob/living")) ? 1 : 0))) {
-		return live(f.dot);
+	if (!rt.istype(f.args[0], T("/mob/living"))) {
+		return f.dot;
 	}
-	if (truthy((yield* g.callName(f, live(f.args[0]), "has_bane", ["iron"])))) {
-		if ((truthy(rt.sv(f, "holder")) && rt.lt(rt.fv(f, "chem_temp", rt.sv(f, "holder")), 100))) {
-			yield* g.callName(f, rt.fv(f, "reagents", live(f.args[0])), "add_reagent", ["toxin", live(f.args[2])]);
+	if (f.args[0].has_bane("iron")) {
+		if (this.holder && this.holder.chem_temp < 100) {
+			yield* f.args[0].reagents.add_reagent("toxin", f.args[2]);
 		}
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true, { args: ["M", "method", "reac_volume"] });
 
@@ -959,18 +868,18 @@ rt.type(3648, "/datum/reagent/silver", "/datum/reagent", {
 	taste_description: "expensive yet reasonable metal",
 });
 
-// /datum/reagent/silver/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/other_reagents.dm:841)  may sleep
+// other_reagents.dm:841
 rt.def("/datum/reagent/silver/proc/reaction_mob", function* reaction_mob(f: Frame) {
-	if (live(f.args[1]) === null) {
-		f.args[1] = 1;
+	if (f.args[1] === null) {
+		f.args[1] = TOUCH;
 	}
-	if (!truthy((rt.istype(live(f.args[0]), T("/mob/living")) ? 1 : 0))) {
-		return live(f.dot);
+	if (!rt.istype(f.args[0], T("/mob/living"))) {
+		return f.dot;
 	}
-	if (truthy((yield* g.callName(f, live(f.args[0]), "has_bane", ["silver"])))) {
-		yield* g.callName(f, rt.fv(f, "reagents", live(f.args[0])), "add_reagent", ["toxin", live(f.args[2])]);
+	if (f.args[0].has_bane("silver")) {
+		yield* f.args[0].reagents.add_reagent("toxin", f.args[2]);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true, { args: ["M", "method", "reac_volume"] });
 
@@ -983,23 +892,22 @@ rt.type(3649, "/datum/reagent/uranium", "/datum/reagent", {
 	taste_description: "the inside of a reactor",
 });
 
-// /datum/reagent/uranium/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/other_reagents.dm:856)  may sleep
-rt.def("/datum/reagent/uranium/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	yield* g.callName(f, live(f.args[0]), "apply_effect", [divide(1, rt.fv(f, "metabolism_efficiency", live(f.args[0]))), "irradiate", 0]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+// other_reagents.dm:856
+rt.def("/datum/reagent/uranium/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	yield* M.apply_effect(1 / M.metabolism_efficiency, "irradiate", 0);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /datum/reagent/uranium/proc/reaction_turf  (code/modules/reagents/chemistry/reagents/other_reagents.dm:860)  may sleep
+// other_reagents.dm:860
 rt.def("/datum/reagent/uranium/proc/reaction_turf", function* reaction_turf(f: Frame, _T: Value, reac_volume: Value) {
 	let GG: Value = null;
-	f.vars = () => [_T, reac_volume, GG];
-	if (!rt.ge(live(reac_volume), 3)) return f.dot;
-	if (truthy((rt.istype(live(_T), T("/turf/open/space")) ? 1 : 0))) return f.dot;
-	if (!truthy((GG = rt.locateIn(f, T("/obj/effect/decal/cleanable/greenglow"), rt.fv(f, "contents", live(_T)))))) {
-		GG = (yield* g.new_(f, T("/obj/effect/decal/cleanable/greenglow"), [live(_T)]));
+	if (!(reac_volume >= 3)) return f.dot;
+	if (rt.istype(_T, T("/turf/open/space"))) return f.dot;
+	if (!(GG = rt.locateIn(f, T("/obj/effect/decal/cleanable/greenglow"), _T.contents))) {
+		GG = (yield* new_(T("/obj/effect/decal/cleanable/greenglow"), _T));
 	}
-	yield* g.callName(f, rt.fv(f, "reagents", live(GG)), "add_reagent", ["uranium", live(reac_volume)]);
+	yield* GG.reagents.add_reagent("uranium", reac_volume);
 	return f.dot;
 }, true);
 
@@ -1012,29 +920,29 @@ rt.type(3653, "/datum/reagent/bluespace", "/datum/reagent", {
 	taste_description: "fizzling blue",
 });
 
-// /datum/reagent/bluespace/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/other_reagents.dm:876)  may sleep
+// other_reagents.dm:876
 rt.def("/datum/reagent/bluespace/proc/reaction_mob", function* reaction_mob(f: Frame) {
-	if (live(f.args[1]) === null) {
-		f.args[1] = 1;
+	if (f.args[1] === null) {
+		f.args[1] = TOUCH;
 	}
-	if ((isEqual(live(f.args[1]), 1) || isEqual(live(f.args[1]), 3))) {
-		yield* g.call(f, P("/proc/do_teleport"), null, [null, live(f.args[0]), null, rt.getStep(f, live(f.args[0]), 0), null, divide(live(f.args[2]), 5), "asoundin", rt.rsc("sound/effects/phasein.ogg")], rt.Args.Named);
+	if (f.args[1] == TOUCH || f.args[1] == VAPOR) {
+		yield* do_teleport(f.args[0], rt.getStep(f, f.args[0], 0), f.args[2] / 5, { asoundin: rt.rsc("sound/effects/phasein.ogg") });
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true, { args: ["M", "method", "reac_volume"] });
 
-// /datum/reagent/bluespace/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/other_reagents.dm:881)  may sleep
-rt.def("/datum/reagent/bluespace/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	if ((rt.gt(rt.sv(f, "current_cycle"), 10) && truthy(rt.op(f, "Prob", [], [15])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='warning'>You feel unstable...</span>"]);
-		yield* g.callName(f, live(f.args[0]), "Jitter", [2]);
-		rt.setSv(f, "current_cycle", 1);
-		yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), ["some_magic_bullshit", P("/proc/do_teleport"), live(f.args[0]), rt.getStep(f, live(f.args[0]), 0), 5, null, null, null, rt.rsc("sound/effects/phasein.ogg")])), 30]);
+// other_reagents.dm:881
+rt.def("/datum/reagent/bluespace/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	if (this.current_cycle > 10 && prob(15)) {
+		to_chat(M, "<span class='warning'>You feel unstable...</span>");
+		M.Jitter(2);
+		this.current_cycle = 1;
+		yield* addtimer((yield* new_(T("/datum/callback"), "some_magic_bullshit", P("/proc/do_teleport"), M, rt.getStep(f, M, 0), 5, null, null, null, rt.rsc("sound/effects/phasein.ogg"))), 30);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3604, "/datum/reagent/fuel", "/datum/reagent", {
 	name: "Welding fuel",
@@ -1047,29 +955,29 @@ rt.type(3604, "/datum/reagent/fuel", "/datum/reagent", {
 	glass_desc: "Unless you're an industrial tool, this is probably not safe for consumption.",
 });
 
-// /datum/reagent/fuel/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/other_reagents.dm:915)  may sleep
+// other_reagents.dm:915
 rt.def("/datum/reagent/fuel/proc/reaction_mob", function* reaction_mob(f: Frame) {
-	if (live(f.args[1]) === null) {
-		f.args[1] = 1;
+	if (f.args[1] === null) {
+		f.args[1] = TOUCH;
 	}
-	if (!truthy((rt.istype(live(f.args[0]), T("/mob/living")) ? 1 : 0))) {
-		return live(f.dot);
+	if (!rt.istype(f.args[0], T("/mob/living"))) {
+		return f.dot;
 	}
-	if ((isEqual(live(f.args[1]), 1) || isEqual(live(f.args[1]), 3))) {
-		yield* g.callName(f, live(f.args[0]), "adjust_fire_stacks", [divide(live(f.args[2]), 10)]);
-		return live(f.dot);
+	if (f.args[1] == TOUCH || f.args[1] == VAPOR) {
+		yield* f.args[0].adjust_fire_stacks(f.args[2] / 10);
+		return f.dot;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true, { args: ["M", "method", "reac_volume"] });
 
-// /datum/reagent/fuel/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/other_reagents.dm:923)  may sleep
-rt.def("/datum/reagent/fuel/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [1, 0]);
+// other_reagents.dm:923
+rt.def("/datum/reagent/fuel/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	yield* M.adjustToxLoss(1, 0);
 	f.dot = 1;
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3643, "/datum/reagent/space_cleaner", "/datum/reagent", {
 	name: "Space cleaner",
@@ -1079,99 +987,78 @@ rt.type(3643, "/datum/reagent/space_cleaner", "/datum/reagent", {
 	taste_description: "sourness",
 });
 
-// /datum/reagent/space_cleaner/proc/reaction_obj  (code/modules/reagents/chemistry/reagents/other_reagents.dm:935)  may sleep
+// other_reagents.dm:935
 rt.def("/datum/reagent/space_cleaner/proc/reaction_obj", function* reaction_obj(f: Frame, O: Value, reac_volume: Value) {
-	f.vars = () => [O, reac_volume];
-	if (truthy((rt.istype(live(O), T("/obj/effect/decal/cleanable")) ? 1 : 0))) {
-		yield* g.call(f, P("/proc/qdel"), null, [live(O)]);
+	if (rt.istype(O, T("/obj/effect/decal/cleanable"))) {
+		yield* qdel(O);
 	} else {
-		if (!truthy(live(O))) return f.dot;
-		yield* g.callName(f, live(O), "remove_atom_colour", [3]);
-		yield* g.callName(f, live(O), "clean_blood", []);
+		if (!O) return f.dot;
+		O.remove_atom_colour(WASHABLE_COLOUR_PRIORITY);
+		O.clean_blood();
 	}
 	return f.dot;
 }, true);
 
-// /datum/reagent/space_cleaner/proc/reaction_turf  (code/modules/reagents/chemistry/reagents/other_reagents.dm:943)  may sleep
+// other_reagents.dm:943
 rt.def("/datum/reagent/space_cleaner/proc/reaction_turf", function* reaction_turf(f: Frame, _T: Value, reac_volume: Value) {
 	let C: Value = null, M: Value = null;
-	let $e: any;
-	f.vars = () => [_T, reac_volume, C, M, $e];
-	if (!rt.ge(live(reac_volume), 1)) return f.dot;
-	yield* g.callName(f, live(_T), "remove_atom_colour", [3]);
-	yield* g.callName(f, live(_T), "clean_blood", []);
-	C = null;
-	rt.forList(f, 0, live(_T), T("/obj/effect/decal/cleanable"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		C = $e;
-		yield* g.call(f, P("/proc/qdel"), null, [live(C)]);
+	if (!(reac_volume >= 1)) return f.dot;
+	_T.remove_atom_colour(WASHABLE_COLOUR_PRIORITY);
+	_T.clean_blood();
+	for (C of each(_T, T("/obj/effect/decal/cleanable"))) {
+		yield* qdel(C);
 	}
-	rt.endFor(f, 0);
-	M = null;
-	rt.forList(f, 0, live(_T), T("/mob/living/simple_animal/slime"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		yield* g.callName(f, live(M), "adjustToxLoss", [(yield* g.call(f, P("/proc/rand"), null, [5, 10]))]);
+	for (M of each(_T, T("/mob/living/simple_animal/slime"))) {
+		yield* M.adjustToxLoss(rand(5, 10));
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /datum/reagent/space_cleaner/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/other_reagents.dm:953)  may sleep
+// other_reagents.dm:953
 rt.def("/datum/reagent/space_cleaner/proc/reaction_mob", function* reaction_mob(f: Frame, M: Value, method: Value, reac_volume: Value) {
-	let C: Value = null, H: Value = null, I: Value = null;
-	let $e: any;
-	f.vars = () => [M, method, reac_volume, C, H, I, $e];
-	if (live(method) === null) {
-		method = 1;
-	}
-	if (!(isEqual(live(method), 1) || isEqual(live(method), 3))) return f.dot;
-	yield* g.callName(f, live(M), "remove_atom_colour", [3]);
-	if (!truthy((rt.istype(live(M), T("/mob/living/carbon")) ? 1 : 0))) return f.dot;
-	C = live(M);
-	if (truthy((rt.istype(live(M), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		if (truthy(rt.gv(f, "lip_style", (H = live(M))))) {
-			rt.setFv(f, "lip_style", live(H), null);
-			yield* g.callName(f, live(H), "update_body", []);
+	let H: Value = null, I: Value = null;
+	method ??= TOUCH;
+	if (!(method == TOUCH || method == VAPOR)) return f.dot;
+	M.remove_atom_colour(WASHABLE_COLOUR_PRIORITY);
+	if (!rt.istype(M, T("/mob/living/carbon"))) return f.dot;
+	let C: Value = M;
+	if (rt.istype(M, T("/mob/living/carbon/human"))) {
+		if ((H = M).lip_style) {
+			H.lip_style = null;
+			yield* H.update_body();
 		}
 	}
-	I = null;
-	rt.forList(f, 0, rt.fv(f, "held_items", live(C)), T("/obj/item"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		yield* g.callName(f, live(I), "clean_blood", []);
+	for (I of each(C.held_items, T("/obj/item"))) {
+		I.clean_blood();
 	}
-	rt.endFor(f, 0);
-	if (truthy(rt.fv(f, "wear_mask", live(C)))) {
-		if (truthy((yield* g.callName(f, rt.fv(f, "wear_mask", live(C)), "clean_blood", [])))) {
-			yield* g.callName(f, live(C), "update_inv_wear_mask", []);
+	if (C.wear_mask) {
+		if (C.wear_mask.clean_blood()) {
+			yield* C.update_inv_wear_mask();
 		}
 	}
-	if (truthy((rt.istype(live(M), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		if (truthy(rt.gv(f, "head", (H = live(C))))) {
-			if (truthy((yield* g.callName(f, rt.fv(f, "head", live(H)), "clean_blood", [])))) {
-				yield* g.callName(f, live(H), "update_inv_head", []);
+	if (rt.istype(M, T("/mob/living/carbon/human"))) {
+		if ((H = C).head) {
+			if (H.head.clean_blood()) {
+				yield* H.update_inv_head();
 			}
 		}
-		if (truthy(rt.fv(f, "wear_suit", live(H)))) {
-			if (truthy((yield* g.callName(f, rt.fv(f, "wear_suit", live(H)), "clean_blood", [])))) {
-				yield* g.callName(f, live(H), "update_inv_wear_suit", []);
+		if (H.wear_suit) {
+			if (H.wear_suit.clean_blood()) {
+				yield* H.update_inv_wear_suit();
 			}
-		} else {
-			if (truthy(rt.fv(f, "w_uniform", live(H)))) {
-				if (truthy((yield* g.callName(f, rt.fv(f, "w_uniform", live(H)), "clean_blood", [])))) {
-					yield* g.callName(f, live(H), "update_inv_w_uniform", []);
-				}
+		} else if (H.w_uniform) {
+			if (H.w_uniform.clean_blood()) {
+				yield* H.update_inv_w_uniform();
 			}
 		}
-		if (truthy(rt.fv(f, "shoes", live(H)))) {
-			if (truthy((yield* g.callName(f, rt.fv(f, "shoes", live(H)), "clean_blood", [])))) {
-				yield* g.callName(f, live(H), "update_inv_shoes", []);
+		if (H.shoes) {
+			if (H.shoes.clean_blood()) {
+				H.update_inv_shoes();
 			}
 		}
-		yield* g.callName(f, live(H), "wash_cream", []);
+		H.wash_cream();
 	}
-	yield* g.callName(f, live(M), "clean_blood", []);
+	M.clean_blood();
 	return f.dot;
 }, true);
 
@@ -1183,24 +1070,24 @@ rt.type(3645, "/datum/reagent/space_cleaner/ez_clean", "/datum/reagent/space_cle
 	taste_description: "acid",
 });
 
-// /datum/reagent/space_cleaner/ez_clean/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/other_reagents.dm:992)  may sleep
-rt.def("/datum/reagent/space_cleaner/ez_clean/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	yield* g.callName(f, live(f.args[0]), "adjustBruteLoss", [3.3299999237060547]);
-	yield* g.callName(f, live(f.args[0]), "adjustFireLoss", [3.3299999237060547]);
-	yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [3.3299999237060547]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+// other_reagents.dm:992
+rt.def("/datum/reagent/space_cleaner/ez_clean/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	yield* M.adjustBruteLoss(3.33);
+	yield* M.adjustFireLoss(3.33);
+	yield* M.adjustToxLoss(3.33);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /datum/reagent/space_cleaner/ez_clean/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/other_reagents.dm:998)  may sleep
+// other_reagents.dm:998
 rt.def("/datum/reagent/space_cleaner/ez_clean/proc/reaction_mob", function* reaction_mob(f: Frame) {
-	if (live(f.args[1]) === null) {
-		f.args[1] = 1;
+	if (f.args[1] === null) {
+		f.args[1] = TOUCH;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!((isEqual(live(f.args[1]), 1) || isEqual(live(f.args[1]), 3)) && !truthy((rt.istype(live(f.args[0]), T("/mob/living/silicon")) ? 1 : 0)))) return f.dot;
-	yield* g.callName(f, live(f.args[0]), "adjustBruteLoss", [1]);
-	yield* g.callName(f, live(f.args[0]), "adjustFireLoss", [1]);
+	yield* parent_proc();
+	if (!((f.args[1] == TOUCH || f.args[1] == VAPOR) && !rt.istype(f.args[0], T("/mob/living/silicon")))) return f.dot;
+	yield* f.args[0].adjustBruteLoss(1);
+	yield* f.args[0].adjustFireLoss(1);
 	return f.dot;
 }, true, { args: ["M", "method", "reac_volume"] });
 
@@ -1213,16 +1100,16 @@ rt.type(3656, "/datum/reagent/cryptobiolin", "/datum/reagent", {
 	taste_description: "sourness",
 });
 
-// /datum/reagent/cryptobiolin/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/other_reagents.dm:1012)  may sleep
-rt.def("/datum/reagent/cryptobiolin/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	yield* g.callName(f, live(f.args[0]), "Dizzy", [1]);
-	if (!truthy(rt.fv(f, "confused", live(f.args[0])))) {
-		rt.setFv(f, "confused", live(f.args[0]), 1);
+// other_reagents.dm:1012
+rt.def("/datum/reagent/cryptobiolin/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	M.Dizzy(1);
+	if (!M.confused) {
+		M.confused = 1;
 	}
-	rt.setFv(f, "confused", live(f.args[0]), (yield* g.call(f, P("/proc/max"), null, [rt.fv(f, "confused", live(f.args[0])), 20])));
-	yield* g.callSuper(f, [], rt.Args.Same);
+	M.confused = max(M.confused, 20);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3657, "/datum/reagent/impedrezene", "/datum/reagent", {
 	name: "Impedrezene",
@@ -1232,21 +1119,21 @@ rt.type(3657, "/datum/reagent/impedrezene", "/datum/reagent", {
 	taste_description: "numbness",
 });
 
-// /datum/reagent/impedrezene/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/other_reagents.dm:1026)  may sleep
-rt.def("/datum/reagent/impedrezene/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	rt.setFv(f, "jitteriness", live(f.args[0]), (yield* g.call(f, P("/proc/max"), null, [subtract(rt.fv(f, "jitteriness", live(f.args[0])), 5), 0])));
-	if (truthy(rt.op(f, "Prob", [], [80]))) {
-		yield* g.callName(f, live(f.args[0]), "adjustBrainLoss", [1]);
+// other_reagents.dm:1026
+rt.def("/datum/reagent/impedrezene/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	M.jitteriness = max(M.jitteriness - 5, 0);
+	if (prob(80)) {
+		yield* M.adjustBrainLoss(1);
 	}
-	if (truthy(rt.op(f, "Prob", [], [50]))) {
-		rt.setFv(f, "drowsyness", live(f.args[0]), (yield* g.call(f, P("/proc/max"), null, [rt.fv(f, "drowsyness", live(f.args[0])), 3])));
+	if (prob(50)) {
+		M.drowsyness = max(M.drowsyness, 3);
 	}
-	if (truthy(rt.op(f, "Prob", [], [10]))) {
-		yield* g.callName(f, live(f.args[0]), "emote", ["drool"]);
+	if (prob(10)) {
+		yield* M.emote("drool");
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3658, "/datum/reagent/nanites", "/datum/reagent", {
 	name: "Nanomachines",
@@ -1257,20 +1144,13 @@ rt.type(3658, "/datum/reagent/nanites", "/datum/reagent", {
 	taste_description: "sludge",
 });
 
-// /datum/reagent/nanites/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/other_reagents.dm:1044)  may sleep
+// other_reagents.dm:1044
 rt.def("/datum/reagent/nanites/proc/reaction_mob", function* reaction_mob(f: Frame, M: Value, method: Value, reac_volume: Value, show_message: Value, touch_protection: Value) {
-	f.vars = () => [M, method, reac_volume, show_message, touch_protection];
-	if (live(method) === null) {
-		method = 1;
-	}
-	if (live(show_message) === null) {
-		show_message = 1;
-	}
-	if (live(touch_protection) === null) {
-		touch_protection = 0;
-	}
-	if (!(((isEqual(live(method), 4) || isEqual(live(method), 2)) || isEqual(live(method), 5)) || (isEqual(live(method), 3) && truthy(rt.op(f, "Prob", [], [multiply((yield* g.call(f, P("/proc/min"), null, [live(reac_volume), 100])), subtract(1, live(touch_protection)))]))))) return f.dot;
-	yield* g.callName(f, live(M), "ForceContractDisease", [(yield* g.new_(f, T("/datum/disease/transformation/robot"), [0]))]);
+	method ??= TOUCH;
+	show_message ??= 1;
+	touch_protection ??= 0;
+	if (!(method == PATCH || method == INGEST || method == INJECT || method == VAPOR && prob(min(reac_volume, 100) * (1 - touch_protection)))) return f.dot;
+	yield* M.ForceContractDisease((yield* new_(T("/datum/disease/transformation/robot"), 0)));
 	return f.dot;
 }, true);
 
@@ -1283,20 +1163,13 @@ rt.type(3659, "/datum/reagent/xenomicrobes", "/datum/reagent", {
 	taste_description: "sludge",
 });
 
-// /datum/reagent/xenomicrobes/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/other_reagents.dm:1056)  may sleep
+// other_reagents.dm:1056
 rt.def("/datum/reagent/xenomicrobes/proc/reaction_mob", function* reaction_mob(f: Frame, M: Value, method: Value, reac_volume: Value, show_message: Value, touch_protection: Value) {
-	f.vars = () => [M, method, reac_volume, show_message, touch_protection];
-	if (live(method) === null) {
-		method = 1;
-	}
-	if (live(show_message) === null) {
-		show_message = 1;
-	}
-	if (live(touch_protection) === null) {
-		touch_protection = 0;
-	}
-	if (!(((isEqual(live(method), 4) || isEqual(live(method), 2)) || isEqual(live(method), 5)) || (isEqual(live(method), 3) && truthy(rt.op(f, "Prob", [], [multiply((yield* g.call(f, P("/proc/min"), null, [live(reac_volume), 100])), subtract(1, live(touch_protection)))]))))) return f.dot;
-	yield* g.callName(f, live(M), "ContractDisease", [(yield* g.new_(f, T("/datum/disease/transformation/xeno"), [0]))]);
+	method ??= TOUCH;
+	show_message ??= 1;
+	touch_protection ??= 0;
+	if (!(method == PATCH || method == INGEST || method == INJECT || method == VAPOR && prob(min(reac_volume, 100) * (1 - touch_protection)))) return f.dot;
+	yield* M.ContractDisease((yield* new_(T("/datum/disease/transformation/xeno"), 0)));
 	return f.dot;
 }, true);
 
@@ -1308,20 +1181,13 @@ rt.type(3660, "/datum/reagent/fungalspores", "/datum/reagent", {
 	taste_description: "slime",
 });
 
-// /datum/reagent/fungalspores/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/other_reagents.dm:1067)  may sleep
+// other_reagents.dm:1067
 rt.def("/datum/reagent/fungalspores/proc/reaction_mob", function* reaction_mob(f: Frame, M: Value, method: Value, reac_volume: Value, show_message: Value, touch_protection: Value) {
-	f.vars = () => [M, method, reac_volume, show_message, touch_protection];
-	if (live(method) === null) {
-		method = 1;
-	}
-	if (live(show_message) === null) {
-		show_message = 1;
-	}
-	if (live(touch_protection) === null) {
-		touch_protection = 0;
-	}
-	if (!(((isEqual(live(method), 4) || isEqual(live(method), 2)) || isEqual(live(method), 5)) || (isEqual(live(method), 3) && truthy(rt.op(f, "Prob", [], [multiply((yield* g.call(f, P("/proc/min"), null, [live(reac_volume), 100])), subtract(1, live(touch_protection)))]))))) return f.dot;
-	yield* g.callName(f, live(M), "ForceContractDisease", [(yield* g.new_(f, T("/datum/disease/tuberculosis"), [0]))]);
+	method ??= TOUCH;
+	show_message ??= 1;
+	touch_protection ??= 0;
+	if (!(method == PATCH || method == INGEST || method == INJECT || method == VAPOR && prob(min(reac_volume, 100) * (1 - touch_protection)))) return f.dot;
+	yield* M.ForceContractDisease((yield* new_(T("/datum/disease/tuberculosis"), 0)));
 	return f.dot;
 }, true);
 
@@ -1334,21 +1200,21 @@ rt.type(3665, "/datum/reagent/carbondioxide", "/datum/reagent", {
 	taste_description: "something unknowable",
 });
 
-// /datum/reagent/carbondioxide/proc/reaction_obj  (code/modules/reagents/chemistry/reagents/other_reagents.dm:1109)
+// other_reagents.dm:1109
 rt.def("/datum/reagent/carbondioxide/proc/reaction_obj", function reaction_obj(f: Frame, O: Value, reac_volume: Value) {
-	if ((!truthy(live(O)) || !truthy(live(reac_volume)))) {
+	if (!O || !reac_volume) {
 		return 0;
 	}
-	rt.callName(f, live(O), "atmos_spawn_air", [fmt("co2=＀;TEMP=＀", [divide(live(reac_volume), 5), 293.1499938964844])]);
+	O.atmos_spawn_air(`co2=${reac_volume / 5};TEMP=${T20C}`);
 	return f.dot;
 });
 
-// /datum/reagent/carbondioxide/proc/reaction_turf  (code/modules/reagents/chemistry/reagents/other_reagents.dm:1114)
+// other_reagents.dm:1114
 rt.def("/datum/reagent/carbondioxide/proc/reaction_turf", function reaction_turf(f: Frame, _T: Value, reac_volume: Value) {
-	if (truthy((rt.istype(live(_T), T("/turf/open")) ? 1 : 0))) {
-		rt.callName(f, live(_T), "atmos_spawn_air", [fmt("co2=＀;TEMP=＀", [divide(live(reac_volume), 5), 293.1499938964844])]);
+	if (rt.istype(_T, T("/turf/open"))) {
+		_T.atmos_spawn_air(`co2=${reac_volume / 5};TEMP=${T20C}`);
 	}
-	return live(f.dot);
+	return f.dot;
 });
 
 rt.type(3666, "/datum/reagent/nitrous_oxide", "/datum/reagent", {
@@ -1361,48 +1227,44 @@ rt.type(3666, "/datum/reagent/nitrous_oxide", "/datum/reagent", {
 	taste_description: "sweetness",
 });
 
-// /datum/reagent/nitrous_oxide/proc/reaction_obj  (code/modules/reagents/chemistry/reagents/other_reagents.dm:1128)
+// other_reagents.dm:1128
 rt.def("/datum/reagent/nitrous_oxide/proc/reaction_obj", function reaction_obj(f: Frame, O: Value, reac_volume: Value) {
-	if ((!truthy(live(O)) || !truthy(live(reac_volume)))) {
+	if (!O || !reac_volume) {
 		return 0;
 	}
-	rt.callName(f, live(O), "atmos_spawn_air", [fmt("n2o=＀;TEMP=＀", [divide(live(reac_volume), 5), 293.1499938964844])]);
+	O.atmos_spawn_air(`n2o=${reac_volume / 5};TEMP=${T20C}`);
 	return f.dot;
 });
 
-// /datum/reagent/nitrous_oxide/proc/reaction_turf  (code/modules/reagents/chemistry/reagents/other_reagents.dm:1133)
+// other_reagents.dm:1133
 rt.def("/datum/reagent/nitrous_oxide/proc/reaction_turf", function reaction_turf(f: Frame, _T: Value, reac_volume: Value) {
-	if (!truthy((rt.istype(live(_T), T("/turf/open")) ? 1 : 0))) return f.dot;
-	rt.callName(f, live(_T), "atmos_spawn_air", [fmt("n2o=＀;TEMP=＀", [divide(live(reac_volume), 5), 293.1499938964844])]);
+	if (!rt.istype(_T, T("/turf/open"))) return f.dot;
+	_T.atmos_spawn_air(`n2o=${reac_volume / 5};TEMP=${T20C}`);
 	return f.dot;
 });
 
-// /datum/reagent/nitrous_oxide/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/other_reagents.dm:1137)
+// other_reagents.dm:1137
 rt.def("/datum/reagent/nitrous_oxide/proc/reaction_mob", function reaction_mob(f: Frame, M: Value, method: Value, reac_volume: Value) {
-	f.vars = () => [method];
-	if (live(method) === null) {
-		method = 1;
-	}
-	if (!isEqual(live(method), 3)) return f.dot;
-	rt.modField(f, live(M), "drowsyness", rt.call(f, P("/proc/max"), null, [rt.call(f, P("/proc/round"), null, [live(reac_volume), 1]), 2]), add);
+	method ??= TOUCH;
+	if (method != VAPOR) return f.dot;
+	M.drowsyness += max(round(reac_volume, 1), 2);
 	return f.dot;
 });
 
-// /datum/reagent/nitrous_oxide/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/other_reagents.dm:1141)  may sleep
-rt.def("/datum/reagent/nitrous_oxide/proc/on_mob_life", function* on_mob_life(f: Frame) {
+// other_reagents.dm:1141
+rt.def("/datum/reagent/nitrous_oxide/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
 	let H: Value = null;
-	f.vars = () => [H];
-	rt.modField(f, live(f.args[0]), "drowsyness", 2, add);
-	if (truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		rt.setFv(f, "blood_volume", (H = live(f.args[0])), (yield* g.call(f, P("/proc/max"), null, [subtract(rt.fv(f, "blood_volume", live(H)), 2.5), 0])));
+	M.drowsyness += 2;
+	if (rt.istype(M, T("/mob/living/carbon/human"))) {
+		(H = M).blood_volume = max(H.blood_volume - 2.5, 0);
 	}
-	if (truthy(rt.op(f, "Prob", [], [20]))) {
-		rt.modField(f, live(f.args[0]), "losebreath", 2, add);
-		rt.setFv(f, "confused", live(f.args[0]), (yield* g.call(f, P("/proc/min"), null, [add(rt.fv(f, "confused", live(f.args[0])), 2), 5])));
+	if (prob(20)) {
+		M.losebreath += 2;
+		M.confused = min(M.confused + 2, 5);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3668, "/datum/reagent/colorful_reagent/crayonpowder", "/datum/reagent/colorful_reagent", {
 	colorname: "none",
@@ -1414,9 +1276,9 @@ rt.type(3668, "/datum/reagent/colorful_reagent/crayonpowder", "/datum/reagent/co
 	taste_description: "the back of class",
 });
 
-// /datum/reagent/colorful_reagent/crayonpowder/proc/New  (code/modules/reagents/chemistry/reagents/other_reagents.dm:1164)
+// other_reagents.dm:1164
 rt.def("/datum/reagent/colorful_reagent/crayonpowder/proc/New", function New(f: Frame) {
-	rt.setSv(f, "description", fmt("＇！ powder made by grinding down crayons, good for colouring chemical reagents.", [rt.sv(f, "colorname")]));
+	this.description = fmt("＇！ powder made by grinding down crayons, good for colouring chemical reagents.", [this.colorname]);
 	return f.dot;
 });
 
@@ -1428,12 +1290,10 @@ rt.type(3669, "/datum/reagent/colorful_reagent/crayonpowder/red", "/datum/reagen
 	random_color_list: null,
 });
 
-// /datum/reagent/colorful_reagent/crayonpowder/red/proc/<init>  (code/modules/reagents/chemistry/reagents/other_reagents.dm:1172)
+// other_reagents.dm:1172
 rt.def("/datum/reagent/colorful_reagent/crayonpowder/red/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "random_color_list", rt.list("#DA0000"));
+	parent_proc();
+	this.random_color_list = list("#DA0000");
 	return f.dot;
 });
 
@@ -1445,12 +1305,10 @@ rt.type(3670, "/datum/reagent/colorful_reagent/crayonpowder/orange", "/datum/rea
 	random_color_list: null,
 });
 
-// /datum/reagent/colorful_reagent/crayonpowder/orange/proc/<init>  (code/modules/reagents/chemistry/reagents/other_reagents.dm:1179)
+// other_reagents.dm:1179
 rt.def("/datum/reagent/colorful_reagent/crayonpowder/orange/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "random_color_list", rt.list("#FF9300"));
+	parent_proc();
+	this.random_color_list = list("#FF9300");
 	return f.dot;
 });
 
@@ -1462,12 +1320,10 @@ rt.type(3671, "/datum/reagent/colorful_reagent/crayonpowder/yellow", "/datum/rea
 	random_color_list: null,
 });
 
-// /datum/reagent/colorful_reagent/crayonpowder/yellow/proc/<init>  (code/modules/reagents/chemistry/reagents/other_reagents.dm:1186)
+// other_reagents.dm:1186
 rt.def("/datum/reagent/colorful_reagent/crayonpowder/yellow/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "random_color_list", rt.list("#FFF200"));
+	parent_proc();
+	this.random_color_list = list("#FFF200");
 	return f.dot;
 });
 
@@ -1479,12 +1335,10 @@ rt.type(3672, "/datum/reagent/colorful_reagent/crayonpowder/green", "/datum/reag
 	random_color_list: null,
 });
 
-// /datum/reagent/colorful_reagent/crayonpowder/green/proc/<init>  (code/modules/reagents/chemistry/reagents/other_reagents.dm:1193)
+// other_reagents.dm:1193
 rt.def("/datum/reagent/colorful_reagent/crayonpowder/green/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "random_color_list", rt.list("#A8E61D"));
+	parent_proc();
+	this.random_color_list = list("#A8E61D");
 	return f.dot;
 });
 
@@ -1496,12 +1350,10 @@ rt.type(3673, "/datum/reagent/colorful_reagent/crayonpowder/blue", "/datum/reage
 	random_color_list: null,
 });
 
-// /datum/reagent/colorful_reagent/crayonpowder/blue/proc/<init>  (code/modules/reagents/chemistry/reagents/other_reagents.dm:1200)
+// other_reagents.dm:1200
 rt.def("/datum/reagent/colorful_reagent/crayonpowder/blue/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "random_color_list", rt.list("#00B7EF"));
+	parent_proc();
+	this.random_color_list = list("#00B7EF");
 	return f.dot;
 });
 
@@ -1513,12 +1365,10 @@ rt.type(3674, "/datum/reagent/colorful_reagent/crayonpowder/purple", "/datum/rea
 	random_color_list: null,
 });
 
-// /datum/reagent/colorful_reagent/crayonpowder/purple/proc/<init>  (code/modules/reagents/chemistry/reagents/other_reagents.dm:1207)
+// other_reagents.dm:1207
 rt.def("/datum/reagent/colorful_reagent/crayonpowder/purple/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "random_color_list", rt.list("#DA00FF"));
+	parent_proc();
+	this.random_color_list = list("#DA00FF");
 	return f.dot;
 });
 
@@ -1530,12 +1380,10 @@ rt.type(3675, "/datum/reagent/colorful_reagent/crayonpowder/invisible", "/datum/
 	random_color_list: null,
 });
 
-// /datum/reagent/colorful_reagent/crayonpowder/invisible/proc/<init>  (code/modules/reagents/chemistry/reagents/other_reagents.dm:1214)
+// other_reagents.dm:1214
 rt.def("/datum/reagent/colorful_reagent/crayonpowder/invisible/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "random_color_list", rt.list(null));
+	parent_proc();
+	this.random_color_list = list(null);
 	return f.dot;
 });
 
@@ -1547,12 +1395,10 @@ rt.type(3676, "/datum/reagent/colorful_reagent/crayonpowder/black", "/datum/reag
 	random_color_list: null,
 });
 
-// /datum/reagent/colorful_reagent/crayonpowder/black/proc/<init>  (code/modules/reagents/chemistry/reagents/other_reagents.dm:1221)
+// other_reagents.dm:1221
 rt.def("/datum/reagent/colorful_reagent/crayonpowder/black/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "random_color_list", rt.list("#404040"));
+	parent_proc();
+	this.random_color_list = list("#404040");
 	return f.dot;
 });
 
@@ -1564,12 +1410,10 @@ rt.type(3677, "/datum/reagent/colorful_reagent/crayonpowder/white", "/datum/reag
 	random_color_list: null,
 });
 
-// /datum/reagent/colorful_reagent/crayonpowder/white/proc/<init>  (code/modules/reagents/chemistry/reagents/other_reagents.dm:1228)
+// other_reagents.dm:1228
 rt.def("/datum/reagent/colorful_reagent/crayonpowder/white/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "random_color_list", rt.list("#FFFFFF"));
+	parent_proc();
+	this.random_color_list = list("#FFFFFF");
 	return f.dot;
 });
 
@@ -1582,15 +1426,15 @@ rt.type(3678, "/datum/reagent/plantnutriment", "/datum/reagent", {
 	taste_description: "plant food",
 });
 
-// /datum/reagent/plantnutriment/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/other_reagents.dm:1244)  may sleep
-rt.def("/datum/reagent/plantnutriment/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	if (truthy(rt.op(f, "Prob", [], [rt.sv(f, "tox_prob")]))) {
-		yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [1, 0]);
+// other_reagents.dm:1244
+rt.def("/datum/reagent/plantnutriment/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	if (prob(this.tox_prob)) {
+		yield* M.adjustToxLoss(1, 0);
 		f.dot = 1;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3683, "/datum/reagent/stable_plasma", "/datum/reagent", {
 	name: "Stable Plasma",
@@ -1602,16 +1446,15 @@ rt.type(3683, "/datum/reagent/stable_plasma", "/datum/reagent", {
 	taste_mult: 1.5,
 });
 
-// /datum/reagent/stable_plasma/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/other_reagents.dm:1298)  may sleep
-rt.def("/datum/reagent/stable_plasma/proc/on_mob_life", function* on_mob_life(f: Frame) {
+// other_reagents.dm:1298
+rt.def("/datum/reagent/stable_plasma/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
 	let C: Value = null;
-	f.vars = () => [C];
-	if (truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon")) ? 1 : 0))) {
-		yield* g.callName(f, (C = live(f.args[0])), "adjustPlasma", [10]);
+	if (rt.istype(M, T("/mob/living/carbon"))) {
+		yield* (C = M).adjustPlasma(10);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	return live(f.dot);
-}, true, { args: ["M"] });
+	yield* parent_proc();
+	return f.dot;
+}, true);
 
 rt.type(3685, "/datum/reagent/carpet", "/datum/reagent", {
 	name: "Carpet",
@@ -1622,15 +1465,14 @@ rt.type(3685, "/datum/reagent/carpet", "/datum/reagent", {
 	taste_description: "carpet",
 });
 
-// /datum/reagent/carpet/proc/reaction_turf  (code/modules/reagents/chemistry/reagents/other_reagents.dm:1321)  may sleep
+// other_reagents.dm:1321
 rt.def("/datum/reagent/carpet/proc/reaction_turf", function* reaction_turf(f: Frame) {
 	let F: Value = null;
-	f.vars = () => [F];
-	if ((truthy((rt.istype(live(f.args[0]), T("/turf/open/floor/plating")) ? 1 : 0)) || truthy((rt.istype(live(f.args[0]), T("/turf/open/floor/plasteel")) ? 1 : 0)))) {
-		yield* g.callName(f, (F = live(f.args[0])), "ChangeTurf", [T("/turf/open/floor/carpet")]);
+	if (rt.istype(f.args[0], T("/turf/open/floor/plating")) || rt.istype(f.args[0], T("/turf/open/floor/plasteel"))) {
+		yield* (F = f.args[0]).ChangeTurf(T("/turf/open/floor/carpet"));
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	return live(f.dot);
+	yield* parent_proc();
+	return f.dot;
 }, true, { args: ["T", "reac_volume"] });
 
 rt.type(3667, "/datum/reagent/colorful_reagent", "/datum/reagent", {
@@ -1643,41 +1485,41 @@ rt.type(3667, "/datum/reagent/colorful_reagent", "/datum/reagent", {
 	taste_description: "rainbows",
 });
 
-// /datum/reagent/colorful_reagent/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/other_reagents.dm:1370)  may sleep
-rt.def("/datum/reagent/colorful_reagent/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	if ((truthy(live(f.args[0])) && truthy((rt.istype(live(f.args[0]), T("/mob/living")) ? 1 : 0)))) {
-		yield* g.callName(f, live(f.args[0]), "add_atom_colour", [rt.op(f, "PickUnweighted", [1], [rt.sv(f, "random_color_list")]), 3]);
+// other_reagents.dm:1370
+rt.def("/datum/reagent/colorful_reagent/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	if (M && rt.istype(M, T("/mob/living"))) {
+		M.add_atom_colour(pick(this.random_color_list), WASHABLE_COLOUR_PRIORITY);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /datum/reagent/colorful_reagent/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/other_reagents.dm:1375)  may sleep
-rt.def("/datum/reagent/colorful_reagent/proc/reaction_mob", function* reaction_mob(f: Frame) {
-	if ((truthy(live(f.args[0])) && truthy((rt.istype(live(f.args[0]), T("/mob/living")) ? 1 : 0)))) {
-		yield* g.callName(f, live(f.args[0]), "add_atom_colour", [rt.op(f, "PickUnweighted", [1], [rt.sv(f, "random_color_list")]), 3]);
+// other_reagents.dm:1375
+rt.def("/datum/reagent/colorful_reagent/proc/reaction_mob", function* reaction_mob(f: Frame, M: Value, reac_volume: Value) {
+	if (M && rt.istype(M, T("/mob/living"))) {
+		M.add_atom_colour(pick(this.random_color_list), WASHABLE_COLOUR_PRIORITY);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M", "reac_volume"] });
+}, true);
 
-// /datum/reagent/colorful_reagent/proc/reaction_obj  (code/modules/reagents/chemistry/reagents/other_reagents.dm:1381)
-rt.def("/datum/reagent/colorful_reagent/proc/reaction_obj", function reaction_obj(f: Frame) {
-	if (truthy(live(f.args[0]))) {
-		rt.callName(f, live(f.args[0]), "add_atom_colour", [rt.op(f, "PickUnweighted", [1], [rt.sv(f, "random_color_list")]), 3]);
+// other_reagents.dm:1381
+rt.def("/datum/reagent/colorful_reagent/proc/reaction_obj", function reaction_obj(f: Frame, O: Value, reac_volume: Value) {
+	if (O) {
+		O.add_atom_colour(pick(this.random_color_list), WASHABLE_COLOUR_PRIORITY);
 	}
-	rt.callSuper(f, [], rt.Args.Same);
+	parent_proc();
 	return f.dot;
-}, false, { args: ["O", "reac_volume"] });
+}, false);
 
-// /datum/reagent/colorful_reagent/proc/reaction_turf  (code/modules/reagents/chemistry/reagents/other_reagents.dm:1386)
-rt.def("/datum/reagent/colorful_reagent/proc/reaction_turf", function reaction_turf(f: Frame) {
-	if (truthy(live(f.args[0]))) {
-		rt.callName(f, live(f.args[0]), "add_atom_colour", [rt.op(f, "PickUnweighted", [1], [rt.sv(f, "random_color_list")]), 3]);
+// other_reagents.dm:1386
+rt.def("/datum/reagent/colorful_reagent/proc/reaction_turf", function reaction_turf(f: Frame, T: Value, reac_volume: Value) {
+	if (T) {
+		T.add_atom_colour(pick(this.random_color_list), WASHABLE_COLOUR_PRIORITY);
 	}
-	rt.callSuper(f, [], rt.Args.Same);
+	parent_proc();
 	return f.dot;
-}, false, { args: ["T", "reac_volume"] });
+}, false);
 
 rt.type(3690, "/datum/reagent/hair_dye", "/datum/reagent", {
 	potential_colors: null,
@@ -1689,18 +1531,15 @@ rt.type(3690, "/datum/reagent/hair_dye", "/datum/reagent", {
 	taste_description: "sourness",
 });
 
-// /datum/reagent/hair_dye/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/other_reagents.dm:1399)  may sleep
+// other_reagents.dm:1399
 rt.def("/datum/reagent/hair_dye/proc/reaction_mob", function* reaction_mob(f: Frame, M: Value, method: Value, reac_volume: Value) {
 	let H: Value = null;
-	f.vars = () => [M, method, reac_volume, H];
-	if (live(method) === null) {
-		method = 1;
-	}
-	if (!(isEqual(live(method), 1) || isEqual(live(method), 3))) return f.dot;
-	if (!(truthy(live(M)) && truthy((rt.istype(live(M), T("/mob/living/carbon/human")) ? 1 : 0)))) return f.dot;
-	rt.setFv(f, "hair_color", (H = live(M)), rt.op(f, "PickUnweighted", [1], [rt.sv(f, "potential_colors")]));
-	rt.setFv(f, "facial_hair_color", live(H), rt.op(f, "PickUnweighted", [1], [rt.sv(f, "potential_colors")]));
-	yield* g.callName(f, live(H), "update_hair", []);
+	method ??= TOUCH;
+	if (!(method == TOUCH || method == VAPOR)) return f.dot;
+	if (!(M && rt.istype(M, T("/mob/living/carbon/human")))) return f.dot;
+	(H = M).hair_color = pick(this.potential_colors);
+	H.facial_hair_color = pick(this.potential_colors);
+	yield* H.update_hair();
 	return f.dot;
 }, true);
 
@@ -1713,21 +1552,17 @@ rt.type(3691, "/datum/reagent/barbers_aid", "/datum/reagent", {
 	taste_description: "sourness",
 });
 
-// /datum/reagent/barbers_aid/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/other_reagents.dm:1415)  may sleep
+// other_reagents.dm:1415
 rt.def("/datum/reagent/barbers_aid/proc/reaction_mob", function* reaction_mob(f: Frame, M: Value, method: Value, reac_volume: Value) {
-	let H: Value = null, picked_hair: Value = null, picked_beard: Value = null;
-	f.vars = () => [M, method, reac_volume, H, picked_hair, picked_beard];
-	if (live(method) === null) {
-		method = 1;
-	}
-	if (!(isEqual(live(method), 1) || isEqual(live(method), 3))) return f.dot;
-	if (!(truthy(live(M)) && truthy((rt.istype(live(M), T("/mob/living/carbon/human")) ? 1 : 0)))) return f.dot;
-	H = live(M);
-	picked_hair = rt.op(f, "PickUnweighted", [1], [rt.gl("hair_styles_list")]);
-	picked_beard = rt.op(f, "PickUnweighted", [1], [rt.gl("facial_hair_styles_list")]);
-	rt.setFv(f, "hair_style", live(H), live(picked_hair));
-	rt.setFv(f, "facial_hair_style", live(H), live(picked_beard));
-	yield* g.callName(f, live(H), "update_hair", []);
+	method ??= TOUCH;
+	if (!(method == TOUCH || method == VAPOR)) return f.dot;
+	if (!(M && rt.istype(M, T("/mob/living/carbon/human")))) return f.dot;
+	let H: Value = M;
+	let picked_hair: Value = pick(GLOB.hair_styles_list);
+	let picked_beard: Value = pick(GLOB.facial_hair_styles_list);
+	H.hair_style = picked_hair;
+	H.facial_hair_style = picked_beard;
+	yield* H.update_hair();
 	return f.dot;
 }, true);
 
@@ -1740,18 +1575,15 @@ rt.type(3692, "/datum/reagent/concentrated_barbers_aid", "/datum/reagent", {
 	taste_description: "sourness",
 });
 
-// /datum/reagent/concentrated_barbers_aid/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/other_reagents.dm:1433)  may sleep
+// other_reagents.dm:1433
 rt.def("/datum/reagent/concentrated_barbers_aid/proc/reaction_mob", function* reaction_mob(f: Frame, M: Value, method: Value, reac_volume: Value) {
 	let H: Value = null;
-	f.vars = () => [M, method, reac_volume, H];
-	if (live(method) === null) {
-		method = 1;
-	}
-	if (!(isEqual(live(method), 1) || isEqual(live(method), 3))) return f.dot;
-	if (!(truthy(live(M)) && truthy((rt.istype(live(M), T("/mob/living/carbon/human")) ? 1 : 0)))) return f.dot;
-	rt.setFv(f, "hair_style", (H = live(M)), "Very Long Hair");
-	rt.setFv(f, "facial_hair_style", live(H), "Very Long Beard");
-	yield* g.callName(f, live(H), "update_hair", []);
+	method ??= TOUCH;
+	if (!(method == TOUCH || method == VAPOR)) return f.dot;
+	if (!(M && rt.istype(M, T("/mob/living/carbon/human")))) return f.dot;
+	(H = M).hair_style = "Very Long Hair";
+	H.facial_hair_style = "Very Long Beard";
+	yield* H.update_hair();
 	return f.dot;
 }, true);
 
@@ -1764,23 +1596,20 @@ rt.type(3695, "/datum/reagent/drying_agent", "/datum/reagent", {
 	taste_description: "dryness",
 });
 
-// /datum/reagent/drying_agent/proc/reaction_turf  (code/modules/reagents/chemistry/reagents/other_reagents.dm:1465)  may sleep
+// other_reagents.dm:1465
 rt.def("/datum/reagent/drying_agent/proc/reaction_turf", function* reaction_turf(f: Frame, _T: Value, reac_volume: Value) {
-	f.vars = () => [_T, reac_volume];
-	if (!(truthy((rt.istype(live(_T), T("/turf/open")) ? 1 : 0)) && truthy(rt.fv(f, "wet", live(_T))))) return f.dot;
-	rt.setFv(f, "wet_time", live(_T), (yield* g.call(f, P("/proc/max"), null, [0, subtract(rt.fv(f, "wet_time", live(_T)), multiply(live(reac_volume), 5))])));
-	yield* g.callName(f, live(_T), "HandleWet", []);
+	if (!(rt.istype(_T, T("/turf/open")) && _T.wet)) return f.dot;
+	_T.wet_time = max(0, _T.wet_time - reac_volume * 5);
+	yield* _T.HandleWet();
 	return f.dot;
 }, true);
 
-// /datum/reagent/drying_agent/proc/reaction_obj  (code/modules/reagents/chemistry/reagents/other_reagents.dm:1470)  may sleep
+// other_reagents.dm:1470
 rt.def("/datum/reagent/drying_agent/proc/reaction_obj", function* reaction_obj(f: Frame, O: Value, reac_volume: Value) {
-	let t_loc: Value = null;
-	f.vars = () => [O, reac_volume, t_loc];
-	if (!isEqual(rt.fv(f, "type", live(O)), T("/obj/item/clothing/shoes/galoshes"))) return f.dot;
-	t_loc = rt.getStep(f, live(O), 0);
-	yield* g.call(f, P("/proc/qdel"), null, [live(O)]);
-	yield* g.new_(f, T("/obj/item/clothing/shoes/galoshes/dry"), [live(t_loc)]);
+	if (O.type != T("/obj/item/clothing/shoes/galoshes")) return f.dot;
+	let t_loc: Value = rt.getStep(f, O, 0);
+	yield* qdel(O);
+	yield* new_(T("/obj/item/clothing/shoes/galoshes/dry"), t_loc);
 	return f.dot;
 }, true);
 
@@ -1792,14 +1621,14 @@ rt.type(3750, "/datum/reagent/royal_bee_jelly", "/datum/reagent", {
 	taste_description: "strange honey",
 });
 
-// /datum/reagent/royal_bee_jelly/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/other_reagents.dm:1537)  may sleep
-rt.def("/datum/reagent/royal_bee_jelly/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	if (truthy(rt.op(f, "Prob", [], [2]))) {
-		yield* g.callName(f, live(f.args[0]), "say", [rt.op(f, "PickUnweighted", [3], ["Bzzz...", "BZZ BZZ", "Bzzzzzzzzzzz..."])]);
+// other_reagents.dm:1537
+rt.def("/datum/reagent/royal_bee_jelly/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	if (prob(2)) {
+		yield* M.say(pick("Bzzz...", "BZZ BZZ", "Bzzzzzzzzzzz..."));
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3751, "/datum/reagent/romerol", "/datum/reagent", {
 	name: "Romerol",
@@ -1811,16 +1640,15 @@ rt.type(3751, "/datum/reagent/romerol", "/datum/reagent", {
 	taste_description: "brains",
 });
 
-// /datum/reagent/romerol/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/other_reagents.dm:1559)  may sleep
-rt.def("/datum/reagent/romerol/proc/on_mob_life", function* on_mob_life(f: Frame) {
+// other_reagents.dm:1559
+rt.def("/datum/reagent/romerol/proc/on_mob_life", function* on_mob_life(f: Frame, H: Value) {
 	let ZI: Value = null;
-	f.vars = () => [ZI];
-	if (!truthy((yield* g.callName(f, live(f.args[0]), "getorganslot", ["zombie_infection"])))) {
-		yield* g.callName(f, (ZI = (yield* g.new_(f, T("/obj/item/organ/zombie_infection"), []))), "Insert", [live(f.args[0])]);
+	if (!H.getorganslot("zombie_infection")) {
+		yield* (ZI = (yield* new_(T("/obj/item/organ/zombie_infection")))).Insert(H);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["H"] });
+}, true);
 
 rt.type(3752, "/datum/reagent/growthserum", "/datum/reagent", {
 	current_size: 1,
@@ -1831,38 +1659,34 @@ rt.type(3752, "/datum/reagent/growthserum", "/datum/reagent", {
 	taste_description: "bitterness",
 });
 
-// /datum/reagent/growthserum/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/other_reagents.dm:1573)  may sleep
-rt.def("/datum/reagent/growthserum/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	let newsize: Value = null;
-	let $0: any;
-	f.vars = () => [newsize, $0];
-	newsize = rt.sv(f, "current_size");
-	$0 = rt.sv(f, "volume");
-	if (rt.inRange($0, 0, 19)) {
+// other_reagents.dm:1573
+rt.def("/datum/reagent/growthserum/proc/on_mob_life", function* on_mob_life(f: Frame, H: Value) {
+	let newsize: Value = this.current_size;
+	if (rt.inRange(this.volume, 0, 19)) {
 		newsize = 1.25;
-	} else if (rt.inRange($0, 20, 49)) {
+	} else if (rt.inRange(this.volume, 20, 49)) {
 		newsize = 1.5;
-	} else if (rt.inRange($0, 50, 99)) {
+	} else if (rt.inRange(this.volume, 50, 99)) {
 		newsize = 2;
-	} else if (rt.inRange($0, 100, 199)) {
+	} else if (rt.inRange(this.volume, 100, 199)) {
 		newsize = 2.5;
-	} else if (rt.inRange($0, 200, 9.999999848243207e+30)) {
+	} else if (rt.inRange(this.volume, 200, 1e+31)) {
 		newsize = 3.5;
 	}
-	rt.setFv(f, "resize", live(f.args[0]), divide(live(newsize), rt.sv(f, "current_size")));
-	rt.setSv(f, "current_size", live(newsize));
-	yield* g.callName(f, live(f.args[0]), "update_transform", []);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	H.resize = newsize / this.current_size;
+	this.current_size = newsize;
+	yield* H.update_transform();
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["H"] });
+}, true);
 
-// /datum/reagent/growthserum/proc/on_mob_delete  (code/modules/reagents/chemistry/reagents/other_reagents.dm:1592)  may sleep
-rt.def("/datum/reagent/growthserum/proc/on_mob_delete", function* on_mob_delete(f: Frame) {
-	rt.setFv(f, "resize", live(f.args[0]), divide(1, rt.sv(f, "current_size")));
-	yield* g.callName(f, live(f.args[0]), "update_transform", []);
-	yield* g.callSuper(f, [], rt.Args.Same);
+// other_reagents.dm:1592
+rt.def("/datum/reagent/growthserum/proc/on_mob_delete", function* on_mob_delete(f: Frame, M: Value) {
+	M.resize = 1 / this.current_size;
+	yield* M.update_transform();
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3754, "/datum/reagent/glitter", "/datum/reagent", {
 	glitter_type: rt.typePath("/obj/effect/decal/cleanable/glitter"),
@@ -1874,12 +1698,11 @@ rt.type(3754, "/datum/reagent/glitter", "/datum/reagent", {
 	reagent_state: 1,
 });
 
-// /datum/reagent/glitter/proc/reaction_turf  (code/modules/reagents/chemistry/reagents/other_reagents.dm:1613)  may sleep
+// other_reagents.dm:1613
 rt.def("/datum/reagent/glitter/proc/reaction_turf", function* reaction_turf(f: Frame, _T: Value, reac_volume: Value) {
-	f.vars = () => [_T, reac_volume];
-	if (!truthy((rt.istype(live(_T), T("/turf")) ? 1 : 0))) {
-		return live(f.dot);
+	if (!rt.istype(_T, T("/turf"))) {
+		return f.dot;
 	}
-	yield* g.new_(f, rt.sv(f, "glitter_type"), [live(_T)]);
+	yield* new_(this.glitter_type, _T);
 	return f.dot;
 }, true);

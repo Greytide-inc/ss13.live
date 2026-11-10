@@ -1,34 +1,34 @@
-// From code/game/gamemodes/changeling/changeling.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/gamemodes/changeling/changeling.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, g } = rt;
 
 
-// /datum/controller/global_vars/proc/InitGlobalpossible_changeling_IDs  (code/game/gamemodes/changeling/changeling.dm:5)
+// changeling.dm:5
 rt.def("/datum/controller/global_vars/proc/InitGlobalpossible_changeling_IDs", function InitGlobalpossible_changeling_IDs(f: Frame) {
-	rt.setGl("possible_changeling_IDs", rt.list("Alpha", "Beta", "Gamma", "Delta", "Epsilon", "Zeta", "Eta", "Theta", "Iota", "Kappa", "Lambda", "Mu", "Nu", "Xi", "Omicron", "Pi", "Rho", "Sigma", "Tau", "Upsilon", "Phi", "Chi", "Psi", "Omega"));
-	rt.modSrcVar(f, "gvars_datum_init_order", "possible_changeling_IDs", add);
+	GLOB.possible_changeling_IDs = list("Alpha", "Beta", "Gamma", "Delta", "Epsilon", "Zeta", "Eta", "Theta", "Iota", "Kappa", "Lambda", "Mu", "Nu", "Xi", "Omicron", "Pi", "Rho", "Sigma", "Tau", "Upsilon", "Phi", "Chi", "Psi", "Omega");
+	this.gvars_datum_init_order += "possible_changeling_IDs";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalslots  (code/game/gamemodes/changeling/changeling.dm:6)
+// changeling.dm:6
 rt.def("/datum/controller/global_vars/proc/InitGlobalslots", function InitGlobalslots(f: Frame) {
-	rt.setGl("slots", rt.list("head", "wear_mask", "back", "wear_suit", "w_uniform", "shoes", "belt", "gloves", "glasses", "ears", "wear_id", "s_store"));
-	rt.modSrcVar(f, "gvars_datum_init_order", "slots", add);
+	GLOB.slots = list("head", "wear_mask", "back", "wear_suit", "w_uniform", "shoes", "belt", "gloves", "glasses", "ears", "wear_id", "s_store");
+	this.gvars_datum_init_order += "slots";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalslot2slot  (code/game/gamemodes/changeling/changeling.dm:7)
+// changeling.dm:7
 rt.def("/datum/controller/global_vars/proc/InitGlobalslot2slot", function InitGlobalslot2slot(f: Frame) {
-	rt.setGl("slot2slot", rt.alist(f, ["head", 11, "wear_mask", 2, "neck", 10, "back", 1, "wear_suit", 13, "w_uniform", 14, "shoes", 12, "belt", 5, "gloves", 9, "glasses", 8, "ears", 7, "wear_id", 6, "s_store", 17]));
-	rt.modSrcVar(f, "gvars_datum_init_order", "slot2slot", add);
+	GLOB.slot2slot = rt.alist(f, ["head", 11, "wear_mask", 2, "neck", 10, "back", 1, "wear_suit", 13, "w_uniform", 14, "shoes", 12, "belt", 5, "gloves", 9, "glasses", 8, "ears", 7, "wear_id", 6, "s_store", 17]);
+	this.gvars_datum_init_order += "slot2slot";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalslot2type  (code/game/gamemodes/changeling/changeling.dm:8)
+// changeling.dm:8
 rt.def("/datum/controller/global_vars/proc/InitGlobalslot2type", function InitGlobalslot2type(f: Frame) {
-	rt.setGl("slot2type", rt.alist(f, ["head", T("/obj/item/clothing/head/changeling"), "wear_mask", T("/obj/item/clothing/mask/changeling"), "back", T("/obj/item/changeling"), "wear_suit", T("/obj/item/clothing/suit/changeling"), "w_uniform", T("/obj/item/clothing/under/changeling"), "shoes", T("/obj/item/clothing/shoes/changeling"), "belt", T("/obj/item/changeling"), "gloves", T("/obj/item/clothing/gloves/changeling"), "glasses", T("/obj/item/clothing/glasses/changeling"), "ears", T("/obj/item/changeling"), "wear_id", T("/obj/item/changeling"), "s_store", T("/obj/item/changeling")]));
-	rt.modSrcVar(f, "gvars_datum_init_order", "slot2type", add);
+	GLOB.slot2type = rt.alist(f, ["head", T("/obj/item/clothing/head/changeling"), "wear_mask", T("/obj/item/clothing/mask/changeling"), "back", T("/obj/item/changeling"), "wear_suit", T("/obj/item/clothing/suit/changeling"), "w_uniform", T("/obj/item/clothing/under/changeling"), "shoes", T("/obj/item/clothing/shoes/changeling"), "belt", T("/obj/item/changeling"), "gloves", T("/obj/item/clothing/gloves/changeling"), "glasses", T("/obj/item/clothing/glasses/changeling"), "ears", T("/obj/item/changeling"), "wear_id", T("/obj/item/changeling"), "s_store", T("/obj/item/changeling")]);
+	this.gvars_datum_init_order += "slot2type";
 	return f.dot;
 });
 
@@ -61,257 +61,214 @@ rt.type(1083, "/datum/game_mode/changeling", "/datum/game_mode", {
 	announce_text: "Alien changelings have infiltrated the crew!\n<span class='green'>Changelings</span>: Accomplish the objectives assigned to you.\n<span class='notice'>Crew</span>: Root out and eliminate the changeling menace.",
 }, { const: ["prob_int_murder_target","prob_right_murder_target_l","prob_right_murder_target_h","prob_int_item","prob_right_item_l","prob_right_item_h","prob_int_sab_target","prob_right_sab_target_l","prob_right_sab_target_h","prob_right_killer_l","prob_right_killer_h","prob_right_objective_l","prob_right_objective_h","changeling_amount"] });
 
-// /datum/game_mode/changeling/proc/pre_setup  (code/game/gamemodes/changeling/changeling.dm:54)
+// changeling.dm:54
 rt.def("/datum/game_mode/changeling/proc/pre_setup", function pre_setup(f: Frame) {
-	let num_changelings: Value = null, i: Value = null, changeling: Value = null;
-	f.vars = () => [num_changelings, i, changeling];
-	if (truthy(rt.fv(f, "protect_roles_from_antagonist", rt.gl("config")))) {
-		rt.modSrcVar(f, "restricted_jobs", rt.sv(f, "protected_jobs"), add);
+	let i: Value = null, changeling: Value = null;
+	if (GLOB.config.protect_roles_from_antagonist) {
+		this.restricted_jobs += this.protected_jobs;
 	}
-	if (truthy(rt.fv(f, "protect_assistant_from_antagonist", rt.gl("config")))) {
-		rt.modSrcVar(f, "restricted_jobs", "Assistant", add);
+	if (GLOB.config.protect_assistant_from_antagonist) {
+		this.restricted_jobs += "Assistant";
 	}
-	num_changelings = 1;
-	if (truthy(rt.fv(f, "changeling_scaling_coeff", rt.gl("config")))) {
-		num_changelings = rt.call(f, P("/proc/max"), null, [1, rt.call(f, P("/proc/min"), null, [add(rt.call(f, P("/proc/round"), null, [divide(rt.callSrc(f, "num_players", []), multiply(rt.fv(f, "changeling_scaling_coeff", rt.gl("config")), 2))]), 2), rt.call(f, P("/proc/round"), null, [divide(rt.callSrc(f, "num_players", []), rt.fv(f, "changeling_scaling_coeff", rt.gl("config")))])])]);
+	let num_changelings: Value = 1;
+	if (GLOB.config.changeling_scaling_coeff) {
+		num_changelings = max(1, min(round(this.num_players() / (GLOB.config.changeling_scaling_coeff * 2)) + 2, round(this.num_players() / GLOB.config.changeling_scaling_coeff)));
 	} else {
-		num_changelings = rt.call(f, P("/proc/max"), null, [1, rt.call(f, P("/proc/min"), null, [rt.callSrc(f, "num_players", []), 4])]);
+		num_changelings = max(1, min(this.num_players(), 4));
 	}
-	if (rt.gt(rt.len(f, rt.sv(f, "antag_candidates")), 0)) {
-		i = null;
+	if (rt.len(f, this.antag_candidates) > 0) {
 		i = 0;
-		while (rt.lt(live(i), live(num_changelings))) {
-			if (!truthy(rt.len(f, rt.sv(f, "antag_candidates")))) {
+		while (i < num_changelings) {
+			if (!rt.len(f, this.antag_candidates)) {
 				break;
 			}
-			(rt.modSrcVar(f, "antag_candidates", (changeling = rt.op(f, "PickUnweighted", [1], [rt.sv(f, "antag_candidates")])), subtract));
-			rt.modSrcVar(f, "changelings", live(changeling), add);
-			rt.setFv(f, "special_role", live(changeling), "Changeling");
-			rt.setFv(f, "restricted_roles", live(changeling), rt.sv(f, "restricted_jobs"));
-			i = rt.inc(live(i), 1);
+			this.antag_candidates -= (changeling = pick(this.antag_candidates));
+			this.changelings += changeling;
+			changeling.special_role = "Changeling";
+			changeling.restricted_roles = this.restricted_jobs;
+			i++;
 		}
 		return 1;
 	} else {
 		return 0;
 	}
-	return f.dot;
 });
 
-// /datum/game_mode/changeling/proc/post_setup  (code/game/gamemodes/changeling/changeling.dm:83)  may sleep
+// changeling.dm:83
 rt.def("/datum/game_mode/changeling/proc/post_setup", function* post_setup(f: Frame) {
-	let team_objectives: Value = null, possible_team_objectives: Value = null, _T: Value = null, CTO: Value = null, changeling: Value = null;
-	let $e: any;
-	f.vars = () => [team_objectives, possible_team_objectives, _T, CTO, changeling, $e];
-	team_objectives = subtract((yield* g.call(f, P("/proc/typesof"), null, [T("/datum/objective/changeling_team_objective")])), T("/datum/objective/changeling_team_objective"));
-	possible_team_objectives = rt.list();
-	_T = null;
-	rt.forList(f, 0, live(team_objectives));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_T = $e;
-		CTO = live(_T);
-		if (rt.ge(rt.len(f, rt.sv(f, "changelings")), rt.initial(f, live(CTO), "min_lings"))) {
-			possible_team_objectives = rt.modify(live(possible_team_objectives), live(_T), add);
+	let _T: Value = null, CTO: Value = null, changeling: Value = null;
+	let team_objectives: Value = typesof(T("/datum/objective/changeling_team_objective")) - T("/datum/objective/changeling_team_objective");
+	let possible_team_objectives: Value = list();
+	for (_T of each(team_objectives)) {
+		CTO = _T;
+		if (rt.len(f, this.changelings) >= rt.initial(f, CTO, "min_lings")) {
+			possible_team_objectives += _T;
 		}
 	}
-	rt.endFor(f, 0);
-	if ((truthy(rt.len(f, live(possible_team_objectives))) && truthy(rt.op(f, "Prob", [], [multiply(20, rt.len(f, rt.sv(f, "changelings")))])))) {
-		rt.setSv(f, "changeling_team_objective_type", rt.op(f, "PickUnweighted", [1], [live(possible_team_objectives)]));
+	if (rt.len(f, possible_team_objectives) && prob(20 * rt.len(f, this.changelings))) {
+		this.changeling_team_objective_type = pick(possible_team_objectives);
 	}
-	changeling = null;
-	rt.forList(f, 0, rt.sv(f, "changelings"), T("/datum/mind"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		changeling = $e;
-		yield* g.call(f, P("/proc/log_game"), null, [fmt("＀ (ckey) has been selected as a changeling", [rt.fv(f, "key", live(changeling))])]);
-		yield* g.callName(f, rt.fv(f, "current", live(changeling)), "make_changeling", []);
-		yield* g.srcCall(f, "forge_changeling_objectives", live(changeling));
-		yield* g.srcCall(f, "greet_changeling", live(changeling));
-		yield* g.callName(f, rt.fv(f, "mode", rt.gl("SSticker")), "update_changeling_icons_added", [live(changeling)]);
+	for (changeling of each(this.changelings, T("/datum/mind"))) {
+		log_game(`${changeling.key} (ckey) has been selected as a changeling`);
+		yield* changeling.current.make_changeling();
+		yield* this.forge_changeling_objectives(changeling);
+		yield* this.greet_changeling(changeling);
+		GLOB.SSticker.mode.update_changeling_icons_added(changeling);
 	}
-	rt.endFor(f, 0);
-	rt.modSrcVar(f, "modePlayer", rt.sv(f, "changelings"), add);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	this.modePlayer += this.changelings;
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /datum/game_mode/changeling/proc/make_antag_chance  (code/game/gamemodes/changeling/changeling.dm:104)  may sleep
+// changeling.dm:104
 rt.def("/datum/game_mode/changeling/proc/make_antag_chance", function* make_antag_chance(f: Frame, character: Value) {
-	let changelingcap: Value = null;
-	f.vars = () => [character, changelingcap];
-	changelingcap = (yield* g.call(f, P("/proc/min"), null, [add((yield* g.call(f, P("/proc/round"), null, [divide(rt.len(f, rt.gl("joined_player_list")), multiply(rt.fv(f, "changeling_scaling_coeff", rt.gl("config")), 2))])), 2), (yield* g.call(f, P("/proc/round"), null, [divide(rt.len(f, rt.gl("joined_player_list")), rt.fv(f, "changeling_scaling_coeff", rt.gl("config")))]))]));
-	if (rt.ge(rt.getLen(f, rt.gv(f, "changelings", rt.fv(f, "mode", rt.gl("SSticker")))), live(changelingcap))) {
-		return live(f.dot);
+	let changelingcap: Value = min(round(rt.len(f, GLOB.joined_player_list) / (GLOB.config.changeling_scaling_coeff * 2)) + 2, round(rt.len(f, GLOB.joined_player_list) / GLOB.config.changeling_scaling_coeff));
+	if (rt.len(f, GLOB.SSticker.mode.changelings) >= changelingcap) {
+		return f.dot;
 	}
-	if (!(rt.le(rt.getLen(f, rt.gv(f, "changelings", rt.fv(f, "mode", rt.gl("SSticker")))), subtract(live(changelingcap), 2)) || truthy(rt.op(f, "Prob", [], [subtract(100, multiply(rt.fv(f, "changeling_scaling_coeff", rt.gl("config")), 2))])))) return f.dot;
-	if (!truthy((rt.isIn(f, "changeling", rt.gv(f, "be_special", rt.gv(f, "prefs", rt.fv(f, "client", live(character))))) ? 1 : 0))) return f.dot;
-	if (!(!truthy((yield* g.call(f, P("/proc/jobban_isbanned"), null, [live(character), "changeling"]))) && !truthy((yield* g.call(f, P("/proc/jobban_isbanned"), null, [live(character), "Syndicate"]))))) return f.dot;
-	if (truthy((rt.isIn(f, rt.fv(f, "job", live(character)), rt.sv(f, "restricted_jobs")) ? 1 : 0))) return f.dot;
-	yield* g.callName(f, rt.fv(f, "mind", live(character)), "make_Changling", []);
+	if (!(rt.len(f, GLOB.SSticker.mode.changelings) <= changelingcap - 2 || prob(100 - GLOB.config.changeling_scaling_coeff * 2))) return f.dot;
+	if (!rt.isIn(f, "changeling", character.client.prefs.be_special)) return f.dot;
+	if (!(!jobban_isbanned(character, "changeling") && !jobban_isbanned(character, "Syndicate"))) return f.dot;
+	if (rt.isIn(f, character.job, this.restricted_jobs)) return f.dot;
+	yield* character.mind.make_Changling();
 	return f.dot;
 }, true);
 
-// /datum/game_mode/proc/forge_changeling_objectives  (code/game/gamemodes/changeling/changeling.dm:122)  may sleep
+// changeling.dm:122
 rt.def("/datum/game_mode/proc/forge_changeling_objectives", function* forge_changeling_objectives(f: Frame, changeling: Value, team_mode: Value) {
-	let escape_objective_possible: Value = null, CTO: Value = null, absorb_objective: Value = null, steal_objective: Value = null, active_ais: Value = null, destroy_objective: Value = null, kill_objective: Value = null, maroon_objective: Value = null, identity_theft: Value = null, escape_objective: Value = null, identity_theft_3: Value = null;
-	let $e: any;
-	f.vars = () => [changeling, team_mode, escape_objective_possible, CTO, absorb_objective, steal_objective, active_ais, destroy_objective, kill_objective, maroon_objective, identity_theft, escape_objective, identity_theft_3, $e];
-	if (live(team_mode) === null) {
-		team_mode = 0;
-	}
-	escape_objective_possible = 1;
-	CTO = null;
-	rt.forList(f, 0, rt.fv(f, "objectives", live(changeling)), T("/datum/objective/changeling_team_objective"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		CTO = $e;
-		if (!truthy(rt.fv(f, "escape_objective_compatible", live(CTO)))) {
+	let CTO: Value = null, absorb_objective: Value = null, steal_objective: Value = null, active_ais: Value = null, destroy_objective: Value = null, kill_objective: Value = null, maroon_objective: Value = null, identity_theft: Value = null, escape_objective: Value = null, identity_theft_3: Value = null;
+	team_mode ??= 0;
+	let escape_objective_possible: Value = 1;
+	for (CTO of each(changeling.objectives, T("/datum/objective/changeling_team_objective"))) {
+		if (!CTO.escape_objective_compatible) {
 			escape_objective_possible = 0;
 			break;
 		}
 	}
-	rt.endFor(f, 0);
-	rt.setFv(f, "owner", (absorb_objective = (yield* g.new_(f, T("/datum/objective/absorb"), []))), live(changeling));
-	yield* g.callName(f, live(absorb_objective), "gen_amount_goal", [6, 8]);
-	rt.modField(f, live(changeling), "objectives", live(absorb_objective), add);
-	if (truthy(rt.op(f, "Prob", [], [60]))) {
-		rt.setFv(f, "owner", (steal_objective = (yield* g.new_(f, T("/datum/objective/steal"), []))), live(changeling));
-		yield* g.callName(f, live(steal_objective), "find_target", []);
-		rt.modField(f, live(changeling), "objectives", live(steal_objective), add);
+	(absorb_objective = (yield* new_(T("/datum/objective/absorb")))).owner = changeling;
+	absorb_objective.gen_amount_goal(6, 8);
+	changeling.objectives += absorb_objective;
+	if (prob(60)) {
+		(steal_objective = (yield* new_(T("/datum/objective/steal")))).owner = changeling;
+		yield* steal_objective.find_target();
+		changeling.objectives += steal_objective;
 	}
-	if ((truthy(rt.getLen(f, (active_ais = (yield* g.call(f, P("/proc/active_ais"), null, []))))) && truthy(rt.op(f, "Prob", [], [divide(100, rt.len(f, rt.gl("joined_player_list")))])))) {
-		rt.setFv(f, "owner", (destroy_objective = (yield* g.new_(f, T("/datum/objective/destroy"), []))), live(changeling));
-		yield* g.callName(f, live(destroy_objective), "find_target", []);
-		rt.modField(f, live(changeling), "objectives", live(destroy_objective), add);
-	} else {
-		if (truthy(rt.op(f, "Prob", [], [70]))) {
-			rt.setFv(f, "owner", (kill_objective = (yield* g.new_(f, T("/datum/objective/assassinate"), []))), live(changeling));
-			if (truthy(live(team_mode))) {
-				yield* g.callName(f, live(kill_objective), "find_target_by_role", ["role", "Changeling", "role_type", 1, "invert", 1], rt.Args.Named);
-			} else {
-				yield* g.callName(f, live(kill_objective), "find_target", []);
-			}
-			rt.modField(f, live(changeling), "objectives", live(kill_objective), add);
+	if (rt.len(f, (active_ais = (yield* g.call(f, P("/proc/active_ais"), null, [])))) && prob(100 / rt.len(f, GLOB.joined_player_list))) {
+		(destroy_objective = (yield* new_(T("/datum/objective/destroy")))).owner = changeling;
+		yield* destroy_objective.find_target();
+		changeling.objectives += destroy_objective;
+	} else if (prob(70)) {
+		(kill_objective = (yield* new_(T("/datum/objective/assassinate")))).owner = changeling;
+		if (team_mode) {
+			yield* kill_objective.find_target_by_role({ role: "Changeling", role_type: 1, invert: 1 });
 		} else {
-			rt.setFv(f, "owner", (maroon_objective = (yield* g.new_(f, T("/datum/objective/maroon"), []))), live(changeling));
-			if (truthy(live(team_mode))) {
-				yield* g.callName(f, live(maroon_objective), "find_target_by_role", ["role", "Changeling", "role_type", 1, "invert", 1], rt.Args.Named);
-			} else {
-				yield* g.callName(f, live(maroon_objective), "find_target", []);
-			}
-			rt.modField(f, live(changeling), "objectives", live(maroon_objective), add);
-			if ((!truthy(rt.locateIn(f, T("/datum/objective/escape"), rt.fv(f, "objectives", live(changeling)))) && truthy(live(escape_objective_possible)))) {
-				rt.setFv(f, "owner", (identity_theft = (yield* g.new_(f, T("/datum/objective/escape/escape_with_identity"), []))), live(changeling));
-				rt.setFv(f, "target", live(identity_theft), rt.fv(f, "target", live(maroon_objective)));
-				yield* g.callName(f, live(identity_theft), "update_explanation_text", []);
-				rt.modField(f, live(changeling), "objectives", live(identity_theft), add);
-				escape_objective_possible = 0;
-			}
+			yield* kill_objective.find_target();
+		}
+		changeling.objectives += kill_objective;
+	} else {
+		(maroon_objective = (yield* new_(T("/datum/objective/maroon")))).owner = changeling;
+		if (team_mode) {
+			yield* maroon_objective.find_target_by_role({ role: "Changeling", role_type: 1, invert: 1 });
+		} else {
+			yield* maroon_objective.find_target();
+		}
+		changeling.objectives += maroon_objective;
+		if (!rt.locateIn(f, T("/datum/objective/escape"), changeling.objectives) && escape_objective_possible) {
+			(identity_theft = (yield* new_(T("/datum/objective/escape/escape_with_identity")))).owner = changeling;
+			identity_theft.target = maroon_objective.target;
+			identity_theft.update_explanation_text();
+			changeling.objectives += identity_theft;
+			escape_objective_possible = 0;
 		}
 	}
-	if (!(!truthy(rt.locateIn(f, T("/datum/objective/escape"), rt.fv(f, "objectives", live(changeling)))) && truthy(live(escape_objective_possible)))) return f.dot;
-	if (truthy(rt.op(f, "Prob", [], [50]))) {
-		rt.setFv(f, "owner", (escape_objective = (yield* g.new_(f, T("/datum/objective/escape"), []))), live(changeling));
-		rt.modField(f, live(changeling), "objectives", live(escape_objective), add);
+	if (!(!rt.locateIn(f, T("/datum/objective/escape"), changeling.objectives) && escape_objective_possible)) return f.dot;
+	if (prob(50)) {
+		(escape_objective = (yield* new_(T("/datum/objective/escape")))).owner = changeling;
+		changeling.objectives += escape_objective;
 	} else {
-		rt.setFv(f, "owner", (identity_theft_3 = (yield* g.new_(f, T("/datum/objective/escape/escape_with_identity"), []))), live(changeling));
-		if (truthy(live(team_mode))) {
-			yield* g.callName(f, live(identity_theft_3), "find_target_by_role", ["role", "Changeling", "role_type", 1, "invert", 1], rt.Args.Named);
+		(identity_theft_3 = (yield* new_(T("/datum/objective/escape/escape_with_identity")))).owner = changeling;
+		if (team_mode) {
+			yield* identity_theft_3.find_target_by_role({ role: "Changeling", role_type: 1, invert: 1 });
 		} else {
-			yield* g.callName(f, live(identity_theft_3), "find_target", []);
+			yield* identity_theft_3.find_target();
 		}
-		rt.modField(f, live(changeling), "objectives", live(identity_theft_3), add);
+		changeling.objectives += identity_theft_3;
 	}
 	escape_objective_possible = 0;
 	return f.dot;
 }, true);
 
-// /datum/game_mode/changeling/proc/forge_changeling_objectives  (code/game/gamemodes/changeling/changeling.dm:189)  may sleep
+// changeling.dm:189
 rt.def("/datum/game_mode/changeling/proc/forge_changeling_objectives", function* forge_changeling_objectives(f: Frame, changeling: Value) {
 	let team_objective: Value = null;
-	f.vars = () => [changeling, team_objective];
-	if (truthy(rt.sv(f, "changeling_team_objective_type"))) {
-		rt.setFv(f, "owner", (team_objective = (yield* g.new_(f, rt.sv(f, "changeling_team_objective_type"), []))), live(changeling));
-		rt.modField(f, live(changeling), "objectives", live(team_objective), add);
-		yield* g.callSuper(f, [live(changeling), 1]);
+	if (this.changeling_team_objective_type) {
+		(team_objective = (yield* new_(this.changeling_team_objective_type))).owner = changeling;
+		changeling.objectives += team_objective;
+		yield* parent_proc(changeling, 1);
 	} else {
-		yield* g.callSuper(f, [live(changeling), 0]);
+		yield* parent_proc(changeling, 0);
 	}
 	return f.dot;
 }, true);
 
-// /datum/game_mode/proc/greet_changeling  (code/game/gamemodes/changeling/changeling.dm:200)  may sleep
+// changeling.dm:200
 rt.def("/datum/game_mode/proc/greet_changeling", function* greet_changeling(f: Frame, changeling: Value, you_are: Value) {
-	let H: Value = null, obj_count: Value = null, objective: Value = null;
-	let $e: any;
-	f.vars = () => [changeling, you_are, H, obj_count, objective, $e];
-	if (live(you_are) === null) {
-		you_are = 1;
+	let H: Value = null, objective: Value = null;
+	you_are ??= 1;
+	if (you_are) {
+		to_chat(changeling.current, `<span class='boldannounce'>You are ${changeling.changeling.changelingID}, a changeling! You have absorbed and taken the form of a human.</span>`);
 	}
-	if (truthy(live(you_are))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [rt.fv(f, "current", live(changeling)), fmt("<span class='boldannounce'>You are ＀, a changeling! You have absorbed and taken the form of a human.</span>", [rt.gv(f, "changelingID", rt.fv(f, "changeling", live(changeling)))])]);
-	}
-	yield* g.call(f, P("/proc/to_chat"), null, [rt.fv(f, "current", live(changeling)), "<span class='boldannounce'>Use say \":g message\" to communicate with your fellow changelings.</span>"]);
-	yield* g.call(f, P("/proc/to_chat"), null, [rt.fv(f, "current", live(changeling)), "<b>You must complete the following tasks:</b>"]);
-	yield* g.callName(f, rt.fv(f, "current", live(changeling)), "playsound_local", [null, rt.getStep(f, rt.fv(f, "current", live(changeling)), 0), null, rt.rsc("sound/ambience/antag/ling_aler.ogg"), null, 100, null, 0, "pressure_affected", 0], rt.Args.Named);
-	if (truthy(rt.gv(f, "mind", rt.fv(f, "current", live(changeling))))) {
-		if (isEqual(rt.gv(f, "assigned_role", rt.gv(f, "mind", (H = rt.fv(f, "current", live(changeling))))), "Clown")) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(H), "You have evolved beyond your clownish nature, allowing you to wield weapons without harming yourself."]);
-			yield* g.callName(f, rt.fv(f, "dna", live(H)), "remove_mutation", ["Clumsiness"]);
+	to_chat(changeling.current, "<span class='boldannounce'>Use say \":g message\" to communicate with your fellow changelings.</span>");
+	to_chat(changeling.current, "<b>You must complete the following tasks:</b>");
+	yield* changeling.current.playsound_local(rt.getStep(f, changeling.current, 0), rt.rsc("sound/ambience/antag/ling_aler.ogg"), 100, 0, { pressure_affected: 0 });
+	if (changeling.current.mind) {
+		if ((H = changeling.current).mind.assigned_role == "Clown") {
+			to_chat(H, "You have evolved beyond your clownish nature, allowing you to wield weapons without harming yourself.");
+			yield* H.dna.remove_mutation("Clumsiness");
 		}
 	}
-	obj_count = 1;
-	objective = null;
-	rt.forList(f, 0, rt.fv(f, "objectives", live(changeling)), T("/datum/objective"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		objective = $e;
-		yield* g.call(f, P("/proc/to_chat"), null, [rt.fv(f, "current", live(changeling)), fmt("<b>Objective #＀</b>: ＀", [live(obj_count), rt.fv(f, "explanation_text", live(objective))])]);
-		obj_count = rt.inc(live(obj_count), 1);
+	let obj_count: Value = 1;
+	for (objective of each(changeling.objectives, T("/datum/objective"))) {
+		to_chat(changeling.current, `<b>Objective #${obj_count}</b>: ${objective.explanation_text}`);
+		obj_count++;
 	}
-	rt.endFor(f, 0);
-	return live(f.dot);
+	return f.dot;
 }, true);
 
-// /datum/game_mode/proc/auto_declare_completion_changeling  (code/game/gamemodes/changeling/changeling.dm:240)
+// changeling.dm:240
 rt.def("/datum/game_mode/proc/auto_declare_completion_changeling", function auto_declare_completion_changeling(f: Frame) {
 	let text: Value = null, changeling: Value = null, changelingwin: Value = null, count: Value = null, objective: Value = null;
-	let $e: any;
-	f.vars = () => [text, changeling, changelingwin, count, objective, $e];
-	if (truthy(rt.len(f, rt.sv(f, "changelings")))) {
+	if (rt.len(f, this.changelings)) {
 		text = "<br><font size=3><b>The changelings were:</b></font>";
-		changeling = null;
-		rt.forList(f, 0, rt.sv(f, "changelings"), T("/datum/mind"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			changeling = $e;
+		for (changeling of each(this.changelings, T("/datum/mind"))) {
 			changelingwin = 1;
-			if (!truthy(rt.fv(f, "current", live(changeling)))) {
+			if (!changeling.current) {
 				changelingwin = 0;
 			}
-			text = rt.modify(live(text), rt.callSrc(f, "printplayer", [live(changeling)]), add);
-			text = rt.modify(live(text), fmt("<br><b>Changeling ID:</b> ＀.", [rt.gv(f, "changelingID", rt.fv(f, "changeling", live(changeling)))]), add);
-			text = rt.modify(live(text), fmt("<br><b>Genomes Extracted:</b> ＀", [rt.gv(f, "absorbedcount", rt.fv(f, "changeling", live(changeling)))]), add);
-			if (truthy(rt.getLen(f, rt.fv(f, "objectives", live(changeling))))) {
+			text += this.printplayer(changeling);
+			text += `<br><b>Changeling ID:</b> ${changeling.changeling.changelingID}.`;
+			text += `<br><b>Genomes Extracted:</b> ${changeling.changeling.absorbedcount}`;
+			if (rt.len(f, changeling.objectives)) {
 				count = 1;
 				objective = null;
-				rt.forList(f, 1, rt.fv(f, "objectives", live(changeling)), T("/datum/objective"));
-				while (($e = rt.next(f, 1)) !== undefined) {
-					objective = $e;
-					if (truthy(rt.callName(f, live(objective), "check_completion", []))) {
-						text = rt.modify(live(text), fmt("<br><b>Objective #＀</b>: ＀ <font color='green'><b>Success!</b></font>", [live(count), rt.fv(f, "explanation_text", live(objective))]), add);
+				for (objective of each(changeling.objectives, T("/datum/objective"))) {
+					if (objective.check_completion()) {
+						text += `<br><b>Objective #${count}</b>: ${objective.explanation_text} <font color='green'><b>Success!</b></font>`;
 					} else {
-						text = rt.modify(live(text), fmt("<br><b>Objective #＀</b>: ＀ <span class='danger'>Fail.</span>", [live(count), rt.fv(f, "explanation_text", live(objective))]), add);
+						text += `<br><b>Objective #${count}</b>: ${objective.explanation_text} <span class='danger'>Fail.</span>`;
 						changelingwin = 0;
 					}
-					count = rt.inc(live(count), 1);
+					count++;
 				}
-				rt.endFor(f, 1);
 			}
-			if (truthy(live(changelingwin))) {
-				text = rt.modify(live(text), "<br><font color='green'><b>The changeling was successful!</b></font>", add);
+			if (changelingwin) {
+				text += "<br><font color='green'><b>The changeling was successful!</b></font>";
 			} else {
-				text = rt.modify(live(text), "<br><span class='boldannounce'>The changeling has failed.</span>", add);
+				text += "<br><span class='boldannounce'>The changeling has failed.</span>";
 			}
-			text = rt.modify(live(text), "<br>", add);
+			text += "<br>";
 		}
-		rt.endFor(f, 0);
-		rt.call(f, P("/proc/to_chat"), null, [rt.world(), live(text)]);
+		to_chat(rt.world(), text);
 	}
 	return 1;
 });
@@ -341,286 +298,240 @@ rt.type(1195, "/datum/changeling", "/datum", {
 	emporium_action: null,
 });
 
-// /datum/changeling/proc/<init>  (code/game/gamemodes/changeling/changeling.dm:279)
+// changeling.dm:279
 rt.def("/datum/changeling/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "stored_profiles", rt.list());
-	$0 = $0;
-	rt.setSv(f, "purchasedpowers", rt.list());
+	parent_proc();
+	this.stored_profiles = list();
+
+	this.purchasedpowers = list();
 	return f.dot;
 });
 
-// /datum/changeling/proc/New  (code/game/gamemodes/changeling/changeling.dm:305)  may sleep
+// changeling.dm:305
 rt.def("/datum/changeling/proc/New", function* New(f: Frame) {
 	let honorific: Value = null;
-	f.vars = () => [honorific];
-	if (live(f.args[0]) === null) {
+	if (f.args[0] === null) {
 		f.args[0] = "female";
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	honorific = null;
-	if (isEqual(live(f.args[0]), "female")) {
+	yield* parent_proc();
+	if (f.args[0] == "female") {
 		honorific = "Ms.";
 	} else {
 		honorific = "Mr.";
 	}
-	if (truthy(rt.len(f, rt.gl("possible_changeling_IDs")))) {
-		rt.setSv(f, "changelingID", rt.op(f, "PickUnweighted", [1], [rt.gl("possible_changeling_IDs")]));
-		(rt.modGl("possible_changeling_IDs", rt.sv(f, "changelingID"), subtract));
-		rt.setSv(f, "changelingID", fmt("＀ ＀", [live(honorific), rt.sv(f, "changelingID")]));
+	if (rt.len(f, GLOB.possible_changeling_IDs)) {
+		this.changelingID = pick(GLOB.possible_changeling_IDs);
+		GLOB.possible_changeling_IDs -= this.changelingID;
+		this.changelingID = `${honorific} ${this.changelingID}`;
 	} else {
-		rt.setSv(f, "changelingID", fmt("＀ ＀", [live(honorific), (yield* g.call(f, P("/proc/rand"), null, [1, 999]))]));
+		this.changelingID = `${honorific} ${rand(1, 999)}`;
 	}
-	rt.setSv(f, "cellular_emporium", (yield* g.new_(f, T("/datum/cellular_emporium"), [live(f.src)])));
-	rt.setSv(f, "emporium_action", (yield* g.new_(f, T("/datum/action/innate/cellular_emporium"), [rt.sv(f, "cellular_emporium")])));
+	this.cellular_emporium = (yield* new_(T("/datum/cellular_emporium"), this));
+	this.emporium_action = (yield* new_(T("/datum/action/innate/cellular_emporium"), this.cellular_emporium));
 	return f.dot;
 }, true, { args: ["gender"] });
 
-// /datum/changeling/proc/Destroy  (code/game/gamemodes/changeling/changeling.dm:322)  may sleep
+// changeling.dm:322
 rt.def("/datum/changeling/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "cellular_emporium")]);
-	rt.setSv(f, "cellular_emporium", null);
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "emporium_action")]);
-	rt.setSv(f, "emporium_action", null);
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* qdel(this.cellular_emporium);
+	this.cellular_emporium = null;
+	yield* qdel(this.emporium_action);
+	this.emporium_action = null;
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true);
 
-// /datum/changeling/proc/regenerate  (code/game/gamemodes/changeling/changeling.dm:329)  may sleep
+// changeling.dm:329
 rt.def("/datum/changeling/proc/regenerate", function* regenerate(f: Frame, the_ling: Value) {
-	f.vars = () => [the_ling];
-	if (!truthy((rt.istype(live(the_ling), T("/mob/living/carbon")) ? 1 : 0))) return f.dot;
-	yield* g.callName(f, rt.sv(f, "emporium_action"), "Grant", [live(the_ling)]);
-	if (isEqual(rt.fv(f, "stat", live(the_ling)), 2)) {
-		rt.setSv(f, "chem_charges", (yield* g.call(f, P("/proc/min"), null, [(yield* g.call(f, P("/proc/max"), null, [0, subtract(add(rt.sv(f, "chem_charges"), rt.sv(f, "chem_recharge_rate")), rt.sv(f, "chem_recharge_slowdown"))])), multiply(rt.sv(f, "chem_storage"), 0.5)])));
-		rt.setSv(f, "geneticdamage", (yield* g.call(f, P("/proc/max"), null, [50, subtract(rt.sv(f, "geneticdamage"), 1)])));
+	if (!rt.istype(the_ling, T("/mob/living/carbon"))) return f.dot;
+	yield* this.emporium_action.Grant(the_ling);
+	if (the_ling.stat == 2) {
+		this.chem_charges = min(max(0, this.chem_charges + this.chem_recharge_rate - this.chem_recharge_slowdown), this.chem_storage * 0.5);
+		this.geneticdamage = max(LING_DEAD_GENETICDAMAGE_HEAL_CAP, this.geneticdamage - 1);
 	} else {
-		rt.setSv(f, "chem_charges", (yield* g.call(f, P("/proc/min"), null, [(yield* g.call(f, P("/proc/max"), null, [0, subtract(add(rt.sv(f, "chem_charges"), rt.sv(f, "chem_recharge_rate")), rt.sv(f, "chem_recharge_slowdown"))])), rt.sv(f, "chem_storage")])));
-		rt.setSv(f, "geneticdamage", (yield* g.call(f, P("/proc/max"), null, [0, subtract(rt.sv(f, "geneticdamage"), 1)])));
+		this.chem_charges = min(max(0, this.chem_charges + this.chem_recharge_rate - this.chem_recharge_slowdown), this.chem_storage);
+		this.geneticdamage = max(0, this.geneticdamage - 1);
 	}
 	return f.dot;
 }, true);
 
-// /datum/changeling/proc/get_dna  (code/game/gamemodes/changeling/changeling.dm:340)
+// changeling.dm:340
 rt.def("/datum/changeling/proc/get_dna", function get_dna(f: Frame, dna_owner: Value) {
 	let prof: Value = null;
-	let $e: any;
-	f.vars = () => [prof, $e];
-	prof = null;
-	rt.forList(f, 0, rt.sv(f, "stored_profiles"), T("/datum/changelingprofile"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		prof = $e;
-		if (isEqual(live(dna_owner), rt.fv(f, "name", live(prof)))) {
-			return live(prof);
+	for (prof of each(this.stored_profiles, T("/datum/changelingprofile"))) {
+		if (dna_owner == prof.name) {
+			return prof;
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /datum/changeling/proc/has_dna  (code/game/gamemodes/changeling/changeling.dm:345)
+// changeling.dm:345
 rt.def("/datum/changeling/proc/has_dna", function has_dna(f: Frame, tDNA: Value) {
 	let prof: Value = null;
-	let $e: any;
-	f.vars = () => [prof, $e];
-	prof = null;
-	rt.forList(f, 0, rt.sv(f, "stored_profiles"), T("/datum/changelingprofile"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		prof = $e;
-		if (truthy(rt.callName(f, live(tDNA), "is_same_as", [rt.fv(f, "dna", live(prof))]))) {
+	for (prof of each(this.stored_profiles, T("/datum/changelingprofile"))) {
+		if (tDNA.is_same_as(prof.dna)) {
 			return 1;
 		}
 	}
-	rt.endFor(f, 0);
 	return 0;
 });
 
-// /datum/changeling/proc/can_absorb_dna  (code/game/gamemodes/changeling/changeling.dm:351)
+// changeling.dm:351
 rt.def("/datum/changeling/proc/can_absorb_dna", function can_absorb_dna(f: Frame, user: Value, target: Value, verbose: Value) {
 	let prof: Value = null;
-	f.vars = () => [verbose, prof];
-	if (live(verbose) === null) {
-		verbose = 1;
-	}
-	if (truthy(rt.len(f, rt.sv(f, "stored_profiles")))) {
-		if ((isEqual(rt.gv(f, "dna", (prof = rt.index(rt.sv(f, "stored_profiles"), 1))), rt.fv(f, "dna", live(user))) && rt.ge(rt.len(f, rt.sv(f, "stored_profiles")), rt.sv(f, "dna_max")))) {
-			if (truthy(live(verbose))) {
-				rt.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>We have reached our capacity to store genetic information! We must transform before absorbing more.</span>"]);
+	verbose ??= 1;
+	if (rt.len(f, this.stored_profiles)) {
+		if ((prof = rt.index(this.stored_profiles, 1)).dna == user.dna && rt.len(f, this.stored_profiles) >= this.dna_max) {
+			if (verbose) {
+				to_chat(user, "<span class='warning'>We have reached our capacity to store genetic information! We must transform before absorbing more.</span>");
 			}
-			return live(f.dot);
+			return f.dot;
 		}
 	}
-	if (!truthy(live(target))) {
-		return live(f.dot);
+	if (!target) {
+		return f.dot;
 	}
-	if ((truthy(rt.bitAnd(rt.fv(f, "disabilities", live(target)), 128)) || truthy(rt.bitAnd(rt.fv(f, "disabilities", live(target)), 64)))) {
-		if (truthy(live(verbose))) {
-			rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>DNA of ＀ is ruined beyond usability!</span>", [live(target)])]);
+	if (rt.bitAnd(target.disabilities, 128) || rt.bitAnd(target.disabilities, 64)) {
+		if (verbose) {
+			to_chat(user, `<span class='warning'>DNA of ${target} is ruined beyond usability!</span>`);
 		}
-		return live(f.dot);
+		return f.dot;
 	}
-	if (!truthy((rt.istype(live(target), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		if (truthy(live(verbose))) {
-			rt.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>We could gain no benefit from absorbing a lesser creature.</span>"]);
+	if (!rt.istype(target, T("/mob/living/carbon/human"))) {
+		if (verbose) {
+			to_chat(user, "<span class='warning'>We could gain no benefit from absorbing a lesser creature.</span>");
 		}
-		return live(f.dot);
+		return f.dot;
 	}
-	if (truthy(rt.callSrc(f, "has_dna", [rt.fv(f, "dna", live(target))]))) {
-		if (truthy(live(verbose))) {
-			rt.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>We already have this DNA in storage!</span>"]);
+	if (this.has_dna(target.dna)) {
+		if (verbose) {
+			to_chat(user, "<span class='warning'>We already have this DNA in storage!</span>");
 		}
-		return live(f.dot);
+		return f.dot;
 	}
-	if (!truthy(rt.callName(f, live(target), "has_dna", []))) {
-		if (truthy(live(verbose))) {
-			rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ is not compatible with our biology.</span>", [live(target)])]);
+	if (!target.has_dna()) {
+		if (verbose) {
+			to_chat(user, `<span class='warning'>${target} is not compatible with our biology.</span>`);
 		}
-		return live(f.dot);
+		return f.dot;
 	}
 	return 1;
 });
 
-// /datum/changeling/proc/create_profile  (code/game/gamemodes/changeling/changeling.dm:378)  may sleep
+// changeling.dm:378
 rt.def("/datum/changeling/proc/create_profile", function* create_profile(f: Frame, H: Value, user: Value, protect: Value) {
-	let prof: Value = null, new_dna: Value = null, slots: Value = null, slot: Value = null, I: Value = null;
-	let $e: any;
-	f.vars = () => [H, user, protect, prof, new_dna, slots, slot, I, $e];
-	if (live(protect) === null) {
-		protect = 0;
-	}
-	prof = (yield* g.new_(f, T("/datum/changelingprofile"), []));
-	rt.setFv(f, "real_name", rt.fv(f, "dna", live(H)), rt.fv(f, "real_name", live(H)));
-	new_dna = (yield* g.new_(f, rt.gv(f, "type", rt.fv(f, "dna", live(H))), []));
-	yield* g.callName(f, rt.fv(f, "dna", live(H)), "copy_dna", [live(new_dna)]);
-	rt.setFv(f, "dna", live(prof), live(new_dna));
-	rt.setFv(f, "name", live(prof), rt.fv(f, "real_name", live(H)));
-	rt.setFv(f, "protected", live(prof), live(protect));
-	rt.setFv(f, "underwear", live(prof), rt.fv(f, "underwear", live(H)));
-	rt.setFv(f, "undershirt", live(prof), rt.fv(f, "undershirt", live(H)));
-	rt.setFv(f, "socks", live(prof), rt.fv(f, "socks", live(H)));
-	slots = rt.list("head", "wear_mask", "back", "wear_suit", "w_uniform", "shoes", "belt", "gloves", "glasses", "ears", "wear_id", "s_store");
-	slot = null;
-	rt.forList(f, 0, live(slots));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		slot = $e;
-		if (truthy((rt.isIn(f, live(slot), rt.fv(f, "vars", live(H))) ? 1 : 0))) {
-			if (!truthy((I = rt.index(rt.fv(f, "vars", live(H)), live(slot))))) {
+	let slot: Value = null, I: Value = null;
+	protect ??= 0;
+	let prof: Value = (yield* new_(T("/datum/changelingprofile")));
+	H.dna.real_name = H.real_name;
+	let new_dna: Value = (yield* new_(H.dna.type));
+	yield* H.dna.copy_dna(new_dna);
+	prof.dna = new_dna;
+	prof.name = H.real_name;
+	prof.protected = protect;
+	prof.underwear = H.underwear;
+	prof.undershirt = H.undershirt;
+	prof.socks = H.socks;
+	let slots: Value = list("head", "wear_mask", "back", "wear_suit", "w_uniform", "shoes", "belt", "gloves", "glasses", "ears", "wear_id", "s_store");
+	for (slot of each(slots)) {
+		if (rt.isIn(f, slot, H.vars)) {
+			if (!(I = rt.index(H.vars, slot))) {
 				continue;
 			}
-			rt.setAt(rt.fv(f, "name_list", live(prof)), live(slot), rt.fv(f, "name", live(I)));
-			rt.setAt(rt.fv(f, "appearance_list", live(prof)), live(slot), rt.fv(f, "appearance", live(I)));
-			rt.setAt(rt.fv(f, "flags_cover_list", live(prof)), live(slot), rt.fv(f, "flags_cover", live(I)));
-			rt.setAt(rt.fv(f, "item_color_list", live(prof)), live(slot), rt.fv(f, "item_color", live(I)));
-			rt.setAt(rt.fv(f, "item_state_list", live(prof)), live(slot), rt.fv(f, "item_state", live(I)));
-			rt.setAt(rt.fv(f, "exists_list", live(prof)), live(slot), 1);
+			rt.setAt(prof.name_list, slot, I.name);
+			rt.setAt(prof.appearance_list, slot, I.appearance);
+			rt.setAt(prof.flags_cover_list, slot, I.flags_cover);
+			rt.setAt(prof.item_color_list, slot, I.item_color);
+			rt.setAt(prof.item_state_list, slot, I.item_state);
+			rt.setAt(prof.exists_list, slot, 1);
 		} else {
 			continue;
 		}
 	}
-	rt.endFor(f, 0);
-	return live(prof);
+	return prof;
 }, true);
 
-// /datum/changeling/proc/add_profile  (code/game/gamemodes/changeling/changeling.dm:409)
+// changeling.dm:409
 rt.def("/datum/changeling/proc/add_profile", function add_profile(f: Frame, prof: Value) {
-	if (rt.gt(rt.len(f, rt.sv(f, "stored_profiles")), rt.sv(f, "dna_max"))) {
-		if (!truthy(rt.callSrc(f, "push_out_profile", []))) {
-			return live(f.dot);
+	if (rt.len(f, this.stored_profiles) > this.dna_max) {
+		if (!this.push_out_profile()) {
+			return f.dot;
 		}
 	}
-	rt.modSrcVar(f, "stored_profiles", live(prof), add);
-	rt.incSrcVar(f, "absorbedcount", 1, true);
+	this.stored_profiles += prof;
+	this.absorbedcount++;
 	return f.dot;
 });
 
-// /datum/changeling/proc/add_new_profile  (code/game/gamemodes/changeling/changeling.dm:417)  may sleep
+// changeling.dm:417
 rt.def("/datum/changeling/proc/add_new_profile", function* add_new_profile(f: Frame, H: Value, user: Value, protect: Value) {
 	let prof: Value = null;
-	f.vars = () => [H, user, protect, prof];
-	if (live(protect) === null) {
-		protect = 0;
-	}
-	yield* g.srcCall(f, "add_profile", (prof = (yield* g.srcCall(f, "create_profile", live(H), live(protect)))));
-	return live(prof);
+	protect ??= 0;
+	this.add_profile((prof = (yield* this.create_profile(H, protect))));
+	return prof;
 }, true);
 
-// /datum/changeling/proc/get_profile_to_remove  (code/game/gamemodes/changeling/changeling.dm:430)
+// changeling.dm:430
 rt.def("/datum/changeling/proc/get_profile_to_remove", function get_profile_to_remove(f: Frame) {
 	let prof: Value = null;
-	let $e: any;
-	f.vars = () => [prof, $e];
-	prof = null;
-	rt.forList(f, 0, rt.sv(f, "stored_profiles"), T("/datum/changelingprofile"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		prof = $e;
-		if (!truthy(rt.fv(f, "protected", live(prof)))) {
-			return live(prof);
+	for (prof of each(this.stored_profiles, T("/datum/changelingprofile"))) {
+		if (!prof.protected) {
+			return prof;
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /datum/changeling/proc/push_out_profile  (code/game/gamemodes/changeling/changeling.dm:435)
+// changeling.dm:435
 rt.def("/datum/changeling/proc/push_out_profile", function push_out_profile(f: Frame) {
 	let removeprofile: Value = null;
-	f.vars = () => [removeprofile];
-	if (truthy((removeprofile = rt.callSrc(f, "get_profile_to_remove", [])))) {
-		(rt.modSrcVar(f, "stored_profiles", live(removeprofile), subtract));
+	if (removeprofile = this.get_profile_to_remove()) {
+		this.stored_profiles -= removeprofile;
 		return 1;
 	}
 	return 0;
 });
 
-// /proc/changeling_transform  (code/game/gamemodes/changeling/changeling.dm:443)  may sleep
+// changeling.dm:443
 rt.def("/proc/changeling_transform", function* changeling_transform(f: Frame, user: Value, chosen_prof: Value) {
-	let chosen_dna: Value = null, slot: Value = null, C: Value = null, equip: Value = null, thetype: Value = null;
-	let $e: any;
-	f.vars = () => [user, chosen_prof, chosen_dna, slot, C, equip, thetype, $e];
-	chosen_dna = rt.fv(f, "dna", live(chosen_prof));
-	rt.setFv(f, "real_name", live(user), rt.fv(f, "name", live(chosen_prof)));
-	rt.setFv(f, "underwear", live(user), rt.fv(f, "underwear", live(chosen_prof)));
-	rt.setFv(f, "undershirt", live(user), rt.fv(f, "undershirt", live(chosen_prof)));
-	rt.setFv(f, "socks", live(user), rt.fv(f, "socks", live(chosen_prof)));
-	yield* g.callName(f, live(chosen_dna), "transfer_identity", [live(user), 1]);
-	yield* g.callName(f, live(user), "updateappearance", ["mutcolor_update", 1], rt.Args.Named);
-	yield* g.callName(f, live(user), "update_body", []);
-	yield* g.callName(f, live(user), "domutcheck", []);
-	slot = null;
-	rt.forList(f, 0, rt.gl("slots"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		slot = $e;
-		if ((truthy(rt.op(f, "IsType", [], [rt.index(rt.fv(f, "vars", live(user)), live(slot)), rt.index(rt.gl("slot2type"), live(slot))])) && !truthy(rt.index(rt.fv(f, "exists_list", live(chosen_prof)), live(slot))))) {
-			yield* g.call(f, P("/proc/qdel"), null, [rt.index(rt.fv(f, "vars", live(user)), live(slot))]);
+	let slot: Value = null, C: Value = null, equip: Value = null, thetype: Value = null;
+	let chosen_dna: Value = chosen_prof.dna;
+	user.real_name = chosen_prof.name;
+	user.underwear = chosen_prof.underwear;
+	user.undershirt = chosen_prof.undershirt;
+	user.socks = chosen_prof.socks;
+	yield* chosen_dna.transfer_identity(user, 1);
+	yield* user.updateappearance({ mutcolor_update: 1 });
+	yield* user.update_body();
+	yield* user.domutcheck();
+	for (slot of each(GLOB.slots)) {
+		if (rt.op(f, "IsType", [], [rt.index(user.vars, slot), rt.index(GLOB.slot2type, slot)]) && !rt.index(chosen_prof.exists_list, slot)) {
+			yield* qdel(rt.index(user.vars, slot));
 			continue;
 		}
-		if (((truthy(rt.index(rt.fv(f, "vars", live(user)), live(slot))) && !truthy(rt.op(f, "IsType", [], [rt.index(rt.fv(f, "vars", live(user)), live(slot)), rt.index(rt.gl("slot2type"), live(slot))]))) || !truthy(rt.index(rt.fv(f, "exists_list", live(chosen_prof)), live(slot))))) {
+		if (rt.index(user.vars, slot) && !rt.op(f, "IsType", [], [rt.index(user.vars, slot), rt.index(GLOB.slot2type, slot)]) || !rt.index(chosen_prof.exists_list, slot)) {
 			continue;
 		}
 		C = null;
 		equip = 0;
-		if (!truthy(rt.index(rt.fv(f, "vars", live(user)), live(slot)))) {
-			thetype = rt.index(rt.gl("slot2type"), live(slot));
+		if (!rt.index(user.vars, slot)) {
+			thetype = rt.index(GLOB.slot2type, slot);
 			equip = 1;
-			C = (yield* g.new_(f, live(thetype), [live(user)]));
-		} else {
-			if (truthy(rt.op(f, "IsType", [], [rt.index(rt.fv(f, "vars", live(user)), live(slot)), rt.index(rt.gl("slot2type"), live(slot))]))) {
-				C = rt.index(rt.fv(f, "vars", live(user)), live(slot));
-			}
+			C = (yield* new_(thetype, user));
+		} else if (rt.op(f, "IsType", [], [rt.index(user.vars, slot), rt.index(GLOB.slot2type, slot)])) {
+			C = rt.index(user.vars, slot);
 		}
-		rt.setFv(f, "appearance", live(C), rt.index(rt.fv(f, "appearance_list", live(chosen_prof)), live(slot)));
-		rt.setFv(f, "name", live(C), rt.index(rt.fv(f, "name_list", live(chosen_prof)), live(slot)));
-		rt.setFv(f, "flags_cover", live(C), rt.index(rt.fv(f, "flags_cover_list", live(chosen_prof)), live(slot)));
-		rt.setFv(f, "item_color", live(C), rt.index(rt.fv(f, "item_color_list", live(chosen_prof)), live(slot)));
-		rt.setFv(f, "item_state", live(C), rt.index(rt.fv(f, "item_state_list", live(chosen_prof)), live(slot)));
-		if (truthy(live(equip))) {
-			yield* g.callName(f, live(user), "equip_to_slot_or_del", [live(C), rt.index(rt.gl("slot2slot"), live(slot))]);
+		C.appearance = rt.index(chosen_prof.appearance_list, slot);
+		C.name = rt.index(chosen_prof.name_list, slot);
+		C.flags_cover = rt.index(chosen_prof.flags_cover_list, slot);
+		C.item_color = rt.index(chosen_prof.item_color_list, slot);
+		C.item_state = rt.index(chosen_prof.item_state_list, slot);
+		if (equip) {
+			yield* user.equip_to_slot_or_del(C, rt.index(GLOB.slot2slot, slot));
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.callName(f, live(user), "regenerate_icons", []);
+	yield* user.regenerate_icons();
 	return f.dot;
 }, true);
 
@@ -639,65 +550,60 @@ rt.type(1196, "/datum/changelingprofile", "/datum", {
 	socks: null,
 });
 
-// /datum/changelingprofile/proc/<init>  (code/game/gamemodes/changeling/changeling.dm:488)
+// changeling.dm:488
 rt.def("/datum/changelingprofile/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "name_list", rt.list());
-	$0 = $0;
-	rt.setSv(f, "appearance_list", rt.list());
-	$0 = $0;
-	rt.setSv(f, "flags_cover_list", rt.list());
-	$0 = $0;
-	rt.setSv(f, "exists_list", rt.list());
-	$0 = $0;
-	rt.setSv(f, "item_color_list", rt.list());
-	$0 = $0;
-	rt.setSv(f, "item_state_list", rt.list());
+	parent_proc();
+	this.name_list = list();
+
+	this.appearance_list = list();
+
+	this.flags_cover_list = list();
+
+	this.exists_list = list();
+
+	this.item_color_list = list();
+
+	this.item_state_list = list();
 	return f.dot;
 });
 
-// /datum/changelingprofile/proc/Destroy  (code/game/gamemodes/changeling/changeling.dm:500)  may sleep
+// changeling.dm:500
 rt.def("/datum/changelingprofile/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "dna")]);
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* qdel(this.dna);
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true);
 
-// /datum/changelingprofile/proc/copy_profile  (code/game/gamemodes/changeling/changeling.dm:506)  may sleep
+// changeling.dm:506
 rt.def("/datum/changelingprofile/proc/copy_profile", function* copy_profile(f: Frame, newprofile: Value) {
-	f.vars = () => [newprofile];
-	rt.setFv(f, "name", live(newprofile), rt.sv(f, "name"));
-	rt.setFv(f, "protected", live(newprofile), rt.sv(f, "protected"));
-	rt.setFv(f, "dna", live(newprofile), (yield* g.new_(f, rt.fv(f, "type", rt.sv(f, "dna")), [])));
-	yield* g.callName(f, rt.sv(f, "dna"), "copy_dna", [rt.fv(f, "dna", live(newprofile))]);
-	rt.setFv(f, "name_list", live(newprofile), (yield* g.callName(f, rt.sv(f, "name_list"), "Copy", [])));
-	rt.setFv(f, "appearance_list", live(newprofile), (yield* g.callName(f, rt.sv(f, "appearance_list"), "Copy", [])));
-	rt.setFv(f, "flags_cover_list", live(newprofile), (yield* g.callName(f, rt.sv(f, "flags_cover_list"), "Copy", [])));
-	rt.setFv(f, "exists_list", live(newprofile), (yield* g.callName(f, rt.sv(f, "exists_list"), "Copy", [])));
-	rt.setFv(f, "item_color_list", live(newprofile), (yield* g.callName(f, rt.sv(f, "item_color_list"), "Copy", [])));
-	rt.setFv(f, "item_state_list", live(newprofile), (yield* g.callName(f, rt.sv(f, "item_state_list"), "Copy", [])));
-	rt.setFv(f, "underwear", live(newprofile), rt.sv(f, "underwear"));
-	rt.setFv(f, "undershirt", live(newprofile), rt.sv(f, "undershirt"));
-	rt.setFv(f, "socks", live(newprofile), rt.sv(f, "socks"));
+	newprofile.name = this.name;
+	newprofile.protected = this.protected;
+	newprofile.dna = (yield* new_(this.dna.type));
+	yield* this.dna.copy_dna(newprofile.dna);
+	newprofile.name_list = (yield* this.name_list.Copy());
+	newprofile.appearance_list = (yield* this.appearance_list.Copy());
+	newprofile.flags_cover_list = (yield* this.flags_cover_list.Copy());
+	newprofile.exists_list = (yield* this.exists_list.Copy());
+	newprofile.item_color_list = (yield* this.item_color_list.Copy());
+	newprofile.item_state_list = (yield* this.item_state_list.Copy());
+	newprofile.underwear = this.underwear;
+	newprofile.undershirt = this.undershirt;
+	newprofile.socks = this.socks;
 	return f.dot;
 }, true);
 
-// /datum/game_mode/proc/update_changeling_icons_added  (code/game/gamemodes/changeling/changeling.dm:519)
+// changeling.dm:519
 rt.def("/datum/game_mode/proc/update_changeling_icons_added", function update_changeling_icons_added(f: Frame, changling_mind: Value) {
 	let hud: Value = null;
-	f.vars = () => [hud];
-	rt.callName(f, (hud = rt.index(rt.gl("huds"), 13)), "join_hud", [rt.fv(f, "current", live(changling_mind))]);
-	rt.callSrc(f, "set_antag_hud", [rt.fv(f, "current", live(changling_mind)), "changling"]);
+	(hud = rt.index(GLOB.huds, ANTAG_HUD_CHANGELING)).join_hud(changling_mind.current);
+	this.set_antag_hud(changling_mind.current, "changling");
 	return f.dot;
 });
 
-// /datum/game_mode/proc/update_changeling_icons_removed  (code/game/gamemodes/changeling/changeling.dm:524)
+// changeling.dm:524
 rt.def("/datum/game_mode/proc/update_changeling_icons_removed", function update_changeling_icons_removed(f: Frame, changling_mind: Value) {
 	let hud: Value = null;
-	f.vars = () => [hud];
-	rt.callName(f, (hud = rt.index(rt.gl("huds"), 13)), "leave_hud", [rt.fv(f, "current", live(changling_mind))]);
-	rt.callSrc(f, "set_antag_hud", [rt.fv(f, "current", live(changling_mind)), null]);
+	(hud = rt.index(GLOB.huds, ANTAG_HUD_CHANGELING)).leave_hud(changling_mind.current);
+	this.set_antag_hud(changling_mind.current, null);
 	return f.dot;
 });

@@ -1,7 +1,7 @@
-// From code/modules/projectiles/guns/energy/special.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/projectiles/guns/energy/special.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(5183, "/obj/item/weapon/gun/energy/ionrifle", "/obj/item/weapon/gun/energy", {
@@ -20,12 +20,10 @@ rt.type(5183, "/obj/item/weapon/gun/energy/ionrifle", "/obj/item/weapon/gun/ener
 	flight_y_offset: 9,
 });
 
-// /obj/item/weapon/gun/energy/ionrifle/proc/<init>  (code/modules/projectiles/guns/energy/special.dm:11)
+// special.dm:11
 rt.def("/obj/item/weapon/gun/energy/ionrifle/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "ammo_type", rt.list(T("/obj/item/ammo_casing/energy/ion")));
+	parent_proc();
+	this.ammo_type = list(T("/obj/item/ammo_casing/energy/ion"));
 	return f.dot;
 });
 
@@ -39,23 +37,19 @@ rt.type(5185, "/obj/item/weapon/gun/energy/decloner", "/obj/item/weapon/gun/ener
 	pin: null,
 });
 
-// /obj/item/weapon/gun/energy/decloner/proc/<init>  (code/modules/projectiles/guns/energy/special.dm:35)
+// special.dm:35
 rt.def("/obj/item/weapon/gun/energy/decloner/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "ammo_type", rt.list(T("/obj/item/ammo_casing/energy/declone")));
+	parent_proc();
+	this.ammo_type = list(T("/obj/item/ammo_casing/energy/declone"));
 	return f.dot;
 });
 
-// /obj/item/weapon/gun/energy/decloner/proc/update_icon  (code/modules/projectiles/guns/energy/special.dm:40)
+// special.dm:40
 rt.def("/obj/item/weapon/gun/energy/decloner/proc/update_icon", function update_icon(f: Frame) {
-	let shot: Value = null;
-	f.vars = () => [shot];
-	rt.callSuper(f, [], rt.Args.Same);
-	shot = rt.index(rt.sv(f, "ammo_type"), rt.sv(f, "select"));
-	if (!rt.gt(rt.fv(f, "charge", rt.sv(f, "cell")), rt.fv(f, "e_cost", live(shot)))) return f.dot;
-	rt.callSrc(f, "add_overlay", ["decloner_spin"]);
+	parent_proc();
+	let shot: Value = rt.index(this.ammo_type, this.select);
+	if (!(this.cell.charge > shot.e_cost)) return f.dot;
+	this.add_overlay("decloner_spin");
 	return f.dot;
 });
 
@@ -71,12 +65,10 @@ rt.type(5186, "/obj/item/weapon/gun/energy/floragun", "/obj/item/weapon/gun/ener
 	ammo_x_offset: 1,
 });
 
-// /obj/item/weapon/gun/energy/floragun/proc/<init>  (code/modules/projectiles/guns/energy/special.dm:50)
+// special.dm:50
 rt.def("/obj/item/weapon/gun/energy/floragun/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "ammo_type", rt.list(T("/obj/item/ammo_casing/energy/flora/yield"), T("/obj/item/ammo_casing/energy/flora/mut")));
+	parent_proc();
+	this.ammo_type = list(T("/obj/item/ammo_casing/energy/flora/yield"), T("/obj/item/ammo_casing/energy/flora/mut"));
 	return f.dot;
 });
 
@@ -92,12 +84,10 @@ rt.type(5187, "/obj/item/weapon/gun/energy/meteorgun", "/obj/item/weapon/gun/ene
 	clumsy_check: 0,
 });
 
-// /obj/item/weapon/gun/energy/meteorgun/proc/<init>  (code/modules/projectiles/guns/energy/special.dm:62)
+// special.dm:62
 rt.def("/obj/item/weapon/gun/energy/meteorgun/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "ammo_type", rt.list(T("/obj/item/ammo_casing/energy/meteor")));
+	parent_proc();
+	this.ammo_type = list(T("/obj/item/ammo_casing/energy/meteor"));
 	return f.dot;
 });
 
@@ -110,12 +100,10 @@ rt.type(5189, "/obj/item/weapon/gun/energy/mindflayer", "/obj/item/weapon/gun/en
 	ammo_x_offset: 2,
 });
 
-// /obj/item/weapon/gun/energy/mindflayer/proc/<init>  (code/modules/projectiles/guns/energy/special.dm:82)
+// special.dm:82
 rt.def("/obj/item/weapon/gun/energy/mindflayer/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "ammo_type", rt.list(T("/obj/item/ammo_casing/energy/mindflayer")));
+	parent_proc();
+	this.ammo_type = list(T("/obj/item/ammo_casing/energy/mindflayer"));
 	return f.dot;
 });
 
@@ -139,14 +127,12 @@ rt.type(5169, "/obj/item/weapon/gun/energy/kinetic_accelerator/crossbow", "/obj/
 	can_flashlight: 0,
 });
 
-// /obj/item/weapon/gun/energy/kinetic_accelerator/crossbow/proc/<init>  (code/modules/projectiles/guns/energy/special.dm:91)
+// special.dm:91
 rt.def("/obj/item/weapon/gun/energy/kinetic_accelerator/crossbow/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 2000]));
-	$0 = $0;
-	rt.setSv(f, "ammo_type", rt.list(T("/obj/item/ammo_casing/energy/bolt")));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 2000]);
+
+	this.ammo_type = list(T("/obj/item/ammo_casing/energy/bolt"));
 	return f.dot;
 });
 
@@ -158,12 +144,10 @@ rt.type(5170, "/obj/item/weapon/gun/energy/kinetic_accelerator/crossbow/hallowee
 	ammo_type: null,
 });
 
-// /obj/item/weapon/gun/energy/kinetic_accelerator/crossbow/halloween/proc/<init>  (code/modules/projectiles/guns/energy/special.dm:109)
+// special.dm:109
 rt.def("/obj/item/weapon/gun/energy/kinetic_accelerator/crossbow/halloween/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "ammo_type", rt.list(T("/obj/item/ammo_casing/energy/bolt/halloween")));
+	parent_proc();
+	this.ammo_type = list(T("/obj/item/ammo_casing/energy/bolt/halloween"));
 	return f.dot;
 });
 
@@ -179,14 +163,12 @@ rt.type(5171, "/obj/item/weapon/gun/energy/kinetic_accelerator/crossbow/large", 
 	pin: null,
 });
 
-// /obj/item/weapon/gun/energy/kinetic_accelerator/crossbow/large/proc/<init>  (code/modules/projectiles/guns/energy/special.dm:116)
+// special.dm:116
 rt.def("/obj/item/weapon/gun/energy/kinetic_accelerator/crossbow/large/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 4000]));
-	$0 = $0;
-	rt.setSv(f, "ammo_type", rt.list(T("/obj/item/ammo_casing/energy/bolt/large")));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 4000]);
+
+	this.ammo_type = list(T("/obj/item/ammo_casing/energy/bolt/large"));
 	return f.dot;
 });
 
@@ -207,45 +189,40 @@ rt.type(5190, "/obj/item/weapon/gun/energy/plasmacutter", "/obj/item/weapon/gun/
 	toolspeed: 0.7,
 });
 
-// /obj/item/weapon/gun/energy/plasmacutter/proc/<init>  (code/modules/projectiles/guns/energy/special.dm:128)
+// special.dm:128
 rt.def("/obj/item/weapon/gun/energy/plasmacutter/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "ammo_type", rt.list(T("/obj/item/ammo_casing/energy/plasma")));
-	rt.setSv(f, "attack_verb", rt.list("attacked", "slashed", "cut", "sliced"));
+	parent_proc();
+	this.ammo_type = list(T("/obj/item/ammo_casing/energy/plasma"));
+	this.attack_verb = list("attacked", "slashed", "cut", "sliced");
 	return f.dot;
 });
 
-// /obj/item/weapon/gun/energy/plasmacutter/proc/examine  (code/modules/projectiles/guns/energy/special.dm:139)
-rt.def("/obj/item/weapon/gun/energy/plasmacutter/proc/examine", function examine(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.sv(f, "cell"))) return f.dot;
-	rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='notice'>＀ is ＀% charged.</span>", [live(f.src), rt.call(f, P("/proc/round"), null, [rt.callName(f, rt.sv(f, "cell"), "percent", [])])])]);
+// special.dm:139
+rt.def("/obj/item/weapon/gun/energy/plasmacutter/proc/examine", function examine(f: Frame, user: Value) {
+	parent_proc();
+	if (!this.cell) return f.dot;
+	to_chat(user, `<span class='notice'>${this} is ${round(this.cell.percent())}% charged.</span>`);
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/item/weapon/gun/energy/plasmacutter/proc/attackby  (code/modules/projectiles/guns/energy/special.dm:144)  may sleep
-rt.def("/obj/item/weapon/gun/energy/plasmacutter/proc/attackby", function* attackby(f: Frame) {
+// special.dm:144
+rt.def("/obj/item/weapon/gun/energy/plasmacutter/proc/attackby", function* attackby(f: Frame, A: Value, user: Value) {
 	let S: Value = null;
-	f.vars = () => [S];
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/stack/sheet/mineral/plasma")) ? 1 : 0))) {
-		yield* g.callName(f, (S = live(f.args[0])), "use", [1]);
-		yield* g.callName(f, rt.sv(f, "cell"), "give", [1000]);
-		yield* g.srcCall(f, "recharge_newshot", 1);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You insert ＀ in ＀, recharging it.</span>", [live(f.args[0]), live(f.src)])]);
+	if (rt.istype(A, T("/obj/item/stack/sheet/mineral/plasma"))) {
+		yield* (S = A).use(1);
+		yield* this.cell.give(1000);
+		yield* this.recharge_newshot(1);
+		to_chat(user, `<span class='notice'>You insert ${A} in ${this}, recharging it.</span>`);
+	} else if (rt.istype(A, T("/obj/item/weapon/ore/plasma"))) {
+		yield* qdel(A);
+		yield* this.cell.give(500);
+		yield* this.recharge_newshot(1);
+		to_chat(user, `<span class='notice'>You insert ${A} in ${this}, recharging it.</span>`);
 	} else {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/ore/plasma")) ? 1 : 0))) {
-			yield* g.call(f, P("/proc/qdel"), null, [live(f.args[0])]);
-			yield* g.callName(f, rt.sv(f, "cell"), "give", [500]);
-			yield* g.srcCall(f, "recharge_newshot", 1);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You insert ＀ in ＀, recharging it.</span>", [live(f.args[0]), live(f.src)])]);
-		} else {
-			yield* g.callSuper(f, [], rt.Args.Same);
-		}
+		yield* parent_proc();
 	}
 	return f.dot;
-}, true, { args: ["A", "user"] });
+}, true);
 
 rt.type(5191, "/obj/item/weapon/gun/energy/plasmacutter/adv", "/obj/item/weapon/gun/energy/plasmacutter", {
 	name: "advanced plasma cutter",
@@ -255,12 +232,10 @@ rt.type(5191, "/obj/item/weapon/gun/energy/plasmacutter/adv", "/obj/item/weapon/
 	ammo_type: null,
 });
 
-// /obj/item/weapon/gun/energy/plasmacutter/adv/proc/<init>  (code/modules/projectiles/guns/energy/special.dm:166)
+// special.dm:166
 rt.def("/obj/item/weapon/gun/energy/plasmacutter/adv/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "ammo_type", rt.list(T("/obj/item/ammo_casing/energy/plasma/adv")));
+	parent_proc();
+	this.ammo_type = list(T("/obj/item/ammo_casing/energy/plasma/adv"));
 	return f.dot;
 });
 
@@ -275,88 +250,84 @@ rt.type(5192, "/obj/item/weapon/gun/energy/wormhole_projector", "/obj/item/weapo
 	origin_tech: "combat=4;bluespace=6;plasmatech=4;engineering=4",
 });
 
-// /obj/item/weapon/gun/energy/wormhole_projector/proc/<init>  (code/modules/projectiles/guns/energy/special.dm:171)
+// special.dm:171
 rt.def("/obj/item/weapon/gun/energy/wormhole_projector/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "ammo_type", rt.list(T("/obj/item/ammo_casing/energy/wormhole"), T("/obj/item/ammo_casing/energy/wormhole/orange")));
+	parent_proc();
+	this.ammo_type = list(T("/obj/item/ammo_casing/energy/wormhole"), T("/obj/item/ammo_casing/energy/wormhole/orange"));
 	return f.dot;
 });
 
-// /obj/item/weapon/gun/energy/wormhole_projector/proc/update_icon  (code/modules/projectiles/guns/energy/special.dm:179)
+// special.dm:179
 rt.def("/obj/item/weapon/gun/energy/wormhole_projector/proc/update_icon", function update_icon(f: Frame) {
-	rt.setSv(f, "icon_state", fmt("＀＀", [rt.initial(f, live(f.src), "icon_state"), rt.sv(f, "select")]));
-	rt.setSv(f, "item_state", rt.sv(f, "icon_state"));
-	return live(f.dot);
+	this.icon_state = `${rt.initial(f, this, "icon_state")}${this.select}`;
+	this.item_state = this.icon_state;
+	return f.dot;
 });
 
-// /obj/item/weapon/gun/energy/wormhole_projector/proc/process_chamber  (code/modules/projectiles/guns/energy/special.dm:184)  may sleep
+// special.dm:184
 rt.def("/obj/item/weapon/gun/energy/wormhole_projector/proc/process_chamber", function* process_chamber(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "select_fire");
+	yield* parent_proc();
+	yield* this.select_fire();
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/gun/energy/wormhole_projector/proc/on_portal_destroy  (code/modules/projectiles/guns/energy/special.dm:188)
+// special.dm:188
 rt.def("/obj/item/weapon/gun/energy/wormhole_projector/proc/on_portal_destroy", function on_portal_destroy(f: Frame, _P: Value) {
-	if (isEqual(live(_P), rt.sv(f, "p_blue"))) {
-		rt.setSv(f, "p_blue", null);
+	if (_P == this.p_blue) {
+		this.p_blue = null;
 	} else {
-		if (!isEqual(live(_P), rt.sv(f, "p_orange"))) return f.dot;
-		rt.setSv(f, "p_orange", null);
+		if (_P != this.p_orange) return f.dot;
+		this.p_orange = null;
 	}
 	return f.dot;
 });
 
-// /obj/item/weapon/gun/energy/wormhole_projector/proc/has_blue_portal  (code/modules/projectiles/guns/energy/special.dm:194)
+// special.dm:194
 rt.def("/obj/item/weapon/gun/energy/wormhole_projector/proc/has_blue_portal", function has_blue_portal(f: Frame) {
-	if ((truthy((rt.istype(rt.sv(f, "p_blue"), T("/obj/effect/portal")) ? 1 : 0)) && !(!truthy(rt.sv(f, "p_blue")) || truthy(rt.fv(f, "gc_destroyed", rt.sv(f, "p_blue")))))) {
+	if (rt.istype(this.p_blue, T("/obj/effect/portal")) && !(!this.p_blue || this.p_blue.gc_destroyed)) {
 		return 1;
 	}
 	return 0;
 });
 
-// /obj/item/weapon/gun/energy/wormhole_projector/proc/has_orange_portal  (code/modules/projectiles/guns/energy/special.dm:199)
+// special.dm:199
 rt.def("/obj/item/weapon/gun/energy/wormhole_projector/proc/has_orange_portal", function has_orange_portal(f: Frame) {
-	if ((truthy((rt.istype(rt.sv(f, "p_orange"), T("/obj/effect/portal")) ? 1 : 0)) && !(!truthy(rt.sv(f, "p_orange")) || truthy(rt.fv(f, "gc_destroyed", rt.sv(f, "p_orange")))))) {
+	if (rt.istype(this.p_orange, T("/obj/effect/portal")) && !(!this.p_orange || this.p_orange.gc_destroyed)) {
 		return 1;
 	}
 	return 0;
 });
 
-// /obj/item/weapon/gun/energy/wormhole_projector/proc/crosslink  (code/modules/projectiles/guns/energy/special.dm:204)
+// special.dm:204
 rt.def("/obj/item/weapon/gun/energy/wormhole_projector/proc/crosslink", function crosslink(f: Frame) {
-	if ((!truthy(rt.callSrc(f, "has_blue_portal", [])) && !truthy(rt.callSrc(f, "has_orange_portal", [])))) {
-		return live(f.dot);
+	if (!this.has_blue_portal() && !this.has_orange_portal()) {
+		return f.dot;
 	}
-	if ((!truthy(rt.callSrc(f, "has_blue_portal", [])) && truthy(rt.callSrc(f, "has_orange_portal", [])))) {
-		rt.callName(f, rt.sv(f, "p_orange"), "link_portal", [null]);
-		return live(f.dot);
+	if (!this.has_blue_portal() && this.has_orange_portal()) {
+		this.p_orange.link_portal(null);
+		return f.dot;
 	}
-	if ((!truthy(rt.callSrc(f, "has_orange_portal", [])) && truthy(rt.callSrc(f, "has_blue_portal", [])))) {
-		rt.callName(f, rt.sv(f, "p_blue"), "link_portal", [null]);
-		return live(f.dot);
+	if (!this.has_orange_portal() && this.has_blue_portal()) {
+		this.p_blue.link_portal(null);
+		return f.dot;
 	}
-	rt.callName(f, rt.sv(f, "p_orange"), "link_portal", [rt.sv(f, "p_blue")]);
-	rt.callName(f, rt.sv(f, "p_blue"), "link_portal", [rt.sv(f, "p_orange")]);
+	this.p_orange.link_portal(this.p_blue);
+	this.p_blue.link_portal(this.p_orange);
 	return f.dot;
 });
 
-// /obj/item/weapon/gun/energy/wormhole_projector/proc/create_portal  (code/modules/projectiles/guns/energy/special.dm:216)  may sleep
+// special.dm:216
 rt.def("/obj/item/weapon/gun/energy/wormhole_projector/proc/create_portal", function* create_portal(f: Frame, W: Value, target: Value) {
-	let _P: Value = null;
-	f.vars = () => [W, target, _P];
-	_P = (yield* g.new_(f, T("/obj/effect/portal"), [live(target), live(f.src), 300, null, 0, null]));
-	if (truthy((rt.istype(live(W), T("/obj/item/projectile/beam/wormhole/orange")) ? 1 : 0))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "p_orange")]);
-		rt.setSv(f, "p_orange", live(_P));
-		rt.setFv(f, "icon_state", live(_P), "portal1");
+	let _P: Value = (yield* new_(T("/obj/effect/portal"), target, this, 300, null, 0, null));
+	if (rt.istype(W, T("/obj/item/projectile/beam/wormhole/orange"))) {
+		yield* qdel(this.p_orange);
+		this.p_orange = _P;
+		_P.icon_state = "portal1";
 	} else {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "p_blue")]);
-		rt.setSv(f, "p_blue", live(_P));
+		yield* qdel(this.p_blue);
+		this.p_blue = _P;
 	}
-	yield* g.srcCall(f, "crosslink");
+	this.crosslink();
 	return f.dot;
 }, true);
 
@@ -371,12 +342,10 @@ rt.type(5193, "/obj/item/weapon/gun/energy/printer", "/obj/item/weapon/gun/energ
 	ammo_type: null,
 });
 
-// /obj/item/weapon/gun/energy/printer/proc/<init>  (code/modules/projectiles/guns/energy/special.dm:234)
+// special.dm:234
 rt.def("/obj/item/weapon/gun/energy/printer/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "ammo_type", rt.list(T("/obj/item/ammo_casing/energy/c3dbullet")));
+	parent_proc();
+	this.ammo_type = list(T("/obj/item/ammo_casing/energy/c3dbullet"));
 	return f.dot;
 });
 
@@ -390,12 +359,10 @@ rt.type(5194, "/obj/item/weapon/gun/energy/temperature", "/obj/item/weapon/gun/e
 	pin: null,
 });
 
-// /obj/item/weapon/gun/energy/temperature/proc/<init>  (code/modules/projectiles/guns/energy/special.dm:249)
+// special.dm:249
 rt.def("/obj/item/weapon/gun/energy/temperature/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "ammo_type", rt.list(T("/obj/item/ammo_casing/energy/temp"), T("/obj/item/ammo_casing/energy/temp/hot")));
+	parent_proc();
+	this.ammo_type = list(T("/obj/item/ammo_casing/energy/temp"), T("/obj/item/ammo_casing/energy/temp/hot"));
 	return f.dot;
 });
 
@@ -409,12 +376,10 @@ rt.type(5148, "/obj/item/weapon/gun/energy/laser/instakill", "/obj/item/weapon/g
 	ammo_type: null,
 });
 
-// /obj/item/weapon/gun/energy/laser/instakill/proc/<init>  (code/modules/projectiles/guns/energy/special.dm:264)
+// special.dm:264
 rt.def("/obj/item/weapon/gun/energy/laser/instakill/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "ammo_type", rt.list(T("/obj/item/ammo_casing/energy/instakill")));
+	parent_proc();
+	this.ammo_type = list(T("/obj/item/ammo_casing/energy/instakill"));
 	return f.dot;
 });
 
@@ -425,12 +390,10 @@ rt.type(5149, "/obj/item/weapon/gun/energy/laser/instakill/red", "/obj/item/weap
 	ammo_type: null,
 });
 
-// /obj/item/weapon/gun/energy/laser/instakill/red/proc/<init>  (code/modules/projectiles/guns/energy/special.dm:272)
+// special.dm:272
 rt.def("/obj/item/weapon/gun/energy/laser/instakill/red/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "ammo_type", rt.list(T("/obj/item/ammo_casing/energy/instakill/red")));
+	parent_proc();
+	this.ammo_type = list(T("/obj/item/ammo_casing/energy/instakill/red"));
 	return f.dot;
 });
 
@@ -441,12 +404,10 @@ rt.type(5150, "/obj/item/weapon/gun/energy/laser/instakill/blue", "/obj/item/wea
 	ammo_type: null,
 });
 
-// /obj/item/weapon/gun/energy/laser/instakill/blue/proc/<init>  (code/modules/projectiles/guns/energy/special.dm:278)
+// special.dm:278
 rt.def("/obj/item/weapon/gun/energy/laser/instakill/blue/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "ammo_type", rt.list(T("/obj/item/ammo_casing/energy/instakill/blue")));
+	parent_proc();
+	this.ammo_type = list(T("/obj/item/ammo_casing/energy/instakill/blue"));
 	return f.dot;
 });
 
@@ -460,11 +421,9 @@ rt.type(5196, "/obj/item/weapon/gun/energy/gravity_gun", "/obj/item/weapon/gun/e
 	icon_state: "gravity_gun",
 });
 
-// /obj/item/weapon/gun/energy/gravity_gun/proc/<init>  (code/modules/projectiles/guns/energy/special.dm:286)
+// special.dm:286
 rt.def("/obj/item/weapon/gun/energy/gravity_gun/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "ammo_type", rt.list(T("/obj/item/ammo_casing/energy/gravityrepulse"), T("/obj/item/ammo_casing/energy/gravityattract"), T("/obj/item/ammo_casing/energy/gravitychaos")));
+	parent_proc();
+	this.ammo_type = list(T("/obj/item/ammo_casing/energy/gravityrepulse"), T("/obj/item/ammo_casing/energy/gravityattract"), T("/obj/item/ammo_casing/energy/gravitychaos"));
 	return f.dot;
 });

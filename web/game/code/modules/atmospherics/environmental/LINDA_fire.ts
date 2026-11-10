@@ -1,62 +1,50 @@
-// From code/modules/atmospherics/environmental/LINDA_fire.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/atmospherics/environmental/LINDA_fire.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
-// /atom/proc/temperature_expose  (code/modules/atmospherics/environmental/LINDA_fire.dm:2)
+// LINDA_fire.dm:2
 rt.def("/atom/proc/temperature_expose", function temperature_expose(f: Frame, air: Value, exposed_temperature: Value, exposed_volume: Value) {
 	return null;
 });
 
-// /turf/open/proc/hotspot_expose  (code/modules/atmospherics/environmental/LINDA_fire.dm:11)  may sleep
+// LINDA_fire.dm:11
 rt.def("/turf/open/proc/hotspot_expose", function* hotspot_expose(f: Frame, exposed_temperature: Value, exposed_volume: Value, soh: Value) {
-	let air_contents: Value = null, oxy: Value = null, tox: Value = null, igniting: Value = null;
-	let $0: any;
-	f.vars = () => [exposed_temperature, exposed_volume, soh, air_contents, oxy, tox, igniting, $0];
-	if (!truthy((air_contents = (yield* g.srcCall(f, "return_air"))))) {
+	let air_contents: Value = null;
+	if (!(air_contents = this.return_air())) {
 		return 0;
 	}
-	if (truthy(rt.index(rt.fv(f, "gases", live(air_contents)), "o2"))) {
-		$0 = rt.index(rt.index(rt.fv(f, "gases", live(air_contents)), "o2"), 1);
-	} else {
-		$0 = 0;
-	}
-	oxy = $0;
-	if (truthy(rt.index(rt.fv(f, "gases", live(air_contents)), "plasma"))) {
-		$0 = rt.index(rt.index(rt.fv(f, "gases", live(air_contents)), "plasma"), 1);
-	} else {
-		$0 = 0;
-	}
-	tox = $0;
-	if (truthy(rt.sv(f, "active_hotspot"))) {
-		if (truthy(live(soh))) {
-			if ((rt.gt(live(tox), 0.5) && rt.gt(live(oxy), 0.5))) {
-				if (rt.lt(rt.fv(f, "temperature", rt.sv(f, "active_hotspot")), live(exposed_temperature))) {
-					rt.setFv(f, "temperature", rt.sv(f, "active_hotspot"), live(exposed_temperature));
+	let oxy: Value = rt.index(air_contents.gases, "o2") ? rt.index(rt.index(air_contents.gases, "o2"), 1) : 0;
+	let tox: Value = rt.index(air_contents.gases, "plasma") ? rt.index(rt.index(air_contents.gases, "plasma"), 1) : 0;
+	if (this.active_hotspot) {
+		if (soh) {
+			if (tox > 0.5 && oxy > 0.5) {
+				if (this.active_hotspot.temperature < exposed_temperature) {
+					this.active_hotspot.temperature = exposed_temperature;
 				}
-				if (rt.lt(rt.fv(f, "volume", rt.sv(f, "active_hotspot")), live(exposed_volume))) {
-					rt.setFv(f, "volume", rt.sv(f, "active_hotspot"), live(exposed_volume));
+				if (this.active_hotspot.volume < exposed_volume) {
+					this.active_hotspot.volume = exposed_volume;
 				}
 			}
 		}
 		return 1;
 	}
-	igniting = 0;
-	if ((rt.gt(live(exposed_temperature), 373.1499938964844) && rt.gt(live(tox), 0.5))) {
+	let igniting: Value = 0;
+	if (exposed_temperature > 373.15 && tox > 0.5) {
 		igniting = 1;
 	}
-	if (truthy(live(igniting))) {
-		if ((rt.lt(live(oxy), 0.5) || rt.lt(live(tox), 0.5))) {
+	if (igniting) {
+		if (oxy < 0.5 || tox < 0.5) {
 			return 0;
 		}
-		rt.setSv(f, "active_hotspot", (yield* g.new_(f, T("/obj/effect/hotspot"), [live(f.src)])));
-		rt.setFv(f, "temperature", rt.sv(f, "active_hotspot"), live(exposed_temperature));
-		rt.setFv(f, "volume", rt.sv(f, "active_hotspot"), live(exposed_volume));
-		rt.setFv(f, "just_spawned", rt.sv(f, "active_hotspot"), (rt.lt(rt.sv(f, "current_cycle"), rt.fv(f, "times_fired", rt.gl("SSair"))) ? 1 : 0));
-		yield* g.callName(f, rt.gl("SSair"), "add_to_active", [live(f.src), 0]);
+		this.active_hotspot = (yield* new_(T("/obj/effect/hotspot"), this));
+		this.active_hotspot.temperature = exposed_temperature;
+		this.active_hotspot.volume = exposed_volume;
+		this.active_hotspot.just_spawned = (this.current_cycle < GLOB.SSair.times_fired ? 1 : 0);
+		GLOB.SSair.add_to_active(this, 0);
 	}
-	return live(igniting);
+	return igniting;
 }, true);
 
 rt.type(12039, "/obj/effect/hotspot", "/obj/effect", {
@@ -73,150 +61,133 @@ rt.type(12039, "/obj/effect/hotspot", "/obj/effect", {
 	layer: 2.04,
 });
 
-// /obj/effect/hotspot/proc/New  (code/modules/atmospherics/environmental/LINDA_fire.dm:61)  may sleep
+// LINDA_fire.dm:61
 rt.def("/obj/effect/hotspot/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.modField(f, rt.gl("SSair"), "hotspots", live(f.src), add);
-	yield* g.srcCall(f, "perform_exposure");
-	yield* g.srcCall(f, "setDir", rt.op(f, "PickUnweighted", [1], [rt.gl("cardinal")]));
-	yield* g.srcCall(f, "air_update_turf");
+	yield* parent_proc();
+	GLOB.SSair.hotspots += this;
+	yield* this.perform_exposure();
+	yield* this.setDir(pick(GLOB.cardinal));
+	this.air_update_turf();
 	return f.dot;
 }, true);
 
-// /obj/effect/hotspot/proc/perform_exposure  (code/modules/atmospherics/environmental/LINDA_fire.dm:71)  may sleep
+// LINDA_fire.dm:71
 rt.def("/obj/effect/hotspot/proc/perform_exposure", function* perform_exposure(f: Frame) {
 	let location: Value = null, affected: Value = null, A: Value = null, AT: Value = null;
-	let $e: any;
-	f.vars = () => [location, affected, A, AT, $e];
-	if ((!truthy((rt.istype((location = rt.sv(f, "loc")), T("/turf/open")) ? 1 : 0)) || !truthy(rt.fv(f, "air", live(location))))) {
+	if (!rt.istype((location = this.loc), T("/turf/open")) || !location.air) {
 		return 0;
 	}
-	rt.setFv(f, "active_hotspot", live(location), live(f.src));
-	if (rt.gt(rt.sv(f, "volume"), 2375)) {
-		rt.setSv(f, "bypassing", 1);
+	location.active_hotspot = this;
+	if (this.volume > 2375) {
+		this.bypassing = 1;
 	} else {
-		rt.setSv(f, "bypassing", 0);
+		this.bypassing = 0;
 	}
-	if (truthy(rt.sv(f, "bypassing"))) {
-		if (!truthy(rt.sv(f, "just_spawned"))) {
-			rt.setSv(f, "volume", multiply(rt.index(rt.gv(f, "reaction_results", rt.fv(f, "air", live(location))), "fire"), 40000));
-			rt.setSv(f, "temperature", rt.gv(f, "temperature", rt.fv(f, "air", live(location))));
+	if (this.bypassing) {
+		if (!this.just_spawned) {
+			this.volume = rt.index(location.air.reaction_results, "fire") * FIRE_GROWTH_RATE;
+			this.temperature = location.air.temperature;
 		}
 	} else {
-		rt.setFv(f, "temperature", (affected = (yield* g.callName(f, rt.fv(f, "air", live(location)), "remove_ratio", [divide(rt.sv(f, "volume"), rt.gv(f, "volume", rt.fv(f, "air", live(location))))]))), rt.sv(f, "temperature"));
-		yield* g.callName(f, live(affected), "react", []);
-		rt.setSv(f, "temperature", rt.fv(f, "temperature", live(affected)));
-		rt.setSv(f, "volume", multiply(rt.index(rt.fv(f, "reaction_results", live(affected)), "fire"), 40000));
-		yield* g.callName(f, live(location), "assume_air", [live(affected)]);
+		(affected = (yield* location.air.remove_ratio(this.volume / location.air.volume))).temperature = this.temperature;
+		yield* affected.react();
+		this.temperature = affected.temperature;
+		this.volume = rt.index(affected.reaction_results, "fire") * FIRE_GROWTH_RATE;
+		yield* location.assume_air(affected);
 	}
-	A = null;
-	rt.forList(f, 0, rt.sv(f, "loc"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		A = $e;
-		if ((truthy((AT = live(A))) && !isEqual(live(AT), live(f.src)))) {
-			yield* g.callName(f, live(AT), "fire_act", [rt.sv(f, "temperature"), rt.sv(f, "volume")]);
+	for (A of each(this.loc)) {
+		if ((AT = A) && AT != this) {
+			yield* AT.fire_act(this.temperature, this.volume);
 		}
 	}
-	rt.endFor(f, 0);
 	return 0;
 }, true);
 
-// /obj/effect/hotspot/proc/process  (code/modules/atmospherics/environmental/LINDA_fire.dm:106)  may sleep
+// LINDA_fire.dm:106
 rt.def("/obj/effect/hotspot/proc/process", function* process(f: Frame) {
 	let location: Value = null, radiated_temperature: Value = null, t: Value = null, _T: Value = null;
-	let $e: any;
-	f.vars = () => [location, radiated_temperature, t, _T, $e];
-	if (truthy(rt.sv(f, "just_spawned"))) {
-		rt.setSv(f, "just_spawned", 0);
+	if (this.just_spawned) {
+		this.just_spawned = 0;
 		return 0;
 	}
-	if (!truthy((rt.istype((location = rt.sv(f, "loc")), T("/turf/open")) ? 1 : 0))) {
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-		return live(f.dot);
+	if (!rt.istype((location = this.loc), T("/turf/open"))) {
+		yield* qdel(this);
+		return f.dot;
 	}
-	if (truthy(rt.fv(f, "excited_group", live(location)))) {
-		yield* g.callName(f, rt.fv(f, "excited_group", live(location)), "reset_cooldowns", []);
+	if (location.excited_group) {
+		location.excited_group.reset_cooldowns();
 	}
-	if ((rt.lt(rt.sv(f, "temperature"), 373.1499938964844) || rt.le(rt.sv(f, "volume"), 1))) {
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-		return live(f.dot);
+	if (this.temperature < 373.15 || this.volume <= 1) {
+		yield* qdel(this);
+		return f.dot;
 	}
-	if (((((!truthy(rt.fv(f, "air", live(location))) || !truthy(rt.index(rt.gv(f, "gases", rt.fv(f, "air", live(location))), "plasma"))) || !truthy(rt.index(rt.gv(f, "gases", rt.fv(f, "air", live(location))), "o2"))) || rt.lt(rt.index(rt.index(rt.gv(f, "gases", rt.fv(f, "air", live(location))), "plasma"), 1), 0.5)) || rt.lt(rt.index(rt.index(rt.gv(f, "gases", rt.fv(f, "air", live(location))), "o2"), 1), 0.5))) {
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-		return live(f.dot);
+	if (!location.air || !rt.index(location.air.gases, "plasma") || !rt.index(location.air.gases, "o2") || rt.index(rt.index(location.air.gases, "plasma"), 1) < 0.5 || rt.index(rt.index(location.air.gases, "o2"), 1) < 0.5) {
+		yield* qdel(this);
+		return f.dot;
 	}
-	yield* g.srcCall(f, "perform_exposure");
-	if (truthy(rt.sv(f, "bypassing"))) {
-		rt.setSv(f, "icon_state", "3");
-		yield* g.callName(f, live(location), "burn_tile", []);
-		if (rt.gt(rt.gv(f, "temperature", rt.fv(f, "air", live(location))), 423.1499938964844)) {
-			radiated_temperature = multiply(rt.gv(f, "temperature", rt.fv(f, "air", live(location))), 0.8500000238418579);
-			t = null;
-			rt.forList(f, 0, rt.fv(f, "atmos_adjacent_turfs", live(location)));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				t = $e;
-				if (truthy(rt.gv(f, "active_hotspot", (_T = live(t))))) {
-					yield* g.callName(f, live(_T), "hotspot_expose", [live(radiated_temperature), 625]);
+	yield* this.perform_exposure();
+	if (this.bypassing) {
+		this.icon_state = "3";
+		yield* location.burn_tile();
+		if (location.air.temperature > 423.15) {
+			radiated_temperature = location.air.temperature * 0.85;
+			for (t of each(location.atmos_adjacent_turfs)) {
+				if ((_T = t).active_hotspot) {
+					yield* _T.hotspot_expose(radiated_temperature, 625);
 				}
 			}
-			rt.endFor(f, 0);
 		}
+	} else if (this.volume > 1000) {
+		this.icon_state = "2";
 	} else {
-		if (rt.gt(rt.sv(f, "volume"), 1000)) {
-			rt.setSv(f, "icon_state", "2");
-		} else {
-			rt.setSv(f, "icon_state", "1");
-		}
+		this.icon_state = "1";
 	}
-	if (rt.gt(rt.sv(f, "temperature"), rt.fv(f, "max_fire_temperature_sustained", live(location)))) {
-		rt.setFv(f, "max_fire_temperature_sustained", live(location), rt.sv(f, "temperature"));
+	if (this.temperature > location.max_fire_temperature_sustained) {
+		location.max_fire_temperature_sustained = this.temperature;
 	}
-	if ((truthy(rt.fv(f, "heat_capacity", live(location))) && rt.gt(rt.sv(f, "temperature"), rt.fv(f, "heat_capacity", live(location))))) {
-		rt.setFv(f, "to_be_destroyed", live(location), 1);
+	if (location.heat_capacity && this.temperature > location.heat_capacity) {
+		location.to_be_destroyed = 1;
 	}
 	return 1;
 }, true, { waitfor: false });
 
-// /obj/effect/hotspot/proc/Destroy  (code/modules/atmospherics/environmental/LINDA_fire.dm:153)  may sleep
+// LINDA_fire.dm:153
 rt.def("/obj/effect/hotspot/proc/Destroy", function* Destroy(f: Frame) {
 	let _T: Value = null;
-	f.vars = () => [_T];
-	yield* g.srcCall(f, "set_light", 0);
-	(rt.modField(f, rt.gl("SSair"), "hotspots", live(f.src), subtract));
-	if ((truthy((rt.istype((_T = rt.sv(f, "loc")), T("/turf/open")) ? 1 : 0)) && isEqual(rt.fv(f, "active_hotspot", live(_T)), live(f.src)))) {
-		rt.setFv(f, "active_hotspot", live(_T), null);
+	this.set_light(0);
+	GLOB.SSair.hotspots -= this;
+	if (rt.istype((_T = this.loc), T("/turf/open")) && _T.active_hotspot == this) {
+		_T.active_hotspot = null;
 	}
-	yield* g.srcCall(f, "DestroyTurf");
-	rt.setSv(f, "loc", null);
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* this.DestroyTurf();
+	this.loc = null;
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true);
 
-// /obj/effect/hotspot/proc/DestroyTurf  (code/modules/atmospherics/environmental/LINDA_fire.dm:163)  may sleep
+// LINDA_fire.dm:163
 rt.def("/obj/effect/hotspot/proc/DestroyTurf", function* DestroyTurf(f: Frame) {
 	let _T: Value = null, chance_of_deletion: Value = null;
-	f.vars = () => [_T, chance_of_deletion];
-	if (!truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.sv(f, "loc")])))) return f.dot;
-	if (!truthy(rt.gv(f, "to_be_destroyed", (_T = rt.sv(f, "loc"))))) return f.dot;
-	chance_of_deletion = null;
-	if (truthy(rt.fv(f, "heat_capacity", live(_T)))) {
-		chance_of_deletion = multiply(divide(rt.fv(f, "max_fire_temperature_sustained", live(_T)), rt.fv(f, "heat_capacity", live(_T))), 8);
+	if (!isturf(this.loc)) return f.dot;
+	if (!(_T = this.loc).to_be_destroyed) return f.dot;
+	if (_T.heat_capacity) {
+		chance_of_deletion = _T.max_fire_temperature_sustained / _T.heat_capacity * 8;
 	} else {
 		chance_of_deletion = 100;
 	}
-	if (truthy(rt.op(f, "Prob", [], [live(chance_of_deletion)]))) {
-		yield* g.callName(f, live(_T), "ChangeTurf", [rt.fv(f, "baseturf", live(_T))]);
+	if (prob(chance_of_deletion)) {
+		yield* _T.ChangeTurf(_T.baseturf);
 	} else {
-		rt.setFv(f, "to_be_destroyed", live(_T), 0);
-		rt.setFv(f, "max_fire_temperature_sustained", live(_T), 0);
+		_T.to_be_destroyed = 0;
+		_T.max_fire_temperature_sustained = 0;
 	}
 	return f.dot;
 }, true);
 
-// /obj/effect/hotspot/proc/Crossed  (code/modules/atmospherics/environmental/LINDA_fire.dm:178)  may sleep
-rt.def("/obj/effect/hotspot/proc/Crossed", function* Crossed(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy((rt.istype(live(f.args[0]), T("/mob/living")) ? 1 : 0))) return f.dot;
-	yield* g.callName(f, live(f.args[0]), "fire_act", [rt.sv(f, "temperature"), rt.sv(f, "volume")]);
+// LINDA_fire.dm:178
+rt.def("/obj/effect/hotspot/proc/Crossed", function* Crossed(f: Frame, L: Value) {
+	yield* parent_proc();
+	if (!rt.istype(L, T("/mob/living"))) return f.dot;
+	yield* L.fire_act(this.temperature, this.volume);
 	return f.dot;
-}, true, { args: ["L"] });
+}, true);

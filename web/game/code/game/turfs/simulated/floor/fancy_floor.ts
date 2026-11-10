@@ -1,7 +1,7 @@
-// From code/game/turfs/simulated/floor/fancy_floor.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/turfs/simulated/floor/fancy_floor.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(4553, "/turf/open/floor/wood", "/turf/open/floor", {
@@ -10,78 +10,64 @@ rt.type(4553, "/turf/open/floor/wood", "/turf/open/floor", {
 	floor_tile: rt.typePath("/obj/item/stack/tile/wood"),
 });
 
-// /turf/open/floor/wood/proc/attackby  (code/game/turfs/simulated/floor/fancy_floor.dm:16)  may sleep
-rt.def("/turf/open/floor/wood/proc/attackby", function* attackby(f: Frame) {
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		return live(f.dot);
+// fancy_floor.dm:16
+rt.def("/turf/open/floor/wood/proc/attackby", function* attackby(f: Frame, C: Value, user: Value, params: Value) {
+	if (yield* parent_proc()) {
+		return f.dot;
 	}
-	if (!truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/screwdriver")) ? 1 : 0))) return f.dot;
-	yield* g.srcCall(f, "pry_tile", live(f.args[0]), live(f.args[1]));
-	return live(f.dot);
-}, true, { args: ["C", "user", "params"] });
-
-// /turf/open/floor/wood/proc/try_replace_tile  (code/game/turfs/simulated/floor/fancy_floor.dm:23)  may sleep
-rt.def("/turf/open/floor/wood/proc/try_replace_tile", function* try_replace_tile(f: Frame, _T: Value, user: Value, params: Value) {
-	let tool: Value = null, _P: Value = null;
-	f.vars = () => [_T, user, params, tool, _P];
-	if (isEqual(rt.fv(f, "turf_type", live(_T)), rt.sv(f, "type"))) {
-		return live(f.dot);
-	}
-	if (!truthy((tool = (yield* g.callName(f, live(user), "is_holding_item_of_type", [T("/obj/item/weapon/screwdriver")]))))) {
-		tool = (yield* g.callName(f, live(user), "is_holding_item_of_type", [T("/obj/item/weapon/crowbar")]));
-	}
-	if (!truthy(live(tool))) {
-		return live(f.dot);
-	}
-	if (!truthy((rt.istype((_P = (yield* g.srcCall(f, "pry_tile", live(tool), live(user), 1))), T("/turf/open/floor/plating")) ? 1 : 0))) {
-		return live(f.dot);
-	}
-	yield* g.callName(f, live(_P), "attackby", [live(_T), live(user), live(params)]);
+	if (!rt.istype(C, T("/obj/item/weapon/screwdriver"))) return f.dot;
+	yield* this.pry_tile(C, user);
 	return f.dot;
 }, true);
 
-// /turf/open/floor/wood/proc/pry_tile  (code/game/turfs/simulated/floor/fancy_floor.dm:36)  may sleep
-rt.def("/turf/open/floor/wood/proc/pry_tile", function* pry_tile(f: Frame, C: Value, user: Value, silent: Value) {
-	let is_screwdriver: Value = null;
-	f.vars = () => [C, user, silent, is_screwdriver];
-	if (live(silent) === null) {
-		silent = 0;
+// fancy_floor.dm:23
+rt.def("/turf/open/floor/wood/proc/try_replace_tile", function* try_replace_tile(f: Frame, _T: Value, user: Value, params: Value) {
+	let tool: Value = null, _P: Value = null;
+	if (_T.turf_type == this.type) {
+		return f.dot;
 	}
-	is_screwdriver = (rt.istype(live(C), T("/obj/item/weapon/screwdriver")) ? 1 : 0);
-	yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.fv(f, "usesound", live(C)), 80, 1]);
-	return (yield* g.callSrc(f, "remove_tile", [null, live(user), null, live(silent), "make_tile", live(is_screwdriver)], rt.Args.Named));
+	if (!(tool = user.is_holding_item_of_type(T("/obj/item/weapon/screwdriver")))) {
+		tool = user.is_holding_item_of_type(T("/obj/item/weapon/crowbar"));
+	}
+	if (!tool) {
+		return f.dot;
+	}
+	if (!rt.istype((_P = (yield* this.pry_tile(tool, user, 1))), T("/turf/open/floor/plating"))) {
+		return f.dot;
+	}
+	yield* _P.attackby(_T, user, params);
+	return f.dot;
 }, true);
 
-// /turf/open/floor/wood/proc/remove_tile  (code/game/turfs/simulated/floor/fancy_floor.dm:41)  may sleep
+// fancy_floor.dm:36
+rt.def("/turf/open/floor/wood/proc/pry_tile", function* pry_tile(f: Frame, C: Value, user: Value, silent: Value) {
+	silent ??= 0;
+	let is_screwdriver: Value = (rt.istype(C, T("/obj/item/weapon/screwdriver")) ? 1 : 0);
+	playsound(this, C.usesound, 80, 1);
+	return (yield* this.remove_tile(user, silent, { make_tile: is_screwdriver }));
+}, true);
+
+// fancy_floor.dm:41
 rt.def("/turf/open/floor/wood/proc/remove_tile", function* remove_tile(f: Frame, user: Value, silent: Value, make_tile: Value) {
-	f.vars = () => [user, silent, make_tile];
-	if (live(silent) === null) {
-		silent = 0;
-	}
-	if (live(make_tile) === null) {
-		make_tile = 1;
-	}
-	if ((truthy(rt.sv(f, "broken")) || truthy(rt.sv(f, "burnt")))) {
-		rt.setSv(f, "broken", 0);
-		rt.setSv(f, "burnt", 0);
-		if ((truthy(live(user)) && !truthy(live(silent)))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='danger'>You remove the broken planks.</span>"]);
+	silent ??= 0;
+	make_tile ??= 1;
+	if (this.broken || this.burnt) {
+		this.broken = 0;
+		this.burnt = 0;
+		if (user && !silent) {
+			to_chat(user, "<span class='danger'>You remove the broken planks.</span>");
 		}
-	} else {
-		if (truthy(live(make_tile))) {
-			if ((truthy(live(user)) && !truthy(live(silent)))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='danger'>You unscrew the planks.</span>"]);
-			}
-			if (truthy(rt.sv(f, "floor_tile"))) {
-				yield* g.new_(f, rt.sv(f, "floor_tile"), [live(f.src)]);
-			}
-		} else {
-			if ((truthy(live(user)) && !truthy(live(silent)))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='danger'>You forcefully pry off the planks, destroying them in the process.</span>"]);
-			}
+	} else if (make_tile) {
+		if (user && !silent) {
+			to_chat(user, "<span class='danger'>You unscrew the planks.</span>");
 		}
+		if (this.floor_tile) {
+			yield* new_(this.floor_tile, this);
+		}
+	} else if (user && !silent) {
+		to_chat(user, "<span class='danger'>You forcefully pry off the planks, destroying them in the process.</span>");
 	}
-	return (yield* g.srcCall(f, "make_plating"));
+	return (yield* this.make_plating());
 }, true);
 
 rt.type(4556, "/turf/open/floor/grass", "/turf/open/floor", {
@@ -95,34 +81,32 @@ rt.type(4556, "/turf/open/floor/grass", "/turf/open/floor", {
 	flags: 0,
 });
 
-// /turf/open/floor/grass/proc/<init>  (code/game/turfs/simulated/floor/fancy_floor.dm:68)
+// fancy_floor.dm:68
 rt.def("/turf/open/floor/grass/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "broken_states", rt.list("sand"));
+	parent_proc();
+	this.broken_states = list("sand");
 	return f.dot;
 });
 
-// /turf/open/floor/grass/proc/Initialize  (code/game/turfs/simulated/floor/fancy_floor.dm:74)  may sleep
+// fancy_floor.dm:74
 rt.def("/turf/open/floor/grass/proc/Initialize", function* Initialize(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "update_icon");
+	yield* parent_proc();
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /turf/open/floor/grass/proc/attackby  (code/game/turfs/simulated/floor/fancy_floor.dm:78)  may sleep
-rt.def("/turf/open/floor/grass/proc/attackby", function* attackby(f: Frame) {
-	if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/shovel")) ? 1 : 0)) && truthy(live(f.args[2])))) {
-		yield* g.new_(f, rt.sv(f, "ore_type"), [live(f.src)]);
-		yield* g.new_(f, rt.sv(f, "ore_type"), [live(f.src)]);
-		yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='notice'>＀ digs up ＀.</span>", [live(f.args[1]), live(f.src)]), fmt("<span class='notice'>You ＀ ＀.</span>", [rt.fv(f, "turfverb", live(f.src)), live(f.src)])]);
-		yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/effects/shovel_dig.ogg"), 50, 1]);
-		yield* g.srcCall(f, "make_plating");
+// fancy_floor.dm:78
+rt.def("/turf/open/floor/grass/proc/attackby", function* attackby(f: Frame, C: Value, user: Value, params: Value) {
+	if (rt.istype(C, T("/obj/item/weapon/shovel")) && params) {
+		yield* new_(this.ore_type, this);
+		yield* new_(this.ore_type, this);
+		user.visible_message(`<span class='notice'>${user} digs up ${this}.</span>`, `<span class='notice'>You ${this.turfverb} ${this}.</span>`);
+		playsound(this, rt.rsc("sound/effects/shovel_dig.ogg"), 50, 1);
+		yield* this.make_plating();
 	}
-	if (!truthy((yield* g.callSuper(f, [], rt.Args.Same)))) return f.dot;
-	return live(f.dot);
-}, true, { args: ["C", "user", "params"] });
+	if (!(yield* parent_proc())) return f.dot;
+	return f.dot;
+}, true);
 
 rt.type(4557, "/turf/open/floor/grass/snow", "/turf/open/floor/grass", {
 	floor_tile: null,
@@ -136,14 +120,14 @@ rt.type(4557, "/turf/open/floor/grass/snow", "/turf/open/floor/grass", {
 	slowdown: 2,
 });
 
-// /turf/open/floor/grass/snow/proc/attackby  (code/game/turfs/simulated/floor/fancy_floor.dm:99)  may sleep
-rt.def("/turf/open/floor/grass/snow/proc/attackby", function* attackby(f: Frame) {
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/crowbar")) ? 1 : 0))) {
-		return live(f.dot);
+// fancy_floor.dm:99
+rt.def("/turf/open/floor/grass/snow/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
+	if (rt.istype(W, T("/obj/item/weapon/crowbar"))) {
+		return f.dot;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["W", "user", "params"] });
+}, true);
 
 rt.type(4558, "/turf/open/floor/grass/snow/basalt", "/turf/open/floor/grass/snow", {
 	name: "volcanic floor",
@@ -154,12 +138,12 @@ rt.type(4558, "/turf/open/floor/grass/snow/basalt", "/turf/open/floor/grass/snow
 	slowdown: 0,
 });
 
-// /turf/open/floor/grass/snow/basalt/proc/Initialize  (code/game/turfs/simulated/floor/fancy_floor.dm:112)  may sleep
+// fancy_floor.dm:112
 rt.def("/turf/open/floor/grass/snow/basalt/proc/Initialize", function* Initialize(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.op(f, "Prob", [], [15]))) return f.dot;
-	rt.setSv(f, "icon_state", fmt("basalt＀", [(yield* g.call(f, P("/proc/rand"), null, [0, 12]))]));
-	yield* g.call(f, P("/proc/set_basalt_light"), null, [live(f.src)]);
+	yield* parent_proc();
+	if (!prob(15)) return f.dot;
+	this.icon_state = `basalt${rand(0, 12)}`;
+	set_basalt_light(this);
 	return f.dot;
 }, true);
 
@@ -174,12 +158,12 @@ rt.type(4559, "/turf/open/floor/grass/fakebasalt", "/turf/open/floor/grass", {
 	slowdown: 0,
 });
 
-// /turf/open/floor/grass/fakebasalt/proc/Initialize  (code/game/turfs/simulated/floor/fancy_floor.dm:129)  may sleep
+// fancy_floor.dm:129
 rt.def("/turf/open/floor/grass/fakebasalt/proc/Initialize", function* Initialize(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.op(f, "Prob", [], [15]))) return f.dot;
-	rt.setSv(f, "icon_state", fmt("basalt＀", [(yield* g.call(f, P("/proc/rand"), null, [0, 12]))]));
-	yield* g.call(f, P("/proc/set_basalt_light"), null, [live(f.src)]);
+	yield* parent_proc();
+	if (!prob(15)) return f.dot;
+	this.icon_state = `basalt${rand(0, 12)}`;
+	set_basalt_light(this);
 	return f.dot;
 }, true);
 
@@ -195,37 +179,35 @@ rt.type(4560, "/turf/open/floor/carpet", "/turf/open/floor", {
 	flags: 0,
 });
 
-// /turf/open/floor/carpet/proc/<init>  (code/game/turfs/simulated/floor/fancy_floor.dm:141)
+// fancy_floor.dm:141
 rt.def("/turf/open/floor/carpet/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "broken_states", rt.list("damaged"));
-	$0 = $0;
-	rt.setSv(f, "canSmoothWith", rt.list(T("/turf/open/floor/carpet")));
+	parent_proc();
+	this.broken_states = list("damaged");
+
+	this.canSmoothWith = list(T("/turf/open/floor/carpet"));
 	return f.dot;
 });
 
-// /turf/open/floor/carpet/proc/Initialize  (code/game/turfs/simulated/floor/fancy_floor.dm:147)  may sleep
+// fancy_floor.dm:147
 rt.def("/turf/open/floor/carpet/proc/Initialize", function* Initialize(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "update_icon");
+	yield* parent_proc();
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /turf/open/floor/carpet/proc/update_icon  (code/game/turfs/simulated/floor/fancy_floor.dm:151)  may sleep
+// fancy_floor.dm:151
 rt.def("/turf/open/floor/carpet/proc/update_icon", function* update_icon(f: Frame) {
-	if (!truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
+	if (!(yield* parent_proc())) {
 		return 0;
 	}
-	if ((!truthy(rt.sv(f, "broken")) && !truthy(rt.sv(f, "burnt")))) {
-		if (truthy(rt.sv(f, "smooth"))) {
-			yield* g.call(f, P("/proc/queue_smooth"), null, [live(f.src)]);
+	if (!this.broken && !this.burnt) {
+		if (this.smooth) {
+			queue_smooth(this);
 		}
 	} else {
-		yield* g.srcCall(f, "make_plating");
-		if (!truthy(rt.sv(f, "smooth"))) return f.dot;
-		yield* g.call(f, P("/proc/queue_smooth_neighbors"), null, [live(f.src)]);
+		yield* this.make_plating();
+		if (!this.smooth) return f.dot;
+		queue_smooth_neighbors(this);
 	}
 	return f.dot;
 }, true);
@@ -236,51 +218,41 @@ rt.type(4561, "/turf/open/floor/carpet/black", "/turf/open/floor/carpet", {
 	canSmoothWith: null,
 });
 
-// /turf/open/floor/carpet/black/proc/<init>  (code/game/turfs/simulated/floor/fancy_floor.dm:164)
+// fancy_floor.dm:164
 rt.def("/turf/open/floor/carpet/black/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "canSmoothWith", rt.list(T("/turf/open/floor/carpet/black")));
+	parent_proc();
+	this.canSmoothWith = list(T("/turf/open/floor/carpet/black"));
 	return f.dot;
 });
 
-// /turf/open/floor/carpet/proc/narsie_act  (code/game/turfs/simulated/floor/fancy_floor.dm:168)  may sleep
+// fancy_floor.dm:168
 rt.def("/turf/open/floor/carpet/proc/narsie_act", function* narsie_act(f: Frame, force: Value, ignore_mobs: Value, probability: Value) {
 	let I: Value = null, A: Value = null;
-	let $e: any;
-	f.vars = () => [force, ignore_mobs, probability, I, A, $e];
-	if (live(probability) === null) {
-		probability = 20;
-	}
-	f.dot = (rt.op(f, "Prob", [], [live(probability)]) || live(force));
-	I = null;
-	rt.forList(f, 0, live(f.src));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		A = live(I);
-		if ((truthy(live(ignore_mobs)) && truthy((yield* g.call(f, P("/proc/ismob"), null, [live(A)]))))) {
+	probability ??= 20;
+	f.dot = (prob(probability) || force);
+	for (I of each(this)) {
+		A = I;
+		if (ignore_mobs && ismob(A)) {
 			continue;
 		}
-		if ((truthy((yield* g.call(f, P("/proc/ismob"), null, [live(A)]))) || truthy(live(f.dot)))) {
-			yield* g.callName(f, live(A), "narsie_act", []);
+		if (ismob(A) || f.dot) {
+			yield* A.narsie_act();
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /turf/open/floor/carpet/proc/break_tile  (code/game/turfs/simulated/floor/fancy_floor.dm:178)  may sleep
+// fancy_floor.dm:178
 rt.def("/turf/open/floor/carpet/proc/break_tile", function* break_tile(f: Frame) {
-	rt.setSv(f, "broken", 1);
-	yield* g.srcCall(f, "update_icon");
+	this.broken = 1;
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /turf/open/floor/carpet/proc/burn_tile  (code/game/turfs/simulated/floor/fancy_floor.dm:182)  may sleep
+// fancy_floor.dm:182
 rt.def("/turf/open/floor/carpet/proc/burn_tile", function* burn_tile(f: Frame) {
-	rt.setSv(f, "burnt", 1);
-	yield* g.srcCall(f, "update_icon");
+	this.burnt = 1;
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
@@ -292,19 +264,17 @@ rt.type(4562, "/turf/open/floor/fakepit", "/turf/open/floor", {
 	icon_state: "smooth",
 });
 
-// /turf/open/floor/fakepit/proc/<init>  (code/game/turfs/simulated/floor/fancy_floor.dm:191)
+// fancy_floor.dm:191
 rt.def("/turf/open/floor/fakepit/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "canSmoothWith", rt.list(T("/turf/open/floor/fakepit")));
+	parent_proc();
+	this.canSmoothWith = list(T("/turf/open/floor/fakepit"));
 	return f.dot;
 });
 
-// /turf/open/floor/fakepit/proc/get_smooth_underlay_icon  (code/game/turfs/simulated/floor/fancy_floor.dm:196)
+// fancy_floor.dm:196
 rt.def("/turf/open/floor/fakepit/proc/get_smooth_underlay_icon", function get_smooth_underlay_icon(f: Frame, underlay_appearance: Value, asking_turf: Value, adjacency_dir: Value) {
-	rt.setFv(f, "icon", live(underlay_appearance), rt.rsc("icons/turf/floors.dmi"));
-	rt.setFv(f, "icon_state", live(underlay_appearance), "basalt");
+	underlay_appearance.icon = rt.rsc("icons/turf/floors.dmi");
+	underlay_appearance.icon_state = "basalt";
 	return 1;
 });
 
@@ -316,26 +286,24 @@ rt.type(4563, "/turf/open/floor/fakespace", "/turf/open/floor", {
 	plane: -95,
 });
 
-// /turf/open/floor/fakespace/proc/<init>  (code/game/turfs/simulated/floor/fancy_floor.dm:204)
+// fancy_floor.dm:204
 rt.def("/turf/open/floor/fakespace/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "broken_states", rt.list("damaged"));
+	parent_proc();
+	this.broken_states = list("damaged");
 	return f.dot;
 });
 
-// /turf/open/floor/fakespace/proc/Initialize  (code/game/turfs/simulated/floor/fancy_floor.dm:208)  may sleep
+// fancy_floor.dm:208
 rt.def("/turf/open/floor/fakespace/proc/Initialize", function* Initialize(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "icon_state", fmt("＀", [rt.modulus(rt.bitXor(add(rt.sv(f, "x"), rt.sv(f, "y")), add(rt.op(f, "BitNot", [], [multiply(rt.sv(f, "x"), rt.sv(f, "y"))]), rt.sv(f, "z"))), 25)]));
+	yield* parent_proc();
+	this.icon_state = `${rt.bitXor(this.x + this.y, rt.op(f, "BitNot", [], [this.x * this.y]) + this.z) % 25}`;
 	return f.dot;
 }, true);
 
-// /turf/open/floor/fakespace/proc/get_smooth_underlay_icon  (code/game/turfs/simulated/floor/fancy_floor.dm:212)
+// fancy_floor.dm:212
 rt.def("/turf/open/floor/fakespace/proc/get_smooth_underlay_icon", function get_smooth_underlay_icon(f: Frame, underlay_appearance: Value, asking_turf: Value, adjacency_dir: Value) {
-	rt.setFv(f, "icon", live(underlay_appearance), rt.rsc("icons/turf/space.dmi"));
-	rt.setFv(f, "icon_state", live(underlay_appearance), fmt("＀", [rt.modulus(rt.bitXor(add(rt.sv(f, "x"), rt.sv(f, "y")), add(rt.op(f, "BitNot", [], [multiply(rt.sv(f, "x"), rt.sv(f, "y"))]), rt.sv(f, "z"))), 25)]));
-	rt.setFv(f, "plane", live(underlay_appearance), -95);
+	underlay_appearance.icon = rt.rsc("icons/turf/space.dmi");
+	underlay_appearance.icon_state = `${rt.bitXor(this.x + this.y, rt.op(f, "BitNot", [], [this.x * this.y]) + this.z) % 25}`;
+	underlay_appearance.plane = PLANE_SPACE;
 	return 1;
 });

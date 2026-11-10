@@ -1,7 +1,7 @@
-// From code/modules/clothing/masks/hailer.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/clothing/masks/hailer.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(8558, "/obj/item/clothing/mask/gas/sechailer", "/obj/item/clothing/mask/gas", {
@@ -24,12 +24,10 @@ rt.type(8558, "/obj/item/clothing/mask/gas/sechailer", "/obj/item/clothing/mask/
 	visor_flags_cover: 8,
 });
 
-// /obj/item/clothing/mask/gas/sechailer/proc/<init>  (code/modules/clothing/masks/hailer.dm:7)
+// hailer.dm:7
 rt.def("/obj/item/clothing/mask/gas/sechailer/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "actions_types", rt.list(T("/datum/action/item_action/halt"), T("/datum/action/item_action/adjust")));
+	parent_proc();
+	this.actions_types = list(T("/datum/action/item_action/halt"), T("/datum/action/item_action/adjust"));
 	return f.dot;
 });
 
@@ -44,12 +42,10 @@ rt.type(8559, "/obj/item/clothing/mask/gas/sechailer/swat", "/obj/item/clothing/
 	visor_flags_inv: 0,
 });
 
-// /obj/item/clothing/mask/gas/sechailer/swat/proc/<init>  (code/modules/clothing/masks/hailer.dm:26)
+// hailer.dm:26
 rt.def("/obj/item/clothing/mask/gas/sechailer/swat/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "actions_types", rt.list(T("/datum/action/item_action/halt")));
+	parent_proc();
+	this.actions_types = list(T("/datum/action/item_action/halt"));
 	return f.dot;
 });
 
@@ -62,181 +58,164 @@ rt.type(8560, "/obj/item/clothing/mask/gas/sechailer/cyborg", "/obj/item/clothin
 	actions_types: null,
 });
 
-// /obj/item/clothing/mask/gas/sechailer/cyborg/proc/<init>  (code/modules/clothing/masks/hailer.dm:39)
+// hailer.dm:39
 rt.def("/obj/item/clothing/mask/gas/sechailer/cyborg/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "actions_types", rt.list(T("/datum/action/item_action/halt")));
+	parent_proc();
+	this.actions_types = list(T("/datum/action/item_action/halt"));
 	return f.dot;
 });
 
-// /obj/item/clothing/mask/gas/sechailer/proc/attackby  (code/modules/clothing/masks/hailer.dm:42)  may sleep
-rt.def("/obj/item/clothing/mask/gas/sechailer/proc/attackby", function* attackby(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/screwdriver")) ? 1 : 0))) {
-		$0 = rt.sv(f, "aggressiveness");
-		if ($0 === 1) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You set the restrictor to the middle position.</span>"]);
-			rt.setSv(f, "aggressiveness", 2);
-		} else if ($0 === 2) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You set the restrictor to the last position.</span>"]);
-			rt.setSv(f, "aggressiveness", 3);
-		} else if ($0 === 3) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You set the restrictor to the first position.</span>"]);
-			rt.setSv(f, "aggressiveness", 1);
-		} else if ($0 === 4) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='danger'>You adjust the restrictor but nothing happens, probably because it's broken.</span>"]);
+// hailer.dm:42
+rt.def("/obj/item/clothing/mask/gas/sechailer/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
+	if (rt.istype(W, T("/obj/item/weapon/screwdriver"))) {
+		if (this.aggressiveness === 1) {
+			to_chat(user, "<span class='notice'>You set the restrictor to the middle position.</span>");
+			this.aggressiveness = 2;
+		} else if (this.aggressiveness === 2) {
+			to_chat(user, "<span class='notice'>You set the restrictor to the last position.</span>");
+			this.aggressiveness = 3;
+		} else if (this.aggressiveness === 3) {
+			to_chat(user, "<span class='notice'>You set the restrictor to the first position.</span>");
+			this.aggressiveness = 1;
+		} else if (this.aggressiveness === 4) {
+			to_chat(user, "<span class='danger'>You adjust the restrictor but nothing happens, probably because it's broken.</span>");
+		}
+	} else if (rt.istype(W, T("/obj/item/weapon/wirecutters"))) {
+		if (this.aggressiveness != 4) {
+			to_chat(user, "<span class='danger'>You broke the restrictor!</span>");
+			this.aggressiveness = 4;
 		}
 	} else {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/wirecutters")) ? 1 : 0))) {
-			if (!isEqual(rt.sv(f, "aggressiveness"), 4)) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='danger'>You broke the restrictor!</span>"]);
-				rt.setSv(f, "aggressiveness", 4);
-			}
-		} else {
-			yield* g.callSuper(f, [], rt.Args.Same);
-		}
-	}
-	return f.dot;
-}, true, { args: ["W", "user", "params"] });
-
-// /obj/item/clothing/mask/gas/sechailer/proc/ui_action_click  (code/modules/clothing/masks/hailer.dm:63)  may sleep
-rt.def("/obj/item/clothing/mask/gas/sechailer/proc/ui_action_click", function* ui_action_click(f: Frame, user: Value, action: Value) {
-	f.vars = () => [user, action];
-	if (truthy((rt.istype(live(action), T("/datum/action/item_action/halt")) ? 1 : 0))) {
-		yield* g.srcCall(f, "halt");
-	} else {
-		yield* g.srcCall(f, "adjustmask", live(user));
+		yield* parent_proc();
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/clothing/mask/gas/sechailer/proc/attack_self  (code/modules/clothing/masks/hailer.dm:69)
-rt.def("/obj/item/clothing/mask/gas/sechailer/proc/attack_self", function attack_self(f: Frame) {
-	rt.callSrc(f, "halt", []);
-	return f.dot;
-});
-
-// /obj/item/clothing/mask/gas/sechailer/proc/emag_act  (code/modules/clothing/masks/hailer.dm:73)
-rt.def("/obj/item/clothing/mask/gas/sechailer/proc/emag_act", function emag_act(f: Frame, user: Value) {
-	if (truthy(rt.sv(f, "safety"))) {
-		rt.setSv(f, "safety", 0);
-		rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>You silently fry ＀'s vocal circuit with the cryptographic sequencer.", [live(f.src)])]);
+// hailer.dm:63
+rt.def("/obj/item/clothing/mask/gas/sechailer/proc/ui_action_click", function* ui_action_click(f: Frame, user: Value, action: Value) {
+	if (rt.istype(action, T("/datum/action/item_action/halt"))) {
+		this.halt();
 	} else {
-		return live(f.dot);
+		yield* this.adjustmask(user);
+	}
+	return f.dot;
+}, true);
+
+// hailer.dm:69
+rt.def("/obj/item/clothing/mask/gas/sechailer/proc/attack_self", function attack_self(f: Frame) {
+	this.halt();
+	return f.dot;
+});
+
+// hailer.dm:73
+rt.def("/obj/item/clothing/mask/gas/sechailer/proc/emag_act", function emag_act(f: Frame, user: Value) {
+	if (this.safety) {
+		this.safety = 0;
+		to_chat(user, `<span class='warning'>You silently fry ${this}'s vocal circuit with the cryptographic sequencer.`);
+	} else {
+		return f.dot;
 	}
 	return f.dot;
 });
 
-// /obj/item/clothing/mask/gas/sechailer/verb/halt  (code/modules/clothing/masks/hailer.dm:81)
+// hailer.dm:81
 rt.def("/obj/item/clothing/mask/gas/sechailer/verb/halt", function halt(f: Frame) {
-	let phrase: Value = null, phrase_text: Value = null, phrase_sound: Value = null;
-	let $0: any;
-	f.vars = () => [phrase, phrase_text, phrase_sound, $0];
-	if (!truthy((rt.istype(live(f.usr), T("/mob/living")) ? 1 : 0))) {
-		return live(f.dot);
+	let phrase_text: Value = null, phrase_sound: Value = null;
+	if (!rt.istype(f.usr, T("/mob/living"))) {
+		return f.dot;
 	}
-	if (!truthy(rt.callSrc(f, "can_use", [live(f.usr)]))) {
-		return live(f.dot);
+	if (!this.can_use(f.usr)) {
+		return f.dot;
 	}
-	if (truthy(rt.sv(f, "broken_hailer"))) {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.usr), fmt("<span class='warning'>＄！'s hailing system is broken.</span>", [live(f.src)])]);
-		return live(f.dot);
+	if (this.broken_hailer) {
+		to_chat(f.usr, fmt("<span class='warning'>＄！'s hailing system is broken.</span>", [this]));
+		return f.dot;
 	}
-	phrase = 0;
-	phrase_text = null;
-	phrase_sound = null;
-	if (!rt.lt(rt.sv(f, "cooldown"), subtract(rt.worldTime(f), 30))) return f.dot;
-	rt.incSrcVar(f, "recent_uses", 1, true);
-	if (rt.lt(rt.sv(f, "cooldown_special"), subtract(rt.worldTime(f), 180))) {
-		rt.setSv(f, "recent_uses", rt.initial(f, live(f.src), "recent_uses"));
+	let phrase: Value = 0;
+	if (!(this.cooldown < rt.worldTime(f) - 30)) return f.dot;
+	this.recent_uses++;
+	if (this.cooldown_special < rt.worldTime(f) - 180) {
+		this.recent_uses = rt.initial(f, this, "recent_uses");
 	}
-	$0 = rt.sv(f, "recent_uses");
-	if ($0 === 3) {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.usr), fmt("<span class='warning'>＄！ is starting to heat up.</span>", [live(f.src)])]);
-	} else if ($0 === 4) {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.usr), fmt("<span class='userdanger'>＄！ is heating up dangerously from overuse!</span>", [live(f.src)])]);
-	} else if ($0 === 5) {
-		rt.setSv(f, "broken_hailer", 1);
-		rt.call(f, P("/proc/to_chat"), null, [live(f.usr), fmt("<span class='userdanger'>＄！'s power modulator overloads and breaks.</span>", [live(f.src)])]);
-		return live(f.dot);
+	if (this.recent_uses === 3) {
+		to_chat(f.usr, fmt("<span class='warning'>＄！ is starting to heat up.</span>", [this]));
+	} else if (this.recent_uses === 4) {
+		to_chat(f.usr, fmt("<span class='userdanger'>＄！ is heating up dangerously from overuse!</span>", [this]));
+	} else if (this.recent_uses === 5) {
+		this.broken_hailer = 1;
+		to_chat(f.usr, fmt("<span class='userdanger'>＄！'s power modulator overloads and breaks.</span>", [this]));
+		return f.dot;
 	}
-	$0 = rt.sv(f, "aggressiveness");
-	if ($0 === 1) {
-		phrase = rt.call(f, P("/proc/rand"), null, [1, 5]);
-	} else if ($0 === 2) {
-		phrase = rt.call(f, P("/proc/rand"), null, [1, 11]);
-	} else if ($0 === 3) {
-		phrase = rt.call(f, P("/proc/rand"), null, [1, 18]);
-	} else if ($0 === 4) {
-		phrase = rt.call(f, P("/proc/rand"), null, [12, 18]);
+	if (this.aggressiveness === 1) {
+		phrase = rand(1, 5);
+	} else if (this.aggressiveness === 2) {
+		phrase = rand(1, 11);
+	} else if (this.aggressiveness === 3) {
+		phrase = rand(1, 18);
+	} else if (this.aggressiveness === 4) {
+		phrase = rand(12, 18);
 	}
-	if (!truthy(rt.sv(f, "safety"))) {
+	if (!this.safety) {
 		phrase_text = "FUCK YOUR CUNT YOU SHIT EATING COCKSTORM AND EAT A DONG FUCKING ASS RAMMING SHIT FUCK EAT PENISES IN YOUR FUCK FACE AND SHIT OUT ABORTIONS OF FUCK AND POO AND SHIT IN YOUR ASS YOU COCK FUCK SHIT MONKEY FUCK ASS WANKER FROM THE DEPTHS OF SHIT.";
 		phrase_sound = "emag";
-	} else {
-		$0 = live(phrase);
-		if ($0 === 1) {
-			phrase_text = "HALT! HALT! HALT!";
-			phrase_sound = "halt";
-		} else if ($0 === 2) {
-			phrase_text = "Stop in the name of the Law.";
-			phrase_sound = "bobby";
-		} else if ($0 === 3) {
-			phrase_text = "Compliance is in your best interest.";
-			phrase_sound = "compliance";
-		} else if ($0 === 4) {
-			phrase_text = "Prepare for justice!";
-			phrase_sound = "justice";
-		} else if ($0 === 5) {
-			phrase_text = "Running will only increase your sentence.";
-			phrase_sound = "running";
-		} else if ($0 === 6) {
-			phrase_text = "Don't move, Creep!";
-			phrase_sound = "dontmove";
-		} else if ($0 === 7) {
-			phrase_text = "Down on the floor, Creep!";
-			phrase_sound = "floor";
-		} else if ($0 === 8) {
-			phrase_text = "Dead or alive you're coming with me.";
-			phrase_sound = "robocop";
-		} else if ($0 === 9) {
-			phrase_text = "God made today for the crooks we could not catch yesterday.";
-			phrase_sound = "god";
-		} else if ($0 === 10) {
-			phrase_text = "Freeze, Scum Bag!";
-			phrase_sound = "freeze";
-		} else if ($0 === 11) {
-			phrase_text = "Stop right there, criminal scum!";
-			phrase_sound = "imperial";
-		} else if ($0 === 12) {
-			phrase_text = "Stop or I'll bash you.";
-			phrase_sound = "bash";
-		} else if ($0 === 13) {
-			phrase_text = "Go ahead, make my day.";
-			phrase_sound = "harry";
-		} else if ($0 === 14) {
-			phrase_text = "Stop breaking the law, ass hole.";
-			phrase_sound = "asshole";
-		} else if ($0 === 15) {
-			phrase_text = "You have the right to shut the fuck up.";
-			phrase_sound = "stfu";
-		} else if ($0 === 16) {
-			phrase_text = "Shut up crime!";
-			phrase_sound = "shutup";
-		} else if ($0 === 17) {
-			phrase_text = "Face the wrath of the golden bolt.";
-			phrase_sound = "super";
-		} else if ($0 === 18) {
-			phrase_text = "I am, the LAW!";
-			phrase_sound = "dredd";
-		}
+	} else if (phrase === 1) {
+		phrase_text = "HALT! HALT! HALT!";
+		phrase_sound = "halt";
+	} else if (phrase === 2) {
+		phrase_text = "Stop in the name of the Law.";
+		phrase_sound = "bobby";
+	} else if (phrase === 3) {
+		phrase_text = "Compliance is in your best interest.";
+		phrase_sound = "compliance";
+	} else if (phrase === 4) {
+		phrase_text = "Prepare for justice!";
+		phrase_sound = "justice";
+	} else if (phrase === 5) {
+		phrase_text = "Running will only increase your sentence.";
+		phrase_sound = "running";
+	} else if (phrase === 6) {
+		phrase_text = "Don't move, Creep!";
+		phrase_sound = "dontmove";
+	} else if (phrase === 7) {
+		phrase_text = "Down on the floor, Creep!";
+		phrase_sound = "floor";
+	} else if (phrase === 8) {
+		phrase_text = "Dead or alive you're coming with me.";
+		phrase_sound = "robocop";
+	} else if (phrase === 9) {
+		phrase_text = "God made today for the crooks we could not catch yesterday.";
+		phrase_sound = "god";
+	} else if (phrase === 10) {
+		phrase_text = "Freeze, Scum Bag!";
+		phrase_sound = "freeze";
+	} else if (phrase === 11) {
+		phrase_text = "Stop right there, criminal scum!";
+		phrase_sound = "imperial";
+	} else if (phrase === 12) {
+		phrase_text = "Stop or I'll bash you.";
+		phrase_sound = "bash";
+	} else if (phrase === 13) {
+		phrase_text = "Go ahead, make my day.";
+		phrase_sound = "harry";
+	} else if (phrase === 14) {
+		phrase_text = "Stop breaking the law, ass hole.";
+		phrase_sound = "asshole";
+	} else if (phrase === 15) {
+		phrase_text = "You have the right to shut the fuck up.";
+		phrase_sound = "stfu";
+	} else if (phrase === 16) {
+		phrase_text = "Shut up crime!";
+		phrase_sound = "shutup";
+	} else if (phrase === 17) {
+		phrase_text = "Face the wrath of the golden bolt.";
+		phrase_sound = "super";
+	} else if (phrase === 18) {
+		phrase_text = "I am, the LAW!";
+		phrase_sound = "dredd";
 	}
-	rt.callName(f, live(f.usr), "audible_message", [fmt("＀'s Compli-o-Nator: <font color='red' size='4'><b>＀</b></font>", [live(f.usr), live(phrase_text)])]);
-	rt.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), fmt("sound/voice/complionator/＀.ogg", [live(phrase_sound)]), 100, 0, 4]);
-	rt.setSv(f, "cooldown", rt.worldTime(f));
-	rt.setSv(f, "cooldown_special", rt.worldTime(f));
+	f.usr.audible_message(`${f.usr}'s Compli-o-Nator: <font color='red' size='4'><b>${phrase_text}</b></font>`);
+	playsound(this.loc, `sound/voice/complionator/${phrase_sound}.ogg`, 100, 0, 4);
+	this.cooldown = rt.worldTime(f);
+	this.cooldown_special = rt.worldTime(f);
 	return f.dot;
 }, false, { verb: { name: "HALT", category: "Object", src: 11 } });

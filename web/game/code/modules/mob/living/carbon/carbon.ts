@@ -1,714 +1,598 @@
-// From code/modules/mob/living/carbon/carbon.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/carbon/carbon.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, fmt } = rt;
 
 
-// /mob/living/carbon/proc/Initialize  (code/modules/mob/living/carbon/carbon.dm:5)  may sleep
+// carbon.dm:5
 rt.def("/mob/living/carbon/proc/Initialize", function* Initialize(f: Frame) {
-	yield* g.srcCall(f, "create_reagents", 1000);
-	yield* g.srcCall(f, "update_body_parts");
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* this.create_reagents(1000);
+	yield* this.update_body_parts();
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/proc/Destroy  (code/modules/mob/living/carbon/carbon.dm:10)  may sleep
+// carbon.dm:10
 rt.def("/mob/living/carbon/proc/Destroy", function* Destroy(f: Frame) {
 	let guts: Value = null, food: Value = null, BP: Value = null, imp: Value = null;
-	let $e: any;
-	f.vars = () => [guts, food, BP, imp, $e];
-	guts = null;
-	rt.forList(f, 0, rt.sv(f, "internal_organs"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		guts = $e;
-		yield* g.call(f, P("/proc/qdel"), null, [live(guts)]);
+	for (guts of each(this.internal_organs)) {
+		yield* qdel(guts);
 	}
-	rt.endFor(f, 0);
-	food = null;
-	rt.forList(f, 0, rt.sv(f, "stomach_contents"), T("/atom/movable"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		food = $e;
-		yield* g.call(f, P("/proc/qdel"), null, [live(food)]);
+	for (food of each(this.stomach_contents, T("/atom/movable"))) {
+		yield* qdel(food);
 	}
-	rt.endFor(f, 0);
-	BP = null;
-	rt.forList(f, 0, rt.sv(f, "bodyparts"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		BP = $e;
-		yield* g.call(f, P("/proc/qdel"), null, [live(BP)]);
+	for (BP of each(this.bodyparts)) {
+		yield* qdel(BP);
 	}
-	rt.endFor(f, 0);
-	imp = null;
-	rt.forList(f, 0, rt.sv(f, "implants"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		imp = $e;
-		yield* g.call(f, P("/proc/qdel"), null, [live(imp)]);
+	for (imp of each(this.implants)) {
+		yield* qdel(imp);
 	}
-	rt.endFor(f, 0);
-	rt.setSv(f, "bodyparts", rt.list());
-	yield* g.srcCall(f, "remove_from_all_data_huds");
-	if (truthy(rt.sv(f, "dna"))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "dna")]);
+	this.bodyparts = list();
+	this.remove_from_all_data_huds();
+	if (this.dna) {
+		yield* qdel(this.dna);
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);
 
-// /mob/living/carbon/proc/relaymove  (code/modules/mob/living/carbon/carbon.dm:25)  may sleep
+// carbon.dm:25
 rt.def("/mob/living/carbon/proc/relaymove", function* relaymove(f: Frame, user: Value, direction: Value) {
-	let I: Value = null, d: Value = null, BP: Value = null, A: Value = null;
-	let $e: any;
-	f.vars = () => [user, direction, I, d, BP, A, $e];
-	if (!truthy((rt.isIn(f, live(user), rt.fv(f, "stomach_contents", live(f.src))) ? 1 : 0))) return f.dot;
-	if (!truthy(rt.op(f, "Prob", [], [40]))) return f.dot;
-	if (truthy(rt.op(f, "Prob", [], [25]))) {
-		yield* g.srcCall(f, "audible_message", fmt("<span class='warning'>You hear something rumbling inside ＀'s stomach...</span>", [live(f.src)]), "<span class='warning'>You hear something rumbling.</span>", 4, "<span class='userdanger'>Something is rumbling inside your stomach!</span>");
+	let I: Value = null, BP: Value = null, A: Value = null;
+	if (!rt.isIn(f, user, this.stomach_contents)) return f.dot;
+	if (!prob(40)) return f.dot;
+	if (prob(25)) {
+		this.audible_message(`<span class='warning'>You hear something rumbling inside ${this}'s stomach...</span>`, "<span class='warning'>You hear something rumbling.</span>", 4, "<span class='userdanger'>Something is rumbling inside your stomach!</span>");
 	}
-	if (!(truthy((I = (yield* g.callName(f, live(user), "get_active_held_item", [])))) && truthy(rt.fv(f, "force", live(I))))) return f.dot;
-	d = (yield* g.call(f, P("/proc/rand"), null, [(yield* g.call(f, P("/proc/round"), null, [divide(rt.fv(f, "force", live(I)), 4)])), rt.fv(f, "force", live(I))]));
-	if (truthy((yield* g.callName(f, (BP = (yield* g.srcCall(f, "get_bodypart", "chest"))), "receive_damage", [live(d), 0])))) {
-		yield* g.srcCall(f, "update_damage_overlays");
+	if (!((I = user.get_active_held_item()) && I.force)) return f.dot;
+	let d: Value = rand(round(I.force / 4), I.force);
+	if (yield* (BP = this.get_bodypart("chest")).receive_damage(d, 0)) {
+		this.update_damage_overlays();
 	}
-	yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＀ attacks ＀'s stomach wall with the ＀!</span>", [live(user), live(f.src), rt.fv(f, "name", live(I))]), fmt("<span class='userdanger'>＀ attacks your stomach wall with the ＀!</span>", [live(user), rt.fv(f, "name", live(I))]));
-	yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(user)), rt.rsc("sound/effects/attackblob.ogg"), 50, 1]);
-	if (!truthy(rt.op(f, "Prob", [], [subtract((yield* g.callName(f, live(f.src), "getBruteLoss", [])), 50)]))) return f.dot;
-	A = null;
-	rt.forList(f, 0, rt.sv(f, "stomach_contents"), T("/atom/movable"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		A = $e;
-		rt.setFv(f, "loc", live(A), rt.sv(f, "loc"));
-		yield* g.callName(f, rt.sv(f, "stomach_contents"), "Remove", [live(A)]);
+	this.visible_message(`<span class='danger'>${user} attacks ${this}'s stomach wall with the ${I.name}!</span>`, `<span class='userdanger'>${user} attacks your stomach wall with the ${I.name}!</span>`);
+	playsound(user.loc, rt.rsc("sound/effects/attackblob.ogg"), 50, 1);
+	if (!prob(this.getBruteLoss() - 50)) return f.dot;
+	for (A of each(this.stomach_contents, T("/atom/movable"))) {
+		A.loc = this.loc;
+		yield* this.stomach_contents.Remove(A);
 	}
-	rt.endFor(f, 0);
-	yield* g.callName(f, live(f.src), "gib", []);
+	yield* this.gib();
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/proc/swap_hand  (code/modules/mob/living/carbon/carbon.dm:49)
+// carbon.dm:49
 rt.def("/mob/living/carbon/proc/swap_hand", function swap_hand(f: Frame, held_index: Value) {
-	let item_in_hand: Value = null, oindex: Value = null, H: Value = null;
-	f.vars = () => [held_index, item_in_hand, oindex, H];
-	if (!truthy(live(held_index))) {
-		held_index = add(rt.modulus(rt.sv(f, "active_hand_index"), rt.len(f, rt.sv(f, "held_items"))), 1);
+	let item_in_hand: Value = null, H: Value = null;
+	if (!held_index) {
+		held_index = this.active_hand_index % rt.len(f, this.held_items) + 1;
 	}
-	if (truthy((item_in_hand = rt.callName(f, live(f.src), "get_active_held_item", [])))) {
-		if (truthy((rt.istype(live(item_in_hand), T("/obj/item/weapon/twohanded")) ? 1 : 0))) {
-			if (isEqual(rt.fv(f, "wielded", live(item_in_hand)), 1)) {
-				rt.call(f, P("/proc/to_chat"), null, [live(f.usr), fmt("<span class='warning'>Your other hand is too busy holding the ＀</span>", [rt.fv(f, "name", live(item_in_hand))])]);
-				return live(f.dot);
+	if (item_in_hand = this.get_active_held_item()) {
+		if (rt.istype(item_in_hand, T("/obj/item/weapon/twohanded"))) {
+			if (item_in_hand.wielded == 1) {
+				to_chat(f.usr, `<span class='warning'>Your other hand is too busy holding the ${item_in_hand.name}</span>`);
+				return f.dot;
 			}
 		}
 	}
-	oindex = rt.sv(f, "active_hand_index");
-	rt.setSv(f, "active_hand_index", live(held_index));
-	if (!truthy(rt.sv(f, "hud_used"))) return f.dot;
-	H = null;
-	if (truthy((H = rt.index(rt.fv(f, "hand_slots", rt.sv(f, "hud_used")), fmt("＀", [live(oindex)]))))) {
-		rt.callName(f, live(H), "update_icon", []);
+	let oindex: Value = this.active_hand_index;
+	this.active_hand_index = held_index;
+	if (!this.hud_used) return f.dot;
+	if (H = rt.index(this.hud_used.hand_slots, `${oindex}`)) {
+		H.update_icon();
 	}
-	if (!truthy((H = rt.index(rt.fv(f, "hand_slots", rt.sv(f, "hud_used")), fmt("＀", [live(held_index)]))))) return f.dot;
-	rt.callName(f, live(H), "update_icon", []);
+	if (!(H = rt.index(this.hud_used.hand_slots, `${held_index}`))) return f.dot;
+	H.update_icon();
 	return f.dot;
 });
 
-// /mob/living/carbon/proc/attackby  (code/modules/mob/living/carbon/carbon.dm:87)  may sleep
-rt.def("/mob/living/carbon/proc/attackby", function* attackby(f: Frame) {
+// carbon.dm:87
+rt.def("/mob/living/carbon/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
 	let S: Value = null;
-	let $e: any;
-	f.vars = () => [S, $e];
-	if ((truthy(rt.sv(f, "lying")) && truthy(rt.len(f, rt.sv(f, "surgeries"))))) {
-		if ((!isEqual(live(f.args[1]), live(f.src)) && isEqual(rt.fv(f, "a_intent", live(f.args[1])), "help"))) {
-			S = null;
-			rt.forList(f, 0, rt.sv(f, "surgeries"), T("/datum/surgery"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				S = $e;
-				if (truthy((yield* g.callName(f, live(S), "next_step", [live(f.args[1])])))) {
+	if (this.lying && rt.len(f, this.surgeries)) {
+		if (user != this && user.a_intent == "help") {
+			for (S of each(this.surgeries, T("/datum/surgery"))) {
+				if (yield* S.next_step(user)) {
 					return 1;
 				}
 			}
-			rt.endFor(f, 0);
 		}
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["I", "user", "params"] });
+	return (yield* parent_proc());
+}, true);
 
-// /mob/living/carbon/proc/throw_impact  (code/modules/mob/living/carbon/carbon.dm:95)  may sleep
-rt.def("/mob/living/carbon/proc/throw_impact", function* throw_impact(f: Frame) {
-	let hurt: Value = null, D: Value = null, R: Value = null, victim: Value = null;
-	f.vars = () => [hurt, D, R, victim];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	hurt = 1;
-	if (truthy((rt.istype(live(f.args[1]), T("/datum/thrownthing")) ? 1 : 0))) {
-		if (truthy((rt.istype(rt.gv(f, "thrower", (D = live(f.args[1]))), T("/mob/living/silicon/robot")) ? 1 : 0))) {
-			if (!truthy(rt.gv(f, "emagged", (R = rt.fv(f, "thrower", live(D)))))) {
+// carbon.dm:95
+rt.def("/mob/living/carbon/proc/throw_impact", function* throw_impact(f: Frame, hit_atom: Value, throwingdatum: Value) {
+	let D: Value = null, R: Value = null, victim: Value = null;
+	f.dot = (yield* parent_proc());
+	let hurt: Value = 1;
+	if (rt.istype(throwingdatum, T("/datum/thrownthing"))) {
+		if (rt.istype((D = throwingdatum).thrower, T("/mob/living/silicon/robot"))) {
+			if (!(R = D.thrower).emagged) {
 				hurt = 0;
 			}
 		}
 	}
-	if ((truthy(rt.fv(f, "density", live(f.args[0]))) && truthy((yield* g.call(f, P("/proc/isturf"), null, [live(f.args[0])]))))) {
-		if (truthy(live(hurt))) {
-			yield* g.srcCall(f, "Knockdown", 20);
-			yield* g.srcCall(f, "take_bodypart_damage", 10);
+	if (hit_atom.density && isturf(hit_atom)) {
+		if (hurt) {
+			yield* this.Knockdown(20);
+			yield* this.take_bodypart_damage(10);
 		}
 	}
-	if (!(truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon")) ? 1 : 0)) && !isEqual(live(f.args[0]), live(f.src)))) return f.dot;
-	if (truthy(rt.bitAnd(rt.gv(f, "movement_type", (victim = live(f.args[0]))), 2))) {
-		return live(f.dot);
+	if (!(rt.istype(hit_atom, T("/mob/living/carbon")) && hit_atom != this)) return f.dot;
+	if (rt.bitAnd((victim = hit_atom).movement_type, 2)) {
+		return f.dot;
 	}
-	if (truthy(live(hurt))) {
-		yield* g.callName(f, live(victim), "take_bodypart_damage", [10]);
-		yield* g.srcCall(f, "take_bodypart_damage", 10);
-		yield* g.callName(f, live(victim), "Knockdown", [20]);
-		yield* g.srcCall(f, "Knockdown", 20);
-		yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＀ crashes into ＀, knocking them both over!</span>", [live(f.src), live(victim)]), fmt("<span class='userdanger'>You violently crash into ＀!</span>", [live(victim)]));
+	if (hurt) {
+		yield* victim.take_bodypart_damage(10);
+		yield* this.take_bodypart_damage(10);
+		yield* victim.Knockdown(20);
+		yield* this.Knockdown(20);
+		this.visible_message(`<span class='danger'>${this} crashes into ${victim}, knocking them both over!</span>`, `<span class='userdanger'>You violently crash into ${victim}!</span>`);
 	}
-	yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/weapons/punch1.ogg"), 50, 1]);
+	playsound(this, rt.rsc("sound/weapons/punch1.ogg"), 50, 1);
 	return f.dot;
-}, true, { args: ["hit_atom", "throwingdatum"], waitfor: false });
+}, true, { waitfor: false });
 
-// /mob/living/carbon/proc/toggle_throw_mode  (code/modules/mob/living/carbon/carbon.dm:125)
+// carbon.dm:125
 rt.def("/mob/living/carbon/proc/toggle_throw_mode", function toggle_throw_mode(f: Frame) {
-	if (truthy(rt.sv(f, "stat"))) {
-		return live(f.dot);
+	if (this.stat) {
+		return f.dot;
 	}
-	if (truthy(rt.sv(f, "in_throw_mode"))) {
-		rt.callSrc(f, "throw_mode_off", []);
+	if (this.in_throw_mode) {
+		this.throw_mode_off();
 	} else {
-		rt.callSrc(f, "throw_mode_on", []);
+		this.throw_mode_on();
 	}
 	return f.dot;
 });
 
-// /mob/living/carbon/proc/throw_mode_off  (code/modules/mob/living/carbon/carbon.dm:132)
+// carbon.dm:132
 rt.def("/mob/living/carbon/proc/throw_mode_off", function throw_mode_off(f: Frame) {
-	rt.setSv(f, "in_throw_mode", 0);
-	if (!(truthy(rt.sv(f, "client")) && truthy(rt.sv(f, "hud_used")))) return f.dot;
-	rt.setFv(f, "icon_state", rt.fv(f, "throw_icon", rt.sv(f, "hud_used")), "act_throw_off");
+	this.in_throw_mode = 0;
+	if (!(this.client && this.hud_used)) return f.dot;
+	this.hud_used.throw_icon.icon_state = "act_throw_off";
 	return f.dot;
 });
 
-// /mob/living/carbon/proc/throw_mode_on  (code/modules/mob/living/carbon/carbon.dm:138)
+// carbon.dm:138
 rt.def("/mob/living/carbon/proc/throw_mode_on", function throw_mode_on(f: Frame) {
-	rt.setSv(f, "in_throw_mode", 1);
-	if (!(truthy(rt.sv(f, "client")) && truthy(rt.sv(f, "hud_used")))) return f.dot;
-	rt.setFv(f, "icon_state", rt.fv(f, "throw_icon", rt.sv(f, "hud_used")), "act_throw_on");
+	this.in_throw_mode = 1;
+	if (!(this.client && this.hud_used)) return f.dot;
+	this.hud_used.throw_icon.icon_state = "act_throw_on";
 	return f.dot;
 });
 
-// /mob/living/carbon/proc/throw_item  (code/modules/mob/living/carbon/carbon.dm:145)  may sleep
+// carbon.dm:145
 rt.def("/mob/living/carbon/proc/throw_item", function* throw_item(f: Frame, target: Value) {
 	let thrown_thing: Value = null, I: Value = null, throwable_mob: Value = null, start_T: Value = null, end_T: Value = null, start_T_descriptor: Value = null, end_T_descriptor: Value = null;
-	f.vars = () => [target, thrown_thing, I, throwable_mob, start_T, end_T, start_T_descriptor, end_T_descriptor];
-	yield* g.srcCall(f, "throw_mode_off");
-	if ((!truthy(live(target)) || !truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.sv(f, "loc")]))))) {
-		return live(f.dot);
+	this.throw_mode_off();
+	if (!target || !isturf(this.loc)) {
+		return f.dot;
 	}
-	if (truthy((rt.istype(live(target), T("/obj/screen")) ? 1 : 0))) {
-		return live(f.dot);
+	if (rt.istype(target, T("/obj/screen"))) {
+		return f.dot;
 	}
-	thrown_thing = null;
-	if (!truthy((I = (yield* g.callName(f, live(f.src), "get_active_held_item", []))))) {
-		if (((truthy(rt.sv(f, "pulling")) && truthy((rt.istype(rt.sv(f, "pulling"), T("/mob/living")) ? 1 : 0))) && rt.ge(rt.sv(f, "grab_state"), 1))) {
-			if (!truthy(rt.gv(f, "buckled", (throwable_mob = rt.sv(f, "pulling"))))) {
-				thrown_thing = live(throwable_mob);
-				yield* g.srcCall(f, "stop_pulling");
-				start_T = rt.getStep(f, rt.sv(f, "loc"), 0);
-				end_T = rt.getStep(f, live(target), 0);
-				if ((truthy(live(start_T)) && truthy(live(end_T)))) {
-					start_T_descriptor = fmt("<font color='#6b5d00'>tile at ＀, ＀, ＀ in area ＀</font>", [rt.fv(f, "x", live(start_T)), rt.fv(f, "y", live(start_T)), rt.fv(f, "z", live(start_T)), (yield* g.call(f, P("/proc/get_area"), null, [live(start_T)]))]);
-					end_T_descriptor = fmt("<font color='#6b4400'>tile at ＀, ＀, ＀ in area ＀</font>", [rt.fv(f, "x", live(end_T)), rt.fv(f, "y", live(end_T)), rt.fv(f, "z", live(end_T)), (yield* g.call(f, P("/proc/get_area"), null, [live(end_T)]))]);
-					yield* g.call(f, P("/proc/add_logs"), null, [null, live(f.src), null, live(throwable_mob), null, "thrown", "addition", fmt("from ＀ with the target ＀", [live(start_T_descriptor), live(end_T_descriptor)])], rt.Args.Named);
+	if (!(I = this.get_active_held_item())) {
+		if (this.pulling && rt.istype(this.pulling, T("/mob/living")) && this.grab_state >= 1) {
+			if (!(throwable_mob = this.pulling).buckled) {
+				thrown_thing = throwable_mob;
+				yield* this.stop_pulling();
+				start_T = rt.getStep(f, this.loc, 0);
+				end_T = rt.getStep(f, target, 0);
+				if (start_T && end_T) {
+					start_T_descriptor = `<font color='#6b5d00'>tile at ${start_T.x}, ${start_T.y}, ${start_T.z} in area ${get_area(start_T)}</font>`;
+					end_T_descriptor = `<font color='#6b4400'>tile at ${end_T.x}, ${end_T.y}, ${end_T.z} in area ${get_area(end_T)}</font>`;
+					yield* add_logs(this, throwable_mob, "thrown", { addition: `from ${start_T_descriptor} with the target ${end_T_descriptor}` });
 				}
 			}
 		}
-	} else {
-		if (!truthy(rt.bitAnd(rt.fv(f, "flags", live(I)), 130))) {
-			thrown_thing = live(I);
-			yield* g.srcCall(f, "dropItemToGround", live(I));
-		}
+	} else if (!rt.bitAnd(I.flags, 130)) {
+		thrown_thing = I;
+		yield* this.dropItemToGround(I);
 	}
-	if (!truthy(live(thrown_thing))) return f.dot;
-	yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＀ has thrown ＀.</span>", [live(f.src), live(thrown_thing)]));
-	yield* g.srcCall(f, "newtonian_move", rt.getDir(f, live(target), live(f.src)));
-	yield* g.callName(f, live(thrown_thing), "throw_at", [live(target), rt.fv(f, "throw_range", live(thrown_thing)), rt.fv(f, "throw_speed", live(thrown_thing)), live(f.src)]);
+	if (!thrown_thing) return f.dot;
+	this.visible_message(`<span class='danger'>${this} has thrown ${thrown_thing}.</span>`);
+	yield* this.newtonian_move(rt.getDir(f, target, this));
+	yield* thrown_thing.throw_at(target, thrown_thing.throw_range, thrown_thing.throw_speed, this);
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/proc/restrained  (code/modules/mob/living/carbon/carbon.dm:177)
+// carbon.dm:177
 rt.def("/mob/living/carbon/proc/restrained", function restrained(f: Frame, ignore_grab: Value) {
-	f.dot = (rt.sv(f, "handcuffed") || (((!truthy(live(ignore_grab)) ? 1 : 0) && rt.sv(f, "pulledby")) && (rt.ge(rt.fv(f, "grab_state", rt.sv(f, "pulledby")), 1) ? 1 : 0)));
+	f.dot = (this.handcuffed || (((!ignore_grab ? 1 : 0) && this.pulledby) && (this.pulledby.grab_state >= 1 ? 1 : 0)));
 	return f.dot;
 });
 
-// /mob/living/carbon/proc/show_inv  (code/modules/mob/living/carbon/carbon.dm:184)  may sleep
+// carbon.dm:184
 rt.def("/mob/living/carbon/proc/show_inv", function* show_inv(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.callName(f, live(user), "set_machine", [live(f.src)]);
+	yield* user.set_machine(this);
 	// tg_js: one `strip` tgui window instead of the HTML popup (modules/mob/strip.ts)
-	yield* g.srcCall(f, "ui_interact", live(user));
+	yield* this.ui_interact(user);
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/proc/Topic  (code/modules/mob/living/carbon/carbon.dm:215)  may sleep
-rt.def("/mob/living/carbon/proc/Topic", function* Topic(f: Frame) {
-	let slot: Value = null, ITEM: Value = null;
-	let $0: any, $1: any, $2: any;
-	f.vars = () => [slot, ITEM, $0, $1, $2];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy((yield* g.callName(f, live(f.usr), "canUseTopic", [live(f.src), 1, 1])))) return f.dot;
-	if (!truthy(rt.at(live(f.args[1]), "internal"))) return f.dot;
-	slot = (yield* g.call(f, P("/proc/text2num"), null, [rt.at(live(f.args[1]), "internal")]));
-	if (!(((truthy((ITEM = (yield* g.srcCall(f, "get_item_by_slot", live(slot))))) && truthy((rt.istype(live(ITEM), T("/obj/item/weapon/tank")) ? 1 : 0))) && truthy(rt.sv(f, "wear_mask"))) && truthy(rt.bitAnd(rt.fv(f, "flags", rt.sv(f, "wear_mask")), 8)))) return f.dot;
-	$0 = live(f.usr);
-	if (truthy(rt.sv(f, "internal"))) {
+// carbon.dm:215
+rt.def("/mob/living/carbon/proc/Topic", function* Topic(f: Frame, href: Value, href_list: Value) {
+	let ITEM: Value = null;
+	let $1: any, $2: any;
+	yield* parent_proc();
+	if (!f.usr.canUseTopic(this, BE_CLOSE, NO_DEXTERY)) return f.dot;
+	if (!rt.at(href_list, "internal")) return f.dot;
+	let slot: Value = text2num(rt.at(href_list, "internal"));
+	if (!((ITEM = this.get_item_by_slot(slot)) && rt.istype(ITEM, T("/obj/item/weapon/tank")) && this.wear_mask && rt.bitAnd(this.wear_mask.flags, MASKINTERNALS))) return f.dot;
+	let $0: any = f.usr;
+	if (this.internal) {
 		$1 = "close";
 	} else {
 		$1 = "open";
 	}
-	$0 = fmt("<span class='danger'>＀ tries to ＀ the valve on ＀'s ＀.</span>", [$0, $1, live(f.src), rt.fv(f, "name", live(ITEM))]);
-	$1 = live(f.usr);
-	if (truthy(rt.sv(f, "internal"))) {
+	$0 = `<span class='danger'>${$0} tries to ${$1} the valve on ${this}'s ${ITEM.name}.</span>`;
+	$1 = f.usr;
+	if (this.internal) {
 		$2 = "close";
 	} else {
 		$2 = "open";
 	}
-	yield* g.srcCall(f, "visible_message", $0, fmt("<span class='userdanger'>＀ tries to ＀ the valve on ＀'s ＀.</span>", [$1, $2, live(f.src), rt.fv(f, "name", live(ITEM))]));
-	if (!truthy((yield* g.call(f, P("/proc/do_mob"), null, [live(f.usr), live(f.src), 40])))) return f.dot;
-	if (truthy(rt.sv(f, "internal"))) {
-		rt.setSv(f, "internal", null);
-		yield* g.srcCall(f, "update_internals_hud_icon", 0);
-	} else {
-		if ((truthy(live(ITEM)) && truthy((rt.istype(live(ITEM), T("/obj/item/weapon/tank")) ? 1 : 0)))) {
-			if (((truthy(rt.sv(f, "wear_mask")) && truthy(rt.bitAnd(rt.fv(f, "flags", rt.sv(f, "wear_mask")), 8))) || truthy((yield* g.srcCall(f, "getorganslot", "breathing_tube"))))) {
-				rt.setSv(f, "internal", live(ITEM));
-				yield* g.srcCall(f, "update_internals_hud_icon", 1);
-			}
+	this.visible_message($0, `<span class='userdanger'>${$1} tries to ${$2} the valve on ${this}'s ${ITEM.name}.</span>`);
+	if (!(yield* do_mob(f.usr, this, POCKET_STRIP_DELAY))) return f.dot;
+	if (this.internal) {
+		this.internal = null;
+		this.update_internals_hud_icon(0);
+	} else if (ITEM && rt.istype(ITEM, T("/obj/item/weapon/tank"))) {
+		if (this.wear_mask && rt.bitAnd(this.wear_mask.flags, MASKINTERNALS) || this.getorganslot("breathing_tube")) {
+			this.internal = ITEM;
+			this.update_internals_hud_icon(1);
 		}
 	}
-	$0 = live(f.usr);
-	if (truthy(rt.sv(f, "internal"))) {
-		$1 = "opens";
-	} else {
-		$1 = "closes";
-	}
-	$0 = fmt("<span class='danger'>＀ ＀ the valve on ＀'s ＀.</span>", [$0, $1, live(f.src), rt.fv(f, "name", live(ITEM))]);
-	$1 = live(f.usr);
-	if (truthy(rt.sv(f, "internal"))) {
+	$0 = f.usr;
+	$0 = `<span class='danger'>${$0} ${this.internal ? "opens" : "closes"} the valve on ${this}'s ${ITEM.name}.</span>`;
+	$1 = f.usr;
+	if (this.internal) {
 		$2 = "opens";
 	} else {
 		$2 = "closes";
 	}
-	yield* g.srcCall(f, "visible_message", $0, fmt("<span class='userdanger'>＀ ＀ the valve on ＀'s ＀.</span>", [$1, $2, live(f.src), rt.fv(f, "name", live(ITEM))]));
+	this.visible_message($0, `<span class='userdanger'>${$1} ${$2} the valve on ${this}'s ${ITEM.name}.</span>`);
 	return f.dot;
-}, true, { args: ["href", "href_list"] });
+}, true);
 
-// /mob/living/carbon/proc/fall  (code/modules/mob/living/carbon/carbon.dm:238)
+// carbon.dm:238
 rt.def("/mob/living/carbon/proc/fall", function fall(f: Frame, forced: Value) {
-	rt.callName(f, rt.sv(f, "loc"), "handle_fall", [live(f.src), live(forced)]);
+	this.loc.handle_fall(this, forced);
 	return f.dot;
 });
 
-// /mob/living/carbon/proc/is_muzzled  (code/modules/mob/living/carbon/carbon.dm:241)
+// carbon.dm:241
 rt.def("/mob/living/carbon/proc/is_muzzled", function is_muzzled(f: Frame) {
-	return (rt.istype(rt.fv(f, "wear_mask", live(f.src)), T("/obj/item/clothing/mask/muzzle")) ? 1 : 0);
+	return (rt.istype(this.wear_mask, T("/obj/item/clothing/mask/muzzle")) ? 1 : 0);
 });
 
-// /mob/living/carbon/proc/resist_buckle  (code/modules/mob/living/carbon/carbon.dm:244)  may sleep
+// carbon.dm:244
 rt.def("/mob/living/carbon/proc/resist_buckle", function* resist_buckle(f: Frame) {
-	if (truthy((yield* g.srcCall(f, "restrained")))) {
-		yield* g.srcCall(f, "changeNext_move", 100);
-		rt.setSv(f, "last_special", add(rt.worldTime(f), 100));
-		yield* g.srcCall(f, "visible_message", fmt("<span class='warning'>＀ attempts to unbuckle themself!</span>", [live(f.src)]), "<span class='notice'>You attempt to unbuckle yourself... (This will take around one minute and you need to stay still.)</span>");
-		if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.src), null, 600, null, 0, "target", live(f.src)], rt.Args.Named)))) {
-			if (!truthy(rt.sv(f, "buckled"))) {
-				return live(f.dot);
+	if (this.restrained()) {
+		this.changeNext_move(100);
+		this.last_special = rt.worldTime(f) + 100;
+		this.visible_message(`<span class='warning'>${this} attempts to unbuckle themself!</span>`, "<span class='notice'>You attempt to unbuckle yourself... (This will take around one minute and you need to stay still.)</span>");
+		if (yield* do_after(this, 600, 0, { target: this })) {
+			if (!this.buckled) {
+				return f.dot;
 			}
-			yield* g.callName(f, rt.sv(f, "buckled"), "user_unbuckle_mob", [live(f.src), live(f.src)]);
-		} else {
-			if ((truthy(live(f.src)) && truthy(rt.sv(f, "buckled")))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='warning'>You fail to unbuckle yourself!</span>"]);
-			}
+			yield* this.buckled.user_unbuckle_mob(this, this);
+		} else if (this && this.buckled) {
+			to_chat(this, "<span class='warning'>You fail to unbuckle yourself!</span>");
 		}
 	} else {
-		yield* g.callName(f, rt.sv(f, "buckled"), "user_unbuckle_mob", [live(f.src), live(f.src)]);
+		yield* this.buckled.user_unbuckle_mob(this, this);
 	}
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/proc/resist_fire  (code/modules/mob/living/carbon/carbon.dm:260)  may sleep
+// carbon.dm:260
 rt.def("/mob/living/carbon/proc/resist_fire", function* resist_fire(f: Frame) {
-	(rt.modSrcVar(f, "fire_stacks", 5, subtract));
-	yield* g.srcCall(f, "Knockdown", 60, 1, 1);
-	yield* g.srcCall(f, "spin", 32, 2);
-	yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＀ rolls on the floor, trying to put themselves out!</span>", [live(f.src)]), "<span class='notice'>You stop, drop, and roll!</span>");
-	yield* g.call(f, P("/proc/sleep"), null, [30]);
-	if (rt.le(rt.sv(f, "fire_stacks"), 0)) {
-		yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＀ has successfully extinguished themselves!</span>", [live(f.src)]), "<span class='notice'>You extinguish yourself.</span>");
-		yield* g.srcCall(f, "ExtinguishMob");
+	this.fire_stacks -= 5;
+	yield* this.Knockdown(60, 1, 1);
+	yield* this.spin(32, 2);
+	this.visible_message(`<span class='danger'>${this} rolls on the floor, trying to put themselves out!</span>`, "<span class='notice'>You stop, drop, and roll!</span>");
+	yield* sleep(30);
+	if (this.fire_stacks <= 0) {
+		this.visible_message(`<span class='danger'>${this} has successfully extinguished themselves!</span>`, "<span class='notice'>You extinguish yourself.</span>");
+		yield* this.ExtinguishMob();
 	}
-	return live(f.dot);
+	return f.dot;
 }, true);
 
-// /mob/living/carbon/proc/resist_restraints  (code/modules/mob/living/carbon/carbon.dm:276)  may sleep
+// carbon.dm:276
 rt.def("/mob/living/carbon/proc/resist_restraints", function* resist_restraints(f: Frame) {
-	let I: Value = null, type: Value = null;
-	f.vars = () => [I, type];
-	I = null;
-	type = 0;
-	if (truthy(rt.sv(f, "handcuffed"))) {
-		I = rt.sv(f, "handcuffed");
+	let I: Value = null;
+	let type: Value = 0;
+	if (this.handcuffed) {
+		I = this.handcuffed;
 		type = 1;
-	} else {
-		if (truthy(rt.sv(f, "legcuffed"))) {
-			I = rt.sv(f, "legcuffed");
-			type = 2;
-		}
+	} else if (this.legcuffed) {
+		I = this.legcuffed;
+		type = 2;
 	}
-	if (!truthy(live(I))) return f.dot;
-	if (isEqual(live(type), 1)) {
-		yield* g.srcCall(f, "changeNext_move", 100);
-		rt.setSv(f, "last_special", add(rt.worldTime(f), 100));
+	if (!I) return f.dot;
+	if (type == 1) {
+		this.changeNext_move(100);
+		this.last_special = rt.worldTime(f) + 100;
 	}
-	if (isEqual(live(type), 2)) {
-		yield* g.srcCall(f, "changeNext_move", 4);
-		rt.setSv(f, "last_special", add(rt.worldTime(f), 4));
+	if (type == 2) {
+		this.changeNext_move(4);
+		this.last_special = rt.worldTime(f) + 4;
 	}
-	yield* g.srcCall(f, "cuff_resist", live(I));
+	yield* this.cuff_resist(I);
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/proc/cuff_resist  (code/modules/mob/living/carbon/carbon.dm:293)  may sleep
+// carbon.dm:293
 rt.def("/mob/living/carbon/proc/cuff_resist", function* cuff_resist(f: Frame, I: Value, breakouttime: Value, cuff_break: Value) {
-	let displaytime: Value = null;
-	f.vars = () => [I, breakouttime, cuff_break, displaytime];
-	if (live(breakouttime) === null) {
-		breakouttime = 600;
-	}
-	if (live(cuff_break) === null) {
-		cuff_break = 0;
-	}
-	breakouttime = rt.fv(f, "breakouttime", live(I));
-	displaytime = divide(live(breakouttime), 600);
-	if (!truthy(live(cuff_break))) {
-		yield* g.srcCall(f, "visible_message", fmt("<span class='warning'>＀ attempts to remove ＀!</span>", [live(f.src), live(I)]));
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), fmt("<span class='notice'>You attempt to remove ＀... (This will take around ＀ minutes and you need to stand still.)</span>", [live(I), live(displaytime)])]);
-		if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.src), null, live(breakouttime), null, 0, "target", live(f.src)], rt.Args.Named)))) {
-			yield* g.srcCall(f, "clear_cuffs", live(I), live(cuff_break));
+	breakouttime ??= 600;
+	cuff_break ??= 0;
+	breakouttime = I.breakouttime;
+	let displaytime: Value = breakouttime / 600;
+	if (!cuff_break) {
+		this.visible_message(`<span class='warning'>${this} attempts to remove ${I}!</span>`);
+		to_chat(this, `<span class='notice'>You attempt to remove ${I}... (This will take around ${displaytime} minutes and you need to stand still.)</span>`);
+		if (yield* do_after(this, breakouttime, 0, { target: this })) {
+			yield* this.clear_cuffs(I, cuff_break);
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), fmt("<span class='warning'>You fail to remove ＀!</span>", [live(I)])]);
+			to_chat(this, `<span class='warning'>You fail to remove ${I}!</span>`);
+		}
+	} else if (cuff_break == 1) {
+		breakouttime = 50;
+		this.visible_message(`<span class='warning'>${this} is trying to break ${I}!</span>`);
+		to_chat(this, `<span class='notice'>You attempt to break ${I}... (This will take around 5 seconds and you need to stand still.)</span>`);
+		if (yield* do_after(this, breakouttime, 0, { target: this })) {
+			yield* this.clear_cuffs(I, cuff_break);
+		} else {
+			to_chat(this, `<span class='warning'>You fail to break ${I}!</span>`);
 		}
 	} else {
-		if (isEqual(live(cuff_break), 1)) {
-			breakouttime = 50;
-			yield* g.srcCall(f, "visible_message", fmt("<span class='warning'>＀ is trying to break ＀!</span>", [live(f.src), live(I)]));
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), fmt("<span class='notice'>You attempt to break ＀... (This will take around 5 seconds and you need to stand still.)</span>", [live(I)])]);
-			if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.src), null, live(breakouttime), null, 0, "target", live(f.src)], rt.Args.Named)))) {
-				yield* g.srcCall(f, "clear_cuffs", live(I), live(cuff_break));
-			} else {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), fmt("<span class='warning'>You fail to break ＀!</span>", [live(I)])]);
-			}
-		} else {
-			if (!isEqual(live(cuff_break), 2)) return f.dot;
-			yield* g.srcCall(f, "clear_cuffs", live(I), live(cuff_break));
-		}
+		if (cuff_break != 2) return f.dot;
+		yield* this.clear_cuffs(I, cuff_break);
 	}
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/proc/uncuff  (code/modules/mob/living/carbon/carbon.dm:316)  may sleep
+// carbon.dm:316
 rt.def("/mob/living/carbon/proc/uncuff", function* uncuff(f: Frame) {
 	let W: Value = null;
-	f.vars = () => [W];
-	if (truthy(rt.sv(f, "handcuffed"))) {
-		W = rt.sv(f, "handcuffed");
-		rt.setSv(f, "handcuffed", null);
-		if ((truthy(rt.sv(f, "buckled")) && truthy(rt.fv(f, "buckle_requires_restraints", rt.sv(f, "buckled"))))) {
-			yield* g.callName(f, rt.sv(f, "buckled"), "unbuckle_mob", [live(f.src)]);
+	if (this.handcuffed) {
+		W = this.handcuffed;
+		this.handcuffed = null;
+		if (this.buckled && this.buckled.buckle_requires_restraints) {
+			yield* this.buckled.unbuckle_mob(this);
 		}
-		yield* g.srcCall(f, "update_handcuffed");
-		if (truthy(rt.sv(f, "client"))) {
-			(rt.modField(f, rt.sv(f, "client"), "screen", live(W), subtract));
+		yield* this.update_handcuffed();
+		if (this.client) {
+			this.client.screen -= W;
 		}
-		if (truthy(live(W))) {
-			rt.setFv(f, "loc", live(W), rt.sv(f, "loc"));
-			yield* g.callName(f, live(W), "dropped", [live(f.src)]);
-			if (truthy(live(W))) {
-				rt.setFv(f, "layer", live(W), rt.initial(f, live(W), "layer"));
-				rt.setFv(f, "plane", live(W), rt.initial(f, live(W), "plane"));
+		if (W) {
+			W.loc = this.loc;
+			yield* W.dropped(this);
+			if (W) {
+				W.layer = rt.initial(f, W, "layer");
+				W.plane = rt.initial(f, W, "plane");
 			}
 		}
-		yield* g.srcCall(f, "changeNext_move", 0);
+		this.changeNext_move(0);
 	}
-	if (!truthy(rt.sv(f, "legcuffed"))) return f.dot;
-	W = rt.sv(f, "legcuffed");
-	rt.setSv(f, "legcuffed", null);
-	yield* g.srcCall(f, "update_inv_legcuffed");
-	if (truthy(rt.sv(f, "client"))) {
-		(rt.modField(f, rt.sv(f, "client"), "screen", live(W), subtract));
+	if (!this.legcuffed) return f.dot;
+	W = this.legcuffed;
+	this.legcuffed = null;
+	yield* this.update_inv_legcuffed();
+	if (this.client) {
+		this.client.screen -= W;
 	}
-	if (truthy(live(W))) {
-		rt.setFv(f, "loc", live(W), rt.sv(f, "loc"));
-		yield* g.callName(f, live(W), "dropped", [live(f.src)]);
-		if (truthy(live(W))) {
-			rt.setFv(f, "layer", live(W), rt.initial(f, live(W), "layer"));
-			rt.setFv(f, "plane", live(W), rt.initial(f, live(W), "plane"));
+	if (W) {
+		W.loc = this.loc;
+		yield* W.dropped(this);
+		if (W) {
+			W.layer = rt.initial(f, W, "layer");
+			W.plane = rt.initial(f, W, "plane");
 		}
 	}
-	yield* g.srcCall(f, "changeNext_move", 0);
+	this.changeNext_move(0);
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/proc/clear_cuffs  (code/modules/mob/living/carbon/carbon.dm:345)  may sleep
+// carbon.dm:345
 rt.def("/mob/living/carbon/proc/clear_cuffs", function* clear_cuffs(f: Frame, I: Value, cuff_break: Value) {
-	let $0: any, $1: any;
-	f.vars = () => [I, cuff_break, $0, $1];
-	if ((!truthy(rt.fv(f, "loc", live(I))) || truthy(rt.sv(f, "buckled")))) {
-		return live(f.dot);
+	if (!I.loc || this.buckled) {
+		return f.dot;
 	}
-	$0 = live(f.src);
-	if (truthy(live(cuff_break))) {
-		$1 = "break";
-	} else {
-		$1 = "remove";
-	}
-	yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＀ manages to ＀ ＀!</span>", [$0, $1, live(I)]));
-	$0 = live(f.src);
-	if (truthy(live(cuff_break))) {
-		$1 = "break";
-	} else {
-		$1 = "remove";
-	}
-	yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='notice'>You successfully ＀ ＀.</span>", [$1, live(I)])]);
-	if (truthy(live(cuff_break))) {
-		yield* g.call(f, P("/proc/qdel"), null, [live(I)]);
-		if (isEqual(live(I), rt.sv(f, "handcuffed"))) {
-			rt.setSv(f, "handcuffed", null);
-			yield* g.srcCall(f, "update_handcuffed");
-			return live(f.dot);
-		} else {
-			if (isEqual(live(I), rt.sv(f, "legcuffed"))) {
-				rt.setSv(f, "legcuffed", null);
-				yield* g.srcCall(f, "update_inv_legcuffed");
-				return live(f.dot);
-			}
+	let $0: any = this;
+	this.visible_message(`<span class='danger'>${$0} manages to ${cuff_break ? "break" : "remove"} ${I}!</span>`);
+	to_chat(this, `<span class='notice'>You successfully ${cuff_break ? "break" : "remove"} ${I}.</span>`);
+	if (cuff_break) {
+		yield* qdel(I);
+		if (I == this.handcuffed) {
+			this.handcuffed = null;
+			yield* this.update_handcuffed();
+			return f.dot;
+		} else if (I == this.legcuffed) {
+			this.legcuffed = null;
+			yield* this.update_inv_legcuffed();
+			return f.dot;
 		}
 		return 1;
 	} else {
-		if (isEqual(live(I), rt.sv(f, "handcuffed"))) {
-			rt.setFv(f, "loc", rt.sv(f, "handcuffed"), rt.sv(f, "loc"));
-			yield* g.callName(f, rt.sv(f, "handcuffed"), "dropped", [live(f.src)]);
-			rt.setSv(f, "handcuffed", null);
-			if ((truthy(rt.sv(f, "buckled")) && truthy(rt.fv(f, "buckle_requires_restraints", rt.sv(f, "buckled"))))) {
-				yield* g.callName(f, rt.sv(f, "buckled"), "unbuckle_mob", [live(f.src)]);
+		if (I == this.handcuffed) {
+			this.handcuffed.loc = this.loc;
+			yield* this.handcuffed.dropped(this);
+			this.handcuffed = null;
+			if (this.buckled && this.buckled.buckle_requires_restraints) {
+				yield* this.buckled.unbuckle_mob(this);
 			}
-			yield* g.srcCall(f, "update_handcuffed");
-			return live(f.dot);
+			yield* this.update_handcuffed();
+			return f.dot;
 		}
-		if (isEqual(live(I), rt.sv(f, "legcuffed"))) {
-			rt.setFv(f, "loc", rt.sv(f, "legcuffed"), rt.sv(f, "loc"));
-			yield* g.callName(f, rt.sv(f, "legcuffed"), "dropped", []);
-			rt.setSv(f, "legcuffed", null);
-			yield* g.srcCall(f, "update_inv_legcuffed");
-			return live(f.dot);
+		if (I == this.legcuffed) {
+			this.legcuffed.loc = this.loc;
+			yield* this.legcuffed.dropped();
+			this.legcuffed = null;
+			yield* this.update_inv_legcuffed();
+			return f.dot;
 		} else {
-			yield* g.srcCall(f, "dropItemToGround", live(I));
-			return live(f.dot);
+			yield* this.dropItemToGround(I);
+			return f.dot;
 		}
 		return 1;
 	}
-	return f.dot;
 }, true);
 
-// /mob/living/carbon/proc/get_standard_pixel_y_offset  (code/modules/mob/living/carbon/carbon.dm:384)
+// carbon.dm:384
 rt.def("/mob/living/carbon/proc/get_standard_pixel_y_offset", function get_standard_pixel_y_offset(f: Frame, lying: Value) {
-	f.vars = () => [lying];
-	if (live(lying) === null) {
-		lying = 0;
-	}
-	if (truthy(live(lying))) {
+	lying ??= 0;
+	if (lying) {
 		return -6;
 	} else {
-		return rt.initial(f, live(f.src), "pixel_y");
+		return rt.initial(f, this, "pixel_y");
 	}
-	return f.dot;
 });
 
-// /mob/living/carbon/proc/accident  (code/modules/mob/living/carbon/carbon.dm:389)  may sleep
+// carbon.dm:389
 rt.def("/mob/living/carbon/proc/accident", function* accident(f: Frame, I: Value) {
-	let modifier: Value = null, target: Value = null, range: Value = null, i: Value = null, new_turf: Value = null;
-	let $0: any;
-	f.vars = () => [I, modifier, target, range, i, new_turf, $0];
-	if ((!truthy(live(I)) || truthy(rt.bitAnd(rt.fv(f, "flags", live(I)), 130)))) {
-		return live(f.dot);
+	let target: Value = null, range: Value = null, i: Value = null, new_turf: Value = null;
+	if (!I || rt.bitAnd(I.flags, 130)) {
+		return f.dot;
 	}
-	yield* g.srcCall(f, "dropItemToGround", live(I));
-	modifier = 0;
-	if (truthy(rt.bitAnd(rt.sv(f, "disabilities"), 256))) {
-		(modifier = rt.modify(live(modifier), 40, subtract));
+	yield* this.dropItemToGround(I);
+	let modifier: Value = 0;
+	if (rt.bitAnd(this.disabilities, 256)) {
+		modifier -= 40;
 	}
-	$0 = add((yield* g.call(f, P("/proc/rand"), null, [1, 100])), live(modifier));
-	if (rt.inRange($0, -9.999999848243207e+30, 0)) {
-		yield* g.callName(f, live(I), "attack", [live(f.src), live(f.src)]);
-	} else if (rt.inRange($0, 1, 30)) {
-		yield* g.callName(f, live(I), "throw_impact", [live(f.src)]);
-	} else if (rt.inRange($0, 31, 60)) {
-		target = rt.getStep(f, rt.sv(f, "loc"), 0);
-		range = (yield* g.call(f, P("/proc/rand"), null, [2, rt.fv(f, "throw_range", live(I))]));
-		i = null;
+	const subject = rand(1, 100) + modifier;
+	if (rt.inRange(subject, -1e+31, 0)) {
+		yield* I.attack(this, this);
+	} else if (rt.inRange(subject, 1, 30)) {
+		yield* I.throw_impact(this);
+	} else if (rt.inRange(subject, 31, 60)) {
+		target = rt.getStep(f, this.loc, 0);
+		range = rand(2, I.throw_range);
 		i = 1;
-		while (rt.lt(live(i), live(range))) {
-			target = (new_turf = rt.getStep(f, live(target), rt.sv(f, "dir")));
-			if (truthy(rt.fv(f, "density", live(new_turf)))) {
+		while (i < range) {
+			target = (new_turf = rt.getStep(f, target, this.dir));
+			if (new_turf.density) {
 				break;
 			}
-			i = rt.inc(live(i), 1);
+			i++;
 		}
-		yield* g.callName(f, live(I), "throw_at", [live(target), rt.fv(f, "throw_range", live(I)), rt.fv(f, "throw_speed", live(I)), live(f.src)]);
-	} else if (rt.inRange($0, 61, 90)) {
-		target = rt.getStep(f, rt.sv(f, "loc"), 0);
-		yield* g.callName(f, live(I), "throw_at", [live(target), rt.fv(f, "throw_range", live(I)), rt.fv(f, "throw_speed", live(I)), live(f.src)]);
+		yield* I.throw_at(target, I.throw_range, I.throw_speed, this);
+	} else if (rt.inRange(subject, 61, 90)) {
+		target = rt.getStep(f, this.loc, 0);
+		yield* I.throw_at(target, I.throw_range, I.throw_speed, this);
 	}
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/proc/AddAbility  (code/modules/mob/living/carbon/carbon.dm:417)  may sleep
+// carbon.dm:417
 rt.def("/mob/living/carbon/proc/AddAbility", function* AddAbility(f: Frame, A: Value) {
-	f.vars = () => [A];
-	yield* g.callName(f, rt.sv(f, "abilities"), "Add", [live(A)]);
-	yield* g.callName(f, live(A), "on_gain", [live(f.src)]);
-	if (truthy(rt.fv(f, "has_action", live(A)))) {
-		yield* g.callName(f, rt.fv(f, "action", live(A)), "Grant", [live(f.src)]);
+	this.abilities.Add(A);
+	yield* A.on_gain(this);
+	if (A.has_action) {
+		yield* A.action.Grant(this);
 	}
-	yield* g.call(f, P("/proc/sortInsert"), null, [rt.sv(f, "abilities"), P("/proc/cmp_abilities_cost"), 0]);
+	yield* sortInsert(this.abilities, P("/proc/cmp_abilities_cost"), 0);
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/proc/RemoveAbility  (code/modules/mob/living/carbon/carbon.dm:424)  may sleep
+// carbon.dm:424
 rt.def("/mob/living/carbon/proc/RemoveAbility", function* RemoveAbility(f: Frame, A: Value) {
-	f.vars = () => [A];
-	yield* g.callName(f, rt.sv(f, "abilities"), "Remove", [live(A)]);
-	yield* g.callName(f, live(A), "on_lose", [live(f.src)]);
-	if (!truthy(rt.fv(f, "action", live(A)))) return f.dot;
-	yield* g.callName(f, rt.fv(f, "action", live(A)), "Remove", [live(f.src)]);
+	yield* this.abilities.Remove(A);
+	A.on_lose(this);
+	if (!A.action) return f.dot;
+	yield* A.action.Remove(this);
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/proc/add_abilities_to_panel  (code/modules/mob/living/carbon/carbon.dm:430)
+// carbon.dm:430
 rt.def("/mob/living/carbon/proc/add_abilities_to_panel", function add_abilities_to_panel(f: Frame) {
 	let A: Value = null;
-	let $0: any, $1: any, $e: any;
-	f.vars = () => [A, $0, $1, $e];
-	A = null;
-	rt.forList(f, 0, rt.sv(f, "abilities"), T("/obj/effect/proc_holder/alien"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		A = $e;
-		$0 = fmt("＀", [rt.fv(f, "panel", live(A))]);
-		if (rt.gt(rt.fv(f, "plasma_cost", live(A)), 0)) {
-			$1 = fmt("(＀)", [rt.fv(f, "plasma_cost", live(A))]);
-		} else {
-			$1 = "";
-		}
-		rt.call(f, P("/proc/statpanel"), null, [$0, $1, live(A)]);
+	let $e: any;
+	for (A of each(this.abilities, T("/obj/effect/proc_holder/alien"))) {
+		statpanel(`${A.panel}`, A.plasma_cost > 0 ? `(${A.plasma_cost})` : "", A);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /mob/living/carbon/proc/Stat  (code/modules/mob/living/carbon/carbon.dm:434)  may sleep
+// carbon.dm:434
 rt.def("/mob/living/carbon/proc/Stat", function* Stat(f: Frame) {
 	let vessel: Value = null;
-	f.vars = () => [vessel];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy((yield* g.call(f, P("/proc/statpanel"), null, ["Status"])))) {
-		if (truthy((vessel = (yield* g.srcCall(f, "getorgan", T("/obj/item/organ/alien/plasmavessel")))))) {
-			yield* g.call(f, P("/proc/stat"), null, [null, fmt("Plasma Stored: ＀/＀", [rt.fv(f, "storedPlasma", live(vessel)), rt.fv(f, "max_plasma", live(vessel))])]);
+	yield* parent_proc();
+	if (statpanel("Status")) {
+		if (vessel = this.getorgan(T("/obj/item/organ/alien/plasmavessel"))) {
+			stat(null, `Plasma Stored: ${vessel.storedPlasma}/${vessel.max_plasma}`);
 		}
-		if (truthy(rt.locateIn(f, T("/obj/item/device/assembly/health"), live(f.src)))) {
-			yield* g.call(f, P("/proc/stat"), null, [null, fmt("Health: ＀", [rt.sv(f, "health")])]);
+		if (rt.locateIn(f, T("/obj/item/device/assembly/health"), this)) {
+			stat(null, `Health: ${this.health}`);
 		}
 	}
-	yield* g.srcCall(f, "add_abilities_to_panel");
+	this.add_abilities_to_panel();
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/proc/attack_ui  (code/modules/mob/living/carbon/carbon.dm:445)  may sleep
-rt.def("/mob/living/carbon/proc/attack_ui", function* attack_ui(f: Frame) {
-	if (!truthy((yield* g.srcCall(f, "has_hand_for_held_index", rt.sv(f, "active_hand_index"))))) {
+// carbon.dm:445
+rt.def("/mob/living/carbon/proc/attack_ui", function* attack_ui(f: Frame, slot: Value) {
+	if (!this.has_hand_for_held_index(this.active_hand_index)) {
 		return 0;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["slot"] });
+	return (yield* parent_proc());
+}, true);
 
-// /mob/living/carbon/proc/vomit  (code/modules/mob/living/carbon/carbon.dm:450)  may sleep
+// carbon.dm:450
 rt.def("/mob/living/carbon/proc/vomit", function* vomit(f: Frame, lost_nutrition: Value, blood: Value, stun: Value, distance: Value, message: Value, toxic: Value) {
-	let _T: Value = null, i: Value = null;
+	let i: Value = null;
 	let $e: any;
-	f.vars = () => [lost_nutrition, blood, stun, distance, message, toxic, _T, i, $e];
-	if (live(lost_nutrition) === null) {
-		lost_nutrition = 10;
-	}
-	if (live(blood) === null) {
-		blood = 0;
-	}
-	if (live(stun) === null) {
-		stun = 1;
-	}
-	if (live(distance) === null) {
-		distance = 1;
-	}
-	if (live(message) === null) {
-		message = 1;
-	}
-	if (live(toxic) === null) {
-		toxic = 0;
-	}
-	if (truthy((rt.isIn(f, ((rt.sv(f, "dna") && rt.fv(f, "species", rt.sv(f, "dna"))) && 19), rt.gv(f, "species_traits", rt.fv(f, "species", rt.sv(f, "dna")))) ? 1 : 0))) {
+	lost_nutrition ??= 10;
+	blood ??= 0;
+	stun ??= 1;
+	distance ??= 1;
+	message ??= 1;
+	toxic ??= 0;
+	if (rt.isIn(f, ((this.dna && this.dna.species) && NOHUNGER), this.dna.species.species_traits)) {
 		return 1;
 	}
-	if ((rt.lt(rt.sv(f, "nutrition"), 100) && !truthy(live(blood)))) {
-		if (truthy(live(message))) {
-			yield* g.srcCall(f, "visible_message", fmt("<span class='warning'>＀ dry heaves!</span>", [live(f.src)]), "<span class='userdanger'>You try to throw up, but there's nothing in your stomach!</span>");
+	if (this.nutrition < 100 && !blood) {
+		if (message) {
+			this.visible_message(`<span class='warning'>${this} dry heaves!</span>`, "<span class='userdanger'>You try to throw up, but there's nothing in your stomach!</span>");
 		}
-		if (truthy(live(stun))) {
-			yield* g.srcCall(f, "Knockdown", 200);
+		if (stun) {
+			yield* this.Knockdown(200);
 		}
 		return 1;
 	}
-	if (truthy((yield* g.srcCall(f, "is_mouth_covered")))) {
-		if (truthy(live(message))) {
-			yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＀ throws up all over themself!</span>", [live(f.src)]), "<span class='userdanger'>You throw up all over yourself!</span>");
+	if (this.is_mouth_covered()) {
+		if (message) {
+			this.visible_message(`<span class='danger'>${this} throws up all over themself!</span>`, "<span class='userdanger'>You throw up all over yourself!</span>");
 		}
 		distance = 0;
-	} else {
-		if (truthy(live(message))) {
-			yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＀ throws up!</span>", [live(f.src)]), "<span class='userdanger'>You throw up!</span>");
-		}
+	} else if (message) {
+		this.visible_message(`<span class='danger'>${this} throws up!</span>`, "<span class='userdanger'>You throw up!</span>");
 	}
-	if (truthy(live(stun))) {
-		yield* g.srcCall(f, "Stun", 80);
+	if (stun) {
+		yield* this.Stun(80);
 	}
-	yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/effects/splat.ogg"), 50, 1]);
-	_T = rt.getStep(f, live(f.src), 0);
-	if (!truthy(live(blood))) {
-		(rt.modSrcVar(f, "nutrition", live(lost_nutrition), subtract));
-		yield* g.srcCall(f, "adjustToxLoss", -3);
+	playsound(rt.getStep(f, this, 0), rt.rsc("sound/effects/splat.ogg"), 50, 1);
+	let _T: Value = rt.getStep(f, this, 0);
+	if (!blood) {
+		this.nutrition -= lost_nutrition;
+		yield* this.adjustToxLoss(-3);
 	}
-	i = null;
-	rt.forRange(f, 0, 0, live(distance), 1);
+	rt.forRange(f, 0, 0, distance, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		if (truthy(live(blood))) {
-			if (truthy(live(_T))) {
-				yield* g.srcCall(f, "add_splatter_floor", live(_T));
+		if (blood) {
+			if (_T) {
+				yield* this.add_splatter_floor(_T);
 			}
-			if (truthy(live(stun))) {
-				yield* g.srcCall(f, "adjustBruteLoss", 3);
+			if (stun) {
+				yield* this.adjustBruteLoss(3);
 			}
-		} else {
-			if (truthy(live(_T))) {
-				yield* g.callName(f, live(_T), "add_vomit_floor", [live(f.src), live(toxic)]);
-			}
+		} else if (_T) {
+			yield* _T.add_vomit_floor(this, toxic);
 		}
-		if (truthy((yield* g.call(f, P("/proc/is_blocked_turf"), null, [(_T = rt.getStep(f, live(_T), rt.sv(f, "dir")))])))) {
+		if (is_blocked_turf((_T = rt.getStep(f, _T, this.dir)))) {
 			break;
 		}
 	}
@@ -716,523 +600,441 @@ rt.def("/mob/living/carbon/proc/vomit", function* vomit(f: Frame, lost_nutrition
 	return 1;
 }, true);
 
-// /mob/living/carbon/proc/spew_organ  (code/modules/mob/living/carbon/carbon.dm:493)  may sleep
+// carbon.dm:493
 rt.def("/mob/living/carbon/proc/spew_organ", function* spew_organ(f: Frame, power: Value) {
-	let guts: Value = null, _T: Value = null, throw_target: Value = null;
-	f.vars = () => [power, guts, _T, throw_target];
-	if (live(power) === null) {
-		power = 5;
+	power ??= 5;
+	if (!rt.len(f, this.internal_organs)) {
+		return f.dot;
 	}
-	if (!truthy(rt.len(f, rt.sv(f, "internal_organs")))) {
-		return live(f.dot);
-	}
-	guts = rt.op(f, "PickUnweighted", [1], [rt.sv(f, "internal_organs")]);
-	_T = rt.getStep(f, live(f.src), 0);
-	yield* g.callName(f, live(guts), "Remove", [live(f.src)]);
-	yield* g.callName(f, live(guts), "forceMove", [live(_T)]);
-	throw_target = (yield* g.call(f, P("/proc/get_edge_target_turf"), null, [live(guts), rt.sv(f, "dir")]));
-	yield* g.callName(f, live(guts), "throw_at", [live(throw_target), live(power), 4, live(f.src)]);
+	let guts: Value = pick(this.internal_organs);
+	let _T: Value = rt.getStep(f, this, 0);
+	yield* guts.Remove(this);
+	yield* guts.forceMove(_T);
+	let throw_target: Value = get_edge_target_turf(guts, this.dir);
+	yield* guts.throw_at(throw_target, power, 4, this);
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/proc/fully_replace_character_name  (code/modules/mob/living/carbon/carbon.dm:504)
-rt.def("/mob/living/carbon/proc/fully_replace_character_name", function fully_replace_character_name(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.sv(f, "dna"))) return f.dot;
-	rt.setFv(f, "real_name", rt.sv(f, "dna"), rt.sv(f, "real_name"));
+// carbon.dm:504
+rt.def("/mob/living/carbon/proc/fully_replace_character_name", function fully_replace_character_name(f: Frame, oldname: Value, newname: Value) {
+	parent_proc();
+	if (!this.dna) return f.dot;
+	this.dna.real_name = this.real_name;
 	return f.dot;
-}, false, { args: ["oldname", "newname"] });
+}, false);
 
-// /mob/living/carbon/proc/updatehealth  (code/modules/mob/living/carbon/carbon.dm:510)  may sleep
+// carbon.dm:510
 rt.def("/mob/living/carbon/proc/updatehealth", function* updatehealth(f: Frame) {
-	let total_burn: Value = null, total_brute: Value = null, X: Value = null, BP: Value = null;
-	let $e: any;
-	f.vars = () => [total_burn, total_brute, X, BP, $e];
-	if (truthy(rt.bitAnd(rt.sv(f, "status_flags"), 4096))) {
-		return live(f.dot);
+	let X: Value = null, BP: Value = null;
+	if (rt.bitAnd(this.status_flags, 4096)) {
+		return f.dot;
 	}
-	total_burn = 0;
-	total_brute = 0;
-	X = null;
-	rt.forList(f, 0, rt.sv(f, "bodyparts"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		X = $e;
-		total_brute = rt.modify(live(total_brute), rt.gv(f, "brute_dam", (BP = live(X))), add);
-		total_burn = rt.modify(live(total_burn), rt.fv(f, "burn_dam", live(BP)), add);
+	let total_burn: Value = 0;
+	let total_brute: Value = 0;
+	for (X of each(this.bodyparts)) {
+		total_brute += (BP = X).brute_dam;
+		total_burn += BP.burn_dam;
 	}
-	rt.endFor(f, 0);
-	rt.setSv(f, "health", subtract(subtract(subtract(subtract(subtract(rt.sv(f, "maxHealth"), (yield* g.srcCall(f, "getOxyLoss"))), (yield* g.srcCall(f, "getToxLoss"))), (yield* g.srcCall(f, "getCloneLoss"))), live(total_burn)), live(total_brute)));
-	yield* g.srcCall(f, "update_stat");
-	if ((rt.lt(subtract(rt.sv(f, "maxHealth"), live(total_burn)), -100) && isEqual(rt.sv(f, "stat"), 2))) {
-		yield* g.srcCall(f, "become_husk");
+	this.health = this.maxHealth - this.getOxyLoss() - this.getToxLoss() - this.getCloneLoss() - total_burn - total_brute;
+	yield* this.update_stat();
+	if (this.maxHealth - total_burn < -100 && this.stat == 2) {
+		yield* this.become_husk();
 	}
-	yield* g.srcCall(f, "med_hud_set_health");
+	yield* this.med_hud_set_health();
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/proc/update_sight  (code/modules/mob/living/carbon/carbon.dm:525)  may sleep
+// carbon.dm:525
 rt.def("/mob/living/carbon/proc/update_sight", function* update_sight(f: Frame) {
 	let E: Value = null, A: Value = null, G: Value = null, X: Value = null, M: Value = null;
-	let $e: any;
-	f.vars = () => [E, A, G, X, M, $e];
-	if (!truthy(rt.sv(f, "client"))) {
-		return live(f.dot);
+	if (!this.client) {
+		return f.dot;
 	}
-	if (isEqual(rt.sv(f, "stat"), 2)) {
-		rt.setSv(f, "sight", 28);
-		rt.setSv(f, "see_in_dark", 8);
-		rt.setSv(f, "see_invisible", 60);
-		return live(f.dot);
+	if (this.stat == 2) {
+		this.sight = 28;
+		this.see_in_dark = 8;
+		this.see_invisible = 60;
+		return f.dot;
 	}
-	rt.setSv(f, "sight", rt.initial(f, live(f.src), "sight"));
-	rt.setSv(f, "lighting_alpha", rt.initial(f, live(f.src), "lighting_alpha"));
-	if (!truthy((E = (yield* g.srcCall(f, "getorganslot", "eye_sight"))))) {
-		yield* g.srcCall(f, "update_tint");
+	this.sight = rt.initial(f, this, "sight");
+	this.lighting_alpha = rt.initial(f, this, "lighting_alpha");
+	if (!(E = this.getorganslot("eye_sight"))) {
+		yield* this.update_tint();
 	} else {
-		rt.setSv(f, "see_invisible", rt.fv(f, "see_invisible", live(E)));
-		rt.setSv(f, "see_in_dark", rt.fv(f, "see_in_dark", live(E)));
-		(rt.modSrcVar(f, "sight", rt.fv(f, "sight_flags", live(E)), rt.bitOr));
-		if (rt.fv(f, "lighting_alpha", live(E)) !== null) {
-			rt.setSv(f, "lighting_alpha", rt.fv(f, "lighting_alpha", live(E)));
+		this.see_invisible = E.see_invisible;
+		this.see_in_dark = E.see_in_dark;
+		(rt.modSrcVar(f, "sight", E.sight_flags, rt.bitOr));
+		if (E.lighting_alpha !== null) {
+			this.lighting_alpha = E.lighting_alpha;
 		}
 	}
-	if (!isEqual(rt.fv(f, "eye", rt.sv(f, "client")), live(f.src))) {
-		if (truthy((yield* g.callName(f, (A = rt.fv(f, "eye", rt.sv(f, "client"))), "update_remote_sight", [live(f.src)])))) {
-			return live(f.dot);
+	if (this.client.eye != this) {
+		if ((A = this.client.eye).update_remote_sight(this)) {
+			return f.dot;
 		}
 	}
-	if (truthy(rt.sv(f, "glasses"))) {
-		(rt.modSrcVar(f, "sight", rt.gv(f, "vision_flags", (G = rt.sv(f, "glasses"))), rt.bitOr));
-		rt.setSv(f, "see_in_dark", (yield* g.call(f, P("/proc/max"), null, [rt.fv(f, "darkness_view", live(G)), rt.sv(f, "see_in_dark")])));
-		if (truthy(rt.fv(f, "invis_override", live(G)))) {
-			rt.setSv(f, "see_invisible", rt.fv(f, "invis_override", live(G)));
+	if (this.glasses) {
+		(rt.modSrcVar(f, "sight", (G = this.glasses).vision_flags, rt.bitOr));
+		this.see_in_dark = max(G.darkness_view, this.see_in_dark);
+		if (G.invis_override) {
+			this.see_invisible = G.invis_override;
 		} else {
-			rt.setSv(f, "see_invisible", (yield* g.call(f, P("/proc/min"), null, [rt.fv(f, "invis_view", live(G)), rt.sv(f, "see_invisible")])));
+			this.see_invisible = min(G.invis_view, this.see_invisible);
 		}
-		if (rt.fv(f, "lighting_alpha", live(G)) !== null) {
-			rt.setSv(f, "lighting_alpha", (yield* g.call(f, P("/proc/min"), null, [rt.sv(f, "lighting_alpha"), rt.fv(f, "lighting_alpha", live(G))])));
+		if (G.lighting_alpha !== null) {
+			this.lighting_alpha = min(this.lighting_alpha, G.lighting_alpha);
 		}
 	}
-	if (truthy(rt.sv(f, "dna"))) {
-		X = null;
-		rt.forList(f, 0, rt.fv(f, "mutations", rt.sv(f, "dna")));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			X = $e;
-			if (isEqual(rt.gv(f, "name", (M = live(X))), "X Ray Vision")) {
+	if (this.dna) {
+		for (X of each(this.dna.mutations)) {
+			if ((M = X).name == "X Ray Vision") {
 				(rt.modSrcVar(f, "sight", 28, rt.bitOr));
-				rt.setSv(f, "see_in_dark", (yield* g.call(f, P("/proc/max"), null, [rt.sv(f, "see_in_dark"), 8])));
+				this.see_in_dark = max(this.see_in_dark, 8);
 			}
 		}
-		rt.endFor(f, 0);
 	}
-	if (truthy(rt.sv(f, "see_override"))) {
-		rt.setSv(f, "see_invisible", rt.sv(f, "see_override"));
+	if (this.see_override) {
+		this.see_invisible = this.see_override;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/proc/update_tint  (code/modules/mob/living/carbon/carbon.dm:574)  may sleep
+// carbon.dm:574
 rt.def("/mob/living/carbon/proc/update_tint", function* update_tint(f: Frame) {
-	if (!truthy(rt.gl("tinted_weldhelh"))) {
-		return live(f.dot);
+	if (!GLOB.tinted_weldhelh) {
+		return f.dot;
 	}
-	rt.setSv(f, "tinttotal", (yield* g.srcCall(f, "get_total_tint")));
-	if (rt.ge(rt.sv(f, "tinttotal"), 3)) {
-		yield* g.srcCall(f, "overlay_fullscreen", "tint", T("/obj/screen/fullscreen/blind"));
+	this.tinttotal = this.get_total_tint();
+	if (this.tinttotal >= TINT_BLIND) {
+		yield* this.overlay_fullscreen("tint", T("/obj/screen/fullscreen/blind"));
+	} else if (this.tinttotal >= TINT_DARKENED) {
+		yield* this.overlay_fullscreen("tint", T("/obj/screen/fullscreen/impaired"), 2);
 	} else {
-		if (rt.ge(rt.sv(f, "tinttotal"), 2)) {
-			yield* g.srcCall(f, "overlay_fullscreen", "tint", T("/obj/screen/fullscreen/impaired"), 2);
-		} else {
-			yield* g.srcCall(f, "clear_fullscreen", "tint", 0);
-		}
+		yield* this.clear_fullscreen("tint", 0);
 	}
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/proc/get_total_tint  (code/modules/mob/living/carbon/carbon.dm:586)
+// carbon.dm:586
 rt.def("/mob/living/carbon/proc/get_total_tint", function get_total_tint(f: Frame) {
 	let HT: Value = null, E: Value = null;
-	f.vars = () => [HT, E];
 	f.dot = 0;
-	if (truthy((rt.istype(rt.sv(f, "head"), T("/obj/item/clothing/head")) ? 1 : 0))) {
-		f.dot = rt.modify(live(f.dot), rt.gv(f, "tint", (HT = rt.sv(f, "head"))), add);
+	if (rt.istype(this.head, T("/obj/item/clothing/head"))) {
+		f.dot += (HT = this.head).tint;
 	}
-	if (truthy(rt.sv(f, "wear_mask"))) {
-		f.dot = rt.modify(live(f.dot), rt.fv(f, "tint", rt.sv(f, "wear_mask")), add);
+	if (this.wear_mask) {
+		f.dot += this.wear_mask.tint;
 	}
-	if (truthy((E = rt.callSrc(f, "getorganslot", ["eye_sight"])))) {
-		f.dot = rt.modify(live(f.dot), rt.fv(f, "tint", live(E)), add);
+	if (E = this.getorganslot("eye_sight")) {
+		f.dot += E.tint;
 	} else {
-		f.dot = rt.modify(live(f.dot), 9.999999848243207e+30, add);
+		f.dot += 1e+31;
 	}
 	return f.dot;
 });
 
-// /mob/living/carbon/proc/update_damage_hud  (code/modules/mob/living/carbon/carbon.dm:602)  may sleep
+// carbon.dm:602
 rt.def("/mob/living/carbon/proc/update_damage_hud", function* update_damage_hud(f: Frame) {
 	let severity: Value = null, hurtdamage: Value = null, severity_1: Value = null;
-	let $0: any;
-	f.vars = () => [severity, hurtdamage, severity_1, $0];
-	if (!truthy(rt.sv(f, "client"))) {
-		return live(f.dot);
+	if (!this.client) {
+		return f.dot;
 	}
-	if ((isEqual(rt.sv(f, "stat"), 1) && rt.le(rt.sv(f, "health"), 0))) {
+	if (this.stat == 1 && this.health <= 0) {
 		severity = 0;
-		$0 = rt.sv(f, "health");
-		if (rt.inRange($0, -20, -10)) {
+		if (rt.inRange(this.health, -20, -10)) {
 			severity = 1;
-		} else if (rt.inRange($0, -30, -20)) {
+		} else if (rt.inRange(this.health, -30, -20)) {
 			severity = 2;
-		} else if (rt.inRange($0, -40, -30)) {
+		} else if (rt.inRange(this.health, -40, -30)) {
 			severity = 3;
-		} else if (rt.inRange($0, -50, -40)) {
+		} else if (rt.inRange(this.health, -50, -40)) {
 			severity = 4;
-		} else if (rt.inRange($0, -60, -50)) {
+		} else if (rt.inRange(this.health, -60, -50)) {
 			severity = 5;
-		} else if (rt.inRange($0, -70, -60)) {
+		} else if (rt.inRange(this.health, -70, -60)) {
 			severity = 6;
-		} else if (rt.inRange($0, -80, -70)) {
+		} else if (rt.inRange(this.health, -80, -70)) {
 			severity = 7;
-		} else if (rt.inRange($0, -90, -80)) {
+		} else if (rt.inRange(this.health, -90, -80)) {
 			severity = 8;
-		} else if (rt.inRange($0, -95, -90)) {
+		} else if (rt.inRange(this.health, -95, -90)) {
 			severity = 9;
-		} else if (rt.inRange($0, -9.999999848243207e+30, -95)) {
+		} else if (rt.inRange(this.health, -1e+31, -95)) {
 			severity = 10;
 		}
-		yield* g.srcCall(f, "overlay_fullscreen", "crit", T("/obj/screen/fullscreen/crit"), live(severity));
+		yield* this.overlay_fullscreen("crit", T("/obj/screen/fullscreen/crit"), severity);
 	} else {
-		yield* g.srcCall(f, "clear_fullscreen", "crit");
-		if (truthy(rt.sv(f, "oxyloss"))) {
+		yield* this.clear_fullscreen("crit");
+		if (this.oxyloss) {
 			severity = 0;
-			$0 = rt.sv(f, "oxyloss");
-			if (rt.inRange($0, 10, 20)) {
+			if (rt.inRange(this.oxyloss, 10, 20)) {
 				severity = 1;
-			} else if (rt.inRange($0, 20, 25)) {
+			} else if (rt.inRange(this.oxyloss, 20, 25)) {
 				severity = 2;
-			} else if (rt.inRange($0, 25, 30)) {
+			} else if (rt.inRange(this.oxyloss, 25, 30)) {
 				severity = 3;
-			} else if (rt.inRange($0, 30, 35)) {
+			} else if (rt.inRange(this.oxyloss, 30, 35)) {
 				severity = 4;
-			} else if (rt.inRange($0, 35, 40)) {
+			} else if (rt.inRange(this.oxyloss, 35, 40)) {
 				severity = 5;
-			} else if (rt.inRange($0, 40, 45)) {
+			} else if (rt.inRange(this.oxyloss, 40, 45)) {
 				severity = 6;
-			} else if (rt.inRange($0, 45, 9.999999848243207e+30)) {
+			} else if (rt.inRange(this.oxyloss, 45, 1e+31)) {
 				severity = 7;
 			}
-			yield* g.srcCall(f, "overlay_fullscreen", "oxy", T("/obj/screen/fullscreen/oxy"), live(severity));
+			yield* this.overlay_fullscreen("oxy", T("/obj/screen/fullscreen/oxy"), severity);
 		} else {
-			yield* g.srcCall(f, "clear_fullscreen", "oxy");
+			yield* this.clear_fullscreen("oxy");
 		}
-		if (truthy((hurtdamage = add(add((yield* g.srcCall(f, "getBruteLoss")), (yield* g.srcCall(f, "getFireLoss"))), rt.sv(f, "damageoverlaytemp"))))) {
+		if (hurtdamage = this.getBruteLoss() + this.getFireLoss() + this.damageoverlaytemp) {
 			severity_1 = 0;
-			$0 = live(hurtdamage);
-			if (rt.inRange($0, 5, 15)) {
+			if (rt.inRange(hurtdamage, 5, 15)) {
 				severity_1 = 1;
-			} else if (rt.inRange($0, 15, 30)) {
+			} else if (rt.inRange(hurtdamage, 15, 30)) {
 				severity_1 = 2;
-			} else if (rt.inRange($0, 30, 45)) {
+			} else if (rt.inRange(hurtdamage, 30, 45)) {
 				severity_1 = 3;
-			} else if (rt.inRange($0, 45, 70)) {
+			} else if (rt.inRange(hurtdamage, 45, 70)) {
 				severity_1 = 4;
-			} else if (rt.inRange($0, 70, 85)) {
+			} else if (rt.inRange(hurtdamage, 70, 85)) {
 				severity_1 = 5;
-			} else if (rt.inRange($0, 85, 9.999999848243207e+30)) {
+			} else if (rt.inRange(hurtdamage, 85, 1e+31)) {
 				severity_1 = 6;
 			}
-			yield* g.srcCall(f, "overlay_fullscreen", "brute", T("/obj/screen/fullscreen/brute"), live(severity_1));
+			yield* this.overlay_fullscreen("brute", T("/obj/screen/fullscreen/brute"), severity_1);
 		} else {
-			yield* g.srcCall(f, "clear_fullscreen", "brute");
+			yield* this.clear_fullscreen("brute");
 		}
 	}
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/proc/update_health_hud  (code/modules/mob/living/carbon/carbon.dm:651)
+// carbon.dm:651
 rt.def("/mob/living/carbon/proc/update_health_hud", function update_health_hud(f: Frame, shown_health_amount: Value) {
-	f.vars = () => [shown_health_amount];
-	if ((!truthy(rt.sv(f, "client")) || !truthy(rt.sv(f, "hud_used")))) {
-		return live(f.dot);
+	if (!this.client || !this.hud_used) {
+		return f.dot;
 	}
-	if (!truthy(rt.fv(f, "healths", rt.sv(f, "hud_used")))) return f.dot;
-	if (!isEqual(rt.sv(f, "stat"), 2)) {
+	if (!this.hud_used.healths) return f.dot;
+	if (this.stat != 2) {
 		f.dot = 1;
-		if (!truthy(live(shown_health_amount))) {
-			shown_health_amount = rt.sv(f, "health");
+		if (!shown_health_amount) {
+			shown_health_amount = this.health;
 		}
-		if (rt.ge(live(shown_health_amount), rt.sv(f, "maxHealth"))) {
-			rt.setFv(f, "icon_state", rt.fv(f, "healths", rt.sv(f, "hud_used")), "health0");
+		if (shown_health_amount >= this.maxHealth) {
+			this.hud_used.healths.icon_state = "health0";
+		} else if (shown_health_amount > this.maxHealth * 0.8) {
+			this.hud_used.healths.icon_state = "health1";
+		} else if (shown_health_amount > this.maxHealth * 0.6) {
+			this.hud_used.healths.icon_state = "health2";
+		} else if (shown_health_amount > this.maxHealth * 0.4) {
+			this.hud_used.healths.icon_state = "health3";
+		} else if (shown_health_amount > this.maxHealth * 0.2) {
+			this.hud_used.healths.icon_state = "health4";
+		} else if (shown_health_amount > 0) {
+			this.hud_used.healths.icon_state = "health5";
 		} else {
-			if (rt.gt(live(shown_health_amount), multiply(rt.sv(f, "maxHealth"), 0.800000011920929))) {
-				rt.setFv(f, "icon_state", rt.fv(f, "healths", rt.sv(f, "hud_used")), "health1");
-			} else {
-				if (rt.gt(live(shown_health_amount), multiply(rt.sv(f, "maxHealth"), 0.6000000238418579))) {
-					rt.setFv(f, "icon_state", rt.fv(f, "healths", rt.sv(f, "hud_used")), "health2");
-				} else {
-					if (rt.gt(live(shown_health_amount), multiply(rt.sv(f, "maxHealth"), 0.4000000059604645))) {
-						rt.setFv(f, "icon_state", rt.fv(f, "healths", rt.sv(f, "hud_used")), "health3");
-					} else {
-						if (rt.gt(live(shown_health_amount), multiply(rt.sv(f, "maxHealth"), 0.20000000298023224))) {
-							rt.setFv(f, "icon_state", rt.fv(f, "healths", rt.sv(f, "hud_used")), "health4");
-						} else {
-							if (rt.gt(live(shown_health_amount), 0)) {
-								rt.setFv(f, "icon_state", rt.fv(f, "healths", rt.sv(f, "hud_used")), "health5");
-							} else {
-								rt.setFv(f, "icon_state", rt.fv(f, "healths", rt.sv(f, "hud_used")), "health6");
-							}
-						}
-					}
-				}
-			}
+			this.hud_used.healths.icon_state = "health6";
 		}
 	} else {
-		rt.setFv(f, "icon_state", rt.fv(f, "healths", rt.sv(f, "hud_used")), "health7");
+		this.hud_used.healths.icon_state = "health7";
 	}
 	return f.dot;
 });
 
-// /mob/living/carbon/proc/update_internals_hud_icon  (code/modules/mob/living/carbon/carbon.dm:676)
+// carbon.dm:676
 rt.def("/mob/living/carbon/proc/update_internals_hud_icon", function update_internals_hud_icon(f: Frame, internal_state: Value) {
-	f.vars = () => [internal_state];
-	if (live(internal_state) === null) {
-		internal_state = 0;
-	}
-	if (!(truthy(rt.sv(f, "hud_used")) && truthy(rt.fv(f, "internals", rt.sv(f, "hud_used"))))) return f.dot;
-	rt.setFv(f, "icon_state", rt.fv(f, "internals", rt.sv(f, "hud_used")), fmt("internal＀", [live(internal_state)]));
+	internal_state ??= 0;
+	if (!(this.hud_used && this.hud_used.internals)) return f.dot;
+	this.hud_used.internals.icon_state = `internal${internal_state}`;
 	return f.dot;
 });
 
-// /mob/living/carbon/proc/update_stat  (code/modules/mob/living/carbon/carbon.dm:680)  may sleep
+// carbon.dm:680
 rt.def("/mob/living/carbon/proc/update_stat", function* update_stat(f: Frame) {
-	if (truthy(rt.bitAnd(rt.sv(f, "status_flags"), 4096))) {
-		return live(f.dot);
+	if (rt.bitAnd(this.status_flags, 4096)) {
+		return f.dot;
 	}
-	if (!isEqual(rt.sv(f, "stat"), 2)) {
-		if (rt.le(rt.sv(f, "health"), -100)) {
-			yield* g.srcCall(f, "death");
-			return live(f.dot);
+	if (this.stat != 2) {
+		if (this.health <= -100) {
+			yield* this.death();
+			return f.dot;
 		}
-		if (((((truthy((yield* g.srcCall(f, "IsUnconscious"))) || truthy((yield* g.srcCall(f, "IsSleeping")))) || rt.gt((yield* g.srcCall(f, "getOxyLoss")), 50)) || truthy(rt.bitAnd(rt.sv(f, "status_flags"), 8192))) || rt.le(rt.sv(f, "health"), 0))) {
-			if (isEqual(rt.sv(f, "stat"), 0)) {
-				rt.setSv(f, "stat", 1);
-				yield* g.srcCall(f, "blind_eyes", 1);
-				yield* g.srcCall(f, "update_canmove");
+		if (this.IsUnconscious() || this.IsSleeping() || this.getOxyLoss() > 50 || rt.bitAnd(this.status_flags, FAKEDEATH) || this.health <= 0) {
+			if (this.stat == 0) {
+				this.stat = 1;
+				yield* this.blind_eyes(1);
+				yield* this.update_canmove();
 			}
-		} else {
-			if (isEqual(rt.sv(f, "stat"), 1)) {
-				rt.setSv(f, "stat", 0);
-				rt.setSv(f, "resting", 0);
-				yield* g.srcCall(f, "adjust_blindness", -1);
-				yield* g.srcCall(f, "update_canmove");
-			}
+		} else if (this.stat == 1) {
+			this.stat = 0;
+			this.resting = 0;
+			yield* this.adjust_blindness(-1);
+			yield* this.update_canmove();
 		}
 	}
-	yield* g.srcCall(f, "update_damage_hud");
-	yield* g.srcCall(f, "update_health_hud");
-	yield* g.srcCall(f, "med_hud_set_status");
+	yield* this.update_damage_hud();
+	this.update_health_hud();
+	this.med_hud_set_status();
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/proc/update_handcuffed  (code/modules/mob/living/carbon/carbon.dm:704)  may sleep
+// carbon.dm:704
 rt.def("/mob/living/carbon/proc/update_handcuffed", function* update_handcuffed(f: Frame) {
-	if (truthy(rt.sv(f, "handcuffed"))) {
-		yield* g.srcCall(f, "drop_all_held_items");
-		yield* g.srcCall(f, "stop_pulling");
-		yield* g.callSrc(f, "throw_alert", [null, "handcuffed", null, T("/obj/screen/alert/restrained/handcuffed"), "new_master", rt.fv(f, "handcuffed", live(f.src))], rt.Args.Named);
+	if (this.handcuffed) {
+		yield* this.drop_all_held_items();
+		yield* this.stop_pulling();
+		yield* this.throw_alert("handcuffed", T("/obj/screen/alert/restrained/handcuffed"), { new_master: this.handcuffed });
 	} else {
-		yield* g.srcCall(f, "clear_alert", "handcuffed");
+		yield* this.clear_alert("handcuffed");
 	}
-	yield* g.srcCall(f, "update_action_buttons_icon");
-	yield* g.srcCall(f, "update_inv_handcuffed");
-	yield* g.srcCall(f, "update_hud_handcuffed");
+	yield* this.update_action_buttons_icon();
+	this.update_inv_handcuffed();
+	this.update_hud_handcuffed();
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/proc/fully_heal  (code/modules/mob/living/carbon/carbon.dm:715)  may sleep
+// carbon.dm:715
 rt.def("/mob/living/carbon/proc/fully_heal", function* fully_heal(f: Frame) {
 	let B: Value = null, D: Value = null, R: Value = null;
-	let $e: any;
-	f.vars = () => [B, D, R, $e];
-	if (live(f.args[0]) === null) {
+	if (f.args[0] === null) {
 		f.args[0] = 0;
 	}
-	if (truthy(rt.sv(f, "reagents"))) {
-		yield* g.callName(f, rt.sv(f, "reagents"), "clear_reagents", []);
+	if (this.reagents) {
+		yield* this.reagents.clear_reagents();
 	}
-	if (truthy((B = (yield* g.srcCall(f, "getorgan", T("/obj/item/organ/brain")))))) {
-		rt.setFv(f, "damaged_brain", live(B), 0);
+	if (B = this.getorgan(T("/obj/item/organ/brain"))) {
+		B.damaged_brain = 0;
 	}
-	D = null;
-	rt.forList(f, 0, rt.sv(f, "viruses"), T("/datum/disease"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		D = $e;
-		if (!isEqual(rt.fv(f, "severity", live(D)), "No threat")) {
-			yield* g.callName(f, live(D), "cure", [0]);
+	for (D of each(this.viruses, T("/datum/disease"))) {
+		if (D.severity != "No threat") {
+			yield* D.cure(0);
 		}
 	}
-	rt.endFor(f, 0);
-	if (truthy(live(f.args[0]))) {
-		yield* g.srcCall(f, "regenerate_limbs");
-		yield* g.srcCall(f, "regenerate_organs");
-		rt.setSv(f, "handcuffed", rt.initial(f, live(f.src), "handcuffed"));
-		R = null;
-		rt.forList(f, 0, rt.sv(f, "contents"), T("/obj/item/weapon/restraints"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			R = $e;
-			yield* g.call(f, P("/proc/qdel"), null, [live(R)]);
+	if (f.args[0]) {
+		yield* this.regenerate_limbs();
+		yield* this.regenerate_organs();
+		this.handcuffed = rt.initial(f, this, "handcuffed");
+		for (R of each(this.contents, T("/obj/item/weapon/restraints"))) {
+			yield* qdel(R);
 		}
-		rt.endFor(f, 0);
-		yield* g.srcCall(f, "update_handcuffed");
-		if (truthy(rt.sv(f, "reagents"))) {
-			rt.setFv(f, "addiction_list", rt.sv(f, "reagents"), rt.list());
+		yield* this.update_handcuffed();
+		if (this.reagents) {
+			this.reagents.addiction_list = list();
 		}
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "restoreEars");
+	yield* parent_proc();
+	this.restoreEars();
 	return f.dot;
 }, true, { args: ["admin_revive"] });
 
-// /mob/living/carbon/proc/can_be_revived  (code/modules/mob/living/carbon/carbon.dm:737)
+// carbon.dm:737
 rt.def("/mob/living/carbon/proc/can_be_revived", function can_be_revived(f: Frame) {
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	if (!(!truthy(rt.callSrc(f, "getorgan", [T("/obj/item/organ/brain")])) && (!truthy(rt.sv(f, "mind")) || !truthy(rt.fv(f, "changeling", rt.sv(f, "mind")))))) return f.dot;
+	f.dot = parent_proc();
+	if (!(!this.getorgan(T("/obj/item/organ/brain")) && (!this.mind || !this.mind.changeling))) return f.dot;
 	return 0;
 });
 
-// /mob/living/carbon/proc/harvest  (code/modules/mob/living/carbon/carbon.dm:742)  may sleep
-rt.def("/mob/living/carbon/proc/harvest", function* harvest(f: Frame) {
-	let organs_amt: Value = null, X: Value = null, O: Value = null;
-	let $e: any;
-	f.vars = () => [organs_amt, X, O, $e];
-	if ((!truthy(live(f.src)) || truthy(rt.fv(f, "gc_destroyed", live(f.src))))) {
-		return live(f.dot);
+// carbon.dm:742
+rt.def("/mob/living/carbon/proc/harvest", function* harvest(f: Frame, user: Value) {
+	let X: Value = null, O: Value = null;
+	if (!this || this.gc_destroyed) {
+		return f.dot;
 	}
-	organs_amt = 0;
-	X = null;
-	rt.forList(f, 0, rt.sv(f, "internal_organs"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		X = $e;
-		O = live(X);
-		if (truthy(rt.op(f, "Prob", [], [50]))) {
-			organs_amt = rt.inc(live(organs_amt), 1);
-			yield* g.callName(f, live(O), "Remove", [live(f.src)]);
-			rt.setFv(f, "loc", live(O), rt.getStep(f, live(f.src), 0));
+	let organs_amt: Value = 0;
+	for (X of each(this.internal_organs)) {
+		O = X;
+		if (prob(50)) {
+			organs_amt++;
+			yield* O.Remove(this);
+			O.loc = rt.getStep(f, this, 0);
 		}
 	}
-	rt.endFor(f, 0);
-	if (truthy(live(organs_amt))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='notice'>You retrieve some of ＀'s internal organs!</span>", [live(f.src)])]);
+	if (organs_amt) {
+		to_chat(user, `<span class='notice'>You retrieve some of ${this}'s internal organs!</span>`);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /mob/living/carbon/proc/ExtinguishMob  (code/modules/mob/living/carbon/carbon.dm:757)  may sleep
+// carbon.dm:757
 rt.def("/mob/living/carbon/proc/ExtinguishMob", function* ExtinguishMob(f: Frame) {
 	let X: Value = null, I: Value = null;
-	let $e: any;
-	f.vars = () => [X, I, $e];
-	X = null;
-	rt.forList(f, 0, (yield* g.srcCall(f, "get_equipped_items")));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		X = $e;
-		rt.setFv(f, "acid_level", (I = live(X)), 0);
-		yield* g.callName(f, live(I), "extinguish", []);
+	for (X of each(this.get_equipped_items())) {
+		(I = X).acid_level = 0;
+		yield* I.extinguish();
 	}
-	rt.endFor(f, 0);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/proc/fakefire  (code/modules/mob/living/carbon/carbon.dm:764)
+// carbon.dm:764
 rt.def("/mob/living/carbon/proc/fakefire", function fakefire(f: Frame, fire_icon: Value) {
 	let new_fire_overlay: Value = null;
-	f.vars = () => [fire_icon, new_fire_overlay];
-	if (live(fire_icon) === null) {
-		fire_icon = "Generic_mob_burning";
-	}
-	rt.setFv(f, "appearance_flags", (new_fire_overlay = rt.call(f, P("/proc/mutable_appearance"), null, [rt.rsc("icons/mob/onfire.dmi"), live(fire_icon), -1])), 2);
-	rt.setAt(rt.sv(f, "overlays_standing"), 1, live(new_fire_overlay));
-	rt.callSrc(f, "apply_overlay", [1]);
+	fire_icon ??= "Generic_mob_burning";
+	(new_fire_overlay = mutable_appearance(rt.rsc("icons/mob/onfire.dmi"), fire_icon, -1)).appearance_flags = 2;
+	rt.setAt(this.overlays_standing, FIRE_LAYER, new_fire_overlay);
+	this.apply_overlay(FIRE_LAYER);
 	return f.dot;
 });
 
-// /mob/living/carbon/proc/fakefireextinguish  (code/modules/mob/living/carbon/carbon.dm:770)
+// carbon.dm:770
 rt.def("/mob/living/carbon/proc/fakefireextinguish", function fakefireextinguish(f: Frame) {
-	rt.callSrc(f, "remove_overlay", [1]);
+	this.remove_overlay(FIRE_LAYER);
 	return f.dot;
 });
 
-// /mob/living/carbon/proc/devour_mob  (code/modules/mob/living/carbon/carbon.dm:774)  may sleep
+// carbon.dm:774
 rt.def("/mob/living/carbon/proc/devour_mob", function* devour_mob(f: Frame, C: Value, devour_time: Value) {
-	f.vars = () => [C, devour_time];
-	if (live(devour_time) === null) {
-		devour_time = 130;
+	devour_time ??= 130;
+	C.visible_message(`<span class='danger'>${this} is attempting to devour ${C}!</span>`, `<span class='userdanger'>${this} is attempting to devour you!</span>`);
+	if (!(yield* do_mob(this, C, devour_time))) {
+		return f.dot;
 	}
-	yield* g.callName(f, live(C), "visible_message", [fmt("<span class='danger'>＀ is attempting to devour ＀!</span>", [live(f.src), live(C)]), fmt("<span class='userdanger'>＀ is attempting to devour you!</span>", [live(f.src)])]);
-	if (!truthy((yield* g.call(f, P("/proc/do_mob"), null, [live(f.src), live(C), live(devour_time)])))) {
-		return live(f.dot);
-	}
-	if (!(((truthy(rt.sv(f, "pulling")) && isEqual(rt.sv(f, "pulling"), live(C))) && rt.ge(rt.sv(f, "grab_state"), 1)) && isEqual(rt.sv(f, "a_intent"), "grab"))) return f.dot;
-	yield* g.callName(f, live(C), "visible_message", [fmt("<span class='danger'>＀ devours ＀!</span>", [live(f.src), live(C)]), fmt("<span class='userdanger'>＀ devours you!</span>", [live(f.src)])]);
-	yield* g.callName(f, live(C), "forceMove", [live(f.src)]);
-	yield* g.callName(f, rt.sv(f, "stomach_contents"), "Add", [live(C)]);
-	yield* g.call(f, P("/proc/add_logs"), null, [live(f.src), live(C), "devoured"]);
+	if (!(this.pulling && this.pulling == C && this.grab_state >= 1 && this.a_intent == "grab")) return f.dot;
+	C.visible_message(`<span class='danger'>${this} devours ${C}!</span>`, `<span class='userdanger'>${this} devours you!</span>`);
+	yield* C.forceMove(this);
+	this.stomach_contents.Add(C);
+	add_logs(this, C, "devoured");
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/proc/create_bodyparts  (code/modules/mob/living/carbon/carbon.dm:788)  may sleep
+// carbon.dm:788
 rt.def("/mob/living/carbon/proc/create_bodyparts", function* create_bodyparts(f: Frame) {
-	let l_arm_index_next: Value = null, r_arm_index_next: Value = null, X: Value = null, O: Value = null;
-	let $e: any;
-	f.vars = () => [l_arm_index_next, r_arm_index_next, X, O, $e];
-	l_arm_index_next = -1;
-	r_arm_index_next = 0;
-	X = null;
-	rt.forList(f, 0, rt.sv(f, "bodyparts"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		X = $e;
-		rt.setFv(f, "owner", (O = (yield* g.new_(f, live(X), []))), live(f.src));
-		yield* g.callName(f, rt.sv(f, "bodyparts"), "Remove", [live(X)]);
-		yield* g.callName(f, rt.sv(f, "bodyparts"), "Add", [live(O)]);
-		if (isEqual(rt.fv(f, "body_part", live(O)), 128)) {
-			l_arm_index_next = rt.modify(live(l_arm_index_next), 2, add);
-			rt.setFv(f, "held_index", live(O), live(l_arm_index_next));
-			rt.modSrcVar(f, "hand_bodyparts", live(O), add);
-		} else {
-			if (isEqual(rt.fv(f, "body_part", live(O)), 256)) {
-				r_arm_index_next = rt.modify(live(r_arm_index_next), 2, add);
-				rt.setFv(f, "held_index", live(O), live(r_arm_index_next));
-				rt.modSrcVar(f, "hand_bodyparts", live(O), add);
-			}
+	let X: Value = null, O: Value = null;
+	let l_arm_index_next: Value = -1;
+	let r_arm_index_next: Value = 0;
+	for (X of each(this.bodyparts)) {
+		(O = (yield* new_(X))).owner = this;
+		yield* this.bodyparts.Remove(X);
+		this.bodyparts.Add(O);
+		if (O.body_part == ARM_LEFT) {
+			l_arm_index_next += 2;
+			O.held_index = l_arm_index_next;
+			this.hand_bodyparts += O;
+		} else if (O.body_part == ARM_RIGHT) {
+			r_arm_index_next += 2;
+			O.held_index = r_arm_index_next;
+			this.hand_bodyparts += O;
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/proc/create_internal_organs  (code/modules/mob/living/carbon/carbon.dm:804)  may sleep
+// carbon.dm:804
 rt.def("/mob/living/carbon/proc/create_internal_organs", function* create_internal_organs(f: Frame) {
 	let X: Value = null, I: Value = null;
-	let $e: any;
-	f.vars = () => [X, I, $e];
-	X = null;
-	rt.forList(f, 0, rt.sv(f, "internal_organs"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		X = $e;
-		yield* g.callName(f, (I = live(X)), "Insert", [live(f.src)]);
+	for (X of each(this.internal_organs)) {
+		yield* (I = X).Insert(this);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/proc/vv_get_dropdown  (code/modules/mob/living/carbon/carbon.dm:809)
+// carbon.dm:809
 rt.def("/mob/living/carbon/proc/vv_get_dropdown", function vv_get_dropdown(f: Frame) {
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	rt.setAt((f.dot = rt.modify(live(f.dot), "---", add)), "Make AI", fmt("?_src_=vars;makeai=＃", [live(f.src)]));
-	rt.setAt(live(f.dot), "Modify bodypart", fmt("?_src_=vars;editbodypart=＃", [live(f.src)]));
-	rt.setAt(live(f.dot), "Modify organs", fmt("?_src_=vars;editorgans=＃", [live(f.src)]));
+	f.dot = parent_proc();
+	rt.setAt((f.dot += "---"), "Make AI", fmt("?_src_=vars;makeai=＃", [this]));
+	rt.setAt(f.dot, "Modify bodypart", fmt("?_src_=vars;editbodypart=＃", [this]));
+	rt.setAt(f.dot, "Modify organs", fmt("?_src_=vars;editorgans=＃", [this]));
 	return f.dot;
 });

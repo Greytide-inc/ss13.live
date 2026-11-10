@@ -1,7 +1,7 @@
-// From code/modules/hydroponics/grown/random.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/hydroponics/grown/random.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(10069, "/obj/item/seeds/random", "/obj/item/seeds", {
@@ -17,16 +17,16 @@ rt.type(10069, "/obj/item/seeds/random", "/obj/item/seeds", {
 	icon_state: "seed-x",
 });
 
-// /obj/item/seeds/random/proc/New  (code/modules/hydroponics/grown/random.dm:16)  may sleep
+// random.dm:16
 rt.def("/obj/item/seeds/random/proc/New", function* New(f: Frame) {
-	yield* g.srcCall(f, "randomize_stats");
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.op(f, "Prob", [], [60]))) {
-		yield* g.srcCall(f, "add_random_reagents");
+	this.randomize_stats();
+	yield* parent_proc();
+	if (prob(60)) {
+		yield* this.add_random_reagents();
 	}
-	if (truthy(rt.op(f, "Prob", [], [50]))) {
-		yield* g.srcCall(f, "add_random_traits");
+	if (prob(50)) {
+		yield* this.add_random_traits();
 	}
-	yield* g.srcCall(f, "add_random_plant_type", 35);
+	yield* this.add_random_plant_type(35);
 	return f.dot;
 }, true);

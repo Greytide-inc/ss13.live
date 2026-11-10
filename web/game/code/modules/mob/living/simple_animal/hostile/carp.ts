@@ -1,7 +1,7 @@
-// From code/modules/mob/living/simple_animal/hostile/carp.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/simple_animal/hostile/carp.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(4902, "/mob/living/simple_animal/hostile/carp", "/mob/living/simple_animal/hostile", {
@@ -38,29 +38,26 @@ rt.type(4902, "/mob/living/simple_animal/hostile/carp", "/mob/living/simple_anim
 	gold_core_spawnable: 1,
 });
 
-// /mob/living/simple_animal/hostile/carp/proc/<init>  (code/modules/mob/living/simple_animal/hostile/carp.dm:10)
+// carp.dm:10
 rt.def("/mob/living/simple_animal/hostile/carp/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "butcher_results", rt.alist(f, [T("/obj/item/weapon/reagent_containers/food/snacks/carpmeat"), 2]));
-	$0 = $0;
-	rt.setSv(f, "emote_taunt", rt.list("gnashes"));
-	$0 = $0;
-	rt.setSv(f, "speak_emote", rt.list("gnashes"));
-	rt.setSv(f, "atmos_requirements", rt.alist(f, ["min_oxy", 0, "max_oxy", 0, "min_tox", 0, "max_tox", 0, "min_co2", 0, "max_co2", 0, "min_n2", 0, "max_n2", 0]));
-	$0 = $0;
-	rt.setSv(f, "faction", rt.list("carp"));
+	parent_proc();
+	this.butcher_results = rt.alist(f, [T("/obj/item/weapon/reagent_containers/food/snacks/carpmeat"), 2]);
+
+	this.emote_taunt = list("gnashes");
+
+	this.speak_emote = list("gnashes");
+	this.atmos_requirements = rt.alist(f, ["min_oxy", 0, "max_oxy", 0, "min_tox", 0, "max_tox", 0, "min_co2", 0, "max_co2", 0, "min_n2", 0, "max_n2", 0]);
+
+	this.faction = list("carp");
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/carp/proc/AttackingTarget  (code/modules/mob/living/simple_animal/hostile/carp.dm:42)  may sleep
+// carp.dm:42
 rt.def("/mob/living/simple_animal/hostile/carp/proc/AttackingTarget", function* AttackingTarget(f: Frame) {
 	let H: Value = null;
-	f.vars = () => [H];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!(truthy(live(f.dot)) && truthy((rt.istype(rt.sv(f, "target"), T("/mob/living/carbon/human")) ? 1 : 0)))) return f.dot;
-	yield* g.callName(f, (H = rt.sv(f, "target")), "adjustStaminaLoss", [8]);
+	f.dot = (yield* parent_proc());
+	if (!(f.dot && rt.istype(this.target, T("/mob/living/carbon/human")))) return f.dot;
+	yield* (H = this.target).adjustStaminaLoss(8);
 	return f.dot;
 }, true);
 
@@ -74,13 +71,11 @@ rt.type(4907, "/mob/living/simple_animal/hostile/carp/cayenne", "/mob/living/sim
 	AIStatus: 3,
 });
 
-// /mob/living/simple_animal/hostile/carp/cayenne/proc/<init>  (code/modules/mob/living/simple_animal/hostile/carp.dm:76)
+// carp.dm:76
 rt.def("/mob/living/simple_animal/hostile/carp/cayenne/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "speak_emote", rt.list("squeaks"));
-	$0 = $0;
-	rt.setSv(f, "faction", rt.list("syndicate"));
+	parent_proc();
+	this.speak_emote = list("squeaks");
+
+	this.faction = list("syndicate");
 	return f.dot;
 });

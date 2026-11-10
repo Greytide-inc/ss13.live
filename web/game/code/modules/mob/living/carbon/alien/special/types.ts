@@ -1,5 +1,5 @@
 // Types declared in code/modules/mob/living/carbon/alien/special that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(8588, "/obj/item/clothing/mask/facehugger/toy", "/obj/item/clothing/mask/facehugger", {
 	item_state: "facehugger_inactive",

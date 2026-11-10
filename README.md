@@ -12,19 +12,18 @@ The game is split into two parts, the same way BYOND splits it:
 
   ```ts
   rt.def("/obj/machinery/door/airlock/proc/Destroy", function* Destroy(f: Frame) {
-  	...
-  	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "wires")]);
-  	rt.setSv(f, "wires", null);
-  	if (truthy(rt.sv(f, "charge"))) {
-  		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "charge")]);
-  		rt.setSv(f, "charge", null);
+  	yield* qdel(this.wires);
+  	this.wires = null;
+  	if (this.charge) {
+  		yield* qdel(this.charge);
+  		this.charge = null;
   	}
   	...
-  	return (yield* g.callSuper(f, [], rt.Args.Same));
+  	return (yield* parent_proc());
   }, true);
   ```
 
-  It is a small subset of TypeScript: type notes on parameters and variables only (no classes, generics or interfaces), and the type checker doesn't run on it. Variables and procs are reached by name through `rt`, as in DM.
+  It is a small subset of TypeScript written to read like the DM it came from: `this.wires` for a var, `qdel(x)` for a proc, `parent_proc()` for `..()`. Type notes go on parameters and variables only (no classes, generics or interfaces), and the type checker doesn't run on it. The build compiles it into calls that keep DM's rules (vars and procs looked up by name at run time, DM's truth and maths), and stops on a mistake.
 - **Engine** (`web/src/`): a rewrite of what BYOND supplied. It handles the type tree, the scheduler and sleeping procs, garbage collection, the built-in procs, the map loader, `.dmi` icons, appearances, lighting, line of sight, input, verbs, browse popups, tgui and sound.
 
 In the browser, the game runs in a Web Worker that acts as the server. The page acts as the client: it draws with PixiJS and handles input. The two talk with `postMessage`. The game's own save files (character setup, preferences, anything it writes to its `data/` folder) are kept in the browser's IndexedDB. For multiplayer, the same game code runs in a Node server instead (`web/tools/server.mjs`), and each player's page talks to it over a WebSocket. Saved worlds are a separate thing, made by the build tools and not by players: the build includes a world saved just before round start, so the page loads into the lobby in seconds instead of initializing the station first.
@@ -54,7 +53,7 @@ For development:
 | `npm run boot-check -- NAME` | Boots the game headless in Node and checks its log against recorded BYOND results in `web/reference/`. The main check after any game or engine change |
 | `npm run build:tgui` | Rebuilds the tgui assets from `tgui/src` |
 
-More commands are in [web/README.md](web/README.md). The rules for editing game code are in [web/game/README.md](web/game/README.md). New to the code? [web/game/HOW-TO-READ.md](web/game/HOW-TO-READ.md) explains what `rt.sv`, `live()` and `yield*` mean, with a worked example.
+More commands are in [web/README.md](web/README.md). The rules for editing game code are in [web/game/README.md](web/game/README.md). New to the code? [web/game/HOW-TO-READ.md](web/game/HOW-TO-READ.md) explains the names you'll meet most, `function*` and `yield*`, with a worked example.
 
 ## Layout
 

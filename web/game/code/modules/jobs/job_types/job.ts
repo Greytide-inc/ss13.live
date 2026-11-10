@@ -1,7 +1,7 @@
-// From code/modules/jobs/job_types/job.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/jobs/job_types/job.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(2742, "/datum/job", "/datum", {
@@ -22,73 +22,66 @@ rt.type(2742, "/datum/job", "/datum", {
 	outfit: null,
 });
 
-// /datum/job/proc/<init>  (code/modules/jobs/job_types/job.dm:6)
+// job.dm:6
 rt.def("/datum/job/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "minimal_access", rt.list());
-	$0 = $0;
-	rt.setSv(f, "access", rt.list());
-	$0 = $0;
-	rt.setSv(f, "department_head", rt.list());
+	parent_proc();
+	this.minimal_access = list();
+
+	this.access = list();
+
+	this.department_head = list();
 	return f.dot;
 });
 
-// /datum/job/proc/announce  (code/modules/jobs/job_types/job.dm:54)
+// job.dm:54
 rt.def("/datum/job/proc/announce", function announce(f: Frame, H: Value) {
-	if (!truthy(rt.sv(f, "head_announce"))) return f.dot;
-	rt.callSrc(f, "announce_head", [live(H), rt.sv(f, "head_announce")]);
+	if (!this.head_announce) return f.dot;
+	this.announce_head(H, this.head_announce);
 	return f.dot;
 });
 
-// /datum/job/proc/equip  (code/modules/jobs/job_types/job.dm:59)  may sleep
+// job.dm:59
 rt.def("/datum/job/proc/equip", function* equip(f: Frame, H: Value, visualsOnly: Value, announce: Value) {
-	f.vars = () => [H, visualsOnly, announce];
-	if (live(visualsOnly) === null) {
-		visualsOnly = 0;
-	}
-	if (live(announce) === null) {
-		announce = 1;
-	}
-	if (!truthy(live(H))) {
+	visualsOnly ??= 0;
+	announce ??= 1;
+	if (!H) {
 		return 0;
 	}
-	yield* g.callName(f, rt.gv(f, "species", rt.fv(f, "dna", live(H))), "before_equip_job", [live(f.src), live(H), live(visualsOnly)]);
-	if (truthy(rt.sv(f, "outfit"))) {
-		yield* g.callName(f, live(H), "equipOutfit", [rt.sv(f, "outfit"), live(visualsOnly)]);
+	yield* H.dna.species.before_equip_job(this, H, visualsOnly);
+	if (this.outfit) {
+		yield* H.equipOutfit(this.outfit, visualsOnly);
 	}
-	yield* g.callName(f, rt.gv(f, "species", rt.fv(f, "dna", live(H))), "after_equip_job", [live(f.src), live(H), live(visualsOnly)]);
-	if ((!truthy(live(visualsOnly)) && truthy(live(announce)))) {
-		yield* g.srcCall(f, "announce", live(H));
+	yield* H.dna.species.after_equip_job(this, H, visualsOnly);
+	if (!visualsOnly && announce) {
+		yield* this.announce(H);
 	}
-	if (!(truthy(rt.fv(f, "enforce_human_authority", rt.gl("config"))) && truthy((rt.isIn(f, rt.sv(f, "title"), rt.gl("command_positions")) ? 1 : 0)))) return f.dot;
-	rt.setAt(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "tail_human", "None");
-	rt.setAt(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "ears", "None");
-	yield* g.callName(f, live(H), "regenerate_icons", []);
+	if (!(GLOB.config.enforce_human_authority && rt.isIn(f, this.title, GLOB.command_positions))) return f.dot;
+	rt.setAt(H.dna.features, "tail_human", "None");
+	rt.setAt(H.dna.features, "ears", "None");
+	yield* H.regenerate_icons();
 	return f.dot;
 }, true);
 
-// /datum/job/proc/get_access  (code/modules/jobs/job_types/job.dm:79)
+// job.dm:79
 rt.def("/datum/job/proc/get_access", function get_access(f: Frame) {
-	if (!truthy(rt.gl("config"))) {
-		return rt.callName(f, rt.fv(f, "minimal_access", live(f.src)), "Copy", []);
+	if (!GLOB.config) {
+		return this.minimal_access.Copy();
 	}
-	f.dot = rt.list();
-	if (truthy(rt.fv(f, "jobs_have_minimal_access", rt.gl("config")))) {
-		f.dot = rt.callName(f, rt.fv(f, "minimal_access", live(f.src)), "Copy", []);
+	f.dot = list();
+	if (GLOB.config.jobs_have_minimal_access) {
+		f.dot = this.minimal_access.Copy();
 	} else {
-		f.dot = rt.callName(f, rt.fv(f, "access", live(f.src)), "Copy", []);
+		f.dot = this.access.Copy();
 	}
-	if (!truthy(rt.bitAnd(rt.fv(f, "jobs_have_maint_access", rt.gl("config")), 4))) return f.dot;
-	(f.dot = rt.modify(live(f.dot), rt.list(12), rt.bitOr));
+	if (!rt.bitAnd(GLOB.config.jobs_have_maint_access, 4)) return f.dot;
+	(f.dot = rt.modify(f.dot, list(12), rt.bitOr));
 	return f.dot;
 });
 
-// /datum/job/proc/announce_head  (code/modules/jobs/job_types/job.dm:93)
+// job.dm:93
 rt.def("/datum/job/proc/announce_head", function announce_head(f: Frame, H: Value, channels: Value) {
-	if (!(truthy(live(H)) && truthy(rt.len(f, rt.gl("announcement_systems"))))) return f.dot;
-	rt.callName(f, rt.gl("SSticker"), "OnRoundstart", [rt.new_(f, T("/datum/callback"), ["some_magic_bullshit", P("/proc/addtimer"), rt.new_(f, T("/datum/callback"), [rt.op(f, "PickUnweighted", [1], [rt.gl("announcement_systems")]), P("/obj/machinery/announcement_system/proc/announce"), "NEWHEAD", rt.fv(f, "real_name", live(H)), rt.fv(f, "job", live(H)), live(channels)]), 1])]);
+	if (!(H && rt.len(f, GLOB.announcement_systems))) return f.dot;
+	GLOB.SSticker.OnRoundstart(new_(T("/datum/callback"), "some_magic_bullshit", P("/proc/addtimer"), new_(T("/datum/callback"), pick(GLOB.announcement_systems), P("/obj/machinery/announcement_system/proc/announce"), "NEWHEAD", H.real_name, H.job, channels), 1));
 	return f.dot;
 });
 
@@ -108,61 +101,53 @@ rt.type(682, "/datum/outfit/job", "/datum/outfit", {
 	shoes: rt.typePath("/obj/item/clothing/shoes/sneakers/black"),
 });
 
-// /datum/outfit/job/proc/pre_equip  (code/modules/jobs/job_types/job.dm:143)
+// job.dm:143
 rt.def("/datum/outfit/job/proc/pre_equip", function pre_equip(f: Frame, H: Value, visualsOnly: Value) {
-	let $0: any;
-	f.vars = () => [visualsOnly, $0];
-	if (live(visualsOnly) === null) {
-		visualsOnly = 0;
-	}
-	$0 = rt.fv(f, "backbag", live(H));
-	if ($0 === "Grey Backpack") {
-		rt.setSv(f, "back", T("/obj/item/weapon/storage/backpack"));
-	} else if ($0 === "Grey Satchel") {
-		rt.setSv(f, "back", T("/obj/item/weapon/storage/backpack/satchel"));
-	} else if ($0 === "Grey Duffel Bag") {
-		rt.setSv(f, "back", T("/obj/item/weapon/storage/backpack/duffelbag"));
-	} else if ($0 === "Leather Satchel") {
-		rt.setSv(f, "back", T("/obj/item/weapon/storage/backpack/satchel/leather"));
-	} else if ($0 === "Department Satchel") {
-		rt.setSv(f, "back", rt.sv(f, "satchel"));
-	} else if ($0 === "Department Duffel Bag") {
-		rt.setSv(f, "back", rt.sv(f, "duffelbag"));
+	visualsOnly ??= 0;
+	if (H.backbag === "Grey Backpack") {
+		this.back = T("/obj/item/weapon/storage/backpack");
+	} else if (H.backbag === "Grey Satchel") {
+		this.back = T("/obj/item/weapon/storage/backpack/satchel");
+	} else if (H.backbag === "Grey Duffel Bag") {
+		this.back = T("/obj/item/weapon/storage/backpack/duffelbag");
+	} else if (H.backbag === "Leather Satchel") {
+		this.back = T("/obj/item/weapon/storage/backpack/satchel/leather");
+	} else if (H.backbag === "Department Satchel") {
+		this.back = this.satchel;
+	} else if (H.backbag === "Department Duffel Bag") {
+		this.back = this.duffelbag;
 	} else {
-		rt.setSv(f, "back", rt.sv(f, "backpack"));
+		this.back = this.backpack;
 	}
-	if (!truthy(rt.sv(f, "box"))) return f.dot;
-	if (!truthy(rt.sv(f, "backpack_contents"))) {
-		rt.setSv(f, "backpack_contents", rt.list());
+	if (!this.box) return f.dot;
+	if (!this.backpack_contents) {
+		this.backpack_contents = list();
 	}
-	rt.callName(f, rt.sv(f, "backpack_contents"), "Insert", [1, rt.sv(f, "box")]);
-	rt.setAt(rt.sv(f, "backpack_contents"), rt.sv(f, "box"), 1);
+	this.backpack_contents.Insert(1, this.box);
+	rt.setAt(this.backpack_contents, this.box, 1);
 	return f.dot;
 });
 
-// /datum/outfit/job/proc/post_equip  (code/modules/jobs/job_types/job.dm:169)  may sleep
+// job.dm:169
 rt.def("/datum/outfit/job/proc/post_equip", function* post_equip(f: Frame, H: Value, visualsOnly: Value) {
 	let J: Value = null, C: Value = null, PDA: Value = null;
-	f.vars = () => [H, visualsOnly, J, C, PDA];
-	if (live(visualsOnly) === null) {
-		visualsOnly = 0;
+	visualsOnly ??= 0;
+	if (visualsOnly) {
+		return f.dot;
 	}
-	if (truthy(live(visualsOnly))) {
-		return live(f.dot);
+	if (!(J = (yield* GLOB.SSjob.GetJobType(this.jobtype)))) {
+		J = (yield* GLOB.SSjob.GetJob(H.job));
 	}
-	if (!truthy((J = (yield* g.callName(f, rt.gl("SSjob"), "GetJobType", [rt.sv(f, "jobtype")]))))) {
-		J = (yield* g.callName(f, rt.gl("SSjob"), "GetJob", [rt.fv(f, "job", live(H))]));
+	if (rt.istype((C = H.wear_id), T("/obj/item/weapon/card/id"))) {
+		C.access = J.get_access();
+		C.registered_name = H.real_name;
+		C.assignment = J.title;
+		C.update_label();
+		yield* H.sec_hud_set_ID();
 	}
-	if (truthy((rt.istype((C = rt.fv(f, "wear_id", live(H))), T("/obj/item/weapon/card/id")) ? 1 : 0))) {
-		rt.setFv(f, "access", live(C), (yield* g.callName(f, live(J), "get_access", [])));
-		rt.setFv(f, "registered_name", live(C), rt.fv(f, "real_name", live(H)));
-		rt.setFv(f, "assignment", live(C), rt.fv(f, "title", live(J)));
-		yield* g.callName(f, live(C), "update_label", []);
-		yield* g.callName(f, live(H), "sec_hud_set_ID", []);
-	}
-	if (!truthy((rt.istype((PDA = (yield* g.callName(f, live(H), "get_item_by_slot", [rt.sv(f, "pda_slot")]))), T("/obj/item/device/pda")) ? 1 : 0))) return f.dot;
-	rt.setFv(f, "owner", live(PDA), rt.fv(f, "real_name", live(H)));
-	rt.setFv(f, "ownjob", live(PDA), rt.fv(f, "title", live(J)));
-	yield* g.callName(f, live(PDA), "update_label", []);
+	if (!rt.istype((PDA = H.get_item_by_slot(this.pda_slot)), T("/obj/item/device/pda"))) return f.dot;
+	PDA.owner = H.real_name;
+	PDA.ownjob = J.title;
+	PDA.update_label();
 	return f.dot;
 }, true);

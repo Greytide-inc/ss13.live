@@ -1,7 +1,7 @@
-// From code/modules/modular_computers/file_system/computer_file.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/modular_computers/file_system/computer_file.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(4156, "/datum/computer_file", "/datum", {
@@ -14,41 +14,38 @@ rt.type(4156, "/datum/computer_file", "/datum", {
 	uid: null,
 }, { global: { file_uid: 674 } });
 
-// /datum/computer_file/proc/New  (code/modules/modular_computers/file_system/computer_file.dm:12)
+// computer_file.dm:12
 rt.def("/datum/computer_file/proc/New", function New(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "uid", rt.incGl("file_uid", 1, true));
+	parent_proc();
+	this.uid = rt.incGl("file_uid", 1, true);
 	return f.dot;
 });
 
-// /datum/computer_file/proc/Destroy  (code/modules/modular_computers/file_system/computer_file.dm:16)  may sleep
+// computer_file.dm:16
 rt.def("/datum/computer_file/proc/Destroy", function* Destroy(f: Frame) {
-	if (!truthy(rt.sv(f, "holder"))) {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+	if (!this.holder) {
+		return (yield* parent_proc());
 	}
-	yield* g.callName(f, rt.sv(f, "holder"), "remove_file", [live(f.src)]);
-	if ((truthy(rt.fv(f, "holder", rt.sv(f, "holder"))) && isEqual(rt.gv(f, "active_program", rt.fv(f, "holder", rt.sv(f, "holder"))), live(f.src)))) {
-		yield* g.callName(f, rt.fv(f, "holder", rt.sv(f, "holder")), "kill_program", ["forced", 1], rt.Args.Named);
+	this.holder.remove_file(this);
+	if (this.holder.holder && this.holder.holder.active_program == this) {
+		yield* this.holder.holder.kill_program({ forced: 1 });
 	}
-	rt.setSv(f, "holder", null);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	this.holder = null;
+	return (yield* parent_proc());
 }, true);
 
-// /datum/computer_file/proc/clone  (code/modules/modular_computers/file_system/computer_file.dm:28)  may sleep
+// computer_file.dm:28
 rt.def("/datum/computer_file/proc/clone", function* clone(f: Frame, rename: Value) {
 	let temp: Value = null;
-	f.vars = () => [rename, temp];
-	if (live(rename) === null) {
-		rename = 0;
-	}
-	rt.setFv(f, "unsendable", (temp = (yield* g.new_(f, rt.sv(f, "type"), []))), rt.sv(f, "unsendable"));
-	rt.setFv(f, "undeletable", live(temp), rt.sv(f, "undeletable"));
-	rt.setFv(f, "size", live(temp), rt.sv(f, "size"));
-	if (truthy(live(rename))) {
-		rt.setFv(f, "filename", live(temp), add(rt.sv(f, "filename"), "(Copy)"));
+	rename ??= 0;
+	(temp = (yield* new_(this.type))).unsendable = this.unsendable;
+	temp.undeletable = this.undeletable;
+	rt.setFv(f, "size", temp, rt.sv(f, "size"));
+	if (rename) {
+		temp.filename = this.filename + "(Copy)";
 	} else {
-		rt.setFv(f, "filename", live(temp), rt.sv(f, "filename"));
+		temp.filename = this.filename;
 	}
-	rt.setFv(f, "filetype", live(temp), rt.sv(f, "filetype"));
-	return live(temp);
+	temp.filetype = this.filetype;
+	return temp;
 }, true);

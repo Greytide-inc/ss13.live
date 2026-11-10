@@ -1,7 +1,7 @@
-// From code/modules/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, g } = rt;
 
 
 rt.type(5022, "/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner", "/mob/living/simple_animal/hostile/megafauna", {
@@ -36,16 +36,14 @@ rt.type(5022, "/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner", "
 	death_sound: "bodyfall",
 });
 
-// /mob/living/simple_animal/hostile/megafauna/blood_drunk_miner/proc/<init>  (code/modules/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner.dm:33)
+// blood_drunk_miner.dm:33
 rt.def("/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "speak_emote", rt.list("roars"));
-	$0 = $0;
-	rt.setSv(f, "crusher_loot", rt.list(T("/obj/item/weapon/melee/transforming/cleaving_saw"), T("/obj/item/weapon/gun/energy/kinetic_accelerator"), T("/obj/item/crusher_trophy/miner_eye")));
-	$0 = $0;
-	rt.setSv(f, "loot", rt.list(T("/obj/item/weapon/melee/transforming/cleaving_saw"), T("/obj/item/weapon/gun/energy/kinetic_accelerator")));
+	parent_proc();
+	this.speak_emote = list("roars");
+
+	this.crusher_loot = list(T("/obj/item/weapon/melee/transforming/cleaving_saw"), T("/obj/item/weapon/gun/energy/kinetic_accelerator"), T("/obj/item/crusher_trophy/miner_eye"));
+
+	this.loot = list(T("/obj/item/weapon/melee/transforming/cleaving_saw"), T("/obj/item/weapon/gun/energy/kinetic_accelerator"));
 	return f.dot;
 });
 
@@ -54,268 +52,231 @@ rt.type(5694, "/obj/item/weapon/melee/transforming/cleaving_saw/miner", "/obj/it
 	force: 6,
 });
 
-// /obj/item/weapon/melee/transforming/cleaving_saw/miner/proc/attack  (code/modules/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner.dm:59)  may sleep
-rt.def("/obj/item/weapon/melee/transforming/cleaving_saw/miner/proc/attack", function* attack(f: Frame) {
-	let target_knockdown_amount: Value = null, new_knockdown: Value = null;
-	f.vars = () => [target_knockdown_amount, new_knockdown];
-	target_knockdown_amount = (yield* g.callName(f, live(f.args[0]), "AmountKnockdown", []));
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (isEqual((new_knockdown = (yield* g.callName(f, live(f.args[0]), "AmountKnockdown", []))), live(target_knockdown_amount))) return f.dot;
-	yield* g.callName(f, live(f.args[0]), "SetKnockdown", [null, (yield* g.call(f, P("/proc/max"), null, [live(target_knockdown_amount), 6])), "ignore_canknockdown", 1], rt.Args.Named);
-	return f.dot;
-}, true, { args: ["target", "user"] });
-
-// /mob/living/simple_animal/hostile/megafauna/blood_drunk_miner/proc/Initialize  (code/modules/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner.dm:72)  may sleep
-rt.def("/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "internal", (yield* g.new_(f, T("/obj/item/device/gps/internal/miner"), [live(f.src)])));
-	rt.setSv(f, "miner_saw", (yield* g.new_(f, T("/obj/item/weapon/melee/transforming/cleaving_saw/miner"), [live(f.src)])));
+// blood_drunk_miner.dm:59
+rt.def("/obj/item/weapon/melee/transforming/cleaving_saw/miner/proc/attack", function* attack(f: Frame, target: Value, user: Value) {
+	let new_knockdown: Value = null;
+	let target_knockdown_amount: Value = target.AmountKnockdown();
+	yield* parent_proc();
+	if ((new_knockdown = target.AmountKnockdown()) == target_knockdown_amount) return f.dot;
+	yield* target.SetKnockdown(max(target_knockdown_amount, 6), { ignore_canknockdown: 1 });
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/megafauna/blood_drunk_miner/proc/adjustHealth  (code/modules/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner.dm:77)  may sleep
+// blood_drunk_miner.dm:72
+rt.def("/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner/proc/Initialize", function* Initialize(f: Frame) {
+	f.dot = (yield* parent_proc());
+	this.internal = (yield* new_(T("/obj/item/device/gps/internal/miner"), this));
+	this.miner_saw = (yield* new_(T("/obj/item/weapon/melee/transforming/cleaving_saw/miner"), this));
+	return f.dot;
+}, true);
+
+// blood_drunk_miner.dm:77
 rt.def("/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner/proc/adjustHealth", function* adjustHealth(f: Frame) {
-	let adjustment_amount: Value = null;
-	f.vars = () => [adjustment_amount];
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 1;
 	}
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 0;
 	}
-	adjustment_amount = multiply(live(f.args[0]), 0.15000000596046448);
-	if (rt.gt(add(rt.worldTime(f), live(adjustment_amount)), rt.sv(f, "next_move"))) {
-		yield* g.srcCall(f, "changeNext_move", live(adjustment_amount));
+	let adjustment_amount: Value = f.args[0] * 0.15;
+	if (rt.worldTime(f) + adjustment_amount > this.next_move) {
+		this.changeNext_move(adjustment_amount);
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true, { args: ["amount", "updating_health", "forced"] });
 
-// /mob/living/simple_animal/hostile/megafauna/blood_drunk_miner/proc/death  (code/modules/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner.dm:83)  may sleep
+// blood_drunk_miner.dm:83
 rt.def("/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner/proc/death", function* death(f: Frame) {
-	if (rt.gt(rt.sv(f, "health"), 0)) {
-		return live(f.dot);
+	if (this.health > 0) {
+		return f.dot;
 	}
-	yield* g.new_(f, T("/obj/effect/temp_visual/dir_setting/miner_death"), [rt.sv(f, "loc"), rt.sv(f, "dir")]);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* new_(T("/obj/effect/temp_visual/dir_setting/miner_death"), this.loc, this.dir);
+	return (yield* parent_proc());
 }, true);
 
-// /mob/living/simple_animal/hostile/megafauna/blood_drunk_miner/proc/Move  (code/modules/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner.dm:89)  may sleep
-rt.def("/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner/proc/Move", function* Move(f: Frame) {
-	if ((truthy(rt.sv(f, "dashing")) || ((truthy(live(f.args[0])) && isEqual(rt.fv(f, "z", live(f.args[0])), rt.sv(f, "z"))) && (truthy((rt.istype(live(f.args[0]), T("/turf/open/floor/plating/lava")) ? 1 : 0)) || truthy((rt.istype(live(f.args[0]), T("/turf/open/chasm")) ? 1 : 0)))))) {
+// blood_drunk_miner.dm:89
+rt.def("/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner/proc/Move", function* Move(f: Frame, newloc: Value) {
+	if (this.dashing || newloc && newloc.z == this.z && (rt.istype(newloc, T("/turf/open/floor/plating/lava")) || rt.istype(newloc, T("/turf/open/chasm")))) {
 		return 0;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["newloc"] });
+	return (yield* parent_proc());
+}, true);
 
-// /mob/living/simple_animal/hostile/megafauna/blood_drunk_miner/proc/ex_act  (code/modules/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner.dm:94)  may sleep
-rt.def("/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner/proc/ex_act", function* ex_act(f: Frame) {
-	if (truthy((yield* g.srcCall(f, "dash")))) {
-		return live(f.dot);
+// blood_drunk_miner.dm:94
+rt.def("/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner/proc/ex_act", function* ex_act(f: Frame, severity: Value, target: Value) {
+	if (yield* this.dash()) {
+		return f.dot;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["severity", "target"], waitfor: false });
+	return (yield* parent_proc());
+}, true, { waitfor: false });
 
-// /mob/living/simple_animal/hostile/megafauna/blood_drunk_miner/proc/AttackingTarget  (code/modules/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner.dm:99)  may sleep
+// blood_drunk_miner.dm:99
 rt.def("/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner/proc/AttackingTarget", function* AttackingTarget(f: Frame) {
 	let L: Value = null;
-	f.vars = () => [L];
-	if ((!truthy(rt.sv(f, "target")) || truthy(rt.fv(f, "gc_destroyed", rt.sv(f, "target"))))) {
-		return live(f.dot);
+	if (!this.target || this.target.gc_destroyed) {
+		return f.dot;
 	}
-	if ((rt.gt(rt.sv(f, "next_move"), rt.worldTime(f)) || !truthy((yield* g.srcCall(f, "Adjacent", rt.sv(f, "target")))))) {
-		yield* g.call(f, P("/proc/ImmediateInvokeAsync"), null, [live(f.src), P("/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner/proc/quick_attack_loop")]);
-		return live(f.dot);
+	if (this.next_move > rt.worldTime(f) || !this.Adjacent(this.target)) {
+		yield* ImmediateInvokeAsync(this, P("/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner/proc/quick_attack_loop"));
+		return f.dot;
 	}
-	yield* g.srcCall(f, "face_atom", rt.sv(f, "target"));
-	if (truthy((rt.istype(rt.sv(f, "target"), T("/mob/living")) ? 1 : 0))) {
-		if (isEqual(rt.gv(f, "stat", (L = rt.sv(f, "target"))), 2)) {
-			yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＀ butchers ＀!</span>", [live(f.src), live(L)]), fmt("<span class='userdanger'>You butcher ＀, restoring your health!</span>", [live(L)]));
-			if ((!isEqual(rt.sv(f, "z"), 2) && !truthy(rt.sv(f, "client")))) {
-				yield* g.srcCall(f, "adjustBruteLoss", divide(rt.neg(rt.fv(f, "maxHealth", live(L))), 2));
+	yield* this.face_atom(this.target);
+	if (rt.istype(this.target, T("/mob/living"))) {
+		if ((L = this.target).stat == 2) {
+			this.visible_message(`<span class='danger'>${this} butchers ${L}!</span>`, `<span class='userdanger'>You butcher ${L}, restoring your health!</span>`);
+			if (this.z != 2 && !this.client) {
+				yield* this.adjustBruteLoss(-L.maxHealth / 2);
 			}
-			yield* g.callName(f, live(L), "gib", []);
+			yield* L.gib();
 			return 1;
 		}
 	}
-	yield* g.srcCall(f, "changeNext_move", 8);
-	yield* g.callName(f, rt.sv(f, "miner_saw"), "melee_attack_chain", [live(f.src), rt.sv(f, "target")]);
-	yield* g.srcCall(f, "transform_weapon");
-	yield* g.call(f, P("/proc/ImmediateInvokeAsync"), null, [live(f.src), P("/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner/proc/quick_attack_loop")]);
-	if (truthy(rt.op(f, "Prob", [], [10]))) {
-		yield* g.call(f, P("/proc/ImmediateInvokeAsync"), null, [live(f.src), P("/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner/proc/dash")]);
+	this.changeNext_move(8);
+	yield* this.miner_saw.melee_attack_chain(this, this.target);
+	yield* this.transform_weapon();
+	yield* ImmediateInvokeAsync(this, P("/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner/proc/quick_attack_loop"));
+	if (prob(10)) {
+		yield* ImmediateInvokeAsync(this, P("/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner/proc/dash"));
 	}
 	return 1;
 }, true);
 
-// /mob/living/simple_animal/hostile/megafauna/blood_drunk_miner/proc/do_attack_animation  (code/modules/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner.dm:123)  may sleep
+// blood_drunk_miner.dm:123
 rt.def("/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner/proc/do_attack_animation", function* do_attack_animation(f: Frame) {
-	if (!truthy(live(f.args[2]))) {
-		f.args[2] = rt.sv(f, "miner_saw");
+	if (!f.args[2]) {
+		f.args[2] = this.miner_saw;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true, { args: ["A", "visual_effect_icon", "used_item", "no_effect", "end_pixel_y"] });
 
-// /mob/living/simple_animal/hostile/megafauna/blood_drunk_miner/proc/GiveTarget  (code/modules/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner.dm:128)  may sleep
-rt.def("/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner/proc/GiveTarget", function* GiveTarget(f: Frame) {
-	let targets_the_same: Value = null;
-	f.vars = () => [targets_the_same];
-	targets_the_same = (isEqual(live(f.args[0]), rt.sv(f, "target")) ? 1 : 0);
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!((truthy(live(f.dot)) && truthy(rt.sv(f, "target"))) && !truthy(live(targets_the_same)))) return f.dot;
-	rt.setSv(f, "wander", 1);
-	yield* g.srcCall(f, "transform_weapon");
-	yield* g.call(f, P("/proc/ImmediateInvokeAsync"), null, [live(f.src), P("/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner/proc/quick_attack_loop")]);
+// blood_drunk_miner.dm:128
+rt.def("/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner/proc/GiveTarget", function* GiveTarget(f: Frame, new_target: Value) {
+	let targets_the_same: Value = (new_target == this.target ? 1 : 0);
+	f.dot = (yield* parent_proc());
+	if (!(f.dot && this.target && !targets_the_same)) return f.dot;
+	this.wander = 1;
+	yield* this.transform_weapon();
+	yield* ImmediateInvokeAsync(this, P("/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner/proc/quick_attack_loop"));
 	return f.dot;
-}, true, { args: ["new_target"] });
+}, true);
 
-// /mob/living/simple_animal/hostile/megafauna/blood_drunk_miner/proc/OpenFire  (code/modules/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner.dm:136)  may sleep
+// blood_drunk_miner.dm:136
 rt.def("/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner/proc/OpenFire", function* OpenFire(f: Frame) {
-	yield* g.srcCall(f, "Goto", rt.sv(f, "target"), rt.sv(f, "move_to_delay"), rt.sv(f, "minimum_distance"));
-	if ((rt.ge((yield* g.call(f, P("/proc/get_dist"), null, [live(f.src), rt.sv(f, "target")])), 4) && rt.ge(rt.worldTime(f), rt.sv(f, "dash_cooldown")))) {
-		yield* g.call(f, P("/proc/ImmediateInvokeAsync"), null, [live(f.src), P("/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner/proc/dash"), rt.sv(f, "target")]);
-	} else {
-		if (rt.le(rt.sv(f, "next_move"), rt.worldTime(f))) {
-			yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＀ fires the proto-kinetic accelerator!</span>", [live(f.src)]));
-			yield* g.new_(f, T("/obj/effect/temp_visual/dir_setting/firing_effect"), [rt.sv(f, "loc"), rt.sv(f, "dir")]);
-			yield* g.srcCall(f, "face_atom", rt.sv(f, "target"));
-			yield* g.srcCall(f, "Shoot", rt.sv(f, "target"));
-			yield* g.srcCall(f, "changeNext_move", 4);
-		}
+	this.Goto(this.target, this.move_to_delay, this.minimum_distance);
+	if (get_dist(this, this.target) >= 4 && rt.worldTime(f) >= this.dash_cooldown) {
+		yield* ImmediateInvokeAsync(this, P("/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner/proc/dash"), this.target);
+	} else if (this.next_move <= rt.worldTime(f)) {
+		this.visible_message(`<span class='danger'>${this} fires the proto-kinetic accelerator!</span>`);
+		yield* new_(T("/obj/effect/temp_visual/dir_setting/firing_effect"), this.loc, this.dir);
+		yield* this.face_atom(this.target);
+		yield* this.Shoot(this.target);
+		this.changeNext_move(4);
 	}
-	yield* g.srcCall(f, "transform_weapon");
+	yield* this.transform_weapon();
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/megafauna/blood_drunk_miner/proc/quick_attack_loop  (code/modules/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner.dm:148)  may sleep
+// blood_drunk_miner.dm:148
 rt.def("/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner/proc/quick_attack_loop", function* quick_attack_loop(f: Frame) {
-	if (rt.le(rt.sv(f, "next_move"), rt.worldTime(f))) {
-		yield* g.call(f, P("/proc/sleep"), null, [1]);
+	if (this.next_move <= rt.worldTime(f)) {
+		yield* sleep(1);
 		yield* g.callSelf(f, []);
-		return live(f.dot);
+		return f.dot;
 	}
-	yield* g.call(f, P("/proc/sleep"), null, [multiply(subtract(rt.sv(f, "next_move"), rt.worldTime(f)), 1.5)]);
-	if ((!truthy(rt.sv(f, "target")) || truthy(rt.fv(f, "gc_destroyed", rt.sv(f, "target"))))) {
-		return live(f.dot);
+	yield* sleep((this.next_move - rt.worldTime(f)) * 1.5);
+	if (!this.target || this.target.gc_destroyed) {
+		return f.dot;
 	}
-	if (((truthy(rt.sv(f, "dashing")) || rt.gt(rt.sv(f, "next_move"), rt.worldTime(f))) || !truthy((yield* g.srcCall(f, "Adjacent", rt.sv(f, "target")))))) {
-		if ((truthy(rt.sv(f, "dashing")) && rt.le(rt.sv(f, "next_move"), rt.worldTime(f)))) {
-			rt.setSv(f, "next_move", add(rt.worldTime(f), 1));
+	if (this.dashing || this.next_move > rt.worldTime(f) || !this.Adjacent(this.target)) {
+		if (this.dashing && this.next_move <= rt.worldTime(f)) {
+			this.next_move = rt.worldTime(f) + 1;
 		}
 		yield* g.callSelf(f, []);
-		return live(f.dot);
+		return f.dot;
 	}
-	yield* g.srcCall(f, "AttackingTarget");
+	yield* this.AttackingTarget();
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/megafauna/blood_drunk_miner/proc/dash  (code/modules/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner.dm:163)  may sleep
+// blood_drunk_miner.dm:163
 rt.def("/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner/proc/dash", function* dash(f: Frame, dash_target: Value) {
-	let accessable_turfs: Value = null, self_dist_to_target: Value = null, own_turf: Value = null, O: Value = null, turf_dist_to_target: Value = null, valid: Value = null, _T: Value = null, target_turf: Value = null, closest_dist: Value = null, t: Value = null, step_back_turf: Value = null, step_forward_turf: Value = null, D: Value = null;
-	let $e: any;
-	f.vars = () => [dash_target, accessable_turfs, self_dist_to_target, own_turf, O, turf_dist_to_target, valid, _T, target_turf, closest_dist, t, step_back_turf, step_forward_turf, D, $e];
-	if (rt.lt(rt.worldTime(f), rt.sv(f, "dash_cooldown"))) {
-		return live(f.dot);
+	let O: Value = null, turf_dist_to_target: Value = null, valid: Value = null, _T: Value = null, target_turf: Value = null, closest_dist: Value = null, t: Value = null;
+	if (rt.worldTime(f) < this.dash_cooldown) {
+		return f.dot;
 	}
-	rt.setSv(f, "dash_cooldown", add(rt.worldTime(f), rt.initial(f, live(f.src), "dash_cooldown")));
-	accessable_turfs = rt.list();
-	self_dist_to_target = 0;
-	own_turf = rt.getStep(f, live(f.src), 0);
-	if (!(!truthy(rt.sv(f, "target")) || truthy(rt.fv(f, "gc_destroyed", rt.sv(f, "target"))))) {
-		self_dist_to_target = rt.modify(live(self_dist_to_target), (yield* g.call(f, P("/proc/get_dist"), null, [live(dash_target), live(own_turf)])), add);
+	this.dash_cooldown = rt.worldTime(f) + rt.initial(f, this, "dash_cooldown");
+	let accessable_turfs: Value = list();
+	let self_dist_to_target: Value = 0;
+	let own_turf: Value = rt.getStep(f, this, 0);
+	if (!(!this.target || this.target.gc_destroyed)) {
+		self_dist_to_target += get_dist(dash_target, own_turf);
 	}
-	O = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/block"), null, [rt.locate((yield* g.call(f, P("/proc/max"), null, [subtract(rt.fv(f, "x", live(own_turf)), 4), 1])), (yield* g.call(f, P("/proc/max"), null, [subtract(rt.fv(f, "y", live(own_turf)), 4), 1])), rt.fv(f, "z", live(own_turf))), rt.locate((yield* g.call(f, P("/proc/min"), null, [add(rt.fv(f, "x", live(own_turf)), 4), rt.fv(f, "maxx", rt.world())])), (yield* g.call(f, P("/proc/min"), null, [add(rt.fv(f, "y", live(own_turf)), 4), rt.fv(f, "maxy", rt.world())])), rt.fv(f, "z", live(own_turf)))])), T("/turf/open"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		O = $e;
+	for (O of each(block(rt.locate(max(own_turf.x - 4, 1), max(own_turf.y - 4, 1), own_turf.z), rt.locate(min(own_turf.x + 4, rt.world().maxx), min(own_turf.y + 4, rt.world().maxy), own_turf.z)), T("/turf/open"))) {
 		turf_dist_to_target = 0;
-		if (!(!truthy(live(dash_target)) || truthy(rt.fv(f, "gc_destroyed", live(dash_target))))) {
-			turf_dist_to_target = rt.modify(live(turf_dist_to_target), (yield* g.call(f, P("/proc/get_dist"), null, [live(dash_target), live(O)])), add);
+		if (!(!dash_target || dash_target.gc_destroyed)) {
+			turf_dist_to_target += get_dist(dash_target, O);
 		}
-		if (((((rt.ge((yield* g.call(f, P("/proc/get_dist"), null, [live(f.src), live(O)])), 4) && rt.le(live(turf_dist_to_target), live(self_dist_to_target))) && !truthy((rt.istype(live(O), T("/turf/open/floor/plating/lava")) ? 1 : 0))) && !truthy((rt.istype(live(O), T("/turf/open/chasm")) ? 1 : 0))) && ((!truthy(live(dash_target)) || truthy(rt.fv(f, "gc_destroyed", live(dash_target)))) || !truthy((yield* g.callName(f, live(O), "Adjacent", [live(dash_target)])))))) {
+		if (get_dist(this, O) >= MINER_DASH_RANGE && turf_dist_to_target <= self_dist_to_target && !rt.istype(O, T("/turf/open/floor/plating/lava")) && !rt.istype(O, T("/turf/open/chasm")) && (!dash_target || dash_target.gc_destroyed || !O.Adjacent(dash_target))) {
 			valid = 1;
 			_T = null;
-			rt.forList(f, 1, (yield* g.call(f, P("/proc/getline"), null, [live(own_turf), live(O)])), T("/turf"));
-			while (($e = rt.next(f, 1)) !== undefined) {
-				_T = $e;
-				if (truthy((yield* g.call(f, P("/proc/is_blocked_turf"), null, [live(_T), 1])))) {
+			for (_T of each(getline(own_turf, O), T("/turf"))) {
+				if (is_blocked_turf(_T, 1)) {
 					valid = 0;
 					continue;
 				}
 			}
-			rt.endFor(f, 1);
-			if (truthy(live(valid))) {
-				rt.setAt(live(accessable_turfs), live(O), live(turf_dist_to_target));
+			if (valid) {
+				rt.setAt(accessable_turfs, O, turf_dist_to_target);
 			}
 		}
 	}
-	rt.endFor(f, 0);
-	if (!truthy(rt.length(live(accessable_turfs)))) {
-		return live(f.dot);
+	if (!rt.length(accessable_turfs)) {
+		return f.dot;
 	}
-	target_turf = null;
-	if (!(!truthy(rt.sv(f, "target")) || truthy(rt.fv(f, "gc_destroyed", rt.sv(f, "target"))))) {
-		closest_dist = 4;
-		t = null;
-		rt.forList(f, 0, live(accessable_turfs));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			t = $e;
-			if (rt.lt(rt.index(live(accessable_turfs), live(t)), live(closest_dist))) {
-				closest_dist = rt.index(live(accessable_turfs), live(t));
+	if (!(!this.target || this.target.gc_destroyed)) {
+		closest_dist = MINER_DASH_RANGE;
+		for (t of each(accessable_turfs)) {
+			if (rt.index(accessable_turfs, t) < closest_dist) {
+				closest_dist = rt.index(accessable_turfs, t);
 			}
 		}
-		rt.endFor(f, 0);
 		t = null;
-		rt.forList(f, 0, live(accessable_turfs));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			t = $e;
-			rt.setAt(live(accessable_turfs), live(t), multiply(subtract(rt.index(live(accessable_turfs), live(t)), live(closest_dist)), 10));
+		for (t of each(accessable_turfs)) {
+			rt.setAt(accessable_turfs, t, (rt.index(accessable_turfs, t) - closest_dist) * 10);
 		}
-		rt.endFor(f, 0);
-		target_turf = (yield* g.call(f, P("/proc/pickweight"), null, [live(accessable_turfs)]));
+		target_turf = pickweight(accessable_turfs);
 	} else {
-		target_turf = rt.op(f, "PickUnweighted", [1], [live(accessable_turfs)]);
+		target_turf = pick(accessable_turfs);
 	}
-	step_back_turf = rt.getStep(f, live(target_turf), (yield* g.call(f, P("/proc/get_cardinal_dir"), null, [live(target_turf), live(own_turf)])));
-	step_forward_turf = rt.getStep(f, live(own_turf), (yield* g.call(f, P("/proc/get_cardinal_dir"), null, [live(own_turf), live(target_turf)])));
-	yield* g.new_(f, T("/obj/effect/temp_visual/small_smoke/halfsecond"), [live(step_back_turf)]);
-	yield* g.new_(f, T("/obj/effect/temp_visual/small_smoke/halfsecond"), [live(step_forward_turf)]);
-	D = (yield* g.new_(f, T("/obj/effect/temp_visual/decoy/fading/halfsecond"), [live(own_turf), live(f.src)]));
-	yield* g.srcCall(f, "forceMove", live(step_back_turf));
-	yield* g.call(f, P("/proc/playsound"), null, [live(own_turf), rt.rsc("sound/weapons/punchmiss.ogg"), 40, 1, -1]);
-	rt.setSv(f, "dashing", 1);
-	rt.setSv(f, "alpha", 0);
-	rt.op(f, "Animate", [2, 6], [null, live(f.src), "alpha", 255, "time", 5]);
-	yield* g.call(f, P("/proc/sleep"), null, [2]);
-	yield* g.callName(f, live(D), "forceMove", [live(step_forward_turf)]);
-	yield* g.srcCall(f, "forceMove", live(target_turf));
-	yield* g.call(f, P("/proc/playsound"), null, [live(target_turf), rt.rsc("sound/weapons/punchmiss.ogg"), 40, 1, -1]);
-	yield* g.call(f, P("/proc/sleep"), null, [1]);
-	rt.setSv(f, "dashing", 0);
+	let step_back_turf: Value = rt.getStep(f, target_turf, get_cardinal_dir(target_turf, own_turf));
+	let step_forward_turf: Value = rt.getStep(f, own_turf, get_cardinal_dir(own_turf, target_turf));
+	yield* new_(T("/obj/effect/temp_visual/small_smoke/halfsecond"), step_back_turf);
+	yield* new_(T("/obj/effect/temp_visual/small_smoke/halfsecond"), step_forward_turf);
+	let D: Value = (yield* new_(T("/obj/effect/temp_visual/decoy/fading/halfsecond"), own_turf, this));
+	yield* this.forceMove(step_back_turf);
+	playsound(own_turf, rt.rsc("sound/weapons/punchmiss.ogg"), 40, 1, -1);
+	this.dashing = 1;
+	this.alpha = 0;
+	rt.op(f, "Animate", [2, 6], [null, this, "alpha", 255, "time", 5]);
+	yield* sleep(2);
+	yield* D.forceMove(step_forward_turf);
+	yield* this.forceMove(target_turf);
+	playsound(target_turf, rt.rsc("sound/weapons/punchmiss.ogg"), 40, 1, -1);
+	yield* sleep(1);
+	this.dashing = 0;
 	return 1;
 }, true, { argTypes: [{ path: "/atom" }] });
 
-// /mob/living/simple_animal/hostile/megafauna/blood_drunk_miner/proc/transform_weapon  (code/modules/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner.dm:216)  may sleep
+// blood_drunk_miner.dm:216
 rt.def("/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner/proc/transform_weapon", function* transform_weapon(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	if (!rt.le(rt.sv(f, "time_until_next_transform"), rt.worldTime(f))) return f.dot;
-	rt.setFv(f, "transform_cooldown", rt.sv(f, "miner_saw"), 0);
-	yield* g.callName(f, rt.sv(f, "miner_saw"), "transform_weapon", [live(f.src), 1]);
-	if (truthy(rt.fv(f, "active", rt.sv(f, "miner_saw")))) {
-		$0 = "_transformed";
-	} else {
-		$0 = "";
-	}
-	rt.setSv(f, "icon_state", fmt("miner＀", [$0]));
-	if (truthy(rt.fv(f, "active", rt.sv(f, "miner_saw")))) {
-		$0 = "_transformed";
-	} else {
-		$0 = "";
-	}
-	rt.setSv(f, "icon_living", fmt("miner＀", [$0]));
-	rt.setSv(f, "time_until_next_transform", add(rt.worldTime(f), (yield* g.call(f, P("/proc/rand"), null, [50, 100]))));
+	if (!(this.time_until_next_transform <= rt.worldTime(f))) return f.dot;
+	this.miner_saw.transform_cooldown = 0;
+	yield* this.miner_saw.transform_weapon(this, 1);
+	this.icon_state = `miner${this.miner_saw.active ? "_transformed" : ""}`;
+	this.icon_living = `miner${this.miner_saw.active ? "_transformed" : ""}`;
+	this.time_until_next_transform = rt.worldTime(f) + rand(50, 100);
 	return f.dot;
 }, true);
 
@@ -324,26 +285,25 @@ rt.type(11618, "/obj/effect/temp_visual/dir_setting/miner_death", "/obj/effect/t
 	duration: 10,
 });
 
-// /obj/effect/temp_visual/dir_setting/miner_death/proc/Initialize  (code/modules/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner.dm:228)  may sleep
-rt.def("/obj/effect/temp_visual/dir_setting/miner_death/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.call(f, P("/proc/ImmediateInvokeAsync"), null, [live(f.src), P("/obj/effect/temp_visual/dir_setting/miner_death/proc/fade_out")]);
+// blood_drunk_miner.dm:228
+rt.def("/obj/effect/temp_visual/dir_setting/miner_death/proc/Initialize", function* Initialize(f: Frame, mapload: Value, set_dir: Value) {
+	f.dot = (yield* parent_proc());
+	yield* ImmediateInvokeAsync(this, P("/obj/effect/temp_visual/dir_setting/miner_death/proc/fade_out"));
 	return f.dot;
-}, true, { args: ["mapload", "set_dir"] });
+}, true);
 
-// /obj/effect/temp_visual/dir_setting/miner_death/proc/fade_out  (code/modules/mob/living/simple_animal/hostile/megafauna/blood_drunk_miner.dm:232)  may sleep
+// blood_drunk_miner.dm:232
 rt.def("/obj/effect/temp_visual/dir_setting/miner_death/proc/fade_out", function* fade_out(f: Frame) {
-	let M: Value = null, final_dir: Value = null;
-	f.vars = () => [M, final_dir];
-	yield* g.callName(f, (M = (yield* g.new_(f, T("/matrix"), []))), "Turn", [rt.op(f, "PickUnweighted", [2], [90, 270])]);
-	final_dir = rt.sv(f, "dir");
-	if (truthy(rt.bitAnd(rt.sv(f, "dir"), 12))) {
-		final_dir = rt.op(f, "PickUnweighted", [2], [1, 2]);
+	let M: Value = null;
+	(M = (yield* new_(T("/matrix")))).Turn(pick(90, 270));
+	let final_dir: Value = this.dir;
+	if (rt.bitAnd(this.dir, 12)) {
+		final_dir = pick(1, 2);
 	}
-	rt.op(f, "Animate", [2, 12], [null, live(f.src), "transform", live(M), "pixel_y", -6, "dir", live(final_dir), "time", 2, "easing", 192]);
-	yield* g.call(f, P("/proc/sleep"), null, [2]);
-	rt.op(f, "Animate", [2, 10], [null, live(f.src), "color", rt.list("#A7A19E", "#A7A19E", "#A7A19E", rt.list(0, 0, 0)), "time", 8, "easing", 64, "flags", 4]);
-	yield* g.call(f, P("/proc/sleep"), null, [2]);
-	rt.op(f, "Animate", [2, 10], [null, live(f.src), "alpha", 0, "time", 6, "easing", 128, "flags", 4]);
+	rt.op(f, "Animate", [2, 12], [null, this, "transform", M, "pixel_y", -6, "dir", final_dir, "time", 2, "easing", 192]);
+	yield* sleep(2);
+	rt.op(f, "Animate", [2, 10], [null, this, "color", list("#A7A19E", "#A7A19E", "#A7A19E", list(0, 0, 0)), "time", 8, "easing", 64, "flags", 4]);
+	yield* sleep(2);
+	rt.op(f, "Animate", [2, 10], [null, this, "alpha", 0, "time", 6, "easing", 128, "flags", 4]);
 	return f.dot;
 }, true);

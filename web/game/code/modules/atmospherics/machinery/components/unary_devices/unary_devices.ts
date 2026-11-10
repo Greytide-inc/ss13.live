@@ -1,7 +1,7 @@
-// From code/modules/atmospherics/machinery/components/unary_devices/unary_devices.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/atmospherics/machinery/components/unary_devices/unary_devices.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(10582, "/obj/machinery/atmospherics/components/unary", "/obj/machinery/atmospherics/components", {
@@ -11,23 +11,22 @@ rt.type(10582, "/obj/machinery/atmospherics/components/unary", "/obj/machinery/a
 	dir: 2,
 });
 
-// /obj/machinery/atmospherics/components/unary/proc/SetInitDirections  (code/modules/atmospherics/machinery/components/unary_devices/unary_devices.dm:8)
+// unary_devices.dm:8
 rt.def("/obj/machinery/atmospherics/components/unary/proc/SetInitDirections", function SetInitDirections(f: Frame) {
-	rt.setSv(f, "initialize_directions", rt.sv(f, "dir"));
+	this.initialize_directions = this.dir;
 	return f.dot;
 });
 
-// /obj/machinery/atmospherics/components/unary/proc/on_construction  (code/modules/atmospherics/machinery/components/unary_devices/unary_devices.dm:14)  may sleep
+// unary_devices.dm:14
 rt.def("/obj/machinery/atmospherics/components/unary/proc/on_construction", function* on_construction(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "update_icon");
+	yield* parent_proc();
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/machinery/atmospherics/components/unary/proc/hide  (code/modules/atmospherics/machinery/components/unary_devices/unary_devices.dm:18)  may sleep
+// unary_devices.dm:18
 rt.def("/obj/machinery/atmospherics/components/unary/proc/hide", function* hide(f: Frame, intact: Value) {
-	f.vars = () => [intact];
-	yield* g.srcCall(f, "update_icon");
-	yield* g.callSuper(f, [live(intact)]);
+	yield* this.update_icon();
+	yield* parent_proc(intact);
 	return f.dot;
 }, true);

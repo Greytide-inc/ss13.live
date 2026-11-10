@@ -1,7 +1,7 @@
-// From code/modules/projectiles/guns/misc/blastcannon.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/projectiles/guns/misc/blastcannon.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(5285, "/obj/item/weapon/gun/blastcannon", "/obj/item/weapon/gun", {
@@ -21,135 +21,129 @@ rt.type(5285, "/obj/item/weapon/gun/blastcannon", "/obj/item/weapon/gun", {
 	needs_permit: 0,
 });
 
-// /obj/item/weapon/gun/blastcannon/proc/New  (code/modules/projectiles/guns/misc/blastcannon.dm:19)  may sleep
+// blastcannon.dm:19
 rt.def("/obj/item/weapon/gun/blastcannon/proc/New", function* New(f: Frame) {
-	if (!truthy(rt.sv(f, "pin"))) {
-		rt.setSv(f, "pin", (yield* g.new_(f, T("/obj/item/device/firing_pin"), [])));
+	if (!this.pin) {
+		this.pin = (yield* new_(T("/obj/item/device/firing_pin")));
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/gun/blastcannon/proc/Destroy  (code/modules/projectiles/guns/misc/blastcannon.dm:25)  may sleep
+// blastcannon.dm:25
 rt.def("/obj/item/weapon/gun/blastcannon/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.sv(f, "bomb"))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "bomb")]);
-		rt.setSv(f, "bomb", null);
+	if (this.bomb) {
+		yield* qdel(this.bomb);
+		this.bomb = null;
 	}
-	rt.setSv(f, "air1", null);
-	rt.setSv(f, "air2", null);
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	this.air1 = null;
+	this.air2 = null;
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/gun/blastcannon/proc/attack_self  (code/modules/projectiles/guns/misc/blastcannon.dm:33)  may sleep
+// blastcannon.dm:33
 rt.def("/obj/item/weapon/gun/blastcannon/proc/attack_self", function* attack_self(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (truthy(rt.sv(f, "bomb"))) {
-		yield* g.callName(f, rt.sv(f, "bomb"), "forceMove", [rt.fv(f, "loc", live(user))]);
-		yield* g.callName(f, live(user), "put_in_hands", [rt.sv(f, "bomb")]);
-		yield* g.callName(f, live(user), "visible_message", [fmt("<span class='warning'>＀ detaches the ＀ from the ＀</span>", [live(user), rt.sv(f, "bomb"), live(f.src)])]);
-		rt.setSv(f, "bomb", null);
+	if (this.bomb) {
+		yield* this.bomb.forceMove(user.loc);
+		yield* user.put_in_hands(this.bomb);
+		user.visible_message(`<span class='warning'>${user} detaches the ${this.bomb} from the ${this}</span>`);
+		this.bomb = null;
 	}
-	yield* g.srcCall(f, "update_icon");
-	f.dot = (yield* g.callSuper(f, [live(user)]));
+	yield* this.update_icon();
+	f.dot = (yield* parent_proc(user));
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/gun/blastcannon/proc/update_icon  (code/modules/projectiles/guns/misc/blastcannon.dm:42)
+// blastcannon.dm:42
 rt.def("/obj/item/weapon/gun/blastcannon/proc/update_icon", function update_icon(f: Frame) {
-	if (truthy(rt.sv(f, "bomb"))) {
-		rt.setSv(f, "icon_state", rt.sv(f, "icon_state_loaded"));
-		rt.setSv(f, "name", "blast cannon");
-		rt.setSv(f, "desc", "A makeshift device used to concentrate a bomb's blast energy to a narrow wave.");
+	if (this.bomb) {
+		this.icon_state = this.icon_state_loaded;
+		this.name = "blast cannon";
+		this.desc = "A makeshift device used to concentrate a bomb's blast energy to a narrow wave.";
 	} else {
-		rt.setSv(f, "icon_state", rt.initial(f, live(f.src), "icon_state"));
-		rt.setSv(f, "name", rt.initial(f, live(f.src), "name"));
-		rt.setSv(f, "desc", rt.initial(f, live(f.src), "desc"));
+		this.icon_state = rt.initial(f, this, "icon_state");
+		this.name = rt.initial(f, this, "name");
+		this.desc = rt.initial(f, this, "desc");
 	}
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
+	f.dot = parent_proc();
 	return f.dot;
 });
 
-// /obj/item/weapon/gun/blastcannon/proc/attackby  (code/modules/projectiles/guns/misc/blastcannon.dm:52)  may sleep
-rt.def("/obj/item/weapon/gun/blastcannon/proc/attackby", function* attackby(f: Frame) {
+// blastcannon.dm:52
+rt.def("/obj/item/weapon/gun/blastcannon/proc/attackby", function* attackby(f: Frame, O: Value, user: Value) {
 	let _T: Value = null;
-	f.vars = () => [_T];
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/device/transfer_valve")) ? 1 : 0))) {
-		if ((!truthy(rt.gv(f, "tank_one", (_T = live(f.args[0])))) || !truthy(rt.fv(f, "tank_two", live(_T))))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>What good would an incomplete bomb do?</span>"]);
+	if (rt.istype(O, T("/obj/item/device/transfer_valve"))) {
+		if (!(_T = O).tank_one || !_T.tank_two) {
+			to_chat(user, "<span class='warning'>What good would an incomplete bomb do?</span>");
 			return 0;
 		}
-		if (!truthy((yield* g.callName(f, live(f.args[1]), "drop_item", [live(f.args[0])])))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>The ＀ seems to be stuck to your hand!</span>", [live(f.args[0])])]);
+		if (!(yield* user.drop_item(O))) {
+			to_chat(user, `<span class='warning'>The ${O} seems to be stuck to your hand!</span>`);
 			return 0;
 		}
-		yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='warning'>＀ attaches the ＀ to the ＀!</span>", [live(f.args[1]), live(f.args[0]), live(f.src)])]);
-		rt.setSv(f, "bomb", live(f.args[0]));
-		rt.setFv(f, "loc", live(f.args[0]), live(f.src));
-		yield* g.srcCall(f, "update_icon");
+		user.visible_message(`<span class='warning'>${user} attaches the ${O} to the ${this}!</span>`);
+		this.bomb = O;
+		O.loc = this;
+		yield* this.update_icon();
 		return 1;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	f.dot = (yield* parent_proc());
 	return f.dot;
-}, true, { args: ["O", "user"] });
+}, true);
 
-// /obj/item/weapon/gun/blastcannon/proc/calculate_bomb  (code/modules/projectiles/guns/misc/blastcannon.dm:68)  may sleep
+// blastcannon.dm:68
 rt.def("/obj/item/weapon/gun/blastcannon/proc/calculate_bomb", function* calculate_bomb(f: Frame) {
-	let temp: Value = null, i: Value = null, pressure: Value = null;
+	let temp: Value = null, i: Value = null;
 	let $e: any;
-	f.vars = () => [temp, i, pressure, $e];
-	if (((!truthy((rt.istype(rt.sv(f, "bomb"), T("/obj/item/device/transfer_valve")) ? 1 : 0)) || !truthy((rt.istype(rt.fv(f, "tank_one", rt.sv(f, "bomb")), T("/obj/item/weapon/tank")) ? 1 : 0))) || !truthy((rt.istype(rt.fv(f, "tank_two", rt.sv(f, "bomb")), T("/obj/item/weapon/tank")) ? 1 : 0)))) {
+	if (!rt.istype(this.bomb, T("/obj/item/device/transfer_valve")) || !rt.istype(this.bomb.tank_one, T("/obj/item/weapon/tank")) || !rt.istype(this.bomb.tank_two, T("/obj/item/weapon/tank"))) {
 		return 0;
 	}
-	rt.setSv(f, "air1", rt.gv(f, "air_contents", rt.fv(f, "tank_one", rt.sv(f, "bomb"))));
-	rt.setSv(f, "air2", rt.gv(f, "air_contents", rt.fv(f, "tank_two", rt.sv(f, "bomb"))));
-	temp = null;
-	rt.setFv(f, "volume", live(temp), add(rt.fv(f, "volume", rt.sv(f, "air1")), rt.fv(f, "volume", rt.sv(f, "air2"))));
-	yield* g.callName(f, live(temp), "merge", [rt.sv(f, "air1")]);
-	yield* g.callName(f, live(temp), "merge", [rt.sv(f, "air2")]);
-	i = null;
+	this.air1 = this.bomb.tank_one.air_contents;
+	this.air2 = this.bomb.tank_two.air_contents;
+	temp.volume = this.air1.volume + this.air2.volume;
+	yield* temp.merge(this.air1);
+	yield* temp.merge(this.air2);
 	rt.forRange(f, 0, 1, 6, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.callName(f, live(temp), "react", []);
+		yield* temp.react();
 	}
 	rt.endFor(f, 0);
-	pressure = (yield* g.callName(f, live(temp), "return_pressure", []));
-	yield* g.call(f, P("/proc/qdel"), null, [live(temp)]);
-	if (rt.lt(live(pressure), 4053)) {
+	let pressure: Value = temp.return_pressure();
+	yield* qdel(temp);
+	if (pressure < TANK_FRAGMENT_PRESSURE) {
 		return 0;
 	}
-	return divide(live(pressure), 607.949951171875);
+	return pressure / 607.94995;
 }, true);
 
-// /obj/item/weapon/gun/blastcannon/proc/afterattack  (code/modules/projectiles/guns/misc/blastcannon.dm:85)  may sleep
-rt.def("/obj/item/weapon/gun/blastcannon/proc/afterattack", function* afterattack(f: Frame) {
-	let power: Value = null, heavy: Value = null, medium: Value = null, light: Value = null, starting: Value = null, A: Value = null, log_str: Value = null;
+// blastcannon.dm:85
+rt.def("/obj/item/weapon/gun/blastcannon/proc/afterattack", function* afterattack(f: Frame, target: Value, user: Value, flag: Value, params: Value) {
+	let log_str: Value = null;
 	let $0: any;
-	f.vars = () => [power, heavy, medium, light, starting, A, log_str, $0];
-	if (((((((!truthy(rt.sv(f, "bomb")) || isEqual(live(f.args[0]), live(f.args[1]))) || isEqual(rt.fv(f, "loc", live(f.args[0])), live(f.args[1]))) || !truthy(live(f.args[0]))) || isEqual(rt.fv(f, "loc", live(f.args[0])), rt.fv(f, "loc", live(f.args[1])))) || truthy((rt.isIn(f, rt.fv(f, "loc", live(f.args[0])), (yield* g.call(f, P("/proc/range"), null, [live(f.args[1]), 2]))) ? 1 : 0))) || truthy((rt.isIn(f, live(f.args[0]), (yield* g.call(f, P("/proc/range"), null, [live(f.args[1]), 2]))) ? 1 : 0)))) {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+	if (!this.bomb || target == user || target.loc == user || !target || target.loc == user.loc || rt.isIn(f, target.loc, range(user, 2)) || rt.isIn(f, target, range(user, 2))) {
+		return (yield* parent_proc());
 	}
-	power = (yield* g.srcCall(f, "calculate_bomb"));
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "bomb")]);
-	yield* g.srcCall(f, "update_icon");
-	heavy = multiply(live(power), 0.20000000298023224);
-	medium = multiply(live(power), 0.5);
-	light = live(power);
-	yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='danger'>＀ opens ％！ on ＋ ＀ and fires a blast wave at ％！!</span>", [live(f.args[1]), rt.sv(f, "bomb"), rt.fv(f, "name", live(f.src)), live(f.args[0])]), fmt("<span class='danger'>You open ％！ on your ＀ and fire a blast wave at ％！!</span>", [rt.sv(f, "bomb"), rt.fv(f, "name", live(f.src)), live(f.args[0])])]);
-	yield* g.call(f, P("/proc/playsound"), null, [live(f.args[1]), "explosion", 100, 1]);
-	starting = rt.getStep(f, live(f.args[1]), 0);
-	A = (yield* g.call(f, P("/proc/get_area"), null, [live(f.args[1])]));
-	if (truthy(live(starting))) {
-		$0 = fmt("＀ ＀", [fmt("(＀,＀,＀)", [rt.fv(f, "x", live(starting)), rt.fv(f, "y", live(starting)), rt.fv(f, "z", live(starting))]), fmt("(<a href='?_src_=holder;adminplayerobservecoodjump=1;X=＀;Y=＀;Z=＀'>JMP</a>)", [rt.fv(f, "x", live(starting)), rt.fv(f, "y", live(starting)), rt.fv(f, "z", live(starting))])]);
+	let power: Value = (yield* this.calculate_bomb());
+	yield* qdel(this.bomb);
+	yield* this.update_icon();
+	let heavy: Value = power * 0.2;
+	let medium: Value = power * 0.5;
+	let light: Value = power;
+	user.visible_message(fmt("<span class='danger'>＀ opens ％！ on ＋ ＀ and fires a blast wave at ％！!</span>", [user, this.bomb, this.name, target]), fmt("<span class='danger'>You open ％！ on your ＀ and fire a blast wave at ％！!</span>", [this.bomb, this.name, target]));
+	playsound(user, "explosion", 100, 1);
+	let starting: Value = rt.getStep(f, user, 0);
+	let A: Value = get_area(user);
+	if (starting) {
+		$0 = `${`(${starting.x},${starting.y},${starting.z})`} ${`(<a href='?_src_=holder;adminplayerobservecoodjump=1;X=${starting.x};Y=${starting.y};Z=${starting.z}'>JMP</a>)`}`;
 	} else {
 		$0 = "nonexistent location";
 	}
-	yield* g.call(f, P("/proc/message_admins"), null, [(log_str = fmt("Blast wave fired at ＀ (＀) by ＀(＀) with power ＀/＀/＀.", [fmt("＀", [$0]), rt.fv(f, "name", live(A)), rt.fv(f, "name", live(f.args[1])), rt.fv(f, "ckey", live(f.args[1])), live(heavy), live(medium), live(light)]))]);
-	yield* g.call(f, P("/proc/log_game"), null, [live(log_str)]);
+	message_admins((log_str = `Blast wave fired at ${`${$0}`} (${A.name}) by ${user.name}(${user.ckey}) with power ${heavy}/${medium}/${light}.`));
+	log_game(log_str);
 	return f.dot;
-}, true, { args: ["target", "user", "flag", "params"] });
+}, true);
 
 rt.type(8902, "/obj/item/projectile/blastwave", "/obj/item/projectile", {
 	heavyr: 0,
@@ -163,24 +157,20 @@ rt.type(8902, "/obj/item/projectile/blastwave", "/obj/item/projectile", {
 	icon_state: "blastwave",
 });
 
-// /obj/item/projectile/blastwave/proc/Range  (code/modules/projectiles/guns/misc/blastcannon.dm:113)  may sleep
+// blastcannon.dm:113
 rt.def("/obj/item/projectile/blastwave/proc/Range", function* Range(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.sv(f, "heavyr"))) {
-		yield* g.callName(f, rt.sv(f, "loc"), "ex_act", [1]);
+	yield* parent_proc();
+	if (this.heavyr) {
+		yield* this.loc.ex_act(1);
+	} else if (this.mediumr) {
+		yield* this.loc.ex_act(2);
+	} else if (this.lightr) {
+		yield* this.loc.ex_act(3);
 	} else {
-		if (truthy(rt.sv(f, "mediumr"))) {
-			yield* g.callName(f, rt.sv(f, "loc"), "ex_act", [2]);
-		} else {
-			if (truthy(rt.sv(f, "lightr"))) {
-				yield* g.callName(f, rt.sv(f, "loc"), "ex_act", [3]);
-			} else {
-				yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-			}
-		}
+		yield* qdel(this);
 	}
-	rt.incSrcVar(f, "heavyr", -1, true);
-	rt.incSrcVar(f, "mediumr", -1, true);
-	rt.incSrcVar(f, "lightr", -1, true);
+	this.heavyr--;
+	this.mediumr--;
+	this.lightr--;
 	return f.dot;
 }, true);

@@ -1,22 +1,22 @@
-// From code/modules/cargo/exports/organs.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/cargo/exports/organs.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(2021, "/datum/export/organ/alien", "/datum/export/organ", {});
 
-// /datum/export/organ/alien/proc/get_cost  (code/modules/cargo/exports/organs.dm:6)
+// organs.dm:6
 rt.def("/datum/export/organ/alien/proc/get_cost", function get_cost(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 0;
 	}
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	if (!truthy(live(f.args[2]))) return f.dot;
-	(f.dot = rt.modify(live(f.dot), 2, multiply));
+	f.dot = parent_proc();
+	if (!f.args[2]) return f.dot;
+	f.dot *= 2;
 	return f.dot;
 }, false, { args: ["O", "contr", "emag"] });
 
@@ -26,12 +26,10 @@ rt.type(2022, "/datum/export/organ/alien/brain", "/datum/export/organ/alien", {
 	export_types: null,
 });
 
-// /datum/export/organ/alien/brain/proc/<init>  (code/modules/cargo/exports/organs.dm:13)
+// organs.dm:13
 rt.def("/datum/export/organ/alien/brain/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/item/organ/brain/alien")));
+	parent_proc();
+	this.export_types = list(T("/obj/item/organ/brain/alien"));
 	return f.dot;
 });
 
@@ -41,12 +39,10 @@ rt.type(2023, "/datum/export/organ/alien/acid", "/datum/export/organ/alien", {
 	export_types: null,
 });
 
-// /datum/export/organ/alien/acid/proc/<init>  (code/modules/cargo/exports/organs.dm:18)
+// organs.dm:18
 rt.def("/datum/export/organ/alien/acid/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/item/organ/alien/acid")));
+	parent_proc();
+	this.export_types = list(T("/obj/item/organ/alien/acid"));
 	return f.dot;
 });
 
@@ -56,12 +52,10 @@ rt.type(2024, "/datum/export/organ/alien/hivenode", "/datum/export/organ/alien",
 	export_types: null,
 });
 
-// /datum/export/organ/alien/hivenode/proc/<init>  (code/modules/cargo/exports/organs.dm:23)
+// organs.dm:23
 rt.def("/datum/export/organ/alien/hivenode/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/item/organ/alien/hivenode")));
+	parent_proc();
+	this.export_types = list(T("/obj/item/organ/alien/hivenode"));
 	return f.dot;
 });
 
@@ -71,12 +65,10 @@ rt.type(2025, "/datum/export/organ/alien/neurotoxin", "/datum/export/organ/alien
 	export_types: null,
 });
 
-// /datum/export/organ/alien/neurotoxin/proc/<init>  (code/modules/cargo/exports/organs.dm:28)
+// organs.dm:28
 rt.def("/datum/export/organ/alien/neurotoxin/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/item/organ/alien/neurotoxin")));
+	parent_proc();
+	this.export_types = list(T("/obj/item/organ/alien/neurotoxin"));
 	return f.dot;
 });
 
@@ -86,19 +78,17 @@ rt.type(2027, "/datum/export/organ/alien/plasmavessel", "/datum/export/organ/ali
 	export_types: null,
 });
 
-// /datum/export/organ/alien/plasmavessel/proc/<init>  (code/modules/cargo/exports/organs.dm:37)
+// organs.dm:37
 rt.def("/datum/export/organ/alien/plasmavessel/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/item/organ/alien/plasmavessel")));
+	parent_proc();
+	this.export_types = list(T("/obj/item/organ/alien/plasmavessel"));
 	return f.dot;
 });
 
-// /datum/export/organ/alien/plasmavessel/proc/get_cost  (code/modules/cargo/exports/organs.dm:40)
-rt.def("/datum/export/organ/alien/plasmavessel/proc/get_cost", function get_cost(f: Frame) {
-	return add(add(rt.callSuper(f, [], rt.Args.Same), multiply(rt.fv(f, "max_plasma", live(f.args[0])), 2)), multiply(rt.fv(f, "plasma_rate", live(f.args[0])), 20));
-}, false, { args: ["P"] });
+// organs.dm:40
+rt.def("/datum/export/organ/alien/plasmavessel/proc/get_cost", function get_cost(f: Frame, P: Value) {
+	return parent_proc() + P.max_plasma * 2 + P.plasma_rate * 20;
+}, false);
 
 rt.type(2028, "/datum/export/organ/alien/embryo", "/datum/export/organ/alien", {
 	cost: 5000,
@@ -106,12 +96,10 @@ rt.type(2028, "/datum/export/organ/alien/embryo", "/datum/export/organ/alien", {
 	export_types: null,
 });
 
-// /datum/export/organ/alien/embryo/proc/<init>  (code/modules/cargo/exports/organs.dm:47)
+// organs.dm:47
 rt.def("/datum/export/organ/alien/embryo/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/item/organ/body_egg/alien_embryo")));
+	parent_proc();
+	this.export_types = list(T("/obj/item/organ/body_egg/alien_embryo"));
 	return f.dot;
 });
 
@@ -121,12 +109,10 @@ rt.type(2029, "/datum/export/organ/alien/eggsac", "/datum/export/organ/alien", {
 	export_types: null,
 });
 
-// /datum/export/organ/alien/eggsac/proc/<init>  (code/modules/cargo/exports/organs.dm:52)
+// organs.dm:52
 rt.def("/datum/export/organ/alien/eggsac/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/item/organ/alien/eggsac")));
+	parent_proc();
+	this.export_types = list(T("/obj/item/organ/alien/eggsac"));
 	return f.dot;
 });
 
@@ -136,12 +122,10 @@ rt.type(2030, "/datum/export/organ/alien/abductor", "/datum/export/organ/alien",
 	export_types: null,
 });
 
-// /datum/export/organ/alien/abductor/proc/<init>  (code/modules/cargo/exports/organs.dm:59)
+// organs.dm:59
 rt.def("/datum/export/organ/alien/abductor/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/item/organ/heart/gland")));
+	parent_proc();
+	this.export_types = list(T("/obj/item/organ/heart/gland"));
 	return f.dot;
 });
 
@@ -151,12 +135,10 @@ rt.type(2031, "/datum/export/organ/alien/changeling_egg", "/datum/export/organ/a
 	export_types: null,
 });
 
-// /datum/export/organ/alien/changeling_egg/proc/<init>  (code/modules/cargo/exports/organs.dm:64)
+// organs.dm:64
 rt.def("/datum/export/organ/alien/changeling_egg/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/item/organ/body_egg/changeling_egg")));
+	parent_proc();
+	this.export_types = list(T("/obj/item/organ/body_egg/changeling_egg"));
 	return f.dot;
 });
 
@@ -166,25 +148,23 @@ rt.type(2032, "/datum/export/organ/hivelord", "/datum/export/organ", {
 	export_types: null,
 });
 
-// /datum/export/organ/hivelord/proc/<init>  (code/modules/cargo/exports/organs.dm:70)
+// organs.dm:70
 rt.def("/datum/export/organ/hivelord/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/item/organ/regenerative_core")));
+	parent_proc();
+	this.export_types = list(T("/obj/item/organ/regenerative_core"));
 	return f.dot;
 });
 
-// /datum/export/organ/alien/plasmavessel/proc/get_cost  (code/modules/cargo/exports/organs.dm:73)
-rt.def("/datum/export/organ/alien/plasmavessel/proc/get_cost", function get_cost(f: Frame) {
-	if (truthy(rt.fv(f, "inert", live(f.args[0])))) {
-		return divide(rt.callSuper(f, [], rt.Args.Same), 3);
+// organs.dm:73
+rt.def("/datum/export/organ/alien/plasmavessel/proc/get_cost", function get_cost(f: Frame, C: Value) {
+	if (C.inert) {
+		return parent_proc() / 3;
 	}
-	if (truthy(rt.fv(f, "preserved", live(f.args[0])))) {
-		return multiply(rt.callSuper(f, [], rt.Args.Same), 2);
+	if (C.preserved) {
+		return parent_proc() * 2;
 	}
-	return rt.callSuper(f, [], rt.Args.Same);
-}, false, { args: ["C"] });
+	return parent_proc();
+}, false);
 
 rt.type(2034, "/datum/export/organ/cat/ears", "/datum/export/organ/cat", {
 	cost: 1000,
@@ -192,12 +172,10 @@ rt.type(2034, "/datum/export/organ/cat/ears", "/datum/export/organ/cat", {
 	export_types: null,
 });
 
-// /datum/export/organ/cat/ears/proc/<init>  (code/modules/cargo/exports/organs.dm:84)
+// organs.dm:84
 rt.def("/datum/export/organ/cat/ears/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/item/organ/ears/cat")));
+	parent_proc();
+	this.export_types = list(T("/obj/item/organ/ears/cat"));
 	return f.dot;
 });
 
@@ -207,12 +185,10 @@ rt.type(2035, "/datum/export/organ/cat/tail", "/datum/export/organ/cat", {
 	export_types: null,
 });
 
-// /datum/export/organ/cat/tail/proc/<init>  (code/modules/cargo/exports/organs.dm:89)
+// organs.dm:89
 rt.def("/datum/export/organ/cat/tail/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/item/organ/tail/cat")));
+	parent_proc();
+	this.export_types = list(T("/obj/item/organ/tail/cat"));
 	return f.dot;
 });
 
@@ -222,12 +198,10 @@ rt.type(2037, "/datum/export/organ/human/heart", "/datum/export/organ/human", {
 	export_types: null,
 });
 
-// /datum/export/organ/human/heart/proc/<init>  (code/modules/cargo/exports/organs.dm:103)
+// organs.dm:103
 rt.def("/datum/export/organ/human/heart/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/item/organ/heart")));
+	parent_proc();
+	this.export_types = list(T("/obj/item/organ/heart"));
 	return f.dot;
 });
 
@@ -238,12 +212,10 @@ rt.type(2038, "/datum/export/organ/human/lungs", "/datum/export/organ/human", {
 	export_types: null,
 });
 
-// /datum/export/organ/human/lungs/proc/<init>  (code/modules/cargo/exports/organs.dm:109)
+// organs.dm:109
 rt.def("/datum/export/organ/human/lungs/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/item/organ/lungs")));
+	parent_proc();
+	this.export_types = list(T("/obj/item/organ/lungs"));
 	return f.dot;
 });
 
@@ -253,19 +225,17 @@ rt.type(2039, "/datum/export/organ/human/appendix", "/datum/export/organ/human",
 	export_types: null,
 });
 
-// /datum/export/organ/human/appendix/proc/<init>  (code/modules/cargo/exports/organs.dm:114)
+// organs.dm:114
 rt.def("/datum/export/organ/human/appendix/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/item/organ/appendix")));
+	parent_proc();
+	this.export_types = list(T("/obj/item/organ/appendix"));
 	return f.dot;
 });
 
-// /datum/export/organ/human/appendix/proc/get_cost  (code/modules/cargo/exports/organs.dm:117)
-rt.def("/datum/export/organ/human/appendix/proc/get_cost", function get_cost(f: Frame) {
-	if (truthy(rt.fv(f, "inflamed", live(f.args[0])))) {
+// organs.dm:117
+rt.def("/datum/export/organ/human/appendix/proc/get_cost", function get_cost(f: Frame, O: Value) {
+	if (O.inflamed) {
 		return 0;
 	}
-	return rt.callSuper(f, [], rt.Args.Same);
-}, false, { args: ["O"] });
+	return parent_proc();
+}, false);

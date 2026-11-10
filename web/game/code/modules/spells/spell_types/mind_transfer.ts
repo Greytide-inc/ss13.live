@@ -1,7 +1,7 @@
-// From code/modules/spells/spell_types/mind_transfer.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/spells/spell_types/mind_transfer.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(11329, "/obj/effect/proc_holder/spell/targeted/mind_transfer", "/obj/effect/proc_holder/spell/targeted", {
@@ -20,60 +20,56 @@ rt.type(11329, "/obj/effect/proc_holder/spell/targeted/mind_transfer", "/obj/eff
 	action_icon_state: "mindswap",
 });
 
-// /obj/effect/proc_holder/spell/targeted/mind_transfer/proc/cast  (code/modules/spells/spell_types/mind_transfer.dm:24)  may sleep
+// mind_transfer.dm:24
 rt.def("/obj/effect/proc_holder/spell/targeted/mind_transfer/proc/cast", function* cast(f: Frame, targets: Value, user: Value, distanceoverride: Value) {
-	let target: Value = null, t_He: Value = null, t_is: Value = null, victim: Value = null, caster: Value = null, ghost: Value = null;
-	f.vars = () => [targets, user, distanceoverride, target, t_He, t_is, victim, caster, ghost];
-	if (live(user) === null) {
-		user = live(f.usr);
+	user ??= f.usr;
+	if (!rt.len(f, targets)) {
+		to_chat(user, "<span class='warning'>No mind found!</span>");
+		return f.dot;
 	}
-	if (!truthy(rt.len(f, live(targets)))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>No mind found!</span>"]);
-		return live(f.dot);
+	if (rt.len(f, targets) > 1) {
+		to_chat(user, "<span class='warning'>Too many minds! You're not a hive damnit!</span>");
+		return f.dot;
 	}
-	if (rt.gt(rt.len(f, live(targets)), 1)) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>Too many minds! You're not a hive damnit!</span>"]);
-		return live(f.dot);
+	let target: Value = rt.index(targets, 1);
+	let t_He: Value = target.p_they(1);
+	let t_is: Value = target.p_are();
+	if (!rt.isIn(f, target, oview(this.range)) && !distanceoverride) {
+		to_chat(user, `<span class='warning'>${t_He} ${t_is} too far away!</span>`);
+		return f.dot;
 	}
-	target = rt.index(live(targets), 1);
-	t_He = (yield* g.callName(f, live(target), "p_they", [1]));
-	t_is = (yield* g.callName(f, live(target), "p_are", []));
-	if ((!truthy((rt.isIn(f, live(target), (yield* g.call(f, P("/proc/oview"), null, [rt.sv(f, "range")]))) ? 1 : 0)) && !truthy(live(distanceoverride)))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ ＀ too far away!</span>", [live(t_He), live(t_is)])]);
-		return live(f.dot);
+	if (rt.istype(target, T("/mob/living/simple_animal/hostile/megafauna"))) {
+		to_chat(user, "<span class='warning'>This creature is too powerful to control!</span>");
+		return f.dot;
 	}
-	if (truthy((rt.istype(live(target), T("/mob/living/simple_animal/hostile/megafauna")) ? 1 : 0))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>This creature is too powerful to control!</span>"]);
-		return live(f.dot);
+	if (target.stat == 2) {
+		to_chat(user, "<span class='warning'>You don't particularly want to be dead!</span>");
+		return f.dot;
 	}
-	if (isEqual(rt.fv(f, "stat", live(target)), 2)) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>You don't particularly want to be dead!</span>"]);
-		return live(f.dot);
+	if (!target.key || !target.mind) {
+		to_chat(user, `<span class='warning'>${t_He} appear${target.p_s()} to be catatonic! Not even magic can affect ${target.p_their()} vacant mind.</span>`);
+		return f.dot;
 	}
-	if ((!truthy(rt.fv(f, "key", live(target))) || !truthy(rt.fv(f, "mind", live(target))))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ appear＀ to be catatonic! Not even magic can affect ＀ vacant mind.</span>", [live(t_He), (yield* g.callName(f, live(target), "p_s", [])), (yield* g.callName(f, live(target), "p_their", []))])]);
-		return live(f.dot);
+	if (user.suiciding) {
+		to_chat(user, "<span class='warning'>You're killing yourself! You can't concentrate enough to do this!</span>");
+		return f.dot;
 	}
-	if (truthy(rt.fv(f, "suiciding", live(user)))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>You're killing yourself! You can't concentrate enough to do this!</span>"]);
-		return live(f.dot);
+	if (rt.isIn(f, target.mind.special_role, this.protected_roles) || cmptext(copytext(target.key, 1, 2), "@")) {
+		to_chat(user, `<span class='warning'>${target.p_their(1)} mind is resisting your spell!</span>`);
+		return f.dot;
 	}
-	if ((truthy((rt.isIn(f, rt.gv(f, "special_role", rt.fv(f, "mind", live(target))), rt.sv(f, "protected_roles")) ? 1 : 0)) || truthy((yield* g.call(f, P("/proc/cmptext"), null, [(yield* g.call(f, P("/proc/copytext"), null, [rt.fv(f, "key", live(target)), 1, 2])), "@"]))))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ mind is resisting your spell!</span>", [(yield* g.callName(f, live(target), "p_their", [1]))])]);
-		return live(f.dot);
+	let victim: Value = target;
+	let caster: Value = user;
+	let ghost: Value = (yield* victim.ghostize(0));
+	yield* caster.mind.transfer_to(victim);
+	yield* ghost.mind.transfer_to(caster);
+	if (ghost.key) {
+		caster.key = ghost.key;
 	}
-	victim = live(target);
-	caster = live(user);
-	ghost = (yield* g.callName(f, live(victim), "ghostize", [0]));
-	yield* g.callName(f, rt.fv(f, "mind", live(caster)), "transfer_to", [live(victim)]);
-	yield* g.callName(f, rt.fv(f, "mind", live(ghost)), "transfer_to", [live(caster)]);
-	if (truthy(rt.fv(f, "key", live(ghost)))) {
-		rt.setFv(f, "key", live(caster), rt.fv(f, "key", live(ghost)));
-	}
-	yield* g.call(f, P("/proc/qdel"), null, [live(ghost)]);
-	yield* g.callName(f, live(caster), "Unconscious", [rt.sv(f, "unconscious_amount_caster")]);
-	yield* g.callName(f, live(victim), "Unconscious", [rt.sv(f, "unconscious_amount_victim")]);
-	rt.op(f, "Output", [], [live(caster), (yield* g.call(f, P("/proc/sound"), null, [rt.rsc("sound/magic/mandswap.ogg")]))], false);
-	rt.op(f, "Output", [], [live(victim), (yield* g.call(f, P("/proc/sound"), null, [rt.rsc("sound/magic/mandswap.ogg")]))], false);
+	yield* qdel(ghost);
+	yield* caster.Unconscious(this.unconscious_amount_caster);
+	yield* victim.Unconscious(this.unconscious_amount_victim);
+	rt.op(f, "Output", [], [caster, sound(rt.rsc("sound/magic/mandswap.ogg"))], false);
+	rt.op(f, "Output", [], [victim, sound(rt.rsc("sound/magic/mandswap.ogg"))], false);
 	return f.dot;
 }, true);

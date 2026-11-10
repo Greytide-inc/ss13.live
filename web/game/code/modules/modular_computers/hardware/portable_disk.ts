@@ -1,7 +1,7 @@
-// From code/modules/modular_computers/hardware/portable_disk.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/modular_computers/hardware/portable_disk.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(7592, "/obj/item/weapon/computer_hardware/hard_drive/portable", "/obj/item/weapon/computer_hardware/hard_drive", {
@@ -16,22 +16,18 @@ rt.type(7592, "/obj/item/weapon/computer_hardware/hard_drive/portable", "/obj/it
 	origin_tech: "programming=1",
 });
 
-// /obj/item/weapon/computer_hardware/hard_drive/portable/proc/on_install  (code/modules/modular_computers/hardware/portable_disk.dm:13)
+// portable_disk.dm:13
 rt.def("/obj/item/weapon/computer_hardware/hard_drive/portable/proc/on_install", function on_install(f: Frame, M: Value, user: Value) {
-	f.vars = () => [user];
-	if (live(user) === null) {
-		user = null;
-	}
-	rt.callName(f, live(M), "add_verb", [rt.sv(f, "device_type")]);
+	M.add_verb(this.device_type);
 	return f.dot;
 });
 
-// /obj/item/weapon/computer_hardware/hard_drive/portable/proc/on_remove  (code/modules/modular_computers/hardware/portable_disk.dm:16)  may sleep
+// portable_disk.dm:16
 rt.def("/obj/item/weapon/computer_hardware/hard_drive/portable/proc/on_remove", function* on_remove(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = null;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.callName(f, live(f.args[0]), "remove_verb", [rt.sv(f, "device_type")]);
+	yield* parent_proc();
+	f.args[0].remove_verb(this.device_type);
 	return f.dot;
 }, true, { args: ["M", "user"] });

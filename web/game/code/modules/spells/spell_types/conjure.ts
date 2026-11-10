@@ -1,7 +1,7 @@
-// From code/modules/spells/spell_types/conjure.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/spells/spell_types/conjure.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(11352, "/obj/effect/proc_holder/spell/aoe_turf/conjure", "/obj/effect/proc_holder/spell/aoe_turf", {
@@ -16,68 +16,54 @@ rt.type(11352, "/obj/effect/proc_holder/spell/aoe_turf/conjure", "/obj/effect/pr
 	desc: "This spell conjures objs of the specified types in range.",
 });
 
-// /obj/effect/proc_holder/spell/aoe_turf/conjure/proc/<init>  (code/modules/spells/spell_types/conjure.dm:5)
+// conjure.dm:5
 rt.def("/obj/effect/proc_holder/spell/aoe_turf/conjure/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "summon_type", rt.list());
-	$0 = $0;
-	rt.setSv(f, "newVars", rt.list());
+	parent_proc();
+	this.summon_type = list();
+
+	this.newVars = list();
 	return f.dot;
 });
 
-// /obj/effect/proc_holder/spell/aoe_turf/conjure/proc/cast  (code/modules/spells/spell_types/conjure.dm:19)  may sleep
+// conjure.dm:19
 rt.def("/obj/effect/proc_holder/spell/aoe_turf/conjure/proc/cast", function* cast(f: Frame, targets: Value, user: Value) {
-	let _T: Value = null, i: Value = null, summoned_object_type: Value = null, spawn_place: Value = null, O: Value = null, N: Value = null, summoned_object: Value = null, varName: Value = null;
-	let $e: any;
-	f.vars = () => [targets, user, _T, i, summoned_object_type, spawn_place, O, N, summoned_object, varName, $e];
-	if (live(user) === null) {
-		user = live(f.usr);
-	}
-	yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(user), 0), rt.sv(f, "cast_sound"), 50, 1]);
-	_T = null;
-	rt.forList(f, 0, live(targets), T("/turf"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_T = $e;
-		if ((truthy(rt.fv(f, "density", live(_T))) && !truthy(rt.sv(f, "summon_ignore_density")))) {
-			(targets = rt.modify(live(targets), live(_T), subtract));
+	let _T: Value = null, summoned_object_type: Value = null, spawn_place: Value = null, O: Value = null, N: Value = null, summoned_object: Value = null, varName: Value = null;
+	user ??= f.usr;
+	playsound(rt.getStep(f, user, 0), this.cast_sound, 50, 1);
+	for (_T of each(targets, T("/turf"))) {
+		if (_T.density && !this.summon_ignore_density) {
+			targets -= _T;
 		}
 	}
-	rt.endFor(f, 0);
-	i = null;
-	i = 0;
-	while (rt.lt(live(i), rt.sv(f, "summon_amt"))) {
-		if (!truthy(rt.len(f, live(targets)))) {
+	let i: Value = 0;
+	while (i < this.summon_amt) {
+		if (!rt.len(f, targets)) {
 			break;
 		}
-		summoned_object_type = rt.op(f, "PickUnweighted", [1], [rt.sv(f, "summon_type")]);
-		spawn_place = rt.op(f, "PickUnweighted", [1], [live(targets)]);
-		if (truthy(rt.sv(f, "summon_ignore_prev_spawn_points"))) {
-			(targets = rt.modify(live(targets), live(spawn_place), subtract));
+		summoned_object_type = pick(this.summon_type);
+		spawn_place = pick(targets);
+		if (this.summon_ignore_prev_spawn_points) {
+			targets -= spawn_place;
 		}
-		if (truthy((yield* g.call(f, P("/proc/ispath"), null, [live(summoned_object_type), T("/turf")])))) {
-			O = live(spawn_place);
-			N = live(summoned_object_type);
-			yield* g.callName(f, live(O), "ChangeTurf", [live(N)]);
+		if (ispath(summoned_object_type, T("/turf"))) {
+			O = spawn_place;
+			N = summoned_object_type;
+			yield* O.ChangeTurf(N);
 		} else {
-			summoned_object = (yield* g.new_(f, live(summoned_object_type), [live(spawn_place)]));
+			summoned_object = (yield* new_(summoned_object_type, spawn_place));
 			varName = null;
-			rt.forList(f, 0, rt.sv(f, "newVars"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				varName = $e;
-				if (truthy((rt.isIn(f, live(varName), rt.fv(f, "vars", live(summoned_object))) ? 1 : 0))) {
-					rt.setAt(rt.fv(f, "vars", live(summoned_object)), live(varName), rt.index(rt.sv(f, "newVars"), live(varName)));
+			for (varName of each(this.newVars)) {
+				if (rt.isIn(f, varName, summoned_object.vars)) {
+					rt.setAt(summoned_object.vars, varName, rt.index(this.newVars, varName));
 				}
 			}
-			rt.endFor(f, 0);
-			rt.setFv(f, "admin_spawned", live(summoned_object), 1);
-			if (truthy(rt.sv(f, "summon_lifespan"))) {
-				yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), ["some_magic_bullshit", P("/proc/qdel"), live(summoned_object)])), rt.sv(f, "summon_lifespan"), 8]);
+			summoned_object.admin_spawned = 1;
+			if (this.summon_lifespan) {
+				yield* addtimer((yield* new_(T("/datum/callback"), "some_magic_bullshit", P("/proc/qdel"), summoned_object)), this.summon_lifespan, 8);
 			}
-			yield* g.srcCall(f, "post_summon", live(summoned_object), live(user));
+			this.post_summon(summoned_object, user);
 		}
-		i = rt.inc(live(i), 1);
+		i++;
 	}
 	return f.dot;
 }, true);
@@ -91,13 +77,11 @@ rt.type(11353, "/obj/effect/proc_holder/spell/aoe_turf/conjure/summonEdSwarm", "
 	range: 3,
 });
 
-// /obj/effect/proc_holder/spell/aoe_turf/conjure/summonEdSwarm/proc/<init>  (code/modules/spells/spell_types/conjure.dm:54)
+// conjure.dm:54
 rt.def("/obj/effect/proc_holder/spell/aoe_turf/conjure/summonEdSwarm/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "summon_type", rt.list(T("/mob/living/simple_animal/bot/ed209")));
-	rt.setSv(f, "newVars", rt.alist(f, ["emagged", 2, "remote_disabled", 1, "shoot_sound", rt.rsc("sound/weapons/laser.ogg"), "projectile", T("/obj/item/projectile/beam/laser"), "declare_arrests", 0, "name", "Wizard's Justicebot"]));
+	parent_proc();
+	this.summon_type = list(T("/mob/living/simple_animal/bot/ed209"));
+	this.newVars = rt.alist(f, ["emagged", 2, "remote_disabled", 1, "shoot_sound", rt.rsc("sound/weapons/laser.ogg"), "projectile", T("/obj/item/projectile/beam/laser"), "declare_arrests", 0, "name", "Wizard's Justicebot"]);
 	return f.dot;
 });
 
@@ -115,41 +99,33 @@ rt.type(11285, "/obj/effect/proc_holder/spell/targeted/conjure_item", "/obj/effe
 	cooldown_min: 10,
 });
 
-// /obj/effect/proc_holder/spell/targeted/conjure_item/proc/cast  (code/modules/spells/spell_types/conjure.dm:73)  may sleep
+// conjure.dm:73
 rt.def("/obj/effect/proc_holder/spell/targeted/conjure_item/proc/cast", function* cast(f: Frame, targets: Value, user: Value) {
 	let C: Value = null;
-	let $e: any;
-	f.vars = () => [targets, user, C, $e];
-	if (live(user) === null) {
-		user = live(f.usr);
-	}
-	if ((truthy(rt.sv(f, "item")) && !(!truthy(rt.sv(f, "item")) || truthy(rt.fv(f, "gc_destroyed", rt.sv(f, "item")))))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "item")]);
-		rt.setSv(f, "item", null);
+	user ??= f.usr;
+	if (this.item && !(!this.item || this.item.gc_destroyed)) {
+		yield* qdel(this.item);
+		this.item = null;
 	} else {
-		C = null;
-		rt.forList(f, 0, live(targets), T("/mob/living/carbon"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			C = $e;
-			if (truthy((yield* g.callName(f, live(C), "drop_item", [])))) {
-				rt.setSv(f, "item", (yield* g.srcCall(f, "make_item")));
-				yield* g.callName(f, live(C), "put_in_hands", [rt.sv(f, "item")]);
+		for (C of each(targets, T("/mob/living/carbon"))) {
+			if (yield* C.drop_item()) {
+				this.item = (yield* this.make_item());
+				yield* C.put_in_hands(this.item);
 			}
 		}
-		rt.endFor(f, 0);
 	}
 	return f.dot;
 }, true);
 
-// /obj/effect/proc_holder/spell/targeted/conjure_item/proc/Destroy  (code/modules/spells/spell_types/conjure.dm:84)  may sleep
+// conjure.dm:84
 rt.def("/obj/effect/proc_holder/spell/targeted/conjure_item/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.sv(f, "item"))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "item")]);
+	if (this.item) {
+		yield* qdel(this.item);
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);
 
-// /obj/effect/proc_holder/spell/targeted/conjure_item/proc/make_item  (code/modules/spells/spell_types/conjure.dm:88)  may sleep
+// conjure.dm:88
 rt.def("/obj/effect/proc_holder/spell/targeted/conjure_item/proc/make_item", function* make_item(f: Frame) {
-	return (yield* g.new_(f, rt.sv(f, "item_type"), []));
+	return (yield* new_(this.item_type));
 }, true);

@@ -1,7 +1,7 @@
-// From code/game/machinery/status_display.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/machinery/status_display.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(10829, "/obj/machinery/status_display", "/obj/machinery", {
@@ -26,208 +26,191 @@ rt.type(10829, "/obj/machinery/status_display", "/obj/machinery", {
 	maptext_width: 32,
 });
 
-// /obj/machinery/status_display/proc/Initialize  (code/game/machinery/status_display.dm:48)  may sleep
+// status_display.dm:48
 rt.def("/obj/machinery/status_display/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.callName(f, rt.gl("ai_status_displays"), "Add", [live(f.src)]);
-	yield* g.callName(f, rt.gl("SSradio"), "add_object", [live(f.src), rt.sv(f, "frequency")]);
+	f.dot = (yield* parent_proc());
+	GLOB.ai_status_displays.Add(this);
+	GLOB.SSradio.add_object(this, this.frequency);
 	return f.dot;
 }, true);
 
-// /obj/machinery/status_display/proc/Destroy  (code/game/machinery/status_display.dm:54)  may sleep
+// status_display.dm:54
 rt.def("/obj/machinery/status_display/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.gl("SSradio"))) {
-		yield* g.callName(f, rt.gl("SSradio"), "remove_object", [live(f.src), rt.sv(f, "frequency")]);
+	if (GLOB.SSradio) {
+		yield* GLOB.SSradio.remove_object(this, this.frequency);
 	}
-	yield* g.callName(f, rt.gl("ai_status_displays"), "Remove", [live(f.src)]);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* GLOB.ai_status_displays.Remove(this);
+	return (yield* parent_proc());
 }, true);
 
-// /obj/machinery/status_display/proc/process  (code/game/machinery/status_display.dm:61)
+// status_display.dm:61
 rt.def("/obj/machinery/status_display/proc/process", function process(f: Frame) {
-	if (truthy(rt.bitAnd(rt.sv(f, "stat"), 2))) {
-		rt.callSrc(f, "remove_display", []);
-		return live(f.dot);
+	if (rt.bitAnd(this.stat, 2)) {
+		this.remove_display();
+		return f.dot;
 	}
-	rt.callSrc(f, "update", []);
+	this.update();
 	return f.dot;
 }, false, { waitfor: false });
 
-// /obj/machinery/status_display/proc/emp_act  (code/game/machinery/status_display.dm:67)  may sleep
+// status_display.dm:67
 rt.def("/obj/machinery/status_display/proc/emp_act", function* emp_act(f: Frame, severity: Value) {
-	f.vars = () => [severity];
-	if (truthy(rt.bitAnd(rt.sv(f, "stat"), 3))) {
-		yield* g.callSuper(f, [live(severity)]);
-		return live(f.dot);
+	if (rt.bitAnd(this.stat, 3)) {
+		yield* parent_proc(severity);
+		return f.dot;
 	}
-	yield* g.srcCall(f, "set_picture", "ai_bsod");
-	yield* g.callSuper(f, [live(severity)]);
+	this.set_picture("ai_bsod");
+	yield* parent_proc(severity);
 	return f.dot;
 }, true);
 
-// /obj/machinery/status_display/proc/update  (code/game/machinery/status_display.dm:76)
+// status_display.dm:76
 rt.def("/obj/machinery/status_display/proc/update", function update(f: Frame) {
 	let line1: Value = null, line2: Value = null, message1_len: Value = null, message2_len: Value = null;
-	let $0: any;
-	f.vars = () => [line1, line2, message1_len, message2_len, $0];
-	if ((truthy(rt.sv(f, "friendc")) && !isEqual(rt.sv(f, "mode"), 4))) {
-		rt.callSrc(f, "set_picture", ["ai_friend"]);
-		return live(f.dot);
+	if (this.friendc && this.mode != 4) {
+		this.set_picture("ai_friend");
+		return f.dot;
 	}
-	$0 = rt.sv(f, "mode");
-	if ($0 === 0) {
-		rt.callSrc(f, "remove_display", []);
-	} else if ($0 === 1) {
-		rt.callSrc(f, "display_shuttle_status", []);
-	} else if ($0 === 2) {
-		line1 = null;
-		line2 = null;
-		if (!truthy(rt.sv(f, "index1"))) {
-			line1 = rt.sv(f, "message1");
+	if (this.mode === 0) {
+		this.remove_display();
+	} else if (this.mode === 1) {
+		this.display_shuttle_status();
+	} else if (this.mode === 2) {
+		if (!this.index1) {
+			line1 = this.message1;
 		} else {
-			line1 = rt.call(f, P("/proc/copytext"), null, [add(add(rt.sv(f, "message1"), "|"), rt.sv(f, "message1")), rt.sv(f, "index1"), add(rt.sv(f, "index1"), 5)]);
-			message1_len = rt.length(rt.sv(f, "message1"));
-			if (rt.gt((rt.modSrcVar(f, "index1", 2, add)), live(message1_len))) {
-				(rt.modSrcVar(f, "index1", live(message1_len), subtract));
+			line1 = copytext(this.message1 + "|" + this.message1, this.index1, this.index1 + 5);
+			message1_len = rt.length(this.message1);
+			if ((this.index1 += 2) > message1_len) {
+				this.index1 -= message1_len;
 			}
 		}
-		if (!truthy(rt.sv(f, "index2"))) {
-			line2 = rt.sv(f, "message2");
+		if (!this.index2) {
+			line2 = this.message2;
 		} else {
-			line2 = rt.call(f, P("/proc/copytext"), null, [add(add(rt.sv(f, "message2"), "|"), rt.sv(f, "message2")), rt.sv(f, "index2"), add(rt.sv(f, "index2"), 5)]);
-			message2_len = rt.length(rt.sv(f, "message2"));
-			if (rt.gt((rt.modSrcVar(f, "index2", 2, add)), live(message2_len))) {
-				(rt.modSrcVar(f, "index2", live(message2_len), subtract));
+			line2 = copytext(this.message2 + "|" + this.message2, this.index2, this.index2 + 5);
+			message2_len = rt.length(this.message2);
+			if ((this.index2 += 2) > message2_len) {
+				this.index2 -= message2_len;
 			}
 		}
-		rt.callSrc(f, "update_display", [live(line1), live(line2)]);
-	} else if ($0 === 4) {
+		this.update_display(line1, line2);
+	} else if (this.mode === 4) {
 		line1 = null;
 		line2 = null;
 		// tg bug: a map with no cargo shuttle (creative mode's) has SSshuttle.supply null; tg read null.mode every tick. Blank screen instead.
-		if (rt.fv(f, "supply", rt.gl("SSshuttle")) == null) {
-		} else if (isEqual(rt.gv(f, "mode", rt.fv(f, "supply", rt.gl("SSshuttle"))), "idle")) {
-			if (isEqual(rt.gv(f, "z", rt.fv(f, "supply", rt.gl("SSshuttle"))), 2)) {
+		if (!GLOB.SSshuttle.supply) {
+		} else if (GLOB.SSshuttle.supply.mode == "idle") {
+			if (GLOB.SSshuttle.supply.z == ZLEVEL_STATION) {
 				line1 = "CARGO";
 				line2 = "Docked";
 			}
 		} else {
 			line1 = "CARGO";
-			if (rt.gt(rt.call(f, P("/proc/lentext"), null, [(line2 = rt.callName(f, rt.fv(f, "supply", rt.gl("SSshuttle")), "getTimerStr", []))]), 5)) {
+			if (lentext((line2 = GLOB.SSshuttle.supply.getTimerStr())) > 5) {
 				line2 = "Error";
 			}
 		}
-		rt.callSrc(f, "update_display", [live(line1), live(line2)]);
-	} else if ($0 === 5) {
-		rt.callSrc(f, "display_shuttle_status", []);
+		this.update_display(line1, line2);
+	} else if (this.mode === 5) {
+		this.display_shuttle_status();
 	}
 	return f.dot;
 });
 
-// /obj/machinery/status_display/proc/examine  (code/game/machinery/status_display.dm:125)
-rt.def("/obj/machinery/status_display/proc/examine", function examine(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	$0 = rt.sv(f, "mode");
-	if ($0 === 1 || $0 === 2 || $0 === 4 || $0 === 5) {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("The display says:<br>\t<xmp>＀</xmp><br>\t<xmp>＀</xmp>", [rt.sv(f, "message1"), rt.sv(f, "message2")])]);
+// status_display.dm:125
+rt.def("/obj/machinery/status_display/proc/examine", function examine(f: Frame, user: Value) {
+	f.dot = parent_proc();
+	if (this.mode === 1 || this.mode === 2 || this.mode === 4 || this.mode === 5) {
+		to_chat(user, `The display says:<br>\t<xmp>${this.message1}</xmp><br>\t<xmp>${this.message2}</xmp>`);
 	}
-	if (!(isEqual(rt.sv(f, "mode"), 1) && truthy(rt.fv(f, "emergency", rt.gl("SSshuttle"))))) return f.dot;
-	rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("Current Shuttle: ＀", [rt.gv(f, "name", rt.fv(f, "emergency", rt.gl("SSshuttle")))])]);
+	if (!(this.mode == 1 && GLOB.SSshuttle.emergency)) return f.dot;
+	to_chat(user, `Current Shuttle: ${GLOB.SSshuttle.emergency.name}`);
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/machinery/status_display/proc/set_message  (code/game/machinery/status_display.dm:135)
+// status_display.dm:135
 rt.def("/obj/machinery/status_display/proc/set_message", function set_message(f: Frame, m1: Value, m2: Value) {
-	if (truthy(live(m1))) {
-		rt.setSv(f, "index1", (rt.gt(rt.length(live(m1)), 5) ? 1 : 0));
-		rt.setSv(f, "message1", live(m1));
+	if (m1) {
+		this.index1 = (rt.length(m1) > 5 ? 1 : 0);
+		this.message1 = m1;
 	} else {
-		rt.setSv(f, "message1", "");
-		rt.setSv(f, "index1", 0);
+		this.message1 = "";
+		this.index1 = 0;
 	}
-	if (truthy(live(m2))) {
-		rt.setSv(f, "index2", (rt.gt(rt.length(live(m2)), 5) ? 1 : 0));
-		rt.setSv(f, "message2", live(m2));
+	if (m2) {
+		this.index2 = (rt.length(m2) > 5 ? 1 : 0);
+		this.message2 = m2;
 	} else {
-		rt.setSv(f, "message2", "");
-		rt.setSv(f, "index2", 0);
+		this.message2 = "";
+		this.index2 = 0;
 	}
 	return f.dot;
 });
 
-// /obj/machinery/status_display/proc/set_picture  (code/game/machinery/status_display.dm:149)
+// status_display.dm:149
 rt.def("/obj/machinery/status_display/proc/set_picture", function set_picture(f: Frame, state: Value) {
-	rt.setSv(f, "picture_state", live(state));
-	rt.callSrc(f, "remove_display", []);
-	rt.callSrc(f, "add_overlay", [rt.sv(f, "picture_state")]);
+	this.picture_state = state;
+	this.remove_display();
+	this.add_overlay(this.picture_state);
 	return f.dot;
 });
 
-// /obj/machinery/status_display/proc/update_display  (code/game/machinery/status_display.dm:154)
+// status_display.dm:154
 rt.def("/obj/machinery/status_display/proc/update_display", function update_display(f: Frame, line1: Value, line2: Value) {
-	let new_text: Value = null;
-	f.vars = () => [new_text];
-	new_text = fmt("<div style=\"font-size:＀;color:＀;font:'＀';text-align:center;\" valign=\"top\">＀<br>＀</div>", ["5pt", "#09f", "Arial Black", live(line1), live(line2)]);
-	if (isEqual(rt.sv(f, "maptext"), live(new_text))) return f.dot;
-	rt.setSv(f, "maptext", live(new_text));
+	let new_text: Value = `<div style="font-size:${"5pt"};color:${"#09f"};font:'${"Arial Black"}';text-align:center;" valign="top">${line1}<br>${line2}</div>`;
+	if (this.maptext == new_text) return f.dot;
+	this.maptext = new_text;
 	return f.dot;
 });
 
-// /obj/machinery/status_display/proc/remove_display  (code/game/machinery/status_display.dm:159)
+// status_display.dm:159
 rt.def("/obj/machinery/status_display/proc/remove_display", function remove_display(f: Frame) {
-	rt.callSrc(f, "cut_overlays", []);
-	if (!truthy(rt.sv(f, "maptext"))) return f.dot;
-	rt.setSv(f, "maptext", "");
+	this.cut_overlays();
+	if (!this.maptext) return f.dot;
+	this.maptext = "";
 	return f.dot;
 });
 
-// /obj/machinery/status_display/proc/display_shuttle_status  (code/game/machinery/status_display.dm:166)
+// status_display.dm:166
 rt.def("/obj/machinery/status_display/proc/display_shuttle_status", function display_shuttle_status(f: Frame) {
 	let shuttle: Value = null, line1: Value = null, line2: Value = null;
-	f.vars = () => [shuttle, line1, line2];
-	shuttle = null;
-	if (isEqual(rt.sv(f, "mode"), 1)) {
-		shuttle = rt.fv(f, "emergency", rt.gl("SSshuttle"));
+	if (this.mode == 1) {
+		shuttle = GLOB.SSshuttle.emergency;
 	} else {
-		shuttle = rt.callName(f, rt.gl("SSshuttle"), "getShuttle", [rt.sv(f, "shuttle_id")]);
+		shuttle = GLOB.SSshuttle.getShuttle(this.shuttle_id);
 	}
-	if (!truthy(live(shuttle))) {
-		rt.callSrc(f, "update_display", ["shutl?", ""]);
-	} else {
-		if (truthy(rt.fv(f, "timer", live(shuttle)))) {
-			line1 = fmt("-＀-", [rt.callName(f, live(shuttle), "getModeStr", [])]);
-			if (rt.gt(rt.length((line2 = rt.callName(f, live(shuttle), "getTimerStr", []))), 5)) {
-				line2 = "Error!";
-			}
-			rt.callSrc(f, "update_display", [live(line1), live(line2)]);
-		} else {
-			rt.callSrc(f, "remove_display", []);
+	if (!shuttle) {
+		this.update_display("shutl?", "");
+	} else if (shuttle.timer) {
+		line1 = `-${shuttle.getModeStr()}-`;
+		if (rt.length((line2 = shuttle.getTimerStr())) > 5) {
+			line2 = "Error!";
 		}
+		this.update_display(line1, line2);
+	} else {
+		this.remove_display();
 	}
 	return f.dot;
 });
 
-// /obj/machinery/status_display/proc/receive_signal  (code/game/machinery/status_display.dm:188)
+// status_display.dm:188
 rt.def("/obj/machinery/status_display/proc/receive_signal", function receive_signal(f: Frame, signal: Value) {
-	let $0: any;
-	f.vars = () => [$0];
-	if (truthy(rt.sv(f, "supply_display"))) {
-		rt.setSv(f, "mode", 4);
-		return live(f.dot);
+	if (this.supply_display) {
+		this.mode = 4;
+		return f.dot;
 	}
-	$0 = rt.index(rt.fv(f, "data", live(signal)), "command");
-	if ($0 === "blank") {
-		rt.setSv(f, "mode", 0);
-	} else if ($0 === "shuttle") {
-		rt.setSv(f, "mode", 1);
-	} else if ($0 === "message") {
-		rt.setSv(f, "mode", 2);
-		rt.callSrc(f, "set_message", [rt.index(rt.fv(f, "data", live(signal)), "msg1"), rt.index(rt.fv(f, "data", live(signal)), "msg2")]);
-	} else if ($0 === "alert") {
-		rt.setSv(f, "mode", 3);
-		rt.callSrc(f, "set_picture", [rt.index(rt.fv(f, "data", live(signal)), "picture_state")]);
+	const command = rt.index(signal.data, "command");
+	if (command === "blank") {
+		this.mode = 0;
+	} else if (command === "shuttle") {
+		this.mode = 1;
+	} else if (command === "message") {
+		this.mode = 2;
+		this.set_message(rt.index(signal.data, "msg1"), rt.index(signal.data, "msg2"));
+	} else if (command === "alert") {
+		this.mode = 3;
+		this.set_picture(rt.index(signal.data, "picture_state"));
 	}
 	return f.dot;
 });
@@ -244,102 +227,97 @@ rt.type(10830, "/obj/machinery/ai_status_display", "/obj/machinery", {
 	density: 0,
 });
 
-// /obj/machinery/ai_status_display/proc/Initialize  (code/game/machinery/status_display.dm:217)  may sleep
+// status_display.dm:217
 rt.def("/obj/machinery/ai_status_display/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.callName(f, rt.gl("ai_status_displays"), "Add", [live(f.src)]);
+	f.dot = (yield* parent_proc());
+	GLOB.ai_status_displays.Add(this);
 	return f.dot;
 }, true);
 
-// /obj/machinery/ai_status_display/proc/Destroy  (code/game/machinery/status_display.dm:221)  may sleep
+// status_display.dm:221
 rt.def("/obj/machinery/ai_status_display/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.callName(f, rt.gl("ai_status_displays"), "Remove", [live(f.src)]);
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* GLOB.ai_status_displays.Remove(this);
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true);
 
-// /obj/machinery/ai_status_display/proc/attack_ai  (code/game/machinery/status_display.dm:225)  may sleep
+// status_display.dm:225
 rt.def("/obj/machinery/ai_status_display/proc/attack_ai", function* attack_ai(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (!truthy((rt.istype(live(user), T("/mob/living/silicon/ai")) ? 1 : 0))) return f.dot;
-	yield* g.callName(f, live(user), "ai_statuschange", []);
+	if (!rt.istype(user, T("/mob/living/silicon/ai"))) return f.dot;
+	yield* user.ai_statuschange();
 	return f.dot;
 }, true);
 
-// /obj/machinery/ai_status_display/proc/process  (code/game/machinery/status_display.dm:229)
+// status_display.dm:229
 rt.def("/obj/machinery/ai_status_display/proc/process", function process(f: Frame) {
-	if (truthy(rt.bitAnd(rt.sv(f, "stat"), 2))) {
-		rt.callSrc(f, "cut_overlays", []);
-		return live(f.dot);
+	if (rt.bitAnd(this.stat, 2)) {
+		this.cut_overlays();
+		return f.dot;
 	}
-	rt.callSrc(f, "update", []);
+	this.update();
 	return f.dot;
 }, false, { waitfor: false });
 
-// /obj/machinery/ai_status_display/proc/emp_act  (code/game/machinery/status_display.dm:236)  may sleep
+// status_display.dm:236
 rt.def("/obj/machinery/ai_status_display/proc/emp_act", function* emp_act(f: Frame, severity: Value) {
-	f.vars = () => [severity];
-	if (truthy(rt.bitAnd(rt.sv(f, "stat"), 3))) {
-		yield* g.callSuper(f, [live(severity)]);
-		return live(f.dot);
+	if (rt.bitAnd(this.stat, 3)) {
+		yield* parent_proc(severity);
+		return f.dot;
 	}
-	yield* g.srcCall(f, "set_picture", "ai_bsod");
-	yield* g.callSuper(f, [live(severity)]);
+	this.set_picture("ai_bsod");
+	yield* parent_proc(severity);
 	return f.dot;
 }, true);
 
-// /obj/machinery/ai_status_display/proc/update  (code/game/machinery/status_display.dm:244)
+// status_display.dm:244
 rt.def("/obj/machinery/ai_status_display/proc/update", function update(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	if (isEqual(rt.sv(f, "mode"), 0)) {
-		rt.callSrc(f, "cut_overlays", []);
-		return live(f.dot);
+	if (this.mode == 0) {
+		this.cut_overlays();
+		return f.dot;
 	}
-	if (isEqual(rt.sv(f, "mode"), 1)) {
-		$0 = rt.sv(f, "emotion");
-		if ($0 === "Very Happy") {
-			rt.callSrc(f, "set_picture", ["ai_veryhappy"]);
-		} else if ($0 === "Happy") {
-			rt.callSrc(f, "set_picture", ["ai_happy"]);
-		} else if ($0 === "Neutral") {
-			rt.callSrc(f, "set_picture", ["ai_neutral"]);
-		} else if ($0 === "Unsure") {
-			rt.callSrc(f, "set_picture", ["ai_unsure"]);
-		} else if ($0 === "Confused") {
-			rt.callSrc(f, "set_picture", ["ai_confused"]);
-		} else if ($0 === "Sad") {
-			rt.callSrc(f, "set_picture", ["ai_sad"]);
-		} else if ($0 === "BSOD") {
-			rt.callSrc(f, "set_picture", ["ai_bsod"]);
-		} else if ($0 === "Blank") {
-			rt.callSrc(f, "set_picture", ["ai_off"]);
-		} else if ($0 === "Problems?") {
-			rt.callSrc(f, "set_picture", ["ai_trollface"]);
-		} else if ($0 === "Awesome") {
-			rt.callSrc(f, "set_picture", ["ai_awesome"]);
-		} else if ($0 === "Dorfy") {
-			rt.callSrc(f, "set_picture", ["ai_urist"]);
-		} else if ($0 === "Facepalm") {
-			rt.callSrc(f, "set_picture", ["ai_facepalm"]);
-		} else if ($0 === "Friend Computer") {
-			rt.callSrc(f, "set_picture", ["ai_friend"]);
-		} else if ($0 === "Blue Glow") {
-			rt.callSrc(f, "set_picture", ["ai_sal"]);
-		} else if ($0 === "Red Glow") {
-			rt.callSrc(f, "set_picture", ["ai_hal"]);
+	if (this.mode == 1) {
+		if (this.emotion === "Very Happy") {
+			this.set_picture("ai_veryhappy");
+		} else if (this.emotion === "Happy") {
+			this.set_picture("ai_happy");
+		} else if (this.emotion === "Neutral") {
+			this.set_picture("ai_neutral");
+		} else if (this.emotion === "Unsure") {
+			this.set_picture("ai_unsure");
+		} else if (this.emotion === "Confused") {
+			this.set_picture("ai_confused");
+		} else if (this.emotion === "Sad") {
+			this.set_picture("ai_sad");
+		} else if (this.emotion === "BSOD") {
+			this.set_picture("ai_bsod");
+		} else if (this.emotion === "Blank") {
+			this.set_picture("ai_off");
+		} else if (this.emotion === "Problems?") {
+			this.set_picture("ai_trollface");
+		} else if (this.emotion === "Awesome") {
+			this.set_picture("ai_awesome");
+		} else if (this.emotion === "Dorfy") {
+			this.set_picture("ai_urist");
+		} else if (this.emotion === "Facepalm") {
+			this.set_picture("ai_facepalm");
+		} else if (this.emotion === "Friend Computer") {
+			this.set_picture("ai_friend");
+		} else if (this.emotion === "Blue Glow") {
+			this.set_picture("ai_sal");
+		} else if (this.emotion === "Red Glow") {
+			this.set_picture("ai_hal");
 		}
-		return live(f.dot);
+		return f.dot;
 	}
-	if (!isEqual(rt.sv(f, "mode"), 2)) return f.dot;
-	rt.callSrc(f, "set_picture", ["ai_bsod"]);
-	return live(f.dot);
+	if (this.mode != 2) return f.dot;
+	this.set_picture("ai_bsod");
+	return f.dot;
 });
 
-// /obj/machinery/ai_status_display/proc/set_picture  (code/game/machinery/status_display.dm:289)
+// status_display.dm:289
 rt.def("/obj/machinery/ai_status_display/proc/set_picture", function set_picture(f: Frame, state: Value) {
-	rt.setSv(f, "picture_state", live(state));
-	rt.callSrc(f, "cut_overlays", []);
-	rt.callSrc(f, "add_overlay", [rt.sv(f, "picture_state")]);
+	this.picture_state = state;
+	this.cut_overlays();
+	this.add_overlay(this.picture_state);
 	return f.dot;
 });

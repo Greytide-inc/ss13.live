@@ -1,25 +1,25 @@
-// From code/game/objects/items/stacks/sheets/mineral.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/stacks/sheets/mineral.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(9041, "/obj/item/stack/sheet/mineral", "/obj/item/stack/sheet", {
 	icon: rt.rsc("icons/obj/mining.dmi"),
 });
 
-// /obj/item/stack/sheet/mineral/proc/Initialize  (code/game/objects/items/stacks/sheets/mineral.dm:26)  may sleep
-rt.def("/obj/item/stack/sheet/mineral/proc/Initialize", function* Initialize(f: Frame) {
-	rt.setSv(f, "pixel_x", (yield* g.call(f, P("/proc/rand"), null, [-4, 4])));
-	rt.setSv(f, "pixel_y", (yield* g.call(f, P("/proc/rand"), null, [-4, 4])));
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+// mineral.dm:26
+rt.def("/obj/item/stack/sheet/mineral/proc/Initialize", function* Initialize(f: Frame, mapload: Value) {
+	this.pixel_x = rand(-4, 4);
+	this.pixel_y = rand(-4, 4);
+	f.dot = (yield* parent_proc());
 	return f.dot;
-}, true, { args: ["mapload"] });
+}, true);
 
-// /datum/controller/global_vars/proc/InitGlobalsandstone_recipes  (code/game/objects/items/stacks/sheets/mineral.dm:34)
+// mineral.dm:34
 rt.def("/datum/controller/global_vars/proc/InitGlobalsandstone_recipes", function InitGlobalsandstone_recipes(f: Frame) {
-	rt.setGl("sandstone_recipes", rt.list(rt.new_(f, T("/datum/stack_recipe"), [null, "pile of dirt", null, T("/obj/machinery/hydroponics/soil"), null, 3, "time", 10, "one_per_turf", 1, "on_floor", 1], rt.Args.Named), rt.new_(f, T("/datum/stack_recipe"), [null, "sandstone door", null, T("/obj/structure/mineral_door/sandstone"), null, 10, "one_per_turf", 1, "on_floor", 1], rt.Args.Named), rt.new_(f, T("/datum/stack_recipe"), ["aesthetic volcanic floor tile", T("/obj/item/stack/tile/basalt"), 2, 2, 4, 20]), rt.new_(f, T("/datum/stack_recipe"), [null, "Assistant Statue", null, T("/obj/structure/statue/sandstone/assistant"), null, 5, "one_per_turf", 1, "on_floor", 1], rt.Args.Named), rt.new_(f, T("/datum/stack_recipe"), [null, "Breakdown into sand", null, T("/obj/item/weapon/ore/glass"), null, 1, "one_per_turf", 0, "on_floor", 1], rt.Args.Named)));
-	rt.modSrcVar(f, "gvars_datum_init_order", "sandstone_recipes", add);
+	GLOB.sandstone_recipes = list(new_(T("/datum/stack_recipe"), "pile of dirt", T("/obj/machinery/hydroponics/soil"), 3, { time: 10, one_per_turf: 1, on_floor: 1 }), new_(T("/datum/stack_recipe"), "sandstone door", T("/obj/structure/mineral_door/sandstone"), 10, { one_per_turf: 1, on_floor: 1 }), new_(T("/datum/stack_recipe"), "aesthetic volcanic floor tile", T("/obj/item/stack/tile/basalt"), 2, 2, 4, 20), new_(T("/datum/stack_recipe"), "Assistant Statue", T("/obj/structure/statue/sandstone/assistant"), 5, { one_per_turf: 1, on_floor: 1 }), new_(T("/datum/stack_recipe"), "Breakdown into sand", T("/obj/item/weapon/ore/glass"), 1, { one_per_turf: 0, on_floor: 1 }));
+	this.gvars_datum_init_order += "sandstone_recipes";
 	return f.dot;
 });
 
@@ -35,29 +35,27 @@ rt.type(9042, "/obj/item/stack/sheet/mineral/sandstone", "/obj/item/stack/sheet/
 	sheettype: "sandstone",
 });
 
-// /obj/item/stack/sheet/mineral/sandstone/proc/<init>  (code/game/objects/items/stacks/sheets/mineral.dm:50)
+// mineral.dm:50
 rt.def("/obj/item/stack/sheet/mineral/sandstone/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$glass", 2000]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$glass", 2000]);
 	return f.dot;
 });
 
-// /obj/item/stack/sheet/mineral/sandstone/proc/Initialize  (code/game/objects/items/stacks/sheets/mineral.dm:54)  may sleep
+// mineral.dm:54
 rt.def("/obj/item/stack/sheet/mineral/sandstone/proc/Initialize", function* Initialize(f: Frame) {
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 1;
 	}
-	rt.setSv(f, "recipes", rt.gl("sandstone_recipes"));
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	this.recipes = GLOB.sandstone_recipes;
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true, { args: ["mapload", "new_amount", "merge"] });
 
-// /datum/controller/global_vars/proc/InitGlobalsandbag_recipes  (code/game/objects/items/stacks/sheets/mineral.dm:73)
+// mineral.dm:73
 rt.def("/datum/controller/global_vars/proc/InitGlobalsandbag_recipes", function InitGlobalsandbag_recipes(f: Frame) {
-	rt.setGl("sandbag_recipes", rt.list(rt.new_(f, T("/datum/stack_recipe"), [null, "sandbags", null, T("/obj/structure/barricade/sandbags"), null, 1, "time", 25, "one_per_turf", 1, "on_floor", 1], rt.Args.Named)));
-	rt.modSrcVar(f, "gvars_datum_init_order", "sandbag_recipes", add);
+	GLOB.sandbag_recipes = list(new_(T("/datum/stack_recipe"), "sandbags", T("/obj/structure/barricade/sandbags"), 1, { time: 25, one_per_turf: 1, on_floor: 1 }));
+	this.gvars_datum_init_order += "sandbag_recipes";
 	return f.dot;
 });
 
@@ -71,13 +69,13 @@ rt.type(9044, "/obj/item/stack/sheet/mineral/sandbags", "/obj/item/stack/sheet/m
 	novariants: 1,
 });
 
-// /obj/item/stack/sheet/mineral/sandbags/proc/Initialize  (code/game/objects/items/stacks/sheets/mineral.dm:78)  may sleep
+// mineral.dm:78
 rt.def("/obj/item/stack/sheet/mineral/sandbags/proc/Initialize", function* Initialize(f: Frame) {
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 1;
 	}
-	rt.setSv(f, "recipes", rt.gl("sandbag_recipes"));
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	this.recipes = GLOB.sandbag_recipes;
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true, { args: ["mapload", "new_amount", "merge"] });
 
@@ -89,21 +87,20 @@ rt.type(7053, "/obj/item/weapon/emptysandbag", "/obj/item/weapon", {
 	w_class: 1,
 });
 
-// /obj/item/weapon/emptysandbag/proc/attackby  (code/game/objects/items/stacks/sheets/mineral.dm:89)  may sleep
-rt.def("/obj/item/weapon/emptysandbag/proc/attackby", function* attackby(f: Frame) {
+// mineral.dm:89
+rt.def("/obj/item/weapon/emptysandbag/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
 	let I: Value = null;
-	f.vars = () => [I];
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/ore/glass")) ? 1 : 0))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You fill the sandbag.</span>"]);
-		I = (yield* g.new_(f, T("/obj/item/stack/sheet/mineral/sandbags"), []));
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-		yield* g.callName(f, live(f.args[1]), "put_in_hands", [live(I)]);
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.args[0])]);
+	if (rt.istype(W, T("/obj/item/weapon/ore/glass"))) {
+		to_chat(user, "<span class='notice'>You fill the sandbag.</span>");
+		I = (yield* new_(T("/obj/item/stack/sheet/mineral/sandbags")));
+		yield* qdel(this);
+		yield* user.put_in_hands(I);
+		yield* qdel(W);
 	} else {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["W", "user", "params"] });
+}, true);
 
 rt.type(9045, "/obj/item/stack/sheet/mineral/diamond", "/obj/item/stack/sheet/mineral", {
 	name: "diamond",
@@ -115,29 +112,27 @@ rt.type(9045, "/obj/item/stack/sheet/mineral/diamond", "/obj/item/stack/sheet/mi
 	novariants: 1,
 });
 
-// /obj/item/stack/sheet/mineral/diamond/proc/<init>  (code/game/objects/items/stacks/sheets/mineral.dm:107)
+// mineral.dm:107
 rt.def("/obj/item/stack/sheet/mineral/diamond/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$diamond", 2000]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$diamond", 2000]);
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobaldiamond_recipes  (code/game/objects/items/stacks/sheets/mineral.dm:110)
+// mineral.dm:110
 rt.def("/datum/controller/global_vars/proc/InitGlobaldiamond_recipes", function InitGlobaldiamond_recipes(f: Frame) {
-	rt.setGl("diamond_recipes", rt.list(rt.new_(f, T("/datum/stack_recipe"), [null, "diamond door", null, T("/obj/structure/mineral_door/transparent/diamond"), null, 10, "one_per_turf", 1, "on_floor", 1], rt.Args.Named), rt.new_(f, T("/datum/stack_recipe"), ["diamond tile", T("/obj/item/stack/tile/mineral/diamond"), 1, 4, 20]), rt.new_(f, T("/datum/stack_recipe"), [null, "Captain Statue", null, T("/obj/structure/statue/diamond/captain"), null, 5, "one_per_turf", 1, "on_floor", 1], rt.Args.Named), rt.new_(f, T("/datum/stack_recipe"), [null, "AI Hologram Statue", null, T("/obj/structure/statue/diamond/ai1"), null, 5, "one_per_turf", 1, "on_floor", 1], rt.Args.Named), rt.new_(f, T("/datum/stack_recipe"), [null, "AI Core Statue", null, T("/obj/structure/statue/diamond/ai2"), null, 5, "one_per_turf", 1, "on_floor", 1], rt.Args.Named)));
-	rt.modSrcVar(f, "gvars_datum_init_order", "diamond_recipes", add);
+	GLOB.diamond_recipes = list(new_(T("/datum/stack_recipe"), "diamond door", T("/obj/structure/mineral_door/transparent/diamond"), 10, { one_per_turf: 1, on_floor: 1 }), new_(T("/datum/stack_recipe"), "diamond tile", T("/obj/item/stack/tile/mineral/diamond"), 1, 4, 20), new_(T("/datum/stack_recipe"), "Captain Statue", T("/obj/structure/statue/diamond/captain"), 5, { one_per_turf: 1, on_floor: 1 }), new_(T("/datum/stack_recipe"), "AI Hologram Statue", T("/obj/structure/statue/diamond/ai1"), 5, { one_per_turf: 1, on_floor: 1 }), new_(T("/datum/stack_recipe"), "AI Core Statue", T("/obj/structure/statue/diamond/ai2"), 5, { one_per_turf: 1, on_floor: 1 }));
+	this.gvars_datum_init_order += "diamond_recipes";
 	return f.dot;
 });
 
-// /obj/item/stack/sheet/mineral/diamond/proc/Initialize  (code/game/objects/items/stacks/sheets/mineral.dm:119)  may sleep
+// mineral.dm:119
 rt.def("/obj/item/stack/sheet/mineral/diamond/proc/Initialize", function* Initialize(f: Frame) {
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 1;
 	}
-	rt.setSv(f, "recipes", rt.gl("diamond_recipes"));
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	this.recipes = GLOB.diamond_recipes;
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true, { args: ["mapload", "new_amount", "merge"] });
 
@@ -151,29 +146,27 @@ rt.type(9046, "/obj/item/stack/sheet/mineral/uranium", "/obj/item/stack/sheet/mi
 	novariants: 1,
 });
 
-// /obj/item/stack/sheet/mineral/uranium/proc/<init>  (code/game/objects/items/stacks/sheets/mineral.dm:131)
+// mineral.dm:131
 rt.def("/obj/item/stack/sheet/mineral/uranium/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$uranium", 2000]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$uranium", 2000]);
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobaluranium_recipes  (code/game/objects/items/stacks/sheets/mineral.dm:134)
+// mineral.dm:134
 rt.def("/datum/controller/global_vars/proc/InitGlobaluranium_recipes", function InitGlobaluranium_recipes(f: Frame) {
-	rt.setGl("uranium_recipes", rt.list(rt.new_(f, T("/datum/stack_recipe"), [null, "uranium door", null, T("/obj/structure/mineral_door/uranium"), null, 10, "one_per_turf", 1, "on_floor", 1], rt.Args.Named), rt.new_(f, T("/datum/stack_recipe"), ["uranium tile", T("/obj/item/stack/tile/mineral/uranium"), 1, 4, 20]), rt.new_(f, T("/datum/stack_recipe"), [null, "Nuke Statue", null, T("/obj/structure/statue/uranium/nuke"), null, 5, "one_per_turf", 1, "on_floor", 1], rt.Args.Named), rt.new_(f, T("/datum/stack_recipe"), [null, "Engineer Statue", null, T("/obj/structure/statue/uranium/eng"), null, 5, "one_per_turf", 1, "on_floor", 1], rt.Args.Named)));
-	rt.modSrcVar(f, "gvars_datum_init_order", "uranium_recipes", add);
+	GLOB.uranium_recipes = list(new_(T("/datum/stack_recipe"), "uranium door", T("/obj/structure/mineral_door/uranium"), 10, { one_per_turf: 1, on_floor: 1 }), new_(T("/datum/stack_recipe"), "uranium tile", T("/obj/item/stack/tile/mineral/uranium"), 1, 4, 20), new_(T("/datum/stack_recipe"), "Nuke Statue", T("/obj/structure/statue/uranium/nuke"), 5, { one_per_turf: 1, on_floor: 1 }), new_(T("/datum/stack_recipe"), "Engineer Statue", T("/obj/structure/statue/uranium/eng"), 5, { one_per_turf: 1, on_floor: 1 }));
+	this.gvars_datum_init_order += "uranium_recipes";
 	return f.dot;
 });
 
-// /obj/item/stack/sheet/mineral/uranium/proc/Initialize  (code/game/objects/items/stacks/sheets/mineral.dm:142)  may sleep
+// mineral.dm:142
 rt.def("/obj/item/stack/sheet/mineral/uranium/proc/Initialize", function* Initialize(f: Frame) {
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 1;
 	}
-	rt.setSv(f, "recipes", rt.gl("uranium_recipes"));
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	this.recipes = GLOB.uranium_recipes;
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true, { args: ["mapload", "new_amount", "merge"] });
 
@@ -189,59 +182,55 @@ rt.type(9047, "/obj/item/stack/sheet/mineral/plasma", "/obj/item/stack/sheet/min
 	materials: null,
 });
 
-// /obj/item/stack/sheet/mineral/plasma/proc/<init>  (code/game/objects/items/stacks/sheets/mineral.dm:157)
+// mineral.dm:157
 rt.def("/obj/item/stack/sheet/mineral/plasma/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$plasma", 2000]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$plasma", 2000]);
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalplasma_recipes  (code/game/objects/items/stacks/sheets/mineral.dm:159)
+// mineral.dm:159
 rt.def("/datum/controller/global_vars/proc/InitGlobalplasma_recipes", function InitGlobalplasma_recipes(f: Frame) {
-	rt.setGl("plasma_recipes", rt.list(rt.new_(f, T("/datum/stack_recipe"), [null, "plasma door", null, T("/obj/structure/mineral_door/transparent/plasma"), null, 10, "one_per_turf", 1, "on_floor", 1], rt.Args.Named), rt.new_(f, T("/datum/stack_recipe"), ["plasma tile", T("/obj/item/stack/tile/mineral/plasma"), 1, 4, 20]), rt.new_(f, T("/datum/stack_recipe"), [null, "Scientist Statue", null, T("/obj/structure/statue/plasma/scientist"), null, 5, "one_per_turf", 1, "on_floor", 1], rt.Args.Named)));
-	rt.modSrcVar(f, "gvars_datum_init_order", "plasma_recipes", add);
+	GLOB.plasma_recipes = list(new_(T("/datum/stack_recipe"), "plasma door", T("/obj/structure/mineral_door/transparent/plasma"), 10, { one_per_turf: 1, on_floor: 1 }), new_(T("/datum/stack_recipe"), "plasma tile", T("/obj/item/stack/tile/mineral/plasma"), 1, 4, 20), new_(T("/datum/stack_recipe"), "Scientist Statue", T("/obj/structure/statue/plasma/scientist"), 5, { one_per_turf: 1, on_floor: 1 }));
+	this.gvars_datum_init_order += "plasma_recipes";
 	return f.dot;
 });
 
-// /obj/item/stack/sheet/mineral/plasma/proc/Initialize  (code/game/objects/items/stacks/sheets/mineral.dm:166)  may sleep
+// mineral.dm:166
 rt.def("/obj/item/stack/sheet/mineral/plasma/proc/Initialize", function* Initialize(f: Frame) {
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 1;
 	}
-	rt.setSv(f, "recipes", rt.gl("plasma_recipes"));
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	this.recipes = GLOB.plasma_recipes;
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true, { args: ["mapload", "new_amount", "merge"] });
 
-// /obj/item/stack/sheet/mineral/plasma/proc/attackby  (code/game/objects/items/stacks/sheets/mineral.dm:170)  may sleep
-rt.def("/obj/item/stack/sheet/mineral/plasma/proc/attackby", function* attackby(f: Frame) {
+// mineral.dm:170
+rt.def("/obj/item/stack/sheet/mineral/plasma/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
 	let _T: Value = null;
 	let $0: any, $1: any;
-	f.vars = () => [_T, $0, $1];
-	if (rt.gt((yield* g.callName(f, live(f.args[0]), "is_hot", [])), 300)) {
-		_T = rt.getStep(f, live(f.src), 0);
-		$0 = fmt("＀＀ ＀", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.args[1])])), fmt("(<a href='?_src_=holder;adminmoreinfo=＃'>?</a>)", [live(f.args[1])]), fmt("(<a href='?_src_=holder;adminplayerobservefollow=＃'>FLW</a>)", [live(f.args[1])])]);
-		if (truthy(live(_T))) {
-			$1 = fmt("＀ ＀", [fmt("(＀,＀,＀)", [rt.fv(f, "x", live(_T)), rt.fv(f, "y", live(_T)), rt.fv(f, "z", live(_T))]), fmt("(<a href='?_src_=holder;adminplayerobservecoodjump=1;X=＀;Y=＀;Z=＀'>JMP</a>)", [rt.fv(f, "x", live(_T)), rt.fv(f, "y", live(_T)), rt.fv(f, "z", live(_T))])]);
+	if (W.is_hot() > 300) {
+		_T = rt.getStep(f, this, 0);
+		$0 = `${key_name_admin(user)}${fmt("(<a href='?_src_=holder;adminmoreinfo=＃'>?</a>)", [user])} ${fmt("(<a href='?_src_=holder;adminplayerobservefollow=＃'>FLW</a>)", [user])}`;
+		if (_T) {
+			$1 = `${`(${_T.x},${_T.y},${_T.z})`} ${`(<a href='?_src_=holder;adminplayerobservecoodjump=1;X=${_T.x};Y=${_T.y};Z=${_T.z}'>JMP</a>)`}`;
 		} else {
 			$1 = "nonexistent location";
 		}
-		yield* g.call(f, P("/proc/message_admins"), null, [fmt("Plasma sheets ignited by ＀ in ＀", [$0, fmt("＀", [$1])]), 0, 1]);
-		yield* g.call(f, P("/proc/log_game"), null, [fmt("Plasma sheets ignited by ＀ in ＀", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.args[1])])), fmt("(＀,＀,＀)", [rt.fv(f, "x", live(_T)), rt.fv(f, "y", live(_T)), rt.fv(f, "z", live(_T))])])]);
-		yield* g.srcCall(f, "fire_act", (yield* g.callName(f, live(f.args[0]), "is_hot", [])));
+		message_admins(`Plasma sheets ignited by ${$0} in ${`${$1}`}`, 0, 1);
+		log_game(`Plasma sheets ignited by ${key_name(user)} in ${`(${_T.x},${_T.y},${_T.z})`}`);
+		yield* this.fire_act(W.is_hot());
 	} else {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["W", "user", "params"] });
+}, true);
 
-// /obj/item/stack/sheet/mineral/plasma/proc/fire_act  (code/game/objects/items/stacks/sheets/mineral.dm:179)  may sleep
+// mineral.dm:179
 rt.def("/obj/item/stack/sheet/mineral/plasma/proc/fire_act", function* fire_act(f: Frame, exposed_temperature: Value, exposed_volume: Value) {
-	f.vars = () => [exposed_temperature, exposed_volume];
-	yield* g.srcCall(f, "atmos_spawn_air", fmt("plasma=＀;TEMP=＀", [multiply(rt.sv(f, "amount"), 10), live(exposed_temperature)]));
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	this.atmos_spawn_air(`plasma=${this.amount * 10};TEMP=${exposed_temperature}`);
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
@@ -254,29 +243,27 @@ rt.type(9048, "/obj/item/stack/sheet/mineral/gold", "/obj/item/stack/sheet/miner
 	materials: null,
 });
 
-// /obj/item/stack/sheet/mineral/gold/proc/<init>  (code/game/objects/items/stacks/sheets/mineral.dm:191)
+// mineral.dm:191
 rt.def("/obj/item/stack/sheet/mineral/gold/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$gold", 2000]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$gold", 2000]);
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalgold_recipes  (code/game/objects/items/stacks/sheets/mineral.dm:193)
+// mineral.dm:193
 rt.def("/datum/controller/global_vars/proc/InitGlobalgold_recipes", function InitGlobalgold_recipes(f: Frame) {
-	rt.setGl("gold_recipes", rt.list(rt.new_(f, T("/datum/stack_recipe"), [null, "golden door", null, T("/obj/structure/mineral_door/gold"), null, 10, "one_per_turf", 1, "on_floor", 1], rt.Args.Named), rt.new_(f, T("/datum/stack_recipe"), ["gold tile", T("/obj/item/stack/tile/mineral/gold"), 1, 4, 20]), rt.new_(f, T("/datum/stack_recipe"), [null, "HoS Statue", null, T("/obj/structure/statue/gold/hos"), null, 5, "one_per_turf", 1, "on_floor", 1], rt.Args.Named), rt.new_(f, T("/datum/stack_recipe"), [null, "HoP Statue", null, T("/obj/structure/statue/gold/hop"), null, 5, "one_per_turf", 1, "on_floor", 1], rt.Args.Named), rt.new_(f, T("/datum/stack_recipe"), [null, "CE Statue", null, T("/obj/structure/statue/gold/ce"), null, 5, "one_per_turf", 1, "on_floor", 1], rt.Args.Named), rt.new_(f, T("/datum/stack_recipe"), [null, "RD Statue", null, T("/obj/structure/statue/gold/rd"), null, 5, "one_per_turf", 1, "on_floor", 1], rt.Args.Named), rt.new_(f, T("/datum/stack_recipe"), ["Simple Crown", T("/obj/item/clothing/head/crown"), 5]), rt.new_(f, T("/datum/stack_recipe"), [null, "CMO Statue", null, T("/obj/structure/statue/gold/cmo"), null, 5, "one_per_turf", 1, "on_floor", 1], rt.Args.Named)));
-	rt.modSrcVar(f, "gvars_datum_init_order", "gold_recipes", add);
+	GLOB.gold_recipes = list(new_(T("/datum/stack_recipe"), "golden door", T("/obj/structure/mineral_door/gold"), 10, { one_per_turf: 1, on_floor: 1 }), new_(T("/datum/stack_recipe"), "gold tile", T("/obj/item/stack/tile/mineral/gold"), 1, 4, 20), new_(T("/datum/stack_recipe"), "HoS Statue", T("/obj/structure/statue/gold/hos"), 5, { one_per_turf: 1, on_floor: 1 }), new_(T("/datum/stack_recipe"), "HoP Statue", T("/obj/structure/statue/gold/hop"), 5, { one_per_turf: 1, on_floor: 1 }), new_(T("/datum/stack_recipe"), "CE Statue", T("/obj/structure/statue/gold/ce"), 5, { one_per_turf: 1, on_floor: 1 }), new_(T("/datum/stack_recipe"), "RD Statue", T("/obj/structure/statue/gold/rd"), 5, { one_per_turf: 1, on_floor: 1 }), new_(T("/datum/stack_recipe"), "Simple Crown", T("/obj/item/clothing/head/crown"), 5), new_(T("/datum/stack_recipe"), "CMO Statue", T("/obj/structure/statue/gold/cmo"), 5, { one_per_turf: 1, on_floor: 1 }));
+	this.gvars_datum_init_order += "gold_recipes";
 	return f.dot;
 });
 
-// /obj/item/stack/sheet/mineral/gold/proc/Initialize  (code/game/objects/items/stacks/sheets/mineral.dm:205)  may sleep
+// mineral.dm:205
 rt.def("/obj/item/stack/sheet/mineral/gold/proc/Initialize", function* Initialize(f: Frame) {
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 1;
 	}
-	rt.setSv(f, "recipes", rt.gl("gold_recipes"));
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	this.recipes = GLOB.gold_recipes;
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true, { args: ["mapload", "new_amount", "merge"] });
 
@@ -289,29 +276,27 @@ rt.type(9049, "/obj/item/stack/sheet/mineral/silver", "/obj/item/stack/sheet/min
 	materials: null,
 });
 
-// /obj/item/stack/sheet/mineral/silver/proc/<init>  (code/game/objects/items/stacks/sheets/mineral.dm:217)
+// mineral.dm:217
 rt.def("/obj/item/stack/sheet/mineral/silver/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$silver", 2000]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$silver", 2000]);
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalsilver_recipes  (code/game/objects/items/stacks/sheets/mineral.dm:219)
+// mineral.dm:219
 rt.def("/datum/controller/global_vars/proc/InitGlobalsilver_recipes", function InitGlobalsilver_recipes(f: Frame) {
-	rt.setGl("silver_recipes", rt.list(rt.new_(f, T("/datum/stack_recipe"), [null, "silver door", null, T("/obj/structure/mineral_door/silver"), null, 10, "one_per_turf", 1, "on_floor", 1], rt.Args.Named), rt.new_(f, T("/datum/stack_recipe"), ["silver tile", T("/obj/item/stack/tile/mineral/silver"), 1, 4, 20]), rt.new_(f, T("/datum/stack_recipe"), [null, "Med Officer Statue", null, T("/obj/structure/statue/silver/md"), null, 5, "one_per_turf", 1, "on_floor", 1], rt.Args.Named), rt.new_(f, T("/datum/stack_recipe"), [null, "Janitor Statue", null, T("/obj/structure/statue/silver/janitor"), null, 5, "one_per_turf", 1, "on_floor", 1], rt.Args.Named), rt.new_(f, T("/datum/stack_recipe"), [null, "Sec Officer Statue", null, T("/obj/structure/statue/silver/sec"), null, 5, "one_per_turf", 1, "on_floor", 1], rt.Args.Named), rt.new_(f, T("/datum/stack_recipe"), [null, "Sec Borg Statue", null, T("/obj/structure/statue/silver/secborg"), null, 5, "one_per_turf", 1, "on_floor", 1], rt.Args.Named), rt.new_(f, T("/datum/stack_recipe"), [null, "Med Borg Statue", null, T("/obj/structure/statue/silver/medborg"), null, 5, "one_per_turf", 1, "on_floor", 1], rt.Args.Named)));
-	rt.modSrcVar(f, "gvars_datum_init_order", "silver_recipes", add);
+	GLOB.silver_recipes = list(new_(T("/datum/stack_recipe"), "silver door", T("/obj/structure/mineral_door/silver"), 10, { one_per_turf: 1, on_floor: 1 }), new_(T("/datum/stack_recipe"), "silver tile", T("/obj/item/stack/tile/mineral/silver"), 1, 4, 20), new_(T("/datum/stack_recipe"), "Med Officer Statue", T("/obj/structure/statue/silver/md"), 5, { one_per_turf: 1, on_floor: 1 }), new_(T("/datum/stack_recipe"), "Janitor Statue", T("/obj/structure/statue/silver/janitor"), 5, { one_per_turf: 1, on_floor: 1 }), new_(T("/datum/stack_recipe"), "Sec Officer Statue", T("/obj/structure/statue/silver/sec"), 5, { one_per_turf: 1, on_floor: 1 }), new_(T("/datum/stack_recipe"), "Sec Borg Statue", T("/obj/structure/statue/silver/secborg"), 5, { one_per_turf: 1, on_floor: 1 }), new_(T("/datum/stack_recipe"), "Med Borg Statue", T("/obj/structure/statue/silver/medborg"), 5, { one_per_turf: 1, on_floor: 1 }));
+	this.gvars_datum_init_order += "silver_recipes";
 	return f.dot;
 });
 
-// /obj/item/stack/sheet/mineral/silver/proc/Initialize  (code/game/objects/items/stacks/sheets/mineral.dm:230)  may sleep
+// mineral.dm:230
 rt.def("/obj/item/stack/sheet/mineral/silver/proc/Initialize", function* Initialize(f: Frame) {
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 1;
 	}
-	rt.setSv(f, "recipes", rt.gl("silver_recipes"));
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	this.recipes = GLOB.silver_recipes;
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true, { args: ["mapload", "new_amount", "merge"] });
 
@@ -325,29 +310,27 @@ rt.type(9050, "/obj/item/stack/sheet/mineral/bananium", "/obj/item/stack/sheet/m
 	novariants: 1,
 });
 
-// /obj/item/stack/sheet/mineral/bananium/proc/<init>  (code/game/objects/items/stacks/sheets/mineral.dm:242)
+// mineral.dm:242
 rt.def("/obj/item/stack/sheet/mineral/bananium/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$bananium", 2000]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$bananium", 2000]);
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalclown_recipes  (code/game/objects/items/stacks/sheets/mineral.dm:245)
+// mineral.dm:245
 rt.def("/datum/controller/global_vars/proc/InitGlobalclown_recipes", function InitGlobalclown_recipes(f: Frame) {
-	rt.setGl("clown_recipes", rt.list(rt.new_(f, T("/datum/stack_recipe"), ["bananium tile", T("/obj/item/stack/tile/mineral/bananium"), 1, 4, 20]), rt.new_(f, T("/datum/stack_recipe"), [null, "Clown Statue", null, T("/obj/structure/statue/bananium/clown"), null, 5, "one_per_turf", 1, "on_floor", 1], rt.Args.Named)));
-	rt.modSrcVar(f, "gvars_datum_init_order", "clown_recipes", add);
+	GLOB.clown_recipes = list(new_(T("/datum/stack_recipe"), "bananium tile", T("/obj/item/stack/tile/mineral/bananium"), 1, 4, 20), new_(T("/datum/stack_recipe"), "Clown Statue", T("/obj/structure/statue/bananium/clown"), 5, { one_per_turf: 1, on_floor: 1 }));
+	this.gvars_datum_init_order += "clown_recipes";
 	return f.dot;
 });
 
-// /obj/item/stack/sheet/mineral/bananium/proc/Initialize  (code/game/objects/items/stacks/sheets/mineral.dm:251)  may sleep
+// mineral.dm:251
 rt.def("/obj/item/stack/sheet/mineral/bananium/proc/Initialize", function* Initialize(f: Frame) {
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 1;
 	}
-	rt.setSv(f, "recipes", rt.gl("clown_recipes"));
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	this.recipes = GLOB.clown_recipes;
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true, { args: ["mapload", "new_amount", "merge"] });
 
@@ -365,29 +348,27 @@ rt.type(9051, "/obj/item/stack/sheet/mineral/titanium", "/obj/item/stack/sheet/m
 	materials: null,
 });
 
-// /obj/item/stack/sheet/mineral/titanium/proc/<init>  (code/game/objects/items/stacks/sheets/mineral.dm:268)
+// mineral.dm:268
 rt.def("/obj/item/stack/sheet/mineral/titanium/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$titanium", 2000]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$titanium", 2000]);
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobaltitanium_recipes  (code/game/objects/items/stacks/sheets/mineral.dm:270)
+// mineral.dm:270
 rt.def("/datum/controller/global_vars/proc/InitGlobaltitanium_recipes", function InitGlobaltitanium_recipes(f: Frame) {
-	rt.setGl("titanium_recipes", rt.list(rt.new_(f, T("/datum/stack_recipe"), ["titanium tile", T("/obj/item/stack/tile/mineral/titanium"), 1, 4, 20])));
-	rt.modSrcVar(f, "gvars_datum_init_order", "titanium_recipes", add);
+	GLOB.titanium_recipes = list(new_(T("/datum/stack_recipe"), "titanium tile", T("/obj/item/stack/tile/mineral/titanium"), 1, 4, 20));
+	this.gvars_datum_init_order += "titanium_recipes";
 	return f.dot;
 });
 
-// /obj/item/stack/sheet/mineral/titanium/proc/Initialize  (code/game/objects/items/stacks/sheets/mineral.dm:275)  may sleep
+// mineral.dm:275
 rt.def("/obj/item/stack/sheet/mineral/titanium/proc/Initialize", function* Initialize(f: Frame) {
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 1;
 	}
-	rt.setSv(f, "recipes", rt.gl("titanium_recipes"));
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	this.recipes = GLOB.titanium_recipes;
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true, { args: ["mapload", "new_amount", "merge"] });
 
@@ -405,36 +386,34 @@ rt.type(9052, "/obj/item/stack/sheet/mineral/plastitanium", "/obj/item/stack/she
 	materials: null,
 });
 
-// /obj/item/stack/sheet/mineral/plastitanium/proc/<init>  (code/game/objects/items/stacks/sheets/mineral.dm:293)
+// mineral.dm:293
 rt.def("/obj/item/stack/sheet/mineral/plastitanium/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$titanium", 2000, "$plasma", 2000]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$titanium", 2000, "$plasma", 2000]);
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalplastitanium_recipes  (code/game/objects/items/stacks/sheets/mineral.dm:295)
+// mineral.dm:295
 rt.def("/datum/controller/global_vars/proc/InitGlobalplastitanium_recipes", function InitGlobalplastitanium_recipes(f: Frame) {
-	rt.setGl("plastitanium_recipes", rt.list(rt.new_(f, T("/datum/stack_recipe"), ["plas-titanium tile", T("/obj/item/stack/tile/mineral/plastitanium"), 1, 4, 20])));
-	rt.modSrcVar(f, "gvars_datum_init_order", "plastitanium_recipes", add);
+	GLOB.plastitanium_recipes = list(new_(T("/datum/stack_recipe"), "plas-titanium tile", T("/obj/item/stack/tile/mineral/plastitanium"), 1, 4, 20));
+	this.gvars_datum_init_order += "plastitanium_recipes";
 	return f.dot;
 });
 
-// /obj/item/stack/sheet/mineral/plastitanium/proc/Initialize  (code/game/objects/items/stacks/sheets/mineral.dm:300)  may sleep
+// mineral.dm:300
 rt.def("/obj/item/stack/sheet/mineral/plastitanium/proc/Initialize", function* Initialize(f: Frame) {
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 1;
 	}
-	rt.setSv(f, "recipes", rt.gl("plastitanium_recipes"));
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	this.recipes = GLOB.plastitanium_recipes;
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true, { args: ["mapload", "new_amount", "merge"] });
 
-// /datum/controller/global_vars/proc/InitGlobalsnow_recipes  (code/game/objects/items/stacks/sheets/mineral.dm:315)
+// mineral.dm:315
 rt.def("/datum/controller/global_vars/proc/InitGlobalsnow_recipes", function InitGlobalsnow_recipes(f: Frame) {
-	rt.setGl("snow_recipes", rt.list(rt.new_(f, T("/datum/stack_recipe"), [null, "Snow Wall", null, T("/turf/closed/wall/mineral/snow"), null, 5, "one_per_turf", 1, "on_floor", 1], rt.Args.Named), rt.new_(f, T("/datum/stack_recipe"), [null, "Snowman", null, T("/obj/structure/statue/snow/snowman"), null, 5, "one_per_turf", 1, "on_floor", 1], rt.Args.Named), rt.new_(f, T("/datum/stack_recipe"), ["Snowball", T("/obj/item/toy/snowball"), 1])));
-	rt.modSrcVar(f, "gvars_datum_init_order", "snow_recipes", add);
+	GLOB.snow_recipes = list(new_(T("/datum/stack_recipe"), "Snow Wall", T("/turf/closed/wall/mineral/snow"), 5, { one_per_turf: 1, on_floor: 1 }), new_(T("/datum/stack_recipe"), "Snowman", T("/obj/structure/statue/snow/snowman"), 5, { one_per_turf: 1, on_floor: 1 }), new_(T("/datum/stack_recipe"), "Snowball", T("/obj/item/toy/snowball"), 1));
+	this.gvars_datum_init_order += "snow_recipes";
 	return f.dot;
 });
 
@@ -447,13 +426,13 @@ rt.type(9053, "/obj/item/stack/sheet/mineral/snow", "/obj/item/stack/sheet/miner
 	origin_tech: "materials=1",
 });
 
-// /obj/item/stack/sheet/mineral/snow/proc/Initialize  (code/game/objects/items/stacks/sheets/mineral.dm:322)  may sleep
+// mineral.dm:322
 rt.def("/obj/item/stack/sheet/mineral/snow/proc/Initialize", function* Initialize(f: Frame) {
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 1;
 	}
-	rt.setSv(f, "recipes", rt.gl("snow_recipes"));
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	this.recipes = GLOB.snow_recipes;
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true, { args: ["mapload", "new_amount", "merge"] });
 
@@ -465,19 +444,17 @@ rt.type(9054, "/obj/item/stack/sheet/mineral/enruranium", "/obj/item/stack/sheet
 	materials: null,
 });
 
-// /obj/item/stack/sheet/mineral/enruranium/proc/<init>  (code/game/objects/items/stacks/sheets/mineral.dm:335)
+// mineral.dm:335
 rt.def("/obj/item/stack/sheet/mineral/enruranium/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$uranium", 3000]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$uranium", 3000]);
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobaladamantine_recipes  (code/game/objects/items/stacks/sheets/mineral.dm:340)
+// mineral.dm:340
 rt.def("/datum/controller/global_vars/proc/InitGlobaladamantine_recipes", function InitGlobaladamantine_recipes(f: Frame) {
-	rt.setGl("adamantine_recipes", rt.list(rt.new_(f, T("/datum/stack_recipe"), [null, "incomplete servant golem shell", null, T("/obj/item/golem_shell/servant"), "req_amount", 1, "res_amount", 1], rt.Args.Named)));
-	rt.modSrcVar(f, "gvars_datum_init_order", "adamantine_recipes", add);
+	GLOB.adamantine_recipes = list(new_(T("/datum/stack_recipe"), "incomplete servant golem shell", T("/obj/item/golem_shell/servant"), { req_amount: 1, res_amount: 1 }));
+	this.gvars_datum_init_order += "adamantine_recipes";
 	return f.dot;
 });
 
@@ -488,20 +465,20 @@ rt.type(9055, "/obj/item/stack/sheet/mineral/adamantine", "/obj/item/stack/sheet
 	origin_tech: "materials=4",
 });
 
-// /obj/item/stack/sheet/mineral/adamantine/proc/Initialize  (code/game/objects/items/stacks/sheets/mineral.dm:351)  may sleep
+// mineral.dm:351
 rt.def("/obj/item/stack/sheet/mineral/adamantine/proc/Initialize", function* Initialize(f: Frame) {
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 1;
 	}
-	rt.setSv(f, "recipes", rt.gl("adamantine_recipes"));
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	this.recipes = GLOB.adamantine_recipes;
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true, { args: ["mapload", "new_amount", "merge"] });
 
-// /datum/controller/global_vars/proc/InitGlobalabductor_recipes  (code/game/objects/items/stacks/sheets/mineral.dm:375)
+// mineral.dm:375
 rt.def("/datum/controller/global_vars/proc/InitGlobalabductor_recipes", function InitGlobalabductor_recipes(f: Frame) {
-	rt.setGl("abductor_recipes", rt.list(rt.new_(f, T("/datum/stack_recipe"), [null, "alien bed", null, T("/obj/structure/bed/abductor"), null, 2, "one_per_turf", 1, "on_floor", 1], rt.Args.Named), rt.new_(f, T("/datum/stack_recipe"), [null, "alien locker", null, T("/obj/structure/closet/abductor"), null, 2, "time", 15, "one_per_turf", 1, "on_floor", 1], rt.Args.Named), rt.new_(f, T("/datum/stack_recipe"), [null, "alien table frame", null, T("/obj/structure/table_frame/abductor"), null, 1, "time", 15, "one_per_turf", 1, "on_floor", 1], rt.Args.Named), rt.new_(f, T("/datum/stack_recipe"), [null, "alien airlock assembly", null, T("/obj/structure/door_assembly/door_assembly_abductor"), null, 4, "time", 20, "one_per_turf", 1, "on_floor", 1], rt.Args.Named), null, rt.new_(f, T("/datum/stack_recipe"), ["alien floor tile", T("/obj/item/stack/tile/mineral/abductor"), 1, 4, 20])));
-	rt.modSrcVar(f, "gvars_datum_init_order", "abductor_recipes", add);
+	GLOB.abductor_recipes = list(new_(T("/datum/stack_recipe"), "alien bed", T("/obj/structure/bed/abductor"), 2, { one_per_turf: 1, on_floor: 1 }), new_(T("/datum/stack_recipe"), "alien locker", T("/obj/structure/closet/abductor"), 2, { time: 15, one_per_turf: 1, on_floor: 1 }), new_(T("/datum/stack_recipe"), "alien table frame", T("/obj/structure/table_frame/abductor"), 1, { time: 15, one_per_turf: 1, on_floor: 1 }), new_(T("/datum/stack_recipe"), "alien airlock assembly", T("/obj/structure/door_assembly/door_assembly_abductor"), 4, { time: 20, one_per_turf: 1, on_floor: 1 }), null, new_(T("/datum/stack_recipe"), "alien floor tile", T("/obj/item/stack/tile/mineral/abductor"), 1, 4, 20));
+	this.gvars_datum_init_order += "abductor_recipes";
 	return f.dot;
 });
 
@@ -514,12 +491,12 @@ rt.type(9057, "/obj/item/stack/sheet/mineral/abductor", "/obj/item/stack/sheet/m
 	sheettype: "abductor",
 });
 
-// /obj/item/stack/sheet/mineral/abductor/proc/Initialize  (code/game/objects/items/stacks/sheets/mineral.dm:389)  may sleep
+// mineral.dm:389
 rt.def("/obj/item/stack/sheet/mineral/abductor/proc/Initialize", function* Initialize(f: Frame) {
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 1;
 	}
-	rt.setSv(f, "recipes", rt.gl("abductor_recipes"));
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	this.recipes = GLOB.abductor_recipes;
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true, { args: ["mapload", "new_amount", "merge"] });

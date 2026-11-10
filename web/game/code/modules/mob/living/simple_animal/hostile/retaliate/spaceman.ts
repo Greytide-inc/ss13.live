@@ -1,7 +1,7 @@
-// From code/modules/mob/living/simple_animal/hostile/retaliate/spaceman.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/simple_animal/hostile/retaliate/spaceman.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(4940, "/mob/living/simple_animal/hostile/retaliate/nanotrasenpeace", "/mob/living/simple_animal/hostile/retaliate", {
@@ -36,23 +36,21 @@ rt.type(4940, "/mob/living/simple_animal/hostile/retaliate/nanotrasenpeace", "/m
 	search_objects: 1,
 });
 
-// /mob/living/simple_animal/hostile/retaliate/nanotrasenpeace/proc/<init>  (code/modules/mob/living/simple_animal/hostile/retaliate/spaceman.dm:49)
+// spaceman.dm:49
 rt.def("/mob/living/simple_animal/hostile/retaliate/nanotrasenpeace/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "faction", rt.list("nanotrasenprivate"));
-	$0 = $0;
-	rt.setSv(f, "loot", rt.list(T("/obj/effect/mob_spawn/human/corpse/nanotrasensoldier")));
-	rt.setSv(f, "atmos_requirements", rt.alist(f, ["min_oxy", 5, "max_oxy", 0, "min_tox", 0, "max_tox", 1, "min_co2", 0, "max_co2", 5, "min_n2", 0, "max_n2", 0]));
+	parent_proc();
+	this.faction = list("nanotrasenprivate");
+
+	this.loot = list(T("/obj/effect/mob_spawn/human/corpse/nanotrasensoldier"));
+	this.atmos_requirements = rt.alist(f, ["min_oxy", 5, "max_oxy", 0, "min_tox", 0, "max_tox", 1, "min_co2", 0, "max_co2", 5, "min_n2", 0, "max_n2", 0]);
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/retaliate/nanotrasenpeace/proc/Aggro  (code/modules/mob/living/simple_animal/hostile/retaliate/spaceman.dm:58)  may sleep
+// spaceman.dm:58
 rt.def("/mob/living/simple_animal/hostile/retaliate/nanotrasenpeace/proc/Aggro", function* Aggro(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "summon_backup", 15);
-	yield* g.srcCall(f, "say", "411 in progress, requesting backup!");
+	yield* parent_proc();
+	yield* this.summon_backup(15);
+	yield* this.say("411 in progress, requesting backup!");
 	return f.dot;
 }, true);
 
@@ -69,11 +67,9 @@ rt.type(4941, "/mob/living/simple_animal/hostile/retaliate/nanotrasenpeace/range
 	loot: null,
 });
 
-// /mob/living/simple_animal/hostile/retaliate/nanotrasenpeace/ranged/proc/<init>  (code/modules/mob/living/simple_animal/hostile/retaliate/spaceman.dm:72)
+// spaceman.dm:72
 rt.def("/mob/living/simple_animal/hostile/retaliate/nanotrasenpeace/ranged/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "loot", rt.list(T("/obj/item/weapon/gun/ballistic/automatic/wt550"), T("/obj/effect/mob_spawn/human/corpse/nanotrasensoldier")));
+	parent_proc();
+	this.loot = list(T("/obj/item/weapon/gun/ballistic/automatic/wt550"), T("/obj/effect/mob_spawn/human/corpse/nanotrasensoldier"));
 	return f.dot;
 });

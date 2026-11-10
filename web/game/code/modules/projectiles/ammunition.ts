@@ -1,7 +1,7 @@
-// From code/modules/projectiles/ammunition.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/projectiles/ammunition.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(8654, "/obj/item/ammo_casing", "/obj/item", {
@@ -25,82 +25,63 @@ rt.type(8654, "/obj/item/ammo_casing", "/obj/item", {
 	w_class: 1,
 });
 
-// /obj/item/ammo_casing/proc/New  (code/modules/projectiles/ammunition.dm:23)  may sleep
+// ammunition.dm:23
 rt.def("/obj/item/ammo_casing/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.sv(f, "projectile_type"))) {
-		rt.setSv(f, "BB", (yield* g.new_(f, rt.sv(f, "projectile_type"), [live(f.src)])));
+	yield* parent_proc();
+	if (this.projectile_type) {
+		this.BB = (yield* new_(this.projectile_type, this));
 	}
-	rt.setSv(f, "pixel_x", (yield* g.call(f, P("/proc/rand"), null, [-10, 10])));
-	rt.setSv(f, "pixel_y", (yield* g.call(f, P("/proc/rand"), null, [-10, 10])));
-	yield* g.srcCall(f, "setDir", rt.op(f, "PickUnweighted", [1], [rt.gl("alldirs")]));
-	yield* g.srcCall(f, "update_icon");
+	this.pixel_x = rand(-10, 10);
+	this.pixel_y = rand(-10, 10);
+	yield* this.setDir(pick(GLOB.alldirs));
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/item/ammo_casing/proc/update_icon  (code/modules/projectiles/ammunition.dm:32)
+// ammunition.dm:32
 rt.def("/obj/item/ammo_casing/proc/update_icon", function update_icon(f: Frame) {
-	let $0: any, $1: any;
-	f.vars = () => [$0, $1];
-	rt.callSuper(f, [], rt.Args.Same);
-	$0 = rt.initial(f, live(f.src), "icon_state");
-	if (truthy(rt.sv(f, "BB"))) {
-		$1 = "-live";
-	} else {
-		$1 = "";
-	}
-	rt.setSv(f, "icon_state", fmt("＀＀", [$0, $1]));
-	$0 = rt.initial(f, live(f.src), "desc");
-	if (truthy(rt.sv(f, "BB"))) {
-		$1 = "";
-	} else {
-		$1 = " This one is spent";
-	}
-	rt.setSv(f, "desc", fmt("＀＀", [$0, $1]));
+	parent_proc();
+	let $0: any = rt.initial(f, this, "icon_state");
+	this.icon_state = `${$0}${this.BB ? "-live" : ""}`;
+	this.desc = `${rt.initial(f, this, "desc")}${this.BB ? "" : " This one is spent"}`;
 	return f.dot;
 });
 
-// /obj/item/ammo_casing/proc/newshot  (code/modules/projectiles/ammunition.dm:38)  may sleep
+// ammunition.dm:38
 rt.def("/obj/item/ammo_casing/proc/newshot", function* newshot(f: Frame) {
-	if (truthy(rt.sv(f, "BB"))) return f.dot;
-	rt.setSv(f, "BB", (yield* g.new_(f, rt.sv(f, "projectile_type"), [live(f.src)])));
+	if (this.BB) return f.dot;
+	this.BB = (yield* new_(this.projectile_type, this));
 	return f.dot;
 }, true);
 
-// /obj/item/ammo_casing/proc/attackby  (code/modules/projectiles/ammunition.dm:42)  may sleep
-rt.def("/obj/item/ammo_casing/proc/attackby", function* attackby(f: Frame) {
+// ammunition.dm:42
+rt.def("/obj/item/ammo_casing/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
 	let box: Value = null, boolets: Value = null, bullet: Value = null;
-	let $e: any;
-	f.vars = () => [box, boolets, bullet, $e];
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/ammo_box")) ? 1 : 0))) {
-		box = live(f.args[0]);
-		if (truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.sv(f, "loc")])))) {
+	if (rt.istype(I, T("/obj/item/ammo_box"))) {
+		box = I;
+		if (isturf(this.loc)) {
 			boolets = 0;
-			bullet = null;
-			rt.forList(f, 0, rt.sv(f, "loc"), T("/obj/item/ammo_casing"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				bullet = $e;
-				if (rt.ge(rt.getLen(f, rt.fv(f, "stored_ammo", live(box))), rt.fv(f, "max_ammo", live(box)))) {
+			for (bullet of each(this.loc, T("/obj/item/ammo_casing"))) {
+				if (rt.len(f, box.stored_ammo) >= box.max_ammo) {
 					break;
 				}
-				if (truthy(rt.fv(f, "BB", live(bullet)))) {
-					if (truthy((yield* g.callName(f, live(box), "give_round", [live(bullet), 0])))) {
-						boolets = rt.inc(live(boolets), 1);
+				if (bullet.BB) {
+					if (yield* box.give_round(bullet, 0)) {
+						boolets++;
 					}
 				} else {
 					continue;
 				}
 			}
-			rt.endFor(f, 0);
-			if (rt.gt(live(boolets), 0)) {
-				yield* g.callName(f, live(box), "update_icon", []);
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You collect ＀ shell５. ＀ now contains ＀ shell５.</span>", [live(boolets), live(box), rt.getLen(f, rt.fv(f, "stored_ammo", live(box)))])]);
+			if (boolets > 0) {
+				yield* box.update_icon();
+				to_chat(user, fmt("<span class='notice'>You collect ＀ shell５. ＀ now contains ＀ shell５.</span>", [boolets, box, rt.len(f, box.stored_ammo)]));
 			} else {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You fail to collect anything!</span>"]);
+				to_chat(user, "<span class='warning'>You fail to collect anything!</span>");
 			}
 		}
 	} else {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["I", "user", "params"] });
+}, true);

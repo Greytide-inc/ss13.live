@@ -1,7 +1,7 @@
-// From code/modules/power/cell.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/power/cell.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(5707, "/obj/item/weapon/stock_parts/cell", "/obj/item/weapon/stock_parts", {
@@ -26,220 +26,204 @@ rt.type(5707, "/obj/item/weapon/stock_parts/cell", "/obj/item/weapon/stock_parts
 	materials: null,
 });
 
-// /obj/item/weapon/stock_parts/cell/proc/<init>  (code/modules/power/cell.dm:15)
+// cell.dm:15
 rt.def("/obj/item/weapon/stock_parts/cell/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 700, "$glass", 50]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 700, "$glass", 50]);
 	return f.dot;
 });
 
-// /obj/item/weapon/stock_parts/cell/proc/New  (code/modules/power/cell.dm:26)  may sleep
+// cell.dm:26
 rt.def("/obj/item/weapon/stock_parts/cell/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.fv(f, "isprocessing", live(f.src)))) {
-		rt.setFv(f, "isprocessing", live(f.src), 1);
-		rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), add);
+	yield* parent_proc();
+	if (!this.isprocessing) {
+		this.isprocessing = 1;
+		GLOB.SSobj.processing += this;
 	}
-	rt.setSv(f, "charge", rt.sv(f, "maxcharge"));
-	if (truthy(rt.sv(f, "ratingdesc"))) {
-		rt.modSrcVar(f, "desc", fmt(" This one has a power rating of ＀, and you should not swallow it.", [rt.sv(f, "maxcharge")]), add);
+	this.charge = this.maxcharge;
+	if (this.ratingdesc) {
+		this.desc += ` This one has a power rating of ${this.maxcharge}, and you should not swallow it.`;
 	}
-	yield* g.srcCall(f, "update_icon");
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/stock_parts/cell/proc/Destroy  (code/modules/power/cell.dm:34)  may sleep
+// cell.dm:34
 rt.def("/obj/item/weapon/stock_parts/cell/proc/Destroy", function* Destroy(f: Frame) {
-	rt.setFv(f, "isprocessing", live(f.src), 0);
-	(rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), subtract));
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	this.isprocessing = 0;
+	GLOB.SSobj.processing -= this;
+	return (yield* parent_proc());
 }, true);
 
-// /obj/item/weapon/stock_parts/cell/proc/vv_edit_var  (code/modules/power/cell.dm:38)  may sleep
-rt.def("/obj/item/weapon/stock_parts/cell/proc/vv_edit_var", function* vv_edit_var(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = live(f.args[0]);
-	if ($0 === "self_recharge") {
-		if (truthy(live(f.args[1]))) {
-			if (!truthy(rt.fv(f, "isprocessing", live(f.src)))) {
-				rt.setFv(f, "isprocessing", live(f.src), 1);
-				rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), add);
+// cell.dm:38
+rt.def("/obj/item/weapon/stock_parts/cell/proc/vv_edit_var", function* vv_edit_var(f: Frame, var_name: Value, var_value: Value) {
+	if (var_name === "self_recharge") {
+		if (var_value) {
+			if (!this.isprocessing) {
+				this.isprocessing = 1;
+				GLOB.SSobj.processing += this;
 			}
 		} else {
-			rt.setFv(f, "isprocessing", live(f.src), 0);
-			(rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), subtract));
+			this.isprocessing = 0;
+			GLOB.SSobj.processing -= this;
 		}
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	f.dot = (yield* parent_proc());
 	return f.dot;
-}, true, { args: ["var_name", "var_value"] });
+}, true);
 
-// /obj/item/weapon/stock_parts/cell/proc/process  (code/modules/power/cell.dm:48)  may sleep
+// cell.dm:48
 rt.def("/obj/item/weapon/stock_parts/cell/proc/process", function* process(f: Frame) {
-	if (truthy(rt.sv(f, "self_recharge"))) {
-		yield* g.srcCall(f, "give", multiply(rt.sv(f, "chargerate"), 0.25));
+	if (this.self_recharge) {
+		yield* this.give(this.chargerate * 0.25);
 	} else {
 		return 26;
 	}
 	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/item/weapon/stock_parts/cell/proc/update_icon  (code/modules/power/cell.dm:53)
+// cell.dm:53
 rt.def("/obj/item/weapon/stock_parts/cell/proc/update_icon", function update_icon(f: Frame) {
-	rt.callSrc(f, "cut_overlays", []);
-	if (truthy(rt.sv(f, "grown_battery"))) {
-		rt.callSrc(f, "add_overlay", ["grown_wires"]);
+	this.cut_overlays();
+	if (this.grown_battery) {
+		this.add_overlay("grown_wires");
 	}
-	if (rt.lt(rt.sv(f, "charge"), 0.009999999776482582)) {
-		return live(f.dot);
+	if (this.charge < 0.01) {
+		return f.dot;
+	} else if (this.charge / this.maxcharge >= 0.995) {
+		this.add_overlay("cell-o2");
 	} else {
-		if (rt.ge(divide(rt.sv(f, "charge"), rt.sv(f, "maxcharge")), 0.9950000047683716)) {
-			rt.callSrc(f, "add_overlay", ["cell-o2"]);
-		} else {
-			rt.callSrc(f, "add_overlay", ["cell-o1"]);
-		}
+		this.add_overlay("cell-o1");
 	}
 	return f.dot;
 });
 
-// /obj/item/weapon/stock_parts/cell/proc/percent  (code/modules/power/cell.dm:64)
+// cell.dm:64
 rt.def("/obj/item/weapon/stock_parts/cell/proc/percent", function percent(f: Frame) {
-	return divide(multiply(100, rt.sv(f, "charge")), rt.sv(f, "maxcharge"));
+	return 100 * this.charge / this.maxcharge;
 });
 
-// /obj/item/weapon/stock_parts/cell/proc/use  (code/modules/power/cell.dm:68)  may sleep
+// cell.dm:68
 rt.def("/obj/item/weapon/stock_parts/cell/proc/use", function* use(f: Frame, amount: Value) {
-	f.vars = () => [amount];
-	if ((truthy(rt.sv(f, "rigged")) && rt.gt(live(amount), 0))) {
-		yield* g.srcCall(f, "explode");
+	if (this.rigged && amount > 0) {
+		yield* this.explode();
 		return 0;
 	}
-	if (rt.lt(rt.sv(f, "charge"), live(amount))) {
+	if (this.charge < amount) {
 		return 0;
 	}
-	rt.setSv(f, "charge", subtract(rt.sv(f, "charge"), live(amount)));
+	this.charge = this.charge - amount;
 	return 1;
 }, true);
 
-// /obj/item/weapon/stock_parts/cell/proc/give  (code/modules/power/cell.dm:80)  may sleep
+// cell.dm:80
 rt.def("/obj/item/weapon/stock_parts/cell/proc/give", function* give(f: Frame, amount: Value) {
 	let power_used: Value = null;
-	f.vars = () => [amount, power_used];
-	if ((truthy(rt.sv(f, "rigged")) && rt.gt(live(amount), 0))) {
-		yield* g.srcCall(f, "explode");
+	if (this.rigged && amount > 0) {
+		yield* this.explode();
 		return 0;
 	}
-	if (rt.lt(rt.sv(f, "maxcharge"), live(amount))) {
-		amount = rt.sv(f, "maxcharge");
+	if (this.maxcharge < amount) {
+		amount = this.maxcharge;
 	}
-	rt.modSrcVar(f, "charge", (power_used = (yield* g.call(f, P("/proc/min"), null, [subtract(rt.sv(f, "maxcharge"), rt.sv(f, "charge")), live(amount)]))), add);
-	return live(power_used);
+	this.charge += (power_used = min(this.maxcharge - this.charge, amount));
+	return power_used;
 }, true);
 
-// /obj/item/weapon/stock_parts/cell/proc/examine  (code/modules/power/cell.dm:90)
-rt.def("/obj/item/weapon/stock_parts/cell/proc/examine", function examine(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.sv(f, "rigged"))) {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='danger'>This power cell seems to be faulty!</span>"]);
+// cell.dm:90
+rt.def("/obj/item/weapon/stock_parts/cell/proc/examine", function examine(f: Frame, user: Value) {
+	parent_proc();
+	if (this.rigged) {
+		to_chat(user, "<span class='danger'>This power cell seems to be faulty!</span>");
 	} else {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("The charge meter reads ＀%.", [rt.call(f, P("/proc/round"), null, [rt.callName(f, live(f.src), "percent", [])])])]);
+		to_chat(user, `The charge meter reads ${round(this.percent())}%.`);
 	}
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/item/weapon/stock_parts/cell/proc/suicide_act  (code/modules/power/cell.dm:97)
+// cell.dm:97
 rt.def("/obj/item/weapon/stock_parts/cell/proc/suicide_act", function suicide_act(f: Frame, user: Value) {
-	rt.callName(f, live(user), "visible_message", [fmt("<span class='suicide'>＀ is licking the electrodes of ＀! It looks like ＀ trying to commit suicide!</span>", [live(user), live(f.src), rt.callName(f, live(user), "p_theyre", [])])]);
+	user.visible_message(`<span class='suicide'>${user} is licking the electrodes of ${this}! It looks like ${user.p_theyre()} trying to commit suicide!</span>`);
 	return 2;
 });
 
-// /obj/item/weapon/stock_parts/cell/proc/attackby  (code/modules/power/cell.dm:101)  may sleep
-rt.def("/obj/item/weapon/stock_parts/cell/proc/attackby", function* attackby(f: Frame) {
-	let S: Value = null;
-	f.vars = () => [S];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/reagent_containers/syringe")) ? 1 : 0))) return f.dot;
-	S = live(f.args[0]);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You inject the solution into the power cell.</span>"]);
-	if (truthy((yield* g.callName(f, rt.fv(f, "reagents", live(S)), "has_reagent", ["plasma", 5])))) {
-		rt.setSv(f, "rigged", 1);
+// cell.dm:101
+rt.def("/obj/item/weapon/stock_parts/cell/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
+	yield* parent_proc();
+	if (!rt.istype(W, T("/obj/item/weapon/reagent_containers/syringe"))) return f.dot;
+	let S: Value = W;
+	to_chat(user, "<span class='notice'>You inject the solution into the power cell.</span>");
+	if (S.reagents.has_reagent("plasma", 5)) {
+		this.rigged = 1;
 	}
-	yield* g.callName(f, rt.fv(f, "reagents", live(S)), "clear_reagents", []);
-	return f.dot;
-}, true, { args: ["W", "user", "params"] });
-
-// /obj/item/weapon/stock_parts/cell/proc/explode  (code/modules/power/cell.dm:111)  may sleep
-rt.def("/obj/item/weapon/stock_parts/cell/proc/explode", function* explode(f: Frame) {
-	let _T: Value = null, devastation_range: Value = null, heavy_impact_range: Value = null, light_impact_range: Value = null, flash_range: Value = null;
-	f.vars = () => [_T, devastation_range, heavy_impact_range, light_impact_range, flash_range];
-	_T = rt.getStep(f, rt.fv(f, "loc", live(f.src)), 0);
-	if (isEqual(rt.sv(f, "charge"), 0)) {
-		return live(f.dot);
-	}
-	devastation_range = -1;
-	heavy_impact_range = (yield* g.call(f, P("/proc/round"), null, [divide(rt.op(f, "Sqrt", [], [rt.sv(f, "charge")]), 60)]));
-	light_impact_range = (yield* g.call(f, P("/proc/round"), null, [divide(rt.op(f, "Sqrt", [], [rt.sv(f, "charge")]), 30)]));
-	flash_range = live(light_impact_range);
-	if (isEqual(live(light_impact_range), 0)) {
-		rt.setSv(f, "rigged", 0);
-		yield* g.srcCall(f, "corrupt");
-		return live(f.dot);
-	}
-	yield* g.call(f, P("/proc/explosion"), null, [live(_T), live(devastation_range), live(heavy_impact_range), live(light_impact_range), live(flash_range)]);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* S.reagents.clear_reagents();
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/stock_parts/cell/proc/corrupt  (code/modules/power/cell.dm:133)
+// cell.dm:111
+rt.def("/obj/item/weapon/stock_parts/cell/proc/explode", function* explode(f: Frame) {
+	let _T: Value = rt.getStep(f, this.loc, 0);
+	if (this.charge == 0) {
+		return f.dot;
+	}
+	let devastation_range: Value = -1;
+	let heavy_impact_range: Value = round(rt.op(f, "Sqrt", [], [this.charge]) / 60);
+	let light_impact_range: Value = round(rt.op(f, "Sqrt", [], [this.charge]) / 30);
+	let flash_range: Value = light_impact_range;
+	if (light_impact_range == 0) {
+		this.rigged = 0;
+		this.corrupt();
+		return f.dot;
+	}
+	yield* explosion(_T, devastation_range, heavy_impact_range, light_impact_range, flash_range);
+	yield* qdel(this);
+	return f.dot;
+}, true);
+
+// cell.dm:133
 rt.def("/obj/item/weapon/stock_parts/cell/proc/corrupt", function corrupt(f: Frame) {
-	(rt.modSrcVar(f, "charge", 2, divide));
-	rt.setSv(f, "maxcharge", rt.call(f, P("/proc/max"), null, [divide(rt.sv(f, "maxcharge"), 2), rt.sv(f, "chargerate")]));
-	if (!truthy(rt.op(f, "Prob", [], [10]))) return f.dot;
-	rt.setSv(f, "rigged", 1);
+	this.charge /= 2;
+	this.maxcharge = max(this.maxcharge / 2, this.chargerate);
+	if (!prob(10)) return f.dot;
+	this.rigged = 1;
 	return f.dot;
 });
 
-// /obj/item/weapon/stock_parts/cell/proc/emp_act  (code/modules/power/cell.dm:139)  may sleep
-rt.def("/obj/item/weapon/stock_parts/cell/proc/emp_act", function* emp_act(f: Frame) {
-	(rt.modSrcVar(f, "charge", divide(1000, live(f.args[0])), subtract));
-	if (rt.lt(rt.sv(f, "charge"), 0)) {
-		rt.setSv(f, "charge", 0);
+// cell.dm:139
+rt.def("/obj/item/weapon/stock_parts/cell/proc/emp_act", function* emp_act(f: Frame, severity: Value) {
+	this.charge -= 1000 / severity;
+	if (this.charge < 0) {
+		this.charge = 0;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["severity"] });
+}, true);
 
-// /obj/item/weapon/stock_parts/cell/proc/ex_act  (code/modules/power/cell.dm:145)
-rt.def("/obj/item/weapon/stock_parts/cell/proc/ex_act", function ex_act(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	rt.callSuper(f, [], rt.Args.Same);
-	if (!truthy(live(f.src)) || truthy(rt.fv(f, "gc_destroyed", live(f.src)))) return f.dot;
-	$0 = live(f.args[0]);
-	if ($0 === 2) {
-		if (truthy(rt.op(f, "Prob", [], [50]))) {
-			rt.callSrc(f, "corrupt", []);
+// cell.dm:145
+rt.def("/obj/item/weapon/stock_parts/cell/proc/ex_act", function ex_act(f: Frame, severity: Value, target: Value) {
+	parent_proc();
+	if (!this || this.gc_destroyed) return f.dot;
+	if (severity === 2) {
+		if (prob(50)) {
+			this.corrupt();
 		}
-	} else if ($0 === 3) {
-		if (!truthy(rt.op(f, "Prob", [], [25]))) return f.dot;
-		rt.callSrc(f, "corrupt", []);
+	} else if (severity === 3) {
+		if (!prob(25)) return f.dot;
+		this.corrupt();
 	}
 	return f.dot;
-}, false, { args: ["severity", "target"], waitfor: false });
+}, false, { waitfor: false });
 
-// /obj/item/weapon/stock_parts/cell/proc/blob_act  (code/modules/power/cell.dm:157)
+// cell.dm:157
 rt.def("/obj/item/weapon/stock_parts/cell/proc/blob_act", function blob_act(f: Frame, B: Value) {
-	rt.callSrc(f, "ex_act", [1]);
+	this.ex_act(1);
 	return f.dot;
 });
 
-// /obj/item/weapon/stock_parts/cell/proc/get_electrocute_damage  (code/modules/power/cell.dm:160)
+// cell.dm:160
 rt.def("/obj/item/weapon/stock_parts/cell/proc/get_electrocute_damage", function get_electrocute_damage(f: Frame) {
-	if (rt.ge(rt.sv(f, "charge"), 1000)) {
-		return add(rt.call(f, P("/proc/max"), null, [10, rt.call(f, P("/proc/min"), null, [rt.call(f, P("/proc/round"), null, [divide(rt.sv(f, "charge"), 10000)]), 90])]), rt.call(f, P("/proc/rand"), null, [-5, 5]));
+	if (this.charge >= 1000) {
+		return max(10, min(round(this.charge / 10000), 90)) + rand(-5, 5);
 	}
 	return 0;
 });
@@ -252,21 +236,19 @@ rt.type(5713, "/obj/item/weapon/stock_parts/cell/crap", "/obj/item/weapon/stock_
 	rating: 2,
 });
 
-// /obj/item/weapon/stock_parts/cell/crap/proc/<init>  (code/modules/power/cell.dm:170)
+// cell.dm:170
 rt.def("/obj/item/weapon/stock_parts/cell/crap/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$glass", 40]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$glass", 40]);
 	return f.dot;
 });
 
 rt.type(5714, "/obj/item/weapon/stock_parts/cell/crap/empty", "/obj/item/weapon/stock_parts/cell/crap", {});
 
-// /obj/item/weapon/stock_parts/cell/crap/empty/proc/New  (code/modules/power/cell.dm:174)  may sleep
+// cell.dm:174
 rt.def("/obj/item/weapon/stock_parts/cell/crap/empty/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "charge", 0);
+	yield* parent_proc();
+	this.charge = 0;
 	return f.dot;
 }, true);
 
@@ -278,21 +260,19 @@ rt.type(5715, "/obj/item/weapon/stock_parts/cell/secborg", "/obj/item/weapon/sto
 	rating: 2.5,
 });
 
-// /obj/item/weapon/stock_parts/cell/secborg/proc/<init>  (code/modules/power/cell.dm:181)
+// cell.dm:181
 rt.def("/obj/item/weapon/stock_parts/cell/secborg/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$glass", 40]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$glass", 40]);
 	return f.dot;
 });
 
 rt.type(5716, "/obj/item/weapon/stock_parts/cell/secborg/empty", "/obj/item/weapon/stock_parts/cell/secborg", {});
 
-// /obj/item/weapon/stock_parts/cell/secborg/empty/proc/New  (code/modules/power/cell.dm:185)  may sleep
+// cell.dm:185
 rt.def("/obj/item/weapon/stock_parts/cell/secborg/empty/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "charge", 0);
+	yield* parent_proc();
+	this.charge = 0;
 	return f.dot;
 }, true);
 
@@ -306,21 +286,19 @@ rt.type(5720, "/obj/item/weapon/stock_parts/cell/high", "/obj/item/weapon/stock_
 	rating: 3,
 });
 
-// /obj/item/weapon/stock_parts/cell/high/proc/<init>  (code/modules/power/cell.dm:207)
+// cell.dm:207
 rt.def("/obj/item/weapon/stock_parts/cell/high/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$glass", 60]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$glass", 60]);
 	return f.dot;
 });
 
 rt.type(5722, "/obj/item/weapon/stock_parts/cell/high/empty", "/obj/item/weapon/stock_parts/cell/high", {});
 
-// /obj/item/weapon/stock_parts/cell/high/empty/proc/New  (code/modules/power/cell.dm:219)  may sleep
+// cell.dm:219
 rt.def("/obj/item/weapon/stock_parts/cell/high/empty/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "charge", 0);
+	yield* parent_proc();
+	this.charge = 0;
 	return f.dot;
 }, true);
 
@@ -334,21 +312,19 @@ rt.type(5724, "/obj/item/weapon/stock_parts/cell/super", "/obj/item/weapon/stock
 	rating: 4,
 });
 
-// /obj/item/weapon/stock_parts/cell/super/proc/<init>  (code/modules/power/cell.dm:227)
+// cell.dm:227
 rt.def("/obj/item/weapon/stock_parts/cell/super/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$glass", 300]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$glass", 300]);
 	return f.dot;
 });
 
 rt.type(5725, "/obj/item/weapon/stock_parts/cell/super/empty", "/obj/item/weapon/stock_parts/cell/super", {});
 
-// /obj/item/weapon/stock_parts/cell/super/empty/proc/New  (code/modules/power/cell.dm:232)  may sleep
+// cell.dm:232
 rt.def("/obj/item/weapon/stock_parts/cell/super/empty/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "charge", 0);
+	yield* parent_proc();
+	this.charge = 0;
 	return f.dot;
 }, true);
 
@@ -362,21 +338,19 @@ rt.type(5726, "/obj/item/weapon/stock_parts/cell/hyper", "/obj/item/weapon/stock
 	rating: 5,
 });
 
-// /obj/item/weapon/stock_parts/cell/hyper/proc/<init>  (code/modules/power/cell.dm:240)
+// cell.dm:240
 rt.def("/obj/item/weapon/stock_parts/cell/hyper/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$glass", 400]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$glass", 400]);
 	return f.dot;
 });
 
 rt.type(5727, "/obj/item/weapon/stock_parts/cell/hyper/empty", "/obj/item/weapon/stock_parts/cell/hyper", {});
 
-// /obj/item/weapon/stock_parts/cell/hyper/empty/proc/New  (code/modules/power/cell.dm:245)  may sleep
+// cell.dm:245
 rt.def("/obj/item/weapon/stock_parts/cell/hyper/empty/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "charge", 0);
+	yield* parent_proc();
+	this.charge = 0;
 	return f.dot;
 }, true);
 
@@ -391,21 +365,19 @@ rt.type(5728, "/obj/item/weapon/stock_parts/cell/bluespace", "/obj/item/weapon/s
 	rating: 6,
 });
 
-// /obj/item/weapon/stock_parts/cell/bluespace/proc/<init>  (code/modules/power/cell.dm:254)
+// cell.dm:254
 rt.def("/obj/item/weapon/stock_parts/cell/bluespace/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$glass", 600]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$glass", 600]);
 	return f.dot;
 });
 
 rt.type(5729, "/obj/item/weapon/stock_parts/cell/bluespace/empty", "/obj/item/weapon/stock_parts/cell/bluespace", {});
 
-// /obj/item/weapon/stock_parts/cell/bluespace/empty/proc/New  (code/modules/power/cell.dm:259)  may sleep
+// cell.dm:259
 rt.def("/obj/item/weapon/stock_parts/cell/bluespace/empty/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "charge", 0);
+	yield* parent_proc();
+	this.charge = 0;
 	return f.dot;
 }, true);
 
@@ -419,12 +391,10 @@ rt.type(5730, "/obj/item/weapon/stock_parts/cell/infinite", "/obj/item/weapon/st
 	rating: 6,
 });
 
-// /obj/item/weapon/stock_parts/cell/infinite/proc/<init>  (code/modules/power/cell.dm:267)
+// cell.dm:267
 rt.def("/obj/item/weapon/stock_parts/cell/infinite/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$glass", 1000]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$glass", 1000]);
 	return f.dot;
 });
 
@@ -441,12 +411,10 @@ rt.type(5732, "/obj/item/weapon/stock_parts/cell/potato", "/obj/item/weapon/stoc
 	rating: 1,
 });
 
-// /obj/item/weapon/stock_parts/cell/potato/proc/<init>  (code/modules/power/cell.dm:296)
+// cell.dm:296
 rt.def("/obj/item/weapon/stock_parts/cell/potato/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.list());
+	parent_proc();
+	this.materials = list();
 	return f.dot;
 });
 
@@ -460,21 +428,19 @@ rt.type(5723, "/obj/item/weapon/stock_parts/cell/high/slime", "/obj/item/weapon/
 	materials: null,
 });
 
-// /obj/item/weapon/stock_parts/cell/high/slime/proc/<init>  (code/modules/power/cell.dm:306)
+// cell.dm:306
 rt.def("/obj/item/weapon/stock_parts/cell/high/slime/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.list());
+	parent_proc();
+	this.materials = list();
 	return f.dot;
 });
 
 rt.type(5734, "/obj/item/weapon/stock_parts/cell/emproof/empty", "/obj/item/weapon/stock_parts/cell/emproof", {});
 
-// /obj/item/weapon/stock_parts/cell/emproof/empty/proc/New  (code/modules/power/cell.dm:316)  may sleep
+// cell.dm:316
 rt.def("/obj/item/weapon/stock_parts/cell/emproof/empty/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "charge", 0);
+	yield* parent_proc();
+	this.charge = 0;
 	return f.dot;
 }, true);
 
@@ -486,8 +452,8 @@ rt.type(5735, "/obj/item/weapon/stock_parts/cell/beam_rifle", "/obj/item/weapon/
 	rating: 4,
 });
 
-// /obj/item/weapon/stock_parts/cell/beam_rifle/proc/emp_act  (code/modules/power/cell.dm:336)
+// cell.dm:336
 rt.def("/obj/item/weapon/stock_parts/cell/beam_rifle/proc/emp_act", function emp_act(f: Frame, severity: Value) {
-	rt.setSv(f, "charge", rt.call(f, P("/proc/max"), null, [0, rt.call(f, P("/proc/min"), null, [subtract(rt.sv(f, "charge"), divide(10000, live(severity))), rt.sv(f, "maxcharge")])]));
+	this.charge = max(0, min(this.charge - 10000 / severity, this.maxcharge));
 	return f.dot;
 });

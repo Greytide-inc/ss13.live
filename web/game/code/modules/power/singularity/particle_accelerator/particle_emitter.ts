@@ -1,7 +1,7 @@
-// From code/modules/power/singularity/particle_accelerator/particle_emitter.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/power/singularity/particle_accelerator/particle_emitter.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(12982, "/obj/structure/particle_accelerator/particle_emitter", "/obj/structure/particle_accelerator", {
@@ -13,29 +13,23 @@ rt.type(12982, "/obj/structure/particle_accelerator/particle_emitter", "/obj/str
 	icon_state: "none",
 });
 
-// /obj/structure/particle_accelerator/particle_emitter/proc/emit_particle  (code/modules/power/singularity/particle_accelerator/particle_emitter.dm:28)  may sleep
+// particle_emitter.dm:28
 rt.def("/obj/structure/particle_accelerator/particle_emitter/proc/emit_particle", function* emit_particle(f: Frame, strength: Value) {
 	let _T: Value = null, _P: Value = null;
-	let $0: any;
-	f.vars = () => [strength, _T, _P, $0];
-	if (live(strength) === null) {
-		strength = 0;
-	}
-	if (rt.le(add(rt.sv(f, "last_shot"), rt.sv(f, "fire_delay")), rt.worldTime(f))) {
-		rt.setSv(f, "last_shot", rt.worldTime(f));
-		_T = rt.getStep(f, live(f.src), 0);
-		_P = null;
-		$0 = live(strength);
-		if ($0 === 0) {
-			_P = (yield* g.new_(f, T("/obj/effect/accelerated_particle/weak"), [live(_T)]));
-		} else if ($0 === 1) {
-			_P = (yield* g.new_(f, T("/obj/effect/accelerated_particle"), [live(_T)]));
-		} else if ($0 === 2) {
-			_P = (yield* g.new_(f, T("/obj/effect/accelerated_particle/strong"), [live(_T)]));
-		} else if ($0 === 3) {
-			_P = (yield* g.new_(f, T("/obj/effect/accelerated_particle/powerful"), [live(_T)]));
+	strength ??= 0;
+	if (this.last_shot + this.fire_delay <= rt.worldTime(f)) {
+		this.last_shot = rt.worldTime(f);
+		_T = rt.getStep(f, this, 0);
+		if (strength === 0) {
+			_P = (yield* new_(T("/obj/effect/accelerated_particle/weak"), _T));
+		} else if (strength === 1) {
+			_P = (yield* new_(T("/obj/effect/accelerated_particle"), _T));
+		} else if (strength === 2) {
+			_P = (yield* new_(T("/obj/effect/accelerated_particle/strong"), _T));
+		} else if (strength === 3) {
+			_P = (yield* new_(T("/obj/effect/accelerated_particle/powerful"), _T));
 		}
-		yield* g.callName(f, live(_P), "setDir", [rt.sv(f, "dir")]);
+		yield* _P.setDir(this.dir);
 		return 1;
 	}
 	return 0;

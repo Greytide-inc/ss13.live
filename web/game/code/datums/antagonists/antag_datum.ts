@@ -1,7 +1,7 @@
-// From code/datums/antagonists/antag_datum.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/datums/antagonists/antag_datum.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(895, "/datum/antagonist", "/datum", {
@@ -13,91 +13,82 @@ rt.type(895, "/datum/antagonist", "/datum", {
 	delete_on_death: 1,
 });
 
-// /datum/antagonist/proc/<init>  (code/datums/antagonists/antag_datum.dm:9)
+// antag_datum.dm:9
 rt.def("/datum/antagonist/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "typecache_datum_blacklist", rt.list());
+	parent_proc();
+	this.typecache_datum_blacklist = list();
 	return f.dot;
 });
 
-// /datum/antagonist/proc/New  (code/datums/antagonists/antag_datum.dm:13)
+// antag_datum.dm:13
 rt.def("/datum/antagonist/proc/New", function New(f: Frame, new_owner: Value) {
-	rt.setSv(f, "typecache_datum_blacklist", rt.call(f, P("/proc/typecacheof"), null, [rt.sv(f, "typecache_datum_blacklist")]));
-	if (!truthy(live(new_owner))) return f.dot;
-	rt.setSv(f, "owner", live(new_owner));
+	this.typecache_datum_blacklist = typecacheof(this.typecache_datum_blacklist);
+	if (!new_owner) return f.dot;
+	this.owner = new_owner;
 	return f.dot;
 });
 
-// /datum/antagonist/proc/Destroy  (code/datums/antagonists/antag_datum.dm:19)  may sleep
+// antag_datum.dm:19
 rt.def("/datum/antagonist/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.sv(f, "owner"))) {
-		if (truthy(rt.fv(f, "antag_datums", rt.sv(f, "owner")))) {
-			(rt.modField(f, rt.sv(f, "owner"), "antag_datums", live(f.src), subtract));
-			if (!truthy(rt.getLen(f, rt.fv(f, "antag_datums", rt.sv(f, "owner"))))) {
-				rt.setFv(f, "antag_datums", rt.sv(f, "owner"), null);
+	if (this.owner) {
+		if (this.owner.antag_datums) {
+			this.owner.antag_datums -= this;
+			if (!rt.len(f, this.owner.antag_datums)) {
+				this.owner.antag_datums = null;
 			}
 		}
 	}
-	rt.setSv(f, "owner", null);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	this.owner = null;
+	return (yield* parent_proc());
 }, true);
 
-// /datum/antagonist/proc/can_be_owned  (code/datums/antagonists/antag_datum.dm:25)
+// antag_datum.dm:25
 rt.def("/datum/antagonist/proc/can_be_owned", function can_be_owned(f: Frame, new_owner: Value) {
 	let i: Value = null, A: Value = null;
-	let $e: any;
-	f.vars = () => [i, A, $e];
 	f.dot = 1;
-	if (truthy(rt.callName(f, rt.sv(f, "owner"), "has_antag_datum", [rt.sv(f, "type")]))) {
+	if (this.owner.has_antag_datum(this.type)) {
 		return 0;
 	}
-	i = null;
-	rt.forList(f, 0, rt.fv(f, "antag_datums", rt.sv(f, "owner")));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		i = $e;
-		A = live(i);
-		if (truthy(rt.call(f, P("/proc/is_type_in_typecache"), null, [live(f.src), rt.fv(f, "typecache_datum_blacklist", live(A))]))) {
+	for (i of each(this.owner.antag_datums)) {
+		A = i;
+		if (is_type_in_typecache(this, A.typecache_datum_blacklist)) {
 			return 0;
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /datum/antagonist/proc/on_body_transfer  (code/datums/antagonists/antag_datum.dm:33)  may sleep
+// antag_datum.dm:33
 rt.def("/datum/antagonist/proc/on_body_transfer", function* on_body_transfer(f: Frame, old_body: Value, new_body: Value) {
-	f.vars = () => [old_body, new_body];
-	yield* g.srcCall(f, "remove_innate_effects", live(old_body));
-	yield* g.srcCall(f, "apply_innate_effects", live(new_body));
+	yield* this.remove_innate_effects(old_body);
+	yield* this.apply_innate_effects(new_body);
 	return f.dot;
 }, true);
 
-// /datum/antagonist/proc/on_gain  (code/datums/antagonists/antag_datum.dm:46)  may sleep
+// antag_datum.dm:46
 rt.def("/datum/antagonist/proc/on_gain", function* on_gain(f: Frame) {
-	if (!(truthy(rt.sv(f, "owner")) && truthy(rt.fv(f, "current", rt.sv(f, "owner"))))) return f.dot;
-	if (!truthy(rt.sv(f, "silent"))) {
-		yield* g.srcCall(f, "greet");
+	if (!(this.owner && this.owner.current)) return f.dot;
+	if (!this.silent) {
+		this.greet();
 	}
-	yield* g.srcCall(f, "apply_innate_effects");
+	yield* this.apply_innate_effects();
 	return f.dot;
 }, true);
 
-// /datum/antagonist/proc/on_removal  (code/datums/antagonists/antag_datum.dm:52)  may sleep
+// antag_datum.dm:52
 rt.def("/datum/antagonist/proc/on_removal", function* on_removal(f: Frame) {
-	yield* g.srcCall(f, "remove_innate_effects");
-	if (truthy(rt.sv(f, "owner"))) {
-		if (truthy(rt.fv(f, "antag_datums", rt.sv(f, "owner")))) {
-			(rt.modField(f, rt.sv(f, "owner"), "antag_datums", live(f.src), subtract));
-			if (!truthy(rt.getLen(f, rt.fv(f, "antag_datums", rt.sv(f, "owner"))))) {
-				rt.setFv(f, "antag_datums", rt.sv(f, "owner"), null);
+	yield* this.remove_innate_effects();
+	if (this.owner) {
+		if (this.owner.antag_datums) {
+			this.owner.antag_datums -= this;
+			if (!rt.len(f, this.owner.antag_datums)) {
+				this.owner.antag_datums = null;
 			}
 		}
-		if ((!truthy(rt.sv(f, "silent")) && truthy(rt.fv(f, "current", rt.sv(f, "owner"))))) {
-			yield* g.srcCall(f, "farewell");
+		if (!this.silent && this.owner.current) {
+			this.farewell();
 		}
 	}
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* qdel(this);
 	return f.dot;
 }, true);

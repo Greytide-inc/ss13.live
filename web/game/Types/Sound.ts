@@ -1,7 +1,7 @@
-// From Types/Sound.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on BYOND's Types/Sound.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(13814, "/sound", "/datum", {
@@ -28,33 +28,30 @@ rt.type(13814, "/sound", "/datum", {
 	status: 0,
 });
 
-// /sound/proc/New  (Types/Sound.dm:30)
+// Sound.dm:30
 rt.def("/sound/proc/New", function New(f: Frame, file: Value, repeat: Value, wait: Value, channel: Value, volume: Value) {
 	let copy_from: Value = null;
-	f.vars = () => [repeat, copy_from];
-	if (live(repeat) === null) {
-		repeat = 0;
-	}
-	if (truthy((rt.istype(live(file), T("/sound")) ? 1 : 0))) {
-		copy_from = live(file);
-		rt.setFv(f, "file", live(f.src), rt.fv(f, "file", live(copy_from)));
-		rt.setFv(f, "repeat", live(f.src), rt.fv(f, "repeat", live(copy_from)));
-		rt.setFv(f, "wait", live(f.src), rt.fv(f, "wait", live(copy_from)));
-		rt.setFv(f, "channel", live(f.src), rt.fv(f, "channel", live(copy_from)));
-		rt.setFv(f, "volume", live(f.src), rt.fv(f, "volume", live(copy_from)));
+	repeat ??= 0;
+	if (rt.istype(file, T("/sound"))) {
+		copy_from = file;
+		this.file = copy_from.file;
+		this.repeat = copy_from.repeat;
+		this.wait = copy_from.wait;
+		this.channel = copy_from.channel;
+		this.volume = copy_from.volume;
 	} else {
-		if (live(file) !== null) {
-			rt.setFv(f, "file", live(f.src), live(file));
+		if (file !== null) {
+			this.file = file;
 		}
-		rt.setFv(f, "repeat", live(f.src), live(repeat));
-		if (live(wait) !== null) {
-			rt.setFv(f, "wait", live(f.src), live(wait));
+		this.repeat = repeat;
+		if (wait !== null) {
+			this.wait = wait;
 		}
-		if (live(channel) !== null) {
-			rt.setFv(f, "channel", live(f.src), live(channel));
+		if (channel !== null) {
+			this.channel = channel;
 		}
-		if (live(volume) === null) return f.dot;
-		rt.setFv(f, "volume", live(f.src), live(volume));
+		if (volume === null) return f.dot;
+		this.volume = volume;
 	}
 	return f.dot;
 });

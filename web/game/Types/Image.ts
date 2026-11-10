@@ -1,7 +1,7 @@
-// From Types/Image.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on BYOND's Types/Image.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(5106, "/image", "/datum", {
@@ -61,11 +61,9 @@ rt.type(5106, "/image", "/datum", {
 	loc: null,
 });
 
-// /image/proc/<init>  (Types/Image.dm:17)
+// Image.dm:17
 rt.def("/image/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "filters", rt.list());
+	parent_proc();
+	this.filters = list();
 	return f.dot;
 });

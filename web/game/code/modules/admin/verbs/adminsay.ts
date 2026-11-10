@@ -1,26 +1,25 @@
-// From code/modules/admin/verbs/adminsay.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/admin/verbs/adminsay.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { fmt } = rt;
 
 
-// /client/proc/cmd_admin_say  (code/modules/admin/verbs/adminsay.dm:5)
+// adminsay.dm:5
 rt.def("/client/proc/cmd_admin_say", function cmd_admin_say(f: Frame, msg: Value) {
-	f.vars = () => [msg];
-	if (!truthy(rt.call(f, P("/proc/check_rights"), null, [0]))) {
-		return live(f.dot);
+	if (!check_rights(0)) {
+		return f.dot;
 	}
-	if (!truthy((msg = rt.call(f, P("/proc/copytext"), null, [rt.call(f, P("/proc/sanitize"), null, [live(msg)]), 1, 1024])))) {
-		return live(f.dot);
+	if (!(msg = copytext(sanitize(msg), 1, 1024))) {
+		return f.dot;
 	}
-	rt.call(f, P("/proc/log_adminsay"), null, [fmt("＀ : ＀", [rt.call(f, P("/proc/key_name"), null, [live(f.src)]), live(msg)])]);
-	msg = rt.call(f, P("/proc/keywords_lookup"), null, [live(msg)]);
-	if (truthy(rt.call(f, P("/proc/check_rights"), null, [2, 0]))) {
-		msg = fmt("<span class='admin'><span class='prefix'>ADMIN:</span> <EM>＀</EM> (<a href='?_src_=holder;adminplayerobservefollow=＃'>FLW</A>): <span class='message'>＀</span></span>", [rt.call(f, P("/proc/key_name"), null, [live(f.usr), 1]), rt.sv(f, "mob"), live(msg)]);
-		rt.call(f, P("/proc/to_chat"), null, [rt.gl("admins"), live(msg)]);
+	log_adminsay(`${key_name(this)} : ${msg}`);
+	msg = keywords_lookup(msg);
+	if (check_rights(2, 0)) {
+		msg = fmt("<span class='admin'><span class='prefix'>ADMIN:</span> <EM>＀</EM> (<a href='?_src_=holder;adminplayerobservefollow=＃'>FLW</A>): <span class='message'>＀</span></span>", [key_name(f.usr, 1), this.mob, msg]);
+		to_chat(GLOB.admins, msg);
 	} else {
-		msg = fmt("<span class='adminobserver'><span class='prefix'>ADMIN:</span> <EM>＀:</EM> <span class='message'>＀</span></span>", [rt.call(f, P("/proc/key_name"), null, [live(f.usr), 1]), live(msg)]);
-		rt.call(f, P("/proc/to_chat"), null, [rt.gl("admins"), live(msg)]);
+		msg = `<span class='adminobserver'><span class='prefix'>ADMIN:</span> <EM>${key_name(f.usr, 1)}:</EM> <span class='message'>${msg}</span></span>`;
+		to_chat(GLOB.admins, msg);
 	}
 	return f.dot;
 }, false, { hidden: true, verb: { name: "Asay", category: "Special Verbs" }, argTypes: [{ type: 2 }] });

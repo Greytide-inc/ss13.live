@@ -1,7 +1,7 @@
-// From code/game/objects/effects/effect_system/effects_foam.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/effects/effect_system/effects_foam.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(11919, "/obj/effect/particle_effect/foam", "/obj/effect/particle_effect", {
@@ -19,159 +19,132 @@ rt.type(11919, "/obj/effect/particle_effect/foam", "/obj/effect/particle_effect"
 	animate_movement: 0,
 }, { global: { blacklisted_turfs: 781 } });
 
-// /obj/effect/particle_effect/foam/proc/New  (code/game/objects/effects/effect_system/effects_foam.dm:42)  may sleep
+// effects_foam.dm:42
 rt.def("/obj/effect/particle_effect/foam/proc/New", function* New(f: Frame, loc: Value) {
-	f.vars = () => [loc];
-	yield* g.callSuper(f, [live(loc)]);
-	yield* g.srcCall(f, "create_reagents", 1000);
-	if (!truthy(rt.fv(f, "isprocessing", live(f.src)))) {
-		rt.setFv(f, "isprocessing", live(f.src), 1);
-		rt.modField(f, rt.gl("SSfastprocess"), "processing", live(f.src), add);
+	yield* parent_proc(loc);
+	yield* this.create_reagents(1000);
+	if (!this.isprocessing) {
+		this.isprocessing = 1;
+		GLOB.SSfastprocess.processing += this;
 	}
-	yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/effects/bubbles2.ogg"), 80, 1, -3]);
+	playsound(this, rt.rsc("sound/effects/bubbles2.ogg"), 80, 1, -3);
 	return f.dot;
 }, true);
 
-// /obj/effect/particle_effect/foam/proc/Destroy  (code/game/objects/effects/effect_system/effects_foam.dm:48)  may sleep
+// effects_foam.dm:48
 rt.def("/obj/effect/particle_effect/foam/proc/Destroy", function* Destroy(f: Frame) {
-	rt.setFv(f, "isprocessing", live(f.src), 0);
-	(rt.modField(f, rt.gl("SSfastprocess"), "processing", live(f.src), subtract));
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	this.isprocessing = 0;
+	GLOB.SSfastprocess.processing -= this;
+	return (yield* parent_proc());
 }, true);
 
-// /obj/effect/particle_effect/foam/proc/kill_foam  (code/game/objects/effects/effect_system/effects_foam.dm:53)  may sleep
+// effects_foam.dm:53
 rt.def("/obj/effect/particle_effect/foam/proc/kill_foam", function* kill_foam(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	rt.setFv(f, "isprocessing", live(f.src), 0);
-	(rt.modField(f, rt.gl("SSfastprocess"), "processing", live(f.src), subtract));
-	$0 = rt.sv(f, "metal");
-	if ($0 === 1) {
-		yield* g.new_(f, T("/obj/structure/foamedmetal"), [rt.getStep(f, live(f.src), 0)]);
-	} else if ($0 === 2) {
-		yield* g.new_(f, T("/obj/structure/foamedmetal/iron"), [rt.getStep(f, live(f.src), 0)]);
-	} else if ($0 === 3) {
-		yield* g.new_(f, T("/obj/structure/foamedmetal/resin"), [rt.getStep(f, live(f.src), 0)]);
+	this.isprocessing = 0;
+	GLOB.SSfastprocess.processing -= this;
+	if (this.metal === ALUMINUM_FOAM) {
+		yield* new_(T("/obj/structure/foamedmetal"), rt.getStep(f, this, 0));
+	} else if (this.metal === IRON_FOAM) {
+		yield* new_(T("/obj/structure/foamedmetal/iron"), rt.getStep(f, this, 0));
+	} else if (this.metal === 3) {
+		yield* new_(T("/obj/structure/foamedmetal/resin"), rt.getStep(f, this, 0));
 	}
-	yield* g.call(f, P("/proc/flick"), null, [fmt("＀-disolve", [rt.sv(f, "icon_state")]), live(f.src)]);
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), ["some_magic_bullshit", P("/proc/qdel"), live(f.src)])), 5, 8]);
+	flick(`${this.icon_state}-disolve`, this);
+	yield* addtimer((yield* new_(T("/datum/callback"), "some_magic_bullshit", P("/proc/qdel"), this)), 5, 8);
 	return f.dot;
 }, true);
 
-// /obj/effect/particle_effect/foam/proc/process  (code/game/objects/effects/effect_system/effects_foam.dm:65)  may sleep
+// effects_foam.dm:65
 rt.def("/obj/effect/particle_effect/foam/proc/process", function* process(f: Frame) {
-	let fraction: Value = null, O: Value = null, _T: Value = null, hit: Value = null, L: Value = null;
-	let $e: any;
-	f.vars = () => [fraction, O, _T, hit, L, $e];
-	rt.incSrcVar(f, "lifetime", -1, true);
-	if (rt.lt(rt.sv(f, "lifetime"), 1)) {
-		yield* g.srcCall(f, "kill_foam");
-		return live(f.dot);
+	let O: Value = null, _T: Value = null, L: Value = null;
+	this.lifetime--;
+	if (this.lifetime < 1) {
+		yield* this.kill_foam();
+		return f.dot;
 	}
-	fraction = divide(1, rt.initial(f, live(f.src), "reagent_divisor"));
-	O = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/range"), null, [0, live(f.src)])), T("/obj"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		O = $e;
-		if (isEqual(rt.fv(f, "type", live(O)), rt.fv(f, "type", live(f.src)))) {
+	let fraction: Value = 1 / rt.initial(f, this, "reagent_divisor");
+	for (O of each(range(0, this), T("/obj"))) {
+		if (O.type == this.type) {
 			continue;
 		}
-		if (truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.fv(f, "loc", live(O))])))) {
-			if ((truthy(rt.gv(f, "intact", (_T = rt.fv(f, "loc", live(O))))) && isEqual(rt.fv(f, "level", live(O)), 1))) {
+		if (isturf(O.loc)) {
+			if ((_T = O.loc).intact && O.level == 1) {
 				continue;
 			}
 		}
-		if (truthy(rt.modulus(rt.sv(f, "lifetime"), rt.sv(f, "reagent_divisor")))) {
-			yield* g.callName(f, rt.sv(f, "reagents"), "reaction", [live(O), 3, live(fraction)]);
+		if (this.lifetime % this.reagent_divisor) {
+			yield* this.reagents.reaction(O, VAPOR, fraction);
 		}
 	}
-	rt.endFor(f, 0);
-	hit = 0;
-	L = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/range"), null, [0, live(f.src)])), T("/mob/living"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		L = $e;
-		hit = rt.modify(live(hit), (yield* g.srcCall(f, "foam_mob", live(L))), add);
+	let hit: Value = 0;
+	for (L of each(range(0, this), T("/mob/living"))) {
+		hit += (yield* this.foam_mob(L));
 	}
-	rt.endFor(f, 0);
-	if (truthy(live(hit))) {
-		rt.incSrcVar(f, "lifetime", 1, true);
+	if (hit) {
+		this.lifetime++;
 	}
-	_T = rt.getStep(f, live(f.src), 0);
-	if (truthy(rt.modulus(rt.sv(f, "lifetime"), rt.sv(f, "reagent_divisor")))) {
-		yield* g.callName(f, rt.sv(f, "reagents"), "reaction", [live(_T), 3, live(fraction)]);
+	_T = rt.getStep(f, this, 0);
+	if (this.lifetime % this.reagent_divisor) {
+		yield* this.reagents.reaction(_T, VAPOR, fraction);
 	}
-	if (rt.lt(rt.incSrcVar(f, "amount", -1, false), 0)) {
-		return live(f.dot);
+	if (--this.amount < 0) {
+		return f.dot;
 	}
-	yield* g.srcCall(f, "spread_foam");
+	yield* this.spread_foam();
 	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/effect/particle_effect/foam/proc/foam_mob  (code/game/objects/effects/effect_system/effects_foam.dm:94)  may sleep
+// effects_foam.dm:94
 rt.def("/obj/effect/particle_effect/foam/proc/foam_mob", function* foam_mob(f: Frame, L: Value) {
-	let fraction: Value = null;
-	f.vars = () => [L, fraction];
-	if (rt.lt(rt.sv(f, "lifetime"), 1)) {
+	if (this.lifetime < 1) {
 		return 0;
 	}
-	if (!truthy((rt.istype(live(L), T("/mob/living")) ? 1 : 0))) {
+	if (!rt.istype(L, T("/mob/living"))) {
 		return 0;
 	}
-	fraction = divide(1, rt.initial(f, live(f.src), "reagent_divisor"));
-	if (truthy(rt.modulus(rt.sv(f, "lifetime"), rt.sv(f, "reagent_divisor")))) {
-		yield* g.callName(f, rt.sv(f, "reagents"), "reaction", [live(L), 3, live(fraction)]);
+	let fraction: Value = 1 / rt.initial(f, this, "reagent_divisor");
+	if (this.lifetime % this.reagent_divisor) {
+		yield* this.reagents.reaction(L, VAPOR, fraction);
 	}
-	rt.incSrcVar(f, "lifetime", -1, true);
+	this.lifetime--;
 	return 1;
 }, true);
 
-// /obj/effect/particle_effect/foam/proc/Crossed  (code/game/objects/effects/effect_system/effects_foam.dm:105)  may sleep
+// effects_foam.dm:105
 rt.def("/obj/effect/particle_effect/foam/proc/Crossed", function* Crossed(f: Frame, AM: Value) {
 	let M: Value = null;
-	f.vars = () => [AM, M];
-	if (!truthy((rt.istype(live(AM), T("/mob/living/carbon")) ? 1 : 0))) return f.dot;
-	yield* g.callName(f, (M = live(AM)), "slip", [100, live(f.src)]);
+	if (!rt.istype(AM, T("/mob/living/carbon"))) return f.dot;
+	yield* (M = AM).slip(100, this);
 	return f.dot;
 }, true);
 
-// /obj/effect/particle_effect/foam/proc/spread_foam  (code/game/objects/effects/effect_system/effects_foam.dm:114)  may sleep
+// effects_foam.dm:114
 rt.def("/obj/effect/particle_effect/foam/proc/spread_foam", function* spread_foam(f: Frame) {
-	let t_loc: Value = null, _T: Value = null, foundfoam: Value = null, L: Value = null, F: Value = null;
-	let $e: any;
-	f.vars = () => [t_loc, _T, foundfoam, L, F, $e];
-	t_loc = rt.getStep(f, live(f.src), 0);
-	_T = null;
-	rt.forList(f, 0, (yield* g.callName(f, live(t_loc), "GetAtmosAdjacentTurfs", [])), T("/turf"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_T = $e;
-		if (truthy((foundfoam = rt.locateIn(f, T("/obj/effect/particle_effect/foam"), live(_T))))) {
+	let _T: Value = null, foundfoam: Value = null, L: Value = null, F: Value = null;
+	let t_loc: Value = rt.getStep(f, this, 0);
+	for (_T of each(t_loc.GetAtmosAdjacentTurfs(), T("/turf"))) {
+		if (foundfoam = rt.locateIn(f, T("/obj/effect/particle_effect/foam"), _T)) {
 			continue;
 		}
-		if (truthy((yield* g.call(f, P("/proc/is_type_in_typecache"), null, [live(_T), rt.gl("blacklisted_turfs")])))) {
+		if (is_type_in_typecache(_T, GLOB.blacklisted_turfs)) {
 			continue;
 		}
 		L = null;
-		rt.forList(f, 1, live(_T), T("/mob/living"));
-		while (($e = rt.next(f, 1)) !== undefined) {
-			L = $e;
-			yield* g.srcCall(f, "foam_mob", live(L));
+		for (L of each(_T, T("/mob/living"))) {
+			yield* this.foam_mob(L);
 		}
-		rt.endFor(f, 1);
-		rt.setFv(f, "amount", (F = (yield* g.new_(f, rt.fv(f, "type", live(f.src)), [live(_T)]))), rt.sv(f, "amount"));
-		yield* g.callName(f, rt.sv(f, "reagents"), "copy_to", [live(F), rt.fv(f, "total_volume", rt.sv(f, "reagents"))]);
-		yield* g.callName(f, live(F), "add_atom_colour", [rt.sv(f, "color"), 4]);
-		rt.setFv(f, "metal", live(F), rt.sv(f, "metal"));
+		(F = (yield* new_(this.type, _T))).amount = this.amount;
+		yield* this.reagents.copy_to(F, this.reagents.total_volume);
+		F.add_atom_colour(this.color, FIXED_COLOUR_PRIORITY);
+		F.metal = this.metal;
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /obj/effect/particle_effect/foam/proc/temperature_expose  (code/game/objects/effects/effect_system/effects_foam.dm:133)  may sleep
+// effects_foam.dm:133
 rt.def("/obj/effect/particle_effect/foam/proc/temperature_expose", function* temperature_expose(f: Frame, air: Value, exposed_temperature: Value, exposed_volume: Value) {
-	f.vars = () => [air, exposed_temperature, exposed_volume];
-	if (!truthy(rt.op(f, "Prob", [], [(yield* g.call(f, P("/proc/max"), null, [0, subtract(live(exposed_temperature), 475)]))]))) return f.dot;
-	yield* g.srcCall(f, "kill_foam");
+	if (!prob(max(0, exposed_temperature - 475))) return f.dot;
+	yield* this.kill_foam();
 	return f.dot;
 }, true);
 
@@ -182,41 +155,33 @@ rt.type(1514, "/datum/effect_system/foam_spread", "/datum/effect_system", {
 	effect_type: rt.typePath("/obj/effect/particle_effect/foam"),
 });
 
-// /datum/effect_system/foam_spread/proc/New  (code/game/objects/effects/effect_system/effects_foam.dm:155)  may sleep
+// effects_foam.dm:155
 rt.def("/datum/effect_system/foam_spread/proc/New", function* New(f: Frame) {
-	let R: Value = null;
-	f.vars = () => [R];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "chemholder", (yield* g.new_(f, T("/obj"), [])));
-	R = (yield* g.new_(f, T("/datum/reagents"), [1000]));
-	rt.setFv(f, "reagents", rt.sv(f, "chemholder"), live(R));
-	rt.setFv(f, "my_atom", live(R), rt.sv(f, "chemholder"));
+	yield* parent_proc();
+	this.chemholder = (yield* new_(T("/obj")));
+	let R: Value = (yield* new_(T("/datum/reagents"), 1000));
+	this.chemholder.reagents = R;
+	R.my_atom = this.chemholder;
 	return f.dot;
 }, true);
 
-// /datum/effect_system/foam_spread/proc/Destroy  (code/game/objects/effects/effect_system/effects_foam.dm:162)  may sleep
+// effects_foam.dm:162
 rt.def("/datum/effect_system/foam_spread/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "chemholder")]);
-	rt.setSv(f, "chemholder", null);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* qdel(this.chemholder);
+	this.chemholder = null;
+	return (yield* parent_proc());
 }, true);
 
-// /datum/effect_system/foam_spread/proc/set_up  (code/game/objects/effects/effect_system/effects_foam.dm:167)  may sleep
+// effects_foam.dm:167
 rt.def("/datum/effect_system/foam_spread/proc/set_up", function* set_up(f: Frame, amt: Value, loca: Value, carry: Value) {
-	f.vars = () => [amt, loca, carry];
-	if (live(amt) === null) {
-		amt = 5;
-	}
-	if (live(carry) === null) {
-		carry = null;
-	}
-	if (truthy((yield* g.call(f, P("/proc/isturf"), null, [live(loca)])))) {
-		rt.setSv(f, "location", live(loca));
+	amt ??= 5;
+	if (isturf(loca)) {
+		this.location = loca;
 	} else {
-		rt.setSv(f, "location", rt.getStep(f, live(loca), 0));
+		this.location = rt.getStep(f, loca, 0);
 	}
-	rt.setSv(f, "amount", (yield* g.call(f, P("/proc/round"), null, [rt.op(f, "Sqrt", [], [divide(live(amt), 2)]), 1])));
-	yield* g.callName(f, live(carry), "copy_to", [rt.sv(f, "chemholder"), multiply(4, rt.fv(f, "total_volume", live(carry)))]);
+	this.amount = round(rt.op(f, "Sqrt", [], [amt / 2]), 1);
+	yield* carry.copy_to(this.chemholder, 4 * carry.total_volume);
 	return f.dot;
 }, true);
 
@@ -224,32 +189,31 @@ rt.type(1515, "/datum/effect_system/foam_spread/metal", "/datum/effect_system/fo
 	effect_type: rt.typePath("/obj/effect/particle_effect/foam/metal"),
 });
 
-// /datum/effect_system/foam_spread/metal/proc/set_up  (code/game/objects/effects/effect_system/effects_foam.dm:176)  may sleep
+// effects_foam.dm:176
 rt.def("/datum/effect_system/foam_spread/metal/proc/set_up", function* set_up(f: Frame) {
-	if (live(f.args[0]) === null) {
+	if (f.args[0] === null) {
 		f.args[0] = 5;
 	}
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = null;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "metal", live(f.args[3]));
+	yield* parent_proc();
+	this.metal = f.args[3];
 	return f.dot;
 }, true, { args: ["amt", "loca", "carry", "metaltype"] });
 
-// /datum/effect_system/foam_spread/proc/start  (code/game/objects/effects/effect_system/effects_foam.dm:180)  may sleep
+// effects_foam.dm:180
 rt.def("/datum/effect_system/foam_spread/proc/start", function* start(f: Frame) {
 	let foundfoam: Value = null, F: Value = null, foamcolor: Value = null;
-	f.vars = () => [foundfoam, F, foamcolor];
-	if (truthy((foundfoam = rt.locateIn(f, T("/obj/effect/particle_effect/foam"), rt.sv(f, "location"))))) {
-		rt.modField(f, live(foundfoam), "amount", rt.sv(f, "amount"), add);
+	if (foundfoam = rt.locateIn(f, T("/obj/effect/particle_effect/foam"), this.location)) {
+		foundfoam.amount += this.amount;
 	} else {
-		F = (yield* g.new_(f, rt.sv(f, "effect_type"), [rt.sv(f, "location")]));
-		foamcolor = (yield* g.call(f, P("/proc/mix_color_from_reagents"), null, [rt.gv(f, "reagent_list", rt.fv(f, "reagents", rt.sv(f, "chemholder")))]));
-		yield* g.callName(f, rt.fv(f, "reagents", rt.sv(f, "chemholder")), "copy_to", [live(F), divide(rt.gv(f, "total_volume", rt.fv(f, "reagents", rt.sv(f, "chemholder"))), rt.sv(f, "amount"))]);
-		yield* g.callName(f, live(F), "add_atom_colour", [live(foamcolor), 4]);
-		rt.setFv(f, "amount", live(F), rt.sv(f, "amount"));
-		rt.setFv(f, "metal", live(F), rt.sv(f, "metal"));
+		F = (yield* new_(this.effect_type, this.location));
+		foamcolor = mix_color_from_reagents(this.chemholder.reagents.reagent_list);
+		yield* this.chemholder.reagents.copy_to(F, this.chemholder.reagents.total_volume / this.amount);
+		F.add_atom_colour(foamcolor, FIXED_COLOUR_PRIORITY);
+		F.amount = this.amount;
+		F.metal = this.metal;
 	}
 	return f.dot;
 }, true);
@@ -269,67 +233,55 @@ rt.type(12704, "/obj/structure/foamedmetal", "/obj/structure", {
 	max_integrity: 20,
 });
 
-// /obj/structure/foamedmetal/proc/New  (code/game/objects/effects/effect_system/effects_foam.dm:209)  may sleep
+// effects_foam.dm:209
 rt.def("/obj/structure/foamedmetal/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "air_update_turf", 1);
+	yield* parent_proc();
+	this.air_update_turf(1);
 	return f.dot;
 }, true);
 
-// /obj/structure/foamedmetal/proc/Destroy  (code/game/objects/effects/effect_system/effects_foam.dm:215)  may sleep
+// effects_foam.dm:215
 rt.def("/obj/structure/foamedmetal/proc/Destroy", function* Destroy(f: Frame) {
-	rt.setSv(f, "density", 0);
-	yield* g.srcCall(f, "air_update_turf", 1);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	this.density = 0;
+	this.air_update_turf(1);
+	return (yield* parent_proc());
 }, true);
 
-// /obj/structure/foamedmetal/proc/Move  (code/game/objects/effects/effect_system/effects_foam.dm:219)  may sleep
+// effects_foam.dm:219
 rt.def("/obj/structure/foamedmetal/proc/Move", function* Move(f: Frame) {
-	let _T: Value = null;
-	f.vars = () => [_T];
-	_T = rt.sv(f, "loc");
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "move_update_air", live(_T));
+	let _T: Value = this.loc;
+	yield* parent_proc();
+	this.move_update_air(_T);
 	return f.dot;
 }, true);
 
-// /obj/structure/foamedmetal/proc/attack_paw  (code/game/objects/effects/effect_system/effects_foam.dm:224)  may sleep
+// effects_foam.dm:224
 rt.def("/obj/structure/foamedmetal/proc/attack_paw", function* attack_paw(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.srcCall(f, "attack_hand", live(user));
+	yield* this.attack_hand(user);
 	return f.dot;
 }, true);
 
-// /obj/structure/foamedmetal/proc/play_attack_sound  (code/game/objects/effects/effect_system/effects_foam.dm:227)
+// effects_foam.dm:227
 rt.def("/obj/structure/foamedmetal/proc/play_attack_sound", function play_attack_sound(f: Frame, damage_amount: Value, damage_type: Value, damage_flag: Value) {
-	f.vars = () => [damage_type, damage_flag];
-	if (live(damage_type) === null) {
-		damage_type = "brute";
-	}
-	if (live(damage_flag) === null) {
-		damage_flag = 0;
-	}
-	rt.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/weapons/tap.ogg"), 100, 1]);
+	damage_type ??= "brute";
+	damage_flag ??= 0;
+	playsound(this.loc, rt.rsc("sound/weapons/tap.ogg"), 100, 1);
 	return f.dot;
 });
 
-// /obj/structure/foamedmetal/proc/attack_hand  (code/game/objects/effects/effect_system/effects_foam.dm:230)  may sleep
+// effects_foam.dm:230
 rt.def("/obj/structure/foamedmetal/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.callName(f, live(user), "changeNext_move", [8]);
-	yield* g.callName(f, live(user), "do_attack_animation", [live(f.src), "punch"]);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>You hit ＀ but bounce off it!</span>", [live(f.src)])]);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/weapons/tap.ogg"), 100, 1]);
+	user.changeNext_move(8);
+	yield* user.do_attack_animation(this, "punch");
+	to_chat(user, `<span class='warning'>You hit ${this} but bounce off it!</span>`);
+	playsound(this.loc, rt.rsc("sound/weapons/tap.ogg"), 100, 1);
 	return f.dot;
 }, true);
 
-// /obj/structure/foamedmetal/proc/CanPass  (code/game/objects/effects/effect_system/effects_foam.dm:236)
+// effects_foam.dm:236
 rt.def("/obj/structure/foamedmetal/proc/CanPass", function CanPass(f: Frame, mover: Value, target: Value, height: Value) {
-	f.vars = () => [height];
-	if (live(height) === null) {
-		height = 1.5;
-	}
-	return (!truthy(rt.sv(f, "density")) ? 1 : 0);
+	height ??= 1.5;
+	return (!this.density ? 1 : 0);
 });
 
 rt.type(12706, "/obj/structure/foamedmetal/resin", "/obj/structure/foamedmetal", {
@@ -343,68 +295,46 @@ rt.type(12706, "/obj/structure/foamedmetal/resin", "/obj/structure/foamedmetal",
 	layer: 4.3,
 });
 
-// /obj/structure/foamedmetal/resin/proc/Initialize  (code/game/objects/effects/effect_system/effects_foam.dm:255)  may sleep
+// effects_foam.dm:255
 rt.def("/obj/structure/foamedmetal/resin/proc/Initialize", function* Initialize(f: Frame) {
 	let O: Value = null, G: Value = null, H: Value = null, G_gases: Value = null, I: Value = null, U: Value = null, L: Value = null, Item: Value = null;
-	let $e: any;
-	f.vars = () => [O, G, H, G_gases, I, U, L, Item, $e];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy((rt.istype(rt.sv(f, "loc"), T("/turf/open")) ? 1 : 0))) return f.dot;
-	if (truthy(rt.gv(f, "air", (O = rt.sv(f, "loc"))))) {
-		rt.setFv(f, "temperature", (G = rt.fv(f, "air", live(O))), 293.1499938964844);
-		H = null;
-		rt.forList(f, 0, live(O), T("/obj/effect/hotspot"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			H = $e;
-			yield* g.call(f, P("/proc/qdel"), null, [live(H)]);
+	f.dot = (yield* parent_proc());
+	if (!rt.istype(this.loc, T("/turf/open"))) return f.dot;
+	if ((O = this.loc).air) {
+		(G = O.air).temperature = 293.15;
+		for (H of each(O, T("/obj/effect/hotspot"))) {
+			yield* qdel(H);
 		}
-		rt.endFor(f, 0);
-		G_gases = rt.fv(f, "gases", live(G));
-		I = null;
-		rt.forList(f, 0, live(G_gases));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			I = $e;
-			if ((!isEqual(live(I), "o2") && !isEqual(live(I), "n2"))) {
-				rt.setAt(rt.index(rt.fv(f, "gases", live(G)), live(I)), 1, 0);
+		G_gases = G.gases;
+		for (I of each(G_gases)) {
+			if (I != "o2" && I != "n2") {
+				rt.setAt(rt.index(G.gases, I), 1, 0);
 			}
 		}
-		rt.endFor(f, 0);
-		yield* g.callName(f, live(G), "garbage_collect", []);
-		yield* g.callName(f, live(O), "air_update_turf", []);
+		G.garbage_collect();
+		O.air_update_turf();
 	}
-	U = null;
-	rt.forList(f, 0, live(O), T("/obj/machinery/atmospherics/components/unary"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		U = $e;
-		if (!truthy(rt.fv(f, "welded", live(U)))) {
-			rt.setFv(f, "welded", live(U), 1);
-			yield* g.callName(f, live(U), "update_icon", []);
-			yield* g.callName(f, live(U), "visible_message", [fmt("<span class='danger'>＀ sealed shut!</span>", [live(U)])]);
+	for (U of each(O, T("/obj/machinery/atmospherics/components/unary"))) {
+		if (!U.welded) {
+			U.welded = 1;
+			yield* U.update_icon();
+			U.visible_message(`<span class='danger'>${U} sealed shut!</span>`);
 		}
 	}
-	rt.endFor(f, 0);
-	L = null;
-	rt.forList(f, 0, live(O), T("/mob/living"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		L = $e;
-		yield* g.callName(f, live(L), "ExtinguishMob", []);
+	for (L of each(O, T("/mob/living"))) {
+		yield* L.ExtinguishMob();
 	}
-	rt.endFor(f, 0);
-	Item = null;
-	rt.forList(f, 0, live(O), T("/obj/item"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		Item = $e;
-		yield* g.callName(f, live(Item), "extinguish", []);
+	for (Item of each(O, T("/obj/item"))) {
+		yield* Item.extinguish();
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /obj/structure/foamedmetal/resin/proc/CanPass  (code/game/objects/effects/effect_system/effects_foam.dm:280)
-rt.def("/obj/structure/foamedmetal/resin/proc/CanPass", function CanPass(f: Frame) {
-	if ((truthy((rt.istype(live(f.args[0]), T("/atom/movable")) ? 1 : 0)) && truthy(rt.callName(f, live(f.args[0]), "checkpass", [2])))) {
-		return 1;
+// effects_foam.dm:280
+rt.def("/obj/structure/foamedmetal/resin/proc/CanPass", function CanPass(f: Frame, mover: Value, target: Value, height: Value) {
+	if (rt.istype(mover, T("/atom/movable")) && mover.checkpass(IRON_FOAM)) {
+		return ALUMINUM_FOAM;
 	}
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
+	f.dot = parent_proc();
 	return f.dot;
-}, false, { args: ["mover", "target", "height"] });
+}, false);

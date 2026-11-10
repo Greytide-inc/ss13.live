@@ -1,7 +1,7 @@
-// From code/modules/clothing/masks/miscellaneous.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/clothing/masks/miscellaneous.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(8564, "/obj/item/clothing/mask/muzzle", "/obj/item/clothing/mask", {
@@ -15,20 +15,19 @@ rt.type(8564, "/obj/item/clothing/mask/muzzle", "/obj/item/clothing/mask", {
 	equip_delay_other: 20,
 });
 
-// /obj/item/clothing/mask/muzzle/proc/attack_paw  (code/modules/clothing/masks/miscellaneous.dm:12)  may sleep
-rt.def("/obj/item/clothing/mask/muzzle/proc/attack_paw", function* attack_paw(f: Frame) {
+// miscellaneous.dm:12
+rt.def("/obj/item/clothing/mask/muzzle/proc/attack_paw", function* attack_paw(f: Frame, user: Value) {
 	let C: Value = null;
-	f.vars = () => [C];
-	if (truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon")) ? 1 : 0))) {
-		C = live(f.args[0]);
-		if (isEqual(live(f.src), rt.fv(f, "wear_mask", live(C)))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='warning'>You need help taking this off!</span>"]);
-			return live(f.dot);
+	if (rt.istype(user, T("/mob/living/carbon"))) {
+		C = user;
+		if (this == C.wear_mask) {
+			to_chat(user, "<span class='warning'>You need help taking this off!</span>");
+			return f.dot;
 		}
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
 rt.type(8565, "/obj/item/clothing/mask/surgical", "/obj/item/clothing/mask", {
 	name: "sterile mask",
@@ -46,21 +45,18 @@ rt.type(8565, "/obj/item/clothing/mask/surgical", "/obj/item/clothing/mask", {
 	actions_types: null,
 });
 
-// /obj/item/clothing/mask/surgical/proc/<init>  (code/modules/clothing/masks/miscellaneous.dm:31)
+// miscellaneous.dm:31
 rt.def("/obj/item/clothing/mask/surgical/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 25, "rad", 0, "fire", 0, "acid", 0]));
-	$0 = $0;
-	rt.setSv(f, "actions_types", rt.list(T("/datum/action/item_action/adjust")));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 25, "rad", 0, "fire", 0, "acid", 0]);
+
+	this.actions_types = list(T("/datum/action/item_action/adjust"));
 	return f.dot;
 });
 
-// /obj/item/clothing/mask/surgical/proc/attack_self  (code/modules/clothing/masks/miscellaneous.dm:35)  may sleep
+// miscellaneous.dm:35
 rt.def("/obj/item/clothing/mask/surgical/proc/attack_self", function* attack_self(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.srcCall(f, "adjustmask", live(user));
+	yield* this.adjustmask(user);
 	return f.dot;
 }, true);
 
@@ -75,37 +71,27 @@ rt.type(8568, "/obj/item/clothing/mask/pig", "/obj/item/clothing/mask", {
 	actions_types: null,
 });
 
-// /obj/item/clothing/mask/pig/proc/<init>  (code/modules/clothing/masks/miscellaneous.dm:55)
+// miscellaneous.dm:55
 rt.def("/obj/item/clothing/mask/pig/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "actions_types", rt.list(T("/datum/action/item_action/toggle_voice_box")));
+	parent_proc();
+	this.actions_types = list(T("/datum/action/item_action/toggle_voice_box"));
 	return f.dot;
 });
 
-// /obj/item/clothing/mask/pig/proc/attack_self  (code/modules/clothing/masks/miscellaneous.dm:59)
+// miscellaneous.dm:59
 rt.def("/obj/item/clothing/mask/pig/proc/attack_self", function attack_self(f: Frame, user: Value) {
-	let $0: any, $1: any;
-	f.vars = () => [$0, $1];
-	rt.setSv(f, "voicechange", (!truthy(rt.sv(f, "voicechange")) ? 1 : 0));
-	$0 = live(user);
-	if (truthy(rt.sv(f, "voicechange"))) {
-		$1 = "on";
-	} else {
-		$1 = "off";
-	}
-	rt.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='notice'>You turn the voice box ＀!</span>", [$1])]);
+	this.voicechange = (!this.voicechange ? 1 : 0);
+	let $0: any = user;
+	to_chat($0, `<span class='notice'>You turn the voice box ${this.voicechange ? "on" : "off"}!</span>`);
 	return f.dot;
 });
 
-// /obj/item/clothing/mask/pig/proc/speechModification  (code/modules/clothing/masks/miscellaneous.dm:64)
+// miscellaneous.dm:64
 rt.def("/obj/item/clothing/mask/pig/proc/speechModification", function speechModification(f: Frame, message: Value) {
-	f.vars = () => [message];
-	if (truthy(rt.sv(f, "voicechange"))) {
-		message = rt.op(f, "PickUnweighted", [3], ["Oink!", "Squeeeeeeee!", "Oink Oink!"]);
+	if (this.voicechange) {
+		message = pick("Oink!", "Squeeeeeeee!", "Oink Oink!");
 	}
-	return live(message);
+	return message;
 });
 
 rt.type(8569, "/obj/item/clothing/mask/spig", "/obj/item/clothing/mask", {
@@ -118,13 +104,12 @@ rt.type(8569, "/obj/item/clothing/mask/spig", "/obj/item/clothing/mask", {
 	w_class: 2,
 });
 
-// /obj/item/clothing/mask/spig/proc/speechModification  (code/modules/clothing/masks/miscellaneous.dm:78)
+// miscellaneous.dm:78
 rt.def("/obj/item/clothing/mask/spig/proc/speechModification", function speechModification(f: Frame, message: Value) {
-	f.vars = () => [message];
-	if (truthy(rt.sv(f, "voicechange"))) {
-		message = rt.op(f, "PickUnweighted", [3], ["Oink!", "Squeeeeeeee!", "Oink Oink!"]);
+	if (this.voicechange) {
+		message = pick("Oink!", "Squeeeeeeee!", "Oink Oink!");
 	}
-	return live(message);
+	return message;
 });
 
 rt.type(8570, "/obj/item/clothing/mask/cowmask", "/obj/item/clothing/mask", {
@@ -138,13 +123,12 @@ rt.type(8570, "/obj/item/clothing/mask/cowmask", "/obj/item/clothing/mask", {
 	w_class: 2,
 });
 
-// /obj/item/clothing/mask/cowmask/proc/speechModification  (code/modules/clothing/masks/miscellaneous.dm:93)
+// miscellaneous.dm:93
 rt.def("/obj/item/clothing/mask/cowmask/proc/speechModification", function speechModification(f: Frame, message: Value) {
-	f.vars = () => [message];
-	if (truthy(rt.sv(f, "voicechange"))) {
-		message = rt.op(f, "PickUnweighted", [3], ["Moooooooo!", "Moo!", "Moooo!"]);
+	if (this.voicechange) {
+		message = pick("Moooooooo!", "Moo!", "Moooo!");
 	}
-	return live(message);
+	return message;
 });
 
 rt.type(8571, "/obj/item/clothing/mask/horsehead", "/obj/item/clothing/mask", {
@@ -157,13 +141,12 @@ rt.type(8571, "/obj/item/clothing/mask/horsehead", "/obj/item/clothing/mask", {
 	w_class: 2,
 });
 
-// /obj/item/clothing/mask/horsehead/proc/speechModification  (code/modules/clothing/masks/miscellaneous.dm:107)
+// miscellaneous.dm:107
 rt.def("/obj/item/clothing/mask/horsehead/proc/speechModification", function speechModification(f: Frame, message: Value) {
-	f.vars = () => [message];
-	if (truthy(rt.sv(f, "voicechange"))) {
-		message = rt.op(f, "PickUnweighted", [5], ["NEEIIGGGHHHH!", "NEEEIIIIGHH!", "NEIIIGGHH!", "HAAWWWWW!", "HAAAWWW!"]);
+	if (this.voicechange) {
+		message = pick("NEEIIGGGHHHH!", "NEEEIIIIGHH!", "NEIIIGGHH!", "HAAWWWWW!", "HAAAWWW!");
 	}
-	return live(message);
+	return message;
 });
 
 rt.type(8580, "/obj/item/clothing/mask/bandana", "/obj/item/clothing/mask", {
@@ -179,9 +162,8 @@ rt.type(8580, "/obj/item/clothing/mask/bandana", "/obj/item/clothing/mask", {
 	icon_state: "bandbotany",
 });
 
-// /obj/item/clothing/mask/bandana/proc/attack_self  (code/modules/clothing/masks/miscellaneous.dm:173)  may sleep
+// miscellaneous.dm:173
 rt.def("/obj/item/clothing/mask/bandana/proc/attack_self", function* attack_self(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.srcCall(f, "adjustmask", live(user));
+	yield* this.adjustmask(user);
 	return f.dot;
 }, true);

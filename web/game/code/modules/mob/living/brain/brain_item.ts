@@ -1,7 +1,7 @@
-// From code/modules/mob/living/brain/brain_item.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/brain/brain_item.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(9462, "/obj/item/organ/brain", "/obj/item/organ", {
@@ -21,160 +21,155 @@ rt.type(9462, "/obj/item/organ/brain", "/obj/item/organ", {
 	attack_verb: null,
 });
 
-// /obj/item/organ/brain/proc/Insert  (code/modules/mob/living/brain/brain_item.dm:22)  may sleep
+// brain_item.dm:22
 rt.def("/obj/item/organ/brain/proc/Insert", function* Insert(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "name", "brain");
-	if ((truthy(rt.fv(f, "mind", live(f.args[0]))) && truthy(rt.gv(f, "changeling", rt.fv(f, "mind", live(f.args[0])))))) {
-		if ((truthy(rt.sv(f, "brainmob")) && !(isEqual(rt.fv(f, "stat", live(f.args[0])), 2) || truthy(rt.bitAnd(rt.fv(f, "status_flags", live(f.args[0])), 8192))))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "brainmob"), "<span class = danger>You can't feel your body! You're still just a brain!</span>"]);
+	yield* parent_proc();
+	this.name = "brain";
+	if (f.args[0].mind && f.args[0].mind.changeling) {
+		if (this.brainmob && !(f.args[0].stat == 2 || rt.bitAnd(f.args[0].status_flags, FAKEDEATH))) {
+			to_chat(this.brainmob, "<span class = danger>You can't feel your body! You're still just a brain!</span>");
 		}
-		rt.setSv(f, "loc", live(f.args[0]));
-		yield* g.callName(f, live(f.args[0]), "update_hair", []);
-		return live(f.dot);
+		this.loc = f.args[0];
+		yield* f.args[0].update_hair();
+		return f.dot;
 	}
-	if (truthy(rt.sv(f, "brainmob"))) {
-		if (truthy(rt.fv(f, "key", live(f.args[0])))) {
-			yield* g.callName(f, live(f.args[0]), "ghostize", []);
+	if (this.brainmob) {
+		if (f.args[0].key) {
+			yield* f.args[0].ghostize();
 		}
-		if (truthy(rt.fv(f, "mind", rt.sv(f, "brainmob")))) {
-			yield* g.callName(f, rt.fv(f, "mind", rt.sv(f, "brainmob")), "transfer_to", [live(f.args[0])]);
+		if (this.brainmob.mind) {
+			yield* this.brainmob.mind.transfer_to(f.args[0]);
 		} else {
-			rt.setFv(f, "key", live(f.args[0]), rt.fv(f, "key", rt.sv(f, "brainmob")));
+			f.args[0].key = this.brainmob.key;
 		}
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "brainmob")]);
-		rt.setSv(f, "brainmob", null);
+		yield* qdel(this.brainmob);
+		this.brainmob = null;
 	}
-	yield* g.callName(f, live(f.args[0]), "update_hair", []);
+	yield* f.args[0].update_hair();
 	return f.dot;
 }, true, { args: ["C", "special"] });
 
-// /obj/item/organ/brain/proc/Remove  (code/modules/mob/living/brain/brain_item.dm:48)  may sleep
+// brain_item.dm:48
 rt.def("/obj/item/organ/brain/proc/Remove", function* Remove(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if ((!truthy(rt.sv(f, "gc_destroyed")) || (truthy(rt.sv(f, "owner")) && !truthy(rt.fv(f, "gc_destroyed", rt.sv(f, "owner")))))) {
-		yield* g.srcCall(f, "transfer_identity", live(f.args[0]));
+	yield* parent_proc();
+	if (!this.gc_destroyed || this.owner && !this.owner.gc_destroyed) {
+		yield* this.transfer_identity(f.args[0]);
 	}
-	yield* g.callName(f, live(f.args[0]), "update_hair", []);
+	yield* f.args[0].update_hair();
 	return f.dot;
 }, true, { args: ["C", "special"] });
 
-// /obj/item/organ/brain/proc/transfer_identity  (code/modules/mob/living/brain/brain_item.dm:57)  may sleep
+// brain_item.dm:57
 rt.def("/obj/item/organ/brain/proc/transfer_identity", function* transfer_identity(f: Frame, L: Value) {
 	let C: Value = null, ZI: Value = null;
-	f.vars = () => [L, C, ZI];
-	rt.setSv(f, "name", fmt("＀'s brain", [rt.fv(f, "name", live(L))]));
-	if ((truthy(rt.sv(f, "brainmob")) || truthy(rt.sv(f, "decoy_override")))) {
-		return live(f.dot);
+	this.name = `${L.name}'s brain`;
+	if (this.brainmob || this.decoy_override) {
+		return f.dot;
 	}
-	if (!truthy(rt.fv(f, "mind", live(L)))) {
-		return live(f.dot);
+	if (!L.mind) {
+		return f.dot;
 	}
-	rt.setSv(f, "brainmob", (yield* g.new_(f, T("/mob/living/brain"), [live(f.src)])));
-	rt.setFv(f, "name", rt.sv(f, "brainmob"), rt.fv(f, "real_name", live(L)));
-	rt.setFv(f, "real_name", rt.sv(f, "brainmob"), rt.fv(f, "real_name", live(L)));
-	rt.setFv(f, "timeofhostdeath", rt.sv(f, "brainmob"), rt.fv(f, "timeofdeath", live(L)));
-	if (truthy((yield* g.callName(f, live(L), "has_dna", [])))) {
-		C = live(L);
-		if (!truthy(rt.fv(f, "stored_dna", rt.sv(f, "brainmob")))) {
-			rt.setFv(f, "stored_dna", rt.sv(f, "brainmob"), (yield* g.new_(f, T("/datum/dna/stored"), [rt.sv(f, "brainmob")])));
+	this.brainmob = (yield* new_(T("/mob/living/brain"), this));
+	this.brainmob.name = L.real_name;
+	this.brainmob.real_name = L.real_name;
+	this.brainmob.timeofhostdeath = L.timeofdeath;
+	if (L.has_dna()) {
+		C = L;
+		if (!this.brainmob.stored_dna) {
+			this.brainmob.stored_dna = (yield* new_(T("/datum/dna/stored"), this.brainmob));
 		}
-		yield* g.callName(f, rt.fv(f, "dna", live(C)), "copy_dna", [rt.fv(f, "stored_dna", rt.sv(f, "brainmob"))]);
-		if (truthy(rt.bitAnd(rt.fv(f, "disabilities", live(L)), 128))) {
-			(rt.modField(f, rt.sv(f, "brainmob"), "disabilities", 128, rt.bitOr));
+		yield* C.dna.copy_dna(this.brainmob.stored_dna);
+		if (rt.bitAnd(L.disabilities, 128)) {
+			(rt.modField(f, this.brainmob, "disabilities", 128, rt.bitOr));
 		}
-		if (truthy((ZI = (yield* g.callName(f, live(L), "getorganslot", ["zombie_infection"]))))) {
-			yield* g.callName(f, rt.sv(f, "brainmob"), "set_species", [rt.fv(f, "old_species", live(ZI))]);
+		if (ZI = L.getorganslot("zombie_infection")) {
+			yield* this.brainmob.set_species(ZI.old_species);
 		}
 	}
-	if ((truthy(rt.fv(f, "mind", live(L))) && truthy(rt.gv(f, "current", rt.fv(f, "mind", live(L)))))) {
-		yield* g.callName(f, rt.fv(f, "mind", live(L)), "transfer_to", [rt.sv(f, "brainmob")]);
+	if (L.mind && L.mind.current) {
+		yield* L.mind.transfer_to(this.brainmob);
 	}
-	yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "brainmob"), "<span class='notice'>You feel slightly disoriented. That's normal when you're just a brain.</span>"]);
+	to_chat(this.brainmob, "<span class='notice'>You feel slightly disoriented. That's normal when you're just a brain.</span>");
 	return f.dot;
 }, true);
 
-// /obj/item/organ/brain/proc/attackby  (code/modules/mob/living/brain/brain_item.dm:81)  may sleep
+// brain_item.dm:81
 rt.def("/obj/item/organ/brain/proc/attackby", function* attackby(f: Frame, O: Value, user: Value, params: Value) {
-	f.vars = () => [O, user, params];
-	yield* g.callName(f, live(user), "changeNext_move", [8]);
-	if (!truthy(rt.sv(f, "brainmob"))) return f.dot;
-	yield* g.callName(f, live(O), "attack", [rt.sv(f, "brainmob"), live(user)]);
+	user.changeNext_move(8);
+	if (!this.brainmob) return f.dot;
+	yield* O.attack(this.brainmob, user);
 	return f.dot;
 }, true);
 
-// /obj/item/organ/brain/proc/examine  (code/modules/mob/living/brain/brain_item.dm:86)
-rt.def("/obj/item/organ/brain/proc/examine", function examine(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.sv(f, "brainmob"))) {
-		if (truthy(rt.fv(f, "client", rt.sv(f, "brainmob")))) {
-			if (rt.le(rt.fv(f, "health", rt.sv(f, "brainmob")), -100)) {
-				rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "It's lifeless and severely damaged."]);
+// brain_item.dm:86
+rt.def("/obj/item/organ/brain/proc/examine", function examine(f: Frame, user: Value) {
+	parent_proc();
+	if (this.brainmob) {
+		if (this.brainmob.client) {
+			if (this.brainmob.health <= -100) {
+				to_chat(user, "It's lifeless and severely damaged.");
 			} else {
-				rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "You can feel the small spark of life still left in this one."]);
+				to_chat(user, "You can feel the small spark of life still left in this one.");
 			}
 		} else {
-			rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "This one seems particularly lifeless. Perhaps it will regain some of its luster later."]);
+			to_chat(user, "This one seems particularly lifeless. Perhaps it will regain some of its luster later.");
 		}
+	} else if (this.decoy_override) {
+		to_chat(user, "This one seems particularly lifeless. Perhaps it will regain some of its luster later.");
 	} else {
-		if (truthy(rt.sv(f, "decoy_override"))) {
-			rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "This one seems particularly lifeless. Perhaps it will regain some of its luster later."]);
-		} else {
-			rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "This one is completely devoid of life."]);
-		}
+		to_chat(user, "This one is completely devoid of life.");
 	}
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/item/organ/brain/proc/attack  (code/modules/mob/living/brain/brain_item.dm:103)  may sleep
-rt.def("/obj/item/organ/brain/proc/attack", function* attack(f: Frame) {
+// brain_item.dm:103
+rt.def("/obj/item/organ/brain/proc/attack", function* attack(f: Frame, C: Value, user: Value) {
 	let msg: Value = null;
-	f.vars = () => [msg];
-	if (!truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon")) ? 1 : 0))) {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+	if (!rt.istype(C, T("/mob/living/carbon"))) {
+		return (yield* parent_proc());
 	}
-	yield* g.srcCall(f, "add_fingerprint", live(f.args[1]));
-	if (!isEqual(rt.fv(f, "zone_selected", live(f.args[1])), "head")) {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* this.add_fingerprint(user);
+	if (user.zone_selected != "head") {
+		return (yield* parent_proc());
 	}
-	if ((((truthy(rt.fv(f, "head", live(f.args[0]))) && truthy(rt.bitAnd(rt.gv(f, "flags_cover", rt.fv(f, "head", live(f.args[0]))), 4))) || (truthy(rt.fv(f, "wear_mask", live(f.args[0]))) && truthy(rt.bitAnd(rt.gv(f, "flags_cover", rt.fv(f, "wear_mask", live(f.args[0]))), 2)))) || (truthy(rt.fv(f, "glasses", live(f.args[0]))) && truthy(rt.bitAnd(rt.gv(f, "flags", rt.fv(f, "glasses", live(f.args[0]))), 1))))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You're going to need to remove their head cover first!</span>"]);
-		return live(f.dot);
+	if (C.head && rt.bitAnd(C.head.flags_cover, HEADCOVERSEYES) || C.wear_mask && rt.bitAnd(C.wear_mask.flags_cover, MASKCOVERSEYES) || C.glasses && rt.bitAnd(C.glasses.flags, GLASSESCOVERSEYES)) {
+		to_chat(user, "<span class='warning'>You're going to need to remove their head cover first!</span>");
+		return f.dot;
 	}
-	if (!truthy((yield* g.callName(f, live(f.args[0]), "getorgan", [T("/obj/item/organ/brain")])))) {
-		if (!truthy((yield* g.callName(f, live(f.args[0]), "get_bodypart", ["head"])))) {
-			return live(f.dot);
+	if (!C.getorgan(T("/obj/item/organ/brain"))) {
+		if (!C.get_bodypart("head")) {
+			return f.dot;
 		}
-		yield* g.callName(f, live(f.args[1]), "drop_item", []);
-		msg = fmt("＀ has ＀ inserted into ＀ head by ＀.", [live(f.args[0]), live(f.src), (yield* g.callName(f, live(f.args[0]), "p_their", [])), live(f.args[1])]);
-		if (isEqual(live(f.args[0]), live(f.args[1]))) {
-			msg = fmt("＀ inserts ＀ into ＀ head!", [live(f.args[1]), live(f.src), (yield* g.callName(f, live(f.args[1]), "p_their", []))]);
+		yield* user.drop_item();
+		msg = `${C} has ${this} inserted into ${C.p_their()} head by ${user}.`;
+		if (C == user) {
+			msg = `${user} inserts ${this} into ${user.p_their()} head!`;
 		}
-		yield* g.callName(f, live(f.args[0]), "visible_message", [fmt("<span class='danger'>＀</span>", [live(msg)]), fmt("<span class='userdanger'>＀</span>", [live(msg)])]);
-		if (!isEqual(live(f.args[0]), live(f.args[1]))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='notice'>＀ inserts ＀ into your head.</span>", [live(f.args[1]), live(f.src)])]);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You insert ＀ into ＀'s head.</span>", [live(f.src), live(f.args[0])])]);
+		C.visible_message(`<span class='danger'>${msg}</span>`, `<span class='userdanger'>${msg}</span>`);
+		if (C != user) {
+			to_chat(C, `<span class='notice'>${user} inserts ${this} into your head.</span>`);
+			to_chat(user, `<span class='notice'>You insert ${this} into ${C}'s head.</span>`);
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You insert ＀ into your head.</span>", [live(f.src)])]);
+			to_chat(user, `<span class='notice'>You insert ${this} into your head.</span>`);
 		}
-		yield* g.srcCall(f, "Insert", live(f.args[0]));
+		yield* this.Insert(C);
 	} else {
-		yield* g.callSuper(f, [], rt.Args.Same);
+		yield* parent_proc();
 	}
 	return f.dot;
-}, true, { args: ["C", "user"] });
+}, true);
 
-// /obj/item/organ/brain/proc/Destroy  (code/modules/mob/living/brain/brain_item.dm:140)  may sleep
+// brain_item.dm:140
 rt.def("/obj/item/organ/brain/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.sv(f, "brainmob"))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "brainmob")]);
-		rt.setSv(f, "brainmob", null);
+	if (this.brainmob) {
+		yield* qdel(this.brainmob);
+		this.brainmob = null;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);

@@ -1,7 +1,7 @@
-// From code/modules/surgery/tools.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/surgery/tools.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(6661, "/obj/item/weapon/retractor", "/obj/item/weapon", {
@@ -15,12 +15,10 @@ rt.type(6661, "/obj/item/weapon/retractor", "/obj/item/weapon", {
 	origin_tech: "materials=1;biotech=1",
 });
 
-// /obj/item/weapon/retractor/proc/<init>  (code/modules/surgery/tools.dm:6)
+// tools.dm:6
 rt.def("/obj/item/weapon/retractor/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 6000, "$glass", 3000]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 6000, "$glass", 3000]);
 	return f.dot;
 });
 
@@ -36,13 +34,11 @@ rt.type(6658, "/obj/item/weapon/hemostat", "/obj/item/weapon", {
 	attack_verb: null,
 });
 
-// /obj/item/weapon/hemostat/proc/<init>  (code/modules/surgery/tools.dm:17)
+// tools.dm:17
 rt.def("/obj/item/weapon/hemostat/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 5000, "$glass", 2500]));
-	rt.setSv(f, "attack_verb", rt.list("attacked", "pinched"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 5000, "$glass", 2500]);
+	this.attack_verb = list("attacked", "pinched");
 	return f.dot;
 });
 
@@ -58,14 +54,12 @@ rt.type(6667, "/obj/item/weapon/cautery", "/obj/item/weapon", {
 	attack_verb: null,
 });
 
-// /obj/item/weapon/cautery/proc/<init>  (code/modules/surgery/tools.dm:29)
+// tools.dm:29
 rt.def("/obj/item/weapon/cautery/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 2500, "$glass", 750]));
-	$0 = $0;
-	rt.setSv(f, "attack_verb", rt.list("burnt"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 2500, "$glass", 750]);
+
+	this.attack_verb = list("burnt");
 	return f.dot;
 });
 
@@ -83,14 +77,12 @@ rt.type(6665, "/obj/item/weapon/surgicaldrill", "/obj/item/weapon", {
 	attack_verb: null,
 });
 
-// /obj/item/weapon/surgicaldrill/proc/<init>  (code/modules/surgery/tools.dm:42)
+// tools.dm:42
 rt.def("/obj/item/weapon/surgicaldrill/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 10000, "$glass", 6000]));
-	$0 = $0;
-	rt.setSv(f, "attack_verb", rt.list("drilled"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 10000, "$glass", 6000]);
+
+	this.attack_verb = list("drilled");
 	return f.dot;
 });
 
@@ -112,19 +104,17 @@ rt.type(6655, "/obj/item/weapon/scalpel", "/obj/item/weapon", {
 	sharpness: 2,
 });
 
-// /obj/item/weapon/scalpel/proc/<init>  (code/modules/surgery/tools.dm:60)
+// tools.dm:60
 rt.def("/obj/item/weapon/scalpel/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 4000, "$glass", 1000]));
-	rt.setSv(f, "attack_verb", rt.list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 4000, "$glass", 1000]);
+	this.attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut");
 	return f.dot;
 });
 
-// /obj/item/weapon/scalpel/proc/suicide_act  (code/modules/surgery/tools.dm:67)
+// tools.dm:67
 rt.def("/obj/item/weapon/scalpel/proc/suicide_act", function suicide_act(f: Frame, user: Value) {
-	rt.callName(f, live(user), "visible_message", [fmt("<span class='suicide'>＀ is slitting ＀ ＀ with ＀! It looks like ＀ trying to commit suicide!</span>", [live(user), rt.callName(f, live(user), "p_their", []), rt.op(f, "PickUnweighted", [3], ["wrists", "throat", "stomach"]), live(f.src), rt.callName(f, live(user), "p_theyre", [])])]);
+	user.visible_message(`<span class='suicide'>${user} is slitting ${user.p_their()} ${pick("wrists", "throat", "stomach")} with ${this}! It looks like ${user.p_theyre()} trying to commit suicide!</span>`);
 	return 1;
 });
 
@@ -147,13 +137,11 @@ rt.type(6663, "/obj/item/weapon/circular_saw", "/obj/item/weapon", {
 	sharpness: 1,
 });
 
-// /obj/item/weapon/circular_saw/proc/<init>  (code/modules/surgery/tools.dm:84)
+// tools.dm:84
 rt.def("/obj/item/weapon/circular_saw/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 10000, "$glass", 6000]));
-	rt.setSv(f, "attack_verb", rt.list("attacked", "slashed", "sawed", "cut"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 10000, "$glass", 6000]);
+	this.attack_verb = list("attacked", "slashed", "sawed", "cut");
 	return f.dot;
 });
 
@@ -167,21 +155,19 @@ rt.type(7648, "/obj/item/weapon/surgical_drapes", "/obj/item/weapon", {
 	attack_verb: null,
 });
 
-// /obj/item/weapon/surgical_drapes/proc/<init>  (code/modules/surgery/tools.dm:96)
+// tools.dm:96
 rt.def("/obj/item/weapon/surgical_drapes/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "attack_verb", rt.list("slapped"));
+	parent_proc();
+	this.attack_verb = list("slapped");
 	return f.dot;
 });
 
-// /obj/item/weapon/surgical_drapes/proc/attack  (code/modules/surgery/tools.dm:99)  may sleep
-rt.def("/obj/item/weapon/surgical_drapes/proc/attack", function* attack(f: Frame) {
-	if (truthy((yield* g.call(f, P("/proc/attempt_initiate_surgery"), null, [live(f.src), live(f.args[0]), live(f.args[1])])))) return f.dot;
-	yield* g.callSuper(f, [], rt.Args.Same);
+// tools.dm:99
+rt.def("/obj/item/weapon/surgical_drapes/proc/attack", function* attack(f: Frame, M: Value, user: Value) {
+	if (yield* attempt_initiate_surgery(this, M, user)) return f.dot;
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M", "user"] });
+}, true);
 
 rt.type(7649, "/obj/item/weapon/organ_storage", "/obj/item/weapon", {
 	name: "organ storage bag",
@@ -190,51 +176,49 @@ rt.type(7649, "/obj/item/weapon/organ_storage", "/obj/item/weapon", {
 	icon_state: "evidenceobj",
 });
 
-// /obj/item/weapon/organ_storage/proc/afterattack  (code/modules/surgery/tools.dm:109)
+// tools.dm:109
 rt.def("/obj/item/weapon/organ_storage/proc/afterattack", function afterattack(f: Frame, I: Value, user: Value, proximity: Value) {
-	let xx: Value = null, yy: Value = null, img: Value = null;
-	f.vars = () => [xx, yy, img];
-	if (!truthy(live(proximity))) {
-		return live(f.dot);
+	let img: Value = null;
+	if (!proximity) {
+		return f.dot;
 	}
-	if (truthy(rt.len(f, rt.sv(f, "contents")))) {
-		rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>＀ already has something inside it.</span>", [live(f.src)])]);
-		return live(f.dot);
+	if (rt.len(f, this.contents)) {
+		to_chat(user, `<span class='notice'>${this} already has something inside it.</span>`);
+		return f.dot;
 	}
-	if ((!truthy((rt.istype(live(I), T("/obj/item/organ")) ? 1 : 0)) && !truthy((rt.istype(live(I), T("/obj/item/bodypart")) ? 1 : 0)))) {
-		rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>＀ can only hold body parts!</span>", [live(f.src)])]);
-		return live(f.dot);
+	if (!rt.istype(I, T("/obj/item/organ")) && !rt.istype(I, T("/obj/item/bodypart"))) {
+		to_chat(user, `<span class='notice'>${this} can only hold body parts!</span>`);
+		return f.dot;
 	}
-	rt.callName(f, live(user), "visible_message", [fmt("＀ puts ＀ into ＀.", [live(user), live(I), live(f.src)]), fmt("<span class='notice'>You put ＀ inside ＀.</span>", [live(I), live(f.src)])]);
-	rt.setSv(f, "icon_state", "evidence");
-	xx = rt.fv(f, "pixel_x", live(I));
-	yy = rt.fv(f, "pixel_y", live(I));
-	rt.setFv(f, "pixel_x", live(I), 0);
-	rt.setFv(f, "pixel_y", live(I), 0);
-	rt.setFv(f, "plane", (img = rt.call(f, P("/proc/image"), null, ["icon", live(I), "layer", -1], rt.Args.Named)), -32767);
-	rt.setFv(f, "pixel_x", live(I), live(xx));
-	rt.setFv(f, "pixel_y", live(I), live(yy));
-	rt.callSrc(f, "add_overlay", [live(img)]);
-	rt.callSrc(f, "add_overlay", ["evidence"]);
-	rt.setSv(f, "desc", fmt("An organ storage container holding ＀.", [live(I)]));
-	rt.setFv(f, "loc", live(I), live(f.src));
-	rt.setSv(f, "w_class", rt.fv(f, "w_class", live(I)));
+	user.visible_message(`${user} puts ${I} into ${this}.`, `<span class='notice'>You put ${I} inside ${this}.</span>`);
+	this.icon_state = "evidence";
+	let xx: Value = I.pixel_x;
+	let yy: Value = I.pixel_y;
+	I.pixel_x = 0;
+	I.pixel_y = 0;
+	(img = image({ icon: I, layer: -1 })).plane = -32767;
+	I.pixel_x = xx;
+	I.pixel_y = yy;
+	this.add_overlay(img);
+	this.add_overlay("evidence");
+	this.desc = `An organ storage container holding ${I}.`;
+	I.loc = this;
+	this.w_class = I.w_class;
 	return f.dot;
 });
 
-// /obj/item/weapon/organ_storage/proc/attack_self  (code/modules/surgery/tools.dm:135)  may sleep
+// tools.dm:135
 rt.def("/obj/item/weapon/organ_storage/proc/attack_self", function* attack_self(f: Frame, user: Value) {
 	let I: Value = null;
-	f.vars = () => [user, I];
-	if (truthy(rt.len(f, rt.sv(f, "contents")))) {
-		I = rt.index(rt.sv(f, "contents"), 1);
-		yield* g.callName(f, live(user), "visible_message", [fmt("＀ dumps ＀ from ＀.", [live(user), live(I), live(f.src)]), fmt("<span class='notice'>You dump ＀ from ＀.</span>", [live(I), live(f.src)])]);
-		yield* g.srcCall(f, "cut_overlays");
-		yield* g.callName(f, live(I), "forceMove", [rt.getStep(f, live(f.src), 0)]);
-		rt.setSv(f, "icon_state", "evidenceobj");
-		rt.setSv(f, "desc", "A container for holding body parts.");
+	if (rt.len(f, this.contents)) {
+		I = rt.index(this.contents, 1);
+		user.visible_message(`${user} dumps ${I} from ${this}.`, `<span class='notice'>You dump ${I} from ${this}.</span>`);
+		this.cut_overlays();
+		yield* I.forceMove(rt.getStep(f, this, 0));
+		this.icon_state = "evidenceobj";
+		this.desc = "A container for holding body parts.";
 	} else {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("＀ is empty.", [live(f.src)])]);
+		to_chat(user, `${this} is empty.`);
 	}
-	return live(f.dot);
+	return f.dot;
 }, true);

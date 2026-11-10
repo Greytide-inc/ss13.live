@@ -1,7 +1,7 @@
-// From code/game/objects/items/stacks/medical.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/stacks/medical.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, fmt } = rt;
 
 
 rt.type(9099, "/obj/item/stack/medical", "/obj/item/stack", {
@@ -24,111 +24,99 @@ rt.type(9099, "/obj/item/stack/medical", "/obj/item/stack", {
 	novariants: 0,
 });
 
-// /obj/item/stack/medical/proc/attack  (code/game/objects/items/stacks/medical.dm:22)  may sleep
+// medical.dm:22
 rt.def("/obj/item/stack/medical/proc/attack", function* attack(f: Frame, M: Value, user: Value) {
 	let t_him: Value = null, affecting: Value = null, C: Value = null, H: Value = null, critter: Value = null, t_himself: Value = null;
-	f.vars = () => [M, user, t_him, affecting, C, H, critter, t_himself];
-	if (isEqual(rt.fv(f, "stat", live(M)), 2)) {
+	if (M.stat == 2) {
 		t_him = "it";
-		if (isEqual(rt.fv(f, "gender", live(M)), "male")) {
+		if (M.gender == "male") {
 			t_him = "him";
-		} else {
-			if (isEqual(rt.fv(f, "gender", live(M)), "female")) {
-				t_him = "her";
-			}
+		} else if (M.gender == "female") {
+			t_him = "her";
 		}
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='danger'>＄！ is dead, you cannot help ＀!</span>", [live(M), live(t_him)])]);
-		return live(f.dot);
+		to_chat(user, fmt("<span class='danger'>＄！ is dead, you cannot help ＀!</span>", [M, t_him]));
+		return f.dot;
 	}
-	if ((!truthy((rt.istype(live(M), T("/mob/living/carbon")) ? 1 : 0)) && !truthy((rt.istype(live(M), T("/mob/living/simple_animal")) ? 1 : 0)))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='danger'>You don't know how to apply ％！ to ＀!</span>", [live(f.src), live(M)])]);
+	if (!rt.istype(M, T("/mob/living/carbon")) && !rt.istype(M, T("/mob/living/simple_animal"))) {
+		to_chat(user, fmt("<span class='danger'>You don't know how to apply ％！ to ＀!</span>", [this, M]));
 		return 1;
 	}
-	affecting = null;
-	if (truthy((rt.istype(live(M), T("/mob/living/carbon")) ? 1 : 0))) {
-		if (!truthy((affecting = (yield* g.callName(f, (C = live(M)), "get_bodypart", [(yield* g.call(f, P("/proc/check_zone"), null, [rt.fv(f, "zone_selected", live(user))]))]))))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ doesn't have ＇！!</span>", [live(C), (yield* g.call(f, P("/proc/parse_zone"), null, [rt.fv(f, "zone_selected", live(user))]))])]);
-			return live(f.dot);
+	if (rt.istype(M, T("/mob/living/carbon"))) {
+		if (!(affecting = (C = M).get_bodypart(check_zone(user.zone_selected)))) {
+			to_chat(user, fmt("<span class='warning'>＀ doesn't have ＇！!</span>", [C, parse_zone(user.zone_selected)]));
+			return f.dot;
 		}
-		if (truthy((rt.istype(live(C), T("/mob/living/carbon/human")) ? 1 : 0))) {
-			H = live(C);
-			if (truthy(rt.sv(f, "stop_bleeding"))) {
-				if (truthy(rt.fv(f, "bleedsuppress", live(H)))) {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀'s bleeding is already bandaged!</span>", [live(H)])]);
-					return live(f.dot);
-				} else {
-					if (!truthy(rt.fv(f, "bleed_rate", live(H)))) {
-						yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ isn't bleeding!</span>", [live(H)])]);
-						return live(f.dot);
-					}
+		if (rt.istype(C, T("/mob/living/carbon/human"))) {
+			H = C;
+			if (this.stop_bleeding) {
+				if (H.bleedsuppress) {
+					to_chat(user, `<span class='warning'>${H}'s bleeding is already bandaged!</span>`);
+					return f.dot;
+				} else if (!H.bleed_rate) {
+					to_chat(user, `<span class='warning'>${H} isn't bleeding!</span>`);
+					return f.dot;
 				}
 			}
 		}
 	}
-	if (truthy((rt.istype(live(M), T("/mob/living")) ? 1 : 0))) {
-		if (!truthy((yield* g.callName(f, live(M), "can_inject", [live(user), 1])))) {
-			return live(f.dot);
+	if (rt.istype(M, T("/mob/living"))) {
+		if (!(yield* M.can_inject(user, 1))) {
+			return f.dot;
 		}
 	}
-	if (truthy(live(user))) {
-		if (!isEqual(live(M), live(user))) {
-			if (truthy((rt.istype(live(M), T("/mob/living/simple_animal")) ? 1 : 0))) {
-				if (!truthy(rt.gv(f, "healable", (critter = live(M))))) {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'> You cannot use ＀ on ＀!</span>", [live(f.src), live(M)])]);
-					return live(f.dot);
-				} else {
-					if (isEqual(rt.fv(f, "health", live(critter)), rt.fv(f, "maxHealth", live(critter)))) {
-						yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'> ＀ is at full health.</span>", [live(M)])]);
-						return live(f.dot);
-					} else {
-						if (rt.lt(rt.fv(f, "heal_brute", live(f.src)), 1)) {
-							yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'> ＀ won't help ＀ at all.</span>", [live(f.src), live(M)])]);
-							return live(f.dot);
-						}
-					}
+	if (user) {
+		if (M != user) {
+			if (rt.istype(M, T("/mob/living/simple_animal"))) {
+				if (!(critter = M).healable) {
+					to_chat(user, `<span class='notice'> You cannot use ${this} on ${M}!</span>`);
+					return f.dot;
+				} else if (critter.health == critter.maxHealth) {
+					to_chat(user, `<span class='notice'> ${M} is at full health.</span>`);
+					return f.dot;
+				} else if (this.heal_brute < 1) {
+					to_chat(user, `<span class='notice'> ${this} won't help ${M} at all.</span>`);
+					return f.dot;
 				}
 			}
-			yield* g.callName(f, live(user), "visible_message", [fmt("<span class='green'>＀ applies ＀ on ＀.</span>", [live(user), live(f.src), live(M)]), fmt("<span class='green'>You apply ＀ on ＀.</span>", [live(f.src), live(M)])]);
+			user.visible_message(`<span class='green'>${user} applies ${this} on ${M}.</span>`, `<span class='green'>You apply ${this} on ${M}.</span>`);
 		} else {
 			t_himself = "itself";
-			if (isEqual(rt.fv(f, "gender", live(user)), "male")) {
+			if (user.gender == "male") {
 				t_himself = "himself";
-			} else {
-				if (isEqual(rt.fv(f, "gender", live(user)), "female")) {
-					t_himself = "herself";
-				}
+			} else if (user.gender == "female") {
+				t_himself = "herself";
 			}
-			yield* g.callName(f, live(user), "visible_message", [fmt("<span class='notice'>＀ starts to apply ＀ on ＀...</span>", [live(user), live(f.src), live(t_himself)]), fmt("<span class='notice'>You begin applying ＀ on yourself...</span>", [live(f.src)])]);
-			if (!truthy((yield* g.call(f, P("/proc/do_mob"), null, [null, live(user), null, live(M), null, rt.sv(f, "self_delay"), "extra_checks", (yield* g.new_(f, T("/datum/callback"), [live(M), P("/mob/living/proc/can_inject"), live(user), 1]))], rt.Args.Named)))) {
-				return live(f.dot);
+			user.visible_message(`<span class='notice'>${user} starts to apply ${this} on ${t_himself}...</span>`, `<span class='notice'>You begin applying ${this} on yourself...</span>`);
+			if (!(yield* do_mob(user, M, this.self_delay, { extra_checks: (yield* new_(T("/datum/callback"), M, P("/mob/living/proc/can_inject"), user, 1)) }))) {
+				return f.dot;
 			}
-			yield* g.callName(f, live(user), "visible_message", [fmt("<span class='green'>＀ applies ＀ on ＀.</span>", [live(user), live(f.src), live(t_himself)]), fmt("<span class='green'>You apply ＀ on yourself.</span>", [live(f.src)])]);
+			user.visible_message(`<span class='green'>${user} applies ${this} on ${t_himself}.</span>`, `<span class='green'>You apply ${this} on yourself.</span>`);
 		}
 	}
-	if (truthy((rt.istype(live(M), T("/mob/living/carbon")) ? 1 : 0))) {
-		if (!truthy((affecting = (yield* g.callName(f, (C = live(M)), "get_bodypart", [(yield* g.call(f, P("/proc/check_zone"), null, [rt.fv(f, "zone_selected", live(user))]))]))))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ doesn't have ＇！!</span>", [live(C), (yield* g.call(f, P("/proc/parse_zone"), null, [rt.fv(f, "zone_selected", live(user))]))])]);
-			return live(f.dot);
+	if (rt.istype(M, T("/mob/living/carbon"))) {
+		if (!(affecting = (C = M).get_bodypart(check_zone(user.zone_selected)))) {
+			to_chat(user, fmt("<span class='warning'>＀ doesn't have ＇！!</span>", [C, parse_zone(user.zone_selected)]));
+			return f.dot;
 		}
-		if (truthy((rt.istype(live(C), T("/mob/living/carbon/human")) ? 1 : 0))) {
-			H = live(C);
-			if (truthy(rt.sv(f, "stop_bleeding"))) {
-				if (!truthy(rt.fv(f, "bleedsuppress", live(H)))) {
-					yield* g.callName(f, live(H), "suppress_bloodloss", [rt.sv(f, "stop_bleeding")]);
+		if (rt.istype(C, T("/mob/living/carbon/human"))) {
+			H = C;
+			if (this.stop_bleeding) {
+				if (!H.bleedsuppress) {
+					yield* H.suppress_bloodloss(this.stop_bleeding);
 				}
 			}
 		}
-		if (isEqual(rt.fv(f, "status", live(affecting)), 1)) {
-			if (truthy((yield* g.callName(f, live(affecting), "heal_damage", [rt.sv(f, "heal_brute"), rt.sv(f, "heal_burn")])))) {
-				yield* g.callName(f, live(C), "update_damage_overlays", []);
+		if (affecting.status == BODYPART_ORGANIC) {
+			if (yield* affecting.heal_damage(this.heal_brute, this.heal_burn)) {
+				C.update_damage_overlays();
 			}
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>Medicine won't work on a robotic limb!</span>"]);
+			to_chat(user, "<span class='notice'>Medicine won't work on a robotic limb!</span>");
 		}
 	} else {
-		yield* g.callName(f, live(M), "heal_bodypart_damage", [divide(rt.fv(f, "heal_brute", live(f.src)), 2), divide(rt.fv(f, "heal_burn", live(f.src)), 2)]);
+		yield* M.heal_bodypart_damage(this.heal_brute / 2, this.heal_burn / 2);
 	}
-	yield* g.srcCall(f, "use", 1);
+	yield* this.use(1);
 	return f.dot;
 }, true);
 
@@ -138,11 +126,9 @@ rt.type(9103, "/obj/item/stack/medical/gauze/cyborg", "/obj/item/stack/medical/g
 	cost: 250,
 });
 
-// /obj/item/stack/medical/gauze/cyborg/proc/<init>  (code/game/objects/items/stacks/medical.dm:132)
+// medical.dm:132
 rt.def("/obj/item/stack/medical/gauze/cyborg/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.list());
+	parent_proc();
+	this.materials = list();
 	return f.dot;
 });

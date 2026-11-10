@@ -1,7 +1,7 @@
-// From code/game/objects/items/weapons/chrono_eraser.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/weapons/chrono_eraser.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, g } = rt;
 
 
 rt.type(7127, "/obj/item/weapon/chrono_eraser", "/obj/item/weapon", {
@@ -18,55 +18,52 @@ rt.type(7127, "/obj/item/weapon/chrono_eraser", "/obj/item/weapon", {
 	actions_types: null,
 });
 
-// /obj/item/weapon/chrono_eraser/proc/<init>  (code/game/objects/items/weapons/chrono_eraser.dm:14)
+// chrono_eraser.dm:14
 rt.def("/obj/item/weapon/chrono_eraser/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "erased_minds", rt.list());
-	$0 = $0;
-	rt.setSv(f, "actions_types", rt.list(T("/datum/action/item_action/equip_unequip_TED_Gun")));
+	parent_proc();
+	this.erased_minds = list();
+
+	this.actions_types = list(T("/datum/action/item_action/equip_unequip_TED_Gun"));
 	return f.dot;
 });
 
-// /obj/item/weapon/chrono_eraser/proc/pass_mind  (code/game/objects/items/weapons/chrono_eraser.dm:17)
+// chrono_eraser.dm:17
 rt.def("/obj/item/weapon/chrono_eraser/proc/pass_mind", function pass_mind(f: Frame, M: Value) {
-	rt.modSrcVar(f, "erased_minds", live(M), add);
+	this.erased_minds += M;
 	return f.dot;
 });
 
-// /obj/item/weapon/chrono_eraser/proc/dropped  (code/game/objects/items/weapons/chrono_eraser.dm:20)  may sleep
+// chrono_eraser.dm:20
 rt.def("/obj/item/weapon/chrono_eraser/proc/dropped", function* dropped(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.sv(f, "PA"))) return f.dot;
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "PA")]);
+	yield* parent_proc();
+	if (!this.PA) return f.dot;
+	yield* qdel(this.PA);
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/chrono_eraser/proc/Destroy  (code/game/objects/items/weapons/chrono_eraser.dm:25)  may sleep
+// chrono_eraser.dm:25
 rt.def("/obj/item/weapon/chrono_eraser/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.srcCall(f, "dropped");
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* this.dropped();
+	return (yield* parent_proc());
 }, true);
 
-// /obj/item/weapon/chrono_eraser/proc/ui_action_click  (code/game/objects/items/weapons/chrono_eraser.dm:29)  may sleep
+// chrono_eraser.dm:29
 rt.def("/obj/item/weapon/chrono_eraser/proc/ui_action_click", function* ui_action_click(f: Frame, user: Value) {
 	let C: Value = null;
-	f.vars = () => [user, C];
-	if (!truthy((rt.istype(live(user), T("/mob/living/carbon")) ? 1 : 0))) return f.dot;
-	if (!isEqual(rt.gv(f, "back", (C = live(user))), live(f.src))) return f.dot;
-	if (truthy(rt.sv(f, "PA"))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "PA")]);
+	if (!rt.istype(user, T("/mob/living/carbon"))) return f.dot;
+	if ((C = user).back != this) return f.dot;
+	if (this.PA) {
+		yield* qdel(this.PA);
 	} else {
-		rt.setSv(f, "PA", (yield* g.new_(f, T("/obj/item/weapon/gun/energy/chrono_gun"), [live(f.src)])));
-		yield* g.callName(f, live(user), "put_in_hands", [rt.sv(f, "PA")]);
+		this.PA = (yield* new_(T("/obj/item/weapon/gun/energy/chrono_gun"), this));
+		yield* user.put_in_hands(this.PA);
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/chrono_eraser/proc/item_action_slot_check  (code/game/objects/items/weapons/chrono_eraser.dm:39)
+// chrono_eraser.dm:39
 rt.def("/obj/item/weapon/chrono_eraser/proc/item_action_slot_check", function item_action_slot_check(f: Frame, slot: Value, user: Value) {
-	if (!isEqual(live(slot), 1)) return f.dot;
+	if (slot != slot_back) return f.dot;
 	return 1;
 });
 
@@ -86,106 +83,100 @@ rt.type(5164, "/obj/item/weapon/gun/energy/chrono_gun", "/obj/item/weapon/gun/en
 	ammo_type: null,
 });
 
-// /obj/item/weapon/gun/energy/chrono_gun/proc/<init>  (code/game/objects/items/weapons/chrono_eraser.dm:50)
+// chrono_eraser.dm:50
 rt.def("/obj/item/weapon/gun/energy/chrono_gun/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "ammo_type", rt.list(T("/obj/item/ammo_casing/energy/chrono_beam")));
+	parent_proc();
+	this.ammo_type = list(T("/obj/item/ammo_casing/energy/chrono_beam"));
 	return f.dot;
 });
 
-// /obj/item/weapon/gun/energy/chrono_gun/proc/Initialize  (code/game/objects/items/weapons/chrono_eraser.dm:58)  may sleep
+// chrono_eraser.dm:58
 rt.def("/obj/item/weapon/gun/energy/chrono_gun/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (truthy((rt.istype(rt.sv(f, "loc"), T("/obj/item/weapon/chrono_eraser")) ? 1 : 0))) {
-		rt.setSv(f, "TED", rt.sv(f, "loc"));
+	f.dot = (yield* parent_proc());
+	if (rt.istype(this.loc, T("/obj/item/weapon/chrono_eraser"))) {
+		this.TED = this.loc;
 	} else {
-		rt.setSv(f, "TED", (yield* g.new_(f, T("/obj/item/weapon/chrono_eraser"), [rt.fv(f, "loc", live(f.src))])));
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+		this.TED = (yield* new_(T("/obj/item/weapon/chrono_eraser"), this.loc));
+		yield* qdel(this);
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/gun/energy/chrono_gun/proc/process_fire  (code/game/objects/items/weapons/chrono_eraser.dm:70)  may sleep
+// chrono_eraser.dm:70
 rt.def("/obj/item/weapon/gun/energy/chrono_gun/proc/process_fire", function* process_fire(f: Frame) {
-	if (truthy(rt.sv(f, "field"))) {
-		yield* g.srcCall(f, "field_disconnect", rt.sv(f, "field"));
+	if (this.field) {
+		this.field_disconnect(this.field);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/gun/energy/chrono_gun/proc/Destroy  (code/game/objects/items/weapons/chrono_eraser.dm:75)  may sleep
+// chrono_eraser.dm:75
 rt.def("/obj/item/weapon/gun/energy/chrono_gun/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.sv(f, "TED"))) {
-		rt.setFv(f, "PA", rt.sv(f, "TED"), null);
-		rt.setSv(f, "TED", null);
+	if (this.TED) {
+		this.TED.PA = null;
+		this.TED = null;
 	}
-	if (truthy(rt.sv(f, "field"))) {
-		yield* g.srcCall(f, "field_disconnect", rt.sv(f, "field"));
+	if (this.field) {
+		this.field_disconnect(this.field);
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);
 
-// /obj/item/weapon/gun/energy/chrono_gun/proc/field_connect  (code/game/objects/items/weapons/chrono_eraser.dm:83)
+// chrono_eraser.dm:83
 rt.def("/obj/item/weapon/gun/energy/chrono_gun/proc/field_connect", function field_connect(f: Frame, F: Value) {
-	let user: Value = null;
-	f.vars = () => [user];
-	user = rt.fv(f, "loc", live(f.src));
-	if (truthy(rt.fv(f, "gun", live(F)))) {
-		if ((truthy((rt.istype(live(user), T("/mob/living")) ? 1 : 0)) && truthy(rt.fv(f, "captured", live(F))))) {
-			rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='alert'><b>FAIL: <i>＀</i> already has an existing connection.</b></span>", [rt.fv(f, "captured", live(F))])]);
+	let user: Value = this.loc;
+	if (F.gun) {
+		if (rt.istype(user, T("/mob/living")) && F.captured) {
+			to_chat(user, `<span class='alert'><b>FAIL: <i>${F.captured}</i> already has an existing connection.</b></span>`);
 		}
-		rt.callName(f, live(f.src), "field_disconnect", [live(F)]);
+		this.field_disconnect(F);
 	} else {
-		rt.setSv(f, "startpos", rt.getStep(f, live(f.src), 0));
-		rt.setSv(f, "field", live(F));
-		rt.setFv(f, "gun", live(F), live(f.src));
-		if (!(truthy((rt.istype(live(user), T("/mob/living")) ? 1 : 0)) && truthy(rt.fv(f, "captured", live(F))))) return f.dot;
-		rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>Connection established with target: <b>＀</b></span>", [rt.fv(f, "captured", live(F))])]);
+		this.startpos = rt.getStep(f, this, 0);
+		this.field = F;
+		F.gun = this;
+		if (!(rt.istype(user, T("/mob/living")) && F.captured)) return f.dot;
+		to_chat(user, `<span class='notice'>Connection established with target: <b>${F.captured}</b></span>`);
 	}
 	return f.dot;
 });
 
-// /obj/item/weapon/gun/energy/chrono_gun/proc/field_disconnect  (code/game/objects/items/weapons/chrono_eraser.dm:96)
+// chrono_eraser.dm:96
 rt.def("/obj/item/weapon/gun/energy/chrono_gun/proc/field_disconnect", function field_disconnect(f: Frame, F: Value) {
 	let user: Value = null;
-	f.vars = () => [user];
-	if ((truthy(live(F)) && isEqual(rt.sv(f, "field"), live(F)))) {
-		user = rt.fv(f, "loc", live(f.src));
-		if (isEqual(rt.fv(f, "gun", live(F)), live(f.src))) {
-			rt.setFv(f, "gun", live(F), null);
+	if (F && this.field == F) {
+		user = this.loc;
+		if (F.gun == this) {
+			F.gun = null;
 		}
-		if ((truthy((rt.istype(live(user), T("/mob/living")) ? 1 : 0)) && truthy(rt.fv(f, "captured", live(F))))) {
-			rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='alert'>Disconnected from target: <b>＀</b></span>", [rt.fv(f, "captured", live(F))])]);
+		if (rt.istype(user, T("/mob/living")) && F.captured) {
+			to_chat(user, `<span class='alert'>Disconnected from target: <b>${F.captured}</b></span>`);
 		}
 	}
-	rt.setSv(f, "field", null);
-	rt.setSv(f, "startpos", null);
+	this.field = null;
+	this.startpos = null;
 	return f.dot;
 });
 
-// /obj/item/weapon/gun/energy/chrono_gun/proc/field_check  (code/game/objects/items/weapons/chrono_eraser.dm:107)
+// chrono_eraser.dm:107
 rt.def("/obj/item/weapon/gun/energy/chrono_gun/proc/field_check", function field_check(f: Frame, F: Value) {
 	let currentpos: Value = null, user: Value = null;
-	f.vars = () => [currentpos, user];
-	if (!truthy(live(F))) return f.dot;
-	if (isEqual(rt.sv(f, "field"), live(F))) {
-		currentpos = rt.getStep(f, live(f.src), 0);
-		user = rt.fv(f, "loc", live(f.src));
-		if ((((isEqual(live(currentpos), rt.sv(f, "startpos")) && truthy((rt.isIn(f, rt.sv(f, "field"), rt.call(f, P("/proc/view"), null, [3, live(currentpos)])) ? 1 : 0))) && !truthy(rt.fv(f, "lying", live(user)))) && isEqual(rt.fv(f, "stat", live(user)), 0))) {
+	if (!F) return f.dot;
+	if (this.field == F) {
+		currentpos = rt.getStep(f, this, 0);
+		user = this.loc;
+		if (currentpos == this.startpos && rt.isIn(f, this.field, view(CHRONO_BEAM_RANGE, currentpos)) && !user.lying && user.stat == 0) {
 			return 1;
 		}
 	}
-	rt.callSrc(f, "field_disconnect", [live(F)]);
+	this.field_disconnect(F);
 	return 0;
 });
 
-// /obj/item/weapon/gun/energy/chrono_gun/proc/pass_mind  (code/game/objects/items/weapons/chrono_eraser.dm:117)
+// chrono_eraser.dm:117
 rt.def("/obj/item/weapon/gun/energy/chrono_gun/proc/pass_mind", function pass_mind(f: Frame, M: Value) {
-	if (!truthy(rt.sv(f, "TED"))) return f.dot;
-	rt.callName(f, rt.sv(f, "TED"), "pass_mind", [live(M)]);
+	if (!this.TED) return f.dot;
+	this.TED.pass_mind(M);
 	return f.dot;
 });
 
@@ -197,22 +188,20 @@ rt.type(8846, "/obj/item/projectile/energy/chrono_beam", "/obj/item/projectile/e
 	nodamage: 1,
 });
 
-// /obj/item/projectile/energy/chrono_beam/proc/fire  (code/game/objects/items/weapons/chrono_eraser.dm:128)
+// chrono_eraser.dm:128
 rt.def("/obj/item/projectile/energy/chrono_beam/proc/fire", function fire(f: Frame) {
-	rt.setSv(f, "gun", rt.callName(f, rt.sv(f, "firer"), "get_active_held_item", []));
-	if (truthy((rt.istype(rt.sv(f, "gun"), T("/obj/item/weapon/gun/energy/chrono_gun")) ? 1 : 0))) {
-		return rt.callSuper(f, [], rt.Args.Same);
+	this.gun = this.firer.get_active_held_item();
+	if (rt.istype(this.gun, T("/obj/item/weapon/gun/energy/chrono_gun"))) {
+		return parent_proc();
 	}
 	return 0;
 }, false, { waitfor: false });
 
-// /obj/item/projectile/energy/chrono_beam/proc/on_hit  (code/game/objects/items/weapons/chrono_eraser.dm:135)
+// chrono_eraser.dm:135
 rt.def("/obj/item/projectile/energy/chrono_beam/proc/on_hit", function on_hit(f: Frame, target: Value) {
-	let F: Value = null;
-	f.vars = () => [F];
-	if (!((truthy(live(target)) && truthy(rt.sv(f, "gun"))) && truthy((rt.istype(live(target), T("/mob/living")) ? 1 : 0)))) return f.dot;
-	F = rt.new_(f, T("/obj/effect/chrono_field"), [rt.fv(f, "loc", live(target)), live(target), rt.sv(f, "gun")]);
-	rt.callName(f, rt.sv(f, "gun"), "field_connect", [live(F)]);
+	if (!(target && this.gun && rt.istype(target, T("/mob/living")))) return f.dot;
+	let F: Value = new_(T("/obj/effect/chrono_field"), target.loc, target, this.gun);
+	this.gun.field_connect(F);
 	return f.dot;
 });
 
@@ -232,115 +221,102 @@ rt.type(11951, "/obj/effect/chrono_field", "/obj/effect", {
 	blend_mode: 4,
 });
 
-// /obj/effect/chrono_field/proc/New  (code/game/objects/items/weapons/chrono_eraser.dm:163)
+// chrono_eraser.dm:163
 rt.def("/obj/effect/chrono_field/proc/New", function New(f: Frame, loc: Value, target: Value, G: Value) {
 	let mob_snapshot: Value = null, cached_icon: Value = null, i: Value = null, removing_frame: Value = null, mob_icon: Value = null;
-	f.vars = () => [mob_snapshot, cached_icon, i, removing_frame, mob_icon];
-	if (((truthy(live(target)) && truthy((rt.istype(live(target), T("/mob/living")) ? 1 : 0))) && truthy(live(G)))) {
-		rt.setFv(f, "loc", live(target), live(f.src));
-		rt.setFv(f, "captured", live(f.src), live(target));
-		mob_snapshot = rt.call(f, P("/proc/getFlatIcon"), null, [live(target)]);
-		cached_icon = rt.new_(f, T("/icon"), []);
-		i = null;
+	if (target && rt.istype(target, T("/mob/living")) && G) {
+		target.loc = this;
+		this.captured = target;
+		mob_snapshot = getFlatIcon(target);
+		cached_icon = new_(T("/icon"));
 		i = 1;
-		while (rt.le(live(i), 22)) {
-			removing_frame = rt.call(f, P("/proc/icon"), null, [rt.rsc("icons/obj/chronos.dmi"), "erasing", 2, live(i)]);
-			rt.callName(f, (mob_icon = rt.call(f, P("/proc/icon"), null, [live(mob_snapshot)])), "Blend", [live(removing_frame), 2]);
-			rt.callName(f, live(cached_icon), "Insert", [live(mob_icon), fmt("frame＀", [live(i)])]);
-			i = rt.inc(live(i), 1);
+		while (i <= CHRONO_FRAME_COUNT) {
+			removing_frame = icon(rt.rsc("icons/obj/chronos.dmi"), "erasing", 2, i);
+			(mob_icon = icon(mob_snapshot)).Blend(removing_frame, 2);
+			cached_icon.Insert(mob_icon, `frame${i}`);
+			i++;
 		}
-		rt.setSv(f, "mob_underlay", rt.call(f, P("/proc/mutable_appearance"), null, [live(cached_icon), "frame1"]));
-		rt.callSrc(f, "update_icon", []);
-		rt.setSv(f, "desc", add(rt.initial(f, live(f.src), "desc"), fmt("<br><span class='info'>It appears to contain ＀.</span>", [rt.fv(f, "name", live(target))])));
+		this.mob_underlay = mutable_appearance(cached_icon, "frame1");
+		this.update_icon();
+		this.desc = rt.initial(f, this, "desc") + `<br><span class='info'>It appears to contain ${target.name}.</span>`;
 	}
-	if (truthy(rt.fv(f, "isprocessing", live(f.src)))) return f.dot;
-	rt.setFv(f, "isprocessing", live(f.src), 1);
-	rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), add);
+	if (this.isprocessing) return f.dot;
+	this.isprocessing = 1;
+	GLOB.SSobj.processing += this;
 	return f.dot;
 });
 
-// /obj/effect/chrono_field/proc/Destroy  (code/game/objects/items/weapons/chrono_eraser.dm:182)  may sleep
+// chrono_eraser.dm:182
 rt.def("/obj/effect/chrono_field/proc/Destroy", function* Destroy(f: Frame) {
-	if ((truthy(rt.sv(f, "gun")) && truthy((yield* g.callName(f, rt.sv(f, "gun"), "field_check", [live(f.src)]))))) {
-		yield* g.callName(f, rt.sv(f, "gun"), "field_disconnect", [live(f.src)]);
+	if (this.gun && this.gun.field_check(this)) {
+		this.gun.field_disconnect(this);
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);
 
-// /obj/effect/chrono_field/proc/update_icon  (code/game/objects/items/weapons/chrono_eraser.dm:187)
+// chrono_eraser.dm:187
 rt.def("/obj/effect/chrono_field/proc/update_icon", function update_icon(f: Frame) {
-	let ttk_frame: Value = null;
-	f.vars = () => [ttk_frame];
-	ttk_frame = subtract(1, divide(rt.sv(f, "tickstokill"), rt.initial(f, live(f.src), "tickstokill")));
-	if (isEqual((ttk_frame = rt.call(f, P("/proc/max"), null, [1, rt.call(f, P("/proc/min"), null, [rt.call(f, P("/proc/Ceiling"), null, [multiply(live(ttk_frame), 22)]), 22])])), rt.sv(f, "RPpos"))) return f.dot;
-	rt.setSv(f, "RPpos", live(ttk_frame));
-	rt.setFv(f, "icon_state", rt.sv(f, "mob_underlay"), fmt("frame＀", [rt.sv(f, "RPpos")]));
-	rt.setSv(f, "underlays", rt.list());
-	rt.modSrcVar(f, "underlays", rt.sv(f, "mob_underlay"), add);
+	let ttk_frame: Value = 1 - this.tickstokill / rt.initial(f, this, "tickstokill");
+	if ((ttk_frame = max(1, min(Ceiling(ttk_frame * 22), 22))) == this.RPpos) return f.dot;
+	this.RPpos = ttk_frame;
+	this.mob_underlay.icon_state = `frame${this.RPpos}`;
+	this.underlays = list();
+	this.underlays += this.mob_underlay;
 	return f.dot;
 });
 
-// /obj/effect/chrono_field/proc/process  (code/game/objects/items/weapons/chrono_eraser.dm:197)  may sleep
+// chrono_eraser.dm:197
 rt.def("/obj/effect/chrono_field/proc/process", function* process(f: Frame) {
 	let AM: Value = null, ghost: Value = null;
-	let $e: any;
-	f.vars = () => [AM, ghost, $e];
-	if (truthy(rt.sv(f, "captured"))) {
-		if (rt.gt(rt.sv(f, "tickstokill"), rt.initial(f, live(f.src), "tickstokill"))) {
-			AM = null;
-			rt.forList(f, 0, rt.sv(f, "contents"), T("/atom/movable"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				AM = $e;
-				rt.setFv(f, "loc", live(AM), rt.sv(f, "loc"));
+	if (this.captured) {
+		if (this.tickstokill > rt.initial(f, this, "tickstokill")) {
+			for (AM of each(this.contents, T("/atom/movable"))) {
+				AM.loc = this.loc;
 			}
-			rt.endFor(f, 0);
-			yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+			yield* qdel(this);
+		} else if (this.tickstokill <= 0) {
+			to_chat(this.captured, "<span class='boldnotice'>As the last essence of your being is erased from time, you begin to re-experience your most enjoyable memory. You feel happy...</span>");
+			ghost = (yield* this.captured.ghostize(1));
+			if (this.captured.mind) {
+				if (ghost) {
+					ghost.mind = null;
+				}
+				if (this.gun) {
+					this.gun.pass_mind(this.captured.mind);
+				}
+			}
+			yield* qdel(this.captured);
+			yield* qdel(this);
 		} else {
-			if (rt.le(rt.sv(f, "tickstokill"), 0)) {
-				yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "captured"), "<span class='boldnotice'>As the last essence of your being is erased from time, you begin to re-experience your most enjoyable memory. You feel happy...</span>"]);
-				ghost = (yield* g.callName(f, rt.sv(f, "captured"), "ghostize", [1]));
-				if (truthy(rt.fv(f, "mind", rt.sv(f, "captured")))) {
-					if (truthy(live(ghost))) {
-						rt.setFv(f, "mind", live(ghost), null);
-					}
-					if (truthy(rt.sv(f, "gun"))) {
-						yield* g.callName(f, rt.sv(f, "gun"), "pass_mind", [rt.fv(f, "mind", rt.sv(f, "captured"))]);
-					}
-				}
-				yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "captured")]);
-				yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-			} else {
-				yield* g.callName(f, rt.sv(f, "captured"), "Unconscious", [80]);
-				if (!isEqual(rt.fv(f, "loc", rt.sv(f, "captured")), live(f.src))) {
-					rt.setFv(f, "loc", rt.sv(f, "captured"), live(f.src));
-				}
-				yield* g.srcCall(f, "update_icon");
-				if (truthy(rt.sv(f, "gun"))) {
-					if (truthy((yield* g.callName(f, rt.sv(f, "gun"), "field_check", [live(f.src)])))) {
-						rt.incSrcVar(f, "tickstokill", -1, true);
-					} else {
-						rt.setSv(f, "gun", null);
-						return (yield* g.callSelf(f, []));
-					}
+			yield* this.captured.Unconscious(80);
+			if (this.captured.loc != this) {
+				this.captured.loc = this;
+			}
+			yield* this.update_icon();
+			if (this.gun) {
+				if (this.gun.field_check(this)) {
+					this.tickstokill--;
 				} else {
-					rt.incSrcVar(f, "tickstokill", 1, true);
+					this.gun = null;
+					return (yield* g.callSelf(f, []));
 				}
+			} else {
+				this.tickstokill++;
 			}
 		}
 	} else {
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+		yield* qdel(this);
 	}
 	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/effect/chrono_field/proc/bullet_act  (code/game/objects/items/weapons/chrono_eraser.dm:228)
+// chrono_eraser.dm:228
 rt.def("/obj/effect/chrono_field/proc/bullet_act", function bullet_act(f: Frame, _P: Value) {
 	let beam: Value = null, Pgun: Value = null;
-	f.vars = () => [beam, Pgun];
-	if (truthy((rt.istype(live(_P), T("/obj/item/projectile/energy/chrono_beam")) ? 1 : 0))) {
-		beam = live(_P);
-		if ((truthy((Pgun = rt.fv(f, "gun", live(beam)))) && truthy((rt.istype(live(Pgun), T("/obj/item/weapon/gun/energy/chrono_gun")) ? 1 : 0)))) {
-			rt.callName(f, live(Pgun), "field_connect", [live(f.src)]);
+	if (rt.istype(_P, T("/obj/item/projectile/energy/chrono_beam"))) {
+		beam = _P;
+		if ((Pgun = beam.gun) && rt.istype(Pgun, T("/obj/item/weapon/gun/energy/chrono_gun"))) {
+			Pgun.field_connect(this);
 		}
 	} else {
 		return 0;
@@ -348,13 +324,12 @@ rt.def("/obj/effect/chrono_field/proc/bullet_act", function bullet_act(f: Frame,
 	return f.dot;
 });
 
-// /obj/effect/chrono_field/proc/return_air  (code/game/objects/items/weapons/chrono_eraser.dm:240)
+// chrono_eraser.dm:240
 rt.def("/obj/effect/chrono_field/proc/return_air", function return_air(f: Frame) {
 	let GM: Value = null;
-	f.vars = () => [GM];
-	rt.callName(f, (GM = rt.new_(f, T("/datum/gas_mixture"), [])), "assert_gases", ["o2", "n2"]);
-	rt.setAt(rt.index(rt.fv(f, "gases", live(GM)), "o2"), 1, 21.83659553527832);
-	rt.setAt(rt.index(rt.fv(f, "gases", live(GM)), "n2"), 1, 82.14720153808594);
-	rt.setFv(f, "temperature", live(GM), 293.1499938964844);
-	return live(GM);
+	(GM = new_(T("/datum/gas_mixture"))).assert_gases("o2", "n2");
+	rt.setAt(rt.index(GM.gases, "o2"), 1, 21.836596);
+	rt.setAt(rt.index(GM.gases, "n2"), 1, 82.1472);
+	GM.temperature = T20C;
+	return GM;
 });

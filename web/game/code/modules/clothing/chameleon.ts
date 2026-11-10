@@ -1,7 +1,7 @@
-// From code/modules/clothing/chameleon.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/clothing/chameleon.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, g } = rt;
 
 
 rt.type(236, "/datum/action/item_action/chameleon/drone/randomise", "/datum/action/item_action/chameleon/drone", {
@@ -9,18 +9,17 @@ rt.type(236, "/datum/action/item_action/chameleon/drone/randomise", "/datum/acti
 	button_icon_state: "random",
 });
 
-// /datum/action/item_action/chameleon/drone/randomise/proc/Trigger  (code/modules/clothing/chameleon.dm:8)  may sleep
+// chameleon.dm:8
 rt.def("/datum/action/item_action/chameleon/drone/randomise/proc/Trigger", function* Trigger(f: Frame) {
 	let X: Value = null, Z: Value = null;
-	f.vars = () => [X, Z];
-	if (!truthy((yield* g.srcCall(f, "IsAvailable")))) {
-		return live(f.dot);
+	if (!(yield* this.IsAvailable())) {
+		return f.dot;
 	}
-	if (truthy((rt.istype(rt.sv(f, "target"), T("/obj/item/clothing/head/chameleon/drone")) ? 1 : 0))) {
-		yield* g.callName(f, rt.gv(f, "chameleon_action", (X = rt.sv(f, "target"))), "random_look", [rt.sv(f, "owner")]);
+	if (rt.istype(this.target, T("/obj/item/clothing/head/chameleon/drone"))) {
+		yield* (X = this.target).chameleon_action.random_look(this.owner);
 	}
-	if (truthy((rt.istype(rt.sv(f, "target"), T("/obj/item/clothing/mask/chameleon/drone")) ? 1 : 0))) {
-		yield* g.callName(f, rt.gv(f, "chameleon_action", (Z = rt.sv(f, "target"))), "random_look", [rt.sv(f, "owner")]);
+	if (rt.istype(this.target, T("/obj/item/clothing/mask/chameleon/drone"))) {
+		yield* (Z = this.target).chameleon_action.random_look(this.owner);
 	}
 	return 1;
 }, true);
@@ -29,45 +28,40 @@ rt.type(237, "/datum/action/item_action/chameleon/drone/togglehatmask", "/datum/
 	name: "Toggle Headgear Mode",
 });
 
-// /datum/action/item_action/chameleon/drone/togglehatmask/proc/New  (code/modules/clothing/chameleon.dm:26)  may sleep
+// chameleon.dm:26
 rt.def("/datum/action/item_action/chameleon/drone/togglehatmask/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy((rt.istype(rt.sv(f, "target"), T("/obj/item/clothing/head/chameleon/drone")) ? 1 : 0))) {
-		rt.setSv(f, "button_icon_state", "drone_camogear_helm");
+	yield* parent_proc();
+	if (rt.istype(this.target, T("/obj/item/clothing/head/chameleon/drone"))) {
+		this.button_icon_state = "drone_camogear_helm";
 	}
-	if (!truthy((rt.istype(rt.sv(f, "target"), T("/obj/item/clothing/mask/chameleon/drone")) ? 1 : 0))) return f.dot;
-	rt.setSv(f, "button_icon_state", "drone_camogear_mask");
+	if (!rt.istype(this.target, T("/obj/item/clothing/mask/chameleon/drone"))) return f.dot;
+	this.button_icon_state = "drone_camogear_mask";
 	return f.dot;
 }, true);
 
-// /datum/action/item_action/chameleon/drone/togglehatmask/proc/Trigger  (code/modules/clothing/chameleon.dm:34)  may sleep
+// chameleon.dm:34
 rt.def("/datum/action/item_action/chameleon/drone/togglehatmask/proc/Trigger", function* Trigger(f: Frame) {
-	let D: Value = null, old_headgear: Value = null, new_headgear: Value = null;
-	f.vars = () => [D, old_headgear, new_headgear];
-	if (!truthy((yield* g.srcCall(f, "IsAvailable")))) {
-		return live(f.dot);
+	let D: Value = null, new_headgear: Value = null;
+	if (!(yield* this.IsAvailable())) {
+		return f.dot;
 	}
-	D = null;
-	if (truthy((rt.istype(rt.sv(f, "owner"), T("/mob/living/simple_animal/drone")) ? 1 : 0))) {
-		D = rt.sv(f, "owner");
+	if (rt.istype(this.owner, T("/mob/living/simple_animal/drone"))) {
+		D = this.owner;
 	} else {
-		return live(f.dot);
+		return f.dot;
 	}
-	old_headgear = rt.sv(f, "target");
-	new_headgear = null;
-	if (truthy((rt.istype(live(old_headgear), T("/obj/item/clothing/head/chameleon/drone")) ? 1 : 0))) {
-		new_headgear = (yield* g.new_(f, T("/obj/item/clothing/mask/chameleon/drone"), []));
+	let old_headgear: Value = this.target;
+	if (rt.istype(old_headgear, T("/obj/item/clothing/head/chameleon/drone"))) {
+		new_headgear = (yield* new_(T("/obj/item/clothing/mask/chameleon/drone")));
+	} else if (rt.istype(old_headgear, T("/obj/item/clothing/mask/chameleon/drone"))) {
+		new_headgear = (yield* new_(T("/obj/item/clothing/head/chameleon/drone")));
 	} else {
-		if (truthy((rt.istype(live(old_headgear), T("/obj/item/clothing/mask/chameleon/drone")) ? 1 : 0))) {
-			new_headgear = (yield* g.new_(f, T("/obj/item/clothing/head/chameleon/drone"), []));
-		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "owner"), "<span class='warning'>You shouldn't be able to toggle a camogear helmetmask if you're not wearing it</span>"]);
-		}
+		to_chat(this.owner, "<span class='warning'>You shouldn't be able to toggle a camogear helmetmask if you're not wearing it</span>");
 	}
-	if (truthy(live(new_headgear))) {
-		yield* g.callName(f, live(D), "dropItemToGround", [rt.sv(f, "target"), 1]);
-		yield* g.call(f, P("/proc/qdel"), null, [live(old_headgear)]);
-		yield* g.callName(f, live(D), "equip_to_slot", [live(new_headgear), 11]);
+	if (new_headgear) {
+		yield* D.dropItemToGround(this.target, 1);
+		yield* qdel(old_headgear);
+		yield* D.equip_to_slot(new_headgear, slot_head);
 	}
 	return 1;
 }, true);
@@ -81,188 +75,172 @@ rt.type(238, "/datum/action/item_action/chameleon/change", "/datum/action/item_a
 	name: "Chameleon Change",
 });
 
-// /datum/action/item_action/chameleon/change/proc/<init>  (code/modules/clothing/chameleon.dm:71)
+// chameleon.dm:71
 rt.def("/datum/action/item_action/chameleon/change/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "chameleon_blacklist", rt.list());
-	$0 = $0;
-	rt.setSv(f, "chameleon_list", rt.list());
+	parent_proc();
+	this.chameleon_blacklist = list();
+
+	this.chameleon_list = list();
 	return f.dot;
 });
 
-// /datum/action/item_action/chameleon/change/proc/initialize_disguises  (code/modules/clothing/chameleon.dm:80)
+// chameleon.dm:80
 rt.def("/datum/action/item_action/chameleon/change/proc/initialize_disguises", function initialize_disguises(f: Frame) {
 	let V: Value = null, I: Value = null, chameleon_item_name: Value = null;
-	let $e: any;
-	f.vars = () => [V, I, chameleon_item_name, $e];
-	if (truthy(rt.sv(f, "button"))) {
-		rt.setFv(f, "name", rt.sv(f, "button"), fmt("Change ＀ Appearance", [rt.sv(f, "chameleon_name")]));
+	if (this.button) {
+		this.button.name = `Change ${this.chameleon_name} Appearance`;
 	}
-	(rt.modSrcVar(f, "chameleon_blacklist", rt.call(f, P("/proc/typecacheof"), null, [rt.fv(f, "type", rt.sv(f, "target"))]), rt.bitOr));
-	V = null;
-	rt.forList(f, 0, rt.call(f, P("/proc/typesof"), null, [rt.sv(f, "chameleon_type")]));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		V = $e;
-		if ((truthy(rt.call(f, P("/proc/ispath"), null, [live(V)])) && truthy(rt.call(f, P("/proc/ispath"), null, [live(V), T("/obj/item")])))) {
-			I = live(V);
-			if ((truthy(rt.index(rt.sv(f, "chameleon_blacklist"), live(V))) || truthy(rt.bitAnd(rt.initial(f, live(I), "flags"), 128)))) {
+	(rt.modSrcVar(f, "chameleon_blacklist", typecacheof(this.target.type), rt.bitOr));
+	for (V of each(typesof(this.chameleon_type))) {
+		if (ispath(V) && ispath(V, T("/obj/item"))) {
+			I = V;
+			if (rt.index(this.chameleon_blacklist, V) || rt.bitAnd(rt.initial(f, I, "flags"), 128)) {
 				continue;
 			}
-			if ((!truthy(rt.initial(f, live(I), "icon_state")) || !truthy(rt.initial(f, live(I), "item_state")))) {
+			if (!rt.initial(f, I, "icon_state") || !rt.initial(f, I, "item_state")) {
 				continue;
 			}
-			chameleon_item_name = fmt("＀ (＀)", [rt.initial(f, live(I), "name"), rt.initial(f, live(I), "icon_state")]);
-			rt.setAt(rt.sv(f, "chameleon_list"), live(chameleon_item_name), live(I));
+			chameleon_item_name = `${rt.initial(f, I, "name")} (${rt.initial(f, I, "icon_state")})`;
+			rt.setAt(this.chameleon_list, chameleon_item_name, I);
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /datum/action/item_action/chameleon/change/proc/select_look  (code/modules/clothing/chameleon.dm:97)  may sleep
+// chameleon.dm:97
 rt.def("/datum/action/item_action/chameleon/change/proc/select_look", function* select_look(f: Frame, user: Value) {
 	let picked_item: Value = null, picked_name: Value = null;
-	f.vars = () => [user, picked_item, picked_name];
-	picked_item = null;
-	picked_name = null;
-	if (!truthy((picked_name = (yield* g.op(f, "Prompt", [1], [null, live(picked_name), fmt("Chameleon ＀", [rt.sv(f, "chameleon_name")]), fmt("Select ＀ to change into", [rt.sv(f, "chameleon_name")]), rt.sv(f, "chameleon_list")]))))) {
-		return live(f.dot);
+	if (!(picked_name = (yield* g.op(f, "Prompt", [1], [null, picked_name, `Chameleon ${this.chameleon_name}`, `Select ${this.chameleon_name} to change into`, this.chameleon_list])))) {
+		return f.dot;
 	}
-	if (!truthy((picked_item = rt.index(rt.sv(f, "chameleon_list"), live(picked_name))))) {
-		return live(f.dot);
+	if (!(picked_item = rt.index(this.chameleon_list, picked_name))) {
+		return f.dot;
 	}
-	yield* g.srcCall(f, "update_look", live(user), live(picked_item));
+	yield* this.update_look(user, picked_item);
 	return f.dot;
 }, true);
 
-// /datum/action/item_action/chameleon/change/proc/random_look  (code/modules/clothing/chameleon.dm:106)  may sleep
+// chameleon.dm:106
 rt.def("/datum/action/item_action/chameleon/change/proc/random_look", function* random_look(f: Frame, user: Value) {
-	let picked_name: Value = null;
-	f.vars = () => [user, picked_name];
-	picked_name = rt.op(f, "PickUnweighted", [1], [rt.sv(f, "chameleon_list")]);
-	if (truthy(live(user))) {
-		yield* g.srcCall(f, "update_look", live(user), rt.index(rt.sv(f, "chameleon_list"), live(picked_name)));
+	let picked_name: Value = pick(this.chameleon_list);
+	if (user) {
+		yield* this.update_look(user, rt.index(this.chameleon_list, picked_name));
 	} else {
-		yield* g.srcCall(f, "update_item", rt.index(rt.sv(f, "chameleon_list"), live(picked_name)));
+		this.update_item(rt.index(this.chameleon_list, picked_name));
 	}
 	return f.dot;
 }, true);
 
-// /datum/action/item_action/chameleon/change/proc/update_look  (code/modules/clothing/chameleon.dm:120)  may sleep
+// chameleon.dm:120
 rt.def("/datum/action/item_action/chameleon/change/proc/update_look", function* update_look(f: Frame, user: Value, picked_item: Value) {
 	let CG: Value = null, C: Value = null;
-	f.vars = () => [user, picked_item, CG, C];
-	if (truthy((rt.istype(rt.sv(f, "target"), T("/obj/item/weapon/gun/energy/laser/chameleon")) ? 1 : 0))) {
-		yield* g.callName(f, (CG = rt.sv(f, "target")), "get_chameleon_projectile", [live(picked_item)]);
+	if (rt.istype(this.target, T("/obj/item/weapon/gun/energy/laser/chameleon"))) {
+		yield* (CG = this.target).get_chameleon_projectile(picked_item);
 	}
-	if (truthy((rt.istype(live(user), T("/mob/living")) ? 1 : 0))) {
-		if (!isEqual(rt.gv(f, "stat", (C = live(user))), 0)) {
-			return live(f.dot);
+	if (rt.istype(user, T("/mob/living"))) {
+		if ((C = user).stat != 0) {
+			return f.dot;
 		}
-		yield* g.srcCall(f, "update_item", live(picked_item));
-		yield* g.srcCall(f, "update_item_icon");
+		this.update_item(picked_item);
+		yield* this.update_item_icon();
 	}
-	yield* g.srcCall(f, "UpdateButtonIcon");
+	yield* this.UpdateButtonIcon();
 	return f.dot;
 }, true);
 
-// /datum/action/item_action/chameleon/change/proc/update_item  (code/modules/clothing/chameleon.dm:133)
+// chameleon.dm:133
 rt.def("/datum/action/item_action/chameleon/change/proc/update_item", function update_item(f: Frame, picked_item: Value) {
 	let I: Value = null, CL: Value = null, PCL: Value = null;
-	f.vars = () => [I, CL, PCL];
-	rt.setFv(f, "name", rt.sv(f, "target"), rt.initial(f, live(picked_item), "name"));
-	rt.setFv(f, "desc", rt.sv(f, "target"), rt.initial(f, live(picked_item), "desc"));
-	rt.setFv(f, "icon_state", rt.sv(f, "target"), rt.initial(f, live(picked_item), "icon_state"));
-	if (truthy((rt.istype(rt.sv(f, "target"), T("/obj/item")) ? 1 : 0))) {
-		rt.setFv(f, "item_state", (I = rt.sv(f, "target")), rt.initial(f, live(picked_item), "item_state"));
-		rt.setFv(f, "item_color", live(I), rt.initial(f, live(picked_item), "item_color"));
-		if ((truthy((rt.istype(live(I), T("/obj/item/clothing")) ? 1 : 0)) && truthy((rt.istype(live(picked_item), T("/obj/item/clothing")) ? 1 : 0)))) {
-			CL = live(I);
-			PCL = live(picked_item);
-			rt.setFv(f, "flags_cover", live(CL), rt.initial(f, live(PCL), "flags_cover"));
+	this.target.name = rt.initial(f, picked_item, "name");
+	this.target.desc = rt.initial(f, picked_item, "desc");
+	this.target.icon_state = rt.initial(f, picked_item, "icon_state");
+	if (rt.istype(this.target, T("/obj/item"))) {
+		(I = this.target).item_state = rt.initial(f, picked_item, "item_state");
+		I.item_color = rt.initial(f, picked_item, "item_color");
+		if (rt.istype(I, T("/obj/item/clothing")) && rt.istype(picked_item, T("/obj/item/clothing"))) {
+			CL = I;
+			PCL = picked_item;
+			CL.flags_cover = rt.initial(f, PCL, "flags_cover");
 		}
 	}
-	rt.setFv(f, "icon", rt.sv(f, "target"), rt.initial(f, live(picked_item), "icon"));
+	this.target.icon = rt.initial(f, picked_item, "icon");
 	return f.dot;
 });
 
-// /datum/action/item_action/chameleon/change/proc/Trigger  (code/modules/clothing/chameleon.dm:147)  may sleep
+// chameleon.dm:147
 rt.def("/datum/action/item_action/chameleon/change/proc/Trigger", function* Trigger(f: Frame) {
-	if (!truthy((yield* g.srcCall(f, "IsAvailable")))) {
-		return live(f.dot);
+	if (!(yield* this.IsAvailable())) {
+		return f.dot;
 	}
-	yield* g.srcCall(f, "select_look", rt.sv(f, "owner"));
+	yield* this.select_look(this.owner);
 	return 1;
 }, true);
 
-// /datum/action/item_action/chameleon/change/proc/emp_randomise  (code/modules/clothing/chameleon.dm:154)  may sleep
+// chameleon.dm:154
 rt.def("/datum/action/item_action/chameleon/change/proc/emp_randomise", function* emp_randomise(f: Frame) {
-	if (truthy((rt.istype(rt.sv(f, "target"), T("/obj/item/weapon/gun/energy/laser/chameleon")) ? 1 : 0))) {
-		return live(f.dot);
+	if (rt.istype(this.target, T("/obj/item/weapon/gun/energy/laser/chameleon"))) {
+		return f.dot;
 	}
-	if (!truthy(rt.fv(f, "isprocessing", live(f.src)))) {
-		rt.setFv(f, "isprocessing", live(f.src), 1);
-		rt.modField(f, rt.gl("SSprocessing"), "processing", live(f.src), add);
+	if (!this.isprocessing) {
+		this.isprocessing = 1;
+		GLOB.SSprocessing.processing += this;
 	}
-	yield* g.srcCall(f, "random_look", rt.sv(f, "owner"));
-	rt.setSv(f, "emp_timer", add(rt.worldTime(f), 300));
+	yield* this.random_look(this.owner);
+	this.emp_timer = rt.worldTime(f) + EMP_RANDOMISE_TIME;
 	return f.dot;
 }, true);
 
-// /datum/action/item_action/chameleon/change/proc/process  (code/modules/clothing/chameleon.dm:162)  may sleep
+// chameleon.dm:162
 rt.def("/datum/action/item_action/chameleon/change/proc/process", function* process(f: Frame) {
-	if (rt.gt(rt.worldTime(f), rt.sv(f, "emp_timer"))) {
-		rt.setFv(f, "isprocessing", live(f.src), 0);
-		(rt.modField(f, rt.gl("SSprocessing"), "processing", live(f.src), subtract));
-		return live(f.dot);
+	if (rt.worldTime(f) > this.emp_timer) {
+		this.isprocessing = 0;
+		GLOB.SSprocessing.processing -= this;
+		return f.dot;
 	}
-	yield* g.srcCall(f, "random_look", rt.sv(f, "owner"));
+	yield* this.random_look(this.owner);
 	return f.dot;
 }, true, { waitfor: false });
 
-// /datum/action/item_action/chameleon/change/proc/update_item_icon  (code/modules/clothing/chameleon.dm:168)  may sleep
+// chameleon.dm:168
 rt.def("/datum/action/item_action/chameleon/change/proc/update_item_icon", function* update_item_icon(f: Frame) {
-	let I: Value = null, M: Value = null, flags: Value = null;
-	f.vars = () => [I, M, flags];
-	I = rt.sv(f, "target");
-	M = rt.sv(f, "owner");
-	if (truthy(rt.bitAnd((flags = rt.fv(f, "slot_flags", live(I))), 1))) {
-		yield* g.callName(f, live(M), "update_inv_wear_suit", []);
+	let flags: Value = null;
+	let I: Value = this.target;
+	let M: Value = this.owner;
+	if (rt.bitAnd((flags = I.slot_flags), SLOT_OCLOTHING)) {
+		yield* M.update_inv_wear_suit();
 	}
-	if (truthy(rt.bitAnd(live(flags), 2))) {
-		yield* g.callName(f, live(M), "update_inv_w_uniform", []);
+	if (rt.bitAnd(flags, SLOT_ICLOTHING)) {
+		yield* M.update_inv_w_uniform();
 	}
-	if (truthy(rt.bitAnd(live(flags), 4))) {
-		yield* g.callName(f, live(M), "update_inv_gloves", []);
+	if (rt.bitAnd(flags, SLOT_GLOVES)) {
+		M.update_inv_gloves();
 	}
-	if (truthy(rt.bitAnd(live(flags), 8))) {
-		yield* g.callName(f, live(M), "update_inv_glasses", []);
+	if (rt.bitAnd(flags, SLOT_EYES)) {
+		M.update_inv_glasses();
 	}
-	if (truthy(rt.bitAnd(live(flags), 16))) {
-		yield* g.callName(f, live(M), "update_inv_ears", []);
+	if (rt.bitAnd(flags, SLOT_EARS)) {
+		M.update_inv_ears();
 	}
-	if (truthy(rt.bitAnd(live(flags), 32))) {
-		yield* g.callName(f, live(M), "update_inv_wear_mask", []);
+	if (rt.bitAnd(flags, SLOT_MASK)) {
+		yield* M.update_inv_wear_mask();
 	}
-	if (truthy(rt.bitAnd(live(flags), 64))) {
-		yield* g.callName(f, live(M), "update_inv_head", []);
+	if (rt.bitAnd(flags, SLOT_HEAD)) {
+		yield* M.update_inv_head();
 	}
-	if (truthy(rt.bitAnd(live(flags), 128))) {
-		yield* g.callName(f, live(M), "update_inv_shoes", []);
+	if (rt.bitAnd(flags, SLOT_FEET)) {
+		M.update_inv_shoes();
 	}
-	if (truthy(rt.bitAnd(live(flags), 256))) {
-		yield* g.callName(f, live(M), "update_inv_wear_id", []);
+	if (rt.bitAnd(flags, SLOT_ID)) {
+		M.update_inv_wear_id();
 	}
-	if (truthy(rt.bitAnd(live(flags), 512))) {
-		yield* g.callName(f, live(M), "update_inv_belt", []);
+	if (rt.bitAnd(flags, SLOT_BELT)) {
+		M.update_inv_belt();
 	}
-	if (truthy(rt.bitAnd(live(flags), 1024))) {
-		yield* g.callName(f, live(M), "update_inv_back", []);
+	if (rt.bitAnd(flags, SLOT_BACK)) {
+		M.update_inv_back();
 	}
-	if (!truthy(rt.bitAnd(live(flags), 8192))) return f.dot;
-	yield* g.callName(f, live(M), "update_inv_neck", []);
+	if (!rt.bitAnd(flags, SLOT_NECK)) return f.dot;
+	M.update_inv_neck();
 	return f.dot;
 }, true);
 
@@ -280,30 +258,27 @@ rt.type(8343, "/obj/item/clothing/under/chameleon", "/obj/item/clothing/under", 
 	armor: null,
 });
 
-// /obj/item/clothing/under/chameleon/proc/<init>  (code/modules/clothing/chameleon.dm:208)
+// chameleon.dm:208
 rt.def("/obj/item/clothing/under/chameleon/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 10, "bullet", 10, "laser", 10, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 50, "acid", 50]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 10, "bullet", 10, "laser", 10, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 50, "acid", 50]);
 	return f.dot;
 });
 
-// /obj/item/clothing/under/chameleon/proc/New  (code/modules/clothing/chameleon.dm:213)  may sleep
+// chameleon.dm:213
 rt.def("/obj/item/clothing/under/chameleon/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "chameleon_action", (yield* g.new_(f, T("/datum/action/item_action/chameleon/change"), [live(f.src)])));
-	rt.setFv(f, "chameleon_type", rt.sv(f, "chameleon_action"), T("/obj/item/clothing/under"));
-	rt.setFv(f, "chameleon_name", rt.sv(f, "chameleon_action"), "Jumpsuit");
-	rt.setFv(f, "chameleon_blacklist", rt.sv(f, "chameleon_action"), (yield* g.call(f, P("/proc/typecacheof"), null, [null, rt.list(T("/obj/item/clothing/under"), T("/obj/item/clothing/under/color"), T("/obj/item/clothing/under/rank"), T("/obj/item/clothing/under/changeling")), "only_root_path", 1], rt.Args.Named)));
-	yield* g.callName(f, rt.sv(f, "chameleon_action"), "initialize_disguises", []);
+	yield* parent_proc();
+	this.chameleon_action = (yield* new_(T("/datum/action/item_action/chameleon/change"), this));
+	this.chameleon_action.chameleon_type = T("/obj/item/clothing/under");
+	this.chameleon_action.chameleon_name = "Jumpsuit";
+	this.chameleon_action.chameleon_blacklist = (yield* typecacheof(list(T("/obj/item/clothing/under"), T("/obj/item/clothing/under/color"), T("/obj/item/clothing/under/rank"), T("/obj/item/clothing/under/changeling")), { only_root_path: 1 }));
+	this.chameleon_action.initialize_disguises();
 	return f.dot;
 }, true);
 
-// /obj/item/clothing/under/chameleon/proc/emp_act  (code/modules/clothing/chameleon.dm:221)  may sleep
+// chameleon.dm:221
 rt.def("/obj/item/clothing/under/chameleon/proc/emp_act", function* emp_act(f: Frame, severity: Value) {
-	f.vars = () => [severity];
-	yield* g.callName(f, rt.sv(f, "chameleon_action"), "emp_randomise", []);
+	yield* this.chameleon_action.emp_randomise();
 	return f.dot;
 }, true);
 
@@ -319,30 +294,27 @@ rt.type(7832, "/obj/item/clothing/suit/chameleon", "/obj/item/clothing/suit", {
 	armor: null,
 });
 
-// /obj/item/clothing/suit/chameleon/proc/<init>  (code/modules/clothing/chameleon.dm:231)
+// chameleon.dm:231
 rt.def("/obj/item/clothing/suit/chameleon/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 10, "bullet", 10, "laser", 10, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 50, "acid", 50]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 10, "bullet", 10, "laser", 10, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 50, "acid", 50]);
 	return f.dot;
 });
 
-// /obj/item/clothing/suit/chameleon/proc/New  (code/modules/clothing/chameleon.dm:236)  may sleep
+// chameleon.dm:236
 rt.def("/obj/item/clothing/suit/chameleon/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "chameleon_action", (yield* g.new_(f, T("/datum/action/item_action/chameleon/change"), [live(f.src)])));
-	rt.setFv(f, "chameleon_type", rt.sv(f, "chameleon_action"), T("/obj/item/clothing/suit"));
-	rt.setFv(f, "chameleon_name", rt.sv(f, "chameleon_action"), "Suit");
-	rt.setFv(f, "chameleon_blacklist", rt.sv(f, "chameleon_action"), (yield* g.call(f, P("/proc/typecacheof"), null, [null, rt.list(T("/obj/item/clothing/suit/armor/abductor"), T("/obj/item/clothing/suit/changeling")), "only_root_path", 1], rt.Args.Named)));
-	yield* g.callName(f, rt.sv(f, "chameleon_action"), "initialize_disguises", []);
+	yield* parent_proc();
+	this.chameleon_action = (yield* new_(T("/datum/action/item_action/chameleon/change"), this));
+	this.chameleon_action.chameleon_type = T("/obj/item/clothing/suit");
+	this.chameleon_action.chameleon_name = "Suit";
+	this.chameleon_action.chameleon_blacklist = (yield* typecacheof(list(T("/obj/item/clothing/suit/armor/abductor"), T("/obj/item/clothing/suit/changeling")), { only_root_path: 1 }));
+	this.chameleon_action.initialize_disguises();
 	return f.dot;
 }, true);
 
-// /obj/item/clothing/suit/chameleon/proc/emp_act  (code/modules/clothing/chameleon.dm:244)  may sleep
+// chameleon.dm:244
 rt.def("/obj/item/clothing/suit/chameleon/proc/emp_act", function* emp_act(f: Frame, severity: Value) {
-	f.vars = () => [severity];
-	yield* g.callName(f, rt.sv(f, "chameleon_action"), "emp_randomise", []);
+	yield* this.chameleon_action.emp_randomise();
 	return f.dot;
 }, true);
 
@@ -357,30 +329,27 @@ rt.type(8216, "/obj/item/clothing/glasses/chameleon", "/obj/item/clothing/glasse
 	armor: null,
 });
 
-// /obj/item/clothing/glasses/chameleon/proc/<init>  (code/modules/clothing/chameleon.dm:253)
+// chameleon.dm:253
 rt.def("/obj/item/clothing/glasses/chameleon/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 10, "bullet", 10, "laser", 10, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 50, "acid", 50]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 10, "bullet", 10, "laser", 10, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 50, "acid", 50]);
 	return f.dot;
 });
 
-// /obj/item/clothing/glasses/chameleon/proc/New  (code/modules/clothing/chameleon.dm:258)  may sleep
+// chameleon.dm:258
 rt.def("/obj/item/clothing/glasses/chameleon/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "chameleon_action", (yield* g.new_(f, T("/datum/action/item_action/chameleon/change"), [live(f.src)])));
-	rt.setFv(f, "chameleon_type", rt.sv(f, "chameleon_action"), T("/obj/item/clothing/glasses"));
-	rt.setFv(f, "chameleon_name", rt.sv(f, "chameleon_action"), "Glasses");
-	rt.setFv(f, "chameleon_blacklist", rt.sv(f, "chameleon_action"), (yield* g.call(f, P("/proc/typecacheof"), null, [null, T("/obj/item/clothing/glasses/changeling"), "only_root_path", 1], rt.Args.Named)));
-	yield* g.callName(f, rt.sv(f, "chameleon_action"), "initialize_disguises", []);
+	yield* parent_proc();
+	this.chameleon_action = (yield* new_(T("/datum/action/item_action/chameleon/change"), this));
+	this.chameleon_action.chameleon_type = T("/obj/item/clothing/glasses");
+	this.chameleon_action.chameleon_name = "Glasses";
+	this.chameleon_action.chameleon_blacklist = (yield* typecacheof(T("/obj/item/clothing/glasses/changeling"), { only_root_path: 1 }));
+	this.chameleon_action.initialize_disguises();
 	return f.dot;
 }, true);
 
-// /obj/item/clothing/glasses/chameleon/proc/emp_act  (code/modules/clothing/chameleon.dm:266)  may sleep
+// chameleon.dm:266
 rt.def("/obj/item/clothing/glasses/chameleon/proc/emp_act", function* emp_act(f: Frame, severity: Value) {
-	f.vars = () => [severity];
-	yield* g.callName(f, rt.sv(f, "chameleon_action"), "emp_randomise", []);
+	yield* this.chameleon_action.emp_randomise();
 	return f.dot;
 }, true);
 
@@ -394,30 +363,27 @@ rt.type(7692, "/obj/item/clothing/gloves/chameleon", "/obj/item/clothing/gloves"
 	armor: null,
 });
 
-// /obj/item/clothing/gloves/chameleon/proc/<init>  (code/modules/clothing/chameleon.dm:275)
+// chameleon.dm:275
 rt.def("/obj/item/clothing/gloves/chameleon/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 10, "bullet", 10, "laser", 10, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 50, "acid", 50]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 10, "bullet", 10, "laser", 10, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 50, "acid", 50]);
 	return f.dot;
 });
 
-// /obj/item/clothing/gloves/chameleon/proc/New  (code/modules/clothing/chameleon.dm:280)  may sleep
+// chameleon.dm:280
 rt.def("/obj/item/clothing/gloves/chameleon/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "chameleon_action", (yield* g.new_(f, T("/datum/action/item_action/chameleon/change"), [live(f.src)])));
-	rt.setFv(f, "chameleon_type", rt.sv(f, "chameleon_action"), T("/obj/item/clothing/gloves"));
-	rt.setFv(f, "chameleon_name", rt.sv(f, "chameleon_action"), "Gloves");
-	rt.setFv(f, "chameleon_blacklist", rt.sv(f, "chameleon_action"), (yield* g.call(f, P("/proc/typecacheof"), null, [null, rt.list(T("/obj/item/clothing/gloves"), T("/obj/item/clothing/gloves/color"), T("/obj/item/clothing/gloves/changeling")), "only_root_path", 1], rt.Args.Named)));
-	yield* g.callName(f, rt.sv(f, "chameleon_action"), "initialize_disguises", []);
+	yield* parent_proc();
+	this.chameleon_action = (yield* new_(T("/datum/action/item_action/chameleon/change"), this));
+	this.chameleon_action.chameleon_type = T("/obj/item/clothing/gloves");
+	this.chameleon_action.chameleon_name = "Gloves";
+	this.chameleon_action.chameleon_blacklist = (yield* typecacheof(list(T("/obj/item/clothing/gloves"), T("/obj/item/clothing/gloves/color"), T("/obj/item/clothing/gloves/changeling")), { only_root_path: 1 }));
+	this.chameleon_action.initialize_disguises();
 	return f.dot;
 }, true);
 
-// /obj/item/clothing/gloves/chameleon/proc/emp_act  (code/modules/clothing/chameleon.dm:288)  may sleep
+// chameleon.dm:288
 rt.def("/obj/item/clothing/gloves/chameleon/proc/emp_act", function* emp_act(f: Frame, severity: Value) {
-	f.vars = () => [severity];
-	yield* g.callName(f, rt.sv(f, "chameleon_action"), "emp_randomise", []);
+	yield* this.chameleon_action.emp_randomise();
 	return f.dot;
 }, true);
 
@@ -431,30 +397,27 @@ rt.type(8086, "/obj/item/clothing/head/chameleon", "/obj/item/clothing/head", {
 	armor: null,
 });
 
-// /obj/item/clothing/head/chameleon/proc/<init>  (code/modules/clothing/chameleon.dm:297)
+// chameleon.dm:297
 rt.def("/obj/item/clothing/head/chameleon/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 5, "bullet", 5, "laser", 5, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 50, "acid", 50]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 5, "bullet", 5, "laser", 5, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 50, "acid", 50]);
 	return f.dot;
 });
 
-// /obj/item/clothing/head/chameleon/proc/New  (code/modules/clothing/chameleon.dm:302)  may sleep
+// chameleon.dm:302
 rt.def("/obj/item/clothing/head/chameleon/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "chameleon_action", (yield* g.new_(f, T("/datum/action/item_action/chameleon/change"), [live(f.src)])));
-	rt.setFv(f, "chameleon_type", rt.sv(f, "chameleon_action"), T("/obj/item/clothing/head"));
-	rt.setFv(f, "chameleon_name", rt.sv(f, "chameleon_action"), "Hat");
-	rt.setFv(f, "chameleon_blacklist", rt.sv(f, "chameleon_action"), (yield* g.call(f, P("/proc/typecacheof"), null, [null, T("/obj/item/clothing/head/changeling"), "only_root_path", 1], rt.Args.Named)));
-	yield* g.callName(f, rt.sv(f, "chameleon_action"), "initialize_disguises", []);
+	yield* parent_proc();
+	this.chameleon_action = (yield* new_(T("/datum/action/item_action/chameleon/change"), this));
+	this.chameleon_action.chameleon_type = T("/obj/item/clothing/head");
+	this.chameleon_action.chameleon_name = "Hat";
+	this.chameleon_action.chameleon_blacklist = (yield* typecacheof(T("/obj/item/clothing/head/changeling"), { only_root_path: 1 }));
+	this.chameleon_action.initialize_disguises();
 	return f.dot;
 }, true);
 
-// /obj/item/clothing/head/chameleon/proc/emp_act  (code/modules/clothing/chameleon.dm:310)  may sleep
+// chameleon.dm:310
 rt.def("/obj/item/clothing/head/chameleon/proc/emp_act", function* emp_act(f: Frame, severity: Value) {
-	f.vars = () => [severity];
-	yield* g.callName(f, rt.sv(f, "chameleon_action"), "emp_randomise", []);
+	yield* this.chameleon_action.emp_randomise();
 	return f.dot;
 }, true);
 
@@ -463,23 +426,20 @@ rt.type(8087, "/obj/item/clothing/head/chameleon/drone", "/obj/item/clothing/hea
 	armor: null,
 });
 
-// /obj/item/clothing/head/chameleon/drone/proc/<init>  (code/modules/clothing/chameleon.dm:316)
+// chameleon.dm:316
 rt.def("/obj/item/clothing/head/chameleon/drone/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 0, "acid", 0]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 0, "acid", 0]);
 	return f.dot;
 });
 
-// /obj/item/clothing/head/chameleon/drone/proc/New  (code/modules/clothing/chameleon.dm:320)  may sleep
+// chameleon.dm:320
 rt.def("/obj/item/clothing/head/chameleon/drone/proc/New", function* New(f: Frame) {
 	let togglehatmask_action: Value = null, randomise_action: Value = null;
-	f.vars = () => [togglehatmask_action, randomise_action];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.callName(f, rt.sv(f, "chameleon_action"), "random_look", []);
-	yield* g.callName(f, (togglehatmask_action = (yield* g.new_(f, T("/datum/action/item_action/chameleon/drone/togglehatmask"), [live(f.src)]))), "UpdateButtonIcon", []);
-	yield* g.callName(f, (randomise_action = (yield* g.new_(f, T("/datum/action/item_action/chameleon/drone/randomise"), [live(f.src)]))), "UpdateButtonIcon", []);
+	yield* parent_proc();
+	yield* this.chameleon_action.random_look();
+	yield* (togglehatmask_action = (yield* new_(T("/datum/action/item_action/chameleon/drone/togglehatmask"), this))).UpdateButtonIcon();
+	yield* (randomise_action = (yield* new_(T("/datum/action/item_action/chameleon/drone/randomise"), this))).UpdateButtonIcon();
 	return f.dot;
 }, true);
 
@@ -499,45 +459,35 @@ rt.type(8535, "/obj/item/clothing/mask/chameleon", "/obj/item/clothing/mask", {
 	flags_cover: 10,
 });
 
-// /obj/item/clothing/mask/chameleon/proc/<init>  (code/modules/clothing/chameleon.dm:333)
+// chameleon.dm:333
 rt.def("/obj/item/clothing/mask/chameleon/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 5, "bullet", 5, "laser", 5, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 50, "acid", 50]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 5, "bullet", 5, "laser", 5, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 50, "acid", 50]);
 	return f.dot;
 });
 
-// /obj/item/clothing/mask/chameleon/proc/New  (code/modules/clothing/chameleon.dm:346)  may sleep
+// chameleon.dm:346
 rt.def("/obj/item/clothing/mask/chameleon/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "chameleon_action", (yield* g.new_(f, T("/datum/action/item_action/chameleon/change"), [live(f.src)])));
-	rt.setFv(f, "chameleon_type", rt.sv(f, "chameleon_action"), T("/obj/item/clothing/mask"));
-	rt.setFv(f, "chameleon_name", rt.sv(f, "chameleon_action"), "Mask");
-	rt.setFv(f, "chameleon_blacklist", rt.sv(f, "chameleon_action"), (yield* g.call(f, P("/proc/typecacheof"), null, [null, T("/obj/item/clothing/mask/changeling"), "only_root_path", 1], rt.Args.Named)));
-	yield* g.callName(f, rt.sv(f, "chameleon_action"), "initialize_disguises", []);
+	yield* parent_proc();
+	this.chameleon_action = (yield* new_(T("/datum/action/item_action/chameleon/change"), this));
+	this.chameleon_action.chameleon_type = T("/obj/item/clothing/mask");
+	this.chameleon_action.chameleon_name = "Mask";
+	this.chameleon_action.chameleon_blacklist = (yield* typecacheof(T("/obj/item/clothing/mask/changeling"), { only_root_path: 1 }));
+	this.chameleon_action.initialize_disguises();
 	return f.dot;
 }, true);
 
-// /obj/item/clothing/mask/chameleon/proc/emp_act  (code/modules/clothing/chameleon.dm:354)  may sleep
+// chameleon.dm:354
 rt.def("/obj/item/clothing/mask/chameleon/proc/emp_act", function* emp_act(f: Frame, severity: Value) {
-	f.vars = () => [severity];
-	yield* g.callName(f, rt.sv(f, "chameleon_action"), "emp_randomise", []);
+	yield* this.chameleon_action.emp_randomise();
 	return f.dot;
 }, true);
 
-// /obj/item/clothing/mask/chameleon/proc/attack_self  (code/modules/clothing/chameleon.dm:357)
+// chameleon.dm:357
 rt.def("/obj/item/clothing/mask/chameleon/proc/attack_self", function attack_self(f: Frame, user: Value) {
-	let $0: any, $1: any;
-	f.vars = () => [$0, $1];
-	rt.setSv(f, "vchange", (!truthy(rt.sv(f, "vchange")) ? 1 : 0));
-	$0 = live(user);
-	if (truthy(rt.sv(f, "vchange"))) {
-		$1 = "on";
-	} else {
-		$1 = "off";
-	}
-	rt.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='notice'>The voice changer is now ＀!</span>", [$1])]);
+	this.vchange = (!this.vchange ? 1 : 0);
+	let $0: any = user;
+	to_chat($0, `<span class='notice'>The voice changer is now ${this.vchange ? "on" : "off"}!</span>`);
 	return f.dot;
 });
 
@@ -547,29 +497,26 @@ rt.type(8536, "/obj/item/clothing/mask/chameleon/drone", "/obj/item/clothing/mas
 	armor: null,
 });
 
-// /obj/item/clothing/mask/chameleon/drone/proc/<init>  (code/modules/clothing/chameleon.dm:364)
+// chameleon.dm:364
 rt.def("/obj/item/clothing/mask/chameleon/drone/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 0, "acid", 0]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 0, "acid", 0]);
 	return f.dot;
 });
 
-// /obj/item/clothing/mask/chameleon/drone/proc/New  (code/modules/clothing/chameleon.dm:369)  may sleep
+// chameleon.dm:369
 rt.def("/obj/item/clothing/mask/chameleon/drone/proc/New", function* New(f: Frame) {
 	let togglehatmask_action: Value = null, randomise_action: Value = null;
-	f.vars = () => [togglehatmask_action, randomise_action];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.callName(f, rt.sv(f, "chameleon_action"), "random_look", []);
-	yield* g.callName(f, (togglehatmask_action = (yield* g.new_(f, T("/datum/action/item_action/chameleon/drone/togglehatmask"), [live(f.src)]))), "UpdateButtonIcon", []);
-	yield* g.callName(f, (randomise_action = (yield* g.new_(f, T("/datum/action/item_action/chameleon/drone/randomise"), [live(f.src)]))), "UpdateButtonIcon", []);
+	yield* parent_proc();
+	yield* this.chameleon_action.random_look();
+	yield* (togglehatmask_action = (yield* new_(T("/datum/action/item_action/chameleon/drone/togglehatmask"), this))).UpdateButtonIcon();
+	yield* (randomise_action = (yield* new_(T("/datum/action/item_action/chameleon/drone/randomise"), this))).UpdateButtonIcon();
 	return f.dot;
 }, true);
 
-// /obj/item/clothing/mask/chameleon/drone/proc/attack_self  (code/modules/clothing/chameleon.dm:377)
+// chameleon.dm:377
 rt.def("/obj/item/clothing/mask/chameleon/drone/proc/attack_self", function attack_self(f: Frame, user: Value) {
-	rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>The ＀ does not have a voice changer.</span>", [live(f.src)])]);
+	to_chat(user, `<span class='notice'>The ${this} does not have a voice changer.</span>`);
 	return f.dot;
 });
 
@@ -587,30 +534,27 @@ rt.type(8486, "/obj/item/clothing/shoes/chameleon", "/obj/item/clothing/shoes", 
 	armor: null,
 });
 
-// /obj/item/clothing/shoes/chameleon/proc/<init>  (code/modules/clothing/chameleon.dm:389)
+// chameleon.dm:389
 rt.def("/obj/item/clothing/shoes/chameleon/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 10, "bullet", 10, "laser", 10, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 50, "acid", 50]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 10, "bullet", 10, "laser", 10, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 50, "acid", 50]);
 	return f.dot;
 });
 
-// /obj/item/clothing/shoes/chameleon/proc/New  (code/modules/clothing/chameleon.dm:394)  may sleep
+// chameleon.dm:394
 rt.def("/obj/item/clothing/shoes/chameleon/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "chameleon_action", (yield* g.new_(f, T("/datum/action/item_action/chameleon/change"), [live(f.src)])));
-	rt.setFv(f, "chameleon_type", rt.sv(f, "chameleon_action"), T("/obj/item/clothing/shoes"));
-	rt.setFv(f, "chameleon_name", rt.sv(f, "chameleon_action"), "Shoes");
-	rt.setFv(f, "chameleon_blacklist", rt.sv(f, "chameleon_action"), (yield* g.call(f, P("/proc/typecacheof"), null, [null, T("/obj/item/clothing/shoes/changeling"), "only_root_path", 1], rt.Args.Named)));
-	yield* g.callName(f, rt.sv(f, "chameleon_action"), "initialize_disguises", []);
+	yield* parent_proc();
+	this.chameleon_action = (yield* new_(T("/datum/action/item_action/chameleon/change"), this));
+	this.chameleon_action.chameleon_type = T("/obj/item/clothing/shoes");
+	this.chameleon_action.chameleon_name = "Shoes";
+	this.chameleon_action.chameleon_blacklist = (yield* typecacheof(T("/obj/item/clothing/shoes/changeling"), { only_root_path: 1 }));
+	this.chameleon_action.initialize_disguises();
 	return f.dot;
 }, true);
 
-// /obj/item/clothing/shoes/chameleon/proc/emp_act  (code/modules/clothing/chameleon.dm:402)  may sleep
+// chameleon.dm:402
 rt.def("/obj/item/clothing/shoes/chameleon/proc/emp_act", function* emp_act(f: Frame, severity: Value) {
-	f.vars = () => [severity];
-	yield* g.callName(f, rt.sv(f, "chameleon_action"), "emp_randomise", []);
+	yield* this.chameleon_action.emp_randomise();
 	return f.dot;
 }, true);
 
@@ -632,194 +576,154 @@ rt.type(5141, "/obj/item/weapon/gun/energy/laser/chameleon", "/obj/item/weapon/g
 	cell_type: rt.typePath("/obj/item/weapon/stock_parts/cell/bluespace"),
 }, { global: { blacklisted_vars: 728 } });
 
-// /obj/item/weapon/gun/energy/laser/chameleon/proc/<init>  (code/modules/clothing/chameleon.dm:407)
+// chameleon.dm:407
 rt.def("/obj/item/weapon/gun/energy/laser/chameleon/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "ammo_type", rt.list(T("/obj/item/ammo_casing/energy/chameleon")));
+	parent_proc();
+	this.ammo_type = list(T("/obj/item/ammo_casing/energy/chameleon"));
 	return f.dot;
 });
 
-// /obj/item/weapon/gun/energy/laser/chameleon/proc/Initialize  (code/modules/clothing/chameleon.dm:424)  may sleep
+// chameleon.dm:424
 rt.def("/obj/item/weapon/gun/energy/laser/chameleon/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "chameleon_action", (yield* g.new_(f, T("/datum/action/item_action/chameleon/change"), [live(f.src)])));
-	rt.setFv(f, "chameleon_type", rt.sv(f, "chameleon_action"), T("/obj/item/weapon/gun"));
-	rt.setFv(f, "chameleon_name", rt.sv(f, "chameleon_action"), "Gun");
-	rt.setFv(f, "chameleon_blacklist", rt.sv(f, "chameleon_action"), (yield* g.call(f, P("/proc/typecacheof"), null, [null, T("/obj/item/weapon/gun/magic"), "ignore_root_path", 0], rt.Args.Named)));
-	yield* g.callName(f, rt.sv(f, "chameleon_action"), "initialize_disguises", []);
+	f.dot = (yield* parent_proc());
+	this.chameleon_action = (yield* new_(T("/datum/action/item_action/chameleon/change"), this));
+	this.chameleon_action.chameleon_type = T("/obj/item/weapon/gun");
+	this.chameleon_action.chameleon_name = "Gun";
+	this.chameleon_action.chameleon_blacklist = (yield* typecacheof(T("/obj/item/weapon/gun/magic"), { ignore_root_path: 0 }));
+	this.chameleon_action.initialize_disguises();
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/gun/energy/laser/chameleon/proc/Initialize  (code/modules/clothing/chameleon.dm:432)  may sleep
+// chameleon.dm:432
 rt.def("/obj/item/weapon/gun/energy/laser/chameleon/proc/Initialize", function* Initialize(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "projectile_copy_vars", rt.list("name", "icon", "icon_state", "item_state", "speed", "color", "hitsound", "forcedodge", "impact_effect_type", "range", "suppressed", "hitsound_wall", "impact_effect_type", "pass_flags"));
-	rt.setSv(f, "chameleon_projectile_vars", rt.alist(f, ["name", "practice laser", "icon", rt.rsc("icons/obj/projectiles.dmi"), "icon_state", "laser"]));
-	rt.setSv(f, "gun_copy_vars", rt.list("fire_sound", "burst_size", "fire_delay"));
-	rt.setSv(f, "chameleon_gun_vars", rt.list());
-	rt.setSv(f, "ammo_copy_vars", rt.list("firing_effect_type"));
-	rt.setSv(f, "chameleon_ammo_vars", rt.list());
-	yield* g.srcCall(f, "recharge_newshot");
-	yield* g.srcCall(f, "get_chameleon_projectile", T("/obj/item/weapon/gun/energy/laser"));
+	yield* parent_proc();
+	this.projectile_copy_vars = list("name", "icon", "icon_state", "item_state", "speed", "color", "hitsound", "forcedodge", "impact_effect_type", "range", "suppressed", "hitsound_wall", "impact_effect_type", "pass_flags");
+	this.chameleon_projectile_vars = rt.alist(f, ["name", "practice laser", "icon", rt.rsc("icons/obj/projectiles.dmi"), "icon_state", "laser"]);
+	this.gun_copy_vars = list("fire_sound", "burst_size", "fire_delay");
+	this.chameleon_gun_vars = list();
+	this.ammo_copy_vars = list("firing_effect_type");
+	this.chameleon_ammo_vars = list();
+	yield* this.recharge_newshot();
+	yield* this.get_chameleon_projectile(T("/obj/item/weapon/gun/energy/laser"));
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/gun/energy/laser/chameleon/proc/reset_chameleon_vars  (code/modules/clothing/chameleon.dm:446)  may sleep
+// chameleon.dm:446
 rt.def("/obj/item/weapon/gun/energy/laser/chameleon/proc/reset_chameleon_vars", function* reset_chameleon_vars(f: Frame) {
 	let v: Value = null;
-	let $e: any;
-	f.vars = () => [v, $e];
-	rt.setSv(f, "chameleon_ammo_vars", rt.list());
-	rt.setSv(f, "chameleon_gun_vars", rt.list());
-	rt.setSv(f, "chameleon_projectile_vars", rt.list());
-	if (truthy(rt.sv(f, "chambered"))) {
-		v = null;
-		rt.forList(f, 0, rt.sv(f, "ammo_copy_vars"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			v = $e;
-			if (truthy((rt.isIn(f, live(v), rt.gl("blacklisted_vars")) ? 1 : 0))) {
+	this.chameleon_ammo_vars = list();
+	this.chameleon_gun_vars = list();
+	this.chameleon_projectile_vars = list();
+	if (this.chambered) {
+		for (v of each(this.ammo_copy_vars)) {
+			if (rt.isIn(f, v, GLOB.blacklisted_vars)) {
 				continue;
 			}
-			rt.setAt(rt.fv(f, "vars", rt.sv(f, "chambered")), live(v), rt.initial(f, rt.fv(f, "vars", rt.sv(f, "chambered")), live(v)));
+			rt.setAt(this.chambered.vars, v, rt.initial(f, this.chambered.vars, v));
 		}
-		rt.endFor(f, 0);
 	}
 	v = null;
-	rt.forList(f, 0, rt.sv(f, "gun_copy_vars"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		v = $e;
-		if (truthy((rt.isIn(f, live(v), rt.gl("blacklisted_vars")) ? 1 : 0))) {
+	for (v of each(this.gun_copy_vars)) {
+		if (rt.isIn(f, v, GLOB.blacklisted_vars)) {
 			continue;
 		}
-		rt.setAt(rt.sv(f, "vars"), live(v), rt.initial(f, rt.sv(f, "vars"), live(v)));
+		rt.setAt(this.vars, v, rt.initial(f, this.vars, v));
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/qdel"), null, [rt.fv(f, "BB", rt.sv(f, "chambered"))]);
-	rt.setFv(f, "BB", rt.sv(f, "chambered"), null);
-	yield* g.callName(f, rt.sv(f, "chambered"), "newshot", []);
+	yield* qdel(this.chambered.BB);
+	this.chambered.BB = null;
+	yield* this.chambered.newshot();
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/gun/energy/laser/chameleon/proc/set_chameleon_ammo  (code/modules/clothing/chameleon.dm:462)  may sleep
+// chameleon.dm:462
 rt.def("/obj/item/weapon/gun/energy/laser/chameleon/proc/set_chameleon_ammo", function* set_chameleon_ammo(f: Frame, AC: Value, passthrough: Value, reset: Value) {
 	let V: Value = null, _P: Value = null;
-	let $e: any;
-	f.vars = () => [AC, passthrough, reset, V, _P, $e];
-	if (live(passthrough) === null) {
-		passthrough = 1;
-	}
-	if (live(reset) === null) {
-		reset = 0;
-	}
-	if (!truthy((rt.istype(live(AC), T("/obj/item/ammo_casing")) ? 1 : 0))) {
-		yield* g.call(f, P("/proc/CRASH"), null, [fmt("＀ is not /obj/item/ammo_casing!", [live(AC)])]);
+	passthrough ??= 1;
+	reset ??= 0;
+	if (!rt.istype(AC, T("/obj/item/ammo_casing"))) {
+		CRASH(`${AC} is not /obj/item/ammo_casing!`);
 		return 0;
 	}
-	V = null;
-	rt.forList(f, 0, rt.sv(f, "ammo_copy_vars"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		V = $e;
-		if (truthy(rt.index(rt.fv(f, "vars", live(AC)), live(V)))) {
-			rt.setAt(rt.sv(f, "chameleon_ammo_vars"), live(V), rt.index(rt.fv(f, "vars", live(AC)), live(V)));
-			if ((truthy(rt.sv(f, "chambered")) && truthy(rt.index(rt.fv(f, "vars", rt.sv(f, "chambered")), live(V))))) {
-				rt.setAt(rt.fv(f, "vars", rt.sv(f, "chambered")), live(V), rt.index(rt.fv(f, "vars", live(AC)), live(V)));
+	for (V of each(this.ammo_copy_vars)) {
+		if (rt.index(AC.vars, V)) {
+			rt.setAt(this.chameleon_ammo_vars, V, rt.index(AC.vars, V));
+			if (this.chambered && rt.index(this.chambered.vars, V)) {
+				rt.setAt(this.chambered.vars, V, rt.index(AC.vars, V));
 			}
 		}
 	}
-	rt.endFor(f, 0);
-	if (!truthy(live(passthrough))) return f.dot;
-	yield* g.srcCall(f, "set_chameleon_projectile", (_P = rt.fv(f, "BB", live(AC))));
+	if (!passthrough) return f.dot;
+	yield* this.set_chameleon_projectile((_P = AC.BB));
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/gun/energy/laser/chameleon/proc/set_chameleon_projectile  (code/modules/clothing/chameleon.dm:475)  may sleep
+// chameleon.dm:475
 rt.def("/obj/item/weapon/gun/energy/laser/chameleon/proc/set_chameleon_projectile", function* set_chameleon_projectile(f: Frame, _P: Value) {
 	let V: Value = null, AC: Value = null;
-	let $e: any;
-	f.vars = () => [_P, V, AC, $e];
-	if (!truthy((rt.istype(live(_P), T("/obj/item/projectile")) ? 1 : 0))) {
-		yield* g.call(f, P("/proc/CRASH"), null, [fmt("＀ is not /obj/item/projectile!", [live(_P)])]);
+	if (!rt.istype(_P, T("/obj/item/projectile"))) {
+		CRASH(`${_P} is not /obj/item/projectile!`);
 		return 0;
 	}
-	rt.setSv(f, "chameleon_projectile_vars", rt.alist(f, ["name", "practice laser", "icon", rt.rsc("icons/obj/projectiles.dmi"), "icon_state", "laser", "nodamage", 1]));
-	V = null;
-	rt.forList(f, 0, rt.sv(f, "projectile_copy_vars"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		V = $e;
-		if (truthy(rt.index(rt.fv(f, "vars", live(_P)), live(V)))) {
-			rt.setAt(rt.sv(f, "chameleon_projectile_vars"), live(V), rt.index(rt.fv(f, "vars", live(_P)), live(V)));
+	this.chameleon_projectile_vars = rt.alist(f, ["name", "practice laser", "icon", rt.rsc("icons/obj/projectiles.dmi"), "icon_state", "laser", "nodamage", 1]);
+	for (V of each(this.projectile_copy_vars)) {
+		if (rt.index(_P.vars, V)) {
+			rt.setAt(this.chameleon_projectile_vars, V, rt.index(_P.vars, V));
 		}
 	}
-	rt.endFor(f, 0);
-	if (truthy((rt.istype(rt.sv(f, "chambered"), T("/obj/item/ammo_casing/energy/chameleon")) ? 1 : 0))) {
-		rt.setFv(f, "projectile_vars", (AC = rt.sv(f, "chambered")), (yield* g.callName(f, rt.sv(f, "chameleon_projectile_vars"), "Copy", [])));
+	if (rt.istype(this.chambered, T("/obj/item/ammo_casing/energy/chameleon"))) {
+		(AC = this.chambered).projectile_vars = (yield* this.chameleon_projectile_vars.Copy());
 	}
-	if (!truthy(rt.sv(f, "badmin_mode"))) return f.dot;
-	yield* g.call(f, P("/proc/qdel"), null, [rt.fv(f, "BB", rt.sv(f, "chambered"))]);
-	rt.setFv(f, "projectile_type", rt.sv(f, "chambered"), rt.fv(f, "type", live(_P)));
-	yield* g.callName(f, rt.sv(f, "chambered"), "newshot", []);
+	if (!this.badmin_mode) return f.dot;
+	yield* qdel(this.chambered.BB);
+	this.chambered.projectile_type = _P.type;
+	yield* this.chambered.newshot();
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/gun/energy/laser/chameleon/proc/set_chameleon_gun  (code/modules/clothing/chameleon.dm:491)  may sleep
+// chameleon.dm:491
 rt.def("/obj/item/weapon/gun/energy/laser/chameleon/proc/set_chameleon_gun", function* set_chameleon_gun(f: Frame, G: Value, passthrough: Value) {
 	let V: Value = null, BG: Value = null, AB: Value = null, AC: Value = null, MG: Value = null, AC_1: Value = null, EG: Value = null, AC_0: Value = null;
-	let $e: any;
-	f.vars = () => [G, passthrough, V, BG, AB, AC, MG, AC_1, EG, AC_0, $e];
-	if (live(passthrough) === null) {
-		passthrough = 1;
-	}
-	if (!truthy((rt.istype(live(G), T("/obj/item/weapon/gun")) ? 1 : 0))) {
-		yield* g.call(f, P("/proc/CRASH"), null, [fmt("＀ is not /obj/item/weapon/gun!", [live(G)])]);
+	passthrough ??= 1;
+	if (!rt.istype(G, T("/obj/item/weapon/gun"))) {
+		CRASH(`${G} is not /obj/item/weapon/gun!`);
 		return 0;
 	}
-	V = null;
-	rt.forList(f, 0, rt.sv(f, "gun_copy_vars"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		V = $e;
-		if ((truthy(rt.index(rt.sv(f, "vars"), live(V))) && truthy(rt.index(rt.fv(f, "vars", live(G)), live(V))))) {
-			rt.setAt(rt.sv(f, "chameleon_gun_vars"), live(V), rt.index(rt.fv(f, "vars", live(G)), live(V)));
-			rt.setAt(rt.sv(f, "vars"), live(V), rt.index(rt.fv(f, "vars", live(G)), live(V)));
+	for (V of each(this.gun_copy_vars)) {
+		if (rt.index(this.vars, V) && rt.index(G.vars, V)) {
+			rt.setAt(this.chameleon_gun_vars, V, rt.index(G.vars, V));
+			rt.setAt(this.vars, V, rt.index(G.vars, V));
 		}
 	}
-	rt.endFor(f, 0);
-	if (!truthy(live(passthrough))) return f.dot;
-	if (truthy((rt.istype(live(G), T("/obj/item/weapon/gun/ballistic")) ? 1 : 0))) {
-		BG = live(G);
-		AB = (yield* g.new_(f, rt.fv(f, "mag_type", live(BG)), [live(G)]));
-		yield* g.call(f, P("/proc/qdel"), null, [live(BG)]);
-		if ((!truthy((rt.istype(live(AB), T("/obj/item/ammo_box")) ? 1 : 0)) || !truthy(rt.fv(f, "ammo_type", live(AB))))) {
-			yield* g.call(f, P("/proc/qdel"), null, [live(AB)]);
+	if (!passthrough) return f.dot;
+	if (rt.istype(G, T("/obj/item/weapon/gun/ballistic"))) {
+		BG = G;
+		AB = (yield* new_(BG.mag_type, G));
+		yield* qdel(BG);
+		if (!rt.istype(AB, T("/obj/item/ammo_box")) || !AB.ammo_type) {
+			yield* qdel(AB);
 			return 0;
 		}
-		yield* g.srcCall(f, "set_chameleon_ammo", (AC = (yield* g.new_(f, rt.fv(f, "ammo_type", live(AB)), [live(G)]))));
-	} else {
-		if (truthy((rt.istype(live(G), T("/obj/item/weapon/gun/magic")) ? 1 : 0))) {
-			MG = live(G);
-			yield* g.srcCall(f, "set_chameleon_ammo", (AC_1 = (yield* g.new_(f, rt.fv(f, "ammo_type", live(MG)), [live(G)]))));
-		} else {
-			if (truthy((rt.istype(live(G), T("/obj/item/weapon/gun/energy")) ? 1 : 0))) {
-				if ((truthy((rt.istype(rt.gv(f, "ammo_type", (EG = live(G))), T("/list")) ? 1 : 0)) && truthy(rt.getLen(f, rt.fv(f, "ammo_type", live(EG)))))) {
-					yield* g.srcCall(f, "set_chameleon_ammo", (AC_1 = rt.index(rt.fv(f, "ammo_type", live(EG)), 1)));
-				}
-			} else {
-				if (!truthy((rt.istype(live(G), T("/obj/item/weapon/gun/syringe")) ? 1 : 0))) return f.dot;
-				yield* g.srcCall(f, "set_chameleon_ammo", (AC_0 = (yield* g.new_(f, T("/obj/item/ammo_casing/syringegun"), [live(f.src)]))));
-			}
+		yield* this.set_chameleon_ammo((AC = (yield* new_(AB.ammo_type, G))));
+	} else if (rt.istype(G, T("/obj/item/weapon/gun/magic"))) {
+		MG = G;
+		yield* this.set_chameleon_ammo((AC_1 = (yield* new_(MG.ammo_type, G))));
+	} else if (rt.istype(G, T("/obj/item/weapon/gun/energy"))) {
+		if (rt.istype((EG = G).ammo_type, T("/list")) && rt.len(f, EG.ammo_type)) {
+			yield* this.set_chameleon_ammo((AC_1 = rt.index(EG.ammo_type, 1)));
 		}
+	} else {
+		if (!rt.istype(G, T("/obj/item/weapon/gun/syringe"))) return f.dot;
+		yield* this.set_chameleon_ammo((AC_0 = (yield* new_(T("/obj/item/ammo_casing/syringegun"), this))));
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/gun/energy/laser/chameleon/proc/get_chameleon_projectile  (code/modules/clothing/chameleon.dm:522)  may sleep
+// chameleon.dm:522
 rt.def("/obj/item/weapon/gun/energy/laser/chameleon/proc/get_chameleon_projectile", function* get_chameleon_projectile(f: Frame, guntype: Value) {
 	let G: Value = null;
-	f.vars = () => [guntype, G];
-	yield* g.srcCall(f, "reset_chameleon_vars");
-	yield* g.srcCall(f, "set_chameleon_gun", (G = (yield* g.new_(f, live(guntype), [live(f.src)]))));
-	yield* g.call(f, P("/proc/qdel"), null, [live(G)]);
+	yield* this.reset_chameleon_vars();
+	yield* this.set_chameleon_gun((G = (yield* new_(guntype, this))));
+	yield* qdel(G);
 	return f.dot;
 }, true);
 
@@ -828,20 +732,19 @@ rt.type(5502, "/obj/item/weapon/storage/backpack/chameleon", "/obj/item/weapon/s
 	name: "backpack",
 });
 
-// /obj/item/weapon/storage/backpack/chameleon/proc/New  (code/modules/clothing/chameleon.dm:532)  may sleep
+// chameleon.dm:532
 rt.def("/obj/item/weapon/storage/backpack/chameleon/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "chameleon_action", (yield* g.new_(f, T("/datum/action/item_action/chameleon/change"), [live(f.src)])));
-	rt.setFv(f, "chameleon_type", rt.sv(f, "chameleon_action"), T("/obj/item/weapon/storage/backpack"));
-	rt.setFv(f, "chameleon_name", rt.sv(f, "chameleon_action"), "Backpack");
-	yield* g.callName(f, rt.sv(f, "chameleon_action"), "initialize_disguises", []);
+	yield* parent_proc();
+	this.chameleon_action = (yield* new_(T("/datum/action/item_action/chameleon/change"), this));
+	this.chameleon_action.chameleon_type = T("/obj/item/weapon/storage/backpack");
+	this.chameleon_action.chameleon_name = "Backpack";
+	this.chameleon_action.initialize_disguises();
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/storage/backpack/chameleon/proc/emp_act  (code/modules/clothing/chameleon.dm:539)  may sleep
+// chameleon.dm:539
 rt.def("/obj/item/weapon/storage/backpack/chameleon/proc/emp_act", function* emp_act(f: Frame, severity: Value) {
-	f.vars = () => [severity];
-	yield* g.callName(f, rt.sv(f, "chameleon_action"), "emp_randomise", []);
+	yield* this.chameleon_action.emp_randomise();
 	return f.dot;
 }, true);
 
@@ -852,20 +755,19 @@ rt.type(5331, "/obj/item/weapon/storage/belt/chameleon", "/obj/item/weapon/stora
 	silent: 1,
 });
 
-// /obj/item/weapon/storage/belt/chameleon/proc/New  (code/modules/clothing/chameleon.dm:548)  may sleep
+// chameleon.dm:548
 rt.def("/obj/item/weapon/storage/belt/chameleon/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "chameleon_action", (yield* g.new_(f, T("/datum/action/item_action/chameleon/change"), [live(f.src)])));
-	rt.setFv(f, "chameleon_type", rt.sv(f, "chameleon_action"), T("/obj/item/weapon/storage/belt"));
-	rt.setFv(f, "chameleon_name", rt.sv(f, "chameleon_action"), "Belt");
-	yield* g.callName(f, rt.sv(f, "chameleon_action"), "initialize_disguises", []);
+	yield* parent_proc();
+	this.chameleon_action = (yield* new_(T("/datum/action/item_action/chameleon/change"), this));
+	this.chameleon_action.chameleon_type = T("/obj/item/weapon/storage/belt");
+	this.chameleon_action.chameleon_name = "Belt";
+	this.chameleon_action.initialize_disguises();
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/storage/belt/chameleon/proc/emp_act  (code/modules/clothing/chameleon.dm:555)  may sleep
+// chameleon.dm:555
 rt.def("/obj/item/weapon/storage/belt/chameleon/proc/emp_act", function* emp_act(f: Frame, severity: Value) {
-	f.vars = () => [severity];
-	yield* g.callName(f, rt.sv(f, "chameleon_action"), "emp_randomise", []);
+	yield* this.chameleon_action.emp_randomise();
 	return f.dot;
 }, true);
 
@@ -874,20 +776,19 @@ rt.type(9202, "/obj/item/device/radio/headset/chameleon", "/obj/item/device/radi
 	name: "radio headset",
 });
 
-// /obj/item/device/radio/headset/chameleon/proc/Initialize  (code/modules/clothing/chameleon.dm:562)  may sleep
+// chameleon.dm:562
 rt.def("/obj/item/device/radio/headset/chameleon/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "chameleon_action", (yield* g.new_(f, T("/datum/action/item_action/chameleon/change"), [live(f.src)])));
-	rt.setFv(f, "chameleon_type", rt.sv(f, "chameleon_action"), T("/obj/item/device/radio/headset"));
-	rt.setFv(f, "chameleon_name", rt.sv(f, "chameleon_action"), "Headset");
-	yield* g.callName(f, rt.sv(f, "chameleon_action"), "initialize_disguises", []);
+	f.dot = (yield* parent_proc());
+	this.chameleon_action = (yield* new_(T("/datum/action/item_action/chameleon/change"), this));
+	this.chameleon_action.chameleon_type = T("/obj/item/device/radio/headset");
+	this.chameleon_action.chameleon_name = "Headset";
+	this.chameleon_action.initialize_disguises();
 	return f.dot;
 }, true);
 
-// /obj/item/device/radio/headset/chameleon/proc/emp_act  (code/modules/clothing/chameleon.dm:569)  may sleep
+// chameleon.dm:569
 rt.def("/obj/item/device/radio/headset/chameleon/proc/emp_act", function* emp_act(f: Frame, severity: Value) {
-	f.vars = () => [severity];
-	yield* g.callName(f, rt.sv(f, "chameleon_action"), "emp_randomise", []);
+	yield* this.chameleon_action.emp_randomise();
 	return f.dot;
 }, true);
 
@@ -896,20 +797,19 @@ rt.type(9332, "/obj/item/device/pda/chameleon", "/obj/item/device/pda", {
 	name: "PDA",
 });
 
-// /obj/item/device/pda/chameleon/proc/New  (code/modules/clothing/chameleon.dm:576)  may sleep
+// chameleon.dm:576
 rt.def("/obj/item/device/pda/chameleon/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "chameleon_action", (yield* g.new_(f, T("/datum/action/item_action/chameleon/change"), [live(f.src)])));
-	rt.setFv(f, "chameleon_type", rt.sv(f, "chameleon_action"), T("/obj/item/device/pda"));
-	rt.setFv(f, "chameleon_name", rt.sv(f, "chameleon_action"), "PDA");
-	rt.setFv(f, "chameleon_blacklist", rt.sv(f, "chameleon_action"), (yield* g.call(f, P("/proc/typecacheof"), null, [null, rt.list(T("/obj/item/device/pda/heads"), T("/obj/item/device/pda/ai"), T("/obj/item/device/pda/ai/pai")), "only_root_path", 1], rt.Args.Named)));
-	yield* g.callName(f, rt.sv(f, "chameleon_action"), "initialize_disguises", []);
+	yield* parent_proc();
+	this.chameleon_action = (yield* new_(T("/datum/action/item_action/chameleon/change"), this));
+	this.chameleon_action.chameleon_type = T("/obj/item/device/pda");
+	this.chameleon_action.chameleon_name = "PDA";
+	this.chameleon_action.chameleon_blacklist = (yield* typecacheof(list(T("/obj/item/device/pda/heads"), T("/obj/item/device/pda/ai"), T("/obj/item/device/pda/ai/pai")), { only_root_path: 1 }));
+	this.chameleon_action.initialize_disguises();
 	return f.dot;
 }, true);
 
-// /obj/item/device/pda/chameleon/proc/emp_act  (code/modules/clothing/chameleon.dm:584)  may sleep
+// chameleon.dm:584
 rt.def("/obj/item/device/pda/chameleon/proc/emp_act", function* emp_act(f: Frame, severity: Value) {
-	f.vars = () => [severity];
-	yield* g.callName(f, rt.sv(f, "chameleon_action"), "emp_randomise", []);
+	yield* this.chameleon_action.emp_randomise();
 	return f.dot;
 }, true);

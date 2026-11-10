@@ -1,7 +1,7 @@
-// From code/game/objects/items/body_egg.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/body_egg.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(9457, "/obj/item/organ/body_egg", "/obj/item/organ", {
@@ -13,69 +13,69 @@ rt.type(9457, "/obj/item/organ/body_egg", "/obj/item/organ", {
 	slot: "parasite_egg",
 });
 
-// /obj/item/organ/body_egg/proc/on_find  (code/game/objects/items/body_egg.dm:10)
-rt.def("/obj/item/organ/body_egg/proc/on_find", function on_find(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='warning'>You found an unknown alien organism in ＀'s ＀!</span>", [rt.sv(f, "owner"), rt.sv(f, "zone")])]);
+// body_egg.dm:10
+rt.def("/obj/item/organ/body_egg/proc/on_find", function on_find(f: Frame, finder: Value) {
+	parent_proc();
+	to_chat(finder, `<span class='warning'>You found an unknown alien organism in ${this.owner}'s ${this.zone}!</span>`);
 	return f.dot;
-}, false, { args: ["finder"] });
+}, false);
 
-// /obj/item/organ/body_egg/proc/New  (code/game/objects/items/body_egg.dm:14)  may sleep
-rt.def("/obj/item/organ/body_egg/proc/New", function* New(f: Frame) {
-	if (truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon")) ? 1 : 0))) {
-		yield* g.callName(f, live(f.src), "Insert", [live(f.args[0])]);
+// body_egg.dm:14
+rt.def("/obj/item/organ/body_egg/proc/New", function* New(f: Frame, loc: Value) {
+	if (rt.istype(loc, T("/mob/living/carbon"))) {
+		yield* this.Insert(loc);
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["loc"] });
+	return (yield* parent_proc());
+}, true);
 
-// /obj/item/organ/body_egg/proc/Insert  (code/game/objects/items/body_egg.dm:19)  may sleep
+// body_egg.dm:19
 rt.def("/obj/item/organ/body_egg/proc/Insert", function* Insert(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	(rt.modField(f, rt.sv(f, "owner"), "status_flags", 32768, rt.bitOr));
-	if (!truthy(rt.fv(f, "isprocessing", live(f.src)))) {
-		rt.setFv(f, "isprocessing", live(f.src), 1);
-		rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), add);
+	yield* parent_proc();
+	(rt.modField(f, this.owner, "status_flags", XENO_HOST, rt.bitOr));
+	if (!this.isprocessing) {
+		this.isprocessing = 1;
+		GLOB.SSobj.processing += this;
 	}
-	yield* g.callName(f, rt.sv(f, "owner"), "med_hud_set_status", []);
-	yield* g.call(f, P("/proc/ImmediateInvokeAsync"), null, [live(f.src), P("/obj/item/organ/body_egg/proc/AddInfectionImages"), rt.sv(f, "owner")]);
+	this.owner.med_hud_set_status();
+	yield* ImmediateInvokeAsync(this, P("/obj/item/organ/body_egg/proc/AddInfectionImages"), this.owner);
 	return f.dot;
 }, true, { args: ["M", "special"] });
 
-// /obj/item/organ/body_egg/proc/Remove  (code/game/objects/items/body_egg.dm:26)  may sleep
+// body_egg.dm:26
 rt.def("/obj/item/organ/body_egg/proc/Remove", function* Remove(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	rt.setFv(f, "isprocessing", live(f.src), 0);
-	(rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), subtract));
-	if (truthy(rt.sv(f, "owner"))) {
-		(rt.modField(f, rt.sv(f, "owner"), "status_flags", 16744447, rt.bitAnd));
-		yield* g.callName(f, rt.sv(f, "owner"), "med_hud_set_status", []);
-		yield* g.call(f, P("/proc/ImmediateInvokeAsync"), null, [live(f.src), P("/obj/item/organ/body_egg/proc/RemoveInfectionImages"), rt.sv(f, "owner")]);
+	this.isprocessing = 0;
+	GLOB.SSobj.processing -= this;
+	if (this.owner) {
+		(rt.modField(f, this.owner, "status_flags", 16744447, rt.bitAnd));
+		this.owner.med_hud_set_status();
+		yield* ImmediateInvokeAsync(this, P("/obj/item/organ/body_egg/proc/RemoveInfectionImages"), this.owner);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true, { args: ["M", "special"] });
 
-// /obj/item/organ/body_egg/proc/process  (code/game/objects/items/body_egg.dm:34)  may sleep
+// body_egg.dm:34
 rt.def("/obj/item/organ/body_egg/proc/process", function* process(f: Frame) {
-	if (!truthy(rt.sv(f, "owner"))) {
-		return live(f.dot);
+	if (!this.owner) {
+		return f.dot;
 	}
-	if (!truthy((rt.isIn(f, live(f.src), rt.fv(f, "internal_organs", rt.sv(f, "owner"))) ? 1 : 0))) {
-		yield* g.srcCall(f, "Remove", rt.sv(f, "owner"));
-		return live(f.dot);
+	if (!rt.isIn(f, this, this.owner.internal_organs)) {
+		yield* this.Remove(this.owner);
+		return f.dot;
 	}
-	yield* g.srcCall(f, "egg_process");
+	yield* this.egg_process();
 	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/item/organ/body_egg/proc/RefreshInfectionImage  (code/game/objects/items/body_egg.dm:45)  may sleep
+// body_egg.dm:45
 rt.def("/obj/item/organ/body_egg/proc/RefreshInfectionImage", function* RefreshInfectionImage(f: Frame) {
-	yield* g.srcCall(f, "RemoveInfectionImages");
-	yield* g.srcCall(f, "AddInfectionImages");
+	yield* this.RemoveInfectionImages();
+	this.AddInfectionImages();
 	return f.dot;
 }, true);

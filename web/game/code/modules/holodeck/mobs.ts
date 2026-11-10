@@ -1,7 +1,7 @@
-// From code/modules/holodeck/mobs.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/holodeck/mobs.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(5073, "/mob/living/simple_animal/holodeck_monkey", "/mob/living/simple_animal", {
@@ -22,16 +22,14 @@ rt.type(5073, "/mob/living/simple_animal/holodeck_monkey", "/mob/living/simple_a
 	response_harm: "kicks",
 });
 
-// /mob/living/simple_animal/holodeck_monkey/proc/<init>  (code/modules/holodeck/mobs.dm:12)
+// mobs.dm:12
 rt.def("/mob/living/simple_animal/holodeck_monkey/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "speak_emote", rt.list("chimpers"));
-	$0 = $0;
-	rt.setSv(f, "emote_hear", rt.list("chimpers."));
-	rt.setSv(f, "emote_see", rt.list("scratches.", "looks around."));
-	$0 = $0;
-	rt.setSv(f, "butcher_results", rt.list());
+	parent_proc();
+	this.speak_emote = list("chimpers");
+
+	this.emote_hear = list("chimpers.");
+	this.emote_see = list("scratches.", "looks around.");
+
+	this.butcher_results = list();
 	return f.dot;
 });

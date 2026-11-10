@@ -287,11 +287,11 @@ export class ObjectTree {
 		return this.typesByPath.get(path);
 	}
 
-	/** Converts a var initial value from the JSON into a VM value. Numbers are 32-bit floats. */
+	/** Converts a var initial value from the JSON into a VM value. */
 	convertValue(v: JsonValue): Value {
 		if (v === null) return v;
 		if (typeof v === "string") return byondMarkers(v);
-		if (typeof v === "number") return Math.fround(v);
+		if (typeof v === "number") return v;
 		switch (v.type) {
 			case JsonVarType.Resource:
 				return new Resource(v.resourcePath, true);

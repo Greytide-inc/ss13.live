@@ -1,7 +1,7 @@
-// From code/modules/projectiles/guns/energy/laser.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/projectiles/guns/energy/laser.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(5133, "/obj/item/weapon/gun/energy/laser", "/obj/item/weapon/gun/energy", {
@@ -17,14 +17,12 @@ rt.type(5133, "/obj/item/weapon/gun/energy/laser", "/obj/item/weapon/gun/energy"
 	ammo_type: null,
 });
 
-// /obj/item/weapon/gun/energy/laser/proc/<init>  (code/modules/projectiles/guns/energy/laser.dm:7)
+// laser.dm:7
 rt.def("/obj/item/weapon/gun/energy/laser/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 2000]));
-	$0 = $0;
-	rt.setSv(f, "ammo_type", rt.list(T("/obj/item/ammo_casing/energy/lasergun")));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 2000]);
+
+	this.ammo_type = list(T("/obj/item/ammo_casing/energy/lasergun"));
 	return f.dot;
 });
 
@@ -37,12 +35,10 @@ rt.type(5139, "/obj/item/weapon/gun/energy/laser/practice", "/obj/item/weapon/gu
 	ammo_type: null,
 });
 
-// /obj/item/weapon/gun/energy/laser/practice/proc/<init>  (code/modules/projectiles/guns/energy/laser.dm:17)
+// laser.dm:17
 rt.def("/obj/item/weapon/gun/energy/laser/practice/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "ammo_type", rt.list(T("/obj/item/ammo_casing/energy/laser/practice")));
+	parent_proc();
+	this.ammo_type = list(T("/obj/item/ammo_casing/energy/laser/practice"));
 	return f.dot;
 });
 
@@ -54,12 +50,10 @@ rt.type(5138, "/obj/item/weapon/gun/energy/laser/retro/old", "/obj/item/weapon/g
 	ammo_type: null,
 });
 
-// /obj/item/weapon/gun/energy/laser/retro/old/proc/<init>  (code/modules/projectiles/guns/energy/laser.dm:31)
+// laser.dm:31
 rt.def("/obj/item/weapon/gun/energy/laser/retro/old/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "ammo_type", rt.list(T("/obj/item/ammo_casing/energy/lasergun/old")));
+	parent_proc();
+	this.ammo_type = list(T("/obj/item/ammo_casing/energy/lasergun/old"));
 	return f.dot;
 });
 
@@ -72,12 +66,10 @@ rt.type(5144, "/obj/item/weapon/gun/energy/laser/captain/scattershot", "/obj/ite
 	ammo_type: null,
 });
 
-// /obj/item/weapon/gun/energy/laser/captain/scattershot/proc/<init>  (code/modules/projectiles/guns/energy/laser.dm:51)
+// laser.dm:51
 rt.def("/obj/item/weapon/gun/energy/laser/captain/scattershot/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "ammo_type", rt.list(T("/obj/item/ammo_casing/energy/laser/scatter"), T("/obj/item/ammo_casing/energy/laser")));
+	parent_proc();
+	this.ammo_type = list(T("/obj/item/ammo_casing/energy/laser/scatter"), T("/obj/item/ammo_casing/energy/laser"));
 	return f.dot;
 });
 
@@ -87,12 +79,10 @@ rt.type(5146, "/obj/item/weapon/gun/energy/laser/scatter", "/obj/item/weapon/gun
 	ammo_type: null,
 });
 
-// /obj/item/weapon/gun/energy/laser/scatter/proc/<init>  (code/modules/projectiles/guns/energy/laser.dm:65)
+// laser.dm:65
 rt.def("/obj/item/weapon/gun/energy/laser/scatter/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "ammo_type", rt.list(T("/obj/item/ammo_casing/energy/laser/scatter"), T("/obj/item/ammo_casing/energy/laser")));
+	parent_proc();
+	this.ammo_type = list(T("/obj/item/ammo_casing/energy/laser/scatter"), T("/obj/item/ammo_casing/energy/laser"));
 	return f.dot;
 });
 
@@ -107,12 +97,10 @@ rt.type(5147, "/obj/item/weapon/gun/energy/laser/scatter/shotty", "/obj/item/wea
 	ammo_type: null,
 });
 
-// /obj/item/weapon/gun/energy/laser/scatter/shotty/proc/<init>  (code/modules/projectiles/guns/energy/laser.dm:75)
+// laser.dm:75
 rt.def("/obj/item/weapon/gun/energy/laser/scatter/shotty/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "ammo_type", rt.list(T("/obj/item/ammo_casing/energy/laser/scatter/disabler"), T("/obj/item/ammo_casing/energy/electrode")));
+	parent_proc();
+	this.ammo_type = list(T("/obj/item/ammo_casing/energy/laser/scatter/disabler"), T("/obj/item/ammo_casing/energy/electrode"));
 	return f.dot;
 });
 
@@ -131,12 +119,10 @@ rt.type(5172, "/obj/item/weapon/gun/energy/lasercannon", "/obj/item/weapon/gun/e
 	pin: null,
 });
 
-// /obj/item/weapon/gun/energy/lasercannon/proc/<init>  (code/modules/projectiles/guns/energy/laser.dm:89)
+// laser.dm:89
 rt.def("/obj/item/weapon/gun/energy/lasercannon/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "ammo_type", rt.list(T("/obj/item/ammo_casing/energy/laser/accelerator")));
+	parent_proc();
+	this.ammo_type = list(T("/obj/item/ammo_casing/energy/laser/accelerator"));
 	return f.dot;
 });
 
@@ -147,11 +133,11 @@ rt.type(8870, "/obj/item/projectile/beam/laser/accelerator", "/obj/item/projecti
 	damage: 6,
 });
 
-// /obj/item/projectile/beam/laser/accelerator/proc/Range  (code/modules/projectiles/guns/energy/laser.dm:105)  may sleep
+// laser.dm:105
 rt.def("/obj/item/projectile/beam/laser/accelerator/proc/Range", function* Range(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.modSrcVar(f, "damage", 7, add);
-	(rt.modSrcVar(f, "transform", add(1, multiply(divide(rt.sv(f, "damage"), 7), 0.20000000298023224)), multiply));
+	yield* parent_proc();
+	this.damage += 7;
+	this.transform *= 1 + this.damage / 7 * 0.2;
 	return f.dot;
 }, true);
 
@@ -166,12 +152,10 @@ rt.type(5173, "/obj/item/weapon/gun/energy/xray", "/obj/item/weapon/gun/energy",
 	pin: null,
 });
 
-// /obj/item/weapon/gun/energy/xray/proc/<init>  (code/modules/projectiles/guns/energy/laser.dm:115)
+// laser.dm:115
 rt.def("/obj/item/weapon/gun/energy/xray/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "ammo_type", rt.list(T("/obj/item/ammo_casing/energy/xray")));
+	parent_proc();
+	this.ammo_type = list(T("/obj/item/ammo_casing/energy/xray"));
 	return f.dot;
 });
 
@@ -188,12 +172,10 @@ rt.type(5134, "/obj/item/weapon/gun/energy/laser/bluetag", "/obj/item/weapon/gun
 	pin: rt.typePath("/obj/item/device/firing_pin/tag/blue"),
 });
 
-// /obj/item/weapon/gun/energy/laser/bluetag/proc/<init>  (code/modules/projectiles/guns/energy/laser.dm:125)
+// laser.dm:125
 rt.def("/obj/item/weapon/gun/energy/laser/bluetag/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "ammo_type", rt.list(T("/obj/item/ammo_casing/energy/laser/bluetag")));
+	parent_proc();
+	this.ammo_type = list(T("/obj/item/ammo_casing/energy/laser/bluetag"));
 	return f.dot;
 });
 
@@ -210,11 +192,9 @@ rt.type(5135, "/obj/item/weapon/gun/energy/laser/redtag", "/obj/item/weapon/gun/
 	pin: rt.typePath("/obj/item/device/firing_pin/tag/red"),
 });
 
-// /obj/item/weapon/gun/energy/laser/redtag/proc/<init>  (code/modules/projectiles/guns/energy/laser.dm:137)
+// laser.dm:137
 rt.def("/obj/item/weapon/gun/energy/laser/redtag/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "ammo_type", rt.list(T("/obj/item/ammo_casing/energy/laser/redtag")));
+	parent_proc();
+	this.ammo_type = list(T("/obj/item/ammo_casing/energy/laser/redtag"));
 	return f.dot;
 });

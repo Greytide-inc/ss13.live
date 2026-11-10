@@ -1,7 +1,7 @@
-// From code/modules/ninja/suit/shoes.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/ninja/suit/shoes.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(8513, "/obj/item/clothing/shoes/space_ninja", "/obj/item/clothing/shoes", {
@@ -20,11 +20,9 @@ rt.type(8513, "/obj/item/clothing/shoes/space_ninja", "/obj/item/clothing/shoes"
 	max_heat_protection_temperature: 1500,
 });
 
-// /obj/item/clothing/shoes/space_ninja/proc/<init>  (code/modules/ninja/suit/shoes.dm:10)
+// shoes.dm:10
 rt.def("/obj/item/clothing/shoes/space_ninja/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 60, "bullet", 50, "laser", 30, "energy", 15, "bomb", 30, "bio", 30, "rad", 30, "fire", 100, "acid", 100]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 60, "bullet", 50, "laser", 30, "energy", 15, "bomb", 30, "bio", 30, "rad", 30, "fire", 100, "acid", 100]);
 	return f.dot;
 });

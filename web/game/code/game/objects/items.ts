@@ -1,20 +1,20 @@
-// From code/game/objects/items.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, fmt } = rt;
 
 
-// /datum/controller/global_vars/proc/InitGlobalfire_overlay  (code/game/objects/items.dm:1)
+// items.dm:1
 rt.def("/datum/controller/global_vars/proc/InitGlobalfire_overlay", function InitGlobalfire_overlay(f: Frame) {
-	rt.setGl("fire_overlay", rt.call(f, P("/proc/mutable_appearance"), null, [rt.rsc("icons/effects/fire.dmi"), "fire"]));
-	rt.modSrcVar(f, "gvars_datum_init_order", "fire_overlay", add);
+	GLOB.fire_overlay = mutable_appearance(rt.rsc("icons/effects/fire.dmi"), "fire");
+	this.gvars_datum_init_order += "fire_overlay";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalrpg_loot_items  (code/game/objects/items.dm:3)
+// items.dm:3
 rt.def("/datum/controller/global_vars/proc/InitGlobalrpg_loot_items", function InitGlobalrpg_loot_items(f: Frame) {
-	rt.setGl("rpg_loot_items", 0);
-	rt.modSrcVar(f, "gvars_datum_init_order", "rpg_loot_items", add);
+	GLOB.rpg_loot_items = 0;
+	this.gvars_datum_init_order += "rpg_loot_items";
 	return f.dot;
 });
 
@@ -95,819 +95,717 @@ rt.type(5108, "/obj/item", "/obj", {
 	mouse_drag_pointer: 1,
 });
 
-// /obj/item/proc/Initialize  (code/game/objects/items.dm:118)  may sleep
+// items.dm:118
 rt.def("/obj/item/proc/Initialize", function* Initialize(f: Frame) {
 	let path: Value = null;
-	let $e: any;
-	f.vars = () => [path, $e];
-	if (!truthy(rt.sv(f, "materials"))) {
-		rt.setSv(f, "materials", rt.list());
+	if (!this.materials) {
+		this.materials = list();
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	path = null;
-	rt.forList(f, 0, rt.sv(f, "actions_types"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		path = $e;
-		yield* g.new_(f, live(path), [live(f.src)]);
+	f.dot = (yield* parent_proc());
+	for (path of each(this.actions_types)) {
+		yield* new_(path, this);
 	}
-	rt.endFor(f, 0);
-	rt.setSv(f, "actions_types", null);
-	if (truthy(rt.gl("rpg_loot_items"))) {
-		rt.setSv(f, "rpg_loot", (yield* g.new_(f, T("/datum/rpg_loot"), [live(f.src)])));
+	this.actions_types = null;
+	if (GLOB.rpg_loot_items) {
+		this.rpg_loot = (yield* new_(T("/datum/rpg_loot"), this));
 	}
-	if (!truthy(rt.sv(f, "force_string"))) return f.dot;
-	rt.setSv(f, "force_string_override", 1);
+	if (!this.force_string) return f.dot;
+	this.force_string_override = 1;
 	return f.dot;
 }, true);
 
-// /obj/item/proc/Destroy  (code/game/objects/items.dm:132)  may sleep
+// items.dm:132
 rt.def("/obj/item/proc/Destroy", function* Destroy(f: Frame) {
 	let m: Value = null, X: Value = null;
-	let $e: any;
-	f.vars = () => [m, X, $e];
 	(rt.modSrcVar(f, "flags", 16760831, rt.bitAnd));
-	if (truthy((yield* g.call(f, P("/proc/ismob"), null, [rt.sv(f, "loc")])))) {
-		yield* g.callName(f, (m = rt.sv(f, "loc")), "temporarilyRemoveItemFromInventory", [live(f.src), 1]);
+	if (ismob(this.loc)) {
+		yield* (m = this.loc).temporarilyRemoveItemFromInventory(this, 1);
 	}
-	X = null;
-	rt.forList(f, 0, rt.sv(f, "actions"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		X = $e;
-		yield* g.call(f, P("/proc/qdel"), null, [live(X)]);
+	for (X of each(this.actions)) {
+		yield* qdel(X);
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "rpg_loot")]);
-	rt.setSv(f, "rpg_loot", null);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* qdel(this.rpg_loot);
+	this.rpg_loot = null;
+	return (yield* parent_proc());
 }, true);
 
-// /obj/item/proc/check_allowed_items  (code/game/objects/items.dm:145)
+// items.dm:145
 rt.def("/obj/item/proc/check_allowed_items", function check_allowed_items(f: Frame, target: Value, not_inside: Value, target_self: Value) {
-	if (((truthy((rt.isIn(f, live(f.src), live(target)) ? 1 : 0)) && !truthy(live(target_self))) || ((!truthy(rt.call(f, P("/proc/isturf"), null, [rt.fv(f, "loc", live(target))])) && !truthy(rt.call(f, P("/proc/isturf"), null, [live(target)]))) && truthy(live(not_inside))))) {
+	if (rt.isIn(f, this, target) && !target_self || !isturf(target.loc) && !isturf(target) && not_inside) {
 		return 0;
 	} else {
 		return 1;
 	}
-	return f.dot;
 });
 
-// /obj/item/proc/blob_act  (code/game/objects/items.dm:151)  may sleep
+// items.dm:151
 rt.def("/obj/item/proc/blob_act", function* blob_act(f: Frame, B: Value) {
-	f.vars = () => [B];
-	if (!(truthy(live(B)) && isEqual(rt.fv(f, "loc", live(B)), rt.sv(f, "loc")))) return f.dot;
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	if (!(B && B.loc == this.loc)) return f.dot;
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
-// /obj/item/verb/move_to_top  (code/game/objects/items.dm:169)
+// items.dm:169
 rt.def("/obj/item/verb/move_to_top", function move_to_top(f: Frame) {
-	let _T: Value = null;
-	f.vars = () => [_T];
-	if ((((!truthy(rt.call(f, P("/proc/isturf"), null, [rt.sv(f, "loc")])) || truthy(rt.fv(f, "stat", live(f.usr)))) || truthy(rt.callName(f, live(f.usr), "restrained", []))) || !truthy(rt.fv(f, "canmove", live(f.usr))))) {
-		return live(f.dot);
+	if (!isturf(this.loc) || f.usr.stat || f.usr.restrained() || !f.usr.canmove) {
+		return f.dot;
 	}
-	_T = rt.fv(f, "loc", live(f.src));
-	rt.setFv(f, "loc", live(f.src), null);
-	rt.setFv(f, "loc", live(f.src), live(_T));
+	let _T: Value = this.loc;
+	this.loc = null;
+	this.loc = _T;
 	return f.dot;
 }, false, { verb: { name: "Move To Top", category: "Object", src: 3, range: 1 } });
 
-// /obj/item/proc/examine  (code/game/objects/items.dm:179)
-rt.def("/obj/item/proc/examine", function examine(f: Frame) {
-	let pronoun: Value = null, size: Value = null, msg: Value = null, techlvls: Value = null, _T: Value = null, mat: Value = null;
-	let $e: any;
-	f.vars = () => [pronoun, size, msg, techlvls, _T, mat, $e];
-	rt.callSuper(f, [], rt.Args.Same);
-	pronoun = null;
-	if (isEqual(rt.fv(f, "gender", live(f.src)), "plural")) {
+// items.dm:179
+rt.def("/obj/item/proc/examine", function examine(f: Frame, user: Value) {
+	let pronoun: Value = null, techlvls: Value = null, _T: Value = null, mat: Value = null;
+	parent_proc();
+	if (this.gender == "plural") {
 		pronoun = "They are";
 	} else {
 		pronoun = "It is";
 	}
-	size = rt.call(f, P("/proc/weightclass2text"), null, [rt.fv(f, "w_class", live(f.src))]);
-	rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("＀ a ＀ item.", [live(pronoun), live(size)])]);
-	if (!truthy(rt.fv(f, "research_scanner", live(f.args[0])))) return f.dot;
-	msg = "*--------* <BR>";
-	if (truthy(rt.sv(f, "origin_tech"))) {
-		msg = rt.modify(live(msg), "<span class='notice'>Testing potentials:</span><BR>", add);
-		techlvls = rt.call(f, P("/proc/params2list"), null, [rt.sv(f, "origin_tech")]);
-		_T = null;
-		rt.forList(f, 0, live(techlvls));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			_T = $e;
-			msg = rt.modify(live(msg), fmt("Tech: ＀ | magnitude: ＀ <BR>", [rt.call(f, P("/proc/CallTechName"), null, [live(_T)]), rt.index(live(techlvls), live(_T))]), add);
+	let size: Value = weightclass2text(this.w_class);
+	to_chat(user, `${pronoun} a ${size} item.`);
+	if (!user.research_scanner) return f.dot;
+	let msg: Value = "*--------* <BR>";
+	if (this.origin_tech) {
+		msg += "<span class='notice'>Testing potentials:</span><BR>";
+		techlvls = params2list(this.origin_tech);
+		for (_T of each(techlvls)) {
+			msg += `Tech: ${CallTechName(_T)} | magnitude: ${rt.index(techlvls, _T)} <BR>`;
 		}
-		rt.endFor(f, 0);
 	} else {
-		msg = rt.modify(live(msg), "<span class='danger'>No tech origins detected.</span><BR>", add);
+		msg += "<span class='danger'>No tech origins detected.</span><BR>";
 	}
-	if (truthy(rt.len(f, rt.sv(f, "materials")))) {
-		msg = rt.modify(live(msg), "<span class='notice'>Extractable materials:<BR>", add);
-		mat = null;
-		rt.forList(f, 0, rt.sv(f, "materials"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			mat = $e;
-			msg = rt.modify(live(msg), fmt("＀<BR>", [rt.call(f, P("/proc/CallMaterialName"), null, [live(mat)])]), add);
+	if (rt.len(f, this.materials)) {
+		msg += "<span class='notice'>Extractable materials:<BR>";
+		for (mat of each(this.materials)) {
+			msg += `${CallMaterialName(mat)}<BR>`;
 		}
-		rt.endFor(f, 0);
 	} else {
-		msg = rt.modify(live(msg), "<span class='danger'>No extractable materials detected.</span><BR>", add);
+		msg += "<span class='danger'>No extractable materials detected.</span><BR>";
 	}
-	msg = rt.modify(live(msg), "*--------*", add);
-	rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), live(msg)]);
+	msg += "*--------*";
+	to_chat(user, msg);
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/item/proc/attack_self  (code/game/objects/items.dm:211)  may sleep
+// items.dm:211
 rt.def("/obj/item/proc/attack_self", function* attack_self(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.srcCall(f, "interact", live(user));
+	yield* this.interact(user);
 	return f.dot;
 }, true);
 
-// /obj/item/proc/interact  (code/game/objects/items.dm:214)  may sleep
+// items.dm:214
 rt.def("/obj/item/proc/interact", function* interact(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.srcCall(f, "add_fingerprint", live(user));
-	if ((truthy(rt.sv(f, "hidden_uplink")) && truthy(rt.fv(f, "active", rt.sv(f, "hidden_uplink"))))) {
-		yield* g.callName(f, rt.sv(f, "hidden_uplink"), "interact", [live(user)]);
+	yield* this.add_fingerprint(user);
+	if (this.hidden_uplink && this.hidden_uplink.active) {
+		yield* this.hidden_uplink.interact(user);
 		return 1;
 	}
-	yield* g.srcCall(f, "ui_interact", live(user));
+	yield* this.ui_interact(user);
 	return f.dot;
 }, true);
 
-// /obj/item/proc/ui_act  (code/game/objects/items.dm:221)  may sleep
-rt.def("/obj/item/proc/ui_act", function* ui_act(f: Frame) {
-	yield* g.srcCall(f, "add_fingerprint", live(f.usr));
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["action", "params"] });
+// items.dm:221
+rt.def("/obj/item/proc/ui_act", function* ui_act(f: Frame, action: Value, params: Value) {
+	yield* this.add_fingerprint(f.usr);
+	return (yield* parent_proc());
+}, true);
 
-// /obj/item/proc/attack_hand  (code/game/objects/items.dm:225)  may sleep
+// items.dm:225
 rt.def("/obj/item/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
-	let C: Value = null, affecting: Value = null, S: Value = null, pickup_from: Value = null;
+	let C: Value = null, affecting: Value = null, S: Value = null;
 	let $0: any, $1: any;
-	f.vars = () => [user, C, affecting, S, pickup_from, $0, $1];
-	if (!truthy(live(user))) {
-		return live(f.dot);
+	if (!user) {
+		return f.dot;
 	}
-	if (truthy(rt.sv(f, "anchored"))) {
-		return live(f.dot);
+	if (this.anchored) {
+		return f.dot;
 	}
-	if (truthy(rt.bitAnd(rt.sv(f, "resistance_flags"), 8))) {
-		if (truthy((rt.istype((C = live(user)), T("/mob/living/carbon")) ? 1 : 0))) {
-			if ((truthy(rt.fv(f, "gloves", live(C))) && rt.gt(rt.gv(f, "max_heat_protection_temperature", rt.fv(f, "gloves", live(C))), 360))) {
-				yield* g.srcCall(f, "extinguish");
-				yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You put out the fire on ＀.</span>", [live(f.src)])]);
+	if (rt.bitAnd(this.resistance_flags, 8)) {
+		if (rt.istype((C = user), T("/mob/living/carbon"))) {
+			if (C.gloves && C.gloves.max_heat_protection_temperature > 360) {
+				yield* this.extinguish();
+				to_chat(user, `<span class='notice'>You put out the fire on ${this}.</span>`);
 			} else {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>You burn your hand on ＀!</span>", [live(f.src)])]);
-				$0 = live(C);
-				if (isEqual(rt.modulus(rt.fv(f, "active_hand_index", live(user)), 2), 0)) {
+				to_chat(user, `<span class='warning'>You burn your hand on ${this}!</span>`);
+				$0 = C;
+				if (user.active_hand_index % 2 == 0) {
 					$1 = "r";
 				} else {
 					$1 = "l";
 				}
-				if ((truthy((affecting = (yield* g.callName(f, $0, "get_bodypart", [fmt("＀_arm", [$1])])))) && truthy((yield* g.callName(f, live(affecting), "receive_damage", [0, 5]))))) {
-					yield* g.callName(f, live(C), "update_damage_overlays", []);
+				if ((affecting = $0.get_bodypart(`${$1}_arm`)) && (yield* affecting.receive_damage(0, 5))) {
+					C.update_damage_overlays();
 				}
-				return live(f.dot);
+				return f.dot;
 			}
 		} else {
-			yield* g.srcCall(f, "extinguish");
+			yield* this.extinguish();
 		}
 	}
-	if ((rt.gt(rt.sv(f, "acid_level"), 20) && !truthy((yield* g.call(f, P("/proc/ismob"), null, [rt.sv(f, "loc")]))))) {
-		if (truthy((rt.istype((C = live(user)), T("/mob/living/carbon")) ? 1 : 0))) {
-			if ((!truthy(rt.fv(f, "gloves", live(C))) || !truthy(rt.bitAnd(rt.gv(f, "resistance_flags", rt.fv(f, "gloves", live(C))), 48)))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>The acid on ＀ burns your hand!</span>", [live(f.src)])]);
-				$0 = live(C);
-				if (isEqual(rt.modulus(rt.fv(f, "active_hand_index", live(user)), 2), 0)) {
+	if (this.acid_level > 20 && !ismob(this.loc)) {
+		if (rt.istype((C = user), T("/mob/living/carbon"))) {
+			if (!C.gloves || !rt.bitAnd(C.gloves.resistance_flags, 48)) {
+				to_chat(user, `<span class='warning'>The acid on ${this} burns your hand!</span>`);
+				$0 = C;
+				if (user.active_hand_index % 2 == 0) {
 					$1 = "r";
 				} else {
 					$1 = "l";
 				}
-				if ((truthy((affecting = (yield* g.callName(f, $0, "get_bodypart", [fmt("＀_arm", [$1])])))) && truthy((yield* g.callName(f, live(affecting), "receive_damage", [0, 5]))))) {
-					yield* g.callName(f, live(C), "update_damage_overlays", []);
+				if ((affecting = $0.get_bodypart(`${$1}_arm`)) && (yield* affecting.receive_damage(0, 5))) {
+					C.update_damage_overlays();
 				}
 			}
 		}
 	}
-	if (truthy((rt.istype(rt.sv(f, "loc"), T("/obj/item/weapon/storage")) ? 1 : 0))) {
-		yield* g.callName(f, (S = rt.sv(f, "loc")), "remove_from_storage", [live(f.src), rt.fv(f, "loc", live(user))]);
+	if (rt.istype(this.loc, T("/obj/item/weapon/storage"))) {
+		yield* (S = this.loc).remove_from_storage(this, user.loc);
 	}
-	if (truthy(rt.sv(f, "throwing"))) {
-		yield* g.callName(f, rt.sv(f, "throwing"), "finalize", [0]);
+	if (this.throwing) {
+		yield* this.throwing.finalize(0);
 	}
-	if (isEqual(rt.sv(f, "loc"), live(user))) {
-		if (!truthy((yield* g.callName(f, live(user), "dropItemToGround", [live(f.src)])))) {
-			return live(f.dot);
+	if (this.loc == user) {
+		if (!(yield* user.dropItemToGround(this))) {
+			return f.dot;
 		}
 	}
-	yield* g.srcCall(f, "pickup", live(user));
-	yield* g.srcCall(f, "add_fingerprint", live(user));
-	if (truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.sv(f, "loc")])))) {
-		$0 = rt.sv(f, "loc");
+	yield* this.pickup(user);
+	yield* this.add_fingerprint(user);
+	let pickup_from: Value = isturf(this.loc) ? this.loc : null;
+	if (!(yield* user.put_in_active_hand(this))) {
+		yield* this.dropped(user);
 	} else {
-		$0 = null;
-	}
-	pickup_from = $0;
-	if (!truthy((yield* g.callName(f, live(user), "put_in_active_hand", [live(f.src)])))) {
-		yield* g.srcCall(f, "dropped", live(user));
-	} else {
-		if (!truthy(live(pickup_from))) return f.dot;
-		yield* g.srcCall(f, "do_pickup_animation", live(user), live(pickup_from));
+		if (!pickup_from) return f.dot;
+		yield* this.do_pickup_animation(user, pickup_from);
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/proc/attack_paw  (code/game/objects/items.dm:276)  may sleep
+// items.dm:276
 rt.def("/obj/item/proc/attack_paw", function* attack_paw(f: Frame, user: Value) {
-	let S: Value = null, pickup_from: Value = null;
-	let $0: any;
-	f.vars = () => [user, S, pickup_from, $0];
-	if (!truthy(live(user))) {
-		return live(f.dot);
+	let S: Value = null;
+	if (!user) {
+		return f.dot;
 	}
-	if (truthy(rt.sv(f, "anchored"))) {
-		return live(f.dot);
+	if (this.anchored) {
+		return f.dot;
 	}
-	if (truthy((rt.istype(rt.sv(f, "loc"), T("/obj/item/weapon/storage")) ? 1 : 0))) {
-		yield* g.callName(f, (S = rt.sv(f, "loc")), "remove_from_storage", [live(f.src), rt.fv(f, "loc", live(user))]);
+	if (rt.istype(this.loc, T("/obj/item/weapon/storage"))) {
+		yield* (S = this.loc).remove_from_storage(this, user.loc);
 	}
-	if (truthy(rt.sv(f, "throwing"))) {
-		yield* g.callName(f, rt.sv(f, "throwing"), "finalize", [0]);
+	if (this.throwing) {
+		yield* this.throwing.finalize(0);
 	}
-	if (isEqual(rt.sv(f, "loc"), live(user))) {
-		if (!truthy((yield* g.callName(f, live(user), "dropItemToGround", [live(f.src)])))) {
-			return live(f.dot);
+	if (this.loc == user) {
+		if (!(yield* user.dropItemToGround(this))) {
+			return f.dot;
 		}
 	}
-	yield* g.srcCall(f, "pickup", live(user));
-	yield* g.srcCall(f, "add_fingerprint", live(user));
-	if (truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.sv(f, "loc")])))) {
-		$0 = rt.sv(f, "loc");
+	yield* this.pickup(user);
+	yield* this.add_fingerprint(user);
+	let pickup_from: Value = isturf(this.loc) ? this.loc : null;
+	if (!(yield* user.put_in_active_hand(this))) {
+		yield* this.dropped(user);
 	} else {
-		$0 = null;
-	}
-	pickup_from = $0;
-	if (!truthy((yield* g.callName(f, live(user), "put_in_active_hand", [live(f.src)])))) {
-		yield* g.srcCall(f, "dropped", live(user));
-	} else {
-		if (!truthy(live(pickup_from))) return f.dot;
-		yield* g.srcCall(f, "do_pickup_animation", live(user), live(pickup_from));
+		if (!pickup_from) return f.dot;
+		yield* this.do_pickup_animation(user, pickup_from);
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/proc/attack_alien  (code/game/objects/items.dm:300)  may sleep
+// items.dm:300
 rt.def("/obj/item/proc/attack_alien", function* attack_alien(f: Frame, user: Value) {
 	let A: Value = null;
-	f.vars = () => [user, A];
-	if (!truthy(rt.gv(f, "has_fine_manipulation", (A = live(user))))) {
-		if (truthy((rt.isIn(f, live(f.src), rt.fv(f, "contents", live(A))) ? 1 : 0))) {
-			yield* g.callName(f, live(A), "dropItemToGround", [live(f.src)]);
+	if (!(A = user).has_fine_manipulation) {
+		if (rt.isIn(f, this, A.contents)) {
+			yield* A.dropItemToGround(this);
 		}
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>Your claws aren't capable of such fine manipulation!</span>"]);
-		return live(f.dot);
+		to_chat(user, "<span class='warning'>Your claws aren't capable of such fine manipulation!</span>");
+		return f.dot;
 	}
-	yield* g.srcCall(f, "attack_paw", live(A));
+	yield* this.attack_paw(A);
 	return f.dot;
 }, true);
 
-// /obj/item/proc/attack_ai  (code/game/objects/items.dm:310)  may sleep
+// items.dm:310
 rt.def("/obj/item/proc/attack_ai", function* attack_ai(f: Frame, user: Value) {
 	let R: Value = null;
-	f.vars = () => [user, R];
-	if (!truthy((rt.istype(rt.fv(f, "loc", live(f.src)), T("/obj/item/weapon/robot_module")) ? 1 : 0))) return f.dot;
-	if (!truthy((rt.istype(live(user), T("/mob/living/silicon/robot")) ? 1 : 0))) {
-		return live(f.dot);
+	if (!rt.istype(this.loc, T("/obj/item/weapon/robot_module"))) return f.dot;
+	if (!rt.istype(user, T("/mob/living/silicon/robot"))) {
+		return f.dot;
 	}
-	if (truthy(rt.gv(f, "low_power_mode", (R = live(user))))) return f.dot;
-	yield* g.callName(f, live(R), "activate_module", [live(f.src)]);
-	yield* g.callName(f, rt.fv(f, "hud_used", live(R)), "update_robot_modules_display", []);
+	if ((R = user).low_power_mode) return f.dot;
+	yield* R.activate_module(this);
+	R.hud_used.update_robot_modules_display();
 	return f.dot;
 }, true);
 
-// /obj/item/proc/attackby  (code/game/objects/items.dm:323)  may sleep
+// items.dm:323
 rt.def("/obj/item/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
 	let S: Value = null, rejections: Value = null, things: Value = null, len: Value = null, progress: Value = null;
-	f.vars = () => [W, user, params, S, rejections, things, len, progress];
-	if (!truthy((rt.istype(live(W), T("/obj/item/weapon/storage")) ? 1 : 0))) return f.dot;
-	if (!truthy(rt.gv(f, "use_to_pickup", (S = live(W))))) return f.dot;
-	if (truthy(rt.fv(f, "collection_mode", live(S)))) {
-		if (truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.sv(f, "loc")])))) {
-			rejections = rt.list();
-			things = (yield* g.callName(f, rt.fv(f, "contents", rt.sv(f, "loc")), "Copy", []));
-			if (isEqual(rt.fv(f, "collection_mode", live(S)), 2)) {
-				things = (yield* g.call(f, P("/proc/typecache_filter_list"), null, [live(things), (yield* g.call(f, P("/proc/typecacheof"), null, [rt.sv(f, "type")]))]));
+	if (!rt.istype(W, T("/obj/item/weapon/storage"))) return f.dot;
+	if (!(S = W).use_to_pickup) return f.dot;
+	if (S.collection_mode) {
+		if (isturf(this.loc)) {
+			rejections = list();
+			things = (yield* this.loc.contents.Copy());
+			if (S.collection_mode == 2) {
+				things = typecache_filter_list(things, typecacheof(this.type));
 			}
-			if (!truthy((len = rt.len(f, live(things))))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You failed to pick up anything with ＀.</span>", [live(S)])]);
-				return live(f.dot);
+			if (!(len = rt.len(f, things))) {
+				to_chat(user, `<span class='notice'>You failed to pick up anything with ${S}.</span>`);
+				return f.dot;
 			}
-			progress = (yield* g.new_(f, T("/datum/progressbar"), [live(user), live(len), rt.sv(f, "loc")]));
-			while (truthy((yield* g.call(f, P("/proc/do_after"), null, [live(user), 10, 1, live(S), 0, (yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/item/proc/handle_mass_pickup"), live(S), live(things), rt.sv(f, "loc"), live(rejections), live(progress)]))])))) {
-				yield* g.call(f, P("/proc/sleep"), null, [1]);
+			progress = (yield* new_(T("/datum/progressbar"), user, len, this.loc));
+			while (yield* do_after(user, 10, 1, S, 0, (yield* new_(T("/datum/callback"), this, P("/obj/item/proc/handle_mass_pickup"), S, things, this.loc, rejections, progress)))) {
+				yield* sleep(1);
 			}
-			yield* g.call(f, P("/proc/qdel"), null, [live(progress)]);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You put everything you could ＀ ＀.</span>", [rt.fv(f, "preposition", live(S)), live(S)])]);
+			yield* qdel(progress);
+			to_chat(user, `<span class='notice'>You put everything you could ${S.preposition} ${S}.</span>`);
 		}
 	} else {
-		if (!truthy((yield* g.callName(f, live(S), "can_be_inserted", [live(f.src)])))) return f.dot;
-		yield* g.callName(f, live(S), "handle_item_insertion", [live(f.src)]);
+		if (!S.can_be_inserted(this)) return f.dot;
+		yield* S.handle_item_insertion(this);
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/proc/handle_mass_pickup  (code/game/objects/items.dm:351)  may sleep
+// items.dm:351
 rt.def("/obj/item/proc/handle_mass_pickup", function* handle_mass_pickup(f: Frame, S: Value, things: Value, thing_loc: Value, rejections: Value, progress: Value) {
 	let I: Value = null;
-	let $e: any;
-	f.vars = () => [S, things, thing_loc, rejections, progress, I, $e];
-	I = null;
-	rt.forList(f, 0, live(things), T("/obj/item"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		(things = rt.modify(live(things), live(I), subtract));
-		if (!isEqual(rt.fv(f, "loc", live(I)), live(thing_loc))) {
+	for (I of each(things, T("/obj/item"))) {
+		things -= I;
+		if (I.loc != thing_loc) {
 			continue;
 		}
-		if (truthy((rt.isIn(f, rt.fv(f, "type", live(I)), live(rejections)) ? 1 : 0))) {
+		if (rt.isIn(f, I.type, rejections)) {
 			continue;
 		}
-		if (!truthy((yield* g.callName(f, live(S), "can_be_inserted", [null, live(I), "stop_messages", 1], rt.Args.Named)))) {
-			if (rt.ge(rt.getLen(f, rt.fv(f, "contents", live(S))), rt.fv(f, "storage_slots", live(S)))) {
+		if (!(yield* S.can_be_inserted(I, { stop_messages: 1 }))) {
+			if (rt.len(f, S.contents) >= S.storage_slots) {
 				break;
 			}
-			rejections = rt.modify(live(rejections), rt.fv(f, "type", live(I)), add);
+			rejections += I.type;
 			continue;
 		}
-		yield* g.callName(f, live(S), "handle_item_insertion", [live(I), 1]);
-		if (rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit"))) {
-			yield* g.callName(f, live(progress), "update", [subtract(rt.fv(f, "goal", live(progress)), rt.len(f, live(things)))]);
+		yield* S.handle_item_insertion(I, 1);
+		if (rt.tickUsage(f) > GLOB.current_ticklimit) {
+			yield* progress.update(progress.goal - rt.len(f, things));
 			return 1;
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.callName(f, live(progress), "update", [subtract(rt.fv(f, "goal", live(progress)), rt.len(f, live(things)))]);
+	yield* progress.update(progress.goal - rt.len(f, things));
 	return 0;
 }, true, { argTypes: [{ type: 4, path: "/obj/item/weapon/storage" }, { path: "/list" }, { path: "/atom" }, { path: "/list" }, { path: "/datum/progressbar" }] });
 
-// /obj/item/proc/hit_reaction  (code/game/objects/items.dm:375)
+// items.dm:375
 rt.def("/obj/item/proc/hit_reaction", function hit_reaction(f: Frame, owner: Value, hitby: Value, attack_text: Value, final_block_chance: Value, damage: Value, attack_type: Value) {
-	f.vars = () => [attack_text, final_block_chance, damage, attack_type];
-	if (live(attack_text) === null) {
-		attack_text = "the attack";
-	}
-	if (live(final_block_chance) === null) {
-		final_block_chance = 0;
-	}
-	if (live(damage) === null) {
-		damage = 0;
-	}
-	if (live(attack_type) === null) {
-		attack_type = 1;
-	}
-	if (truthy(rt.op(f, "Prob", [], [live(final_block_chance)]))) {
-		rt.callName(f, live(owner), "visible_message", [fmt("<span class='danger'>＀ blocks ＀ with ＀!</span>", [live(owner), live(attack_text), live(f.src)])]);
+	attack_text ??= "the attack";
+	final_block_chance ??= 0;
+	damage ??= 0;
+	attack_type ??= 1;
+	if (prob(final_block_chance)) {
+		owner.visible_message(`<span class='danger'>${owner} blocks ${attack_text} with ${this}!</span>`);
 		return 1;
 	}
 	return 0;
 });
 
-// /obj/item/proc/dropped  (code/game/objects/items.dm:384)  may sleep
+// items.dm:384
 rt.def("/obj/item/proc/dropped", function* dropped(f: Frame, user: Value) {
 	let X: Value = null, A: Value = null;
-	let $e: any;
-	f.vars = () => [user, X, A, $e];
-	X = null;
-	rt.forList(f, 0, rt.sv(f, "actions"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		X = $e;
-		yield* g.callName(f, (A = live(X)), "Remove", [live(user)]);
+	for (X of each(this.actions)) {
+		yield* (A = X).Remove(user);
 	}
-	rt.endFor(f, 0);
-	if (truthy(rt.bitAnd(16384, rt.sv(f, "flags")))) {
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	if (rt.bitAnd(DROPDEL, this.flags)) {
+		yield* qdel(this);
 	}
-	rt.setSv(f, "in_inventory", 0);
+	this.in_inventory = 0;
 	return f.dot;
 }, true);
 
-// /obj/item/proc/do_pickup_animation  (code/game/objects/items.dm:394)  may sleep
+// items.dm:394
 rt.def("/obj/item/proc/do_pickup_animation", function* do_pickup_animation(f: Frame, target: Value, from: Value) {
-	let I: Value = null, to_x: Value = null, to_y: Value = null, M: Value = null;
-	f.vars = () => [target, from, I, to_x, to_y, M];
-	if ((!truthy(live(target)) || !truthy(live(from)))) {
-		return live(f.dot);
+	let I: Value = null, M: Value = null;
+	if (!target || !from) {
+		return f.dot;
 	}
-	rt.setFv(f, "overlays", (I = (yield* g.call(f, P("/proc/image"), null, ["icon", rt.sv(f, "icon"), "icon_state", rt.sv(f, "icon_state"), "loc", live(from), "layer", 4.5], rt.Args.Named))), (yield* g.callName(f, rt.sv(f, "overlays"), "Copy", [])));
-	rt.setFv(f, "pixel_x", live(I), rt.sv(f, "pixel_x"));
-	rt.setFv(f, "pixel_y", live(I), rt.sv(f, "pixel_y"));
-	to_x = multiply(subtract(rt.fv(f, "x", live(target)), rt.fv(f, "x", live(from))), rt.fv(f, "icon_size", rt.world()));
-	to_y = multiply(subtract(rt.fv(f, "y", live(target)), rt.fv(f, "y", live(from))), rt.fv(f, "icon_size", rt.world()));
-	yield* g.call(f, P("/proc/flick_overlay_view"), null, [live(I), live(from), 5]);
-	yield* g.callName(f, (M = (yield* g.call(f, P("/proc/matrix"), null, [rt.fv(f, "transform", live(I))]))), "Scale", [0.6499999761581421]);
-	rt.op(f, "Animate", [2, 14], [null, live(I), "alpha", 175, "pixel_x", live(to_x), "pixel_y", live(to_y), "transform", live(M), "time", 3, "easing", 3]);
+	(I = (yield* image({ icon: this.icon, icon_state: this.icon_state, loc: from, layer: ABOVE_ALL_MOB_LAYER }))).overlays = (yield* this.overlays.Copy());
+	I.pixel_x = this.pixel_x;
+	I.pixel_y = this.pixel_y;
+	let to_x: Value = (target.x - from.x) * rt.world().icon_size;
+	let to_y: Value = (target.y - from.y) * rt.world().icon_size;
+	yield* flick_overlay_view(I, from, 5);
+	(M = matrix(I.transform)).Scale(0.65);
+	rt.op(f, "Animate", [2, 14], [null, I, "alpha", 175, "pixel_x", to_x, "pixel_y", to_y, "transform", M, "time", 3, "easing", 3]);
 	rt.op(f, "Animate", [2, 4], ["alpha", 0, "time", 2]);
 	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/item/proc/do_drop_animation  (code/game/objects/items.dm:411)  may sleep
+// items.dm:411
 rt.def("/obj/item/proc/do_drop_animation", function* do_drop_animation(f: Frame, source: Value) {
-	let _T: Value = null, px: Value = null, py: Value = null;
-	f.vars = () => [source, _T, px, py];
-	_T = rt.sv(f, "loc");
-	if (((!truthy(live(source)) || !truthy((yield* g.call(f, P("/proc/isturf"), null, [live(_T)])))) || isEqual(live(_T), rt.getStep(f, live(source), 0)))) {
-		return live(f.dot);
+	let _T: Value = this.loc;
+	if (!source || !isturf(_T) || _T == rt.getStep(f, source, 0)) {
+		return f.dot;
 	}
-	yield* g.call(f, P("/proc/sleep"), null, [0]);
-	if ((!truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.sv(f, "loc")]))) || !isEqual(rt.sv(f, "loc"), live(_T)))) {
-		return live(f.dot);
+	yield* sleep(0);
+	if (!isturf(this.loc) || this.loc != _T) {
+		return f.dot;
 	}
-	px = rt.sv(f, "pixel_x");
-	py = rt.sv(f, "pixel_y");
-	rt.setSv(f, "pixel_x", add(live(px), multiply(subtract(rt.fv(f, "x", live(source)), rt.fv(f, "x", live(_T))), rt.fv(f, "icon_size", rt.world()))));
-	rt.setSv(f, "pixel_y", add(live(py), multiply(subtract(rt.fv(f, "y", live(source)), rt.fv(f, "y", live(_T))), rt.fv(f, "icon_size", rt.world()))));
-	rt.op(f, "Animate", [2, 10], [null, live(f.src), "pixel_x", live(px), "pixel_y", live(py), "time", 3, "easing", 3]);
+	let px: Value = this.pixel_x;
+	let py: Value = this.pixel_y;
+	this.pixel_x = px + (source.x - _T.x) * rt.world().icon_size;
+	this.pixel_y = py + (source.y - _T.y) * rt.world().icon_size;
+	rt.op(f, "Animate", [2, 10], [null, this, "pixel_x", px, "pixel_y", py, "time", 3, "easing", 3]);
 	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/item/proc/equipped  (code/game/objects/items.dm:447)  may sleep
+// items.dm:447
 rt.def("/obj/item/proc/equipped", function* equipped(f: Frame, user: Value, slot: Value) {
 	let X: Value = null, A: Value = null;
-	let $e: any;
-	f.vars = () => [user, slot, X, A, $e];
-	X = null;
-	rt.forList(f, 0, rt.sv(f, "actions"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		X = $e;
-		A = live(X);
-		if (truthy((yield* g.srcCall(f, "item_action_slot_check", live(slot), live(user))))) {
-			yield* g.callName(f, live(A), "Grant", [live(user)]);
+	for (X of each(this.actions)) {
+		A = X;
+		if (this.item_action_slot_check(slot, user)) {
+			yield* A.Grant(user);
 		}
 	}
-	rt.endFor(f, 0);
-	rt.setSv(f, "in_inventory", 1);
+	this.in_inventory = 1;
 	return f.dot;
 }, true);
 
-// /obj/item/proc/item_action_slot_check  (code/game/objects/items.dm:455)
+// items.dm:455
 rt.def("/obj/item/proc/item_action_slot_check", function item_action_slot_check(f: Frame, slot: Value, user: Value) {
-	if ((isEqual(live(slot), 18) || isEqual(live(slot), 19))) {
+	if (slot == slot_in_backpack || slot == slot_legcuffed) {
 		return 0;
 	}
 	return 1;
 });
 
-// /obj/item/proc/mob_can_equip  (code/game/objects/items.dm:464)  may sleep
+// items.dm:464
 rt.def("/obj/item/proc/mob_can_equip", function* mob_can_equip(f: Frame, M: Value, equipper: Value, slot: Value, disable_warning: Value, bypass_equip_delay_self: Value) {
-	f.vars = () => [M, equipper, slot, disable_warning, bypass_equip_delay_self];
-	if (live(disable_warning) === null) {
-		disable_warning = 0;
-	}
-	if (live(bypass_equip_delay_self) === null) {
-		bypass_equip_delay_self = 0;
-	}
-	if (!truthy(live(M))) {
+	disable_warning ??= 0;
+	bypass_equip_delay_self ??= 0;
+	if (!M) {
 		return 0;
 	}
-	return (yield* g.callName(f, live(M), "can_equip", [live(f.src), live(slot), live(disable_warning), live(bypass_equip_delay_self)]));
+	return (yield* M.can_equip(this, slot, disable_warning, bypass_equip_delay_self));
 }, true);
 
-// /obj/item/verb/verb_pickup  (code/game/objects/items.dm:474)  may sleep
+// items.dm:474
 rt.def("/obj/item/verb/verb_pickup", function* verb_pickup(f: Frame) {
-	if (((truthy((yield* g.callName(f, live(f.usr), "incapacitated", []))) || !truthy((yield* g.srcCall(f, "Adjacent", live(f.usr))))) || truthy(rt.fv(f, "lying", live(f.usr))))) {
-		return live(f.dot);
+	if (f.usr.incapacitated() || !this.Adjacent(f.usr) || f.usr.lying) {
+		return f.dot;
 	}
-	if ((yield* g.callName(f, live(f.usr), "get_active_held_item", [])) !== null) return f.dot;
-	yield* g.callName(f, live(f.usr), "UnarmedAttack", [live(f.src)]);
+	if (f.usr.get_active_held_item() !== null) return f.dot;
+	yield* f.usr.UnarmedAttack(this);
 	return f.dot;
 }, true, { verb: { name: "Pick up", category: "Object", src: 3, range: 1 } });
 
-// /obj/item/proc/ui_action_click  (code/game/objects/items.dm:484)  may sleep
+// items.dm:484
 rt.def("/obj/item/proc/ui_action_click", function* ui_action_click(f: Frame, user: Value, actiontype: Value) {
-	f.vars = () => [user, actiontype];
-	yield* g.srcCall(f, "attack_self", live(user));
+	yield* this.attack_self(user);
 	return f.dot;
 }, true);
 
-// /obj/item/proc/eyestab  (code/game/objects/items.dm:492)  may sleep
+// items.dm:492
 rt.def("/obj/item/proc/eyestab", function* eyestab(f: Frame, M: Value, user: Value) {
-	let is_human_victim: Value = null, affecting: Value = null, H: Value = null, Mo: Value = null, U: Value = null, eyes: Value = null;
-	f.vars = () => [M, user, is_human_victim, affecting, H, Mo, U, eyes];
-	is_human_victim = 0;
-	affecting = (yield* g.callName(f, live(M), "get_bodypart", ["head"]));
-	if (truthy((rt.istype(live(M), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		if (!truthy(live(affecting))) {
-			return live(f.dot);
+	let H: Value = null, Mo: Value = null, U: Value = null, eyes: Value = null;
+	let is_human_victim: Value = 0;
+	let affecting: Value = M.get_bodypart("head");
+	if (rt.istype(M, T("/mob/living/carbon/human"))) {
+		if (!affecting) {
+			return f.dot;
 		}
 		is_human_victim = 1;
-		if ((((truthy(rt.gv(f, "head", (H = live(M)))) && truthy(rt.bitAnd(rt.gv(f, "flags_cover", rt.fv(f, "head", live(H))), 4))) || (truthy(rt.fv(f, "wear_mask", live(H))) && truthy(rt.bitAnd(rt.gv(f, "flags_cover", rt.fv(f, "wear_mask", live(H))), 2)))) || (truthy(rt.fv(f, "glasses", live(H))) && truthy(rt.bitAnd(rt.gv(f, "flags_cover", rt.fv(f, "glasses", live(H))), 1))))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='danger'>You're going to need to remove that mask/helmet/glasses first!</span>"]);
-			return live(f.dot);
+		if ((H = M).head && rt.bitAnd(H.head.flags_cover, HEADCOVERSEYES) || H.wear_mask && rt.bitAnd(H.wear_mask.flags_cover, MASKCOVERSEYES) || H.glasses && rt.bitAnd(H.glasses.flags_cover, GLASSESCOVERSEYES)) {
+			to_chat(user, "<span class='danger'>You're going to need to remove that mask/helmet/glasses first!</span>");
+			return f.dot;
 		}
 	}
-	if (truthy((rt.istype(live(M), T("/mob/living/carbon/monkey")) ? 1 : 0))) {
-		if ((truthy(rt.gv(f, "wear_mask", (Mo = live(M)))) && truthy(rt.bitAnd(rt.gv(f, "flags_cover", rt.fv(f, "wear_mask", live(Mo))), 2)))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='danger'>You're going to need to remove that mask/helmet/glasses first!</span>"]);
-			return live(f.dot);
+	if (rt.istype(M, T("/mob/living/carbon/monkey"))) {
+		if ((Mo = M).wear_mask && rt.bitAnd(Mo.wear_mask.flags_cover, MASKCOVERSEYES)) {
+			to_chat(user, "<span class='danger'>You're going to need to remove that mask/helmet/glasses first!</span>");
+			return f.dot;
 		}
 	}
-	if (truthy((rt.istype(live(M), T("/mob/living/carbon/alien")) ? 1 : 0))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>You cannot locate any eyes on this creature!</span>"]);
-		return live(f.dot);
+	if (rt.istype(M, T("/mob/living/carbon/alien"))) {
+		to_chat(user, "<span class='warning'>You cannot locate any eyes on this creature!</span>");
+		return f.dot;
 	}
-	if (truthy((rt.istype(live(M), T("/mob/living/brain")) ? 1 : 0))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='danger'>You cannot locate any organic eyes on this brain!</span>"]);
-		return live(f.dot);
+	if (rt.istype(M, T("/mob/living/brain"))) {
+		to_chat(user, "<span class='danger'>You cannot locate any organic eyes on this brain!</span>");
+		return f.dot;
 	}
-	yield* g.callName(f, live(f.src), "add_fingerprint", [live(user)]);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.fv(f, "hitsound", live(f.src)), 30, 1, -1]);
-	yield* g.callName(f, live(user), "do_attack_animation", [live(M)]);
-	if (!isEqual(live(M), live(user))) {
-		yield* g.callName(f, live(M), "visible_message", [fmt("<span class='danger'>＀ has stabbed ＀ in the eye with ＀!</span>", [live(user), live(M), live(f.src)]), fmt("<span class='userdanger'>＀ stabs you in the eye with ＀!</span>", [live(user), live(f.src)])]);
+	yield* this.add_fingerprint(user);
+	playsound(this.loc, this.hitsound, 30, 1, -1);
+	yield* user.do_attack_animation(M);
+	if (M != user) {
+		M.visible_message(`<span class='danger'>${user} has stabbed ${M} in the eye with ${this}!</span>`, `<span class='userdanger'>${user} stabs you in the eye with ${this}!</span>`);
 	} else {
-		yield* g.callName(f, live(user), "visible_message", [fmt("<span class='danger'>＀ has stabbed themself in the eyes with ＀!</span>", [live(user), live(f.src)]), fmt("<span class='userdanger'>You stab yourself in the eyes with ＀!</span>", [live(f.src)])]);
+		user.visible_message(`<span class='danger'>${user} has stabbed themself in the eyes with ${this}!</span>`, `<span class='userdanger'>You stab yourself in the eyes with ${this}!</span>`);
 	}
-	if (truthy(live(is_human_victim))) {
-		yield* g.callName(f, (U = live(M)), "apply_damage", [7, "brute", live(affecting)]);
+	if (is_human_victim) {
+		yield* (U = M).apply_damage(7, "brute", affecting);
 	} else {
-		yield* g.callName(f, live(M), "take_bodypart_damage", [7]);
+		yield* M.take_bodypart_damage(7);
 	}
-	yield* g.call(f, P("/proc/add_logs"), null, [live(user), live(M), "attacked", fmt("＀", [rt.fv(f, "name", live(f.src))]), fmt("(INTENT: ＀)", [(yield* g.call(f, P("/proc/uppertext"), null, [rt.fv(f, "a_intent", live(user))]))])]);
-	yield* g.callName(f, live(M), "adjust_blurriness", [3]);
-	yield* g.callName(f, live(M), "adjust_eye_damage", [(yield* g.call(f, P("/proc/rand"), null, [2, 4]))]);
-	if (!truthy((eyes = (yield* g.callName(f, live(M), "getorganslot", ["eyes_sight"]))))) {
-		return live(f.dot);
+	add_logs(user, M, "attacked", `${this.name}`, `(INTENT: ${uppertext(user.a_intent)})`);
+	yield* M.adjust_blurriness(3);
+	yield* M.adjust_eye_damage(rand(2, 4));
+	if (!(eyes = M.getorganslot("eyes_sight"))) {
+		return f.dot;
 	}
-	if (!rt.ge(rt.fv(f, "eye_damage", live(eyes)), 10)) return f.dot;
-	yield* g.callName(f, live(M), "adjust_blurriness", [15]);
-	if (!isEqual(rt.fv(f, "stat", live(M)), 2)) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(M), "<span class='danger'>Your eyes start to bleed profusely!</span>"]);
+	if (!(eyes.eye_damage >= 10)) return f.dot;
+	yield* M.adjust_blurriness(15);
+	if (M.stat != 2) {
+		to_chat(M, "<span class='danger'>Your eyes start to bleed profusely!</span>");
 	}
-	if (!truthy(rt.bitAnd(rt.fv(f, "disabilities", live(M)), 9))) {
-		if (truthy((yield* g.callName(f, live(M), "become_nearsighted", [])))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(M), "<span class='danger'>You become nearsighted!</span>"]);
+	if (!rt.bitAnd(M.disabilities, 9)) {
+		if (yield* M.become_nearsighted()) {
+			to_chat(M, "<span class='danger'>You become nearsighted!</span>");
 		}
 	}
-	if (truthy(rt.op(f, "Prob", [], [50]))) {
-		if (!isEqual(rt.fv(f, "stat", live(M)), 2)) {
-			if (truthy((yield* g.callName(f, live(M), "drop_item", [])))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(M), "<span class='danger'>You drop what you're holding and clutch at your eyes!</span>"]);
+	if (prob(50)) {
+		if (M.stat != 2) {
+			if (yield* M.drop_item()) {
+				to_chat(M, "<span class='danger'>You drop what you're holding and clutch at your eyes!</span>");
 			}
 		}
-		yield* g.callName(f, live(M), "adjust_blurriness", [10]);
-		yield* g.callName(f, live(M), "Unconscious", [20]);
-		yield* g.callName(f, live(M), "Knockdown", [40]);
+		yield* M.adjust_blurriness(10);
+		yield* M.Unconscious(20);
+		yield* M.Knockdown(40);
 	}
-	if (!truthy(rt.op(f, "Prob", [], [add(subtract(rt.fv(f, "eye_damage", live(eyes)), 10), 1)]))) return f.dot;
-	if (!truthy((yield* g.callName(f, live(M), "become_blind", [])))) return f.dot;
-	yield* g.call(f, P("/proc/to_chat"), null, [live(M), "<span class='danger'>You go blind!</span>"]);
+	if (!prob(eyes.eye_damage - 10 + 1)) return f.dot;
+	if (!(yield* M.become_blind())) return f.dot;
+	to_chat(M, "<span class='danger'>You go blind!</span>");
 	return f.dot;
 }, true);
 
-// /obj/item/proc/clean_blood  (code/game/objects/items.dm:567)
+// items.dm:567
 rt.def("/obj/item/proc/clean_blood", function clean_blood(f: Frame) {
-	let index: Value = null, blood_splatter_icon: Value = null;
-	f.vars = () => [index, blood_splatter_icon];
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	if (!truthy(live(f.dot))) return f.dot;
-	if (!(truthy(rt.initial(f, live(f.src), "icon")) && truthy(rt.initial(f, live(f.src), "icon_state")))) return f.dot;
-	index = rt.callSrc(f, "blood_splatter_index", []);
-	if (!truthy((blood_splatter_icon = rt.index(rt.gl("blood_splatter_icons"), live(index))))) return f.dot;
-	rt.callSrc(f, "cut_overlay", [live(blood_splatter_icon)]);
+	let blood_splatter_icon: Value = null;
+	f.dot = parent_proc();
+	if (!f.dot) return f.dot;
+	if (!(rt.initial(f, this, "icon") && rt.initial(f, this, "icon_state"))) return f.dot;
+	let index: Value = this.blood_splatter_index();
+	if (!(blood_splatter_icon = rt.index(GLOB.blood_splatter_icons, index))) return f.dot;
+	this.cut_overlay(blood_splatter_icon);
 	return f.dot;
 });
 
-// /obj/item/clothing/gloves/proc/clean_blood  (code/game/objects/items.dm:576)
+// items.dm:576
 rt.def("/obj/item/clothing/gloves/proc/clean_blood", function clean_blood(f: Frame) {
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	if (!truthy(live(f.dot))) return f.dot;
-	rt.setSv(f, "transfer_blood", 0);
+	f.dot = parent_proc();
+	if (!f.dot) return f.dot;
+	this.transfer_blood = 0;
 	return f.dot;
 });
 
-// /obj/item/proc/singularity_pull  (code/game/objects/items.dm:581)  may sleep
-rt.def("/obj/item/proc/singularity_pull", function* singularity_pull(f: Frame) {
-	if (rt.ge(live(f.args[1]), 7)) {
-		yield* g.callSrc(f, "throw_at", [null, live(f.args[0]), null, 14, null, 3, "spin", 0], rt.Args.Named);
+// items.dm:581
+rt.def("/obj/item/proc/singularity_pull", function* singularity_pull(f: Frame, S: Value, current_size: Value) {
+	if (current_size >= STAGE_FOUR) {
+		yield* this.throw_at(S, 14, 3, { spin: 0 });
 	} else {
-		yield* g.callSuper(f, [], rt.Args.Same);
+		yield* parent_proc();
 	}
 	return f.dot;
-}, true, { args: ["S", "current_size"] });
+}, true);
 
-// /obj/item/proc/throw_impact  (code/game/objects/items.dm:586)  may sleep
+// items.dm:586
 rt.def("/obj/item/proc/throw_impact", function* throw_impact(f: Frame, A: Value) {
-	let L: Value = null, itempush: Value = null;
-	f.vars = () => [A, L, itempush];
-	if (!(truthy(live(A)) && !(!truthy(live(A)) || truthy(rt.fv(f, "gc_destroyed", live(A)))))) return f.dot;
-	if ((truthy((yield* g.srcCall(f, "is_hot"))) && truthy((rt.istype(live(A), T("/mob/living")) ? 1 : 0)))) {
-		yield* g.callName(f, (L = live(A)), "IgniteMob", []);
+	let L: Value = null;
+	if (!(A && !(!A || A.gc_destroyed))) return f.dot;
+	if (this.is_hot() && rt.istype(A, T("/mob/living"))) {
+		yield* (L = A).IgniteMob();
 	}
-	itempush = 1;
-	if (rt.lt(rt.sv(f, "w_class"), 4)) {
+	let itempush: Value = 1;
+	if (this.w_class < 4) {
 		itempush = 0;
 	}
-	return (yield* g.callName(f, live(A), "hitby", [live(f.src), 0, live(itempush)]));
+	return (yield* A.hitby(this, 0, itempush));
 }, true, { waitfor: false });
 
-// /obj/item/proc/throw_at  (code/game/objects/items.dm:596)  may sleep
+// items.dm:596
 rt.def("/obj/item/proc/throw_at", function* throw_at(f: Frame, target: Value, range: Value, speed: Value, thrower: Value, spin: Value, diagonals_first: Value, callback: Value) {
-	f.vars = () => [target, range, speed, thrower, spin, diagonals_first, callback];
-	if (live(spin) === null) {
-		spin = 1;
-	}
-	if (live(diagonals_first) === null) {
-		diagonals_first = 0;
-	}
-	rt.setSv(f, "thrownby", live(thrower));
-	callback = (yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/item/proc/after_throw"), live(callback)]));
-	f.dot = (yield* g.callSuper(f, [live(target), live(range), live(speed), live(thrower), live(spin), live(diagonals_first), live(callback)]));
+	spin ??= 1;
+	diagonals_first ??= 0;
+	this.thrownby = thrower;
+	callback = (yield* new_(T("/datum/callback"), this, P("/obj/item/proc/after_throw"), callback));
+	f.dot = (yield* parent_proc(target, range, speed, thrower, spin, diagonals_first, callback));
 	return f.dot;
 }, true);
 
-// /obj/item/proc/after_throw  (code/game/objects/items.dm:603)  may sleep
+// items.dm:603
 rt.def("/obj/item/proc/after_throw", function* after_throw(f: Frame, callback: Value) {
-	f.vars = () => [callback];
-	if (truthy(live(callback))) {
-		f.dot = (yield* g.callName(f, live(callback), "Invoke", []));
+	if (callback) {
+		f.dot = (yield* callback.Invoke());
 	}
-	rt.setSv(f, "throw_speed", rt.initial(f, live(f.src), "throw_speed"));
-	rt.setSv(f, "in_inventory", 0);
+	this.throw_speed = rt.initial(f, this, "throw_speed");
+	this.in_inventory = 0;
 	return f.dot;
 }, true, { argTypes: [{ path: "/datum/callback" }] });
 
-// /obj/item/proc/remove_item_from_storage  (code/game/objects/items.dm:608)  may sleep
+// items.dm:608
 rt.def("/obj/item/proc/remove_item_from_storage", function* remove_item_from_storage(f: Frame, newLoc: Value) {
 	let S: Value = null;
-	f.vars = () => [newLoc, S];
-	if (!truthy(live(newLoc))) {
+	if (!newLoc) {
 		return 0;
 	}
-	if (truthy((rt.istype(rt.sv(f, "loc"), T("/obj/item/weapon/storage")) ? 1 : 0))) {
-		yield* g.callName(f, (S = rt.sv(f, "loc")), "remove_from_storage", [live(f.src), live(newLoc)]);
+	if (rt.istype(this.loc, T("/obj/item/weapon/storage"))) {
+		yield* (S = this.loc).remove_from_storage(this, newLoc);
 		return 1;
 	}
 	return 0;
 }, true);
 
-// /obj/item/proc/get_dismemberment_chance  (code/game/objects/items.dm:623)
+// items.dm:623
 rt.def("/obj/item/proc/get_dismemberment_chance", function get_dismemberment_chance(f: Frame, affecting: Value) {
-	if (!truthy(rt.callName(f, live(affecting), "can_dismember", [live(f.src)]))) return f.dot;
-	if (!((truthy(rt.sv(f, "sharpness")) || isEqual(rt.sv(f, "damtype"), "fire")) && rt.ge(rt.sv(f, "w_class"), 3))) return f.dot;
-	f.dot = multiply(rt.sv(f, "force"), subtract(rt.sv(f, "w_class"), 1));
+	if (!affecting.can_dismember(this)) return f.dot;
+	if (!((this.sharpness || this.damtype == "fire") && this.w_class >= 3)) return f.dot;
+	f.dot = this.force * (this.w_class - 1);
 	return f.dot;
 });
 
-// /obj/item/proc/get_dismember_sound  (code/game/objects/items.dm:628)
+// items.dm:628
 rt.def("/obj/item/proc/get_dismember_sound", function get_dismember_sound(f: Frame) {
-	if (isEqual(rt.sv(f, "damtype"), "fire")) {
+	if (this.damtype == "fire") {
 		f.dot = rt.rsc("sound/weapons/sear.ogg");
 	} else {
-		f.dot = rt.op(f, "PickUnweighted", [3], [rt.rsc("sound/misc/desceration-01.ogg"), rt.rsc("sound/misc/desceration-02.ogg"), rt.rsc("sound/misc/desceration-03.ogg")]);
+		f.dot = pick(rt.rsc("sound/misc/desceration-01.ogg"), rt.rsc("sound/misc/desceration-02.ogg"), rt.rsc("sound/misc/desceration-03.ogg"));
 	}
 	return f.dot;
 });
 
-// /obj/item/proc/open_flame  (code/game/objects/items.dm:634)  may sleep
+// items.dm:634
 rt.def("/obj/item/proc/open_flame", function* open_flame(f: Frame, flame_heat: Value) {
 	let location: Value = null, M: Value = null, success: Value = null;
-	f.vars = () => [flame_heat, location, M, success];
-	if (live(flame_heat) === null) {
-		flame_heat = 700;
-	}
-	if (truthy((yield* g.call(f, P("/proc/ismob"), null, [(location = rt.sv(f, "loc"))])))) {
-		M = live(location);
+	flame_heat ??= 700;
+	if (ismob((location = this.loc))) {
+		M = location;
 		success = 0;
-		if (isEqual(live(f.src), (yield* g.callName(f, live(M), "get_item_by_slot", [2])))) {
+		if (this == M.get_item_by_slot(slot_wear_mask)) {
 			success = 1;
 		}
-		if (truthy(live(success))) {
-			location = rt.getStep(f, live(M), 0);
+		if (success) {
+			location = rt.getStep(f, M, 0);
 		}
 	}
-	if (!truthy((yield* g.call(f, P("/proc/isturf"), null, [live(location)])))) return f.dot;
-	yield* g.callName(f, live(location), "hotspot_expose", [live(flame_heat), 5]);
+	if (!isturf(location)) return f.dot;
+	yield* location.hotspot_expose(flame_heat, 5);
 	return f.dot;
 }, true);
 
-// /obj/item/proc/ignition_effect  (code/game/objects/items.dm:646)
+// items.dm:646
 rt.def("/obj/item/proc/ignition_effect", function ignition_effect(f: Frame, A: Value, user: Value) {
-	if (truthy(rt.callSrc(f, "is_hot", []))) {
-		f.dot = fmt("<span class='notice'>＀ lights ＀ with ＀.</span>", [live(user), live(A), live(f.src)]);
+	if (this.is_hot()) {
+		f.dot = `<span class='notice'>${user} lights ${A} with ${this}.</span>`;
 	} else {
 		f.dot = "";
 	}
 	return f.dot;
 });
 
-// /obj/item/proc/burn  (code/game/objects/items.dm:669)  may sleep
+// items.dm:669
 rt.def("/obj/item/proc/burn", function* burn(f: Frame) {
-	let _T: Value = null, ash_type: Value = null, A: Value = null;
-	f.vars = () => [_T, ash_type, A];
-	if (!truthy(live(f.src)) || truthy(rt.fv(f, "gc_destroyed", live(f.src)))) return f.dot;
-	_T = rt.getStep(f, live(f.src), 0);
-	ash_type = T("/obj/effect/decal/cleanable/ash");
-	if ((isEqual(rt.sv(f, "w_class"), 5) || isEqual(rt.sv(f, "w_class"), 6))) {
+	let A: Value = null;
+	if (!this || this.gc_destroyed) return f.dot;
+	let _T: Value = rt.getStep(f, this, 0);
+	let ash_type: Value = T("/obj/effect/decal/cleanable/ash");
+	if (this.w_class == WEIGHT_CLASS_HUGE || this.w_class == WEIGHT_CLASS_GIGANTIC) {
 		ash_type = T("/obj/effect/decal/cleanable/ash/large");
 	}
-	rt.modField(f, (A = (yield* g.new_(f, live(ash_type), [live(_T)]))), "desc", fmt("\nLooks like this used to be ＇！ some time ago.", [rt.sv(f, "name")]), add);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	(A = (yield* new_(ash_type, _T))).desc += fmt("\nLooks like this used to be ＇！ some time ago.", [this.name]);
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /obj/item/proc/acid_melt  (code/game/objects/items.dm:679)  may sleep
+// items.dm:679
 rt.def("/obj/item/proc/acid_melt", function* acid_melt(f: Frame) {
-	let _T: Value = null, MO: Value = null;
-	f.vars = () => [_T, MO];
-	if (!truthy(live(f.src)) || truthy(rt.fv(f, "gc_destroyed", live(f.src)))) return f.dot;
-	_T = rt.getStep(f, live(f.src), 0);
-	rt.setFv(f, "pixel_x", (MO = (yield* g.new_(f, T("/obj/effect/decal/cleanable/molten_object"), [live(_T)]))), (yield* g.call(f, P("/proc/rand"), null, [-16, 16])));
-	rt.setFv(f, "pixel_y", live(MO), (yield* g.call(f, P("/proc/rand"), null, [-16, 16])));
-	rt.setFv(f, "desc", live(MO), fmt("Looks like this was ＇！ some time ago.", [live(f.src)]));
-	yield* g.callSuper(f, [], rt.Args.Same);
+	let MO: Value = null;
+	if (!this || this.gc_destroyed) return f.dot;
+	let _T: Value = rt.getStep(f, this, 0);
+	(MO = (yield* new_(T("/obj/effect/decal/cleanable/molten_object"), _T))).pixel_x = rand(-16, 16);
+	MO.pixel_y = rand(-16, 16);
+	MO.desc = fmt("Looks like this was ＇！ some time ago.", [this]);
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /obj/item/proc/microwave_act  (code/game/objects/items.dm:688)
+// items.dm:688
 rt.def("/obj/item/proc/microwave_act", function microwave_act(f: Frame, M: Value) {
-	if (!(truthy(live(M)) && rt.lt(rt.fv(f, "dirty", live(M)), 100))) return f.dot;
-	rt.incField(f, live(M), "dirty", 1, true);
+	if (!(M && M.dirty < 100)) return f.dot;
+	M.dirty++;
 	return f.dot;
 });
 
-// /obj/item/proc/set_force_string  (code/game/objects/items.dm:694)
+// items.dm:694
 rt.def("/obj/item/proc/set_force_string", function set_force_string(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.sv(f, "force");
-	if (rt.inRange($0, 0, 4)) {
-		rt.setSv(f, "force_string", "very low");
-	} else if (rt.inRange($0, 4, 7)) {
-		rt.setSv(f, "force_string", "low");
-	} else if (rt.inRange($0, 7, 10)) {
-		rt.setSv(f, "force_string", "medium");
-	} else if (rt.inRange($0, 10, 11)) {
-		rt.setSv(f, "force_string", "high");
-	} else if (rt.inRange($0, 11, 20)) {
-		rt.setSv(f, "force_string", "robust");
-	} else if (rt.inRange($0, 20, 25)) {
-		rt.setSv(f, "force_string", "very robust");
+	if (rt.inRange(this.force, 0, 4)) {
+		this.force_string = "very low";
+	} else if (rt.inRange(this.force, 4, 7)) {
+		this.force_string = "low";
+	} else if (rt.inRange(this.force, 7, 10)) {
+		this.force_string = "medium";
+	} else if (rt.inRange(this.force, 10, 11)) {
+		this.force_string = "high";
+	} else if (rt.inRange(this.force, 11, 20)) {
+		this.force_string = "robust";
+	} else if (rt.inRange(this.force, 20, 25)) {
+		this.force_string = "very robust";
 	} else {
-		rt.setSv(f, "force_string", "exceptionally robust");
+		this.force_string = "exceptionally robust";
 	}
-	rt.setSv(f, "last_force_string_check", rt.sv(f, "force"));
+	this.last_force_string_check = this.force;
 	return f.dot;
 });
 
-// /obj/item/proc/openTip  (code/game/objects/items.dm:712)
+// items.dm:712
 rt.def("/obj/item/proc/openTip", function openTip(f: Frame, location: Value, control: Value, params: Value, user: Value) {
 	let $0: any, $1: any, $2: any, $3: any, $4: any, $5: any, $6: any, $7: any, $8: any, $9: any, $10: any;
-	f.vars = () => [$0, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10];
-	if ((!isEqual(rt.sv(f, "last_force_string_check"), rt.sv(f, "force")) && !truthy(rt.sv(f, "force_string_override")))) {
-		rt.callSrc(f, "set_force_string", []);
+	if (this.last_force_string_check != this.force && !this.force_string_override) {
+		this.set_force_string();
 	}
-	if (!truthy(rt.sv(f, "force_string_override"))) {
+	if (!this.force_string_override) {
 		$0 = null;
-		$1 = live(user);
+		$1 = user;
 		$2 = null;
-		$3 = live(f.src);
+		$3 = this;
 		$4 = null;
-		$5 = live(params);
+		$5 = params;
 		$6 = "title";
-		$7 = rt.sv(f, "name");
+		$7 = this.name;
 		$8 = "content";
-		$9 = rt.sv(f, "desc");
-		if (truthy(rt.sv(f, "force"))) {
-			$10 = fmt("<b>Force:</b> ＀", [rt.sv(f, "force_string")]);
+		$9 = this.desc;
+		if (this.force) {
+			$10 = `<b>Force:</b> ${this.force_string}`;
 		} else {
 			$10 = "";
 		}
-		rt.call(f, P("/proc/openToolTip"), null, [$0, $1, $2, $3, $4, $5, $6, $7, $8, fmt("＀<br>＀", [$9, $10]), "theme", ""], rt.Args.Named);
+		rt.call(f, P("/proc/openToolTip"), null, [$0, $1, $2, $3, $4, $5, $6, $7, $8, `${$9}<br>${$10}`, "theme", ""], rt.Args.Named);
 	} else {
-		rt.call(f, P("/proc/openToolTip"), null, [null, live(user), null, live(f.src), null, live(params), "title", rt.sv(f, "name"), "content", fmt("＀<br><b>Force:</b> ＀", [rt.sv(f, "desc"), rt.sv(f, "force_string")]), "theme", ""], rt.Args.Named);
+		openToolTip(user, this, params, { title: this.name, content: `${this.desc}<br><b>Force:</b> ${this.force_string}`, theme: "" });
 	}
 	return f.dot;
 });
 
-// /obj/item/proc/MouseEntered  (code/game/objects/items.dm:720)  may sleep
-rt.def("/obj/item/proc/MouseEntered", function* MouseEntered(f: Frame) {
-	let timedelay: Value = null, user: Value = null;
-	f.vars = () => [timedelay, user];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!(truthy(rt.sv(f, "in_inventory")) && truthy(rt.gv(f, "enable_tips", rt.gv(f, "prefs", rt.fv(f, "client", live(f.usr))))))) return f.dot;
-	timedelay = divide(rt.gv(f, "tip_delay", rt.gv(f, "prefs", rt.fv(f, "client", live(f.usr)))), 100);
-	user = live(f.usr);
-	rt.setSv(f, "tip_timer", (yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/item/proc/openTip"), live(f.args[0]), live(f.args[1]), live(f.args[2]), live(user)])), live(timedelay), 8])));
+// items.dm:720
+rt.def("/obj/item/proc/MouseEntered", function* MouseEntered(f: Frame, location: Value, control: Value, params: Value) {
+	yield* parent_proc();
+	if (!(this.in_inventory && f.usr.client.prefs.enable_tips)) return f.dot;
+	let timedelay: Value = f.usr.client.prefs.tip_delay / 100;
+	let user: Value = f.usr;
+	this.tip_timer = (yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/item/proc/openTip"), location, control, params, user)), timedelay, 8));
 	return f.dot;
-}, true, { args: ["location", "control", "params"] });
+}, true);
 
-// /obj/item/proc/MouseExited  (code/game/objects/items.dm:727)  may sleep
+// items.dm:727
 rt.def("/obj/item/proc/MouseExited", function* MouseExited(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.call(f, P("/proc/deltimer"), null, [rt.sv(f, "tip_timer")]);
-	yield* g.call(f, P("/proc/closeToolTip"), null, [live(f.usr)]);
+	yield* parent_proc();
+	yield* deltimer(this.tip_timer);
+	closeToolTip(f.usr);
 	return f.dot;
 }, true);

@@ -1,7 +1,7 @@
-// From code/modules/admin/fun_balloon.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/admin/fun_balloon.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, g } = rt;
 
 
 rt.type(12030, "/obj/effect/fun_balloon", "/obj/effect", {
@@ -13,47 +13,44 @@ rt.type(12030, "/obj/effect/fun_balloon", "/obj/effect", {
 	icon_state: "syndballoon",
 });
 
-// /obj/effect/fun_balloon/proc/New  (code/modules/admin/fun_balloon.dm:10)  may sleep
+// fun_balloon.dm:10
 rt.def("/obj/effect/fun_balloon/proc/New", function* New(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	(rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), rt.bitOr));
+	f.dot = (yield* parent_proc());
+	(rt.modField(f, GLOB.SSobj, "processing", this, rt.bitOr));
 	return f.dot;
 }, true);
 
-// /obj/effect/fun_balloon/proc/Destroy  (code/modules/admin/fun_balloon.dm:14)  may sleep
+// fun_balloon.dm:14
 rt.def("/obj/effect/fun_balloon/proc/Destroy", function* Destroy(f: Frame) {
-	(rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), subtract));
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	GLOB.SSobj.processing -= this;
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true);
 
-// /obj/effect/fun_balloon/proc/process  (code/modules/admin/fun_balloon.dm:18)  may sleep
+// fun_balloon.dm:18
 rt.def("/obj/effect/fun_balloon/proc/process", function* process(f: Frame) {
-	if (!((!truthy(rt.sv(f, "popped")) && truthy((yield* g.srcCall(f, "check")))) && !(!truthy(live(f.src)) || truthy(rt.fv(f, "gc_destroyed", live(f.src)))))) return f.dot;
-	rt.setSv(f, "popped", 1);
-	yield* g.srcCall(f, "effect");
+	if (!(!this.popped && (yield* this.check()) && !(!this || this.gc_destroyed))) return f.dot;
+	this.popped = 1;
+	yield* this.effect();
 	yield* g.srcCall(f, "pop");
 	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/effect/fun_balloon/proc/pop  (code/modules/admin/fun_balloon.dm:30)  may sleep
+// fun_balloon.dm:30
 rt.def("/obj/effect/fun_balloon/proc/pop", function* pop(f: Frame) {
-	yield* g.srcCall(f, "visible_message", fmt("＀ pops!", [live(f.src)]));
-	yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/items/party_horn.ogg"), 50, 1, -1]);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	this.visible_message(`${this} pops!`);
+	playsound(rt.getStep(f, this, 0), rt.rsc("sound/items/party_horn.ogg"), 50, 1, -1);
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
-// /obj/effect/fun_balloon/proc/attack_ghost  (code/modules/admin/fun_balloon.dm:35)  may sleep
+// fun_balloon.dm:35
 rt.def("/obj/effect/fun_balloon/proc/attack_ghost", function* attack_ghost(f: Frame, user: Value) {
-	let $0: any;
-	f.vars = () => [user, $0];
-	if (((!truthy(rt.fv(f, "client", live(user))) || !truthy(rt.gv(f, "holder", rt.fv(f, "client", live(user))))) || truthy(rt.sv(f, "popped")))) {
-		return live(f.dot);
+	if (!user.client || !user.client.holder || this.popped) {
+		return f.dot;
 	}
-	$0 = (yield* g.call(f, P("/proc/alert"), null, [fmt("Pop ＀?", [live(f.src)]), "Fun Balloon", "Yes", "No"]));
-	if ($0 === "Yes") {
-		yield* g.srcCall(f, "effect");
+	if ((yield* alert(`Pop ${this}?`, "Fun Balloon", "Yes", "No")) === "Yes") {
+		yield* this.effect();
 		yield* g.srcCall(f, "pop");
 	}
 	return f.dot;
@@ -66,28 +63,22 @@ rt.type(12031, "/obj/effect/fun_balloon/sentience", "/obj/effect/fun_balloon", {
 	desc: "When this pops, things are gonna get more aware around here.",
 });
 
-// /obj/effect/fun_balloon/sentience/proc/effect  (code/modules/admin/fun_balloon.dm:49)  may sleep
+// fun_balloon.dm:49
 rt.def("/obj/effect/fun_balloon/sentience/proc/effect", function* effect(f: Frame) {
-	let bodies: Value = null, M: Value = null, question: Value = null, candidates: Value = null, ghost: Value = null, body: Value = null;
-	let $e: any;
-	f.vars = () => [bodies, M, question, candidates, ghost, body, $e];
-	bodies = rt.list();
-	M = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/range"), null, [rt.sv(f, "effect_range"), rt.getStep(f, live(f.src), 0)])), T("/mob/living"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		bodies = rt.modify(live(bodies), live(M), add);
+	let M: Value = null, ghost: Value = null, body: Value = null;
+	let bodies: Value = list();
+	for (M of each(range(this.effect_range, rt.getStep(f, this, 0)), T("/mob/living"))) {
+		bodies += M;
 	}
-	rt.endFor(f, 0);
-	question = fmt("Would you like to be ＀?", [rt.sv(f, "group_name")]);
-	candidates = (yield* g.call(f, P("/proc/pollCandidatesForMobs"), null, [live(question), "pAI", null, 0, 100, live(bodies)]));
-	while (truthy(rt.len(f, live(candidates))) && truthy(rt.len(f, live(bodies)))) {
-		ghost = (yield* g.call(f, P("/proc/pick_n_take"), null, [live(candidates)]));
-		yield* g.call(f, P("/proc/to_chat"), null, [(body = (yield* g.call(f, P("/proc/pick_n_take"), null, [live(bodies)]))), "Your mob has been taken over by a ghost!"]);
-		yield* g.call(f, P("/proc/message_admins"), null, [fmt("＀ has taken control of (＀)", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(ghost)])), (yield* g.call(f, P("/proc/key_name_admin"), null, [live(body)]))])]);
-		yield* g.callName(f, live(body), "ghostize", [0]);
-		rt.setFv(f, "key", live(body), rt.fv(f, "key", live(ghost)));
-		yield* g.new_(f, T("/obj/effect/temp_visual/gravpush"), [rt.getStep(f, live(body), 0)]);
+	let question: Value = `Would you like to be ${this.group_name}?`;
+	let candidates: Value = (yield* pollCandidatesForMobs(question, "pAI", null, 0, 100, bodies));
+	while (rt.len(f, candidates) && rt.len(f, bodies)) {
+		ghost = pick_n_take(candidates);
+		to_chat((body = pick_n_take(bodies)), "Your mob has been taken over by a ghost!");
+		message_admins(`${key_name_admin(ghost)} has taken control of (${key_name_admin(body)})`);
+		yield* body.ghostize(0);
+		body.key = ghost.key;
+		yield* new_(T("/obj/effect/temp_visual/gravpush"), rt.getStep(f, body, 0));
 	}
 	return f.dot;
 }, true);
@@ -97,10 +88,10 @@ rt.type(12032, "/obj/effect/fun_balloon/sentience/emergency_shuttle", "/obj/effe
 	name: "shuttle sentience fun balloon",
 });
 
-// /obj/effect/fun_balloon/sentience/emergency_shuttle/proc/check  (code/modules/admin/fun_balloon.dm:71)
+// fun_balloon.dm:71
 rt.def("/obj/effect/fun_balloon/sentience/emergency_shuttle/proc/check", function check(f: Frame) {
 	f.dot = 0;
-	if (!((truthy(rt.fv(f, "emergency", rt.gl("SSshuttle"))) && rt.le(rt.callName(f, rt.fv(f, "emergency", rt.gl("SSshuttle")), "timeLeft", []), rt.sv(f, "trigger_time"))) && isEqual(rt.gv(f, "mode", rt.fv(f, "emergency", rt.gl("SSshuttle"))), "call"))) return f.dot;
+	if (!(GLOB.SSshuttle.emergency && GLOB.SSshuttle.emergency.timeLeft() <= this.trigger_time && GLOB.SSshuttle.emergency.mode == "call")) return f.dot;
 	f.dot = 1;
 	return f.dot;
 });
@@ -111,21 +102,15 @@ rt.type(12033, "/obj/effect/fun_balloon/scatter", "/obj/effect/fun_balloon", {
 	desc: "When this pops, you're not going to be around here anymore.",
 });
 
-// /obj/effect/fun_balloon/scatter/proc/effect  (code/modules/admin/fun_balloon.dm:80)  may sleep
+// fun_balloon.dm:80
 rt.def("/obj/effect/fun_balloon/scatter/proc/effect", function* effect(f: Frame) {
 	let M: Value = null, _T: Value = null;
-	let $e: any;
-	f.vars = () => [M, _T, $e];
-	M = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/range"), null, [rt.sv(f, "effect_range"), rt.getStep(f, live(f.src), 0)])), T("/mob/living"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		_T = (yield* g.call(f, P("/proc/find_safe_turf"), null, []));
-		yield* g.new_(f, T("/obj/effect/temp_visual/gravpush"), [rt.getStep(f, live(M), 0)]);
-		yield* g.callName(f, live(M), "forceMove", [live(_T)]);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(M), "<span class='notice'>Pop!</span>"]);
+	for (M of each(range(this.effect_range, rt.getStep(f, this, 0)), T("/mob/living"))) {
+		_T = find_safe_turf();
+		yield* new_(T("/obj/effect/temp_visual/gravpush"), rt.getStep(f, M, 0));
+		yield* M.forceMove(_T);
+		to_chat(M, "<span class='notice'>Pop!</span>");
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
@@ -137,23 +122,17 @@ rt.type(12034, "/obj/effect/station_crash", "/obj/effect", {
 	icon_state: "syndballoon",
 });
 
-// /obj/effect/station_crash/proc/New  (code/modules/admin/fun_balloon.dm:94)  may sleep
+// fun_balloon.dm:94
 rt.def("/obj/effect/station_crash/proc/New", function* New(f: Frame) {
 	let S: Value = null, SM: Value = null, new_dir: Value = null;
-	let $e: any;
-	f.vars = () => [S, SM, new_dir, $e];
-	S = null;
-	rt.forList(f, 0, rt.fv(f, "stationary", rt.gl("SSshuttle")));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		S = $e;
-		if (isEqual(rt.gv(f, "id", (SM = live(S))), "emergency_home")) {
-			new_dir = (yield* g.call(f, P("/proc/turn"), null, [rt.fv(f, "dir", live(SM)), 180]));
-			rt.setFv(f, "loc", live(SM), (yield* g.call(f, P("/proc/get_ranged_target_turf"), null, [live(SM), live(new_dir), (yield* g.call(f, P("/proc/rand"), null, [3, 15]))])));
+	for (S of each(GLOB.SSshuttle.stationary)) {
+		if ((SM = S).id == "emergency_home") {
+			new_dir = turn(SM.dir, 180);
+			SM.loc = get_ranged_target_turf(SM, new_dir, rand(3, 15));
 			break;
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
@@ -165,13 +144,13 @@ rt.type(12035, "/obj/effect/shuttle_build", "/obj/effect", {
 	icon_state: "syndballoon",
 });
 
-// /obj/effect/shuttle_build/proc/New  (code/modules/admin/fun_balloon.dm:113)  may sleep
+// fun_balloon.dm:113
 // tg_js: was New(), which ran while the "Build your own shuttle kit" template was still loading (atom setup off), so the
 // turfs the emergency shuttle left and landed on never got set up (no air: LINDA "Cannot execute null.archive()").
 // Initialize() runs after the load, as later tg does it; INITIALIZE_HINT_QDEL replaces the qdel(src).
 rt.def("/obj/effect/shuttle_build/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.callName(f, rt.fv(f, "emergency", rt.gl("SSshuttle")), "dock", [(yield* g.callName(f, rt.gl("SSshuttle"), "getDock", ["emergency_home"]))]);
+	f.dot = (yield* parent_proc());
+	yield* GLOB.SSshuttle.emergency.dock(GLOB.SSshuttle.getDock("emergency_home"));
 	return 2;
 }, true);
 
@@ -180,59 +159,42 @@ rt.type(11814, "/obj/effect/forcefield/arena_shuttle", "/obj/effect/forcefield",
 	name: "portal",
 });
 
-// /obj/effect/forcefield/arena_shuttle/proc/<init>  (code/modules/admin/fun_balloon.dm:120)
+// fun_balloon.dm:120
 rt.def("/obj/effect/forcefield/arena_shuttle/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "warp_points", rt.list());
+	parent_proc();
+	this.warp_points = list();
 	return f.dot;
 });
 
-// /obj/effect/forcefield/arena_shuttle/proc/Bumped  (code/modules/admin/fun_balloon.dm:124)  may sleep
+// fun_balloon.dm:124
 rt.def("/obj/effect/forcefield/arena_shuttle/proc/Bumped", function* Bumped(f: Frame, M: Value) {
 	let _T: Value = null, AM: Value = null, L: Value = null, LA: Value = null, chainsaw: Value = null;
-	let $e: any;
-	f.vars = () => [M, _T, AM, L, LA, chainsaw, $e];
-	if (!truthy(rt.len(f, rt.sv(f, "warp_points")))) {
-		rt.setSv(f, "warp_points", (yield* g.call(f, P("/proc/get_area_turfs"), null, [T("/area/shuttle/escape")])));
-		_T = null;
-		rt.forList(f, 0, rt.sv(f, "warp_points"), T("/turf"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			_T = $e;
+	if (!rt.len(f, this.warp_points)) {
+		this.warp_points = get_area_turfs(T("/area/shuttle/escape"));
+		for (_T of each(this.warp_points, T("/turf"))) {
 			AM = null;
-			rt.forList(f, 1, live(_T), T("/atom/movable"));
-			while (($e = rt.next(f, 1)) !== undefined) {
-				AM = $e;
-				if ((truthy(rt.fv(f, "density", live(AM))) && truthy(rt.fv(f, "anchored", live(AM))))) {
-					(rt.modSrcVar(f, "warp_points", live(_T), subtract));
+			for (AM of each(_T, T("/atom/movable"))) {
+				if (AM.density && AM.anchored) {
+					this.warp_points -= _T;
 					break;
 				}
 			}
-			rt.endFor(f, 1);
 		}
-		rt.endFor(f, 0);
 	}
-	if (!truthy((rt.istype(live(M), T("/mob/living")) ? 1 : 0))) {
-		return live(f.dot);
-	} else {
-		if ((truthy(rt.gv(f, "pulling", (L = live(M)))) && truthy((rt.istype(rt.fv(f, "pulling", live(L)), T("/obj/item/bodypart/head")) ? 1 : 0)))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(L), "Your offering is accepted. You may pass."]);
-			yield* g.call(f, P("/proc/qdel"), null, [rt.fv(f, "pulling", live(L))]);
-			LA = rt.op(f, "PickUnweighted", [1], [rt.sv(f, "warp_points")]);
-			yield* g.callName(f, live(L), "forceMove", [live(LA)]);
-			rt.setFv(f, "hallucination", live(L), 0);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(L), "<span class='reallybig redtext'>The battle is won. Your bloodlust subsides.</span>"]);
-			chainsaw = null;
-			rt.forList(f, 0, live(L), T("/obj/item/weapon/twohanded/required/chainsaw/doomslayer"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				chainsaw = $e;
-				yield* g.call(f, P("/proc/qdel"), null, [live(chainsaw)]);
-			}
-			rt.endFor(f, 0);
-		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(L), "You are not yet worthy of passing. Drag a severed head to the barrier to be allowed entry to the hall of champions."]);
+	if (!rt.istype(M, T("/mob/living"))) {
+		return f.dot;
+	} else if ((L = M).pulling && rt.istype(L.pulling, T("/obj/item/bodypart/head"))) {
+		to_chat(L, "Your offering is accepted. You may pass.");
+		yield* qdel(L.pulling);
+		LA = pick(this.warp_points);
+		yield* L.forceMove(LA);
+		L.hallucination = 0;
+		to_chat(L, "<span class='reallybig redtext'>The battle is won. Your bloodlust subsides.</span>");
+		for (chainsaw of each(L, T("/obj/item/weapon/twohanded/required/chainsaw/doomslayer"))) {
+			yield* qdel(chainsaw);
 		}
+	} else {
+		to_chat(L, "You are not yet worthy of passing. Drag a severed head to the barrier to be allowed entry to the hall of champions.");
 	}
 	return f.dot;
 }, true);
@@ -242,42 +204,33 @@ rt.type(11815, "/obj/effect/forcefield/arena_shuttle_entrance", "/obj/effect/for
 	name: "portal",
 });
 
-// /obj/effect/forcefield/arena_shuttle_entrance/proc/<init>  (code/modules/admin/fun_balloon.dm:158)
+// fun_balloon.dm:158
 rt.def("/obj/effect/forcefield/arena_shuttle_entrance/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "warp_points", rt.list());
+	parent_proc();
+	this.warp_points = list();
 	return f.dot;
 });
 
-// /obj/effect/forcefield/arena_shuttle_entrance/proc/Bumped  (code/modules/admin/fun_balloon.dm:161)  may sleep
+// fun_balloon.dm:161
 rt.def("/obj/effect/forcefield/arena_shuttle_entrance/proc/Bumped", function* Bumped(f: Frame, M: Value) {
-	let S: Value = null, LA: Value = null, B: Value = null;
-	let $e: any;
-	f.vars = () => [M, S, LA, B, $e];
-	if (!truthy(rt.len(f, rt.sv(f, "warp_points")))) {
-		S = null;
-		rt.forList(f, 0, rt.gl("landmarks_list"), T("/obj/effect/landmark/shuttle_arena_entrance"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			S = $e;
-			(rt.modSrcVar(f, "warp_points", live(S), rt.bitOr));
+	let S: Value = null, B: Value = null;
+	if (!rt.len(f, this.warp_points)) {
+		for (S of each(GLOB.landmarks_list, T("/obj/effect/landmark/shuttle_arena_entrance"))) {
+			(rt.modSrcVar(f, "warp_points", S, rt.bitOr));
 		}
-		rt.endFor(f, 0);
 	}
-	if (!truthy((rt.istype(live(M), T("/mob/living")) ? 1 : 0))) {
-		return live(f.dot);
+	if (!rt.istype(M, T("/mob/living"))) {
+		return f.dot;
 	}
-	LA = rt.op(f, "PickUnweighted", [1], [rt.sv(f, "warp_points")]);
-	yield* g.callName(f, live(M), "forceMove", [rt.getStep(f, live(LA), 0)]);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(M), "<span class='reallybig redtext'>You're trapped in a deadly arena! To escape, you'll need to drag a severed head to the escape portals.</span>"]);
+	let LA: Value = pick(this.warp_points);
+	yield* M.forceMove(rt.getStep(f, LA, 0));
+	to_chat(M, "<span class='reallybig redtext'>You're trapped in a deadly arena! To escape, you'll need to drag a severed head to the escape portals.</span>");
 	rt.spawnTail(f, 0, "/obj/effect/forcefield/arena_shuttle_entrance/proc/Bumped: spawn at modules/admin/fun_balloon.dm:171", M, S, LA, B);
 	return f.dot;
 }, true);
 
 // a spawn(0) body of /obj/effect/forcefield/arena_shuttle_entrance/proc/Bumped, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/obj/effect/forcefield/arena_shuttle_entrance/proc/Bumped: spawn at modules/admin/fun_balloon.dm:171", function* (f: Frame, M: Value, S: Value, LA: Value, B: Value) {
-	f.vars = () => [M, S, LA, B];
-	yield* g.callName(f, (B = (yield* g.new_(f, T("/obj/effect/mine/pickup/bloodbath"), [live(M)]))), "mineEffect", [live(M)]);
+	yield* (B = (yield* new_(T("/obj/effect/mine/pickup/bloodbath"), M))).mineEffect(M);
 	return null;
 });

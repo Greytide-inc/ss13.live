@@ -1,7 +1,7 @@
-// From code/modules/cargo/exports/large_objects.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/cargo/exports/large_objects.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(1975, "/datum/export/large/crate", "/datum/export/large", {
@@ -12,22 +12,20 @@ rt.type(1975, "/datum/export/large/crate", "/datum/export/large", {
 	exclude_types: null,
 });
 
-// /datum/export/large/crate/proc/<init>  (code/modules/cargo/exports/large_objects.dm:8)
+// large_objects.dm:8
 rt.def("/datum/export/large/crate/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/structure/closet/crate")));
-	$0 = $0;
-	rt.setSv(f, "exclude_types", rt.list(T("/obj/structure/closet/crate/large"), T("/obj/structure/closet/crate/wooden")));
+	parent_proc();
+	this.export_types = list(T("/obj/structure/closet/crate"));
+
+	this.exclude_types = list(T("/obj/structure/closet/crate/large"), T("/obj/structure/closet/crate/wooden"));
 	return f.dot;
 });
 
-// /datum/export/large/crate/proc/total_printout  (code/modules/cargo/exports/large_objects.dm:12)
+// large_objects.dm:12
 rt.def("/datum/export/large/crate/proc/total_printout", function total_printout(f: Frame) {
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	if (!truthy(live(f.dot))) return f.dot;
-	f.dot = rt.modify(live(f.dot), " Thanks for participating in Nanotrasen Crates Recycling Program.", add);
+	f.dot = parent_proc();
+	if (!f.dot) return f.dot;
+	f.dot += " Thanks for participating in Nanotrasen Crates Recycling Program.";
 	return f.dot;
 });
 
@@ -38,14 +36,12 @@ rt.type(1976, "/datum/export/large/crate/wooden", "/datum/export/large/crate", {
 	export_types: null,
 });
 
-// /datum/export/large/crate/wooden/proc/<init>  (code/modules/cargo/exports/large_objects.dm:20)
+// large_objects.dm:20
 rt.def("/datum/export/large/crate/wooden/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "exclude_types", rt.list());
-	$0 = $0;
-	rt.setSv(f, "export_types", rt.list(T("/obj/structure/closet/crate/large")));
+	parent_proc();
+	this.exclude_types = list();
+
+	this.export_types = list(T("/obj/structure/closet/crate/large"));
 	return f.dot;
 });
 
@@ -54,12 +50,10 @@ rt.type(1977, "/datum/export/large/crate/wooden/ore", "/datum/export/large/crate
 	export_types: null,
 });
 
-// /datum/export/large/crate/wooden/ore/proc/<init>  (code/modules/cargo/exports/large_objects.dm:24)
+// large_objects.dm:24
 rt.def("/datum/export/large/crate/wooden/ore/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/structure/ore_box")));
+	parent_proc();
+	this.export_types = list(T("/obj/structure/ore_box"));
 	return f.dot;
 });
 
@@ -70,14 +64,12 @@ rt.type(1978, "/datum/export/large/crate/wood", "/datum/export/large/crate", {
 	export_types: null,
 });
 
-// /datum/export/large/crate/wood/proc/<init>  (code/modules/cargo/exports/large_objects.dm:30)
+// large_objects.dm:30
 rt.def("/datum/export/large/crate/wood/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "exclude_types", rt.list());
-	$0 = $0;
-	rt.setSv(f, "export_types", rt.list(T("/obj/structure/closet/crate/wooden")));
+	parent_proc();
+	this.exclude_types = list();
+
+	this.export_types = list(T("/obj/structure/closet/crate/wooden"));
 	return f.dot;
 });
 
@@ -86,14 +78,12 @@ rt.type(1979, "/datum/export/large/reagent_dispenser", "/datum/export/large", {
 	cost: 100,
 });
 
-// /datum/export/large/reagent_dispenser/proc/get_cost  (code/modules/cargo/exports/large_objects.dm:40)
-rt.def("/datum/export/large/reagent_dispenser/proc/get_cost", function get_cost(f: Frame) {
-	let D: Value = null, ratio: Value = null;
-	f.vars = () => [D, ratio];
-	D = live(f.args[0]);
-	ratio = divide(rt.gv(f, "total_volume", rt.fv(f, "reagents", live(D))), rt.gv(f, "maximum_volume", rt.fv(f, "reagents", live(D))));
-	return add(rt.callSuper(f, [], rt.Args.Same), rt.call(f, P("/proc/round"), null, [multiply(rt.sv(f, "contents_cost"), live(ratio))]));
-}, false, { args: ["O"] });
+// large_objects.dm:40
+rt.def("/datum/export/large/reagent_dispenser/proc/get_cost", function get_cost(f: Frame, O: Value) {
+	let D: Value = O;
+	let ratio: Value = D.reagents.total_volume / D.reagents.maximum_volume;
+	return parent_proc() + round(this.contents_cost * ratio);
+}, false);
 
 rt.type(1980, "/datum/export/large/reagent_dispenser/water", "/datum/export/large/reagent_dispenser", {
 	unit_name: "watertank",
@@ -101,12 +91,10 @@ rt.type(1980, "/datum/export/large/reagent_dispenser/water", "/datum/export/larg
 	export_types: null,
 });
 
-// /datum/export/large/reagent_dispenser/water/proc/<init>  (code/modules/cargo/exports/large_objects.dm:47)
+// large_objects.dm:47
 rt.def("/datum/export/large/reagent_dispenser/water/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/structure/reagent_dispensers/watertank")));
+	parent_proc();
+	this.export_types = list(T("/obj/structure/reagent_dispensers/watertank"));
 	return f.dot;
 });
 
@@ -115,12 +103,10 @@ rt.type(1981, "/datum/export/large/reagent_dispenser/fuel", "/datum/export/large
 	export_types: null,
 });
 
-// /datum/export/large/reagent_dispenser/fuel/proc/<init>  (code/modules/cargo/exports/large_objects.dm:52)
+// large_objects.dm:52
 rt.def("/datum/export/large/reagent_dispenser/fuel/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/structure/reagent_dispensers/fueltank")));
+	parent_proc();
+	this.export_types = list(T("/obj/structure/reagent_dispensers/fueltank"));
 	return f.dot;
 });
 
@@ -130,12 +116,10 @@ rt.type(1982, "/datum/export/large/reagent_dispenser/beer", "/datum/export/large
 	export_types: null,
 });
 
-// /datum/export/large/reagent_dispenser/beer/proc/<init>  (code/modules/cargo/exports/large_objects.dm:57)
+// large_objects.dm:57
 rt.def("/datum/export/large/reagent_dispenser/beer/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/structure/reagent_dispensers/beerkeg")));
+	parent_proc();
+	this.export_types = list(T("/obj/structure/reagent_dispensers/beerkeg"));
 	return f.dot;
 });
 
@@ -145,12 +129,10 @@ rt.type(1983, "/datum/export/large/emitter", "/datum/export/large", {
 	export_types: null,
 });
 
-// /datum/export/large/emitter/proc/<init>  (code/modules/cargo/exports/large_objects.dm:65)
+// large_objects.dm:65
 rt.def("/datum/export/large/emitter/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/machinery/power/emitter")));
+	parent_proc();
+	this.export_types = list(T("/obj/machinery/power/emitter"));
 	return f.dot;
 });
 
@@ -160,12 +142,10 @@ rt.type(1984, "/datum/export/large/field_generator", "/datum/export/large", {
 	export_types: null,
 });
 
-// /datum/export/large/field_generator/proc/<init>  (code/modules/cargo/exports/large_objects.dm:70)
+// large_objects.dm:70
 rt.def("/datum/export/large/field_generator/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/machinery/field/generator")));
+	parent_proc();
+	this.export_types = list(T("/obj/machinery/field/generator"));
 	return f.dot;
 });
 
@@ -175,12 +155,10 @@ rt.type(1985, "/datum/export/large/collector", "/datum/export/large", {
 	export_types: null,
 });
 
-// /datum/export/large/collector/proc/<init>  (code/modules/cargo/exports/large_objects.dm:75)
+// large_objects.dm:75
 rt.def("/datum/export/large/collector/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/machinery/power/rad_collector")));
+	parent_proc();
+	this.export_types = list(T("/obj/machinery/power/rad_collector"));
 	return f.dot;
 });
 
@@ -190,12 +168,10 @@ rt.type(1986, "/datum/export/large/collector/pa", "/datum/export/large/collector
 	export_types: null,
 });
 
-// /datum/export/large/collector/pa/proc/<init>  (code/modules/cargo/exports/large_objects.dm:80)
+// large_objects.dm:80
 rt.def("/datum/export/large/collector/pa/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/structure/particle_accelerator")));
+	parent_proc();
+	this.export_types = list(T("/obj/structure/particle_accelerator"));
 	return f.dot;
 });
 
@@ -205,12 +181,10 @@ rt.type(1987, "/datum/export/large/collector/pa/controls", "/datum/export/large/
 	export_types: null,
 });
 
-// /datum/export/large/collector/pa/controls/proc/<init>  (code/modules/cargo/exports/large_objects.dm:85)
+// large_objects.dm:85
 rt.def("/datum/export/large/collector/pa/controls/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/machinery/particle_accelerator/control_box")));
+	parent_proc();
+	this.export_types = list(T("/obj/machinery/particle_accelerator/control_box"));
 	return f.dot;
 });
 
@@ -220,12 +194,10 @@ rt.type(1988, "/datum/export/large/pipedispenser", "/datum/export/large", {
 	export_types: null,
 });
 
-// /datum/export/large/pipedispenser/proc/<init>  (code/modules/cargo/exports/large_objects.dm:90)
+// large_objects.dm:90
 rt.def("/datum/export/large/pipedispenser/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/machinery/pipedispenser")));
+	parent_proc();
+	this.export_types = list(T("/obj/machinery/pipedispenser"));
 	return f.dot;
 });
 
@@ -235,12 +207,10 @@ rt.type(1989, "/datum/export/large/supermatter", "/datum/export/large", {
 	export_types: null,
 });
 
-// /datum/export/large/supermatter/proc/<init>  (code/modules/cargo/exports/large_objects.dm:95)
+// large_objects.dm:95
 rt.def("/datum/export/large/supermatter/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/machinery/power/supermatter_shard")));
+	parent_proc();
+	this.export_types = list(T("/obj/machinery/power/supermatter_shard"));
 	return f.dot;
 });
 
@@ -250,12 +220,10 @@ rt.type(1990, "/datum/export/large/iv", "/datum/export/large", {
 	export_types: null,
 });
 
-// /datum/export/large/iv/proc/<init>  (code/modules/cargo/exports/large_objects.dm:101)
+// large_objects.dm:101
 rt.def("/datum/export/large/iv/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/machinery/iv_drip")));
+	parent_proc();
+	this.export_types = list(T("/obj/machinery/iv_drip"));
 	return f.dot;
 });
 
@@ -265,12 +233,10 @@ rt.type(1991, "/datum/export/large/barrier", "/datum/export/large", {
 	export_types: null,
 });
 
-// /datum/export/large/barrier/proc/<init>  (code/modules/cargo/exports/large_objects.dm:106)
+// large_objects.dm:106
 rt.def("/datum/export/large/barrier/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/item/weapon/grenade/barrier"), T("/obj/structure/barricade/security")));
+	parent_proc();
+	this.export_types = list(T("/obj/item/weapon/grenade/barrier"), T("/obj/structure/barricade/security"));
 	return f.dot;
 });
 
@@ -279,38 +245,33 @@ rt.type(1992, "/datum/export/large/mech", "/datum/export/large", {
 	export_types: null,
 });
 
-// /datum/export/large/mech/proc/<init>  (code/modules/cargo/exports/large_objects.dm:110)
+// large_objects.dm:110
 rt.def("/datum/export/large/mech/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/mecha")));
+	parent_proc();
+	this.export_types = list(T("/obj/mecha"));
 	return f.dot;
 });
 
-// /datum/export/large/mech/proc/applies_to  (code/modules/cargo/exports/large_objects.dm:114)
-rt.def("/datum/export/large/mech/proc/applies_to", function applies_to(f: Frame) {
+// large_objects.dm:114
+rt.def("/datum/export/large/mech/proc/applies_to", function applies_to(f: Frame, O: Value) {
 	let ME: Value = null;
-	f.vars = () => [ME];
-	if (!truthy(rt.callSuper(f, [], rt.Args.Same))) {
+	if (!parent_proc()) {
 		return 0;
 	}
-	rt.setFv(f, "wreckage", (ME = live(f.args[0])), null);
-	if (!truthy(rt.sv(f, "sellable"))) return f.dot;
+	(ME = O).wreckage = null;
+	if (!this.sellable) return f.dot;
 	return 1;
-}, false, { args: ["O"] });
+}, false);
 
 rt.type(1993, "/datum/export/large/mech/sellable", "/datum/export/large/mech", {
 	export_types: null,
 	sellable: 1,
 });
 
-// /datum/export/large/mech/sellable/proc/<init>  (code/modules/cargo/exports/large_objects.dm:123)
+// large_objects.dm:123
 rt.def("/datum/export/large/mech/sellable/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list());
+	parent_proc();
+	this.export_types = list();
 	return f.dot;
 });
 
@@ -321,14 +282,12 @@ rt.type(1994, "/datum/export/large/mech/sellable/ripley", "/datum/export/large/m
 	exclude_types: null,
 });
 
-// /datum/export/large/mech/sellable/ripley/proc/<init>  (code/modules/cargo/exports/large_objects.dm:129)
+// large_objects.dm:129
 rt.def("/datum/export/large/mech/sellable/ripley/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/mecha/working/ripley")));
-	$0 = $0;
-	rt.setSv(f, "exclude_types", rt.list(T("/obj/mecha/working/ripley/firefighter")));
+	parent_proc();
+	this.export_types = list(T("/obj/mecha/working/ripley"));
+
+	this.exclude_types = list(T("/obj/mecha/working/ripley/firefighter"));
 	return f.dot;
 });
 
@@ -338,12 +297,10 @@ rt.type(1995, "/datum/export/large/mech/sellable/firefighter", "/datum/export/la
 	export_types: null,
 });
 
-// /datum/export/large/mech/sellable/firefighter/proc/<init>  (code/modules/cargo/exports/large_objects.dm:135)
+// large_objects.dm:135
 rt.def("/datum/export/large/mech/sellable/firefighter/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/mecha/working/ripley/firefighter")));
+	parent_proc();
+	this.export_types = list(T("/obj/mecha/working/ripley/firefighter"));
 	return f.dot;
 });
 
@@ -353,12 +310,10 @@ rt.type(1996, "/datum/export/large/mech/sellable/odysseus", "/datum/export/large
 	export_types: null,
 });
 
-// /datum/export/large/mech/sellable/odysseus/proc/<init>  (code/modules/cargo/exports/large_objects.dm:140)
+// large_objects.dm:140
 rt.def("/datum/export/large/mech/sellable/odysseus/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/mecha/medical/odysseus")));
+	parent_proc();
+	this.export_types = list(T("/obj/mecha/medical/odysseus"));
 	return f.dot;
 });
 
@@ -369,14 +324,12 @@ rt.type(1997, "/datum/export/large/mech/sellable/gygax", "/datum/export/large/me
 	exclude_types: null,
 });
 
-// /datum/export/large/mech/sellable/gygax/proc/<init>  (code/modules/cargo/exports/large_objects.dm:145)
+// large_objects.dm:145
 rt.def("/datum/export/large/mech/sellable/gygax/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/mecha/combat/gygax")));
-	$0 = $0;
-	rt.setSv(f, "exclude_types", rt.list(T("/obj/mecha/combat/gygax/dark")));
+	parent_proc();
+	this.export_types = list(T("/obj/mecha/combat/gygax"));
+
+	this.exclude_types = list(T("/obj/mecha/combat/gygax/dark"));
 	return f.dot;
 });
 
@@ -387,12 +340,10 @@ rt.type(1998, "/datum/export/large/mech/sellable/honkmech", "/datum/export/large
 	export_types: null,
 });
 
-// /datum/export/large/mech/sellable/honkmech/proc/<init>  (code/modules/cargo/exports/large_objects.dm:152)
+// large_objects.dm:152
 rt.def("/datum/export/large/mech/sellable/honkmech/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/mecha/combat/honker")));
+	parent_proc();
+	this.export_types = list(T("/obj/mecha/combat/honker"));
 	return f.dot;
 });
 
@@ -402,12 +353,10 @@ rt.type(1999, "/datum/export/large/mech/sellable/durand", "/datum/export/large/m
 	export_types: null,
 });
 
-// /datum/export/large/mech/sellable/durand/proc/<init>  (code/modules/cargo/exports/large_objects.dm:157)
+// large_objects.dm:157
 rt.def("/datum/export/large/mech/sellable/durand/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/mecha/combat/durand")));
+	parent_proc();
+	this.export_types = list(T("/obj/mecha/combat/durand"));
 	return f.dot;
 });
 
@@ -417,12 +366,10 @@ rt.type(2000, "/datum/export/large/mech/sellable/phazon", "/datum/export/large/m
 	export_types: null,
 });
 
-// /datum/export/large/mech/sellable/phazon/proc/<init>  (code/modules/cargo/exports/large_objects.dm:162)
+// large_objects.dm:162
 rt.def("/datum/export/large/mech/sellable/phazon/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/mecha/combat/phazon")));
+	parent_proc();
+	this.export_types = list(T("/obj/mecha/combat/phazon"));
 	return f.dot;
 });
 
@@ -432,12 +379,10 @@ rt.type(2001, "/datum/export/large/mech/sellable/syndiegygax", "/datum/export/la
 	export_types: null,
 });
 
-// /datum/export/large/mech/sellable/syndiegygax/proc/<init>  (code/modules/cargo/exports/large_objects.dm:167)
+// large_objects.dm:167
 rt.def("/datum/export/large/mech/sellable/syndiegygax/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/mecha/combat/gygax/dark")));
+	parent_proc();
+	this.export_types = list(T("/obj/mecha/combat/gygax/dark"));
 	return f.dot;
 });
 
@@ -447,11 +392,9 @@ rt.type(2003, "/datum/export/large/mech/sellable/mauler", "/datum/export/large/m
 	export_types: null,
 });
 
-// /datum/export/large/mech/sellable/mauler/proc/<init>  (code/modules/cargo/exports/large_objects.dm:177)
+// large_objects.dm:177
 rt.def("/datum/export/large/mech/sellable/mauler/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/mecha/combat/marauder/mauler")));
+	parent_proc();
+	this.export_types = list(T("/obj/mecha/combat/marauder/mauler"));
 	return f.dot;
 });

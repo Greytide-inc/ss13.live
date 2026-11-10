@@ -1,7 +1,7 @@
-// From code/game/objects/items/weapons/singularityhammer.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/weapons/singularityhammer.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(5622, "/obj/item/weapon/twohanded/singularityhammer", "/obj/item/weapon/twohanded", {
@@ -23,96 +23,85 @@ rt.type(5622, "/obj/item/weapon/twohanded/singularityhammer", "/obj/item/weapon/
 	force_string: "LORD SINGULOTH HIMSELF",
 });
 
-// /obj/item/weapon/twohanded/singularityhammer/proc/<init>  (code/game/objects/items/weapons/singularityhammer.dm:15)
+// singularityhammer.dm:15
 rt.def("/obj/item/weapon/twohanded/singularityhammer/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 50, "bullet", 50, "laser", 50, "energy", 0, "bomb", 50, "bio", 0, "rad", 0, "fire", 100, "acid", 100]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 50, "bullet", 50, "laser", 50, "energy", 0, "bomb", 50, "bio", 0, "rad", 0, "fire", 100, "acid", 100]);
 	return f.dot;
 });
 
-// /obj/item/weapon/twohanded/singularityhammer/proc/New  (code/game/objects/items/weapons/singularityhammer.dm:20)  may sleep
+// singularityhammer.dm:20
 rt.def("/obj/item/weapon/twohanded/singularityhammer/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.fv(f, "isprocessing", live(f.src)))) return f.dot;
-	rt.setFv(f, "isprocessing", live(f.src), 1);
-	rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), add);
+	yield* parent_proc();
+	if (this.isprocessing) return f.dot;
+	this.isprocessing = 1;
+	GLOB.SSobj.processing += this;
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/twohanded/singularityhammer/proc/Destroy  (code/game/objects/items/weapons/singularityhammer.dm:24)  may sleep
+// singularityhammer.dm:24
 rt.def("/obj/item/weapon/twohanded/singularityhammer/proc/Destroy", function* Destroy(f: Frame) {
-	rt.setFv(f, "isprocessing", live(f.src), 0);
-	(rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), subtract));
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	this.isprocessing = 0;
+	GLOB.SSobj.processing -= this;
+	return (yield* parent_proc());
 }, true);
 
-// /obj/item/weapon/twohanded/singularityhammer/proc/process  (code/game/objects/items/weapons/singularityhammer.dm:28)
+// singularityhammer.dm:28
 rt.def("/obj/item/weapon/twohanded/singularityhammer/proc/process", function process(f: Frame) {
-	if (rt.lt(rt.sv(f, "charged"), 5)) {
-		rt.incSrcVar(f, "charged", 1, true);
+	if (this.charged < 5) {
+		this.charged++;
 	}
-	return live(f.dot);
+	return f.dot;
 }, false, { waitfor: false });
 
-// /obj/item/weapon/twohanded/singularityhammer/proc/update_icon  (code/game/objects/items/weapons/singularityhammer.dm:33)
+// singularityhammer.dm:33
 rt.def("/obj/item/weapon/twohanded/singularityhammer/proc/update_icon", function update_icon(f: Frame) {
-	rt.setSv(f, "icon_state", fmt("mjollnir＀", [rt.sv(f, "wielded")]));
-	return live(f.dot);
+	this.icon_state = `mjollnir${this.wielded}`;
+	return f.dot;
 });
 
-// /obj/item/weapon/twohanded/singularityhammer/proc/vortex  (code/game/objects/items/weapons/singularityhammer.dm:37)  may sleep
+// singularityhammer.dm:37
 rt.def("/obj/item/weapon/twohanded/singularityhammer/proc/vortex", function* vortex(f: Frame, pull: Value, wielder: Value) {
 	let X: Value = null, A: Value = null, H: Value = null, M: Value = null;
-	let $e: any;
-	f.vars = () => [pull, wielder, X, A, H, M, $e];
-	X = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/orange"), null, [5, live(pull)])), T("/atom"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		X = $e;
-		if (truthy((rt.istype(live(X), T("/atom/movable")) ? 1 : 0))) {
-			if (isEqual((A = live(X)), live(wielder))) {
+	for (X of each(orange(5, pull), T("/atom"))) {
+		if (rt.istype(X, T("/atom/movable"))) {
+			if ((A = X) == wielder) {
 				continue;
 			}
-			if (((truthy(live(A)) && !truthy(rt.fv(f, "anchored", live(A)))) && !truthy((rt.istype(live(X), T("/mob/living/carbon/human")) ? 1 : 0)))) {
-				yield* g.call(f, P("/proc/step_towards"), null, [live(A), live(pull)]);
-				yield* g.call(f, P("/proc/step_towards"), null, [live(A), live(pull)]);
-				yield* g.call(f, P("/proc/step_towards"), null, [live(A), live(pull)]);
-			} else {
-				if (truthy((rt.istype(live(X), T("/mob/living/carbon/human")) ? 1 : 0))) {
-					if (truthy((rt.istype(rt.gv(f, "shoes", (H = live(X))), T("/obj/item/clothing/shoes/magboots")) ? 1 : 0))) {
-						if (truthy(rt.gv(f, "magpulse", (M = rt.fv(f, "shoes", live(H)))))) {
-							continue;
-						}
+			if (A && !A.anchored && !rt.istype(X, T("/mob/living/carbon/human"))) {
+				yield* step_towards(A, pull);
+				yield* step_towards(A, pull);
+				yield* step_towards(A, pull);
+			} else if (rt.istype(X, T("/mob/living/carbon/human"))) {
+				if (rt.istype((H = X).shoes, T("/obj/item/clothing/shoes/magboots"))) {
+					if ((M = H.shoes).magpulse) {
+						continue;
 					}
-					yield* g.callName(f, live(H), "apply_effect", [20, "knockdown", 0]);
-					yield* g.call(f, P("/proc/step_towards"), null, [live(H), live(pull)]);
-					yield* g.call(f, P("/proc/step_towards"), null, [live(H), live(pull)]);
-					yield* g.call(f, P("/proc/step_towards"), null, [live(H), live(pull)]);
 				}
+				yield* H.apply_effect(20, "knockdown", 0);
+				yield* step_towards(H, pull);
+				yield* step_towards(H, pull);
+				yield* step_towards(H, pull);
 			}
 		}
 	}
-	rt.endFor(f, 0);
-	return live(f.dot);
+	return f.dot;
 }, true);
 
-// /obj/item/weapon/twohanded/singularityhammer/proc/afterattack  (code/game/objects/items/weapons/singularityhammer.dm:59)  may sleep
+// singularityhammer.dm:59
 rt.def("/obj/item/weapon/twohanded/singularityhammer/proc/afterattack", function* afterattack(f: Frame, A: Value, user: Value, proximity: Value) {
 	let Z: Value = null, target: Value = null;
-	f.vars = () => [A, user, proximity, Z, target];
-	if (!truthy(live(proximity))) {
-		return live(f.dot);
+	if (!proximity) {
+		return f.dot;
 	}
-	if (!truthy(rt.sv(f, "wielded"))) return f.dot;
-	if (!isEqual(rt.sv(f, "charged"), 5)) return f.dot;
-	rt.setSv(f, "charged", 0);
-	if (truthy((rt.istype(live(A), T("/mob/living")) ? 1 : 0))) {
-		yield* g.callName(f, (Z = live(A)), "take_bodypart_damage", [20, 0]);
+	if (!this.wielded) return f.dot;
+	if (this.charged != 5) return f.dot;
+	this.charged = 0;
+	if (rt.istype(A, T("/mob/living"))) {
+		yield* (Z = A).take_bodypart_damage(20, 0);
 	}
-	yield* g.call(f, P("/proc/playsound"), null, [live(user), rt.rsc("sound/weapons/marauder.ogg"), 50, 1]);
-	yield* g.srcCall(f, "vortex", (target = rt.getStep(f, live(A), 0)), live(user));
+	playsound(user, rt.rsc("sound/weapons/marauder.ogg"), 50, 1);
+	yield* this.vortex((target = rt.getStep(f, A, 0)), user);
 	return f.dot;
 }, true);
 
@@ -131,38 +120,37 @@ rt.type(5623, "/obj/item/weapon/twohanded/mjollnir", "/obj/item/weapon/twohanded
 	origin_tech: "combat=4;powerstorage=7",
 });
 
-// /obj/item/weapon/twohanded/mjollnir/proc/shock  (code/game/objects/items/weapons/singularityhammer.dm:85)  may sleep
+// singularityhammer.dm:85
 rt.def("/obj/item/weapon/twohanded/mjollnir/proc/shock", function* shock(f: Frame, target: Value) {
-	let s: Value = null, throw_target: Value = null;
-	f.vars = () => [target, s, throw_target];
-	yield* g.callName(f, live(target), "Stun", [60]);
-	yield* g.callName(f, (s = (yield* g.new_(f, T("/datum/effect_system/lightning_spread"), []))), "set_up", [5, 1, rt.fv(f, "loc", live(target))]);
-	yield* g.callName(f, live(s), "start", []);
-	yield* g.callName(f, live(target), "visible_message", [fmt("<span class='danger'>＀ was shocked by ＀!</span>", [rt.fv(f, "name", live(target)), live(f.src)]), "<span class='userdanger'>You feel a powerful shock course through your body sending you flying!</span>", "<span class='italics'>You hear a heavy electrical crack!</span>"]);
-	throw_target = (yield* g.call(f, P("/proc/get_edge_target_turf"), null, [live(target), rt.getDir(f, live(f.src), (yield* g.call(f, P("/proc/get_step_away"), null, [live(target), live(f.src)])))]));
-	yield* g.callName(f, live(target), "throw_at", [live(throw_target), 200, 4]);
-	return live(f.dot);
+	let s: Value = null;
+	yield* target.Stun(60);
+	yield* (s = (yield* new_(T("/datum/effect_system/lightning_spread")))).set_up(5, 1, target.loc);
+	yield* s.start();
+	target.visible_message(`<span class='danger'>${target.name} was shocked by ${this}!</span>`, "<span class='userdanger'>You feel a powerful shock course through your body sending you flying!</span>", "<span class='italics'>You hear a heavy electrical crack!</span>");
+	let throw_target: Value = get_edge_target_turf(target, rt.getDir(f, this, get_step_away(target, this)));
+	yield* target.throw_at(throw_target, 200, 4);
+	return f.dot;
 }, true);
 
-// /obj/item/weapon/twohanded/mjollnir/proc/attack  (code/game/objects/items/weapons/singularityhammer.dm:97)  may sleep
-rt.def("/obj/item/weapon/twohanded/mjollnir/proc/attack", function* attack(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.sv(f, "wielded"))) return f.dot;
-	yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), "sparks", 50, 1]);
-	yield* g.srcCall(f, "shock", live(f.args[0]));
+// singularityhammer.dm:97
+rt.def("/obj/item/weapon/twohanded/mjollnir/proc/attack", function* attack(f: Frame, M: Value, user: Value) {
+	yield* parent_proc();
+	if (!this.wielded) return f.dot;
+	playsound(this.loc, "sparks", 50, 1);
+	yield* this.shock(M);
 	return f.dot;
-}, true, { args: ["M", "user"] });
+}, true);
 
-// /obj/item/weapon/twohanded/mjollnir/proc/throw_impact  (code/game/objects/items/weapons/singularityhammer.dm:103)  may sleep
-rt.def("/obj/item/weapon/twohanded/mjollnir/proc/throw_impact", function* throw_impact(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy((rt.istype(live(f.args[0]), T("/mob/living")) ? 1 : 0))) return f.dot;
-	yield* g.srcCall(f, "shock", live(f.args[0]));
+// singularityhammer.dm:103
+rt.def("/obj/item/weapon/twohanded/mjollnir/proc/throw_impact", function* throw_impact(f: Frame, target: Value) {
+	f.dot = (yield* parent_proc());
+	if (!rt.istype(target, T("/mob/living"))) return f.dot;
+	yield* this.shock(target);
 	return f.dot;
-}, true, { args: ["target"], waitfor: false });
+}, true, { waitfor: false });
 
-// /obj/item/weapon/twohanded/mjollnir/proc/update_icon  (code/game/objects/items/weapons/singularityhammer.dm:108)
+// singularityhammer.dm:108
 rt.def("/obj/item/weapon/twohanded/mjollnir/proc/update_icon", function update_icon(f: Frame) {
-	rt.setSv(f, "icon_state", fmt("mjollnir＀", [rt.sv(f, "wielded")]));
-	return live(f.dot);
+	this.icon_state = `mjollnir${this.wielded}`;
+	return f.dot;
 });

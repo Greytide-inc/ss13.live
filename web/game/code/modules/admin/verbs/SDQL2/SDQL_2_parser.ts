@@ -1,7 +1,7 @@
-// From code/modules/admin/verbs/SDQL2/SDQL_2_parser.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/admin/verbs/SDQL2/SDQL_2_parser.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(1842, "/datum/SDQL_parser", "/datum", {
@@ -16,520 +16,461 @@ rt.type(1842, "/datum/SDQL_parser", "/datum", {
 	comparitors: null,
 });
 
-// /datum/SDQL_parser/proc/<init>  (code/modules/admin/verbs/SDQL2/SDQL_2_parser.dm:54)
+// SDQL_2_parser.dm:54
 rt.def("/datum/SDQL_parser/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "select_functions", rt.list("count"));
-	rt.setSv(f, "boolean_operators", rt.list("and", "or", "&&", "||"));
-	rt.setSv(f, "unary_operators", rt.list("!", "-", "~"));
-	rt.setSv(f, "binary_operators", rt.list("+", "-", "/", "*", "&", "|", "^"));
-	rt.setSv(f, "comparitors", rt.list("=", "==", "!=", "<>", "<", "<=", ">", ">="));
+	parent_proc();
+	this.select_functions = list("count");
+	this.boolean_operators = list("and", "or", "&&", "||");
+	this.unary_operators = list("!", "-", "~");
+	this.binary_operators = list("+", "-", "/", "*", "&", "|", "^");
+	this.comparitors = list("=", "==", "!=", "<>", "<", "<=", ">", ">=");
 	return f.dot;
 });
 
-// /datum/SDQL_parser/proc/New  (code/modules/admin/verbs/SDQL2/SDQL_2_parser.dm:61)
+// SDQL_2_parser.dm:61
 rt.def("/datum/SDQL_parser/proc/New", function New(f: Frame, query_list: Value) {
-	rt.setSv(f, "query", live(query_list));
+	this.query = query_list;
 	return f.dot;
 });
 
-// /datum/SDQL_parser/proc/parse_error  (code/modules/admin/verbs/SDQL2/SDQL_2_parser.dm:65)
+// SDQL_2_parser.dm:65
 rt.def("/datum/SDQL_parser/proc/parse_error", function parse_error(f: Frame, error_message: Value) {
-	rt.setSv(f, "error", 1);
-	rt.call(f, P("/proc/to_chat"), null, [live(f.usr), fmt("<span class='danger'>SQDL2 Parsing Error: ＀</span>", [live(error_message)])]);
-	return add(rt.len(f, rt.sv(f, "query")), 1);
+	this.error = 1;
+	to_chat(f.usr, `<span class='danger'>SQDL2 Parsing Error: ${error_message}</span>`);
+	return rt.len(f, this.query) + 1;
 });
 
-// /datum/SDQL_parser/proc/parse  (code/modules/admin/verbs/SDQL2/SDQL_2_parser.dm:69)
+// SDQL_2_parser.dm:69
 rt.def("/datum/SDQL_parser/proc/parse", function parse(f: Frame) {
-	rt.setSv(f, "tree", rt.list());
-	rt.callSrc(f, "query", [1, rt.sv(f, "tree")]);
-	if (truthy(rt.sv(f, "error"))) {
-		return rt.list();
+	this.tree = list();
+	this.query(1, this.tree);
+	if (this.error) {
+		return list();
 	}
-	return rt.sv(f, "tree");
+	return this.tree;
 });
 
-// /datum/SDQL_parser/proc/token  (code/modules/admin/verbs/SDQL2/SDQL_2_parser.dm:78)
+// SDQL_2_parser.dm:78
 rt.def("/datum/SDQL_parser/proc/token", function token(f: Frame, i: Value) {
-	if (rt.le(live(i), rt.len(f, rt.sv(f, "query")))) {
-		return rt.index(rt.sv(f, "query"), live(i));
+	if (i <= rt.len(f, this.query)) {
+		return rt.index(this.query, i);
 	}
 	return null;
 });
 
-// /datum/SDQL_parser/proc/tokens  (code/modules/admin/verbs/SDQL2/SDQL_2_parser.dm:85)
+// SDQL_2_parser.dm:85
 rt.def("/datum/SDQL_parser/proc/tokens", function tokens(f: Frame, i: Value, num: Value) {
-	if (rt.le(add(live(i), live(num)), rt.len(f, rt.sv(f, "query")))) {
-		return rt.callName(f, rt.sv(f, "query"), "Copy", [live(i), add(live(i), live(num))]);
+	if (i + num <= rt.len(f, this.query)) {
+		return this.query.Copy(i, i + num);
 	}
 	return null;
 });
 
-// /datum/SDQL_parser/proc/tokenl  (code/modules/admin/verbs/SDQL2/SDQL_2_parser.dm:92)
+// SDQL_2_parser.dm:92
 rt.def("/datum/SDQL_parser/proc/tokenl", function tokenl(f: Frame, i: Value) {
-	return rt.call(f, P("/proc/lowertext"), null, [rt.callSrc(f, "token", [live(i)])]);
+	return lowertext(this.token(i));
 });
 
-// /datum/SDQL_parser/proc/query  (code/modules/admin/verbs/SDQL2/SDQL_2_parser.dm:97)
+// SDQL_2_parser.dm:97
 rt.def("/datum/SDQL_parser/proc/query", function query(f: Frame, i: Value, node: Value) {
-	let $0: any;
-	f.vars = () => [node, $0];
-	rt.setSv(f, "query_type", rt.callSrc(f, "tokenl", [live(i)]));
-	$0 = rt.sv(f, "query_type");
-	if ($0 === "select") {
-		rt.callSrc(f, "select_query", [live(i), live(node)]);
-	} else if ($0 === "delete") {
-		rt.callSrc(f, "delete_query", [live(i), live(node)]);
-	} else if ($0 === "update") {
-		rt.callSrc(f, "update_query", [live(i), live(node)]);
-	} else if ($0 === "call") {
-		rt.callSrc(f, "call_query", [live(i), live(node)]);
-	} else if ($0 === "explain") {
-		rt.setAt((node = rt.modify(live(node), "explain", add)), "explain", rt.list());
-		rt.callSrc(f, "query", [add(live(i), 1), rt.at(live(node), "explain")]);
+	this.query_type = this.tokenl(i);
+	if (this.query_type === "select") {
+		this.select_query(i, node);
+	} else if (this.query_type === "delete") {
+		this.delete_query(i, node);
+	} else if (this.query_type === "update") {
+		this.update_query(i, node);
+	} else if (this.query_type === "call") {
+		this.call_query(i, node);
+	} else if (this.query_type === "explain") {
+		rt.setAt((node += "explain"), "explain", list());
+		this.query(i + 1, rt.at(node, "explain"));
 	}
 	return f.dot;
 });
 
-// /datum/SDQL_parser/proc/select_query  (code/modules/admin/verbs/SDQL2/SDQL_2_parser.dm:115)
+// SDQL_2_parser.dm:115
 rt.def("/datum/SDQL_parser/proc/select_query", function select_query(f: Frame, i: Value, node: Value) {
-	let select: Value = null;
-	f.vars = () => [i, node, select];
-	select = rt.list();
-	i = rt.callSrc(f, "select_list", [add(live(i), 1), live(select)]);
-	rt.setAt((node = rt.modify(live(node), "select", add)), "select", live(select));
-	rt.callSrc(f, "selectors", [live(i), live(node)]);
-	return live(i);
+	let select: Value = list();
+	i = this.select_list(i + 1, select);
+	rt.setAt((node += "select"), "select", select);
+	this.selectors(i, node);
+	return i;
 });
 
-// /datum/SDQL_parser/proc/delete_query  (code/modules/admin/verbs/SDQL2/SDQL_2_parser.dm:124)
+// SDQL_2_parser.dm:124
 rt.def("/datum/SDQL_parser/proc/delete_query", function delete_query(f: Frame, i: Value, node: Value) {
-	let select: Value = null;
-	f.vars = () => [i, node, select];
-	select = rt.list();
-	i = rt.callSrc(f, "select_list", [add(live(i), 1), live(select)]);
-	rt.setAt((node = rt.modify(live(node), "delete", add)), "delete", live(select));
-	rt.callSrc(f, "selectors", [live(i), live(node)]);
-	return live(i);
+	let select: Value = list();
+	i = this.select_list(i + 1, select);
+	rt.setAt((node += "delete"), "delete", select);
+	this.selectors(i, node);
+	return i;
 });
 
-// /datum/SDQL_parser/proc/update_query  (code/modules/admin/verbs/SDQL2/SDQL_2_parser.dm:133)
+// SDQL_2_parser.dm:133
 rt.def("/datum/SDQL_parser/proc/update_query", function update_query(f: Frame, i: Value, node: Value) {
-	let select: Value = null, set_assignments: Value = null;
-	f.vars = () => [i, node, select, set_assignments];
-	select = rt.list();
-	i = rt.callSrc(f, "select_list", [add(live(i), 1), live(select)]);
-	rt.setAt((node = rt.modify(live(node), "update", add)), "update", live(select));
-	if (!isEqual(rt.callSrc(f, "tokenl", [live(i)]), "set")) {
-		i = rt.callSrc(f, "parse_error", ["UPDATE has misplaced SET"]);
+	let select: Value = list();
+	i = this.select_list(i + 1, select);
+	rt.setAt((node += "update"), "update", select);
+	if (this.tokenl(i) != "set") {
+		i = this.parse_error("UPDATE has misplaced SET");
 	}
-	set_assignments = rt.list();
-	i = rt.callSrc(f, "assignments", [add(live(i), 1), live(set_assignments)]);
-	rt.setAt((node = rt.modify(live(node), "set", add)), "set", live(set_assignments));
-	rt.callSrc(f, "selectors", [live(i), live(node)]);
-	return live(i);
+	let set_assignments: Value = list();
+	i = this.assignments(i + 1, set_assignments);
+	rt.setAt((node += "set"), "set", set_assignments);
+	this.selectors(i, node);
+	return i;
 });
 
-// /datum/SDQL_parser/proc/call_query  (code/modules/admin/verbs/SDQL2/SDQL_2_parser.dm:148)
+// SDQL_2_parser.dm:148
 rt.def("/datum/SDQL_parser/proc/call_query", function call_query(f: Frame, i: Value, node: Value) {
-	let func: Value = null, select: Value = null;
-	f.vars = () => [i, node, func, select];
-	func = rt.list();
-	i = rt.callSrc(f, "variable", [add(live(i), 1), live(func)]);
-	rt.setAt((node = rt.modify(live(node), "call", add)), "call", live(func));
-	if (!isEqual(rt.callSrc(f, "tokenl", [live(i)]), "on")) {
-		return live(i);
+	let func: Value = list();
+	i = this.variable(i + 1, func);
+	rt.setAt((node += "call"), "call", func);
+	if (this.tokenl(i) != "on") {
+		return i;
 	}
-	select = rt.list();
-	i = rt.callSrc(f, "select_list", [add(live(i), 1), live(select)]);
-	rt.setAt((node = rt.modify(live(node), "on", add)), "on", live(select));
-	rt.callSrc(f, "selectors", [live(i), live(node)]);
-	return live(i);
+	let select: Value = list();
+	i = this.select_list(i + 1, select);
+	rt.setAt((node += "on"), "on", select);
+	this.selectors(i, node);
+	return i;
 });
 
-// /datum/SDQL_parser/proc/select_list  (code/modules/admin/verbs/SDQL2/SDQL_2_parser.dm:163)
+// SDQL_2_parser.dm:163
 rt.def("/datum/SDQL_parser/proc/select_list", function select_list(f: Frame, i: Value, node: Value) {
-	f.vars = () => [i];
-	if (isEqual(rt.callSrc(f, "token", [(i = rt.callSrc(f, "select_item", [live(i), live(node)]))]), ",")) {
-		i = rt.callSrc(f, "select_list", [add(live(i), 1), live(node)]);
+	if (this.token((i = this.select_item(i, node))) == ",") {
+		i = this.select_list(i + 1, node);
 	}
-	return live(i);
+	return i;
 });
 
-// /datum/SDQL_parser/proc/assignments  (code/modules/admin/verbs/SDQL2/SDQL_2_parser.dm:170)
+// SDQL_2_parser.dm:170
 rt.def("/datum/SDQL_parser/proc/assignments", function assignments(f: Frame, i: Value, node: Value) {
-	f.vars = () => [i];
-	if (isEqual(rt.callSrc(f, "token", [(i = rt.callSrc(f, "assignment", [live(i), live(node)]))]), ",")) {
-		i = rt.callSrc(f, "assignments", [add(live(i), 1), live(node)]);
+	if (this.token((i = this.assignment(i, node))) == ",") {
+		i = this.assignments(i + 1, node);
 	}
-	return live(i);
+	return i;
 });
 
-// /datum/SDQL_parser/proc/select_item  (code/modules/admin/verbs/SDQL2/SDQL_2_parser.dm:177)
+// SDQL_2_parser.dm:177
 rt.def("/datum/SDQL_parser/proc/select_item", function select_item(f: Frame, i: Value, node: Value) {
-	f.vars = () => [i, node];
-	if (isEqual(rt.callSrc(f, "token", [live(i)]), "*")) {
-		node = rt.modify(live(node), "*", add);
-		i = rt.inc(live(i), 1);
+	if (this.token(i) == "*") {
+		node += "*";
+		i++;
+	} else if (rt.isIn(f, this.tokenl(i), this.select_functions)) {
+		i = this.select_function(i, node);
 	} else {
-		if (truthy((rt.isIn(f, rt.callSrc(f, "tokenl", [live(i)]), rt.sv(f, "select_functions")) ? 1 : 0))) {
-			i = rt.callSrc(f, "select_function", [live(i), live(node)]);
-		} else {
-			i = rt.callSrc(f, "object_type", [live(i), live(node)]);
-		}
+		i = this.object_type(i, node);
 	}
-	return live(i);
+	return i;
 });
 
-// /datum/SDQL_parser/proc/selectors  (code/modules/admin/verbs/SDQL2/SDQL_2_parser.dm:188)
+// SDQL_2_parser.dm:188
 rt.def("/datum/SDQL_parser/proc/selectors", function selectors(f: Frame, i: Value, node: Value) {
 	let tok: Value = null, from: Value = null, where: Value = null;
-	f.vars = () => [i, tok, from, where];
 	blk48: {
 		while (true) {
-			if (!truthy(rt.callSrc(f, "token", [live(i)]))) break blk48;
-			if (truthy((rt.isIn(f, (tok = rt.callSrc(f, "tokenl", [live(i)])), rt.list("from", "in")) ? 1 : 0))) {
-				from = rt.list();
-				i = rt.callSrc(f, "from_item", [add(live(i), 1), live(from)]);
-				rt.setAt(live(node), "from", live(from));
+			if (!this.token(i)) break blk48;
+			if (rt.isIn(f, (tok = this.tokenl(i)), list("from", "in"))) {
+				from = list();
+				i = this.from_item(i + 1, from);
+				rt.setAt(node, "from", from);
 				continue;
 			}
-			if (!isEqual(live(tok), "where")) break;
-			where = rt.list();
-			i = rt.callSrc(f, "bool_expression", [add(live(i), 1), live(where)]);
-			rt.setAt(live(node), "where", live(where));
+			if (tok != "where") break;
+			where = list();
+			i = this.bool_expression(i + 1, where);
+			rt.setAt(node, "where", where);
 		}
-		rt.callSrc(f, "parse_error", [fmt("Expected either FROM, IN or WHERE token, found ＀ instead.", [rt.callSrc(f, "token", [live(i)])])]);
-		return add(live(i), 1);
+		this.parse_error(`Expected either FROM, IN or WHERE token, found ${this.token(i)} instead.`);
+		return i + 1;
 	}
-	if (!truthy(rt.callName(f, live(node), "Find", ["from"]))) {
-		rt.setAt(live(node), "from", rt.list("world"));
+	if (!node.Find("from")) {
+		rt.setAt(node, "from", list("world"));
 	}
-	return live(i);
+	return i;
 });
 
-// /datum/SDQL_parser/proc/from_item  (code/modules/admin/verbs/SDQL2/SDQL_2_parser.dm:208)
+// SDQL_2_parser.dm:208
 rt.def("/datum/SDQL_parser/proc/from_item", function from_item(f: Frame, i: Value, node: Value) {
-	f.vars = () => [i, node];
-	if (isEqual(rt.callSrc(f, "token", [live(i)]), "world")) {
-		node = rt.modify(live(node), "world", add);
-		i = rt.inc(live(i), 1);
+	if (this.token(i) == "world") {
+		node += "world";
+		i++;
 	} else {
-		i = rt.callSrc(f, "expression", [live(i), live(node)]);
+		i = this.expression(i, node);
 	}
-	return live(i);
+	return i;
 });
 
-// /datum/SDQL_parser/proc/bool_expression  (code/modules/admin/verbs/SDQL2/SDQL_2_parser.dm:217)
+// SDQL_2_parser.dm:217
 rt.def("/datum/SDQL_parser/proc/bool_expression", function bool_expression(f: Frame, i: Value, node: Value) {
-	let bool: Value = null;
-	f.vars = () => [i, bool];
-	bool = rt.list();
-	i = rt.callSrc(f, "expression", [live(i), live(bool)]);
-	rt.setAt(live(node), rt.incField(f, live(node), "len", 1, false), live(bool));
-	if (truthy((rt.isIn(f, rt.callSrc(f, "tokenl", [live(i)]), rt.sv(f, "boolean_operators")) ? 1 : 0))) {
-		i = rt.callSrc(f, "bool_expression", [(i = rt.callSrc(f, "bool_operator", [live(i), live(node)])), live(node)]);
+	let bool: Value = list();
+	i = this.expression(i, bool);
+	rt.setAt(node, ++node.len, bool);
+	if (rt.isIn(f, this.tokenl(i), this.boolean_operators)) {
+		i = this.bool_expression((i = this.bool_operator(i, node)), node);
 	}
-	return live(i);
+	return i;
 });
 
-// /datum/SDQL_parser/proc/assignment  (code/modules/admin/verbs/SDQL2/SDQL_2_parser.dm:227)
+// SDQL_2_parser.dm:227
 rt.def("/datum/SDQL_parser/proc/assignment", function assignment(f: Frame, i: Value, node: Value, assignment_list: Value) {
 	let exp_list: Value = null;
-	f.vars = () => [i, assignment_list, exp_list];
-	if (live(assignment_list) === null) {
-		assignment_list = rt.list();
-	}
-	assignment_list = rt.modify(live(assignment_list), rt.callSrc(f, "token", [live(i)]), add);
-	if (isEqual(rt.callSrc(f, "token", [add(live(i), 1)]), ".")) {
-		i = rt.callSrc(f, "assignment", [add(live(i), 2), live(node), live(assignment_list)]);
+	assignment_list ??= list();
+	assignment_list += this.token(i);
+	if (this.token(i + 1) == ".") {
+		i = this.assignment(i + 2, node, assignment_list);
+	} else if (this.token(i + 1) == "=") {
+		exp_list = list();
+		rt.setAt(node, assignment_list, exp_list);
+		i = this.expression(i + 2, exp_list);
 	} else {
-		if (isEqual(rt.callSrc(f, "token", [add(live(i), 1)]), "=")) {
-			exp_list = rt.list();
-			rt.setAt(live(node), live(assignment_list), live(exp_list));
-			i = rt.callSrc(f, "expression", [add(live(i), 2), live(exp_list)]);
-		} else {
-			rt.callSrc(f, "parse_error", ["Assignment expected, but no = found"]);
-		}
+		this.parse_error("Assignment expected, but no = found");
 	}
-	return live(i);
+	return i;
 });
 
-// /datum/SDQL_parser/proc/variable  (code/modules/admin/verbs/SDQL2/SDQL_2_parser.dm:240)
+// SDQL_2_parser.dm:240
 rt.def("/datum/SDQL_parser/proc/variable", function variable(f: Frame, i: Value, node: Value) {
-	let L: Value = null, _arguments: Value = null, expression: Value = null;
-	f.vars = () => [i, L, _arguments, expression];
-	L = rt.list(rt.callSrc(f, "token", [live(i)]));
-	rt.setAt(live(node), rt.incField(f, live(node), "len", 1, false), live(L));
-	if (isEqual(rt.callSrc(f, "token", [live(i)]), "{")) {
-		L = rt.modify(live(L), rt.callSrc(f, "token", [add(live(i), 1)]), add);
-		if (!isEqual(rt.callSrc(f, "token", [(i = rt.modify(live(i), 2, add))]), "}")) {
-			rt.callSrc(f, "parse_error", ["Missing } at end of pointer."]);
+	let _arguments: Value = null, expression: Value = null;
+	let L: Value = list(this.token(i));
+	rt.setAt(node, ++node.len, L);
+	if (this.token(i) == "{") {
+		L += this.token(i + 1);
+		if (this.token((i += 2)) != "}") {
+			this.parse_error("Missing } at end of pointer.");
 		}
 	}
-	if (isEqual(rt.callSrc(f, "token", [add(live(i), 1)]), ".")) {
-		L = rt.modify(live(L), ".", add);
-		i = rt.callSrc(f, "variable", [add(live(i), 2), live(L)]);
+	if (this.token(i + 1) == ".") {
+		L += ".";
+		i = this.variable(i + 2, L);
+	} else if (this.token(i + 1) == "(") {
+		_arguments = list();
+		i = this.call_function(i, null, _arguments);
+		rt.setAt((L += ":"), ++L.len, _arguments);
+	} else if (this.token(i + 1) == "[") {
+		expression = list();
+		if (this.token((i = this.expression(i + 2, expression))) != "]") {
+			this.parse_error("Missing ] at the end of list access.");
+		}
+		rt.setAt((L += "["), ++L.len, expression);
+		i++;
 	} else {
-		if (isEqual(rt.callSrc(f, "token", [add(live(i), 1)]), "(")) {
-			_arguments = rt.list();
-			i = rt.callSrc(f, "call_function", [live(i), null, live(_arguments)]);
-			rt.setAt((L = rt.modify(live(L), ":", add)), rt.incField(f, live(L), "len", 1, false), live(_arguments));
-		} else {
-			if (isEqual(rt.callSrc(f, "token", [add(live(i), 1)]), "[")) {
-				expression = rt.list();
-				if (!isEqual(rt.callSrc(f, "token", [(i = rt.callSrc(f, "expression", [add(live(i), 2), live(expression)]))]), "]")) {
-					rt.callSrc(f, "parse_error", ["Missing ] at the end of list access."]);
-				}
-				rt.setAt((L = rt.modify(live(L), "[", add)), rt.incField(f, live(L), "len", 1, false), live(expression));
-				i = rt.inc(live(i), 1);
-			} else {
-				i = rt.inc(live(i), 1);
-			}
-		}
+		i++;
 	}
-	return live(i);
+	return i;
 });
 
-// /datum/SDQL_parser/proc/array  (code/modules/admin/verbs/SDQL2/SDQL_2_parser.dm:269)
+// SDQL_2_parser.dm:269
 rt.def("/datum/SDQL_parser/proc/array", function array(f: Frame, i: Value, node: Value) {
-	let expression_list: Value = null, temp_expression_list: Value = null, tok: Value = null;
-	f.vars = () => [i, node, expression_list, temp_expression_list, tok];
-	if (!isEqual(rt.call(f, P("/proc/copytext"), null, [rt.callSrc(f, "token", [live(i)]), 1, 2]), "[")) {
-		rt.callSrc(f, "parse_error", [fmt("Expected an array but found '＀'", [rt.callSrc(f, "token", [live(i)])])]);
-		return add(live(i), 1);
+	let temp_expression_list: Value = null, tok: Value = null;
+	if (copytext(this.token(i), 1, 2) != "[") {
+		this.parse_error(`Expected an array but found '${this.token(i)}'`);
+		return i + 1;
 	}
-	node = rt.modify(live(node), rt.callSrc(f, "token", [live(i)]), add);
-	expression_list = rt.list();
-	i = rt.inc(live(i), 1);
-	if (!isEqual(rt.callSrc(f, "token", [live(i)]), "]")) {
-		temp_expression_list = rt.list();
-		tok = null;
+	node += this.token(i);
+	let expression_list: Value = list();
+	i++;
+	if (this.token(i) != "]") {
+		temp_expression_list = list();
 		while (true) {
 			blk99: {
-				if ((isEqual((tok = rt.callSrc(f, "token", [live(i)])), ",") || isEqual(live(tok), ":"))) {
-					if (live(temp_expression_list) === null) {
-						rt.callSrc(f, "parse_error", ["Found ',' or ':' without expression in an array."]);
-						return add(live(i), 1);
+				if ((tok = this.token(i)) == "," || tok == ":") {
+					if (temp_expression_list === null) {
+						this.parse_error("Found ',' or ':' without expression in an array.");
+						return i + 1;
 					}
-					rt.setAt(live(expression_list), rt.incField(f, live(expression_list), "len", 1, false), live(temp_expression_list));
+					rt.setAt(expression_list, ++expression_list.len, temp_expression_list);
 					temp_expression_list = null;
-					if (isEqual(live(tok), ":")) {
-						temp_expression_list = rt.list();
-						i = rt.callSrc(f, "expression", [add(live(i), 1), live(temp_expression_list)]);
-						rt.setAt(live(expression_list), rt.index(live(expression_list), rt.len(f, live(expression_list))), live(temp_expression_list));
+					if (tok == ":") {
+						temp_expression_list = list();
+						i = this.expression(i + 1, temp_expression_list);
+						rt.setAt(expression_list, rt.index(expression_list, rt.len(f, expression_list)), temp_expression_list);
 						temp_expression_list = null;
-						if (!isEqual((tok = rt.callSrc(f, "token", [live(i)])), ",")) {
-							if (isEqual(live(tok), "]")) {
+						if ((tok = this.token(i)) != ",") {
+							if (tok == "]") {
 								break;
 							}
-							rt.callSrc(f, "parse_error", [fmt("Expected ',' or ']' after array assoc value, but found '＀'", [rt.callSrc(f, "token", [live(i)])])]);
-							return live(i);
+							this.parse_error(`Expected ',' or ']' after array assoc value, but found '${this.token(i)}'`);
+							return i;
 						}
-						i = rt.inc(live(i), 1);
+						i++;
 						break blk99;
 					}
 				}
-				temp_expression_list = rt.list();
-				i = rt.callSrc(f, "expression", [live(i), live(temp_expression_list)]);
+				temp_expression_list = list();
+				i = this.expression(i, temp_expression_list);
 			}
-			if (!(truthy(rt.callSrc(f, "token", [live(i)])) && !isEqual(rt.callSrc(f, "token", [live(i)]), "]"))) break;
+			if (!(this.token(i) && this.token(i) != "]")) break;
 		}
-		if (truthy(live(temp_expression_list))) {
-			rt.setAt(live(expression_list), rt.incField(f, live(expression_list), "len", 1, false), live(temp_expression_list));
+		if (temp_expression_list) {
+			rt.setAt(expression_list, ++expression_list.len, temp_expression_list);
 		}
 	}
-	rt.setAt(live(node), rt.incField(f, live(node), "len", 1, false), live(expression_list));
-	return add(live(i), 1);
+	rt.setAt(node, ++node.len, expression_list);
+	return i + 1;
 });
 
-// /datum/SDQL_parser/proc/object_type  (code/modules/admin/verbs/SDQL2/SDQL_2_parser.dm:309)
+// SDQL_2_parser.dm:309
 rt.def("/datum/SDQL_parser/proc/object_type", function object_type(f: Frame, i: Value, node: Value) {
-	f.vars = () => [i, node];
-	if (isEqual(rt.call(f, P("/proc/copytext"), null, [rt.callSrc(f, "token", [live(i)]), 1, 2]), "/")) {
-		node = rt.modify(live(node), rt.callSrc(f, "token", [live(i)]), add);
+	if (copytext(this.token(i), 1, 2) == "/") {
+		node += this.token(i);
 	} else {
-		i = rt.callSrc(f, "string", [live(i), live(node)]);
+		i = this.string(i, node);
 	}
-	return add(live(i), 1);
+	return i + 1;
 });
 
-// /datum/SDQL_parser/proc/comparitor  (code/modules/admin/verbs/SDQL2/SDQL_2_parser.dm:317)
+// SDQL_2_parser.dm:317
 rt.def("/datum/SDQL_parser/proc/comparitor", function comparitor(f: Frame, i: Value, node: Value) {
-	f.vars = () => [node];
-	if (truthy((rt.isIn(f, rt.callSrc(f, "token", [live(i)]), rt.list("=", "==", "!=", "<>", "<", "<=", ">", ">=")) ? 1 : 0))) {
-		node = rt.modify(live(node), rt.callSrc(f, "token", [live(i)]), add);
+	if (rt.isIn(f, this.token(i), list("=", "==", "!=", "<>", "<", "<=", ">", ">="))) {
+		node += this.token(i);
 	} else {
-		rt.callSrc(f, "parse_error", [fmt("Unknown comparitor ＀", [rt.callSrc(f, "token", [live(i)])])]);
+		this.parse_error(`Unknown comparitor ${this.token(i)}`);
 	}
-	return add(live(i), 1);
+	return i + 1;
 });
 
-// /datum/SDQL_parser/proc/bool_operator  (code/modules/admin/verbs/SDQL2/SDQL_2_parser.dm:325)
+// SDQL_2_parser.dm:325
 rt.def("/datum/SDQL_parser/proc/bool_operator", function bool_operator(f: Frame, i: Value, node: Value) {
-	f.vars = () => [node];
-	if (truthy((rt.isIn(f, rt.callSrc(f, "tokenl", [live(i)]), rt.list("and", "or", "&&", "||")) ? 1 : 0))) {
-		node = rt.modify(live(node), rt.callSrc(f, "token", [live(i)]), add);
+	if (rt.isIn(f, this.tokenl(i), list("and", "or", "&&", "||"))) {
+		node += this.token(i);
 	} else {
-		rt.callSrc(f, "parse_error", [fmt("Unknown comparitor ＀", [rt.callSrc(f, "token", [live(i)])])]);
+		this.parse_error(`Unknown comparitor ${this.token(i)}`);
 	}
-	return add(live(i), 1);
+	return i + 1;
 });
 
-// /datum/SDQL_parser/proc/string  (code/modules/admin/verbs/SDQL2/SDQL_2_parser.dm:333)
+// SDQL_2_parser.dm:333
 rt.def("/datum/SDQL_parser/proc/string", function string(f: Frame, i: Value, node: Value) {
-	f.vars = () => [node];
-	if (truthy((rt.isIn(f, rt.call(f, P("/proc/copytext"), null, [rt.callSrc(f, "token", [live(i)]), 1, 2]), rt.list("'", "\"")) ? 1 : 0))) {
-		node = rt.modify(live(node), rt.call(f, P("/proc/copytext"), null, [rt.callSrc(f, "token", [live(i)]), 2, -1]), add);
+	if (rt.isIn(f, copytext(this.token(i), 1, 2), list("'", "\""))) {
+		node += copytext(this.token(i), 2, -1);
 	} else {
-		rt.callSrc(f, "parse_error", [fmt("Expected string but found '＀'", [rt.callSrc(f, "token", [live(i)])])]);
+		this.parse_error(`Expected string but found '${this.token(i)}'`);
 	}
-	return add(live(i), 1);
+	return i + 1;
 });
 
-// /datum/SDQL_parser/proc/call_function  (code/modules/admin/verbs/SDQL2/SDQL_2_parser.dm:341)
+// SDQL_2_parser.dm:341
 rt.def("/datum/SDQL_parser/proc/call_function", function call_function(f: Frame, i: Value, node: Value, _arguments: Value) {
 	let procname: Value = null, expression_list_temp: Value = null;
 	let $t: any;
-	f.vars = () => [i, node, procname, expression_list_temp, $t];
-	if (truthy(rt.length(rt.callSrc(f, "tokenl", [live(i)])))) {
+	if (rt.length(this.tokenl(i))) {
 		procname = "";
-		if ((isEqual(rt.callSrc(f, "token", [live(i)]), "global") && isEqual(rt.callSrc(f, "token", [add(live(i), 1)]), "."))) {
-			i = rt.modify(live(i), 2, add);
+		if (this.token(i) == "global" && this.token(i + 1) == ".") {
+			i += 2;
 			procname = "global.";
 		}
-		node = rt.modify(live(node), add(live(procname), rt.callSrc(f, "token", [($t = live(i), i = rt.inc($t, 1), $t)])), add);
-		if (!isEqual(rt.callSrc(f, "token", [live(i)]), "(")) {
-			rt.callSrc(f, "parse_error", [fmt("Expected ( but found '＀'", [rt.callSrc(f, "token", [live(i)])])]);
-		} else {
-			if (!isEqual(rt.callSrc(f, "token", [add(live(i), 1)]), ")")) {
-				expression_list_temp = rt.list();
-				while (true) {
-					if (isEqual(rt.callSrc(f, "token", [(i = rt.callSrc(f, "expression", [add(live(i), 1), live(expression_list_temp)]))]), ",")) {
-						rt.setAt(live(_arguments), rt.incField(f, live(_arguments), "len", 1, false), live(expression_list_temp));
-						expression_list_temp = rt.list();
-					}
-					if (!(truthy(rt.callSrc(f, "token", [live(i)])) && !isEqual(rt.callSrc(f, "token", [live(i)]), ")"))) break;
+		node += procname + this.token(($t = i, i = rt.inc($t, 1), $t));
+		if (this.token(i) != "(") {
+			this.parse_error(`Expected ( but found '${this.token(i)}'`);
+		} else if (this.token(i + 1) != ")") {
+			expression_list_temp = list();
+			while (true) {
+				if (this.token((i = this.expression(i + 1, expression_list_temp))) == ",") {
+					rt.setAt(_arguments, ++_arguments.len, expression_list_temp);
+					expression_list_temp = list();
 				}
-				rt.setAt(live(_arguments), rt.incField(f, live(_arguments), "len", 1, false), live(expression_list_temp));
-			} else {
-				i = rt.inc(live(i), 1);
+				if (!(this.token(i) && this.token(i) != ")")) break;
 			}
+			rt.setAt(_arguments, ++_arguments.len, expression_list_temp);
+		} else {
+			i++;
 		}
 	} else {
-		rt.callSrc(f, "parse_error", ["Expected a function but found nothing"]);
+		this.parse_error("Expected a function but found nothing");
 	}
-	return add(live(i), 1);
+	return i + 1;
 });
 
-// /datum/SDQL_parser/proc/select_function  (code/modules/admin/verbs/SDQL2/SDQL_2_parser.dm:367)
+// SDQL_2_parser.dm:367
 rt.def("/datum/SDQL_parser/proc/select_function", function select_function(f: Frame, i: Value, node: Value) {
-	rt.callSrc(f, "parse_error", ["Sorry, function calls aren't available yet"]);
-	return live(i);
+	this.parse_error("Sorry, function calls aren't available yet");
+	return i;
 });
 
-// /datum/SDQL_parser/proc/expression  (code/modules/admin/verbs/SDQL2/SDQL_2_parser.dm:372)
+// SDQL_2_parser.dm:372
 rt.def("/datum/SDQL_parser/proc/expression", function expression(f: Frame, i: Value, node: Value) {
 	let expr: Value = null, rhs: Value = null;
-	f.vars = () => [i, expr, rhs];
-	if (truthy((rt.isIn(f, rt.callSrc(f, "token", [live(i)]), rt.sv(f, "unary_operators")) ? 1 : 0))) {
-		i = rt.callSrc(f, "unary_expression", [live(i), live(node)]);
-	} else {
-		if (isEqual(rt.callSrc(f, "token", [live(i)]), "(")) {
-			expr = rt.list();
-			if (!isEqual(rt.callSrc(f, "token", [(i = rt.callSrc(f, "expression", [add(live(i), 1), live(expr)]))]), ")")) {
-				rt.callSrc(f, "parse_error", ["Missing ) at end of expression."]);
-			} else {
-				i = rt.inc(live(i), 1);
-			}
-			rt.setAt(live(node), rt.incField(f, live(node), "len", 1, false), live(expr));
+	if (rt.isIn(f, this.token(i), this.unary_operators)) {
+		i = this.unary_expression(i, node);
+	} else if (this.token(i) == "(") {
+		expr = list();
+		if (this.token((i = this.expression(i + 1, expr))) != ")") {
+			this.parse_error("Missing ) at end of expression.");
 		} else {
-			i = rt.callSrc(f, "value", [live(i), live(node)]);
+			i++;
 		}
-	}
-	if (truthy((rt.isIn(f, rt.callSrc(f, "token", [live(i)]), rt.sv(f, "binary_operators")) ? 1 : 0))) {
-		i = rt.callSrc(f, "expression", [(i = rt.callSrc(f, "binary_operator", [live(i), live(node)])), live(node)]);
+		rt.setAt(node, ++node.len, expr);
 	} else {
-		if (truthy((rt.isIn(f, rt.callSrc(f, "token", [live(i)]), rt.sv(f, "comparitors")) ? 1 : 0))) {
-			i = rt.callSrc(f, "binary_operator", [live(i), live(node)]);
-			rhs = rt.list();
-			i = rt.callSrc(f, "expression", [live(i), live(rhs)]);
-			rt.setAt(live(node), rt.incField(f, live(node), "len", 1, false), live(rhs));
-		}
+		i = this.value(i, node);
 	}
-	return live(i);
+	if (rt.isIn(f, this.token(i), this.binary_operators)) {
+		i = this.expression((i = this.binary_operator(i, node)), node);
+	} else if (rt.isIn(f, this.token(i), this.comparitors)) {
+		i = this.binary_operator(i, node);
+		rhs = list();
+		i = this.expression(i, rhs);
+		rt.setAt(node, ++node.len, rhs);
+	}
+	return i;
 });
 
-// /datum/SDQL_parser/proc/unary_expression  (code/modules/admin/verbs/SDQL2/SDQL_2_parser.dm:396)
+// SDQL_2_parser.dm:396
 rt.def("/datum/SDQL_parser/proc/unary_expression", function unary_expression(f: Frame, i: Value, node: Value) {
 	let unary_exp: Value = null, expr: Value = null;
-	f.vars = () => [i, unary_exp, expr];
-	if (truthy((rt.isIn(f, rt.callSrc(f, "token", [live(i)]), rt.sv(f, "unary_operators")) ? 1 : 0))) {
-		unary_exp = rt.list();
-		unary_exp = rt.modify(live(unary_exp), rt.callSrc(f, "token", [live(i)]), add);
-		i = rt.inc(live(i), 1);
-		if (truthy((rt.isIn(f, rt.callSrc(f, "token", [live(i)]), rt.sv(f, "unary_operators")) ? 1 : 0))) {
-			i = rt.callSrc(f, "unary_expression", [live(i), live(unary_exp)]);
-		} else {
-			if (isEqual(rt.callSrc(f, "token", [live(i)]), "(")) {
-				expr = rt.list();
-				if (!isEqual(rt.callSrc(f, "token", [(i = rt.callSrc(f, "expression", [add(live(i), 1), live(expr)]))]), ")")) {
-					rt.callSrc(f, "parse_error", ["Missing ) at end of expression."]);
-				} else {
-					i = rt.inc(live(i), 1);
-				}
-				rt.setAt(live(unary_exp), rt.incField(f, live(unary_exp), "len", 1, false), live(expr));
+	if (rt.isIn(f, this.token(i), this.unary_operators)) {
+		unary_exp = list();
+		unary_exp += this.token(i);
+		i++;
+		if (rt.isIn(f, this.token(i), this.unary_operators)) {
+			i = this.unary_expression(i, unary_exp);
+		} else if (this.token(i) == "(") {
+			expr = list();
+			if (this.token((i = this.expression(i + 1, expr))) != ")") {
+				this.parse_error("Missing ) at end of expression.");
 			} else {
-				i = rt.callSrc(f, "value", [live(i), live(unary_exp)]);
+				i++;
 			}
+			rt.setAt(unary_exp, ++unary_exp.len, expr);
+		} else {
+			i = this.value(i, unary_exp);
 		}
-		rt.setAt(live(node), rt.incField(f, live(node), "len", 1, false), live(unary_exp));
+		rt.setAt(node, ++node.len, unary_exp);
 	} else {
-		rt.callSrc(f, "parse_error", [fmt("Expected unary operator but found '＀'", [rt.callSrc(f, "token", [live(i)])])]);
+		this.parse_error(`Expected unary operator but found '${this.token(i)}'`);
 	}
-	return live(i);
+	return i;
 });
 
-// /datum/SDQL_parser/proc/binary_operator  (code/modules/admin/verbs/SDQL2/SDQL_2_parser.dm:419)
+// SDQL_2_parser.dm:419
 rt.def("/datum/SDQL_parser/proc/binary_operator", function binary_operator(f: Frame, i: Value, node: Value) {
-	f.vars = () => [node];
-	if (truthy((rt.isIn(f, rt.callSrc(f, "token", [live(i)]), add(rt.sv(f, "binary_operators"), rt.sv(f, "comparitors"))) ? 1 : 0))) {
-		node = rt.modify(live(node), rt.callSrc(f, "token", [live(i)]), add);
+	if (rt.isIn(f, this.token(i), this.binary_operators + this.comparitors)) {
+		node += this.token(i);
 	} else {
-		rt.callSrc(f, "parse_error", [fmt("Unknown binary operator ＀", [rt.callSrc(f, "token", [live(i)])])]);
+		this.parse_error(`Unknown binary operator ${this.token(i)}`);
 	}
-	return add(live(i), 1);
+	return i + 1;
 });
 
-// /datum/SDQL_parser/proc/value  (code/modules/admin/verbs/SDQL2/SDQL_2_parser.dm:427)
+// SDQL_2_parser.dm:427
 rt.def("/datum/SDQL_parser/proc/value", function value(f: Frame, i: Value, node: Value) {
-	f.vars = () => [i, node];
-	if (isEqual(rt.callSrc(f, "token", [live(i)]), "null")) {
-		node = rt.modify(live(node), "null", add);
-		i = rt.inc(live(i), 1);
+	if (this.token(i) == "null") {
+		node += "null";
+		i++;
+	} else if (lowertext(copytext(this.token(i), 1, 3)) == "0x" && isnum(hex2num(copytext(this.token(i), 3)))) {
+		node += hex2num(copytext(this.token(i), 3));
+		i++;
+	} else if (isnum(text2num(this.token(i)))) {
+		node += text2num(this.token(i));
+		i++;
+	} else if (rt.isIn(f, copytext(this.token(i), 1, 2), list("'", "\""))) {
+		i = this.string(i, node);
+	} else if (copytext(this.token(i), 1, 2) == "[") {
+		i = this.array(i, node);
 	} else {
-		if ((isEqual(rt.call(f, P("/proc/lowertext"), null, [rt.call(f, P("/proc/copytext"), null, [rt.callSrc(f, "token", [live(i)]), 1, 3])]), "0x") && truthy(rt.call(f, P("/proc/isnum"), null, [rt.call(f, P("/proc/hex2num"), null, [rt.call(f, P("/proc/copytext"), null, [rt.callSrc(f, "token", [live(i)]), 3])])])))) {
-			node = rt.modify(live(node), rt.call(f, P("/proc/hex2num"), null, [rt.call(f, P("/proc/copytext"), null, [rt.callSrc(f, "token", [live(i)]), 3])]), add);
-			i = rt.inc(live(i), 1);
-		} else {
-			if (truthy(rt.call(f, P("/proc/isnum"), null, [rt.call(f, P("/proc/text2num"), null, [rt.callSrc(f, "token", [live(i)])])]))) {
-				node = rt.modify(live(node), rt.call(f, P("/proc/text2num"), null, [rt.callSrc(f, "token", [live(i)])]), add);
-				i = rt.inc(live(i), 1);
-			} else {
-				if (truthy((rt.isIn(f, rt.call(f, P("/proc/copytext"), null, [rt.callSrc(f, "token", [live(i)]), 1, 2]), rt.list("'", "\"")) ? 1 : 0))) {
-					i = rt.callSrc(f, "string", [live(i), live(node)]);
-				} else {
-					if (isEqual(rt.call(f, P("/proc/copytext"), null, [rt.callSrc(f, "token", [live(i)]), 1, 2]), "[")) {
-						i = rt.callSrc(f, "array", [live(i), live(node)]);
-					} else {
-						i = rt.callSrc(f, "variable", [live(i), live(node)]);
-					}
-				}
-			}
-		}
+		i = this.variable(i, node);
 	}
-	return live(i);
+	return i;
 });

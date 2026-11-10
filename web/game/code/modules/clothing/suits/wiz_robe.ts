@@ -1,7 +1,7 @@
-// From code/modules/clothing/suits/wiz_robe.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/clothing/suits/wiz_robe.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(8189, "/obj/item/clothing/head/wizard", "/obj/item/clothing/head", {
@@ -17,12 +17,10 @@ rt.type(8189, "/obj/item/clothing/head/wizard", "/obj/item/clothing/head", {
 	dog_fashion: rt.typePath("/datum/dog_fashion/head/blue_wizard"),
 });
 
-// /obj/item/clothing/head/wizard/proc/<init>  (code/modules/clothing/suits/wiz_robe.dm:7)
+// wiz_robe.dm:7
 rt.def("/obj/item/clothing/head/wizard/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 30, "bullet", 20, "laser", 20, "energy", 20, "bomb", 20, "bio", 20, "rad", 20, "fire", 100, "acid", 100]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 30, "bullet", 20, "laser", 20, "energy", 20, "bomb", 20, "bio", 20, "rad", 20, "fire", 100, "acid", 100]);
 	return f.dot;
 });
 
@@ -37,12 +35,10 @@ rt.type(8193, "/obj/item/clothing/head/wizard/fake", "/obj/item/clothing/head/wi
 	dog_fashion: rt.typePath("/datum/dog_fashion/head/blue_wizard"),
 });
 
-// /obj/item/clothing/head/wizard/fake/proc/<init>  (code/modules/clothing/suits/wiz_robe.dm:37)
+// wiz_robe.dm:37
 rt.def("/obj/item/clothing/head/wizard/fake/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 0, "acid", 0]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 0, "acid", 0]);
 	return f.dot;
 });
 
@@ -62,14 +58,12 @@ rt.type(7917, "/obj/item/clothing/suit/wizrobe", "/obj/item/clothing/suit", {
 	resistance_flags: 34,
 });
 
-// /obj/item/clothing/suit/wizrobe/proc/<init>  (code/modules/clothing/suits/wiz_robe.dm:69)
+// wiz_robe.dm:69
 rt.def("/obj/item/clothing/suit/wizrobe/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 30, "bullet", 20, "laser", 20, "energy", 20, "bomb", 20, "bio", 20, "rad", 20, "fire", 100, "acid", 100]));
-	$0 = $0;
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/weapon/teleportation_scroll")));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 30, "bullet", 20, "laser", 20, "energy", 20, "bomb", 20, "bio", 20, "rad", 20, "fire", 100, "acid", 100]);
+
+	this.allowed = list(T("/obj/item/weapon/teleportation_scroll"));
 	return f.dot;
 });
 
@@ -84,12 +78,10 @@ rt.type(7926, "/obj/item/clothing/suit/wizrobe/fake", "/obj/item/clothing/suit/w
 	resistance_flags: 4,
 });
 
-// /obj/item/clothing/suit/wizrobe/fake/proc/<init>  (code/modules/clothing/suits/wiz_robe.dm:126)
+// wiz_robe.dm:126
 rt.def("/obj/item/clothing/suit/wizrobe/fake/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 0, "acid", 0]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 0, "acid", 0]);
 	return f.dot;
 });
 
@@ -103,12 +95,10 @@ rt.type(8195, "/obj/item/clothing/head/wizard/marisa/fake", "/obj/item/clothing/
 	resistance_flags: 4,
 });
 
-// /obj/item/clothing/head/wizard/marisa/fake/proc/<init>  (code/modules/clothing/suits/wiz_robe.dm:135)
+// wiz_robe.dm:135
 rt.def("/obj/item/clothing/head/wizard/marisa/fake/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 0, "acid", 0]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 0, "acid", 0]);
 	return f.dot;
 });
 
@@ -123,12 +113,10 @@ rt.type(7922, "/obj/item/clothing/suit/wizrobe/marisa/fake", "/obj/item/clothing
 	resistance_flags: 4,
 });
 
-// /obj/item/clothing/suit/wizrobe/marisa/fake/proc/<init>  (code/modules/clothing/suits/wiz_robe.dm:145)
+// wiz_robe.dm:145
 rt.def("/obj/item/clothing/suit/wizrobe/marisa/fake/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 0, "acid", 0]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 0, "acid", 0]);
 	return f.dot;
 });
 
@@ -141,42 +129,37 @@ rt.type(7927, "/obj/item/clothing/suit/wizrobe/paper", "/obj/item/clothing/suit/
 	actions_types: null,
 });
 
-// /obj/item/clothing/suit/wizrobe/paper/proc/<init>  (code/modules/clothing/suits/wiz_robe.dm:154)
+// wiz_robe.dm:154
 rt.def("/obj/item/clothing/suit/wizrobe/paper/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "actions_types", rt.list(T("/datum/action/item_action/stickmen")));
+	parent_proc();
+	this.actions_types = list(T("/datum/action/item_action/stickmen"));
 	return f.dot;
 });
 
-// /obj/item/clothing/suit/wizrobe/paper/proc/ui_action_click  (code/modules/clothing/suits/wiz_robe.dm:158)  may sleep
+// wiz_robe.dm:158
 rt.def("/obj/item/clothing/suit/wizrobe/paper/proc/ui_action_click", function* ui_action_click(f: Frame, user: Value, action: Value) {
-	f.vars = () => [user, action];
-	yield* g.srcCall(f, "stickmen");
+	yield* this.stickmen();
 	return f.dot;
 }, true);
 
-// /obj/item/clothing/suit/wizrobe/paper/verb/stickmen  (code/modules/clothing/suits/wiz_robe.dm:165)  may sleep
+// wiz_robe.dm:165
 rt.def("/obj/item/clothing/suit/wizrobe/paper/verb/stickmen", function* stickmen(f: Frame) {
-	let M: Value = null, factions: Value = null;
-	f.vars = () => [M, factions];
-	if (!truthy((rt.istype(live(f.usr), T("/mob/living")) ? 1 : 0))) {
-		return live(f.dot);
+	if (!rt.istype(f.usr, T("/mob/living"))) {
+		return f.dot;
 	}
-	if (!truthy(rt.sv(f, "robe_charge"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), "<span class='warning'>＄robe's internal magic supply is still recharging!</span>"]);
-		return live(f.dot);
+	if (!this.robe_charge) {
+		to_chat(f.usr, "<span class='warning'>＄robe's internal magic supply is still recharging!</span>");
+		return f.dot;
 	}
-	yield* g.callName(f, live(f.usr), "say", ["Rise, my creation! Off your page into this realm!"]);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/magic/summon_magic.ogg"), 50, 1, 1]);
-	M = (yield* g.new_(f, T("/mob/living/simple_animal/hostile/stickman"), [rt.getStep(f, live(f.usr), 0)]));
-	factions = rt.fv(f, "faction", live(f.usr));
-	rt.setFv(f, "faction", live(M), live(factions));
-	rt.setFv(f, "robe_charge", live(f.src), 0);
-	yield* g.call(f, P("/proc/sleep"), null, [30]);
-	rt.setFv(f, "robe_charge", live(f.src), 1);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), "<span class='notice'>＄robe hums, its internal magic supply restored.</span>"]);
+	yield* f.usr.say("Rise, my creation! Off your page into this realm!");
+	playsound(this.loc, rt.rsc("sound/magic/summon_magic.ogg"), 50, 1, 1);
+	let M: Value = (yield* new_(T("/mob/living/simple_animal/hostile/stickman"), rt.getStep(f, f.usr, 0)));
+	let factions: Value = f.usr.faction;
+	M.faction = factions;
+	this.robe_charge = 0;
+	yield* sleep(30);
+	this.robe_charge = 1;
+	to_chat(f.usr, "<span class='notice'>＄robe hums, its internal magic supply restored.</span>");
 	return f.dot;
 }, true, { verb: { name: "Summon Stick Minions", category: "Object", src: 11 } });
 
@@ -198,12 +181,10 @@ rt.type(7727, "/obj/item/clothing/suit/space/hardsuit/shielded/wizard", "/obj/it
 	resistance_flags: 34,
 });
 
-// /obj/item/clothing/suit/space/hardsuit/shielded/wizard/proc/<init>  (code/modules/clothing/suits/wiz_robe.dm:197)
+// wiz_robe.dm:197
 rt.def("/obj/item/clothing/suit/space/hardsuit/shielded/wizard/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 30, "bullet", 20, "laser", 20, "energy", 20, "bomb", 20, "bio", 20, "rad", 20, "fire", 100, "acid", 100]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 30, "bullet", 20, "laser", 20, "energy", 20, "bomb", 20, "bio", 20, "rad", 20, "fire", 100, "acid", 100]);
 	return f.dot;
 });
 
@@ -219,14 +200,12 @@ rt.type(7959, "/obj/item/clothing/head/helmet/space/hardsuit/shielded/wizard", "
 	resistance_flags: 34,
 });
 
-// /obj/item/clothing/head/helmet/space/hardsuit/shielded/wizard/proc/<init>  (code/modules/clothing/suits/wiz_robe.dm:208)
+// wiz_robe.dm:208
 rt.def("/obj/item/clothing/head/helmet/space/hardsuit/shielded/wizard/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 30, "bullet", 20, "laser", 20, "energy", 20, "bomb", 20, "bio", 20, "rad", 20, "fire", 100, "acid", 100]));
-	$0 = $0;
-	rt.setSv(f, "actions_types", null);
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 30, "bullet", 20, "laser", 20, "energy", 20, "bomb", 20, "bio", 20, "rad", 20, "fire", 100, "acid", 100]);
+
+	this.actions_types = null;
 	return f.dot;
 });
 
@@ -237,15 +216,15 @@ rt.type(9972, "/obj/item/wizard_armour_charge", "/obj/item", {
 	icon_state: "electricity2",
 });
 
-// /obj/item/wizard_armour_charge/proc/afterattack  (code/modules/clothing/suits/wiz_robe.dm:222)  may sleep
-rt.def("/obj/item/wizard_armour_charge/proc/afterattack", function* afterattack(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy((rt.istype(live(f.args[0]), T("/obj/item/clothing/suit/space/hardsuit/shielded/wizard")) ? 1 : 0))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>The rune can only be used on battlemage armour!</span>"]);
-		return live(f.dot);
+// wiz_robe.dm:222
+rt.def("/obj/item/wizard_armour_charge/proc/afterattack", function* afterattack(f: Frame, W: Value, user: Value) {
+	yield* parent_proc();
+	if (!rt.istype(W, T("/obj/item/clothing/suit/space/hardsuit/shielded/wizard"))) {
+		to_chat(user, "<span class='warning'>The rune can only be used on battlemage armour!</span>");
+		return f.dot;
 	}
-	rt.modField(f, live(f.args[0]), "current_charges", 8, add);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You charge ％！. It can now absorb ＀ hits.</span>", [live(f.args[0]), rt.fv(f, "current_charges", live(f.args[0]))])]);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	W.current_charges += 8;
+	to_chat(user, fmt("<span class='notice'>You charge ％！. It can now absorb ＀ hits.</span>", [W, W.current_charges]));
+	yield* qdel(this);
 	return f.dot;
-}, true, { args: ["W", "user"] });
+}, true);

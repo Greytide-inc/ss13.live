@@ -1,16 +1,15 @@
-// From code/game/objects/effects/effect_system/effects_sparks.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/effects/effect_system/effects_sparks.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
-// /proc/do_sparks  (code/game/objects/effects/effect_system/effects_sparks.dm:13)  may sleep
+// effects_sparks.dm:13
 rt.def("/proc/do_sparks", function* do_sparks(f: Frame, n: Value, c: Value, source: Value) {
 	let sparks: Value = null;
-	f.vars = () => [n, c, source, sparks];
-	yield* g.callName(f, (sparks = (yield* g.new_(f, T("/datum/effect_system/spark_spread"), []))), "set_up", [live(n), live(c), live(source)]);
-	yield* g.callName(f, live(sparks), "start", []);
-	yield* g.call(f, P("/proc/qdel"), null, [live(sparks)]);
+	yield* (sparks = (yield* new_(T("/datum/effect_system/spark_spread")))).set_up(n, c, source);
+	yield* sparks.start();
+	yield* qdel(sparks);
 	return f.dot;
 }, true);
 
@@ -21,36 +20,33 @@ rt.type(11932, "/obj/effect/particle_effect/sparks", "/obj/effect/particle_effec
 	icon_state: "sparks",
 });
 
-// /obj/effect/particle_effect/sparks/proc/New  (code/game/objects/effects/effect_system/effects_sparks.dm:26)  may sleep
+// effects_sparks.dm:26
 rt.def("/obj/effect/particle_effect/sparks/proc/New", function* New(f: Frame) {
 	let _T: Value = null;
-	f.vars = () => [_T];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.call(f, P("/proc/flick"), null, ["sparks", live(f.src)]);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), "sparks", 100, 1]);
-	if (truthy((yield* g.call(f, P("/proc/isturf"), null, [(_T = rt.sv(f, "loc"))])))) {
-		yield* g.callName(f, live(_T), "hotspot_expose", [1000, 100]);
+	yield* parent_proc();
+	flick("sparks", this);
+	playsound(this.loc, "sparks", 100, 1);
+	if (isturf((_T = this.loc))) {
+		yield* _T.hotspot_expose(1000, 100);
 	}
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), ["some_magic_bullshit", P("/proc/qdel"), live(f.src)])), 20, 8]);
+	yield* addtimer((yield* new_(T("/datum/callback"), "some_magic_bullshit", P("/proc/qdel"), this)), 20, 8);
 	return f.dot;
 }, true);
 
-// /obj/effect/particle_effect/sparks/proc/Destroy  (code/game/objects/effects/effect_system/effects_sparks.dm:35)  may sleep
+// effects_sparks.dm:35
 rt.def("/obj/effect/particle_effect/sparks/proc/Destroy", function* Destroy(f: Frame) {
 	let _T: Value = null;
-	f.vars = () => [_T];
-	if (truthy((yield* g.call(f, P("/proc/isturf"), null, [(_T = rt.sv(f, "loc"))])))) {
-		yield* g.callName(f, live(_T), "hotspot_expose", [1000, 100]);
+	if (isturf((_T = this.loc))) {
+		yield* _T.hotspot_expose(1000, 100);
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);
 
-// /obj/effect/particle_effect/sparks/proc/Move  (code/game/objects/effects/effect_system/effects_sparks.dm:41)  may sleep
+// effects_sparks.dm:41
 rt.def("/obj/effect/particle_effect/sparks/proc/Move", function* Move(f: Frame) {
 	let _T: Value = null;
-	f.vars = () => [_T];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy((yield* g.call(f, P("/proc/isturf"), null, [(_T = rt.sv(f, "loc"))])))) return f.dot;
-	yield* g.callName(f, live(_T), "hotspot_expose", [1000, 100]);
+	yield* parent_proc();
+	if (!isturf((_T = this.loc))) return f.dot;
+	yield* _T.hotspot_expose(1000, 100);
 	return f.dot;
 }, true);

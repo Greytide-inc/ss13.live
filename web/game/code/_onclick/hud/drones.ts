@@ -1,72 +1,63 @@
-// From code/_onclick/hud/drones.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/_onclick/hud/drones.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(70, "/datum/hud/dextrous/drone", "/datum/hud/dextrous", {});
 
-// /datum/hud/dextrous/drone/proc/New  (code/_onclick/hud/drones.dm:2)  may sleep
+// drones.dm:2
 rt.def("/datum/hud/dextrous/drone/proc/New", function* New(f: Frame) {
 	let inv_box: Value = null, inv: Value = null;
-	let $e: any;
-	f.vars = () => [inv_box, inv, $e];
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = rt.rsc("icons/mob/screen_midnight.dmi");
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	inv_box = null;
-	rt.setFv(f, "name", (inv_box = (yield* g.new_(f, T("/obj/screen/inventory"), []))), "internal storage");
-	rt.setFv(f, "icon", live(inv_box), live(f.args[1]));
-	rt.setFv(f, "icon_state", live(inv_box), "suit_storage");
-	rt.setFv(f, "screen_loc", live(inv_box), "CENTER-2:14,SOUTH:5");
-	rt.setFv(f, "slot_id", live(inv_box), 20);
-	rt.modSrcVar(f, "static_inventory", live(inv_box), add);
-	rt.setFv(f, "name", (inv_box = (yield* g.new_(f, T("/obj/screen/inventory"), []))), "head/mask");
-	rt.setFv(f, "icon", live(inv_box), live(f.args[1]));
-	rt.setFv(f, "icon_state", live(inv_box), "mask");
-	rt.setFv(f, "screen_loc", live(inv_box), "CENTER-3:14,SOUTH:5");
-	rt.setFv(f, "slot_id", live(inv_box), 11);
-	rt.modSrcVar(f, "static_inventory", live(inv_box), add);
-	inv = null;
-	rt.forList(f, 0, add(rt.sv(f, "static_inventory"), rt.sv(f, "toggleable_inventory")), T("/obj/screen/inventory"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		inv = $e;
-		if (truthy(rt.fv(f, "slot_id", live(inv)))) {
-			rt.setFv(f, "hud", live(inv), live(f.src));
-			rt.setAt(rt.sv(f, "inv_slots"), rt.fv(f, "slot_id", live(inv)), live(inv));
-			yield* g.callName(f, live(inv), "update_icon", []);
+	yield* parent_proc();
+	(inv_box = (yield* new_(T("/obj/screen/inventory")))).name = "internal storage";
+	inv_box.icon = f.args[1];
+	inv_box.icon_state = "suit_storage";
+	inv_box.screen_loc = "CENTER-2:14,SOUTH:5";
+	inv_box.slot_id = slot_generic_dextrous_storage;
+	this.static_inventory += inv_box;
+	(inv_box = (yield* new_(T("/obj/screen/inventory")))).name = "head/mask";
+	inv_box.icon = f.args[1];
+	inv_box.icon_state = "mask";
+	inv_box.screen_loc = "CENTER-3:14,SOUTH:5";
+	inv_box.slot_id = slot_head;
+	this.static_inventory += inv_box;
+	for (inv of each(this.static_inventory + this.toggleable_inventory, T("/obj/screen/inventory"))) {
+		if (inv.slot_id) {
+			inv.hud = this;
+			rt.setAt(this.inv_slots, inv.slot_id, inv);
+			yield* inv.update_icon();
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true, { args: ["owner", "ui_style"] });
 
-// /datum/hud/dextrous/drone/proc/persistent_inventory_update  (code/_onclick/hud/drones.dm:31)
+// drones.dm:31
 rt.def("/datum/hud/dextrous/drone/proc/persistent_inventory_update", function persistent_inventory_update(f: Frame) {
-	let D: Value = null;
-	f.vars = () => [D];
-	if (!truthy(rt.sv(f, "mymob"))) {
-		return live(f.dot);
+	if (!this.mymob) {
+		return f.dot;
 	}
-	D = rt.sv(f, "mymob");
-	if (truthy(rt.sv(f, "hud_shown"))) {
-		if (truthy(rt.fv(f, "internal_storage", live(D)))) {
-			rt.setFv(f, "screen_loc", rt.fv(f, "internal_storage", live(D)), "CENTER-2:14,SOUTH:5");
-			rt.modField(f, rt.fv(f, "client", live(D)), "screen", rt.fv(f, "internal_storage", live(D)), add);
+	let D: Value = this.mymob;
+	if (this.hud_shown) {
+		if (D.internal_storage) {
+			D.internal_storage.screen_loc = "CENTER-2:14,SOUTH:5";
+			D.client.screen += D.internal_storage;
 		}
-		if (truthy(rt.fv(f, "head", live(D)))) {
-			rt.setFv(f, "screen_loc", rt.fv(f, "head", live(D)), "CENTER-3:14,SOUTH:5");
-			rt.modField(f, rt.fv(f, "client", live(D)), "screen", rt.fv(f, "head", live(D)), add);
+		if (D.head) {
+			D.head.screen_loc = "CENTER-3:14,SOUTH:5";
+			D.client.screen += D.head;
 		}
 	} else {
-		if (truthy(rt.fv(f, "internal_storage", live(D)))) {
-			rt.setFv(f, "screen_loc", rt.fv(f, "internal_storage", live(D)), null);
+		if (D.internal_storage) {
+			D.internal_storage.screen_loc = null;
 		}
-		if (truthy(rt.fv(f, "head", live(D)))) {
-			rt.setFv(f, "screen_loc", rt.fv(f, "head", live(D)), null);
+		if (D.head) {
+			D.head.screen_loc = null;
 		}
 	}
-	rt.callSuper(f, [], rt.Args.Same);
+	parent_proc();
 	return f.dot;
 });

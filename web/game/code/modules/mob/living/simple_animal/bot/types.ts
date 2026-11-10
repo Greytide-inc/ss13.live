@@ -1,5 +1,5 @@
 // Types declared in code/modules/mob/living/simple_animal/bot that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(5035, "/mob/living/simple_animal/bot/ed209/bluetag", "/mob/living/simple_animal/bot/ed209", {
 	lasercolor: "b",

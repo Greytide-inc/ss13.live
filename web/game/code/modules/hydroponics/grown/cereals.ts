@@ -1,7 +1,7 @@
-// From code/modules/hydroponics/grown/cereals.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/hydroponics/grown/cereals.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(10012, "/obj/item/seeds/wheat", "/obj/item/seeds", {
@@ -19,14 +19,12 @@ rt.type(10012, "/obj/item/seeds/wheat", "/obj/item/seeds", {
 	mutatelist: null,
 });
 
-// /obj/item/seeds/wheat/proc/<init>  (code/modules/hydroponics/grown/cereals.dm:14)
+// cereals.dm:14
 rt.def("/obj/item/seeds/wheat/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "reagents_add", rt.alist(f, ["nutriment", 0.03999999910593033]));
-	$0 = $0;
-	rt.setSv(f, "mutatelist", rt.list(T("/obj/item/seeds/wheat/oat"), T("/obj/item/seeds/wheat/meat")));
+	parent_proc();
+	this.reagents_add = rt.alist(f, ["nutriment", 0.04]);
+
+	this.mutatelist = list(T("/obj/item/seeds/wheat/oat"), T("/obj/item/seeds/wheat/meat"));
 	return f.dot;
 });
 
@@ -40,12 +38,10 @@ rt.type(10013, "/obj/item/seeds/wheat/oat", "/obj/item/seeds/wheat", {
 	icon_state: "seed-oat",
 });
 
-// /obj/item/seeds/wheat/oat/proc/<init>  (code/modules/hydroponics/grown/cereals.dm:33)
+// cereals.dm:33
 rt.def("/obj/item/seeds/wheat/oat/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "mutatelist", rt.list());
+	parent_proc();
+	this.mutatelist = list();
 	return f.dot;
 });
 
@@ -60,12 +56,10 @@ rt.type(10014, "/obj/item/seeds/wheat/rice", "/obj/item/seeds/wheat", {
 	icon_state: "seed-rice",
 });
 
-// /obj/item/seeds/wheat/rice/proc/<init>  (code/modules/hydroponics/grown/cereals.dm:52)
+// cereals.dm:52
 rt.def("/obj/item/seeds/wheat/rice/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "mutatelist", rt.list());
+	parent_proc();
+	this.mutatelist = list();
 	return f.dot;
 });
 
@@ -79,12 +73,10 @@ rt.type(10015, "/obj/item/seeds/wheat/meat", "/obj/item/seeds/wheat", {
 	icon_state: "seed-meatwheat",
 });
 
-// /obj/item/seeds/wheat/meat/proc/<init>  (code/modules/hydroponics/grown/cereals.dm:72)
+// cereals.dm:72
 rt.def("/obj/item/seeds/wheat/meat/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "mutatelist", rt.list());
+	parent_proc();
+	this.mutatelist = list();
 	return f.dot;
 });
 
@@ -98,15 +90,13 @@ rt.type(6289, "/obj/item/weapon/reagent_containers/food/snacks/grown/meatwheat",
 	seed: rt.typePath("/obj/item/seeds/wheat/meat"),
 });
 
-// /obj/item/weapon/reagent_containers/food/snacks/grown/meatwheat/proc/attack_self  (code/modules/hydroponics/grown/cereals.dm:84)  may sleep
+// cereals.dm:84
 rt.def("/obj/item/weapon/reagent_containers/food/snacks/grown/meatwheat/proc/attack_self", function* attack_self(f: Frame, user: Value) {
-	let M: Value = null;
-	f.vars = () => [user, M];
-	yield* g.callName(f, live(user), "visible_message", [fmt("<span class='notice'>＀ crushes ＀ into meat.</span>", [live(user), live(f.src)]), fmt("<span class='notice'>You crush ＀ into something that resembles meat.</span>", [live(f.src)])]);
-	yield* g.call(f, P("/proc/playsound"), null, [live(user), rt.rsc("sound/effects/blobattack.ogg"), 50, 1]);
-	M = (yield* g.new_(f, T("/obj/item/weapon/reagent_containers/food/snacks/meat/slab/meatwheat"), [rt.getStep(f, live(user), 0)]));
-	yield* g.callName(f, live(user), "drop_item", []);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-	yield* g.callName(f, live(user), "put_in_hands", [live(M)]);
+	user.visible_message(`<span class='notice'>${user} crushes ${this} into meat.</span>`, `<span class='notice'>You crush ${this} into something that resembles meat.</span>`);
+	playsound(user, rt.rsc("sound/effects/blobattack.ogg"), 50, 1);
+	let M: Value = (yield* new_(T("/obj/item/weapon/reagent_containers/food/snacks/meat/slab/meatwheat"), rt.getStep(f, user, 0)));
+	yield* user.drop_item();
+	yield* qdel(this);
+	yield* user.put_in_hands(M);
 	return 1;
 }, true);

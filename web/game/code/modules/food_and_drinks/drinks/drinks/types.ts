@@ -1,5 +1,5 @@
 // Types declared in code/modules/food_and_drinks/drinks/drinks that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(5820, "/obj/item/weapon/reagent_containers/food/drinks/bottle/absinthe/premium", "/obj/item/weapon/reagent_containers/food/drinks/bottle/absinthe", {
 	name: "Gwyn's Premium Absinthe",

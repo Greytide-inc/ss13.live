@@ -1,7 +1,7 @@
-// From code/modules/modular_computers/laptop_vendor.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/modular_computers/laptop_vendor.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(10955, "/obj/machinery/lapvend", "/obj/machinery", {
@@ -27,358 +27,321 @@ rt.type(10955, "/obj/machinery/lapvend", "/obj/machinery", {
 	density: 1,
 });
 
-// /obj/machinery/lapvend/proc/reset_order  (code/modules/modular_computers/laptop_vendor.dm:36)  may sleep
+// laptop_vendor.dm:36
 rt.def("/obj/machinery/lapvend/proc/reset_order", function* reset_order(f: Frame) {
-	rt.setSv(f, "state", 0);
-	rt.setSv(f, "devtype", 0);
-	if (truthy(rt.sv(f, "fabricated_laptop"))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "fabricated_laptop")]);
-		rt.setSv(f, "fabricated_laptop", null);
+	this.state = 0;
+	this.devtype = 0;
+	if (this.fabricated_laptop) {
+		yield* qdel(this.fabricated_laptop);
+		this.fabricated_laptop = null;
 	}
-	if (truthy(rt.sv(f, "fabricated_tablet"))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "fabricated_tablet")]);
-		rt.setSv(f, "fabricated_tablet", null);
+	if (this.fabricated_tablet) {
+		yield* qdel(this.fabricated_tablet);
+		this.fabricated_tablet = null;
 	}
-	rt.setSv(f, "dev_cpu", 1);
-	rt.setSv(f, "dev_battery", 1);
-	rt.setSv(f, "dev_disk", 1);
-	rt.setSv(f, "dev_netcard", 0);
-	rt.setSv(f, "dev_apc_recharger", 0);
-	rt.setSv(f, "dev_printer", 0);
-	rt.setSv(f, "dev_card", 0);
+	this.dev_cpu = 1;
+	this.dev_battery = 1;
+	this.dev_disk = 1;
+	this.dev_netcard = 0;
+	this.dev_apc_recharger = 0;
+	this.dev_printer = 0;
+	this.dev_card = 0;
 	return f.dot;
 }, true);
 
-// /obj/machinery/lapvend/proc/fabricate_and_recalc_price  (code/modules/modular_computers/laptop_vendor.dm:52)  may sleep
+// laptop_vendor.dm:52
 rt.def("/obj/machinery/lapvend/proc/fabricate_and_recalc_price", function* fabricate_and_recalc_price(f: Frame, fabricate: Value) {
 	let battery_module: Value = null;
-	let $0: any;
-	f.vars = () => [fabricate, battery_module, $0];
-	if (live(fabricate) === null) {
-		fabricate = 0;
-	}
-	rt.setSv(f, "total_price", 0);
-	if (isEqual(rt.sv(f, "devtype"), 1)) {
+	fabricate ??= 0;
+	this.total_price = 0;
+	if (this.devtype == 1) {
+		if (fabricate) {
+			this.fabricated_laptop = (yield* new_(T("/obj/item/device/modular_computer/laptop/buildable"), this));
+			yield* this.fabricated_laptop.install_component((yield* new_(T("/obj/item/weapon/computer_hardware/battery"))));
+			battery_module = rt.index(this.fabricated_laptop.all_components, "CELL");
+		}
+		this.total_price = 99;
+		if (this.dev_cpu === 1) {
+			if (fabricate) {
+				yield* this.fabricated_laptop.install_component((yield* new_(T("/obj/item/weapon/computer_hardware/processor_unit/small"))));
+			}
+		} else if (this.dev_cpu === 2) {
+			if (fabricate) {
+				yield* this.fabricated_laptop.install_component((yield* new_(T("/obj/item/weapon/computer_hardware/processor_unit"))));
+			}
+			this.total_price += 299;
+		}
+		if (this.dev_battery === 1) {
+			if (fabricate) {
+				yield* battery_module.try_insert((yield* new_(T("/obj/item/weapon/stock_parts/cell/computer"))));
+			}
+		} else if (this.dev_battery === 2) {
+			if (fabricate) {
+				yield* battery_module.try_insert((yield* new_(T("/obj/item/weapon/stock_parts/cell/computer/advanced"))));
+			}
+			this.total_price += 199;
+		} else if (this.dev_battery === 3) {
+			if (fabricate) {
+				yield* battery_module.try_insert((yield* new_(T("/obj/item/weapon/stock_parts/cell/computer/super"))));
+			}
+			this.total_price += 499;
+		}
+		if (this.dev_disk === 1) {
+			if (fabricate) {
+				yield* this.fabricated_laptop.install_component((yield* new_(T("/obj/item/weapon/computer_hardware/hard_drive"))));
+			}
+		} else if (this.dev_disk === 2) {
+			if (fabricate) {
+				yield* this.fabricated_laptop.install_component((yield* new_(T("/obj/item/weapon/computer_hardware/hard_drive/advanced"))));
+			}
+			this.total_price += 99;
+		} else if (this.dev_disk === 3) {
+			if (fabricate) {
+				yield* this.fabricated_laptop.install_component((yield* new_(T("/obj/item/weapon/computer_hardware/hard_drive/super"))));
+			}
+			this.total_price += 299;
+		}
+		if (this.dev_netcard === 1) {
+			if (fabricate) {
+				yield* this.fabricated_laptop.install_component((yield* new_(T("/obj/item/weapon/computer_hardware/network_card"))));
+			}
+			this.total_price += 99;
+		} else if (this.dev_netcard === 2) {
+			if (fabricate) {
+				yield* this.fabricated_laptop.install_component((yield* new_(T("/obj/item/weapon/computer_hardware/network_card/advanced"))));
+			}
+			this.total_price += 299;
+		}
+		if (this.dev_apc_recharger) {
+			this.total_price += 399;
+			if (fabricate) {
+				yield* this.fabricated_laptop.install_component((yield* new_(T("/obj/item/weapon/computer_hardware/recharger/APC"))));
+			}
+		}
+		if (this.dev_printer) {
+			this.total_price += 99;
+			if (fabricate) {
+				yield* this.fabricated_laptop.install_component((yield* new_(T("/obj/item/weapon/computer_hardware/printer/mini"))));
+			}
+		}
+		if (this.dev_card) {
+			this.total_price += 199;
+			if (fabricate) {
+				yield* this.fabricated_laptop.install_component((yield* new_(T("/obj/item/weapon/computer_hardware/card_slot"))));
+			}
+		}
+		return this.total_price;
+	} else if (this.devtype == 2) {
 		battery_module = null;
-		if (truthy(live(fabricate))) {
-			rt.setSv(f, "fabricated_laptop", (yield* g.new_(f, T("/obj/item/device/modular_computer/laptop/buildable"), [live(f.src)])));
-			yield* g.callName(f, rt.sv(f, "fabricated_laptop"), "install_component", [(yield* g.new_(f, T("/obj/item/weapon/computer_hardware/battery"), []))]);
-			battery_module = rt.index(rt.fv(f, "all_components", rt.sv(f, "fabricated_laptop")), "CELL");
+		if (fabricate) {
+			this.fabricated_tablet = (yield* new_(T("/obj/item/device/modular_computer/tablet"), this));
+			yield* this.fabricated_tablet.install_component((yield* new_(T("/obj/item/weapon/computer_hardware/battery"))));
+			yield* this.fabricated_tablet.install_component((yield* new_(T("/obj/item/weapon/computer_hardware/processor_unit/small"))));
+			battery_module = rt.index(this.fabricated_tablet.all_components, "CELL");
 		}
-		rt.setSv(f, "total_price", 99);
-		$0 = rt.sv(f, "dev_cpu");
-		if ($0 === 1) {
-			if (truthy(live(fabricate))) {
-				yield* g.callName(f, rt.sv(f, "fabricated_laptop"), "install_component", [(yield* g.new_(f, T("/obj/item/weapon/computer_hardware/processor_unit/small"), []))]);
+		this.total_price = 199;
+		if (this.dev_battery === 1) {
+			if (fabricate) {
+				yield* battery_module.try_insert((yield* new_(T("/obj/item/weapon/stock_parts/cell/computer/nano"))));
 			}
-		} else if ($0 === 2) {
-			if (truthy(live(fabricate))) {
-				yield* g.callName(f, rt.sv(f, "fabricated_laptop"), "install_component", [(yield* g.new_(f, T("/obj/item/weapon/computer_hardware/processor_unit"), []))]);
+		} else if (this.dev_battery === 2) {
+			if (fabricate) {
+				yield* battery_module.try_insert((yield* new_(T("/obj/item/weapon/stock_parts/cell/computer/micro"))));
 			}
-			rt.modSrcVar(f, "total_price", 299, add);
+			this.total_price += 199;
+		} else if (this.dev_battery === 3) {
+			if (fabricate) {
+				yield* battery_module.try_insert((yield* new_(T("/obj/item/weapon/stock_parts/cell/computer"))));
+			}
+			this.total_price += 499;
 		}
-		$0 = rt.sv(f, "dev_battery");
-		if ($0 === 1) {
-			if (truthy(live(fabricate))) {
-				yield* g.callName(f, live(battery_module), "try_insert", [(yield* g.new_(f, T("/obj/item/weapon/stock_parts/cell/computer"), []))]);
+		if (this.dev_disk === 1) {
+			if (fabricate) {
+				yield* this.fabricated_tablet.install_component((yield* new_(T("/obj/item/weapon/computer_hardware/hard_drive/micro"))));
 			}
-		} else if ($0 === 2) {
-			if (truthy(live(fabricate))) {
-				yield* g.callName(f, live(battery_module), "try_insert", [(yield* g.new_(f, T("/obj/item/weapon/stock_parts/cell/computer/advanced"), []))]);
+		} else if (this.dev_disk === 2) {
+			if (fabricate) {
+				yield* this.fabricated_tablet.install_component((yield* new_(T("/obj/item/weapon/computer_hardware/hard_drive/small"))));
 			}
-			rt.modSrcVar(f, "total_price", 199, add);
-		} else if ($0 === 3) {
-			if (truthy(live(fabricate))) {
-				yield* g.callName(f, live(battery_module), "try_insert", [(yield* g.new_(f, T("/obj/item/weapon/stock_parts/cell/computer/super"), []))]);
+			this.total_price += 99;
+		} else if (this.dev_disk === 3) {
+			if (fabricate) {
+				yield* this.fabricated_tablet.install_component((yield* new_(T("/obj/item/weapon/computer_hardware/hard_drive"))));
 			}
-			rt.modSrcVar(f, "total_price", 499, add);
+			this.total_price += 299;
 		}
-		$0 = rt.sv(f, "dev_disk");
-		if ($0 === 1) {
-			if (truthy(live(fabricate))) {
-				yield* g.callName(f, rt.sv(f, "fabricated_laptop"), "install_component", [(yield* g.new_(f, T("/obj/item/weapon/computer_hardware/hard_drive"), []))]);
+		if (this.dev_netcard === 1) {
+			if (fabricate) {
+				yield* this.fabricated_tablet.install_component((yield* new_(T("/obj/item/weapon/computer_hardware/network_card"))));
 			}
-		} else if ($0 === 2) {
-			if (truthy(live(fabricate))) {
-				yield* g.callName(f, rt.sv(f, "fabricated_laptop"), "install_component", [(yield* g.new_(f, T("/obj/item/weapon/computer_hardware/hard_drive/advanced"), []))]);
+			this.total_price += 99;
+		} else if (this.dev_netcard === 2) {
+			if (fabricate) {
+				yield* this.fabricated_tablet.install_component((yield* new_(T("/obj/item/weapon/computer_hardware/network_card/advanced"))));
 			}
-			rt.modSrcVar(f, "total_price", 99, add);
-		} else if ($0 === 3) {
-			if (truthy(live(fabricate))) {
-				yield* g.callName(f, rt.sv(f, "fabricated_laptop"), "install_component", [(yield* g.new_(f, T("/obj/item/weapon/computer_hardware/hard_drive/super"), []))]);
-			}
-			rt.modSrcVar(f, "total_price", 299, add);
+			this.total_price += 299;
 		}
-		$0 = rt.sv(f, "dev_netcard");
-		if ($0 === 1) {
-			if (truthy(live(fabricate))) {
-				yield* g.callName(f, rt.sv(f, "fabricated_laptop"), "install_component", [(yield* g.new_(f, T("/obj/item/weapon/computer_hardware/network_card"), []))]);
-			}
-			rt.modSrcVar(f, "total_price", 99, add);
-		} else if ($0 === 2) {
-			if (truthy(live(fabricate))) {
-				yield* g.callName(f, rt.sv(f, "fabricated_laptop"), "install_component", [(yield* g.new_(f, T("/obj/item/weapon/computer_hardware/network_card/advanced"), []))]);
-			}
-			rt.modSrcVar(f, "total_price", 299, add);
-		}
-		if (truthy(rt.sv(f, "dev_apc_recharger"))) {
-			rt.modSrcVar(f, "total_price", 399, add);
-			if (truthy(live(fabricate))) {
-				yield* g.callName(f, rt.sv(f, "fabricated_laptop"), "install_component", [(yield* g.new_(f, T("/obj/item/weapon/computer_hardware/recharger/APC"), []))]);
+		if (this.dev_printer) {
+			this.total_price += 99;
+			if (fabricate) {
+				yield* this.fabricated_tablet.install_component((yield* new_(T("/obj/item/weapon/computer_hardware/printer"))));
 			}
 		}
-		if (truthy(rt.sv(f, "dev_printer"))) {
-			rt.modSrcVar(f, "total_price", 99, add);
-			if (truthy(live(fabricate))) {
-				yield* g.callName(f, rt.sv(f, "fabricated_laptop"), "install_component", [(yield* g.new_(f, T("/obj/item/weapon/computer_hardware/printer/mini"), []))]);
+		if (this.dev_card) {
+			this.total_price += 199;
+			if (fabricate) {
+				yield* this.fabricated_tablet.install_component((yield* new_(T("/obj/item/weapon/computer_hardware/card_slot"))));
 			}
 		}
-		if (truthy(rt.sv(f, "dev_card"))) {
-			rt.modSrcVar(f, "total_price", 199, add);
-			if (truthy(live(fabricate))) {
-				yield* g.callName(f, rt.sv(f, "fabricated_laptop"), "install_component", [(yield* g.new_(f, T("/obj/item/weapon/computer_hardware/card_slot"), []))]);
-			}
-		}
-		return rt.sv(f, "total_price");
-	} else {
-		if (isEqual(rt.sv(f, "devtype"), 2)) {
-			battery_module = null;
-			if (truthy(live(fabricate))) {
-				rt.setSv(f, "fabricated_tablet", (yield* g.new_(f, T("/obj/item/device/modular_computer/tablet"), [live(f.src)])));
-				yield* g.callName(f, rt.sv(f, "fabricated_tablet"), "install_component", [(yield* g.new_(f, T("/obj/item/weapon/computer_hardware/battery"), []))]);
-				yield* g.callName(f, rt.sv(f, "fabricated_tablet"), "install_component", [(yield* g.new_(f, T("/obj/item/weapon/computer_hardware/processor_unit/small"), []))]);
-				battery_module = rt.index(rt.fv(f, "all_components", rt.sv(f, "fabricated_tablet")), "CELL");
-			}
-			rt.setSv(f, "total_price", 199);
-			$0 = rt.sv(f, "dev_battery");
-			if ($0 === 1) {
-				if (truthy(live(fabricate))) {
-					yield* g.callName(f, live(battery_module), "try_insert", [(yield* g.new_(f, T("/obj/item/weapon/stock_parts/cell/computer/nano"), []))]);
-				}
-			} else if ($0 === 2) {
-				if (truthy(live(fabricate))) {
-					yield* g.callName(f, live(battery_module), "try_insert", [(yield* g.new_(f, T("/obj/item/weapon/stock_parts/cell/computer/micro"), []))]);
-				}
-				rt.modSrcVar(f, "total_price", 199, add);
-			} else if ($0 === 3) {
-				if (truthy(live(fabricate))) {
-					yield* g.callName(f, live(battery_module), "try_insert", [(yield* g.new_(f, T("/obj/item/weapon/stock_parts/cell/computer"), []))]);
-				}
-				rt.modSrcVar(f, "total_price", 499, add);
-			}
-			$0 = rt.sv(f, "dev_disk");
-			if ($0 === 1) {
-				if (truthy(live(fabricate))) {
-					yield* g.callName(f, rt.sv(f, "fabricated_tablet"), "install_component", [(yield* g.new_(f, T("/obj/item/weapon/computer_hardware/hard_drive/micro"), []))]);
-				}
-			} else if ($0 === 2) {
-				if (truthy(live(fabricate))) {
-					yield* g.callName(f, rt.sv(f, "fabricated_tablet"), "install_component", [(yield* g.new_(f, T("/obj/item/weapon/computer_hardware/hard_drive/small"), []))]);
-				}
-				rt.modSrcVar(f, "total_price", 99, add);
-			} else if ($0 === 3) {
-				if (truthy(live(fabricate))) {
-					yield* g.callName(f, rt.sv(f, "fabricated_tablet"), "install_component", [(yield* g.new_(f, T("/obj/item/weapon/computer_hardware/hard_drive"), []))]);
-				}
-				rt.modSrcVar(f, "total_price", 299, add);
-			}
-			$0 = rt.sv(f, "dev_netcard");
-			if ($0 === 1) {
-				if (truthy(live(fabricate))) {
-					yield* g.callName(f, rt.sv(f, "fabricated_tablet"), "install_component", [(yield* g.new_(f, T("/obj/item/weapon/computer_hardware/network_card"), []))]);
-				}
-				rt.modSrcVar(f, "total_price", 99, add);
-			} else if ($0 === 2) {
-				if (truthy(live(fabricate))) {
-					yield* g.callName(f, rt.sv(f, "fabricated_tablet"), "install_component", [(yield* g.new_(f, T("/obj/item/weapon/computer_hardware/network_card/advanced"), []))]);
-				}
-				rt.modSrcVar(f, "total_price", 299, add);
-			}
-			if (truthy(rt.sv(f, "dev_printer"))) {
-				rt.modSrcVar(f, "total_price", 99, add);
-				if (truthy(live(fabricate))) {
-					yield* g.callName(f, rt.sv(f, "fabricated_tablet"), "install_component", [(yield* g.new_(f, T("/obj/item/weapon/computer_hardware/printer"), []))]);
-				}
-			}
-			if (truthy(rt.sv(f, "dev_card"))) {
-				rt.modSrcVar(f, "total_price", 199, add);
-				if (truthy(live(fabricate))) {
-					yield* g.callName(f, rt.sv(f, "fabricated_tablet"), "install_component", [(yield* g.new_(f, T("/obj/item/weapon/computer_hardware/card_slot"), []))]);
-				}
-			}
-			return rt.sv(f, "total_price");
-		}
+		return this.total_price;
 	}
 	return 0;
 }, true);
 
-// /obj/machinery/lapvend/proc/ui_act  (code/modules/modular_computers/laptop_vendor.dm:171)  may sleep
-rt.def("/obj/machinery/lapvend/proc/ui_act", function* ui_act(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
+// laptop_vendor.dm:171
+rt.def("/obj/machinery/lapvend/proc/ui_act", function* ui_act(f: Frame, action: Value, params: Value) {
+	if (yield* parent_proc()) {
 		return 1;
 	}
-	$0 = live(f.args[0]);
-	if ($0 === "pick_device") {
-		if (truthy(rt.sv(f, "state"))) {
+	if (action === "pick_device") {
+		if (this.state) {
 			return 0;
 		}
-		rt.setSv(f, "devtype", (yield* g.call(f, P("/proc/text2num"), null, [rt.at(live(f.args[1]), "pick")])));
-		rt.setSv(f, "state", 1);
-		yield* g.srcCall(f, "fabricate_and_recalc_price", 0);
+		this.devtype = text2num(rt.at(params, "pick"));
+		this.state = 1;
+		yield* this.fabricate_and_recalc_price(0);
 		return 1;
-	} else if ($0 === "clean_order") {
-		yield* g.srcCall(f, "reset_order");
+	} else if (action === "clean_order") {
+		yield* this.reset_order();
 		return 1;
-	} else if ($0 === "purchase") {
-		yield* g.srcCall(f, "try_purchase");
+	} else if (action === "purchase") {
+		yield* this.try_purchase();
 		return 1;
 	}
-	if ((!isEqual(rt.sv(f, "state"), 1) && truthy(rt.sv(f, "devtype")))) {
+	if (this.state != 1 && this.devtype) {
 		return 0;
 	}
-	$0 = live(f.args[0]);
-	if ($0 === "confirm_order") {
-		rt.setSv(f, "state", 2);
-		yield* g.srcCall(f, "fabricate_and_recalc_price", 0);
+	if (action === "confirm_order") {
+		this.state = 2;
+		yield* this.fabricate_and_recalc_price(0);
 		return 1;
-	} else if ($0 === "hw_cpu") {
-		rt.setSv(f, "dev_cpu", (yield* g.call(f, P("/proc/text2num"), null, [rt.at(live(f.args[1]), "cpu")])));
-		yield* g.srcCall(f, "fabricate_and_recalc_price", 0);
+	} else if (action === "hw_cpu") {
+		this.dev_cpu = text2num(rt.at(params, "cpu"));
+		yield* this.fabricate_and_recalc_price(0);
 		return 1;
-	} else if ($0 === "hw_battery") {
-		rt.setSv(f, "dev_battery", (yield* g.call(f, P("/proc/text2num"), null, [rt.at(live(f.args[1]), "battery")])));
-		yield* g.srcCall(f, "fabricate_and_recalc_price", 0);
+	} else if (action === "hw_battery") {
+		this.dev_battery = text2num(rt.at(params, "battery"));
+		yield* this.fabricate_and_recalc_price(0);
 		return 1;
-	} else if ($0 === "hw_disk") {
-		rt.setSv(f, "dev_disk", (yield* g.call(f, P("/proc/text2num"), null, [rt.at(live(f.args[1]), "disk")])));
-		yield* g.srcCall(f, "fabricate_and_recalc_price", 0);
+	} else if (action === "hw_disk") {
+		this.dev_disk = text2num(rt.at(params, "disk"));
+		yield* this.fabricate_and_recalc_price(0);
 		return 1;
-	} else if ($0 === "hw_netcard") {
-		rt.setSv(f, "dev_netcard", (yield* g.call(f, P("/proc/text2num"), null, [rt.at(live(f.args[1]), "netcard")])));
-		yield* g.srcCall(f, "fabricate_and_recalc_price", 0);
+	} else if (action === "hw_netcard") {
+		this.dev_netcard = text2num(rt.at(params, "netcard"));
+		yield* this.fabricate_and_recalc_price(0);
 		return 1;
-	} else if ($0 === "hw_tesla") {
-		rt.setSv(f, "dev_apc_recharger", (yield* g.call(f, P("/proc/text2num"), null, [rt.at(live(f.args[1]), "tesla")])));
-		yield* g.srcCall(f, "fabricate_and_recalc_price", 0);
+	} else if (action === "hw_tesla") {
+		this.dev_apc_recharger = text2num(rt.at(params, "tesla"));
+		yield* this.fabricate_and_recalc_price(0);
 		return 1;
-	} else if ($0 === "hw_nanoprint") {
-		rt.setSv(f, "dev_printer", (yield* g.call(f, P("/proc/text2num"), null, [rt.at(live(f.args[1]), "print")])));
-		yield* g.srcCall(f, "fabricate_and_recalc_price", 0);
+	} else if (action === "hw_nanoprint") {
+		this.dev_printer = text2num(rt.at(params, "print"));
+		yield* this.fabricate_and_recalc_price(0);
 		return 1;
-	} else if ($0 === "hw_card") {
-		rt.setSv(f, "dev_card", (yield* g.call(f, P("/proc/text2num"), null, [rt.at(live(f.args[1]), "card")])));
-		yield* g.srcCall(f, "fabricate_and_recalc_price", 0);
+	} else if (action === "hw_card") {
+		this.dev_card = text2num(rt.at(params, "card"));
+		yield* this.fabricate_and_recalc_price(0);
 		return 1;
 	}
 	return 0;
-}, true, { args: ["action", "params"] });
+}, true);
 
-// /obj/machinery/lapvend/proc/attack_hand  (code/modules/modular_computers/laptop_vendor.dm:226)  may sleep
+// laptop_vendor.dm:226
 rt.def("/obj/machinery/lapvend/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.srcCall(f, "ui_interact", live(user));
+	yield* this.ui_interact(user);
 	return f.dot;
 }, true);
 
-// /obj/machinery/lapvend/proc/ui_interact  (code/modules/modular_computers/laptop_vendor.dm:229)  may sleep
+// laptop_vendor.dm:229
 rt.def("/obj/machinery/lapvend/proc/ui_interact", function* ui_interact(f: Frame, user: Value, ui_key: Value, ui: Value, force_open: Value, master_ui: Value, state: Value) {
-	f.vars = () => [user, ui_key, ui, force_open, master_ui, state];
-	if (live(ui_key) === null) {
-		ui_key = "main";
-	}
-	if (live(ui) === null) {
-		ui = null;
-	}
-	if (live(force_open) === null) {
-		force_open = 0;
-	}
-	if (live(master_ui) === null) {
-		master_ui = null;
-	}
-	if (live(state) === null) {
-		state = rt.gl("default_state");
-	}
-	if (truthy(rt.bitAnd(rt.sv(f, "stat"), 11))) {
-		if (truthy(live(ui))) {
-			yield* g.callName(f, live(ui), "close", []);
+	ui_key ??= "main";
+	force_open ??= 0;
+	state ??= GLOB.default_state;
+	if (rt.bitAnd(this.stat, 11)) {
+		if (ui) {
+			yield* ui.close();
 		}
 		return 0;
 	}
-	if (truthy((ui = (yield* g.callName(f, rt.gl("SStgui"), "try_update_ui", [live(user), live(f.src), live(ui_key), live(ui), live(force_open)]))))) return f.dot;
-	yield* g.callName(f, (ui = (yield* g.new_(f, T("/datum/tgui"), [null, live(user), null, live(f.src), null, live(ui_key), null, "computer_fabricator", null, "Personal Computer Vendor", null, 500, null, 400, "state", live(state)], rt.Args.Named))), "open", []);
-	yield* g.callName(f, live(ui), "set_autoupdate", ["state", 1], rt.Args.Named);
+	if (ui = (yield* GLOB.SStgui.try_update_ui(user, this, ui_key, ui, force_open))) return f.dot;
+	yield* (ui = (yield* new_(T("/datum/tgui"), user, this, ui_key, "computer_fabricator", "Personal Computer Vendor", 500, 400, { state: state }))).open();
+	yield* ui.set_autoupdate({ state: 1 });
 	return f.dot;
 }, true);
 
-// /obj/machinery/lapvend/proc/attackby  (code/modules/modular_computers/laptop_vendor.dm:244)  may sleep
-rt.def("/obj/machinery/lapvend/proc/attackby", function* attackby(f: Frame) {
+// laptop_vendor.dm:244
+rt.def("/obj/machinery/lapvend/proc/attackby", function* attackby(f: Frame, I: Value, user: Value) {
 	let c: Value = null;
-	f.vars = () => [c];
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/stack/spacecash")) ? 1 : 0))) {
-		c = live(f.args[0]);
-		if (!truthy((yield* g.callName(f, live(f.args[1]), "drop_item", [live(c)])))) {
-			return live(f.dot);
+	if (rt.istype(I, T("/obj/item/stack/spacecash"))) {
+		c = I;
+		if (!(yield* user.drop_item(c))) {
+			return f.dot;
 		}
-		rt.modSrcVar(f, "credits", rt.fv(f, "value", live(c)), add);
-		yield* g.srcCall(f, "visible_message", fmt("<span class='info'><span class='name'>＀</span> inserts ＀ credits into the ＀.</span>", [live(f.usr), rt.fv(f, "value", live(c)), live(f.src)]));
-		yield* g.call(f, P("/proc/qdel"), null, [live(c)]);
-		return live(f.dot);
+		this.credits += rt.fv(f, "value", c);
+		this.visible_message(`<span class='info'><span class='name'>${f.usr}</span> inserts ${rt.fv(f, "value", c)} credits into the ${this}.</span>`);
+		yield* qdel(c);
+		return f.dot;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["I", "user"] });
+	return (yield* parent_proc());
+}, true);
 
-// /obj/machinery/lapvend/proc/process_payment  (code/modules/modular_computers/laptop_vendor.dm:259)  may sleep
+// laptop_vendor.dm:259
 rt.def("/obj/machinery/lapvend/proc/process_payment", function* process_payment(f: Frame) {
-	if (rt.gt(rt.sv(f, "total_price"), rt.sv(f, "credits"))) {
-		yield* g.srcCall(f, "say", "Insufficient credits.");
+	if (this.total_price > this.credits) {
+		yield* this.say("Insufficient credits.");
 		return 0;
 	} else {
 		return 1;
 	}
-	return f.dot;
 }, true);
 
-// /obj/machinery/lapvend/proc/ui_data  (code/modules/modular_computers/laptop_vendor.dm:267)
+// laptop_vendor.dm:267
 rt.def("/obj/machinery/lapvend/proc/ui_data", function ui_data(f: Frame, user: Value) {
 	let data: Value = null;
-	f.vars = () => [data];
-	rt.setAt((data = rt.list()), "state", rt.sv(f, "state"));
-	if (isEqual(rt.sv(f, "state"), 1)) {
-		rt.setAt(live(data), "devtype", rt.sv(f, "devtype"));
-		rt.setAt(live(data), "hw_battery", rt.sv(f, "dev_battery"));
-		rt.setAt(live(data), "hw_disk", rt.sv(f, "dev_disk"));
-		rt.setAt(live(data), "hw_netcard", rt.sv(f, "dev_netcard"));
-		rt.setAt(live(data), "hw_tesla", rt.sv(f, "dev_apc_recharger"));
-		rt.setAt(live(data), "hw_nanoprint", rt.sv(f, "dev_printer"));
-		rt.setAt(live(data), "hw_card", rt.sv(f, "dev_card"));
-		rt.setAt(live(data), "hw_cpu", rt.sv(f, "dev_cpu"));
+	rt.setAt((data = list()), "state", this.state);
+	if (this.state == 1) {
+		rt.setAt(data, "devtype", this.devtype);
+		rt.setAt(data, "hw_battery", this.dev_battery);
+		rt.setAt(data, "hw_disk", this.dev_disk);
+		rt.setAt(data, "hw_netcard", this.dev_netcard);
+		rt.setAt(data, "hw_tesla", this.dev_apc_recharger);
+		rt.setAt(data, "hw_nanoprint", this.dev_printer);
+		rt.setAt(data, "hw_card", this.dev_card);
+		rt.setAt(data, "hw_cpu", this.dev_cpu);
 	}
-	if ((isEqual(rt.sv(f, "state"), 1) || isEqual(rt.sv(f, "state"), 2))) {
-		rt.setAt(live(data), "totalprice", rt.sv(f, "total_price"));
-		rt.setAt(live(data), "credits", rt.sv(f, "credits"));
+	if (this.state == 1 || this.state == 2) {
+		rt.setAt(data, "totalprice", this.total_price);
+		rt.setAt(data, "credits", this.credits);
 	}
-	return live(data);
+	return data;
 });
 
-// /obj/machinery/lapvend/proc/try_purchase  (code/modules/modular_computers/laptop_vendor.dm:287)  may sleep
+// laptop_vendor.dm:287
 rt.def("/obj/machinery/lapvend/proc/try_purchase", function* try_purchase(f: Frame) {
-	if (!isEqual(rt.sv(f, "state"), 2)) return f.dot;
-	if (truthy((yield* g.srcCall(f, "process_payment")))) {
-		yield* g.srcCall(f, "fabricate_and_recalc_price", 1);
-		if ((isEqual(rt.sv(f, "devtype"), 1) && truthy(rt.sv(f, "fabricated_laptop")))) {
-			yield* g.callName(f, rt.sv(f, "fabricated_laptop"), "forceMove", [rt.fv(f, "loc", live(f.src))]);
-			rt.setSv(f, "fabricated_laptop", null);
-		} else {
-			if ((isEqual(rt.sv(f, "devtype"), 2) && truthy(rt.sv(f, "fabricated_tablet")))) {
-				yield* g.callName(f, rt.sv(f, "fabricated_tablet"), "forceMove", [rt.fv(f, "loc", live(f.src))]);
-				rt.setSv(f, "fabricated_tablet", null);
-			}
+	if (this.state != 2) return f.dot;
+	if (yield* this.process_payment()) {
+		yield* this.fabricate_and_recalc_price(1);
+		if (this.devtype == 1 && this.fabricated_laptop) {
+			yield* this.fabricated_laptop.forceMove(this.loc);
+			this.fabricated_laptop = null;
+		} else if (this.devtype == 2 && this.fabricated_tablet) {
+			yield* this.fabricated_tablet.forceMove(this.loc);
+			this.fabricated_tablet = null;
 		}
-		(rt.modSrcVar(f, "credits", rt.sv(f, "total_price"), subtract));
-		yield* g.srcCall(f, "say", "Enjoy your new product!");
-		rt.setSv(f, "state", 3);
+		this.credits -= this.total_price;
+		yield* this.say("Enjoy your new product!");
+		this.state = 3;
 		return 1;
 	}
 	return 0;

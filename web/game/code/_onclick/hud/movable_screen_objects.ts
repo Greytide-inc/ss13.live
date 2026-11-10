@@ -1,7 +1,7 @@
-// From code/_onclick/hud/movable_screen_objects.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/_onclick/hud/movable_screen_objects.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, g } = rt;
 
 
 rt.type(11001, "/obj/screen/movable", "/obj/screen", {
@@ -9,55 +9,52 @@ rt.type(11001, "/obj/screen/movable", "/obj/screen", {
 	moved: 0,
 });
 
-// /obj/screen/movable/proc/MouseDrop  (code/_onclick/hud/movable_screen_objects.dm:23)
+// movable_screen_objects.dm:23
 rt.def("/obj/screen/movable/proc/MouseDrop", function MouseDrop(f: Frame, over_object: Value, src_location: Value, over_location: Value, src_control: Value, over_control: Value, params: Value) {
-	let PM: Value = null, screen_loc_params: Value = null, screen_loc_X: Value = null, screen_loc_Y: Value = null, pix_X: Value = null, pix_Y: Value = null;
-	f.vars = () => [PM, screen_loc_params, screen_loc_X, screen_loc_Y, pix_X, pix_Y];
-	if ((!truthy((PM = rt.call(f, P("/proc/params2list"), null, [live(params)]))) || !truthy(rt.at(live(PM), "screen-loc")))) {
-		return live(f.dot);
+	let PM: Value = null, pix_X: Value = null, pix_Y: Value = null;
+	if (!(PM = params2list(params)) || !rt.at(PM, "screen-loc")) {
+		return f.dot;
 	}
-	screen_loc_params = rt.call(f, P("/proc/splittext"), null, [rt.at(live(PM), "screen-loc"), ","]);
-	screen_loc_X = rt.call(f, P("/proc/splittext"), null, [rt.index(live(screen_loc_params), 1), ":"]);
-	screen_loc_Y = rt.call(f, P("/proc/splittext"), null, [rt.index(live(screen_loc_params), 2), ":"]);
-	if (truthy(rt.sv(f, "snap2grid"))) {
-		rt.setSv(f, "screen_loc", fmt("＀,＀", [rt.index(live(screen_loc_X), 1), rt.index(live(screen_loc_Y), 1)]));
+	let screen_loc_params: Value = splittext(rt.at(PM, "screen-loc"), ",");
+	let screen_loc_X: Value = splittext(rt.index(screen_loc_params, 1), ":");
+	let screen_loc_Y: Value = splittext(rt.index(screen_loc_params, 2), ":");
+	if (this.snap2grid) {
+		this.screen_loc = `${rt.index(screen_loc_X, 1)},${rt.index(screen_loc_Y, 1)}`;
 	} else {
-		pix_X = subtract(rt.call(f, P("/proc/text2num"), null, [rt.index(live(screen_loc_X), 2)]), 16);
-		pix_Y = subtract(rt.call(f, P("/proc/text2num"), null, [rt.index(live(screen_loc_Y), 2)]), 16);
-		rt.setSv(f, "screen_loc", fmt("＀:＀,＀:＀", [rt.index(live(screen_loc_X), 1), live(pix_X), rt.index(live(screen_loc_Y), 1), live(pix_Y)]));
+		pix_X = text2num(rt.index(screen_loc_X, 2)) - 16;
+		pix_Y = text2num(rt.index(screen_loc_Y, 2)) - 16;
+		this.screen_loc = `${rt.index(screen_loc_X, 1)}:${pix_X},${rt.index(screen_loc_Y, 1)}:${pix_Y}`;
 	}
-	rt.setSv(f, "moved", rt.sv(f, "screen_loc"));
+	this.moved = this.screen_loc;
 	return f.dot;
 });
 
-// /client/proc/test_movable_UI  (code/_onclick/hud/movable_screen_objects.dm:54)  may sleep
+// movable_screen_objects.dm:54
 rt.def("/client/proc/test_movable_UI", function* test_movable_UI(f: Frame) {
 	let M: Value = null, screen_l: Value = null;
-	f.vars = () => [M, screen_l];
-	rt.setFv(f, "name", (M = (yield* g.new_(f, T("/obj/screen/movable"), []))), "Movable UI Object");
-	rt.setFv(f, "icon_state", live(M), "block");
-	rt.setFv(f, "maptext", live(M), "Movable");
-	rt.setFv(f, "maptext_width", live(M), 64);
-	if (!truthy((screen_l = (yield* g.op(f, "Prompt", [2], [null, "Spawn Movable UI Object", "Where on the screen? (Formatted as 'X,Y' e.g: '1,1' for bottom left)", live(f.usr), null]))))) {
-		return live(f.dot);
+	(M = (yield* new_(T("/obj/screen/movable")))).name = "Movable UI Object";
+	M.icon_state = "block";
+	M.maptext = "Movable";
+	M.maptext_width = 64;
+	if (!(screen_l = (yield* g.op(f, "Prompt", [2], [null, "Spawn Movable UI Object", "Where on the screen? (Formatted as 'X,Y' e.g: '1,1' for bottom left)", f.usr, null])))) {
+		return f.dot;
 	}
-	rt.setFv(f, "screen_loc", live(M), live(screen_l));
-	rt.modSrcVar(f, "screen", live(M), add);
+	M.screen_loc = screen_l;
+	this.screen += M;
 	return f.dot;
 }, true, { verb: { name: "Spawn Movable UI Object", category: "Debug" } });
 
-// /client/proc/test_snap_UI  (code/_onclick/hud/movable_screen_objects.dm:73)  may sleep
+// movable_screen_objects.dm:73
 rt.def("/client/proc/test_snap_UI", function* test_snap_UI(f: Frame) {
 	let S: Value = null, screen_l: Value = null;
-	f.vars = () => [S, screen_l];
-	rt.setFv(f, "name", (S = (yield* g.new_(f, T("/obj/screen/movable/snap"), []))), "Snap UI Object");
-	rt.setFv(f, "icon_state", live(S), "block");
-	rt.setFv(f, "maptext", live(S), "Snap");
-	rt.setFv(f, "maptext_width", live(S), 64);
-	if (!truthy((screen_l = (yield* g.op(f, "Prompt", [2], [null, "Spawn Snap UI Object", "Where on the screen? (Formatted as 'X,Y' e.g: '1,1' for bottom left)", live(f.usr), null]))))) {
-		return live(f.dot);
+	(S = (yield* new_(T("/obj/screen/movable/snap")))).name = "Snap UI Object";
+	S.icon_state = "block";
+	S.maptext = "Snap";
+	S.maptext_width = 64;
+	if (!(screen_l = (yield* g.op(f, "Prompt", [2], [null, "Spawn Snap UI Object", "Where on the screen? (Formatted as 'X,Y' e.g: '1,1' for bottom left)", f.usr, null])))) {
+		return f.dot;
 	}
-	rt.setFv(f, "screen_loc", live(S), live(screen_l));
-	rt.modSrcVar(f, "screen", live(S), add);
+	S.screen_loc = screen_l;
+	this.screen += S;
 	return f.dot;
 }, true, { verb: { name: "Spawn Snap UI Object", category: "Debug" } });

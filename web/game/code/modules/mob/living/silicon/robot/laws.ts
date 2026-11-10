@@ -1,122 +1,101 @@
-// From code/modules/mob/living/silicon/robot/laws.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/silicon/robot/laws.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
 
 
-// /mob/living/silicon/robot/verb/cmd_show_laws  (code/modules/mob/living/silicon/robot/laws.dm:5)  may sleep
+
+// laws.dm:5
 rt.def("/mob/living/silicon/robot/verb/cmd_show_laws", function* cmd_show_laws(f: Frame) {
-	if (isEqual(rt.fv(f, "stat", live(f.usr)), 2)) {
-		return live(f.dot);
+	if (f.usr.stat == 2) {
+		return f.dot;
 	}
-	yield* g.srcCall(f, "show_laws");
+	yield* this.show_laws();
 	return f.dot;
 }, true, { verb: { name: "Show Laws", category: "Robot Commands" } });
 
-// /mob/living/silicon/robot/proc/show_laws  (code/modules/mob/living/silicon/robot/laws.dm:10)  may sleep
+// laws.dm:10
 rt.def("/mob/living/silicon/robot/proc/show_laws", function* show_laws(f: Frame, everyone: Value) {
 	let who: Value = null;
-	f.vars = () => [everyone, who];
-	if (live(everyone) === null) {
-		everyone = 0;
-	}
-	yield* g.srcCall(f, "laws_sanity_check");
-	who = null;
-	if (truthy(live(everyone))) {
+	everyone ??= 0;
+	yield* this.laws_sanity_check();
+	if (everyone) {
 		who = rt.world();
 	} else {
-		who = live(f.src);
+		who = this;
 	}
-	if (truthy(rt.sv(f, "lawupdate"))) {
-		if (truthy(rt.sv(f, "connected_ai"))) {
-			if ((truthy(rt.fv(f, "stat", rt.sv(f, "connected_ai"))) || truthy(rt.fv(f, "control_disabled", rt.sv(f, "connected_ai"))))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<b>AI signal lost, unable to sync laws.</b>"]);
+	if (this.lawupdate) {
+		if (this.connected_ai) {
+			if (this.connected_ai.stat || this.connected_ai.control_disabled) {
+				to_chat(this, "<b>AI signal lost, unable to sync laws.</b>");
 			} else {
-				yield* g.srcCall(f, "lawsync");
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<b>Laws synced with AI, be sure to note any changes.</b>"]);
-				if (truthy((yield* g.call(f, P("/proc/is_special_character"), null, [live(f.src)])))) {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<b>Remember, your AI does NOT share or know about your law 0.</b>"]);
-					if (truthy(rt.gv(f, "zeroth", rt.gv(f, "laws", rt.fv(f, "connected_ai", live(f.src)))))) {
-						yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<b>While you are free to disregard it, your AI has a law 0 of its own.</b>"]);
+				yield* this.lawsync();
+				to_chat(this, "<b>Laws synced with AI, be sure to note any changes.</b>");
+				if (is_special_character(this)) {
+					to_chat(this, "<b>Remember, your AI does NOT share or know about your law 0.</b>");
+					if (this.connected_ai.laws.zeroth) {
+						to_chat(this, "<b>While you are free to disregard it, your AI has a law 0 of its own.</b>");
 					}
 				}
 			}
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<b>No AI selected to sync laws with, disabling lawsync protocol.</b>"]);
-			rt.setSv(f, "lawupdate", 0);
+			to_chat(this, "<b>No AI selected to sync laws with, disabling lawsync protocol.</b>");
+			this.lawupdate = 0;
 		}
 	}
-	yield* g.call(f, P("/proc/to_chat"), null, [live(who), "<b>Obey these laws:</b>"]);
-	yield* g.callName(f, rt.sv(f, "laws"), "show_laws", [live(who)]);
-	if (truthy(rt.sv(f, "shell"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(who), "<b>Remember, you are an AI remotely controlling your shell, other AIs can be ignored.</b>"]);
+	to_chat(who, "<b>Obey these laws:</b>");
+	yield* this.laws.show_laws(who);
+	if (this.shell) {
+		to_chat(who, "<b>Remember, you are an AI remotely controlling your shell, other AIs can be ignored.</b>");
+	} else if (is_special_character(this) && this.connected_ai) {
+		to_chat(who, `<b>Remember, ${this.connected_ai.name} is technically your master, but your objective comes first.</b>`);
+	} else if (this.connected_ai) {
+		to_chat(who, `<b>Remember, ${this.connected_ai.name} is your master, other AIs can be ignored.</b>`);
+	} else if (this.emagged) {
+		to_chat(who, "<b>Remember, you are not required to listen to the AI.</b>");
 	} else {
-		if ((truthy((yield* g.call(f, P("/proc/is_special_character"), null, [live(f.src)]))) && truthy(rt.sv(f, "connected_ai")))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(who), fmt("<b>Remember, ＀ is technically your master, but your objective comes first.</b>", [rt.fv(f, "name", rt.sv(f, "connected_ai"))])]);
-		} else {
-			if (truthy(rt.sv(f, "connected_ai"))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(who), fmt("<b>Remember, ＀ is your master, other AIs can be ignored.</b>", [rt.fv(f, "name", rt.sv(f, "connected_ai"))])]);
-			} else {
-				if (truthy(rt.sv(f, "emagged"))) {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(who), "<b>Remember, you are not required to listen to the AI.</b>"]);
-				} else {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(who), "<b>Remember, you are not bound to any AI, you are not required to listen to them.</b>"]);
-				}
-			}
-		}
+		to_chat(who, "<b>Remember, you are not bound to any AI, you are not required to listen to them.</b>");
 	}
 	return f.dot;
 }, true);
 
-// /mob/living/silicon/robot/proc/lawsync  (code/modules/mob/living/silicon/robot/laws.dm:48)  may sleep
+// laws.dm:48
 rt.def("/mob/living/silicon/robot/proc/lawsync", function* lawsync(f: Frame) {
-	let master: Value = null, temp: Value = null, index: Value = null;
-	let $0: any;
-	f.vars = () => [master, temp, index, $0];
-	yield* g.srcCall(f, "laws_sanity_check");
-	if (truthy(rt.sv(f, "connected_ai"))) {
-		$0 = rt.fv(f, "laws", rt.sv(f, "connected_ai"));
-	} else {
-		$0 = null;
-	}
-	master = $0;
-	temp = null;
-	if (truthy(live(master))) {
-		rt.setFv(f, "len", rt.fv(f, "ion", rt.sv(f, "laws")), rt.getLen(f, rt.fv(f, "ion", live(master))));
-		index = null;
+	let temp: Value = null, index: Value = null;
+	yield* this.laws_sanity_check();
+	let master: Value = this.connected_ai ? this.connected_ai.laws : null;
+	if (master) {
+		this.laws.ion.len = rt.len(f, master.ion);
 		index = 1;
-		while (rt.le(live(index), rt.getLen(f, rt.fv(f, "ion", live(master))))) {
-			if (rt.gt(rt.length((temp = rt.index(rt.fv(f, "ion", live(master)), live(index)))), 0)) {
-				rt.setAt(rt.fv(f, "ion", rt.sv(f, "laws")), live(index), live(temp));
+		while (index <= rt.len(f, master.ion)) {
+			if (rt.length((temp = rt.index(master.ion, index))) > 0) {
+				rt.setAt(this.laws.ion, index, temp);
 			}
-			index = rt.inc(live(index), 1);
+			index++;
 		}
-		if (!truthy((yield* g.call(f, P("/proc/is_special_character"), null, [live(f.src)])))) {
-			if (truthy(rt.fv(f, "zeroth_borg", live(master)))) {
-				temp = rt.fv(f, "zeroth_borg", live(master));
+		if (!is_special_character(this)) {
+			if (master.zeroth_borg) {
+				temp = master.zeroth_borg;
 			} else {
-				temp = rt.fv(f, "zeroth", live(master));
+				temp = master.zeroth;
 			}
-			rt.setFv(f, "zeroth", rt.sv(f, "laws"), live(temp));
+			this.laws.zeroth = temp;
 		}
-		rt.setFv(f, "len", rt.fv(f, "inherent", rt.sv(f, "laws")), rt.getLen(f, rt.fv(f, "inherent", live(master))));
-		index = null;
+		this.laws.inherent.len = rt.len(f, master.inherent);
 		index = 1;
-		while (rt.le(live(index), rt.getLen(f, rt.fv(f, "inherent", live(master))))) {
-			if (rt.gt(rt.length((temp = rt.index(rt.fv(f, "inherent", live(master)), live(index)))), 0)) {
-				rt.setAt(rt.fv(f, "inherent", rt.sv(f, "laws")), live(index), live(temp));
+		while (index <= rt.len(f, master.inherent)) {
+			if (rt.length((temp = rt.index(master.inherent, index))) > 0) {
+				rt.setAt(this.laws.inherent, index, temp);
 			}
-			index = rt.inc(live(index), 1);
+			index++;
 		}
-		rt.setFv(f, "len", rt.fv(f, "supplied", rt.sv(f, "laws")), rt.getLen(f, rt.fv(f, "supplied", live(master))));
-		index = null;
+		this.laws.supplied.len = rt.len(f, master.supplied);
 		index = 1;
-		while (rt.le(live(index), rt.getLen(f, rt.fv(f, "supplied", live(master))))) {
-			if (rt.gt(rt.length((temp = rt.index(rt.fv(f, "supplied", live(master)), live(index)))), 0)) {
-				rt.setAt(rt.fv(f, "supplied", rt.sv(f, "laws")), live(index), live(temp));
+		while (index <= rt.len(f, master.supplied)) {
+			if (rt.length((temp = rt.index(master.supplied, index))) > 0) {
+				rt.setAt(this.laws.supplied, index, temp);
 			}
-			index = rt.inc(live(index), 1);
+			index++;
 		}
 	}
-	return live(f.dot);
+	return f.dot;
 }, true);

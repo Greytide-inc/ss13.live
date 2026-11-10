@@ -1,5 +1,5 @@
 // Types declared in code/game/area/areas that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(13595, "/area/holodeck/rec_center", "/area/holodeck", {
 	name: "１Recreational Holodeck",

@@ -1,7 +1,7 @@
-// From code/modules/paperwork/paper_cutter.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/paperwork/paper_cutter.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(7619, "/obj/item/weapon/papercutter", "/obj/item/weapon", {
@@ -18,137 +18,129 @@ rt.type(7619, "/obj/item/weapon/papercutter", "/obj/item/weapon", {
 	w_class: 3,
 });
 
-// /obj/item/weapon/papercutter/proc/New  (code/modules/paperwork/paper_cutter.dm:16)  may sleep
+// paper_cutter.dm:16
 rt.def("/obj/item/weapon/papercutter/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "storedcutter", (yield* g.new_(f, T("/obj/item/weapon/hatchet/cutterblade"), [live(f.src)])));
-	yield* g.srcCall(f, "update_icon");
+	yield* parent_proc();
+	this.storedcutter = (yield* new_(T("/obj/item/weapon/hatchet/cutterblade"), this));
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/papercutter/proc/suicide_act  (code/modules/paperwork/paper_cutter.dm:23)  may sleep
+// paper_cutter.dm:23
 rt.def("/obj/item/weapon/papercutter/proc/suicide_act", function* suicide_act(f: Frame, user: Value) {
 	let C: Value = null, BP: Value = null;
-	f.vars = () => [user, C, BP];
-	if (truthy(rt.sv(f, "storedcutter"))) {
-		yield* g.callName(f, live(user), "visible_message", [fmt("<span class='suicide'>＀ is beheading ＀self with ＀! It looks like ＀ trying to commit suicide!</span>", [live(user), (yield* g.callName(f, live(user), "p_them", [])), rt.fv(f, "name", live(f.src)), (yield* g.callName(f, live(user), "p_theyre", []))])]);
-		if (truthy((rt.istype(live(user), T("/mob/living/carbon")) ? 1 : 0))) {
-			C = live(user);
-			if (truthy((BP = (yield* g.callName(f, live(C), "get_bodypart", ["head"]))))) {
-				yield* g.callName(f, live(BP), "drop_limb", []);
-				yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.op(f, "PickUnweighted", [3], [rt.rsc("sound/misc/desceration-01.ogg"), rt.rsc("sound/misc/desceration-02.ogg"), rt.rsc("sound/misc/desceration-01.ogg")]), 50, 1, -1]);
+	if (this.storedcutter) {
+		user.visible_message(`<span class='suicide'>${user} is beheading ${user.p_them()}self with ${this.name}! It looks like ${user.p_theyre()} trying to commit suicide!</span>`);
+		if (rt.istype(user, T("/mob/living/carbon"))) {
+			C = user;
+			if (BP = C.get_bodypart("head")) {
+				yield* BP.drop_limb();
+				playsound(this.loc, pick(rt.rsc("sound/misc/desceration-01.ogg"), rt.rsc("sound/misc/desceration-02.ogg"), rt.rsc("sound/misc/desceration-01.ogg")), 50, 1, -1);
 			}
 		}
 		return 1;
 	} else {
-		yield* g.callName(f, live(user), "visible_message", [fmt("<span class='suicide'>＀ repeatedly bashes ＀ against ＀ head! It looks like ＀ trying to commit suicide!</span>", [live(user), rt.fv(f, "name", live(f.src)), (yield* g.callName(f, live(user), "p_their", [])), (yield* g.callName(f, live(user), "p_theyre", []))])]);
-		yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/items/gavel.ogg"), 50, 1, -1]);
+		user.visible_message(`<span class='suicide'>${user} repeatedly bashes ${this.name} against ${user.p_their()} head! It looks like ${user.p_theyre()} trying to commit suicide!</span>`);
+		playsound(this.loc, rt.rsc("sound/items/gavel.ogg"), 50, 1, -1);
 		return 1;
 	}
-	return f.dot;
 }, true);
 
-// /obj/item/weapon/papercutter/proc/update_icon  (code/modules/paperwork/paper_cutter.dm:38)
+// paper_cutter.dm:38
 rt.def("/obj/item/weapon/papercutter/proc/update_icon", function update_icon(f: Frame) {
 	let $0: any;
-	f.vars = () => [$0];
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.callSrc(f, "cut_overlays", []);
-	if (truthy(rt.sv(f, "storedcutter"))) {
-		$0 = fmt("＀-cutter", [rt.initial(f, live(f.src), "icon_state")]);
+	parent_proc();
+	this.cut_overlays();
+	if (this.storedcutter) {
+		$0 = `${rt.initial(f, this, "icon_state")}-cutter`;
 	} else {
-		$0 = fmt("＀", [rt.initial(f, live(f.src), "icon_state")]);
+		$0 = `${rt.initial(f, this, "icon_state")}`;
 	}
-	rt.setSv(f, "icon_state", $0);
-	if (!truthy(rt.sv(f, "storedpaper"))) return f.dot;
-	rt.callSrc(f, "add_overlay", ["paper"]);
+	this.icon_state = $0;
+	if (!this.storedpaper) return f.dot;
+	this.add_overlay("paper");
 	return f.dot;
 });
 
-// /obj/item/weapon/papercutter/proc/attackby  (code/modules/paperwork/paper_cutter.dm:46)  may sleep
+// paper_cutter.dm:46
 rt.def("/obj/item/weapon/papercutter/proc/attackby", function* attackby(f: Frame) {
 	let $0: any, $1: any, $2: any;
-	f.vars = () => [$0, $1, $2];
-	if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/paper")) ? 1 : 0)) && !truthy(rt.sv(f, "storedpaper")))) {
-		if (!truthy((yield* g.callName(f, live(f.args[1]), "drop_item", [])))) {
-			return live(f.dot);
+	if (rt.istype(f.args[0], T("/obj/item/weapon/paper")) && !this.storedpaper) {
+		if (!(yield* f.args[1].drop_item())) {
+			return f.dot;
 		}
-		yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), "pageturn", 60, 1]);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You place ＀ in ＀.</span>", [live(f.args[0]), live(f.src)])]);
-		rt.setFv(f, "loc", live(f.args[0]), live(f.src));
-		rt.setSv(f, "storedpaper", live(f.args[0]));
-		yield* g.srcCall(f, "update_icon");
-		return live(f.dot);
+		playsound(this.loc, "pageturn", 60, 1);
+		to_chat(f.args[1], `<span class='notice'>You place ${f.args[0]} in ${this}.</span>`);
+		f.args[0].loc = this;
+		this.storedpaper = f.args[0];
+		yield* this.update_icon();
+		return f.dot;
 	}
-	if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/hatchet/cutterblade")) ? 1 : 0)) && !truthy(rt.sv(f, "storedcutter")))) {
-		if (!truthy((yield* g.callName(f, live(f.args[1]), "drop_item", [])))) {
-			return live(f.dot);
+	if (rt.istype(f.args[0], T("/obj/item/weapon/hatchet/cutterblade")) && !this.storedcutter) {
+		if (!(yield* f.args[1].drop_item())) {
+			return f.dot;
 		}
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You replace ＀'s ＀.</span>", [live(f.src), live(f.args[0])])]);
-		rt.setFv(f, "loc", live(f.args[0]), live(f.src));
-		rt.setSv(f, "storedcutter", live(f.args[0]));
-		yield* g.srcCall(f, "update_icon");
-		return live(f.dot);
+		to_chat(f.args[1], `<span class='notice'>You replace ${this}'s ${f.args[0]}.</span>`);
+		f.args[0].loc = this;
+		this.storedcutter = f.args[0];
+		yield* this.update_icon();
+		return f.dot;
 	}
-	if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/screwdriver")) ? 1 : 0)) && truthy(rt.sv(f, "storedcutter")))) {
-		yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.fv(f, "usesound", live(f.args[0])), 50, 1]);
-		$0 = live(f.args[1]);
-		$1 = rt.sv(f, "storedcutter");
-		if (truthy(rt.sv(f, "cuttersecured"))) {
-			$1 = $1;
+	if (rt.istype(f.args[0], T("/obj/item/weapon/screwdriver")) && this.storedcutter) {
+		playsound(this, f.args[0].usesound, 50, 1);
+		$0 = f.args[1];
+		$1 = this.storedcutter;
+		if (this.cuttersecured) {
+
 			$2 = "unsecured";
 		} else {
 			$2 = "secured";
 		}
-		yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='notice'>＀ has been ＀.</span>", [$1, $2])]);
-		rt.setSv(f, "cuttersecured", (!truthy(rt.sv(f, "cuttersecured")) ? 1 : 0));
-		return live(f.dot);
+		to_chat($0, `<span class='notice'>${$1} has been ${$2}.</span>`);
+		this.cuttersecured = (!this.cuttersecured ? 1 : 0);
+		return f.dot;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true, { args: ["P", "user", "params"] });
 
-// /obj/item/weapon/papercutter/proc/attack_hand  (code/modules/paperwork/paper_cutter.dm:72)  may sleep
+// paper_cutter.dm:72
 rt.def("/obj/item/weapon/papercutter/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.srcCall(f, "add_fingerprint", live(user));
-	if (!truthy(rt.sv(f, "storedcutter"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>The cutting blade is gone! You can't use ＀ now.</span>", [live(f.src)])]);
-		return live(f.dot);
+	yield* this.add_fingerprint(user);
+	if (!this.storedcutter) {
+		to_chat(user, `<span class='notice'>The cutting blade is gone! You can't use ${this} now.</span>`);
+		return f.dot;
 	}
-	if (!truthy(rt.sv(f, "cuttersecured"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You remove ＀'s ＀.</span>", [live(f.src), rt.sv(f, "storedcutter")])]);
-		yield* g.callName(f, live(user), "put_in_hands", [rt.sv(f, "storedcutter")]);
-		rt.setSv(f, "storedcutter", null);
-		yield* g.srcCall(f, "update_icon");
+	if (!this.cuttersecured) {
+		to_chat(user, `<span class='notice'>You remove ${this}'s ${this.storedcutter}.</span>`);
+		yield* user.put_in_hands(this.storedcutter);
+		this.storedcutter = null;
+		yield* this.update_icon();
 	}
-	if (!truthy(rt.sv(f, "storedpaper"))) return f.dot;
-	yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/weapons/slash.ogg"), 50, 1]);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You neatly cut ＀.</span>", [rt.sv(f, "storedpaper")])]);
-	rt.setSv(f, "storedpaper", null);
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "storedpaper")]);
-	yield* g.new_(f, T("/obj/item/weapon/paperslip"), [rt.getStep(f, live(f.src), 0)]);
-	yield* g.new_(f, T("/obj/item/weapon/paperslip"), [rt.getStep(f, live(f.src), 0)]);
-	yield* g.srcCall(f, "update_icon");
+	if (!this.storedpaper) return f.dot;
+	playsound(this.loc, rt.rsc("sound/weapons/slash.ogg"), 50, 1);
+	to_chat(user, `<span class='notice'>You neatly cut ${this.storedpaper}.</span>`);
+	this.storedpaper = null;
+	yield* qdel(this.storedpaper);
+	yield* new_(T("/obj/item/weapon/paperslip"), rt.getStep(f, this, 0));
+	yield* new_(T("/obj/item/weapon/paperslip"), rt.getStep(f, this, 0));
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/papercutter/proc/MouseDrop  (code/modules/paperwork/paper_cutter.dm:94)  may sleep
+// paper_cutter.dm:94
 rt.def("/obj/item/weapon/papercutter/proc/MouseDrop", function* MouseDrop(f: Frame, over_object: Value) {
 	let M: Value = null, H: Value = null;
-	f.vars = () => [over_object, M, H];
-	if ((truthy((yield* g.callName(f, (M = live(f.usr)), "incapacitated", []))) || !truthy((yield* g.srcCall(f, "Adjacent", live(M)))))) {
-		return live(f.dot);
+	if ((M = f.usr).incapacitated() || !this.Adjacent(M)) {
+		return f.dot;
 	}
-	if (isEqual(live(over_object), live(M))) {
-		yield* g.callName(f, live(M), "put_in_hands", [live(f.src)]);
-	} else {
-		if (truthy((rt.istype(live(over_object), T("/obj/screen/inventory/hand")) ? 1 : 0))) {
-			H = live(over_object);
-			yield* g.callName(f, live(M), "putItemFromInventoryInHandIfPossible", [live(f.src), rt.fv(f, "held_index", live(H))]);
-		}
+	if (over_object == M) {
+		yield* M.put_in_hands(this);
+	} else if (rt.istype(over_object, T("/obj/screen/inventory/hand"))) {
+		H = over_object;
+		yield* M.putItemFromInventoryInHandIfPossible(this, H.held_index);
 	}
-	yield* g.srcCall(f, "add_fingerprint", live(M));
+	yield* this.add_fingerprint(M);
 	return f.dot;
 }, true);
 
@@ -162,10 +154,10 @@ rt.type(7620, "/obj/item/weapon/paperslip", "/obj/item/weapon", {
 	max_integrity: 50,
 });
 
-// /obj/item/weapon/paperslip/proc/New  (code/modules/paperwork/paper_cutter.dm:117)  may sleep
+// paper_cutter.dm:117
 rt.def("/obj/item/weapon/paperslip/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "pixel_x", (yield* g.call(f, P("/proc/rand"), null, [-5, 5])));
-	rt.setSv(f, "pixel_y", (yield* g.call(f, P("/proc/rand"), null, [-5, 5])));
+	yield* parent_proc();
+	this.pixel_x = rand(-5, 5);
+	this.pixel_y = rand(-5, 5);
 	return f.dot;
 }, true);

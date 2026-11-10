@@ -1,7 +1,7 @@
-// From code/modules/surgery/organs/vocal_cords.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/surgery/organs/vocal_cords.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, g, fmt } = rt;
 
 
 rt.type(9532, "/obj/item/organ/vocal_cords", "/obj/item/organ", {
@@ -13,10 +13,9 @@ rt.type(9532, "/obj/item/organ/vocal_cords", "/obj/item/organ", {
 	gender: "plural",
 });
 
-// /obj/item/organ/vocal_cords/proc/handle_speech  (code/modules/surgery/organs/vocal_cords.dm:21)  may sleep
+// vocal_cords.dm:21
 rt.def("/obj/item/organ/vocal_cords/proc/handle_speech", function* handle_speech(f: Frame, message: Value) {
-	f.vars = () => [message];
-	yield* g.callName(f, rt.sv(f, "owner"), "say", [null, live(message), "spans", rt.sv(f, "spans"), "sanitize", 0], rt.Args.Named);
+	yield* this.owner.say(message, { spans: this.spans, sanitize: 0 });
 	return f.dot;
 }, true);
 
@@ -29,53 +28,43 @@ rt.type(9533, "/obj/item/organ/vocal_cords/adamantine", "/obj/item/organ/vocal_c
 	icon_state: "adamantine_cords",
 });
 
-// /obj/item/organ/vocal_cords/adamantine/proc/<init>  (code/modules/surgery/organs/vocal_cords.dm:33)
+// vocal_cords.dm:33
 rt.def("/obj/item/organ/vocal_cords/adamantine/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "actions_types", rt.list(T("/datum/action/item_action/organ_action/use/adamantine_vocal_cords")));
+	parent_proc();
+	this.actions_types = list(T("/datum/action/item_action/organ_action/use/adamantine_vocal_cords"));
 	return f.dot;
 });
 
 rt.type(229, "/datum/action/item_action/organ_action/use/adamantine_vocal_cords", "/datum/action/item_action/organ_action/use", {});
 
-// /datum/action/item_action/organ_action/use/adamantine_vocal_cords/proc/Trigger  (code/modules/surgery/organs/vocal_cords.dm:39)  may sleep
+// vocal_cords.dm:39
 rt.def("/datum/action/item_action/organ_action/use/adamantine_vocal_cords/proc/Trigger", function* Trigger(f: Frame) {
-	let message: Value = null;
-	f.vars = () => [message];
-	if (!truthy((yield* g.srcCall(f, "IsAvailable")))) {
-		return live(f.dot);
+	if (!(yield* this.IsAvailable())) {
+		return f.dot;
 	}
-	message = (yield* g.op(f, "Prompt", [2], [null, "Resonate", "Resonate a message to all nearby golems.", rt.sv(f, "owner"), null]));
-	if ((((!truthy(live(f.src)) || truthy(rt.fv(f, "gc_destroyed", live(f.src)))) || (!truthy(rt.sv(f, "owner")) || truthy(rt.fv(f, "gc_destroyed", rt.sv(f, "owner"))))) || !truthy(live(message)))) {
-		return live(f.dot);
+	let message: Value = (yield* g.op(f, "Prompt", [2], [null, "Resonate", "Resonate a message to all nearby golems.", this.owner, null]));
+	if (!this || this.gc_destroyed || !this.owner || this.owner.gc_destroyed || !message) {
+		return f.dot;
 	}
-	yield* g.callName(f, rt.sv(f, "owner"), "say", [fmt(".x＀", [live(message)])]);
+	yield* this.owner.say(`.x${message}`);
 	return f.dot;
 }, true);
 
-// /obj/item/organ/vocal_cords/adamantine/proc/handle_speech  (code/modules/surgery/organs/vocal_cords.dm:47)
+// vocal_cords.dm:47
 rt.def("/obj/item/organ/vocal_cords/adamantine/proc/handle_speech", function handle_speech(f: Frame, message: Value) {
-	let msg: Value = null, m: Value = null, C: Value = null, link: Value = null;
-	let $e: any;
-	f.vars = () => [msg, m, C, link, $e];
-	msg = fmt("<span class='resonate'><span class='name'>＀</span> <span class='message'>resonates, \"＀\"</span></span>", [rt.fv(f, "real_name", rt.sv(f, "owner")), live(message)]);
-	m = null;
-	rt.forList(f, 0, rt.gl("player_list"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		m = $e;
-		if (truthy((rt.istype(live(m), T("/mob/living/carbon")) ? 1 : 0))) {
-			if (truthy(rt.callName(f, (C = live(m)), "getorganslot", ["adamantine_resonator"]))) {
-				rt.call(f, P("/proc/to_chat"), null, [live(C), live(msg)]);
+	let m: Value = null, C: Value = null, link: Value = null;
+	let msg: Value = `<span class='resonate'><span class='name'>${this.owner.real_name}</span> <span class='message'>resonates, "${message}"</span></span>`;
+	for (m of each(GLOB.player_list)) {
+		if (rt.istype(m, T("/mob/living/carbon"))) {
+			if ((C = m).getorganslot("adamantine_resonator")) {
+				to_chat(C, msg);
 			}
 		}
-		if (truthy((rt.istype(live(m), T("/mob/dead/observer")) ? 1 : 0))) {
-			link = fmt("<a href=?src=＃;follow=＃>(F)</a>", [live(m), rt.sv(f, "owner")]);
-			rt.call(f, P("/proc/to_chat"), null, [live(m), fmt("＀ ＀", [live(link), live(msg)])]);
+		if (rt.istype(m, T("/mob/dead/observer"))) {
+			link = fmt("<a href=?src=＃;follow=＃>(F)</a>", [m, this.owner]);
+			to_chat(m, `${link} ${msg}`);
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
@@ -92,14 +81,12 @@ rt.type(9534, "/obj/item/organ/vocal_cords/colossus", "/obj/item/organ/vocal_cor
 	actions_types: null,
 });
 
-// /obj/item/organ/vocal_cords/colossus/proc/<init>  (code/modules/surgery/organs/vocal_cords.dm:64)
+// vocal_cords.dm:64
 rt.def("/obj/item/organ/vocal_cords/colossus/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "spans", rt.list("colossus", "yell"));
-	$0 = $0;
-	rt.setSv(f, "actions_types", rt.list(T("/datum/action/item_action/organ_action/colossus")));
+	parent_proc();
+	this.spans = list("colossus", "yell");
+
+	this.actions_types = list(T("/datum/action/item_action/organ_action/colossus"));
 	return f.dot;
 });
 
@@ -108,700 +95,469 @@ rt.type(231, "/datum/action/item_action/organ_action/colossus", "/datum/action/i
 	name: "Voice of God",
 });
 
-// /datum/action/item_action/organ_action/colossus/proc/New  (code/modules/surgery/organs/vocal_cords.dm:75)  may sleep
+// vocal_cords.dm:75
 rt.def("/datum/action/item_action/organ_action/colossus/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "cords", rt.sv(f, "target"));
+	yield* parent_proc();
+	this.cords = this.target;
 	return f.dot;
 }, true);
 
-// /datum/action/item_action/organ_action/colossus/proc/IsAvailable  (code/modules/surgery/organs/vocal_cords.dm:79)
+// vocal_cords.dm:79
 rt.def("/datum/action/item_action/organ_action/colossus/proc/IsAvailable", function IsAvailable(f: Frame) {
-	if (rt.lt(rt.worldTime(f), rt.fv(f, "next_command", rt.sv(f, "cords")))) {
+	if (rt.worldTime(f) < this.cords.next_command) {
 		return 0;
 	}
-	if (!truthy(rt.sv(f, "owner"))) {
+	if (!this.owner) {
 		return 0;
 	}
-	if (!truthy(rt.callName(f, rt.sv(f, "owner"), "can_speak", []))) {
+	if (!this.owner.can_speak()) {
 		return 0;
 	}
-	if (truthy(rt.bitAnd(rt.sv(f, "check_flags"), 8))) {
-		if (truthy(rt.fv(f, "stat", rt.sv(f, "owner")))) {
+	if (rt.bitAnd(this.check_flags, AB_CHECK_CONSCIOUS)) {
+		if (this.owner.stat) {
 			return 0;
 		}
 	}
 	return 1;
 });
 
-// /datum/action/item_action/organ_action/colossus/proc/Trigger  (code/modules/surgery/organs/vocal_cords.dm:91)  may sleep
+// vocal_cords.dm:91
 rt.def("/datum/action/item_action/organ_action/colossus/proc/Trigger", function* Trigger(f: Frame) {
-	let command: Value = null;
-	f.vars = () => [command];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy((yield* g.srcCall(f, "IsAvailable")))) {
-		if (rt.lt(rt.worldTime(f), rt.fv(f, "next_command", rt.sv(f, "cords")))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "owner"), fmt("<span class='notice'>You must wait ＀ seconds before Speaking again.</span>", [divide(subtract(rt.fv(f, "next_command", rt.sv(f, "cords")), rt.worldTime(f)), 10)])]);
+	f.dot = (yield* parent_proc());
+	if (!(yield* this.IsAvailable())) {
+		if (rt.worldTime(f) < this.cords.next_command) {
+			to_chat(this.owner, `<span class='notice'>You must wait ${(this.cords.next_command - rt.worldTime(f)) / 10} seconds before Speaking again.</span>`);
 		}
-		return live(f.dot);
+		return f.dot;
 	}
-	command = (yield* g.op(f, "Prompt", [2], [null, "Command", "Speak with the Voice of God", rt.sv(f, "owner"), null]));
-	if (((!truthy(live(f.src)) || truthy(rt.fv(f, "gc_destroyed", live(f.src)))) || (!truthy(rt.sv(f, "owner")) || truthy(rt.fv(f, "gc_destroyed", rt.sv(f, "owner")))))) {
-		return live(f.dot);
+	let command: Value = (yield* g.op(f, "Prompt", [2], [null, "Command", "Speak with the Voice of God", this.owner, null]));
+	if (!this || this.gc_destroyed || !this.owner || this.owner.gc_destroyed) {
+		return f.dot;
 	}
-	if (!truthy(live(command))) {
-		return live(f.dot);
+	if (!command) {
+		return f.dot;
 	}
-	yield* g.callName(f, rt.sv(f, "owner"), "say", [fmt(".x＀", [live(command)])]);
+	yield* this.owner.say(`.x${command}`);
 	return f.dot;
 }, true);
 
-// /obj/item/organ/vocal_cords/colossus/proc/can_speak_with  (code/modules/surgery/organs/vocal_cords.dm:104)
+// vocal_cords.dm:104
 rt.def("/obj/item/organ/vocal_cords/colossus/proc/can_speak_with", function can_speak_with(f: Frame) {
-	if (rt.lt(rt.worldTime(f), rt.sv(f, "next_command"))) {
-		rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "owner"), fmt("<span class='notice'>You must wait ＀ seconds before Speaking again.</span>", [divide(subtract(rt.sv(f, "next_command"), rt.worldTime(f)), 10)])]);
+	if (rt.worldTime(f) < this.next_command) {
+		to_chat(this.owner, `<span class='notice'>You must wait ${(this.next_command - rt.worldTime(f)) / 10} seconds before Speaking again.</span>`);
 		return 0;
 	}
-	if (!truthy(rt.sv(f, "owner"))) {
+	if (!this.owner) {
 		return 0;
 	}
-	if (!truthy(rt.callName(f, rt.sv(f, "owner"), "can_speak", []))) {
-		rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "owner"), "<span class='warning'>You are unable to speak!</span>"]);
+	if (!this.owner.can_speak()) {
+		to_chat(this.owner, "<span class='warning'>You are unable to speak!</span>");
 		return 0;
 	}
 	return 1;
 });
 
-// /obj/item/organ/vocal_cords/colossus/proc/handle_speech  (code/modules/surgery/organs/vocal_cords.dm:115)  may sleep
+// vocal_cords.dm:115
 rt.def("/obj/item/organ/vocal_cords/colossus/proc/handle_speech", function* handle_speech(f: Frame, message: Value) {
-	f.vars = () => [message];
-	yield* g.callName(f, rt.sv(f, "owner"), "say", [null, (yield* g.call(f, P("/proc/uppertext"), null, [live(message)])), "spans", rt.sv(f, "spans"), "sanitize", 0], rt.Args.Named);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, rt.sv(f, "owner"), 0), rt.rsc("sound/magic/clockwork/invoke_general.ogg"), 300, 1, 5]);
-	return live(f.dot);
-}, true);
-
-// /obj/item/organ/vocal_cords/colossus/proc/speak_with  (code/modules/surgery/organs/vocal_cords.dm:120)  may sleep
-rt.def("/obj/item/organ/vocal_cords/colossus/proc/speak_with", function* speak_with(f: Frame, message: Value) {
-	let cooldown: Value = null;
-	f.vars = () => [message, cooldown];
-	cooldown = (yield* g.call(f, P("/proc/voice_of_god"), null, [live(message), rt.sv(f, "owner"), rt.sv(f, "spans"), rt.sv(f, "base_multiplier")]));
-	rt.setSv(f, "next_command", add(rt.worldTime(f), multiply(live(cooldown), rt.sv(f, "cooldown_mod"))));
+	yield* this.owner.say(uppertext(message), { spans: this.spans, sanitize: 0 });
+	playsound(rt.getStep(f, this.owner, 0), rt.rsc("sound/magic/clockwork/invoke_general.ogg"), 300, 1, 5);
 	return f.dot;
 }, true);
 
-// /proc/voice_of_god  (code/modules/surgery/organs/vocal_cords.dm:130)  may sleep
+// vocal_cords.dm:120
+rt.def("/obj/item/organ/vocal_cords/colossus/proc/speak_with", function* speak_with(f: Frame, message: Value) {
+	let cooldown: Value = (yield* voice_of_god(message, this.owner, this.spans, this.base_multiplier));
+	this.next_command = rt.worldTime(f) + cooldown * this.cooldown_mod;
+	return f.dot;
+}, true);
+
+// vocal_cords.dm:130
 rt.def("/proc/voice_of_god", function* voice_of_god(f: Frame, message: Value, user: Value, span_list: Value, base_multiplier: Value) {
-	let cooldown: Value = null, log_message: Value = null, listeners: Value = null, L: Value = null, H: Value = null, power_multiplier: Value = null, specific_listeners: Value = null, found_string: Value = null, V: Value = null, L_7: Value = null, devilinfo: Value = null, start: Value = null, C: Value = null, H_6: Value = null, throwtarget: Value = null, S: Value = null, direction: Value = null, i: Value = null, V_8: Value = null, L_9: Value = null, chair: Value = null;
+	let L: Value = null, H: Value = null, found_string: Value = null, V: Value = null, L_7: Value = null, devilinfo: Value = null, start: Value = null, C: Value = null, H_6: Value = null, throwtarget: Value = null, S: Value = null, direction: Value = null, i: Value = null, V_8: Value = null, L_9: Value = null, chair: Value = null;
 	let $0: any, $1: any, $e: any;
-	f.vars = () => [message, user, span_list, base_multiplier, cooldown, log_message, listeners, L, H, power_multiplier, specific_listeners, found_string, V, L_7, devilinfo, start, C, H_6, throwtarget, S, direction, i, V_8, L_9, chair, $0, $1, $e];
-	if (live(base_multiplier) === null) {
-		base_multiplier = 1;
-	}
-	cooldown = 0;
-	if (((!truthy(live(user)) || !truthy((yield* g.callName(f, live(user), "can_speak", [])))) || truthy(rt.fv(f, "stat", live(user))))) {
+	base_multiplier ??= 1;
+	let cooldown: Value = 0;
+	if (!user || !user.can_speak() || user.stat) {
 		return 0;
 	}
-	log_message = (yield* g.call(f, P("/proc/uppertext"), null, [live(message)]));
-	if ((!truthy(live(span_list)) || !truthy(rt.len(f, live(span_list))))) {
-		if (truthy((yield* g.call(f, P("/proc/iscultist"), null, [live(user)])))) {
-			span_list = rt.list("narsiesmall");
+	let log_message: Value = uppertext(message);
+	if (!span_list || !rt.len(f, span_list)) {
+		if (iscultist(user)) {
+			span_list = list("narsiesmall");
+		} else if (is_servant_of_ratvar(user)) {
+			span_list = list("ratvar");
 		} else {
-			if (truthy((yield* g.call(f, P("/proc/is_servant_of_ratvar"), null, [live(user)])))) {
-				span_list = rt.list("ratvar");
-			} else {
-				span_list = rt.list();
-			}
+			span_list = list();
 		}
 	}
-	message = (yield* g.call(f, P("/proc/lowertext"), null, [live(message)]));
-	listeners = rt.list();
-	L = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/get_hearers_in_view"), null, [8, live(user)])), T("/mob/living"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		L = $e;
-		if ((((truthy((yield* g.callName(f, live(L), "can_hear", []))) && !truthy((yield* g.callName(f, live(L), "null_rod_check", [])))) && !isEqual(live(L), live(user))) && !isEqual(rt.fv(f, "stat", live(L)), 2))) {
-			if (truthy((rt.istype(live(L), T("/mob/living/carbon/human")) ? 1 : 0))) {
-				if (truthy((rt.istype(rt.gv(f, "ears", (H = live(L))), T("/obj/item/clothing/ears/earmuffs")) ? 1 : 0))) {
+	message = lowertext(message);
+	let listeners: Value = list();
+	for (L of each(get_hearers_in_view(8, user), T("/mob/living"))) {
+		if (L.can_hear() && !L.null_rod_check() && L != user && L.stat != 2) {
+			if (rt.istype(L, T("/mob/living/carbon/human"))) {
+				if (rt.istype((H = L).ears, T("/obj/item/clothing/ears/earmuffs"))) {
 					continue;
 				}
 			}
-			listeners = rt.modify(live(listeners), live(L), add);
+			listeners += L;
 		}
 	}
-	rt.endFor(f, 0);
-	if (!truthy(rt.len(f, live(listeners)))) {
-		return (cooldown = 100);
+	if (!rt.len(f, listeners)) {
+		return (cooldown = COOLDOWN_NONE);
 	}
-	power_multiplier = live(base_multiplier);
-	if (truthy(rt.fv(f, "mind", live(user)))) {
-		if (isEqual(rt.gv(f, "assigned_role", rt.fv(f, "mind", live(user))), "Chaplain")) {
-			(power_multiplier = rt.modify(live(power_multiplier), 2, multiply));
+	let power_multiplier: Value = base_multiplier;
+	if (user.mind) {
+		if (user.mind.assigned_role == "Chaplain") {
+			power_multiplier *= 2;
 		}
-		if (truthy((rt.isIn(f, rt.gv(f, "assigned_role", rt.fv(f, "mind", live(user))), rt.gl("command_positions")) ? 1 : 0))) {
-			(power_multiplier = rt.modify(live(power_multiplier), 1.399999976158142, multiply));
+		if (rt.isIn(f, user.mind.assigned_role, GLOB.command_positions)) {
+			power_multiplier *= 1.4;
 		}
-		if (isEqual(rt.gv(f, "assigned_role", rt.fv(f, "mind", live(user))), "Mime")) {
-			(power_multiplier = rt.modify(live(power_multiplier), 0.5, multiply));
-		}
-	}
-	if (truthy((yield* g.call(f, P("/proc/iscultist"), null, [live(user)])))) {
-		(power_multiplier = rt.modify(live(power_multiplier), 2, multiply));
-	} else {
-		if (truthy((yield* g.call(f, P("/proc/is_servant_of_ratvar"), null, [live(user)])))) {
-			(power_multiplier = rt.modify(live(power_multiplier), 2, multiply));
+		if (user.mind.assigned_role == "Mime") {
+			power_multiplier *= 0.5;
 		}
 	}
-	specific_listeners = rt.list();
-	found_string = null;
-	message = (yield* g.call(f, P("/proc/get_full_job_name"), null, [live(message)]));
-	V = null;
-	rt.forList(f, 0, live(listeners));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		V = $e;
-		L_7 = live(V);
-		if ((truthy((devilinfo = (yield* g.call(f, P("/proc/is_devil"), null, [live(L_7)])))) && truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.fv(f, "truename", live(devilinfo))]))))) {
-			start = (yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.fv(f, "truename", live(devilinfo))]));
-			listeners = rt.list(live(L_7));
-			(power_multiplier = rt.modify(live(power_multiplier), 5, multiply));
-			message = add((yield* g.call(f, P("/proc/copytext"), null, [live(message), 0, live(start)])), (yield* g.call(f, P("/proc/copytext"), null, [live(message), add(live(start), rt.length(rt.fv(f, "truename", live(devilinfo)))), add(rt.length(live(message)), 1)])));
+	if (iscultist(user)) {
+		power_multiplier *= 2;
+	} else if (is_servant_of_ratvar(user)) {
+		power_multiplier *= 2;
+	}
+	let specific_listeners: Value = list();
+	message = get_full_job_name(message);
+	for (V of each(listeners)) {
+		L_7 = V;
+		if ((devilinfo = is_devil(L_7)) && findtext(message, devilinfo.truename)) {
+			start = findtext(message, devilinfo.truename);
+			listeners = list(L_7);
+			power_multiplier *= 5;
+			message = copytext(message, 0, start) + copytext(message, start + rt.length(devilinfo.truename), rt.length(message) + 1);
 			break;
-		} else {
-			if (truthy((yield* g.call(f, P("/proc/dd_hasprefix"), null, [live(message), rt.fv(f, "real_name", live(L_7))])))) {
-				specific_listeners = rt.modify(live(specific_listeners), live(L_7), add);
-				found_string = rt.fv(f, "real_name", live(L_7));
-			} else {
-				if (truthy((yield* g.call(f, P("/proc/dd_hasprefix"), null, [live(message), (yield* g.callName(f, live(L_7), "first_name", []))])))) {
-					specific_listeners = rt.modify(live(specific_listeners), live(L_7), add);
-					found_string = (yield* g.callName(f, live(L_7), "first_name", []));
-				} else {
-					if ((truthy(rt.fv(f, "mind", live(L_7))) && truthy((yield* g.call(f, P("/proc/dd_hasprefix"), null, [live(message), rt.gv(f, "assigned_role", rt.fv(f, "mind", live(L_7)))]))))) {
-						specific_listeners = rt.modify(live(specific_listeners), live(L_7), add);
-						found_string = rt.gv(f, "assigned_role", rt.fv(f, "mind", live(L_7)));
-					}
-				}
-			}
+		} else if (dd_hasprefix(message, L_7.real_name)) {
+			specific_listeners += L_7;
+			found_string = L_7.real_name;
+		} else if (dd_hasprefix(message, L_7.first_name())) {
+			specific_listeners += L_7;
+			found_string = L_7.first_name();
+		} else if (L_7.mind && dd_hasprefix(message, L_7.mind.assigned_role)) {
+			specific_listeners += L_7;
+			found_string = L_7.mind.assigned_role;
 		}
 	}
-	rt.endFor(f, 0);
-	if (truthy(rt.len(f, live(specific_listeners)))) {
-		listeners = live(specific_listeners);
-		(power_multiplier = rt.modify(live(power_multiplier), add(1, divide(1, rt.len(f, live(specific_listeners)))), multiply));
-		message = add((yield* g.call(f, P("/proc/copytext"), null, [live(message), 0, 1])), (yield* g.call(f, P("/proc/copytext"), null, [live(message), add(1, rt.length(live(found_string))), add(rt.length(live(message)), 1)])));
+	if (rt.len(f, specific_listeners)) {
+		listeners = specific_listeners;
+		power_multiplier *= 1 + 1 / rt.len(f, specific_listeners);
+		message = copytext(message, 0, 1) + copytext(message, 1 + rt.length(found_string), rt.length(message) + 1);
 	}
-	if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("stun_words")])))) {
-		cooldown = 1200;
+	if (findtext(message, GLOB.stun_words)) {
+		cooldown = COOLDOWN_STUN;
 		V = null;
-		rt.forList(f, 0, live(listeners));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			V = $e;
-			yield* g.callName(f, (L_7 = live(V)), "Stun", [multiply(60, live(power_multiplier))]);
+		for (V of each(listeners)) {
+			yield* (L_7 = V).Stun(60 * power_multiplier);
 		}
-		rt.endFor(f, 0);
-	} else {
-		if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("knockdown_words")])))) {
-			cooldown = 1200;
-			V = null;
-			rt.forList(f, 0, live(listeners));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				V = $e;
-				yield* g.callName(f, (L_7 = live(V)), "Knockdown", [multiply(60, live(power_multiplier))]);
+	} else if (findtext(message, GLOB.knockdown_words)) {
+		cooldown = COOLDOWN_STUN;
+		V = null;
+		for (V of each(listeners)) {
+			yield* (L_7 = V).Knockdown(60 * power_multiplier);
+		}
+	} else if (findtext(message, GLOB.sleep_words)) {
+		cooldown = COOLDOWN_STUN;
+		for (C of each(listeners, T("/mob/living/carbon"))) {
+			yield* C.Sleeping(40 * power_multiplier);
+		}
+	} else if (findtext(message, GLOB.vomit_words)) {
+		cooldown = COOLDOWN_STUN;
+		C = null;
+		for (C of each(listeners, T("/mob/living/carbon"))) {
+			yield* C.vomit(10 * power_multiplier, { distance: power_multiplier });
+		}
+	} else if (findtext(message, GLOB.silence_words)) {
+		cooldown = COOLDOWN_STUN;
+		C = null;
+		for (C of each(listeners, T("/mob/living/carbon"))) {
+			if (user.mind && (user.mind.assigned_role == "Curator" || user.mind.assigned_role == "Mime")) {
+				power_multiplier *= 3;
 			}
-			rt.endFor(f, 0);
-		} else {
-			if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("sleep_words")])))) {
-				cooldown = 1200;
-				C = null;
-				rt.forList(f, 0, live(listeners), T("/mob/living/carbon"));
-				while (($e = rt.next(f, 0)) !== undefined) {
-					C = $e;
-					yield* g.callName(f, live(C), "Sleeping", [multiply(40, live(power_multiplier))]);
-				}
-				rt.endFor(f, 0);
+			C.silent += 10 * power_multiplier;
+		}
+	} else if (findtext(message, GLOB.hallucinate_words)) {
+		cooldown = COOLDOWN_MEME;
+		V = null;
+		for (V of each(listeners)) {
+			yield* new_(T("/obj/effect/hallucination/delusion"), rt.getStep(f, (L_7 = V), 0), L_7, null, 150 * power_multiplier, 0);
+		}
+	} else if (findtext(message, GLOB.wakeup_words)) {
+		cooldown = COOLDOWN_DAMAGE;
+		V = null;
+		for (V of each(listeners)) {
+			yield* (L_7 = V).SetSleeping(0);
+		}
+	} else if (findtext(message, GLOB.heal_words)) {
+		cooldown = COOLDOWN_DAMAGE;
+		V = null;
+		for (V of each(listeners)) {
+			yield* (L_7 = V).heal_overall_damage(10 * power_multiplier, 10 * power_multiplier, 0, 0);
+		}
+	} else if (findtext(message, GLOB.hurt_words)) {
+		cooldown = COOLDOWN_DAMAGE;
+		V = null;
+		for (V of each(listeners)) {
+			yield* (L_7 = V).apply_damage(15 * power_multiplier, { def_zone: "chest" });
+		}
+	} else if (findtext(message, GLOB.bleed_words)) {
+		cooldown = COOLDOWN_DAMAGE;
+		for (H_6 of each(listeners, T("/mob/living/carbon/human"))) {
+			H_6.bleed_rate += 5 * power_multiplier;
+		}
+	} else if (findtext(message, GLOB.burn_words)) {
+		cooldown = COOLDOWN_DAMAGE;
+		V = null;
+		for (V of each(listeners)) {
+			yield* (L_7 = V).adjust_fire_stacks(1 * power_multiplier);
+			yield* L_7.IgniteMob();
+		}
+	} else if (findtext(message, GLOB.hot_words)) {
+		cooldown = COOLDOWN_DAMAGE;
+		V = null;
+		for (V of each(listeners)) {
+			(L_7 = V).bodytemperature += 50 * power_multiplier;
+		}
+	} else if (findtext(message, GLOB.cold_words)) {
+		cooldown = COOLDOWN_DAMAGE;
+		V = null;
+		for (V of each(listeners)) {
+			(L_7 = V).bodytemperature -= 50 * power_multiplier;
+		}
+	} else if (findtext(message, GLOB.repulse_words)) {
+		cooldown = COOLDOWN_DAMAGE;
+		V = null;
+		for (V of each(listeners)) {
+			L_7 = V;
+			throwtarget = get_edge_target_turf(user, rt.getDir(f, user, get_step_away(L_7, user)));
+			yield* L_7.throw_at(throwtarget, 3 * power_multiplier, 1 * power_multiplier);
+		}
+	} else if (findtext(message, GLOB.attract_words)) {
+		cooldown = COOLDOWN_DAMAGE;
+		V = null;
+		for (V of each(listeners)) {
+			yield* (L_7 = V).throw_at(get_step_towards(user, L_7), 3 * power_multiplier, 1 * power_multiplier);
+		}
+	} else if (findtext(message, GLOB.whoareyou_words)) {
+		cooldown = COOLDOWN_MEME;
+		V = null;
+		for (V of each(listeners)) {
+			if (is_devil((L_7 = V))) {
+				devilinfo = is_devil(L_7);
+				yield* L_7.say(`${devilinfo.truename}`);
 			} else {
-				if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("vomit_words")])))) {
-					cooldown = 1200;
-					C = null;
-					rt.forList(f, 0, live(listeners), T("/mob/living/carbon"));
-					while (($e = rt.next(f, 0)) !== undefined) {
-						C = $e;
-						yield* g.callName(f, live(C), "vomit", [null, multiply(10, live(power_multiplier)), "distance", live(power_multiplier)], rt.Args.Named);
-					}
-					rt.endFor(f, 0);
+				yield* L_7.say(`${L_7.real_name}`);
+			}
+			yield* sleep(5);
+		}
+	} else if (findtext(message, GLOB.saymyname_words)) {
+		cooldown = COOLDOWN_MEME;
+		V = null;
+		for (V of each(listeners)) {
+			yield* (L_7 = V).say(`${user.name}!`);
+			yield* sleep(5);
+		}
+	} else if (findtext(message, GLOB.knockknock_words)) {
+		cooldown = COOLDOWN_MEME;
+		V = null;
+		for (V of each(listeners)) {
+			yield* (L_7 = V).say("Who's there?");
+			yield* sleep(5);
+		}
+	} else if (findtext(message, GLOB.statelaws_words)) {
+		cooldown = COOLDOWN_STUN;
+		for (S of each(listeners, T("/mob/living/silicon"))) {
+			yield* S.statelaws({ force: 1 });
+		}
+	} else if (findtext(message, GLOB.move_words)) {
+		cooldown = COOLDOWN_MEME;
+		if (findtext(message, GLOB.up_words)) {
+			direction = 1;
+		} else if (findtext(message, GLOB.down_words)) {
+			direction = 2;
+		} else if (findtext(message, GLOB.left_words)) {
+			direction = 8;
+		} else if (findtext(message, GLOB.right_words)) {
+			direction = 4;
+		}
+		i = 1;
+		while (i <= 5 * power_multiplier) {
+			V_8 = null;
+			for (V_8 of each(listeners)) {
+				$0 = (L_9 = V_8);
+				if (direction) {
+
+					$1 = direction;
 				} else {
-					if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("silence_words")])))) {
-						cooldown = 1200;
-						C = null;
-						rt.forList(f, 0, live(listeners), T("/mob/living/carbon"));
-						while (($e = rt.next(f, 0)) !== undefined) {
-							C = $e;
-							if ((truthy(rt.fv(f, "mind", live(user))) && (isEqual(rt.gv(f, "assigned_role", rt.fv(f, "mind", live(user))), "Curator") || isEqual(rt.gv(f, "assigned_role", rt.fv(f, "mind", live(user))), "Mime")))) {
-								(power_multiplier = rt.modify(live(power_multiplier), 3, multiply));
-							}
-							rt.modField(f, live(C), "silent", multiply(10, live(power_multiplier)), add);
-						}
-						rt.endFor(f, 0);
-					} else {
-						if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("hallucinate_words")])))) {
-							cooldown = 300;
-							V = null;
-							rt.forList(f, 0, live(listeners));
-							while (($e = rt.next(f, 0)) !== undefined) {
-								V = $e;
-								yield* g.new_(f, T("/obj/effect/hallucination/delusion"), [rt.getStep(f, (L_7 = live(V)), 0), live(L_7), null, multiply(150, live(power_multiplier)), 0]);
-							}
-							rt.endFor(f, 0);
-						} else {
-							if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("wakeup_words")])))) {
-								cooldown = 600;
-								V = null;
-								rt.forList(f, 0, live(listeners));
-								while (($e = rt.next(f, 0)) !== undefined) {
-									V = $e;
-									yield* g.callName(f, (L_7 = live(V)), "SetSleeping", [0]);
-								}
-								rt.endFor(f, 0);
-							} else {
-								if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("heal_words")])))) {
-									cooldown = 600;
-									V = null;
-									rt.forList(f, 0, live(listeners));
-									while (($e = rt.next(f, 0)) !== undefined) {
-										V = $e;
-										yield* g.callName(f, (L_7 = live(V)), "heal_overall_damage", [multiply(10, live(power_multiplier)), multiply(10, live(power_multiplier)), 0, 0]);
-									}
-									rt.endFor(f, 0);
-								} else {
-									if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("hurt_words")])))) {
-										cooldown = 600;
-										V = null;
-										rt.forList(f, 0, live(listeners));
-										while (($e = rt.next(f, 0)) !== undefined) {
-											V = $e;
-											yield* g.callName(f, (L_7 = live(V)), "apply_damage", [null, multiply(15, live(power_multiplier)), "def_zone", "chest"], rt.Args.Named);
-										}
-										rt.endFor(f, 0);
-									} else {
-										if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("bleed_words")])))) {
-											cooldown = 600;
-											H_6 = null;
-											rt.forList(f, 0, live(listeners), T("/mob/living/carbon/human"));
-											while (($e = rt.next(f, 0)) !== undefined) {
-												H_6 = $e;
-												rt.modField(f, live(H_6), "bleed_rate", multiply(5, live(power_multiplier)), add);
-											}
-											rt.endFor(f, 0);
-										} else {
-											if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("burn_words")])))) {
-												cooldown = 600;
-												V = null;
-												rt.forList(f, 0, live(listeners));
-												while (($e = rt.next(f, 0)) !== undefined) {
-													V = $e;
-													yield* g.callName(f, (L_7 = live(V)), "adjust_fire_stacks", [multiply(1, live(power_multiplier))]);
-													yield* g.callName(f, live(L_7), "IgniteMob", []);
-												}
-												rt.endFor(f, 0);
-											} else {
-												if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("hot_words")])))) {
-													cooldown = 600;
-													V = null;
-													rt.forList(f, 0, live(listeners));
-													while (($e = rt.next(f, 0)) !== undefined) {
-														V = $e;
-														rt.modField(f, (L_7 = live(V)), "bodytemperature", multiply(50, live(power_multiplier)), add);
-													}
-													rt.endFor(f, 0);
-												} else {
-													if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("cold_words")])))) {
-														cooldown = 600;
-														V = null;
-														rt.forList(f, 0, live(listeners));
-														while (($e = rt.next(f, 0)) !== undefined) {
-															V = $e;
-															(rt.modField(f, (L_7 = live(V)), "bodytemperature", multiply(50, live(power_multiplier)), subtract));
-														}
-														rt.endFor(f, 0);
-													} else {
-														if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("repulse_words")])))) {
-															cooldown = 600;
-															V = null;
-															rt.forList(f, 0, live(listeners));
-															while (($e = rt.next(f, 0)) !== undefined) {
-																V = $e;
-																L_7 = live(V);
-																throwtarget = (yield* g.call(f, P("/proc/get_edge_target_turf"), null, [live(user), rt.getDir(f, live(user), (yield* g.call(f, P("/proc/get_step_away"), null, [live(L_7), live(user)])))]));
-																yield* g.callName(f, live(L_7), "throw_at", [live(throwtarget), multiply(3, live(power_multiplier)), multiply(1, live(power_multiplier))]);
-															}
-															rt.endFor(f, 0);
-														} else {
-															if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("attract_words")])))) {
-																cooldown = 600;
-																V = null;
-																rt.forList(f, 0, live(listeners));
-																while (($e = rt.next(f, 0)) !== undefined) {
-																	V = $e;
-																	yield* g.callName(f, (L_7 = live(V)), "throw_at", [(yield* g.call(f, P("/proc/get_step_towards"), null, [live(user), live(L_7)])), multiply(3, live(power_multiplier)), multiply(1, live(power_multiplier))]);
-																}
-																rt.endFor(f, 0);
-															} else {
-																if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("whoareyou_words")])))) {
-																	cooldown = 300;
-																	V = null;
-																	rt.forList(f, 0, live(listeners));
-																	while (($e = rt.next(f, 0)) !== undefined) {
-																		V = $e;
-																		if (truthy((yield* g.call(f, P("/proc/is_devil"), null, [(L_7 = live(V))])))) {
-																			devilinfo = (yield* g.call(f, P("/proc/is_devil"), null, [live(L_7)]));
-																			yield* g.callName(f, live(L_7), "say", [fmt("＀", [rt.fv(f, "truename", live(devilinfo))])]);
-																		} else {
-																			yield* g.callName(f, live(L_7), "say", [fmt("＀", [rt.fv(f, "real_name", live(L_7))])]);
-																		}
-																		yield* g.call(f, P("/proc/sleep"), null, [5]);
-																	}
-																	rt.endFor(f, 0);
-																} else {
-																	if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("saymyname_words")])))) {
-																		cooldown = 300;
-																		V = null;
-																		rt.forList(f, 0, live(listeners));
-																		while (($e = rt.next(f, 0)) !== undefined) {
-																			V = $e;
-																			yield* g.callName(f, (L_7 = live(V)), "say", [fmt("＀!", [rt.fv(f, "name", live(user))])]);
-																			yield* g.call(f, P("/proc/sleep"), null, [5]);
-																		}
-																		rt.endFor(f, 0);
-																	} else {
-																		if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("knockknock_words")])))) {
-																			cooldown = 300;
-																			V = null;
-																			rt.forList(f, 0, live(listeners));
-																			while (($e = rt.next(f, 0)) !== undefined) {
-																				V = $e;
-																				yield* g.callName(f, (L_7 = live(V)), "say", ["Who's there?"]);
-																				yield* g.call(f, P("/proc/sleep"), null, [5]);
-																			}
-																			rt.endFor(f, 0);
-																		} else {
-																			if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("statelaws_words")])))) {
-																				cooldown = 1200;
-																				S = null;
-																				rt.forList(f, 0, live(listeners), T("/mob/living/silicon"));
-																				while (($e = rt.next(f, 0)) !== undefined) {
-																					S = $e;
-																					yield* g.callName(f, live(S), "statelaws", ["force", 1], rt.Args.Named);
-																				}
-																				rt.endFor(f, 0);
-																			} else {
-																				if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("move_words")])))) {
-																					cooldown = 300;
-																					direction = null;
-																					if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("up_words")])))) {
-																						direction = 1;
-																					} else {
-																						if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("down_words")])))) {
-																							direction = 2;
-																						} else {
-																							if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("left_words")])))) {
-																								direction = 8;
-																							} else {
-																								if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("right_words")])))) {
-																									direction = 4;
-																								}
-																							}
-																						}
-																					}
-																					i = null;
-																					i = 1;
-																					while (rt.le(live(i), multiply(5, live(power_multiplier)))) {
-																						V_8 = null;
-																						rt.forList(f, 0, live(listeners));
-																						while (($e = rt.next(f, 0)) !== undefined) {
-																							V_8 = $e;
-																							$0 = (L_9 = live(V_8));
-																							if (truthy(live(direction))) {
-																								$0 = $0;
-																								$1 = live(direction);
-																							} else {
-																								$1 = rt.op(f, "PickUnweighted", [1], [rt.gl("cardinal")]);
-																							}
-																							yield* g.call(f, P("/proc/step"), null, [$0, $1]);
-																						}
-																						rt.endFor(f, 0);
-																						yield* g.call(f, P("/proc/sleep"), null, [10]);
-																						i = rt.inc(live(i), 1);
-																					}
-																				} else {
-																					if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("walk_words")])))) {
-																						cooldown = 300;
-																						V = null;
-																						rt.forList(f, 0, live(listeners));
-																						while (($e = rt.next(f, 0)) !== undefined) {
-																							V = $e;
-																							if (!isEqual(rt.gv(f, "m_intent", (L_7 = live(V))), "walk")) {
-																								yield* g.callName(f, live(L_7), "toggle_move_intent", []);
-																							}
-																						}
-																						rt.endFor(f, 0);
-																					} else {
-																						if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("run_words")])))) {
-																							cooldown = 300;
-																							V = null;
-																							rt.forList(f, 0, live(listeners));
-																							while (($e = rt.next(f, 0)) !== undefined) {
-																								V = $e;
-																								if (!isEqual(rt.gv(f, "m_intent", (L_7 = live(V))), "run")) {
-																									yield* g.callName(f, live(L_7), "toggle_move_intent", []);
-																								}
-																							}
-																							rt.endFor(f, 0);
-																						} else {
-																							if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("helpintent_words")])))) {
-																								cooldown = 300;
-																								H_6 = null;
-																								rt.forList(f, 0, live(listeners), T("/mob/living/carbon/human"));
-																								while (($e = rt.next(f, 0)) !== undefined) {
-																									H_6 = $e;
-																									yield* g.callName(f, live(H_6), "a_intent_change", ["help"]);
-																									yield* g.callName(f, live(H_6), "click_random_mob", []);
-																									yield* g.call(f, P("/proc/sleep"), null, [2]);
-																								}
-																								rt.endFor(f, 0);
-																							} else {
-																								if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("disarmintent_words")])))) {
-																									cooldown = 300;
-																									H_6 = null;
-																									rt.forList(f, 0, live(listeners), T("/mob/living/carbon/human"));
-																									while (($e = rt.next(f, 0)) !== undefined) {
-																										H_6 = $e;
-																										yield* g.callName(f, live(H_6), "a_intent_change", ["disarm"]);
-																										yield* g.callName(f, live(H_6), "click_random_mob", []);
-																										yield* g.call(f, P("/proc/sleep"), null, [2]);
-																									}
-																									rt.endFor(f, 0);
-																								} else {
-																									if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("grabintent_words")])))) {
-																										cooldown = 300;
-																										H_6 = null;
-																										rt.forList(f, 0, live(listeners), T("/mob/living/carbon/human"));
-																										while (($e = rt.next(f, 0)) !== undefined) {
-																											H_6 = $e;
-																											yield* g.callName(f, live(H_6), "a_intent_change", ["grab"]);
-																											yield* g.callName(f, live(H_6), "click_random_mob", []);
-																											yield* g.call(f, P("/proc/sleep"), null, [2]);
-																										}
-																										rt.endFor(f, 0);
-																									} else {
-																										if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("harmintent_words")])))) {
-																											cooldown = 300;
-																											H_6 = null;
-																											rt.forList(f, 0, live(listeners), T("/mob/living/carbon/human"));
-																											while (($e = rt.next(f, 0)) !== undefined) {
-																												H_6 = $e;
-																												yield* g.callName(f, live(H_6), "a_intent_change", ["harm"]);
-																												yield* g.callName(f, live(H_6), "click_random_mob", []);
-																												yield* g.call(f, P("/proc/sleep"), null, [2]);
-																											}
-																											rt.endFor(f, 0);
-																										} else {
-																											if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("throwmode_words")])))) {
-																												cooldown = 300;
-																												C = null;
-																												rt.forList(f, 0, live(listeners), T("/mob/living/carbon"));
-																												while (($e = rt.next(f, 0)) !== undefined) {
-																													C = $e;
-																													yield* g.callName(f, live(C), "throw_mode_on", []);
-																												}
-																												rt.endFor(f, 0);
-																											} else {
-																												if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("flip_words")])))) {
-																													cooldown = 300;
-																													V = null;
-																													rt.forList(f, 0, live(listeners));
-																													while (($e = rt.next(f, 0)) !== undefined) {
-																														V = $e;
-																														yield* g.callName(f, (L_7 = live(V)), "emote", ["flip"]);
-																													}
-																													rt.endFor(f, 0);
-																												} else {
-																													if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("speak_words")])))) {
-																														cooldown = 300;
-																														V = null;
-																														rt.forList(f, 0, live(listeners));
-																														while (($e = rt.next(f, 0)) !== undefined) {
-																															V = $e;
-																															yield* g.callName(f, (L_7 = live(V)), "say", [(yield* g.call(f, P("/proc/strings_replacement"), null, ["brain_damage_lines.json", "brain_damage"]))]);
-																															yield* g.call(f, P("/proc/sleep"), null, [5]);
-																														}
-																														rt.endFor(f, 0);
-																													} else {
-																														if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("getup_words")])))) {
-																															cooldown = 600;
-																															V = null;
-																															rt.forList(f, 0, live(listeners));
-																															while (($e = rt.next(f, 0)) !== undefined) {
-																																V = $e;
-																																if (truthy(rt.gv(f, "resting", (L_7 = live(V))))) {
-																																	yield* g.callName(f, live(L_7), "lay_down", []);
-																																}
-																																yield* g.callName(f, live(L_7), "SetStun", [0]);
-																																yield* g.callName(f, live(L_7), "SetKnockdown", [0]);
-																																yield* g.callName(f, live(L_7), "SetUnconscious", [0]);
-																															}
-																															rt.endFor(f, 0);
-																														} else {
-																															if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("sit_words")])))) {
-																																cooldown = 300;
-																																V = null;
-																																rt.forList(f, 0, live(listeners));
-																																while (($e = rt.next(f, 0)) !== undefined) {
-																																	V = $e;
-																																	L_7 = live(V);
-																																	chair = null;
-																																	rt.forList(f, 1, rt.getStep(f, live(L_7), 0), T("/obj/structure/chair"));
-																																	if (($e = rt.next(f, 1)) !== undefined) {
-																																		chair = $e;
-																																		yield* g.callName(f, live(chair), "buckle_mob", [live(L_7)]);
-																																	}
-																																	rt.endFor(f, 1);
-																																}
-																																rt.endFor(f, 0);
-																															} else {
-																																if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("stand_words")])))) {
-																																	cooldown = 300;
-																																	V = null;
-																																	rt.forList(f, 0, live(listeners));
-																																	while (($e = rt.next(f, 0)) !== undefined) {
-																																		V = $e;
-																																		if ((truthy(rt.gv(f, "buckled", (L_7 = live(V)))) && truthy((rt.istype(rt.fv(f, "buckled", live(L_7)), T("/obj/structure/chair")) ? 1 : 0)))) {
-																																			yield* g.callName(f, rt.fv(f, "buckled", live(L_7)), "unbuckle_mob", [live(L_7)]);
-																																		}
-																																	}
-																																	rt.endFor(f, 0);
-																																} else {
-																																	if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("dance_words")])))) {
-																																		cooldown = 300;
-																																		V = null;
-																																		rt.forList(f, 0, live(listeners));
-																																		while (($e = rt.next(f, 0)) !== undefined) {
-																																			V = $e;
-																																			yield* g.callName(f, (L_7 = live(V)), "emote", ["dance"]);
-																																			yield* g.call(f, P("/proc/sleep"), null, [5]);
-																																		}
-																																		rt.endFor(f, 0);
-																																	} else {
-																																		if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("jump_words")])))) {
-																																			cooldown = 300;
-																																			V = null;
-																																			rt.forList(f, 0, live(listeners));
-																																			while (($e = rt.next(f, 0)) !== undefined) {
-																																				V = $e;
-																																				L_7 = live(V);
-																																				if (truthy(rt.op(f, "Prob", [], [25]))) {
-																																					yield* g.callName(f, live(L_7), "say", ["HOW HIGH?!!"]);
-																																				}
-																																				yield* g.callName(f, live(L_7), "emote", ["jump"]);
-																																				yield* g.call(f, P("/proc/sleep"), null, [5]);
-																																			}
-																																			rt.endFor(f, 0);
-																																		} else {
-																																			if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("salute_words")])))) {
-																																				cooldown = 300;
-																																				V = null;
-																																				rt.forList(f, 0, live(listeners));
-																																				while (($e = rt.next(f, 0)) !== undefined) {
-																																					V = $e;
-																																					yield* g.callName(f, (L_7 = live(V)), "emote", ["salute"]);
-																																					yield* g.call(f, P("/proc/sleep"), null, [5]);
-																																				}
-																																				rt.endFor(f, 0);
-																																			} else {
-																																				if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("deathgasp_words")])))) {
-																																					cooldown = 300;
-																																					V = null;
-																																					rt.forList(f, 0, live(listeners));
-																																					while (($e = rt.next(f, 0)) !== undefined) {
-																																						V = $e;
-																																						yield* g.callName(f, (L_7 = live(V)), "emote", ["deathgasp"]);
-																																						yield* g.call(f, P("/proc/sleep"), null, [5]);
-																																					}
-																																					rt.endFor(f, 0);
-																																				} else {
-																																					if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("clap_words")])))) {
-																																						cooldown = 300;
-																																						V = null;
-																																						rt.forList(f, 0, live(listeners));
-																																						while (($e = rt.next(f, 0)) !== undefined) {
-																																							V = $e;
-																																							yield* g.callName(f, (L_7 = live(V)), "emote", ["clap"]);
-																																							yield* g.call(f, P("/proc/sleep"), null, [5]);
-																																						}
-																																						rt.endFor(f, 0);
-																																					} else {
-																																						if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("honk_words")])))) {
-																																							cooldown = 300;
-																																							yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), ["some_magic_bullshit", P("/proc/playsound"), rt.getStep(f, live(user), 0), rt.rsc("sound/items/bikehorn.ogg"), 300, 1])), 25]);
-																																							if ((truthy(rt.fv(f, "mind", live(user))) && isEqual(rt.gv(f, "assigned_role", rt.fv(f, "mind", live(user))), "Clown"))) {
-																																								C = null;
-																																								rt.forList(f, 0, live(listeners), T("/mob/living/carbon"));
-																																								while (($e = rt.next(f, 0)) !== undefined) {
-																																									C = $e;
-																																									yield* g.callName(f, live(C), "slip", [multiply(140, live(power_multiplier))]);
-																																								}
-																																								rt.endFor(f, 0);
-																																								cooldown = 300;
-																																							}
-																																						} else {
-																																							if (truthy((yield* g.call(f, P("/proc/findtext"), null, [live(message), rt.gl("multispin_words")])))) {
-																																								cooldown = 300;
-																																								V = null;
-																																								rt.forList(f, 0, live(listeners));
-																																								while (($e = rt.next(f, 0)) !== undefined) {
-																																									V = $e;
-																																									yield* g.callName(f, (L_7 = live(V)), "SpinAnimation", ["speed", 10, "loops", 5], rt.Args.Named);
-																																								}
-																																								rt.endFor(f, 0);
-																																							} else {
-																																								cooldown = 100;
-																																							}
-																																						}
-																																					}
-																																				}
-																																			}
-																																		}
-																																	}
-																																}
-																															}
-																														}
-																													}
-																												}
-																											}
-																										}
-																									}
-																								}
-																							}
-																						}
-																					}
-																				}
-																			}
-																		}
-																	}
-																}
-															}
-														}
-													}
-												}
-											}
-										}
-									}
-								}
-							}
-						}
-					}
+					$1 = pick(GLOB.cardinal);
 				}
+				yield* step($0, $1);
+			}
+			yield* sleep(10);
+			i++;
+		}
+	} else if (findtext(message, GLOB.walk_words)) {
+		cooldown = COOLDOWN_MEME;
+		V = null;
+		for (V of each(listeners)) {
+			if ((L_7 = V).m_intent != "walk") {
+				yield* L_7.toggle_move_intent();
 			}
 		}
+	} else if (findtext(message, GLOB.run_words)) {
+		cooldown = COOLDOWN_MEME;
+		V = null;
+		for (V of each(listeners)) {
+			if ((L_7 = V).m_intent != "run") {
+				yield* L_7.toggle_move_intent();
+			}
+		}
+	} else if (findtext(message, GLOB.helpintent_words)) {
+		cooldown = COOLDOWN_MEME;
+		H_6 = null;
+		for (H_6 of each(listeners, T("/mob/living/carbon/human"))) {
+			H_6.a_intent_change("help");
+			yield* H_6.click_random_mob();
+			yield* sleep(2);
+		}
+	} else if (findtext(message, GLOB.disarmintent_words)) {
+		cooldown = COOLDOWN_MEME;
+		H_6 = null;
+		for (H_6 of each(listeners, T("/mob/living/carbon/human"))) {
+			H_6.a_intent_change("disarm");
+			yield* H_6.click_random_mob();
+			yield* sleep(2);
+		}
+	} else if (findtext(message, GLOB.grabintent_words)) {
+		cooldown = COOLDOWN_MEME;
+		H_6 = null;
+		for (H_6 of each(listeners, T("/mob/living/carbon/human"))) {
+			H_6.a_intent_change("grab");
+			yield* H_6.click_random_mob();
+			yield* sleep(2);
+		}
+	} else if (findtext(message, GLOB.harmintent_words)) {
+		cooldown = COOLDOWN_MEME;
+		H_6 = null;
+		for (H_6 of each(listeners, T("/mob/living/carbon/human"))) {
+			H_6.a_intent_change("harm");
+			yield* H_6.click_random_mob();
+			yield* sleep(2);
+		}
+	} else if (findtext(message, GLOB.throwmode_words)) {
+		cooldown = COOLDOWN_MEME;
+		C = null;
+		for (C of each(listeners, T("/mob/living/carbon"))) {
+			C.throw_mode_on();
+		}
+	} else if (findtext(message, GLOB.flip_words)) {
+		cooldown = COOLDOWN_MEME;
+		V = null;
+		for (V of each(listeners)) {
+			yield* (L_7 = V).emote("flip");
+		}
+	} else if (findtext(message, GLOB.speak_words)) {
+		cooldown = COOLDOWN_MEME;
+		V = null;
+		for (V of each(listeners)) {
+			yield* (L_7 = V).say(strings_replacement("brain_damage_lines.json", "brain_damage"));
+			yield* sleep(5);
+		}
+	} else if (findtext(message, GLOB.getup_words)) {
+		cooldown = COOLDOWN_DAMAGE;
+		V = null;
+		for (V of each(listeners)) {
+			if ((L_7 = V).resting) {
+				yield* L_7.lay_down();
+			}
+			yield* L_7.SetStun(0);
+			yield* L_7.SetKnockdown(0);
+			yield* L_7.SetUnconscious(0);
+		}
+	} else if (findtext(message, GLOB.sit_words)) {
+		cooldown = COOLDOWN_MEME;
+		V = null;
+		for (V of each(listeners)) {
+			L_7 = V;
+			chair = null;
+			rt.forList(f, 1, rt.getStep(f, L_7, 0), T("/obj/structure/chair"));
+			if (($e = rt.next(f, 1)) !== undefined) {
+				chair = $e;
+				yield* chair.buckle_mob(L_7);
+			}
+			rt.endFor(f, 1);
+		}
+	} else if (findtext(message, GLOB.stand_words)) {
+		cooldown = COOLDOWN_MEME;
+		V = null;
+		for (V of each(listeners)) {
+			if ((L_7 = V).buckled && rt.istype(L_7.buckled, T("/obj/structure/chair"))) {
+				yield* L_7.buckled.unbuckle_mob(L_7);
+			}
+		}
+	} else if (findtext(message, GLOB.dance_words)) {
+		cooldown = COOLDOWN_MEME;
+		V = null;
+		for (V of each(listeners)) {
+			yield* (L_7 = V).emote("dance");
+			yield* sleep(5);
+		}
+	} else if (findtext(message, GLOB.jump_words)) {
+		cooldown = COOLDOWN_MEME;
+		V = null;
+		for (V of each(listeners)) {
+			L_7 = V;
+			if (prob(25)) {
+				yield* L_7.say("HOW HIGH?!!");
+			}
+			yield* L_7.emote("jump");
+			yield* sleep(5);
+		}
+	} else if (findtext(message, GLOB.salute_words)) {
+		cooldown = COOLDOWN_MEME;
+		V = null;
+		for (V of each(listeners)) {
+			yield* (L_7 = V).emote("salute");
+			yield* sleep(5);
+		}
+	} else if (findtext(message, GLOB.deathgasp_words)) {
+		cooldown = COOLDOWN_MEME;
+		V = null;
+		for (V of each(listeners)) {
+			yield* (L_7 = V).emote("deathgasp");
+			yield* sleep(5);
+		}
+	} else if (findtext(message, GLOB.clap_words)) {
+		cooldown = COOLDOWN_MEME;
+		V = null;
+		for (V of each(listeners)) {
+			yield* (L_7 = V).emote("clap");
+			yield* sleep(5);
+		}
+	} else if (findtext(message, GLOB.honk_words)) {
+		cooldown = COOLDOWN_MEME;
+		yield* addtimer((yield* new_(T("/datum/callback"), "some_magic_bullshit", P("/proc/playsound"), rt.getStep(f, user, 0), rt.rsc("sound/items/bikehorn.ogg"), 300, 1)), 25);
+		if (user.mind && user.mind.assigned_role == "Clown") {
+			C = null;
+			for (C of each(listeners, T("/mob/living/carbon"))) {
+				yield* C.slip(140 * power_multiplier);
+			}
+			cooldown = COOLDOWN_MEME;
+		}
+	} else if (findtext(message, GLOB.multispin_words)) {
+		cooldown = COOLDOWN_MEME;
+		V = null;
+		for (V of each(listeners)) {
+			yield* (L_7 = V).SpinAnimation({ speed: 10, loops: 5 });
+		}
+	} else {
+		cooldown = 100;
 	}
-	yield* g.call(f, P("/proc/message_admins"), null, [fmt("＀ has said '＀' with a Voice of God, affecting ＀, with a power multiplier of ＀.", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(user)])), live(log_message), (yield* g.call(f, P("/proc/english_list"), null, [live(listeners)])), live(power_multiplier)])]);
-	yield* g.call(f, P("/proc/log_game"), null, [fmt("＀ has said '＀' with a Voice of God, affecting ＀, with a power multiplier of ＀.", [(yield* g.call(f, P("/proc/key_name"), null, [live(user)])), live(log_message), (yield* g.call(f, P("/proc/english_list"), null, [live(listeners)])), live(power_multiplier)])]);
-	return live(cooldown);
+	message_admins(`${key_name_admin(user)} has said '${log_message}' with a Voice of God, affecting ${english_list(listeners)}, with a power multiplier of ${power_multiplier}.`);
+	log_game(`${key_name(user)} has said '${log_message}' with a Voice of God, affecting ${english_list(listeners)}, with a power multiplier of ${power_multiplier}.`);
+	return cooldown;
 }, true);

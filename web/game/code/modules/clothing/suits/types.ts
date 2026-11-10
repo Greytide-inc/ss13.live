@@ -1,5 +1,5 @@
 // Types declared in code/modules/clothing/suits that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(7767, "/obj/item/clothing/suit/armor/plate", "/obj/item/clothing/suit/armor", {});
 rt.type(7771, "/obj/item/clothing/suit/armor/vest", "/obj/item/clothing/suit/armor", {

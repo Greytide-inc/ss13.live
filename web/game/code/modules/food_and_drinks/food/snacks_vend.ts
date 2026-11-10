@@ -1,7 +1,7 @@
-// From code/modules/food_and_drinks/food/snacks_vend.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/food_and_drinks/food/snacks_vend.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(6187, "/obj/item/weapon/reagent_containers/food/snacks/candy", "/obj/item/weapon/reagent_containers/food/snacks", {
@@ -15,13 +15,11 @@ rt.type(6187, "/obj/item/weapon/reagent_containers/food/snacks/candy", "/obj/ite
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/food/snacks/candy/proc/<init>  (code/modules/food_and_drinks/food/snacks_vend.dm:13)
+// snacks_vend.dm:13
 rt.def("/obj/item/weapon/reagent_containers/food/snacks/candy/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "tastes", rt.alist(f, ["candy", 1]));
-	rt.setSv(f, "list_reagents", rt.alist(f, ["nutriment", 1, "sugar", 3]));
+	parent_proc();
+	this.tastes = rt.alist(f, ["candy", 1]);
+	this.list_reagents = rt.alist(f, ["nutriment", 1, "sugar", 3]);
 	return f.dot;
 });
 
@@ -36,13 +34,11 @@ rt.type(6188, "/obj/item/weapon/reagent_containers/food/snacks/sosjerky", "/obj/
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/food/snacks/sosjerky/proc/<init>  (code/modules/food_and_drinks/food/snacks_vend.dm:23)
+// snacks_vend.dm:23
 rt.def("/obj/item/weapon/reagent_containers/food/snacks/sosjerky/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "tastes", rt.alist(f, ["dried meat", 1]));
-	rt.setSv(f, "list_reagents", rt.alist(f, ["nutriment", 1, "sugar", 3]));
+	parent_proc();
+	this.tastes = rt.alist(f, ["dried meat", 1]);
+	this.list_reagents = rt.alist(f, ["nutriment", 1, "sugar", 3]);
 	return f.dot;
 });
 
@@ -53,12 +49,10 @@ rt.type(6189, "/obj/item/weapon/reagent_containers/food/snacks/sosjerky/healthy"
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/food/snacks/sosjerky/healthy/proc/<init>  (code/modules/food_and_drinks/food/snacks_vend.dm:28)
+// snacks_vend.dm:28
 rt.def("/obj/item/weapon/reagent_containers/food/snacks/sosjerky/healthy/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["nutriment", 3, "vitamin", 1]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["nutriment", 3, "vitamin", 1]);
 	return f.dot;
 });
 
@@ -74,13 +68,11 @@ rt.type(6190, "/obj/item/weapon/reagent_containers/food/snacks/chips", "/obj/ite
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/food/snacks/chips/proc/<init>  (code/modules/food_and_drinks/food/snacks_vend.dm:40)
+// snacks_vend.dm:40
 rt.def("/obj/item/weapon/reagent_containers/food/snacks/chips/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "tastes", rt.alist(f, ["salt", 1, "crisps", 1]));
-	rt.setSv(f, "list_reagents", rt.alist(f, ["nutriment", 1, "sugar", 3]));
+	parent_proc();
+	this.tastes = rt.alist(f, ["salt", 1, "crisps", 1]);
+	this.list_reagents = rt.alist(f, ["nutriment", 1, "sugar", 3]);
 	return f.dot;
 });
 
@@ -95,13 +87,11 @@ rt.type(6191, "/obj/item/weapon/reagent_containers/food/snacks/no_raisin", "/obj
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/food/snacks/no_raisin/proc/<init>  (code/modules/food_and_drinks/food/snacks_vend.dm:50)
+// snacks_vend.dm:50
 rt.def("/obj/item/weapon/reagent_containers/food/snacks/no_raisin/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "tastes", rt.alist(f, ["dried raisins", 1]));
-	rt.setSv(f, "list_reagents", rt.alist(f, ["nutriment", 2, "sugar", 4]));
+	parent_proc();
+	this.tastes = rt.alist(f, ["dried raisins", 1]);
+	this.list_reagents = rt.alist(f, ["nutriment", 2, "sugar", 4]);
 	return f.dot;
 });
 
@@ -112,12 +102,10 @@ rt.type(6192, "/obj/item/weapon/reagent_containers/food/snacks/no_raisin/healthy
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/food/snacks/no_raisin/healthy/proc/<init>  (code/modules/food_and_drinks/food/snacks_vend.dm:55)
+// snacks_vend.dm:55
 rt.def("/obj/item/weapon/reagent_containers/food/snacks/no_raisin/healthy/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["nutriment", 3, "vitamin", 2]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["nutriment", 3, "vitamin", 2]);
 	return f.dot;
 });
 
@@ -130,12 +118,10 @@ rt.type(6193, "/obj/item/weapon/reagent_containers/food/snacks/spacetwinkie", "/
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/food/snacks/spacetwinkie/proc/<init>  (code/modules/food_and_drinks/food/snacks_vend.dm:62)
+// snacks_vend.dm:62
 rt.def("/obj/item/weapon/reagent_containers/food/snacks/spacetwinkie/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["sugar", 4]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["sugar", 4]);
 	return f.dot;
 });
 
@@ -150,13 +136,11 @@ rt.type(6194, "/obj/item/weapon/reagent_containers/food/snacks/cheesiehonkers", 
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/food/snacks/cheesiehonkers/proc/<init>  (code/modules/food_and_drinks/food/snacks_vend.dm:74)
+// snacks_vend.dm:74
 rt.def("/obj/item/weapon/reagent_containers/food/snacks/cheesiehonkers/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "tastes", rt.alist(f, ["cheese", 5, "crisps", 2]));
-	rt.setSv(f, "list_reagents", rt.alist(f, ["nutriment", 1, "sugar", 3]));
+	parent_proc();
+	this.tastes = rt.alist(f, ["cheese", 5, "crisps", 2]);
+	this.list_reagents = rt.alist(f, ["nutriment", 1, "sugar", 3]);
 	return f.dot;
 });
 
@@ -170,12 +154,10 @@ rt.type(6195, "/obj/item/weapon/reagent_containers/food/snacks/syndicake", "/obj
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/food/snacks/syndicake/proc/<init>  (code/modules/food_and_drinks/food/snacks_vend.dm:83)
+// snacks_vend.dm:83
 rt.def("/obj/item/weapon/reagent_containers/food/snacks/syndicake/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "tastes", rt.alist(f, ["sweetness", 3, "cake", 1]));
-	rt.setSv(f, "list_reagents", rt.alist(f, ["nutriment", 4, "doctorsdelight", 5]));
+	parent_proc();
+	this.tastes = rt.alist(f, ["sweetness", 3, "cake", 1]);
+	this.list_reagents = rt.alist(f, ["nutriment", 4, "doctorsdelight", 5]);
 	return f.dot;
 });

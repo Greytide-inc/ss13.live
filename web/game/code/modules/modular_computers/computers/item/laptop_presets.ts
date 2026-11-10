@@ -1,19 +1,19 @@
-// From code/modules/modular_computers/computers/item/laptop_presets.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/modular_computers/computers/item/laptop_presets.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(9412, "/obj/item/device/modular_computer/laptop/preset", "/obj/item/device/modular_computer/laptop", {});
 
-// /obj/item/device/modular_computer/laptop/preset/proc/New  (code/modules/modular_computers/computers/item/laptop_presets.dm:2)  may sleep
+// laptop_presets.dm:2
 rt.def("/obj/item/device/modular_computer/laptop/preset/proc/New", function* New(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.srcCall(f, "install_component", (yield* g.new_(f, T("/obj/item/weapon/computer_hardware/processor_unit/small"), [])));
-	yield* g.srcCall(f, "install_component", (yield* g.new_(f, T("/obj/item/weapon/computer_hardware/battery"), [live(f.src), T("/obj/item/weapon/stock_parts/cell/computer")])));
-	yield* g.srcCall(f, "install_component", (yield* g.new_(f, T("/obj/item/weapon/computer_hardware/hard_drive"), [])));
-	yield* g.srcCall(f, "install_component", (yield* g.new_(f, T("/obj/item/weapon/computer_hardware/network_card"), [])));
-	yield* g.srcCall(f, "install_programs");
+	f.dot = (yield* parent_proc());
+	yield* this.install_component((yield* new_(T("/obj/item/weapon/computer_hardware/processor_unit/small"))));
+	yield* this.install_component((yield* new_(T("/obj/item/weapon/computer_hardware/battery"), this, T("/obj/item/weapon/stock_parts/cell/computer"))));
+	yield* this.install_component((yield* new_(T("/obj/item/weapon/computer_hardware/hard_drive"))));
+	yield* this.install_component((yield* new_(T("/obj/item/weapon/computer_hardware/network_card"))));
+	yield* this.install_programs();
 	return f.dot;
 }, true);
 
@@ -21,11 +21,10 @@ rt.type(9413, "/obj/item/device/modular_computer/laptop/preset/civillian", "/obj
 	desc: "A low-end laptop often used for personal recreation.",
 });
 
-// /obj/item/device/modular_computer/laptop/preset/civillian/proc/install_programs  (code/modules/modular_computers/computers/item/laptop_presets.dm:22)
+// laptop_presets.dm:22
 rt.def("/obj/item/device/modular_computer/laptop/preset/civillian/proc/install_programs", function install_programs(f: Frame) {
 	let hard_drive: Value = null;
-	f.vars = () => [hard_drive];
-	rt.callName(f, (hard_drive = rt.at(rt.sv(f, "all_components"), "HDD")), "store_file", [rt.new_(f, T("/datum/computer_file/program/chatclient"), [])]);
-	rt.callName(f, live(hard_drive), "store_file", [rt.new_(f, T("/datum/computer_file/program/nttransfer"), [])]);
+	(hard_drive = rt.at(this.all_components, "HDD")).store_file(new_(T("/datum/computer_file/program/chatclient")));
+	hard_drive.store_file(new_(T("/datum/computer_file/program/nttransfer")));
 	return f.dot;
 });

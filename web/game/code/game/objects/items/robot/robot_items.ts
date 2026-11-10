@@ -1,7 +1,7 @@
-// From code/game/objects/items/robot/robot_items.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/robot/robot_items.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, fmt } = rt;
 
 
 rt.type(9807, "/obj/item/borg/stun", "/obj/item/borg", {
@@ -10,27 +10,26 @@ rt.type(9807, "/obj/item/borg/stun", "/obj/item/borg", {
 	icon_state: "elecarm",
 });
 
-// /obj/item/borg/stun/proc/attack  (code/game/objects/items/robot/robot_items.dm:14)  may sleep
+// robot_items.dm:14
 rt.def("/obj/item/borg/stun/proc/attack", function* attack(f: Frame, M: Value, user: Value) {
 	let H: Value = null, R: Value = null;
-	f.vars = () => [M, user, H, R];
-	if (truthy((rt.istype(live(M), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		if (truthy((yield* g.callName(f, (H = live(M)), "check_shields", [live(f.src), 0, fmt("＀'s ＀", [live(M), rt.sv(f, "name")]), 1])))) {
-			yield* g.call(f, P("/proc/playsound"), null, [live(M), rt.rsc("sound/weapons/genhit.ogg"), 50, 1]);
+	if (rt.istype(M, T("/mob/living/carbon/human"))) {
+		if (yield* (H = M).check_shields(this, 0, `${M}'s ${this.name}`, 1)) {
+			playsound(M, rt.rsc("sound/weapons/genhit.ogg"), 50, 1);
 			return 0;
 		}
 	}
-	if (truthy((rt.istype(live(user), T("/mob/living/silicon/robot")) ? 1 : 0))) {
-		if (!truthy((yield* g.callName(f, rt.gv(f, "cell", (R = live(user))), "use", [rt.sv(f, "charge_cost")])))) {
-			return live(f.dot);
+	if (rt.istype(user, T("/mob/living/silicon/robot"))) {
+		if (!(yield* (R = user).cell.use(this.charge_cost))) {
+			return f.dot;
 		}
 	}
-	yield* g.callName(f, live(user), "do_attack_animation", [live(M)]);
-	yield* g.callName(f, live(M), "Knockdown", [100]);
-	yield* g.callName(f, live(M), "apply_effect", ["stutter", 5]);
-	yield* g.callName(f, live(M), "visible_message", [fmt("<span class='danger'>＀ has prodded ＀ with ＀!</span>", [live(user), live(M), live(f.src)]), fmt("<span class='userdanger'>＀ has prodded you with ＀!</span>", [live(user), live(f.src)])]);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/weapons/egloves.ogg"), 50, 1, -1]);
-	yield* g.call(f, P("/proc/add_logs"), null, [live(user), live(M), "stunned", live(f.src), fmt("(INTENT: ＀)", [(yield* g.call(f, P("/proc/uppertext"), null, [rt.fv(f, "a_intent", live(user))]))])]);
+	yield* user.do_attack_animation(M);
+	yield* M.Knockdown(100);
+	yield* M.apply_effect("stutter", 5);
+	M.visible_message(`<span class='danger'>${user} has prodded ${M} with ${this}!</span>`, `<span class='userdanger'>${user} has prodded you with ${this}!</span>`);
+	playsound(this.loc, rt.rsc("sound/weapons/egloves.ogg"), 50, 1, -1);
+	add_logs(user, M, "stunned", this, `(INTENT: ${uppertext(user.a_intent)})`);
 	return f.dot;
 }, true);
 
@@ -45,124 +44,110 @@ rt.type(9808, "/obj/item/borg/cyborghug", "/obj/item/borg", {
 	desc: "For when a someone really needs a hug.",
 });
 
-// /obj/item/borg/cyborghug/proc/attack_self  (code/game/objects/items/robot/robot_items.dm:46)
+// robot_items.dm:46
 rt.def("/obj/item/borg/cyborghug/proc/attack_self", function attack_self(f: Frame, user: Value) {
 	let _P: Value = null;
-	let $0: any;
-	f.vars = () => [_P, $0];
-	if (truthy((rt.istype(live(user), T("/mob/living/silicon/robot")) ? 1 : 0))) {
-		if ((truthy(rt.gv(f, "emagged", (_P = live(user)))) && isEqual(rt.sv(f, "shockallowed"), 1))) {
-			if (rt.lt(rt.sv(f, "mode"), 3)) {
-				rt.incSrcVar(f, "mode", 1, true);
+	if (rt.istype(user, T("/mob/living/silicon/robot"))) {
+		if ((_P = user).emagged && this.shockallowed == 1) {
+			if (this.mode < 3) {
+				this.mode++;
 			} else {
-				rt.setSv(f, "mode", 0);
+				this.mode = 0;
 			}
+		} else if (this.mode < 1) {
+			this.mode++;
 		} else {
-			if (rt.lt(rt.sv(f, "mode"), 1)) {
-				rt.incSrcVar(f, "mode", 1, true);
-			} else {
-				rt.setSv(f, "mode", 0);
-			}
+			this.mode = 0;
 		}
 	}
-	$0 = rt.sv(f, "mode");
-	if ($0 === 0) {
-		rt.call(f, P("/proc/to_chat"), null, [live(user), "Power reset. Hugs!"]);
-	} else if ($0 === 1) {
-		rt.call(f, P("/proc/to_chat"), null, [live(user), "Power increased!"]);
-	} else if ($0 === 2) {
-		rt.call(f, P("/proc/to_chat"), null, [live(user), "BZZT. Electrifying arms..."]);
-	} else if ($0 === 3) {
-		rt.call(f, P("/proc/to_chat"), null, [live(user), "ERROR: ARM ACTUATORS OVERLOADED."]);
+	if (this.mode === 0) {
+		to_chat(user, "Power reset. Hugs!");
+	} else if (this.mode === 1) {
+		to_chat(user, "Power increased!");
+	} else if (this.mode === 2) {
+		to_chat(user, "BZZT. Electrifying arms...");
+	} else if (this.mode === 3) {
+		to_chat(user, "ERROR: ARM ACTUATORS OVERLOADED.");
 	}
 	return f.dot;
 });
 
-// /obj/item/borg/cyborghug/proc/attack  (code/game/objects/items/robot/robot_items.dm:68)  may sleep
+// robot_items.dm:68
 rt.def("/obj/item/borg/cyborghug/proc/attack", function* attack(f: Frame, M: Value, user: Value) {
-	let $0: any;
-	f.vars = () => [M, user, $0];
-	if (isEqual(live(M), live(user))) {
-		return live(f.dot);
+	if (M == user) {
+		return f.dot;
 	}
-	$0 = rt.sv(f, "mode");
-	if ($0 === 0) {
-		if (rt.ge(rt.fv(f, "health", live(M)), 0)) {
-			if (isEqual(rt.fv(f, "zone_selected", live(user)), "head")) {
-				yield* g.callName(f, live(user), "visible_message", [fmt("<span class='notice'>＀ playfully boops ＀ on the head!</span>", [live(user), live(M)]), fmt("<span class='notice'>You playfully boop ＀ on the head!</span>", [live(M)])]);
-				yield* g.callName(f, live(user), "do_attack_animation", [live(M), "boop"]);
-				yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/weapons/tap.ogg"), 50, 1, -1]);
-			} else {
-				if (truthy((rt.istype(live(M), T("/mob/living/carbon/human")) ? 1 : 0))) {
-					if (truthy(rt.fv(f, "lying", live(M)))) {
-						yield* g.callName(f, live(user), "visible_message", [fmt("<span class='notice'>＀ shakes ＀ trying to get ＀ up!</span>", [live(user), live(M), (yield* g.callName(f, live(M), "p_them", []))]), fmt("<span class='notice'>You shake ＀ trying to get ＀ up!</span>", [live(M), (yield* g.callName(f, live(M), "p_them", []))])]);
-					} else {
-						yield* g.callName(f, live(user), "visible_message", [fmt("<span class='notice'>＀ hugs ＀ to make ＀ feel better!</span>", [live(user), live(M), (yield* g.callName(f, live(M), "p_them", []))]), fmt("<span class='notice'>You hug ＀ to make ＀ feel better!</span>", [live(M), (yield* g.callName(f, live(M), "p_them", []))])]);
-					}
-					if (truthy(rt.fv(f, "resting", live(M)))) {
-						rt.setFv(f, "resting", live(M), 0);
-						yield* g.callName(f, live(M), "update_canmove", []);
-					}
+	if (this.mode === 0) {
+		if (M.health >= 0) {
+			if (user.zone_selected == "head") {
+				user.visible_message(`<span class='notice'>${user} playfully boops ${M} on the head!</span>`, `<span class='notice'>You playfully boop ${M} on the head!</span>`);
+				yield* user.do_attack_animation(M, "boop");
+				playsound(this.loc, rt.rsc("sound/weapons/tap.ogg"), 50, 1, -1);
+			} else if (rt.istype(M, T("/mob/living/carbon/human"))) {
+				if (M.lying) {
+					user.visible_message(`<span class='notice'>${user} shakes ${M} trying to get ${M.p_them()} up!</span>`, `<span class='notice'>You shake ${M} trying to get ${M.p_them()} up!</span>`);
 				} else {
-					yield* g.callName(f, live(user), "visible_message", [fmt("<span class='notice'>＀ pets ＀!</span>", [live(user), live(M)]), fmt("<span class='notice'>You pet ＀!</span>", [live(M)])]);
+					user.visible_message(`<span class='notice'>${user} hugs ${M} to make ${M.p_them()} feel better!</span>`, `<span class='notice'>You hug ${M} to make ${M.p_them()} feel better!</span>`);
 				}
-			}
-			yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/weapons/thudswoosh.ogg"), 50, 1, -1]);
-		}
-	} else if ($0 === 1) {
-		if (rt.ge(rt.fv(f, "health", live(M)), 0)) {
-			if (truthy((rt.istype(live(M), T("/mob/living/carbon/human")) ? 1 : 0))) {
-				if (truthy(rt.fv(f, "lying", live(M)))) {
-					yield* g.callName(f, live(user), "visible_message", [fmt("<span class='notice'>＀ shakes ＀ trying to get ＀ up!</span>", [live(user), live(M), (yield* g.callName(f, live(M), "p_them", []))]), fmt("<span class='notice'>You shake ＀ trying to get ＀ up!</span>", [live(M), (yield* g.callName(f, live(M), "p_them", []))])]);
-				} else {
-					if (isEqual(rt.fv(f, "zone_selected", live(user)), "head")) {
-						yield* g.callName(f, live(user), "visible_message", [fmt("<span class='warning'>＀ bops ＀ on the head!</span>", [live(user), live(M)]), fmt("<span class='warning'>You bop ＀ on the head!</span>", [live(M)])]);
-						yield* g.callName(f, live(user), "do_attack_animation", [live(M), "punch"]);
-					} else {
-						yield* g.callName(f, live(user), "visible_message", [fmt("<span class='warning'>＀ hugs ＀ in a firm bear-hug! ＀ looks uncomfortable...</span>", [live(user), live(M), live(M)]), fmt("<span class='warning'>You hug ＀ firmly to make ＀ feel better! ＀ looks uncomfortable...</span>", [live(M), (yield* g.callName(f, live(M), "p_them", [])), live(M)])]);
-					}
-				}
-				if (truthy(rt.fv(f, "resting", live(M)))) {
-					rt.setFv(f, "resting", live(M), 0);
-					yield* g.callName(f, live(M), "update_canmove", []);
+				if (M.resting) {
+					M.resting = 0;
+					yield* M.update_canmove();
 				}
 			} else {
-				yield* g.callName(f, live(user), "visible_message", [fmt("<span class='warning'>＀ bops ＀ on the head!</span>", [live(user), live(M)]), fmt("<span class='warning'>You bop ＀ on the head!</span>", [live(M)])]);
+				user.visible_message(`<span class='notice'>${user} pets ${M}!</span>`, `<span class='notice'>You pet ${M}!</span>`);
 			}
-			yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/weapons/tap.ogg"), 50, 1, -1]);
+			playsound(this.loc, rt.rsc("sound/weapons/thudswoosh.ogg"), 50, 1, -1);
 		}
-	} else if ($0 === 2) {
-		if (rt.lt(rt.sv(f, "scooldown"), rt.worldTime(f))) {
-			if (rt.ge(rt.fv(f, "health", live(M)), 0)) {
-				if ((truthy((rt.istype(live(M), T("/mob/living/carbon/human")) ? 1 : 0)) || truthy((rt.istype(live(M), T("/mob/living/carbon/monkey")) ? 1 : 0)))) {
-					yield* g.callName(f, live(M), "electrocute_act", [null, 5, null, fmt("＀", [live(user)]), "safety", 1], rt.Args.Named);
-					yield* g.callName(f, live(user), "visible_message", [fmt("<span class='userdanger'>＀ electrocutes ＀ with their touch!</span>", [live(user), live(M)]), fmt("<span class='danger'>You electrocute ＀ with your touch!</span>", [live(M)])]);
-					yield* g.callName(f, live(M), "update_canmove", []);
+	} else if (this.mode === 1) {
+		if (M.health >= 0) {
+			if (rt.istype(M, T("/mob/living/carbon/human"))) {
+				if (M.lying) {
+					user.visible_message(`<span class='notice'>${user} shakes ${M} trying to get ${M.p_them()} up!</span>`, `<span class='notice'>You shake ${M} trying to get ${M.p_them()} up!</span>`);
+				} else if (user.zone_selected == "head") {
+					user.visible_message(`<span class='warning'>${user} bops ${M} on the head!</span>`, `<span class='warning'>You bop ${M} on the head!</span>`);
+					yield* user.do_attack_animation(M, "punch");
 				} else {
-					if (!truthy((rt.istype(live(M), T("/mob/living/silicon/robot")) ? 1 : 0))) {
-						yield* g.callName(f, live(M), "adjustFireLoss", [10]);
-						yield* g.callName(f, live(user), "visible_message", [fmt("<span class='userdanger'>＀ shocks ＀!</span>", [live(user), live(M)]), fmt("<span class='danger'>You shock ＀!</span>", [live(M)])]);
-					} else {
-						yield* g.callName(f, live(user), "visible_message", [fmt("<span class='userdanger'>＀ shocks ＀. It does not seem to have an effect</span>", [live(user), live(M)]), fmt("<span class='danger'>You shock ＀ to no effect.</span>", [live(M)])]);
-					}
+					user.visible_message(`<span class='warning'>${user} hugs ${M} in a firm bear-hug! ${M} looks uncomfortable...</span>`, `<span class='warning'>You hug ${M} firmly to make ${M.p_them()} feel better! ${M} looks uncomfortable...</span>`);
 				}
-				yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/effects/sparks2.ogg"), 50, 1, -1]);
-				(rt.modField(f, rt.fv(f, "cell", live(user)), "charge", 500, subtract));
-				rt.setSv(f, "scooldown", add(rt.worldTime(f), 20));
+				if (M.resting) {
+					M.resting = 0;
+					yield* M.update_canmove();
+				}
+			} else {
+				user.visible_message(`<span class='warning'>${user} bops ${M} on the head!</span>`, `<span class='warning'>You bop ${M} on the head!</span>`);
+			}
+			playsound(this.loc, rt.rsc("sound/weapons/tap.ogg"), 50, 1, -1);
+		}
+	} else if (this.mode === 2) {
+		if (this.scooldown < rt.worldTime(f)) {
+			if (M.health >= 0) {
+				if (rt.istype(M, T("/mob/living/carbon/human")) || rt.istype(M, T("/mob/living/carbon/monkey"))) {
+					yield* M.electrocute_act(5, `${user}`, { safety: 1 });
+					user.visible_message(`<span class='userdanger'>${user} electrocutes ${M} with their touch!</span>`, `<span class='danger'>You electrocute ${M} with your touch!</span>`);
+					yield* M.update_canmove();
+				} else if (!rt.istype(M, T("/mob/living/silicon/robot"))) {
+					yield* M.adjustFireLoss(10);
+					user.visible_message(`<span class='userdanger'>${user} shocks ${M}!</span>`, `<span class='danger'>You shock ${M}!</span>`);
+				} else {
+					user.visible_message(`<span class='userdanger'>${user} shocks ${M}. It does not seem to have an effect</span>`, `<span class='danger'>You shock ${M} to no effect.</span>`);
+				}
+				playsound(this.loc, rt.rsc("sound/effects/sparks2.ogg"), 50, 1, -1);
+				user.cell.charge -= 500;
+				this.scooldown = rt.worldTime(f) + 20;
 			}
 		}
-	} else if ($0 === 3) {
-		if (!rt.lt(rt.sv(f, "ccooldown"), rt.worldTime(f))) return f.dot;
-		if (!rt.ge(rt.fv(f, "health", live(M)), 0)) return f.dot;
-		if (truthy((rt.istype(live(M), T("/mob/living/carbon/human")) ? 1 : 0))) {
-			yield* g.callName(f, live(user), "visible_message", [fmt("<span class='userdanger'>＀ crushes ＀ in their grip!</span>", [live(user), live(M)]), fmt("<span class='danger'>You crush ＀ in your grip!</span>", [live(M)])]);
+	} else if (this.mode === 3) {
+		if (!(this.ccooldown < rt.worldTime(f))) return f.dot;
+		if (!(M.health >= 0)) return f.dot;
+		if (rt.istype(M, T("/mob/living/carbon/human"))) {
+			user.visible_message(`<span class='userdanger'>${user} crushes ${M} in their grip!</span>`, `<span class='danger'>You crush ${M} in your grip!</span>`);
 		} else {
-			yield* g.callName(f, live(user), "visible_message", [fmt("<span class='userdanger'>＀ crushes ＀!</span>", [live(user), live(M)]), fmt("<span class='danger'>You crush ＀!</span>", [live(M)])]);
+			user.visible_message(`<span class='userdanger'>${user} crushes ${M}!</span>`, `<span class='danger'>You crush ${M}!</span>`);
 		}
-		yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/weapons/smash.ogg"), 50, 1, -1]);
-		yield* g.callName(f, live(M), "adjustBruteLoss", [15]);
-		(rt.modField(f, rt.fv(f, "cell", live(user)), "charge", 300, subtract));
-		rt.setSv(f, "ccooldown", add(rt.worldTime(f), 10));
+		playsound(this.loc, rt.rsc("sound/weapons/smash.ogg"), 50, 1, -1);
+		yield* M.adjustBruteLoss(15);
+		user.cell.charge -= 300;
+		this.ccooldown = rt.worldTime(f) + 10;
 	}
 	return f.dot;
 }, true);
@@ -174,138 +159,135 @@ rt.type(9811, "/obj/item/borg/charger", "/obj/item/borg", {
 	icon_state: "charger_draw",
 }, { global: { charge_items: 741, charge_machines: 1054 } });
 
-// /obj/item/borg/charger/proc/Initialize  (code/game/objects/items/robot/robot_items.dm:160)  may sleep
+// robot_items.dm:160
 rt.def("/obj/item/borg/charger/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true);
 
-// /obj/item/borg/charger/proc/update_icon  (code/game/objects/items/robot/robot_items.dm:163)
+// robot_items.dm:163
 rt.def("/obj/item/borg/charger/proc/update_icon", function update_icon(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "icon_state", fmt("charger_＀", [rt.sv(f, "mode")]));
+	parent_proc();
+	this.icon_state = `charger_${this.mode}`;
 	return f.dot;
 });
 
-// /obj/item/borg/charger/proc/attack_self  (code/game/objects/items/robot/robot_items.dm:167)
+// robot_items.dm:167
 rt.def("/obj/item/borg/charger/proc/attack_self", function attack_self(f: Frame, user: Value) {
-	if (isEqual(rt.sv(f, "mode"), "draw")) {
-		rt.setSv(f, "mode", "charge");
+	if (this.mode == "draw") {
+		this.mode = "charge";
 	} else {
-		rt.setSv(f, "mode", "draw");
+		this.mode = "draw";
 	}
-	rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You toggle ＀ to \"＀\" mode.</span>", [live(f.src), rt.sv(f, "mode")])]);
-	rt.callSrc(f, "update_icon", []);
+	to_chat(user, `<span class='notice'>You toggle ${this} to "${this.mode}" mode.</span>`);
+	this.update_icon();
 	return f.dot;
 });
 
-// /obj/item/borg/charger/proc/afterattack  (code/game/objects/items/robot/robot_items.dm:175)  may sleep
+// robot_items.dm:175
 rt.def("/obj/item/borg/charger/proc/afterattack", function* afterattack(f: Frame, target: Value, user: Value, proximity_flag: Value) {
 	let M: Value = null, cell: Value = null, E: Value = null, draw: Value = null;
-	f.vars = () => [target, user, proximity_flag, M, cell, E, draw];
-	if ((!truthy(live(proximity_flag)) || !truthy((rt.istype(live(user), T("/mob/living/silicon/robot")) ? 1 : 0)))) {
-		return live(f.dot);
+	if (!proximity_flag || !rt.istype(user, T("/mob/living/silicon/robot"))) {
+		return f.dot;
 	}
-	if (isEqual(rt.sv(f, "mode"), "draw")) {
-		if (truthy((yield* g.call(f, P("/proc/is_type_in_list"), null, [live(target), rt.gl("charge_machines")])))) {
-			if ((truthy(rt.bitAnd(rt.gv(f, "stat", (M = live(target))), 3)) || !truthy(rt.fv(f, "anchored", live(M))))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ is unpowered!</span>", [live(M)])]);
-				return live(f.dot);
+	if (this.mode == "draw") {
+		if (is_type_in_list(target, GLOB.charge_machines)) {
+			if (rt.bitAnd((M = target).stat, 3) || !M.anchored) {
+				to_chat(user, `<span class='warning'>${M} is unpowered!</span>`);
+				return f.dot;
 			}
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You connect to ＀'s power line...</span>", [live(M)])]);
-			while (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(user), null, 15, "target", live(M), "progress", 0], rt.Args.Named)))) {
-				if (((!truthy(live(user)) || !truthy(rt.fv(f, "cell", live(user)))) || !isEqual(rt.sv(f, "mode"), "draw"))) {
-					return live(f.dot);
+			to_chat(user, `<span class='notice'>You connect to ${M}'s power line...</span>`);
+			while (yield* do_after(user, 15, { target: M, progress: 0 })) {
+				if (!user || !user.cell || this.mode != "draw") {
+					return f.dot;
 				}
-				if ((truthy(rt.bitAnd(rt.fv(f, "stat", live(M)), 3)) || !truthy(rt.fv(f, "anchored", live(M))))) {
+				if (rt.bitAnd(M.stat, 3) || !M.anchored) {
 					break;
 				}
-				if (!truthy((yield* g.callName(f, rt.fv(f, "cell", live(user)), "give", [150])))) {
+				if (!(yield* user.cell.give(150))) {
 					break;
 				}
-				yield* g.callName(f, live(M), "use_power", [200]);
+				yield* M.use_power(200);
 			}
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>You stop charging youself.</span>"]);
-		} else {
-			if (truthy((yield* g.call(f, P("/proc/is_type_in_list"), null, [live(target), rt.gl("charge_items")])))) {
-				if (!truthy((rt.istype((cell = live(target)), T("/obj/item/weapon/stock_parts/cell")) ? 1 : 0))) {
-					cell = rt.locateIn(f, T("/obj/item/weapon/stock_parts/cell"), live(target));
-				}
-				if (!truthy(live(cell))) {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ has no power cell!</span>", [live(target)])]);
-					return live(f.dot);
-				}
-				if (truthy((rt.istype(live(target), T("/obj/item/weapon/gun/energy")) ? 1 : 0))) {
-					if (!truthy(rt.gv(f, "can_charge", (E = live(target))))) {
-						yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ has no power port!</span>", [live(target)])]);
-						return live(f.dot);
-					}
-				}
-				if (!truthy(rt.fv(f, "charge", live(cell)))) {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ has no power!</span>", [live(target)])]);
-				}
-				yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You connect to ＀'s power port...</span>", [live(target)])]);
-				while (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(user), null, 15, "target", live(target), "progress", 0], rt.Args.Named)))) {
-					if (((!truthy(live(user)) || !truthy(rt.fv(f, "cell", live(user)))) || !isEqual(rt.sv(f, "mode"), "draw"))) {
-						return live(f.dot);
-					}
-					if ((!truthy(live(cell)) || !truthy(live(target)))) {
-						return live(f.dot);
-					}
-					if ((!isEqual(live(cell), live(target)) && !isEqual(rt.fv(f, "loc", live(cell)), live(target)))) {
-						return live(f.dot);
-					}
-					draw = (yield* g.call(f, P("/proc/min"), null, [rt.fv(f, "charge", live(cell)), multiply(rt.fv(f, "chargerate", live(cell)), 0.5), subtract(rt.gv(f, "maxcharge", rt.fv(f, "cell", live(user))), rt.gv(f, "charge", rt.fv(f, "cell", live(user))))]));
-					if (!truthy((yield* g.callName(f, live(cell), "use", [live(draw)])))) {
-						break;
-					}
-					if (!truthy((yield* g.callName(f, rt.fv(f, "cell", live(user)), "give", [live(draw)])))) {
-						break;
-					}
-					yield* g.callName(f, live(target), "update_icon", []);
-				}
-				yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>You stop charging youself.</span>"]);
+			to_chat(user, "<span class='notice'>You stop charging youself.</span>");
+		} else if (is_type_in_list(target, GLOB.charge_items)) {
+			if (!rt.istype((cell = target), T("/obj/item/weapon/stock_parts/cell"))) {
+				cell = rt.locateIn(f, T("/obj/item/weapon/stock_parts/cell"), target);
 			}
+			if (!cell) {
+				to_chat(user, `<span class='warning'>${target} has no power cell!</span>`);
+				return f.dot;
+			}
+			if (rt.istype(target, T("/obj/item/weapon/gun/energy"))) {
+				if (!(E = target).can_charge) {
+					to_chat(user, `<span class='warning'>${target} has no power port!</span>`);
+					return f.dot;
+				}
+			}
+			if (!cell.charge) {
+				to_chat(user, `<span class='warning'>${target} has no power!</span>`);
+			}
+			to_chat(user, `<span class='notice'>You connect to ${target}'s power port...</span>`);
+			while (yield* do_after(user, 15, { target: target, progress: 0 })) {
+				if (!user || !user.cell || this.mode != "draw") {
+					return f.dot;
+				}
+				if (!cell || !target) {
+					return f.dot;
+				}
+				if (cell != target && cell.loc != target) {
+					return f.dot;
+				}
+				draw = min(cell.charge, cell.chargerate * 0.5, user.cell.maxcharge - user.cell.charge);
+				if (!(yield* cell.use(draw))) {
+					break;
+				}
+				if (!(yield* user.cell.give(draw))) {
+					break;
+				}
+				yield* target.update_icon();
+			}
+			to_chat(user, "<span class='notice'>You stop charging youself.</span>");
 		}
 	} else {
-		if (!truthy((yield* g.call(f, P("/proc/is_type_in_list"), null, [live(target), rt.gl("charge_items")])))) return f.dot;
-		if (!truthy((rt.istype((cell = live(target)), T("/obj/item/weapon/stock_parts/cell")) ? 1 : 0))) {
-			cell = rt.locateIn(f, T("/obj/item/weapon/stock_parts/cell"), live(target));
+		if (!is_type_in_list(target, GLOB.charge_items)) return f.dot;
+		if (!rt.istype((cell = target), T("/obj/item/weapon/stock_parts/cell"))) {
+			cell = rt.locateIn(f, T("/obj/item/weapon/stock_parts/cell"), target);
 		}
-		if (!truthy(live(cell))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ has no power cell!</span>", [live(target)])]);
-			return live(f.dot);
+		if (!cell) {
+			to_chat(user, `<span class='warning'>${target} has no power cell!</span>`);
+			return f.dot;
 		}
-		if (truthy((rt.istype(live(target), T("/obj/item/weapon/gun/energy")) ? 1 : 0))) {
-			if (!truthy(rt.gv(f, "can_charge", (E = live(target))))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ has no power port!</span>", [live(target)])]);
-				return live(f.dot);
+		if (rt.istype(target, T("/obj/item/weapon/gun/energy"))) {
+			if (!(E = target).can_charge) {
+				to_chat(user, `<span class='warning'>${target} has no power port!</span>`);
+				return f.dot;
 			}
 		}
-		if (rt.ge(rt.fv(f, "charge", live(cell)), rt.fv(f, "maxcharge", live(cell)))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ is already charged!</span>", [live(target)])]);
+		if (cell.charge >= cell.maxcharge) {
+			to_chat(user, `<span class='warning'>${target} is already charged!</span>`);
 		}
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You connect to ＀'s power port...</span>", [live(target)])]);
-		while (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(user), null, 15, "target", live(target), "progress", 0], rt.Args.Named)))) {
-			if (((!truthy(live(user)) || !truthy(rt.fv(f, "cell", live(user)))) || !isEqual(rt.sv(f, "mode"), "charge"))) {
-				return live(f.dot);
+		to_chat(user, `<span class='notice'>You connect to ${target}'s power port...</span>`);
+		while (yield* do_after(user, 15, { target: target, progress: 0 })) {
+			if (!user || !user.cell || this.mode != "charge") {
+				return f.dot;
 			}
-			if ((!truthy(live(cell)) || !truthy(live(target)))) {
-				return live(f.dot);
+			if (!cell || !target) {
+				return f.dot;
 			}
-			if ((!isEqual(live(cell), live(target)) && !isEqual(rt.fv(f, "loc", live(cell)), live(target)))) {
-				return live(f.dot);
+			if (cell != target && cell.loc != target) {
+				return f.dot;
 			}
-			draw = (yield* g.call(f, P("/proc/min"), null, [rt.gv(f, "charge", rt.fv(f, "cell", live(user))), multiply(rt.fv(f, "chargerate", live(cell)), 0.5), subtract(rt.fv(f, "maxcharge", live(cell)), rt.fv(f, "charge", live(cell)))]));
-			if (!truthy((yield* g.callName(f, rt.fv(f, "cell", live(user)), "use", [live(draw)])))) {
+			draw = min(user.cell.charge, cell.chargerate * 0.5, cell.maxcharge - cell.charge);
+			if (!(yield* user.cell.use(draw))) {
 				break;
 			}
-			if (!truthy((yield* g.callName(f, live(cell), "give", [live(draw)])))) {
+			if (!(yield* cell.give(draw))) {
 				break;
 			}
-			yield* g.callName(f, live(target), "update_icon", []);
+			yield* target.update_icon();
 		}
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You stop charging ＀.</span>", [live(target)])]);
+		to_chat(user, `<span class='notice'>You stop charging ${target}.</span>`);
 	}
 	return f.dot;
 }, true);
@@ -318,79 +300,70 @@ rt.type(9359, "/obj/item/device/harmalarm", "/obj/item/device", {
 	icon_state: "megaphone",
 });
 
-// /obj/item/device/harmalarm/proc/emag_act  (code/game/objects/items/robot/robot_items.dm:284)
+// robot_items.dm:284
 rt.def("/obj/item/device/harmalarm/proc/emag_act", function emag_act(f: Frame, user: Value) {
-	rt.setSv(f, "emagged", (!truthy(rt.sv(f, "emagged")) ? 1 : 0));
-	if (truthy(rt.sv(f, "emagged"))) {
-		rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<font color='red'>You short out the safeties on the ＀!</font>", [live(f.src)])]);
+	this.emagged = (!this.emagged ? 1 : 0);
+	if (this.emagged) {
+		to_chat(user, `<font color='red'>You short out the safeties on the ${this}!</font>`);
 	} else {
-		rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<font color='red'>You reset the safeties on the ＀!</font>", [live(f.src)])]);
+		to_chat(user, `<font color='red'>You reset the safeties on the ${this}!</font>`);
 	}
 	return f.dot;
 });
 
-// /obj/item/device/harmalarm/proc/attack_self  (code/game/objects/items/robot/robot_items.dm:291)  may sleep
+// robot_items.dm:291
 rt.def("/obj/item/device/harmalarm/proc/attack_self", function* attack_self(f: Frame, user: Value) {
-	let safety: Value = null, R: Value = null, M: Value = null, C: Value = null, bang_effect: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [user, safety, R, M, C, bang_effect, $0, $e];
-	safety = (!truthy(rt.sv(f, "emagged")) ? 1 : 0);
-	if (rt.gt(rt.sv(f, "cooldown"), rt.worldTime(f))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<font color='red'>The device is still recharging!</font>"]);
-		return live(f.dot);
+	let R: Value = null, M: Value = null, C: Value = null, bang_effect: Value = null;
+	let $e: any;
+	let safety: Value = (!this.emagged ? 1 : 0);
+	if (this.cooldown > rt.worldTime(f)) {
+		to_chat(user, "<font color='red'>The device is still recharging!</font>");
+		return f.dot;
 	}
-	if (truthy((rt.istype(live(user), T("/mob/living/silicon/robot")) ? 1 : 0))) {
-		if (rt.lt(rt.gv(f, "charge", rt.gv(f, "cell", (R = live(user)))), 1200)) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<font color='red'>You don't have enough charge to do this!</font>"]);
-			return live(f.dot);
+	if (rt.istype(user, T("/mob/living/silicon/robot"))) {
+		if ((R = user).cell.charge < 1200) {
+			to_chat(user, "<font color='red'>You don't have enough charge to do this!</font>");
+			return f.dot;
 		}
-		(rt.modField(f, rt.fv(f, "cell", live(R)), "charge", 1000, subtract));
-		if (truthy(rt.fv(f, "emagged", live(R)))) {
+		R.cell.charge -= 1000;
+		if (R.emagged) {
 			safety = 0;
 		}
 	}
-	if (isEqual(live(safety), 1)) {
-		yield* g.callName(f, live(user), "visible_message", [fmt("<font color='red' size='2'>＀ blares out a near-deafening siren from its speakers!</font>", [live(user)]), "<span class='userdanger'>The siren pierces your hearing and confuses you!</span>", "<span class='danger'>The siren pierces your hearing!</span>"]);
-		M = null;
-		rt.forList(f, 0, (yield* g.call(f, P("/proc/get_hearers_in_view"), null, [9, live(user)])), T("/mob/living/carbon"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			M = $e;
-			if (isEqual((yield* g.callName(f, live(M), "get_ear_protection", [])), 0)) {
-				rt.modField(f, live(M), "confused", 6, add);
+	if (safety == 1) {
+		user.visible_message(`<font color='red' size='2'>${user} blares out a near-deafening siren from its speakers!</font>`, "<span class='userdanger'>The siren pierces your hearing and confuses you!</span>", "<span class='danger'>The siren pierces your hearing!</span>");
+		for (M of each(get_hearers_in_view(9, user), T("/mob/living/carbon"))) {
+			if (M.get_ear_protection() == 0) {
+				M.confused += 6;
 			}
 		}
-		rt.endFor(f, 0);
-		yield* g.srcCall(f, "audible_message", "<font color='red' size='7'>HUMAN HARM</font>");
-		yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/ai/harmalarm.ogg"), 70, 3]);
-		rt.setSv(f, "cooldown", add(rt.worldTime(f), 200));
-		yield* g.call(f, P("/proc/log_game"), null, [fmt("＀(＀) used a Cyborg Harm Alarm in (＀,＀,＀)", [rt.fv(f, "ckey", live(user)), live(user), rt.fv(f, "x", live(user)), rt.fv(f, "y", live(user)), rt.fv(f, "z", live(user))])]);
-		if (truthy((rt.istype(live(user), T("/mob/living/silicon/robot")) ? 1 : 0))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.gv(f, "connected_ai", (R = live(user))), fmt("<br><span class='notice'>NOTICE - Peacekeeping 'HARM ALARM' used by: ＀</span><br>", [live(user)])]);
+		this.audible_message("<font color='red' size='7'>HUMAN HARM</font>");
+		playsound(rt.getStep(f, this, 0), rt.rsc("sound/ai/harmalarm.ogg"), 70, 3);
+		this.cooldown = rt.worldTime(f) + 200;
+		log_game(`${user.ckey}(${user}) used a Cyborg Harm Alarm in (${user.x},${user.y},${user.z})`);
+		if (rt.istype(user, T("/mob/living/silicon/robot"))) {
+			to_chat((R = user).connected_ai, `<br><span class='notice'>NOTICE - Peacekeeping 'HARM ALARM' used by: ${user}</span><br>`);
 		}
-		return live(f.dot);
+		return f.dot;
 	}
-	if (!isEqual(live(safety), 0)) return f.dot;
-	yield* g.callName(f, live(user), "audible_message", ["<font color='red' size='7'>BZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZT</font>"]);
-	C = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/get_hearers_in_view"), null, [9, live(user)])), T("/mob/living/carbon"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		C = $e;
-		$0 = (bang_effect = (yield* g.callName(f, live(C), "soundbang_act", [2, 0, 0, 5])));
-		if ($0 === 1) {
-			rt.modField(f, live(C), "confused", 5, add);
-			rt.modField(f, live(C), "stuttering", 10, add);
-			yield* g.callName(f, live(C), "Jitter", [10]);
-		} else if ($0 === 2) {
-			yield* g.callName(f, live(C), "Knockdown", [40]);
-			rt.modField(f, live(C), "confused", 10, add);
-			rt.modField(f, live(C), "stuttering", 15, add);
-			yield* g.callName(f, live(C), "Jitter", [25]);
+	if (safety != 0) return f.dot;
+	user.audible_message("<font color='red' size='7'>BZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZT</font>");
+	for (C of each(get_hearers_in_view(9, user), T("/mob/living/carbon"))) {
+		const subject = (bang_effect = (yield* C.soundbang_act(2, 0, 0, 5)));
+		if (subject === 1) {
+			C.confused += 5;
+			C.stuttering += 10;
+			C.Jitter(10);
+		} else if (subject === 2) {
+			yield* C.Knockdown(40);
+			C.confused += 10;
+			C.stuttering += 15;
+			C.Jitter(25);
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/machines/warning-buzzer.ogg"), 130, 3]);
-	rt.setSv(f, "cooldown", add(rt.worldTime(f), 600));
-	yield* g.call(f, P("/proc/log_game"), null, [fmt("＀(＀) used an emagged Cyborg Harm Alarm in (＀,＀,＀)", [rt.fv(f, "ckey", live(user)), live(user), rt.fv(f, "x", live(user)), rt.fv(f, "y", live(user)), rt.fv(f, "z", live(user))])]);
+	playsound(rt.getStep(f, this, 0), rt.rsc("sound/machines/warning-buzzer.ogg"), 130, 3);
+	this.cooldown = rt.worldTime(f) + 600;
+	log_game(`${user.ckey}(${user}) used an emagged Cyborg Harm Alarm in (${user.x},${user.y},${user.z})`);
 	return f.dot;
 }, true);
 
@@ -409,152 +382,143 @@ rt.type(9812, "/obj/item/borg/lollipop", "/obj/item/borg", {
 	icon_state: "lollipop",
 });
 
-// /obj/item/borg/lollipop/proc/equipped  (code/game/objects/items/robot/robot_items.dm:355)  may sleep
+// robot_items.dm:355
 rt.def("/obj/item/borg/lollipop/proc/equipped", function* equipped(f: Frame) {
-	yield* g.srcCall(f, "check_amount");
+	yield* this.check_amount();
 	return f.dot;
 }, true);
 
-// /obj/item/borg/lollipop/proc/dropped  (code/game/objects/items/robot/robot_items.dm:358)  may sleep
+// robot_items.dm:358
 rt.def("/obj/item/borg/lollipop/proc/dropped", function* dropped(f: Frame) {
-	yield* g.srcCall(f, "check_amount");
+	yield* this.check_amount();
 	return f.dot;
 }, true);
 
-// /obj/item/borg/lollipop/proc/check_amount  (code/game/objects/items/robot/robot_items.dm:363)  may sleep
+// robot_items.dm:363
 rt.def("/obj/item/borg/lollipop/proc/check_amount", function* check_amount(f: Frame) {
-	if (truthy(rt.sv(f, "charging"))) {
-		return live(f.dot);
+	if (this.charging) {
+		return f.dot;
 	}
-	if (!rt.lt(rt.sv(f, "candy"), rt.sv(f, "candymax"))) return f.dot;
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/item/borg/lollipop/proc/charge_lollipops")])), rt.sv(f, "charge_delay")]);
-	rt.setSv(f, "charging", 1);
+	if (!(this.candy < this.candymax)) return f.dot;
+	yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/item/borg/lollipop/proc/charge_lollipops"))), this.charge_delay);
+	this.charging = 1;
 	return f.dot;
 }, true);
 
-// /obj/item/borg/lollipop/proc/charge_lollipops  (code/game/objects/items/robot/robot_items.dm:368)  may sleep
+// robot_items.dm:368
 rt.def("/obj/item/borg/lollipop/proc/charge_lollipops", function* charge_lollipops(f: Frame) {
-	rt.incSrcVar(f, "candy", 1, true);
-	rt.setSv(f, "charging", 0);
-	yield* g.srcCall(f, "check_amount");
+	this.candy++;
+	this.charging = 0;
+	yield* this.check_amount();
 	return f.dot;
 }, true);
 
-// /obj/item/borg/lollipop/proc/dispense  (code/game/objects/items/robot/robot_items.dm:373)  may sleep
+// robot_items.dm:373
 rt.def("/obj/item/borg/lollipop/proc/dispense", function* dispense(f: Frame, A: Value, user: Value) {
 	let _T: Value = null, O: Value = null;
-	f.vars = () => [A, user, _T, O];
-	if (rt.le(rt.sv(f, "candy"), 0)) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>No lollipops left in storage!</span>"]);
+	if (this.candy <= 0) {
+		to_chat(user, "<span class='warning'>No lollipops left in storage!</span>");
 		return 0;
 	}
-	if (((!truthy((_T = rt.getStep(f, live(A), 0))) || !truthy((rt.istype(live(_T), T("/turf")) ? 1 : 0))) || !truthy((rt.istype(live(_T), T("/turf/open")) ? 1 : 0)))) {
+	if (!(_T = rt.getStep(f, A, 0)) || !rt.istype(_T, T("/turf")) || !rt.istype(_T, T("/turf/open"))) {
 		return 0;
 	}
-	if (truthy((rt.istype(live(A), T("/obj")) ? 1 : 0))) {
-		if (truthy(rt.gv(f, "density", (O = live(A))))) {
+	if (rt.istype(A, T("/obj"))) {
+		if ((O = A).density) {
 			return 0;
 		}
 	}
-	yield* g.new_(f, T("/obj/item/weapon/reagent_containers/food/snacks/lollipop"), [live(_T)]);
-	rt.incSrcVar(f, "candy", -1, true);
-	yield* g.srcCall(f, "check_amount");
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>Dispensing lollipop...</span>"]);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/machines/click.ogg"), 50, 1]);
+	yield* new_(T("/obj/item/weapon/reagent_containers/food/snacks/lollipop"), _T);
+	this.candy--;
+	yield* this.check_amount();
+	to_chat(user, "<span class='notice'>Dispensing lollipop...</span>");
+	playsound(this.loc, rt.rsc("sound/machines/click.ogg"), 50, 1);
 	return 1;
 }, true);
 
-// /obj/item/borg/lollipop/proc/shootL  (code/game/objects/items/robot/robot_items.dm:391)  may sleep
+// robot_items.dm:391
 rt.def("/obj/item/borg/lollipop/proc/shootL", function* shootL(f: Frame, target: Value, user: Value, params: Value) {
 	let A: Value = null;
-	f.vars = () => [target, user, params, A];
-	if (rt.le(rt.sv(f, "candy"), 0)) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>Not enough lollipops left!</span>"]);
+	if (this.candy <= 0) {
+		to_chat(user, "<span class='warning'>Not enough lollipops left!</span>");
 		return 0;
 	}
-	rt.incSrcVar(f, "candy", -1, true);
-	rt.setFv(f, "damage", rt.gv(f, "BB", (A = (yield* g.new_(f, T("/obj/item/ammo_casing/caseless/lollipop"), [live(f.src)])))), rt.sv(f, "hitdamage"));
-	if (truthy(rt.sv(f, "hitdamage"))) {
-		rt.setFv(f, "nodamage", rt.fv(f, "BB", live(A)), 0);
+	this.candy--;
+	(A = (yield* new_(T("/obj/item/ammo_casing/caseless/lollipop"), this))).BB.damage = this.hitdamage;
+	if (this.hitdamage) {
+		A.BB.nodamage = 0;
 	}
-	rt.setFv(f, "speed", rt.fv(f, "BB", live(A)), 0.5);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/machines/click.ogg"), 50, 1]);
-	yield* g.callName(f, live(A), "fire_casing", [live(target), live(user), live(params), 0, 0, null, 0]);
-	yield* g.callName(f, live(user), "visible_message", [fmt("<span class='warning'>＀ blasts a flying lollipop at ＀!</span>", [live(user), live(target)])]);
-	yield* g.srcCall(f, "check_amount");
+	A.BB.speed = 0.5;
+	playsound(this.loc, rt.rsc("sound/machines/click.ogg"), 50, 1);
+	yield* A.fire_casing(target, user, params, 0, 0, null, 0);
+	user.visible_message(`<span class='warning'>${user} blasts a flying lollipop at ${target}!</span>`);
+	yield* this.check_amount();
 	return f.dot;
 }, true);
 
-// /obj/item/borg/lollipop/proc/shootG  (code/game/objects/items/robot/robot_items.dm:406)  may sleep
+// robot_items.dm:406
 rt.def("/obj/item/borg/lollipop/proc/shootG", function* shootG(f: Frame, target: Value, user: Value, params: Value) {
 	let A: Value = null;
-	f.vars = () => [target, user, params, A];
-	if (rt.le(rt.sv(f, "candy"), 0)) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>Not enough gumballs left!</span>"]);
+	if (this.candy <= 0) {
+		to_chat(user, "<span class='warning'>Not enough gumballs left!</span>");
 		return 0;
 	}
-	rt.incSrcVar(f, "candy", -1, true);
-	rt.setFv(f, "damage", rt.gv(f, "BB", (A = (yield* g.new_(f, T("/obj/item/ammo_casing/caseless/gumball"), [live(f.src)])))), rt.sv(f, "hitdamage"));
-	if (truthy(rt.sv(f, "hitdamage"))) {
-		rt.setFv(f, "nodamage", rt.fv(f, "BB", live(A)), 0);
+	this.candy--;
+	(A = (yield* new_(T("/obj/item/ammo_casing/caseless/gumball"), this))).BB.damage = this.hitdamage;
+	if (this.hitdamage) {
+		A.BB.nodamage = 0;
 	}
-	rt.setFv(f, "speed", rt.fv(f, "BB", live(A)), 0.5);
-	rt.setFv(f, "color", rt.fv(f, "BB", live(A)), rt.op(f, "Rgb", [1, 3], [(yield* g.call(f, P("/proc/rand"), null, [0, 255])), (yield* g.call(f, P("/proc/rand"), null, [0, 255])), (yield* g.call(f, P("/proc/rand"), null, [0, 255]))]));
-	yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/weapons/bulletflyby3.ogg"), 50, 1]);
-	yield* g.callName(f, live(A), "fire_casing", [live(target), live(user), live(params), 0, 0, null, 0]);
-	yield* g.callName(f, live(user), "visible_message", [fmt("<span class='warning'>＀ shoots a high-velocity gumball at ＀!</span>", [live(user), live(target)])]);
-	yield* g.srcCall(f, "check_amount");
+	A.BB.speed = 0.5;
+	A.BB.color = rt.op(f, "Rgb", [1, 3], [rand(0, 255), rand(0, 255), rand(0, 255)]);
+	playsound(this.loc, rt.rsc("sound/weapons/bulletflyby3.ogg"), 50, 1);
+	yield* A.fire_casing(target, user, params, 0, 0, null, 0);
+	user.visible_message(`<span class='warning'>${user} shoots a high-velocity gumball at ${target}!</span>`);
+	yield* this.check_amount();
 	return f.dot;
 }, true);
 
-// /obj/item/borg/lollipop/proc/afterattack  (code/game/objects/items/robot/robot_items.dm:422)  may sleep
+// robot_items.dm:422
 rt.def("/obj/item/borg/lollipop/proc/afterattack", function* afterattack(f: Frame, target: Value, user: Value, proximity: Value, click_params: Value) {
 	let R: Value = null;
-	let $0: any;
-	f.vars = () => [target, user, proximity, click_params, R, $0];
-	yield* g.srcCall(f, "check_amount");
-	if (truthy((rt.istype(live(user), T("/mob/living/silicon/robot")) ? 1 : 0))) {
-		if (!truthy((yield* g.callName(f, rt.gv(f, "cell", (R = live(user))), "use", [12])))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>Not enough power.</span>"]);
+	yield* this.check_amount();
+	if (rt.istype(user, T("/mob/living/silicon/robot"))) {
+		if (!(yield* (R = user).cell.use(12))) {
+			to_chat(user, "<span class='warning'>Not enough power.</span>");
 			return 0;
 		}
-		if (truthy(rt.fv(f, "emagged", live(R)))) {
-			rt.setSv(f, "hitdamage", rt.sv(f, "emaggedhitdamage"));
+		if (R.emagged) {
+			this.hitdamage = this.emaggedhitdamage;
 		}
 	}
-	$0 = rt.sv(f, "mode");
-	if ($0 === 1) {
-		if (!truthy(live(proximity))) {
+	if (this.mode === 1) {
+		if (!proximity) {
 			return 0;
 		}
-		yield* g.srcCall(f, "dispense", live(target), live(user));
-	} else if ($0 === 2) {
-		yield* g.srcCall(f, "shootL", live(target), live(user), live(click_params));
-	} else if ($0 === 3) {
-		yield* g.srcCall(f, "shootG", live(target), live(user), live(click_params));
+		yield* this.dispense(target, user);
+	} else if (this.mode === 2) {
+		yield* this.shootL(target, user, click_params);
+	} else if (this.mode === 3) {
+		yield* this.shootG(target, user, click_params);
 	}
-	rt.setSv(f, "hitdamage", rt.initial(f, live(f.src), "hitdamage"));
+	this.hitdamage = rt.initial(f, this, "hitdamage");
 	return f.dot;
 }, true);
 
-// /obj/item/borg/lollipop/proc/attack_self  (code/game/objects/items/robot/robot_items.dm:442)  may sleep
-rt.def("/obj/item/borg/lollipop/proc/attack_self", function* attack_self(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.sv(f, "mode");
-	if ($0 === 1) {
-		rt.incSrcVar(f, "mode", 1, true);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='notice'>Module is now throwing lollipops.</span>"]);
-	} else if ($0 === 2) {
-		rt.incSrcVar(f, "mode", 1, true);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='notice'>Module is now blasting gumballs.</span>"]);
-	} else if ($0 === 3) {
-		rt.setSv(f, "mode", 1);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='notice'>Module is now dispensing lollipops.</span>"]);
+// robot_items.dm:442
+rt.def("/obj/item/borg/lollipop/proc/attack_self", function* attack_self(f: Frame, user: Value) {
+	if (this.mode === 1) {
+		this.mode++;
+		to_chat(user, "<span class='notice'>Module is now throwing lollipops.</span>");
+	} else if (this.mode === 2) {
+		this.mode++;
+		to_chat(user, "<span class='notice'>Module is now blasting gumballs.</span>");
+	} else if (this.mode === 3) {
+		this.mode = 1;
+		to_chat(user, "<span class='notice'>Module is now dispensing lollipops.</span>");
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
 rt.type(8792, "/obj/item/projectile/bullet/reusable/gumball", "/obj/item/projectile/bullet/reusable", {
 	name: "gumball",
@@ -564,14 +528,13 @@ rt.type(8792, "/obj/item/projectile/bullet/reusable/gumball", "/obj/item/project
 	nodamage: 1,
 });
 
-// /obj/item/projectile/bullet/reusable/gumball/proc/handle_drop  (code/game/objects/items/robot/robot_items.dm:469)  may sleep
+// robot_items.dm:469
 rt.def("/obj/item/projectile/bullet/reusable/gumball/proc/handle_drop", function* handle_drop(f: Frame) {
-	let _T: Value = null, S: Value = null;
-	f.vars = () => [_T, S];
-	if (truthy(rt.sv(f, "dropped"))) return f.dot;
-	_T = rt.getStep(f, live(f.src), 0);
-	rt.setFv(f, "color", (S = (yield* g.new_(f, rt.sv(f, "ammo_type"), [live(_T)]))), rt.sv(f, "color"));
-	rt.setSv(f, "dropped", 1);
+	let S: Value = null;
+	if (this.dropped) return f.dot;
+	let _T: Value = rt.getStep(f, this, 0);
+	(S = (yield* new_(this.ammo_type, _T))).color = this.color;
+	this.dropped = 1;
 	return f.dot;
 }, true);
 
@@ -584,24 +547,22 @@ rt.type(8793, "/obj/item/projectile/bullet/reusable/lollipop", "/obj/item/projec
 	nodamage: 1,
 });
 
-// /obj/item/projectile/bullet/reusable/lollipop/proc/New  (code/game/objects/items/robot/robot_items.dm:490)  may sleep
+// robot_items.dm:490
 rt.def("/obj/item/projectile/bullet/reusable/lollipop/proc/New", function* New(f: Frame) {
 	let S: Value = null, head: Value = null;
-	f.vars = () => [S, head];
-	rt.setSv(f, "color2", rt.gv(f, "headcolor", (S = (yield* g.new_(f, rt.sv(f, "ammo_type"), [live(f.src)])))));
-	rt.setFv(f, "color", (head = (yield* g.call(f, P("/proc/mutable_appearance"), null, [rt.rsc("icons/obj/projectiles.dmi"), "lollipop_2"]))), rt.sv(f, "color2"));
-	yield* g.srcCall(f, "add_overlay", live(head));
+	this.color2 = (S = (yield* new_(this.ammo_type, this))).headcolor;
+	(head = mutable_appearance(rt.rsc("icons/obj/projectiles.dmi"), "lollipop_2")).color = this.color2;
+	this.add_overlay(head);
 	return f.dot;
 }, true);
 
-// /obj/item/projectile/bullet/reusable/lollipop/proc/handle_drop  (code/game/objects/items/robot/robot_items.dm:497)  may sleep
+// robot_items.dm:497
 rt.def("/obj/item/projectile/bullet/reusable/lollipop/proc/handle_drop", function* handle_drop(f: Frame) {
-	let _T: Value = null, S: Value = null;
-	f.vars = () => [_T, S];
-	if (truthy(rt.sv(f, "dropped"))) return f.dot;
-	_T = rt.getStep(f, live(f.src), 0);
-	yield* g.callName(f, (S = (yield* g.new_(f, rt.sv(f, "ammo_type"), [live(_T)]))), "change_head_color", [rt.sv(f, "color2")]);
-	rt.setSv(f, "dropped", 1);
+	let S: Value = null;
+	if (this.dropped) return f.dot;
+	let _T: Value = rt.getStep(f, this, 0);
+	(S = (yield* new_(this.ammo_type, _T))).change_head_color(this.color2);
+	this.dropped = 1;
 	return f.dot;
 }, true);
 
@@ -628,187 +589,165 @@ rt.type(9813, "/obj/item/borg/projectile_dampen", "/obj/item/borg", {
 	icon_state: "shield",
 });
 
-// /obj/item/borg/projectile_dampen/proc/Initialize  (code/game/objects/items/robot/robot_items.dm:535)  may sleep
+// robot_items.dm:535
 rt.def("/obj/item/borg/projectile_dampen/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "projectile_effect", (yield* g.call(f, P("/proc/image"), null, [rt.rsc("icons/effects/fields.dmi"), "projectile_dampen_effect"])));
-	rt.setSv(f, "tracked", rt.list());
-	rt.setSv(f, "icon_state", "shield0");
-	if (!truthy(rt.fv(f, "isprocessing", live(f.src)))) {
-		rt.setFv(f, "isprocessing", live(f.src), 1);
-		rt.modField(f, rt.gl("SSfastprocess"), "processing", live(f.src), add);
+	f.dot = (yield* parent_proc());
+	this.projectile_effect = image(rt.rsc("icons/effects/fields.dmi"), "projectile_dampen_effect");
+	this.tracked = list();
+	this.icon_state = "shield0";
+	if (!this.isprocessing) {
+		this.isprocessing = 1;
+		GLOB.SSfastprocess.processing += this;
 	}
-	rt.setSv(f, "host", rt.sv(f, "loc"));
+	this.host = this.loc;
 	return f.dot;
 }, true);
 
-// /obj/item/borg/projectile_dampen/proc/Destroy  (code/game/objects/items/robot/robot_items.dm:543)  may sleep
+// robot_items.dm:543
 rt.def("/obj/item/borg/projectile_dampen/proc/Destroy", function* Destroy(f: Frame) {
-	rt.setFv(f, "isprocessing", live(f.src), 0);
-	(rt.modField(f, rt.gl("SSfastprocess"), "processing", live(f.src), subtract));
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	this.isprocessing = 0;
+	GLOB.SSfastprocess.processing -= this;
+	return (yield* parent_proc());
 }, true);
 
-// /obj/item/borg/projectile_dampen/proc/attack_self  (code/game/objects/items/robot/robot_items.dm:547)  may sleep
+// robot_items.dm:547
 rt.def("/obj/item/borg/projectile_dampen/proc/attack_self", function* attack_self(f: Frame, user: Value) {
-	let $0: any, $1: any;
-	f.vars = () => [user, $0, $1];
-	if (rt.gt(rt.sv(f, "cycle_delay"), rt.worldTime(f))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='boldwarning'>％！ is still recycling its projectors!</span>", [live(f.src)])]);
-		return live(f.dot);
+	if (this.cycle_delay > rt.worldTime(f)) {
+		to_chat(user, fmt("<span class='boldwarning'>％！ is still recycling its projectors!</span>", [this]));
+		return f.dot;
 	}
-	rt.setSv(f, "cycle_delay", add(rt.worldTime(f), 20));
-	rt.setSv(f, "active", (!truthy(rt.sv(f, "active")) ? 1 : 0));
-	if (truthy(rt.sv(f, "active"))) {
-		yield* g.srcCall(f, "activate_field", live(user));
+	this.cycle_delay = rt.worldTime(f) + 20;
+	this.active = (!this.active ? 1 : 0);
+	if (this.active) {
+		yield* this.activate_field(user);
 	} else {
-		yield* g.srcCall(f, "deactivate_field");
+		yield* this.deactivate_field();
 	}
-	yield* g.srcCall(f, "update_icon");
-	$0 = live(user);
-	if (truthy(rt.sv(f, "active"))) {
-		$1 = "activate";
-	} else {
-		$1 = "deactivate";
-	}
-	yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='boldnotice'>You ＀ the ＀.</span>", [$1, live(f.src)])]);
+	yield* this.update_icon();
+	let $0: any = user;
+	to_chat($0, `<span class='boldnotice'>You ${this.active ? "activate" : "deactivate"} the ${this}.</span>`);
 	return f.dot;
 }, true);
 
-// /obj/item/borg/projectile_dampen/proc/update_icon  (code/game/objects/items/robot/robot_items.dm:560)
+// robot_items.dm:560
 rt.def("/obj/item/borg/projectile_dampen/proc/update_icon", function update_icon(f: Frame) {
-	rt.setSv(f, "icon_state", fmt("＀＀", [rt.initial(f, live(f.src), "icon_state"), rt.sv(f, "active")]));
+	this.icon_state = `${rt.initial(f, this, "icon_state")}${this.active}`;
 	return f.dot;
 });
 
-// /obj/item/borg/projectile_dampen/proc/activate_field  (code/game/objects/items/robot/robot_items.dm:563)  may sleep
+// robot_items.dm:563
 rt.def("/obj/item/borg/projectile_dampen/proc/activate_field", function* activate_field(f: Frame) {
-	if (truthy((rt.istype(rt.sv(f, "dampening_field"), T("/datum/proximity_monitor/advanced")) ? 1 : 0))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "dampening_field")]);
-		rt.setSv(f, "dampening_field", null);
+	if (rt.istype(this.dampening_field, T("/datum/proximity_monitor/advanced"))) {
+		yield* qdel(this.dampening_field);
+		this.dampening_field = null;
 	}
-	rt.setSv(f, "dampening_field", (yield* g.call(f, P("/proc/make_field"), null, [T("/datum/proximity_monitor/advanced/peaceborg_dampener"), rt.alist(f, ["current_range", rt.sv(f, "field_radius"), "host", live(f.src), "projector", live(f.src)])])));
+	this.dampening_field = (yield* make_field(T("/datum/proximity_monitor/advanced/peaceborg_dampener"), rt.alist(f, ["current_range", this.field_radius, "host", this, "projector", this])));
 	return f.dot;
 }, true);
 
-// /obj/item/borg/projectile_dampen/proc/deactivate_field  (code/game/objects/items/robot/robot_items.dm:568)  may sleep
+// robot_items.dm:568
 rt.def("/obj/item/borg/projectile_dampen/proc/deactivate_field", function* deactivate_field(f: Frame) {
 	let _P: Value = null;
-	let $e: any;
-	f.vars = () => [_P, $e];
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "dampening_field")]);
-	rt.setSv(f, "dampening_field", null);
-	yield* g.srcCall(f, "visible_message", fmt("<span class='warning'>＄！ shuts off!</span>", [live(f.src)]));
-	_P = null;
-	rt.forList(f, 0, rt.sv(f, "tracked"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_P = $e;
-		yield* g.srcCall(f, "restore_projectile", live(_P));
+	yield* qdel(this.dampening_field);
+	this.dampening_field = null;
+	this.visible_message(fmt("<span class='warning'>＄！ shuts off!</span>", [this]));
+	for (_P of each(this.tracked)) {
+		this.restore_projectile(_P);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /obj/item/borg/projectile_dampen/proc/dropped  (code/game/objects/items/robot/robot_items.dm:574)  may sleep
+// robot_items.dm:574
 rt.def("/obj/item/borg/projectile_dampen/proc/dropped", function* dropped(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "host", rt.sv(f, "loc"));
+	f.dot = (yield* parent_proc());
+	this.host = this.loc;
 	return f.dot;
 }, true);
 
-// /obj/item/borg/projectile_dampen/proc/equipped  (code/game/objects/items/robot/robot_items.dm:578)  may sleep
+// robot_items.dm:578
 rt.def("/obj/item/borg/projectile_dampen/proc/equipped", function* equipped(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "host", rt.sv(f, "loc"));
+	f.dot = (yield* parent_proc());
+	this.host = this.loc;
 	return f.dot;
 }, true);
 
-// /obj/item/borg/projectile_dampen/proc/on_mob_death  (code/game/objects/items/robot/robot_items.dm:582)  may sleep
+// robot_items.dm:582
 rt.def("/obj/item/borg/projectile_dampen/proc/on_mob_death", function* on_mob_death(f: Frame) {
-	yield* g.srcCall(f, "deactivate_field");
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* this.deactivate_field();
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true);
 
-// /obj/item/borg/projectile_dampen/proc/process  (code/game/objects/items/robot/robot_items.dm:586)  may sleep
+// robot_items.dm:586
 rt.def("/obj/item/borg/projectile_dampen/proc/process", function* process(f: Frame) {
-	yield* g.srcCall(f, "process_recharge");
-	yield* g.srcCall(f, "process_usage");
-	yield* g.srcCall(f, "update_location");
+	yield* this.process_recharge();
+	yield* this.process_usage();
+	yield* this.update_location();
 	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/item/borg/projectile_dampen/proc/update_location  (code/game/objects/items/robot/robot_items.dm:592)  may sleep
+// robot_items.dm:592
 rt.def("/obj/item/borg/projectile_dampen/proc/update_location", function* update_location(f: Frame) {
-	if (!truthy(rt.sv(f, "dampening_field"))) return f.dot;
-	yield* g.callName(f, rt.sv(f, "dampening_field"), "HandleMove", []);
+	if (!this.dampening_field) return f.dot;
+	yield* this.dampening_field.HandleMove();
 	return f.dot;
 }, true);
 
-// /obj/item/borg/projectile_dampen/proc/process_usage  (code/game/objects/items/robot/robot_items.dm:596)  may sleep
+// robot_items.dm:596
 rt.def("/obj/item/borg/projectile_dampen/proc/process_usage", function* process_usage(f: Frame) {
-	let usage: Value = null, I: Value = null, _P: Value = null;
-	let $e: any;
-	f.vars = () => [usage, I, _P, $e];
-	usage = 0;
-	I = null;
-	rt.forList(f, 0, rt.sv(f, "tracked"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		if ((!truthy(rt.gv(f, "stun", (_P = live(I)))) && truthy(rt.fv(f, "nodamage", live(_P))))) {
+	let I: Value = null, _P: Value = null;
+	let usage: Value = 0;
+	for (I of each(this.tracked)) {
+		if (!(_P = I).stun && _P.nodamage) {
 			continue;
 		}
-		usage = rt.modify(live(usage), rt.sv(f, "projectile_tick_speed_ecost"), add);
-		usage = rt.modify(live(usage), multiply(rt.index(rt.sv(f, "tracked"), live(I)), rt.sv(f, "projectile_damage_tick_ecost_coefficient")), add);
+		usage += this.projectile_tick_speed_ecost;
+		usage += rt.index(this.tracked, I) * this.projectile_damage_tick_ecost_coefficient;
 	}
-	rt.endFor(f, 0);
-	rt.setSv(f, "energy", (yield* g.call(f, P("/proc/max"), null, [0, (yield* g.call(f, P("/proc/min"), null, [subtract(rt.sv(f, "energy"), live(usage)), rt.sv(f, "maxenergy")]))])));
-	if (!rt.le(rt.sv(f, "energy"), 0)) return f.dot;
-	yield* g.srcCall(f, "deactivate_field");
-	yield* g.srcCall(f, "visible_message", fmt("<span class='warning'>The ＀ blinks \"ENERGY DEPLETED\"</span>", [live(f.src)]));
+	this.energy = max(0, min(this.energy - usage, this.maxenergy));
+	if (!(this.energy <= 0)) return f.dot;
+	yield* this.deactivate_field();
+	this.visible_message(`<span class='warning'>The ${this} blinks "ENERGY DEPLETED"</span>`);
 	return f.dot;
 }, true);
 
-// /obj/item/borg/projectile_dampen/proc/process_recharge  (code/game/objects/items/robot/robot_items.dm:608)  may sleep
+// robot_items.dm:608
 rt.def("/obj/item/borg/projectile_dampen/proc/process_recharge", function* process_recharge(f: Frame) {
-	if (!truthy((rt.istype(rt.sv(f, "host"), T("/mob/living/silicon/robot")) ? 1 : 0))) {
-		if (truthy((rt.istype(rt.fv(f, "loc", rt.sv(f, "host")), T("/mob/living/silicon/robot")) ? 1 : 0))) {
-			rt.setSv(f, "host", rt.fv(f, "loc", rt.sv(f, "host")));
+	if (!rt.istype(this.host, T("/mob/living/silicon/robot"))) {
+		if (rt.istype(this.host.loc, T("/mob/living/silicon/robot"))) {
+			this.host = this.host.loc;
 		} else {
-			rt.setSv(f, "energy", (yield* g.call(f, P("/proc/max"), null, [0, (yield* g.call(f, P("/proc/min"), null, [add(rt.sv(f, "energy"), rt.sv(f, "energy_recharge")), rt.sv(f, "maxenergy")]))])));
-			return live(f.dot);
+			this.energy = max(0, min(this.energy + this.energy_recharge, this.maxenergy));
+			return f.dot;
 		}
 	}
-	if (!(rt.ge(rt.gv(f, "charge", rt.fv(f, "cell", rt.sv(f, "host"))), multiply(rt.gv(f, "maxcharge", rt.fv(f, "cell", rt.sv(f, "host"))), rt.sv(f, "cyborg_cell_critical_percentage"))) && rt.lt(rt.sv(f, "energy"), rt.sv(f, "maxenergy")))) return f.dot;
-	yield* g.callName(f, rt.fv(f, "cell", rt.sv(f, "host")), "use", [multiply(rt.sv(f, "energy_recharge"), rt.sv(f, "energy_recharge_cyborg_drain_coefficient"))]);
-	rt.modSrcVar(f, "energy", rt.sv(f, "energy_recharge"), add);
+	if (!(this.host.cell.charge >= this.host.cell.maxcharge * this.cyborg_cell_critical_percentage && this.energy < this.maxenergy)) return f.dot;
+	yield* this.host.cell.use(this.energy_recharge * this.energy_recharge_cyborg_drain_coefficient);
+	this.energy += this.energy_recharge;
 	return f.dot;
 }, true);
 
-// /obj/item/borg/projectile_dampen/proc/dampen_projectile  (code/game/objects/items/robot/robot_items.dm:619)
+// robot_items.dm:619
 rt.def("/obj/item/borg/projectile_dampen/proc/dampen_projectile", function dampen_projectile(f: Frame, _P: Value, track_projectile: Value) {
-	f.vars = () => [track_projectile];
-	if (live(track_projectile) === null) {
-		track_projectile = 1;
+	track_projectile ??= 1;
+	if (rt.index(this.tracked, _P)) {
+		return f.dot;
 	}
-	if (truthy(rt.index(rt.sv(f, "tracked"), live(_P)))) {
-		return live(f.dot);
+	if (track_projectile) {
+		rt.setAt(this.tracked, _P, _P.damage);
 	}
-	if (truthy(live(track_projectile))) {
-		rt.setAt(rt.sv(f, "tracked"), live(_P), rt.fv(f, "damage", live(_P)));
-	}
-	(rt.modField(f, live(_P), "damage", rt.sv(f, "projectile_damage_coefficient"), multiply));
-	(rt.modField(f, live(_P), "speed", rt.sv(f, "projectile_speed_coefficient"), multiply));
-	rt.callName(f, live(_P), "add_overlay", [rt.sv(f, "projectile_effect")]);
+	_P.damage *= this.projectile_damage_coefficient;
+	_P.speed *= this.projectile_speed_coefficient;
+	_P.add_overlay(this.projectile_effect);
 	return f.dot;
 });
 
-// /obj/item/borg/projectile_dampen/proc/restore_projectile  (code/game/objects/items/robot/robot_items.dm:628)
+// robot_items.dm:628
 rt.def("/obj/item/borg/projectile_dampen/proc/restore_projectile", function restore_projectile(f: Frame, _P: Value) {
-	(rt.modSrcVar(f, "tracked", live(_P), subtract));
-	(rt.modField(f, live(_P), "damage", divide(1, rt.sv(f, "projectile_damage_coefficient")), multiply));
-	(rt.modField(f, live(_P), "speed", divide(1, rt.sv(f, "projectile_speed_coefficient")), multiply));
-	rt.callName(f, live(_P), "cut_overlay", [rt.sv(f, "projectile_effect")]);
+	this.tracked -= _P;
+	_P.damage *= 1 / this.projectile_damage_coefficient;
+	_P.speed *= 1 / this.projectile_speed_coefficient;
+	_P.cut_overlay(this.projectile_effect);
 	return f.dot;
 });
 
@@ -817,11 +756,11 @@ rt.type(9822, "/obj/item/borg/sight/hud/med", "/obj/item/borg/sight/hud", {
 	icon_state: "healthhud",
 });
 
-// /obj/item/borg/sight/hud/med/proc/New  (code/game/objects/items/robot/robot_items.dm:677)  may sleep
+// robot_items.dm:677
 rt.def("/obj/item/borg/sight/hud/med/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "hud", (yield* g.new_(f, T("/obj/item/clothing/glasses/hud/health"), [live(f.src)])));
-	return live(f.dot);
+	yield* parent_proc();
+	this.hud = (yield* new_(T("/obj/item/clothing/glasses/hud/health"), this));
+	return f.dot;
 }, true);
 
 rt.type(9823, "/obj/item/borg/sight/hud/sec", "/obj/item/borg/sight/hud", {
@@ -829,9 +768,9 @@ rt.type(9823, "/obj/item/borg/sight/hud/sec", "/obj/item/borg/sight/hud", {
 	icon_state: "securityhud",
 });
 
-// /obj/item/borg/sight/hud/sec/proc/New  (code/game/objects/items/robot/robot_items.dm:687)  may sleep
+// robot_items.dm:687
 rt.def("/obj/item/borg/sight/hud/sec/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "hud", (yield* g.new_(f, T("/obj/item/clothing/glasses/hud/security"), [live(f.src)])));
-	return live(f.dot);
+	yield* parent_proc();
+	this.hud = (yield* new_(T("/obj/item/clothing/glasses/hud/security"), this));
+	return f.dot;
 }, true);

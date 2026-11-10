@@ -1,7 +1,7 @@
-// From code/game/gamemodes/changeling/powers/panacea.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/gamemodes/changeling/powers/panacea.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(11246, "/obj/effect/proc_holder/changeling/panacea", "/obj/effect/proc_holder/changeling", {
@@ -13,37 +13,27 @@ rt.type(11246, "/obj/effect/proc_holder/changeling/panacea", "/obj/effect/proc_h
 	desc: "Expels impurifications from our form; curing diseases, removing parasites, sobering us, purging toxins and radiation, and resetting our genetic code completely.",
 });
 
-// /obj/effect/proc_holder/changeling/panacea/proc/sting_action  (code/game/gamemodes/changeling/powers/panacea.dm:11)  may sleep
+// panacea.dm:11
 rt.def("/obj/effect/proc_holder/changeling/panacea/proc/sting_action", function* sting_action(f: Frame, user: Value) {
-	let bad_organs: Value = null, o: Value = null, O: Value = null, C: Value = null, D: Value = null;
-	let $e: any;
-	f.vars = () => [user, bad_organs, o, O, C, D, $e];
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>We cleanse impurities from our form.</span>"]);
-	bad_organs = rt.list((yield* g.callName(f, live(user), "getorgan", [T("/obj/item/organ/body_egg")])), (yield* g.callName(f, live(user), "getorgan", [T("/obj/item/organ/zombie_infection")])));
-	o = null;
-	rt.forList(f, 0, live(bad_organs));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		o = $e;
-		if (!truthy((rt.istype((O = live(o)), T("/obj/item/organ")) ? 1 : 0))) {
+	let o: Value = null, O: Value = null, C: Value = null, D: Value = null;
+	to_chat(user, "<span class='notice'>We cleanse impurities from our form.</span>");
+	let bad_organs: Value = list(user.getorgan(T("/obj/item/organ/body_egg")), user.getorgan(T("/obj/item/organ/zombie_infection")));
+	for (o of each(bad_organs)) {
+		if (!rt.istype((O = o), T("/obj/item/organ"))) {
 			continue;
 		}
-		yield* g.callName(f, live(O), "Remove", [live(user)]);
-		if (truthy((rt.istype(live(user), T("/mob/living/carbon")) ? 1 : 0))) {
-			yield* g.callName(f, (C = live(user)), "vomit", [null, 0, "toxic", 1], rt.Args.Named);
+		yield* O.Remove(user);
+		if (rt.istype(user, T("/mob/living/carbon"))) {
+			yield* (C = user).vomit(0, { toxic: 1 });
 		}
-		yield* g.callName(f, live(O), "forceMove", [rt.getStep(f, live(user), 0)]);
+		yield* O.forceMove(rt.getStep(f, user, 0));
 	}
-	rt.endFor(f, 0);
-	yield* g.callName(f, rt.fv(f, "reagents", live(user)), "add_reagent", ["mutadone", 10]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(user)), "add_reagent", ["pen_acid", 20]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(user)), "add_reagent", ["antihol", 10]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(user)), "add_reagent", ["mannitol", 25]);
-	D = null;
-	rt.forList(f, 0, rt.fv(f, "viruses", live(user)), T("/datum/disease"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		D = $e;
-		yield* g.callName(f, live(D), "cure", []);
+	yield* user.reagents.add_reagent("mutadone", 10);
+	yield* user.reagents.add_reagent("pen_acid", 20);
+	yield* user.reagents.add_reagent("antihol", 10);
+	yield* user.reagents.add_reagent("mannitol", 25);
+	for (D of each(user.viruses, T("/datum/disease"))) {
+		yield* D.cure();
 	}
-	rt.endFor(f, 0);
 	return 1;
 }, true);

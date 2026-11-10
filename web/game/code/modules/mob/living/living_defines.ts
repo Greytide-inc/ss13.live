@@ -1,7 +1,7 @@
-// From code/modules/mob/living/living_defines.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/living_defines.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(4809, "/mob/living", "/mob", {
@@ -58,19 +58,17 @@ rt.type(4809, "/mob/living", "/mob", {
 	see_in_dark: 2,
 });
 
-// /mob/living/proc/<init>  (code/modules/mob/living/living_defines.dm:30)
+// living_defines.dm:30
 rt.def("/mob/living/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "hud_possible", rt.list("1", "2", "15"));
-	$0 = $0;
-	rt.setSv(f, "surgeries", rt.list());
-	$0 = $0;
-	rt.setSv(f, "staticOverlays", rt.list());
-	$0 = $0;
-	rt.setSv(f, "pipes_shown", rt.list());
-	$0 = $0;
-	rt.setSv(f, "weather_immunities", rt.list());
+	parent_proc();
+	this.hud_possible = list("1", "2", "15");
+
+	this.surgeries = list();
+
+	this.staticOverlays = list();
+
+	this.pipes_shown = list();
+
+	this.weather_immunities = list();
 	return f.dot;
 });

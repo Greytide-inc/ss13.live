@@ -1,7 +1,7 @@
-// From code/modules/surgery/organs/autosurgeon.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/surgery/organs/autosurgeon.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(9431, "/obj/item/device/autosurgeon", "/obj/item/device", {
@@ -16,82 +16,75 @@ rt.type(9431, "/obj/item/device/autosurgeon", "/obj/item/device", {
 	w_class: 2,
 });
 
-// /obj/item/device/autosurgeon/proc/Initialize  (code/modules/surgery/organs/autosurgeon.dm:15)  may sleep
-rt.def("/obj/item/device/autosurgeon/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(rt.sv(f, "starting_organ"))) return f.dot;
-	yield* g.srcCall(f, "insert_organ", (yield* g.new_(f, rt.sv(f, "starting_organ"), [live(f.src)])));
+// autosurgeon.dm:15
+rt.def("/obj/item/device/autosurgeon/proc/Initialize", function* Initialize(f: Frame, mapload: Value) {
+	f.dot = (yield* parent_proc());
+	if (!this.starting_organ) return f.dot;
+	yield* this.insert_organ((yield* new_(this.starting_organ, this)));
 	return f.dot;
-}, true, { args: ["mapload"] });
+}, true);
 
-// /obj/item/device/autosurgeon/proc/insert_organ  (code/modules/surgery/organs/autosurgeon.dm:20)  may sleep
+// autosurgeon.dm:20
 rt.def("/obj/item/device/autosurgeon/proc/insert_organ", function* insert_organ(f: Frame, I: Value) {
-	f.vars = () => [I];
-	rt.setSv(f, "storedorgan", live(I));
-	yield* g.callName(f, live(I), "forceMove", [live(f.src)]);
-	rt.setSv(f, "name", fmt("＀ (＀)", [rt.initial(f, live(f.src), "name"), rt.fv(f, "name", rt.sv(f, "storedorgan"))]));
+	this.storedorgan = I;
+	yield* I.forceMove(this);
+	this.name = `${rt.initial(f, this, "name")} (${this.storedorgan.name})`;
 	return f.dot;
 }, true);
 
-// /obj/item/device/autosurgeon/proc/attack_self  (code/modules/surgery/organs/autosurgeon.dm:25)  may sleep
+// autosurgeon.dm:25
 rt.def("/obj/item/device/autosurgeon/proc/attack_self", function* attack_self(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (!truthy(rt.sv(f, "uses"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ has already been used. The tools are dull and won't reactivate.</span>", [live(f.src)])]);
-		return live(f.dot);
-	} else {
-		if (!truthy(rt.sv(f, "storedorgan"))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>＀ currently has no implant stored.</span>", [live(f.src)])]);
-			return live(f.dot);
-		}
+	if (!this.uses) {
+		to_chat(user, `<span class='warning'>${this} has already been used. The tools are dull and won't reactivate.</span>`);
+		return f.dot;
+	} else if (!this.storedorgan) {
+		to_chat(user, `<span class='notice'>${this} currently has no implant stored.</span>`);
+		return f.dot;
 	}
-	yield* g.callName(f, rt.sv(f, "storedorgan"), "Insert", [live(user)]);
-	yield* g.callName(f, live(user), "visible_message", [fmt("<span class='notice'>＀ presses a button on ＀, and you hear a short mechanical noise.</span>", [live(user), live(f.src)]), fmt("<span class='notice'>You feel a sharp sting as ＀ plunges into your body.</span>", [live(f.src)])]);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(user), 0), rt.rsc("sound/weapons/circsawhit.ogg"), 50, 1]);
-	rt.setSv(f, "storedorgan", null);
-	rt.setSv(f, "name", rt.initial(f, live(f.src), "name"));
-	if (!isEqual(rt.sv(f, "uses"), -1)) {
-		rt.incSrcVar(f, "uses", -1, true);
+	yield* this.storedorgan.Insert(user);
+	user.visible_message(`<span class='notice'>${user} presses a button on ${this}, and you hear a short mechanical noise.</span>`, `<span class='notice'>You feel a sharp sting as ${this} plunges into your body.</span>`);
+	playsound(rt.getStep(f, user, 0), rt.rsc("sound/weapons/circsawhit.ogg"), 50, 1);
+	this.storedorgan = null;
+	this.name = rt.initial(f, this, "name");
+	if (this.uses != INFINITE) {
+		this.uses--;
 	}
-	if (truthy(rt.sv(f, "uses"))) return f.dot;
-	rt.setSv(f, "desc", fmt("＀ Looks like it's been used up.", [rt.initial(f, live(f.src), "desc")]));
+	if (this.uses) return f.dot;
+	this.desc = `${rt.initial(f, this, "desc")} Looks like it's been used up.`;
 	return f.dot;
 }, true);
 
-// /obj/item/device/autosurgeon/proc/attackby  (code/modules/surgery/organs/autosurgeon.dm:42)  may sleep
+// autosurgeon.dm:42
 rt.def("/obj/item/device/autosurgeon/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
 	let floorloc: Value = null;
-	f.vars = () => [I, user, params, floorloc];
-	if (truthy(rt.op(f, "IsType", [], [live(I), rt.sv(f, "organ_type")]))) {
-		if (truthy(rt.sv(f, "storedorgan"))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>＀ already has an implant stored.</span>", [live(f.src)])]);
-			return live(f.dot);
-		} else {
-			if (!truthy(rt.sv(f, "uses"))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>＀ has already been used up.</span>", [live(f.src)])]);
-				return live(f.dot);
-			}
+	if (rt.op(f, "IsType", [], [I, this.organ_type])) {
+		if (this.storedorgan) {
+			to_chat(user, `<span class='notice'>${this} already has an implant stored.</span>`);
+			return f.dot;
+		} else if (!this.uses) {
+			to_chat(user, `<span class='notice'>${this} has already been used up.</span>`);
+			return f.dot;
 		}
-		if (!truthy((yield* g.callName(f, live(user), "drop_item", [])))) {
-			return live(f.dot);
+		if (!(yield* user.drop_item())) {
+			return f.dot;
 		}
-		yield* g.callName(f, live(I), "forceMove", [live(f.src)]);
-		rt.setSv(f, "storedorgan", live(I));
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You insert the ＀ into ＀.</span>", [live(I), live(f.src)])]);
+		yield* I.forceMove(this);
+		this.storedorgan = I;
+		to_chat(user, `<span class='notice'>You insert the ${I} into ${this}.</span>`);
 	} else {
-		if (!truthy((rt.istype(live(I), T("/obj/item/weapon/screwdriver")) ? 1 : 0))) return f.dot;
-		if (!truthy(rt.sv(f, "storedorgan"))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>There's no implant in ＀ for you to remove.</span>", [live(f.src)])]);
+		if (!rt.istype(I, T("/obj/item/weapon/screwdriver"))) return f.dot;
+		if (!this.storedorgan) {
+			to_chat(user, `<span class='notice'>There's no implant in ${this} for you to remove.</span>`);
 		} else {
-			rt.modField(f, (floorloc = rt.getStep(f, live(user), 0)), "contents", rt.sv(f, "contents"), add);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You remove the ＀ from ＀.</span>", [rt.sv(f, "storedorgan"), live(f.src)])]);
-			yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(user), 0), rt.fv(f, "usesound", live(I)), 50, 1]);
-			rt.setSv(f, "storedorgan", null);
-			if (!isEqual(rt.sv(f, "uses"), -1)) {
-				rt.incSrcVar(f, "uses", -1, true);
+			(floorloc = rt.getStep(f, user, 0)).contents += this.contents;
+			to_chat(user, `<span class='notice'>You remove the ${this.storedorgan} from ${this}.</span>`);
+			playsound(rt.getStep(f, user, 0), I.usesound, 50, 1);
+			this.storedorgan = null;
+			if (this.uses != INFINITE) {
+				this.uses--;
 			}
-			if (truthy(rt.sv(f, "uses"))) return f.dot;
-			rt.setSv(f, "desc", fmt("＀ Looks like it's been used up.", [rt.initial(f, live(f.src), "desc")]));
+			if (this.uses) return f.dot;
+			this.desc = `${rt.initial(f, this, "desc")} Looks like it's been used up.`;
 		}
 	}
 	return f.dot;

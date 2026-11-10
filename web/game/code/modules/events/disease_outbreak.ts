@@ -1,7 +1,7 @@
-// From code/modules/events/disease_outbreak.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/events/disease_outbreak.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(297, "/datum/round_event/disease_outbreak", "/datum/round_event", {
@@ -9,63 +9,58 @@ rt.type(297, "/datum/round_event/disease_outbreak", "/datum/round_event", {
 	announceWhen: 15,
 });
 
-// /datum/round_event/disease_outbreak/proc/announce  (code/modules/events/disease_outbreak.dm:15)  may sleep
+// disease_outbreak.dm:15
 rt.def("/datum/round_event/disease_outbreak/proc/announce", function* announce(f: Frame) {
-	yield* g.call(f, P("/proc/priority_announce"), null, [fmt("Confirmed outbreak of level 7 viral biohazard aboard ＀. All personnel must contain the outbreak.", [(yield* g.call(f, P("/proc/station_name"), null, []))]), "Biohazard Alert", rt.rsc("sound/ai/outbreak7.ogg")]);
+	yield* priority_announce(`Confirmed outbreak of level 7 viral biohazard aboard ${station_name()}. All personnel must contain the outbreak.`, "Biohazard Alert", rt.rsc("sound/ai/outbreak7.ogg"));
 	return f.dot;
 }, true);
 
-// /datum/round_event/disease_outbreak/proc/setup  (code/modules/events/disease_outbreak.dm:18)
+// disease_outbreak.dm:18
 rt.def("/datum/round_event/disease_outbreak/proc/setup", function setup(f: Frame) {
-	rt.setSv(f, "announceWhen", rt.call(f, P("/proc/rand"), null, [15, 30]));
+	this.announceWhen = rand(15, 30);
 	return f.dot;
 });
 
-// /datum/round_event/disease_outbreak/proc/start  (code/modules/events/disease_outbreak.dm:21)  may sleep
+// disease_outbreak.dm:21
 rt.def("/datum/round_event/disease_outbreak/proc/start", function* start(f: Frame) {
 	let H: Value = null, _T: Value = null, foundAlready: Value = null, D: Value = null, DS: Value = null;
 	let $e: any;
-	f.vars = () => [H, _T, foundAlready, D, DS, $e];
-	if (!truthy(rt.sv(f, "virus_type"))) {
-		rt.setSv(f, "virus_type", rt.op(f, "PickUnweighted", [5], [T("/datum/disease/dnaspread"), T("/datum/disease/advance/flu"), T("/datum/disease/advance/cold"), T("/datum/disease/brainrot"), T("/datum/disease/magnitis")]));
+	if (!this.virus_type) {
+		this.virus_type = pick(T("/datum/disease/dnaspread"), T("/datum/disease/advance/flu"), T("/datum/disease/advance/cold"), T("/datum/disease/brainrot"), T("/datum/disease/magnitis"));
 	}
-	H = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/shuffle"), null, [rt.gl("living_mob_list")])), T("/mob/living/carbon/human"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		H = $e;
-		if (!truthy((_T = rt.getStep(f, live(H), 0)))) {
+	for (H of each(shuffle(GLOB.living_mob_list), T("/mob/living/carbon/human"))) {
+		if (!(_T = rt.getStep(f, H, 0))) {
 			continue;
 		}
-		if (!isEqual(rt.fv(f, "z", live(_T)), 2)) {
+		if (_T.z != ZLEVEL_STATION) {
 			continue;
 		}
 		foundAlready = 0;
 		D = null;
-		rt.forList(f, 1, rt.fv(f, "viruses", live(H)), T("/datum/disease"));
+		rt.forList(f, 1, H.viruses, T("/datum/disease"));
 		if (($e = rt.next(f, 1)) !== undefined) {
 			D = $e;
 			foundAlready = 1;
 		}
 		rt.endFor(f, 1);
-		if ((isEqual(rt.fv(f, "stat", live(H)), 2) || truthy(live(foundAlready)))) {
+		if (H.stat == 2 || foundAlready) {
 			continue;
 		}
 		D = null;
-		if (isEqual(rt.sv(f, "virus_type"), T("/datum/disease/dnaspread"))) {
-			if ((!truthy(rt.fv(f, "dna", live(H))) || truthy(rt.bitAnd(rt.fv(f, "disabilities", live(H)), 1)))) {
+		if (this.virus_type == T("/datum/disease/dnaspread")) {
+			if (!H.dna || rt.bitAnd(H.disabilities, 1)) {
 				continue;
 			}
-			D = (yield* g.new_(f, rt.sv(f, "virus_type"), []));
-			rt.setAt(rt.gv(f, "strain_data", (DS = live(D))), "name", rt.fv(f, "real_name", live(H)));
-			rt.setAt(rt.fv(f, "strain_data", live(DS)), "UI", rt.gv(f, "uni_identity", rt.fv(f, "dna", live(H))));
-			rt.setAt(rt.fv(f, "strain_data", live(DS)), "SE", rt.gv(f, "struc_enzymes", rt.fv(f, "dna", live(H))));
+			D = (yield* new_(this.virus_type));
+			rt.setAt((DS = D).strain_data, "name", H.real_name);
+			rt.setAt(DS.strain_data, "UI", H.dna.uni_identity);
+			rt.setAt(DS.strain_data, "SE", H.dna.struc_enzymes);
 		} else {
-			D = (yield* g.new_(f, rt.sv(f, "virus_type"), []));
+			D = (yield* new_(this.virus_type));
 		}
-		rt.setFv(f, "carrier", live(D), 1);
-		yield* g.callName(f, live(H), "AddDisease", [live(D)]);
+		D.carrier = 1;
+		yield* H.AddDisease(D);
 		break;
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);

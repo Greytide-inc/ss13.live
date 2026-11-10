@@ -1,7 +1,7 @@
-// From code/modules/mob/living/carbon/human/species_types/flypeople.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/carbon/human/species_types/flypeople.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(4079, "/datum/species/fly", "/datum/species", {
@@ -12,34 +12,32 @@ rt.type(4079, "/datum/species/fly", "/datum/species", {
 	meat: rt.typePath("/obj/item/weapon/reagent_containers/food/snacks/meat/slab/human/mutant/fly"),
 });
 
-// /datum/species/fly/proc/handle_chemicals  (code/modules/mob/living/carbon/human/species_types/flypeople.dm:9)  may sleep
+// flypeople.dm:9
 rt.def("/datum/species/fly/proc/handle_chemicals", function* handle_chemicals(f: Frame, chem: Value, H: Value) {
-	f.vars = () => [chem, H];
-	if (!isEqual(rt.fv(f, "id", live(chem)), "pestkiller")) return f.dot;
-	yield* g.callName(f, live(H), "adjustToxLoss", [3]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(H)), "remove_reagent", [rt.fv(f, "id", live(chem)), 0.4000000059604645]);
+	if (chem.id != "pestkiller") return f.dot;
+	yield* H.adjustToxLoss(3);
+	yield* H.reagents.remove_reagent(chem.id, REAGENTS_METABOLISM);
 	return 1;
 }, true);
 
-// /datum/species/fly/proc/handle_chemicals  (code/modules/mob/living/carbon/human/species_types/flypeople.dm:16)  may sleep
-rt.def("/datum/species/fly/proc/handle_chemicals", function* handle_chemicals(f: Frame) {
+// flypeople.dm:16
+rt.def("/datum/species/fly/proc/handle_chemicals", function* handle_chemicals(f: Frame, chem: Value, H: Value) {
 	let nutri_check: Value = null, pos: Value = null;
-	f.vars = () => [nutri_check, pos];
-	if (truthy((rt.istype(live(f.args[0]), T("/datum/reagent/consumable")) ? 1 : 0))) {
-		if (rt.gt(rt.gv(f, "nutriment_factor", (nutri_check = live(f.args[0]))), 0)) {
-			pos = rt.getStep(f, live(f.args[1]), 0);
-			yield* g.callName(f, live(f.args[1]), "vomit", [0, 0, 0, 2, 1]);
-			yield* g.call(f, P("/proc/playsound"), null, [live(pos), rt.rsc("sound/effects/splat.ogg"), 50, 1]);
-			yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='danger'>＀ vomits on the floor!</span>", [live(f.args[1])]), "<span class='userdanger'>You throw up on the floor!</span>"]);
+	if (rt.istype(chem, T("/datum/reagent/consumable"))) {
+		if ((nutri_check = chem).nutriment_factor > 0) {
+			pos = rt.getStep(f, H, 0);
+			yield* H.vomit(0, 0, 0, 2, 1);
+			playsound(pos, rt.rsc("sound/effects/splat.ogg"), 50, 1);
+			H.visible_message(`<span class='danger'>${H} vomits on the floor!</span>`, "<span class='userdanger'>You throw up on the floor!</span>");
 		}
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["chem", "H"] });
+}, true);
 
-// /datum/species/fly/proc/check_weakness  (code/modules/mob/living/carbon/human/species_types/flypeople.dm:27)
+// flypeople.dm:27
 rt.def("/datum/species/fly/proc/check_weakness", function check_weakness(f: Frame, weapon: Value, attacker: Value) {
-	if (truthy((rt.istype(live(weapon), T("/obj/item/weapon/melee/flyswatter")) ? 1 : 0))) {
+	if (rt.istype(weapon, T("/obj/item/weapon/melee/flyswatter"))) {
 		return 29;
 	}
 	return 0;

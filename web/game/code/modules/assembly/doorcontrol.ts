@@ -1,7 +1,7 @@
-// From code/modules/assembly/doorcontrol.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/assembly/doorcontrol.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(9363, "/obj/item/device/assembly/control", "/obj/item/device/assembly", {
@@ -15,49 +15,39 @@ rt.type(9363, "/obj/item/device/assembly/control", "/obj/item/device/assembly", 
 	origin_tech: "magnets=1;programming=2",
 });
 
-// /obj/item/device/assembly/control/proc/examine  (code/modules/assembly/doorcontrol.dm:12)
-rt.def("/obj/item/device/assembly/control/proc/examine", function examine(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.sv(f, "id"))) return f.dot;
-	rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='notice'>Its channel ID is '＀'.</span>", [rt.sv(f, "id")])]);
+// doorcontrol.dm:12
+rt.def("/obj/item/device/assembly/control/proc/examine", function examine(f: Frame, user: Value) {
+	parent_proc();
+	if (!this.id) return f.dot;
+	to_chat(user, `<span class='notice'>Its channel ID is '${this.id}'.</span>`);
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/item/device/assembly/control/proc/activate  (code/modules/assembly/doorcontrol.dm:20)  may sleep
+// doorcontrol.dm:20
 rt.def("/obj/item/device/assembly/control/proc/activate", function* activate(f: Frame) {
 	let openclose: Value = null, M: Value = null;
-	let $e: any;
-	f.vars = () => [openclose, M, $e];
-	rt.setSv(f, "cooldown", 1);
-	openclose = null;
-	M = null;
-	rt.forList(f, 0, rt.gl("machines"), T("/obj/machinery/door/poddoor"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if (isEqual(rt.fv(f, "id", live(M)), rt.fv(f, "id", live(f.src)))) {
-			if (live(openclose) === null) {
-				openclose = rt.fv(f, "density", live(M));
-			}
+	this.cooldown = 1;
+	for (M of each(GLOB.machines, T("/obj/machinery/door/poddoor"))) {
+		if (M.id == this.id) {
+			openclose ??= M.density;
 			rt.spawnTail(f, 0, "/obj/item/device/assembly/control/proc/activate: spawn at modules/assembly/doorcontrol.dm:24", openclose, M);
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/sleep"), null, [10]);
-	rt.setSv(f, "cooldown", 0);
+	yield* sleep(10);
+	this.cooldown = 0;
 	return f.dot;
 }, true);
 
 // a spawn(0) body of /obj/item/device/assembly/control/proc/activate, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/obj/item/device/assembly/control/proc/activate: spawn at modules/assembly/doorcontrol.dm:24", function* (f: Frame, openclose: Value, M: Value) {
-	f.vars = () => [openclose, M];
-	if (truthy(live(M))) {
-		if (truthy(live(openclose))) {
-			yield* g.callName(f, live(M), "open", []);
+	if (M) {
+		if (openclose) {
+			yield* M.open();
 		} else {
-			yield* g.callName(f, live(M), "close", []);
+			yield* M.close();
 		}
 	}
-	return live(f.dot);
+	return f.dot;
 });
 
 rt.type(9364, "/obj/item/device/assembly/control/airlock", "/obj/item/device/assembly/control", {
@@ -67,64 +57,56 @@ rt.type(9364, "/obj/item/device/assembly/control/airlock", "/obj/item/device/ass
 	desc: "A small electronic device able to control an airlock remotely.",
 });
 
-// /obj/item/device/assembly/control/airlock/proc/activate  (code/modules/assembly/doorcontrol.dm:51)  may sleep
+// doorcontrol.dm:51
 rt.def("/obj/item/device/assembly/control/airlock/proc/activate", function* activate(f: Frame) {
-	let doors_need_closing: Value = null, open_or_close: Value = null, D: Value = null;
+	let D: Value = null;
 	let $0: any, $1: any, $e: any;
-	f.vars = () => [doors_need_closing, open_or_close, D, $0, $1, $e];
-	rt.setSv(f, "cooldown", 1);
-	doors_need_closing = 0;
-	open_or_close = rt.list();
-	D = null;
-	rt.forList(f, 0, rt.gl("airlocks"), T("/obj/machinery/door/airlock"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		D = $e;
-		if (isEqual(rt.fv(f, "id_tag", live(D)), rt.fv(f, "id", live(f.src)))) {
-			if (truthy(rt.bitAnd(rt.sv(f, "specialfunctions"), 1))) {
-				open_or_close = rt.modify(live(open_or_close), live(D), add);
-				if (!truthy(rt.fv(f, "density", live(D)))) {
+	this.cooldown = 1;
+	let doors_need_closing: Value = 0;
+	let open_or_close: Value = list();
+	for (D of each(GLOB.airlocks, T("/obj/machinery/door/airlock"))) {
+		if (D.id_tag == this.id) {
+			if (rt.bitAnd(this.specialfunctions, 1)) {
+				open_or_close += D;
+				if (!D.density) {
 					doors_need_closing = 1;
 				}
 			}
-			if (truthy(rt.bitAnd(rt.sv(f, "specialfunctions"), 2))) {
-				rt.setFv(f, "aiDisabledIdScanner", live(D), (!truthy(rt.fv(f, "aiDisabledIdScanner", live(D))) ? 1 : 0));
+			if (rt.bitAnd(this.specialfunctions, 2)) {
+				D.aiDisabledIdScanner = (!D.aiDisabledIdScanner ? 1 : 0);
 			}
-			if (truthy(rt.bitAnd(rt.sv(f, "specialfunctions"), 4))) {
-				if ((!truthy((yield* g.callName(f, rt.fv(f, "wires", live(D)), "is_cut", ["Bolts"]))) && truthy((yield* g.callName(f, live(D), "hasPower", []))))) {
-					rt.setFv(f, "locked", live(D), (!truthy(rt.fv(f, "locked", live(D))) ? 1 : 0));
-					yield* g.callName(f, live(D), "update_icon", []);
+			if (rt.bitAnd(this.specialfunctions, BOLTS)) {
+				if (!D.wires.is_cut("Bolts") && D.hasPower()) {
+					D.locked = (!D.locked ? 1 : 0);
+					yield* D.update_icon();
 				}
 			}
-			if (truthy(rt.bitAnd(rt.sv(f, "specialfunctions"), 8))) {
-				if (truthy(rt.fv(f, "secondsElectrified", live(D)))) {
-					rt.setFv(f, "secondsElectrified", live(D), -1);
-					rt.modField(f, live(D), "shockedby", fmt("[＀]＀(ckey:＀)", [(yield* g.call(f, P("/proc/time_stamp"), null, [])), live(f.usr), rt.fv(f, "ckey", live(f.usr))]), add);
-					yield* g.call(f, P("/proc/add_logs"), null, [live(f.usr), live(D), "electrified"]);
+			if (rt.bitAnd(this.specialfunctions, 8)) {
+				if (D.secondsElectrified) {
+					D.secondsElectrified = -1;
+					D.shockedby += `[${time_stamp()}]${f.usr}(ckey:${f.usr.ckey})`;
+					add_logs(f.usr, D, "electrified");
 				} else {
-					rt.setFv(f, "secondsElectrified", live(D), 0);
+					D.secondsElectrified = 0;
 				}
 			}
-			if (truthy(rt.bitAnd(rt.sv(f, "specialfunctions"), 16))) {
-				rt.setFv(f, "safe", live(D), (!truthy(rt.fv(f, "safe", live(D))) ? 1 : 0));
+			if (rt.bitAnd(this.specialfunctions, 16)) {
+				D.safe = (!D.safe ? 1 : 0);
 			}
 		}
 	}
-	rt.endFor(f, 0);
 	D = null;
-	rt.forList(f, 0, live(open_or_close));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		D = $e;
-		$0 = live(D);
-		if (truthy(live(doors_need_closing))) {
+	for (D of each(open_or_close)) {
+		$0 = D;
+		if (doors_need_closing) {
 			$1 = P("/obj/machinery/door/airlock/proc/close");
 		} else {
 			$1 = P("/obj/machinery/door/airlock/proc/open");
 		}
-		yield* g.call(f, P("/proc/ImmediateInvokeAsync"), null, [$0, $1]);
+		yield* ImmediateInvokeAsync($0, $1);
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/sleep"), null, [10]);
-	rt.setSv(f, "cooldown", 0);
+	yield* sleep(10);
+	this.cooldown = 0;
 	return f.dot;
 }, true);
 
@@ -133,57 +115,43 @@ rt.type(9365, "/obj/item/device/assembly/control/massdriver", "/obj/item/device/
 	desc: "A small electronic device able to control a mass driver.",
 });
 
-// /obj/item/device/assembly/control/massdriver/proc/activate  (code/modules/assembly/doorcontrol.dm:87)  may sleep
+// doorcontrol.dm:87
 rt.def("/obj/item/device/assembly/control/massdriver/proc/activate", function* activate(f: Frame) {
 	let M: Value = null;
-	let $e: any;
-	f.vars = () => [M, $e];
-	rt.setSv(f, "cooldown", 1);
-	M = null;
-	rt.forList(f, 0, rt.gl("machines"), T("/obj/machinery/door/poddoor"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if (isEqual(rt.fv(f, "id", live(M)), rt.fv(f, "id", live(f.src)))) {
+	this.cooldown = 1;
+	for (M of each(GLOB.machines, T("/obj/machinery/door/poddoor"))) {
+		if (M.id == this.id) {
 			rt.spawnTail(f, 0, "/obj/item/device/assembly/control/massdriver/proc/activate: spawn at modules/assembly/doorcontrol.dm:89", M);
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/sleep"), null, [10]);
+	yield* sleep(10);
 	M = null;
-	rt.forList(f, 0, rt.gl("machines"), T("/obj/machinery/mass_driver"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if (isEqual(rt.fv(f, "id", live(M)), rt.fv(f, "id", live(f.src)))) {
-			yield* g.callName(f, live(M), "drive", []);
+	for (M of each(GLOB.machines, T("/obj/machinery/mass_driver"))) {
+		if (M.id == this.id) {
+			yield* M.drive();
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/sleep"), null, [60]);
+	yield* sleep(60);
 	M = null;
-	rt.forList(f, 0, rt.gl("machines"), T("/obj/machinery/door/poddoor"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if (isEqual(rt.fv(f, "id", live(M)), rt.fv(f, "id", live(f.src)))) {
+	for (M of each(GLOB.machines, T("/obj/machinery/door/poddoor"))) {
+		if (M.id == this.id) {
 			rt.spawnTail(f, 0, "/obj/item/device/assembly/control/massdriver/proc/activate: spawn at modules/assembly/doorcontrol.dm:102", M);
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/sleep"), null, [10]);
-	rt.setSv(f, "cooldown", 0);
+	yield* sleep(10);
+	this.cooldown = 0;
 	return f.dot;
 }, true);
 
 // a spawn(0) body of /obj/item/device/assembly/control/massdriver/proc/activate, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/obj/item/device/assembly/control/massdriver/proc/activate: spawn at modules/assembly/doorcontrol.dm:102", function* (f: Frame, M: Value) {
-	f.vars = () => [M];
-	yield* g.callName(f, live(M), "close", []);
+	yield* M.close();
 	return null;
 });
 
 // a spawn(0) body of /obj/item/device/assembly/control/massdriver/proc/activate, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/obj/item/device/assembly/control/massdriver/proc/activate: spawn at modules/assembly/doorcontrol.dm:89", function* (f: Frame, M: Value) {
-	f.vars = () => [M];
-	yield* g.callName(f, live(M), "open", []);
+	yield* M.open();
 	return null;
 });
 
@@ -192,41 +160,31 @@ rt.type(9366, "/obj/item/device/assembly/control/igniter", "/obj/item/device/ass
 	desc: "A remote controller for a mounted igniter.",
 });
 
-// /obj/item/device/assembly/control/igniter/proc/activate  (code/modules/assembly/doorcontrol.dm:115)  may sleep
+// doorcontrol.dm:115
 rt.def("/obj/item/device/assembly/control/igniter/proc/activate", function* activate(f: Frame) {
 	let M: Value = null;
-	let $e: any;
-	f.vars = () => [M, $e];
-	rt.setSv(f, "cooldown", 1);
-	M = null;
-	rt.forList(f, 0, rt.gl("machines"), T("/obj/machinery/sparker"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if (isEqual(rt.fv(f, "id", live(M)), rt.fv(f, "id", live(f.src)))) {
+	this.cooldown = 1;
+	for (M of each(GLOB.machines, T("/obj/machinery/sparker"))) {
+		if (M.id == this.id) {
 			rt.spawnTail(f, 0, "/obj/item/device/assembly/control/igniter/proc/activate: spawn at modules/assembly/doorcontrol.dm:117", M);
 		}
 	}
-	rt.endFor(f, 0);
 	M = null;
-	rt.forList(f, 0, rt.gl("machines"), T("/obj/machinery/igniter"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if (isEqual(rt.fv(f, "id", live(M)), rt.fv(f, "id", live(f.src)))) {
-			yield* g.callName(f, live(M), "use_power", [50]);
-			rt.setFv(f, "on", live(M), (!truthy(rt.fv(f, "on", live(M))) ? 1 : 0));
-			rt.setFv(f, "icon_state", live(M), fmt("igniter＀", [rt.fv(f, "on", live(M))]));
+	for (M of each(GLOB.machines, T("/obj/machinery/igniter"))) {
+		if (M.id == this.id) {
+			yield* M.use_power(50);
+			M.on = (!M.on ? 1 : 0);
+			M.icon_state = `igniter${M.on}`;
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/sleep"), null, [30]);
-	rt.setSv(f, "cooldown", 0);
+	yield* sleep(30);
+	this.cooldown = 0;
 	return f.dot;
 }, true);
 
 // a spawn(0) body of /obj/item/device/assembly/control/igniter/proc/activate, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/obj/item/device/assembly/control/igniter/proc/activate: spawn at modules/assembly/doorcontrol.dm:117", function* (f: Frame, M: Value) {
-	f.vars = () => [M];
-	yield* g.callName(f, live(M), "ignite", []);
+	yield* M.ignite();
 	return null;
 });
 
@@ -235,30 +193,23 @@ rt.type(9367, "/obj/item/device/assembly/control/flasher", "/obj/item/device/ass
 	desc: "A remote controller for a mounted flasher.",
 });
 
-// /obj/item/device/assembly/control/flasher/proc/activate  (code/modules/assembly/doorcontrol.dm:136)  may sleep
+// doorcontrol.dm:136
 rt.def("/obj/item/device/assembly/control/flasher/proc/activate", function* activate(f: Frame) {
 	let M: Value = null;
-	let $e: any;
-	f.vars = () => [M, $e];
-	rt.setSv(f, "cooldown", 1);
-	M = null;
-	rt.forList(f, 0, rt.gl("machines"), T("/obj/machinery/flasher"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if (isEqual(rt.fv(f, "id", live(M)), rt.fv(f, "id", live(f.src)))) {
+	this.cooldown = 1;
+	for (M of each(GLOB.machines, T("/obj/machinery/flasher"))) {
+		if (M.id == this.id) {
 			rt.spawnTail(f, 0, "/obj/item/device/assembly/control/flasher/proc/activate: spawn at modules/assembly/doorcontrol.dm:138", M);
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/sleep"), null, [50]);
-	rt.setSv(f, "cooldown", 0);
+	yield* sleep(50);
+	this.cooldown = 0;
 	return f.dot;
 }, true);
 
 // a spawn(0) body of /obj/item/device/assembly/control/flasher/proc/activate, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/obj/item/device/assembly/control/flasher/proc/activate: spawn at modules/assembly/doorcontrol.dm:138", function* (f: Frame, M: Value) {
-	f.vars = () => [M];
-	yield* g.callName(f, live(M), "flash", []);
+	yield* M.flash();
 	return null;
 });
 
@@ -267,22 +218,16 @@ rt.type(9368, "/obj/item/device/assembly/control/crematorium", "/obj/item/device
 	desc: "An evil-looking remote controller for a crematorium.",
 });
 
-// /obj/item/device/assembly/control/crematorium/proc/activate  (code/modules/assembly/doorcontrol.dm:151)  may sleep
+// doorcontrol.dm:151
 rt.def("/obj/item/device/assembly/control/crematorium/proc/activate", function* activate(f: Frame) {
 	let C: Value = null;
-	let $e: any;
-	f.vars = () => [C, $e];
-	rt.setSv(f, "cooldown", 1);
-	C = null;
-	rt.forList(f, 0, rt.gl("crematoriums"), T("/obj/structure/bodycontainer/crematorium"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		C = $e;
-		if (isEqual(rt.fv(f, "id", live(C)), rt.sv(f, "id"))) {
-			yield* g.callName(f, live(C), "cremate", [live(f.usr)]);
+	this.cooldown = 1;
+	for (C of each(GLOB.crematoriums, T("/obj/structure/bodycontainer/crematorium"))) {
+		if (C.id == this.id) {
+			yield* C.cremate(f.usr);
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/sleep"), null, [50]);
-	rt.setSv(f, "cooldown", 0);
+	yield* sleep(50);
+	this.cooldown = 0;
 	return f.dot;
 }, true);

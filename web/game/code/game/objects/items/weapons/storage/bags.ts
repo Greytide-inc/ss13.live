@@ -1,7 +1,7 @@
-// From code/game/objects/items/weapons/storage/bags.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/weapons/storage/bags.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(5527, "/obj/item/weapon/storage/bag/trash", "/obj/item/weapon/storage/bag", {
@@ -18,48 +18,41 @@ rt.type(5527, "/obj/item/weapon/storage/bag/trash", "/obj/item/weapon/storage/ba
 	cant_hold: null,
 });
 
-// /obj/item/weapon/storage/bag/trash/proc/<init>  (code/game/objects/items/weapons/storage/bags.dm:40)
+// bags.dm:40
 rt.def("/obj/item/weapon/storage/bag/trash/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "can_hold", rt.list());
-	$0 = $0;
-	rt.setSv(f, "cant_hold", rt.list(T("/obj/item/weapon/disk/nuclear")));
+	parent_proc();
+	this.can_hold = list();
+
+	this.cant_hold = list(T("/obj/item/weapon/disk/nuclear"));
 	return f.dot;
 });
 
-// /obj/item/weapon/storage/bag/trash/proc/suicide_act  (code/game/objects/items/weapons/storage/bags.dm:44)
+// bags.dm:44
 rt.def("/obj/item/weapon/storage/bag/trash/proc/suicide_act", function suicide_act(f: Frame, user: Value) {
-	rt.callName(f, live(user), "visible_message", [fmt("<span class='suicide'>＀ puts ＀ over ＀ head and starts chomping at the insides! Disgusting!</span>", [live(user), live(f.src), rt.callName(f, live(user), "p_their", [])])]);
-	rt.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/items/eatfood.ogg"), 50, 1, -1]);
+	user.visible_message(`<span class='suicide'>${user} puts ${this} over ${user.p_their()} head and starts chomping at the insides! Disgusting!</span>`);
+	playsound(this.loc, rt.rsc("sound/items/eatfood.ogg"), 50, 1, -1);
 	return 4;
 });
 
-// /obj/item/weapon/storage/bag/trash/proc/update_icon  (code/game/objects/items/weapons/storage/bags.dm:49)
+// bags.dm:49
 rt.def("/obj/item/weapon/storage/bag/trash/proc/update_icon", function update_icon(f: Frame) {
-	if (isEqual(rt.len(f, rt.sv(f, "contents")), 0)) {
-		rt.setSv(f, "icon_state", fmt("＀", [rt.initial(f, live(f.src), "icon_state")]));
+	if (rt.len(f, this.contents) == 0) {
+		this.icon_state = `${rt.initial(f, this, "icon_state")}`;
+	} else if (rt.len(f, this.contents) < 12) {
+		this.icon_state = `${rt.initial(f, this, "icon_state")}1`;
+	} else if (rt.len(f, this.contents) < 21) {
+		this.icon_state = `${rt.initial(f, this, "icon_state")}2`;
 	} else {
-		if (rt.lt(rt.len(f, rt.sv(f, "contents")), 12)) {
-			rt.setSv(f, "icon_state", fmt("＀1", [rt.initial(f, live(f.src), "icon_state")]));
-		} else {
-			if (rt.lt(rt.len(f, rt.sv(f, "contents")), 21)) {
-				rt.setSv(f, "icon_state", fmt("＀2", [rt.initial(f, live(f.src), "icon_state")]));
-			} else {
-				rt.setSv(f, "icon_state", fmt("＀3", [rt.initial(f, live(f.src), "icon_state")]));
-			}
-		}
+		this.icon_state = `${rt.initial(f, this, "icon_state")}3`;
 	}
 	return f.dot;
 });
 
-// /obj/item/weapon/storage/bag/trash/proc/janicart_insert  (code/game/objects/items/weapons/storage/bags.dm:60)  may sleep
+// bags.dm:60
 rt.def("/obj/item/weapon/storage/bag/trash/proc/janicart_insert", function* janicart_insert(f: Frame, user: Value, J: Value) {
-	f.vars = () => [user, J];
-	yield* g.callName(f, live(J), "put_in_cart", [live(f.src), live(user)]);
-	rt.setFv(f, "mybag", live(J), live(f.src));
-	yield* g.callName(f, live(J), "update_icon", []);
+	yield* J.put_in_cart(this, user);
+	J.mybag = this;
+	yield* J.update_icon();
 	return f.dot;
 }, true);
 
@@ -77,12 +70,10 @@ rt.type(5530, "/obj/item/weapon/storage/bag/ore", "/obj/item/weapon/storage/bag"
 	can_hold: null,
 });
 
-// /obj/item/weapon/storage/bag/ore/proc/<init>  (code/game/objects/items/weapons/storage/bags.dm:90)
+// bags.dm:90
 rt.def("/obj/item/weapon/storage/bag/ore/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "can_hold", rt.list(T("/obj/item/weapon/ore")));
+	parent_proc();
+	this.can_hold = list(T("/obj/item/weapon/ore"));
 	return f.dot;
 });
 
@@ -98,12 +89,10 @@ rt.type(5533, "/obj/item/weapon/storage/bag/plants", "/obj/item/weapon/storage/b
 	can_hold: null,
 });
 
-// /obj/item/weapon/storage/bag/plants/proc/<init>  (code/game/objects/items/weapons/storage/bags.dm:115)
+// bags.dm:115
 rt.def("/obj/item/weapon/storage/bag/plants/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "can_hold", rt.list(T("/obj/item/weapon/reagent_containers/food/snacks/grown"), T("/obj/item/seeds"), T("/obj/item/weapon/grown"), T("/obj/item/weapon/reagent_containers/honeycomb")));
+	parent_proc();
+	this.can_hold = list(T("/obj/item/weapon/reagent_containers/food/snacks/grown"), T("/obj/item/seeds"), T("/obj/item/weapon/grown"), T("/obj/item/weapon/reagent_containers/honeycomb"));
 	return f.dot;
 });
 
@@ -114,22 +103,16 @@ rt.type(5534, "/obj/item/weapon/storage/bag/plants/portaseeder", "/obj/item/weap
 	origin_tech: "biotech=3;engineering=2",
 });
 
-// /obj/item/weapon/storage/bag/plants/portaseeder/verb/dissolve_contents  (code/game/objects/items/weapons/storage/bags.dm:130)  may sleep
+// bags.dm:130
 rt.def("/obj/item/weapon/storage/bag/plants/portaseeder/verb/dissolve_contents", function* dissolve_contents(f: Frame) {
 	let O: Value = null;
-	let $e: any;
-	f.vars = () => [O, $e];
-	if (((truthy(rt.fv(f, "stat", live(f.usr))) || !truthy(rt.fv(f, "canmove", live(f.usr)))) || truthy((yield* g.callName(f, live(f.usr), "restrained", []))))) {
-		return live(f.dot);
+	if (f.usr.stat || !f.usr.canmove || f.usr.restrained()) {
+		return f.dot;
 	}
-	O = null;
-	rt.forList(f, 0, rt.sv(f, "contents"), T("/obj/item"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		O = $e;
-		yield* g.call(f, P("/proc/seedify"), null, [live(O), 1]);
+	for (O of each(this.contents, T("/obj/item"))) {
+		yield* seedify(O, 1);
 	}
-	rt.endFor(f, 0);
-	yield* g.srcCall(f, "close_all");
+	this.close_all();
 	return f.dot;
 }, true, { verb: { name: "Activate Seed Extraction", category: "Object", desc: "Activate to convert your plants into plantable seeds." } });
 
@@ -143,168 +126,133 @@ rt.type(5535, "/obj/item/weapon/storage/bag/sheetsnatcher", "/obj/item/weapon/st
 	allow_quick_empty: 1,
 });
 
-// /obj/item/weapon/storage/bag/sheetsnatcher/proc/can_be_inserted  (code/game/objects/items/weapons/storage/bags.dm:155)
+// bags.dm:155
 rt.def("/obj/item/weapon/storage/bag/sheetsnatcher/proc/can_be_inserted", function can_be_inserted(f: Frame, W: Value, stop_messages: Value) {
-	let current: Value = null, S: Value = null;
-	let $e: any;
-	f.vars = () => [stop_messages, current, S, $e];
-	if (live(stop_messages) === null) {
-		stop_messages = 0;
-	}
-	if (((!truthy((rt.istype(live(W), T("/obj/item/stack/sheet")) ? 1 : 0)) || truthy((rt.istype(live(W), T("/obj/item/stack/sheet/mineral/sandstone")) ? 1 : 0))) || truthy((rt.istype(live(W), T("/obj/item/stack/sheet/mineral/wood")) ? 1 : 0)))) {
-		if (!truthy(live(stop_messages))) {
-			rt.call(f, P("/proc/to_chat"), null, [live(f.usr), fmt("The snatcher does not accept ＀.", [live(W)])]);
+	let S: Value = null;
+	stop_messages ??= 0;
+	if (!rt.istype(W, T("/obj/item/stack/sheet")) || rt.istype(W, T("/obj/item/stack/sheet/mineral/sandstone")) || rt.istype(W, T("/obj/item/stack/sheet/mineral/wood"))) {
+		if (!stop_messages) {
+			to_chat(f.usr, `The snatcher does not accept ${W}.`);
 		}
 		return 0;
 	}
-	current = 0;
-	S = null;
-	rt.forList(f, 0, rt.sv(f, "contents"), T("/obj/item/stack/sheet"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		S = $e;
-		current = rt.modify(live(current), rt.fv(f, "amount", live(S)), add);
+	let current: Value = 0;
+	for (S of each(this.contents, T("/obj/item/stack/sheet"))) {
+		current += S.amount;
 	}
-	rt.endFor(f, 0);
-	if (isEqual(rt.sv(f, "capacity"), live(current))) {
-		if (!truthy(live(stop_messages))) {
-			rt.call(f, P("/proc/to_chat"), null, [live(f.usr), "<span class='danger'>The snatcher is full.</span>"]);
+	if (this.capacity == current) {
+		if (!stop_messages) {
+			to_chat(f.usr, "<span class='danger'>The snatcher is full.</span>");
 		}
 		return 0;
 	}
 	return 1;
 });
 
-// /obj/item/weapon/storage/bag/sheetsnatcher/proc/handle_item_insertion  (code/game/objects/items/weapons/storage/bags.dm:171)  may sleep
+// bags.dm:171
 rt.def("/obj/item/weapon/storage/bag/sheetsnatcher/proc/handle_item_insertion", function* handle_item_insertion(f: Frame, W: Value, prevent_warning: Value) {
-	let S: Value = null, amount: Value = null, inserted: Value = null, current: Value = null, S2: Value = null, sheet: Value = null;
-	let $e: any;
-	f.vars = () => [W, prevent_warning, S, amount, inserted, current, S2, sheet, $e];
-	if (live(prevent_warning) === null) {
-		prevent_warning = 0;
-	}
-	if (!truthy((rt.istype((S = live(W)), T("/obj/item/stack/sheet")) ? 1 : 0))) {
+	let S: Value = null, amount: Value = null, S2: Value = null, sheet: Value = null;
+	prevent_warning ??= 0;
+	if (!rt.istype((S = W), T("/obj/item/stack/sheet"))) {
 		return 0;
 	}
-	amount = null;
-	inserted = 0;
-	current = 0;
-	S2 = null;
-	rt.forList(f, 0, rt.sv(f, "contents"), T("/obj/item/stack/sheet"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		S2 = $e;
-		current = rt.modify(live(current), rt.fv(f, "amount", live(S2)), add);
+	let inserted: Value = 0;
+	let current: Value = 0;
+	for (S2 of each(this.contents, T("/obj/item/stack/sheet"))) {
+		current += S2.amount;
 	}
-	rt.endFor(f, 0);
-	if (rt.lt(rt.sv(f, "capacity"), add(live(current), rt.fv(f, "amount", live(S))))) {
-		amount = subtract(rt.sv(f, "capacity"), live(current));
+	if (this.capacity < current + S.amount) {
+		amount = this.capacity - current;
 	} else {
-		amount = rt.fv(f, "amount", live(S));
+		amount = S.amount;
 	}
-	sheet = null;
-	rt.forList(f, 0, rt.sv(f, "contents"), T("/obj/item/stack/sheet"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		sheet = $e;
-		if (isEqual(rt.fv(f, "type", live(S)), rt.fv(f, "type", live(sheet)))) {
-			rt.modField(f, live(sheet), "amount", live(amount), add);
-			(rt.modField(f, live(S), "amount", live(amount), subtract));
+	for (sheet of each(this.contents, T("/obj/item/stack/sheet"))) {
+		if (S.type == sheet.type) {
+			sheet.amount += amount;
+			S.amount -= amount;
 			inserted = 1;
 			break;
 		}
 	}
-	rt.endFor(f, 0);
-	if ((!truthy(live(inserted)) || !truthy(rt.fv(f, "amount", live(S))))) {
-		yield* g.callName(f, live(f.usr), "dropItemToGround", [live(S)]);
-		if ((truthy(rt.fv(f, "client", live(f.usr))) && !isEqual(rt.fv(f, "s_active", live(f.usr)), live(f.src)))) {
-			(rt.modField(f, rt.fv(f, "client", live(f.usr)), "screen", live(S), subtract));
+	if (!inserted || !S.amount) {
+		yield* f.usr.dropItemToGround(S);
+		if (f.usr.client && f.usr.s_active != this) {
+			f.usr.client.screen -= S;
 		}
-		yield* g.callName(f, live(S), "dropped", [live(f.usr)]);
-		if (!truthy(rt.fv(f, "amount", live(S)))) {
-			yield* g.call(f, P("/proc/qdel"), null, [live(S)]);
+		yield* S.dropped(f.usr);
+		if (!S.amount) {
+			yield* qdel(S);
 		} else {
-			if (truthy(rt.fv(f, "pulledby", live(S)))) {
-				yield* g.callName(f, rt.fv(f, "pulledby", live(S)), "stop_pulling", []);
+			if (S.pulledby) {
+				yield* S.pulledby.stop_pulling();
 			}
-			rt.setFv(f, "loc", live(S), live(f.src));
+			S.loc = this;
 		}
 	}
-	yield* g.srcCall(f, "orient2hud", live(f.usr));
-	if (truthy(rt.fv(f, "s_active", live(f.usr)))) {
-		yield* g.callName(f, rt.fv(f, "s_active", live(f.usr)), "show_to", [live(f.usr)]);
+	yield* this.orient2hud(f.usr);
+	if (f.usr.s_active) {
+		yield* f.usr.s_active.show_to(f.usr);
 	}
-	yield* g.srcCall(f, "update_icon");
+	yield* this.update_icon();
 	return 1;
 }, true);
 
-// /obj/item/weapon/storage/bag/sheetsnatcher/proc/orient2hud  (code/game/objects/items/weapons/storage/bags.dm:218)  may sleep
+// bags.dm:218
 rt.def("/obj/item/weapon/storage/bag/sheetsnatcher/proc/orient2hud", function* orient2hud(f: Frame, user: Value) {
-	let adjusted_contents: Value = null, numbered_contents: Value = null, I: Value = null, D: Value = null, row_num: Value = null, col_count: Value = null;
-	let $e: any;
-	f.vars = () => [user, adjusted_contents, numbered_contents, I, D, row_num, col_count, $e];
-	adjusted_contents = rt.len(f, rt.sv(f, "contents"));
-	numbered_contents = null;
-	if (truthy(rt.sv(f, "display_contents_with_number"))) {
-		numbered_contents = rt.list();
+	let numbered_contents: Value = null, I: Value = null, D: Value = null;
+	let adjusted_contents: Value = rt.len(f, this.contents);
+	if (this.display_contents_with_number) {
+		numbered_contents = list();
 		adjusted_contents = 0;
-		I = null;
-		rt.forList(f, 0, rt.sv(f, "contents"), T("/obj/item/stack/sheet"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			I = $e;
-			adjusted_contents = rt.inc(live(adjusted_contents), 1);
-			rt.setFv(f, "number", (D = (yield* g.new_(f, T("/datum/numbered_display"), [live(I)]))), rt.fv(f, "amount", live(I)));
-			yield* g.callName(f, live(numbered_contents), "Add", [live(D)]);
+		for (I of each(this.contents, T("/obj/item/stack/sheet"))) {
+			adjusted_contents++;
+			(D = (yield* new_(T("/datum/numbered_display"), I))).number = I.amount;
+			numbered_contents.Add(D);
 		}
-		rt.endFor(f, 0);
 	}
-	row_num = 0;
-	col_count = subtract((yield* g.call(f, P("/proc/min"), null, [7, rt.sv(f, "storage_slots")])), 1);
-	if (rt.gt(live(adjusted_contents), 7)) {
-		row_num = (yield* g.call(f, P("/proc/round"), null, [divide(subtract(live(adjusted_contents), 1), 7)]));
+	let row_num: Value = 0;
+	let col_count: Value = min(7, this.storage_slots) - 1;
+	if (adjusted_contents > 7) {
+		row_num = round((adjusted_contents - 1) / 7);
 	}
-	yield* g.callName(f, live(f.src), "standard_orient_objs", [live(row_num), live(col_count), live(numbered_contents)]);
-	return live(f.dot);
+	this.standard_orient_objs(row_num, col_count, numbered_contents);
+	return f.dot;
 }, true);
 
-// /obj/item/weapon/storage/bag/sheetsnatcher/quick_empty  (code/game/objects/items/weapons/storage/bags.dm:236)  may sleep
+// bags.dm:236
 rt.def("/obj/item/weapon/storage/bag/sheetsnatcher/quick_empty", function* quick_empty(f: Frame) {
-	let location: Value = null, S: Value = null, N: Value = null, stacksize: Value = null;
-	let $e: any;
-	f.vars = () => [location, S, N, stacksize, $e];
-	location = rt.getStep(f, live(f.src), 0);
-	S = null;
-	rt.forList(f, 0, rt.sv(f, "contents"), T("/obj/item/stack/sheet"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		S = $e;
-		while (truthy(rt.fv(f, "amount", live(S)))) {
-			N = (yield* g.new_(f, rt.fv(f, "type", live(S)), [live(location)]));
-			stacksize = (yield* g.call(f, P("/proc/min"), null, [rt.fv(f, "amount", live(S)), rt.fv(f, "max_amount", live(N))]));
-			rt.setFv(f, "amount", live(N), live(stacksize));
-			(rt.modField(f, live(S), "amount", live(stacksize), subtract));
+	let S: Value = null, N: Value = null, stacksize: Value = null;
+	let location: Value = rt.getStep(f, this, 0);
+	for (S of each(this.contents, T("/obj/item/stack/sheet"))) {
+		while (S.amount) {
+			N = (yield* new_(S.type, location));
+			stacksize = min(S.amount, N.max_amount);
+			N.amount = stacksize;
+			S.amount -= stacksize;
 		}
-		if (!truthy(rt.fv(f, "amount", live(S)))) {
-			yield* g.call(f, P("/proc/qdel"), null, [live(S)]);
+		if (!S.amount) {
+			yield* qdel(S);
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.srcCall(f, "orient2hud", live(f.usr));
-	if (truthy(rt.fv(f, "s_active", live(f.usr)))) {
-		yield* g.callName(f, rt.fv(f, "s_active", live(f.usr)), "show_to", [live(f.usr)]);
+	yield* this.orient2hud(f.usr);
+	if (f.usr.s_active) {
+		yield* f.usr.s_active.show_to(f.usr);
 	}
-	yield* g.srcCall(f, "update_icon");
+	yield* this.update_icon();
 	return f.dot;
 }, true, { verb: { name: "Empty Contents", category: "Object" } });
 
-// /obj/item/weapon/storage/bag/sheetsnatcher/proc/remove_from_storage  (code/game/objects/items/weapons/storage/bags.dm:252)  may sleep
+// bags.dm:252
 rt.def("/obj/item/weapon/storage/bag/sheetsnatcher/proc/remove_from_storage", function* remove_from_storage(f: Frame, W: Value, new_location: Value) {
 	let S: Value = null, temp: Value = null;
-	f.vars = () => [W, new_location, S, temp];
-	if (!truthy((rt.istype((S = live(W)), T("/obj/item/stack/sheet")) ? 1 : 0))) {
+	if (!rt.istype((S = W), T("/obj/item/stack/sheet"))) {
 		return 0;
 	}
-	if (rt.gt(rt.fv(f, "amount", live(S)), rt.fv(f, "max_amount", live(S)))) {
-		rt.setFv(f, "amount", (temp = (yield* g.new_(f, rt.fv(f, "type", live(S)), [live(f.src)]))), subtract(rt.fv(f, "amount", live(S)), rt.fv(f, "max_amount", live(S))));
-		rt.setFv(f, "amount", live(S), rt.fv(f, "max_amount", live(S)));
+	if (S.amount > S.max_amount) {
+		(temp = (yield* new_(S.type, this))).amount = S.amount - S.max_amount;
+		S.amount = S.max_amount;
 	}
-	return (yield* g.callSuper(f, [live(S), live(new_location)]));
+	return (yield* parent_proc(S, new_location));
 }, true);
 
 rt.type(5537, "/obj/item/weapon/storage/bag/books", "/obj/item/weapon/storage/bag", {
@@ -321,12 +269,10 @@ rt.type(5537, "/obj/item/weapon/storage/bag/books", "/obj/item/weapon/storage/ba
 	can_hold: null,
 });
 
-// /obj/item/weapon/storage/bag/books/proc/<init>  (code/game/objects/items/weapons/storage/bags.dm:291)
+// bags.dm:291
 rt.def("/obj/item/weapon/storage/bag/books/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "can_hold", rt.list(T("/obj/item/weapon/book"), T("/obj/item/weapon/storage/book"), T("/obj/item/weapon/spellbook")));
+	parent_proc();
+	this.can_hold = list(T("/obj/item/weapon/book"), T("/obj/item/weapon/storage/book"), T("/obj/item/weapon/spellbook"));
 	return f.dot;
 });
 
@@ -345,86 +291,71 @@ rt.type(5538, "/obj/item/weapon/storage/bag/tray", "/obj/item/weapon/storage/bag
 	preposition: "on",
 });
 
-// /obj/item/weapon/storage/bag/tray/proc/<init>  (code/game/objects/items/weapons/storage/bags.dm:308)
+// bags.dm:308
 rt.def("/obj/item/weapon/storage/bag/tray/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 3000]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 3000]);
 	return f.dot;
 });
 
-// /obj/item/weapon/storage/bag/tray/proc/attack  (code/game/objects/items/weapons/storage/bags.dm:312)  may sleep
-rt.def("/obj/item/weapon/storage/bag/tray/proc/attack", function* attack(f: Frame) {
-	let oldContents: Value = null, I: Value = null, i: Value = null;
-	let $e: any;
-	f.vars = () => [oldContents, I, i, $e];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	oldContents = (yield* g.callName(f, rt.sv(f, "contents"), "Copy", []));
-	yield* g.srcCall(f, "quick_empty");
-	I = null;
-	rt.forList(f, 0, live(oldContents), T("/obj/item"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
+// bags.dm:312
+rt.def("/obj/item/weapon/storage/bag/tray/proc/attack", function* attack(f: Frame, M: Value, user: Value) {
+	let I: Value = null, i: Value = null;
+	yield* parent_proc();
+	let oldContents: Value = (yield* this.contents.Copy());
+	yield* this.quick_empty();
+	for (I of each(oldContents, T("/obj/item"))) {
 		rt.spawnTail(f, 0, "/obj/item/weapon/storage/bag/tray/proc/attack: spawn at game/objects/items/weapons/storage/bags.dm:319", oldContents, I, i);
 	}
-	rt.endFor(f, 0);
-	if (truthy(rt.op(f, "Prob", [], [50]))) {
-		yield* g.call(f, P("/proc/playsound"), null, [live(f.args[0]), rt.rsc("sound/items/trayhit1.ogg"), 50, 1]);
+	if (prob(50)) {
+		playsound(M, rt.rsc("sound/items/trayhit1.ogg"), 50, 1);
 	} else {
-		yield* g.call(f, P("/proc/playsound"), null, [live(f.args[0]), rt.rsc("sound/items/trayhit2.ogg"), 50, 1]);
+		playsound(M, rt.rsc("sound/items/trayhit2.ogg"), 50, 1);
 	}
-	if (!(truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon/human")) ? 1 : 0)) || truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon/monkey")) ? 1 : 0)))) return f.dot;
-	if (!truthy(rt.op(f, "Prob", [], [10]))) return f.dot;
-	yield* g.callName(f, live(f.args[0]), "Knockdown", [40]);
+	if (!(rt.istype(M, T("/mob/living/carbon/human")) || rt.istype(M, T("/mob/living/carbon/monkey")))) return f.dot;
+	if (!prob(10)) return f.dot;
+	yield* M.Knockdown(40);
 	return f.dot;
-}, true, { args: ["M", "user"] });
+}, true);
 
 // a spawn(0) body of /obj/item/weapon/storage/bag/tray/proc/attack, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/obj/item/weapon/storage/bag/tray/proc/attack: spawn at game/objects/items/weapons/storage/bags.dm:319", function* (f: Frame, oldContents: Value, I: Value, i: Value) {
-	f.vars = () => [oldContents, I, i];
 	i = null;
 	i = 1;
-	while (rt.le(live(i), (yield* g.call(f, P("/proc/rand"), null, [1, 2])))) {
-		if (truthy(live(I))) {
-			yield* g.call(f, P("/proc/step"), null, [live(I), rt.op(f, "PickUnweighted", [4], [1, 2, 4, 8])]);
-			yield* g.call(f, P("/proc/sleep"), null, [(yield* g.call(f, P("/proc/rand"), null, [2, 4]))]);
+	while (i <= rand(1, 2)) {
+		if (I) {
+			yield* step(I, pick(1, 2, 4, 8));
+			yield* sleep(rand(2, 4));
 		}
-		i = rt.inc(live(i), 1);
+		i++;
 	}
 	return null;
 });
 
-// /obj/item/weapon/storage/bag/tray/proc/rebuild_overlays  (code/game/objects/items/weapons/storage/bags.dm:335)
+// bags.dm:335
 rt.def("/obj/item/weapon/storage/bag/tray/proc/rebuild_overlays", function rebuild_overlays(f: Frame) {
 	let I: Value = null;
-	let $e: any;
-	f.vars = () => [I, $e];
-	rt.callSrc(f, "cut_overlays", []);
-	I = null;
-	rt.forList(f, 0, rt.sv(f, "contents"), T("/obj/item"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		rt.callSrc(f, "add_overlay", [rt.call(f, P("/proc/mutable_appearance"), null, [rt.fv(f, "icon", live(I)), rt.fv(f, "icon_state", live(I))])]);
+	this.cut_overlays();
+	for (I of each(this.contents, T("/obj/item"))) {
+		this.add_overlay(mutable_appearance(I.icon, I.icon_state));
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /obj/item/weapon/storage/bag/tray/proc/remove_from_storage  (code/game/objects/items/weapons/storage/bags.dm:340)  may sleep
-rt.def("/obj/item/weapon/storage/bag/tray/proc/remove_from_storage", function* remove_from_storage(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "rebuild_overlays");
+// bags.dm:340
+rt.def("/obj/item/weapon/storage/bag/tray/proc/remove_from_storage", function* remove_from_storage(f: Frame, W: Value, new_location: Value) {
+	yield* parent_proc();
+	this.rebuild_overlays();
 	return f.dot;
-}, true, { args: ["W", "new_location"] });
+}, true);
 
-// /obj/item/weapon/storage/bag/tray/proc/handle_item_insertion  (code/game/objects/items/weapons/storage/bags.dm:344)  may sleep
+// bags.dm:344
 rt.def("/obj/item/weapon/storage/bag/tray/proc/handle_item_insertion", function* handle_item_insertion(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	yield* g.srcCall(f, "add_overlay", (yield* g.call(f, P("/proc/mutable_appearance"), null, [rt.fv(f, "icon", live(f.args[0])), rt.fv(f, "icon_state", live(f.args[0]))])));
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	this.add_overlay(mutable_appearance(f.args[0].icon, f.args[0].icon_state));
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true, { args: ["I", "prevent_warning"] });
 
@@ -441,12 +372,10 @@ rt.type(5539, "/obj/item/weapon/storage/bag/chemistry", "/obj/item/weapon/storag
 	can_hold: null,
 });
 
-// /obj/item/weapon/storage/bag/chemistry/proc/<init>  (code/game/objects/items/weapons/storage/bags.dm:361)
+// bags.dm:361
 rt.def("/obj/item/weapon/storage/bag/chemistry/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "can_hold", rt.list(T("/obj/item/weapon/reagent_containers/pill"), T("/obj/item/weapon/reagent_containers/glass/beaker"), T("/obj/item/weapon/reagent_containers/glass/bottle")));
+	parent_proc();
+	this.can_hold = list(T("/obj/item/weapon/reagent_containers/pill"), T("/obj/item/weapon/reagent_containers/glass/beaker"), T("/obj/item/weapon/reagent_containers/glass/bottle"));
 	return f.dot;
 });
 
@@ -463,11 +392,9 @@ rt.type(5540, "/obj/item/weapon/storage/bag/bio", "/obj/item/weapon/storage/bag"
 	can_hold: null,
 });
 
-// /obj/item/weapon/storage/bag/bio/proc/<init>  (code/game/objects/items/weapons/storage/bags.dm:377)
+// bags.dm:377
 rt.def("/obj/item/weapon/storage/bag/bio/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "can_hold", rt.list(T("/obj/item/slime_extract"), T("/obj/item/weapon/reagent_containers/syringe"), T("/obj/item/weapon/reagent_containers/glass/beaker"), T("/obj/item/weapon/reagent_containers/glass/bottle"), T("/obj/item/weapon/reagent_containers/blood"), T("/obj/item/weapon/reagent_containers/hypospray/medipen"), T("/obj/item/trash/deadmouse"), T("/obj/item/weapon/reagent_containers/food/snacks/monkeycube")));
+	parent_proc();
+	this.can_hold = list(T("/obj/item/slime_extract"), T("/obj/item/weapon/reagent_containers/syringe"), T("/obj/item/weapon/reagent_containers/glass/beaker"), T("/obj/item/weapon/reagent_containers/glass/bottle"), T("/obj/item/weapon/reagent_containers/blood"), T("/obj/item/weapon/reagent_containers/hypospray/medipen"), T("/obj/item/trash/deadmouse"), T("/obj/item/weapon/reagent_containers/food/snacks/monkeycube"));
 	return f.dot;
 });

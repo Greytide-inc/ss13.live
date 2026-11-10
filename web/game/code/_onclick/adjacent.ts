@@ -1,110 +1,90 @@
-// From code/_onclick/adjacent.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/_onclick/adjacent.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
-// /area/proc/Adjacent  (code/_onclick/adjacent.dm:18)
+// adjacent.dm:18
 rt.def("/area/proc/Adjacent", function Adjacent(f: Frame, neighbor: Value) {
-	rt.call(f, P("/proc/CRASH"), null, ["Call to /area/Adjacent(), unimplemented proc"]);
+	CRASH("Call to /area/Adjacent(), unimplemented proc");
 	return f.dot;
 });
 
-// /turf/proc/Adjacent  (code/_onclick/adjacent.dm:29)
+// adjacent.dm:29
 rt.def("/turf/proc/Adjacent", function Adjacent(f: Frame, neighbor: Value, target: Value) {
-	let T0: Value = null, in_dir: Value = null, d1: Value = null, d2: Value = null, d: Value = null, T1: Value = null;
-	let $e: any;
-	f.vars = () => [target, T0, in_dir, d1, d2, d, T1, $e];
-	if (live(target) === null) {
-		target = null;
-	}
-	if (isEqual((T0 = rt.getStep(f, live(neighbor), 0)), live(f.src))) {
+	let T0: Value = null, d: Value = null, T1: Value = null;
+	if ((T0 = rt.getStep(f, neighbor, 0)) == this) {
 		return 1;
 	}
-	if (rt.gt(rt.call(f, P("/proc/get_dist"), null, [live(f.src), live(T0)]), 1)) {
+	if (get_dist(this, T0) > 1) {
 		return 0;
 	}
-	if ((isEqual(rt.fv(f, "x", live(T0)), rt.sv(f, "x")) || isEqual(rt.fv(f, "y", live(T0)), rt.sv(f, "y")))) {
-		return (rt.callName(f, live(T0), "ClickCross", [null, rt.getDir(f, live(T0), live(f.src)), "border_only", 1, "target_atom", live(target)], rt.Args.Named) && rt.callName(f, live(f.src), "ClickCross", [null, rt.getDir(f, live(f.src), live(T0)), "border_only", 1, "target_atom", live(target)], rt.Args.Named));
+	if (T0.x == this.x || T0.y == this.y) {
+		return (T0.ClickCross(rt.getDir(f, T0, this), { border_only: 1, target_atom: target }) && this.ClickCross(rt.getDir(f, this, T0), { border_only: 1, target_atom: target }));
 	}
-	in_dir = rt.getDir(f, live(T0), live(f.src));
-	d1 = rt.bitAnd(live(in_dir), 3);
-	d2 = rt.bitAnd(live(in_dir), 12);
-	d = null;
-	rt.forList(f, 0, rt.list(live(d1), live(d2)));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		d = $e;
-		if (!truthy(rt.callName(f, live(T0), "ClickCross", [null, live(d), "border_only", 1, "target_atom", live(target)], rt.Args.Named))) {
+	let in_dir: Value = rt.getDir(f, T0, this);
+	let d1: Value = rt.bitAnd(in_dir, 3);
+	let d2: Value = rt.bitAnd(in_dir, 12);
+	for (d of each(list(d1, d2))) {
+		if (!T0.ClickCross(d, { border_only: 1, target_atom: target })) {
 			continue;
 		}
-		if (((!truthy((T1 = rt.getStep(f, live(T0), live(d)))) || truthy(rt.fv(f, "density", live(T1)))) || !truthy(rt.callName(f, live(T1), "ClickCross", [null, rt.bitOr(rt.getDir(f, live(T1), live(T0)), rt.getDir(f, live(T1), live(f.src))), "border_only", 0, "target_atom", live(target)], rt.Args.Named)))) {
+		if (!(T1 = rt.getStep(f, T0, d)) || T1.density || !T1.ClickCross(rt.bitOr(rt.getDir(f, T1, T0), rt.getDir(f, T1, this)), { border_only: 0, target_atom: target })) {
 			continue;
 		}
-		if (!truthy(rt.callName(f, live(f.src), "ClickCross", [null, rt.getDir(f, live(f.src), live(T1)), "border_only", 1, "target_atom", live(target)], rt.Args.Named))) {
+		if (!this.ClickCross(rt.getDir(f, this, T1), { border_only: 1, target_atom: target })) {
 			continue;
 		}
 		return 1;
 	}
-	rt.endFor(f, 0);
 	return 0;
 });
 
-// /atom/movable/proc/Adjacent  (code/_onclick/adjacent.dm:67)
+// adjacent.dm:67
 rt.def("/atom/movable/proc/Adjacent", function Adjacent(f: Frame, neighbor: Value) {
-	if (isEqual(live(neighbor), rt.sv(f, "loc"))) {
+	if (neighbor == this.loc) {
 		return 1;
 	}
-	if (!truthy(rt.call(f, P("/proc/isturf"), null, [rt.sv(f, "loc")]))) {
+	if (!isturf(this.loc)) {
 		return 0;
 	}
-	if (truthy(rt.callName(f, rt.sv(f, "loc"), "Adjacent", [null, live(neighbor), "target", live(neighbor)], rt.Args.Named))) {
+	if (this.loc.Adjacent(neighbor, { target: neighbor })) {
 		return 1;
 	}
 	return 0;
 });
 
-// /obj/item/proc/Adjacent  (code/_onclick/adjacent.dm:77)
+// adjacent.dm:77
 rt.def("/obj/item/proc/Adjacent", function Adjacent(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 1;
 	}
-	if (isEqual(live(f.args[0]), rt.sv(f, "loc"))) {
+	if (f.args[0] == this.loc) {
 		return 1;
 	}
-	if (truthy((rt.istype(rt.sv(f, "loc"), T("/obj/item")) ? 1 : 0))) {
-		if (rt.gt(live(f.args[1]), 0)) {
-			return rt.callName(f, rt.sv(f, "loc"), "Adjacent", [live(f.args[0]), subtract(live(f.args[1]), 1)]);
+	if (rt.istype(this.loc, T("/obj/item"))) {
+		if (f.args[1] > 0) {
+			return this.loc.Adjacent(f.args[0], f.args[1] - 1);
 		}
 		return 0;
 	}
-	return rt.callSuper(f, [], rt.Args.Same);
+	return parent_proc();
 }, false, { args: ["neighbor", "recurse"] });
 
-// /turf/proc/ClickCross  (code/_onclick/adjacent.dm:90)
+// adjacent.dm:90
 rt.def("/turf/proc/ClickCross", function ClickCross(f: Frame, target_dir: Value, border_only: Value, target_atom: Value) {
 	let O: Value = null;
-	let $e: any;
-	f.vars = () => [target_atom, O, $e];
-	if (live(target_atom) === null) {
-		target_atom = null;
-	}
-	O = null;
-	rt.forList(f, 0, live(f.src), T("/obj"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		O = $e;
-		if (((!truthy(rt.fv(f, "density", live(O))) || isEqual(live(O), live(target_atom))) || truthy(rt.bitAnd(rt.fv(f, "pass_flags", live(O)), 32)))) {
+	for (O of each(this, T("/obj"))) {
+		if (!O.density || O == target_atom || rt.bitAnd(O.pass_flags, 32)) {
 			continue;
 		}
-		if (truthy(rt.bitAnd(rt.fv(f, "flags", live(O)), 512))) {
-			if ((truthy(rt.bitAnd(rt.fv(f, "dir", live(O)), live(target_dir))) || truthy(rt.bitAnd(rt.fv(f, "dir", live(O)), subtract(rt.fv(f, "dir", live(O)), 1))))) {
+		if (rt.bitAnd(O.flags, ON_BORDER)) {
+			if (rt.bitAnd(O.dir, target_dir) || rt.bitAnd(O.dir, O.dir - 1)) {
 				return 0;
 			}
-		} else {
-			if (!truthy(live(border_only))) {
-				return 0;
-			}
+		} else if (!border_only) {
+			return 0;
 		}
 	}
-	rt.endFor(f, 0);
 	return 1;
 });

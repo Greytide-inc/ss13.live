@@ -1,7 +1,7 @@
-// From code/modules/mob/living/carbon/human/species_types/synths.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/carbon/human/species_types/synths.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(4109, "/datum/species/synth", "/datum/species", {
@@ -20,128 +20,120 @@ rt.type(4109, "/datum/species/synth", "/datum/species", {
 	meat: null,
 });
 
-// /datum/species/synth/proc/on_species_gain  (code/modules/mob/living/carbon/human/species_types/synths.dm:26)  may sleep
-rt.def("/datum/species/synth/proc/on_species_gain", function* on_species_gain(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "assume_disguise", live(f.args[1]), live(f.args[0]));
-	return f.dot;
-}, true, { args: ["H", "old_species"] });
-
-// /datum/species/synth/proc/handle_chemicals  (code/modules/mob/living/carbon/human/species_types/synths.dm:30)  may sleep
-rt.def("/datum/species/synth/proc/handle_chemicals", function* handle_chemicals(f: Frame) {
-	if (isEqual(rt.fv(f, "id", live(f.args[0])), "synthflesh")) {
-		yield* g.callName(f, live(f.args[0]), "reaction_mob", [live(f.args[1]), 1, 2, 0]);
-		yield* g.callName(f, rt.fv(f, "reagents", live(f.args[1])), "remove_reagent", [rt.fv(f, "id", live(f.args[0])), 0.4000000059604645]);
-		return 1;
-	} else {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
-	}
-	return f.dot;
-}, true, { args: ["chem", "H"] });
-
-// /datum/species/synth/proc/assume_disguise  (code/modules/mob/living/carbon/human/species_types/synths.dm:39)  may sleep
-rt.def("/datum/species/synth/proc/assume_disguise", function* assume_disguise(f: Frame, S: Value, H: Value) {
-	let X: Value = null, BP: Value = null;
-	let $e: any;
-	f.vars = () => [S, H, X, BP, $e];
-	if ((truthy(live(S)) && !truthy(rt.op(f, "IsType", [], [live(S), rt.sv(f, "type")])))) {
-		rt.setSv(f, "name", rt.fv(f, "name", live(S)));
-		rt.setSv(f, "say_mod", rt.fv(f, "say_mod", live(S)));
-		rt.setSv(f, "sexes", rt.fv(f, "sexes", live(S)));
-		rt.setSv(f, "species_traits", (yield* g.callName(f, rt.sv(f, "initial_species_traits"), "Copy", [])));
-		yield* g.callName(f, rt.sv(f, "species_traits"), "Add", [rt.fv(f, "species_traits", live(S))]);
-		rt.setSv(f, "attack_verb", rt.fv(f, "attack_verb", live(S)));
-		rt.setSv(f, "attack_sound", rt.fv(f, "attack_sound", live(S)));
-		rt.setSv(f, "miss_sound", rt.fv(f, "miss_sound", live(S)));
-		rt.setSv(f, "meat", rt.fv(f, "meat", live(S)));
-		rt.setSv(f, "mutant_bodyparts", (yield* g.callName(f, rt.fv(f, "mutant_bodyparts", live(S)), "Copy", [])));
-		rt.setSv(f, "mutant_organs", (yield* g.callName(f, rt.fv(f, "mutant_organs", live(S)), "Copy", [])));
-		rt.setSv(f, "default_features", (yield* g.callName(f, rt.fv(f, "default_features", live(S)), "Copy", [])));
-		rt.setSv(f, "nojumpsuit", rt.fv(f, "nojumpsuit", live(S)));
-		rt.setSv(f, "no_equip", (yield* g.callName(f, rt.fv(f, "no_equip", live(S)), "Copy", [])));
-		rt.setSv(f, "limbs_id", rt.fv(f, "limbs_id", live(S)));
-		rt.setSv(f, "use_skintones", rt.fv(f, "use_skintones", live(S)));
-		rt.setSv(f, "fixed_mut_color", rt.fv(f, "fixed_mut_color", live(S)));
-		rt.setSv(f, "hair_color", rt.fv(f, "hair_color", live(S)));
-		rt.setSv(f, "fake_species", (yield* g.new_(f, rt.fv(f, "type", live(S)), [])));
-	} else {
-		rt.setSv(f, "name", rt.initial(f, live(f.src), "name"));
-		rt.setSv(f, "say_mod", rt.initial(f, live(f.src), "say_mod"));
-		rt.setSv(f, "species_traits", (yield* g.callName(f, rt.sv(f, "initial_species_traits"), "Copy", [])));
-		rt.setSv(f, "attack_verb", rt.initial(f, live(f.src), "attack_verb"));
-		rt.setSv(f, "attack_sound", rt.initial(f, live(f.src), "attack_sound"));
-		rt.setSv(f, "miss_sound", rt.initial(f, live(f.src), "miss_sound"));
-		rt.setSv(f, "mutant_bodyparts", rt.list());
-		rt.setSv(f, "default_features", rt.list());
-		rt.setSv(f, "nojumpsuit", rt.initial(f, live(f.src), "nojumpsuit"));
-		rt.setSv(f, "no_equip", rt.list());
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "fake_species")]);
-		rt.setSv(f, "fake_species", null);
-		rt.setSv(f, "meat", rt.initial(f, live(f.src), "meat"));
-		rt.setSv(f, "limbs_id", "synth");
-		rt.setSv(f, "use_skintones", 0);
-		rt.setSv(f, "sexes", 0);
-		rt.setSv(f, "fixed_mut_color", "");
-		rt.setSv(f, "hair_color", "");
-	}
-	X = null;
-	rt.forList(f, 0, rt.fv(f, "bodyparts", live(H)));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		X = $e;
-		yield* g.callName(f, (BP = live(X)), "update_limb", []);
-	}
-	rt.endFor(f, 0);
-	yield* g.callName(f, live(H), "update_body_parts", []);
+// synths.dm:26
+rt.def("/datum/species/synth/proc/on_species_gain", function* on_species_gain(f: Frame, H: Value, old_species: Value) {
+	yield* parent_proc();
+	yield* this.assume_disguise(old_species, H);
 	return f.dot;
 }, true);
 
-// /datum/species/synth/proc/handle_hair  (code/modules/mob/living/carbon/human/species_types/synths.dm:89)  may sleep
-rt.def("/datum/species/synth/proc/handle_hair", function* handle_hair(f: Frame) {
-	if (truthy(rt.sv(f, "fake_species"))) {
-		yield* g.callName(f, rt.sv(f, "fake_species"), "handle_hair", [live(f.args[0]), live(f.args[1])]);
+// synths.dm:30
+rt.def("/datum/species/synth/proc/handle_chemicals", function* handle_chemicals(f: Frame, chem: Value, H: Value) {
+	if (chem.id == "synthflesh") {
+		yield* chem.reaction_mob(H, TOUCH, 2, 0);
+		yield* H.reagents.remove_reagent(chem.id, REAGENTS_METABOLISM);
+		return 1;
 	} else {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+		return (yield* parent_proc());
+	}
+}, true);
+
+// synths.dm:39
+rt.def("/datum/species/synth/proc/assume_disguise", function* assume_disguise(f: Frame, S: Value, H: Value) {
+	let X: Value = null, BP: Value = null;
+	if (S && !rt.op(f, "IsType", [], [S, this.type])) {
+		this.name = S.name;
+		this.say_mod = S.say_mod;
+		this.sexes = S.sexes;
+		this.species_traits = (yield* this.initial_species_traits.Copy());
+		this.species_traits.Add(S.species_traits);
+		this.attack_verb = S.attack_verb;
+		this.attack_sound = S.attack_sound;
+		this.miss_sound = S.miss_sound;
+		this.meat = S.meat;
+		this.mutant_bodyparts = (yield* S.mutant_bodyparts.Copy());
+		this.mutant_organs = (yield* S.mutant_organs.Copy());
+		this.default_features = (yield* S.default_features.Copy());
+		this.nojumpsuit = S.nojumpsuit;
+		this.no_equip = (yield* S.no_equip.Copy());
+		this.limbs_id = S.limbs_id;
+		this.use_skintones = S.use_skintones;
+		this.fixed_mut_color = S.fixed_mut_color;
+		this.hair_color = S.hair_color;
+		this.fake_species = (yield* new_(S.type));
+	} else {
+		this.name = rt.initial(f, this, "name");
+		this.say_mod = rt.initial(f, this, "say_mod");
+		this.species_traits = (yield* this.initial_species_traits.Copy());
+		this.attack_verb = rt.initial(f, this, "attack_verb");
+		this.attack_sound = rt.initial(f, this, "attack_sound");
+		this.miss_sound = rt.initial(f, this, "miss_sound");
+		this.mutant_bodyparts = list();
+		this.default_features = list();
+		this.nojumpsuit = rt.initial(f, this, "nojumpsuit");
+		this.no_equip = list();
+		yield* qdel(this.fake_species);
+		this.fake_species = null;
+		this.meat = rt.initial(f, this, "meat");
+		this.limbs_id = "synth";
+		this.use_skintones = 0;
+		this.sexes = 0;
+		this.fixed_mut_color = "";
+		this.hair_color = "";
+	}
+	for (X of each(H.bodyparts)) {
+		(BP = X).update_limb();
+	}
+	yield* H.update_body_parts();
+	return f.dot;
+}, true);
+
+// synths.dm:89
+rt.def("/datum/species/synth/proc/handle_hair", function* handle_hair(f: Frame, H: Value, forced_colour: Value) {
+	if (this.fake_species) {
+		yield* this.fake_species.handle_hair(H, forced_colour);
+	} else {
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["H", "forced_colour"] });
+}, true);
 
-// /datum/species/synth/proc/handle_body  (code/modules/mob/living/carbon/human/species_types/synths.dm:96)  may sleep
-rt.def("/datum/species/synth/proc/handle_body", function* handle_body(f: Frame) {
-	if (truthy(rt.sv(f, "fake_species"))) {
-		yield* g.callName(f, rt.sv(f, "fake_species"), "handle_body", [live(f.args[0])]);
+// synths.dm:96
+rt.def("/datum/species/synth/proc/handle_body", function* handle_body(f: Frame, H: Value) {
+	if (this.fake_species) {
+		yield* this.fake_species.handle_body(H);
 	} else {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["H"] });
+}, true);
 
-// /datum/species/synth/proc/handle_mutant_bodyparts  (code/modules/mob/living/carbon/human/species_types/synths.dm:103)  may sleep
-rt.def("/datum/species/synth/proc/handle_mutant_bodyparts", function* handle_mutant_bodyparts(f: Frame) {
-	if (truthy(rt.sv(f, "fake_species"))) {
-		yield* g.callName(f, rt.sv(f, "fake_species"), "handle_body", [live(f.args[0]), live(f.args[1])]);
+// synths.dm:103
+rt.def("/datum/species/synth/proc/handle_mutant_bodyparts", function* handle_mutant_bodyparts(f: Frame, H: Value, forced_colour: Value) {
+	if (this.fake_species) {
+		yield* this.fake_species.handle_body(H, forced_colour);
 	} else {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["H", "forced_colour"] });
+}, true);
 
-// /datum/species/synth/proc/get_spans  (code/modules/mob/living/carbon/human/species_types/synths.dm:110)
+// synths.dm:110
 rt.def("/datum/species/synth/proc/get_spans", function get_spans(f: Frame) {
-	if (truthy(rt.sv(f, "fake_species"))) {
-		return rt.callName(f, rt.sv(f, "fake_species"), "get_spans", []);
+	if (this.fake_species) {
+		return this.fake_species.get_spans();
 	}
-	return rt.list();
+	return list();
 });
 
-// /datum/species/synth/proc/handle_speech  (code/modules/mob/living/carbon/human/species_types/synths.dm:115)
-rt.def("/datum/species/synth/proc/handle_speech", function handle_speech(f: Frame) {
-	if (rt.gt(rt.fv(f, "health", live(f.args[1])), rt.sv(f, "disguise_fail_health"))) {
-		if (truthy(rt.sv(f, "fake_species"))) {
-			return rt.callName(f, rt.sv(f, "fake_species"), "handle_speech", [live(f.args[0]), live(f.args[1])]);
+// synths.dm:115
+rt.def("/datum/species/synth/proc/handle_speech", function handle_speech(f: Frame, message: Value, H: Value) {
+	if (H.health > this.disguise_fail_health) {
+		if (this.fake_species) {
+			return this.fake_species.handle_speech(message, H);
 		}
-		return rt.callSuper(f, [], rt.Args.Same);
+		return parent_proc();
 	} else {
-		return rt.callSuper(f, [], rt.Args.Same);
+		return parent_proc();
 	}
-	return f.dot;
-}, false, { args: ["message", "H"] });
+}, false);

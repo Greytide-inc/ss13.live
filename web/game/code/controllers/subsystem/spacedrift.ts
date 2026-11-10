@@ -1,7 +1,7 @@
-// From code/controllers/subsystem/spacedrift.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/controllers/subsystem/spacedrift.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(40, "/datum/controller/subsystem/spacedrift", "/datum/controller/subsystem", {
@@ -14,109 +14,104 @@ rt.type(40, "/datum/controller/subsystem/spacedrift", "/datum/controller/subsyst
 	runlevels: 12,
 });
 
-// /datum/controller/subsystem/spacedrift/proc/New  (code/controllers/subsystem/spacedrift.dm:1)  may sleep
+// spacedrift.dm:1
 rt.def("/datum/controller/subsystem/spacedrift/proc/New", function* New(f: Frame) {
-	if (!isEqual(rt.gl("SSspacedrift"), live(f.src))) {
-		if (truthy((rt.istype(rt.gl("SSspacedrift"), T("/datum/controller/subsystem/spacedrift")) ? 1 : 0))) {
-			yield* g.srcCall(f, "Recover");
-			yield* g.call(f, P("/proc/qdel"), null, [rt.gl("SSspacedrift")]);
+	if (GLOB.SSspacedrift != this) {
+		if (rt.istype(GLOB.SSspacedrift, T("/datum/controller/subsystem/spacedrift"))) {
+			yield* this.Recover();
+			yield* qdel(GLOB.SSspacedrift);
 		}
-		rt.setGl("SSspacedrift", live(f.src));
+		GLOB.SSspacedrift = this;
 	}
-	yield* g.srcCall(f, "PreInit");
+	this.PreInit();
 	return f.dot;
 }, true);
 
-// /datum/controller/subsystem/spacedrift/proc/<init>  (code/controllers/subsystem/spacedrift.dm:8)
+// spacedrift.dm:8
 rt.def("/datum/controller/subsystem/spacedrift/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "currentrun", rt.list());
-	$0 = $0;
-	rt.setSv(f, "processing", rt.list());
+	parent_proc();
+	this.currentrun = list();
+
+	this.processing = list();
 	return f.dot;
 });
 
-// /datum/controller/subsystem/spacedrift/proc/stat_entry  (code/controllers/subsystem/spacedrift.dm:12)  may sleep
+// spacedrift.dm:12
 rt.def("/datum/controller/subsystem/spacedrift/proc/stat_entry", function* stat_entry(f: Frame) {
-	yield* g.callSuper(f, [fmt("P:＀", [rt.len(f, rt.sv(f, "processing"))])]);
+	yield* parent_proc(`P:${rt.len(f, this.processing)}`);
 	return f.dot;
 }, true);
 
-// /datum/controller/subsystem/spacedrift/proc/fire  (code/controllers/subsystem/spacedrift.dm:16)  may sleep
+// spacedrift.dm:16
 rt.def("/datum/controller/subsystem/spacedrift/proc/fire", function* fire(f: Frame, resumed: Value) {
-	let currentrun: Value = null, AM: Value = null, old_dir: Value = null, old_loc: Value = null;
+	let AM: Value = null, old_dir: Value = null, old_loc: Value = null;
 	let $0: any;
-	f.vars = () => [resumed, currentrun, AM, old_dir, old_loc, $0];
-	if (live(resumed) === null) {
-		resumed = 0;
+	resumed ??= 0;
+	if (!resumed) {
+		this.currentrun = (yield* this.processing.Copy());
 	}
-	if (!truthy(live(resumed))) {
-		rt.setFv(f, "currentrun", live(f.src), (yield* g.callName(f, rt.sv(f, "processing"), "Copy", [])));
-	}
-	currentrun = rt.fv(f, "currentrun", live(f.src));
-	while (truthy(rt.len(f, live(currentrun)))) {
-		AM = rt.index(live(currentrun), rt.len(f, live(currentrun)));
-		rt.incField(f, live(currentrun), "len", -1, true);
-		if (!truthy(live(AM))) {
-			(rt.modSrcVar(f, "processing", live(AM), subtract));
-			if ((rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit")) || !isEqual(rt.fv(f, "state", live(f.src)), 2))) {
-				$0 = (yield* g.srcCall(f, "pause"));
+	let currentrun: Value = this.currentrun;
+	while (rt.len(f, currentrun)) {
+		AM = rt.index(currentrun, rt.len(f, currentrun));
+		currentrun.len--;
+		if (!AM) {
+			this.processing -= AM;
+			if (rt.tickUsage(f) > GLOB.current_ticklimit || this.state != 2) {
+				$0 = this.pause();
 			} else {
 				$0 = 0;
 			}
-			if (truthy($0)) {
-				return live(f.dot);
+			if ($0) {
+				return f.dot;
 			}
 			continue;
 		}
-		if (rt.gt(rt.fv(f, "inertia_next_move", live(AM)), rt.worldTime(f))) {
-			if ((rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit")) || !isEqual(rt.fv(f, "state", live(f.src)), 2))) {
-				$0 = (yield* g.srcCall(f, "pause"));
+		if (AM.inertia_next_move > rt.worldTime(f)) {
+			if (rt.tickUsage(f) > GLOB.current_ticklimit || this.state != 2) {
+				$0 = this.pause();
 			} else {
 				$0 = 0;
 			}
-			if (truthy($0)) {
-				return live(f.dot);
+			if ($0) {
+				return f.dot;
 			}
 			continue;
 		}
-		if (((!truthy(rt.fv(f, "loc", live(AM))) || !isEqual(rt.fv(f, "loc", live(AM)), rt.fv(f, "inertia_last_loc", live(AM)))) || truthy((yield* g.callName(f, live(AM), "Process_Spacemove", [0]))))) {
-			rt.setFv(f, "inertia_dir", live(AM), 0);
+		if (!AM.loc || AM.loc != AM.inertia_last_loc || (yield* AM.Process_Spacemove(0))) {
+			AM.inertia_dir = 0;
 		}
-		if (!truthy(rt.fv(f, "inertia_dir", live(AM)))) {
-			rt.setFv(f, "inertia_last_loc", live(AM), null);
-			(rt.modSrcVar(f, "processing", live(AM), subtract));
-			if ((rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit")) || !isEqual(rt.fv(f, "state", live(f.src)), 2))) {
-				$0 = (yield* g.srcCall(f, "pause"));
+		if (!AM.inertia_dir) {
+			AM.inertia_last_loc = null;
+			this.processing -= AM;
+			if (rt.tickUsage(f) > GLOB.current_ticklimit || this.state != 2) {
+				$0 = this.pause();
 			} else {
 				$0 = 0;
 			}
-			if (truthy($0)) {
-				return live(f.dot);
+			if ($0) {
+				return f.dot;
 			}
 			continue;
 		}
-		old_dir = rt.fv(f, "dir", live(AM));
-		old_loc = rt.fv(f, "loc", live(AM));
-		rt.setFv(f, "glide_size", live(AM), (yield* g.call(f, P("/proc/max"), null, [1, (yield* g.call(f, P("/proc/min"), null, [divide(32, (yield* g.call(f, P("/proc/max"), null, [divide(rt.fv(f, "inertia_move_delay", live(AM)), rt.fv(f, "tick_lag", rt.world())), 1]))), 32]))])));
-		rt.setFv(f, "inertia_moving", live(AM), 1);
-		yield* g.call(f, P("/proc/step"), null, [live(AM), rt.fv(f, "inertia_dir", live(AM))]);
-		rt.setFv(f, "inertia_moving", live(AM), 0);
-		rt.setFv(f, "inertia_next_move", live(AM), add(rt.worldTime(f), rt.fv(f, "inertia_move_delay", live(AM))));
-		if (isEqual(rt.fv(f, "loc", live(AM)), live(old_loc))) {
-			rt.setFv(f, "inertia_dir", live(AM), 0);
+		old_dir = AM.dir;
+		old_loc = AM.loc;
+		AM.glide_size = max(1, min(32 / max(AM.inertia_move_delay / rt.world().tick_lag, 1), 32));
+		AM.inertia_moving = 1;
+		yield* step(AM, AM.inertia_dir);
+		AM.inertia_moving = 0;
+		AM.inertia_next_move = rt.worldTime(f) + AM.inertia_move_delay;
+		if (AM.loc == old_loc) {
+			AM.inertia_dir = 0;
 		}
-		yield* g.callName(f, live(AM), "setDir", [live(old_dir)]);
-		rt.setFv(f, "inertia_last_loc", live(AM), rt.fv(f, "loc", live(AM)));
-		if ((rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit")) || !isEqual(rt.fv(f, "state", live(f.src)), 2))) {
-			$0 = (yield* g.srcCall(f, "pause"));
+		yield* AM.setDir(old_dir);
+		AM.inertia_last_loc = AM.loc;
+		if (rt.tickUsage(f) > GLOB.current_ticklimit || this.state != 2) {
+			$0 = this.pause();
 		} else {
 			$0 = 0;
 		}
-		if (truthy($0)) {
-			return live(f.dot);
+		if ($0) {
+			return f.dot;
 		}
 	}
 	return f.dot;

@@ -1,7 +1,7 @@
-// From code/modules/surgery/bodyparts/robot_bodyparts.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/surgery/bodyparts/robot_bodyparts.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(10171, "/obj/item/bodypart/chest/robot", "/obj/item/bodypart/chest", {
@@ -16,61 +16,58 @@ rt.type(10171, "/obj/item/bodypart/chest/robot", "/obj/item/bodypart/chest", {
 	icon_state: "borg_chest",
 });
 
-// /obj/item/bodypart/chest/robot/proc/attackby  (code/modules/surgery/bodyparts/robot_bodyparts.dm:59)  may sleep
-rt.def("/obj/item/bodypart/chest/robot/proc/attackby", function* attackby(f: Frame) {
+// robot_bodyparts.dm:59
+rt.def("/obj/item/bodypart/chest/robot/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
 	let coil: Value = null;
-	f.vars = () => [coil];
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/stock_parts/cell")) ? 1 : 0))) {
-		if (truthy(rt.fv(f, "cell", live(f.src)))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You have already inserted a cell!</span>"]);
-			return live(f.dot);
+	if (rt.istype(W, T("/obj/item/weapon/stock_parts/cell"))) {
+		if (this.cell) {
+			to_chat(user, "<span class='warning'>You have already inserted a cell!</span>");
+			return f.dot;
 		} else {
-			if (!truthy((yield* g.callName(f, live(f.args[1]), "transferItemToLoc", [live(f.args[0]), live(f.src)])))) {
-				return live(f.dot);
+			if (!(yield* user.transferItemToLoc(W, this))) {
+				return f.dot;
 			}
-			rt.setFv(f, "cell", live(f.src), live(f.args[0]));
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You insert the cell.</span>"]);
+			this.cell = W;
+			to_chat(user, "<span class='notice'>You insert the cell.</span>");
+		}
+	} else if (rt.istype(W, T("/obj/item/stack/cable_coil"))) {
+		if (this.wired) {
+			to_chat(user, "<span class='warning'>You have already inserted wire!</span>");
+			return f.dot;
+		}
+		if (yield* (coil = W).use(1)) {
+			this.wired = 1;
+			to_chat(user, "<span class='notice'>You insert the wire.</span>");
+		} else {
+			to_chat(user, "<span class='warning'>You need one length of coil to wire it!</span>");
 		}
 	} else {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/stack/cable_coil")) ? 1 : 0))) {
-			if (truthy(rt.fv(f, "wired", live(f.src)))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You have already inserted wire!</span>"]);
-				return live(f.dot);
-			}
-			if (truthy((yield* g.callName(f, (coil = live(f.args[0])), "use", [1])))) {
-				rt.setFv(f, "wired", live(f.src), 1);
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You insert the wire.</span>"]);
-			} else {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You need one length of coil to wire it!</span>"]);
-			}
-		} else {
-			return (yield* g.callSuper(f, [], rt.Args.Same));
-		}
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["W", "user", "params"] });
-
-// /obj/item/bodypart/chest/robot/proc/Destroy  (code/modules/surgery/bodyparts/robot_bodyparts.dm:83)  may sleep
-rt.def("/obj/item/bodypart/chest/robot/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.sv(f, "cell"))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "cell")]);
-		rt.setSv(f, "cell", null);
-	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
 }, true);
 
-// /obj/item/bodypart/chest/robot/proc/drop_organs  (code/modules/surgery/bodyparts/robot_bodyparts.dm:90)  may sleep
-rt.def("/obj/item/bodypart/chest/robot/proc/drop_organs", function* drop_organs(f: Frame) {
-	if (truthy(rt.sv(f, "wired"))) {
-		yield* g.new_(f, T("/obj/item/stack/cable_coil"), [rt.fv(f, "loc", live(f.args[0])), 1]);
+// robot_bodyparts.dm:83
+rt.def("/obj/item/bodypart/chest/robot/proc/Destroy", function* Destroy(f: Frame) {
+	if (this.cell) {
+		yield* qdel(this.cell);
+		this.cell = null;
 	}
-	if (truthy(rt.sv(f, "cell"))) {
-		yield* g.callName(f, rt.sv(f, "cell"), "forceMove", [rt.fv(f, "loc", live(f.args[0]))]);
-		rt.setSv(f, "cell", null);
+	return (yield* parent_proc());
+}, true);
+
+// robot_bodyparts.dm:90
+rt.def("/obj/item/bodypart/chest/robot/proc/drop_organs", function* drop_organs(f: Frame, user: Value) {
+	if (this.wired) {
+		yield* new_(T("/obj/item/stack/cable_coil"), user.loc, 1);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	if (this.cell) {
+		yield* this.cell.forceMove(user.loc);
+		this.cell = null;
+	}
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
 rt.type(10203, "/obj/item/bodypart/head/robot", "/obj/item/bodypart/head", {
 	flash1: null,
@@ -84,77 +81,72 @@ rt.type(10203, "/obj/item/bodypart/head/robot", "/obj/item/bodypart/head", {
 	icon_state: "borg_head",
 });
 
-// /obj/item/bodypart/head/robot/proc/attackby  (code/modules/surgery/bodyparts/robot_bodyparts.dm:111)  may sleep
-rt.def("/obj/item/bodypart/head/robot/proc/attackby", function* attackby(f: Frame) {
+// robot_bodyparts.dm:111
+rt.def("/obj/item/bodypart/head/robot/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
 	let F: Value = null;
-	f.vars = () => [F];
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/device/assembly/flash/handheld")) ? 1 : 0))) {
-		F = live(f.args[0]);
-		if ((truthy(rt.fv(f, "flash1", live(f.src))) && truthy(rt.fv(f, "flash2", live(f.src))))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You have already inserted the eyes!</span>"]);
-			return live(f.dot);
+	if (rt.istype(W, T("/obj/item/device/assembly/flash/handheld"))) {
+		F = W;
+		if (this.flash1 && this.flash2) {
+			to_chat(user, "<span class='warning'>You have already inserted the eyes!</span>");
+			return f.dot;
+		} else if (F.crit_fail) {
+			to_chat(user, "<span class='warning'>You can't use a broken flash!</span>");
+			return f.dot;
 		} else {
-			if (truthy(rt.fv(f, "crit_fail", live(F)))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You can't use a broken flash!</span>"]);
-				return live(f.dot);
-			} else {
-				if (!truthy((yield* g.callName(f, live(f.args[1]), "transferItemToLoc", [live(F), live(f.src)])))) {
-					return live(f.dot);
-				}
-				if (truthy(rt.fv(f, "flash1", live(f.src)))) {
-					rt.setFv(f, "flash2", live(f.src), live(F));
-				} else {
-					rt.setFv(f, "flash1", live(f.src), live(F));
-				}
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You insert the flash into the eye socket.</span>"]);
+			if (!(yield* user.transferItemToLoc(F, this))) {
+				return f.dot;
 			}
+			if (this.flash1) {
+				this.flash2 = F;
+			} else {
+				this.flash1 = F;
+			}
+			to_chat(user, "<span class='notice'>You insert the flash into the eye socket.</span>");
+		}
+	} else if (rt.istype(W, T("/obj/item/weapon/crowbar"))) {
+		if (this.flash1 || this.flash2) {
+			playsound(this.loc, W.usesound, 50, 1);
+			to_chat(user, `<span class='notice'>You remove the flash from ${this}.</span>`);
+			if (this.flash1) {
+				yield* this.flash1.forceMove(user.loc);
+				this.flash1 = null;
+			}
+			if (this.flash2) {
+				yield* this.flash2.forceMove(user.loc);
+				this.flash2 = null;
+			}
+		} else {
+			to_chat(user, `<span class='warning'>There are no flash to remove from ${this}.</span>`);
 		}
 	} else {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/crowbar")) ? 1 : 0))) {
-			if ((truthy(rt.sv(f, "flash1")) || truthy(rt.sv(f, "flash2")))) {
-				yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.fv(f, "usesound", live(f.args[0])), 50, 1]);
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You remove the flash from ＀.</span>", [live(f.src)])]);
-				if (truthy(rt.sv(f, "flash1"))) {
-					yield* g.callName(f, rt.sv(f, "flash1"), "forceMove", [rt.fv(f, "loc", live(f.args[1]))]);
-					rt.setSv(f, "flash1", null);
-				}
-				if (truthy(rt.sv(f, "flash2"))) {
-					yield* g.callName(f, rt.sv(f, "flash2"), "forceMove", [rt.fv(f, "loc", live(f.args[1]))]);
-					rt.setSv(f, "flash2", null);
-				}
-			} else {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>There are no flash to remove from ＀.</span>", [live(f.src)])]);
-			}
-		} else {
-			return (yield* g.callSuper(f, [], rt.Args.Same));
-		}
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["W", "user", "params"] });
-
-// /obj/item/bodypart/head/robot/proc/Destroy  (code/modules/surgery/bodyparts/robot_bodyparts.dm:145)  may sleep
-rt.def("/obj/item/bodypart/head/robot/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.sv(f, "flash1"))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "flash1")]);
-		rt.setSv(f, "flash1", null);
-	}
-	if (truthy(rt.sv(f, "flash2"))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "flash2")]);
-		rt.setSv(f, "flash2", null);
-	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
 }, true);
 
-// /obj/item/bodypart/head/robot/proc/drop_organs  (code/modules/surgery/bodyparts/robot_bodyparts.dm:155)  may sleep
-rt.def("/obj/item/bodypart/head/robot/proc/drop_organs", function* drop_organs(f: Frame) {
-	if (truthy(rt.sv(f, "flash1"))) {
-		yield* g.callName(f, rt.sv(f, "flash1"), "forceMove", [rt.fv(f, "loc", live(f.args[0]))]);
-		rt.setSv(f, "flash1", null);
+// robot_bodyparts.dm:145
+rt.def("/obj/item/bodypart/head/robot/proc/Destroy", function* Destroy(f: Frame) {
+	if (this.flash1) {
+		yield* qdel(this.flash1);
+		this.flash1 = null;
 	}
-	if (truthy(rt.sv(f, "flash2"))) {
-		yield* g.callName(f, rt.sv(f, "flash2"), "forceMove", [rt.fv(f, "loc", live(f.args[0]))]);
-		rt.setSv(f, "flash2", null);
+	if (this.flash2) {
+		yield* qdel(this.flash2);
+		this.flash2 = null;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	return (yield* parent_proc());
+}, true);
+
+// robot_bodyparts.dm:155
+rt.def("/obj/item/bodypart/head/robot/proc/drop_organs", function* drop_organs(f: Frame, user: Value) {
+	if (this.flash1) {
+		yield* this.flash1.forceMove(user.loc);
+		this.flash1 = null;
+	}
+	if (this.flash2) {
+		yield* this.flash2.forceMove(user.loc);
+		this.flash2 = null;
+	}
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);

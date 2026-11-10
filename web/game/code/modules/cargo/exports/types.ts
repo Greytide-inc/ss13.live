@@ -1,5 +1,5 @@
 // Types declared in code/modules/cargo/exports that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(2002, "/datum/export/large/mech/sellable/syndiegygax/syndie", "/datum/export/large/mech/sellable/syndiegygax", {
 	cost: 25000,

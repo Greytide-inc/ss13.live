@@ -1,7 +1,7 @@
-// From code/modules/clothing/outfits/standard.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/clothing/outfits/standard.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(665, "/datum/outfit/tournament/janitor", "/datum/outfit/tournament", {
@@ -17,26 +17,21 @@ rt.type(665, "/datum/outfit/tournament/janitor", "/datum/outfit/tournament", {
 	backpack_contents: null,
 });
 
-// /datum/outfit/tournament/janitor/proc/<init>  (code/modules/clothing/outfits/standard.dm:49)
+// standard.dm:49
 rt.def("/datum/outfit/tournament/janitor/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "backpack_contents", rt.alist(f, [T("/obj/item/stack/tile/plasteel"), 6]));
+	parent_proc();
+	this.backpack_contents = rt.alist(f, [T("/obj/item/stack/tile/plasteel"), 6]);
 	return f.dot;
 });
 
-// /datum/outfit/tournament/janitor/proc/post_equip  (code/modules/clothing/outfits/standard.dm:55)  may sleep
+// standard.dm:55
 rt.def("/datum/outfit/tournament/janitor/proc/post_equip", function* post_equip(f: Frame, H: Value, visualsOnly: Value) {
 	let bucket: Value = null;
-	f.vars = () => [H, visualsOnly, bucket];
-	if (live(visualsOnly) === null) {
-		visualsOnly = 0;
+	visualsOnly ??= 0;
+	if (visualsOnly) {
+		return f.dot;
 	}
-	if (truthy(live(visualsOnly))) {
-		return live(f.dot);
-	}
-	yield* g.callName(f, rt.gv(f, "reagents", (bucket = (yield* g.callName(f, live(H), "get_item_for_held_index", [1])))), "add_reagent", ["water", 70]);
+	yield* (bucket = H.get_item_for_held_index(1)).reagents.add_reagent("water", 70);
 	return f.dot;
 }, true);
 
@@ -53,12 +48,10 @@ rt.type(666, "/datum/outfit/laser_tag", "/datum/outfit", {
 	backpack_contents: null,
 });
 
-// /datum/outfit/laser_tag/proc/<init>  (code/modules/clothing/outfits/standard.dm:69)
+// standard.dm:69
 rt.def("/datum/outfit/laser_tag/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "backpack_contents", rt.alist(f, [T("/obj/item/weapon/storage/box"), 1]));
+	parent_proc();
+	this.backpack_contents = rt.alist(f, [T("/obj/item/weapon/storage/box"), 1]);
 	return f.dot;
 });
 
@@ -77,20 +70,17 @@ rt.type(670, "/datum/outfit/tunnel_clown", "/datum/outfit", {
 	r_hand: rt.typePath("/obj/item/weapon/twohanded/fireaxe"),
 });
 
-// /datum/outfit/tunnel_clown/proc/post_equip  (code/modules/clothing/outfits/standard.dm:115)
+// standard.dm:115
 rt.def("/datum/outfit/tunnel_clown/proc/post_equip", function post_equip(f: Frame, H: Value, visualsOnly: Value) {
 	let W: Value = null;
-	f.vars = () => [visualsOnly, W];
-	if (live(visualsOnly) === null) {
-		visualsOnly = 0;
+	visualsOnly ??= 0;
+	if (visualsOnly) {
+		return f.dot;
 	}
-	if (truthy(live(visualsOnly))) {
-		return live(f.dot);
-	}
-	rt.setFv(f, "access", (W = rt.fv(f, "wear_id", live(H))), rt.call(f, P("/proc/get_all_accesses"), null, []));
-	rt.setFv(f, "assignment", live(W), "Tunnel Clown!");
-	rt.setFv(f, "registered_name", live(W), rt.fv(f, "real_name", live(H)));
-	rt.callName(f, live(W), "update_label", [rt.fv(f, "real_name", live(H))]);
+	(W = H.wear_id).access = get_all_accesses();
+	W.assignment = "Tunnel Clown!";
+	W.registered_name = H.real_name;
+	W.update_label(H.real_name);
 	return f.dot;
 });
 
@@ -109,26 +99,16 @@ rt.type(671, "/datum/outfit/psycho", "/datum/outfit", {
 	r_hand: rt.typePath("/obj/item/weapon/twohanded/fireaxe"),
 });
 
-// /datum/outfit/psycho/proc/post_equip  (code/modules/clothing/outfits/standard.dm:136)  may sleep
+// standard.dm:136
 rt.def("/datum/outfit/psycho/proc/post_equip", function* post_equip(f: Frame, H: Value) {
 	let carried_item: Value = null, I: Value = null;
-	let $e: any;
-	f.vars = () => [H, carried_item, I, $e];
-	carried_item = null;
-	rt.forList(f, 0, (yield* g.callName(f, live(H), "get_equipped_items", [])), T("/obj/item"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		carried_item = $e;
-		yield* g.callName(f, live(carried_item), "add_mob_blood", [live(H)]);
+	for (carried_item of each(H.get_equipped_items(), T("/obj/item"))) {
+		yield* carried_item.add_mob_blood(H);
 	}
-	rt.endFor(f, 0);
-	I = null;
-	rt.forList(f, 0, rt.fv(f, "held_items", live(H)), T("/obj/item"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		yield* g.callName(f, live(I), "add_mob_blood", [live(H)]);
+	for (I of each(H.held_items, T("/obj/item"))) {
+		yield* I.add_mob_blood(H);
 	}
-	rt.endFor(f, 0);
-	yield* g.callName(f, live(H), "regenerate_icons", []);
+	yield* H.regenerate_icons();
 	return f.dot;
 }, true);
 
@@ -145,44 +125,36 @@ rt.type(672, "/datum/outfit/assassin", "/datum/outfit", {
 	belt: rt.typePath("/obj/item/device/pda/heads"),
 });
 
-// /datum/outfit/assassin/proc/post_equip  (code/modules/clothing/outfits/standard.dm:157)  may sleep
+// standard.dm:157
 rt.def("/datum/outfit/assassin/proc/post_equip", function* post_equip(f: Frame, H: Value, visualsOnly: Value) {
-	let U: Value = null, sec_briefcase: Value = null, briefcase_item: Value = null, i: Value = null, pda: Value = null, W: Value = null;
+	let U: Value = null, briefcase_item: Value = null, i: Value = null, pda: Value = null, W: Value = null;
 	let $e: any;
-	f.vars = () => [H, visualsOnly, U, sec_briefcase, briefcase_item, i, pda, W, $e];
-	if (live(visualsOnly) === null) {
-		visualsOnly = 0;
+	visualsOnly ??= 0;
+	yield* (U = H.w_uniform).attach_accessory((yield* new_(T("/obj/item/clothing/accessory/waistcoat"), H)));
+	if (visualsOnly) {
+		return f.dot;
 	}
-	yield* g.callName(f, (U = rt.fv(f, "w_uniform", live(H))), "attach_accessory", [(yield* g.new_(f, T("/obj/item/clothing/accessory/waistcoat"), [live(H)]))]);
-	if (truthy(live(visualsOnly))) {
-		return live(f.dot);
+	let sec_briefcase: Value = H.get_item_for_held_index(1);
+	for (briefcase_item of each(sec_briefcase, T("/obj/item"))) {
+		yield* qdel(briefcase_item);
 	}
-	sec_briefcase = (yield* g.callName(f, live(H), "get_item_for_held_index", [1]));
-	briefcase_item = null;
-	rt.forList(f, 0, live(sec_briefcase), T("/obj/item"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		briefcase_item = $e;
-		yield* g.call(f, P("/proc/qdel"), null, [live(briefcase_item)]);
-	}
-	rt.endFor(f, 0);
-	i = null;
 	rt.forRange(f, 0, 3, 0, -1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.callName(f, live(sec_briefcase), "handle_item_insertion", [(yield* g.new_(f, T("/obj/item/stack/spacecash/c1000"), [])), 1]);
+		yield* sec_briefcase.handle_item_insertion((yield* new_(T("/obj/item/stack/spacecash/c1000"))), 1);
 	}
 	rt.endFor(f, 0);
-	yield* g.callName(f, live(sec_briefcase), "handle_item_insertion", [(yield* g.new_(f, T("/obj/item/weapon/gun/energy/kinetic_accelerator/crossbow"), [])), 1]);
-	yield* g.callName(f, live(sec_briefcase), "handle_item_insertion", [(yield* g.new_(f, T("/obj/item/weapon/gun/ballistic/revolver/mateba"), [])), 1]);
-	yield* g.callName(f, live(sec_briefcase), "handle_item_insertion", [(yield* g.new_(f, T("/obj/item/ammo_box/a357"), [])), 1]);
-	yield* g.callName(f, live(sec_briefcase), "handle_item_insertion", [(yield* g.new_(f, T("/obj/item/weapon/grenade/plastic/x4"), [])), 1]);
-	rt.setFv(f, "owner", (pda = rt.fv(f, "belt", live(H))), rt.fv(f, "real_name", live(H)));
-	rt.setFv(f, "ownjob", live(pda), "Reaper");
-	yield* g.callName(f, live(pda), "update_label", []);
-	rt.setFv(f, "access", (W = rt.fv(f, "wear_id", live(H))), (yield* g.call(f, P("/proc/get_all_accesses"), null, [])));
-	rt.setFv(f, "assignment", live(W), "Reaper");
-	rt.setFv(f, "registered_name", live(W), rt.fv(f, "real_name", live(H)));
-	yield* g.callName(f, live(W), "update_label", [rt.fv(f, "real_name", live(H))]);
+	yield* sec_briefcase.handle_item_insertion((yield* new_(T("/obj/item/weapon/gun/energy/kinetic_accelerator/crossbow"))), 1);
+	yield* sec_briefcase.handle_item_insertion((yield* new_(T("/obj/item/weapon/gun/ballistic/revolver/mateba"))), 1);
+	yield* sec_briefcase.handle_item_insertion((yield* new_(T("/obj/item/ammo_box/a357"))), 1);
+	yield* sec_briefcase.handle_item_insertion((yield* new_(T("/obj/item/weapon/grenade/plastic/x4"))), 1);
+	(pda = H.belt).owner = H.real_name;
+	pda.ownjob = "Reaper";
+	pda.update_label();
+	(W = H.wear_id).access = get_all_accesses();
+	W.assignment = "Reaper";
+	W.registered_name = H.real_name;
+	W.update_label(H.real_name);
 	return f.dot;
 }, true);
 
@@ -203,22 +175,19 @@ rt.type(673, "/datum/outfit/centcom_commander", "/datum/outfit", {
 	id: rt.typePath("/obj/item/weapon/card/id"),
 });
 
-// /datum/outfit/centcom_commander/proc/post_equip  (code/modules/clothing/outfits/standard.dm:206)
+// standard.dm:206
 rt.def("/datum/outfit/centcom_commander/proc/post_equip", function post_equip(f: Frame, H: Value, visualsOnly: Value) {
 	let W: Value = null;
-	f.vars = () => [visualsOnly, W];
-	if (live(visualsOnly) === null) {
-		visualsOnly = 0;
+	visualsOnly ??= 0;
+	if (visualsOnly) {
+		return f.dot;
 	}
-	if (truthy(live(visualsOnly))) {
-		return live(f.dot);
-	}
-	rt.setFv(f, "icon_state", (W = rt.fv(f, "wear_id", live(H))), "centcom");
-	rt.setFv(f, "access", live(W), rt.call(f, P("/proc/get_all_accesses"), null, []));
-	rt.modField(f, live(W), "access", rt.call(f, P("/proc/get_centcom_access"), null, ["Centcom Commander"]), add);
-	rt.setFv(f, "assignment", live(W), "Centcom Commander");
-	rt.setFv(f, "registered_name", live(W), rt.fv(f, "real_name", live(H)));
-	rt.callName(f, live(W), "update_label", []);
+	(W = H.wear_id).icon_state = "centcom";
+	W.access = get_all_accesses();
+	W.access += get_centcom_access("Centcom Commander");
+	W.assignment = "Centcom Commander";
+	W.registered_name = H.real_name;
+	W.update_label();
 	return f.dot;
 });
 
@@ -238,24 +207,21 @@ rt.type(674, "/datum/outfit/spec_ops", "/datum/outfit", {
 	id: rt.typePath("/obj/item/weapon/card/id"),
 });
 
-// /datum/outfit/spec_ops/proc/post_equip  (code/modules/clothing/outfits/standard.dm:234)
+// standard.dm:234
 rt.def("/datum/outfit/spec_ops/proc/post_equip", function post_equip(f: Frame, H: Value, visualsOnly: Value) {
 	let W: Value = null, R: Value = null;
-	f.vars = () => [visualsOnly, W, R];
-	if (live(visualsOnly) === null) {
-		visualsOnly = 0;
+	visualsOnly ??= 0;
+	if (visualsOnly) {
+		return f.dot;
 	}
-	if (truthy(live(visualsOnly))) {
-		return live(f.dot);
-	}
-	rt.setFv(f, "icon_state", (W = rt.fv(f, "wear_id", live(H))), "centcom");
-	rt.setFv(f, "access", live(W), rt.call(f, P("/proc/get_all_accesses"), null, []));
-	rt.modField(f, live(W), "access", rt.call(f, P("/proc/get_centcom_access"), null, ["Special Ops Officer"]), add);
-	rt.setFv(f, "assignment", live(W), "Special Ops Officer");
-	rt.setFv(f, "registered_name", live(W), rt.fv(f, "real_name", live(H)));
-	rt.callName(f, live(W), "update_label", []);
-	rt.callName(f, (R = rt.fv(f, "ears", live(H))), "set_frequency", [1337]);
-	rt.setFv(f, "freqlock", live(R), 1);
+	(W = H.wear_id).icon_state = "centcom";
+	W.access = get_all_accesses();
+	W.access += get_centcom_access("Special Ops Officer");
+	W.assignment = "Special Ops Officer";
+	W.registered_name = H.real_name;
+	W.update_label();
+	(R = H.ears).set_frequency(1337);
+	R.freqlock = 1;
 	return f.dot;
 });
 
@@ -273,12 +239,10 @@ rt.type(644, "/datum/outfit/wizard", "/datum/outfit", {
 	backpack_contents: null,
 });
 
-// /datum/outfit/wizard/proc/<init>  (code/modules/clothing/outfits/standard.dm:266)
+// standard.dm:266
 rt.def("/datum/outfit/wizard/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "backpack_contents", rt.alist(f, [T("/obj/item/weapon/storage/box"), 1]));
+	parent_proc();
+	this.backpack_contents = rt.alist(f, [T("/obj/item/weapon/storage/box"), 1]);
 	return f.dot;
 });
 
@@ -296,22 +260,19 @@ rt.type(676, "/datum/outfit/soviet", "/datum/outfit", {
 	id: rt.typePath("/obj/item/weapon/card/id"),
 });
 
-// /datum/outfit/soviet/proc/post_equip  (code/modules/clothing/outfits/standard.dm:301)
+// standard.dm:301
 rt.def("/datum/outfit/soviet/proc/post_equip", function post_equip(f: Frame, H: Value, visualsOnly: Value) {
 	let W: Value = null;
-	f.vars = () => [visualsOnly, W];
-	if (live(visualsOnly) === null) {
-		visualsOnly = 0;
+	visualsOnly ??= 0;
+	if (visualsOnly) {
+		return f.dot;
 	}
-	if (truthy(live(visualsOnly))) {
-		return live(f.dot);
-	}
-	rt.setFv(f, "icon_state", (W = rt.fv(f, "wear_id", live(H))), "centcom");
-	rt.setFv(f, "access", live(W), rt.call(f, P("/proc/get_all_accesses"), null, []));
-	rt.modField(f, live(W), "access", rt.call(f, P("/proc/get_centcom_access"), null, ["Admiral"]), add);
-	rt.setFv(f, "assignment", live(W), "Admiral");
-	rt.setFv(f, "registered_name", live(W), rt.fv(f, "real_name", live(H)));
-	rt.callName(f, live(W), "update_label", []);
+	(W = H.wear_id).icon_state = "centcom";
+	W.access = get_all_accesses();
+	W.access += get_centcom_access("Admiral");
+	W.assignment = "Admiral";
+	W.registered_name = H.real_name;
+	W.update_label();
 	return f.dot;
 });
 
@@ -327,19 +288,16 @@ rt.type(677, "/datum/outfit/mobster", "/datum/outfit", {
 	id: rt.typePath("/obj/item/weapon/card/id"),
 });
 
-// /datum/outfit/mobster/proc/post_equip  (code/modules/clothing/outfits/standard.dm:325)
+// standard.dm:325
 rt.def("/datum/outfit/mobster/proc/post_equip", function post_equip(f: Frame, H: Value, visualsOnly: Value) {
 	let W: Value = null;
-	f.vars = () => [visualsOnly, W];
-	if (live(visualsOnly) === null) {
-		visualsOnly = 0;
+	visualsOnly ??= 0;
+	if (visualsOnly) {
+		return f.dot;
 	}
-	if (truthy(live(visualsOnly))) {
-		return live(f.dot);
-	}
-	rt.setFv(f, "assignment", (W = rt.fv(f, "wear_id", live(H))), "Assistant");
-	rt.setFv(f, "registered_name", live(W), rt.fv(f, "real_name", live(H)));
-	rt.callName(f, live(W), "update_label", []);
+	(W = H.wear_id).assignment = "Assistant";
+	W.registered_name = H.real_name;
+	W.update_label();
 	return f.dot;
 });
 
@@ -362,33 +320,28 @@ rt.type(679, "/datum/outfit/death_commando", "/datum/outfit", {
 	backpack_contents: null,
 });
 
-// /datum/outfit/death_commando/proc/<init>  (code/modules/clothing/outfits/standard.dm:355)
+// standard.dm:355
 rt.def("/datum/outfit/death_commando/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "backpack_contents", rt.alist(f, [T("/obj/item/weapon/storage/box"), 1, T("/obj/item/ammo_box/a357"), 1, T("/obj/item/weapon/storage/firstaid/regular"), 1, T("/obj/item/weapon/storage/box/flashbangs"), 1, T("/obj/item/device/flashlight"), 1, T("/obj/item/weapon/grenade/plastic/x4"), 1]));
+	parent_proc();
+	this.backpack_contents = rt.alist(f, [T("/obj/item/weapon/storage/box"), 1, T("/obj/item/ammo_box/a357"), 1, T("/obj/item/weapon/storage/firstaid/regular"), 1, T("/obj/item/weapon/storage/box/flashbangs"), 1, T("/obj/item/device/flashlight"), 1, T("/obj/item/weapon/grenade/plastic/x4"), 1]);
 	return f.dot;
 });
 
-// /datum/outfit/death_commando/proc/post_equip  (code/modules/clothing/outfits/standard.dm:367)  may sleep
+// standard.dm:367
 rt.def("/datum/outfit/death_commando/proc/post_equip", function* post_equip(f: Frame, H: Value, visualsOnly: Value) {
 	let R: Value = null, L: Value = null, W: Value = null;
-	f.vars = () => [H, visualsOnly, R, L, W];
-	if (live(visualsOnly) === null) {
-		visualsOnly = 0;
+	visualsOnly ??= 0;
+	if (visualsOnly) {
+		return f.dot;
 	}
-	if (truthy(live(visualsOnly))) {
-		return live(f.dot);
-	}
-	yield* g.callName(f, (R = rt.fv(f, "ears", live(H))), "set_frequency", [1337]);
-	rt.setFv(f, "freqlock", live(R), 1);
-	yield* g.callName(f, (L = (yield* g.new_(f, T("/obj/item/weapon/implant/mindshield"), [live(H)]))), "implant", [live(H), null, 1]);
-	rt.setFv(f, "icon_state", (W = rt.fv(f, "wear_id", live(H))), "centcom");
-	rt.setFv(f, "access", live(W), (yield* g.call(f, P("/proc/get_all_accesses"), null, [])));
-	rt.modField(f, live(W), "access", (yield* g.call(f, P("/proc/get_centcom_access"), null, ["Death Commando"])), add);
-	rt.setFv(f, "assignment", live(W), "Death Commando");
-	rt.setFv(f, "registered_name", live(W), rt.fv(f, "real_name", live(H)));
-	yield* g.callName(f, live(W), "update_label", [rt.fv(f, "registered_name", live(W)), rt.fv(f, "assignment", live(W))]);
+	yield* (R = H.ears).set_frequency(1337);
+	R.freqlock = 1;
+	yield* (L = (yield* new_(T("/obj/item/weapon/implant/mindshield"), H))).implant(H, null, 1);
+	(W = H.wear_id).icon_state = "centcom";
+	W.access = get_all_accesses();
+	W.access += get_centcom_access("Death Commando");
+	W.assignment = "Death Commando";
+	W.registered_name = H.real_name;
+	W.update_label(W.registered_name, W.assignment);
 	return f.dot;
 }, true);

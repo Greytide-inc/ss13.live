@@ -1,7 +1,7 @@
-// From code/modules/assembly/proximity.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/assembly/proximity.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(9379, "/obj/item/device/assembly/prox_sensor", "/obj/item/device/assembly", {
@@ -17,211 +17,196 @@ rt.type(9379, "/obj/item/device/assembly/prox_sensor", "/obj/item/device/assembl
 	origin_tech: "magnets=1;engineering=1",
 });
 
-// /obj/item/device/assembly/prox_sensor/proc/<init>  (code/modules/assembly/proximity.dm:5)
+// proximity.dm:5
 rt.def("/obj/item/device/assembly/prox_sensor/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 800, "$glass", 200]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 800, "$glass", 200]);
 	return f.dot;
 });
 
-// /obj/item/device/assembly/prox_sensor/proc/Initialize  (code/modules/assembly/proximity.dm:21)  may sleep
+// proximity.dm:21
 rt.def("/obj/item/device/assembly/prox_sensor/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "proximity_monitor", (yield* g.new_(f, T("/datum/proximity_monitor"), [live(f.src), 0])));
+	f.dot = (yield* parent_proc());
+	this.proximity_monitor = (yield* new_(T("/datum/proximity_monitor"), this, 0));
 	return f.dot;
 }, true);
 
-// /obj/item/device/assembly/prox_sensor/proc/describe  (code/modules/assembly/proximity.dm:26)
+// proximity.dm:26
 rt.def("/obj/item/device/assembly/prox_sensor/proc/describe", function describe(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	if (truthy(rt.sv(f, "timing"))) {
+	if (this.timing) {
 		return "<span class='notice'>The proximity sensor is arming.</span>";
 	}
-	if (truthy(rt.sv(f, "scanning"))) {
-		$0 = "armed";
-	} else {
-		$0 = "disarmed";
-	}
-	return fmt("The proximity sensor is ＀.", [$0]);
+	return `The proximity sensor is ${this.scanning ? "armed" : "disarmed"}.`;
 });
 
-// /obj/item/device/assembly/prox_sensor/proc/activate  (code/modules/assembly/proximity.dm:30)  may sleep
+// proximity.dm:30
 rt.def("/obj/item/device/assembly/prox_sensor/proc/activate", function* activate(f: Frame) {
-	if (!truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
+	if (!(yield* parent_proc())) {
 		return 0;
 	}
-	rt.setSv(f, "timing", (!truthy(rt.sv(f, "timing")) ? 1 : 0));
-	yield* g.srcCall(f, "update_icon");
+	this.timing = (!this.timing ? 1 : 0);
+	yield* this.update_icon();
 	return 1;
 }, true);
 
-// /obj/item/device/assembly/prox_sensor/proc/toggle_secure  (code/modules/assembly/proximity.dm:37)  may sleep
+// proximity.dm:37
 rt.def("/obj/item/device/assembly/prox_sensor/proc/toggle_secure", function* toggle_secure(f: Frame) {
-	rt.setSv(f, "secured", (!truthy(rt.sv(f, "secured")) ? 1 : 0));
-	if (!truthy(rt.sv(f, "secured"))) {
-		if (truthy(rt.sv(f, "scanning"))) {
-			yield* g.srcCall(f, "toggle_scan");
-			rt.setFv(f, "host", rt.sv(f, "proximity_monitor"), live(f.src));
+	this.secured = (!this.secured ? 1 : 0);
+	if (!this.secured) {
+		if (this.scanning) {
+			yield* this.toggle_scan();
+			this.proximity_monitor.host = this;
 		}
-		rt.setSv(f, "timing", 0);
+		this.timing = 0;
 	} else {
-		rt.setFv(f, "host", rt.sv(f, "proximity_monitor"), rt.sv(f, "loc"));
+		this.proximity_monitor.host = this.loc;
 	}
-	yield* g.srcCall(f, "update_icon");
-	return rt.sv(f, "secured");
+	yield* this.update_icon();
+	return this.secured;
 }, true);
 
-// /obj/item/device/assembly/prox_sensor/proc/HasProximity  (code/modules/assembly/proximity.dm:50)  may sleep
+// proximity.dm:50
 rt.def("/obj/item/device/assembly/prox_sensor/proc/HasProximity", function* HasProximity(f: Frame, AM: Value) {
-	f.vars = () => [AM];
-	if (truthy((rt.istype(live(AM), T("/obj/effect/beam")) ? 1 : 0))) {
-		return live(f.dot);
+	if (rt.istype(AM, T("/obj/effect/beam"))) {
+		return f.dot;
 	}
-	yield* g.srcCall(f, "sense");
+	yield* this.sense();
 	return f.dot;
 }, true);
 
-// /obj/item/device/assembly/prox_sensor/proc/sense  empty
+// Empty in tg.
 rt.def("/obj/item/device/assembly/prox_sensor/proc/sense");
 
-// /obj/item/device/assembly/prox_sensor/proc/sense  (code/modules/assembly/proximity.dm:56)  may sleep
+// proximity.dm:56
 rt.def("/obj/item/device/assembly/prox_sensor/proc/sense", function* sense(f: Frame) {
-	if ((!truthy(rt.sv(f, "secured")) || rt.gt(rt.sv(f, "next_activate"), rt.worldTime(f)))) {
+	if (!this.secured || this.next_activate > rt.worldTime(f)) {
 		return 0;
 	}
-	yield* g.srcCall(f, "pulse", 0);
-	yield* g.srcCall(f, "audible_message", fmt("＀ *beep* *beep*", [(yield* g.call(f, P("/proc/bicon"), null, [live(f.src)]))]), null, 3);
-	rt.setSv(f, "next_activate", add(rt.worldTime(f), 30));
+	yield* this.pulse(0);
+	this.audible_message(`${bicon(this)} *beep* *beep*`, null, 3);
+	this.next_activate = rt.worldTime(f) + 30;
 	return f.dot;
 }, true);
 
-// /obj/item/device/assembly/prox_sensor/proc/process  (code/modules/assembly/proximity.dm:65)  may sleep
+// proximity.dm:65
 rt.def("/obj/item/device/assembly/prox_sensor/proc/process", function* process(f: Frame) {
-	if (!truthy(rt.sv(f, "timing"))) return f.dot;
-	rt.incSrcVar(f, "time", -1, true);
-	if (!rt.le(rt.sv(f, "time"), 0)) return f.dot;
-	rt.setSv(f, "timing", 0);
-	yield* g.srcCall(f, "toggle_scan", 1);
-	rt.setSv(f, "time", rt.initial(f, live(f.src), "time"));
+	if (!this.timing) return f.dot;
+	this.time--;
+	if (!(this.time <= 0)) return f.dot;
+	this.timing = 0;
+	yield* this.toggle_scan(1);
+	this.time = rt.initial(f, this, "time");
 	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/item/device/assembly/prox_sensor/proc/toggle_scan  empty
+// Empty in tg.
 rt.def("/obj/item/device/assembly/prox_sensor/proc/toggle_scan");
 
-// /obj/item/device/assembly/prox_sensor/proc/toggle_scan  (code/modules/assembly/proximity.dm:72)  may sleep
+// proximity.dm:72
 rt.def("/obj/item/device/assembly/prox_sensor/proc/toggle_scan", function* toggle_scan(f: Frame, scan: Value) {
-	let $0: any, $1: any;
-	f.vars = () => [scan, $0, $1];
-	if (!truthy(rt.sv(f, "secured"))) {
+	let $1: any;
+	if (!this.secured) {
 		return 0;
 	}
-	rt.setSv(f, "scanning", live(scan));
-	$0 = rt.sv(f, "proximity_monitor");
-	if (truthy(rt.sv(f, "scanning"))) {
-		$1 = rt.sv(f, "sensitivity");
+	this.scanning = scan;
+	let $0: any = this.proximity_monitor;
+	if (this.scanning) {
+		$1 = this.sensitivity;
 	} else {
 		$1 = 0;
 	}
-	yield* g.callName(f, $0, "SetRange", [$1]);
-	yield* g.srcCall(f, "update_icon");
+	yield* $0.SetRange($1);
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/item/device/assembly/prox_sensor/proc/sensitivity_change  (code/modules/assembly/proximity.dm:79)  may sleep
+// proximity.dm:79
 rt.def("/obj/item/device/assembly/prox_sensor/proc/sensitivity_change", function* sensitivity_change(f: Frame, value: Value) {
 	let sense: Value = null;
-	f.vars = () => [value, sense];
-	rt.setSv(f, "sensitivity", (sense = (yield* g.call(f, P("/proc/min"), null, [(yield* g.call(f, P("/proc/max"), null, [add(rt.sv(f, "sensitivity"), live(value)), 0])), 5]))));
-	if (!(truthy(rt.sv(f, "scanning")) && truthy((yield* g.callName(f, rt.sv(f, "proximity_monitor"), "SetRange", [live(sense)]))))) return f.dot;
-	yield* g.srcCall(f, "sense");
+	this.sensitivity = (sense = min(max(this.sensitivity + value, 0), 5));
+	if (!(this.scanning && (yield* this.proximity_monitor.SetRange(sense)))) return f.dot;
+	yield* this.sense();
 	return f.dot;
 }, true);
 
-// /obj/item/device/assembly/prox_sensor/proc/update_icon  (code/modules/assembly/proximity.dm:85)  may sleep
+// proximity.dm:85
 rt.def("/obj/item/device/assembly/prox_sensor/proc/update_icon", function* update_icon(f: Frame) {
-	yield* g.srcCall(f, "cut_overlays");
-	rt.setSv(f, "attached_overlays", rt.list());
-	if (truthy(rt.sv(f, "timing"))) {
-		yield* g.srcCall(f, "add_overlay", "prox_timing");
-		rt.modSrcVar(f, "attached_overlays", "prox_timing", add);
+	this.cut_overlays();
+	this.attached_overlays = list();
+	if (this.timing) {
+		this.add_overlay("prox_timing");
+		this.attached_overlays += "prox_timing";
 	}
-	if (truthy(rt.sv(f, "scanning"))) {
-		yield* g.srcCall(f, "add_overlay", "prox_scanning");
-		rt.modSrcVar(f, "attached_overlays", "prox_scanning", add);
+	if (this.scanning) {
+		this.add_overlay("prox_scanning");
+		this.attached_overlays += "prox_scanning";
 	}
-	if (truthy(rt.sv(f, "holder"))) {
-		yield* g.callName(f, rt.sv(f, "holder"), "update_icon", []);
+	if (this.holder) {
+		yield* this.holder.update_icon();
 	}
-	return live(f.dot);
+	return f.dot;
 }, true);
 
-// /obj/item/device/assembly/prox_sensor/proc/interact  (code/modules/assembly/proximity.dm:98)
+// proximity.dm:98
 rt.def("/obj/item/device/assembly/prox_sensor/proc/interact", function interact(f: Frame, user: Value) {
-	let second: Value = null, minute: Value = null, dat: Value = null;
 	let $0: any, $1: any;
-	f.vars = () => [second, minute, dat, $0, $1];
-	if (!truthy(rt.callSrc(f, "is_secured", [live(user)]))) return f.dot;
-	second = rt.modulus(rt.sv(f, "time"), 60);
-	minute = divide(subtract(rt.sv(f, "time"), live(second)), 60);
-	if (truthy(rt.sv(f, "timing"))) {
-		$0 = fmt("<A href='?src=＃;time=0'>Arming</A>", [live(f.src)]);
+	if (!this.is_secured(user)) return f.dot;
+	let second: Value = this.time % 60;
+	let minute: Value = (this.time - second) / 60;
+	if (this.timing) {
+		$0 = fmt("<A href='?src=＃;time=0'>Arming</A>", [this]);
 	} else {
-		$0 = fmt("<A href='?src=＃;time=1'>Not Arming</A>", [live(f.src)]);
+		$0 = fmt("<A href='?src=＃;time=1'>Not Arming</A>", [this]);
 	}
-	dat = fmt("<TT><B>Proximity Sensor</B>\n＀ ＀:＀\n<A href='?src=＃;tp=-30'>-</A> <A href='?src=＃;tp=-1'>-</A> <A href='?src=＃;tp=1'>+</A> <A href='?src=＃;tp=30'>+</A>\n</TT>", [$0, live(minute), live(second), live(f.src), live(f.src), live(f.src), live(f.src)]);
-	$0 = live(f.src);
-	if (truthy(rt.sv(f, "scanning"))) {
+	let dat: Value = fmt("<TT><B>Proximity Sensor</B>\n＀ ＀:＀\n<A href='?src=＃;tp=-30'>-</A> <A href='?src=＃;tp=-1'>-</A> <A href='?src=＃;tp=1'>+</A> <A href='?src=＃;tp=30'>+</A>\n</TT>", [$0, minute, second, this, this, this, this]);
+	$0 = this;
+	if (this.scanning) {
 		$1 = "0'>Armed";
 	} else {
 		$1 = "1'>Unarmed";
 	}
-	dat = rt.modify(live(dat), fmt("<BR><A href='?src=＃;scanning=＀</A> (Movement sensor active when armed!)", [$0, $1]), add);
-	dat = rt.modify(live(dat), fmt("<BR>Detection range: <A href='?src=＃;sense=down'>-</A> ＀ <A href='?src=＃;sense=up'>+</A>", [live(f.src), rt.sv(f, "sensitivity"), live(f.src)]), add);
-	dat = rt.modify(live(dat), fmt("<BR><BR><A href='?src=＃;refresh=1'>Refresh</A>", [live(f.src)]), add);
-	dat = rt.modify(live(dat), fmt("<BR><BR><A href='?src=＃;close=1'>Close</A>", [live(f.src)]), add);
-	rt.op(f, "Browse", [], [live(user), live(dat), "window=prox"], false);
-	rt.call(f, P("/proc/onclose"), null, [live(user), "prox"]);
-	return live(f.dot);
+	dat += fmt("<BR><A href='?src=＃;scanning=＀</A> (Movement sensor active when armed!)", [$0, $1]);
+	dat += fmt("<BR>Detection range: <A href='?src=＃;sense=down'>-</A> ＀ <A href='?src=＃;sense=up'>+</A>", [this, this.sensitivity, this]);
+	dat += fmt("<BR><BR><A href='?src=＃;refresh=1'>Refresh</A>", [this]);
+	dat += fmt("<BR><BR><A href='?src=＃;close=1'>Close</A>", [this]);
+	rt.op(f, "Browse", [], [user, dat, "window=prox"], false);
+	onclose(user, "prox");
+	return f.dot;
 });
 
-// /obj/item/device/assembly/prox_sensor/proc/Topic  (code/modules/assembly/proximity.dm:112)  may sleep
-rt.def("/obj/item/device/assembly/prox_sensor/proc/Topic", function* Topic(f: Frame) {
+// proximity.dm:112
+rt.def("/obj/item/device/assembly/prox_sensor/proc/Topic", function* Topic(f: Frame, href: Value, href_list: Value) {
 	let tp: Value = null;
 	let $0: any;
-	f.vars = () => [tp, $0];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if ((truthy((yield* g.callName(f, live(f.usr), "incapacitated", []))) || !rt.le((yield* g.call(f, P("/proc/get_dist"), null, [rt.sv(f, "loc"), live(f.usr)])), 1))) {
-		rt.op(f, "Browse", [], [live(f.usr), null, "window=prox"], false);
-		yield* g.call(f, P("/proc/onclose"), null, [live(f.usr), "prox"]);
-		return live(f.dot);
+	yield* parent_proc();
+	if (f.usr.incapacitated() || !(get_dist(this.loc, f.usr) <= 1)) {
+		rt.op(f, "Browse", [], [f.usr, null, "window=prox"], false);
+		onclose(f.usr, "prox");
+		return f.dot;
 	}
-	if (truthy(rt.at(live(f.args[1]), "sense"))) {
-		if (isEqual(rt.at(live(f.args[1]), "sense"), "up")) {
+	if (rt.at(href_list, "sense")) {
+		if (rt.at(href_list, "sense") == "up") {
 			$0 = 1;
 		} else {
 			$0 = -1;
 		}
-		yield* g.srcCall(f, "sensitivity_change", $0);
+		yield* this.sensitivity_change($0);
 	}
-	if (truthy(rt.at(live(f.args[1]), "scanning"))) {
-		yield* g.srcCall(f, "toggle_scan", (yield* g.call(f, P("/proc/text2num"), null, [rt.at(live(f.args[1]), "scanning")])));
+	if (rt.at(href_list, "scanning")) {
+		yield* this.toggle_scan(text2num(rt.at(href_list, "scanning")));
 	}
-	if (truthy(rt.at(live(f.args[1]), "time"))) {
-		rt.setSv(f, "timing", (yield* g.call(f, P("/proc/text2num"), null, [rt.at(live(f.args[1]), "time")])));
-		yield* g.srcCall(f, "update_icon");
+	if (rt.at(href_list, "time")) {
+		this.timing = text2num(rt.at(href_list, "time"));
+		yield* this.update_icon();
 	}
-	if (truthy(rt.at(live(f.args[1]), "tp"))) {
-		rt.setSv(f, "time", (yield* g.call(f, P("/proc/min"), null, [(yield* g.call(f, P("/proc/max"), null, [(yield* g.call(f, P("/proc/round"), null, [(rt.modSrcVar(f, "time", (tp = (yield* g.call(f, P("/proc/text2num"), null, [rt.at(live(f.args[1]), "tp")]))), add))])), 0])), 600])));
+	if (rt.at(href_list, "tp")) {
+		this.time = min(max(round((this.time += (tp = text2num(rt.at(href_list, "tp"))))), 0), 600);
 	}
-	if (truthy(rt.at(live(f.args[1]), "close"))) {
-		rt.op(f, "Browse", [], [live(f.usr), null, "window=prox"], false);
-		return live(f.dot);
+	if (rt.at(href_list, "close")) {
+		rt.op(f, "Browse", [], [f.usr, null, "window=prox"], false);
+		return f.dot;
 	}
-	if (!truthy(live(f.usr))) return f.dot;
-	yield* g.srcCall(f, "attack_self", live(f.usr));
+	if (!f.usr) return f.dot;
+	yield* this.attack_self(f.usr);
 	return f.dot;
-}, true, { args: ["href", "href_list"] });
+}, true);

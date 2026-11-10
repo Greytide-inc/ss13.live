@@ -1,7 +1,7 @@
-// From code/modules/holodeck/turfs.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/holodeck/turfs.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(4768, "/turf/open/floor/holofloor", "/turf/open/floor", {
@@ -12,14 +12,12 @@ rt.type(4768, "/turf/open/floor/holofloor", "/turf/open/floor", {
 	flags: 0,
 });
 
-// /turf/open/floor/holofloor/proc/<init>  (code/modules/holodeck/turfs.dm:4)
+// turfs.dm:4
 rt.def("/turf/open/floor/holofloor/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "broken_states", rt.list("engine"));
-	$0 = $0;
-	rt.setSv(f, "burnt_states", rt.list("engine"));
+	parent_proc();
+	this.broken_states = list("engine");
+
+	this.burnt_states = list("engine");
 	return f.dot;
 });
 
@@ -29,10 +27,10 @@ rt.type(4776, "/turf/open/floor/holofloor/asteroid", "/turf/open/floor/holofloor
 	icon: rt.rsc("icons/turf/floors.dmi"),
 });
 
-// /turf/open/floor/holofloor/asteroid/proc/Initialize  (code/modules/holodeck/turfs.dm:46)  may sleep
+// turfs.dm:46
 rt.def("/turf/open/floor/holofloor/asteroid/proc/Initialize", function* Initialize(f: Frame) {
-	rt.setSv(f, "icon_state", fmt("asteroid＀", [(yield* g.call(f, P("/proc/rand"), null, [0, 12]))]));
-	yield* g.callSuper(f, [], rt.Args.Same);
+	this.icon_state = `asteroid${rand(0, 12)}`;
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
@@ -41,12 +39,12 @@ rt.type(4777, "/turf/open/floor/holofloor/basalt", "/turf/open/floor/holofloor",
 	icon_state: "basalt0",
 });
 
-// /turf/open/floor/holofloor/basalt/proc/Initialize  (code/modules/holodeck/turfs.dm:54)  may sleep
+// turfs.dm:54
 rt.def("/turf/open/floor/holofloor/basalt/proc/Initialize", function* Initialize(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.op(f, "Prob", [], [15]))) return f.dot;
-	rt.setSv(f, "icon_state", fmt("basalt＀", [(yield* g.call(f, P("/proc/rand"), null, [0, 12]))]));
-	yield* g.call(f, P("/proc/set_basalt_light"), null, [live(f.src)]);
+	yield* parent_proc();
+	if (!prob(15)) return f.dot;
+	this.icon_state = `basalt${rand(0, 12)}`;
+	set_basalt_light(this);
 	return f.dot;
 }, true);
 
@@ -56,10 +54,10 @@ rt.type(4778, "/turf/open/floor/holofloor/space", "/turf/open/floor/holofloor", 
 	icon_state: "0",
 });
 
-// /turf/open/floor/holofloor/space/proc/Initialize  (code/modules/holodeck/turfs.dm:65)  may sleep
+// turfs.dm:65
 rt.def("/turf/open/floor/holofloor/space/proc/Initialize", function* Initialize(f: Frame) {
-	rt.setSv(f, "icon_state", fmt("＀", [rt.modulus(rt.bitXor(add(rt.sv(f, "x"), rt.sv(f, "y")), add(rt.op(f, "BitNot", [], [multiply(rt.sv(f, "x"), rt.sv(f, "y"))]), rt.sv(f, "z"))), 25)]));
-	yield* g.callSuper(f, [], rt.Args.Same);
+	this.icon_state = `${rt.bitXor(this.x + this.y, rt.op(f, "BitNot", [], [this.x * this.y]) + this.z) % 25}`;
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
@@ -69,19 +67,19 @@ rt.type(4779, "/turf/open/floor/holofloor/hyperspace", "/turf/open/floor/holoflo
 	icon_state: "speedspace_ns_1",
 });
 
-// /turf/open/floor/holofloor/hyperspace/proc/Initialize  (code/modules/holodeck/turfs.dm:74)  may sleep
+// turfs.dm:74
 rt.def("/turf/open/floor/holofloor/hyperspace/proc/Initialize", function* Initialize(f: Frame) {
-	rt.setSv(f, "icon_state", fmt("speedspace_ns_＀", [add(rt.modulus(add(add(rt.sv(f, "x"), multiply(5, rt.sv(f, "y"))), multiply(add(rt.modulus(rt.sv(f, "y"), 2), 1), 7)), 15), 1)]));
-	yield* g.callSuper(f, [], rt.Args.Same);
+	this.icon_state = `speedspace_ns_${(this.x + 5 * this.y + (this.y % 2 + 1) * 7) % 15 + 1}`;
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
 rt.type(4780, "/turf/open/floor/holofloor/hyperspace/ns", "/turf/open/floor/holofloor/hyperspace", {});
 
-// /turf/open/floor/holofloor/hyperspace/ns/proc/Initialize  (code/modules/holodeck/turfs.dm:78)  may sleep
+// turfs.dm:78
 rt.def("/turf/open/floor/holofloor/hyperspace/ns/proc/Initialize", function* Initialize(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "icon_state", fmt("speedspace_ns_＀", [add(rt.modulus(add(add(rt.sv(f, "x"), multiply(5, rt.sv(f, "y"))), multiply(add(rt.modulus(rt.sv(f, "y"), 2), 1), 7)), 15), 1)]));
+	yield* parent_proc();
+	this.icon_state = `speedspace_ns_${(this.x + 5 * this.y + (this.y % 2 + 1) * 7) % 15 + 1}`;
 	return f.dot;
 }, true);
 
@@ -96,28 +94,26 @@ rt.type(4781, "/turf/open/floor/holofloor/carpet", "/turf/open/floor/holofloor",
 	canSmoothWith: null,
 });
 
-// /turf/open/floor/holofloor/carpet/proc/<init>  (code/modules/holodeck/turfs.dm:87)
+// turfs.dm:87
 rt.def("/turf/open/floor/holofloor/carpet/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "broken_states", rt.list("damaged"));
+	parent_proc();
+	this.broken_states = list("damaged");
 	return f.dot;
 });
 
-// /turf/open/floor/holofloor/carpet/proc/Initialize  (code/modules/holodeck/turfs.dm:92)  may sleep
+// turfs.dm:92
 rt.def("/turf/open/floor/holofloor/carpet/proc/Initialize", function* Initialize(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/turf/open/floor/holofloor/carpet/proc/update_icon")])), 1]);
+	yield* parent_proc();
+	yield* addtimer((yield* new_(T("/datum/callback"), this, P("/turf/open/floor/holofloor/carpet/proc/update_icon"))), 1);
 	return f.dot;
 }, true);
 
-// /turf/open/floor/holofloor/carpet/proc/update_icon  (code/modules/holodeck/turfs.dm:96)
+// turfs.dm:96
 rt.def("/turf/open/floor/holofloor/carpet/proc/update_icon", function update_icon(f: Frame) {
-	if (!truthy(rt.callSuper(f, [], rt.Args.Same))) {
+	if (!parent_proc()) {
 		return 0;
 	}
-	if (!truthy(rt.sv(f, "intact"))) return f.dot;
-	rt.call(f, P("/proc/queue_smooth"), null, [live(f.src)]);
+	if (!this.intact) return f.dot;
+	queue_smooth(this);
 	return f.dot;
 });

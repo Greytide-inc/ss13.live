@@ -1,7 +1,7 @@
-// From code/game/objects/items/weapons/storage/book.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/weapons/storage/book.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(5544, "/obj/item/weapon/storage/book", "/obj/item/weapon/storage", {
@@ -17,30 +17,30 @@ rt.type(5544, "/obj/item/weapon/storage/book", "/obj/item/weapon/storage", {
 	resistance_flags: 4,
 });
 
-// /obj/item/weapon/storage/book/proc/attack_self  (code/game/objects/items/weapons/storage/book.dm:14)
+// book.dm:14
 rt.def("/obj/item/weapon/storage/book/proc/attack_self", function attack_self(f: Frame, user: Value) {
-	rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>The pages of ＀ have been cut out!</span>", [rt.sv(f, "title")])]);
+	to_chat(user, `<span class='notice'>The pages of ${this.title} have been cut out!</span>`);
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalbiblenames  (code/game/objects/items/weapons/storage/book.dm:16)
+// book.dm:16
 rt.def("/datum/controller/global_vars/proc/InitGlobalbiblenames", function InitGlobalbiblenames(f: Frame) {
-	rt.setGl("biblenames", rt.list("Bible", "Quran", "Scrapbook", "Burning Bible", "Clown Bible", "Banana Bible", "Creeper Bible", "White Bible", "Holy Light", "The God Delusion", "Tome", "The King in Yellow", "Ithaqua", "Scientology", "Melted Bible", "Necronomicon"));
-	rt.modSrcVar(f, "gvars_datum_init_order", "biblenames", add);
+	GLOB.biblenames = list("Bible", "Quran", "Scrapbook", "Burning Bible", "Clown Bible", "Banana Bible", "Creeper Bible", "White Bible", "Holy Light", "The God Delusion", "Tome", "The King in Yellow", "Ithaqua", "Scientology", "Melted Bible", "Necronomicon");
+	this.gvars_datum_init_order += "biblenames";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalbiblestates  (code/game/objects/items/weapons/storage/book.dm:17)
+// book.dm:17
 rt.def("/datum/controller/global_vars/proc/InitGlobalbiblestates", function InitGlobalbiblestates(f: Frame) {
-	rt.setGl("biblestates", rt.list("bible", "koran", "scrapbook", "burning", "honk1", "honk2", "creeper", "white", "holylight", "atheist", "tome", "kingyellow", "ithaqua", "scientology", "melted", "necronomicon"));
-	rt.modSrcVar(f, "gvars_datum_init_order", "biblestates", add);
+	GLOB.biblestates = list("bible", "koran", "scrapbook", "burning", "honk1", "honk2", "creeper", "white", "holylight", "atheist", "tome", "kingyellow", "ithaqua", "scientology", "melted", "necronomicon");
+	this.gvars_datum_init_order += "biblestates";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalbibleitemstates  (code/game/objects/items/weapons/storage/book.dm:18)
+// book.dm:18
 rt.def("/datum/controller/global_vars/proc/InitGlobalbibleitemstates", function InitGlobalbibleitemstates(f: Frame) {
-	rt.setGl("bibleitemstates", rt.list("bible", "koran", "scrapbook", "bible", "bible", "bible", "syringe_kit", "syringe_kit", "syringe_kit", "syringe_kit", "syringe_kit", "kingyellow", "ithaqua", "scientology", "melted", "necronomicon"));
-	rt.modSrcVar(f, "gvars_datum_init_order", "bibleitemstates", add);
+	GLOB.bibleitemstates = list("bible", "koran", "scrapbook", "bible", "bible", "bible", "syringe_kit", "syringe_kit", "syringe_kit", "syringe_kit", "syringe_kit", "kingyellow", "ithaqua", "scientology", "melted", "necronomicon");
+	this.gvars_datum_init_order += "bibleitemstates";
 	return f.dot;
 });
 
@@ -55,183 +55,161 @@ rt.type(5545, "/obj/item/weapon/storage/book/bible", "/obj/item/weapon/storage/b
 	force_string: "holy",
 });
 
-// /obj/item/weapon/storage/book/bible/proc/suicide_act  (code/game/objects/items/weapons/storage/book.dm:31)
+// book.dm:31
 rt.def("/obj/item/weapon/storage/book/bible/proc/suicide_act", function suicide_act(f: Frame, user: Value) {
-	rt.callName(f, live(user), "visible_message", [fmt("<span class='suicide'>＀ is offering ＀self to ＀! It looks like ＀ trying to commit suicide!</span>", [live(user), rt.callName(f, live(user), "p_them", []), rt.sv(f, "deity_name"), rt.callName(f, live(user), "p_theyre", [])])]);
+	user.visible_message(`<span class='suicide'>${user} is offering ${user.p_them()}self to ${this.deity_name}! It looks like ${user.p_theyre()} trying to commit suicide!</span>`);
 	return 1;
 });
 
-// /obj/item/weapon/storage/book/bible/proc/attack_self  (code/game/objects/items/weapons/storage/book.dm:35)
+// book.dm:35
 rt.def("/obj/item/weapon/storage/book/bible/proc/attack_self", function attack_self(f: Frame, H: Value) {
-	let dat: Value = null, i: Value = null, bibleicon: Value = null, nicename: Value = null;
+	let i: Value = null, bibleicon: Value = null, nicename: Value = null;
 	let $e: any;
-	f.vars = () => [dat, i, bibleicon, nicename, $e];
-	if (!truthy((rt.istype(live(H), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		return live(f.dot);
+	if (!rt.istype(H, T("/mob/living/carbon/human"))) {
+		return f.dot;
 	}
-	if (!(!truthy(rt.fv(f, "bible_icon_state", rt.gl("SSreligion"))) && isEqual(rt.fv(f, "job", live(H)), "Chaplain"))) return f.dot;
-	dat = "<html><head><title>Pick Bible Style</title></head><body><center><h2>Pick a bible style</h2></center><table>";
-	i = null;
-	rt.forRange(f, 0, 1, rt.len(f, rt.gl("biblestates")), 1);
+	if (!(!GLOB.SSreligion.bible_icon_state && H.job == "Chaplain")) return f.dot;
+	let dat: Value = "<html><head><title>Pick Bible Style</title></head><body><center><h2>Pick a bible style</h2></center><table>";
+	rt.forRange(f, 0, 1, rt.len(f, GLOB.biblestates), 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		bibleicon = rt.call(f, P("/proc/icon"), null, [rt.rsc("icons/obj/storage.dmi"), rt.index(rt.gl("biblestates"), live(i))]);
-		nicename = rt.index(rt.gl("biblenames"), live(i));
-		rt.op(f, "BrowseResource", [], [live(H), live(bibleicon), live(nicename)], false);
-		dat = rt.modify(live(dat), fmt("<tr><td><img src=\"＀\"></td><td><a href=\"?src=＃;seticon=＀\">＀</a></td></tr>", [live(nicename), live(f.src), live(i), live(nicename)]), add);
+		bibleicon = icon(rt.rsc("icons/obj/storage.dmi"), rt.index(GLOB.biblestates, i));
+		nicename = rt.index(GLOB.biblenames, i);
+		rt.op(f, "BrowseResource", [], [H, bibleicon, nicename], false);
+		dat += fmt("<tr><td><img src=\"＀\"></td><td><a href=\"?src=＃;seticon=＀\">＀</a></td></tr>", [nicename, this, i, nicename]);
 	}
 	rt.endFor(f, 0);
-	dat = rt.modify(live(dat), "</table></body></html>", add);
-	rt.op(f, "Browse", [], [live(H), live(dat), "window=editicon;can_close=0;can_minimize=0;size=250x650"], false);
+	dat += "</table></body></html>";
+	rt.op(f, "Browse", [], [H, dat, "window=editicon;can_close=0;can_minimize=0;size=250x650"], false);
 	return f.dot;
 });
 
-// /obj/item/weapon/storage/book/bible/proc/Topic  (code/game/objects/items/weapons/storage/book.dm:49)  may sleep
+// book.dm:49
 rt.def("/obj/item/weapon/storage/book/bible/proc/Topic", function* Topic(f: Frame, href: Value, href_list: Value) {
-	let iconi: Value = null, biblename: Value = null, B: Value = null, H: Value = null;
-	f.vars = () => [href, href_list, iconi, biblename, B, H];
-	if (!truthy((yield* g.callName(f, live(f.usr), "canUseTopic", [live(f.src)])))) {
-		return live(f.dot);
+	let B: Value = null, H: Value = null;
+	if (!f.usr.canUseTopic(this)) {
+		return f.dot;
 	}
-	if (!((truthy(rt.at(live(href_list), "seticon")) && truthy(rt.gl("SSreligion"))) && !truthy(rt.fv(f, "bible_icon_state", rt.gl("SSreligion"))))) return f.dot;
-	iconi = (yield* g.call(f, P("/proc/text2num"), null, [rt.at(live(href_list), "seticon")]));
+	if (!(rt.at(href_list, "seticon") && GLOB.SSreligion && !GLOB.SSreligion.bible_icon_state)) return f.dot;
+	let iconi: Value = text2num(rt.at(href_list, "seticon"));
 	// The href's icon number must be a real choice (a whole number in range), and the book is this one: tg located any object named by "src".
-	if (!(typeof iconi === "number" && Number.isInteger(iconi) && iconi >= 1 && iconi <= rt.len(f, rt.gl("biblestates")))) return f.dot;
-	biblename = rt.index(rt.gl("biblenames"), live(iconi));
-	rt.setFv(f, "icon_state", (B = live(f.src)), rt.index(rt.gl("biblestates"), live(iconi)));
-	rt.setFv(f, "item_state", live(B), rt.index(rt.gl("bibleitemstates"), live(iconi)));
-	if ((isEqual(rt.fv(f, "icon_state", live(B)), "honk1") || isEqual(rt.fv(f, "icon_state", live(B)), "honk2"))) {
-		yield* g.callName(f, rt.gv(f, "dna", (H = live(f.usr))), "add_mutation", ["Clumsiness"]);
-		yield* g.callName(f, live(H), "equip_to_slot_or_del", [(yield* g.new_(f, T("/obj/item/clothing/mask/gas/clown_hat"), [live(H)])), 2]);
+	if (!(typeof iconi === "number" && Number.isInteger(iconi) && iconi >= 1 && iconi <= rt.len(f, GLOB.biblestates))) return f.dot;
+	let biblename: Value = rt.index(GLOB.biblenames, iconi);
+	(B = this).icon_state = rt.index(GLOB.biblestates, iconi);
+	B.item_state = rt.index(GLOB.bibleitemstates, iconi);
+	if (B.icon_state == "honk1" || B.icon_state == "honk2") {
+		yield* (H = f.usr).dna.add_mutation("Clumsiness");
+		yield* H.equip_to_slot_or_del((yield* new_(T("/obj/item/clothing/mask/gas/clown_hat"), H)), 2);
 	}
-	rt.setFv(f, "bible_icon_state", rt.gl("SSreligion"), rt.fv(f, "icon_state", live(B)));
-	rt.setFv(f, "bible_item_state", rt.gl("SSreligion"), rt.fv(f, "item_state", live(B)));
-	rt.op(f, "Browse", [], [live(f.usr), null, "window=editicon"], false);
+	GLOB.SSreligion.bible_icon_state = B.icon_state;
+	GLOB.SSreligion.bible_item_state = B.item_state;
+	rt.op(f, "Browse", [], [f.usr, null, "window=editicon"], false);
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/storage/book/bible/proc/bless  (code/game/objects/items/weapons/storage/book.dm:70)  may sleep
+// book.dm:70
 rt.def("/obj/item/weapon/storage/book/bible/proc/bless", function* bless(f: Frame, H: Value, user: Value) {
-	let X: Value = null, BP: Value = null, heal_amt: Value = null, hurt_limbs: Value = null, X_2: Value = null, affecting: Value = null;
-	let $e: any;
-	f.vars = () => [H, user, X, BP, heal_amt, hurt_limbs, X_2, affecting, $e];
-	X = null;
-	rt.forList(f, 0, rt.fv(f, "bodyparts", live(H)));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		X = $e;
-		if (isEqual(rt.gv(f, "status", (BP = live(X))), 2)) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ refuses to heal this metallic taint!</span>", [rt.fv(f, "deity_name", live(f.src))])]);
+	let X: Value = null, BP: Value = null, hurt_limbs: Value = null, X_2: Value = null, affecting: Value = null;
+	for (X of each(H.bodyparts)) {
+		if ((BP = X).status == BODYPART_ROBOTIC) {
+			to_chat(user, `<span class='warning'>${this.deity_name} refuses to heal this metallic taint!</span>`);
 			return 0;
 		}
 	}
-	rt.endFor(f, 0);
-	heal_amt = 10;
-	if (truthy(rt.getLen(f, (hurt_limbs = (yield* g.callName(f, live(H), "get_damaged_bodyparts", [1, 1])))))) {
-		X_2 = null;
-		rt.forList(f, 0, live(hurt_limbs));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			X_2 = $e;
-			if (truthy((yield* g.callName(f, (affecting = live(X_2)), "heal_damage", [live(heal_amt), live(heal_amt)])))) {
-				yield* g.callName(f, live(H), "update_damage_overlays", []);
+	let heal_amt: Value = 10;
+	if (rt.len(f, (hurt_limbs = H.get_damaged_bodyparts(1, 1)))) {
+		for (X_2 of each(hurt_limbs)) {
+			if (yield* (affecting = X_2).heal_damage(heal_amt, heal_amt)) {
+				H.update_damage_overlays();
 			}
 		}
-		rt.endFor(f, 0);
-		yield* g.callName(f, live(H), "visible_message", [fmt("<span class='notice'>＀ heals ＀ with the power of ＀!</span>", [live(user), live(H), rt.sv(f, "deity_name")])]);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(H), fmt("<span class='boldnotice'>May the power of ＀ compel you to be healed!</span>", [rt.sv(f, "deity_name")])]);
-		yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), "punch", 25, 1, -1]);
+		H.visible_message(`<span class='notice'>${user} heals ${H} with the power of ${this.deity_name}!</span>`);
+		to_chat(H, `<span class='boldnotice'>May the power of ${this.deity_name} compel you to be healed!</span>`);
+		playsound(this.loc, "punch", 25, 1, -1);
 	}
 	return 1;
 }, true);
 
-// /obj/item/weapon/storage/book/bible/proc/attack  (code/game/objects/items/weapons/storage/book.dm:91)  may sleep
+// book.dm:91
 rt.def("/obj/item/weapon/storage/book/bible/proc/attack", function* attack(f: Frame) {
-	let chaplain: Value = null, smack: Value = null, C: Value = null;
-	f.vars = () => [chaplain, smack, C];
-	if (live(f.args[2]) === null) {
+	let C: Value = null;
+	if (f.args[2] === null) {
 		f.args[2] = 1;
 	}
-	if (!truthy((yield* g.callName(f, live(f.args[1]), "IsAdvancedToolUser", [])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You don't have the dexterity to do this!</span>"]);
-		return live(f.dot);
+	if (!f.args[1].IsAdvancedToolUser()) {
+		to_chat(f.args[1], "<span class='warning'>You don't have the dexterity to do this!</span>");
+		return f.dot;
 	}
-	if ((truthy(rt.bitAnd(rt.fv(f, "disabilities", live(f.args[1])), 256)) && truthy(rt.op(f, "Prob", [], [50])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='danger'>＀ slips out of your hand and hits your head.</span>", [live(f.src)])]);
-		yield* g.callName(f, live(f.args[1]), "take_bodypart_damage", [10]);
-		yield* g.callName(f, live(f.args[1]), "Unconscious", [400]);
-		return live(f.dot);
+	if (rt.bitAnd(f.args[1].disabilities, 256) && prob(50)) {
+		to_chat(f.args[1], `<span class='danger'>${this} slips out of your hand and hits your head.</span>`);
+		yield* f.args[1].take_bodypart_damage(10);
+		yield* f.args[1].Unconscious(400);
+		return f.dot;
 	}
-	chaplain = 0;
-	if ((truthy(rt.fv(f, "mind", live(f.args[1]))) && truthy(rt.gv(f, "isholy", rt.fv(f, "mind", live(f.args[1])))))) {
+	let chaplain: Value = 0;
+	if (f.args[1].mind && f.args[1].mind.isholy) {
 		chaplain = 1;
 	}
-	if (!truthy(live(chaplain))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='danger'>The book sizzles in your hands.</span>"]);
-		yield* g.callName(f, live(f.args[1]), "take_bodypart_damage", [0, 10]);
-		return live(f.dot);
+	if (!chaplain) {
+		to_chat(f.args[1], "<span class='danger'>The book sizzles in your hands.</span>");
+		yield* f.args[1].take_bodypart_damage(0, 10);
+		return f.dot;
 	}
-	if (!truthy(live(f.args[2]))) {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+	if (!f.args[2]) {
+		return (yield* parent_proc());
 	}
-	smack = 1;
-	if (!isEqual(rt.fv(f, "stat", live(f.args[0])), 2)) {
-		if ((truthy(live(chaplain)) && isEqual(live(f.args[1]), live(f.args[0])))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You can't heal yourself!</span>"]);
-			return live(f.dot);
+	let smack: Value = 1;
+	if (f.args[0].stat != 2) {
+		if (chaplain && f.args[1] == f.args[0]) {
+			to_chat(f.args[1], "<span class='warning'>You can't heal yourself!</span>");
+			return f.dot;
 		}
-		if (((truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon/human")) ? 1 : 0)) && truthy(rt.op(f, "Prob", [], [60]))) && truthy((yield* g.srcCall(f, "bless", live(f.args[0]), live(f.args[1])))))) {
+		if (rt.istype(f.args[0], T("/mob/living/carbon/human")) && prob(60) && (yield* this.bless(f.args[0], f.args[1]))) {
 			smack = 0;
-		} else {
-			if (truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon")) ? 1 : 0))) {
-				if (!truthy((rt.istype(rt.gv(f, "head", (C = live(f.args[0]))), T("/obj/item/clothing/head/helmet")) ? 1 : 0))) {
-					yield* g.callName(f, live(C), "adjustBrainLoss", [10]);
-					yield* g.call(f, P("/proc/to_chat"), null, [live(C), "<span class='danger'>You feel dumber.</span>"]);
-				}
+		} else if (rt.istype(f.args[0], T("/mob/living/carbon"))) {
+			if (!rt.istype((C = f.args[0]).head, T("/obj/item/clothing/head/helmet"))) {
+				yield* C.adjustBrainLoss(10);
+				to_chat(C, "<span class='danger'>You feel dumber.</span>");
 			}
 		}
-		if (truthy(live(smack))) {
-			yield* g.callName(f, live(f.args[0]), "visible_message", [fmt("<span class='danger'>＀ beats ＀ over the head with ＀!</span>", [live(f.args[1]), live(f.args[0]), live(f.src)]), fmt("<span class='userdanger'>＀ beats ＀ over the head with ＀!</span>", [live(f.args[1]), live(f.args[0]), live(f.src)])]);
-			yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), "punch", 25, 1, -1]);
-			yield* g.call(f, P("/proc/add_logs"), null, [live(f.args[1]), live(f.args[0]), "attacked", live(f.src)]);
+		if (smack) {
+			f.args[0].visible_message(`<span class='danger'>${f.args[1]} beats ${f.args[0]} over the head with ${this}!</span>`, `<span class='userdanger'>${f.args[1]} beats ${f.args[0]} over the head with ${this}!</span>`);
+			playsound(this.loc, "punch", 25, 1, -1);
+			add_logs(f.args[1], f.args[0], "attacked", this);
 		}
 	} else {
-		yield* g.callName(f, live(f.args[0]), "visible_message", [fmt("<span class='danger'>＀ smacks ＀'s lifeless corpse with ＀.</span>", [live(f.args[1]), live(f.args[0]), live(f.src)])]);
-		yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), "punch", 25, 1, -1]);
+		f.args[0].visible_message(`<span class='danger'>${f.args[1]} smacks ${f.args[0]}'s lifeless corpse with ${this}.</span>`);
+		playsound(this.loc, "punch", 25, 1, -1);
 	}
 	return f.dot;
 }, true, { args: ["M", "user", "heal_mode"] });
 
-// /obj/item/weapon/storage/book/bible/proc/afterattack  (code/game/objects/items/weapons/storage/book.dm:139)  may sleep
+// book.dm:139
 rt.def("/obj/item/weapon/storage/book/bible/proc/afterattack", function* afterattack(f: Frame, A: Value, user: Value, proximity: Value) {
-	let R: Value = null, water2holy: Value = null, unholy2clean: Value = null;
-	let $e: any;
-	f.vars = () => [A, user, proximity, R, water2holy, unholy2clean, $e];
-	if (!truthy(live(proximity))) {
-		return live(f.dot);
+	let R: Value = null, water2holy: Value = null;
+	if (!proximity) {
+		return f.dot;
 	}
-	if (truthy((rt.istype(live(A), T("/turf/open/floor")) ? 1 : 0))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>You hit the floor with the bible.</span>"]);
-		if ((truthy(rt.fv(f, "mind", live(user))) && truthy(rt.gv(f, "isholy", rt.fv(f, "mind", live(user)))))) {
-			R = null;
-			rt.forList(f, 0, (yield* g.call(f, P("/proc/orange"), null, [2, live(user)])), T("/obj/effect/rune"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				R = $e;
-				rt.setFv(f, "invisibility", live(R), 0);
+	if (rt.istype(A, T("/turf/open/floor"))) {
+		to_chat(user, "<span class='notice'>You hit the floor with the bible.</span>");
+		if (user.mind && user.mind.isholy) {
+			for (R of each(orange(2, user), T("/obj/effect/rune"))) {
+				R.invisibility = 0;
 			}
-			rt.endFor(f, 0);
 		}
 	}
-	if (!(truthy(rt.fv(f, "mind", live(user))) && truthy(rt.gv(f, "isholy", rt.fv(f, "mind", live(user)))))) return f.dot;
-	if ((truthy(rt.fv(f, "reagents", live(A))) && truthy((yield* g.callName(f, rt.fv(f, "reagents", live(A)), "has_reagent", ["water"]))))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You bless ＀.</span>", [live(A)])]);
-		water2holy = (yield* g.callName(f, rt.fv(f, "reagents", live(A)), "get_reagent_amount", ["water"]));
-		yield* g.callName(f, rt.fv(f, "reagents", live(A)), "del_reagent", ["water"]);
-		yield* g.callName(f, rt.fv(f, "reagents", live(A)), "add_reagent", ["holywater", live(water2holy)]);
+	if (!(user.mind && user.mind.isholy)) return f.dot;
+	if (A.reagents && A.reagents.has_reagent("water")) {
+		to_chat(user, `<span class='notice'>You bless ${A}.</span>`);
+		water2holy = A.reagents.get_reagent_amount("water");
+		yield* A.reagents.del_reagent("water");
+		yield* A.reagents.add_reagent("holywater", water2holy);
 	}
-	if (!(truthy(rt.fv(f, "reagents", live(A))) && truthy((yield* g.callName(f, rt.fv(f, "reagents", live(A)), "has_reagent", ["unholywater"]))))) return f.dot;
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You purify ＀.</span>", [live(A)])]);
-	unholy2clean = (yield* g.callName(f, rt.fv(f, "reagents", live(A)), "get_reagent_amount", ["unholywater"]));
-	yield* g.callName(f, rt.fv(f, "reagents", live(A)), "del_reagent", ["unholywater"]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(A)), "add_reagent", ["holywater", live(unholy2clean)]);
+	if (!(A.reagents && A.reagents.has_reagent("unholywater"))) return f.dot;
+	to_chat(user, `<span class='notice'>You purify ${A}.</span>`);
+	let unholy2clean: Value = A.reagents.get_reagent_amount("unholywater");
+	yield* A.reagents.del_reagent("unholywater");
+	yield* A.reagents.add_reagent("holywater", unholy2clean);
 	return f.dot;
 }, true);
 
@@ -239,9 +217,9 @@ rt.type(5546, "/obj/item/weapon/storage/book/bible/booze", "/obj/item/weapon/sto
 	desc: "To be applied to the head repeatedly.",
 });
 
-// /obj/item/weapon/storage/book/bible/booze/proc/PopulateContents  (code/game/objects/items/weapons/storage/book.dm:162)  may sleep
+// book.dm:162
 rt.def("/obj/item/weapon/storage/book/bible/booze/proc/PopulateContents", function* PopulateContents(f: Frame) {
-	yield* g.new_(f, T("/obj/item/weapon/reagent_containers/food/drinks/bottle/whiskey"), [live(f.src)]);
+	yield* new_(T("/obj/item/weapon/reagent_containers/food/drinks/bottle/whiskey"), this);
 	return f.dot;
 }, true);
 
@@ -259,28 +237,27 @@ rt.type(5547, "/obj/item/weapon/storage/book/bible/syndicate", "/obj/item/weapon
 	attack_verb: null,
 });
 
-// /obj/item/weapon/storage/book/bible/syndicate/proc/attack_self  (code/game/objects/items/weapons/storage/book.dm:182)  may sleep
+// book.dm:182
 rt.def("/obj/item/weapon/storage/book/bible/syndicate/proc/attack_self", function* attack_self(f: Frame, H: Value) {
 	let ownername: Value = null;
-	f.vars = () => [H, ownername];
-	if (!truthy(rt.sv(f, "uses"))) return f.dot;
-	rt.setFv(f, "isholy", rt.fv(f, "mind", live(H)), 1);
-	(rt.modSrcVar(f, "uses", 1, subtract));
-	yield* g.call(f, P("/proc/to_chat"), null, [live(H), "<span class='userdanger'>You try to open the book AND IT BITES YOU!</span>"]);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/effects/snap.ogg"), 50, 1]);
-	yield* g.callName(f, live(H), "apply_damage", [5, "brute", rt.op(f, "PickUnweighted", [2], ["l_arm", "r_arm"])]);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(H), "<span class='notice'>Your name appears on the inside cover, in blood.</span>"]);
-	rt.modSrcVar(f, "desc", fmt("<span class='warning'>The name ＀ is written in blood inside the cover.</span>", [(ownername = rt.fv(f, "real_name", live(H)))]), add);
+	if (!this.uses) return f.dot;
+	H.mind.isholy = 1;
+	this.uses -= 1;
+	to_chat(H, "<span class='userdanger'>You try to open the book AND IT BITES YOU!</span>");
+	playsound(this.loc, rt.rsc("sound/effects/snap.ogg"), 50, 1);
+	yield* H.apply_damage(5, "brute", pick("l_arm", "r_arm"));
+	to_chat(H, "<span class='notice'>Your name appears on the inside cover, in blood.</span>");
+	this.desc += `<span class='warning'>The name ${(ownername = H.real_name)} is written in blood inside the cover.</span>`;
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/storage/book/bible/syndicate/proc/attack  (code/game/objects/items/weapons/storage/book.dm:191)  may sleep
+// book.dm:191
 rt.def("/obj/item/weapon/storage/book/bible/syndicate/proc/attack", function* attack(f: Frame) {
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 1;
 	}
-	if (isEqual(rt.fv(f, "a_intent", live(f.args[1])), "help")) {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+	if (f.args[1].a_intent == "help") {
+		return (yield* parent_proc());
 	}
-	return (yield* g.callSuper(f, [null, live(f.args[0]), null, live(f.args[1]), "heal_mode", 0], rt.Args.Named));
+	return (yield* parent_proc(f.args[0], f.args[1], { heal_mode: 0 }));
 }, true, { args: ["M", "user", "heal_mode"] });

@@ -1,7 +1,7 @@
-// From code/modules/jobs/job_types/engineering.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/jobs/job_types/engineering.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(2758, "/datum/job/chief_engineer", "/datum/job", {
@@ -21,16 +21,14 @@ rt.type(2758, "/datum/job/chief_engineer", "/datum/job", {
 	minimal_access: null,
 });
 
-// /datum/job/chief_engineer/proc/<init>  (code/modules/jobs/job_types/engineering.dm:7)
+// engineering.dm:7
 rt.def("/datum/job/chief_engineer/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "department_head", rt.list("Captain"));
-	$0 = $0;
-	rt.setSv(f, "head_announce", rt.list("Engineering"));
-	rt.setSv(f, "access", rt.list(10, 11, 23, 12, 13, 24, 14, 18, 19, 32, 63, 65, 56, 59, 60, 61, 64));
-	rt.setSv(f, "minimal_access", rt.list(10, 11, 23, 12, 13, 24, 14, 18, 19, 32, 63, 65, 56, 59, 60, 61, 64));
+	parent_proc();
+	this.department_head = list("Captain");
+
+	this.head_announce = list("Engineering");
+	this.access = list(10, 11, 23, 12, 13, 24, 14, 18, 19, 32, 63, 65, 56, 59, 60, 61, 64);
+	this.minimal_access = list(10, 11, 23, 12, 13, 24, 14, 18, 19, 32, 63, 65, 56, 59, 60, 61, 64);
 	return f.dot;
 });
 
@@ -54,12 +52,10 @@ rt.type(701, "/datum/outfit/job/ce", "/datum/outfit/job", {
 	box: rt.typePath("/obj/item/weapon/storage/box/engineer"),
 });
 
-// /datum/outfit/job/ce/proc/<init>  (code/modules/jobs/job_types/engineering.dm:42)
+// engineering.dm:42
 rt.def("/datum/outfit/job/ce/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "backpack_contents", rt.alist(f, [T("/obj/item/weapon/melee/classic_baton/telescopic"), 1, T("/obj/item/device/modular_computer/tablet/preset/advanced"), 1]));
+	parent_proc();
+	this.backpack_contents = rt.alist(f, [T("/obj/item/weapon/melee/classic_baton/telescopic"), 1, T("/obj/item/device/modular_computer/tablet/preset/advanced"), 1]);
 	return f.dot;
 });
 
@@ -78,14 +74,12 @@ rt.type(2759, "/datum/job/engineer", "/datum/job", {
 	minimal_access: null,
 });
 
-// /datum/job/engineer/proc/<init>  (code/modules/jobs/job_types/engineering.dm:68)
+// engineering.dm:68
 rt.def("/datum/job/engineer/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "department_head", rt.list("Chief Engineer"));
-	rt.setSv(f, "access", rt.list(10, 11, 23, 12, 13, 32, 24, 61));
-	rt.setSv(f, "minimal_access", rt.list(10, 11, 23, 12, 13, 32, 61));
+	parent_proc();
+	this.department_head = list("Chief Engineer");
+	this.access = list(10, 11, 23, 12, 13, 32, 24, 61);
+	this.minimal_access = list(10, 11, 23, 12, 13, 32, 61);
 	return f.dot;
 });
 
@@ -108,12 +102,10 @@ rt.type(703, "/datum/outfit/job/engineer", "/datum/outfit/job", {
 	box: rt.typePath("/obj/item/weapon/storage/box/engineer"),
 });
 
-// /datum/outfit/job/engineer/proc/<init>  (code/modules/jobs/job_types/engineering.dm:101)
+// engineering.dm:101
 rt.def("/datum/outfit/job/engineer/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "backpack_contents", rt.alist(f, [T("/obj/item/device/modular_computer/tablet/preset/advanced"), 1]));
+	parent_proc();
+	this.backpack_contents = rt.alist(f, [T("/obj/item/device/modular_computer/tablet/preset/advanced"), 1]);
 	return f.dot;
 });
 
@@ -132,14 +124,12 @@ rt.type(2760, "/datum/job/atmos", "/datum/job", {
 	minimal_access: null,
 });
 
-// /datum/job/atmos/proc/<init>  (code/modules/jobs/job_types/engineering.dm:123)
+// engineering.dm:123
 rt.def("/datum/job/atmos/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "department_head", rt.list("Chief Engineer"));
-	rt.setSv(f, "access", rt.list(10, 11, 23, 12, 13, 32, 24));
-	rt.setSv(f, "minimal_access", rt.list(24, 12, 14, 32));
+	parent_proc();
+	this.department_head = list("Chief Engineer");
+	this.access = list(10, 11, 23, 12, 13, 32, 24);
+	this.minimal_access = list(24, 12, 14, 32);
 	return f.dot;
 });
 
@@ -160,11 +150,9 @@ rt.type(706, "/datum/outfit/job/atmos", "/datum/outfit/job", {
 	box: rt.typePath("/obj/item/weapon/storage/box/engineer"),
 });
 
-// /datum/outfit/job/atmos/proc/<init>  (code/modules/jobs/job_types/engineering.dm:153)
+// engineering.dm:153
 rt.def("/datum/outfit/job/atmos/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "backpack_contents", rt.alist(f, [T("/obj/item/device/modular_computer/tablet/preset/advanced"), 1]));
+	parent_proc();
+	this.backpack_contents = rt.alist(f, [T("/obj/item/device/modular_computer/tablet/preset/advanced"), 1]);
 	return f.dot;
 });

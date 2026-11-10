@@ -1,5 +1,5 @@
 // Types declared in code/modules/power/supermatter that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(10330, "/obj/machinery/power/supermatter_shard/hugbox", "/obj/machinery/power/supermatter_shard", {
 	takes_damage: 0,

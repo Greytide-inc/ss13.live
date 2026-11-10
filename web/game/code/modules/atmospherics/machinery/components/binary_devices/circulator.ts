@@ -1,7 +1,7 @@
-// From code/modules/atmospherics/machinery/components/binary_devices/circulator.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/atmospherics/machinery/components/binary_devices/circulator.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(10562, "/obj/machinery/atmospherics/components/binary/circulator", "/obj/machinery/atmospherics/components/binary", {
@@ -15,52 +15,49 @@ rt.type(10562, "/obj/machinery/atmospherics/components/binary/circulator", "/obj
 	density: 1,
 }, { global: { CIRC_LEFT: 749, CIRC_RIGHT: 750 }, const: ["CIRC_LEFT","CIRC_RIGHT"] });
 
-// /obj/machinery/atmospherics/components/binary/circulator/proc/return_transfer_air  (code/modules/atmospherics/machinery/components/binary_devices/circulator.dm:24)  may sleep
+// circulator.dm:24
 rt.def("/obj/machinery/atmospherics/components/binary/circulator/proc/return_transfer_air", function* return_transfer_air(f: Frame) {
-	let air1: Value = null, air2: Value = null, output_starting_pressure: Value = null, input_starting_pressure: Value = null, pressure_delta: Value = null, transfer_moles: Value = null, removed: Value = null;
-	f.vars = () => [air1, air2, output_starting_pressure, input_starting_pressure, pressure_delta, transfer_moles, removed];
-	air1 = rt.index(rt.sv(f, "airs"), 1);
-	air2 = rt.index(rt.sv(f, "airs"), 2);
-	output_starting_pressure = (yield* g.callName(f, live(air1), "return_pressure", []));
-	input_starting_pressure = (yield* g.callName(f, live(air2), "return_pressure", []));
-	if (rt.ge(live(output_starting_pressure), subtract(live(input_starting_pressure), 10))) {
-		rt.setSv(f, "last_pressure_delta", 0);
+	let pressure_delta: Value = null, transfer_moles: Value = null, removed: Value = null;
+	let air1: Value = rt.index(this.airs, 1);
+	let air2: Value = rt.index(this.airs, 2);
+	let output_starting_pressure: Value = air1.return_pressure();
+	let input_starting_pressure: Value = air2.return_pressure();
+	if (output_starting_pressure >= input_starting_pressure - 10) {
+		this.last_pressure_delta = 0;
 		return null;
 	}
-	if (rt.gt(rt.fv(f, "temperature", live(air2)), 0)) {
-		pressure_delta = divide(subtract(live(input_starting_pressure), live(output_starting_pressure)), 2);
-		transfer_moles = divide(multiply(live(pressure_delta), rt.fv(f, "volume", live(air1))), multiply(rt.fv(f, "temperature", live(air2)), 8.3100004196167));
-		rt.setSv(f, "last_pressure_delta", live(pressure_delta));
-		removed = (yield* g.callName(f, live(air2), "remove", [live(transfer_moles)]));
-		yield* g.srcCall(f, "update_parents");
-		return live(removed);
+	if (air2.temperature > 0) {
+		pressure_delta = (input_starting_pressure - output_starting_pressure) / 2;
+		transfer_moles = pressure_delta * air1.volume / (air2.temperature * R_IDEAL_GAS_EQUATION);
+		this.last_pressure_delta = pressure_delta;
+		removed = (yield* air2.remove(transfer_moles));
+		this.update_parents();
+		return removed;
 	} else {
-		rt.setSv(f, "last_pressure_delta", 0);
+		this.last_pressure_delta = 0;
 	}
 	return f.dot;
 }, true);
 
-// /obj/machinery/atmospherics/components/binary/circulator/proc/process_atmos  (code/modules/atmospherics/machinery/components/binary_devices/circulator.dm:56)
+// circulator.dm:56
 rt.def("/obj/machinery/atmospherics/components/binary/circulator/proc/process_atmos", function process_atmos(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.callSrc(f, "update_icon", []);
+	parent_proc();
+	this.update_icon();
 	return f.dot;
 });
 
-// /obj/machinery/atmospherics/components/binary/circulator/proc/update_icon  (code/modules/atmospherics/machinery/components/binary_devices/circulator.dm:60)
+// circulator.dm:60
 rt.def("/obj/machinery/atmospherics/components/binary/circulator/proc/update_icon", function update_icon(f: Frame) {
-	if (truthy(rt.bitAnd(rt.sv(f, "stat"), 3))) {
-		rt.setSv(f, "icon_state", fmt("circ＀-p", [rt.sv(f, "side")]));
-	} else {
-		if (rt.gt(rt.sv(f, "last_pressure_delta"), 0)) {
-			if (rt.gt(rt.sv(f, "last_pressure_delta"), 101.32499694824219)) {
-				rt.setSv(f, "icon_state", fmt("circ＀-run", [rt.sv(f, "side")]));
-			} else {
-				rt.setSv(f, "icon_state", fmt("circ＀-slow", [rt.sv(f, "side")]));
-			}
+	if (rt.bitAnd(this.stat, 3)) {
+		this.icon_state = `circ${this.side}-p`;
+	} else if (this.last_pressure_delta > 0) {
+		if (this.last_pressure_delta > ONE_ATMOSPHERE) {
+			this.icon_state = `circ${this.side}-run`;
 		} else {
-			rt.setSv(f, "icon_state", fmt("circ＀-off", [rt.sv(f, "side")]));
+			this.icon_state = `circ${this.side}-slow`;
 		}
+	} else {
+		this.icon_state = `circ${this.side}-off`;
 	}
 	return 1;
 });

@@ -1,12 +1,12 @@
-// From code/game/objects/items/stacks/rods.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/stacks/rods.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, g, add } = rt;
 
 
-// /datum/controller/global_vars/proc/InitGlobalrod_recipes  (code/game/objects/items/stacks/rods.dm:1)
+// rods.dm:1
 rt.def("/datum/controller/global_vars/proc/InitGlobalrod_recipes", function InitGlobalrod_recipes(f: Frame) {
-	rt.setGl("rod_recipes", rt.list(rt.new_(f, T("/datum/stack_recipe"), [null, "grille", null, T("/obj/structure/grille"), null, 2, "time", 10, "one_per_turf", 1, "on_floor", 1], rt.Args.Named), rt.new_(f, T("/datum/stack_recipe"), [null, "table frame", null, T("/obj/structure/table_frame"), null, 2, "time", 10, "one_per_turf", 1, "on_floor", 1], rt.Args.Named), rt.new_(f, T("/datum/stack_recipe"), [null, "scooter frame", null, T("/obj/item/scooter_frame"), null, 10, "time", 25, "one_per_turf", 0], rt.Args.Named)));
+	GLOB.rod_recipes = list(new_(T("/datum/stack_recipe"), "grille", T("/obj/structure/grille"), 2, { time: 10, one_per_turf: 1, on_floor: 1 }), new_(T("/datum/stack_recipe"), "table frame", T("/obj/structure/table_frame"), 2, { time: 10, one_per_turf: 1, on_floor: 1 }), new_(T("/datum/stack_recipe"), "scooter frame", T("/obj/item/scooter_frame"), 10, { time: 25, one_per_turf: 0 }));
 	rt.modSrcVar(f, "gvars_datum_init_order", "rod_recipes", add);
 	return f.dot;
 });
@@ -30,78 +30,70 @@ rt.type(9006, "/obj/item/stack/rods", "/obj/item/stack", {
 	novariants: 1,
 });
 
-// /obj/item/stack/rods/proc/<init>  (code/game/objects/items/stacks/rods.dm:19)
+// rods.dm:19
 rt.def("/obj/item/stack/rods/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 1000]));
-	rt.setSv(f, "attack_verb", rt.list("hit", "bludgeoned", "whacked"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 1000]);
+	this.attack_verb = list("hit", "bludgeoned", "whacked");
 	return f.dot;
 });
 
-// /obj/item/stack/rods/proc/Initialize  (code/game/objects/items/stacks/rods.dm:26)  may sleep
+// rods.dm:26
 rt.def("/obj/item/stack/rods/proc/Initialize", function* Initialize(f: Frame) {
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 1;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "recipes", rt.gl("rod_recipes"));
-	yield* g.srcCall(f, "update_icon");
+	yield* parent_proc();
+	this.recipes = GLOB.rod_recipes;
+	yield* this.update_icon();
 	return f.dot;
 }, true, { args: ["mapload", "new_amount", "merge"] });
 
-// /obj/item/stack/rods/proc/update_icon  (code/game/objects/items/stacks/rods.dm:32)
+// rods.dm:32
 rt.def("/obj/item/stack/rods/proc/update_icon", function update_icon(f: Frame) {
 	let amount: Value = null;
-	f.vars = () => [amount];
-	if ((rt.le((amount = rt.callSrc(f, "get_amount", [])), 5) && rt.gt(live(amount), 0))) {
-		rt.setSv(f, "icon_state", fmt("rods-＀", [live(amount)]));
+	if ((amount = this.get_amount()) <= 5 && amount > 0) {
+		this.icon_state = `rods-${amount}`;
 	} else {
-		rt.setSv(f, "icon_state", "rods");
+		this.icon_state = "rods";
 	}
 	return f.dot;
 });
 
-// /obj/item/stack/rods/proc/attackby  (code/game/objects/items/stacks/rods.dm:39)  may sleep
-rt.def("/obj/item/stack/rods/proc/attackby", function* attackby(f: Frame) {
+// rods.dm:39
+rt.def("/obj/item/stack/rods/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
 	let WT: Value = null, new_item: Value = null, R: Value = null, replace: Value = null, S: Value = null, A: Value = null;
-	f.vars = () => [WT, new_item, R, replace, S, A];
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/weldingtool")) ? 1 : 0))) {
-		WT = live(f.args[0]);
-		if (rt.lt((yield* g.srcCall(f, "get_amount")), 2)) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You need at least two rods to do this!</span>"]);
-			return live(f.dot);
+	if (rt.istype(W, T("/obj/item/weapon/weldingtool"))) {
+		WT = W;
+		if ((yield* g.srcCall(f, "get_amount")) < 2) {
+			to_chat(user, "<span class='warning'>You need at least two rods to do this!</span>");
+			return f.dot;
 		}
-		if (truthy((yield* g.callName(f, live(WT), "remove_fuel", [0, live(f.args[1])])))) {
-			new_item = (yield* g.new_(f, T("/obj/item/stack/sheet/metal"), [rt.fv(f, "loc", live(f.usr))]));
-			yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("＀ shaped ＀ into metal with the welding tool.", [rt.fv(f, "name", live(f.args[1])), live(f.src)]), fmt("<span class='notice'>You shape ＀ into metal with the welding tool.</span>", [live(f.src)]), "<span class='italics'>You hear welding.</span>"]);
-			R = live(f.src);
+		if (yield* WT.remove_fuel(0, user)) {
+			new_item = (yield* new_(T("/obj/item/stack/sheet/metal"), f.usr.loc));
+			user.visible_message(`${user.name} shaped ${f.src} into metal with the welding tool.`, `<span class='notice'>You shape ${f.src} into metal with the welding tool.</span>`, "<span class='italics'>You hear welding.</span>");
+			R = f.src;
 			f.src = null;
-			replace = (isEqual((yield* g.callName(f, live(f.args[1]), "get_inactive_held_item", [])), live(R)) ? 1 : 0);
-			yield* g.callName(f, live(R), "use", [2]);
-			if ((!truthy(live(R)) && truthy(live(replace)))) {
-				yield* g.callName(f, live(f.args[1]), "put_in_hands", [live(new_item)]);
+			replace = (user.get_inactive_held_item() == R ? 1 : 0);
+			yield* R.use(2);
+			if (!R && replace) {
+				yield* user.put_in_hands(new_item);
 			}
+		}
+	} else if (rt.istype(W, T("/obj/item/weapon/reagent_containers/food/snacks"))) {
+		S = W;
+		if (rt.sv(f, "amount") != 1) {
+			to_chat(user, "<span class='warning'>You must use a single rod!</span>");
+		} else if (S.w_class > WEIGHT_CLASS_SMALL) {
+			to_chat(user, `<span class='warning'>The ingredient is too big for ${f.src}!</span>`);
+		} else {
+			yield* (A = (yield* new_(T("/obj/item/weapon/reagent_containers/food/snacks/customizable/kebab"), rt.getStep(f, f.src, 0)))).initialize_custom_food(f.src, S, user);
 		}
 	} else {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/reagent_containers/food/snacks")) ? 1 : 0))) {
-			S = live(f.args[0]);
-			if (!isEqual(rt.sv(f, "amount"), 1)) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You must use a single rod!</span>"]);
-			} else {
-				if (rt.gt(rt.fv(f, "w_class", live(S)), 2)) {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>The ingredient is too big for ＀!</span>", [live(f.src)])]);
-				} else {
-					yield* g.callName(f, (A = (yield* g.new_(f, T("/obj/item/weapon/reagent_containers/food/snacks/customizable/kebab"), [rt.getStep(f, live(f.src), 0)]))), "initialize_custom_food", [live(f.src), live(S), live(f.args[1])]);
-				}
-			}
-		} else {
-			return (yield* g.callSuper(f, [], rt.Args.Same));
-		}
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["W", "user", "params"] });
+}, true);
 
 rt.type(9007, "/obj/item/stack/rods/cyborg", "/obj/item/stack/rods", {
 	materials: null,
@@ -109,11 +101,9 @@ rt.type(9007, "/obj/item/stack/rods/cyborg", "/obj/item/stack/rods", {
 	cost: 250,
 });
 
-// /obj/item/stack/rods/cyborg/proc/<init>  (code/game/objects/items/stacks/rods.dm:71)
+// rods.dm:71
 rt.def("/obj/item/stack/rods/cyborg/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.list());
+	parent_proc();
+	this.materials = list();
 	return f.dot;
 });

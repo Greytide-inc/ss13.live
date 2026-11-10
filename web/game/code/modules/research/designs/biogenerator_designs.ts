@@ -1,7 +1,7 @@
-// From code/modules/research/designs/biogenerator_designs.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/research/designs/biogenerator_designs.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(3091, "/datum/design/milk", "/datum/design", {
@@ -13,14 +13,12 @@ rt.type(3091, "/datum/design/milk", "/datum/design", {
 	category: null,
 });
 
-// /datum/design/milk/proc/<init>  (code/modules/research/designs/biogenerator_designs.dm:9)
+// biogenerator_designs.dm:9
 rt.def("/datum/design/milk/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$biomass", 20]));
-	rt.setSv(f, "make_reagents", rt.alist(f, ["milk", 10]));
-	rt.setSv(f, "category", rt.list("initial", "Food"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$biomass", 20]);
+	this.make_reagents = rt.alist(f, ["milk", 10]);
+	this.category = list("initial", "Food");
 	return f.dot;
 });
 
@@ -33,14 +31,12 @@ rt.type(3092, "/datum/design/cream", "/datum/design", {
 	category: null,
 });
 
-// /datum/design/cream/proc/<init>  (code/modules/research/designs/biogenerator_designs.dm:17)
+// biogenerator_designs.dm:17
 rt.def("/datum/design/cream/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$biomass", 30]));
-	rt.setSv(f, "make_reagents", rt.alist(f, ["cream", 10]));
-	rt.setSv(f, "category", rt.list("initial", "Food"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$biomass", 30]);
+	this.make_reagents = rt.alist(f, ["cream", 10]);
+	this.category = list("initial", "Food");
 	return f.dot;
 });
 
@@ -53,13 +49,11 @@ rt.type(3093, "/datum/design/milk_carton", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/reagent_containers/food/condiment/milk"),
 });
 
-// /datum/design/milk_carton/proc/<init>  (code/modules/research/designs/biogenerator_designs.dm:25)
+// biogenerator_designs.dm:25
 rt.def("/datum/design/milk_carton/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$biomass", 100]));
-	rt.setSv(f, "category", rt.list("initial", "Food"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$biomass", 100]);
+	this.category = list("initial", "Food");
 	return f.dot;
 });
 
@@ -72,13 +66,11 @@ rt.type(3094, "/datum/design/cream_carton", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/reagent_containers/food/drinks/bottle/cream"),
 });
 
-// /datum/design/cream_carton/proc/<init>  (code/modules/research/designs/biogenerator_designs.dm:33)
+// biogenerator_designs.dm:33
 rt.def("/datum/design/cream_carton/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$biomass", 300]));
-	rt.setSv(f, "category", rt.list("initial", "Food"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$biomass", 300]);
+	this.category = list("initial", "Food");
 	return f.dot;
 });
 
@@ -91,14 +83,12 @@ rt.type(3095, "/datum/design/black_pepper", "/datum/design", {
 	category: null,
 });
 
-// /datum/design/black_pepper/proc/<init>  (code/modules/research/designs/biogenerator_designs.dm:41)
+// biogenerator_designs.dm:41
 rt.def("/datum/design/black_pepper/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$biomass", 25]));
-	rt.setSv(f, "make_reagents", rt.alist(f, ["blackpepper", 10]));
-	rt.setSv(f, "category", rt.list("initial", "Food"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$biomass", 25]);
+	this.make_reagents = rt.alist(f, ["blackpepper", 10]);
+	this.category = list("initial", "Food");
 	return f.dot;
 });
 
@@ -112,15 +102,13 @@ rt.type(3096, "/datum/design/pepper_mill", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/reagent_containers/food/condiment/peppermill"),
 });
 
-// /datum/design/pepper_mill/proc/<init>  (code/modules/research/designs/biogenerator_designs.dm:49)
+// biogenerator_designs.dm:49
 rt.def("/datum/design/pepper_mill/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$biomass", 50]));
-	$0 = $0;
-	rt.setSv(f, "make_reagents", rt.list());
-	rt.setSv(f, "category", rt.list("initial", "Food"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$biomass", 50]);
+
+	this.make_reagents = list();
+	this.category = list("initial", "Food");
 	return f.dot;
 });
 
@@ -133,13 +121,11 @@ rt.type(3097, "/datum/design/monkey_cube", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/reagent_containers/food/snacks/monkeycube"),
 });
 
-// /datum/design/monkey_cube/proc/<init>  (code/modules/research/designs/biogenerator_designs.dm:58)
+// biogenerator_designs.dm:58
 rt.def("/datum/design/monkey_cube/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$biomass", 250]));
-	rt.setSv(f, "category", rt.list("initial", "Food"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$biomass", 250]);
+	this.category = list("initial", "Food");
 	return f.dot;
 });
 
@@ -152,13 +138,11 @@ rt.type(3098, "/datum/design/ez_nut", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/reagent_containers/glass/bottle/nutrient/ez"),
 });
 
-// /datum/design/ez_nut/proc/<init>  (code/modules/research/designs/biogenerator_designs.dm:66)
+// biogenerator_designs.dm:66
 rt.def("/datum/design/ez_nut/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$biomass", 10]));
-	rt.setSv(f, "category", rt.list("initial", "Botany Chemicals"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$biomass", 10]);
+	this.category = list("initial", "Botany Chemicals");
 	return f.dot;
 });
 
@@ -171,13 +155,11 @@ rt.type(3099, "/datum/design/l4z_nut", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/reagent_containers/glass/bottle/nutrient/l4z"),
 });
 
-// /datum/design/l4z_nut/proc/<init>  (code/modules/research/designs/biogenerator_designs.dm:74)
+// biogenerator_designs.dm:74
 rt.def("/datum/design/l4z_nut/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$biomass", 20]));
-	rt.setSv(f, "category", rt.list("initial", "Botany Chemicals"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$biomass", 20]);
+	this.category = list("initial", "Botany Chemicals");
 	return f.dot;
 });
 
@@ -190,13 +172,11 @@ rt.type(3100, "/datum/design/rh_nut", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/reagent_containers/glass/bottle/nutrient/rh"),
 });
 
-// /datum/design/rh_nut/proc/<init>  (code/modules/research/designs/biogenerator_designs.dm:82)
+// biogenerator_designs.dm:82
 rt.def("/datum/design/rh_nut/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$biomass", 25]));
-	rt.setSv(f, "category", rt.list("initial", "Botany Chemicals"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$biomass", 25]);
+	this.category = list("initial", "Botany Chemicals");
 	return f.dot;
 });
 
@@ -209,13 +189,11 @@ rt.type(3101, "/datum/design/weed_killer", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/reagent_containers/glass/bottle/killer/weedkiller"),
 });
 
-// /datum/design/weed_killer/proc/<init>  (code/modules/research/designs/biogenerator_designs.dm:90)
+// biogenerator_designs.dm:90
 rt.def("/datum/design/weed_killer/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$biomass", 50]));
-	rt.setSv(f, "category", rt.list("initial", "Botany Chemicals"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$biomass", 50]);
+	this.category = list("initial", "Botany Chemicals");
 	return f.dot;
 });
 
@@ -228,13 +206,11 @@ rt.type(3102, "/datum/design/pest_spray", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/reagent_containers/glass/bottle/killer/pestkiller"),
 });
 
-// /datum/design/pest_spray/proc/<init>  (code/modules/research/designs/biogenerator_designs.dm:98)
+// biogenerator_designs.dm:98
 rt.def("/datum/design/pest_spray/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$biomass", 50]));
-	rt.setSv(f, "category", rt.list("initial", "Botany Chemicals"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$biomass", 50]);
+	this.category = list("initial", "Botany Chemicals");
 	return f.dot;
 });
 
@@ -247,13 +223,11 @@ rt.type(3103, "/datum/design/botany_bottle", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/reagent_containers/glass/bottle/nutrient/empty"),
 });
 
-// /datum/design/botany_bottle/proc/<init>  (code/modules/research/designs/biogenerator_designs.dm:106)
+// biogenerator_designs.dm:106
 rt.def("/datum/design/botany_bottle/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$biomass", 5]));
-	rt.setSv(f, "category", rt.list("initial", "Botany Chemicals"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$biomass", 5]);
+	this.category = list("initial", "Botany Chemicals");
 	return f.dot;
 });
 
@@ -266,13 +240,11 @@ rt.type(3104, "/datum/design/cloth", "/datum/design", {
 	build_path: rt.typePath("/obj/item/stack/sheet/cloth"),
 });
 
-// /datum/design/cloth/proc/<init>  (code/modules/research/designs/biogenerator_designs.dm:114)
+// biogenerator_designs.dm:114
 rt.def("/datum/design/cloth/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$biomass", 50]));
-	rt.setSv(f, "category", rt.list("initial", "Leather and Cloth"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$biomass", 50]);
+	this.category = list("initial", "Leather and Cloth");
 	return f.dot;
 });
 
@@ -285,13 +257,11 @@ rt.type(3105, "/datum/design/leather", "/datum/design", {
 	build_path: rt.typePath("/obj/item/stack/sheet/leather"),
 });
 
-// /datum/design/leather/proc/<init>  (code/modules/research/designs/biogenerator_designs.dm:122)
+// biogenerator_designs.dm:122
 rt.def("/datum/design/leather/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$biomass", 150]));
-	rt.setSv(f, "category", rt.list("initial", "Leather and Cloth"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$biomass", 150]);
+	this.category = list("initial", "Leather and Cloth");
 	return f.dot;
 });
 
@@ -304,13 +274,11 @@ rt.type(3106, "/datum/design/secbelt", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/storage/belt/security"),
 });
 
-// /datum/design/secbelt/proc/<init>  (code/modules/research/designs/biogenerator_designs.dm:130)
+// biogenerator_designs.dm:130
 rt.def("/datum/design/secbelt/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$biomass", 300]));
-	rt.setSv(f, "category", rt.list("initial", "Leather and Cloth"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$biomass", 300]);
+	this.category = list("initial", "Leather and Cloth");
 	return f.dot;
 });
 
@@ -323,13 +291,11 @@ rt.type(3107, "/datum/design/medbelt", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/storage/belt/medical"),
 });
 
-// /datum/design/medbelt/proc/<init>  (code/modules/research/designs/biogenerator_designs.dm:138)
+// biogenerator_designs.dm:138
 rt.def("/datum/design/medbelt/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$biomass", 300]));
-	rt.setSv(f, "category", rt.list("initial", "Leather and Cloth"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$biomass", 300]);
+	this.category = list("initial", "Leather and Cloth");
 	return f.dot;
 });
 
@@ -342,13 +308,11 @@ rt.type(3108, "/datum/design/janibelt", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/storage/belt/janitor"),
 });
 
-// /datum/design/janibelt/proc/<init>  (code/modules/research/designs/biogenerator_designs.dm:146)
+// biogenerator_designs.dm:146
 rt.def("/datum/design/janibelt/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$biomass", 300]));
-	rt.setSv(f, "category", rt.list("initial", "Leather and Cloth"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$biomass", 300]);
+	this.category = list("initial", "Leather and Cloth");
 	return f.dot;
 });
 
@@ -361,13 +325,11 @@ rt.type(3109, "/datum/design/s_holster", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/storage/belt/holster"),
 });
 
-// /datum/design/s_holster/proc/<init>  (code/modules/research/designs/biogenerator_designs.dm:154)
+// biogenerator_designs.dm:154
 rt.def("/datum/design/s_holster/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$biomass", 400]));
-	rt.setSv(f, "category", rt.list("initial", "Leather and Cloth"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$biomass", 400]);
+	this.category = list("initial", "Leather and Cloth");
 	return f.dot;
 });
 
@@ -380,12 +342,10 @@ rt.type(3110, "/datum/design/rice_hat", "/datum/design", {
 	build_path: rt.typePath("/obj/item/clothing/head/rice_hat"),
 });
 
-// /datum/design/rice_hat/proc/<init>  (code/modules/research/designs/biogenerator_designs.dm:162)
+// biogenerator_designs.dm:162
 rt.def("/datum/design/rice_hat/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$biomass", 300]));
-	rt.setSv(f, "category", rt.list("initial", "Leather and Cloth"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$biomass", 300]);
+	this.category = list("initial", "Leather and Cloth");
 	return f.dot;
 });

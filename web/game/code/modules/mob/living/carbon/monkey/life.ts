@@ -1,214 +1,195 @@
-// From code/modules/mob/living/carbon/monkey/life.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/carbon/monkey/life.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
-// /mob/living/carbon/monkey/proc/Life  (code/modules/mob/living/carbon/monkey/life.dm:13)  may sleep
+// life.dm:13
 rt.def("/mob/living/carbon/monkey/proc/Life", function* Life(f: Frame) {
-	if (truthy(rt.sv(f, "notransform"))) {
-		return live(f.dot);
+	if (this.notransform) {
+		return f.dot;
 	}
-	if (!truthy((yield* g.callSuper(f, [], rt.Args.Same)))) return f.dot;
-	if (truthy(rt.sv(f, "client"))) return f.dot;
-	if (isEqual(rt.sv(f, "stat"), 0)) {
-		if (!truthy((yield* g.srcCall(f, "handle_combat")))) {
-			if ((((truthy(rt.op(f, "Prob", [], [33])) && truthy(rt.sv(f, "canmove"))) && truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.sv(f, "loc")])))) && !truthy(rt.sv(f, "pulledby")))) {
-				yield* g.call(f, P("/proc/step"), null, [live(f.src), rt.op(f, "PickUnweighted", [1], [rt.gl("cardinal")])]);
+	if (!(yield* parent_proc())) return f.dot;
+	if (this.client) return f.dot;
+	if (this.stat == 0) {
+		if (!(yield* this.handle_combat())) {
+			if (prob(33) && this.canmove && isturf(this.loc) && !this.pulledby) {
+				yield* step(this, pick(GLOB.cardinal));
 			}
-			if (truthy(rt.op(f, "Prob", [], [1]))) {
-				yield* g.srcCall(f, "emote", rt.op(f, "PickUnweighted", [4], ["scratch", "jump", "roll", "tail"]));
+			if (prob(1)) {
+				yield* this.emote(pick("scratch", "jump", "roll", "tail"));
 			}
 		}
 	} else {
-		yield* g.call(f, P("/proc/walk_to"), null, [live(f.src), 0]);
+		walk_to(this, 0);
 	}
 	return f.dot;
 }, true, { waitfor: false });
 
-// /mob/living/carbon/monkey/proc/handle_mutations_and_radiation  (code/modules/mob/living/carbon/monkey/life.dm:28)  may sleep
+// life.dm:28
 rt.def("/mob/living/carbon/monkey/proc/handle_mutations_and_radiation", function* handle_mutations_and_radiation(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	if (!truthy(rt.sv(f, "radiation"))) return f.dot;
-	if (rt.gt(rt.sv(f, "radiation"), 100)) {
-		if (!truthy((yield* g.srcCall(f, "IsKnockdown")))) {
-			yield* g.srcCall(f, "emote", "collapse");
+	if (!this.radiation) return f.dot;
+	if (this.radiation > 100) {
+		if (!this.IsKnockdown()) {
+			yield* this.emote("collapse");
 		}
-		yield* g.srcCall(f, "Knockdown", 200);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='danger'>You feel weak.</span>"]);
+		yield* this.Knockdown(200);
+		to_chat(this, "<span class='danger'>You feel weak.</span>");
 	}
-	$0 = rt.sv(f, "radiation");
-	if (rt.inRange($0, 50, 75)) {
-		if (truthy(rt.op(f, "Prob", [], [5]))) {
-			if (!truthy((yield* g.srcCall(f, "IsKnockdown")))) {
-				yield* g.srcCall(f, "emote", "collapse");
+	if (rt.inRange(this.radiation, 50, 75)) {
+		if (prob(5)) {
+			if (!this.IsKnockdown()) {
+				yield* this.emote("collapse");
 			}
-			yield* g.srcCall(f, "Knockdown", 60);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='danger'>You feel weak.</span>"]);
+			yield* this.Knockdown(60);
+			to_chat(this, "<span class='danger'>You feel weak.</span>");
 		}
-	} else if (rt.inRange($0, 75, 100)) {
-		if (truthy(rt.op(f, "Prob", [], [1]))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='danger'>You mutate!</span>"]);
-			yield* g.srcCall(f, "randmutb");
-			yield* g.srcCall(f, "emote", "gasp");
-			yield* g.srcCall(f, "domutcheck");
+	} else if (rt.inRange(this.radiation, 75, 100)) {
+		if (prob(1)) {
+			to_chat(this, "<span class='danger'>You mutate!</span>");
+			yield* this.randmutb();
+			yield* this.emote("gasp");
+			yield* this.domutcheck();
 		}
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/monkey/proc/handle_chemicals_in_body  (code/modules/mob/living/carbon/monkey/life.dm:53)  may sleep
+// life.dm:53
 rt.def("/mob/living/carbon/monkey/proc/handle_chemicals_in_body", function* handle_chemicals_in_body(f: Frame) {
-	if (!truthy(rt.sv(f, "reagents"))) return f.dot;
-	yield* g.callName(f, rt.sv(f, "reagents"), "metabolize", [null, live(f.src), "can_overdose", 1], rt.Args.Named);
+	if (!this.reagents) return f.dot;
+	yield* this.reagents.metabolize(this, { can_overdose: 1 });
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/monkey/proc/handle_breath_temperature  (code/modules/mob/living/carbon/monkey/life.dm:56)  may sleep
+// life.dm:56
 rt.def("/mob/living/carbon/monkey/proc/handle_breath_temperature", function* handle_breath_temperature(f: Frame, breath: Value) {
-	let $0: any;
-	f.vars = () => [breath, $0];
-	if (!rt.gt(rt.op(f, "Abs", [], [subtract(310.1499938964844, rt.fv(f, "temperature", live(breath)))]), 50)) return f.dot;
-	$0 = rt.fv(f, "temperature", live(breath));
-	if (rt.inRange($0, -9.999999848243207e+30, 120)) {
-		yield* g.srcCall(f, "adjustFireLoss", 3);
-	} else if (rt.inRange($0, 120, 200)) {
-		yield* g.srcCall(f, "adjustFireLoss", 1.5);
-	} else if (rt.inRange($0, 200, 260)) {
-		yield* g.srcCall(f, "adjustFireLoss", 0.5);
-	} else if (rt.inRange($0, 360, 400)) {
-		yield* g.srcCall(f, "adjustFireLoss", 2);
-	} else if (rt.inRange($0, 400, 1000)) {
-		yield* g.srcCall(f, "adjustFireLoss", 3);
-	} else if (rt.inRange($0, 1000, 9.999999848243207e+30)) {
-		yield* g.srcCall(f, "adjustFireLoss", 8);
+	if (!(rt.op(f, "Abs", [], [310.15 - breath.temperature]) > 50)) return f.dot;
+	if (rt.inRange(breath.temperature, -1e+31, 120)) {
+		yield* this.adjustFireLoss(3);
+	} else if (rt.inRange(breath.temperature, 120, 200)) {
+		yield* this.adjustFireLoss(1.5);
+	} else if (rt.inRange(breath.temperature, 200, 260)) {
+		yield* this.adjustFireLoss(0.5);
+	} else if (rt.inRange(breath.temperature, 360, 400)) {
+		yield* this.adjustFireLoss(2);
+	} else if (rt.inRange(breath.temperature, 400, 1000)) {
+		yield* this.adjustFireLoss(3);
+	} else if (rt.inRange(breath.temperature, 1000, 1e+31)) {
+		yield* this.adjustFireLoss(8);
 	}
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/monkey/proc/handle_environment  (code/modules/mob/living/carbon/monkey/life.dm:72)  may sleep
+// life.dm:72
 rt.def("/mob/living/carbon/monkey/proc/handle_environment", function* handle_environment(f: Frame, environment: Value) {
-	let loc_temp: Value = null, pressure: Value = null, adjusted_pressure: Value = null;
-	let $0: any;
-	f.vars = () => [environment, loc_temp, pressure, adjusted_pressure, $0];
-	if (!truthy(live(environment))) {
-		return live(f.dot);
+	let adjusted_pressure: Value = null;
+	if (!environment) {
+		return f.dot;
 	}
-	loc_temp = (yield* g.srcCall(f, "get_temperature", live(environment)));
-	if (!isEqual(rt.sv(f, "stat"), 2)) {
-		yield* g.srcCall(f, "natural_bodytemperature_stabilization");
+	let loc_temp: Value = this.get_temperature(environment);
+	if (this.stat != 2) {
+		this.natural_bodytemperature_stabilization();
 	}
-	if (!truthy(rt.sv(f, "on_fire"))) {
-		if (rt.lt(live(loc_temp), rt.sv(f, "bodytemperature"))) {
-			rt.modSrcVar(f, "bodytemperature", (yield* g.call(f, P("/proc/min"), null, [divide(subtract(live(loc_temp), rt.sv(f, "bodytemperature")), 6), 30])), add);
+	if (!this.on_fire) {
+		if (loc_temp < this.bodytemperature) {
+			this.bodytemperature += min((loc_temp - this.bodytemperature) / BODYTEMP_COLD_DIVISOR, BODYTEMP_COOLING_MAX);
 		} else {
-			rt.modSrcVar(f, "bodytemperature", (yield* g.call(f, P("/proc/min"), null, [divide(subtract(live(loc_temp), rt.sv(f, "bodytemperature")), 6), 30])), add);
+			this.bodytemperature += min((loc_temp - this.bodytemperature) / BODYTEMP_HEAT_DIVISOR, BODYTEMP_HEATING_MAX);
 		}
 	}
-	if (rt.gt(rt.sv(f, "bodytemperature"), 360.1499938964844)) {
-		$0 = rt.sv(f, "bodytemperature");
-		if (rt.inRange($0, 360, 400)) {
-			yield* g.srcCall(f, "throw_alert", "temp", T("/obj/screen/alert/hot"), 1);
-			yield* g.srcCall(f, "apply_damage", 2, "fire");
-		} else if (rt.inRange($0, 400, 460)) {
-			yield* g.srcCall(f, "throw_alert", "temp", T("/obj/screen/alert/hot"), 2);
-			yield* g.srcCall(f, "apply_damage", 3, "fire");
-		} else if (rt.inRange($0, 460, 9.999999848243207e+30)) {
-			yield* g.srcCall(f, "throw_alert", "temp", T("/obj/screen/alert/hot"), 3);
-			if (truthy(rt.sv(f, "on_fire"))) {
-				yield* g.srcCall(f, "apply_damage", 10, "fire");
+	if (this.bodytemperature > BODYTEMP_HEAT_DAMAGE_LIMIT) {
+		if (rt.inRange(this.bodytemperature, 360, 400)) {
+			yield* this.throw_alert("temp", T("/obj/screen/alert/hot"), 1);
+			yield* this.apply_damage(HEAT_DAMAGE_LEVEL_1, "fire");
+		} else if (rt.inRange(this.bodytemperature, 400, 460)) {
+			yield* this.throw_alert("temp", T("/obj/screen/alert/hot"), 2);
+			yield* this.apply_damage(HEAT_DAMAGE_LEVEL_2, "fire");
+		} else if (rt.inRange(this.bodytemperature, 460, 1e+31)) {
+			yield* this.throw_alert("temp", T("/obj/screen/alert/hot"), 3);
+			if (this.on_fire) {
+				yield* this.apply_damage(10, "fire");
 			} else {
-				yield* g.srcCall(f, "apply_damage", 3, "fire");
+				yield* this.apply_damage(HEAT_DAMAGE_LEVEL_2, "fire");
 			}
 		}
-	} else {
-		if (rt.lt(rt.sv(f, "bodytemperature"), 260.1499938964844)) {
-			if (!truthy((rt.istype(rt.sv(f, "loc"), T("/obj/machinery/atmospherics/components/unary/cryo_cell")) ? 1 : 0))) {
-				$0 = rt.sv(f, "bodytemperature");
-				if (rt.inRange($0, 200, 260)) {
-					yield* g.srcCall(f, "throw_alert", "temp", T("/obj/screen/alert/cold"), 1);
-					yield* g.srcCall(f, "apply_damage", 0.5, "fire");
-				} else if (rt.inRange($0, 120, 200)) {
-					yield* g.srcCall(f, "throw_alert", "temp", T("/obj/screen/alert/cold"), 2);
-					yield* g.srcCall(f, "apply_damage", 1.5, "fire");
-				} else if (rt.inRange($0, -9.999999848243207e+30, 120)) {
-					yield* g.srcCall(f, "throw_alert", "temp", T("/obj/screen/alert/cold"), 3);
-					yield* g.srcCall(f, "apply_damage", 3, "fire");
-				}
-			} else {
-				yield* g.srcCall(f, "clear_alert", "temp");
+	} else if (this.bodytemperature < BODYTEMP_COLD_DAMAGE_LIMIT) {
+		if (!rt.istype(this.loc, T("/obj/machinery/atmospherics/components/unary/cryo_cell"))) {
+			if (rt.inRange(this.bodytemperature, 200, 260)) {
+				yield* this.throw_alert("temp", T("/obj/screen/alert/cold"), 1);
+				yield* this.apply_damage(COLD_DAMAGE_LEVEL_1, "fire");
+			} else if (rt.inRange(this.bodytemperature, 120, 200)) {
+				yield* this.throw_alert("temp", T("/obj/screen/alert/cold"), 2);
+				yield* this.apply_damage(COLD_DAMAGE_LEVEL_2, "fire");
+			} else if (rt.inRange(this.bodytemperature, -1e+31, 120)) {
+				yield* this.throw_alert("temp", T("/obj/screen/alert/cold"), 3);
+				yield* this.apply_damage(COLD_DAMAGE_LEVEL_3, "fire");
 			}
 		} else {
-			yield* g.srcCall(f, "clear_alert", "temp");
+			yield* this.clear_alert("temp");
 		}
-	}
-	pressure = (yield* g.callName(f, live(environment), "return_pressure", []));
-	$0 = (adjusted_pressure = (yield* g.srcCall(f, "calculate_affecting_pressure", live(pressure))));
-	if (rt.inRange($0, 550, 9.999999848243207e+30)) {
-		yield* g.srcCall(f, "adjustBruteLoss", (yield* g.call(f, P("/proc/min"), null, [multiply(subtract(divide(live(adjusted_pressure), 550), 1), 4), 4])));
-		yield* g.srcCall(f, "throw_alert", "pressure", T("/obj/screen/alert/highpressure"), 2);
-	} else if (rt.inRange($0, 325, 550)) {
-		yield* g.srcCall(f, "throw_alert", "pressure", T("/obj/screen/alert/highpressure"), 1);
-	} else if (rt.inRange($0, 50, 325)) {
-		yield* g.srcCall(f, "clear_alert", "pressure");
-	} else if (rt.inRange($0, 20, 50)) {
-		yield* g.srcCall(f, "throw_alert", "pressure", T("/obj/screen/alert/lowpressure"), 1);
 	} else {
-		yield* g.srcCall(f, "adjustBruteLoss", 2);
-		yield* g.srcCall(f, "throw_alert", "pressure", T("/obj/screen/alert/lowpressure"), 2);
+		yield* this.clear_alert("temp");
 	}
-	return live(f.dot);
-}, true);
-
-// /mob/living/carbon/monkey/proc/handle_random_events  (code/modules/mob/living/carbon/monkey/life.dm:140)  may sleep
-rt.def("/mob/living/carbon/monkey/proc/handle_random_events", function* handle_random_events(f: Frame) {
-	if (!(truthy(rt.op(f, "Prob", [], [1])) && truthy(rt.op(f, "Prob", [], [2])))) return f.dot;
-	yield* g.srcCall(f, "emote", "scratch");
+	let pressure: Value = environment.return_pressure();
+	const subject = (adjusted_pressure = this.calculate_affecting_pressure(pressure));
+	if (rt.inRange(subject, HAZARD_HIGH_PRESSURE, 1e+31)) {
+		yield* this.adjustBruteLoss(min((adjusted_pressure / HAZARD_HIGH_PRESSURE - 1) * PRESSURE_DAMAGE_COEFFICIENT, MAX_HIGH_PRESSURE_DAMAGE));
+		yield* this.throw_alert("pressure", T("/obj/screen/alert/highpressure"), 2);
+	} else if (rt.inRange(subject, WARNING_HIGH_PRESSURE, HAZARD_HIGH_PRESSURE)) {
+		yield* this.throw_alert("pressure", T("/obj/screen/alert/highpressure"), 1);
+	} else if (rt.inRange(subject, WARNING_LOW_PRESSURE, WARNING_HIGH_PRESSURE)) {
+		yield* this.clear_alert("pressure");
+	} else if (rt.inRange(subject, HAZARD_LOW_PRESSURE, WARNING_LOW_PRESSURE)) {
+		yield* this.throw_alert("pressure", T("/obj/screen/alert/lowpressure"), 1);
+	} else {
+		yield* this.adjustBruteLoss(LOW_PRESSURE_DAMAGE);
+		yield* this.throw_alert("pressure", T("/obj/screen/alert/lowpressure"), 2);
+	}
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/monkey/proc/has_smoke_protection  (code/modules/mob/living/carbon/monkey/life.dm:145)
+// life.dm:140
+rt.def("/mob/living/carbon/monkey/proc/handle_random_events", function* handle_random_events(f: Frame) {
+	if (!(prob(1) && prob(2))) return f.dot;
+	yield* this.emote("scratch");
+	return f.dot;
+}, true);
+
+// life.dm:145
 rt.def("/mob/living/carbon/monkey/proc/has_smoke_protection", function has_smoke_protection(f: Frame) {
-	if (!truthy(rt.sv(f, "wear_mask"))) return f.dot;
-	if (!truthy(rt.bitAnd(rt.fv(f, "flags", rt.sv(f, "wear_mask")), 4096))) return f.dot;
+	if (!this.wear_mask) return f.dot;
+	if (!rt.bitAnd(this.wear_mask.flags, BLOCK_GAS_SMOKE_EFFECT)) return f.dot;
 	return 1;
 });
 
-// /mob/living/carbon/monkey/proc/handle_fire  (code/modules/mob/living/carbon/monkey/life.dm:149)  may sleep
+// life.dm:149
 rt.def("/mob/living/carbon/monkey/proc/handle_fire", function* handle_fire(f: Frame) {
-	let burning_items: Value = null, head_clothes: Value = null, X: Value = null, I: Value = null;
-	let $e: any;
-	f.vars = () => [burning_items, head_clothes, X, I, $e];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(rt.sv(f, "on_fire"))) return f.dot;
-	burning_items = rt.list();
-	head_clothes = null;
-	if (truthy(rt.sv(f, "wear_mask"))) {
-		head_clothes = rt.sv(f, "wear_mask");
+	let head_clothes: Value = null, X: Value = null, I: Value = null;
+	f.dot = (yield* parent_proc());
+	if (!this.on_fire) return f.dot;
+	let burning_items: Value = list();
+	if (this.wear_mask) {
+		head_clothes = this.wear_mask;
 	}
-	if (truthy(rt.sv(f, "wear_neck"))) {
-		head_clothes = rt.sv(f, "wear_neck");
+	if (this.wear_neck) {
+		head_clothes = this.wear_neck;
 	}
-	if (truthy(rt.sv(f, "head"))) {
-		head_clothes = rt.sv(f, "head");
+	if (this.head) {
+		head_clothes = this.head;
 	}
-	if (truthy(live(head_clothes))) {
-		burning_items = rt.modify(live(burning_items), live(head_clothes), add);
+	if (head_clothes) {
+		burning_items += head_clothes;
 	}
-	if (truthy(rt.sv(f, "back"))) {
-		burning_items = rt.modify(live(burning_items), rt.sv(f, "back"), add);
+	if (this.back) {
+		burning_items += this.back;
 	}
-	X = null;
-	rt.forList(f, 0, live(burning_items));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		X = $e;
-		if (!truthy(rt.bitAnd(rt.gv(f, "resistance_flags", (I = live(X))), 2))) {
-			yield* g.callName(f, live(I), "take_damage", [rt.sv(f, "fire_stacks"), "fire", "fire", 0]);
+	for (X of each(burning_items)) {
+		if (!rt.bitAnd((I = X).resistance_flags, FIRE_PROOF)) {
+			yield* I.take_damage(this.fire_stacks, "fire", "fire", 0);
 		}
 	}
-	rt.endFor(f, 0);
-	rt.modSrcVar(f, "bodytemperature", 30, add);
+	this.bodytemperature += BODYTEMP_HEATING_MAX;
 	return f.dot;
 }, true);

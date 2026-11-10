@@ -1,7 +1,7 @@
-// From code/game/gamemodes/changeling/powers/transform.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/gamemodes/changeling/powers/transform.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, g } = rt;
 
 
 rt.type(8205, "/obj/item/clothing/glasses/changeling", "/obj/item/clothing/glasses", {
@@ -9,32 +9,32 @@ rt.type(8205, "/obj/item/clothing/glasses/changeling", "/obj/item/clothing/glass
 	name: "flesh",
 });
 
-// /obj/item/clothing/glasses/changeling/proc/attack_hand  (code/game/gamemodes/changeling/powers/transform.dm:14)  may sleep
-rt.def("/obj/item/clothing/glasses/changeling/proc/attack_hand", function* attack_hand(f: Frame) {
-	if (((isEqual(rt.sv(f, "loc"), live(f.args[0])) && truthy(rt.fv(f, "mind", live(f.args[0])))) && truthy(rt.gv(f, "changeling", rt.fv(f, "mind", live(f.args[0])))))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='notice'>You reabsorb ＀ into your body.</span>", [live(f.src)])]);
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-		return live(f.dot);
+// transform.dm:14
+rt.def("/obj/item/clothing/glasses/changeling/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
+	if (this.loc == user && user.mind && user.mind.changeling) {
+		to_chat(user, `<span class='notice'>You reabsorb ${this} into your body.</span>`);
+		yield* qdel(this);
+		return f.dot;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
 rt.type(8260, "/obj/item/clothing/under/changeling", "/obj/item/clothing/under", {
 	flags: 2,
 	name: "flesh",
 });
 
-// /obj/item/clothing/under/changeling/proc/attack_hand  (code/game/gamemodes/changeling/powers/transform.dm:25)  may sleep
-rt.def("/obj/item/clothing/under/changeling/proc/attack_hand", function* attack_hand(f: Frame) {
-	if (((isEqual(rt.sv(f, "loc"), live(f.args[0])) && truthy(rt.fv(f, "mind", live(f.args[0])))) && truthy(rt.gv(f, "changeling", rt.fv(f, "mind", live(f.args[0])))))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='notice'>You reabsorb ＀ into your body.</span>", [live(f.src)])]);
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-		return live(f.dot);
+// transform.dm:25
+rt.def("/obj/item/clothing/under/changeling/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
+	if (this.loc == user && user.mind && user.mind.changeling) {
+		to_chat(user, `<span class='notice'>You reabsorb ${this} into your body.</span>`);
+		yield* qdel(this);
+		return f.dot;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
 rt.type(7804, "/obj/item/clothing/suit/changeling", "/obj/item/clothing/suit", {
 	flags: 2,
@@ -42,89 +42,87 @@ rt.type(7804, "/obj/item/clothing/suit/changeling", "/obj/item/clothing/suit", {
 	allowed: null,
 });
 
-// /obj/item/clothing/suit/changeling/proc/<init>  (code/game/gamemodes/changeling/powers/transform.dm:34)
+// transform.dm:34
 rt.def("/obj/item/clothing/suit/changeling/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/changeling")));
+	parent_proc();
+	this.allowed = list(T("/obj/item/changeling"));
 	return f.dot;
 });
 
-// /obj/item/clothing/suit/changeling/proc/attack_hand  (code/game/gamemodes/changeling/powers/transform.dm:37)  may sleep
-rt.def("/obj/item/clothing/suit/changeling/proc/attack_hand", function* attack_hand(f: Frame) {
-	if (((isEqual(rt.sv(f, "loc"), live(f.args[0])) && truthy(rt.fv(f, "mind", live(f.args[0])))) && truthy(rt.gv(f, "changeling", rt.fv(f, "mind", live(f.args[0])))))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='notice'>You reabsorb ＀ into your body.</span>", [live(f.src)])]);
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-		return live(f.dot);
+// transform.dm:37
+rt.def("/obj/item/clothing/suit/changeling/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
+	if (this.loc == user && user.mind && user.mind.changeling) {
+		to_chat(user, `<span class='notice'>You reabsorb ${this} into your body.</span>`);
+		yield* qdel(this);
+		return f.dot;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
 rt.type(8024, "/obj/item/clothing/head/changeling", "/obj/item/clothing/head", {
 	flags: 2,
 	name: "flesh",
 });
 
-// /obj/item/clothing/head/changeling/proc/attack_hand  (code/game/gamemodes/changeling/powers/transform.dm:48)  may sleep
-rt.def("/obj/item/clothing/head/changeling/proc/attack_hand", function* attack_hand(f: Frame) {
-	if (((isEqual(rt.sv(f, "loc"), live(f.args[0])) && truthy(rt.fv(f, "mind", live(f.args[0])))) && truthy(rt.gv(f, "changeling", rt.fv(f, "mind", live(f.args[0])))))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='notice'>You reabsorb ＀ into your body.</span>", [live(f.src)])]);
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-		return live(f.dot);
+// transform.dm:48
+rt.def("/obj/item/clothing/head/changeling/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
+	if (this.loc == user && user.mind && user.mind.changeling) {
+		to_chat(user, `<span class='notice'>You reabsorb ${this} into your body.</span>`);
+		yield* qdel(this);
+		return f.dot;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
 rt.type(8457, "/obj/item/clothing/shoes/changeling", "/obj/item/clothing/shoes", {
 	flags: 2,
 	name: "flesh",
 });
 
-// /obj/item/clothing/shoes/changeling/proc/attack_hand  (code/game/gamemodes/changeling/powers/transform.dm:59)  may sleep
-rt.def("/obj/item/clothing/shoes/changeling/proc/attack_hand", function* attack_hand(f: Frame) {
-	if (((isEqual(rt.sv(f, "loc"), live(f.args[0])) && truthy(rt.fv(f, "mind", live(f.args[0])))) && truthy(rt.gv(f, "changeling", rt.fv(f, "mind", live(f.args[0])))))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='notice'>You reabsorb ＀ into your body.</span>", [live(f.src)])]);
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-		return live(f.dot);
+// transform.dm:59
+rt.def("/obj/item/clothing/shoes/changeling/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
+	if (this.loc == user && user.mind && user.mind.changeling) {
+		to_chat(user, `<span class='notice'>You reabsorb ${this} into your body.</span>`);
+		yield* qdel(this);
+		return f.dot;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
 rt.type(7660, "/obj/item/clothing/gloves/changeling", "/obj/item/clothing/gloves", {
 	flags: 2,
 	name: "flesh",
 });
 
-// /obj/item/clothing/gloves/changeling/proc/attack_hand  (code/game/gamemodes/changeling/powers/transform.dm:70)  may sleep
-rt.def("/obj/item/clothing/gloves/changeling/proc/attack_hand", function* attack_hand(f: Frame) {
-	if (((isEqual(rt.sv(f, "loc"), live(f.args[0])) && truthy(rt.fv(f, "mind", live(f.args[0])))) && truthy(rt.gv(f, "changeling", rt.fv(f, "mind", live(f.args[0])))))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='notice'>You reabsorb ＀ into your body.</span>", [live(f.src)])]);
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-		return live(f.dot);
+// transform.dm:70
+rt.def("/obj/item/clothing/gloves/changeling/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
+	if (this.loc == user && user.mind && user.mind.changeling) {
+		to_chat(user, `<span class='notice'>You reabsorb ${this} into your body.</span>`);
+		yield* qdel(this);
+		return f.dot;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
 rt.type(8516, "/obj/item/clothing/mask/changeling", "/obj/item/clothing/mask", {
 	flags: 2,
 	name: "flesh",
 });
 
-// /obj/item/clothing/mask/changeling/proc/attack_hand  (code/game/gamemodes/changeling/powers/transform.dm:81)  may sleep
-rt.def("/obj/item/clothing/mask/changeling/proc/attack_hand", function* attack_hand(f: Frame) {
-	if (((isEqual(rt.sv(f, "loc"), live(f.args[0])) && truthy(rt.fv(f, "mind", live(f.args[0])))) && truthy(rt.gv(f, "changeling", rt.fv(f, "mind", live(f.args[0])))))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='notice'>You reabsorb ＀ into your body.</span>", [live(f.src)])]);
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-		return live(f.dot);
+// transform.dm:81
+rt.def("/obj/item/clothing/mask/changeling/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
+	if (this.loc == user && user.mind && user.mind.changeling) {
+		to_chat(user, `<span class='notice'>You reabsorb ${this} into your body.</span>`);
+		yield* qdel(this);
+		return f.dot;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
 rt.type(8926, "/obj/item/changeling", "/obj/item", {
 	flags: 2,
@@ -133,25 +131,23 @@ rt.type(8926, "/obj/item/changeling", "/obj/item", {
 	allowed: null,
 });
 
-// /obj/item/changeling/proc/<init>  (code/game/gamemodes/changeling/powers/transform.dm:91)
+// transform.dm:91
 rt.def("/obj/item/changeling/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/changeling")));
+	parent_proc();
+	this.allowed = list(T("/obj/item/changeling"));
 	return f.dot;
 });
 
-// /obj/item/changeling/proc/attack_hand  (code/game/gamemodes/changeling/powers/transform.dm:94)  may sleep
-rt.def("/obj/item/changeling/proc/attack_hand", function* attack_hand(f: Frame) {
-	if (((isEqual(rt.sv(f, "loc"), live(f.args[0])) && truthy(rt.fv(f, "mind", live(f.args[0])))) && truthy(rt.gv(f, "changeling", rt.fv(f, "mind", live(f.args[0])))))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='notice'>You reabsorb ＀ into your body.</span>", [live(f.src)])]);
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-		return live(f.dot);
+// transform.dm:94
+rt.def("/obj/item/changeling/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
+	if (this.loc == user && user.mind && user.mind.changeling) {
+		to_chat(user, `<span class='notice'>You reabsorb ${this} into your body.</span>`);
+		yield* qdel(this);
+		return f.dot;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
 rt.type(11261, "/obj/effect/proc_holder/changeling/transform", "/obj/effect/proc_holder/changeling", {
 	chemical_cost: 5,
@@ -162,44 +158,33 @@ rt.type(11261, "/obj/effect/proc_holder/changeling/transform", "/obj/effect/proc
 	desc: "We take on the appearance and voice of one we have absorbed.",
 });
 
-// /obj/effect/proc_holder/changeling/transform/proc/sting_action  (code/game/gamemodes/changeling/powers/transform.dm:102)  may sleep
+// transform.dm:102
 rt.def("/obj/effect/proc_holder/changeling/transform/proc/sting_action", function* sting_action(f: Frame, user: Value) {
-	let changeling: Value = null, chosen_prof: Value = null;
-	f.vars = () => [user, changeling, chosen_prof];
-	changeling = rt.gv(f, "changeling", rt.fv(f, "mind", live(user)));
-	if (!truthy((chosen_prof = (yield* g.callName(f, live(changeling), "select_dna", ["Select the target DNA: ", "Target DNA", live(user)]))))) {
-		return live(f.dot);
+	let chosen_prof: Value = null;
+	let changeling: Value = user.mind.changeling;
+	if (!(chosen_prof = (yield* changeling.select_dna("Select the target DNA: ", "Target DNA", user)))) {
+		return f.dot;
 	}
-	yield* g.call(f, P("/proc/changeling_transform"), null, [live(user), live(chosen_prof)]);
+	yield* changeling_transform(user, chosen_prof);
 	return 1;
 }, true);
 
-// /datum/changeling/proc/select_dna  (code/game/gamemodes/changeling/powers/transform.dm:112)  may sleep
+// transform.dm:112
 rt.def("/datum/changeling/proc/select_dna", function* select_dna(f: Frame, prompt: Value, title: Value, user: Value) {
-	let names: Value = null, prof: Value = null, chosen_name: Value = null, slot: Value = null, prof_2: Value = null;
-	let $e: any;
-	f.vars = () => [prompt, title, user, names, prof, chosen_name, slot, prof_2, $e];
-	names = rt.list("Drop Flesh Disguise");
-	prof = null;
-	rt.forList(f, 0, rt.sv(f, "stored_profiles"), T("/datum/changelingprofile"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		prof = $e;
-		names = rt.modify(live(names), fmt("＀", [rt.fv(f, "name", live(prof))]), add);
+	let prof: Value = null, chosen_name: Value = null, slot: Value = null, prof_2: Value = null;
+	let names: Value = list("Drop Flesh Disguise");
+	for (prof of each(this.stored_profiles, T("/datum/changelingprofile"))) {
+		names += `${prof.name}`;
 	}
-	rt.endFor(f, 0);
-	if (!truthy((chosen_name = (yield* g.op(f, "Prompt", [1], [null, null, live(title), live(prompt), live(names)]))))) {
-		return live(f.dot);
+	if (!(chosen_name = (yield* g.op(f, "Prompt", [1], [null, null, title, prompt, names])))) {
+		return f.dot;
 	}
-	if (isEqual(live(chosen_name), "Drop Flesh Disguise")) {
-		slot = null;
-		rt.forList(f, 0, rt.gl("slots"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			slot = $e;
-			if (truthy(rt.op(f, "IsType", [], [rt.index(rt.fv(f, "vars", live(user)), live(slot)), rt.index(rt.gl("slot2type"), live(slot))]))) {
-				yield* g.call(f, P("/proc/qdel"), null, [rt.index(rt.fv(f, "vars", live(user)), live(slot))]);
+	if (chosen_name == "Drop Flesh Disguise") {
+		for (slot of each(GLOB.slots)) {
+			if (rt.op(f, "IsType", [], [rt.index(user.vars, slot), rt.index(GLOB.slot2type, slot)])) {
+				yield* qdel(rt.index(user.vars, slot));
 			}
 		}
-		rt.endFor(f, 0);
 	}
-	return (prof_2 = (yield* g.srcCall(f, "get_dna", live(chosen_name))));
+	return (prof_2 = this.get_dna(chosen_name));
 }, true);

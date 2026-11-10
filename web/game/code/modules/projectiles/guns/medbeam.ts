@@ -1,7 +1,7 @@
-// From code/modules/projectiles/guns/medbeam.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/projectiles/guns/medbeam.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(5279, "/obj/item/weapon/gun/medbeam", "/obj/item/weapon/gun", {
@@ -21,171 +21,151 @@ rt.type(5279, "/obj/item/weapon/gun/medbeam", "/obj/item/weapon/gun", {
 	w_class: 3,
 });
 
-// /obj/item/weapon/gun/medbeam/proc/Initialize  (code/modules/projectiles/guns/medbeam.dm:20)  may sleep
+// medbeam.dm:20
 rt.def("/obj/item/weapon/gun/medbeam/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (truthy(rt.fv(f, "isprocessing", live(f.src)))) return f.dot;
-	rt.setFv(f, "isprocessing", live(f.src), 1);
-	rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), add);
+	f.dot = (yield* parent_proc());
+	if (this.isprocessing) return f.dot;
+	this.isprocessing = 1;
+	GLOB.SSobj.processing += this;
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/gun/medbeam/proc/Destroy  (code/modules/projectiles/guns/medbeam.dm:24)  may sleep
-rt.def("/obj/item/weapon/gun/medbeam/proc/Destroy", function* Destroy(f: Frame) {
-	rt.setFv(f, "isprocessing", live(f.src), 0);
-	(rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), subtract));
-	yield* g.srcCall(f, "LoseTarget");
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["user"] });
+// medbeam.dm:24
+rt.def("/obj/item/weapon/gun/medbeam/proc/Destroy", function* Destroy(f: Frame, user: Value) {
+	this.isprocessing = 0;
+	GLOB.SSobj.processing -= this;
+	yield* this.LoseTarget();
+	return (yield* parent_proc());
+}, true);
 
-// /obj/item/weapon/gun/medbeam/proc/dropped  (code/modules/projectiles/guns/medbeam.dm:29)  may sleep
-rt.def("/obj/item/weapon/gun/medbeam/proc/dropped", function* dropped(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "LoseTarget");
+// medbeam.dm:29
+rt.def("/obj/item/weapon/gun/medbeam/proc/dropped", function* dropped(f: Frame, user: Value) {
+	yield* parent_proc();
+	yield* this.LoseTarget();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /obj/item/weapon/gun/medbeam/proc/equipped  (code/modules/projectiles/guns/medbeam.dm:33)  may sleep
-rt.def("/obj/item/weapon/gun/medbeam/proc/equipped", function* equipped(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "LoseTarget");
+// medbeam.dm:33
+rt.def("/obj/item/weapon/gun/medbeam/proc/equipped", function* equipped(f: Frame, user: Value) {
+	yield* parent_proc();
+	yield* this.LoseTarget();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /obj/item/weapon/gun/medbeam/proc/LoseTarget  (code/modules/projectiles/guns/medbeam.dm:38)  may sleep
+// medbeam.dm:38
 rt.def("/obj/item/weapon/gun/medbeam/proc/LoseTarget", function* LoseTarget(f: Frame) {
-	if (truthy(rt.sv(f, "active"))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "current_beam")]);
-		rt.setSv(f, "current_beam", null);
-		rt.setSv(f, "active", 0);
-		yield* g.srcCall(f, "on_beam_release", rt.sv(f, "current_target"));
+	if (this.active) {
+		yield* qdel(this.current_beam);
+		this.current_beam = null;
+		this.active = 0;
+		this.on_beam_release(this.current_target);
 	}
-	rt.setSv(f, "current_target", null);
+	this.current_target = null;
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/gun/medbeam/proc/process_fire  (code/modules/projectiles/guns/medbeam.dm:45)  may sleep
+// medbeam.dm:45
 rt.def("/obj/item/weapon/gun/medbeam/proc/process_fire", function* process_fire(f: Frame, target: Value, user: Value, message: Value, params: Value, zone_override: Value) {
-	f.vars = () => [target, user, message, params, zone_override];
-	if (live(message) === null) {
-		message = 1;
+	message ??= 1;
+	if (rt.istype(user, T("/mob/living"))) {
+		yield* this.add_fingerprint(user);
 	}
-	if (truthy((rt.istype(live(user), T("/mob/living")) ? 1 : 0))) {
-		yield* g.srcCall(f, "add_fingerprint", live(user));
+	if (this.current_target) {
+		yield* this.LoseTarget();
 	}
-	if (truthy(rt.sv(f, "current_target"))) {
-		yield* g.srcCall(f, "LoseTarget");
+	if (!rt.istype(target, T("/mob/living"))) {
+		return f.dot;
 	}
-	if (!truthy((rt.istype(live(target), T("/mob/living")) ? 1 : 0))) {
-		return live(f.dot);
-	}
-	rt.setSv(f, "current_target", live(target));
-	rt.setSv(f, "active", 1);
-	rt.setSv(f, "current_beam", (yield* g.new_(f, T("/datum/beam"), [null, live(user), null, rt.sv(f, "current_target"), "time", 6000, "beam_icon_state", "medbeam", "btype", T("/obj/effect/ebeam/medical")], rt.Args.Named)));
-	yield* g.call(f, P("/proc/ImmediateInvokeAsync"), null, [rt.sv(f, "current_beam"), P("/datum/beam/proc/Start")]);
+	this.current_target = target;
+	this.active = 1;
+	this.current_beam = (yield* new_(T("/datum/beam"), user, this.current_target, { time: 6000, beam_icon_state: "medbeam", btype: T("/obj/effect/ebeam/medical") }));
+	yield* ImmediateInvokeAsync(this.current_beam, P("/datum/beam/proc/Start"));
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/gun/medbeam/proc/process  (code/modules/projectiles/guns/medbeam.dm:62)  may sleep
+// medbeam.dm:62
 rt.def("/obj/item/weapon/gun/medbeam/proc/process", function* process(f: Frame) {
-	let source: Value = null;
-	f.vars = () => [source];
-	source = rt.sv(f, "loc");
-	if ((!truthy(rt.sv(f, "mounted")) && !truthy((rt.istype(live(source), T("/mob/living")) ? 1 : 0)))) {
-		yield* g.srcCall(f, "LoseTarget");
-		return live(f.dot);
+	let source: Value = this.loc;
+	if (!this.mounted && !rt.istype(source, T("/mob/living"))) {
+		yield* this.LoseTarget();
+		return f.dot;
 	}
-	if (!truthy(rt.sv(f, "current_target"))) {
-		yield* g.srcCall(f, "LoseTarget");
-		return live(f.dot);
+	if (!this.current_target) {
+		yield* this.LoseTarget();
+		return f.dot;
 	}
-	if (rt.le(rt.worldTime(f), add(rt.sv(f, "last_check"), rt.sv(f, "check_delay")))) {
-		return live(f.dot);
+	if (rt.worldTime(f) <= this.last_check + this.check_delay) {
+		return f.dot;
 	}
-	rt.setSv(f, "last_check", rt.worldTime(f));
-	if ((rt.gt((yield* g.call(f, P("/proc/get_dist"), null, [live(source), rt.sv(f, "current_target")])), rt.sv(f, "max_range")) || !truthy((yield* g.srcCall(f, "los_check", live(source), rt.sv(f, "current_target")))))) {
-		yield* g.srcCall(f, "LoseTarget");
-		if (truthy((rt.istype(live(source), T("/mob/living")) ? 1 : 0))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(source), "<span class='warning'>You lose control of the beam!</span>"]);
+	this.last_check = rt.worldTime(f);
+	if (get_dist(source, this.current_target) > this.max_range || !(yield* this.los_check(source, this.current_target))) {
+		yield* this.LoseTarget();
+		if (rt.istype(source, T("/mob/living"))) {
+			to_chat(source, "<span class='warning'>You lose control of the beam!</span>");
 		}
-		return live(f.dot);
+		return f.dot;
 	}
-	if (!truthy(rt.sv(f, "current_target"))) return f.dot;
-	yield* g.srcCall(f, "on_beam_tick", rt.sv(f, "current_target"));
+	if (!this.current_target) return f.dot;
+	yield* this.on_beam_tick(this.current_target);
 	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/item/weapon/gun/medbeam/proc/los_check  (code/modules/projectiles/guns/medbeam.dm:88)  may sleep
+// medbeam.dm:88
 rt.def("/obj/item/weapon/gun/medbeam/proc/los_check", function* los_check(f: Frame, user: Value, target: Value) {
-	let user_turf: Value = null, dummy: Value = null, turf: Value = null, AM: Value = null, B: Value = null;
-	let $e: any;
-	f.vars = () => [user, target, user_turf, dummy, turf, AM, B, $e];
-	user_turf = rt.fv(f, "loc", live(user));
-	if (truthy(rt.sv(f, "mounted"))) {
-		user_turf = rt.getStep(f, live(user), 0);
-	} else {
-		if (!truthy((rt.istype(live(user_turf), T("/turf")) ? 1 : 0))) {
-			return 0;
-		}
+	let dummy: Value = null, turf: Value = null, AM: Value = null, B: Value = null;
+	let user_turf: Value = user.loc;
+	if (this.mounted) {
+		user_turf = rt.getStep(f, user, 0);
+	} else if (!rt.istype(user_turf, T("/turf"))) {
+		return 0;
 	}
-	(rt.modField(f, (dummy = (yield* g.new_(f, T("/obj"), [live(user_turf)]))), "pass_flags", 7, rt.bitOr));
-	turf = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/getline"), null, [live(user_turf), live(target)])), T("/turf"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		turf = $e;
-		if ((truthy(rt.sv(f, "mounted")) && isEqual(live(turf), live(user_turf)))) {
+	(rt.modField(f, (dummy = (yield* new_(T("/obj"), user_turf))), "pass_flags", 7, rt.bitOr));
+	for (turf of each(getline(user_turf, target), T("/turf"))) {
+		if (this.mounted && turf == user_turf) {
 			continue;
 		}
-		if (truthy(rt.fv(f, "density", live(turf)))) {
-			yield* g.call(f, P("/proc/qdel"), null, [live(dummy)]);
+		if (turf.density) {
+			yield* qdel(dummy);
 			return 0;
 		}
 		AM = null;
-		rt.forList(f, 1, live(turf), T("/atom/movable"));
-		while (($e = rt.next(f, 1)) !== undefined) {
-			AM = $e;
-			if (!truthy((yield* g.callName(f, live(AM), "CanPass", [live(dummy), live(turf), 1])))) {
-				yield* g.call(f, P("/proc/qdel"), null, [live(dummy)]);
+		for (AM of each(turf, T("/atom/movable"))) {
+			if (!(yield* AM.CanPass(dummy, turf, 1))) {
+				yield* qdel(dummy);
 				return 0;
 			}
 		}
-		rt.endFor(f, 1);
 		B = null;
-		rt.forList(f, 1, live(turf), T("/obj/effect/ebeam/medical"));
-		while (($e = rt.next(f, 1)) !== undefined) {
-			B = $e;
-			if (!isEqual(rt.fv(f, "owner", live(B)), rt.sv(f, "current_beam"))) {
-				yield* g.call(f, P("/proc/explosion"), null, [rt.fv(f, "loc", live(B)), 0, 3, 5, 8]);
-				yield* g.call(f, P("/proc/qdel"), null, [live(dummy)]);
+		for (B of each(turf, T("/obj/effect/ebeam/medical"))) {
+			if (B.owner != this.current_beam) {
+				yield* explosion(B.loc, 0, 3, 5, 8);
+				yield* qdel(dummy);
 				return 0;
 			}
 		}
-		rt.endFor(f, 1);
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/qdel"), null, [live(dummy)]);
+	yield* qdel(dummy);
 	return 1;
 }, true);
 
-// /obj/item/weapon/gun/medbeam/proc/on_beam_tick  (code/modules/projectiles/guns/medbeam.dm:115)  may sleep
+// medbeam.dm:115
 rt.def("/obj/item/weapon/gun/medbeam/proc/on_beam_tick", function* on_beam_tick(f: Frame, target: Value) {
-	f.vars = () => [target];
-	if (!isEqual(rt.fv(f, "health", live(target)), rt.fv(f, "maxHealth", live(target)))) {
-		yield* g.new_(f, T("/obj/effect/temp_visual/heal"), [rt.getStep(f, live(target), 0), "#80F5FF"]);
+	if (target.health != target.maxHealth) {
+		yield* new_(T("/obj/effect/temp_visual/heal"), rt.getStep(f, target, 0), "#80F5FF");
 	}
-	yield* g.callName(f, live(target), "adjustBruteLoss", [-4]);
-	yield* g.callName(f, live(target), "adjustFireLoss", [-4]);
-	return live(f.dot);
+	yield* target.adjustBruteLoss(-4);
+	yield* target.adjustFireLoss(-4);
+	return f.dot;
 }, true);
 
 rt.type(5280, "/obj/item/weapon/gun/medbeam/mech", "/obj/item/weapon/gun/medbeam", {
 	mounted: 1,
 });
 
-// /obj/item/weapon/gun/medbeam/mech/proc/Initialize  (code/modules/projectiles/guns/medbeam.dm:132)  may sleep
+// medbeam.dm:132
 rt.def("/obj/item/weapon/gun/medbeam/mech/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setFv(f, "isprocessing", live(f.src), 0);
-	(rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), subtract));
+	f.dot = (yield* parent_proc());
+	this.isprocessing = 0;
+	GLOB.SSobj.processing -= this;
 	return f.dot;
 }, true);

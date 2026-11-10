@@ -1,7 +1,7 @@
-// From code/modules/mob/living/brain/MMI.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/brain/MMI.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(9115, "/obj/item/device/mmi", "/obj/item/device", {
@@ -21,277 +21,249 @@ rt.type(9115, "/obj/item/device/mmi", "/obj/item/device", {
 	origin_tech: "biotech=2;programming=3;engineering=2",
 });
 
-// /obj/item/device/mmi/proc/<init>  (code/modules/mob/living/brain/MMI.dm:14)
+// MMI.dm:14
 rt.def("/obj/item/device/mmi/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "laws", rt.new_(f, T("/datum/ai_laws"), []));
+	parent_proc();
+	this.laws = new_(T("/datum/ai_laws"));
 	return f.dot;
 });
 
-// /obj/item/device/mmi/proc/update_icon  (code/modules/mob/living/brain/MMI.dm:19)
+// MMI.dm:19
 rt.def("/obj/item/device/mmi/proc/update_icon", function update_icon(f: Frame) {
-	if (truthy(rt.sv(f, "brain"))) {
-		if (truthy((rt.istype(rt.sv(f, "brain"), T("/obj/item/organ/brain/alien")) ? 1 : 0))) {
-			if ((truthy(rt.sv(f, "brainmob")) && isEqual(rt.fv(f, "stat", rt.sv(f, "brainmob")), 2))) {
-				rt.setSv(f, "icon_state", "mmi_alien_dead");
+	if (this.brain) {
+		if (rt.istype(this.brain, T("/obj/item/organ/brain/alien"))) {
+			if (this.brainmob && this.brainmob.stat == 2) {
+				this.icon_state = "mmi_alien_dead";
 			} else {
-				rt.setSv(f, "icon_state", "mmi_alien");
+				this.icon_state = "mmi_alien";
 			}
-			rt.setSv(f, "braintype", "Xenoborg");
+			this.braintype = "Xenoborg";
 		} else {
-			if ((truthy(rt.sv(f, "brainmob")) && isEqual(rt.fv(f, "stat", rt.sv(f, "brainmob")), 2))) {
-				rt.setSv(f, "icon_state", "mmi_dead");
+			if (this.brainmob && this.brainmob.stat == 2) {
+				this.icon_state = "mmi_dead";
 			} else {
-				rt.setSv(f, "icon_state", "mmi_full");
+				this.icon_state = "mmi_full";
 			}
-			rt.setSv(f, "braintype", "Cyborg");
+			this.braintype = "Cyborg";
 		}
 	} else {
-		rt.setSv(f, "icon_state", "mmi_empty");
+		this.icon_state = "mmi_empty";
 	}
 	return f.dot;
 });
 
-// /obj/item/device/mmi/proc/Initialize  (code/modules/mob/living/brain/MMI.dm:35)  may sleep
+// MMI.dm:35
 rt.def("/obj/item/device/mmi/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "radio", (yield* g.new_(f, T("/obj/item/device/radio"), [live(f.src)])));
-	rt.setFv(f, "broadcasting", rt.sv(f, "radio"), 0);
-	yield* g.callName(f, rt.sv(f, "laws"), "set_laws_config", []);
+	f.dot = (yield* parent_proc());
+	this.radio = (yield* new_(T("/obj/item/device/radio"), this));
+	this.radio.broadcasting = 0;
+	yield* this.laws.set_laws_config();
 	return f.dot;
 }, true);
 
-// /obj/item/device/mmi/proc/attackby  (code/modules/mob/living/brain/MMI.dm:41)  may sleep
-rt.def("/obj/item/device/mmi/proc/attackby", function* attackby(f: Frame) {
+// MMI.dm:41
+rt.def("/obj/item/device/mmi/proc/attackby", function* attackby(f: Frame, O: Value, user: Value, params: Value) {
 	let newbrain: Value = null, B: Value = null;
-	f.vars = () => [newbrain, B];
-	yield* g.callName(f, live(f.args[1]), "changeNext_move", [8]);
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/organ/brain")) ? 1 : 0))) {
-		newbrain = live(f.args[0]);
-		if (truthy(rt.sv(f, "brain"))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>There's already a brain in the MMI!</span>"]);
-			return live(f.dot);
+	user.changeNext_move(8);
+	if (rt.istype(O, T("/obj/item/organ/brain"))) {
+		newbrain = O;
+		if (this.brain) {
+			to_chat(user, "<span class='warning'>There's already a brain in the MMI!</span>");
+			return f.dot;
 		}
-		if (!truthy(rt.fv(f, "brainmob", live(newbrain)))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You aren't sure where this brain came from, but you're pretty sure it's a useless brain!</span>"]);
-			return live(f.dot);
+		if (!newbrain.brainmob) {
+			to_chat(user, "<span class='warning'>You aren't sure where this brain came from, but you're pretty sure it's a useless brain!</span>");
+			return f.dot;
 		}
-		if (!truthy((yield* g.callName(f, live(f.args[1]), "transferItemToLoc", [live(f.args[0]), live(f.src)])))) {
-			return live(f.dot);
+		if (!(yield* user.transferItemToLoc(O, this))) {
+			return f.dot;
 		}
-		if (!truthy(rt.gv(f, "key", (B = rt.fv(f, "brainmob", live(newbrain)))))) {
-			yield* g.callName(f, live(B), "notify_ghost_cloning", [null, "Someone has put your brain in a MMI!", "source", live(f.src)], rt.Args.Named);
+		if (!(B = newbrain.brainmob).key) {
+			yield* B.notify_ghost_cloning("Someone has put your brain in a MMI!", { source: this });
 		}
-		yield* g.srcCall(f, "visible_message", fmt("＀ sticks ＇！ into ％！.", [live(f.args[1]), live(newbrain), live(f.src)]));
-		rt.setSv(f, "brainmob", rt.fv(f, "brainmob", live(newbrain)));
-		rt.setFv(f, "brainmob", live(newbrain), null);
-		rt.setFv(f, "loc", rt.sv(f, "brainmob"), live(f.src));
-		rt.setFv(f, "container", rt.sv(f, "brainmob"), live(f.src));
-		if (!truthy(rt.fv(f, "damaged_brain", live(newbrain)))) {
-			rt.setFv(f, "stat", rt.sv(f, "brainmob"), 0);
-			(rt.modGl("dead_mob_list", rt.sv(f, "brainmob"), subtract));
-			rt.modGl("living_mob_list", rt.sv(f, "brainmob"), add);
+		this.visible_message(fmt("＀ sticks ＇！ into ％！.", [user, newbrain, this]));
+		this.brainmob = newbrain.brainmob;
+		newbrain.brainmob = null;
+		this.brainmob.loc = this;
+		this.brainmob.container = this;
+		if (!newbrain.damaged_brain) {
+			this.brainmob.stat = 0;
+			GLOB.dead_mob_list -= this.brainmob;
+			GLOB.living_mob_list += this.brainmob;
 		}
-		yield* g.callName(f, rt.sv(f, "brainmob"), "reset_perspective", []);
-		rt.setSv(f, "brain", live(newbrain));
-		rt.setSv(f, "name", fmt("Man-Machine Interface: ＀", [rt.fv(f, "real_name", rt.sv(f, "brainmob"))]));
-		yield* g.srcCall(f, "update_icon");
+		yield* this.brainmob.reset_perspective();
+		this.brain = newbrain;
+		this.name = `Man-Machine Interface: ${this.brainmob.real_name}`;
+		yield* this.update_icon();
+	} else if (this.brainmob) {
+		yield* O.attack(this.brainmob, user);
 	} else {
-		if (truthy(rt.sv(f, "brainmob"))) {
-			yield* g.callName(f, live(f.args[0]), "attack", [rt.sv(f, "brainmob"), live(f.args[1])]);
-		} else {
-			return (yield* g.callSuper(f, [], rt.Args.Same));
-		}
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["O", "user", "params"] });
+}, true);
 
-// /obj/item/device/mmi/proc/attack_self  (code/modules/mob/living/brain/MMI.dm:82)  may sleep
+// MMI.dm:82
 rt.def("/obj/item/device/mmi/proc/attack_self", function* attack_self(f: Frame, user: Value) {
-	let $0: any, $1: any;
-	f.vars = () => [user, $0, $1];
-	if (!truthy(rt.sv(f, "brain"))) {
-		rt.setFv(f, "on", rt.sv(f, "radio"), (!truthy(rt.fv(f, "on", rt.sv(f, "radio"))) ? 1 : 0));
-		$0 = live(user);
-		if (isEqual(rt.fv(f, "on", rt.sv(f, "radio")), 1)) {
-			$1 = "on";
-		} else {
-			$1 = "off";
-		}
-		yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='notice'>You toggle the MMI's radio system ＀.</span>", [$1])]);
+	if (!this.brain) {
+		this.radio.on = (!this.radio.on ? 1 : 0);
+		to_chat(user, `<span class='notice'>You toggle the MMI's radio system ${this.radio.on == 1 ? "on" : "off"}.</span>`);
 	} else {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>You unlock and upend the MMI, spilling the brain onto the floor.</span>"]);
-		yield* g.srcCall(f, "eject_brain", live(user));
-		yield* g.srcCall(f, "update_icon");
-		rt.setSv(f, "name", "Man-Machine Interface");
+		to_chat(user, "<span class='notice'>You unlock and upend the MMI, spilling the brain onto the floor.</span>");
+		yield* this.eject_brain(user);
+		yield* this.update_icon();
+		this.name = "Man-Machine Interface";
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/device/mmi/proc/eject_brain  (code/modules/mob/living/brain/MMI.dm:92)  may sleep
+// MMI.dm:92
 rt.def("/obj/item/device/mmi/proc/eject_brain", function* eject_brain(f: Frame, user: Value) {
-	f.vars = () => [user];
-	rt.setFv(f, "container", rt.sv(f, "brainmob"), null);
-	rt.setFv(f, "loc", rt.sv(f, "brainmob"), rt.sv(f, "brain"));
-	rt.setFv(f, "stat", rt.sv(f, "brainmob"), 2);
-	rt.setFv(f, "emp_damage", rt.sv(f, "brainmob"), 0);
-	yield* g.callName(f, rt.sv(f, "brainmob"), "reset_perspective", []);
-	(rt.modGl("living_mob_list", rt.sv(f, "brainmob"), subtract));
-	rt.modGl("dead_mob_list", rt.sv(f, "brainmob"), add);
-	rt.setFv(f, "brainmob", rt.sv(f, "brain"), rt.sv(f, "brainmob"));
-	rt.setSv(f, "brainmob", null);
-	if (truthy(live(user))) {
-		yield* g.callName(f, live(user), "put_in_hands", [rt.sv(f, "brain")]);
+	this.brainmob.container = null;
+	this.brainmob.loc = this.brain;
+	this.brainmob.stat = 2;
+	this.brainmob.emp_damage = 0;
+	yield* this.brainmob.reset_perspective();
+	GLOB.living_mob_list -= this.brainmob;
+	GLOB.dead_mob_list += this.brainmob;
+	this.brain.brainmob = this.brainmob;
+	this.brainmob = null;
+	if (user) {
+		yield* user.put_in_hands(this.brain);
 	} else {
-		yield* g.callName(f, rt.sv(f, "brain"), "forceMove", [rt.getStep(f, live(f.src), 0)]);
+		yield* this.brain.forceMove(rt.getStep(f, this, 0));
 	}
-	rt.setSv(f, "brain", null);
+	this.brain = null;
 	return f.dot;
 }, true);
 
-// /obj/item/device/mmi/proc/transfer_identity  (code/modules/mob/living/brain/MMI.dm:109)  may sleep
+// MMI.dm:109
 rt.def("/obj/item/device/mmi/proc/transfer_identity", function* transfer_identity(f: Frame, L: Value) {
 	let C: Value = null, H: Value = null, newbrain: Value = null;
-	f.vars = () => [L, C, H, newbrain];
-	if (!truthy(rt.sv(f, "brainmob"))) {
-		rt.setSv(f, "brainmob", (yield* g.new_(f, T("/mob/living/brain"), [live(f.src)])));
+	if (!this.brainmob) {
+		this.brainmob = (yield* new_(T("/mob/living/brain"), this));
 	}
-	rt.setFv(f, "name", rt.sv(f, "brainmob"), rt.fv(f, "real_name", live(L)));
-	rt.setFv(f, "real_name", rt.sv(f, "brainmob"), rt.fv(f, "real_name", live(L)));
-	if (truthy((yield* g.callName(f, live(L), "has_dna", [])))) {
-		C = live(L);
-		if (!truthy(rt.fv(f, "stored_dna", rt.sv(f, "brainmob")))) {
-			rt.setFv(f, "stored_dna", rt.sv(f, "brainmob"), (yield* g.new_(f, T("/datum/dna/stored"), [rt.sv(f, "brainmob")])));
+	this.brainmob.name = L.real_name;
+	this.brainmob.real_name = L.real_name;
+	if (L.has_dna()) {
+		C = L;
+		if (!this.brainmob.stored_dna) {
+			this.brainmob.stored_dna = (yield* new_(T("/datum/dna/stored"), this.brainmob));
 		}
-		yield* g.callName(f, rt.fv(f, "dna", live(C)), "copy_dna", [rt.fv(f, "stored_dna", rt.sv(f, "brainmob"))]);
+		yield* C.dna.copy_dna(this.brainmob.stored_dna);
 	}
-	rt.setFv(f, "container", rt.sv(f, "brainmob"), live(f.src));
-	if (truthy((rt.istype(live(L), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		H = live(L);
-		rt.setFv(f, "loc", (newbrain = (yield* g.callName(f, live(H), "getorgan", [T("/obj/item/organ/brain")]))), live(f.src));
-		rt.setSv(f, "brain", live(newbrain));
-	} else {
-		if (!truthy(rt.sv(f, "brain"))) {
-			rt.setSv(f, "brain", (yield* g.new_(f, T("/obj/item/organ/brain"), [live(f.src)])));
-			rt.setFv(f, "name", rt.sv(f, "brain"), fmt("＀'s brain", [rt.fv(f, "real_name", live(L))]));
-		}
+	this.brainmob.container = this;
+	if (rt.istype(L, T("/mob/living/carbon/human"))) {
+		H = L;
+		(newbrain = H.getorgan(T("/obj/item/organ/brain"))).loc = this;
+		this.brain = newbrain;
+	} else if (!this.brain) {
+		this.brain = (yield* new_(T("/obj/item/organ/brain"), this));
+		this.brain.name = `${L.real_name}'s brain`;
 	}
-	rt.setSv(f, "name", fmt("Man-Machine Interface: ＀", [rt.fv(f, "real_name", rt.sv(f, "brainmob"))]));
-	yield* g.srcCall(f, "update_icon");
-	return live(f.dot);
+	this.name = `Man-Machine Interface: ${this.brainmob.real_name}`;
+	yield* this.update_icon();
+	return f.dot;
 }, true);
 
-// /obj/item/device/mmi/proc/replacement_ai_name  (code/modules/mob/living/brain/MMI.dm:134)
+// MMI.dm:134
 rt.def("/obj/item/device/mmi/proc/replacement_ai_name", function replacement_ai_name(f: Frame) {
-	return rt.fv(f, "name", rt.sv(f, "brainmob"));
+	return this.brainmob.name;
 });
 
-// /obj/item/device/mmi/verb/Toggle_Listening  (code/modules/mob/living/brain/MMI.dm:143)
+// MMI.dm:143
 rt.def("/obj/item/device/mmi/verb/Toggle_Listening", function Toggle_Listening(f: Frame) {
-	let $0: any, $1: any;
-	f.vars = () => [$0, $1];
-	if (truthy(rt.fv(f, "stat", rt.sv(f, "brainmob")))) {
-		rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "brainmob"), "<span class='warning'>Can't do that while incapacitated or dead!</span>"]);
+	let $1: any;
+	if (this.brainmob.stat) {
+		to_chat(this.brainmob, "<span class='warning'>Can't do that while incapacitated or dead!</span>");
 	}
-	if (!truthy(rt.fv(f, "on", rt.sv(f, "radio")))) {
-		rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "brainmob"), "<span class='warning'>Your radio is disabled!</span>"]);
-		return live(f.dot);
+	if (!this.radio.on) {
+		to_chat(this.brainmob, "<span class='warning'>Your radio is disabled!</span>");
+		return f.dot;
 	}
-	$0 = rt.sv(f, "radio");
-	if (isEqual(rt.fv(f, "listening", rt.sv(f, "radio")), 1)) {
+	let $0: any = this.radio;
+	if (this.radio.listening == 1) {
 		$1 = 0;
 	} else {
 		$1 = 1;
 	}
-	rt.setFv(f, "listening", $0, $1);
-	$0 = rt.sv(f, "brainmob");
-	if (isEqual(rt.fv(f, "listening", rt.sv(f, "radio")), 1)) {
+	$0.listening = $1;
+	$0 = this.brainmob;
+	if (this.radio.listening == 1) {
 		$1 = "now";
 	} else {
 		$1 = "no longer";
 	}
-	rt.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='notice'>Radio is ＀ receiving broadcast.</span>", [$1])]);
+	to_chat($0, `<span class='notice'>Radio is ${$1} receiving broadcast.</span>`);
 	return f.dot;
 }, false, { hidePopup: true, verb: { name: "Toggle Listening", category: "MMI", desc: "Toggle listening channel on or off.", src: 12 } });
 
-// /obj/item/device/mmi/proc/emp_act  (code/modules/mob/living/brain/MMI.dm:153)  may sleep
-rt.def("/obj/item/device/mmi/proc/emp_act", function* emp_act(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	if ((!truthy(rt.sv(f, "brainmob")) || truthy((rt.istype(rt.sv(f, "loc"), T("/mob/living/silicon/robot")) ? 1 : 0)))) {
-		return live(f.dot);
+// MMI.dm:153
+rt.def("/obj/item/device/mmi/proc/emp_act", function* emp_act(f: Frame, severity: Value) {
+	if (!this.brainmob || rt.istype(this.loc, T("/mob/living/silicon/robot"))) {
+		return f.dot;
 	} else {
-		$0 = live(f.args[0]);
-		if ($0 === 1) {
-			rt.setFv(f, "emp_damage", rt.sv(f, "brainmob"), (yield* g.call(f, P("/proc/min"), null, [add(rt.fv(f, "emp_damage", rt.sv(f, "brainmob")), (yield* g.call(f, P("/proc/rand"), null, [20, 30]))), 30])));
-		} else if ($0 === 2) {
-			rt.setFv(f, "emp_damage", rt.sv(f, "brainmob"), (yield* g.call(f, P("/proc/min"), null, [add(rt.fv(f, "emp_damage", rt.sv(f, "brainmob")), (yield* g.call(f, P("/proc/rand"), null, [10, 20]))), 30])));
-		} else if ($0 === 3) {
-			rt.setFv(f, "emp_damage", rt.sv(f, "brainmob"), (yield* g.call(f, P("/proc/min"), null, [add(rt.fv(f, "emp_damage", rt.sv(f, "brainmob")), (yield* g.call(f, P("/proc/rand"), null, [0, 10]))), 30])));
+		if (severity === 1) {
+			this.brainmob.emp_damage = min(this.brainmob.emp_damage + rand(20, 30), 30);
+		} else if (severity === 2) {
+			this.brainmob.emp_damage = min(this.brainmob.emp_damage + rand(10, 20), 30);
+		} else if (severity === 3) {
+			this.brainmob.emp_damage = min(this.brainmob.emp_damage + rand(0, 10), 30);
 		}
-		yield* g.callName(f, rt.sv(f, "brainmob"), "emote", ["alarm"]);
+		yield* this.brainmob.emote("alarm");
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["severity"] });
+}, true);
 
-// /obj/item/device/mmi/proc/Destroy  (code/modules/mob/living/brain/MMI.dm:167)  may sleep
+// MMI.dm:167
 rt.def("/obj/item/device/mmi/proc/Destroy", function* Destroy(f: Frame) {
 	let borg: Value = null;
-	f.vars = () => [borg];
-	if (truthy((rt.istype(rt.sv(f, "loc"), T("/mob/living/silicon/robot")) ? 1 : 0))) {
-		rt.setFv(f, "mmi", (borg = rt.sv(f, "loc")), null);
+	if (rt.istype(this.loc, T("/mob/living/silicon/robot"))) {
+		(borg = this.loc).mmi = null;
 	}
-	if (truthy(rt.sv(f, "brainmob"))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "brainmob")]);
-		rt.setSv(f, "brainmob", null);
+	if (this.brainmob) {
+		yield* qdel(this.brainmob);
+		this.brainmob = null;
 	}
-	if (truthy(rt.sv(f, "brain"))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "brain")]);
-		rt.setSv(f, "brain", null);
+	if (this.brain) {
+		yield* qdel(this.brain);
+		this.brain = null;
 	}
-	if (truthy(rt.sv(f, "mecha"))) {
-		rt.setSv(f, "mecha", null);
+	if (this.mecha) {
+		this.mecha = null;
 	}
-	if (truthy(rt.sv(f, "radio"))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "radio")]);
-		rt.setSv(f, "radio", null);
+	if (this.radio) {
+		yield* qdel(this.radio);
+		this.radio = null;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);
 
-// /obj/item/device/mmi/proc/deconstruct  (code/modules/mob/living/brain/MMI.dm:185)  may sleep
+// MMI.dm:185
 rt.def("/obj/item/device/mmi/proc/deconstruct", function* deconstruct(f: Frame, disassembled: Value) {
-	f.vars = () => [disassembled];
-	if (live(disassembled) === null) {
-		disassembled = 1;
+	disassembled ??= 1;
+	if (this.brain) {
+		yield* this.eject_brain();
 	}
-	if (truthy(rt.sv(f, "brain"))) {
-		yield* g.srcCall(f, "eject_brain");
-	}
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
-// /obj/item/device/mmi/proc/examine  (code/modules/mob/living/brain/MMI.dm:189)
-rt.def("/obj/item/device/mmi/proc/examine", function examine(f: Frame) {
+// MMI.dm:189
+rt.def("/obj/item/device/mmi/proc/examine", function examine(f: Frame, user: Value) {
 	let B: Value = null;
-	f.vars = () => [B];
-	rt.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.sv(f, "brainmob"))) return f.dot;
-	if (((!truthy(rt.gv(f, "key", (B = rt.sv(f, "brainmob")))) || !truthy(rt.fv(f, "mind", live(B)))) || isEqual(rt.fv(f, "stat", live(B)), 2))) {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='warning'>The MMI indicates the brain is completely unresponsive.</span>"]);
+	parent_proc();
+	if (!this.brainmob) return f.dot;
+	if (!(B = this.brainmob).key || !B.mind || B.stat == 2) {
+		to_chat(user, "<span class='warning'>The MMI indicates the brain is completely unresponsive.</span>");
+	} else if (!B.client) {
+		to_chat(user, "<span class='warning'>The MMI indicates the brain is currently inactive; it might change.</span>");
 	} else {
-		if (!truthy(rt.fv(f, "client", live(B)))) {
-			rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='warning'>The MMI indicates the brain is currently inactive; it might change.</span>"]);
-		} else {
-			rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='notice'>The MMI indicates the brain is active.</span>"]);
-		}
+		to_chat(user, "<span class='notice'>The MMI indicates the brain is active.</span>");
 	}
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
 rt.type(9118, "/obj/item/device/mmi/syndie", "/obj/item/device/mmi", {
 	name: "Syndicate Man-Machine Interface",
@@ -299,10 +271,10 @@ rt.type(9118, "/obj/item/device/mmi/syndie", "/obj/item/device/mmi", {
 	origin_tech: "biotech=4;programming=4;syndicate=2",
 });
 
-// /obj/item/device/mmi/syndie/proc/New  (code/modules/mob/living/brain/MMI.dm:208)  may sleep
+// MMI.dm:208
 rt.def("/obj/item/device/mmi/syndie/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "laws", (yield* g.new_(f, T("/datum/ai_laws/syndicate_override"), [])));
-	rt.setFv(f, "on", rt.sv(f, "radio"), 0);
+	yield* parent_proc();
+	this.laws = (yield* new_(T("/datum/ai_laws/syndicate_override")));
+	this.radio.on = 0;
 	return f.dot;
 }, true);

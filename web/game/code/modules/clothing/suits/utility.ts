@@ -1,7 +1,7 @@
-// From code/modules/clothing/suits/utility.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/clothing/suits/utility.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(7910, "/obj/item/clothing/suit/fire", "/obj/item/clothing/suit", {
@@ -26,12 +26,10 @@ rt.type(7910, "/obj/item/clothing/suit/fire", "/obj/item/clothing/suit", {
 	resistance_flags: 2,
 });
 
-// /obj/item/clothing/suit/fire/proc/<init>  (code/modules/clothing/suits/utility.dm:21)
+// utility.dm:21
 rt.def("/obj/item/clothing/suit/fire/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/device/flashlight"), T("/obj/item/weapon/tank/internals/emergency_oxygen"), T("/obj/item/weapon/extinguisher"), T("/obj/item/weapon/crowbar")));
+	parent_proc();
+	this.allowed = list(T("/obj/item/device/flashlight"), T("/obj/item/weapon/tank/internals/emergency_oxygen"), T("/obj/item/weapon/extinguisher"), T("/obj/item/weapon/crowbar"));
 	return f.dot;
 });
 
@@ -52,12 +50,10 @@ rt.type(8186, "/obj/item/clothing/head/bomb_hood", "/obj/item/clothing/head", {
 	resistance_flags: 0,
 });
 
-// /obj/item/clothing/head/bomb_hood/proc/<init>  (code/modules/clothing/suits/utility.dm:60)
+// utility.dm:60
 rt.def("/obj/item/clothing/head/bomb_hood/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 20, "bullet", 0, "laser", 20, "energy", 10, "bomb", 100, "bio", 0, "rad", 0, "fire", 80, "acid", 50]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 20, "bullet", 0, "laser", 20, "energy", 10, "bomb", 100, "bio", 0, "rad", 0, "fire", 80, "acid", 50]);
 	return f.dot;
 });
 
@@ -83,12 +79,10 @@ rt.type(7914, "/obj/item/clothing/suit/bomb_suit", "/obj/item/clothing/suit", {
 	resistance_flags: 0,
 });
 
-// /obj/item/clothing/suit/bomb_suit/proc/<init>  (code/modules/clothing/suits/utility.dm:83)
+// utility.dm:83
 rt.def("/obj/item/clothing/suit/bomb_suit/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 20, "bullet", 0, "laser", 20, "energy", 10, "bomb", 100, "bio", 0, "rad", 0, "fire", 80, "acid", 50]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 20, "bullet", 0, "laser", 20, "energy", 10, "bomb", 100, "bio", 0, "rad", 0, "fire", 80, "acid", 50]);
 	return f.dot;
 });
 
@@ -98,12 +92,10 @@ rt.type(7915, "/obj/item/clothing/suit/bomb_suit/security", "/obj/item/clothing/
 	allowed: null,
 });
 
-// /obj/item/clothing/suit/bomb_suit/security/proc/<init>  (code/modules/clothing/suits/utility.dm:102)
+// utility.dm:102
 rt.def("/obj/item/clothing/suit/bomb_suit/security/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/weapon/gun/energy"), T("/obj/item/weapon/melee/baton"), T("/obj/item/weapon/restraints/handcuffs")));
+	parent_proc();
+	this.allowed = list(T("/obj/item/weapon/gun/energy"), T("/obj/item/weapon/melee/baton"), T("/obj/item/weapon/restraints/handcuffs"));
 	return f.dot;
 });
 
@@ -120,12 +112,10 @@ rt.type(8188, "/obj/item/clothing/head/radiation", "/obj/item/clothing/head", {
 	resistance_flags: 0,
 });
 
-// /obj/item/clothing/head/radiation/proc/<init>  (code/modules/clothing/suits/utility.dm:113)
+// utility.dm:113
 rt.def("/obj/item/clothing/head/radiation/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 60, "rad", 100, "fire", 30, "acid", 30]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 60, "rad", 100, "fire", 30, "acid", 30]);
 	return f.dot;
 });
 
@@ -148,12 +138,10 @@ rt.type(7916, "/obj/item/clothing/suit/radiation", "/obj/item/clothing/suit", {
 	resistance_flags: 0,
 });
 
-// /obj/item/clothing/suit/radiation/proc/<init>  (code/modules/clothing/suits/utility.dm:129)
+// utility.dm:129
 rt.def("/obj/item/clothing/suit/radiation/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/device/flashlight"), T("/obj/item/weapon/tank/internals/emergency_oxygen"), T("/obj/item/device/geiger_counter")));
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 60, "rad", 100, "fire", 30, "acid", 30]));
+	parent_proc();
+	this.allowed = list(T("/obj/item/device/flashlight"), T("/obj/item/weapon/tank/internals/emergency_oxygen"), T("/obj/item/device/geiger_counter"));
+	this.armor = rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 60, "rad", 100, "fire", 30, "acid", 30]);
 	return f.dot;
 });

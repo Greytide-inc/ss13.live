@@ -1,7 +1,7 @@
-// From code/modules/reagents/reagent_containers/bottle.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/reagents/reagent_containers/bottle.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(6393, "/obj/item/weapon/reagent_containers/glass/bottle", "/obj/item/weapon/reagent_containers/glass", {
@@ -14,53 +14,51 @@ rt.type(6393, "/obj/item/weapon/reagent_containers/glass/bottle", "/obj/item/wea
 	full_icon_state: null,
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/proc/Initialize  (code/modules/reagents/reagent_containers/bottle.dm:13)  may sleep
+// bottle.dm:13
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(rt.sv(f, "icon_state"))) {
-		rt.setSv(f, "icon_state", "bottle");
+	f.dot = (yield* parent_proc());
+	if (!this.icon_state) {
+		this.icon_state = "bottle";
 	}
-	yield* g.srcCall(f, "update_icon");
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/reagent_containers/glass/bottle/proc/on_reagent_change  (code/modules/reagents/reagent_containers/bottle.dm:19)
+// bottle.dm:19
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/proc/on_reagent_change", function on_reagent_change(f: Frame) {
-	rt.callSrc(f, "update_icon", []);
+	this.update_icon();
 	return f.dot;
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/proc/update_icon  (code/modules/reagents/reagent_containers/bottle.dm:22)
+// bottle.dm:22
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/proc/update_icon", function update_icon(f: Frame) {
-	let filling: Value = null, percent: Value = null;
-	let $0: any;
-	f.vars = () => [filling, percent, $0];
-	rt.callSrc(f, "cut_overlays", []);
+	let percent: Value = null;
+	this.cut_overlays();
 	// Coloured culture/virus bottles (bottle16, bottle12...) keep their own sprite in full_icon_state;
 	// when empty they show the plain "bottle" sprite, and the filling overlays use the own sprite's name.
-	if (!truthy(rt.sv(f, "full_icon_state"))) rt.setSv(f, "full_icon_state", rt.sv(f, "icon_state"));
-	const own = String(rt.sv(f, "full_icon_state"));
+	if (!this.full_icon_state) this.full_icon_state = this.icon_state;
+	const own = String(this.full_icon_state);
 	const coloured = /^bottle\d+$/.test(own);
-	if (!truthy(rt.fv(f, "total_volume", rt.sv(f, "reagents")))) {
-		if (coloured) rt.setSv(f, "icon_state", "bottle");
+	if (!this.reagents.total_volume) {
+		if (coloured) this.icon_state = "bottle";
 		return f.dot;
 	}
-	rt.setSv(f, "icon_state", own);
-	filling = rt.call(f, P("/proc/mutable_appearance"), null, [rt.rsc("icons/obj/reagentfillings.dmi"), fmt("＀-10", [rt.sv(f, "icon_state")])]);
-	$0 = (percent = rt.call(f, P("/proc/round"), null, [multiply(divide(rt.fv(f, "total_volume", rt.sv(f, "reagents")), rt.sv(f, "volume")), 100)]));
-	if (rt.inRange($0, 0, 9)) {
-		rt.setFv(f, "icon_state", live(filling), fmt("＀-10", [rt.sv(f, "icon_state")]));
-	} else if (rt.inRange($0, 10, 29)) {
-		rt.setFv(f, "icon_state", live(filling), fmt("＀25", [rt.sv(f, "icon_state")]));
-	} else if (rt.inRange($0, 30, 49)) {
-		rt.setFv(f, "icon_state", live(filling), fmt("＀50", [rt.sv(f, "icon_state")]));
-	} else if (rt.inRange($0, 50, 69)) {
-		rt.setFv(f, "icon_state", live(filling), fmt("＀75", [rt.sv(f, "icon_state")]));
-	} else if (rt.inRange($0, 70, 9.999999848243207e+30)) {
-		rt.setFv(f, "icon_state", live(filling), fmt("＀100", [rt.sv(f, "icon_state")]));
+	this.icon_state = own;
+	let filling: Value = mutable_appearance(rt.rsc("icons/obj/reagentfillings.dmi"), `${this.icon_state}-10`);
+	const subject = (percent = round(this.reagents.total_volume / this.volume * 100));
+	if (rt.inRange(subject, 0, 9)) {
+		filling.icon_state = `${this.icon_state}-10`;
+	} else if (rt.inRange(subject, 10, 29)) {
+		filling.icon_state = `${this.icon_state}25`;
+	} else if (rt.inRange(subject, 30, 49)) {
+		filling.icon_state = `${this.icon_state}50`;
+	} else if (rt.inRange(subject, 50, 69)) {
+		filling.icon_state = `${this.icon_state}75`;
+	} else if (rt.inRange(subject, 70, 1e+31)) {
+		filling.icon_state = `${this.icon_state}100`;
 	}
-	rt.setFv(f, "color", live(filling), rt.call(f, P("/proc/mix_color_from_reagents"), null, [rt.fv(f, "reagent_list", rt.sv(f, "reagents"))]));
-	rt.callSrc(f, "add_overlay", [live(filling)]);
+	filling.color = mix_color_from_reagents(this.reagents.reagent_list);
+	this.add_overlay(filling);
 	return f.dot;
 });
 
@@ -71,12 +69,10 @@ rt.type(6404, "/obj/item/weapon/reagent_containers/glass/bottle/epinephrine", "/
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/epinephrine/proc/<init>  (code/modules/reagents/reagent_containers/bottle.dm:47)
+// bottle.dm:47
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/epinephrine/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["epinephrine", 30]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["epinephrine", 30]);
 	return f.dot;
 });
 
@@ -87,12 +83,10 @@ rt.type(6405, "/obj/item/weapon/reagent_containers/glass/bottle/toxin", "/obj/it
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/toxin/proc/<init>  (code/modules/reagents/reagent_containers/bottle.dm:53)
+// bottle.dm:53
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/toxin/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["toxin", 30]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["toxin", 30]);
 	return f.dot;
 });
 
@@ -103,12 +97,10 @@ rt.type(6406, "/obj/item/weapon/reagent_containers/glass/bottle/cyanide", "/obj/
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/cyanide/proc/<init>  (code/modules/reagents/reagent_containers/bottle.dm:59)
+// bottle.dm:59
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/cyanide/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["cyanide", 30]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["cyanide", 30]);
 	return f.dot;
 });
 
@@ -119,12 +111,10 @@ rt.type(6407, "/obj/item/weapon/reagent_containers/glass/bottle/spewium", "/obj/
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/spewium/proc/<init>  (code/modules/reagents/reagent_containers/bottle.dm:65)
+// bottle.dm:65
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/spewium/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["spewium", 30]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["spewium", 30]);
 	return f.dot;
 });
 
@@ -136,12 +126,10 @@ rt.type(6408, "/obj/item/weapon/reagent_containers/glass/bottle/morphine", "/obj
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/morphine/proc/<init>  (code/modules/reagents/reagent_containers/bottle.dm:72)
+// bottle.dm:72
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/morphine/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["morphine", 30]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["morphine", 30]);
 	return f.dot;
 });
 
@@ -152,12 +140,10 @@ rt.type(6409, "/obj/item/weapon/reagent_containers/glass/bottle/chloralhydrate",
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/chloralhydrate/proc/<init>  (code/modules/reagents/reagent_containers/bottle.dm:78)
+// bottle.dm:78
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/chloralhydrate/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["chloralhydrate", 15]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["chloralhydrate", 15]);
 	return f.dot;
 });
 
@@ -168,12 +154,10 @@ rt.type(6410, "/obj/item/weapon/reagent_containers/glass/bottle/charcoal", "/obj
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/charcoal/proc/<init>  (code/modules/reagents/reagent_containers/bottle.dm:84)
+// bottle.dm:84
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/charcoal/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["charcoal", 30]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["charcoal", 30]);
 	return f.dot;
 });
 
@@ -184,12 +168,10 @@ rt.type(6411, "/obj/item/weapon/reagent_containers/glass/bottle/mutagen", "/obj/
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/mutagen/proc/<init>  (code/modules/reagents/reagent_containers/bottle.dm:90)
+// bottle.dm:90
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/mutagen/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["mutagen", 30]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["mutagen", 30]);
 	return f.dot;
 });
 
@@ -200,12 +182,10 @@ rt.type(6412, "/obj/item/weapon/reagent_containers/glass/bottle/plasma", "/obj/i
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/plasma/proc/<init>  (code/modules/reagents/reagent_containers/bottle.dm:96)
+// bottle.dm:96
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/plasma/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["plasma", 30]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["plasma", 30]);
 	return f.dot;
 });
 
@@ -216,12 +196,10 @@ rt.type(6413, "/obj/item/weapon/reagent_containers/glass/bottle/synaptizine", "/
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/synaptizine/proc/<init>  (code/modules/reagents/reagent_containers/bottle.dm:102)
+// bottle.dm:102
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/synaptizine/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["synaptizine", 30]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["synaptizine", 30]);
 	return f.dot;
 });
 
@@ -232,12 +210,10 @@ rt.type(6414, "/obj/item/weapon/reagent_containers/glass/bottle/ammonia", "/obj/
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/ammonia/proc/<init>  (code/modules/reagents/reagent_containers/bottle.dm:108)
+// bottle.dm:108
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/ammonia/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["ammonia", 30]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["ammonia", 30]);
 	return f.dot;
 });
 
@@ -248,12 +224,10 @@ rt.type(6415, "/obj/item/weapon/reagent_containers/glass/bottle/diethylamine", "
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/diethylamine/proc/<init>  (code/modules/reagents/reagent_containers/bottle.dm:114)
+// bottle.dm:114
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/diethylamine/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["diethylamine", 30]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["diethylamine", 30]);
 	return f.dot;
 });
 
@@ -264,12 +238,10 @@ rt.type(6416, "/obj/item/weapon/reagent_containers/glass/bottle/facid", "/obj/it
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/facid/proc/<init>  (code/modules/reagents/reagent_containers/bottle.dm:120)
+// bottle.dm:120
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/facid/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["facid", 30]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["facid", 30]);
 	return f.dot;
 });
 
@@ -281,12 +253,10 @@ rt.type(6417, "/obj/item/weapon/reagent_containers/glass/bottle/adminordrazine",
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/adminordrazine/proc/<init>  (code/modules/reagents/reagent_containers/bottle.dm:127)
+// bottle.dm:127
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/adminordrazine/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["adminordrazine", 30]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["adminordrazine", 30]);
 	return f.dot;
 });
 
@@ -297,12 +267,10 @@ rt.type(6418, "/obj/item/weapon/reagent_containers/glass/bottle/capsaicin", "/ob
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/capsaicin/proc/<init>  (code/modules/reagents/reagent_containers/bottle.dm:133)
+// bottle.dm:133
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/capsaicin/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["capsaicin", 30]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["capsaicin", 30]);
 	return f.dot;
 });
 
@@ -313,12 +281,10 @@ rt.type(6419, "/obj/item/weapon/reagent_containers/glass/bottle/frostoil", "/obj
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/frostoil/proc/<init>  (code/modules/reagents/reagent_containers/bottle.dm:139)
+// bottle.dm:139
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/frostoil/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["frostoil", 30]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["frostoil", 30]);
 	return f.dot;
 });
 
@@ -330,11 +296,11 @@ rt.type(6420, "/obj/item/weapon/reagent_containers/glass/bottle/traitor", "/obj/
 	icon_state: "bottle16",
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/traitor/proc/Initialize  (code/modules/reagents/reagent_containers/bottle.dm:149)  may sleep
+// bottle.dm:149
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/traitor/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "extra_reagent", rt.op(f, "PickUnweighted", [6], ["polonium", "histamine", "formaldehyde", "venom", "neurotoxin2", "cyanide"]));
-	yield* g.callName(f, rt.sv(f, "reagents"), "add_reagent", [fmt("＀", [rt.sv(f, "extra_reagent")]), 3]);
+	f.dot = (yield* parent_proc());
+	this.extra_reagent = pick("polonium", "histamine", "formaldehyde", "venom", "neurotoxin2", "cyanide");
+	yield* this.reagents.add_reagent(`${this.extra_reagent}`, 3);
 	return f.dot;
 }, true);
 
@@ -345,12 +311,10 @@ rt.type(6421, "/obj/item/weapon/reagent_containers/glass/bottle/polonium", "/obj
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/polonium/proc/<init>  (code/modules/reagents/reagent_containers/bottle.dm:157)
+// bottle.dm:157
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/polonium/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["polonium", 30]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["polonium", 30]);
 	return f.dot;
 });
 
@@ -361,12 +325,10 @@ rt.type(6422, "/obj/item/weapon/reagent_containers/glass/bottle/venom", "/obj/it
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/venom/proc/<init>  (code/modules/reagents/reagent_containers/bottle.dm:163)
+// bottle.dm:163
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/venom/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["venom", 30]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["venom", 30]);
 	return f.dot;
 });
 
@@ -377,12 +339,10 @@ rt.type(6423, "/obj/item/weapon/reagent_containers/glass/bottle/neurotoxin2", "/
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/neurotoxin2/proc/<init>  (code/modules/reagents/reagent_containers/bottle.dm:169)
+// bottle.dm:169
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/neurotoxin2/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["neurotoxin2", 30]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["neurotoxin2", 30]);
 	return f.dot;
 });
 
@@ -393,12 +353,10 @@ rt.type(6424, "/obj/item/weapon/reagent_containers/glass/bottle/formaldehyde", "
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/formaldehyde/proc/<init>  (code/modules/reagents/reagent_containers/bottle.dm:175)
+// bottle.dm:175
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/formaldehyde/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["formaldehyde", 30]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["formaldehyde", 30]);
 	return f.dot;
 });
 
@@ -409,12 +367,10 @@ rt.type(6425, "/obj/item/weapon/reagent_containers/glass/bottle/initropidril", "
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/initropidril/proc/<init>  (code/modules/reagents/reagent_containers/bottle.dm:181)
+// bottle.dm:181
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/initropidril/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["initropidril", 30]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["initropidril", 30]);
 	return f.dot;
 });
 
@@ -425,12 +381,10 @@ rt.type(6426, "/obj/item/weapon/reagent_containers/glass/bottle/pancuronium", "/
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/pancuronium/proc/<init>  (code/modules/reagents/reagent_containers/bottle.dm:187)
+// bottle.dm:187
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/pancuronium/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["pancuronium", 30]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["pancuronium", 30]);
 	return f.dot;
 });
 
@@ -441,12 +395,10 @@ rt.type(6427, "/obj/item/weapon/reagent_containers/glass/bottle/sodium_thiopenta
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/sodium_thiopental/proc/<init>  (code/modules/reagents/reagent_containers/bottle.dm:193)
+// bottle.dm:193
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/sodium_thiopental/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["sodium_thiopental", 30]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["sodium_thiopental", 30]);
 	return f.dot;
 });
 
@@ -457,12 +409,10 @@ rt.type(6428, "/obj/item/weapon/reagent_containers/glass/bottle/coniine", "/obj/
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/coniine/proc/<init>  (code/modules/reagents/reagent_containers/bottle.dm:199)
+// bottle.dm:199
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/coniine/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["coniine", 30]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["coniine", 30]);
 	return f.dot;
 });
 
@@ -473,12 +423,10 @@ rt.type(6429, "/obj/item/weapon/reagent_containers/glass/bottle/curare", "/obj/i
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/curare/proc/<init>  (code/modules/reagents/reagent_containers/bottle.dm:205)
+// bottle.dm:205
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/curare/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["curare", 30]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["curare", 30]);
 	return f.dot;
 });
 
@@ -489,12 +437,10 @@ rt.type(6430, "/obj/item/weapon/reagent_containers/glass/bottle/amanitin", "/obj
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/amanitin/proc/<init>  (code/modules/reagents/reagent_containers/bottle.dm:211)
+// bottle.dm:211
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/amanitin/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["amanitin", 30]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["amanitin", 30]);
 	return f.dot;
 });
 
@@ -505,12 +451,10 @@ rt.type(6431, "/obj/item/weapon/reagent_containers/glass/bottle/histamine", "/ob
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/histamine/proc/<init>  (code/modules/reagents/reagent_containers/bottle.dm:217)
+// bottle.dm:217
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/histamine/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["histamine", 30]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["histamine", 30]);
 	return f.dot;
 });
 
@@ -521,12 +465,10 @@ rt.type(6432, "/obj/item/weapon/reagent_containers/glass/bottle/diphenhydramine"
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/diphenhydramine/proc/<init>  (code/modules/reagents/reagent_containers/bottle.dm:223)
+// bottle.dm:223
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/diphenhydramine/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["diphenhydramine", 30]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["diphenhydramine", 30]);
 	return f.dot;
 });
 
@@ -537,12 +479,10 @@ rt.type(6433, "/obj/item/weapon/reagent_containers/glass/bottle/potass_iodide", 
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/potass_iodide/proc/<init>  (code/modules/reagents/reagent_containers/bottle.dm:229)
+// bottle.dm:229
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/potass_iodide/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["potass_iodide", 30]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["potass_iodide", 30]);
 	return f.dot;
 });
 
@@ -553,12 +493,10 @@ rt.type(6434, "/obj/item/weapon/reagent_containers/glass/bottle/salglu_solution"
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/salglu_solution/proc/<init>  (code/modules/reagents/reagent_containers/bottle.dm:235)
+// bottle.dm:235
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/salglu_solution/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["salglu_solution", 30]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["salglu_solution", 30]);
 	return f.dot;
 });
 
@@ -569,12 +507,10 @@ rt.type(6435, "/obj/item/weapon/reagent_containers/glass/bottle/atropine", "/obj
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/atropine/proc/<init>  (code/modules/reagents/reagent_containers/bottle.dm:241)
+// bottle.dm:241
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/atropine/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["atropine", 30]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["atropine", 30]);
 	return f.dot;
 });
 
@@ -585,12 +521,10 @@ rt.type(6436, "/obj/item/weapon/reagent_containers/glass/bottle/romerol", "/obj/
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/romerol/proc/<init>  (code/modules/reagents/reagent_containers/bottle.dm:247)
+// bottle.dm:247
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/romerol/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["romerol", 30]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["romerol", 30]);
 	return f.dot;
 });
 
@@ -601,11 +535,9 @@ rt.type(6453, "/obj/item/weapon/reagent_containers/glass/bottle/tuberculosiscure
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/tuberculosiscure/proc/<init>  (code/modules/reagents/reagent_containers/bottle.dm:350)
+// bottle.dm:350
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/tuberculosiscure/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["atropine", 5, "epinephrine", 5, "salbutamol", 10, "spaceacillin", 10]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["atropine", 5, "epinephrine", 5, "salbutamol", 10, "spaceacillin", 10]);
 	return f.dot;
 });

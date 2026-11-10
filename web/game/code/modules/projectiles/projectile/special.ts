@@ -1,7 +1,7 @@
-// From code/modules/projectiles/projectile/special.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/projectiles/projectile/special.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(8916, "/obj/item/projectile/ion", "/obj/item/projectile", {
@@ -14,25 +14,25 @@ rt.type(8916, "/obj/item/projectile/ion", "/obj/item/projectile", {
 	impact_effect_type: rt.typePath("/obj/effect/temp_visual/impact_effect/ion"),
 });
 
-// /obj/item/projectile/ion/proc/on_hit  (code/modules/projectiles/projectile/special.dm:12)  may sleep
+// special.dm:12
 rt.def("/obj/item/projectile/ion/proc/on_hit", function* on_hit(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.call(f, P("/proc/empulse"), null, [live(f.args[0]), 1, 1]);
+	yield* parent_proc();
+	yield* empulse(f.args[0], 1, 1);
 	return 1;
 }, true, { args: ["target", "blocked"] });
 
 rt.type(8917, "/obj/item/projectile/ion/weak", "/obj/item/projectile/ion", {});
 
-// /obj/item/projectile/ion/weak/proc/on_hit  (code/modules/projectiles/projectile/special.dm:20)  may sleep
+// special.dm:20
 rt.def("/obj/item/projectile/ion/weak/proc/on_hit", function* on_hit(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.call(f, P("/proc/empulse"), null, [live(f.args[0]), 0, 0]);
+	yield* parent_proc();
+	yield* empulse(f.args[0], 0, 0);
 	return 1;
 }, true, { args: ["target", "blocked"] });
 
@@ -42,13 +42,13 @@ rt.type(8840, "/obj/item/projectile/bullet/gyro", "/obj/item/projectile/bullet",
 	damage: 50,
 });
 
-// /obj/item/projectile/bullet/gyro/proc/on_hit  (code/modules/projectiles/projectile/special.dm:31)  may sleep
+// special.dm:31
 rt.def("/obj/item/projectile/bullet/gyro/proc/on_hit", function* on_hit(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.call(f, P("/proc/explosion"), null, [live(f.args[0]), -1, 0, 2]);
+	yield* parent_proc();
+	yield* explosion(f.args[0], -1, 0, 2);
 	return 1;
 }, true, { args: ["target", "blocked"] });
 
@@ -59,13 +59,13 @@ rt.type(8841, "/obj/item/projectile/bullet/a40mm", "/obj/item/projectile/bullet"
 	damage: 60,
 });
 
-// /obj/item/projectile/bullet/a40mm/proc/on_hit  (code/modules/projectiles/projectile/special.dm:42)  may sleep
+// special.dm:42
 rt.def("/obj/item/projectile/bullet/a40mm/proc/on_hit", function* on_hit(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.call(f, P("/proc/explosion"), null, [null, live(f.args[0]), null, -1, null, 0, null, 2, null, 1, null, 0, "flame_range", 3], rt.Args.Named);
+	yield* parent_proc();
+	yield* explosion(f.args[0], -1, 0, 2, 1, 0, { flame_range: 3 });
 	return 1;
 }, true, { args: ["target", "blocked"] });
 
@@ -79,20 +79,19 @@ rt.type(8842, "/obj/item/projectile/bullet/a84mm", "/obj/item/projectile/bullet"
 	dismemberment: 100,
 });
 
-// /obj/item/projectile/bullet/a84mm/proc/on_hit  (code/modules/projectiles/projectile/special.dm:56)  may sleep
+// special.dm:56
 rt.def("/obj/item/projectile/bullet/a84mm/proc/on_hit", function* on_hit(f: Frame) {
 	let M: Value = null, S: Value = null;
-	f.vars = () => [M, S];
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.call(f, P("/proc/explosion"), null, [null, live(f.args[0]), null, -1, null, 1, null, 3, null, 1, null, 0, "flame_range", 4], rt.Args.Named);
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/mecha")) ? 1 : 0))) {
-		yield* g.callName(f, (M = live(f.args[0])), "take_damage", [rt.sv(f, "anti_armour_damage")]);
+	yield* parent_proc();
+	yield* explosion(f.args[0], -1, 1, 3, 1, 0, { flame_range: 4 });
+	if (rt.istype(f.args[0], T("/obj/mecha"))) {
+		yield* (M = f.args[0]).take_damage(this.anti_armour_damage);
 	}
-	if (truthy((rt.istype(live(f.args[0]), T("/mob/living/silicon")) ? 1 : 0))) {
-		yield* g.callName(f, (S = live(f.args[0])), "take_overall_damage", [multiply(rt.sv(f, "anti_armour_damage"), 0.75), multiply(rt.sv(f, "anti_armour_damage"), 0.25)]);
+	if (rt.istype(f.args[0], T("/mob/living/silicon"))) {
+		yield* (S = f.args[0]).take_overall_damage(this.anti_armour_damage * 0.75, this.anti_armour_damage * 0.25);
 	}
 	return 1;
 }, true, { args: ["target", "blocked"] });
@@ -104,16 +103,16 @@ rt.type(8843, "/obj/item/projectile/bullet/srmrocket", "/obj/item/projectile/bul
 	damage: 30,
 });
 
-// /obj/item/projectile/bullet/srmrocket/proc/on_hit  (code/modules/projectiles/projectile/special.dm:74)  may sleep
+// special.dm:74
 rt.def("/obj/item/projectile/bullet/srmrocket/proc/on_hit", function* on_hit(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy((rt.istype(live(f.args[0]), T("/mob/living")) ? 1 : 0))) {
-		yield* g.call(f, P("/proc/explosion"), null, [live(f.args[0]), 0, 1, 2, 4]);
+	yield* parent_proc();
+	if (!rt.istype(f.args[0], T("/mob/living"))) {
+		yield* explosion(f.args[0], 0, 1, 2, 4);
 	} else {
-		yield* g.call(f, P("/proc/explosion"), null, [live(f.args[0]), 0, 0, 2, 4]);
+		yield* explosion(f.args[0], 0, 0, 2, 4);
 	}
 	return 1;
 }, true, { args: ["target", "blocked"] });
@@ -128,16 +127,15 @@ rt.type(8899, "/obj/item/projectile/temp", "/obj/item/projectile", {
 	flag: "energy",
 });
 
-// /obj/item/projectile/temp/proc/on_hit  (code/modules/projectiles/projectile/special.dm:92)  may sleep
+// special.dm:92
 rt.def("/obj/item/projectile/temp/proc/on_hit", function* on_hit(f: Frame) {
 	let M: Value = null;
-	f.vars = () => [M];
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy((rt.istype(live(f.args[0]), T("/mob/living")) ? 1 : 0))) {
-		rt.setFv(f, "bodytemperature", (M = live(f.args[0])), rt.sv(f, "temperature"));
+	yield* parent_proc();
+	if (rt.istype(f.args[0], T("/mob/living"))) {
+		(M = f.args[0]).bodytemperature = this.temperature;
 	}
 	return 1;
 }, true, { args: ["target", "blocked"] });
@@ -152,30 +150,24 @@ rt.type(8918, "/obj/item/projectile/meteor", "/obj/item/projectile", {
 	icon_state: "small1",
 });
 
-// /obj/item/projectile/meteor/proc/Bump  (code/modules/projectiles/projectile/special.dm:112)  may sleep
+// special.dm:112
 rt.def("/obj/item/projectile/meteor/proc/Bump", function* Bump(f: Frame, A: Value, yes: Value) {
 	let M: Value = null;
-	let $e: any;
-	f.vars = () => [A, yes, M, $e];
-	if (!truthy(live(yes))) {
-		return live(f.dot);
+	if (!yes) {
+		return f.dot;
 	}
-	if (isEqual(live(A), rt.sv(f, "firer"))) {
-		rt.setSv(f, "loc", rt.fv(f, "loc", live(A)));
-		return live(f.dot);
+	if (A == this.firer) {
+		this.loc = A.loc;
+		return f.dot;
 	}
-	yield* g.callName(f, live(A), "ex_act", [2]);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/effects/meteorimpact.ogg"), 40, 1]);
-	M = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/urange"), null, [10, live(f.src)])), T("/mob"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if (!truthy(rt.fv(f, "stat", live(M)))) {
-			yield* g.call(f, P("/proc/shake_camera"), null, [live(M), 3, 1]);
+	yield* A.ex_act(2);
+	playsound(this.loc, rt.rsc("sound/effects/meteorimpact.ogg"), 40, 1);
+	for (M of each(urange(10, this), T("/mob"))) {
+		if (!M.stat) {
+			shake_camera(M, 3, 1);
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
@@ -188,20 +180,19 @@ rt.type(8860, "/obj/item/projectile/energy/floramut", "/obj/item/projectile/ener
 	flag: "energy",
 });
 
-// /obj/item/projectile/energy/floramut/proc/on_hit  (code/modules/projectiles/projectile/special.dm:133)  may sleep
+// special.dm:133
 rt.def("/obj/item/projectile/energy/floramut/proc/on_hit", function* on_hit(f: Frame) {
 	let C: Value = null;
-	f.vars = () => [C];
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon")) ? 1 : 0))) return f.dot;
-	if (!isEqual(rt.gv(f, "id", rt.gv(f, "species", rt.gv(f, "dna", (C = live(f.args[0]))))), "pod")) return f.dot;
-	yield* g.callName(f, live(C), "randmuti", []);
-	yield* g.callName(f, live(C), "randmut", []);
-	yield* g.callName(f, live(C), "updateappearance", []);
-	yield* g.callName(f, live(C), "domutcheck", []);
+	f.dot = (yield* parent_proc());
+	if (!rt.istype(f.args[0], T("/mob/living/carbon"))) return f.dot;
+	if ((C = f.args[0]).dna.species.id != "pod") return f.dot;
+	yield* C.randmuti();
+	yield* C.randmut();
+	yield* C.updateappearance();
+	yield* C.domutcheck();
 	return f.dot;
 }, true, { args: ["target", "blocked"] });
 
@@ -209,17 +200,16 @@ rt.type(8887, "/obj/item/projectile/beam/mindflayer", "/obj/item/projectile/beam
 	name: "flayer ray",
 });
 
-// /obj/item/projectile/beam/mindflayer/proc/on_hit  (code/modules/projectiles/projectile/special.dm:154)  may sleep
+// special.dm:154
 rt.def("/obj/item/projectile/beam/mindflayer/proc/on_hit", function* on_hit(f: Frame) {
 	let M: Value = null;
-	f.vars = () => [M];
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon/human")) ? 1 : 0))) return f.dot;
-	yield* g.callName(f, (M = live(f.args[0])), "adjustBrainLoss", [20]);
-	rt.modField(f, live(M), "hallucination", 20, add);
+	f.dot = (yield* parent_proc());
+	if (!rt.istype(f.args[0], T("/mob/living/carbon/human"))) return f.dot;
+	yield* (M = f.args[0]).adjustBrainLoss(20);
+	M.hallucination += 20;
 	return f.dot;
 }, true, { args: ["target", "blocked"] });
 
@@ -231,9 +221,9 @@ rt.type(8716, "/obj/item/ammo_casing/energy/wormhole", "/obj/item/ammo_casing/en
 	fire_sound: rt.rsc("sound/weapons/pulse3.ogg"),
 });
 
-// /obj/item/ammo_casing/energy/wormhole/proc/New  (code/modules/projectiles/projectile/special.dm:177)
+// special.dm:177
 rt.def("/obj/item/ammo_casing/energy/wormhole/proc/New", function New(f: Frame, wh: Value) {
-	rt.setSv(f, "gun", live(wh));
+	this.gun = wh;
 	return f.dot;
 });
 
@@ -246,21 +236,20 @@ rt.type(8888, "/obj/item/projectile/beam/wormhole", "/obj/item/projectile/beam",
 	color: "#33CCFF",
 });
 
-// /obj/item/projectile/beam/wormhole/proc/on_hit  (code/modules/projectiles/projectile/special.dm:180)  may sleep
-rt.def("/obj/item/projectile/beam/wormhole/proc/on_hit", function* on_hit(f: Frame) {
+// special.dm:180
+rt.def("/obj/item/projectile/beam/wormhole/proc/on_hit", function* on_hit(f: Frame, target: Value) {
 	let portal_destination: Value = null;
-	f.vars = () => [portal_destination];
-	if (truthy((yield* g.call(f, P("/proc/ismob"), null, [live(f.args[0])])))) {
-		portal_destination = rt.op(f, "PickUnweighted", [1], [(yield* g.call(f, P("/proc/orange"), null, [6, live(f.src)]))]);
-		yield* g.call(f, P("/proc/do_teleport"), null, [live(f.args[0]), live(portal_destination)]);
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+	if (ismob(target)) {
+		portal_destination = pick(orange(6, this));
+		yield* do_teleport(target, portal_destination);
+		return (yield* parent_proc());
 	}
-	if (!truthy(rt.sv(f, "gun"))) {
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	if (!this.gun) {
+		yield* qdel(this);
 	}
-	yield* g.callName(f, rt.sv(f, "gun"), "create_portal", [live(f.src), rt.getStep(f, live(f.src), 0)]);
+	yield* this.gun.create_portal(this, rt.getStep(f, this, 0));
 	return f.dot;
-}, true, { args: ["target"] });
+}, true);
 
 rt.type(8844, "/obj/item/projectile/bullet/frag12", "/obj/item/projectile/bullet", {
 	name: "explosive slug",
@@ -268,13 +257,13 @@ rt.type(8844, "/obj/item/projectile/bullet/frag12", "/obj/item/projectile/bullet
 	knockdown: 50,
 });
 
-// /obj/item/projectile/bullet/frag12/proc/on_hit  (code/modules/projectiles/projectile/special.dm:194)  may sleep
+// special.dm:194
 rt.def("/obj/item/projectile/bullet/frag12/proc/on_hit", function* on_hit(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.call(f, P("/proc/explosion"), null, [live(f.args[0]), -1, 0, 1]);
+	yield* parent_proc();
+	yield* explosion(f.args[0], -1, 0, 1);
 	return 1;
 }, true, { args: ["target", "blocked"] });
 
@@ -289,35 +278,33 @@ rt.type(8919, "/obj/item/projectile/plasma", "/obj/item/projectile", {
 	impact_effect_type: rt.typePath("/obj/effect/temp_visual/impact_effect/purple_laser"),
 });
 
-// /obj/item/projectile/plasma/proc/Initialize  (code/modules/projectiles/projectile/special.dm:209)  may sleep
+// special.dm:209
 rt.def("/obj/item/projectile/plasma/proc/Initialize", function* Initialize(f: Frame) {
 	let proj_turf: Value = null, environment: Value = null, pressure: Value = null;
-	f.vars = () => [proj_turf, environment, pressure];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy((yield* g.call(f, P("/proc/isturf"), null, [(proj_turf = rt.getStep(f, live(f.src), 0))])))) {
-		return live(f.dot);
+	f.dot = (yield* parent_proc());
+	if (!isturf((proj_turf = rt.getStep(f, this, 0)))) {
+		return f.dot;
 	}
-	if (!truthy((environment = (yield* g.callName(f, live(proj_turf), "return_air", []))))) return f.dot;
-	if (!rt.lt((pressure = (yield* g.callName(f, live(environment), "return_pressure", []))), 60)) return f.dot;
-	rt.setSv(f, "name", fmt("full strength ＀", [rt.sv(f, "name")]));
-	(rt.modSrcVar(f, "damage", 4, multiply));
+	if (!(environment = proj_turf.return_air())) return f.dot;
+	if (!((pressure = environment.return_pressure()) < 60)) return f.dot;
+	this.name = `full strength ${this.name}`;
+	this.damage *= 4;
 	return f.dot;
 }, true);
 
-// /obj/item/projectile/plasma/proc/on_hit  (code/modules/projectiles/projectile/special.dm:221)  may sleep
-rt.def("/obj/item/projectile/plasma/proc/on_hit", function* on_hit(f: Frame) {
+// special.dm:221
+rt.def("/obj/item/projectile/plasma/proc/on_hit", function* on_hit(f: Frame, target: Value) {
 	let M: Value = null;
-	f.vars = () => [M];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy((rt.istype(live(f.args[0]), T("/turf/closed/mineral")) ? 1 : 0))) return f.dot;
-	yield* g.callName(f, (M = live(f.args[0])), "gets_drilled", [rt.sv(f, "firer")]);
-	if (truthy(rt.sv(f, "mine_range"))) {
-		rt.incSrcVar(f, "mine_range", -1, true);
-		rt.incSrcVar(f, "range", 1, true);
+	f.dot = (yield* parent_proc());
+	if (!rt.istype(target, T("/turf/closed/mineral"))) return f.dot;
+	yield* (M = target).gets_drilled(this.firer);
+	if (this.mine_range) {
+		this.mine_range--;
+		this.range++;
 	}
-	if (!rt.gt(rt.sv(f, "range"), 0)) return f.dot;
+	if (!(this.range > 0)) return f.dot;
 	return -1;
-}, true, { args: ["target"] });
+}, true);
 
 rt.type(8923, "/obj/item/projectile/gravityrepulse", "/obj/item/projectile", {
 	T: null,
@@ -333,51 +320,38 @@ rt.type(8923, "/obj/item/projectile/gravityrepulse", "/obj/item/projectile", {
 	color: "#33CCFF",
 });
 
-// /obj/item/projectile/gravityrepulse/proc/<init>  (code/modules/projectiles/projectile/special.dm:260)
+// special.dm:260
 rt.def("/obj/item/projectile/gravityrepulse/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "thrown_items", rt.list());
+	parent_proc();
+	this.thrown_items = list();
 	return f.dot;
 });
 
-// /obj/item/projectile/gravityrepulse/proc/Initialize  (code/modules/projectiles/projectile/special.dm:263)  may sleep
+// special.dm:263
 rt.def("/obj/item/projectile/gravityrepulse/proc/Initialize", function* Initialize(f: Frame) {
 	let C: Value = null;
-	f.vars = () => [C];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy((rt.istype((C = rt.sv(f, "loc")), T("/obj/item/ammo_casing/energy/gravityrepulse")) ? 1 : 0))) return f.dot;
-	rt.setSv(f, "power", (yield* g.call(f, P("/proc/min"), null, [rt.gv(f, "power", rt.fv(f, "gun", live(C))), 15])));
+	f.dot = (yield* parent_proc());
+	if (!rt.istype((C = this.loc), T("/obj/item/ammo_casing/energy/gravityrepulse"))) return f.dot;
+	this.power = min(C.gun.power, 15);
 	return f.dot;
 }, true);
 
-// /obj/item/projectile/gravityrepulse/proc/on_hit  (code/modules/projectiles/projectile/special.dm:269)  may sleep
+// special.dm:269
 rt.def("/obj/item/projectile/gravityrepulse/proc/on_hit", function* on_hit(f: Frame) {
 	let A: Value = null, throwtarget: Value = null, F: Value = null;
-	let $e: any;
-	f.vars = () => [A, throwtarget, F, $e];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "T", rt.getStep(f, live(f.src), 0));
-	A = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/range"), null, [rt.sv(f, "T"), rt.sv(f, "power")])), T("/atom/movable"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		A = $e;
-		if ((((isEqual(live(A), live(f.src)) || (truthy(rt.sv(f, "firer")) && isEqual(live(A), rt.fv(f, "firer", live(f.src))))) || truthy(rt.fv(f, "anchored", live(A)))) || truthy(rt.index(rt.sv(f, "thrown_items"), live(A))))) {
+	f.dot = (yield* parent_proc());
+	this.T = rt.getStep(f, this, 0);
+	for (A of each(range(this.T, this.power), T("/atom/movable"))) {
+		if (A == this || this.firer && A == this.firer || A.anchored || rt.index(this.thrown_items, A)) {
 			continue;
 		}
-		throwtarget = (yield* g.call(f, P("/proc/get_edge_target_turf"), null, [live(f.src), rt.getDir(f, live(f.src), (yield* g.call(f, P("/proc/get_step_away"), null, [live(A), live(f.src)])))]));
-		yield* g.callName(f, live(A), "throw_at", [live(throwtarget), add(rt.sv(f, "power"), 1), 1]);
-		rt.setAt(rt.sv(f, "thrown_items"), live(A), live(A));
+		throwtarget = get_edge_target_turf(this, rt.getDir(f, this, get_step_away(A, this)));
+		yield* A.throw_at(throwtarget, this.power + 1, 1);
+		rt.setAt(this.thrown_items, A, A);
 	}
-	rt.endFor(f, 0);
-	F = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/range"), null, [rt.sv(f, "T"), rt.sv(f, "power")])), T("/turf"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		F = $e;
-		yield* g.new_(f, T("/obj/effect/temp_visual/gravpush"), [live(F)]);
+	for (F of each(range(this.T, this.power), T("/turf"))) {
+		yield* new_(T("/obj/effect/temp_visual/gravpush"), F);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
@@ -395,50 +369,37 @@ rt.type(8924, "/obj/item/projectile/gravityattract", "/obj/item/projectile", {
 	color: "#FF6600",
 });
 
-// /obj/item/projectile/gravityattract/proc/<init>  (code/modules/projectiles/projectile/special.dm:291)
+// special.dm:291
 rt.def("/obj/item/projectile/gravityattract/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "thrown_items", rt.list());
+	parent_proc();
+	this.thrown_items = list();
 	return f.dot;
 });
 
-// /obj/item/projectile/gravityattract/proc/Initialize  (code/modules/projectiles/projectile/special.dm:294)  may sleep
+// special.dm:294
 rt.def("/obj/item/projectile/gravityattract/proc/Initialize", function* Initialize(f: Frame) {
 	let C: Value = null;
-	f.vars = () => [C];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy((rt.istype((C = rt.sv(f, "loc")), T("/obj/item/ammo_casing/energy/gravityattract")) ? 1 : 0))) return f.dot;
-	rt.setSv(f, "power", (yield* g.call(f, P("/proc/min"), null, [rt.gv(f, "power", rt.fv(f, "gun", live(C))), 15])));
+	f.dot = (yield* parent_proc());
+	if (!rt.istype((C = this.loc), T("/obj/item/ammo_casing/energy/gravityattract"))) return f.dot;
+	this.power = min(C.gun.power, 15);
 	return f.dot;
 }, true);
 
-// /obj/item/projectile/gravityattract/proc/on_hit  (code/modules/projectiles/projectile/special.dm:300)  may sleep
+// special.dm:300
 rt.def("/obj/item/projectile/gravityattract/proc/on_hit", function* on_hit(f: Frame) {
 	let A: Value = null, F: Value = null;
-	let $e: any;
-	f.vars = () => [A, F, $e];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "T", rt.getStep(f, live(f.src), 0));
-	A = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/range"), null, [rt.sv(f, "T"), rt.sv(f, "power")])), T("/atom/movable"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		A = $e;
-		if ((((isEqual(live(A), live(f.src)) || (truthy(rt.sv(f, "firer")) && isEqual(live(A), rt.fv(f, "firer", live(f.src))))) || truthy(rt.fv(f, "anchored", live(A)))) || truthy(rt.index(rt.sv(f, "thrown_items"), live(A))))) {
+	f.dot = (yield* parent_proc());
+	this.T = rt.getStep(f, this, 0);
+	for (A of each(range(this.T, this.power), T("/atom/movable"))) {
+		if (A == this || this.firer && A == this.firer || A.anchored || rt.index(this.thrown_items, A)) {
 			continue;
 		}
-		yield* g.callName(f, live(A), "throw_at", [rt.sv(f, "T"), add(rt.sv(f, "power"), 1), 1]);
-		rt.setAt(rt.sv(f, "thrown_items"), live(A), live(A));
+		yield* A.throw_at(this.T, this.power + 1, 1);
+		rt.setAt(this.thrown_items, A, A);
 	}
-	rt.endFor(f, 0);
-	F = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/range"), null, [rt.sv(f, "T"), rt.sv(f, "power")])), T("/turf"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		F = $e;
-		yield* g.new_(f, T("/obj/effect/temp_visual/gravpush"), [live(F)]);
+	for (F of each(range(this.T, this.power), T("/turf"))) {
+		yield* new_(T("/obj/effect/temp_visual/gravpush"), F);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
@@ -456,49 +417,36 @@ rt.type(8925, "/obj/item/projectile/gravitychaos", "/obj/item/projectile", {
 	color: "#101010",
 });
 
-// /obj/item/projectile/gravitychaos/proc/<init>  (code/modules/projectiles/projectile/special.dm:321)
+// special.dm:321
 rt.def("/obj/item/projectile/gravitychaos/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "thrown_items", rt.list());
+	parent_proc();
+	this.thrown_items = list();
 	return f.dot;
 });
 
-// /obj/item/projectile/gravitychaos/proc/Initialize  (code/modules/projectiles/projectile/special.dm:324)  may sleep
+// special.dm:324
 rt.def("/obj/item/projectile/gravitychaos/proc/Initialize", function* Initialize(f: Frame) {
 	let C: Value = null;
-	f.vars = () => [C];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy((rt.istype((C = rt.sv(f, "loc")), T("/obj/item/ammo_casing/energy/gravitychaos")) ? 1 : 0))) return f.dot;
-	rt.setSv(f, "power", (yield* g.call(f, P("/proc/min"), null, [rt.gv(f, "power", rt.fv(f, "gun", live(C))), 15])));
+	f.dot = (yield* parent_proc());
+	if (!rt.istype((C = this.loc), T("/obj/item/ammo_casing/energy/gravitychaos"))) return f.dot;
+	this.power = min(C.gun.power, 15);
 	return f.dot;
 }, true);
 
-// /obj/item/projectile/gravitychaos/proc/on_hit  (code/modules/projectiles/projectile/special.dm:330)  may sleep
+// special.dm:330
 rt.def("/obj/item/projectile/gravitychaos/proc/on_hit", function* on_hit(f: Frame) {
 	let A: Value = null, Z: Value = null;
-	let $e: any;
-	f.vars = () => [A, Z, $e];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "T", rt.getStep(f, live(f.src), 0));
-	A = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/range"), null, [rt.sv(f, "T"), rt.sv(f, "power")])), T("/atom/movable"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		A = $e;
-		if ((((isEqual(live(A), live(f.src)) || (truthy(rt.sv(f, "firer")) && isEqual(live(A), rt.fv(f, "firer", live(f.src))))) || truthy(rt.fv(f, "anchored", live(A)))) || truthy(rt.index(rt.sv(f, "thrown_items"), live(A))))) {
+	f.dot = (yield* parent_proc());
+	this.T = rt.getStep(f, this, 0);
+	for (A of each(range(this.T, this.power), T("/atom/movable"))) {
+		if (A == this || this.firer && A == this.firer || A.anchored || rt.index(this.thrown_items, A)) {
 			continue;
 		}
-		yield* g.callName(f, live(A), "throw_at", [(yield* g.call(f, P("/proc/get_edge_target_turf"), null, [live(A), rt.op(f, "PickUnweighted", [1], [rt.gl("cardinal")])])), add(rt.sv(f, "power"), 1), 1]);
-		rt.setAt(rt.sv(f, "thrown_items"), live(A), live(A));
+		yield* A.throw_at(get_edge_target_turf(A, pick(GLOB.cardinal)), this.power + 1, 1);
+		rt.setAt(this.thrown_items, A, A);
 	}
-	rt.endFor(f, 0);
-	Z = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/range"), null, [rt.sv(f, "T"), rt.sv(f, "power")])), T("/turf"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		Z = $e;
-		yield* g.new_(f, T("/obj/effect/temp_visual/gravpush"), [live(Z)]);
+	for (Z of each(range(this.T, this.power), T("/turf"))) {
+		yield* new_(T("/obj/effect/temp_visual/gravpush"), Z);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);

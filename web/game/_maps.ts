@@ -2,7 +2,7 @@
 // (step 4; src/vm/dmm.ts reads them). In the DM source this was _maps/basemap.dm, #included by tgstation.dme.
 // The station itself (z2) is a blank placeholder here: SSmapping loads the real one at runtime
 // (code/modules/mapping/reader.dm), picked by config/maps.txt or data/next_map.json.
-import * as rt from "../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.maps([
 	"_maps/map_files/generic/Centcomm.dmm", // z1

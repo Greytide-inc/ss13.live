@@ -1,31 +1,26 @@
-// From code/modules/fields/fields.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/fields/fields.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
-// /proc/make_field  (code/modules/fields/fields.dm:13)  may sleep
+// fields.dm:13
 rt.def("/proc/make_field", function* make_field(f: Frame, field_type: Value, field_params: Value, override_checks: Value, start_field: Value) {
 	let F: Value = null;
-	f.vars = () => [field_type, field_params, override_checks, start_field, F];
-	if (live(override_checks) === null) {
-		override_checks = 0;
-	}
-	if (live(start_field) === null) {
-		start_field = 1;
-	}
-	if ((!truthy((yield* g.callName(f, (F = (yield* g.new_(f, live(field_type), []))), "assume_params", [live(field_params)]))) && !truthy(live(override_checks)))) {
-		yield* g.call(f, P("/proc/qdel"), null, [live(F)]);
+	override_checks ??= 0;
+	start_field ??= 1;
+	if (!(F = (yield* new_(field_type))).assume_params(field_params) && !override_checks) {
+		yield* qdel(F);
 		F = null;
 	}
-	if ((!truthy((yield* g.callName(f, live(F), "check_variables", []))) && !truthy(live(override_checks)))) {
-		yield* g.call(f, P("/proc/qdel"), null, [live(F)]);
+	if (!F.check_variables() && !override_checks) {
+		yield* qdel(F);
 		F = null;
 	}
-	if ((truthy(live(start_field)) && (truthy(live(F)) || truthy(live(override_checks))))) {
-		yield* g.callName(f, live(F), "Initialize", []);
+	if (start_field && (F || override_checks)) {
+		yield* F.Initialize();
 	}
-	return live(F);
+	return F;
 }, true);
 
 rt.type(1507, "/datum/proximity_monitor/advanced", "/datum/proximity_monitor", {
@@ -46,394 +41,303 @@ rt.type(1507, "/datum/proximity_monitor/advanced", "/datum/proximity_monitor", {
 	edge_turfs_new: null,
 });
 
-// /datum/proximity_monitor/advanced/proc/<init>  (code/modules/fields/fields.dm:37)
+// fields.dm:37
 rt.def("/datum/proximity_monitor/advanced/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "field_turfs", rt.list());
-	$0 = $0;
-	rt.setSv(f, "edge_turfs", rt.list());
-	$0 = $0;
-	rt.setSv(f, "field_turfs_new", rt.list());
-	$0 = $0;
-	rt.setSv(f, "edge_turfs_new", rt.list());
+	parent_proc();
+	this.field_turfs = list();
+
+	this.edge_turfs = list();
+
+	this.field_turfs_new = list();
+
+	this.edge_turfs_new = list();
 	return f.dot;
 });
 
-// /datum/proximity_monitor/advanced/proc/Destroy  (code/modules/fields/fields.dm:43)  may sleep
+// fields.dm:43
 rt.def("/datum/proximity_monitor/advanced/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.srcCall(f, "full_cleanup");
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* this.full_cleanup();
+	return (yield* parent_proc());
 }, true);
 
-// /datum/proximity_monitor/advanced/proc/assume_params  (code/modules/fields/fields.dm:48)
+// fields.dm:48
 rt.def("/datum/proximity_monitor/advanced/proc/assume_params", function assume_params(f: Frame, field_params: Value) {
-	let pass_check: Value = null, param: Value = null;
-	let $e: any;
-	f.vars = () => [pass_check, param, $e];
-	pass_check = 1;
-	param = null;
-	rt.forList(f, 0, live(field_params));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		param = $e;
-		if (((truthy(rt.index(rt.sv(f, "vars"), live(param))) || rt.index(rt.sv(f, "vars"), live(param)) === null) || truthy((rt.isIn(f, live(param), rt.sv(f, "vars")) ? 1 : 0)))) {
-			rt.setAt(rt.sv(f, "vars"), live(param), rt.index(live(field_params), live(param)));
+	let param: Value = null;
+	let pass_check: Value = 1;
+	for (param of each(field_params)) {
+		if (rt.index(this.vars, param) || rt.index(this.vars, param) === null || rt.isIn(f, param, this.vars)) {
+			rt.setAt(this.vars, param, rt.index(field_params, param));
 		} else {
 			pass_check = 0;
 		}
 	}
-	rt.endFor(f, 0);
-	return live(pass_check);
+	return pass_check;
 });
 
-// /datum/proximity_monitor/advanced/proc/check_variables  (code/modules/fields/fields.dm:57)
+// fields.dm:57
 rt.def("/datum/proximity_monitor/advanced/proc/check_variables", function check_variables(f: Frame) {
-	let pass: Value = null;
-	f.vars = () => [pass];
-	pass = 1;
-	if (isEqual(rt.sv(f, "field_shape"), 0)) {
+	let pass: Value = 1;
+	if (this.field_shape == 0) {
 		pass = 0;
 	}
-	if (((((rt.lt(rt.sv(f, "current_range"), 0) || rt.lt(rt.sv(f, "square_height"), 0)) || rt.lt(rt.sv(f, "square_width"), 0)) || rt.lt(rt.sv(f, "square_depth_up"), 0)) || rt.lt(rt.sv(f, "square_depth_down"), 0))) {
+	if (this.current_range < 0 || this.square_height < 0 || this.square_width < 0 || this.square_depth_up < 0 || this.square_depth_down < 0) {
 		pass = 0;
 	}
-	if (!truthy((rt.istype(rt.sv(f, "host"), T("/atom")) ? 1 : 0))) {
+	if (!rt.istype(this.host, T("/atom"))) {
 		pass = 0;
 	}
-	return live(pass);
+	return pass;
 });
 
-// /datum/proximity_monitor/advanced/proc/process  (code/modules/fields/fields.dm:67)  may sleep
+// fields.dm:67
 rt.def("/datum/proximity_monitor/advanced/proc/process", function* process(f: Frame) {
 	let _T: Value = null;
-	let $e: any;
-	f.vars = () => [_T, $e];
-	if (truthy(rt.sv(f, "process_inner_turfs"))) {
-		_T = null;
-		rt.forList(f, 0, rt.sv(f, "field_turfs"), T("/turf"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			_T = $e;
-			yield* g.srcCall(f, "process_inner_turf", live(_T));
-			if (rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit"))) {
-				yield* g.call(f, P("/proc/stoplag"), null, []);
+	if (this.process_inner_turfs) {
+		for (_T of each(this.field_turfs, T("/turf"))) {
+			this.process_inner_turf(_T);
+			if (rt.tickUsage(f) > GLOB.current_ticklimit) {
+				yield* stoplag();
 			}
 		}
-		rt.endFor(f, 0);
 	}
-	if (!truthy(rt.sv(f, "process_edge_turfs"))) return f.dot;
+	if (!this.process_edge_turfs) return f.dot;
 	_T = null;
-	rt.forList(f, 0, rt.sv(f, "edge_turfs"), T("/turf"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_T = $e;
-		yield* g.srcCall(f, "process_edge_turf", live(_T));
-		if (rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit"))) {
-			yield* g.call(f, P("/proc/stoplag"), null, []);
+	for (_T of each(this.edge_turfs, T("/turf"))) {
+		this.process_edge_turf(_T);
+		if (rt.tickUsage(f) > GLOB.current_ticklimit) {
+			yield* stoplag();
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true, { waitfor: false });
 
-// /datum/proximity_monitor/advanced/proc/Initialize  (code/modules/fields/fields.dm:80)  may sleep
+// fields.dm:80
 rt.def("/datum/proximity_monitor/advanced/proc/Initialize", function* Initialize(f: Frame) {
-	yield* g.srcCall(f, "setup_field");
-	yield* g.srcCall(f, "post_setup_field");
+	yield* this.setup_field();
+	this.post_setup_field();
 	return f.dot;
 }, true);
 
-// /datum/proximity_monitor/advanced/proc/full_cleanup  (code/modules/fields/fields.dm:84)  may sleep
+// fields.dm:84
 rt.def("/datum/proximity_monitor/advanced/proc/full_cleanup", function* full_cleanup(f: Frame) {
 	let _T: Value = null;
-	let $e: any;
-	f.vars = () => [_T, $e];
-	_T = null;
-	rt.forList(f, 0, rt.sv(f, "edge_turfs"), T("/turf"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_T = $e;
-		yield* g.srcCall(f, "cleanup_edge_turf", live(_T));
+	for (_T of each(this.edge_turfs, T("/turf"))) {
+		yield* this.cleanup_edge_turf(_T);
 	}
-	rt.endFor(f, 0);
 	_T = null;
-	rt.forList(f, 0, rt.sv(f, "field_turfs"), T("/turf"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_T = $e;
-		yield* g.srcCall(f, "cleanup_field_turf", live(_T));
+	for (_T of each(this.field_turfs, T("/turf"))) {
+		yield* this.cleanup_field_turf(_T);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /datum/proximity_monitor/advanced/proc/check_movement  (code/modules/fields/fields.dm:90)
+// fields.dm:90
 rt.def("/datum/proximity_monitor/advanced/proc/check_movement", function check_movement(f: Frame) {
-	if (!truthy(rt.sv(f, "use_host_turf"))) {
-		if (!isEqual(rt.fv(f, "loc", rt.sv(f, "host")), rt.sv(f, "last_host_loc"))) {
-			rt.setSv(f, "last_host_loc", rt.fv(f, "loc", rt.sv(f, "host")));
+	if (!this.use_host_turf) {
+		if (this.host.loc != this.last_host_loc) {
+			this.last_host_loc = this.host.loc;
 			return 1;
 		}
-	} else {
-		if (!isEqual(rt.getStep(f, rt.sv(f, "host"), 0), rt.sv(f, "last_host_loc"))) {
-			rt.setSv(f, "last_host_loc", rt.getStep(f, rt.sv(f, "host"), 0));
-			return 1;
-		}
+	} else if (rt.getStep(f, this.host, 0) != this.last_host_loc) {
+		this.last_host_loc = rt.getStep(f, this.host, 0);
+		return 1;
 	}
 	return 0;
 });
 
-// /datum/proximity_monitor/advanced/proc/recalculate_field  (code/modules/fields/fields.dm:101)  may sleep
+// fields.dm:101
 rt.def("/datum/proximity_monitor/advanced/proc/recalculate_field", function* recalculate_field(f: Frame, ignore_movement_check: Value) {
-	let needs_setup: Value = null, _T: Value = null;
-	let $e: any;
-	f.vars = () => [ignore_movement_check, needs_setup, _T, $e];
-	if (live(ignore_movement_check) === null) {
-		ignore_movement_check = 0;
+	let _T: Value = null;
+	ignore_movement_check ??= 0;
+	if (!(ignore_movement_check || this.check_movement()) && this.field_shape != 0) {
+		return f.dot;
 	}
-	if ((!(truthy(live(ignore_movement_check)) || truthy((yield* g.srcCall(f, "check_movement")))) && !isEqual(rt.sv(f, "field_shape"), 0))) {
-		return live(f.dot);
-	}
-	yield* g.srcCall(f, "update_new_turfs");
-	needs_setup = (yield* g.callName(f, rt.sv(f, "field_turfs_new"), "Copy", []));
-	if (truthy(rt.sv(f, "setup_field_turfs"))) {
-		_T = null;
-		rt.forList(f, 0, rt.sv(f, "field_turfs"), T("/turf"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			_T = $e;
-			if (!truthy((rt.isIn(f, live(_T), live(needs_setup)) ? 1 : 0))) {
-				yield* g.srcCall(f, "cleanup_field_turf", live(_T));
+	this.update_new_turfs();
+	let needs_setup: Value = (yield* this.field_turfs_new.Copy());
+	if (this.setup_field_turfs) {
+		for (_T of each(this.field_turfs, T("/turf"))) {
+			if (!rt.isIn(f, _T, needs_setup)) {
+				yield* this.cleanup_field_turf(_T);
 			} else {
-				(needs_setup = rt.modify(live(needs_setup), live(_T), subtract));
+				needs_setup -= _T;
 			}
-			if (rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit"))) {
-				yield* g.call(f, P("/proc/stoplag"), null, []);
+			if (rt.tickUsage(f) > GLOB.current_ticklimit) {
+				yield* stoplag();
 			}
 		}
-		rt.endFor(f, 0);
 		_T = null;
-		rt.forList(f, 0, live(needs_setup), T("/turf"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			_T = $e;
-			yield* g.srcCall(f, "setup_field_turf", live(_T));
-			if (rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit"))) {
-				yield* g.call(f, P("/proc/stoplag"), null, []);
+		for (_T of each(needs_setup, T("/turf"))) {
+			yield* this.setup_field_turf(_T);
+			if (rt.tickUsage(f) > GLOB.current_ticklimit) {
+				yield* stoplag();
 			}
 		}
-		rt.endFor(f, 0);
 	}
-	if (!truthy(rt.sv(f, "setup_edge_turfs"))) return f.dot;
+	if (!this.setup_edge_turfs) return f.dot;
 	_T = null;
-	rt.forList(f, 0, rt.sv(f, "edge_turfs"), T("/turf"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_T = $e;
-		yield* g.srcCall(f, "cleanup_edge_turf", live(_T));
-		if (rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit"))) {
-			yield* g.call(f, P("/proc/stoplag"), null, []);
+	for (_T of each(this.edge_turfs, T("/turf"))) {
+		yield* this.cleanup_edge_turf(_T);
+		if (rt.tickUsage(f) > GLOB.current_ticklimit) {
+			yield* stoplag();
 		}
 	}
-	rt.endFor(f, 0);
 	_T = null;
-	rt.forList(f, 0, rt.sv(f, "edge_turfs_new"), T("/turf"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_T = $e;
-		yield* g.srcCall(f, "setup_edge_turf", live(_T));
-		if (rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit"))) {
-			yield* g.call(f, P("/proc/stoplag"), null, []);
+	for (_T of each(this.edge_turfs_new, T("/turf"))) {
+		yield* this.setup_edge_turf(_T);
+		if (rt.tickUsage(f) > GLOB.current_ticklimit) {
+			yield* stoplag();
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /datum/proximity_monitor/advanced/proc/HandleMove  (code/modules/fields/fields.dm:148)  may sleep
+// fields.dm:148
 rt.def("/datum/proximity_monitor/advanced/proc/HandleMove", function* HandleMove(f: Frame) {
-	let _host: Value = null, new_host_loc: Value = null;
-	f.vars = () => [_host, new_host_loc];
-	_host = rt.sv(f, "host");
-	new_host_loc = rt.fv(f, "loc", live(_host));
-	if (isEqual(rt.sv(f, "last_host_loc"), live(new_host_loc))) return f.dot;
-	yield* g.srcCall(f, "recalculate_field");
+	let _host: Value = this.host;
+	let new_host_loc: Value = _host.loc;
+	if (this.last_host_loc == new_host_loc) return f.dot;
+	yield* this.recalculate_field();
 	return f.dot;
 }, true);
 
-// /datum/proximity_monitor/advanced/proc/setup_field  (code/modules/fields/fields.dm:156)  may sleep
+// fields.dm:156
 rt.def("/datum/proximity_monitor/advanced/proc/setup_field", function* setup_field(f: Frame) {
 	let _T: Value = null;
-	let $e: any;
-	f.vars = () => [_T, $e];
-	yield* g.srcCall(f, "update_new_turfs");
-	if (truthy(rt.sv(f, "setup_field_turfs"))) {
-		_T = null;
-		rt.forList(f, 0, rt.sv(f, "field_turfs_new"), T("/turf"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			_T = $e;
-			yield* g.srcCall(f, "setup_field_turf", live(_T));
-			if (rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit"))) {
-				yield* g.call(f, P("/proc/stoplag"), null, []);
+	this.update_new_turfs();
+	if (this.setup_field_turfs) {
+		for (_T of each(this.field_turfs_new, T("/turf"))) {
+			yield* this.setup_field_turf(_T);
+			if (rt.tickUsage(f) > GLOB.current_ticklimit) {
+				yield* stoplag();
 			}
 		}
-		rt.endFor(f, 0);
 	}
-	if (!truthy(rt.sv(f, "setup_edge_turfs"))) return f.dot;
+	if (!this.setup_edge_turfs) return f.dot;
 	_T = null;
-	rt.forList(f, 0, rt.sv(f, "edge_turfs_new"), T("/turf"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_T = $e;
-		yield* g.srcCall(f, "setup_edge_turf", live(_T));
-		if (rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit"))) {
-			yield* g.call(f, P("/proc/stoplag"), null, []);
+	for (_T of each(this.edge_turfs_new, T("/turf"))) {
+		yield* this.setup_edge_turf(_T);
+		if (rt.tickUsage(f) > GLOB.current_ticklimit) {
+			yield* stoplag();
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /datum/proximity_monitor/advanced/proc/cleanup_field_turf  (code/modules/fields/fields.dm:167)  may sleep
+// fields.dm:167
 rt.def("/datum/proximity_monitor/advanced/proc/cleanup_field_turf", function* cleanup_field_turf(f: Frame, _T: Value) {
-	f.vars = () => [_T];
-	yield* g.call(f, P("/proc/qdel"), null, [rt.index(rt.sv(f, "field_turfs"), live(_T))]);
-	(rt.modSrcVar(f, "field_turfs", live(_T), subtract));
+	yield* qdel(rt.index(this.field_turfs, _T));
+	this.field_turfs -= _T;
 	return f.dot;
 }, true);
 
-// /datum/proximity_monitor/advanced/proc/cleanup_edge_turf  (code/modules/fields/fields.dm:171)  may sleep
+// fields.dm:171
 rt.def("/datum/proximity_monitor/advanced/proc/cleanup_edge_turf", function* cleanup_edge_turf(f: Frame, _T: Value) {
-	f.vars = () => [_T];
-	yield* g.call(f, P("/proc/qdel"), null, [rt.index(rt.sv(f, "edge_turfs"), live(_T))]);
-	(rt.modSrcVar(f, "edge_turfs", live(_T), subtract));
+	yield* qdel(rt.index(this.edge_turfs, _T));
+	this.edge_turfs -= _T;
 	return f.dot;
 }, true);
 
-// /datum/proximity_monitor/advanced/proc/setup_field_turf  (code/modules/fields/fields.dm:175)  may sleep
+// fields.dm:175
 rt.def("/datum/proximity_monitor/advanced/proc/setup_field_turf", function* setup_field_turf(f: Frame, _T: Value) {
-	f.vars = () => [_T];
-	rt.setAt(rt.sv(f, "field_turfs"), live(_T), (yield* g.new_(f, T("/obj/effect/abstract/proximity_checker/advanced/field_turf"), [live(_T), live(f.src)])));
+	rt.setAt(this.field_turfs, _T, (yield* new_(T("/obj/effect/abstract/proximity_checker/advanced/field_turf"), _T, this)));
 	return f.dot;
 }, true);
 
-// /datum/proximity_monitor/advanced/proc/setup_edge_turf  (code/modules/fields/fields.dm:178)  may sleep
+// fields.dm:178
 rt.def("/datum/proximity_monitor/advanced/proc/setup_edge_turf", function* setup_edge_turf(f: Frame, _T: Value) {
-	f.vars = () => [_T];
-	rt.setAt(rt.sv(f, "edge_turfs"), live(_T), (yield* g.new_(f, T("/obj/effect/abstract/proximity_checker/advanced/field_edge"), [live(_T), live(f.src)])));
+	rt.setAt(this.edge_turfs, _T, (yield* new_(T("/obj/effect/abstract/proximity_checker/advanced/field_edge"), _T, this)));
 	return f.dot;
 }, true);
 
-// /datum/proximity_monitor/advanced/proc/update_new_turfs  (code/modules/fields/fields.dm:181)
+// fields.dm:181
 rt.def("/datum/proximity_monitor/advanced/proc/update_new_turfs", function update_new_turfs(f: Frame) {
-	let center: Value = null, _T: Value = null, center_turfs: Value = null, _T_2: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [center, _T, center_turfs, _T_2, $0, $e];
-	if (!truthy((rt.istype(rt.sv(f, "host"), T("/atom")) ? 1 : 0))) {
+	let _T: Value = null, center_turfs: Value = null, _T_2: Value = null;
+	let $e: any;
+	if (!rt.istype(this.host, T("/atom"))) {
 		return 0;
 	}
-	center = rt.getStep(f, rt.sv(f, "host"), 0);
-	rt.setSv(f, "field_turfs_new", rt.list());
-	rt.setSv(f, "edge_turfs_new", rt.list());
-	$0 = rt.sv(f, "field_shape");
-	if ($0 === 0) {
+	let center: Value = rt.getStep(f, this.host, 0);
+	this.field_turfs_new = list();
+	this.edge_turfs_new = list();
+	if (this.field_shape === 0) {
 		return 0;
-	} else if ($0 === 1) {
-		_T = null;
-		rt.forList(f, 0, rt.call(f, P("/proc/block"), null, [rt.locate(subtract(rt.fv(f, "x", live(center)), rt.sv(f, "current_range")), subtract(rt.fv(f, "y", live(center)), rt.sv(f, "current_range")), subtract(rt.fv(f, "z", live(center)), rt.sv(f, "square_depth_down"))), rt.locate(add(rt.fv(f, "x", live(center)), rt.sv(f, "current_range")), add(rt.fv(f, "y", live(center)), rt.sv(f, "current_range")), add(rt.fv(f, "z", live(center)), rt.sv(f, "square_depth_up")))]), T("/turf"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			_T = $e;
-			rt.modSrcVar(f, "field_turfs_new", live(_T), add);
+	} else if (this.field_shape === FIELD_SHAPE_RADIUS_SQUARE) {
+		for (_T of each(block(rt.locate(center.x - this.current_range, center.y - this.current_range, center.z - this.square_depth_down), rt.locate(center.x + this.current_range, center.y + this.current_range, center.z + this.square_depth_up)), T("/turf"))) {
+			this.field_turfs_new += _T;
 		}
-		rt.endFor(f, 0);
-		rt.setSv(f, "edge_turfs_new", rt.callName(f, rt.sv(f, "field_turfs_new"), "Copy", []));
-		if (rt.ge(rt.sv(f, "current_range"), 1)) {
-			center_turfs = rt.list();
-			_T_2 = null;
-			rt.forList(f, 0, rt.call(f, P("/proc/block"), null, [rt.locate(add(subtract(rt.fv(f, "x", live(center)), rt.sv(f, "current_range")), 1), add(subtract(rt.fv(f, "y", live(center)), rt.sv(f, "current_range")), 1), subtract(rt.fv(f, "z", live(center)), rt.sv(f, "square_depth_down"))), rt.locate(subtract(add(rt.fv(f, "x", live(center)), rt.sv(f, "current_range")), 1), subtract(add(rt.fv(f, "y", live(center)), rt.sv(f, "current_range")), 1), add(rt.fv(f, "z", live(center)), rt.sv(f, "square_depth_up")))]), T("/turf"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				_T_2 = $e;
-				center_turfs = rt.modify(live(center_turfs), live(_T_2), add);
+		this.edge_turfs_new = this.field_turfs_new.Copy();
+		if (this.current_range >= 1) {
+			center_turfs = list();
+			for (_T_2 of each(block(rt.locate(center.x - this.current_range + 1, center.y - this.current_range + 1, center.z - this.square_depth_down), rt.locate(center.x + this.current_range - 1, center.y + this.current_range - 1, center.z + this.square_depth_up)), T("/turf"))) {
+				center_turfs += _T_2;
 			}
-			rt.endFor(f, 0);
 			_T_2 = null;
-			rt.forList(f, 0, live(center_turfs), T("/turf"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				_T_2 = $e;
-				(rt.modSrcVar(f, "edge_turfs_new", live(_T_2), subtract));
+			for (_T_2 of each(center_turfs, T("/turf"))) {
+				this.edge_turfs_new -= _T_2;
 			}
-			rt.endFor(f, 0);
 		}
-	} else if ($0 === 2) {
+	} else if (this.field_shape === FIELD_SHAPE_CUSTOM_SQUARE) {
 		_T = null;
-		rt.forList(f, 0, rt.call(f, P("/proc/block"), null, [rt.locate(subtract(rt.fv(f, "x", live(center)), rt.sv(f, "square_width")), subtract(rt.fv(f, "y", live(center)), rt.sv(f, "square_height")), subtract(rt.fv(f, "z", live(center)), rt.sv(f, "square_depth_down"))), rt.locate(add(rt.fv(f, "x", live(center)), rt.sv(f, "square_width")), add(rt.fv(f, "y", live(center)), rt.sv(f, "square_height")), add(rt.fv(f, "z", live(center)), rt.sv(f, "square_depth_up")))]), T("/turf"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			_T = $e;
-			rt.modSrcVar(f, "field_turfs_new", live(_T), add);
+		for (_T of each(block(rt.locate(center.x - this.square_width, center.y - this.square_height, center.z - this.square_depth_down), rt.locate(center.x + this.square_width, center.y + this.square_height, center.z + this.square_depth_up)), T("/turf"))) {
+			this.field_turfs_new += _T;
 		}
-		rt.endFor(f, 0);
-		rt.setSv(f, "edge_turfs_new", rt.callName(f, rt.sv(f, "field_turfs_new"), "Copy", []));
-		if (!(rt.ge(rt.sv(f, "square_height"), 1) && rt.ge(rt.sv(f, "square_width"), 1))) return f.dot;
-		center_turfs = rt.list();
+		this.edge_turfs_new = this.field_turfs_new.Copy();
+		if (!(this.square_height >= 1 && this.square_width >= 1)) return f.dot;
+		center_turfs = list();
 		_T_2 = null;
-		rt.forList(f, 0, rt.call(f, P("/proc/block"), null, [rt.locate(add(subtract(rt.fv(f, "x", live(center)), rt.sv(f, "square_width")), 1), add(subtract(rt.fv(f, "y", live(center)), rt.sv(f, "square_height")), 1), subtract(rt.fv(f, "z", live(center)), rt.sv(f, "square_depth_down"))), rt.locate(subtract(add(rt.fv(f, "x", live(center)), rt.sv(f, "square_width")), 1), subtract(add(rt.fv(f, "y", live(center)), rt.sv(f, "square_height")), 1), add(rt.fv(f, "z", live(center)), rt.sv(f, "square_depth_up")))]), T("/turf"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			_T_2 = $e;
-			center_turfs = rt.modify(live(center_turfs), live(_T_2), add);
+		for (_T_2 of each(block(rt.locate(center.x - this.square_width + 1, center.y - this.square_height + 1, center.z - this.square_depth_down), rt.locate(center.x + this.square_width - 1, center.y + this.square_height - 1, center.z + this.square_depth_up)), T("/turf"))) {
+			center_turfs += _T_2;
 		}
-		rt.endFor(f, 0);
 		_T_2 = null;
-		rt.forList(f, 0, live(center_turfs), T("/turf"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			_T_2 = $e;
-			(rt.modSrcVar(f, "edge_turfs_new", live(_T_2), subtract));
+		for (_T_2 of each(center_turfs, T("/turf"))) {
+			this.edge_turfs_new -= _T_2;
 		}
-		rt.endFor(f, 0);
 	}
 	return f.dot;
 });
 
-// /datum/proximity_monitor/advanced/proc/get_edgeturf_direction  (code/modules/fields/fields.dm:212)
+// fields.dm:212
 rt.def("/datum/proximity_monitor/advanced/proc/get_edgeturf_direction", function get_edgeturf_direction(f: Frame, _T: Value, center_override: Value) {
-	let checking_from: Value = null;
-	let $0: any;
-	f.vars = () => [center_override, checking_from, $0];
-	if (live(center_override) === null) {
-		center_override = null;
+	let checking_from: Value = rt.getStep(f, this.host, 0);
+	if (rt.istype(center_override, T("/turf"))) {
+		checking_from = center_override;
 	}
-	checking_from = rt.getStep(f, rt.sv(f, "host"), 0);
-	if (truthy((rt.istype(live(center_override), T("/turf")) ? 1 : 0))) {
-		checking_from = live(center_override);
+	if (this.field_shape != 1 && this.field_shape != 2) {
+		return f.dot;
 	}
-	if ((!isEqual(rt.sv(f, "field_shape"), 1) && !isEqual(rt.sv(f, "field_shape"), 2))) {
-		return live(f.dot);
+	if (!rt.isIn(f, _T, this.edge_turfs)) {
+		return f.dot;
 	}
-	if (!truthy((rt.isIn(f, live(_T), rt.sv(f, "edge_turfs")) ? 1 : 0))) {
-		return live(f.dot);
-	}
-	$0 = rt.sv(f, "field_shape");
-	if ($0 === 1) {
-		if (((isEqual(rt.fv(f, "x", live(_T)), add(rt.fv(f, "x", live(checking_from)), rt.sv(f, "current_range"))) || isEqual(rt.fv(f, "x", live(_T)), subtract(rt.fv(f, "x", live(checking_from)), rt.sv(f, "current_range")))) && (isEqual(rt.fv(f, "y", live(_T)), add(rt.fv(f, "y", live(checking_from)), rt.sv(f, "current_range"))) || isEqual(rt.fv(f, "y", live(_T)), subtract(rt.fv(f, "y", live(checking_from)), rt.sv(f, "current_range")))))) {
-			return rt.getDir(f, live(checking_from), live(_T));
+	if (this.field_shape === 1) {
+		if ((_T.x == checking_from.x + this.current_range || _T.x == checking_from.x - this.current_range) && (_T.y == checking_from.y + this.current_range || _T.y == checking_from.y - this.current_range)) {
+			return rt.getDir(f, checking_from, _T);
 		}
-		if (isEqual(rt.fv(f, "x", live(_T)), add(rt.fv(f, "x", live(checking_from)), rt.sv(f, "current_range")))) {
+		if (_T.x == checking_from.x + this.current_range) {
 			return 4;
 		}
-		if (isEqual(rt.fv(f, "x", live(_T)), subtract(rt.fv(f, "x", live(checking_from)), rt.sv(f, "current_range")))) {
+		if (_T.x == checking_from.x - this.current_range) {
 			return 8;
 		}
-		if (isEqual(rt.fv(f, "y", live(_T)), subtract(rt.fv(f, "y", live(checking_from)), rt.sv(f, "current_range")))) {
+		if (_T.y == checking_from.y - this.current_range) {
 			return 2;
 		}
-		if (isEqual(rt.fv(f, "y", live(_T)), add(rt.fv(f, "y", live(checking_from)), rt.sv(f, "current_range")))) {
+		if (_T.y == checking_from.y + this.current_range) {
 			return 1;
 		}
-	} else if ($0 === 2) {
-		if (((isEqual(rt.fv(f, "x", live(_T)), add(rt.fv(f, "x", live(checking_from)), rt.sv(f, "square_width"))) || isEqual(rt.fv(f, "x", live(_T)), subtract(rt.fv(f, "x", live(checking_from)), rt.sv(f, "square_width")))) && (isEqual(rt.fv(f, "y", live(_T)), add(rt.fv(f, "y", live(checking_from)), rt.sv(f, "square_height"))) || isEqual(rt.fv(f, "y", live(_T)), subtract(rt.fv(f, "y", live(checking_from)), rt.sv(f, "square_height")))))) {
-			return rt.getDir(f, live(checking_from), live(_T));
+	} else if (this.field_shape === 2) {
+		if ((_T.x == checking_from.x + this.square_width || _T.x == checking_from.x - this.square_width) && (_T.y == checking_from.y + this.square_height || _T.y == checking_from.y - this.square_height)) {
+			return rt.getDir(f, checking_from, _T);
 		}
-		if (isEqual(rt.fv(f, "x", live(_T)), add(rt.fv(f, "x", live(checking_from)), rt.sv(f, "square_width")))) {
+		if (_T.x == checking_from.x + this.square_width) {
 			return 4;
 		}
-		if (isEqual(rt.fv(f, "x", live(_T)), subtract(rt.fv(f, "x", live(checking_from)), rt.sv(f, "square_width")))) {
+		if (_T.x == checking_from.x - this.square_width) {
 			return 8;
 		}
-		if (isEqual(rt.fv(f, "y", live(_T)), subtract(rt.fv(f, "y", live(checking_from)), rt.sv(f, "square_height")))) {
+		if (_T.y == checking_from.y - this.square_height) {
 			return 2;
 		}
-		if (!isEqual(rt.fv(f, "y", live(_T)), add(rt.fv(f, "y", live(checking_from)), rt.sv(f, "square_height")))) return f.dot;
+		if (_T.y != checking_from.y + this.square_height) return f.dot;
 		return 1;
 	}
 	return f.dot;
@@ -449,47 +353,47 @@ rt.type(1508, "/datum/proximity_monitor/advanced/debug", "/datum/proximity_monit
 	setup_edge_turfs: 1,
 });
 
-// /datum/proximity_monitor/advanced/debug/proc/recalculate_field  (code/modules/fields/fields.dm:254)  may sleep
+// fields.dm:254
 rt.def("/datum/proximity_monitor/advanced/debug/proc/recalculate_field", function* recalculate_field(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /datum/proximity_monitor/advanced/debug/proc/post_setup_field  (code/modules/fields/fields.dm:257)
+// fields.dm:257
 rt.def("/datum/proximity_monitor/advanced/debug/proc/post_setup_field", function post_setup_field(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
+	parent_proc();
 	return f.dot;
 });
 
-// /datum/proximity_monitor/advanced/debug/proc/setup_edge_turf  (code/modules/fields/fields.dm:261)  may sleep
-rt.def("/datum/proximity_monitor/advanced/debug/proc/setup_edge_turf", function* setup_edge_turf(f: Frame) {
-	rt.setFv(f, "color", live(f.args[0]), rt.sv(f, "set_edgeturf_color"));
-	yield* g.callSuper(f, [], rt.Args.Same);
+// fields.dm:261
+rt.def("/datum/proximity_monitor/advanced/debug/proc/setup_edge_turf", function* setup_edge_turf(f: Frame, T: Value) {
+	T.color = this.set_edgeturf_color;
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["T"] });
+}, true);
 
-// /datum/proximity_monitor/advanced/debug/proc/cleanup_edge_turf  (code/modules/fields/fields.dm:264)  may sleep
-rt.def("/datum/proximity_monitor/advanced/debug/proc/cleanup_edge_turf", function* cleanup_edge_turf(f: Frame) {
-	rt.setFv(f, "color", live(f.args[0]), rt.initial(f, live(f.args[0]), "color"));
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy((rt.isIn(f, live(f.args[0]), rt.sv(f, "field_turfs")) ? 1 : 0))) return f.dot;
-	rt.setFv(f, "color", live(f.args[0]), rt.sv(f, "set_fieldturf_color"));
+// fields.dm:264
+rt.def("/datum/proximity_monitor/advanced/debug/proc/cleanup_edge_turf", function* cleanup_edge_turf(f: Frame, T: Value) {
+	T.color = rt.initial(f, T, "color");
+	yield* parent_proc();
+	if (!rt.isIn(f, T, this.field_turfs)) return f.dot;
+	T.color = this.set_fieldturf_color;
 	return f.dot;
-}, true, { args: ["T"] });
+}, true);
 
-// /datum/proximity_monitor/advanced/debug/proc/setup_field_turf  (code/modules/fields/fields.dm:271)  may sleep
-rt.def("/datum/proximity_monitor/advanced/debug/proc/setup_field_turf", function* setup_field_turf(f: Frame) {
-	rt.setFv(f, "color", live(f.args[0]), rt.sv(f, "set_fieldturf_color"));
-	yield* g.callSuper(f, [], rt.Args.Same);
+// fields.dm:271
+rt.def("/datum/proximity_monitor/advanced/debug/proc/setup_field_turf", function* setup_field_turf(f: Frame, T: Value) {
+	T.color = this.set_fieldturf_color;
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["T"] });
+}, true);
 
-// /datum/proximity_monitor/advanced/debug/proc/cleanup_field_turf  (code/modules/fields/fields.dm:274)  may sleep
-rt.def("/datum/proximity_monitor/advanced/debug/proc/cleanup_field_turf", function* cleanup_field_turf(f: Frame) {
-	rt.setFv(f, "color", live(f.args[0]), rt.initial(f, live(f.args[0]), "color"));
-	yield* g.callSuper(f, [], rt.Args.Same);
+// fields.dm:274
+rt.def("/datum/proximity_monitor/advanced/debug/proc/cleanup_field_turf", function* cleanup_field_turf(f: Frame, T: Value) {
+	T.color = rt.initial(f, T, "color");
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["T"] });
+}, true);
 
 rt.type(9273, "/obj/item/device/multitool/field_debug", "/obj/item/device/multitool", {
 	field_params: null,
@@ -500,83 +404,78 @@ rt.type(9273, "/obj/item/device/multitool/field_debug", "/obj/item/device/multit
 	desc: "Seems to project a colored field!",
 });
 
-// /obj/item/device/multitool/field_debug/proc/<init>  (code/modules/fields/fields.dm:281)
+// fields.dm:281
 rt.def("/obj/item/device/multitool/field_debug/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "field_params", rt.alist(f, ["field_shape", 1, "current_range", 5, "set_fieldturf_color", "#aaffff", "set_edgeturf_color", "#ffaaff"]));
+	parent_proc();
+	this.field_params = rt.alist(f, ["field_shape", 1, "current_range", 5, "set_fieldturf_color", "#aaffff", "set_edgeturf_color", "#ffaaff"]);
 	return f.dot;
 });
 
-// /obj/item/device/multitool/field_debug/proc/New  (code/modules/fields/fields.dm:287)  may sleep
+// fields.dm:287
 rt.def("/obj/item/device/multitool/field_debug/proc/New", function* New(f: Frame) {
-	if (!truthy(rt.fv(f, "isprocessing", live(f.src)))) {
-		rt.setFv(f, "isprocessing", live(f.src), 1);
-		rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), add);
+	if (!this.isprocessing) {
+		this.isprocessing = 1;
+		GLOB.SSobj.processing += this;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /obj/item/device/multitool/field_debug/proc/Destroy  (code/modules/fields/fields.dm:291)  may sleep
+// fields.dm:291
 rt.def("/obj/item/device/multitool/field_debug/proc/Destroy", function* Destroy(f: Frame) {
-	rt.setFv(f, "isprocessing", live(f.src), 0);
-	(rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), subtract));
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "current")]);
-	rt.setSv(f, "current", null);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	this.isprocessing = 0;
+	GLOB.SSobj.processing -= this;
+	yield* qdel(this.current);
+	this.current = null;
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /obj/item/device/multitool/field_debug/proc/setup_debug_field  (code/modules/fields/fields.dm:296)  may sleep
+// fields.dm:296
 rt.def("/obj/item/device/multitool/field_debug/proc/setup_debug_field", function* setup_debug_field(f: Frame) {
 	let new_params: Value = null;
-	f.vars = () => [new_params];
-	rt.setAt((new_params = (yield* g.callName(f, rt.sv(f, "field_params"), "Copy", []))), "host", live(f.src));
-	rt.setSv(f, "current", (yield* g.call(f, P("/proc/make_field"), null, [rt.sv(f, "field_type"), live(new_params)])));
+	rt.setAt((new_params = (yield* this.field_params.Copy())), "host", this);
+	this.current = (yield* make_field(this.field_type, new_params));
 	return f.dot;
 }, true);
 
-// /obj/item/device/multitool/field_debug/proc/attack_self  (code/modules/fields/fields.dm:301)  may sleep
+// fields.dm:301
 rt.def("/obj/item/device/multitool/field_debug/proc/attack_self", function* attack_self(f: Frame, user: Value) {
-	let $0: any, $1: any, $2: any;
-	f.vars = () => [user, $0, $1, $2];
-	rt.setSv(f, "operating", (!truthy(rt.sv(f, "operating")) ? 1 : 0));
-	$0 = live(user);
-	$1 = live(f.src);
-	if (truthy(rt.sv(f, "operating"))) {
-		$1 = $1;
+	let $2: any;
+	this.operating = (!this.operating ? 1 : 0);
+	let $0: any = user;
+	let $1: any = this;
+	if (this.operating) {
+
 		$2 = "on";
 	} else {
 		$2 = "off";
 	}
-	yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("You turn the ＀ ＀.", [$1, $2])]);
-	if ((!truthy((rt.istype(rt.sv(f, "current"), T("/datum/proximity_monitor/advanced")) ? 1 : 0)) && truthy(rt.sv(f, "operating")))) {
-		yield* g.srcCall(f, "setup_debug_field");
+	to_chat($0, `You turn the ${$1} ${$2}.`);
+	if (!rt.istype(this.current, T("/datum/proximity_monitor/advanced")) && this.operating) {
+		yield* this.setup_debug_field();
 	} else {
-		if (truthy(rt.sv(f, "operating"))) return f.dot;
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "current")]);
-		rt.setSv(f, "current", null);
+		if (this.operating) return f.dot;
+		yield* qdel(this.current);
+		this.current = null;
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/device/multitool/field_debug/proc/on_mob_move  (code/modules/fields/fields.dm:309)  may sleep
+// fields.dm:309
 rt.def("/obj/item/device/multitool/field_debug/proc/on_mob_move", function* on_mob_move(f: Frame) {
-	yield* g.srcCall(f, "check_turf", rt.getStep(f, live(f.src), 0));
+	yield* this.check_turf(rt.getStep(f, this, 0));
 	return f.dot;
 }, true);
 
-// /obj/item/device/multitool/field_debug/proc/process  (code/modules/fields/fields.dm:312)  may sleep
+// fields.dm:312
 rt.def("/obj/item/device/multitool/field_debug/proc/process", function* process(f: Frame) {
-	yield* g.srcCall(f, "check_turf", rt.getStep(f, live(f.src), 0));
+	yield* this.check_turf(rt.getStep(f, this, 0));
 	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/item/device/multitool/field_debug/proc/check_turf  (code/modules/fields/fields.dm:315)  may sleep
+// fields.dm:315
 rt.def("/obj/item/device/multitool/field_debug/proc/check_turf", function* check_turf(f: Frame, _T: Value) {
-	f.vars = () => [_T];
-	yield* g.callName(f, rt.sv(f, "current"), "HandleMove", []);
+	yield* this.current.HandleMove();
 	return f.dot;
 }, true);

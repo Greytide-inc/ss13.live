@@ -1,5 +1,5 @@
 // Types declared in code/game/gamemodes/wizard that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(1436, "/datum/spellbook_entry/fireball", "/datum/spellbook_entry", {
 	name: "Fireball",

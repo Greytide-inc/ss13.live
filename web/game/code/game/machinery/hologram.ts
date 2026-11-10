@@ -1,7 +1,7 @@
-// From code/game/machinery/hologram.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/machinery/hologram.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, g, add, fmt } = rt;
 
 
 rt.type(10796, "/obj/machinery/holopad", "/obj/machinery", {
@@ -25,318 +25,257 @@ rt.type(10796, "/obj/machinery/holopad", "/obj/machinery", {
 	armor: null,
 }, { global: { force_answer_call: 757, holopads: 758 } });
 
-// /obj/machinery/holopad/proc/<init>  (code/game/machinery/hologram.dm:44)
+// hologram.dm:44
 rt.def("/obj/machinery/holopad/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "masters", rt.list());
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 50, "bullet", 20, "laser", 20, "energy", 20, "bomb", 0, "bio", 0, "rad", 0, "fire", 50, "acid", 0]));
+	parent_proc();
+	this.masters = list();
+	this.armor = rt.alist(f, ["melee", 50, "bullet", 20, "laser", 20, "energy", 20, "bomb", 0, "bio", 0, "rad", 0, "fire", 50, "acid", 0]);
 	return f.dot;
 });
 
-// /obj/machinery/holopad/proc/Initialize  (code/game/machinery/hologram.dm:54)  may sleep
+// hologram.dm:54
 rt.def("/obj/machinery/holopad/proc/Initialize", function* Initialize(f: Frame) {
 	let B: Value = null;
-	f.vars = () => [B];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.callName(f, (B = (yield* g.new_(f, T("/obj/item/weapon/circuitboard/machine/holopad"), [null]))), "apply_default_parts", [live(f.src)]);
-	rt.modGl("holopads", live(f.src), add);
+	f.dot = (yield* parent_proc());
+	yield* (B = (yield* new_(T("/obj/item/weapon/circuitboard/machine/holopad"), null))).apply_default_parts(this);
+	GLOB.holopads += this;
 	return f.dot;
 }, true);
 
-// /obj/machinery/holopad/proc/Destroy  (code/game/machinery/hologram.dm:61)  may sleep
+// hologram.dm:61
 rt.def("/obj/machinery/holopad/proc/Destroy", function* Destroy(f: Frame) {
 	let I: Value = null, HC: Value = null;
-	let $e: any;
-	f.vars = () => [I, HC, $e];
-	if (truthy(rt.sv(f, "outgoing_call"))) {
-		yield* g.callName(f, rt.sv(f, "outgoing_call"), "ConnectionFailure", [live(f.src)]);
+	if (this.outgoing_call) {
+		yield* this.outgoing_call.ConnectionFailure(this);
+	}
+	for (I of each(this.holo_calls)) {
+		yield* (HC = I).ConnectionFailure(this);
 	}
 	I = null;
-	rt.forList(f, 0, rt.sv(f, "holo_calls"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		yield* g.callName(f, (HC = live(I)), "ConnectionFailure", [live(f.src)]);
+	for (I of each(this.masters)) {
+		yield* this.clear_holo(I);
 	}
-	rt.endFor(f, 0);
-	I = null;
-	rt.forList(f, 0, rt.sv(f, "masters"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		yield* g.srcCall(f, "clear_holo", live(I));
-	}
-	rt.endFor(f, 0);
-	(rt.modGl("holopads", live(f.src), subtract));
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	GLOB.holopads -= this;
+	return (yield* parent_proc());
 }, true);
 
-// /obj/machinery/holopad/proc/power_change  (code/game/machinery/hologram.dm:73)  may sleep
+// hologram.dm:73
 rt.def("/obj/machinery/holopad/proc/power_change", function* power_change(f: Frame) {
-	if (truthy((yield* g.srcCall(f, "powered")))) {
+	if (this.powered()) {
 		(rt.modSrcVar(f, "stat", 16777213, rt.bitAnd));
 	} else {
 		(rt.modSrcVar(f, "stat", 2, rt.bitOr));
-		if (!truthy(rt.sv(f, "outgoing_call"))) return f.dot;
-		yield* g.callName(f, rt.sv(f, "outgoing_call"), "ConnectionFailure", [live(f.src)]);
+		if (!this.outgoing_call) return f.dot;
+		yield* this.outgoing_call.ConnectionFailure(this);
 	}
 	return f.dot;
 }, true);
 
-// /obj/machinery/holopad/proc/obj_break  (code/game/machinery/hologram.dm:81)  may sleep
+// hologram.dm:81
 rt.def("/obj/machinery/holopad/proc/obj_break", function* obj_break(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(rt.sv(f, "outgoing_call"))) return f.dot;
-	yield* g.callName(f, rt.sv(f, "outgoing_call"), "ConnectionFailure", [live(f.src)]);
+	f.dot = (yield* parent_proc());
+	if (!this.outgoing_call) return f.dot;
+	yield* this.outgoing_call.ConnectionFailure(this);
 	return f.dot;
 }, true);
 
-// /obj/machinery/holopad/proc/RefreshParts  (code/game/machinery/hologram.dm:87)
+// hologram.dm:87
 rt.def("/obj/machinery/holopad/proc/RefreshParts", function RefreshParts(f: Frame) {
-	let holograph_range: Value = null, B: Value = null;
-	let $e: any;
-	f.vars = () => [holograph_range, B, $e];
-	holograph_range = 4;
-	B = null;
-	rt.forList(f, 0, rt.sv(f, "component_parts"), T("/obj/item/weapon/stock_parts/capacitor"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		B = $e;
-		holograph_range = rt.modify(live(holograph_range), multiply(1, rt.fv(f, "rating", live(B))), add);
+	let B: Value = null;
+	let holograph_range: Value = 4;
+	for (B of each(this.component_parts, T("/obj/item/weapon/stock_parts/capacitor"))) {
+		holograph_range += 1 * B.rating;
 	}
-	rt.endFor(f, 0);
-	rt.setSv(f, "holo_range", live(holograph_range));
+	this.holo_range = holograph_range;
 	return f.dot;
 });
 
-// /obj/machinery/holopad/proc/attackby  (code/game/machinery/hologram.dm:92)  may sleep
-rt.def("/obj/machinery/holopad/proc/attackby", function* attackby(f: Frame) {
-	if (truthy((yield* g.srcCall(f, "default_deconstruction_screwdriver", live(f.args[1]), "holopad_open", "holopad0", live(f.args[0]))))) {
-		return live(f.dot);
+// hologram.dm:92
+rt.def("/obj/machinery/holopad/proc/attackby", function* attackby(f: Frame, P: Value, user: Value, params: Value) {
+	if (this.default_deconstruction_screwdriver(user, "holopad_open", "holopad0", P)) {
+		return f.dot;
 	}
-	if (truthy((yield* g.srcCall(f, "exchange_parts", live(f.args[1]), live(f.args[0]))))) {
-		return live(f.dot);
+	if (yield* this.exchange_parts(user, P)) {
+		return f.dot;
 	}
-	if (truthy((yield* g.srcCall(f, "default_pry_open", live(f.args[0]))))) {
-		return live(f.dot);
+	if (yield* this.default_pry_open(P)) {
+		return f.dot;
 	}
-	if (truthy((yield* g.srcCall(f, "default_unfasten_wrench", live(f.args[1]), live(f.args[0]))))) {
-		return live(f.dot);
+	if (yield* this.default_unfasten_wrench(user, P)) {
+		return f.dot;
 	}
-	if (truthy((yield* g.srcCall(f, "default_deconstruction_crowbar", live(f.args[0]))))) {
-		return live(f.dot);
+	if (yield* this.default_deconstruction_crowbar(P)) {
+		return f.dot;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["P", "user", "params"] });
-
-// /obj/machinery/holopad/proc/AltClick  (code/game/machinery/hologram.dm:109)  may sleep
-rt.def("/obj/machinery/holopad/proc/AltClick", function* AltClick(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (!truthy((rt.istype(live(user), T("/mob/living/silicon/ai")) ? 1 : 0))) return f.dot;
-	yield* g.srcCall(f, "hangup_all_calls");
-	return live(f.dot);
+	return (yield* parent_proc());
 }, true);
 
-// /obj/machinery/holopad/proc/interact  (code/game/machinery/hologram.dm:114)  may sleep
+// hologram.dm:109
+rt.def("/obj/machinery/holopad/proc/AltClick", function* AltClick(f: Frame, user: Value) {
+	if (!rt.istype(user, T("/mob/living/silicon/ai"))) return f.dot;
+	yield* this.hangup_all_calls();
+	return f.dot;
+}, true);
+
+// hologram.dm:114
 rt.def("/obj/machinery/holopad/proc/interact", function* interact(f: Frame, user: Value) {
 	let dat: Value = null, one_answered_call: Value = null, one_unanswered_call: Value = null, I: Value = null, HC: Value = null, popup: Value = null;
-	let $e: any;
-	f.vars = () => [user, dat, one_answered_call, one_unanswered_call, I, HC, popup, $e];
-	if (!truthy((rt.istype(live(user), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		return live(f.dot);
+	if (!rt.istype(user, T("/mob/living/carbon/human"))) {
+		return f.dot;
 	}
-	if (((truthy(rt.sv(f, "outgoing_call")) || truthy((yield* g.callName(f, live(user), "incapacitated", [])))) || !truthy((yield* g.srcCall(f, "is_operational"))))) {
-		return live(f.dot);
+	if (this.outgoing_call || user.incapacitated() || !this.is_operational()) {
+		return f.dot;
 	}
-	yield* g.callName(f, live(user), "set_machine", [live(f.src)]);
-	dat = null;
-	if (truthy(rt.sv(f, "temp"))) {
-		dat = rt.sv(f, "temp");
+	yield* user.set_machine(this);
+	if (this.temp) {
+		dat = this.temp;
 	} else {
-		dat = fmt("<a href='?src=＃;AIrequest=1'>Request an AI's presence.</a><br>", [live(f.src)]);
-		dat = rt.modify(live(dat), fmt("<a href='?src=＃;Holocall=1'>Call another holopad.</a><br>", [live(f.src)]), add);
-		if (truthy(rt.length(rt.sv(f, "holo_calls")))) {
-			dat = rt.modify(live(dat), "=====================================================<br>", add);
+		dat = fmt("<a href='?src=＃;AIrequest=1'>Request an AI's presence.</a><br>", [this]);
+		dat += fmt("<a href='?src=＃;Holocall=1'>Call another holopad.</a><br>", [this]);
+		if (rt.length(this.holo_calls)) {
+			dat += "=====================================================<br>";
 		}
 		one_answered_call = 0;
 		one_unanswered_call = 0;
-		I = null;
-		rt.forList(f, 0, rt.sv(f, "holo_calls"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			I = $e;
-			if (!isEqual(rt.gv(f, "connected_holopad", (HC = live(I))), live(f.src))) {
-				dat = rt.modify(live(dat), fmt("<a href='?src=＃;connectcall=＃'>Answer call from ＀.</a><br>", [live(f.src), live(HC), (yield* g.call(f, P("/proc/get_area"), null, [rt.fv(f, "calling_holopad", live(HC))]))]), add);
+		for (I of each(this.holo_calls)) {
+			if ((HC = I).connected_holopad != this) {
+				dat += fmt("<a href='?src=＃;connectcall=＃'>Answer call from ＀.</a><br>", [this, HC, get_area(HC.calling_holopad)]);
 				one_unanswered_call = 1;
 			} else {
 				one_answered_call = 1;
 			}
 		}
-		rt.endFor(f, 0);
-		if ((truthy(live(one_answered_call)) && truthy(live(one_unanswered_call)))) {
-			dat = rt.modify(live(dat), "=====================================================<br>", add);
+		if (one_answered_call && one_unanswered_call) {
+			dat += "=====================================================<br>";
 		}
 		I = null;
-		rt.forList(f, 0, rt.sv(f, "holo_calls"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			I = $e;
-			if (isEqual(rt.gv(f, "connected_holopad", (HC = live(I))), live(f.src))) {
-				dat = rt.modify(live(dat), fmt("<a href='?src=＃;disconnectcall=＃'>Disconnect call from ＀.</a><br>", [live(f.src), live(HC), rt.fv(f, "user", live(HC))]), add);
+		for (I of each(this.holo_calls)) {
+			if ((HC = I).connected_holopad == this) {
+				dat += fmt("<a href='?src=＃;disconnectcall=＃'>Disconnect call from ＀.</a><br>", [this, HC, HC.user]);
 			}
 		}
-		rt.endFor(f, 0);
 	}
-	yield* g.callName(f, (popup = (yield* g.new_(f, T("/datum/browser"), [live(user), "holopad", rt.sv(f, "name"), 300, 130]))), "set_content", [live(dat)]);
-	yield* g.callName(f, live(popup), "set_title_image", [(yield* g.callName(f, live(user), "browse_rsc_icon", [rt.fv(f, "icon", live(f.src)), rt.fv(f, "icon_state", live(f.src))]))]);
-	yield* g.callName(f, live(popup), "open", []);
+	(popup = (yield* new_(T("/datum/browser"), user, "holopad", this.name, 300, 130))).set_content(dat);
+	popup.set_title_image(user.browse_rsc_icon(this.icon, this.icon_state));
+	yield* popup.open();
 	return f.dot;
 }, true);
 
-// /obj/machinery/holopad/proc/hangup_all_calls  (code/game/machinery/hologram.dm:157)  may sleep
+// hologram.dm:157
 rt.def("/obj/machinery/holopad/proc/hangup_all_calls", function* hangup_all_calls(f: Frame) {
 	let I: Value = null, HC: Value = null;
-	let $e: any;
-	f.vars = () => [I, HC, $e];
-	I = null;
-	rt.forList(f, 0, rt.sv(f, "holo_calls"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		yield* g.callName(f, (HC = live(I)), "Disconnect", [live(f.src)]);
+	for (I of each(this.holo_calls)) {
+		yield* (HC = I).Disconnect(this);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /obj/machinery/holopad/proc/Topic  (code/game/machinery/hologram.dm:162)  may sleep
-rt.def("/obj/machinery/holopad/proc/Topic", function* Topic(f: Frame) {
+// hologram.dm:162
+rt.def("/obj/machinery/holopad/proc/Topic", function* Topic(f: Frame, href: Value, href_list: Value) {
 	let area: Value = null, AI: Value = null, callnames: Value = null, I: Value = null, A: Value = null, result: Value = null, call_to_connect: Value = null, call_to_disconnect: Value = null;
-	let $e: any;
-	f.vars = () => [area, AI, callnames, I, A, result, call_to_connect, call_to_disconnect, $e];
-	if ((truthy((yield* g.callSuper(f, [], rt.Args.Same))) || truthy((rt.istype(live(f.usr), T("/mob/living/silicon/ai")) ? 1 : 0)))) {
-		return live(f.dot);
+	if ((yield* parent_proc()) || rt.istype(f.usr, T("/mob/living/silicon/ai"))) {
+		return f.dot;
 	}
-	yield* g.srcCall(f, "add_fingerprint", live(f.usr));
-	if (!truthy((yield* g.srcCall(f, "is_operational")))) {
-		return live(f.dot);
+	yield* this.add_fingerprint(f.usr);
+	if (!this.is_operational()) {
+		return f.dot;
 	}
-	if (truthy(rt.at(live(f.args[1]), "AIrequest"))) {
-		if (rt.lt(add(rt.sv(f, "last_request"), 200), rt.worldTime(f))) {
-			rt.setSv(f, "last_request", rt.worldTime(f));
-			rt.setSv(f, "temp", "You requested an AI's presence.<BR>");
-			rt.modSrcVar(f, "temp", fmt("<A href='?src=＃;mainmenu=1'>Main Menu</A>", [live(f.src)]), add);
-			area = (yield* g.call(f, P("/proc/get_area"), null, [live(f.src)]));
-			AI = null;
-			rt.forList(f, 0, rt.gl("silicon_mobs"), T("/mob/living/silicon/ai"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				AI = $e;
-				if (!truthy(rt.fv(f, "client", live(AI)))) {
+	if (rt.at(href_list, "AIrequest")) {
+		if (this.last_request + 200 < rt.worldTime(f)) {
+			this.last_request = rt.worldTime(f);
+			this.temp = "You requested an AI's presence.<BR>";
+			this.temp += fmt("<A href='?src=＃;mainmenu=1'>Main Menu</A>", [this]);
+			area = get_area(this);
+			for (AI of each(GLOB.silicon_mobs, T("/mob/living/silicon/ai"))) {
+				if (!AI.client) {
 					continue;
 				}
-				yield* g.call(f, P("/proc/to_chat"), null, [live(AI), fmt("<span class='info'>Your presence is requested at <a href='?src=＃;jumptoholopad=＃'>％！</a>.</span>", [live(AI), live(f.src), live(area)])]);
+				to_chat(AI, fmt("<span class='info'>Your presence is requested at <a href='?src=＃;jumptoholopad=＃'>％！</a>.</span>", [AI, this, area]));
 			}
-			rt.endFor(f, 0);
 		} else {
-			rt.setSv(f, "temp", "A request for AI presence was already sent recently.<BR>");
-			rt.modSrcVar(f, "temp", fmt("<A href='?src=＃;mainmenu=1'>Main Menu</A>", [live(f.src)]), add);
+			this.temp = "A request for AI presence was already sent recently.<BR>";
+			this.temp += fmt("<A href='?src=＃;mainmenu=1'>Main Menu</A>", [this]);
 		}
-	} else {
-		if (truthy(rt.at(live(f.args[1]), "Holocall"))) {
-			if (truthy(rt.sv(f, "outgoing_call"))) {
-				return live(f.dot);
-			}
-			rt.setSv(f, "temp", "You must stand on the holopad to make a call!<br>");
-			rt.modSrcVar(f, "temp", fmt("<A href='?src=＃;mainmenu=1'>Main Menu</A>", [live(f.src)]), add);
-			if (isEqual(rt.fv(f, "loc", live(f.usr)), rt.sv(f, "loc"))) {
-				callnames = rt.list();
-				I = null;
-				rt.forList(f, 0, rt.gl("holopads"));
-				while (($e = rt.next(f, 0)) !== undefined) {
-					I = $e;
-					if (truthy((A = (yield* g.call(f, P("/proc/get_area"), null, [live(I)]))))) {
-						if (!truthy(rt.index(live(callnames), live(A)))) {
-							rt.setAt(live(callnames), live(A), rt.list());
-						}
-						rt.modAt(live(callnames), live(A), live(I), add);
+	} else if (rt.at(href_list, "Holocall")) {
+		if (this.outgoing_call) {
+			return f.dot;
+		}
+		this.temp = "You must stand on the holopad to make a call!<br>";
+		this.temp += fmt("<A href='?src=＃;mainmenu=1'>Main Menu</A>", [this]);
+		if (f.usr.loc == this.loc) {
+			callnames = list();
+			for (I of each(GLOB.holopads)) {
+				if (A = get_area(I)) {
+					if (!rt.index(callnames, A)) {
+						rt.setAt(callnames, A, list());
 					}
-				}
-				rt.endFor(f, 0);
-				(callnames = rt.modify(live(callnames), (yield* g.call(f, P("/proc/get_area"), null, [live(f.src)])), subtract));
-				result = (yield* g.op(f, "Prompt", [1], [null, "Holocall", "Choose an area to call", live(f.usr), live(callnames)]));
-				if ((((!truthy(live(f.usr)) || truthy(rt.fv(f, "gc_destroyed", live(f.usr)))) || !truthy(live(result))) || truthy(rt.sv(f, "outgoing_call")))) {
-					return live(f.dot);
-				}
-				if (isEqual(rt.fv(f, "loc", live(f.usr)), rt.sv(f, "loc"))) {
-					rt.setSv(f, "temp", "Dialing...<br>");
-					rt.modSrcVar(f, "temp", fmt("<A href='?src=＃;mainmenu=1'>Main Menu</A>", [live(f.src)]), add);
-					yield* g.new_(f, T("/datum/holocall"), [live(f.usr), live(f.src), rt.index(live(callnames), live(result))]);
+					rt.modAt(callnames, A, I, add);
 				}
 			}
-		} else {
-			if (truthy(rt.at(live(f.args[1]), "connectcall"))) {
-				if (!(!truthy((call_to_connect = rt.locateIn(f, rt.at(live(f.args[1]), "connectcall"), rt.world()))) || truthy(rt.fv(f, "gc_destroyed", live(call_to_connect))))) {
-					yield* g.callName(f, live(call_to_connect), "Answer", [live(f.src)]);
-				}
-				rt.setSv(f, "temp", "");
-			} else {
-				if (truthy(rt.at(live(f.args[1]), "disconnectcall"))) {
-					if (!(!truthy((call_to_disconnect = rt.locateIn(f, rt.at(live(f.args[1]), "disconnectcall"), rt.world()))) || truthy(rt.fv(f, "gc_destroyed", live(call_to_disconnect))))) {
-						yield* g.callName(f, live(call_to_disconnect), "Disconnect", [live(f.src)]);
-					}
-					rt.setSv(f, "temp", "");
-				} else {
-					if (truthy(rt.at(live(f.args[1]), "mainmenu"))) {
-						rt.setSv(f, "temp", "");
-						if (truthy(rt.sv(f, "outgoing_call"))) {
-							yield* g.callName(f, rt.sv(f, "outgoing_call"), "Disconnect", []);
-						}
-					}
-				}
+			callnames -= get_area(this);
+			result = (yield* g.op(f, "Prompt", [1], [null, "Holocall", "Choose an area to call", f.usr, callnames]));
+			if (!f.usr || f.usr.gc_destroyed || !result || this.outgoing_call) {
+				return f.dot;
 			}
+			if (f.usr.loc == this.loc) {
+				this.temp = "Dialing...<br>";
+				this.temp += fmt("<A href='?src=＃;mainmenu=1'>Main Menu</A>", [this]);
+				yield* new_(T("/datum/holocall"), f.usr, this, rt.index(callnames, result));
+			}
+		}
+	} else if (rt.at(href_list, "connectcall")) {
+		if (!(!(call_to_connect = rt.locateIn(f, rt.at(href_list, "connectcall"), rt.world())) || call_to_connect.gc_destroyed)) {
+			yield* call_to_connect.Answer(this);
+		}
+		this.temp = "";
+	} else if (rt.at(href_list, "disconnectcall")) {
+		if (!(!(call_to_disconnect = rt.locateIn(f, rt.at(href_list, "disconnectcall"), rt.world())) || call_to_disconnect.gc_destroyed)) {
+			yield* call_to_disconnect.Disconnect(this);
+		}
+		this.temp = "";
+	} else if (rt.at(href_list, "mainmenu")) {
+		this.temp = "";
+		if (this.outgoing_call) {
+			yield* this.outgoing_call.Disconnect();
 		}
 	}
-	yield* g.srcCall(f, "updateDialog");
+	yield* this.updateDialog();
 	return f.dot;
-}, true, { args: ["href", "href_list"] });
+}, true);
 
-// /obj/machinery/holopad/proc/attack_ai  (code/game/machinery/hologram.dm:225)  may sleep
+// hologram.dm:225
 rt.def("/obj/machinery/holopad/proc/attack_ai", function* attack_ai(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (!truthy((rt.istype(live(user), T("/mob/living/silicon/ai")) ? 1 : 0))) {
-		return live(f.dot);
+	if (!rt.istype(user, T("/mob/living/silicon/ai"))) {
+		return f.dot;
 	}
-	if (!isEqual(rt.gv(f, "loc", rt.fv(f, "eyeobj", live(user))), rt.fv(f, "loc", live(f.src)))) {
-		yield* g.callName(f, rt.fv(f, "eyeobj", live(user)), "setLoc", [rt.getStep(f, live(f.src), 0)]);
+	if (user.eyeobj.loc != this.loc) {
+		yield* user.eyeobj.setLoc(rt.getStep(f, this, 0));
+	} else if (!rt.index(this.masters, user)) {
+		yield* this.activate_holo(user);
 	} else {
-		if (!truthy(rt.index(rt.sv(f, "masters"), live(user)))) {
-			yield* g.srcCall(f, "activate_holo", live(user));
-		} else {
-			yield* g.srcCall(f, "clear_holo", live(user));
-		}
+		yield* this.clear_holo(user);
 	}
 	return f.dot;
 }, true);
 
-// /obj/machinery/holopad/proc/process  (code/game/machinery/hologram.dm:238)  may sleep
+// hologram.dm:238
 rt.def("/obj/machinery/holopad/proc/process", function* process(f: Frame) {
 	let I: Value = null, master: Value = null, AI: Value = null, pad_close: Value = null, h: Value = null, HC: Value = null;
-	let $e: any;
-	f.vars = () => [I, master, AI, pad_close, h, HC, $e];
-	I = null;
-	rt.forList(f, 0, rt.sv(f, "masters"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		master = live(I);
-		if (!truthy((rt.istype((AI = live(master)), T("/mob/living/silicon/ai")) ? 1 : 0))) {
+	for (I of each(this.masters)) {
+		master = I;
+		if (!rt.istype((AI = master), T("/mob/living/silicon/ai"))) {
 			AI = null;
 		}
-		if ((((!(!truthy(live(master)) || truthy(rt.fv(f, "gc_destroyed", live(master)))) && !truthy((yield* g.callName(f, live(master), "incapacitated", [])))) && truthy(rt.fv(f, "client", live(master)))) && (!truthy(live(AI)) || truthy(rt.fv(f, "eyeobj", live(AI)))))) {
-			if (truthy((yield* g.srcCall(f, "is_operational")))) {
-				if (truthy(live(AI))) {
-					if (rt.le((yield* g.call(f, P("/proc/get_dist"), null, [rt.fv(f, "eyeobj", live(AI)), live(f.src)])), rt.sv(f, "holo_range"))) {
+		if (!(!master || master.gc_destroyed) && !master.incapacitated() && master.client && (!AI || AI.eyeobj)) {
+			if (this.is_operational()) {
+				if (AI) {
+					if (get_dist(AI.eyeobj, this) <= this.holo_range) {
 						continue;
 					}
-					if (rt.le((yield* g.call(f, P("/proc/get_dist"), null, [(pad_close = (yield* g.call(f, P("/proc/get_closest_atom"), null, [T("/obj/machinery/holopad"), rt.gl("holopads"), rt.fv(f, "eyeobj", live(AI))]))), rt.fv(f, "eyeobj", live(AI))])), rt.sv(f, "holo_range"))) {
-						h = rt.index(rt.sv(f, "masters"), live(master));
-						yield* g.srcCall(f, "unset_holo", live(master));
-						yield* g.callName(f, live(pad_close), "set_holo", [live(master), live(h)]);
+					if (get_dist((pad_close = get_closest_atom(T("/obj/machinery/holopad"), GLOB.holopads, AI.eyeobj)), AI.eyeobj) <= this.holo_range) {
+						h = rt.index(this.masters, master);
+						this.unset_holo(master);
+						pad_close.set_holo(master, h);
 						continue;
 					}
 				} else {
@@ -344,164 +283,138 @@ rt.def("/obj/machinery/holopad/proc/process", function* process(f: Frame) {
 				}
 			}
 		}
-		yield* g.srcCall(f, "clear_holo", live(master));
+		yield* this.clear_holo(master);
 	}
-	rt.endFor(f, 0);
-	if (truthy(rt.sv(f, "outgoing_call"))) {
-		yield* g.callName(f, rt.sv(f, "outgoing_call"), "Check", []);
+	if (this.outgoing_call) {
+		yield* this.outgoing_call.Check();
 	}
 	I = null;
-	rt.forList(f, 0, rt.sv(f, "holo_calls"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		if (!isEqual(rt.gv(f, "connected_holopad", (HC = live(I))), live(f.src))) {
-			if ((truthy(rt.gl("force_answer_call")) && rt.gt(rt.worldTime(f), add(rt.fv(f, "call_start_time", live(HC)), 100)))) {
-				yield* g.callName(f, live(HC), "Answer", [live(f.src)]);
+	for (I of each(this.holo_calls)) {
+		if ((HC = I).connected_holopad != this) {
+			if (GLOB.force_answer_call && rt.worldTime(f) > HC.call_start_time + 100) {
+				yield* HC.Answer(this);
 				break;
 			}
-			if (truthy(rt.sv(f, "outgoing_call"))) {
-				yield* g.callName(f, live(HC), "Disconnect", [live(f.src)]);
+			if (this.outgoing_call) {
+				yield* HC.Disconnect(this);
 			} else {
-				yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/machines/twobeep.ogg"), 100]);
+				playsound(this, rt.rsc("sound/machines/twobeep.ogg"), 100);
 			}
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/machinery/holopad/proc/activate_holo  (code/game/machinery/hologram.dm:275)  may sleep
+// hologram.dm:275
 rt.def("/obj/machinery/holopad/proc/activate_holo", function* activate_holo(f: Frame, user: Value) {
 	let AI: Value = null, Hologram: Value = null;
-	f.vars = () => [user, AI, Hologram];
-	if (!truthy((rt.istype((AI = live(user)), T("/mob/living/silicon/ai")) ? 1 : 0))) {
+	if (!rt.istype((AI = user), T("/mob/living/silicon/ai"))) {
 		AI = null;
 	}
-	if ((truthy((yield* g.srcCall(f, "is_operational"))) && (!truthy(live(AI)) || isEqual(rt.gv(f, "loc", rt.fv(f, "eyeobj", live(AI))), rt.sv(f, "loc"))))) {
-		if ((truthy(live(AI)) && truthy((rt.istype(rt.fv(f, "current", live(AI)), T("/obj/machinery/holopad")) ? 1 : 0)))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='danger'>ERROR:</span>  Image feed in progress."]);
-			return live(f.dot);
+	if (this.is_operational() && (!AI || AI.eyeobj.loc == this.loc)) {
+		if (AI && rt.istype(AI.current, T("/obj/machinery/holopad"))) {
+			to_chat(user, "<span class='danger'>ERROR:</span>  Image feed in progress.");
+			return f.dot;
 		}
-		Hologram = (yield* g.new_(f, T("/obj/effect/overlay/holo_pad_hologram"), [rt.sv(f, "loc")]));
-		if (truthy(live(AI))) {
-			rt.setFv(f, "icon", live(Hologram), rt.fv(f, "holo_icon", live(AI)));
+		Hologram = (yield* new_(T("/obj/effect/overlay/holo_pad_hologram"), this.loc));
+		if (AI) {
+			Hologram.icon = AI.holo_icon;
 		} else {
-			rt.setFv(f, "icon", live(Hologram), rt.fv(f, "icon", live(user)));
-			rt.setFv(f, "icon_state", live(Hologram), rt.fv(f, "icon_state", live(user)));
-			yield* g.callName(f, live(Hologram), "copy_overlays", [live(user), 1]);
-			rt.setFv(f, "alpha", live(Hologram), 100);
-			yield* g.callName(f, live(Hologram), "add_atom_colour", ["#77abff", 4]);
-			rt.setFv(f, "Impersonation", live(Hologram), live(user));
+			Hologram.icon = user.icon;
+			Hologram.icon_state = user.icon_state;
+			Hologram.copy_overlays(user, 1);
+			Hologram.alpha = 100;
+			Hologram.add_atom_colour("#77abff", FIXED_COLOUR_PRIORITY);
+			Hologram.Impersonation = user;
 		}
-		yield* g.callName(f, live(Hologram), "copy_known_languages_from", [null, live(user), "replace", 1], rt.Args.Named);
-		rt.setFv(f, "mouse_opacity", live(Hologram), 0);
-		rt.setFv(f, "layer", live(Hologram), 5);
-		rt.setFv(f, "anchored", live(Hologram), 1);
-		rt.setFv(f, "name", live(Hologram), fmt("＀ (Hologram)", [rt.fv(f, "name", live(user))]));
-		yield* g.callName(f, live(Hologram), "set_light", [2]);
-		yield* g.srcCall(f, "set_holo", live(user), live(Hologram));
-		yield* g.srcCall(f, "visible_message", fmt("<span class='notice'>A holographic image of ＀ flickers to life before your eyes!</span>", [live(user)]));
-		return live(Hologram);
+		yield* Hologram.copy_known_languages_from(user, { replace: 1 });
+		Hologram.mouse_opacity = 0;
+		Hologram.layer = 5;
+		Hologram.anchored = 1;
+		Hologram.name = `${user.name} (Hologram)`;
+		Hologram.set_light(2);
+		this.set_holo(user, Hologram);
+		this.visible_message(`<span class='notice'>A holographic image of ${user} flickers to life before your eyes!</span>`);
+		return Hologram;
 	} else {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='danger'>ERROR:</span> Unable to project hologram."]);
+		to_chat(user, "<span class='danger'>ERROR:</span> Unable to project hologram.");
 	}
 	return f.dot;
 }, true);
 
-// /obj/machinery/holopad/proc/Hear  (code/game/machinery/hologram.dm:313)  may sleep
+// hologram.dm:313
 rt.def("/obj/machinery/holopad/proc/Hear", function* Hear(f: Frame, message: Value, speaker: Value, message_language: Value, raw_message: Value, radio_freq: Value, spans: Value, message_mode: Value) {
 	let master: Value = null, I: Value = null, HC: Value = null;
-	let $e: any;
-	f.vars = () => [message, speaker, message_language, raw_message, radio_freq, spans, message_mode, master, I, HC, $e];
-	if (((truthy(live(speaker)) && truthy(rt.len(f, rt.sv(f, "masters")))) && !truthy(live(radio_freq)))) {
-		master = null;
-		rt.forList(f, 0, rt.sv(f, "masters"), T("/mob/living/silicon/ai"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			master = $e;
-			if ((truthy(rt.index(rt.sv(f, "masters"), live(master))) && !isEqual(live(speaker), live(master)))) {
-				yield* g.callName(f, live(master), "relay_speech", [live(message), live(speaker), live(message_language), live(raw_message), live(radio_freq), live(spans), live(message_mode)]);
+	if (speaker && rt.len(f, this.masters) && !radio_freq) {
+		for (master of each(this.masters, T("/mob/living/silicon/ai"))) {
+			if (rt.index(this.masters, master) && speaker != master) {
+				yield* master.relay_speech(message, speaker, message_language, raw_message, radio_freq, spans, message_mode);
 			}
 		}
-		rt.endFor(f, 0);
 	}
-	I = null;
-	rt.forList(f, 0, rt.sv(f, "holo_calls"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		if ((isEqual(rt.gv(f, "connected_holopad", (HC = live(I))), live(f.src)) && !isEqual(live(speaker), rt.fv(f, "hologram", live(HC))))) {
-			yield* g.callName(f, rt.fv(f, "user", live(HC)), "Hear", [live(message), live(speaker), live(message_language), live(raw_message), live(radio_freq), live(spans), live(message_mode)]);
+	for (I of each(this.holo_calls)) {
+		if ((HC = I).connected_holopad == this && speaker != HC.hologram) {
+			yield* HC.user.Hear(message, speaker, message_language, raw_message, radio_freq, spans, message_mode);
 		}
 	}
-	rt.endFor(f, 0);
-	if (!(truthy(rt.sv(f, "outgoing_call")) && isEqual(live(speaker), rt.fv(f, "user", rt.sv(f, "outgoing_call"))))) return f.dot;
-	yield* g.callName(f, rt.fv(f, "hologram", rt.sv(f, "outgoing_call")), "say", [live(raw_message)]);
+	if (!(this.outgoing_call && speaker == this.outgoing_call.user)) return f.dot;
+	yield* this.outgoing_call.hologram.say(raw_message);
 	return f.dot;
 }, true);
 
-// /obj/machinery/holopad/proc/SetLightsAndPower  (code/game/machinery/hologram.dm:327)
+// hologram.dm:327
 rt.def("/obj/machinery/holopad/proc/SetLightsAndPower", function SetLightsAndPower(f: Frame) {
 	let total_users: Value = null;
-	let $0: any;
-	f.vars = () => [total_users, $0];
-	if (rt.gt((total_users = add(rt.len(f, rt.sv(f, "masters")), rt.length(rt.sv(f, "holo_calls")))), 0)) {
-		$0 = 2;
+	this.use_power = (total_users = rt.len(f, this.masters) + rt.length(this.holo_calls)) > 0 ? 2 : 1;
+	this.active_power_usage = 1 + 2 * total_users;
+	if (total_users) {
+		this.set_light(2);
+		this.icon_state = "holopad1";
 	} else {
-		$0 = 1;
-	}
-	rt.setSv(f, "use_power", $0);
-	rt.setSv(f, "active_power_usage", add(1, multiply(2, live(total_users))));
-	if (truthy(live(total_users))) {
-		rt.callSrc(f, "set_light", [2]);
-		rt.setSv(f, "icon_state", "holopad1");
-	} else {
-		rt.callSrc(f, "set_light", [0]);
-		rt.setSv(f, "icon_state", "holopad0");
+		this.set_light(0);
+		this.icon_state = "holopad0";
 	}
 	return f.dot;
 });
 
-// /obj/machinery/holopad/proc/set_holo  (code/game/machinery/hologram.dm:339)
+// hologram.dm:339
 rt.def("/obj/machinery/holopad/proc/set_holo", function set_holo(f: Frame, user: Value, h: Value) {
 	let AI: Value = null;
-	f.vars = () => [AI];
-	rt.setAt(rt.sv(f, "masters"), live(user), live(h));
-	if (truthy((rt.istype((AI = live(user)), T("/mob/living/silicon/ai")) ? 1 : 0))) {
-		rt.setFv(f, "current", live(AI), live(f.src));
+	rt.setAt(this.masters, user, h);
+	if (rt.istype((AI = user), T("/mob/living/silicon/ai"))) {
+		AI.current = this;
 	}
-	rt.callSrc(f, "SetLightsAndPower", []);
+	this.SetLightsAndPower();
 	return 1;
 });
 
-// /obj/machinery/holopad/proc/clear_holo  (code/game/machinery/hologram.dm:346)  may sleep
+// hologram.dm:346
 rt.def("/obj/machinery/holopad/proc/clear_holo", function* clear_holo(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.call(f, P("/proc/qdel"), null, [rt.index(rt.sv(f, "masters"), live(user))]);
-	yield* g.srcCall(f, "unset_holo", live(user));
+	yield* qdel(rt.index(this.masters, user));
+	this.unset_holo(user);
 	return 1;
 }, true);
 
-// /obj/machinery/holopad/proc/unset_holo  (code/game/machinery/hologram.dm:351)
+// hologram.dm:351
 rt.def("/obj/machinery/holopad/proc/unset_holo", function unset_holo(f: Frame, user: Value) {
 	let AI: Value = null;
-	f.vars = () => [AI];
-	if ((truthy((rt.istype((AI = live(user)), T("/mob/living/silicon/ai")) ? 1 : 0)) && isEqual(rt.fv(f, "current", live(AI)), live(f.src)))) {
-		rt.setFv(f, "current", live(AI), null);
+	if (rt.istype((AI = user), T("/mob/living/silicon/ai")) && AI.current == this) {
+		AI.current = null;
 	}
-	(rt.modSrcVar(f, "masters", live(user), subtract));
-	rt.callSrc(f, "SetLightsAndPower", []);
+	this.masters -= user;
+	this.SetLightsAndPower();
 	return 1;
 });
 
-// /obj/machinery/holopad/proc/move_hologram  (code/game/machinery/hologram.dm:359)  may sleep
+// hologram.dm:359
 rt.def("/obj/machinery/holopad/proc/move_hologram", function* move_hologram(f: Frame, user: Value, new_turf: Value) {
 	let H: Value = null, holo_area: Value = null, eye_area: Value = null;
-	f.vars = () => [user, new_turf, H, holo_area, eye_area];
-	if (truthy(rt.index(rt.sv(f, "masters"), live(user)))) {
-		yield* g.call(f, P("/proc/step_to"), null, [(H = rt.index(rt.sv(f, "masters"), live(user))), live(new_turf)]);
-		rt.setFv(f, "loc", live(H), live(new_turf));
-		holo_area = (yield* g.call(f, P("/proc/get_area"), null, [live(f.src)]));
-		if (!truthy((rt.isIn(f, (eye_area = rt.fv(f, "loc", live(new_turf))), rt.fv(f, "related", live(holo_area))) ? 1 : 0))) {
-			yield* g.srcCall(f, "clear_holo", live(user));
+	if (rt.index(this.masters, user)) {
+		yield* step_to((H = rt.index(this.masters, user)), new_turf);
+		H.loc = new_turf;
+		holo_area = get_area(this);
+		if (!rt.isIn(f, (eye_area = new_turf.loc), holo_area.related)) {
+			yield* this.clear_holo(user);
 		}
 	}
 	return 1;
@@ -512,22 +425,22 @@ rt.type(11775, "/obj/effect/overlay/holo_pad_hologram", "/obj/effect/overlay", {
 	HC: null,
 });
 
-// /obj/effect/overlay/holo_pad_hologram/proc/Destroy  (code/game/machinery/hologram.dm:377)  may sleep
+// hologram.dm:377
 rt.def("/obj/effect/overlay/holo_pad_hologram/proc/Destroy", function* Destroy(f: Frame) {
-	rt.setSv(f, "Impersonation", null);
-	if (truthy(rt.sv(f, "HC"))) {
-		yield* g.callName(f, rt.sv(f, "HC"), "Disconnect", [rt.fv(f, "calling_holopad", rt.sv(f, "HC"))]);
+	this.Impersonation = null;
+	if (this.HC) {
+		yield* this.HC.Disconnect(this.HC.calling_holopad);
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);
 
-// /obj/effect/overlay/holo_pad_hologram/proc/examine  (code/game/machinery/hologram.dm:385)  may sleep
-rt.def("/obj/effect/overlay/holo_pad_hologram/proc/examine", function* examine(f: Frame) {
-	if (truthy(rt.sv(f, "Impersonation"))) {
-		return (yield* g.callName(f, rt.sv(f, "Impersonation"), "examine", [live(f.args[0])]));
+// hologram.dm:385
+rt.def("/obj/effect/overlay/holo_pad_hologram/proc/examine", function* examine(f: Frame, user: Value) {
+	if (this.Impersonation) {
+		return (yield* this.Impersonation.examine(user));
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["user"] });
+	return (yield* parent_proc());
+}, true);
 
 rt.type(6722, "/obj/item/weapon/circuitboard/machine/holopad", "/obj/item/weapon/circuitboard/machine", {
 	req_components: null,
@@ -536,11 +449,9 @@ rt.type(6722, "/obj/item/weapon/circuitboard/machine/holopad", "/obj/item/weapon
 	origin_tech: "programming=1",
 });
 
-// /obj/item/weapon/circuitboard/machine/holopad/proc/<init>  (code/game/machinery/hologram.dm:392)
+// hologram.dm:392
 rt.def("/obj/item/weapon/circuitboard/machine/holopad/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_components", rt.alist(f, [T("/obj/item/weapon/stock_parts/capacitor"), 1]));
+	parent_proc();
+	this.req_components = rt.alist(f, [T("/obj/item/weapon/stock_parts/capacitor"), 1]);
 	return f.dot;
 });

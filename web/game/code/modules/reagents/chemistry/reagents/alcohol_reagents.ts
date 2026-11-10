@@ -1,7 +1,7 @@
-// From code/modules/reagents/chemistry/reagents/alcohol_reagents.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/reagents/chemistry/reagents/alcohol_reagents.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(3359, "/datum/reagent/consumable/ethanol", "/datum/reagent/consumable", {
@@ -14,63 +14,55 @@ rt.type(3359, "/datum/reagent/consumable/ethanol", "/datum/reagent/consumable", 
 	nutriment_factor: 0,
 });
 
-// /datum/reagent/consumable/ethanol/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/alcohol_reagents.dm:37)  may sleep
-rt.def("/datum/reagent/consumable/ethanol/proc/on_mob_life", function* on_mob_life(f: Frame) {
+// alcohol_reagents.dm:37
+rt.def("/datum/reagent/consumable/ethanol/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
 	let H: Value = null;
-	f.vars = () => [H];
-	if (truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		if (rt.lt(rt.gv(f, "drunkenness", (H = live(f.args[0]))), multiply(multiply(rt.sv(f, "volume"), rt.sv(f, "boozepwr")), 0.05000000074505806))) {
-			rt.setFv(f, "drunkenness", live(H), (yield* g.call(f, P("/proc/max"), null, [add(rt.fv(f, "drunkenness", live(H)), multiply(multiply(rt.op(f, "Sqrt", [], [rt.sv(f, "volume")]), rt.sv(f, "boozepwr")), 0.004999999888241291)), 0])));
+	if (rt.istype(M, T("/mob/living/carbon/human"))) {
+		if ((H = M).drunkenness < this.volume * this.boozepwr * ALCOHOL_THRESHOLD_MODIFIER) {
+			H.drunkenness = max(H.drunkenness + rt.op(f, "Sqrt", [], [this.volume]) * this.boozepwr * ALCOHOL_RATE, 0);
 		}
 	}
-	return ((yield* g.callSuper(f, [], rt.Args.Same)) || live(f.dot));
-}, true, { args: ["M"] });
+	return ((yield* parent_proc()) || f.dot);
+}, true);
 
-// /datum/reagent/consumable/ethanol/proc/reaction_obj  (code/modules/reagents/chemistry/reagents/alcohol_reagents.dm:44)
+// alcohol_reagents.dm:44
 rt.def("/datum/reagent/consumable/ethanol/proc/reaction_obj", function reaction_obj(f: Frame, O: Value, reac_volume: Value) {
 	let paperaffected: Value = null, affectedbook: Value = null;
-	f.vars = () => [paperaffected, affectedbook];
-	if (truthy((rt.istype(live(O), T("/obj/item/weapon/paper")) ? 1 : 0))) {
-		rt.callName(f, (paperaffected = live(O)), "clearpaper", []);
-		rt.call(f, P("/proc/to_chat"), null, [live(f.usr), fmt("<span class='notice'>＀'s ink washes away.</span>", [live(paperaffected)])]);
+	if (rt.istype(O, T("/obj/item/weapon/paper"))) {
+		(paperaffected = O).clearpaper();
+		to_chat(f.usr, `<span class='notice'>${paperaffected}'s ink washes away.</span>`);
 	}
-	if (truthy((rt.istype(live(O), T("/obj/item/weapon/book")) ? 1 : 0))) {
-		if (rt.ge(live(reac_volume), 5)) {
-			rt.setFv(f, "dat", (affectedbook = live(O)), null);
-			rt.call(f, P("/proc/to_chat"), null, [live(f.usr), fmt("<span class='notice'>Through thorough application, you wash away ＀'s writing.</span>", [live(affectedbook)])]);
+	if (rt.istype(O, T("/obj/item/weapon/book"))) {
+		if (reac_volume >= 5) {
+			(affectedbook = O).dat = null;
+			to_chat(f.usr, `<span class='notice'>Through thorough application, you wash away ${affectedbook}'s writing.</span>`);
 		} else {
-			rt.call(f, P("/proc/to_chat"), null, [live(f.usr), "<span class='warning'>The ink smears, but doesn't wash away!</span>"]);
+			to_chat(f.usr, "<span class='warning'>The ink smears, but doesn't wash away!</span>");
 		}
 	}
-	return live(f.dot);
+	return f.dot;
 });
 
-// /datum/reagent/consumable/ethanol/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/alcohol_reagents.dm:58)  may sleep
+// alcohol_reagents.dm:58
 rt.def("/datum/reagent/consumable/ethanol/proc/reaction_mob", function* reaction_mob(f: Frame) {
 	let C: Value = null, power_multiplier: Value = null, s: Value = null, S: Value = null;
-	let $e: any;
-	f.vars = () => [C, power_multiplier, s, S, $e];
-	if (live(f.args[1]) === null) {
-		f.args[1] = 1;
+	if (f.args[1] === null) {
+		f.args[1] = TOUCH;
 	}
-	if (!truthy((rt.istype(live(f.args[0]), T("/mob/living")) ? 1 : 0))) {
-		return live(f.dot);
+	if (!rt.istype(f.args[0], T("/mob/living"))) {
+		return f.dot;
 	}
-	if (truthy((rt.isIn(f, live(f.args[1]), rt.list(1, 3, 4)) ? 1 : 0))) {
-		yield* g.callName(f, live(f.args[0]), "adjust_fire_stacks", [divide(live(f.args[2]), 15)]);
-		if (truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon")) ? 1 : 0))) {
-			C = live(f.args[0]);
-			power_multiplier = divide(rt.sv(f, "boozepwr"), 65);
-			s = null;
-			rt.forList(f, 0, rt.fv(f, "surgeries", live(C)));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				s = $e;
-				rt.setFv(f, "success_multiplier", (S = live(s)), (yield* g.call(f, P("/proc/max"), null, [multiply(0.10000000149011612, live(power_multiplier)), rt.fv(f, "success_multiplier", live(S))])));
+	if (rt.isIn(f, f.args[1], list(TOUCH, VAPOR, PATCH))) {
+		yield* f.args[0].adjust_fire_stacks(f.args[2] / 15);
+		if (rt.istype(f.args[0], T("/mob/living/carbon"))) {
+			C = f.args[0];
+			power_multiplier = this.boozepwr / 65;
+			for (s of each(C.surgeries)) {
+				(S = s).success_multiplier = max(0.1 * power_multiplier, S.success_multiplier);
 			}
-			rt.endFor(f, 0);
 		}
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true, { args: ["M", "method", "reac_volume"] });
 
 rt.type(3361, "/datum/reagent/consumable/ethanol/beer/green", "/datum/reagent/consumable/ethanol/beer", {
@@ -84,17 +76,17 @@ rt.type(3361, "/datum/reagent/consumable/ethanol/beer/green", "/datum/reagent/co
 	glass_desc: "A freezing pint of green beer. Festive.",
 });
 
-// /datum/reagent/consumable/ethanol/beer/green/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/alcohol_reagents.dm:96)  may sleep
-rt.def("/datum/reagent/consumable/ethanol/beer/green/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	if (!isEqual(rt.fv(f, "color", live(f.args[0])), rt.sv(f, "color"))) {
-		yield* g.callName(f, live(f.args[0]), "add_atom_colour", [rt.sv(f, "color"), 2]);
+// alcohol_reagents.dm:96
+rt.def("/datum/reagent/consumable/ethanol/beer/green/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	if (M.color != this.color) {
+		M.add_atom_colour(this.color, TEMPORARY_COLOUR_PRIORITY);
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["M"] });
+	return (yield* parent_proc());
+}, true);
 
-// /datum/reagent/consumable/ethanol/beer/green/proc/on_mob_delete  (code/modules/reagents/chemistry/reagents/alcohol_reagents.dm:101)
+// alcohol_reagents.dm:101
 rt.def("/datum/reagent/consumable/ethanol/beer/green/proc/on_mob_delete", function on_mob_delete(f: Frame, M: Value) {
-	rt.callName(f, live(M), "remove_atom_colour", [2, rt.sv(f, "color")]);
+	M.remove_atom_colour(TEMPORARY_COLOUR_PRIORITY, this.color);
 	return f.dot;
 });
 
@@ -110,16 +102,16 @@ rt.type(3362, "/datum/reagent/consumable/ethanol/kahlua", "/datum/reagent/consum
 	shot_glass_icon_state: "shotglasscream",
 });
 
-// /datum/reagent/consumable/ethanol/kahlua/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/alcohol_reagents.dm:115)  may sleep
-rt.def("/datum/reagent/consumable/ethanol/kahlua/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	rt.setFv(f, "dizziness", live(f.args[0]), (yield* g.call(f, P("/proc/max"), null, [0, subtract(rt.fv(f, "dizziness", live(f.args[0])), 5)])));
-	rt.setFv(f, "drowsyness", live(f.args[0]), (yield* g.call(f, P("/proc/max"), null, [0, subtract(rt.fv(f, "drowsyness", live(f.args[0])), 3)])));
-	yield* g.callName(f, live(f.args[0]), "AdjustSleeping", [-40, 0]);
-	yield* g.callName(f, live(f.args[0]), "Jitter", [5]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+// alcohol_reagents.dm:115
+rt.def("/datum/reagent/consumable/ethanol/kahlua/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	M.dizziness = max(0, M.dizziness - 5);
+	M.drowsyness = max(0, M.drowsyness - 3);
+	yield* M.AdjustSleeping(-40, 0);
+	M.Jitter(5);
+	yield* parent_proc();
 	f.dot = 1;
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3364, "/datum/reagent/consumable/ethanol/thirteenloko", "/datum/reagent/consumable/ethanol", {
 	name: "Thirteen Loko",
@@ -134,16 +126,16 @@ rt.type(3364, "/datum/reagent/consumable/ethanol/thirteenloko", "/datum/reagent/
 	nutriment_factor: 0.4,
 });
 
-// /datum/reagent/consumable/ethanol/thirteenloko/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/alcohol_reagents.dm:148)  may sleep
-rt.def("/datum/reagent/consumable/ethanol/thirteenloko/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	rt.setFv(f, "drowsyness", live(f.args[0]), (yield* g.call(f, P("/proc/max"), null, [0, subtract(rt.fv(f, "drowsyness", live(f.args[0])), 7)])));
-	yield* g.callName(f, live(f.args[0]), "AdjustSleeping", [-40]);
-	if (rt.gt(rt.fv(f, "bodytemperature", live(f.args[0])), 310)) {
-		rt.setFv(f, "bodytemperature", live(f.args[0]), (yield* g.call(f, P("/proc/max"), null, [310, subtract(rt.fv(f, "bodytemperature", live(f.args[0])), 7.5)])));
+// alcohol_reagents.dm:148
+rt.def("/datum/reagent/consumable/ethanol/thirteenloko/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	M.drowsyness = max(0, M.drowsyness - 7);
+	yield* M.AdjustSleeping(-40);
+	if (M.bodytemperature > 310) {
+		M.bodytemperature = max(310, M.bodytemperature - 7.5);
 	}
-	yield* g.callName(f, live(f.args[0]), "Jitter", [5]);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["M"] });
+	M.Jitter(5);
+	return (yield* parent_proc());
+}, true);
 
 rt.type(3365, "/datum/reagent/consumable/ethanol/vodka", "/datum/reagent/consumable/ethanol", {
 	name: "Vodka",
@@ -158,11 +150,11 @@ rt.type(3365, "/datum/reagent/consumable/ethanol/vodka", "/datum/reagent/consuma
 	shot_glass_icon_state: "shotglassclear",
 });
 
-// /datum/reagent/consumable/ethanol/vodka/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/alcohol_reagents.dm:168)  may sleep
-rt.def("/datum/reagent/consumable/ethanol/vodka/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	rt.setFv(f, "radiation", live(f.args[0]), (yield* g.call(f, P("/proc/max"), null, [subtract(rt.fv(f, "radiation", live(f.args[0])), 2), 0])));
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["M"] });
+// alcohol_reagents.dm:168
+rt.def("/datum/reagent/consumable/ethanol/vodka/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	M.radiation = max(M.radiation - 2, 0);
+	return (yield* parent_proc());
+}, true);
 
 rt.type(3366, "/datum/reagent/consumable/ethanol/bilk", "/datum/reagent/consumable/ethanol", {
 	name: "Bilk",
@@ -177,14 +169,14 @@ rt.type(3366, "/datum/reagent/consumable/ethanol/bilk", "/datum/reagent/consumab
 	nutriment_factor: 0.8,
 });
 
-// /datum/reagent/consumable/ethanol/bilk/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/alcohol_reagents.dm:184)  may sleep
-rt.def("/datum/reagent/consumable/ethanol/bilk/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	if ((truthy((yield* g.callName(f, live(f.args[0]), "getBruteLoss", []))) && truthy(rt.op(f, "Prob", [], [10])))) {
-		yield* g.callName(f, live(f.args[0]), "heal_bodypart_damage", [1, 0, 0]);
+// alcohol_reagents.dm:184
+rt.def("/datum/reagent/consumable/ethanol/bilk/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	if (M.getBruteLoss() && prob(10)) {
+		yield* M.heal_bodypart_damage(1, 0, 0);
 		f.dot = 1;
 	}
-	return ((yield* g.callSuper(f, [], rt.Args.Same)) || live(f.dot));
-}, true, { args: ["M"] });
+	return ((yield* parent_proc()) || f.dot);
+}, true);
 
 rt.type(3367, "/datum/reagent/consumable/ethanol/threemileisland", "/datum/reagent/consumable/ethanol", {
 	name: "Three Mile Island Iced Tea",
@@ -198,11 +190,11 @@ rt.type(3367, "/datum/reagent/consumable/ethanol/threemileisland", "/datum/reage
 	glass_desc: "A glass of this is sure to prevent a meltdown.",
 });
 
-// /datum/reagent/consumable/ethanol/threemileisland/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/alcohol_reagents.dm:201)  may sleep
-rt.def("/datum/reagent/consumable/ethanol/threemileisland/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	yield* g.callName(f, live(f.args[0]), "set_drugginess", [50]);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["M"] });
+// alcohol_reagents.dm:201
+rt.def("/datum/reagent/consumable/ethanol/threemileisland/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	yield* M.set_drugginess(50);
+	return (yield* parent_proc());
+}, true);
 
 rt.type(3376, "/datum/reagent/consumable/ethanol/absinthe", "/datum/reagent/consumable/ethanol", {
 	name: "Absinthe",
@@ -217,14 +209,14 @@ rt.type(3376, "/datum/reagent/consumable/ethanol/absinthe", "/datum/reagent/cons
 	shot_glass_icon_state: "shotglassgreen",
 });
 
-// /datum/reagent/consumable/ethanol/absinthe/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/alcohol_reagents.dm:307)  may sleep
-rt.def("/datum/reagent/consumable/ethanol/absinthe/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	if (truthy(rt.op(f, "Prob", [], [10]))) {
-		rt.modField(f, live(f.args[0]), "hallucination", 4, add);
+// alcohol_reagents.dm:307
+rt.def("/datum/reagent/consumable/ethanol/absinthe/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	if (prob(10)) {
+		M.hallucination += 4;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3382, "/datum/reagent/consumable/ethanol/cuba_libre", "/datum/reagent/consumable/ethanol", {
 	name: "Cuba Libre",
@@ -238,17 +230,17 @@ rt.type(3382, "/datum/reagent/consumable/ethanol/cuba_libre", "/datum/reagent/co
 	glass_desc: "A classic mix of rum and cola.",
 });
 
-// /datum/reagent/consumable/ethanol/cuba_libre/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/alcohol_reagents.dm:381)  may sleep
-rt.def("/datum/reagent/consumable/ethanol/cuba_libre/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	if (truthy((rt.isIn(f, (rt.fv(f, "mind", live(f.args[0])) && rt.gv(f, "special_role", rt.fv(f, "mind", live(f.args[0])))), rt.list("Revolutionary", "Head Revolutionary")) ? 1 : 0))) {
-		yield* g.callName(f, live(f.args[0]), "adjustBruteLoss", [-1, 0]);
-		yield* g.callName(f, live(f.args[0]), "adjustFireLoss", [-1, 0]);
-		yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [-1, 0]);
-		yield* g.callName(f, live(f.args[0]), "adjustOxyLoss", [-5, 0]);
+// alcohol_reagents.dm:381
+rt.def("/datum/reagent/consumable/ethanol/cuba_libre/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	if (rt.isIn(f, (M.mind && M.mind.special_role), list("Revolutionary", "Head Revolutionary"))) {
+		yield* M.adjustBruteLoss(-1, 0);
+		yield* M.adjustFireLoss(-1, 0);
+		yield* M.adjustToxLoss(-1, 0);
+		yield* M.adjustOxyLoss(-5, 0);
 		f.dot = 1;
 	}
-	return ((yield* g.callSuper(f, [], rt.Args.Same)) || live(f.dot));
-}, true, { args: ["M"] });
+	return ((yield* parent_proc()) || f.dot);
+}, true);
 
 rt.type(3387, "/datum/reagent/consumable/ethanol/screwdrivercocktail", "/datum/reagent/consumable/ethanol", {
 	name: "Screwdriver",
@@ -262,13 +254,13 @@ rt.type(3387, "/datum/reagent/consumable/ethanol/screwdrivercocktail", "/datum/r
 	glass_desc: "A simple, yet superb mixture of Vodka and orange juice. Just the thing for the tired engineer.",
 });
 
-// /datum/reagent/consumable/ethanol/screwdrivercocktail/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/alcohol_reagents.dm:445)  may sleep
-rt.def("/datum/reagent/consumable/ethanol/screwdrivercocktail/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	if (truthy((rt.isIn(f, (rt.fv(f, "mind", live(f.args[0])) && rt.gv(f, "assigned_role", rt.fv(f, "mind", live(f.args[0])))), rt.list("Station Engineer", "Atmospheric Technician", "Chief Engineer")) ? 1 : 0))) {
-		rt.setFv(f, "radiation", live(f.args[0]), (yield* g.call(f, P("/proc/max"), null, [subtract(rt.fv(f, "radiation", live(f.args[0])), 25), 0])));
+// alcohol_reagents.dm:445
+rt.def("/datum/reagent/consumable/ethanol/screwdrivercocktail/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	if (rt.isIn(f, (M.mind && M.mind.assigned_role), list("Station Engineer", "Atmospheric Technician", "Chief Engineer"))) {
+		M.radiation = max(M.radiation - 25, 0);
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["M"] });
+	return (yield* parent_proc());
+}, true);
 
 rt.type(3390, "/datum/reagent/consumable/ethanol/brave_bull", "/datum/reagent/consumable/ethanol", {
 	name: "Brave Bull",
@@ -282,19 +274,19 @@ rt.type(3390, "/datum/reagent/consumable/ethanol/brave_bull", "/datum/reagent/co
 	glass_desc: "Tequila and Coffee liqueur, brought together in a mouthwatering mixture. Drink up.",
 });
 
-// /datum/reagent/consumable/ethanol/brave_bull/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/alcohol_reagents.dm:483)  may sleep
-rt.def("/datum/reagent/consumable/ethanol/brave_bull/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	if (isEqual(rt.fv(f, "maxHealth", live(f.args[0])), rt.initial(f, live(f.args[0]), "maxHealth"))) {
-		rt.modField(f, live(f.args[0]), "maxHealth", 5, add);
-		rt.modField(f, live(f.args[0]), "health", 5, add);
+// alcohol_reagents.dm:483
+rt.def("/datum/reagent/consumable/ethanol/brave_bull/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	if (M.maxHealth == rt.initial(f, M, "maxHealth")) {
+		M.maxHealth += 5;
+		M.health += 5;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["M"] });
+	return (yield* parent_proc());
+}, true);
 
-// /datum/reagent/consumable/ethanol/brave_bull/proc/on_mob_delete  (code/modules/reagents/chemistry/reagents/alcohol_reagents.dm:489)
+// alcohol_reagents.dm:489
 rt.def("/datum/reagent/consumable/ethanol/brave_bull/proc/on_mob_delete", function on_mob_delete(f: Frame, M: Value) {
-	if (isEqual(rt.fv(f, "maxHealth", live(M)), rt.initial(f, live(M), "maxHealth"))) return f.dot;
-	rt.setFv(f, "maxHealth", live(M), rt.initial(f, live(M), "maxHealth"));
+	if (M.maxHealth == rt.initial(f, M, "maxHealth")) return f.dot;
+	M.maxHealth = rt.initial(f, M, "maxHealth");
 	return f.dot;
 });
 
@@ -311,13 +303,13 @@ rt.type(3392, "/datum/reagent/consumable/ethanol/toxins_special", "/datum/reagen
 	shot_glass_icon_state: "toxinsspecialglass",
 });
 
-// /datum/reagent/consumable/ethanol/toxins_special/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/alcohol_reagents.dm:516)  may sleep
-rt.def("/datum/reagent/consumable/ethanol/toxins_special/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	if (rt.lt(rt.fv(f, "bodytemperature", live(f.args[0])), 330)) {
-		rt.setFv(f, "bodytemperature", live(f.args[0]), (yield* g.call(f, P("/proc/min"), null, [330, add(rt.fv(f, "bodytemperature", live(f.args[0])), 22.5)])));
+// alcohol_reagents.dm:516
+rt.def("/datum/reagent/consumable/ethanol/toxins_special/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	if (M.bodytemperature < 330) {
+		M.bodytemperature = min(330, M.bodytemperature + 22.5);
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["M"] });
+	return (yield* parent_proc());
+}, true);
 
 rt.type(3393, "/datum/reagent/consumable/ethanol/beepsky_smash", "/datum/reagent/consumable/ethanol", {
 	name: "Beepsky Smash",
@@ -332,11 +324,11 @@ rt.type(3393, "/datum/reagent/consumable/ethanol/beepsky_smash", "/datum/reagent
 	glass_desc: "Heavy, hot and strong. Just like the Iron fist of the LAW.",
 });
 
-// /datum/reagent/consumable/ethanol/beepsky_smash/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/alcohol_reagents.dm:533)  may sleep
-rt.def("/datum/reagent/consumable/ethanol/beepsky_smash/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	yield* g.callName(f, live(f.args[0]), "Stun", [40, 0]);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["M"] });
+// alcohol_reagents.dm:533
+rt.def("/datum/reagent/consumable/ethanol/beepsky_smash/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	yield* M.Stun(40, 0);
+	return (yield* parent_proc());
+}, true);
 
 rt.type(3403, "/datum/reagent/consumable/ethanol/manhattan_proj", "/datum/reagent/consumable/ethanol", {
 	name: "Manhattan Project",
@@ -350,11 +342,11 @@ rt.type(3403, "/datum/reagent/consumable/ethanol/manhattan_proj", "/datum/reagen
 	glass_desc: "A scientist's drink of choice, for thinking how to blow up the station.",
 });
 
-// /datum/reagent/consumable/ethanol/manhattan_proj/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/alcohol_reagents.dm:652)  may sleep
-rt.def("/datum/reagent/consumable/ethanol/manhattan_proj/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	yield* g.callName(f, live(f.args[0]), "set_drugginess", [30]);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["M"] });
+// alcohol_reagents.dm:652
+rt.def("/datum/reagent/consumable/ethanol/manhattan_proj/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	yield* M.set_drugginess(30);
+	return (yield* parent_proc());
+}, true);
 
 rt.type(3405, "/datum/reagent/consumable/ethanol/antifreeze", "/datum/reagent/consumable/ethanol", {
 	name: "Anti-freeze",
@@ -368,13 +360,13 @@ rt.type(3405, "/datum/reagent/consumable/ethanol/antifreeze", "/datum/reagent/co
 	glass_desc: "The ultimate refreshment.",
 });
 
-// /datum/reagent/consumable/ethanol/antifreeze/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/alcohol_reagents.dm:678)  may sleep
-rt.def("/datum/reagent/consumable/ethanol/antifreeze/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	if (rt.lt(rt.fv(f, "bodytemperature", live(f.args[0])), 330)) {
-		rt.setFv(f, "bodytemperature", live(f.args[0]), (yield* g.call(f, P("/proc/min"), null, [330, add(rt.fv(f, "bodytemperature", live(f.args[0])), 30)])));
+// alcohol_reagents.dm:678
+rt.def("/datum/reagent/consumable/ethanol/antifreeze/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	if (M.bodytemperature < 330) {
+		M.bodytemperature = min(330, M.bodytemperature + 30);
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["M"] });
+	return (yield* parent_proc());
+}, true);
 
 rt.type(3406, "/datum/reagent/consumable/ethanol/barefoot", "/datum/reagent/consumable/ethanol", {
 	name: "Barefoot",
@@ -388,18 +380,17 @@ rt.type(3406, "/datum/reagent/consumable/ethanol/barefoot", "/datum/reagent/cons
 	glass_desc: "Barefoot and pregnant.",
 });
 
-// /datum/reagent/consumable/ethanol/barefoot/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/alcohol_reagents.dm:694)  may sleep
-rt.def("/datum/reagent/consumable/ethanol/barefoot/proc/on_mob_life", function* on_mob_life(f: Frame) {
+// alcohol_reagents.dm:694
+rt.def("/datum/reagent/consumable/ethanol/barefoot/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
 	let H: Value = null;
-	f.vars = () => [H];
-	if (truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		if (!truthy(rt.gv(f, "shoes", (H = live(f.args[0]))))) {
-			yield* g.callName(f, live(H), "adjustBruteLoss", [-3, 0]);
+	if (rt.istype(M, T("/mob/living/carbon/human"))) {
+		if (!(H = M).shoes) {
+			yield* H.adjustBruteLoss(-3, 0);
 			f.dot = 1;
 		}
 	}
-	return ((yield* g.callSuper(f, [], rt.Args.Same)) || live(f.dot));
-}, true, { args: ["M"] });
+	return ((yield* parent_proc()) || f.dot);
+}, true);
 
 rt.type(3414, "/datum/reagent/consumable/ethanol/sbiten", "/datum/reagent/consumable/ethanol", {
 	name: "Sbiten",
@@ -413,13 +404,13 @@ rt.type(3414, "/datum/reagent/consumable/ethanol/sbiten", "/datum/reagent/consum
 	glass_desc: "A spicy mix of Vodka and Spice. Very hot.",
 });
 
-// /datum/reagent/consumable/ethanol/sbiten/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/alcohol_reagents.dm:792)  may sleep
-rt.def("/datum/reagent/consumable/ethanol/sbiten/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	if (rt.lt(rt.fv(f, "bodytemperature", live(f.args[0])), 360)) {
-		rt.setFv(f, "bodytemperature", live(f.args[0]), (yield* g.call(f, P("/proc/min"), null, [360, add(rt.fv(f, "bodytemperature", live(f.args[0])), 75)])));
+// alcohol_reagents.dm:792
+rt.def("/datum/reagent/consumable/ethanol/sbiten/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	if (M.bodytemperature < 360) {
+		M.bodytemperature = min(360, M.bodytemperature + 75);
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["M"] });
+	return (yield* parent_proc());
+}, true);
 
 rt.type(3417, "/datum/reagent/consumable/ethanol/iced_beer", "/datum/reagent/consumable/ethanol", {
 	name: "Iced Beer",
@@ -433,13 +424,13 @@ rt.type(3417, "/datum/reagent/consumable/ethanol/iced_beer", "/datum/reagent/con
 	glass_desc: "A beer so frosty, the air around it freezes.",
 });
 
-// /datum/reagent/consumable/ethanol/iced_beer/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/alcohol_reagents.dm:831)  may sleep
-rt.def("/datum/reagent/consumable/ethanol/iced_beer/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	if (rt.gt(rt.fv(f, "bodytemperature", live(f.args[0])), 270)) {
-		rt.setFv(f, "bodytemperature", live(f.args[0]), (yield* g.call(f, P("/proc/max"), null, [270, subtract(rt.fv(f, "bodytemperature", live(f.args[0])), 30)])));
+// alcohol_reagents.dm:831
+rt.def("/datum/reagent/consumable/ethanol/iced_beer/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	if (M.bodytemperature > 270) {
+		M.bodytemperature = max(270, M.bodytemperature - 30);
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["M"] });
+	return (yield* parent_proc());
+}, true);
 
 rt.type(3424, "/datum/reagent/consumable/ethanol/changelingsting", "/datum/reagent/consumable/ethanol", {
 	name: "Changeling Sting",
@@ -453,14 +444,14 @@ rt.type(3424, "/datum/reagent/consumable/ethanol/changelingsting", "/datum/reage
 	glass_desc: "A stingy drink.",
 });
 
-// /datum/reagent/consumable/ethanol/changelingsting/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/alcohol_reagents.dm:914)  may sleep
-rt.def("/datum/reagent/consumable/ethanol/changelingsting/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	if ((truthy(rt.fv(f, "mind", live(f.args[0]))) && truthy(rt.gv(f, "changeling", rt.fv(f, "mind", live(f.args[0])))))) {
-		rt.modField(f, rt.gv(f, "changeling", rt.fv(f, "mind", live(f.args[0]))), "chem_charges", rt.sv(f, "metabolization_rate"), add);
-		rt.setFv(f, "chem_charges", rt.gv(f, "changeling", rt.fv(f, "mind", live(f.args[0]))), (yield* g.call(f, P("/proc/max"), null, [0, (yield* g.call(f, P("/proc/min"), null, [rt.gv(f, "chem_charges", rt.gv(f, "changeling", rt.fv(f, "mind", live(f.args[0])))), rt.gv(f, "chem_storage", rt.gv(f, "changeling", rt.fv(f, "mind", live(f.args[0]))))]))])));
+// alcohol_reagents.dm:914
+rt.def("/datum/reagent/consumable/ethanol/changelingsting/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	if (M.mind && M.mind.changeling) {
+		M.mind.changeling.chem_charges += this.metabolization_rate;
+		M.mind.changeling.chem_charges = max(0, min(M.mind.changeling.chem_charges, M.mind.changeling.chem_storage));
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["M"] });
+	return (yield* parent_proc());
+}, true);
 
 rt.type(3426, "/datum/reagent/consumable/ethanol/syndicatebomb", "/datum/reagent/consumable/ethanol", {
 	name: "Syndicate Bomb",
@@ -474,13 +465,13 @@ rt.type(3426, "/datum/reagent/consumable/ethanol/syndicatebomb", "/datum/reagent
 	glass_desc: "A syndicate bomb.",
 });
 
-// /datum/reagent/consumable/ethanol/syndicatebomb/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/alcohol_reagents.dm:942)  may sleep
-rt.def("/datum/reagent/consumable/ethanol/syndicatebomb/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	if (truthy(rt.op(f, "Prob", [], [5]))) {
-		yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.args[0]), 0), rt.rsc("sound/effects/explosionfar.ogg"), 100, 1]);
+// alcohol_reagents.dm:942
+rt.def("/datum/reagent/consumable/ethanol/syndicatebomb/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	if (prob(5)) {
+		playsound(rt.getStep(f, M, 0), rt.rsc("sound/effects/explosionfar.ogg"), 100, 1);
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["M"] });
+	return (yield* parent_proc());
+}, true);
 
 rt.type(3429, "/datum/reagent/consumable/ethanol/bananahonk", "/datum/reagent/consumable/ethanol", {
 	name: "Banana Honk",
@@ -495,14 +486,14 @@ rt.type(3429, "/datum/reagent/consumable/ethanol/bananahonk", "/datum/reagent/co
 	nutriment_factor: 0.4,
 });
 
-// /datum/reagent/consumable/ethanol/bananahonk/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/alcohol_reagents.dm:982)  may sleep
-rt.def("/datum/reagent/consumable/ethanol/bananahonk/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	if ((truthy((rt.isIn(f, ((rt.istype(live(f.args[0]), T("/mob/living/carbon/human")) ? 1 : 0) && rt.fv(f, "job", live(f.args[0]))), rt.list("Clown")) ? 1 : 0)) || truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon/monkey")) ? 1 : 0)))) {
-		yield* g.callName(f, live(f.args[0]), "heal_bodypart_damage", [1, 1, 0]);
+// alcohol_reagents.dm:982
+rt.def("/datum/reagent/consumable/ethanol/bananahonk/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	if (rt.isIn(f, ((rt.istype(M, T("/mob/living/carbon/human")) ? 1 : 0) && M.job), list("Clown")) || rt.istype(M, T("/mob/living/carbon/monkey"))) {
+		yield* M.heal_bodypart_damage(1, 1, 0);
 		f.dot = 1;
 	}
-	return ((yield* g.callSuper(f, [], rt.Args.Same)) || live(f.dot));
-}, true, { args: ["M"] });
+	return ((yield* parent_proc()) || f.dot);
+}, true);
 
 rt.type(3430, "/datum/reagent/consumable/ethanol/silencer", "/datum/reagent/consumable/ethanol", {
 	name: "Silencer",
@@ -517,14 +508,14 @@ rt.type(3430, "/datum/reagent/consumable/ethanol/silencer", "/datum/reagent/cons
 	nutriment_factor: 0.4,
 });
 
-// /datum/reagent/consumable/ethanol/silencer/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/alcohol_reagents.dm:1000)  may sleep
-rt.def("/datum/reagent/consumable/ethanol/silencer/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	if (truthy((rt.isIn(f, ((rt.istype(live(f.args[0]), T("/mob/living/carbon/human")) ? 1 : 0) && rt.fv(f, "job", live(f.args[0]))), rt.list("Mime")) ? 1 : 0))) {
-		yield* g.callName(f, live(f.args[0]), "heal_bodypart_damage", [1, 1]);
+// alcohol_reagents.dm:1000
+rt.def("/datum/reagent/consumable/ethanol/silencer/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	if (rt.isIn(f, ((rt.istype(M, T("/mob/living/carbon/human")) ? 1 : 0) && M.job), list("Mime"))) {
+		yield* M.heal_bodypart_damage(1, 1);
 		f.dot = 1;
 	}
-	return ((yield* g.callSuper(f, [], rt.Args.Same)) || live(f.dot));
-}, true, { args: ["M"] });
+	return ((yield* parent_proc()) || f.dot);
+}, true);
 
 rt.type(3434, "/datum/reagent/consumable/ethanol/fetching_fizz", "/datum/reagent/consumable/ethanol", {
 	name: "Fetching Fizz",
@@ -539,20 +530,14 @@ rt.type(3434, "/datum/reagent/consumable/ethanol/fetching_fizz", "/datum/reagent
 	glass_desc: "Induces magnetism in the imbiber. Started as a barroom prank but evolved to become popular with miners and scrappers. Metallic aftertaste.",
 });
 
-// /datum/reagent/consumable/ethanol/fetching_fizz/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/alcohol_reagents.dm:1055)  may sleep
-rt.def("/datum/reagent/consumable/ethanol/fetching_fizz/proc/on_mob_life", function* on_mob_life(f: Frame) {
+// alcohol_reagents.dm:1055
+rt.def("/datum/reagent/consumable/ethanol/fetching_fizz/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
 	let O: Value = null;
-	let $e: any;
-	f.vars = () => [O, $e];
-	O = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/orange"), null, [3, live(f.args[0])])), T("/obj/item/weapon/ore"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		O = $e;
-		yield* g.call(f, P("/proc/step_towards"), null, [live(O), rt.getStep(f, live(f.args[0]), 0)]);
+	for (O of each(orange(3, M), T("/obj/item/weapon/ore"))) {
+		yield* step_towards(O, rt.getStep(f, M, 0));
 	}
-	rt.endFor(f, 0);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["M"] });
+	return (yield* parent_proc());
+}, true);
 
 rt.type(3435, "/datum/reagent/consumable/ethanol/hearty_punch", "/datum/reagent/consumable/ethanol", {
 	name: "Hearty Punch",
@@ -567,18 +552,18 @@ rt.type(3435, "/datum/reagent/consumable/ethanol/hearty_punch", "/datum/reagent/
 	glass_desc: "Aromatic beverage served piping hot. According to folk tales it can almost wake the dead.",
 });
 
-// /datum/reagent/consumable/ethanol/hearty_punch/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/alcohol_reagents.dm:1073)  may sleep
-rt.def("/datum/reagent/consumable/ethanol/hearty_punch/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	if ((isEqual(rt.fv(f, "stat", live(f.args[0])), 1) && rt.le(rt.fv(f, "health", live(f.args[0])), 0))) {
-		yield* g.callName(f, live(f.args[0]), "adjustBruteLoss", [-7, 0]);
-		yield* g.callName(f, live(f.args[0]), "adjustFireLoss", [-7, 0]);
-		yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [-7, 0]);
-		yield* g.callName(f, live(f.args[0]), "adjustOxyLoss", [-7, 0]);
-		yield* g.callName(f, live(f.args[0]), "adjustCloneLoss", [-7, 0]);
+// alcohol_reagents.dm:1073
+rt.def("/datum/reagent/consumable/ethanol/hearty_punch/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	if (M.stat == 1 && M.health <= 0) {
+		yield* M.adjustBruteLoss(-7, 0);
+		yield* M.adjustFireLoss(-7, 0);
+		yield* M.adjustToxLoss(-7, 0);
+		yield* M.adjustOxyLoss(-7, 0);
+		yield* M.adjustCloneLoss(-7, 0);
 		f.dot = 1;
 	}
-	return ((yield* g.callSuper(f, [], rt.Args.Same)) || live(f.dot));
-}, true, { args: ["M"] });
+	return ((yield* parent_proc()) || f.dot);
+}, true);
 
 rt.type(3437, "/datum/reagent/consumable/ethanol/atomicbomb", "/datum/reagent/consumable/ethanol", {
 	name: "Atomic Bomb",
@@ -592,29 +577,26 @@ rt.type(3437, "/datum/reagent/consumable/ethanol/atomicbomb", "/datum/reagent/co
 	glass_desc: "Nanotrasen cannot take legal responsibility for your actions after imbibing.",
 });
 
-// /datum/reagent/consumable/ethanol/atomicbomb/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/alcohol_reagents.dm:1107)  may sleep
-rt.def("/datum/reagent/consumable/ethanol/atomicbomb/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	yield* g.callName(f, live(f.args[0]), "set_drugginess", [50]);
-	rt.setFv(f, "confused", live(f.args[0]), (yield* g.call(f, P("/proc/max"), null, [add(rt.fv(f, "confused", live(f.args[0])), 2), 0])));
-	yield* g.callName(f, live(f.args[0]), "Dizzy", [10]);
-	if (!truthy(rt.fv(f, "slurring", live(f.args[0])))) {
-		rt.setFv(f, "slurring", live(f.args[0]), 1);
+// alcohol_reagents.dm:1107
+rt.def("/datum/reagent/consumable/ethanol/atomicbomb/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	yield* M.set_drugginess(50);
+	M.confused = max(M.confused + 2, 0);
+	M.Dizzy(10);
+	if (!M.slurring) {
+		M.slurring = 1;
 	}
-	rt.modField(f, live(f.args[0]), "slurring", 3, add);
-	$0 = rt.sv(f, "current_cycle");
-	if (rt.inRange($0, 51, 200)) {
-		yield* g.callName(f, live(f.args[0]), "Sleeping", [100, 0]);
+	M.slurring += 3;
+	if (rt.inRange(this.current_cycle, 51, 200)) {
+		yield* M.Sleeping(100, 0);
 		f.dot = 1;
-	} else if (rt.inRange($0, 201, 9.999999848243207e+30)) {
-		yield* g.callName(f, live(f.args[0]), "AdjustSleeping", [40, 0]);
-		yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [2, 0]);
+	} else if (rt.inRange(this.current_cycle, 201, 1e+31)) {
+		yield* M.AdjustSleeping(40, 0);
+		yield* M.adjustToxLoss(2, 0);
 		f.dot = 1;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3438, "/datum/reagent/consumable/ethanol/gargle_blaster", "/datum/reagent/consumable/ethanol", {
 	name: "Pan-Galactic Gargle Blaster",
@@ -628,30 +610,27 @@ rt.type(3438, "/datum/reagent/consumable/ethanol/gargle_blaster", "/datum/reagen
 	glass_desc: "Like having your brain smashed out by a slice of lemon wrapped around a large gold brick.",
 });
 
-// /datum/reagent/consumable/ethanol/gargle_blaster/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/alcohol_reagents.dm:1135)  may sleep
-rt.def("/datum/reagent/consumable/ethanol/gargle_blaster/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	rt.modField(f, live(f.args[0]), "dizziness", 6, add);
-	$0 = rt.sv(f, "current_cycle");
-	if (rt.inRange($0, 15, 45)) {
-		if (!truthy(rt.fv(f, "slurring", live(f.args[0])))) {
-			rt.setFv(f, "slurring", live(f.args[0]), 1);
+// alcohol_reagents.dm:1135
+rt.def("/datum/reagent/consumable/ethanol/gargle_blaster/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	M.dizziness += 6;
+	if (rt.inRange(this.current_cycle, 15, 45)) {
+		if (!M.slurring) {
+			M.slurring = 1;
 		}
-		rt.modField(f, live(f.args[0]), "slurring", 3, add);
-	} else if (rt.inRange($0, 45, 55)) {
-		if (truthy(rt.op(f, "Prob", [], [50]))) {
-			rt.setFv(f, "confused", live(f.args[0]), (yield* g.call(f, P("/proc/max"), null, [add(rt.fv(f, "confused", live(f.args[0])), 3), 0])));
+		M.slurring += 3;
+	} else if (rt.inRange(this.current_cycle, 45, 55)) {
+		if (prob(50)) {
+			M.confused = max(M.confused + 3, 0);
 		}
-	} else if (rt.inRange($0, 55, 200)) {
-		yield* g.callName(f, live(f.args[0]), "set_drugginess", [55]);
-	} else if (rt.inRange($0, 200, 9.999999848243207e+30)) {
-		yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [2, 0]);
+	} else if (rt.inRange(this.current_cycle, 55, 200)) {
+		yield* M.set_drugginess(55);
+	} else if (rt.inRange(this.current_cycle, 200, 1e+31)) {
+		yield* M.adjustToxLoss(2, 0);
 		f.dot = 1;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3439, "/datum/reagent/consumable/ethanol/neurotoxin", "/datum/reagent/consumable/ethanol", {
 	name: "Neurotoxin",
@@ -665,31 +644,28 @@ rt.type(3439, "/datum/reagent/consumable/ethanol/neurotoxin", "/datum/reagent/co
 	glass_desc: "A drink that is guaranteed to knock you silly.",
 });
 
-// /datum/reagent/consumable/ethanol/neurotoxin/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/alcohol_reagents.dm:1163)  may sleep
-rt.def("/datum/reagent/consumable/ethanol/neurotoxin/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	yield* g.callName(f, live(f.args[0]), "Knockdown", [60, 1, 0]);
-	rt.modField(f, live(f.args[0]), "dizziness", 6, add);
-	$0 = rt.sv(f, "current_cycle");
-	if (rt.inRange($0, 15, 45)) {
-		if (!truthy(rt.fv(f, "slurring", live(f.args[0])))) {
-			rt.setFv(f, "slurring", live(f.args[0]), 1);
+// alcohol_reagents.dm:1163
+rt.def("/datum/reagent/consumable/ethanol/neurotoxin/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	yield* M.Knockdown(60, 1, 0);
+	M.dizziness += 6;
+	if (rt.inRange(this.current_cycle, 15, 45)) {
+		if (!M.slurring) {
+			M.slurring = 1;
 		}
-		rt.modField(f, live(f.args[0]), "slurring", 3, add);
-	} else if (rt.inRange($0, 45, 55)) {
-		if (truthy(rt.op(f, "Prob", [], [50]))) {
-			rt.setFv(f, "confused", live(f.args[0]), (yield* g.call(f, P("/proc/max"), null, [add(rt.fv(f, "confused", live(f.args[0])), 3), 0])));
+		M.slurring += 3;
+	} else if (rt.inRange(this.current_cycle, 45, 55)) {
+		if (prob(50)) {
+			M.confused = max(M.confused + 3, 0);
 		}
-	} else if (rt.inRange($0, 55, 200)) {
-		yield* g.callName(f, live(f.args[0]), "set_drugginess", [55]);
-	} else if (rt.inRange($0, 200, 9.999999848243207e+30)) {
-		yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [2, 0]);
+	} else if (rt.inRange(this.current_cycle, 55, 200)) {
+		yield* M.set_drugginess(55);
+	} else if (rt.inRange(this.current_cycle, 200, 1e+31)) {
+		yield* M.adjustToxLoss(2, 0);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	f.dot = 1;
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3440, "/datum/reagent/consumable/ethanol/hippies_delight", "/datum/reagent/consumable/ethanol", {
 	name: "Hippie's Delight",
@@ -705,46 +681,43 @@ rt.type(3440, "/datum/reagent/consumable/ethanol/hippies_delight", "/datum/reage
 	nutriment_factor: 0,
 });
 
-// /datum/reagent/consumable/ethanol/hippies_delight/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/alcohol_reagents.dm:1194)  may sleep
-rt.def("/datum/reagent/consumable/ethanol/hippies_delight/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	if (!truthy(rt.fv(f, "slurring", live(f.args[0])))) {
-		rt.setFv(f, "slurring", live(f.args[0]), 1);
+// alcohol_reagents.dm:1194
+rt.def("/datum/reagent/consumable/ethanol/hippies_delight/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	if (!M.slurring) {
+		M.slurring = 1;
 	}
-	$0 = rt.sv(f, "current_cycle");
-	if (rt.inRange($0, 1, 5)) {
-		yield* g.callName(f, live(f.args[0]), "Dizzy", [10]);
-		yield* g.callName(f, live(f.args[0]), "set_drugginess", [30]);
-		if (truthy(rt.op(f, "Prob", [], [10]))) {
-			yield* g.callName(f, live(f.args[0]), "emote", [rt.op(f, "PickUnweighted", [2], ["twitch", "giggle"])]);
+	if (rt.inRange(this.current_cycle, 1, 5)) {
+		M.Dizzy(10);
+		yield* M.set_drugginess(30);
+		if (prob(10)) {
+			yield* M.emote(pick("twitch", "giggle"));
 		}
-	} else if (rt.inRange($0, 5, 10)) {
-		yield* g.callName(f, live(f.args[0]), "Jitter", [20]);
-		yield* g.callName(f, live(f.args[0]), "Dizzy", [20]);
-		yield* g.callName(f, live(f.args[0]), "set_drugginess", [45]);
-		if (truthy(rt.op(f, "Prob", [], [20]))) {
-			yield* g.callName(f, live(f.args[0]), "emote", [rt.op(f, "PickUnweighted", [2], ["twitch", "giggle"])]);
+	} else if (rt.inRange(this.current_cycle, 5, 10)) {
+		M.Jitter(20);
+		M.Dizzy(20);
+		yield* M.set_drugginess(45);
+		if (prob(20)) {
+			yield* M.emote(pick("twitch", "giggle"));
 		}
-	} else if (rt.inRange($0, 10, 200)) {
-		yield* g.callName(f, live(f.args[0]), "Jitter", [40]);
-		yield* g.callName(f, live(f.args[0]), "Dizzy", [40]);
-		yield* g.callName(f, live(f.args[0]), "set_drugginess", [60]);
-		if (truthy(rt.op(f, "Prob", [], [30]))) {
-			yield* g.callName(f, live(f.args[0]), "emote", [rt.op(f, "PickUnweighted", [2], ["twitch", "giggle"])]);
+	} else if (rt.inRange(this.current_cycle, 10, 200)) {
+		M.Jitter(40);
+		M.Dizzy(40);
+		yield* M.set_drugginess(60);
+		if (prob(30)) {
+			yield* M.emote(pick("twitch", "giggle"));
 		}
-	} else if (rt.inRange($0, 200, 9.999999848243207e+30)) {
-		yield* g.callName(f, live(f.args[0]), "Jitter", [60]);
-		yield* g.callName(f, live(f.args[0]), "Dizzy", [60]);
-		yield* g.callName(f, live(f.args[0]), "set_drugginess", [75]);
-		if (truthy(rt.op(f, "Prob", [], [40]))) {
-			yield* g.callName(f, live(f.args[0]), "emote", [rt.op(f, "PickUnweighted", [2], ["twitch", "giggle"])]);
+	} else if (rt.inRange(this.current_cycle, 200, 1e+31)) {
+		M.Jitter(60);
+		M.Dizzy(60);
+		yield* M.set_drugginess(75);
+		if (prob(40)) {
+			yield* M.emote(pick("twitch", "giggle"));
 		}
-		if (truthy(rt.op(f, "Prob", [], [30]))) {
-			yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [2, 0]);
+		if (prob(30)) {
+			yield* M.adjustToxLoss(2, 0);
 			f.dot = 1;
 		}
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);

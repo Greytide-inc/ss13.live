@@ -1,7 +1,7 @@
-// From code/modules/mining/machine_stacking.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mining/machine_stacking.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(10932, "/obj/machinery/mineral/stacking_unit_console", "/obj/machinery/mineral", {
@@ -15,61 +15,52 @@ rt.type(10932, "/obj/machinery/mineral/stacking_unit_console", "/obj/machinery/m
 	density: 0,
 });
 
-// /obj/machinery/mineral/stacking_unit_console/proc/Initialize  (code/modules/mining/machine_stacking.dm:14)  may sleep
+// machine_stacking.dm:14
 rt.def("/obj/machinery/mineral/stacking_unit_console/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "machine", rt.locateIn(f, T("/obj/machinery/mineral/stacking_machine"), rt.getStep(f, live(f.src), rt.sv(f, "machinedir"))));
-	if (truthy(rt.sv(f, "machine"))) {
-		rt.setFv(f, "CONSOLE", rt.sv(f, "machine"), live(f.src));
+	f.dot = (yield* parent_proc());
+	this.machine = rt.locateIn(f, T("/obj/machinery/mineral/stacking_machine"), rt.getStep(f, this, this.machinedir));
+	if (this.machine) {
+		this.machine.CONSOLE = this;
 	} else {
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+		yield* qdel(this);
 	}
 	return f.dot;
 }, true);
 
-// /obj/machinery/mineral/stacking_unit_console/proc/attack_hand  (code/modules/mining/machine_stacking.dm:26)
+// machine_stacking.dm:26
 rt.def("/obj/machinery/mineral/stacking_unit_console/proc/attack_hand", function attack_hand(f: Frame, user: Value) {
 	let s: Value = null, dat: Value = null, O: Value = null;
-	let $e: any;
-	f.vars = () => [s, dat, O, $e];
-	s = null;
-	dat = null;
-	dat = rt.modify(live(dat), "<b>Stacking unit console</b><br><br>", add);
-	O = null;
-	rt.forList(f, 0, rt.fv(f, "stack_list", rt.sv(f, "machine")));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		O = $e;
-		if (rt.gt(rt.gv(f, "amount", (s = rt.index(rt.fv(f, "stack_list", rt.sv(f, "machine")), live(O)))), 0)) {
-			dat = rt.modify(live(dat), fmt("＀: ＀ <A href='?src=＃;release=＀'>Release</A><br>", [rt.call(f, P("/proc/capitalize"), null, [rt.fv(f, "name", live(s))]), rt.fv(f, "amount", live(s)), live(f.src), rt.fv(f, "type", live(s))]), add);
+	dat += "<b>Stacking unit console</b><br><br>";
+	for (O of each(this.machine.stack_list)) {
+		if ((s = rt.index(this.machine.stack_list, O)).amount > 0) {
+			dat += fmt("＀: ＀ <A href='?src=＃;release=＀'>Release</A><br>", [capitalize(s.name), s.amount, this, s.type]);
 		}
 	}
-	rt.endFor(f, 0);
-	dat = rt.modify(live(dat), fmt("<br>Stacking: ＀<br><br>", [rt.fv(f, "stack_amt", rt.sv(f, "machine"))]), add);
-	rt.op(f, "Browse", [], [live(user), live(dat), "window=console_stacking_machine"], false);
-	return live(f.dot);
+	dat += `<br>Stacking: ${this.machine.stack_amt}<br><br>`;
+	rt.op(f, "Browse", [], [user, dat, "window=console_stacking_machine"], false);
+	return f.dot;
 });
 
-// /obj/machinery/mineral/stacking_unit_console/proc/Topic  (code/modules/mining/machine_stacking.dm:40)  may sleep
-rt.def("/obj/machinery/mineral/stacking_unit_console/proc/Topic", function* Topic(f: Frame) {
+// machine_stacking.dm:40
+rt.def("/obj/machinery/mineral/stacking_unit_console/proc/Topic", function* Topic(f: Frame, href: Value, href_list: Value) {
 	let inp: Value = null, out: Value = null;
-	f.vars = () => [inp, out];
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		return live(f.dot);
+	if (yield* parent_proc()) {
+		return f.dot;
 	}
-	yield* g.callName(f, live(f.usr), "set_machine", [live(f.src)]);
-	yield* g.callName(f, live(f.src), "add_fingerprint", [live(f.usr)]);
-	if (truthy(rt.at(live(f.args[1]), "release"))) {
-		if (!truthy((rt.isIn(f, (yield* g.call(f, P("/proc/text2path"), null, [rt.at(live(f.args[1]), "release")])), rt.fv(f, "stack_list", rt.sv(f, "machine"))) ? 1 : 0))) {
-			return live(f.dot);
+	yield* f.usr.set_machine(this);
+	yield* this.add_fingerprint(f.usr);
+	if (rt.at(href_list, "release")) {
+		if (!rt.isIn(f, text2path(rt.at(href_list, "release")), this.machine.stack_list)) {
+			return f.dot;
 		}
-		inp = rt.index(rt.fv(f, "stack_list", rt.sv(f, "machine")), (yield* g.call(f, P("/proc/text2path"), null, [rt.at(live(f.args[1]), "release")])));
-		rt.setFv(f, "amount", (out = (yield* g.new_(f, rt.fv(f, "type", live(inp)), []))), rt.fv(f, "amount", live(inp)));
-		rt.setFv(f, "amount", live(inp), 0);
-		yield* g.callName(f, rt.sv(f, "machine"), "unload_mineral", [live(out)]);
+		inp = rt.index(this.machine.stack_list, text2path(rt.at(href_list, "release")));
+		(out = (yield* new_(inp.type))).amount = inp.amount;
+		inp.amount = 0;
+		yield* this.machine.unload_mineral(out);
 	}
-	yield* g.callName(f, live(f.src), "updateUsrDialog", []);
-	return live(f.dot);
-}, true, { args: ["href", "href_list"] });
+	yield* this.updateUsrDialog();
+	return f.dot;
+}, true);
 
 rt.type(10933, "/obj/machinery/mineral/stacking_machine", "/obj/machinery/mineral", {
 	CONSOLE: null,
@@ -86,48 +77,44 @@ rt.type(10933, "/obj/machinery/mineral/stacking_machine", "/obj/machinery/minera
 	density: 1,
 });
 
-// /obj/machinery/mineral/stacking_machine/proc/<init>  (code/modules/mining/machine_stacking.dm:66)
+// machine_stacking.dm:66
 rt.def("/obj/machinery/mineral/stacking_machine/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "stk_types", rt.list());
-	$0 = $0;
-	rt.setSv(f, "stk_amt", rt.list());
-	$0 = $0;
-	rt.setSv(f, "stack_list", rt.op(f, "CreateMultidimensionalList", [1], [0]));
+	parent_proc();
+	this.stk_types = list();
+
+	this.stk_amt = list();
+
+	this.stack_list = rt.op(f, "CreateMultidimensionalList", [1], [0]);
 	return f.dot;
 });
 
-// /obj/machinery/mineral/stacking_machine/proc/Initialize  (code/modules/mining/machine_stacking.dm:74)  may sleep
+// machine_stacking.dm:74
 rt.def("/obj/machinery/mineral/stacking_machine/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "proximity_monitor", (yield* g.new_(f, T("/datum/proximity_monitor"), [live(f.src), 1])));
+	f.dot = (yield* parent_proc());
+	this.proximity_monitor = (yield* new_(T("/datum/proximity_monitor"), this, 1));
 	return f.dot;
 }, true);
 
-// /obj/machinery/mineral/stacking_machine/proc/HasProximity  (code/modules/mining/machine_stacking.dm:78)  may sleep
+// machine_stacking.dm:78
 rt.def("/obj/machinery/mineral/stacking_machine/proc/HasProximity", function* HasProximity(f: Frame, AM: Value) {
-	f.vars = () => [AM];
-	if (!(truthy((rt.istype(live(AM), T("/obj/item/stack/sheet")) ? 1 : 0)) && isEqual(rt.fv(f, "loc", live(AM)), rt.getStep(f, live(f.src), rt.sv(f, "input_dir"))))) return f.dot;
-	yield* g.srcCall(f, "process_sheet", live(AM));
+	if (!(rt.istype(AM, T("/obj/item/stack/sheet")) && AM.loc == rt.getStep(f, this, this.input_dir))) return f.dot;
+	yield* this.process_sheet(AM);
 	return f.dot;
 }, true);
 
-// /obj/machinery/mineral/stacking_machine/proc/process_sheet  (code/modules/mining/machine_stacking.dm:82)  may sleep
+// machine_stacking.dm:82
 rt.def("/obj/machinery/mineral/stacking_machine/proc/process_sheet", function* process_sheet(f: Frame, inp: Value) {
 	let s: Value = null, storage: Value = null, out: Value = null;
-	f.vars = () => [inp, s, storage, out];
-	if (!truthy((rt.isIn(f, rt.fv(f, "type", live(inp)), rt.sv(f, "stack_list")) ? 1 : 0))) {
-		rt.setFv(f, "amount", (s = (yield* g.new_(f, rt.fv(f, "type", live(inp)), [live(f.src), 0]))), 0);
-		rt.setAt(rt.sv(f, "stack_list"), rt.fv(f, "type", live(inp)), live(s));
+	if (!rt.isIn(f, inp.type, this.stack_list)) {
+		(s = (yield* new_(inp.type, this, 0))).amount = 0;
+		rt.setAt(this.stack_list, inp.type, s);
 	}
-	rt.modField(f, (storage = rt.index(rt.sv(f, "stack_list"), rt.fv(f, "type", live(inp)))), "amount", rt.fv(f, "amount", live(inp)), add);
-	rt.setFv(f, "loc", live(inp), null);
-	while (rt.gt(rt.fv(f, "amount", live(storage)), rt.sv(f, "stack_amt"))) {
-		rt.setFv(f, "amount", (out = (yield* g.new_(f, rt.fv(f, "type", live(inp)), []))), rt.sv(f, "stack_amt"));
-		yield* g.srcCall(f, "unload_mineral", live(out));
-		(rt.modField(f, live(storage), "amount", rt.sv(f, "stack_amt"), subtract));
+	(storage = rt.index(this.stack_list, inp.type)).amount += inp.amount;
+	inp.loc = null;
+	while (storage.amount > this.stack_amt) {
+		(out = (yield* new_(inp.type))).amount = this.stack_amt;
+		yield* this.unload_mineral(out);
+		storage.amount -= this.stack_amt;
 	}
 	return f.dot;
 }, true);

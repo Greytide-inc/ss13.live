@@ -1,7 +1,7 @@
-// From code/modules/zombie/items.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/zombie/items.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(10207, "/obj/item/zombie_hand", "/obj/item", {
@@ -19,64 +19,59 @@ rt.type(10207, "/obj/item/zombie_hand", "/obj/item", {
 	damtype: "brute",
 });
 
-// /obj/item/zombie_hand/proc/equipped  (code/modules/zombie/items.dm:20)  may sleep
-rt.def("/obj/item/zombie_hand/proc/equipped", function* equipped(f: Frame) {
+// items.dm:20
+rt.def("/obj/item/zombie_hand/proc/equipped", function* equipped(f: Frame, user: Value, slot: Value) {
 	let i: Value = null;
-	f.vars = () => [i];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(rt.modulus((i = (yield* g.callName(f, live(f.args[0]), "get_held_index_of_item", [live(f.src)]))), 2))) {
-		rt.setSv(f, "icon_state", rt.sv(f, "icon_left"));
+	f.dot = (yield* parent_proc());
+	if (!((i = user.get_held_index_of_item(this)) % 2)) {
+		this.icon_state = this.icon_left;
 	} else {
-		rt.setSv(f, "icon_state", rt.sv(f, "icon_right"));
+		this.icon_state = this.icon_right;
 	}
-	return f.dot;
-}, true, { args: ["user", "slot"] });
-
-// /obj/item/zombie_hand/proc/afterattack  (code/modules/zombie/items.dm:29)  may sleep
-rt.def("/obj/item/zombie_hand/proc/afterattack", function* afterattack(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(live(f.args[2]))) {
-		return live(f.dot);
-	} else {
-		if (!truthy((rt.istype(live(f.args[0]), T("/mob/living")) ? 1 : 0))) return f.dot;
-		if (truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon/human")) ? 1 : 0))) {
-			yield* g.srcCall(f, "check_infection", live(f.args[0]), live(f.args[1]));
-		} else {
-			yield* g.srcCall(f, "check_feast", live(f.args[0]), live(f.args[1]));
-		}
-	}
-	return f.dot;
-}, true, { args: ["target", "user", "proximity_flag"] });
-
-// /obj/item/zombie_hand/proc/check_infection  (code/modules/zombie/items.dm:39)  may sleep
-rt.def("/obj/item/zombie_hand/proc/check_infection", function* check_infection(f: Frame, target: Value, user: Value) {
-	let infection: Value = null;
-	f.vars = () => [target, user, infection];
-	if ((!truthy(rt.fv(f, "dna", live(target))) || !truthy(rt.gv(f, "species", rt.fv(f, "dna", live(target)))))) {
-		return live(f.dot);
-	}
-	if (truthy((rt.isIn(f, 21, rt.gv(f, "species_traits", rt.gv(f, "species", rt.fv(f, "dna", live(target))))) ? 1 : 0))) {
-		return live(f.dot);
-	}
-	infection = null;
-	if (truthy((infection = (yield* g.callName(f, live(target), "getorganslot", ["zombie_infection"]))))) return f.dot;
-	yield* g.callName(f, (infection = (yield* g.new_(f, T("/obj/item/organ/zombie_infection"), []))), "Insert", [live(target)]);
 	return f.dot;
 }, true);
 
-// /obj/item/zombie_hand/proc/check_feast  (code/modules/zombie/items.dm:53)  may sleep
+// items.dm:29
+rt.def("/obj/item/zombie_hand/proc/afterattack", function* afterattack(f: Frame, target: Value, user: Value, proximity_flag: Value) {
+	f.dot = (yield* parent_proc());
+	if (!proximity_flag) {
+		return f.dot;
+	} else {
+		if (!rt.istype(target, T("/mob/living"))) return f.dot;
+		if (rt.istype(target, T("/mob/living/carbon/human"))) {
+			yield* this.check_infection(target, user);
+		} else {
+			yield* this.check_feast(target, user);
+		}
+	}
+	return f.dot;
+}, true);
+
+// items.dm:39
+rt.def("/obj/item/zombie_hand/proc/check_infection", function* check_infection(f: Frame, target: Value, user: Value) {
+	let infection: Value = null;
+	if (!target.dna || !target.dna.species) {
+		return f.dot;
+	}
+	if (rt.isIn(f, NOZOMBIE, target.dna.species.species_traits)) {
+		return f.dot;
+	}
+	if (infection = target.getorganslot("zombie_infection")) return f.dot;
+	yield* (infection = (yield* new_(T("/obj/item/organ/zombie_infection")))).Insert(target);
+	return f.dot;
+}, true);
+
+// items.dm:53
 rt.def("/obj/item/zombie_hand/proc/check_feast", function* check_feast(f: Frame, target: Value, user: Value) {
-	let hp_gained: Value = null;
-	f.vars = () => [target, user, hp_gained];
-	if (!isEqual(rt.fv(f, "stat", live(target)), 2)) return f.dot;
-	hp_gained = rt.fv(f, "maxHealth", live(target));
-	yield* g.callName(f, live(target), "gib", []);
-	yield* g.callName(f, live(user), "adjustBruteLoss", [rt.neg(live(hp_gained)), 0]);
-	yield* g.callName(f, live(user), "adjustToxLoss", [rt.neg(live(hp_gained)), 0]);
-	yield* g.callName(f, live(user), "adjustFireLoss", [rt.neg(live(hp_gained)), 0]);
-	yield* g.callName(f, live(user), "adjustCloneLoss", [rt.neg(live(hp_gained)), 0]);
-	yield* g.callName(f, live(user), "updatehealth", []);
-	yield* g.callName(f, live(user), "adjustBrainLoss", [rt.neg(live(hp_gained))]);
-	rt.setFv(f, "nutrition", live(user), (yield* g.call(f, P("/proc/min"), null, [add(rt.fv(f, "nutrition", live(user)), live(hp_gained)), 550])));
+	if (target.stat != 2) return f.dot;
+	let hp_gained: Value = target.maxHealth;
+	yield* target.gib();
+	yield* user.adjustBruteLoss(-hp_gained, 0);
+	yield* user.adjustToxLoss(-hp_gained, 0);
+	yield* user.adjustFireLoss(-hp_gained, 0);
+	yield* user.adjustCloneLoss(-hp_gained, 0);
+	yield* user.updatehealth();
+	yield* user.adjustBrainLoss(-hp_gained);
+	user.nutrition = min(user.nutrition + hp_gained, NUTRITION_LEVEL_FULL);
 	return f.dot;
 }, true);

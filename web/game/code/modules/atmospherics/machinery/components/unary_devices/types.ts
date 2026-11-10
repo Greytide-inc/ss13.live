@@ -1,5 +1,5 @@
 // Types declared in code/modules/atmospherics/machinery/components/unary_devices that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(6746, "/obj/item/weapon/circuitboard/machine/thermomachine/freezer", "/obj/item/weapon/circuitboard/machine/thermomachine", {
 	name: "Freezer (Machine Board)",

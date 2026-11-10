@@ -1,7 +1,7 @@
-// From code/game/objects/items/weapons/handcuffs.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/weapons/handcuffs.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, fmt } = rt;
 
 
 rt.type(5775, "/obj/item/weapon/restraints/handcuffs", "/obj/item/weapon/restraints", {
@@ -24,77 +24,67 @@ rt.type(5775, "/obj/item/weapon/restraints/handcuffs", "/obj/item/weapon/restrai
 	armor: null,
 });
 
-// /obj/item/weapon/restraints/handcuffs/proc/<init>  (code/game/objects/items/weapons/handcuffs.dm:18)
+// handcuffs.dm:18
 rt.def("/obj/item/weapon/restraints/handcuffs/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 500]));
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 50, "acid", 50]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 500]);
+	this.armor = rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 50, "acid", 50]);
 	return f.dot;
 });
 
-// /obj/item/weapon/restraints/handcuffs/proc/attack  (code/game/objects/items/weapons/handcuffs.dm:26)  may sleep
+// handcuffs.dm:26
 rt.def("/obj/item/weapon/restraints/handcuffs/proc/attack", function* attack(f: Frame, C: Value, user: Value) {
 	let M: Value = null;
-	f.vars = () => [C, user, M];
-	if (!truthy((rt.istype(live(C), T("/mob/living/carbon")) ? 1 : 0))) {
-		return live(f.dot);
+	if (!rt.istype(C, T("/mob/living/carbon"))) {
+		return f.dot;
 	}
-	if ((truthy(rt.bitAnd(rt.fv(f, "disabilities", live(user)), 256)) && truthy(rt.op(f, "Prob", [], [50])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>Uh... how do those things work?!</span>"]);
-		yield* g.srcCall(f, "apply_cuffs", live(user), live(user));
-		return live(f.dot);
+	if (rt.bitAnd(user.disabilities, 256) && prob(50)) {
+		to_chat(user, "<span class='warning'>Uh... how do those things work?!</span>");
+		yield* this.apply_cuffs(user, user);
+		return f.dot;
 	}
-	if ((truthy((rt.istype(live(C), T("/mob/living/carbon/monkey")) ? 1 : 0)) && truthy(rt.op(f, "Prob", [], [20])))) {
-		M = null;
-		yield* g.callName(f, (M = live(C)), "retaliate", [live(user)]);
+	if (rt.istype(C, T("/mob/living/carbon/monkey")) && prob(MONKEY_CUFF_RETALIATION_PROB)) {
+		yield* (M = C).retaliate(user);
 	}
-	if (truthy(rt.fv(f, "handcuffed", live(C)))) return f.dot;
-	if ((rt.ge((yield* g.callName(f, live(C), "get_num_arms", [])), 2) || truthy((yield* g.callName(f, live(C), "get_arm_ignore", []))))) {
-		yield* g.callName(f, live(C), "visible_message", [fmt("<span class='danger'>＀ is trying to put ＀ on ＀!</span>", [live(user), rt.fv(f, "name", live(f.src)), live(C)]), fmt("<span class='userdanger'>＀ is trying to put ＀ on ＀!</span>", [live(user), rt.fv(f, "name", live(f.src)), live(C)])]);
-		yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.sv(f, "cuffsound"), 30, 1, -2]);
-		if ((truthy((yield* g.call(f, P("/proc/do_mob"), null, [live(user), live(C), 30]))) && (rt.ge((yield* g.callName(f, live(C), "get_num_arms", [])), 2) || truthy((yield* g.callName(f, live(C), "get_arm_ignore", [])))))) {
-			yield* g.srcCall(f, "apply_cuffs", live(C), live(user));
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You handcuff ＀.</span>", [live(C)])]);
-			yield* g.call(f, P("/proc/add_logs"), null, [live(user), live(C), "handcuffed"]);
+	if (C.handcuffed) return f.dot;
+	if (C.get_num_arms() >= 2 || C.get_arm_ignore()) {
+		C.visible_message(`<span class='danger'>${user} is trying to put ${this.name} on ${C}!</span>`, `<span class='userdanger'>${user} is trying to put ${this.name} on ${C}!</span>`);
+		playsound(this.loc, this.cuffsound, 30, 1, -2);
+		if ((yield* do_mob(user, C, 30)) && (C.get_num_arms() >= 2 || C.get_arm_ignore())) {
+			yield* this.apply_cuffs(C, user);
+			to_chat(user, `<span class='notice'>You handcuff ${C}.</span>`);
+			add_logs(user, C, "handcuffed");
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>You fail to handcuff ＀!</span>", [live(C)])]);
+			to_chat(user, `<span class='warning'>You fail to handcuff ${C}!</span>`);
 		}
 	} else {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ doesn't have two hands...</span>", [live(C)])]);
+		to_chat(user, `<span class='warning'>${C} doesn't have two hands...</span>`);
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/restraints/handcuffs/proc/apply_cuffs  (code/game/objects/items/weapons/handcuffs.dm:57)  may sleep
+// handcuffs.dm:57
 rt.def("/obj/item/weapon/restraints/handcuffs/proc/apply_cuffs", function* apply_cuffs(f: Frame, target: Value, user: Value, dispense: Value) {
-	let cuffs: Value = null;
-	f.vars = () => [target, user, dispense, cuffs];
-	if (live(dispense) === null) {
-		dispense = 0;
+	dispense ??= 0;
+	if (target.handcuffed) {
+		return f.dot;
 	}
-	if (truthy(rt.fv(f, "handcuffed", live(target)))) {
-		return live(f.dot);
+	if (!(yield* user.drop_item()) && !dispense) {
+		return f.dot;
 	}
-	if ((!truthy((yield* g.callName(f, live(user), "drop_item", []))) && !truthy(live(dispense)))) {
-		return live(f.dot);
+	let cuffs: Value = this;
+	if (this.trashtype) {
+		cuffs = (yield* new_(this.trashtype));
+	} else if (dispense) {
+		cuffs = (yield* new_(this.type));
 	}
-	cuffs = live(f.src);
-	if (truthy(rt.sv(f, "trashtype"))) {
-		cuffs = (yield* g.new_(f, rt.sv(f, "trashtype"), []));
-	} else {
-		if (truthy(live(dispense))) {
-			cuffs = (yield* g.new_(f, rt.sv(f, "type"), []));
-		}
+	cuffs.loc = target;
+	target.handcuffed = cuffs;
+	yield* target.update_handcuffed();
+	if (this.trashtype && !dispense) {
+		yield* qdel(this);
 	}
-	rt.setFv(f, "loc", live(cuffs), live(target));
-	rt.setFv(f, "handcuffed", live(target), live(cuffs));
-	yield* g.callName(f, live(target), "update_handcuffed", []);
-	if ((truthy(rt.sv(f, "trashtype")) && !truthy(live(dispense)))) {
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-	}
-	return live(f.dot);
+	return f.dot;
 }, true);
 
 rt.type(5781, "/obj/item/weapon/restraints/handcuffs/cable", "/obj/item/weapon/restraints/handcuffs", {
@@ -109,101 +99,95 @@ rt.type(5781, "/obj/item/weapon/restraints/handcuffs/cable", "/obj/item/weapon/r
 	breakouttime: 300,
 });
 
-// /obj/item/weapon/restraints/handcuffs/cable/proc/<init>  (code/game/objects/items/weapons/handcuffs.dm:91)
+// handcuffs.dm:91
 rt.def("/obj/item/weapon/restraints/handcuffs/cable/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 150, "$glass", 75]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 150, "$glass", 75]);
 	return f.dot;
 });
 
-// /obj/item/weapon/restraints/handcuffs/cable/proc/attack  (code/game/objects/items/weapons/handcuffs.dm:98)  may sleep
-rt.def("/obj/item/weapon/restraints/handcuffs/cable/proc/attack", function* attack(f: Frame) {
-	if (!truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon")) ? 1 : 0))) {
-		return live(f.dot);
+// handcuffs.dm:98
+rt.def("/obj/item/weapon/restraints/handcuffs/cable/proc/attack", function* attack(f: Frame, C: Value, user: Value) {
+	if (!rt.istype(C, T("/mob/living/carbon"))) {
+		return f.dot;
 	}
-	if ((truthy(rt.sv(f, "wirestorage")) && rt.lt(rt.fv(f, "energy", rt.sv(f, "wirestorage")), 15))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>You need at least 15 wire to restrain ＀!</span>", [live(f.args[0])])]);
-		return live(f.dot);
+	if (this.wirestorage && this.wirestorage.energy < 15) {
+		to_chat(user, `<span class='warning'>You need at least 15 wire to restrain ${C}!</span>`);
+		return f.dot;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["C", "user"] });
+	return (yield* parent_proc());
+}, true);
 
-// /obj/item/weapon/restraints/handcuffs/cable/proc/apply_cuffs  (code/game/objects/items/weapons/handcuffs.dm:107)  may sleep
+// handcuffs.dm:107
 rt.def("/obj/item/weapon/restraints/handcuffs/cable/proc/apply_cuffs", function* apply_cuffs(f: Frame) {
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 0;
 	}
-	if (truthy(rt.sv(f, "wirestorage"))) {
-		if (!truthy((yield* g.callName(f, rt.sv(f, "wirestorage"), "use_charge", [15])))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>You need at least 15 wire to restrain ＀!</span>", [live(f.args[0])])]);
-			return live(f.dot);
+	if (this.wirestorage) {
+		if (!(yield* this.wirestorage.use_charge(15))) {
+			to_chat(f.args[1], `<span class='warning'>You need at least 15 wire to restrain ${f.args[0]}!</span>`);
+			return f.dot;
 		}
-		return (yield* g.callSuper(f, [live(f.args[0]), live(f.args[1]), 1]));
+		return (yield* parent_proc(f.args[0], f.args[1], 1));
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true, { args: ["target", "user", "dispense"] });
 
-// /obj/item/weapon/restraints/handcuffs/cable/proc/attackby  (code/game/objects/items/weapons/handcuffs.dm:160)  may sleep
-rt.def("/obj/item/weapon/restraints/handcuffs/cable/proc/attackby", function* attackby(f: Frame) {
+// handcuffs.dm:160
+rt.def("/obj/item/weapon/restraints/handcuffs/cable/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
 	let R: Value = null, W: Value = null, M: Value = null, S: Value = null;
-	f.vars = () => [R, W, M, S];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/stack/rods")) ? 1 : 0))) {
-		if (truthy((yield* g.callName(f, (R = live(f.args[0])), "use", [1])))) {
-			W = (yield* g.new_(f, T("/obj/item/weapon/wirerod"), []));
-			yield* g.srcCall(f, "remove_item_from_storage", live(f.args[1]));
-			yield* g.callName(f, live(f.args[1]), "put_in_hands", [live(W)]);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You wrap the cable restraint around the top of the rod.</span>"]);
-			yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* parent_proc();
+	if (rt.istype(I, T("/obj/item/stack/rods"))) {
+		if (yield* (R = I).use(1)) {
+			W = (yield* new_(T("/obj/item/weapon/wirerod")));
+			yield* this.remove_item_from_storage(user);
+			yield* user.put_in_hands(W);
+			to_chat(user, "<span class='notice'>You wrap the cable restraint around the top of the rod.</span>");
+			yield* qdel(this);
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You need one rod to make a wired rod!</span>"]);
-			return live(f.dot);
+			to_chat(user, "<span class='warning'>You need one rod to make a wired rod!</span>");
+			return f.dot;
+		}
+	} else if (rt.istype(I, T("/obj/item/stack/sheet/metal"))) {
+		if ((M = I).get_amount() < 6) {
+			to_chat(user, "<span class='warning'>You need at least six metal sheets to make good enough weights!</span>");
+			return f.dot;
+		}
+		to_chat(user, `<span class='notice'>You begin to apply ${I} to ${this}...</span>`);
+		if (yield* do_after(user, 35, { target: this })) {
+			if (M.get_amount() < 6 || !M) {
+				return f.dot;
+			}
+			S = (yield* new_(T("/obj/item/weapon/restraints/legcuffs/bola")));
+			yield* M.use(6);
+			yield* user.put_in_hands(S);
+			to_chat(user, `<span class='notice'>You make some weights out of ${I} and tie them to ${this}.</span>`);
+			yield* this.remove_item_from_storage(user);
+			yield* qdel(this);
 		}
 	} else {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/stack/sheet/metal")) ? 1 : 0))) {
-			if (rt.lt((yield* g.callName(f, (M = live(f.args[0])), "get_amount", [])), 6)) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You need at least six metal sheets to make good enough weights!</span>"]);
-				return live(f.dot);
-			}
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You begin to apply ＀ to ＀...</span>", [live(f.args[0]), live(f.src)])]);
-			if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, 35, "target", live(f.src)], rt.Args.Named)))) {
-				if ((rt.lt((yield* g.callName(f, live(M), "get_amount", [])), 6) || !truthy(live(M)))) {
-					return live(f.dot);
-				}
-				S = (yield* g.new_(f, T("/obj/item/weapon/restraints/legcuffs/bola"), []));
-				yield* g.callName(f, live(M), "use", [6]);
-				yield* g.callName(f, live(f.args[1]), "put_in_hands", [live(S)]);
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You make some weights out of ＀ and tie them to ＀.</span>", [live(f.args[0]), live(f.src)])]);
-				yield* g.srcCall(f, "remove_item_from_storage", live(f.args[1]));
-				yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-			}
-		} else {
-			return (yield* g.callSuper(f, [], rt.Args.Same));
-		}
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["I", "user", "params"] });
+}, true);
 
 rt.type(5791, "/obj/item/weapon/restraints/handcuffs/cable/zipties/cyborg", "/obj/item/weapon/restraints/handcuffs/cable/zipties", {});
 
-// /obj/item/weapon/restraints/handcuffs/cable/zipties/cyborg/proc/attack  (code/game/objects/items/weapons/handcuffs.dm:191)  may sleep
+// handcuffs.dm:191
 rt.def("/obj/item/weapon/restraints/handcuffs/cable/zipties/cyborg/proc/attack", function* attack(f: Frame, C: Value, user: Value) {
-	f.vars = () => [C, user];
-	if (!truthy((rt.istype(live(user), T("/mob/living/silicon/robot")) ? 1 : 0))) return f.dot;
-	if (truthy(rt.fv(f, "handcuffed", live(C)))) return f.dot;
-	yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/weapons/cablecuff.ogg"), 30, 1, -2]);
-	yield* g.callName(f, live(C), "visible_message", [fmt("<span class='danger'>＀ is trying to put zipties on ＀!</span>", [live(user), live(C)]), fmt("<span class='userdanger'>＀ is trying to put zipties on ＀!</span>", [live(user), live(C)])]);
-	if (truthy((yield* g.call(f, P("/proc/do_mob"), null, [live(user), live(C), 30])))) {
-		if (!truthy(rt.fv(f, "handcuffed", live(C)))) {
-			rt.setFv(f, "handcuffed", live(C), (yield* g.new_(f, T("/obj/item/weapon/restraints/handcuffs/cable/zipties/used"), [live(C)])));
-			yield* g.callName(f, live(C), "update_handcuffed", []);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You handcuff ＀.</span>", [live(C)])]);
-			yield* g.call(f, P("/proc/add_logs"), null, [live(user), live(C), "handcuffed"]);
+	if (!rt.istype(user, T("/mob/living/silicon/robot"))) return f.dot;
+	if (C.handcuffed) return f.dot;
+	playsound(this.loc, rt.rsc("sound/weapons/cablecuff.ogg"), 30, 1, -2);
+	C.visible_message(`<span class='danger'>${user} is trying to put zipties on ${C}!</span>`, `<span class='userdanger'>${user} is trying to put zipties on ${C}!</span>`);
+	if (yield* do_mob(user, C, 30)) {
+		if (!C.handcuffed) {
+			C.handcuffed = (yield* new_(T("/obj/item/weapon/restraints/handcuffs/cable/zipties/used"), C));
+			yield* C.update_handcuffed();
+			to_chat(user, `<span class='notice'>You handcuff ${C}.</span>`);
+			add_logs(user, C, "handcuffed");
 		}
 	} else {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>You fail to handcuff ＀!</span>", [live(C)])]);
+		to_chat(user, `<span class='warning'>You fail to handcuff ${C}!</span>`);
 	}
 	return f.dot;
 }, true);
@@ -218,12 +202,10 @@ rt.type(5790, "/obj/item/weapon/restraints/handcuffs/cable/zipties", "/obj/item/
 	trashtype: rt.typePath("/obj/item/weapon/restraints/handcuffs/cable/zipties/used"),
 });
 
-// /obj/item/weapon/restraints/handcuffs/cable/zipties/proc/<init>  (code/game/objects/items/weapons/handcuffs.dm:210)
+// handcuffs.dm:210
 rt.def("/obj/item/weapon/restraints/handcuffs/cable/zipties/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.list());
+	parent_proc();
+	this.materials = list();
 	return f.dot;
 });
 
@@ -238,82 +220,78 @@ rt.type(5771, "/obj/item/weapon/restraints/legcuffs/beartrap", "/obj/item/weapon
 	origin_tech: "engineering=4",
 });
 
-// /obj/item/weapon/restraints/legcuffs/beartrap/proc/Initialize  (code/game/objects/items/weapons/handcuffs.dm:248)  may sleep
+// handcuffs.dm:248
 rt.def("/obj/item/weapon/restraints/legcuffs/beartrap/proc/Initialize", function* Initialize(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "icon_state", fmt("＀＀", [rt.initial(f, live(f.src), "icon_state"), rt.sv(f, "armed")]));
+	yield* parent_proc();
+	this.icon_state = `${rt.initial(f, this, "icon_state")}${this.armed}`;
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/restraints/legcuffs/beartrap/proc/suicide_act  (code/game/objects/items/weapons/handcuffs.dm:252)
+// handcuffs.dm:252
 rt.def("/obj/item/weapon/restraints/legcuffs/beartrap/proc/suicide_act", function suicide_act(f: Frame, user: Value) {
-	rt.callName(f, live(user), "visible_message", [fmt("<span class='suicide'>＀ is sticking ＀ head in the ＀! It looks like ＀ trying to commit suicide!</span>", [live(user), rt.callName(f, live(user), "p_their", []), rt.fv(f, "name", live(f.src)), rt.callName(f, live(user), "p_theyre", [])])]);
-	rt.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/weapons/bladeslice.ogg"), 50, 1, -1]);
+	user.visible_message(`<span class='suicide'>${user} is sticking ${user.p_their()} head in the ${this.name}! It looks like ${user.p_theyre()} trying to commit suicide!</span>`);
+	playsound(this.loc, rt.rsc("sound/weapons/bladeslice.ogg"), 50, 1, -1);
 	return 1;
 });
 
-// /obj/item/weapon/restraints/legcuffs/beartrap/proc/attack_self  (code/game/objects/items/weapons/handcuffs.dm:257)  may sleep
-rt.def("/obj/item/weapon/restraints/legcuffs/beartrap/proc/attack_self", function* attack_self(f: Frame) {
-	let $0: any, $1: any, $2: any;
-	f.vars = () => [$0, $1, $2];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!((truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon/human")) ? 1 : 0)) && !truthy(rt.fv(f, "stat", live(f.args[0])))) && !truthy((yield* g.callName(f, live(f.args[0]), "restrained", []))))) return f.dot;
-	rt.setSv(f, "armed", (!truthy(rt.sv(f, "armed")) ? 1 : 0));
-	rt.setSv(f, "icon_state", fmt("＀＀", [rt.initial(f, live(f.src), "icon_state"), rt.sv(f, "armed")]));
-	$0 = live(f.args[0]);
-	$1 = live(f.src);
-	if (truthy(rt.sv(f, "armed"))) {
-		$1 = $1;
+// handcuffs.dm:257
+rt.def("/obj/item/weapon/restraints/legcuffs/beartrap/proc/attack_self", function* attack_self(f: Frame, user: Value) {
+	let $2: any;
+	yield* parent_proc();
+	if (!(rt.istype(user, T("/mob/living/carbon/human")) && !user.stat && !user.restrained())) return f.dot;
+	this.armed = (!this.armed ? 1 : 0);
+	this.icon_state = `${rt.initial(f, this, "icon_state")}${this.armed}`;
+	let $0: any = user;
+	let $1: any = this;
+	if (this.armed) {
+
 		$2 = "armed";
 	} else {
 		$2 = "disarmed";
 	}
-	yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='notice'>＀ is now ＀</span>", [$1, $2])]);
+	to_chat($0, `<span class='notice'>${$1} is now ${$2}</span>`);
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /obj/item/weapon/restraints/legcuffs/beartrap/proc/Crossed  (code/game/objects/items/weapons/handcuffs.dm:264)  may sleep
-rt.def("/obj/item/weapon/restraints/legcuffs/beartrap/proc/Crossed", function* Crossed(f: Frame) {
+// handcuffs.dm:264
+rt.def("/obj/item/weapon/restraints/legcuffs/beartrap/proc/Crossed", function* Crossed(f: Frame, AM: Value) {
 	let L: Value = null, snap: Value = null, def_zone: Value = null, C: Value = null, SA: Value = null;
-	f.vars = () => [L, snap, def_zone, C, SA];
-	if ((truthy(rt.sv(f, "armed")) && truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.fv(f, "loc", live(f.src))]))))) {
-		if (truthy((rt.istype(live(f.args[0]), T("/mob/living")) ? 1 : 0))) {
-			L = live(f.args[0]);
+	if (this.armed && isturf(this.loc)) {
+		if (rt.istype(AM, T("/mob/living"))) {
+			L = AM;
 			snap = 0;
 			def_zone = "chest";
-			if (truthy((rt.istype(live(L), T("/mob/living/carbon")) ? 1 : 0))) {
-				C = live(L);
+			if (rt.istype(L, T("/mob/living/carbon"))) {
+				C = L;
 				snap = 1;
-				if (!truthy(rt.fv(f, "lying", live(C)))) {
-					def_zone = rt.op(f, "PickUnweighted", [2], ["l_leg", "r_leg"]);
-					if ((!truthy(rt.fv(f, "legcuffed", live(C))) && rt.ge((yield* g.callName(f, live(C), "get_num_legs", [])), 2))) {
-						rt.setFv(f, "legcuffed", live(C), live(f.src));
-						rt.setFv(f, "loc", live(f.src), live(C));
-						yield* g.callName(f, live(C), "update_inv_legcuffed", []);
+				if (!C.lying) {
+					def_zone = pick("l_leg", "r_leg");
+					if (!C.legcuffed && C.get_num_legs() >= 2) {
+						C.legcuffed = this;
+						this.loc = C;
+						yield* C.update_inv_legcuffed();
 					}
 				}
-			} else {
-				if (truthy((rt.istype(live(L), T("/mob/living/simple_animal")) ? 1 : 0))) {
-					if (rt.gt(rt.gv(f, "mob_size", (SA = live(L))), 0)) {
-						snap = 1;
-					}
+			} else if (rt.istype(L, T("/mob/living/simple_animal"))) {
+				if ((SA = L).mob_size > MOB_SIZE_TINY) {
+					snap = 1;
 				}
 			}
-			if (truthy(rt.bitAnd(rt.fv(f, "movement_type", live(L)), 2))) {
+			if (rt.bitAnd(L.movement_type, 2)) {
 				snap = 0;
 			}
-			if (truthy(live(snap))) {
-				rt.setSv(f, "armed", 0);
-				rt.setSv(f, "icon_state", fmt("＀＀", [rt.initial(f, live(f.src), "icon_state"), rt.sv(f, "armed")]));
-				yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/effects/snap.ogg"), 50, 1]);
-				yield* g.callName(f, live(L), "visible_message", [fmt("<span class='danger'>＀ triggers ％！.</span>", [live(L), live(f.src)]), fmt("<span class='userdanger'>You trigger ％！!</span>", [live(f.src)])]);
-				yield* g.callName(f, live(L), "apply_damage", [rt.sv(f, "trap_damage"), "brute", live(def_zone)]);
+			if (snap) {
+				this.armed = 0;
+				this.icon_state = `${rt.initial(f, this, "icon_state")}${this.armed}`;
+				playsound(this.loc, rt.rsc("sound/effects/snap.ogg"), 50, 1);
+				L.visible_message(fmt("<span class='danger'>＀ triggers ％！.</span>", [L, this]), fmt("<span class='userdanger'>You trigger ％！!</span>", [this]));
+				yield* L.apply_damage(this.trap_damage, "brute", def_zone);
 			}
 		}
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["AM"] });
+}, true);
 
 rt.type(5772, "/obj/item/weapon/restraints/legcuffs/beartrap/energy", "/obj/item/weapon/restraints/legcuffs/beartrap", {
 	armed: 1,
@@ -323,25 +301,24 @@ rt.type(5772, "/obj/item/weapon/restraints/legcuffs/beartrap/energy", "/obj/item
 	icon_state: "e_snare",
 });
 
-// /obj/item/weapon/restraints/legcuffs/beartrap/energy/proc/New  (code/game/objects/items/weapons/handcuffs.dm:302)  may sleep
+// handcuffs.dm:302
 rt.def("/obj/item/weapon/restraints/legcuffs/beartrap/energy/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/item/weapon/restraints/legcuffs/beartrap/energy/proc/dissipate")])), 100]);
+	yield* parent_proc();
+	yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/item/weapon/restraints/legcuffs/beartrap/energy/proc/dissipate"))), 100);
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/restraints/legcuffs/beartrap/energy/proc/dissipate  (code/game/objects/items/weapons/handcuffs.dm:306)  may sleep
+// handcuffs.dm:306
 rt.def("/obj/item/weapon/restraints/legcuffs/beartrap/energy/proc/dissipate", function* dissipate(f: Frame) {
-	if (truthy((yield* g.call(f, P("/proc/ismob"), null, [rt.sv(f, "loc")])))) return f.dot;
-	yield* g.call(f, P("/proc/do_sparks"), null, [1, 1, live(f.src)]);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	if (ismob(this.loc)) return f.dot;
+	yield* do_sparks(1, 1, this);
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/restraints/legcuffs/beartrap/energy/proc/attack_hand  (code/game/objects/items/weapons/handcuffs.dm:311)  may sleep
+// handcuffs.dm:311
 rt.def("/obj/item/weapon/restraints/legcuffs/beartrap/energy/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.srcCall(f, "Crossed", live(user));
+	yield* this.Crossed(user);
 	return f.dot;
 }, true);
 
@@ -355,37 +332,36 @@ rt.type(5767, "/obj/item/weapon/restraints/legcuffs/bola", "/obj/item/weapon/res
 	origin_tech: "engineering=3;combat=1",
 });
 
-// /obj/item/weapon/restraints/legcuffs/bola/proc/throw_at  (code/game/objects/items/weapons/handcuffs.dm:326)  may sleep
+// handcuffs.dm:326
 rt.def("/obj/item/weapon/restraints/legcuffs/bola/proc/throw_at", function* throw_at(f: Frame) {
-	if (live(f.args[4]) === null) {
+	if (f.args[4] === null) {
 		f.args[4] = 1;
 	}
-	if (live(f.args[5]) === null) {
+	if (f.args[5] === null) {
 		f.args[5] = 0;
 	}
-	if (!truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		return live(f.dot);
+	if (!(yield* parent_proc())) {
+		return f.dot;
 	}
-	yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/weapons/bolathrow.ogg"), 75, 1]);
+	playsound(this.loc, rt.rsc("sound/weapons/bolathrow.ogg"), 75, 1);
 	return f.dot;
 }, true, { args: ["target", "range", "speed", "thrower", "spin", "diagonals_first", "callback"] });
 
-// /obj/item/weapon/restraints/legcuffs/bola/proc/throw_impact  (code/game/objects/items/weapons/handcuffs.dm:331)  may sleep
-rt.def("/obj/item/weapon/restraints/legcuffs/bola/proc/throw_impact", function* throw_impact(f: Frame) {
+// handcuffs.dm:331
+rt.def("/obj/item/weapon/restraints/legcuffs/bola/proc/throw_impact", function* throw_impact(f: Frame, hit_atom: Value) {
 	let C: Value = null;
-	f.vars = () => [C];
-	if ((truthy((yield* g.callSuper(f, [], rt.Args.Same))) || !truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon")) ? 1 : 0)))) {
-		return live(f.dot);
+	if ((yield* parent_proc()) || !rt.istype(hit_atom, T("/mob/living/carbon"))) {
+		return f.dot;
 	}
-	if (!(!truthy(rt.gv(f, "legcuffed", (C = live(f.args[0])))) && rt.ge((yield* g.callName(f, live(C), "get_num_legs", [])), 2))) return f.dot;
-	yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＄！ ensnares ＀!</span>", [live(f.src), live(C)]));
-	rt.setFv(f, "legcuffed", live(C), live(f.src));
-	rt.setFv(f, "loc", live(f.src), live(C));
-	yield* g.callName(f, live(C), "update_inv_legcuffed", []);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(C), fmt("<span class='userdanger'>＄！ ensnares you!</span>", [live(f.src)])]);
-	yield* g.callName(f, live(C), "Knockdown", [rt.sv(f, "knockdown")]);
+	if (!(!(C = hit_atom).legcuffed && C.get_num_legs() >= 2)) return f.dot;
+	this.visible_message(fmt("<span class='danger'>＄！ ensnares ＀!</span>", [this, C]));
+	C.legcuffed = this;
+	this.loc = C;
+	yield* C.update_inv_legcuffed();
+	to_chat(C, fmt("<span class='userdanger'>＄！ ensnares you!</span>", [this]));
+	yield* C.Knockdown(this.knockdown);
 	return f.dot;
-}, true, { args: ["hit_atom"], waitfor: false });
+}, true, { waitfor: false });
 
 rt.type(5770, "/obj/item/weapon/restraints/legcuffs/bola/energy", "/obj/item/weapon/restraints/legcuffs/bola", {
 	name: "energy bola",
@@ -396,14 +372,13 @@ rt.type(5770, "/obj/item/weapon/restraints/legcuffs/bola/energy", "/obj/item/wea
 	breakouttime: 60,
 });
 
-// /obj/item/weapon/restraints/legcuffs/bola/energy/proc/throw_impact  (code/game/objects/items/weapons/handcuffs.dm:360)  may sleep
-rt.def("/obj/item/weapon/restraints/legcuffs/bola/energy/proc/throw_impact", function* throw_impact(f: Frame) {
+// handcuffs.dm:360
+rt.def("/obj/item/weapon/restraints/legcuffs/bola/energy/proc/throw_impact", function* throw_impact(f: Frame, hit_atom: Value) {
 	let B: Value = null;
-	f.vars = () => [B];
-	if (truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon")) ? 1 : 0))) {
-		yield* g.callName(f, (B = (yield* g.new_(f, T("/obj/item/weapon/restraints/legcuffs/beartrap/energy/cyborg"), [rt.getStep(f, live(f.args[0]), 0)]))), "Crossed", [live(f.args[0])]);
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	if (rt.istype(hit_atom, T("/mob/living/carbon"))) {
+		yield* (B = (yield* new_(T("/obj/item/weapon/restraints/legcuffs/beartrap/energy/cyborg"), rt.getStep(f, hit_atom, 0)))).Crossed(hit_atom);
+		yield* qdel(this);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["hit_atom"], waitfor: false });
+}, true, { waitfor: false });

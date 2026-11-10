@@ -1,7 +1,7 @@
-// From code/modules/projectiles/guns/ballistic/launchers.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/projectiles/guns/ballistic/launchers.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(5265, "/obj/item/weapon/gun/ballistic/revolver/grenadelauncher", "/obj/item/weapon/gun/ballistic/revolver", {
@@ -15,13 +15,13 @@ rt.type(5265, "/obj/item/weapon/gun/ballistic/revolver/grenadelauncher", "/obj/i
 	pin: rt.typePath("/obj/item/device/firing_pin/implant/pindicate"),
 });
 
-// /obj/item/weapon/gun/ballistic/revolver/grenadelauncher/proc/attackby  (code/modules/projectiles/guns/ballistic/launchers.dm:18)  may sleep
-rt.def("/obj/item/weapon/gun/ballistic/revolver/grenadelauncher/proc/attackby", function* attackby(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!(truthy((rt.istype(live(f.args[0]), T("/obj/item/ammo_box")) ? 1 : 0)) || truthy((rt.istype(live(f.args[0]), T("/obj/item/ammo_casing")) ? 1 : 0)))) return f.dot;
-	yield* g.srcCall(f, "chamber_round");
+// launchers.dm:18
+rt.def("/obj/item/weapon/gun/ballistic/revolver/grenadelauncher/proc/attackby", function* attackby(f: Frame, A: Value, user: Value, params: Value) {
+	yield* parent_proc();
+	if (!(rt.istype(A, T("/obj/item/ammo_box")) || rt.istype(A, T("/obj/item/ammo_casing")))) return f.dot;
+	yield* this.chamber_round();
 	return f.dot;
-}, true, { args: ["A", "user", "params"] });
+}, true);
 
 rt.type(5239, "/obj/item/weapon/gun/ballistic/automatic/gyropistol", "/obj/item/weapon/gun/ballistic/automatic", {
 	name: "gyrojet pistol",
@@ -36,27 +36,18 @@ rt.type(5239, "/obj/item/weapon/gun/ballistic/automatic/gyropistol", "/obj/item/
 	mag_type: rt.typePath("/obj/item/ammo_box/magazine/m75"),
 });
 
-// /obj/item/weapon/gun/ballistic/automatic/gyropistol/proc/<init>  (code/modules/projectiles/guns/ballistic/launchers.dm:42)
+// launchers.dm:42
 rt.def("/obj/item/weapon/gun/ballistic/automatic/gyropistol/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "actions_types", rt.list());
+	parent_proc();
+	this.actions_types = list();
 	return f.dot;
 });
 
-// /obj/item/weapon/gun/ballistic/automatic/gyropistol/proc/update_icon  (code/modules/projectiles/guns/ballistic/launchers.dm:46)
+// launchers.dm:46
 rt.def("/obj/item/weapon/gun/ballistic/automatic/gyropistol/proc/update_icon", function update_icon(f: Frame) {
-	let $0: any, $1: any;
-	f.vars = () => [$0, $1];
-	rt.callSuper(f, [], rt.Args.Same);
-	$0 = rt.initial(f, live(f.src), "icon_state");
-	if (truthy(rt.sv(f, "magazine"))) {
-		$1 = "loaded";
-	} else {
-		$1 = "";
-	}
-	rt.setSv(f, "icon_state", fmt("＀＀", [$0, $1]));
+	parent_proc();
+	let $0: any = rt.initial(f, this, "icon_state");
+	this.icon_state = `${$0}${this.magazine ? "loaded" : ""}`;
 	return f.dot;
 });
 
@@ -78,23 +69,20 @@ rt.type(5240, "/obj/item/weapon/gun/ballistic/automatic/speargun", "/obj/item/we
 	mag_type: rt.typePath("/obj/item/ammo_box/magazine/internal/speargun"),
 });
 
-// /obj/item/weapon/gun/ballistic/automatic/speargun/proc/<init>  (code/modules/projectiles/guns/ballistic/launchers.dm:63)
+// launchers.dm:63
 rt.def("/obj/item/weapon/gun/ballistic/automatic/speargun/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "actions_types", rt.list());
+	parent_proc();
+	this.actions_types = list();
 	return f.dot;
 });
 
-// /obj/item/weapon/gun/ballistic/automatic/speargun/proc/attackby  (code/modules/projectiles/guns/ballistic/launchers.dm:73)  may sleep
+// launchers.dm:73
 rt.def("/obj/item/weapon/gun/ballistic/automatic/speargun/proc/attackby", function* attackby(f: Frame, A: Value, user: Value, params: Value) {
 	let num_loaded: Value = null;
-	f.vars = () => [A, user, params, num_loaded];
-	if (!truthy((num_loaded = (yield* g.callName(f, rt.sv(f, "magazine"), "attackby", [live(A), live(user), live(params), 1]))))) return f.dot;
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You load ＀ spear５ into ％！.</span>", [live(num_loaded), live(f.src)])]);
-	yield* g.srcCall(f, "update_icon");
-	yield* g.srcCall(f, "chamber_round");
+	if (!(num_loaded = (yield* this.magazine.attackby(A, user, params, 1)))) return f.dot;
+	to_chat(user, fmt("<span class='notice'>You load ＀ spear５ into ％！.</span>", [num_loaded, this]));
+	yield* this.update_icon();
+	yield* this.chamber_round();
 	return f.dot;
 }, true);
 
@@ -115,25 +103,16 @@ rt.type(5241, "/obj/item/weapon/gun/ballistic/automatic/atlauncher", "/obj/item/
 	mag_type: rt.typePath("/obj/item/ammo_box/magazine/internal/rocketlauncher"),
 });
 
-// /obj/item/weapon/gun/ballistic/automatic/atlauncher/proc/<init>  (code/modules/projectiles/guns/ballistic/launchers.dm:91)
+// launchers.dm:91
 rt.def("/obj/item/weapon/gun/ballistic/automatic/atlauncher/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "actions_types", rt.list());
+	parent_proc();
+	this.actions_types = list();
 	return f.dot;
 });
 
-// /obj/item/weapon/gun/ballistic/automatic/atlauncher/proc/update_icon  (code/modules/projectiles/guns/ballistic/launchers.dm:99)
+// launchers.dm:99
 rt.def("/obj/item/weapon/gun/ballistic/automatic/atlauncher/proc/update_icon", function update_icon(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	rt.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.sv(f, "magazine"))) {
-		$0 = fmt("-＀", [rt.callSrc(f, "get_ammo", [1])]);
-	} else {
-		$0 = "";
-	}
-	rt.setSv(f, "icon_state", fmt("rocketlauncher＀", [$0]));
+	parent_proc();
+	this.icon_state = `rocketlauncher${this.magazine ? `-${this.get_ammo(1)}` : ""}`;
 	return f.dot;
 });

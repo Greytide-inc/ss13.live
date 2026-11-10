@@ -1,69 +1,67 @@
-// From code/game/gamemodes/devil/true_devil/inventory.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/gamemodes/devil/true_devil/inventory.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
 
 
-// /mob/living/carbon/true_devil/proc/doUnEquip  (code/game/gamemodes/devil/true_devil/inventory.dm:2)  may sleep
-rt.def("/mob/living/carbon/true_devil/proc/doUnEquip", function* doUnEquip(f: Frame) {
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		yield* g.srcCall(f, "update_inv_hands");
+
+// inventory.dm:2
+rt.def("/mob/living/carbon/true_devil/proc/doUnEquip", function* doUnEquip(f: Frame, I: Value, force: Value) {
+	if (yield* parent_proc()) {
+		yield* this.update_inv_hands();
 		return 1;
 	}
 	return 0;
-}, true, { args: ["I", "force"] });
+}, true);
 
-// /mob/living/carbon/true_devil/proc/update_inv_hands  (code/game/gamemodes/devil/true_devil/inventory.dm:9)
+// inventory.dm:9
 rt.def("/mob/living/carbon/true_devil/proc/update_inv_hands", function update_inv_hands(f: Frame) {
-	let hands_overlays: Value = null, l_hand: Value = null, r_hand: Value = null, r_state: Value = null, r_hand_overlay: Value = null, l_state: Value = null, l_hand_overlay: Value = null;
-	f.vars = () => [hands_overlays, l_hand, r_hand, r_state, r_hand_overlay, l_state, l_hand_overlay];
-	rt.callSrc(f, "remove_overlay", [1]);
-	hands_overlays = rt.list();
-	l_hand = rt.callSrc(f, "get_item_for_held_index", [1]);
-	if (truthy((r_hand = rt.callSrc(f, "get_item_for_held_index", [2])))) {
-		if (!truthy((r_state = rt.fv(f, "item_state", live(r_hand))))) {
-			r_state = rt.fv(f, "icon_state", live(r_hand));
+	let r_hand: Value = null, r_state: Value = null, r_hand_overlay: Value = null, l_state: Value = null, l_hand_overlay: Value = null;
+	this.remove_overlay(DEVIL_HANDS_LAYER);
+	let hands_overlays: Value = list();
+	let l_hand: Value = this.get_item_for_held_index(1);
+	if (r_hand = this.get_item_for_held_index(2)) {
+		if (!(r_state = r_hand.item_state)) {
+			r_state = r_hand.icon_state;
 		}
-		hands_overlays = rt.modify(live(hands_overlays), (r_hand_overlay = rt.callName(f, live(r_hand), "build_worn_icon", ["state", live(r_state), "default_layer", 1, "default_icon_file", rt.fv(f, "righthand_file", live(r_hand)), "isinhands", 1], rt.Args.Named)), add);
-		if (((truthy(rt.sv(f, "client")) && truthy(rt.sv(f, "hud_used"))) && !isEqual(rt.fv(f, "hud_version", rt.sv(f, "hud_used")), 3))) {
-			rt.setFv(f, "layer", live(r_hand), 20);
-			rt.setFv(f, "plane", live(r_hand), 20);
-			rt.setFv(f, "screen_loc", live(r_hand), rt.call(f, P("/proc/ui_hand_position"), null, [rt.callSrc(f, "get_held_index_of_item", [live(r_hand)])]));
-			(rt.modField(f, rt.sv(f, "client"), "screen", live(r_hand), rt.bitOr));
-		}
-	}
-	if (truthy(live(l_hand))) {
-		if (!truthy((l_state = rt.fv(f, "item_state", live(l_hand))))) {
-			l_state = rt.fv(f, "icon_state", live(l_hand));
-		}
-		hands_overlays = rt.modify(live(hands_overlays), (l_hand_overlay = rt.callName(f, live(l_hand), "build_worn_icon", ["state", live(l_state), "default_layer", 1, "default_icon_file", rt.fv(f, "lefthand_file", live(l_hand)), "isinhands", 1], rt.Args.Named)), add);
-		if (((truthy(rt.sv(f, "client")) && truthy(rt.sv(f, "hud_used"))) && !isEqual(rt.fv(f, "hud_version", rt.sv(f, "hud_used")), 3))) {
-			rt.setFv(f, "layer", live(l_hand), 20);
-			rt.setFv(f, "plane", live(l_hand), 20);
-			rt.setFv(f, "screen_loc", live(l_hand), rt.call(f, P("/proc/ui_hand_position"), null, [rt.callSrc(f, "get_held_index_of_item", [live(l_hand)])]));
-			(rt.modField(f, rt.sv(f, "client"), "screen", live(l_hand), rt.bitOr));
+		hands_overlays += (r_hand_overlay = r_hand.build_worn_icon({ state: r_state, default_layer: DEVIL_HANDS_LAYER, default_icon_file: r_hand.righthand_file, isinhands: DEVIL_HANDS_LAYER }));
+		if (this.client && this.hud_used && this.hud_used.hud_version != HUD_STYLE_NOHUD) {
+			r_hand.layer = ABOVE_HUD_LAYER;
+			r_hand.plane = ABOVE_HUD_PLANE;
+			r_hand.screen_loc = ui_hand_position(this.get_held_index_of_item(r_hand));
+			(rt.modField(f, this.client, "screen", r_hand, rt.bitOr));
 		}
 	}
-	if (truthy(rt.len(f, live(hands_overlays)))) {
-		rt.setAt(rt.sv(f, "devil_overlays"), 1, live(hands_overlays));
+	if (l_hand) {
+		if (!(l_state = l_hand.item_state)) {
+			l_state = l_hand.icon_state;
+		}
+		hands_overlays += (l_hand_overlay = l_hand.build_worn_icon({ state: l_state, default_layer: DEVIL_HANDS_LAYER, default_icon_file: l_hand.lefthand_file, isinhands: DEVIL_HANDS_LAYER }));
+		if (this.client && this.hud_used && this.hud_used.hud_version != HUD_STYLE_NOHUD) {
+			l_hand.layer = ABOVE_HUD_LAYER;
+			l_hand.plane = ABOVE_HUD_PLANE;
+			l_hand.screen_loc = ui_hand_position(this.get_held_index_of_item(l_hand));
+			(rt.modField(f, this.client, "screen", l_hand, rt.bitOr));
+		}
 	}
-	rt.callSrc(f, "apply_overlay", [1]);
+	if (rt.len(f, hands_overlays)) {
+		rt.setAt(this.devil_overlays, DEVIL_HANDS_LAYER, hands_overlays);
+	}
+	this.apply_overlay(DEVIL_HANDS_LAYER);
 	return f.dot;
 });
 
-// /mob/living/carbon/true_devil/proc/remove_overlay  (code/game/gamemodes/devil/true_devil/inventory.dm:50)
+// inventory.dm:50
 rt.def("/mob/living/carbon/true_devil/proc/remove_overlay", function remove_overlay(f: Frame, cache_index: Value) {
 	let I: Value = null;
-	f.vars = () => [I];
-	if (!truthy((I = rt.index(rt.sv(f, "devil_overlays"), live(cache_index))))) return f.dot;
-	rt.callSrc(f, "cut_overlay", [live(I)]);
-	rt.setAt(rt.sv(f, "devil_overlays"), live(cache_index), null);
+	if (!(I = rt.index(this.devil_overlays, cache_index))) return f.dot;
+	this.cut_overlay(I);
+	rt.setAt(this.devil_overlays, cache_index, null);
 	return f.dot;
 });
 
-// /mob/living/carbon/true_devil/proc/apply_overlay  (code/game/gamemodes/devil/true_devil/inventory.dm:57)
+// inventory.dm:57
 rt.def("/mob/living/carbon/true_devil/proc/apply_overlay", function apply_overlay(f: Frame, cache_index: Value) {
-	if (!truthy((f.dot = rt.index(rt.sv(f, "devil_overlays"), live(cache_index))))) return f.dot;
-	rt.callSrc(f, "add_overlay", [live(f.dot)]);
+	if (!(f.dot = rt.index(this.devil_overlays, cache_index))) return f.dot;
+	this.add_overlay(f.dot);
 	return f.dot;
 });

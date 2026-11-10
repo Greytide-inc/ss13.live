@@ -1,7 +1,7 @@
-// From code/game/objects/items/theft_tools.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/theft_tools.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, fmt } = rt;
 
 
 rt.type(9782, "/obj/item/nuke_core", "/obj/item", {
@@ -16,38 +16,38 @@ rt.type(9782, "/obj/item/nuke_core", "/obj/item", {
 	resistance_flags: 99,
 });
 
-// /obj/item/nuke_core/proc/Initialize  (code/game/objects/items/theft_tools.dm:19)  may sleep
+// theft_tools.dm:19
 rt.def("/obj/item/nuke_core/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (truthy(rt.fv(f, "isprocessing", live(f.src)))) return f.dot;
-	rt.setFv(f, "isprocessing", live(f.src), 1);
-	rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), add);
+	f.dot = (yield* parent_proc());
+	if (this.isprocessing) return f.dot;
+	this.isprocessing = 1;
+	GLOB.SSobj.processing += this;
 	return f.dot;
 }, true);
 
-// /obj/item/nuke_core/proc/Destroy  (code/game/objects/items/theft_tools.dm:23)  may sleep
+// theft_tools.dm:23
 rt.def("/obj/item/nuke_core/proc/Destroy", function* Destroy(f: Frame) {
-	rt.setFv(f, "isprocessing", live(f.src), 0);
-	(rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), subtract));
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	this.isprocessing = 0;
+	GLOB.SSobj.processing -= this;
+	return (yield* parent_proc());
 }, true);
 
-// /obj/item/nuke_core/proc/attackby  (code/game/objects/items/theft_tools.dm:27)  may sleep
-rt.def("/obj/item/nuke_core/proc/attackby", function* attackby(f: Frame) {
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/nuke_core_container")) ? 1 : 0))) {
-		yield* g.callName(f, live(f.args[0]), "load", [live(f.src), live(f.args[1])]);
+// theft_tools.dm:27
+rt.def("/obj/item/nuke_core/proc/attackby", function* attackby(f: Frame, container: Value, user: Value) {
+	if (rt.istype(container, T("/obj/item/nuke_core_container"))) {
+		yield* container.load(this, user);
 	} else {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["container", "user"] });
+}, true);
 
-// /obj/item/nuke_core/proc/process  (code/game/objects/items/theft_tools.dm:33)  may sleep
+// theft_tools.dm:33
 rt.def("/obj/item/nuke_core/proc/process", function* process(f: Frame) {
-	if (!rt.lt(rt.sv(f, "cooldown"), subtract(rt.worldTime(f), 60))) return f.dot;
-	rt.setSv(f, "cooldown", rt.worldTime(f));
-	yield* g.call(f, P("/proc/flick"), null, [rt.sv(f, "pulseicon"), live(f.src)]);
-	yield* g.call(f, P("/proc/radiation_pulse"), null, [rt.getStep(f, live(f.src), 0), 1, 4, 40, 1]);
+	if (!(this.cooldown < rt.worldTime(f) - 60)) return f.dot;
+	this.cooldown = rt.worldTime(f);
+	flick(this.pulseicon, this);
+	yield* radiation_pulse(rt.getStep(f, this, 0), 1, 4, 40, 1);
 	return f.dot;
 }, true, { waitfor: false });
 
@@ -60,53 +60,52 @@ rt.type(9784, "/obj/item/nuke_core_container", "/obj/item", {
 	icon_state: "core_container_empty",
 });
 
-// /obj/item/nuke_core_container/proc/Destroy  (code/game/objects/items/theft_tools.dm:48)  may sleep
+// theft_tools.dm:48
 rt.def("/obj/item/nuke_core_container/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "core")]);
-	rt.setSv(f, "core", null);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* qdel(this.core);
+	this.core = null;
+	return (yield* parent_proc());
 }, true);
 
-// /obj/item/nuke_core_container/proc/load  (code/game/objects/items/theft_tools.dm:52)  may sleep
+// theft_tools.dm:52
 rt.def("/obj/item/nuke_core_container/proc/load", function* load(f: Frame, ncore: Value, user: Value) {
-	f.vars = () => [ncore, user];
-	if ((truthy(rt.sv(f, "core")) || !truthy((rt.istype(live(ncore), T("/obj/item/nuke_core")) ? 1 : 0)))) {
+	if (this.core || !rt.istype(ncore, T("/obj/item/nuke_core"))) {
 		return 0;
 	}
-	yield* g.callName(f, live(ncore), "forceMove", [live(f.src)]);
-	rt.setSv(f, "core", live(ncore));
-	rt.setSv(f, "icon_state", "core_container_loaded");
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>Container is sealing...</span>"]);
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/item/nuke_core_container/proc/seal")])), 50]);
+	yield* ncore.forceMove(this);
+	this.core = ncore;
+	this.icon_state = "core_container_loaded";
+	to_chat(user, "<span class='warning'>Container is sealing...</span>");
+	yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/item/nuke_core_container/proc/seal"))), 50);
 	return 1;
 }, true);
 
-// /obj/item/nuke_core_container/proc/seal  (code/game/objects/items/theft_tools.dm:62)
+// theft_tools.dm:62
 rt.def("/obj/item/nuke_core_container/proc/seal", function seal(f: Frame) {
-	if (!truthy((rt.istype(rt.sv(f, "core"), T("/obj/item/nuke_core")) ? 1 : 0))) return f.dot;
-	rt.setFv(f, "isprocessing", rt.sv(f, "core"), 0);
-	(rt.modField(f, rt.gl("SSobj"), "processing", rt.sv(f, "core"), subtract));
-	rt.setSv(f, "icon_state", "core_container_sealed");
-	rt.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/items/deconstruct.ogg"), 60, 1]);
-	if (!truthy(rt.call(f, P("/proc/ismob"), null, [rt.sv(f, "loc")]))) return f.dot;
-	rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "loc"), fmt("<span class='warning'>＀ is permanently sealed, ＀'s radiation is contained.</span>", [live(f.src), rt.sv(f, "core")])]);
+	if (!rt.istype(this.core, T("/obj/item/nuke_core"))) return f.dot;
+	this.core.isprocessing = 0;
+	GLOB.SSobj.processing -= this.core;
+	this.icon_state = "core_container_sealed";
+	playsound(this, rt.rsc("sound/items/deconstruct.ogg"), 60, 1);
+	if (!ismob(this.loc)) return f.dot;
+	to_chat(this.loc, `<span class='warning'>${this} is permanently sealed, ${this.core}'s radiation is contained.</span>`);
 	return f.dot;
 });
 
-// /obj/item/nuke_core_container/proc/attackby  (code/game/objects/items/theft_tools.dm:70)  may sleep
-rt.def("/obj/item/nuke_core_container/proc/attackby", function* attackby(f: Frame) {
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/nuke_core")) ? 1 : 0))) {
-		if (!truthy((yield* g.callName(f, live(f.args[1]), "temporarilyRemoveItemFromInventory", [live(f.args[0])])))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>The ＀ is stuck to your hand!</span>", [live(f.args[0])])]);
-			return live(f.dot);
+// theft_tools.dm:70
+rt.def("/obj/item/nuke_core_container/proc/attackby", function* attackby(f: Frame, core: Value, user: Value) {
+	if (rt.istype(core, T("/obj/item/nuke_core"))) {
+		if (!(yield* user.temporarilyRemoveItemFromInventory(core))) {
+			to_chat(user, `<span class='warning'>The ${core} is stuck to your hand!</span>`);
+			return f.dot;
 		} else {
-			yield* g.srcCall(f, "load", live(f.args[0]), live(f.args[1]));
+			yield* this.load(core, user);
 		}
 	} else {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["core", "user"] });
+}, true);
 
 rt.type(9783, "/obj/item/nuke_core/supermatter_sliver", "/obj/item/nuke_core", {
 	item_state: "supermattersliver",
@@ -116,48 +115,43 @@ rt.type(9783, "/obj/item/nuke_core/supermatter_sliver", "/obj/item/nuke_core", {
 	icon_state: "supermatter_sliver",
 });
 
-// /obj/item/nuke_core/supermatter_sliver/proc/attackby  (code/game/objects/items/theft_tools.dm:126)  may sleep
+// theft_tools.dm:126
 rt.def("/obj/item/nuke_core/supermatter_sliver/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
 	let tongs: Value = null;
-	f.vars = () => [W, user, params, tongs];
-	if (truthy((rt.istype(live(W), T("/obj/item/weapon/hemostat/supermatter")) ? 1 : 0))) {
-		if (truthy(rt.gv(f, "sliver", (tongs = live(W))))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>＄！ is already holding a supermatter sliver!</span>", [live(tongs)])]);
+	if (rt.istype(W, T("/obj/item/weapon/hemostat/supermatter"))) {
+		if ((tongs = W).sliver) {
+			to_chat(user, fmt("<span class='notice'>＄！ is already holding a supermatter sliver!</span>", [tongs]));
 			return 0;
 		}
-		yield* g.srcCall(f, "forceMove", live(tongs));
-		rt.setFv(f, "sliver", live(tongs), live(f.src));
-		rt.setFv(f, "icon_state", live(tongs), "supermatter_tongs_loaded");
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You carefully pick up ＀ with ＀.</span>", [live(f.src), live(tongs)])]);
+		yield* this.forceMove(tongs);
+		tongs.sliver = this;
+		tongs.icon_state = "supermatter_tongs_loaded";
+		to_chat(user, `<span class='notice'>You carefully pick up ${this} with ${tongs}.</span>`);
+	} else if (rt.istype(W, T("/obj/item/weapon/scalpel/supermatter")) || rt.istype(W, T("/obj/item/nuke_core_container/supermatter"))) {
+		return f.dot;
 	} else {
-		if ((truthy((rt.istype(live(W), T("/obj/item/weapon/scalpel/supermatter")) ? 1 : 0)) || truthy((rt.istype(live(W), T("/obj/item/nuke_core_container/supermatter")) ? 1 : 0)))) {
-			return live(f.dot);
-		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>As it touches ％！, both ％！ and ％！ burst into dust!</span>", [live(f.src), live(f.src), live(W)])]);
-			yield* g.call(f, P("/proc/radiation_pulse"), null, [rt.getStep(f, live(user), 0), 1, 2, 10, 1]);
-			yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/effects/supermatter.ogg"), 50, 1]);
-			yield* g.call(f, P("/proc/qdel"), null, [live(W)]);
-			yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-		}
+		to_chat(user, fmt("<span class='notice'>As it touches ％！, both ％！ and ％！ burst into dust!</span>", [this, this, W]));
+		yield* radiation_pulse(rt.getStep(f, user, 0), 1, 2, 10, 1);
+		playsound(this, rt.rsc("sound/effects/supermatter.ogg"), 50, 1);
+		yield* qdel(W);
+		yield* qdel(this);
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/nuke_core/supermatter_sliver/proc/pickup  (code/game/objects/items/theft_tools.dm:145)  may sleep
-rt.def("/obj/item/nuke_core/supermatter_sliver/proc/pickup", function* pickup(f: Frame) {
-	let ded: Value = null;
-	f.vars = () => [ded];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon")) ? 1 : 0))) {
+// theft_tools.dm:145
+rt.def("/obj/item/nuke_core/supermatter_sliver/proc/pickup", function* pickup(f: Frame, user: Value) {
+	yield* parent_proc();
+	if (!rt.istype(user, T("/mob/living/carbon"))) {
 		return 0;
 	}
-	ded = live(f.args[0]);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='warning'>You reach for the supermatter sliver with your hands. That was dumb.</span>"]);
-	yield* g.call(f, P("/proc/radiation_pulse"), null, [rt.getStep(f, live(f.args[0]), 0), 2, 4, 50, 1]);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.args[0]), 0), rt.rsc("sound/effects/supermatter.ogg"), 50, 1]);
-	yield* g.callName(f, live(ded), "dust", []);
+	let ded: Value = user;
+	to_chat(user, "<span class='warning'>You reach for the supermatter sliver with your hands. That was dumb.</span>");
+	yield* radiation_pulse(rt.getStep(f, user, 0), 2, 4, 50, 1);
+	playsound(rt.getStep(f, user, 0), rt.rsc("sound/effects/supermatter.ogg"), 50, 1);
+	yield* ded.dust();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
 rt.type(9785, "/obj/item/nuke_core_container/supermatter", "/obj/item/nuke_core_container", {
 	sliver: null,
@@ -165,53 +159,52 @@ rt.type(9785, "/obj/item/nuke_core_container/supermatter", "/obj/item/nuke_core_
 	desc: "A tiny receptacle that releases an inert freon mix upon sealing, allowing a sliver of a supermatter crystal to be safely stored..",
 });
 
-// /obj/item/nuke_core_container/supermatter/proc/Destroy  (code/game/objects/items/theft_tools.dm:160)  may sleep
+// theft_tools.dm:160
 rt.def("/obj/item/nuke_core_container/supermatter/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "sliver")]);
-	rt.setSv(f, "sliver", null);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* qdel(this.sliver);
+	this.sliver = null;
+	return (yield* parent_proc());
 }, true);
 
-// /obj/item/nuke_core_container/supermatter/proc/load  (code/game/objects/items/theft_tools.dm:164)  may sleep
+// theft_tools.dm:164
 rt.def("/obj/item/nuke_core_container/supermatter/proc/load", function* load(f: Frame, _T: Value, user: Value) {
-	f.vars = () => [_T, user];
-	if ((!truthy((rt.istype(live(_T), T("/obj/item/weapon/hemostat/supermatter")) ? 1 : 0)) || !truthy(rt.fv(f, "sliver", live(_T))))) {
+	if (!rt.istype(_T, T("/obj/item/weapon/hemostat/supermatter")) || !_T.sliver) {
 		return 0;
 	}
-	yield* g.callName(f, rt.fv(f, "sliver", live(_T)), "forceMove", [live(f.src)]);
-	rt.setSv(f, "sliver", rt.fv(f, "sliver", live(_T)));
-	rt.setFv(f, "sliver", live(_T), null);
-	rt.setSv(f, "icon_state", "core_container_loaded");
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>Container is sealing...</span>"]);
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/item/nuke_core_container/supermatter/proc/seal")])), 50]);
+	yield* _T.sliver.forceMove(this);
+	this.sliver = _T.sliver;
+	_T.sliver = null;
+	this.icon_state = "core_container_loaded";
+	to_chat(user, "<span class='warning'>Container is sealing...</span>");
+	yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/item/nuke_core_container/supermatter/proc/seal"))), 50);
 	return 1;
 }, true);
 
-// /obj/item/nuke_core_container/supermatter/proc/seal  (code/game/objects/items/theft_tools.dm:175)
+// theft_tools.dm:175
 rt.def("/obj/item/nuke_core_container/supermatter/proc/seal", function seal(f: Frame) {
-	if (!truthy((rt.istype(rt.sv(f, "sliver"), T("/obj/item/nuke_core/supermatter_sliver")) ? 1 : 0))) return f.dot;
-	rt.setFv(f, "isprocessing", rt.sv(f, "sliver"), 0);
-	(rt.modField(f, rt.gl("SSobj"), "processing", rt.sv(f, "sliver"), subtract));
-	rt.setSv(f, "icon_state", "core_container_sealed");
-	rt.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/items/deconstruct.ogg"), 60, 1]);
-	if (!truthy(rt.call(f, P("/proc/ismob"), null, [rt.sv(f, "loc")]))) return f.dot;
-	rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "loc"), fmt("<span class='warning'>＀ is permanently sealed, ＀ is safely contained.</span>", [live(f.src), rt.sv(f, "sliver")])]);
+	if (!rt.istype(this.sliver, T("/obj/item/nuke_core/supermatter_sliver"))) return f.dot;
+	this.sliver.isprocessing = 0;
+	GLOB.SSobj.processing -= this.sliver;
+	this.icon_state = "core_container_sealed";
+	playsound(this, rt.rsc("sound/items/deconstruct.ogg"), 60, 1);
+	if (!ismob(this.loc)) return f.dot;
+	to_chat(this.loc, `<span class='warning'>${this} is permanently sealed, ${this.sliver} is safely contained.</span>`);
 	return f.dot;
 });
 
-// /obj/item/nuke_core_container/supermatter/proc/attackby  (code/game/objects/items/theft_tools.dm:183)  may sleep
-rt.def("/obj/item/nuke_core_container/supermatter/proc/attackby", function* attackby(f: Frame) {
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/hemostat/supermatter")) ? 1 : 0))) {
-		if (!truthy((yield* g.callName(f, live(f.args[1]), "temporarilyRemoveItemFromInventory", [live(f.args[0])])))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>＄！ is stuck to your hand!</span>", [live(f.args[0])])]);
+// theft_tools.dm:183
+rt.def("/obj/item/nuke_core_container/supermatter/proc/attackby", function* attackby(f: Frame, tongs: Value, user: Value) {
+	if (rt.istype(tongs, T("/obj/item/weapon/hemostat/supermatter"))) {
+		if (!(yield* user.temporarilyRemoveItemFromInventory(tongs))) {
+			to_chat(user, fmt("<span class='warning'>＄！ is stuck to your hand!</span>", [tongs]));
 		} else {
-			yield* g.srcCall(f, "load", rt.sv(f, "sliver"), live(f.args[1]));
+			yield* this.load(this.sliver, user);
 		}
 	} else {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["tongs", "user"] });
+}, true);
 
 rt.type(6660, "/obj/item/weapon/hemostat/supermatter", "/obj/item/weapon/hemostat", {
 	sliver: null,
@@ -223,56 +216,54 @@ rt.type(6660, "/obj/item/weapon/hemostat/supermatter", "/obj/item/weapon/hemosta
 	damtype: "fire",
 });
 
-// /obj/item/weapon/hemostat/supermatter/proc/Destroy  (code/game/objects/items/theft_tools.dm:210)  may sleep
+// theft_tools.dm:210
 rt.def("/obj/item/weapon/hemostat/supermatter/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "sliver")]);
-	rt.setSv(f, "sliver", null);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* qdel(this.sliver);
+	this.sliver = null;
+	return (yield* parent_proc());
 }, true);
 
-// /obj/item/weapon/hemostat/supermatter/proc/afterattack  (code/game/objects/items/theft_tools.dm:214)  may sleep
+// theft_tools.dm:214
 rt.def("/obj/item/weapon/hemostat/supermatter/proc/afterattack", function* afterattack(f: Frame, O: Value, user: Value, proximity: Value) {
-	f.vars = () => [O, user, proximity];
-	if (!truthy(rt.sv(f, "sliver"))) {
-		return live(f.dot);
+	if (!this.sliver) {
+		return f.dot;
 	}
-	if (!truthy((rt.istype(live(O), T("/atom/movable")) ? 1 : 0))) return f.dot;
-	yield* g.srcCall(f, "Consume", live(O));
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), fmt("<span class='notice'>＄！ is dusted along with ％！!</span>", [rt.sv(f, "sliver"), live(O)])]);
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "sliver")]);
-	rt.setSv(f, "sliver", null);
+	if (!rt.istype(O, T("/atom/movable"))) return f.dot;
+	yield* this.Consume(O);
+	to_chat(f.usr, fmt("<span class='notice'>＄！ is dusted along with ％！!</span>", [this.sliver, O]));
+	yield* qdel(this.sliver);
+	this.sliver = null;
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/hemostat/supermatter/proc/throw_impact  (code/game/objects/items/theft_tools.dm:223)  may sleep
-rt.def("/obj/item/weapon/hemostat/supermatter/proc/throw_impact", function* throw_impact(f: Frame) {
-	if (truthy(rt.sv(f, "sliver"))) {
-		yield* g.callName(f, rt.sv(f, "sliver"), "forceMove", [rt.sv(f, "loc")]);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), fmt("<span class='notice'>＄！ falls out of ％！ as you throw them.</span>", [rt.sv(f, "sliver"), live(f.src)])]);
-		rt.setSv(f, "sliver", null);
+// theft_tools.dm:223
+rt.def("/obj/item/weapon/hemostat/supermatter/proc/throw_impact", function* throw_impact(f: Frame, hit_atom: Value) {
+	if (this.sliver) {
+		yield* this.sliver.forceMove(this.loc);
+		to_chat(f.usr, fmt("<span class='notice'>＄！ falls out of ％！ as you throw them.</span>", [this.sliver, this]));
+		this.sliver = null;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["hit_atom"], waitfor: false });
+}, true, { waitfor: false });
 
-// /obj/item/weapon/hemostat/supermatter/proc/Consume  (code/game/objects/items/theft_tools.dm:229)  may sleep
+// theft_tools.dm:229
 rt.def("/obj/item/weapon/hemostat/supermatter/proc/Consume", function* Consume(f: Frame, AM: Value, user: Value) {
 	let victim: Value = null;
-	f.vars = () => [AM, user, victim];
-	if (truthy((yield* g.call(f, P("/proc/ismob"), null, [live(AM)])))) {
-		yield* g.callName(f, (victim = live(AM)), "dust", []);
-		yield* g.call(f, P("/proc/message_admins"), null, [fmt("＀ has consumed ＀ ＀.", [live(f.src), (yield* g.call(f, P("/proc/key_name_admin"), null, [live(victim)])), fmt("(<a href='?_src_=holder;adminplayerobservecoodjump=1;X=＀;Y=＀;Z=＀'>JMP</a>)", [rt.fv(f, "x", live(f.src)), rt.fv(f, "y", live(f.src)), rt.fv(f, "z", live(f.src))])])]);
-		yield* g.srcCall(f, "investigate_log", fmt("has consumed ＀.", [(yield* g.call(f, P("/proc/key_name"), null, [live(victim)]))]), "supermatter");
+	if (ismob(AM)) {
+		yield* (victim = AM).dust();
+		message_admins(`${this} has consumed ${key_name_admin(victim)} ${`(<a href='?_src_=holder;adminplayerobservecoodjump=1;X=${this.x};Y=${this.y};Z=${this.z}'>JMP</a>)`}.`);
+		this.investigate_log(`has consumed ${key_name(victim)}.`, "supermatter");
 	} else {
-		yield* g.srcCall(f, "investigate_log", fmt("has consumed ＀.", [live(AM)]), "supermatter");
-		yield* g.call(f, P("/proc/qdel"), null, [live(AM)]);
+		this.investigate_log(`has consumed ${AM}.`, "supermatter");
+		yield* qdel(AM);
 	}
-	yield* g.callName(f, live(user), "visible_message", [fmt("<span class='danger'>As ＀ touches ％！ with ＇！, silence fills the room...</span>", [live(user), live(AM), live(f.src)]), fmt("<span class='userdanger'>You touch ％！ with ％！, and everything suddenly goes silent.</span>\n<span class='notice'>＄！ flashes into dust, and soon as you can register this, you do as well.</span>", [live(AM), live(f.src), live(AM)]), "<span class='italics'>Everything suddenly goes silent.</span>"]);
-	yield* g.call(f, P("/proc/radiation_pulse"), null, [rt.getStep(f, live(user), 0), 2, 4, 50, 1]);
-	yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/effects/supermatter.ogg"), 50, 1]);
-	yield* g.callName(f, live(user), "dust", []);
-	rt.setSv(f, "icon_state", "supermatter_tongs");
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "sliver")]);
-	rt.setSv(f, "sliver", null);
+	user.visible_message(fmt("<span class='danger'>As ＀ touches ％！ with ＇！, silence fills the room...</span>", [user, AM, this]), fmt("<span class='userdanger'>You touch ％！ with ％！, and everything suddenly goes silent.</span>\n<span class='notice'>＄！ flashes into dust, and soon as you can register this, you do as well.</span>", [AM, this, AM]), "<span class='italics'>Everything suddenly goes silent.</span>");
+	yield* radiation_pulse(rt.getStep(f, user, 0), 2, 4, 50, 1);
+	playsound(this, rt.rsc("sound/effects/supermatter.ogg"), 50, 1);
+	yield* user.dust();
+	this.icon_state = "supermatter_tongs";
+	yield* qdel(this.sliver);
+	this.sliver = null;
 	return f.dot;
 }, true);

@@ -1,7 +1,7 @@
-// From code/modules/mob/living/simple_animal/guardian/types/ranged.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/simple_animal/guardian/types/ranged.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, g, subtract } = rt;
 
 
 rt.type(4880, "/mob/living/simple_animal/hostile/guardian/ranged", "/mob/living/simple_animal/hostile/guardian", {
@@ -26,108 +26,98 @@ rt.type(4880, "/mob/living/simple_animal/hostile/guardian/ranged", "/mob/living/
 	toggle_button_type: rt.typePath("/obj/screen/guardian/ToggleMode"),
 });
 
-// /mob/living/simple_animal/hostile/guardian/ranged/proc/<init>  (code/modules/mob/living/simple_animal/guardian/types/ranged.dm:27)
+// ranged.dm:27
 rt.def("/mob/living/simple_animal/hostile/guardian/ranged/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "snares", rt.list());
-	rt.setSv(f, "damage_coeff", rt.alist(f, ["brute", 0.8999999761581421, "fire", 0.8999999761581421, "tox", 0.8999999761581421, "clone", 0.8999999761581421, "stamina", 0, "oxy", 0.8999999761581421]));
+	parent_proc();
+	this.snares = list();
+	this.damage_coeff = rt.alist(f, ["brute", 0.9, "fire", 0.9, "tox", 0.9, "clone", 0.9, "stamina", 0, "oxy", 0.9]);
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/guardian/ranged/proc/ToggleMode  (code/modules/mob/living/simple_animal/guardian/types/ranged.dm:31)
+// ranged.dm:31
 rt.def("/mob/living/simple_animal/hostile/guardian/ranged/proc/ToggleMode", function ToggleMode(f: Frame) {
-	if (isEqual(rt.fv(f, "loc", live(f.src)), rt.sv(f, "summoner"))) {
-		if (truthy(rt.sv(f, "toggle"))) {
-			rt.setSv(f, "ranged", rt.initial(f, live(f.src), "ranged"));
-			rt.setSv(f, "melee_damage_lower", rt.initial(f, live(f.src), "melee_damage_lower"));
-			rt.setSv(f, "melee_damage_upper", rt.initial(f, live(f.src), "melee_damage_upper"));
-			rt.setSv(f, "obj_damage", rt.initial(f, live(f.src), "obj_damage"));
-			rt.setSv(f, "environment_smash", rt.initial(f, live(f.src), "environment_smash"));
-			rt.setSv(f, "alpha", 255);
-			rt.setSv(f, "range", rt.initial(f, live(f.src), "range"));
-			rt.setSv(f, "incorporeal_move", 0);
-			rt.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='danger'><B>You switch to combat mode.</span></B>"]);
-			rt.setSv(f, "toggle", 0);
+	if (this.loc == this.summoner) {
+		if (this.toggle) {
+			this.ranged = rt.initial(f, this, "ranged");
+			this.melee_damage_lower = rt.initial(f, this, "melee_damage_lower");
+			this.melee_damage_upper = rt.initial(f, this, "melee_damage_upper");
+			this.obj_damage = rt.initial(f, this, "obj_damage");
+			this.environment_smash = rt.initial(f, this, "environment_smash");
+			this.alpha = 255;
+			this.range = rt.initial(f, this, "range");
+			this.incorporeal_move = 0;
+			to_chat(this, "<span class='danger'><B>You switch to combat mode.</span></B>");
+			this.toggle = 0;
 		} else {
-			rt.setSv(f, "ranged", 0);
-			rt.setSv(f, "melee_damage_lower", 0);
-			rt.setSv(f, "melee_damage_upper", 0);
-			rt.setSv(f, "obj_damage", 0);
-			rt.setSv(f, "environment_smash", 0);
-			rt.setSv(f, "alpha", 45);
-			rt.setSv(f, "range", 255);
-			rt.setSv(f, "incorporeal_move", 1);
-			rt.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='danger'><B>You switch to scout mode.</span></B>"]);
-			rt.setSv(f, "toggle", 1);
+			this.ranged = 0;
+			this.melee_damage_lower = 0;
+			this.melee_damage_upper = 0;
+			this.obj_damage = 0;
+			this.environment_smash = 0;
+			this.alpha = 45;
+			this.range = 255;
+			this.incorporeal_move = 1;
+			to_chat(this, "<span class='danger'><B>You switch to scout mode.</span></B>");
+			this.toggle = 1;
 		}
 	} else {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='danger'><B>You have to be recalled to toggle modes!</span></B>"]);
+		to_chat(this, "<span class='danger'><B>You have to be recalled to toggle modes!</span></B>");
 	}
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/guardian/ranged/proc/Shoot  (code/modules/mob/living/simple_animal/guardian/types/ranged.dm:58)  may sleep
-rt.def("/mob/living/simple_animal/hostile/guardian/ranged/proc/Shoot", function* Shoot(f: Frame) {
-	let _P: Value = null;
-	f.vars = () => [_P];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy((rt.istype(live(f.dot), T("/obj/item/projectile")) ? 1 : 0))) return f.dot;
-	_P = live(f.dot);
-	if (!truthy(rt.sv(f, "namedatum"))) return f.dot;
-	rt.setFv(f, "color", live(_P), rt.fv(f, "colour", rt.sv(f, "namedatum")));
+// ranged.dm:58
+rt.def("/mob/living/simple_animal/hostile/guardian/ranged/proc/Shoot", function* Shoot(f: Frame, targeted_atom: Value) {
+	f.dot = (yield* parent_proc());
+	if (!rt.istype(f.dot, T("/obj/item/projectile"))) return f.dot;
+	let _P: Value = f.dot;
+	if (!this.namedatum) return f.dot;
+	_P.color = this.namedatum.colour;
 	return f.dot;
-}, true, { args: ["targeted_atom"] });
+}, true);
 
-// /mob/living/simple_animal/hostile/guardian/ranged/proc/ToggleLight  (code/modules/mob/living/simple_animal/guardian/types/ranged.dm:66)
+// ranged.dm:66
 rt.def("/mob/living/simple_animal/hostile/guardian/ranged/proc/ToggleLight", function ToggleLight(f: Frame) {
 	let msg: Value = null;
-	let $0: any;
-	f.vars = () => [msg, $0];
-	msg = null;
-	$0 = rt.sv(f, "lighting_alpha");
-	if ($0 === 255) {
-		rt.setSv(f, "lighting_alpha", 192);
+	if (this.lighting_alpha === LIGHTING_PLANE_ALPHA_VISIBLE) {
+		this.lighting_alpha = LIGHTING_PLANE_ALPHA_MOSTLY_VISIBLE;
 		msg = "You activate your night vision.";
-	} else if ($0 === 192) {
-		rt.setSv(f, "lighting_alpha", 128);
+	} else if (this.lighting_alpha === LIGHTING_PLANE_ALPHA_MOSTLY_VISIBLE) {
+		this.lighting_alpha = LIGHTING_PLANE_ALPHA_MOSTLY_INVISIBLE;
 		msg = "You increase your night vision.";
-	} else if ($0 === 128) {
-		rt.setSv(f, "lighting_alpha", 0);
+	} else if (this.lighting_alpha === LIGHTING_PLANE_ALPHA_MOSTLY_INVISIBLE) {
+		this.lighting_alpha = LIGHTING_PLANE_ALPHA_INVISIBLE;
 		msg = "You maximize your night vision.";
 	} else {
-		rt.setSv(f, "lighting_alpha", 255);
+		this.lighting_alpha = LIGHTING_PLANE_ALPHA_VISIBLE;
 		msg = "You deactivate your night vision.";
 	}
-	rt.call(f, P("/proc/to_chat"), null, [live(f.src), fmt("<span class='notice'>＀</span>", [live(msg)])]);
+	to_chat(this, `<span class='notice'>${msg}</span>`);
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/guardian/ranged/verb/Snare  (code/modules/mob/living/simple_animal/guardian/types/ranged.dm:87)  may sleep
+// ranged.dm:87
 rt.def("/mob/living/simple_animal/hostile/guardian/ranged/verb/Snare", function* Snare(f: Frame) {
 	let snare_loc: Value = null, S: Value = null;
-	f.vars = () => [snare_loc, S];
-	if (rt.lt(rt.getLen(f, rt.fv(f, "snares", live(f.src))), 6)) {
-		snare_loc = rt.getStep(f, rt.fv(f, "loc", live(f.src)), 0);
-		rt.setFv(f, "spawner", (S = (yield* g.new_(f, T("/obj/effect/snare"), [live(snare_loc)]))), live(f.src));
-		rt.setFv(f, "name", live(S), fmt("＀ snare (＀)", [(yield* g.call(f, P("/proc/get_area"), null, [live(snare_loc)])), (yield* g.call(f, P("/proc/rand"), null, [1, 1000]))]));
-		(rt.modField(f, live(f.src), "snares", live(S), rt.bitOr));
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='danger'><B>Surveillance snare deployed!</span></B>"]);
+	if (rt.len(f, this.snares) < 6) {
+		snare_loc = rt.getStep(f, this.loc, 0);
+		(S = (yield* new_(T("/obj/effect/snare"), snare_loc))).spawner = this;
+		S.name = `${get_area(snare_loc)} snare (${rand(1, 1000)})`;
+		(rt.modField(f, this, "snares", S, rt.bitOr));
+		to_chat(this, "<span class='danger'><B>Surveillance snare deployed!</span></B>");
 	} else {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='danger'><B>You have too many snares deployed. Remove some first.</span></B>"]);
+		to_chat(this, "<span class='danger'><B>You have too many snares deployed. Remove some first.</span></B>");
 	}
 	return f.dot;
 }, true, { verb: { name: "Set Surveillance Snare", category: "Guardian", desc: "Set an invisible snare that will alert you when living creatures walk over it. Max of 5" } });
 
-// /mob/living/simple_animal/hostile/guardian/ranged/verb/DisarmSnare  (code/modules/mob/living/simple_animal/guardian/types/ranged.dm:101)  may sleep
+// ranged.dm:101
 rt.def("/mob/living/simple_animal/hostile/guardian/ranged/verb/DisarmSnare", function* DisarmSnare(f: Frame) {
 	let picked_snare: Value = null;
-	f.vars = () => [picked_snare];
-	if (!truthy((picked_snare = (yield* g.op(f, "Prompt", [1], [null, "Remove Snare", "Pick which snare to remove", live(f.src), rt.fv(f, "snares", live(f.src))]))))) return f.dot;
-	(rt.modField(f, live(f.src), "snares", live(picked_snare), subtract));
-	yield* g.call(f, P("/proc/qdel"), null, [live(picked_snare)]);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='danger'><B>Snare disarmed.</span></B>"]);
+	if (!(picked_snare = (yield* g.op(f, "Prompt", [1], [null, "Remove Snare", "Pick which snare to remove", this, this.snares])))) return f.dot;
+	(rt.modField(f, this, "snares", picked_snare, subtract));
+	yield* qdel(picked_snare);
+	to_chat(this, "<span class='danger'><B>Snare disarmed.</span></B>");
 	return f.dot;
 }, true, { verb: { name: "Remove Surveillance Snare", category: "Guardian", desc: "Disarm unwanted surveillance snares." } });
 
@@ -138,20 +128,14 @@ rt.type(12085, "/obj/effect/snare", "/obj/effect", {
 	invisibility: 101,
 });
 
-// /obj/effect/snare/proc/Crossed  (code/modules/mob/living/simple_animal/guardian/types/ranged.dm:115)
+// ranged.dm:115
 rt.def("/obj/effect/snare/proc/Crossed", function Crossed(f: Frame, AM: Value) {
-	let guardians: Value = null, para: Value = null;
-	let $e: any;
-	f.vars = () => [guardians, para, $e];
-	if (!((((truthy((rt.istype(live(AM), T("/mob/living")) ? 1 : 0)) && truthy(rt.sv(f, "spawner"))) && truthy(rt.fv(f, "summoner", rt.sv(f, "spawner")))) && !isEqual(live(AM), rt.sv(f, "spawner"))) && !truthy(rt.callName(f, rt.sv(f, "spawner"), "hasmatchingsummoner", [live(AM)])))) return f.dot;
-	rt.call(f, P("/proc/to_chat"), null, [rt.fv(f, "summoner", rt.sv(f, "spawner")), fmt("<span class='danger'><B>＀ has crossed surveillance snare, ＀.</span></B>", [live(AM), rt.sv(f, "name")])]);
-	guardians = rt.callName(f, rt.fv(f, "summoner", rt.sv(f, "spawner")), "hasparasites", []);
-	para = null;
-	rt.forList(f, 0, live(guardians));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		para = $e;
-		rt.call(f, P("/proc/to_chat"), null, [live(para), fmt("<span class='danger'><B>＀ has crossed surveillance snare, ＀.</span></B>", [live(AM), rt.sv(f, "name")])]);
+	let para: Value = null;
+	if (!(rt.istype(AM, T("/mob/living")) && this.spawner && this.spawner.summoner && AM != this.spawner && !this.spawner.hasmatchingsummoner(AM))) return f.dot;
+	to_chat(this.spawner.summoner, `<span class='danger'><B>${AM} has crossed surveillance snare, ${this.name}.</span></B>`);
+	let guardians: Value = this.spawner.summoner.hasparasites();
+	for (para of each(guardians)) {
+		to_chat(para, `<span class='danger'><B>${AM} has crossed surveillance snare, ${this.name}.</span></B>`);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });

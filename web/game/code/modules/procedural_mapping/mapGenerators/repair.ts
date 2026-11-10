@@ -1,7 +1,7 @@
-// From code/modules/procedural_mapping/mapGenerators/repair.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/procedural_mapping/mapGenerators/repair.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(1919, "/datum/mapGeneratorModule/bottomLayer/repairFloorPlasteel", "/datum/mapGeneratorModule/bottomLayer", {
@@ -10,21 +10,19 @@ rt.type(1919, "/datum/mapGeneratorModule/bottomLayer/repairFloorPlasteel", "/dat
 	spawnableTurfs: null,
 });
 
-// /datum/mapGeneratorModule/bottomLayer/repairFloorPlasteel/proc/<init>  (code/modules/procedural_mapping/mapGenerators/repair.dm:2)
+// repair.dm:2
 rt.def("/datum/mapGeneratorModule/bottomLayer/repairFloorPlasteel/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "spawnableTurfs", rt.alist(f, [T("/turf/open/floor/plasteel"), 100]));
+	parent_proc();
+	this.spawnableTurfs = rt.alist(f, [T("/turf/open/floor/plasteel"), 100]);
 	return f.dot;
 });
 
-// /datum/mapGeneratorModule/bottomLayer/repairFloorPlasteel/proc/place  (code/modules/procedural_mapping/mapGenerators/repair.dm:7)  may sleep
+// repair.dm:7
 rt.def("/datum/mapGeneratorModule/bottomLayer/repairFloorPlasteel/proc/place", function* place(f: Frame) {
-	if ((truthy((rt.istype(live(f.args[0]), T("/turf/closed")) ? 1 : 0)) && !truthy(rt.sv(f, "ignore_wall")))) {
+	if (rt.istype(f.args[0], T("/turf/closed")) && !this.ignore_wall) {
 		return 0;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true, { args: ["T"] });
 
 rt.type(1935, "/datum/mapGeneratorModule/border/normalWalls", "/datum/mapGeneratorModule/border", {
@@ -33,14 +31,12 @@ rt.type(1935, "/datum/mapGeneratorModule/border/normalWalls", "/datum/mapGenerat
 	spawnableTurfs: null,
 });
 
-// /datum/mapGeneratorModule/border/normalWalls/proc/<init>  (code/modules/procedural_mapping/mapGenerators/repair.dm:15)
+// repair.dm:15
 rt.def("/datum/mapGeneratorModule/border/normalWalls/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "spawnableAtoms", rt.list());
-	$0 = $0;
-	rt.setSv(f, "spawnableTurfs", rt.alist(f, [T("/turf/closed/wall"), 100]));
+	parent_proc();
+	this.spawnableAtoms = list();
+
+	this.spawnableTurfs = rt.alist(f, [T("/turf/closed/wall"), 100]);
 	return f.dot;
 });
 
@@ -48,12 +44,10 @@ rt.type(1888, "/datum/mapGenerator/repair", "/datum/mapGenerator", {
 	modules: null,
 });
 
-// /datum/mapGenerator/repair/proc/<init>  (code/modules/procedural_mapping/mapGenerators/repair.dm:20)
+// repair.dm:20
 rt.def("/datum/mapGenerator/repair/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "modules", rt.list(T("/datum/mapGeneratorModule/bottomLayer/repairFloorPlasteel"), T("/datum/mapGeneratorModule/bottomLayer/repressurize")));
+	parent_proc();
+	this.modules = list(T("/datum/mapGeneratorModule/bottomLayer/repairFloorPlasteel"), T("/datum/mapGeneratorModule/bottomLayer/repressurize"));
 	return f.dot;
 });
 
@@ -61,12 +55,10 @@ rt.type(1889, "/datum/mapGenerator/repair/delete_walls", "/datum/mapGenerator/re
 	modules: null,
 });
 
-// /datum/mapGenerator/repair/delete_walls/proc/<init>  (code/modules/procedural_mapping/mapGenerators/repair.dm:24)
+// repair.dm:24
 rt.def("/datum/mapGenerator/repair/delete_walls/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "modules", rt.list(T("/datum/mapGeneratorModule/bottomLayer/repairFloorPlasteel/flatten"), T("/datum/mapGeneratorModule/bottomLayer/repressurize")));
+	parent_proc();
+	this.modules = list(T("/datum/mapGeneratorModule/bottomLayer/repairFloorPlasteel/flatten"), T("/datum/mapGeneratorModule/bottomLayer/repressurize"));
 	return f.dot;
 });
 
@@ -74,11 +66,9 @@ rt.type(1890, "/datum/mapGenerator/repair/enclose_room", "/datum/mapGenerator/re
 	modules: null,
 });
 
-// /datum/mapGenerator/repair/enclose_room/proc/<init>  (code/modules/procedural_mapping/mapGenerators/repair.dm:28)
+// repair.dm:28
 rt.def("/datum/mapGenerator/repair/enclose_room/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "modules", rt.list(T("/datum/mapGeneratorModule/bottomLayer/repairFloorPlasteel/flatten"), T("/datum/mapGeneratorModule/border/normalWalls"), T("/datum/mapGeneratorModule/bottomLayer/repressurize")));
+	parent_proc();
+	this.modules = list(T("/datum/mapGeneratorModule/bottomLayer/repairFloorPlasteel/flatten"), T("/datum/mapGeneratorModule/border/normalWalls"), T("/datum/mapGeneratorModule/bottomLayer/repressurize"));
 	return f.dot;
 });

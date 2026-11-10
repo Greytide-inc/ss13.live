@@ -1,7 +1,7 @@
-// From code/modules/events/wizard/summons.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/events/wizard/summons.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(1377, "/datum/round_event_control/wizard/summonguns", "/datum/round_event_control/wizard", {
@@ -12,20 +12,20 @@ rt.type(1377, "/datum/round_event_control/wizard/summonguns", "/datum/round_even
 	earliest_start: 0,
 });
 
-// /datum/round_event_control/wizard/summonguns/proc/New  (code/modules/events/wizard/summons.dm:9)
+// summons.dm:9
 rt.def("/datum/round_event_control/wizard/summonguns/proc/New", function New(f: Frame) {
-	if (truthy(rt.fv(f, "no_summon_guns", rt.gl("config")))) {
-		rt.setSv(f, "weight", 0);
+	if (GLOB.config.no_summon_guns) {
+		this.weight = 0;
 	}
-	rt.callSuper(f, [], rt.Args.Same);
+	parent_proc();
 	return f.dot;
 });
 
 rt.type(354, "/datum/round_event/wizard/summonguns", "/datum/round_event/wizard", {});
 
-// /datum/round_event/wizard/summonguns/proc/start  (code/modules/events/wizard/summons.dm:14)  may sleep
+// summons.dm:14
 rt.def("/datum/round_event/wizard/summonguns/proc/start", function* start(f: Frame) {
-	yield* g.call(f, P("/proc/rightandwrong"), null, [0, null, 10]);
+	yield* rightandwrong(0, null, 10);
 	return f.dot;
 }, true);
 
@@ -37,19 +37,19 @@ rt.type(1378, "/datum/round_event_control/wizard/summonmagic", "/datum/round_eve
 	earliest_start: 0,
 });
 
-// /datum/round_event_control/wizard/summonmagic/proc/New  (code/modules/events/wizard/summons.dm:24)
+// summons.dm:24
 rt.def("/datum/round_event_control/wizard/summonmagic/proc/New", function New(f: Frame) {
-	if (truthy(rt.fv(f, "no_summon_magic", rt.gl("config")))) {
-		rt.setSv(f, "weight", 0);
+	if (GLOB.config.no_summon_magic) {
+		this.weight = 0;
 	}
-	rt.callSuper(f, [], rt.Args.Same);
+	parent_proc();
 	return f.dot;
 });
 
 rt.type(355, "/datum/round_event/wizard/summonmagic", "/datum/round_event/wizard", {});
 
-// /datum/round_event/wizard/summonmagic/proc/start  (code/modules/events/wizard/summons.dm:29)  may sleep
+// summons.dm:29
 rt.def("/datum/round_event/wizard/summonmagic/proc/start", function* start(f: Frame) {
-	yield* g.call(f, P("/proc/rightandwrong"), null, [1, null, 10]);
+	yield* rightandwrong(1, null, 10);
 	return f.dot;
 }, true);

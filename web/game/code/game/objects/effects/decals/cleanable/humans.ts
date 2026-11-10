@@ -1,7 +1,7 @@
-// From code/game/objects/effects/decals/cleanable/humans.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/effects/decals/cleanable/humans.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(11707, "/obj/effect/decal/cleanable/blood", "/obj/effect/decal/cleanable", {
@@ -16,42 +16,34 @@ rt.type(11707, "/obj/effect/decal/cleanable/blood", "/obj/effect/decal/cleanable
 	bloodiness: 100,
 });
 
-// /obj/effect/decal/cleanable/blood/proc/<init>  (code/game/objects/effects/decals/cleanable/humans.dm:7)
+// humans.dm:7
 rt.def("/obj/effect/decal/cleanable/blood/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "viruses", rt.list());
-	$0 = $0;
-	rt.setSv(f, "blood_DNA", rt.list());
-	rt.setSv(f, "random_icon_states", rt.list("floor1", "floor2", "floor3", "floor4", "floor5", "floor6", "floor7"));
+	parent_proc();
+	this.viruses = list();
+
+	this.blood_DNA = list();
+	this.random_icon_states = list("floor1", "floor2", "floor3", "floor4", "floor5", "floor6", "floor7");
 	return f.dot;
 });
 
-// /obj/effect/decal/cleanable/blood/proc/Destroy  (code/game/objects/effects/decals/cleanable/humans.dm:13)  may sleep
+// humans.dm:13
 rt.def("/obj/effect/decal/cleanable/blood/proc/Destroy", function* Destroy(f: Frame) {
 	let D: Value = null;
-	let $e: any;
-	f.vars = () => [D, $e];
-	D = null;
-	rt.forList(f, 0, rt.sv(f, "viruses"), T("/datum/disease"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		D = $e;
-		yield* g.callName(f, live(D), "cure", [0]);
+	for (D of each(this.viruses, T("/datum/disease"))) {
+		yield* D.cure(0);
 	}
-	rt.endFor(f, 0);
-	rt.setSv(f, "viruses", null);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	this.viruses = null;
+	return (yield* parent_proc());
 }, true);
 
-// /obj/effect/decal/cleanable/blood/proc/replace_decal  (code/game/objects/effects/decals/cleanable/humans.dm:19)  may sleep
-rt.def("/obj/effect/decal/cleanable/blood/proc/replace_decal", function* replace_decal(f: Frame) {
-	if (truthy(rt.fv(f, "blood_DNA", live(f.args[0])))) {
-		(rt.modSrcVar(f, "blood_DNA", (yield* g.callName(f, rt.fv(f, "blood_DNA", live(f.args[0])), "Copy", [])), rt.bitOr));
+// humans.dm:19
+rt.def("/obj/effect/decal/cleanable/blood/proc/replace_decal", function* replace_decal(f: Frame, C: Value) {
+	if (C.blood_DNA) {
+		(rt.modSrcVar(f, "blood_DNA", (yield* C.blood_DNA.Copy()), rt.bitOr));
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["C"] });
+}, true);
 
 rt.type(11710, "/obj/effect/decal/cleanable/blood/old", "/obj/effect/decal/cleanable/blood", {
 	name: "dried blood",
@@ -59,11 +51,11 @@ rt.type(11710, "/obj/effect/decal/cleanable/blood/old", "/obj/effect/decal/clean
 	bloodiness: 0,
 });
 
-// /obj/effect/decal/cleanable/blood/old/proc/Initialize  (code/game/objects/effects/decals/cleanable/humans.dm:29)  may sleep
+// humans.dm:29
 rt.def("/obj/effect/decal/cleanable/blood/old/proc/Initialize", function* Initialize(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.modSrcVar(f, "icon_state", "-old", add);
-	rt.setAt(rt.sv(f, "blood_DNA"), "Non-human DNA", "A+");
+	yield* parent_proc();
+	this.icon_state += "-old";
+	rt.setAt(this.blood_DNA, "Non-human DNA", "A+");
 	return f.dot;
 }, true);
 
@@ -73,12 +65,10 @@ rt.type(11712, "/obj/effect/decal/cleanable/blood/tracks", "/obj/effect/decal/cl
 	random_icon_states: null,
 });
 
-// /obj/effect/decal/cleanable/blood/tracks/proc/<init>  (code/game/objects/effects/decals/cleanable/humans.dm:39)
+// humans.dm:39
 rt.def("/obj/effect/decal/cleanable/blood/tracks/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "random_icon_states", null);
+	parent_proc();
+	this.random_icon_states = null;
 	return f.dot;
 });
 
@@ -91,16 +81,14 @@ rt.type(11736, "/obj/effect/decal/cleanable/trail_holder", "/obj/effect/decal/cl
 	desc: "Your instincts say you shouldn't be following these.",
 });
 
-// /obj/effect/decal/cleanable/trail_holder/proc/<init>  (code/game/objects/effects/decals/cleanable/humans.dm:46)
+// humans.dm:46
 rt.def("/obj/effect/decal/cleanable/trail_holder/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "random_icon_states", null);
-	$0 = $0;
-	rt.setSv(f, "existing_dirs", rt.list());
-	$0 = $0;
-	rt.setSv(f, "blood_DNA", rt.list());
+	parent_proc();
+	this.random_icon_states = null;
+
+	this.existing_dirs = list();
+
+	this.blood_DNA = list();
 	return f.dot;
 });
 
@@ -114,39 +102,33 @@ rt.type(11713, "/obj/effect/decal/cleanable/blood/gibs", "/obj/effect/decal/clea
 	mergeable_decal: 0,
 });
 
-// /obj/effect/decal/cleanable/blood/gibs/proc/Initialize  (code/game/objects/effects/decals/cleanable/humans.dm:64)  may sleep
+// humans.dm:64
 rt.def("/obj/effect/decal/cleanable/blood/gibs/proc/Initialize", function* Initialize(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.callName(f, rt.sv(f, "reagents"), "add_reagent", ["liquidgibs", 5]);
+	yield* parent_proc();
+	yield* this.reagents.add_reagent("liquidgibs", 5);
 	return f.dot;
 }, true);
 
-// /obj/effect/decal/cleanable/blood/gibs/proc/streak  (code/game/objects/effects/decals/cleanable/humans.dm:72)  may sleep
+// humans.dm:72
 rt.def("/obj/effect/decal/cleanable/blood/gibs/proc/streak", function* streak(f: Frame, directions: Value) {
-	let direction: Value = null, i: Value = null, b: Value = null, D: Value = null, ND: Value = null;
-	let $e: any;
-	f.vars = () => [directions, direction, i, b, D, ND, $e];
-	direction = rt.op(f, "PickUnweighted", [1], [live(directions)]);
-	i = null;
-	i = 0;
-	while (rt.lt(live(i), rt.op(f, "PickWeighted", [4], [100, 1, 200, 2, 150, 3, 100, 50]))) {
-		yield* g.call(f, P("/proc/sleep"), null, [2]);
-		if (rt.gt(live(i), 0)) {
-			b = (yield* g.new_(f, T("/obj/effect/decal/cleanable/blood/splatter"), [rt.fv(f, "loc", live(f.src))]));
+	let b: Value = null, D: Value = null, ND: Value = null;
+	let direction: Value = pick(directions);
+	let i: Value = 0;
+	while (i < rt.op(f, "PickWeighted", [4], [100, 1, 200, 2, 150, 3, 100, 50])) {
+		yield* sleep(2);
+		if (i > 0) {
+			b = (yield* new_(T("/obj/effect/decal/cleanable/blood/splatter"), this.loc));
 			D = null;
-			rt.forList(f, 0, rt.fv(f, "viruses", live(f.src)), T("/datum/disease"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				D = $e;
-				ND = (yield* g.callName(f, live(D), "Copy", [1]));
-				rt.modField(f, live(b), "viruses", live(ND), add);
-				rt.setFv(f, "holder", live(ND), live(b));
+			for (D of each(this.viruses, T("/datum/disease"))) {
+				ND = (yield* D.Copy(1));
+				b.viruses += ND;
+				ND.holder = b;
 			}
-			rt.endFor(f, 0);
 		}
-		if (!truthy((yield* g.call(f, P("/proc/step_to"), null, [live(f.src), rt.getStep(f, live(f.src), live(direction)), 0])))) {
+		if (!(yield* step_to(this, rt.getStep(f, this, direction), 0))) {
 			break;
 		}
-		i = rt.inc(live(i), 1);
+		i++;
 	}
 	return f.dot;
 }, true, { waitfor: false });
@@ -155,12 +137,10 @@ rt.type(11717, "/obj/effect/decal/cleanable/blood/gibs/torso", "/obj/effect/deca
 	random_icon_states: null,
 });
 
-// /obj/effect/decal/cleanable/blood/gibs/torso/proc/<init>  (code/game/objects/effects/decals/cleanable/humans.dm:94)
+// humans.dm:94
 rt.def("/obj/effect/decal/cleanable/blood/gibs/torso/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "random_icon_states", rt.list("gibtorso"));
+	parent_proc();
+	this.random_icon_states = list("gibtorso");
 	return f.dot;
 });
 
@@ -170,12 +150,12 @@ rt.type(11720, "/obj/effect/decal/cleanable/blood/gibs/old", "/obj/effect/decal/
 	bloodiness: 0,
 });
 
-// /obj/effect/decal/cleanable/blood/gibs/old/proc/Initialize  (code/game/objects/effects/decals/cleanable/humans.dm:108)  may sleep
+// humans.dm:108
 rt.def("/obj/effect/decal/cleanable/blood/gibs/old/proc/Initialize", function* Initialize(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "setDir", rt.op(f, "PickUnweighted", [4], [1, 2, 4, 8]));
-	rt.modSrcVar(f, "icon_state", "-old", add);
-	rt.setAt(rt.sv(f, "blood_DNA"), "Non-human DNA", "A+");
+	yield* parent_proc();
+	yield* this.setDir(pick(1, 2, 4, 8));
+	this.icon_state += "-old";
+	rt.setAt(this.blood_DNA, "Non-human DNA", "A+");
 	return f.dot;
 }, true);
 
@@ -191,109 +171,93 @@ rt.type(11723, "/obj/effect/decal/cleanable/blood/footprints", "/obj/effect/deca
 	blood_state: "blood",
 });
 
-// /obj/effect/decal/cleanable/blood/footprints/proc/<init>  (code/game/objects/effects/decals/cleanable/humans.dm:137)
+// humans.dm:137
 rt.def("/obj/effect/decal/cleanable/blood/footprints/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "shoe_types", rt.list());
-	$0 = $0;
-	rt.setSv(f, "random_icon_states", null);
+	parent_proc();
+	this.shoe_types = list();
+
+	this.random_icon_states = null;
 	return f.dot;
 });
 
-// /obj/effect/decal/cleanable/blood/footprints/proc/Crossed  (code/game/objects/effects/decals/cleanable/humans.dm:140)
+// humans.dm:140
 rt.def("/obj/effect/decal/cleanable/blood/footprints/proc/Crossed", function Crossed(f: Frame, O: Value) {
 	let H: Value = null, S: Value = null;
-	f.vars = () => [H, S];
-	if (truthy((rt.istype(live(O), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		H = live(O);
-		if ((truthy((S = rt.fv(f, "shoes", live(H)))) && truthy(rt.index(rt.fv(f, "bloody_shoes", live(S)), rt.sv(f, "blood_state"))))) {
-			rt.setAt(rt.fv(f, "bloody_shoes", live(S)), rt.sv(f, "blood_state"), rt.call(f, P("/proc/max"), null, [subtract(rt.index(rt.fv(f, "bloody_shoes", live(S)), rt.sv(f, "blood_state")), 5), 0]));
-			(rt.modSrcVar(f, "entered_dirs", rt.fv(f, "dir", live(H)), rt.bitOr));
-			(rt.modSrcVar(f, "shoe_types", rt.gv(f, "type", rt.fv(f, "shoes", live(H))), rt.bitOr));
+	if (rt.istype(O, T("/mob/living/carbon/human"))) {
+		H = O;
+		if ((S = H.shoes) && rt.index(S.bloody_shoes, this.blood_state)) {
+			rt.setAt(S.bloody_shoes, this.blood_state, max(rt.index(S.bloody_shoes, this.blood_state) - BLOOD_LOSS_PER_STEP, 0));
+			(rt.modSrcVar(f, "entered_dirs", H.dir, rt.bitOr));
+			(rt.modSrcVar(f, "shoe_types", H.shoes.type, rt.bitOr));
 		}
 	}
-	rt.callSrc(f, "update_icon", []);
+	this.update_icon();
 	return f.dot;
 });
 
-// /obj/effect/decal/cleanable/blood/footprints/proc/Uncrossed  (code/game/objects/effects/decals/cleanable/humans.dm:150)
+// humans.dm:150
 rt.def("/obj/effect/decal/cleanable/blood/footprints/proc/Uncrossed", function Uncrossed(f: Frame, O: Value) {
 	let H: Value = null, S: Value = null;
-	f.vars = () => [H, S];
-	if (truthy((rt.istype(live(O), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		H = live(O);
-		if ((truthy((S = rt.fv(f, "shoes", live(H)))) && truthy(rt.index(rt.fv(f, "bloody_shoes", live(S)), rt.sv(f, "blood_state"))))) {
-			rt.setAt(rt.fv(f, "bloody_shoes", live(S)), rt.sv(f, "blood_state"), rt.call(f, P("/proc/max"), null, [subtract(rt.index(rt.fv(f, "bloody_shoes", live(S)), rt.sv(f, "blood_state")), 5), 0]));
-			(rt.modSrcVar(f, "exited_dirs", rt.fv(f, "dir", live(H)), rt.bitOr));
-			(rt.modSrcVar(f, "shoe_types", rt.gv(f, "type", rt.fv(f, "shoes", live(H))), rt.bitOr));
+	if (rt.istype(O, T("/mob/living/carbon/human"))) {
+		H = O;
+		if ((S = H.shoes) && rt.index(S.bloody_shoes, this.blood_state)) {
+			rt.setAt(S.bloody_shoes, this.blood_state, max(rt.index(S.bloody_shoes, this.blood_state) - BLOOD_LOSS_PER_STEP, 0));
+			(rt.modSrcVar(f, "exited_dirs", H.dir, rt.bitOr));
+			(rt.modSrcVar(f, "shoe_types", H.shoes.type, rt.bitOr));
 		}
 	}
-	rt.callSrc(f, "update_icon", []);
+	this.update_icon();
 	return f.dot;
 });
 
-// /obj/effect/decal/cleanable/blood/footprints/proc/update_icon  (code/game/objects/effects/decals/cleanable/humans.dm:160)
+// humans.dm:160
 rt.def("/obj/effect/decal/cleanable/blood/footprints/proc/update_icon", function update_icon(f: Frame) {
 	let Ddir: Value = null, bloodstep_overlay: Value = null;
-	let $e: any;
-	f.vars = () => [Ddir, bloodstep_overlay, $e];
-	rt.callSrc(f, "cut_overlays", []);
-	Ddir = null;
-	rt.forList(f, 0, rt.gl("cardinal"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		Ddir = $e;
-		if (truthy(rt.bitAnd(rt.sv(f, "entered_dirs"), live(Ddir)))) {
-			if (!truthy((bloodstep_overlay = rt.index(rt.gl("bloody_footprints_cache"), fmt("entered-＀-＀", [rt.sv(f, "blood_state"), live(Ddir)]))))) {
-				rt.setAt(rt.gl("bloody_footprints_cache"), fmt("entered-＀-＀", [rt.sv(f, "blood_state"), live(Ddir)]), (bloodstep_overlay = rt.call(f, P("/proc/image"), null, [null, rt.sv(f, "icon"), null, fmt("＀1", [rt.sv(f, "blood_state")]), "dir", live(Ddir)], rt.Args.Named)));
+	this.cut_overlays();
+	for (Ddir of each(GLOB.cardinal)) {
+		if (rt.bitAnd(this.entered_dirs, Ddir)) {
+			if (!(bloodstep_overlay = rt.index(GLOB.bloody_footprints_cache, `entered-${this.blood_state}-${Ddir}`))) {
+				rt.setAt(GLOB.bloody_footprints_cache, `entered-${this.blood_state}-${Ddir}`, (bloodstep_overlay = image(this.icon, `${this.blood_state}1`, { dir: Ddir })));
 			}
-			rt.callSrc(f, "add_overlay", [live(bloodstep_overlay)]);
+			this.add_overlay(bloodstep_overlay);
 		}
-		if (truthy(rt.bitAnd(rt.sv(f, "exited_dirs"), live(Ddir)))) {
-			if (!truthy((bloodstep_overlay = rt.index(rt.gl("bloody_footprints_cache"), fmt("exited-＀-＀", [rt.sv(f, "blood_state"), live(Ddir)]))))) {
-				rt.setAt(rt.gl("bloody_footprints_cache"), fmt("exited-＀-＀", [rt.sv(f, "blood_state"), live(Ddir)]), (bloodstep_overlay = rt.call(f, P("/proc/image"), null, [null, rt.sv(f, "icon"), null, fmt("＀2", [rt.sv(f, "blood_state")]), "dir", live(Ddir)], rt.Args.Named)));
+		if (rt.bitAnd(this.exited_dirs, Ddir)) {
+			if (!(bloodstep_overlay = rt.index(GLOB.bloody_footprints_cache, `exited-${this.blood_state}-${Ddir}`))) {
+				rt.setAt(GLOB.bloody_footprints_cache, `exited-${this.blood_state}-${Ddir}`, (bloodstep_overlay = image(this.icon, `${this.blood_state}2`, { dir: Ddir })));
 			}
-			rt.callSrc(f, "add_overlay", [live(bloodstep_overlay)]);
+			this.add_overlay(bloodstep_overlay);
 		}
 	}
-	rt.endFor(f, 0);
-	rt.setSv(f, "alpha", add(150, rt.sv(f, "bloodiness")));
+	this.alpha = BLOODY_FOOTPRINT_BASE_ALPHA + this.bloodiness;
 	return f.dot;
 });
 
-// /obj/effect/decal/cleanable/blood/footprints/proc/examine  (code/game/objects/effects/decals/cleanable/humans.dm:178)
-rt.def("/obj/effect/decal/cleanable/blood/footprints/proc/examine", function examine(f: Frame) {
+// humans.dm:178
+rt.def("/obj/effect/decal/cleanable/blood/footprints/proc/examine", function examine(f: Frame, user: Value) {
 	let shoe: Value = null, S: Value = null;
-	let $e: any;
-	f.vars = () => [shoe, S, $e];
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.len(f, rt.sv(f, "shoe_types")))) {
-		f.dot = rt.modify(live(f.dot), "You recognise the footprints as belonging to:\n", add);
-		shoe = null;
-		rt.forList(f, 0, rt.sv(f, "shoe_types"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			shoe = $e;
-			f.dot = rt.modify(live(f.dot), fmt("some <B>＀</B> ＀\n", [rt.initial(f, (S = live(shoe)), "name"), rt.call(f, P("/proc/bicon"), null, [rt.initial(f, live(S), "icon")])]), add);
+	f.dot = parent_proc();
+	if (rt.len(f, this.shoe_types)) {
+		f.dot += "You recognise the footprints as belonging to:\n";
+		for (shoe of each(this.shoe_types)) {
+			f.dot += `some <B>${rt.initial(f, (S = shoe), "name")}</B> ${bicon(rt.initial(f, S, "icon"))}\n`;
 		}
-		rt.endFor(f, 0);
 	}
-	rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), live(f.dot)]);
+	to_chat(user, f.dot);
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/effect/decal/cleanable/blood/footprints/proc/replace_decal  (code/game/objects/effects/decals/cleanable/humans.dm:188)  may sleep
-rt.def("/obj/effect/decal/cleanable/blood/footprints/proc/replace_decal", function* replace_decal(f: Frame) {
-	if (!isEqual(rt.sv(f, "blood_state"), rt.fv(f, "blood_state", live(f.args[0])))) {
-		return live(f.dot);
+// humans.dm:188
+rt.def("/obj/effect/decal/cleanable/blood/footprints/proc/replace_decal", function* replace_decal(f: Frame, C: Value) {
+	if (this.blood_state != C.blood_state) {
+		return f.dot;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["C"] });
+}, true);
 
-// /obj/effect/decal/cleanable/blood/footprints/proc/can_bloodcrawl_in  (code/game/objects/effects/decals/cleanable/humans.dm:193)
+// humans.dm:193
 rt.def("/obj/effect/decal/cleanable/blood/footprints/proc/can_bloodcrawl_in", function can_bloodcrawl_in(f: Frame) {
-	if ((!isEqual(rt.sv(f, "blood_state"), "oil") && !isEqual(rt.sv(f, "blood_state"), "no blood whatsoever"))) {
+	if (this.blood_state != "oil" && this.blood_state != "no blood whatsoever") {
 		return 1;
 	}
 	return 0;

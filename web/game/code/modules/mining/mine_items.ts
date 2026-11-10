@@ -1,7 +1,7 @@
-// From code/modules/mining/mine_items.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mining/mine_items.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(12081, "/obj/effect/light_emitter", "/obj/effect", {
@@ -12,10 +12,10 @@ rt.type(12081, "/obj/effect/light_emitter", "/obj/effect", {
 	invisibility: 101,
 });
 
-// /obj/effect/light_emitter/proc/New  (code/modules/mining/mine_items.dm:12)  may sleep
+// mine_items.dm:12
 rt.def("/obj/effect/light_emitter/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "set_light", rt.sv(f, "set_luminosity"), rt.sv(f, "set_cap"));
+	yield* parent_proc();
+	this.set_light(this.set_luminosity, this.set_cap);
 	return f.dot;
 }, true);
 
@@ -24,20 +24,20 @@ rt.type(12336, "/obj/structure/closet/wardrobe/miner", "/obj/structure/closet/wa
 	name: "mining wardrobe",
 });
 
-// /obj/structure/closet/wardrobe/miner/proc/PopulateContents  (code/modules/mining/mine_items.dm:22)  may sleep
+// mine_items.dm:22
 rt.def("/obj/structure/closet/wardrobe/miner/proc/PopulateContents", function* PopulateContents(f: Frame) {
-	yield* g.new_(f, T("/obj/item/weapon/storage/backpack/duffelbag"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/backpack/explorer"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/backpack/satchel/explorer"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/under/rank/miner/lavaland"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/under/rank/miner/lavaland"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/under/rank/miner/lavaland"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/shoes/workboots/mining"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/shoes/workboots/mining"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/shoes/workboots/mining"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/gloves/color/black"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/gloves/color/black"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/gloves/color/black"), [live(f.src)]);
+	yield* new_(T("/obj/item/weapon/storage/backpack/duffelbag"), this);
+	yield* new_(T("/obj/item/weapon/storage/backpack/explorer"), this);
+	yield* new_(T("/obj/item/weapon/storage/backpack/satchel/explorer"), this);
+	yield* new_(T("/obj/item/clothing/under/rank/miner/lavaland"), this);
+	yield* new_(T("/obj/item/clothing/under/rank/miner/lavaland"), this);
+	yield* new_(T("/obj/item/clothing/under/rank/miner/lavaland"), this);
+	yield* new_(T("/obj/item/clothing/shoes/workboots/mining"), this);
+	yield* new_(T("/obj/item/clothing/shoes/workboots/mining"), this);
+	yield* new_(T("/obj/item/clothing/shoes/workboots/mining"), this);
+	yield* new_(T("/obj/item/clothing/gloves/color/black"), this);
+	yield* new_(T("/obj/item/clothing/gloves/color/black"), this);
+	yield* new_(T("/obj/item/clothing/gloves/color/black"), this);
 	return f.dot;
 }, true);
 
@@ -47,31 +47,29 @@ rt.type(12408, "/obj/structure/closet/secure_closet/miner", "/obj/structure/clos
 	req_access: null,
 });
 
-// /obj/structure/closet/secure_closet/miner/proc/<init>  (code/modules/mining/mine_items.dm:38)
+// mine_items.dm:38
 rt.def("/obj/structure/closet/secure_closet/miner/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_access", rt.list(48));
+	parent_proc();
+	this.req_access = list(48);
 	return f.dot;
 });
 
-// /obj/structure/closet/secure_closet/miner/proc/PopulateContents  (code/modules/mining/mine_items.dm:41)  may sleep
+// mine_items.dm:41
 rt.def("/obj/structure/closet/secure_closet/miner/proc/PopulateContents", function* PopulateContents(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.new_(f, T("/obj/item/stack/sheet/mineral/sandbags"), [live(f.src), 5]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/box/emptysandbags"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/shovel"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/pickaxe/mini"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/device/radio/headset/headset_cargo/mining"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/device/flashlight/seclite"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/bag/plants"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/storage/bag/ore"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/device/t_scanner/adv_mining_scanner/lesser"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/gun/energy/kinetic_accelerator"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/glasses/meson"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/survivalcapsule"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/device/assault_pod/mining"), [live(f.src)]);
+	yield* parent_proc();
+	yield* new_(T("/obj/item/stack/sheet/mineral/sandbags"), this, 5);
+	yield* new_(T("/obj/item/weapon/storage/box/emptysandbags"), this);
+	yield* new_(T("/obj/item/weapon/shovel"), this);
+	yield* new_(T("/obj/item/weapon/pickaxe/mini"), this);
+	yield* new_(T("/obj/item/device/radio/headset/headset_cargo/mining"), this);
+	yield* new_(T("/obj/item/device/flashlight/seclite"), this);
+	yield* new_(T("/obj/item/weapon/storage/bag/plants"), this);
+	yield* new_(T("/obj/item/weapon/storage/bag/ore"), this);
+	yield* new_(T("/obj/item/device/t_scanner/adv_mining_scanner/lesser"), this);
+	yield* new_(T("/obj/item/weapon/gun/energy/kinetic_accelerator"), this);
+	yield* new_(T("/obj/item/clothing/glasses/meson"), this);
+	yield* new_(T("/obj/item/weapon/survivalcapsule"), this);
+	yield* new_(T("/obj/item/device/assault_pod/mining"), this);
 	return f.dot;
 }, true);
 
@@ -84,13 +82,13 @@ rt.type(10391, "/obj/machinery/computer/shuttle/mining", "/obj/machinery/compute
 	no_destination_swap: 1,
 }, { global: { dumb_rev_heads: 746 } });
 
-// /obj/machinery/computer/shuttle/mining/proc/attack_hand  (code/modules/mining/mine_items.dm:69)  may sleep
-rt.def("/obj/machinery/computer/shuttle/mining/proc/attack_hand", function* attack_hand(f: Frame) {
-	if ((((isEqual(rt.fv(f, "z", live(f.args[0])), 2) && truthy(rt.fv(f, "mind", live(f.args[0])))) && truthy((rt.isIn(f, rt.fv(f, "mind", live(f.args[0])), rt.gv(f, "head_revolutionaries", rt.fv(f, "mode", rt.gl("SSticker")))) ? 1 : 0))) && !truthy((rt.isIn(f, rt.fv(f, "mind", live(f.args[0])), rt.gl("dumb_rev_heads")) ? 1 : 0)))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='warning'>You get a feeling that leaving the station might be a REALLY dumb idea...</span>"]);
-		rt.modGl("dumb_rev_heads", rt.fv(f, "mind", live(f.args[0])), add);
-		return live(f.dot);
+// mine_items.dm:69
+rt.def("/obj/machinery/computer/shuttle/mining/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
+	if (user.z == ZLEVEL_STATION && user.mind && rt.isIn(f, user.mind, GLOB.SSticker.mode.head_revolutionaries) && !rt.isIn(f, user.mind, GLOB.dumb_rev_heads)) {
+		to_chat(user, "<span class='warning'>You get a feeling that leaving the station might be a REALLY dumb idea...</span>");
+		GLOB.dumb_rev_heads += user.mind;
+		return f.dot;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);

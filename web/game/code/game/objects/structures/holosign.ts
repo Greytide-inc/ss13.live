@@ -1,7 +1,7 @@
-// From code/game/objects/structures/holosign.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/structures/holosign.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(12781, "/obj/structure/holosign", "/obj/structure", {
@@ -14,58 +14,48 @@ rt.type(12781, "/obj/structure/holosign", "/obj/structure", {
 	armor: null,
 });
 
-// /obj/structure/holosign/proc/<init>  (code/game/objects/structures/holosign.dm:10)
+// holosign.dm:10
 rt.def("/obj/structure/holosign/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 0, "bullet", 50, "laser", 50, "energy", 50, "bomb", 0, "bio", 0, "rad", 0, "fire", 20, "acid", 20]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 0, "bullet", 50, "laser", 50, "energy", 50, "bomb", 0, "bio", 0, "rad", 0, "fire", 20, "acid", 20]);
 	return f.dot;
 });
 
-// /obj/structure/holosign/proc/New  (code/game/objects/structures/holosign.dm:15)  may sleep
-rt.def("/obj/structure/holosign/proc/New", function* New(f: Frame) {
-	if (truthy(live(f.args[1]))) {
-		rt.setSv(f, "projector", live(f.args[1]));
-		rt.modField(f, rt.sv(f, "projector"), "signs", live(f.src), add);
+// holosign.dm:15
+rt.def("/obj/structure/holosign/proc/New", function* New(f: Frame, loc: Value, source_projector: Value) {
+	if (source_projector) {
+		this.projector = source_projector;
+		this.projector.signs += this;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["loc", "source_projector"] });
+}, true);
 
-// /obj/structure/holosign/proc/Destroy  (code/game/objects/structures/holosign.dm:21)  may sleep
+// holosign.dm:21
 rt.def("/obj/structure/holosign/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.sv(f, "projector"))) {
-		(rt.modField(f, rt.sv(f, "projector"), "signs", live(f.src), subtract));
-		rt.setSv(f, "projector", null);
+	if (this.projector) {
+		this.projector.signs -= this;
+		this.projector = null;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);
 
-// /obj/structure/holosign/proc/attack_hand  (code/game/objects/structures/holosign.dm:26)  may sleep
+// holosign.dm:26
 rt.def("/obj/structure/holosign/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.callName(f, live(user), "do_attack_animation", [live(f.src), "punch"]);
-	yield* g.callName(f, live(user), "changeNext_move", [8]);
-	yield* g.srcCall(f, "take_damage", 5, "brute", "melee", 1);
+	yield* user.do_attack_animation(this, "punch");
+	user.changeNext_move(8);
+	yield* this.take_damage(5, "brute", "melee", 1);
 	return f.dot;
 }, true);
 
-// /obj/structure/holosign/proc/play_attack_sound  (code/game/objects/structures/holosign.dm:31)
+// holosign.dm:31
 rt.def("/obj/structure/holosign/proc/play_attack_sound", function play_attack_sound(f: Frame, damage_amount: Value, damage_type: Value, damage_flag: Value) {
-	let $0: any;
-	f.vars = () => [damage_type, damage_flag, $0];
-	if (live(damage_type) === null) {
-		damage_type = "brute";
-	}
-	if (live(damage_flag) === null) {
-		damage_flag = 0;
-	}
-	$0 = live(damage_type);
-	if ($0 === "brute") {
-		rt.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/weapons/egloves.ogg"), 80, 1]);
-	} else if ($0 === "fire") {
-		rt.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/weapons/egloves.ogg"), 80, 1]);
+	damage_type ??= "brute";
+	damage_flag ??= 0;
+	if (damage_type === "brute") {
+		playsound(this.loc, rt.rsc("sound/weapons/egloves.ogg"), 80, 1);
+	} else if (damage_type === "fire") {
+		playsound(this.loc, rt.rsc("sound/weapons/egloves.ogg"), 80, 1);
 	}
 	return f.dot;
 });
@@ -81,28 +71,22 @@ rt.type(12783, "/obj/structure/holosign/barrier", "/obj/structure/holosign", {
 	max_integrity: 20,
 });
 
-// /obj/structure/holosign/barrier/proc/CanPass  (code/game/objects/structures/holosign.dm:54)
+// holosign.dm:54
 rt.def("/obj/structure/holosign/barrier/proc/CanPass", function CanPass(f: Frame, mover: Value, target: Value, height: Value, air_group: Value) {
-	let C: Value = null;
-	f.vars = () => [height, air_group, C];
-	if (live(height) === null) {
-		height = 0;
-	}
-	if (live(air_group) === null) {
-		air_group = 0;
-	}
-	if (!truthy(rt.sv(f, "density"))) {
+	height ??= 0;
+	air_group ??= 0;
+	if (!this.density) {
 		return 1;
 	}
-	if ((truthy(live(air_group)) || isEqual(live(height), 0))) {
+	if (air_group || height == 0) {
 		return 1;
 	}
-	if (truthy(rt.bitAnd(rt.fv(f, "pass_flags", live(mover)), 7))) {
+	if (rt.bitAnd(mover.pass_flags, 7)) {
 		return 1;
 	}
-	if (!truthy((rt.istype(live(mover), T("/mob/living/carbon")) ? 1 : 0))) return f.dot;
-	C = live(mover);
-	if (!(truthy(rt.sv(f, "allow_walk")) && isEqual(rt.fv(f, "m_intent", live(C)), "walk"))) return f.dot;
+	if (!rt.istype(mover, T("/mob/living/carbon"))) return f.dot;
+	let C: Value = mover;
+	if (!(this.allow_walk && C.m_intent == "walk")) return f.dot;
 	return 1;
 });
 
@@ -117,20 +101,18 @@ rt.type(12785, "/obj/structure/holosign/barrier/atmos", "/obj/structure/holosign
 	alpha: 150,
 });
 
-// /obj/structure/holosign/barrier/atmos/proc/Initialize  (code/game/objects/structures/holosign.dm:80)
+// holosign.dm:80
 rt.def("/obj/structure/holosign/barrier/atmos/proc/Initialize", function Initialize(f: Frame) {
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	rt.callSrc(f, "air_update_turf", [1]);
+	f.dot = parent_proc();
+	this.air_update_turf(1);
 	return f.dot;
 });
 
-// /obj/structure/holosign/barrier/atmos/proc/Destroy  (code/game/objects/structures/holosign.dm:84)  may sleep
+// holosign.dm:84
 rt.def("/obj/structure/holosign/barrier/atmos/proc/Destroy", function* Destroy(f: Frame) {
-	let _T: Value = null;
-	f.vars = () => [_T];
-	_T = rt.getStep(f, live(f.src), 0);
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.callName(f, live(_T), "air_update_turf", [1]);
+	let _T: Value = rt.getStep(f, this, 0);
+	f.dot = (yield* parent_proc());
+	_T.air_update_turf(1);
 	return f.dot;
 }, true);
 
@@ -143,15 +125,14 @@ rt.type(12786, "/obj/structure/holosign/barrier/cyborg", "/obj/structure/holosig
 	max_integrity: 10,
 });
 
-// /obj/structure/holosign/barrier/cyborg/proc/bullet_act  (code/game/objects/structures/holosign.dm:97)  may sleep
+// holosign.dm:97
 rt.def("/obj/structure/holosign/barrier/cyborg/proc/bullet_act", function* bullet_act(f: Frame, _P: Value) {
-	f.vars = () => [_P];
-	yield* g.srcCall(f, "take_damage", divide(rt.fv(f, "damage", live(_P)), 5), "brute", "melee", 1);
-	if (truthy((rt.istype(live(_P), T("/obj/item/projectile/energy/electrode")) ? 1 : 0))) {
-		yield* g.srcCall(f, "take_damage", 10, "brute", "melee", 1);
+	yield* this.take_damage(_P.damage / 5, "brute", "melee", 1);
+	if (rt.istype(_P, T("/obj/item/projectile/energy/electrode"))) {
+		yield* this.take_damage(10, "brute", "melee", 1);
 	}
-	if (!truthy((rt.istype(live(_P), T("/obj/item/projectile/beam/disabler")) ? 1 : 0))) return f.dot;
-	yield* g.srcCall(f, "take_damage", 5, "brute", "melee", 1);
+	if (!rt.istype(_P, T("/obj/item/projectile/beam/disabler"))) return f.dot;
+	yield* this.take_damage(5, "brute", "melee", 1);
 	return f.dot;
 }, true);
 
@@ -163,33 +144,30 @@ rt.type(12787, "/obj/structure/holosign/barrier/cyborg/hacked", "/obj/structure/
 	max_integrity: 20,
 });
 
-// /obj/structure/holosign/barrier/cyborg/hacked/proc/bullet_act  (code/game/objects/structures/holosign.dm:111)  may sleep
+// holosign.dm:111
 rt.def("/obj/structure/holosign/barrier/cyborg/hacked/proc/bullet_act", function* bullet_act(f: Frame, _P: Value) {
-	f.vars = () => [_P];
-	yield* g.srcCall(f, "take_damage", rt.fv(f, "damage", live(_P)), "brute", "melee", 1);
+	yield* this.take_damage(_P.damage, "brute", "melee", 1);
 	return f.dot;
 }, true);
 
-// /obj/structure/holosign/barrier/cyborg/hacked/proc/attack_hand  (code/game/objects/structures/holosign.dm:117)  may sleep
+// holosign.dm:117
 rt.def("/obj/structure/holosign/barrier/cyborg/hacked/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
 	let M: Value = null;
-	f.vars = () => [user, M];
-	if (truthy(rt.sv(f, "shockcd"))) return f.dot;
-	if (!truthy((yield* g.call(f, P("/proc/ismob"), null, [live(user)])))) return f.dot;
-	yield* g.callName(f, (M = live(user)), "electrocute_act", [null, 15, null, "Energy Barrier", "safety", 1], rt.Args.Named);
-	rt.setSv(f, "shockcd", 1);
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/structure/holosign/barrier/cyborg/hacked/proc/cooldown")])), 5]);
+	if (this.shockcd) return f.dot;
+	if (!ismob(user)) return f.dot;
+	yield* (M = user).electrocute_act(15, "Energy Barrier", { safety: 1 });
+	this.shockcd = 1;
+	yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/structure/holosign/barrier/cyborg/hacked/proc/cooldown"))), 5);
 	return f.dot;
 }, true);
 
-// /obj/structure/holosign/barrier/cyborg/hacked/proc/Bumped  (code/game/objects/structures/holosign.dm:125)  may sleep
+// holosign.dm:125
 rt.def("/obj/structure/holosign/barrier/cyborg/hacked/proc/Bumped", function* Bumped(f: Frame, user: Value) {
 	let M: Value = null;
-	f.vars = () => [user, M];
-	if (truthy(rt.sv(f, "shockcd"))) return f.dot;
-	if (!truthy((yield* g.call(f, P("/proc/ismob"), null, [live(user)])))) return f.dot;
-	yield* g.callName(f, (M = live(user)), "electrocute_act", [null, 15, null, "Energy Barrier", "safety", 1], rt.Args.Named);
-	rt.setSv(f, "shockcd", 1);
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/structure/holosign/barrier/cyborg/hacked/proc/cooldown")])), 5]);
+	if (this.shockcd) return f.dot;
+	if (!ismob(user)) return f.dot;
+	yield* (M = user).electrocute_act(15, "Energy Barrier", { safety: 1 });
+	this.shockcd = 1;
+	yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/structure/holosign/barrier/cyborg/hacked/proc/cooldown"))), 5);
 	return f.dot;
 }, true);

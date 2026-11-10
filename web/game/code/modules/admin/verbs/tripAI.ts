@@ -1,29 +1,28 @@
-// From code/modules/admin/verbs/tripAI.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/admin/verbs/tripAI.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
 
 
-// /client/proc/triple_ai  (code/modules/admin/verbs/tripAI.dm:5)  may sleep
+
+// tripAI.dm:5
 rt.def("/client/proc/triple_ai", function* triple_ai(f: Frame) {
 	let job: Value = null;
-	f.vars = () => [job];
-	if (rt.gt(rt.fv(f, "current_state", rt.gl("SSticker")), 1)) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), "This option is currently only usable during pregame. This may change at a later date."]);
-		return live(f.dot);
+	if (GLOB.SSticker.current_state > GAME_STATE_PREGAME) {
+		to_chat(f.usr, "This option is currently only usable during pregame. This may change at a later date.");
+		return f.dot;
 	}
-	if (!truthy((job = (yield* g.callName(f, rt.gl("SSjob"), "GetJob", ["AI"]))))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), "Unable to locate the AI job"]);
-		return live(f.dot);
+	if (!(job = (yield* GLOB.SSjob.GetJob("AI")))) {
+		to_chat(f.usr, "Unable to locate the AI job");
+		return f.dot;
 	}
-	if (truthy(rt.fv(f, "triai", rt.gl("SSticker")))) {
-		rt.setFv(f, "triai", rt.gl("SSticker"), 0);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), "Only one AI will be spawned at round start."]);
-		yield* g.call(f, P("/proc/message_admins"), null, [fmt("<span class='adminnotice'>＀ has toggled off triple AIs at round start.</span>", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.usr)]))])]);
+	if (GLOB.SSticker.triai) {
+		GLOB.SSticker.triai = 0;
+		to_chat(f.usr, "Only one AI will be spawned at round start.");
+		message_admins(`<span class='adminnotice'>${key_name_admin(f.usr)} has toggled off triple AIs at round start.</span>`);
 	} else {
-		rt.setFv(f, "triai", rt.gl("SSticker"), 1);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), "There will be an AI Triumvirate at round start."]);
-		yield* g.call(f, P("/proc/message_admins"), null, [fmt("<span class='adminnotice'>＀ has toggled on triple AIs at round start.</span>", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.usr)]))])]);
+		GLOB.SSticker.triai = 1;
+		to_chat(f.usr, "There will be an AI Triumvirate at round start.");
+		message_admins(`<span class='adminnotice'>${key_name_admin(f.usr)} has toggled on triple AIs at round start.</span>`);
 	}
 	return f.dot;
 }, true, { verb: { name: "Create AI Triumvirate", category: "Fun" } });

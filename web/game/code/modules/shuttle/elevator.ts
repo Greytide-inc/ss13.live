@@ -1,7 +1,7 @@
-// From code/modules/shuttle/elevator.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/shuttle/elevator.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(13048, "/obj/docking_port/mobile/elevator", "/obj/docking_port/mobile", {
@@ -13,9 +13,8 @@ rt.type(13048, "/obj/docking_port/mobile/elevator", "/obj/docking_port/mobile", 
 	knockdown: 0,
 });
 
-// /obj/docking_port/mobile/elevator/proc/request  (code/modules/shuttle/elevator.dm:10)  may sleep
+// elevator.dm:10
 rt.def("/obj/docking_port/mobile/elevator/proc/request", function* request(f: Frame, S: Value) {
-	f.vars = () => [S];
-	yield* g.srcCall(f, "dock", live(S), 1);
+	yield* this.dock(S, 1);
 	return f.dot;
 }, true);

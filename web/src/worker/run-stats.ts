@@ -74,6 +74,7 @@ export function makeRunStats(ctx: RunStatsCtx) {
 				summary.push(`[vm-boot] SSgarbage failed to GC (${rows.length} types): ${rows.slice(0, 15).map(([k, c]) => `${k} x${c}`).join(", ")}`);
 			}
 		}
+		if (vm.deletedUses) summary.push(`[vm-boot] WARNING deleted objects used ${vm.deletedUses}x (detranslate 6b): ${[...vm.deletedUseNames].slice(0, 10).join(", ")}`);
 		const g = vm.gcStats;
 		summary.push(`[vm-boot] VM collector: ${g.freed} objects freed at ${g.safePoints} safe points, ${(g.ms / 1000).toFixed(1)} s; ${vm.map.atoms.size} atoms`);
 		summary.push(`[vm-boot] heap at end ${heapMB()} MB`);

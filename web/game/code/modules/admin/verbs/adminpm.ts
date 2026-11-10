@@ -1,227 +1,207 @@
-// From code/modules/admin/verbs/adminpm.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/admin/verbs/adminpm.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, g } = rt;
 
 
-// /client/proc/cmd_admin_pm_context  (code/modules/admin/verbs/adminpm.dm:8)  may sleep
+// adminpm.dm:8
 rt.def("/client/proc/cmd_admin_pm_context", function* cmd_admin_pm_context(f: Frame, M: Value) {
-	f.vars = () => [M];
-	if (!truthy(rt.sv(f, "holder"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<font color='red'>Error: Admin-PM-Context: Only administrators may use this command.</font>"]);
-		return live(f.dot);
+	if (!this.holder) {
+		to_chat(this, "<font color='red'>Error: Admin-PM-Context: Only administrators may use this command.</font>");
+		return f.dot;
 	}
-	if ((!truthy((yield* g.call(f, P("/proc/ismob"), null, [live(M)]))) || !truthy(rt.fv(f, "client", live(M))))) {
-		return live(f.dot);
+	if (!ismob(M) || !M.client) {
+		return f.dot;
 	}
-	yield* g.srcCall(f, "cmd_admin_pm", rt.fv(f, "client", live(M)), null);
+	yield* this.cmd_admin_pm(M.client, null);
 	return f.dot;
 }, true, { verb: { name: "Admin PM Mob", category: "" }, argTypes: [{ type: 8, path: "/mob", source: "?" }] });
 
-// /client/proc/cmd_admin_pm_panel  (code/modules/admin/verbs/adminpm.dm:20)  may sleep
+// adminpm.dm:20
 rt.def("/client/proc/cmd_admin_pm_panel", function* cmd_admin_pm_panel(f: Frame) {
-	let targets: Value = null, _T: Value = null, target: Value = null;
+	let _T: Value = null;
 	let $e: any;
-	f.vars = () => [targets, _T, target, $e];
-	if (!truthy(rt.sv(f, "holder"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<font color='red'>Error: Admin-PM-Panel: Only administrators may use this command.</font>"]);
-		return live(f.dot);
+	if (!this.holder) {
+		to_chat(this, "<font color='red'>Error: Admin-PM-Panel: Only administrators may use this command.</font>");
+		return f.dot;
 	}
-	targets = rt.op(f, "CreateMultidimensionalList", [1], [0]);
-	_T = null;
+	let targets: Value = rt.op(f, "CreateMultidimensionalList", [1], [0]);
 	rt.op(f, "CreateTypeEnumerator", [0], [T("/client")], false);
-	live(_T);
+	_T;
 	while (($e = rt.next(f, 0)) !== undefined) {
 		_T = $e;
-		if (truthy(rt.fv(f, "mob", live(_T)))) {
-			if (truthy((rt.istype(rt.fv(f, "mob", live(_T)), T("/mob/dead/new_player")) ? 1 : 0))) {
-				rt.setAt(live(targets), fmt("(New Player) - ＀", [live(_T)]), live(_T));
+		if (_T.mob) {
+			if (rt.istype(_T.mob, T("/mob/dead/new_player"))) {
+				rt.setAt(targets, `(New Player) - ${_T}`, _T);
+			} else if (rt.istype(_T.mob, T("/mob/dead/observer"))) {
+				rt.setAt(targets, `${_T.mob.name}(Ghost) - ${_T}`, _T);
 			} else {
-				if (truthy((rt.istype(rt.fv(f, "mob", live(_T)), T("/mob/dead/observer")) ? 1 : 0))) {
-					rt.setAt(live(targets), fmt("＀(Ghost) - ＀", [rt.gv(f, "name", rt.fv(f, "mob", live(_T))), live(_T)]), live(_T));
-				} else {
-					rt.setAt(live(targets), fmt("＀(as ＀) - ＀", [rt.gv(f, "real_name", rt.fv(f, "mob", live(_T))), rt.gv(f, "name", rt.fv(f, "mob", live(_T))), live(_T)]), live(_T));
-				}
+				rt.setAt(targets, `${_T.mob.real_name}(as ${_T.mob.name}) - ${_T}`, _T);
 			}
 		} else {
-			rt.setAt(live(targets), fmt("(No Mob) - ＀", [live(_T)]), live(_T));
+			rt.setAt(targets, `(No Mob) - ${_T}`, _T);
 		}
 	}
 	rt.endFor(f, 0);
-	target = (yield* g.op(f, "Prompt", [1], [null, "Admin PM", "To whom shall we send a message?", live(f.src), (yield* g.call(f, P("/proc/sortList"), null, [live(targets)]))]));
-	yield* g.srcCall(f, "cmd_admin_pm", rt.index(live(targets), live(target)), null);
+	let target: Value = (yield* g.op(f, "Prompt", [1], [null, "Admin PM", "To whom shall we send a message?", this, (yield* sortList(targets))]));
+	yield* this.cmd_admin_pm(rt.index(targets, target), null);
 	return f.dot;
 }, true, { verb: { name: "Admin PM", category: "Admin" } });
 
-// /client/proc/cmd_ahelp_reply  (code/modules/admin/verbs/adminpm.dm:39)  may sleep
+// adminpm.dm:39
 rt.def("/client/proc/cmd_ahelp_reply", function* cmd_ahelp_reply(f: Frame, whom: Value) {
 	let C: Value = null, AH: Value = null, msg: Value = null;
-	f.vars = () => [whom, C, AH, msg];
-	if (truthy(rt.bitAnd(rt.fv(f, "muted", rt.sv(f, "prefs")), 8))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<font color='red'>Error: Admin-PM: You are unable to use admin PM-s (muted).</font>"]);
-		return live(f.dot);
+	if (rt.bitAnd(this.prefs.muted, 8)) {
+		to_chat(this, "<font color='red'>Error: Admin-PM: You are unable to use admin PM-s (muted).</font>");
+		return f.dot;
 	}
-	C = null;
-	if (truthy((yield* g.call(f, P("/proc/istext"), null, [live(whom)])))) {
-		if (truthy((yield* g.call(f, P("/proc/cmptext"), null, [(yield* g.call(f, P("/proc/copytext"), null, [live(whom), 1, 2])), "@"])))) {
-			whom = (yield* g.srcCall(f, "findStealthKey", live(whom)));
+	if (istext(whom)) {
+		if (cmptext(copytext(whom, 1, 2), "@")) {
+			whom = this.findStealthKey(whom);
 		}
-		C = rt.index(rt.gl("directory"), live(whom));
-	} else {
-		if (truthy((rt.istype(live(whom), T("/client")) ? 1 : 0))) {
-			C = live(whom);
+		C = rt.index(GLOB.directory, whom);
+	} else if (rt.istype(whom, T("/client"))) {
+		C = whom;
+	}
+	if (!C) {
+		if (this.holder) {
+			to_chat(this, "<font color='red'>Error: Admin-PM: Client not found.</font>");
 		}
+		return f.dot;
 	}
-	if (!truthy(live(C))) {
-		if (truthy(rt.sv(f, "holder"))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<font color='red'>Error: Admin-PM: Client not found.</font>"]);
-		}
-		return live(f.dot);
+	if (AH = C.current_ticket) {
+		message_admins(`${key_name_admin(this)} has started replying to ${key_name(C, 0, 0)}'s admin help.`);
 	}
-	if (truthy((AH = rt.fv(f, "current_ticket", live(C))))) {
-		yield* g.call(f, P("/proc/message_admins"), null, [fmt("＀ has started replying to ＀'s admin help.", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.src)])), (yield* g.call(f, P("/proc/key_name"), null, [live(C), 0, 0]))])]);
+	if (!(msg = (yield* g.op(f, "Prompt", [3], [null, `Private message to ${key_name(C, 0, 0)}`, "Message:", this, null])))) {
+		message_admins(`${key_name_admin(this)} has cancelled their reply to ${key_name(C, 0, 0)}'s admin help.`);
+		return f.dot;
 	}
-	if (!truthy((msg = (yield* g.op(f, "Prompt", [3], [null, fmt("Private message to ＀", [(yield* g.call(f, P("/proc/key_name"), null, [live(C), 0, 0]))]), "Message:", live(f.src), null]))))) {
-		yield* g.call(f, P("/proc/message_admins"), null, [fmt("＀ has cancelled their reply to ＀'s admin help.", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.src)])), (yield* g.call(f, P("/proc/key_name"), null, [live(C), 0, 0]))])]);
-		return live(f.dot);
-	}
-	yield* g.srcCall(f, "cmd_admin_pm", live(whom), live(msg));
+	yield* this.cmd_admin_pm(whom, msg);
 	return f.dot;
 }, true);
 
-// /client/proc/cmd_admin_pm  (code/modules/admin/verbs/adminpm.dm:67)  may sleep
+// adminpm.dm:67
 rt.def("/client/proc/cmd_admin_pm", function* cmd_admin_pm(f: Frame, whom: Value, msg: Value) {
-	let recipient: Value = null, rawmsg: Value = null, keywordparsedmsg: Value = null, AH: Value = null, interaction_message: Value = null, replymsg: Value = null, sender: Value = null, sendername: Value = null, reply: Value = null, X: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [whom, msg, recipient, rawmsg, keywordparsedmsg, AH, interaction_message, replymsg, sender, sendername, reply, X, $0, $e];
-	if (truthy(rt.bitAnd(rt.fv(f, "muted", rt.sv(f, "prefs")), 8))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<font color='red'>Error: Admin-PM: You are unable to use admin PM-s (muted).</font>"]);
-		return live(f.dot);
+	let recipient: Value = null, AH: Value = null, interaction_message: Value = null, replymsg: Value = null, sender: Value = null, sendername: Value = null, reply: Value = null, X: Value = null;
+	let $e: any;
+	if (rt.bitAnd(this.prefs.muted, 8)) {
+		to_chat(this, "<font color='red'>Error: Admin-PM: You are unable to use admin PM-s (muted).</font>");
+		return f.dot;
 	}
-	if ((!truthy(rt.sv(f, "holder")) && !truthy(rt.sv(f, "current_ticket")))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<font color='red'>You can no longer reply to this ticket, please open another one by using the Adminhelp verb if need be.</font>"]);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), fmt("<font color='blue'>Message: ＀</font>", [live(msg)])]);
-		return live(f.dot);
+	if (!this.holder && !this.current_ticket) {
+		to_chat(this, "<font color='red'>You can no longer reply to this ticket, please open another one by using the Adminhelp verb if need be.</font>");
+		to_chat(this, `<font color='blue'>Message: ${msg}</font>`);
+		return f.dot;
 	}
-	recipient = null;
-	if (truthy((yield* g.call(f, P("/proc/istext"), null, [live(whom)])))) {
-		if (truthy((yield* g.call(f, P("/proc/cmptext"), null, [(yield* g.call(f, P("/proc/copytext"), null, [live(whom), 1, 2])), "@"])))) {
-			whom = (yield* g.srcCall(f, "findStealthKey", live(whom)));
+	if (istext(whom)) {
+		if (cmptext(copytext(whom, 1, 2), "@")) {
+			whom = this.findStealthKey(whom);
 		}
-		recipient = rt.index(rt.gl("directory"), live(whom));
-	} else {
-		if (truthy((rt.istype(live(whom), T("/client")) ? 1 : 0))) {
-			recipient = live(whom);
-		}
+		recipient = rt.index(GLOB.directory, whom);
+	} else if (rt.istype(whom, T("/client"))) {
+		recipient = whom;
 	}
 	{
-		if (!truthy(live(recipient))) {
-			if (truthy(rt.sv(f, "holder"))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<font color='red'>Error: Admin-PM: Client not found.</font>"]);
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), live(msg)]);
+		if (!recipient) {
+			if (this.holder) {
+				to_chat(this, "<font color='red'>Error: Admin-PM: Client not found.</font>");
+				to_chat(this, msg);
 			} else {
-				yield* g.callName(f, rt.sv(f, "current_ticket"), "MessageNoRecipient", [live(msg)]);
+				this.current_ticket.MessageNoRecipient(msg);
 			}
-			return live(f.dot);
+			return f.dot;
 		}
-		if (!truthy(live(msg))) {
-			if (!truthy((msg = (yield* g.op(f, "Prompt", [3], [null, fmt("Private message to ＀", [(yield* g.call(f, P("/proc/key_name"), null, [live(recipient), 0, 0]))]), "Message:", live(f.src), null]))))) {
-				return live(f.dot);
+		if (!msg) {
+			if (!(msg = (yield* g.op(f, "Prompt", [3], [null, `Private message to ${key_name(recipient, 0, 0)}`, "Message:", this, null])))) {
+				return f.dot;
 			}
-			if (truthy(rt.bitAnd(rt.fv(f, "muted", rt.sv(f, "prefs")), 8))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<font color='red'>Error: Admin-PM: You are unable to use admin PM-s (muted).</font>"]);
-				return live(f.dot);
+			if (rt.bitAnd(this.prefs.muted, 8)) {
+				to_chat(this, "<font color='red'>Error: Admin-PM: You are unable to use admin PM-s (muted).</font>");
+				return f.dot;
 			}
-			if (!truthy(live(recipient))) {
-				if (truthy(rt.sv(f, "holder"))) {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<font color='red'>Error: Admin-PM: Client not found.</font>"]);
+			if (!recipient) {
+				if (this.holder) {
+					to_chat(this, "<font color='red'>Error: Admin-PM: Client not found.</font>");
 				} else {
-					yield* g.callName(f, rt.sv(f, "current_ticket"), "MessageNoRecipient", [live(msg)]);
+					this.current_ticket.MessageNoRecipient(msg);
 				}
-				return live(f.dot);
+				return f.dot;
 			}
 		}
 	}
-	if (truthy((yield* g.callName(f, live(f.src), "handle_spam_prevention", [live(msg), 8])))) {
-		return live(f.dot);
+	if (this.handle_spam_prevention(msg, 8)) {
+		return f.dot;
 	}
-	if (!truthy((yield* g.call(f, P("/proc/check_rights"), null, [48, 0])))) {
-		if (!truthy((msg = (yield* g.call(f, P("/proc/sanitize"), null, [(yield* g.call(f, P("/proc/copytext"), null, [live(msg), 1, 1024]))]))))) {
-			return live(f.dot);
+	if (!check_rights(48, 0)) {
+		if (!(msg = sanitize(copytext(msg, 1, 1024)))) {
+			return f.dot;
 		}
 	}
-	rawmsg = live(msg);
-	if (truthy(rt.sv(f, "holder"))) {
-		msg = (yield* g.call(f, P("/proc/emoji_parse"), null, [live(msg)]));
+	let rawmsg: Value = msg;
+	if (this.holder) {
+		msg = emoji_parse(msg);
 	}
-	keywordparsedmsg = (yield* g.call(f, P("/proc/keywords_lookup"), null, [live(msg)]));
+	let keywordparsedmsg: Value = keywords_lookup(msg);
 	{
-		if (truthy(rt.fv(f, "holder", live(recipient)))) {
-			if (truthy(rt.sv(f, "holder"))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(recipient), fmt("<font color='red'>Admin PM from-<b>＀</b>: ＀</font>", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.src), live(recipient), 1])), live(keywordparsedmsg)])]);
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), fmt("<font color='blue'>Admin PM to-<b>＀</b>: ＀</font>", [(yield* g.call(f, P("/proc/key_name"), null, [live(recipient), live(f.src), 1])), live(keywordparsedmsg)])]);
-				interaction_message = fmt("<font color='purple'>PM from-<b>＀</b> to-<b>＀</b>: ＀</font>", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.src), live(recipient), 1])), (yield* g.call(f, P("/proc/key_name"), null, [live(recipient), live(f.src), 1])), live(keywordparsedmsg)]);
-				yield* g.call(f, P("/proc/admin_ticket_log"), null, [live(f.src), live(interaction_message)]);
-				if (!isEqual(live(recipient), live(f.src))) {
-					yield* g.call(f, P("/proc/admin_ticket_log"), null, [live(recipient), live(interaction_message)]);
+		if (recipient.holder) {
+			if (this.holder) {
+				to_chat(recipient, `<font color='red'>Admin PM from-<b>${key_name(this, recipient, 1)}</b>: ${keywordparsedmsg}</font>`);
+				to_chat(this, `<font color='blue'>Admin PM to-<b>${key_name(recipient, this, 1)}</b>: ${keywordparsedmsg}</font>`);
+				interaction_message = `<font color='purple'>PM from-<b>${key_name(this, recipient, 1)}</b> to-<b>${key_name(recipient, this, 1)}</b>: ${keywordparsedmsg}</font>`;
+				admin_ticket_log(this, interaction_message);
+				if (recipient != this) {
+					admin_ticket_log(recipient, interaction_message);
 				}
 			} else {
-				replymsg = fmt("<font color='red'>Reply PM from-<b>＀</b>: ＀</font>", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.src), live(recipient), 1])), live(keywordparsedmsg)]);
-				yield* g.call(f, P("/proc/admin_ticket_log"), null, [live(f.src), live(replymsg)]);
-				yield* g.call(f, P("/proc/to_chat"), null, [live(recipient), live(replymsg)]);
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), fmt("<font color='blue'>PM to-<b>Admins</b>: ＀</font>", [live(msg)])]);
+				replymsg = `<font color='red'>Reply PM from-<b>${key_name(this, recipient, 1)}</b>: ${keywordparsedmsg}</font>`;
+				admin_ticket_log(this, replymsg);
+				to_chat(recipient, replymsg);
+				to_chat(this, `<font color='blue'>PM to-<b>Admins</b>: ${msg}</font>`);
 			}
-			if (truthy(rt.bitAnd(rt.gv(f, "toggles", rt.fv(f, "prefs", live(recipient))), 1))) {
-				rt.op(f, "Output", [], [live(recipient), rt.rsc("sound/effects/adminhelp.ogg")], false);
+			if (rt.bitAnd(recipient.prefs.toggles, 1)) {
+				rt.op(f, "Output", [], [recipient, rt.rsc("sound/effects/adminhelp.ogg")], false);
+			}
+		} else if (this.holder) {
+			if (!recipient.current_ticket) {
+				yield* new_(T("/datum/admin_help"), msg, recipient, 1);
+			}
+			to_chat(recipient, "<font color='red' size='4'><b>-- Administrator private message --</b></font>");
+			to_chat(recipient, `<font color='red'>Admin PM from-<b>${key_name(this, recipient, 0)}</b>: ${msg}</font>`);
+			to_chat(recipient, "<font color='red'><i>Click on the administrator's name to reply.</i></font>");
+			to_chat(this, `<font color='blue'>Admin PM to-<b>${key_name(recipient, this, 1)}</b>: ${msg}</font>`);
+			admin_ticket_log(recipient, `<font color='blue'>PM From ${key_name_admin(this)}: ${keywordparsedmsg}</font>`);
+			rt.op(f, "Output", [], [recipient, rt.rsc("sound/effects/adminhelp.ogg")], false);
+			if (GLOB.config.popup_admin_pm) {
+				rt.spawnTail(f, 0, "/client/proc/cmd_admin_pm: spawn at modules/admin/verbs/adminpm.dm:189", whom, msg, recipient, rawmsg, keywordparsedmsg, AH, interaction_message, replymsg, sender, sendername, reply, X);
 			}
 		} else {
-			if (truthy(rt.sv(f, "holder"))) {
-				if (!truthy(rt.fv(f, "current_ticket", live(recipient)))) {
-					yield* g.new_(f, T("/datum/admin_help"), [live(msg), live(recipient), 1]);
-				}
-				yield* g.call(f, P("/proc/to_chat"), null, [live(recipient), "<font color='red' size='4'><b>-- Administrator private message --</b></font>"]);
-				yield* g.call(f, P("/proc/to_chat"), null, [live(recipient), fmt("<font color='red'>Admin PM from-<b>＀</b>: ＀</font>", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.src), live(recipient), 0])), live(msg)])]);
-				yield* g.call(f, P("/proc/to_chat"), null, [live(recipient), "<font color='red'><i>Click on the administrator's name to reply.</i></font>"]);
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), fmt("<font color='blue'>Admin PM to-<b>＀</b>: ＀</font>", [(yield* g.call(f, P("/proc/key_name"), null, [live(recipient), live(f.src), 1])), live(msg)])]);
-				yield* g.call(f, P("/proc/admin_ticket_log"), null, [live(recipient), fmt("<font color='blue'>PM From ＀: ＀</font>", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.src)])), live(keywordparsedmsg)])]);
-				rt.op(f, "Output", [], [live(recipient), rt.rsc("sound/effects/adminhelp.ogg")], false);
-				if (truthy(rt.fv(f, "popup_admin_pm", rt.gl("config")))) {
-					rt.spawnTail(f, 0, "/client/proc/cmd_admin_pm: spawn at modules/admin/verbs/adminpm.dm:189", whom, msg, recipient, rawmsg, keywordparsedmsg, AH, interaction_message, replymsg, sender, sendername, reply, X);
-				}
-			} else {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<font color='red'>Error: Admin-PM: Non-admin to non-admin PM communication is forbidden.</font>"]);
-				return live(f.dot);
-			}
+			to_chat(this, "<font color='red'>Error: Admin-PM: Non-admin to non-admin PM communication is forbidden.</font>");
+			return f.dot;
 		}
 	}
 	{
-		yield* g.call(f, P("/proc/window_flash"), null, [null, live(recipient), "ignorepref", 1], rt.Args.Named);
-		yield* g.call(f, P("/proc/log_admin_private"), null, [fmt("PM: ＀->＀: ＀", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.src)])), (yield* g.call(f, P("/proc/key_name"), null, [live(recipient)])), live(rawmsg)])]);
-		X = null;
-		rt.forList(f, 0, rt.gl("admins"), T("/client"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			X = $e;
-			if ((!isEqual(rt.fv(f, "key", live(X)), rt.sv(f, "key")) && !isEqual(rt.fv(f, "key", live(X)), rt.fv(f, "key", live(recipient))))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(X), fmt("<font color='blue'><B>PM: ＀-&gt;＀:</B> ＀</font>", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.src), live(X), 0])), (yield* g.call(f, P("/proc/key_name"), null, [live(recipient), live(X), 0])), live(keywordparsedmsg)])]);
+		yield* window_flash(recipient, { ignorepref: 1 });
+		log_admin_private(`PM: ${key_name(this)}->${key_name(recipient)}: ${rawmsg}`);
+		for (X of each(GLOB.admins, T("/client"))) {
+			if (X.key != this.key && X.key != recipient.key) {
+				to_chat(X, `<font color='blue'><B>PM: ${key_name(this, X, 0)}-&gt;${key_name(recipient, X, 0)}:</B> ${keywordparsedmsg}</font>`);
 			}
 		}
-		rt.endFor(f, 0);
 	}
 	return f.dot;
 }, true);
 
 // a spawn(0) body of /client/proc/cmd_admin_pm, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/client/proc/cmd_admin_pm: spawn at modules/admin/verbs/adminpm.dm:189", function* (f: Frame, whom: Value, msg: Value, recipient: Value, rawmsg: Value, keywordparsedmsg: Value, AH: Value, interaction_message: Value, replymsg: Value, sender: Value, sendername: Value, reply: Value, X: Value) {
-	f.vars = () => [whom, msg, recipient, rawmsg, keywordparsedmsg, AH, interaction_message, replymsg, sender, sendername, reply, X];
-	sender = live(f.src);
-	sendername = rt.sv(f, "key");
-	reply = (yield* g.op(f, "Prompt", [3], ["", fmt("Admin PM from-＀", [live(sendername)]), live(msg), live(recipient), null]));
-	if ((truthy(live(recipient)) && truthy(live(reply)))) {
-		if (truthy(live(sender))) {
-			yield* g.callName(f, live(recipient), "cmd_admin_pm", [live(sender), live(reply)]);
+	sender = this;
+	sendername = this.key;
+	reply = (yield* g.op(f, "Prompt", [3], ["", `Admin PM from-${sendername}`, msg, recipient, null]));
+	if (recipient && reply) {
+		if (sender) {
+			yield* recipient.cmd_admin_pm(sender, reply);
 		} else {
-			yield* g.srcCall(f, "adminhelp", live(reply));
+			yield* this.adminhelp(reply);
 		}
 	}
-	return live(f.dot);
+	return f.dot;
 });

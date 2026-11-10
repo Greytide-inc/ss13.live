@@ -1,15 +1,15 @@
-// From code/modules/jobs/job_types/security.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/jobs/job_types/security.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
-// /datum/job/proc/check_config_for_sec_maint  (code/modules/jobs/job_types/security.dm:3)
+// security.dm:3
 rt.def("/datum/job/proc/check_config_for_sec_maint", function check_config_for_sec_maint(f: Frame) {
-	if (truthy(rt.bitAnd(rt.fv(f, "jobs_have_maint_access", rt.gl("config")), 2))) {
-		return rt.list(12);
+	if (rt.bitAnd(GLOB.config.jobs_have_maint_access, 2)) {
+		return list(12);
 	}
-	return rt.list();
+	return list();
 });
 
 rt.type(2769, "/datum/job/hos", "/datum/job", {
@@ -29,16 +29,14 @@ rt.type(2769, "/datum/job/hos", "/datum/job", {
 	minimal_access: null,
 });
 
-// /datum/job/hos/proc/<init>  (code/modules/jobs/job_types/security.dm:13)
+// security.dm:13
 rt.def("/datum/job/hos/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "department_head", rt.list("Captain"));
-	$0 = $0;
-	rt.setSv(f, "head_announce", rt.list("Security"));
-	rt.setSv(f, "access", rt.list(1, 63, 2, 3, 42, 66, 4, 6, 12, 21, 47, 10, 48, 5, 32, 50, 19, 58, 59, 60, 62, 12));
-	rt.setSv(f, "minimal_access", rt.list(1, 63, 2, 3, 42, 66, 4, 6, 12, 21, 47, 10, 48, 5, 32, 50, 19, 58, 59, 60, 62, 12));
+	parent_proc();
+	this.department_head = list("Captain");
+
+	this.head_announce = list("Security");
+	this.access = list(1, 63, 2, 3, 42, 66, 4, 6, 12, 21, 47, 10, 48, 5, 32, 50, 19, 58, 59, 60, 62, 12);
+	this.minimal_access = list(1, 63, 2, 3, 42, 66, 4, 6, 12, 21, 47, 10, 48, 5, 32, 50, 19, 58, 59, 60, 62, 12);
 	return f.dot;
 });
 
@@ -65,14 +63,12 @@ rt.type(717, "/datum/outfit/job/hos", "/datum/outfit/job", {
 	implants: null,
 });
 
-// /datum/outfit/job/hos/proc/<init>  (code/modules/jobs/job_types/security.dm:51)
+// security.dm:51
 rt.def("/datum/outfit/job/hos/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "backpack_contents", rt.alist(f, [T("/obj/item/weapon/melee/baton/loaded"), 1]));
-	$0 = $0;
-	rt.setSv(f, "implants", rt.list(T("/obj/item/weapon/implant/mindshield")));
+	parent_proc();
+	this.backpack_contents = rt.alist(f, [T("/obj/item/weapon/melee/baton/loaded"), 1]);
+
+	this.implants = list(T("/obj/item/weapon/implant/mindshield"));
 	return f.dot;
 });
 
@@ -91,23 +87,19 @@ rt.type(2770, "/datum/job/warden", "/datum/job", {
 	minimal_access: null,
 });
 
-// /datum/job/warden/proc/<init>  (code/modules/jobs/job_types/security.dm:66)
+// security.dm:66
 rt.def("/datum/job/warden/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "department_head", rt.list("Head of Security"));
-	rt.setSv(f, "access", rt.list(1, 63, 2, 3, 42, 12, 6, 66, 4));
-	rt.setSv(f, "minimal_access", rt.list(1, 63, 2, 3, 42, 66));
+	parent_proc();
+	this.department_head = list("Head of Security");
+	this.access = list(1, 63, 2, 3, 42, 12, 6, 66, 4);
+	this.minimal_access = list(1, 63, 2, 3, 42, 66);
 	return f.dot;
 });
 
-// /datum/job/warden/proc/get_access  (code/modules/jobs/job_types/security.dm:81)
+// security.dm:81
 rt.def("/datum/job/warden/proc/get_access", function get_access(f: Frame) {
-	let L: Value = null;
-	f.vars = () => [L];
-	L = rt.list();
-	return (L = rt.bitOr(rt.callSuper(f, [], rt.Args.Same), rt.callSrc(f, "check_config_for_sec_maint", [])));
+	let L: Value = list();
+	return (L = rt.bitOr(parent_proc(), this.check_config_for_sec_maint()));
 });
 
 rt.type(718, "/datum/outfit/job/warden", "/datum/outfit/job", {
@@ -132,14 +124,12 @@ rt.type(718, "/datum/outfit/job/warden", "/datum/outfit/job", {
 	implants: null,
 });
 
-// /datum/outfit/job/warden/proc/<init>  (code/modules/jobs/job_types/security.dm:100)
+// security.dm:100
 rt.def("/datum/outfit/job/warden/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "backpack_contents", rt.alist(f, [T("/obj/item/weapon/melee/baton/loaded"), 1]));
-	$0 = $0;
-	rt.setSv(f, "implants", rt.list(T("/obj/item/weapon/implant/mindshield")));
+	parent_proc();
+	this.backpack_contents = rt.alist(f, [T("/obj/item/weapon/melee/baton/loaded"), 1]);
+
+	this.implants = list(T("/obj/item/weapon/implant/mindshield"));
 	return f.dot;
 });
 
@@ -158,14 +148,12 @@ rt.type(2771, "/datum/job/detective", "/datum/job", {
 	minimal_access: null,
 });
 
-// /datum/job/detective/proc/<init>  (code/modules/jobs/job_types/security.dm:116)
+// security.dm:116
 rt.def("/datum/job/detective/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "department_head", rt.list("Head of Security"));
-	rt.setSv(f, "access", rt.list(63, 4, 6, 12, 42, 2, 66));
-	rt.setSv(f, "minimal_access", rt.list(63, 4, 6, 12, 42, 2, 66));
+	parent_proc();
+	this.department_head = list("Head of Security");
+	this.access = list(63, 4, 6, 12, 42, 2, 66);
+	this.minimal_access = list(63, 4, 6, 12, 42, 2, 66);
 	return f.dot;
 });
 
@@ -186,28 +174,25 @@ rt.type(719, "/datum/outfit/job/detective", "/datum/outfit/job", {
 	implants: null,
 });
 
-// /datum/outfit/job/detective/proc/<init>  (code/modules/jobs/job_types/security.dm:143)
+// security.dm:143
 rt.def("/datum/outfit/job/detective/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "backpack_contents", rt.alist(f, [T("/obj/item/weapon/storage/box/evidence"), 1, T("/obj/item/device/detective_scanner"), 1, T("/obj/item/weapon/melee/classic_baton"), 1]));
-	$0 = $0;
-	rt.setSv(f, "implants", rt.list(T("/obj/item/weapon/implant/mindshield")));
+	parent_proc();
+	this.backpack_contents = rt.alist(f, [T("/obj/item/weapon/storage/box/evidence"), 1, T("/obj/item/device/detective_scanner"), 1, T("/obj/item/weapon/melee/classic_baton"), 1]);
+
+	this.implants = list(T("/obj/item/weapon/implant/mindshield"));
 	return f.dot;
 });
 
-// /datum/outfit/job/detective/proc/post_equip  (code/modules/jobs/job_types/security.dm:151)  may sleep
+// security.dm:151
 rt.def("/datum/outfit/job/detective/proc/post_equip", function* post_equip(f: Frame) {
 	let cig: Value = null;
-	f.vars = () => [cig];
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.callName(f, (cig = rt.fv(f, "wear_mask", live(f.args[0]))), "light", [""]);
-	if (!truthy(live(f.args[1]))) return f.dot;
-	return live(f.dot);
+	yield* parent_proc();
+	yield* (cig = f.args[0].wear_mask).light("");
+	if (!f.args[1]) return f.dot;
+	return f.dot;
 }, true, { args: ["H", "visualsOnly"] });
 
 rt.type(2772, "/datum/job/officer", "/datum/job", {
@@ -225,123 +210,107 @@ rt.type(2772, "/datum/job/officer", "/datum/job", {
 	minimal_access: null,
 });
 
-// /datum/job/officer/proc/<init>  (code/modules/jobs/job_types/security.dm:164)
+// security.dm:164
 rt.def("/datum/job/officer/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "department_head", rt.list("Head of Security"));
-	rt.setSv(f, "access", rt.list(1, 63, 2, 42, 12, 6, 66, 4));
-	rt.setSv(f, "minimal_access", rt.list(1, 63, 2, 42, 66));
+	parent_proc();
+	this.department_head = list("Head of Security");
+	this.access = list(1, 63, 2, 42, 12, 6, 66, 4);
+	this.minimal_access = list(1, 63, 2, 42, 66);
 	return f.dot;
 });
 
-// /datum/job/officer/proc/get_access  (code/modules/jobs/job_types/security.dm:180)
+// security.dm:180
 rt.def("/datum/job/officer/proc/get_access", function get_access(f: Frame) {
-	let L: Value = null;
-	f.vars = () => [L];
-	L = rt.list();
-	(L = rt.modify(live(L), rt.bitOr(rt.callSuper(f, [], rt.Args.Same), rt.callSrc(f, "check_config_for_sec_maint", [])), rt.bitOr));
-	return live(L);
+	let L: Value = list();
+	(L = rt.modify(L, rt.bitOr(parent_proc(), this.check_config_for_sec_maint()), rt.bitOr));
+	return L;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalavailable_depts  (code/modules/jobs/job_types/security.dm:184)
+// security.dm:184
 rt.def("/datum/controller/global_vars/proc/InitGlobalavailable_depts", function InitGlobalavailable_depts(f: Frame) {
-	rt.setGl("available_depts", rt.list("Engineering", "Medical", "Science", "Supply"));
-	rt.modSrcVar(f, "gvars_datum_init_order", "available_depts", add);
+	GLOB.available_depts = list("Engineering", "Medical", "Science", "Supply");
+	this.gvars_datum_init_order += "available_depts";
 	return f.dot;
 });
 
-// /datum/job/officer/proc/after_spawn  (code/modules/jobs/job_types/security.dm:189)  may sleep
+// security.dm:189
 rt.def("/datum/job/officer/proc/after_spawn", function* after_spawn(f: Frame, H: Value, M: Value) {
-	let department: Value = null, ears: Value = null, accessory: Value = null, dep_access: Value = null, destination: Value = null, spawn_point: Value = null, U: Value = null, W: Value = null, teleport: Value = null, _T: Value = null, safety: Value = null;
-	let $0: any;
-	f.vars = () => [H, M, department, ears, accessory, dep_access, destination, spawn_point, U, W, teleport, _T, safety, $0];
-	department = null;
-	if (((truthy(live(M)) && truthy(rt.fv(f, "client", live(M)))) && truthy(rt.gv(f, "prefs", rt.fv(f, "client", live(M)))))) {
-		department = rt.gv(f, "prefered_security_department", rt.gv(f, "prefs", rt.fv(f, "client", live(M))));
-		if ((!truthy(rt.length(rt.gl("available_depts"))) || isEqual(live(department), "None"))) {
-			return live(f.dot);
-		} else {
-			if (truthy((rt.isIn(f, live(department), rt.gl("available_depts")) ? 1 : 0))) {
-				if (truthy(rt.gl("available_depts"))) {
-					(rt.modGl("available_depts", live(department), subtract));
-					if (!truthy(rt.len(f, rt.gl("available_depts")))) {
-						rt.setGl("available_depts", null);
-					}
+	let department: Value = null, ears: Value = null, accessory: Value = null, dep_access: Value = null, destination: Value = null, spawn_point: Value = null, U: Value = null, W: Value = null, _T: Value = null, safety: Value = null;
+	if (M && M.client && M.client.prefs) {
+		department = M.client.prefs.prefered_security_department;
+		if (!rt.length(GLOB.available_depts) || department == "None") {
+			return f.dot;
+		} else if (rt.isIn(f, department, GLOB.available_depts)) {
+			if (GLOB.available_depts) {
+				GLOB.available_depts -= department;
+				if (!rt.len(f, GLOB.available_depts)) {
+					GLOB.available_depts = null;
 				}
-			} else {
-				department = (yield* g.call(f, P("/proc/pick_n_take"), null, [rt.gl("available_depts")]));
 			}
+		} else {
+			department = pick_n_take(GLOB.available_depts);
 		}
 	}
-	ears = null;
-	accessory = null;
-	dep_access = null;
-	destination = null;
-	spawn_point = null;
-	$0 = live(department);
-	if ($0 === "Supply") {
+	if (department === "Supply") {
 		ears = T("/obj/item/device/radio/headset/headset_sec/alt/department/supply");
-		dep_access = rt.list(50, 48, 54);
+		dep_access = list(50, 48, 54);
 		destination = T("/area/security/checkpoint/supply");
-		spawn_point = rt.locateIn(f, T("/obj/effect/landmark/start/depsec/supply"), rt.gl("department_security_spawns"));
+		spawn_point = rt.locateIn(f, T("/obj/effect/landmark/start/depsec/supply"), GLOB.department_security_spawns);
 		accessory = T("/obj/item/clothing/accessory/armband/cargo");
-	} else if ($0 === "Engineering") {
+	} else if (department === "Engineering") {
 		ears = T("/obj/item/device/radio/headset/headset_sec/alt/department/engi");
-		dep_access = rt.list(32, 10);
+		dep_access = list(32, 10);
 		destination = T("/area/security/checkpoint/engineering");
-		spawn_point = rt.locateIn(f, T("/obj/effect/landmark/start/depsec/engineering"), rt.gl("department_security_spawns"));
+		spawn_point = rt.locateIn(f, T("/obj/effect/landmark/start/depsec/engineering"), GLOB.department_security_spawns);
 		accessory = T("/obj/item/clothing/accessory/armband/engine");
-	} else if ($0 === "Medical") {
+	} else if (department === "Medical") {
 		ears = T("/obj/item/device/radio/headset/headset_sec/alt/department/med");
-		dep_access = rt.list(5);
+		dep_access = list(5);
 		destination = T("/area/security/checkpoint/medical");
-		spawn_point = rt.locateIn(f, T("/obj/effect/landmark/start/depsec/medical"), rt.gl("department_security_spawns"));
+		spawn_point = rt.locateIn(f, T("/obj/effect/landmark/start/depsec/medical"), GLOB.department_security_spawns);
 		accessory = T("/obj/item/clothing/accessory/armband/medblue");
-	} else if ($0 === "Science") {
+	} else if (department === "Science") {
 		ears = T("/obj/item/device/radio/headset/headset_sec/alt/department/sci");
-		dep_access = rt.list(47);
+		dep_access = list(47);
 		destination = T("/area/security/checkpoint/science");
-		spawn_point = rt.locateIn(f, T("/obj/effect/landmark/start/depsec/science"), rt.gl("department_security_spawns"));
+		spawn_point = rt.locateIn(f, T("/obj/effect/landmark/start/depsec/science"), GLOB.department_security_spawns);
 		accessory = T("/obj/item/clothing/accessory/armband/science");
 	}
-	if (truthy(live(accessory))) {
-		yield* g.callName(f, (U = rt.fv(f, "w_uniform", live(H))), "attach_accessory", [(yield* g.new_(f, live(accessory), []))]);
+	if (accessory) {
+		yield* (U = H.w_uniform).attach_accessory((yield* new_(accessory)));
 	}
-	if (truthy(live(ears))) {
-		if (truthy(rt.fv(f, "ears", live(H)))) {
-			yield* g.call(f, P("/proc/qdel"), null, [rt.fv(f, "ears", live(H))]);
+	if (ears) {
+		if (H.ears) {
+			yield* qdel(H.ears);
 		}
-		yield* g.callName(f, live(H), "equip_to_slot_or_del", [(yield* g.new_(f, live(ears), [live(H)])), 7]);
+		yield* H.equip_to_slot_or_del((yield* new_(ears, H)), slot_ears);
 	}
-	(rt.modField(f, (W = rt.fv(f, "wear_id", live(H))), "access", live(dep_access), rt.bitOr));
-	teleport = 0;
-	if (!truthy(rt.fv(f, "sec_start_brig", rt.gl("config")))) {
-		if ((truthy(live(destination)) || truthy(live(spawn_point)))) {
+	(rt.modField(f, (W = H.wear_id), "access", dep_access, rt.bitOr));
+	let teleport: Value = 0;
+	if (!GLOB.config.sec_start_brig) {
+		if (destination || spawn_point) {
 			teleport = 1;
 		}
 	}
-	if (truthy(live(teleport))) {
-		_T = null;
-		if (truthy(live(spawn_point))) {
-			_T = rt.getStep(f, live(spawn_point), 0);
-			yield* g.callName(f, live(H), "Move", [live(_T)]);
+	if (teleport) {
+		if (spawn_point) {
+			_T = rt.getStep(f, spawn_point, 0);
+			yield* H.Move(_T);
 		} else {
 			safety = 0;
-			while (rt.lt(live(safety), 25)) {
-				if ((truthy((_T = (yield* g.call(f, P("/proc/safepick"), null, [(yield* g.call(f, P("/proc/get_area_turfs"), null, [live(destination)]))])))) && !truthy((yield* g.callName(f, live(H), "Move", [live(_T)]))))) {
-					safety = rt.modify(live(safety), 1, add);
+			while (safety < 25) {
+				if ((_T = safepick(get_area_turfs(destination))) && !(yield* H.Move(_T))) {
+					safety += 1;
 					continue;
 				}
 				break;
 			}
 		}
 	}
-	if (truthy(live(department))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(M), fmt("<b>You have been assigned to ＀!</b>", [live(department)])]);
+	if (department) {
+		to_chat(M, `<b>You have been assigned to ${department}!</b>`);
 	} else {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(M), "<b>You have not been assigned to any department. Patrol the halls and help where needed.</b>"]);
+		to_chat(M, "<b>You have not been assigned to any department. Patrol the halls and help where needed.</b>");
 	}
 	return f.dot;
 }, true);
@@ -367,25 +336,23 @@ rt.type(720, "/datum/outfit/job/security", "/datum/outfit/job", {
 	implants: null,
 });
 
-// /datum/outfit/job/security/proc/<init>  (code/modules/jobs/job_types/security.dm:278)
+// security.dm:278
 rt.def("/datum/outfit/job/security/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "backpack_contents", rt.alist(f, [T("/obj/item/weapon/melee/baton/loaded"), 1]));
-	$0 = $0;
-	rt.setSv(f, "implants", rt.list(T("/obj/item/weapon/implant/mindshield")));
+	parent_proc();
+	this.backpack_contents = rt.alist(f, [T("/obj/item/weapon/melee/baton/loaded"), 1]);
+
+	this.implants = list(T("/obj/item/weapon/implant/mindshield"));
 	return f.dot;
 });
 
 rt.type(9175, "/obj/item/device/radio/headset/headset_sec/alt/department", "/obj/item/device/radio/headset/headset_sec/alt", {});
 
-// /obj/item/device/radio/headset/headset_sec/alt/department/proc/Initialize  (code/modules/jobs/job_types/security.dm:289)  may sleep
+// security.dm:289
 rt.def("/obj/item/device/radio/headset/headset_sec/alt/department/proc/Initialize", function* Initialize(f: Frame) {
-	rt.setSv(f, "wires", (yield* g.new_(f, T("/datum/wires/radio"), [live(f.src)])));
-	rt.setSv(f, "secure_radio_connections", (yield* g.new_(f, T("/list"), [])));
-	yield* g.srcCall(f, "recalculateChannels");
-	yield* g.callSuper(f, [], rt.Args.Same);
+	this.wires = (yield* new_(T("/datum/wires/radio"), this));
+	this.secure_radio_connections = (yield* new_(T("/list")));
+	this.recalculateChannels();
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
@@ -394,14 +361,12 @@ rt.type(9176, "/obj/item/device/radio/headset/headset_sec/alt/department/engi", 
 	keyslot2: null,
 });
 
-// /obj/item/device/radio/headset/headset_sec/alt/department/engi/proc/<init>  (code/modules/jobs/job_types/security.dm:295)  may sleep
+// security.dm:295
 rt.def("/obj/item/device/radio/headset/headset_sec/alt/department/engi/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "keyslot", (yield* g.new_(f, T("/obj/item/device/encryptionkey/headset_sec"), [])));
-	$0 = $0;
-	rt.setSv(f, "keyslot2", (yield* g.new_(f, T("/obj/item/device/encryptionkey/headset_eng"), [])));
+	yield* parent_proc();
+	this.keyslot = (yield* new_(T("/obj/item/device/encryptionkey/headset_sec")));
+
+	this.keyslot2 = (yield* new_(T("/obj/item/device/encryptionkey/headset_eng")));
 	return f.dot;
 }, true);
 
@@ -410,14 +375,12 @@ rt.type(9177, "/obj/item/device/radio/headset/headset_sec/alt/department/supply"
 	keyslot2: null,
 });
 
-// /obj/item/device/radio/headset/headset_sec/alt/department/supply/proc/<init>  (code/modules/jobs/job_types/security.dm:299)  may sleep
+// security.dm:299
 rt.def("/obj/item/device/radio/headset/headset_sec/alt/department/supply/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "keyslot", (yield* g.new_(f, T("/obj/item/device/encryptionkey/headset_sec"), [])));
-	$0 = $0;
-	rt.setSv(f, "keyslot2", (yield* g.new_(f, T("/obj/item/device/encryptionkey/headset_cargo"), [])));
+	yield* parent_proc();
+	this.keyslot = (yield* new_(T("/obj/item/device/encryptionkey/headset_sec")));
+
+	this.keyslot2 = (yield* new_(T("/obj/item/device/encryptionkey/headset_cargo")));
 	return f.dot;
 }, true);
 
@@ -426,14 +389,12 @@ rt.type(9178, "/obj/item/device/radio/headset/headset_sec/alt/department/med", "
 	keyslot2: null,
 });
 
-// /obj/item/device/radio/headset/headset_sec/alt/department/med/proc/<init>  (code/modules/jobs/job_types/security.dm:303)  may sleep
+// security.dm:303
 rt.def("/obj/item/device/radio/headset/headset_sec/alt/department/med/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "keyslot", (yield* g.new_(f, T("/obj/item/device/encryptionkey/headset_sec"), [])));
-	$0 = $0;
-	rt.setSv(f, "keyslot2", (yield* g.new_(f, T("/obj/item/device/encryptionkey/headset_med"), [])));
+	yield* parent_proc();
+	this.keyslot = (yield* new_(T("/obj/item/device/encryptionkey/headset_sec")));
+
+	this.keyslot2 = (yield* new_(T("/obj/item/device/encryptionkey/headset_med")));
 	return f.dot;
 }, true);
 
@@ -442,13 +403,11 @@ rt.type(9179, "/obj/item/device/radio/headset/headset_sec/alt/department/sci", "
 	keyslot2: null,
 });
 
-// /obj/item/device/radio/headset/headset_sec/alt/department/sci/proc/<init>  (code/modules/jobs/job_types/security.dm:307)  may sleep
+// security.dm:307
 rt.def("/obj/item/device/radio/headset/headset_sec/alt/department/sci/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "keyslot", (yield* g.new_(f, T("/obj/item/device/encryptionkey/headset_sec"), [])));
-	$0 = $0;
-	rt.setSv(f, "keyslot2", (yield* g.new_(f, T("/obj/item/device/encryptionkey/headset_sci"), [])));
+	yield* parent_proc();
+	this.keyslot = (yield* new_(T("/obj/item/device/encryptionkey/headset_sec")));
+
+	this.keyslot2 = (yield* new_(T("/obj/item/device/encryptionkey/headset_sci")));
 	return f.dot;
 }, true);

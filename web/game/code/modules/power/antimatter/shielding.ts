@@ -1,26 +1,20 @@
-// From code/modules/power/antimatter/shielding.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/power/antimatter/shielding.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
-// /proc/cardinalrange  (code/modules/power/antimatter/shielding.dm:3)
+// shielding.dm:3
 rt.def("/proc/cardinalrange", function cardinalrange(f: Frame, center: Value) {
-	let things: Value = null, direction: Value = null, _T: Value = null;
-	let $e: any;
-	f.vars = () => [things, direction, _T, $e];
-	things = rt.list();
-	direction = null;
-	rt.forList(f, 0, rt.gl("cardinal"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		direction = $e;
-		if (!truthy((_T = rt.getStep(f, live(center), live(direction))))) {
+	let direction: Value = null, _T: Value = null;
+	let things: Value = list();
+	for (direction of each(GLOB.cardinal)) {
+		if (!(_T = rt.getStep(f, center, direction))) {
 			continue;
 		}
-		things = rt.modify(live(things), rt.fv(f, "contents", live(_T)), add);
+		things += _T.contents;
 	}
-	rt.endFor(f, 0);
-	return live(things);
+	return things;
 });
 
 rt.type(10975, "/obj/machinery/am_shielding", "/obj/machinery", {
@@ -42,297 +36,242 @@ rt.type(10975, "/obj/machinery/am_shielding", "/obj/machinery", {
 	dir: 1,
 });
 
-// /obj/machinery/am_shielding/proc/Initialize  (code/modules/power/antimatter/shielding.dm:32)  may sleep
+// shielding.dm:32
 rt.def("/obj/machinery/am_shielding/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/machinery/am_shielding/proc/controllerscan")])), 10]);
+	f.dot = (yield* parent_proc());
+	yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/machinery/am_shielding/proc/controllerscan"))), 10);
 	return f.dot;
 }, true);
 
-// /obj/machinery/am_shielding/proc/controllerscan  (code/modules/power/antimatter/shielding.dm:38)  may sleep
+// shielding.dm:38
 rt.def("/obj/machinery/am_shielding/proc/controllerscan", function* controllerscan(f: Frame, priorscan: Value) {
 	let AMS: Value = null, direction: Value = null, AMC: Value = null;
-	let $e: any;
-	f.vars = () => [priorscan, AMS, direction, AMC, $e];
-	if (live(priorscan) === null) {
-		priorscan = 0;
+	priorscan ??= 0;
+	if (!rt.istype(this.loc, T("/turf"))) {
+		yield* qdel(this);
+		return f.dot;
 	}
-	if (!truthy((rt.istype(rt.fv(f, "loc", live(f.src)), T("/turf")) ? 1 : 0))) {
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-		return live(f.dot);
-	}
-	AMS = null;
-	rt.forList(f, 0, rt.fv(f, "contents", rt.sv(f, "loc")), T("/obj/machinery/am_shielding"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		AMS = $e;
-		if (isEqual(live(AMS), live(f.src))) {
+	for (AMS of each(this.loc.contents, T("/obj/machinery/am_shielding"))) {
+		if (AMS == this) {
 			continue;
 		}
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-		return live(f.dot);
+		yield* qdel(this);
+		return f.dot;
 	}
-	rt.endFor(f, 0);
 	AMS = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/cardinalrange"), null, [live(f.src)])), T("/obj/machinery/am_shielding"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		AMS = $e;
-		if (((truthy(live(AMS)) && truthy(rt.fv(f, "control_unit", live(AMS)))) && truthy((yield* g.srcCall(f, "link_control", rt.fv(f, "control_unit", live(AMS))))))) {
+	for (AMS of each(cardinalrange(this), T("/obj/machinery/am_shielding"))) {
+		if (AMS && AMS.control_unit && this.link_control(AMS.control_unit)) {
 			break;
 		}
 	}
-	rt.endFor(f, 0);
-	if (!truthy(rt.sv(f, "control_unit"))) {
-		direction = null;
-		rt.forList(f, 0, rt.gl("cardinal"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			direction = $e;
+	if (!this.control_unit) {
+		for (direction of each(GLOB.cardinal)) {
 		}
-		rt.endFor(f, 0);
-		AMC = null;
-		rt.forList(f, 0, (yield* g.call(f, P("/proc/cardinalrange"), null, [live(f.src)])), T("/obj/machinery/power/am_control_unit"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			AMC = $e;
-			if (truthy((yield* g.callName(f, live(AMC), "add_shielding", [live(f.src)])))) {
+		for (AMC of each(cardinalrange(this), T("/obj/machinery/power/am_control_unit"))) {
+			if (AMC.add_shielding(this)) {
 				break;
 			}
 		}
-		rt.endFor(f, 0);
 	}
-	if (truthy(rt.sv(f, "control_unit"))) return f.dot;
-	if (!truthy(live(priorscan))) {
-		yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/machinery/am_shielding/proc/controllerscan"), 1])), 20]);
-		return live(f.dot);
+	if (this.control_unit) return f.dot;
+	if (!priorscan) {
+		yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/machinery/am_shielding/proc/controllerscan"), 1)), 20);
+		return f.dot;
 	}
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
-// /obj/machinery/am_shielding/proc/Destroy  (code/modules/power/antimatter/shielding.dm:67)  may sleep
+// shielding.dm:67
 rt.def("/obj/machinery/am_shielding/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.sv(f, "control_unit"))) {
-		yield* g.callName(f, rt.sv(f, "control_unit"), "remove_shielding", [live(f.src)]);
+	if (this.control_unit) {
+		this.control_unit.remove_shielding(this);
 	}
-	if (truthy(rt.sv(f, "processing"))) {
-		yield* g.srcCall(f, "shutdown_core");
+	if (this.processing) {
+		this.shutdown_core();
 	}
-	yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>The ＀ melts!</span>", [rt.fv(f, "name", live(f.src))]));
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	this.visible_message(`<span class='danger'>The ${this.name} melts!</span>`);
+	return (yield* parent_proc());
 }, true);
 
-// /obj/machinery/am_shielding/proc/CanPass  (code/modules/power/antimatter/shielding.dm:76)
+// shielding.dm:76
 rt.def("/obj/machinery/am_shielding/proc/CanPass", function CanPass(f: Frame, mover: Value, target: Value, height: Value) {
-	f.vars = () => [height];
-	if (live(height) === null) {
-		height = 0;
-	}
-	if (isEqual(live(height), 0)) {
+	height ??= 0;
+	if (height == 0) {
 		return 1;
 	}
 	return 0;
 });
 
-// /obj/machinery/am_shielding/proc/process  (code/modules/power/antimatter/shielding.dm:82)
+// shielding.dm:82
 rt.def("/obj/machinery/am_shielding/proc/process", function process(f: Frame) {
-	if (!truthy(rt.sv(f, "processing"))) {
-		f.dot = 26;
+	if (!this.processing) {
+		f.dot = PROCESS_KILL;
 	}
-	return live(f.dot);
+	return f.dot;
 }, false, { waitfor: false });
 
-// /obj/machinery/am_shielding/proc/ex_act  (code/modules/power/antimatter/shielding.dm:93)  may sleep
+// shielding.dm:93
 rt.def("/obj/machinery/am_shielding/proc/ex_act", function* ex_act(f: Frame, severity: Value, target: Value) {
-	f.vars = () => [severity, target];
-	(rt.modSrcVar(f, "stability", subtract(80, multiply(live(severity), 20)), subtract));
-	yield* g.srcCall(f, "check_stability");
-	return live(f.dot);
+	this.stability -= 80 - severity * 20;
+	yield* this.check_stability();
+	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/machinery/am_shielding/proc/bullet_act  (code/modules/power/antimatter/shielding.dm:99)  may sleep
-rt.def("/obj/machinery/am_shielding/proc/bullet_act", function* bullet_act(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (isEqual(rt.fv(f, "flag", live(f.args[0])), "bullet")) return f.dot;
-	(rt.modSrcVar(f, "stability", divide(rt.fv(f, "force", live(f.args[0])), 2), subtract));
-	yield* g.srcCall(f, "check_stability");
-	return f.dot;
-}, true, { args: ["Proj"] });
-
-// /obj/machinery/am_shielding/proc/update_icon  (code/modules/power/antimatter/shielding.dm:108)
-rt.def("/obj/machinery/am_shielding/proc/update_icon", function update_icon(f: Frame) {
-	let direction: Value = null, _T: Value = null, machine: Value = null, shield: Value = null, control: Value = null, prefix: Value = null, icondirs: Value = null;
-	let $e: any;
-	f.vars = () => [direction, _T, machine, shield, control, prefix, icondirs, $e];
-	rt.setSv(f, "dirs", 0);
-	rt.setSv(f, "coredirs", 0);
-	rt.callSrc(f, "cut_overlays", []);
-	direction = null;
-	rt.forList(f, 0, rt.gl("alldirs"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		direction = $e;
-		_T = rt.getStep(f, rt.sv(f, "loc"), live(direction));
-		machine = null;
-		rt.forList(f, 1, live(_T), T("/obj/machinery"));
-		while (($e = rt.next(f, 1)) !== undefined) {
-			machine = $e;
-			if (truthy((rt.istype(live(machine), T("/obj/machinery/am_shielding")) ? 1 : 0))) {
-				if (isEqual(rt.gv(f, "control_unit", (shield = live(machine))), rt.sv(f, "control_unit"))) {
-					if (truthy(rt.fv(f, "processing", live(shield)))) {
-						(rt.modSrcVar(f, "coredirs", live(direction), rt.bitOr));
-					}
-					if (truthy((rt.isIn(f, live(direction), rt.gl("cardinal")) ? 1 : 0))) {
-						(rt.modSrcVar(f, "dirs", live(direction), rt.bitOr));
-					}
-				}
-			} else {
-				if ((truthy((rt.istype(live(machine), T("/obj/machinery/power/am_control_unit")) ? 1 : 0)) && truthy((rt.isIn(f, live(direction), rt.gl("cardinal")) ? 1 : 0)))) {
-					if (isEqual((control = live(machine)), rt.sv(f, "control_unit"))) {
-						(rt.modSrcVar(f, "dirs", live(direction), rt.bitOr));
-					}
-				}
-			}
-		}
-		rt.endFor(f, 1);
-	}
-	rt.endFor(f, 0);
-	prefix = "";
-	icondirs = rt.sv(f, "dirs");
-	if (truthy(rt.sv(f, "coredirs"))) {
-		prefix = "core";
-	}
-	rt.setSv(f, "icon_state", fmt("＀shield_＀", [live(prefix), live(icondirs)]));
-	if (truthy(rt.callSrc(f, "core_check", []))) {
-		rt.callSrc(f, "add_overlay", [fmt("core＀", [(rt.sv(f, "control_unit") && rt.fv(f, "active", rt.sv(f, "control_unit")))])]);
-		if (!truthy(rt.sv(f, "processing"))) {
-			rt.callSrc(f, "setup_core", []);
-		}
-	} else {
-		if (!truthy(rt.sv(f, "processing"))) return f.dot;
-		rt.callSrc(f, "shutdown_core", []);
-	}
-	return f.dot;
-});
-
-// /obj/machinery/am_shielding/proc/take_damage  (code/modules/power/antimatter/shielding.dm:144)  may sleep
-rt.def("/obj/machinery/am_shielding/proc/take_damage", function* take_damage(f: Frame, damage_amount: Value, damage_type: Value, damage_flag: Value, sound_effect: Value) {
-	let $0: any;
-	f.vars = () => [damage_amount, damage_type, damage_flag, sound_effect, $0];
-	if (live(damage_type) === null) {
-		damage_type = "brute";
-	}
-	if (live(damage_flag) === null) {
-		damage_flag = 0;
-	}
-	if (live(sound_effect) === null) {
-		sound_effect = 1;
-	}
-	$0 = live(damage_type);
-	if ($0 === "brute") {
-		if (truthy(live(sound_effect))) {
-			if (truthy(live(damage_amount))) {
-				yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/weapons/smash.ogg"), 50, 1]);
-			} else {
-				yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/weapons/tap.ogg"), 50, 1]);
-			}
-		}
-	} else if ($0 === "fire") {
-		if (truthy(live(sound_effect))) {
-			yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/items/welder.ogg"), 100, 1]);
-		}
-	} else {
-		return live(f.dot);
-	}
-	if (!rt.ge(live(damage_amount), 10)) return f.dot;
-	(rt.modSrcVar(f, "stability", divide(live(damage_amount), 2), subtract));
-	yield* g.srcCall(f, "check_stability");
+// shielding.dm:99
+rt.def("/obj/machinery/am_shielding/proc/bullet_act", function* bullet_act(f: Frame, Proj: Value) {
+	f.dot = (yield* parent_proc());
+	if (Proj.flag == "bullet") return f.dot;
+	this.stability -= Proj.force / 2;
+	yield* this.check_stability();
 	return f.dot;
 }, true);
 
-// /obj/machinery/am_shielding/proc/link_control  (code/modules/power/antimatter/shielding.dm:163)
+// shielding.dm:108
+rt.def("/obj/machinery/am_shielding/proc/update_icon", function update_icon(f: Frame) {
+	let direction: Value = null, _T: Value = null, machine: Value = null, shield: Value = null, control: Value = null;
+	this.dirs = 0;
+	this.coredirs = 0;
+	this.cut_overlays();
+	for (direction of each(GLOB.alldirs)) {
+		_T = rt.getStep(f, this.loc, direction);
+		machine = null;
+		for (machine of each(_T, T("/obj/machinery"))) {
+			if (rt.istype(machine, T("/obj/machinery/am_shielding"))) {
+				if ((shield = machine).control_unit == this.control_unit) {
+					if (shield.processing) {
+						(rt.modSrcVar(f, "coredirs", direction, rt.bitOr));
+					}
+					if (rt.isIn(f, direction, GLOB.cardinal)) {
+						(rt.modSrcVar(f, "dirs", direction, rt.bitOr));
+					}
+				}
+			} else if (rt.istype(machine, T("/obj/machinery/power/am_control_unit")) && rt.isIn(f, direction, GLOB.cardinal)) {
+				if ((control = machine) == this.control_unit) {
+					(rt.modSrcVar(f, "dirs", direction, rt.bitOr));
+				}
+			}
+		}
+	}
+	let prefix: Value = "";
+	let icondirs: Value = this.dirs;
+	if (this.coredirs) {
+		prefix = "core";
+	}
+	this.icon_state = `${prefix}shield_${icondirs}`;
+	if (this.core_check()) {
+		this.add_overlay(`core${(this.control_unit && this.control_unit.active)}`);
+		if (!this.processing) {
+			this.setup_core();
+		}
+	} else {
+		if (!this.processing) return f.dot;
+		this.shutdown_core();
+	}
+	return f.dot;
+});
+
+// shielding.dm:144
+rt.def("/obj/machinery/am_shielding/proc/take_damage", function* take_damage(f: Frame, damage_amount: Value, damage_type: Value, damage_flag: Value, sound_effect: Value) {
+	damage_type ??= "brute";
+	damage_flag ??= 0;
+	sound_effect ??= 1;
+	if (damage_type === "brute") {
+		if (sound_effect) {
+			if (damage_amount) {
+				playsound(this.loc, rt.rsc("sound/weapons/smash.ogg"), 50, 1);
+			} else {
+				playsound(this.loc, rt.rsc("sound/weapons/tap.ogg"), 50, 1);
+			}
+		}
+	} else if (damage_type === "fire") {
+		if (sound_effect) {
+			playsound(this.loc, rt.rsc("sound/items/welder.ogg"), 100, 1);
+		}
+	} else {
+		return f.dot;
+	}
+	if (!(damage_amount >= 10)) return f.dot;
+	this.stability -= damage_amount / 2;
+	yield* this.check_stability();
+	return f.dot;
+}, true);
+
+// shielding.dm:163
 rt.def("/obj/machinery/am_shielding/proc/link_control", function link_control(f: Frame, AMC: Value) {
-	if (!truthy((rt.istype(live(AMC), T("/obj/machinery/power/am_control_unit")) ? 1 : 0))) {
+	if (!rt.istype(AMC, T("/obj/machinery/power/am_control_unit"))) {
 		return 0;
 	}
-	if ((truthy(rt.sv(f, "control_unit")) && !isEqual(rt.sv(f, "control_unit"), live(AMC)))) {
+	if (this.control_unit && this.control_unit != AMC) {
 		return 0;
 	}
-	rt.setSv(f, "control_unit", live(AMC));
-	rt.callName(f, rt.sv(f, "control_unit"), "add_shielding", [live(f.src), 1]);
+	this.control_unit = AMC;
+	this.control_unit.add_shielding(this, 1);
 	return 1;
 });
 
-// /obj/machinery/am_shielding/proc/core_check  (code/modules/power/antimatter/shielding.dm:174)
+// shielding.dm:174
 rt.def("/obj/machinery/am_shielding/proc/core_check", function core_check(f: Frame) {
 	let direction: Value = null, found_am_device: Value = null, machine: Value = null;
-	let $e: any;
-	f.vars = () => [direction, found_am_device, machine, $e];
-	direction = null;
-	rt.forList(f, 0, rt.gl("alldirs"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		direction = $e;
+	for (direction of each(GLOB.alldirs)) {
 		found_am_device = 0;
 		machine = null;
-		rt.forList(f, 1, rt.getStep(f, rt.sv(f, "loc"), live(direction)), T("/obj/machinery"));
-		while (($e = rt.next(f, 1)) !== undefined) {
-			machine = $e;
-			if (!truthy(live(machine))) {
+		for (machine of each(rt.getStep(f, this.loc, direction), T("/obj/machinery"))) {
+			if (!machine) {
 				continue;
 			}
-			if ((truthy((rt.istype(live(machine), T("/obj/machinery/am_shielding")) ? 1 : 0)) || truthy((rt.istype(live(machine), T("/obj/machinery/power/am_control_unit")) ? 1 : 0)))) {
+			if (rt.istype(machine, T("/obj/machinery/am_shielding")) || rt.istype(machine, T("/obj/machinery/power/am_control_unit"))) {
 				found_am_device = 1;
 				break;
 			}
 		}
-		rt.endFor(f, 1);
-		if (!truthy(live(found_am_device))) {
+		if (!found_am_device) {
 			return 0;
 		}
 	}
-	rt.endFor(f, 0);
 	return 1;
 });
 
-// /obj/machinery/am_shielding/proc/setup_core  (code/modules/power/antimatter/shielding.dm:190)
+// shielding.dm:190
 rt.def("/obj/machinery/am_shielding/proc/setup_core", function setup_core(f: Frame) {
-	rt.setSv(f, "processing", 1);
-	(rt.modGl("machines", live(f.src), rt.bitOr));
-	if (!truthy(rt.fv(f, "isprocessing", live(f.src)))) {
-		rt.setFv(f, "isprocessing", live(f.src), 1);
-		rt.modField(f, rt.gl("SSmachines"), "processing", live(f.src), add);
+	this.processing = 1;
+	(rt.modGl("machines", this, rt.bitOr));
+	if (!this.isprocessing) {
+		this.isprocessing = 1;
+		GLOB.SSmachines.processing += this;
 	}
-	if (!truthy(rt.sv(f, "control_unit"))) {
-		return live(f.dot);
+	if (!this.control_unit) {
+		return f.dot;
 	}
-	rt.callName(f, rt.fv(f, "linked_cores", rt.sv(f, "control_unit")), "Add", [live(f.src)]);
-	rt.modField(f, rt.sv(f, "control_unit"), "reported_core_efficiency", rt.sv(f, "efficiency"), add);
-	return live(f.dot);
+	this.control_unit.linked_cores.Add(this);
+	this.control_unit.reported_core_efficiency += this.efficiency;
+	return f.dot;
 });
 
-// /obj/machinery/am_shielding/proc/shutdown_core  (code/modules/power/antimatter/shielding.dm:201)
+// shielding.dm:201
 rt.def("/obj/machinery/am_shielding/proc/shutdown_core", function shutdown_core(f: Frame) {
-	rt.setSv(f, "processing", 0);
-	if (!truthy(rt.sv(f, "control_unit"))) {
-		return live(f.dot);
+	this.processing = 0;
+	if (!this.control_unit) {
+		return f.dot;
 	}
-	rt.callName(f, rt.fv(f, "linked_cores", rt.sv(f, "control_unit")), "Remove", [live(f.src)]);
-	(rt.modField(f, rt.sv(f, "control_unit"), "reported_core_efficiency", rt.sv(f, "efficiency"), subtract));
-	return live(f.dot);
+	this.control_unit.linked_cores.Remove(this);
+	this.control_unit.reported_core_efficiency -= this.efficiency;
+	return f.dot;
 });
 
-// /obj/machinery/am_shielding/proc/check_stability  (code/modules/power/antimatter/shielding.dm:209)  may sleep
+// shielding.dm:209
 rt.def("/obj/machinery/am_shielding/proc/check_stability", function* check_stability(f: Frame, injecting_fuel: Value) {
-	f.vars = () => [injecting_fuel];
-	if (live(injecting_fuel) === null) {
-		injecting_fuel = 0;
+	injecting_fuel ??= 0;
+	if (this.stability > 0) {
+		return f.dot;
 	}
-	if (rt.gt(rt.sv(f, "stability"), 0)) {
-		return live(f.dot);
+	if (injecting_fuel && this.control_unit) {
+		this.control_unit.exploding = 1;
 	}
-	if ((truthy(live(injecting_fuel)) && truthy(rt.sv(f, "control_unit")))) {
-		rt.setFv(f, "exploding", rt.sv(f, "control_unit"), 1);
+	if (this) {
+		yield* qdel(this);
 	}
-	if (truthy(live(f.src))) {
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-	}
-	return live(f.dot);
+	return f.dot;
 }, true);
 
 rt.type(9428, "/obj/item/device/am_shielding_container", "/obj/item/device", {
@@ -349,22 +288,20 @@ rt.type(9428, "/obj/item/device/am_shielding_container", "/obj/item/device", {
 	materials: null,
 });
 
-// /obj/item/device/am_shielding_container/proc/<init>  (code/modules/power/antimatter/shielding.dm:240)
+// shielding.dm:240
 rt.def("/obj/item/device/am_shielding_container/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 100]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 100]);
 	return f.dot;
 });
 
-// /obj/item/device/am_shielding_container/proc/attackby  (code/modules/power/antimatter/shielding.dm:243)  may sleep
-rt.def("/obj/item/device/am_shielding_container/proc/attackby", function* attackby(f: Frame) {
-	if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/device/multitool")) ? 1 : 0)) && truthy((rt.istype(rt.fv(f, "loc", live(f.src)), T("/turf")) ? 1 : 0)))) {
-		yield* g.new_(f, T("/obj/machinery/am_shielding"), [rt.fv(f, "loc", live(f.src))]);
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+// shielding.dm:243
+rt.def("/obj/item/device/am_shielding_container/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
+	if (rt.istype(I, T("/obj/item/device/multitool")) && rt.istype(this.loc, T("/turf"))) {
+		yield* new_(T("/obj/machinery/am_shielding"), this.loc);
+		yield* qdel(this);
 	} else {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["I", "user", "params"] });
+}, true);

@@ -1,7 +1,7 @@
-// From code/modules/stock_market/stocks.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/stock_market/stocks.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, add, subtract, divide } = rt;
 
 
 rt.type(4224, "/datum/stock", "/datum", {
@@ -35,452 +35,387 @@ rt.type(4224, "/datum/stock", "/datum", {
 	industry: null,
 });
 
-// /datum/stock/proc/<init>  (code/modules/stock_market/stocks.dm:18)
+// stocks.dm:18
 rt.def("/datum/stock/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "values", rt.list());
-	$0 = $0;
-	rt.setSv(f, "products", rt.list());
-	$0 = $0;
-	rt.setSv(f, "borrow_brokers", rt.list());
-	$0 = $0;
-	rt.setSv(f, "shareholders", rt.list());
-	$0 = $0;
-	rt.setSv(f, "borrows", rt.list());
-	$0 = $0;
-	rt.setSv(f, "events", rt.list());
-	$0 = $0;
-	rt.setSv(f, "articles", rt.list());
+	parent_proc();
+	this.values = list();
+
+	this.products = list();
+
+	this.borrow_brokers = list();
+
+	this.shareholders = list();
+
+	this.borrows = list();
+
+	this.events = list();
+
+	this.articles = list();
 	return f.dot;
 });
 
-// /datum/stock/proc/addEvent  (code/modules/stock_market/stocks.dm:50)
+// stocks.dm:50
 rt.def("/datum/stock/proc/addEvent", function addEvent(f: Frame, E: Value) {
-	(rt.modSrcVar(f, "events", live(E), rt.bitOr));
+	(rt.modSrcVar(f, "events", E, rt.bitOr));
 	return f.dot;
 });
 
-// /datum/stock/proc/addArticle  (code/modules/stock_market/stocks.dm:53)
+// stocks.dm:53
 rt.def("/datum/stock/proc/addArticle", function addArticle(f: Frame, A: Value) {
-	if (!truthy((rt.isIn(f, live(A), rt.sv(f, "articles")) ? 1 : 0))) {
-		rt.callName(f, rt.sv(f, "articles"), "Insert", [1, live(A)]);
+	if (!rt.isIn(f, A, this.articles)) {
+		this.articles.Insert(1, A);
 	}
-	rt.setFv(f, "ticks", live(A), rt.worldTime(f));
+	A.ticks = rt.worldTime(f);
 	return f.dot;
 });
 
-// /datum/stock/proc/generateEvents  (code/modules/stock_market/stocks.dm:58)  may sleep
+// stocks.dm:58
 rt.def("/datum/stock/proc/generateEvents", function* generateEvents(f: Frame) {
-	let types: Value = null, _T: Value = null;
-	let $e: any;
-	f.vars = () => [types, _T, $e];
-	types = subtract((yield* g.call(f, P("/proc/typesof"), null, [T("/datum/stockEvent")])), T("/datum/stockEvent"));
-	_T = null;
-	rt.forList(f, 0, live(types));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_T = $e;
-		yield* g.srcCall(f, "generateEvent", live(_T));
+	let _T: Value = null;
+	let types: Value = typesof(T("/datum/stockEvent")) - T("/datum/stockEvent");
+	for (_T of each(types)) {
+		yield* this.generateEvent(_T);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /datum/stock/proc/generateEvent  (code/modules/stock_market/stocks.dm:63)  may sleep
+// stocks.dm:63
 rt.def("/datum/stock/proc/generateEvent", function* generateEvent(f: Frame, _T: Value) {
 	let E: Value = null;
-	f.vars = () => [_T, E];
-	yield* g.srcCall(f, "addEvent", (E = (yield* g.new_(f, live(_T), [live(f.src)]))));
+	this.addEvent((E = (yield* new_(_T, this))));
 	return f.dot;
 }, true);
 
-// /datum/stock/proc/affectPublicOpinion  (code/modules/stock_market/stocks.dm:67)
+// stocks.dm:67
 rt.def("/datum/stock/proc/affectPublicOpinion", function affectPublicOpinion(f: Frame, boost: Value) {
-	rt.modSrcVar(f, "optimism", multiply(divide(rt.call(f, P("/proc/rand"), null, [0, 500]), 500), live(boost)), add);
-	rt.modSrcVar(f, "average_optimism", multiply(divide(rt.call(f, P("/proc/rand"), null, [0, 150]), 5000), live(boost)), add);
-	rt.modSrcVar(f, "speculation", multiply(divide(rt.call(f, P("/proc/rand"), null, [-1, 50]), 10), live(boost)), add);
-	rt.modSrcVar(f, "performance", multiply(divide(rt.call(f, P("/proc/rand"), null, [0, 150]), 100), live(boost)), add);
+	this.optimism += rand(0, 500) / 500 * boost;
+	this.average_optimism += rand(0, 150) / 5000 * boost;
+	this.speculation += rand(-1, 50) / 10 * boost;
+	this.performance += rand(0, 150) / 100 * boost;
 	return f.dot;
 });
 
-// /datum/stock/proc/generateIndustry  (code/modules/stock_market/stocks.dm:73)  may sleep
+// stocks.dm:73
 rt.def("/datum/stock/proc/generateIndustry", function* generateIndustry(f: Frame) {
-	let ts: Value = null, in_t: Value = null, i: Value = null;
-	f.vars = () => [ts, in_t, i];
-	if (truthy((yield* g.call(f, P("/proc/findtext"), null, [rt.sv(f, "name"), "Farms"])))) {
-		rt.setSv(f, "industry", (yield* g.new_(f, T("/datum/industry/agriculture"), [])));
+	let ts: Value = null, in_t: Value = null;
+	if (findtext(this.name, "Farms")) {
+		this.industry = (yield* new_(T("/datum/industry/agriculture")));
+	} else if (findtext(this.name, "Software") || findtext(this.name, "Programming") || findtext(this.name, "IT Group") || findtext(this.name, "Electronics") || findtext(this.name, "Electric") || findtext(this.name, "Nanotechnology")) {
+		this.industry = (yield* new_(T("/datum/industry/it")));
+	} else if (findtext(this.name, "Mobile") || findtext(this.name, "Communications")) {
+		this.industry = (yield* new_(T("/datum/industry/communications")));
+	} else if (findtext(this.name, "Pharmaceuticals") || findtext(this.name, "Health")) {
+		this.industry = (yield* new_(T("/datum/industry/health")));
+	} else if (findtext(this.name, "Wholesale") || findtext(this.name, "Stores")) {
+		this.industry = (yield* new_(T("/datum/industry/consumer")));
 	} else {
-		if ((((((truthy((yield* g.call(f, P("/proc/findtext"), null, [rt.sv(f, "name"), "Software"]))) || truthy((yield* g.call(f, P("/proc/findtext"), null, [rt.sv(f, "name"), "Programming"])))) || truthy((yield* g.call(f, P("/proc/findtext"), null, [rt.sv(f, "name"), "IT Group"])))) || truthy((yield* g.call(f, P("/proc/findtext"), null, [rt.sv(f, "name"), "Electronics"])))) || truthy((yield* g.call(f, P("/proc/findtext"), null, [rt.sv(f, "name"), "Electric"])))) || truthy((yield* g.call(f, P("/proc/findtext"), null, [rt.sv(f, "name"), "Nanotechnology"]))))) {
-			rt.setSv(f, "industry", (yield* g.new_(f, T("/datum/industry/it"), [])));
-		} else {
-			if ((truthy((yield* g.call(f, P("/proc/findtext"), null, [rt.sv(f, "name"), "Mobile"]))) || truthy((yield* g.call(f, P("/proc/findtext"), null, [rt.sv(f, "name"), "Communications"]))))) {
-				rt.setSv(f, "industry", (yield* g.new_(f, T("/datum/industry/communications"), [])));
-			} else {
-				if ((truthy((yield* g.call(f, P("/proc/findtext"), null, [rt.sv(f, "name"), "Pharmaceuticals"]))) || truthy((yield* g.call(f, P("/proc/findtext"), null, [rt.sv(f, "name"), "Health"]))))) {
-					rt.setSv(f, "industry", (yield* g.new_(f, T("/datum/industry/health"), [])));
-				} else {
-					if ((truthy((yield* g.call(f, P("/proc/findtext"), null, [rt.sv(f, "name"), "Wholesale"]))) || truthy((yield* g.call(f, P("/proc/findtext"), null, [rt.sv(f, "name"), "Stores"]))))) {
-						rt.setSv(f, "industry", (yield* g.new_(f, T("/datum/industry/consumer"), [])));
-					} else {
-						ts = subtract((yield* g.call(f, P("/proc/typesof"), null, [T("/datum/industry")])), T("/datum/industry"));
-						in_t = rt.op(f, "PickUnweighted", [1], [live(ts)]);
-						rt.setSv(f, "industry", (yield* g.new_(f, live(in_t), [])));
-					}
-				}
-			}
-		}
+		ts = typesof(T("/datum/industry")) - T("/datum/industry");
+		in_t = pick(ts);
+		this.industry = (yield* new_(in_t));
 	}
-	i = null;
-	i = 0;
-	while (rt.lt(live(i), (yield* g.call(f, P("/proc/rand"), null, [2, 5])))) {
-		rt.modSrcVar(f, "products", (yield* g.callName(f, rt.sv(f, "industry"), "generateProductName", [rt.sv(f, "name")])), add);
-		i = rt.inc(live(i), 1);
+	let i: Value = 0;
+	while (i < rand(2, 5)) {
+		this.products += this.industry.generateProductName(this.name);
+		i++;
 	}
 	return f.dot;
 }, true);
 
-// /datum/stock/proc/frc  (code/modules/stock_market/stocks.dm:91)
+// stocks.dm:91
 rt.def("/datum/stock/proc/frc", function frc(f: Frame, amt: Value) {
-	let shares: Value = null, fr: Value = null;
-	f.vars = () => [shares, fr];
-	shares = add(rt.sv(f, "available_shares"), multiply(rt.sv(f, "outside_shareholders"), rt.sv(f, "average_shares")));
-	if (((rt.lt((fr = multiply(multiply(multiply(divide(divide(live(amt), 100), live(shares)), rt.sv(f, "fluctuational_coefficient")), rt.sv(f, "fluctuation_rate")), rt.call(f, P("/proc/max"), null, [rt.neg(divide(rt.sv(f, "current_trend"), 100)), 1]))), 0) && rt.lt(rt.sv(f, "speculation"), 0)) || (rt.gt(live(fr), 0) && rt.gt(rt.sv(f, "speculation"), 0)))) {
-		(fr = rt.modify(live(fr), rt.call(f, P("/proc/max"), null, [divide(rt.op(f, "Abs", [], [rt.sv(f, "speculation")]), 5), 1]), multiply));
-	} else {
-		(fr = rt.modify(live(fr), rt.call(f, P("/proc/max"), null, [divide(rt.op(f, "Abs", [], [rt.sv(f, "speculation")]), 5), 1]), divide));
-	}
-	return live(fr);
-});
-
-// /datum/stock/proc/supplyGrowth  (code/modules/stock_market/stocks.dm:100)
-rt.def("/datum/stock/proc/supplyGrowth", function supplyGrowth(f: Frame, amt: Value) {
 	let fr: Value = null;
-	f.vars = () => [fr];
-	fr = rt.callSrc(f, "frc", [live(amt)]);
-	rt.modSrcVar(f, "available_shares", live(amt), add);
-	if (rt.lt(rt.op(f, "Abs", [], [live(fr)]), 0.00009999999747378752)) {
-		return live(f.dot);
+	let shares: Value = this.available_shares + this.outside_shareholders * this.average_shares;
+	if ((fr = amt / 100 / shares * this.fluctuational_coefficient * this.fluctuation_rate * max(-(this.current_trend / 100), 1)) < 0 && this.speculation < 0 || fr > 0 && this.speculation > 0) {
+		fr *= max(rt.op(f, "Abs", [], [this.speculation]) / 5, 1);
+	} else {
+		fr /= max(rt.op(f, "Abs", [], [this.speculation]) / 5, 1);
 	}
-	(rt.modSrcVar(f, "current_value", multiply(live(fr), rt.sv(f, "current_value")), subtract));
+	return fr;
+});
+
+// stocks.dm:100
+rt.def("/datum/stock/proc/supplyGrowth", function supplyGrowth(f: Frame, amt: Value) {
+	let fr: Value = this.frc(amt);
+	this.available_shares += amt;
+	if (rt.op(f, "Abs", [], [fr]) < 0.0001) {
+		return f.dot;
+	}
+	this.current_value -= fr * this.current_value;
 	return f.dot;
 });
 
-// /datum/stock/proc/supplyDrop  (code/modules/stock_market/stocks.dm:107)
+// stocks.dm:107
 rt.def("/datum/stock/proc/supplyDrop", function supplyDrop(f: Frame, amt: Value) {
-	rt.callSrc(f, "supplyGrowth", [rt.neg(live(amt))]);
+	this.supplyGrowth(-amt);
 	return f.dot;
 });
 
-// /datum/stock/proc/fluctuate  (code/modules/stock_market/stocks.dm:110)
+// stocks.dm:110
 rt.def("/datum/stock/proc/fluctuate", function fluctuate(f: Frame) {
-	let change: Value = null, shift_score: Value = null, as_score: Value = null, sh_change_dev: Value = null, sh_change: Value = null, shareholder_change: Value = null, share_change: Value = null, avg_change_dev: Value = null, avg_change: Value = null, cv: Value = null, aspec: Value = null, fucking_stock_spikes: Value = null, piece_of_shit_fuck: Value = null, i_hate_this_code: Value = null;
+	let shareholder_change: Value = null, avg_change_dev: Value = null, avg_change: Value = null, aspec: Value = null, i_hate_this_code: Value = null;
 	let $0: any;
-	f.vars = () => [change, shift_score, as_score, sh_change_dev, sh_change, shareholder_change, share_change, avg_change_dev, avg_change, cv, aspec, fucking_stock_spikes, piece_of_shit_fuck, i_hate_this_code, $0];
-	change = add(divide(rt.call(f, P("/proc/rand"), null, [-100, 100]), 10), divide(multiply(rt.sv(f, "optimism"), rt.call(f, P("/proc/rand"), null, [200])), 10));
-	(rt.modSrcVar(f, "optimism", multiply(subtract(rt.sv(f, "optimism"), rt.sv(f, "average_optimism")), divide(rt.call(f, P("/proc/rand"), null, [10, 80]), 1000)), subtract));
-	shift_score = add(live(change), rt.sv(f, "current_trend"));
-	as_score = rt.op(f, "Abs", [], [live(shift_score)]);
-	sh_change_dev = divide(rt.call(f, P("/proc/rand"), null, [-10, 10]), 10);
-	sh_change = add(divide(live(shift_score), add(live(as_score), 100)), live(sh_change_dev));
-	rt.modSrcVar(f, "outside_shareholders", (shareholder_change = rt.call(f, P("/proc/round"), null, [live(sh_change)])), add);
-	share_change = multiply(live(shareholder_change), rt.sv(f, "average_shares"));
-	if ((rt.gt(live(as_score), 20) && truthy(rt.op(f, "Prob", [], [divide(live(as_score), 4)])))) {
-		avg_change_dev = divide(rt.call(f, P("/proc/rand"), null, [-10, 10]), 10);
-		rt.modSrcVar(f, "average_shares", (avg_change = add(divide(live(shift_score), add(live(as_score), 100)), live(avg_change_dev))), add);
-		share_change = rt.modify(live(share_change), multiply(rt.sv(f, "outside_shareholders"), live(avg_change)), add);
+	let change: Value = rand(-100, 100) / 10 + this.optimism * rand(200) / 10;
+	this.optimism -= (this.optimism - this.average_optimism) * (rand(10, 80) / 1000);
+	let shift_score: Value = change + this.current_trend;
+	let as_score: Value = rt.op(f, "Abs", [], [shift_score]);
+	let sh_change_dev: Value = rand(-10, 10) / 10;
+	let sh_change: Value = shift_score / (as_score + 100) + sh_change_dev;
+	this.outside_shareholders += (shareholder_change = round(sh_change));
+	let share_change: Value = shareholder_change * this.average_shares;
+	if (as_score > 20 && prob(as_score / 4)) {
+		avg_change_dev = rand(-10, 10) / 10;
+		this.average_shares += (avg_change = shift_score / (as_score + 100) + avg_change_dev);
+		share_change += this.outside_shareholders * avg_change;
 	}
-	cv = rt.sv(f, "last_value");
-	rt.callSrc(f, "supplyDrop", [live(share_change)]);
-	rt.modSrcVar(f, "available_shares", live(share_change), add);
-	if (truthy(rt.op(f, "Prob", [], [25]))) {
-		rt.setSv(f, "average_optimism", rt.call(f, P("/proc/max"), null, [rt.call(f, P("/proc/min"), null, [add(rt.sv(f, "average_optimism"), divide(subtract(rt.call(f, P("/proc/rand"), null, [-3, 3]), multiply(rt.sv(f, "current_trend"), 0.15000000596046448)), 100)), 1]), -1]));
+	let cv: Value = this.last_value;
+	this.supplyDrop(share_change);
+	this.available_shares += share_change;
+	if (prob(25)) {
+		this.average_optimism = max(min(this.average_optimism + (rand(-3, 3) - this.current_trend * 0.15) / 100, 1), -1);
 	}
-	if (truthy(rt.op(f, "Prob", [], [multiply(subtract((aspec = rt.op(f, "Abs", [], [rt.sv(f, "speculation")])), 75), 2)]))) {
-		rt.modSrcVar(f, "speculation", rt.call(f, P("/proc/rand"), null, [-4, 4]), add);
+	if (prob(((aspec = rt.op(f, "Abs", [], [this.speculation])) - 75) * 2)) {
+		this.speculation += rand(-4, 4);
+	} else if (prob(50)) {
+		this.speculation += rand(-4, 4);
 	} else {
-		if (truthy(rt.op(f, "Prob", [], [50]))) {
-			rt.modSrcVar(f, "speculation", rt.call(f, P("/proc/rand"), null, [-4, 4]), add);
-		} else {
-			rt.modSrcVar(f, "speculation", multiply(divide(rt.call(f, P("/proc/rand"), null, [-400, 0]), 1000), rt.sv(f, "speculation")), add);
-			if ((truthy(rt.op(f, "Prob", [], [1])) && truthy(rt.op(f, "Prob", [], [5])))) {
-				rt.modSrcVar(f, "speculation", multiply(divide(rt.call(f, P("/proc/rand"), null, [-4000, 0]), 1000), rt.sv(f, "speculation")), add);
-			}
+		this.speculation += rand(-400, 0) / 1000 * this.speculation;
+		if (prob(1) && prob(5)) {
+			this.speculation += rand(-4000, 0) / 1000 * this.speculation;
 		}
 	}
-	fucking_stock_spikes = add(rt.sv(f, "current_value"), 500);
-	piece_of_shit_fuck = subtract(rt.sv(f, "current_value"), 500);
-	if ((rt.lt((i_hate_this_code = multiply(add(divide(rt.sv(f, "speculation"), rt.call(f, P("/proc/rand"), null, [25000, 50000])), divide(rt.sv(f, "performance"), rt.call(f, P("/proc/rand"), null, [100, 800]))), rt.sv(f, "current_value"))), live(fucking_stock_spikes)) || rt.gt(live(i_hate_this_code), live(piece_of_shit_fuck)))) {
-		rt.modSrcVar(f, "current_value", live(i_hate_this_code), add);
+	let fucking_stock_spikes: Value = this.current_value + 500;
+	let piece_of_shit_fuck: Value = this.current_value - 500;
+	if ((i_hate_this_code = (this.speculation / rand(25000, 50000) + this.performance / rand(100, 800)) * this.current_value) < fucking_stock_spikes || i_hate_this_code > piece_of_shit_fuck) {
+		this.current_value += i_hate_this_code;
 	}
-	if (rt.lt(rt.sv(f, "current_value"), 5)) {
-		rt.setSv(f, "current_value", 5);
+	if (this.current_value < 5) {
+		this.current_value = 5;
 	}
-	if (!isEqual(rt.sv(f, "performance"), 0)) {
-		rt.setSv(f, "performance", multiply(divide(rt.call(f, P("/proc/rand"), null, [900, 1050]), 1000), rt.sv(f, "performance")));
-		if (rt.lt(rt.op(f, "Abs", [], [rt.sv(f, "performance")]), 0.20000000298023224)) {
-			rt.setSv(f, "performance", 0);
+	if (this.performance != 0) {
+		this.performance = rand(900, 1050) / 1000 * this.performance;
+		if (rt.op(f, "Abs", [], [this.performance]) < 0.2) {
+			this.performance = 0;
 		}
 	}
-	if (rt.lt(live(cv), rt.sv(f, "current_value"))) {
+	if (cv < this.current_value) {
 		$0 = 1;
+	} else if (cv > this.current_value) {
+		$0 = -1;
 	} else {
-		if (rt.gt(live(cv), rt.sv(f, "current_value"))) {
-			$0 = -1;
-		} else {
-			$0 = 0;
-		}
+		$0 = 0;
 	}
-	rt.setSv(f, "disp_value_change", $0);
-	rt.setSv(f, "last_value", rt.sv(f, "current_value"));
-	if (rt.ge(rt.len(f, rt.sv(f, "values")), 50)) {
-		rt.callName(f, rt.sv(f, "values"), "Cut", [1, 2]);
+	this.disp_value_change = $0;
+	this.last_value = this.current_value;
+	if (rt.len(f, this.values) >= 50) {
+		this.values.Cut(1, 2);
 	}
-	rt.modSrcVar(f, "values", rt.sv(f, "current_value"), add);
-	if (rt.lt(rt.sv(f, "current_value"), 10)) {
-		rt.callSrc(f, "unifyShares", []);
+	this.values += this.current_value;
+	if (this.current_value < 10) {
+		this.unifyShares();
 	}
-	rt.setSv(f, "last_trend", rt.sv(f, "current_trend"));
-	rt.modSrcVar(f, "current_trend", add(add(add(divide(rt.call(f, P("/proc/rand"), null, [-200, 200]), 100), divide(multiply(rt.sv(f, "optimism"), rt.call(f, P("/proc/rand"), null, [200])), 10)), multiply(divide(multiply(divide(rt.call(f, P("/proc/max"), null, [subtract(50, rt.op(f, "Abs", [], [rt.sv(f, "speculation")])), 0]), 50), rt.call(f, P("/proc/rand"), null, [0, 200])), 1000), rt.neg(rt.sv(f, "current_trend")))), divide(multiply(divide(multiply(rt.call(f, P("/proc/max"), null, [subtract(rt.sv(f, "speculation"), 50), 0]), rt.call(f, P("/proc/rand"), null, [0, 200])), 1000), rt.sv(f, "speculation")), 400)), add);
+	this.last_trend = this.current_trend;
+	this.current_trend += rand(-200, 200) / 100 + this.optimism * rand(200) / 10 + max(50 - rt.op(f, "Abs", [], [this.speculation]), 0) / 50 * rand(0, 200) / 1000 * -this.current_trend + max(this.speculation - 50, 0) * rand(0, 200) / 1000 * this.speculation / 400;
 	return f.dot;
 });
 
-// /datum/stock/proc/unifyShares  (code/modules/stock_market/stocks.dm:168)
+// stocks.dm:168
 rt.def("/datum/stock/proc/unifyShares", function unifyShares(f: Frame) {
 	let I: Value = null, shr: Value = null, B: Value = null;
-	let $e: any;
-	f.vars = () => [I, shr, B, $e];
-	I = null;
-	rt.forList(f, 0, rt.sv(f, "shareholders"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		if (truthy(rt.modulus((shr = rt.index(rt.sv(f, "shareholders"), live(I))), 2))) {
-			rt.callSrc(f, "sellShares", [live(I), 1]);
+	for (I of each(this.shareholders)) {
+		if ((shr = rt.index(this.shareholders, I)) % 2) {
+			this.sellShares(I, 1);
 		}
-		(shr = rt.modify(live(shr), 1, subtract));
-		(rt.modAt(rt.sv(f, "shareholders"), live(I), 2, divide));
-		if (!truthy(rt.index(rt.sv(f, "shareholders"), live(I)))) {
-			(rt.modSrcVar(f, "shareholders", live(I), subtract));
+		shr -= 1;
+		(rt.modAt(this.shareholders, I, 2, divide));
+		if (!rt.index(this.shareholders, I)) {
+			this.shareholders -= I;
 		}
 	}
-	rt.endFor(f, 0);
-	B = null;
-	rt.forList(f, 0, rt.sv(f, "borrow_brokers"), T("/datum/borrow"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		B = $e;
-		rt.setFv(f, "share_amount", live(B), rt.call(f, P("/proc/round"), null, [divide(rt.fv(f, "share_amount", live(B)), 2)]));
-		rt.setFv(f, "share_debt", live(B), rt.call(f, P("/proc/round"), null, [divide(rt.fv(f, "share_debt", live(B)), 2)]));
+	for (B of each(this.borrow_brokers, T("/datum/borrow"))) {
+		B.share_amount = round(B.share_amount / 2);
+		B.share_debt = round(B.share_debt / 2);
 	}
-	rt.endFor(f, 0);
 	B = null;
-	rt.forList(f, 0, rt.sv(f, "borrows"), T("/datum/borrow"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		B = $e;
-		rt.setFv(f, "share_amount", live(B), rt.call(f, P("/proc/round"), null, [divide(rt.fv(f, "share_amount", live(B)), 2)]));
-		rt.setFv(f, "share_debt", live(B), rt.call(f, P("/proc/round"), null, [divide(rt.fv(f, "share_debt", live(B)), 2)]));
+	for (B of each(this.borrows, T("/datum/borrow"))) {
+		B.share_amount = round(B.share_amount / 2);
+		B.share_debt = round(B.share_debt / 2);
 	}
-	rt.endFor(f, 0);
-	(rt.modSrcVar(f, "average_shares", 2, divide));
-	(rt.modSrcVar(f, "available_shares", 2, divide));
-	(rt.modSrcVar(f, "current_value", 2, multiply));
-	rt.setSv(f, "last_unification", rt.worldTime(f));
+	this.average_shares /= 2;
+	this.available_shares /= 2;
+	this.current_value *= 2;
+	this.last_unification = rt.worldTime(f);
 	return f.dot;
 });
 
-// /datum/stock/proc/process  (code/modules/stock_market/stocks.dm:188)  may sleep
+// stocks.dm:188
 rt.def("/datum/stock/proc/process", function* process(f: Frame) {
 	let B: Value = null, borrow: Value = null, amt: Value = null, E: Value = null, EV: Value = null;
-	let $e: any;
-	f.vars = () => [B, borrow, amt, E, EV, $e];
-	B = null;
-	rt.forList(f, 0, rt.sv(f, "borrows"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		B = $e;
-		borrow = live(B);
-		if (rt.gt(rt.worldTime(f), rt.fv(f, "grace_expires", live(borrow)))) {
-			yield* g.srcCall(f, "modifyAccount", rt.fv(f, "borrower", live(borrow)), rt.neg((yield* g.call(f, P("/proc/max"), null, [multiply(rt.sv(f, "current_value"), rt.fv(f, "share_debt", live(borrow))), 0]))), 1);
-			(rt.modSrcVar(f, "borrows", live(borrow), subtract));
-			if (truthy((rt.isIn(f, rt.fv(f, "borrower", live(borrow)), rt.gl("FrozenAccounts")) ? 1 : 0))) {
-				(rt.modAt(rt.gl("FrozenAccounts"), rt.fv(f, "borrower", live(borrow)), live(borrow), subtract));
-				if (isEqual(rt.length(rt.index(rt.gl("FrozenAccounts"), rt.fv(f, "borrower", live(borrow)))), 0)) {
-					(rt.modGl("FrozenAccounts", rt.fv(f, "borrower", live(borrow)), subtract));
+	for (B of each(this.borrows)) {
+		borrow = B;
+		if (rt.worldTime(f) > borrow.grace_expires) {
+			this.modifyAccount(borrow.borrower, -max(this.current_value * borrow.share_debt, 0), 1);
+			this.borrows -= borrow;
+			if (rt.isIn(f, borrow.borrower, GLOB.FrozenAccounts)) {
+				(rt.modAt(GLOB.FrozenAccounts, borrow.borrower, borrow, subtract));
+				if (rt.length(rt.index(GLOB.FrozenAccounts, borrow.borrower)) == 0) {
+					GLOB.FrozenAccounts -= borrow.borrower;
 				}
 			}
-			yield* g.call(f, P("/proc/qdel"), null, [live(borrow)]);
-		} else {
-			if (rt.gt(rt.worldTime(f), rt.fv(f, "lease_expires", live(borrow)))) {
-				if (truthy((rt.isIn(f, rt.fv(f, "borrower", live(borrow)), rt.sv(f, "shareholders")) ? 1 : 0))) {
-					if (rt.gt((amt = rt.index(rt.sv(f, "shareholders"), rt.fv(f, "borrower", live(borrow)))), rt.fv(f, "share_debt", live(borrow)))) {
-						(rt.modAt(rt.sv(f, "shareholders"), rt.fv(f, "borrower", live(borrow)), rt.fv(f, "share_debt", live(borrow)), subtract));
-						(rt.modSrcVar(f, "borrows", live(borrow), subtract));
-						if (truthy((rt.isIn(f, rt.fv(f, "borrower", live(borrow)), rt.gl("FrozenAccounts")) ? 1 : 0))) {
-							(rt.modAt(rt.gl("FrozenAccounts"), rt.fv(f, "borrower", live(borrow)), live(borrow), subtract));
-						}
-						if (isEqual(rt.length(rt.index(rt.gl("FrozenAccounts"), rt.fv(f, "borrower", live(borrow)))), 0)) {
-							(rt.modGl("FrozenAccounts", rt.fv(f, "borrower", live(borrow)), subtract));
-						}
-						yield* g.call(f, P("/proc/qdel"), null, [live(borrow)]);
-					} else {
-						(rt.modSrcVar(f, "shareholders", rt.fv(f, "borrower", live(borrow)), subtract));
-						(rt.modField(f, live(borrow), "share_debt", live(amt), subtract));
+			yield* qdel(borrow);
+		} else if (rt.worldTime(f) > borrow.lease_expires) {
+			if (rt.isIn(f, borrow.borrower, this.shareholders)) {
+				if ((amt = rt.index(this.shareholders, borrow.borrower)) > borrow.share_debt) {
+					(rt.modAt(this.shareholders, borrow.borrower, borrow.share_debt, subtract));
+					this.borrows -= borrow;
+					if (rt.isIn(f, borrow.borrower, GLOB.FrozenAccounts)) {
+						(rt.modAt(GLOB.FrozenAccounts, borrow.borrower, borrow, subtract));
 					}
+					if (rt.length(rt.index(GLOB.FrozenAccounts, borrow.borrower)) == 0) {
+						GLOB.FrozenAccounts -= borrow.borrower;
+					}
+					yield* qdel(borrow);
+				} else {
+					this.shareholders -= borrow.borrower;
+					borrow.share_debt -= amt;
 				}
 			}
 		}
 	}
-	rt.endFor(f, 0);
-	if (truthy(rt.sv(f, "bankrupt"))) {
-		return live(f.dot);
+	if (this.bankrupt) {
+		return f.dot;
 	}
 	B = null;
-	rt.forList(f, 0, rt.sv(f, "borrow_brokers"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		B = $e;
-		if (rt.lt(rt.gv(f, "offer_expires", (borrow = live(B))), rt.worldTime(f))) {
-			(rt.modSrcVar(f, "borrow_brokers", live(borrow), subtract));
-			yield* g.call(f, P("/proc/qdel"), null, [live(borrow)]);
+	for (B of each(this.borrow_brokers)) {
+		if ((borrow = B).offer_expires < rt.worldTime(f)) {
+			this.borrow_brokers -= borrow;
+			yield* qdel(borrow);
 		}
 	}
-	rt.endFor(f, 0);
-	if (truthy(rt.op(f, "Prob", [], [5]))) {
-		yield* g.srcCall(f, "generateBrokers");
+	if (prob(5)) {
+		this.generateBrokers();
 	}
-	rt.incSrcVar(f, "fluctuation_counter", 1, true);
-	if (!rt.ge(rt.sv(f, "fluctuation_counter"), rt.sv(f, "fluctuation_rate"))) return f.dot;
-	E = null;
-	rt.forList(f, 0, rt.sv(f, "events"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		E = $e;
-		yield* g.callName(f, (EV = live(E)), "process", []);
+	this.fluctuation_counter++;
+	if (!(this.fluctuation_counter >= this.fluctuation_rate)) return f.dot;
+	for (E of each(this.events)) {
+		yield* (EV = E).process();
 	}
-	rt.endFor(f, 0);
-	rt.setSv(f, "fluctuation_counter", 0);
-	yield* g.srcCall(f, "fluctuate");
+	this.fluctuation_counter = 0;
+	this.fluctuate();
 	return f.dot;
 }, true, { waitfor: false });
 
-// /datum/stock/proc/generateBrokers  (code/modules/stock_market/stocks.dm:230)
+// stocks.dm:230
 rt.def("/datum/stock/proc/generateBrokers", function generateBrokers(f: Frame) {
-	let broker: Value = null, B: Value = null;
-	f.vars = () => [broker, B];
-	if (rt.gt(rt.len(f, rt.sv(f, "borrow_brokers")), 2)) {
-		return live(f.dot);
+	let B: Value = null;
+	if (rt.len(f, this.borrow_brokers) > 2) {
+		return f.dot;
 	}
-	if (!truthy(rt.getLen(f, rt.fv(f, "stockBrokers", rt.gl("stockExchange"))))) {
-		rt.callName(f, rt.gl("stockExchange"), "generateBrokers", []);
+	if (!rt.len(f, GLOB.stockExchange.stockBrokers)) {
+		GLOB.stockExchange.generateBrokers();
 	}
-	broker = rt.op(f, "PickUnweighted", [1], [rt.fv(f, "stockBrokers", rt.gl("stockExchange"))]);
-	rt.setFv(f, "broker", (B = rt.new_(f, T("/datum/borrow"), [])), live(broker));
-	rt.setFv(f, "stock", live(B), live(f.src));
-	rt.setFv(f, "lease_time", live(B), multiply(rt.call(f, P("/proc/rand"), null, [4, 7]), 600));
-	rt.setFv(f, "grace_time", live(B), multiply(rt.call(f, P("/proc/rand"), null, [1, 3]), 600));
-	rt.setFv(f, "share_amount", live(B), multiply(rt.call(f, P("/proc/rand"), null, [1, 10]), 100));
-	rt.setFv(f, "deposit", live(B), divide(rt.call(f, P("/proc/rand"), null, [20, 70]), 100));
-	rt.setFv(f, "share_debt", live(B), rt.fv(f, "share_amount", live(B)));
-	rt.setFv(f, "offer_expires", live(B), add(multiply(rt.call(f, P("/proc/rand"), null, [5, 10]), 600), rt.worldTime(f)));
-	rt.modSrcVar(f, "borrow_brokers", live(B), add);
+	let broker: Value = pick(GLOB.stockExchange.stockBrokers);
+	(B = new_(T("/datum/borrow"))).broker = broker;
+	B.stock = this;
+	B.lease_time = rand(4, 7) * 600;
+	B.grace_time = rand(1, 3) * 600;
+	B.share_amount = rand(1, 10) * 100;
+	B.deposit = rand(20, 70) / 100;
+	B.share_debt = B.share_amount;
+	B.offer_expires = rand(5, 10) * 600 + rt.worldTime(f);
+	this.borrow_brokers += B;
 	return f.dot;
 });
 
-// /datum/stock/proc/modifyAccount  (code/modules/stock_market/stocks.dm:247)
+// stocks.dm:247
 rt.def("/datum/stock/proc/modifyAccount", function modifyAccount(f: Frame, whose: Value, by: Value, force: Value) {
-	f.vars = () => [force];
-	if (live(force) === null) {
-		force = 0;
-	}
-	if (truthy(rt.fv(f, "points", rt.gl("SSshuttle")))) {
-		if (((rt.lt(live(by), 0) && rt.lt(add(rt.fv(f, "points", rt.gl("SSshuttle")), live(by)), 0)) && !truthy(live(force)))) {
+	force ??= 0;
+	if (GLOB.SSshuttle.points) {
+		if (by < 0 && GLOB.SSshuttle.points + by < 0 && !force) {
 			return 0;
 		}
-		rt.modField(f, rt.gl("SSshuttle"), "points", live(by), add);
-		rt.callName(f, rt.gl("stockExchange"), "balanceLog", [live(whose), live(by)]);
+		GLOB.SSshuttle.points += by;
+		GLOB.stockExchange.balanceLog(whose, by);
 		return 1;
 	}
 	return 0;
 });
 
-// /datum/stock/proc/borrow  (code/modules/stock_market/stocks.dm:256)
+// stocks.dm:256
 rt.def("/datum/stock/proc/borrow", function borrow(f: Frame, B: Value, who: Value) {
-	let old_d: Value = null, d_amt: Value = null;
-	f.vars = () => [old_d, d_amt];
-	if (truthy(rt.fv(f, "lease_expires", live(B)))) {
+	if (B.lease_expires) {
 		return 0;
 	}
-	rt.setFv(f, "lease_expires", live(B), add(rt.worldTime(f), rt.fv(f, "lease_time", live(B))));
-	old_d = rt.fv(f, "deposit", live(B));
-	d_amt = multiply(multiply(rt.fv(f, "deposit", live(B)), rt.sv(f, "current_value")), rt.fv(f, "share_amount", live(B)));
-	if (!truthy(rt.callSrc(f, "modifyAccount", [live(who), rt.neg(live(d_amt))]))) {
-		rt.setFv(f, "lease_expires", live(B), 0);
-		rt.setFv(f, "deposit", live(B), live(old_d));
+	B.lease_expires = rt.worldTime(f) + B.lease_time;
+	let old_d: Value = B.deposit;
+	let d_amt: Value = B.deposit * this.current_value * B.share_amount;
+	if (!this.modifyAccount(who, -d_amt)) {
+		B.lease_expires = 0;
+		B.deposit = old_d;
 		return 0;
 	}
-	rt.setFv(f, "deposit", live(B), live(d_amt));
-	if (!truthy((rt.isIn(f, live(who), rt.sv(f, "shareholders")) ? 1 : 0))) {
-		rt.setAt(rt.sv(f, "shareholders"), live(who), rt.fv(f, "share_amount", live(B)));
+	B.deposit = d_amt;
+	if (!rt.isIn(f, who, this.shareholders)) {
+		rt.setAt(this.shareholders, who, B.share_amount);
 	} else {
-		rt.modAt(rt.sv(f, "shareholders"), live(who), rt.fv(f, "share_amount", live(B)), add);
+		rt.modAt(this.shareholders, who, B.share_amount, add);
 	}
-	(rt.modSrcVar(f, "borrow_brokers", live(B), subtract));
-	rt.modSrcVar(f, "borrows", live(B), add);
-	rt.setFv(f, "borrower", live(B), live(who));
-	rt.setFv(f, "grace_expires", live(B), add(rt.fv(f, "lease_expires", live(B)), rt.fv(f, "grace_time", live(B))));
-	if (!truthy((rt.isIn(f, live(who), rt.gl("FrozenAccounts")) ? 1 : 0))) {
-		rt.setAt(rt.gl("FrozenAccounts"), live(who), rt.list(live(B)));
+	this.borrow_brokers -= B;
+	this.borrows += B;
+	B.borrower = who;
+	B.grace_expires = B.lease_expires + B.grace_time;
+	if (!rt.isIn(f, who, GLOB.FrozenAccounts)) {
+		rt.setAt(GLOB.FrozenAccounts, who, list(B));
 	} else {
-		rt.modAt(rt.gl("FrozenAccounts"), live(who), live(B), add);
+		rt.modAt(GLOB.FrozenAccounts, who, B, add);
 	}
 	return 1;
 });
 
-// /datum/stock/proc/buyShares  (code/modules/stock_market/stocks.dm:281)
+// stocks.dm:281
 rt.def("/datum/stock/proc/buyShares", function buyShares(f: Frame, who: Value, howmany: Value) {
-	let loss: Value = null;
-	f.vars = () => [howmany, loss];
-	if (rt.le(live(howmany), 0)) {
-		return live(f.dot);
+	if (howmany <= 0) {
+		return f.dot;
 	}
-	howmany = rt.call(f, P("/proc/round"), null, [live(howmany)]);
-	loss = multiply(live(howmany), rt.sv(f, "current_value"));
-	if (rt.lt(rt.sv(f, "available_shares"), live(howmany))) {
+	howmany = round(howmany);
+	let loss: Value = howmany * this.current_value;
+	if (this.available_shares < howmany) {
 		return 0;
 	}
-	if (truthy(rt.callSrc(f, "modifyAccount", [live(who), rt.neg(live(loss))]))) {
-		rt.callSrc(f, "supplyDrop", [live(howmany)]);
-		if (!truthy((rt.isIn(f, live(who), rt.sv(f, "shareholders")) ? 1 : 0))) {
-			rt.setAt(rt.sv(f, "shareholders"), live(who), live(howmany));
+	if (this.modifyAccount(who, -loss)) {
+		this.supplyDrop(howmany);
+		if (!rt.isIn(f, who, this.shareholders)) {
+			rt.setAt(this.shareholders, who, howmany);
 		} else {
-			rt.modAt(rt.sv(f, "shareholders"), live(who), live(howmany), add);
+			rt.modAt(this.shareholders, who, howmany, add);
 		}
 		return 1;
 	}
 	return 0;
 });
 
-// /datum/stock/proc/sellShares  (code/modules/stock_market/stocks.dm:297)
+// stocks.dm:297
 rt.def("/datum/stock/proc/sellShares", function sellShares(f: Frame, whose: Value, howmany: Value) {
-	let gain: Value = null;
-	f.vars = () => [howmany, gain];
-	if (rt.lt(live(howmany), 0)) {
-		return live(f.dot);
+	if (howmany < 0) {
+		return f.dot;
 	}
-	howmany = rt.call(f, P("/proc/round"), null, [live(howmany)]);
-	gain = multiply(live(howmany), rt.sv(f, "current_value"));
-	if (rt.lt(rt.index(rt.sv(f, "shareholders"), live(whose)), live(howmany))) {
+	howmany = round(howmany);
+	let gain: Value = howmany * this.current_value;
+	if (rt.index(this.shareholders, whose) < howmany) {
 		return 0;
 	}
-	if (truthy(rt.callSrc(f, "modifyAccount", [live(whose), live(gain)]))) {
-		rt.callSrc(f, "supplyGrowth", [live(howmany)]);
-		(rt.modAt(rt.sv(f, "shareholders"), live(whose), live(howmany), subtract));
-		if (rt.le(rt.index(rt.sv(f, "shareholders"), live(whose)), 0)) {
-			(rt.modSrcVar(f, "shareholders", live(whose), subtract));
+	if (this.modifyAccount(whose, gain)) {
+		this.supplyGrowth(howmany);
+		(rt.modAt(this.shareholders, whose, howmany, subtract));
+		if (rt.index(this.shareholders, whose) <= 0) {
+			this.shareholders -= whose;
 		}
 		return 1;
 	}
 	return 0;
 });
 
-// /datum/stock/proc/displayValues  (code/modules/stock_market/stocks.dm:312)
+// stocks.dm:312
 rt.def("/datum/stock/proc/displayValues", function displayValues(f: Frame, user: Value) {
-	rt.op(f, "Browse", [], [live(user), rt.call(f, P("/proc/plotBarGraph"), null, [rt.sv(f, "values"), fmt("＀ share value per share", [rt.sv(f, "name")])]), fmt("window=stock_＀;size=450x450", [rt.sv(f, "name")])], false);
+	rt.op(f, "Browse", [], [user, plotBarGraph(this.values, `${this.name} share value per share`), `window=stock_${this.name};size=450x450`], false);
 	return f.dot;
 });

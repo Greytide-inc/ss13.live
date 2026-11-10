@@ -2,21 +2,23 @@
 //
 // enableDiffMode(vm) removes the noise sources that make two runs differ without a bug: a fake clock
 // (tick_usage/cpu constant, timeofday/realtime/time2text = fixed start + world.time) and the collector
-// running only at tick boundaries. Diary writes one line per tick plus a world fingerprint every 50 ticks;
-// the full log/runtime text goes to a side file. Nothing here is loaded unless boot.ts is given --diff.
-import { closeSync, openSync, writeSync } from "node:fs";
+// running only at tick boundaries. Diary writes one line per tick (log, runtimes and everything sent to players
+// count in its hash) plus, every 100 ticks, a check: the hash of the whole game state (state.ts), whose dump goes to
+// PREFIX.state/TICK.gz for compare.ts to say where two runs differ. The full log/runtime/output text goes to a side
+// file. Nothing here is loaded unless boot.ts is given --diff.
+import { closeSync, mkdirSync, openSync, readFileSync, rmSync, unlinkSync, writeSync } from "node:fs";
 import { createHash } from "node:crypto";
 import type { Frame, VM } from "../../vm/interpreter.js";
 import type { DMProc } from "../../vm/objtree.js";
 import { clockHook, diffHook } from "../../vm/clockhook.js";
-import { DMObject, live } from "../../vm/objects.js";
+import { DMList, DMObject } from "../../vm/objects.js";
 import { DMAtom, Kind } from "../../vm/world.js";
-import { DMList } from "../../vm/objects.js";
 import type { Value } from "../../vm/value.js";
+import { StateDump } from "./state.js";
 
 /** 2017-06-15 12:00:00 UTC: a fixed "today"; noon, so +-12 h of world time stays inside one day. */
 export const DIFF_START_MS = Date.UTC(2017, 5, 15, 12, 0, 0);
-export const FINGERPRINT_EVERY = Number(process.env.DIFF_FP_EVERY ?? 50); // ~1 s each on the station map; raise it for long soaks (both runs must use the same value)
+export const FINGERPRINT_EVERY = Number(process.env.DIFF_FP_EVERY ?? 100); // ticks between state checks (~10 s and ~40 MB each on BoxStation) (both runs must use the same value)
 
 /** Default for --diff-vcost: calls per 1 % of tick_usage (picked from measured calls per tick). */
 export const VCOST_DEFAULT = 25;
@@ -27,7 +29,7 @@ export function enableDiffMode(vm: VM, vcostPerPct = 0): void {
 	diffHook.vcostPerPct = vcostPerPct;
 	diffHook.calls = 0;
 	diffHook.gcTickOnly = true;
-	// world.time is deciseconds (a float32): the fake host clock is the start plus that.
+	// world.time is deciseconds: the fake host clock is the start plus that.
 	clockHook.nowMs = () => DIFF_START_MS + Math.round(vm.sched.time * 100);
 }
 
@@ -51,7 +53,18 @@ function desc(v: Value): string {
 export class Diary {
 	private readonly fd: number;
 	private readonly textFd: number;
-	fpMs = 0; // wall time spent on fingerprints (reported by close, not in the diary)
+	fpMs = 0; // wall time spent on state checks (reported by close, not in the diary)
+	fpBytes = 0; // their dumps' size on disk
+	private readonly state: StateDump;
+	private readonly stateDir: string;
+	/** Where notes go (boot.ts sets its log). */
+	note: (s: string) => void = () => {};
+	/** --diff-ref: the other run's diary lines by key ("TICK", "F TICK"), to check this run against as it goes. */
+	private ref: Map<string, string> | null = null;
+	/** The first tick whose diary line differs from the reference's, or null. */
+	firstDiff: number | null = null;
+	/** Set at the first check at or after `firstDiff`: the run can stop, that check's dump is kept for compare.ts. */
+	stop = false;
 	private draws = 0;
 	private created = 0;
 	private lines: string[] = [];
@@ -90,8 +103,15 @@ export class Diary {
 		const nextU32 = rng.nextU32.bind(rng);
 		rng.nextU32 = () => { this.draws++; if (this.tracing) this.traceDraw(); return nextU32(); };
 		const alloc = vm.allocObject.bind(vm);
-		vm.allocObject = (type, pinned) => { this.created++; return alloc(type, pinned); };
-		writeSync(this.fd, `# diary v1 fields: tick time draws rng objs sleeping loghash | F tick worldhash mobhash\n`);
+		this.state = new StateDump(vm);
+		vm.allocObject = (type, pinned) => { this.created++; const o = alloc(type, pinned); this.state.created(o); return o; };
+		this.stateDir = prefix + ".state";
+		rmSync(this.stateDir, { recursive: true, force: true });
+		mkdirSync(this.stateDir, { recursive: true });
+		// Everything sent to players: one line each, in the tick's hash.
+		const send = vm.clients.send.bind(vm.clients);
+		vm.clients.send = (ckey, m) => { this.lines.push(`out ${ckey} ${JSON.stringify(m)}`); send(ckey, m); };
+		writeSync(this.fd, `# diary v2 fields: tick time draws rng objs sleeping loghash | F tick statehash objects lists\n`);
 	}
 
 	// ---- detail mode (--diff-trace FROM-TO) ------------------------------------------------------------------------
@@ -111,6 +131,13 @@ export class Diary {
 		this.traceTo = to;
 		writeSync(this.traceFd, `# trace v1: tick R draw# proc file:line | tick E proc-id proc args-hash caller file:line\n`);
 		this.hookEnter(setTrEnter);
+	}
+
+	/** Checks this run against another run's diary (its prefix) as it goes: a check that matches it deletes its dump
+	 * (the reference has the same one), the first one after a difference keeps it and sets `stop`. */
+	setRef(prefix: string): void {
+		const lines = readFileSync(prefix.replace(/\.diary$/, "") + ".diary", "utf8").split("\n").filter((l) => l !== "" && !l.startsWith("#"));
+		this.ref = new Map(lines.map((l) => [l.startsWith("F\t") ? "F " + l.split("\t")[1] : l.slice(0, l.indexOf("\t")), l]));
 	}
 
 	/** Before each vm.runTick(): the tick about to run. */
@@ -157,51 +184,27 @@ export class Diary {
 			if (vm.sched.lastTickUsage >= 10) st.ticksOver10++;
 		}
 		const h = this.lines.length ? sha(this.lines.join("\n")) : "-";
-		writeSync(this.fd, `${t}\t${vm.sched.time}\t${this.draws}\t${this.rngHash()}\t${this.created}\t${vm.sched.sleeping}\t${h}\n`);
-		if (this.lines.length) writeSync(this.textFd, this.lines.map((l) => `${t}\t${l}`).join("\n") + "\n");
+		const line = `${t}\t${vm.sched.time}\t${this.draws}\t${this.rngHash()}\t${this.created}\t${vm.sched.sleeping}\t${h}`;
+		writeSync(this.fd, line + "\n");
+		if (this.ref !== null && this.firstDiff === null && this.ref.get(String(t)) !== line) { this.firstDiff = t; this.note(`[diff] tick ${t} differs from the reference run`); }
+		const mark = (globalThis as { dtMark?: string }).dtMark; // dt-diff's own check: a planted fault sets this when it first runs
+		if (mark !== undefined) { this.note(`[diff] mark "${mark}" at tick ${t}`); delete (globalThis as { dtMark?: string }).dtMark; }
+		if (this.lines.length) writeSync(this.textFd, this.lines.map((l) => `${t}\t${l.length > 2000 ? l.slice(0, 2000) + "..." : l}`).join("\n") + "\n");
 		this.lines = [];
 		if (this.trace.length) { writeSync(this.traceFd, this.trace.join("\n") + "\n"); this.trace = []; }
 		if (t % FINGERPRINT_EVERY === 0) {
 			const t0 = performance.now();
-			writeSync(this.fd, `F\t${t}\t${this.worldHash()}\t${sha(this.mobDump())}\n`);
+			const file = `${this.stateDir}/${t}.gz`, d = this.state.dump(file);
+			const fl = `F\t${t}\t${d.hash}\t${d.objects}\t${d.lists}`;
+			writeSync(this.fd, fl + "\n");
 			this.fpMs += performance.now() - t0;
-		}
-	}
-
-	/** dk1-dump-style turf dump (type, colour, area, flags, opacity, atmos neighbours, air, contents), hashed as it goes:
-	 * no sorting (list order is deterministic and a different order is a finding too) and no giant string. */
-	worldHash(): string {
-		const vm = this.vm, m = vm.map;
-		const h = createHash("sha1");
-		const s = (v: Value): string => (v === null || v === undefined ? "" : v instanceof DMList ? "[" + v.items.map((q) => (q instanceof DMObject ? `<${q.type.path}>` : String(q)) + (v.assoc ? "=" + String(v.get(q)) : "")).join(",") + "]" : v instanceof DMObject ? `<${v.type.path}>` : String(v));
-		let buf: string[] = [];
-		for (let z = 1; z <= m.maxz; z++) for (let y = 1; y <= m.maxy; y++) for (let x = 1; x <= m.maxx; x++) {
-			const t = m.turfAt(x, y, z);
-			if (!t) continue;
-			const adj = live(t.getVar("atmos_adjacent_turfs"));
-			const air = live(t.getVar("air"));
-			buf.push(`${x},${y},${z}|${t.type.path}|${s(t.getVar("color"))}|${t.loc?.type.path ?? ""}|${s(t.getVar("flags"))}|${s(t.getVar("opacity"))}|${adj instanceof DMList ? adj.items.map((a) => { const q = live(a) as DMAtom; return `${q.x},${q.y}`; }).join(" ") : ""}|${s(t.getVar("baseturf"))}|${s(t.getVar("dir"))}|${s(t.getVar("icon_state"))}|${air instanceof DMObject ? `${s(air.getVar("temperature"))} ${s(air.getVar("gases"))}` : ""}`);
-			for (const c of t.contents) if (c.kind !== Kind.Mob) buf.push(`${c.type.path}:${s(c.getVar("name"))}:${s(c.getVar("dir"))}:${s(c.getVar("icon_state"))}:${s(c.getVar("color"))}`);
-			if (buf.length > 2000) { h.update(buf.join("\n")); buf = []; }
-		}
-		h.update(buf.join("\n"));
-		return h.digest("hex").slice(0, 12);
-	}
-
-	mobDump(): string {
-		const vm = this.vm;
-		const s = (v: Value): string => (v === null || v === undefined ? "" : v instanceof DMObject ? `<${v.type.path}>` : String(v));
-		const out: string[] = [];
-		for (const m of vm.map.atomsOfKind(Kind.Mob)) {
-			let loc: DMAtom | null = m.loc, where = "null", depth = 0;
-			while (loc !== null && depth++ < 8) {
-				if (loc.kind === Kind.Turf) { where = `${loc.x},${loc.y},${loc.z}`; break; }
-				where = `in ${loc.type.path}`;
-				loc = loc.loc;
+			if (this.ref !== null && this.ref.get("F " + t) === fl) unlinkSync(file);
+			else {
+				this.fpBytes += d.bytes;
+				if (this.ref !== null) { this.note(`[diff] state at tick ${t} ${this.ref.has("F " + t) ? "differs from" : "isn't in"} the reference run; dump kept`); this.stop = true; }
 			}
-			out.push(`${m.type.path}|${where}|${s(m.getVar("stat"))}|${s(m.getVar("health"))}`);
+			if (this.firstDiff !== null) this.stop = true;
 		}
-		return out.join("\n");
 	}
 
 	close(): void {

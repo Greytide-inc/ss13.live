@@ -1,5 +1,5 @@
 // Types declared in code/game/objects/items/weapons/grenades that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(6883, "/obj/item/weapon/grenade/chem_grenade/cryo", "/obj/item/weapon/grenade/chem_grenade", {
 	affected_area: 2,

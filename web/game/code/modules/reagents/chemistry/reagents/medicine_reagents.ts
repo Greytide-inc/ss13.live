@@ -1,7 +1,7 @@
-// From code/modules/reagents/chemistry/reagents/medicine_reagents.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/reagents/chemistry/reagents/medicine_reagents.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(3547, "/datum/reagent/medicine", "/datum/reagent", {
@@ -10,11 +10,10 @@ rt.type(3547, "/datum/reagent/medicine", "/datum/reagent", {
 	taste_description: "bitterness",
 });
 
-// /datum/reagent/medicine/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:14)  may sleep
+// medicine_reagents.dm:14
 rt.def("/datum/reagent/medicine/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
-	f.vars = () => [M];
-	rt.incSrcVar(f, "current_cycle", 1, true);
-	yield* g.callName(f, rt.sv(f, "holder"), "remove_reagent", [rt.fv(f, "id", live(f.src)), divide(rt.sv(f, "metabolization_rate"), rt.fv(f, "metabolism_efficiency", live(M)))]);
+	this.current_cycle++;
+	yield* this.holder.remove_reagent(this.id, this.metabolization_rate / M.metabolism_efficiency);
 	return f.dot;
 }, true);
 
@@ -25,18 +24,16 @@ rt.type(3548, "/datum/reagent/medicine/leporazine", "/datum/reagent/medicine", {
 	color: "#C8A5DC",
 });
 
-// /datum/reagent/medicine/leporazine/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:24)  may sleep
-rt.def("/datum/reagent/medicine/leporazine/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	if (rt.gt(rt.fv(f, "bodytemperature", live(f.args[0])), 310)) {
-		rt.setFv(f, "bodytemperature", live(f.args[0]), (yield* g.call(f, P("/proc/max"), null, [310, subtract(rt.fv(f, "bodytemperature", live(f.args[0])), 60)])));
-	} else {
-		if (rt.lt(rt.fv(f, "bodytemperature", live(f.args[0])), 311)) {
-			rt.setFv(f, "bodytemperature", live(f.args[0]), (yield* g.call(f, P("/proc/min"), null, [310, add(rt.fv(f, "bodytemperature", live(f.args[0])), 60)])));
-		}
+// medicine_reagents.dm:24
+rt.def("/datum/reagent/medicine/leporazine/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	if (M.bodytemperature > 310) {
+		M.bodytemperature = max(310, M.bodytemperature - 60);
+	} else if (M.bodytemperature < 311) {
+		M.bodytemperature = min(310, M.bodytemperature + 60);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3549, "/datum/reagent/medicine/adminordrazine", "/datum/reagent/medicine", {
 	name: "Adminordrazine",
@@ -47,51 +44,45 @@ rt.type(3549, "/datum/reagent/medicine/adminordrazine", "/datum/reagent/medicine
 	taste_description: "badmins",
 });
 
-// /datum/reagent/medicine/adminordrazine/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:39)  may sleep
-rt.def("/datum/reagent/medicine/adminordrazine/proc/on_mob_life", function* on_mob_life(f: Frame) {
+// medicine_reagents.dm:39
+rt.def("/datum/reagent/medicine/adminordrazine/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
 	let D: Value = null;
-	let $e: any;
-	f.vars = () => [D, $e];
-	yield* g.callName(f, rt.fv(f, "reagents", live(f.args[0])), "remove_all_type", [T("/datum/reagent/toxin"), 5, 0, 1]);
-	yield* g.callName(f, live(f.args[0]), "setCloneLoss", [0, 0]);
-	yield* g.callName(f, live(f.args[0]), "setOxyLoss", [0, 0]);
-	rt.setFv(f, "radiation", live(f.args[0]), 0);
-	yield* g.callName(f, live(f.args[0]), "heal_bodypart_damage", [5, 5, 0]);
-	yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [-5, 0]);
-	rt.setFv(f, "hallucination", live(f.args[0]), 0);
-	yield* g.callName(f, live(f.args[0]), "setBrainLoss", [0]);
-	rt.setFv(f, "disabilities", live(f.args[0]), 0);
-	yield* g.callName(f, live(f.args[0]), "set_blurriness", [0]);
-	yield* g.callName(f, live(f.args[0]), "set_blindness", [0]);
-	yield* g.callName(f, live(f.args[0]), "SetKnockdown", [0, 0]);
-	yield* g.callName(f, live(f.args[0]), "SetStun", [0, 0]);
-	yield* g.callName(f, live(f.args[0]), "SetUnconscious", [0, 0]);
-	rt.setFv(f, "silent", live(f.args[0]), 0);
-	rt.setFv(f, "dizziness", live(f.args[0]), 0);
-	rt.setFv(f, "drowsyness", live(f.args[0]), 0);
-	rt.setFv(f, "stuttering", live(f.args[0]), 0);
-	rt.setFv(f, "slurring", live(f.args[0]), 0);
-	rt.setFv(f, "confused", live(f.args[0]), 0);
-	yield* g.callName(f, live(f.args[0]), "SetSleeping", [0, 0]);
-	rt.setFv(f, "jitteriness", live(f.args[0]), 0);
-	D = null;
-	rt.forList(f, 0, rt.fv(f, "viruses", live(f.args[0])), T("/datum/disease"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		D = $e;
-		if (isEqual(rt.fv(f, "severity", live(D)), "No threat")) {
+	yield* M.reagents.remove_all_type(T("/datum/reagent/toxin"), 5, 0, 1);
+	yield* M.setCloneLoss(0, 0);
+	yield* M.setOxyLoss(0, 0);
+	M.radiation = 0;
+	yield* M.heal_bodypart_damage(5, 5, 0);
+	yield* M.adjustToxLoss(-5, 0);
+	M.hallucination = 0;
+	M.setBrainLoss(0);
+	M.disabilities = 0;
+	yield* M.set_blurriness(0);
+	yield* M.set_blindness(0);
+	yield* M.SetKnockdown(0, 0);
+	yield* M.SetStun(0, 0);
+	yield* M.SetUnconscious(0, 0);
+	M.silent = 0;
+	M.dizziness = 0;
+	M.drowsyness = 0;
+	M.stuttering = 0;
+	M.slurring = 0;
+	M.confused = 0;
+	yield* M.SetSleeping(0, 0);
+	M.jitteriness = 0;
+	for (D of each(M.viruses, T("/datum/disease"))) {
+		if (D.severity == "No threat") {
 			continue;
 		}
-		rt.setFv(f, "spread_text", live(D), "Remissive");
-		rt.incField(f, live(D), "stage", -1, true);
-		if (rt.lt(rt.fv(f, "stage", live(D)), 1)) {
-			yield* g.callName(f, live(D), "cure", []);
+		D.spread_text = "Remissive";
+		D.stage--;
+		if (D.stage < 1) {
+			yield* D.cure();
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	f.dot = 1;
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3551, "/datum/reagent/medicine/synaptizine", "/datum/reagent/medicine", {
 	name: "Synaptizine",
@@ -100,23 +91,23 @@ rt.type(3551, "/datum/reagent/medicine/synaptizine", "/datum/reagent/medicine", 
 	color: "#FF00FF",
 });
 
-// /datum/reagent/medicine/synaptizine/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:84)  may sleep
-rt.def("/datum/reagent/medicine/synaptizine/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	rt.setFv(f, "drowsyness", live(f.args[0]), (yield* g.call(f, P("/proc/max"), null, [subtract(rt.fv(f, "drowsyness", live(f.args[0])), 5), 0])));
-	yield* g.callName(f, live(f.args[0]), "AdjustStun", [-20, 0]);
-	yield* g.callName(f, live(f.args[0]), "AdjustKnockdown", [-20, 0]);
-	yield* g.callName(f, live(f.args[0]), "AdjustUnconscious", [-20, 0]);
-	if (truthy((yield* g.callName(f, rt.sv(f, "holder"), "has_reagent", ["mindbreaker"])))) {
-		yield* g.callName(f, rt.sv(f, "holder"), "remove_reagent", ["mindbreaker", 5]);
+// medicine_reagents.dm:84
+rt.def("/datum/reagent/medicine/synaptizine/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	M.drowsyness = max(M.drowsyness - 5, 0);
+	yield* M.AdjustStun(-20, 0);
+	yield* M.AdjustKnockdown(-20, 0);
+	yield* M.AdjustUnconscious(-20, 0);
+	if (this.holder.has_reagent("mindbreaker")) {
+		yield* this.holder.remove_reagent("mindbreaker", 5);
 	}
-	rt.setFv(f, "hallucination", live(f.args[0]), (yield* g.call(f, P("/proc/max"), null, [0, subtract(rt.fv(f, "hallucination", live(f.args[0])), 10)])));
-	if (truthy(rt.op(f, "Prob", [], [30]))) {
-		yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [1, 0]);
+	M.hallucination = max(0, M.hallucination - 10);
+	if (prob(30)) {
+		yield* M.adjustToxLoss(1, 0);
 		f.dot = 1;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3553, "/datum/reagent/medicine/synaphydramine", "/datum/reagent/medicine", {
 	name: "Diphen-Synaptizine",
@@ -125,23 +116,23 @@ rt.type(3553, "/datum/reagent/medicine/synaphydramine", "/datum/reagent/medicine
 	color: "#EC536D",
 });
 
-// /datum/reagent/medicine/synaphydramine/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:103)  may sleep
-rt.def("/datum/reagent/medicine/synaphydramine/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	rt.setFv(f, "drowsyness", live(f.args[0]), (yield* g.call(f, P("/proc/max"), null, [subtract(rt.fv(f, "drowsyness", live(f.args[0])), 5), 0])));
-	if (truthy((yield* g.callName(f, rt.sv(f, "holder"), "has_reagent", ["mindbreaker"])))) {
-		yield* g.callName(f, rt.sv(f, "holder"), "remove_reagent", ["mindbreaker", 5]);
+// medicine_reagents.dm:103
+rt.def("/datum/reagent/medicine/synaphydramine/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	M.drowsyness = max(M.drowsyness - 5, 0);
+	if (this.holder.has_reagent("mindbreaker")) {
+		yield* this.holder.remove_reagent("mindbreaker", 5);
 	}
-	if (truthy((yield* g.callName(f, rt.sv(f, "holder"), "has_reagent", ["histamine"])))) {
-		yield* g.callName(f, rt.sv(f, "holder"), "remove_reagent", ["histamine", 5]);
+	if (this.holder.has_reagent("histamine")) {
+		yield* this.holder.remove_reagent("histamine", 5);
 	}
-	rt.setFv(f, "hallucination", live(f.args[0]), (yield* g.call(f, P("/proc/max"), null, [0, subtract(rt.fv(f, "hallucination", live(f.args[0])), 10)])));
-	if (truthy(rt.op(f, "Prob", [], [30]))) {
-		yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [1, 0]);
+	M.hallucination = max(0, M.hallucination - 10);
+	if (prob(30)) {
+		yield* M.adjustToxLoss(1, 0);
 		f.dot = 1;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3554, "/datum/reagent/medicine/inacusiate", "/datum/reagent/medicine", {
 	name: "Inacusiate",
@@ -150,12 +141,12 @@ rt.type(3554, "/datum/reagent/medicine/inacusiate", "/datum/reagent/medicine", {
 	color: "#6600FF",
 });
 
-// /datum/reagent/medicine/inacusiate/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:121)  may sleep
-rt.def("/datum/reagent/medicine/inacusiate/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	yield* g.callName(f, live(f.args[0]), "restoreEars", []);
-	yield* g.callSuper(f, [], rt.Args.Same);
+// medicine_reagents.dm:121
+rt.def("/datum/reagent/medicine/inacusiate/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	M.restoreEars();
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3555, "/datum/reagent/medicine/cryoxadone", "/datum/reagent/medicine", {
 	name: "Cryoxadone",
@@ -165,39 +156,36 @@ rt.type(3555, "/datum/reagent/medicine/cryoxadone", "/datum/reagent/medicine", {
 	taste_description: "sludge",
 });
 
-// /datum/reagent/medicine/cryoxadone/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:132)  may sleep
-rt.def("/datum/reagent/medicine/cryoxadone/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.fv(f, "bodytemperature", live(f.args[0]));
-	if (rt.inRange($0, 0, 100)) {
-		(rt.modField(f, live(f.args[0]), "status_flags", 16760831, rt.bitAnd));
-		yield* g.callName(f, live(f.args[0]), "adjustCloneLoss", [-1, 0]);
-		yield* g.callName(f, live(f.args[0]), "adjustOxyLoss", [-9, 0]);
-		yield* g.callName(f, live(f.args[0]), "adjustBruteLoss", [-5, 0]);
-		yield* g.callName(f, live(f.args[0]), "adjustFireLoss", [-5, 0]);
-		yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [-5, 0]);
+// medicine_reagents.dm:132
+rt.def("/datum/reagent/medicine/cryoxadone/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	if (rt.inRange(M.bodytemperature, 0, 100)) {
+		(rt.modField(f, M, "status_flags", 16760831, rt.bitAnd));
+		yield* M.adjustCloneLoss(-1, 0);
+		yield* M.adjustOxyLoss(-9, 0);
+		yield* M.adjustBruteLoss(-5, 0);
+		yield* M.adjustFireLoss(-5, 0);
+		yield* M.adjustToxLoss(-5, 0);
 		f.dot = 1;
-	} else if (rt.inRange($0, 100, 225)) {
-		(rt.modField(f, live(f.args[0]), "status_flags", 16760831, rt.bitAnd));
-		yield* g.callName(f, live(f.args[0]), "adjustCloneLoss", [-1, 0]);
-		yield* g.callName(f, live(f.args[0]), "adjustOxyLoss", [-7, 0]);
-		yield* g.callName(f, live(f.args[0]), "adjustBruteLoss", [-3, 0]);
-		yield* g.callName(f, live(f.args[0]), "adjustFireLoss", [-3, 0]);
-		yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [-3, 0]);
+	} else if (rt.inRange(M.bodytemperature, 100, 225)) {
+		(rt.modField(f, M, "status_flags", 16760831, rt.bitAnd));
+		yield* M.adjustCloneLoss(-1, 0);
+		yield* M.adjustOxyLoss(-7, 0);
+		yield* M.adjustBruteLoss(-3, 0);
+		yield* M.adjustFireLoss(-3, 0);
+		yield* M.adjustToxLoss(-3, 0);
 		f.dot = 1;
-	} else if (rt.inRange($0, 225, 273.1499938964844)) {
-		(rt.modField(f, live(f.args[0]), "status_flags", 16760831, rt.bitAnd));
-		yield* g.callName(f, live(f.args[0]), "adjustCloneLoss", [-1, 0]);
-		yield* g.callName(f, live(f.args[0]), "adjustOxyLoss", [-5, 0]);
-		yield* g.callName(f, live(f.args[0]), "adjustBruteLoss", [-1, 0]);
-		yield* g.callName(f, live(f.args[0]), "adjustFireLoss", [-1, 0]);
-		yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [-1, 0]);
+	} else if (rt.inRange(M.bodytemperature, 225, T0C)) {
+		(rt.modField(f, M, "status_flags", 16760831, rt.bitAnd));
+		yield* M.adjustCloneLoss(-1, 0);
+		yield* M.adjustOxyLoss(-5, 0);
+		yield* M.adjustBruteLoss(-1, 0);
+		yield* M.adjustFireLoss(-1, 0);
+		yield* M.adjustToxLoss(-1, 0);
 		f.dot = 1;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3556, "/datum/reagent/medicine/clonexadone", "/datum/reagent/medicine", {
 	name: "Clonexadone",
@@ -208,27 +196,24 @@ rt.type(3556, "/datum/reagent/medicine/clonexadone", "/datum/reagent/medicine", 
 	metabolization_rate: 0.6,
 });
 
-// /datum/reagent/medicine/clonexadone/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:168)  may sleep
-rt.def("/datum/reagent/medicine/clonexadone/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.fv(f, "bodytemperature", live(f.args[0]));
-	if (rt.inRange($0, 0, 100)) {
-		(rt.modField(f, live(f.args[0]), "status_flags", 16760831, rt.bitAnd));
-		yield* g.callName(f, live(f.args[0]), "adjustCloneLoss", [-7, 0]);
+// medicine_reagents.dm:168
+rt.def("/datum/reagent/medicine/clonexadone/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	if (rt.inRange(M.bodytemperature, 0, 100)) {
+		(rt.modField(f, M, "status_flags", 16760831, rt.bitAnd));
+		yield* M.adjustCloneLoss(-7, 0);
 		f.dot = 1;
-	} else if (rt.inRange($0, 100, 225)) {
-		(rt.modField(f, live(f.args[0]), "status_flags", 16760831, rt.bitAnd));
-		yield* g.callName(f, live(f.args[0]), "adjustCloneLoss", [-3, 0]);
+	} else if (rt.inRange(M.bodytemperature, 100, 225)) {
+		(rt.modField(f, M, "status_flags", 16760831, rt.bitAnd));
+		yield* M.adjustCloneLoss(-3, 0);
 		f.dot = 1;
-	} else if (rt.inRange($0, 225, 273.1499938964844)) {
-		(rt.modField(f, live(f.args[0]), "status_flags", 16760831, rt.bitAnd));
-		yield* g.callName(f, live(f.args[0]), "adjustCloneLoss", [-2, 0]);
+	} else if (rt.inRange(M.bodytemperature, 225, T0C)) {
+		(rt.modField(f, M, "status_flags", 16760831, rt.bitAnd));
+		yield* M.adjustCloneLoss(-2, 0);
 		f.dot = 1;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3557, "/datum/reagent/medicine/rezadone", "/datum/reagent/medicine", {
 	name: "Rezadone",
@@ -240,25 +225,25 @@ rt.type(3557, "/datum/reagent/medicine/rezadone", "/datum/reagent/medicine", {
 	taste_description: "fish",
 });
 
-// /datum/reagent/medicine/rezadone/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:193)  may sleep
-rt.def("/datum/reagent/medicine/rezadone/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	yield* g.callName(f, live(f.args[0]), "setCloneLoss", [0]);
-	yield* g.callName(f, live(f.args[0]), "heal_bodypart_damage", [1, 1, 0]);
-	(rt.modField(f, live(f.args[0]), "status_flags", 16760831, rt.bitAnd));
-	yield* g.callSuper(f, [], rt.Args.Same);
+// medicine_reagents.dm:193
+rt.def("/datum/reagent/medicine/rezadone/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	yield* M.setCloneLoss(0);
+	yield* M.heal_bodypart_damage(1, 1, 0);
+	(rt.modField(f, M, "status_flags", 16760831, rt.bitAnd));
+	yield* parent_proc();
 	f.dot = 1;
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /datum/reagent/medicine/rezadone/proc/overdose_process  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:200)  may sleep
-rt.def("/datum/reagent/medicine/rezadone/proc/overdose_process", function* overdose_process(f: Frame) {
-	yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [1, 0]);
-	yield* g.callName(f, live(f.args[0]), "Dizzy", [5]);
-	yield* g.callName(f, live(f.args[0]), "Jitter", [5]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+// medicine_reagents.dm:200
+rt.def("/datum/reagent/medicine/rezadone/proc/overdose_process", function* overdose_process(f: Frame, M: Value) {
+	yield* M.adjustToxLoss(1, 0);
+	M.Dizzy(5);
+	M.Jitter(5);
+	yield* parent_proc();
 	f.dot = 1;
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3559, "/datum/reagent/medicine/silver_sulfadiazine", "/datum/reagent/medicine", {
 	name: "Silver Sulfadiazine",
@@ -268,41 +253,39 @@ rt.type(3559, "/datum/reagent/medicine/silver_sulfadiazine", "/datum/reagent/med
 	color: "#C8A5DC",
 });
 
-// /datum/reagent/medicine/silver_sulfadiazine/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:222)  may sleep
+// medicine_reagents.dm:222
 rt.def("/datum/reagent/medicine/silver_sulfadiazine/proc/reaction_mob", function* reaction_mob(f: Frame) {
-	if (live(f.args[1]) === null) {
-		f.args[1] = 1;
+	if (f.args[1] === null) {
+		f.args[1] = TOUCH;
 	}
-	if (live(f.args[3]) === null) {
+	if (f.args[3] === null) {
 		f.args[3] = 1;
 	}
-	if ((truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon")) ? 1 : 0)) && !isEqual(rt.fv(f, "stat", live(f.args[0])), 2))) {
-		if (truthy((rt.isIn(f, live(f.args[1]), rt.list(2, 3, 5)) ? 1 : 0))) {
-			yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [multiply(0.5, live(f.args[2]))]);
-			if (truthy(live(f.args[3]))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='warning'>You don't feel so good...</span>"]);
+	if (rt.istype(f.args[0], T("/mob/living/carbon")) && f.args[0].stat != 2) {
+		if (rt.isIn(f, f.args[1], list(2, VAPOR, INJECT))) {
+			yield* f.args[0].adjustToxLoss(0.5 * f.args[2]);
+			if (f.args[3]) {
+				to_chat(f.args[0], "<span class='warning'>You don't feel so good...</span>");
 			}
-		} else {
-			if (truthy((yield* g.callName(f, live(f.args[0]), "getFireLoss", [])))) {
-				yield* g.callName(f, live(f.args[0]), "adjustFireLoss", [rt.neg(live(f.args[2]))]);
-				if (truthy(live(f.args[3]))) {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='danger'>You feel your burns healing! It stings like hell!</span>"]);
-				}
-				yield* g.callName(f, live(f.args[0]), "emote", ["scream"]);
+		} else if (f.args[0].getFireLoss()) {
+			yield* f.args[0].adjustFireLoss(-f.args[2]);
+			if (f.args[3]) {
+				to_chat(f.args[0], "<span class='danger'>You feel your burns healing! It stings like hell!</span>");
 			}
+			yield* f.args[0].emote("scream");
 		}
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true, { args: ["M", "method", "reac_volume", "show_message"] });
 
-// /datum/reagent/medicine/silver_sulfadiazine/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:235)  may sleep
-rt.def("/datum/reagent/medicine/silver_sulfadiazine/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	yield* g.callName(f, live(f.args[0]), "adjustFireLoss", [-2, 0]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+// medicine_reagents.dm:235
+rt.def("/datum/reagent/medicine/silver_sulfadiazine/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	yield* M.adjustFireLoss(-2, 0);
+	yield* parent_proc();
 	f.dot = 1;
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3560, "/datum/reagent/medicine/oxandrolone", "/datum/reagent/medicine", {
 	name: "Oxandrolone",
@@ -314,27 +297,27 @@ rt.type(3560, "/datum/reagent/medicine/oxandrolone", "/datum/reagent/medicine", 
 	overdose_threshold: 25,
 });
 
-// /datum/reagent/medicine/oxandrolone/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:249)  may sleep
-rt.def("/datum/reagent/medicine/oxandrolone/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	if (rt.gt((yield* g.callName(f, live(f.args[0]), "getFireLoss", [])), 50)) {
-		yield* g.callName(f, live(f.args[0]), "adjustFireLoss", [-4, 0]);
+// medicine_reagents.dm:249
+rt.def("/datum/reagent/medicine/oxandrolone/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	if (M.getFireLoss() > 50) {
+		yield* M.adjustFireLoss(-4, 0);
 	} else {
-		yield* g.callName(f, live(f.args[0]), "adjustFireLoss", [-0.5, 0]);
+		yield* M.adjustFireLoss(-0.5, 0);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	f.dot = 1;
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /datum/reagent/medicine/oxandrolone/proc/overdose_process  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:257)  may sleep
-rt.def("/datum/reagent/medicine/oxandrolone/proc/overdose_process", function* overdose_process(f: Frame) {
-	if (truthy((yield* g.callName(f, live(f.args[0]), "getFireLoss", [])))) {
-		yield* g.callName(f, live(f.args[0]), "adjustFireLoss", [4.5, 0]);
+// medicine_reagents.dm:257
+rt.def("/datum/reagent/medicine/oxandrolone/proc/overdose_process", function* overdose_process(f: Frame, M: Value) {
+	if (M.getFireLoss()) {
+		yield* M.adjustFireLoss(4.5, 0);
 		f.dot = 1;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3561, "/datum/reagent/medicine/styptic_powder", "/datum/reagent/medicine", {
 	name: "Styptic Powder",
@@ -344,41 +327,39 @@ rt.type(3561, "/datum/reagent/medicine/styptic_powder", "/datum/reagent/medicine
 	color: "#FF9696",
 });
 
-// /datum/reagent/medicine/styptic_powder/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:270)  may sleep
+// medicine_reagents.dm:270
 rt.def("/datum/reagent/medicine/styptic_powder/proc/reaction_mob", function* reaction_mob(f: Frame) {
-	if (live(f.args[1]) === null) {
-		f.args[1] = 1;
+	if (f.args[1] === null) {
+		f.args[1] = TOUCH;
 	}
-	if (live(f.args[3]) === null) {
+	if (f.args[3] === null) {
 		f.args[3] = 1;
 	}
-	if ((truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon")) ? 1 : 0)) && !isEqual(rt.fv(f, "stat", live(f.args[0])), 2))) {
-		if (truthy((rt.isIn(f, live(f.args[1]), rt.list(2, 3, 5)) ? 1 : 0))) {
-			yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [multiply(0.5, live(f.args[2]))]);
-			if (truthy(live(f.args[3]))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='warning'>You don't feel so good...</span>"]);
+	if (rt.istype(f.args[0], T("/mob/living/carbon")) && f.args[0].stat != 2) {
+		if (rt.isIn(f, f.args[1], list(2, VAPOR, INJECT))) {
+			yield* f.args[0].adjustToxLoss(0.5 * f.args[2]);
+			if (f.args[3]) {
+				to_chat(f.args[0], "<span class='warning'>You don't feel so good...</span>");
 			}
-		} else {
-			if (truthy((yield* g.callName(f, live(f.args[0]), "getBruteLoss", [])))) {
-				yield* g.callName(f, live(f.args[0]), "adjustBruteLoss", [rt.neg(live(f.args[2]))]);
-				if (truthy(live(f.args[3]))) {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='danger'>You feel your bruises healing! It stings like hell!</span>"]);
-				}
-				yield* g.callName(f, live(f.args[0]), "emote", ["scream"]);
+		} else if (f.args[0].getBruteLoss()) {
+			yield* f.args[0].adjustBruteLoss(-f.args[2]);
+			if (f.args[3]) {
+				to_chat(f.args[0], "<span class='danger'>You feel your bruises healing! It stings like hell!</span>");
 			}
+			yield* f.args[0].emote("scream");
 		}
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true, { args: ["M", "method", "reac_volume", "show_message"] });
 
-// /datum/reagent/medicine/styptic_powder/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:284)  may sleep
-rt.def("/datum/reagent/medicine/styptic_powder/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	yield* g.callName(f, live(f.args[0]), "adjustBruteLoss", [-2, 0]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+// medicine_reagents.dm:284
+rt.def("/datum/reagent/medicine/styptic_powder/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	yield* M.adjustBruteLoss(-2, 0);
+	yield* parent_proc();
 	f.dot = 1;
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3562, "/datum/reagent/medicine/salglu_solution", "/datum/reagent/medicine", {
 	last_added: 0,
@@ -393,49 +374,46 @@ rt.type(3562, "/datum/reagent/medicine/salglu_solution", "/datum/reagent/medicin
 	taste_description: "sweetness and salt",
 });
 
-// /datum/reagent/medicine/salglu_solution/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:302)  may sleep
-rt.def("/datum/reagent/medicine/salglu_solution/proc/on_mob_life", function* on_mob_life(f: Frame) {
+// medicine_reagents.dm:302
+rt.def("/datum/reagent/medicine/salglu_solution/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
 	let amount_to_add: Value = null, new_blood_level: Value = null;
-	f.vars = () => [amount_to_add, new_blood_level];
-	if (truthy(rt.sv(f, "last_added"))) {
-		(rt.modField(f, live(f.args[0]), "blood_volume", rt.sv(f, "last_added"), subtract));
-		rt.setSv(f, "last_added", 0);
+	if (this.last_added) {
+		M.blood_volume -= this.last_added;
+		this.last_added = 0;
 	}
-	if (rt.lt(rt.fv(f, "blood_volume", live(f.args[0])), rt.sv(f, "maximum_reachable"))) {
-		amount_to_add = (yield* g.call(f, P("/proc/min"), null, [rt.fv(f, "blood_volume", live(f.args[0])), multiply(rt.sv(f, "volume"), 5)]));
-		rt.setSv(f, "last_added", subtract((new_blood_level = (yield* g.call(f, P("/proc/min"), null, [add(rt.fv(f, "blood_volume", live(f.args[0])), live(amount_to_add)), rt.sv(f, "maximum_reachable")]))), rt.fv(f, "blood_volume", live(f.args[0]))));
-		rt.setFv(f, "blood_volume", live(f.args[0]), live(new_blood_level));
+	if (M.blood_volume < this.maximum_reachable) {
+		amount_to_add = min(M.blood_volume, this.volume * 5);
+		this.last_added = (new_blood_level = min(M.blood_volume + amount_to_add, this.maximum_reachable)) - M.blood_volume;
+		M.blood_volume = new_blood_level;
 	}
-	if (truthy(rt.op(f, "Prob", [], [33]))) {
-		yield* g.callName(f, live(f.args[0]), "adjustBruteLoss", [-0.5, 0]);
-		yield* g.callName(f, live(f.args[0]), "adjustFireLoss", [-0.5, 0]);
+	if (prob(33)) {
+		yield* M.adjustBruteLoss(-0.5, 0);
+		yield* M.adjustFireLoss(-0.5, 0);
 		f.dot = 1;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /datum/reagent/medicine/salglu_solution/proc/overdose_process  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:316)  may sleep
-rt.def("/datum/reagent/medicine/salglu_solution/proc/overdose_process", function* overdose_process(f: Frame) {
-	if (truthy(rt.op(f, "Prob", [], [3]))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class = 'warning'>You feel salty.</span>"]);
-		yield* g.callName(f, rt.sv(f, "holder"), "add_reagent", ["sodiumchloride", 1]);
-		yield* g.callName(f, rt.sv(f, "holder"), "remove_reagent", ["salglu_solution", 0.5]);
-	} else {
-		if (truthy(rt.op(f, "Prob", [], [3]))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class = 'warning'>You feel sweet.</span>"]);
-			yield* g.callName(f, rt.sv(f, "holder"), "add_reagent", ["sugar", 1]);
-			yield* g.callName(f, rt.sv(f, "holder"), "remove_reagent", ["salglu_solution", 0.5]);
-		}
+// medicine_reagents.dm:316
+rt.def("/datum/reagent/medicine/salglu_solution/proc/overdose_process", function* overdose_process(f: Frame, M: Value) {
+	if (prob(3)) {
+		to_chat(M, "<span class = 'warning'>You feel salty.</span>");
+		yield* this.holder.add_reagent("sodiumchloride", 1);
+		yield* this.holder.remove_reagent("salglu_solution", 0.5);
+	} else if (prob(3)) {
+		to_chat(M, "<span class = 'warning'>You feel sweet.</span>");
+		yield* this.holder.add_reagent("sugar", 1);
+		yield* this.holder.remove_reagent("salglu_solution", 0.5);
 	}
-	if (truthy(rt.op(f, "Prob", [], [33]))) {
-		yield* g.callName(f, live(f.args[0]), "adjustBruteLoss", [0.5, 0]);
-		yield* g.callName(f, live(f.args[0]), "adjustFireLoss", [0.5, 0]);
+	if (prob(33)) {
+		yield* M.adjustBruteLoss(0.5, 0);
+		yield* M.adjustFireLoss(0.5, 0);
 		f.dot = 1;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3563, "/datum/reagent/medicine/mine_salve", "/datum/reagent/medicine", {
 	name: "Miner's Salve",
@@ -446,65 +424,57 @@ rt.type(3563, "/datum/reagent/medicine/mine_salve", "/datum/reagent/medicine", {
 	metabolization_rate: 0.16000001,
 });
 
-// /datum/reagent/medicine/mine_salve/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:339)  may sleep
-rt.def("/datum/reagent/medicine/mine_salve/proc/on_mob_life", function* on_mob_life(f: Frame) {
+// medicine_reagents.dm:339
+rt.def("/datum/reagent/medicine/mine_salve/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
 	let N: Value = null;
-	f.vars = () => [N];
-	if (truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon")) ? 1 : 0))) {
-		rt.setFv(f, "hal_screwyhud", (N = live(f.args[0])), 3);
+	if (rt.istype(M, T("/mob/living/carbon"))) {
+		(N = M).hal_screwyhud = SCREWYHUD_HEALTHY;
 	}
-	yield* g.callName(f, live(f.args[0]), "adjustBruteLoss", [-0.25, 0]);
-	yield* g.callName(f, live(f.args[0]), "adjustFireLoss", [-0.25, 0]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* M.adjustBruteLoss(-0.25, 0);
+	yield* M.adjustFireLoss(-0.25, 0);
+	yield* parent_proc();
 	f.dot = 1;
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /datum/reagent/medicine/mine_salve/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:348)  may sleep
+// medicine_reagents.dm:348
 rt.def("/datum/reagent/medicine/mine_salve/proc/reaction_mob", function* reaction_mob(f: Frame) {
 	let C: Value = null, s: Value = null, S: Value = null;
-	let $e: any;
-	f.vars = () => [C, s, S, $e];
-	if (live(f.args[1]) === null) {
-		f.args[1] = 1;
+	if (f.args[1] === null) {
+		f.args[1] = TOUCH;
 	}
-	if (live(f.args[3]) === null) {
+	if (f.args[3] === null) {
 		f.args[3] = 1;
 	}
-	if ((truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon")) ? 1 : 0)) && !isEqual(rt.fv(f, "stat", live(f.args[0])), 2))) {
-		if (truthy((rt.isIn(f, live(f.args[1]), rt.list(2, 3, 5)) ? 1 : 0))) {
-			(rt.modField(f, live(f.args[0]), "nutrition", 5, subtract));
-			if (truthy(live(f.args[3]))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='warning'>Your stomach feels empty and cramps!</span>"]);
+	if (rt.istype(f.args[0], T("/mob/living/carbon")) && f.args[0].stat != 2) {
+		if (rt.isIn(f, f.args[1], list(2, VAPOR, INJECT))) {
+			f.args[0].nutrition -= 5;
+			if (f.args[3]) {
+				to_chat(f.args[0], "<span class='warning'>Your stomach feels empty and cramps!</span>");
 			}
 		} else {
-			C = live(f.args[0]);
-			s = null;
-			rt.forList(f, 0, rt.fv(f, "surgeries", live(C)));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				s = $e;
-				rt.setFv(f, "success_multiplier", (S = live(s)), (yield* g.call(f, P("/proc/max"), null, [0.10000000149011612, rt.fv(f, "success_multiplier", live(S))])));
+			C = f.args[0];
+			for (s of each(C.surgeries)) {
+				(S = s).success_multiplier = max(0.1, S.success_multiplier);
 			}
-			rt.endFor(f, 0);
-			if (truthy(live(f.args[3]))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='danger'>You feel your wounds fade away to nothing!</span>"]);
+			if (f.args[3]) {
+				to_chat(f.args[0], "<span class='danger'>You feel your wounds fade away to nothing!</span>");
 			}
 		}
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true, { args: ["M", "method", "reac_volume", "show_message"] });
 
-// /datum/reagent/medicine/mine_salve/proc/on_mob_delete  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:365)
-rt.def("/datum/reagent/medicine/mine_salve/proc/on_mob_delete", function on_mob_delete(f: Frame) {
+// medicine_reagents.dm:365
+rt.def("/datum/reagent/medicine/mine_salve/proc/on_mob_delete", function on_mob_delete(f: Frame, M: Value) {
 	let N: Value = null;
-	f.vars = () => [N];
-	if (truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon")) ? 1 : 0))) {
-		rt.setFv(f, "hal_screwyhud", (N = live(f.args[0])), 0);
+	if (rt.istype(M, T("/mob/living/carbon"))) {
+		(N = M).hal_screwyhud = SCREWYHUD_NONE;
 	}
-	rt.callSuper(f, [], rt.Args.Same);
+	parent_proc();
 	return f.dot;
-}, false, { args: ["M"] });
+}, false);
 
 rt.type(3564, "/datum/reagent/medicine/synthflesh", "/datum/reagent/medicine", {
 	name: "Synthflesh",
@@ -514,27 +484,27 @@ rt.type(3564, "/datum/reagent/medicine/synthflesh", "/datum/reagent/medicine", {
 	color: "#FFEBEB",
 });
 
-// /datum/reagent/medicine/synthflesh/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:378)  may sleep
+// medicine_reagents.dm:378
 rt.def("/datum/reagent/medicine/synthflesh/proc/reaction_mob", function* reaction_mob(f: Frame) {
-	if (live(f.args[1]) === null) {
-		f.args[1] = 1;
+	if (f.args[1] === null) {
+		f.args[1] = TOUCH;
 	}
-	if (live(f.args[3]) === null) {
+	if (f.args[3] === null) {
 		f.args[3] = 1;
 	}
-	if (truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon")) ? 1 : 0))) {
-		if (isEqual(rt.fv(f, "stat", live(f.args[0])), 2)) {
+	if (rt.istype(f.args[0], T("/mob/living/carbon"))) {
+		if (f.args[0].stat == 2) {
 			f.args[3] = 0;
 		}
-		if (truthy((rt.isIn(f, live(f.args[1]), rt.list(4, 1)) ? 1 : 0))) {
-			yield* g.callName(f, live(f.args[0]), "adjustBruteLoss", [multiply(-1.25, live(f.args[2]))]);
-			yield* g.callName(f, live(f.args[0]), "adjustFireLoss", [multiply(-1.25, live(f.args[2]))]);
-			if (truthy(live(f.args[3]))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='danger'>You feel your burns and bruises healing! It stings like hell!</span>"]);
+		if (rt.isIn(f, f.args[1], list(PATCH, TOUCH))) {
+			yield* f.args[0].adjustBruteLoss(-1.25 * f.args[2]);
+			yield* f.args[0].adjustFireLoss(-1.25 * f.args[2]);
+			if (f.args[3]) {
+				to_chat(f.args[0], "<span class='danger'>You feel your burns and bruises healing! It stings like hell!</span>");
 			}
 		}
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true, { args: ["M", "method", "reac_volume", "show_message"] });
 
@@ -548,25 +518,19 @@ rt.type(3565, "/datum/reagent/medicine/charcoal", "/datum/reagent/medicine", {
 	taste_description: "ash",
 });
 
-// /datum/reagent/medicine/charcoal/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:398)  may sleep
-rt.def("/datum/reagent/medicine/charcoal/proc/on_mob_life", function* on_mob_life(f: Frame) {
+// medicine_reagents.dm:398
+rt.def("/datum/reagent/medicine/charcoal/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
 	let R: Value = null;
-	let $e: any;
-	f.vars = () => [R, $e];
-	yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [-2, 0]);
+	yield* M.adjustToxLoss(-2, 0);
 	f.dot = 1;
-	R = null;
-	rt.forList(f, 0, rt.gv(f, "reagent_list", rt.fv(f, "reagents", live(f.args[0]))), T("/datum/reagent"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		R = $e;
-		if (!isEqual(live(R), live(f.src))) {
-			yield* g.callName(f, rt.fv(f, "reagents", live(f.args[0])), "remove_reagent", [rt.fv(f, "id", live(R)), 1]);
+	for (R of each(M.reagents.reagent_list, T("/datum/reagent"))) {
+		if (R != this) {
+			yield* M.reagents.remove_reagent(R.id, 1);
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3566, "/datum/reagent/medicine/omnizine", "/datum/reagent/medicine", {
 	name: "Omnizine",
@@ -578,27 +542,27 @@ rt.type(3566, "/datum/reagent/medicine/omnizine", "/datum/reagent/medicine", {
 	overdose_threshold: 30,
 });
 
-// /datum/reagent/medicine/omnizine/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:415)  may sleep
-rt.def("/datum/reagent/medicine/omnizine/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [-0.5, 0]);
-	yield* g.callName(f, live(f.args[0]), "adjustOxyLoss", [-0.5, 0]);
-	yield* g.callName(f, live(f.args[0]), "adjustBruteLoss", [-0.5, 0]);
-	yield* g.callName(f, live(f.args[0]), "adjustFireLoss", [-0.5, 0]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+// medicine_reagents.dm:415
+rt.def("/datum/reagent/medicine/omnizine/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	yield* M.adjustToxLoss(-0.5, 0);
+	yield* M.adjustOxyLoss(-0.5, 0);
+	yield* M.adjustBruteLoss(-0.5, 0);
+	yield* M.adjustFireLoss(-0.5, 0);
+	yield* parent_proc();
 	f.dot = 1;
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /datum/reagent/medicine/omnizine/proc/overdose_process  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:423)  may sleep
-rt.def("/datum/reagent/medicine/omnizine/proc/overdose_process", function* overdose_process(f: Frame) {
-	yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [1.5, 0]);
-	yield* g.callName(f, live(f.args[0]), "adjustOxyLoss", [1.5, 0]);
-	yield* g.callName(f, live(f.args[0]), "adjustBruteLoss", [1.5, 0]);
-	yield* g.callName(f, live(f.args[0]), "adjustFireLoss", [1.5, 0]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+// medicine_reagents.dm:423
+rt.def("/datum/reagent/medicine/omnizine/proc/overdose_process", function* overdose_process(f: Frame, M: Value) {
+	yield* M.adjustToxLoss(1.5, 0);
+	yield* M.adjustOxyLoss(1.5, 0);
+	yield* M.adjustBruteLoss(1.5, 0);
+	yield* M.adjustFireLoss(1.5, 0);
+	yield* parent_proc();
 	f.dot = 1;
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3568, "/datum/reagent/medicine/calomel", "/datum/reagent/medicine", {
 	name: "Calomel",
@@ -610,27 +574,21 @@ rt.type(3568, "/datum/reagent/medicine/calomel", "/datum/reagent/medicine", {
 	taste_description: "acid",
 });
 
-// /datum/reagent/medicine/calomel/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:440)  may sleep
-rt.def("/datum/reagent/medicine/calomel/proc/on_mob_life", function* on_mob_life(f: Frame) {
+// medicine_reagents.dm:440
+rt.def("/datum/reagent/medicine/calomel/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
 	let R: Value = null;
-	let $e: any;
-	f.vars = () => [R, $e];
-	R = null;
-	rt.forList(f, 0, rt.gv(f, "reagent_list", rt.fv(f, "reagents", live(f.args[0]))), T("/datum/reagent"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		R = $e;
-		if (!isEqual(live(R), live(f.src))) {
-			yield* g.callName(f, rt.fv(f, "reagents", live(f.args[0])), "remove_reagent", [rt.fv(f, "id", live(R)), 2.5]);
+	for (R of each(M.reagents.reagent_list, T("/datum/reagent"))) {
+		if (R != this) {
+			yield* M.reagents.remove_reagent(R.id, 2.5);
 		}
 	}
-	rt.endFor(f, 0);
-	if (rt.gt(rt.fv(f, "health", live(f.args[0])), 20)) {
-		yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [2.5, 0]);
+	if (M.health > 20) {
+		yield* M.adjustToxLoss(2.5, 0);
 		f.dot = 1;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3569, "/datum/reagent/medicine/potass_iodide", "/datum/reagent/medicine", {
 	name: "Potassium Iodide",
@@ -641,14 +599,14 @@ rt.type(3569, "/datum/reagent/medicine/potass_iodide", "/datum/reagent/medicine"
 	metabolization_rate: 0.8,
 });
 
-// /datum/reagent/medicine/potass_iodide/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:457)  may sleep
-rt.def("/datum/reagent/medicine/potass_iodide/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	if (rt.gt(rt.fv(f, "radiation", live(f.args[0])), 0)) {
-		rt.incField(f, live(f.args[0]), "radiation", -1, true);
+// medicine_reagents.dm:457
+rt.def("/datum/reagent/medicine/potass_iodide/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	if (M.radiation > 0) {
+		M.radiation--;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3570, "/datum/reagent/medicine/pen_acid", "/datum/reagent/medicine", {
 	name: "Pentetic Acid",
@@ -659,31 +617,25 @@ rt.type(3570, "/datum/reagent/medicine/pen_acid", "/datum/reagent/medicine", {
 	metabolization_rate: 0.2,
 });
 
-// /datum/reagent/medicine/pen_acid/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:470)  may sleep
-rt.def("/datum/reagent/medicine/pen_acid/proc/on_mob_life", function* on_mob_life(f: Frame) {
+// medicine_reagents.dm:470
+rt.def("/datum/reagent/medicine/pen_acid/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
 	let R: Value = null;
-	let $e: any;
-	f.vars = () => [R, $e];
-	if (rt.gt(rt.fv(f, "radiation", live(f.args[0])), 0)) {
-		(rt.modField(f, live(f.args[0]), "radiation", 4, subtract));
+	if (M.radiation > 0) {
+		M.radiation -= 4;
 	}
-	yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [-2, 0]);
-	if (rt.lt(rt.fv(f, "radiation", live(f.args[0])), 0)) {
-		rt.setFv(f, "radiation", live(f.args[0]), 0);
+	yield* M.adjustToxLoss(-2, 0);
+	if (M.radiation < 0) {
+		M.radiation = 0;
 	}
-	R = null;
-	rt.forList(f, 0, rt.gv(f, "reagent_list", rt.fv(f, "reagents", live(f.args[0]))), T("/datum/reagent"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		R = $e;
-		if (!isEqual(live(R), live(f.src))) {
-			yield* g.callName(f, rt.fv(f, "reagents", live(f.args[0])), "remove_reagent", [rt.fv(f, "id", live(R)), 2]);
+	for (R of each(M.reagents.reagent_list, T("/datum/reagent"))) {
+		if (R != this) {
+			yield* M.reagents.remove_reagent(R.id, 2);
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	f.dot = 1;
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3571, "/datum/reagent/medicine/sal_acid", "/datum/reagent/medicine", {
 	name: "Salicyclic Acid",
@@ -695,27 +647,27 @@ rt.type(3571, "/datum/reagent/medicine/sal_acid", "/datum/reagent/medicine", {
 	overdose_threshold: 25,
 });
 
-// /datum/reagent/medicine/sal_acid/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:492)  may sleep
-rt.def("/datum/reagent/medicine/sal_acid/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	if (rt.gt((yield* g.callName(f, live(f.args[0]), "getBruteLoss", [])), 50)) {
-		yield* g.callName(f, live(f.args[0]), "adjustBruteLoss", [-4, 0]);
+// medicine_reagents.dm:492
+rt.def("/datum/reagent/medicine/sal_acid/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	if (M.getBruteLoss() > 50) {
+		yield* M.adjustBruteLoss(-4, 0);
 	} else {
-		yield* g.callName(f, live(f.args[0]), "adjustBruteLoss", [-0.5, 0]);
+		yield* M.adjustBruteLoss(-0.5, 0);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	f.dot = 1;
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /datum/reagent/medicine/sal_acid/proc/overdose_process  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:500)  may sleep
-rt.def("/datum/reagent/medicine/sal_acid/proc/overdose_process", function* overdose_process(f: Frame) {
-	if (truthy((yield* g.callName(f, live(f.args[0]), "getBruteLoss", [])))) {
-		yield* g.callName(f, live(f.args[0]), "adjustBruteLoss", [4.5, 0]);
+// medicine_reagents.dm:500
+rt.def("/datum/reagent/medicine/sal_acid/proc/overdose_process", function* overdose_process(f: Frame, M: Value) {
+	if (M.getBruteLoss()) {
+		yield* M.adjustBruteLoss(4.5, 0);
 		f.dot = 1;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3572, "/datum/reagent/medicine/salbutamol", "/datum/reagent/medicine", {
 	name: "Salbutamol",
@@ -726,16 +678,16 @@ rt.type(3572, "/datum/reagent/medicine/salbutamol", "/datum/reagent/medicine", {
 	metabolization_rate: 0.1,
 });
 
-// /datum/reagent/medicine/salbutamol/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:514)  may sleep
-rt.def("/datum/reagent/medicine/salbutamol/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	yield* g.callName(f, live(f.args[0]), "adjustOxyLoss", [-3, 0]);
-	if (rt.ge(rt.fv(f, "losebreath", live(f.args[0])), 4)) {
-		(rt.modField(f, live(f.args[0]), "losebreath", 2, subtract));
+// medicine_reagents.dm:514
+rt.def("/datum/reagent/medicine/salbutamol/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	yield* M.adjustOxyLoss(-3, 0);
+	if (M.losebreath >= 4) {
+		M.losebreath -= 2;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	f.dot = 1;
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3573, "/datum/reagent/medicine/perfluorodecalin", "/datum/reagent/medicine", {
 	name: "Perfluorodecalin",
@@ -746,18 +698,18 @@ rt.type(3573, "/datum/reagent/medicine/perfluorodecalin", "/datum/reagent/medici
 	metabolization_rate: 0.1,
 });
 
-// /datum/reagent/medicine/perfluorodecalin/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:529)  may sleep
-rt.def("/datum/reagent/medicine/perfluorodecalin/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	yield* g.callName(f, live(f.args[0]), "adjustOxyLoss", [-12, 0]);
-	rt.setFv(f, "silent", live(f.args[0]), (yield* g.call(f, P("/proc/max"), null, [rt.fv(f, "silent", live(f.args[0])), 5])));
-	if (truthy(rt.op(f, "Prob", [], [33]))) {
-		yield* g.callName(f, live(f.args[0]), "adjustBruteLoss", [-0.5, 0]);
-		yield* g.callName(f, live(f.args[0]), "adjustFireLoss", [-0.5, 0]);
+// medicine_reagents.dm:529
+rt.def("/datum/reagent/medicine/perfluorodecalin/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	yield* M.adjustOxyLoss(-12, 0);
+	M.silent = max(M.silent, 5);
+	if (prob(33)) {
+		yield* M.adjustBruteLoss(-0.5, 0);
+		yield* M.adjustFireLoss(-0.5, 0);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	f.dot = 1;
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3574, "/datum/reagent/medicine/ephedrine", "/datum/reagent/medicine", {
 	name: "Ephedrine",
@@ -770,72 +722,72 @@ rt.type(3574, "/datum/reagent/medicine/ephedrine", "/datum/reagent/medicine", {
 	addiction_threshold: 30,
 });
 
-// /datum/reagent/medicine/ephedrine/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:548)  may sleep
-rt.def("/datum/reagent/medicine/ephedrine/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	(rt.modField(f, live(f.args[0]), "status_flags", 32, rt.bitOr));
-	yield* g.callName(f, live(f.args[0]), "AdjustStun", [-20, 0]);
-	yield* g.callName(f, live(f.args[0]), "AdjustKnockdown", [-20, 0]);
-	yield* g.callName(f, live(f.args[0]), "AdjustUnconscious", [-20, 0]);
-	yield* g.callName(f, live(f.args[0]), "adjustStaminaLoss", [-1, 0]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+// medicine_reagents.dm:548
+rt.def("/datum/reagent/medicine/ephedrine/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	(rt.modField(f, M, "status_flags", 32, rt.bitOr));
+	yield* M.AdjustStun(-20, 0);
+	yield* M.AdjustKnockdown(-20, 0);
+	yield* M.AdjustUnconscious(-20, 0);
+	yield* M.adjustStaminaLoss(-1, 0);
+	yield* parent_proc();
 	f.dot = 1;
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /datum/reagent/medicine/ephedrine/proc/overdose_process  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:557)  may sleep
-rt.def("/datum/reagent/medicine/ephedrine/proc/overdose_process", function* overdose_process(f: Frame) {
-	if (truthy(rt.op(f, "Prob", [], [33]))) {
-		yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [0.5, 0]);
-		rt.incField(f, live(f.args[0]), "losebreath", 1, true);
+// medicine_reagents.dm:557
+rt.def("/datum/reagent/medicine/ephedrine/proc/overdose_process", function* overdose_process(f: Frame, M: Value) {
+	if (prob(33)) {
+		yield* M.adjustToxLoss(0.5, 0);
+		M.losebreath++;
 		f.dot = 1;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /datum/reagent/medicine/ephedrine/proc/addiction_act_stage1  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:564)  may sleep
-rt.def("/datum/reagent/medicine/ephedrine/proc/addiction_act_stage1", function* addiction_act_stage1(f: Frame) {
-	if (truthy(rt.op(f, "Prob", [], [33]))) {
-		yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [2, 0]);
-		rt.modField(f, live(f.args[0]), "losebreath", 2, add);
+// medicine_reagents.dm:564
+rt.def("/datum/reagent/medicine/ephedrine/proc/addiction_act_stage1", function* addiction_act_stage1(f: Frame, M: Value) {
+	if (prob(33)) {
+		yield* M.adjustToxLoss(2, 0);
+		M.losebreath += 2;
 		f.dot = 1;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /datum/reagent/medicine/ephedrine/proc/addiction_act_stage2  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:571)  may sleep
-rt.def("/datum/reagent/medicine/ephedrine/proc/addiction_act_stage2", function* addiction_act_stage2(f: Frame) {
-	if (truthy(rt.op(f, "Prob", [], [33]))) {
-		yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [3, 0]);
-		rt.modField(f, live(f.args[0]), "losebreath", 3, add);
+// medicine_reagents.dm:571
+rt.def("/datum/reagent/medicine/ephedrine/proc/addiction_act_stage2", function* addiction_act_stage2(f: Frame, M: Value) {
+	if (prob(33)) {
+		yield* M.adjustToxLoss(3, 0);
+		M.losebreath += 3;
 		f.dot = 1;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /datum/reagent/medicine/ephedrine/proc/addiction_act_stage3  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:578)  may sleep
-rt.def("/datum/reagent/medicine/ephedrine/proc/addiction_act_stage3", function* addiction_act_stage3(f: Frame) {
-	if (truthy(rt.op(f, "Prob", [], [33]))) {
-		yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [4, 0]);
-		rt.modField(f, live(f.args[0]), "losebreath", 4, add);
+// medicine_reagents.dm:578
+rt.def("/datum/reagent/medicine/ephedrine/proc/addiction_act_stage3", function* addiction_act_stage3(f: Frame, M: Value) {
+	if (prob(33)) {
+		yield* M.adjustToxLoss(4, 0);
+		M.losebreath += 4;
 		f.dot = 1;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /datum/reagent/medicine/ephedrine/proc/addiction_act_stage4  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:585)  may sleep
-rt.def("/datum/reagent/medicine/ephedrine/proc/addiction_act_stage4", function* addiction_act_stage4(f: Frame) {
-	if (truthy(rt.op(f, "Prob", [], [33]))) {
-		yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [5, 0]);
-		rt.modField(f, live(f.args[0]), "losebreath", 5, add);
+// medicine_reagents.dm:585
+rt.def("/datum/reagent/medicine/ephedrine/proc/addiction_act_stage4", function* addiction_act_stage4(f: Frame, M: Value) {
+	if (prob(33)) {
+		yield* M.adjustToxLoss(5, 0);
+		M.losebreath += 5;
 		f.dot = 1;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3575, "/datum/reagent/medicine/diphenhydramine", "/datum/reagent/medicine", {
 	name: "Diphenhydramine",
@@ -846,16 +798,16 @@ rt.type(3575, "/datum/reagent/medicine/diphenhydramine", "/datum/reagent/medicin
 	metabolization_rate: 0.2,
 });
 
-// /datum/reagent/medicine/diphenhydramine/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:600)  may sleep
-rt.def("/datum/reagent/medicine/diphenhydramine/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	if (truthy(rt.op(f, "Prob", [], [10]))) {
-		rt.modField(f, live(f.args[0]), "drowsyness", 1, add);
+// medicine_reagents.dm:600
+rt.def("/datum/reagent/medicine/diphenhydramine/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	if (prob(10)) {
+		M.drowsyness += 1;
 	}
-	(rt.modField(f, live(f.args[0]), "jitteriness", 1, subtract));
-	yield* g.callName(f, rt.fv(f, "reagents", live(f.args[0])), "remove_reagent", ["histamine", 3]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	M.jitteriness -= 1;
+	yield* M.reagents.remove_reagent("histamine", 3);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3576, "/datum/reagent/medicine/morphine", "/datum/reagent/medicine", {
 	name: "Morphine",
@@ -868,104 +820,96 @@ rt.type(3576, "/datum/reagent/medicine/morphine", "/datum/reagent/medicine", {
 	addiction_threshold: 25,
 });
 
-// /datum/reagent/medicine/morphine/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:617)  may sleep
-rt.def("/datum/reagent/medicine/morphine/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	(rt.modField(f, live(f.args[0]), "status_flags", 16, rt.bitOr));
-	$0 = rt.sv(f, "current_cycle");
-	if ($0 === 11) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='warning'>You start to feel tired...</span>"]);
-	} else if (rt.inRange($0, 12, 24)) {
-		rt.modField(f, live(f.args[0]), "drowsyness", 1, add);
-	} else if (rt.inRange($0, 24, 9.999999848243207e+30)) {
-		yield* g.callName(f, live(f.args[0]), "Sleeping", [40, 0]);
+// medicine_reagents.dm:617
+rt.def("/datum/reagent/medicine/morphine/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	(rt.modField(f, M, "status_flags", 16, rt.bitOr));
+	if (this.current_cycle === 11) {
+		to_chat(M, "<span class='warning'>You start to feel tired...</span>");
+	} else if (rt.inRange(this.current_cycle, 12, 24)) {
+		M.drowsyness += 1;
+	} else if (rt.inRange(this.current_cycle, 24, 1e+31)) {
+		yield* M.Sleeping(40, 0);
 		f.dot = 1;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /datum/reagent/medicine/morphine/proc/overdose_process  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:629)  may sleep
-rt.def("/datum/reagent/medicine/morphine/proc/overdose_process", function* overdose_process(f: Frame) {
+// medicine_reagents.dm:629
+rt.def("/datum/reagent/medicine/morphine/proc/overdose_process", function* overdose_process(f: Frame, M: Value) {
 	let I: Value = null;
-	f.vars = () => [I];
-	if (truthy(rt.op(f, "Prob", [], [33]))) {
-		if (truthy((I = (yield* g.callName(f, live(f.args[0]), "get_active_held_item", []))))) {
-			yield* g.callName(f, live(f.args[0]), "drop_item", []);
+	if (prob(33)) {
+		if (I = M.get_active_held_item()) {
+			yield* M.drop_item();
 		}
-		yield* g.callName(f, live(f.args[0]), "Dizzy", [2]);
-		yield* g.callName(f, live(f.args[0]), "Jitter", [2]);
+		M.Dizzy(2);
+		M.Jitter(2);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /datum/reagent/medicine/morphine/proc/addiction_act_stage1  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:638)  may sleep
-rt.def("/datum/reagent/medicine/morphine/proc/addiction_act_stage1", function* addiction_act_stage1(f: Frame) {
+// medicine_reagents.dm:638
+rt.def("/datum/reagent/medicine/morphine/proc/addiction_act_stage1", function* addiction_act_stage1(f: Frame, M: Value) {
 	let I: Value = null;
-	f.vars = () => [I];
-	if (truthy(rt.op(f, "Prob", [], [33]))) {
-		if (truthy((I = (yield* g.callName(f, live(f.args[0]), "get_active_held_item", []))))) {
-			yield* g.callName(f, live(f.args[0]), "drop_item", []);
+	if (prob(33)) {
+		if (I = M.get_active_held_item()) {
+			yield* M.drop_item();
 		}
-		yield* g.callName(f, live(f.args[0]), "Dizzy", [2]);
-		yield* g.callName(f, live(f.args[0]), "Jitter", [2]);
+		M.Dizzy(2);
+		M.Jitter(2);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /datum/reagent/medicine/morphine/proc/addiction_act_stage2  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:647)  may sleep
-rt.def("/datum/reagent/medicine/morphine/proc/addiction_act_stage2", function* addiction_act_stage2(f: Frame) {
+// medicine_reagents.dm:647
+rt.def("/datum/reagent/medicine/morphine/proc/addiction_act_stage2", function* addiction_act_stage2(f: Frame, M: Value) {
 	let I: Value = null;
-	f.vars = () => [I];
-	if (truthy(rt.op(f, "Prob", [], [33]))) {
-		if (truthy((I = (yield* g.callName(f, live(f.args[0]), "get_active_held_item", []))))) {
-			yield* g.callName(f, live(f.args[0]), "drop_item", []);
+	if (prob(33)) {
+		if (I = M.get_active_held_item()) {
+			yield* M.drop_item();
 		}
-		yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [1, 0]);
+		yield* M.adjustToxLoss(1, 0);
 		f.dot = 1;
-		yield* g.callName(f, live(f.args[0]), "Dizzy", [3]);
-		yield* g.callName(f, live(f.args[0]), "Jitter", [3]);
+		M.Dizzy(3);
+		M.Jitter(3);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /datum/reagent/medicine/morphine/proc/addiction_act_stage3  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:658)  may sleep
-rt.def("/datum/reagent/medicine/morphine/proc/addiction_act_stage3", function* addiction_act_stage3(f: Frame) {
+// medicine_reagents.dm:658
+rt.def("/datum/reagent/medicine/morphine/proc/addiction_act_stage3", function* addiction_act_stage3(f: Frame, M: Value) {
 	let I: Value = null;
-	f.vars = () => [I];
-	if (truthy(rt.op(f, "Prob", [], [33]))) {
-		if (truthy((I = (yield* g.callName(f, live(f.args[0]), "get_active_held_item", []))))) {
-			yield* g.callName(f, live(f.args[0]), "drop_item", []);
+	if (prob(33)) {
+		if (I = M.get_active_held_item()) {
+			yield* M.drop_item();
 		}
-		yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [2, 0]);
+		yield* M.adjustToxLoss(2, 0);
 		f.dot = 1;
-		yield* g.callName(f, live(f.args[0]), "Dizzy", [4]);
-		yield* g.callName(f, live(f.args[0]), "Jitter", [4]);
+		M.Dizzy(4);
+		M.Jitter(4);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /datum/reagent/medicine/morphine/proc/addiction_act_stage4  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:669)  may sleep
-rt.def("/datum/reagent/medicine/morphine/proc/addiction_act_stage4", function* addiction_act_stage4(f: Frame) {
+// medicine_reagents.dm:669
+rt.def("/datum/reagent/medicine/morphine/proc/addiction_act_stage4", function* addiction_act_stage4(f: Frame, M: Value) {
 	let I: Value = null;
-	f.vars = () => [I];
-	if (truthy(rt.op(f, "Prob", [], [33]))) {
-		if (truthy((I = (yield* g.callName(f, live(f.args[0]), "get_active_held_item", []))))) {
-			yield* g.callName(f, live(f.args[0]), "drop_item", []);
+	if (prob(33)) {
+		if (I = M.get_active_held_item()) {
+			yield* M.drop_item();
 		}
-		yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [3, 0]);
+		yield* M.adjustToxLoss(3, 0);
 		f.dot = 1;
-		yield* g.callName(f, live(f.args[0]), "Dizzy", [5]);
-		yield* g.callName(f, live(f.args[0]), "Jitter", [5]);
+		M.Dizzy(5);
+		M.Jitter(5);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3577, "/datum/reagent/medicine/oculine", "/datum/reagent/medicine", {
 	name: "Oculine",
@@ -977,39 +921,32 @@ rt.type(3577, "/datum/reagent/medicine/oculine", "/datum/reagent/medicine", {
 	taste_description: "dull toxin",
 });
 
-// /datum/reagent/medicine/oculine/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:689)  may sleep
-rt.def("/datum/reagent/medicine/oculine/proc/on_mob_life", function* on_mob_life(f: Frame) {
+// medicine_reagents.dm:689
+rt.def("/datum/reagent/medicine/oculine/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
 	let eyes: Value = null;
-	f.vars = () => [eyes];
-	if (!truthy((eyes = (yield* g.callName(f, live(f.args[0]), "getorganslot", ["eyes_sight"]))))) {
-		return live(f.dot);
+	if (!(eyes = M.getorganslot("eyes_sight"))) {
+		return f.dot;
 	}
-	if (truthy(rt.bitAnd(rt.fv(f, "disabilities", live(f.args[0])), 1))) {
-		if (truthy(rt.op(f, "Prob", [], [20]))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='warning'>Your vision slowly returns...</span>"]);
-			yield* g.callName(f, live(f.args[0]), "cure_blind", []);
-			yield* g.callName(f, live(f.args[0]), "cure_nearsighted", []);
-			yield* g.callName(f, live(f.args[0]), "blur_eyes", [35]);
+	if (rt.bitAnd(M.disabilities, 1)) {
+		if (prob(20)) {
+			to_chat(M, "<span class='warning'>Your vision slowly returns...</span>");
+			yield* M.cure_blind();
+			yield* M.cure_nearsighted();
+			yield* M.blur_eyes(35);
 		}
-	} else {
-		if (truthy(rt.bitAnd(rt.fv(f, "disabilities", live(f.args[0])), 8))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='warning'>The blackness in your peripheral vision fades.</span>"]);
-			yield* g.callName(f, live(f.args[0]), "cure_nearsighted", []);
-			yield* g.callName(f, live(f.args[0]), "blur_eyes", [10]);
-		} else {
-			if ((truthy(rt.fv(f, "eye_blind", live(f.args[0]))) || truthy(rt.fv(f, "eye_blurry", live(f.args[0]))))) {
-				yield* g.callName(f, live(f.args[0]), "set_blindness", [0]);
-				yield* g.callName(f, live(f.args[0]), "set_blurriness", [0]);
-			} else {
-				if (rt.gt(rt.fv(f, "eye_damage", live(eyes)), 0)) {
-					yield* g.callName(f, live(f.args[0]), "adjust_eye_damage", [-1]);
-				}
-			}
-		}
+	} else if (rt.bitAnd(M.disabilities, 8)) {
+		to_chat(M, "<span class='warning'>The blackness in your peripheral vision fades.</span>");
+		yield* M.cure_nearsighted();
+		yield* M.blur_eyes(10);
+	} else if (M.eye_blind || M.eye_blurry) {
+		yield* M.set_blindness(0);
+		yield* M.set_blurriness(0);
+	} else if (eyes.eye_damage > 0) {
+		yield* M.adjust_eye_damage(-1);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3578, "/datum/reagent/medicine/atropine", "/datum/reagent/medicine", {
 	name: "Atropine",
@@ -1021,33 +958,33 @@ rt.type(3578, "/datum/reagent/medicine/atropine", "/datum/reagent/medicine", {
 	overdose_threshold: 35,
 });
 
-// /datum/reagent/medicine/atropine/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:720)  may sleep
-rt.def("/datum/reagent/medicine/atropine/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	if (rt.lt(rt.fv(f, "health", live(f.args[0])), 0)) {
-		yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [-2, 0]);
-		yield* g.callName(f, live(f.args[0]), "adjustBruteLoss", [-2, 0]);
-		yield* g.callName(f, live(f.args[0]), "adjustFireLoss", [-2, 0]);
-		yield* g.callName(f, live(f.args[0]), "adjustOxyLoss", [-5, 0]);
+// medicine_reagents.dm:720
+rt.def("/datum/reagent/medicine/atropine/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	if (M.health < 0) {
+		yield* M.adjustToxLoss(-2, 0);
+		yield* M.adjustBruteLoss(-2, 0);
+		yield* M.adjustFireLoss(-2, 0);
+		yield* M.adjustOxyLoss(-5, 0);
 		f.dot = 1;
 	}
-	rt.setFv(f, "losebreath", live(f.args[0]), 0);
-	if (truthy(rt.op(f, "Prob", [], [20]))) {
-		yield* g.callName(f, live(f.args[0]), "Dizzy", [5]);
-		yield* g.callName(f, live(f.args[0]), "Jitter", [5]);
+	M.losebreath = 0;
+	if (prob(20)) {
+		M.Dizzy(5);
+		M.Jitter(5);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /datum/reagent/medicine/atropine/proc/overdose_process  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:733)  may sleep
-rt.def("/datum/reagent/medicine/atropine/proc/overdose_process", function* overdose_process(f: Frame) {
-	yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [0.5, 0]);
+// medicine_reagents.dm:733
+rt.def("/datum/reagent/medicine/atropine/proc/overdose_process", function* overdose_process(f: Frame, M: Value) {
+	yield* M.adjustToxLoss(0.5, 0);
 	f.dot = 1;
-	yield* g.callName(f, live(f.args[0]), "Dizzy", [1]);
-	yield* g.callName(f, live(f.args[0]), "Jitter", [1]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	M.Dizzy(1);
+	M.Jitter(1);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3579, "/datum/reagent/medicine/epinephrine", "/datum/reagent/medicine", {
 	name: "Epinephrine",
@@ -1059,44 +996,44 @@ rt.type(3579, "/datum/reagent/medicine/epinephrine", "/datum/reagent/medicine", 
 	overdose_threshold: 30,
 });
 
-// /datum/reagent/medicine/epinephrine/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:749)  may sleep
-rt.def("/datum/reagent/medicine/epinephrine/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	if (rt.lt(rt.fv(f, "health", live(f.args[0])), 0)) {
-		yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [-0.5, 0]);
-		yield* g.callName(f, live(f.args[0]), "adjustBruteLoss", [-0.5, 0]);
-		yield* g.callName(f, live(f.args[0]), "adjustFireLoss", [-0.5, 0]);
+// medicine_reagents.dm:749
+rt.def("/datum/reagent/medicine/epinephrine/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	if (M.health < 0) {
+		yield* M.adjustToxLoss(-0.5, 0);
+		yield* M.adjustBruteLoss(-0.5, 0);
+		yield* M.adjustFireLoss(-0.5, 0);
 	}
-	if (rt.gt(rt.fv(f, "oxyloss", live(f.args[0])), 35)) {
-		yield* g.callName(f, live(f.args[0]), "setOxyLoss", [35, 0]);
+	if (M.oxyloss > 35) {
+		yield* M.setOxyLoss(35, 0);
 	}
-	if (rt.ge(rt.fv(f, "losebreath", live(f.args[0])), 4)) {
-		(rt.modField(f, live(f.args[0]), "losebreath", 2, subtract));
+	if (M.losebreath >= 4) {
+		M.losebreath -= 2;
 	}
-	if (rt.lt(rt.fv(f, "losebreath", live(f.args[0])), 0)) {
-		rt.setFv(f, "losebreath", live(f.args[0]), 0);
+	if (M.losebreath < 0) {
+		M.losebreath = 0;
 	}
-	yield* g.callName(f, live(f.args[0]), "adjustStaminaLoss", [-0.5, 0]);
+	yield* M.adjustStaminaLoss(-0.5, 0);
 	f.dot = 1;
-	if (truthy(rt.op(f, "Prob", [], [20]))) {
-		yield* g.callName(f, live(f.args[0]), "AdjustStun", [-20, 0]);
-		yield* g.callName(f, live(f.args[0]), "AdjustKnockdown", [-20, 0]);
-		yield* g.callName(f, live(f.args[0]), "AdjustUnconscious", [-20, 0]);
+	if (prob(20)) {
+		yield* M.AdjustStun(-20, 0);
+		yield* M.AdjustKnockdown(-20, 0);
+		yield* M.AdjustUnconscious(-20, 0);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /datum/reagent/medicine/epinephrine/proc/overdose_process  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:768)  may sleep
-rt.def("/datum/reagent/medicine/epinephrine/proc/overdose_process", function* overdose_process(f: Frame) {
-	if (truthy(rt.op(f, "Prob", [], [33]))) {
-		yield* g.callName(f, live(f.args[0]), "adjustStaminaLoss", [2.5, 0]);
-		yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [1, 0]);
-		rt.incField(f, live(f.args[0]), "losebreath", 1, true);
+// medicine_reagents.dm:768
+rt.def("/datum/reagent/medicine/epinephrine/proc/overdose_process", function* overdose_process(f: Frame, M: Value) {
+	if (prob(33)) {
+		yield* M.adjustStaminaLoss(2.5, 0);
+		yield* M.adjustToxLoss(1, 0);
+		M.losebreath++;
 		f.dot = 1;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3580, "/datum/reagent/medicine/strange_reagent", "/datum/reagent/medicine", {
 	name: "Strange Reagent",
@@ -1108,51 +1045,51 @@ rt.type(3580, "/datum/reagent/medicine/strange_reagent", "/datum/reagent/medicin
 	taste_description: "magnets",
 });
 
-// /datum/reagent/medicine/strange_reagent/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:785)  may sleep
+// medicine_reagents.dm:785
 rt.def("/datum/reagent/medicine/strange_reagent/proc/reaction_mob", function* reaction_mob(f: Frame) {
-	if (live(f.args[1]) === null) {
-		f.args[1] = 1;
+	if (f.args[1] === null) {
+		f.args[1] = TOUCH;
 	}
-	if (isEqual(rt.fv(f, "stat", live(f.args[0])), 2)) {
-		if ((rt.ge((yield* g.callName(f, live(f.args[0]), "getBruteLoss", [])), 100) || rt.ge((yield* g.callName(f, live(f.args[0]), "getFireLoss", [])), 100))) {
-			yield* g.callName(f, live(f.args[0]), "visible_message", [fmt("<span class='warning'>＀'s body convulses a bit, and then falls still once more.</span>", [live(f.args[0])])]);
-			return live(f.dot);
+	if (f.args[0].stat == 2) {
+		if (f.args[0].getBruteLoss() >= 100 || f.args[0].getFireLoss() >= 100) {
+			f.args[0].visible_message(`<span class='warning'>${f.args[0]}'s body convulses a bit, and then falls still once more.</span>`);
+			return f.dot;
 		}
-		yield* g.callName(f, live(f.args[0]), "visible_message", [fmt("<span class='warning'>＀'s body convulses a bit.</span>", [live(f.args[0])])]);
-		if (((!truthy(rt.fv(f, "suiciding", live(f.args[0]))) && !truthy(rt.bitAnd(rt.fv(f, "disabilities", live(f.args[0])), 128))) && !truthy(rt.fv(f, "hellbound", live(f.args[0]))))) {
-			if (!truthy(live(f.args[0]))) {
-				return live(f.dot);
+		f.args[0].visible_message(`<span class='warning'>${f.args[0]}'s body convulses a bit.</span>`);
+		if (!f.args[0].suiciding && !rt.bitAnd(f.args[0].disabilities, 128) && !f.args[0].hellbound) {
+			if (!f.args[0]) {
+				return f.dot;
 			}
-			if (truthy((yield* g.callName(f, live(f.args[0]), "notify_ghost_cloning", ["source", live(f.args[0])], rt.Args.Named)))) {
+			if (yield* f.args[0].notify_ghost_cloning({ source: f.args[0] })) {
 				rt.spawnTail(f, 100, "/datum/reagent/medicine/strange_reagent/proc/reaction_mob: spawn at modules/reagents/chemistry/reagents/medicine_reagents.dm:794");
 			} else {
-				yield* g.callName(f, live(f.args[0]), "adjustOxyLoss", [-20, 0]);
-				yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [-20, 0]);
-				yield* g.callName(f, live(f.args[0]), "updatehealth", []);
-				if (truthy((yield* g.callName(f, live(f.args[0]), "revive", [])))) {
-					yield* g.callName(f, live(f.args[0]), "emote", ["gasp"]);
-					yield* g.call(f, P("/proc/add_logs"), null, [live(f.args[0]), live(f.args[0]), "revived", live(f.src)]);
+				yield* f.args[0].adjustOxyLoss(-20, 0);
+				yield* f.args[0].adjustToxLoss(-20, 0);
+				yield* f.args[0].updatehealth();
+				if (yield* f.args[0].revive()) {
+					yield* f.args[0].emote("gasp");
+					add_logs(f.args[0], f.args[0], "revived", this);
 				}
 			}
 		}
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true, { args: ["M", "method", "reac_volume"] });
 
 // a spawn(100) body of /datum/reagent/medicine/strange_reagent/proc/reaction_mob, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/datum/reagent/medicine/strange_reagent/proc/reaction_mob: spawn at modules/reagents/chemistry/reagents/medicine_reagents.dm:794", function* (f: Frame) {
-	return live(f.dot);
+	return f.dot;
 });
 
-// /datum/reagent/medicine/strange_reagent/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:806)  may sleep
-rt.def("/datum/reagent/medicine/strange_reagent/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	yield* g.callName(f, live(f.args[0]), "adjustBruteLoss", [0.5, 0]);
-	yield* g.callName(f, live(f.args[0]), "adjustFireLoss", [0.5, 0]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+// medicine_reagents.dm:806
+rt.def("/datum/reagent/medicine/strange_reagent/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	yield* M.adjustBruteLoss(0.5, 0);
+	yield* M.adjustFireLoss(0.5, 0);
+	yield* parent_proc();
 	f.dot = 1;
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3581, "/datum/reagent/medicine/mannitol", "/datum/reagent/medicine", {
 	name: "Mannitol",
@@ -1161,12 +1098,12 @@ rt.type(3581, "/datum/reagent/medicine/mannitol", "/datum/reagent/medicine", {
 	color: "#DCDCFF",
 });
 
-// /datum/reagent/medicine/mannitol/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:818)  may sleep
-rt.def("/datum/reagent/medicine/mannitol/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	yield* g.callName(f, live(f.args[0]), "adjustBrainLoss", [-3]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+// medicine_reagents.dm:818
+rt.def("/datum/reagent/medicine/mannitol/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	yield* M.adjustBrainLoss(-3);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3582, "/datum/reagent/medicine/mutadone", "/datum/reagent/medicine", {
 	name: "Mutadone",
@@ -1176,15 +1113,15 @@ rt.type(3582, "/datum/reagent/medicine/mutadone", "/datum/reagent/medicine", {
 	taste_description: "acid",
 });
 
-// /datum/reagent/medicine/mutadone/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:829)  may sleep
-rt.def("/datum/reagent/medicine/mutadone/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	rt.setFv(f, "jitteriness", live(f.args[0]), 0);
-	if (truthy((yield* g.callName(f, live(f.args[0]), "has_dna", [])))) {
-		yield* g.callName(f, rt.fv(f, "dna", live(f.args[0])), "remove_all_mutations", []);
+// medicine_reagents.dm:829
+rt.def("/datum/reagent/medicine/mutadone/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	M.jitteriness = 0;
+	if (M.has_dna()) {
+		yield* M.dna.remove_all_mutations();
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3583, "/datum/reagent/medicine/antihol", "/datum/reagent/medicine", {
 	name: "Antihol",
@@ -1194,23 +1131,22 @@ rt.type(3583, "/datum/reagent/medicine/antihol", "/datum/reagent/medicine", {
 	taste_description: "raw egg",
 });
 
-// /datum/reagent/medicine/antihol/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:842)  may sleep
-rt.def("/datum/reagent/medicine/antihol/proc/on_mob_life", function* on_mob_life(f: Frame) {
+// medicine_reagents.dm:842
+rt.def("/datum/reagent/medicine/antihol/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
 	let H: Value = null;
-	f.vars = () => [H];
-	rt.setFv(f, "dizziness", live(f.args[0]), 0);
-	rt.setFv(f, "drowsyness", live(f.args[0]), 0);
-	rt.setFv(f, "slurring", live(f.args[0]), 0);
-	rt.setFv(f, "confused", live(f.args[0]), 0);
-	yield* g.callName(f, rt.fv(f, "reagents", live(f.args[0])), "remove_all_type", [T("/datum/reagent/consumable/ethanol"), 3, 0, 1]);
-	yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [-0.20000000298023224, 0]);
-	if (truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		rt.setFv(f, "drunkenness", (H = live(f.args[0])), (yield* g.call(f, P("/proc/max"), null, [subtract(rt.fv(f, "drunkenness", live(H)), 10), 0])));
+	M.dizziness = 0;
+	M.drowsyness = 0;
+	M.slurring = 0;
+	M.confused = 0;
+	yield* M.reagents.remove_all_type(T("/datum/reagent/consumable/ethanol"), 3, 0, 1);
+	yield* M.adjustToxLoss(-0.2, 0);
+	if (rt.istype(M, T("/mob/living/carbon/human"))) {
+		(H = M).drunkenness = max(H.drunkenness - 10, 0);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	f.dot = 1;
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3584, "/datum/reagent/medicine/stimulants", "/datum/reagent/medicine", {
 	name: "Stimulants",
@@ -1221,35 +1157,35 @@ rt.type(3584, "/datum/reagent/medicine/stimulants", "/datum/reagent/medicine", {
 	overdose_threshold: 60,
 });
 
-// /datum/reagent/medicine/stimulants/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:863)  may sleep
-rt.def("/datum/reagent/medicine/stimulants/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	(rt.modField(f, live(f.args[0]), "status_flags", 32, rt.bitOr));
-	if ((rt.lt(rt.fv(f, "health", live(f.args[0])), 50) && rt.gt(rt.fv(f, "health", live(f.args[0])), 0))) {
-		yield* g.callName(f, live(f.args[0]), "adjustOxyLoss", [-1, 0]);
-		yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [-1, 0]);
-		yield* g.callName(f, live(f.args[0]), "adjustBruteLoss", [-1, 0]);
-		yield* g.callName(f, live(f.args[0]), "adjustFireLoss", [-1, 0]);
+// medicine_reagents.dm:863
+rt.def("/datum/reagent/medicine/stimulants/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	(rt.modField(f, M, "status_flags", 32, rt.bitOr));
+	if (M.health < 50 && M.health > 0) {
+		yield* M.adjustOxyLoss(-1, 0);
+		yield* M.adjustToxLoss(-1, 0);
+		yield* M.adjustBruteLoss(-1, 0);
+		yield* M.adjustFireLoss(-1, 0);
 	}
-	yield* g.callName(f, live(f.args[0]), "AdjustStun", [-60, 0]);
-	yield* g.callName(f, live(f.args[0]), "AdjustKnockdown", [-60, 0]);
-	yield* g.callName(f, live(f.args[0]), "AdjustUnconscious", [-60, 0]);
-	yield* g.callName(f, live(f.args[0]), "adjustStaminaLoss", [-5, 0]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* M.AdjustStun(-60, 0);
+	yield* M.AdjustKnockdown(-60, 0);
+	yield* M.AdjustUnconscious(-60, 0);
+	yield* M.adjustStaminaLoss(-5, 0);
+	yield* parent_proc();
 	f.dot = 1;
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /datum/reagent/medicine/stimulants/proc/overdose_process  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:877)  may sleep
-rt.def("/datum/reagent/medicine/stimulants/proc/overdose_process", function* overdose_process(f: Frame) {
-	if (truthy(rt.op(f, "Prob", [], [33]))) {
-		yield* g.callName(f, live(f.args[0]), "adjustStaminaLoss", [2.5, 0]);
-		yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [1, 0]);
-		rt.incField(f, live(f.args[0]), "losebreath", 1, true);
+// medicine_reagents.dm:877
+rt.def("/datum/reagent/medicine/stimulants/proc/overdose_process", function* overdose_process(f: Frame, M: Value) {
+	if (prob(33)) {
+		yield* M.adjustStaminaLoss(2.5, 0);
+		yield* M.adjustToxLoss(1, 0);
+		M.losebreath++;
 		f.dot = 1;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3585, "/datum/reagent/medicine/insulin", "/datum/reagent/medicine", {
 	name: "Insulin",
@@ -1260,15 +1196,15 @@ rt.type(3585, "/datum/reagent/medicine/insulin", "/datum/reagent/medicine", {
 	metabolization_rate: 0.2,
 });
 
-// /datum/reagent/medicine/insulin/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:893)  may sleep
-rt.def("/datum/reagent/medicine/insulin/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	if (truthy((yield* g.callName(f, live(f.args[0]), "AdjustSleeping", [-20, 0])))) {
+// medicine_reagents.dm:893
+rt.def("/datum/reagent/medicine/insulin/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	if (yield* M.AdjustSleeping(-20, 0)) {
 		f.dot = 1;
 	}
-	yield* g.callName(f, rt.fv(f, "reagents", live(f.args[0])), "remove_reagent", ["sugar", 3]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* M.reagents.remove_reagent("sugar", 3);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3586, "/datum/reagent/medicine/bicaridine", "/datum/reagent/medicine", {
 	name: "Bicaridine",
@@ -1279,21 +1215,21 @@ rt.type(3586, "/datum/reagent/medicine/bicaridine", "/datum/reagent/medicine", {
 	overdose_threshold: 30,
 });
 
-// /datum/reagent/medicine/bicaridine/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:908)  may sleep
-rt.def("/datum/reagent/medicine/bicaridine/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	yield* g.callName(f, live(f.args[0]), "adjustBruteLoss", [-2, 0]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+// medicine_reagents.dm:908
+rt.def("/datum/reagent/medicine/bicaridine/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	yield* M.adjustBruteLoss(-2, 0);
+	yield* parent_proc();
 	f.dot = 1;
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /datum/reagent/medicine/bicaridine/proc/overdose_process  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:913)  may sleep
-rt.def("/datum/reagent/medicine/bicaridine/proc/overdose_process", function* overdose_process(f: Frame) {
-	yield* g.callName(f, live(f.args[0]), "adjustBruteLoss", [4, 0]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+// medicine_reagents.dm:913
+rt.def("/datum/reagent/medicine/bicaridine/proc/overdose_process", function* overdose_process(f: Frame, M: Value) {
+	yield* M.adjustBruteLoss(4, 0);
+	yield* parent_proc();
 	f.dot = 1;
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3587, "/datum/reagent/medicine/dexalin", "/datum/reagent/medicine", {
 	name: "Dexalin",
@@ -1304,21 +1240,21 @@ rt.type(3587, "/datum/reagent/medicine/dexalin", "/datum/reagent/medicine", {
 	overdose_threshold: 30,
 });
 
-// /datum/reagent/medicine/dexalin/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:926)  may sleep
-rt.def("/datum/reagent/medicine/dexalin/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	yield* g.callName(f, live(f.args[0]), "adjustOxyLoss", [-2, 0]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+// medicine_reagents.dm:926
+rt.def("/datum/reagent/medicine/dexalin/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	yield* M.adjustOxyLoss(-2, 0);
+	yield* parent_proc();
 	f.dot = 1;
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /datum/reagent/medicine/dexalin/proc/overdose_process  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:931)  may sleep
-rt.def("/datum/reagent/medicine/dexalin/proc/overdose_process", function* overdose_process(f: Frame) {
-	yield* g.callName(f, live(f.args[0]), "adjustOxyLoss", [4, 0]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+// medicine_reagents.dm:931
+rt.def("/datum/reagent/medicine/dexalin/proc/overdose_process", function* overdose_process(f: Frame, M: Value) {
+	yield* M.adjustOxyLoss(4, 0);
+	yield* parent_proc();
 	f.dot = 1;
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3588, "/datum/reagent/medicine/kelotane", "/datum/reagent/medicine", {
 	name: "Kelotane",
@@ -1329,21 +1265,21 @@ rt.type(3588, "/datum/reagent/medicine/kelotane", "/datum/reagent/medicine", {
 	overdose_threshold: 30,
 });
 
-// /datum/reagent/medicine/kelotane/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:944)  may sleep
-rt.def("/datum/reagent/medicine/kelotane/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	yield* g.callName(f, live(f.args[0]), "adjustFireLoss", [-2, 0]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+// medicine_reagents.dm:944
+rt.def("/datum/reagent/medicine/kelotane/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	yield* M.adjustFireLoss(-2, 0);
+	yield* parent_proc();
 	f.dot = 1;
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /datum/reagent/medicine/kelotane/proc/overdose_process  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:949)  may sleep
-rt.def("/datum/reagent/medicine/kelotane/proc/overdose_process", function* overdose_process(f: Frame) {
-	yield* g.callName(f, live(f.args[0]), "adjustFireLoss", [4, 0]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+// medicine_reagents.dm:949
+rt.def("/datum/reagent/medicine/kelotane/proc/overdose_process", function* overdose_process(f: Frame, M: Value) {
+	yield* M.adjustFireLoss(4, 0);
+	yield* parent_proc();
 	f.dot = 1;
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3589, "/datum/reagent/medicine/antitoxin", "/datum/reagent/medicine", {
 	name: "Anti-Toxin",
@@ -1355,31 +1291,25 @@ rt.type(3589, "/datum/reagent/medicine/antitoxin", "/datum/reagent/medicine", {
 	taste_description: "a roll of gauze",
 });
 
-// /datum/reagent/medicine/antitoxin/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:963)  may sleep
-rt.def("/datum/reagent/medicine/antitoxin/proc/on_mob_life", function* on_mob_life(f: Frame) {
+// medicine_reagents.dm:963
+rt.def("/datum/reagent/medicine/antitoxin/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
 	let R: Value = null;
-	let $e: any;
-	f.vars = () => [R, $e];
-	yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [-2, 0]);
-	R = null;
-	rt.forList(f, 0, rt.gv(f, "reagent_list", rt.fv(f, "reagents", live(f.args[0]))), T("/datum/reagent/toxin"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		R = $e;
-		yield* g.callName(f, rt.fv(f, "reagents", live(f.args[0])), "remove_reagent", [rt.fv(f, "id", live(R)), 1]);
+	yield* M.adjustToxLoss(-2, 0);
+	for (R of each(M.reagents.reagent_list, T("/datum/reagent/toxin"))) {
+		yield* M.reagents.remove_reagent(R.id, 1);
 	}
-	rt.endFor(f, 0);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	f.dot = 1;
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /datum/reagent/medicine/antitoxin/proc/overdose_process  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:970)  may sleep
-rt.def("/datum/reagent/medicine/antitoxin/proc/overdose_process", function* overdose_process(f: Frame) {
-	yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [4, 0]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+// medicine_reagents.dm:970
+rt.def("/datum/reagent/medicine/antitoxin/proc/overdose_process", function* overdose_process(f: Frame, M: Value) {
+	yield* M.adjustToxLoss(4, 0);
+	yield* parent_proc();
 	f.dot = 1;
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3590, "/datum/reagent/medicine/inaprovaline", "/datum/reagent/medicine", {
 	name: "Inaprovaline",
@@ -1389,14 +1319,14 @@ rt.type(3590, "/datum/reagent/medicine/inaprovaline", "/datum/reagent/medicine",
 	color: "#C8A5DC",
 });
 
-// /datum/reagent/medicine/inaprovaline/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:982)  may sleep
-rt.def("/datum/reagent/medicine/inaprovaline/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	if (rt.ge(rt.fv(f, "losebreath", live(f.args[0])), 5)) {
-		(rt.modField(f, live(f.args[0]), "losebreath", 5, subtract));
+// medicine_reagents.dm:982
+rt.def("/datum/reagent/medicine/inaprovaline/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	if (M.losebreath >= 5) {
+		M.losebreath -= 5;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3591, "/datum/reagent/medicine/tricordrazine", "/datum/reagent/medicine", {
 	name: "Tricordrazine",
@@ -1408,29 +1338,29 @@ rt.type(3591, "/datum/reagent/medicine/tricordrazine", "/datum/reagent/medicine"
 	taste_description: "grossness",
 });
 
-// /datum/reagent/medicine/tricordrazine/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:996)  may sleep
-rt.def("/datum/reagent/medicine/tricordrazine/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	if (truthy(rt.op(f, "Prob", [], [80]))) {
-		yield* g.callName(f, live(f.args[0]), "adjustBruteLoss", [-1, 0]);
-		yield* g.callName(f, live(f.args[0]), "adjustFireLoss", [-1, 0]);
-		yield* g.callName(f, live(f.args[0]), "adjustOxyLoss", [-1, 0]);
-		yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [-1, 0]);
+// medicine_reagents.dm:996
+rt.def("/datum/reagent/medicine/tricordrazine/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	if (prob(80)) {
+		yield* M.adjustBruteLoss(-1, 0);
+		yield* M.adjustFireLoss(-1, 0);
+		yield* M.adjustOxyLoss(-1, 0);
+		yield* M.adjustToxLoss(-1, 0);
 		f.dot = 1;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /datum/reagent/medicine/tricordrazine/proc/overdose_process  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:1005)  may sleep
-rt.def("/datum/reagent/medicine/tricordrazine/proc/overdose_process", function* overdose_process(f: Frame) {
-	yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [2, 0]);
-	yield* g.callName(f, live(f.args[0]), "adjustOxyLoss", [2, 0]);
-	yield* g.callName(f, live(f.args[0]), "adjustBruteLoss", [2, 0]);
-	yield* g.callName(f, live(f.args[0]), "adjustFireLoss", [2, 0]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+// medicine_reagents.dm:1005
+rt.def("/datum/reagent/medicine/tricordrazine/proc/overdose_process", function* overdose_process(f: Frame, M: Value) {
+	yield* M.adjustToxLoss(2, 0);
+	yield* M.adjustOxyLoss(2, 0);
+	yield* M.adjustBruteLoss(2, 0);
+	yield* M.adjustFireLoss(2, 0);
+	yield* parent_proc();
 	f.dot = 1;
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3592, "/datum/reagent/medicine/syndicate_nanites", "/datum/reagent/medicine", {
 	name: "Restorative Nanites",
@@ -1440,18 +1370,18 @@ rt.type(3592, "/datum/reagent/medicine/syndicate_nanites", "/datum/reagent/medic
 	color: "#555555",
 });
 
-// /datum/reagent/medicine/syndicate_nanites/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:1020)  may sleep
-rt.def("/datum/reagent/medicine/syndicate_nanites/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	yield* g.callName(f, live(f.args[0]), "adjustBruteLoss", [-5, 0]);
-	yield* g.callName(f, live(f.args[0]), "adjustFireLoss", [-5, 0]);
-	yield* g.callName(f, live(f.args[0]), "adjustOxyLoss", [-15, 0]);
-	yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [-5, 0]);
-	yield* g.callName(f, live(f.args[0]), "adjustBrainLoss", [-15]);
-	yield* g.callName(f, live(f.args[0]), "adjustCloneLoss", [-3, 0]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+// medicine_reagents.dm:1020
+rt.def("/datum/reagent/medicine/syndicate_nanites/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	yield* M.adjustBruteLoss(-5, 0);
+	yield* M.adjustFireLoss(-5, 0);
+	yield* M.adjustOxyLoss(-15, 0);
+	yield* M.adjustToxLoss(-5, 0);
+	yield* M.adjustBrainLoss(-15);
+	yield* M.adjustCloneLoss(-3, 0);
+	yield* parent_proc();
 	f.dot = 1;
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3593, "/datum/reagent/medicine/earthsblood", "/datum/reagent/medicine", {
 	name: "Earthsblood",
@@ -1461,30 +1391,30 @@ rt.type(3593, "/datum/reagent/medicine/earthsblood", "/datum/reagent/medicine", 
 	overdose_threshold: 25,
 });
 
-// /datum/reagent/medicine/earthsblood/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:1037)  may sleep
-rt.def("/datum/reagent/medicine/earthsblood/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	yield* g.callName(f, live(f.args[0]), "adjustBruteLoss", [-3, 0]);
-	yield* g.callName(f, live(f.args[0]), "adjustFireLoss", [-3, 0]);
-	yield* g.callName(f, live(f.args[0]), "adjustOxyLoss", [-15, 0]);
-	yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [-3, 0]);
-	yield* g.callName(f, live(f.args[0]), "adjustBrainLoss", [2]);
-	yield* g.callName(f, live(f.args[0]), "adjustCloneLoss", [-1, 0]);
-	yield* g.callName(f, live(f.args[0]), "adjustStaminaLoss", [-30, 0]);
-	rt.setFv(f, "jitteriness", live(f.args[0]), (yield* g.call(f, P("/proc/min"), null, [(yield* g.call(f, P("/proc/max"), null, [0, add(rt.fv(f, "jitteriness", live(f.args[0])), 3)])), 30])));
-	rt.setFv(f, "druggy", live(f.args[0]), (yield* g.call(f, P("/proc/min"), null, [(yield* g.call(f, P("/proc/max"), null, [0, add(rt.fv(f, "druggy", live(f.args[0])), 10)])), 15])));
-	yield* g.callSuper(f, [], rt.Args.Same);
+// medicine_reagents.dm:1037
+rt.def("/datum/reagent/medicine/earthsblood/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	yield* M.adjustBruteLoss(-3, 0);
+	yield* M.adjustFireLoss(-3, 0);
+	yield* M.adjustOxyLoss(-15, 0);
+	yield* M.adjustToxLoss(-3, 0);
+	yield* M.adjustBrainLoss(2);
+	yield* M.adjustCloneLoss(-1, 0);
+	yield* M.adjustStaminaLoss(-30, 0);
+	M.jitteriness = min(max(0, M.jitteriness + 3), 30);
+	M.druggy = min(max(0, M.druggy + 10), 15);
+	yield* parent_proc();
 	f.dot = 1;
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /datum/reagent/medicine/earthsblood/proc/overdose_process  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:1050)  may sleep
-rt.def("/datum/reagent/medicine/earthsblood/proc/overdose_process", function* overdose_process(f: Frame) {
-	rt.setFv(f, "hallucination", live(f.args[0]), (yield* g.call(f, P("/proc/min"), null, [(yield* g.call(f, P("/proc/max"), null, [0, add(rt.fv(f, "hallucination", live(f.args[0])), 10)])), 50])));
-	yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [5, 0]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+// medicine_reagents.dm:1050
+rt.def("/datum/reagent/medicine/earthsblood/proc/overdose_process", function* overdose_process(f: Frame, M: Value) {
+	M.hallucination = min(max(0, M.hallucination + 10), 50);
+	yield* M.adjustToxLoss(5, 0);
+	yield* parent_proc();
 	f.dot = 1;
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3594, "/datum/reagent/medicine/haloperidol", "/datum/reagent/medicine", {
 	name: "Haloperidol",
@@ -1495,33 +1425,27 @@ rt.type(3594, "/datum/reagent/medicine/haloperidol", "/datum/reagent/medicine", 
 	metabolization_rate: 0.16000001,
 });
 
-// /datum/reagent/medicine/haloperidol/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:1064)  may sleep
-rt.def("/datum/reagent/medicine/haloperidol/proc/on_mob_life", function* on_mob_life(f: Frame) {
+// medicine_reagents.dm:1064
+rt.def("/datum/reagent/medicine/haloperidol/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
 	let R: Value = null;
-	let $e: any;
-	f.vars = () => [R, $e];
-	R = null;
-	rt.forList(f, 0, rt.gv(f, "reagent_list", rt.fv(f, "reagents", live(f.args[0]))), T("/datum/reagent/drug"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		R = $e;
-		yield* g.callName(f, rt.fv(f, "reagents", live(f.args[0])), "remove_reagent", [rt.fv(f, "id", live(R)), 5]);
+	for (R of each(M.reagents.reagent_list, T("/datum/reagent/drug"))) {
+		yield* M.reagents.remove_reagent(R.id, 5);
 	}
-	rt.endFor(f, 0);
-	rt.modField(f, live(f.args[0]), "drowsyness", 2, add);
-	if (rt.ge(rt.fv(f, "jitteriness", live(f.args[0])), 3)) {
-		(rt.modField(f, live(f.args[0]), "jitteriness", 3, subtract));
+	M.drowsyness += 2;
+	if (M.jitteriness >= 3) {
+		M.jitteriness -= 3;
 	}
-	if (rt.ge(rt.fv(f, "hallucination", live(f.args[0])), 5)) {
-		(rt.modField(f, live(f.args[0]), "hallucination", 5, subtract));
+	if (M.hallucination >= 5) {
+		M.hallucination -= 5;
 	}
-	if (truthy(rt.op(f, "Prob", [], [20]))) {
-		yield* g.callName(f, live(f.args[0]), "adjustBrainLoss", [1]);
+	if (prob(20)) {
+		yield* M.adjustBrainLoss(1);
 	}
-	yield* g.callName(f, live(f.args[0]), "adjustStaminaLoss", [2.5, 0]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* M.adjustStaminaLoss(2.5, 0);
+	yield* parent_proc();
 	f.dot = 1;
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3595, "/datum/reagent/medicine/miningnanites", "/datum/reagent/medicine", {
 	name: "Nanites",
@@ -1532,23 +1456,23 @@ rt.type(3595, "/datum/reagent/medicine/miningnanites", "/datum/reagent/medicine"
 	can_synth: 0,
 });
 
-// /datum/reagent/medicine/miningnanites/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:1086)  may sleep
-rt.def("/datum/reagent/medicine/miningnanites/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	yield* g.callName(f, live(f.args[0]), "heal_bodypart_damage", [5, 5, 0]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+// medicine_reagents.dm:1086
+rt.def("/datum/reagent/medicine/miningnanites/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	yield* M.heal_bodypart_damage(5, 5, 0);
+	yield* parent_proc();
 	f.dot = 1;
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /datum/reagent/medicine/miningnanites/proc/overdose_process  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:1091)  may sleep
-rt.def("/datum/reagent/medicine/miningnanites/proc/overdose_process", function* overdose_process(f: Frame) {
-	yield* g.callName(f, live(f.args[0]), "adjustBruteLoss", [3, 0]);
-	yield* g.callName(f, live(f.args[0]), "adjustFireLoss", [3, 0]);
-	yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [3, 0]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+// medicine_reagents.dm:1091
+rt.def("/datum/reagent/medicine/miningnanites/proc/overdose_process", function* overdose_process(f: Frame, M: Value) {
+	yield* M.adjustBruteLoss(3, 0);
+	yield* M.adjustFireLoss(3, 0);
+	yield* M.adjustToxLoss(3, 0);
+	yield* parent_proc();
 	f.dot = 1;
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3596, "/datum/reagent/medicine/changelingAdrenaline", "/datum/reagent/medicine", {
 	name: "Adrenaline",
@@ -1558,24 +1482,24 @@ rt.type(3596, "/datum/reagent/medicine/changelingAdrenaline", "/datum/reagent/me
 	overdose_threshold: 30,
 });
 
-// /datum/reagent/medicine/changelingAdrenaline/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:1106)  may sleep
-rt.def("/datum/reagent/medicine/changelingAdrenaline/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	yield* g.callName(f, live(f.args[0]), "AdjustUnconscious", [-20, 0]);
-	yield* g.callName(f, live(f.args[0]), "AdjustStun", [-20, 0]);
-	yield* g.callName(f, live(f.args[0]), "AdjustKnockdown", [-20, 0]);
-	yield* g.callName(f, live(f.args[0]), "adjustStaminaLoss", [-1, 0]);
+// medicine_reagents.dm:1106
+rt.def("/datum/reagent/medicine/changelingAdrenaline/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	yield* M.AdjustUnconscious(-20, 0);
+	yield* M.AdjustStun(-20, 0);
+	yield* M.AdjustKnockdown(-20, 0);
+	yield* M.adjustStaminaLoss(-1, 0);
 	f.dot = 1;
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /datum/reagent/medicine/changelingAdrenaline/proc/overdose_process  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:1114)  may sleep
-rt.def("/datum/reagent/medicine/changelingAdrenaline/proc/overdose_process", function* overdose_process(f: Frame) {
-	yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [1, 0]);
+// medicine_reagents.dm:1114
+rt.def("/datum/reagent/medicine/changelingAdrenaline/proc/overdose_process", function* overdose_process(f: Frame, M: Value) {
+	yield* M.adjustToxLoss(1, 0);
 	f.dot = 1;
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3597, "/datum/reagent/medicine/changelingAdrenaline2", "/datum/reagent/medicine", {
 	name: "Adrenaline",
@@ -1585,11 +1509,11 @@ rt.type(3597, "/datum/reagent/medicine/changelingAdrenaline2", "/datum/reagent/m
 	metabolization_rate: 1,
 });
 
-// /datum/reagent/medicine/changelingAdrenaline2/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/medicine_reagents.dm:1126)  may sleep
-rt.def("/datum/reagent/medicine/changelingAdrenaline2/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	(rt.modField(f, live(f.args[0]), "status_flags", 64, rt.bitOr));
-	yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [2, 0]);
+// medicine_reagents.dm:1126
+rt.def("/datum/reagent/medicine/changelingAdrenaline2/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	(rt.modField(f, M, "status_flags", 64, rt.bitOr));
+	yield* M.adjustToxLoss(2, 0);
 	f.dot = 1;
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);

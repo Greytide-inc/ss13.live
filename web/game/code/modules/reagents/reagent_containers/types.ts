@@ -1,5 +1,5 @@
 // Types declared in code/modules/reagents/reagent_containers that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(6382, "/obj/item/weapon/reagent_containers/spray/medical", "/obj/item/weapon/reagent_containers/spray", {
 	name: "medical spray",

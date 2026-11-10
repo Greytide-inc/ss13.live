@@ -1,7 +1,7 @@
-// From code/modules/mob/living/simple_animal/hostile/russian.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/simple_animal/hostile/russian.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(4980, "/mob/living/simple_animal/hostile/russian", "/mob/living/simple_animal/hostile", {
@@ -34,15 +34,13 @@ rt.type(4980, "/mob/living/simple_animal/hostile/russian", "/mob/living/simple_a
 	del_on_death: 1,
 });
 
-// /mob/living/simple_animal/hostile/russian/proc/<init>  (code/modules/mob/living/simple_animal/hostile/russian.dm:23)
+// russian.dm:23
 rt.def("/mob/living/simple_animal/hostile/russian/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "loot", rt.list(T("/obj/effect/mob_spawn/human/corpse/russian"), T("/obj/item/weapon/kitchen/knife")));
-	rt.setSv(f, "atmos_requirements", rt.alist(f, ["min_oxy", 5, "max_oxy", 0, "min_tox", 0, "max_tox", 1, "min_co2", 0, "max_co2", 5, "min_n2", 0, "max_n2", 0]));
-	$0 = $0;
-	rt.setSv(f, "faction", rt.list("russian"));
+	parent_proc();
+	this.loot = list(T("/obj/effect/mob_spawn/human/corpse/russian"), T("/obj/item/weapon/kitchen/knife"));
+	this.atmos_requirements = rt.alist(f, ["min_oxy", 5, "max_oxy", 0, "min_tox", 0, "max_tox", 1, "min_co2", 0, "max_co2", 5, "min_n2", 0, "max_n2", 0]);
+
+	this.faction = list("russian");
 	return f.dot;
 });
 
@@ -57,12 +55,10 @@ rt.type(4981, "/mob/living/simple_animal/hostile/russian/ranged", "/mob/living/s
 	casingtype: rt.typePath("/obj/item/ammo_casing/n762"),
 });
 
-// /mob/living/simple_animal/hostile/russian/ranged/proc/<init>  (code/modules/mob/living/simple_animal/hostile/russian.dm:35)
+// russian.dm:35
 rt.def("/mob/living/simple_animal/hostile/russian/ranged/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "loot", rt.list(T("/obj/effect/mob_spawn/human/corpse/russian/ranged"), T("/obj/item/weapon/gun/ballistic/revolver/nagant")));
+	parent_proc();
+	this.loot = list(T("/obj/effect/mob_spawn/human/corpse/russian/ranged"), T("/obj/item/weapon/gun/ballistic/revolver/nagant"));
 	return f.dot;
 });
 
@@ -71,12 +67,10 @@ rt.type(4982, "/mob/living/simple_animal/hostile/russian/ranged/mosin", "/mob/li
 	casingtype: rt.typePath("/obj/item/ammo_casing/a762"),
 });
 
-// /mob/living/simple_animal/hostile/russian/ranged/mosin/proc/<init>  (code/modules/mob/living/simple_animal/hostile/russian.dm:45)
+// russian.dm:45
 rt.def("/mob/living/simple_animal/hostile/russian/ranged/mosin/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "loot", rt.list(T("/obj/effect/mob_spawn/human/corpse/russian/ranged"), T("/obj/item/weapon/gun/ballistic/shotgun/boltaction")));
+	parent_proc();
+	this.loot = list(T("/obj/effect/mob_spawn/human/corpse/russian/ranged"), T("/obj/item/weapon/gun/ballistic/shotgun/boltaction"));
 	return f.dot;
 });
 
@@ -89,12 +83,10 @@ rt.type(4983, "/mob/living/simple_animal/hostile/russian/ranged/trooper", "/mob/
 	loot: null,
 });
 
-// /mob/living/simple_animal/hostile/russian/ranged/trooper/proc/<init>  (code/modules/mob/living/simple_animal/hostile/russian.dm:55)
+// russian.dm:55
 rt.def("/mob/living/simple_animal/hostile/russian/ranged/trooper/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "loot", rt.list(T("/obj/effect/mob_spawn/human/corpse/russian/ranged/trooper"), T("/obj/item/weapon/gun/ballistic/shotgun/lethal")));
+	parent_proc();
+	this.loot = list(T("/obj/effect/mob_spawn/human/corpse/russian/ranged/trooper"), T("/obj/item/weapon/gun/ballistic/shotgun/lethal"));
 	return f.dot;
 });
 
@@ -109,19 +101,17 @@ rt.type(4984, "/mob/living/simple_animal/hostile/russian/ranged/officer", "/mob/
 	loot: null,
 });
 
-// /mob/living/simple_animal/hostile/russian/ranged/officer/proc/<init>  (code/modules/mob/living/simple_animal/hostile/russian.dm:66)
+// russian.dm:66
 rt.def("/mob/living/simple_animal/hostile/russian/ranged/officer/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "loot", rt.list(T("/obj/effect/mob_spawn/human/corpse/russian/ranged/officer"), T("/obj/item/weapon/gun/ballistic/automatic/pistol/APS")));
+	parent_proc();
+	this.loot = list(T("/obj/effect/mob_spawn/human/corpse/russian/ranged/officer"), T("/obj/item/weapon/gun/ballistic/automatic/pistol/APS"));
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/russian/ranged/officer/proc/Aggro  (code/modules/mob/living/simple_animal/hostile/russian.dm:70)  may sleep
+// russian.dm:70
 rt.def("/mob/living/simple_animal/hostile/russian/ranged/officer/proc/Aggro", function* Aggro(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "summon_backup", 15);
-	yield* g.srcCall(f, "say", "V BOJ!!");
+	yield* parent_proc();
+	yield* this.summon_backup(15);
+	yield* this.say("V BOJ!!");
 	return f.dot;
 }, true);

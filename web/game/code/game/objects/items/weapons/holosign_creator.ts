@@ -1,7 +1,7 @@
-// From code/game/objects/items/weapons/holosign_creator.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/weapons/holosign_creator.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(7234, "/obj/item/weapon/holosign_creator", "/obj/item/weapon", {
@@ -24,72 +24,63 @@ rt.type(7234, "/obj/item/weapon/holosign_creator", "/obj/item/weapon", {
 	origin_tech: "magnets=1;programming=3",
 });
 
-// /obj/item/weapon/holosign_creator/proc/<init>  (code/game/objects/items/weapons/holosign_creator.dm:14)
+// holosign_creator.dm:14
 rt.def("/obj/item/weapon/holosign_creator/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "signs", rt.list());
+	parent_proc();
+	this.signs = list();
 	return f.dot;
 });
 
-// /obj/item/weapon/holosign_creator/proc/afterattack  (code/game/objects/items/weapons/holosign_creator.dm:22)  may sleep
+// holosign_creator.dm:22
 rt.def("/obj/item/weapon/holosign_creator/proc/afterattack", function* afterattack(f: Frame, target: Value, user: Value, flag: Value) {
-	let _T: Value = null, H: Value = null;
-	f.vars = () => [target, user, flag, _T, H];
-	if (!truthy(live(flag))) return f.dot;
-	if (!truthy((yield* g.srcCall(f, "check_allowed_items", live(target), 1)))) {
-		return live(f.dot);
+	let H: Value = null;
+	if (!flag) return f.dot;
+	if (!this.check_allowed_items(target, 1)) {
+		return f.dot;
 	}
-	_T = rt.getStep(f, live(target), 0);
-	if (truthy((H = rt.locateIn(f, rt.sv(f, "holosign_type"), live(_T))))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You use ＀ to deactivate ＀.</span>", [live(f.src), live(H)])]);
-		yield* g.call(f, P("/proc/qdel"), null, [live(H)]);
+	let _T: Value = rt.getStep(f, target, 0);
+	if (H = rt.locateIn(f, this.holosign_type, _T)) {
+		to_chat(user, `<span class='notice'>You use ${this} to deactivate ${H}.</span>`);
+		yield* qdel(H);
 	} else {
-		if (truthy((yield* g.call(f, P("/proc/is_blocked_turf"), null, [live(_T), 1])))) return f.dot;
-		if (truthy(rt.sv(f, "holocreator_busy"))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>＀ is busy creating a hologram.</span>", [live(f.src)])]);
-			return live(f.dot);
+		if (is_blocked_turf(_T, 1)) return f.dot;
+		if (this.holocreator_busy) {
+			to_chat(user, `<span class='notice'>${this} is busy creating a hologram.</span>`);
+			return f.dot;
 		}
-		if (rt.lt(rt.len(f, rt.sv(f, "signs")), rt.sv(f, "max_signs"))) {
-			yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/machines/click.ogg"), 20, 1]);
-			if (truthy(rt.sv(f, "creation_time"))) {
-				rt.setSv(f, "holocreator_busy", 1);
-				if (!truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(user), null, rt.sv(f, "creation_time"), "target", live(target)], rt.Args.Named)))) {
-					rt.setSv(f, "holocreator_busy", 0);
-					return live(f.dot);
+		if (rt.len(f, this.signs) < this.max_signs) {
+			playsound(this.loc, rt.rsc("sound/machines/click.ogg"), 20, 1);
+			if (this.creation_time) {
+				this.holocreator_busy = 1;
+				if (!(yield* do_after(user, this.creation_time, { target: target }))) {
+					this.holocreator_busy = 0;
+					return f.dot;
 				}
-				rt.setSv(f, "holocreator_busy", 0);
-				if (rt.ge(rt.len(f, rt.sv(f, "signs")), rt.sv(f, "max_signs"))) {
-					return live(f.dot);
+				this.holocreator_busy = 0;
+				if (rt.len(f, this.signs) >= this.max_signs) {
+					return f.dot;
 				}
-				if (truthy((yield* g.call(f, P("/proc/is_blocked_turf"), null, [live(_T), 1])))) {
-					return live(f.dot);
+				if (is_blocked_turf(_T, 1)) {
+					return f.dot;
 				}
 			}
-			H = (yield* g.new_(f, rt.sv(f, "holosign_type"), [rt.getStep(f, live(target), 0), live(f.src)]));
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You create ＇！ with ＀.</span>", [live(H), live(f.src)])]);
+			H = (yield* new_(this.holosign_type, rt.getStep(f, target, 0), this));
+			to_chat(user, fmt("<span class='notice'>You create ＇！ with ＀.</span>", [H, this]));
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>＀ is projecting at max capacity!</span>", [live(f.src)])]);
+			to_chat(user, `<span class='notice'>${this} is projecting at max capacity!</span>`);
 		}
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/holosign_creator/proc/attack_self  (code/game/objects/items/weapons/holosign_creator.dm:55)  may sleep
+// holosign_creator.dm:55
 rt.def("/obj/item/weapon/holosign_creator/proc/attack_self", function* attack_self(f: Frame, user: Value) {
 	let H: Value = null;
-	let $e: any;
-	f.vars = () => [user, H, $e];
-	if (!truthy(rt.len(f, rt.sv(f, "signs")))) return f.dot;
-	H = null;
-	rt.forList(f, 0, rt.sv(f, "signs"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		H = $e;
-		yield* g.call(f, P("/proc/qdel"), null, [live(H)]);
+	if (!rt.len(f, this.signs)) return f.dot;
+	for (H of each(this.signs)) {
+		yield* qdel(H);
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>You clear all active holograms.</span>"]);
+	to_chat(user, "<span class='notice'>You clear all active holograms.</span>");
 	return f.dot;
 }, true);
 
@@ -102,66 +93,46 @@ rt.type(7238, "/obj/item/weapon/holosign_creator/cyborg", "/obj/item/weapon/holo
 	holosign_type: rt.typePath("/obj/structure/holosign/barrier/cyborg"),
 });
 
-// /obj/item/weapon/holosign_creator/cyborg/proc/attack_self  (code/game/objects/items/weapons/holosign_creator.dm:94)  may sleep
+// holosign_creator.dm:94
 rt.def("/obj/item/weapon/holosign_creator/cyborg/proc/attack_self", function* attack_self(f: Frame, user: Value) {
 	let R: Value = null, H: Value = null, H_0: Value = null;
-	let $e: any;
-	f.vars = () => [user, R, H, H_0, $e];
-	if (truthy((rt.istype(live(user), T("/mob/living/silicon/robot")) ? 1 : 0))) {
-		R = live(user);
-		if (truthy(rt.sv(f, "shock"))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>You clear all active holograms, and reset your projector to normal.</span>"]);
-			rt.setSv(f, "holosign_type", T("/obj/structure/holosign/barrier/cyborg"));
-			rt.setSv(f, "creation_time", 5);
-			if (truthy(rt.len(f, rt.sv(f, "signs")))) {
+	if (rt.istype(user, T("/mob/living/silicon/robot"))) {
+		R = user;
+		if (this.shock) {
+			to_chat(user, "<span class='notice'>You clear all active holograms, and reset your projector to normal.</span>");
+			this.holosign_type = T("/obj/structure/holosign/barrier/cyborg");
+			this.creation_time = 5;
+			if (rt.len(f, this.signs)) {
+				for (H of each(this.signs)) {
+					yield* qdel(H);
+				}
+			}
+			this.shock = 0;
+			return f.dot;
+		} else if (R.emagged && !this.shock) {
+			to_chat(user, "<span class='warning'>You clear all active holograms, and overload your energy projector!</span>");
+			this.holosign_type = T("/obj/structure/holosign/barrier/cyborg/hacked");
+			this.creation_time = 30;
+			if (rt.len(f, this.signs)) {
 				H = null;
-				rt.forList(f, 0, rt.sv(f, "signs"));
-				while (($e = rt.next(f, 0)) !== undefined) {
-					H = $e;
-					yield* g.call(f, P("/proc/qdel"), null, [live(H)]);
-				}
-				rt.endFor(f, 0);
-			}
-			rt.setSv(f, "shock", 0);
-			return live(f.dot);
-		} else {
-			if ((truthy(rt.fv(f, "emagged", live(R))) && !truthy(rt.sv(f, "shock")))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>You clear all active holograms, and overload your energy projector!</span>"]);
-				rt.setSv(f, "holosign_type", T("/obj/structure/holosign/barrier/cyborg/hacked"));
-				rt.setSv(f, "creation_time", 30);
-				if (truthy(rt.len(f, rt.sv(f, "signs")))) {
-					H = null;
-					rt.forList(f, 0, rt.sv(f, "signs"));
-					while (($e = rt.next(f, 0)) !== undefined) {
-						H = $e;
-						yield* g.call(f, P("/proc/qdel"), null, [live(H)]);
-					}
-					rt.endFor(f, 0);
-				}
-				rt.setSv(f, "shock", 1);
-				return live(f.dot);
-			} else {
-				if (truthy(rt.len(f, rt.sv(f, "signs")))) {
-					H = null;
-					rt.forList(f, 0, rt.sv(f, "signs"));
-					while (($e = rt.next(f, 0)) !== undefined) {
-						H = $e;
-						yield* g.call(f, P("/proc/qdel"), null, [live(H)]);
-					}
-					rt.endFor(f, 0);
-					yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>You clear all active holograms.</span>"]);
+				for (H of each(this.signs)) {
+					yield* qdel(H);
 				}
 			}
+			this.shock = 1;
+			return f.dot;
+		} else if (rt.len(f, this.signs)) {
+			H = null;
+			for (H of each(this.signs)) {
+				yield* qdel(H);
+			}
+			to_chat(user, "<span class='notice'>You clear all active holograms.</span>");
 		}
 	}
-	if (!truthy(rt.len(f, rt.sv(f, "signs")))) return f.dot;
-	H_0 = null;
-	rt.forList(f, 0, rt.sv(f, "signs"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		H_0 = $e;
-		yield* g.call(f, P("/proc/qdel"), null, [live(H_0)]);
+	if (!rt.len(f, this.signs)) return f.dot;
+	for (H_0 of each(this.signs)) {
+		yield* qdel(H_0);
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>You clear all active holograms.</span>"]);
+	to_chat(user, "<span class='notice'>You clear all active holograms.</span>");
 	return f.dot;
 }, true);

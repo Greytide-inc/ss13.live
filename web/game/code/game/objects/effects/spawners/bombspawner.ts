@@ -1,7 +1,7 @@
-// From code/game/objects/effects/spawners/bombspawner.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/effects/spawners/bombspawner.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(11836, "/obj/effect/spawner/newbomb", "/obj/effect/spawner", {
@@ -13,27 +13,26 @@ rt.type(11836, "/obj/effect/spawner/newbomb", "/obj/effect/spawner", {
 	icon_state: "x",
 });
 
-// /obj/effect/spawner/newbomb/proc/Initialize  (code/game/objects/effects/spawners/bombspawner.dm:10)  may sleep
+// bombspawner.dm:10
 rt.def("/obj/effect/spawner/newbomb/proc/Initialize", function* Initialize(f: Frame) {
-	let V: Value = null, PT: Value = null, OT: Value = null, A: Value = null;
-	f.vars = () => [V, PT, OT, A];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	V = (yield* g.new_(f, T("/obj/item/device/transfer_valve"), [rt.fv(f, "loc", live(f.src))]));
-	PT = (yield* g.new_(f, T("/obj/item/weapon/tank/internals/plasma/full"), [live(V)]));
-	OT = (yield* g.new_(f, T("/obj/item/weapon/tank/internals/oxygen"), [live(V)]));
-	rt.setFv(f, "temperature", rt.fv(f, "air_contents", live(PT)), add(rt.sv(f, "btemp1"), 273.1499938964844));
-	rt.setFv(f, "temperature", rt.fv(f, "air_contents", live(OT)), add(rt.sv(f, "btemp2"), 273.1499938964844));
-	rt.setFv(f, "tank_one", live(V), live(PT));
-	rt.setFv(f, "tank_two", live(V), live(OT));
-	rt.setFv(f, "master", live(PT), live(V));
-	rt.setFv(f, "master", live(OT), live(V));
-	if (truthy(rt.sv(f, "assembly_type"))) {
-		A = (yield* g.new_(f, rt.sv(f, "assembly_type"), [live(V)]));
-		rt.setFv(f, "attached_device", live(V), live(A));
-		rt.setFv(f, "holder", live(A), live(V));
-		yield* g.callName(f, live(A), "toggle_secure", []);
+	let A: Value = null;
+	yield* parent_proc();
+	let V: Value = (yield* new_(T("/obj/item/device/transfer_valve"), this.loc));
+	let PT: Value = (yield* new_(T("/obj/item/weapon/tank/internals/plasma/full"), V));
+	let OT: Value = (yield* new_(T("/obj/item/weapon/tank/internals/oxygen"), V));
+	PT.air_contents.temperature = this.btemp1 + T0C;
+	OT.air_contents.temperature = this.btemp2 + T0C;
+	V.tank_one = PT;
+	V.tank_two = OT;
+	PT.master = V;
+	OT.master = V;
+	if (this.assembly_type) {
+		A = (yield* new_(this.assembly_type, V));
+		V.attached_device = A;
+		A.holder = V;
+		yield* A.toggle_secure();
 	}
-	yield* g.callName(f, live(V), "update_icon", []);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* V.update_icon();
+	yield* qdel(this);
 	return f.dot;
 }, true);

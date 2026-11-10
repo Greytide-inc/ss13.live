@@ -1,7 +1,7 @@
-// From code/game/machinery/camera/camera.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/machinery/camera/camera.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, fmt } = rt;
 
 
 rt.type(10622, "/obj/machinery/camera", "/obj/machinery", {
@@ -39,510 +39,434 @@ rt.type(10622, "/obj/machinery/camera", "/obj/machinery", {
 	integrity_failure: 50,
 });
 
-// /obj/machinery/camera/proc/<init>  (code/game/machinery/camera/camera.dm:21)
+// camera.dm:21
 rt.def("/obj/machinery/camera/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "network", rt.list("SS13"));
-	$0 = $0;
-	rt.setSv(f, "localMotionTargets", rt.list());
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 50, "bullet", 20, "laser", 20, "energy", 20, "bomb", 0, "bio", 0, "rad", 0, "fire", 90, "acid", 50]));
+	parent_proc();
+	this.network = list("SS13");
+
+	this.localMotionTargets = list();
+	this.armor = rt.alist(f, ["melee", 50, "bullet", 20, "laser", 20, "energy", 20, "bomb", 0, "bio", 0, "rad", 0, "fire", 90, "acid", 50]);
 	return f.dot;
 });
 
-// /obj/machinery/camera/proc/Initialize  (code/game/machinery/camera/camera.dm:44)  may sleep
-rt.def("/obj/machinery/camera/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "assembly", (yield* g.new_(f, T("/obj/structure/camera_assembly"), [live(f.src)])));
-	rt.setFv(f, "state", rt.sv(f, "assembly"), 4);
-	rt.modField(f, rt.gl("cameranet"), "cameras", live(f.src), add);
-	yield* g.callName(f, rt.gl("cameranet"), "addCamera", [live(f.src)]);
-	rt.setSv(f, "proximity_monitor", (yield* g.new_(f, T("/datum/proximity_monitor"), [live(f.src), 1])));
-	if (!(((truthy(live(f.args[0])) && isEqual(rt.sv(f, "z"), 2)) && truthy(rt.op(f, "Prob", [], [3]))) && !truthy(rt.sv(f, "start_active")))) return f.dot;
-	yield* g.srcCall(f, "toggle_cam");
+// camera.dm:44
+rt.def("/obj/machinery/camera/proc/Initialize", function* Initialize(f: Frame, mapload: Value) {
+	f.dot = (yield* parent_proc());
+	this.assembly = (yield* new_(T("/obj/structure/camera_assembly"), this));
+	this.assembly.state = 4;
+	GLOB.cameranet.cameras += this;
+	GLOB.cameranet.addCamera(this);
+	this.proximity_monitor = (yield* new_(T("/datum/proximity_monitor"), this, 1));
+	if (!(mapload && this.z == ZLEVEL_STATION && prob(3) && !this.start_active)) return f.dot;
+	yield* this.toggle_cam();
 	return f.dot;
-}, true, { args: ["mapload"] });
-
-// /obj/machinery/camera/proc/Destroy  (code/game/machinery/camera/camera.dm:55)  may sleep
-rt.def("/obj/machinery/camera/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.srcCall(f, "toggle_cam", null, 0);
-	if (truthy(rt.sv(f, "assembly"))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "assembly")]);
-		rt.setSv(f, "assembly", null);
-	}
-	if (truthy(rt.sv(f, "bug"))) {
-		(rt.modField(f, rt.sv(f, "bug"), "bugged_cameras", rt.fv(f, "c_tag", live(f.src)), subtract));
-		if (isEqual(rt.fv(f, "current", rt.sv(f, "bug")), live(f.src))) {
-			rt.setFv(f, "current", rt.sv(f, "bug"), null);
-		}
-		rt.setSv(f, "bug", null);
-	}
-	yield* g.callName(f, rt.gl("cameranet"), "removeCamera", [live(f.src)]);
-	(rt.modField(f, rt.gl("cameranet"), "cameras", live(f.src), subtract));
-	yield* g.callName(f, rt.gl("cameranet"), "removeCamera", [live(f.src)]);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
 }, true);
 
-// /obj/machinery/camera/proc/emp_act  (code/game/machinery/camera/camera.dm:70)  may sleep
-rt.def("/obj/machinery/camera/proc/emp_act", function* emp_act(f: Frame) {
-	let previous_network: Value = null, thisemp: Value = null, O: Value = null;
-	let $e: any;
-	f.vars = () => [previous_network, thisemp, O, $e];
-	if (!truthy(rt.sv(f, "status"))) {
-		return live(f.dot);
+// camera.dm:55
+rt.def("/obj/machinery/camera/proc/Destroy", function* Destroy(f: Frame) {
+	yield* this.toggle_cam(null, 0);
+	if (this.assembly) {
+		yield* qdel(this.assembly);
+		this.assembly = null;
 	}
-	if (truthy((yield* g.srcCall(f, "isEmpProof")))) return f.dot;
-	if (!truthy(rt.op(f, "Prob", [], [divide(150, live(f.args[0]))]))) return f.dot;
-	yield* g.srcCall(f, "update_icon");
-	previous_network = rt.sv(f, "network");
-	rt.setSv(f, "network", rt.list());
-	yield* g.callName(f, rt.gl("cameranet"), "removeCamera", [live(f.src)]);
-	(rt.modSrcVar(f, "stat", 16, rt.bitOr));
-	yield* g.srcCall(f, "set_light", 0);
-	rt.setSv(f, "emped", add(rt.sv(f, "emped"), 1));
-	yield* g.srcCall(f, "update_icon");
-	thisemp = rt.sv(f, "emped");
+	if (this.bug) {
+		this.bug.bugged_cameras -= this.c_tag;
+		if (this.bug.current == this) {
+			this.bug.current = null;
+		}
+		this.bug = null;
+	}
+	GLOB.cameranet.removeCamera(this);
+	GLOB.cameranet.cameras -= this;
+	GLOB.cameranet.removeCamera(this);
+	return (yield* parent_proc());
+}, true);
+
+// camera.dm:70
+rt.def("/obj/machinery/camera/proc/emp_act", function* emp_act(f: Frame, severity: Value) {
+	let O: Value = null;
+	if (!this.status) {
+		return f.dot;
+	}
+	if (this.isEmpProof()) return f.dot;
+	if (!prob(150 / severity)) return f.dot;
+	yield* this.update_icon();
+	let previous_network: Value = this.network;
+	this.network = list();
+	GLOB.cameranet.removeCamera(this);
+	(rt.modSrcVar(f, "stat", EMPED, rt.bitOr));
+	this.set_light(0);
+	this.emped = this.emped + 1;
+	yield* this.update_icon();
+	let thisemp: Value = this.emped;
 	rt.spawnTail(f, 900, "/obj/machinery/camera/proc/emp_act: spawn at game/machinery/camera/camera.dm:83", previous_network, thisemp, O);
-	O = null;
-	rt.forList(f, 0, rt.gl("mob_list"), T("/mob"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		O = $e;
-		if ((truthy(rt.fv(f, "client", live(O))) && isEqual(rt.gv(f, "eye", rt.fv(f, "client", live(O))), live(f.src)))) {
-			yield* g.callName(f, live(O), "unset_machine", []);
-			yield* g.callName(f, live(O), "reset_perspective", [null]);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(O), "The screen bursts into static."]);
+	for (O of each(GLOB.mob_list, T("/mob"))) {
+		if (O.client && O.client.eye == this) {
+			yield* O.unset_machine();
+			yield* O.reset_perspective(null);
+			to_chat(O, "The screen bursts into static.");
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["severity"] });
+}, true);
 
 // a spawn(900) body of /obj/machinery/camera/proc/emp_act, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/obj/machinery/camera/proc/emp_act: spawn at game/machinery/camera/camera.dm:83", function* (f: Frame, previous_network: Value, thisemp: Value, O: Value) {
-	f.vars = () => [previous_network, thisemp, O];
-	if (truthy(rt.sv(f, "loc"))) {
-		yield* g.srcCall(f, "triggerCameraAlarm");
-		if (isEqual(rt.sv(f, "emped"), live(thisemp))) {
-			rt.setSv(f, "network", live(previous_network));
+	if (this.loc) {
+		this.triggerCameraAlarm();
+		if (this.emped == thisemp) {
+			this.network = previous_network;
 			(rt.modSrcVar(f, "stat", 16777199, rt.bitAnd));
-			yield* g.srcCall(f, "update_icon");
-			if (truthy((yield* g.srcCall(f, "can_use")))) {
-				yield* g.callName(f, rt.gl("cameranet"), "addCamera", [live(f.src)]);
+			yield* this.update_icon();
+			if (this.can_use()) {
+				GLOB.cameranet.addCamera(this);
 			}
-			rt.setSv(f, "emped", 0);
-			yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/machinery/camera/proc/cancelCameraAlarm")])), 100]);
+			this.emped = 0;
+			yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/machinery/camera/proc/cancelCameraAlarm"))), 100);
 		}
 	}
 	return null;
 });
 
-// /obj/machinery/camera/proc/tesla_act  (code/game/machinery/camera/camera.dm:102)  may sleep
-rt.def("/obj/machinery/camera/proc/tesla_act", function* tesla_act(f: Frame) {
-	if (truthy((yield* g.srcCall(f, "isEmpProof")))) {
-		return live(f.dot);
+// camera.dm:102
+rt.def("/obj/machinery/camera/proc/tesla_act", function* tesla_act(f: Frame, power: Value) {
+	if (this.isEmpProof()) {
+		return f.dot;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-	return f.dot;
-}, true, { args: ["power"] });
-
-// /obj/machinery/camera/proc/ex_act  (code/game/machinery/camera/camera.dm:110)
-rt.def("/obj/machinery/camera/proc/ex_act", function ex_act(f: Frame) {
-	if (truthy(rt.sv(f, "invuln"))) {
-		return live(f.dot);
-	}
-	rt.callSuper(f, [], rt.Args.Same);
-	return f.dot;
-}, false, { args: ["severity", "target"], waitfor: false });
-
-// /obj/machinery/camera/proc/setViewRange  (code/game/machinery/camera/camera.dm:114)
-rt.def("/obj/machinery/camera/proc/setViewRange", function setViewRange(f: Frame, num: Value) {
-	f.vars = () => [num];
-	if (live(num) === null) {
-		num = 7;
-	}
-	rt.setFv(f, "view_range", live(f.src), live(num));
-	rt.callName(f, rt.gl("cameranet"), "updateVisibility", [live(f.src), 0]);
-	return f.dot;
-});
-
-// /obj/machinery/camera/proc/shock  (code/game/machinery/camera/camera.dm:117)  may sleep
-rt.def("/obj/machinery/camera/proc/shock", function* shock(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (!truthy((rt.istype(live(user), T("/mob/living")) ? 1 : 0))) {
-		return live(f.dot);
-	}
-	yield* g.callName(f, live(user), "electrocute_act", [10, live(f.src)]);
+	yield* parent_proc();
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
-// /obj/machinery/camera/proc/attackby  (code/game/machinery/camera/camera.dm:122)  may sleep
-rt.def("/obj/machinery/camera/proc/attackby", function* attackby(f: Frame) {
-	let msg: Value = null, msg2: Value = null, _P: Value = null, U: Value = null, X: Value = null, _P_4: Value = null, itemname: Value = null, info: Value = null, O: Value = null, AI: Value = null, cable: Value = null;
+// camera.dm:110
+rt.def("/obj/machinery/camera/proc/ex_act", function ex_act(f: Frame, severity: Value, target: Value) {
+	if (this.invuln) {
+		return f.dot;
+	}
+	parent_proc();
+	return f.dot;
+}, false, { waitfor: false });
+
+// camera.dm:114
+rt.def("/obj/machinery/camera/proc/setViewRange", function setViewRange(f: Frame, num: Value) {
+	num ??= 7;
+	this.view_range = num;
+	GLOB.cameranet.updateVisibility(this, 0);
+	return f.dot;
+});
+
+// camera.dm:117
+rt.def("/obj/machinery/camera/proc/shock", function* shock(f: Frame, user: Value) {
+	if (!rt.istype(user, T("/mob/living"))) {
+		return f.dot;
+	}
+	yield* user.electrocute_act(10, this);
+	return f.dot;
+}, true);
+
+// camera.dm:122
+rt.def("/obj/machinery/camera/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
+	let _P: Value = null, U: Value = null, X: Value = null, _P_4: Value = null, itemname: Value = null, info: Value = null, O: Value = null, AI: Value = null, cable: Value = null;
 	let $0: any, $1: any, $e: any;
-	f.vars = () => [msg, msg2, _P, U, X, _P_4, itemname, info, O, AI, cable, $0, $1, $e];
-	msg = fmt("<span class='notice'>You attach ＀ into the assembly's inner circuits.</span>", [live(f.args[0])]);
-	msg2 = fmt("<span class='notice'>＀ already has that upgrade!</span>", [live(f.src)]);
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/screwdriver")) ? 1 : 0))) {
-		rt.setSv(f, "panel_open", (!truthy(rt.sv(f, "panel_open")) ? 1 : 0));
-		$0 = live(f.args[1]);
-		if (truthy(rt.sv(f, "panel_open"))) {
+	let msg: Value = `<span class='notice'>You attach ${W} into the assembly's inner circuits.</span>`;
+	let msg2: Value = `<span class='notice'>${this} already has that upgrade!</span>`;
+	if (rt.istype(W, T("/obj/item/weapon/screwdriver"))) {
+		this.panel_open = (!this.panel_open ? 1 : 0);
+		$0 = user;
+		if (this.panel_open) {
 			$1 = "open";
 		} else {
 			$1 = "closed";
 		}
-		yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='notice'>You screw the camera's panel ＀.</span>", [$1])]);
-		yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.fv(f, "usesound", live(f.args[0])), 50, 1]);
-		return live(f.dot);
+		to_chat($0, `<span class='notice'>You screw the camera's panel ${$1}.</span>`);
+		playsound(this.loc, W.usesound, 50, 1);
+		return f.dot;
 	}
-	if (truthy(rt.sv(f, "panel_open"))) {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/wirecutters")) ? 1 : 0))) {
-			yield* g.srcCall(f, "toggle_cam", live(f.args[1]), 1);
-			rt.setSv(f, "obj_integrity", rt.sv(f, "max_integrity"));
-			return live(f.dot);
-		} else {
-			if (truthy((rt.istype(live(f.args[0]), T("/obj/item/device/multitool")) ? 1 : 0))) {
-				if (isEqual(rt.sv(f, "view_range"), rt.initial(f, live(f.src), "view_range"))) {
-					$0 = rt.sv(f, "short_range");
-				} else {
-					$0 = rt.initial(f, live(f.src), "view_range");
-				}
-				yield* g.srcCall(f, "setViewRange", $0);
-				$0 = live(f.args[1]);
-				if (isEqual(rt.sv(f, "view_range"), rt.initial(f, live(f.src), "view_range"))) {
-					$1 = "restore";
-				} else {
-					$1 = "mess up";
-				}
-				yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='notice'>You ＀ the camera's focus.</span>", [$1])]);
-				return live(f.dot);
+	if (this.panel_open) {
+		if (rt.istype(W, T("/obj/item/weapon/wirecutters"))) {
+			yield* this.toggle_cam(user, 1);
+			this.obj_integrity = this.max_integrity;
+			return f.dot;
+		} else if (rt.istype(W, T("/obj/item/device/multitool"))) {
+			if (this.view_range == rt.initial(f, this, "view_range")) {
+				$0 = this.short_range;
 			} else {
-				if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/weldingtool")) ? 1 : 0))) {
-					if (truthy((yield* g.srcCall(f, "weld", live(f.args[0]), live(f.args[1]))))) {
-						yield* g.srcCall(f, "visible_message", fmt("<span class='warning'>＀ unwelds ＀, leaving it as just a frame bolted to the wall.</span>", [live(f.args[1]), live(f.src)]), fmt("<span class='warning'>You unweld ＀, leaving it as just a frame bolted to the wall</span>", [live(f.src)]));
-						yield* g.srcCall(f, "deconstruct", 1);
-					}
-					return live(f.dot);
-				} else {
-					if (truthy((rt.istype(live(f.args[0]), T("/obj/item/device/analyzer")) ? 1 : 0))) {
-						if (!truthy((yield* g.srcCall(f, "isXRay")))) {
-							if (!truthy((yield* g.callName(f, live(f.args[1]), "drop_item", [live(f.args[0])])))) {
-								return live(f.dot);
-							}
-							yield* g.srcCall(f, "upgradeXRay");
-							yield* g.call(f, P("/proc/qdel"), null, [live(f.args[0])]);
-							yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("＀", [live(msg)])]);
-						} else {
-							yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("＀", [live(msg2)])]);
-						}
-						return live(f.dot);
-					} else {
-						if (truthy((rt.istype(live(f.args[0]), T("/obj/item/stack/sheet/mineral/plasma")) ? 1 : 0))) {
-							if (!truthy((yield* g.srcCall(f, "isEmpProof")))) {
-								_P = live(f.args[0]);
-								yield* g.srcCall(f, "upgradeEmpProof");
-								yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("＀", [live(msg)])]);
-								yield* g.callName(f, live(_P), "use", [1]);
-							} else {
-								yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("＀", [live(msg2)])]);
-							}
-							return live(f.dot);
-						} else {
-							if (truthy((rt.istype(live(f.args[0]), T("/obj/item/device/assembly/prox_sensor")) ? 1 : 0))) {
-								if (!truthy((yield* g.srcCall(f, "isMotion")))) {
-									yield* g.srcCall(f, "upgradeMotion");
-									yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("＀", [live(msg)])]);
-									yield* g.call(f, P("/proc/qdel"), null, [live(f.args[0])]);
-								} else {
-									yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("＀", [live(msg2)])]);
-								}
-								return live(f.dot);
-							}
-						}
-					}
-				}
+				$0 = rt.initial(f, this, "view_range");
 			}
+			this.setViewRange($0);
+			$0 = user;
+			if (this.view_range == rt.initial(f, this, "view_range")) {
+				$1 = "restore";
+			} else {
+				$1 = "mess up";
+			}
+			to_chat($0, `<span class='notice'>You ${$1} the camera's focus.</span>`);
+			return f.dot;
+		} else if (rt.istype(W, T("/obj/item/weapon/weldingtool"))) {
+			if (yield* this.weld(W, user)) {
+				this.visible_message(`<span class='warning'>${user} unwelds ${this}, leaving it as just a frame bolted to the wall.</span>`, `<span class='warning'>You unweld ${this}, leaving it as just a frame bolted to the wall</span>`);
+				yield* this.deconstruct(1);
+			}
+			return f.dot;
+		} else if (rt.istype(W, T("/obj/item/device/analyzer"))) {
+			if (!this.isXRay()) {
+				if (!(yield* user.drop_item(W))) {
+					return f.dot;
+				}
+				yield* this.upgradeXRay();
+				yield* qdel(W);
+				to_chat(user, `${msg}`);
+			} else {
+				to_chat(user, `${msg2}`);
+			}
+			return f.dot;
+		} else if (rt.istype(W, T("/obj/item/stack/sheet/mineral/plasma"))) {
+			if (!this.isEmpProof()) {
+				_P = W;
+				yield* this.upgradeEmpProof();
+				to_chat(user, `${msg}`);
+				yield* _P.use(1);
+			} else {
+				to_chat(user, `${msg2}`);
+			}
+			return f.dot;
+		} else if (rt.istype(W, T("/obj/item/device/assembly/prox_sensor"))) {
+			if (!this.isMotion()) {
+				yield* this.upgradeMotion();
+				to_chat(user, `${msg}`);
+				yield* qdel(W);
+			} else {
+				to_chat(user, `${msg2}`);
+			}
+			return f.dot;
 		}
 	}
-	if (((truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/paper")) ? 1 : 0)) || truthy((rt.istype(live(f.args[0]), T("/obj/item/device/pda")) ? 1 : 0))) && truthy((rt.istype(live(f.args[1]), T("/mob/living")) ? 1 : 0)))) {
-		U = live(f.args[1]);
-		X = null;
-		_P_4 = null;
+	if ((rt.istype(W, T("/obj/item/weapon/paper")) || rt.istype(W, T("/obj/item/device/pda"))) && rt.istype(user, T("/mob/living"))) {
+		U = user;
 		itemname = "";
 		info = "";
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/paper")) ? 1 : 0))) {
-			itemname = rt.gv(f, "name", (X = live(f.args[0])));
-			info = rt.fv(f, "info", live(X));
+		if (rt.istype(W, T("/obj/item/weapon/paper"))) {
+			itemname = (X = W).name;
+			info = X.info;
 		} else {
-			itemname = rt.gv(f, "name", (_P_4 = live(f.args[0])));
-			info = rt.fv(f, "notehtml", live(_P_4));
+			itemname = (_P_4 = W).name;
+			info = _P_4.notehtml;
 		}
-		yield* g.call(f, P("/proc/to_chat"), null, [live(U), fmt("<span class='notice'>You hold ％！ up to the camera...</span>", [live(itemname)])]);
-		yield* g.callName(f, live(U), "changeNext_move", [8]);
-		O = null;
-		rt.forList(f, 0, rt.gl("player_list"), T("/mob"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			O = $e;
-			if (truthy((rt.istype(live(O), T("/mob/living/silicon/ai")) ? 1 : 0))) {
-				if ((truthy(rt.gv(f, "control_disabled", (AI = live(O)))) || isEqual(rt.fv(f, "stat", live(AI)), 2))) {
-					return live(f.dot);
+		to_chat(U, fmt("<span class='notice'>You hold ％！ up to the camera...</span>", [itemname]));
+		U.changeNext_move(8);
+		for (O of each(GLOB.player_list, T("/mob"))) {
+			if (rt.istype(O, T("/mob/living/silicon/ai"))) {
+				if ((AI = O).control_disabled || AI.stat == 2) {
+					return f.dot;
 				}
-				if (isEqual(rt.fv(f, "name", live(U)), "Unknown")) {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(AI), fmt("<b>＀</b> holds <a href='?_src_=usr;show_paper=1;'>＇！</a> up to one of your cameras ...", [live(U), live(itemname)])]);
+				if (U.name == "Unknown") {
+					to_chat(AI, fmt("<b>＀</b> holds <a href='?_src_=usr;show_paper=1;'>＇！</a> up to one of your cameras ...", [U, itemname]));
 				} else {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(AI), fmt("<b><a href='?src=＃;track=＀'>＀</a></b> holds <a href='?_src_=usr;show_paper=1;'>＇！</a> up to one of your cameras ...", [live(AI), (yield* g.call(f, P("/proc/html_encode"), null, [rt.fv(f, "name", live(U))])), live(U), live(itemname)])]);
+					to_chat(AI, fmt("<b><a href='?src=＃;track=＀'>＀</a></b> holds <a href='?_src_=usr;show_paper=1;'>＇！</a> up to one of your cameras ...", [AI, html_encode(U.name), U, itemname]));
 				}
-				rt.setFv(f, "last_paper_seen", live(AI), fmt("<HTML><HEAD><TITLE>＀</TITLE></HEAD><BODY><TT>＀</TT></BODY></HTML>", [live(itemname), live(info)]));
-			} else {
-				if ((truthy(rt.fv(f, "client", live(O))) && isEqual(rt.gv(f, "eye", rt.fv(f, "client", live(O))), live(f.src)))) {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(O), fmt("＀ holds ＇！ up to one of the cameras ...", [live(U), live(itemname)])]);
-					rt.op(f, "Browse", [], [live(O), fmt("<HTML><HEAD><TITLE>＀</TITLE></HEAD><BODY><TT>＀</TT></BODY></HTML>", [live(itemname), live(info)]), fmt("window=＀", [live(itemname)])], false);
-				}
+				AI.last_paper_seen = `<HTML><HEAD><TITLE>${itemname}</TITLE></HEAD><BODY><TT>${info}</TT></BODY></HTML>`;
+			} else if (O.client && O.client.eye == this) {
+				to_chat(O, fmt("＀ holds ＇！ up to one of the cameras ...", [U, itemname]));
+				rt.op(f, "Browse", [], [O, `<HTML><HEAD><TITLE>${itemname}</TITLE></HEAD><BODY><TT>${info}</TT></BODY></HTML>`, `window=${itemname}`], false);
 			}
 		}
-		rt.endFor(f, 0);
-		return live(f.dot);
-	} else {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/device/camera_bug")) ? 1 : 0))) {
-			if (!truthy((yield* g.srcCall(f, "can_use")))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>Camera non-functional.</span>"]);
-				return live(f.dot);
-			}
-			if (truthy(rt.sv(f, "bug"))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>Camera bug removed.</span>"]);
-				(rt.modField(f, rt.sv(f, "bug"), "bugged_cameras", rt.fv(f, "c_tag", live(f.src)), subtract));
-				rt.setSv(f, "bug", null);
-			} else {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>Camera bugged.</span>"]);
-				rt.setSv(f, "bug", live(f.args[0]));
-				rt.setAt(rt.fv(f, "bugged_cameras", rt.sv(f, "bug")), rt.fv(f, "c_tag", live(f.src)), live(f.src));
-			}
-			return live(f.dot);
+		return f.dot;
+	} else if (rt.istype(W, T("/obj/item/device/camera_bug"))) {
+		if (!this.can_use()) {
+			to_chat(user, "<span class='notice'>Camera non-functional.</span>");
+			return f.dot;
+		}
+		if (this.bug) {
+			to_chat(user, "<span class='notice'>Camera bug removed.</span>");
+			this.bug.bugged_cameras -= this.c_tag;
+			this.bug = null;
 		} else {
-			if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/pai_cable")) ? 1 : 0))) {
-				yield* g.callName(f, (cable = live(f.args[0])), "plugin", [live(f.src), live(f.args[1])]);
-				return live(f.dot);
-			}
+			to_chat(user, "<span class='notice'>Camera bugged.</span>");
+			this.bug = W;
+			rt.setAt(this.bug.bugged_cameras, this.c_tag, this);
 		}
+		return f.dot;
+	} else if (rt.istype(W, T("/obj/item/weapon/pai_cable"))) {
+		yield* (cable = W).plugin(this, user);
+		return f.dot;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["W", "user", "params"] });
+	return (yield* parent_proc());
+}, true);
 
-// /obj/machinery/camera/proc/run_obj_armor  (code/game/machinery/camera/camera.dm:234)
+// camera.dm:234
 rt.def("/obj/machinery/camera/proc/run_obj_armor", function run_obj_armor(f: Frame) {
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 0;
 	}
-	if (((isEqual(live(f.args[2]), "melee") && rt.lt(live(f.args[0]), 12)) && !truthy(rt.bitAnd(rt.sv(f, "stat"), 1)))) {
+	if (f.args[2] == "melee" && f.args[0] < 12 && !rt.bitAnd(this.stat, 1)) {
 		return 0;
 	}
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
+	f.dot = parent_proc();
 	return f.dot;
 }, false, { args: ["damage_amount", "damage_type", "damage_flag", "attack_dir"] });
 
-// /obj/machinery/camera/proc/obj_break  (code/game/machinery/camera/camera.dm:239)  may sleep
+// camera.dm:239
 rt.def("/obj/machinery/camera/proc/obj_break", function* obj_break(f: Frame, damage_flag: Value) {
-	f.vars = () => [damage_flag];
-	if (!(truthy(rt.sv(f, "status")) && !truthy(rt.bitAnd(rt.sv(f, "flags"), 128)))) return f.dot;
-	yield* g.srcCall(f, "triggerCameraAlarm");
-	yield* g.srcCall(f, "toggle_cam", null, 0);
+	if (!(this.status && !rt.bitAnd(this.flags, NODECONSTRUCT))) return f.dot;
+	this.triggerCameraAlarm();
+	yield* this.toggle_cam(null, 0);
 	return f.dot;
 }, true);
 
-// /obj/machinery/camera/proc/deconstruct  (code/game/machinery/camera/camera.dm:244)  may sleep
+// camera.dm:244
 rt.def("/obj/machinery/camera/proc/deconstruct", function* deconstruct(f: Frame, disassembled: Value) {
 	let I: Value = null;
-	f.vars = () => [disassembled, I];
-	if (live(disassembled) === null) {
-		disassembled = 1;
-	}
-	if (!truthy(rt.bitAnd(rt.sv(f, "flags"), 128))) {
-		if (truthy(live(disassembled))) {
-			if (!truthy(rt.sv(f, "assembly"))) {
-				rt.setSv(f, "assembly", (yield* g.new_(f, T("/obj/structure/camera_assembly"), [])));
+	disassembled ??= 1;
+	if (!rt.bitAnd(this.flags, NODECONSTRUCT)) {
+		if (disassembled) {
+			if (!this.assembly) {
+				this.assembly = (yield* new_(T("/obj/structure/camera_assembly")));
 			}
-			rt.setFv(f, "loc", rt.sv(f, "assembly"), rt.fv(f, "loc", live(f.src)));
-			rt.setFv(f, "state", rt.sv(f, "assembly"), 1);
-			yield* g.callName(f, rt.sv(f, "assembly"), "setDir", [rt.sv(f, "dir")]);
-			rt.setSv(f, "assembly", null);
+			this.assembly.loc = this.loc;
+			this.assembly.state = 1;
+			yield* this.assembly.setDir(this.dir);
+			this.assembly = null;
 		} else {
-			rt.setFv(f, "obj_integrity", (I = (yield* g.new_(f, T("/obj/item/wallframe/camera"), [rt.sv(f, "loc")]))), multiply(rt.fv(f, "max_integrity", live(I)), 0.5));
-			yield* g.new_(f, T("/obj/item/stack/cable_coil"), [rt.sv(f, "loc"), 2]);
+			(I = (yield* new_(T("/obj/item/wallframe/camera"), this.loc))).obj_integrity = I.max_integrity * 0.5;
+			yield* new_(T("/obj/item/stack/cable_coil"), this.loc, 2);
 		}
 	}
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
-// /obj/machinery/camera/proc/update_icon  (code/game/machinery/camera/camera.dm:259)
+// camera.dm:259
 rt.def("/obj/machinery/camera/proc/update_icon", function update_icon(f: Frame) {
-	if (!truthy(rt.sv(f, "status"))) {
-		rt.setSv(f, "icon_state", fmt("＀1", [rt.initial(f, live(f.src), "icon_state")]));
+	if (!this.status) {
+		this.icon_state = `${rt.initial(f, this, "icon_state")}1`;
+	} else if (rt.bitAnd(this.stat, EMPED)) {
+		this.icon_state = `${rt.initial(f, this, "icon_state")}emp`;
 	} else {
-		if (truthy(rt.bitAnd(rt.sv(f, "stat"), 16))) {
-			rt.setSv(f, "icon_state", fmt("＀emp", [rt.initial(f, live(f.src), "icon_state")]));
-		} else {
-			rt.setSv(f, "icon_state", fmt("＀", [rt.initial(f, live(f.src), "icon_state")]));
-		}
+		this.icon_state = `${rt.initial(f, this, "icon_state")}`;
 	}
 	return f.dot;
 });
 
-// /obj/machinery/camera/proc/toggle_cam  (code/game/machinery/camera/camera.dm:267)  may sleep
+// camera.dm:267
 rt.def("/obj/machinery/camera/proc/toggle_cam", function* toggle_cam(f: Frame, user: Value, displaymessage: Value) {
-	let change_msg: Value = null, O: Value = null;
-	let $e: any;
-	f.vars = () => [user, displaymessage, change_msg, O, $e];
-	if (live(displaymessage) === null) {
-		displaymessage = 1;
-	}
-	rt.setSv(f, "status", (!truthy(rt.sv(f, "status")) ? 1 : 0));
-	if (truthy((yield* g.srcCall(f, "can_use")))) {
-		yield* g.callName(f, rt.gl("cameranet"), "addCamera", [live(f.src)]);
+	let O: Value = null;
+	displaymessage ??= 1;
+	this.status = (!this.status ? 1 : 0);
+	if (this.can_use()) {
+		GLOB.cameranet.addCamera(this);
 	} else {
-		yield* g.srcCall(f, "set_light", 0);
-		yield* g.callName(f, rt.gl("cameranet"), "removeCamera", [live(f.src)]);
+		this.set_light(0);
+		GLOB.cameranet.removeCamera(this);
 	}
-	yield* g.callName(f, rt.gl("cameranet"), "updateChunk", [rt.sv(f, "x"), rt.sv(f, "y"), rt.sv(f, "z")]);
-	change_msg = "deactivates";
-	if (truthy(rt.sv(f, "status"))) {
+	GLOB.cameranet.updateChunk(this.x, this.y, this.z);
+	let change_msg: Value = "deactivates";
+	if (this.status) {
 		change_msg = "reactivates";
-		yield* g.srcCall(f, "triggerCameraAlarm");
-		yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/machinery/camera/proc/cancelCameraAlarm")])), 100]);
+		this.triggerCameraAlarm();
+		yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/machinery/camera/proc/cancelCameraAlarm"))), 100);
 	}
-	if (truthy(live(displaymessage))) {
-		if (truthy(live(user))) {
-			yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＀ ＀ ＀!</span>", [live(user), live(change_msg), live(f.src)]));
-			yield* g.srcCall(f, "add_hiddenprint", live(user));
+	if (displaymessage) {
+		if (user) {
+			this.visible_message(`<span class='danger'>${user} ${change_msg} ${this}!</span>`);
+			this.add_hiddenprint(user);
 		} else {
-			yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＄！ ＀!</span>", [live(f.src), live(change_msg)]));
+			this.visible_message(fmt("<span class='danger'>＄！ ＀!</span>", [this, change_msg]));
 		}
-		yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/items/wirecutter.ogg"), 100, 1]);
+		playsound(this.loc, rt.rsc("sound/items/wirecutter.ogg"), 100, 1);
 	}
-	yield* g.srcCall(f, "update_icon");
-	O = null;
-	rt.forList(f, 0, rt.gl("player_list"), T("/mob"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		O = $e;
-		if ((truthy(rt.fv(f, "client", live(O))) && isEqual(rt.gv(f, "eye", rt.fv(f, "client", live(O))), live(f.src)))) {
-			yield* g.callName(f, live(O), "unset_machine", []);
-			yield* g.callName(f, live(O), "reset_perspective", [null]);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(O), "The screen bursts into static."]);
+	yield* this.update_icon();
+	for (O of each(GLOB.player_list, T("/mob"))) {
+		if (O.client && O.client.eye == this) {
+			yield* O.unset_machine();
+			yield* O.reset_perspective(null);
+			to_chat(O, "The screen bursts into static.");
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /obj/machinery/camera/proc/triggerCameraAlarm  (code/game/machinery/camera/camera.dm:300)
+// camera.dm:300
 rt.def("/obj/machinery/camera/proc/triggerCameraAlarm", function triggerCameraAlarm(f: Frame) {
 	let S: Value = null;
-	let $e: any;
-	f.vars = () => [S, $e];
-	rt.setSv(f, "alarm_on", 1);
-	S = null;
-	rt.forList(f, 0, rt.gl("mob_list"), T("/mob/living/silicon"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		S = $e;
-		rt.callName(f, live(S), "triggerAlarm", ["Camera", rt.call(f, P("/proc/get_area"), null, [live(f.src)]), rt.list(live(f.src)), live(f.src)]);
+	this.alarm_on = 1;
+	for (S of each(GLOB.mob_list, T("/mob/living/silicon"))) {
+		S.triggerAlarm("Camera", get_area(this), list(this), this);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /obj/machinery/camera/proc/cancelCameraAlarm  (code/game/machinery/camera/camera.dm:305)
+// camera.dm:305
 rt.def("/obj/machinery/camera/proc/cancelCameraAlarm", function cancelCameraAlarm(f: Frame) {
 	let S: Value = null;
-	let $e: any;
-	f.vars = () => [S, $e];
-	rt.setSv(f, "alarm_on", 0);
-	S = null;
-	rt.forList(f, 0, rt.gl("mob_list"), T("/mob/living/silicon"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		S = $e;
-		rt.callName(f, live(S), "cancelAlarm", ["Camera", rt.call(f, P("/proc/get_area"), null, [live(f.src)]), live(f.src)]);
+	this.alarm_on = 0;
+	for (S of each(GLOB.mob_list, T("/mob/living/silicon"))) {
+		S.cancelAlarm("Camera", get_area(this), this);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /obj/machinery/camera/proc/can_use  (code/game/machinery/camera/camera.dm:309)
+// camera.dm:309
 rt.def("/obj/machinery/camera/proc/can_use", function can_use(f: Frame) {
-	if (!truthy(rt.sv(f, "status"))) {
+	if (!this.status) {
 		return 0;
 	}
-	if (truthy(rt.bitAnd(rt.sv(f, "stat"), 16))) {
+	if (rt.bitAnd(this.stat, EMPED)) {
 		return 0;
 	}
 	return 1;
 });
 
-// /obj/machinery/camera/proc/can_see  (code/game/machinery/camera/camera.dm:317)
+// camera.dm:317
 rt.def("/obj/machinery/camera/proc/can_see", function can_see(f: Frame) {
-	let see: Value = null, pos: Value = null;
-	f.vars = () => [see, pos];
-	see = null;
-	pos = rt.getStep(f, live(f.src), 0);
-	if (truthy(rt.callSrc(f, "isXRay", []))) {
-		see = rt.call(f, P("/proc/range"), null, [rt.sv(f, "view_range"), live(pos)]);
+	let see: Value = null;
+	let pos: Value = rt.getStep(f, this, 0);
+	if (this.isXRay()) {
+		see = range(this.view_range, pos);
 	} else {
-		see = rt.call(f, P("/proc/get_hear"), null, [rt.sv(f, "view_range"), live(pos)]);
+		see = get_hear(this.view_range, pos);
 	}
-	return live(see);
+	return see;
 });
 
-// /obj/machinery/camera/proc/weld  (code/game/machinery/camera/camera.dm:362)  may sleep
+// camera.dm:362
 rt.def("/obj/machinery/camera/proc/weld", function* weld(f: Frame, WT: Value, user: Value) {
-	f.vars = () => [WT, user];
-	if (truthy(rt.sv(f, "busy"))) {
+	if (this.busy) {
 		return 0;
 	}
-	if (!truthy((yield* g.callName(f, live(WT), "remove_fuel", [0, live(user)])))) {
+	if (!(yield* WT.remove_fuel(0, user))) {
 		return 0;
 	}
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You start to weld ＀...</span>", [live(f.src)])]);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.fv(f, "usesound", live(WT)), 50, 1]);
-	rt.setSv(f, "busy", 1);
-	if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(user), null, multiply(100, rt.fv(f, "toolspeed", live(WT))), "target", live(f.src)], rt.Args.Named)))) {
-		rt.setSv(f, "busy", 0);
-		if (!truthy((yield* g.callName(f, live(WT), "isOn", [])))) {
+	to_chat(user, `<span class='notice'>You start to weld ${this}...</span>`);
+	playsound(this.loc, WT.usesound, 50, 1);
+	this.busy = 1;
+	if (yield* do_after(user, 100 * WT.toolspeed, { target: this })) {
+		this.busy = 0;
+		if (!WT.isOn()) {
 			return 0;
 		}
 		return 1;
 	}
-	rt.setSv(f, "busy", 0);
+	this.busy = 0;
 	return 0;
 }, true);
 
-// /obj/machinery/camera/proc/Togglelight  (code/game/machinery/camera/camera.dm:377)
+// camera.dm:377
 rt.def("/obj/machinery/camera/proc/Togglelight", function Togglelight(f: Frame, on: Value) {
 	let A: Value = null, cam: Value = null;
-	let $e: any;
-	f.vars = () => [on, A, cam, $e];
-	if (live(on) === null) {
-		on = 0;
-	}
-	A = null;
-	rt.forList(f, 0, rt.gl("ai_list"), T("/mob/living/silicon/ai"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		A = $e;
+	on ??= 0;
+	for (A of each(GLOB.ai_list, T("/mob/living/silicon/ai"))) {
 		cam = null;
-		rt.forList(f, 1, rt.fv(f, "lit_cameras", live(A)), T("/obj/machinery/camera"));
-		while (($e = rt.next(f, 1)) !== undefined) {
-			cam = $e;
-			if (isEqual(live(cam), live(f.src))) {
-				return live(f.dot);
+		for (cam of each(A.lit_cameras, T("/obj/machinery/camera"))) {
+			if (cam == this) {
+				return f.dot;
 			}
 		}
-		rt.endFor(f, 1);
 	}
-	rt.endFor(f, 0);
-	if (truthy(live(on))) {
-		rt.callSrc(f, "set_light", [5]);
+	if (on) {
+		this.set_light(5);
 	} else {
-		rt.callSrc(f, "set_light", [0]);
+		this.set_light(0);
 	}
 	return f.dot;
 });
@@ -551,40 +475,39 @@ rt.type(10623, "/obj/machinery/camera/portable", "/obj/machinery/camera", {
 	prev_turf: null,
 });
 
-// /obj/machinery/camera/portable/proc/Initialize  (code/game/machinery/camera/camera.dm:390)  may sleep
+// camera.dm:390
 rt.def("/obj/machinery/camera/portable/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setFv(f, "state", rt.sv(f, "assembly"), 0);
-	rt.setFv(f, "anchored", rt.sv(f, "assembly"), 0);
-	yield* g.callName(f, rt.sv(f, "assembly"), "update_icon", []);
+	f.dot = (yield* parent_proc());
+	this.assembly.state = 0;
+	this.assembly.anchored = 0;
+	yield* this.assembly.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/machinery/camera/portable/proc/process  (code/game/machinery/camera/camera.dm:396)
+// camera.dm:396
 rt.def("/obj/machinery/camera/portable/proc/process", function process(f: Frame) {
-	if (!(truthy(rt.gl("cameranet")) && !isEqual(rt.getStep(f, live(f.src), 0), rt.sv(f, "prev_turf")))) return f.dot;
-	rt.callName(f, rt.gl("cameranet"), "updatePortableCamera", [live(f.src)]);
-	rt.setSv(f, "prev_turf", rt.getStep(f, live(f.src), 0));
+	if (!(GLOB.cameranet && rt.getStep(f, this, 0) != this.prev_turf)) return f.dot;
+	GLOB.cameranet.updatePortableCamera(this);
+	this.prev_turf = rt.getStep(f, this, 0);
 	return f.dot;
 }, false, { waitfor: false });
 
-// /obj/machinery/camera/proc/get_remote_view_fullscreens  (code/game/machinery/camera/camera.dm:401)  may sleep
+// camera.dm:401
 rt.def("/obj/machinery/camera/proc/get_remote_view_fullscreens", function* get_remote_view_fullscreens(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (!isEqual(rt.sv(f, "view_range"), rt.sv(f, "short_range"))) return f.dot;
-	yield* g.callName(f, live(user), "overlay_fullscreen", ["remote_view", T("/obj/screen/fullscreen/impaired"), 2]);
+	if (this.view_range != this.short_range) return f.dot;
+	yield* user.overlay_fullscreen("remote_view", T("/obj/screen/fullscreen/impaired"), 2);
 	return f.dot;
 }, true);
 
-// /obj/machinery/camera/proc/update_remote_sight  (code/game/machinery/camera/camera.dm:405)
+// camera.dm:405
 rt.def("/obj/machinery/camera/proc/update_remote_sight", function update_remote_sight(f: Frame, user: Value) {
-	rt.setFv(f, "see_invisible", live(user), 25);
-	if (truthy(rt.callSrc(f, "isXRay", []))) {
-		(rt.modField(f, live(user), "sight", 28, rt.bitOr));
-		rt.setFv(f, "see_in_dark", live(user), rt.call(f, P("/proc/max"), null, [rt.fv(f, "see_in_dark", live(user)), 8]));
+	user.see_invisible = 25;
+	if (this.isXRay()) {
+		(rt.modField(f, user, "sight", 28, rt.bitOr));
+		user.see_in_dark = max(user.see_in_dark, 8);
 	} else {
-		rt.setFv(f, "sight", live(user), 0);
-		rt.setFv(f, "see_in_dark", live(user), 2);
+		user.sight = 0;
+		user.see_in_dark = 2;
 	}
 	return 1;
 });

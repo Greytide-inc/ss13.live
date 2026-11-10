@@ -1,7 +1,7 @@
-// From code/modules/mob/living/simple_animal/friendly/mouse.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/simple_animal/friendly/mouse.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(5085, "/mob/living/simple_animal/mouse", "/mob/living/simple_animal", {
@@ -32,90 +32,85 @@ rt.type(5085, "/mob/living/simple_animal/mouse", "/mob/living/simple_animal", {
 	mob_size: 0,
 });
 
-// /mob/living/simple_animal/mouse/proc/<init>  (code/modules/mob/living/simple_animal/friendly/mouse.dm:8)
+// mouse.dm:8
 rt.def("/mob/living/simple_animal/mouse/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "speak", rt.list("Squeek!", "SQUEEK!", "Squeek?"));
-	$0 = $0;
-	rt.setSv(f, "speak_emote", rt.list("squeeks"));
-	$0 = $0;
-	rt.setSv(f, "emote_hear", rt.list("squeeks."));
-	rt.setSv(f, "emote_see", rt.list("runs in a circle.", "shakes."));
-	$0 = $0;
-	rt.setSv(f, "butcher_results", rt.alist(f, [T("/obj/item/weapon/reagent_containers/food/snacks/meat/slab"), 1]));
+	parent_proc();
+	this.speak = list("Squeek!", "SQUEEK!", "Squeek?");
+
+	this.speak_emote = list("squeeks");
+
+	this.emote_hear = list("squeeks.");
+	this.emote_see = list("runs in a circle.", "shakes.");
+
+	this.butcher_results = rt.alist(f, [T("/obj/item/weapon/reagent_containers/food/snacks/meat/slab"), 1]);
 	return f.dot;
 });
 
-// /mob/living/simple_animal/mouse/proc/Initialize  (code/modules/mob/living/simple_animal/friendly/mouse.dm:29)  may sleep
+// mouse.dm:29
 rt.def("/mob/living/simple_animal/mouse/proc/Initialize", function* Initialize(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.sv(f, "body_color"))) {
-		rt.setSv(f, "body_color", rt.op(f, "PickUnweighted", [1], [rt.list("brown", "gray", "white")]));
+	yield* parent_proc();
+	if (!this.body_color) {
+		this.body_color = pick(list("brown", "gray", "white"));
 	}
-	rt.setSv(f, "icon_state", fmt("mouse_＀", [rt.sv(f, "body_color")]));
-	rt.setSv(f, "icon_living", fmt("mouse_＀", [rt.sv(f, "body_color")]));
-	rt.setSv(f, "icon_dead", fmt("mouse_＀_dead", [rt.sv(f, "body_color")]));
+	this.icon_state = `mouse_${this.body_color}`;
+	this.icon_living = `mouse_${this.body_color}`;
+	this.icon_dead = `mouse_${this.body_color}_dead`;
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/mouse/proc/splat  (code/modules/mob/living/simple_animal/friendly/mouse.dm:38)  may sleep
+// mouse.dm:38
 rt.def("/mob/living/simple_animal/mouse/proc/splat", function* splat(f: Frame) {
-	rt.setFv(f, "health", live(f.src), 0);
-	rt.setFv(f, "icon_dead", live(f.src), fmt("mouse_＀_splat", [rt.sv(f, "body_color")]));
-	yield* g.srcCall(f, "death");
+	this.health = 0;
+	this.icon_dead = `mouse_${this.body_color}_splat`;
+	yield* this.death();
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/mouse/proc/death  (code/modules/mob/living/simple_animal/friendly/mouse.dm:43)  may sleep
+// mouse.dm:43
 rt.def("/mob/living/simple_animal/mouse/proc/death", function* death(f: Frame, gibbed: Value, toast: Value) {
 	let M: Value = null;
-	f.vars = () => [gibbed, toast, M];
-	if (!truthy(rt.sv(f, "ckey"))) {
-		yield* g.callSuper(f, [1]);
-		rt.setFv(f, "icon_state", (M = (yield* g.new_(f, T("/obj/item/trash/deadmouse"), [rt.fv(f, "loc", live(f.src))]))), rt.sv(f, "icon_dead"));
-		rt.setFv(f, "name", live(M), rt.sv(f, "name"));
-		if (truthy(live(toast))) {
-			yield* g.callName(f, live(M), "add_atom_colour", ["#3A3A3A", 4]);
-			rt.setFv(f, "desc", live(M), "It's toast.");
+	if (!this.ckey) {
+		yield* parent_proc(1);
+		(M = (yield* new_(T("/obj/item/trash/deadmouse"), this.loc))).icon_state = this.icon_dead;
+		M.name = this.name;
+		if (toast) {
+			M.add_atom_colour("#3A3A3A", FIXED_COLOUR_PRIORITY);
+			M.desc = "It's toast.";
 		}
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+		yield* qdel(this);
 	} else {
-		yield* g.callSuper(f, [live(gibbed)]);
+		yield* parent_proc(gibbed);
 	}
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/mouse/proc/Crossed  (code/modules/mob/living/simple_animal/friendly/mouse.dm:56)
-rt.def("/mob/living/simple_animal/mouse/proc/Crossed", function Crossed(f: Frame) {
+// mouse.dm:56
+rt.def("/mob/living/simple_animal/mouse/proc/Crossed", function Crossed(f: Frame, AM: Value) {
 	let M: Value = null;
-	f.vars = () => [M];
-	if (truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		if (!truthy(rt.sv(f, "stat"))) {
-			rt.call(f, P("/proc/to_chat"), null, [(M = live(f.args[0])), fmt("<span class='notice'>＀ Squeek!</span>", [rt.call(f, P("/proc/bicon"), null, [live(f.src)])])]);
-			rt.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/effects/mousesqueek.ogg"), 100, 1]);
+	if (rt.istype(AM, T("/mob/living/carbon/human"))) {
+		if (!this.stat) {
+			to_chat((M = AM), `<span class='notice'>${bicon(this)} Squeek!</span>`);
+			playsound(this, rt.rsc("sound/effects/mousesqueek.ogg"), 100, 1);
 		}
 	}
-	rt.callSuper(f, [], rt.Args.Same);
+	parent_proc();
 	return f.dot;
-}, false, { args: ["AM"] });
+}, false);
 
-// /mob/living/simple_animal/mouse/proc/handle_automated_action  (code/modules/mob/living/simple_animal/friendly/mouse.dm:64)  may sleep
+// mouse.dm:64
 rt.def("/mob/living/simple_animal/mouse/proc/handle_automated_action", function* handle_automated_action(f: Frame) {
 	let F: Value = null, C: Value = null;
-	f.vars = () => [F, C];
-	if (!truthy(rt.op(f, "Prob", [], [rt.sv(f, "chew_probability")]))) return f.dot;
-	if (!(truthy((rt.istype((F = rt.getStep(f, live(f.src), 0)), T("/turf/open/floor")) ? 1 : 0)) && !truthy(rt.fv(f, "intact", live(F))))) return f.dot;
-	if (!(truthy((C = rt.locateIn(f, T("/obj/structure/cable"), live(F)))) && truthy(rt.op(f, "Prob", [], [15])))) return f.dot;
-	if (truthy((yield* g.callName(f, live(C), "avail", [])))) {
-		yield* g.srcCall(f, "visible_message", fmt("<span class='warning'>＀ chews through the ＀. It's toast!</span>", [live(f.src), live(C)]));
-		yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/effects/sparks2.ogg"), 100, 1]);
-		yield* g.callName(f, live(C), "deconstruct", []);
-		yield* g.callSrc(f, "death", ["toast", 1], rt.Args.Named);
+	if (!prob(this.chew_probability)) return f.dot;
+	if (!(rt.istype((F = rt.getStep(f, this, 0)), T("/turf/open/floor")) && !F.intact)) return f.dot;
+	if (!((C = rt.locateIn(f, T("/obj/structure/cable"), F)) && prob(15))) return f.dot;
+	if (C.avail()) {
+		this.visible_message(`<span class='warning'>${this} chews through the ${C}. It's toast!</span>`);
+		playsound(this, rt.rsc("sound/effects/sparks2.ogg"), 100, 1);
+		yield* C.deconstruct();
+		yield* this.death({ toast: 1 });
 	} else {
-		yield* g.callName(f, live(C), "deconstruct", []);
-		yield* g.srcCall(f, "visible_message", fmt("<span class='warning'>＀ chews through the ＀.</span>", [live(f.src), live(C)]));
+		yield* C.deconstruct();
+		this.visible_message(`<span class='warning'>${this} chews through the ${C}.</span>`);
 	}
 	return f.dot;
 }, true, { waitfor: false });

@@ -1,7 +1,7 @@
-// From code/modules/clothing/suits/bio.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/clothing/suits/bio.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(8178, "/obj/item/clothing/head/bio_hood", "/obj/item/clothing/head", {
@@ -16,12 +16,10 @@ rt.type(8178, "/obj/item/clothing/head/bio_hood", "/obj/item/clothing/head", {
 	flags_cover: 20,
 });
 
-// /obj/item/clothing/head/bio_hood/proc/<init>  (code/modules/clothing/suits/bio.dm:8)
+// bio.dm:8
 rt.def("/obj/item/clothing/head/bio_hood/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 100, "rad", 20, "fire", 30, "acid", 100]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 100, "rad", 20, "fire", 30, "acid", 100]);
 	return f.dot;
 });
 
@@ -44,13 +42,11 @@ rt.type(7833, "/obj/item/clothing/suit/bio_suit", "/obj/item/clothing/suit", {
 	resistance_flags: 32,
 });
 
-// /obj/item/clothing/suit/bio_suit/proc/<init>  (code/modules/clothing/suits/bio.dm:24)
+// bio.dm:24
 rt.def("/obj/item/clothing/suit/bio_suit/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/weapon/tank/internals/emergency_oxygen"), T("/obj/item/weapon/pen"), T("/obj/item/device/flashlight/pen"), T("/obj/item/weapon/reagent_containers/dropper"), T("/obj/item/weapon/reagent_containers/syringe"), T("/obj/item/weapon/reagent_containers/hypospray")));
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 100, "rad", 20, "fire", 30, "acid", 100]));
+	parent_proc();
+	this.allowed = list(T("/obj/item/weapon/tank/internals/emergency_oxygen"), T("/obj/item/weapon/pen"), T("/obj/item/device/flashlight/pen"), T("/obj/item/weapon/reagent_containers/dropper"), T("/obj/item/weapon/reagent_containers/syringe"), T("/obj/item/weapon/reagent_containers/hypospray"));
+	this.armor = rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 100, "rad", 20, "fire", 30, "acid", 100]);
 	return f.dot;
 });
 
@@ -59,12 +55,10 @@ rt.type(8181, "/obj/item/clothing/head/bio_hood/security", "/obj/item/clothing/h
 	icon_state: "bio_security",
 });
 
-// /obj/item/clothing/head/bio_hood/security/proc/<init>  (code/modules/clothing/suits/bio.dm:49)
+// bio.dm:49
 rt.def("/obj/item/clothing/head/bio_hood/security/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 25, "bullet", 15, "laser", 25, "energy", 10, "bomb", 25, "bio", 100, "rad", 20, "fire", 30, "acid", 100]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 25, "bullet", 15, "laser", 25, "energy", 10, "bomb", 25, "bio", 100, "rad", 20, "fire", 30, "acid", 100]);
 	return f.dot;
 });
 
@@ -73,11 +67,9 @@ rt.type(7836, "/obj/item/clothing/suit/bio_suit/security", "/obj/item/clothing/s
 	icon_state: "bio_security",
 });
 
-// /obj/item/clothing/suit/bio_suit/security/proc/<init>  (code/modules/clothing/suits/bio.dm:53)
+// bio.dm:53
 rt.def("/obj/item/clothing/suit/bio_suit/security/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 25, "bullet", 15, "laser", 25, "energy", 10, "bomb", 25, "bio", 100, "rad", 20, "fire", 30, "acid", 100]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 25, "bullet", 15, "laser", 25, "energy", 10, "bomb", 25, "bio", 100, "rad", 20, "fire", 30, "acid", 100]);
 	return f.dot;
 });

@@ -1,5 +1,5 @@
 // Types declared in code/game/objects/effects that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(6983, "/obj/item/weapon/poster/random_contraband", "/obj/item/weapon/poster", {
 	name: "random contraband poster",

@@ -1,5 +1,5 @@
 // Types declared in code/game/objects/structures/beds_chairs that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(9878, "/obj/item/chair/stool", "/obj/item/chair", {
 	item_state: "stool",

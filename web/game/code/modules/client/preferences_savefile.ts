@@ -1,446 +1,414 @@
-// From code/modules/client/preferences_savefile.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/client/preferences_savefile.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
-// /datum/preferences/proc/savefile_needs_update  (code/modules/client/preferences_savefile.dm:24)
+// preferences_savefile.dm:24
 rt.def("/datum/preferences/proc/savefile_needs_update", function savefile_needs_update(f: Frame, S: Value) {
-	let savefile_version: Value = null;
-	f.vars = () => [savefile_version];
-	savefile_version = null;
-	savefile_version = rt.input(f, rt.R.index, null, [live(S), "version"]);
-	if (rt.lt(live(savefile_version), 15)) {
-		rt.callName(f, rt.fv(f, "dir", live(S)), "Cut", []);
+	let savefile_version: Value = rt.input(f, rt.R.index, null, [S, "version"]);
+	if (savefile_version < SAVEFILE_VERSION_MIN) {
+		S.dir.Cut();
 		return -2;
 	}
-	if (rt.lt(live(savefile_version), 18)) {
-		return live(savefile_version);
+	if (savefile_version < SAVEFILE_VERSION_MAX) {
+		return savefile_version;
 	}
 	return -1;
 });
 
-// /datum/preferences/proc/update_antagchoices  (code/modules/client/preferences_savefile.dm:35)
+// preferences_savefile.dm:35
 rt.def("/datum/preferences/proc/update_antagchoices", function update_antagchoices(f: Frame, current_version: Value, S: Value) {
-	let B_traitor: Value = null, B_operative: Value = null, B_changeling: Value = null, B_wizard: Value = null, B_malf: Value = null, B_rev: Value = null, B_alien: Value = null, B_pai: Value = null, B_cultist: Value = null, B_blob: Value = null, B_ninja: Value = null, B_monkey: Value = null, B_gang: Value = null, B_abductor: Value = null, archived: Value = null, flag: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [B_traitor, B_operative, B_changeling, B_wizard, B_malf, B_rev, B_alien, B_pai, B_cultist, B_blob, B_ninja, B_monkey, B_gang, B_abductor, archived, flag, $0, $e];
-	if (!((!truthy((rt.istype(rt.sv(f, "be_special"), T("/list")) ? 1 : 0)) || truthy(rt.sv(f, "old_be_special"))) && rt.lt(live(current_version), 12))) return f.dot;
-	B_traitor = 1;
-	B_operative = 2;
-	B_changeling = 4;
-	B_wizard = 8;
-	B_malf = 16;
-	B_rev = 32;
-	B_alien = 64;
-	B_pai = 128;
-	B_cultist = 256;
-	B_blob = 512;
-	B_ninja = 1024;
-	B_monkey = 2048;
-	B_gang = 4096;
-	B_abductor = 16384;
-	archived = rt.list(live(B_traitor), live(B_operative), live(B_changeling), live(B_wizard), live(B_malf), live(B_rev), live(B_alien), live(B_pai), live(B_cultist), live(B_blob), live(B_ninja), live(B_monkey), live(B_gang), live(B_abductor));
-	rt.setSv(f, "be_special", rt.list());
-	flag = null;
-	rt.forList(f, 0, live(archived));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		flag = $e;
-		if (truthy(rt.bitAnd(rt.sv(f, "old_be_special"), live(flag)))) {
-			$0 = live(flag);
-			if ($0 === 1) {
-				rt.modSrcVar(f, "be_special", "traitor", add);
-			} else if ($0 === 2) {
-				rt.modSrcVar(f, "be_special", "operative", add);
-			} else if ($0 === 4) {
-				rt.modSrcVar(f, "be_special", "changeling", add);
-			} else if ($0 === 8) {
-				rt.modSrcVar(f, "be_special", "wizard", add);
-			} else if ($0 === 16) {
-				rt.modSrcVar(f, "be_special", "malf AI", add);
-			} else if ($0 === 32) {
-				rt.modSrcVar(f, "be_special", "revolutionary", add);
-			} else if ($0 === 64) {
-				rt.modSrcVar(f, "be_special", "xenomorph", add);
-			} else if ($0 === 128) {
-				rt.modSrcVar(f, "be_special", "pAI", add);
-			} else if ($0 === 256) {
-				rt.modSrcVar(f, "be_special", "cultist", add);
-			} else if ($0 === 512) {
-				rt.modSrcVar(f, "be_special", "blob", add);
-			} else if ($0 === 1024) {
-				rt.modSrcVar(f, "be_special", "space ninja", add);
-			} else if ($0 === 2048) {
-				rt.modSrcVar(f, "be_special", "monkey", add);
-			} else if ($0 === 4096) {
-				rt.modSrcVar(f, "be_special", "gangster", add);
-			} else if ($0 === 16384) {
-				rt.modSrcVar(f, "be_special", "abductor", add);
+	let flag: Value = null;
+	let $e: any;
+	if (!((!rt.istype(this.be_special, T("/list")) || this.old_be_special) && current_version < 12)) return f.dot;
+	let B_traitor: Value = 1;
+	let B_operative: Value = 2;
+	let B_changeling: Value = 4;
+	let B_wizard: Value = 8;
+	let B_malf: Value = 16;
+	let B_rev: Value = 32;
+	let B_alien: Value = 64;
+	let B_pai: Value = 128;
+	let B_cultist: Value = 256;
+	let B_blob: Value = 512;
+	let B_ninja: Value = 1024;
+	let B_monkey: Value = 2048;
+	let B_gang: Value = 4096;
+	let B_abductor: Value = 16384;
+	let archived: Value = list(B_traitor, B_operative, B_changeling, B_wizard, B_malf, B_rev, B_alien, B_pai, B_cultist, B_blob, B_ninja, B_monkey, B_gang, B_abductor);
+	this.be_special = list();
+	for (flag of each(archived)) {
+		if (rt.bitAnd(this.old_be_special, flag)) {
+			if (flag === 1) {
+				this.be_special += "traitor";
+			} else if (flag === 2) {
+				this.be_special += "operative";
+			} else if (flag === 4) {
+				this.be_special += "changeling";
+			} else if (flag === 8) {
+				this.be_special += "wizard";
+			} else if (flag === 16) {
+				this.be_special += "malf AI";
+			} else if (flag === 32) {
+				this.be_special += "revolutionary";
+			} else if (flag === 64) {
+				this.be_special += "xenomorph";
+			} else if (flag === 128) {
+				this.be_special += "pAI";
+			} else if (flag === 256) {
+				this.be_special += "cultist";
+			} else if (flag === 512) {
+				this.be_special += "blob";
+			} else if (flag === 1024) {
+				this.be_special += "space ninja";
+			} else if (flag === 2048) {
+				this.be_special += "monkey";
+			} else if (flag === 4096) {
+				this.be_special += "gangster";
+			} else if (flag === 16384) {
+				this.be_special += "abductor";
 			}
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /datum/preferences/proc/update_character  (code/modules/client/preferences_savefile.dm:100)
+// preferences_savefile.dm:100
 rt.def("/datum/preferences/proc/update_character", function update_character(f: Frame, current_version: Value, S: Value) {
 	let berandom: Value = null;
-	f.vars = () => [berandom];
-	if (rt.lt(live(current_version), 16)) {
-		berandom = null;
-		berandom = rt.input(f, rt.R.index, null, [live(S), "userandomjob"]);
-		if (truthy(live(berandom))) {
-			rt.setSv(f, "joblessrole", 2);
+	if (current_version < 16) {
+		berandom = rt.input(f, rt.R.index, null, [S, "userandomjob"]);
+		if (berandom) {
+			this.joblessrole = BERANDOMJOB;
 		} else {
-			rt.setSv(f, "joblessrole", 1);
+			this.joblessrole = BEASSISTANT;
 		}
 	}
-	if (!rt.lt(live(current_version), 17)) return f.dot;
-	rt.setAt(rt.sv(f, "features"), "legs", "Normal Legs");
+	if (!(current_version < 17)) return f.dot;
+	rt.setAt(this.features, "legs", "Normal Legs");
 	return f.dot;
 });
 
-// /datum/preferences/proc/load_path  (code/modules/client/preferences_savefile.dm:113)
+// preferences_savefile.dm:113
 rt.def("/datum/preferences/proc/load_path", function load_path(f: Frame, ckey: Value, filename: Value) {
-	f.vars = () => [filename];
-	if (live(filename) === null) {
-		filename = "preferences.sav";
+	filename ??= "preferences.sav";
+	if (!ckey) {
+		return f.dot;
 	}
-	if (!truthy(live(ckey))) {
-		return live(f.dot);
-	}
-	rt.setSv(f, "path", fmt("data/player_saves/＀/＀/＀", [rt.call(f, P("/proc/copytext"), null, [live(ckey), 1, 2]), live(ckey), live(filename)]));
+	this.path = `data/player_saves/${copytext(ckey, 1, 2)}/${ckey}/${filename}`;
 	return f.dot;
 });
 
-// /datum/preferences/proc/load_preferences  (code/modules/client/preferences_savefile.dm:118)
+// preferences_savefile.dm:118
 rt.def("/datum/preferences/proc/load_preferences", function load_preferences(f: Frame) {
 	let S: Value = null, needs_update: Value = null;
-	let $0: any;
-	f.vars = () => [S, needs_update, $0];
-	if (!truthy(rt.sv(f, "path"))) {
+	if (!this.path) {
 		return 0;
 	}
-	if (!truthy(rt.call(f, P("/proc/fexists"), null, [rt.sv(f, "path")]))) {
+	if (!fexists(this.path)) {
 		return 0;
 	}
-	if (!truthy((S = rt.new_(f, T("/savefile"), [rt.sv(f, "path")])))) {
+	if (!(S = new_(T("/savefile"), this.path))) {
 		return 0;
 	}
-	rt.setFv(f, "cd", live(S), "/");
-	if (isEqual((needs_update = rt.callSrc(f, "savefile_needs_update", [live(S)])), -2)) {
+	S.cd = "/";
+	if ((needs_update = this.savefile_needs_update(S)) == -2) {
 		return 0;
 	}
-	rt.setSv(f, "ooccolor", rt.input(f, rt.R.index, null, [live(S), "ooccolor"]));
-	rt.setSv(f, "lastchangelog", rt.input(f, rt.R.index, null, [live(S), "lastchangelog"]));
-	rt.setSv(f, "UI_style", rt.input(f, rt.R.index, null, [live(S), "UI_style"]));
-	rt.setSv(f, "hotkeys", rt.input(f, rt.R.index, null, [live(S), "hotkeys"]));
-	rt.setSv(f, "tgui_fancy", rt.input(f, rt.R.index, null, [live(S), "tgui_fancy"]));
-	rt.setSv(f, "tgui_lock", rt.input(f, rt.R.index, null, [live(S), "tgui_lock"]));
-	rt.setSv(f, "windowflashing", rt.input(f, rt.R.index, null, [live(S), "windowflash"]));
-	rt.setSv(f, "be_special", rt.input(f, rt.R.index, null, [live(S), "be_special"]));
-	rt.setSv(f, "default_slot", rt.input(f, rt.R.index, null, [live(S), "default_slot"]));
-	rt.setSv(f, "chat_toggles", rt.input(f, rt.R.index, null, [live(S), "chat_toggles"]));
-	rt.setSv(f, "toggles", rt.input(f, rt.R.index, null, [live(S), "toggles"]));
-	rt.setSv(f, "ghost_form", rt.input(f, rt.R.index, null, [live(S), "ghost_form"]));
-	rt.setSv(f, "ghost_orbit", rt.input(f, rt.R.index, null, [live(S), "ghost_orbit"]));
-	rt.setSv(f, "ghost_accs", rt.input(f, rt.R.index, null, [live(S), "ghost_accs"]));
-	rt.setSv(f, "ghost_others", rt.input(f, rt.R.index, null, [live(S), "ghost_others"]));
-	rt.setSv(f, "preferred_map", rt.input(f, rt.R.index, null, [live(S), "preferred_map"]));
-	rt.setSv(f, "ignoring", rt.input(f, rt.R.index, null, [live(S), "ignoring"]));
-	rt.setSv(f, "ghost_hud", rt.input(f, rt.R.index, null, [live(S), "ghost_hud"]));
-	rt.setSv(f, "inquisitive_ghost", rt.input(f, rt.R.index, null, [live(S), "inquisitive_ghost"]));
-	rt.setSv(f, "uses_glasses_colour", rt.input(f, rt.R.index, null, [live(S), "uses_glasses_colour"]));
-	rt.setSv(f, "clientfps", rt.input(f, rt.R.index, null, [live(S), "clientfps"]));
-	rt.setSv(f, "parallax", rt.input(f, rt.R.index, null, [live(S), "parallax"]));
-	rt.setSv(f, "screentip_pref", rt.input(f, rt.R.index, null, [live(S), "screentip_pref"]));
-	rt.setSv(f, "runechat_pref", rt.input(f, rt.R.index, null, [live(S), "runechat_pref"]));
-	rt.setSv(f, "widescreenpref", rt.input(f, rt.R.index, null, [live(S), "widescreenpref"]));
-	rt.setSv(f, "menuoptions", rt.input(f, rt.R.index, null, [live(S), "menuoptions"]));
-	rt.setSv(f, "enable_tips", rt.input(f, rt.R.index, null, [live(S), "enable_tips"]));
-	rt.setSv(f, "tip_delay", rt.input(f, rt.R.index, null, [live(S), "tip_delay"]));
-	if (rt.ge(live(needs_update), 0)) {
-		rt.callSrc(f, "update_preferences", [live(needs_update), live(S)]);
-		rt.callSrc(f, "update_antagchoices", [live(needs_update), live(S)]);
+	this.ooccolor = rt.input(f, rt.R.index, null, [S, "ooccolor"]);
+	this.lastchangelog = rt.input(f, rt.R.index, null, [S, "lastchangelog"]);
+	this.UI_style = rt.input(f, rt.R.index, null, [S, "UI_style"]);
+	this.hotkeys = rt.input(f, rt.R.index, null, [S, "hotkeys"]);
+	this.tgui_fancy = rt.input(f, rt.R.index, null, [S, "tgui_fancy"]);
+	this.tgui_lock = rt.input(f, rt.R.index, null, [S, "tgui_lock"]);
+	this.windowflashing = rt.input(f, rt.R.index, null, [S, "windowflash"]);
+	this.be_special = rt.input(f, rt.R.index, null, [S, "be_special"]);
+	this.default_slot = rt.input(f, rt.R.index, null, [S, "default_slot"]);
+	this.chat_toggles = rt.input(f, rt.R.index, null, [S, "chat_toggles"]);
+	this.toggles = rt.input(f, rt.R.index, null, [S, "toggles"]);
+	this.ghost_form = rt.input(f, rt.R.index, null, [S, "ghost_form"]);
+	this.ghost_orbit = rt.input(f, rt.R.index, null, [S, "ghost_orbit"]);
+	this.ghost_accs = rt.input(f, rt.R.index, null, [S, "ghost_accs"]);
+	this.ghost_others = rt.input(f, rt.R.index, null, [S, "ghost_others"]);
+	this.preferred_map = rt.input(f, rt.R.index, null, [S, "preferred_map"]);
+	this.ignoring = rt.input(f, rt.R.index, null, [S, "ignoring"]);
+	this.ghost_hud = rt.input(f, rt.R.index, null, [S, "ghost_hud"]);
+	this.inquisitive_ghost = rt.input(f, rt.R.index, null, [S, "inquisitive_ghost"]);
+	this.uses_glasses_colour = rt.input(f, rt.R.index, null, [S, "uses_glasses_colour"]);
+	this.clientfps = rt.input(f, rt.R.index, null, [S, "clientfps"]);
+	this.parallax = rt.input(f, rt.R.index, null, [S, "parallax"]);
+	this.screentip_pref = rt.input(f, rt.R.index, null, [S, "screentip_pref"]);
+	this.runechat_pref = rt.input(f, rt.R.index, null, [S, "runechat_pref"]);
+	this.widescreenpref = rt.input(f, rt.R.index, null, [S, "widescreenpref"]);
+	this.menuoptions = rt.input(f, rt.R.index, null, [S, "menuoptions"]);
+	this.enable_tips = rt.input(f, rt.R.index, null, [S, "enable_tips"]);
+	this.tip_delay = rt.input(f, rt.R.index, null, [S, "tip_delay"]);
+	if (needs_update >= 0) {
+		this.update_preferences(needs_update, S);
+		this.update_antagchoices(needs_update, S);
 	}
-	rt.setSv(f, "ooccolor", rt.call(f, P("/proc/sanitize_ooccolor"), null, [rt.call(f, P("/proc/sanitize_hexcolor"), null, [rt.sv(f, "ooccolor"), 6, 1, rt.initial(f, live(f.src), "ooccolor")])]));
-	rt.setSv(f, "lastchangelog", rt.call(f, P("/proc/sanitize_text"), null, [rt.sv(f, "lastchangelog"), rt.initial(f, live(f.src), "lastchangelog")]));
-	rt.setSv(f, "UI_style", rt.call(f, P("/proc/sanitize_inlist"), null, [rt.sv(f, "UI_style"), rt.list("Midnight", "Plasmafire", "Retro", "Slimecore", "Operative", "Clockwork"), rt.initial(f, live(f.src), "UI_style")]));
-	rt.setSv(f, "hotkeys", rt.call(f, P("/proc/sanitize_integer"), null, [rt.sv(f, "hotkeys"), 0, 1, rt.initial(f, live(f.src), "hotkeys")]));
-	rt.setSv(f, "tgui_fancy", rt.call(f, P("/proc/sanitize_integer"), null, [rt.sv(f, "tgui_fancy"), 0, 1, rt.initial(f, live(f.src), "tgui_fancy")]));
-	rt.setSv(f, "tgui_lock", rt.call(f, P("/proc/sanitize_integer"), null, [rt.sv(f, "tgui_lock"), 0, 1, rt.initial(f, live(f.src), "tgui_lock")]));
-	rt.setSv(f, "windowflashing", rt.call(f, P("/proc/sanitize_integer"), null, [rt.sv(f, "windowflashing"), 0, 1, rt.initial(f, live(f.src), "windowflashing")]));
-	rt.setSv(f, "default_slot", rt.call(f, P("/proc/sanitize_integer"), null, [rt.sv(f, "default_slot"), 1, rt.sv(f, "max_save_slots"), rt.initial(f, live(f.src), "default_slot")]));
-	rt.setSv(f, "toggles", rt.call(f, P("/proc/sanitize_integer"), null, [rt.sv(f, "toggles"), 0, 65535, rt.initial(f, live(f.src), "toggles")]));
-	rt.setSv(f, "clientfps", rt.call(f, P("/proc/sanitize_integer"), null, [rt.sv(f, "clientfps"), 0, 1000, 0]));
-	rt.setSv(f, "parallax", rt.call(f, P("/proc/sanitize_integer"), null, [rt.sv(f, "parallax"), -1, 3, null]));
-	rt.setSv(f, "screentip_pref", rt.call(f, P("/proc/sanitize_integer"), null, [rt.sv(f, "screentip_pref"), 0, 1, 1]));
-	rt.setSv(f, "runechat_pref", rt.call(f, P("/proc/sanitize_integer"), null, [rt.sv(f, "runechat_pref"), 0, 1, 1]));
-	rt.setSv(f, "widescreenpref", rt.call(f, P("/proc/sanitize_integer"), null, [rt.sv(f, "widescreenpref"), 0, 1, 1]));
-	rt.setSv(f, "ghost_form", rt.call(f, P("/proc/sanitize_inlist"), null, [rt.sv(f, "ghost_form"), rt.gl("ghost_forms"), rt.initial(f, live(f.src), "ghost_form")]));
-	rt.setSv(f, "ghost_orbit", rt.call(f, P("/proc/sanitize_inlist"), null, [rt.sv(f, "ghost_orbit"), rt.gl("ghost_orbits"), rt.initial(f, live(f.src), "ghost_orbit")]));
-	rt.setSv(f, "ghost_accs", rt.call(f, P("/proc/sanitize_inlist"), null, [rt.sv(f, "ghost_accs"), rt.gl("ghost_accs_options"), 100]));
-	rt.setSv(f, "ghost_others", rt.call(f, P("/proc/sanitize_inlist"), null, [rt.sv(f, "ghost_others"), rt.gl("ghost_others_options"), 100]));
-	if (truthy((rt.istype(rt.sv(f, "menuoptions"), T("/list")) ? 1 : 0))) {
-		$0 = rt.sv(f, "menuoptions");
-	} else {
-		$0 = rt.list();
-	}
-	rt.setSv(f, "menuoptions", $0);
-	if (truthy((rt.istype(rt.sv(f, "be_special"), T("/list")) ? 1 : 0))) {
-		$0 = rt.sv(f, "be_special");
-	} else {
-		$0 = rt.list();
-	}
-	rt.setSv(f, "be_special", $0);
+	this.ooccolor = sanitize_ooccolor(sanitize_hexcolor(this.ooccolor, 6, 1, rt.initial(f, this, "ooccolor")));
+	this.lastchangelog = sanitize_text(this.lastchangelog, rt.initial(f, this, "lastchangelog"));
+	this.UI_style = sanitize_inlist(this.UI_style, list("Midnight", "Plasmafire", "Retro", "Slimecore", "Operative", "Clockwork"), rt.initial(f, this, "UI_style"));
+	this.hotkeys = sanitize_integer(this.hotkeys, 0, 1, rt.initial(f, this, "hotkeys"));
+	this.tgui_fancy = sanitize_integer(this.tgui_fancy, 0, 1, rt.initial(f, this, "tgui_fancy"));
+	this.tgui_lock = sanitize_integer(this.tgui_lock, 0, 1, rt.initial(f, this, "tgui_lock"));
+	this.windowflashing = sanitize_integer(this.windowflashing, 0, 1, rt.initial(f, this, "windowflashing"));
+	this.default_slot = sanitize_integer(this.default_slot, 1, this.max_save_slots, rt.initial(f, this, "default_slot"));
+	this.toggles = sanitize_integer(this.toggles, 0, 65535, rt.initial(f, this, "toggles"));
+	this.clientfps = sanitize_integer(this.clientfps, 0, 1000, 0);
+	this.parallax = sanitize_integer(this.parallax, PARALLAX_INSANE, PARALLAX_DISABLE, null);
+	this.screentip_pref = sanitize_integer(this.screentip_pref, 0, 1, 1);
+	this.runechat_pref = sanitize_integer(this.runechat_pref, 0, 1, 1);
+	this.widescreenpref = sanitize_integer(this.widescreenpref, 0, 1, 1);
+	this.ghost_form = sanitize_inlist(this.ghost_form, GLOB.ghost_forms, rt.initial(f, this, "ghost_form"));
+	this.ghost_orbit = sanitize_inlist(this.ghost_orbit, GLOB.ghost_orbits, rt.initial(f, this, "ghost_orbit"));
+	this.ghost_accs = sanitize_inlist(this.ghost_accs, GLOB.ghost_accs_options, GHOST_ACCS_DEFAULT_OPTION);
+	this.ghost_others = sanitize_inlist(this.ghost_others, GLOB.ghost_others_options, GHOST_OTHERS_DEFAULT_OPTION);
+	this.menuoptions = rt.istype(this.menuoptions, T("/list")) ? this.menuoptions : list();
+	this.be_special = rt.istype(this.be_special, T("/list")) ? this.be_special : list();
 	return 1;
 });
 
-// /datum/preferences/proc/save_preferences  (code/modules/client/preferences_savefile.dm:195)
+// preferences_savefile.dm:195
 rt.def("/datum/preferences/proc/save_preferences", function save_preferences(f: Frame) {
 	let S: Value = null;
-	f.vars = () => [S];
-	if (!truthy(rt.sv(f, "path"))) {
+	if (!this.path) {
 		return 0;
 	}
-	if (!truthy((S = rt.new_(f, T("/savefile"), [rt.sv(f, "path")])))) {
+	if (!(S = new_(T("/savefile"), this.path))) {
 		return 0;
 	}
-	rt.setFv(f, "cd", live(S), "/");
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "version", 18], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "ooccolor", rt.sv(f, "ooccolor")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "lastchangelog", rt.sv(f, "lastchangelog")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "UI_style", rt.sv(f, "UI_style")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "hotkeys", rt.sv(f, "hotkeys")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "tgui_fancy", rt.sv(f, "tgui_fancy")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "tgui_lock", rt.sv(f, "tgui_lock")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "windowflash", rt.sv(f, "windowflashing")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "be_special", rt.sv(f, "be_special")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "default_slot", rt.sv(f, "default_slot")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "toggles", rt.sv(f, "toggles")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "chat_toggles", rt.sv(f, "chat_toggles")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "ghost_form", rt.sv(f, "ghost_form")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "ghost_orbit", rt.sv(f, "ghost_orbit")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "ghost_accs", rt.sv(f, "ghost_accs")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "ghost_others", rt.sv(f, "ghost_others")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "preferred_map", rt.sv(f, "preferred_map")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "ignoring", rt.sv(f, "ignoring")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "ghost_hud", rt.sv(f, "ghost_hud")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "inquisitive_ghost", rt.sv(f, "inquisitive_ghost")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "uses_glasses_colour", rt.sv(f, "uses_glasses_colour")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "clientfps", rt.sv(f, "clientfps")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "parallax", rt.sv(f, "parallax")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "screentip_pref", rt.sv(f, "screentip_pref")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "runechat_pref", rt.sv(f, "runechat_pref")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "widescreenpref", rt.sv(f, "widescreenpref")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "menuoptions", rt.sv(f, "menuoptions")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "enable_tips", rt.sv(f, "enable_tips")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "tip_delay", rt.sv(f, "tip_delay")], false);
+	S.cd = "/";
+	rt.op(f, "OutputReference", [rt.R.index], [S, "version", SAVEFILE_VERSION_MAX], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "ooccolor", this.ooccolor], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "lastchangelog", this.lastchangelog], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "UI_style", this.UI_style], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "hotkeys", this.hotkeys], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "tgui_fancy", this.tgui_fancy], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "tgui_lock", this.tgui_lock], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "windowflash", this.windowflashing], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "be_special", this.be_special], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "default_slot", this.default_slot], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "toggles", this.toggles], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "chat_toggles", this.chat_toggles], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "ghost_form", this.ghost_form], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "ghost_orbit", this.ghost_orbit], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "ghost_accs", this.ghost_accs], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "ghost_others", this.ghost_others], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "preferred_map", this.preferred_map], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "ignoring", this.ignoring], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "ghost_hud", this.ghost_hud], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "inquisitive_ghost", this.inquisitive_ghost], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "uses_glasses_colour", this.uses_glasses_colour], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "clientfps", this.clientfps], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "parallax", this.parallax], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "screentip_pref", this.screentip_pref], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "runechat_pref", this.runechat_pref], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "widescreenpref", this.widescreenpref], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "menuoptions", this.menuoptions], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "enable_tips", this.enable_tips], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "tip_delay", this.tip_delay], false);
 	return 1;
 });
 
-// /datum/preferences/proc/load_character  (code/modules/client/preferences_savefile.dm:237)  may sleep
+// preferences_savefile.dm:237
 rt.def("/datum/preferences/proc/load_character", function* load_character(f: Frame, slot: Value) {
-	let S: Value = null, needs_update: Value = null, species_id: Value = null, newtype: Value = null, rando_race: Value = null;
-	f.vars = () => [slot, S, needs_update, species_id, newtype, rando_race];
-	if (!truthy(rt.sv(f, "path"))) {
+	let S: Value = null, needs_update: Value = null, newtype: Value = null, rando_race: Value = null;
+	if (!this.path) {
 		return 0;
 	}
-	if (!truthy((yield* g.call(f, P("/proc/fexists"), null, [rt.sv(f, "path")])))) {
+	if (!fexists(this.path)) {
 		return 0;
 	}
-	if (!truthy((S = (yield* g.new_(f, T("/savefile"), [rt.sv(f, "path")]))))) {
+	if (!(S = (yield* new_(T("/savefile"), this.path)))) {
 		return 0;
 	}
-	rt.setFv(f, "cd", live(S), "/");
-	if (!truthy(live(slot))) {
-		slot = rt.sv(f, "default_slot");
+	S.cd = "/";
+	if (!slot) {
+		slot = this.default_slot;
 	}
-	if (!isEqual((slot = (yield* g.call(f, P("/proc/sanitize_integer"), null, [live(slot), 1, rt.sv(f, "max_save_slots"), rt.initial(f, live(f.src), "default_slot")]))), rt.sv(f, "default_slot"))) {
-		rt.setSv(f, "default_slot", live(slot));
-		rt.op(f, "OutputReference", [rt.R.index], [live(S), "default_slot", live(slot)], false);
+	if ((slot = sanitize_integer(slot, 1, this.max_save_slots, rt.initial(f, this, "default_slot"))) != this.default_slot) {
+		this.default_slot = slot;
+		rt.op(f, "OutputReference", [rt.R.index], [S, "default_slot", slot], false);
 	}
-	rt.setFv(f, "cd", live(S), fmt("/character＀", [live(slot)]));
-	if (isEqual((needs_update = (yield* g.srcCall(f, "savefile_needs_update", live(S)))), -2)) {
+	S.cd = `/character${slot}`;
+	if ((needs_update = this.savefile_needs_update(S)) == -2) {
 		return 0;
 	}
-	species_id = null;
-	species_id = rt.input(f, rt.R.index, null, [live(S), "species"]);
-	if (((truthy(rt.fv(f, "mutant_races", rt.gl("config"))) && truthy(live(species_id))) && truthy((rt.isIn(f, live(species_id), rt.gl("roundstart_species")) ? 1 : 0)))) {
-		newtype = rt.index(rt.gl("roundstart_species"), live(species_id));
-		rt.setSv(f, "pref_species", (yield* g.new_(f, live(newtype), [])));
-	} else {
-		if (truthy(rt.getLen(f, rt.fv(f, "roundstart_races", rt.gl("config"))))) {
-			if (truthy((rando_race = rt.op(f, "PickUnweighted", [1], [rt.fv(f, "roundstart_races", rt.gl("config"))])))) {
-				rt.setSv(f, "pref_species", (yield* g.new_(f, live(rando_race), [])));
-			}
+	let species_id: Value = rt.input(f, rt.R.index, null, [S, "species"]);
+	if (GLOB.config.mutant_races && species_id && rt.isIn(f, species_id, GLOB.roundstart_species)) {
+		newtype = rt.index(GLOB.roundstart_species, species_id);
+		this.pref_species = (yield* new_(newtype));
+	} else if (rt.len(f, GLOB.config.roundstart_races)) {
+		if (rando_race = pick(GLOB.config.roundstart_races)) {
+			this.pref_species = (yield* new_(rando_race));
 		}
 	}
-	if ((!truthy(rt.index(live(S), fmt("features＀", ["mcolor"]))) || isEqual(rt.index(live(S), fmt("features＀", ["mcolor"])), "#000"))) {
-		rt.op(f, "OutputReference", [rt.R.index], [live(S), fmt("features＀", ["mcolor"]), "#FFF"], false);
+	if (!rt.index(S, `features${"mcolor"}`) || rt.index(S, `features${"mcolor"}`) == "#000") {
+		rt.op(f, "OutputReference", [rt.R.index], [S, `features${"mcolor"}`, "#FFF"], false);
 	}
-	rt.setSv(f, "metadata", rt.input(f, rt.R.index, null, [live(S), "OOC_Notes"]));
-	rt.setSv(f, "real_name", rt.input(f, rt.R.index, null, [live(S), "real_name"]));
-	rt.setSv(f, "be_random_name", rt.input(f, rt.R.index, null, [live(S), "name_is_always_random"]));
-	rt.setSv(f, "be_random_body", rt.input(f, rt.R.index, null, [live(S), "body_is_always_random"]));
-	rt.setSv(f, "gender", rt.input(f, rt.R.index, null, [live(S), "gender"]));
-	rt.setSv(f, "age", rt.input(f, rt.R.index, null, [live(S), "age"]));
-	rt.setSv(f, "hair_color", rt.input(f, rt.R.index, null, [live(S), "hair_color"]));
-	rt.setSv(f, "facial_hair_color", rt.input(f, rt.R.index, null, [live(S), "facial_hair_color"]));
-	rt.setSv(f, "eye_color", rt.input(f, rt.R.index, null, [live(S), "eye_color"]));
-	rt.setSv(f, "skin_tone", rt.input(f, rt.R.index, null, [live(S), "skin_tone"]));
-	rt.setSv(f, "hair_style", rt.input(f, rt.R.index, null, [live(S), "hair_style_name"]));
-	rt.setSv(f, "facial_hair_style", rt.input(f, rt.R.index, null, [live(S), "facial_style_name"]));
-	rt.setSv(f, "underwear", rt.input(f, rt.R.index, null, [live(S), "underwear"]));
-	rt.setSv(f, "undershirt", rt.input(f, rt.R.index, null, [live(S), "undershirt"]));
-	rt.setSv(f, "socks", rt.input(f, rt.R.index, null, [live(S), "socks"]));
-	rt.setSv(f, "backbag", rt.input(f, rt.R.index, null, [live(S), "backbag"]));
-	rt.setSv(f, "uplink_spawn_loc", rt.input(f, rt.R.index, null, [live(S), "uplink_loc"]));
-	rt.setAt(rt.sv(f, "features"), "mcolor", rt.input(f, rt.R.index, null, [live(S), "feature_mcolor"]));
-	rt.setAt(rt.sv(f, "features"), "tail_lizard", rt.input(f, rt.R.index, null, [live(S), "feature_lizard_tail"]));
-	rt.setAt(rt.sv(f, "features"), "snout", rt.input(f, rt.R.index, null, [live(S), "feature_lizard_snout"]));
-	rt.setAt(rt.sv(f, "features"), "horns", rt.input(f, rt.R.index, null, [live(S), "feature_lizard_horns"]));
-	rt.setAt(rt.sv(f, "features"), "frills", rt.input(f, rt.R.index, null, [live(S), "feature_lizard_frills"]));
-	rt.setAt(rt.sv(f, "features"), "spines", rt.input(f, rt.R.index, null, [live(S), "feature_lizard_spines"]));
-	rt.setAt(rt.sv(f, "features"), "body_markings", rt.input(f, rt.R.index, null, [live(S), "feature_lizard_body_markings"]));
-	rt.setAt(rt.sv(f, "features"), "legs", rt.input(f, rt.R.index, null, [live(S), "feature_lizard_legs"]));
-	if (!truthy(rt.fv(f, "mutant_humans", rt.gl("config")))) {
-		rt.setAt(rt.sv(f, "features"), "tail_human", "none");
-		rt.setAt(rt.sv(f, "features"), "ears", "none");
+	this.metadata = rt.input(f, rt.R.index, null, [S, "OOC_Notes"]);
+	this.real_name = rt.input(f, rt.R.index, null, [S, "real_name"]);
+	this.be_random_name = rt.input(f, rt.R.index, null, [S, "name_is_always_random"]);
+	this.be_random_body = rt.input(f, rt.R.index, null, [S, "body_is_always_random"]);
+	this.gender = rt.input(f, rt.R.index, null, [S, "gender"]);
+	this.age = rt.input(f, rt.R.index, null, [S, "age"]);
+	this.hair_color = rt.input(f, rt.R.index, null, [S, "hair_color"]);
+	this.facial_hair_color = rt.input(f, rt.R.index, null, [S, "facial_hair_color"]);
+	this.eye_color = rt.input(f, rt.R.index, null, [S, "eye_color"]);
+	this.skin_tone = rt.input(f, rt.R.index, null, [S, "skin_tone"]);
+	this.hair_style = rt.input(f, rt.R.index, null, [S, "hair_style_name"]);
+	this.facial_hair_style = rt.input(f, rt.R.index, null, [S, "facial_style_name"]);
+	this.underwear = rt.input(f, rt.R.index, null, [S, "underwear"]);
+	this.undershirt = rt.input(f, rt.R.index, null, [S, "undershirt"]);
+	this.socks = rt.input(f, rt.R.index, null, [S, "socks"]);
+	this.backbag = rt.input(f, rt.R.index, null, [S, "backbag"]);
+	this.uplink_spawn_loc = rt.input(f, rt.R.index, null, [S, "uplink_loc"]);
+	rt.setAt(this.features, "mcolor", rt.input(f, rt.R.index, null, [S, "feature_mcolor"]));
+	rt.setAt(this.features, "tail_lizard", rt.input(f, rt.R.index, null, [S, "feature_lizard_tail"]));
+	rt.setAt(this.features, "snout", rt.input(f, rt.R.index, null, [S, "feature_lizard_snout"]));
+	rt.setAt(this.features, "horns", rt.input(f, rt.R.index, null, [S, "feature_lizard_horns"]));
+	rt.setAt(this.features, "frills", rt.input(f, rt.R.index, null, [S, "feature_lizard_frills"]));
+	rt.setAt(this.features, "spines", rt.input(f, rt.R.index, null, [S, "feature_lizard_spines"]));
+	rt.setAt(this.features, "body_markings", rt.input(f, rt.R.index, null, [S, "feature_lizard_body_markings"]));
+	rt.setAt(this.features, "legs", rt.input(f, rt.R.index, null, [S, "feature_lizard_legs"]));
+	if (!GLOB.config.mutant_humans) {
+		rt.setAt(this.features, "tail_human", "none");
+		rt.setAt(this.features, "ears", "none");
 	} else {
-		rt.setAt(rt.sv(f, "features"), "tail_human", rt.input(f, rt.R.index, null, [live(S), "feature_human_tail"]));
-		rt.setAt(rt.sv(f, "features"), "ears", rt.input(f, rt.R.index, null, [live(S), "feature_human_ears"]));
+		rt.setAt(this.features, "tail_human", rt.input(f, rt.R.index, null, [S, "feature_human_tail"]));
+		rt.setAt(this.features, "ears", rt.input(f, rt.R.index, null, [S, "feature_human_ears"]));
 	}
-	rt.setAt(rt.sv(f, "custom_names"), "clown", rt.input(f, rt.R.index, null, [live(S), "clown_name"]));
-	rt.setAt(rt.sv(f, "custom_names"), "mime", rt.input(f, rt.R.index, null, [live(S), "mime_name"]));
-	rt.setAt(rt.sv(f, "custom_names"), "ai", rt.input(f, rt.R.index, null, [live(S), "ai_name"]));
-	rt.setAt(rt.sv(f, "custom_names"), "cyborg", rt.input(f, rt.R.index, null, [live(S), "cyborg_name"]));
-	rt.setAt(rt.sv(f, "custom_names"), "religion", rt.input(f, rt.R.index, null, [live(S), "religion_name"]));
-	rt.setAt(rt.sv(f, "custom_names"), "deity", rt.input(f, rt.R.index, null, [live(S), "deity_name"]));
-	rt.setSv(f, "prefered_security_department", rt.input(f, rt.R.index, null, [live(S), "prefered_security_department"]));
-	rt.setSv(f, "joblessrole", rt.input(f, rt.R.index, null, [live(S), "joblessrole"]));
-	rt.setSv(f, "job_civilian_high", rt.input(f, rt.R.index, null, [live(S), "job_civilian_high"]));
-	rt.setSv(f, "job_civilian_med", rt.input(f, rt.R.index, null, [live(S), "job_civilian_med"]));
-	rt.setSv(f, "job_civilian_low", rt.input(f, rt.R.index, null, [live(S), "job_civilian_low"]));
-	rt.setSv(f, "job_medsci_high", rt.input(f, rt.R.index, null, [live(S), "job_medsci_high"]));
-	rt.setSv(f, "job_medsci_med", rt.input(f, rt.R.index, null, [live(S), "job_medsci_med"]));
-	rt.setSv(f, "job_medsci_low", rt.input(f, rt.R.index, null, [live(S), "job_medsci_low"]));
-	rt.setSv(f, "job_engsec_high", rt.input(f, rt.R.index, null, [live(S), "job_engsec_high"]));
-	rt.setSv(f, "job_engsec_med", rt.input(f, rt.R.index, null, [live(S), "job_engsec_med"]));
-	rt.setSv(f, "job_engsec_low", rt.input(f, rt.R.index, null, [live(S), "job_engsec_low"]));
-	if (rt.ge(live(needs_update), 0)) {
-		yield* g.srcCall(f, "update_character", live(needs_update), live(S));
+	rt.setAt(this.custom_names, "clown", rt.input(f, rt.R.index, null, [S, "clown_name"]));
+	rt.setAt(this.custom_names, "mime", rt.input(f, rt.R.index, null, [S, "mime_name"]));
+	rt.setAt(this.custom_names, "ai", rt.input(f, rt.R.index, null, [S, "ai_name"]));
+	rt.setAt(this.custom_names, "cyborg", rt.input(f, rt.R.index, null, [S, "cyborg_name"]));
+	rt.setAt(this.custom_names, "religion", rt.input(f, rt.R.index, null, [S, "religion_name"]));
+	rt.setAt(this.custom_names, "deity", rt.input(f, rt.R.index, null, [S, "deity_name"]));
+	this.prefered_security_department = rt.input(f, rt.R.index, null, [S, "prefered_security_department"]);
+	this.joblessrole = rt.input(f, rt.R.index, null, [S, "joblessrole"]);
+	this.job_civilian_high = rt.input(f, rt.R.index, null, [S, "job_civilian_high"]);
+	this.job_civilian_med = rt.input(f, rt.R.index, null, [S, "job_civilian_med"]);
+	this.job_civilian_low = rt.input(f, rt.R.index, null, [S, "job_civilian_low"]);
+	this.job_medsci_high = rt.input(f, rt.R.index, null, [S, "job_medsci_high"]);
+	this.job_medsci_med = rt.input(f, rt.R.index, null, [S, "job_medsci_med"]);
+	this.job_medsci_low = rt.input(f, rt.R.index, null, [S, "job_medsci_low"]);
+	this.job_engsec_high = rt.input(f, rt.R.index, null, [S, "job_engsec_high"]);
+	this.job_engsec_med = rt.input(f, rt.R.index, null, [S, "job_engsec_med"]);
+	this.job_engsec_low = rt.input(f, rt.R.index, null, [S, "job_engsec_low"]);
+	if (needs_update >= 0) {
+		this.update_character(needs_update, S);
 	}
-	rt.setSv(f, "metadata", (yield* g.call(f, P("/proc/sanitize_text"), null, [rt.sv(f, "metadata"), rt.initial(f, live(f.src), "metadata")])));
-	rt.setSv(f, "real_name", (yield* g.call(f, P("/proc/reject_bad_name"), null, [rt.sv(f, "real_name")])));
-	if ((!truthy(rt.at(rt.sv(f, "features"), "mcolor")) || isEqual(rt.at(rt.sv(f, "features"), "mcolor"), "#000"))) {
-		rt.setAt(rt.sv(f, "features"), "mcolor", rt.op(f, "PickUnweighted", [8], ["FFFFFF", "7F7F7F", "7FFF7F", "7F7FFF", "FF7F7F", "7FFFFF", "FF7FFF", "FFFF7F"]));
+	this.metadata = sanitize_text(this.metadata, rt.initial(f, this, "metadata"));
+	this.real_name = reject_bad_name(this.real_name);
+	if (!rt.at(this.features, "mcolor") || rt.at(this.features, "mcolor") == "#000") {
+		rt.setAt(this.features, "mcolor", pick("FFFFFF", "7F7F7F", "7FFF7F", "7F7FFF", "FF7F7F", "7FFFFF", "FF7FFF", "FFFF7F"));
 	}
-	if (!truthy(rt.sv(f, "real_name"))) {
-		rt.setSv(f, "real_name", (yield* g.call(f, P("/proc/random_unique_name"), null, [rt.sv(f, "gender")])));
+	if (!this.real_name) {
+		this.real_name = random_unique_name(this.gender);
 	}
-	rt.setSv(f, "be_random_name", (yield* g.call(f, P("/proc/sanitize_integer"), null, [rt.sv(f, "be_random_name"), 0, 1, rt.initial(f, live(f.src), "be_random_name")])));
-	rt.setSv(f, "be_random_body", (yield* g.call(f, P("/proc/sanitize_integer"), null, [rt.sv(f, "be_random_body"), 0, 1, rt.initial(f, live(f.src), "be_random_body")])));
-	rt.setSv(f, "gender", (yield* g.call(f, P("/proc/sanitize_gender"), null, [rt.sv(f, "gender")])));
-	if (isEqual(rt.sv(f, "gender"), "male")) {
-		rt.setSv(f, "hair_style", (yield* g.call(f, P("/proc/sanitize_inlist"), null, [rt.sv(f, "hair_style"), rt.gl("hair_styles_male_list")])));
-		rt.setSv(f, "facial_hair_style", (yield* g.call(f, P("/proc/sanitize_inlist"), null, [rt.sv(f, "facial_hair_style"), rt.gl("facial_hair_styles_male_list")])));
-		rt.setSv(f, "underwear", (yield* g.call(f, P("/proc/sanitize_inlist"), null, [rt.sv(f, "underwear"), rt.gl("underwear_m")])));
-		rt.setSv(f, "undershirt", (yield* g.call(f, P("/proc/sanitize_inlist"), null, [rt.sv(f, "undershirt"), rt.gl("undershirt_m")])));
+	this.be_random_name = sanitize_integer(this.be_random_name, 0, 1, rt.initial(f, this, "be_random_name"));
+	this.be_random_body = sanitize_integer(this.be_random_body, 0, 1, rt.initial(f, this, "be_random_body"));
+	this.gender = sanitize_gender(this.gender);
+	if (this.gender == "male") {
+		this.hair_style = sanitize_inlist(this.hair_style, GLOB.hair_styles_male_list);
+		this.facial_hair_style = sanitize_inlist(this.facial_hair_style, GLOB.facial_hair_styles_male_list);
+		this.underwear = sanitize_inlist(this.underwear, GLOB.underwear_m);
+		this.undershirt = sanitize_inlist(this.undershirt, GLOB.undershirt_m);
 	} else {
-		rt.setSv(f, "hair_style", (yield* g.call(f, P("/proc/sanitize_inlist"), null, [rt.sv(f, "hair_style"), rt.gl("hair_styles_female_list")])));
-		rt.setSv(f, "facial_hair_style", (yield* g.call(f, P("/proc/sanitize_inlist"), null, [rt.sv(f, "facial_hair_style"), rt.gl("facial_hair_styles_female_list")])));
-		rt.setSv(f, "underwear", (yield* g.call(f, P("/proc/sanitize_inlist"), null, [rt.sv(f, "underwear"), rt.gl("underwear_f")])));
-		rt.setSv(f, "undershirt", (yield* g.call(f, P("/proc/sanitize_inlist"), null, [rt.sv(f, "undershirt"), rt.gl("undershirt_f")])));
+		this.hair_style = sanitize_inlist(this.hair_style, GLOB.hair_styles_female_list);
+		this.facial_hair_style = sanitize_inlist(this.facial_hair_style, GLOB.facial_hair_styles_female_list);
+		this.underwear = sanitize_inlist(this.underwear, GLOB.underwear_f);
+		this.undershirt = sanitize_inlist(this.undershirt, GLOB.undershirt_f);
 	}
-	rt.setSv(f, "socks", (yield* g.call(f, P("/proc/sanitize_inlist"), null, [rt.sv(f, "socks"), rt.gl("socks_list")])));
-	rt.setSv(f, "age", (yield* g.call(f, P("/proc/sanitize_integer"), null, [rt.sv(f, "age"), 17, 85, rt.initial(f, live(f.src), "age")])));
-	rt.setSv(f, "hair_color", (yield* g.call(f, P("/proc/sanitize_hexcolor"), null, [rt.sv(f, "hair_color"), 3, 0])));
-	rt.setSv(f, "facial_hair_color", (yield* g.call(f, P("/proc/sanitize_hexcolor"), null, [rt.sv(f, "facial_hair_color"), 3, 0])));
-	rt.setSv(f, "eye_color", (yield* g.call(f, P("/proc/sanitize_hexcolor"), null, [rt.sv(f, "eye_color"), 3, 0])));
-	rt.setSv(f, "skin_tone", (yield* g.call(f, P("/proc/sanitize_inlist"), null, [rt.sv(f, "skin_tone"), rt.gl("skin_tones")])));
-	rt.setSv(f, "backbag", (yield* g.call(f, P("/proc/sanitize_inlist"), null, [rt.sv(f, "backbag"), rt.gl("backbaglist"), rt.initial(f, live(f.src), "backbag")])));
-	rt.setSv(f, "uplink_spawn_loc", (yield* g.call(f, P("/proc/sanitize_inlist"), null, [rt.sv(f, "uplink_spawn_loc"), rt.gl("uplink_spawn_loc_list"), rt.initial(f, live(f.src), "uplink_spawn_loc")])));
-	rt.setAt(rt.sv(f, "features"), "mcolor", (yield* g.call(f, P("/proc/sanitize_hexcolor"), null, [rt.at(rt.sv(f, "features"), "mcolor"), 3, 0])));
-	rt.setAt(rt.sv(f, "features"), "tail_lizard", (yield* g.call(f, P("/proc/sanitize_inlist"), null, [rt.at(rt.sv(f, "features"), "tail_lizard"), rt.gl("tails_list_lizard")])));
-	rt.setAt(rt.sv(f, "features"), "tail_human", (yield* g.call(f, P("/proc/sanitize_inlist"), null, [rt.at(rt.sv(f, "features"), "tail_human"), rt.gl("tails_list_human"), "None"])));
-	rt.setAt(rt.sv(f, "features"), "snout", (yield* g.call(f, P("/proc/sanitize_inlist"), null, [rt.at(rt.sv(f, "features"), "snout"), rt.gl("snouts_list")])));
-	rt.setAt(rt.sv(f, "features"), "horns", (yield* g.call(f, P("/proc/sanitize_inlist"), null, [rt.at(rt.sv(f, "features"), "horns"), rt.gl("horns_list")])));
-	rt.setAt(rt.sv(f, "features"), "ears", (yield* g.call(f, P("/proc/sanitize_inlist"), null, [rt.at(rt.sv(f, "features"), "ears"), rt.gl("ears_list"), "None"])));
-	rt.setAt(rt.sv(f, "features"), "frills", (yield* g.call(f, P("/proc/sanitize_inlist"), null, [rt.at(rt.sv(f, "features"), "frills"), rt.gl("frills_list")])));
-	rt.setAt(rt.sv(f, "features"), "spines", (yield* g.call(f, P("/proc/sanitize_inlist"), null, [rt.at(rt.sv(f, "features"), "spines"), rt.gl("spines_list")])));
-	rt.setAt(rt.sv(f, "features"), "body_markings", (yield* g.call(f, P("/proc/sanitize_inlist"), null, [rt.at(rt.sv(f, "features"), "body_markings"), rt.gl("body_markings_list")])));
-	rt.setAt(rt.sv(f, "features"), "feature_lizard_legs", (yield* g.call(f, P("/proc/sanitize_inlist"), null, [rt.at(rt.sv(f, "features"), "legs"), rt.gl("legs_list"), "Normal Legs"])));
-	rt.setSv(f, "joblessrole", (yield* g.call(f, P("/proc/sanitize_integer"), null, [rt.sv(f, "joblessrole"), 1, 3, rt.initial(f, live(f.src), "joblessrole")])));
-	rt.setSv(f, "job_civilian_high", (yield* g.call(f, P("/proc/sanitize_integer"), null, [rt.sv(f, "job_civilian_high"), 0, 65535, rt.initial(f, live(f.src), "job_civilian_high")])));
-	rt.setSv(f, "job_civilian_med", (yield* g.call(f, P("/proc/sanitize_integer"), null, [rt.sv(f, "job_civilian_med"), 0, 65535, rt.initial(f, live(f.src), "job_civilian_med")])));
-	rt.setSv(f, "job_civilian_low", (yield* g.call(f, P("/proc/sanitize_integer"), null, [rt.sv(f, "job_civilian_low"), 0, 65535, rt.initial(f, live(f.src), "job_civilian_low")])));
-	rt.setSv(f, "job_medsci_high", (yield* g.call(f, P("/proc/sanitize_integer"), null, [rt.sv(f, "job_medsci_high"), 0, 65535, rt.initial(f, live(f.src), "job_medsci_high")])));
-	rt.setSv(f, "job_medsci_med", (yield* g.call(f, P("/proc/sanitize_integer"), null, [rt.sv(f, "job_medsci_med"), 0, 65535, rt.initial(f, live(f.src), "job_medsci_med")])));
-	rt.setSv(f, "job_medsci_low", (yield* g.call(f, P("/proc/sanitize_integer"), null, [rt.sv(f, "job_medsci_low"), 0, 65535, rt.initial(f, live(f.src), "job_medsci_low")])));
-	rt.setSv(f, "job_engsec_high", (yield* g.call(f, P("/proc/sanitize_integer"), null, [rt.sv(f, "job_engsec_high"), 0, 65535, rt.initial(f, live(f.src), "job_engsec_high")])));
-	rt.setSv(f, "job_engsec_med", (yield* g.call(f, P("/proc/sanitize_integer"), null, [rt.sv(f, "job_engsec_med"), 0, 65535, rt.initial(f, live(f.src), "job_engsec_med")])));
-	rt.setSv(f, "job_engsec_low", (yield* g.call(f, P("/proc/sanitize_integer"), null, [rt.sv(f, "job_engsec_low"), 0, 65535, rt.initial(f, live(f.src), "job_engsec_low")])));
+	this.socks = sanitize_inlist(this.socks, GLOB.socks_list);
+	this.age = sanitize_integer(this.age, AGE_MIN, AGE_MAX, rt.initial(f, this, "age"));
+	this.hair_color = sanitize_hexcolor(this.hair_color, 3, 0);
+	this.facial_hair_color = sanitize_hexcolor(this.facial_hair_color, 3, 0);
+	this.eye_color = sanitize_hexcolor(this.eye_color, 3, 0);
+	this.skin_tone = sanitize_inlist(this.skin_tone, GLOB.skin_tones);
+	this.backbag = sanitize_inlist(this.backbag, GLOB.backbaglist, rt.initial(f, this, "backbag"));
+	this.uplink_spawn_loc = sanitize_inlist(this.uplink_spawn_loc, GLOB.uplink_spawn_loc_list, rt.initial(f, this, "uplink_spawn_loc"));
+	rt.setAt(this.features, "mcolor", sanitize_hexcolor(rt.at(this.features, "mcolor"), 3, 0));
+	rt.setAt(this.features, "tail_lizard", sanitize_inlist(rt.at(this.features, "tail_lizard"), GLOB.tails_list_lizard));
+	rt.setAt(this.features, "tail_human", sanitize_inlist(rt.at(this.features, "tail_human"), GLOB.tails_list_human, "None"));
+	rt.setAt(this.features, "snout", sanitize_inlist(rt.at(this.features, "snout"), GLOB.snouts_list));
+	rt.setAt(this.features, "horns", sanitize_inlist(rt.at(this.features, "horns"), GLOB.horns_list));
+	rt.setAt(this.features, "ears", sanitize_inlist(rt.at(this.features, "ears"), GLOB.ears_list, "None"));
+	rt.setAt(this.features, "frills", sanitize_inlist(rt.at(this.features, "frills"), GLOB.frills_list));
+	rt.setAt(this.features, "spines", sanitize_inlist(rt.at(this.features, "spines"), GLOB.spines_list));
+	rt.setAt(this.features, "body_markings", sanitize_inlist(rt.at(this.features, "body_markings"), GLOB.body_markings_list));
+	rt.setAt(this.features, "feature_lizard_legs", sanitize_inlist(rt.at(this.features, "legs"), GLOB.legs_list, "Normal Legs"));
+	this.joblessrole = sanitize_integer(this.joblessrole, 1, 3, rt.initial(f, this, "joblessrole"));
+	this.job_civilian_high = sanitize_integer(this.job_civilian_high, 0, 65535, rt.initial(f, this, "job_civilian_high"));
+	this.job_civilian_med = sanitize_integer(this.job_civilian_med, 0, 65535, rt.initial(f, this, "job_civilian_med"));
+	this.job_civilian_low = sanitize_integer(this.job_civilian_low, 0, 65535, rt.initial(f, this, "job_civilian_low"));
+	this.job_medsci_high = sanitize_integer(this.job_medsci_high, 0, 65535, rt.initial(f, this, "job_medsci_high"));
+	this.job_medsci_med = sanitize_integer(this.job_medsci_med, 0, 65535, rt.initial(f, this, "job_medsci_med"));
+	this.job_medsci_low = sanitize_integer(this.job_medsci_low, 0, 65535, rt.initial(f, this, "job_medsci_low"));
+	this.job_engsec_high = sanitize_integer(this.job_engsec_high, 0, 65535, rt.initial(f, this, "job_engsec_high"));
+	this.job_engsec_med = sanitize_integer(this.job_engsec_med, 0, 65535, rt.initial(f, this, "job_engsec_med"));
+	this.job_engsec_low = sanitize_integer(this.job_engsec_low, 0, 65535, rt.initial(f, this, "job_engsec_low"));
 	return 1;
 }, true);
 
-// /datum/preferences/proc/save_character  (code/modules/client/preferences_savefile.dm:380)
+// preferences_savefile.dm:380
 rt.def("/datum/preferences/proc/save_character", function save_character(f: Frame) {
 	let S: Value = null;
-	f.vars = () => [S];
-	if (!truthy(rt.sv(f, "path"))) {
+	if (!this.path) {
 		return 0;
 	}
-	if (!truthy((S = rt.new_(f, T("/savefile"), [rt.sv(f, "path")])))) {
+	if (!(S = new_(T("/savefile"), this.path))) {
 		return 0;
 	}
-	rt.setFv(f, "cd", live(S), fmt("/character＀", [rt.sv(f, "default_slot")]));
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "version", 18], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "OOC_Notes", rt.sv(f, "metadata")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "real_name", rt.sv(f, "real_name")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "name_is_always_random", rt.sv(f, "be_random_name")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "body_is_always_random", rt.sv(f, "be_random_body")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "gender", rt.sv(f, "gender")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "age", rt.sv(f, "age")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "hair_color", rt.sv(f, "hair_color")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "facial_hair_color", rt.sv(f, "facial_hair_color")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "eye_color", rt.sv(f, "eye_color")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "skin_tone", rt.sv(f, "skin_tone")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "hair_style_name", rt.sv(f, "hair_style")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "facial_style_name", rt.sv(f, "facial_hair_style")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "underwear", rt.sv(f, "underwear")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "undershirt", rt.sv(f, "undershirt")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "socks", rt.sv(f, "socks")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "backbag", rt.sv(f, "backbag")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "uplink_loc", rt.sv(f, "uplink_spawn_loc")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "species", rt.fv(f, "id", rt.sv(f, "pref_species"))], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "feature_mcolor", rt.at(rt.sv(f, "features"), "mcolor")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "feature_lizard_tail", rt.at(rt.sv(f, "features"), "tail_lizard")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "feature_human_tail", rt.at(rt.sv(f, "features"), "tail_human")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "feature_lizard_snout", rt.at(rt.sv(f, "features"), "snout")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "feature_lizard_horns", rt.at(rt.sv(f, "features"), "horns")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "feature_human_ears", rt.at(rt.sv(f, "features"), "ears")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "feature_lizard_frills", rt.at(rt.sv(f, "features"), "frills")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "feature_lizard_spines", rt.at(rt.sv(f, "features"), "spines")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "feature_lizard_body_markings", rt.at(rt.sv(f, "features"), "body_markings")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "feature_lizard_legs", rt.at(rt.sv(f, "features"), "legs")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "clown_name", rt.at(rt.sv(f, "custom_names"), "clown")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "mime_name", rt.at(rt.sv(f, "custom_names"), "mime")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "ai_name", rt.at(rt.sv(f, "custom_names"), "ai")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "cyborg_name", rt.at(rt.sv(f, "custom_names"), "cyborg")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "religion_name", rt.at(rt.sv(f, "custom_names"), "religion")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "deity_name", rt.at(rt.sv(f, "custom_names"), "deity")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "prefered_security_department", rt.sv(f, "prefered_security_department")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "joblessrole", rt.sv(f, "joblessrole")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "job_civilian_high", rt.sv(f, "job_civilian_high")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "job_civilian_med", rt.sv(f, "job_civilian_med")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "job_civilian_low", rt.sv(f, "job_civilian_low")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "job_medsci_high", rt.sv(f, "job_medsci_high")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "job_medsci_med", rt.sv(f, "job_medsci_med")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "job_medsci_low", rt.sv(f, "job_medsci_low")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "job_engsec_high", rt.sv(f, "job_engsec_high")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "job_engsec_med", rt.sv(f, "job_engsec_med")], false);
-	rt.op(f, "OutputReference", [rt.R.index], [live(S), "job_engsec_low", rt.sv(f, "job_engsec_low")], false);
+	S.cd = `/character${this.default_slot}`;
+	rt.op(f, "OutputReference", [rt.R.index], [S, "version", SAVEFILE_VERSION_MAX], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "OOC_Notes", this.metadata], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "real_name", this.real_name], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "name_is_always_random", this.be_random_name], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "body_is_always_random", this.be_random_body], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "gender", this.gender], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "age", this.age], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "hair_color", this.hair_color], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "facial_hair_color", this.facial_hair_color], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "eye_color", this.eye_color], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "skin_tone", this.skin_tone], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "hair_style_name", this.hair_style], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "facial_style_name", this.facial_hair_style], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "underwear", this.underwear], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "undershirt", this.undershirt], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "socks", this.socks], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "backbag", this.backbag], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "uplink_loc", this.uplink_spawn_loc], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "species", this.pref_species.id], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "feature_mcolor", rt.at(this.features, "mcolor")], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "feature_lizard_tail", rt.at(this.features, "tail_lizard")], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "feature_human_tail", rt.at(this.features, "tail_human")], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "feature_lizard_snout", rt.at(this.features, "snout")], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "feature_lizard_horns", rt.at(this.features, "horns")], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "feature_human_ears", rt.at(this.features, "ears")], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "feature_lizard_frills", rt.at(this.features, "frills")], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "feature_lizard_spines", rt.at(this.features, "spines")], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "feature_lizard_body_markings", rt.at(this.features, "body_markings")], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "feature_lizard_legs", rt.at(this.features, "legs")], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "clown_name", rt.at(this.custom_names, "clown")], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "mime_name", rt.at(this.custom_names, "mime")], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "ai_name", rt.at(this.custom_names, "ai")], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "cyborg_name", rt.at(this.custom_names, "cyborg")], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "religion_name", rt.at(this.custom_names, "religion")], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "deity_name", rt.at(this.custom_names, "deity")], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "prefered_security_department", this.prefered_security_department], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "joblessrole", this.joblessrole], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "job_civilian_high", this.job_civilian_high], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "job_civilian_med", this.job_civilian_med], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "job_civilian_low", this.job_civilian_low], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "job_medsci_high", this.job_medsci_high], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "job_medsci_med", this.job_medsci_med], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "job_medsci_low", this.job_medsci_low], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "job_engsec_high", this.job_engsec_high], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "job_engsec_med", this.job_engsec_med], false);
+	rt.op(f, "OutputReference", [rt.R.index], [S, "job_engsec_low", this.job_engsec_low], false);
 	return 1;
 });

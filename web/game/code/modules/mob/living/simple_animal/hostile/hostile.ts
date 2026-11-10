@@ -1,7 +1,7 @@
-// From code/modules/mob/living/simple_animal/hostile/hostile.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/simple_animal/hostile/hostile.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(4854, "/mob/living/simple_animal/hostile", "/mob/living/simple_animal", {
@@ -45,567 +45,502 @@ rt.type(4854, "/mob/living/simple_animal/hostile", "/mob/living/simple_animal", 
 	environment_smash: 1,
 });
 
-// /mob/living/simple_animal/hostile/proc/<init>  (code/modules/mob/living/simple_animal/hostile/hostile.dm:13)
+// hostile.dm:13
 rt.def("/mob/living/simple_animal/hostile/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "friends", rt.list());
-	$0 = $0;
-	rt.setSv(f, "emote_taunt", rt.list());
-	$0 = $0;
-	rt.setSv(f, "wanted_objects", rt.list());
-	$0 = $0;
-	rt.setSv(f, "faction", rt.list("hostile"));
-	$0 = $0;
-	rt.setSv(f, "environment_target_typecache", rt.list(T("/obj/machinery/door/window"), T("/obj/structure/window"), T("/obj/structure/closet"), T("/obj/structure/table"), T("/obj/structure/grille"), T("/obj/structure/girder"), T("/obj/structure/rack"), T("/obj/structure/barricade")));
+	parent_proc();
+	this.friends = list();
+
+	this.emote_taunt = list();
+
+	this.wanted_objects = list();
+
+	this.faction = list("hostile");
+
+	this.environment_target_typecache = list(T("/obj/machinery/door/window"), T("/obj/structure/window"), T("/obj/structure/closet"), T("/obj/structure/table"), T("/obj/structure/grille"), T("/obj/structure/girder"), T("/obj/structure/rack"), T("/obj/structure/barricade"));
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/proc/Initialize  (code/modules/mob/living/simple_animal/hostile/hostile.dm:58)  may sleep
+// hostile.dm:58
 rt.def("/mob/living/simple_animal/hostile/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(rt.sv(f, "targets_from"))) {
-		rt.setSv(f, "targets_from", live(f.src));
+	f.dot = (yield* parent_proc());
+	if (!this.targets_from) {
+		this.targets_from = f.src;
 	}
-	rt.setSv(f, "environment_target_typecache", (yield* g.call(f, P("/proc/typecacheof"), null, [rt.sv(f, "environment_target_typecache")])));
-	rt.setSv(f, "wanted_objects", (yield* g.call(f, P("/proc/typecacheof"), null, [rt.sv(f, "wanted_objects")])));
+	this.environment_target_typecache = typecacheof(this.environment_target_typecache);
+	this.wanted_objects = typecacheof(this.wanted_objects);
+	if (is_creative()) creative_fight_setup(this); // tg_js: Creative's mob fight mode (modules/creative/creative.ts)
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/proc/Destroy  (code/modules/mob/living/simple_animal/hostile/hostile.dm:68)  may sleep
+// hostile.dm:68
 rt.def("/mob/living/simple_animal/hostile/proc/Destroy", function* Destroy(f: Frame) {
-	rt.setSv(f, "targets_from", null);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	this.targets_from = null;
+	return (yield* parent_proc());
 }, true);
 
-// /mob/living/simple_animal/hostile/proc/Life  (code/modules/mob/living/simple_animal/hostile/hostile.dm:71)
+// hostile.dm:71
 rt.def("/mob/living/simple_animal/hostile/proc/Life", function Life(f: Frame) {
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	if (truthy(live(f.dot))) return f.dot;
-	rt.call(f, P("/proc/walk"), null, [live(f.src), 0]);
+	f.dot = parent_proc();
+	if (f.dot) return f.dot;
+	walk(this, 0);
 	return 0;
 }, false, { waitfor: false });
 
-// /mob/living/simple_animal/hostile/proc/handle_automated_action  (code/modules/mob/living/simple_animal/hostile/hostile.dm:77)  may sleep
+// hostile.dm:77
 rt.def("/mob/living/simple_animal/hostile/proc/handle_automated_action", function* handle_automated_action(f: Frame) {
-	let possible_targets: Value = null;
-	f.vars = () => [possible_targets];
-	if (isEqual(rt.sv(f, "AIStatus"), 3)) {
+	if (this.AIStatus == AI_OFF) {
 		return 0;
 	}
-	possible_targets = (yield* g.srcCall(f, "ListTargets"));
-	if (truthy(rt.sv(f, "environment_smash"))) {
-		yield* g.srcCall(f, "EscapeConfinement");
+	let possible_targets: Value = this.ListTargets();
+	if (this.environment_smash) {
+		yield* this.EscapeConfinement();
 	}
-	if (truthy((yield* g.srcCall(f, "AICanContinue", live(possible_targets))))) {
-		yield* g.srcCall(f, "DestroySurroundings");
-		if (!truthy((yield* g.srcCall(f, "MoveToTarget", live(possible_targets))))) {
-			if (truthy((yield* g.srcCall(f, "AIShouldSleep", live(possible_targets))))) {
-				rt.setSv(f, "AIStatus", 2);
+	if (yield* this.AICanContinue(possible_targets)) {
+		yield* this.DestroySurroundings();
+		if (!(yield* this.MoveToTarget(possible_targets))) {
+			if (yield* this.AIShouldSleep(possible_targets)) {
+				this.AIStatus = AI_IDLE;
 			}
 		}
 	}
 	return 1;
 }, true, { waitfor: false });
 
-// /mob/living/simple_animal/hostile/proc/attacked_by  (code/modules/mob/living/simple_animal/hostile/hostile.dm:92)  may sleep
-rt.def("/mob/living/simple_animal/hostile/proc/attacked_by", function* attacked_by(f: Frame) {
-	if (((((isEqual(rt.sv(f, "stat"), 0) && !truthy(rt.sv(f, "target"))) && !isEqual(rt.sv(f, "AIStatus"), 3)) && !truthy(rt.sv(f, "client"))) && truthy(live(f.args[1])))) {
-		yield* g.srcCall(f, "FindTarget", rt.list(live(f.args[1])), 1);
+// hostile.dm:92
+rt.def("/mob/living/simple_animal/hostile/proc/attacked_by", function* attacked_by(f: Frame, I: Value, user: Value) {
+	if (this.stat == 0 && !this.target && this.AIStatus != AI_OFF && !this.client && user) {
+		yield* this.FindTarget(list(user), 1);
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["I", "user"] });
-
-// /mob/living/simple_animal/hostile/proc/bullet_act  (code/modules/mob/living/simple_animal/hostile/hostile.dm:97)  may sleep
-rt.def("/mob/living/simple_animal/hostile/proc/bullet_act", function* bullet_act(f: Frame) {
-	if ((((isEqual(rt.sv(f, "stat"), 0) && !truthy(rt.sv(f, "target"))) && !isEqual(rt.sv(f, "AIStatus"), 3)) && !truthy(rt.sv(f, "client")))) {
-		if ((truthy(rt.fv(f, "firer", live(f.args[0]))) && rt.le((yield* g.call(f, P("/proc/get_dist"), null, [live(f.src), rt.fv(f, "firer", live(f.args[0]))])), rt.sv(f, "aggro_vision_range")))) {
-			yield* g.srcCall(f, "FindTarget", rt.list(rt.fv(f, "firer", live(f.args[0]))), 1);
-		}
-		yield* g.srcCall(f, "Goto", rt.fv(f, "starting", live(f.args[0])), rt.sv(f, "move_to_delay"), 3);
-	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["P"] });
-
-// /mob/living/simple_animal/hostile/proc/ListTargets  (code/modules/mob/living/simple_animal/hostile/hostile.dm:106)
-rt.def("/mob/living/simple_animal/hostile/proc/ListTargets", function ListTargets(f: Frame) {
-	let HM: Value = null;
-	let $e: any;
-	f.vars = () => [HM, $e];
-	if (!truthy(rt.sv(f, "search_objects"))) {
-		f.dot = subtract(rt.call(f, P("/proc/hearers"), null, [rt.sv(f, "vision_range"), rt.sv(f, "targets_from")]), live(f.src));
-		HM = null;
-		rt.forList(f, 0, rt.call(f, P("/proc/typecache_filter_range"), null, [rt.sv(f, "vision_range"), rt.sv(f, "targets_from"), rt.gl("hostile_machines")]));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			HM = $e;
-			if (truthy(rt.call(f, P("/proc/can_see"), null, [rt.sv(f, "targets_from"), live(HM), rt.sv(f, "vision_range")]))) {
-				f.dot = rt.modify(live(f.dot), live(HM), add);
-			}
-		}
-		rt.endFor(f, 0);
-	} else {
-		f.dot = rt.call(f, P("/proc/oview"), null, [rt.sv(f, "vision_range"), rt.sv(f, "targets_from")]);
-	}
-	return f.dot;
-});
-
-// /mob/living/simple_animal/hostile/proc/FindTarget  (code/modules/mob/living/simple_animal/hostile/hostile.dm:118)  may sleep
-rt.def("/mob/living/simple_animal/hostile/proc/FindTarget", function* FindTarget(f: Frame, possible_targets: Value, HasTargetsList: Value) {
-	let pos_targ: Value = null, A: Value = null, Target: Value = null;
-	let $e: any;
-	f.vars = () => [possible_targets, HasTargetsList, pos_targ, A, Target, $e];
-	if (live(HasTargetsList) === null) {
-		HasTargetsList = 0;
-	}
-	f.dot = rt.list();
-	if (!truthy(live(HasTargetsList))) {
-		possible_targets = (yield* g.srcCall(f, "ListTargets"));
-	}
-	pos_targ = null;
-	rt.forList(f, 0, live(possible_targets));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		pos_targ = $e;
-		if (truthy((yield* g.srcCall(f, "Found", (A = live(pos_targ)))))) {
-			f.dot = rt.list(live(A));
-			break;
-		}
-		if (truthy((yield* g.srcCall(f, "CanAttack", live(A))))) {
-			f.dot = rt.modify(live(f.dot), live(A), add);
-			continue;
-		}
-	}
-	rt.endFor(f, 0);
-	yield* g.srcCall(f, "GiveTarget", (Target = (yield* g.srcCall(f, "PickTarget", live(f.dot)))));
-	return live(Target);
+	return (yield* parent_proc());
 }, true);
 
-// /mob/living/simple_animal/hostile/proc/PossibleThreats  (code/modules/mob/living/simple_animal/hostile/hostile.dm:136)
-rt.def("/mob/living/simple_animal/hostile/proc/PossibleThreats", function PossibleThreats(f: Frame) {
-	let pos_targ: Value = null, A: Value = null;
-	let $e: any;
-	f.vars = () => [pos_targ, A, $e];
-	f.dot = rt.list();
-	pos_targ = null;
-	rt.forList(f, 0, rt.callSrc(f, "ListTargets", []));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		pos_targ = $e;
-		if (truthy(rt.callSrc(f, "Found", [(A = live(pos_targ))]))) {
-			f.dot = rt.list(live(A));
-			break;
+// hostile.dm:97
+rt.def("/mob/living/simple_animal/hostile/proc/bullet_act", function* bullet_act(f: Frame) {
+	if (this.stat == 0 && !this.target && this.AIStatus != AI_OFF && !this.client) {
+		if (f.args[0].firer && get_dist(this, f.args[0].firer) <= this.aggro_vision_range) {
+			yield* this.FindTarget(list(f.args[0].firer), 1);
 		}
-		if (truthy(rt.callSrc(f, "CanAttack", [live(A)]))) {
-			f.dot = rt.modify(live(f.dot), live(A), add);
-			continue;
-		}
+		this.Goto(f.args[0].starting, this.move_to_delay, 3);
 	}
-	rt.endFor(f, 0);
+	return (yield* parent_proc());
+}, true, { args: ["P"] });
+
+// hostile.dm:106
+rt.def("/mob/living/simple_animal/hostile/proc/ListTargets", function ListTargets(f: Frame) {
+	let HM: Value = null;
+	if (!this.search_objects) {
+		f.dot = hearers(this.vision_range, this.targets_from) - this;
+		for (HM of each(typecache_filter_range(this.vision_range, this.targets_from, GLOB.hostile_machines))) {
+			if (can_see(this.targets_from, HM, this.vision_range)) {
+				f.dot += HM;
+			}
+		}
+	} else {
+		f.dot = oview(this.vision_range, this.targets_from);
+	}
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/proc/PickTarget  (code/modules/mob/living/simple_animal/hostile/hostile.dm:152)
-rt.def("/mob/living/simple_animal/hostile/proc/PickTarget", function PickTarget(f: Frame, Targets: Value) {
-	let pos_targ: Value = null, A: Value = null, target_dist: Value = null, possible_target_distance: Value = null, chosen_target: Value = null;
-	let $e: any;
-	f.vars = () => [Targets, pos_targ, A, target_dist, possible_target_distance, chosen_target, $e];
-	if (rt.sv(f, "target") !== null) {
-		pos_targ = null;
-		rt.forList(f, 0, live(Targets));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			pos_targ = $e;
-			A = live(pos_targ);
-			target_dist = rt.call(f, P("/proc/get_dist"), null, [rt.sv(f, "targets_from"), rt.sv(f, "target")]);
-			possible_target_distance = rt.call(f, P("/proc/get_dist"), null, [rt.sv(f, "targets_from"), live(A)]);
-			if (rt.lt(live(target_dist), live(possible_target_distance))) {
-				(Targets = rt.modify(live(Targets), live(A), subtract));
-			}
+// hostile.dm:118
+rt.def("/mob/living/simple_animal/hostile/proc/FindTarget", function* FindTarget(f: Frame, possible_targets: Value, HasTargetsList: Value) {
+	let pos_targ: Value = null, A: Value = null, Target: Value = null;
+	HasTargetsList ??= 0;
+	f.dot = list();
+	if (!HasTargetsList) {
+		possible_targets = this.ListTargets();
+	}
+	for (pos_targ of each(possible_targets)) {
+		if (this.Found((A = pos_targ))) {
+			f.dot = list(A);
+			break;
 		}
-		rt.endFor(f, 0);
+		if (this.CanAttack(A)) {
+			f.dot += A;
+			continue;
+		}
 	}
-	if (!truthy(rt.len(f, live(Targets)))) {
-		return live(f.dot);
+	yield* this.GiveTarget((Target = this.PickTarget(f.dot)));
+	return Target;
+}, true);
+
+// hostile.dm:136
+rt.def("/mob/living/simple_animal/hostile/proc/PossibleThreats", function PossibleThreats(f: Frame) {
+	let pos_targ: Value = null, A: Value = null;
+	f.dot = list();
+	for (pos_targ of each(this.ListTargets())) {
+		if (this.Found((A = pos_targ))) {
+			f.dot = list(A);
+			break;
+		}
+		if (this.CanAttack(A)) {
+			f.dot += A;
+			continue;
+		}
 	}
-	return (chosen_target = rt.op(f, "PickUnweighted", [1], [live(Targets)]));
+	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/proc/CanAttack  (code/modules/mob/living/simple_animal/hostile/hostile.dm:165)
+// hostile.dm:152
+rt.def("/mob/living/simple_animal/hostile/proc/PickTarget", function PickTarget(f: Frame, Targets: Value) {
+	let pos_targ: Value = null, A: Value = null, target_dist: Value = null, possible_target_distance: Value = null, chosen_target: Value = null;
+	if (this.target !== null) {
+		for (pos_targ of each(Targets)) {
+			A = pos_targ;
+			target_dist = get_dist(this.targets_from, this.target);
+			possible_target_distance = get_dist(this.targets_from, A);
+			if (target_dist < possible_target_distance) {
+				Targets -= A;
+			}
+		}
+	}
+	if (!rt.len(f, Targets)) {
+		return f.dot;
+	}
+	return (chosen_target = pick(Targets));
+});
+
+// hostile.dm:165
 rt.def("/mob/living/simple_animal/hostile/proc/CanAttack", function CanAttack(f: Frame, the_target: Value) {
 	let L: Value = null, faction_check: Value = null, M: Value = null, _P: Value = null, OW: Value = null;
-	f.vars = () => [L, faction_check, M, _P, OW];
-	if (!truthy(live(the_target))) {
+	if (!the_target) {
 		return 0;
 	}
-	if (rt.lt(rt.sv(f, "see_invisible"), rt.fv(f, "invisibility", live(the_target)))) {
+	if (this.see_invisible < the_target.invisibility) {
 		return 0;
 	}
-	if (rt.lt(rt.sv(f, "search_objects"), 2)) {
-		if (truthy((rt.istype(live(the_target), T("/mob/living")) ? 1 : 0))) {
-			L = live(the_target);
-			faction_check = rt.callSrc(f, "faction_check_mob", [live(L)]);
-			if (truthy(rt.sv(f, "robust_searching"))) {
-				if ((rt.gt(rt.fv(f, "stat", live(L)), rt.sv(f, "stat_attack")) || (!isEqual(rt.fv(f, "stat", live(L)), rt.sv(f, "stat_attack")) && isEqual(rt.sv(f, "stat_exclusive"), 1)))) {
+	if (this.search_objects < 2) {
+		if (rt.istype(the_target, T("/mob/living"))) {
+			L = the_target;
+			faction_check = this.faction_check_mob(L);
+			if (this.robust_searching) {
+				if (L.stat > this.stat_attack || L.stat != this.stat_attack && this.stat_exclusive == 1) {
 					return 0;
 				}
-				if (((truthy(live(faction_check)) && !truthy(rt.sv(f, "attack_same"))) || (!truthy(live(faction_check)) && isEqual(rt.sv(f, "attack_same"), 2)))) {
+				if (faction_check && !this.attack_same || !faction_check && this.attack_same == 2) {
 					return 0;
 				}
-				if (truthy((rt.isIn(f, live(L), rt.sv(f, "friends")) ? 1 : 0))) {
+				if (rt.isIn(f, L, this.friends)) {
 					return 0;
 				}
 			} else {
-				if (truthy(rt.fv(f, "stat", live(L)))) {
+				if (L.stat) {
 					return 0;
 				}
-				if ((truthy(live(faction_check)) && !truthy(rt.sv(f, "attack_same")))) {
+				if (faction_check && !this.attack_same) {
 					return 0;
 				}
 			}
 			return 1;
 		}
-		if (truthy((rt.istype(live(the_target), T("/obj/mecha")) ? 1 : 0))) {
-			if (truthy(rt.gv(f, "occupant", (M = live(the_target))))) {
-				if (truthy(rt.callSrc(f, "CanAttack", [rt.fv(f, "occupant", live(M))]))) {
+		if (rt.istype(the_target, T("/obj/mecha"))) {
+			if ((M = the_target).occupant) {
+				if (this.CanAttack(M.occupant)) {
 					return 1;
 				}
 			}
 		}
-		if (truthy((rt.istype(live(the_target), T("/obj/machinery/porta_turret")) ? 1 : 0))) {
-			if (truthy((rt.isIn(f, rt.gv(f, "faction", (_P = live(the_target))), rt.sv(f, "faction")) ? 1 : 0))) {
+		if (rt.istype(the_target, T("/obj/machinery/porta_turret"))) {
+			if (rt.isIn(f, (_P = the_target).faction, this.faction)) {
 				return 0;
 			}
-			if ((truthy(rt.fv(f, "has_cover", live(_P))) && !truthy(rt.fv(f, "raised", live(_P))))) {
+			if (_P.has_cover && !_P.raised) {
 				return 0;
 			}
-			if (truthy(rt.bitAnd(rt.fv(f, "stat", live(_P)), 1))) {
+			if (rt.bitAnd(_P.stat, 1)) {
 				return 0;
 			}
 			return 1;
 		}
-		if (truthy((rt.istype(live(the_target), T("/obj/structure/destructible/clockwork/ocular_warden")) ? 1 : 0))) {
-			if (!isEqual(rt.gv(f, "target", (OW = live(the_target))), live(f.src))) {
+		if (rt.istype(the_target, T("/obj/structure/destructible/clockwork/ocular_warden"))) {
+			if ((OW = the_target).target != this) {
 				return 0;
 			}
 			return 1;
 		}
 	}
-	if (truthy((rt.istype(live(the_target), T("/obj")) ? 1 : 0))) {
-		if ((truthy(rt.sv(f, "attack_all_objects")) || truthy(rt.call(f, P("/proc/is_type_in_typecache"), null, [live(the_target), rt.sv(f, "wanted_objects")])))) {
+	if (rt.istype(the_target, T("/obj"))) {
+		if (this.attack_all_objects || is_type_in_typecache(the_target, this.wanted_objects)) {
 			return 1;
 		}
 	}
 	return 0;
 });
 
-// /mob/living/simple_animal/hostile/proc/GiveTarget  (code/modules/mob/living/simple_animal/hostile/hostile.dm:216)  may sleep
+// hostile.dm:216
 rt.def("/mob/living/simple_animal/hostile/proc/GiveTarget", function* GiveTarget(f: Frame, new_target: Value) {
-	f.vars = () => [new_target];
-	rt.setSv(f, "target", live(new_target));
-	yield* g.srcCall(f, "LosePatience");
-	if (rt.sv(f, "target") === null) return f.dot;
-	yield* g.srcCall(f, "GainPatience");
-	yield* g.srcCall(f, "Aggro");
+	this.target = new_target;
+	yield* this.LosePatience();
+	if (this.target === null) return f.dot;
+	yield* this.GainPatience();
+	yield* this.Aggro();
 	return 1;
 }, true);
 
-// /mob/living/simple_animal/hostile/proc/MoveToTarget  (code/modules/mob/living/simple_animal/hostile/hostile.dm:225)  may sleep
+// hostile.dm:225
 rt.def("/mob/living/simple_animal/hostile/proc/MoveToTarget", function* MoveToTarget(f: Frame, possible_targets: Value) {
 	let target_distance: Value = null;
-	f.vars = () => [possible_targets, target_distance];
-	rt.setSv(f, "stop_automated_movement", 1);
-	if ((!truthy(rt.sv(f, "target")) || !truthy((yield* g.srcCall(f, "CanAttack", rt.sv(f, "target")))))) {
-		yield* g.srcCall(f, "LoseTarget");
+	this.stop_automated_movement = 1;
+	if (!this.target || !this.CanAttack(this.target)) {
+		yield* this.LoseTarget();
 		return 0;
 	}
-	if (truthy((rt.isIn(f, rt.sv(f, "target"), live(possible_targets)) ? 1 : 0))) {
-		if (!isEqual(rt.fv(f, "z", rt.sv(f, "target")), rt.sv(f, "z"))) {
-			yield* g.srcCall(f, "LoseTarget");
+	if (rt.isIn(f, this.target, possible_targets)) {
+		if (this.target.z != this.z) {
+			yield* this.LoseTarget();
 			return 0;
 		}
-		target_distance = (yield* g.call(f, P("/proc/get_dist"), null, [rt.sv(f, "targets_from"), rt.sv(f, "target")]));
-		if (truthy(rt.sv(f, "ranged"))) {
-			if ((!truthy((yield* g.callName(f, rt.sv(f, "target"), "Adjacent", [rt.sv(f, "targets_from")]))) && rt.le(rt.sv(f, "ranged_cooldown"), rt.worldTime(f)))) {
-				yield* g.srcCall(f, "OpenFire", rt.sv(f, "target"));
+		target_distance = get_dist(this.targets_from, this.target);
+		if (this.ranged) {
+			if (!this.target.Adjacent(this.targets_from) && this.ranged_cooldown <= rt.worldTime(f)) {
+				yield* this.OpenFire(this.target);
 			}
 		}
-		if (!truthy((yield* g.srcCall(f, "Process_Spacemove")))) {
-			yield* g.call(f, P("/proc/walk"), null, [live(f.src), 0]);
+		if (!(yield* this.Process_Spacemove())) {
+			walk(this, 0);
 			return 1;
 		}
-		if (rt.sv(f, "retreat_distance") !== null) {
-			if (rt.le(live(target_distance), rt.sv(f, "retreat_distance"))) {
-				yield* g.call(f, P("/proc/walk_away"), null, [live(f.src), rt.sv(f, "target"), rt.sv(f, "retreat_distance"), rt.sv(f, "move_to_delay")]);
+		if (this.retreat_distance !== null) {
+			if (target_distance <= this.retreat_distance) {
+				walk_away(this, this.target, this.retreat_distance, this.move_to_delay);
 			} else {
-				yield* g.srcCall(f, "Goto", rt.sv(f, "target"), rt.sv(f, "move_to_delay"), rt.sv(f, "minimum_distance"));
+				this.Goto(this.target, this.move_to_delay, this.minimum_distance);
 			}
 		} else {
-			yield* g.srcCall(f, "Goto", rt.sv(f, "target"), rt.sv(f, "move_to_delay"), rt.sv(f, "minimum_distance"));
+			this.Goto(this.target, this.move_to_delay, this.minimum_distance);
 		}
-		if (truthy(rt.sv(f, "target"))) {
-			if (((truthy(rt.sv(f, "targets_from")) && truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.fv(f, "loc", rt.sv(f, "targets_from"))])))) && truthy((yield* g.callName(f, rt.sv(f, "target"), "Adjacent", [rt.sv(f, "targets_from")]))))) {
-				yield* g.srcCall(f, "AttackingTarget");
-				yield* g.srcCall(f, "GainPatience");
+		if (this.target) {
+			if (this.targets_from && isturf(this.targets_from.loc) && this.target.Adjacent(this.targets_from)) {
+				yield* this.AttackingTarget();
+				yield* this.GainPatience();
 			}
 			return 1;
 		}
 		return 0;
 	}
-	if (truthy(rt.sv(f, "environment_smash"))) {
-		if ((rt.fv(f, "loc", rt.sv(f, "target")) !== null && rt.le((yield* g.call(f, P("/proc/get_dist"), null, [rt.sv(f, "targets_from"), rt.fv(f, "loc", rt.sv(f, "target"))])), rt.sv(f, "vision_range")))) {
-			if ((truthy(rt.sv(f, "ranged_ignores_vision")) && rt.le(rt.sv(f, "ranged_cooldown"), rt.worldTime(f)))) {
-				yield* g.srcCall(f, "OpenFire", rt.sv(f, "target"));
+	if (this.environment_smash) {
+		if (this.target.loc !== null && get_dist(this.targets_from, this.target.loc) <= this.vision_range) {
+			if (this.ranged_ignores_vision && this.ranged_cooldown <= rt.worldTime(f)) {
+				yield* this.OpenFire(this.target);
 			}
-			if (rt.ge(rt.sv(f, "environment_smash"), 2)) {
-				yield* g.srcCall(f, "Goto", rt.sv(f, "target"), rt.sv(f, "move_to_delay"), rt.sv(f, "minimum_distance"));
-				yield* g.srcCall(f, "FindHidden");
+			if (this.environment_smash >= 2) {
+				this.Goto(this.target, this.move_to_delay, this.minimum_distance);
+				yield* this.FindHidden();
 				return 1;
-			} else {
-				if (truthy((yield* g.srcCall(f, "FindHidden")))) {
-					return 1;
-				}
+			} else if (yield* this.FindHidden()) {
+				return 1;
 			}
 		}
 	}
-	yield* g.srcCall(f, "LoseTarget");
+	yield* this.LoseTarget();
 	return 0;
 }, true);
 
-// /mob/living/simple_animal/hostile/proc/Goto  (code/modules/mob/living/simple_animal/hostile/hostile.dm:267)
+// hostile.dm:267
 rt.def("/mob/living/simple_animal/hostile/proc/Goto", function Goto(f: Frame, target: Value, delay: Value, minimum_distance: Value) {
-	rt.call(f, P("/proc/walk_to"), null, [live(f.src), live(target), live(minimum_distance), live(delay)]);
+	walk_to(this, target, minimum_distance, delay);
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/proc/adjustHealth  (code/modules/mob/living/simple_animal/hostile/hostile.dm:270)  may sleep
+// hostile.dm:270
 rt.def("/mob/living/simple_animal/hostile/proc/adjustHealth", function* adjustHealth(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 1;
 	}
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 0;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!(((!truthy(rt.sv(f, "ckey")) && !truthy(rt.sv(f, "stat"))) && rt.lt(rt.sv(f, "search_objects"), 3)) && rt.gt(live(f.dot), 0))) return f.dot;
-	if (truthy(rt.sv(f, "search_objects"))) {
-		rt.setSv(f, "target", null);
-		yield* g.srcCall(f, "LoseSearchObjects");
+	f.dot = (yield* parent_proc());
+	if (!(!this.ckey && !this.stat && this.search_objects < 3 && f.dot > 0)) return f.dot;
+	if (this.search_objects) {
+		this.target = null;
+		yield* this.LoseSearchObjects();
 	}
-	if (isEqual(rt.sv(f, "AIStatus"), 2)) {
-		rt.setSv(f, "AIStatus", 1);
-		yield* g.srcCall(f, "FindTarget");
+	if (this.AIStatus == AI_IDLE) {
+		this.AIStatus = AI_ON;
+		yield* this.FindTarget();
 	} else {
-		if (!(rt.sv(f, "target") !== null && truthy(rt.op(f, "Prob", [], [40])))) return f.dot;
-		yield* g.srcCall(f, "FindTarget");
+		if (!(this.target !== null && prob(40))) return f.dot;
+		yield* this.FindTarget();
 	}
 	return f.dot;
 }, true, { args: ["amount", "updating_health", "forced"] });
 
-// /mob/living/simple_animal/hostile/proc/AttackingTarget  (code/modules/mob/living/simple_animal/hostile/hostile.dm:283)  may sleep
+// hostile.dm:283
 rt.def("/mob/living/simple_animal/hostile/proc/AttackingTarget", function* AttackingTarget(f: Frame) {
-	return (yield* g.callName(f, rt.sv(f, "target"), "attack_animal", [live(f.src)]));
+	return (yield* this.target.attack_animal(this));
 }, true);
 
-// /mob/living/simple_animal/hostile/proc/Aggro  (code/modules/mob/living/simple_animal/hostile/hostile.dm:286)  may sleep
+// hostile.dm:286
 rt.def("/mob/living/simple_animal/hostile/proc/Aggro", function* Aggro(f: Frame) {
-	rt.setSv(f, "vision_range", rt.sv(f, "aggro_vision_range"));
-	if (!((truthy(rt.sv(f, "target")) && truthy(rt.len(f, rt.sv(f, "emote_taunt")))) && truthy(rt.op(f, "Prob", [], [rt.sv(f, "taunt_chance")])))) return f.dot;
-	yield* g.srcCall(f, "emote", "me", 1, fmt("＀ at ＀.", [rt.op(f, "PickUnweighted", [1], [rt.sv(f, "emote_taunt")]), rt.sv(f, "target")]));
-	rt.setSv(f, "taunt_chance", (yield* g.call(f, P("/proc/max"), null, [subtract(rt.sv(f, "taunt_chance"), 7), 2])));
+	this.vision_range = this.aggro_vision_range;
+	if (!(this.target && rt.len(f, this.emote_taunt) && prob(this.taunt_chance))) return f.dot;
+	yield* this.emote("me", 1, `${pick(this.emote_taunt)} at ${this.target}.`);
+	this.taunt_chance = max(this.taunt_chance - 7, 2);
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/proc/LoseAggro  (code/modules/mob/living/simple_animal/hostile/hostile.dm:294)
+// hostile.dm:294
 rt.def("/mob/living/simple_animal/hostile/proc/LoseAggro", function LoseAggro(f: Frame) {
-	rt.setSv(f, "stop_automated_movement", 0);
-	rt.setSv(f, "vision_range", rt.sv(f, "idle_vision_range"));
-	rt.setSv(f, "taunt_chance", rt.initial(f, live(f.src), "taunt_chance"));
+	this.stop_automated_movement = 0;
+	this.vision_range = this.idle_vision_range;
+	this.taunt_chance = rt.initial(f, this, "taunt_chance");
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/proc/LoseTarget  (code/modules/mob/living/simple_animal/hostile/hostile.dm:299)
+// hostile.dm:299
 rt.def("/mob/living/simple_animal/hostile/proc/LoseTarget", function LoseTarget(f: Frame) {
-	rt.setSv(f, "target", null);
-	rt.call(f, P("/proc/walk"), null, [live(f.src), 0]);
-	rt.callSrc(f, "LoseAggro", []);
+	this.target = null;
+	walk(this, 0);
+	this.LoseAggro();
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/proc/death  (code/modules/mob/living/simple_animal/hostile/hostile.dm:305)  may sleep
+// hostile.dm:305
 rt.def("/mob/living/simple_animal/hostile/proc/death", function* death(f: Frame, gibbed: Value) {
-	f.vars = () => [gibbed];
-	yield* g.srcCall(f, "LoseTarget");
-	yield* g.callSuper(f, [live(gibbed)]);
+	yield* this.LoseTarget();
+	yield* parent_proc(gibbed);
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/proc/summon_backup  (code/modules/mob/living/simple_animal/hostile/hostile.dm:309)  may sleep
+// hostile.dm:309
 rt.def("/mob/living/simple_animal/hostile/proc/summon_backup", function* summon_backup(f: Frame, distance: Value, exact_faction_match: Value) {
 	let M: Value = null;
-	let $e: any;
-	f.vars = () => [distance, exact_faction_match, M, $e];
-	yield* g.srcCall(f, "do_alert_animation", live(f.src));
-	yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/machines/chime.ogg"), 50, 1, -1]);
-	M = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/oview"), null, [live(distance), rt.sv(f, "targets_from")])), T("/mob/living/simple_animal/hostile"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if (truthy((yield* g.srcCall(f, "faction_check_mob", live(M), 1)))) {
-			if (isEqual(rt.fv(f, "AIStatus", live(M)), 3)) {
-				return live(f.dot);
+	yield* this.do_alert_animation(this);
+	playsound(this.loc, rt.rsc("sound/machines/chime.ogg"), 50, 1, -1);
+	for (M of each(oview(distance, this.targets_from), T("/mob/living/simple_animal/hostile"))) {
+		if (this.faction_check_mob(M, 1)) {
+			if (M.AIStatus == AI_OFF) {
+				return f.dot;
 			} else {
-				yield* g.callName(f, live(M), "Goto", [live(f.src), rt.fv(f, "move_to_delay", live(M)), rt.fv(f, "minimum_distance", live(M))]);
+				M.Goto(this, M.move_to_delay, M.minimum_distance);
 			}
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/proc/OpenFire  (code/modules/mob/living/simple_animal/hostile/hostile.dm:320)  may sleep
+// hostile.dm:320
 rt.def("/mob/living/simple_animal/hostile/proc/OpenFire", function* OpenFire(f: Frame, A: Value) {
 	let _T: Value = null, L: Value = null, cb: Value = null;
-	let $e: any;
-	f.vars = () => [A, _T, L, cb, $e];
-	if (truthy(rt.sv(f, "check_friendly_fire"))) {
-		_T = null;
-		rt.forList(f, 0, (yield* g.call(f, P("/proc/getline"), null, [live(f.src), live(A)])), T("/turf"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			_T = $e;
+	if (this.check_friendly_fire) {
+		for (_T of each(getline(this, A), T("/turf"))) {
 			L = null;
-			rt.forList(f, 1, live(_T), T("/mob/living"));
-			while (($e = rt.next(f, 1)) !== undefined) {
-				L = $e;
-				if ((isEqual(live(L), live(f.src)) || isEqual(live(L), live(A)))) {
+			for (L of each(_T, T("/mob/living"))) {
+				if (L == this || L == A) {
 					continue;
 				}
-				if ((truthy((yield* g.srcCall(f, "faction_check_mob", live(L)))) && !truthy(rt.sv(f, "attack_same")))) {
-					return live(f.dot);
+				if (this.faction_check_mob(L) && !this.attack_same) {
+					return f.dot;
 				}
 			}
-			rt.endFor(f, 1);
 		}
-		rt.endFor(f, 0);
 	}
-	yield* g.srcCall(f, "visible_message", fmt("<span class='danger'><b>＀</b> ＀ at ＀!</span>", [live(f.src), rt.sv(f, "ranged_message"), live(A)]));
-	if (truthy(rt.sv(f, "rapid"))) {
-		yield* g.call(f, P("/proc/addtimer"), null, [(cb = (yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/mob/living/simple_animal/hostile/proc/Shoot"), live(A)]))), 1]);
-		yield* g.call(f, P("/proc/addtimer"), null, [live(cb), 4]);
-		yield* g.call(f, P("/proc/addtimer"), null, [live(cb), 6]);
+	this.visible_message(`<span class='danger'><b>${this}</b> ${this.ranged_message} at ${A}!</span>`);
+	if (this.rapid) {
+		yield* addtimer((cb = (yield* new_(T("/datum/callback"), this, P("/mob/living/simple_animal/hostile/proc/Shoot"), A))), 1);
+		yield* addtimer(cb, 4);
+		yield* addtimer(cb, 6);
 	} else {
-		yield* g.srcCall(f, "Shoot", live(A));
+		yield* this.Shoot(A);
 	}
-	rt.setSv(f, "ranged_cooldown", add(rt.worldTime(f), rt.sv(f, "ranged_cooldown_time")));
+	this.ranged_cooldown = rt.worldTime(f) + this.ranged_cooldown_time;
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/proc/Shoot  (code/modules/mob/living/simple_animal/hostile/hostile.dm:339)  may sleep
+// hostile.dm:339
 rt.def("/mob/living/simple_animal/hostile/proc/Shoot", function* Shoot(f: Frame, targeted_atom: Value) {
-	let startloc: Value = null, casing: Value = null, _P: Value = null;
-	f.vars = () => [targeted_atom, startloc, casing, _P];
-	if ((((!truthy(live(targeted_atom)) || truthy(rt.fv(f, "gc_destroyed", live(targeted_atom)))) || isEqual(live(targeted_atom), rt.fv(f, "loc", rt.sv(f, "targets_from")))) || isEqual(live(targeted_atom), rt.sv(f, "targets_from")))) {
-		return live(f.dot);
+	let casing: Value = null, _P: Value = null;
+	if (!targeted_atom || targeted_atom.gc_destroyed || targeted_atom == this.targets_from.loc || targeted_atom == this.targets_from) {
+		return f.dot;
 	}
-	startloc = rt.getStep(f, rt.sv(f, "targets_from"), 0);
-	if (truthy(rt.sv(f, "casingtype"))) {
-		casing = (yield* g.new_(f, rt.sv(f, "casingtype"), [live(startloc)]));
-		yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.sv(f, "projectilesound"), 100, 1]);
-		yield* g.callName(f, live(casing), "fire_casing", [null, live(targeted_atom), null, live(f.src), null, null, null, null, null, null, "zone_override", (yield* g.call(f, P("/proc/ran_zone"), null, []))], rt.Args.Named);
+	let startloc: Value = rt.getStep(f, this.targets_from, 0);
+	if (this.casingtype) {
+		casing = (yield* new_(this.casingtype, startloc));
+		playsound(this, this.projectilesound, 100, 1);
+		yield* casing.fire_casing(targeted_atom, this, null, null, null, { zone_override: ran_zone() });
 	} else {
-		if (!truthy(rt.sv(f, "projectiletype"))) return f.dot;
-		_P = (yield* g.new_(f, rt.sv(f, "projectiletype"), [live(startloc)]));
-		yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.sv(f, "projectilesound"), 100, 1]);
-		rt.setFv(f, "current", live(_P), live(startloc));
-		rt.setFv(f, "starting", live(_P), live(startloc));
-		rt.setFv(f, "firer", live(_P), live(f.src));
-		rt.setFv(f, "yo", live(_P), subtract(rt.fv(f, "y", live(targeted_atom)), rt.fv(f, "y", live(startloc))));
-		rt.setFv(f, "xo", live(_P), subtract(rt.fv(f, "x", live(targeted_atom)), rt.fv(f, "x", live(startloc))));
-		if (!isEqual(rt.sv(f, "AIStatus"), 1)) {
-			yield* g.srcCall(f, "newtonian_move", rt.getDir(f, live(targeted_atom), rt.sv(f, "targets_from")));
+		if (!this.projectiletype) return f.dot;
+		_P = (yield* new_(this.projectiletype, startloc));
+		playsound(this, this.projectilesound, 100, 1);
+		_P.current = startloc;
+		_P.starting = startloc;
+		_P.firer = this;
+		_P.yo = targeted_atom.y - startloc.y;
+		_P.xo = targeted_atom.x - startloc.x;
+		if (this.AIStatus != AI_ON) {
+			yield* this.newtonian_move(rt.getDir(f, targeted_atom, this.targets_from));
 		}
-		rt.setFv(f, "original", live(_P), live(targeted_atom));
-		yield* g.callName(f, live(_P), "fire", []);
-		return live(_P);
+		_P.original = targeted_atom;
+		yield* _P.fire();
+		return _P;
 	}
 	return f.dot;
 }, true, { argTypes: [{ path: "/atom" }] });
 
-// /mob/living/simple_animal/hostile/proc/DestroySurroundings  (code/modules/mob/living/simple_animal/hostile/hostile.dm:363)  may sleep
+// hostile.dm:363
 rt.def("/mob/living/simple_animal/hostile/proc/DestroySurroundings", function* DestroySurroundings(f: Frame) {
 	let dir: Value = null, _T: Value = null, a: Value = null, A: Value = null;
-	let $e: any;
-	f.vars = () => [dir, _T, a, A, $e];
-	if (!truthy(rt.sv(f, "environment_smash"))) return f.dot;
-	yield* g.srcCall(f, "EscapeConfinement");
-	dir = null;
-	rt.forList(f, 0, rt.gl("cardinal"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		dir = $e;
-		if ((truthy((rt.istype((_T = rt.getStep(f, rt.sv(f, "targets_from"), live(dir))), T("/turf/closed/wall")) ? 1 : 0)) || truthy((rt.istype(live(_T), T("/turf/closed/mineral")) ? 1 : 0)))) {
-			if (truthy((yield* g.callName(f, live(_T), "Adjacent", [rt.sv(f, "targets_from")])))) {
-				yield* g.callName(f, live(_T), "attack_animal", [live(f.src)]);
+	if (!this.environment_smash) return f.dot;
+	yield* this.EscapeConfinement();
+	for (dir of each(GLOB.cardinal)) {
+		if (rt.istype((_T = rt.getStep(f, this.targets_from, dir)), T("/turf/closed/wall")) || rt.istype(_T, T("/turf/closed/mineral"))) {
+			if (_T.Adjacent(this.targets_from)) {
+				yield* _T.attack_animal(this);
 			}
 		}
 		a = null;
-		rt.forList(f, 1, live(_T));
-		while (($e = rt.next(f, 1)) !== undefined) {
-			a = $e;
-			if (!truthy((yield* g.callName(f, (A = live(a)), "Adjacent", [rt.sv(f, "targets_from")])))) {
+		for (a of each(_T)) {
+			if (!(A = a).Adjacent(this.targets_from)) {
 				continue;
 			}
-			if (truthy((yield* g.call(f, P("/proc/is_type_in_typecache"), null, [live(A), rt.sv(f, "environment_target_typecache")])))) {
-				yield* g.callName(f, live(A), "attack_animal", [live(f.src)]);
+			if (is_type_in_typecache(A, this.environment_target_typecache)) {
+				yield* A.attack_animal(this);
 			}
 		}
-		rt.endFor(f, 1);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/proc/EscapeConfinement  (code/modules/mob/living/simple_animal/hostile/hostile.dm:378)  may sleep
+// hostile.dm:378
 rt.def("/mob/living/simple_animal/hostile/proc/EscapeConfinement", function* EscapeConfinement(f: Frame) {
 	let A: Value = null;
-	f.vars = () => [A];
-	if (truthy(rt.sv(f, "buckled"))) {
-		yield* g.callName(f, rt.sv(f, "buckled"), "attack_animal", [live(f.src)]);
+	if (this.buckled) {
+		yield* this.buckled.attack_animal(this);
 	}
-	if (!(!truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.fv(f, "loc", rt.sv(f, "targets_from"))]))) && rt.fv(f, "loc", rt.sv(f, "targets_from")) !== null)) return f.dot;
-	yield* g.callName(f, (A = rt.getStep(f, rt.sv(f, "targets_from"), 0)), "attack_animal", [live(f.src)]);
+	if (!(!isturf(this.targets_from.loc) && this.targets_from.loc !== null)) return f.dot;
+	yield* (A = rt.getStep(f, this.targets_from, 0)).attack_animal(this);
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/proc/FindHidden  (code/modules/mob/living/simple_animal/hostile/hostile.dm:385)  may sleep
+// hostile.dm:385
 rt.def("/mob/living/simple_animal/hostile/proc/FindHidden", function* FindHidden(f: Frame) {
 	let A: Value = null;
-	f.vars = () => [A];
-	if (!((truthy((rt.istype(rt.fv(f, "loc", rt.sv(f, "target")), T("/obj/structure/closet")) ? 1 : 0)) || truthy((rt.istype(rt.fv(f, "loc", rt.sv(f, "target")), T("/obj/machinery/disposal")) ? 1 : 0))) || truthy((rt.istype(rt.fv(f, "loc", rt.sv(f, "target")), T("/obj/machinery/sleeper")) ? 1 : 0)))) return f.dot;
-	yield* g.srcCall(f, "Goto", (A = rt.fv(f, "loc", rt.sv(f, "target"))), rt.sv(f, "move_to_delay"), rt.sv(f, "minimum_distance"));
-	if (truthy((yield* g.callName(f, live(A), "Adjacent", [rt.sv(f, "targets_from")])))) {
-		yield* g.callName(f, live(A), "attack_animal", [live(f.src)]);
+	if (!(rt.istype(this.target.loc, T("/obj/structure/closet")) || rt.istype(this.target.loc, T("/obj/machinery/disposal")) || rt.istype(this.target.loc, T("/obj/machinery/sleeper")))) return f.dot;
+	this.Goto((A = this.target.loc), this.move_to_delay, this.minimum_distance);
+	if (A.Adjacent(this.targets_from)) {
+		yield* A.attack_animal(this);
 	}
 	return 1;
 }, true);
 
-// /mob/living/simple_animal/hostile/proc/RangedAttack  (code/modules/mob/living/simple_animal/hostile/hostile.dm:393)  may sleep
-rt.def("/mob/living/simple_animal/hostile/proc/RangedAttack", function* RangedAttack(f: Frame) {
-	if ((truthy(rt.sv(f, "ranged")) && rt.le(rt.sv(f, "ranged_cooldown"), rt.worldTime(f)))) {
-		rt.setSv(f, "target", live(f.args[0]));
-		yield* g.srcCall(f, "OpenFire", live(f.args[0]));
+// hostile.dm:393
+rt.def("/mob/living/simple_animal/hostile/proc/RangedAttack", function* RangedAttack(f: Frame, A: Value, params: Value) {
+	if (this.ranged && this.ranged_cooldown <= rt.worldTime(f)) {
+		this.target = A;
+		yield* this.OpenFire(A);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["A", "params"] });
+}, true);
 
-// /mob/living/simple_animal/hostile/proc/AICanContinue  (code/modules/mob/living/simple_animal/hostile/hostile.dm:402)  may sleep
+// hostile.dm:402
 rt.def("/mob/living/simple_animal/hostile/proc/AICanContinue", function* AICanContinue(f: Frame, possible_targets: Value) {
-	let $0: any;
-	f.vars = () => [possible_targets, $0];
-	$0 = rt.sv(f, "AIStatus");
-	if ($0 === 1) {
+	if (this.AIStatus === AI_ON) {
 		f.dot = 1;
-	} else if ($0 === 2) {
-		if (truthy((yield* g.srcCall(f, "FindTarget", live(possible_targets), 1)))) {
+	} else if (this.AIStatus === AI_IDLE) {
+		if (yield* this.FindTarget(possible_targets, 1)) {
 			f.dot = 1;
-			rt.setSv(f, "AIStatus", 1);
+			this.AIStatus = AI_ON;
 		} else {
 			f.dot = 0;
 		}
@@ -613,40 +548,38 @@ rt.def("/mob/living/simple_animal/hostile/proc/AICanContinue", function* AICanCo
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/proc/AIShouldSleep  (code/modules/mob/living/simple_animal/hostile/hostile.dm:413)  may sleep
+// hostile.dm:413
 rt.def("/mob/living/simple_animal/hostile/proc/AIShouldSleep", function* AIShouldSleep(f: Frame, possible_targets: Value) {
-	f.vars = () => [possible_targets];
-	return (!truthy((yield* g.srcCall(f, "FindTarget", live(possible_targets), 1))) ? 1 : 0);
+	return (!(yield* this.FindTarget(possible_targets, 1)) ? 1 : 0);
 }, true);
 
-// /mob/living/simple_animal/hostile/proc/GainPatience  (code/modules/mob/living/simple_animal/hostile/hostile.dm:420)  may sleep
+// hostile.dm:420
 rt.def("/mob/living/simple_animal/hostile/proc/GainPatience", function* GainPatience(f: Frame) {
-	if (!truthy(rt.sv(f, "lose_patience_timeout"))) return f.dot;
-	yield* g.srcCall(f, "LosePatience");
-	rt.setSv(f, "lose_patience_timer_id", (yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/mob/living/simple_animal/hostile/proc/LoseTarget")])), rt.sv(f, "lose_patience_timeout"), 8])));
+	if (!this.lose_patience_timeout) return f.dot;
+	yield* this.LosePatience();
+	this.lose_patience_timer_id = (yield* addtimer((yield* new_(T("/datum/callback"), this, P("/mob/living/simple_animal/hostile/proc/LoseTarget"))), this.lose_patience_timeout, 8));
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/proc/LosePatience  (code/modules/mob/living/simple_animal/hostile/hostile.dm:425)  may sleep
+// hostile.dm:425
 rt.def("/mob/living/simple_animal/hostile/proc/LosePatience", function* LosePatience(f: Frame) {
-	yield* g.call(f, P("/proc/deltimer"), null, [rt.sv(f, "lose_patience_timer_id")]);
+	yield* deltimer(this.lose_patience_timer_id);
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/proc/LoseSearchObjects  (code/modules/mob/living/simple_animal/hostile/hostile.dm:431)  may sleep
+// hostile.dm:431
 rt.def("/mob/living/simple_animal/hostile/proc/LoseSearchObjects", function* LoseSearchObjects(f: Frame) {
-	rt.setSv(f, "search_objects", 0);
-	yield* g.call(f, P("/proc/deltimer"), null, [rt.sv(f, "search_objects_timer_id")]);
-	rt.setSv(f, "search_objects_timer_id", (yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/mob/living/simple_animal/hostile/proc/RegainSearchObjects")])), rt.sv(f, "search_objects_regain_time"), 8])));
+	this.search_objects = 0;
+	yield* deltimer(this.search_objects_timer_id);
+	this.search_objects_timer_id = (yield* addtimer((yield* new_(T("/datum/callback"), this, P("/mob/living/simple_animal/hostile/proc/RegainSearchObjects"))), this.search_objects_regain_time, 8));
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/proc/RegainSearchObjects  (code/modules/mob/living/simple_animal/hostile/hostile.dm:436)
+// hostile.dm:436
 rt.def("/mob/living/simple_animal/hostile/proc/RegainSearchObjects", function RegainSearchObjects(f: Frame, value: Value) {
-	f.vars = () => [value];
-	if (!truthy(live(value))) {
-		value = rt.initial(f, live(f.src), "search_objects");
+	if (!value) {
+		value = rt.initial(f, this, "search_objects");
 	}
-	rt.setSv(f, "search_objects", live(value));
+	this.search_objects = value;
 	return f.dot;
 });

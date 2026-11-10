@@ -1,7 +1,7 @@
-// From code/datums/diseases/anxiety.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/datums/diseases/anxiety.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(946, "/datum/disease/anxiety", "/datum/disease", {
@@ -18,52 +18,47 @@ rt.type(946, "/datum/disease/anxiety", "/datum/disease", {
 	viable_mobtypes: null,
 });
 
-// /datum/disease/anxiety/proc/<init>  (code/datums/diseases/anxiety.dm:8)
+// anxiety.dm:8
 rt.def("/datum/disease/anxiety/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "cures", rt.list("ethanol"));
-	$0 = $0;
-	rt.setSv(f, "viable_mobtypes", rt.list(T("/mob/living/carbon/human"), T("/mob/living/carbon/monkey")));
+	parent_proc();
+	this.cures = list("ethanol");
+
+	this.viable_mobtypes = list(T("/mob/living/carbon/human"), T("/mob/living/carbon/monkey"));
 	return f.dot;
 });
 
-// /datum/disease/anxiety/proc/stage_act  (code/datums/diseases/anxiety.dm:15)  may sleep
+// anxiety.dm:15
 rt.def("/datum/disease/anxiety/proc/stage_act", function* stage_act(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	$0 = rt.sv(f, "stage");
-	if ($0 === 2) {
-		if (truthy(rt.op(f, "Prob", [], [5]))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "affected_mob"), "<span class='notice'>You feel anxious.</span>"]);
+	yield* parent_proc();
+	if (this.stage === 2) {
+		if (prob(5)) {
+			to_chat(this.affected_mob, "<span class='notice'>You feel anxious.</span>");
 		}
-	} else if ($0 === 3) {
-		if (truthy(rt.op(f, "Prob", [], [10]))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "affected_mob"), "<span class='notice'>Your stomach flutters.</span>"]);
+	} else if (this.stage === 3) {
+		if (prob(10)) {
+			to_chat(this.affected_mob, "<span class='notice'>Your stomach flutters.</span>");
 		}
-		if (truthy(rt.op(f, "Prob", [], [5]))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "affected_mob"), "<span class='notice'>You feel panicky.</span>"]);
+		if (prob(5)) {
+			to_chat(this.affected_mob, "<span class='notice'>You feel panicky.</span>");
 		}
-		if (truthy(rt.op(f, "Prob", [], [2]))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "affected_mob"), "<span class='danger'>You're overtaken with panic!</span>"]);
-			rt.modField(f, rt.sv(f, "affected_mob"), "confused", (yield* g.call(f, P("/proc/rand"), null, [2, 3])), add);
+		if (prob(2)) {
+			to_chat(this.affected_mob, "<span class='danger'>You're overtaken with panic!</span>");
+			this.affected_mob.confused += rand(2, 3);
 		}
-	} else if ($0 === 4) {
-		if (truthy(rt.op(f, "Prob", [], [10]))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "affected_mob"), "<span class='danger'>You feel butterflies in your stomach.</span>"]);
+	} else if (this.stage === 4) {
+		if (prob(10)) {
+			to_chat(this.affected_mob, "<span class='danger'>You feel butterflies in your stomach.</span>");
 		}
-		if (truthy(rt.op(f, "Prob", [], [5]))) {
-			yield* g.callName(f, rt.sv(f, "affected_mob"), "visible_message", [fmt("<span class='danger'>＀ stumbles around in a panic.</span>", [rt.sv(f, "affected_mob")]), "<span class='userdanger'>You have a panic attack!</span>"]);
-			rt.modField(f, rt.sv(f, "affected_mob"), "confused", (yield* g.call(f, P("/proc/rand"), null, [6, 8])), add);
-			rt.modField(f, rt.sv(f, "affected_mob"), "jitteriness", (yield* g.call(f, P("/proc/rand"), null, [6, 8])), add);
+		if (prob(5)) {
+			this.affected_mob.visible_message(`<span class='danger'>${this.affected_mob} stumbles around in a panic.</span>`, "<span class='userdanger'>You have a panic attack!</span>");
+			this.affected_mob.confused += rand(6, 8);
+			this.affected_mob.jitteriness += rand(6, 8);
 		}
-		if (truthy(rt.op(f, "Prob", [], [2]))) {
-			yield* g.callName(f, rt.sv(f, "affected_mob"), "visible_message", [fmt("<span class='danger'>＀ coughs up butterflies!</span>", [rt.sv(f, "affected_mob")]), "<span class='userdanger'>You cough up butterflies!</span>"]);
-			yield* g.new_(f, T("/mob/living/simple_animal/butterfly"), [rt.fv(f, "loc", rt.sv(f, "affected_mob"))]);
-			yield* g.new_(f, T("/mob/living/simple_animal/butterfly"), [rt.fv(f, "loc", rt.sv(f, "affected_mob"))]);
+		if (prob(2)) {
+			this.affected_mob.visible_message(`<span class='danger'>${this.affected_mob} coughs up butterflies!</span>`, "<span class='userdanger'>You cough up butterflies!</span>");
+			yield* new_(T("/mob/living/simple_animal/butterfly"), this.affected_mob.loc);
+			yield* new_(T("/mob/living/simple_animal/butterfly"), this.affected_mob.loc);
 		}
 	}
-	return live(f.dot);
+	return f.dot;
 }, true);

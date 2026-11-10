@@ -1,7 +1,7 @@
-// From code/modules/mob/living/carbon/alien/special/facehugger.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/carbon/alien/special/facehugger.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(8587, "/obj/item/clothing/mask/facehugger", "/obj/item/clothing/mask", {
@@ -25,314 +25,299 @@ rt.type(8587, "/obj/item/clothing/mask/facehugger", "/obj/item/clothing/mask", {
 	max_integrity: 100,
 });
 
-// /obj/item/clothing/mask/facehugger/proc/take_damage  (code/modules/mob/living/carbon/alien/special/facehugger.dm:49)  may sleep
+// facehugger.dm:49
 rt.def("/obj/item/clothing/mask/facehugger/proc/take_damage", function* take_damage(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = "brute";
 	}
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 0;
 	}
-	if (live(f.args[3]) === null) {
+	if (f.args[3] === null) {
 		f.args[3] = 1;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!rt.lt(rt.sv(f, "obj_integrity"), 90)) return f.dot;
-	yield* g.srcCall(f, "Die");
+	yield* parent_proc();
+	if (!(this.obj_integrity < 90)) return f.dot;
+	this.Die();
 	return f.dot;
 }, true, { args: ["damage_amount", "damage_type", "damage_flag", "sound_effect", "attack_dir"] });
 
-// /obj/item/clothing/mask/facehugger/proc/attackby  (code/modules/mob/living/carbon/alien/special/facehugger.dm:54)  may sleep
+// facehugger.dm:54
 rt.def("/obj/item/clothing/mask/facehugger/proc/attackby", function* attackby(f: Frame, O: Value, user: Value, params: Value) {
-	f.vars = () => [O, user, params];
-	return (yield* g.callName(f, live(O), "attack_obj", [live(f.src), live(user)]));
+	return (yield* O.attack_obj(this, user));
 }, true);
 
-// /obj/item/clothing/mask/facehugger/proc/attack_alien  (code/modules/mob/living/carbon/alien/special/facehugger.dm:57)  may sleep
+// facehugger.dm:57
 rt.def("/obj/item/clothing/mask/facehugger/proc/attack_alien", function* attack_alien(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.srcCall(f, "attack_hand", live(user));
-	return live(f.dot);
+	yield* this.attack_hand(user);
+	return f.dot;
 }, true);
 
-// /obj/item/clothing/mask/facehugger/proc/attack_hand  (code/modules/mob/living/carbon/alien/special/facehugger.dm:61)  may sleep
-rt.def("/obj/item/clothing/mask/facehugger/proc/attack_hand", function* attack_hand(f: Frame) {
-	if (((isEqual(rt.sv(f, "stat"), 0) && !truthy(rt.sv(f, "sterile"))) && !truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon/alien")) ? 1 : 0)))) {
-		if (truthy((yield* g.srcCall(f, "Leap", live(f.args[0]))))) {
-			return live(f.dot);
+// facehugger.dm:61
+rt.def("/obj/item/clothing/mask/facehugger/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
+	if (this.stat == 0 && !this.sterile && !rt.istype(user, T("/mob/living/carbon/alien"))) {
+		if (yield* this.Leap(user)) {
+			return f.dot;
 		}
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /obj/item/clothing/mask/facehugger/proc/attack  (code/modules/mob/living/carbon/alien/special/facehugger.dm:67)  may sleep
-rt.def("/obj/item/clothing/mask/facehugger/proc/attack", function* attack(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy((yield* g.callName(f, live(f.args[1]), "transferItemToLoc", [live(f.src), rt.getStep(f, live(f.args[0]), 0)])))) return f.dot;
-	yield* g.srcCall(f, "Leap", live(f.args[0]));
+// facehugger.dm:67
+rt.def("/obj/item/clothing/mask/facehugger/proc/attack", function* attack(f: Frame, M: Value, user: Value) {
+	yield* parent_proc();
+	if (!(yield* user.transferItemToLoc(this, rt.getStep(f, M, 0)))) return f.dot;
+	yield* this.Leap(M);
 	return f.dot;
-}, true, { args: ["M", "user"] });
+}, true);
 
-// /obj/item/clothing/mask/facehugger/proc/examine  (code/modules/mob/living/carbon/alien/special/facehugger.dm:72)
-rt.def("/obj/item/clothing/mask/facehugger/proc/examine", function examine(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	rt.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.sv(f, "real"))) {
-		return live(f.dot);
+// facehugger.dm:72
+rt.def("/obj/item/clothing/mask/facehugger/proc/examine", function examine(f: Frame, user: Value) {
+	parent_proc();
+	if (!this.real) {
+		return f.dot;
 	}
-	$0 = rt.sv(f, "stat");
-	if ($0 === 2 || $0 === 1) {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='boldannounce'>＀ is not moving.</span>", [live(f.src)])]);
-	} else if ($0 === 0) {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='boldannounce'>＀ seems to be active!</span>", [live(f.src)])]);
+	if (this.stat === 2 || this.stat === 1) {
+		to_chat(user, `<span class='boldannounce'>${this} is not moving.</span>`);
+	} else if (this.stat === 0) {
+		to_chat(user, `<span class='boldannounce'>${this} seems to be active!</span>`);
 	}
-	if (!truthy(rt.sv(f, "sterile"))) return f.dot;
-	rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='boldannounce'>It looks like the proboscis has been removed.</span>"]);
+	if (!this.sterile) return f.dot;
+	to_chat(user, "<span class='boldannounce'>It looks like the proboscis has been removed.</span>");
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/item/clothing/mask/facehugger/proc/temperature_expose  (code/modules/mob/living/carbon/alien/special/facehugger.dm:85)
+// facehugger.dm:85
 rt.def("/obj/item/clothing/mask/facehugger/proc/temperature_expose", function temperature_expose(f: Frame, air: Value, exposed_temperature: Value, exposed_volume: Value) {
-	if (!rt.gt(live(exposed_temperature), 300)) return f.dot;
-	rt.callSrc(f, "Die", []);
+	if (!(exposed_temperature > 300)) return f.dot;
+	this.Die();
 	return f.dot;
 });
 
-// /obj/item/clothing/mask/facehugger/proc/equipped  (code/modules/mob/living/carbon/alien/special/facehugger.dm:89)  may sleep
+// facehugger.dm:89
 rt.def("/obj/item/clothing/mask/facehugger/proc/equipped", function* equipped(f: Frame, M: Value) {
-	f.vars = () => [M];
-	yield* g.srcCall(f, "Attach", live(M));
+	yield* this.Attach(M);
 	return f.dot;
 }, true);
 
-// /obj/item/clothing/mask/facehugger/proc/Crossed  (code/modules/mob/living/carbon/alien/special/facehugger.dm:92)  may sleep
+// facehugger.dm:92
 rt.def("/obj/item/clothing/mask/facehugger/proc/Crossed", function* Crossed(f: Frame, target: Value) {
-	f.vars = () => [target];
-	yield* g.srcCall(f, "HasProximity", live(target));
-	return live(f.dot);
+	yield* this.HasProximity(target);
+	return f.dot;
 }, true);
 
-// /obj/item/clothing/mask/facehugger/proc/on_found  (code/modules/mob/living/carbon/alien/special/facehugger.dm:96)  may sleep
+// facehugger.dm:96
 rt.def("/obj/item/clothing/mask/facehugger/proc/on_found", function* on_found(f: Frame, finder: Value) {
-	f.vars = () => [finder];
-	if (isEqual(rt.sv(f, "stat"), 0)) {
-		return (yield* g.srcCall(f, "HasProximity", live(finder)));
+	if (this.stat == 0) {
+		return (yield* this.HasProximity(finder));
 	}
 	return 0;
 }, true);
 
-// /obj/item/clothing/mask/facehugger/proc/HasProximity  (code/modules/mob/living/carbon/alien/special/facehugger.dm:101)  may sleep
+// facehugger.dm:101
 rt.def("/obj/item/clothing/mask/facehugger/proc/HasProximity", function* HasProximity(f: Frame, AM: Value) {
-	f.vars = () => [AM];
-	if ((truthy((yield* g.call(f, P("/proc/CanHug"), null, [live(AM)]))) && truthy((yield* g.srcCall(f, "Adjacent", live(AM)))))) {
-		return (yield* g.srcCall(f, "Leap", live(AM)));
+	if (CanHug(AM) && this.Adjacent(AM)) {
+		return (yield* this.Leap(AM));
 	}
 	return 0;
 }, true);
 
-// /obj/item/clothing/mask/facehugger/proc/throw_at  (code/modules/mob/living/carbon/alien/special/facehugger.dm:106)  may sleep
+// facehugger.dm:106
 rt.def("/obj/item/clothing/mask/facehugger/proc/throw_at", function* throw_at(f: Frame) {
-	if (live(f.args[4]) === null) {
+	if (f.args[4] === null) {
 		f.args[4] = 1;
 	}
-	if (live(f.args[5]) === null) {
+	if (f.args[5] === null) {
 		f.args[5] = 0;
 	}
-	if (!truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		return live(f.dot);
+	if (!(yield* parent_proc())) {
+		return f.dot;
 	}
-	if (!isEqual(rt.sv(f, "stat"), 0)) return f.dot;
-	rt.setSv(f, "icon_state", fmt("＀_thrown", [rt.initial(f, live(f.src), "icon_state")]));
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/item/clothing/mask/facehugger/proc/clear_throw_icon_state")])), 15]);
+	if (this.stat != 0) return f.dot;
+	this.icon_state = `${rt.initial(f, this, "icon_state")}_thrown`;
+	yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/item/clothing/mask/facehugger/proc/clear_throw_icon_state"))), 15);
 	return f.dot;
 }, true, { args: ["target", "range", "speed", "thrower", "spin", "diagonals_first", "callback"] });
 
-// /obj/item/clothing/mask/facehugger/proc/clear_throw_icon_state  (code/modules/mob/living/carbon/alien/special/facehugger.dm:113)
+// facehugger.dm:113
 rt.def("/obj/item/clothing/mask/facehugger/proc/clear_throw_icon_state", function clear_throw_icon_state(f: Frame) {
-	if (!isEqual(rt.sv(f, "icon_state"), fmt("＀_thrown", [rt.initial(f, live(f.src), "icon_state")]))) return f.dot;
-	rt.setSv(f, "icon_state", fmt("＀", [rt.initial(f, live(f.src), "icon_state")]));
+	if (this.icon_state != `${rt.initial(f, this, "icon_state")}_thrown`) return f.dot;
+	this.icon_state = `${rt.initial(f, this, "icon_state")}`;
 	return f.dot;
 });
 
-// /obj/item/clothing/mask/facehugger/proc/throw_impact  (code/modules/mob/living/carbon/alien/special/facehugger.dm:117)  may sleep
-rt.def("/obj/item/clothing/mask/facehugger/proc/throw_impact", function* throw_impact(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!isEqual(rt.sv(f, "stat"), 0)) return f.dot;
-	rt.setSv(f, "icon_state", fmt("＀", [rt.initial(f, live(f.src), "icon_state")]));
-	yield* g.srcCall(f, "Leap", live(f.args[0]));
+// facehugger.dm:117
+rt.def("/obj/item/clothing/mask/facehugger/proc/throw_impact", function* throw_impact(f: Frame, hit_atom: Value) {
+	yield* parent_proc();
+	if (this.stat != 0) return f.dot;
+	this.icon_state = `${rt.initial(f, this, "icon_state")}`;
+	yield* this.Leap(hit_atom);
 	return f.dot;
-}, true, { args: ["hit_atom"], waitfor: false });
+}, true, { waitfor: false });
 
-// /obj/item/clothing/mask/facehugger/proc/valid_to_attach  (code/modules/mob/living/carbon/alien/special/facehugger.dm:125)
+// facehugger.dm:125
 rt.def("/obj/item/clothing/mask/facehugger/proc/valid_to_attach", function valid_to_attach(f: Frame, M: Value) {
 	let target: Value = null;
-	f.vars = () => [target];
-	if (!isEqual(rt.sv(f, "stat"), 0)) {
+	if (this.stat != 0) {
 		return 0;
 	}
-	if (truthy(rt.sv(f, "attached"))) {
+	if (this.attached) {
 		return 0;
 	}
-	if ((!truthy((rt.istype(live(M), T("/mob/living/simple_animal/pet/dog/corgi")) ? 1 : 0)) && !truthy((rt.istype(live(M), T("/mob/living/carbon")) ? 1 : 0)))) {
+	if (!rt.istype(M, T("/mob/living/simple_animal/pet/dog/corgi")) && !rt.istype(M, T("/mob/living/carbon"))) {
 		return 0;
 	}
-	if (truthy((rt.istype(live(M), T("/mob/living/carbon")) ? 1 : 0))) {
-		if ((truthy((rt.istype(live(M), T("/mob/living/carbon/alien")) ? 1 : 0)) || truthy((rt.istype(live(M), T("/mob/living/carbon/true_devil")) ? 1 : 0)))) {
+	if (rt.istype(M, T("/mob/living/carbon"))) {
+		if (rt.istype(M, T("/mob/living/carbon/alien")) || rt.istype(M, T("/mob/living/carbon/true_devil"))) {
 			return 0;
 		}
-		if (!truthy(rt.callName(f, (target = live(M)), "get_bodypart", ["head"]))) {
+		if (!(target = M).get_bodypart("head")) {
 			return 0;
 		}
-		if ((truthy(rt.callName(f, live(target), "getorgan", [T("/obj/item/organ/alien/hivenode")])) || truthy(rt.callName(f, live(target), "getorgan", [T("/obj/item/organ/body_egg/alien_embryo")])))) {
+		if (target.getorgan(T("/obj/item/organ/alien/hivenode")) || target.getorgan(T("/obj/item/organ/body_egg/alien_embryo"))) {
 			return 0;
 		}
 		return 1;
 	} else {
-		if (!truthy((rt.istype(live(M), T("/mob/living/simple_animal/pet/dog/corgi")) ? 1 : 0))) return f.dot;
+		if (!rt.istype(M, T("/mob/living/simple_animal/pet/dog/corgi"))) return f.dot;
 		return 1;
 	}
-	return f.dot;
 });
 
-// /obj/item/clothing/mask/facehugger/proc/Leap  (code/modules/mob/living/carbon/alien/special/facehugger.dm:149)  may sleep
+// facehugger.dm:149
 rt.def("/obj/item/clothing/mask/facehugger/proc/Leap", function* Leap(f: Frame, M: Value) {
 	let target: Value = null, H: Value = null, W: Value = null;
-	f.vars = () => [M, target, H, W];
-	if (!truthy((yield* g.srcCall(f, "valid_to_attach", live(M))))) {
+	if (!this.valid_to_attach(M)) {
 		return 0;
 	}
-	if (truthy((rt.istype(live(M), T("/mob/living/carbon")) ? 1 : 0))) {
-		if ((truthy(rt.gv(f, "wear_mask", (target = live(M)))) && truthy((rt.istype(rt.fv(f, "wear_mask", live(target)), T("/obj/item/clothing/mask/facehugger")) ? 1 : 0)))) {
+	if (rt.istype(M, T("/mob/living/carbon"))) {
+		if ((target = M).wear_mask && rt.istype(target.wear_mask, T("/obj/item/clothing/mask/facehugger"))) {
 			return 0;
 		}
 	}
-	yield* g.callName(f, live(M), "visible_message", [fmt("<span class='danger'>＀ leaps at ＀'s face!</span>", [live(f.src), live(M)]), fmt("<span class='userdanger'>＀ leaps at ＀'s face!</span>", [live(f.src), live(M)])]);
-	if (truthy((rt.istype(live(M), T("/mob/living/carbon")) ? 1 : 0))) {
-		target = live(M);
-		if (truthy((rt.istype(live(M), T("/mob/living/carbon/human")) ? 1 : 0))) {
-			if (truthy((yield* g.callName(f, (H = live(M)), "is_mouth_covered", ["head_only", 1], rt.Args.Named)))) {
-				yield* g.callName(f, live(H), "visible_message", [fmt("<span class='danger'>＀ smashes against ＀'s ＀!</span>", [live(f.src), live(H), rt.fv(f, "head", live(H))]), fmt("<span class='userdanger'>＀ smashes against ＀'s ＀!</span>", [live(f.src), live(H), rt.fv(f, "head", live(H))])]);
-				yield* g.srcCall(f, "Die");
+	M.visible_message(`<span class='danger'>${this} leaps at ${M}'s face!</span>`, `<span class='userdanger'>${this} leaps at ${M}'s face!</span>`);
+	if (rt.istype(M, T("/mob/living/carbon"))) {
+		target = M;
+		if (rt.istype(M, T("/mob/living/carbon/human"))) {
+			if (yield* (H = M).is_mouth_covered({ head_only: 1 })) {
+				H.visible_message(`<span class='danger'>${this} smashes against ${H}'s ${H.head}!</span>`, `<span class='userdanger'>${this} smashes against ${H}'s ${H.head}!</span>`);
+				this.Die();
 				return 0;
 			}
 		}
-		if (truthy(rt.fv(f, "wear_mask", live(target)))) {
-			W = rt.fv(f, "wear_mask", live(target));
-			if (truthy((yield* g.callName(f, live(target), "dropItemToGround", [live(W)])))) {
-				yield* g.callName(f, live(target), "visible_message", [fmt("<span class='danger'>＀ tears ＀ off of ＀'s face!</span>", [live(f.src), live(W), live(target)]), fmt("<span class='userdanger'>＀ tears ＀ off of ＀'s face!</span>", [live(f.src), live(W), live(target)])]);
+		if (target.wear_mask) {
+			W = target.wear_mask;
+			if (yield* target.dropItemToGround(W)) {
+				target.visible_message(`<span class='danger'>${this} tears ${W} off of ${target}'s face!</span>`, `<span class='userdanger'>${this} tears ${W} off of ${target}'s face!</span>`);
 			}
 		}
-		yield* g.callName(f, live(target), "equip_to_slot_if_possible", [live(f.src), 2, 0, 1, 1]);
+		yield* target.equip_to_slot_if_possible(this, slot_wear_mask, 0, 1, 1);
 	}
 	return 1;
 }, true);
 
-// /obj/item/clothing/mask/facehugger/proc/Attach  (code/modules/mob/living/carbon/alien/special/facehugger.dm:180)  may sleep
+// facehugger.dm:180
 rt.def("/obj/item/clothing/mask/facehugger/proc/Attach", function* Attach(f: Frame, M: Value) {
 	let C: Value = null;
-	f.vars = () => [M, C];
-	if (!truthy((yield* g.srcCall(f, "valid_to_attach", live(M))))) {
-		return live(f.dot);
+	if (!this.valid_to_attach(M)) {
+		return f.dot;
 	}
-	rt.incSrcVar(f, "attached", 1, true);
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/item/clothing/mask/facehugger/proc/detach")])), 150]);
-	if (truthy((rt.istype(live(M), T("/mob/living/simple_animal/pet/dog/corgi")) ? 1 : 0))) {
-		rt.setSv(f, "loc", (C = live(M)));
-		rt.setFv(f, "facehugger", live(C), live(f.src));
-		yield* g.callName(f, live(C), "regenerate_icons", []);
+	this.attached++;
+	yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/item/clothing/mask/facehugger/proc/detach"))), 150);
+	if (rt.istype(M, T("/mob/living/simple_animal/pet/dog/corgi"))) {
+		this.loc = (C = M);
+		C.facehugger = this;
+		yield* C.regenerate_icons();
 	}
-	if (!truthy(rt.sv(f, "sterile"))) {
-		yield* g.callName(f, live(M), "take_bodypart_damage", [rt.sv(f, "strength"), 0]);
-		yield* g.callName(f, live(M), "Unconscious", [499.9999694824219]);
+	if (!this.sterile) {
+		yield* M.take_bodypart_damage(this.strength, 0);
+		yield* M.Unconscious(499.99997);
 	}
-	yield* g.srcCall(f, "GoIdle");
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/item/clothing/mask/facehugger/proc/Impregnate"), live(M)])), (yield* g.call(f, P("/proc/rand"), null, [100, 150]))]);
+	yield* this.GoIdle();
+	yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/item/clothing/mask/facehugger/proc/Impregnate"), M)), rand(MIN_IMPREGNATION_TIME, 150));
 	return f.dot;
 }, true);
 
-// /obj/item/clothing/mask/facehugger/proc/Impregnate  (code/modules/mob/living/carbon/alien/special/facehugger.dm:205)  may sleep
+// facehugger.dm:205
 rt.def("/obj/item/clothing/mask/facehugger/proc/Impregnate", function* Impregnate(f: Frame, target: Value) {
 	let C: Value = null, LC: Value = null, C_1: Value = null;
-	f.vars = () => [target, C, LC, C_1];
-	if ((!truthy(live(target)) || isEqual(rt.fv(f, "stat", live(target)), 2))) {
-		return live(f.dot);
+	if (!target || target.stat == 2) {
+		return f.dot;
 	}
-	if (truthy((rt.istype(live(target), T("/mob/living/carbon")) ? 1 : 0))) {
-		if (!isEqual(rt.gv(f, "wear_mask", (C = live(target))), live(f.src))) {
-			return live(f.dot);
+	if (rt.istype(target, T("/mob/living/carbon"))) {
+		if ((C = target).wear_mask != this) {
+			return f.dot;
 		}
 	}
-	if (!truthy(rt.sv(f, "sterile"))) {
-		yield* g.callName(f, live(target), "visible_message", [fmt("<span class='danger'>＀ falls limp after violating ＀'s face!</span>", [live(f.src), live(target)]), fmt("<span class='userdanger'>＀ falls limp after violating ＀'s face!</span>", [live(f.src), live(target)])]);
-		yield* g.srcCall(f, "Die");
-		rt.setSv(f, "icon_state", fmt("＀_impregnated", [rt.initial(f, live(f.src), "icon_state")]));
-		if (((!truthy((LC = (yield* g.callName(f, live(target), "get_bodypart", ["chest"])))) || !isEqual(rt.fv(f, "status", live(LC)), 2)) && !truthy((yield* g.callName(f, live(target), "getorgan", [T("/obj/item/organ/body_egg/alien_embryo")]))))) {
-			yield* g.new_(f, T("/obj/item/organ/body_egg/alien_embryo"), [live(target)]);
+	if (!this.sterile) {
+		target.visible_message(`<span class='danger'>${this} falls limp after violating ${target}'s face!</span>`, `<span class='userdanger'>${this} falls limp after violating ${target}'s face!</span>`);
+		this.Die();
+		this.icon_state = `${rt.initial(f, this, "icon_state")}_impregnated`;
+		if ((!(LC = target.get_bodypart("chest")) || LC.status != 2) && !target.getorgan(T("/obj/item/organ/body_egg/alien_embryo"))) {
+			yield* new_(T("/obj/item/organ/body_egg/alien_embryo"), target);
 		}
-		if (truthy((rt.istype(live(target), T("/mob/living/simple_animal/pet/dog/corgi")) ? 1 : 0))) {
-			C_1 = live(target);
-			rt.setFv(f, "loc", live(f.src), rt.getStep(f, live(C_1), 0));
-			rt.setFv(f, "facehugger", live(C_1), null);
+		if (rt.istype(target, T("/mob/living/simple_animal/pet/dog/corgi"))) {
+			C_1 = target;
+			this.loc = rt.getStep(f, C_1, 0);
+			C_1.facehugger = null;
 		}
 	} else {
-		yield* g.callName(f, live(target), "visible_message", [fmt("<span class='danger'>＀ violates ＀'s face!</span>", [live(f.src), live(target)]), fmt("<span class='userdanger'>＀ violates ＀'s face!</span>", [live(f.src), live(target)])]);
+		target.visible_message(`<span class='danger'>${this} violates ${target}'s face!</span>`, `<span class='userdanger'>${this} violates ${target}'s face!</span>`);
 	}
 	return f.dot;
 }, true, { argTypes: [{ type: 8, path: "/mob/living" }] });
 
-// /obj/item/clothing/mask/facehugger/proc/GoActive  (code/modules/mob/living/carbon/alien/special/facehugger.dm:234)
+// facehugger.dm:234
 rt.def("/obj/item/clothing/mask/facehugger/proc/GoActive", function GoActive(f: Frame) {
-	if ((isEqual(rt.sv(f, "stat"), 2) || isEqual(rt.sv(f, "stat"), 0))) {
-		return live(f.dot);
+	if (this.stat == 2 || this.stat == 0) {
+		return f.dot;
 	}
-	rt.setSv(f, "stat", 0);
-	rt.setSv(f, "icon_state", fmt("＀", [rt.initial(f, live(f.src), "icon_state")]));
+	this.stat = 0;
+	this.icon_state = `${rt.initial(f, this, "icon_state")}`;
 	return f.dot;
 });
 
-// /obj/item/clothing/mask/facehugger/proc/GoIdle  (code/modules/mob/living/carbon/alien/special/facehugger.dm:241)  may sleep
+// facehugger.dm:241
 rt.def("/obj/item/clothing/mask/facehugger/proc/GoIdle", function* GoIdle(f: Frame) {
-	if ((isEqual(rt.sv(f, "stat"), 2) || isEqual(rt.sv(f, "stat"), 1))) {
-		return live(f.dot);
+	if (this.stat == 2 || this.stat == 1) {
+		return f.dot;
 	}
-	rt.setSv(f, "stat", 1);
-	rt.setSv(f, "icon_state", fmt("＀_inactive", [rt.initial(f, live(f.src), "icon_state")]));
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/item/clothing/mask/facehugger/proc/GoActive")])), (yield* g.call(f, P("/proc/rand"), null, [200, 400]))]);
+	this.stat = 1;
+	this.icon_state = `${rt.initial(f, this, "icon_state")}_inactive`;
+	yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/item/clothing/mask/facehugger/proc/GoActive"))), rand(MIN_ACTIVE_TIME, 400));
 	return f.dot;
 }, true);
 
-// /obj/item/clothing/mask/facehugger/proc/Die  (code/modules/mob/living/carbon/alien/special/facehugger.dm:250)
+// facehugger.dm:250
 rt.def("/obj/item/clothing/mask/facehugger/proc/Die", function Die(f: Frame) {
-	if (isEqual(rt.sv(f, "stat"), 2)) {
-		return live(f.dot);
+	if (this.stat == 2) {
+		return f.dot;
 	}
-	rt.setSv(f, "icon_state", fmt("＀_dead", [rt.initial(f, live(f.src), "icon_state")]));
-	rt.setSv(f, "item_state", "facehugger_inactive");
-	rt.setSv(f, "stat", 2);
-	rt.callSrc(f, "visible_message", [fmt("<span class='danger'>＀ curls up into a ball!</span>", [live(f.src)])]);
+	this.icon_state = `${rt.initial(f, this, "icon_state")}_dead`;
+	this.item_state = "facehugger_inactive";
+	this.stat = 2;
+	this.visible_message(`<span class='danger'>${this} curls up into a ball!</span>`);
 	return f.dot;
 });
 
-// /proc/CanHug  (code/modules/mob/living/carbon/alien/special/facehugger.dm:260)
+// facehugger.dm:260
 rt.def("/proc/CanHug", function CanHug(f: Frame, M: Value) {
 	let C: Value = null, H: Value = null;
-	f.vars = () => [C, H];
-	if (!truthy((rt.istype(live(M), T("/mob/living")) ? 1 : 0))) {
+	if (!rt.istype(M, T("/mob/living"))) {
 		return 0;
 	}
-	if (isEqual(rt.fv(f, "stat", live(M)), 2)) {
+	if (M.stat == 2) {
 		return 0;
 	}
-	if (truthy(rt.callName(f, live(M), "getorgan", [T("/obj/item/organ/alien/hivenode")]))) {
+	if (M.getorgan(T("/obj/item/organ/alien/hivenode"))) {
 		return 0;
 	}
-	if ((truthy((rt.istype(live(M), T("/mob/living/simple_animal/pet/dog/corgi")) ? 1 : 0)) || truthy((rt.istype(live(M), T("/mob/living/carbon/monkey")) ? 1 : 0)))) {
+	if (rt.istype(M, T("/mob/living/simple_animal/pet/dog/corgi")) || rt.istype(M, T("/mob/living/carbon/monkey"))) {
 		return 1;
 	}
-	if ((truthy((rt.istype((C = live(M)), T("/mob/living/carbon/human")) ? 1 : 0)) && !truthy((rt.isIn(f, 2, rt.gv(f, "no_equip", rt.gv(f, "species", rt.fv(f, "dna", live(C))))) ? 1 : 0)))) {
-		if (truthy(rt.callName(f, (H = live(C)), "is_mouth_covered", ["head_only", 1], rt.Args.Named))) {
+	if (rt.istype((C = M), T("/mob/living/carbon/human")) && !rt.isIn(f, slot_wear_mask, C.dna.species.no_equip)) {
+		if ((H = C).is_mouth_covered({ head_only: 1 })) {
 			return 0;
 		}
 		return 1;

@@ -1,7 +1,7 @@
-// From code/modules/mob/living/simple_animal/friendly/fox.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/simple_animal/friendly/fox.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(5064, "/mob/living/simple_animal/pet/fox", "/mob/living/simple_animal/pet", {
@@ -25,16 +25,14 @@ rt.type(5064, "/mob/living/simple_animal/pet/fox", "/mob/living/simple_animal/pe
 	gold_core_spawnable: 2,
 });
 
-// /mob/living/simple_animal/pet/fox/proc/<init>  (code/modules/mob/living/simple_animal/friendly/fox.dm:16)
+// fox.dm:16
 rt.def("/mob/living/simple_animal/pet/fox/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "speak", rt.list("Ack-Ack", "Ack-Ack-Ack-Ackawoooo", "Geckers", "Awoo", "Tchoff"));
-	rt.setSv(f, "speak_emote", rt.list("geckers", "barks"));
-	rt.setSv(f, "emote_hear", rt.list("howls.", "barks."));
-	rt.setSv(f, "emote_see", rt.list("shakes its head.", "shivers."));
-	$0 = $0;
-	rt.setSv(f, "butcher_results", rt.alist(f, [T("/obj/item/weapon/reagent_containers/food/snacks/meat/slab"), 3]));
+	parent_proc();
+	this.speak = list("Ack-Ack", "Ack-Ack-Ack-Ackawoooo", "Geckers", "Awoo", "Tchoff");
+	this.speak_emote = list("geckers", "barks");
+	this.emote_hear = list("howls.", "barks.");
+	this.emote_see = list("shakes its head.", "shivers.");
+
+	this.butcher_results = rt.alist(f, [T("/obj/item/weapon/reagent_containers/food/snacks/meat/slab"), 3]);
 	return f.dot;
 });

@@ -1,225 +1,179 @@
-// From code/modules/mob/living/silicon/silicon_defense.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/silicon/silicon_defense.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
-// /mob/living/silicon/proc/attack_alien  (code/modules/mob/living/silicon/silicon_defense.dm:9)  may sleep
-rt.def("/mob/living/silicon/proc/attack_alien", function* attack_alien(f: Frame) {
-	let damage: Value = null;
-	f.vars = () => [damage];
-	if (!truthy((yield* g.callSuper(f, [], rt.Args.Same)))) return f.dot;
-	damage = 20;
-	if (truthy(rt.op(f, "Prob", [], [90]))) {
-		yield* g.call(f, P("/proc/add_logs"), null, [live(f.args[0]), live(f.src), "attacked"]);
-		yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/weapons/slash.ogg"), 25, 1, -1]);
-		yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＀ has slashed at ＀!</span>", [live(f.args[0]), live(f.src)]), fmt("<span class='userdanger'>＀ has slashed at ＀!</span>", [live(f.args[0]), live(f.src)]));
-		if (truthy(rt.op(f, "Prob", [], [8]))) {
-			yield* g.callSrc(f, "flash_act", ["affect_silicon", 1], rt.Args.Named);
+// silicon_defense.dm:9
+rt.def("/mob/living/silicon/proc/attack_alien", function* attack_alien(f: Frame, M: Value) {
+	if (!(yield* parent_proc())) return f.dot;
+	let damage: Value = 20;
+	if (prob(90)) {
+		add_logs(M, this, "attacked");
+		playsound(this.loc, rt.rsc("sound/weapons/slash.ogg"), 25, 1, -1);
+		this.visible_message(`<span class='danger'>${M} has slashed at ${this}!</span>`, `<span class='userdanger'>${M} has slashed at ${this}!</span>`);
+		if (prob(8)) {
+			yield* this.flash_act({ affect_silicon: 1 });
 		}
-		yield* g.call(f, P("/proc/add_logs"), null, [live(f.args[0]), live(f.src), "attacked"]);
-		yield* g.srcCall(f, "adjustBruteLoss", live(damage));
-		yield* g.srcCall(f, "updatehealth");
+		add_logs(M, this, "attacked");
+		yield* this.adjustBruteLoss(damage);
+		yield* this.updatehealth();
 	} else {
-		yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/weapons/slashmiss.ogg"), 25, 1, -1]);
-		yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＀ took a swipe at ＀!</span>", [live(f.args[0]), live(f.src)]), fmt("<span class='userdanger'>＀ took a swipe at ＀!</span>", [live(f.args[0]), live(f.src)]));
+		playsound(this.loc, rt.rsc("sound/weapons/slashmiss.ogg"), 25, 1, -1);
+		this.visible_message(`<span class='danger'>${M} took a swipe at ${this}!</span>`, `<span class='userdanger'>${M} took a swipe at ${this}!</span>`);
 	}
 	return f.dot;
-}, true, { args: ["M"] });
-
-// /mob/living/silicon/proc/attack_animal  (code/modules/mob/living/silicon/silicon_defense.dm:27)  may sleep
-rt.def("/mob/living/silicon/proc/attack_animal", function* attack_animal(f: Frame) {
-	let damage: Value = null, N: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [damage, N, $0, $e];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(live(f.dot))) return f.dot;
-	if (truthy(rt.op(f, "Prob", [], [(damage = (yield* g.call(f, P("/proc/rand"), null, [rt.fv(f, "melee_damage_lower", live(f.args[0])), rt.fv(f, "melee_damage_upper", live(f.args[0]))])))]))) {
-		N = null;
-		rt.forList(f, 0, rt.sv(f, "buckled_mobs"), T("/mob/living"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			N = $e;
-			yield* g.callName(f, live(N), "Knockdown", [20]);
-			yield* g.srcCall(f, "unbuckle_mob", live(N));
-			yield* g.callName(f, live(N), "visible_message", [fmt("<span class='boldwarning'>＀ is knocked off of ＀ by ＀!</span>", [live(N), live(f.src), live(f.args[0])])]);
-		}
-		rt.endFor(f, 0);
-	}
-	$0 = rt.fv(f, "melee_damage_type", live(f.args[0]));
-	if ($0 === "brute") {
-		yield* g.srcCall(f, "adjustBruteLoss", live(damage));
-	} else if ($0 === "fire") {
-		yield* g.srcCall(f, "adjustFireLoss", live(damage));
-	} else if ($0 === "tox") {
-		yield* g.srcCall(f, "adjustToxLoss", live(damage));
-	} else if ($0 === "oxy") {
-		yield* g.srcCall(f, "adjustOxyLoss", live(damage));
-	} else if ($0 === "clone") {
-		yield* g.srcCall(f, "adjustCloneLoss", live(damage));
-	} else if ($0 === "stamina") {
-		yield* g.srcCall(f, "adjustStaminaLoss", live(damage));
-	}
-	return f.dot;
-}, true, { args: ["M"] });
-
-// /mob/living/silicon/proc/attack_paw  (code/modules/mob/living/silicon/silicon_defense.dm:50)  may sleep
-rt.def("/mob/living/silicon/proc/attack_paw", function* attack_paw(f: Frame, user: Value) {
-	f.vars = () => [user];
-	return (yield* g.srcCall(f, "attack_hand", live(user)));
 }, true);
 
-// /mob/living/silicon/proc/attack_larva  (code/modules/mob/living/silicon/silicon_defense.dm:53)
+// silicon_defense.dm:27
+rt.def("/mob/living/silicon/proc/attack_animal", function* attack_animal(f: Frame, M: Value) {
+	let damage: Value = null, N: Value = null;
+	let $e: any;
+	f.dot = (yield* parent_proc());
+	if (!f.dot) return f.dot;
+	if (prob((damage = rand(M.melee_damage_lower, M.melee_damage_upper)))) {
+		for (N of each(this.buckled_mobs, T("/mob/living"))) {
+			yield* N.Knockdown(20);
+			yield* this.unbuckle_mob(N);
+			N.visible_message(`<span class='boldwarning'>${N} is knocked off of ${this} by ${M}!</span>`);
+		}
+	}
+	if (M.melee_damage_type === "brute") {
+		yield* this.adjustBruteLoss(damage);
+	} else if (M.melee_damage_type === "fire") {
+		yield* this.adjustFireLoss(damage);
+	} else if (M.melee_damage_type === "tox") {
+		yield* this.adjustToxLoss(damage);
+	} else if (M.melee_damage_type === "oxy") {
+		yield* this.adjustOxyLoss(damage);
+	} else if (M.melee_damage_type === "clone") {
+		yield* this.adjustCloneLoss(damage);
+	} else if (M.melee_damage_type === "stamina") {
+		yield* this.adjustStaminaLoss(damage);
+	}
+	return f.dot;
+}, true);
+
+// silicon_defense.dm:50
+rt.def("/mob/living/silicon/proc/attack_paw", function* attack_paw(f: Frame, user: Value) {
+	return (yield* this.attack_hand(user));
+}, true);
+
+// silicon_defense.dm:53
 rt.def("/mob/living/silicon/proc/attack_larva", function attack_larva(f: Frame, L: Value) {
-	if (!isEqual(rt.fv(f, "a_intent", live(L)), "help")) return f.dot;
-	rt.callSrc(f, "visible_message", [fmt("＀ rubs its head against ＀.", [rt.fv(f, "name", live(L)), live(f.src)])]);
+	if (L.a_intent != "help") return f.dot;
+	this.visible_message(`${L.name} rubs its head against ${this}.`);
 	return f.dot;
 });
 
-// /mob/living/silicon/proc/attack_hulk  (code/modules/mob/living/silicon/silicon_defense.dm:57)  may sleep
+// silicon_defense.dm:57
 rt.def("/mob/living/silicon/proc/attack_hulk", function* attack_hulk(f: Frame, user: Value, does_attack_animation: Value) {
-	f.vars = () => [user, does_attack_animation];
-	if (live(does_attack_animation) === null) {
-		does_attack_animation = 0;
-	}
-	if (isEqual(rt.fv(f, "a_intent", live(user)), "harm")) {
-		yield* g.callSuper(f, [live(user), 1]);
-		yield* g.srcCall(f, "adjustBruteLoss", (yield* g.call(f, P("/proc/rand"), null, [10, 15])));
-		yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), "punch", 25, 1, -1]);
-		yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＀ has punched ＀!</span>", [live(user), live(f.src)]), fmt("<span class='userdanger'>＀ has punched ＀!</span>", [live(user), live(f.src)]));
+	does_attack_animation ??= 0;
+	if (user.a_intent == "harm") {
+		yield* parent_proc(user, 1);
+		yield* this.adjustBruteLoss(rand(10, 15));
+		playsound(this.loc, "punch", 25, 1, -1);
+		this.visible_message(`<span class='danger'>${user} has punched ${this}!</span>`, `<span class='userdanger'>${user} has punched ${this}!</span>`);
 		return 1;
 	}
 	return 0;
 }, true);
 
-// /mob/living/silicon/proc/attack_hand  (code/modules/mob/living/silicon/silicon_defense.dm:67)  may sleep
+// silicon_defense.dm:67
 rt.def("/mob/living/silicon/proc/attack_hand", function* attack_hand(f: Frame, M: Value) {
-	let $0: any;
-	f.vars = () => [M, $0];
-	$0 = rt.fv(f, "a_intent", live(M));
-	if ($0 === "help") {
-		yield* g.callName(f, live(M), "visible_message", [fmt("＀ pets ＀.", [live(M), live(f.src)]), fmt("<span class='notice'>You pet ＀.</span>", [live(f.src)])]);
-	} else if ($0 === "grab") {
-		yield* g.srcCall(f, "grabbedby", live(M));
+	if (M.a_intent === "help") {
+		M.visible_message(`${M} pets ${this}.`, `<span class='notice'>You pet ${this}.</span>`);
+	} else if (M.a_intent === "grab") {
+		yield* this.grabbedby(M);
 	} else {
-		yield* g.callName(f, live(M), "do_attack_animation", [live(f.src), "punch"]);
-		yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/effects/bang.ogg"), 10, 1]);
-		yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＀ punches ＀, but doesn't leave a dent.</span>", [live(M), live(f.src)]), fmt("<span class='warning'>＀ punches ＀, but doesn't leave a dent.</span>", [live(M), live(f.src)]), null, 3);
+		yield* M.do_attack_animation(this, "punch");
+		playsound(this.loc, rt.rsc("sound/effects/bang.ogg"), 10, 1);
+		this.visible_message(`<span class='danger'>${M} punches ${this}, but doesn't leave a dent.</span>`, `<span class='warning'>${M} punches ${this}, but doesn't leave a dent.</span>`, null, 3);
 	}
 	return 0;
 }, true);
 
-// /mob/living/silicon/proc/electrocute_act  (code/modules/mob/living/silicon/silicon_defense.dm:82)  may sleep
+// silicon_defense.dm:82
 rt.def("/mob/living/silicon/proc/electrocute_act", function* electrocute_act(f: Frame, shock_damage: Value, source: Value, siemens_coeff: Value, safety: Value, tesla_shock: Value, illusion: Value, stun: Value) {
 	let M: Value = null;
-	let $e: any;
-	f.vars = () => [shock_damage, source, siemens_coeff, safety, tesla_shock, illusion, stun, M, $e];
-	if (live(siemens_coeff) === null) {
-		siemens_coeff = 1;
-	}
-	if (live(safety) === null) {
-		safety = 0;
-	}
-	if (live(tesla_shock) === null) {
-		tesla_shock = 0;
-	}
-	if (live(illusion) === null) {
-		illusion = 0;
-	}
-	if (live(stun) === null) {
-		stun = 1;
-	}
-	if (truthy(rt.sv(f, "buckled_mobs"))) {
-		M = null;
-		rt.forList(f, 0, rt.sv(f, "buckled_mobs"), T("/mob/living"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			M = $e;
-			yield* g.srcCall(f, "unbuckle_mob", live(M));
-			yield* g.callName(f, live(M), "electrocute_act", [divide(live(shock_damage), 100), live(source), live(siemens_coeff), live(safety), live(tesla_shock), live(illusion), live(stun)]);
+	siemens_coeff ??= 1;
+	safety ??= 0;
+	tesla_shock ??= 0;
+	illusion ??= 0;
+	stun ??= 1;
+	if (this.buckled_mobs) {
+		for (M of each(this.buckled_mobs, T("/mob/living"))) {
+			yield* this.unbuckle_mob(M);
+			yield* M.electrocute_act(shock_damage / 100, source, siemens_coeff, safety, tesla_shock, illusion, stun);
 		}
-		rt.endFor(f, 0);
 	}
 	return 0;
 }, true);
 
-// /mob/living/silicon/proc/emp_act  (code/modules/mob/living/silicon/silicon_defense.dm:88)  may sleep
-rt.def("/mob/living/silicon/proc/emp_act", function* emp_act(f: Frame) {
-	let M: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [M, $0, $e];
-	$0 = live(f.args[0]);
-	if ($0 === 1) {
-		yield* g.callName(f, live(f.src), "take_bodypart_damage", [20]);
-	} else if ($0 === 2) {
-		yield* g.callName(f, live(f.src), "take_bodypart_damage", [10]);
-	}
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='userdanger'>*BZZZT*</span>"]);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='danger'>Warning: Electromagnetic pulse detected.</span>"]);
-	M = null;
-	rt.forList(f, 0, rt.sv(f, "buckled_mobs"), T("/mob/living"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if (truthy(rt.op(f, "Prob", [], [multiply(live(f.args[0]), 50)]))) {
-			yield* g.srcCall(f, "unbuckle_mob", live(M));
-			yield* g.callName(f, live(M), "Knockdown", [40]);
-			yield* g.callName(f, live(M), "visible_message", [fmt("<span class='boldwarning'>＀ is thrown off of ＀!</span>", [live(M), live(f.src)])]);
-		}
-	}
-	rt.endFor(f, 0);
-	yield* g.callSrc(f, "flash_act", ["affect_silicon", 1], rt.Args.Named);
-	yield* g.callSuper(f, [], rt.Args.Same);
-	return f.dot;
-}, true, { args: ["severity"] });
-
-// /mob/living/silicon/proc/bullet_act  (code/modules/mob/living/silicon/silicon_defense.dm:104)  may sleep
-rt.def("/mob/living/silicon/proc/bullet_act", function* bullet_act(f: Frame, Proj: Value) {
+// silicon_defense.dm:88
+rt.def("/mob/living/silicon/proc/emp_act", function* emp_act(f: Frame, severity: Value) {
 	let M: Value = null;
 	let $e: any;
-	f.vars = () => [Proj, M, $e];
-	if ((isEqual(rt.fv(f, "damage_type", live(Proj)), "brute") || isEqual(rt.fv(f, "damage_type", live(Proj)), "fire"))) {
-		yield* g.srcCall(f, "adjustBruteLoss", rt.fv(f, "damage", live(Proj)));
-		if (truthy(rt.op(f, "Prob", [], [multiply(rt.fv(f, "damage", live(Proj)), 1.5)]))) {
-			M = null;
-			rt.forList(f, 0, rt.sv(f, "buckled_mobs"), T("/mob/living"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				M = $e;
-				yield* g.callName(f, live(M), "visible_message", [fmt("<span class='boldwarning'>＀ is knocked off of ＀!</span>", [live(M), live(f.src)])]);
-				yield* g.srcCall(f, "unbuckle_mob", live(M));
-				yield* g.callName(f, live(M), "Knockdown", [40]);
+	if (severity === 1) {
+		yield* this.take_bodypart_damage(20);
+	} else if (severity === 2) {
+		yield* this.take_bodypart_damage(10);
+	}
+	to_chat(this, "<span class='userdanger'>*BZZZT*</span>");
+	to_chat(this, "<span class='danger'>Warning: Electromagnetic pulse detected.</span>");
+	for (M of each(this.buckled_mobs, T("/mob/living"))) {
+		if (prob(severity * 50)) {
+			yield* this.unbuckle_mob(M);
+			yield* M.Knockdown(40);
+			M.visible_message(`<span class='boldwarning'>${M} is thrown off of ${this}!</span>`);
+		}
+	}
+	yield* this.flash_act({ affect_silicon: 1 });
+	yield* parent_proc();
+	return f.dot;
+}, true);
+
+// silicon_defense.dm:104
+rt.def("/mob/living/silicon/proc/bullet_act", function* bullet_act(f: Frame, Proj: Value) {
+	let M: Value = null;
+	if (Proj.damage_type == "brute" || Proj.damage_type == "fire") {
+		yield* this.adjustBruteLoss(Proj.damage);
+		if (prob(Proj.damage * 1.5)) {
+			for (M of each(this.buckled_mobs, T("/mob/living"))) {
+				M.visible_message(`<span class='boldwarning'>${M} is knocked off of ${this}!</span>`);
+				yield* this.unbuckle_mob(M);
+				yield* M.Knockdown(40);
 			}
-			rt.endFor(f, 0);
 		}
 	}
-	if ((truthy(rt.fv(f, "stun", live(Proj))) || truthy(rt.fv(f, "knockdown", live(Proj))))) {
+	if (Proj.stun || Proj.knockdown) {
 		M = null;
-		rt.forList(f, 0, rt.sv(f, "buckled_mobs"), T("/mob/living"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			M = $e;
-			yield* g.srcCall(f, "unbuckle_mob", live(M));
-			yield* g.callName(f, live(M), "visible_message", [fmt("<span class='boldwarning'>＀ is knocked off of ＀ by the ＀!</span>", [live(M), live(f.src), live(Proj)])]);
+		for (M of each(this.buckled_mobs, T("/mob/living"))) {
+			yield* this.unbuckle_mob(M);
+			M.visible_message(`<span class='boldwarning'>${M} is knocked off of ${this} by the ${Proj}!</span>`);
 		}
-		rt.endFor(f, 0);
 	}
-	yield* g.callName(f, live(Proj), "on_hit", [live(f.src)]);
+	yield* Proj.on_hit(this);
 	return 2;
 }, true);
 
-// /mob/living/silicon/proc/flash_act  (code/modules/mob/living/silicon/silicon_defense.dm:120)  may sleep
+// silicon_defense.dm:120
 rt.def("/mob/living/silicon/proc/flash_act", function* flash_act(f: Frame) {
-	if (live(f.args[0]) === null) {
+	if (f.args[0] === null) {
 		f.args[0] = 1;
 	}
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 0;
 	}
-	if (live(f.args[3]) === null) {
+	if (f.args[3] === null) {
 		f.args[3] = 0;
 	}
-	if (live(f.args[4]) === null) {
+	if (f.args[4] === null) {
 		f.args[4] = T("/obj/screen/fullscreen/flash/static");
 	}
-	if (!truthy(live(f.args[2]))) return f.dot;
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	if (!f.args[2]) return f.dot;
+	return (yield* parent_proc());
 }, true, { args: ["intensity", "override_blindness_check", "affect_silicon", "visual", "type"] });

@@ -1,16 +1,16 @@
-// From code/_onclick/hud/ai.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/_onclick/hud/ai.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, g } = rt;
 
 
 rt.type(11005, "/obj/screen/ai", "/obj/screen", {
 	icon: rt.rsc("icons/mob/screen_ai.dmi"),
 });
 
-// /obj/screen/ai/proc/Click  (code/_onclick/hud/ai.dm:5)
+// ai.dm:5
 rt.def("/obj/screen/ai/proc/Click", function Click(f: Frame) {
-	if (!truthy((rt.istype(live(f.usr), T("/mob/dead/observer")) ? 1 : 0))) return f.dot;
+	if (!rt.istype(f.usr, T("/mob/dead/observer"))) return f.dot;
 	return 1;
 });
 
@@ -19,14 +19,13 @@ rt.type(11006, "/obj/screen/ai/aicore", "/obj/screen/ai", {
 	icon_state: "ai_core",
 });
 
-// /obj/screen/ai/aicore/proc/Click  (code/_onclick/hud/ai.dm:13)  may sleep
+// ai.dm:13
 rt.def("/obj/screen/ai/aicore/proc/Click", function* Click(f: Frame) {
 	let AI: Value = null;
-	f.vars = () => [AI];
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		return live(f.dot);
+	if (yield* parent_proc()) {
+		return f.dot;
 	}
-	yield* g.callName(f, (AI = live(f.usr)), "view_core", []);
+	yield* (AI = f.usr).view_core();
 	return f.dot;
 }, true);
 
@@ -35,13 +34,11 @@ rt.type(11007, "/obj/screen/ai/camera_list", "/obj/screen/ai", {
 	icon_state: "camera",
 });
 
-// /obj/screen/ai/camera_list/proc/Click  (code/_onclick/hud/ai.dm:23)  may sleep
+// ai.dm:23
 rt.def("/obj/screen/ai/camera_list/proc/Click", function* Click(f: Frame) {
-	let AI: Value = null, camera: Value = null;
-	f.vars = () => [AI, camera];
-	AI = live(f.usr);
-	camera = (yield* g.op(f, "Prompt", [1], [null, "Cameras", "Choose which camera you want to view", live(AI), (yield* g.callName(f, live(AI), "get_camera_list", []))]));
-	yield* g.callName(f, live(AI), "ai_camera_list", [live(camera)]);
+	let AI: Value = f.usr;
+	let camera: Value = (yield* g.op(f, "Prompt", [1], [null, "Cameras", "Choose which camera you want to view", AI, AI.get_camera_list()]));
+	yield* AI.ai_camera_list(camera);
 	return f.dot;
 }, true);
 
@@ -50,16 +47,14 @@ rt.type(11008, "/obj/screen/ai/camera_track", "/obj/screen/ai", {
 	icon_state: "track",
 });
 
-// /obj/screen/ai/camera_track/proc/Click  (code/_onclick/hud/ai.dm:32)  may sleep
+// ai.dm:32
 rt.def("/obj/screen/ai/camera_track/proc/Click", function* Click(f: Frame) {
-	let AI: Value = null, target_name: Value = null;
-	f.vars = () => [AI, target_name];
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		return live(f.dot);
+	if (yield* parent_proc()) {
+		return f.dot;
 	}
-	AI = live(f.usr);
-	target_name = (yield* g.op(f, "Prompt", [1], [null, "Tracking", "Choose who you want to track", live(AI), (yield* g.callName(f, live(AI), "trackable_mobs", []))]));
-	yield* g.callName(f, live(AI), "ai_camera_track", [live(target_name)]);
+	let AI: Value = f.usr;
+	let target_name: Value = (yield* g.op(f, "Prompt", [1], [null, "Tracking", "Choose who you want to track", AI, (yield* AI.trackable_mobs())]));
+	AI.ai_camera_track(target_name);
 	return f.dot;
 }, true);
 
@@ -68,14 +63,13 @@ rt.type(11009, "/obj/screen/ai/camera_light", "/obj/screen/ai", {
 	icon_state: "camera_light",
 });
 
-// /obj/screen/ai/camera_light/proc/Click  (code/_onclick/hud/ai.dm:43)
+// ai.dm:43
 rt.def("/obj/screen/ai/camera_light/proc/Click", function Click(f: Frame) {
 	let AI: Value = null;
-	f.vars = () => [AI];
-	if (truthy(rt.callSuper(f, [], rt.Args.Same))) {
-		return live(f.dot);
+	if (parent_proc()) {
+		return f.dot;
 	}
-	rt.callName(f, (AI = live(f.usr)), "toggle_camera_light", []);
+	(AI = f.usr).toggle_camera_light();
 	return f.dot;
 });
 
@@ -84,15 +78,13 @@ rt.type(11010, "/obj/screen/ai/crew_monitor", "/obj/screen/ai", {
 	icon_state: "crew_monitor",
 });
 
-// /obj/screen/ai/crew_monitor/proc/Click  (code/_onclick/hud/ai.dm:53)  may sleep
+// ai.dm:53
 rt.def("/obj/screen/ai/crew_monitor/proc/Click", function* Click(f: Frame) {
-	let AI: Value = null;
-	f.vars = () => [AI];
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		return live(f.dot);
+	if (yield* parent_proc()) {
+		return f.dot;
 	}
-	AI = live(f.usr);
-	yield* g.callName(f, rt.gl("crewmonitor"), "show", [live(AI)]);
+	let AI: Value = f.usr;
+	yield* GLOB.crewmonitor.show(AI);
 	return f.dot;
 }, true);
 
@@ -101,14 +93,13 @@ rt.type(11011, "/obj/screen/ai/crew_manifest", "/obj/screen/ai", {
 	icon_state: "manifest",
 });
 
-// /obj/screen/ai/crew_manifest/proc/Click  (code/_onclick/hud/ai.dm:63)
+// ai.dm:63
 rt.def("/obj/screen/ai/crew_manifest/proc/Click", function Click(f: Frame) {
 	let AI: Value = null;
-	f.vars = () => [AI];
-	if (truthy(rt.callSuper(f, [], rt.Args.Same))) {
-		return live(f.dot);
+	if (parent_proc()) {
+		return f.dot;
 	}
-	rt.callName(f, (AI = live(f.usr)), "ai_roster", []);
+	(AI = f.usr).ai_roster();
 	return f.dot;
 });
 
@@ -117,14 +108,13 @@ rt.type(11012, "/obj/screen/ai/alerts", "/obj/screen/ai", {
 	icon_state: "alerts",
 });
 
-// /obj/screen/ai/alerts/proc/Click  (code/_onclick/hud/ai.dm:73)
+// ai.dm:73
 rt.def("/obj/screen/ai/alerts/proc/Click", function Click(f: Frame) {
 	let AI: Value = null;
-	f.vars = () => [AI];
-	if (truthy(rt.callSuper(f, [], rt.Args.Same))) {
-		return live(f.dot);
+	if (parent_proc()) {
+		return f.dot;
 	}
-	rt.callName(f, (AI = live(f.usr)), "ai_alerts", []);
+	(AI = f.usr).ai_alerts();
 	return f.dot;
 });
 
@@ -133,14 +123,13 @@ rt.type(11013, "/obj/screen/ai/announcement", "/obj/screen/ai", {
 	icon_state: "announcement",
 });
 
-// /obj/screen/ai/announcement/proc/Click  (code/_onclick/hud/ai.dm:83)  may sleep
+// ai.dm:83
 rt.def("/obj/screen/ai/announcement/proc/Click", function* Click(f: Frame) {
 	let AI: Value = null;
-	f.vars = () => [AI];
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		return live(f.dot);
+	if (yield* parent_proc()) {
+		return f.dot;
 	}
-	yield* g.callName(f, (AI = live(f.usr)), "announcement", []);
+	yield* (AI = f.usr).announcement();
 	return f.dot;
 }, true);
 
@@ -149,14 +138,13 @@ rt.type(11014, "/obj/screen/ai/call_shuttle", "/obj/screen/ai", {
 	icon_state: "call_shuttle",
 });
 
-// /obj/screen/ai/call_shuttle/proc/Click  (code/_onclick/hud/ai.dm:93)  may sleep
+// ai.dm:93
 rt.def("/obj/screen/ai/call_shuttle/proc/Click", function* Click(f: Frame) {
 	let AI: Value = null;
-	f.vars = () => [AI];
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		return live(f.dot);
+	if (yield* parent_proc()) {
+		return f.dot;
 	}
-	yield* g.callName(f, (AI = live(f.usr)), "ai_call_shuttle", []);
+	yield* (AI = f.usr).ai_call_shuttle();
 	return f.dot;
 }, true);
 
@@ -165,14 +153,13 @@ rt.type(11015, "/obj/screen/ai/state_laws", "/obj/screen/ai", {
 	icon_state: "state_laws",
 });
 
-// /obj/screen/ai/state_laws/proc/Click  (code/_onclick/hud/ai.dm:103)
+// ai.dm:103
 rt.def("/obj/screen/ai/state_laws/proc/Click", function Click(f: Frame) {
 	let AI: Value = null;
-	f.vars = () => [AI];
-	if (truthy(rt.callSuper(f, [], rt.Args.Same))) {
-		return live(f.dot);
+	if (parent_proc()) {
+		return f.dot;
 	}
-	rt.callName(f, (AI = live(f.usr)), "checklaws", []);
+	(AI = f.usr).checklaws();
 	return f.dot;
 });
 
@@ -181,14 +168,13 @@ rt.type(11016, "/obj/screen/ai/pda_msg_send", "/obj/screen/ai", {
 	icon_state: "pda_send",
 });
 
-// /obj/screen/ai/pda_msg_send/proc/Click  (code/_onclick/hud/ai.dm:113)  may sleep
+// ai.dm:113
 rt.def("/obj/screen/ai/pda_msg_send/proc/Click", function* Click(f: Frame) {
 	let AI: Value = null;
-	f.vars = () => [AI];
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		return live(f.dot);
+	if (yield* parent_proc()) {
+		return f.dot;
 	}
-	yield* g.callName(f, (AI = live(f.usr)), "cmd_send_pdamesg", [live(f.usr)]);
+	yield* (AI = f.usr).cmd_send_pdamesg(f.usr);
 	return f.dot;
 }, true);
 
@@ -197,14 +183,13 @@ rt.type(11017, "/obj/screen/ai/pda_msg_show", "/obj/screen/ai", {
 	icon_state: "pda_receive",
 });
 
-// /obj/screen/ai/pda_msg_show/proc/Click  (code/_onclick/hud/ai.dm:123)
+// ai.dm:123
 rt.def("/obj/screen/ai/pda_msg_show/proc/Click", function Click(f: Frame) {
 	let AI: Value = null;
-	f.vars = () => [AI];
-	if (truthy(rt.callSuper(f, [], rt.Args.Same))) {
-		return live(f.dot);
+	if (parent_proc()) {
+		return f.dot;
 	}
-	rt.callName(f, (AI = live(f.usr)), "cmd_show_message_log", [live(f.usr)]);
+	(AI = f.usr).cmd_show_message_log(f.usr);
 	return f.dot;
 });
 
@@ -213,15 +198,14 @@ rt.type(11018, "/obj/screen/ai/image_take", "/obj/screen/ai", {
 	icon_state: "take_picture",
 });
 
-// /obj/screen/ai/image_take/proc/Click  (code/_onclick/hud/ai.dm:133)
+// ai.dm:133
 rt.def("/obj/screen/ai/image_take/proc/Click", function Click(f: Frame) {
 	let AI: Value = null, R: Value = null;
-	f.vars = () => [AI, R];
-	if (truthy((rt.istype(live(f.usr), T("/mob/living/silicon/ai")) ? 1 : 0))) {
-		rt.callName(f, rt.gv(f, "aicamera", (AI = live(f.usr))), "toggle_camera_mode", []);
+	if (rt.istype(f.usr, T("/mob/living/silicon/ai"))) {
+		(AI = f.usr).aicamera.toggle_camera_mode();
 	} else {
-		if (!truthy((rt.istype(live(f.usr), T("/mob/living/silicon/robot")) ? 1 : 0))) return f.dot;
-		rt.callName(f, rt.gv(f, "aicamera", (R = live(f.usr))), "toggle_camera_mode", []);
+		if (!rt.istype(f.usr, T("/mob/living/silicon/robot"))) return f.dot;
+		(R = f.usr).aicamera.toggle_camera_mode();
 	}
 	return f.dot;
 });
@@ -231,15 +215,14 @@ rt.type(11019, "/obj/screen/ai/image_view", "/obj/screen/ai", {
 	icon_state: "view_images",
 });
 
-// /obj/screen/ai/image_view/proc/Click  (code/_onclick/hud/ai.dm:145)  may sleep
+// ai.dm:145
 rt.def("/obj/screen/ai/image_view/proc/Click", function* Click(f: Frame) {
 	let AI: Value = null, R: Value = null;
-	f.vars = () => [AI, R];
-	if (truthy((rt.istype(live(f.usr), T("/mob/living/silicon/ai")) ? 1 : 0))) {
-		yield* g.callName(f, rt.gv(f, "aicamera", (AI = live(f.usr))), "viewpictures", []);
+	if (rt.istype(f.usr, T("/mob/living/silicon/ai"))) {
+		yield* (AI = f.usr).aicamera.viewpictures();
 	} else {
-		if (!truthy((rt.istype(live(f.usr), T("/mob/living/silicon/robot")) ? 1 : 0))) return f.dot;
-		yield* g.callName(f, rt.gv(f, "aicamera", (R = live(f.usr))), "viewpictures", []);
+		if (!rt.istype(f.usr, T("/mob/living/silicon/robot"))) return f.dot;
+		yield* (R = f.usr).aicamera.viewpictures();
 	}
 	return f.dot;
 }, true);
@@ -249,14 +232,13 @@ rt.type(11020, "/obj/screen/ai/sensors", "/obj/screen/ai", {
 	icon_state: "ai_sensor",
 });
 
-// /obj/screen/ai/sensors/proc/Click  (code/_onclick/hud/ai.dm:157)  may sleep
+// ai.dm:157
 rt.def("/obj/screen/ai/sensors/proc/Click", function* Click(f: Frame) {
 	let S: Value = null;
-	f.vars = () => [S];
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		return live(f.dot);
+	if (yield* parent_proc()) {
+		return f.dot;
 	}
-	yield* g.callName(f, (S = live(f.usr)), "sensor_mode", []);
+	yield* (S = f.usr).sensor_mode();
 	return f.dot;
 }, true);
 
@@ -264,53 +246,51 @@ rt.type(61, "/datum/hud/ai", "/datum/hud", {
 	ui_style_icon: rt.rsc("icons/mob/screen_ai.dmi"),
 });
 
-// /datum/hud/ai/proc/New  (code/_onclick/hud/ai.dm:167)  may sleep
+// ai.dm:167
 rt.def("/datum/hud/ai/proc/New", function* New(f: Frame) {
 	let using: Value = null;
-	f.vars = () => [using];
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = rt.rsc("icons/mob/screen_ai.dmi");
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	using = null;
-	rt.setFv(f, "screen_loc", (using = (yield* g.new_(f, T("/obj/screen/language_menu"), []))), "CENTER+4:21,SOUTH+1:5");
-	rt.modSrcVar(f, "static_inventory", live(using), add);
-	rt.setFv(f, "screen_loc", (using = (yield* g.new_(f, T("/obj/screen/ai/aicore"), []))), "SOUTH:6,WEST");
-	rt.modSrcVar(f, "static_inventory", live(using), add);
-	rt.setFv(f, "screen_loc", (using = (yield* g.new_(f, T("/obj/screen/ai/camera_list"), []))), "SOUTH:6,WEST+1");
-	rt.modSrcVar(f, "static_inventory", live(using), add);
-	rt.setFv(f, "screen_loc", (using = (yield* g.new_(f, T("/obj/screen/ai/camera_track"), []))), "SOUTH:6,WEST+2");
-	rt.modSrcVar(f, "static_inventory", live(using), add);
-	rt.setFv(f, "screen_loc", (using = (yield* g.new_(f, T("/obj/screen/ai/camera_light"), []))), "SOUTH:6,WEST+3");
-	rt.modSrcVar(f, "static_inventory", live(using), add);
-	rt.setFv(f, "screen_loc", (using = (yield* g.new_(f, T("/obj/screen/ai/crew_monitor"), []))), "SOUTH:6,WEST+4");
-	rt.modSrcVar(f, "static_inventory", live(using), add);
-	rt.setFv(f, "screen_loc", (using = (yield* g.new_(f, T("/obj/screen/ai/crew_manifest"), []))), "SOUTH:6,WEST+5");
-	rt.modSrcVar(f, "static_inventory", live(using), add);
-	rt.setFv(f, "screen_loc", (using = (yield* g.new_(f, T("/obj/screen/ai/alerts"), []))), "SOUTH:6,WEST+6");
-	rt.modSrcVar(f, "static_inventory", live(using), add);
-	rt.setFv(f, "screen_loc", (using = (yield* g.new_(f, T("/obj/screen/ai/announcement"), []))), "SOUTH:6,WEST+7");
-	rt.modSrcVar(f, "static_inventory", live(using), add);
-	rt.setFv(f, "screen_loc", (using = (yield* g.new_(f, T("/obj/screen/ai/call_shuttle"), []))), "SOUTH:6,WEST+8");
-	rt.modSrcVar(f, "static_inventory", live(using), add);
-	rt.setFv(f, "screen_loc", (using = (yield* g.new_(f, T("/obj/screen/ai/state_laws"), []))), "SOUTH:6,WEST+9");
-	rt.modSrcVar(f, "static_inventory", live(using), add);
-	rt.setFv(f, "screen_loc", (using = (yield* g.new_(f, T("/obj/screen/ai/pda_msg_send"), []))), "SOUTH:6,WEST+10");
-	rt.modSrcVar(f, "static_inventory", live(using), add);
-	rt.setFv(f, "screen_loc", (using = (yield* g.new_(f, T("/obj/screen/ai/pda_msg_show"), []))), "SOUTH:6,WEST+11");
-	rt.modSrcVar(f, "static_inventory", live(using), add);
-	rt.setFv(f, "screen_loc", (using = (yield* g.new_(f, T("/obj/screen/ai/image_take"), []))), "SOUTH:6,WEST+12");
-	rt.modSrcVar(f, "static_inventory", live(using), add);
-	rt.setFv(f, "screen_loc", (using = (yield* g.new_(f, T("/obj/screen/ai/image_view"), []))), "SOUTH:6,WEST+13");
-	rt.modSrcVar(f, "static_inventory", live(using), add);
-	rt.setFv(f, "screen_loc", (using = (yield* g.new_(f, T("/obj/screen/ai/sensors"), []))), "SOUTH:6,WEST+14");
-	rt.modSrcVar(f, "static_inventory", live(using), add);
+	yield* parent_proc();
+	(using = (yield* new_(T("/obj/screen/language_menu")))).screen_loc = "CENTER+4:21,SOUTH+1:5";
+	this.static_inventory += using;
+	(using = (yield* new_(T("/obj/screen/ai/aicore")))).screen_loc = "SOUTH:6,WEST";
+	this.static_inventory += using;
+	(using = (yield* new_(T("/obj/screen/ai/camera_list")))).screen_loc = "SOUTH:6,WEST+1";
+	this.static_inventory += using;
+	(using = (yield* new_(T("/obj/screen/ai/camera_track")))).screen_loc = "SOUTH:6,WEST+2";
+	this.static_inventory += using;
+	(using = (yield* new_(T("/obj/screen/ai/camera_light")))).screen_loc = "SOUTH:6,WEST+3";
+	this.static_inventory += using;
+	(using = (yield* new_(T("/obj/screen/ai/crew_monitor")))).screen_loc = "SOUTH:6,WEST+4";
+	this.static_inventory += using;
+	(using = (yield* new_(T("/obj/screen/ai/crew_manifest")))).screen_loc = "SOUTH:6,WEST+5";
+	this.static_inventory += using;
+	(using = (yield* new_(T("/obj/screen/ai/alerts")))).screen_loc = "SOUTH:6,WEST+6";
+	this.static_inventory += using;
+	(using = (yield* new_(T("/obj/screen/ai/announcement")))).screen_loc = "SOUTH:6,WEST+7";
+	this.static_inventory += using;
+	(using = (yield* new_(T("/obj/screen/ai/call_shuttle")))).screen_loc = "SOUTH:6,WEST+8";
+	this.static_inventory += using;
+	(using = (yield* new_(T("/obj/screen/ai/state_laws")))).screen_loc = "SOUTH:6,WEST+9";
+	this.static_inventory += using;
+	(using = (yield* new_(T("/obj/screen/ai/pda_msg_send")))).screen_loc = "SOUTH:6,WEST+10";
+	this.static_inventory += using;
+	(using = (yield* new_(T("/obj/screen/ai/pda_msg_show")))).screen_loc = "SOUTH:6,WEST+11";
+	this.static_inventory += using;
+	(using = (yield* new_(T("/obj/screen/ai/image_take")))).screen_loc = "SOUTH:6,WEST+12";
+	this.static_inventory += using;
+	(using = (yield* new_(T("/obj/screen/ai/image_view")))).screen_loc = "SOUTH:6,WEST+13";
+	this.static_inventory += using;
+	(using = (yield* new_(T("/obj/screen/ai/sensors")))).screen_loc = "SOUTH:6,WEST+14";
+	this.static_inventory += using;
 	return f.dot;
 }, true, { args: ["owner", "ui_style"] });
 
-// /mob/living/silicon/ai/proc/create_mob_hud  (code/_onclick/hud/ai.dm:253)  may sleep
+// ai.dm:253
 rt.def("/mob/living/silicon/ai/proc/create_mob_hud", function* create_mob_hud(f: Frame) {
-	if (!(truthy(rt.sv(f, "client")) && !truthy(rt.sv(f, "hud_used")))) return f.dot;
-	rt.setSv(f, "hud_used", (yield* g.new_(f, T("/datum/hud/ai"), [live(f.src)])));
+	if (!(this.client && !this.hud_used)) return f.dot;
+	this.hud_used = (yield* new_(T("/datum/hud/ai"), this));
 	return f.dot;
 }, true);

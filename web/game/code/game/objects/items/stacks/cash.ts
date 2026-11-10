@@ -1,7 +1,7 @@
-// From code/game/objects/items/stacks/cash.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/stacks/cash.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(9090, "/obj/item/stack/spacecash", "/obj/item/stack", {
@@ -20,38 +20,31 @@ rt.type(9090, "/obj/item/stack/spacecash", "/obj/item/stack", {
 	resistance_flags: 4,
 });
 
-// /obj/item/stack/spacecash/proc/Initialize  (code/game/objects/items/stacks/cash.dm:17)  may sleep
+// cash.dm:17
 rt.def("/obj/item/stack/spacecash/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.srcCall(f, "update_desc");
+	f.dot = (yield* parent_proc());
+	this.update_desc();
 	return f.dot;
 }, true);
 
-// /obj/item/stack/spacecash/proc/update_desc  (code/game/objects/items/stacks/cash.dm:21)
+// cash.dm:21
 rt.def("/obj/item/stack/spacecash/proc/update_desc", function update_desc(f: Frame) {
 	let total_worth: Value = null;
-	let $0: any, $1: any;
-	f.vars = () => [total_worth, $0, $1];
-	$0 = (total_worth = multiply(rt.sv(f, "amount"), rt.sv(f, "value")));
-	if (rt.gt(rt.sv(f, "amount"), 1)) {
-		$1 = "s";
-	} else {
-		$1 = "";
-	}
-	rt.setSv(f, "desc", fmt("It's worth ＀ credit＀", [$0, $1]));
+	let $0: any = (total_worth = this.amount * rt.sv(f, "value"));
+	this.desc = `It's worth ${$0} credit${this.amount > 1 ? "s" : ""}`;
 	return f.dot;
 });
 
-// /obj/item/stack/spacecash/proc/merge  (code/game/objects/items/stacks/cash.dm:26)  may sleep
-rt.def("/obj/item/stack/spacecash/proc/merge", function* merge(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.srcCall(f, "update_desc");
+// cash.dm:26
+rt.def("/obj/item/stack/spacecash/proc/merge", function* merge(f: Frame, S: Value) {
+	f.dot = (yield* parent_proc());
+	this.update_desc();
 	return f.dot;
-}, true, { args: ["S"] });
+}, true);
 
-// /obj/item/stack/spacecash/proc/use  (code/game/objects/items/stacks/cash.dm:30)  may sleep
+// cash.dm:30
 rt.def("/obj/item/stack/spacecash/proc/use", function* use(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.srcCall(f, "update_desc");
+	f.dot = (yield* parent_proc());
+	this.update_desc();
 	return f.dot;
 }, true);

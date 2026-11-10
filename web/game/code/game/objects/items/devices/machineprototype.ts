@@ -1,7 +1,7 @@
-// From code/game/objects/items/devices/machineprototype.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/devices/machineprototype.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(9262, "/obj/item/device/machineprototype", "/obj/item/device", {
@@ -13,11 +13,9 @@ rt.type(9262, "/obj/item/device/machineprototype", "/obj/item/device", {
 	origin_tech: "engineering=6",
 });
 
-// /obj/item/device/machineprototype/proc/<init>  (code/game/objects/items/devices/machineprototype.dm:6)
+// machineprototype.dm:6
 rt.def("/obj/item/device/machineprototype/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 1000, "$glass", 500]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 1000, "$glass", 500]);
 	return f.dot;
 });

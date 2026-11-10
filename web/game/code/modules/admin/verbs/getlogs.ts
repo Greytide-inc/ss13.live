@@ -1,43 +1,42 @@
-// From code/modules/admin/verbs/getlogs.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/admin/verbs/getlogs.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
 
 
-// /client/proc/getserverlog  (code/modules/admin/verbs/getlogs.dm:8)  may sleep
+
+// getlogs.dm:8
 rt.def("/client/proc/getserverlog", function* getserverlog(f: Frame) {
 	let path: Value = null;
-	f.vars = () => [path];
-	if (!truthy((path = (yield* g.srcCall(f, "browse_files", "data/logs/"))))) {
-		return live(f.dot);
+	if (!(path = (yield* this.browse_files("data/logs/")))) {
+		return f.dot;
 	}
-	if (truthy((yield* g.srcCall(f, "file_spam_check")))) {
-		return live(f.dot);
+	if (this.file_spam_check()) {
+		return f.dot;
 	}
-	yield* g.call(f, P("/proc/message_admins"), null, [fmt("＀ accessed file: ＀", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.src)])), live(path)])]);
-	rt.op(f, "Ftp", [], [live(f.src), (yield* g.call(f, P("/proc/file"), null, [live(path)])), null], false);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "Attempting to send file, this may take a fair few minutes if the file is very large."]);
-	return live(f.dot);
+	message_admins(`${key_name_admin(this)} accessed file: ${path}`);
+	rt.op(f, "Ftp", [], [this, file(path), null], false);
+	to_chat(this, "Attempting to send file, this may take a fair few minutes if the file is very large.");
+	return f.dot;
 }, true, { verb: { name: ".getserverlog", category: "", desc: "Fetch logfiles from data/logs" } });
 
-// /datum/admins/proc/view_txt_log  (code/modules/admin/verbs/getlogs.dm:29)
+// getlogs.dm:29
 rt.def("/datum/admins/proc/view_txt_log", function view_txt_log(f: Frame) {
-	if (truthy(rt.call(f, P("/proc/fexists"), null, [fmt("＀", [rt.gl("world_game_log")])]))) {
-		rt.op(f, "Ftp", [], [live(f.src), rt.gl("world_game_log"), null], false);
+	if (fexists(`${GLOB.world_game_log}`)) {
+		rt.op(f, "Ftp", [], [this, GLOB.world_game_log, null], false);
 	} else {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.src), "<font color='red'>Server log not found, try using .getserverlog.</font>"]);
-		return live(f.dot);
+		to_chat(this, "<font color='red'>Server log not found, try using .getserverlog.</font>");
+		return f.dot;
 	}
-	return live(f.dot);
+	return f.dot;
 }, false, { verb: { name: "Show Server Log", category: "Admin", desc: "Shows server log for this round." } });
 
-// /datum/admins/proc/view_atk_log  (code/modules/admin/verbs/getlogs.dm:43)
+// getlogs.dm:43
 rt.def("/datum/admins/proc/view_atk_log", function view_atk_log(f: Frame) {
-	if (truthy(rt.call(f, P("/proc/fexists"), null, [fmt("＀", [rt.gl("world_attack_log")])]))) {
-		rt.op(f, "Ftp", [], [live(f.src), rt.gl("world_attack_log"), null], false);
+	if (fexists(`${GLOB.world_attack_log}`)) {
+		rt.op(f, "Ftp", [], [this, GLOB.world_attack_log, null], false);
 	} else {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.src), "<font color='red'>Server attack log not found, try using .getserverlog.</font>"]);
-		return live(f.dot);
+		to_chat(this, "<font color='red'>Server attack log not found, try using .getserverlog.</font>");
+		return f.dot;
 	}
-	return live(f.dot);
+	return f.dot;
 }, false, { verb: { name: "Show Server Attack Log", category: "Admin", desc: "Shows server attack log for this round." } });

@@ -1,50 +1,50 @@
-// From code/modules/mob/living/silicon/robot/death.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/silicon/robot/death.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
-// /mob/living/silicon/robot/proc/gib_animation  (code/modules/mob/living/silicon/robot/death.dm:3)  may sleep
+// death.dm:3
 rt.def("/mob/living/silicon/robot/proc/gib_animation", function* gib_animation(f: Frame) {
-	yield* g.new_(f, T("/obj/effect/temp_visual/gib_animation"), [rt.sv(f, "loc"), "gibbed-r"]);
+	yield* new_(T("/obj/effect/temp_visual/gib_animation"), this.loc, "gibbed-r");
 	return f.dot;
 }, true);
 
-// /mob/living/silicon/robot/proc/dust  (code/modules/mob/living/silicon/robot/death.dm:7)  may sleep
+// death.dm:7
 rt.def("/mob/living/silicon/robot/proc/dust", function* dust(f: Frame) {
-	if (truthy(rt.sv(f, "mmi"))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "mmi")]);
+	if (this.mmi) {
+		yield* qdel(this.mmi);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /mob/living/silicon/robot/proc/spawn_dust  (code/modules/mob/living/silicon/robot/death.dm:11)  may sleep
+// death.dm:11
 rt.def("/mob/living/silicon/robot/proc/spawn_dust", function* spawn_dust(f: Frame) {
-	yield* g.new_(f, T("/obj/effect/decal/remains/robot"), [rt.sv(f, "loc")]);
+	yield* new_(T("/obj/effect/decal/remains/robot"), this.loc);
 	return f.dot;
 }, true);
 
-// /mob/living/silicon/robot/proc/dust_animation  (code/modules/mob/living/silicon/robot/death.dm:14)  may sleep
+// death.dm:14
 rt.def("/mob/living/silicon/robot/proc/dust_animation", function* dust_animation(f: Frame) {
-	yield* g.new_(f, T("/obj/effect/temp_visual/dust_animation"), [rt.sv(f, "loc"), "dust-r"]);
+	yield* new_(T("/obj/effect/temp_visual/dust_animation"), this.loc, "dust-r");
 	return f.dot;
 }, true);
 
-// /mob/living/silicon/robot/proc/death  (code/modules/mob/living/silicon/robot/death.dm:17)  may sleep
-rt.def("/mob/living/silicon/robot/proc/death", function* death(f: Frame) {
-	if (isEqual(rt.sv(f, "stat"), 2)) {
-		return live(f.dot);
+// death.dm:17
+rt.def("/mob/living/silicon/robot/proc/death", function* death(f: Frame, gibbed: Value) {
+	if (this.stat == 2) {
+		return f.dot;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "locked", 0);
-	yield* g.srcCall(f, "update_canmove");
-	if ((truthy(rt.sv(f, "camera")) && truthy(rt.fv(f, "status", rt.sv(f, "camera"))))) {
-		yield* g.callName(f, rt.sv(f, "camera"), "toggle_cam", [live(f.src), 0]);
+	f.dot = (yield* parent_proc());
+	this.locked = 0;
+	yield* this.update_canmove();
+	if (this.camera && this.camera.status) {
+		yield* this.camera.toggle_cam(this, 0);
 	}
-	yield* g.srcCall(f, "update_headlamp", 1);
-	yield* g.srcCall(f, "uneq_all");
-	yield* g.srcCall(f, "update_icons");
-	yield* g.srcCall(f, "unbuckle_all_mobs", 1);
+	yield* this.update_headlamp(1);
+	yield* this.uneq_all();
+	yield* this.update_icons();
+	yield* this.unbuckle_all_mobs(1);
 	return f.dot;
-}, true, { args: ["gibbed"] });
+}, true);

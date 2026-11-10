@@ -1,7 +1,7 @@
-// From code/game/objects/items/cardboard_cutouts.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/cardboard_cutouts.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, g } = rt;
 
 
 rt.type(9659, "/obj/item/cardboard_cutout", "/obj/item", {
@@ -17,192 +17,186 @@ rt.type(9659, "/obj/item/cardboard_cutout", "/obj/item", {
 	resistance_flags: 4,
 });
 
-// /obj/item/cardboard_cutout/proc/attack_hand  (code/game/objects/items/cardboard_cutouts.dm:22)  may sleep
-rt.def("/obj/item/cardboard_cutout/proc/attack_hand", function* attack_hand(f: Frame) {
-	if ((isEqual(rt.fv(f, "a_intent", live(f.args[0])), "help") || truthy(rt.sv(f, "pushed_over")))) {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+// cardboard_cutouts.dm:22
+rt.def("/obj/item/cardboard_cutout/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
+	if (user.a_intent == "help" || this.pushed_over) {
+		return (yield* parent_proc());
 	}
-	yield* g.callName(f, live(f.args[0]), "visible_message", [fmt("<span class='warning'>＀ pushes over ＀!</span>", [live(f.args[0]), live(f.src)]), fmt("<span class='danger'>You push over ＀!</span>", [live(f.src)])]);
-	yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/weapons/genhit.ogg"), 50, 1]);
-	yield* g.srcCall(f, "push_over");
-	return f.dot;
-}, true, { args: ["user"] });
-
-// /obj/item/cardboard_cutout/proc/push_over  (code/game/objects/items/cardboard_cutouts.dm:29)
-rt.def("/obj/item/cardboard_cutout/proc/push_over", function push_over(f: Frame) {
-	rt.setSv(f, "name", rt.initial(f, live(f.src), "name"));
-	rt.setSv(f, "desc", fmt("＀ It's been pushed over.", [rt.initial(f, live(f.src), "desc")]));
-	rt.setSv(f, "icon", rt.initial(f, live(f.src), "icon"));
-	rt.setSv(f, "icon_state", "cutout_pushed_over");
-	rt.callSrc(f, "remove_atom_colour", [4]);
-	rt.setSv(f, "alpha", rt.initial(f, live(f.src), "alpha"));
-	rt.setSv(f, "pushed_over", 1);
-	return f.dot;
-});
-
-// /obj/item/cardboard_cutout/proc/attack_self  (code/game/objects/items/cardboard_cutouts.dm:38)
-rt.def("/obj/item/cardboard_cutout/proc/attack_self", function attack_self(f: Frame, user: Value) {
-	if (!truthy(rt.sv(f, "pushed_over"))) {
-		return live(f.dot);
-	}
-	rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You right ＀.</span>", [live(f.src)])]);
-	rt.setSv(f, "desc", rt.initial(f, live(f.src), "desc"));
-	rt.setSv(f, "icon", rt.initial(f, live(f.src), "icon"));
-	rt.setSv(f, "icon_state", rt.initial(f, live(f.src), "icon_state"));
-	rt.setSv(f, "pushed_over", 0);
-	return f.dot;
-});
-
-// /obj/item/cardboard_cutout/proc/attackby  (code/game/objects/items/cardboard_cutouts.dm:47)  may sleep
-rt.def("/obj/item/cardboard_cutout/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
-	f.vars = () => [I, user, params];
-	if (truthy((rt.istype(live(I), T("/obj/item/toy/crayon")) ? 1 : 0))) {
-		yield* g.srcCall(f, "change_appearance", live(I), live(user));
-		return live(f.dot);
-	}
-	if (truthy(rt.bitAnd(rt.fv(f, "flags", live(I)), 4))) {
-		return live(f.dot);
-	}
-	if (!truthy(rt.fv(f, "force", live(I)))) {
-		yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/weapons/tap.ogg"), (yield* g.srcCall(f, "get_clamped_volume")), 1, -1]);
-	} else {
-		if (truthy(rt.fv(f, "hitsound", live(I)))) {
-			yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.fv(f, "hitsound", live(I)), (yield* g.srcCall(f, "get_clamped_volume")), 1, -1]);
-		}
-	}
-	yield* g.callName(f, live(user), "changeNext_move", [8]);
-	yield* g.callName(f, live(user), "do_attack_animation", [live(f.src)]);
-	if (!truthy(rt.fv(f, "force", live(I)))) return f.dot;
-	yield* g.callName(f, live(user), "visible_message", [fmt("<span class='danger'>＀ has hit ＀ with ＀!</span>", [live(user), live(f.src), live(I)]), fmt("<span class='danger'>You hit ＀ with ＀!</span>", [live(f.src), live(I)])]);
-	if (!truthy(rt.op(f, "Prob", [], [rt.fv(f, "force", live(I))]))) return f.dot;
-	yield* g.srcCall(f, "push_over");
+	user.visible_message(`<span class='warning'>${user} pushes over ${this}!</span>`, `<span class='danger'>You push over ${this}!</span>`);
+	playsound(this, rt.rsc("sound/weapons/genhit.ogg"), 50, 1);
+	this.push_over();
 	return f.dot;
 }, true);
 
-// /obj/item/cardboard_cutout/proc/bullet_act  (code/game/objects/items/cardboard_cutouts.dm:70)
-rt.def("/obj/item/cardboard_cutout/proc/bullet_act", function bullet_act(f: Frame, _P: Value) {
-	rt.callSrc(f, "visible_message", [fmt("<span class='danger'>＀ has been hit by ＀!</span>", [live(f.src), live(_P)])]);
-	rt.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/weapons/slice.ogg"), 50, 1]);
-	if (!truthy(rt.op(f, "Prob", [], [rt.fv(f, "damage", live(_P))]))) return f.dot;
-	rt.callSrc(f, "push_over", []);
+// cardboard_cutouts.dm:29
+rt.def("/obj/item/cardboard_cutout/proc/push_over", function push_over(f: Frame) {
+	this.name = rt.initial(f, this, "name");
+	this.desc = `${rt.initial(f, this, "desc")} It's been pushed over.`;
+	this.icon = rt.initial(f, this, "icon");
+	this.icon_state = "cutout_pushed_over";
+	this.remove_atom_colour(FIXED_COLOUR_PRIORITY);
+	this.alpha = rt.initial(f, this, "alpha");
+	this.pushed_over = 1;
 	return f.dot;
 });
 
-// /obj/item/cardboard_cutout/proc/change_appearance  (code/game/objects/items/cardboard_cutouts.dm:76)  may sleep
+// cardboard_cutouts.dm:38
+rt.def("/obj/item/cardboard_cutout/proc/attack_self", function attack_self(f: Frame, user: Value) {
+	if (!this.pushed_over) {
+		return f.dot;
+	}
+	to_chat(user, `<span class='notice'>You right ${this}.</span>`);
+	this.desc = rt.initial(f, this, "desc");
+	this.icon = rt.initial(f, this, "icon");
+	this.icon_state = rt.initial(f, this, "icon_state");
+	this.pushed_over = 0;
+	return f.dot;
+});
+
+// cardboard_cutouts.dm:47
+rt.def("/obj/item/cardboard_cutout/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
+	if (rt.istype(I, T("/obj/item/toy/crayon"))) {
+		yield* this.change_appearance(I, user);
+		return f.dot;
+	}
+	if (rt.bitAnd(I.flags, NOBLUDGEON)) {
+		return f.dot;
+	}
+	if (!I.force) {
+		playsound(this.loc, rt.rsc("sound/weapons/tap.ogg"), this.get_clamped_volume(), 1, -1);
+	} else if (I.hitsound) {
+		playsound(this.loc, I.hitsound, this.get_clamped_volume(), 1, -1);
+	}
+	user.changeNext_move(8);
+	yield* user.do_attack_animation(this);
+	if (!I.force) return f.dot;
+	user.visible_message(`<span class='danger'>${user} has hit ${this} with ${I}!</span>`, `<span class='danger'>You hit ${this} with ${I}!</span>`);
+	if (!prob(I.force)) return f.dot;
+	this.push_over();
+	return f.dot;
+}, true);
+
+// cardboard_cutouts.dm:70
+rt.def("/obj/item/cardboard_cutout/proc/bullet_act", function bullet_act(f: Frame, _P: Value) {
+	this.visible_message(`<span class='danger'>${this} has been hit by ${_P}!</span>`);
+	playsound(this, rt.rsc("sound/weapons/slice.ogg"), 50, 1);
+	if (!prob(_P.damage)) return f.dot;
+	this.push_over();
+	return f.dot;
+});
+
+// cardboard_cutouts.dm:76
 rt.def("/obj/item/cardboard_cutout/proc/change_appearance", function* change_appearance(f: Frame, crayon: Value, user: Value) {
 	let new_appearance: Value = null;
-	let $0: any;
-	f.vars = () => [crayon, user, new_appearance, $0];
-	if ((!truthy(live(crayon)) || !truthy(live(user)))) {
-		return live(f.dot);
+	if (!crayon || !user) {
+		return f.dot;
 	}
-	if (truthy(rt.sv(f, "pushed_over"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>Right ＀ first!</span>", [live(f.src)])]);
-		return live(f.dot);
+	if (this.pushed_over) {
+		to_chat(user, `<span class='warning'>Right ${this} first!</span>`);
+		return f.dot;
 	}
-	if (truthy((yield* g.callName(f, live(crayon), "check_empty", [live(user)])))) {
-		return live(f.dot);
+	if (yield* crayon.check_empty(user)) {
+		return f.dot;
 	}
-	if (truthy(rt.fv(f, "is_capped", live(crayon)))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>Take the cap off first!</span>"]);
-		return live(f.dot);
+	if (crayon.is_capped) {
+		to_chat(user, "<span class='warning'>Take the cap off first!</span>");
+		return f.dot;
 	}
-	if (((!truthy((new_appearance = (yield* g.op(f, "Prompt", [1], [null, "26th Century Deception", fmt("Choose a new appearance for ＀.", [live(f.src)]), live(user), rt.sv(f, "possible_appearances")])))) || !truthy(live(crayon))) || !truthy((yield* g.callName(f, live(user), "canUseTopic", [live(f.src)]))))) {
-		return live(f.dot);
+	if (!(new_appearance = (yield* g.op(f, "Prompt", [1], [null, "26th Century Deception", `Choose a new appearance for ${this}.`, user, this.possible_appearances]))) || !crayon || !user.canUseTopic(this)) {
+		return f.dot;
 	}
-	if (!truthy((yield* g.call(f, P("/proc/do_after"), null, [live(user), 10, 0, live(f.src), 1])))) {
-		return live(f.dot);
+	if (!(yield* do_after(user, 10, 0, this, 1))) {
+		return f.dot;
 	}
-	yield* g.callName(f, live(user), "visible_message", [fmt("<span class='notice'>＀ gives ＀ a new look.</span>", [live(user), live(f.src)]), fmt("<span class='notice'>Voila! You give ＀ a new look.</span>", [live(f.src)])]);
-	yield* g.callName(f, live(crayon), "use_charges", [1]);
-	yield* g.callName(f, live(crayon), "check_empty", [live(user)]);
-	rt.setSv(f, "alpha", 255);
-	rt.setSv(f, "icon", rt.initial(f, live(f.src), "icon"));
-	if (!truthy(rt.sv(f, "deceptive"))) {
-		yield* g.srcCall(f, "add_atom_colour", "#FFD7A7", 4);
+	user.visible_message(`<span class='notice'>${user} gives ${this} a new look.</span>`, `<span class='notice'>Voila! You give ${this} a new look.</span>`);
+	yield* crayon.use_charges(1);
+	yield* crayon.check_empty(user);
+	this.alpha = 255;
+	this.icon = rt.initial(f, this, "icon");
+	if (!this.deceptive) {
+		this.add_atom_colour("#FFD7A7", FIXED_COLOUR_PRIORITY);
 	}
-	$0 = live(new_appearance);
-	if ($0 === "Assistant") {
-		rt.setSv(f, "name", fmt("＀ ＀", [rt.op(f, "PickUnweighted", [1], [rt.gl("first_names_male")]), rt.op(f, "PickUnweighted", [1], [rt.gl("last_names")])]));
-		rt.setSv(f, "desc", "A cardboat cutout of an assistant.");
-		rt.setSv(f, "icon_state", "cutout_greytide");
-	} else if ($0 === "Clown") {
-		rt.setSv(f, "name", rt.op(f, "PickUnweighted", [1], [rt.gl("clown_names")]));
-		rt.setSv(f, "desc", "A cardboard cutout of a clown. You get the feeling that it should be in a corner.");
-		rt.setSv(f, "icon_state", "cutout_clown");
-	} else if ($0 === "Mime") {
-		rt.setSv(f, "name", rt.op(f, "PickUnweighted", [1], [rt.gl("mime_names")]));
-		rt.setSv(f, "desc", "...(A cardboard cutout of a mime.)");
-		rt.setSv(f, "icon_state", "cutout_mime");
-	} else if ($0 === "Traitor") {
-		rt.setSv(f, "name", fmt("＀", [rt.op(f, "PickUnweighted", [2], ["Unknown", "Captain"])]));
-		rt.setSv(f, "desc", "A cardboard cutout of a traitor.");
-		rt.setSv(f, "icon_state", "cutout_traitor");
-	} else if ($0 === "Nuke Op") {
-		rt.setSv(f, "name", fmt("＀", [rt.op(f, "PickUnweighted", [9], ["Unknown", "COMMS", "Telecomms", "AI", "stealthy op", "STEALTH", "sneakybeaky", "MEDIC", "Medic"])]));
-		rt.setSv(f, "desc", "A cardboard cutout of a nuclear operative.");
-		rt.setSv(f, "icon_state", "cutout_fluke");
-	} else if ($0 === "Cultist") {
-		rt.setSv(f, "name", "Unknown");
-		rt.setSv(f, "desc", "A cardboard cutout of a cultist.");
-		rt.setSv(f, "icon_state", "cutout_cultist");
-	} else if ($0 === "Clockwork Cultist") {
-		rt.setSv(f, "name", fmt("＀ ＀", [rt.op(f, "PickUnweighted", [1], [rt.gl("first_names_male")]), rt.op(f, "PickUnweighted", [1], [rt.gl("last_names")])]));
-		rt.setSv(f, "desc", "A cardboard cutout of a servant of Ratvar.");
-		rt.setSv(f, "icon_state", "cutout_servant");
-	} else if ($0 === "Revolutionary") {
-		rt.setSv(f, "name", "Unknown");
-		rt.setSv(f, "desc", "A cardboard cutout of a revolutionary.");
-		rt.setSv(f, "icon_state", "cutout_viva");
-	} else if ($0 === "Wizard") {
-		rt.setSv(f, "name", fmt("＀, ＀", [rt.op(f, "PickUnweighted", [1], [rt.gl("wizard_first")]), rt.op(f, "PickUnweighted", [1], [rt.gl("wizard_second")])]));
-		rt.setSv(f, "desc", "A cardboard cutout of a wizard.");
-		rt.setSv(f, "icon_state", "cutout_wizard");
-	} else if ($0 === "Shadowling") {
-		rt.setSv(f, "name", "Unknown");
-		rt.setSv(f, "desc", "A cardboard cutout of a shadowling.");
-		rt.setSv(f, "icon_state", "cutout_shadowling");
-	} else if ($0 === "Xenomorph") {
-		rt.setSv(f, "name", fmt("alien hunter (＀)", [(yield* g.call(f, P("/proc/rand"), null, [1, 999]))]));
-		rt.setSv(f, "desc", "A cardboard cutout of a xenomorph.");
-		rt.setSv(f, "icon_state", "cutout_fukken_xeno");
-		if (truthy(rt.op(f, "Prob", [], [25]))) {
-			rt.setSv(f, "alpha", 75);
+	if (new_appearance === "Assistant") {
+		this.name = `${pick(GLOB.first_names_male)} ${pick(GLOB.last_names)}`;
+		this.desc = "A cardboat cutout of an assistant.";
+		this.icon_state = "cutout_greytide";
+	} else if (new_appearance === "Clown") {
+		this.name = pick(GLOB.clown_names);
+		this.desc = "A cardboard cutout of a clown. You get the feeling that it should be in a corner.";
+		this.icon_state = "cutout_clown";
+	} else if (new_appearance === "Mime") {
+		this.name = pick(GLOB.mime_names);
+		this.desc = "...(A cardboard cutout of a mime.)";
+		this.icon_state = "cutout_mime";
+	} else if (new_appearance === "Traitor") {
+		this.name = `${pick("Unknown", "Captain")}`;
+		this.desc = "A cardboard cutout of a traitor.";
+		this.icon_state = "cutout_traitor";
+	} else if (new_appearance === "Nuke Op") {
+		this.name = `${pick("Unknown", "COMMS", "Telecomms", "AI", "stealthy op", "STEALTH", "sneakybeaky", "MEDIC", "Medic")}`;
+		this.desc = "A cardboard cutout of a nuclear operative.";
+		this.icon_state = "cutout_fluke";
+	} else if (new_appearance === "Cultist") {
+		this.name = "Unknown";
+		this.desc = "A cardboard cutout of a cultist.";
+		this.icon_state = "cutout_cultist";
+	} else if (new_appearance === "Clockwork Cultist") {
+		this.name = `${pick(GLOB.first_names_male)} ${pick(GLOB.last_names)}`;
+		this.desc = "A cardboard cutout of a servant of Ratvar.";
+		this.icon_state = "cutout_servant";
+	} else if (new_appearance === "Revolutionary") {
+		this.name = "Unknown";
+		this.desc = "A cardboard cutout of a revolutionary.";
+		this.icon_state = "cutout_viva";
+	} else if (new_appearance === "Wizard") {
+		this.name = `${pick(GLOB.wizard_first)}, ${pick(GLOB.wizard_second)}`;
+		this.desc = "A cardboard cutout of a wizard.";
+		this.icon_state = "cutout_wizard";
+	} else if (new_appearance === "Shadowling") {
+		this.name = "Unknown";
+		this.desc = "A cardboard cutout of a shadowling.";
+		this.icon_state = "cutout_shadowling";
+	} else if (new_appearance === "Xenomorph") {
+		this.name = `alien hunter (${rand(1, 999)})`;
+		this.desc = "A cardboard cutout of a xenomorph.";
+		this.icon_state = "cutout_fukken_xeno";
+		if (prob(25)) {
+			this.alpha = 75;
 		}
-	} else if ($0 === "Xenomorph Maid") {
-		rt.setSv(f, "name", fmt("lusty xenomorph maid (＀)", [(yield* g.call(f, P("/proc/rand"), null, [1, 999]))]));
-		rt.setSv(f, "desc", "A cardboard cutout of a xenomorph maid.");
-		rt.setSv(f, "icon_state", "cutout_lusty");
-	} else if ($0 === "Swarmer") {
-		rt.setSv(f, "name", fmt("Swarmer (＀)", [(yield* g.call(f, P("/proc/rand"), null, [1, 999]))]));
-		rt.setSv(f, "desc", "A cardboard cutout of a swarmer.");
-		rt.setSv(f, "icon_state", "cutout_swarmer");
-	} else if ($0 === "Ash Walker") {
-		rt.setSv(f, "name", (yield* g.call(f, P("/proc/lizard_name"), null, [rt.op(f, "PickUnweighted", [2], ["male", "female"])])));
-		rt.setSv(f, "desc", "A cardboard cutout of an ash walker.");
-		rt.setSv(f, "icon_state", "cutout_free_antag");
-	} else if ($0 === "Deathsquad Officer") {
-		rt.setSv(f, "name", rt.op(f, "PickUnweighted", [1], [rt.gl("commando_names")]));
-		rt.setSv(f, "desc", "A cardboard cutout of a death commando.");
-		rt.setSv(f, "icon_state", "cutout_deathsquad");
-	} else if ($0 === "Ian") {
-		rt.setSv(f, "name", "Ian");
-		rt.setSv(f, "desc", "A cardboard cutout of the HoP's beloved corgi.");
-		rt.setSv(f, "icon_state", "cutout_ian");
-	} else if ($0 === "Slaughter Demon") {
-		rt.setSv(f, "name", "slaughter demon");
-		rt.setSv(f, "desc", "A cardboard cutout of a slaughter demon.");
-		rt.setSv(f, "icon", rt.rsc("icons/mob/mob.dmi"));
-		rt.setSv(f, "icon_state", "daemon");
-	} else if ($0 === "Laughter Demon") {
-		rt.setSv(f, "name", "laughter demon");
-		rt.setSv(f, "desc", "A cardboard cutout of a laughter demon.");
-		rt.setSv(f, "icon", rt.rsc("icons/mob/mob.dmi"));
-		rt.setSv(f, "icon_state", "bowmon");
-	} else if ($0 === "Private Security Officer") {
-		rt.setSv(f, "name", "Private Security Officer");
-		rt.setSv(f, "desc", "A cardboard cutout of a private security officer.");
-		rt.setSv(f, "icon_state", "cutout_ntsec");
+	} else if (new_appearance === "Xenomorph Maid") {
+		this.name = `lusty xenomorph maid (${rand(1, 999)})`;
+		this.desc = "A cardboard cutout of a xenomorph maid.";
+		this.icon_state = "cutout_lusty";
+	} else if (new_appearance === "Swarmer") {
+		this.name = `Swarmer (${rand(1, 999)})`;
+		this.desc = "A cardboard cutout of a swarmer.";
+		this.icon_state = "cutout_swarmer";
+	} else if (new_appearance === "Ash Walker") {
+		this.name = lizard_name(pick("male", "female"));
+		this.desc = "A cardboard cutout of an ash walker.";
+		this.icon_state = "cutout_free_antag";
+	} else if (new_appearance === "Deathsquad Officer") {
+		this.name = pick(GLOB.commando_names);
+		this.desc = "A cardboard cutout of a death commando.";
+		this.icon_state = "cutout_deathsquad";
+	} else if (new_appearance === "Ian") {
+		this.name = "Ian";
+		this.desc = "A cardboard cutout of the HoP's beloved corgi.";
+		this.icon_state = "cutout_ian";
+	} else if (new_appearance === "Slaughter Demon") {
+		this.name = "slaughter demon";
+		this.desc = "A cardboard cutout of a slaughter demon.";
+		this.icon = rt.rsc("icons/mob/mob.dmi");
+		this.icon_state = "daemon";
+	} else if (new_appearance === "Laughter Demon") {
+		this.name = "laughter demon";
+		this.desc = "A cardboard cutout of a laughter demon.";
+		this.icon = rt.rsc("icons/mob/mob.dmi");
+		this.icon_state = "bowmon";
+	} else if (new_appearance === "Private Security Officer") {
+		this.name = "Private Security Officer";
+		this.desc = "A cardboard cutout of a private security officer.";
+		this.icon_state = "cutout_ntsec";
 	}
 	return 1;
 }, true);

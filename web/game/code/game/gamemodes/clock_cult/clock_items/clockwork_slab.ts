@@ -1,7 +1,7 @@
-// From code/game/gamemodes/clock_cult/clock_items/clockwork_slab.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/gamemodes/clock_cult/clock_items/clockwork_slab.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, g, add, fmt } = rt;
 
 
 rt.type(8949, "/obj/item/clockwork/slab", "/obj/item/clockwork", {
@@ -26,16 +26,14 @@ rt.type(8949, "/obj/item/clockwork/slab", "/obj/item/clockwork", {
 	actions_types: null,
 });
 
-// /obj/item/clockwork/slab/proc/<init>  (code/game/gamemodes/clock_cult/clock_items/clockwork_slab.dm:11)
+// clockwork_slab.dm:11
 rt.def("/obj/item/clockwork/slab/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "stored_components", rt.alist(f, ["belligerent_eye", 0, "vanguard_cogwheel", 0, "geis_capacitor", 0, "replicant_alloy", 0, "hierophant_ansible", 0]));
-	$0 = $0;
-	rt.setSv(f, "quickbound", rt.list(T("/datum/clockwork_scripture/ranged_ability/geis_prep"), T("/datum/clockwork_scripture/create_object/replicant"), T("/datum/clockwork_scripture/create_object/tinkerers_cache")));
-	$0 = $0;
-	rt.setSv(f, "actions_types", rt.list(T("/datum/action/item_action/clock/hierophant")));
+	parent_proc();
+	this.stored_components = rt.alist(f, ["belligerent_eye", 0, "vanguard_cogwheel", 0, "geis_capacitor", 0, "replicant_alloy", 0, "hierophant_ansible", 0]);
+
+	this.quickbound = list(T("/datum/clockwork_scripture/ranged_ability/geis_prep"), T("/datum/clockwork_scripture/create_object/replicant"), T("/datum/clockwork_scripture/create_object/tinkerers_cache"));
+
+	this.actions_types = list(T("/datum/action/item_action/clock/hierophant"));
 	return f.dot;
 });
 
@@ -43,12 +41,10 @@ rt.type(8950, "/obj/item/clockwork/slab/starter", "/obj/item/clockwork/slab", {
 	stored_components: null,
 });
 
-// /obj/item/clockwork/slab/starter/proc/<init>  (code/game/gamemodes/clock_cult/clock_items/clockwork_slab.dm:27)
+// clockwork_slab.dm:27
 rt.def("/obj/item/clockwork/slab/starter/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "stored_components", rt.alist(f, ["belligerent_eye", 1, "vanguard_cogwheel", 1, "geis_capacitor", 1, "replicant_alloy", 1, "hierophant_ansible", 1]));
+	parent_proc();
+	this.stored_components = rt.alist(f, ["belligerent_eye", 1, "vanguard_cogwheel", 1, "geis_capacitor", 1, "replicant_alloy", 1, "hierophant_ansible", 1]);
 	return f.dot;
 });
 
@@ -59,12 +55,10 @@ rt.type(8951, "/obj/item/clockwork/slab/internal", "/obj/item/clockwork/slab", {
 	name: "scripture motor",
 });
 
-// /obj/item/clockwork/slab/internal/proc/<init>  (code/game/gamemodes/clock_cult/clock_items/clockwork_slab.dm:31)
+// clockwork_slab.dm:31
 rt.def("/obj/item/clockwork/slab/internal/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "quickbound", rt.list());
+	parent_proc();
+	this.quickbound = list();
 	return f.dot;
 });
 
@@ -73,13 +67,13 @@ rt.type(8952, "/obj/item/clockwork/slab/debug", "/obj/item/clockwork/slab", {
 	no_cost: 1,
 });
 
-// /obj/item/clockwork/slab/debug/proc/attack_hand  (code/game/gamemodes/clock_cult/clock_items/clockwork_slab.dm:40)  may sleep
-rt.def("/obj/item/clockwork/slab/debug/proc/attack_hand", function* attack_hand(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy((yield* g.call(f, P("/proc/is_servant_of_ratvar"), null, [live(f.args[0])])))) return f.dot;
-	yield* g.call(f, P("/proc/add_servant_of_ratvar"), null, [live(f.args[0])]);
+// clockwork_slab.dm:40
+rt.def("/obj/item/clockwork/slab/debug/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
+	yield* parent_proc();
+	if (is_servant_of_ratvar(user)) return f.dot;
+	yield* add_servant_of_ratvar(user);
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
 rt.type(8953, "/obj/item/clockwork/slab/cyborg", "/obj/item/clockwork/slab", {
 	clockwork_desc: "A divine link to the Celestial Derelict, allowing for limited recital of scripture.\nHitting a slab, a Servant with a slab, or a cache will <b>transfer</b> this slab's components into the target, the target's slab, or the global cache, respectively.",
@@ -88,14 +82,12 @@ rt.type(8953, "/obj/item/clockwork/slab/cyborg", "/obj/item/clockwork/slab", {
 	actions_types: null,
 });
 
-// /obj/item/clockwork/slab/cyborg/proc/<init>  (code/game/gamemodes/clock_cult/clock_items/clockwork_slab.dm:47)
+// clockwork_slab.dm:47
 rt.def("/obj/item/clockwork/slab/cyborg/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "quickbound", rt.list(T("/datum/clockwork_scripture/ranged_ability/judicial_marker"), T("/datum/clockwork_scripture/ranged_ability/linked_vanguard"), T("/datum/clockwork_scripture/create_object/tinkerers_cache")));
-	$0 = $0;
-	rt.setSv(f, "actions_types", rt.list());
+	parent_proc();
+	this.quickbound = list(T("/datum/clockwork_scripture/ranged_ability/judicial_marker"), T("/datum/clockwork_scripture/ranged_ability/linked_vanguard"), T("/datum/clockwork_scripture/create_object/tinkerers_cache"));
+
+	this.actions_types = list();
 	return f.dot;
 });
 
@@ -103,12 +95,10 @@ rt.type(8954, "/obj/item/clockwork/slab/cyborg/engineer", "/obj/item/clockwork/s
 	quickbound: null,
 });
 
-// /obj/item/clockwork/slab/cyborg/engineer/proc/<init>  (code/game/gamemodes/clock_cult/clock_items/clockwork_slab.dm:53)
+// clockwork_slab.dm:53
 rt.def("/obj/item/clockwork/slab/cyborg/engineer/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "quickbound", rt.list(T("/datum/clockwork_scripture/create_object/replicant"), T("/datum/clockwork_scripture/create_object/cogscarab"), T("/datum/clockwork_scripture/create_object/soul_vessel"), T("/datum/clockwork_scripture/create_object/sigil_of_transmission"), T("/datum/clockwork_scripture/create_object/interdiction_lens")));
+	parent_proc();
+	this.quickbound = list(T("/datum/clockwork_scripture/create_object/replicant"), T("/datum/clockwork_scripture/create_object/cogscarab"), T("/datum/clockwork_scripture/create_object/soul_vessel"), T("/datum/clockwork_scripture/create_object/sigil_of_transmission"), T("/datum/clockwork_scripture/create_object/interdiction_lens"));
 	return f.dot;
 });
 
@@ -116,12 +106,10 @@ rt.type(8955, "/obj/item/clockwork/slab/cyborg/medical", "/obj/item/clockwork/sl
 	quickbound: null,
 });
 
-// /obj/item/clockwork/slab/cyborg/medical/proc/<init>  (code/game/gamemodes/clock_cult/clock_items/clockwork_slab.dm:57)
+// clockwork_slab.dm:57
 rt.def("/obj/item/clockwork/slab/cyborg/medical/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "quickbound", rt.list(T("/datum/clockwork_scripture/ranged_ability/linked_vanguard"), T("/datum/clockwork_scripture/ranged_ability/sentinels_compromise"), T("/datum/clockwork_scripture/create_object/vitality_matrix"), T("/datum/clockwork_scripture/channeled/mending_mantra"), T("/datum/clockwork_scripture/fellowship_armory")));
+	parent_proc();
+	this.quickbound = list(T("/datum/clockwork_scripture/ranged_ability/linked_vanguard"), T("/datum/clockwork_scripture/ranged_ability/sentinels_compromise"), T("/datum/clockwork_scripture/create_object/vitality_matrix"), T("/datum/clockwork_scripture/channeled/mending_mantra"), T("/datum/clockwork_scripture/fellowship_armory"));
 	return f.dot;
 });
 
@@ -129,12 +117,10 @@ rt.type(8956, "/obj/item/clockwork/slab/cyborg/security", "/obj/item/clockwork/s
 	quickbound: null,
 });
 
-// /obj/item/clockwork/slab/cyborg/security/proc/<init>  (code/game/gamemodes/clock_cult/clock_items/clockwork_slab.dm:61)
+// clockwork_slab.dm:61
 rt.def("/obj/item/clockwork/slab/cyborg/security/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "quickbound", rt.list(T("/datum/clockwork_scripture/channeled/belligerent"), T("/datum/clockwork_scripture/ranged_ability/judicial_marker"), T("/datum/clockwork_scripture/channeled/taunting_tirade"), T("/datum/clockwork_scripture/channeled/volt_blaster")));
+	parent_proc();
+	this.quickbound = list(T("/datum/clockwork_scripture/channeled/belligerent"), T("/datum/clockwork_scripture/ranged_ability/judicial_marker"), T("/datum/clockwork_scripture/channeled/taunting_tirade"), T("/datum/clockwork_scripture/channeled/volt_blaster"));
 	return f.dot;
 });
 
@@ -142,12 +128,10 @@ rt.type(8957, "/obj/item/clockwork/slab/cyborg/peacekeeper", "/obj/item/clockwor
 	quickbound: null,
 });
 
-// /obj/item/clockwork/slab/cyborg/peacekeeper/proc/<init>  (code/game/gamemodes/clock_cult/clock_items/clockwork_slab.dm:65)
+// clockwork_slab.dm:65
 rt.def("/obj/item/clockwork/slab/cyborg/peacekeeper/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "quickbound", rt.list(T("/datum/clockwork_scripture/channeled/belligerent"), T("/datum/clockwork_scripture/ranged_ability/judicial_marker"), T("/datum/clockwork_scripture/channeled/taunting_tirade"), T("/datum/clockwork_scripture/channeled/volt_blaster")));
+	parent_proc();
+	this.quickbound = list(T("/datum/clockwork_scripture/channeled/belligerent"), T("/datum/clockwork_scripture/ranged_ability/judicial_marker"), T("/datum/clockwork_scripture/channeled/taunting_tirade"), T("/datum/clockwork_scripture/channeled/volt_blaster"));
 	return f.dot;
 });
 
@@ -155,12 +139,10 @@ rt.type(8958, "/obj/item/clockwork/slab/cyborg/janitor", "/obj/item/clockwork/sl
 	quickbound: null,
 });
 
-// /obj/item/clockwork/slab/cyborg/janitor/proc/<init>  (code/game/gamemodes/clock_cult/clock_items/clockwork_slab.dm:69)
+// clockwork_slab.dm:69
 rt.def("/obj/item/clockwork/slab/cyborg/janitor/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "quickbound", rt.list(T("/datum/clockwork_scripture/create_object/replicant"), T("/datum/clockwork_scripture/create_object/sigil_of_transgression"), T("/datum/clockwork_scripture/create_object/ocular_warden"), T("/datum/clockwork_scripture/create_object/mania_motor"), T("/datum/clockwork_scripture/create_object/tinkerers_daemon")));
+	parent_proc();
+	this.quickbound = list(T("/datum/clockwork_scripture/create_object/replicant"), T("/datum/clockwork_scripture/create_object/sigil_of_transgression"), T("/datum/clockwork_scripture/create_object/ocular_warden"), T("/datum/clockwork_scripture/create_object/mania_motor"), T("/datum/clockwork_scripture/create_object/tinkerers_daemon"));
 	return f.dot;
 });
 
@@ -168,12 +150,10 @@ rt.type(8959, "/obj/item/clockwork/slab/cyborg/service", "/obj/item/clockwork/sl
 	quickbound: null,
 });
 
-// /obj/item/clockwork/slab/cyborg/service/proc/<init>  (code/game/gamemodes/clock_cult/clock_items/clockwork_slab.dm:73)
+// clockwork_slab.dm:73
 rt.def("/obj/item/clockwork/slab/cyborg/service/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "quickbound", rt.list(T("/datum/clockwork_scripture/create_object/replicant"), T("/datum/clockwork_scripture/create_object/tinkerers_cache"), T("/datum/clockwork_scripture/spatial_gateway"), T("/datum/clockwork_scripture/fellowship_armory"), T("/datum/clockwork_scripture/create_object/clockwork_obelisk")));
+	parent_proc();
+	this.quickbound = list(T("/datum/clockwork_scripture/create_object/replicant"), T("/datum/clockwork_scripture/create_object/tinkerers_cache"), T("/datum/clockwork_scripture/spatial_gateway"), T("/datum/clockwork_scripture/fellowship_armory"), T("/datum/clockwork_scripture/create_object/clockwork_obelisk"));
 	return f.dot;
 });
 
@@ -181,705 +161,598 @@ rt.type(8960, "/obj/item/clockwork/slab/cyborg/miner", "/obj/item/clockwork/slab
 	quickbound: null,
 });
 
-// /obj/item/clockwork/slab/cyborg/miner/proc/<init>  (code/game/gamemodes/clock_cult/clock_items/clockwork_slab.dm:77)
+// clockwork_slab.dm:77
 rt.def("/obj/item/clockwork/slab/cyborg/miner/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "quickbound", rt.list(T("/datum/clockwork_scripture/ranged_ability/linked_vanguard"), T("/datum/clockwork_scripture/spatial_gateway"), T("/datum/clockwork_scripture/channeled/volt_blaster")));
+	parent_proc();
+	this.quickbound = list(T("/datum/clockwork_scripture/ranged_ability/linked_vanguard"), T("/datum/clockwork_scripture/spatial_gateway"), T("/datum/clockwork_scripture/channeled/volt_blaster"));
 	return f.dot;
 });
 
-// /obj/item/clockwork/slab/cyborg/proc/access_display  (code/game/gamemodes/clock_cult/clock_items/clockwork_slab.dm:80)  may sleep
-rt.def("/obj/item/clockwork/slab/cyborg/proc/access_display", function* access_display(f: Frame) {
-	if (!truthy(rt.gl("ratvar_awakens"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='warning'>Use the action buttons to recite your limited set of scripture!</span>"]);
+// clockwork_slab.dm:80
+rt.def("/obj/item/clockwork/slab/cyborg/proc/access_display", function* access_display(f: Frame, user: Value) {
+	if (!GLOB.ratvar_awakens) {
+		to_chat(user, "<span class='warning'>Use the action buttons to recite your limited set of scripture!</span>");
 	} else {
-		yield* g.callSuper(f, [], rt.Args.Same);
+		yield* parent_proc();
 	}
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /obj/item/clockwork/slab/cyborg/proc/ratvar_act  (code/game/gamemodes/clock_cult/clock_items/clockwork_slab.dm:86)  may sleep
+// clockwork_slab.dm:86
 rt.def("/obj/item/clockwork/slab/cyborg/proc/ratvar_act", function* ratvar_act(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.gl("ratvar_awakens"))) return f.dot;
-	yield* g.callName(f, rt.gl("SStgui"), "close_uis", [live(f.src)]);
+	yield* parent_proc();
+	if (GLOB.ratvar_awakens) return f.dot;
+	yield* GLOB.SStgui.close_uis(this);
 	return f.dot;
 }, true);
 
-// /obj/item/clockwork/slab/proc/Initialize  (code/game/gamemodes/clock_cult/clock_items/clockwork_slab.dm:91)  may sleep
+// clockwork_slab.dm:91
 rt.def("/obj/item/clockwork/slab/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.call(f, P("/proc/update_slab_info"), null, [live(f.src)]);
-	if (!truthy(rt.fv(f, "isprocessing", live(f.src)))) {
-		rt.setFv(f, "isprocessing", live(f.src), 1);
-		rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), add);
+	f.dot = (yield* parent_proc());
+	yield* update_slab_info(this);
+	if (!this.isprocessing) {
+		this.isprocessing = 1;
+		GLOB.SSobj.processing += this;
 	}
-	rt.setSv(f, "production_time", add(rt.worldTime(f), 450));
+	this.production_time = rt.worldTime(f) + SLAB_PRODUCTION_TIME;
 	return f.dot;
 }, true);
 
-// /obj/item/clockwork/slab/proc/Destroy  (code/game/gamemodes/clock_cult/clock_items/clockwork_slab.dm:97)  may sleep
+// clockwork_slab.dm:97
 rt.def("/obj/item/clockwork/slab/proc/Destroy", function* Destroy(f: Frame) {
-	rt.setFv(f, "isprocessing", live(f.src), 0);
-	(rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), subtract));
-	if ((truthy(rt.sv(f, "slab_ability")) && truthy(rt.fv(f, "ranged_ability_user", rt.sv(f, "slab_ability"))))) {
-		yield* g.callName(f, rt.sv(f, "slab_ability"), "remove_ranged_ability", []);
+	this.isprocessing = 0;
+	GLOB.SSobj.processing -= this;
+	if (this.slab_ability && this.slab_ability.ranged_ability_user) {
+		yield* this.slab_ability.remove_ranged_ability();
 	}
-	rt.setSv(f, "slab_ability", null);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	this.slab_ability = null;
+	return (yield* parent_proc());
 }, true);
 
-// /obj/item/clockwork/slab/proc/dropped  (code/game/gamemodes/clock_cult/clock_items/clockwork_slab.dm:104)  may sleep
-rt.def("/obj/item/clockwork/slab/proc/dropped", function* dropped(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/item/clockwork/slab/proc/check_on_mob"), live(f.args[0])])), 1]);
+// clockwork_slab.dm:104
+rt.def("/obj/item/clockwork/slab/proc/dropped", function* dropped(f: Frame, user: Value) {
+	f.dot = (yield* parent_proc());
+	yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/item/clockwork/slab/proc/check_on_mob"), user)), 1);
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /obj/item/clockwork/slab/proc/check_on_mob  (code/game/gamemodes/clock_cult/clock_items/clockwork_slab.dm:108)  may sleep
+// clockwork_slab.dm:108
 rt.def("/obj/item/clockwork/slab/proc/check_on_mob", function* check_on_mob(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (!(((truthy(live(user)) && !truthy((rt.isIn(f, live(f.src), rt.fv(f, "held_items", live(user))) ? 1 : 0))) && truthy(rt.sv(f, "slab_ability"))) && truthy(rt.fv(f, "ranged_ability_user", rt.sv(f, "slab_ability"))))) return f.dot;
-	yield* g.callName(f, rt.sv(f, "slab_ability"), "remove_ranged_ability", []);
+	if (!(user && !rt.isIn(f, this, user.held_items) && this.slab_ability && this.slab_ability.ranged_ability_user)) return f.dot;
+	yield* this.slab_ability.remove_ranged_ability();
 	return f.dot;
 }, true, { argTypes: [{ type: 8, path: "/mob" }] });
 
-// /obj/item/clockwork/slab/proc/process  (code/game/gamemodes/clock_cult/clock_items/clockwork_slab.dm:113)  may sleep
+// clockwork_slab.dm:113
 rt.def("/obj/item/clockwork/slab/proc/process", function* process(f: Frame) {
-	let servants: Value = null, production_slowdown: Value = null, M: Value = null, L: Value = null, component_to_generate: Value = null, S: Value = null;
-	let $e: any;
-	f.vars = () => [servants, production_slowdown, M, L, component_to_generate, S, $e];
-	if (!truthy(rt.sv(f, "produces_components"))) {
-		rt.setFv(f, "isprocessing", live(f.src), 0);
-		(rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), subtract));
-		return live(f.dot);
+	let M: Value = null, L: Value = null, component_to_generate: Value = null, S: Value = null;
+	if (!this.produces_components) {
+		this.isprocessing = 0;
+		GLOB.SSobj.processing -= this;
+		return f.dot;
 	}
-	if (rt.gt(rt.sv(f, "production_time"), rt.worldTime(f))) {
-		return live(f.dot);
+	if (this.production_time > rt.worldTime(f)) {
+		return f.dot;
 	}
-	servants = 0;
-	production_slowdown = 0;
-	M = null;
-	rt.forList(f, 0, rt.gl("living_mob_list"), T("/mob/living"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if ((truthy((yield* g.call(f, P("/proc/is_servant_of_ratvar"), null, [live(M)]))) && (truthy((rt.istype(live(M), T("/mob/living/carbon/human")) ? 1 : 0)) || truthy((rt.istype(live(M), T("/mob/living/silicon")) ? 1 : 0))))) {
-			servants = rt.inc(live(servants), 1);
+	let servants: Value = 0;
+	let production_slowdown: Value = 0;
+	for (M of each(GLOB.living_mob_list, T("/mob/living"))) {
+		if (is_servant_of_ratvar(M) && (rt.istype(M, T("/mob/living/carbon/human")) || rt.istype(M, T("/mob/living/silicon")))) {
+			servants++;
 		}
 	}
-	rt.endFor(f, 0);
-	if (rt.gt(live(servants), 6)) {
-		(servants = rt.modify(live(servants), 6, subtract));
-		production_slowdown = (yield* g.call(f, P("/proc/min"), null, [multiply(150, live(servants)), 1350]));
+	if (servants > SCRIPT_SERVANT_REQ) {
+		servants -= SCRIPT_SERVANT_REQ;
+		production_slowdown = min(SLAB_SERVANT_SLOWDOWN * servants, SLAB_SLOWDOWN_MAXIMUM);
 	}
-	rt.setSv(f, "production_time", add(add(rt.worldTime(f), 450), live(production_slowdown)));
-	L = null;
-	if (!(truthy((rt.istype((L = (yield* g.call(f, P("/proc/get_atom_on_turf"), null, [live(f.src), T("/mob/living")]))), T("/mob/living")) ? 1 : 0)) && truthy((yield* g.call(f, P("/proc/can_recite_scripture"), null, [live(L)]))))) return f.dot;
-	if (!truthy((component_to_generate = rt.sv(f, "target_component_id")))) {
-		component_to_generate = (yield* g.call(f, P("/proc/get_weighted_component_id"), null, [live(f.src)]));
+	this.production_time = rt.worldTime(f) + SLAB_PRODUCTION_TIME + production_slowdown;
+	if (!(rt.istype((L = get_atom_on_turf(this, T("/mob/living"))), T("/mob/living")) && can_recite_scripture(L))) return f.dot;
+	if (!(component_to_generate = this.target_component_id)) {
+		component_to_generate = get_weighted_component_id(this);
 	}
-	rt.incAt(rt.sv(f, "stored_components"), live(component_to_generate), 1, true);
-	yield* g.call(f, P("/proc/update_slab_info"), null, [live(f.src)]);
-	S = null;
-	rt.forList(f, 0, (yield* g.callName(f, live(L), "GetAllContents", [])), T("/obj/item/clockwork/slab"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		S = $e;
-		if (isEqual(live(S), live(f.src))) {
+	rt.incAt(this.stored_components, component_to_generate, 1, true);
+	yield* update_slab_info(this);
+	for (S of each(L.GetAllContents(), T("/obj/item/clockwork/slab"))) {
+		if (S == this) {
 			continue;
 		}
-		rt.setFv(f, "production_time", live(S), add(rt.sv(f, "production_time"), 50));
+		S.production_time = this.production_time + 50;
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(L), fmt("<span class='warning'>Your slab cl＀s as it produces a </span><span class='＀'>component</span><span class='warning'>.</span>", [rt.op(f, "PickUnweighted", [4], ["ank", "ink", "unk", "ang"]), (yield* g.call(f, P("/proc/get_component_span"), null, [live(component_to_generate)]))])]);
+	to_chat(L, `<span class='warning'>Your slab cl${pick("ank", "ink", "unk", "ang")}s as it produces a </span><span class='${get_component_span(component_to_generate)}'>component</span><span class='warning'>.</span>`);
 	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/item/clockwork/slab/proc/examine  (code/game/gamemodes/clock_cult/clock_items/clockwork_slab.dm:142)
-rt.def("/obj/item/clockwork/slab/proc/examine", function examine(f: Frame) {
+// clockwork_slab.dm:142
+rt.def("/obj/item/clockwork/slab/proc/examine", function examine(f: Frame, user: Value) {
 	let i: Value = null, quickbind_slot: Value = null;
 	let $0: any, $1: any, $2: any, $3: any, $e: any;
-	f.vars = () => [i, quickbind_slot, $0, $1, $2, $3, $e];
-	rt.callSuper(f, [], rt.Args.Same);
-	if (!(truthy(rt.call(f, P("/proc/is_servant_of_ratvar"), null, [live(f.args[0])])) || truthy((rt.istype(live(f.args[0]), T("/mob/dead/observer")) ? 1 : 0)))) return f.dot;
-	if (truthy(rt.length(rt.sv(f, "quickbound")))) {
-		i = null;
-		rt.forRange(f, 0, 1, rt.len(f, rt.sv(f, "quickbound")), 1);
+	parent_proc();
+	if (!(is_servant_of_ratvar(user) || rt.istype(user, T("/mob/dead/observer")))) return f.dot;
+	if (rt.length(this.quickbound)) {
+		rt.forRange(f, 0, 1, rt.len(f, this.quickbound), 1);
 		while (($e = rt.next(f, 0)) !== undefined) {
 			i = $e;
-			if (!truthy(rt.index(rt.sv(f, "quickbound"), live(i)))) {
+			if (!rt.index(this.quickbound, i)) {
 				continue;
 			}
-			quickbind_slot = rt.index(rt.sv(f, "quickbound"), live(i));
-			rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<b>Quickbind</b> button: <span class='＀'>＀</span>.", [rt.call(f, P("/proc/get_component_span"), null, [rt.initial(f, live(quickbind_slot), "primary_component")]), rt.initial(f, live(quickbind_slot), "name")])]);
+			quickbind_slot = rt.index(this.quickbound, i);
+			to_chat(user, `<b>Quickbind</b> button: <span class='${get_component_span(rt.initial(f, quickbind_slot, "primary_component"))}'>${rt.initial(f, quickbind_slot, "name")}</span>.`);
 		}
 		rt.endFor(f, 0);
 	}
-	if (truthy(rt.gl("clockwork_caches"))) {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<b>Stored components (with global cache):</b>"]);
+	if (GLOB.clockwork_caches) {
+		to_chat(user, "<b>Stored components (with global cache):</b>");
 		i = null;
-		rt.forList(f, 0, rt.sv(f, "stored_components"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			i = $e;
-			$0 = live(f.args[0]);
-			$1 = rt.call(f, P("/proc/get_component_span"), null, [live(i)]);
-			$2 = rt.call(f, P("/proc/get_component_name"), null, [live(i)]);
-			if (!isEqual(live(i), "replicant_alloy")) {
+		for (i of each(this.stored_components)) {
+			$0 = user;
+			$1 = get_component_span(i);
+			$2 = get_component_name(i);
+			if (i != "replicant_alloy") {
 				$3 = "s";
 			} else {
 				$3 = "";
 			}
-			rt.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='＀_small'><i>＀＀:</i> <b>＀</b> (<b>＀</b>)</span>", [$1, $2, $3, rt.index(rt.sv(f, "stored_components"), live(i)), add(rt.index(rt.sv(f, "stored_components"), live(i)), rt.index(rt.gl("clockwork_component_cache"), live(i)))])]);
+			to_chat($0, `<span class='${$1}_small'><i>${$2}${$3}:</i> <b>${rt.index(this.stored_components, i)}</b> (<b>${rt.index(this.stored_components, i) + rt.index(GLOB.clockwork_component_cache, i)}</b>)</span>`);
 		}
-		rt.endFor(f, 0);
 	} else {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<b>Stored components:</b>"]);
+		to_chat(user, "<b>Stored components:</b>");
 		i = null;
-		rt.forList(f, 0, rt.sv(f, "stored_components"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			i = $e;
-			$0 = live(f.args[0]);
-			$1 = rt.call(f, P("/proc/get_component_span"), null, [live(i)]);
-			$2 = rt.call(f, P("/proc/get_component_name"), null, [live(i)]);
-			if (!isEqual(live(i), "replicant_alloy")) {
+		for (i of each(this.stored_components)) {
+			$0 = user;
+			$1 = get_component_span(i);
+			$2 = get_component_name(i);
+			if (i != "replicant_alloy") {
 				$3 = "s";
 			} else {
 				$3 = "";
 			}
-			rt.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='＀_small'><i>＀＀:</i> <b>＀</b></span>", [$1, $2, $3, rt.index(rt.sv(f, "stored_components"), live(i))])]);
+			to_chat($0, `<span class='${$1}_small'><i>${$2}${$3}:</i> <b>${rt.index(this.stored_components, i)}</b></span>`);
 		}
-		rt.endFor(f, 0);
 	}
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/item/clockwork/slab/proc/attack  (code/game/gamemodes/clock_cult/clock_items/clockwork_slab.dm:162)  may sleep
-rt.def("/obj/item/clockwork/slab/proc/attack", function* attack(f: Frame) {
+// clockwork_slab.dm:162
+rt.def("/obj/item/clockwork/slab/proc/attack", function* attack(f: Frame, target: Value, user: Value) {
 	let targetslab: Value = null, highest_component_amount: Value = null, S: Value = null, totalcomponents: Value = null, i: Value = null, i_2: Value = null;
-	let $e: any;
-	f.vars = () => [targetslab, highest_component_amount, S, totalcomponents, i, i_2, $e];
-	if ((truthy((yield* g.call(f, P("/proc/is_servant_of_ratvar"), null, [live(f.args[1])]))) && truthy((yield* g.call(f, P("/proc/is_servant_of_ratvar"), null, [live(f.args[0])]))))) {
-		targetslab = null;
+	if (is_servant_of_ratvar(user) && is_servant_of_ratvar(target)) {
 		highest_component_amount = 0;
-		S = null;
-		rt.forList(f, 0, (yield* g.callName(f, live(f.args[0]), "GetAllContents", [])), T("/obj/item/clockwork/slab"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			S = $e;
-			if (!truthy((rt.istype(live(S), T("/obj/item/clockwork/slab/internal")) ? 1 : 0))) {
+		for (S of each(target.GetAllContents(), T("/obj/item/clockwork/slab"))) {
+			if (!rt.istype(S, T("/obj/item/clockwork/slab/internal"))) {
 				totalcomponents = 0;
 				i = null;
-				rt.forList(f, 1, rt.fv(f, "stored_components", live(S)));
-				while (($e = rt.next(f, 1)) !== undefined) {
-					i = $e;
-					totalcomponents = rt.modify(live(totalcomponents), rt.index(rt.fv(f, "stored_components", live(S)), live(i)), add);
+				for (i of each(S.stored_components)) {
+					totalcomponents += rt.index(S.stored_components, i);
 				}
-				rt.endFor(f, 1);
-				if ((!truthy(live(targetslab)) || rt.gt(live(totalcomponents), live(highest_component_amount)))) {
-					highest_component_amount = live(totalcomponents);
-					targetslab = live(S);
+				if (!targetslab || totalcomponents > highest_component_amount) {
+					highest_component_amount = totalcomponents;
+					targetslab = S;
 				}
 			}
 		}
-		rt.endFor(f, 0);
-		if (truthy(live(targetslab))) {
-			if (isEqual(live(targetslab), live(f.src))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='heavy_brass'>\"You can't transfer components into your own slab, idiot.\"</span>"]);
+		if (targetslab) {
+			if (targetslab == this) {
+				to_chat(user, "<span class='heavy_brass'>\"You can't transfer components into your own slab, idiot.\"</span>");
 			} else {
-				i_2 = null;
-				rt.forList(f, 0, rt.sv(f, "stored_components"));
-				while (($e = rt.next(f, 0)) !== undefined) {
-					i_2 = $e;
-					rt.modAt(rt.fv(f, "stored_components", live(targetslab)), live(i_2), rt.index(rt.sv(f, "stored_components"), live(i_2)), add);
-					rt.setAt(rt.sv(f, "stored_components"), live(i_2), 0);
+				for (i_2 of each(this.stored_components)) {
+					rt.modAt(targetslab.stored_components, i_2, rt.index(this.stored_components, i_2), add);
+					rt.setAt(this.stored_components, i_2, 0);
 				}
-				rt.endFor(f, 0);
-				yield* g.call(f, P("/proc/update_slab_info"), null, [live(targetslab)]);
-				yield* g.call(f, P("/proc/update_slab_info"), null, [live(f.src)]);
-				yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='notice'>＀ empties ＀ into ＀'s ＀.</span>", [live(f.args[1]), live(f.src), live(f.args[0]), rt.fv(f, "name", live(targetslab))]), fmt("<span class='notice'>You transfer your slab's components into ＀'s ＀.</span>", [live(f.args[0]), rt.fv(f, "name", live(targetslab))])]);
+				yield* update_slab_info(targetslab);
+				yield* update_slab_info(this);
+				user.visible_message(`<span class='notice'>${user} empties ${this} into ${target}'s ${targetslab.name}.</span>`, `<span class='notice'>You transfer your slab's components into ${target}'s ${targetslab.name}.</span>`);
 			}
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>＀ has no slabs to transfer components to.</span>", [live(f.args[0])])]);
+			to_chat(user, `<span class='warning'>${target} has no slabs to transfer components to.</span>`);
 		}
 	} else {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["target", "user"] });
+}, true);
 
-// /obj/item/clockwork/slab/proc/attackby  (code/game/gamemodes/clock_cult/clock_items/clockwork_slab.dm:190)  may sleep
-rt.def("/obj/item/clockwork/slab/proc/attackby", function* attackby(f: Frame) {
-	let ratvarian: Value = null, C: Value = null, S: Value = null, needs_update: Value = null, i: Value = null;
+// clockwork_slab.dm:190
+rt.def("/obj/item/clockwork/slab/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
+	let C: Value = null, S: Value = null, needs_update: Value = null, i: Value = null;
 	let $0: any, $1: any, $2: any, $3: any, $4: any, $e: any;
-	f.vars = () => [ratvarian, C, S, needs_update, i, $0, $1, $2, $3, $4, $e];
-	ratvarian = (yield* g.call(f, P("/proc/is_servant_of_ratvar"), null, [live(f.args[1])]));
-	if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/clockwork/component")) ? 1 : 0)) && truthy(live(ratvarian)))) {
-		if (!truthy(rt.gv(f, "component_id", (C = live(f.args[0]))))) {
+	let ratvarian: Value = is_servant_of_ratvar(user);
+	if (rt.istype(I, T("/obj/item/clockwork/component")) && ratvarian) {
+		if (!(C = I).component_id) {
 			return 0;
 		}
-		$0 = live(f.args[1]);
-		$1 = fmt("<span class='notice'>＀ inserts ＀ into ＀.</span>", [live(f.args[1]), live(C), live(f.src)]);
-		$2 = live(C);
-		$3 = live(f.src);
-		if (truthy(rt.gl("clockwork_caches"))) {
+		$0 = user;
+		$1 = `<span class='notice'>${user} inserts ${C} into ${this}.</span>`;
+		$2 = C;
+		$3 = this;
+		if (GLOB.clockwork_caches) {
 			$4 = ", where it is added to the global cache";
 		} else {
 			$4 = "";
 		}
-		yield* g.callName(f, $0, "visible_message", [$1, fmt("<span class='notice'>You insert ＀ into ＀＀.</span>", [$2, $3, $4])]);
-		if (truthy(rt.gl("clockwork_caches"))) {
-			rt.incAt(rt.gl("clockwork_component_cache"), rt.fv(f, "component_id", live(C)), 1, true);
-			yield* g.call(f, P("/proc/update_slab_info"), null, []);
+		$0.visible_message($1, `<span class='notice'>You insert ${$2} into ${$3}${$4}.</span>`);
+		if (GLOB.clockwork_caches) {
+			rt.incAt(GLOB.clockwork_component_cache, C.component_id, 1, true);
+			yield* update_slab_info();
 		} else {
-			rt.incAt(rt.sv(f, "stored_components"), rt.fv(f, "component_id", live(C)), 1, true);
-			yield* g.call(f, P("/proc/update_slab_info"), null, [live(f.src)]);
+			rt.incAt(this.stored_components, C.component_id, 1, true);
+			yield* update_slab_info(this);
 		}
-		yield* g.callName(f, live(f.args[1]), "drop_item", []);
-		yield* g.call(f, P("/proc/qdel"), null, [live(C)]);
+		yield* user.drop_item();
+		yield* qdel(C);
 		return 1;
-	} else {
-		if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/clockwork/slab")) ? 1 : 0)) && truthy(live(ratvarian)))) {
-			S = live(f.args[0]);
-			needs_update = 0;
-			i = null;
-			rt.forList(f, 0, rt.sv(f, "stored_components"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				i = $e;
-				rt.modAt(rt.sv(f, "stored_components"), live(i), rt.index(rt.fv(f, "stored_components", live(S)), live(i)), add);
-				rt.setAt(rt.fv(f, "stored_components", live(S)), live(i), 0);
-				if (truthy(rt.index(rt.fv(f, "stored_components", live(S)), live(i)))) {
-					needs_update = 1;
-				}
+	} else if (rt.istype(I, T("/obj/item/clockwork/slab")) && ratvarian) {
+		S = I;
+		needs_update = 0;
+		for (i of each(this.stored_components)) {
+			rt.modAt(this.stored_components, i, rt.index(S.stored_components, i), add);
+			rt.setAt(S.stored_components, i, 0);
+			if (rt.index(S.stored_components, i)) {
+				needs_update = 1;
 			}
-			rt.endFor(f, 0);
-			if (truthy(live(needs_update))) {
-				yield* g.call(f, P("/proc/update_slab_info"), null, [live(f.src)]);
-				yield* g.call(f, P("/proc/update_slab_info"), null, [live(S)]);
-			}
-			yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='notice'>＀ empties ＀ into ＀.</span>", [live(f.args[1]), live(f.src), live(S)]), fmt("<span class='notice'>You transfer your slab's components into ＀.</span>", [live(S)])]);
-		} else {
-			return (yield* g.callSuper(f, [], rt.Args.Same));
 		}
+		if (needs_update) {
+			yield* update_slab_info(this);
+			yield* update_slab_info(S);
+		}
+		user.visible_message(`<span class='notice'>${user} empties ${this} into ${S}.</span>`, `<span class='notice'>You transfer your slab's components into ${S}.</span>`);
+	} else {
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["I", "user", "params"] });
+}, true);
 
-// /obj/item/clockwork/slab/proc/ui_action_click  (code/game/gamemodes/clock_cult/clock_items/clockwork_slab.dm:223)  may sleep
+// clockwork_slab.dm:223
 rt.def("/obj/item/clockwork/slab/proc/ui_action_click", function* ui_action_click(f: Frame, user: Value, action: Value) {
 	let Q: Value = null;
-	f.vars = () => [user, action, Q];
-	if (truthy((rt.istype(live(action), T("/datum/action/item_action/clock/hierophant")) ? 1 : 0))) {
-		yield* g.srcCall(f, "show_hierophant", live(user));
+	if (rt.istype(action, T("/datum/action/item_action/clock/hierophant"))) {
+		yield* this.show_hierophant(user);
 	} else {
-		if (!truthy((rt.istype(live(action), T("/datum/action/item_action/clock/quickbind")) ? 1 : 0))) return f.dot;
-		Q = live(action);
-		yield* g.srcCall(f, "recite_scripture", rt.index(rt.sv(f, "quickbound"), rt.fv(f, "scripture_index", live(Q))), live(user), 0);
+		if (!rt.istype(action, T("/datum/action/item_action/clock/quickbind"))) return f.dot;
+		Q = action;
+		yield* this.recite_scripture(rt.index(this.quickbound, Q.scripture_index), user, 0);
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/clockwork/slab/proc/show_hierophant  (code/game/gamemodes/clock_cult/clock_items/clockwork_slab.dm:230)  may sleep
+// clockwork_slab.dm:230
 rt.def("/obj/item/clockwork/slab/proc/show_hierophant", function* show_hierophant(f: Frame, user: Value) {
 	let message: Value = null;
-	f.vars = () => [user, message];
-	if (!truthy((yield* g.callName(f, live(user), "can_speak_vocal", [])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>You cannot speak into the slab!</span>"]);
+	if (!user.can_speak_vocal()) {
+		to_chat(user, "<span class='warning'>You cannot speak into the slab!</span>");
 		return 0;
 	}
-	if ((((!truthy((message = (yield* g.call(f, P("/proc/stripped_input"), null, [live(user), "Enter a message to send to your fellow servants.", "Hierophant"])))) || !truthy(live(user))) || !truthy((yield* g.callName(f, live(user), "canUseTopic", [live(f.src)])))) || !truthy((yield* g.callName(f, live(user), "can_speak_vocal", []))))) {
+	if (!(message = (yield* stripped_input(user, "Enter a message to send to your fellow servants.", "Hierophant"))) || !user || !user.canUseTopic(this) || !user.can_speak_vocal()) {
 		return 0;
 	}
-	yield* g.call(f, P("/proc/clockwork_say"), null, [live(user), (yield* g.call(f, P("/proc/text2ratvar"), null, [fmt("Servants, hear my words. ＀", [(yield* g.call(f, P("/proc/html_decode"), null, [live(message)]))])])), 1]);
-	yield* g.call(f, P("/proc/titled_hierophant_message"), null, [live(user), live(message)]);
+	yield* clockwork_say(user, text2ratvar(`Servants, hear my words. ${html_decode(message)}`), 1);
+	titled_hierophant_message(user, message);
 	return 1;
 }, true);
 
-// /obj/item/clockwork/slab/proc/attack_self  (code/game/gamemodes/clock_cult/clock_items/clockwork_slab.dm:242)  may sleep
+// clockwork_slab.dm:242
 rt.def("/obj/item/clockwork/slab/proc/attack_self", function* attack_self(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (truthy((yield* g.call(f, P("/proc/iscultist"), null, [live(user)])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='heavy_brass'>\"You reek of blood. You've got a lot of nerve to even look at that slab.\"</span>"]);
-		yield* g.callName(f, live(user), "visible_message", [fmt("<span class='warning'>A sizzling sound comes from ＀'s hands!</span>", [live(user)]), fmt("<span class='userdanger'>＀ suddenly grows extremely hot in your hands!</span>", [live(f.src)])]);
-		yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(user), 0), rt.rsc("sound/weapons/sear.ogg"), 50, 1]);
-		yield* g.callName(f, live(user), "drop_item", []);
-		yield* g.callName(f, live(user), "emote", ["scream"]);
-		yield* g.callName(f, live(user), "apply_damage", [5, "fire", "l_arm"]);
-		yield* g.callName(f, live(user), "apply_damage", [5, "fire", "r_arm"]);
+	if (iscultist(user)) {
+		to_chat(user, "<span class='heavy_brass'>\"You reek of blood. You've got a lot of nerve to even look at that slab.\"</span>");
+		user.visible_message(`<span class='warning'>A sizzling sound comes from ${user}'s hands!</span>`, `<span class='userdanger'>${this} suddenly grows extremely hot in your hands!</span>`);
+		playsound(rt.getStep(f, user, 0), rt.rsc("sound/weapons/sear.ogg"), 50, 1);
+		yield* user.drop_item();
+		yield* user.emote("scream");
+		yield* user.apply_damage(5, "fire", "l_arm");
+		yield* user.apply_damage(5, "fire", "r_arm");
 		return 0;
 	}
-	if (!truthy((yield* g.call(f, P("/proc/is_servant_of_ratvar"), null, [live(user)])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>The information on ＀'s display shifts rapidly. After a moment, your head begins to pound, and you tear your eyes away.</span>", [live(f.src)])]);
-		rt.modField(f, live(user), "confused", 5, add);
-		rt.modField(f, live(user), "dizziness", 5, add);
+	if (!is_servant_of_ratvar(user)) {
+		to_chat(user, `<span class='warning'>The information on ${this}'s display shifts rapidly. After a moment, your head begins to pound, and you tear your eyes away.</span>`);
+		user.confused += 5;
+		user.dizziness += 5;
 		return 0;
 	}
-	if (truthy(rt.sv(f, "busy"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ refuses to work, displaying the message: \"＀!\"</span>", [live(f.src), rt.sv(f, "busy")])]);
+	if (this.busy) {
+		to_chat(user, `<span class='warning'>${this} refuses to work, displaying the message: "${this.busy}!"</span>`);
 		return 0;
 	}
-	if (!truthy((yield* g.call(f, P("/proc/can_recite_scripture"), null, [live(user)])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='nezbere'>＀ hums fitfully in your hands, but doesn't seem to do anything...</span>", [live(f.src)])]);
+	if (!can_recite_scripture(user)) {
+		to_chat(user, `<span class='nezbere'>${this} hums fitfully in your hands, but doesn't seem to do anything...</span>`);
 		return 0;
 	}
-	yield* g.srcCall(f, "access_display", live(user));
+	yield* this.access_display(user);
 	return f.dot;
 }, true);
 
-// /obj/item/clockwork/slab/proc/access_display  (code/game/gamemodes/clock_cult/clock_items/clockwork_slab.dm:265)  may sleep
+// clockwork_slab.dm:265
 rt.def("/obj/item/clockwork/slab/proc/access_display", function* access_display(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (!truthy((yield* g.call(f, P("/proc/is_servant_of_ratvar"), null, [live(user)])))) {
+	if (!is_servant_of_ratvar(user)) {
 		return 0;
 	}
-	yield* g.srcCall(f, "ui_interact", live(user));
+	yield* this.ui_interact(user);
 	return 1;
 }, true);
 
-// /obj/item/clockwork/slab/proc/ui_interact  (code/game/gamemodes/clock_cult/clock_items/clockwork_slab.dm:271)  may sleep
+// clockwork_slab.dm:271
 rt.def("/obj/item/clockwork/slab/proc/ui_interact", function* ui_interact(f: Frame, user: Value, ui_key: Value, ui: Value, force_open: Value, master_ui: Value, state: Value) {
-	f.vars = () => [user, ui_key, ui, force_open, master_ui, state];
-	if (live(ui_key) === null) {
-		ui_key = "main";
-	}
-	if (live(ui) === null) {
-		ui = null;
-	}
-	if (live(force_open) === null) {
-		force_open = 0;
-	}
-	if (live(master_ui) === null) {
-		master_ui = null;
-	}
-	if (live(state) === null) {
-		state = rt.gl("inventory_state");
-	}
-	if (truthy((ui = (yield* g.callName(f, rt.gl("SStgui"), "try_update_ui", [live(user), live(f.src), live(ui_key), live(ui), live(force_open)]))))) return f.dot;
-	yield* g.callName(f, (ui = (yield* g.new_(f, T("/datum/tgui"), [live(user), live(f.src), live(ui_key), "clockwork_slab", rt.sv(f, "name"), 800, 420, live(master_ui), live(state)]))), "set_autoupdate", [0]);
-	yield* g.callName(f, live(ui), "set_style", ["clockwork"]);
-	yield* g.callName(f, live(ui), "open", []);
+	ui_key ??= "main";
+	force_open ??= 0;
+	state ??= GLOB.inventory_state;
+	if (ui = (yield* GLOB.SStgui.try_update_ui(user, this, ui_key, ui, force_open))) return f.dot;
+	(ui = (yield* new_(T("/datum/tgui"), user, this, ui_key, "clockwork_slab", this.name, 800, 420, master_ui, state))).set_autoupdate(0);
+	ui.set_style("clockwork");
+	yield* ui.open();
 	return f.dot;
 }, true);
 
-// /obj/item/clockwork/slab/proc/recite_scripture  (code/game/gamemodes/clock_cult/clock_items/clockwork_slab.dm:279)  may sleep
+// clockwork_slab.dm:279
 rt.def("/obj/item/clockwork/slab/proc/recite_scripture", function* recite_scripture(f: Frame, scripture: Value, user: Value) {
 	let initial_tier: Value = null, scripture_to_recite: Value = null;
-	f.vars = () => [scripture, user, initial_tier, scripture_to_recite];
-	if ((((!truthy(live(scripture)) || !truthy(live(user))) || !truthy((yield* g.callName(f, live(user), "canUseTopic", [live(f.src)])))) || !truthy((yield* g.call(f, P("/proc/can_recite_scripture"), null, [live(user)]))))) {
+	if (!scripture || !user || !user.canUseTopic(this) || !can_recite_scripture(user)) {
 		return 0;
 	}
-	if (!isEqual((yield* g.callName(f, live(user), "get_active_held_item", [])), live(f.src))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>You need to hold the slab in your active hand to recite scripture!</span>"]);
+	if (user.get_active_held_item() != this) {
+		to_chat(user, "<span class='warning'>You need to hold the slab in your active hand to recite scripture!</span>");
 		return 0;
 	}
-	if (!isEqual((initial_tier = rt.initial(f, live(scripture), "tier")), "Peripheral")) {
-		if (((!truthy(rt.gl("ratvar_awakens")) && !truthy(rt.sv(f, "no_cost"))) && !truthy(rt.index(rt.fv(f, "scripture_states", rt.gl("SSticker")), live(initial_tier))))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>That scripture is not unlocked, and cannot be recited!</span>"]);
+	if ((initial_tier = rt.initial(f, scripture, "tier")) != "Peripheral") {
+		if (!GLOB.ratvar_awakens && !this.no_cost && !rt.index(GLOB.SSticker.scripture_states, initial_tier)) {
+			to_chat(user, "<span class='warning'>That scripture is not unlocked, and cannot be recited!</span>");
 			return 0;
 		}
 	}
-	rt.setFv(f, "slab", (scripture_to_recite = (yield* g.new_(f, live(scripture), []))), live(f.src));
-	rt.setFv(f, "invoker", live(scripture_to_recite), live(user));
-	yield* g.callName(f, live(scripture_to_recite), "run_scripture", []);
+	(scripture_to_recite = (yield* new_(scripture))).slab = this;
+	scripture_to_recite.invoker = user;
+	yield* scripture_to_recite.run_scripture();
 	return 1;
 }, true, { argTypes: [{ path: "/datum/clockwork_scripture" }, { type: 8, path: "/mob/living" }] });
 
-// /obj/item/clockwork/slab/proc/recollection  (code/game/gamemodes/clock_cult/clock_items/clockwork_slab.dm:297)
+// clockwork_slab.dm:297
 rt.def("/obj/item/clockwork/slab/proc/recollection", function recollection(f: Frame) {
-	let textlist: Value = null, i: Value = null, servants: Value = null, production_time: Value = null, M: Value = null, production_text_addon: Value = null, production_text: Value = null, i_5: Value = null, quickbind_slot: Value = null;
+	let i: Value = null, servants: Value = null, production_time: Value = null, M: Value = null, production_text_addon: Value = null, production_text: Value = null, i_5: Value = null, quickbind_slot: Value = null;
 	let $e: any;
-	f.vars = () => [textlist, i, servants, production_time, M, production_text_addon, production_text, i_5, quickbind_slot, $e];
-	textlist = rt.list("If you're seeing this, file a bug report.");
-	if (truthy(rt.gl("ratvar_awakens"))) {
-		textlist = rt.list("<font color=#BE8700 size=3><b>");
-		i = null;
+	let textlist: Value = list("If you're seeing this, file a bug report.");
+	if (GLOB.ratvar_awakens) {
+		textlist = list("<font color=#BE8700 size=3><b>");
 		rt.forRange(f, 0, 1, 100, 1);
 		while (($e = rt.next(f, 0)) !== undefined) {
 			i = $e;
-			textlist = rt.modify(live(textlist), "HONOR RATVAR ", add);
+			textlist += "HONOR RATVAR ";
 		}
 		rt.endFor(f, 0);
-		textlist = rt.modify(live(textlist), "</b></font>", add);
+		textlist += "</b></font>";
 	} else {
 		servants = 0;
-		production_time = 450;
-		M = null;
-		rt.forList(f, 0, rt.gl("living_mob_list"), T("/mob/living"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			M = $e;
-			if ((truthy(rt.call(f, P("/proc/is_servant_of_ratvar"), null, [live(M)])) && (truthy((rt.istype(live(M), T("/mob/living/carbon/human")) ? 1 : 0)) || truthy((rt.istype(live(M), T("/mob/living/silicon")) ? 1 : 0))))) {
-				servants = rt.inc(live(servants), 1);
+		production_time = SLAB_PRODUCTION_TIME;
+		for (M of each(GLOB.living_mob_list, T("/mob/living"))) {
+			if (is_servant_of_ratvar(M) && (rt.istype(M, T("/mob/living/carbon/human")) || rt.istype(M, T("/mob/living/silicon")))) {
+				servants++;
 			}
 		}
-		rt.endFor(f, 0);
-		if (rt.gt(live(servants), 6)) {
-			(servants = rt.modify(live(servants), 6, subtract));
-			production_time = rt.modify(live(production_time), rt.call(f, P("/proc/min"), null, [multiply(150, live(servants)), 1350]), add);
+		if (servants > SCRIPT_SERVANT_REQ) {
+			servants -= SCRIPT_SERVANT_REQ;
+			production_time += min(SLAB_SERVANT_SLOWDOWN * servants, SLAB_SLOWDOWN_MAXIMUM);
 		}
 		production_text_addon = "";
-		if (!isEqual(live(production_time), 1800)) {
-			production_text_addon = fmt(", which increases for each human or silicon servant above <b>＀</b>", [6]);
+		if (production_time != 1800) {
+			production_text_addon = `, which increases for each human or silicon servant above <b>${SCRIPT_SERVANT_REQ}</b>`;
 		}
-		production_time = divide(live(production_time), 600);
-		production_text = null;
-		if (truthy(rt.call(f, P("/proc/round"), null, [live(production_time)]))) {
-			production_text = rt.list(fmt("<b>＀ minute５", [rt.call(f, P("/proc/round"), null, [live(production_time)])]));
+		production_time = production_time / 600;
+		if (round(production_time)) {
+			production_text = list(fmt("<b>＀ minute５", [round(production_time)]));
 		}
-		if (!isEqual(live(production_time), rt.call(f, P("/proc/round"), null, [live(production_time)]))) {
-			(production_time = rt.modify(live(production_time), rt.call(f, P("/proc/round"), null, [live(production_time)]), subtract));
-			(production_time = rt.modify(live(production_time), 60, multiply));
-			if (!truthy(rt.length(live(production_text)))) {
-				production_text = rt.list(fmt("<b>＀ second５", [rt.call(f, P("/proc/round"), null, [live(production_time), 1])]));
+		if (production_time != round(production_time)) {
+			production_time -= round(production_time);
+			production_time *= 60;
+			if (!rt.length(production_text)) {
+				production_text = list(fmt("<b>＀ second５", [round(production_time, 1)]));
 			} else {
-				production_text = rt.modify(live(production_text), fmt(" and ＀ second５", [rt.call(f, P("/proc/round"), null, [live(production_time), 1])]), add);
+				production_text += fmt(" and ＀ second５", [round(production_time, 1)]);
 			}
 		}
-		production_text = rt.modify(live(production_text), "</b>", add);
-		textlist = rt.list(fmt("<font color=#BE8700 size=3><b><center>Chetr nyy hagehguf-naq-ubabe Ratvar.</center></b></font><br>First and foremost, you serve Ratvar, the Clockwork Justicar, in any ways he sees fit. This is with no regard to your personal well-being, and you would do well to think of the larger scale of things than your life. Ratvar wishes retribution upon those that trapped him in Reebe - the Nar-Sian cultists - and you are to help him obtain it.<br><br>Ratvar, being trapped in Reebe, the Celestial Derelict, cannot directly affect the mortal plane. However, links, such as this Clockwork Slab, can be created to draw <b><font color=#BE8700>Components</font></b>, fragments of the Justicar, from Reebe, and those Components can be used to draw power and material from Reebe through arcane chants known as <b><font color=#BE8700>Scripture</font></b>.<br><br>One component of a random type is made in this slab every ＀.<br><font color=#BE8700>Components</font> are stored either within slabs, where they can only be accessed by that slab, or in the Global Cache accessed by Tinkerer's Caches, which all slabs can draw from to recite scripture.<br>There are five types of component, and in general, <font color=#6E001A>Belligerent Eyes</font> are aggressive and judgemental, <font color=#1E8CE1>Vanguard Cogwheels</font> are defensive and repairing, <font color=#AF0AAF>Geis Capacitors</font> are for conversion and control, <font color=#5A6068>Replicant Alloy</font> is for construction and fuel, and <font color=#DAAA18>Hierophant Ansibles</font> are for transmission and power, though in combination their effects become more nuanced.<br><br>There are also four tiers of <font color=#BE8700>Scripture</font>; <font color=#BE8700>＀</font>, <font color=#BE8700>＀</font>, <font color=#BE8700>＀</font>, and <font color=#BE8700>＀</font>.<br>Each tier has additional requirements, including Servants, Tinkerer's Caches, and <b>Construction Value</b>(<b>CV</b>). Construction Value is gained by creating structures or converting the station, and everything too large to hold will grant some amount of it.<br><br>This would be a massive amount of information to try and keep track of, but all Servants have the <b><font color=#BE8700>Global Records</font></b> alert, which appears in the top right.<br>Mousing over that alert will display Servants, Caches, CV, and other information, such as the tiers of scripture that are unlocked.<br><br>On that note, <font color=#BE8700>Scripture</font> is recited through <b><font color=#BE8700>Recital</font></b>, the first and most important function of the slab, which also allows <b>Quickbinding</b> scripture.<br>All scripture requires some amount of <font color=#BE8700>Components</font> to recite, and only the weakest scripture does not consume any components when recited.<br>However, weak is relative when it comes to scripture; even the 'weakest' could be enough to dominate a station in the hands of cunning Servants, and higher tiers of scripture are even stronger in the right hands.<br><br>Some effects of scripture include granting the invoker a temporary complete immunity to stuns, summoning a turret that can attack anything that sets eyes on it, or even binding a powerful guardian to the invoker.<br>However, the most important scripture is <font color=#AF0AAF>Geis</font>, which allows you to convert heathens with relative ease.<br><br>The second function of the clockwork slab is <b><font color=#BE8700>Recollection</font></b>, which will display this guide.<br><br>The remaining functions are several buttons in the top left while holding the slab.<br>From left to right, they are:<br><b><font color=#DAAA18>Hierophant Network</font></b>, which allows communication to other Servants.<br>", [(production_text = rt.callName(f, (production_text = rt.modify(live(production_text), live(production_text_addon), add)), "Join", [])), "Driver", "Script", "Application", "Judgement"]));
-		if (truthy(rt.length(rt.sv(f, "quickbound")))) {
-			i_5 = null;
-			rt.forRange(f, 0, 1, rt.sv(f, "maximum_quickbound"), 1);
+		production_text += "</b>";
+		textlist = list(`<font color=#BE8700 size=3><b><center>Chetr nyy hagehguf-naq-ubabe Ratvar.</center></b></font><br>First and foremost, you serve Ratvar, the Clockwork Justicar, in any ways he sees fit. This is with no regard to your personal well-being, and you would do well to think of the larger scale of things than your life. Ratvar wishes retribution upon those that trapped him in Reebe - the Nar-Sian cultists - and you are to help him obtain it.<br><br>Ratvar, being trapped in Reebe, the Celestial Derelict, cannot directly affect the mortal plane. However, links, such as this Clockwork Slab, can be created to draw <b><font color=#BE8700>Components</font></b>, fragments of the Justicar, from Reebe, and those Components can be used to draw power and material from Reebe through arcane chants known as <b><font color=#BE8700>Scripture</font></b>.<br><br>One component of a random type is made in this slab every ${(production_text = (production_text += production_text_addon).Join())}.<br><font color=#BE8700>Components</font> are stored either within slabs, where they can only be accessed by that slab, or in the Global Cache accessed by Tinkerer's Caches, which all slabs can draw from to recite scripture.<br>There are five types of component, and in general, <font color=#6E001A>Belligerent Eyes</font> are aggressive and judgemental, <font color=#1E8CE1>Vanguard Cogwheels</font> are defensive and repairing, <font color=#AF0AAF>Geis Capacitors</font> are for conversion and control, <font color=#5A6068>Replicant Alloy</font> is for construction and fuel, and <font color=#DAAA18>Hierophant Ansibles</font> are for transmission and power, though in combination their effects become more nuanced.<br><br>There are also four tiers of <font color=#BE8700>Scripture</font>; <font color=#BE8700>${"Driver"}</font>, <font color=#BE8700>${"Script"}</font>, <font color=#BE8700>${"Application"}</font>, and <font color=#BE8700>${"Judgement"}</font>.<br>Each tier has additional requirements, including Servants, Tinkerer's Caches, and <b>Construction Value</b>(<b>CV</b>). Construction Value is gained by creating structures or converting the station, and everything too large to hold will grant some amount of it.<br><br>This would be a massive amount of information to try and keep track of, but all Servants have the <b><font color=#BE8700>Global Records</font></b> alert, which appears in the top right.<br>Mousing over that alert will display Servants, Caches, CV, and other information, such as the tiers of scripture that are unlocked.<br><br>On that note, <font color=#BE8700>Scripture</font> is recited through <b><font color=#BE8700>Recital</font></b>, the first and most important function of the slab, which also allows <b>Quickbinding</b> scripture.<br>All scripture requires some amount of <font color=#BE8700>Components</font> to recite, and only the weakest scripture does not consume any components when recited.<br>However, weak is relative when it comes to scripture; even the 'weakest' could be enough to dominate a station in the hands of cunning Servants, and higher tiers of scripture are even stronger in the right hands.<br><br>Some effects of scripture include granting the invoker a temporary complete immunity to stuns, summoning a turret that can attack anything that sets eyes on it, or even binding a powerful guardian to the invoker.<br>However, the most important scripture is <font color=#AF0AAF>Geis</font>, which allows you to convert heathens with relative ease.<br><br>The second function of the clockwork slab is <b><font color=#BE8700>Recollection</font></b>, which will display this guide.<br><br>The remaining functions are several buttons in the top left while holding the slab.<br>From left to right, they are:<br><b><font color=#DAAA18>Hierophant Network</font></b>, which allows communication to other Servants.<br>`);
+		if (rt.length(this.quickbound)) {
+			rt.forRange(f, 0, 1, this.maximum_quickbound, 1);
 			while (($e = rt.next(f, 0)) !== undefined) {
 				i_5 = $e;
-				if ((rt.lt(rt.length(rt.sv(f, "quickbound")), live(i_5)) || !truthy(rt.index(rt.sv(f, "quickbound"), live(i_5))))) {
-					textlist = rt.modify(live(textlist), "A <b>Quickbind</b> slot, currently set to <b><font color=#BE8700>Nothing</font></b>.<br>", add);
+				if (rt.length(this.quickbound) < i_5 || !rt.index(this.quickbound, i_5)) {
+					textlist += "A <b>Quickbind</b> slot, currently set to <b><font color=#BE8700>Nothing</font></b>.<br>";
 				} else {
-					textlist = rt.modify(live(textlist), fmt("A <b>Quickbind</b> slot, currently set to <b><font color=＀>＀</font></b>.<br>", [rt.call(f, P("/proc/get_component_color_bright"), null, [rt.initial(f, (quickbind_slot = rt.index(rt.sv(f, "quickbound"), live(i_5))), "primary_component")]), rt.initial(f, live(quickbind_slot), "name")]), add);
+					textlist += `A <b>Quickbind</b> slot, currently set to <b><font color=${get_component_color_bright(rt.initial(f, (quickbind_slot = rt.index(this.quickbound, i_5)), "primary_component"))}>${rt.initial(f, quickbind_slot, "name")}</font></b>.<br>`;
 				}
 			}
 			rt.endFor(f, 0);
 		}
-		textlist = rt.modify(live(textlist), "<br>Examine the slab or swap to Recital to check the number of components it has available.<br><br><font color=#BE8700 size=3><b><center>Purge all untruths and honor Ratvar.</center></b></font>", add);
+		textlist += "<br>Examine the slab or swap to Recital to check the number of components it has available.<br><br><font color=#BE8700 size=3><b><center>Purge all untruths and honor Ratvar.</center></b></font>";
 	}
-	return rt.callName(f, live(textlist), "Join", []);
+	return textlist.Join();
 });
 
-// /obj/item/clockwork/slab/proc/ui_data  (code/game/gamemodes/clock_cult/clock_items/clockwork_slab.dm:382)  may sleep
+// clockwork_slab.dm:382
 rt.def("/obj/item/clockwork/slab/proc/ui_data", function* ui_data(f: Frame, user: Value) {
-	let data: Value = null, temp_data: Value = null, i: Value = null, s: Value = null, S: Value = null, scripture_color: Value = null, temp_info: Value = null, found: Value = null, costs_components: Value = null, i_8: Value = null, really_temp_data: Value = null, i_9: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [user, data, temp_data, i, s, S, scripture_color, temp_info, found, costs_components, i_8, really_temp_data, i_9, $0, $e];
-	rt.setAt((data = rt.list()), "components", (yield* g.callName(f, rt.sv(f, "stored_components"), "Copy", [])));
-	temp_data = rt.list("<font color=#B18B25>");
-	i = null;
-	rt.forList(f, 0, rt.at(live(data), "components"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		i = $e;
-		temp_data = rt.modify(live(temp_data), fmt("<font color=＀>＀ <b>＀</b></font>", [(yield* g.call(f, P("/proc/get_component_color_bright"), null, [live(i)])), (yield* g.call(f, P("/proc/get_component_acronym"), null, [live(i)])), rt.index(rt.at(live(data), "components"), live(i))]), add);
-		if (!isEqual(live(i), "hierophant_ansible")) {
-			temp_data = rt.modify(live(temp_data), " ", add);
+	let data: Value = null, i: Value = null, s: Value = null, S: Value = null, scripture_color: Value = null, temp_info: Value = null, found: Value = null, costs_components: Value = null, i_8: Value = null, really_temp_data: Value = null, i_9: Value = null;
+	let $e: any;
+	rt.setAt((data = list()), "components", (yield* this.stored_components.Copy()));
+	let temp_data: Value = list("<font color=#B18B25>");
+	for (i of each(rt.at(data, "components"))) {
+		temp_data += `<font color=${get_component_color_bright(i)}>${get_component_acronym(i)} <b>${rt.index(rt.at(data, "components"), i)}</b></font>`;
+		if (i != "hierophant_ansible") {
+			temp_data += " ";
 		} else {
-			temp_data = rt.modify(live(temp_data), " (", add);
+			temp_data += " (";
 		}
 	}
-	rt.endFor(f, 0);
-	if (truthy(rt.gl("clockwork_caches"))) {
+	if (GLOB.clockwork_caches) {
 		i = null;
-		rt.forList(f, 0, rt.gl("clockwork_component_cache"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			i = $e;
-			temp_data = rt.modify(live(temp_data), fmt("<font color=＀>＀ <b>＀</b></font>", [(yield* g.call(f, P("/proc/get_component_color_bright"), null, [live(i)])), (yield* g.call(f, P("/proc/get_component_acronym"), null, [live(i)])), add(rt.index(rt.at(live(data), "components"), live(i)), rt.index(rt.gl("clockwork_component_cache"), live(i)))]), add);
-			if (!isEqual(live(i), "hierophant_ansible")) {
-				temp_data = rt.modify(live(temp_data), " ", add);
+		for (i of each(GLOB.clockwork_component_cache)) {
+			temp_data += `<font color=${get_component_color_bright(i)}>${get_component_acronym(i)} <b>${rt.index(rt.at(data, "components"), i) + rt.index(GLOB.clockwork_component_cache, i)}</b></font>`;
+			if (i != "hierophant_ansible") {
+				temp_data += " ";
 			}
 		}
-		rt.endFor(f, 0);
 	} else {
-		temp_data = rt.modify(live(temp_data), "<b>NONE</b>", add);
+		temp_data += "<b>NONE</b>";
 	}
-	temp_data = (yield* g.callName(f, (temp_data = rt.modify(live(temp_data), ")</font>", add)), "Join", []));
-	rt.setAt(live(data), "components", live(temp_data));
-	$0 = rt.sv(f, "selected_scripture");
-	if ($0 === "Driver") {
-		rt.setAt(live(data), "tier_info", "<font color=#B18B25><b>These scriptures are permenantly unlocked.</b></font>");
-	} else if ($0 === "Script") {
-		if (truthy(rt.index(rt.fv(f, "scripture_states", rt.gl("SSticker")), "Script"))) {
-			rt.setAt(live(data), "tier_info", "<font color=#B18B25><b>These scriptures are permenantly unlocked.</b></font>");
+	temp_data = (temp_data += ")</font>").Join();
+	rt.setAt(data, "components", temp_data);
+	if (this.selected_scripture === "Driver") {
+		rt.setAt(data, "tier_info", "<font color=#B18B25><b>These scriptures are permenantly unlocked.</b></font>");
+	} else if (this.selected_scripture === "Script") {
+		if (rt.index(GLOB.SSticker.scripture_states, "Script")) {
+			rt.setAt(data, "tier_info", "<font color=#B18B25><b>These scriptures are permenantly unlocked.</b></font>");
 		} else {
-			rt.setAt(live(data), "tier_info", fmt("<font color=#B18B25><i>These scriptures require at least <b>＀</b> Servants and <b>＀</b> Tinkerer's Cache.</i></font>", [6, 1]));
+			rt.setAt(data, "tier_info", `<font color=#B18B25><i>These scriptures require at least <b>${SCRIPT_SERVANT_REQ}</b> Servants and <b>${SCRIPT_CACHE_REQ}</b> Tinkerer's Cache.</i></font>`);
 		}
-	} else if ($0 === "Application") {
-		if (truthy(rt.index(rt.fv(f, "scripture_states", rt.gl("SSticker")), "Application"))) {
-			rt.setAt(live(data), "tier_info", "<font color=#B18B25><b>These scriptures are permenantly unlocked.</b></font>");
+	} else if (this.selected_scripture === "Application") {
+		if (rt.index(GLOB.SSticker.scripture_states, "Application")) {
+			rt.setAt(data, "tier_info", "<font color=#B18B25><b>These scriptures are permenantly unlocked.</b></font>");
 		} else {
-			rt.setAt(live(data), "tier_info", fmt("<font color=#B18B25><i>These scriptures require at least <b>＀</b> Servants, <b>＀</b> Tinkerer's Caches, and <b>＀CV</b>.</i></font>", [9, 3, 100]));
+			rt.setAt(data, "tier_info", `<font color=#B18B25><i>These scriptures require at least <b>${APPLICATION_SERVANT_REQ}</b> Servants, <b>${APPLICATION_CACHE_REQ}</b> Tinkerer's Caches, and <b>${APPLICATION_CV_REQ}CV</b>.</i></font>`);
 		}
-	} else if ($0 === "Judgement") {
-		if (truthy(rt.index(rt.fv(f, "scripture_states", rt.gl("SSticker")), "Judgement"))) {
-			rt.setAt(live(data), "tier_info", "<font color=#B18B25><b>This scripture is permenantly unlocked.</b></font>");
+	} else if (this.selected_scripture === "Judgement") {
+		if (rt.index(GLOB.SSticker.scripture_states, "Judgement")) {
+			rt.setAt(data, "tier_info", "<font color=#B18B25><b>This scripture is permenantly unlocked.</b></font>");
 		} else {
-			rt.setAt(live(data), "tier_info", fmt("<font color=#B18B25><i>This scripture requires at least <b>＀</b> Servants, <b>＀</b> Tinkerer's Caches, and <b>＀CV</b>.<br>In addition, there may not be any active non-Servant AIs.</i></font>", [12, 5, 300]));
+			rt.setAt(data, "tier_info", `<font color=#B18B25><i>This scripture requires at least <b>${JUDGEMENT_SERVANT_REQ}</b> Servants, <b>${JUDGEMENT_CACHE_REQ}</b> Tinkerer's Caches, and <b>${JUDGEMENT_CV_REQ}CV</b>.<br>In addition, there may not be any active non-Servant AIs.</i></font>`);
 		}
 	}
-	rt.setAt(live(data), "selected", rt.sv(f, "selected_scripture"));
-	rt.setAt(live(data), "target_comp", "<font color=#B18B25>NONE</font>");
-	if (truthy(rt.sv(f, "target_component_id"))) {
-		rt.setAt(live(data), "target_comp", fmt("<font color=＀>＀</font>", [(yield* g.call(f, P("/proc/get_component_color_bright"), null, [rt.sv(f, "target_component_id")])), (yield* g.call(f, P("/proc/get_component_acronym"), null, [rt.sv(f, "target_component_id")]))]));
+	rt.setAt(data, "selected", this.selected_scripture);
+	rt.setAt(data, "target_comp", "<font color=#B18B25>NONE</font>");
+	if (this.target_component_id) {
+		rt.setAt(data, "target_comp", `<font color=${get_component_color_bright(this.target_component_id)}>${get_component_acronym(this.target_component_id)}</font>`);
 	}
-	yield* g.call(f, P("/proc/generate_all_scripture"), null, []);
-	rt.setAt(live(data), "scripture", rt.list());
-	s = null;
-	rt.forList(f, 0, rt.gl("all_scripture"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		s = $e;
-		if (isEqual(rt.gv(f, "tier", (S = rt.index(rt.gl("all_scripture"), live(s)))), rt.sv(f, "selected_scripture"))) {
-			scripture_color = (yield* g.call(f, P("/proc/get_component_color_bright"), null, [rt.fv(f, "primary_component", live(S))]));
-			temp_info = rt.alist(f, ["name", fmt("<font color=＀><b>＀</b></font>", [live(scripture_color), rt.fv(f, "name", live(S))]), "descname", fmt("<font color=＀>(＀)</font>", [live(scripture_color), rt.fv(f, "descname", live(S))]), "tip", fmt("＀\n＀", [rt.fv(f, "desc", live(S)), rt.fv(f, "usage_tip", live(S))]), "required", rt.alist(f, ["belligerent_eye", 0, "vanguard_cogwheel", 0, "geis_capacitor", 0, "replicant_alloy", 0, "hierophant_ansible", 0]), "type", fmt("＀", [rt.fv(f, "type", live(S))]), "quickbind", rt.fv(f, "quickbind", live(S))]);
-			if (truthy((found = (yield* g.callName(f, rt.sv(f, "quickbound"), "Find", [rt.fv(f, "type", live(S))]))))) {
-				rt.setAt(live(temp_info), "bound", fmt("<b>＀</b>", [live(found)]));
+	yield* generate_all_scripture();
+	rt.setAt(data, "scripture", list());
+	for (s of each(GLOB.all_scripture)) {
+		if ((S = rt.index(GLOB.all_scripture, s)).tier == this.selected_scripture) {
+			scripture_color = get_component_color_bright(S.primary_component);
+			temp_info = rt.alist(f, ["name", `<font color=${scripture_color}><b>${S.name}</b></font>`, "descname", `<font color=${scripture_color}>(${S.descname})</font>`, "tip", `${S.desc}\n${S.usage_tip}`, "required", rt.alist(f, ["belligerent_eye", 0, "vanguard_cogwheel", 0, "geis_capacitor", 0, "replicant_alloy", 0, "hierophant_ansible", 0]), "type", `${S.type}`, "quickbind", S.quickbind]);
+			if (found = this.quickbound.Find(S.type)) {
+				rt.setAt(temp_info, "bound", `<b>${found}</b>`);
 			}
-			if (rt.gt(rt.fv(f, "invokers_required", live(S)), 1)) {
-				rt.setAt(live(temp_info), "invokers", fmt("<font color=#B18B25>Invokers: <b>＀</b></font>", [rt.fv(f, "invokers_required", live(S))]));
+			if (S.invokers_required > 1) {
+				rt.setAt(temp_info, "invokers", `<font color=#B18B25>Invokers: <b>${S.invokers_required}</b></font>`);
 			}
 			costs_components = 0;
 			i_8 = null;
-			rt.forList(f, 1, rt.fv(f, "consumed_components", live(S)));
-			while (($e = rt.next(f, 1)) !== undefined) {
-				i_8 = $e;
-				if (truthy(rt.index(rt.fv(f, "consumed_components", live(S)), live(i_8)))) {
-					rt.modAt(rt.at(live(temp_info), "required"), live(i_8), rt.index(rt.fv(f, "consumed_components", live(S)), live(i_8)), add);
+			for (i_8 of each(S.consumed_components)) {
+				if (rt.index(S.consumed_components, i_8)) {
+					rt.modAt(rt.at(temp_info, "required"), i_8, rt.index(S.consumed_components, i_8), add);
 					costs_components = 1;
 				}
 			}
-			rt.endFor(f, 1);
-			if (truthy(live(costs_components))) {
-				really_temp_data = rt.list(": ");
+			if (costs_components) {
+				really_temp_data = list(": ");
 				i_9 = null;
-				rt.forList(f, 1, rt.at(live(temp_info), "required"));
-				while (($e = rt.next(f, 1)) !== undefined) {
-					i_9 = $e;
-					if (truthy(rt.index(rt.at(live(temp_info), "required"), live(i_9)))) {
-						really_temp_data = rt.modify(live(really_temp_data), fmt("<font color=＀>＀ <b>＀</b></font> ", [(yield* g.call(f, P("/proc/get_component_color_bright"), null, [live(i_9)])), (yield* g.call(f, P("/proc/get_component_acronym"), null, [live(i_9)])), rt.index(rt.at(live(temp_info), "required"), live(i_9))]), add);
+				for (i_9 of each(rt.at(temp_info, "required"))) {
+					if (rt.index(rt.at(temp_info, "required"), i_9)) {
+						really_temp_data += `<font color=${get_component_color_bright(i_9)}>${get_component_acronym(i_9)} <b>${rt.index(rt.at(temp_info, "required"), i_9)}</b></font> `;
 					}
 				}
-				rt.endFor(f, 1);
-				really_temp_data = (yield* g.callName(f, live(really_temp_data), "Join", []));
-				rt.setAt(live(temp_info), "required", live(really_temp_data));
+				really_temp_data = really_temp_data.Join();
+				rt.setAt(temp_info, "required", really_temp_data);
 			} else {
-				rt.setAt(live(temp_info), "required", "");
+				rt.setAt(temp_info, "required", "");
 			}
-			rt.modAt(live(data), "scripture", rt.list(live(temp_info)), add);
+			rt.modAt(data, "scripture", list(temp_info), add);
 		}
 	}
-	rt.endFor(f, 0);
-	rt.setAt(live(data), "recollection", rt.sv(f, "recollecting"));
-	if (truthy(rt.sv(f, "recollecting"))) {
-		rt.setAt(live(data), "rec_text", (yield* g.srcCall(f, "recollection")));
+	rt.setAt(data, "recollection", this.recollecting);
+	if (this.recollecting) {
+		rt.setAt(data, "rec_text", this.recollection());
 	}
-	return live(data);
+	return data;
 }, true);
 
-// /obj/item/clockwork/slab/proc/ui_act  (code/game/gamemodes/clock_cult/clock_items/clockwork_slab.dm:466)  may sleep
-rt.def("/obj/item/clockwork/slab/proc/ui_act", function* ui_act(f: Frame) {
+// clockwork_slab.dm:466
+rt.def("/obj/item/clockwork/slab/proc/ui_act", function* ui_act(f: Frame, action: Value, params: Value) {
 	let components: Value = null, i: Value = null, cache_components: Value = null, input_component: Value = null, path: Value = null, found_index: Value = null, target_index: Value = null, S: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [components, i, cache_components, input_component, path, found_index, target_index, S, $0, $e];
-	$0 = live(f.args[0]);
-	if ($0 === "toggle") {
-		rt.setSv(f, "recollecting", (!truthy(rt.sv(f, "recollecting")) ? 1 : 0));
-	} else if ($0 === "recite") {
-		yield* g.call(f, P("/proc/ImmediateInvokeAsync"), null, [live(f.src), P("/obj/item/clockwork/slab/proc/recite_scripture"), (yield* g.call(f, P("/proc/text2path"), null, [rt.at(live(f.args[1]), "category")])), live(f.usr), 0]);
-	} else if ($0 === "select") {
-		rt.setSv(f, "selected_scripture", rt.at(live(f.args[1]), "category"));
-	} else if ($0 === "component") {
-		components = rt.list("Random Components");
-		i = null;
-		rt.forList(f, 0, rt.gl("clockwork_component_cache"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			i = $e;
+	let $e: any;
+	if (action === "toggle") {
+		this.recollecting = (!this.recollecting ? 1 : 0);
+	} else if (action === "recite") {
+		yield* ImmediateInvokeAsync(this, P("/obj/item/clockwork/slab/proc/recite_scripture"), text2path(rt.at(params, "category")), f.usr, 0);
+	} else if (action === "select") {
+		this.selected_scripture = rt.at(params, "category");
+	} else if (action === "component") {
+		components = list("Random Components");
+		for (i of each(GLOB.clockwork_component_cache)) {
 			cache_components = 0;
-			if (truthy(rt.gl("clockwork_caches"))) {
-				cache_components = rt.index(rt.gl("clockwork_component_cache"), live(i));
+			if (GLOB.clockwork_caches) {
+				cache_components = rt.index(GLOB.clockwork_component_cache, i);
 			}
-			rt.setAt(live(components), fmt("＀ ＀", [(yield* g.call(f, P("/proc/get_component_name"), null, [live(i)])), add(live(cache_components), rt.index(rt.sv(f, "stored_components"), live(i)))]), live(i));
+			rt.setAt(components, `${get_component_name(i)} ${cache_components + rt.index(this.stored_components, i)}`, i);
 		}
-		rt.endFor(f, 0);
-		if ((truthy((input_component = (yield* g.op(f, "Prompt", [1], [null, null, "Target Component", "Choose a component type.", live(components)])))) && !truthy((yield* g.callSuper(f, [], rt.Args.Same))))) {
-			rt.setSv(f, "target_component_id", rt.index(live(components), live(input_component)));
+		if ((input_component = (yield* g.op(f, "Prompt", [1], [null, null, "Target Component", "Choose a component type.", components]))) && !(yield* parent_proc())) {
+			this.target_component_id = rt.index(components, input_component);
 		}
-	} else if ($0 === "bind") {
-		path = (yield* g.call(f, P("/proc/text2path"), null, [rt.at(live(f.args[1]), "category")]));
-		if (truthy((found_index = (yield* g.callName(f, rt.sv(f, "quickbound"), "Find", [live(path)]))))) {
-			if (isEqual(rt.length(rt.sv(f, "quickbound")), live(found_index))) {
-				(rt.modSrcVar(f, "quickbound", live(path), subtract));
+	} else if (action === "bind") {
+		path = text2path(rt.at(params, "category"));
+		if (found_index = this.quickbound.Find(path)) {
+			if (rt.length(this.quickbound) == found_index) {
+				this.quickbound -= path;
 			} else {
-				rt.setAt(rt.sv(f, "quickbound"), live(found_index), null);
+				rt.setAt(this.quickbound, found_index, null);
 			}
-			yield* g.srcCall(f, "update_quickbind");
-		} else {
-			if ((((truthy((yield* g.call(f, P("/proc/isnum"), null, [(target_index = (yield* g.op(f, "Prompt", [33], [null, null, "Input", fmt("Position of ＀, 1 to ＀?", [rt.initial(f, live(path), "name"), rt.sv(f, "maximum_quickbound")]), null])))]))) && rt.gt(live(target_index), 0)) && rt.le(live(target_index), rt.sv(f, "maximum_quickbound"))) && !truthy((yield* g.callSuper(f, [], rt.Args.Same))))) {
-				S = null;
-				if (rt.ge(rt.length(rt.sv(f, "quickbound")), live(target_index))) {
-					S = rt.index(rt.sv(f, "quickbound"), live(target_index));
-				}
-				if (!isEqual(live(S), live(path))) {
-					yield* g.srcCall(f, "quickbind_to_slot", live(path), live(target_index));
-				}
+			yield* this.update_quickbind();
+		} else if (isnum((target_index = (yield* g.op(f, "Prompt", [33], [null, null, "Input", `Position of ${rt.initial(f, path, "name")}, 1 to ${this.maximum_quickbound}?`, null])))) && target_index > 0 && target_index <= this.maximum_quickbound && !(yield* parent_proc())) {
+			if (rt.length(this.quickbound) >= target_index) {
+				S = rt.index(this.quickbound, target_index);
+			}
+			if (S != path) {
+				yield* this.quickbind_to_slot(path, target_index);
 			}
 		}
 	}
 	return 1;
-}, true, { args: ["action", "params"] });
+}, true);
 
-// /obj/item/clockwork/slab/proc/quickbind_to_slot  (code/game/gamemodes/clock_cult/clock_items/clockwork_slab.dm:503)  may sleep
+// clockwork_slab.dm:503
 rt.def("/obj/item/clockwork/slab/proc/quickbind_to_slot", function* quickbind_to_slot(f: Frame, scripture: Value, index: Value) {
 	let quickbind_slot: Value = null;
-	f.vars = () => [scripture, index, quickbind_slot];
-	if (((!truthy((yield* g.call(f, P("/proc/ispath"), null, [live(scripture)]))) || !truthy(live(scripture))) || truthy((rt.isIn(f, live(scripture), rt.sv(f, "quickbound")) ? 1 : 0)))) {
-		return live(f.dot);
+	if (!ispath(scripture) || !scripture || rt.isIn(f, scripture, this.quickbound)) {
+		return f.dot;
 	}
-	while (rt.lt(rt.length(rt.sv(f, "quickbound")), live(index))) {
-		rt.modSrcVar(f, "quickbound", null, add);
+	while (rt.length(this.quickbound) < index) {
+		this.quickbound += null;
 	}
-	if ((truthy((quickbind_slot = rt.index(rt.gl("all_scripture"), rt.index(rt.sv(f, "quickbound"), live(index))))) && !truthy(rt.fv(f, "quickbind", live(quickbind_slot))))) {
-		return live(f.dot);
+	if ((quickbind_slot = rt.index(GLOB.all_scripture, rt.index(this.quickbound, index))) && !quickbind_slot.quickbind) {
+		return f.dot;
 	}
-	rt.setAt(rt.sv(f, "quickbound"), live(index), live(scripture));
-	yield* g.srcCall(f, "update_quickbind");
+	rt.setAt(this.quickbound, index, scripture);
+	yield* this.update_quickbind();
 	return f.dot;
 }, true);
 
-// /obj/item/clockwork/slab/proc/update_quickbind  (code/game/gamemodes/clock_cult/clock_items/clockwork_slab.dm:514)  may sleep
+// clockwork_slab.dm:514
 rt.def("/obj/item/clockwork/slab/proc/update_quickbind", function* update_quickbind(f: Frame) {
 	let Q: Value = null, i: Value = null, Q_1: Value = null, quickbind_slot: Value = null, temp_desc: Value = null, c: Value = null;
 	let $e: any;
-	f.vars = () => [Q, i, Q_1, quickbind_slot, temp_desc, c, $e];
-	Q = null;
-	rt.forList(f, 0, rt.sv(f, "actions"), T("/datum/action/item_action/clock/quickbind"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		Q = $e;
-		yield* g.call(f, P("/proc/qdel"), null, [live(Q)]);
+	for (Q of each(this.actions, T("/datum/action/item_action/clock/quickbind"))) {
+		yield* qdel(Q);
 	}
-	rt.endFor(f, 0);
-	if (!truthy(rt.length(rt.sv(f, "quickbound")))) return f.dot;
-	i = null;
-	rt.forRange(f, 0, 1, rt.len(f, rt.sv(f, "quickbound")), 1);
+	if (!rt.length(this.quickbound)) return f.dot;
+	rt.forRange(f, 0, 1, rt.len(f, this.quickbound), 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		if (!truthy(rt.index(rt.sv(f, "quickbound"), live(i)))) {
+		if (!rt.index(this.quickbound, i)) {
 			continue;
 		}
-		rt.setFv(f, "scripture_index", (Q_1 = (yield* g.new_(f, T("/datum/action/item_action/clock/quickbind"), [live(f.src)]))), live(i));
-		quickbind_slot = rt.index(rt.gl("all_scripture"), rt.index(rt.sv(f, "quickbound"), live(i)));
-		rt.setFv(f, "name", live(Q_1), fmt("＀ (＀)", [rt.fv(f, "name", live(quickbind_slot)), rt.fv(f, "scripture_index", live(Q_1))]));
-		temp_desc = rt.list();
+		(Q_1 = (yield* new_(T("/datum/action/item_action/clock/quickbind"), this))).scripture_index = i;
+		quickbind_slot = rt.index(GLOB.all_scripture, rt.index(this.quickbound, i));
+		Q_1.name = `${quickbind_slot.name} (${Q_1.scripture_index})`;
+		temp_desc = list();
 		c = null;
-		rt.forList(f, 1, rt.fv(f, "consumed_components", live(quickbind_slot)));
-		while (($e = rt.next(f, 1)) !== undefined) {
-			c = $e;
-			if (truthy(rt.index(rt.fv(f, "consumed_components", live(quickbind_slot)), live(c)))) {
-				temp_desc = rt.modify(live(temp_desc), fmt("<font color=＀>＀ <b>＀</b></font> ", [(yield* g.call(f, P("/proc/get_component_color_bright"), null, [live(c)])), (yield* g.call(f, P("/proc/get_component_acronym"), null, [live(c)])), rt.index(rt.fv(f, "consumed_components", live(quickbind_slot)), live(c))]), add);
+		for (c of each(quickbind_slot.consumed_components)) {
+			if (rt.index(quickbind_slot.consumed_components, c)) {
+				temp_desc += `<font color=${get_component_color_bright(c)}>${get_component_acronym(c)} <b>${rt.index(quickbind_slot.consumed_components, c)}</b></font> `;
 			}
 		}
-		rt.endFor(f, 1);
-		if (truthy(rt.length(live(temp_desc)))) {
-			temp_desc = rt.modify(live(temp_desc), "<br>", add);
+		if (rt.length(temp_desc)) {
+			temp_desc += "<br>";
 		}
-		temp_desc = rt.modify(live(temp_desc), fmt("＀", [rt.fv(f, "quickbind_desc", live(quickbind_slot))]), add);
-		rt.setFv(f, "desc", live(Q_1), (yield* g.callName(f, live(temp_desc), "Join", [])));
-		rt.setFv(f, "button_icon_state", live(Q_1), rt.fv(f, "name", live(quickbind_slot)));
-		yield* g.callName(f, live(Q_1), "UpdateButtonIcon", []);
-		if (truthy((rt.istype(rt.sv(f, "loc"), T("/mob/living")) ? 1 : 0))) {
-			yield* g.callName(f, live(Q_1), "Grant", [rt.sv(f, "loc")]);
+		temp_desc += `${quickbind_slot.quickbind_desc}`;
+		Q_1.desc = temp_desc.Join();
+		Q_1.button_icon_state = quickbind_slot.name;
+		yield* Q_1.UpdateButtonIcon();
+		if (rt.istype(this.loc, T("/mob/living"))) {
+			yield* Q_1.Grant(this.loc);
 		}
 	}
 	rt.endFor(f, 0);

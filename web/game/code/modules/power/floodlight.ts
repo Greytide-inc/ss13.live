@@ -1,7 +1,7 @@
-// From code/modules/power/floodlight.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/power/floodlight.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(12975, "/obj/structure/floodlight_frame", "/obj/structure", {
@@ -15,46 +15,39 @@ rt.type(12975, "/obj/structure/floodlight_frame", "/obj/structure", {
 	density: 1,
 });
 
-// /obj/structure/floodlight_frame/proc/attackby  (code/modules/power/floodlight.dm:13)  may sleep
-rt.def("/obj/structure/floodlight_frame/proc/attackby", function* attackby(f: Frame) {
+// floodlight.dm:13
+rt.def("/obj/structure/floodlight_frame/proc/attackby", function* attackby(f: Frame, O: Value, user: Value, params: Value) {
 	let S: Value = null;
-	f.vars = () => [S];
-	if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/wrench")) ? 1 : 0)) && isEqual(rt.sv(f, "state"), 3))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You secure the ＀.</span>", [live(f.src)])]);
-		rt.setSv(f, "anchored", 1);
-		rt.setSv(f, "state", 0);
-		rt.setSv(f, "desc", "A bare metal frame looking vaguely like a floodlight. Requires wiring.");
-	} else {
-		if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/stack/cable_coil")) ? 1 : 0)) && isEqual(rt.sv(f, "state"), 0))) {
-			if (truthy((yield* g.callName(f, (S = live(f.args[0])), "use", [5])))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You wire the ＀.</span>", [live(f.src)])]);
-				rt.setSv(f, "name", fmt("wired ＀", [rt.sv(f, "name")]));
-				rt.setSv(f, "desc", "A bare metal frame looking vaguely like a floodlight. Requires securing with a screwdriver.");
-				rt.setSv(f, "icon_state", "floodlight_c2");
-				rt.setSv(f, "state", 2);
-			}
-		} else {
-			if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/light/tube")) ? 1 : 0)) && isEqual(rt.sv(f, "state"), 1))) {
-				if (truthy((yield* g.callName(f, live(f.args[1]), "transferItemToLoc", [live(f.args[0])])))) {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You put lights in the ＀.</span>", [live(f.src)])]);
-					yield* g.new_(f, T("/obj/machinery/power/floodlight"), [rt.fv(f, "loc", live(f.src))]);
-					yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-				}
-			} else {
-				if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/screwdriver")) ? 1 : 0)) && isEqual(rt.sv(f, "state"), 2))) {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You fasten the wiring and electronics in ＀.</span>", [live(f.src)])]);
-					rt.setSv(f, "name", fmt("secured ＀", [rt.sv(f, "name")]));
-					rt.setSv(f, "desc", "A bare metal frame that looks like a floodlight. Requires light tubes.");
-					rt.setSv(f, "icon_state", "floodlight_c3");
-					rt.setSv(f, "state", 1);
-				} else {
-					yield* g.callSuper(f, [], rt.Args.Same);
-				}
-			}
+	if (rt.istype(O, T("/obj/item/weapon/wrench")) && this.state == FLOODLIGHT_NEEDS_WRENCHING) {
+		to_chat(user, `<span class='notice'>You secure the ${this}.</span>`);
+		this.anchored = 1;
+		this.state = FLOODLIGHT_NEEDS_WIRES;
+		this.desc = "A bare metal frame looking vaguely like a floodlight. Requires wiring.";
+	} else if (rt.istype(O, T("/obj/item/stack/cable_coil")) && this.state == FLOODLIGHT_NEEDS_WIRES) {
+		if (yield* (S = O).use(5)) {
+			to_chat(user, `<span class='notice'>You wire the ${this}.</span>`);
+			this.name = `wired ${this.name}`;
+			this.desc = "A bare metal frame looking vaguely like a floodlight. Requires securing with a screwdriver.";
+			this.icon_state = "floodlight_c2";
+			this.state = FLOODLIGHT_NEEDS_SECURING;
 		}
+	} else if (rt.istype(O, T("/obj/item/weapon/light/tube")) && this.state == FLOODLIGHT_NEEDS_LIGHTS) {
+		if (yield* user.transferItemToLoc(O)) {
+			to_chat(user, `<span class='notice'>You put lights in the ${this}.</span>`);
+			yield* new_(T("/obj/machinery/power/floodlight"), this.loc);
+			yield* qdel(this);
+		}
+	} else if (rt.istype(O, T("/obj/item/weapon/screwdriver")) && this.state == FLOODLIGHT_NEEDS_SECURING) {
+		to_chat(user, `<span class='notice'>You fasten the wiring and electronics in ${this}.</span>`);
+		this.name = `secured ${this.name}`;
+		this.desc = "A bare metal frame that looks like a floodlight. Requires light tubes.";
+		this.icon_state = "floodlight_c3";
+		this.state = FLOODLIGHT_NEEDS_LIGHTS;
+	} else {
+		yield* parent_proc();
 	}
 	return f.dot;
-}, true, { args: ["O", "user", "params"] });
+}, true);
 
 rt.type(10311, "/obj/machinery/power/floodlight", "/obj/machinery/power", {
 	light_setting_list: null,
@@ -71,84 +64,79 @@ rt.type(10311, "/obj/machinery/power/floodlight", "/obj/machinery/power", {
 	active_power_usage: 1000,
 });
 
-// /obj/machinery/power/floodlight/proc/process  (code/modules/power/floodlight.dm:55)
+// floodlight.dm:55
 rt.def("/obj/machinery/power/floodlight/proc/process", function process(f: Frame) {
-	if (truthy(rt.callSrc(f, "avail", [rt.sv(f, "active_power_usage")]))) {
-		rt.callSrc(f, "add_load", [rt.sv(f, "active_power_usage")]);
+	if (this.avail(this.active_power_usage)) {
+		this.add_load(this.active_power_usage);
 	} else {
-		rt.callSrc(f, "change_setting", [1]);
+		this.change_setting(1);
 	}
 	return f.dot;
 }, false, { waitfor: false });
 
-// /obj/machinery/power/floodlight/proc/change_setting  (code/modules/power/floodlight.dm:61)
+// floodlight.dm:61
 rt.def("/obj/machinery/power/floodlight/proc/change_setting", function change_setting(f: Frame, val: Value, user: Value) {
-	let setting_text: Value = null;
-	let $0: any;
-	f.vars = () => [setting_text, $0];
-	if ((rt.lt(live(val), 1) || rt.gt(live(val), rt.len(f, rt.sv(f, "light_setting_list"))))) {
-		return live(f.dot);
+	if (val < 1 || val > rt.len(f, this.light_setting_list)) {
+		return f.dot;
 	}
-	rt.setSv(f, "active_power_usage", rt.index(rt.sv(f, "light_setting_list"), live(val)));
-	if (!truthy(rt.callSrc(f, "avail", [rt.sv(f, "active_power_usage")]))) {
-		return rt.callSrc(f, "change_setting", [subtract(live(val), 1)]);
+	this.active_power_usage = rt.index(this.light_setting_list, val);
+	if (!this.avail(this.active_power_usage)) {
+		return this.change_setting(val - 1);
 	}
-	rt.setSv(f, "setting", live(val));
-	rt.callSrc(f, "set_light", [rt.index(rt.sv(f, "light_setting_list"), live(val))]);
-	setting_text = "";
-	if (rt.gt(live(val), 1)) {
-		rt.setSv(f, "icon_state", fmt("＀_on", [rt.initial(f, live(f.src), "icon_state")]));
+	this.setting = val;
+	this.set_light(rt.index(this.light_setting_list, val));
+	let setting_text: Value = "";
+	if (val > 1) {
+		this.icon_state = `${rt.initial(f, this, "icon_state")}_on`;
 	} else {
-		rt.setSv(f, "icon_state", rt.initial(f, live(f.src), "icon_state"));
+		this.icon_state = rt.initial(f, this, "icon_state");
 	}
-	$0 = live(val);
-	if ($0 === 1) {
+	if (val === 1) {
 		setting_text = "OFF";
-	} else if ($0 === 2) {
+	} else if (val === 2) {
 		setting_text = "low power";
-	} else if ($0 === 3) {
+	} else if (val === 3) {
 		setting_text = "standard lighting";
-	} else if ($0 === 4) {
+	} else if (val === 4) {
 		setting_text = "high power";
 	}
-	if (!truthy(live(user))) return f.dot;
-	rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("You set the ＀ to ＀.", [live(f.src), live(setting_text)])]);
+	if (!user) return f.dot;
+	to_chat(user, `You set the ${this} to ${setting_text}.`);
 	return f.dot;
 });
 
-// /obj/machinery/power/floodlight/proc/attackby  (code/modules/power/floodlight.dm:86)  may sleep
-rt.def("/obj/machinery/power/floodlight/proc/attackby", function* attackby(f: Frame) {
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/wrench")) ? 1 : 0))) {
-		yield* g.callSrc(f, "default_unfasten_wrench", [null, live(f.args[1]), null, live(f.args[0]), "time", 20], rt.Args.Named);
-		yield* g.srcCall(f, "change_setting", 1);
-		if (truthy(rt.sv(f, "anchored"))) {
-			yield* g.srcCall(f, "connect_to_network");
+// floodlight.dm:86
+rt.def("/obj/machinery/power/floodlight/proc/attackby", function* attackby(f: Frame, O: Value, user: Value, params: Value) {
+	if (rt.istype(O, T("/obj/item/weapon/wrench"))) {
+		yield* this.default_unfasten_wrench(user, O, { time: 20 });
+		this.change_setting(1);
+		if (this.anchored) {
+			yield* this.connect_to_network();
 		} else {
-			yield* g.srcCall(f, "disconnect_from_network");
+			yield* this.disconnect_from_network();
 		}
 	} else {
-		f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+		f.dot = (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["O", "user", "params"] });
+}, true);
 
-// /obj/machinery/power/floodlight/proc/attack_hand  (code/modules/power/floodlight.dm:97)  may sleep
-rt.def("/obj/machinery/power/floodlight/proc/attack_hand", function* attack_hand(f: Frame) {
+// floodlight.dm:97
+rt.def("/obj/machinery/power/floodlight/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
 	let current: Value = null;
-	f.vars = () => [current];
-	if (isEqual((current = rt.sv(f, "setting")), 1)) {
-		current = rt.len(f, rt.sv(f, "light_setting_list"));
+	if ((current = this.setting) == 1) {
+		current = rt.len(f, this.light_setting_list);
 	} else {
-		current = rt.inc(live(current), -1);
+		current--;
 	}
-	yield* g.srcCall(f, "change_setting", live(current), live(f.args[0]));
-	yield* g.callSuper(f, [], rt.Args.Same);
+	this.change_setting(current, user);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /obj/machinery/power/floodlight/proc/attack_ai  (code/modules/power/floodlight.dm:106)  may sleep
-rt.def("/obj/machinery/power/floodlight/proc/attack_ai", function* attack_ai(f: Frame) {
-	yield* g.srcCall(f, "attack_hand", live(f.args[0]));
-	yield* g.callSuper(f, [], rt.Args.Same);
+// floodlight.dm:106
+rt.def("/obj/machinery/power/floodlight/proc/attack_ai", function* attack_ai(f: Frame, user: Value) {
+	yield* this.attack_hand(user);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);

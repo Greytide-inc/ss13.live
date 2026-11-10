@@ -1,7 +1,7 @@
-// From code/modules/spells/spell_types/forcewall.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/spells/spell_types/forcewall.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(11314, "/obj/effect/proc_holder/spell/targeted/forcewall", "/obj/effect/proc_holder/spell/targeted", {
@@ -20,19 +20,16 @@ rt.type(11314, "/obj/effect/proc_holder/spell/targeted/forcewall", "/obj/effect/
 	cooldown_min: 50,
 });
 
-// /obj/effect/proc_holder/spell/targeted/forcewall/proc/cast  (code/modules/spells/spell_types/forcewall.dm:17)  may sleep
+// forcewall.dm:17
 rt.def("/obj/effect/proc_holder/spell/targeted/forcewall/proc/cast", function* cast(f: Frame, targets: Value, user: Value) {
-	f.vars = () => [targets, user];
-	if (live(user) === null) {
-		user = live(f.usr);
-	}
-	yield* g.new_(f, rt.sv(f, "wall_type"), [rt.getStep(f, live(user), 0), live(user)]);
-	if ((isEqual(rt.fv(f, "dir", live(user)), 2) || isEqual(rt.fv(f, "dir", live(user)), 1))) {
-		yield* g.new_(f, rt.sv(f, "wall_type"), [rt.getStep(f, live(user), 4), live(user)]);
-		yield* g.new_(f, rt.sv(f, "wall_type"), [rt.getStep(f, live(user), 8), live(user)]);
+	user ??= f.usr;
+	yield* new_(this.wall_type, rt.getStep(f, user, 0), user);
+	if ((user.dir == 2 || user.dir == 1)) {
+		yield* new_(this.wall_type, rt.getStep(f, user, 4), user);
+		yield* new_(this.wall_type, rt.getStep(f, user, 8), user);
 	} else {
-		yield* g.new_(f, rt.sv(f, "wall_type"), [rt.getStep(f, live(user), 1), live(user)]);
-		yield* g.new_(f, rt.sv(f, "wall_type"), [rt.getStep(f, live(user), 2), live(user)]);
+		yield* new_(this.wall_type, rt.getStep(f, user, 1), user);
+		yield* new_(this.wall_type, rt.getStep(f, user, 2), user);
 	}
 	return f.dot;
 }, true);
@@ -41,21 +38,18 @@ rt.type(11817, "/obj/effect/forcefield/wizard", "/obj/effect/forcefield", {
 	wizard: null,
 });
 
-// /obj/effect/forcefield/wizard/proc/Initialize  (code/modules/spells/spell_types/forcewall.dm:30)  may sleep
-rt.def("/obj/effect/forcefield/wizard/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "wizard", live(f.args[1]));
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), ["some_magic_bullshit", P("/proc/qdel"), live(f.src)])), 300, 8]);
+// forcewall.dm:30
+rt.def("/obj/effect/forcefield/wizard/proc/Initialize", function* Initialize(f: Frame, mapload: Value, summoner: Value) {
+	f.dot = (yield* parent_proc());
+	this.wizard = summoner;
+	yield* addtimer((yield* new_(T("/datum/callback"), "some_magic_bullshit", P("/proc/qdel"), this)), 300, 8);
 	return f.dot;
-}, true, { args: ["mapload", "summoner"] });
+}, true);
 
-// /obj/effect/forcefield/wizard/proc/CanPass  (code/modules/spells/spell_types/forcewall.dm:35)
+// forcewall.dm:35
 rt.def("/obj/effect/forcefield/wizard/proc/CanPass", function CanPass(f: Frame, mover: Value, target: Value, height: Value) {
-	f.vars = () => [height];
-	if (live(height) === null) {
-		height = 0;
-	}
-	if (isEqual(live(mover), rt.sv(f, "wizard"))) {
+	height ??= 0;
+	if (mover == this.wizard) {
 		return 1;
 	}
 	return 0;

@@ -1,7 +1,7 @@
-// From code/modules/food_and_drinks/food/snacks/dough.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/food_and_drinks/food/snacks/dough.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(6196, "/obj/item/weapon/reagent_containers/food/snacks/dough", "/obj/item/weapon/reagent_containers/food/snacks", {
@@ -15,31 +15,29 @@ rt.type(6196, "/obj/item/weapon/reagent_containers/food/snacks/dough", "/obj/ite
 	w_class: 3,
 });
 
-// /obj/item/weapon/reagent_containers/food/snacks/dough/proc/<init>  (code/modules/food_and_drinks/food/snacks/dough.dm:13)
+// dough.dm:13
 rt.def("/obj/item/weapon/reagent_containers/food/snacks/dough/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "tastes", rt.alist(f, ["dough", 1]));
-	rt.setSv(f, "list_reagents", rt.alist(f, ["nutriment", 6]));
+	parent_proc();
+	this.tastes = rt.alist(f, ["dough", 1]);
+	this.list_reagents = rt.alist(f, ["nutriment", 6]);
 	return f.dot;
 });
 
-// /obj/item/weapon/reagent_containers/food/snacks/dough/proc/attackby  (code/modules/food_and_drinks/food/snacks/dough.dm:18)  may sleep
-rt.def("/obj/item/weapon/reagent_containers/food/snacks/dough/proc/attackby", function* attackby(f: Frame) {
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/kitchen/rollingpin")) ? 1 : 0))) {
-		if (truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.sv(f, "loc")])))) {
-			yield* g.new_(f, T("/obj/item/weapon/reagent_containers/food/snacks/flatdough"), [rt.sv(f, "loc")]);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You flatten ＀.</span>", [live(f.src)])]);
-			yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+// dough.dm:18
+rt.def("/obj/item/weapon/reagent_containers/food/snacks/dough/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
+	if (rt.istype(I, T("/obj/item/weapon/kitchen/rollingpin"))) {
+		if (isturf(this.loc)) {
+			yield* new_(T("/obj/item/weapon/reagent_containers/food/snacks/flatdough"), this.loc);
+			to_chat(user, `<span class='notice'>You flatten ${this}.</span>`);
+			yield* qdel(this);
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>You need to put ＀ on a surface to roll it out!</span>", [live(f.src)])]);
+			to_chat(user, `<span class='warning'>You need to put ${this} on a surface to roll it out!</span>`);
 		}
 	} else {
-		yield* g.callSuper(f, [], rt.Args.Same);
+		yield* parent_proc();
 	}
 	return f.dot;
-}, true, { args: ["I", "user", "params"] });
+}, true);
 
 rt.type(6197, "/obj/item/weapon/reagent_containers/food/snacks/flatdough", "/obj/item/weapon/reagent_containers/food/snacks", {
 	slices_num: 3,
@@ -54,13 +52,11 @@ rt.type(6197, "/obj/item/weapon/reagent_containers/food/snacks/flatdough", "/obj
 	w_class: 3,
 });
 
-// /obj/item/weapon/reagent_containers/food/snacks/flatdough/proc/<init>  (code/modules/food_and_drinks/food/snacks/dough.dm:40)
+// dough.dm:40
 rt.def("/obj/item/weapon/reagent_containers/food/snacks/flatdough/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "tastes", rt.alist(f, ["dough", 1]));
-	rt.setSv(f, "list_reagents", rt.alist(f, ["nutriment", 6]));
+	parent_proc();
+	this.tastes = rt.alist(f, ["dough", 1]);
+	this.list_reagents = rt.alist(f, ["nutriment", 6]);
 	return f.dot;
 });
 
@@ -75,13 +71,11 @@ rt.type(6198, "/obj/item/weapon/reagent_containers/food/snacks/pizzabread", "/ob
 	w_class: 3,
 });
 
-// /obj/item/weapon/reagent_containers/food/snacks/pizzabread/proc/<init>  (code/modules/food_and_drinks/food/snacks/dough.dm:50)
+// dough.dm:50
 rt.def("/obj/item/weapon/reagent_containers/food/snacks/pizzabread/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "tastes", rt.alist(f, ["bread", 1]));
-	rt.setSv(f, "list_reagents", rt.alist(f, ["nutriment", 7]));
+	parent_proc();
+	this.tastes = rt.alist(f, ["bread", 1]);
+	this.list_reagents = rt.alist(f, ["nutriment", 7]);
 	return f.dot;
 });
 
@@ -95,12 +89,10 @@ rt.type(6199, "/obj/item/weapon/reagent_containers/food/snacks/doughslice", "/ob
 	cooked_type: rt.typePath("/obj/item/weapon/reagent_containers/food/snacks/bun"),
 });
 
-// /obj/item/weapon/reagent_containers/food/snacks/doughslice/proc/<init>  (code/modules/food_and_drinks/food/snacks/dough.dm:60)
+// dough.dm:60
 rt.def("/obj/item/weapon/reagent_containers/food/snacks/doughslice/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "tastes", rt.alist(f, ["dough", 1]));
+	parent_proc();
+	this.tastes = rt.alist(f, ["dough", 1]);
 	return f.dot;
 });
 
@@ -115,13 +107,11 @@ rt.type(6200, "/obj/item/weapon/reagent_containers/food/snacks/bun", "/obj/item/
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/food/snacks/bun/proc/<init>  (code/modules/food_and_drinks/food/snacks/dough.dm:71)
+// dough.dm:71
 rt.def("/obj/item/weapon/reagent_containers/food/snacks/bun/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "tastes", rt.alist(f, ["bun", 1]));
-	rt.setSv(f, "list_reagents", rt.alist(f, ["nutriment", 1]));
+	parent_proc();
+	this.tastes = rt.alist(f, ["bun", 1]);
+	this.list_reagents = rt.alist(f, ["nutriment", 1]);
 	return f.dot;
 });
 
@@ -136,31 +126,29 @@ rt.type(6201, "/obj/item/weapon/reagent_containers/food/snacks/cakebatter", "/ob
 	w_class: 3,
 });
 
-// /obj/item/weapon/reagent_containers/food/snacks/cakebatter/proc/<init>  (code/modules/food_and_drinks/food/snacks/dough.dm:81)
+// dough.dm:81
 rt.def("/obj/item/weapon/reagent_containers/food/snacks/cakebatter/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "tastes", rt.alist(f, ["batter", 1]));
-	rt.setSv(f, "list_reagents", rt.alist(f, ["nutriment", 9]));
+	parent_proc();
+	this.tastes = rt.alist(f, ["batter", 1]);
+	this.list_reagents = rt.alist(f, ["nutriment", 9]);
 	return f.dot;
 });
 
-// /obj/item/weapon/reagent_containers/food/snacks/cakebatter/proc/attackby  (code/modules/food_and_drinks/food/snacks/dough.dm:85)  may sleep
-rt.def("/obj/item/weapon/reagent_containers/food/snacks/cakebatter/proc/attackby", function* attackby(f: Frame) {
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/kitchen/rollingpin")) ? 1 : 0))) {
-		if (truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.sv(f, "loc")])))) {
-			yield* g.new_(f, T("/obj/item/weapon/reagent_containers/food/snacks/piedough"), [rt.sv(f, "loc")]);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You flatten ＀.</span>", [live(f.src)])]);
-			yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+// dough.dm:85
+rt.def("/obj/item/weapon/reagent_containers/food/snacks/cakebatter/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
+	if (rt.istype(I, T("/obj/item/weapon/kitchen/rollingpin"))) {
+		if (isturf(this.loc)) {
+			yield* new_(T("/obj/item/weapon/reagent_containers/food/snacks/piedough"), this.loc);
+			to_chat(user, `<span class='notice'>You flatten ${this}.</span>`);
+			yield* qdel(this);
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>You need to put ＀ on a surface to roll it out!</span>", [live(f.src)])]);
+			to_chat(user, `<span class='warning'>You need to put ${this} on a surface to roll it out!</span>`);
 		}
 	} else {
-		yield* g.callSuper(f, [], rt.Args.Same);
+		yield* parent_proc();
 	}
 	return f.dot;
-}, true, { args: ["I", "user", "params"] });
+}, true);
 
 rt.type(6202, "/obj/item/weapon/reagent_containers/food/snacks/piedough", "/obj/item/weapon/reagent_containers/food/snacks", {
 	slices_num: 3,
@@ -175,13 +163,11 @@ rt.type(6202, "/obj/item/weapon/reagent_containers/food/snacks/piedough", "/obj/
 	w_class: 3,
 });
 
-// /obj/item/weapon/reagent_containers/food/snacks/piedough/proc/<init>  (code/modules/food_and_drinks/food/snacks/dough.dm:105)
+// dough.dm:105
 rt.def("/obj/item/weapon/reagent_containers/food/snacks/piedough/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "tastes", rt.alist(f, ["dough", 1]));
-	rt.setSv(f, "list_reagents", rt.alist(f, ["nutriment", 9]));
+	parent_proc();
+	this.tastes = rt.alist(f, ["dough", 1]);
+	this.list_reagents = rt.alist(f, ["nutriment", 9]);
 	return f.dot;
 });
 
@@ -196,13 +182,11 @@ rt.type(6203, "/obj/item/weapon/reagent_containers/food/snacks/rawpastrybase", "
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/food/snacks/rawpastrybase/proc/<init>  (code/modules/food_and_drinks/food/snacks/dough.dm:115)
+// dough.dm:115
 rt.def("/obj/item/weapon/reagent_containers/food/snacks/rawpastrybase/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "tastes", rt.alist(f, ["raw pastry", 1]));
-	rt.setSv(f, "list_reagents", rt.alist(f, ["nutriment", 1]));
+	parent_proc();
+	this.tastes = rt.alist(f, ["raw pastry", 1]);
+	this.list_reagents = rt.alist(f, ["nutriment", 1]);
 	return f.dot;
 });
 
@@ -216,12 +200,10 @@ rt.type(6204, "/obj/item/weapon/reagent_containers/food/snacks/pastrybase", "/ob
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/food/snacks/pastrybase/proc/<init>  (code/modules/food_and_drinks/food/snacks/dough.dm:124)
+// dough.dm:124
 rt.def("/obj/item/weapon/reagent_containers/food/snacks/pastrybase/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "tastes", rt.alist(f, ["pastry", 1]));
-	rt.setSv(f, "list_reagents", rt.alist(f, ["nutriment", 1]));
+	parent_proc();
+	this.tastes = rt.alist(f, ["pastry", 1]);
+	this.list_reagents = rt.alist(f, ["nutriment", 1]);
 	return f.dot;
 });

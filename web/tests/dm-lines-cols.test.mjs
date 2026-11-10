@@ -1,7 +1,7 @@
 // dm-lines-cols.test.mjs - Guard: every column entry in game/_dm-lines.json must still sit on a token start of its current game line.
 // Codemods that change text within lines must run `node tools/remap-dm-cols.mjs <commit before the codemod>` (see web/game/README.md);
 // else error-lines.ts reports the wrong DM line. Cheap check: the character at the column is not in the middle of an identifier/number
-// (previous char not [\w$]) and inside the line; exact (negative) columns also need to sit on an identifier/bracket/quote start (a call name).
+// (previous char not [\w$]) and inside the line; exact (negative) columns also need to sit on an identifier/bracket/quote start (a call name) or an operator (DM's, a call since step 9b; `==` since 9i).
 // Usage (from web/): node tests/dm-lines-cols.test.mjs [ALT_DM_JSON_PATH [GAME_DIR]]   (alt files are for showing it fails on stale data)
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -26,7 +26,7 @@ for (const r of rows) {
 		if (col === null) continue;
 		total++;
 		const line = lines[d + r.arr[i]] ?? "", ch = line[col] ?? "", prev = line[col - 1] ?? "";
-		const ok = col <= line.length && !(/[\w$]/.test(ch) && /[\w$]/.test(prev)) && !(r.arr[i + 1] < 0 && !/[\w$(\[!"'`-]/.test(ch));
+		const ok = col <= line.length && !(/[\w$]/.test(ch) && /[\w$]/.test(prev)) && !(r.arr[i + 1] < 0 && !/[\w$(\[!"'`+*/%<>=-]/.test(ch));
 		if (!ok) { bad++; if (shown.length < 5) shown.push(`${r.key} line+${r.arr[i]} col ${col}: ${JSON.stringify(line.slice(Math.max(0, col - 15), col))}|${JSON.stringify(line.slice(col, col + 15))}`); }
 	}
 }

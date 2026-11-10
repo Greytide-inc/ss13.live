@@ -1,7 +1,7 @@
-// From code/modules/clothing/under/jobs/security.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/clothing/under/jobs/security.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(8291, "/obj/item/clothing/under/rank/security", "/obj/item/clothing/under/rank", {
@@ -17,12 +17,10 @@ rt.type(8291, "/obj/item/clothing/under/rank/security", "/obj/item/clothing/unde
 	random_sensor: 0,
 });
 
-// /obj/item/clothing/under/rank/security/proc/<init>  (code/modules/clothing/under/jobs/security.dm:18)
+// security.dm:18
 rt.def("/obj/item/clothing/under/rank/security/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 10, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 30, "acid", 30]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 10, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 30, "acid", 30]);
 	return f.dot;
 });
 
@@ -39,12 +37,10 @@ rt.type(8327, "/obj/item/clothing/under/rank/warden", "/obj/item/clothing/under/
 	random_sensor: 0,
 });
 
-// /obj/item/clothing/under/rank/warden/proc/<init>  (code/modules/clothing/under/jobs/security.dm:38)
+// security.dm:38
 rt.def("/obj/item/clothing/under/rank/warden/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 10, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 30, "acid", 30]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 10, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 30, "acid", 30]);
 	return f.dot;
 });
 
@@ -61,12 +57,10 @@ rt.type(8330, "/obj/item/clothing/under/rank/det", "/obj/item/clothing/under/ran
 	random_sensor: 0,
 });
 
-// /obj/item/clothing/under/rank/det/proc/<init>  (code/modules/clothing/under/jobs/security.dm:60)
+// security.dm:60
 rt.def("/obj/item/clothing/under/rank/det/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 10, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 30, "acid", 30]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 10, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 30, "acid", 30]);
 	return f.dot;
 });
 
@@ -83,11 +77,9 @@ rt.type(8332, "/obj/item/clothing/under/rank/head_of_security", "/obj/item/cloth
 	random_sensor: 0,
 });
 
-// /obj/item/clothing/under/rank/head_of_security/proc/<init>  (code/modules/clothing/under/jobs/security.dm:83)
+// security.dm:83
 rt.def("/obj/item/clothing/under/rank/head_of_security/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 10, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 50, "acid", 50]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 10, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 50, "acid", 50]);
 	return f.dot;
 });

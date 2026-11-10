@@ -1,7 +1,7 @@
-// From code/game/objects/items/taster.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/taster.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(9781, "/obj/item/taster", "/obj/item", {
@@ -13,20 +13,18 @@ rt.type(9781, "/obj/item/taster", "/obj/item", {
 	icon_state: "tonguenormal",
 });
 
-// /obj/item/taster/proc/get_spans  (code/game/objects/items/taster.dm:12)
+// taster.dm:12
 rt.def("/obj/item/taster/proc/get_spans", function get_spans(f: Frame) {
-	return rt.list();
+	return list();
 });
 
-// /obj/item/taster/proc/afterattack  (code/game/objects/items/taster.dm:15)
+// taster.dm:15
 rt.def("/obj/item/taster/proc/afterattack", function afterattack(f: Frame, O: Value, user: Value, proximity: Value) {
-	let message: Value = null;
-	f.vars = () => [message];
-	if (!truthy(live(proximity))) {
-		return live(f.dot);
+	if (!proximity) {
+		return f.dot;
 	}
-	if (!truthy(rt.fv(f, "reagents", live(O)))) return f.dot;
-	message = rt.callName(f, rt.fv(f, "reagents", live(O)), "generate_taste_message", [rt.sv(f, "taste_sensitivity")]);
-	rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>＀ tastes <span class='italics'>＀</span> in ＀.</span>", [live(f.src), live(message), live(O)])]);
+	if (!O.reagents) return f.dot;
+	let message: Value = O.reagents.generate_taste_message(this.taste_sensitivity);
+	to_chat(user, `<span class='notice'>${this} tastes <span class='italics'>${message}</span> in ${O}.</span>`);
 	return f.dot;
 });

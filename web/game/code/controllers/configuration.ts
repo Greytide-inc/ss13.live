@@ -1,7 +1,7 @@
-// From code/controllers/configuration.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/controllers/configuration.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(81, "/datum/configuration", "/datum", {
@@ -174,706 +174,657 @@ rt.type(81, "/datum/configuration", "/datum", {
 	policies: null,
 });
 
-// /datum/configuration/proc/can_vv_get  (code/controllers/configuration.dm:10)
-rt.def("/datum/configuration/proc/can_vv_get", function can_vv_get(f: Frame) {
-	if (truthy((rt.isIn(f, live(f.args[0]), rt.gl("banned_gets")) ? 1 : 0))) {
+// configuration.dm:10
+rt.def("/datum/configuration/proc/can_vv_get", function can_vv_get(f: Frame, var_name: Value) {
+	if (rt.isIn(f, var_name, GLOB.banned_gets)) {
 		return 0;
 	}
-	return rt.callSuper(f, [], rt.Args.Same);
-}, false, { args: ["var_name"] });
+	return parent_proc();
+}, false);
 
-// /datum/configuration/proc/vv_edit_var  (code/controllers/configuration.dm:16)
-rt.def("/datum/configuration/proc/vv_edit_var", function vv_edit_var(f: Frame) {
-	if (truthy((rt.isIn(f, live(f.args[0]), rt.gl("banned_edits")) ? 1 : 0))) {
+// configuration.dm:16
+rt.def("/datum/configuration/proc/vv_edit_var", function vv_edit_var(f: Frame, var_name: Value, var_value: Value) {
+	if (rt.isIn(f, var_name, GLOB.banned_edits)) {
 		return 0;
 	}
-	return rt.callSuper(f, [], rt.Args.Same);
-}, false, { args: ["var_name", "var_value"] });
+	return parent_proc();
+}, false);
 
-// /datum/configuration/proc/<init>  (code/controllers/configuration.dm:120)
+// configuration.dm:120
 rt.def("/datum/configuration/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "mode_names", rt.list());
-	$0 = $0;
-	rt.setSv(f, "modes", rt.list());
-	$0 = $0;
-	rt.setSv(f, "votable_modes", rt.list());
-	$0 = $0;
-	rt.setSv(f, "probabilities", rt.list());
-	$0 = $0;
-	rt.setSv(f, "min_pop", rt.list());
-	$0 = $0;
-	rt.setSv(f, "max_pop", rt.list());
-	$0 = $0;
-	rt.setSv(f, "continuous", rt.list());
-	$0 = $0;
-	rt.setSv(f, "midround_antag", rt.list());
-	$0 = $0;
-	rt.setSv(f, "roundstart_races", rt.list());
-	$0 = $0;
-	rt.setSv(f, "lawids", rt.list());
-	$0 = $0;
-	rt.setSv(f, "law_weights", rt.list());
-	$0 = $0;
-	rt.setSv(f, "maplist", rt.list());
-	$0 = $0;
-	rt.setSv(f, "policies", rt.list());
+	parent_proc();
+	this.mode_names = list();
+
+	this.modes = list();
+
+	this.votable_modes = list();
+
+	this.probabilities = list();
+
+	this.min_pop = list();
+
+	this.max_pop = list();
+
+	this.continuous = list();
+
+	this.midround_antag = list();
+
+	this.roundstart_races = list();
+
+	this.lawids = list();
+
+	this.law_weights = list();
+
+	this.maplist = list();
+
+	this.policies = list();
 	return f.dot;
 });
 
-// /datum/configuration/proc/New  (code/controllers/configuration.dm:274)  may sleep
+// configuration.dm:274
 rt.def("/datum/configuration/proc/New", function* New(f: Frame) {
 	let _T: Value = null, M: Value = null;
-	let $e: any;
-	f.vars = () => [_T, M, $e];
-	rt.setSv(f, "gamemode_cache", (yield* g.call(f, P("/proc/typecacheof"), null, [T("/datum/game_mode"), 1])));
-	_T = null;
-	rt.forList(f, 0, rt.sv(f, "gamemode_cache"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_T = $e;
-		if (truthy(rt.gv(f, "config_tag", (M = (yield* g.new_(f, live(_T), [])))))) {
-			if (!truthy((rt.isIn(f, rt.fv(f, "config_tag", live(M)), rt.sv(f, "modes")) ? 1 : 0))) {
-				rt.op(f, "OutputReference", [rt.R.glob(112)], [fmt("Adding game mode ＀ (＀) to configuration.", [rt.fv(f, "name", live(M)), rt.fv(f, "config_tag", live(M))])], false);
-				rt.modSrcVar(f, "modes", rt.fv(f, "config_tag", live(M)), add);
-				rt.setAt(rt.sv(f, "mode_names"), rt.fv(f, "config_tag", live(M)), rt.fv(f, "name", live(M)));
-				rt.setAt(rt.sv(f, "probabilities"), rt.fv(f, "config_tag", live(M)), rt.fv(f, "probability", live(M)));
-				if (truthy(rt.fv(f, "votable", live(M)))) {
-					rt.modSrcVar(f, "votable_modes", rt.fv(f, "config_tag", live(M)), add);
+	this.gamemode_cache = typecacheof(T("/datum/game_mode"), 1);
+	for (_T of each(this.gamemode_cache)) {
+		if ((M = (yield* new_(_T))).config_tag) {
+			if (!rt.isIn(f, M.config_tag, this.modes)) {
+				rt.op(f, "OutputReference", [rt.R.glob(112)], [`Adding game mode ${M.name} (${M.config_tag}) to configuration.`], false);
+				this.modes += M.config_tag;
+				rt.setAt(this.mode_names, M.config_tag, M.name);
+				rt.setAt(this.probabilities, M.config_tag, M.probability);
+				if (M.votable) {
+					this.votable_modes += M.config_tag;
 				}
 			}
 		}
-		yield* g.call(f, P("/proc/qdel"), null, [live(M)]);
+		yield* qdel(M);
 	}
-	rt.endFor(f, 0);
-	rt.modSrcVar(f, "votable_modes", "secret", add);
-	yield* g.srcCall(f, "Reload");
+	this.votable_modes += "secret";
+	this.Reload();
 	return f.dot;
 }, true);
 
-// /datum/configuration/proc/Reload  (code/controllers/configuration.dm:294)
+// configuration.dm:294
 rt.def("/datum/configuration/proc/Reload", function Reload(f: Frame) {
-	rt.callSrc(f, "load", ["config/config.txt"]);
-	rt.callSrc(f, "load", ["config/game_options.txt", "game_options"]);
-	rt.callSrc(f, "load", ["config/policies.txt", "policies"]);
-	if (truthy(rt.sv(f, "maprotation")) || truthy(rt.sv(f, "allow_vote_map"))) { // ss13.live: the map vote needs the list too
-		rt.callSrc(f, "loadmaplist", ["config/maps.txt"]);
+	this.load("config/config.txt");
+	this.load("config/game_options.txt", "game_options");
+	this.load("config/policies.txt", "policies");
+	if (this.maprotation || this.allow_vote_map) { // ss13.live: the map vote needs the list too
+		this.loadmaplist("config/maps.txt");
 	}
-	rt.setGl("abandon_allowed", rt.sv(f, "respawn"));
+	GLOB.abandon_allowed = this.respawn;
 	return f.dot;
 });
 
-// /datum/configuration/proc/load  (code/controllers/configuration.dm:305)
+// configuration.dm:305
 rt.def("/datum/configuration/proc/load", function load(f: Frame, filename: Value, type: Value) {
-	let Lines: Value = null, t: Value = null, pos: Value = null, name: Value = null, value: Value = null, ticklag: Value = null, mode_name: Value = null, pop_pos: Value = null, mode_name_6: Value = null, mode_value: Value = null, prob_pos: Value = null, prob_name: Value = null, prob_value: Value = null, law_id: Value = null, L: Value = null, lawid: Value = null, weight: Value = null, race_id: Value = null, species_id: Value = null, BombCap: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [type, Lines, t, pos, name, value, ticklag, mode_name, pop_pos, mode_name_6, mode_value, prob_pos, prob_name, prob_value, law_id, L, lawid, weight, race_id, species_id, BombCap, $0, $e];
-	if (live(type) === null) {
-		type = "config";
-	}
-	Lines = rt.callName(f, rt.world(), "file2list", [live(filename)]);
-	t = null;
-	rt.forList(f, 0, live(Lines));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		t = $e;
-		if (!truthy(live(t))) {
+	let t: Value = null, pos: Value = null, name: Value = null, value: Value = null, ticklag: Value = null, mode_name: Value = null, pop_pos: Value = null, mode_name_6: Value = null, mode_value: Value = null, prob_pos: Value = null, prob_name: Value = null, prob_value: Value = null, law_id: Value = null, L: Value = null, lawid: Value = null, weight: Value = null, race_id: Value = null, species_id: Value = null, BombCap: Value = null;
+	let $e: any;
+	type ??= "config";
+	let Lines: Value = rt.world().file2list(filename);
+	for (t of each(Lines)) {
+		if (!t) {
 			continue;
 		}
-		if (isEqual(rt.length((t = rt.call(f, P("/proc/trim"), null, [live(t)]))), 0)) {
+		if (rt.length((t = trim(t))) == 0) {
 			continue;
 		}
-		if (isEqual(rt.call(f, P("/proc/copytext"), null, [live(t), 1, 2]), "#")) {
+		if (copytext(t, 1, 2) == "#") {
 			continue;
 		}
-		pos = rt.call(f, P("/proc/findtext"), null, [live(t), " "]);
+		pos = findtext(t, " ");
 		name = null;
 		value = null;
-		if (truthy(live(pos))) {
-			name = rt.call(f, P("/proc/lowertext"), null, [rt.call(f, P("/proc/copytext"), null, [live(t), 1, live(pos)])]);
-			value = rt.call(f, P("/proc/copytext"), null, [live(t), add(live(pos), 1)]);
+		if (pos) {
+			name = lowertext(copytext(t, 1, pos));
+			value = copytext(t, pos + 1);
 		} else {
-			name = rt.call(f, P("/proc/lowertext"), null, [live(t)]);
+			name = lowertext(t);
 		}
-		if (!truthy(live(name))) {
+		if (!name) {
 			continue;
 		}
-		if (isEqual(live(type), "config")) {
-			$0 = live(name);
-			if ($0 === "lobby_countdown") {
-				rt.setSv(f, "lobby_countdown", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-			} else if ($0 === "round_end_countdown") {
-				rt.setSv(f, "round_end_countdown", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-			} else if ($0 === "log_ooc") {
-				rt.setSv(f, "log_ooc", 1);
-			} else if ($0 === "log_access") {
-				rt.setSv(f, "log_access", 1);
-			} else if ($0 === "log_say") {
-				rt.setSv(f, "log_say", 1);
-			} else if ($0 === "log_admin") {
-				rt.setSv(f, "log_admin", 1);
-			} else if ($0 === "log_prayer") {
-				rt.setSv(f, "log_prayer", 1);
-			} else if ($0 === "log_law") {
-				rt.setSv(f, "log_law", 1);
-			} else if ($0 === "log_game") {
-				rt.setSv(f, "log_game", 1);
-			} else if ($0 === "log_vote") {
-				rt.setSv(f, "log_vote", 1);
-			} else if ($0 === "log_whisper") {
-				rt.setSv(f, "log_whisper", 1);
-			} else if ($0 === "log_attack") {
-				rt.setSv(f, "log_attack", 1);
-			} else if ($0 === "log_emote") {
-				rt.setSv(f, "log_emote", 1);
-			} else if ($0 === "log_adminchat") {
-				rt.setSv(f, "log_adminchat", 1);
-			} else if ($0 === "log_pda") {
-				rt.setSv(f, "log_pda", 1);
-			} else if ($0 === "log_twitter") {
-				rt.setSv(f, "log_twitter", 1);
-			} else if ($0 === "allow_admin_ooccolor") {
-				rt.setSv(f, "allow_admin_ooccolor", 1);
-			} else if ($0 === "allow_vote_restart") {
-				rt.setSv(f, "allow_vote_restart", 1);
-			} else if ($0 === "allow_vote_mode") {
-				rt.setSv(f, "allow_vote_mode", 1);
-			} else if ($0 === "allow_vote_shuttle") {
-				rt.setSv(f, "allow_vote_shuttle", 1);
-			} else if ($0 === "allow_vote_boot") {
-				rt.setSv(f, "allow_vote_boot", 1);
-			} else if ($0 === "allow_vote_map") {
-				rt.setSv(f, "allow_vote_map", 1);
-			} else if ($0 === "no_dead_vote") {
-				rt.setSv(f, "vote_no_dead", 1);
-			} else if ($0 === "default_no_vote") {
-				rt.setSv(f, "vote_no_default", 1);
-			} else if ($0 === "announce_removals") {
-				rt.setSv(f, "announce_removals", 1);
-			} else if ($0 === "newcomer_wait") {
-				rt.setSv(f, "newcomer_wait", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-			} else if ($0 === "vote_delay") {
-				rt.setSv(f, "vote_delay", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-			} else if ($0 === "vote_period") {
-				rt.setSv(f, "vote_period", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-			} else if ($0 === "norespawn") {
-				rt.setSv(f, "respawn", 0);
-			} else if ($0 === "servername") {
-				rt.setSv(f, "server_name", live(value));
-			} else if ($0 === "stationname") {
-				rt.setSv(f, "station_name", live(value));
-			} else if ($0 === "server") {
-				rt.setSv(f, "server", live(value));
-			} else if ($0 === "banappeals") {
-				rt.setSv(f, "banappeals", live(value));
-			} else if ($0 === "wikiurl") {
-				rt.setSv(f, "wikiurl", live(value));
-			} else if ($0 === "forumurl") {
-				rt.setSv(f, "forumurl", live(value));
-			} else if ($0 === "rulesurl") {
-				rt.setSv(f, "rulesurl", live(value));
-			} else if ($0 === "githuburl") {
-				rt.setSv(f, "githuburl", live(value));
-			} else if ($0 === "guest_jobban") {
-				rt.setSv(f, "guest_jobban", 1);
-			} else if ($0 === "guest_ban") {
-				rt.setGl("guests_allowed", 0);
-			} else if ($0 === "allow_metadata") {
-				rt.setSv(f, "allow_Metadata", 1);
-			} else if ($0 === "id_console_jobslot_delay") {
-				rt.setSv(f, "id_console_jobslot_delay", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-			} else if ($0 === "inactivity_period") {
-				rt.setSv(f, "inactivity_period", multiply(rt.call(f, P("/proc/text2num"), null, [live(value)]), 10));
-			} else if ($0 === "afk_period") {
-				rt.setSv(f, "afk_period", multiply(rt.call(f, P("/proc/text2num"), null, [live(value)]), 10));
-			} else if ($0 === "kick_inactive") {
-				rt.setSv(f, "kick_inactive", 1);
-			} else if ($0 === "load_jobs_from_txt") {
-				rt.setSv(f, "load_jobs_from_txt", 1);
-			} else if ($0 === "forbid_singulo_possession") {
-				rt.setSv(f, "forbid_singulo_possession", 1);
-			} else if ($0 === "popup_admin_pm") {
-				rt.setSv(f, "popup_admin_pm", 1);
-			} else if ($0 === "allow_holidays") {
-				rt.setSv(f, "allow_holidays", 1);
-			} else if ($0 === "useircbot") {
-				rt.setSv(f, "useircbot", 1);
-			} else if ($0 === "ticklag") {
-				if (rt.gt((ticklag = rt.call(f, P("/proc/text2num"), null, [live(value)])), 0)) {
-					rt.setSv(f, "fps", divide(10, live(ticklag)));
+		if (type == "config") {
+			if (name === "lobby_countdown") {
+				this.lobby_countdown = text2num(value);
+			} else if (name === "round_end_countdown") {
+				this.round_end_countdown = text2num(value);
+			} else if (name === "log_ooc") {
+				this.log_ooc = 1;
+			} else if (name === "log_access") {
+				this.log_access = 1;
+			} else if (name === "log_say") {
+				this.log_say = 1;
+			} else if (name === "log_admin") {
+				this.log_admin = 1;
+			} else if (name === "log_prayer") {
+				this.log_prayer = 1;
+			} else if (name === "log_law") {
+				this.log_law = 1;
+			} else if (name === "log_game") {
+				this.log_game = 1;
+			} else if (name === "log_vote") {
+				this.log_vote = 1;
+			} else if (name === "log_whisper") {
+				this.log_whisper = 1;
+			} else if (name === "log_attack") {
+				this.log_attack = 1;
+			} else if (name === "log_emote") {
+				this.log_emote = 1;
+			} else if (name === "log_adminchat") {
+				this.log_adminchat = 1;
+			} else if (name === "log_pda") {
+				this.log_pda = 1;
+			} else if (name === "log_twitter") {
+				this.log_twitter = 1;
+			} else if (name === "allow_admin_ooccolor") {
+				this.allow_admin_ooccolor = 1;
+			} else if (name === "allow_vote_restart") {
+				this.allow_vote_restart = 1;
+			} else if (name === "allow_vote_mode") {
+				this.allow_vote_mode = 1;
+			} else if (name === "allow_vote_shuttle") {
+				this.allow_vote_shuttle = 1;
+			} else if (name === "allow_vote_boot") {
+				this.allow_vote_boot = 1;
+			} else if (name === "allow_vote_map") {
+				this.allow_vote_map = 1;
+			} else if (name === "no_dead_vote") {
+				this.vote_no_dead = 1;
+			} else if (name === "default_no_vote") {
+				this.vote_no_default = 1;
+			} else if (name === "announce_removals") {
+				this.announce_removals = 1;
+			} else if (name === "newcomer_wait") {
+				this.newcomer_wait = text2num(value);
+			} else if (name === "vote_delay") {
+				this.vote_delay = text2num(value);
+			} else if (name === "vote_period") {
+				this.vote_period = text2num(value);
+			} else if (name === "norespawn") {
+				this.respawn = 0;
+			} else if (name === "servername") {
+				this.server_name = value;
+			} else if (name === "stationname") {
+				this.station_name = value;
+			} else if (name === "server") {
+				this.server = value;
+			} else if (name === "banappeals") {
+				this.banappeals = value;
+			} else if (name === "wikiurl") {
+				this.wikiurl = value;
+			} else if (name === "forumurl") {
+				this.forumurl = value;
+			} else if (name === "rulesurl") {
+				this.rulesurl = value;
+			} else if (name === "githuburl") {
+				this.githuburl = value;
+			} else if (name === "guest_jobban") {
+				this.guest_jobban = 1;
+			} else if (name === "guest_ban") {
+				GLOB.guests_allowed = 0;
+			} else if (name === "allow_metadata") {
+				this.allow_Metadata = 1;
+			} else if (name === "id_console_jobslot_delay") {
+				this.id_console_jobslot_delay = text2num(value);
+			} else if (name === "inactivity_period") {
+				this.inactivity_period = text2num(value) * 10;
+			} else if (name === "afk_period") {
+				this.afk_period = text2num(value) * 10;
+			} else if (name === "kick_inactive") {
+				this.kick_inactive = 1;
+			} else if (name === "load_jobs_from_txt") {
+				this.load_jobs_from_txt = 1;
+			} else if (name === "forbid_singulo_possession") {
+				this.forbid_singulo_possession = 1;
+			} else if (name === "popup_admin_pm") {
+				this.popup_admin_pm = 1;
+			} else if (name === "allow_holidays") {
+				this.allow_holidays = 1;
+			} else if (name === "useircbot") {
+				this.useircbot = 1;
+			} else if (name === "ticklag") {
+				if ((ticklag = text2num(value)) > 0) {
+					this.fps = 10 / ticklag;
 				}
-			} else if ($0 === "tick_limit_mc_init") {
-				rt.setSv(f, "tick_limit_mc_init", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-			} else if ($0 === "fps") {
-				rt.setSv(f, "fps", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-			} else if ($0 === "automute_on") {
-				rt.setSv(f, "automute_on", 1);
-			} else if ($0 === "soft_popcap") {
-				rt.setSv(f, "soft_popcap", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-			} else if ($0 === "hard_popcap") {
-				rt.setSv(f, "hard_popcap", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-			} else if ($0 === "extreme_popcap") {
-				rt.setSv(f, "extreme_popcap", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-			} else if ($0 === "soft_popcap_message") {
-				rt.setSv(f, "soft_popcap_message", live(value));
-			} else if ($0 === "hard_popcap_message") {
-				rt.setSv(f, "hard_popcap_message", live(value));
-			} else if ($0 === "extreme_popcap_message") {
-				rt.setSv(f, "extreme_popcap_message", live(value));
-			} else if ($0 === "check_randomizer") {
-				rt.setSv(f, "check_randomizer", 1);
-			} else if ($0 === "aggressive_changelog") {
-				rt.setSv(f, "aggressive_changelog", 1);
-			} else if ($0 === "allow_webclient") {
-				rt.setSv(f, "allowwebclient", 1);
-			} else if ($0 === "webclient_only_byond_members") {
-				rt.setSv(f, "webclientmembersonly", 1);
-			} else if ($0 === "announce_admin_logout") {
-				rt.setSv(f, "announce_admin_logout", 1);
-			} else if ($0 === "announce_admin_login") {
-				rt.setSv(f, "announce_admin_login", 1);
-			} else if ($0 === "maprotation") {
-				rt.setSv(f, "maprotation", 1);
-			} else if ($0 === "allow_map_voting") {
-				rt.setSv(f, "allow_map_voting", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-			} else if ($0 === "maprotationchancedelta") {
-				rt.setSv(f, "maprotatechancedelta", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-			} else if ($0 === "autoadmin") {
-				rt.setSv(f, "autoadmin", 1);
-				if (truthy(live(value))) {
-					rt.setSv(f, "autoadmin_rank", rt.call(f, P("/proc/ckeyEx"), null, [live(value)]));
+			} else if (name === "tick_limit_mc_init") {
+				this.tick_limit_mc_init = text2num(value);
+			} else if (name === "fps") {
+				this.fps = text2num(value);
+			} else if (name === "automute_on") {
+				this.automute_on = 1;
+			} else if (name === "soft_popcap") {
+				this.soft_popcap = text2num(value);
+			} else if (name === "hard_popcap") {
+				this.hard_popcap = text2num(value);
+			} else if (name === "extreme_popcap") {
+				this.extreme_popcap = text2num(value);
+			} else if (name === "soft_popcap_message") {
+				this.soft_popcap_message = value;
+			} else if (name === "hard_popcap_message") {
+				this.hard_popcap_message = value;
+			} else if (name === "extreme_popcap_message") {
+				this.extreme_popcap_message = value;
+			} else if (name === "check_randomizer") {
+				this.check_randomizer = 1;
+			} else if (name === "aggressive_changelog") {
+				this.aggressive_changelog = 1;
+			} else if (name === "allow_webclient") {
+				this.allowwebclient = 1;
+			} else if (name === "webclient_only_byond_members") {
+				this.webclientmembersonly = 1;
+			} else if (name === "announce_admin_logout") {
+				this.announce_admin_logout = 1;
+			} else if (name === "announce_admin_login") {
+				this.announce_admin_login = 1;
+			} else if (name === "maprotation") {
+				this.maprotation = 1;
+			} else if (name === "allow_map_voting") {
+				this.allow_map_voting = text2num(value);
+			} else if (name === "maprotationchancedelta") {
+				this.maprotatechancedelta = text2num(value);
+			} else if (name === "autoadmin") {
+				this.autoadmin = 1;
+				if (value) {
+					this.autoadmin_rank = ckeyEx(value);
 				}
-			} else if ($0 === "generate_minimaps") {
-				rt.setSv(f, "generate_minimaps", 1);
-			} else if ($0 === "client_warn_version") {
-				rt.setSv(f, "client_warn_version", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-			} else if ($0 === "client_warn_message") {
-				rt.setSv(f, "client_warn_message", live(value));
-			} else if ($0 === "client_error_version") {
-				rt.setSv(f, "client_error_version", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-			} else if ($0 === "client_error_message") {
-				rt.setSv(f, "client_error_message", live(value));
-			} else if ($0 === "minute_topic_limit") {
-				rt.setSv(f, "minutetopiclimit", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-			} else if ($0 === "second_topic_limit") {
-				rt.setSv(f, "secondtopiclimit", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-			} else if ($0 === "error_cooldown") {
-				rt.setSv(f, "error_cooldown", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-			} else if ($0 === "error_limit") {
-				rt.setSv(f, "error_limit", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-			} else if ($0 === "error_silence_time") {
-				rt.setSv(f, "error_silence_time", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-			} else if ($0 === "error_msg_delay") {
-				rt.setSv(f, "error_msg_delay", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-			} else if ($0 === "default_view") {
-				rt.setSv(f, "default_view", live(value));
-			} else if ($0 === "default_view_square") {
-				rt.setSv(f, "default_view_square", live(value));
+			} else if (name === "generate_minimaps") {
+				this.generate_minimaps = 1;
+			} else if (name === "client_warn_version") {
+				this.client_warn_version = text2num(value);
+			} else if (name === "client_warn_message") {
+				this.client_warn_message = value;
+			} else if (name === "client_error_version") {
+				this.client_error_version = text2num(value);
+			} else if (name === "client_error_message") {
+				this.client_error_message = value;
+			} else if (name === "minute_topic_limit") {
+				this.minutetopiclimit = text2num(value);
+			} else if (name === "second_topic_limit") {
+				this.secondtopiclimit = text2num(value);
+			} else if (name === "error_cooldown") {
+				this.error_cooldown = text2num(value);
+			} else if (name === "error_limit") {
+				this.error_limit = text2num(value);
+			} else if (name === "error_silence_time") {
+				this.error_silence_time = text2num(value);
+			} else if (name === "error_msg_delay") {
+				this.error_msg_delay = text2num(value);
+			} else if (name === "default_view") {
+				this.default_view = value;
+			} else if (name === "default_view_square") {
+				this.default_view_square = value;
 			} else {
-				rt.op(f, "OutputReference", [rt.R.glob(112)], [fmt("Unknown setting in configuration: '＀'", [live(name)])], false);
+				rt.op(f, "OutputReference", [rt.R.glob(112)], [`Unknown setting in configuration: '${name}'`], false);
 			}
-		} else {
-			if (isEqual(live(type), "game_options")) {
-				$0 = live(name);
-				if ($0 === "damage_multiplier") {
-					rt.setSv(f, "damage_multiplier", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-				} else if ($0 === "revival_pod_plants") {
-					rt.setSv(f, "revival_pod_plants", 1);
-				} else if ($0 === "revival_cloning") {
-					rt.setSv(f, "revival_cloning", 1);
-				} else if ($0 === "revival_brain_life") {
-					rt.setSv(f, "revival_brain_life", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-				} else if ($0 === "rename_cyborg") {
-					rt.setSv(f, "rename_cyborg", 1);
-				} else if ($0 === "ooc_during_round") {
-					rt.setSv(f, "ooc_during_round", 1);
-				} else if ($0 === "emojis") {
-					rt.setSv(f, "emojis", 1);
-				} else if ($0 === "run_delay") {
-					rt.setSv(f, "run_speed", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-				} else if ($0 === "walk_delay") {
-					rt.setSv(f, "walk_speed", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-				} else if ($0 === "human_delay") {
-					rt.setSv(f, "human_delay", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-				} else if ($0 === "robot_delay") {
-					rt.setSv(f, "robot_delay", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-				} else if ($0 === "monkey_delay") {
-					rt.setSv(f, "monkey_delay", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-				} else if ($0 === "alien_delay") {
-					rt.setSv(f, "alien_delay", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-				} else if ($0 === "slime_delay") {
-					rt.setSv(f, "slime_delay", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-				} else if ($0 === "animal_delay") {
-					rt.setSv(f, "animal_delay", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-				} else if ($0 === "alert_red_upto") {
-					rt.setSv(f, "alert_desc_red_upto", live(value));
-				} else if ($0 === "alert_red_downto") {
-					rt.setSv(f, "alert_desc_red_downto", live(value));
-				} else if ($0 === "alert_blue_downto") {
-					rt.setSv(f, "alert_desc_blue_downto", live(value));
-				} else if ($0 === "alert_blue_upto") {
-					rt.setSv(f, "alert_desc_blue_upto", live(value));
-				} else if ($0 === "alert_green") {
-					rt.setSv(f, "alert_desc_green", live(value));
-				} else if ($0 === "alert_delta") {
-					rt.setSv(f, "alert_desc_delta", live(value));
-				} else if ($0 === "no_intercept_report") {
-					rt.setSv(f, "intercept", 0);
-				} else if ($0 === "assistants_have_maint_access") {
-					(rt.modSrcVar(f, "jobs_have_maint_access", 1, rt.bitOr));
-				} else if ($0 === "security_has_maint_access") {
-					(rt.modSrcVar(f, "jobs_have_maint_access", 2, rt.bitOr));
-				} else if ($0 === "everyone_has_maint_access") {
-					(rt.modSrcVar(f, "jobs_have_maint_access", 4, rt.bitOr));
-				} else if ($0 === "sec_start_brig") {
-					rt.setSv(f, "sec_start_brig", 1);
-				} else if ($0 === "gateway_delay") {
-					rt.setSv(f, "gateway_delay", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-				} else if ($0 === "continuous") {
-					if (truthy((rt.isIn(f, (mode_name = rt.call(f, P("/proc/lowertext"), null, [live(value)])), rt.sv(f, "modes")) ? 1 : 0))) {
-						rt.setAt(rt.sv(f, "continuous"), live(mode_name), 1);
-					} else {
-						rt.op(f, "OutputReference", [rt.R.glob(112)], [fmt("Unknown continuous configuration definition: ＀.", [live(mode_name)])], false);
-					}
-				} else if ($0 === "midround_antag") {
-					if (truthy((rt.isIn(f, (mode_name = rt.call(f, P("/proc/lowertext"), null, [live(value)])), rt.sv(f, "modes")) ? 1 : 0))) {
-						rt.setAt(rt.sv(f, "midround_antag"), live(mode_name), 1);
-					} else {
-						rt.op(f, "OutputReference", [rt.R.glob(112)], [fmt("Unknown midround antagonist configuration definition: ＀.", [live(mode_name)])], false);
-					}
-				} else if ($0 === "midround_antag_time_check") {
-					rt.setSv(f, "midround_antag_time_check", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-				} else if ($0 === "midround_antag_life_check") {
-					rt.setSv(f, "midround_antag_life_check", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-				} else if ($0 === "min_pop") {
-					pop_pos = rt.call(f, P("/proc/findtext"), null, [live(value), " "]);
-					mode_name_6 = null;
-					mode_value = null;
-					if (truthy(live(pop_pos))) {
-						mode_name_6 = rt.call(f, P("/proc/lowertext"), null, [rt.call(f, P("/proc/copytext"), null, [live(value), 1, live(pop_pos)])]);
-						mode_value = rt.call(f, P("/proc/copytext"), null, [live(value), add(live(pop_pos), 1)]);
-						if (truthy((rt.isIn(f, live(mode_name_6), rt.sv(f, "modes")) ? 1 : 0))) {
-							rt.setAt(rt.sv(f, "min_pop"), live(mode_name_6), rt.call(f, P("/proc/text2num"), null, [live(mode_value)]));
-						} else {
-							rt.op(f, "OutputReference", [rt.R.glob(112)], [fmt("Unknown minimum population configuration definition: ＀.", [live(mode_name_6)])], false);
-						}
-					} else {
-						rt.op(f, "OutputReference", [rt.R.glob(112)], [fmt("Incorrect minimum population configuration definition: ＀  ＀.", [live(mode_name_6), live(mode_value)])], false);
-					}
-				} else if ($0 === "max_pop") {
-					pop_pos = rt.call(f, P("/proc/findtext"), null, [live(value), " "]);
-					mode_name_6 = null;
-					mode_value = null;
-					if (truthy(live(pop_pos))) {
-						mode_name_6 = rt.call(f, P("/proc/lowertext"), null, [rt.call(f, P("/proc/copytext"), null, [live(value), 1, live(pop_pos)])]);
-						mode_value = rt.call(f, P("/proc/copytext"), null, [live(value), add(live(pop_pos), 1)]);
-						if (truthy((rt.isIn(f, live(mode_name_6), rt.sv(f, "modes")) ? 1 : 0))) {
-							rt.setAt(rt.sv(f, "max_pop"), live(mode_name_6), rt.call(f, P("/proc/text2num"), null, [live(mode_value)]));
-						} else {
-							rt.op(f, "OutputReference", [rt.R.glob(112)], [fmt("Unknown maximum population configuration definition: ＀.", [live(mode_name_6)])], false);
-						}
-					} else {
-						rt.op(f, "OutputReference", [rt.R.glob(112)], [fmt("Incorrect maximum population configuration definition: ＀  ＀.", [live(mode_name_6), live(mode_value)])], false);
-					}
-				} else if ($0 === "shuttle_refuel_delay") {
-					rt.setSv(f, "shuttle_refuel_delay", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-				} else if ($0 === "show_game_type_odds") {
-					rt.setSv(f, "show_game_type_odds", 1);
-				} else if ($0 === "ghost_interaction") {
-					rt.setSv(f, "ghost_interaction", 1);
-				} else if ($0 === "traitor_scaling_coeff") {
-					rt.setSv(f, "traitor_scaling_coeff", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-				} else if ($0 === "changeling_scaling_coeff") {
-					rt.setSv(f, "changeling_scaling_coeff", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-				} else if ($0 === "security_scaling_coeff") {
-					rt.setSv(f, "security_scaling_coeff", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-				} else if ($0 === "abductor_scaling_coeff") {
-					rt.setSv(f, "abductor_scaling_coeff", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-				} else if ($0 === "traitor_objectives_amount") {
-					rt.setSv(f, "traitor_objectives_amount", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-				} else if ($0 === "probability") {
-					prob_pos = rt.call(f, P("/proc/findtext"), null, [live(value), " "]);
-					prob_name = null;
-					prob_value = null;
-					if (truthy(live(prob_pos))) {
-						prob_name = rt.call(f, P("/proc/lowertext"), null, [rt.call(f, P("/proc/copytext"), null, [live(value), 1, live(prob_pos)])]);
-						prob_value = rt.call(f, P("/proc/copytext"), null, [live(value), add(live(prob_pos), 1)]);
-						if (truthy((rt.isIn(f, live(prob_name), rt.sv(f, "modes")) ? 1 : 0))) {
-							rt.setAt(rt.sv(f, "probabilities"), live(prob_name), rt.call(f, P("/proc/text2num"), null, [live(prob_value)]));
-						} else {
-							rt.op(f, "OutputReference", [rt.R.glob(112)], [fmt("Unknown game mode probability configuration definition: ＀.", [live(prob_name)])], false);
-						}
-					} else {
-						rt.op(f, "OutputReference", [rt.R.glob(112)], [fmt("Incorrect probability configuration definition: ＀  ＀.", [live(prob_name), live(prob_value)])], false);
-					}
-				} else if ($0 === "protect_roles_from_antagonist") {
-					rt.setSv(f, "protect_roles_from_antagonist", 1);
-				} else if ($0 === "protect_assistant_from_antagonist") {
-					rt.setSv(f, "protect_assistant_from_antagonist", 1);
-				} else if ($0 === "enforce_human_authority") {
-					rt.setSv(f, "enforce_human_authority", 1);
-				} else if ($0 === "allow_latejoin_antagonists") {
-					rt.setSv(f, "allow_latejoin_antagonists", 1);
-				} else if ($0 === "allow_random_events") {
-					rt.setSv(f, "allow_random_events", 1);
-				} else if ($0 === "events_min_time_mul") {
-					rt.setSv(f, "events_min_time_mul", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-				} else if ($0 === "events_min_players_mul") {
-					rt.setSv(f, "events_min_players_mul", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-				} else if ($0 === "minimal_access_threshold") {
-					rt.setSv(f, "minimal_access_threshold", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-				} else if ($0 === "jobs_have_minimal_access") {
-					rt.setSv(f, "jobs_have_minimal_access", 1);
-				} else if ($0 === "humans_need_surnames") {
-					rt.setSv(f, "humans_need_surnames", 1);
-				} else if ($0 === "force_random_names") {
-					rt.setSv(f, "force_random_names", 1);
-				} else if ($0 === "allow_ai") {
-					rt.setSv(f, "allow_ai", 1);
-				} else if ($0 === "disable_secborg") {
-					rt.setSv(f, "forbid_secborg", 1);
-				} else if ($0 === "disable_peaceborg") {
-					rt.setSv(f, "forbid_peaceborg", 1);
-				} else if ($0 === "silent_ai") {
-					rt.setSv(f, "silent_ai", 1);
-				} else if ($0 === "silent_borg") {
-					rt.setSv(f, "silent_borg", 1);
-				} else if ($0 === "sandbox_autoclose") {
-					rt.setSv(f, "sandbox_autoclose", 1);
-				} else if ($0 === "default_laws") {
-					rt.setSv(f, "default_laws", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-				} else if ($0 === "random_laws") {
-					rt.modSrcVar(f, "lawids", (law_id = rt.call(f, P("/proc/lowertext"), null, [live(value)])), add);
-				} else if ($0 === "law_weight") {
-					if (!isEqual(rt.getLen(f, (L = rt.call(f, P("/proc/splittext"), null, [live(value), ","]))), 2)) {
-						rt.op(f, "OutputReference", [rt.R.glob(112)], [add("Invalid LAW_WEIGHT: ", live(t))], false);
-						continue;
-					}
-					lawid = rt.index(live(L), 1);
-					weight = rt.call(f, P("/proc/text2num"), null, [rt.index(live(L), 2)]);
-					rt.setAt(rt.sv(f, "law_weights"), live(lawid), live(weight));
-				} else if ($0 === "silicon_max_law_amount") {
-					rt.setSv(f, "silicon_max_law_amount", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-				} else if ($0 === "join_with_mutant_race") {
-					rt.setSv(f, "mutant_races", 1);
-				} else if ($0 === "roundstart_races") {
-					race_id = rt.call(f, P("/proc/lowertext"), null, [live(value)]);
-					species_id = null;
-					rt.forList(f, 1, rt.gl("species_list"));
-					while (($e = rt.next(f, 1)) !== undefined) {
-						species_id = $e;
-						if (isEqual(live(species_id), live(race_id))) {
-							rt.modSrcVar(f, "roundstart_races", rt.index(rt.gl("species_list"), live(species_id)), add);
-							rt.setAt(rt.gl("roundstart_species"), live(species_id), rt.index(rt.gl("species_list"), live(species_id)));
-						}
-					}
-					rt.endFor(f, 1);
-				} else if ($0 === "join_with_mutant_humans") {
-					rt.setSv(f, "mutant_humans", 1);
-				} else if ($0 === "assistant_cap") {
-					rt.setSv(f, "assistant_cap", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-				} else if ($0 === "starlight") {
-					rt.setSv(f, "starlight", 1);
-				} else if ($0 === "grey_assistants") {
-					rt.setSv(f, "grey_assistants", 1);
-				} else if ($0 === "lavaland_budget") {
-					rt.setSv(f, "lavaland_budget", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-				} else if ($0 === "space_budget") {
-					rt.setSv(f, "space_budget", rt.call(f, P("/proc/text2num"), null, [live(value)]));
-				} else if ($0 === "no_summon_guns") {
-					rt.setSv(f, "no_summon_guns", 1);
-				} else if ($0 === "no_summon_magic") {
-					rt.setSv(f, "no_summon_magic", 1);
-				} else if ($0 === "no_summon_events") {
-					rt.setSv(f, "no_summon_events", 1);
-				} else if ($0 === "reactionary_explosions") {
-					rt.setSv(f, "reactionary_explosions", 1);
-				} else if ($0 === "bombcap") {
-					if (!truthy((BombCap = rt.call(f, P("/proc/text2num"), null, [live(value)])))) {
-						continue;
-					}
-					if (rt.lt(live(BombCap), 4)) {
-						BombCap = 4;
-					}
-					rt.setGl("MAX_EX_DEVESTATION_RANGE", rt.call(f, P("/proc/round"), null, [divide(live(BombCap), 4)]));
-					rt.setGl("MAX_EX_HEAVY_RANGE", rt.call(f, P("/proc/round"), null, [divide(live(BombCap), 2)]));
-					rt.setGl("MAX_EX_LIGHT_RANGE", live(BombCap));
-					rt.setGl("MAX_EX_FLASH_RANGE", live(BombCap));
-					rt.setGl("MAX_EX_FLAME_RANGE", live(BombCap));
-				} else if ($0 === "arrivals_shuttle_dock_window") {
-					rt.setSv(f, "arrivals_shuttle_dock_window", rt.call(f, P("/proc/max"), null, [25, rt.call(f, P("/proc/text2num"), null, [live(value)])]));
-				} else if ($0 === "arrivals_shuttle_require_safe_latejoin") {
-					rt.setSv(f, "arrivals_shuttle_require_safe_latejoin", 1);
-				} else if ($0 === "mice_roundstart") {
-					rt.setSv(f, "mice_roundstart", rt.call(f, P("/proc/text2num"), null, [live(value)]));
+		} else if (type == "game_options") {
+			if (name === "damage_multiplier") {
+				this.damage_multiplier = text2num(value);
+			} else if (name === "revival_pod_plants") {
+				this.revival_pod_plants = 1;
+			} else if (name === "revival_cloning") {
+				this.revival_cloning = 1;
+			} else if (name === "revival_brain_life") {
+				this.revival_brain_life = text2num(value);
+			} else if (name === "rename_cyborg") {
+				this.rename_cyborg = 1;
+			} else if (name === "ooc_during_round") {
+				this.ooc_during_round = 1;
+			} else if (name === "emojis") {
+				this.emojis = 1;
+			} else if (name === "run_delay") {
+				this.run_speed = text2num(value);
+			} else if (name === "walk_delay") {
+				this.walk_speed = text2num(value);
+			} else if (name === "human_delay") {
+				this.human_delay = text2num(value);
+			} else if (name === "robot_delay") {
+				this.robot_delay = text2num(value);
+			} else if (name === "monkey_delay") {
+				this.monkey_delay = text2num(value);
+			} else if (name === "alien_delay") {
+				this.alien_delay = text2num(value);
+			} else if (name === "slime_delay") {
+				this.slime_delay = text2num(value);
+			} else if (name === "animal_delay") {
+				this.animal_delay = text2num(value);
+			} else if (name === "alert_red_upto") {
+				this.alert_desc_red_upto = value;
+			} else if (name === "alert_red_downto") {
+				this.alert_desc_red_downto = value;
+			} else if (name === "alert_blue_downto") {
+				this.alert_desc_blue_downto = value;
+			} else if (name === "alert_blue_upto") {
+				this.alert_desc_blue_upto = value;
+			} else if (name === "alert_green") {
+				this.alert_desc_green = value;
+			} else if (name === "alert_delta") {
+				this.alert_desc_delta = value;
+			} else if (name === "no_intercept_report") {
+				this.intercept = 0;
+			} else if (name === "assistants_have_maint_access") {
+				(rt.modSrcVar(f, "jobs_have_maint_access", 1, rt.bitOr));
+			} else if (name === "security_has_maint_access") {
+				(rt.modSrcVar(f, "jobs_have_maint_access", 2, rt.bitOr));
+			} else if (name === "everyone_has_maint_access") {
+				(rt.modSrcVar(f, "jobs_have_maint_access", 4, rt.bitOr));
+			} else if (name === "sec_start_brig") {
+				this.sec_start_brig = 1;
+			} else if (name === "gateway_delay") {
+				this.gateway_delay = text2num(value);
+			} else if (name === "continuous") {
+				if (rt.isIn(f, (mode_name = lowertext(value)), this.modes)) {
+					rt.setAt(this.continuous, mode_name, 1);
 				} else {
-					rt.op(f, "OutputReference", [rt.R.glob(112)], [fmt("Unknown setting in configuration: '＀'", [live(name)])], false);
+					rt.op(f, "OutputReference", [rt.R.glob(112)], [`Unknown continuous configuration definition: ${mode_name}.`], false);
 				}
+			} else if (name === "midround_antag") {
+				if (rt.isIn(f, (mode_name = lowertext(value)), this.modes)) {
+					rt.setAt(this.midround_antag, mode_name, 1);
+				} else {
+					rt.op(f, "OutputReference", [rt.R.glob(112)], [`Unknown midround antagonist configuration definition: ${mode_name}.`], false);
+				}
+			} else if (name === "midround_antag_time_check") {
+				this.midround_antag_time_check = text2num(value);
+			} else if (name === "midround_antag_life_check") {
+				this.midround_antag_life_check = text2num(value);
+			} else if (name === "min_pop") {
+				pop_pos = findtext(value, " ");
+				mode_name_6 = null;
+				mode_value = null;
+				if (pop_pos) {
+					mode_name_6 = lowertext(copytext(value, 1, pop_pos));
+					mode_value = copytext(value, pop_pos + 1);
+					if (rt.isIn(f, mode_name_6, this.modes)) {
+						rt.setAt(this.min_pop, mode_name_6, text2num(mode_value));
+					} else {
+						rt.op(f, "OutputReference", [rt.R.glob(112)], [`Unknown minimum population configuration definition: ${mode_name_6}.`], false);
+					}
+				} else {
+					rt.op(f, "OutputReference", [rt.R.glob(112)], [`Incorrect minimum population configuration definition: ${mode_name_6}  ${mode_value}.`], false);
+				}
+			} else if (name === "max_pop") {
+				pop_pos = findtext(value, " ");
+				mode_name_6 = null;
+				mode_value = null;
+				if (pop_pos) {
+					mode_name_6 = lowertext(copytext(value, 1, pop_pos));
+					mode_value = copytext(value, pop_pos + 1);
+					if (rt.isIn(f, mode_name_6, this.modes)) {
+						rt.setAt(this.max_pop, mode_name_6, text2num(mode_value));
+					} else {
+						rt.op(f, "OutputReference", [rt.R.glob(112)], [`Unknown maximum population configuration definition: ${mode_name_6}.`], false);
+					}
+				} else {
+					rt.op(f, "OutputReference", [rt.R.glob(112)], [`Incorrect maximum population configuration definition: ${mode_name_6}  ${mode_value}.`], false);
+				}
+			} else if (name === "shuttle_refuel_delay") {
+				this.shuttle_refuel_delay = text2num(value);
+			} else if (name === "show_game_type_odds") {
+				this.show_game_type_odds = 1;
+			} else if (name === "ghost_interaction") {
+				this.ghost_interaction = 1;
+			} else if (name === "traitor_scaling_coeff") {
+				this.traitor_scaling_coeff = text2num(value);
+			} else if (name === "changeling_scaling_coeff") {
+				this.changeling_scaling_coeff = text2num(value);
+			} else if (name === "security_scaling_coeff") {
+				this.security_scaling_coeff = text2num(value);
+			} else if (name === "abductor_scaling_coeff") {
+				this.abductor_scaling_coeff = text2num(value);
+			} else if (name === "traitor_objectives_amount") {
+				this.traitor_objectives_amount = text2num(value);
+			} else if (name === "probability") {
+				prob_pos = findtext(value, " ");
+				prob_name = null;
+				prob_value = null;
+				if (prob_pos) {
+					prob_name = lowertext(copytext(value, 1, prob_pos));
+					prob_value = copytext(value, prob_pos + 1);
+					if (rt.isIn(f, prob_name, this.modes)) {
+						rt.setAt(this.probabilities, prob_name, text2num(prob_value));
+					} else {
+						rt.op(f, "OutputReference", [rt.R.glob(112)], [`Unknown game mode probability configuration definition: ${prob_name}.`], false);
+					}
+				} else {
+					rt.op(f, "OutputReference", [rt.R.glob(112)], [`Incorrect probability configuration definition: ${prob_name}  ${prob_value}.`], false);
+				}
+			} else if (name === "protect_roles_from_antagonist") {
+				this.protect_roles_from_antagonist = 1;
+			} else if (name === "protect_assistant_from_antagonist") {
+				this.protect_assistant_from_antagonist = 1;
+			} else if (name === "enforce_human_authority") {
+				this.enforce_human_authority = 1;
+			} else if (name === "allow_latejoin_antagonists") {
+				this.allow_latejoin_antagonists = 1;
+			} else if (name === "allow_random_events") {
+				this.allow_random_events = 1;
+			} else if (name === "events_min_time_mul") {
+				this.events_min_time_mul = text2num(value);
+			} else if (name === "events_min_players_mul") {
+				this.events_min_players_mul = text2num(value);
+			} else if (name === "minimal_access_threshold") {
+				this.minimal_access_threshold = text2num(value);
+			} else if (name === "jobs_have_minimal_access") {
+				this.jobs_have_minimal_access = 1;
+			} else if (name === "humans_need_surnames") {
+				this.humans_need_surnames = 1;
+			} else if (name === "force_random_names") {
+				this.force_random_names = 1;
+			} else if (name === "allow_ai") {
+				this.allow_ai = 1;
+			} else if (name === "disable_secborg") {
+				this.forbid_secborg = 1;
+			} else if (name === "disable_peaceborg") {
+				this.forbid_peaceborg = 1;
+			} else if (name === "silent_ai") {
+				this.silent_ai = 1;
+			} else if (name === "silent_borg") {
+				this.silent_borg = 1;
+			} else if (name === "sandbox_autoclose") {
+				this.sandbox_autoclose = 1;
+			} else if (name === "default_laws") {
+				this.default_laws = text2num(value);
+			} else if (name === "random_laws") {
+				this.lawids += (law_id = lowertext(value));
+			} else if (name === "law_weight") {
+				if (rt.len(f, (L = splittext(value, ","))) != 2) {
+					rt.op(f, "OutputReference", [rt.R.glob(112)], ["Invalid LAW_WEIGHT: " + t], false);
+					continue;
+				}
+				lawid = rt.index(L, 1);
+				weight = text2num(rt.index(L, 2));
+				rt.setAt(this.law_weights, lawid, weight);
+			} else if (name === "silicon_max_law_amount") {
+				this.silicon_max_law_amount = text2num(value);
+			} else if (name === "join_with_mutant_race") {
+				this.mutant_races = 1;
+			} else if (name === "roundstart_races") {
+				race_id = lowertext(value);
+				species_id = null;
+				for (species_id of each(GLOB.species_list)) {
+					if (species_id == race_id) {
+						this.roundstart_races += rt.index(GLOB.species_list, species_id);
+						rt.setAt(GLOB.roundstart_species, species_id, rt.index(GLOB.species_list, species_id));
+					}
+				}
+			} else if (name === "join_with_mutant_humans") {
+				this.mutant_humans = 1;
+			} else if (name === "assistant_cap") {
+				this.assistant_cap = text2num(value);
+			} else if (name === "starlight") {
+				this.starlight = 1;
+			} else if (name === "grey_assistants") {
+				this.grey_assistants = 1;
+			} else if (name === "lavaland_budget") {
+				this.lavaland_budget = text2num(value);
+			} else if (name === "space_budget") {
+				this.space_budget = text2num(value);
+			} else if (name === "no_summon_guns") {
+				this.no_summon_guns = 1;
+			} else if (name === "no_summon_magic") {
+				this.no_summon_magic = 1;
+			} else if (name === "no_summon_events") {
+				this.no_summon_events = 1;
+			} else if (name === "reactionary_explosions") {
+				this.reactionary_explosions = 1;
+			} else if (name === "bombcap") {
+				if (!(BombCap = text2num(value))) {
+					continue;
+				}
+				if (BombCap < 4) {
+					BombCap = 4;
+				}
+				GLOB.MAX_EX_DEVESTATION_RANGE = round(BombCap / 4);
+				GLOB.MAX_EX_HEAVY_RANGE = round(BombCap / 2);
+				GLOB.MAX_EX_LIGHT_RANGE = BombCap;
+				GLOB.MAX_EX_FLASH_RANGE = BombCap;
+				GLOB.MAX_EX_FLAME_RANGE = BombCap;
+			} else if (name === "arrivals_shuttle_dock_window") {
+				this.arrivals_shuttle_dock_window = max(25, text2num(value));
+			} else if (name === "arrivals_shuttle_require_safe_latejoin") {
+				this.arrivals_shuttle_require_safe_latejoin = 1;
+			} else if (name === "mice_roundstart") {
+				this.mice_roundstart = text2num(value);
 			} else {
-				if (isEqual(live(type), "policies")) {
-					rt.setAt(rt.sv(f, "policies"), live(name), live(value));
-				}
+				rt.op(f, "OutputReference", [rt.R.glob(112)], [`Unknown setting in configuration: '${name}'`], false);
 			}
+		} else if (type == "policies") {
+			rt.setAt(this.policies, name, value);
 		}
 	}
-	rt.endFor(f, 0);
-	rt.setSv(f, "fps", rt.call(f, P("/proc/round"), null, [rt.sv(f, "fps")]));
-	if (!rt.le(rt.sv(f, "fps"), 0)) return f.dot;
-	rt.setSv(f, "fps", rt.initial(f, live(f.src), "fps"));
+	this.fps = round(this.fps);
+	if (!(this.fps <= 0)) return f.dot;
+	this.fps = rt.initial(f, this, "fps");
 	return f.dot;
 });
 
-// /datum/configuration/proc/loadmaplist  (code/controllers/configuration.dm:801)
+// configuration.dm:801
 rt.def("/datum/configuration/proc/loadmaplist", function loadmaplist(f: Frame, filename: Value) {
-	let Lines: Value = null, currentmap: Value = null, t: Value = null, pos: Value = null, command: Value = null, data: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [Lines, currentmap, t, pos, command, data, $0, $e];
-	Lines = rt.callName(f, rt.world(), "file2list", [live(filename)]);
-	currentmap = null;
-	t = null;
-	rt.forList(f, 0, live(Lines));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		t = $e;
-		if (!truthy(live(t))) {
+	let currentmap: Value = null, t: Value = null, pos: Value = null, command: Value = null, data: Value = null;
+	let $e: any;
+	let Lines: Value = rt.world().file2list(filename);
+	for (t of each(Lines)) {
+		if (!t) {
 			continue;
 		}
-		if (isEqual(rt.length((t = rt.call(f, P("/proc/trim"), null, [live(t)]))), 0)) {
+		if (rt.length((t = trim(t))) == 0) {
 			continue;
 		}
-		if (isEqual(rt.call(f, P("/proc/copytext"), null, [live(t), 1, 2]), "#")) {
+		if (copytext(t, 1, 2) == "#") {
 			continue;
 		}
-		pos = rt.call(f, P("/proc/findtext"), null, [live(t), " "]);
+		pos = findtext(t, " ");
 		command = null;
 		data = null;
-		if (truthy(live(pos))) {
-			command = rt.call(f, P("/proc/lowertext"), null, [rt.call(f, P("/proc/copytext"), null, [live(t), 1, live(pos)])]);
-			data = rt.call(f, P("/proc/copytext"), null, [live(t), add(live(pos), 1)]);
+		if (pos) {
+			command = lowertext(copytext(t, 1, pos));
+			data = copytext(t, pos + 1);
 		} else {
-			command = rt.call(f, P("/proc/lowertext"), null, [live(t)]);
+			command = lowertext(t);
 		}
-		if (!truthy(live(command))) {
+		if (!command) {
 			continue;
 		}
-		if ((!truthy(live(currentmap)) && !isEqual(live(command), "map"))) {
+		if (!currentmap && command != "map") {
 			continue;
 		}
-		$0 = live(command);
-		if ($0 === "map") {
-			if (truthy(rt.gv(f, "defaulted", (currentmap = rt.new_(f, T("/datum/map_config"), [fmt("_maps/＀.json", [live(data)])]))))) {
-				rt.call(f, P("/proc/log_world"), null, [fmt("Failed to load map config for ＀!", [live(data)])]);
+		if (command === "map") {
+			if ((currentmap = new_(T("/datum/map_config"), `_maps/${data}.json`)).defaulted) {
+				log_world(`Failed to load map config for ${data}!`);
 			}
-		} else if ($0 === "minplayers" || $0 === "minplayer") {
-			rt.setFv(f, "config_min_users", live(currentmap), rt.call(f, P("/proc/text2num"), null, [live(data)]));
-		} else if ($0 === "maxplayers" || $0 === "maxplayer") {
-			rt.setFv(f, "config_max_users", live(currentmap), rt.call(f, P("/proc/text2num"), null, [live(data)]));
-		} else if ($0 === "weight" || $0 === "voteweight") {
-			rt.setFv(f, "voteweight", live(currentmap), rt.call(f, P("/proc/text2num"), null, [live(data)]));
-		} else if ($0 === "default" || $0 === "defaultmap") {
-			rt.setSv(f, "defaultmap", live(currentmap));
-		} else if ($0 === "endmap") {
-			rt.setAt(rt.sv(f, "maplist"), rt.fv(f, "map_name", live(currentmap)), live(currentmap));
+		} else if (command === "minplayers" || command === "minplayer") {
+			currentmap.config_min_users = text2num(data);
+		} else if (command === "maxplayers" || command === "maxplayer") {
+			currentmap.config_max_users = text2num(data);
+		} else if (command === "weight" || command === "voteweight") {
+			currentmap.voteweight = text2num(data);
+		} else if (command === "default" || command === "defaultmap") {
+			this.defaultmap = currentmap;
+		} else if (command === "endmap") {
+			rt.setAt(this.maplist, currentmap.map_name, currentmap);
 			currentmap = null;
-		} else if ($0 === "disabled") {
+		} else if (command === "disabled") {
 			currentmap = null;
 		} else {
-			rt.op(f, "OutputReference", [rt.R.glob(112)], [fmt("Unknown command in map vote config: '＀'", [live(command)])], false);
+			rt.op(f, "OutputReference", [rt.R.glob(112)], [`Unknown command in map vote config: '${command}'`], false);
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /datum/configuration/proc/pick_mode  (code/controllers/configuration.dm:898)  may sleep
+// configuration.dm:898
 rt.def("/datum/configuration/proc/pick_mode", function* pick_mode(f: Frame, mode_name: Value) {
 	let _T: Value = null, M: Value = null;
-	let $e: any;
-	f.vars = () => [mode_name, _T, M, $e];
-	_T = null;
-	rt.forList(f, 0, rt.sv(f, "gamemode_cache"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_T = $e;
-		if ((truthy(rt.gv(f, "config_tag", (M = (yield* g.new_(f, live(_T), []))))) && isEqual(rt.fv(f, "config_tag", live(M)), live(mode_name)))) {
-			return live(M);
+	for (_T of each(this.gamemode_cache)) {
+		if ((M = (yield* new_(_T))).config_tag && M.config_tag == mode_name) {
+			return M;
 		}
-		yield* g.call(f, P("/proc/qdel"), null, [live(M)]);
+		yield* qdel(M);
 	}
-	rt.endFor(f, 0);
-	return (yield* g.new_(f, T("/datum/game_mode/extended"), []));
+	return (yield* new_(T("/datum/game_mode/extended")));
 }, true);
 
-// /datum/configuration/proc/get_runnable_modes  (code/controllers/configuration.dm:906)  may sleep
+// configuration.dm:906
 rt.def("/datum/configuration/proc/get_runnable_modes", function* get_runnable_modes(f: Frame) {
-	let runnable_modes: Value = null, _T: Value = null, M: Value = null;
-	let $e: any;
-	f.vars = () => [runnable_modes, _T, M, $e];
-	runnable_modes = (yield* g.new_(f, T("/list"), []));
-	_T = null;
-	rt.forList(f, 0, rt.sv(f, "gamemode_cache"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_T = $e;
-		if (!truthy((rt.isIn(f, rt.gv(f, "config_tag", (M = (yield* g.new_(f, live(_T), [])))), rt.sv(f, "modes")) ? 1 : 0))) {
-			yield* g.call(f, P("/proc/qdel"), null, [live(M)]);
+	let _T: Value = null, M: Value = null;
+	let runnable_modes: Value = (yield* new_(T("/list")));
+	for (_T of each(this.gamemode_cache)) {
+		if (!rt.isIn(f, (M = (yield* new_(_T))).config_tag, this.modes)) {
+			yield* qdel(M);
 			continue;
 		}
-		if (rt.le(rt.index(rt.sv(f, "probabilities"), rt.fv(f, "config_tag", live(M))), 0)) {
-			yield* g.call(f, P("/proc/qdel"), null, [live(M)]);
+		if (rt.index(this.probabilities, M.config_tag) <= 0) {
+			yield* qdel(M);
 			continue;
 		}
-		if (truthy(rt.index(rt.sv(f, "min_pop"), rt.fv(f, "config_tag", live(M))))) {
-			rt.setFv(f, "required_players", live(M), rt.index(rt.sv(f, "min_pop"), rt.fv(f, "config_tag", live(M))));
+		if (rt.index(this.min_pop, M.config_tag)) {
+			M.required_players = rt.index(this.min_pop, M.config_tag);
 		}
-		if (truthy(rt.index(rt.sv(f, "max_pop"), rt.fv(f, "config_tag", live(M))))) {
-			rt.setFv(f, "maximum_players", live(M), rt.index(rt.sv(f, "max_pop"), rt.fv(f, "config_tag", live(M))));
+		if (rt.index(this.max_pop, M.config_tag)) {
+			M.maximum_players = rt.index(this.max_pop, M.config_tag);
 		}
-		if (truthy((yield* g.callName(f, live(M), "can_start", [])))) {
-			rt.setAt(live(runnable_modes), live(M), rt.index(rt.sv(f, "probabilities"), rt.fv(f, "config_tag", live(M))));
+		if (M.can_start()) {
+			rt.setAt(runnable_modes, M, rt.index(this.probabilities, M.config_tag));
 		}
 	}
-	rt.endFor(f, 0);
-	return live(runnable_modes);
+	return runnable_modes;
 }, true);
 
-// /datum/configuration/proc/get_runnable_midround_modes  (code/controllers/configuration.dm:926)  may sleep
+// configuration.dm:926
 rt.def("/datum/configuration/proc/get_runnable_midround_modes", function* get_runnable_midround_modes(f: Frame, crew: Value) {
-	let runnable_modes: Value = null, _T: Value = null, M: Value = null;
-	let $e: any;
-	f.vars = () => [crew, runnable_modes, _T, M, $e];
-	runnable_modes = (yield* g.new_(f, T("/list"), []));
-	_T = null;
-	rt.forList(f, 0, subtract(rt.sv(f, "gamemode_cache"), rt.gv(f, "type", rt.fv(f, "mode", rt.gl("SSticker")))));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_T = $e;
-		if (!truthy((rt.isIn(f, rt.gv(f, "config_tag", (M = (yield* g.new_(f, live(_T), [])))), rt.sv(f, "modes")) ? 1 : 0))) {
-			yield* g.call(f, P("/proc/qdel"), null, [live(M)]);
+	let _T: Value = null, M: Value = null;
+	let runnable_modes: Value = (yield* new_(T("/list")));
+	for (_T of each(this.gamemode_cache - GLOB.SSticker.mode.type)) {
+		if (!rt.isIn(f, (M = (yield* new_(_T))).config_tag, this.modes)) {
+			yield* qdel(M);
 			continue;
 		}
-		if (rt.le(rt.index(rt.sv(f, "probabilities"), rt.fv(f, "config_tag", live(M))), 0)) {
-			yield* g.call(f, P("/proc/qdel"), null, [live(M)]);
+		if (rt.index(this.probabilities, M.config_tag) <= 0) {
+			yield* qdel(M);
 			continue;
 		}
-		if (truthy(rt.index(rt.sv(f, "min_pop"), rt.fv(f, "config_tag", live(M))))) {
-			rt.setFv(f, "required_players", live(M), rt.index(rt.sv(f, "min_pop"), rt.fv(f, "config_tag", live(M))));
+		if (rt.index(this.min_pop, M.config_tag)) {
+			M.required_players = rt.index(this.min_pop, M.config_tag);
 		}
-		if (truthy(rt.index(rt.sv(f, "max_pop"), rt.fv(f, "config_tag", live(M))))) {
-			rt.setFv(f, "maximum_players", live(M), rt.index(rt.sv(f, "max_pop"), rt.fv(f, "config_tag", live(M))));
+		if (rt.index(this.max_pop, M.config_tag)) {
+			M.maximum_players = rt.index(this.max_pop, M.config_tag);
 		}
-		if (rt.le(rt.fv(f, "required_players", live(M)), live(crew))) {
-			if ((rt.ge(rt.fv(f, "maximum_players", live(M)), 0) && rt.lt(rt.fv(f, "maximum_players", live(M)), live(crew)))) {
+		if (M.required_players <= crew) {
+			if (M.maximum_players >= 0 && M.maximum_players < crew) {
 				continue;
 			}
-			rt.setAt(live(runnable_modes), live(M), rt.index(rt.sv(f, "probabilities"), rt.fv(f, "config_tag", live(M))));
+			rt.setAt(runnable_modes, M, rt.index(this.probabilities, M.config_tag));
 		}
 	}
-	rt.endFor(f, 0);
-	return live(runnable_modes);
+	return runnable_modes;
 }, true);
 
-// /datum/configuration/proc/stat_entry  (code/controllers/configuration.dm:946)  may sleep
+// configuration.dm:946
 rt.def("/datum/configuration/proc/stat_entry", function* stat_entry(f: Frame) {
-	if (!truthy(rt.sv(f, "statclick"))) {
-		rt.setSv(f, "statclick", (yield* g.new_(f, T("/obj/effect/statclick/debug"), [null, "Edit", live(f.src)])));
+	if (!this.statclick) {
+		this.statclick = (yield* new_(T("/obj/effect/statclick/debug"), null, "Edit", this));
 	}
-	yield* g.call(f, P("/proc/stat"), null, [fmt("＀:", [rt.sv(f, "name")]), rt.sv(f, "statclick")]);
+	stat(`${this.name}:`, this.statclick);
 	return f.dot;
 }, true);

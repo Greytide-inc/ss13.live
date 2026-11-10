@@ -1,7 +1,7 @@
-// From code/game/objects/structures/window.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/structures/window.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, fmt } = rt;
 
 
 rt.type(12207, "/obj/structure/window", "/obj/structure", {
@@ -35,675 +35,588 @@ rt.type(12207, "/obj/structure/window", "/obj/structure", {
 	armor: null,
 });
 
-// /obj/structure/window/proc/<init>  (code/game/objects/structures/window.dm:22)
+// window.dm:22
 rt.def("/obj/structure/window/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "debris", rt.list());
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 80, "acid", 100]));
+	parent_proc();
+	this.debris = list();
+	this.armor = rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 80, "acid", 100]);
 	return f.dot;
 });
 
-// /obj/structure/window/proc/examine  (code/game/objects/structures/window.dm:32)
-rt.def("/obj/structure/window/proc/examine", function examine(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.sv(f, "reinf"))) {
-		if ((truthy(rt.sv(f, "anchored")) && isEqual(rt.sv(f, "state"), 2))) {
-			rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='notice'>The window is <b>screwed</b> to the frame.</span>"]);
-		} else {
-			if ((truthy(rt.sv(f, "anchored")) && isEqual(rt.sv(f, "state"), 1))) {
-				rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='notice'>The window is <i>unscrewed</i> but <b>pried</b> into the frame.</span>"]);
-			} else {
-				if ((truthy(rt.sv(f, "anchored")) && isEqual(rt.sv(f, "state"), 0))) {
-					rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='notice'>The window is out of the frame, but could be <i>pried</i> in. It is <b>screwed</b> to the floor.</span>"]);
-				} else {
-					if (!truthy(rt.sv(f, "anchored"))) {
-						rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='notice'>The window is <i>unscrewed</i> from the floor, and could be deconstructed by <b>wrenching</b>.</span>"]);
-					}
-				}
-			}
+// window.dm:32
+rt.def("/obj/structure/window/proc/examine", function examine(f: Frame, user: Value) {
+	parent_proc();
+	if (this.reinf) {
+		if (this.anchored && this.state == WINDOW_SCREWED_TO_FRAME) {
+			to_chat(user, "<span class='notice'>The window is <b>screwed</b> to the frame.</span>");
+		} else if (this.anchored && this.state == WINDOW_IN_FRAME) {
+			to_chat(user, "<span class='notice'>The window is <i>unscrewed</i> but <b>pried</b> into the frame.</span>");
+		} else if (this.anchored && this.state == WINDOW_OUT_OF_FRAME) {
+			to_chat(user, "<span class='notice'>The window is out of the frame, but could be <i>pried</i> in. It is <b>screwed</b> to the floor.</span>");
+		} else if (!this.anchored) {
+			to_chat(user, "<span class='notice'>The window is <i>unscrewed</i> from the floor, and could be deconstructed by <b>wrenching</b>.</span>");
 		}
+	} else if (this.anchored) {
+		to_chat(user, "<span class='notice'>The window is <b>screwed</b> to the floor.</span>");
 	} else {
-		if (truthy(rt.sv(f, "anchored"))) {
-			rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='notice'>The window is <b>screwed</b> to the floor.</span>"]);
-		} else {
-			rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='notice'>The window is <i>unscrewed</i> from the floor, and could be deconstructed by <b>wrenching</b>.</span>"]);
-		}
+		to_chat(user, "<span class='notice'>The window is <i>unscrewed</i> from the floor, and could be deconstructed by <b>wrenching</b>.</span>");
 	}
-	if (truthy(rt.sv(f, "anchored"))) return f.dot;
-	rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='notice'>Alt-click to rotate it clockwise.</span>"]);
+	if (this.anchored) return f.dot;
+	to_chat(user, "<span class='notice'>Alt-click to rotate it clockwise.</span>");
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/structure/window/proc/Initialize  (code/game/objects/structures/window.dm:52)  may sleep
-rt.def("/obj/structure/window/proc/Initialize", function* Initialize(f: Frame) {
-	let shards: Value = null, rods: Value = null, i: Value = null;
+// window.dm:52
+rt.def("/obj/structure/window/proc/Initialize", function* Initialize(f: Frame, mapload: Value, direct: Value) {
+	let i: Value = null;
 	let $e: any;
-	f.vars = () => [shards, rods, i, $e];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "obj_integrity", rt.sv(f, "max_integrity"));
-	if (truthy(live(f.args[1]))) {
-		yield* g.srcCall(f, "setDir", live(f.args[1]));
+	yield* parent_proc();
+	this.obj_integrity = this.max_integrity;
+	if (direct) {
+		yield* this.setDir(direct);
 	}
-	if ((truthy(rt.sv(f, "reinf")) && truthy(rt.sv(f, "anchored")))) {
-		rt.setSv(f, "state", 2);
+	if (this.reinf && this.anchored) {
+		this.state = WINDOW_SCREWED_TO_FRAME;
 	}
-	rt.setSv(f, "ini_dir", rt.sv(f, "dir"));
-	yield* g.srcCall(f, "air_update_turf", 1);
-	shards = 1;
-	if (truthy(rt.sv(f, "fulltile"))) {
-		shards = rt.inc(live(shards), 1);
-		yield* g.srcCall(f, "setDir");
+	this.ini_dir = this.dir;
+	this.air_update_turf(1);
+	let shards: Value = 1;
+	if (this.fulltile) {
+		shards++;
+		yield* this.setDir();
 	}
-	rods = 0;
-	if (truthy(rt.sv(f, "reinf"))) {
-		rods = rt.inc(live(rods), 1);
-		if (truthy(rt.sv(f, "fulltile"))) {
-			rods = rt.inc(live(rods), 1);
+	let rods: Value = 0;
+	if (this.reinf) {
+		rods++;
+		if (this.fulltile) {
+			rods++;
 		}
 	}
-	i = null;
-	rt.forRange(f, 0, 1, live(shards), 1);
+	rt.forRange(f, 0, 1, shards, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		rt.modSrcVar(f, "debris", (yield* g.new_(f, T("/obj/item/weapon/shard"), [live(f.src)])), add);
+		this.debris += (yield* new_(T("/obj/item/weapon/shard"), this));
 	}
 	rt.endFor(f, 0);
-	if (truthy(live(rods))) {
-		rt.modSrcVar(f, "debris", (yield* g.new_(f, T("/obj/item/stack/rods"), [live(f.src), live(rods)])), add);
+	if (rods) {
+		this.debris += (yield* new_(T("/obj/item/stack/rods"), this, rods));
 	}
-	rt.setSv(f, "real_explosion_block", rt.sv(f, "explosion_block"));
-	rt.setSv(f, "explosion_block", -1);
+	this.real_explosion_block = this.explosion_block;
+	this.explosion_block = -1;
 	return f.dot;
-}, true, { args: ["mapload", "direct"] });
+}, true);
 
-// /obj/structure/window/proc/rcd_vals  (code/game/objects/structures/window.dm:84)
+// window.dm:84
 rt.def("/obj/structure/window/proc/rcd_vals", function rcd_vals(f: Frame, user: Value, the_rcd: Value) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.fv(f, "mode", live(the_rcd));
-	if ($0 === 3) {
-		return rt.alist(f, ["mode", 3, "delay", 20, "cost", 5]);
+	if (the_rcd.mode === RCD_DECONSTRUCT) {
+		return rt.alist(f, ["mode", RCD_DECONSTRUCT, "delay", 20, "cost", 5]);
 	}
 	return 0;
 });
 
-// /obj/structure/window/proc/rcd_act  (code/game/objects/structures/window.dm:90)  may sleep
+// window.dm:90
 rt.def("/obj/structure/window/proc/rcd_act", function* rcd_act(f: Frame, user: Value, the_rcd: Value) {
-	let $0: any;
-	f.vars = () => [user, the_rcd, $0];
-	$0 = rt.fv(f, "mode", live(the_rcd));
-	if ($0 === 3) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>You deconstruct the window.</span>"]);
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	if (the_rcd.mode === RCD_DECONSTRUCT) {
+		to_chat(user, "<span class='notice'>You deconstruct the window.</span>");
+		yield* qdel(this);
 		return 1;
 	}
 	return 0;
 }, true);
 
-// /obj/structure/window/proc/narsie_act  (code/game/objects/structures/window.dm:98)
+// window.dm:98
 rt.def("/obj/structure/window/proc/narsie_act", function narsie_act(f: Frame) {
 	let shard: Value = null;
-	let $e: any;
-	f.vars = () => [shard, $e];
-	rt.callSrc(f, "add_atom_colour", ["#7D1919", 4]);
-	shard = null;
-	rt.forList(f, 0, rt.sv(f, "debris"), T("/obj/item/weapon/shard"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		shard = $e;
-		rt.callName(f, live(shard), "add_atom_colour", ["#7D1919", 4]);
+	this.add_atom_colour("#7D1919", FIXED_COLOUR_PRIORITY);
+	for (shard of each(this.debris, T("/obj/item/weapon/shard"))) {
+		shard.add_atom_colour("#7D1919", FIXED_COLOUR_PRIORITY);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /obj/structure/window/proc/ratvar_act  (code/game/objects/structures/window.dm:103)  may sleep
+// window.dm:103
 rt.def("/obj/structure/window/proc/ratvar_act", function* ratvar_act(f: Frame) {
-	if (!truthy(rt.sv(f, "fulltile"))) {
-		yield* g.new_(f, T("/obj/structure/window/reinforced/clockwork"), [rt.getStep(f, live(f.src), 0), rt.sv(f, "dir")]);
+	if (!this.fulltile) {
+		yield* new_(T("/obj/structure/window/reinforced/clockwork"), rt.getStep(f, this, 0), this.dir);
 	} else {
-		yield* g.new_(f, T("/obj/structure/window/reinforced/clockwork/fulltile"), [rt.getStep(f, live(f.src), 0)]);
+		yield* new_(T("/obj/structure/window/reinforced/clockwork/fulltile"), rt.getStep(f, this, 0));
 	}
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
-// /obj/structure/window/proc/singularity_pull  (code/game/objects/structures/window.dm:110)  may sleep
+// window.dm:110
 rt.def("/obj/structure/window/proc/singularity_pull", function* singularity_pull(f: Frame, S: Value, current_size: Value) {
-	f.vars = () => [S, current_size];
-	if (!rt.ge(live(current_size), 9)) return f.dot;
-	yield* g.srcCall(f, "deconstruct", 0);
+	if (!(current_size >= STAGE_FIVE)) return f.dot;
+	yield* this.deconstruct(0);
 	return f.dot;
 }, true);
 
-// /obj/structure/window/proc/setDir  (code/game/objects/structures/window.dm:114)
-rt.def("/obj/structure/window/proc/setDir", function setDir(f: Frame) {
-	if (!truthy(rt.sv(f, "fulltile"))) {
-		rt.callSuper(f, [], rt.Args.Same);
+// window.dm:114
+rt.def("/obj/structure/window/proc/setDir", function setDir(f: Frame, direct: Value) {
+	if (!this.fulltile) {
+		parent_proc();
 	} else {
-		rt.callSuper(f, [5]);
+		parent_proc(5);
 	}
 	return f.dot;
-}, false, { args: ["direct"] });
+}, false);
 
-// /obj/structure/window/proc/CanPass  (code/game/objects/structures/window.dm:120)
+// window.dm:120
 rt.def("/obj/structure/window/proc/CanPass", function CanPass(f: Frame, mover: Value, target: Value, height: Value) {
 	let W: Value = null;
-	f.vars = () => [height, W];
-	if (live(height) === null) {
-		height = 0;
-	}
-	if ((truthy((rt.istype(live(mover), T("/atom/movable")) ? 1 : 0)) && truthy(rt.callName(f, live(mover), "checkpass", [2])))) {
+	height ??= 0;
+	if (rt.istype(mover, T("/atom/movable")) && mover.checkpass(2)) {
 		return 1;
 	}
-	if (isEqual(rt.sv(f, "dir"), 5)) {
+	if (this.dir == 5) {
 		return 0;
 	}
-	if (isEqual(rt.getDir(f, rt.sv(f, "loc"), live(target)), rt.sv(f, "dir"))) {
-		return (!truthy(rt.sv(f, "density")) ? 1 : 0);
+	if (rt.getDir(f, this.loc, target) == this.dir) {
+		return (!this.density ? 1 : 0);
 	}
-	if (truthy((rt.istype(live(mover), T("/obj/structure/window")) ? 1 : 0))) {
-		W = live(mover);
-		if (!truthy(rt.call(f, P("/proc/valid_window_location"), null, [rt.sv(f, "loc"), rt.fv(f, "ini_dir", live(W))]))) {
+	if (rt.istype(mover, T("/obj/structure/window"))) {
+		W = mover;
+		if (!valid_window_location(this.loc, W.ini_dir)) {
 			return 0;
 		}
-	} else {
-		if (truthy((rt.istype(live(mover), T("/obj/structure/windoor_assembly")) ? 1 : 0))) {
-			W = live(mover);
-			if (!truthy(rt.call(f, P("/proc/valid_window_location"), null, [rt.sv(f, "loc"), rt.fv(f, "ini_dir", live(W))]))) {
-				return 0;
-			}
-		} else {
-			if ((truthy((rt.istype(live(mover), T("/obj/machinery/door/window")) ? 1 : 0)) && !truthy(rt.call(f, P("/proc/valid_window_location"), null, [rt.sv(f, "loc"), rt.fv(f, "dir", live(mover))])))) {
-				return 0;
-			}
+	} else if (rt.istype(mover, T("/obj/structure/windoor_assembly"))) {
+		W = mover;
+		if (!valid_window_location(this.loc, W.ini_dir)) {
+			return 0;
 		}
-	}
-	return 1;
-});
-
-// /obj/structure/window/proc/CheckExit  (code/game/objects/structures/window.dm:139)
-rt.def("/obj/structure/window/proc/CheckExit", function CheckExit(f: Frame, O: Value, target: Value) {
-	if ((truthy((rt.istype(live(O), T("/atom/movable")) ? 1 : 0)) && truthy(rt.callName(f, live(O), "checkpass", [2])))) {
-		return 1;
-	}
-	if (isEqual(rt.getDir(f, rt.fv(f, "loc", live(O)), live(target)), rt.sv(f, "dir"))) {
+	} else if (rt.istype(mover, T("/obj/machinery/door/window")) && !valid_window_location(this.loc, mover.dir)) {
 		return 0;
 	}
 	return 1;
 });
 
-// /obj/structure/window/proc/attack_tk  (code/game/objects/structures/window.dm:146)  may sleep
+// window.dm:139
+rt.def("/obj/structure/window/proc/CheckExit", function CheckExit(f: Frame, O: Value, target: Value) {
+	if (rt.istype(O, T("/atom/movable")) && O.checkpass(2)) {
+		return 1;
+	}
+	if (rt.getDir(f, O.loc, target) == this.dir) {
+		return 0;
+	}
+	return 1;
+});
+
+// window.dm:146
 rt.def("/obj/structure/window/proc/attack_tk", function* attack_tk(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.callName(f, live(user), "changeNext_move", [8]);
-	yield* g.callName(f, live(user), "visible_message", [fmt("<span class='notice'>Something knocks on ＀.</span>", [live(f.src)])]);
-	yield* g.srcCall(f, "add_fingerprint", live(user));
-	yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/effects/glassknock.ogg"), 50, 1]);
+	user.changeNext_move(8);
+	user.visible_message(`<span class='notice'>Something knocks on ${this}.</span>`);
+	yield* this.add_fingerprint(user);
+	playsound(this, rt.rsc("sound/effects/glassknock.ogg"), 50, 1);
 	return f.dot;
 }, true);
 
-// /obj/structure/window/proc/attack_hulk  (code/game/objects/structures/window.dm:152)  may sleep
+// window.dm:152
 rt.def("/obj/structure/window/proc/attack_hulk", function* attack_hulk(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	if (!truthy((yield* g.srcCall(f, "can_be_reached", live(f.args[0]))))) {
+	if (!(yield* this.can_be_reached(f.args[0]))) {
 		return 1;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true, { args: ["user", "does_attack_animation"] });
 
-// /obj/structure/window/proc/attack_hand  (code/game/objects/structures/window.dm:157)  may sleep
+// window.dm:157
 rt.def("/obj/structure/window/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (!truthy((yield* g.srcCall(f, "can_be_reached", live(user))))) {
-		return live(f.dot);
+	if (!(yield* this.can_be_reached(user))) {
+		return f.dot;
 	}
-	yield* g.callName(f, live(user), "changeNext_move", [8]);
-	yield* g.callName(f, live(user), "visible_message", [fmt("＀ knocks on ＀.", [live(user), live(f.src)])]);
-	yield* g.srcCall(f, "add_fingerprint", live(user));
-	yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/effects/glassknock.ogg"), 50, 1]);
+	user.changeNext_move(8);
+	user.visible_message(`${user} knocks on ${this}.`);
+	yield* this.add_fingerprint(user);
+	playsound(this, rt.rsc("sound/effects/glassknock.ogg"), 50, 1);
 	return f.dot;
 }, true);
 
-// /obj/structure/window/proc/attack_paw  (code/game/objects/structures/window.dm:165)  may sleep
+// window.dm:165
 rt.def("/obj/structure/window/proc/attack_paw", function* attack_paw(f: Frame, user: Value) {
-	f.vars = () => [user];
-	return (yield* g.srcCall(f, "attack_hand", live(user)));
+	return (yield* this.attack_hand(user));
 }, true);
 
-// /obj/structure/window/proc/attack_generic  (code/game/objects/structures/window.dm:169)  may sleep
+// window.dm:169
 rt.def("/obj/structure/window/proc/attack_generic", function* attack_generic(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = "brute";
 	}
-	if (live(f.args[3]) === null) {
+	if (f.args[3] === null) {
 		f.args[3] = 0;
 	}
-	if (live(f.args[4]) === null) {
+	if (f.args[4] === null) {
 		f.args[4] = 1;
 	}
-	if (!truthy((yield* g.srcCall(f, "can_be_reached", live(f.args[0]))))) {
-		return live(f.dot);
+	if (!(yield* this.can_be_reached(f.args[0]))) {
+		return f.dot;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true, { args: ["user", "damage_amount", "damage_type", "damage_flag", "sound_effect"] });
 
-// /obj/structure/window/proc/attackby  (code/game/objects/structures/window.dm:174)  may sleep
-rt.def("/obj/structure/window/proc/attackby", function* attackby(f: Frame) {
+// window.dm:174
+rt.def("/obj/structure/window/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
 	let WT: Value = null, G: Value = null;
 	let $0: any, $1: any;
-	f.vars = () => [WT, G, $0, $1];
-	if (!truthy((yield* g.srcCall(f, "can_be_reached", live(f.args[1]))))) {
+	if (!(yield* this.can_be_reached(user))) {
 		return 1;
 	}
-	yield* g.srcCall(f, "add_fingerprint", live(f.args[1]));
-	if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/weldingtool")) ? 1 : 0)) && isEqual(rt.fv(f, "a_intent", live(f.args[1])), "help"))) {
-		WT = live(f.args[0]);
-		if (rt.lt(rt.sv(f, "obj_integrity"), rt.sv(f, "max_integrity"))) {
-			if (truthy((yield* g.callName(f, live(WT), "remove_fuel", [0, live(f.args[1])])))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You begin repairing ＀...</span>", [live(f.src)])]);
-				yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.fv(f, "usesound", live(WT)), 40, 1]);
-				if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, multiply(40, rt.fv(f, "toolspeed", live(f.args[0]))), "target", live(f.src)], rt.Args.Named)))) {
-					rt.setSv(f, "obj_integrity", rt.sv(f, "max_integrity"));
-					yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/items/welder2.ogg"), 50, 1]);
-					yield* g.srcCall(f, "update_nearby_icons");
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You repair ＀.</span>", [live(f.src)])]);
+	yield* this.add_fingerprint(user);
+	if (rt.istype(I, T("/obj/item/weapon/weldingtool")) && user.a_intent == "help") {
+		WT = I;
+		if (this.obj_integrity < this.max_integrity) {
+			if (yield* WT.remove_fuel(0, user)) {
+				to_chat(user, `<span class='notice'>You begin repairing ${this}...</span>`);
+				playsound(this, WT.usesound, 40, 1);
+				if (yield* do_after(user, 40 * I.toolspeed, { target: this })) {
+					this.obj_integrity = this.max_integrity;
+					playsound(this, rt.rsc("sound/items/welder2.ogg"), 50, 1);
+					this.update_nearby_icons();
+					to_chat(user, `<span class='notice'>You repair ${this}.</span>`);
 				}
 			}
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>＀ is already in good condition!</span>", [live(f.src)])]);
+			to_chat(user, `<span class='warning'>${this} is already in good condition!</span>`);
 		}
-		return live(f.dot);
+		return f.dot;
 	}
-	if (!truthy(rt.bitAnd(rt.sv(f, "flags"), 128))) {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/screwdriver")) ? 1 : 0))) {
-			yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.fv(f, "usesound", live(f.args[0])), 75, 1]);
-			if (truthy(rt.sv(f, "reinf"))) {
-				if ((isEqual(rt.sv(f, "state"), 2) || isEqual(rt.sv(f, "state"), 1))) {
-					$0 = live(f.args[1]);
-					if (isEqual(rt.sv(f, "state"), 2)) {
+	if (!rt.bitAnd(this.flags, NODECONSTRUCT)) {
+		if (rt.istype(I, T("/obj/item/weapon/screwdriver"))) {
+			playsound(this, I.usesound, 75, 1);
+			if (this.reinf) {
+				if (this.state == WINDOW_SCREWED_TO_FRAME || this.state == WINDOW_IN_FRAME) {
+					$0 = user;
+					if (this.state == WINDOW_SCREWED_TO_FRAME) {
 						$1 = "unscrew the window from";
 					} else {
 						$1 = "screw the window to";
 					}
-					yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='notice'>You begin to ＀ the frame...</span>", [$1])]);
-					if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, multiply(rt.sv(f, "decon_speed"), rt.fv(f, "toolspeed", live(f.args[0]))), "target", live(f.src), "extra_checks", (yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/structure/window/proc/check_state_and_anchored"), rt.sv(f, "state"), rt.sv(f, "anchored")]))], rt.Args.Named)))) {
-						if (isEqual(rt.sv(f, "state"), 1)) {
-							$0 = 2;
-						} else {
-							$0 = 1;
-						}
-						rt.setSv(f, "state", $0);
-						$0 = live(f.args[1]);
-						if (isEqual(rt.sv(f, "state"), 1)) {
+					to_chat($0, `<span class='notice'>You begin to ${$1} the frame...</span>`);
+					if (yield* do_after(user, this.decon_speed * I.toolspeed, { target: this, extra_checks: (yield* new_(T("/datum/callback"), this, P("/obj/structure/window/proc/check_state_and_anchored"), this.state, this.anchored)) })) {
+						this.state = this.state == WINDOW_IN_FRAME ? WINDOW_SCREWED_TO_FRAME : 1;
+						$0 = user;
+						if (this.state == 1) {
 							$1 = "unfasten the window from";
 						} else {
 							$1 = "fasten the window to";
 						}
-						yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='notice'>You ＀ the frame.</span>", [$1])]);
+						to_chat($0, `<span class='notice'>You ${$1} the frame.</span>`);
 					}
-				} else {
-					if (isEqual(rt.sv(f, "state"), 0)) {
-						$0 = live(f.args[1]);
-						if (truthy(rt.sv(f, "anchored"))) {
-							$1 = "unscrew the frame from";
+				} else if (this.state == 0) {
+					$0 = user;
+					if (this.anchored) {
+						$1 = "unscrew the frame from";
+					} else {
+						$1 = "screw the frame to";
+					}
+					to_chat($0, `<span class='notice'>You begin to ${$1} the floor...</span>`);
+					if (yield* do_after(user, this.decon_speed * I.toolspeed, { target: this, extra_checks: (yield* new_(T("/datum/callback"), this, P("/obj/structure/window/proc/check_state_and_anchored"), this.state, this.anchored)) })) {
+						this.anchored = (!this.anchored ? WINDOW_IN_FRAME : WINDOW_OUT_OF_FRAME);
+						this.update_nearby_icons();
+						$0 = user;
+						if (this.anchored) {
+							$1 = "fasten the frame to";
 						} else {
-							$1 = "screw the frame to";
+							$1 = "unfasten the frame from";
 						}
-						yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='notice'>You begin to ＀ the floor...</span>", [$1])]);
-						if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, multiply(rt.sv(f, "decon_speed"), rt.fv(f, "toolspeed", live(f.args[0]))), "target", live(f.src), "extra_checks", (yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/structure/window/proc/check_state_and_anchored"), rt.sv(f, "state"), rt.sv(f, "anchored")]))], rt.Args.Named)))) {
-							rt.setSv(f, "anchored", (!truthy(rt.sv(f, "anchored")) ? 1 : 0));
-							yield* g.srcCall(f, "update_nearby_icons");
-							$0 = live(f.args[1]);
-							if (truthy(rt.sv(f, "anchored"))) {
-								$1 = "fasten the frame to";
-							} else {
-								$1 = "unfasten the frame from";
-							}
-							yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='notice'>You ＀ the floor.</span>", [$1])]);
-						}
+						to_chat($0, `<span class='notice'>You ${$1} the floor.</span>`);
 					}
 				}
 			} else {
-				$0 = live(f.args[1]);
-				if (truthy(rt.sv(f, "anchored"))) {
+				$0 = user;
+				if (this.anchored) {
 					$1 = "unscrew the window from";
 				} else {
 					$1 = "screw the window to";
 				}
-				yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='notice'>You begin to ＀ the floor...</span>", [$1])]);
-				if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, multiply(rt.sv(f, "decon_speed"), rt.fv(f, "toolspeed", live(f.args[0]))), "target", live(f.src), "extra_checks", (yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/structure/window/proc/check_anchored"), rt.sv(f, "anchored")]))], rt.Args.Named)))) {
-					rt.setSv(f, "anchored", (!truthy(rt.sv(f, "anchored")) ? 1 : 0));
-					yield* g.srcCall(f, "update_nearby_icons");
-					$0 = live(f.args[1]);
-					if (truthy(rt.sv(f, "anchored"))) {
+				to_chat($0, `<span class='notice'>You begin to ${$1} the floor...</span>`);
+				if (yield* do_after(user, this.decon_speed * I.toolspeed, { target: this, extra_checks: (yield* new_(T("/datum/callback"), this, P("/obj/structure/window/proc/check_anchored"), this.anchored)) })) {
+					this.anchored = (!this.anchored ? 1 : 0);
+					this.update_nearby_icons();
+					$0 = user;
+					if (this.anchored) {
 						$1 = "fasten the window to";
 					} else {
 						$1 = "unfasten the window from";
 					}
-					yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='notice'>You ＀ the floor.</span>", [$1])]);
+					to_chat($0, `<span class='notice'>You ${$1} the floor.</span>`);
 				}
 			}
-			return live(f.dot);
-		} else {
-			if (((truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/crowbar")) ? 1 : 0)) && truthy(rt.sv(f, "reinf"))) && (isEqual(rt.sv(f, "state"), 0) || isEqual(rt.sv(f, "state"), 1)))) {
-				$0 = live(f.args[1]);
-				if (isEqual(rt.sv(f, "state"), 0)) {
+			return f.dot;
+		} else if (rt.istype(I, T("/obj/item/weapon/crowbar")) && this.reinf && (this.state == 0 || this.state == WINDOW_IN_FRAME)) {
+			$0 = user;
+			if (this.state == WINDOW_OUT_OF_FRAME) {
+				$1 = "into";
+			} else {
+				$1 = "out of";
+			}
+			to_chat($0, `<span class='notice'>You begin to lever the window ${$1} the frame...</span>`);
+			playsound(this, I.usesound, 75, WINDOW_IN_FRAME);
+			if (yield* do_after(user, this.decon_speed * I.toolspeed, { target: this, extra_checks: (yield* new_(T("/datum/callback"), this, P("/obj/structure/window/proc/check_state_and_anchored"), this.state, this.anchored)) })) {
+				this.state = this.state == WINDOW_OUT_OF_FRAME ? WINDOW_IN_FRAME : WINDOW_OUT_OF_FRAME;
+				$0 = user;
+				if (this.state == WINDOW_IN_FRAME) {
 					$1 = "into";
 				} else {
 					$1 = "out of";
 				}
-				yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='notice'>You begin to lever the window ＀ the frame...</span>", [$1])]);
-				yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.fv(f, "usesound", live(f.args[0])), 75, 1]);
-				if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, multiply(rt.sv(f, "decon_speed"), rt.fv(f, "toolspeed", live(f.args[0]))), "target", live(f.src), "extra_checks", (yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/structure/window/proc/check_state_and_anchored"), rt.sv(f, "state"), rt.sv(f, "anchored")]))], rt.Args.Named)))) {
-					if (isEqual(rt.sv(f, "state"), 0)) {
-						$0 = 1;
-					} else {
-						$0 = 0;
-					}
-					rt.setSv(f, "state", $0);
-					$0 = live(f.args[1]);
-					if (isEqual(rt.sv(f, "state"), 1)) {
-						$1 = "into";
-					} else {
-						$1 = "out of";
-					}
-					yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='notice'>You pry the window ＀ the frame.</span>", [$1])]);
-				}
-				return live(f.dot);
-			} else {
-				if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/wrench")) ? 1 : 0)) && !truthy(rt.sv(f, "anchored")))) {
-					yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.fv(f, "usesound", live(f.args[0])), 75, 1]);
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'> You begin to disassemble ＀...</span>", [live(f.src)])]);
-					if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, multiply(rt.sv(f, "decon_speed"), rt.fv(f, "toolspeed", live(f.args[0]))), "target", live(f.src), "extra_checks", (yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/structure/window/proc/check_state_and_anchored"), rt.sv(f, "state"), rt.sv(f, "anchored")]))], rt.Args.Named)))) {
-						yield* g.callName(f, (G = (yield* g.new_(f, rt.sv(f, "glass_type"), [rt.fv(f, "loc", live(f.args[1])), rt.sv(f, "glass_amount")]))), "add_fingerprint", [live(f.args[1])]);
-						yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/items/deconstruct.ogg"), 50, 1]);
-						yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You successfully disassemble ＀.</span>", [live(f.src)])]);
-						yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-					}
-					return live(f.dot);
-				}
+				to_chat($0, `<span class='notice'>You pry the window ${$1} the frame.</span>`);
 			}
+			return f.dot;
+		} else if (rt.istype(I, T("/obj/item/weapon/wrench")) && !this.anchored) {
+			playsound(this, I.usesound, 75, 1);
+			to_chat(user, `<span class='notice'> You begin to disassemble ${this}...</span>`);
+			if (yield* do_after(user, this.decon_speed * I.toolspeed, { target: this, extra_checks: (yield* new_(T("/datum/callback"), this, P("/obj/structure/window/proc/check_state_and_anchored"), this.state, this.anchored)) })) {
+				yield* (G = (yield* new_(this.glass_type, user.loc, this.glass_amount))).add_fingerprint(user);
+				playsound(this, rt.rsc("sound/items/deconstruct.ogg"), 50, 1);
+				to_chat(user, `<span class='notice'>You successfully disassemble ${this}.</span>`);
+				yield* qdel(this);
+			}
+			return f.dot;
 		}
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["I", "user", "params"] });
+	return (yield* parent_proc());
+}, true);
 
-// /obj/structure/window/proc/check_state  (code/game/objects/structures/window.dm:238)
+// window.dm:238
 rt.def("/obj/structure/window/proc/check_state", function check_state(f: Frame, checked_state: Value) {
-	if (!isEqual(rt.sv(f, "state"), live(checked_state))) return f.dot;
+	if (this.state != checked_state) return f.dot;
 	return 1;
 });
 
-// /obj/structure/window/proc/check_anchored  (code/game/objects/structures/window.dm:242)
+// window.dm:242
 rt.def("/obj/structure/window/proc/check_anchored", function check_anchored(f: Frame, checked_anchored: Value) {
-	if (!isEqual(rt.sv(f, "anchored"), live(checked_anchored))) return f.dot;
+	if (this.anchored != checked_anchored) return f.dot;
 	return 1;
 });
 
-// /obj/structure/window/proc/check_state_and_anchored  (code/game/objects/structures/window.dm:246)
+// window.dm:246
 rt.def("/obj/structure/window/proc/check_state_and_anchored", function check_state_and_anchored(f: Frame, checked_state: Value, checked_anchored: Value) {
-	return (rt.callSrc(f, "check_state", [live(checked_state)]) && rt.callSrc(f, "check_anchored", [live(checked_anchored)]));
+	return (this.check_state(checked_state) && this.check_anchored(checked_anchored));
 });
 
-// /obj/structure/window/proc/mech_melee_attack  (code/game/objects/structures/window.dm:249)  may sleep
-rt.def("/obj/structure/window/proc/mech_melee_attack", function* mech_melee_attack(f: Frame) {
-	if (!truthy((yield* g.srcCall(f, "can_be_reached")))) {
-		return live(f.dot);
+// window.dm:249
+rt.def("/obj/structure/window/proc/mech_melee_attack", function* mech_melee_attack(f: Frame, M: Value) {
+	if (!(yield* this.can_be_reached())) {
+		return f.dot;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /obj/structure/window/proc/can_be_reached  (code/game/objects/structures/window.dm:254)  may sleep
+// window.dm:254
 rt.def("/obj/structure/window/proc/can_be_reached", function* can_be_reached(f: Frame, user: Value) {
 	let O: Value = null;
-	let $e: any;
-	f.vars = () => [user, O, $e];
-	if (!truthy(rt.sv(f, "fulltile"))) {
-		if (truthy(rt.bitAnd(rt.getDir(f, live(user), live(f.src)), rt.sv(f, "dir")))) {
-			O = null;
-			rt.forList(f, 0, rt.sv(f, "loc"), T("/obj"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				O = $e;
-				if (!truthy((yield* g.callName(f, live(O), "CanPass", [live(user), rt.fv(f, "loc", live(user)), 1])))) {
+	if (!this.fulltile) {
+		if (rt.bitAnd(rt.getDir(f, user, this), this.dir)) {
+			for (O of each(this.loc, T("/obj"))) {
+				if (!(yield* O.CanPass(user, user.loc, 1))) {
 					return 0;
 				}
 			}
-			rt.endFor(f, 0);
 		}
 	}
 	return 1;
 }, true);
 
-// /obj/structure/window/proc/take_damage  (code/game/objects/structures/window.dm:262)  may sleep
+// window.dm:262
 rt.def("/obj/structure/window/proc/take_damage", function* take_damage(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = "brute";
 	}
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 0;
 	}
-	if (live(f.args[3]) === null) {
+	if (f.args[3] === null) {
 		f.args[3] = 1;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(live(f.dot))) return f.dot;
-	yield* g.srcCall(f, "update_nearby_icons");
+	f.dot = (yield* parent_proc());
+	if (!f.dot) return f.dot;
+	this.update_nearby_icons();
 	return f.dot;
 }, true, { args: ["damage_amount", "damage_type", "damage_flag", "sound_effect"] });
 
-// /obj/structure/window/proc/play_attack_sound  (code/game/objects/structures/window.dm:267)
+// window.dm:267
 rt.def("/obj/structure/window/proc/play_attack_sound", function play_attack_sound(f: Frame, damage_amount: Value, damage_type: Value, damage_flag: Value) {
-	let $0: any;
-	f.vars = () => [damage_type, damage_flag, $0];
-	if (live(damage_type) === null) {
-		damage_type = "brute";
-	}
-	if (live(damage_flag) === null) {
-		damage_flag = 0;
-	}
-	$0 = live(damage_type);
-	if ($0 === "brute") {
-		if (truthy(live(damage_amount))) {
-			rt.call(f, P("/proc/playsound"), null, [live(f.src), rt.sv(f, "hitsound"), 75, 1]);
+	damage_type ??= "brute";
+	damage_flag ??= 0;
+	if (damage_type === "brute") {
+		if (damage_amount) {
+			playsound(this, this.hitsound, 75, 1);
 		} else {
-			rt.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/weapons/tap.ogg"), 50, 1]);
+			playsound(this, rt.rsc("sound/weapons/tap.ogg"), 50, 1);
 		}
-	} else if ($0 === "fire") {
-		rt.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/items/welder.ogg"), 100, 1]);
+	} else if (damage_type === "fire") {
+		playsound(this, rt.rsc("sound/items/welder.ogg"), 100, 1);
 	}
 	return f.dot;
 });
 
-// /obj/structure/window/proc/deconstruct  (code/game/objects/structures/window.dm:278)  may sleep
+// window.dm:278
 rt.def("/obj/structure/window/proc/deconstruct", function* deconstruct(f: Frame, disassembled: Value) {
 	let _T: Value = null, i: Value = null, I: Value = null;
-	let $e: any;
-	f.vars = () => [disassembled, _T, i, I, $e];
-	if (live(disassembled) === null) {
-		disassembled = 1;
+	disassembled ??= 1;
+	if (!this || this.gc_destroyed) {
+		return f.dot;
 	}
-	if ((!truthy(live(f.src)) || truthy(rt.fv(f, "gc_destroyed", live(f.src))))) {
-		return live(f.dot);
-	}
-	if (!truthy(live(disassembled))) {
-		yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.sv(f, "breaksound"), 70, 1]);
-		_T = rt.sv(f, "loc");
-		if (!truthy(rt.bitAnd(rt.sv(f, "flags"), 128))) {
-			i = null;
-			rt.forList(f, 0, rt.sv(f, "debris"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				i = $e;
-				rt.setFv(f, "loc", (I = live(i)), live(_T));
-				yield* g.srcCall(f, "transfer_fingerprints_to", live(I));
+	if (!disassembled) {
+		playsound(this, this.breaksound, 70, 1);
+		_T = this.loc;
+		if (!rt.bitAnd(this.flags, NODECONSTRUCT)) {
+			for (i of each(this.debris)) {
+				(I = i).loc = _T;
+				this.transfer_fingerprints_to(I);
 			}
-			rt.endFor(f, 0);
 		}
 	}
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-	yield* g.srcCall(f, "update_nearby_icons");
+	yield* qdel(this);
+	this.update_nearby_icons();
 	return f.dot;
 }, true);
 
-// /obj/structure/window/verb/rotate  (code/game/objects/structures/window.dm:296)  may sleep
+// window.dm:296
 rt.def("/obj/structure/window/verb/rotate", function* rotate(f: Frame) {
-	let target_dir: Value = null;
-	f.vars = () => [target_dir];
-	if (((truthy(rt.fv(f, "stat", live(f.usr))) || !truthy(rt.fv(f, "canmove", live(f.usr)))) || truthy((yield* g.callName(f, live(f.usr), "restrained", []))))) {
-		return live(f.dot);
+	if (f.usr.stat || !f.usr.canmove || f.usr.restrained()) {
+		return f.dot;
 	}
-	if (truthy(rt.sv(f, "anchored"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), fmt("<span class='warning'>＀ cannot be rotated while it is fastened to the floor!</span>", [live(f.src)])]);
+	if (this.anchored) {
+		to_chat(f.usr, `<span class='warning'>${this} cannot be rotated while it is fastened to the floor!</span>`);
 		return 0;
 	}
-	target_dir = (yield* g.call(f, P("/proc/turn"), null, [rt.sv(f, "dir"), 90]));
-	if (!truthy((yield* g.call(f, P("/proc/valid_window_location"), null, [rt.sv(f, "loc"), live(target_dir)])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), fmt("<span class='warning'>＀ cannot be rotated in that direction!</span>", [live(f.src)])]);
+	let target_dir: Value = turn(this.dir, 90);
+	if (!valid_window_location(this.loc, target_dir)) {
+		to_chat(f.usr, `<span class='warning'>${this} cannot be rotated in that direction!</span>`);
 		return 0;
 	}
-	yield* g.srcCall(f, "setDir", live(target_dir));
-	yield* g.srcCall(f, "air_update_turf", 1);
-	rt.setSv(f, "ini_dir", rt.sv(f, "dir"));
-	yield* g.srcCall(f, "add_fingerprint", live(f.usr));
+	yield* this.setDir(target_dir);
+	this.air_update_turf(1);
+	this.ini_dir = this.dir;
+	yield* this.add_fingerprint(f.usr);
 	return 1;
 }, true, { verb: { name: "Rotate Window Counter-Clockwise", category: "Object", src: 3, range: 1 } });
 
-// /obj/structure/window/verb/revrotate  (code/game/objects/structures/window.dm:320)  may sleep
+// window.dm:320
 rt.def("/obj/structure/window/verb/revrotate", function* revrotate(f: Frame) {
-	let target_dir: Value = null;
-	f.vars = () => [target_dir];
-	if (((truthy(rt.fv(f, "stat", live(f.usr))) || !truthy(rt.fv(f, "canmove", live(f.usr)))) || truthy((yield* g.callName(f, live(f.usr), "restrained", []))))) {
-		return live(f.dot);
+	if (f.usr.stat || !f.usr.canmove || f.usr.restrained()) {
+		return f.dot;
 	}
-	if (truthy(rt.sv(f, "anchored"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), fmt("<span class='warning'>＀ cannot be rotated while it is fastened to the floor!</span>", [live(f.src)])]);
+	if (this.anchored) {
+		to_chat(f.usr, `<span class='warning'>${this} cannot be rotated while it is fastened to the floor!</span>`);
 		return 0;
 	}
-	target_dir = (yield* g.call(f, P("/proc/turn"), null, [rt.sv(f, "dir"), 270]));
-	if (!truthy((yield* g.call(f, P("/proc/valid_window_location"), null, [rt.sv(f, "loc"), live(target_dir)])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), fmt("<span class='warning'>＀ cannot be rotated in that direction!</span>", [live(f.src)])]);
+	let target_dir: Value = turn(this.dir, 270);
+	if (!valid_window_location(this.loc, target_dir)) {
+		to_chat(f.usr, `<span class='warning'>${this} cannot be rotated in that direction!</span>`);
 		return 0;
 	}
-	yield* g.srcCall(f, "setDir", live(target_dir));
-	yield* g.srcCall(f, "air_update_turf", 1);
-	rt.setSv(f, "ini_dir", rt.sv(f, "dir"));
-	yield* g.srcCall(f, "add_fingerprint", live(f.usr));
+	yield* this.setDir(target_dir);
+	this.air_update_turf(1);
+	this.ini_dir = this.dir;
+	yield* this.add_fingerprint(f.usr);
 	return 1;
 }, true, { verb: { name: "Rotate Window Clockwise", category: "Object", src: 3, range: 1 } });
 
-// /obj/structure/window/proc/AltClick  (code/game/objects/structures/window.dm:340)  may sleep
-rt.def("/obj/structure/window/proc/AltClick", function* AltClick(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy((yield* g.callName(f, live(f.args[0]), "incapacitated", [])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='warning'>You can't do that right now!</span>"]);
-		return live(f.dot);
+// window.dm:340
+rt.def("/obj/structure/window/proc/AltClick", function* AltClick(f: Frame, user: Value) {
+	yield* parent_proc();
+	if (user.incapacitated()) {
+		to_chat(user, "<span class='warning'>You can't do that right now!</span>");
+		return f.dot;
 	}
-	if (!rt.le((yield* g.call(f, P("/proc/get_dist"), null, [live(f.src), live(f.args[0])])), 1)) {
-		return live(f.dot);
+	if (!(get_dist(this, user) <= 1)) {
+		return f.dot;
 	} else {
-		yield* g.srcCall(f, "revrotate");
+		yield* this.revrotate();
 	}
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /obj/structure/window/proc/Destroy  (code/game/objects/structures/window.dm:351)  may sleep
+// window.dm:351
 rt.def("/obj/structure/window/proc/Destroy", function* Destroy(f: Frame) {
-	rt.setSv(f, "density", 0);
-	yield* g.srcCall(f, "air_update_turf", 1);
-	yield* g.srcCall(f, "update_nearby_icons");
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	this.density = 0;
+	this.air_update_turf(1);
+	this.update_nearby_icons();
+	return (yield* parent_proc());
 }, true);
 
-// /obj/structure/window/proc/Move  (code/game/objects/structures/window.dm:357)  may sleep
+// window.dm:357
 rt.def("/obj/structure/window/proc/Move", function* Move(f: Frame) {
-	let _T: Value = null;
-	f.vars = () => [_T];
-	_T = rt.sv(f, "loc");
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "setDir", rt.sv(f, "ini_dir"));
-	yield* g.srcCall(f, "move_update_air", live(_T));
+	let _T: Value = this.loc;
+	yield* parent_proc();
+	yield* this.setDir(this.ini_dir);
+	this.move_update_air(_T);
 	return f.dot;
 }, true);
 
-// /obj/structure/window/proc/CanAtmosPass  (code/game/objects/structures/window.dm:363)
+// window.dm:363
 rt.def("/obj/structure/window/proc/CanAtmosPass", function CanAtmosPass(f: Frame, _T: Value) {
-	if (isEqual(rt.getDir(f, rt.sv(f, "loc"), live(_T)), rt.sv(f, "dir"))) {
-		return (!truthy(rt.sv(f, "density")) ? 1 : 0);
+	if (rt.getDir(f, this.loc, _T) == this.dir) {
+		return (!this.density ? 1 : 0);
 	}
-	if (isEqual(rt.sv(f, "dir"), 5)) {
-		return (!truthy(rt.sv(f, "density")) ? 1 : 0);
+	if (this.dir == 5) {
+		return (!this.density ? 1 : 0);
 	}
 	return 1;
 });
 
-// /obj/structure/window/proc/update_nearby_icons  (code/game/objects/structures/window.dm:371)
+// window.dm:371
 rt.def("/obj/structure/window/proc/update_nearby_icons", function update_nearby_icons(f: Frame) {
-	rt.callSrc(f, "update_icon", []);
-	if (!truthy(rt.sv(f, "smooth"))) return f.dot;
-	rt.call(f, P("/proc/queue_smooth_neighbors"), null, [live(f.src)]);
+	this.update_icon();
+	if (!this.smooth) return f.dot;
+	queue_smooth_neighbors(this);
 	return f.dot;
 });
 
-// /obj/structure/window/proc/update_icon  (code/game/objects/structures/window.dm:377)
+// window.dm:377
 rt.def("/obj/structure/window/proc/update_icon", function update_icon(f: Frame) {
 	let ratio: Value = null;
-	f.vars = () => [ratio];
-	if (!truthy(live(f.src)) || truthy(rt.fv(f, "gc_destroyed", live(f.src)))) return f.dot;
-	if (!truthy(rt.sv(f, "fulltile"))) {
-		return live(f.dot);
+	if (!this || this.gc_destroyed) return f.dot;
+	if (!this.fulltile) {
+		return f.dot;
 	}
-	ratio = multiply(rt.call(f, P("/proc/Ceiling"), null, [multiply((ratio = divide(rt.sv(f, "obj_integrity"), rt.sv(f, "max_integrity"))), 4)]), 25);
-	if (truthy(rt.sv(f, "smooth"))) {
-		rt.call(f, P("/proc/queue_smooth"), null, [live(f.src)]);
+	ratio = Ceiling((ratio = this.obj_integrity / this.max_integrity) * 4) * 25;
+	if (this.smooth) {
+		queue_smooth(this);
 	}
-	rt.callSrc(f, "cut_overlay", [rt.sv(f, "crack_overlay")]);
-	if (rt.gt(live(ratio), 75)) {
-		return live(f.dot);
+	this.cut_overlay(this.crack_overlay);
+	if (ratio > 75) {
+		return f.dot;
 	}
-	rt.setSv(f, "crack_overlay", rt.call(f, P("/proc/mutable_appearance"), null, [rt.rsc("icons/obj/structures.dmi"), fmt("damage＀", [live(ratio)]), rt.neg(add(rt.sv(f, "layer"), 0.10000000149011612))]));
-	rt.callSrc(f, "add_overlay", [rt.sv(f, "crack_overlay")]);
+	this.crack_overlay = mutable_appearance(rt.rsc("icons/obj/structures.dmi"), `damage${ratio}`, -(this.layer + 0.1));
+	this.add_overlay(this.crack_overlay);
 	return f.dot;
 });
 
-// /obj/structure/window/proc/temperature_expose  (code/game/objects/structures/window.dm:395)  may sleep
-rt.def("/obj/structure/window/proc/temperature_expose", function* temperature_expose(f: Frame) {
-	if (rt.gt(live(f.args[1]), add(273.1499938964844, rt.sv(f, "heat_resistance")))) {
-		yield* g.srcCall(f, "take_damage", (yield* g.call(f, P("/proc/round"), null, [divide(live(f.args[2]), 100)])), "fire", 0, 0);
+// window.dm:395
+rt.def("/obj/structure/window/proc/temperature_expose", function* temperature_expose(f: Frame, air: Value, exposed_temperature: Value, exposed_volume: Value) {
+	if (exposed_temperature > T0C + this.heat_resistance) {
+		yield* this.take_damage(round(exposed_volume / 100), "fire", 0, 0);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["air", "exposed_temperature", "exposed_volume"] });
+}, true);
 
-// /obj/structure/window/proc/CanAStarPass  (code/game/objects/structures/window.dm:403)
+// window.dm:403
 rt.def("/obj/structure/window/proc/CanAStarPass", function CanAStarPass(f: Frame, ID: Value, to_dir: Value) {
-	if (!truthy(rt.sv(f, "density"))) {
+	if (!this.density) {
 		return 1;
 	}
-	if ((isEqual(rt.sv(f, "dir"), 5) || isEqual(rt.sv(f, "dir"), live(to_dir)))) {
+	if (this.dir == 5 || this.dir == to_dir) {
 		return 0;
 	}
 	return 1;
 });
 
-// /obj/structure/window/proc/GetExplosionBlock  (code/game/objects/structures/window.dm:411)
+// window.dm:411
 rt.def("/obj/structure/window/proc/GetExplosionBlock", function GetExplosionBlock(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	if ((truthy(rt.sv(f, "reinf")) && truthy(rt.sv(f, "fulltile")))) {
-		$0 = rt.sv(f, "real_explosion_block");
-	} else {
-		$0 = 0;
-	}
-	return $0;
+	return this.reinf && this.fulltile ? this.real_explosion_block : 0;
 });
 
 rt.type(12208, "/obj/structure/window/reinforced", "/obj/structure/window", {
@@ -718,12 +631,10 @@ rt.type(12208, "/obj/structure/window/reinforced", "/obj/structure/window", {
 	glass_type: rt.typePath("/obj/item/stack/sheet/rglass"),
 });
 
-// /obj/structure/window/reinforced/proc/<init>  (code/game/objects/structures/window.dm:422)
+// window.dm:422
 rt.def("/obj/structure/window/reinforced/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 50, "bullet", 0, "laser", 0, "energy", 0, "bomb", 25, "bio", 100, "rad", 100, "fire", 80, "acid", 100]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 50, "bullet", 0, "laser", 0, "energy", 0, "bomb", 25, "bio", 100, "rad", 100, "fire", 80, "acid", 100]);
 	return f.dot;
 });
 
@@ -739,12 +650,10 @@ rt.type(12224, "/obj/structure/window/fulltile", "/obj/structure/window", {
 	max_integrity: 50,
 });
 
-// /obj/structure/window/fulltile/proc/<init>  (code/game/objects/structures/window.dm:454)
+// window.dm:454
 rt.def("/obj/structure/window/fulltile/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "canSmoothWith", rt.list(T("/obj/structure/window/fulltile"), T("/obj/structure/window/reinforced/fulltile"), T("/obj/structure/window/reinforced/highpressure/fulltile"), T("/obj/structure/window/reinforced/tinted/fulltile")));
+	parent_proc();
+	this.canSmoothWith = list(T("/obj/structure/window/fulltile"), T("/obj/structure/window/reinforced/fulltile"), T("/obj/structure/window/reinforced/highpressure/fulltile"), T("/obj/structure/window/reinforced/tinted/fulltile"));
 	return f.dot;
 });
 
@@ -761,12 +670,10 @@ rt.type(12219, "/obj/structure/window/reinforced/fulltile", "/obj/structure/wind
 	glass_amount: 2,
 });
 
-// /obj/structure/window/reinforced/fulltile/proc/<init>  (code/game/objects/structures/window.dm:469)
+// window.dm:469
 rt.def("/obj/structure/window/reinforced/fulltile/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "canSmoothWith", rt.list(T("/obj/structure/window/fulltile"), T("/obj/structure/window/reinforced/fulltile"), T("/obj/structure/window/reinforced/highpressure/fulltile"), T("/obj/structure/window/reinforced/tinted/fulltile")));
+	parent_proc();
+	this.canSmoothWith = list(T("/obj/structure/window/fulltile"), T("/obj/structure/window/reinforced/fulltile"), T("/obj/structure/window/reinforced/highpressure/fulltile"), T("/obj/structure/window/reinforced/tinted/fulltile"));
 	return f.dot;
 });
 
@@ -783,12 +690,10 @@ rt.type(12218, "/obj/structure/window/reinforced/highpressure/fulltile", "/obj/s
 	glass_amount: 2,
 });
 
-// /obj/structure/window/reinforced/highpressure/fulltile/proc/<init>  (code/game/objects/structures/window.dm:481)
+// window.dm:481
 rt.def("/obj/structure/window/reinforced/highpressure/fulltile/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "canSmoothWith", rt.list(T("/obj/structure/window/fulltile"), T("/obj/structure/window/reinforced/fulltile"), T("/obj/structure/window/reinforced/highpressure/fulltile"), T("/obj/structure/window/reinforced/tinted/fulltile")));
+	parent_proc();
+	this.canSmoothWith = list(T("/obj/structure/window/fulltile"), T("/obj/structure/window/reinforced/fulltile"), T("/obj/structure/window/reinforced/highpressure/fulltile"), T("/obj/structure/window/reinforced/tinted/fulltile"));
 	return f.dot;
 });
 
@@ -804,12 +709,10 @@ rt.type(12216, "/obj/structure/window/reinforced/tinted/fulltile", "/obj/structu
 	glass_amount: 2,
 });
 
-// /obj/structure/window/reinforced/tinted/fulltile/proc/<init>  (code/game/objects/structures/window.dm:495)
+// window.dm:495
 rt.def("/obj/structure/window/reinforced/tinted/fulltile/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "canSmoothWith", rt.list(T("/obj/structure/window/fulltile"), T("/obj/structure/window/reinforced/fulltile"), T("/obj/structure/window/reinforced/highpressure/fulltile"), T("/obj/structure/window/reinforced/tinted/fulltile")));
+	parent_proc();
+	this.canSmoothWith = list(T("/obj/structure/window/fulltile"), T("/obj/structure/window/reinforced/fulltile"), T("/obj/structure/window/reinforced/highpressure/fulltile"), T("/obj/structure/window/reinforced/tinted/fulltile"));
 	return f.dot;
 });
 
@@ -822,12 +725,10 @@ rt.type(12221, "/obj/structure/window/reinforced/fulltile/ice", "/obj/structure/
 	glass_amount: 2,
 });
 
-// /obj/structure/window/reinforced/fulltile/ice/proc/<init>  (code/game/objects/structures/window.dm:503)
+// window.dm:503
 rt.def("/obj/structure/window/reinforced/fulltile/ice/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "canSmoothWith", rt.list(T("/obj/structure/window/fulltile"), T("/obj/structure/window/reinforced/fulltile"), T("/obj/structure/window/reinforced/tinted/fulltile"), T("/obj/structure/window/reinforced/fulltile/ice")));
+	parent_proc();
+	this.canSmoothWith = list(T("/obj/structure/window/fulltile"), T("/obj/structure/window/reinforced/fulltile"), T("/obj/structure/window/reinforced/tinted/fulltile"), T("/obj/structure/window/reinforced/fulltile/ice"));
 	return f.dot;
 });
 
@@ -852,18 +753,16 @@ rt.type(12226, "/obj/structure/window/shuttle", "/obj/structure/window", {
 	armor: null,
 });
 
-// /obj/structure/window/shuttle/proc/<init>  (code/game/objects/structures/window.dm:519)
+// window.dm:519
 rt.def("/obj/structure/window/shuttle/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 50, "bullet", 0, "laser", 0, "energy", 0, "bomb", 25, "bio", 100, "rad", 100, "fire", 80, "acid", 100]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 50, "bullet", 0, "laser", 0, "energy", 0, "bomb", 25, "bio", 100, "rad", 100, "fire", 80, "acid", 100]);
 	return f.dot;
 });
 
-// /obj/structure/window/shuttle/proc/narsie_act  (code/game/objects/structures/window.dm:528)
+// window.dm:528
 rt.def("/obj/structure/window/shuttle/proc/narsie_act", function narsie_act(f: Frame) {
-	rt.callSrc(f, "add_atom_colour", ["#3C3434", 4]);
+	this.add_atom_colour("#3C3434", FIXED_COLOUR_PRIORITY);
 	return f.dot;
 });
 
@@ -883,98 +782,75 @@ rt.type(12209, "/obj/structure/window/reinforced/clockwork", "/obj/structure/win
 	reinf: 0,
 });
 
-// /obj/structure/window/reinforced/clockwork/proc/<init>  (code/game/objects/structures/window.dm:540)
+// window.dm:540
 rt.def("/obj/structure/window/reinforced/clockwork/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 60, "bullet", 25, "laser", 0, "energy", 0, "bomb", 25, "bio", 100, "rad", 100, "fire", 80, "acid", 100]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 60, "bullet", 25, "laser", 0, "energy", 0, "bomb", 25, "bio", 100, "rad", 100, "fire", 80, "acid", 100]);
 	return f.dot;
 });
 
-// /obj/structure/window/reinforced/clockwork/proc/Initialize  (code/game/objects/structures/window.dm:551)  may sleep
-rt.def("/obj/structure/window/reinforced/clockwork/proc/Initialize", function* Initialize(f: Frame) {
-	let I: Value = null, amount_of_gears: Value = null, i: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [I, amount_of_gears, i, $0, $e];
-	if (truthy(rt.sv(f, "fulltile"))) {
-		rt.setSv(f, "made_glow", 1);
+// window.dm:551
+rt.def("/obj/structure/window/reinforced/clockwork/proc/Initialize", function* Initialize(f: Frame, mapload: Value, direct: Value) {
+	let I: Value = null, i: Value = null;
+	let $e: any;
+	if (this.fulltile) {
+		this.made_glow = 1;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.sv(f, "debris"))) {
-		I = null;
-		rt.forList(f, 0, rt.sv(f, "debris"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			I = $e;
-			yield* g.call(f, P("/proc/qdel"), null, [live(I)]);
+	yield* parent_proc();
+	if (this.debris) {
+		for (I of each(this.debris)) {
+			yield* qdel(I);
 		}
-		rt.endFor(f, 0);
-		yield* g.callName(f, rt.sv(f, "debris"), "Cut", []);
+		this.debris.Cut();
 	}
-	amount_of_gears = 2;
-	if (truthy(rt.sv(f, "fulltile"))) {
-		yield* g.new_(f, T("/obj/effect/temp_visual/ratvar/window"), [rt.getStep(f, live(f.src), 0)]);
+	let amount_of_gears: Value = 2;
+	if (this.fulltile) {
+		yield* new_(T("/obj/effect/temp_visual/ratvar/window"), rt.getStep(f, this, 0));
 		amount_of_gears = 4;
 	}
-	i = null;
-	rt.forRange(f, 0, 1, live(amount_of_gears), 1);
+	rt.forRange(f, 0, 1, amount_of_gears, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		rt.modSrcVar(f, "debris", (yield* g.new_(f, T("/obj/item/clockwork/alloy_shards/medium/gear_bit"), [])), add);
+		this.debris += (yield* new_(T("/obj/item/clockwork/alloy_shards/medium/gear_bit")));
 	}
 	rt.endFor(f, 0);
-	if (truthy(rt.sv(f, "fulltile"))) {
-		$0 = 2;
-	} else {
-		$0 = 1;
-	}
-	yield* g.call(f, P("/proc/change_construction_value"), null, [$0]);
+	change_construction_value(this.fulltile ? 2 : 1);
 	return f.dot;
-}, true, { args: ["mapload", "direct"] });
-
-// /obj/structure/window/reinforced/clockwork/proc/setDir  (code/game/objects/structures/window.dm:562)  may sleep
-rt.def("/obj/structure/window/reinforced/clockwork/proc/setDir", function* setDir(f: Frame) {
-	let E: Value = null;
-	f.vars = () => [E];
-	if (!truthy(rt.sv(f, "made_glow"))) {
-		yield* g.callName(f, (E = (yield* g.new_(f, T("/obj/effect/temp_visual/ratvar/window/single"), [rt.getStep(f, live(f.src), 0)]))), "setDir", [live(f.args[0])]);
-		rt.setSv(f, "made_glow", 1);
-	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	return f.dot;
-}, true, { args: ["direct"] });
-
-// /obj/structure/window/reinforced/clockwork/proc/Destroy  (code/game/objects/structures/window.dm:569)  may sleep
-rt.def("/obj/structure/window/reinforced/clockwork/proc/Destroy", function* Destroy(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	if (truthy(rt.sv(f, "fulltile"))) {
-		$0 = -2;
-	} else {
-		$0 = -1;
-	}
-	yield* g.call(f, P("/proc/change_construction_value"), null, [$0]);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
 }, true);
 
-// /obj/structure/window/reinforced/clockwork/proc/ratvar_act  (code/game/objects/structures/window.dm:574)
+// window.dm:562
+rt.def("/obj/structure/window/reinforced/clockwork/proc/setDir", function* setDir(f: Frame, direct: Value) {
+	let E: Value = null;
+	if (!this.made_glow) {
+		yield* (E = (yield* new_(T("/obj/effect/temp_visual/ratvar/window/single"), rt.getStep(f, this, 0)))).setDir(direct);
+		this.made_glow = 1;
+	}
+	yield* parent_proc();
+	return f.dot;
+}, true);
+
+// window.dm:569
+rt.def("/obj/structure/window/reinforced/clockwork/proc/Destroy", function* Destroy(f: Frame) {
+	change_construction_value(this.fulltile ? -2 : -1);
+	return (yield* parent_proc());
+}, true);
+
+// window.dm:574
 rt.def("/obj/structure/window/reinforced/clockwork/proc/ratvar_act", function ratvar_act(f: Frame) {
-	if (!truthy(rt.gl("ratvar_awakens"))) return f.dot;
-	rt.setSv(f, "obj_integrity", rt.sv(f, "max_integrity"));
-	rt.callSrc(f, "update_icon", []);
+	if (!GLOB.ratvar_awakens) return f.dot;
+	this.obj_integrity = this.max_integrity;
+	this.update_icon();
 	return f.dot;
 });
 
-// /obj/structure/window/reinforced/clockwork/proc/narsie_act  (code/game/objects/structures/window.dm:578)  may sleep
+// window.dm:578
 rt.def("/obj/structure/window/reinforced/clockwork/proc/narsie_act", function* narsie_act(f: Frame) {
-	let previouscolor: Value = null;
-	f.vars = () => [previouscolor];
-	yield* g.srcCall(f, "take_damage", (yield* g.call(f, P("/proc/rand"), null, [25, 75])), "brute");
-	if (!truthy(live(f.src))) return f.dot;
-	previouscolor = rt.sv(f, "color");
-	rt.setSv(f, "color", "#960000");
-	rt.op(f, "Animate", [2, 6], [null, live(f.src), "color", live(previouscolor), "time", 8]);
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/atom/proc/update_atom_colour")])), 8]);
+	yield* this.take_damage(rand(25, 75), "brute");
+	if (!this) return f.dot;
+	let previouscolor: Value = this.color;
+	this.color = "#960000";
+	rt.op(f, "Animate", [2, 6], [null, this, "color", previouscolor, "time", 8]);
+	yield* addtimer((yield* new_(T("/datum/callback"), this, P("/atom/proc/update_atom_colour"))), 8);
 	return f.dot;
 }, true);
 
@@ -1002,100 +878,91 @@ rt.type(12229, "/obj/structure/window/paperframe", "/obj/structure/window", {
 	armor: null,
 }, { global: { torn: 795, paper: 796 } });
 
-// /obj/structure/window/paperframe/proc/<init>  (code/game/objects/structures/window.dm:614)
+// window.dm:614
 rt.def("/obj/structure/window/paperframe/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "canSmoothWith", rt.list(T("/obj/structure/window/paperframe"), T("/obj/structure/mineral_door/paperframe")));
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 0, "acid", 0]));
+	parent_proc();
+	this.canSmoothWith = list(T("/obj/structure/window/paperframe"), T("/obj/structure/mineral_door/paperframe"));
+	this.armor = rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 0, "acid", 0]);
 	return f.dot;
 });
 
-// /obj/structure/window/paperframe/proc/Initialize  (code/game/objects/structures/window.dm:628)  may sleep
+// window.dm:628
 rt.def("/obj/structure/window/paperframe/proc/Initialize", function* Initialize(f: Frame) {
-	let I: Value = null, papers: Value = null, i: Value = null;
+	let I: Value = null, i: Value = null;
 	let $e: any;
-	f.vars = () => [I, papers, i, $e];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (truthy(rt.sv(f, "debris"))) {
-		I = null;
-		rt.forList(f, 0, rt.sv(f, "debris"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			I = $e;
-			yield* g.call(f, P("/proc/qdel"), null, [live(I)]);
+	f.dot = (yield* parent_proc());
+	if (this.debris) {
+		for (I of each(this.debris)) {
+			yield* qdel(I);
 		}
-		rt.endFor(f, 0);
-		yield* g.callName(f, rt.sv(f, "debris"), "Cut", []);
+		this.debris.Cut();
 	}
-	papers = (yield* g.call(f, P("/proc/rand"), null, [1, 4]));
-	rt.modSrcVar(f, "debris", (yield* g.new_(f, T("/obj/item/stack/sheet/mineral/wood"), [])), add);
-	i = null;
-	rt.forRange(f, 0, 1, live(papers), 1);
+	let papers: Value = rand(1, 4);
+	this.debris += (yield* new_(T("/obj/item/stack/sheet/mineral/wood")));
+	rt.forRange(f, 0, 1, papers, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		rt.modSrcVar(f, "debris", (yield* g.new_(f, T("/obj/item/weapon/paper/natural"), [])), add);
+		this.debris += (yield* new_(T("/obj/item/weapon/paper/natural")));
 	}
 	rt.endFor(f, 0);
-	yield* g.srcCall(f, "update_icon");
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/structure/window/paperframe/proc/attack_hand  (code/game/objects/structures/window.dm:637)  may sleep
+// window.dm:637
 rt.def("/obj/structure/window/paperframe/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.srcCall(f, "add_fingerprint", live(user));
-	if (!isEqual(rt.fv(f, "a_intent", live(user)), "harm")) {
-		yield* g.callName(f, live(user), "changeNext_move", [8]);
-		yield* g.callName(f, live(user), "visible_message", [fmt("＀ knocks on ＀.", [live(user), live(f.src)])]);
-		yield* g.call(f, P("/proc/playsound"), null, [live(f.src), "pageturn", 50, 1]);
+	yield* this.add_fingerprint(user);
+	if (user.a_intent != "harm") {
+		user.changeNext_move(8);
+		user.visible_message(`${user} knocks on ${this}.`);
+		playsound(this, "pageturn", 50, 1);
 	} else {
-		yield* g.srcCall(f, "take_damage", 4, "brute", "melee", 0);
-		yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.sv(f, "hitsound"), 50, 1]);
-		if (!truthy(live(f.src)) || truthy(rt.fv(f, "gc_destroyed", live(f.src)))) return f.dot;
-		yield* g.callName(f, live(user), "visible_message", [fmt("<span class='danger'>＀ tears a hole in ＀.</span>", [live(user), live(f.src)])]);
-		yield* g.srcCall(f, "update_icon");
+		yield* this.take_damage(4, "brute", "melee", 0);
+		playsound(this, this.hitsound, 50, 1);
+		if (!this || this.gc_destroyed) return f.dot;
+		user.visible_message(`<span class='danger'>${user} tears a hole in ${this}.</span>`);
+		yield* this.update_icon();
 	}
 	return f.dot;
 }, true);
 
-// /obj/structure/window/paperframe/proc/update_icon  (code/game/objects/structures/window.dm:650)
+// window.dm:650
 rt.def("/obj/structure/window/paperframe/proc/update_icon", function update_icon(f: Frame) {
-	if (rt.lt(rt.sv(f, "obj_integrity"), rt.sv(f, "max_integrity"))) {
-		rt.callSrc(f, "cut_overlay", [rt.gl("paper")]);
-		rt.callSrc(f, "add_overlay", [rt.gl("torn")]);
-		rt.callSrc(f, "set_opacity", [0]);
+	if (this.obj_integrity < this.max_integrity) {
+		this.cut_overlay(GLOB.paper);
+		this.add_overlay(GLOB.torn);
+		this.set_opacity(0);
 	} else {
-		rt.callSrc(f, "cut_overlay", [rt.gl("torn")]);
-		rt.callSrc(f, "add_overlay", [rt.gl("paper")]);
-		rt.callSrc(f, "set_opacity", [1]);
+		this.cut_overlay(GLOB.torn);
+		this.add_overlay(GLOB.paper);
+		this.set_opacity(1);
 	}
-	rt.call(f, P("/proc/queue_smooth"), null, [live(f.src)]);
+	queue_smooth(this);
 	return f.dot;
 });
 
-// /obj/structure/window/paperframe/proc/attackby  (code/game/objects/structures/window.dm:662)  may sleep
-rt.def("/obj/structure/window/paperframe/proc/attackby", function* attackby(f: Frame) {
-	if (truthy((yield* g.callName(f, live(f.args[0]), "is_hot", [])))) {
-		yield* g.srcCall(f, "fire_act", (yield* g.callName(f, live(f.args[0]), "is_hot", [])));
-		return live(f.dot);
+// window.dm:662
+rt.def("/obj/structure/window/paperframe/proc/attackby", function* attackby(f: Frame, W: Value, user: Value) {
+	if (W.is_hot()) {
+		yield* this.fire_act(W.is_hot());
+		return f.dot;
 	}
-	if (isEqual(rt.fv(f, "a_intent", live(f.args[1])), "harm")) {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+	if (user.a_intent == "harm") {
+		return (yield* parent_proc());
 	}
-	if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/paper")) ? 1 : 0)) && rt.lt(rt.sv(f, "obj_integrity"), rt.sv(f, "max_integrity")))) {
-		yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("＀ starts to patch the holes in ％！.", [live(f.args[1]), live(f.src)])]);
-		if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, 20, "target", live(f.src)], rt.Args.Named)))) {
-			rt.setSv(f, "obj_integrity", (yield* g.call(f, P("/proc/min"), null, [add(rt.sv(f, "obj_integrity"), 4), rt.sv(f, "max_integrity")])));
-			yield* g.call(f, P("/proc/qdel"), null, [live(f.args[0])]);
-			yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("＀ patches some of the holes in ％！.", [live(f.args[1]), live(f.src)])]);
-			if (isEqual(rt.sv(f, "obj_integrity"), rt.sv(f, "max_integrity"))) {
-				yield* g.srcCall(f, "update_icon");
+	if (rt.istype(W, T("/obj/item/weapon/paper")) && this.obj_integrity < this.max_integrity) {
+		user.visible_message(fmt("＀ starts to patch the holes in ％！.", [user, this]));
+		if (yield* do_after(user, 20, { target: this })) {
+			this.obj_integrity = min(this.obj_integrity + 4, this.max_integrity);
+			yield* qdel(W);
+			user.visible_message(fmt("＀ patches some of the holes in ％！.", [user, this]));
+			if (this.obj_integrity == this.max_integrity) {
+				yield* this.update_icon();
 			}
-			return live(f.dot);
+			return f.dot;
 		}
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "update_icon");
+	yield* parent_proc();
+	yield* this.update_icon();
 	return f.dot;
-}, true, { args: ["W", "user"] });
+}, true);

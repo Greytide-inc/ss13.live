@@ -1,7 +1,7 @@
-// From code/modules/mob/living/simple_animal/hostile/eyeballs.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/simple_animal/hostile/eyeballs.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(4908, "/mob/living/simple_animal/hostile/carp/eyeball", "/mob/living/simple_animal/hostile/carp", {
@@ -30,15 +30,13 @@ rt.type(4908, "/mob/living/simple_animal/hostile/carp/eyeball", "/mob/living/sim
 	del_on_death: 1,
 });
 
-// /mob/living/simple_animal/hostile/carp/eyeball/proc/<init>  (code/modules/mob/living/simple_animal/hostile/eyeballs.dm:13)
+// eyeballs.dm:13
 rt.def("/mob/living/simple_animal/hostile/carp/eyeball/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "emote_taunt", rt.list("glares"));
-	$0 = $0;
-	rt.setSv(f, "speak_emote", rt.list("telepathically cries"));
-	$0 = $0;
-	rt.setSv(f, "faction", rt.list("spooky"));
+	parent_proc();
+	this.emote_taunt = list("glares");
+
+	this.speak_emote = list("telepathically cries");
+
+	this.faction = list("spooky");
 	return f.dot;
 });

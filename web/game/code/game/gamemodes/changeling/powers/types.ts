@@ -1,5 +1,5 @@
 // Types declared in code/game/gamemodes/changeling/powers that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(5656, "/obj/item/weapon/melee/arm_blade/false", "/obj/item/weapon/melee/arm_blade", {
 	desc: "A grotesque mass of flesh that used to be your arm. Although it looks dangerous at first, you can tell it's actually quite dull and useless.",

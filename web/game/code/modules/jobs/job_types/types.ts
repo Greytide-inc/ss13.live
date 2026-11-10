@@ -1,5 +1,5 @@
 // Types declared in code/modules/jobs/job_types that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(686, "/datum/outfit/job/quartermaster", "/datum/outfit/job", {
 	name: "Quartermaster",

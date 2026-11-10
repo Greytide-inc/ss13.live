@@ -1,7 +1,7 @@
-// From code/modules/reagents/chemistry/reagents/blob_reagents.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/reagents/chemistry/reagents/blob_reagents.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(3522, "/datum/reagent/blob", "/datum/reagent", {
@@ -20,29 +20,24 @@ rt.type(3522, "/datum/reagent/blob", "/datum/reagent", {
 	can_synth: 0,
 });
 
-// /datum/reagent/blob/proc/send_message  (code/modules/reagents/chemistry/reagents/blob_reagents.dm:18)
+// blob_reagents.dm:18
 rt.def("/datum/reagent/blob/proc/send_message", function send_message(f: Frame, M: Value) {
-	let totalmessage: Value = null;
-	f.vars = () => [totalmessage];
-	totalmessage = rt.sv(f, "message");
-	if ((truthy(rt.sv(f, "message_living")) && !truthy((rt.istype(live(M), T("/mob/living/silicon")) ? 1 : 0)))) {
-		totalmessage = rt.modify(live(totalmessage), rt.sv(f, "message_living"), add);
+	let totalmessage: Value = rt.sv(f, "message");
+	if (this.message_living && !rt.istype(M, T("/mob/living/silicon"))) {
+		totalmessage += this.message_living;
 	}
-	totalmessage = rt.modify(live(totalmessage), "!", add);
-	rt.call(f, P("/proc/to_chat"), null, [live(M), fmt("<span class='userdanger'>＀</span>", [live(totalmessage)])]);
+	totalmessage += "!";
+	to_chat(M, `<span class='userdanger'>${totalmessage}</span>`);
 	return f.dot;
 });
 
-// /datum/reagent/blob/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/blob_reagents.dm:25)
+// blob_reagents.dm:25
 rt.def("/datum/reagent/blob/proc/reaction_mob", function reaction_mob(f: Frame, M: Value, method: Value, reac_volume: Value, show_message: Value, touch_protection: Value, O: Value) {
-	f.vars = () => [method];
-	if (live(method) === null) {
-		method = 1;
-	}
-	if ((isEqual(rt.fv(f, "stat", live(M)), 2) || truthy((rt.istype(live(M), T("/mob/living/simple_animal/hostile/blob")) ? 1 : 0)))) {
+	method ??= TOUCH;
+	if (M.stat == 2 || rt.istype(M, T("/mob/living/simple_animal/hostile/blob"))) {
 		return 0;
 	}
-	return rt.call(f, P("/proc/round"), null, [multiply(live(reac_volume), rt.call(f, P("/proc/min"), null, [subtract(1.5, live(touch_protection)), 1])), 0.10000000149011612]);
+	return round(reac_volume * min(1.5 - touch_protection, 1), 0.1);
 });
 
 rt.type(3523, "/datum/reagent/blob/replicating_foam", "/datum/reagent/blob", {
@@ -57,38 +52,34 @@ rt.type(3523, "/datum/reagent/blob/replicating_foam", "/datum/reagent/blob", {
 	complementary_color: "#57787B",
 });
 
-// /datum/reagent/blob/replicating_foam/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/blob_reagents.dm:60)  may sleep
+// blob_reagents.dm:60
 rt.def("/datum/reagent/blob/replicating_foam/proc/reaction_mob", function* reaction_mob(f: Frame) {
-	if (live(f.args[1]) === null) {
-		f.args[1] = 1;
+	if (f.args[1] === null) {
+		f.args[1] = TOUCH;
 	}
-	f.args[2] = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.callName(f, live(f.args[0]), "apply_damage", [multiply(0.699999988079071, live(f.args[2])), "brute"]);
+	f.args[2] = (yield* parent_proc());
+	yield* f.args[0].apply_damage(0.7 * f.args[2], "brute");
 	return f.dot;
 }, true, { args: ["M", "method", "reac_volume", "show_message", "touch_protection", "O"] });
 
-// /datum/reagent/blob/replicating_foam/proc/damage_reaction  (code/modules/reagents/chemistry/reagents/blob_reagents.dm:64)  may sleep
+// blob_reagents.dm:64
 rt.def("/datum/reagent/blob/replicating_foam/proc/damage_reaction", function* damage_reaction(f: Frame) {
 	let newB: Value = null;
-	f.vars = () => [newB];
-	if (isEqual(live(f.args[2]), "brute")) {
-		f.args[1] = multiply(live(f.args[1]), 2);
-	} else {
-		if ((((isEqual(live(f.args[2]), "fire") && rt.gt(live(f.args[1]), 0)) && rt.gt(subtract(rt.fv(f, "obj_integrity", live(f.args[0])), live(f.args[1])), 0)) && truthy(rt.op(f, "Prob", [], [60])))) {
-			if (truthy((newB = (yield* g.callName(f, live(f.args[0]), "expand", [null, null, 0]))))) {
-				rt.setFv(f, "obj_integrity", live(newB), subtract(rt.fv(f, "obj_integrity", live(f.args[0])), live(f.args[1])));
-				yield* g.callName(f, live(newB), "update_icon", []);
-			}
+	if (f.args[2] == "brute") {
+		f.args[1] = f.args[1] * 2;
+	} else if (f.args[2] == "fire" && f.args[1] > 0 && f.args[0].obj_integrity - f.args[1] > 0 && prob(60)) {
+		if (newB = (yield* f.args[0].expand(null, null, 0))) {
+			newB.obj_integrity = f.args[0].obj_integrity - f.args[1];
+			yield* newB.update_icon();
 		}
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true, { args: ["B", "damage", "damage_type", "damage_flag"] });
 
-// /datum/reagent/blob/replicating_foam/proc/expand_reaction  (code/modules/reagents/chemistry/reagents/blob_reagents.dm:74)  may sleep
+// blob_reagents.dm:74
 rt.def("/datum/reagent/blob/replicating_foam/proc/expand_reaction", function* expand_reaction(f: Frame, B: Value, newB: Value, _T: Value, O: Value) {
-	f.vars = () => [B, newB, _T, O];
-	if (!truthy(rt.op(f, "Prob", [], [30]))) return f.dot;
-	yield* g.callName(f, live(newB), "expand", [null, null, 0]);
+	if (!prob(30)) return f.dot;
+	yield* newB.expand(null, null, 0);
 	return f.dot;
 }, true);
 
@@ -104,43 +95,37 @@ rt.type(3524, "/datum/reagent/blob/networked_fibers", "/datum/reagent/blob", {
 	complementary_color: "#FFF68F",
 });
 
-// /datum/reagent/blob/networked_fibers/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/blob_reagents.dm:90)  may sleep
+// blob_reagents.dm:90
 rt.def("/datum/reagent/blob/networked_fibers/proc/reaction_mob", function* reaction_mob(f: Frame) {
-	if (live(f.args[1]) === null) {
-		f.args[1] = 1;
+	if (f.args[1] === null) {
+		f.args[1] = TOUCH;
 	}
-	f.args[2] = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.callName(f, live(f.args[0]), "apply_damage", [multiply(0.6000000238418579, live(f.args[2])), "brute"]);
-	if (!truthy(live(f.args[0]))) return f.dot;
-	yield* g.callName(f, live(f.args[0]), "apply_damage", [multiply(0.6000000238418579, live(f.args[2])), "fire"]);
+	f.args[2] = (yield* parent_proc());
+	yield* f.args[0].apply_damage(0.6 * f.args[2], "brute");
+	if (!f.args[0]) return f.dot;
+	yield* f.args[0].apply_damage(0.6 * f.args[2], "fire");
 	return f.dot;
 }, true, { args: ["M", "method", "reac_volume", "show_message", "touch_protection", "O"] });
 
-// /datum/reagent/blob/networked_fibers/proc/expand_reaction  (code/modules/reagents/chemistry/reagents/blob_reagents.dm:96)  may sleep
+// blob_reagents.dm:96
 rt.def("/datum/reagent/blob/networked_fibers/proc/expand_reaction", function* expand_reaction(f: Frame, B: Value, newB: Value, _T: Value, O: Value) {
 	let A: Value = null, C: Value = null;
-	let $e: any;
-	f.vars = () => [B, newB, _T, O, A, C, $e];
-	if ((!truthy(live(O)) && truthy(rt.fv(f, "overmind", live(newB))))) {
-		if (!truthy((rt.istype(live(B), T("/obj/structure/blob/node")) ? 1 : 0))) {
-			yield* g.callName(f, rt.fv(f, "overmind", live(newB)), "add_points", [1]);
-			yield* g.call(f, P("/proc/qdel"), null, [live(newB)]);
+	if (!O && newB.overmind) {
+		if (!rt.istype(B, T("/obj/structure/blob/node"))) {
+			newB.overmind.add_points(1);
+			yield* qdel(newB);
 		}
 	} else {
-		A = (yield* g.call(f, P("/proc/get_area"), null, [live(_T)]));
-		if (!(!truthy((rt.istype(live(_T), T("/turf/open/space")) ? 1 : 0)) && !truthy((rt.istype(live(A), T("/area/shuttle")) ? 1 : 0)))) return f.dot;
-		C = null;
-		rt.forList(f, 0, (yield* g.call(f, P("/proc/range"), null, [1, live(newB)])), T("/obj/structure/blob/core"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			C = $e;
-			if (isEqual(rt.fv(f, "overmind", live(C)), live(O))) {
-				yield* g.callName(f, live(newB), "forceMove", [rt.getStep(f, live(C), 0)]);
-				yield* g.callName(f, live(C), "forceMove", [live(_T)]);
-				yield* g.callName(f, live(C), "setDir", [rt.getDir(f, live(newB), live(C))]);
-				yield* g.callName(f, live(O), "add_points", [1]);
+		A = get_area(_T);
+		if (!(!rt.istype(_T, T("/turf/open/space")) && !rt.istype(A, T("/area/shuttle")))) return f.dot;
+		for (C of each(range(1, newB), T("/obj/structure/blob/core"))) {
+			if (C.overmind == O) {
+				yield* newB.forceMove(rt.getStep(f, C, 0));
+				yield* C.forceMove(_T);
+				yield* C.setDir(rt.getDir(f, newB, C));
+				O.add_points(1);
 			}
 		}
-		rt.endFor(f, 0);
 	}
 	return f.dot;
 }, true);
@@ -156,50 +141,43 @@ rt.type(3525, "/datum/reagent/blob/shifting_fragments", "/datum/reagent/blob", {
 	complementary_color: "#3C6EC8",
 });
 
-// /datum/reagent/blob/shifting_fragments/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/blob_reagents.dm:122)  may sleep
+// blob_reagents.dm:122
 rt.def("/datum/reagent/blob/shifting_fragments/proc/reaction_mob", function* reaction_mob(f: Frame) {
-	if (live(f.args[1]) === null) {
-		f.args[1] = 1;
+	if (f.args[1] === null) {
+		f.args[1] = TOUCH;
 	}
-	f.args[2] = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.callName(f, live(f.args[0]), "apply_damage", [multiply(0.699999988079071, live(f.args[2])), "brute"]);
+	f.args[2] = (yield* parent_proc());
+	yield* f.args[0].apply_damage(0.7 * f.args[2], "brute");
 	return f.dot;
 }, true, { args: ["M", "method", "reac_volume", "show_message", "touch_protection", "O"] });
 
-// /datum/reagent/blob/shifting_fragments/proc/expand_reaction  (code/modules/reagents/chemistry/reagents/blob_reagents.dm:126)  may sleep
+// blob_reagents.dm:126
 rt.def("/datum/reagent/blob/shifting_fragments/proc/expand_reaction", function* expand_reaction(f: Frame, B: Value, newB: Value, _T: Value, O: Value) {
-	f.vars = () => [B, newB, _T, O];
-	if (!(truthy((rt.istype(live(B), T("/obj/structure/blob/normal")) ? 1 : 0)) || (truthy((rt.istype(live(B), T("/obj/structure/blob/shield")) ? 1 : 0)) && truthy(rt.op(f, "Prob", [], [25]))))) return f.dot;
-	yield* g.callName(f, live(newB), "forceMove", [rt.getStep(f, live(B), 0)]);
-	yield* g.callName(f, live(B), "forceMove", [live(_T)]);
+	if (!(rt.istype(B, T("/obj/structure/blob/normal")) || rt.istype(B, T("/obj/structure/blob/shield")) && prob(25))) return f.dot;
+	yield* newB.forceMove(rt.getStep(f, B, 0));
+	yield* B.forceMove(_T);
 	return f.dot;
 }, true);
 
-// /datum/reagent/blob/shifting_fragments/proc/damage_reaction  (code/modules/reagents/chemistry/reagents/blob_reagents.dm:131)  may sleep
-rt.def("/datum/reagent/blob/shifting_fragments/proc/damage_reaction", function* damage_reaction(f: Frame) {
+// blob_reagents.dm:131
+rt.def("/datum/reagent/blob/shifting_fragments/proc/damage_reaction", function* damage_reaction(f: Frame, B: Value, damage: Value, damage_type: Value, damage_flag: Value) {
 	let blobstopick: Value = null, OB: Value = null, targeted: Value = null, _T: Value = null;
-	let $e: any;
-	f.vars = () => [blobstopick, OB, targeted, _T, $e];
-	if ((((((isEqual(live(f.args[3]), "melee") || isEqual(live(f.args[3]), "bullet")) || isEqual(live(f.args[3]), "laser")) && rt.gt(live(f.args[1]), 0)) && rt.gt(subtract(rt.fv(f, "obj_integrity", live(f.args[0])), live(f.args[1])), 0)) && truthy(rt.op(f, "Prob", [], [subtract(60, live(f.args[1]))])))) {
-		blobstopick = rt.list();
-		OB = null;
-		rt.forList(f, 0, (yield* g.call(f, P("/proc/orange"), null, [1, live(f.args[0])])), T("/obj/structure/blob"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			OB = $e;
-			if ((((truthy((rt.istype(live(OB), T("/obj/structure/blob/normal")) ? 1 : 0)) || (truthy((rt.istype(live(OB), T("/obj/structure/blob/shield")) ? 1 : 0)) && truthy(rt.op(f, "Prob", [], [25])))) && truthy(rt.fv(f, "overmind", live(OB)))) && isEqual(rt.gv(f, "id", rt.gv(f, "blob_reagent_datum", rt.fv(f, "overmind", live(OB)))), rt.gv(f, "id", rt.gv(f, "blob_reagent_datum", rt.fv(f, "overmind", live(f.args[0]))))))) {
-				blobstopick = rt.modify(live(blobstopick), live(OB), add);
+	if ((damage_flag == "melee" || damage_flag == "bullet" || damage_flag == "laser") && damage > 0 && B.obj_integrity - damage > 0 && prob(60 - damage)) {
+		blobstopick = list();
+		for (OB of each(orange(1, B), T("/obj/structure/blob"))) {
+			if ((rt.istype(OB, T("/obj/structure/blob/normal")) || rt.istype(OB, T("/obj/structure/blob/shield")) && prob(25)) && OB.overmind && OB.overmind.blob_reagent_datum.id == B.overmind.blob_reagent_datum.id) {
+				blobstopick += OB;
 			}
 		}
-		rt.endFor(f, 0);
-		if (truthy(rt.len(f, live(blobstopick)))) {
-			targeted = rt.op(f, "PickUnweighted", [1], [live(blobstopick)]);
-			_T = rt.getStep(f, live(targeted), 0);
-			yield* g.callName(f, live(targeted), "forceMove", [rt.getStep(f, live(f.args[0]), 0)]);
-			yield* g.callName(f, live(f.args[0]), "forceMove", [live(_T)]);
+		if (rt.len(f, blobstopick)) {
+			targeted = pick(blobstopick);
+			_T = rt.getStep(f, targeted, 0);
+			yield* targeted.forceMove(rt.getStep(f, B, 0));
+			yield* B.forceMove(_T);
 		}
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["B", "damage", "damage_type", "damage_flag"] });
+	return (yield* parent_proc());
+}, true);
 
 rt.type(3526, "/datum/reagent/blob/blazing_oil", "/datum/reagent/blob", {
 	name: "Blazing Oil",
@@ -215,50 +193,43 @@ rt.type(3526, "/datum/reagent/blob/blazing_oil", "/datum/reagent/blob", {
 	message_living: ", and you feel your skin char and melt",
 });
 
-// /datum/reagent/blob/blazing_oil/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/blob_reagents.dm:158)  may sleep
+// blob_reagents.dm:158
 rt.def("/datum/reagent/blob/blazing_oil/proc/reaction_mob", function* reaction_mob(f: Frame) {
-	if (live(f.args[1]) === null) {
-		f.args[1] = 1;
+	if (f.args[1] === null) {
+		f.args[1] = TOUCH;
 	}
-	f.args[2] = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.callName(f, live(f.args[0]), "adjust_fire_stacks", [(yield* g.call(f, P("/proc/round"), null, [divide(live(f.args[2]), 10)]))]);
-	yield* g.callName(f, live(f.args[0]), "IgniteMob", []);
-	if (truthy(live(f.args[0]))) {
-		yield* g.callName(f, live(f.args[0]), "apply_damage", [multiply(0.800000011920929, live(f.args[2])), "fire"]);
+	f.args[2] = (yield* parent_proc());
+	yield* f.args[0].adjust_fire_stacks(round(f.args[2] / 10));
+	yield* f.args[0].IgniteMob();
+	if (f.args[0]) {
+		yield* f.args[0].apply_damage(0.8 * f.args[2], "fire");
 	}
-	if (!truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon")) ? 1 : 0))) return f.dot;
-	yield* g.callName(f, live(f.args[0]), "emote", ["scream"]);
+	if (!rt.istype(f.args[0], T("/mob/living/carbon"))) return f.dot;
+	yield* f.args[0].emote("scream");
 	return f.dot;
 }, true, { args: ["M", "method", "reac_volume", "show_message", "touch_protection", "O"] });
 
-// /datum/reagent/blob/blazing_oil/proc/extinguish_reaction  (code/modules/reagents/chemistry/reagents/blob_reagents.dm:167)  may sleep
+// blob_reagents.dm:167
 rt.def("/datum/reagent/blob/blazing_oil/proc/extinguish_reaction", function* extinguish_reaction(f: Frame, B: Value) {
-	f.vars = () => [B];
-	yield* g.callName(f, live(B), "take_damage", [1.5, "fire", "energy"]);
+	yield* B.take_damage(1.5, "fire", "energy");
 	return f.dot;
 }, true);
 
-// /datum/reagent/blob/blazing_oil/proc/damage_reaction  (code/modules/reagents/chemistry/reagents/blob_reagents.dm:170)  may sleep
-rt.def("/datum/reagent/blob/blazing_oil/proc/damage_reaction", function* damage_reaction(f: Frame) {
+// blob_reagents.dm:170
+rt.def("/datum/reagent/blob/blazing_oil/proc/damage_reaction", function* damage_reaction(f: Frame, B: Value, damage: Value, damage_type: Value, damage_flag: Value) {
 	let _T: Value = null, C: Value = null;
-	let $e: any;
-	f.vars = () => [_T, C, $e];
-	if ((isEqual(live(f.args[2]), "fire") && !isEqual(live(f.args[3]), "energy"))) {
-		_T = null;
-		rt.forList(f, 0, (yield* g.call(f, P("/proc/range"), null, [1, live(f.args[0])])), T("/turf/open"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			_T = $e;
-			if ((!((truthy((C = rt.locateIn(f, T("/obj/structure/blob"), live(_T)))) && truthy(rt.fv(f, "overmind", live(C)))) && isEqual(rt.gv(f, "id", rt.gv(f, "blob_reagent_datum", rt.fv(f, "overmind", live(C)))), rt.gv(f, "id", rt.gv(f, "blob_reagent_datum", rt.fv(f, "overmind", live(f.args[0])))))) && truthy(rt.op(f, "Prob", [], [80])))) {
-				yield* g.new_(f, T("/obj/effect/hotspot"), [live(_T)]);
+	if (damage_type == "fire" && damage_flag != "energy") {
+		for (_T of each(range(1, B), T("/turf/open"))) {
+			if (!((C = rt.locateIn(f, T("/obj/structure/blob"), _T)) && C.overmind && C.overmind.blob_reagent_datum.id == B.overmind.blob_reagent_datum.id) && prob(80)) {
+				yield* new_(T("/obj/effect/hotspot"), _T);
 			}
 		}
-		rt.endFor(f, 0);
 	}
-	if (isEqual(live(f.args[3]), "fire")) {
+	if (damage_flag == "fire") {
 		return 0;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["B", "damage", "damage_type", "damage_flag"] });
+	return (yield* parent_proc());
+}, true);
 
 rt.type(3527, "/datum/reagent/blob/regenerative_materia", "/datum/reagent/blob", {
 	name: "Regenerative Materia",
@@ -270,43 +241,41 @@ rt.type(3527, "/datum/reagent/blob/regenerative_materia", "/datum/reagent/blob",
 	message_living: ", and you feel <i>alive</i>",
 });
 
-// /datum/reagent/blob/regenerative_materia/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/blob_reagents.dm:190)  may sleep
+// blob_reagents.dm:190
 rt.def("/datum/reagent/blob/regenerative_materia/proc/reaction_mob", function* reaction_mob(f: Frame) {
-	if (live(f.args[1]) === null) {
-		f.args[1] = 1;
+	if (f.args[1] === null) {
+		f.args[1] = TOUCH;
 	}
-	f.args[2] = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.callName(f, live(f.args[0]), "adjust_drugginess", [live(f.args[2])]);
-	if (truthy(rt.fv(f, "reagents", live(f.args[0])))) {
-		yield* g.callName(f, rt.fv(f, "reagents", live(f.args[0])), "add_reagent", ["regenerative_materia", multiply(0.20000000298023224, live(f.args[2]))]);
-		yield* g.callName(f, rt.fv(f, "reagents", live(f.args[0])), "add_reagent", ["spore", multiply(0.20000000298023224, live(f.args[2]))]);
+	f.args[2] = (yield* parent_proc());
+	yield* f.args[0].adjust_drugginess(f.args[2]);
+	if (f.args[0].reagents) {
+		yield* f.args[0].reagents.add_reagent("regenerative_materia", 0.2 * f.args[2]);
+		yield* f.args[0].reagents.add_reagent("spore", 0.2 * f.args[2]);
 	}
-	yield* g.callName(f, live(f.args[0]), "apply_damage", [multiply(0.699999988079071, live(f.args[2])), "tox"]);
+	yield* f.args[0].apply_damage(0.7 * f.args[2], "tox");
 	return f.dot;
 }, true, { args: ["M", "method", "reac_volume", "show_message", "touch_protection", "O"] });
 
-// /datum/reagent/blob/regenerative_materia/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/blob_reagents.dm:198)  may sleep
-rt.def("/datum/reagent/blob/regenerative_materia/proc/on_mob_life", function* on_mob_life(f: Frame) {
+// blob_reagents.dm:198
+rt.def("/datum/reagent/blob/regenerative_materia/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
 	let N: Value = null;
-	f.vars = () => [N];
-	yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [1]);
-	if (truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon")) ? 1 : 0))) {
-		rt.setFv(f, "hal_screwyhud", (N = live(f.args[0])), 3);
+	yield* M.adjustToxLoss(1);
+	if (rt.istype(M, T("/mob/living/carbon"))) {
+		(N = M).hal_screwyhud = SCREWYHUD_HEALTHY;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /datum/reagent/blob/regenerative_materia/proc/on_mob_delete  (code/modules/reagents/chemistry/reagents/blob_reagents.dm:205)
-rt.def("/datum/reagent/blob/regenerative_materia/proc/on_mob_delete", function on_mob_delete(f: Frame) {
+// blob_reagents.dm:205
+rt.def("/datum/reagent/blob/regenerative_materia/proc/on_mob_delete", function on_mob_delete(f: Frame, M: Value) {
 	let N: Value = null;
-	f.vars = () => [N];
-	if (truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon")) ? 1 : 0))) {
-		rt.setFv(f, "hal_screwyhud", (N = live(f.args[0])), 0);
+	if (rt.istype(M, T("/mob/living/carbon"))) {
+		(N = M).hal_screwyhud = 0;
 	}
-	rt.callSuper(f, [], rt.Args.Same);
+	parent_proc();
 	return f.dot;
-}, false, { args: ["M"] });
+}, false);
 
 rt.type(3528, "/datum/reagent/blob/zombifying_pods", "/datum/reagent/blob", {
 	name: "Zombifying Pods",
@@ -321,48 +290,45 @@ rt.type(3528, "/datum/reagent/blob/zombifying_pods", "/datum/reagent/blob", {
 	message_living: ", and you feel tired",
 });
 
-// /datum/reagent/blob/zombifying_pods/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/blob_reagents.dm:224)  may sleep
+// blob_reagents.dm:224
 rt.def("/datum/reagent/blob/zombifying_pods/proc/reaction_mob", function* reaction_mob(f: Frame) {
-	let points: Value = null, BS: Value = null;
-	f.vars = () => [points, BS];
-	if (live(f.args[1]) === null) {
-		f.args[1] = 1;
+	let BS: Value = null;
+	if (f.args[1] === null) {
+		f.args[1] = TOUCH;
 	}
-	f.args[2] = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.callName(f, live(f.args[0]), "apply_damage", [multiply(0.6000000238418579, live(f.args[2])), "tox"]);
-	if (!((truthy(live(f.args[5])) && truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon/human")) ? 1 : 0))) && isEqual(rt.fv(f, "stat", live(f.args[0])), 1))) return f.dot;
-	yield* g.callName(f, live(f.args[0]), "death", []);
-	points = (yield* g.call(f, P("/proc/rand"), null, [5, 10]));
-	rt.setFv(f, "overmind", (BS = (yield* g.new_(f, T("/mob/living/simple_animal/hostile/blob/blobspore/weak"), [rt.getStep(f, live(f.args[0]), 0)]))), live(f.args[5]));
-	yield* g.callName(f, live(BS), "update_icons", []);
-	yield* g.callName(f, rt.fv(f, "blob_mobs", live(f.args[5])), "Add", [live(BS)]);
-	yield* g.callName(f, live(BS), "Zombify", [live(f.args[0])]);
-	yield* g.callName(f, live(f.args[5]), "add_points", [live(points)]);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[5]), fmt("<span class='notice'>Gained ＀ resources from the zombification of ＀.</span>", [live(points), live(f.args[0])])]);
+	f.args[2] = (yield* parent_proc());
+	yield* f.args[0].apply_damage(0.6 * f.args[2], "tox");
+	if (!(f.args[5] && rt.istype(f.args[0], T("/mob/living/carbon/human")) && f.args[0].stat == 1)) return f.dot;
+	yield* f.args[0].death();
+	let points: Value = rand(5, 10);
+	(BS = (yield* new_(T("/mob/living/simple_animal/hostile/blob/blobspore/weak"), rt.getStep(f, f.args[0], 0)))).overmind = f.args[5];
+	yield* BS.update_icons();
+	f.args[5].blob_mobs.Add(BS);
+	yield* BS.Zombify(f.args[0]);
+	f.args[5].add_points(points);
+	to_chat(f.args[5], `<span class='notice'>Gained ${points} resources from the zombification of ${f.args[0]}.</span>`);
 	return f.dot;
 }, true, { args: ["M", "method", "reac_volume", "show_message", "touch_protection", "O"] });
 
-// /datum/reagent/blob/zombifying_pods/proc/damage_reaction  (code/modules/reagents/chemistry/reagents/blob_reagents.dm:238)  may sleep
-rt.def("/datum/reagent/blob/zombifying_pods/proc/damage_reaction", function* damage_reaction(f: Frame) {
+// blob_reagents.dm:238
+rt.def("/datum/reagent/blob/zombifying_pods/proc/damage_reaction", function* damage_reaction(f: Frame, B: Value, damage: Value, damage_type: Value, damage_flag: Value) {
 	let BS: Value = null;
-	f.vars = () => [BS];
-	if ((((((isEqual(live(f.args[3]), "melee") || isEqual(live(f.args[3]), "bullet")) || isEqual(live(f.args[3]), "laser")) && rt.le(live(f.args[1]), 20)) && rt.le(subtract(rt.fv(f, "obj_integrity", live(f.args[0])), live(f.args[1])), 0)) && truthy(rt.op(f, "Prob", [], [30])))) {
-		yield* g.callName(f, live(f.args[0]), "visible_message", ["<span class='warning'><b>A spore floats free of the blob!</b></span>"]);
-		rt.setFv(f, "overmind", (BS = (yield* g.new_(f, T("/mob/living/simple_animal/hostile/blob/blobspore/weak"), [rt.fv(f, "loc", live(f.args[0]))]))), rt.fv(f, "overmind", live(f.args[0])));
-		yield* g.callName(f, live(BS), "update_icons", []);
-		yield* g.callName(f, rt.gv(f, "blob_mobs", rt.fv(f, "overmind", live(f.args[0]))), "Add", [live(BS)]);
+	if ((damage_flag == "melee" || damage_flag == "bullet" || damage_flag == "laser") && damage <= 20 && B.obj_integrity - damage <= 0 && prob(30)) {
+		B.visible_message("<span class='warning'><b>A spore floats free of the blob!</b></span>");
+		(BS = (yield* new_(T("/mob/living/simple_animal/hostile/blob/blobspore/weak"), B.loc))).overmind = B.overmind;
+		yield* BS.update_icons();
+		B.overmind.blob_mobs.Add(BS);
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["B", "damage", "damage_type", "damage_flag"] });
+	return (yield* parent_proc());
+}, true);
 
-// /datum/reagent/blob/zombifying_pods/proc/expand_reaction  (code/modules/reagents/chemistry/reagents/blob_reagents.dm:247)  may sleep
+// blob_reagents.dm:247
 rt.def("/datum/reagent/blob/zombifying_pods/proc/expand_reaction", function* expand_reaction(f: Frame, B: Value, newB: Value, _T: Value, O: Value) {
 	let BS: Value = null;
-	f.vars = () => [B, newB, _T, O, BS];
-	if (!truthy(rt.op(f, "Prob", [], [10]))) return f.dot;
-	rt.setFv(f, "overmind", (BS = (yield* g.new_(f, T("/mob/living/simple_animal/hostile/blob/blobspore/weak"), [live(_T)]))), rt.fv(f, "overmind", live(B)));
-	yield* g.callName(f, live(BS), "update_icons", []);
-	yield* g.callName(f, rt.gv(f, "blob_mobs", rt.fv(f, "overmind", live(newB))), "Add", [live(BS)]);
+	if (!prob(10)) return f.dot;
+	(BS = (yield* new_(T("/mob/living/simple_animal/hostile/blob/blobspore/weak"), _T))).overmind = B.overmind;
+	yield* BS.update_icons();
+	newB.overmind.blob_mobs.Add(BS);
 	return f.dot;
 }, true);
 
@@ -378,33 +344,31 @@ rt.type(3529, "/datum/reagent/blob/energized_jelly", "/datum/reagent/blob", {
 	message_living: ", and you feel a horrible tingling sensation",
 });
 
-// /datum/reagent/blob/energized_jelly/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/blob_reagents.dm:266)  may sleep
+// blob_reagents.dm:266
 rt.def("/datum/reagent/blob/energized_jelly/proc/reaction_mob", function* reaction_mob(f: Frame) {
-	if (live(f.args[1]) === null) {
-		f.args[1] = 1;
+	if (f.args[1] === null) {
+		f.args[1] = TOUCH;
 	}
-	f.args[2] = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.modField(f, live(f.args[0]), "losebreath", (yield* g.call(f, P("/proc/round"), null, [multiply(0.20000000298023224, live(f.args[2]))])), add);
-	yield* g.callName(f, live(f.args[0]), "adjustStaminaLoss", [multiply(0.4000000059604645, live(f.args[2]))]);
-	if (!truthy(live(f.args[0]))) return f.dot;
-	yield* g.callName(f, live(f.args[0]), "apply_damage", [multiply(0.6000000238418579, live(f.args[2])), "oxy"]);
+	f.args[2] = (yield* parent_proc());
+	f.args[0].losebreath += round(0.2 * f.args[2]);
+	yield* f.args[0].adjustStaminaLoss(0.4 * f.args[2]);
+	if (!f.args[0]) return f.dot;
+	yield* f.args[0].apply_damage(0.6 * f.args[2], "oxy");
 	return f.dot;
 }, true, { args: ["M", "method", "reac_volume", "show_message", "touch_protection", "O"] });
 
-// /datum/reagent/blob/energized_jelly/proc/damage_reaction  (code/modules/reagents/chemistry/reagents/blob_reagents.dm:273)  may sleep
-rt.def("/datum/reagent/blob/energized_jelly/proc/damage_reaction", function* damage_reaction(f: Frame) {
-	if (((((isEqual(live(f.args[3]), "melee") || isEqual(live(f.args[3]), "bullet")) || isEqual(live(f.args[3]), "laser")) && rt.le(subtract(rt.fv(f, "obj_integrity", live(f.args[0])), live(f.args[1])), 0)) && truthy(rt.op(f, "Prob", [], [10])))) {
-		yield* g.call(f, P("/proc/do_sparks"), null, [(yield* g.call(f, P("/proc/rand"), null, [2, 4])), 0, live(f.args[0])]);
+// blob_reagents.dm:273
+rt.def("/datum/reagent/blob/energized_jelly/proc/damage_reaction", function* damage_reaction(f: Frame, B: Value, damage: Value, damage_type: Value, damage_flag: Value) {
+	if ((damage_flag == "melee" || damage_flag == "bullet" || damage_flag == "laser") && B.obj_integrity - damage <= 0 && prob(10)) {
+		yield* do_sparks(rand(2, 4), 0, B);
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["B", "damage", "damage_type", "damage_flag"] });
+	return (yield* parent_proc());
+}, true);
 
-// /datum/reagent/blob/energized_jelly/proc/emp_reaction  (code/modules/reagents/chemistry/reagents/blob_reagents.dm:281)  may sleep
+// blob_reagents.dm:281
 rt.def("/datum/reagent/blob/energized_jelly/proc/emp_reaction", function* emp_reaction(f: Frame, B: Value, severity: Value) {
-	let damage: Value = null;
-	f.vars = () => [B, severity, damage];
-	damage = subtract((yield* g.call(f, P("/proc/rand"), null, [30, 50])), multiply(live(severity), (yield* g.call(f, P("/proc/rand"), null, [10, 15]))));
-	yield* g.callName(f, live(B), "take_damage", [live(damage), "fire", "energy"]);
+	let damage: Value = rand(30, 50) - severity * rand(10, 15);
+	yield* B.take_damage(damage, "fire", "energy");
 	return f.dot;
 }, true);
 
@@ -421,48 +385,40 @@ rt.type(3530, "/datum/reagent/blob/explosive_lattice", "/datum/reagent/blob", {
 	message: "The blob blasts you",
 });
 
-// /datum/reagent/blob/explosive_lattice/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/blob_reagents.dm:298)  may sleep
+// blob_reagents.dm:298
 rt.def("/datum/reagent/blob/explosive_lattice/proc/reaction_mob", function* reaction_mob(f: Frame) {
-	let initial_volume: Value = null, E: Value = null, L: Value = null, aoe_volume: Value = null;
-	let $e: any;
-	f.vars = () => [initial_volume, E, L, aoe_volume, $e];
-	if (live(f.args[1]) === null) {
-		f.args[1] = 1;
+	let E: Value = null, L: Value = null, aoe_volume: Value = null;
+	if (f.args[1] === null) {
+		f.args[1] = TOUCH;
 	}
-	initial_volume = live(f.args[2]);
-	if (rt.ge((f.args[2] = (yield* g.callSuper(f, [], rt.Args.Same))), 10)) {
-		rt.setFv(f, "alpha", (E = (yield* g.new_(f, T("/obj/effect/temp_visual/explosion/fast"), [rt.getStep(f, live(f.args[0]), 0)]))), 150);
-		L = null;
-		rt.forList(f, 0, (yield* g.call(f, P("/proc/orange"), null, [rt.getStep(f, live(f.args[0]), 0), 1])), T("/mob/living"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			L = $e;
-			if (truthy((rt.isIn(f, "blob", rt.fv(f, "faction", live(L))) ? 1 : 0))) {
+	let initial_volume: Value = f.args[2];
+	if ((f.args[2] = (yield* parent_proc())) >= 10) {
+		(E = (yield* new_(T("/obj/effect/temp_visual/explosion/fast"), rt.getStep(f, f.args[0], 0)))).alpha = 150;
+		for (L of each(orange(rt.getStep(f, f.args[0], 0), 1), T("/mob/living"))) {
+			if (rt.isIn(f, "blob", L.faction)) {
 				continue;
 			}
-			aoe_volume = (yield* g.callSuper(f, [live(L), 1, live(initial_volume), 0, (yield* g.callName(f, live(L), "get_permeability_protection", [])), live(f.args[5])]));
-			yield* g.callName(f, live(L), "apply_damage", [multiply(0.4000000059604645, live(aoe_volume)), "brute"]);
+			aoe_volume = (yield* parent_proc(L, TOUCH, initial_volume, 0, L.get_permeability_protection(), f.args[5]));
+			yield* L.apply_damage(0.4 * aoe_volume, "brute");
 		}
-		rt.endFor(f, 0);
-		if (truthy(live(f.args[0]))) {
-			yield* g.callName(f, live(f.args[0]), "apply_damage", [multiply(0.6000000238418579, live(f.args[2])), "brute"]);
+		if (f.args[0]) {
+			yield* f.args[0].apply_damage(0.6 * f.args[2], "brute");
 		}
 	} else {
-		yield* g.callName(f, live(f.args[0]), "apply_damage", [multiply(0.6000000238418579, live(f.args[2])), "brute"]);
+		yield* f.args[0].apply_damage(0.6 * f.args[2], "brute");
 	}
 	return f.dot;
 }, true, { args: ["M", "method", "reac_volume", "show_message", "touch_protection", "O"] });
 
-// /datum/reagent/blob/explosive_lattice/proc/damage_reaction  (code/modules/reagents/chemistry/reagents/blob_reagents.dm:314)
-rt.def("/datum/reagent/blob/explosive_lattice/proc/damage_reaction", function damage_reaction(f: Frame) {
-	if (isEqual(live(f.args[3]), "bomb")) {
+// blob_reagents.dm:314
+rt.def("/datum/reagent/blob/explosive_lattice/proc/damage_reaction", function damage_reaction(f: Frame, B: Value, damage: Value, damage_type: Value, damage_flag: Value) {
+	if (damage_flag == "bomb") {
 		return 0;
-	} else {
-		if (((!isEqual(live(f.args[3]), "melee") || !isEqual(live(f.args[3]), "bullet")) || !isEqual(live(f.args[3]), "laser"))) {
-			return multiply(live(f.args[1]), 1.5);
-		}
+	} else if (damage_flag != "melee" || damage_flag != "bullet" || damage_flag != "laser") {
+		return damage * 1.5;
 	}
-	return rt.callSuper(f, [], rt.Args.Same);
-}, false, { args: ["B", "damage", "damage_type", "damage_flag"] });
+	return parent_proc();
+}, false);
 
 rt.type(3531, "/datum/reagent/blob/cryogenic_poison", "/datum/reagent/blob", {
 	name: "Cryogenic Poison",
@@ -476,30 +432,30 @@ rt.type(3531, "/datum/reagent/blob/cryogenic_poison", "/datum/reagent/blob", {
 	message_living: ", and you feel like your insides are solidifying",
 });
 
-// /datum/reagent/blob/cryogenic_poison/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/blob_reagents.dm:333)  may sleep
+// blob_reagents.dm:333
 rt.def("/datum/reagent/blob/cryogenic_poison/proc/reaction_mob", function* reaction_mob(f: Frame) {
-	if (live(f.args[1]) === null) {
-		f.args[1] = 1;
+	if (f.args[1] === null) {
+		f.args[1] = TOUCH;
 	}
-	f.args[2] = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (truthy(rt.fv(f, "reagents", live(f.args[0])))) {
-		yield* g.callName(f, rt.fv(f, "reagents", live(f.args[0])), "add_reagent", ["frostoil", multiply(0.30000001192092896, live(f.args[2]))]);
-		yield* g.callName(f, rt.fv(f, "reagents", live(f.args[0])), "add_reagent", ["ice", multiply(0.30000001192092896, live(f.args[2]))]);
-		yield* g.callName(f, rt.fv(f, "reagents", live(f.args[0])), "add_reagent", ["cryogenic_poison", multiply(0.30000001192092896, live(f.args[2]))]);
+	f.args[2] = (yield* parent_proc());
+	if (f.args[0].reagents) {
+		yield* f.args[0].reagents.add_reagent("frostoil", 0.3 * f.args[2]);
+		yield* f.args[0].reagents.add_reagent("ice", 0.3 * f.args[2]);
+		yield* f.args[0].reagents.add_reagent("cryogenic_poison", 0.3 * f.args[2]);
 	}
-	yield* g.callName(f, live(f.args[0]), "apply_damage", [multiply(0.20000000298023224, live(f.args[2])), "brute"]);
+	yield* f.args[0].apply_damage(0.2 * f.args[2], "brute");
 	return f.dot;
 }, true, { args: ["M", "method", "reac_volume", "show_message", "touch_protection", "O"] });
 
-// /datum/reagent/blob/cryogenic_poison/proc/on_mob_life  (code/modules/reagents/chemistry/reagents/blob_reagents.dm:341)  may sleep
-rt.def("/datum/reagent/blob/cryogenic_poison/proc/on_mob_life", function* on_mob_life(f: Frame) {
-	yield* g.callName(f, live(f.args[0]), "adjustBruteLoss", [0.30000001192092896, 0]);
-	yield* g.callName(f, live(f.args[0]), "adjustFireLoss", [0.30000001192092896, 0]);
-	yield* g.callName(f, live(f.args[0]), "adjustToxLoss", [0.30000001192092896, 0]);
+// blob_reagents.dm:341
+rt.def("/datum/reagent/blob/cryogenic_poison/proc/on_mob_life", function* on_mob_life(f: Frame, M: Value) {
+	yield* M.adjustBruteLoss(0.3, 0);
+	yield* M.adjustFireLoss(0.3, 0);
+	yield* M.adjustToxLoss(0.3, 0);
 	f.dot = 1;
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
 rt.type(3532, "/datum/reagent/blob/electromagnetic_web", "/datum/reagent/blob", {
 	name: "Electromagnetic Web",
@@ -515,41 +471,37 @@ rt.type(3532, "/datum/reagent/blob/electromagnetic_web", "/datum/reagent/blob", 
 	message_living: ", and you hear a faint buzzing",
 });
 
-// /datum/reagent/blob/electromagnetic_web/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/blob_reagents.dm:362)  may sleep
+// blob_reagents.dm:362
 rt.def("/datum/reagent/blob/electromagnetic_web/proc/reaction_mob", function* reaction_mob(f: Frame) {
-	if (live(f.args[1]) === null) {
-		f.args[1] = 1;
+	if (f.args[1] === null) {
+		f.args[1] = TOUCH;
 	}
-	if (truthy(rt.op(f, "Prob", [], [multiply((f.args[2] = (yield* g.callSuper(f, [], rt.Args.Same))), 2)]))) {
-		yield* g.callName(f, live(f.args[0]), "emp_act", [2]);
+	if (prob((f.args[2] = (yield* parent_proc())) * 2)) {
+		yield* f.args[0].emp_act(2);
 	}
-	if (!truthy(live(f.args[0]))) return f.dot;
-	yield* g.callName(f, live(f.args[0]), "apply_damage", [live(f.args[2]), "fire"]);
+	if (!f.args[0]) return f.dot;
+	yield* f.args[0].apply_damage(f.args[2], "fire");
 	return f.dot;
 }, true, { args: ["M", "method", "reac_volume", "show_message", "touch_protection", "O"] });
 
-// /datum/reagent/blob/electromagnetic_web/proc/damage_reaction  (code/modules/reagents/chemistry/reagents/blob_reagents.dm:369)
+// blob_reagents.dm:369
 rt.def("/datum/reagent/blob/electromagnetic_web/proc/damage_reaction", function damage_reaction(f: Frame, B: Value, damage: Value, damage_type: Value, damage_flag: Value) {
-	let $0: any;
-	f.vars = () => [$0];
-	if (isEqual(live(damage_type), "brute")) {
-		$0 = rt.fv(f, "brute_resist", live(B));
-		if ($0 === 0.5) {
-			return multiply(live(damage), 2);
-		} else if ($0 === 0.25) {
-			return multiply(live(damage), 4);
-		} else if ($0 === 0.10000000149011612) {
-			return multiply(live(damage), 10);
+	if (damage_type == "brute") {
+		if (B.brute_resist === 0.5) {
+			return damage * 2;
+		} else if (B.brute_resist === 0.25) {
+			return damage * 4;
+		} else if (B.brute_resist === 0.1) {
+			return damage * 10;
 		}
 	}
-	return multiply(live(damage), 1.25);
+	return damage * 1.25;
 });
 
-// /datum/reagent/blob/electromagnetic_web/proc/death_reaction  (code/modules/reagents/chemistry/reagents/blob_reagents.dm:380)  may sleep
+// blob_reagents.dm:380
 rt.def("/datum/reagent/blob/electromagnetic_web/proc/death_reaction", function* death_reaction(f: Frame, B: Value, damage_flag: Value) {
-	f.vars = () => [B, damage_flag];
-	if (!((isEqual(live(damage_flag), "melee") || isEqual(live(damage_flag), "bullet")) || isEqual(live(damage_flag), "laser"))) return f.dot;
-	yield* g.call(f, P("/proc/empulse"), null, [rt.fv(f, "loc", live(B)), 1, 3]);
+	if (!(damage_flag == "melee" || damage_flag == "bullet" || damage_flag == "laser")) return f.dot;
+	yield* empulse(B.loc, 1, 3);
 	return f.dot;
 }, true);
 
@@ -566,60 +518,44 @@ rt.type(3533, "/datum/reagent/blob/synchronous_mesh", "/datum/reagent/blob", {
 	message: "The blobs strike you",
 });
 
-// /datum/reagent/blob/synchronous_mesh/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/blob_reagents.dm:397)  may sleep
+// blob_reagents.dm:397
 rt.def("/datum/reagent/blob/synchronous_mesh/proc/reaction_mob", function* reaction_mob(f: Frame) {
 	let B: Value = null;
-	let $e: any;
-	f.vars = () => [B, $e];
-	if (live(f.args[1]) === null) {
-		f.args[1] = 1;
+	if (f.args[1] === null) {
+		f.args[1] = TOUCH;
 	}
-	f.args[2] = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.callName(f, live(f.args[0]), "apply_damage", [multiply(0.20000000298023224, live(f.args[2])), "brute"]);
-	if (!(truthy(live(f.args[0])) && truthy(live(f.args[2])))) return f.dot;
-	B = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/range"), null, [1, live(f.args[0])])), T("/obj/structure/blob"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		B = $e;
-		if (truthy(live(f.args[0]))) {
-			yield* g.callName(f, live(B), "blob_attack_animation", [live(f.args[0])]);
-			yield* g.callName(f, live(f.args[0]), "apply_damage", [multiply(0.30000001192092896, live(f.args[2])), "brute"]);
+	f.args[2] = (yield* parent_proc());
+	yield* f.args[0].apply_damage(0.2 * f.args[2], "brute");
+	if (!(f.args[0] && f.args[2])) return f.dot;
+	for (B of each(range(1, f.args[0]), T("/obj/structure/blob"))) {
+		if (f.args[0]) {
+			yield* B.blob_attack_animation(f.args[0]);
+			yield* f.args[0].apply_damage(0.3 * f.args[2], "brute");
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true, { args: ["M", "method", "reac_volume", "show_message", "touch_protection", "O"] });
 
-// /datum/reagent/blob/synchronous_mesh/proc/damage_reaction  (code/modules/reagents/chemistry/reagents/blob_reagents.dm:406)  may sleep
+// blob_reagents.dm:406
 rt.def("/datum/reagent/blob/synchronous_mesh/proc/damage_reaction", function* damage_reaction(f: Frame, B: Value, damage: Value, damage_type: Value, damage_flag: Value) {
 	let damagesplit: Value = null, C: Value = null;
-	let $e: any;
-	f.vars = () => [B, damage, damage_type, damage_flag, damagesplit, C, $e];
-	if (((isEqual(live(damage_flag), "melee") || isEqual(live(damage_flag), "bullet")) || isEqual(live(damage_flag), "laser"))) {
+	if (damage_flag == "melee" || damage_flag == "bullet" || damage_flag == "laser") {
 		damagesplit = 1;
-		C = null;
-		rt.forList(f, 0, (yield* g.call(f, P("/proc/orange"), null, [1, live(B)])), T("/obj/structure/blob"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			C = $e;
-			if ((((!truthy((rt.istype(live(C), T("/obj/structure/blob/core")) ? 1 : 0)) && !truthy((rt.istype(live(C), T("/obj/structure/blob/node")) ? 1 : 0))) && truthy(rt.fv(f, "overmind", live(C)))) && isEqual(rt.gv(f, "id", rt.gv(f, "blob_reagent_datum", rt.fv(f, "overmind", live(C)))), rt.gv(f, "id", rt.gv(f, "blob_reagent_datum", rt.fv(f, "overmind", live(B))))))) {
-				damagesplit = rt.modify(live(damagesplit), 1, add);
+		for (C of each(orange(1, B), T("/obj/structure/blob"))) {
+			if (!rt.istype(C, T("/obj/structure/blob/core")) && !rt.istype(C, T("/obj/structure/blob/node")) && C.overmind && C.overmind.blob_reagent_datum.id == B.overmind.blob_reagent_datum.id) {
+				damagesplit += 1;
 			}
 		}
-		rt.endFor(f, 0);
 		C = null;
-		rt.forList(f, 0, (yield* g.call(f, P("/proc/orange"), null, [1, live(B)])), T("/obj/structure/blob"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			C = $e;
-			if ((((!truthy((rt.istype(live(C), T("/obj/structure/blob/core")) ? 1 : 0)) && !truthy((rt.istype(live(C), T("/obj/structure/blob/node")) ? 1 : 0))) && truthy(rt.fv(f, "overmind", live(C)))) && isEqual(rt.gv(f, "id", rt.gv(f, "blob_reagent_datum", rt.fv(f, "overmind", live(C)))), rt.gv(f, "id", rt.gv(f, "blob_reagent_datum", rt.fv(f, "overmind", live(B))))))) {
-				yield* g.callName(f, live(C), "take_damage", [divide(live(damage), live(damagesplit)), "clone", 0, 0]);
+		for (C of each(orange(1, B), T("/obj/structure/blob"))) {
+			if (!rt.istype(C, T("/obj/structure/blob/core")) && !rt.istype(C, T("/obj/structure/blob/node")) && C.overmind && C.overmind.blob_reagent_datum.id == B.overmind.blob_reagent_datum.id) {
+				yield* C.take_damage(damage / damagesplit, "clone", 0, 0);
 			}
 		}
-		rt.endFor(f, 0);
-		return divide(live(damage), live(damagesplit));
+		return damage / damagesplit;
 	} else {
-		return multiply(live(damage), 1.25);
+		return damage * 1.25;
 	}
-	return f.dot;
 }, true);
 
 rt.type(3534, "/datum/reagent/blob/reactive_spines", "/datum/reagent/blob", {
@@ -635,38 +571,29 @@ rt.type(3534, "/datum/reagent/blob/reactive_spines", "/datum/reagent/blob", {
 	message: "The blob stabs you",
 });
 
-// /datum/reagent/blob/reactive_spines/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/blob_reagents.dm:432)  may sleep
+// blob_reagents.dm:432
 rt.def("/datum/reagent/blob/reactive_spines/proc/reaction_mob", function* reaction_mob(f: Frame, M: Value, method: Value, reac_volume: Value, show_message: Value, touch_protection: Value, O: Value) {
-	f.vars = () => [M, method, reac_volume, show_message, touch_protection, O];
-	if (live(method) === null) {
-		method = 1;
-	}
-	if ((isEqual(rt.fv(f, "stat", live(M)), 2) || truthy((rt.istype(live(M), T("/mob/living/simple_animal/hostile/blob")) ? 1 : 0)))) {
+	method ??= TOUCH;
+	if (M.stat == 2 || rt.istype(M, T("/mob/living/simple_animal/hostile/blob"))) {
 		return 0;
 	}
-	yield* g.callName(f, live(M), "adjustBruteLoss", [multiply(0.800000011920929, live(reac_volume))]);
+	yield* M.adjustBruteLoss(0.8 * reac_volume);
 	return f.dot;
 }, true);
 
-// /datum/reagent/blob/reactive_spines/proc/damage_reaction  (code/modules/reagents/chemistry/reagents/blob_reagents.dm:437)  may sleep
-rt.def("/datum/reagent/blob/reactive_spines/proc/damage_reaction", function* damage_reaction(f: Frame) {
+// blob_reagents.dm:437
+rt.def("/datum/reagent/blob/reactive_spines/proc/damage_reaction", function* damage_reaction(f: Frame, B: Value, damage: Value, damage_type: Value, damage_flag: Value) {
 	let A: Value = null;
-	let $e: any;
-	f.vars = () => [A, $e];
-	if (((truthy(live(f.args[1])) && isEqual(live(f.args[2]), "brute")) && rt.gt(subtract(rt.fv(f, "obj_integrity", live(f.args[0])), live(f.args[1])), 0))) {
-		if (isEqual(live(f.args[3]), "melee")) {
-			yield* g.callName(f, live(f.args[0]), "visible_message", ["<span class='boldwarning'>The blob retaliates, lashing out!</span>"]);
+	if (damage && damage_type == "brute" && B.obj_integrity - damage > 0) {
+		if (damage_flag == "melee") {
+			B.visible_message("<span class='boldwarning'>The blob retaliates, lashing out!</span>");
 		}
-		A = null;
-		rt.forList(f, 0, (yield* g.call(f, P("/proc/range"), null, [1, live(f.args[0])])), T("/atom"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			A = $e;
-			yield* g.callName(f, live(A), "blob_act", [live(f.args[0])]);
+		for (A of each(range(1, B), T("/atom"))) {
+			yield* A.blob_act(B);
 		}
-		rt.endFor(f, 0);
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["B", "damage", "damage_type", "damage_flag"] });
+	return (yield* parent_proc());
+}, true);
 
 rt.type(3535, "/datum/reagent/blob/pressurized_slime", "/datum/reagent/blob", {
 	name: "Pressurized Slime",
@@ -682,73 +609,59 @@ rt.type(3535, "/datum/reagent/blob/pressurized_slime", "/datum/reagent/blob", {
 	message_living: ", and you gasp for breath",
 });
 
-// /datum/reagent/blob/pressurized_slime/proc/reaction_mob  (code/modules/reagents/chemistry/reagents/blob_reagents.dm:459)  may sleep
+// blob_reagents.dm:459
 rt.def("/datum/reagent/blob/pressurized_slime/proc/reaction_mob", function* reaction_mob(f: Frame) {
 	let _T: Value = null;
-	f.vars = () => [_T];
-	if (live(f.args[1]) === null) {
-		f.args[1] = 1;
+	if (f.args[1] === null) {
+		f.args[1] = TOUCH;
 	}
-	f.args[2] = (yield* g.callSuper(f, [], rt.Args.Same));
-	if ((truthy((rt.istype((_T = rt.getStep(f, live(f.args[0]), 0)), T("/turf/open")) ? 1 : 0)) && truthy(rt.op(f, "Prob", [], [live(f.args[2])])))) {
-		yield* g.callName(f, live(_T), "MakeSlippery", ["min_wet_time", 10, "wet_time_to_add", 5], rt.Args.Named);
-		yield* g.callName(f, live(f.args[0]), "adjust_fire_stacks", [rt.neg(divide(live(f.args[2]), 10))]);
-		yield* g.callName(f, live(f.args[0]), "ExtinguishMob", []);
+	f.args[2] = (yield* parent_proc());
+	if (rt.istype((_T = rt.getStep(f, f.args[0], 0)), T("/turf/open")) && prob(f.args[2])) {
+		yield* _T.MakeSlippery({ min_wet_time: 10, wet_time_to_add: 5 });
+		yield* f.args[0].adjust_fire_stacks(-(f.args[2] / 10));
+		yield* f.args[0].ExtinguishMob();
 	}
-	yield* g.callName(f, live(f.args[0]), "apply_damage", [multiply(0.4000000059604645, live(f.args[2])), "brute"]);
-	if (truthy(live(f.args[0]))) {
-		yield* g.callName(f, live(f.args[0]), "apply_damage", [multiply(0.4000000059604645, live(f.args[2])), "oxy"]);
+	yield* f.args[0].apply_damage(0.4 * f.args[2], "brute");
+	if (f.args[0]) {
+		yield* f.args[0].apply_damage(0.4 * f.args[2], "oxy");
 	}
-	if (!truthy(live(f.args[0]))) return f.dot;
-	yield* g.callName(f, live(f.args[0]), "adjustStaminaLoss", [multiply(0.20000000298023224, live(f.args[2]))]);
+	if (!f.args[0]) return f.dot;
+	yield* f.args[0].adjustStaminaLoss(0.2 * f.args[2]);
 	return f.dot;
 }, true, { args: ["M", "method", "reac_volume", "show_message", "touch_protection", "O"] });
 
-// /datum/reagent/blob/pressurized_slime/proc/damage_reaction  (code/modules/reagents/chemistry/reagents/blob_reagents.dm:472)  may sleep
-rt.def("/datum/reagent/blob/pressurized_slime/proc/damage_reaction", function* damage_reaction(f: Frame) {
-	if ((((isEqual(live(f.args[3]), "melee") || isEqual(live(f.args[3]), "bullet")) || isEqual(live(f.args[3]), "laser")) || !isEqual(live(f.args[2]), "fire"))) {
-		yield* g.srcCall(f, "extinguisharea", live(f.args[0]), live(f.args[1]));
+// blob_reagents.dm:472
+rt.def("/datum/reagent/blob/pressurized_slime/proc/damage_reaction", function* damage_reaction(f: Frame, B: Value, damage: Value, damage_type: Value, damage_flag: Value) {
+	if (damage_flag == "melee" || damage_flag == "bullet" || damage_flag == "laser" || damage_type != "fire") {
+		yield* this.extinguisharea(B, damage);
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["B", "damage", "damage_type", "damage_flag"] });
+	return (yield* parent_proc());
+}, true);
 
-// /datum/reagent/blob/pressurized_slime/proc/death_reaction  (code/modules/reagents/chemistry/reagents/blob_reagents.dm:477)  may sleep
+// blob_reagents.dm:477
 rt.def("/datum/reagent/blob/pressurized_slime/proc/death_reaction", function* death_reaction(f: Frame, B: Value, damage_flag: Value) {
-	f.vars = () => [B, damage_flag];
-	if (!((isEqual(live(damage_flag), "melee") || isEqual(live(damage_flag), "bullet")) || isEqual(live(damage_flag), "laser"))) return f.dot;
-	yield* g.callName(f, live(B), "visible_message", ["<span class='boldwarning'>The blob ruptures, spraying the area with liquid!</span>"]);
-	yield* g.srcCall(f, "extinguisharea", live(B), 50);
+	if (!(damage_flag == "melee" || damage_flag == "bullet" || damage_flag == "laser")) return f.dot;
+	B.visible_message("<span class='boldwarning'>The blob ruptures, spraying the area with liquid!</span>");
+	yield* this.extinguisharea(B, 50);
 	return f.dot;
 }, true);
 
-// /datum/reagent/blob/pressurized_slime/proc/extinguisharea  (code/modules/reagents/chemistry/reagents/blob_reagents.dm:482)  may sleep
+// blob_reagents.dm:482
 rt.def("/datum/reagent/blob/pressurized_slime/proc/extinguisharea", function* extinguisharea(f: Frame, B: Value, probchance: Value) {
 	let _T: Value = null, O: Value = null, L: Value = null;
-	let $e: any;
-	f.vars = () => [B, probchance, _T, O, L, $e];
-	_T = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/range"), null, [1, live(B)])), T("/turf/open"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_T = $e;
-		if (truthy(rt.op(f, "Prob", [], [live(probchance)]))) {
-			yield* g.callName(f, live(_T), "MakeSlippery", ["min_wet_time", 10, "wet_time_to_add", 5], rt.Args.Named);
+	for (_T of each(range(1, B), T("/turf/open"))) {
+		if (prob(probchance)) {
+			yield* _T.MakeSlippery({ min_wet_time: 10, wet_time_to_add: 5 });
 			O = null;
-			rt.forList(f, 1, live(_T), T("/obj"));
-			while (($e = rt.next(f, 1)) !== undefined) {
-				O = $e;
-				yield* g.callName(f, live(O), "extinguish", []);
+			for (O of each(_T, T("/obj"))) {
+				yield* O.extinguish();
 			}
-			rt.endFor(f, 1);
 			L = null;
-			rt.forList(f, 1, live(_T), T("/mob/living"));
-			while (($e = rt.next(f, 1)) !== undefined) {
-				L = $e;
-				yield* g.callName(f, live(L), "adjust_fire_stacks", [-2.5]);
-				yield* g.callName(f, live(L), "ExtinguishMob", []);
+			for (L of each(_T, T("/mob/living"))) {
+				yield* L.adjust_fire_stacks(-2.5);
+				yield* L.ExtinguishMob();
 			}
-			rt.endFor(f, 1);
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);

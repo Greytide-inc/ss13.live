@@ -1,243 +1,243 @@
-// From code/_globalvars/lists/objects.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/_globalvars/lists/objects.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
 
 
-// /datum/controller/global_vars/proc/InitGlobalcable_list  (code/_globalvars/lists/objects.dm:1)
+
+// objects.dm:1
 rt.def("/datum/controller/global_vars/proc/InitGlobalcable_list", function InitGlobalcable_list(f: Frame) {
-	rt.setGl("cable_list", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "cable_list", add);
+	GLOB.cable_list = list();
+	this.gvars_datum_init_order += "cable_list";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalportals  (code/_globalvars/lists/objects.dm:2)
+// objects.dm:2
 rt.def("/datum/controller/global_vars/proc/InitGlobalportals", function InitGlobalportals(f: Frame) {
-	rt.setGl("portals", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "portals", add);
+	GLOB.portals = list();
+	this.gvars_datum_init_order += "portals";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalairlocks  (code/_globalvars/lists/objects.dm:3)
+// objects.dm:3
 rt.def("/datum/controller/global_vars/proc/InitGlobalairlocks", function InitGlobalairlocks(f: Frame) {
-	rt.setGl("airlocks", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "airlocks", add);
+	GLOB.airlocks = list();
+	this.gvars_datum_init_order += "airlocks";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalmechas_list  (code/_globalvars/lists/objects.dm:4)
+// objects.dm:4
 rt.def("/datum/controller/global_vars/proc/InitGlobalmechas_list", function InitGlobalmechas_list(f: Frame) {
-	rt.setGl("mechas_list", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "mechas_list", add);
+	GLOB.mechas_list = list();
+	this.gvars_datum_init_order += "mechas_list";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalshuttle_caller_list  (code/_globalvars/lists/objects.dm:5)
+// objects.dm:5
 rt.def("/datum/controller/global_vars/proc/InitGlobalshuttle_caller_list", function InitGlobalshuttle_caller_list(f: Frame) {
-	rt.setGl("shuttle_caller_list", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "shuttle_caller_list", add);
+	GLOB.shuttle_caller_list = list();
+	this.gvars_datum_init_order += "shuttle_caller_list";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalmachines  (code/_globalvars/lists/objects.dm:6)
+// objects.dm:6
 rt.def("/datum/controller/global_vars/proc/InitGlobalmachines", function InitGlobalmachines(f: Frame) {
-	rt.setGl("machines", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "machines", add);
+	GLOB.machines = list();
+	this.gvars_datum_init_order += "machines";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalsyndicate_shuttle_boards  (code/_globalvars/lists/objects.dm:7)
+// objects.dm:7
 rt.def("/datum/controller/global_vars/proc/InitGlobalsyndicate_shuttle_boards", function InitGlobalsyndicate_shuttle_boards(f: Frame) {
-	rt.setGl("syndicate_shuttle_boards", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "syndicate_shuttle_boards", add);
+	GLOB.syndicate_shuttle_boards = list();
+	this.gvars_datum_init_order += "syndicate_shuttle_boards";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalnavbeacons  (code/_globalvars/lists/objects.dm:8)
+// objects.dm:8
 rt.def("/datum/controller/global_vars/proc/InitGlobalnavbeacons", function InitGlobalnavbeacons(f: Frame) {
-	rt.setGl("navbeacons", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "navbeacons", add);
+	GLOB.navbeacons = list();
+	this.gvars_datum_init_order += "navbeacons";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalteleportbeacons  (code/_globalvars/lists/objects.dm:9)
+// objects.dm:9
 rt.def("/datum/controller/global_vars/proc/InitGlobalteleportbeacons", function InitGlobalteleportbeacons(f: Frame) {
-	rt.setGl("teleportbeacons", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "teleportbeacons", add);
+	GLOB.teleportbeacons = list();
+	this.gvars_datum_init_order += "teleportbeacons";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobaldeliverybeacons  (code/_globalvars/lists/objects.dm:10)
+// objects.dm:10
 rt.def("/datum/controller/global_vars/proc/InitGlobaldeliverybeacons", function InitGlobaldeliverybeacons(f: Frame) {
-	rt.setGl("deliverybeacons", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "deliverybeacons", add);
+	GLOB.deliverybeacons = list();
+	this.gvars_datum_init_order += "deliverybeacons";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobaldeliverybeacontags  (code/_globalvars/lists/objects.dm:11)
+// objects.dm:11
 rt.def("/datum/controller/global_vars/proc/InitGlobaldeliverybeacontags", function InitGlobaldeliverybeacontags(f: Frame) {
-	rt.setGl("deliverybeacontags", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "deliverybeacontags", add);
+	GLOB.deliverybeacontags = list();
+	this.gvars_datum_init_order += "deliverybeacontags";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalnuke_list  (code/_globalvars/lists/objects.dm:12)
+// objects.dm:12
 rt.def("/datum/controller/global_vars/proc/InitGlobalnuke_list", function InitGlobalnuke_list(f: Frame) {
-	rt.setGl("nuke_list", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "nuke_list", add);
+	GLOB.nuke_list = list();
+	this.gvars_datum_init_order += "nuke_list";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalalarmdisplay  (code/_globalvars/lists/objects.dm:13)
+// objects.dm:13
 rt.def("/datum/controller/global_vars/proc/InitGlobalalarmdisplay", function InitGlobalalarmdisplay(f: Frame) {
-	rt.setGl("alarmdisplay", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "alarmdisplay", add);
+	GLOB.alarmdisplay = list();
+	this.gvars_datum_init_order += "alarmdisplay";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalsingularities  (code/_globalvars/lists/objects.dm:14)
+// objects.dm:14
 rt.def("/datum/controller/global_vars/proc/InitGlobalsingularities", function InitGlobalsingularities(f: Frame) {
-	rt.setGl("singularities", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "singularities", add);
+	GLOB.singularities = list();
+	this.gvars_datum_init_order += "singularities";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalchemical_reactions_list  (code/_globalvars/lists/objects.dm:16)
+// objects.dm:16
 rt.def("/datum/controller/global_vars/proc/InitGlobalchemical_reactions_list", function InitGlobalchemical_reactions_list(f: Frame) {
-	rt.setGl("chemical_reactions_list", null);
-	rt.modSrcVar(f, "gvars_datum_init_order", "chemical_reactions_list", add);
+	GLOB.chemical_reactions_list = null;
+	this.gvars_datum_init_order += "chemical_reactions_list";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalchemical_reagents_list  (code/_globalvars/lists/objects.dm:17)
+// objects.dm:17
 rt.def("/datum/controller/global_vars/proc/InitGlobalchemical_reagents_list", function InitGlobalchemical_reagents_list(f: Frame) {
-	rt.setGl("chemical_reagents_list", null);
-	rt.modSrcVar(f, "gvars_datum_init_order", "chemical_reagents_list", add);
+	GLOB.chemical_reagents_list = null;
+	this.gvars_datum_init_order += "chemical_reagents_list";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalmaterials_list  (code/_globalvars/lists/objects.dm:18)
+// objects.dm:18
 rt.def("/datum/controller/global_vars/proc/InitGlobalmaterials_list", function InitGlobalmaterials_list(f: Frame) {
-	rt.setGl("materials_list", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "materials_list", add);
+	GLOB.materials_list = list();
+	this.gvars_datum_init_order += "materials_list";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobaltech_list  (code/_globalvars/lists/objects.dm:19)
+// objects.dm:19
 rt.def("/datum/controller/global_vars/proc/InitGlobaltech_list", function InitGlobaltech_list(f: Frame) {
-	rt.setGl("tech_list", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "tech_list", add);
+	GLOB.tech_list = list();
+	this.gvars_datum_init_order += "tech_list";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalsurgeries_list  (code/_globalvars/lists/objects.dm:20)
+// objects.dm:20
 rt.def("/datum/controller/global_vars/proc/InitGlobalsurgeries_list", function InitGlobalsurgeries_list(f: Frame) {
-	rt.setGl("surgeries_list", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "surgeries_list", add);
+	GLOB.surgeries_list = list();
+	this.gvars_datum_init_order += "surgeries_list";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalcrafting_recipes  (code/_globalvars/lists/objects.dm:21)
+// objects.dm:21
 rt.def("/datum/controller/global_vars/proc/InitGlobalcrafting_recipes", function InitGlobalcrafting_recipes(f: Frame) {
-	rt.setGl("crafting_recipes", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "crafting_recipes", add);
+	GLOB.crafting_recipes = list();
+	this.gvars_datum_init_order += "crafting_recipes";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalrcd_list  (code/_globalvars/lists/objects.dm:22)
+// objects.dm:22
 rt.def("/datum/controller/global_vars/proc/InitGlobalrcd_list", function InitGlobalrcd_list(f: Frame) {
-	rt.setGl("rcd_list", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "rcd_list", add);
+	GLOB.rcd_list = list();
+	this.gvars_datum_init_order += "rcd_list";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalapcs_list  (code/_globalvars/lists/objects.dm:23)
+// objects.dm:23
 rt.def("/datum/controller/global_vars/proc/InitGlobalapcs_list", function InitGlobalapcs_list(f: Frame) {
-	rt.setGl("apcs_list", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "apcs_list", add);
+	GLOB.apcs_list = list();
+	this.gvars_datum_init_order += "apcs_list";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobaltracked_implants  (code/_globalvars/lists/objects.dm:24)
+// objects.dm:24
 rt.def("/datum/controller/global_vars/proc/InitGlobaltracked_implants", function InitGlobaltracked_implants(f: Frame) {
-	rt.setGl("tracked_implants", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "tracked_implants", add);
+	GLOB.tracked_implants = list();
+	this.gvars_datum_init_order += "tracked_implants";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobaltracked_chem_implants  (code/_globalvars/lists/objects.dm:25)
+// objects.dm:25
 rt.def("/datum/controller/global_vars/proc/InitGlobaltracked_chem_implants", function InitGlobaltracked_chem_implants(f: Frame) {
-	rt.setGl("tracked_chem_implants", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "tracked_chem_implants", add);
+	GLOB.tracked_chem_implants = list();
+	this.gvars_datum_init_order += "tracked_chem_implants";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalpoi_list  (code/_globalvars/lists/objects.dm:26)
+// objects.dm:26
 rt.def("/datum/controller/global_vars/proc/InitGlobalpoi_list", function InitGlobalpoi_list(f: Frame) {
-	rt.setGl("poi_list", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "poi_list", add);
+	GLOB.poi_list = list();
+	this.gvars_datum_init_order += "poi_list";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalpinpointer_list  (code/_globalvars/lists/objects.dm:27)
+// objects.dm:27
 rt.def("/datum/controller/global_vars/proc/InitGlobalpinpointer_list", function InitGlobalpinpointer_list(f: Frame) {
-	rt.setGl("pinpointer_list", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "pinpointer_list", add);
+	GLOB.pinpointer_list = list();
+	this.gvars_datum_init_order += "pinpointer_list";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalzombie_infection_list  (code/_globalvars/lists/objects.dm:28)
+// objects.dm:28
 rt.def("/datum/controller/global_vars/proc/InitGlobalzombie_infection_list", function InitGlobalzombie_infection_list(f: Frame) {
-	rt.setGl("zombie_infection_list", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "zombie_infection_list", add);
+	GLOB.zombie_infection_list = list();
+	this.gvars_datum_init_order += "zombie_infection_list";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalmeteor_list  (code/_globalvars/lists/objects.dm:29)
+// objects.dm:29
 rt.def("/datum/controller/global_vars/proc/InitGlobalmeteor_list", function InitGlobalmeteor_list(f: Frame) {
-	rt.setGl("meteor_list", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "meteor_list", add);
+	GLOB.meteor_list = list();
+	this.gvars_datum_init_order += "meteor_list";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalactive_jammers  (code/_globalvars/lists/objects.dm:30)
+// objects.dm:30
 rt.def("/datum/controller/global_vars/proc/InitGlobalactive_jammers", function InitGlobalactive_jammers(f: Frame) {
-	rt.setGl("active_jammers", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "active_jammers", add);
+	GLOB.active_jammers = list();
+	this.gvars_datum_init_order += "active_jammers";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGloballadders  (code/_globalvars/lists/objects.dm:31)
+// objects.dm:31
 rt.def("/datum/controller/global_vars/proc/InitGloballadders", function InitGloballadders(f: Frame) {
-	rt.setGl("ladders", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "ladders", add);
+	GLOB.ladders = list();
+	this.gvars_datum_init_order += "ladders";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobaltrophy_cases  (code/_globalvars/lists/objects.dm:32)
+// objects.dm:32
 rt.def("/datum/controller/global_vars/proc/InitGlobaltrophy_cases", function InitGlobaltrophy_cases(f: Frame) {
-	rt.setGl("trophy_cases", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "trophy_cases", add);
+	GLOB.trophy_cases = list();
+	this.gvars_datum_init_order += "trophy_cases";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalwire_color_directory  (code/_globalvars/lists/objects.dm:34)
+// objects.dm:34
 rt.def("/datum/controller/global_vars/proc/InitGlobalwire_color_directory", function InitGlobalwire_color_directory(f: Frame) {
-	rt.setGl("wire_color_directory", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "wire_color_directory", add);
+	GLOB.wire_color_directory = list();
+	this.gvars_datum_init_order += "wire_color_directory";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalwire_name_directory  (code/_globalvars/lists/objects.dm:35)
+// objects.dm:35
 rt.def("/datum/controller/global_vars/proc/InitGlobalwire_name_directory", function InitGlobalwire_name_directory(f: Frame) {
-	rt.setGl("wire_name_directory", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "wire_name_directory", add);
+	GLOB.wire_name_directory = list();
+	this.gvars_datum_init_order += "wire_name_directory";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalai_status_displays  (code/_globalvars/lists/objects.dm:37)
+// objects.dm:37
 rt.def("/datum/controller/global_vars/proc/InitGlobalai_status_displays", function InitGlobalai_status_displays(f: Frame) {
-	rt.setGl("ai_status_displays", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "ai_status_displays", add);
+	GLOB.ai_status_displays = list();
+	this.gvars_datum_init_order += "ai_status_displays";
 	return f.dot;
 });

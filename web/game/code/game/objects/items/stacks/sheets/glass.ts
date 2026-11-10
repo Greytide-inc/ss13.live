@@ -1,12 +1,12 @@
-// From code/game/objects/items/stacks/sheets/glass.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/stacks/sheets/glass.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, g, add, fmt } = rt;
 
 
-// /datum/controller/global_vars/proc/InitGlobalglass_recipes  (code/game/objects/items/stacks/sheets/glass.dm:11)
+// glass.dm:11
 rt.def("/datum/controller/global_vars/proc/InitGlobalglass_recipes", function InitGlobalglass_recipes(f: Frame) {
-	rt.setGl("glass_recipes", rt.list(rt.new_(f, T("/datum/stack_recipe"), [null, "directional window", null, T("/obj/structure/window/unanchored"), "time", 0, "on_floor", 1, "window_checks", 1], rt.Args.Named), rt.new_(f, T("/datum/stack_recipe"), [null, "fulltile window", null, T("/obj/structure/window/fulltile/unanchored"), null, 2, "time", 0, "on_floor", 1, "window_checks", 1], rt.Args.Named)));
+	GLOB.glass_recipes = list(new_(T("/datum/stack_recipe"), "directional window", T("/obj/structure/window/unanchored"), { time: 0, on_floor: 1, window_checks: 1 }), new_(T("/datum/stack_recipe"), "fulltile window", T("/obj/structure/window/fulltile/unanchored"), 2, { time: 0, on_floor: 1, window_checks: 1 }));
 	rt.modSrcVar(f, "gvars_datum_init_order", "glass_recipes", add);
 	return f.dot;
 });
@@ -23,13 +23,11 @@ rt.type(9022, "/obj/item/stack/sheet/glass", "/obj/item/stack/sheet", {
 	merge_type: rt.typePath("/obj/item/stack/sheet/glass"),
 });
 
-// /obj/item/stack/sheet/glass/proc/<init>  (code/game/objects/items/stacks/sheets/glass.dm:21)
+// glass.dm:21
 rt.def("/obj/item/stack/sheet/glass/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$glass", 2000]));
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 50, "acid", 100]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$glass", 2000]);
+	this.armor = rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 50, "acid", 100]);
 	return f.dot;
 });
 
@@ -39,66 +37,61 @@ rt.type(9023, "/obj/item/stack/sheet/glass/cyborg", "/obj/item/stack/sheet/glass
 	cost: 500,
 });
 
-// /obj/item/stack/sheet/glass/cyborg/proc/<init>  (code/game/objects/items/stacks/sheets/glass.dm:28)
+// glass.dm:28
 rt.def("/obj/item/stack/sheet/glass/cyborg/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.list());
+	parent_proc();
+	this.materials = list();
 	return f.dot;
 });
 
-// /obj/item/stack/sheet/glass/proc/Initialize  (code/game/objects/items/stacks/sheets/glass.dm:36)  may sleep
+// glass.dm:36
 rt.def("/obj/item/stack/sheet/glass/proc/Initialize", function* Initialize(f: Frame) {
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 1;
 	}
-	rt.setSv(f, "recipes", rt.gl("glass_recipes"));
-	yield* g.callSuper(f, [], rt.Args.Same);
+	this.recipes = GLOB.glass_recipes;
+	yield* parent_proc();
 	return f.dot;
 }, true, { args: ["mapload", "new_amount", "merge"] });
 
-// /obj/item/stack/sheet/glass/proc/attackby  (code/game/objects/items/stacks/sheets/glass.dm:40)  may sleep
-rt.def("/obj/item/stack/sheet/glass/proc/attackby", function* attackby(f: Frame) {
+// glass.dm:40
+rt.def("/obj/item/stack/sheet/glass/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
 	let CC: Value = null, new_tile: Value = null, V: Value = null, RG: Value = null, G: Value = null, replace: Value = null;
-	f.vars = () => [CC, new_tile, V, RG, G, replace];
-	yield* g.srcCall(f, "add_fingerprint", live(f.args[1]));
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/stack/cable_coil")) ? 1 : 0))) {
-		CC = live(f.args[0]);
-		if ((rt.lt((yield* g.srcCall(f, "get_amount")), 1) || rt.lt((yield* g.callName(f, live(CC), "get_amount", [])), 5))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning>You need five lengths of coil and one sheet of glass to make wired glass!</span>"]);
-			return live(f.dot);
+	yield* g.srcCall(f, "add_fingerprint", user);
+	if (rt.istype(W, T("/obj/item/stack/cable_coil"))) {
+		CC = W;
+		if ((yield* g.srcCall(f, "get_amount")) < 1 || CC.get_amount() < 5) {
+			to_chat(user, "<span class='warning>You need five lengths of coil and one sheet of glass to make wired glass!</span>");
+			return f.dot;
 		}
-		yield* g.callName(f, live(CC), "use", [5]);
+		yield* CC.use(5);
 		yield* g.srcCall(f, "use", 1);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You attach wire to the ＀.</span>", [rt.sv(f, "name")])]);
-		yield* g.callName(f, (new_tile = (yield* g.new_(f, T("/obj/item/stack/light_w"), [rt.fv(f, "loc", live(f.args[1]))]))), "add_fingerprint", [live(f.args[1])]);
-	} else {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/stack/rods")) ? 1 : 0))) {
-			if ((rt.ge((yield* g.callName(f, (V = live(f.args[0])), "get_amount", [])), 1) && rt.ge((yield* g.callName(f, live(f.src), "get_amount", [])), 1))) {
-				yield* g.callName(f, (RG = (yield* g.new_(f, T("/obj/item/stack/sheet/rglass"), [rt.fv(f, "loc", live(f.args[1]))]))), "add_fingerprint", [live(f.args[1])]);
-				G = live(f.src);
-				f.src = null;
-				replace = (isEqual((yield* g.callName(f, live(f.args[1]), "get_inactive_held_item", [])), live(G)) ? 1 : 0);
-				yield* g.callName(f, live(V), "use", [1]);
-				yield* g.callName(f, live(G), "use", [1]);
-				if ((!truthy(live(G)) && truthy(live(replace)))) {
-					yield* g.callName(f, live(f.args[1]), "put_in_hands", [live(RG)]);
-				}
-			} else {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You need one rod and one sheet of glass to make reinforced glass!</span>"]);
-				return live(f.dot);
+		to_chat(user, `<span class='notice'>You attach wire to the ${rt.sv(f, "name")}.</span>`);
+		yield* (new_tile = (yield* new_(T("/obj/item/stack/light_w"), user.loc))).add_fingerprint(user);
+	} else if (rt.istype(W, T("/obj/item/stack/rods"))) {
+		if ((V = W).get_amount() >= 1 && f.src.get_amount() >= 1) {
+			yield* (RG = (yield* new_(T("/obj/item/stack/sheet/rglass"), user.loc))).add_fingerprint(user);
+			G = f.src;
+			f.src = null;
+			replace = (user.get_inactive_held_item() == G ? 1 : 0);
+			yield* V.use(1);
+			yield* G.use(1);
+			if (!G && replace) {
+				yield* user.put_in_hands(RG);
 			}
 		} else {
-			return (yield* g.callSuper(f, [], rt.Args.Same));
+			to_chat(user, "<span class='warning'>You need one rod and one sheet of glass to make reinforced glass!</span>");
+			return f.dot;
 		}
+	} else {
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["W", "user", "params"] });
+}, true);
 
-// /datum/controller/global_vars/proc/InitGlobalreinforced_glass_recipes  (code/game/objects/items/stacks/sheets/glass.dm:73)
+// glass.dm:73
 rt.def("/datum/controller/global_vars/proc/InitGlobalreinforced_glass_recipes", function InitGlobalreinforced_glass_recipes(f: Frame) {
-	rt.setGl("reinforced_glass_recipes", rt.list(rt.new_(f, T("/datum/stack_recipe"), [null, "windoor frame", null, T("/obj/structure/windoor_assembly"), null, 5, "time", 0, "on_floor", 1, "window_checks", 1], rt.Args.Named), null, rt.new_(f, T("/datum/stack_recipe"), [null, "directional reinforced window", null, T("/obj/structure/window/reinforced/unanchored"), "time", 0, "on_floor", 1, "window_checks", 1], rt.Args.Named), rt.new_(f, T("/datum/stack_recipe"), [null, "fulltile reinforced window", null, T("/obj/structure/window/reinforced/fulltile/unanchored"), null, 2, "time", 0, "on_floor", 1, "window_checks", 1], rt.Args.Named)));
+	GLOB.reinforced_glass_recipes = list(new_(T("/datum/stack_recipe"), "windoor frame", T("/obj/structure/windoor_assembly"), 5, { time: 0, on_floor: 1, window_checks: 1 }), null, new_(T("/datum/stack_recipe"), "directional reinforced window", T("/obj/structure/window/reinforced/unanchored"), { time: 0, on_floor: 1, window_checks: 1 }), new_(T("/datum/stack_recipe"), "fulltile reinforced window", T("/obj/structure/window/reinforced/fulltile/unanchored"), 2, { time: 0, on_floor: 1, window_checks: 1 }));
 	rt.modSrcVar(f, "gvars_datum_init_order", "reinforced_glass_recipes", add);
 	return f.dot;
 });
@@ -115,13 +108,11 @@ rt.type(9025, "/obj/item/stack/sheet/rglass", "/obj/item/stack/sheet", {
 	merge_type: rt.typePath("/obj/item/stack/sheet/rglass"),
 });
 
-// /obj/item/stack/sheet/rglass/proc/<init>  (code/game/objects/items/stacks/sheets/glass.dm:86)
+// glass.dm:86
 rt.def("/obj/item/stack/sheet/rglass/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 1000, "$glass", 2000]));
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 70, "acid", 100]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 1000, "$glass", 2000]);
+	this.armor = rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 70, "acid", 100]);
 	return f.dot;
 });
 
@@ -132,41 +123,39 @@ rt.type(9026, "/obj/item/stack/sheet/rglass/cyborg", "/obj/item/stack/sheet/rgla
 	materials: null,
 });
 
-// /obj/item/stack/sheet/rglass/cyborg/proc/<init>  (code/game/objects/items/stacks/sheets/glass.dm:93)
+// glass.dm:93
 rt.def("/obj/item/stack/sheet/rglass/cyborg/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.list());
+	parent_proc();
+	this.materials = list();
 	return f.dot;
 });
 
-// /obj/item/stack/sheet/rglass/cyborg/proc/get_amount  (code/game/objects/items/stacks/sheets/glass.dm:99)
+// glass.dm:99
 rt.def("/obj/item/stack/sheet/rglass/cyborg/proc/get_amount", function get_amount(f: Frame) {
-	return rt.call(f, P("/proc/min"), null, [rt.call(f, P("/proc/round"), null, [divide(rt.fv(f, "energy", rt.sv(f, "source")), rt.sv(f, "metcost"))]), rt.call(f, P("/proc/round"), null, [divide(rt.fv(f, "energy", rt.sv(f, "glasource")), rt.sv(f, "glacost"))])]);
+	return min(round(this.source.energy / this.metcost), round(this.glasource.energy / this.glacost));
 });
 
-// /obj/item/stack/sheet/rglass/cyborg/proc/use  (code/game/objects/items/stacks/sheets/glass.dm:102)
+// glass.dm:102
 rt.def("/obj/item/stack/sheet/rglass/cyborg/proc/use", function use(f: Frame, amount: Value) {
-	rt.callName(f, rt.sv(f, "source"), "use_charge", [multiply(live(amount), rt.sv(f, "metcost"))]);
-	rt.callName(f, rt.sv(f, "glasource"), "use_charge", [multiply(live(amount), rt.sv(f, "glacost"))]);
+	this.source.use_charge(amount * this.metcost);
+	this.glasource.use_charge(amount * this.glacost);
 	return f.dot;
 });
 
-// /obj/item/stack/sheet/rglass/cyborg/proc/add  (code/game/objects/items/stacks/sheets/glass.dm:106)
+// glass.dm:106
 rt.def("/obj/item/stack/sheet/rglass/cyborg/proc/add", function _add(f: Frame, amount: Value) {
-	rt.callName(f, rt.sv(f, "source"), "add_charge", [multiply(live(amount), rt.sv(f, "metcost"))]);
-	rt.callName(f, rt.sv(f, "glasource"), "add_charge", [multiply(live(amount), rt.sv(f, "glacost"))]);
+	this.source.add_charge(amount * this.metcost);
+	this.glasource.add_charge(amount * this.glacost);
 	return f.dot;
 });
 
-// /obj/item/stack/sheet/rglass/proc/Initialize  (code/game/objects/items/stacks/sheets/glass.dm:110)  may sleep
+// glass.dm:110
 rt.def("/obj/item/stack/sheet/rglass/proc/Initialize", function* Initialize(f: Frame) {
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 1;
 	}
-	rt.setSv(f, "recipes", rt.gl("reinforced_glass_recipes"));
-	yield* g.callSuper(f, [], rt.Args.Same);
+	this.recipes = GLOB.reinforced_glass_recipes;
+	yield* parent_proc();
 	return f.dot;
 }, true, { args: ["mapload", "new_amount", "merge"] });
 
@@ -190,141 +179,120 @@ rt.type(7052, "/obj/item/weapon/shard", "/obj/item/weapon", {
 	sharpness: 1,
 });
 
-// /obj/item/weapon/shard/proc/<init>  (code/game/objects/items/stacks/sheets/glass.dm:123)
+// glass.dm:123
 rt.def("/obj/item/weapon/shard/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$glass", 2000]));
-	rt.setSv(f, "attack_verb", rt.list("stabbed", "slashed", "sliced", "cut"));
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 100, "bullet", 0, "laser", 0, "energy", 100, "bomb", 0, "bio", 0, "rad", 0, "fire", 50, "acid", 100]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$glass", 2000]);
+	this.attack_verb = list("stabbed", "slashed", "sliced", "cut");
+	this.armor = rt.alist(f, ["melee", 100, "bullet", 0, "laser", 0, "energy", 100, "bomb", 0, "bio", 0, "rad", 0, "fire", 50, "acid", 100]);
 	return f.dot;
 });
 
-// /obj/item/weapon/shard/proc/suicide_act  (code/game/objects/items/stacks/sheets/glass.dm:134)
+// glass.dm:134
 rt.def("/obj/item/weapon/shard/proc/suicide_act", function suicide_act(f: Frame, user: Value) {
-	rt.callName(f, live(user), "visible_message", [fmt("<span class='suicide'>＀ is slitting ＀ ＀ with the shard of glass! It looks like ＀ trying to commit suicide.</span>", [live(user), rt.callName(f, live(user), "p_their", []), rt.op(f, "PickUnweighted", [2], ["wrists", "throat"]), rt.callName(f, live(user), "p_theyre", [])])]);
+	user.visible_message(`<span class='suicide'>${user} is slitting ${user.p_their()} ${pick("wrists", "throat")} with the shard of glass! It looks like ${user.p_theyre()} trying to commit suicide.</span>`);
 	return 1;
 });
 
-// /obj/item/weapon/shard/proc/Initialize  (code/game/objects/items/stacks/sheets/glass.dm:139)  may sleep
+// glass.dm:139
 rt.def("/obj/item/weapon/shard/proc/Initialize", function* Initialize(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "icon_state", rt.op(f, "PickUnweighted", [3], ["large", "medium", "small"]));
-	$0 = rt.sv(f, "icon_state");
-	if ($0 === "small") {
-		rt.setSv(f, "pixel_x", (yield* g.call(f, P("/proc/rand"), null, [-12, 12])));
-		rt.setSv(f, "pixel_y", (yield* g.call(f, P("/proc/rand"), null, [-12, 12])));
-	} else if ($0 === "medium") {
-		rt.setSv(f, "pixel_x", (yield* g.call(f, P("/proc/rand"), null, [-8, 8])));
-		rt.setSv(f, "pixel_y", (yield* g.call(f, P("/proc/rand"), null, [-8, 8])));
-	} else if ($0 === "large") {
-		rt.setSv(f, "pixel_x", (yield* g.call(f, P("/proc/rand"), null, [-5, 5])));
-		rt.setSv(f, "pixel_y", (yield* g.call(f, P("/proc/rand"), null, [-5, 5])));
+	f.dot = (yield* parent_proc());
+	this.icon_state = pick("large", "medium", "small");
+	if (this.icon_state === "small") {
+		this.pixel_x = rand(-12, 12);
+		this.pixel_y = rand(-12, 12);
+	} else if (this.icon_state === "medium") {
+		this.pixel_x = rand(-8, 8);
+		this.pixel_y = rand(-8, 8);
+	} else if (this.icon_state === "large") {
+		this.pixel_x = rand(-5, 5);
+		this.pixel_y = rand(-5, 5);
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/shard/proc/afterattack  (code/game/objects/items/stacks/sheets/glass.dm:153)  may sleep
+// glass.dm:153
 rt.def("/obj/item/weapon/shard/proc/afterattack", function* afterattack(f: Frame, A: Value, user: Value, proximity: Value) {
-	let hit_hand: Value = null, H: Value = null, M: Value = null;
-	let $0: any;
-	f.vars = () => [A, user, proximity, hit_hand, H, M, $0];
-	if ((!truthy(live(proximity)) || !truthy((rt.isIn(f, live(f.src), live(user)) ? 1 : 0)))) {
-		return live(f.dot);
+	let H: Value = null, M: Value = null;
+	if (!proximity || !rt.isIn(f, f.src, user)) {
+		return f.dot;
 	}
-	if (truthy((yield* g.call(f, P("/proc/isturf"), null, [live(A)])))) {
-		return live(f.dot);
+	if (isturf(A)) {
+		return f.dot;
 	}
-	if (truthy((rt.istype(live(A), T("/obj/item/weapon/storage")) ? 1 : 0))) {
-		return live(f.dot);
+	if (rt.istype(A, T("/obj/item/weapon/storage"))) {
+		return f.dot;
 	}
-	if (isEqual(rt.modulus(rt.fv(f, "active_hand_index", live(user)), 2), 0)) {
-		$0 = "r_";
-	} else {
-		$0 = "l_";
-	}
-	hit_hand = add($0, "arm");
-	if (truthy((rt.istype(live(user), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		if ((!truthy(rt.gv(f, "gloves", (H = live(user)))) && !truthy((rt.isIn(f, 15, rt.gv(f, "species_traits", rt.gv(f, "species", rt.fv(f, "dna", live(H))))) ? 1 : 0)))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(H), fmt("<span class='warning'>＀ cuts into your hand!</span>", [live(f.src)])]);
-			yield* g.callName(f, live(H), "apply_damage", [multiply(rt.sv(f, "force"), 0.5), "brute", live(hit_hand)]);
+	let hit_hand: Value = (user.active_hand_index % 2 == 0 ? "r_" : "l_") + "arm";
+	if (rt.istype(user, T("/mob/living/carbon/human"))) {
+		if (!(H = user).gloves && !rt.isIn(f, PIERCEIMMUNE, H.dna.species.species_traits)) {
+			to_chat(H, `<span class='warning'>${f.src} cuts into your hand!</span>`);
+			yield* H.apply_damage(this.force * 0.5, "brute", hit_hand);
 		}
 	} else {
-		if (!truthy((rt.istype(live(user), T("/mob/living/carbon/monkey")) ? 1 : 0))) return f.dot;
-		yield* g.call(f, P("/proc/to_chat"), null, [(M = live(user)), fmt("<span class='warning'>＀ cuts into your hand!</span>", [live(f.src)])]);
-		yield* g.callName(f, live(M), "apply_damage", [multiply(rt.sv(f, "force"), 0.5), "brute", live(hit_hand)]);
+		if (!rt.istype(user, T("/mob/living/carbon/monkey"))) return f.dot;
+		to_chat((M = user), `<span class='warning'>${f.src} cuts into your hand!</span>`);
+		yield* M.apply_damage(this.force * 0.5, "brute", hit_hand);
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/shard/proc/attackby  (code/game/objects/items/stacks/sheets/glass.dm:172)  may sleep
-rt.def("/obj/item/weapon/shard/proc/attackby", function* attackby(f: Frame) {
+// glass.dm:172
+rt.def("/obj/item/weapon/shard/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
 	let WT: Value = null, NG: Value = null, G: Value = null;
-	let $e: any;
-	f.vars = () => [WT, NG, G, $e];
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/device/lightreplacer")) ? 1 : 0))) {
-		yield* g.callName(f, live(f.args[0]), "attackby", [live(f.src), live(f.args[1])]);
-	} else {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/weldingtool")) ? 1 : 0))) {
-			if (truthy((yield* g.callName(f, (WT = live(f.args[0])), "remove_fuel", [0, live(f.args[1])])))) {
-				NG = (yield* g.new_(f, T("/obj/item/stack/sheet/glass"), [rt.fv(f, "loc", live(f.args[1]))]));
-				G = null;
-				rt.forList(f, 0, rt.fv(f, "loc", live(f.args[1])), T("/obj/item/stack/sheet/glass"));
-				while (($e = rt.next(f, 0)) !== undefined) {
-					G = $e;
-					if (isEqual(live(G), live(NG))) {
-						continue;
-					}
-					if (rt.ge(rt.fv(f, "amount", live(G)), rt.fv(f, "max_amount", live(G)))) {
-						continue;
-					}
-					yield* g.callName(f, live(G), "attackby", [live(NG), live(f.args[1])]);
+	if (rt.istype(I, T("/obj/item/device/lightreplacer"))) {
+		yield* I.attackby(f.src, user);
+	} else if (rt.istype(I, T("/obj/item/weapon/weldingtool"))) {
+		if (yield* (WT = I).remove_fuel(0, user)) {
+			NG = (yield* new_(T("/obj/item/stack/sheet/glass"), user.loc));
+			for (G of each(user.loc, T("/obj/item/stack/sheet/glass"))) {
+				if (G == NG) {
+					continue;
 				}
-				rt.endFor(f, 0);
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You add the newly-formed glass to the stack. It now contains ＀ sheet５.</span>", [rt.fv(f, "amount", live(NG))])]);
-				yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+				if (G.amount >= G.max_amount) {
+					continue;
+				}
+				yield* G.attackby(NG, user);
 			}
-		} else {
-			return (yield* g.callSuper(f, [], rt.Args.Same));
+			to_chat(user, fmt("<span class='notice'>You add the newly-formed glass to the stack. It now contains ＀ sheet５.</span>", [NG.amount]));
+			yield* qdel(f.src);
 		}
+	} else {
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["I", "user", "params"] });
+}, true);
 
-// /obj/item/weapon/shard/proc/Crossed  (code/game/objects/items/stacks/sheets/glass.dm:190)  may sleep
+// glass.dm:190
 rt.def("/obj/item/weapon/shard/proc/Crossed", function* Crossed(f: Frame, AM: Value) {
-	let H: Value = null, picked_def_zone: Value = null, O: Value = null, feetCover: Value = null;
-	f.vars = () => [AM, H, picked_def_zone, O, feetCover];
-	if (!(truthy((rt.istype(live(AM), T("/mob")) ? 1 : 0)) && truthy((yield* g.srcCall(f, "has_gravity", rt.sv(f, "loc")))))) return f.dot;
-	yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/effects/glass_step.ogg"), 50, 1]);
-	if (!truthy((rt.istype(live(AM), T("/mob/living/carbon/human")) ? 1 : 0))) return f.dot;
-	H = live(AM);
-	if (truthy((rt.isIn(f, 15, rt.gv(f, "species_traits", rt.gv(f, "species", rt.fv(f, "dna", live(H))))) ? 1 : 0))) {
-		return live(f.dot);
+	let O: Value = null;
+	if (!(rt.istype(AM, T("/mob")) && (yield* this.has_gravity(this.loc)))) return f.dot;
+	playsound(this.loc, rt.rsc("sound/effects/glass_step.ogg"), 50, 1);
+	if (!rt.istype(AM, T("/mob/living/carbon/human"))) return f.dot;
+	let H: Value = AM;
+	if (rt.isIn(f, PIERCEIMMUNE, H.dna.species.species_traits)) {
+		return f.dot;
 	}
-	picked_def_zone = rt.op(f, "PickUnweighted", [2], ["l_leg", "r_leg"]);
-	if (!truthy((rt.istype((O = (yield* g.callName(f, live(H), "get_bodypart", [live(picked_def_zone)]))), T("/obj/item/bodypart")) ? 1 : 0))) {
-		return live(f.dot);
+	let picked_def_zone: Value = pick("l_leg", "r_leg");
+	if (!rt.istype((O = H.get_bodypart(picked_def_zone)), T("/obj/item/bodypart"))) {
+		return f.dot;
 	}
-	if (isEqual(rt.fv(f, "status", live(O)), 2)) {
-		return live(f.dot);
+	if (O.status == BODYPART_ROBOTIC) {
+		return f.dot;
 	}
-	feetCover = ((rt.fv(f, "wear_suit", live(H)) && rt.bitAnd(rt.gv(f, "body_parts_covered", rt.fv(f, "wear_suit", live(H))), 96)) || (rt.fv(f, "w_uniform", live(H)) && rt.bitAnd(rt.gv(f, "body_parts_covered", rt.fv(f, "w_uniform", live(H))), 96)));
-	if ((((truthy(rt.fv(f, "shoes", live(H))) || truthy(live(feetCover))) || truthy(rt.bitAnd(rt.fv(f, "movement_type", live(H)), 2))) || truthy(rt.fv(f, "buckled", live(H))))) {
-		return live(f.dot);
+	let feetCover: Value = ((H.wear_suit && rt.bitAnd(H.wear_suit.body_parts_covered, FEET)) || (H.w_uniform && rt.bitAnd(H.w_uniform.body_parts_covered, FEET)));
+	if (H.shoes || feetCover || rt.bitAnd(H.movement_type, BODYPART_ROBOTIC) || H.buckled) {
+		return f.dot;
 	}
-	yield* g.callName(f, live(H), "apply_damage", [5, "brute", live(picked_def_zone)]);
-	if (rt.lt(rt.sv(f, "cooldown"), subtract(rt.worldTime(f), 10))) {
-		if (!truthy((yield* g.callName(f, live(H), "incapacitated", [])))) {
-			yield* g.callName(f, live(H), "visible_message", [fmt("<span class='danger'>＀ steps in the broken glass!</span>", [live(H)]), "<span class='userdanger'>You step in the broken glass!</span>"]);
+	yield* H.apply_damage(5, "brute", picked_def_zone);
+	if (this.cooldown < rt.worldTime(f) - 10) {
+		if (!H.incapacitated()) {
+			H.visible_message(`<span class='danger'>${H} steps in the broken glass!</span>`, "<span class='userdanger'>You step in the broken glass!</span>");
 		} else {
-			yield* g.callName(f, live(H), "visible_message", [fmt("<span class='danger'>＀ slides on the broken glass!</span>", [live(H)]), "<span class='userdanger'>You slide on the broken glass!</span>"]);
+			H.visible_message(`<span class='danger'>${H} slides on the broken glass!</span>`, "<span class='userdanger'>You slide on the broken glass!</span>");
 		}
-		rt.setSv(f, "cooldown", rt.worldTime(f));
+		this.cooldown = rt.worldTime(f);
 	}
-	yield* g.callName(f, live(H), "Knockdown", [60]);
+	yield* H.Knockdown(60);
 	return f.dot;
 }, true);

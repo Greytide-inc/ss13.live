@@ -1,7 +1,7 @@
-// From code/game/gamemodes/clock_cult/clock_effects/clock_overlay.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/gamemodes/clock_cult/clock_effects/clock_overlay.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(11406, "/obj/effect/clockwork/overlay", "/obj/effect/clockwork", {
@@ -9,20 +9,19 @@ rt.type(11406, "/obj/effect/clockwork/overlay", "/obj/effect/clockwork", {
 	mouse_opacity: 0,
 });
 
-// /obj/effect/clockwork/overlay/proc/examine  (code/game/gamemodes/clock_cult/clock_effects/clock_overlay.dm:8)  may sleep
+// clock_overlay.dm:8
 rt.def("/obj/effect/clockwork/overlay/proc/examine", function* examine(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (!truthy(rt.sv(f, "linked"))) return f.dot;
-	yield* g.callName(f, rt.sv(f, "linked"), "examine", [live(user)]);
+	if (!this.linked) return f.dot;
+	yield* this.linked.examine(user);
 	return f.dot;
 }, true);
 
-// /obj/effect/clockwork/overlay/proc/Destroy  (code/game/gamemodes/clock_cult/clock_effects/clock_overlay.dm:19)  may sleep
+// clock_overlay.dm:19
 rt.def("/obj/effect/clockwork/overlay/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.sv(f, "linked"))) {
-		rt.setSv(f, "linked", null);
+	if (this.linked) {
+		this.linked = null;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true);
 
@@ -35,25 +34,23 @@ rt.type(11407, "/obj/effect/clockwork/overlay/wall", "/obj/effect/clockwork/over
 	layer: 2.05,
 });
 
-// /obj/effect/clockwork/overlay/wall/proc/<init>  (code/game/gamemodes/clock_cult/clock_effects/clock_overlay.dm:25)
+// clock_overlay.dm:25
 rt.def("/obj/effect/clockwork/overlay/wall/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "canSmoothWith", rt.list(T("/obj/effect/clockwork/overlay/wall"), T("/obj/structure/falsewall/brass")));
+	parent_proc();
+	this.canSmoothWith = list(T("/obj/effect/clockwork/overlay/wall"), T("/obj/structure/falsewall/brass"));
 	return f.dot;
 });
 
-// /obj/effect/clockwork/overlay/wall/proc/Initialize  (code/game/gamemodes/clock_cult/clock_effects/clock_overlay.dm:30)  may sleep
+// clock_overlay.dm:30
 rt.def("/obj/effect/clockwork/overlay/wall/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.call(f, P("/proc/queue_smooth_neighbors"), null, [live(f.src)]);
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), ["some_magic_bullshit", P("/proc/queue_smooth"), live(f.src)])), 1]);
+	f.dot = (yield* parent_proc());
+	queue_smooth_neighbors(this);
+	yield* addtimer((yield* new_(T("/datum/callback"), "some_magic_bullshit", P("/proc/queue_smooth"), this)), 1);
 	return f.dot;
 }, true);
 
-// /obj/effect/clockwork/overlay/wall/proc/Destroy  (code/game/gamemodes/clock_cult/clock_effects/clock_overlay.dm:35)  may sleep
+// clock_overlay.dm:35
 rt.def("/obj/effect/clockwork/overlay/wall/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.call(f, P("/proc/queue_smooth_neighbors"), null, [live(f.src)]);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	queue_smooth_neighbors(this);
+	return (yield* parent_proc());
 }, true);

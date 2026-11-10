@@ -1,5 +1,5 @@
 // Types declared in code/modules/atmospherics/environmental that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(4447, "/turf/closed/indestructible", "/turf/closed", {
 	name: "wall",
@@ -71,7 +71,11 @@ rt.type(4784, "/turf/open/indestructible", "/turf/open", {
 });
 // Creative mode's floor (src/vm/creative-map.ts): its own baseturf as a type default, so whatever is built on it and then destroyed
 // leaves this floor, never space. A map-file override ({baseturf = ...}) would give each of the ~57,000 tiles its own vars list (~22 MB saved world).
+// Its look is Creative's own (icons/turf/creative_floor.dmi): plain dark grey, a faint 1px grid line on
+// the top and left edge only, so neighbouring tiles make a 1px grid.
 rt.type("/turf/open/indestructible/creative", "/turf/open/indestructible", {
+	icon: rt.rsc("icons/turf/creative_floor.dmi"),
+	icon_state: "creative",
 	baseturf: rt.typePath("/turf/open/indestructible/creative"),
 });
 rt.type(4788, "/turf/open/indestructible/boss", "/turf/open/indestructible", {

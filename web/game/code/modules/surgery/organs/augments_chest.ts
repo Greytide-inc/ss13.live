@@ -1,7 +1,7 @@
-// From code/modules/surgery/organs/augments_chest.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/surgery/organs/augments_chest.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(9503, "/obj/item/organ/cyberimp/chest/nutriment", "/obj/item/organ/cyberimp/chest", {
@@ -16,28 +16,27 @@ rt.type(9503, "/obj/item/organ/cyberimp/chest/nutriment", "/obj/item/organ/cyber
 	origin_tech: "materials=2;powerstorage=2;biotech=2",
 });
 
-// /obj/item/organ/cyberimp/chest/nutriment/proc/on_life  (code/modules/surgery/organs/augments_chest.dm:23)  may sleep
+// augments_chest.dm:23
 rt.def("/obj/item/organ/cyberimp/chest/nutriment/proc/on_life", function* on_life(f: Frame) {
-	if (truthy(rt.sv(f, "synthesizing"))) {
-		return live(f.dot);
+	if (this.synthesizing) {
+		return f.dot;
 	}
-	if (!rt.le(rt.fv(f, "nutrition", rt.sv(f, "owner")), rt.sv(f, "hunger_threshold"))) return f.dot;
-	rt.setSv(f, "synthesizing", 1);
-	yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "owner"), "<span class='notice'>You feel less hungry...</span>"]);
-	rt.modField(f, rt.sv(f, "owner"), "nutrition", 50, add);
-	yield* g.call(f, P("/proc/sleep"), null, [50]);
-	rt.setSv(f, "synthesizing", 0);
+	if (!(this.owner.nutrition <= this.hunger_threshold)) return f.dot;
+	this.synthesizing = 1;
+	to_chat(this.owner, "<span class='notice'>You feel less hungry...</span>");
+	this.owner.nutrition += 50;
+	yield* sleep(50);
+	this.synthesizing = 0;
 	return f.dot;
 }, true);
 
-// /obj/item/organ/cyberimp/chest/nutriment/proc/emp_act  (code/modules/surgery/organs/augments_chest.dm:31)  may sleep
+// augments_chest.dm:31
 rt.def("/obj/item/organ/cyberimp/chest/nutriment/proc/emp_act", function* emp_act(f: Frame, severity: Value) {
-	f.vars = () => [severity];
-	if (!truthy(rt.sv(f, "owner"))) {
-		return live(f.dot);
+	if (!this.owner) {
+		return f.dot;
 	}
-	yield* g.callName(f, rt.fv(f, "reagents", rt.sv(f, "owner")), "add_reagent", ["bad_food", divide(rt.sv(f, "poison_amount"), live(severity))]);
-	yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "owner"), "<span class='warning'>You feel like your insides are burning.</span>"]);
+	yield* this.owner.reagents.add_reagent("bad_food", this.poison_amount / severity);
+	to_chat(this.owner, "<span class='warning'>You feel like your insides are burning.</span>");
 	return f.dot;
 }, true);
 
@@ -53,83 +52,81 @@ rt.type(9505, "/obj/item/organ/cyberimp/chest/reviver", "/obj/item/organ/cyberim
 	slot: "heartdrive",
 });
 
-// /obj/item/organ/cyberimp/chest/reviver/proc/on_life  (code/modules/surgery/organs/augments_chest.dm:59)  may sleep
+// augments_chest.dm:59
 rt.def("/obj/item/organ/cyberimp/chest/reviver/proc/on_life", function* on_life(f: Frame) {
-	if (truthy(rt.sv(f, "reviving"))) {
-		if (isEqual(rt.fv(f, "stat", rt.sv(f, "owner")), 1)) {
-			yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/item/organ/cyberimp/chest/reviver/proc/heal")])), 30]);
+	if (this.reviving) {
+		if (this.owner.stat == 1) {
+			yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/item/organ/cyberimp/chest/reviver/proc/heal"))), 30);
 		} else {
-			rt.setSv(f, "cooldown", add(rt.sv(f, "revive_cost"), rt.worldTime(f)));
-			rt.setSv(f, "reviving", 0);
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "owner"), fmt("<span class='notice'>Your reviver implant shuts down and starts recharging. It will be ready again in ＀ seconds.</span>", [divide(rt.sv(f, "revive_cost"), 10)])]);
+			this.cooldown = this.revive_cost + rt.worldTime(f);
+			this.reviving = 0;
+			to_chat(this.owner, `<span class='notice'>Your reviver implant shuts down and starts recharging. It will be ready again in ${this.revive_cost / 10} seconds.</span>`);
 		}
-		return live(f.dot);
+		return f.dot;
 	}
-	if (rt.gt(rt.sv(f, "cooldown"), rt.worldTime(f))) {
-		return live(f.dot);
+	if (this.cooldown > rt.worldTime(f)) {
+		return f.dot;
 	}
-	if (!isEqual(rt.fv(f, "stat", rt.sv(f, "owner")), 1)) {
-		return live(f.dot);
+	if (this.owner.stat != 1) {
+		return f.dot;
 	}
-	if (truthy(rt.fv(f, "suiciding", rt.sv(f, "owner")))) {
-		return live(f.dot);
+	if (this.owner.suiciding) {
+		return f.dot;
 	}
-	rt.setSv(f, "revive_cost", 0);
-	rt.setSv(f, "reviving", 1);
-	yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "owner"), "<span class='notice'>You feel a faint buzzing as your reviver implant starts patching your wounds...</span>"]);
+	this.revive_cost = 0;
+	this.reviving = 1;
+	to_chat(this.owner, "<span class='notice'>You feel a faint buzzing as your reviver implant starts patching your wounds...</span>");
 	return f.dot;
 }, true);
 
-// /obj/item/organ/cyberimp/chest/reviver/proc/heal  (code/modules/surgery/organs/augments_chest.dm:79)  may sleep
+// augments_chest.dm:79
 rt.def("/obj/item/organ/cyberimp/chest/reviver/proc/heal", function* heal(f: Frame) {
-	if (truthy((yield* g.callName(f, rt.sv(f, "owner"), "getOxyLoss", [])))) {
-		yield* g.callName(f, rt.sv(f, "owner"), "adjustOxyLoss", [-5]);
-		rt.modSrcVar(f, "revive_cost", 5, add);
+	if (this.owner.getOxyLoss()) {
+		yield* this.owner.adjustOxyLoss(-5);
+		this.revive_cost += 5;
 	}
-	if (truthy((yield* g.callName(f, rt.sv(f, "owner"), "getBruteLoss", [])))) {
-		yield* g.callName(f, rt.sv(f, "owner"), "adjustBruteLoss", [-2]);
-		rt.modSrcVar(f, "revive_cost", 40, add);
+	if (this.owner.getBruteLoss()) {
+		yield* this.owner.adjustBruteLoss(-2);
+		this.revive_cost += 40;
 	}
-	if (truthy((yield* g.callName(f, rt.sv(f, "owner"), "getFireLoss", [])))) {
-		yield* g.callName(f, rt.sv(f, "owner"), "adjustFireLoss", [-2]);
-		rt.modSrcVar(f, "revive_cost", 40, add);
+	if (this.owner.getFireLoss()) {
+		yield* this.owner.adjustFireLoss(-2);
+		this.revive_cost += 40;
 	}
-	if (!truthy((yield* g.callName(f, rt.sv(f, "owner"), "getToxLoss", [])))) return f.dot;
-	yield* g.callName(f, rt.sv(f, "owner"), "adjustToxLoss", [-1]);
-	rt.modSrcVar(f, "revive_cost", 40, add);
+	if (!this.owner.getToxLoss()) return f.dot;
+	yield* this.owner.adjustToxLoss(-1);
+	this.revive_cost += 40;
 	return f.dot;
 }, true);
 
-// /obj/item/organ/cyberimp/chest/reviver/proc/emp_act  (code/modules/surgery/organs/augments_chest.dm:93)  may sleep
+// augments_chest.dm:93
 rt.def("/obj/item/organ/cyberimp/chest/reviver/proc/emp_act", function* emp_act(f: Frame, severity: Value) {
 	let H: Value = null;
-	f.vars = () => [severity, H];
-	if (!truthy(rt.sv(f, "owner"))) {
-		return live(f.dot);
+	if (!this.owner) {
+		return f.dot;
 	}
-	if (truthy(rt.sv(f, "reviving"))) {
-		rt.modSrcVar(f, "revive_cost", 200, add);
+	if (this.reviving) {
+		this.revive_cost += 200;
 	} else {
-		rt.modSrcVar(f, "cooldown", 200, add);
+		this.cooldown += 200;
 	}
-	if (!truthy((rt.istype(rt.sv(f, "owner"), T("/mob/living/carbon/human")) ? 1 : 0))) return f.dot;
-	if (!((!isEqual(rt.gv(f, "stat", (H = rt.sv(f, "owner"))), 2) && truthy(rt.op(f, "Prob", [], [divide(50, live(severity))]))) && truthy((yield* g.callName(f, live(H), "can_heartattack", []))))) return f.dot;
-	yield* g.callName(f, live(H), "set_heartattack", [1]);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(H), "<span class='userdanger'>You feel a horrible agony in your chest!</span>"]);
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/item/organ/cyberimp/chest/reviver/proc/undo_heart_attack")])), divide(600, live(severity))]);
+	if (!rt.istype(this.owner, T("/mob/living/carbon/human"))) return f.dot;
+	if (!((H = this.owner).stat != 2 && prob(50 / severity) && H.can_heartattack())) return f.dot;
+	H.set_heartattack(1);
+	to_chat(H, "<span class='userdanger'>You feel a horrible agony in your chest!</span>");
+	yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/item/organ/cyberimp/chest/reviver/proc/undo_heart_attack"))), 600 / severity);
 	return f.dot;
 }, true);
 
-// /obj/item/organ/cyberimp/chest/reviver/proc/undo_heart_attack  (code/modules/surgery/organs/augments_chest.dm:109)
+// augments_chest.dm:109
 rt.def("/obj/item/organ/cyberimp/chest/reviver/proc/undo_heart_attack", function undo_heart_attack(f: Frame) {
 	let H: Value = null;
-	f.vars = () => [H];
-	if (!truthy((rt.istype((H = rt.sv(f, "owner")), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		return live(f.dot);
+	if (!rt.istype((H = this.owner), T("/mob/living/carbon/human"))) {
+		return f.dot;
 	}
-	rt.callName(f, live(H), "set_heartattack", [0]);
-	if (!isEqual(rt.fv(f, "stat", live(H)), 0)) return f.dot;
-	rt.call(f, P("/proc/to_chat"), null, [live(H), "<span class='notice'>You feel your heart beating again!</span>"]);
+	H.set_heartattack(0);
+	if (H.stat != 0) return f.dot;
+	to_chat(H, "<span class='notice'>You feel your heart beating again!</span>");
 	return f.dot;
 });
 
@@ -147,122 +144,110 @@ rt.type(9506, "/obj/item/organ/cyberimp/chest/thrusters", "/obj/item/organ/cyber
 	w_class: 3,
 });
 
-// /obj/item/organ/cyberimp/chest/thrusters/proc/<init>  (code/modules/surgery/organs/augments_chest.dm:126)
+// augments_chest.dm:126
 rt.def("/obj/item/organ/cyberimp/chest/thrusters/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "actions_types", rt.list(T("/datum/action/item_action/organ_action/toggle")));
+	parent_proc();
+	this.actions_types = list(T("/datum/action/item_action/organ_action/toggle"));
 	return f.dot;
 });
 
-// /obj/item/organ/cyberimp/chest/thrusters/proc/Insert  (code/modules/surgery/organs/augments_chest.dm:132)  may sleep
+// augments_chest.dm:132
 rt.def("/obj/item/organ/cyberimp/chest/thrusters/proc/Insert", function* Insert(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.sv(f, "ion_trail"))) {
-		rt.setSv(f, "ion_trail", (yield* g.new_(f, T("/datum/effect_system/trail_follow/ion"), [])));
+	yield* parent_proc();
+	if (!this.ion_trail) {
+		this.ion_trail = (yield* new_(T("/datum/effect_system/trail_follow/ion")));
 	}
-	yield* g.callName(f, rt.sv(f, "ion_trail"), "set_up", [live(f.args[0])]);
+	yield* this.ion_trail.set_up(f.args[0]);
 	return f.dot;
 }, true, { args: ["M", "special"] });
 
-// /obj/item/organ/cyberimp/chest/thrusters/proc/Remove  (code/modules/surgery/organs/augments_chest.dm:139)  may sleep
+// augments_chest.dm:139
 rt.def("/obj/item/organ/cyberimp/chest/thrusters/proc/Remove", function* Remove(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	if (truthy(rt.sv(f, "on"))) {
-		yield* g.callSrc(f, "toggle", ["silent", 1], rt.Args.Named);
+	if (this.on) {
+		yield* this.toggle({ silent: 1 });
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true, { args: ["M", "special"] });
 
-// /obj/item/organ/cyberimp/chest/thrusters/proc/ui_action_click  (code/modules/surgery/organs/augments_chest.dm:143)  may sleep
+// augments_chest.dm:143
 rt.def("/obj/item/organ/cyberimp/chest/thrusters/proc/ui_action_click", function* ui_action_click(f: Frame) {
-	yield* g.srcCall(f, "toggle");
+	yield* this.toggle();
 	return f.dot;
 }, true);
 
-// /obj/item/organ/cyberimp/chest/thrusters/proc/toggle  (code/modules/surgery/organs/augments_chest.dm:146)  may sleep
+// augments_chest.dm:146
 rt.def("/obj/item/organ/cyberimp/chest/thrusters/proc/toggle", function* toggle(f: Frame, silent: Value) {
-	f.vars = () => [silent];
-	if (live(silent) === null) {
-		silent = 0;
-	}
-	if (!truthy(rt.sv(f, "on"))) {
-		if (truthy(rt.sv(f, "crit_fail"))) {
-			if (!truthy(live(silent))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "owner"), "<span class='warning'>Your thrusters set seems to be broken!</span>"]);
+	silent ??= 0;
+	if (!this.on) {
+		if (this.crit_fail) {
+			if (!silent) {
+				to_chat(this.owner, "<span class='warning'>Your thrusters set seems to be broken!</span>");
 			}
 			return 0;
 		}
-		rt.setSv(f, "on", 1);
-		if (truthy((yield* g.srcCall(f, "allow_thrust", 0.009999999776482582)))) {
-			yield* g.callName(f, rt.sv(f, "ion_trail"), "start", []);
-			if (!truthy(live(silent))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "owner"), "<span class='notice'>You turn your thrusters set on.</span>"]);
+		this.on = 1;
+		if (yield* this.allow_thrust(0.01)) {
+			yield* this.ion_trail.start();
+			if (!silent) {
+				to_chat(this.owner, "<span class='notice'>You turn your thrusters set on.</span>");
 			}
 		}
 	} else {
-		yield* g.callName(f, rt.sv(f, "ion_trail"), "stop", []);
-		if (!truthy(live(silent))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "owner"), "<span class='notice'>You turn your thrusters set off.</span>"]);
+		yield* this.ion_trail.stop();
+		if (!silent) {
+			to_chat(this.owner, "<span class='notice'>You turn your thrusters set off.</span>");
 		}
-		rt.setSv(f, "on", 0);
+		this.on = 0;
 	}
-	yield* g.srcCall(f, "update_icon");
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/item/organ/cyberimp/chest/thrusters/proc/update_icon  (code/modules/surgery/organs/augments_chest.dm:165)  may sleep
+// augments_chest.dm:165
 rt.def("/obj/item/organ/cyberimp/chest/thrusters/proc/update_icon", function* update_icon(f: Frame) {
 	let X: Value = null, A: Value = null;
-	let $e: any;
-	f.vars = () => [X, A, $e];
-	if (truthy(rt.sv(f, "on"))) {
-		rt.setSv(f, "icon_state", "imp_jetpack-on");
+	if (this.on) {
+		this.icon_state = "imp_jetpack-on";
 	} else {
-		rt.setSv(f, "icon_state", "imp_jetpack");
+		this.icon_state = "imp_jetpack";
 	}
-	X = null;
-	rt.forList(f, 0, rt.sv(f, "actions"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		X = $e;
-		yield* g.callName(f, (A = live(X)), "UpdateButtonIcon", []);
+	for (X of each(this.actions)) {
+		yield* (A = X).UpdateButtonIcon();
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /obj/item/organ/cyberimp/chest/thrusters/proc/allow_thrust  (code/modules/surgery/organs/augments_chest.dm:173)  may sleep
+// augments_chest.dm:173
 rt.def("/obj/item/organ/cyberimp/chest/thrusters/proc/allow_thrust", function* allow_thrust(f: Frame, num: Value) {
 	let _T: Value = null, environment: Value = null, I: Value = null, removed: Value = null;
-	f.vars = () => [num, _T, environment, I, removed];
-	if ((!truthy(rt.sv(f, "on")) || !truthy(rt.sv(f, "owner")))) {
+	if (!this.on || !this.owner) {
 		return 0;
 	}
-	if (!truthy((_T = rt.getStep(f, rt.sv(f, "owner"), 0)))) {
+	if (!(_T = rt.getStep(f, this.owner, 0))) {
 		return 0;
 	}
-	if ((truthy((environment = (yield* g.callName(f, live(_T), "return_air", [])))) && rt.gt((yield* g.callName(f, live(environment), "return_pressure", [])), 30))) {
+	if ((environment = _T.return_air()) && environment.return_pressure() > 30) {
 		return 1;
 	}
-	if (rt.ge((yield* g.callName(f, rt.sv(f, "owner"), "getPlasma", [])), multiply(live(num), 100))) {
-		yield* g.callName(f, rt.sv(f, "owner"), "adjustPlasma", [multiply(rt.neg(live(num)), 100)]);
+	if (this.owner.getPlasma() >= num * 100) {
+		yield* this.owner.adjustPlasma(-num * 100);
 		return 1;
 	}
-	if (((truthy((I = rt.fv(f, "internal", rt.sv(f, "owner")))) && truthy(rt.fv(f, "air_contents", live(I)))) && rt.gt((yield* g.callName(f, rt.fv(f, "air_contents", live(I)), "total_moles", [])), live(num)))) {
-		if (rt.gt((yield* g.callName(f, (removed = (yield* g.callName(f, rt.fv(f, "air_contents", live(I)), "remove", [live(num)]))), "total_moles", [])), 0.004999999888241291)) {
-			yield* g.callName(f, live(_T), "assume_air", [live(removed)]);
+	if ((I = this.owner.internal) && I.air_contents && I.air_contents.total_moles() > num) {
+		if ((removed = (yield* I.air_contents.remove(num))).total_moles() > 0.005) {
+			yield* _T.assume_air(removed);
 			return 1;
 		} else {
-			yield* g.callName(f, live(_T), "assume_air", [live(removed)]);
+			yield* _T.assume_air(removed);
 		}
 	}
-	yield* g.callSrc(f, "toggle", ["silent", 1], rt.Args.Named);
+	yield* this.toggle({ silent: 1 });
 	return 0;
 }, true);

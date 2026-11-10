@@ -1,7 +1,7 @@
-// From code/modules/spells/spell_types/rod_form.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/spells/spell_types/rod_form.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(11330, "/obj/effect/proc_holder/spell/targeted/rod_form", "/obj/effect/proc_holder/spell/targeted", {
@@ -18,28 +18,20 @@ rt.type(11330, "/obj/effect/proc_holder/spell/targeted/rod_form", "/obj/effect/p
 	action_icon_state: "immrod",
 });
 
-// /obj/effect/proc_holder/spell/targeted/rod_form/proc/cast  (code/modules/spells/spell_types/rod_form.dm:15)  may sleep
+// rod_form.dm:15
 rt.def("/obj/effect/proc_holder/spell/targeted/rod_form/proc/cast", function* cast(f: Frame, targets: Value, user: Value) {
 	let M: Value = null, start: Value = null, W: Value = null;
-	let $e: any;
-	f.vars = () => [targets, user, M, start, W, $e];
-	if (live(user) === null) {
-		user = live(f.usr);
+	user ??= f.usr;
+	for (M of each(targets, T("/mob/living"))) {
+		start = rt.getStep(f, M, 0);
+		(W = (yield* new_(T("/obj/effect/immovablerod/wizard"), start, get_ranged_target_turf(M, M.dir, 15 + this.spell_level * 3)))).wizard = M;
+		W.max_distance += this.spell_level * 3;
+		W.damage_bonus += this.spell_level * 20;
+		W.start_turf = start;
+		yield* M.forceMove(W);
+		M.notransform = 1;
+		(rt.modField(f, M, "status_flags", 4096, rt.bitOr));
 	}
-	M = null;
-	rt.forList(f, 0, live(targets), T("/mob/living"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		start = rt.getStep(f, live(M), 0);
-		rt.setFv(f, "wizard", (W = (yield* g.new_(f, T("/obj/effect/immovablerod/wizard"), [live(start), (yield* g.call(f, P("/proc/get_ranged_target_turf"), null, [live(M), rt.fv(f, "dir", live(M)), add(15, multiply(rt.sv(f, "spell_level"), 3))]))]))), live(M));
-		rt.modField(f, live(W), "max_distance", multiply(rt.sv(f, "spell_level"), 3), add);
-		rt.modField(f, live(W), "damage_bonus", multiply(rt.sv(f, "spell_level"), 20), add);
-		rt.setFv(f, "start_turf", live(W), live(start));
-		yield* g.callName(f, live(M), "forceMove", [live(W)]);
-		rt.setFv(f, "notransform", live(M), 1);
-		(rt.modField(f, live(M), "status_flags", 4096, rt.bitOr));
-	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
@@ -51,29 +43,28 @@ rt.type(12049, "/obj/effect/immovablerod/wizard", "/obj/effect/immovablerod", {
 	notify: 0,
 });
 
-// /obj/effect/immovablerod/wizard/proc/Move  (code/modules/spells/spell_types/rod_form.dm:36)  may sleep
+// rod_form.dm:36
 rt.def("/obj/effect/immovablerod/wizard/proc/Move", function* Move(f: Frame) {
-	if (rt.ge((yield* g.call(f, P("/proc/get_dist"), null, [rt.sv(f, "start_turf"), rt.getStep(f, live(f.src), 0)])), rt.sv(f, "max_distance"))) {
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	if (get_dist(this.start_turf, rt.getStep(f, this, 0)) >= this.max_distance) {
+		yield* qdel(this);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /obj/effect/immovablerod/wizard/proc/Destroy  (code/modules/spells/spell_types/rod_form.dm:42)  may sleep
+// rod_form.dm:42
 rt.def("/obj/effect/immovablerod/wizard/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.sv(f, "wizard"))) {
-		(rt.modField(f, rt.sv(f, "wizard"), "status_flags", 16773119, rt.bitAnd));
-		rt.setFv(f, "notransform", rt.sv(f, "wizard"), 0);
-		yield* g.callName(f, rt.sv(f, "wizard"), "forceMove", [rt.getStep(f, live(f.src), 0)]);
+	if (this.wizard) {
+		(rt.modField(f, this.wizard, "status_flags", 16773119, rt.bitAnd));
+		this.wizard.notransform = 0;
+		yield* this.wizard.forceMove(rt.getStep(f, this, 0));
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);
 
-// /obj/effect/immovablerod/wizard/proc/penetrate  (code/modules/spells/spell_types/rod_form.dm:48)  may sleep
+// rod_form.dm:48
 rt.def("/obj/effect/immovablerod/wizard/proc/penetrate", function* penetrate(f: Frame, L: Value) {
-	f.vars = () => [L];
-	yield* g.callName(f, live(L), "visible_message", [fmt("<span class='danger'>＀ is penetrated by an immovable rod!</span>", [live(L)]), "<span class='userdanger'>The rod penetrates you!</span>", "<span class ='danger'>You hear a CLANG!</span>"]);
-	yield* g.callName(f, live(L), "adjustBruteLoss", [add(70, rt.sv(f, "damage_bonus"))]);
+	L.visible_message(`<span class='danger'>${L} is penetrated by an immovable rod!</span>`, "<span class='userdanger'>The rod penetrates you!</span>", "<span class ='danger'>You hear a CLANG!</span>");
+	yield* L.adjustBruteLoss(70 + this.damage_bonus);
 	return f.dot;
 }, true);

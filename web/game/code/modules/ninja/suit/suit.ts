@@ -1,7 +1,7 @@
-// From code/modules/ninja/suit/suit.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/ninja/suit/suit.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(7760, "/obj/item/clothing/suit/space/space_ninja", "/obj/item/clothing/suit/space", {
@@ -39,233 +39,197 @@ rt.type(7760, "/obj/item/clothing/suit/space/space_ninja", "/obj/item/clothing/s
 	actions_types: null,
 });
 
-// /obj/item/clothing/suit/space/space_ninja/proc/<init>  (code/modules/ninja/suit/suit.dm:32)
+// suit.dm:32
 rt.def("/obj/item/clothing/suit/space/space_ninja/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "reagent_list", rt.list("omnizine", "salbutamol", "spaceacillin", "charcoal", "nutriment", "radium", "potass_iodide"));
-	$0 = $0;
-	rt.setSv(f, "stored_research", rt.list());
-	$0 = $0;
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/weapon/gun"), T("/obj/item/ammo_box"), T("/obj/item/ammo_casing"), T("/obj/item/weapon/melee/baton"), T("/obj/item/weapon/restraints/handcuffs"), T("/obj/item/weapon/tank/internals"), T("/obj/item/weapon/stock_parts/cell")));
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 60, "bullet", 50, "laser", 30, "energy", 15, "bomb", 30, "bio", 30, "rad", 30, "fire", 100, "acid", 100]));
-	$0 = $0;
-	rt.setSv(f, "actions_types", rt.list(T("/datum/action/item_action/initialize_ninja_suit"), T("/datum/action/item_action/ninjasmoke"), T("/datum/action/item_action/ninjaboost"), T("/datum/action/item_action/ninjapulse"), T("/datum/action/item_action/ninjastar"), T("/datum/action/item_action/ninjanet"), T("/datum/action/item_action/ninja_sword_recall"), T("/datum/action/item_action/ninja_stealth"), T("/datum/action/item_action/toggle_glove")));
+	parent_proc();
+	this.reagent_list = list("omnizine", "salbutamol", "spaceacillin", "charcoal", "nutriment", "radium", "potass_iodide");
+
+	this.stored_research = list();
+
+	this.allowed = list(T("/obj/item/weapon/gun"), T("/obj/item/ammo_box"), T("/obj/item/ammo_casing"), T("/obj/item/weapon/melee/baton"), T("/obj/item/weapon/restraints/handcuffs"), T("/obj/item/weapon/tank/internals"), T("/obj/item/weapon/stock_parts/cell"));
+	this.armor = rt.alist(f, ["melee", 60, "bullet", 50, "laser", 30, "energy", 15, "bomb", 30, "bio", 30, "rad", 30, "fire", 100, "acid", 100]);
+
+	this.actions_types = list(T("/datum/action/item_action/initialize_ninja_suit"), T("/datum/action/item_action/ninjasmoke"), T("/datum/action/item_action/ninjaboost"), T("/datum/action/item_action/ninjapulse"), T("/datum/action/item_action/ninjastar"), T("/datum/action/item_action/ninjanet"), T("/datum/action/item_action/ninja_sword_recall"), T("/datum/action/item_action/ninja_stealth"), T("/datum/action/item_action/toggle_glove"));
 	return f.dot;
 });
 
-// /obj/item/clothing/suit/space/space_ninja/proc/New  (code/modules/ninja/suit/suit.dm:64)  may sleep
+// suit.dm:64
 rt.def("/obj/item/clothing/suit/space/space_ninja/proc/New", function* New(f: Frame) {
 	let _T: Value = null, reagent_amount: Value = null, reagent_id: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [_T, reagent_amount, reagent_id, $0, $e];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "spark_system", (yield* g.new_(f, T("/datum/effect_system/spark_spread"), [])));
-	yield* g.callName(f, rt.sv(f, "spark_system"), "set_up", [5, 0, live(f.src)]);
-	yield* g.callName(f, rt.sv(f, "spark_system"), "attach", [live(f.src)]);
-	rt.setSv(f, "stored_research", (yield* g.new_(f, T("/list"), [])));
-	_T = null;
-	rt.forList(f, 0, subtract((yield* g.call(f, P("/proc/typesof"), null, [T("/datum/tech")])), T("/datum/tech")));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_T = $e;
-		rt.modSrcVar(f, "stored_research", (yield* g.new_(f, live(_T), [live(f.src)])), add);
+	let $e: any;
+	yield* parent_proc();
+	this.spark_system = (yield* new_(T("/datum/effect_system/spark_spread")));
+	yield* this.spark_system.set_up(5, 0, this);
+	yield* this.spark_system.attach(this);
+	this.stored_research = (yield* new_(T("/list")));
+	for (_T of each(typesof(T("/datum/tech")) - T("/datum/tech"))) {
+		this.stored_research += (yield* new_(_T, this));
 	}
-	rt.endFor(f, 0);
-	reagent_amount = null;
-	reagent_id = null;
-	rt.forList(f, 0, rt.sv(f, "reagent_list"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		reagent_id = $e;
-		if (isEqual(live(reagent_id), "radium")) {
-			$0 = add(rt.sv(f, "r_maxamount"), multiply(rt.sv(f, "a_boost"), rt.sv(f, "a_transfer")));
-		} else {
-			$0 = rt.sv(f, "r_maxamount");
-		}
-		reagent_amount = rt.modify(live(reagent_amount), $0, add);
+	for (reagent_id of each(this.reagent_list)) {
+		reagent_amount += reagent_id == "radium" ? this.r_maxamount + this.a_boost * this.a_transfer : this.r_maxamount;
 	}
-	rt.endFor(f, 0);
-	rt.setSv(f, "reagents", (yield* g.new_(f, T("/datum/reagents"), [live(reagent_amount)])));
-	rt.setFv(f, "my_atom", rt.sv(f, "reagents"), live(f.src));
+	this.reagents = (yield* new_(T("/datum/reagents"), reagent_amount));
+	this.reagents.my_atom = this;
 	reagent_id = null;
-	rt.forList(f, 0, rt.sv(f, "reagent_list"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		reagent_id = $e;
-		if (isEqual(live(reagent_id), "radium")) {
-			$0 = (yield* g.callName(f, rt.sv(f, "reagents"), "add_reagent", [live(reagent_id), add(rt.sv(f, "r_maxamount"), multiply(rt.sv(f, "a_boost"), rt.sv(f, "a_transfer")))]));
+	for (reagent_id of each(this.reagent_list)) {
+		if (reagent_id == "radium") {
+			yield* this.reagents.add_reagent(reagent_id, this.r_maxamount + this.a_boost * this.a_transfer);
 		} else {
-			$0 = (yield* g.callName(f, rt.sv(f, "reagents"), "add_reagent", [live(reagent_id), rt.sv(f, "r_maxamount")]));
+			yield* this.reagents.add_reagent(reagent_id, this.r_maxamount);
 		}
 	}
-	rt.endFor(f, 0);
-	rt.setSv(f, "cell", (yield* g.new_(f, T("/obj/item/weapon/stock_parts/cell/high"), [])));
-	rt.setFv(f, "charge", rt.sv(f, "cell"), 9000);
-	rt.setFv(f, "name", rt.sv(f, "cell"), "black power cell");
-	rt.setFv(f, "icon_state", rt.sv(f, "cell"), "bscell");
+	this.cell = (yield* new_(T("/obj/item/weapon/stock_parts/cell/high")));
+	this.cell.charge = 9000;
+	this.cell.name = "black power cell";
+	this.cell.icon_state = "bscell";
 	return f.dot;
 }, true);
 
-// /obj/item/clothing/suit/space/space_ninja/proc/Destroy  (code/modules/ninja/suit/suit.dm:94)  may sleep
+// suit.dm:94
 rt.def("/obj/item/clothing/suit/space/space_ninja/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.sv(f, "affecting"))) {
-		rt.op(f, "Browse", [], [rt.sv(f, "affecting"), null, "window=hack spideros"], false);
+	if (this.affecting) {
+		rt.op(f, "Browse", [], [this.affecting, null, "window=hack spideros"], false);
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);
 
-// /obj/item/clothing/suit/space/space_ninja/proc/terminate  (code/modules/ninja/suit/suit.dm:100)  may sleep
+// suit.dm:100
 rt.def("/obj/item/clothing/suit/space/space_ninja/proc/terminate", function* terminate(f: Frame) {
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "n_hood")]);
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "n_gloves")]);
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "n_shoes")]);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* qdel(this.n_hood);
+	yield* qdel(this.n_gloves);
+	yield* qdel(this.n_shoes);
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
-// /obj/item/clothing/suit/space/space_ninja/proc/randomize_param  (code/modules/ninja/suit/suit.dm:108)
+// suit.dm:108
 rt.def("/obj/item/clothing/suit/space/space_ninja/proc/randomize_param", function randomize_param(f: Frame) {
-	rt.setSv(f, "s_cost", rt.call(f, P("/proc/rand"), null, [1, 20]));
-	rt.setSv(f, "s_acost", rt.call(f, P("/proc/rand"), null, [20, 100]));
-	rt.setSv(f, "s_delay", rt.call(f, P("/proc/rand"), null, [10, 100]));
-	rt.setSv(f, "s_bombs", rt.call(f, P("/proc/rand"), null, [5, 20]));
-	rt.setSv(f, "a_boost", rt.call(f, P("/proc/rand"), null, [1, 7]));
+	this.s_cost = rand(1, 20);
+	this.s_acost = rand(20, 100);
+	this.s_delay = rand(10, 100);
+	this.s_bombs = rand(5, 20);
+	this.a_boost = rand(1, 7);
 	return f.dot;
 });
 
-// /obj/item/clothing/suit/space/space_ninja/proc/lock_suit  (code/modules/ninja/suit/suit.dm:117)  may sleep
+// suit.dm:117
 rt.def("/obj/item/clothing/suit/space/space_ninja/proc/lock_suit", function* lock_suit(f: Frame, H: Value) {
-	f.vars = () => [H];
-	if (!truthy((rt.istype(live(H), T("/mob/living/carbon/human")) ? 1 : 0))) {
+	if (!rt.istype(H, T("/mob/living/carbon/human"))) {
 		return 0;
 	}
-	if (!truthy((yield* g.call(f, P("/proc/is_ninja"), null, [live(H)])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(H), " <B>fÄTaL ÈÈRRoR</B>: 382200-*#00CÖDE <B>RED</B>\nUNAUHORIZED USÈ DETÈCeD\nCoMMÈNCING SUB-R0UIN3 13...\nTÈRMInATING U-U-USÈR..."]);
-		yield* g.callName(f, live(H), "gib", []);
+	if (!is_ninja(H)) {
+		to_chat(H, " <B>fÄTaL ÈÈRRoR</B>: 382200-*#00CÖDE <B>RED</B>\nUNAUHORIZED USÈ DETÈCeD\nCoMMÈNCING SUB-R0UIN3 13...\nTÈRMInATING U-U-USÈR...");
+		yield* H.gib();
 		return 0;
 	}
-	if (!truthy((rt.istype(rt.fv(f, "head", live(H)), T("/obj/item/clothing/head/helmet/space/space_ninja")) ? 1 : 0))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(H), "<span class='userdanger'>ERROR</span>: 100113 UNABLE TO LOCATE HEAD GEAR\nABORTING..."]);
+	if (!rt.istype(H.head, T("/obj/item/clothing/head/helmet/space/space_ninja"))) {
+		to_chat(H, "<span class='userdanger'>ERROR</span>: 100113 UNABLE TO LOCATE HEAD GEAR\nABORTING...");
 		return 0;
 	}
-	if (!truthy((rt.istype(rt.fv(f, "shoes", live(H)), T("/obj/item/clothing/shoes/space_ninja")) ? 1 : 0))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(H), "<span class='userdanger'>ERROR</span>: 122011 UNABLE TO LOCATE FOOT GEAR\nABORTING..."]);
+	if (!rt.istype(H.shoes, T("/obj/item/clothing/shoes/space_ninja"))) {
+		to_chat(H, "<span class='userdanger'>ERROR</span>: 122011 UNABLE TO LOCATE FOOT GEAR\nABORTING...");
 		return 0;
 	}
-	if (!truthy((rt.istype(rt.fv(f, "gloves", live(H)), T("/obj/item/clothing/gloves/space_ninja")) ? 1 : 0))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(H), "<span class='userdanger'>ERROR</span>: 110223 UNABLE TO LOCATE HAND GEAR\nABORTING..."]);
+	if (!rt.istype(H.gloves, T("/obj/item/clothing/gloves/space_ninja"))) {
+		to_chat(H, "<span class='userdanger'>ERROR</span>: 110223 UNABLE TO LOCATE HAND GEAR\nABORTING...");
 		return 0;
 	}
-	rt.setSv(f, "affecting", live(H));
-	(rt.modSrcVar(f, "flags", 2, rt.bitOr));
-	rt.setSv(f, "slowdown", 0);
-	rt.setSv(f, "n_hood", rt.fv(f, "head", live(H)));
-	(rt.modField(f, rt.sv(f, "n_hood"), "flags", 2, rt.bitOr));
-	rt.setSv(f, "n_shoes", rt.fv(f, "shoes", live(H)));
-	(rt.modField(f, rt.sv(f, "n_shoes"), "flags", 2, rt.bitOr));
-	rt.incField(f, rt.sv(f, "n_shoes"), "slowdown", -1, true);
-	rt.setSv(f, "n_gloves", rt.fv(f, "gloves", live(H)));
-	(rt.modField(f, rt.sv(f, "n_gloves"), "flags", 2, rt.bitOr));
+	this.affecting = H;
+	(rt.modSrcVar(f, "flags", NODROP, rt.bitOr));
+	this.slowdown = 0;
+	this.n_hood = H.head;
+	(rt.modField(f, this.n_hood, "flags", NODROP, rt.bitOr));
+	this.n_shoes = H.shoes;
+	(rt.modField(f, this.n_shoes, "flags", NODROP, rt.bitOr));
+	this.n_shoes.slowdown--;
+	this.n_gloves = H.gloves;
+	(rt.modField(f, this.n_gloves, "flags", NODROP, rt.bitOr));
 	return 1;
 }, true);
 
-// /obj/item/clothing/suit/space/space_ninja/proc/lockIcons  (code/modules/ninja/suit/suit.dm:145)
+// suit.dm:145
 rt.def("/obj/item/clothing/suit/space/space_ninja/proc/lockIcons", function lockIcons(f: Frame, H: Value) {
-	let $0: any;
-	f.vars = () => [$0];
-	if (isEqual(rt.fv(f, "gender", live(H)), "female")) {
-		$0 = "s-ninjanf";
-	} else {
-		$0 = "s-ninjan";
-	}
-	rt.setSv(f, "icon_state", $0);
-	rt.setFv(f, "icon_state", rt.fv(f, "gloves", live(H)), "s-ninjan");
-	rt.setFv(f, "item_state", rt.fv(f, "gloves", live(H)), "s-ninjan");
+	this.icon_state = H.gender == "female" ? "s-ninjanf" : "s-ninjan";
+	H.gloves.icon_state = "s-ninjan";
+	H.gloves.item_state = "s-ninjan";
 	return f.dot;
 });
 
-// /obj/item/clothing/suit/space/space_ninja/proc/unlock_suit  (code/modules/ninja/suit/suit.dm:153)
+// suit.dm:153
 rt.def("/obj/item/clothing/suit/space/space_ninja/proc/unlock_suit", function unlock_suit(f: Frame) {
-	rt.setSv(f, "affecting", null);
+	this.affecting = null;
 	(rt.modSrcVar(f, "flags", 16777213, rt.bitAnd));
-	rt.setSv(f, "slowdown", 1);
-	rt.setSv(f, "icon_state", "s-ninja");
-	if (truthy(rt.sv(f, "n_hood"))) {
-		(rt.modField(f, rt.sv(f, "n_hood"), "flags", 16777213, rt.bitAnd));
+	this.slowdown = 1;
+	this.icon_state = "s-ninja";
+	if (this.n_hood) {
+		(rt.modField(f, this.n_hood, "flags", 16777213, rt.bitAnd));
 	}
-	if (truthy(rt.sv(f, "n_shoes"))) {
-		(rt.modField(f, rt.sv(f, "n_shoes"), "flags", 16777213, rt.bitAnd));
-		rt.incField(f, rt.sv(f, "n_shoes"), "slowdown", 1, true);
+	if (this.n_shoes) {
+		(rt.modField(f, this.n_shoes, "flags", 16777213, rt.bitAnd));
+		this.n_shoes.slowdown++;
 	}
-	if (!truthy(rt.sv(f, "n_gloves"))) return f.dot;
-	rt.setFv(f, "icon_state", rt.sv(f, "n_gloves"), "s-ninja");
-	rt.setFv(f, "item_state", rt.sv(f, "n_gloves"), "s-ninja");
-	(rt.modField(f, rt.sv(f, "n_gloves"), "flags", 16777213, rt.bitAnd));
-	rt.setFv(f, "candrain", rt.sv(f, "n_gloves"), 0);
-	rt.setFv(f, "draining", rt.sv(f, "n_gloves"), 0);
+	if (!this.n_gloves) return f.dot;
+	this.n_gloves.icon_state = "s-ninja";
+	this.n_gloves.item_state = "s-ninja";
+	(rt.modField(f, this.n_gloves, "flags", 16777213, rt.bitAnd));
+	this.n_gloves.candrain = 0;
+	this.n_gloves.draining = 0;
 	return f.dot;
 });
 
-// /obj/item/clothing/suit/space/space_ninja/proc/examine  (code/modules/ninja/suit/suit.dm:170)
-rt.def("/obj/item/clothing/suit/space/space_ninja/proc/examine", function examine(f: Frame) {
-	let $0: any, $1: any;
-	f.vars = () => [$0, $1];
-	rt.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.sv(f, "s_initialized"))) return f.dot;
-	if (!isEqual(live(f.args[0]), rt.sv(f, "affecting"))) return f.dot;
-	rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("All systems operational. Current energy capacity: <B>＀</B>.", [rt.fv(f, "charge", rt.sv(f, "cell"))])]);
-	$0 = live(f.args[0]);
-	if (truthy(rt.sv(f, "s_active"))) {
-		$1 = "active";
-	} else {
-		$1 = "inactive";
-	}
-	rt.call(f, P("/proc/to_chat"), null, [$0, fmt("The CLOAK-tech device is <B>＀</B>.", [$1])]);
-	rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("There are <B>＀</B> smoke bomb５ remaining.", [rt.sv(f, "s_bombs")])]);
-	rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("There are <B>＀</B> adrenaline booster５ remaining.", [rt.sv(f, "a_boost")])]);
+// suit.dm:170
+rt.def("/obj/item/clothing/suit/space/space_ninja/proc/examine", function examine(f: Frame, user: Value) {
+	parent_proc();
+	if (!this.s_initialized) return f.dot;
+	if (user != this.affecting) return f.dot;
+	to_chat(user, `All systems operational. Current energy capacity: <B>${this.cell.charge}</B>.`);
+	let $0: any = user;
+	to_chat($0, `The CLOAK-tech device is <B>${this.s_active ? "active" : "inactive"}</B>.`);
+	to_chat(user, fmt("There are <B>＀</B> smoke bomb５ remaining.", [this.s_bombs]));
+	to_chat(user, fmt("There are <B>＀</B> adrenaline booster５ remaining.", [this.a_boost]));
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/item/clothing/suit/space/space_ninja/proc/ui_action_click  (code/modules/ninja/suit/suit.dm:179)  may sleep
+// suit.dm:179
 rt.def("/obj/item/clothing/suit/space/space_ninja/proc/ui_action_click", function* ui_action_click(f: Frame, user: Value, action: Value) {
-	f.vars = () => [user, action];
-	if (truthy((rt.istype(live(action), T("/datum/action/item_action/initialize_ninja_suit")) ? 1 : 0))) {
-		yield* g.srcCall(f, "toggle_on_off");
+	if (rt.istype(action, T("/datum/action/item_action/initialize_ninja_suit"))) {
+		yield* this.toggle_on_off();
 		return 1;
 	}
-	if (!truthy(rt.sv(f, "s_initialized"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'><b>ERROR</b>: suit offline.  Please activate suit.</span>"]);
+	if (!this.s_initialized) {
+		to_chat(user, "<span class='warning'><b>ERROR</b>: suit offline.  Please activate suit.</span>");
 		return 0;
 	}
-	if (truthy((rt.istype(live(action), T("/datum/action/item_action/ninjasmoke")) ? 1 : 0))) {
-		yield* g.srcCall(f, "ninjasmoke");
+	if (rt.istype(action, T("/datum/action/item_action/ninjasmoke"))) {
+		yield* this.ninjasmoke();
 		return 1;
 	}
-	if (truthy((rt.istype(live(action), T("/datum/action/item_action/ninjaboost")) ? 1 : 0))) {
-		yield* g.srcCall(f, "ninjaboost");
+	if (rt.istype(action, T("/datum/action/item_action/ninjaboost"))) {
+		yield* this.ninjaboost();
 		return 1;
 	}
-	if (truthy((rt.istype(live(action), T("/datum/action/item_action/ninjapulse")) ? 1 : 0))) {
-		yield* g.srcCall(f, "ninjapulse");
+	if (rt.istype(action, T("/datum/action/item_action/ninjapulse"))) {
+		yield* this.ninjapulse();
 		return 1;
 	}
-	if (truthy((rt.istype(live(action), T("/datum/action/item_action/ninjastar")) ? 1 : 0))) {
-		yield* g.srcCall(f, "ninjastar");
+	if (rt.istype(action, T("/datum/action/item_action/ninjastar"))) {
+		yield* this.ninjastar();
 		return 1;
 	}
-	if (truthy((rt.istype(live(action), T("/datum/action/item_action/ninjanet")) ? 1 : 0))) {
-		yield* g.srcCall(f, "ninjanet");
+	if (rt.istype(action, T("/datum/action/item_action/ninjanet"))) {
+		yield* this.ninjanet();
 		return 1;
 	}
-	if (truthy((rt.istype(live(action), T("/datum/action/item_action/ninja_sword_recall")) ? 1 : 0))) {
-		yield* g.srcCall(f, "ninja_sword_recall");
+	if (rt.istype(action, T("/datum/action/item_action/ninja_sword_recall"))) {
+		yield* this.ninja_sword_recall();
 		return 1;
 	}
-	if (truthy((rt.istype(live(action), T("/datum/action/item_action/ninja_stealth")) ? 1 : 0))) {
-		yield* g.srcCall(f, "stealth");
+	if (rt.istype(action, T("/datum/action/item_action/ninja_stealth"))) {
+		yield* this.stealth();
 		return 1;
 	}
-	if (truthy((rt.istype(live(action), T("/datum/action/item_action/toggle_glove")) ? 1 : 0))) {
-		yield* g.callName(f, rt.sv(f, "n_gloves"), "toggledrain", []);
+	if (rt.istype(action, T("/datum/action/item_action/toggle_glove"))) {
+		this.n_gloves.toggledrain();
 		return 1;
 	}
 	return 0;

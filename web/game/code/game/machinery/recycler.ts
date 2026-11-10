@@ -1,7 +1,7 @@
-// From code/game/machinery/recycler.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/machinery/recycler.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(10814, "/obj/machinery/recycler", "/obj/machinery", {
@@ -23,14 +23,13 @@ rt.type(10814, "/obj/machinery/recycler", "/obj/machinery", {
 	density: 1,
 });
 
-// /obj/machinery/recycler/proc/New  (code/game/machinery/recycler.dm:22)  may sleep
+// recycler.dm:22
 rt.def("/obj/machinery/recycler/proc/New", function* New(f: Frame) {
 	let B: Value = null;
-	f.vars = () => [B];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "materials", (yield* g.new_(f, T("/datum/material_container"), [live(f.src), rt.list("$metal", "$glass", "$plasma", "$silver", "$gold", "$diamond", "$uranium", "$bananium", "$titanium")])));
-	yield* g.callName(f, (B = (yield* g.new_(f, T("/obj/item/weapon/circuitboard/machine/recycler"), [null]))), "apply_default_parts", [live(f.src)]);
-	yield* g.srcCall(f, "update_icon");
+	yield* parent_proc();
+	this.materials = (yield* new_(T("/datum/material_container"), this, list("$metal", "$glass", "$plasma", "$silver", "$gold", "$diamond", "$uranium", "$bananium", "$titanium")));
+	yield* (B = (yield* new_(T("/obj/item/weapon/circuitboard/machine/recycler"), null))).apply_default_parts(this);
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
@@ -41,278 +40,219 @@ rt.type(6728, "/obj/item/weapon/circuitboard/machine/recycler", "/obj/item/weapo
 	origin_tech: "programming=2;engineering=2",
 });
 
-// /obj/item/weapon/circuitboard/machine/recycler/proc/<init>  (code/game/machinery/recycler.dm:32)
+// recycler.dm:32
 rt.def("/obj/item/weapon/circuitboard/machine/recycler/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_components", rt.alist(f, [T("/obj/item/weapon/stock_parts/matter_bin"), 1, T("/obj/item/weapon/stock_parts/manipulator"), 1]));
+	parent_proc();
+	this.req_components = rt.alist(f, [T("/obj/item/weapon/stock_parts/matter_bin"), 1, T("/obj/item/weapon/stock_parts/manipulator"), 1]);
 	return f.dot;
 });
 
-// /obj/machinery/recycler/proc/RefreshParts  (code/game/machinery/recycler.dm:39)
+// recycler.dm:39
 rt.def("/obj/machinery/recycler/proc/RefreshParts", function RefreshParts(f: Frame) {
-	let amt_made: Value = null, mat_mod: Value = null, B: Value = null, M: Value = null;
-	let $e: any;
-	f.vars = () => [amt_made, mat_mod, B, M, $e];
-	amt_made = 0;
-	mat_mod = 0;
-	B = null;
-	rt.forList(f, 0, rt.sv(f, "component_parts"), T("/obj/item/weapon/stock_parts/matter_bin"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		B = $e;
-		mat_mod = multiply(2, rt.fv(f, "rating", live(B)));
+	let B: Value = null, M: Value = null;
+	let amt_made: Value = 0;
+	let mat_mod: Value = 0;
+	for (B of each(this.component_parts, T("/obj/item/weapon/stock_parts/matter_bin"))) {
+		mat_mod = 2 * B.rating;
 	}
-	rt.endFor(f, 0);
-	(mat_mod = rt.modify(live(mat_mod), 50000, multiply));
-	M = null;
-	rt.forList(f, 0, rt.sv(f, "component_parts"), T("/obj/item/weapon/stock_parts/manipulator"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		amt_made = multiply(12.5, rt.fv(f, "rating", live(M)));
+	mat_mod *= 50000;
+	for (M of each(this.component_parts, T("/obj/item/weapon/stock_parts/manipulator"))) {
+		amt_made = 12.5 * M.rating;
 	}
-	rt.endFor(f, 0);
-	rt.setFv(f, "max_amount", rt.sv(f, "materials"), live(mat_mod));
-	rt.setSv(f, "amount_produced", add(rt.call(f, P("/proc/min"), null, [50, live(amt_made)]), 50));
+	this.materials.max_amount = mat_mod;
+	this.amount_produced = min(50, amt_made) + 50;
 	return f.dot;
 });
 
-// /obj/machinery/recycler/proc/examine  (code/game/machinery/recycler.dm:48)
-rt.def("/obj/machinery/recycler/proc/examine", function examine(f: Frame) {
-	let $0: any, $1: any;
-	f.vars = () => [$0, $1];
-	rt.callSuper(f, [], rt.Args.Same);
-	$0 = live(f.args[0]);
-	if (truthy(rt.bitAnd(rt.sv(f, "stat"), 2))) {
-		$1 = "off";
-	} else {
-		$1 = "on";
-	}
-	rt.call(f, P("/proc/to_chat"), null, [$0, fmt("The power light is ＀.", [$1])]);
-	$0 = live(f.args[0]);
-	if (truthy(rt.sv(f, "safety_mode"))) {
-		$1 = "on";
-	} else {
-		$1 = "off";
-	}
-	rt.call(f, P("/proc/to_chat"), null, [$0, fmt("The safety-mode light is ＀.", [$1])]);
-	$0 = live(f.args[0]);
-	if (truthy(rt.sv(f, "emagged"))) {
-		$1 = "off";
-	} else {
-		$1 = "on";
-	}
-	rt.call(f, P("/proc/to_chat"), null, [$0, fmt("The safety-sensors status light is ＀.", [$1])]);
+// recycler.dm:48
+rt.def("/obj/machinery/recycler/proc/examine", function examine(f: Frame, user: Value) {
+	parent_proc();
+	let $0: any = user;
+	to_chat($0, `The power light is ${rt.bitAnd(this.stat, 2) ? "off" : "on"}.`);
+	to_chat(user, `The safety-mode light is ${this.safety_mode ? "on" : "off"}.`);
+	to_chat(user, `The safety-sensors status light is ${this.emagged ? "off" : "on"}.`);
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/machinery/recycler/proc/power_change  (code/game/machinery/recycler.dm:54)
+// recycler.dm:54
 rt.def("/obj/machinery/recycler/proc/power_change", function power_change(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.callSrc(f, "update_icon", []);
+	parent_proc();
+	this.update_icon();
 	return f.dot;
 });
 
-// /obj/machinery/recycler/proc/attackby  (code/game/machinery/recycler.dm:59)  may sleep
-rt.def("/obj/machinery/recycler/proc/attackby", function* attackby(f: Frame) {
-	if (truthy((yield* g.srcCall(f, "default_deconstruction_screwdriver", live(f.args[1]), "grinder-oOpen", "grinder-o0", live(f.args[0]))))) {
-		return live(f.dot);
+// recycler.dm:59
+rt.def("/obj/machinery/recycler/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
+	if (this.default_deconstruction_screwdriver(user, "grinder-oOpen", "grinder-o0", I)) {
+		return f.dot;
 	}
-	if (truthy((yield* g.srcCall(f, "exchange_parts", live(f.args[1]), live(f.args[0]))))) {
-		return live(f.dot);
+	if (yield* this.exchange_parts(user, I)) {
+		return f.dot;
 	}
-	if (truthy((yield* g.srcCall(f, "default_pry_open", live(f.args[0]))))) {
-		return live(f.dot);
+	if (yield* this.default_pry_open(I)) {
+		return f.dot;
 	}
-	if (truthy((yield* g.srcCall(f, "default_unfasten_wrench", live(f.args[1]), live(f.args[0]))))) {
-		return live(f.dot);
+	if (yield* this.default_unfasten_wrench(user, I)) {
+		return f.dot;
 	}
-	if (truthy((yield* g.srcCall(f, "default_deconstruction_crowbar", live(f.args[0]))))) {
-		return live(f.dot);
+	if (yield* this.default_deconstruction_crowbar(I)) {
+		return f.dot;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["I", "user", "params"] });
+	return (yield* parent_proc());
+}, true);
 
-// /obj/machinery/recycler/proc/emag_act  (code/game/machinery/recycler.dm:76)
+// recycler.dm:76
 rt.def("/obj/machinery/recycler/proc/emag_act", function emag_act(f: Frame, user: Value) {
-	if (truthy(rt.sv(f, "emagged"))) return f.dot;
-	rt.setSv(f, "emagged", 1);
-	if (truthy(rt.sv(f, "safety_mode"))) {
-		rt.setSv(f, "safety_mode", 0);
-		rt.callSrc(f, "update_icon", []);
+	if (this.emagged) return f.dot;
+	this.emagged = 1;
+	if (this.safety_mode) {
+		this.safety_mode = 0;
+		this.update_icon();
 	}
-	rt.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), "sparks", 75, 1, -1]);
-	rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You use the cryptographic sequencer on the ＀.</span>", [rt.fv(f, "name", live(f.src))])]);
+	playsound(this.loc, "sparks", 75, 1, -1);
+	to_chat(user, `<span class='notice'>You use the cryptographic sequencer on the ${this.name}.</span>`);
 	return f.dot;
 });
 
-// /obj/machinery/recycler/proc/update_icon  (code/game/machinery/recycler.dm:85)
+// recycler.dm:85
 rt.def("/obj/machinery/recycler/proc/update_icon", function update_icon(f: Frame) {
-	let is_powered: Value = null;
-	let $0: any, $1: any;
-	f.vars = () => [is_powered, $0, $1];
-	rt.callSuper(f, [], rt.Args.Same);
-	is_powered = (!truthy(rt.bitAnd(rt.sv(f, "stat"), 3)) ? 1 : 0);
-	if (truthy(rt.sv(f, "safety_mode"))) {
+	parent_proc();
+	let is_powered: Value = (!rt.bitAnd(this.stat, 3) ? 1 : 0);
+	if (this.safety_mode) {
 		is_powered = 0;
 	}
-	$0 = add(rt.sv(f, "icon_name"), fmt("＀", [live(is_powered)]));
-	if (truthy(rt.sv(f, "blood"))) {
-		$1 = "bld";
-	} else {
-		$1 = "";
-	}
-	rt.setSv(f, "icon_state", add($0, fmt("＀", [$1])));
+	let $0: any = this.icon_name + `${is_powered}`;
+	this.icon_state = $0 + `${this.blood ? "bld" : ""}`;
 	return f.dot;
 });
 
-// /obj/machinery/recycler/proc/Bump  (code/game/machinery/recycler.dm:93)  may sleep
-rt.def("/obj/machinery/recycler/proc/Bump", function* Bump(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy(live(f.args[0]))) return f.dot;
-	yield* g.srcCall(f, "Bumped", live(f.args[0]));
+// recycler.dm:93
+rt.def("/obj/machinery/recycler/proc/Bump", function* Bump(f: Frame, AM: Value) {
+	yield* parent_proc();
+	if (!AM) return f.dot;
+	yield* this.Bumped(AM);
 	return f.dot;
-}, true, { args: ["AM"] });
+}, true);
 
-// /obj/machinery/recycler/proc/Bumped  (code/game/machinery/recycler.dm:100)  may sleep
+// recycler.dm:100
 rt.def("/obj/machinery/recycler/proc/Bumped", function* Bumped(f: Frame, AM: Value) {
 	let move_dir: Value = null;
-	f.vars = () => [AM, move_dir];
-	if (truthy(rt.bitAnd(rt.sv(f, "stat"), 3))) {
-		return live(f.dot);
+	if (rt.bitAnd(this.stat, 3)) {
+		return f.dot;
 	}
-	if (!truthy(rt.sv(f, "anchored"))) {
-		return live(f.dot);
+	if (!this.anchored) {
+		return f.dot;
 	}
-	if (truthy(rt.sv(f, "safety_mode"))) {
-		return live(f.dot);
+	if (this.safety_mode) {
+		return f.dot;
 	}
-	if (!isEqual((move_dir = rt.getDir(f, rt.sv(f, "loc"), rt.fv(f, "loc", live(AM)))), rt.sv(f, "eat_dir"))) return f.dot;
-	yield* g.srcCall(f, "eat", live(AM));
+	if ((move_dir = rt.getDir(f, this.loc, AM.loc)) != this.eat_dir) return f.dot;
+	yield* this.eat(AM);
 	return f.dot;
 }, true);
 
-// /obj/machinery/recycler/proc/eat  (code/game/machinery/recycler.dm:113)  may sleep
+// recycler.dm:113
 rt.def("/obj/machinery/recycler/proc/eat", function* eat(f: Frame, AM0: Value, sound: Value) {
-	let to_eat: Value = null, items_recycled: Value = null, i: Value = null, AM: Value = null, as_head: Value = null, as_mmi: Value = null, brain_holder: Value = null;
-	let $e: any;
-	f.vars = () => [AM0, sound, to_eat, items_recycled, i, AM, as_head, as_mmi, brain_holder, $e];
-	if (live(sound) === null) {
-		sound = 1;
-	}
-	to_eat = null;
-	if (truthy((rt.istype(live(AM0), T("/obj/item")) ? 1 : 0))) {
-		to_eat = (yield* g.callName(f, live(AM0), "GetAllContents", []));
+	let to_eat: Value = null, i: Value = null, AM: Value = null, as_head: Value = null, as_mmi: Value = null, brain_holder: Value = null;
+	sound ??= 1;
+	if (rt.istype(AM0, T("/obj/item"))) {
+		to_eat = AM0.GetAllContents();
 	} else {
-		to_eat = rt.list(live(AM0));
+		to_eat = list(AM0);
 	}
-	items_recycled = 0;
-	i = null;
-	rt.forList(f, 0, live(to_eat));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		i = $e;
-		AM = live(i);
-		as_head = live(AM);
-		as_mmi = live(AM);
-		brain_holder = ((((rt.istype(live(AM), T("/obj/item/organ/brain")) ? 1 : 0) || ((rt.istype(live(as_head), T("/obj/item/bodypart/head")) ? 1 : 0) && rt.fv(f, "brain", live(as_head)))) || ((rt.istype(live(as_mmi), T("/obj/item/device/mmi")) ? 1 : 0) && rt.fv(f, "brain", live(as_mmi)))) || (rt.istype(live(AM), T("/mob/living/brain")) ? 1 : 0));
-		if ((truthy((rt.istype(live(AM), T("/mob/living")) ? 1 : 0)) || truthy(live(brain_holder)))) {
-			if (truthy(rt.sv(f, "emagged"))) {
-				if (!truthy(live(brain_holder))) {
-					yield* g.srcCall(f, "crush_living", live(AM));
+	let items_recycled: Value = 0;
+	for (i of each(to_eat)) {
+		AM = i;
+		as_head = AM;
+		as_mmi = AM;
+		brain_holder = ((((rt.istype(AM, T("/obj/item/organ/brain")) ? 1 : 0) || ((rt.istype(as_head, T("/obj/item/bodypart/head")) ? 1 : 0) && as_head.brain)) || ((rt.istype(as_mmi, T("/obj/item/device/mmi")) ? 1 : 0) && as_mmi.brain)) || (rt.istype(AM, T("/mob/living/brain")) ? 1 : 0));
+		if (rt.istype(AM, T("/mob/living")) || brain_holder) {
+			if (this.emagged) {
+				if (!brain_holder) {
+					yield* this.crush_living(AM);
 				}
 			} else {
-				yield* g.srcCall(f, "emergency_stop", live(AM));
+				yield* this.emergency_stop(AM);
 			}
+		} else if (rt.istype(AM, T("/obj/item"))) {
+			yield* this.recycle_item(AM);
+			items_recycled++;
 		} else {
-			if (truthy((rt.istype(live(AM), T("/obj/item")) ? 1 : 0))) {
-				yield* g.srcCall(f, "recycle_item", live(AM));
-				items_recycled = rt.inc(live(items_recycled), 1);
-			} else {
-				yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/machines/buzz-sigh.ogg"), 50, 0]);
-				rt.setFv(f, "loc", live(AM), rt.fv(f, "loc", live(f.src)));
-			}
+			playsound(this.loc, rt.rsc("sound/machines/buzz-sigh.ogg"), 50, 0);
+			AM.loc = this.loc;
 		}
 	}
-	rt.endFor(f, 0);
-	if (!(truthy(live(items_recycled)) && truthy(live(sound)))) return f.dot;
-	yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.sv(f, "item_recycle_sound"), 50, 1]);
+	if (!(items_recycled && sound)) return f.dot;
+	playsound(this.loc, this.item_recycle_sound, 50, 1);
 	return f.dot;
 }, true);
 
-// /obj/machinery/recycler/proc/recycle_item  (code/game/machinery/recycler.dm:142)  may sleep
+// recycler.dm:142
 rt.def("/obj/machinery/recycler/proc/recycle_item", function* recycle_item(f: Frame, I: Value) {
 	let material_amount: Value = null;
-	f.vars = () => [I, material_amount];
-	rt.setFv(f, "loc", live(I), rt.fv(f, "loc", live(f.src)));
-	if (!truthy((material_amount = (yield* g.callName(f, rt.sv(f, "materials"), "get_item_material_amount", [live(I)]))))) {
-		yield* g.call(f, P("/proc/qdel"), null, [live(I)]);
-		return live(f.dot);
+	I.loc = this.loc;
+	if (!(material_amount = this.materials.get_item_material_amount(I))) {
+		yield* qdel(I);
+		return f.dot;
 	}
-	yield* g.callName(f, rt.sv(f, "materials"), "insert_item", [null, live(I), "multiplier", divide(rt.sv(f, "amount_produced"), 100)], rt.Args.Named);
-	yield* g.call(f, P("/proc/qdel"), null, [live(I)]);
-	yield* g.callName(f, rt.sv(f, "materials"), "retrieve_all", []);
+	yield* this.materials.insert_item(I, { multiplier: this.amount_produced / 100 });
+	yield* qdel(I);
+	yield* this.materials.retrieve_all();
 	return f.dot;
 }, true);
 
-// /obj/machinery/recycler/proc/emergency_stop  (code/game/machinery/recycler.dm:154)  may sleep
+// recycler.dm:154
 rt.def("/obj/machinery/recycler/proc/emergency_stop", function* emergency_stop(f: Frame, L: Value) {
-	f.vars = () => [L];
-	yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/machines/buzz-sigh.ogg"), 50, 0]);
-	rt.setSv(f, "safety_mode", 1);
-	yield* g.srcCall(f, "update_icon");
-	rt.setFv(f, "loc", live(L), rt.fv(f, "loc", live(f.src)));
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/machinery/recycler/proc/reboot")])), 100]);
+	playsound(this.loc, rt.rsc("sound/machines/buzz-sigh.ogg"), 50, 0);
+	this.safety_mode = 1;
+	yield* this.update_icon();
+	L.loc = this.loc;
+	yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/machinery/recycler/proc/reboot"))), 100);
 	return f.dot;
 }, true);
 
-// /obj/machinery/recycler/proc/reboot  (code/game/machinery/recycler.dm:161)
+// recycler.dm:161
 rt.def("/obj/machinery/recycler/proc/reboot", function reboot(f: Frame) {
-	rt.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/machines/ping.ogg"), 50, 0]);
-	rt.setSv(f, "safety_mode", 0);
-	rt.callSrc(f, "update_icon", []);
+	playsound(this.loc, rt.rsc("sound/machines/ping.ogg"), 50, 0);
+	this.safety_mode = 0;
+	this.update_icon();
 	return f.dot;
 });
 
-// /obj/machinery/recycler/proc/crush_living  (code/game/machinery/recycler.dm:167)  may sleep
+// recycler.dm:167
 rt.def("/obj/machinery/recycler/proc/crush_living", function* crush_living(f: Frame, L: Value) {
-	let gib: Value = null, I: Value = null;
-	let $e: any;
-	f.vars = () => [L, gib, I, $e];
-	rt.setFv(f, "loc", live(L), rt.fv(f, "loc", live(f.src)));
-	if (truthy((rt.istype(live(L), T("/mob/living/silicon")) ? 1 : 0))) {
-		yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/items/welder.ogg"), 50, 1]);
+	let I: Value = null;
+	L.loc = this.loc;
+	if (rt.istype(L, T("/mob/living/silicon"))) {
+		playsound(this.loc, rt.rsc("sound/items/welder.ogg"), 50, 1);
 	} else {
-		yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/effects/splat.ogg"), 50, 1]);
+		playsound(this.loc, rt.rsc("sound/effects/splat.ogg"), 50, 1);
 	}
-	gib = 1;
-	if (truthy((rt.istype(live(L), T("/mob/living/carbon")) ? 1 : 0))) {
+	let gib: Value = 1;
+	if (rt.istype(L, T("/mob/living/carbon"))) {
 		gib = 0;
-		if (isEqual(rt.fv(f, "stat", live(L)), 0)) {
-			yield* g.callName(f, live(L), "say", ["ARRRRRRRRRRRGH!!!"]);
+		if (L.stat == 0) {
+			yield* L.say("ARRRRRRRRRRRGH!!!");
 		}
-		yield* g.srcCall(f, "add_mob_blood", live(L));
+		yield* this.add_mob_blood(L);
 	}
-	if ((!truthy(rt.sv(f, "blood")) && !truthy((rt.istype(live(L), T("/mob/living/silicon")) ? 1 : 0)))) {
-		rt.setSv(f, "blood", 1);
-		yield* g.srcCall(f, "update_icon");
+	if (!this.blood && !rt.istype(L, T("/mob/living/silicon"))) {
+		this.blood = 1;
+		yield* this.update_icon();
 	}
-	if (truthy(rt.sv(f, "eat_victim_items"))) {
-		I = null;
-		rt.forList(f, 0, (yield* g.callName(f, live(L), "get_equipped_items", [])), T("/obj/item"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			I = $e;
-			if (truthy((yield* g.callName(f, live(L), "dropItemToGround", [live(I)])))) {
-				yield* g.callSrc(f, "eat", [null, live(I), "sound", 0], rt.Args.Named);
+	if (this.eat_victim_items) {
+		for (I of each(L.get_equipped_items(), T("/obj/item"))) {
+			if (yield* L.dropItemToGround(I)) {
+				yield* this.eat(I, { sound: 0 });
 			}
 		}
-		rt.endFor(f, 0);
 	}
-	yield* g.callName(f, live(L), "Unconscious", [100]);
-	if ((truthy(live(gib)) || isEqual(rt.sv(f, "emagged"), 2))) {
-		yield* g.callName(f, live(L), "gib", []);
+	yield* L.Unconscious(100);
+	if (gib || this.emagged == 2) {
+		yield* L.gib();
 	} else {
-		if (!isEqual(rt.sv(f, "emagged"), 1)) return f.dot;
-		yield* g.callName(f, live(L), "adjustBruteLoss", [rt.sv(f, "crush_damage")]);
+		if (this.emagged != 1) return f.dot;
+		yield* L.adjustBruteLoss(this.crush_damage);
 	}
 	return f.dot;
 }, true);

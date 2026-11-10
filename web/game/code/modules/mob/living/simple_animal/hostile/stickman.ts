@@ -1,7 +1,7 @@
-// From code/modules/mob/living/simple_animal/hostile/stickman.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/simple_animal/hostile/stickman.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(4990, "/mob/living/simple_animal/hostile/stickman", "/mob/living/simple_animal/hostile", {
@@ -39,13 +39,11 @@ rt.type(4990, "/mob/living/simple_animal/hostile/stickman", "/mob/living/simple_
 	status_flags: 8,
 });
 
-// /mob/living/simple_animal/hostile/stickman/proc/<init>  (code/modules/mob/living/simple_animal/hostile/stickman.dm:27)
+// stickman.dm:27
 rt.def("/mob/living/simple_animal/hostile/stickman/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "atmos_requirements", rt.alist(f, ["min_oxy", 5, "max_oxy", 0, "min_tox", 0, "max_tox", 1, "min_co2", 0, "max_co2", 5, "min_n2", 0, "max_n2", 0]));
-	rt.setSv(f, "faction", rt.list("hostile", "stickman"));
+	parent_proc();
+	this.atmos_requirements = rt.alist(f, ["min_oxy", 5, "max_oxy", 0, "min_tox", 0, "max_tox", 1, "min_co2", 0, "max_co2", 5, "min_n2", 0, "max_n2", 0]);
+	this.faction = list("hostile", "stickman");
 	return f.dot;
 });
 
@@ -60,27 +58,25 @@ rt.type(4991, "/mob/living/simple_animal/hostile/stickman/ranged", "/mob/living/
 	loot: null,
 });
 
-// /mob/living/simple_animal/hostile/stickman/ranged/proc/<init>  (code/modules/mob/living/simple_animal/hostile/stickman.dm:43)
+// stickman.dm:43
 rt.def("/mob/living/simple_animal/hostile/stickman/ranged/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "loot", rt.list(T("/obj/item/weapon/gun/ballistic/automatic/pistol/stickman")));
+	parent_proc();
+	this.loot = list(T("/obj/item/weapon/gun/ballistic/automatic/pistol/stickman"));
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/stickman/proc/Initialize  (code/modules/mob/living/simple_animal/hostile/stickman.dm:54)  may sleep
-rt.def("/mob/living/simple_animal/hostile/stickman/proc/Initialize", function* Initialize(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.new_(f, T("/obj/effect/temp_visual/paper_scatter"), [live(f.src)]);
-	rt.setSv(f, "summoned_by_wizard", live(f.args[1]));
+// stickman.dm:54
+rt.def("/mob/living/simple_animal/hostile/stickman/proc/Initialize", function* Initialize(f: Frame, mapload: Value, wizard_summoned: Value) {
+	yield* parent_proc();
+	yield* new_(T("/obj/effect/temp_visual/paper_scatter"), this);
+	this.summoned_by_wizard = wizard_summoned;
 	return f.dot;
-}, true, { args: ["mapload", "wizard_summoned"] });
+}, true);
 
-// /mob/living/simple_animal/hostile/stickman/proc/death  (code/modules/mob/living/simple_animal/hostile/stickman.dm:59)  may sleep
+// stickman.dm:59
 rt.def("/mob/living/simple_animal/hostile/stickman/proc/death", function* death(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!isEqual(rt.sv(f, "summoned_by_wizard"), 1)) return f.dot;
-	rt.incGl("summoned_minions", -1, true);
+	yield* parent_proc();
+	if (this.summoned_by_wizard != 1) return f.dot;
+	GLOB.summoned_minions--;
 	return f.dot;
 }, true);

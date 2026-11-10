@@ -1,7 +1,7 @@
-// From code/modules/spells/spell_types/santa.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/spells/spell_types/santa.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(11365, "/obj/effect/proc_holder/spell/aoe_turf/conjure/presents", "/obj/effect/proc_holder/spell/aoe_turf/conjure", {
@@ -19,11 +19,9 @@ rt.type(11365, "/obj/effect/proc_holder/spell/aoe_turf/conjure/presents", "/obj/
 	cooldown_min: 50,
 });
 
-// /obj/effect/proc_holder/spell/aoe_turf/conjure/presents/proc/<init>  (code/modules/spells/spell_types/santa.dm:13)
+// santa.dm:13
 rt.def("/obj/effect/proc_holder/spell/aoe_turf/conjure/presents/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "summon_type", rt.list("/obj/item/weapon/a_gift"));
+	parent_proc();
+	this.summon_type = list("/obj/item/weapon/a_gift");
 	return f.dot;
 });

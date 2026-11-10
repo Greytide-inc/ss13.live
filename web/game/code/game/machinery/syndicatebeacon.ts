@@ -1,7 +1,7 @@
-// From code/game/machinery/syndicatebeacon.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/machinery/syndicatebeacon.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(10305, "/obj/machinery/power/singularity_beacon", "/obj/machinery/power", {
@@ -19,136 +19,104 @@ rt.type(10305, "/obj/machinery/power/singularity_beacon", "/obj/machinery/power"
 	stat: 0,
 });
 
-// /obj/machinery/power/singularity_beacon/proc/Activate  (code/game/machinery/syndicatebeacon.dm:22)
+// syndicatebeacon.dm:22
 rt.def("/obj/machinery/power/singularity_beacon/proc/Activate", function Activate(f: Frame, user: Value) {
 	let singulo: Value = null;
-	let $e: any;
-	f.vars = () => [user, singulo, $e];
-	if (live(user) === null) {
-		user = null;
-	}
-	if (rt.lt(rt.callSrc(f, "surplus", []), 1500)) {
-		if (truthy(live(user))) {
-			rt.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>The connected wire doesn't have enough current.</span>"]);
+	if (this.surplus() < 1500) {
+		if (user) {
+			to_chat(user, "<span class='notice'>The connected wire doesn't have enough current.</span>");
 		}
-		return live(f.dot);
+		return f.dot;
 	}
-	singulo = null;
-	rt.forList(f, 0, rt.gl("singularities"), T("/obj/singularity"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		singulo = $e;
-		if (isEqual(rt.fv(f, "z", live(singulo)), rt.sv(f, "z"))) {
-			rt.setFv(f, "target", live(singulo), live(f.src));
+	for (singulo of each(GLOB.singularities, T("/obj/singularity"))) {
+		if (singulo.z == this.z) {
+			singulo.target = this;
 		}
 	}
-	rt.endFor(f, 0);
-	rt.setSv(f, "icon_state", fmt("＀1", [rt.sv(f, "icontype")]));
-	rt.setSv(f, "active", 1);
-	if (!truthy(live(user))) return f.dot;
-	rt.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>You activate the beacon.</span>"]);
+	this.icon_state = `${this.icontype}1`;
+	this.active = 1;
+	if (!user) return f.dot;
+	to_chat(user, "<span class='notice'>You activate the beacon.</span>");
 	return f.dot;
 });
 
-// /obj/machinery/power/singularity_beacon/proc/Deactivate  (code/game/machinery/syndicatebeacon.dm:35)
+// syndicatebeacon.dm:35
 rt.def("/obj/machinery/power/singularity_beacon/proc/Deactivate", function Deactivate(f: Frame, user: Value) {
 	let singulo: Value = null;
-	let $e: any;
-	f.vars = () => [user, singulo, $e];
-	if (live(user) === null) {
-		user = null;
-	}
-	singulo = null;
-	rt.forList(f, 0, rt.gl("singularities"), T("/obj/singularity"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		singulo = $e;
-		if (isEqual(rt.fv(f, "target", live(singulo)), live(f.src))) {
-			rt.setFv(f, "target", live(singulo), null);
+	for (singulo of each(GLOB.singularities, T("/obj/singularity"))) {
+		if (singulo.target == this) {
+			singulo.target = null;
 		}
 	}
-	rt.endFor(f, 0);
-	rt.setSv(f, "icon_state", fmt("＀0", [rt.sv(f, "icontype")]));
-	rt.setSv(f, "active", 0);
-	if (!truthy(live(user))) return f.dot;
-	rt.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>You deactivate the beacon.</span>"]);
+	this.icon_state = `${this.icontype}0`;
+	this.active = 0;
+	if (!user) return f.dot;
+	to_chat(user, "<span class='notice'>You deactivate the beacon.</span>");
 	return f.dot;
 });
 
-// /obj/machinery/power/singularity_beacon/proc/attack_hand  (code/game/machinery/syndicatebeacon.dm:50)
+// syndicatebeacon.dm:50
 rt.def("/obj/machinery/power/singularity_beacon/proc/attack_hand", function attack_hand(f: Frame, user: Value) {
-	let $0: any;
-	f.vars = () => [$0];
-	if (truthy(rt.sv(f, "anchored"))) {
-		if (truthy(rt.sv(f, "active"))) {
-			$0 = rt.callSrc(f, "Deactivate", [live(user)]);
-		} else {
-			$0 = rt.callSrc(f, "Activate", [live(user)]);
-		}
-		return $0;
+	if (this.anchored) {
+		return this.active ? this.Deactivate(user) : this.Activate(user);
 	}
-	rt.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>You need to screw the beacon to the floor first!</span>"]);
-	return live(f.dot);
+	to_chat(user, "<span class='warning'>You need to screw the beacon to the floor first!</span>");
+	return f.dot;
 });
 
-// /obj/machinery/power/singularity_beacon/proc/attackby  (code/game/machinery/syndicatebeacon.dm:57)  may sleep
-rt.def("/obj/machinery/power/singularity_beacon/proc/attackby", function* attackby(f: Frame) {
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/screwdriver")) ? 1 : 0))) {
-		if (truthy(rt.sv(f, "active"))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You need to deactivate the beacon first!</span>"]);
-			return live(f.dot);
+// syndicatebeacon.dm:57
+rt.def("/obj/machinery/power/singularity_beacon/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
+	if (rt.istype(W, T("/obj/item/weapon/screwdriver"))) {
+		if (this.active) {
+			to_chat(user, "<span class='warning'>You need to deactivate the beacon first!</span>");
+			return f.dot;
 		}
-		if (truthy(rt.sv(f, "anchored"))) {
-			rt.setSv(f, "anchored", 0);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You unscrew the beacon from the floor.</span>"]);
-			yield* g.srcCall(f, "disconnect_from_network");
-			return live(f.dot);
+		if (this.anchored) {
+			this.anchored = 0;
+			to_chat(user, "<span class='notice'>You unscrew the beacon from the floor.</span>");
+			yield* this.disconnect_from_network();
+			return f.dot;
 		} else {
-			if (!truthy((yield* g.srcCall(f, "connect_to_network")))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>This device must be placed over an exposed, powered cable node!</span>"]);
-				return live(f.dot);
+			if (!(yield* this.connect_to_network())) {
+				to_chat(user, "<span class='warning'>This device must be placed over an exposed, powered cable node!</span>");
+				return f.dot;
 			}
-			rt.setSv(f, "anchored", 1);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You screw the beacon to the floor and attach the cable.</span>"]);
-			return live(f.dot);
+			this.anchored = 1;
+			to_chat(user, "<span class='notice'>You screw the beacon to the floor and attach the cable.</span>");
+			return f.dot;
 		}
 	} else {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+		return (yield* parent_proc());
 	}
-	return f.dot;
-}, true, { args: ["W", "user", "params"] });
-
-// /obj/machinery/power/singularity_beacon/proc/Destroy  (code/game/machinery/syndicatebeacon.dm:79)  may sleep
-rt.def("/obj/machinery/power/singularity_beacon/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.sv(f, "active"))) {
-		yield* g.srcCall(f, "Deactivate");
-	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
 }, true);
 
-// /obj/machinery/power/singularity_beacon/proc/process  (code/game/machinery/syndicatebeacon.dm:84)  may sleep
+// syndicatebeacon.dm:79
+rt.def("/obj/machinery/power/singularity_beacon/proc/Destroy", function* Destroy(f: Frame) {
+	if (this.active) {
+		yield* this.Deactivate();
+	}
+	return (yield* parent_proc());
+}, true);
+
+// syndicatebeacon.dm:84
 rt.def("/obj/machinery/power/singularity_beacon/proc/process", function* process(f: Frame) {
 	let singulo: Value = null;
-	let $e: any;
-	f.vars = () => [singulo, $e];
-	if (!truthy(rt.sv(f, "active"))) {
-		return live(f.dot);
+	if (!this.active) {
+		return f.dot;
 	}
-	if (rt.gt((yield* g.srcCall(f, "surplus")), 1500)) {
-		yield* g.srcCall(f, "add_load", 1500);
-		if (rt.le(rt.sv(f, "cooldown"), rt.worldTime(f))) {
-			rt.setSv(f, "cooldown", add(rt.worldTime(f), 100));
-			singulo = null;
-			rt.forList(f, 0, rt.gl("singularities"), T("/obj/singularity"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				singulo = $e;
-				if (isEqual(rt.fv(f, "z", live(singulo)), rt.sv(f, "z"))) {
-					yield* g.srcCall(f, "say", fmt("The ＀ is now ＀ standard lengths away to the ＀", [live(singulo), (yield* g.call(f, P("/proc/get_dist"), null, [live(f.src), live(singulo)])), (yield* g.call(f, P("/proc/dir2text"), null, [rt.getDir(f, live(f.src), live(singulo))]))]));
+	if (this.surplus() > 1500) {
+		this.add_load(1500);
+		if (this.cooldown <= rt.worldTime(f)) {
+			this.cooldown = rt.worldTime(f) + 100;
+			for (singulo of each(GLOB.singularities, T("/obj/singularity"))) {
+				if (singulo.z == this.z) {
+					yield* this.say(`The ${singulo} is now ${get_dist(this, singulo)} standard lengths away to the ${dir2text(rt.getDir(f, this, singulo))}`);
 				}
 			}
-			rt.endFor(f, 0);
 		}
 	} else {
-		yield* g.srcCall(f, "Deactivate");
-		yield* g.srcCall(f, "say", "Insufficient charge detected - powering down");
+		yield* this.Deactivate();
+		yield* this.say("Insufficient charge detected - powering down");
 	}
 	return f.dot;
 }, true, { waitfor: false });
@@ -163,14 +131,13 @@ rt.type(9222, "/obj/item/device/sbeacondrop", "/obj/item/device", {
 	w_class: 2,
 });
 
-// /obj/item/device/sbeacondrop/proc/attack_self  (code/game/machinery/syndicatebeacon.dm:116)  may sleep
+// syndicatebeacon.dm:116
 rt.def("/obj/item/device/sbeacondrop/proc/attack_self", function* attack_self(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (truthy(live(user))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>Locked In.</span>"]);
-		yield* g.new_(f, rt.sv(f, "droptype"), [rt.fv(f, "loc", live(user))]);
-		yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/effects/pop.ogg"), 100, 1, 1]);
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	if (user) {
+		to_chat(user, "<span class='notice'>Locked In.</span>");
+		yield* new_(this.droptype, user.loc);
+		playsound(this, rt.rsc("sound/effects/pop.ogg"), 100, 1, 1);
+		yield* qdel(this);
 	}
-	return live(f.dot);
+	return f.dot;
 }, true);

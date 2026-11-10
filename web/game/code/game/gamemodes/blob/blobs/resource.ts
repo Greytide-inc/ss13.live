@@ -1,7 +1,7 @@
-// From code/game/gamemodes/blob/blobs/resource.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/gamemodes/blob/blobs/resource.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(12144, "/obj/structure/blob/resource", "/obj/structure/blob", {
@@ -15,31 +15,31 @@ rt.type(12144, "/obj/structure/blob/resource", "/obj/structure/blob", {
 	max_integrity: 60,
 });
 
-// /obj/structure/blob/resource/proc/scannerreport  (code/game/gamemodes/blob/blobs/resource.dm:12)
+// resource.dm:12
 rt.def("/obj/structure/blob/resource/proc/scannerreport", function scannerreport(f: Frame) {
 	return "Gradually supplies the blob with resources, increasing the rate of expansion.";
 });
 
-// /obj/structure/blob/resource/proc/Destroy  (code/game/gamemodes/blob/blobs/resource.dm:20)  may sleep
+// resource.dm:20
 rt.def("/obj/structure/blob/resource/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.sv(f, "overmind"))) {
-		(rt.modField(f, rt.sv(f, "overmind"), "resource_blobs", live(f.src), subtract));
+	if (this.overmind) {
+		this.overmind.resource_blobs -= this;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);
 
-// /obj/structure/blob/resource/proc/Be_Pulsed  (code/game/gamemodes/blob/blobs/resource.dm:24)  may sleep
+// resource.dm:24
 rt.def("/obj/structure/blob/resource/proc/Be_Pulsed", function* Be_Pulsed(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (rt.gt(rt.sv(f, "resource_delay"), rt.worldTime(f))) {
-		return live(f.dot);
+	f.dot = (yield* parent_proc());
+	if (this.resource_delay > rt.worldTime(f)) {
+		return f.dot;
 	}
-	yield* g.call(f, P("/proc/flick"), null, ["blob_resource_glow", live(f.src)]);
-	if (truthy(rt.sv(f, "overmind"))) {
-		yield* g.callName(f, rt.sv(f, "overmind"), "add_points", [1]);
-		rt.setSv(f, "resource_delay", add(add(rt.worldTime(f), 40), multiply(rt.getLen(f, rt.fv(f, "resource_blobs", rt.sv(f, "overmind"))), 2.5)));
+	flick("blob_resource_glow", this);
+	if (this.overmind) {
+		this.overmind.add_points(1);
+		this.resource_delay = rt.worldTime(f) + 40 + rt.len(f, this.overmind.resource_blobs) * 2.5;
 	} else {
-		rt.setSv(f, "resource_delay", add(rt.worldTime(f), 40));
+		this.resource_delay = rt.worldTime(f) + 40;
 	}
 	return f.dot;
 }, true);

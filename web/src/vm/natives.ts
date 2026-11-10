@@ -11,7 +11,7 @@ import { DMList, live } from "./objects.js";
 import { OverlayList } from "./appearances.js";
 import { DMType } from "./objtree.js";
 import { isRegex, regexFind, regexReplace } from "./natives-text.js";
-import { DMRuntimeError, NotImplementedError, formatNumberPrecision, fround, stringify, type Value } from "./value.js";
+import { DMRuntimeError, NotImplementedError, formatNumberPrecision, stringify, type Value } from "./value.js";
 
 const num = (v: Value, dflt: number): number => (typeof v === "number" ? v : dflt);
 
@@ -70,7 +70,7 @@ function text2num(t: Value): Value {
 	const m = /^\s*([+-]?)(?:0x([0-9a-f]+)|((?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?))/i.exec(t);
 	if (!m) return null;
 	const sign = m[1] === "-" ? -1 : 1;
-	return fround(sign * (m[2] !== undefined ? parseInt(m[2], 16) : parseFloat(m[3])));
+	return sign * (m[2] !== undefined ? parseInt(m[2], 16) : parseFloat(m[3]));
 }
 
 export function installNatives(vm: VM): void {
@@ -211,9 +211,9 @@ export function installNatives(vm: VM): void {
 	def("/proc/round", (_vm, args) => {
 		const a = num(args[0], 0);
 		// round(A): floor. round(A, B): nearest multiple of B (measured: round(-7, 5) = -5).
-		if (args.length < 2 || args[1] === null) return fround(Math.floor(a));
+		if (args.length < 2 || args[1] === null) return Math.floor(a);
 		const b = num(args[1], 0);
 		if (b === 0) return a; // unverified
-		return fround(Math.floor(a / b + 0.5) * b);
+		return Math.floor(a / b + 0.5) * b;
 	});
 }

@@ -1,752 +1,640 @@
-// From code/modules/admin/verbs/randomverbs.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/admin/verbs/randomverbs.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, g, truthy, fmt } = rt;
 
 
-// /client/proc/cmd_admin_drop_everything  (code/modules/admin/verbs/randomverbs.dm:4)  may sleep
+// randomverbs.dm:4
 rt.def("/client/proc/cmd_admin_drop_everything", function* cmd_admin_drop_everything(f: Frame, M: Value) {
 	let confirm: Value = null, W: Value = null, msg: Value = null;
-	let $e: any;
-	f.vars = () => [M, confirm, W, msg, $e];
-	if (!truthy(rt.sv(f, "holder"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "Only administrators may use this command."]);
-		return live(f.dot);
+	if (!this.holder) {
+		to_chat(this, "Only administrators may use this command.");
+		return f.dot;
 	}
-	if (!isEqual((confirm = (yield* g.call(f, P("/proc/alert"), null, [live(f.src), fmt("Make ＀ drop everything?", [live(M)]), "Message", "Yes", "No"]))), "Yes")) {
-		return live(f.dot);
+	if ((confirm = (yield* alert(this, `Make ${M} drop everything?`, "Message", "Yes", "No"))) != "Yes") {
+		return f.dot;
 	}
-	W = null;
-	rt.forList(f, 0, live(M), T("/obj/item"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		W = $e;
-		if (!truthy((yield* g.callName(f, live(M), "dropItemToGround", [live(W)])))) {
-			yield* g.call(f, P("/proc/qdel"), null, [live(W)]);
-			yield* g.callName(f, live(M), "regenerate_icons", []);
+	for (W of each(M, T("/obj/item"))) {
+		if (!(yield* M.dropItemToGround(W))) {
+			yield* qdel(W);
+			yield* M.regenerate_icons();
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/log_admin"), null, [fmt("＀ made ＀ drop everything!", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.usr)])), (yield* g.call(f, P("/proc/key_name"), null, [live(M)]))])]);
-	yield* g.call(f, P("/proc/message_admins"), null, [(msg = fmt("＀ made ＀ drop everything!", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.usr)])), (yield* g.call(f, P("/proc/key_name_admin"), null, [live(M)]))]))]);
-	yield* g.call(f, P("/proc/admin_ticket_log"), null, [live(M), live(msg)]);
+	log_admin(`${key_name(f.usr)} made ${key_name(M)} drop everything!`);
+	message_admins((msg = `${key_name_admin(f.usr)} made ${key_name_admin(M)} drop everything!`));
+	admin_ticket_log(M, msg);
 	return f.dot;
 }, true, { verb: { name: "Drop Everything", category: "" }, argTypes: [{ type: 8, path: "/mob", source: "?" }] });
 
-// /client/proc/cmd_admin_subtle_message  (code/modules/admin/verbs/randomverbs.dm:27)  may sleep
+// randomverbs.dm:27
 rt.def("/client/proc/cmd_admin_subtle_message", function* cmd_admin_subtle_message(f: Frame, M: Value) {
 	let msg: Value = null;
-	f.vars = () => [M, msg];
-	if (!truthy((yield* g.call(f, P("/proc/ismob"), null, [live(M)])))) {
-		return live(f.dot);
+	if (!ismob(M)) {
+		return f.dot;
 	}
-	if (!truthy(rt.sv(f, "holder"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "Only administrators may use this command."]);
-		return live(f.dot);
+	if (!this.holder) {
+		to_chat(this, "Only administrators may use this command.");
+		return f.dot;
 	}
-	yield* g.call(f, P("/proc/message_admins"), null, [fmt("＀ has started answering ＀'s prayer.", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.src)])), (yield* g.call(f, P("/proc/key_name"), null, [rt.fv(f, "key", live(M)), 0, 0]))])]);
-	if (!truthy((msg = (yield* g.op(f, "Prompt", [2], [null, null, fmt("Subtle PM to ＀", [rt.fv(f, "key", live(M))]), "Message:", null]))))) {
-		yield* g.call(f, P("/proc/message_admins"), null, [fmt("＀ decided not to answer ＀'s prayer", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.src)])), (yield* g.call(f, P("/proc/key_name"), null, [rt.fv(f, "key", live(M)), 0, 0]))])]);
-		return live(f.dot);
+	message_admins(`${key_name_admin(this)} has started answering ${key_name(M.key, 0, 0)}'s prayer.`);
+	if (!(msg = (yield* g.op(f, "Prompt", [2], [null, null, `Subtle PM to ${M.key}`, "Message:", null])))) {
+		message_admins(`${key_name_admin(this)} decided not to answer ${key_name(M.key, 0, 0)}'s prayer`);
+		return f.dot;
 	}
-	if (truthy(live(f.usr))) {
-		if (truthy(rt.fv(f, "client", live(f.usr)))) {
-			if (truthy(rt.gv(f, "holder", rt.fv(f, "client", live(f.usr))))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(M), fmt("<i>You hear a voice in your head... <b>＀</i></b>", [live(msg)])]);
+	if (f.usr) {
+		if (f.usr.client) {
+			if (f.usr.client.holder) {
+				to_chat(M, `<i>You hear a voice in your head... <b>${msg}</i></b>`);
 			}
 		}
 	}
-	yield* g.call(f, P("/proc/log_admin"), null, [fmt("SubtlePM: ＀ -> ＀ : ＀", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.usr)])), (yield* g.call(f, P("/proc/key_name"), null, [live(M)])), live(msg)])]);
-	yield* g.call(f, P("/proc/message_admins"), null, [(msg = fmt("<span class='adminnotice'><b> SubtleMessage: ＀ -> ＀ :</b> ＀</span>", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.usr)])), (yield* g.call(f, P("/proc/key_name_admin"), null, [live(M)])), live(msg)]))]);
-	yield* g.call(f, P("/proc/admin_ticket_log"), null, [live(M), live(msg)]);
+	log_admin(`SubtlePM: ${key_name(f.usr)} -> ${key_name(M)} : ${msg}`);
+	message_admins((msg = `<span class='adminnotice'><b> SubtleMessage: ${key_name_admin(f.usr)} -> ${key_name_admin(M)} :</b> ${msg}</span>`));
+	admin_ticket_log(M, msg);
 	return f.dot;
 }, true, { verb: { name: "Subtle Message", category: "Special Verbs" }, argTypes: [{ type: 8, path: "/mob", source: "?" }] });
 
-// /client/proc/cmd_admin_world_narrate  (code/modules/admin/verbs/randomverbs.dm:54)  may sleep
+// randomverbs.dm:54
 rt.def("/client/proc/cmd_admin_world_narrate", function* cmd_admin_world_narrate(f: Frame) {
 	let msg: Value = null;
-	f.vars = () => [msg];
-	if (!truthy(rt.sv(f, "holder"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "Only administrators may use this command."]);
-		return live(f.dot);
+	if (!this.holder) {
+		to_chat(this, "Only administrators may use this command.");
+		return f.dot;
 	}
-	if (!truthy((msg = (yield* g.op(f, "Prompt", [2], [null, null, "Enter the text you wish to appear to everyone:", "Message:", null]))))) {
-		return live(f.dot);
+	if (!(msg = (yield* g.op(f, "Prompt", [2], [null, null, "Enter the text you wish to appear to everyone:", "Message:", null])))) {
+		return f.dot;
 	}
-	yield* g.call(f, P("/proc/to_chat"), null, [rt.world(), fmt("＀", [live(msg)])]);
-	yield* g.call(f, P("/proc/log_admin"), null, [fmt("GlobalNarrate: ＀ : ＀", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.usr)])), live(msg)])]);
-	yield* g.call(f, P("/proc/message_admins"), null, [fmt("<span class='adminnotice'>＀ Sent a global narrate</span>", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.usr)]))])]);
+	to_chat(rt.world(), `${msg}`);
+	log_admin(`GlobalNarrate: ${key_name(f.usr)} : ${msg}`);
+	message_admins(`<span class='adminnotice'>${key_name_admin(f.usr)} Sent a global narrate</span>`);
 	return f.dot;
 }, true, { verb: { name: "Global Narrate", category: "Special Verbs" } });
 
-// /client/proc/cmd_admin_direct_narrate  (code/modules/admin/verbs/randomverbs.dm:71)  may sleep
+// randomverbs.dm:71
 rt.def("/client/proc/cmd_admin_direct_narrate", function* cmd_admin_direct_narrate(f: Frame, M: Value) {
 	let msg: Value = null;
-	f.vars = () => [M, msg];
-	if (!truthy(rt.sv(f, "holder"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "Only administrators may use this command."]);
-		return live(f.dot);
+	if (!this.holder) {
+		to_chat(this, "Only administrators may use this command.");
+		return f.dot;
 	}
-	if (!truthy(live(M))) {
-		M = (yield* g.op(f, "Prompt", [1], [null, null, "Active Players", "Direct narrate to whom?", rt.gl("player_list")]));
+	if (!M) {
+		M = (yield* g.op(f, "Prompt", [1], [null, null, "Active Players", "Direct narrate to whom?", GLOB.player_list]));
 	}
-	if (!truthy(live(M))) {
-		return live(f.dot);
+	if (!M) {
+		return f.dot;
 	}
-	if (!truthy((msg = (yield* g.op(f, "Prompt", [2], [null, null, "Enter the text you wish to appear to your target:", "Message:", null]))))) {
-		return live(f.dot);
+	if (!(msg = (yield* g.op(f, "Prompt", [2], [null, null, "Enter the text you wish to appear to your target:", "Message:", null])))) {
+		return f.dot;
 	}
-	yield* g.call(f, P("/proc/to_chat"), null, [live(M), live(msg)]);
-	yield* g.call(f, P("/proc/log_admin"), null, [fmt("DirectNarrate: ＀ to (＀/＀): ＀", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.usr)])), rt.fv(f, "name", live(M)), rt.fv(f, "key", live(M)), live(msg)])]);
-	yield* g.call(f, P("/proc/message_admins"), null, [(msg = fmt("<span class='adminnotice'><b> DirectNarrate: ＀ to (＀/＀):</b> ＀<BR></span>", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.usr)])), rt.fv(f, "name", live(M)), rt.fv(f, "key", live(M)), live(msg)]))]);
-	yield* g.call(f, P("/proc/admin_ticket_log"), null, [live(M), live(msg)]);
+	to_chat(M, msg);
+	log_admin(`DirectNarrate: ${key_name(f.usr)} to (${M.name}/${M.key}): ${msg}`);
+	message_admins((msg = `<span class='adminnotice'><b> DirectNarrate: ${key_name(f.usr)} to (${M.name}/${M.key}):</b> ${msg}<BR></span>`));
+	admin_ticket_log(M, msg);
 	return f.dot;
 }, true, { verb: { name: "Direct Narrate", category: "Special Verbs" }, argTypes: [{ type: 8, path: "/mob" }] });
 
-// /client/proc/cmd_admin_local_narrate  (code/modules/admin/verbs/randomverbs.dm:97)  may sleep
+// randomverbs.dm:97
 rt.def("/client/proc/cmd_admin_local_narrate", function* cmd_admin_local_narrate(f: Frame, A: Value) {
 	let range: Value = null, msg: Value = null, M: Value = null;
-	let $e: any;
-	f.vars = () => [A, range, msg, M, $e];
-	if (!truthy(rt.sv(f, "holder"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "Only administrators may use this command."]);
-		return live(f.dot);
+	if (!this.holder) {
+		to_chat(this, "Only administrators may use this command.");
+		return f.dot;
 	}
-	if (!truthy(live(A))) {
-		return live(f.dot);
+	if (!A) {
+		return f.dot;
 	}
-	if (!truthy((range = (yield* g.op(f, "Prompt", [32], [null, 7, "Narrate to mobs within how many tiles:", "Range:", null]))))) {
-		return live(f.dot);
+	if (!(range = (yield* g.op(f, "Prompt", [32], [null, 7, "Narrate to mobs within how many tiles:", "Range:", null])))) {
+		return f.dot;
 	}
-	if (!truthy((msg = (yield* g.op(f, "Prompt", [2], [null, null, "Enter the text you wish to appear to everyone within view:", "Message:", null]))))) {
-		return live(f.dot);
+	if (!(msg = (yield* g.op(f, "Prompt", [2], [null, null, "Enter the text you wish to appear to everyone within view:", "Message:", null])))) {
+		return f.dot;
 	}
-	M = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/view"), null, [live(range), live(A)])), T("/mob"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		yield* g.call(f, P("/proc/to_chat"), null, [live(M), live(msg)]);
+	for (M of each(view(range, A), T("/mob"))) {
+		to_chat(M, msg);
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/log_admin"), null, [fmt("LocalNarrate: ＀ at ＀＀: ＀", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.usr)])), (yield* g.call(f, P("/proc/get_area"), null, [live(A)])), fmt("(＀,＀,＀)", [rt.fv(f, "x", live(A)), rt.fv(f, "y", live(A)), rt.fv(f, "z", live(A))]), live(msg)])]);
-	yield* g.call(f, P("/proc/message_admins"), null, [fmt("<span class='adminnotice'><b> LocalNarrate: ＀ at ＀＀:</b> ＀<BR></span>", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.usr)])), (yield* g.call(f, P("/proc/get_area"), null, [live(A)])), fmt("(<a href='?_src_=holder;adminplayerobservecoodjump=1;X=＀;Y=＀;Z=＀'>JMP</a>)", [rt.fv(f, "x", live(A)), rt.fv(f, "y", live(A)), rt.fv(f, "z", live(A))]), live(msg)])]);
+	log_admin(`LocalNarrate: ${key_name(f.usr)} at ${get_area(A)}${`(${A.x},${A.y},${A.z})`}: ${msg}`);
+	message_admins(`<span class='adminnotice'><b> LocalNarrate: ${key_name_admin(f.usr)} at ${get_area(A)}${`(<a href='?_src_=holder;adminplayerobservecoodjump=1;X=${A.x};Y=${A.y};Z=${A.z}'>JMP</a>)`}:</b> ${msg}<BR></span>`);
 	return f.dot;
 }, true, { verb: { name: "Local Narrate", category: "Special Verbs" }, argTypes: [{ path: "/atom" }] });
 
-// /client/proc/cmd_admin_godmode  (code/modules/admin/verbs/randomverbs.dm:118)
+// randomverbs.dm:118
 rt.def("/client/proc/cmd_admin_godmode", function cmd_admin_godmode(f: Frame, M: Value) {
 	let msg: Value = null;
-	let $0: any, $1: any, $2: any;
-	f.vars = () => [msg, $0, $1, $2];
-	if (!truthy(rt.sv(f, "holder"))) {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.src), "Only administrators may use this command."]);
-		return live(f.dot);
+	if (!this.holder) {
+		to_chat(this, "Only administrators may use this command.");
+		return f.dot;
 	}
-	(rt.modField(f, live(M), "status_flags", 4096, rt.bitXor));
-	$0 = live(f.usr);
-	if (truthy(rt.bitAnd(rt.fv(f, "status_flags", live(M)), 4096))) {
-		$1 = "ON";
-	} else {
-		$1 = "OFF";
-	}
-	rt.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='adminnotice'>Toggled ＀</span>", [$1])]);
-	$0 = rt.call(f, P("/proc/key_name"), null, [live(f.usr)]);
-	$1 = rt.call(f, P("/proc/key_name"), null, [live(M)]);
-	if (truthy(rt.bitAnd(rt.fv(f, "status_flags", live(M)), 4096))) {
-		$2 = "On";
-	} else {
-		$2 = "Off";
-	}
-	rt.call(f, P("/proc/log_admin"), null, [fmt("＀ has toggled ＀'s nodamage to ＀", [$0, $1, $2])]);
-	$0 = rt.call(f, P("/proc/key_name_admin"), null, [live(f.usr)]);
-	$1 = rt.call(f, P("/proc/key_name_admin"), null, [live(M)]);
-	if (truthy(rt.bitAnd(rt.fv(f, "status_flags", live(M)), 4096))) {
-		$2 = "On";
-	} else {
-		$2 = "Off";
-	}
-	rt.call(f, P("/proc/message_admins"), null, [(msg = fmt("＀ has toggled ＀'s nodamage to ＀", [$0, $1, $2]))]);
-	rt.call(f, P("/proc/admin_ticket_log"), null, [live(M), live(msg)]);
+	(rt.modField(f, M, "status_flags", 4096, rt.bitXor));
+	let $0: any = f.usr;
+	to_chat($0, `<span class='adminnotice'>Toggled ${rt.bitAnd(M.status_flags, 4096) ? "ON" : "OFF"}</span>`);
+	log_admin(`${key_name(f.usr)} has toggled ${key_name(M)}'s nodamage to ${rt.bitAnd(M.status_flags, 4096) ? "On" : "Off"}`);
+	message_admins((msg = `${key_name_admin(f.usr)} has toggled ${key_name_admin(M)}'s nodamage to ${rt.bitAnd(M.status_flags, 4096) ? "On" : "Off"}`));
+	admin_ticket_log(M, msg);
 	return f.dot;
 }, false, { verb: { name: "Godmode", category: "Special Verbs" }, argTypes: [{ type: 8, path: "/mob", source: "?" }] });
 
-// /proc/cmd_admin_mute  (code/modules/admin/verbs/randomverbs.dm:132)
+// randomverbs.dm:132
 rt.def("/proc/cmd_admin_mute", function cmd_admin_mute(f: Frame, whom: Value, mute_type: Value, automute: Value) {
 	let muteunmute: Value = null, mute_string: Value = null, C: Value = null, _P: Value = null;
-	let $0: any;
-	f.vars = () => [automute, muteunmute, mute_string, C, _P, $0];
-	if (live(automute) === null) {
-		automute = 0;
+	automute ??= 0;
+	if (!whom) {
+		return f.dot;
 	}
-	if (!truthy(live(whom))) {
-		return live(f.dot);
-	}
-	muteunmute = null;
-	mute_string = null;
-	$0 = live(mute_type);
-	if ($0 === 1) {
+	if (mute_type === 1) {
 		mute_string = "IC (say and emote)";
-	} else if ($0 === 2) {
+	} else if (mute_type === 2) {
 		mute_string = "OOC";
-	} else if ($0 === 4) {
+	} else if (mute_type === 4) {
 		mute_string = "pray";
-	} else if ($0 === 8) {
+	} else if (mute_type === 8) {
 		mute_string = "adminhelp, admin PM and ASAY";
-	} else if ($0 === 16) {
+	} else if (mute_type === 16) {
 		mute_string = "deadchat and DSAY";
-	} else if ($0 === 31) {
+	} else if (mute_type === 31) {
 		mute_string = "everything";
 	} else {
-		return live(f.dot);
+		return f.dot;
 	}
-	C = null;
-	if (truthy((rt.istype(live(whom), T("/client")) ? 1 : 0))) {
-		C = live(whom);
+	if (rt.istype(whom, T("/client"))) {
+		C = whom;
+	} else if (istext(whom)) {
+		C = rt.index(GLOB.directory, whom);
 	} else {
-		if (truthy(rt.call(f, P("/proc/istext"), null, [live(whom)]))) {
-			C = rt.index(rt.gl("directory"), live(whom));
-		} else {
-			return live(f.dot);
-		}
+		return f.dot;
 	}
-	_P = null;
-	if (truthy(live(C))) {
-		_P = rt.fv(f, "prefs", live(C));
+	if (C) {
+		_P = C.prefs;
 	} else {
-		_P = rt.index(rt.gl("preferences_datums"), live(whom));
+		_P = rt.index(GLOB.preferences_datums, whom);
 	}
-	if (!truthy(live(_P))) {
-		return live(f.dot);
+	if (!_P) {
+		return f.dot;
 	}
-	if (truthy(live(automute))) {
-		if (!truthy(rt.fv(f, "automute_on", rt.gl("config")))) {
-			return live(f.dot);
+	if (automute) {
+		if (!GLOB.config.automute_on) {
+			return f.dot;
 		}
-	} else {
-		if (!truthy(rt.call(f, P("/proc/check_rights"), null, []))) {
-			return live(f.dot);
-		}
+	} else if (!check_rights()) {
+		return f.dot;
 	}
-	if (truthy(live(automute))) {
+	if (automute) {
 		muteunmute = "auto-muted";
-		(rt.modField(f, live(_P), "muted", live(mute_type), rt.bitOr));
-		rt.call(f, P("/proc/log_admin"), null, [fmt("SPAM AUTOMUTE: ＀ ＀ from ＀", [live(muteunmute), rt.call(f, P("/proc/key_name"), null, [live(whom)]), live(mute_string)])]);
-		rt.call(f, P("/proc/message_admins"), null, [fmt("SPAM AUTOMUTE: ＀ ＀ from ＀.", [live(muteunmute), rt.call(f, P("/proc/key_name_admin"), null, [live(whom)]), live(mute_string)])]);
-		if (truthy(live(C))) {
-			rt.call(f, P("/proc/to_chat"), null, [live(C), fmt("You have been ＀ from ＀ by the SPAM AUTOMUTE system. Contact an admin.", [live(muteunmute), live(mute_string)])]);
+		(rt.modField(f, _P, "muted", mute_type, rt.bitOr));
+		log_admin(`SPAM AUTOMUTE: ${muteunmute} ${key_name(whom)} from ${mute_string}`);
+		message_admins(`SPAM AUTOMUTE: ${muteunmute} ${key_name_admin(whom)} from ${mute_string}.`);
+		if (C) {
+			to_chat(C, `You have been ${muteunmute} from ${mute_string} by the SPAM AUTOMUTE system. Contact an admin.`);
 		}
-		return live(f.dot);
+		return f.dot;
 	}
-	if (truthy(rt.bitAnd(rt.fv(f, "muted", live(_P)), live(mute_type)))) {
+	if (rt.bitAnd(_P.muted, mute_type)) {
 		muteunmute = "unmuted";
-		(rt.modField(f, live(_P), "muted", rt.op(f, "BitNot", [], [live(mute_type)]), rt.bitAnd));
+		(rt.modField(f, _P, "muted", rt.op(f, "BitNot", [], [mute_type]), rt.bitAnd));
 	} else {
 		muteunmute = "muted";
-		(rt.modField(f, live(_P), "muted", live(mute_type), rt.bitOr));
+		(rt.modField(f, _P, "muted", mute_type, rt.bitOr));
 	}
-	rt.call(f, P("/proc/log_admin"), null, [fmt("＀ has ＀ ＀ from ＀", [rt.call(f, P("/proc/key_name"), null, [live(f.usr)]), live(muteunmute), rt.call(f, P("/proc/key_name"), null, [live(whom)]), live(mute_string)])]);
-	rt.call(f, P("/proc/message_admins"), null, [fmt("＀ has ＀ ＀ from ＀.", [rt.call(f, P("/proc/key_name_admin"), null, [live(f.usr)]), live(muteunmute), rt.call(f, P("/proc/key_name_admin"), null, [live(whom)]), live(mute_string)])]);
-	if (truthy(live(C))) {
-		rt.call(f, P("/proc/to_chat"), null, [live(C), fmt("You have been ＀ from ＀ by ＀.", [live(muteunmute), live(mute_string), rt.call(f, P("/proc/key_name"), null, [null, live(f.usr), "include_name", 0], rt.Args.Named)])]);
+	log_admin(`${key_name(f.usr)} has ${muteunmute} ${key_name(whom)} from ${mute_string}`);
+	message_admins(`${key_name_admin(f.usr)} has ${muteunmute} ${key_name_admin(whom)} from ${mute_string}.`);
+	if (C) {
+		to_chat(C, `You have been ${muteunmute} from ${mute_string} by ${key_name(f.usr, { include_name: 0 })}.`);
 	}
 	return f.dot;
 });
 
-// /proc/create_xeno  (code/modules/admin/verbs/randomverbs.dm:209)  may sleep
+// randomverbs.dm:209
 rt.def("/proc/create_xeno", function* create_xeno(f: Frame, ckey: Value) {
-	let candidates: Value = null, M: Value = null, alien_caste: Value = null, spawn_here: Value = null, new_xeno: Value = null, msg: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [ckey, candidates, M, alien_caste, spawn_here, new_xeno, msg, $0, $e];
-	if (!truthy(live(ckey))) {
-		candidates = rt.list();
-		M = null;
-		rt.forList(f, 0, rt.gl("player_list"), T("/mob"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			M = $e;
-			if (!isEqual(rt.fv(f, "stat", live(M)), 2)) {
+	let candidates: Value = null, M: Value = null, new_xeno: Value = null, msg: Value = null;
+	let $e: any;
+	if (!ckey) {
+		candidates = list();
+		for (M of each(GLOB.player_list, T("/mob"))) {
+			if (M.stat != 2) {
 				continue;
 			}
-			if (!truthy((rt.isIn(f, "xenomorph", rt.gv(f, "be_special", rt.gv(f, "prefs", rt.fv(f, "client", live(M))))) ? 1 : 0))) {
+			if (!rt.isIn(f, "xenomorph", M.client.prefs.be_special)) {
 				continue;
 			}
-			if (truthy((yield* g.callName(f, rt.fv(f, "client", live(M)), "is_afk", [])))) {
+			if (M.client.is_afk()) {
 				continue;
 			}
-			if (((truthy(rt.fv(f, "mind", live(M))) && truthy(rt.gv(f, "current", rt.fv(f, "mind", live(M))))) && !isEqual(rt.gv(f, "stat", rt.gv(f, "current", rt.fv(f, "mind", live(M)))), 2))) {
+			if (M.mind && M.mind.current && M.mind.current.stat != 2) {
 				continue;
 			}
-			candidates = rt.modify(live(candidates), rt.fv(f, "ckey", live(M)), add);
+			candidates += M.ckey;
 		}
-		rt.endFor(f, 0);
-		if (truthy(rt.len(f, live(candidates)))) {
-			ckey = (yield* g.op(f, "Prompt", [1], [null, null, "Suitable Candidates", "Pick the player you want to respawn as a xeno.", live(candidates)]));
+		if (rt.len(f, candidates)) {
+			ckey = (yield* g.op(f, "Prompt", [1], [null, null, "Suitable Candidates", "Pick the player you want to respawn as a xeno.", candidates]));
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), "<font color='red'>Error: create_xeno(): no suitable candidates.</font>"]);
+			to_chat(f.usr, "<font color='red'>Error: create_xeno(): no suitable candidates.</font>");
 		}
 	}
-	if (!truthy((yield* g.call(f, P("/proc/istext"), null, [live(ckey)])))) {
+	if (!istext(ckey)) {
 		return 0;
 	}
-	alien_caste = (yield* g.op(f, "Prompt", [1], [null, "Pick a caste", "Please choose which caste to spawn.", live(f.usr), rt.list("Queen", "Praetorian", "Hunter", "Sentinel", "Drone", "Larva")]));
-	if (truthy(rt.len(f, rt.gl("xeno_spawn")))) {
-		$0 = rt.op(f, "PickUnweighted", [1], [rt.gl("xeno_spawn")]);
-	} else {
-		$0 = null;
-	}
-	spawn_here = $0;
-	new_xeno = null;
-	$0 = live(alien_caste);
-	if ($0 === "Queen") {
-		new_xeno = (yield* g.new_(f, T("/mob/living/carbon/alien/humanoid/royal/queen"), [live(spawn_here)]));
-	} else if ($0 === "Praetorian") {
-		new_xeno = (yield* g.new_(f, T("/mob/living/carbon/alien/humanoid/royal/praetorian"), [live(spawn_here)]));
-	} else if ($0 === "Hunter") {
-		new_xeno = (yield* g.new_(f, T("/mob/living/carbon/alien/humanoid/hunter"), [live(spawn_here)]));
-	} else if ($0 === "Sentinel") {
-		new_xeno = (yield* g.new_(f, T("/mob/living/carbon/alien/humanoid/sentinel"), [live(spawn_here)]));
-	} else if ($0 === "Drone") {
-		new_xeno = (yield* g.new_(f, T("/mob/living/carbon/alien/humanoid/drone"), [live(spawn_here)]));
-	} else if ($0 === "Larva") {
-		new_xeno = (yield* g.new_(f, T("/mob/living/carbon/alien/larva"), [live(spawn_here)]));
+	let alien_caste: Value = (yield* g.op(f, "Prompt", [1], [null, "Pick a caste", "Please choose which caste to spawn.", f.usr, list("Queen", "Praetorian", "Hunter", "Sentinel", "Drone", "Larva")]));
+	let spawn_here: Value = rt.len(f, GLOB.xeno_spawn) ? pick(GLOB.xeno_spawn) : null;
+	if (alien_caste === "Queen") {
+		new_xeno = (yield* new_(T("/mob/living/carbon/alien/humanoid/royal/queen"), spawn_here));
+	} else if (alien_caste === "Praetorian") {
+		new_xeno = (yield* new_(T("/mob/living/carbon/alien/humanoid/royal/praetorian"), spawn_here));
+	} else if (alien_caste === "Hunter") {
+		new_xeno = (yield* new_(T("/mob/living/carbon/alien/humanoid/hunter"), spawn_here));
+	} else if (alien_caste === "Sentinel") {
+		new_xeno = (yield* new_(T("/mob/living/carbon/alien/humanoid/sentinel"), spawn_here));
+	} else if (alien_caste === "Drone") {
+		new_xeno = (yield* new_(T("/mob/living/carbon/alien/humanoid/drone"), spawn_here));
+	} else if (alien_caste === "Larva") {
+		new_xeno = (yield* new_(T("/mob/living/carbon/alien/larva"), spawn_here));
 	} else {
 		return 0;
 	}
-	if (!truthy(live(spawn_here))) {
-		yield* g.callName(f, rt.gl("SSjob"), "SendToLateJoin", [live(new_xeno), 0]);
+	if (!spawn_here) {
+		yield* GLOB.SSjob.SendToLateJoin(new_xeno, 0);
 	}
-	rt.setFv(f, "ckey", live(new_xeno), live(ckey));
-	yield* g.call(f, P("/proc/message_admins"), null, [(msg = fmt("<span class='notice'>＀ has spawned ＀ as a filthy xeno ＀.</span>", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.usr)])), live(ckey), live(alien_caste)]))]);
-	yield* g.call(f, P("/proc/admin_ticket_log"), null, [live(new_xeno), live(msg)]);
+	new_xeno.ckey = ckey;
+	message_admins((msg = `<span class='notice'>${key_name_admin(f.usr)} has spawned ${ckey} as a filthy xeno ${alien_caste}.</span>`));
+	admin_ticket_log(new_xeno, msg);
 	return 1;
 }, true);
 
-// /client/proc/respawn_character  (code/modules/admin/verbs/randomverbs.dm:264)  may sleep
+// randomverbs.dm:264
 rt.def("/client/proc/respawn_character", function* respawn_character(f: Frame) {
-	let input: Value = null, G_found: Value = null, G: Value = null, _T: Value = null, new_xeno: Value = null, msg: Value = null, new_monkey: Value = null, msg_3: Value = null, new_character: Value = null, record_found: Value = null, id: Value = null, A: Value = null, admin: Value = null, player_key: Value = null, traitordatum: Value = null, synd_spawn: Value = null, ninja_spawn: Value = null, L: Value = null, ninjadatum: Value = null, ninja_spawn_here: Value = null, msg_7: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [input, G_found, G, _T, new_xeno, msg, new_monkey, msg_3, new_character, record_found, id, A, admin, player_key, traitordatum, synd_spawn, ninja_spawn, L, ninjadatum, ninja_spawn_here, msg_7, $0, $e];
-	if (!truthy(rt.sv(f, "holder"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "Only administrators may use this command."]);
-		return live(f.dot);
+	let input: Value = null, G_found: Value = null, G: Value = null, _T: Value = null, new_xeno: Value = null, msg: Value = null, new_monkey: Value = null, msg_3: Value = null, record_found: Value = null, id: Value = null, A: Value = null, traitordatum: Value = null, synd_spawn: Value = null, ninja_spawn: Value = null, L: Value = null, ninjadatum: Value = null, ninja_spawn_here: Value = null, msg_7: Value = null;
+	let $e: any;
+	if (!this.holder) {
+		to_chat(this, "Only administrators may use this command.");
+		return f.dot;
 	}
-	if (!truthy((input = (yield* g.call(f, P("/proc/ckey"), null, [(yield* g.op(f, "Prompt", [2], ["", "Key", "Please specify which key will be respawned.", live(f.src), null]))]))))) {
-		return live(f.dot);
+	if (!(input = ckey((yield* g.op(f, "Prompt", [2], ["", "Key", "Please specify which key will be respawned.", this, null]))))) {
+		return f.dot;
 	}
-	G_found = null;
-	G = null;
-	rt.forList(f, 0, rt.gl("player_list"), T("/mob/dead/observer"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		G = $e;
-		if (isEqual(rt.fv(f, "ckey", live(G)), live(input))) {
-			G_found = live(G);
+	for (G of each(GLOB.player_list, T("/mob/dead/observer"))) {
+		if (G.ckey == input) {
+			G_found = G;
 			break;
 		}
 	}
-	rt.endFor(f, 0);
-	if (!truthy(live(G_found))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), "<font color='red'>There is no active key like that in the game or the person is not currently a ghost.</font>"]);
-		return live(f.dot);
+	if (!G_found) {
+		to_chat(f.usr, "<font color='red'>There is no active key like that in the game or the person is not currently a ghost.</font>");
+		return f.dot;
 	}
-	if ((truthy(rt.fv(f, "mind", live(G_found))) && !truthy(rt.gv(f, "active", rt.fv(f, "mind", live(G_found)))))) {
-		if (isEqual(rt.gv(f, "assigned_role", rt.fv(f, "mind", live(G_found))), "Alien")) {
-			if (isEqual((yield* g.call(f, P("/proc/alert"), null, ["This character appears to have been an alien. Would you like to respawn them as such?", null, "Yes", "No"])), "Yes")) {
-				_T = null;
-				if (truthy(rt.len(f, rt.gl("xeno_spawn")))) {
-					_T = rt.op(f, "PickUnweighted", [1], [rt.gl("xeno_spawn")]);
+	if (G_found.mind && !G_found.mind.active) {
+		if (G_found.mind.assigned_role == "Alien") {
+			if ((yield* alert("This character appears to have been an alien. Would you like to respawn them as such?", null, "Yes", "No")) == "Yes") {
+				if (rt.len(f, GLOB.xeno_spawn)) {
+					_T = pick(GLOB.xeno_spawn);
 				}
-				new_xeno = null;
-				$0 = rt.gv(f, "special_role", rt.fv(f, "mind", live(G_found)));
-				if ($0 === "Hunter") {
-					new_xeno = (yield* g.new_(f, T("/mob/living/carbon/alien/humanoid/hunter"), [live(_T)]));
-				} else if ($0 === "Sentinel") {
-					new_xeno = (yield* g.new_(f, T("/mob/living/carbon/alien/humanoid/sentinel"), [live(_T)]));
-				} else if ($0 === "Drone") {
-					new_xeno = (yield* g.new_(f, T("/mob/living/carbon/alien/humanoid/drone"), [live(_T)]));
-				} else if ($0 === "Praetorian") {
-					new_xeno = (yield* g.new_(f, T("/mob/living/carbon/alien/humanoid/royal/praetorian"), [live(_T)]));
-				} else if ($0 === "Queen") {
-					new_xeno = (yield* g.new_(f, T("/mob/living/carbon/alien/humanoid/royal/queen"), [live(_T)]));
+				if (G_found.mind.special_role === "Hunter") {
+					new_xeno = (yield* new_(T("/mob/living/carbon/alien/humanoid/hunter"), _T));
+				} else if (G_found.mind.special_role === "Sentinel") {
+					new_xeno = (yield* new_(T("/mob/living/carbon/alien/humanoid/sentinel"), _T));
+				} else if (G_found.mind.special_role === "Drone") {
+					new_xeno = (yield* new_(T("/mob/living/carbon/alien/humanoid/drone"), _T));
+				} else if (G_found.mind.special_role === "Praetorian") {
+					new_xeno = (yield* new_(T("/mob/living/carbon/alien/humanoid/royal/praetorian"), _T));
+				} else if (G_found.mind.special_role === "Queen") {
+					new_xeno = (yield* new_(T("/mob/living/carbon/alien/humanoid/royal/queen"), _T));
 				} else {
-					yield* g.call(f, P("/proc/create_xeno"), null, [rt.fv(f, "ckey", live(G_found))]);
-					return live(f.dot);
+					yield* create_xeno(G_found.ckey);
+					return f.dot;
 				}
-				if (!truthy(live(_T))) {
-					yield* g.callName(f, rt.gl("SSjob"), "SendToLateJoin", [live(new_xeno), 0]);
+				if (!_T) {
+					yield* GLOB.SSjob.SendToLateJoin(new_xeno, 0);
 				}
-				yield* g.callName(f, rt.fv(f, "mind", live(G_found)), "transfer_to", [live(new_xeno)]);
-				rt.setFv(f, "key", live(new_xeno), rt.fv(f, "key", live(G_found)));
-				yield* g.call(f, P("/proc/to_chat"), null, [live(new_xeno), "You have been fully respawned. Enjoy the game."]);
-				yield* g.call(f, P("/proc/message_admins"), null, [(msg = fmt("<span class='adminnotice'>＀ has respawned ＀ as a filthy xeno.</span>", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.usr)])), rt.fv(f, "key", live(new_xeno))]))]);
-				yield* g.call(f, P("/proc/admin_ticket_log"), null, [live(new_xeno), live(msg)]);
-				return live(f.dot);
+				yield* G_found.mind.transfer_to(new_xeno);
+				new_xeno.key = G_found.key;
+				to_chat(new_xeno, "You have been fully respawned. Enjoy the game.");
+				message_admins((msg = `<span class='adminnotice'>${key_name_admin(f.usr)} has respawned ${new_xeno.key} as a filthy xeno.</span>`));
+				admin_ticket_log(new_xeno, msg);
+				return f.dot;
 			}
-		} else {
-			if (truthy((yield* g.call(f, P("/proc/findtext"), null, [rt.fv(f, "real_name", live(G_found)), "monkey"])))) {
-				if (isEqual((yield* g.call(f, P("/proc/alert"), null, ["This character appears to have been a monkey. Would you like to respawn them as such?", null, "Yes", "No"])), "Yes")) {
-					new_monkey = (yield* g.new_(f, T("/mob/living/carbon/monkey"), []));
-					yield* g.callName(f, rt.gl("SSjob"), "SendToLateJoin", [live(new_monkey)]);
-					yield* g.callName(f, rt.fv(f, "mind", live(G_found)), "transfer_to", [live(new_monkey)]);
-					rt.setFv(f, "key", live(new_monkey), rt.fv(f, "key", live(G_found)));
-					yield* g.call(f, P("/proc/to_chat"), null, [live(new_monkey), "You have been fully respawned. Enjoy the game."]);
-					yield* g.call(f, P("/proc/message_admins"), null, [(msg_3 = fmt("<span class='adminnotice'>＀ has respawned ＀ as a filthy xeno.</span>", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.usr)])), rt.fv(f, "key", live(new_monkey))]))]);
-					yield* g.call(f, P("/proc/admin_ticket_log"), null, [live(new_monkey), live(msg_3)]);
-					return live(f.dot);
-				}
+		} else if (findtext(G_found.real_name, "monkey")) {
+			if ((yield* alert("This character appears to have been a monkey. Would you like to respawn them as such?", null, "Yes", "No")) == "Yes") {
+				new_monkey = (yield* new_(T("/mob/living/carbon/monkey")));
+				yield* GLOB.SSjob.SendToLateJoin(new_monkey);
+				yield* G_found.mind.transfer_to(new_monkey);
+				new_monkey.key = G_found.key;
+				to_chat(new_monkey, "You have been fully respawned. Enjoy the game.");
+				message_admins((msg_3 = `<span class='adminnotice'>${key_name_admin(f.usr)} has respawned ${new_monkey.key} as a filthy xeno.</span>`));
+				admin_ticket_log(new_monkey, msg_3);
+				return f.dot;
 			}
 		}
 	}
-	new_character = (yield* g.new_(f, T("/mob/living/carbon/human"), []));
-	yield* g.callName(f, rt.gl("SSjob"), "SendToLateJoin", [live(new_character)]);
-	record_found = null;
-	if ((truthy(rt.fv(f, "mind", live(G_found))) && !truthy(rt.gv(f, "active", rt.fv(f, "mind", live(G_found)))))) {
-		id = (yield* g.call(f, P("/proc/md5"), null, [fmt("＀＀", [rt.fv(f, "real_name", live(G_found)), rt.gv(f, "assigned_role", rt.fv(f, "mind", live(G_found)))])]));
-		record_found = (yield* g.call(f, P("/proc/find_record"), null, ["id", live(id), rt.fv(f, "locked", rt.gl("data_core"))]));
+	let new_character: Value = (yield* new_(T("/mob/living/carbon/human")));
+	yield* GLOB.SSjob.SendToLateJoin(new_character);
+	if (G_found.mind && !G_found.mind.active) {
+		id = md5(`${G_found.real_name}${G_found.mind.assigned_role}`);
+		record_found = find_record("id", id, GLOB.data_core.locked);
 	}
-	if (truthy(live(record_found))) {
-		rt.setFv(f, "real_name", live(new_character), rt.index(rt.fv(f, "fields", live(record_found)), "name"));
-		rt.setFv(f, "gender", live(new_character), rt.index(rt.fv(f, "fields", live(record_found)), "sex"));
-		rt.setFv(f, "age", live(new_character), rt.index(rt.fv(f, "fields", live(record_found)), "age"));
-		yield* g.callName(f, live(new_character), "hardset_dna", [rt.index(rt.fv(f, "fields", live(record_found)), "identity"), rt.index(rt.fv(f, "fields", live(record_found)), "enzymes"), rt.index(rt.fv(f, "fields", live(record_found)), "name"), rt.index(rt.fv(f, "fields", live(record_found)), "blood_type"), rt.index(rt.fv(f, "fields", live(record_found)), "species"), rt.index(rt.fv(f, "fields", live(record_found)), "features")]);
+	if (record_found) {
+		new_character.real_name = rt.index(record_found.fields, "name");
+		new_character.gender = rt.index(record_found.fields, "sex");
+		new_character.age = rt.index(record_found.fields, "age");
+		yield* new_character.hardset_dna(rt.index(record_found.fields, "identity"), rt.index(record_found.fields, "enzymes"), rt.index(record_found.fields, "name"), rt.index(record_found.fields, "blood_type"), rt.index(record_found.fields, "species"), rt.index(record_found.fields, "features"));
 	} else {
-		yield* g.callName(f, (A = (yield* g.new_(f, T("/datum/preferences"), []))), "copy_to", [live(new_character)]);
-		rt.setFv(f, "real_name", live(A), rt.fv(f, "real_name", live(G_found)));
-		yield* g.callName(f, rt.fv(f, "dna", live(new_character)), "update_dna_identity", []);
+		yield* (A = (yield* new_(T("/datum/preferences")))).copy_to(new_character);
+		A.real_name = G_found.real_name;
+		yield* new_character.dna.update_dna_identity();
 	}
-	rt.setFv(f, "name", live(new_character), rt.fv(f, "real_name", live(new_character)));
-	if ((truthy(rt.fv(f, "mind", live(G_found))) && !truthy(rt.gv(f, "active", rt.fv(f, "mind", live(G_found)))))) {
-		yield* g.callName(f, rt.fv(f, "mind", live(G_found)), "transfer_to", [live(new_character)]);
+	new_character.name = new_character.real_name;
+	if (G_found.mind && !G_found.mind.active) {
+		yield* G_found.mind.transfer_to(new_character);
 	} else {
-		yield* g.callName(f, live(new_character), "mind_initialize", []);
+		new_character.mind_initialize();
 	}
-	if (!truthy(rt.gv(f, "assigned_role", rt.fv(f, "mind", live(new_character))))) {
-		rt.setFv(f, "assigned_role", rt.fv(f, "mind", live(new_character)), "Assistant");
+	if (!new_character.mind.assigned_role) {
+		new_character.mind.assigned_role = "Assistant";
 	}
-	rt.setFv(f, "key", live(new_character), rt.fv(f, "key", live(G_found)));
-	admin = (yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.src)]));
-	player_key = rt.fv(f, "key", live(G_found));
-	if (truthy((traitordatum = (yield* g.callName(f, rt.fv(f, "mind", live(new_character)), "has_antag_datum", [T("/datum/antagonist/traitor")]))))) {
-		yield* g.callName(f, rt.gl("SSjob"), "EquipRank", [live(new_character), rt.gv(f, "assigned_role", rt.fv(f, "mind", live(new_character))), 1]);
-		yield* g.callName(f, live(traitordatum), "equip", []);
+	new_character.key = G_found.key;
+	let admin: Value = key_name_admin(this);
+	let player_key: Value = G_found.key;
+	if (traitordatum = new_character.mind.has_antag_datum(T("/datum/antagonist/traitor"))) {
+		yield* GLOB.SSjob.EquipRank(new_character, new_character.mind.assigned_role, 1);
+		yield* traitordatum.equip();
 	}
-	$0 = rt.gv(f, "special_role", rt.fv(f, "mind", live(new_character)));
-	if ($0 === "Wizard") {
-		rt.setFv(f, "loc", live(new_character), rt.op(f, "PickUnweighted", [1], [rt.gl("wizardstart")]));
-		yield* g.callName(f, rt.fv(f, "mode", rt.gl("SSticker")), "equip_wizard", [live(new_character)]);
-	} else if ($0 === "Syndicate") {
-		if (truthy((synd_spawn = rt.locateIn(f, "landmark*Syndicate-Spawn", rt.world())))) {
-			rt.setFv(f, "loc", live(new_character), rt.getStep(f, live(synd_spawn), 0));
+	if (new_character.mind.special_role === "Wizard") {
+		new_character.loc = pick(GLOB.wizardstart);
+		yield* GLOB.SSticker.mode.equip_wizard(new_character);
+	} else if (new_character.mind.special_role === "Syndicate") {
+		if (synd_spawn = rt.locateIn(f, "landmark*Syndicate-Spawn", rt.world())) {
+			new_character.loc = rt.getStep(f, synd_spawn, 0);
 		}
-		yield* g.callDyn(f, P("/datum/game_mode/proc/equip_syndicate"), undefined, [live(new_character)]);
-	} else if ($0 === "Space Ninja") {
-		ninja_spawn = rt.list();
-		L = null;
-		rt.forList(f, 0, rt.gl("landmarks_list"), T("/obj/effect/landmark"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			L = $e;
-			if (isEqual(rt.fv(f, "name", live(L)), "carpspawn")) {
-				ninja_spawn = rt.modify(live(ninja_spawn), live(L), add);
+		yield* g.callDyn(f, P("/datum/game_mode/proc/equip_syndicate"), undefined, [new_character]);
+	} else if (new_character.mind.special_role === "Space Ninja") {
+		ninja_spawn = list();
+		for (L of each(GLOB.landmarks_list, T("/obj/effect/landmark"))) {
+			if (L.name == "carpspawn") {
+				ninja_spawn += L;
 			}
 		}
-		rt.endFor(f, 0);
-		yield* g.callName(f, (ninjadatum = (yield* g.callName(f, rt.fv(f, "mind", live(new_character)), "has_antag_datum", [T("/datum/antagonist/ninja")]))), "equip_space_ninja", []);
-		if (truthy(rt.len(f, live(ninja_spawn)))) {
-			ninja_spawn_here = rt.op(f, "PickUnweighted", [1], [live(ninja_spawn)]);
-			rt.setFv(f, "loc", live(new_character), rt.fv(f, "loc", live(ninja_spawn_here)));
+		yield* (ninjadatum = new_character.mind.has_antag_datum(T("/datum/antagonist/ninja"))).equip_space_ninja();
+		if (rt.len(f, ninja_spawn)) {
+			ninja_spawn_here = pick(ninja_spawn);
+			new_character.loc = ninja_spawn_here.loc;
 		}
+	} else if (new_character.mind.assigned_role === "Cyborg") {
+		new_character = (yield* new_character.Robotize());
+	} else if (new_character.mind.assigned_role === "AI") {
+		new_character = (yield* new_character.AIize());
 	} else {
-		$0 = rt.gv(f, "assigned_role", rt.fv(f, "mind", live(new_character)));
-		if ($0 === "Cyborg") {
-			new_character = (yield* g.callName(f, live(new_character), "Robotize", []));
-		} else if ($0 === "AI") {
-			new_character = (yield* g.callName(f, live(new_character), "AIize", []));
-		} else {
-			yield* g.callName(f, rt.gl("SSjob"), "EquipRank", [live(new_character), rt.gv(f, "assigned_role", rt.fv(f, "mind", live(new_character))), 1]);
-		}
+		yield* GLOB.SSjob.EquipRank(new_character, new_character.mind.assigned_role, 1);
 	}
-	if (!truthy((rt.istype(live(new_character), T("/mob/living/silicon")) ? 1 : 0))) {
-		if ((!truthy(live(record_found)) && !isEqual(rt.gv(f, "assigned_role", rt.fv(f, "mind", live(new_character))), rt.gv(f, "special_role", rt.fv(f, "mind", live(new_character)))))) {
-			if (isEqual((yield* g.call(f, P("/proc/alert"), null, [live(new_character), "Warning: No data core entry detected. Would you like to announce the arrival of this character by adding them to various databases, such as medical records?", null, "No", "Yes"])), "Yes")) {
-				yield* g.callName(f, rt.gl("data_core"), "manifest_inject", [live(new_character)]);
+	if (!rt.istype(new_character, T("/mob/living/silicon"))) {
+		if (!record_found && new_character.mind.assigned_role != new_character.mind.special_role) {
+			if ((yield* alert(new_character, "Warning: No data core entry detected. Would you like to announce the arrival of this character by adding them to various databases, such as medical records?", null, "No", "Yes")) == "Yes") {
+				yield* GLOB.data_core.manifest_inject(new_character);
 			}
-			if (isEqual((yield* g.call(f, P("/proc/alert"), null, [live(new_character), "Would you like an active AI to announce this character?", null, "No", "Yes"])), "Yes")) {
-				yield* g.call(f, P("/proc/AnnounceArrival"), null, [live(new_character), rt.gv(f, "assigned_role", rt.fv(f, "mind", live(new_character)))]);
+			if ((yield* alert(new_character, "Would you like an active AI to announce this character?", null, "No", "Yes")) == "Yes") {
+				yield* AnnounceArrival(new_character, new_character.mind.assigned_role);
 			}
 		}
 	}
-	yield* g.call(f, P("/proc/message_admins"), null, [(msg_7 = fmt("<span class='adminnotice'>＀ has respawned ＀ as ＀.</span>", [live(admin), live(player_key), rt.fv(f, "real_name", live(new_character))]))]);
-	yield* g.call(f, P("/proc/admin_ticket_log"), null, [live(new_character), live(msg_7)]);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(new_character), "You have been fully respawned. Enjoy the game."]);
-	return live(new_character);
+	message_admins((msg_7 = `<span class='adminnotice'>${admin} has respawned ${player_key} as ${new_character.real_name}.</span>`));
+	admin_ticket_log(new_character, msg_7);
+	to_chat(new_character, "You have been fully respawned. Enjoy the game.");
+	return new_character;
 }, true, { verb: { name: "Respawn Character", category: "Special Verbs", desc: "Respawn a person that has been gibbed/dusted/killed. They must be a ghost for this to work and preferably should not have a body to go back into." } });
 
-// /client/proc/cmd_admin_add_freeform_ai_law  (code/modules/admin/verbs/randomverbs.dm:434)  may sleep
+// randomverbs.dm:434
 rt.def("/client/proc/cmd_admin_add_freeform_ai_law", function* cmd_admin_add_freeform_ai_law(f: Frame) {
-	let input: Value = null, show_log: Value = null, announce_ion_laws: Value = null, ion: Value = null;
-	let $0: any;
-	f.vars = () => [input, show_log, announce_ion_laws, ion, $0];
-	if (!truthy(rt.sv(f, "holder"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "Only administrators may use this command."]);
-		return live(f.dot);
+	let input: Value = null, ion: Value = null;
+	if (!this.holder) {
+		to_chat(this, "Only administrators may use this command.");
+		return f.dot;
 	}
-	if (!truthy((input = (yield* g.op(f, "Prompt", [3], ["", "What?", "Please enter anything you want the AI to do. Anything. Serious.", live(f.usr), null]))))) {
-		return live(f.dot);
+	if (!(input = (yield* g.op(f, "Prompt", [3], ["", "What?", "Please enter anything you want the AI to do. Anything. Serious.", f.usr, null])))) {
+		return f.dot;
 	}
-	yield* g.call(f, P("/proc/log_admin"), null, [fmt("Admin ＀ has added a new AI law - ＀", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.usr)])), live(input)])]);
-	yield* g.call(f, P("/proc/message_admins"), null, [fmt("Admin ＀ has added a new AI law - ＀", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.usr)])), live(input)])]);
-	show_log = (yield* g.call(f, P("/proc/alert"), null, [live(f.src), "Show ion message?", "Message", "Yes", "No"]));
-	if (isEqual(live(show_log), "Yes")) {
-		$0 = 1;
-	} else {
-		$0 = -1;
-	}
-	announce_ion_laws = $0;
-	rt.setFv(f, "announceEvent", (ion = (yield* g.new_(f, T("/datum/round_event/ion_storm/add_law_only"), []))), live(announce_ion_laws));
-	rt.setFv(f, "ionMessage", live(ion), live(input));
+	log_admin(`Admin ${key_name(f.usr)} has added a new AI law - ${input}`);
+	message_admins(`Admin ${key_name_admin(f.usr)} has added a new AI law - ${input}`);
+	let show_log: Value = (yield* alert(this, "Show ion message?", "Message", "Yes", "No"));
+	let announce_ion_laws: Value = show_log == "Yes" ? 1 : -1;
+	(ion = (yield* new_(T("/datum/round_event/ion_storm/add_law_only")))).announceEvent = announce_ion_laws;
+	ion.ionMessage = input;
 	return f.dot;
 }, true, { verb: { name: "Add Custom AI law", category: "Fun" } });
 
-// /client/proc/cmd_admin_rejuvenate  (code/modules/admin/verbs/randomverbs.dm:456)  may sleep
+// randomverbs.dm:456
 rt.def("/client/proc/cmd_admin_rejuvenate", function* cmd_admin_rejuvenate(f: Frame, M: Value) {
 	let msg: Value = null;
-	f.vars = () => [M, msg];
-	if (!truthy(rt.sv(f, "holder"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "Only administrators may use this command."]);
-		return live(f.dot);
+	if (!this.holder) {
+		to_chat(this, "Only administrators may use this command.");
+		return f.dot;
 	}
-	if (!truthy(rt.sv(f, "mob"))) {
-		return live(f.dot);
+	if (!this.mob) {
+		return f.dot;
 	}
-	if (!truthy((rt.istype(live(M), T("/mob/living")) ? 1 : 0))) {
-		yield* g.call(f, P("/proc/alert"), null, ["Cannot revive a ghost"]);
-		return live(f.dot);
+	if (!rt.istype(M, T("/mob/living"))) {
+		yield* alert("Cannot revive a ghost");
+		return f.dot;
 	}
-	yield* g.callName(f, live(M), "revive", ["full_heal", 1, "admin_revive", 1], rt.Args.Named);
-	yield* g.call(f, P("/proc/log_admin"), null, [fmt("＀ healed / revived ＀", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.usr)])), (yield* g.call(f, P("/proc/key_name"), null, [live(M)]))])]);
-	yield* g.call(f, P("/proc/message_admins"), null, [(msg = fmt("<span class='danger'>Admin ＀ healed / revived ＀!</span>", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.usr)])), (yield* g.call(f, P("/proc/key_name_admin"), null, [live(M)]))]))]);
-	yield* g.call(f, P("/proc/admin_ticket_log"), null, [live(M), live(msg)]);
+	yield* M.revive({ full_heal: 1, admin_revive: 1 });
+	log_admin(`${key_name(f.usr)} healed / revived ${key_name(M)}`);
+	message_admins((msg = `<span class='danger'>Admin ${key_name_admin(f.usr)} healed / revived ${key_name_admin(M)}!</span>`));
+	admin_ticket_log(M, msg);
 	return f.dot;
 }, true, { verb: { name: "Rejuvenate", category: "Special Verbs" }, argTypes: [{ type: 8, path: "/mob/living", source: "?" }] });
 
-// /client/proc/cmd_admin_create_centcom_report  (code/modules/admin/verbs/randomverbs.dm:475)  may sleep
+// randomverbs.dm:475
 rt.def("/client/proc/cmd_admin_create_centcom_report", function* cmd_admin_create_centcom_report(f: Frame) {
-	let input: Value = null, confirm: Value = null, announce_command_report: Value = null;
-	let $0: any, $1: any;
-	f.vars = () => [input, confirm, announce_command_report, $0, $1];
-	if (!truthy(rt.sv(f, "holder"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "Only administrators may use this command."]);
-		return live(f.dot);
+	let input: Value = null;
+	let $1: any;
+	if (!this.holder) {
+		to_chat(this, "Only administrators may use this command.");
+		return f.dot;
 	}
-	if (!truthy((input = (yield* g.op(f, "Prompt", [65], ["", "What?", "Please enter anything you want. Anything. Serious.", live(f.usr), null]))))) {
-		return live(f.dot);
+	if (!(input = (yield* g.op(f, "Prompt", [65], ["", "What?", "Please enter anything you want. Anything. Serious.", f.usr, null])))) {
+		return f.dot;
 	}
-	confirm = (yield* g.call(f, P("/proc/alert"), null, [live(f.src), "Do you want to announce the contents of the report to the crew?", "Announce", "Yes", "No", "Cancel"]));
-	announce_command_report = 1;
-	$0 = live(confirm);
-	if ($0 === "Yes") {
-		yield* g.call(f, P("/proc/priority_announce"), null, [live(input), null, rt.rsc("sound/ai/commandreport.ogg")]);
+	let confirm: Value = (yield* alert(this, "Do you want to announce the contents of the report to the crew?", "Announce", "Yes", "No", "Cancel"));
+	let announce_command_report: Value = 1;
+	if (confirm === "Yes") {
+		yield* priority_announce(input, null, rt.rsc("sound/ai/commandreport.ogg"));
 		announce_command_report = 0;
-	} else if ($0 === "Cancel") {
-		return live(f.dot);
+	} else if (confirm === "Cancel") {
+		return f.dot;
 	}
-	$0 = live(input);
-	if (truthy(live(announce_command_report))) {
+	let $0: any = input;
+	if (announce_command_report) {
 		$1 = "Classified ";
 	} else {
 		$1 = "";
 	}
-	yield* g.call(f, P("/proc/print_command_report"), null, [$0, fmt("＀＀ Update", [$1, (yield* g.call(f, P("/proc/command_name"), null, []))]), live(announce_command_report)]);
-	yield* g.call(f, P("/proc/log_admin"), null, [fmt("＀ has created a command report: ＀", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.src)])), live(input)])]);
-	yield* g.call(f, P("/proc/message_admins"), null, [fmt("＀ has created a command report", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.src)]))])]);
+	yield* print_command_report($0, `${$1}${command_name()} Update`, announce_command_report);
+	log_admin(`${key_name(this)} has created a command report: ${input}`);
+	message_admins(`${key_name_admin(this)} has created a command report`);
 	return f.dot;
 }, true, { verb: { name: "Create Command Report", category: "Special Verbs" } });
 
-// /client/proc/cmd_change_command_name  (code/modules/admin/verbs/randomverbs.dm:500)  may sleep
+// randomverbs.dm:500
 rt.def("/client/proc/cmd_change_command_name", function* cmd_change_command_name(f: Frame) {
 	let input: Value = null;
-	f.vars = () => [input];
-	if (!truthy(rt.sv(f, "holder"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "Only administrators may use this command."]);
-		return live(f.dot);
+	if (!this.holder) {
+		to_chat(this, "Only administrators may use this command.");
+		return f.dot;
 	}
-	if (!truthy((input = (yield* g.op(f, "Prompt", [3], ["", "What?", "Please input a new name for Central Command.", live(f.usr), null]))))) {
-		return live(f.dot);
+	if (!(input = (yield* g.op(f, "Prompt", [3], ["", "What?", "Please input a new name for Central Command.", f.usr, null])))) {
+		return f.dot;
 	}
-	yield* g.call(f, P("/proc/change_command_name"), null, [live(input)]);
-	yield* g.call(f, P("/proc/message_admins"), null, [fmt("＀ has changed Central Command's name to ＀", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.src)])), live(input)])]);
-	yield* g.call(f, P("/proc/log_admin"), null, [fmt("＀ has changed the Central Command name to: ＀", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.src)])), live(input)])]);
+	change_command_name(input);
+	message_admins(`${key_name_admin(this)} has changed Central Command's name to ${input}`);
+	log_admin(`${key_name(this)} has changed the Central Command name to: ${input}`);
 	return f.dot;
 }, true, { verb: { name: "Change Command Name", category: "Special Verbs" } });
 
-// /client/proc/cmd_admin_delete  (code/modules/admin/verbs/randomverbs.dm:514)  may sleep
+// randomverbs.dm:514
 rt.def("/client/proc/cmd_admin_delete", function* cmd_admin_delete(f: Frame, A: Value) {
-	f.vars = () => [A];
-	if (!truthy(rt.sv(f, "holder"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "Only administrators may use this command."]);
-		return live(f.dot);
+	if (!this.holder) {
+		to_chat(this, "Only administrators may use this command.");
+		return f.dot;
 	}
-	yield* g.srcCall(f, "admin_delete", live(A));
+	yield* this.admin_delete(A);
 	return f.dot;
 }, true, { verb: { name: "Delete", category: "Admin" }, argTypes: [{ type: 28, path: "/atom", source: "world" }] });
 
-// /client/proc/admin_delete  (code/modules/admin/verbs/randomverbs.dm:521)  may sleep
+// randomverbs.dm:521
 rt.def("/client/proc/admin_delete", function* admin_delete(f: Frame, D: Value) {
-	let A: Value = null, coords: Value = null, _T: Value = null;
-	let $0: any;
-	f.vars = () => [D, A, coords, _T, $0];
-	A = live(D);
-	if (truthy((rt.istype(live(A), T("/atom")) ? 1 : 0))) {
-		$0 = fmt(" at (＀, ＀, ＀)", [rt.fv(f, "x", live(A)), rt.fv(f, "y", live(A)), rt.fv(f, "z", live(A))]);
+	let _T: Value = null;
+	let A: Value = D;
+	let coords: Value = rt.istype(A, T("/atom")) ? ` at (${A.x}, ${A.y}, ${A.z})` : "";
+	if ((yield* alert(this, `Are you sure you want to delete:\n${D}\nat${coords}?`, "Confirmation", "Yes", "No")) != "Yes") return f.dot;
+	log_admin(`${key_name(f.usr)} deleted ${D}${coords}`);
+	message_admins(`${key_name_admin(f.usr)} deleted ${D}${coords}`);
+	if (isturf(D)) {
+		yield* (_T = D).ChangeTurf(_T.baseturf);
 	} else {
-		$0 = "";
-	}
-	coords = $0;
-	if (!isEqual((yield* g.call(f, P("/proc/alert"), null, [live(f.src), fmt("Are you sure you want to delete:\n＀\nat＀?", [live(D), live(coords)]), "Confirmation", "Yes", "No"])), "Yes")) return f.dot;
-	yield* g.call(f, P("/proc/log_admin"), null, [fmt("＀ deleted ＀＀", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.usr)])), live(D), live(coords)])]);
-	yield* g.call(f, P("/proc/message_admins"), null, [fmt("＀ deleted ＀＀", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.usr)])), live(D), live(coords)])]);
-	if (truthy((yield* g.call(f, P("/proc/isturf"), null, [live(D)])))) {
-		yield* g.callName(f, (_T = live(D)), "ChangeTurf", [rt.fv(f, "baseturf", live(_T))]);
-	} else {
-		yield* g.call(f, P("/proc/qdel"), null, [live(D)]);
+		yield* qdel(D);
 	}
 	return f.dot;
 }, true);
 
-// /client/proc/cmd_admin_list_open_jobs  (code/modules/admin/verbs/randomverbs.dm:537)  may sleep
+// randomverbs.dm:537
 rt.def("/client/proc/cmd_admin_list_open_jobs", function* cmd_admin_list_open_jobs(f: Frame) {
-	if (!truthy(rt.sv(f, "holder"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "Only administrators may use this command."]);
-		return live(f.dot);
+	if (!this.holder) {
+		to_chat(this, "Only administrators may use this command.");
+		return f.dot;
 	}
-	yield* g.callName(f, rt.sv(f, "holder"), "manage_free_slots", []);
+	yield* this.holder.manage_free_slots();
 	return f.dot;
 }, true, { verb: { name: "Manage Job Slots", category: "Admin" } });
 
-// /client/proc/cmd_admin_explosion  (code/modules/admin/verbs/randomverbs.dm:547)  may sleep
+// randomverbs.dm:547
 rt.def("/client/proc/cmd_admin_explosion", function* cmd_admin_explosion(f: Frame, O: Value) {
 	let devastation: Value = null, heavy: Value = null, light: Value = null, flash: Value = null, flames: Value = null;
-	f.vars = () => [O, devastation, heavy, light, flash, flames];
-	if (!truthy(rt.sv(f, "holder"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "Only administrators may use this command."]);
-		return live(f.dot);
+	if (!this.holder) {
+		to_chat(this, "Only administrators may use this command.");
+		return f.dot;
 	}
 	if ((devastation = (yield* g.op(f, "Prompt", [33], [null, null, "Input", "Range of total devastation. -1 to none", null]))) === null) {
-		return live(f.dot);
+		return f.dot;
 	}
 	if ((heavy = (yield* g.op(f, "Prompt", [33], [null, null, "Input", "Range of heavy impact. -1 to none", null]))) === null) {
-		return live(f.dot);
+		return f.dot;
 	}
 	if ((light = (yield* g.op(f, "Prompt", [33], [null, null, "Input", "Range of light impact. -1 to none", null]))) === null) {
-		return live(f.dot);
+		return f.dot;
 	}
 	if ((flash = (yield* g.op(f, "Prompt", [33], [null, null, "Input", "Range of flash. -1 to none", null]))) === null) {
-		return live(f.dot);
+		return f.dot;
 	}
 	if ((flames = (yield* g.op(f, "Prompt", [33], [null, null, "Input", "Range of flames. -1 to none", null]))) === null) {
-		return live(f.dot);
+		return f.dot;
 	}
-	if (((((!isEqual(live(devastation), -1) || !isEqual(live(heavy), -1)) || !isEqual(live(light), -1)) || !isEqual(live(flash), -1)) || !isEqual(live(flames), -1))) {
-		if ((((rt.gt(live(devastation), 20) || rt.gt(live(heavy), 20)) || rt.gt(live(light), 20)) || rt.gt(live(flames), 20))) {
-			if (isEqual((yield* g.call(f, P("/proc/alert"), null, [live(f.src), "Are you sure you want to do this? It will laaag.", "Confirmation", "Yes", "No"])), "No")) {
-				return live(f.dot);
+	if (devastation != -1 || heavy != -1 || light != -1 || flash != -1 || flames != -1) {
+		if (devastation > 20 || heavy > 20 || light > 20 || flames > 20) {
+			if ((yield* alert(this, "Are you sure you want to do this? It will laaag.", "Confirmation", "Yes", "No")) == "No") {
+				return f.dot;
 			}
 		}
-		yield* g.call(f, P("/proc/explosion"), null, [live(O), live(devastation), live(heavy), live(light), live(flash), null, null, live(flames)]);
-		yield* g.call(f, P("/proc/log_admin"), null, [fmt("＀ created an explosion (＀,＀,＀,＀) at (＀,＀,＀)", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.usr)])), live(devastation), live(heavy), live(light), live(flames), rt.fv(f, "x", live(O)), rt.fv(f, "y", live(O)), rt.fv(f, "z", live(O))])]);
-		yield* g.call(f, P("/proc/message_admins"), null, [fmt("＀ created an explosion (＀,＀,＀,＀) at (＀,＀,＀)", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.usr)])), live(devastation), live(heavy), live(light), live(flames), rt.fv(f, "x", live(O)), rt.fv(f, "y", live(O)), rt.fv(f, "z", live(O))])]);
-		return live(f.dot);
+		yield* explosion(O, devastation, heavy, light, flash, null, null, flames);
+		log_admin(`${key_name(f.usr)} created an explosion (${devastation},${heavy},${light},${flames}) at (${O.x},${O.y},${O.z})`);
+		message_admins(`${key_name_admin(f.usr)} created an explosion (${devastation},${heavy},${light},${flames}) at (${O.x},${O.y},${O.z})`);
+		return f.dot;
 	} else {
-		return live(f.dot);
+		return f.dot;
 	}
-	return f.dot;
 }, true, { verb: { name: "Explosion", category: "Special Verbs" }, argTypes: [{ type: 28, path: "/atom", source: "world" }] });
 
-// /client/proc/cmd_admin_emp  (code/modules/admin/verbs/randomverbs.dm:579)  may sleep
+// randomverbs.dm:579
 rt.def("/client/proc/cmd_admin_emp", function* cmd_admin_emp(f: Frame, O: Value) {
 	let heavy: Value = null, light: Value = null;
-	f.vars = () => [O, heavy, light];
-	if (!truthy(rt.sv(f, "holder"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "Only administrators may use this command."]);
-		return live(f.dot);
+	if (!this.holder) {
+		to_chat(this, "Only administrators may use this command.");
+		return f.dot;
 	}
 	if ((heavy = (yield* g.op(f, "Prompt", [33], [null, null, "Input", "Range of heavy pulse.", null]))) === null) {
-		return live(f.dot);
+		return f.dot;
 	}
 	if ((light = (yield* g.op(f, "Prompt", [33], [null, null, "Input", "Range of light pulse.", null]))) === null) {
-		return live(f.dot);
+		return f.dot;
 	}
-	if ((truthy(live(heavy)) || truthy(live(light)))) {
-		yield* g.call(f, P("/proc/empulse"), null, [live(O), live(heavy), live(light)]);
-		yield* g.call(f, P("/proc/log_admin"), null, [fmt("＀ created an EM Pulse (＀,＀) at (＀,＀,＀)", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.usr)])), live(heavy), live(light), rt.fv(f, "x", live(O)), rt.fv(f, "y", live(O)), rt.fv(f, "z", live(O))])]);
-		yield* g.call(f, P("/proc/message_admins"), null, [fmt("＀ created an EM Pulse (＀,＀) at (＀,＀,＀)", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.usr)])), live(heavy), live(light), rt.fv(f, "x", live(O)), rt.fv(f, "y", live(O)), rt.fv(f, "z", live(O))])]);
-		return live(f.dot);
+	if (heavy || light) {
+		yield* empulse(O, heavy, light);
+		log_admin(`${key_name(f.usr)} created an EM Pulse (${heavy},${light}) at (${O.x},${O.y},${O.z})`);
+		message_admins(`${key_name_admin(f.usr)} created an EM Pulse (${heavy},${light}) at (${O.x},${O.y},${O.z})`);
+		return f.dot;
 	} else {
-		return live(f.dot);
+		return f.dot;
 	}
-	return f.dot;
 }, true, { verb: { name: "EM Pulse", category: "Special Verbs" }, argTypes: [{ type: 28, path: "/atom", source: "world" }] });
 
-// /client/proc/cmd_admin_gib  (code/modules/admin/verbs/randomverbs.dm:603)  may sleep
+// randomverbs.dm:603
 rt.def("/client/proc/cmd_admin_gib", function* cmd_admin_gib(f: Frame, M: Value) {
 	let confirm: Value = null;
-	f.vars = () => [M, confirm];
-	if (!truthy(rt.sv(f, "holder"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "Only administrators may use this command."]);
-		return live(f.dot);
+	if (!this.holder) {
+		to_chat(this, "Only administrators may use this command.");
+		return f.dot;
 	}
-	if (isEqual((confirm = (yield* g.call(f, P("/proc/alert"), null, [live(f.src), "Drop a brain?", "Confirm", "Yes", "No", "Cancel"]))), "Cancel")) {
-		return live(f.dot);
+	if ((confirm = (yield* alert(this, "Drop a brain?", "Confirm", "Yes", "No", "Cancel"))) == "Cancel") {
+		return f.dot;
 	}
-	if (!truthy(live(M))) {
-		return live(f.dot);
+	if (!M) {
+		return f.dot;
 	}
-	yield* g.call(f, P("/proc/log_admin"), null, [fmt("＀ has gibbed ＀", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.usr)])), (yield* g.call(f, P("/proc/key_name"), null, [live(M)]))])]);
-	yield* g.call(f, P("/proc/message_admins"), null, [fmt("＀ has gibbed ＀", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.usr)])), (yield* g.call(f, P("/proc/key_name_admin"), null, [live(M)]))])]);
-	if (truthy((rt.istype(live(M), T("/mob/dead/observer")) ? 1 : 0))) {
-		yield* g.new_(f, T("/obj/effect/gibspawner/generic"), [rt.fv(f, "loc", live(M)), rt.fv(f, "viruses", live(M))]);
-		return live(f.dot);
+	log_admin(`${key_name(f.usr)} has gibbed ${key_name(M)}`);
+	message_admins(`${key_name_admin(f.usr)} has gibbed ${key_name_admin(M)}`);
+	if (rt.istype(M, T("/mob/dead/observer"))) {
+		yield* new_(T("/obj/effect/gibspawner/generic"), M.loc, M.viruses);
+		return f.dot;
 	}
-	if (isEqual(live(confirm), "Yes")) {
-		yield* g.callName(f, live(M), "gib", []);
+	if (confirm == "Yes") {
+		yield* M.gib();
 	} else {
-		yield* g.callName(f, live(M), "gib", [1]);
+		yield* M.gib(1);
 	}
 	return f.dot;
 }, true, { verb: { name: "Gib", category: "Special Verbs" }, argTypes: [{ type: 8, path: "/mob", source: "?" }] });
 
-// /client/proc/cmd_admin_gib_self  (code/modules/admin/verbs/randomverbs.dm:630)  may sleep
+// randomverbs.dm:630
 rt.def("/client/proc/cmd_admin_gib_self", function* cmd_admin_gib_self(f: Frame) {
 	let confirm: Value = null;
-	f.vars = () => [confirm];
-	if (!isEqual((confirm = (yield* g.call(f, P("/proc/alert"), null, [live(f.src), "You sure?", "Confirm", "Yes", "No"]))), "Yes")) return f.dot;
-	yield* g.call(f, P("/proc/log_admin"), null, [fmt("＀ used gibself.", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.usr)]))])]);
-	yield* g.call(f, P("/proc/message_admins"), null, [fmt("<span class='adminnotice'>＀ used gibself.</span>", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.usr)]))])]);
-	yield* g.callName(f, rt.sv(f, "mob"), "gib", [1, 1, 1]);
+	if ((confirm = (yield* alert(this, "You sure?", "Confirm", "Yes", "No"))) != "Yes") return f.dot;
+	log_admin(`${key_name(f.usr)} used gibself.`);
+	message_admins(`<span class='adminnotice'>${key_name_admin(f.usr)} used gibself.</span>`);
+	yield* this.mob.gib(1, 1, 1);
 	return f.dot;
 }, true, { verb: { name: "Gibself", category: "Fun" } });
 
-// /client/proc/cmd_admin_check_contents  (code/modules/admin/verbs/randomverbs.dm:641)
+// randomverbs.dm:641
 rt.def("/client/proc/cmd_admin_check_contents", function cmd_admin_check_contents(f: Frame, M: Value) {
-	let L: Value = null, t: Value = null;
-	let $e: any;
-	f.vars = () => [L, t, $e];
-	L = rt.callName(f, live(M), "get_contents", []);
-	t = null;
-	rt.forList(f, 0, live(L));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		t = $e;
-		rt.call(f, P("/proc/to_chat"), null, [live(f.usr), fmt("＀", [live(t)])]);
+	let t: Value = null;
+	let L: Value = M.get_contents();
+	for (t of each(L)) {
+		to_chat(f.usr, `${t}`);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, false, { verb: { name: "Check Contents", category: "Special Verbs" }, argTypes: [{ type: 8, path: "/mob/living", source: "?" }] });
 
-// /client/proc/toggle_view_range  (code/modules/admin/verbs/randomverbs.dm:651)  may sleep
+// randomverbs.dm:651
 rt.def("/client/proc/toggle_view_range", function* toggle_view_range(f: Frame) {
-	if (truthy((yield* g.srcCall(f, "is_default_view")))) {
-		yield* g.srcCall(f, "change_view", (yield* g.op(f, "Prompt", [0], [null, 7, "FUCK YE", "Select view range:", rt.list(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 128)])));
+	if (this.is_default_view()) {
+		yield* this.change_view((yield* g.op(f, "Prompt", [0], [null, 7, "FUCK YE", "Select view range:", list(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 128)])));
 	} else {
-		yield* g.srcCall(f, "change_view", (yield* g.srcCall(f, "default_view")));
+		yield* this.change_view(this.default_view());
 	}
-	yield* g.call(f, P("/proc/log_admin"), null, [fmt("＀ changed their view range to ＀.", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.usr)])), rt.sv(f, "view")])]);
+	log_admin(`${key_name(f.usr)} changed their view range to ${this.view}.`);
 	return f.dot;
 }, true, { verb: { name: "Change View Range", category: "Special Verbs", desc: "switches between 1x and custom views" } });
 
@@ -758,11 +646,11 @@ rt.def("/client/proc/toggle_view_range", function* toggle_view_range(f: Frame) {
 const ZOOM_STEPS = [7, 11, 15, 21, 29, 41, 57, 81, 113, 161, 257];
 function* zoomView(f: Frame, dir: number, quiet = false) {
 	const def = yield* g.srcCall(f, "default_view");
-	const ds = rt.call(f, P("/proc/getviewsize"), null, [live(def)]), cs = rt.call(f, P("/proc/getviewsize"), null, [rt.sv(f, "view")]);
+	const ds = rt.call(f, P("/proc/getviewsize"), null, [def]), cs = rt.call(f, P("/proc/getviewsize"), null, [rt.sv(f, "view")]);
 	const dw = Number(rt.index(ds, 1)), dh = Number(rt.index(ds, 2)), ch = Number(rt.index(cs, 2));
 	let h = dh;
-	if (dir > 0 && rt.onServer() && !truthy(rt.sv(f, "holder"))) { // online, admins only: a zoomed-out view is costly for a server to send
-		if (!quiet) rt.call(f, P("/proc/to_chat"), null, [live(f.usr), "<span class='warning'>Online, zooming out is for admins only.</span>"]);
+	if (dir > 0 && rt.onServer() && !rt.sv(f, "holder")) { // online, admins only: a zoomed-out view is costly for a server to send
+		if (!quiet) rt.call(f, P("/proc/to_chat"), null, [f.usr, "<span class='warning'>Online, zooming out is for admins only.</span>"]);
 		return f.dot;
 	}
 	if (dir > 0) h = ZOOM_STEPS.find(s => s > ch) ?? ZOOM_STEPS[ZOOM_STEPS.length - 1];
@@ -770,14 +658,13 @@ function* zoomView(f: Frame, dir: number, quiet = false) {
 	let w = Math.ceil(h * dw / dh - 1e-9);
 	if (w % 2 === 0) w++;
 	if (quiet && h === ch) return f.dot;
-	yield* g.srcCall(f, "change_view", h === dh ? live(def) : `${w}x${h}`);
-	if (!quiet) rt.call(f, P("/proc/to_chat"), null, [live(f.usr), `<span class='notice'>View: ${w}x${h} tiles${h === dh ? " (normal)" : ""}.</span>`]);
+	yield* g.srcCall(f, "change_view", h === dh ? def : `${w}x${h}`);
+	if (!quiet) rt.call(f, P("/proc/to_chat"), null, [f.usr, `<span class='notice'>View: ${w}x${h} tiles${h === dh ? " (normal)" : ""}.</span>`]);
 	return f.dot;
 }
 // Shared by the Debug verbs and the ghost HUD buttons: client.zoom_view(dir, quiet): 1 = out, -1 = in, 0 = reset. Per client.
 rt.def("/client/proc/zoom_view", function* zoom_view(f: Frame, dir: Value, quiet: Value) {
-	f.vars = () => [dir, quiet];
-	return yield* zoomView(f, Number(live(dir)), truthy(quiet));
+	return yield* zoomView(f, Number(dir), truthy(quiet));
 }, true, { args: ["dir", "quiet"] });
 rt.def("/client/proc/zoom_out", function* zoom_out(f: Frame) {
 	return yield* zoomView(f, 1);
@@ -789,586 +676,470 @@ rt.def("/client/proc/zoom_reset", function* zoom_reset(f: Frame) {
 	return yield* zoomView(f, 0);
 }, true, { verb: { name: "Reset Zoom", category: "Debug", desc: "Back to the normal view size" } });
 
-// /client/proc/admin_call_shuttle  (code/modules/admin/verbs/randomverbs.dm:666)  may sleep
+// randomverbs.dm:666
 rt.def("/client/proc/admin_call_shuttle", function* admin_call_shuttle(f: Frame) {
 	let confirm: Value = null;
-	f.vars = () => [confirm];
-	if ((((truthy(rt.fv(f, "emergency", rt.gl("SSshuttle"))) && !isEqual(rt.gv(f, "mode", rt.fv(f, "emergency", rt.gl("SSshuttle"))), "idle")) && !isEqual(rt.gv(f, "mode", rt.fv(f, "emergency", rt.gl("SSshuttle"))), "recall")) && !isEqual(rt.gv(f, "mode", rt.fv(f, "emergency", rt.gl("SSshuttle"))), "call"))) {
-		return live(f.dot);
+	if (GLOB.SSshuttle.emergency && GLOB.SSshuttle.emergency.mode != "idle" && GLOB.SSshuttle.emergency.mode != "recall" && GLOB.SSshuttle.emergency.mode != "call") {
+		return f.dot;
 	}
-	if (!truthy(rt.sv(f, "holder"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "Only administrators may use this command."]);
-		return live(f.dot);
+	if (!this.holder) {
+		to_chat(this, "Only administrators may use this command.");
+		return f.dot;
 	}
-	if (!isEqual((confirm = (yield* g.call(f, P("/proc/alert"), null, [live(f.src), "You sure?", "Confirm", "Yes", "No"]))), "Yes")) {
-		return live(f.dot);
+	if ((confirm = (yield* alert(this, "You sure?", "Confirm", "Yes", "No"))) != "Yes") {
+		return f.dot;
 	}
-	yield* g.callName(f, rt.fv(f, "emergency", rt.gl("SSshuttle")), "request", []);
-	yield* g.call(f, P("/proc/log_admin"), null, [fmt("＀ admin-called the emergency shuttle.", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.usr)]))])]);
-	yield* g.call(f, P("/proc/message_admins"), null, [fmt("<span class='adminnotice'>＀ admin-called the emergency shuttle.</span>", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.usr)]))])]);
-	return live(f.dot);
+	yield* GLOB.SSshuttle.emergency.request();
+	log_admin(`${key_name(f.usr)} admin-called the emergency shuttle.`);
+	message_admins(`<span class='adminnotice'>${key_name_admin(f.usr)} admin-called the emergency shuttle.</span>`);
+	return f.dot;
 }, true, { verb: { name: "Call Shuttle", category: "Admin" } });
 
-// /client/proc/admin_cancel_shuttle  (code/modules/admin/verbs/randomverbs.dm:686)  may sleep
+// randomverbs.dm:686
 rt.def("/client/proc/admin_cancel_shuttle", function* admin_cancel_shuttle(f: Frame) {
-	if (!truthy((yield* g.call(f, P("/proc/check_rights"), null, [0])))) {
-		return live(f.dot);
+	if (!check_rights(0)) {
+		return f.dot;
 	}
-	if (!isEqual((yield* g.call(f, P("/proc/alert"), null, [live(f.src), "You sure?", "Confirm", "Yes", "No"])), "Yes")) {
-		return live(f.dot);
+	if ((yield* alert(this, "You sure?", "Confirm", "Yes", "No")) != "Yes") {
+		return f.dot;
 	}
-	if ((((truthy(rt.fv(f, "emergency", rt.gl("SSshuttle"))) && !isEqual(rt.gv(f, "mode", rt.fv(f, "emergency", rt.gl("SSshuttle"))), "idle")) && !isEqual(rt.gv(f, "mode", rt.fv(f, "emergency", rt.gl("SSshuttle"))), "recall")) && !isEqual(rt.gv(f, "mode", rt.fv(f, "emergency", rt.gl("SSshuttle"))), "call"))) {
-		return live(f.dot);
+	if (GLOB.SSshuttle.emergency && GLOB.SSshuttle.emergency.mode != "idle" && GLOB.SSshuttle.emergency.mode != "recall" && GLOB.SSshuttle.emergency.mode != "call") {
+		return f.dot;
 	}
-	yield* g.callName(f, rt.fv(f, "emergency", rt.gl("SSshuttle")), "cancel", []);
-	yield* g.call(f, P("/proc/log_admin"), null, [fmt("＀ admin-recalled the emergency shuttle.", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.usr)]))])]);
-	yield* g.call(f, P("/proc/message_admins"), null, [fmt("<span class='adminnotice'>＀ admin-recalled the emergency shuttle.</span>", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.usr)]))])]);
-	return live(f.dot);
+	yield* GLOB.SSshuttle.emergency.cancel();
+	log_admin(`${key_name(f.usr)} admin-recalled the emergency shuttle.`);
+	message_admins(`<span class='adminnotice'>${key_name_admin(f.usr)} admin-recalled the emergency shuttle.</span>`);
+	return f.dot;
 }, true, { verb: { name: "Cancel Shuttle", category: "Admin" } });
 
-// /client/proc/everyone_random  (code/modules/admin/verbs/randomverbs.dm:706)  may sleep
+// randomverbs.dm:706
 rt.def("/client/proc/everyone_random", function* everyone_random(f: Frame) {
 	let notifyplayers: Value = null;
-	f.vars = () => [notifyplayers];
-	if (truthy((yield* g.callName(f, rt.gl("SSticker"), "HasRoundStarted", [])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), "Nope you can't do this, the game's already started. This only works before rounds!"]);
-		return live(f.dot);
+	if (GLOB.SSticker.HasRoundStarted()) {
+		to_chat(f.usr, "Nope you can't do this, the game's already started. This only works before rounds!");
+		return f.dot;
 	}
-	if (truthy(rt.fv(f, "force_random_names", rt.gl("config")))) {
-		rt.setFv(f, "force_random_names", rt.gl("config"), 0);
-		yield* g.call(f, P("/proc/message_admins"), null, [fmt("Admin ＀ has disabled \"Everyone is Special\" mode.", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.usr)]))])]);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), "Disabled."]);
-		return live(f.dot);
+	if (GLOB.config.force_random_names) {
+		GLOB.config.force_random_names = 0;
+		message_admins(`Admin ${key_name_admin(f.usr)} has disabled "Everyone is Special" mode.`);
+		to_chat(f.usr, "Disabled.");
+		return f.dot;
 	}
-	if (isEqual((notifyplayers = (yield* g.call(f, P("/proc/alert"), null, [live(f.src), "Do you want to notify the players?", "Options", "Yes", "No", "Cancel"]))), "Cancel")) {
-		return live(f.dot);
+	if ((notifyplayers = (yield* alert(this, "Do you want to notify the players?", "Options", "Yes", "No", "Cancel"))) == "Cancel") {
+		return f.dot;
 	}
-	yield* g.call(f, P("/proc/log_admin"), null, [fmt("Admin ＀ has forced the players to have random appearances.", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.src)]))])]);
-	yield* g.call(f, P("/proc/message_admins"), null, [fmt("Admin ＀ has forced the players to have random appearances.", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.usr)]))])]);
-	if (isEqual(live(notifyplayers), "Yes")) {
-		yield* g.call(f, P("/proc/to_chat"), null, [rt.world(), fmt("<span class='adminnotice'>Admin ＀ has forced the players to have completely random identities!</span>", [rt.fv(f, "key", live(f.usr))])]);
+	log_admin(`Admin ${key_name(this)} has forced the players to have random appearances.`);
+	message_admins(`Admin ${key_name_admin(f.usr)} has forced the players to have random appearances.`);
+	if (notifyplayers == "Yes") {
+		to_chat(rt.world(), `<span class='adminnotice'>Admin ${f.usr.key} has forced the players to have completely random identities!</span>`);
 	}
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), "<i>Remember: you can always disable the randomness by using the verb again, assuming the round hasn't started yet</i>."]);
-	rt.setFv(f, "force_random_names", rt.gl("config"), 1);
+	to_chat(f.usr, "<i>Remember: you can always disable the randomness by using the verb again, assuming the round hasn't started yet</i>.");
+	GLOB.config.force_random_names = 1;
 	return f.dot;
 }, true, { verb: { name: "Make Everyone Random", category: "Fun", desc: "Make everyone have a random appearance. You can only use this before rounds!" } });
 
-// /client/proc/toggle_random_events  (code/modules/admin/verbs/randomverbs.dm:737)
+// randomverbs.dm:737
 rt.def("/client/proc/toggle_random_events", function toggle_random_events(f: Frame) {
-	if (!truthy(rt.fv(f, "allow_random_events", rt.gl("config")))) {
-		rt.setFv(f, "allow_random_events", rt.gl("config"), 1);
-		rt.call(f, P("/proc/to_chat"), null, [live(f.usr), "Random events enabled"]);
-		rt.call(f, P("/proc/message_admins"), null, [fmt("Admin ＀ has enabled random events.", [rt.call(f, P("/proc/key_name_admin"), null, [live(f.usr)])])]);
+	if (!GLOB.config.allow_random_events) {
+		GLOB.config.allow_random_events = 1;
+		to_chat(f.usr, "Random events enabled");
+		message_admins(`Admin ${key_name_admin(f.usr)} has enabled random events.`);
 	} else {
-		rt.setFv(f, "allow_random_events", rt.gl("config"), 0);
-		rt.call(f, P("/proc/to_chat"), null, [live(f.usr), "Random events disabled"]);
-		rt.call(f, P("/proc/message_admins"), null, [fmt("Admin ＀ has disabled random events.", [rt.call(f, P("/proc/key_name_admin"), null, [live(f.usr)])])]);
+		GLOB.config.allow_random_events = 0;
+		to_chat(f.usr, "Random events disabled");
+		message_admins(`Admin ${key_name_admin(f.usr)} has disabled random events.`);
 	}
 	return f.dot;
 }, false, { verb: { name: "Toggle random events on/off", category: "Server", desc: "Toggles random events such as meteors, black holes, blob (but not space dust) on/off" } });
 
-// /client/proc/admin_change_sec_level  (code/modules/admin/verbs/randomverbs.dm:753)  may sleep
+// randomverbs.dm:753
 rt.def("/client/proc/admin_change_sec_level", function* admin_change_sec_level(f: Frame) {
 	let level: Value = null;
-	f.vars = () => [level];
-	if (!truthy(rt.sv(f, "holder"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "Only administrators may use this command."]);
-		return live(f.dot);
+	if (!this.holder) {
+		to_chat(this, "Only administrators may use this command.");
+		return f.dot;
 	}
-	if (!truthy((level = (yield* g.op(f, "Prompt", [1], [null, null, "Set Security Level", "Select security level to change to", rt.list("green", "blue", "red", "delta")]))))) return f.dot;
-	yield* g.call(f, P("/proc/set_security_level"), null, [live(level)]);
-	yield* g.call(f, P("/proc/log_admin"), null, [fmt("＀ changed the security level to ＀", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.usr)])), live(level)])]);
-	yield* g.call(f, P("/proc/message_admins"), null, [fmt("＀ changed the security level to ＀", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.usr)])), live(level)])]);
+	if (!(level = (yield* g.op(f, "Prompt", [1], [null, null, "Set Security Level", "Select security level to change to", list("green", "blue", "red", "delta")])))) return f.dot;
+	set_security_level(level);
+	log_admin(`${key_name(f.usr)} changed the security level to ${level}`);
+	message_admins(`${key_name_admin(f.usr)} changed the security level to ${level}`);
 	return f.dot;
 }, true, { verb: { name: "Set Security Level", category: "Special Verbs", desc: "Changes the security level. Announcement only, i.e. setting to Delta won't activate nuke" } });
 
-// /client/proc/toggle_nuke  (code/modules/admin/verbs/randomverbs.dm:769)  may sleep
+// randomverbs.dm:769
 rt.def("/client/proc/toggle_nuke", function* toggle_nuke(f: Frame, N: Value) {
 	let newtime: Value = null;
-	let $0: any, $1: any, $2: any;
-	f.vars = () => [N, newtime, $0, $1, $2];
-	if (!truthy((yield* g.call(f, P("/proc/check_rights"), null, [32])))) {
-		return live(f.dot);
+	let $1: any, $2: any;
+	if (!check_rights(32)) {
+		return f.dot;
 	}
-	if (!truthy(rt.fv(f, "timing", live(N)))) {
-		if (!truthy((newtime = (yield* g.op(f, "Prompt", [32], [fmt("＀", [rt.fv(f, "timer_set", live(N))]), "Activate Nuke", "Set activation timer.", live(f.usr), null]))))) {
-			return live(f.dot);
+	if (!N.timing) {
+		if (!(newtime = (yield* g.op(f, "Prompt", [32], [`${N.timer_set}`, "Activate Nuke", "Set activation timer.", f.usr, null])))) {
+			return f.dot;
 		}
-		rt.setFv(f, "timer_set", live(N), live(newtime));
+		N.timer_set = newtime;
 	}
-	yield* g.callName(f, live(N), "set_safety", []);
-	yield* g.callName(f, live(N), "set_active", []);
-	$0 = (yield* g.call(f, P("/proc/key_name"), null, [live(f.usr)]));
-	if (truthy(rt.fv(f, "timing", live(N)))) {
+	N.set_safety();
+	N.set_active();
+	let $0: any = key_name(f.usr);
+	if (N.timing) {
 		$1 = "activated";
 	} else {
 		$1 = "deactivated";
 	}
-	yield* g.call(f, P("/proc/log_admin"), null, [fmt("＀ ＀ a nuke at (＀,＀,＀).", [$0, $1, rt.fv(f, "x", live(N)), rt.fv(f, "y", live(N)), rt.fv(f, "z", live(N))])]);
-	$0 = fmt("＀＀ ＀", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.usr)])), fmt("(<a href='?_src_=holder;adminmoreinfo=＃'>?</a>)", [live(f.usr)]), fmt("(<a href='?_src_=holder;adminplayerobservefollow=＃'>FLW</a>)", [live(f.usr)])]);
-	if (truthy(rt.fv(f, "timing", live(N)))) {
+	log_admin(`${$0} ${$1} a nuke at (${N.x},${N.y},${N.z}).`);
+	$0 = `${key_name_admin(f.usr)}${fmt("(<a href='?_src_=holder;adminmoreinfo=＃'>?</a>)", [f.usr])} ${fmt("(<a href='?_src_=holder;adminplayerobservefollow=＃'>FLW</a>)", [f.usr])}`;
+	if (N.timing) {
 		$1 = "activated";
 	} else {
 		$1 = "deactivated";
 	}
-	if (truthy(live(N))) {
-		$2 = fmt("＀ ＀", [fmt("(＀,＀,＀)", [rt.fv(f, "x", live(N)), rt.fv(f, "y", live(N)), rt.fv(f, "z", live(N))]), fmt("(<a href='?_src_=holder;adminplayerobservecoodjump=1;X=＀;Y=＀;Z=＀'>JMP</a>)", [rt.fv(f, "x", live(N)), rt.fv(f, "y", live(N)), rt.fv(f, "z", live(N))])]);
+	if (N) {
+		$2 = `${`(${N.x},${N.y},${N.z})`} ${`(<a href='?_src_=holder;adminplayerobservecoodjump=1;X=${N.x};Y=${N.y};Z=${N.z}'>JMP</a>)`}`;
 	} else {
 		$2 = "nonexistent location";
 	}
-	yield* g.call(f, P("/proc/message_admins"), null, [fmt("＀ ＀ a nuke at ＀.", [$0, $1, fmt("＀", [$2])])]);
+	message_admins(`${$0} ${$1} a nuke at ${`${$2}`}.`);
 	return f.dot;
 }, true, { hidePopup: true, verb: { name: "Toggle Nuke", category: "Fun" }, argTypes: [{ type: 4, path: "/obj/machinery/nuclearbomb", source: "?" }] });
 
-// /datum/controller/global_vars/proc/InitGlobalcustom_outfits  (code/modules/admin/verbs/randomverbs.dm:784)
+// randomverbs.dm:784
 rt.def("/datum/controller/global_vars/proc/InitGlobalcustom_outfits", function InitGlobalcustom_outfits(f: Frame) {
-	rt.setGl("custom_outfits", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "custom_outfits", add);
+	GLOB.custom_outfits = list();
+	this.gvars_datum_init_order += "custom_outfits";
 	return f.dot;
 });
 
-// /client/proc/create_outfits  (code/modules/admin/verbs/randomverbs.dm:790)
+// randomverbs.dm:790
 rt.def("/client/proc/create_outfits", function create_outfits(f: Frame) {
-	if (!truthy(rt.call(f, P("/proc/check_rights"), null, [32]))) {
-		return live(f.dot);
+	if (!check_rights(32)) {
+		return f.dot;
 	}
-	rt.callName(f, rt.sv(f, "holder"), "create_outfit", []);
+	this.holder.create_outfit();
 	return f.dot;
 }, false, { verb: { name: "Create Custom Outfit", category: "Debug" } });
 
-// /datum/admins/proc/create_outfit  (code/modules/admin/verbs/randomverbs.dm:796)
+// randomverbs.dm:796
 rt.def("/datum/admins/proc/create_outfit", function create_outfit(f: Frame) {
-	let uniforms: Value = null, suits: Value = null, gloves: Value = null, shoes: Value = null, headwear: Value = null, glasses: Value = null, masks: Value = null, ids: Value = null, uniform_select: Value = null, path: Value = null, suit_select: Value = null, path_10: Value = null, gloves_select: Value = null, path_11: Value = null, shoes_select: Value = null, path_12: Value = null, head_select: Value = null, path_13: Value = null, glasses_select: Value = null, path_14: Value = null, mask_select: Value = null, path_15: Value = null, id_select: Value = null, path_16: Value = null, dat: Value = null;
-	let $e: any;
-	f.vars = () => [uniforms, suits, gloves, shoes, headwear, glasses, masks, ids, uniform_select, path, suit_select, path_10, gloves_select, path_11, shoes_select, path_12, head_select, path_13, glasses_select, path_14, mask_select, path_15, id_select, path_16, dat, $e];
-	uniforms = rt.call(f, P("/proc/typesof"), null, [T("/obj/item/clothing/under")]);
-	suits = rt.call(f, P("/proc/typesof"), null, [T("/obj/item/clothing/suit")]);
-	gloves = rt.call(f, P("/proc/typesof"), null, [T("/obj/item/clothing/gloves")]);
-	shoes = rt.call(f, P("/proc/typesof"), null, [T("/obj/item/clothing/shoes")]);
-	headwear = rt.call(f, P("/proc/typesof"), null, [T("/obj/item/clothing/head")]);
-	glasses = rt.call(f, P("/proc/typesof"), null, [T("/obj/item/clothing/glasses")]);
-	masks = rt.call(f, P("/proc/typesof"), null, [T("/obj/item/clothing/mask")]);
-	ids = rt.call(f, P("/proc/typesof"), null, [T("/obj/item/weapon/card/id")]);
-	uniform_select = "<select name=\"outfit_uniform\"><option value=\"\">None</option>";
-	path = null;
-	rt.forList(f, 0, live(uniforms));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		path = $e;
-		uniform_select = rt.modify(live(uniform_select), fmt("<option value=\"＀\">＀</option>", [live(path), live(path)]), add);
+	let path: Value = null, path_10: Value = null, path_11: Value = null, path_12: Value = null, path_13: Value = null, path_14: Value = null, path_15: Value = null, path_16: Value = null;
+	let uniforms: Value = typesof(T("/obj/item/clothing/under"));
+	let suits: Value = typesof(T("/obj/item/clothing/suit"));
+	let gloves: Value = typesof(T("/obj/item/clothing/gloves"));
+	let shoes: Value = typesof(T("/obj/item/clothing/shoes"));
+	let headwear: Value = typesof(T("/obj/item/clothing/head"));
+	let glasses: Value = typesof(T("/obj/item/clothing/glasses"));
+	let masks: Value = typesof(T("/obj/item/clothing/mask"));
+	let ids: Value = typesof(T("/obj/item/weapon/card/id"));
+	let uniform_select: Value = "<select name=\"outfit_uniform\"><option value=\"\">None</option>";
+	for (path of each(uniforms)) {
+		uniform_select += `<option value="${path}">${path}</option>`;
 	}
-	rt.endFor(f, 0);
-	uniform_select = rt.modify(live(uniform_select), "</select>", add);
-	suit_select = "<select name=\"outfit_suit\"><option value=\"\">None</option>";
-	path_10 = null;
-	rt.forList(f, 0, live(suits));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		path_10 = $e;
-		suit_select = rt.modify(live(suit_select), fmt("<option value=\"＀\">＀</option>", [live(path_10), live(path_10)]), add);
+	uniform_select += "</select>";
+	let suit_select: Value = "<select name=\"outfit_suit\"><option value=\"\">None</option>";
+	for (path_10 of each(suits)) {
+		suit_select += `<option value="${path_10}">${path_10}</option>`;
 	}
-	rt.endFor(f, 0);
-	suit_select = rt.modify(live(suit_select), "</select>", add);
-	gloves_select = "<select name=\"outfit_gloves\"><option value=\"\">None</option>";
-	path_11 = null;
-	rt.forList(f, 0, live(gloves));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		path_11 = $e;
-		gloves_select = rt.modify(live(gloves_select), fmt("<option value=\"＀\">＀</option>", [live(path_11), live(path_11)]), add);
+	suit_select += "</select>";
+	let gloves_select: Value = "<select name=\"outfit_gloves\"><option value=\"\">None</option>";
+	for (path_11 of each(gloves)) {
+		gloves_select += `<option value="${path_11}">${path_11}</option>`;
 	}
-	rt.endFor(f, 0);
-	gloves_select = rt.modify(live(gloves_select), "</select>", add);
-	shoes_select = "<select name=\"outfit_shoes\"><option value=\"\">None</option>";
-	path_12 = null;
-	rt.forList(f, 0, live(shoes));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		path_12 = $e;
-		shoes_select = rt.modify(live(shoes_select), fmt("<option value=\"＀\">＀</option>", [live(path_12), live(path_12)]), add);
+	gloves_select += "</select>";
+	let shoes_select: Value = "<select name=\"outfit_shoes\"><option value=\"\">None</option>";
+	for (path_12 of each(shoes)) {
+		shoes_select += `<option value="${path_12}">${path_12}</option>`;
 	}
-	rt.endFor(f, 0);
-	shoes_select = rt.modify(live(shoes_select), "</select>", add);
-	head_select = "<select name=\"outfit_head\"><option value=\"\">None</option>";
-	path_13 = null;
-	rt.forList(f, 0, live(headwear));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		path_13 = $e;
-		head_select = rt.modify(live(head_select), fmt("<option value=\"＀\">＀</option>", [live(path_13), live(path_13)]), add);
+	shoes_select += "</select>";
+	let head_select: Value = "<select name=\"outfit_head\"><option value=\"\">None</option>";
+	for (path_13 of each(headwear)) {
+		head_select += `<option value="${path_13}">${path_13}</option>`;
 	}
-	rt.endFor(f, 0);
-	head_select = rt.modify(live(head_select), "</select>", add);
-	glasses_select = "<select name=\"outfit_glasses\"><option value=\"\">None</option>";
-	path_14 = null;
-	rt.forList(f, 0, live(glasses));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		path_14 = $e;
-		glasses_select = rt.modify(live(glasses_select), fmt("<option value=\"＀\">＀</option>", [live(path_14), live(path_14)]), add);
+	head_select += "</select>";
+	let glasses_select: Value = "<select name=\"outfit_glasses\"><option value=\"\">None</option>";
+	for (path_14 of each(glasses)) {
+		glasses_select += `<option value="${path_14}">${path_14}</option>`;
 	}
-	rt.endFor(f, 0);
-	glasses_select = rt.modify(live(glasses_select), "</select>", add);
-	mask_select = "<select name=\"outfit_mask\"><option value=\"\">None</option>";
-	path_15 = null;
-	rt.forList(f, 0, live(masks));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		path_15 = $e;
-		mask_select = rt.modify(live(mask_select), fmt("<option value=\"＀\">＀</option>", [live(path_15), live(path_15)]), add);
+	glasses_select += "</select>";
+	let mask_select: Value = "<select name=\"outfit_mask\"><option value=\"\">None</option>";
+	for (path_15 of each(masks)) {
+		mask_select += `<option value="${path_15}">${path_15}</option>`;
 	}
-	rt.endFor(f, 0);
-	mask_select = rt.modify(live(mask_select), "</select>", add);
-	id_select = "<select name=\"outfit_id\"><option value=\"\">None</option>";
-	path_16 = null;
-	rt.forList(f, 0, live(ids));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		path_16 = $e;
-		id_select = rt.modify(live(id_select), fmt("<option value=\"＀\">＀</option>", [live(path_16), live(path_16)]), add);
+	mask_select += "</select>";
+	let id_select: Value = "<select name=\"outfit_id\"><option value=\"\">None</option>";
+	for (path_16 of each(ids)) {
+		id_select += `<option value="${path_16}">${path_16}</option>`;
 	}
-	rt.endFor(f, 0);
-	id_select = rt.modify(live(id_select), "</select>", add);
-	dat = fmt("\n\t<html><head><title>Create Outfit</title></head><body>\n\t<form name=\"outfit\" action=\"byond://?src=＃\" method=\"get\">\n\t<input type=\"hidden\" name=\"src\" value=\"＃\">\n\t<input type=\"hidden\" name=\"create_outfit\" value=\"1\">\n\t<table>\n\t\t<tr>\n\t\t\t<th>Name:</th>\n\t\t\t<td>\n\t\t\t\t<input type=\"text\" name=\"outfit_name\" value=\"Custom Outfit\">\n\t\t\t</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<th>Uniform:</th>\n\t\t\t<td>\n\t\t\t   ＀\n\t\t\t</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<th>Suit:</th>\n\t\t\t<td>\n\t\t\t\t＀\n\t\t\t</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<th>Back:</th>\n\t\t\t<td>\n\t\t\t\t<input type=\"text\" name=\"outfit_back\" value=\"\">\n\t\t\t</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<th>Belt:</th>\n\t\t\t<td>\n\t\t\t\t<input type=\"text\" name=\"outfit_belt\" value=\"\">\n\t\t\t</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<th>Gloves:</th>\n\t\t\t<td>\n\t\t\t\t＀\n\t\t\t</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<th>Shoes:</th>\n\t\t\t<td>\n\t\t\t\t＀\n\t\t\t</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<th>Head:</th>\n\t\t\t<td>\n\t\t\t\t＀\n\t\t\t</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<th>Mask:</th>\n\t\t\t<td>\n\t\t\t\t＀\n\t\t\t</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<th>Ears:</th>\n\t\t\t<td>\n\t\t\t\t<input type=\"text\" name=\"outfit_ears\" value=\"\">\n\t\t\t</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<th>Glasses:</th>\n\t\t\t<td>\n\t\t\t\t＀\n\t\t\t</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<th>ID:</th>\n\t\t\t<td>\n\t\t\t\t＀\n\t\t\t</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<th>Left Pocket:</th>\n\t\t\t<td>\n\t\t\t\t<input type=\"text\" name=\"outfit_l_pocket\" value=\"\">\n\t\t\t</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<th>Right Pocket:</th>\n\t\t\t<td>\n\t\t\t\t<input type=\"text\" name=\"outfit_r_pocket\" value=\"\">\n\t\t\t</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<th>Suit Store:</th>\n\t\t\t<td>\n\t\t\t\t<input type=\"text\" name=\"outfit_s_store\" value=\"\">\n\t\t\t</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<th>Right Hand:</th>\n\t\t\t<td>\n\t\t\t\t<input type=\"text\" name=\"outfit_r_hand\" value=\"\">\n\t\t\t</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<th>Left Hand:</th>\n\t\t\t<td>\n\t\t\t\t<input type=\"text\" name=\"outfit_l_hand\" value=\"\">\n\t\t\t</td>\n\t\t</tr>\n\t</table>\n\t<br>\n\t<input type=\"submit\" value=\"Save\">\n\t</form></body></html>\n\t", [live(f.src), live(f.src), live(uniform_select), live(suit_select), live(gloves_select), live(shoes_select), live(head_select), live(mask_select), live(glasses_select), live(id_select)]);
-	rt.op(f, "Browse", [], [live(f.usr), live(dat), "window=dressup;size=550x600"], false);
+	id_select += "</select>";
+	let dat: Value = fmt("\n\t<html><head><title>Create Outfit</title></head><body>\n\t<form name=\"outfit\" action=\"byond://?src=＃\" method=\"get\">\n\t<input type=\"hidden\" name=\"src\" value=\"＃\">\n\t<input type=\"hidden\" name=\"create_outfit\" value=\"1\">\n\t<table>\n\t\t<tr>\n\t\t\t<th>Name:</th>\n\t\t\t<td>\n\t\t\t\t<input type=\"text\" name=\"outfit_name\" value=\"Custom Outfit\">\n\t\t\t</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<th>Uniform:</th>\n\t\t\t<td>\n\t\t\t   ＀\n\t\t\t</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<th>Suit:</th>\n\t\t\t<td>\n\t\t\t\t＀\n\t\t\t</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<th>Back:</th>\n\t\t\t<td>\n\t\t\t\t<input type=\"text\" name=\"outfit_back\" value=\"\">\n\t\t\t</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<th>Belt:</th>\n\t\t\t<td>\n\t\t\t\t<input type=\"text\" name=\"outfit_belt\" value=\"\">\n\t\t\t</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<th>Gloves:</th>\n\t\t\t<td>\n\t\t\t\t＀\n\t\t\t</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<th>Shoes:</th>\n\t\t\t<td>\n\t\t\t\t＀\n\t\t\t</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<th>Head:</th>\n\t\t\t<td>\n\t\t\t\t＀\n\t\t\t</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<th>Mask:</th>\n\t\t\t<td>\n\t\t\t\t＀\n\t\t\t</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<th>Ears:</th>\n\t\t\t<td>\n\t\t\t\t<input type=\"text\" name=\"outfit_ears\" value=\"\">\n\t\t\t</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<th>Glasses:</th>\n\t\t\t<td>\n\t\t\t\t＀\n\t\t\t</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<th>ID:</th>\n\t\t\t<td>\n\t\t\t\t＀\n\t\t\t</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<th>Left Pocket:</th>\n\t\t\t<td>\n\t\t\t\t<input type=\"text\" name=\"outfit_l_pocket\" value=\"\">\n\t\t\t</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<th>Right Pocket:</th>\n\t\t\t<td>\n\t\t\t\t<input type=\"text\" name=\"outfit_r_pocket\" value=\"\">\n\t\t\t</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<th>Suit Store:</th>\n\t\t\t<td>\n\t\t\t\t<input type=\"text\" name=\"outfit_s_store\" value=\"\">\n\t\t\t</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<th>Right Hand:</th>\n\t\t\t<td>\n\t\t\t\t<input type=\"text\" name=\"outfit_r_hand\" value=\"\">\n\t\t\t</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<th>Left Hand:</th>\n\t\t\t<td>\n\t\t\t\t<input type=\"text\" name=\"outfit_l_hand\" value=\"\">\n\t\t\t</td>\n\t\t</tr>\n\t</table>\n\t<br>\n\t<input type=\"submit\" value=\"Save\">\n\t</form></body></html>\n\t", [this, this, uniform_select, suit_select, gloves_select, shoes_select, head_select, mask_select, glasses_select, id_select]);
+	rt.op(f, "Browse", [], [f.usr, dat, "window=dressup;size=550x600"], false);
 	return f.dot;
 });
 
-// /client/proc/toggle_antag_hud  (code/modules/admin/verbs/randomverbs.dm:965)
+// randomverbs.dm:965
 rt.def("/client/proc/toggle_antag_hud", function toggle_antag_hud(f: Frame) {
-	let adding_hud: Value = null, H: Value = null, G: Value = null, H_2: Value = null;
-	let $0: any, $1: any, $e: any;
-	f.vars = () => [adding_hud, H, G, H_2, $0, $1, $e];
-	if (!truthy(rt.sv(f, "holder"))) {
-		return live(f.dot);
+	let H: Value = null, G: Value = null, H_2: Value = null;
+	let $e: any;
+	if (!this.holder) {
+		return f.dot;
 	}
-	adding_hud = (!truthy(rt.callSrc(f, "has_antag_hud", [])) ? 1 : 0);
-	H = null;
-	rt.forList(f, 0, rt.gl("huds"), T("/datum/atom_hud"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		H = $e;
-		if (truthy((rt.istype(live(H), T("/datum/atom_hud/antag")) ? 1 : 0))) {
-			if (truthy(live(adding_hud))) {
-				$0 = rt.callName(f, live(H), "add_hud_to", [live(f.usr)]);
+	let adding_hud: Value = (!this.has_antag_hud() ? 1 : 0);
+	for (H of each(GLOB.huds, T("/datum/atom_hud"))) {
+		if (rt.istype(H, T("/datum/atom_hud/antag"))) {
+			if (adding_hud) {
+				H.add_hud_to(f.usr);
 			} else {
-				$0 = rt.callName(f, live(H), "remove_hud_from", [live(f.usr)]);
+				H.remove_hud_from(f.usr);
 			}
 		}
 	}
-	rt.endFor(f, 0);
-	G = null;
-	rt.forList(f, 0, rt.gv(f, "gangs", rt.fv(f, "mode", rt.gl("SSticker"))), T("/datum/gang"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		G = $e;
-		H_2 = rt.fv(f, "ganghud", live(G));
-		if (truthy(live(adding_hud))) {
-			$0 = rt.callName(f, live(H_2), "add_hud_to", [live(f.usr)]);
+	for (G of each(GLOB.SSticker.mode.gangs, T("/datum/gang"))) {
+		H_2 = G.ganghud;
+		if (adding_hud) {
+			H_2.add_hud_to(f.usr);
 		} else {
-			$0 = rt.callName(f, live(H_2), "remove_hud_from", [live(f.usr)]);
+			H_2.remove_hud_from(f.usr);
 		}
 	}
-	rt.endFor(f, 0);
-	$0 = live(f.usr);
-	if (truthy(live(adding_hud))) {
-		$1 = "ON";
-	} else {
-		$1 = "OFF";
-	}
-	rt.call(f, P("/proc/to_chat"), null, [$0, fmt("You toggled your admin antag HUD ＀.", [$1])]);
-	$0 = rt.call(f, P("/proc/key_name_admin"), null, [live(f.usr)]);
-	if (truthy(live(adding_hud))) {
-		$1 = "ON";
-	} else {
-		$1 = "OFF";
-	}
-	rt.call(f, P("/proc/message_admins"), null, [fmt("＀ toggled their admin antag HUD ＀.", [$0, $1])]);
-	$0 = rt.call(f, P("/proc/key_name"), null, [live(f.usr)]);
-	if (truthy(live(adding_hud))) {
-		$1 = "ON";
-	} else {
-		$1 = "OFF";
-	}
-	rt.call(f, P("/proc/log_admin"), null, [fmt("＀ toggled their admin antag HUD ＀.", [$0, $1])]);
+	let $0: any = f.usr;
+	to_chat($0, `You toggled your admin antag HUD ${adding_hud ? "ON" : "OFF"}.`);
+	message_admins(`${key_name_admin(f.usr)} toggled their admin antag HUD ${adding_hud ? "ON" : "OFF"}.`);
+	log_admin(`${key_name(f.usr)} toggled their admin antag HUD ${adding_hud ? "ON" : "OFF"}.`);
 	return f.dot;
 }, false, { verb: { name: "Toggle AntagHUD", category: "Admin", desc: "Toggles the Admin AntagHUD" } });
 
-// /client/proc/has_antag_hud  (code/modules/admin/verbs/randomverbs.dm:983)
+// randomverbs.dm:983
 rt.def("/client/proc/has_antag_hud", function has_antag_hud(f: Frame) {
 	let A: Value = null;
-	f.vars = () => [A];
-	return rt.index(rt.gv(f, "hudusers", (A = rt.index(rt.gl("huds"), 11))), rt.sv(f, "mob"));
+	return rt.index((A = rt.index(GLOB.huds, ANTAG_HUD_TRAITOR)).hudusers, this.mob);
 });
 
-// /client/proc/open_shuttle_manipulator  (code/modules/admin/verbs/randomverbs.dm:991)  may sleep
+// randomverbs.dm:991
 rt.def("/client/proc/open_shuttle_manipulator", function* open_shuttle_manipulator(f: Frame) {
 	let M: Value = null;
-	let $e: any;
-	f.vars = () => [M, $e];
-	M = null;
-	rt.forList(f, 0, rt.gl("machines"), T("/obj/machinery/shuttle_manipulator"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		yield* g.callName(f, live(M), "ui_interact", [live(f.usr)]);
+	for (M of each(GLOB.machines, T("/obj/machinery/shuttle_manipulator"))) {
+		yield* M.ui_interact(f.usr);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true, { verb: { name: "Shuttle Manipulator", category: "Admin", desc: "Opens the shuttle manipulator UI." } });
 
-// /client/proc/mass_zombie_infection  (code/modules/admin/verbs/randomverbs.dm:1000)  may sleep
+// randomverbs.dm:1000
 rt.def("/client/proc/mass_zombie_infection", function* mass_zombie_infection(f: Frame) {
 	let confirm: Value = null, H: Value = null;
-	let $e: any;
-	f.vars = () => [confirm, H, $e];
-	if (!truthy(rt.sv(f, "holder"))) {
-		return live(f.dot);
+	if (!this.holder) {
+		return f.dot;
 	}
-	if (!isEqual((confirm = (yield* g.call(f, P("/proc/alert"), null, [live(f.src), "Please confirm you want to add latent zombie organs in all humans?", "Confirm Zombies", "Yes", "No"]))), "Yes")) {
-		return live(f.dot);
+	if ((confirm = (yield* alert(this, "Please confirm you want to add latent zombie organs in all humans?", "Confirm Zombies", "Yes", "No"))) != "Yes") {
+		return f.dot;
 	}
-	H = null;
-	rt.forList(f, 0, rt.gl("mob_list"), T("/mob/living/carbon/human"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		H = $e;
-		yield* g.new_(f, T("/obj/item/organ/zombie_infection"), [live(H)]);
+	for (H of each(GLOB.mob_list, T("/mob/living/carbon/human"))) {
+		yield* new_(T("/obj/item/organ/zombie_infection"), H);
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/message_admins"), null, [fmt("＀ added a latent zombie infection to all humans.", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.usr)]))])]);
-	yield* g.call(f, P("/proc/log_admin"), null, [fmt("＀ added a latent zombie infection to all humans.", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.usr)]))])]);
+	message_admins(`${key_name_admin(f.usr)} added a latent zombie infection to all humans.`);
+	log_admin(`${key_name(f.usr)} added a latent zombie infection to all humans.`);
 	return f.dot;
 }, true, { verb: { name: "Mass Zombie Infection", category: "Fun", desc: "Infects all humans with a latent organ that will zombify them on death." } });
 
-// /client/proc/mass_zombie_cure  (code/modules/admin/verbs/randomverbs.dm:1018)  may sleep
+// randomverbs.dm:1018
 rt.def("/client/proc/mass_zombie_cure", function* mass_zombie_cure(f: Frame) {
 	let confirm: Value = null, I: Value = null;
-	let $e: any;
-	f.vars = () => [confirm, I, $e];
-	if (!truthy(rt.sv(f, "holder"))) {
-		return live(f.dot);
+	if (!this.holder) {
+		return f.dot;
 	}
-	if (!isEqual((confirm = (yield* g.call(f, P("/proc/alert"), null, [live(f.src), "Please confirm you want to cure all zombies?", "Confirm Zombie Cure", "Yes", "No"]))), "Yes")) {
-		return live(f.dot);
+	if ((confirm = (yield* alert(this, "Please confirm you want to cure all zombies?", "Confirm Zombie Cure", "Yes", "No"))) != "Yes") {
+		return f.dot;
 	}
-	I = null;
-	rt.forList(f, 0, rt.gl("zombie_infection_list"), T("/obj/item/organ/zombie_infection"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		yield* g.call(f, P("/proc/qdel"), null, [live(I)]);
+	for (I of each(GLOB.zombie_infection_list, T("/obj/item/organ/zombie_infection"))) {
+		yield* qdel(I);
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/message_admins"), null, [fmt("＀ cured all zombies.", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.usr)]))])]);
-	yield* g.call(f, P("/proc/log_admin"), null, [fmt("＀ cured all zombies.", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.usr)]))])]);
+	message_admins(`${key_name_admin(f.usr)} cured all zombies.`);
+	log_admin(`${key_name(f.usr)} cured all zombies.`);
 	return f.dot;
 }, true, { verb: { name: "Mass Zombie Cure", category: "Fun", desc: "Removes the zombie infection from all humans, returning them to normal." } });
 
-// /client/proc/polymorph_all  (code/modules/admin/verbs/randomverbs.dm:1037)  may sleep
+// randomverbs.dm:1037
 rt.def("/client/proc/polymorph_all", function* polymorph_all(f: Frame) {
-	let confirm: Value = null, mobs: Value = null, who_did_it: Value = null, M: Value = null;
-	let $e: any;
-	f.vars = () => [confirm, mobs, who_did_it, M, $e];
-	if (!truthy(rt.sv(f, "holder"))) {
-		return live(f.dot);
+	let confirm: Value = null, M: Value = null;
+	if (!this.holder) {
+		return f.dot;
 	}
-	if (!isEqual((confirm = (yield* g.call(f, P("/proc/alert"), null, [live(f.src), "Please confirm you want polymorph all mobs?", "Confirm Polymorph", "Yes", "No"]))), "Yes")) {
-		return live(f.dot);
+	if ((confirm = (yield* alert(this, "Please confirm you want polymorph all mobs?", "Confirm Polymorph", "Yes", "No"))) != "Yes") {
+		return f.dot;
 	}
-	mobs = (yield* g.call(f, P("/proc/shuffle"), null, [(yield* g.callName(f, rt.gl("living_mob_list"), "Copy", []))]));
-	who_did_it = (yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.usr)]));
-	yield* g.call(f, P("/proc/message_admins"), null, [fmt("＀ started polymorphed all living mobs.", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.usr)]))])]);
-	yield* g.call(f, P("/proc/log_admin"), null, [fmt("＀ polymorphed all living mobs.", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.usr)]))])]);
-	M = null;
-	rt.forList(f, 0, live(mobs), T("/mob/living"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if (rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit"))) {
-			yield* g.call(f, P("/proc/stoplag"), null, []);
+	let mobs: Value = shuffle((yield* GLOB.living_mob_list.Copy()));
+	let who_did_it: Value = key_name_admin(f.usr);
+	message_admins(`${key_name_admin(f.usr)} started polymorphed all living mobs.`);
+	log_admin(`${key_name(f.usr)} polymorphed all living mobs.`);
+	for (M of each(mobs, T("/mob/living"))) {
+		if (rt.tickUsage(f) > GLOB.current_ticklimit) {
+			yield* stoplag();
 		}
-		if (!truthy(live(M))) {
+		if (!M) {
 			continue;
 		}
-		yield* g.callName(f, live(M), "audible_message", ["<span class='italics'>...wabbajack...wabbajack...</span>"]);
-		yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(M)), rt.rsc("sound/magic/staff_change.ogg"), 50, 1, -1]);
-		yield* g.call(f, P("/proc/wabbajack"), null, [live(M)]);
+		M.audible_message("<span class='italics'>...wabbajack...wabbajack...</span>");
+		playsound(M.loc, rt.rsc("sound/magic/staff_change.ogg"), 50, 1, -1);
+		yield* wabbajack(M);
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/message_admins"), null, [fmt("Mass polymorph started by ＀ is complete.", [live(who_did_it)])]);
+	message_admins(`Mass polymorph started by ${who_did_it} is complete.`);
 	return f.dot;
 }, true, { verb: { name: "Polymorph All", category: "Fun", desc: "Applies the effects of the bolt of change to every single mob." } });
 
-// /client/proc/show_tip  (code/modules/admin/verbs/randomverbs.dm:1071)  may sleep
+// randomverbs.dm:1071
 rt.def("/client/proc/show_tip", function* show_tip(f: Frame) {
 	let input: Value = null;
-	f.vars = () => [input];
-	if (!truthy(rt.sv(f, "holder"))) {
-		return live(f.dot);
+	if (!this.holder) {
+		return f.dot;
 	}
-	if (!truthy((input = (yield* g.op(f, "Prompt", [65], ["", "Tip", "Please specify your tip that you want to send to the players.", live(f.usr), null]))))) {
-		return live(f.dot);
+	if (!(input = (yield* g.op(f, "Prompt", [65], ["", "Tip", "Please specify your tip that you want to send to the players.", f.usr, null])))) {
+		return f.dot;
 	}
-	if (!truthy(rt.gl("SSticker"))) {
-		return live(f.dot);
+	if (!GLOB.SSticker) {
+		return f.dot;
 	}
-	rt.setFv(f, "selected_tip", rt.gl("SSticker"), live(input));
-	if (truthy(rt.fv(f, "tipped", rt.gl("SSticker")))) {
-		yield* g.callName(f, rt.gl("SSticker"), "send_tip_of_the_round", []);
+	GLOB.SSticker.selected_tip = input;
+	if (GLOB.SSticker.tipped) {
+		GLOB.SSticker.send_tip_of_the_round();
 	}
-	yield* g.call(f, P("/proc/message_admins"), null, [fmt("＀ sent a tip of the round.", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.usr)]))])]);
-	yield* g.call(f, P("/proc/log_admin"), null, [fmt("＀ sent \"＀\" as the Tip of the Round.", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.usr)])), live(input)])]);
+	message_admins(`${key_name_admin(f.usr)} sent a tip of the round.`);
+	log_admin(`${key_name(f.usr)} sent "${input}" as the Tip of the Round.`);
 	return f.dot;
 }, true, { verb: { name: "Show Tip", category: "Admin", desc: "Sends a tip (that you specify) to all players. After all you're the experienced player here." } });
 
-// /proc/mass_purrbation  (code/modules/admin/verbs/randomverbs.dm:1095)  may sleep
+// randomverbs.dm:1095
 rt.def("/proc/mass_purrbation", function* mass_purrbation(f: Frame) {
 	let M: Value = null;
-	let $e: any;
-	f.vars = () => [M, $e];
-	M = null;
-	rt.forList(f, 0, rt.gl("mob_list"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if (truthy((yield* g.call(f, P("/proc/is_species"), null, [live(M), T("/datum/species/human")])))) {
-			yield* g.call(f, P("/proc/purrbation_apply"), null, [live(M)]);
+	for (M of each(GLOB.mob_list)) {
+		if (is_species(M, T("/datum/species/human"))) {
+			yield* purrbation_apply(M);
 		}
-		if (rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit"))) {
-			yield* g.call(f, P("/proc/stoplag"), null, []);
+		if (rt.tickUsage(f) > GLOB.current_ticklimit) {
+			yield* stoplag();
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /proc/mass_remove_purrbation  (code/modules/admin/verbs/randomverbs.dm:1101)  may sleep
+// randomverbs.dm:1101
 rt.def("/proc/mass_remove_purrbation", function* mass_remove_purrbation(f: Frame) {
 	let M: Value = null;
-	let $e: any;
-	f.vars = () => [M, $e];
-	M = null;
-	rt.forList(f, 0, rt.gl("mob_list"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if (truthy((yield* g.call(f, P("/proc/is_species"), null, [live(M), T("/datum/species/human")])))) {
-			yield* g.call(f, P("/proc/purrbation_remove"), null, [live(M)]);
+	for (M of each(GLOB.mob_list)) {
+		if (is_species(M, T("/datum/species/human"))) {
+			yield* purrbation_remove(M);
 		}
-		if (rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit"))) {
-			yield* g.call(f, P("/proc/stoplag"), null, []);
+		if (rt.tickUsage(f) > GLOB.current_ticklimit) {
+			yield* stoplag();
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /proc/purrbation_toggle  (code/modules/admin/verbs/randomverbs.dm:1107)  may sleep
+// randomverbs.dm:1107
 rt.def("/proc/purrbation_toggle", function* purrbation_toggle(f: Frame, H: Value) {
-	f.vars = () => [H];
-	if (!truthy((yield* g.call(f, P("/proc/is_species"), null, [live(H), T("/datum/species/human")])))) {
-		return live(f.dot);
+	if (!is_species(H, T("/datum/species/human"))) {
+		return f.dot;
 	}
-	if (isEqual(rt.index(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "tail_human"), "None") && isEqual(rt.index(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "ears"), "None")) {
-		yield* g.call(f, P("/proc/purrbation_apply"), null, [live(H)]);
+	if (rt.index(H.dna.features, "tail_human") == "None" && rt.index(H.dna.features, "ears") == "None") {
+		yield* purrbation_apply(H);
 		f.dot = 1;
 	} else {
-		yield* g.call(f, P("/proc/purrbation_remove"), null, [live(H)]);
+		yield* purrbation_remove(H);
 		f.dot = 0;
 	}
 	return f.dot;
 }, true);
 
-// /proc/purrbation_apply  (code/modules/admin/verbs/randomverbs.dm:1117)  may sleep
+// randomverbs.dm:1117
 rt.def("/proc/purrbation_apply", function* purrbation_apply(f: Frame, H: Value) {
-	f.vars = () => [H];
-	if (!truthy((rt.istype(live(H), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		return live(f.dot);
+	if (!rt.istype(H, T("/mob/living/carbon/human"))) {
+		return f.dot;
 	}
-	if (!(isEqual(rt.index(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "tail_human"), "None") && isEqual(rt.index(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "ears"), "None"))) {
-		return live(f.dot);
+	if (!(rt.index(H.dna.features, "tail_human") == "None" && rt.index(H.dna.features, "ears") == "None")) {
+		return f.dot;
 	}
-	yield* g.call(f, P("/proc/to_chat"), null, [live(H), "Something is nya~t right."]);
-	rt.setAt(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "tail_human", "Cat");
-	rt.setAt(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "ears", "Cat");
-	yield* g.callName(f, live(H), "regenerate_icons", []);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(H), 0), rt.rsc("sound/effects/meow1.ogg"), 50, 1, -1]);
+	to_chat(H, "Something is nya~t right.");
+	rt.setAt(H.dna.features, "tail_human", "Cat");
+	rt.setAt(H.dna.features, "ears", "Cat");
+	yield* H.regenerate_icons();
+	playsound(rt.getStep(f, H, 0), rt.rsc("sound/effects/meow1.ogg"), 50, 1, -1);
 	return f.dot;
 }, true);
 
-// /proc/purrbation_remove  (code/modules/admin/verbs/randomverbs.dm:1128)  may sleep
+// randomverbs.dm:1128
 rt.def("/proc/purrbation_remove", function* purrbation_remove(f: Frame, H: Value) {
-	f.vars = () => [H];
-	if (!truthy((rt.istype(live(H), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		return live(f.dot);
+	if (!rt.istype(H, T("/mob/living/carbon/human"))) {
+		return f.dot;
 	}
-	if (isEqual(rt.index(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "tail_human"), "None") && isEqual(rt.index(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "ears"), "None")) {
-		return live(f.dot);
+	if (rt.index(H.dna.features, "tail_human") == "None" && rt.index(H.dna.features, "ears") == "None") {
+		return f.dot;
 	}
-	yield* g.call(f, P("/proc/to_chat"), null, [live(H), "You are no longer a cat."]);
-	rt.setAt(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "tail_human", "None");
-	rt.setAt(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "ears", "None");
-	yield* g.callName(f, live(H), "regenerate_icons", []);
+	to_chat(H, "You are no longer a cat.");
+	rt.setAt(H.dna.features, "tail_human", "None");
+	rt.setAt(H.dna.features, "ears", "None");
+	yield* H.regenerate_icons();
 	return f.dot;
 }, true);
 
-// /client/proc/modify_goals  (code/modules/admin/verbs/randomverbs.dm:1143)
+// randomverbs.dm:1143
 rt.def("/client/proc/modify_goals", function modify_goals(f: Frame) {
-	if (!truthy(rt.call(f, P("/proc/check_rights"), null, [2]))) {
-		return live(f.dot);
+	if (!check_rights(2)) {
+		return f.dot;
 	}
-	rt.callName(f, rt.sv(f, "holder"), "modify_goals", []);
+	this.holder.modify_goals();
 	return f.dot;
 }, false, { verb: { name: "Modify goals", category: "Debug" } });
 
-// /datum/admins/proc/modify_goals  (code/modules/admin/verbs/randomverbs.dm:1149)
+// randomverbs.dm:1149
 rt.def("/datum/admins/proc/modify_goals", function modify_goals(f: Frame) {
-	let dat: Value = null, S: Value = null;
-	let $e: any;
-	f.vars = () => [dat, S, $e];
-	dat = "";
-	S = null;
-	rt.forList(f, 0, rt.gv(f, "station_goals", rt.fv(f, "mode", rt.gl("SSticker"))), T("/datum/station_goal"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		S = $e;
-		dat = rt.modify(live(dat), fmt("＀ - <a href='?src=＃;announce=1'>Announce</a> | <a href='?src=＃;remove=1'>Remove</a><br>", [rt.fv(f, "name", live(S)), live(S), live(S)]), add);
+	let S: Value = null;
+	let dat: Value = "";
+	for (S of each(GLOB.SSticker.mode.station_goals, T("/datum/station_goal"))) {
+		dat += fmt("＀ - <a href='?src=＃;announce=1'>Announce</a> | <a href='?src=＃;remove=1'>Remove</a><br>", [S.name, S, S]);
 	}
-	rt.endFor(f, 0);
-	dat = rt.modify(live(dat), fmt("<br><a href='?src=＃;add_station_goal=1'>Add New Goal</a>", [live(f.src)]), add);
-	rt.op(f, "Browse", [], [live(f.usr), live(dat), "window=goals;size=400x400"], false);
+	dat += fmt("<br><a href='?src=＃;add_station_goal=1'>Add New Goal</a>", [this]);
+	rt.op(f, "Browse", [], [f.usr, dat, "window=goals;size=400x400"], false);
 	return f.dot;
 });
 
-// /client/proc/smite  (code/modules/admin/verbs/randomverbs.dm:1172)  may sleep
+// randomverbs.dm:1172
 rt.def("/client/proc/smite", function* smite(f: Frame, target: Value) {
-	let punishment_list: Value = null, punishment: Value = null, _T: Value = null, msg: Value = null;
-	let $0: any;
-	f.vars = () => [target, punishment_list, punishment, _T, msg, $0];
-	if (!truthy(rt.sv(f, "holder"))) {
-		return live(f.dot);
+	let _T: Value = null, msg: Value = null;
+	if (!this.holder) {
+		return f.dot;
 	}
-	punishment_list = rt.list("Lightning bolt", "Brain damage", "Gib", "Bluespace Artillery Device");
-	punishment = (yield* g.op(f, "Prompt", [1], [null, null, "DIVINE SMITING", "Choose a punishment", live(punishment_list)]));
-	if (((!truthy(live(target)) || truthy(rt.fv(f, "gc_destroyed", live(target)))) || !truthy(live(punishment)))) {
-		return live(f.dot);
+	let punishment_list: Value = list("Lightning bolt", "Brain damage", "Gib", "Bluespace Artillery Device");
+	let punishment: Value = (yield* g.op(f, "Prompt", [1], [null, null, "DIVINE SMITING", "Choose a punishment", punishment_list]));
+	if (!target || target.gc_destroyed || !punishment) {
+		return f.dot;
 	}
-	$0 = live(punishment);
-	if ($0 === "Lightning bolt") {
-		yield* g.callName(f, (_T = rt.getStep(f, rt.getStep(f, live(target), 1), 1)), "Beam", [null, live(target), "icon_state", fmt("lightning＀", [(yield* g.call(f, P("/proc/rand"), null, [1, 12]))]), "time", 5], rt.Args.Named);
-		yield* g.callName(f, live(target), "adjustFireLoss", [75]);
-		yield* g.callName(f, live(target), "electrocution_animation", [40]);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(target), "<span class='userdanger'>The gods have punished you for your sins!</span>"]);
-	} else if ($0 === "Brain damage") {
-		yield* g.callName(f, live(target), "adjustBrainLoss", [75]);
-	} else if ($0 === "Gib") {
-		yield* g.callName(f, live(target), "gib", [0]);
-	} else if ($0 === "Bluespace Artillery Device") {
-		yield* g.srcCall(f, "bluespace_artillery", live(target));
+	if (punishment === "Lightning bolt") {
+		yield* (_T = rt.getStep(f, rt.getStep(f, target, 1), 1)).Beam(target, { icon_state: `lightning${rand(1, 12)}`, time: 5 });
+		yield* target.adjustFireLoss(75);
+		yield* target.electrocution_animation(40);
+		to_chat(target, "<span class='userdanger'>The gods have punished you for your sins!</span>");
+	} else if (punishment === "Brain damage") {
+		yield* target.adjustBrainLoss(75);
+	} else if (punishment === "Gib") {
+		yield* target.gib(0);
+	} else if (punishment === "Bluespace Artillery Device") {
+		yield* this.bluespace_artillery(target);
 	}
-	yield* g.call(f, P("/proc/message_admins"), null, [(msg = fmt("＀ punished ＀ with ＀.", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.usr)])), (yield* g.call(f, P("/proc/key_name_admin"), null, [live(target)])), live(punishment)]))]);
-	yield* g.call(f, P("/proc/admin_ticket_log"), null, [live(target), live(msg)]);
-	yield* g.call(f, P("/proc/log_admin"), null, [fmt("＀ punished ＀ with ＀.", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.usr)])), (yield* g.call(f, P("/proc/key_name"), null, [live(target)])), live(punishment)])]);
+	message_admins((msg = `${key_name_admin(f.usr)} punished ${key_name_admin(target)} with ${punishment}.`));
+	admin_ticket_log(target, msg);
+	log_admin(`${key_name(f.usr)} punished ${key_name(target)} with ${punishment}.`);
 	return f.dot;
 }, true, { verb: { name: "Smite", category: "Fun" }, argTypes: [{ type: 8, path: "/mob/living/carbon/human" }] });
 
-// /client/proc/trigger_centcom_recall  (code/modules/admin/verbs/randomverbs.dm:1203)  may sleep
+// randomverbs.dm:1203
 rt.def("/client/proc/trigger_centcom_recall", function* trigger_centcom_recall(f: Frame) {
-	let message: Value = null;
-	f.vars = () => [message];
-	if (!truthy(rt.sv(f, "holder"))) {
-		return live(f.dot);
+	if (!this.holder) {
+		return f.dot;
 	}
-	message = rt.op(f, "PickUnweighted", [1], [rt.gl("admiral_messages")]);
-	if (!truthy((message = (yield* g.op(f, "Prompt", [3], [null, live(message), "Admiral Message", "Enter message from the on-call admiral to be put in the recall report.", null]))))) {
-		return live(f.dot);
+	let message: Value = pick(GLOB.admiral_messages);
+	if (!(message = (yield* g.op(f, "Prompt", [3], [null, message, "Admiral Message", "Enter message from the on-call admiral to be put in the recall report.", null])))) {
+		return f.dot;
 	}
-	yield* g.call(f, P("/proc/message_admins"), null, [fmt("＀ triggered a Centcom recall, with the admiral message of: ＀", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.usr)])), live(message)])]);
-	yield* g.call(f, P("/proc/log_game"), null, [fmt("＀ triggered a Centcom recall, with the message of: ＀", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.usr)])), live(message)])]);
-	yield* g.callName(f, rt.gl("SSshuttle"), "centcom_recall", [rt.gv(f, "timer", rt.fv(f, "emergency", rt.gl("SSshuttle"))), live(message)]);
+	message_admins(`${key_name_admin(f.usr)} triggered a Centcom recall, with the admiral message of: ${message}`);
+	log_game(`${key_name(f.usr)} triggered a Centcom recall, with the message of: ${message}`);
+	yield* GLOB.SSshuttle.centcom_recall(GLOB.SSshuttle.emergency.timer, message);
 	return f.dot;
 }, true);

@@ -1,7 +1,7 @@
-// From code/modules/hydroponics/grown/corn.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/hydroponics/grown/corn.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(10025, "/obj/item/seeds/corn", "/obj/item/seeds", {
@@ -21,14 +21,12 @@ rt.type(10025, "/obj/item/seeds/corn", "/obj/item/seeds", {
 	mutatelist: null,
 });
 
-// /obj/item/seeds/corn/proc/<init>  (code/modules/hydroponics/grown/corn.dm:16)
+// corn.dm:16
 rt.def("/obj/item/seeds/corn/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "reagents_add", rt.alist(f, ["cornoil", 0.20000000298023224, "vitamin", 0.03999999910593033, "nutriment", 0.10000000149011612]));
-	$0 = $0;
-	rt.setSv(f, "mutatelist", rt.list(T("/obj/item/seeds/corn/snapcorn")));
+	parent_proc();
+	this.reagents_add = rt.alist(f, ["cornoil", 0.2, "vitamin", 0.04, "nutriment", 0.1]);
+
+	this.mutatelist = list(T("/obj/item/seeds/corn/snapcorn"));
 	return f.dot;
 });
 
@@ -43,17 +41,17 @@ rt.type(7497, "/obj/item/weapon/grown/corncob", "/obj/item/weapon/grown", {
 	throwforce: 0,
 });
 
-// /obj/item/weapon/grown/corncob/proc/attackby  (code/modules/hydroponics/grown/corn.dm:39)  may sleep
-rt.def("/obj/item/weapon/grown/corncob/proc/attackby", function* attackby(f: Frame) {
-	if (truthy((yield* g.callName(f, live(f.args[0]), "is_sharp", [])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You use ＀ to fashion a pipe out of the corn cob!</span>", [live(f.args[0])])]);
-		yield* g.new_(f, T("/obj/item/clothing/mask/cigarette/pipe/cobpipe"), [rt.fv(f, "loc", live(f.args[1]))]);
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+// corn.dm:39
+rt.def("/obj/item/weapon/grown/corncob/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
+	if (W.is_sharp()) {
+		to_chat(user, `<span class='notice'>You use ${W} to fashion a pipe out of the corn cob!</span>`);
+		yield* new_(T("/obj/item/clothing/mask/cigarette/pipe/cobpipe"), user.loc);
+		yield* qdel(this);
 	} else {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["W", "user", "params"] });
+}, true);
 
 rt.type(10026, "/obj/item/seeds/corn/snapcorn", "/obj/item/seeds/corn", {
 	species: "snapcorn",
@@ -66,12 +64,10 @@ rt.type(10026, "/obj/item/seeds/corn/snapcorn", "/obj/item/seeds/corn", {
 	icon_state: "seed-snapcorn",
 });
 
-// /obj/item/seeds/corn/snapcorn/proc/<init>  (code/modules/hydroponics/grown/corn.dm:54)
+// corn.dm:54
 rt.def("/obj/item/seeds/corn/snapcorn/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "mutatelist", rt.list());
+	parent_proc();
+	this.mutatelist = list();
 	return f.dot;
 });
 
@@ -88,26 +84,24 @@ rt.type(7498, "/obj/item/weapon/grown/snapcorn", "/obj/item/weapon/grown", {
 	throwforce: 0,
 });
 
-// /obj/item/weapon/grown/snapcorn/proc/add_juice  (code/modules/hydroponics/grown/corn.dm:70)
+// corn.dm:70
 rt.def("/obj/item/weapon/grown/snapcorn/proc/add_juice", function add_juice(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "snap_pops", rt.call(f, P("/proc/max"), null, [rt.call(f, P("/proc/round"), null, [divide(rt.fv(f, "potency", rt.sv(f, "seed")), 8)]), 1]));
+	parent_proc();
+	this.snap_pops = max(round(this.seed.potency / 8), 1);
 	return f.dot;
 });
 
-// /obj/item/weapon/grown/snapcorn/proc/attack_self  (code/modules/hydroponics/grown/corn.dm:74)  may sleep
-rt.def("/obj/item/weapon/grown/snapcorn/proc/attack_self", function* attack_self(f: Frame) {
-	let S: Value = null;
-	f.vars = () => [S];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='notice'>You pick a snap pop from the cob.</span>"]);
-	S = (yield* g.new_(f, T("/obj/item/toy/snappop"), [rt.fv(f, "loc", live(f.args[0]))]));
-	if (truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		yield* g.callName(f, live(f.args[0]), "put_in_hands", [live(S)]);
+// corn.dm:74
+rt.def("/obj/item/weapon/grown/snapcorn/proc/attack_self", function* attack_self(f: Frame, user: Value) {
+	yield* parent_proc();
+	to_chat(user, "<span class='notice'>You pick a snap pop from the cob.</span>");
+	let S: Value = (yield* new_(T("/obj/item/toy/snappop"), user.loc));
+	if (rt.istype(user, T("/mob/living/carbon/human"))) {
+		yield* user.put_in_hands(S);
 	}
-	(rt.modSrcVar(f, "snap_pops", 1, subtract));
-	if (truthy(rt.sv(f, "snap_pops"))) return f.dot;
-	yield* g.new_(f, T("/obj/item/weapon/grown/corncob"), [rt.fv(f, "loc", live(f.args[0]))]);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	this.snap_pops -= 1;
+	if (this.snap_pops) return f.dot;
+	yield* new_(T("/obj/item/weapon/grown/corncob"), user.loc);
+	yield* qdel(this);
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);

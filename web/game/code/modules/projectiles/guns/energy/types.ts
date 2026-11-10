@@ -1,5 +1,5 @@
 // Types declared in code/modules/projectiles/guns/energy that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(5136, "/obj/item/weapon/gun/energy/laser/retro", "/obj/item/weapon/gun/energy/laser", {
 	name: "retro laser gun",

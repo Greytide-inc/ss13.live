@@ -1,7 +1,7 @@
-// From code/modules/mob/living/simple_animal/friendly/drone/_drone.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/simple_animal/friendly/drone/_drone.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, fmt } = rt;
 
 
 rt.type(4841, "/mob/living/simple_animal/drone", "/mob/living/simple_animal", {
@@ -56,305 +56,276 @@ rt.type(4841, "/mob/living/simple_animal/drone", "/mob/living/simple_animal", {
 	dextrous_hud_type: rt.typePath("/datum/hud/dextrous/drone"),
 });
 
-// /mob/living/simple_animal/drone/proc/<init>  (code/modules/mob/living/simple_animal/friendly/drone/_drone.dm:54)
+// _drone.dm:54
 rt.def("/mob/living/simple_animal/drone/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "hud_possible", rt.list("8", "9", "15"));
-	rt.setSv(f, "staticChoices", rt.list("static", "blank", "letter", "animal"));
-	$0 = $0;
-	rt.setSv(f, "drone_overlays", rt.op(f, "CreateMultidimensionalList", [1], [2]));
-	$0 = $0;
-	rt.setSv(f, "alarms", rt.alist(f, ["Atmosphere", rt.list(), "Fire", rt.list(), "Power", rt.list()]));
-	$0 = $0;
-	rt.setSv(f, "speak_emote", rt.list("chirps"));
-	rt.setSv(f, "damage_coeff", rt.alist(f, ["brute", 1, "fire", 1, "tox", 0, "clone", 0, "stamina", 0, "oxy", 0]));
-	$0 = $0;
-	rt.setSv(f, "staticOverlays", rt.list());
-	rt.setSv(f, "faction", rt.list("neutral", "silicon", "turret"));
+	parent_proc();
+	this.hud_possible = list("8", "9", "15");
+	this.staticChoices = list("static", "blank", "letter", "animal");
+
+	this.drone_overlays = rt.op(f, "CreateMultidimensionalList", [1], [2]);
+
+	this.alarms = rt.alist(f, ["Atmosphere", list(), "Fire", list(), "Power", list()]);
+
+	this.speak_emote = list("chirps");
+	this.damage_coeff = rt.alist(f, ["brute", 1, "fire", 1, "tox", 0, "clone", 0, "stamina", 0, "oxy", 0]);
+
+	this.staticOverlays = list();
+	this.faction = list("neutral", "silicon", "turret");
 	return f.dot;
 });
 
-// /mob/living/simple_animal/drone/proc/Initialize  (code/modules/mob/living/simple_animal/friendly/drone/_drone.dm:81)  may sleep
+// _drone.dm:81
 rt.def("/mob/living/simple_animal/drone/proc/Initialize", function* Initialize(f: Frame) {
-	let C: Value = null, I: Value = null, SF: Value = null, diag_hud: Value = null;
-	f.vars = () => [C, I, SF, diag_hud];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "access_card", (yield* g.new_(f, T("/obj/item/weapon/card/id"), [live(f.src)])));
-	C = (yield* g.new_(f, T("/datum/job/captain"), []));
-	rt.setFv(f, "access", rt.sv(f, "access_card"), (yield* g.callName(f, live(C), "get_access", [])));
-	if (truthy(rt.sv(f, "default_storage"))) {
-		yield* g.srcCall(f, "equip_to_slot_or_del", (I = (yield* g.new_(f, rt.sv(f, "default_storage"), [live(f.src)]))), 20);
+	let I: Value = null, SF: Value = null, diag_hud: Value = null;
+	f.dot = (yield* parent_proc());
+	this.access_card = (yield* new_(T("/obj/item/weapon/card/id"), this));
+	let C: Value = (yield* new_(T("/datum/job/captain")));
+	this.access_card.access = C.get_access();
+	if (this.default_storage) {
+		yield* this.equip_to_slot_or_del((I = (yield* new_(this.default_storage, this))), slot_generic_dextrous_storage);
 	}
-	if (truthy(rt.sv(f, "default_hatmask"))) {
-		yield* g.srcCall(f, "equip_to_slot_or_del", (I = (yield* g.new_(f, rt.sv(f, "default_hatmask"), [live(f.src)]))), 11);
+	if (this.default_hatmask) {
+		yield* this.equip_to_slot_or_del((I = (yield* new_(this.default_hatmask, this))), slot_head);
 	}
-	(rt.modField(f, rt.sv(f, "access_card"), "flags", 2, rt.bitOr));
-	yield* g.srcCall(f, "alert_drones", fmt("<span class='notice'>DRONE NETWORK: ＀ connected.</span>", [rt.sv(f, "name")]));
-	if (truthy(rt.sv(f, "seeStatic"))) {
-		yield* g.callName(f, (SF = (yield* g.new_(f, T("/datum/action/generic/drone/select_filter"), [live(f.src)]))), "Grant", [live(f.src)]);
+	(rt.modField(f, this.access_card, "flags", NODROP, rt.bitOr));
+	this.alert_drones(`<span class='notice'>DRONE NETWORK: ${this.name} connected.</span>`);
+	if (this.seeStatic) {
+		yield* (SF = (yield* new_(T("/datum/action/generic/drone/select_filter"), this))).Grant(this);
 	} else {
-		(rt.modSrcVar(f, "verbs", P("/mob/living/simple_animal/drone/verb/toggle_statics"), subtract));
+		this.verbs -= P("/mob/living/simple_animal/drone/verb/toggle_statics");
 	}
-	yield* g.callName(f, (diag_hud = rt.index(rt.gl("huds"), 5)), "add_to_hud", [live(f.src)]);
+	(diag_hud = rt.index(GLOB.huds, DATA_HUD_DIAGNOSTIC)).add_to_hud(this);
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/drone/proc/med_hud_set_health  (code/modules/mob/living/simple_animal/friendly/drone/_drone.dm:110)
+// _drone.dm:110
 rt.def("/mob/living/simple_animal/drone/proc/med_hud_set_health", function med_hud_set_health(f: Frame) {
-	let holder: Value = null, I: Value = null;
-	f.vars = () => [holder, I];
-	holder = rt.at(rt.sv(f, "hud_list"), "9");
-	I = rt.call(f, P("/proc/icon"), null, [rt.sv(f, "icon"), rt.sv(f, "icon_state"), rt.sv(f, "dir")]);
-	rt.setFv(f, "pixel_y", live(holder), subtract(rt.callName(f, live(I), "Height", []), rt.fv(f, "icon_size", rt.world())));
-	rt.setFv(f, "icon_state", live(holder), fmt("huddiag＀", [rt.call(f, P("/proc/RoundDiagBar"), null, [divide(rt.sv(f, "health"), rt.sv(f, "maxHealth"))])]));
+	let holder: Value = rt.at(this.hud_list, "9");
+	let I: Value = icon(this.icon, this.icon_state, this.dir);
+	holder.pixel_y = I.Height() - rt.world().icon_size;
+	holder.icon_state = `huddiag${RoundDiagBar(this.health / this.maxHealth)}`;
 	return f.dot;
 });
 
-// /mob/living/simple_animal/drone/proc/med_hud_set_status  (code/modules/mob/living/simple_animal/friendly/drone/_drone.dm:116)
+// _drone.dm:116
 rt.def("/mob/living/simple_animal/drone/proc/med_hud_set_status", function med_hud_set_status(f: Frame) {
-	let holder: Value = null, I: Value = null;
-	f.vars = () => [holder, I];
-	holder = rt.at(rt.sv(f, "hud_list"), "8");
-	I = rt.call(f, P("/proc/icon"), null, [rt.sv(f, "icon"), rt.sv(f, "icon_state"), rt.sv(f, "dir")]);
-	rt.setFv(f, "pixel_y", live(holder), subtract(rt.callName(f, live(I), "Height", []), rt.fv(f, "icon_size", rt.world())));
-	if (isEqual(rt.sv(f, "stat"), 2)) {
-		rt.setFv(f, "icon_state", live(holder), "huddead2");
+	let holder: Value = rt.at(this.hud_list, "8");
+	let I: Value = icon(this.icon, this.icon_state, this.dir);
+	holder.pixel_y = I.Height() - rt.world().icon_size;
+	if (this.stat == 2) {
+		holder.icon_state = "huddead2";
+	} else if (this.incapacitated()) {
+		holder.icon_state = "hudoffline";
 	} else {
-		if (truthy(rt.callSrc(f, "incapacitated", []))) {
-			rt.setFv(f, "icon_state", live(holder), "hudoffline");
-		} else {
-			rt.setFv(f, "icon_state", live(holder), "hudstat");
-		}
+		holder.icon_state = "hudstat";
 	}
 	return f.dot;
 });
 
-// /mob/living/simple_animal/drone/proc/Destroy  (code/modules/mob/living/simple_animal/friendly/drone/_drone.dm:126)  may sleep
+// _drone.dm:126
 rt.def("/mob/living/simple_animal/drone/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "access_card")]);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* qdel(this.access_card);
+	return (yield* parent_proc());
 }, true);
 
-// /mob/living/simple_animal/drone/proc/Login  (code/modules/mob/living/simple_animal/friendly/drone/_drone.dm:130)  may sleep
+// _drone.dm:130
 rt.def("/mob/living/simple_animal/drone/proc/Login", function* Login(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "check_laws");
-	if (truthy(rt.sv(f, "flavortext"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), fmt("＀", [rt.sv(f, "flavortext")])]);
+	yield* parent_proc();
+	this.check_laws();
+	if (this.flavortext) {
+		to_chat(this, `${this.flavortext}`);
 	}
-	yield* g.srcCall(f, "updateSeeStaticMobs");
-	if (truthy(rt.sv(f, "picked"))) return f.dot;
-	yield* g.srcCall(f, "pickVisualAppearence");
+	this.updateSeeStaticMobs();
+	if (this.picked) return f.dot;
+	yield* this.pickVisualAppearence();
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/drone/proc/death  (code/modules/mob/living/simple_animal/friendly/drone/_drone.dm:143)  may sleep
+// _drone.dm:143
 rt.def("/mob/living/simple_animal/drone/proc/death", function* death(f: Frame, gibbed: Value) {
-	f.vars = () => [gibbed];
-	yield* g.callSuper(f, [live(gibbed)]);
-	if (truthy(rt.sv(f, "internal_storage"))) {
-		yield* g.srcCall(f, "dropItemToGround", rt.sv(f, "internal_storage"));
+	yield* parent_proc(gibbed);
+	if (this.internal_storage) {
+		yield* this.dropItemToGround(this.internal_storage);
 	}
-	if (truthy(rt.sv(f, "head"))) {
-		yield* g.srcCall(f, "dropItemToGround", rt.sv(f, "head"));
+	if (this.head) {
+		yield* this.dropItemToGround(this.head);
 	}
-	yield* g.srcCall(f, "alert_drones", fmt("<span class='danger'>DRONE NETWORK: ＀ is not responding.</span>", [rt.sv(f, "name")]));
+	this.alert_drones(`<span class='danger'>DRONE NETWORK: ${this.name} is not responding.</span>`);
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/drone/proc/gib  (code/modules/mob/living/simple_animal/friendly/drone/_drone.dm:153)  may sleep
+// _drone.dm:153
 rt.def("/mob/living/simple_animal/drone/proc/gib", function* gib(f: Frame) {
-	yield* g.srcCall(f, "dust");
+	yield* this.dust();
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/drone/proc/ratvar_act  (code/modules/mob/living/simple_animal/friendly/drone/_drone.dm:156)  may sleep
+// _drone.dm:156
 rt.def("/mob/living/simple_animal/drone/proc/ratvar_act", function* ratvar_act(f: Frame) {
 	let R: Value = null;
-	f.vars = () => [R];
-	if (truthy(rt.bitAnd(rt.sv(f, "status_flags"), 4096))) {
-		return live(f.dot);
+	if (rt.bitAnd(this.status_flags, 4096)) {
+		return f.dot;
 	}
-	if (truthy(rt.sv(f, "internal_storage"))) {
-		yield* g.srcCall(f, "dropItemToGround", rt.sv(f, "internal_storage"));
+	if (this.internal_storage) {
+		yield* this.dropItemToGround(this.internal_storage);
 	}
-	if (truthy(rt.sv(f, "head"))) {
-		yield* g.srcCall(f, "dropItemToGround", rt.sv(f, "head"));
+	if (this.head) {
+		yield* this.dropItemToGround(this.head);
 	}
-	yield* g.callName(f, (R = (yield* g.new_(f, T("/mob/living/simple_animal/drone/cogscarab/ratvar"), [rt.sv(f, "loc")]))), "setDir", [rt.sv(f, "dir")]);
-	if (truthy(rt.sv(f, "mind"))) {
-		yield* g.callName(f, rt.sv(f, "mind"), "transfer_to", [live(R), 1]);
+	yield* (R = (yield* new_(T("/mob/living/simple_animal/drone/cogscarab/ratvar"), this.loc))).setDir(this.dir);
+	if (this.mind) {
+		yield* this.mind.transfer_to(R, 1);
 	} else {
-		rt.setFv(f, "key", live(R), rt.sv(f, "key"));
+		R.key = this.key;
 	}
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/drone/proc/examine  (code/modules/mob/living/simple_animal/friendly/drone/_drone.dm:173)
+// _drone.dm:173
 rt.def("/mob/living/simple_animal/drone/proc/examine", function examine(f: Frame, user: Value) {
-	let msg: Value = null, I: Value = null;
+	let I: Value = null;
 	let $0: any, $1: any, $e: any;
-	f.vars = () => [msg, I, $0, $1, $e];
-	msg = fmt("<span class='info'>*---------*\nThis is ＀ ＇<b>！</b>!\n", [rt.call(f, P("/proc/bicon"), null, [live(f.src)]), live(f.src)]);
-	I = null;
-	rt.forList(f, 0, rt.sv(f, "held_items"), T("/obj/item"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		if (!truthy(rt.bitAnd(rt.fv(f, "flags", live(I)), 128))) {
-			if (truthy(rt.fv(f, "blood_DNA", live(I)))) {
-				$0 = rt.call(f, P("/proc/bicon"), null, [live(I)]);
-				if (isEqual(rt.fv(f, "gender", live(I)), "plural")) {
+	let msg: Value = fmt("<span class='info'>*---------*\nThis is ＀ ＇<b>！</b>!\n", [bicon(this), this]);
+	for (I of each(this.held_items, T("/obj/item"))) {
+		if (!rt.bitAnd(I.flags, ABSTRACT)) {
+			if (I.blood_DNA) {
+				$0 = bicon(I);
+				if (I.gender == "plural") {
 					$1 = "some";
 				} else {
 					$1 = "a";
 				}
-				msg = rt.modify(live(msg), fmt("<span class='warning'>It has ＀ ＀ blood-stained ＀ in its ＀!</span>\n", [$0, $1, rt.fv(f, "name", live(I)), rt.callSrc(f, "get_held_index_name", [rt.callSrc(f, "get_held_index_of_item", [live(I)])])]), add);
+				msg += `<span class='warning'>It has ${$0} ${$1} blood-stained ${I.name} in its ${this.get_held_index_name(this.get_held_index_of_item(I))}!</span>\n`;
 			} else {
-				msg = rt.modify(live(msg), fmt("It has ＀ ＇！ in its ＀.\n", [rt.call(f, P("/proc/bicon"), null, [live(I)]), live(I), rt.callSrc(f, "get_held_index_name", [rt.callSrc(f, "get_held_index_of_item", [live(I)])])]), add);
+				msg += fmt("It has ＀ ＇！ in its ＀.\n", [bicon(I), I, this.get_held_index_name(this.get_held_index_of_item(I))]);
 			}
 		}
 	}
-	rt.endFor(f, 0);
-	if ((truthy(rt.sv(f, "internal_storage")) && !truthy(rt.bitAnd(rt.fv(f, "flags", rt.sv(f, "internal_storage")), 128)))) {
-		if (truthy(rt.fv(f, "blood_DNA", rt.sv(f, "internal_storage")))) {
-			$0 = rt.call(f, P("/proc/bicon"), null, [rt.sv(f, "internal_storage")]);
-			if (isEqual(rt.fv(f, "gender", rt.sv(f, "internal_storage")), "plural")) {
+	if (this.internal_storage && !rt.bitAnd(this.internal_storage.flags, ABSTRACT)) {
+		if (this.internal_storage.blood_DNA) {
+			$0 = bicon(this.internal_storage);
+			if (this.internal_storage.gender == "plural") {
 				$1 = "some";
 			} else {
 				$1 = "a";
 			}
-			msg = rt.modify(live(msg), fmt("<span class='warning'>It is holding ＀ ＀ blood-stained ＀ in its internal storage!</span>\n", [$0, $1, rt.fv(f, "name", rt.sv(f, "internal_storage"))]), add);
+			msg += `<span class='warning'>It is holding ${$0} ${$1} blood-stained ${this.internal_storage.name} in its internal storage!</span>\n`;
 		} else {
-			msg = rt.modify(live(msg), fmt("It is holding ＀ ＇！ in its internal storage.\n", [rt.call(f, P("/proc/bicon"), null, [rt.sv(f, "internal_storage")]), rt.sv(f, "internal_storage")]), add);
+			msg += fmt("It is holding ＀ ＇！ in its internal storage.\n", [bicon(this.internal_storage), this.internal_storage]);
 		}
 	}
-	if ((truthy(rt.sv(f, "head")) && !truthy(rt.bitAnd(rt.fv(f, "flags", rt.sv(f, "head")), 128)))) {
-		if (truthy(rt.fv(f, "blood_DNA", rt.sv(f, "head")))) {
-			$0 = rt.call(f, P("/proc/bicon"), null, [rt.sv(f, "head")]);
-			if (isEqual(rt.fv(f, "gender", rt.sv(f, "head")), "plural")) {
+	if (this.head && !rt.bitAnd(this.head.flags, ABSTRACT)) {
+		if (this.head.blood_DNA) {
+			$0 = bicon(this.head);
+			if (this.head.gender == "plural") {
 				$1 = "some";
 			} else {
 				$1 = "a";
 			}
-			msg = rt.modify(live(msg), fmt("<span class='warning'>It is wearing ＀ ＀ blood-stained ＀ on its head!</span>\n", [$0, $1, rt.fv(f, "name", rt.sv(f, "head"))]), add);
+			msg += `<span class='warning'>It is wearing ${$0} ${$1} blood-stained ${this.head.name} on its head!</span>\n`;
 		} else {
-			msg = rt.modify(live(msg), fmt("It is wearing ＀ ＇！ on its head.\n", [rt.call(f, P("/proc/bicon"), null, [rt.sv(f, "head")]), rt.sv(f, "head")]), add);
+			msg += fmt("It is wearing ＀ ＇！ on its head.\n", [bicon(this.head), this.head]);
 		}
 	}
-	if ((!truthy(rt.sv(f, "client")) && !isEqual(rt.sv(f, "stat"), 2))) {
-		msg = rt.modify(live(msg), "Its status LED is blinking at a steady rate.\n", add);
+	if (!this.client && this.stat != 2) {
+		msg += "Its status LED is blinking at a steady rate.\n";
 	}
-	if (truthy(rt.sv(f, "hacked"))) {
-		msg = rt.modify(live(msg), "<span class='warning'>Its display is glowing red!</span>\n", add);
+	if (this.hacked) {
+		msg += "<span class='warning'>Its display is glowing red!</span>\n";
 	}
-	if (!isEqual(rt.sv(f, "health"), rt.sv(f, "maxHealth"))) {
-		if (rt.gt(rt.sv(f, "health"), multiply(rt.sv(f, "maxHealth"), 0.33000001311302185))) {
-			msg = rt.modify(live(msg), "<span class='warning'>Its screws are slightly loose.</span>\n", add);
+	if (this.health != this.maxHealth) {
+		if (this.health > this.maxHealth * 0.33) {
+			msg += "<span class='warning'>Its screws are slightly loose.</span>\n";
 		} else {
-			msg = rt.modify(live(msg), "<span class='boldwarning'>Its screws are very loose!</span>\n", add);
+			msg += "<span class='boldwarning'>Its screws are very loose!</span>\n";
 		}
 	}
-	if (isEqual(rt.sv(f, "stat"), 2)) {
-		if (truthy(rt.sv(f, "client"))) {
-			msg = rt.modify(live(msg), "<span class='deadsay'>A message repeatedly flashes on its display: \"REBOOT -- REQUIRED\".</span>\n", add);
+	if (this.stat == 2) {
+		if (this.client) {
+			msg += "<span class='deadsay'>A message repeatedly flashes on its display: \"REBOOT -- REQUIRED\".</span>\n";
 		} else {
-			msg = rt.modify(live(msg), "<span class='deadsay'>A message repeatedly flashes on its display: \"ERROR -- OFFLINE\".</span>\n", add);
+			msg += "<span class='deadsay'>A message repeatedly flashes on its display: \"ERROR -- OFFLINE\".</span>\n";
 		}
 	}
-	msg = rt.modify(live(msg), "*---------*</span>", add);
-	rt.call(f, P("/proc/to_chat"), null, [live(user), live(msg)]);
+	msg += "*---------*</span>";
+	to_chat(user, msg);
 	return f.dot;
 });
 
-// /mob/living/simple_animal/drone/proc/emp_act  (code/modules/mob/living/simple_animal/friendly/drone/_drone.dm:227)  may sleep
+// _drone.dm:227
 rt.def("/mob/living/simple_animal/drone/proc/emp_act", function* emp_act(f: Frame, severity: Value) {
-	f.vars = () => [severity];
-	yield* g.srcCall(f, "Stun", 100);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='danger'><b>ER@%R: MME^RY CO#RU9T!</b> R&$b@0tin)...</span>"]);
-	if (!isEqual(live(severity), 1)) return f.dot;
-	yield* g.srcCall(f, "adjustBruteLoss", rt.sv(f, "heavy_emp_damage"));
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='userdanger'>HeAV% DA%^MMA+G TO I/O CIR!%UUT!</span>"]);
+	yield* this.Stun(100);
+	to_chat(this, "<span class='danger'><b>ER@%R: MME^RY CO#RU9T!</b> R&$b@0tin)...</span>");
+	if (severity != 1) return f.dot;
+	yield* this.adjustBruteLoss(this.heavy_emp_damage);
+	to_chat(this, "<span class='userdanger'>HeAV% DA%^MMA+G TO I/O CIR!%UUT!</span>");
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/drone/proc/triggerAlarm  (code/modules/mob/living/simple_animal/friendly/drone/_drone.dm:235)
+// _drone.dm:235
 rt.def("/mob/living/simple_animal/drone/proc/triggerAlarm", function triggerAlarm(f: Frame, _class: Value, A: Value, O: Value, alarmsource: Value) {
-	let L: Value = null, I: Value = null, alarm: Value = null, sources: Value = null;
-	let $e: any;
-	f.vars = () => [L, I, alarm, sources, $e];
-	if (!isEqual(rt.fv(f, "z", live(alarmsource)), rt.sv(f, "z"))) {
-		return live(f.dot);
+	let I: Value = null, alarm: Value = null, sources: Value = null;
+	if (alarmsource.z != this.z) {
+		return f.dot;
 	}
-	if (isEqual(rt.sv(f, "stat"), 2)) return f.dot;
-	L = rt.index(rt.fv(f, "alarms", live(f.src)), live(_class));
-	I = null;
-	rt.forList(f, 0, live(L));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		if (isEqual(live(I), rt.fv(f, "name", live(A)))) {
-			alarm = rt.index(live(L), live(I));
-			sources = rt.index(live(alarm), 2);
-			if (!truthy((rt.isIn(f, live(alarmsource), live(sources)) ? 1 : 0))) {
-				sources = rt.modify(live(sources), live(alarmsource), add);
+	if (this.stat == 2) return f.dot;
+	let L: Value = rt.index(this.alarms, _class);
+	for (I of each(L)) {
+		if (I == A.name) {
+			alarm = rt.index(L, I);
+			sources = rt.index(alarm, 2);
+			if (!rt.isIn(f, alarmsource, sources)) {
+				sources += alarmsource;
 			}
-			return live(f.dot);
+			return f.dot;
 		}
 	}
-	rt.endFor(f, 0);
-	rt.setAt(live(L), rt.fv(f, "name", live(A)), rt.list(live(A), rt.list(live(alarmsource))));
-	rt.call(f, P("/proc/to_chat"), null, [live(f.src), fmt("--- ＀ alarm detected in ＀!", [live(_class), rt.fv(f, "name", live(A))])]);
+	rt.setAt(L, A.name, list(A, list(alarmsource)));
+	to_chat(this, `--- ${_class} alarm detected in ${A.name}!`);
 	return f.dot;
 });
 
-// /mob/living/simple_animal/drone/proc/cancelAlarm  (code/modules/mob/living/simple_animal/friendly/drone/_drone.dm:251)
+// _drone.dm:251
 rt.def("/mob/living/simple_animal/drone/proc/cancelAlarm", function cancelAlarm(f: Frame, _class: Value, A: Value, origin: Value) {
-	let L: Value = null, cleared: Value = null, I: Value = null, alarm: Value = null, srcs: Value = null;
-	let $e: any;
-	f.vars = () => [L, cleared, I, alarm, srcs, $e];
-	if (isEqual(rt.sv(f, "stat"), 2)) return f.dot;
-	L = rt.index(rt.sv(f, "alarms"), live(_class));
-	cleared = 0;
-	I = null;
-	rt.forList(f, 0, live(L));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		if (isEqual(live(I), rt.fv(f, "name", live(A)))) {
-			alarm = rt.index(live(L), live(I));
-			srcs = rt.index(live(alarm), 2);
-			if (truthy((rt.isIn(f, live(origin), live(srcs)) ? 1 : 0))) {
-				(srcs = rt.modify(live(srcs), live(origin), subtract));
+	let I: Value = null, alarm: Value = null, srcs: Value = null;
+	if (this.stat == 2) return f.dot;
+	let L: Value = rt.index(this.alarms, _class);
+	let cleared: Value = 0;
+	for (I of each(L)) {
+		if (I == A.name) {
+			alarm = rt.index(L, I);
+			srcs = rt.index(alarm, 2);
+			if (rt.isIn(f, origin, srcs)) {
+				srcs -= origin;
 			}
-			if (isEqual(rt.len(f, live(srcs)), 0)) {
+			if (rt.len(f, srcs) == 0) {
 				cleared = 1;
-				(L = rt.modify(live(L), live(I), subtract));
+				L -= I;
 			}
 		}
 	}
-	rt.endFor(f, 0);
-	if (!truthy(live(cleared))) return f.dot;
-	rt.call(f, P("/proc/to_chat"), null, [live(f.src), fmt("--- ＀ alarm in ＀ has been cleared.", [live(_class), rt.fv(f, "name", live(A))])]);
+	if (!cleared) return f.dot;
+	to_chat(this, `--- ${_class} alarm in ${A.name} has been cleared.`);
 	return f.dot;
 });
 
-// /mob/living/simple_animal/drone/proc/flash_act  (code/modules/mob/living/simple_animal/friendly/drone/_drone.dm:271)  may sleep
+// _drone.dm:271
 rt.def("/mob/living/simple_animal/drone/proc/flash_act", function* flash_act(f: Frame) {
-	if (live(f.args[0]) === null) {
+	if (f.args[0] === null) {
 		f.args[0] = 1;
 	}
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 0;
 	}
-	if (!truthy(live(f.args[2]))) return f.dot;
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	if (!f.args[2]) return f.dot;
+	return (yield* parent_proc());
 }, true, { args: ["intensity", "override_blindness_check", "affect_silicon"] });
 
-// /mob/living/simple_animal/drone/proc/mob_has_gravity  (code/modules/mob/living/simple_animal/friendly/drone/_drone.dm:277)
+// _drone.dm:277
 rt.def("/mob/living/simple_animal/drone/proc/mob_has_gravity", function mob_has_gravity(f: Frame) {
-	return (rt.callSuper(f, [], rt.Args.Same) || rt.callSrc(f, "mob_negates_gravity", []));
+	return (parent_proc() || this.mob_negates_gravity());
 });

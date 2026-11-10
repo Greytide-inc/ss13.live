@@ -1,7 +1,7 @@
-// From code/modules/surgery/organs/organ_internal.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/surgery/organs/organ_internal.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(9439, "/obj/item/organ", "/obj/item", {
@@ -17,89 +17,70 @@ rt.type(9439, "/obj/item/organ", "/obj/item", {
 	throwforce: 0,
 });
 
-// /obj/item/organ/proc/Insert  (code/modules/surgery/organs/organ_internal.dm:16)  may sleep
+// organ_internal.dm:16
 rt.def("/obj/item/organ/proc/Insert", function* Insert(f: Frame, M: Value, special: Value, drop_if_replaced: Value) {
 	let replaced: Value = null, X: Value = null, A: Value = null;
-	let $e: any;
-	f.vars = () => [M, special, drop_if_replaced, replaced, X, A, $e];
-	if (live(special) === null) {
-		special = 0;
+	special ??= 0;
+	drop_if_replaced ??= 1;
+	if (!rt.istype(M, T("/mob/living/carbon")) || this.owner == M) {
+		return f.dot;
 	}
-	if (live(drop_if_replaced) === null) {
-		drop_if_replaced = 1;
-	}
-	if ((!truthy((rt.istype(live(M), T("/mob/living/carbon")) ? 1 : 0)) || isEqual(rt.sv(f, "owner"), live(M)))) {
-		return live(f.dot);
-	}
-	if (truthy((replaced = (yield* g.callName(f, live(M), "getorganslot", [rt.sv(f, "slot")]))))) {
-		yield* g.callName(f, live(replaced), "Remove", [null, live(M), "special", 1], rt.Args.Named);
-		if (truthy(live(drop_if_replaced))) {
-			yield* g.callName(f, live(replaced), "forceMove", [rt.getStep(f, live(f.src), 0)]);
+	if (replaced = M.getorganslot(this.slot)) {
+		yield* replaced.Remove(M, { special: 1 });
+		if (drop_if_replaced) {
+			yield* replaced.forceMove(rt.getStep(f, this, 0));
 		} else {
-			yield* g.call(f, P("/proc/qdel"), null, [live(replaced)]);
+			yield* qdel(replaced);
 		}
 	}
-	rt.setSv(f, "owner", live(M));
-	(rt.modField(f, live(M), "internal_organs", live(f.src), rt.bitOr));
-	rt.setAt(rt.fv(f, "internal_organs_slot", live(M)), rt.sv(f, "slot"), live(f.src));
-	rt.setSv(f, "loc", null);
-	X = null;
-	rt.forList(f, 0, rt.sv(f, "actions"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		X = $e;
-		yield* g.callName(f, (A = live(X)), "Grant", [live(M)]);
+	this.owner = M;
+	(rt.modField(f, M, "internal_organs", this, rt.bitOr));
+	rt.setAt(M.internal_organs_slot, this.slot, this);
+	this.loc = null;
+	for (X of each(this.actions)) {
+		yield* (A = X).Grant(M);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /obj/item/organ/proc/Remove  (code/modules/surgery/organs/organ_internal.dm:39)  may sleep
+// organ_internal.dm:39
 rt.def("/obj/item/organ/proc/Remove", function* Remove(f: Frame, M: Value, special: Value) {
 	let X: Value = null, A: Value = null;
-	let $e: any;
-	f.vars = () => [M, special, X, A, $e];
-	if (live(special) === null) {
-		special = 0;
-	}
-	rt.setSv(f, "owner", null);
-	if (truthy(live(M))) {
-		(rt.modField(f, live(M), "internal_organs", live(f.src), subtract));
-		if (isEqual(rt.index(rt.fv(f, "internal_organs_slot", live(M)), rt.sv(f, "slot")), live(f.src))) {
-			yield* g.callName(f, rt.fv(f, "internal_organs_slot", live(M)), "Remove", [rt.sv(f, "slot")]);
+	special ??= 0;
+	this.owner = null;
+	if (M) {
+		M.internal_organs -= this;
+		if (rt.index(M.internal_organs_slot, this.slot) == this) {
+			yield* M.internal_organs_slot.Remove(this.slot);
 		}
-		if (((truthy(rt.sv(f, "vital")) && !truthy(live(special))) && !truthy(rt.bitAnd(rt.fv(f, "status_flags", live(M)), 4096)))) {
-			yield* g.callName(f, live(M), "death", []);
+		if (this.vital && !special && !rt.bitAnd(M.status_flags, 4096)) {
+			yield* M.death();
 		}
 	}
-	X = null;
-	rt.forList(f, 0, rt.sv(f, "actions"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		X = $e;
-		yield* g.callName(f, (A = live(X)), "Remove", [live(M)]);
+	for (X of each(this.actions)) {
+		yield* (A = X).Remove(M);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /obj/item/organ/proc/examine  (code/modules/surgery/organs/organ_internal.dm:56)
-rt.def("/obj/item/organ/proc/examine", function examine(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	if (!(isEqual(rt.sv(f, "status"), 2) && truthy(rt.sv(f, "crit_fail")))) return f.dot;
-	rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='warning'>＀ seems to be broken!</span>", [live(f.src)])]);
+// organ_internal.dm:56
+rt.def("/obj/item/organ/proc/examine", function examine(f: Frame, user: Value) {
+	parent_proc();
+	if (!(this.status == ORGAN_ROBOTIC && this.crit_fail)) return f.dot;
+	to_chat(user, `<span class='warning'>${this} seems to be broken!</span>`);
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/item/organ/proc/prepare_eat  (code/modules/surgery/organs/organ_internal.dm:62)  may sleep
+// organ_internal.dm:62
 rt.def("/obj/item/organ/proc/prepare_eat", function* prepare_eat(f: Frame) {
 	let S: Value = null;
-	f.vars = () => [S];
-	rt.setFv(f, "name", (S = (yield* g.new_(f, T("/obj/item/weapon/reagent_containers/food/snacks/organ"), []))), rt.sv(f, "name"));
-	rt.setFv(f, "desc", live(S), rt.sv(f, "desc"));
-	rt.setFv(f, "icon", live(S), rt.sv(f, "icon"));
-	rt.setFv(f, "icon_state", live(S), rt.sv(f, "icon_state"));
-	rt.setFv(f, "origin_tech", live(S), rt.sv(f, "origin_tech"));
-	rt.setFv(f, "w_class", live(S), rt.sv(f, "w_class"));
-	return live(S);
+	(S = (yield* new_(T("/obj/item/weapon/reagent_containers/food/snacks/organ")))).name = this.name;
+	S.desc = this.desc;
+	S.icon = this.icon;
+	S.icon_state = this.icon_state;
+	S.origin_tech = this.origin_tech;
+	S.w_class = this.w_class;
+	return S;
 }, true);
 
 rt.type(6357, "/obj/item/weapon/reagent_containers/food/snacks/organ", "/obj/item/weapon/reagent_containers/food/snacks", {
@@ -109,88 +90,81 @@ rt.type(6357, "/obj/item/weapon/reagent_containers/food/snacks/organ", "/obj/ite
 	list_reagents: null,
 });
 
-// /obj/item/weapon/reagent_containers/food/snacks/organ/proc/<init>  (code/modules/surgery/organs/organ_internal.dm:76)
+// organ_internal.dm:76
 rt.def("/obj/item/weapon/reagent_containers/food/snacks/organ/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["nutriment", 5]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["nutriment", 5]);
 	return f.dot;
 });
 
-// /obj/item/organ/proc/Destroy  (code/modules/surgery/organs/organ_internal.dm:83)  may sleep
+// organ_internal.dm:83
 rt.def("/obj/item/organ/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.sv(f, "owner"))) {
-		yield* g.callSrc(f, "Remove", [null, rt.sv(f, "owner"), "special", 1], rt.Args.Named);
+	if (this.owner) {
+		yield* this.Remove(this.owner, { special: 1 });
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);
 
-// /obj/item/organ/proc/attack  (code/modules/surgery/organs/organ_internal.dm:87)  may sleep
-rt.def("/obj/item/organ/proc/attack", function* attack(f: Frame) {
+// organ_internal.dm:87
+rt.def("/obj/item/organ/proc/attack", function* attack(f: Frame, M: Value, user: Value) {
 	let H: Value = null, S: Value = null;
-	f.vars = () => [H, S];
-	if ((isEqual(live(f.args[0]), live(f.args[1])) && truthy((rt.istype(live(f.args[1]), T("/mob/living/carbon/human")) ? 1 : 0)))) {
-		H = live(f.args[1]);
-		if (isEqual(rt.sv(f, "status"), 1)) {
-			if (truthy((S = (yield* g.srcCall(f, "prepare_eat"))))) {
-				yield* g.callName(f, live(H), "drop_item", []);
-				yield* g.callName(f, live(H), "put_in_active_hand", [live(S)]);
-				yield* g.callName(f, live(S), "attack", [live(H), live(H)]);
-				yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	if (M == user && rt.istype(user, T("/mob/living/carbon/human"))) {
+		H = user;
+		if (this.status == ORGAN_ORGANIC) {
+			if (S = (yield* this.prepare_eat())) {
+				yield* H.drop_item();
+				yield* H.put_in_active_hand(S);
+				yield* S.attack(H, H);
+				yield* qdel(this);
 			}
 		}
 	} else {
-		yield* g.callSuper(f, [], rt.Args.Same);
+		yield* parent_proc();
 	}
 	return f.dot;
-}, true, { args: ["M", "user"] });
+}, true);
 
-// /mob/living/carbon/proc/regenerate_organs  (code/modules/surgery/organs/organ_internal.dm:111)  may sleep
+// organ_internal.dm:111
 rt.def("/mob/living/carbon/proc/regenerate_organs", function* regenerate_organs(f: Frame) {
-	let breathes: Value = null, blooded: Value = null, L: Value = null, H: Value = null, _T: Value = null, E: Value = null, ears: Value = null;
-	f.vars = () => [breathes, blooded, L, H, _T, E, ears];
-	breathes = 1;
-	blooded = 1;
-	if ((truthy(rt.sv(f, "dna")) && truthy(rt.fv(f, "species", rt.sv(f, "dna"))))) {
-		if (truthy((rt.isIn(f, 10, rt.gv(f, "species_traits", rt.fv(f, "species", rt.sv(f, "dna")))) ? 1 : 0))) {
+	let L: Value = null, H: Value = null, _T: Value = null, E: Value = null, ears: Value = null;
+	let breathes: Value = 1;
+	let blooded: Value = 1;
+	if (this.dna && this.dna.species) {
+		if (rt.isIn(f, NOBREATH, this.dna.species.species_traits)) {
 			breathes = 0;
 		}
-		if (truthy((rt.isIn(f, 12, rt.gv(f, "species_traits", rt.fv(f, "species", rt.sv(f, "dna")))) ? 1 : 0))) {
+		if (rt.isIn(f, NOBLOOD, this.dna.species.species_traits)) {
 			blooded = 0;
 		}
 	}
-	if ((truthy(live(breathes)) && !truthy((yield* g.srcCall(f, "getorganslot", "lungs"))))) {
-		yield* g.callName(f, (L = (yield* g.new_(f, T("/obj/item/organ/lungs"), []))), "Insert", [live(f.src)]);
+	if (breathes && !this.getorganslot("lungs")) {
+		yield* (L = (yield* new_(T("/obj/item/organ/lungs")))).Insert(this);
 	}
-	if ((truthy(live(blooded)) && !truthy((yield* g.srcCall(f, "getorganslot", "heart"))))) {
-		yield* g.callName(f, (H = (yield* g.new_(f, T("/obj/item/organ/heart"), []))), "Insert", [live(f.src)]);
+	if (blooded && !this.getorganslot("heart")) {
+		yield* (H = (yield* new_(T("/obj/item/organ/heart")))).Insert(this);
 	}
-	if (!truthy((yield* g.srcCall(f, "getorganslot", "tongue")))) {
-		_T = null;
-		if (((truthy(rt.sv(f, "dna")) && truthy(rt.fv(f, "species", rt.sv(f, "dna")))) && truthy(rt.gv(f, "mutanttongue", rt.fv(f, "species", rt.sv(f, "dna")))))) {
-			_T = (yield* g.new_(f, rt.gv(f, "mutanttongue", rt.fv(f, "species", rt.sv(f, "dna"))), []));
+	if (!this.getorganslot("tongue")) {
+		if (this.dna && this.dna.species && this.dna.species.mutanttongue) {
+			_T = (yield* new_(this.dna.species.mutanttongue));
 		} else {
-			_T = (yield* g.new_(f, T("/obj/item/organ/tongue"), []));
+			_T = (yield* new_(T("/obj/item/organ/tongue")));
 		}
-		yield* g.callName(f, live(_T), "Insert", [live(f.src)]);
+		yield* _T.Insert(this);
 	}
-	if (!truthy((yield* g.srcCall(f, "getorganslot", "eye_sight")))) {
-		E = null;
-		if (((truthy(rt.sv(f, "dna")) && truthy(rt.fv(f, "species", rt.sv(f, "dna")))) && truthy(rt.gv(f, "mutanteyes", rt.fv(f, "species", rt.sv(f, "dna")))))) {
-			E = (yield* g.new_(f, rt.gv(f, "mutanteyes", rt.fv(f, "species", rt.sv(f, "dna"))), []));
+	if (!this.getorganslot("eye_sight")) {
+		if (this.dna && this.dna.species && this.dna.species.mutanteyes) {
+			E = (yield* new_(this.dna.species.mutanteyes));
 		} else {
-			E = (yield* g.new_(f, T("/obj/item/organ/eyes"), []));
+			E = (yield* new_(T("/obj/item/organ/eyes")));
 		}
-		yield* g.callName(f, live(E), "Insert", [live(f.src)]);
+		yield* E.Insert(this);
 	}
-	if (truthy((yield* g.srcCall(f, "getorganslot", "ears")))) return f.dot;
-	ears = null;
-	if (((truthy(rt.sv(f, "dna")) && truthy(rt.fv(f, "species", rt.sv(f, "dna")))) && truthy(rt.gv(f, "mutantears", rt.fv(f, "species", rt.sv(f, "dna")))))) {
-		ears = (yield* g.new_(f, rt.gv(f, "mutantears", rt.fv(f, "species", rt.sv(f, "dna"))), []));
+	if (this.getorganslot("ears")) return f.dot;
+	if (this.dna && this.dna.species && this.dna.species.mutantears) {
+		ears = (yield* new_(this.dna.species.mutantears));
 	} else {
-		ears = (yield* g.new_(f, T("/obj/item/organ/ears"), []));
+		ears = (yield* new_(T("/obj/item/organ/ears")));
 	}
-	yield* g.callName(f, live(ears), "Insert", [live(f.src)]);
+	yield* ears.Insert(this);
 	return f.dot;
 }, true);

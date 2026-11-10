@@ -1,7 +1,7 @@
-// From code/game/gamemodes/clock_cult/clock_structures/mania_motor.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/gamemodes/clock_cult/clock_structures/mania_motor.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(12155, "/obj/structure/destructible/clockwork/powered/mania_motor", "/obj/structure/destructible/clockwork/powered", {
@@ -21,92 +21,80 @@ rt.type(12155, "/obj/structure/destructible/clockwork/powered/mania_motor", "/ob
 	debris: null,
 });
 
-// /obj/structure/destructible/clockwork/powered/mania_motor/proc/<init>  (code/game/gamemodes/clock_cult/clock_structures/mania_motor.dm:15)
+// mania_motor.dm:15
 rt.def("/obj/structure/destructible/clockwork/powered/mania_motor/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "debris", rt.alist(f, [T("/obj/item/clockwork/alloy_shards/large"), 2, T("/obj/item/clockwork/alloy_shards/small"), 2, T("/obj/item/clockwork/component/geis_capacitor/antennae"), 1]));
+	parent_proc();
+	this.debris = rt.alist(f, [T("/obj/item/clockwork/alloy_shards/large"), 2, T("/obj/item/clockwork/alloy_shards/small"), 2, T("/obj/item/clockwork/component/geis_capacitor/antennae"), 1]);
 	return f.dot;
 });
 
-// /obj/structure/destructible/clockwork/powered/mania_motor/proc/examine  (code/game/gamemodes/clock_cult/clock_structures/mania_motor.dm:21)
-rt.def("/obj/structure/destructible/clockwork/powered/mania_motor/proc/examine", function examine(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	if (!(truthy(rt.call(f, P("/proc/is_servant_of_ratvar"), null, [live(f.args[0])])) || truthy((rt.istype(live(f.args[0]), T("/mob/dead/observer")) ? 1 : 0)))) return f.dot;
-	rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='sevtug_small'>It requires <b>＀W</b> to run.</span>", [rt.sv(f, "mania_cost")])]);
+// mania_motor.dm:21
+rt.def("/obj/structure/destructible/clockwork/powered/mania_motor/proc/examine", function examine(f: Frame, user: Value) {
+	parent_proc();
+	if (!(is_servant_of_ratvar(user) || rt.istype(user, T("/mob/dead/observer")))) return f.dot;
+	to_chat(user, `<span class='sevtug_small'>It requires <b>${this.mania_cost}W</b> to run.</span>`);
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/structure/destructible/clockwork/powered/mania_motor/proc/forced_disable  (code/game/gamemodes/clock_cult/clock_structures/mania_motor.dm:28)  may sleep
+// mania_motor.dm:28
 rt.def("/obj/structure/destructible/clockwork/powered/mania_motor/proc/forced_disable", function* forced_disable(f: Frame, bad_effects: Value) {
-	f.vars = () => [bad_effects];
-	if (!truthy(rt.sv(f, "active"))) return f.dot;
-	if (truthy(live(bad_effects))) {
-		yield* g.srcCall(f, "try_use_power", 100);
+	if (!this.active) return f.dot;
+	if (bad_effects) {
+		yield* this.try_use_power(100);
 	}
-	yield* g.srcCall(f, "visible_message", fmt("<span class='warning'>＀ hums loudly, then the sockets at its base fall dark!</span>", [live(f.src)]));
-	yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/effects/screech.ogg"), 40, 1]);
-	yield* g.srcCall(f, "toggle");
+	this.visible_message(`<span class='warning'>${this} hums loudly, then the sockets at its base fall dark!</span>`);
+	playsound(this, rt.rsc("sound/effects/screech.ogg"), 40, 1);
+	yield* this.toggle();
 	return 1;
 }, true);
 
-// /obj/structure/destructible/clockwork/powered/mania_motor/proc/attack_hand  (code/game/gamemodes/clock_cult/clock_structures/mania_motor.dm:35)
+// mania_motor.dm:35
 rt.def("/obj/structure/destructible/clockwork/powered/mania_motor/proc/attack_hand", function attack_hand(f: Frame, user: Value) {
-	if (!(truthy(rt.callName(f, live(user), "canUseTopic", [live(f.src), (!truthy((rt.istype(live(user), T("/mob/living/silicon")) ? 1 : 0)) ? 1 : 0), 1])) && truthy(rt.call(f, P("/proc/is_servant_of_ratvar"), null, [live(user)])))) return f.dot;
-	if (rt.ge((!truthy(rt.callSrc(f, "total_accessable_power", [])) ? 1 : 0), rt.sv(f, "mania_cost"))) {
-		rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ needs more power to function!</span>", [live(f.src)])]);
+	if (!(user.canUseTopic(this, (!rt.istype(user, T("/mob/living/silicon")) ? 1 : 0), 1) && is_servant_of_ratvar(user))) return f.dot;
+	if ((!this.total_accessable_power() ? 1 : 0) >= this.mania_cost) {
+		to_chat(user, `<span class='warning'>${this} needs more power to function!</span>`);
 		return 0;
 	}
-	rt.callSrc(f, "toggle", [0, live(user)]);
+	this.toggle(0, user);
 	return f.dot;
 });
 
-// /obj/structure/destructible/clockwork/powered/mania_motor/proc/toggle  (code/game/gamemodes/clock_cult/clock_structures/mania_motor.dm:42)
-rt.def("/obj/structure/destructible/clockwork/powered/mania_motor/proc/toggle", function toggle(f: Frame) {
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.sv(f, "active"))) {
-		rt.callSrc(f, "set_light", [2, 0.8999999761581421]);
+// mania_motor.dm:42
+rt.def("/obj/structure/destructible/clockwork/powered/mania_motor/proc/toggle", function toggle(f: Frame, fast_process: Value, user: Value) {
+	f.dot = parent_proc();
+	if (this.active) {
+		this.set_light(2, 0.9);
 	} else {
-		rt.callSrc(f, "set_light", [0]);
+		this.set_light(0);
 	}
 	return f.dot;
-}, false, { args: ["fast_process", "user"] });
+}, false);
 
-// /obj/structure/destructible/clockwork/powered/mania_motor/proc/process  (code/game/gamemodes/clock_cult/clock_structures/mania_motor.dm:49)  may sleep
+// mania_motor.dm:49
 rt.def("/obj/structure/destructible/clockwork/powered/mania_motor/proc/process", function* process(f: Frame) {
-	let efficiency: Value = null, H: Value = null, effects: Value = null, M: Value = null, MM: Value = null;
-	let $e: any;
-	f.vars = () => [efficiency, H, effects, M, MM, $e];
-	if (!truthy((yield* g.srcCall(f, "try_use_power", rt.sv(f, "mania_cost"))))) {
-		yield* g.srcCall(f, "forced_disable", 0);
-		return live(f.dot);
+	let H: Value = null, effects: Value = null, M: Value = null, MM: Value = null;
+	if (!(yield* this.try_use_power(this.mania_cost))) {
+		yield* this.forced_disable(0);
+		return f.dot;
 	}
-	efficiency = (yield* g.srcCall(f, "get_efficiency_mod"));
-	H = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/viewers"), null, [7, live(f.src)])), T("/mob/living/carbon/human"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		H = $e;
-		if (truthy((yield* g.call(f, P("/proc/is_servant_of_ratvar"), null, [live(H)])))) {
+	let efficiency: Value = this.get_efficiency_mod();
+	for (H of each(viewers(7, this), T("/mob/living/carbon/human"))) {
+		if (is_servant_of_ratvar(H)) {
 			continue;
 		}
-		effects = (yield* g.callName(f, live(H), "has_status_effect_list", [T("/datum/status_effect/maniamotor")]));
+		effects = H.has_status_effect_list(T("/datum/status_effect/maniamotor"));
 		M = null;
 		MM = null;
-		rt.forList(f, 1, live(effects), T("/datum/status_effect/maniamotor"));
-		while (($e = rt.next(f, 1)) !== undefined) {
-			MM = $e;
-			if (isEqual(rt.fv(f, "motor", live(MM)), live(f.src))) {
-				M = live(MM);
+		for (MM of each(effects, T("/datum/status_effect/maniamotor"))) {
+			if (MM.motor == this) {
+				M = MM;
 				break;
 			}
 		}
-		rt.endFor(f, 1);
-		if (!truthy(live(M))) {
-			M = (yield* g.callName(f, live(H), "apply_status_effect", [T("/datum/status_effect/maniamotor"), live(f.src)]));
+		if (!M) {
+			M = (yield* H.apply_status_effect(T("/datum/status_effect/maniamotor"), this));
 		}
-		rt.setFv(f, "severity", live(M), (yield* g.call(f, P("/proc/max"), null, [0, (yield* g.call(f, P("/proc/min"), null, [add(rt.fv(f, "severity", live(M)), multiply(multiply(subtract(11, (yield* g.call(f, P("/proc/get_dist"), null, [live(f.src), live(H)]))), live(efficiency)), live(efficiency))), 100]))])));
+		M.severity = max(0, min(M.severity + (11 - get_dist(this, H)) * efficiency * efficiency, MAX_MANIA_SEVERITY));
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true, { waitfor: false });

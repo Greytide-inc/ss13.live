@@ -1,7 +1,7 @@
-// From code/game/objects/items/devices/camera_bug.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/devices/camera_bug.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(9227, "/obj/item/device/camera_bug", "/obj/item/device", {
@@ -27,393 +27,338 @@ rt.type(9227, "/obj/item/device/camera_bug", "/obj/item/device", {
 	origin_tech: "syndicate=1;engineering=3",
 });
 
-// /obj/item/device/camera_bug/proc/<init>  (code/game/objects/items/devices/camera_bug.dm:23)
+// camera_bug.dm:23
 rt.def("/obj/item/device/camera_bug/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "bugged_cameras", rt.list());
+	parent_proc();
+	this.bugged_cameras = list();
 	return f.dot;
 });
 
-// /obj/item/device/camera_bug/proc/New  (code/game/objects/items/devices/camera_bug.dm:36)  may sleep
+// camera_bug.dm:36
 rt.def("/obj/item/device/camera_bug/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.fv(f, "isprocessing", live(f.src)))) return f.dot;
-	rt.setFv(f, "isprocessing", live(f.src), 1);
-	rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), add);
+	yield* parent_proc();
+	if (this.isprocessing) return f.dot;
+	this.isprocessing = 1;
+	GLOB.SSobj.processing += this;
 	return f.dot;
 }, true);
 
-// /obj/item/device/camera_bug/proc/Destroy  (code/game/objects/items/devices/camera_bug.dm:40)  may sleep
+// camera_bug.dm:40
 rt.def("/obj/item/device/camera_bug/proc/Destroy", function* Destroy(f: Frame) {
 	let cam_tag: Value = null, camera: Value = null;
-	let $e: any;
-	f.vars = () => [cam_tag, camera, $e];
-	yield* g.srcCall(f, "get_cameras");
-	cam_tag = null;
-	rt.forList(f, 0, rt.sv(f, "bugged_cameras"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		cam_tag = $e;
-		if (isEqual(rt.gv(f, "bug", (camera = rt.index(rt.sv(f, "bugged_cameras"), live(cam_tag)))), live(f.src))) {
-			rt.setFv(f, "bug", live(camera), null);
+	yield* this.get_cameras();
+	for (cam_tag of each(this.bugged_cameras)) {
+		if ((camera = rt.index(this.bugged_cameras, cam_tag)).bug == this) {
+			camera.bug = null;
 		}
 	}
-	rt.endFor(f, 0);
-	rt.setSv(f, "bugged_cameras", rt.list());
-	if (truthy(rt.sv(f, "tracking"))) {
-		rt.setSv(f, "tracking", null);
+	this.bugged_cameras = list();
+	if (this.tracking) {
+		this.tracking = null;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);
 
-// /obj/item/device/camera_bug/proc/interact  (code/game/objects/items/devices/camera_bug.dm:52)  may sleep
+// camera_bug.dm:52
 rt.def("/obj/item/device/camera_bug/proc/interact", function* interact(f: Frame, user: Value) {
 	let popup: Value = null;
-	f.vars = () => [user, popup];
-	if (live(user) === null) {
-		user = live(f.usr);
-	}
-	yield* g.callName(f, (popup = (yield* g.new_(f, T("/datum/browser"), [null, live(user), null, "camerabug", null, "Camera Bug", "nref", live(f.src)], rt.Args.Named))), "set_content", [(yield* g.srcCall(f, "menu", (yield* g.srcCall(f, "get_cameras"))))]);
-	yield* g.callName(f, live(popup), "open", []);
+	user ??= f.usr;
+	(popup = (yield* new_(T("/datum/browser"), user, "camerabug", "Camera Bug", { nref: this }))).set_content(this.menu((yield* this.get_cameras())));
+	yield* popup.open();
 	return f.dot;
 }, true);
 
-// /obj/item/device/camera_bug/proc/attack_self  (code/game/objects/items/devices/camera_bug.dm:57)  may sleep
+// camera_bug.dm:57
 rt.def("/obj/item/device/camera_bug/proc/attack_self", function* attack_self(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.callName(f, live(user), "set_machine", [live(f.src)]);
-	yield* g.srcCall(f, "interact", live(user));
+	yield* user.set_machine(this);
+	yield* this.interact(user);
 	return f.dot;
 }, true);
 
-// /obj/item/device/camera_bug/proc/check_eye  (code/game/objects/items/devices/camera_bug.dm:61)  may sleep
+// camera_bug.dm:61
 rt.def("/obj/item/device/camera_bug/proc/check_eye", function* check_eye(f: Frame, user: Value) {
 	let _T: Value = null;
-	f.vars = () => [user, _T];
-	if ((((!isEqual(rt.sv(f, "loc"), live(user)) || truthy((yield* g.callName(f, live(user), "incapacitated", [])))) || truthy(rt.fv(f, "eye_blind", live(user)))) || !truthy(rt.sv(f, "current")))) {
-		yield* g.callName(f, live(user), "unset_machine", []);
+	if (this.loc != user || user.incapacitated() || user.eye_blind || !this.current) {
+		yield* user.unset_machine();
 		return 0;
 	}
-	if ((!isEqual(rt.gv(f, "z", (_T = rt.getStep(f, rt.fv(f, "loc", live(user)), 0))), rt.fv(f, "z", rt.sv(f, "current"))) || !truthy((yield* g.callName(f, rt.sv(f, "current"), "can_use", []))))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='danger'>＀ has lost the signal.</span>", [live(f.src)])]);
-		rt.setSv(f, "current", null);
-		yield* g.callName(f, live(user), "unset_machine", []);
+	if ((_T = rt.getStep(f, user.loc, 0)).z != this.current.z || !this.current.can_use()) {
+		to_chat(user, `<span class='danger'>${this} has lost the signal.</span>`);
+		this.current = null;
+		yield* user.unset_machine();
 		return 0;
 	}
 	return 1;
 }, true);
 
-// /obj/item/device/camera_bug/proc/on_unset_machine  (code/game/objects/items/devices/camera_bug.dm:72)  may sleep
+// camera_bug.dm:72
 rt.def("/obj/item/device/camera_bug/proc/on_unset_machine", function* on_unset_machine(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.callName(f, live(user), "reset_perspective", [null]);
+	yield* user.reset_perspective(null);
 	return f.dot;
 }, true);
 
-// /obj/item/device/camera_bug/proc/get_cameras  (code/game/objects/items/devices/camera_bug.dm:75)  may sleep
+// camera_bug.dm:75
 rt.def("/obj/item/device/camera_bug/proc/get_cameras", function* get_cameras(f: Frame) {
 	let camera: Value = null;
-	let $e: any;
-	f.vars = () => [camera, $e];
-	if (rt.gt(rt.worldTime(f), add(rt.sv(f, "last_net_update"), 100))) {
-		rt.setSv(f, "bugged_cameras", rt.list());
-		camera = null;
-		rt.forList(f, 0, rt.fv(f, "cameras", rt.gl("cameranet")), T("/obj/machinery/camera"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			camera = $e;
-			if ((truthy(rt.fv(f, "stat", live(camera))) || !truthy((yield* g.callName(f, live(camera), "can_use", []))))) {
+	if (rt.worldTime(f) > this.last_net_update + 100) {
+		this.bugged_cameras = list();
+		for (camera of each(GLOB.cameranet.cameras, T("/obj/machinery/camera"))) {
+			if (camera.stat || !camera.can_use()) {
 				continue;
 			}
-			if (truthy(rt.length(rt.bitAnd(rt.list("SS13", "MINE"), rt.fv(f, "network", live(camera)))))) {
-				rt.setAt(rt.sv(f, "bugged_cameras"), rt.fv(f, "c_tag", live(camera)), live(camera));
+			if (rt.length(rt.bitAnd(list("SS13", "MINE"), camera.network))) {
+				rt.setAt(this.bugged_cameras, camera.c_tag, camera);
 			}
 		}
-		rt.endFor(f, 0);
 	}
-	yield* g.call(f, P("/proc/sortList"), null, [rt.sv(f, "bugged_cameras")]);
-	return rt.sv(f, "bugged_cameras");
+	yield* sortList(this.bugged_cameras);
+	return this.bugged_cameras;
 }, true);
 
-// /obj/item/device/camera_bug/proc/menu  (code/game/objects/items/devices/camera_bug.dm:87)
+// camera_bug.dm:87
 rt.def("/obj/item/device/camera_bug/proc/menu", function menu(f: Frame, cameras: Value) {
 	let html: Value = null, entry: Value = null, C: Value = null, functions: Value = null, time_diff: Value = null, outstring: Value = null, m: Value = null, s: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [html, entry, C, functions, time_diff, outstring, m, s, $0, $e];
-	if ((!truthy(live(cameras)) || !truthy(rt.len(f, live(cameras))))) {
+	let $e: any;
+	if (!cameras || !rt.len(f, cameras)) {
 		return "No bugged cameras found.";
 	}
-	html = null;
-	$0 = rt.sv(f, "track_mode");
-	if ($0 === 0) {
-		html = fmt("<h3>Select a camera:</h3> <a href='?src=＃;view'>[Cancel camera view]</a><hr><table>", [live(f.src)]);
-		entry = null;
-		rt.forList(f, 0, live(cameras));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			entry = $e;
-			C = rt.index(live(cameras), live(entry));
+	if (this.track_mode === 0) {
+		html = fmt("<h3>Select a camera:</h3> <a href='?src=＃;view'>[Cancel camera view]</a><hr><table>", [this]);
+		for (entry of each(cameras)) {
+			C = rt.index(cameras, entry);
 			functions = "";
-			if (isEqual(rt.fv(f, "bug", live(C)), live(f.src))) {
-				functions = fmt(" - <a href='?src=＃;monitor=＃'>[Monitor]</a> <a href='?src=＃;emp=＃'>[Disable]</a>", [live(f.src), live(C), live(f.src), live(C)]);
+			if (C.bug == this) {
+				functions = fmt(" - <a href='?src=＃;monitor=＃'>[Monitor]</a> <a href='?src=＃;emp=＃'>[Disable]</a>", [this, C, this, C]);
 			} else {
-				functions = fmt(" - <a href='?src=＃;monitor=＃'>[Monitor]</a>", [live(f.src), live(C)]);
+				functions = fmt(" - <a href='?src=＃;monitor=＃'>[Monitor]</a>", [this, C]);
 			}
-			html = rt.modify(live(html), fmt("<tr><td><a href='?src=＃;view=＃'>＀</a></td><td>＀</td></tr>", [live(f.src), live(C), live(entry), live(functions)]), add);
+			html += fmt("<tr><td><a href='?src=＃;view=＃'>＀</a></td><td>＀</td></tr>", [this, C, entry, functions]);
 		}
-		rt.endFor(f, 0);
-	} else if ($0 === 1) {
-		if (truthy(rt.sv(f, "current"))) {
-			html = fmt("Analyzing Camera '＀' <a href='?＃;mode=0'>[Select Camera]</a><br>", [rt.fv(f, "c_tag", rt.sv(f, "current")), live(f.src)]);
-			html = rt.modify(live(html), rt.callSrc(f, "camera_report", []), add);
+	} else if (this.track_mode === 1) {
+		if (this.current) {
+			html = fmt("Analyzing Camera '＀' <a href='?＃;mode=0'>[Select Camera]</a><br>", [this.current.c_tag, this]);
+			html += this.camera_report();
 		} else {
-			rt.setSv(f, "track_mode", 0);
-			return rt.callSelf(f, [live(cameras)]);
+			this.track_mode = 0;
+			return rt.callSelf(f, [cameras]);
 		}
-	} else if ($0 === 2) {
-		if (truthy(rt.sv(f, "tracking"))) {
-			html = fmt("Tracking '＀'  <a href='?＃;mode=0'>[Cancel Tracking]</a>  <a href='?src=＃;view'>[Cancel camera view]</a><br>", [rt.sv(f, "tracked_name"), live(f.src), live(f.src)]);
-			if (truthy(rt.sv(f, "last_found"))) {
-				time_diff = rt.call(f, P("/proc/round"), null, [divide(subtract(rt.worldTime(f), rt.sv(f, "last_seen")), 150)]);
-				C = rt.index(rt.sv(f, "bugged_cameras"), rt.sv(f, "last_found"));
-				outstring = null;
-				if (truthy(live(C))) {
-					outstring = fmt("<a href='?＃;view=＃'>＀</a>", [live(f.src), live(C), rt.sv(f, "last_found")]);
+	} else if (this.track_mode === 2) {
+		if (this.tracking) {
+			html = fmt("Tracking '＀'  <a href='?＃;mode=0'>[Cancel Tracking]</a>  <a href='?src=＃;view'>[Cancel camera view]</a><br>", [this.tracked_name, this, this]);
+			if (this.last_found) {
+				time_diff = round((rt.worldTime(f) - this.last_seen) / 150);
+				C = rt.index(this.bugged_cameras, this.last_found);
+				if (C) {
+					outstring = fmt("<a href='?＃;view=＃'>＀</a>", [this, C, this.last_found]);
 				} else {
-					outstring = rt.sv(f, "last_found");
+					outstring = this.last_found;
 				}
-				if (!truthy(live(time_diff))) {
-					html = rt.modify(live(html), fmt("Last seen near ＀ (now)<br>", [live(outstring)]), add);
+				if (!time_diff) {
+					html += `Last seen near ${outstring} (now)<br>`;
 				} else {
-					m = rt.call(f, P("/proc/round"), null, [divide(live(time_diff), 4)]);
-					if (!truthy((s = multiply(subtract(live(time_diff), multiply(4, live(m))), 15)))) {
+					m = round(time_diff / 4);
+					if (!(s = (time_diff - 4 * m) * 15)) {
 						s = "00";
 					}
-					html = rt.modify(live(html), fmt("Last seen near ＀ (＀:＀ minute５ ago)<br>", [live(outstring), live(m), live(s)]), add);
+					html += fmt("Last seen near ＀ (＀:＀ minute５ ago)<br>", [outstring, m, s]);
 				}
-				if ((truthy(live(C)) && isEqual(rt.fv(f, "bug", live(C)), live(f.src)))) {
-					html = rt.modify(live(html), fmt("<a href='?src=＃;emp=＃'>[Disable]</a>", [live(f.src), live(C)]), add);
+				if (C && C.bug == this) {
+					html += fmt("<a href='?src=＃;emp=＃'>[Disable]</a>", [this, C]);
 				}
 			} else {
-				html = rt.modify(live(html), "Not yet seen.", add);
+				html += "Not yet seen.";
 			}
 		} else {
-			rt.setSv(f, "track_mode", 0);
-			return rt.callSelf(f, [live(cameras)]);
+			this.track_mode = 0;
+			return rt.callSelf(f, [cameras]);
 		}
 	}
-	return live(html);
+	return html;
 });
 
-// /obj/item/device/camera_bug/proc/get_seens  (code/game/objects/items/devices/camera_bug.dm:140)
+// camera_bug.dm:140
 rt.def("/obj/item/device/camera_bug/proc/get_seens", function get_seens(f: Frame) {
 	let seen: Value = null;
-	f.vars = () => [seen];
-	if (!(truthy(rt.sv(f, "current")) && truthy(rt.callName(f, rt.sv(f, "current"), "can_use", [])))) return f.dot;
-	return (seen = rt.callName(f, rt.sv(f, "current"), "can_see", []));
+	if (!(this.current && this.current.can_use())) return f.dot;
+	return (seen = this.current.can_see());
 });
 
-// /obj/item/device/camera_bug/proc/camera_report  (code/game/objects/items/devices/camera_bug.dm:146)
+// camera_bug.dm:146
 rt.def("/obj/item/device/camera_bug/proc/camera_report", function camera_report(f: Frame) {
-	let dat: Value = null, seen: Value = null, names: Value = null, S: Value = null, stage: Value = null, M: Value = null;
-	let $e: any;
-	f.vars = () => [dat, seen, names, S, stage, M, $e];
-	dat = "";
-	if ((truthy((seen = rt.callSrc(f, "get_seens", []))) && rt.ge(rt.len(f, live(seen)), 1))) {
-		names = rt.list();
-		S = null;
-		rt.forList(f, 0, live(seen), T("/obj/singularity"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			S = $e;
-			if (truthy((rt.isIn(f, rt.fv(f, "name", live(S)), live(names)) ? 1 : 0))) {
-				rt.incAt(live(names), rt.fv(f, "name", live(S)), 1, true);
-				dat = rt.modify(live(dat), fmt("＀ (＀)", [rt.fv(f, "name", live(S)), rt.index(live(names), rt.fv(f, "name", live(S)))]), add);
+	let seen: Value = null, names: Value = null, S: Value = null, stage: Value = null, M: Value = null;
+	let dat: Value = "";
+	if ((seen = this.get_seens()) && rt.len(f, seen) >= 1) {
+		names = list();
+		for (S of each(seen, T("/obj/singularity"))) {
+			if (rt.isIn(f, S.name, names)) {
+				rt.incAt(names, S.name, 1, true);
+				dat += `${S.name} (${rt.index(names, S.name)})`;
 			} else {
-				rt.setAt(live(names), rt.fv(f, "name", live(S)), 1);
-				dat = rt.modify(live(dat), fmt("＀", [rt.fv(f, "name", live(S))]), add);
+				rt.setAt(names, S.name, 1);
+				dat += `${S.name}`;
 			}
-			dat = rt.modify(live(dat), fmt(" (Stage ＀)", [(stage = add(rt.call(f, P("/proc/round"), null, [divide(rt.fv(f, "current_size", live(S)), 2)]), 1))]), add);
-			dat = rt.modify(live(dat), fmt(" <a href='?＃;track=＃'>[Track]</a><br>", [live(f.src), live(S)]), add);
+			dat += ` (Stage ${(stage = round(S.current_size / 2) + 1)})`;
+			dat += fmt(" <a href='?＃;track=＃'>[Track]</a><br>", [this, S]);
 		}
-		rt.endFor(f, 0);
+		for (M of each(seen, T("/obj/mecha"))) {
+			if (rt.isIn(f, M.name, names)) {
+				rt.incAt(names, M.name, 1, true);
+				dat += `${M.name} (${rt.index(names, M.name)})`;
+			} else {
+				rt.setAt(names, M.name, 1);
+				dat += `${M.name}`;
+			}
+			dat += fmt(" <a href='?＃;track=＃'>[Track]</a><br>", [this, M]);
+		}
 		M = null;
-		rt.forList(f, 0, live(seen), T("/obj/mecha"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			M = $e;
-			if (truthy((rt.isIn(f, rt.fv(f, "name", live(M)), live(names)) ? 1 : 0))) {
-				rt.incAt(live(names), rt.fv(f, "name", live(M)), 1, true);
-				dat = rt.modify(live(dat), fmt("＀ (＀)", [rt.fv(f, "name", live(M)), rt.index(live(names), rt.fv(f, "name", live(M)))]), add);
+		for (M of each(seen, T("/mob/living"))) {
+			if (rt.isIn(f, M.name, names)) {
+				rt.incAt(names, M.name, 1, true);
+				dat += `${M.name} (${rt.index(names, M.name)})`;
 			} else {
-				rt.setAt(live(names), rt.fv(f, "name", live(M)), 1);
-				dat = rt.modify(live(dat), fmt("＀", [rt.fv(f, "name", live(M))]), add);
+				rt.setAt(names, M.name, 1);
+				dat += `${M.name}`;
 			}
-			dat = rt.modify(live(dat), fmt(" <a href='?＃;track=＃'>[Track]</a><br>", [live(f.src), live(M)]), add);
+			if (M.buckled && !M.lying) {
+				dat += " (Sitting)";
+			}
+			if (M.lying) {
+				dat += " (Laying down)";
+			}
+			dat += fmt(" <a href='?＃;track=＃'>[Track]</a><br>", [this, M]);
 		}
-		rt.endFor(f, 0);
-		M = null;
-		rt.forList(f, 0, live(seen), T("/mob/living"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			M = $e;
-			if (truthy((rt.isIn(f, rt.fv(f, "name", live(M)), live(names)) ? 1 : 0))) {
-				rt.incAt(live(names), rt.fv(f, "name", live(M)), 1, true);
-				dat = rt.modify(live(dat), fmt("＀ (＀)", [rt.fv(f, "name", live(M)), rt.index(live(names), rt.fv(f, "name", live(M)))]), add);
-			} else {
-				rt.setAt(live(names), rt.fv(f, "name", live(M)), 1);
-				dat = rt.modify(live(dat), fmt("＀", [rt.fv(f, "name", live(M))]), add);
-			}
-			if ((truthy(rt.fv(f, "buckled", live(M))) && !truthy(rt.fv(f, "lying", live(M))))) {
-				dat = rt.modify(live(dat), " (Sitting)", add);
-			}
-			if (truthy(rt.fv(f, "lying", live(M)))) {
-				dat = rt.modify(live(dat), " (Laying down)", add);
-			}
-			dat = rt.modify(live(dat), fmt(" <a href='?＃;track=＃'>[Track]</a><br>", [live(f.src), live(M)]), add);
+		if (rt.length(dat) == 0) {
+			dat += "No motion detected.";
 		}
-		rt.endFor(f, 0);
-		if (isEqual(rt.length(live(dat)), 0)) {
-			dat = rt.modify(live(dat), "No motion detected.", add);
-		}
-		return live(dat);
+		return dat;
 	} else {
 		return "Camera Offline<br>";
 	}
-	return f.dot;
 });
 
-// /obj/item/device/camera_bug/proc/Topic  (code/game/objects/items/devices/camera_bug.dm:190)  may sleep
+// camera_bug.dm:190
 rt.def("/obj/item/device/camera_bug/proc/Topic", function* Topic(f: Frame, href: Value, href_list: Value) {
 	let cameras: Value = null, C: Value = null, seen: Value = null, A: Value = null, _T: Value = null;
-	f.vars = () => [href, href_list, cameras, C, seen, A, _T];
-	if (!isEqual(live(f.usr), rt.sv(f, "loc"))) {
-		yield* g.callName(f, live(f.usr), "unset_machine", []);
-		rt.op(f, "Browse", [], [live(f.usr), null, "window=camerabug"], false);
-		return live(f.dot);
+	if (f.usr != this.loc) {
+		yield* f.usr.unset_machine();
+		rt.op(f, "Browse", [], [f.usr, null, "window=camerabug"], false);
+		return f.dot;
 	}
-	yield* g.callName(f, live(f.usr), "set_machine", [live(f.src)]);
-	if (truthy((rt.isIn(f, "mode", live(href_list)) ? 1 : 0))) {
-		rt.setSv(f, "track_mode", (yield* g.call(f, P("/proc/text2num"), null, [rt.at(live(href_list), "mode")])));
+	yield* f.usr.set_machine(this);
+	if (rt.isIn(f, "mode", href_list)) {
+		this.track_mode = text2num(rt.at(href_list, "mode"));
 	}
-	if (truthy((rt.isIn(f, "monitor", live(href_list)) ? 1 : 0))) {
-		cameras = (yield* g.call(f, P("/proc/flatten_list"), null, [rt.sv(f, "bugged_cameras")]));
-		if ((truthy((C = rt.locateIn(f, rt.at(live(href_list), "monitor"), live(cameras)))) && truthy((rt.istype(live(C), T("/obj/machinery/camera")) ? 1 : 0)))) {
-			rt.setSv(f, "track_mode", 1);
-			rt.setSv(f, "current", live(C));
-			yield* g.callName(f, live(f.usr), "reset_perspective", [null]);
-			yield* g.srcCall(f, "interact");
+	if (rt.isIn(f, "monitor", href_list)) {
+		cameras = flatten_list(this.bugged_cameras);
+		if ((C = rt.locateIn(f, rt.at(href_list, "monitor"), cameras)) && rt.istype(C, T("/obj/machinery/camera"))) {
+			this.track_mode = 1;
+			this.current = C;
+			yield* f.usr.reset_perspective(null);
+			yield* this.interact();
 		}
 	}
-	if (truthy((rt.isIn(f, "track", live(href_list)) ? 1 : 0))) {
-		if ((truthy((seen = (yield* g.srcCall(f, "get_seens")))) && rt.ge(rt.len(f, live(seen)), 1))) {
-			if ((truthy((A = rt.locateIn(f, rt.at(live(href_list), "track"), live(seen)))) && truthy((rt.istype(live(A), T("/atom")) ? 1 : 0)))) {
-				rt.setSv(f, "tracking", live(A));
-				rt.setSv(f, "tracked_name", rt.fv(f, "name", live(A)));
-				rt.setSv(f, "last_found", rt.fv(f, "c_tag", rt.sv(f, "current")));
-				rt.setSv(f, "last_seen", rt.worldTime(f));
-				rt.setSv(f, "track_mode", 2);
+	if (rt.isIn(f, "track", href_list)) {
+		if ((seen = this.get_seens()) && rt.len(f, seen) >= 1) {
+			if ((A = rt.locateIn(f, rt.at(href_list, "track"), seen)) && rt.istype(A, T("/atom"))) {
+				this.tracking = A;
+				this.tracked_name = A.name;
+				this.last_found = this.current.c_tag;
+				this.last_seen = rt.worldTime(f);
+				this.track_mode = 2;
 			}
 		}
 	}
-	if (truthy((rt.isIn(f, "emp", live(href_list)) ? 1 : 0))) {
-		cameras = (yield* g.call(f, P("/proc/flatten_list"), null, [rt.sv(f, "bugged_cameras")]));
-		if (((truthy((C = rt.locateIn(f, rt.at(live(href_list), "emp"), live(cameras)))) && truthy((rt.istype(live(C), T("/obj/machinery/camera")) ? 1 : 0))) && isEqual(rt.fv(f, "bug", live(C)), live(f.src)))) {
-			yield* g.callName(f, live(C), "emp_act", [1]);
-			rt.setFv(f, "bug", live(C), null);
-			(rt.modSrcVar(f, "bugged_cameras", rt.fv(f, "c_tag", live(C)), subtract));
+	if (rt.isIn(f, "emp", href_list)) {
+		cameras = flatten_list(this.bugged_cameras);
+		if ((C = rt.locateIn(f, rt.at(href_list, "emp"), cameras)) && rt.istype(C, T("/obj/machinery/camera")) && C.bug == this) {
+			yield* C.emp_act(1);
+			C.bug = null;
+			this.bugged_cameras -= C.c_tag;
 		}
-		yield* g.srcCall(f, "interact");
-		return live(f.dot);
+		yield* this.interact();
+		return f.dot;
 	}
-	if (truthy((rt.isIn(f, "close", live(href_list)) ? 1 : 0))) {
-		yield* g.callName(f, live(f.usr), "unset_machine", []);
-		rt.setSv(f, "current", null);
-		return live(f.dot);
+	if (rt.isIn(f, "close", href_list)) {
+		yield* f.usr.unset_machine();
+		this.current = null;
+		return f.dot;
 	}
-	if (truthy((rt.isIn(f, "view", live(href_list)) ? 1 : 0))) {
-		cameras = (yield* g.call(f, P("/proc/flatten_list"), null, [rt.sv(f, "bugged_cameras")]));
-		if ((truthy((C = rt.locateIn(f, rt.at(live(href_list), "view"), live(cameras)))) && truthy((rt.istype(live(C), T("/obj/machinery/camera")) ? 1 : 0)))) {
-			if (!truthy((yield* g.callName(f, live(C), "can_use", [])))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), "<span class='warning'>Something's wrong with that camera!  You can't get a feed.</span>"]);
-				return live(f.dot);
+	if (rt.isIn(f, "view", href_list)) {
+		cameras = flatten_list(this.bugged_cameras);
+		if ((C = rt.locateIn(f, rt.at(href_list, "view"), cameras)) && rt.istype(C, T("/obj/machinery/camera"))) {
+			if (!C.can_use()) {
+				to_chat(f.usr, "<span class='warning'>Something's wrong with that camera!  You can't get a feed.</span>");
+				return f.dot;
 			}
-			if ((!truthy((_T = rt.getStep(f, rt.sv(f, "loc"), 0))) || !isEqual(rt.fv(f, "z", live(C)), rt.fv(f, "z", live(_T))))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), "<span class='warning'>You can't get a signal!</span>"]);
-				return live(f.dot);
+			if (!(_T = rt.getStep(f, this.loc, 0)) || C.z != _T.z) {
+				to_chat(f.usr, "<span class='warning'>You can't get a signal!</span>");
+				return f.dot;
 			}
-			rt.setSv(f, "current", live(C));
+			this.current = C;
 			rt.spawnTail(f, 6, "/obj/item/device/camera_bug/proc/Topic: spawn at game/objects/items/devices/camera_bug.dm:243", href, href_list, cameras, C, seen, A, _T);
-			return live(f.dot);
+			return f.dot;
 		} else {
-			yield* g.callName(f, live(f.usr), "unset_machine", []);
+			yield* f.usr.unset_machine();
 		}
 	}
-	yield* g.srcCall(f, "interact");
+	yield* this.interact();
 	return f.dot;
 }, true);
 
 // a spawn(6) body of /obj/item/device/camera_bug/proc/Topic, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/obj/item/device/camera_bug/proc/Topic: spawn at game/objects/items/devices/camera_bug.dm:243", function* (f: Frame, href: Value, href_list: Value, cameras: Value, C: Value, seen: Value, A: Value, _T: Value) {
-	f.vars = () => [href, href_list, cameras, C, seen, A, _T];
-	if (truthy((yield* g.callName(f, live(f.src), "check_eye", [live(f.usr)])))) {
-		yield* g.callName(f, live(f.usr), "reset_perspective", [live(C)]);
-		yield* g.srcCall(f, "interact");
+	if (yield* this.check_eye(f.usr)) {
+		yield* f.usr.reset_perspective(C);
+		yield* this.interact();
 	} else {
-		yield* g.callName(f, live(f.usr), "unset_machine", []);
-		rt.op(f, "Browse", [], [live(f.usr), null, "window=camerabug"], false);
+		yield* f.usr.unset_machine();
+		rt.op(f, "Browse", [], [f.usr, null, "window=camerabug"], false);
 	}
 	return null;
 });
 
-// /obj/item/device/camera_bug/proc/process  (code/game/objects/items/devices/camera_bug.dm:257)  may sleep
+// camera_bug.dm:257
 rt.def("/obj/item/device/camera_bug/proc/process", function* process(f: Frame) {
 	let M: Value = null, tracking_cams: Value = null, b_cams: Value = null, entry: Value = null, target_region: Value = null, C: Value = null;
-	let $e: any;
-	f.vars = () => [M, tracking_cams, b_cams, entry, target_region, C, $e];
-	if ((isEqual(rt.sv(f, "track_mode"), 0) || rt.lt(rt.worldTime(f), add(rt.sv(f, "last_tracked"), rt.sv(f, "refresh_interval"))))) {
-		return live(f.dot);
+	if (this.track_mode == 0 || rt.worldTime(f) < this.last_tracked + this.refresh_interval) {
+		return f.dot;
 	}
-	rt.setSv(f, "last_tracked", rt.worldTime(f));
-	if (isEqual(rt.sv(f, "track_mode"), 2)) {
-		if (!truthy(rt.sv(f, "tracking"))) {
-			yield* g.callName(f, live(f.src), "updateSelfDialog", []);
-			return live(f.dot);
+	this.last_tracked = rt.worldTime(f);
+	if (this.track_mode == 2) {
+		if (!this.tracking) {
+			yield* this.updateSelfDialog();
+			return f.dot;
 		}
-		if (!isEqual(rt.fv(f, "name", rt.sv(f, "tracking")), rt.sv(f, "tracked_name"))) {
-			if (truthy((rt.istype((M = rt.sv(f, "tracking")), T("/mob")) ? 1 : 0))) {
-				if (!(isEqual(rt.sv(f, "tracked_name"), "Unknown") && truthy((yield* g.call(f, P("/proc/findtext"), null, [rt.fv(f, "name", rt.sv(f, "tracking")), "Unknown"]))))) {
-					if (!(isEqual(rt.sv(f, "tracked_name"), rt.fv(f, "real_name", live(M))) && truthy((yield* g.call(f, P("/proc/findtext"), null, [rt.fv(f, "name", rt.sv(f, "tracking")), rt.fv(f, "real_name", live(M))]))))) {
-						yield* g.callName(f, live(f.src), "updateSelfDialog", []);
-						return live(f.dot);
+		if (this.tracking.name != this.tracked_name) {
+			if (rt.istype((M = this.tracking), T("/mob"))) {
+				if (!(this.tracked_name == "Unknown" && findtext(this.tracking.name, "Unknown"))) {
+					if (!(this.tracked_name == M.real_name && findtext(this.tracking.name, M.real_name))) {
+						yield* this.updateSelfDialog();
+						return f.dot;
 					}
 				}
 			} else {
-				yield* g.callName(f, live(f.src), "updateSelfDialog", []);
-				return live(f.dot);
+				yield* this.updateSelfDialog();
+				return f.dot;
 			}
 		}
-		tracking_cams = rt.list();
-		b_cams = (yield* g.srcCall(f, "get_cameras"));
-		entry = null;
-		rt.forList(f, 0, live(b_cams));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			entry = $e;
-			tracking_cams = rt.modify(live(tracking_cams), rt.index(live(b_cams), live(entry)), add);
+		tracking_cams = list();
+		b_cams = (yield* this.get_cameras());
+		for (entry of each(b_cams)) {
+			tracking_cams += rt.index(b_cams, entry);
 		}
-		rt.endFor(f, 0);
-		target_region = (yield* g.call(f, P("/proc/view"), null, [rt.sv(f, "tracking")]));
-		C = null;
-		rt.forList(f, 0, rt.bitAnd(live(target_region), live(tracking_cams)), T("/obj/machinery/camera"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			C = $e;
-			if (!truthy((yield* g.call(f, P("/proc/can_see"), null, [live(C), rt.sv(f, "tracking")])))) {
+		target_region = view(this.tracking);
+		for (C of each(rt.bitAnd(target_region, tracking_cams), T("/obj/machinery/camera"))) {
+			if (!can_see(C, this.tracking)) {
 				continue;
 			}
-			if (truthy((yield* g.callName(f, live(C), "can_use", [])))) {
-				rt.setSv(f, "last_found", rt.fv(f, "c_tag", live(C)));
-				rt.setSv(f, "last_seen", rt.worldTime(f));
+			if (C.can_use()) {
+				this.last_found = C.c_tag;
+				this.last_seen = rt.worldTime(f);
 				break;
 			}
 		}
-		rt.endFor(f, 0);
 	}
-	yield* g.callName(f, live(f.src), "updateSelfDialog", []);
+	yield* this.updateSelfDialog();
 	return f.dot;
 }, true, { waitfor: false });

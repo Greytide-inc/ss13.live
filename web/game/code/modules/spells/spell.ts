@@ -1,13 +1,13 @@
-// From code/modules/spells/spell.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/spells/spell.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, g, add } = rt;
 
 
-// /datum/controller/global_vars/proc/InitGlobalspells  (code/modules/spells/spell.dm:12)
+// spell.dm:12
 rt.def("/datum/controller/global_vars/proc/InitGlobalspells", function InitGlobalspells(f: Frame) {
-	rt.setGl("spells", rt.call(f, P("/proc/typesof"), null, [T("/obj/effect/proc_holder/spell")]));
-	rt.modSrcVar(f, "gvars_datum_init_order", "spells", add);
+	GLOB.spells = typesof(T("/obj/effect/proc_holder/spell"));
+	this.gvars_datum_init_order += "spells";
 	return f.dot;
 });
 
@@ -19,86 +19,83 @@ rt.type(11221, "/obj/effect/proc_holder", "/obj/effect", {
 	ranged_clickcd_override: -1,
 });
 
-// /obj/effect/proc_holder/proc/Destroy  (code/modules/spells/spell.dm:16)  may sleep
+// spell.dm:16
 rt.def("/obj/effect/proc_holder/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.sv(f, "ranged_ability_user"))) {
-		yield* g.srcCall(f, "remove_ranged_ability");
+	if (this.ranged_ability_user) {
+		yield* this.remove_ranged_ability();
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);
 
-// /obj/effect/proc_holder/proc/InterceptClickOn  (code/modules/spells/spell.dm:20)  may sleep
+// spell.dm:20
 rt.def("/obj/effect/proc_holder/proc/InterceptClickOn", function* InterceptClickOn(f: Frame, caller: Value, params: Value, A: Value) {
-	f.vars = () => [caller, params, A];
-	if ((!isEqual(rt.fv(f, "ranged_ability", live(caller)), live(f.src)) || !isEqual(rt.sv(f, "ranged_ability_user"), live(caller)))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(caller), fmt("<span class='warning'><b>＀</b> has been disabled.", [rt.gv(f, "name", rt.fv(f, "ranged_ability", live(caller)))])]);
-		yield* g.callName(f, rt.fv(f, "ranged_ability", live(caller)), "remove_ranged_ability", []);
+	if (caller.ranged_ability != this || this.ranged_ability_user != caller) {
+		to_chat(caller, `<span class='warning'><b>${caller.ranged_ability.name}</b> has been disabled.`);
+		yield* caller.ranged_ability.remove_ranged_ability();
 		return 1;
 	}
-	if (rt.ge(rt.sv(f, "ranged_clickcd_override"), 0)) {
-		rt.setFv(f, "next_click", rt.sv(f, "ranged_ability_user"), add(rt.worldTime(f), rt.sv(f, "ranged_clickcd_override")));
+	if (this.ranged_clickcd_override >= 0) {
+		this.ranged_ability_user.next_click = rt.worldTime(f) + this.ranged_clickcd_override;
 	} else {
-		rt.setFv(f, "next_click", rt.sv(f, "ranged_ability_user"), add(rt.worldTime(f), 6));
+		this.ranged_ability_user.next_click = rt.worldTime(f) + 6;
 	}
-	yield* g.callName(f, rt.sv(f, "ranged_ability_user"), "face_atom", [live(A)]);
+	yield* this.ranged_ability_user.face_atom(A);
 	return 0;
 }, true);
 
-// /obj/effect/proc_holder/proc/add_ranged_ability  (code/modules/spells/spell.dm:32)  may sleep
+// spell.dm:32
 rt.def("/obj/effect/proc_holder/proc/add_ranged_ability", function* add_ranged_ability(f: Frame, user: Value, msg: Value, forced: Value) {
-	f.vars = () => [user, msg, forced];
-	if ((!truthy(live(user)) || !truthy(rt.fv(f, "client", live(user))))) {
-		return live(f.dot);
+	if (!user || !user.client) {
+		return f.dot;
 	}
-	if ((truthy(rt.fv(f, "ranged_ability", live(user))) && !isEqual(rt.fv(f, "ranged_ability", live(user)), live(f.src)))) {
-		if (truthy(live(forced))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'><b>＀</b> has been replaced by <b>＀</b>.", [rt.gv(f, "name", rt.fv(f, "ranged_ability", live(user))), rt.sv(f, "name")])]);
-			yield* g.callName(f, rt.fv(f, "ranged_ability", live(user)), "remove_ranged_ability", []);
+	if (user.ranged_ability && user.ranged_ability != this) {
+		if (forced) {
+			to_chat(user, `<span class='warning'><b>${user.ranged_ability.name}</b> has been replaced by <b>${this.name}</b>.`);
+			yield* user.ranged_ability.remove_ranged_ability();
 		} else {
-			return live(f.dot);
+			return f.dot;
 		}
 	}
-	rt.setFv(f, "ranged_ability", live(user), live(f.src));
-	rt.setFv(f, "click_intercept", rt.fv(f, "client", live(user)), rt.fv(f, "ranged_ability", live(user)));
-	yield* g.srcCall(f, "add_mousepointer", rt.fv(f, "client", live(user)));
-	rt.setSv(f, "ranged_ability_user", live(user));
-	if (truthy(live(msg))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "ranged_ability_user"), live(msg)]);
+	user.ranged_ability = this;
+	user.client.click_intercept = user.ranged_ability;
+	this.add_mousepointer(user.client);
+	this.ranged_ability_user = user;
+	if (msg) {
+		to_chat(this.ranged_ability_user, msg);
 	}
-	rt.setSv(f, "active", 1);
-	yield* g.srcCall(f, "update_icon");
+	this.active = 1;
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/effect/proc_holder/proc/add_mousepointer  (code/modules/spells/spell.dm:50)
+// spell.dm:50
 rt.def("/obj/effect/proc_holder/proc/add_mousepointer", function add_mousepointer(f: Frame, C: Value) {
-	if (!((truthy(live(C)) && truthy(rt.sv(f, "ranged_mousepointer"))) && isEqual(rt.fv(f, "mouse_pointer_icon", live(C)), rt.initial(f, live(C), "mouse_pointer_icon")))) return f.dot;
-	rt.setFv(f, "mouse_pointer_icon", live(C), rt.sv(f, "ranged_mousepointer"));
+	if (!(C && this.ranged_mousepointer && C.mouse_pointer_icon == rt.initial(f, C, "mouse_pointer_icon"))) return f.dot;
+	C.mouse_pointer_icon = this.ranged_mousepointer;
 	return f.dot;
 });
 
-// /obj/effect/proc_holder/proc/remove_mousepointer  (code/modules/spells/spell.dm:54)
+// spell.dm:54
 rt.def("/obj/effect/proc_holder/proc/remove_mousepointer", function remove_mousepointer(f: Frame, C: Value) {
-	if (!((truthy(live(C)) && truthy(rt.sv(f, "ranged_mousepointer"))) && isEqual(rt.fv(f, "mouse_pointer_icon", live(C)), rt.sv(f, "ranged_mousepointer")))) return f.dot;
-	rt.setFv(f, "mouse_pointer_icon", live(C), rt.initial(f, live(C), "mouse_pointer_icon"));
+	if (!(C && this.ranged_mousepointer && C.mouse_pointer_icon == this.ranged_mousepointer)) return f.dot;
+	C.mouse_pointer_icon = rt.initial(f, C, "mouse_pointer_icon");
 	return f.dot;
 });
 
-// /obj/effect/proc_holder/proc/remove_ranged_ability  (code/modules/spells/spell.dm:58)  may sleep
+// spell.dm:58
 rt.def("/obj/effect/proc_holder/proc/remove_ranged_ability", function* remove_ranged_ability(f: Frame, msg: Value) {
-	f.vars = () => [msg];
-	if (((!truthy(rt.sv(f, "ranged_ability_user")) || !truthy(rt.fv(f, "client", rt.sv(f, "ranged_ability_user")))) || (truthy(rt.fv(f, "ranged_ability", rt.sv(f, "ranged_ability_user"))) && !isEqual(rt.fv(f, "ranged_ability", rt.sv(f, "ranged_ability_user")), live(f.src))))) {
-		return live(f.dot);
+	if (!this.ranged_ability_user || !this.ranged_ability_user.client || this.ranged_ability_user.ranged_ability && this.ranged_ability_user.ranged_ability != this) {
+		return f.dot;
 	}
-	rt.setFv(f, "ranged_ability", rt.sv(f, "ranged_ability_user"), null);
-	rt.setFv(f, "click_intercept", rt.fv(f, "client", rt.sv(f, "ranged_ability_user")), null);
-	yield* g.srcCall(f, "remove_mousepointer", rt.fv(f, "client", rt.sv(f, "ranged_ability_user")));
-	if (truthy(live(msg))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "ranged_ability_user"), live(msg)]);
+	this.ranged_ability_user.ranged_ability = null;
+	this.ranged_ability_user.client.click_intercept = null;
+	this.remove_mousepointer(this.ranged_ability_user.client);
+	if (msg) {
+		to_chat(this.ranged_ability_user, msg);
 	}
-	rt.setSv(f, "ranged_ability_user", null);
-	rt.setSv(f, "active", 0);
-	yield* g.srcCall(f, "update_icon");
+	this.ranged_ability_user = null;
+	this.active = 0;
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
@@ -151,327 +148,277 @@ rt.type(11274, "/obj/effect/proc_holder/spell", "/obj/effect/proc_holder", {
 	opacity: 0,
 });
 
-// /obj/effect/proc_holder/spell/proc/cast_check  (code/modules/spells/spell.dm:129)  may sleep
+// spell.dm:129
 rt.def("/obj/effect/proc_holder/spell/proc/cast_check", function* cast_check(f: Frame, skipcharge: Value, user: Value) {
 	let _T: Value = null, H: Value = null, casting_clothes: Value = null;
-	let $0: any;
-	f.vars = () => [skipcharge, user, _T, H, casting_clothes, $0];
-	if (live(skipcharge) === null) {
-		skipcharge = 0;
-	}
-	if (live(user) === null) {
-		user = live(f.usr);
-	}
-	if (truthy(rt.sv(f, "player_lock"))) {
-		if ((!truthy(rt.fv(f, "mind", live(user))) || (!truthy((rt.isIn(f, live(f.src), rt.gv(f, "spell_list", rt.fv(f, "mind", live(user)))) ? 1 : 0)) && !truthy((rt.isIn(f, live(f.src), rt.fv(f, "mob_spell_list", live(user))) ? 1 : 0))))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>You shouldn't have this spell! Something's wrong.</span>"]);
+	skipcharge ??= 0;
+	user ??= f.usr;
+	if (this.player_lock) {
+		if (!user.mind || !rt.isIn(f, this, user.mind.spell_list) && !rt.isIn(f, this, user.mob_spell_list)) {
+			to_chat(user, "<span class='warning'>You shouldn't have this spell! Something's wrong.</span>");
 			return 0;
 		}
-	} else {
-		if (!truthy((rt.isIn(f, live(f.src), rt.fv(f, "mob_spell_list", live(user))) ? 1 : 0))) {
+	} else if (!rt.isIn(f, this, user.mob_spell_list)) {
+		return 0;
+	}
+	if ((_T = rt.getStep(f, user, 0)).z == 1 && !this.centcom_cancast) {
+		to_chat(user, "<span class='notice'>You can't cast this spell here.</span>");
+		return 0;
+	}
+	if (!skipcharge) {
+		if (this.charge_type === "recharge") {
+			if (this.charge_counter < this.charge_max) {
+				to_chat(user, this.still_recharging_msg);
+				return 0;
+			}
+		} else if (this.charge_type === "charges") {
+			if (!this.charge_counter) {
+				to_chat(user, `<span class='notice'>${this.name} has no charges left.</span>`);
+				return 0;
+			}
+		}
+	}
+	if (user.stat && !this.stat_allowed) {
+		to_chat(user, "<span class='notice'>Not when you're incapacitated.</span>");
+		return 0;
+	}
+	if (!this.phase_allowed && rt.istype(user.loc, T("/obj/effect/dummy"))) {
+		to_chat(user, `<span class='notice'>${this.name} cannot be cast unless you are completely manifested in the material plane.</span>`);
+		return 0;
+	}
+	if (rt.istype(user, T("/mob/living/carbon/human"))) {
+		H = user;
+		if ((this.invocation_type == "whisper" || this.invocation_type == "shout") && H.is_muzzled()) {
+			to_chat(user, "<span class='notice'>You can't get the words out!</span>");
 			return 0;
 		}
-	}
-	if ((isEqual(rt.gv(f, "z", (_T = rt.getStep(f, live(user), 0))), 1) && !truthy(rt.sv(f, "centcom_cancast")))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>You can't cast this spell here.</span>"]);
-		return 0;
-	}
-	if (!truthy(live(skipcharge))) {
-		$0 = rt.sv(f, "charge_type");
-		if ($0 === "recharge") {
-			if (rt.lt(rt.sv(f, "charge_counter"), rt.sv(f, "charge_max"))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(user), rt.sv(f, "still_recharging_msg")]);
+		casting_clothes = typecacheof(list(T("/obj/item/clothing/suit/wizrobe"), T("/obj/item/clothing/suit/space/hardsuit/wizard"), T("/obj/item/clothing/head/wizard"), T("/obj/item/clothing/head/helmet/space/hardsuit/wizard"), T("/obj/item/clothing/suit/space/hardsuit/shielded/wizard"), T("/obj/item/clothing/head/helmet/space/hardsuit/shielded/wizard")));
+		if (this.clothes_req) {
+			if (!is_type_in_typecache(H.wear_suit, casting_clothes)) {
+				to_chat(H, "<span class='notice'>I don't feel strong enough without my robe.</span>");
 				return 0;
 			}
-		} else if ($0 === "charges") {
-			if (!truthy(rt.sv(f, "charge_counter"))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>＀ has no charges left.</span>", [rt.sv(f, "name")])]);
+			if (!is_type_in_typecache(H.head, casting_clothes)) {
+				to_chat(H, "<span class='notice'>I don't feel strong enough without my hat.</span>");
 				return 0;
 			}
 		}
-	}
-	if ((truthy(rt.fv(f, "stat", live(user))) && !truthy(rt.sv(f, "stat_allowed")))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>Not when you're incapacitated.</span>"]);
-		return 0;
-	}
-	if ((!truthy(rt.sv(f, "phase_allowed")) && truthy((rt.istype(rt.fv(f, "loc", live(user)), T("/obj/effect/dummy")) ? 1 : 0)))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>＀ cannot be cast unless you are completely manifested in the material plane.</span>", [rt.sv(f, "name")])]);
-		return 0;
-	}
-	if (truthy((rt.istype(live(user), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		H = live(user);
-		if (((isEqual(rt.sv(f, "invocation_type"), "whisper") || isEqual(rt.sv(f, "invocation_type"), "shout")) && truthy((yield* g.callName(f, live(H), "is_muzzled", []))))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>You can't get the words out!</span>"]);
-			return 0;
-		}
-		casting_clothes = (yield* g.call(f, P("/proc/typecacheof"), null, [rt.list(T("/obj/item/clothing/suit/wizrobe"), T("/obj/item/clothing/suit/space/hardsuit/wizard"), T("/obj/item/clothing/head/wizard"), T("/obj/item/clothing/head/helmet/space/hardsuit/wizard"), T("/obj/item/clothing/suit/space/hardsuit/shielded/wizard"), T("/obj/item/clothing/head/helmet/space/hardsuit/shielded/wizard"))]));
-		if (truthy(rt.sv(f, "clothes_req"))) {
-			if (!truthy((yield* g.call(f, P("/proc/is_type_in_typecache"), null, [rt.fv(f, "wear_suit", live(H)), live(casting_clothes)])))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(H), "<span class='notice'>I don't feel strong enough without my robe.</span>"]);
+		if (this.cult_req) {
+			if (!rt.istype(H.wear_suit, T("/obj/item/clothing/suit/magusred")) && !rt.istype(H.wear_suit, T("/obj/item/clothing/suit/space/hardsuit/cult"))) {
+				to_chat(H, "<span class='notice'>I don't feel strong enough without my armor.</span>");
 				return 0;
 			}
-			if (!truthy((yield* g.call(f, P("/proc/is_type_in_typecache"), null, [rt.fv(f, "head", live(H)), live(casting_clothes)])))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(H), "<span class='notice'>I don't feel strong enough without my hat.</span>"]);
-				return 0;
-			}
-		}
-		if (truthy(rt.sv(f, "cult_req"))) {
-			if ((!truthy((rt.istype(rt.fv(f, "wear_suit", live(H)), T("/obj/item/clothing/suit/magusred")) ? 1 : 0)) && !truthy((rt.istype(rt.fv(f, "wear_suit", live(H)), T("/obj/item/clothing/suit/space/hardsuit/cult")) ? 1 : 0)))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(H), "<span class='notice'>I don't feel strong enough without my armor.</span>"]);
-				return 0;
-			}
-			if ((!truthy((rt.istype(rt.fv(f, "head", live(H)), T("/obj/item/clothing/head/magus")) ? 1 : 0)) && !truthy((rt.istype(rt.fv(f, "head", live(H)), T("/obj/item/clothing/head/helmet/space/hardsuit/cult")) ? 1 : 0)))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(H), "<span class='notice'>I don't feel strong enough without my helmet.</span>"]);
+			if (!rt.istype(H.head, T("/obj/item/clothing/head/magus")) && !rt.istype(H.head, T("/obj/item/clothing/head/helmet/space/hardsuit/cult"))) {
+				to_chat(H, "<span class='notice'>I don't feel strong enough without my helmet.</span>");
 				return 0;
 			}
 		}
 	} else {
-		if ((truthy(rt.sv(f, "clothes_req")) || truthy(rt.sv(f, "human_req")))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>This spell can only be cast by humans!</span>"]);
+		if (this.clothes_req || this.human_req) {
+			to_chat(user, "<span class='notice'>This spell can only be cast by humans!</span>");
 			return 0;
 		}
-		if ((truthy(rt.sv(f, "nonabstract_req")) && (truthy((rt.istype(live(user), T("/mob/living/brain")) ? 1 : 0)) || truthy((rt.istype(live(user), T("/mob/living/silicon/pai")) ? 1 : 0))))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>This spell can only be cast by physical beings!</span>"]);
+		if (this.nonabstract_req && (rt.istype(user, T("/mob/living/brain")) || rt.istype(user, T("/mob/living/silicon/pai")))) {
+			to_chat(user, "<span class='notice'>This spell can only be cast by physical beings!</span>");
 			return 0;
 		}
 	}
-	if (!truthy(live(skipcharge))) {
-		$0 = rt.sv(f, "charge_type");
-		if ($0 === "recharge") {
-			rt.setSv(f, "charge_counter", 0);
-		} else if ($0 === "charges") {
-			rt.incSrcVar(f, "charge_counter", -1, true);
-		} else if ($0 === "holdervar") {
-			yield* g.srcCall(f, "adjust_var", live(user), rt.sv(f, "holder_var_type"), rt.sv(f, "holder_var_amount"));
+	if (!skipcharge) {
+		if (this.charge_type === "recharge") {
+			this.charge_counter = 0;
+		} else if (this.charge_type === "charges") {
+			this.charge_counter--;
+		} else if (this.charge_type === "holdervar") {
+			yield* this.adjust_var(user, this.holder_var_type, this.holder_var_amount);
 		}
 	}
-	if (truthy(rt.sv(f, "action"))) {
-		yield* g.callName(f, rt.sv(f, "action"), "UpdateButtonIcon", []);
+	if (this.action) {
+		yield* this.action.UpdateButtonIcon();
 	}
 	return 1;
 }, true);
 
-// /obj/effect/proc_holder/spell/proc/invocation  (code/modules/spells/spell.dm:211)  may sleep
+// spell.dm:211
 rt.def("/obj/effect/proc_holder/spell/proc/invocation", function* invocation(f: Frame, user: Value) {
-	let $0: any;
-	f.vars = () => [user, $0];
-	if (live(user) === null) {
-		user = live(f.usr);
-	}
-	$0 = rt.sv(f, "invocation_type");
-	if ($0 === "shout") {
-		if (truthy(rt.op(f, "Prob", [], [50]))) {
-			yield* g.callName(f, live(user), "say", [rt.sv(f, "invocation")]);
+	user ??= f.usr;
+	if (this.invocation_type === "shout") {
+		if (prob(50)) {
+			yield* user.say(this.invocation);
 		} else {
-			yield* g.callName(f, live(user), "say", [(yield* g.call(f, P("/proc/replacetext"), null, [rt.sv(f, "invocation"), " ", "`"]))]);
+			yield* user.say(replacetext(this.invocation, " ", "`"));
 		}
-	} else if ($0 === "whisper") {
-		if (truthy(rt.op(f, "Prob", [], [50]))) {
-			yield* g.callName(f, live(user), "whisper", [rt.sv(f, "invocation")]);
+	} else if (this.invocation_type === "whisper") {
+		if (prob(50)) {
+			yield* user.whisper(this.invocation);
 		} else {
-			yield* g.callName(f, live(user), "whisper", [(yield* g.call(f, P("/proc/replacetext"), null, [rt.sv(f, "invocation"), " ", "`"]))]);
+			yield* user.whisper(replacetext(this.invocation, " ", "`"));
 		}
-	} else if ($0 === "emote") {
-		yield* g.callName(f, live(user), "visible_message", [rt.sv(f, "invocation"), rt.sv(f, "invocation_emote_self")]);
+	} else if (this.invocation_type === "emote") {
+		user.visible_message(this.invocation, this.invocation_emote_self);
 	}
 	return f.dot;
 }, true);
 
-// /obj/effect/proc_holder/spell/proc/playMagSound  (code/modules/spells/spell.dm:226)
+// spell.dm:226
 rt.def("/obj/effect/proc_holder/spell/proc/playMagSound", function playMagSound(f: Frame) {
-	rt.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.usr), 0), rt.sv(f, "sound"), 50, 1]);
+	playsound(rt.getStep(f, f.usr, 0), this.sound, 50, 1);
 	return f.dot;
 });
 
-// /obj/effect/proc_holder/spell/proc/Initialize  (code/modules/spells/spell.dm:229)  may sleep
+// spell.dm:229
 rt.def("/obj/effect/proc_holder/spell/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "action", (yield* g.new_(f, T("/datum/action/spell_action"), [live(f.src)])));
-	if (!truthy(rt.fv(f, "isprocessing", live(f.src)))) {
-		rt.setFv(f, "isprocessing", live(f.src), 1);
-		rt.modField(f, rt.gl("SSfastprocess"), "processing", live(f.src), add);
+	f.dot = (yield* parent_proc());
+	this.action = (yield* new_(T("/datum/action/spell_action"), this));
+	if (!this.isprocessing) {
+		this.isprocessing = 1;
+		GLOB.SSfastprocess.processing += this;
 	}
-	rt.setSv(f, "still_recharging_msg", fmt("<span class='notice'>＀ is still recharging.</span>", [rt.sv(f, "name")]));
-	rt.setSv(f, "charge_counter", rt.sv(f, "charge_max"));
+	this.still_recharging_msg = `<span class='notice'>${this.name} is still recharging.</span>`;
+	this.charge_counter = this.charge_max;
 	return f.dot;
 }, true);
 
-// /obj/effect/proc_holder/spell/proc/Destroy  (code/modules/spells/spell.dm:237)  may sleep
+// spell.dm:237
 rt.def("/obj/effect/proc_holder/spell/proc/Destroy", function* Destroy(f: Frame) {
-	rt.setFv(f, "isprocessing", live(f.src), 0);
-	(rt.modField(f, rt.gl("SSfastprocess"), "processing", live(f.src), subtract));
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "action")]);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	this.isprocessing = 0;
+	GLOB.SSfastprocess.processing -= this;
+	yield* qdel(this.action);
+	return (yield* parent_proc());
 }, true);
 
-// /obj/effect/proc_holder/spell/proc/Click  (code/modules/spells/spell.dm:242)  may sleep
+// spell.dm:242
 rt.def("/obj/effect/proc_holder/spell/proc/Click", function* Click(f: Frame) {
-	if (truthy((yield* g.srcCall(f, "cast_check")))) {
-		yield* g.srcCall(f, "choose_targets");
+	if (yield* this.cast_check()) {
+		yield* this.choose_targets();
 	}
 	return 1;
 }, true);
 
-// /obj/effect/proc_holder/spell/proc/process  (code/modules/spells/spell.dm:256)  may sleep
+// spell.dm:256
 rt.def("/obj/effect/proc_holder/spell/proc/process", function* process(f: Frame) {
-	if (!((truthy(rt.sv(f, "recharging")) && isEqual(rt.sv(f, "charge_type"), "recharge")) && rt.lt(rt.sv(f, "charge_counter"), rt.sv(f, "charge_max")))) return f.dot;
-	if (!rt.ge((rt.modSrcVar(f, "charge_counter", 2, add)), rt.sv(f, "charge_max"))) return f.dot;
-	yield* g.callName(f, rt.sv(f, "action"), "UpdateButtonIcon", []);
-	rt.setSv(f, "charge_counter", rt.sv(f, "charge_max"));
-	rt.setSv(f, "recharging", 0);
+	if (!(this.recharging && this.charge_type == "recharge" && this.charge_counter < this.charge_max)) return f.dot;
+	if (!((this.charge_counter += 2) >= this.charge_max)) return f.dot;
+	yield* this.action.UpdateButtonIcon();
+	this.charge_counter = this.charge_max;
+	this.recharging = 0;
 	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/effect/proc_holder/spell/proc/perform  (code/modules/spells/spell.dm:264)  may sleep
+// spell.dm:264
 rt.def("/obj/effect/proc_holder/spell/proc/perform", function* perform(f: Frame, targets: Value, recharge: Value, user: Value) {
-	f.vars = () => [targets, recharge, user];
-	if (live(recharge) === null) {
-		recharge = 1;
+	recharge ??= 1;
+	user ??= f.usr;
+	yield* this.before_cast(targets);
+	yield* this.invocation(user);
+	if (user && user.ckey) {
+		user.log_message(`<span class='danger'>cast the spell ${this.name}.</span>`, "Attack log");
 	}
-	if (live(user) === null) {
-		user = live(f.usr);
+	if (recharge) {
+		this.recharging = 1;
 	}
-	yield* g.srcCall(f, "before_cast", live(targets));
-	yield* g.srcCall(f, "invocation", live(user));
-	if ((truthy(live(user)) && truthy(rt.fv(f, "ckey", live(user))))) {
-		yield* g.callName(f, live(user), "log_message", [fmt("<span class='danger'>cast the spell ＀.</span>", [rt.sv(f, "name")]), "Attack log"]);
+	if (this.sound) {
+		this.playMagSound();
 	}
-	if (truthy(live(recharge))) {
-		rt.setSv(f, "recharging", 1);
-	}
-	if (truthy(rt.sv(f, "sound"))) {
-		yield* g.srcCall(f, "playMagSound");
-	}
-	if (truthy(rt.op(f, "Prob", [], [rt.sv(f, "critfailchance")]))) {
-		yield* g.srcCall(f, "critfail", live(targets));
+	if (prob(this.critfailchance)) {
+		yield* this.critfail(targets);
 	} else {
-		yield* g.callSrc(f, "cast", [null, live(targets), "user", live(user)], rt.Args.Named);
+		yield* this.cast(targets, { user: user });
 	}
-	yield* g.srcCall(f, "after_cast", live(targets));
-	if (!truthy(rt.sv(f, "action"))) return f.dot;
-	yield* g.callName(f, rt.sv(f, "action"), "UpdateButtonIcon", []);
+	yield* this.after_cast(targets);
+	if (!this.action) return f.dot;
+	yield* this.action.UpdateButtonIcon();
 	return f.dot;
 }, true);
 
-// /obj/effect/proc_holder/spell/proc/before_cast  (code/modules/spells/spell.dm:282)  may sleep
+// spell.dm:282
 rt.def("/obj/effect/proc_holder/spell/proc/before_cast", function* before_cast(f: Frame, targets: Value) {
 	let target: Value = null, location: Value = null, spell: Value = null;
-	let $e: any;
-	f.vars = () => [targets, target, location, spell, $e];
-	if (!truthy(rt.sv(f, "overlay"))) return f.dot;
-	target = null;
-	rt.forList(f, 0, live(targets), T("/atom"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		target = $e;
+	if (!this.overlay) return f.dot;
+	for (target of each(targets, T("/atom"))) {
 		location = null;
-		if (truthy((rt.istype(live(target), T("/mob/living")) ? 1 : 0))) {
-			location = rt.fv(f, "loc", live(target));
-		} else {
-			if (truthy((yield* g.call(f, P("/proc/isturf"), null, [live(target)])))) {
-				location = live(target);
-			}
+		if (rt.istype(target, T("/mob/living"))) {
+			location = target.loc;
+		} else if (isturf(target)) {
+			location = target;
 		}
-		rt.setFv(f, "icon", (spell = (yield* g.new_(f, T("/obj/effect/overlay"), [live(location)]))), rt.sv(f, "overlay_icon"));
-		rt.setFv(f, "icon_state", live(spell), rt.sv(f, "overlay_icon_state"));
-		rt.setFv(f, "anchored", live(spell), 1);
-		rt.setFv(f, "density", live(spell), 0);
-		yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), ["some_magic_bullshit", P("/proc/qdel"), live(spell)])), rt.sv(f, "overlay_lifespan"), 8]);
+		(spell = (yield* new_(T("/obj/effect/overlay"), location))).icon = this.overlay_icon;
+		spell.icon_state = this.overlay_icon_state;
+		spell.anchored = 1;
+		spell.density = 0;
+		yield* addtimer((yield* new_(T("/datum/callback"), "some_magic_bullshit", P("/proc/qdel"), spell)), this.overlay_lifespan, 8);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /obj/effect/proc_holder/spell/proc/after_cast  (code/modules/spells/spell.dm:296)  may sleep
+// spell.dm:296
 rt.def("/obj/effect/proc_holder/spell/proc/after_cast", function* after_cast(f: Frame, targets: Value) {
 	let target: Value = null, location: Value = null, smoke: Value = null;
-	let $e: any;
-	f.vars = () => [targets, target, location, smoke, $e];
-	target = null;
-	rt.forList(f, 0, live(targets), T("/atom"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		target = $e;
+	for (target of each(targets, T("/atom"))) {
 		location = null;
-		if (truthy((rt.istype(live(target), T("/mob/living")) ? 1 : 0))) {
-			location = rt.fv(f, "loc", live(target));
-		} else {
-			if (truthy((yield* g.call(f, P("/proc/isturf"), null, [live(target)])))) {
-				location = live(target);
-			}
+		if (rt.istype(target, T("/mob/living"))) {
+			location = target.loc;
+		} else if (isturf(target)) {
+			location = target;
 		}
-		if ((truthy((rt.istype(live(target), T("/mob/living")) ? 1 : 0)) && truthy(rt.sv(f, "message")))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(target), fmt("＀", [rt.sv(f, "message")])]);
+		if (rt.istype(target, T("/mob/living")) && rt.sv(f, "message")) {
+			to_chat(target, `${rt.sv(f, "message")}`);
 		}
-		if (truthy(rt.sv(f, "sparks_spread"))) {
-			yield* g.call(f, P("/proc/do_sparks"), null, [rt.sv(f, "sparks_amt"), 0, live(location)]);
+		if (this.sparks_spread) {
+			yield* do_sparks(this.sparks_amt, 0, location);
 		}
-		if (truthy(rt.sv(f, "smoke_spread"))) {
-			if (isEqual(rt.sv(f, "smoke_spread"), 1)) {
-				yield* g.callName(f, (smoke = (yield* g.new_(f, T("/datum/effect_system/smoke_spread"), []))), "set_up", [rt.sv(f, "smoke_amt"), live(location)]);
-				yield* g.callName(f, live(smoke), "start", []);
-			} else {
-				if (isEqual(rt.sv(f, "smoke_spread"), 2)) {
-					yield* g.callName(f, (smoke = (yield* g.new_(f, T("/datum/effect_system/smoke_spread/bad"), []))), "set_up", [rt.sv(f, "smoke_amt"), live(location)]);
-					yield* g.callName(f, live(smoke), "start", []);
-				} else {
-					if (isEqual(rt.sv(f, "smoke_spread"), 3)) {
-						yield* g.callName(f, (smoke = (yield* g.new_(f, T("/datum/effect_system/smoke_spread/sleeping"), []))), "set_up", [rt.sv(f, "smoke_amt"), live(location)]);
-						yield* g.callName(f, live(smoke), "start", []);
-					}
-				}
+		if (this.smoke_spread) {
+			if (this.smoke_spread == 1) {
+				yield* (smoke = (yield* new_(T("/datum/effect_system/smoke_spread")))).set_up(this.smoke_amt, location);
+				yield* smoke.start();
+			} else if (this.smoke_spread == 2) {
+				yield* (smoke = (yield* new_(T("/datum/effect_system/smoke_spread/bad")))).set_up(this.smoke_amt, location);
+				yield* smoke.start();
+			} else if (this.smoke_spread == 3) {
+				yield* (smoke = (yield* new_(T("/datum/effect_system/smoke_spread/sleeping")))).set_up(this.smoke_amt, location);
+				yield* smoke.start();
 			}
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /obj/effect/proc_holder/spell/proc/revert_cast  (code/modules/spells/spell.dm:328)  may sleep
+// spell.dm:328
 rt.def("/obj/effect/proc_holder/spell/proc/revert_cast", function* revert_cast(f: Frame, user: Value) {
-	let $0: any;
-	f.vars = () => [user, $0];
-	if (live(user) === null) {
-		user = live(f.usr);
+	user ??= f.usr;
+	if (this.charge_type === "recharge") {
+		this.charge_counter = this.charge_max;
+	} else if (this.charge_type === "charges") {
+		this.charge_counter++;
+	} else if (this.charge_type === "holdervar") {
+		yield* this.adjust_var(user, this.holder_var_type, -this.holder_var_amount);
 	}
-	$0 = rt.sv(f, "charge_type");
-	if ($0 === "recharge") {
-		rt.setSv(f, "charge_counter", rt.sv(f, "charge_max"));
-	} else if ($0 === "charges") {
-		rt.incSrcVar(f, "charge_counter", 1, true);
-	} else if ($0 === "holdervar") {
-		yield* g.srcCall(f, "adjust_var", live(user), rt.sv(f, "holder_var_type"), rt.neg(rt.sv(f, "holder_var_amount")));
-	}
-	if (!truthy(rt.sv(f, "action"))) return f.dot;
-	yield* g.callName(f, rt.sv(f, "action"), "UpdateButtonIcon", []);
+	if (!this.action) return f.dot;
+	yield* this.action.UpdateButtonIcon();
 	return f.dot;
 }, true);
 
-// /obj/effect/proc_holder/spell/proc/adjust_var  (code/modules/spells/spell.dm:339)  may sleep
+// spell.dm:339
 rt.def("/obj/effect/proc_holder/spell/proc/adjust_var", function* adjust_var(f: Frame, target: Value, type: Value, amount: Value) {
-	let $0: any;
-	f.vars = () => [target, type, amount, $0];
-	if (live(target) === null) {
-		target = live(f.usr);
+	target ??= f.usr;
+	if (!rt.istype(target, T("/mob/living"))) {
+		return f.dot;
 	}
-	if (!truthy((rt.istype(live(target), T("/mob/living")) ? 1 : 0))) {
-		return live(f.dot);
-	}
-	$0 = live(type);
-	if ($0 === "bruteloss") {
-		yield* g.callName(f, live(target), "adjustBruteLoss", [live(amount)]);
-	} else if ($0 === "fireloss") {
-		yield* g.callName(f, live(target), "adjustFireLoss", [live(amount)]);
-	} else if ($0 === "toxloss") {
-		yield* g.callName(f, live(target), "adjustToxLoss", [live(amount)]);
-	} else if ($0 === "oxyloss") {
-		yield* g.callName(f, live(target), "adjustOxyLoss", [live(amount)]);
-	} else if ($0 === "stun") {
-		yield* g.callName(f, live(target), "AdjustStun", [live(amount)]);
-	} else if ($0 === "knockdown") {
-		yield* g.callName(f, live(target), "AdjustKnockdown", [live(amount)]);
-	} else if ($0 === "unconscious") {
-		yield* g.callName(f, live(target), "AdjustUnconscious", [live(amount)]);
+	if (type === "bruteloss") {
+		yield* target.adjustBruteLoss(amount);
+	} else if (type === "fireloss") {
+		yield* target.adjustFireLoss(amount);
+	} else if (type === "toxloss") {
+		yield* target.adjustToxLoss(amount);
+	} else if (type === "oxyloss") {
+		yield* target.adjustOxyLoss(amount);
+	} else if (type === "stun") {
+		yield* target.AdjustStun(amount);
+	} else if (type === "knockdown") {
+		yield* target.AdjustKnockdown(amount);
+	} else if (type === "unconscious") {
+		yield* target.AdjustUnconscious(amount);
 	} else {
-		rt.modAt(rt.fv(f, "vars", live(target)), live(type), live(amount), add);
+		rt.modAt(target.vars, type, amount, add);
 	}
 	return f.dot;
 }, true);
@@ -484,111 +431,85 @@ rt.type(11275, "/obj/effect/proc_holder/spell/targeted", "/obj/effect/proc_holde
 	random_target_priority: 1,
 });
 
-// /obj/effect/proc_holder/spell/targeted/proc/choose_targets  (code/modules/spells/spell.dm:371)  may sleep
+// spell.dm:371
 rt.def("/obj/effect/proc_holder/spell/targeted/proc/choose_targets", function* choose_targets(f: Frame, user: Value) {
-	let targets: Value = null, possible_targets: Value = null, target: Value = null, i: Value = null, target_3: Value = null, target_1: Value = null, M: Value = null, L: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [user, targets, possible_targets, target, i, target_3, target_1, M, L, $0, $e];
-	if (live(user) === null) {
-		user = live(f.usr);
-	}
-	targets = rt.list();
-	$0 = rt.sv(f, "max_targets");
-	if ($0 === 0) {
-		target_1 = null;
-		rt.forList(f, 0, (yield* g.call(f, P("/proc/view_or_range"), null, [rt.sv(f, "range"), live(user), rt.sv(f, "selection_type")])), T("/mob/living"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			target_1 = $e;
-			if (!truthy((yield* g.srcCall(f, "can_target", live(target_1))))) {
+	let possible_targets: Value = null, target: Value = null, i: Value = null, target_3: Value = null, target_1: Value = null, M: Value = null, L: Value = null;
+	let $e: any;
+	user ??= f.usr;
+	let targets: Value = list();
+	if (this.max_targets === 0) {
+		for (target_1 of each(view_or_range(this.range, user, this.selection_type), T("/mob/living"))) {
+			if (!this.can_target(target_1)) {
 				continue;
 			}
-			targets = rt.modify(live(targets), live(target_1), add);
+			targets += target_1;
 		}
-		rt.endFor(f, 0);
-	} else if ($0 === 1) {
-		if (rt.lt(rt.sv(f, "range"), 0)) {
-			targets = rt.modify(live(targets), live(user), add);
+	} else if (this.max_targets === 1) {
+		if (this.range < 0) {
+			targets += user;
 		} else {
-			possible_targets = rt.list();
-			M = null;
-			rt.forList(f, 0, (yield* g.call(f, P("/proc/view_or_range"), null, [rt.sv(f, "range"), live(user), rt.sv(f, "selection_type")])), T("/mob/living"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				M = $e;
-				if ((!truthy(rt.sv(f, "include_user")) && isEqual(live(user), live(M)))) {
+			possible_targets = list();
+			for (M of each(view_or_range(this.range, user, this.selection_type), T("/mob/living"))) {
+				if (!this.include_user && user == M) {
 					continue;
 				}
-				if (!truthy((yield* g.srcCall(f, "can_target", live(M))))) {
+				if (!this.can_target(M)) {
 					continue;
 				}
-				possible_targets = rt.modify(live(possible_targets), live(M), add);
+				possible_targets += M;
 			}
-			rt.endFor(f, 0);
 			M = null;
-			if (!truthy(rt.sv(f, "random_target"))) {
-				M = (yield* g.op(f, "Prompt", [9], [null, null, "Targeting", "Choose the target for the spell.", live(possible_targets)]));
-			} else {
-				$0 = rt.sv(f, "random_target_priority");
-				if ($0 === 2) {
-					M = rt.op(f, "PickUnweighted", [1], [live(possible_targets)]);
-				} else if ($0 === 1) {
-					L = null;
-					rt.forList(f, 0, live(possible_targets), T("/mob/living"));
-					while (($e = rt.next(f, 0)) !== undefined) {
-						L = $e;
-						if (truthy(live(M))) {
-							if (rt.lt((yield* g.call(f, P("/proc/get_dist"), null, [live(user), live(L)])), (yield* g.call(f, P("/proc/get_dist"), null, [live(user), live(M)])))) {
-								if (truthy((yield* g.srcCall(f, "los_check", live(user), live(L))))) {
-									M = live(L);
-								}
-							}
-						} else {
-							if (truthy((yield* g.srcCall(f, "los_check", live(user), live(L))))) {
-								M = live(L);
+			if (!this.random_target) {
+				M = (yield* g.op(f, "Prompt", [9], [null, null, "Targeting", "Choose the target for the spell.", possible_targets]));
+			} else if (this.random_target_priority === TARGET_RANDOM) {
+				M = pick(possible_targets);
+			} else if (this.random_target_priority === TARGET_CLOSEST) {
+				for (L of each(possible_targets, T("/mob/living"))) {
+					if (M) {
+						if (get_dist(user, L) < get_dist(user, M)) {
+							if (yield* this.los_check(user, L)) {
+								M = L;
 							}
 						}
+					} else if (yield* this.los_check(user, L)) {
+						M = L;
 					}
-					rt.endFor(f, 0);
 				}
 			}
-			if (truthy((rt.isIn(f, live(M), (yield* g.call(f, P("/proc/view_or_range"), null, [rt.sv(f, "range"), live(user), rt.sv(f, "selection_type")]))) ? 1 : 0))) {
-				targets = rt.modify(live(targets), live(M), add);
+			if (rt.isIn(f, M, view_or_range(this.range, user, this.selection_type))) {
+				targets += M;
 			}
 		}
 	} else {
-		possible_targets = rt.list();
-		target = null;
-		rt.forList(f, 0, (yield* g.call(f, P("/proc/view_or_range"), null, [rt.sv(f, "range"), live(user), rt.sv(f, "selection_type")])), T("/mob/living"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			target = $e;
-			if (!truthy((yield* g.srcCall(f, "can_target", live(target))))) {
+		possible_targets = list();
+		for (target of each(view_or_range(this.range, user, this.selection_type), T("/mob/living"))) {
+			if (!this.can_target(target)) {
 				continue;
 			}
-			possible_targets = rt.modify(live(possible_targets), live(target), add);
+			possible_targets += target;
 		}
-		rt.endFor(f, 0);
-		i = null;
 		i = 1;
-		while (rt.le(live(i), rt.sv(f, "max_targets"))) {
-			if (!truthy(rt.len(f, live(possible_targets)))) {
+		while (i <= this.max_targets) {
+			if (!rt.len(f, possible_targets)) {
 				break;
 			}
-			if (truthy(rt.sv(f, "target_ignore_prev"))) {
-				(possible_targets = rt.modify(live(possible_targets), (target_3 = rt.op(f, "PickUnweighted", [1], [live(possible_targets)])), subtract));
-				targets = rt.modify(live(targets), live(target_3), add);
+			if (this.target_ignore_prev) {
+				possible_targets -= (target_3 = pick(possible_targets));
+				targets += target_3;
 			} else {
-				targets = rt.modify(live(targets), rt.op(f, "PickUnweighted", [1], [live(possible_targets)]), add);
+				targets += pick(possible_targets);
 			}
-			i = rt.inc(live(i), 1);
+			i++;
 		}
 	}
-	if ((!truthy(rt.sv(f, "include_user")) && truthy((rt.isIn(f, live(user), live(targets)) ? 1 : 0)))) {
-		(targets = rt.modify(live(targets), live(user), subtract));
+	if (!this.include_user && rt.isIn(f, user, targets)) {
+		targets -= user;
 	}
-	if (!truthy(rt.len(f, live(targets)))) {
-		yield* g.srcCall(f, "revert_cast", live(user));
-		return live(f.dot);
+	if (!rt.len(f, targets)) {
+		yield* this.revert_cast(user);
+		return f.dot;
 	}
-	yield* g.callSrc(f, "perform", [null, live(targets), "user", live(user)], rt.Args.Named);
+	yield* this.perform(targets, { user: user });
 	return f.dot;
 }, true);
 
@@ -596,103 +517,81 @@ rt.type(11344, "/obj/effect/proc_holder/spell/aoe_turf", "/obj/effect/proc_holde
 	inner_radius: -1,
 });
 
-// /obj/effect/proc_holder/spell/aoe_turf/proc/choose_targets  (code/modules/spells/spell.dm:438)  may sleep
+// spell.dm:438
 rt.def("/obj/effect/proc_holder/spell/aoe_turf/proc/choose_targets", function* choose_targets(f: Frame, user: Value) {
-	let targets: Value = null, target: Value = null;
-	let $e: any;
-	f.vars = () => [user, targets, target, $e];
-	if (live(user) === null) {
-		user = live(f.usr);
-	}
-	targets = rt.list();
-	target = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/view_or_range"), null, [rt.sv(f, "range"), live(user), rt.sv(f, "selection_type")])), T("/turf"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		target = $e;
-		if (!truthy((yield* g.srcCall(f, "can_target", live(target))))) {
+	let target: Value = null;
+	user ??= f.usr;
+	let targets: Value = list();
+	for (target of each(view_or_range(this.range, user, this.selection_type), T("/turf"))) {
+		if (!this.can_target(target)) {
 			continue;
 		}
-		if (!truthy((rt.isIn(f, live(target), (yield* g.call(f, P("/proc/view_or_range"), null, [rt.sv(f, "inner_radius"), live(user), rt.sv(f, "selection_type")]))) ? 1 : 0))) {
-			targets = rt.modify(live(targets), live(target), add);
+		if (!rt.isIn(f, target, view_or_range(this.inner_radius, user, this.selection_type))) {
+			targets += target;
 		}
 	}
-	rt.endFor(f, 0);
-	if (!truthy(rt.len(f, live(targets)))) {
-		yield* g.srcCall(f, "revert_cast");
-		return live(f.dot);
+	if (!rt.len(f, targets)) {
+		yield* this.revert_cast();
+		return f.dot;
 	}
-	yield* g.callSrc(f, "perform", [null, live(targets), "user", live(user)], rt.Args.Named);
+	yield* this.perform(targets, { user: user });
 	return f.dot;
 }, true);
 
-// /obj/effect/proc_holder/spell/proc/updateButtonIcon  (code/modules/spells/spell.dm:453)  may sleep
+// spell.dm:453
 rt.def("/obj/effect/proc_holder/spell/proc/updateButtonIcon", function* updateButtonIcon(f: Frame) {
-	yield* g.callName(f, rt.sv(f, "action"), "UpdateButtonIcon", []);
+	yield* this.action.UpdateButtonIcon();
 	return f.dot;
 }, true);
 
-// /obj/effect/proc_holder/spell/proc/can_be_cast_by  (code/modules/spells/spell.dm:456)
+// spell.dm:456
 rt.def("/obj/effect/proc_holder/spell/proc/can_be_cast_by", function can_be_cast_by(f: Frame, caster: Value) {
-	if (((truthy(rt.sv(f, "human_req")) || truthy(rt.sv(f, "clothes_req"))) && !truthy((rt.istype(live(caster), T("/mob/living/carbon/human")) ? 1 : 0)))) {
+	if ((this.human_req || this.clothes_req) && !rt.istype(caster, T("/mob/living/carbon/human"))) {
 		return 0;
 	}
 	return 1;
 });
 
-// /obj/effect/proc_holder/spell/targeted/proc/los_check  (code/modules/spells/spell.dm:462)  may sleep
+// spell.dm:462
 rt.def("/obj/effect/proc_holder/spell/targeted/proc/los_check", function* los_check(f: Frame, A: Value, B: Value) {
 	let dummy: Value = null, turf: Value = null, AM: Value = null;
-	let $e: any;
-	f.vars = () => [A, B, dummy, turf, AM, $e];
-	(rt.modField(f, (dummy = (yield* g.new_(f, T("/obj"), [rt.fv(f, "loc", live(A))]))), "pass_flags", 1, rt.bitOr));
-	turf = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/getline"), null, [live(A), live(B)])), T("/turf"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		turf = $e;
+	(rt.modField(f, (dummy = (yield* new_(T("/obj"), A.loc))), "pass_flags", 1, rt.bitOr));
+	for (turf of each(getline(A, B), T("/turf"))) {
 		AM = null;
-		rt.forList(f, 1, live(turf), T("/atom/movable"));
-		while (($e = rt.next(f, 1)) !== undefined) {
-			AM = $e;
-			if (!truthy((yield* g.callName(f, live(AM), "CanPass", [live(dummy), live(turf), 1])))) {
-				yield* g.call(f, P("/proc/qdel"), null, [live(dummy)]);
+		for (AM of each(turf, T("/atom/movable"))) {
+			if (!(yield* AM.CanPass(dummy, turf, 1))) {
+				yield* qdel(dummy);
 				return 0;
 			}
 		}
-		rt.endFor(f, 1);
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/qdel"), null, [live(dummy)]);
+	yield* qdel(dummy);
 	return 1;
 }, true);
 
-// /obj/effect/proc_holder/spell/proc/can_cast  (code/modules/spells/spell.dm:473)
+// spell.dm:473
 rt.def("/obj/effect/proc_holder/spell/proc/can_cast", function can_cast(f: Frame, user: Value) {
-	let $0: any;
-	f.vars = () => [user, $0];
-	if (live(user) === null) {
-		user = live(f.usr);
-	}
-	if (((!truthy(rt.fv(f, "mind", live(user))) || !truthy((rt.isIn(f, live(f.src), rt.gv(f, "spell_list", rt.fv(f, "mind", live(user)))) ? 1 : 0))) && !truthy((rt.isIn(f, live(f.src), rt.fv(f, "mob_spell_list", live(user))) ? 1 : 0)))) {
+	user ??= f.usr;
+	if ((!user.mind || !rt.isIn(f, this, user.mind.spell_list)) && !rt.isIn(f, this, user.mob_spell_list)) {
 		return 0;
 	}
-	$0 = rt.sv(f, "charge_type");
-	if ($0 === "recharge") {
-		if (rt.lt(rt.sv(f, "charge_counter"), rt.sv(f, "charge_max"))) {
+	if (this.charge_type === "recharge") {
+		if (this.charge_counter < this.charge_max) {
 			return 0;
 		}
-	} else if ($0 === "charges") {
-		if (!truthy(rt.sv(f, "charge_counter"))) {
+	} else if (this.charge_type === "charges") {
+		if (!this.charge_counter) {
 			return 0;
 		}
 	}
-	if ((truthy(rt.fv(f, "stat", live(user))) && !truthy(rt.sv(f, "stat_allowed")))) {
+	if (user.stat && !this.stat_allowed) {
 		return 0;
 	}
-	if (!truthy((rt.istype(live(user), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		if ((truthy(rt.sv(f, "clothes_req")) || truthy(rt.sv(f, "human_req")))) {
+	if (!rt.istype(user, T("/mob/living/carbon/human"))) {
+		if (this.clothes_req || this.human_req) {
 			return 0;
 		}
-		if ((truthy(rt.sv(f, "nonabstract_req")) && (truthy((rt.istype(live(user), T("/mob/living/brain")) ? 1 : 0)) || truthy((rt.istype(live(user), T("/mob/living/silicon/pai")) ? 1 : 0))))) {
+		if (this.nonabstract_req && (rt.istype(user, T("/mob/living/brain")) || rt.istype(user, T("/mob/living/silicon/pai")))) {
 			return 0;
 		}
 	}
@@ -703,17 +602,14 @@ rt.type(11375, "/obj/effect/proc_holder/spell/self", "/obj/effect/proc_holder/sp
 	range: -1,
 });
 
-// /obj/effect/proc_holder/spell/self/proc/choose_targets  (code/modules/spells/spell.dm:498)  may sleep
+// spell.dm:498
 rt.def("/obj/effect/proc_holder/spell/self/proc/choose_targets", function* choose_targets(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (live(user) === null) {
-		user = live(f.usr);
+	user ??= f.usr;
+	if (!user) {
+		yield* this.revert_cast();
+		return f.dot;
 	}
-	if (!truthy(live(user))) {
-		yield* g.srcCall(f, "revert_cast");
-		return live(f.dot);
-	}
-	yield* g.callSrc(f, "perform", [null, null, "user", live(user)], rt.Args.Named);
+	yield* this.perform(null, { user: user });
 	return f.dot;
 }, true);
 
@@ -730,11 +626,10 @@ rt.type(11376, "/obj/effect/proc_holder/spell/self/basic_heal", "/obj/effect/pro
 	desc: "Heals a small amount of brute and burn damage.",
 });
 
-// /obj/effect/proc_holder/spell/self/basic_heal/proc/cast  (code/modules/spells/spell.dm:517)  may sleep
+// spell.dm:517
 rt.def("/obj/effect/proc_holder/spell/self/basic_heal/proc/cast", function* cast(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.callName(f, live(user), "visible_message", [fmt("<span class='warning'>A wreath of gentle light passes over ＀!</span>", [live(user)]), "<span class='notice'>You wreath yourself in healing light!</span>"]);
-	yield* g.callName(f, live(user), "adjustBruteLoss", [-10]);
-	yield* g.callName(f, live(user), "adjustFireLoss", [-10]);
+	user.visible_message(`<span class='warning'>A wreath of gentle light passes over ${user}!</span>`, "<span class='notice'>You wreath yourself in healing light!</span>");
+	yield* user.adjustBruteLoss(-10);
+	yield* user.adjustFireLoss(-10);
 	return f.dot;
 }, true);

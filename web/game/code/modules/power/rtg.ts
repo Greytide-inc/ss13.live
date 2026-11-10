@@ -1,7 +1,7 @@
-// From code/modules/power/rtg.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/power/rtg.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, fmt } = rt;
 
 
 rt.type(10317, "/obj/machinery/power/rtg", "/obj/machinery/power", {
@@ -20,12 +20,11 @@ rt.type(10317, "/obj/machinery/power/rtg", "/obj/machinery/power", {
 	use_power: 0,
 });
 
-// /obj/machinery/power/rtg/proc/New  (code/modules/power/rtg.dm:23)  may sleep
+// rtg.dm:23
 rt.def("/obj/machinery/power/rtg/proc/New", function* New(f: Frame) {
 	let B: Value = null;
-	f.vars = () => [B];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.callName(f, (B = (yield* g.new_(f, rt.sv(f, "board_path"), [null]))), "apply_default_parts", [live(f.src)]);
+	yield* parent_proc();
+	yield* (B = (yield* new_(this.board_path, null))).apply_default_parts(this);
 	return f.dot;
 }, true);
 
@@ -36,72 +35,60 @@ rt.type(6767, "/obj/item/weapon/circuitboard/machine/rtg", "/obj/item/weapon/cir
 	req_components: null,
 });
 
-// /obj/item/weapon/circuitboard/machine/rtg/proc/<init>  (code/modules/power/rtg.dm:31)
+// rtg.dm:31
 rt.def("/obj/item/weapon/circuitboard/machine/rtg/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_components", rt.alist(f, [T("/obj/item/stack/cable_coil"), 5, T("/obj/item/weapon/stock_parts/capacitor"), 1, T("/obj/item/stack/sheet/mineral/uranium"), 10]));
+	parent_proc();
+	this.req_components = rt.alist(f, [T("/obj/item/stack/cable_coil"), 5, T("/obj/item/weapon/stock_parts/capacitor"), 1, T("/obj/item/stack/sheet/mineral/uranium"), 10]);
 	return f.dot;
 });
 
-// /obj/machinery/power/rtg/proc/Initialize  (code/modules/power/rtg.dm:37)  may sleep
+// rtg.dm:37
 rt.def("/obj/machinery/power/rtg/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.srcCall(f, "connect_to_network");
+	f.dot = (yield* parent_proc());
+	yield* this.connect_to_network();
 	return f.dot;
 }, true);
 
-// /obj/machinery/power/rtg/proc/process  (code/modules/power/rtg.dm:41)  may sleep
+// rtg.dm:41
 rt.def("/obj/machinery/power/rtg/proc/process", function* process(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "add_avail", rt.sv(f, "power_gen"));
-	if (!(truthy(rt.sv(f, "panel_open")) && truthy(rt.sv(f, "irradiate")))) return f.dot;
-	yield* g.call(f, P("/proc/radiation_pulse"), null, [rt.getStep(f, live(f.src), 0), 2, 3, 6]);
+	yield* parent_proc();
+	this.add_avail(this.power_gen);
+	if (!(this.panel_open && this.irradiate)) return f.dot;
+	yield* radiation_pulse(rt.getStep(f, this, 0), 2, 3, 6);
 	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/machinery/power/rtg/proc/RefreshParts  (code/modules/power/rtg.dm:48)
+// rtg.dm:48
 rt.def("/obj/machinery/power/rtg/proc/RefreshParts", function RefreshParts(f: Frame) {
-	let part_level: Value = null, SP: Value = null;
-	let $e: any;
-	f.vars = () => [part_level, SP, $e];
-	part_level = 0;
-	SP = null;
-	rt.forList(f, 0, rt.sv(f, "component_parts"), T("/obj/item/weapon/stock_parts"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		SP = $e;
-		part_level = rt.modify(live(part_level), rt.fv(f, "rating", live(SP)), add);
+	let SP: Value = null;
+	let part_level: Value = 0;
+	for (SP of each(this.component_parts, T("/obj/item/weapon/stock_parts"))) {
+		part_level += SP.rating;
 	}
-	rt.endFor(f, 0);
-	rt.setSv(f, "power_gen", multiply(rt.initial(f, live(f.src), "power_gen"), live(part_level)));
+	this.power_gen = rt.initial(f, this, "power_gen") * part_level;
 	return f.dot;
 });
 
-// /obj/machinery/power/rtg/proc/attackby  (code/modules/power/rtg.dm:54)  may sleep
-rt.def("/obj/machinery/power/rtg/proc/attackby", function* attackby(f: Frame) {
-	if (truthy((yield* g.srcCall(f, "exchange_parts", live(f.args[1]), live(f.args[0]))))) {
-		return live(f.dot);
-	} else {
-		if (truthy((yield* g.srcCall(f, "default_deconstruction_screwdriver", live(f.args[1]), fmt("＀-open", [rt.initial(f, live(f.src), "icon_state")]), rt.initial(f, live(f.src), "icon_state"), live(f.args[0]))))) {
-			return live(f.dot);
-		} else {
-			if (truthy((yield* g.srcCall(f, "default_deconstruction_crowbar", live(f.args[0]))))) {
-				return live(f.dot);
-			}
-		}
+// rtg.dm:54
+rt.def("/obj/machinery/power/rtg/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
+	if (yield* this.exchange_parts(user, I)) {
+		return f.dot;
+	} else if (this.default_deconstruction_screwdriver(user, `${rt.initial(f, this, "icon_state")}-open`, rt.initial(f, this, "icon_state"), I)) {
+		return f.dot;
+	} else if (yield* this.default_deconstruction_crowbar(I)) {
+		return f.dot;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["I", "user", "params"] });
+	return (yield* parent_proc());
+}, true);
 
-// /obj/machinery/power/rtg/proc/attack_hand  (code/modules/power/rtg.dm:63)  may sleep
-rt.def("/obj/machinery/power/rtg/proc/attack_hand", function* attack_hand(f: Frame) {
-	if ((isEqual(rt.fv(f, "a_intent", live(f.args[0])), "grab") && truthy((yield* g.callSrc(f, "user_buckle_mob", [null, rt.fv(f, "pulling", live(f.args[0])), null, live(f.args[0]), "check_loc", 0], rt.Args.Named))))) {
-		return live(f.dot);
+// rtg.dm:63
+rt.def("/obj/machinery/power/rtg/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
+	if (user.a_intent == "grab" && (yield* this.user_buckle_mob(user.pulling, user, { check_loc: 0 }))) {
+		return f.dot;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
 rt.type(6768, "/obj/item/weapon/circuitboard/machine/rtg/advanced", "/obj/item/weapon/circuitboard/machine/rtg", {
 	name: "Advanced RTG (Machine Board)",
@@ -110,12 +97,10 @@ rt.type(6768, "/obj/item/weapon/circuitboard/machine/rtg/advanced", "/obj/item/w
 	req_components: null,
 });
 
-// /obj/item/weapon/circuitboard/machine/rtg/advanced/proc/<init>  (code/modules/power/rtg.dm:77)
+// rtg.dm:77
 rt.def("/obj/item/weapon/circuitboard/machine/rtg/advanced/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_components", rt.alist(f, [T("/obj/item/stack/cable_coil"), 5, T("/obj/item/weapon/stock_parts/capacitor"), 1, T("/obj/item/weapon/stock_parts/micro_laser"), 1, T("/obj/item/stack/sheet/mineral/uranium"), 10, T("/obj/item/stack/sheet/mineral/plasma"), 5]));
+	parent_proc();
+	this.req_components = rt.alist(f, [T("/obj/item/stack/cable_coil"), 5, T("/obj/item/weapon/stock_parts/capacitor"), 1, T("/obj/item/weapon/stock_parts/micro_laser"), 1, T("/obj/item/stack/sheet/mineral/uranium"), 10, T("/obj/item/stack/sheet/mineral/plasma"), 5]);
 	return f.dot;
 });
 
@@ -127,14 +112,12 @@ rt.type(6718, "/obj/item/weapon/circuitboard/machine/abductor/core", "/obj/item/
 	origin_tech: "programming=5;abductor=5;powerstorage=8;engineering=8",
 });
 
-// /obj/item/weapon/circuitboard/machine/abductor/core/proc/<init>  (code/modules/power/rtg.dm:105)
+// rtg.dm:105
 rt.def("/obj/item/weapon/circuitboard/machine/abductor/core/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_components", rt.alist(f, [T("/obj/item/weapon/stock_parts/capacitor"), 1, T("/obj/item/weapon/stock_parts/micro_laser"), 1, T("/obj/item/weapon/stock_parts/cell/infinite/abductor"), 1]));
-	$0 = $0;
-	rt.setSv(f, "def_components", rt.alist(f, [T("/obj/item/weapon/stock_parts/capacitor"), T("/obj/item/weapon/stock_parts/capacitor/quadratic"), T("/obj/item/weapon/stock_parts/micro_laser"), T("/obj/item/weapon/stock_parts/micro_laser/quadultra")]));
+	parent_proc();
+	this.req_components = rt.alist(f, [T("/obj/item/weapon/stock_parts/capacitor"), 1, T("/obj/item/weapon/stock_parts/micro_laser"), 1, T("/obj/item/weapon/stock_parts/cell/infinite/abductor"), 1]);
+
+	this.def_components = rt.alist(f, [T("/obj/item/weapon/stock_parts/capacitor"), T("/obj/item/weapon/stock_parts/capacitor/quadratic"), T("/obj/item/weapon/stock_parts/micro_laser"), T("/obj/item/weapon/stock_parts/micro_laser/quadultra")]);
 	return f.dot;
 });
 
@@ -151,56 +134,54 @@ rt.type(10319, "/obj/machinery/power/rtg/abductor", "/obj/machinery/power/rtg", 
 	pixel_y: 7,
 });
 
-// /obj/machinery/power/rtg/abductor/proc/overload  (code/modules/power/rtg.dm:117)  may sleep
+// rtg.dm:117
 rt.def("/obj/machinery/power/rtg/abductor/proc/overload", function* overload(f: Frame) {
-	if (truthy(rt.sv(f, "going_kaboom"))) {
-		return live(f.dot);
+	if (this.going_kaboom) {
+		return f.dot;
 	}
-	rt.setSv(f, "going_kaboom", 1);
-	yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＄！ lets out an shower of sparks as it starts to lose stability!</span>", [live(f.src)]), "<span class='italics'>You hear a loud electrical crack!</span>");
-	yield* g.call(f, P("/proc/playsound"), null, [null, rt.fv(f, "loc", live(f.src)), null, rt.rsc("sound/magic/lightningshock.ogg"), null, 100, null, 1, "extrarange", 5], rt.Args.Named);
-	yield* g.call(f, P("/proc/tesla_zap"), null, [live(f.src), 5, multiply(rt.sv(f, "power_gen"), 0.05000000074505806)]);
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), ["some_magic_bullshit", P("/proc/explosion"), rt.getStep(f, live(f.src), 0), 2, 3, 4, 8])), 100]);
+	this.going_kaboom = 1;
+	this.visible_message(fmt("<span class='danger'>＄！ lets out an shower of sparks as it starts to lose stability!</span>", [this]), "<span class='italics'>You hear a loud electrical crack!</span>");
+	yield* playsound(this.loc, rt.rsc("sound/magic/lightningshock.ogg"), 100, 1, { extrarange: 5 });
+	yield* tesla_zap(this, 5, this.power_gen * 0.05);
+	yield* addtimer((yield* new_(T("/datum/callback"), "some_magic_bullshit", P("/proc/explosion"), rt.getStep(f, this, 0), 2, 3, 4, 8)), 100);
 	return f.dot;
 }, true);
 
-// /obj/machinery/power/rtg/abductor/proc/bullet_act  (code/modules/power/rtg.dm:124)  may sleep
-rt.def("/obj/machinery/power/rtg/abductor/proc/bullet_act", function* bullet_act(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!(((!truthy(rt.sv(f, "going_kaboom")) && truthy((rt.istype(live(f.args[0]), T("/obj/item/projectile")) ? 1 : 0))) && !truthy(rt.fv(f, "nodamage", live(f.args[0])))) && (isEqual(rt.fv(f, "damage_type", live(f.args[0])), "fire") || isEqual(rt.fv(f, "damage_type", live(f.args[0])), "brute")))) return f.dot;
-	yield* g.call(f, P("/proc/message_admins"), null, [fmt("＀ triggered an Abductor Core explosion via projectile.", [(yield* g.call(f, P("/proc/key_name_admin"), null, [rt.fv(f, "firer", live(f.args[0]))]))])]);
-	yield* g.call(f, P("/proc/log_game"), null, [fmt("＀ triggered an Abductor Core explosion via projectile.", [(yield* g.call(f, P("/proc/key_name"), null, [rt.fv(f, "firer", live(f.args[0]))]))])]);
-	yield* g.srcCall(f, "overload");
+// rtg.dm:124
+rt.def("/obj/machinery/power/rtg/abductor/proc/bullet_act", function* bullet_act(f: Frame, Proj: Value) {
+	yield* parent_proc();
+	if (!(!this.going_kaboom && rt.istype(Proj, T("/obj/item/projectile")) && !Proj.nodamage && (Proj.damage_type == "fire" || Proj.damage_type == "brute"))) return f.dot;
+	message_admins(`${key_name_admin(Proj.firer)} triggered an Abductor Core explosion via projectile.`);
+	log_game(`${key_name(Proj.firer)} triggered an Abductor Core explosion via projectile.`);
+	yield* this.overload();
 	return f.dot;
-}, true, { args: ["Proj"] });
+}, true);
 
-// /obj/machinery/power/rtg/abductor/proc/blob_act  (code/modules/power/rtg.dm:131)  may sleep
+// rtg.dm:131
 rt.def("/obj/machinery/power/rtg/abductor/proc/blob_act", function* blob_act(f: Frame, B: Value) {
-	f.vars = () => [B];
-	yield* g.srcCall(f, "overload");
+	yield* this.overload();
 	return f.dot;
 }, true);
 
-// /obj/machinery/power/rtg/abductor/proc/ex_act  (code/modules/power/rtg.dm:135)  may sleep
+// rtg.dm:135
 rt.def("/obj/machinery/power/rtg/abductor/proc/ex_act", function* ex_act(f: Frame) {
-	if (truthy(rt.sv(f, "going_kaboom"))) {
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	if (this.going_kaboom) {
+		yield* qdel(this);
 	} else {
-		yield* g.srcCall(f, "overload");
+		yield* this.overload();
 	}
 	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/machinery/power/rtg/abductor/proc/fire_act  (code/modules/power/rtg.dm:140)  may sleep
+// rtg.dm:140
 rt.def("/obj/machinery/power/rtg/abductor/proc/fire_act", function* fire_act(f: Frame, exposed_temperature: Value, exposed_volume: Value) {
-	f.vars = () => [exposed_temperature, exposed_volume];
-	yield* g.srcCall(f, "overload");
+	yield* this.overload();
 	return f.dot;
 }, true);
 
-// /obj/machinery/power/rtg/abductor/proc/tesla_act  (code/modules/power/rtg.dm:143)  may sleep
+// rtg.dm:143
 rt.def("/obj/machinery/power/rtg/abductor/proc/tesla_act", function* tesla_act(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "overload");
+	yield* parent_proc();
+	yield* this.overload();
 	return f.dot;
 }, true);

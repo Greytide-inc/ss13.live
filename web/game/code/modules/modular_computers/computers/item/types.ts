@@ -1,5 +1,5 @@
 // Types declared in code/modules/modular_computers/computers/item that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(9411, "/obj/item/device/modular_computer/laptop/buildable", "/obj/item/device/modular_computer/laptop", {
 	start_open: 0,

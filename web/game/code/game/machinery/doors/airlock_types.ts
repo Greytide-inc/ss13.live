@@ -1,7 +1,7 @@
-// From code/game/machinery/doors/airlock_types.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/machinery/doors/airlock_types.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(10239, "/obj/machinery/door/airlock/uranium", "/obj/machinery/door/airlock", {
@@ -12,22 +12,22 @@ rt.type(10239, "/obj/machinery/door/airlock/uranium", "/obj/machinery/door/airlo
 	assemblytype: rt.typePath("/obj/structure/door_assembly/door_assembly_uranium"),
 });
 
-// /obj/machinery/door/airlock/uranium/proc/process  (code/game/machinery/doors/airlock_types.dm:161)  may sleep
+// airlock_types.dm:161
 rt.def("/obj/machinery/door/airlock/uranium/proc/process", function* process(f: Frame) {
-	if (rt.gt(rt.worldTime(f), add(rt.sv(f, "last_event"), 20))) {
-		if (truthy(rt.op(f, "Prob", [], [50]))) {
-			yield* g.srcCall(f, "radiate");
+	if (rt.worldTime(f) > this.last_event + 20) {
+		if (prob(50)) {
+			yield* this.radiate();
 		}
-		rt.setSv(f, "last_event", rt.worldTime(f));
+		this.last_event = rt.worldTime(f);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/machinery/door/airlock/uranium/proc/radiate  (code/game/machinery/doors/airlock_types.dm:168)  may sleep
+// airlock_types.dm:168
 rt.def("/obj/machinery/door/airlock/uranium/proc/radiate", function* radiate(f: Frame) {
-	yield* g.call(f, P("/proc/radiation_pulse"), null, [rt.getStep(f, live(f.src), 0), 3, 3, 15, 0]);
-	return live(f.dot);
+	yield* radiation_pulse(rt.getStep(f, this, 0), 3, 3, 15, 0);
+	return f.dot;
 }, true);
 
 rt.type(10213, "/obj/machinery/door/airlock/plasma", "/obj/machinery/door/airlock", {
@@ -38,28 +38,25 @@ rt.type(10213, "/obj/machinery/door/airlock/plasma", "/obj/machinery/door/airloc
 	assemblytype: rt.typePath("/obj/structure/door_assembly/door_assembly_plasma"),
 });
 
-// /obj/machinery/door/airlock/plasma/proc/temperature_expose  (code/game/machinery/doors/airlock_types.dm:179)  may sleep
+// airlock_types.dm:179
 rt.def("/obj/machinery/door/airlock/plasma/proc/temperature_expose", function* temperature_expose(f: Frame, air: Value, exposed_temperature: Value, exposed_volume: Value) {
-	f.vars = () => [air, exposed_temperature, exposed_volume];
-	if (!rt.gt(live(exposed_temperature), 300)) return f.dot;
-	yield* g.srcCall(f, "PlasmaBurn", live(exposed_temperature));
+	if (!(exposed_temperature > 300)) return f.dot;
+	yield* this.PlasmaBurn(exposed_temperature);
 	return f.dot;
 }, true);
 
-// /obj/machinery/door/airlock/plasma/proc/ignite  (code/game/machinery/doors/airlock_types.dm:183)  may sleep
+// airlock_types.dm:183
 rt.def("/obj/machinery/door/airlock/plasma/proc/ignite", function* ignite(f: Frame, exposed_temperature: Value) {
-	f.vars = () => [exposed_temperature];
-	if (!rt.gt(live(exposed_temperature), 300)) return f.dot;
-	yield* g.srcCall(f, "PlasmaBurn", live(exposed_temperature));
+	if (!(exposed_temperature > 300)) return f.dot;
+	yield* this.PlasmaBurn(exposed_temperature);
 	return f.dot;
 }, true);
 
-// /obj/machinery/door/airlock/plasma/proc/PlasmaBurn  (code/game/machinery/doors/airlock_types.dm:187)  may sleep
+// airlock_types.dm:187
 rt.def("/obj/machinery/door/airlock/plasma/proc/PlasmaBurn", function* PlasmaBurn(f: Frame, temperature: Value) {
-	f.vars = () => [temperature];
-	yield* g.srcCall(f, "atmos_spawn_air", "plasma=500;TEMP=1000");
-	yield* g.new_(f, T("/obj/structure/door_assembly/door_assembly_0"), [rt.fv(f, "loc", live(f.src))]);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	this.atmos_spawn_air("plasma=500;TEMP=1000");
+	yield* new_(T("/obj/structure/door_assembly/door_assembly_0"), this.loc);
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
@@ -74,39 +71,36 @@ rt.type(10255, "/obj/machinery/door/airlock/cult", "/obj/machinery/door/airlock"
 	assemblytype: rt.typePath("/obj/structure/door_assembly/door_assembly_cult"),
 });
 
-// /obj/machinery/door/airlock/cult/proc/New  (code/game/machinery/doors/airlock_types.dm:376)  may sleep
+// airlock_types.dm:376
 rt.def("/obj/machinery/door/airlock/cult/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.new_(f, rt.sv(f, "openingoverlaytype"), [rt.fv(f, "loc", live(f.src))]);
+	yield* parent_proc();
+	yield* new_(this.openingoverlaytype, this.loc);
 	return f.dot;
 }, true);
 
-// /obj/machinery/door/airlock/cult/proc/canAIControl  (code/game/machinery/doors/airlock_types.dm:380)
+// airlock_types.dm:380
 rt.def("/obj/machinery/door/airlock/cult/proc/canAIControl", function canAIControl(f: Frame, user: Value) {
-	return (rt.call(f, P("/proc/iscultist"), null, [live(user)]) && (!truthy(rt.callSrc(f, "isAllPowerCut", [])) ? 1 : 0));
+	return (iscultist(user) && (!this.isAllPowerCut() ? 1 : 0));
 });
 
-// /obj/machinery/door/airlock/cult/proc/allowed  (code/game/machinery/doors/airlock_types.dm:383)  may sleep
+// airlock_types.dm:383
 rt.def("/obj/machinery/door/airlock/cult/proc/allowed", function* allowed(f: Frame, L: Value) {
 	let throwtarget: Value = null;
-	f.vars = () => [L, throwtarget];
-	if (!truthy(rt.sv(f, "density"))) {
+	if (!this.density) {
 		return 1;
 	}
-	if ((((truthy(rt.sv(f, "friendly")) || truthy((yield* g.call(f, P("/proc/iscultist"), null, [live(L)])))) || truthy((rt.istype(live(L), T("/mob/living/simple_animal/shade")) ? 1 : 0))) || truthy((rt.istype(live(L), T("/mob/living/simple_animal/hostile/construct")) ? 1 : 0)))) {
-		yield* g.new_(f, rt.sv(f, "openingoverlaytype"), [rt.sv(f, "loc")]);
+	if (this.friendly || iscultist(L) || rt.istype(L, T("/mob/living/simple_animal/shade")) || rt.istype(L, T("/mob/living/simple_animal/hostile/construct"))) {
+		yield* new_(this.openingoverlaytype, this.loc);
 		return 1;
 	} else {
-		yield* g.new_(f, T("/obj/effect/temp_visual/cult/sac"), [rt.sv(f, "loc")]);
-		throwtarget = null;
-		throwtarget = (yield* g.call(f, P("/proc/get_edge_target_turf"), null, [live(f.src), rt.getDir(f, live(f.src), (yield* g.call(f, P("/proc/get_step_away"), null, [live(L), live(f.src)])))]));
-		rt.op(f, "Output", [], [live(L), rt.op(f, "PickUnweighted", [2], [(yield* g.call(f, P("/proc/sound"), null, [rt.rsc("sound/hallucinations/turn_around1.ogg"), 0, 1, 50])), (yield* g.call(f, P("/proc/sound"), null, [rt.rsc("sound/hallucinations/turn_around2.ogg"), 0, 1, 50]))])], false);
-		yield* g.call(f, P("/proc/flash_color"), null, [null, live(L), "flash_color", "#960000", "flash_time", 20], rt.Args.Named);
-		yield* g.callName(f, live(L), "Knockdown", [40]);
-		yield* g.callName(f, live(L), "throw_at", [live(throwtarget), 5, 1, live(f.src)]);
+		yield* new_(T("/obj/effect/temp_visual/cult/sac"), this.loc);
+		throwtarget = get_edge_target_turf(this, rt.getDir(f, this, get_step_away(L, this)));
+		rt.op(f, "Output", [], [L, pick(sound(rt.rsc("sound/hallucinations/turn_around1.ogg"), 0, 1, 50), sound(rt.rsc("sound/hallucinations/turn_around2.ogg"), 0, 1, 50))], false);
+		yield* flash_color(L, { flash_color: "#960000", flash_time: 20 });
+		yield* L.Knockdown(40);
+		yield* L.throw_at(throwtarget, 5, 1, this);
 		return 0;
 	}
-	return f.dot;
 }, true);
 
 rt.type(10211, "/obj/machinery/door/airlock/clockwork", "/obj/machinery/door/airlock", {
@@ -124,149 +118,129 @@ rt.type(10211, "/obj/machinery/door/airlock/clockwork", "/obj/machinery/door/air
 	normal_integrity: 240,
 });
 
-// /obj/machinery/door/airlock/clockwork/proc/New  (code/game/machinery/doors/airlock_types.dm:445)  may sleep
+// airlock_types.dm:445
 rt.def("/obj/machinery/door/airlock/clockwork/proc/New", function* New(f: Frame) {
 	let _T: Value = null;
-	f.vars = () => [_T];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.new_(f, T("/obj/effect/temp_visual/ratvar/door"), [(_T = rt.getStep(f, live(f.src), 0))]);
-	yield* g.new_(f, T("/obj/effect/temp_visual/ratvar/beam/door"), [live(_T)]);
-	yield* g.call(f, P("/proc/change_construction_value"), null, [5]);
+	yield* parent_proc();
+	yield* new_(T("/obj/effect/temp_visual/ratvar/door"), (_T = rt.getStep(f, this, 0)));
+	yield* new_(T("/obj/effect/temp_visual/ratvar/beam/door"), _T);
+	change_construction_value(5);
 	return f.dot;
 }, true);
 
-// /obj/machinery/door/airlock/clockwork/proc/Destroy  (code/game/machinery/doors/airlock_types.dm:452)  may sleep
+// airlock_types.dm:452
 rt.def("/obj/machinery/door/airlock/clockwork/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.call(f, P("/proc/change_construction_value"), null, [-5]);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	change_construction_value(-5);
+	return (yield* parent_proc());
 }, true);
 
-// /obj/machinery/door/airlock/clockwork/proc/examine  (code/game/machinery/doors/airlock_types.dm:456)  may sleep
-rt.def("/obj/machinery/door/airlock/clockwork/proc/examine", function* examine(f: Frame) {
-	let gear_text: Value = null;
-	let $0: any;
-	f.vars = () => [gear_text, $0];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	gear_text = "The cogwheel is flickering and twisting wildly. Report this to a coder.";
-	$0 = rt.sv(f, "construction_state");
-	if ($0 === 1) {
+// airlock_types.dm:456
+rt.def("/obj/machinery/door/airlock/clockwork/proc/examine", function* examine(f: Frame, user: Value) {
+	yield* parent_proc();
+	let gear_text: Value = "The cogwheel is flickering and twisting wildly. Report this to a coder.";
+	if (this.construction_state === GEAR_SECURE) {
 		gear_text = "<span class='brass'>The cogwheel is solidly <b>wrenched</b> to the brass around it.</span>";
-	} else if ($0 === 2) {
+	} else if (this.construction_state === GEAR_LOOSE) {
 		gear_text = "<span class='alloy'>The cogwheel has been <i>loosened</i>, but remains <b>connected loosely</b> to the door!</span>";
 	}
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), live(gear_text)]);
-	return f.dot;
-}, true, { args: ["user"] });
-
-// /obj/machinery/door/airlock/clockwork/proc/emp_act  (code/game/machinery/doors/airlock_types.dm:466)  may sleep
-rt.def("/obj/machinery/door/airlock/clockwork/proc/emp_act", function* emp_act(f: Frame, severity: Value) {
-	f.vars = () => [severity];
-	if (!truthy(rt.op(f, "Prob", [], [divide(80, live(severity))]))) return f.dot;
-	yield* g.srcCall(f, "open");
+	to_chat(user, gear_text);
 	return f.dot;
 }, true);
 
-// /obj/machinery/door/airlock/clockwork/proc/canAIControl  (code/game/machinery/doors/airlock_types.dm:470)
+// airlock_types.dm:466
+rt.def("/obj/machinery/door/airlock/clockwork/proc/emp_act", function* emp_act(f: Frame, severity: Value) {
+	if (!prob(80 / severity)) return f.dot;
+	yield* this.open();
+	return f.dot;
+}, true);
+
+// airlock_types.dm:470
 rt.def("/obj/machinery/door/airlock/clockwork/proc/canAIControl", function canAIControl(f: Frame, user: Value) {
-	return (rt.call(f, P("/proc/is_servant_of_ratvar"), null, [live(user)]) && (!truthy(rt.callSrc(f, "isAllPowerCut", [])) ? 1 : 0));
+	return (is_servant_of_ratvar(user) && (!this.isAllPowerCut() ? 1 : 0));
 });
 
-// /obj/machinery/door/airlock/clockwork/proc/narsie_act  (code/game/machinery/doors/airlock_types.dm:476)  may sleep
+// airlock_types.dm:476
 rt.def("/obj/machinery/door/airlock/clockwork/proc/narsie_act", function* narsie_act(f: Frame) {
-	let previouscolor: Value = null;
-	f.vars = () => [previouscolor];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy(live(f.src))) return f.dot;
-	previouscolor = rt.sv(f, "color");
-	rt.setSv(f, "color", "#960000");
-	rt.op(f, "Animate", [2, 6], [null, live(f.src), "color", live(previouscolor), "time", 8]);
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/atom/proc/update_atom_colour")])), 8]);
+	yield* parent_proc();
+	if (!this) return f.dot;
+	let previouscolor: Value = this.color;
+	this.color = "#960000";
+	rt.op(f, "Animate", [2, 6], [null, this, "color", previouscolor, "time", 8]);
+	yield* addtimer((yield* new_(T("/datum/callback"), this, P("/atom/proc/update_atom_colour"))), 8);
 	return f.dot;
 }, true);
 
-// /obj/machinery/door/airlock/clockwork/proc/attackby  (code/game/machinery/doors/airlock_types.dm:484)  may sleep
-rt.def("/obj/machinery/door/airlock/clockwork/proc/attackby", function* attackby(f: Frame) {
-	if (truthy((yield* g.srcCall(f, "attempt_construction", live(f.args[0]), live(f.args[1]))))) return f.dot;
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["I", "user", "params"] });
+// airlock_types.dm:484
+rt.def("/obj/machinery/door/airlock/clockwork/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
+	if (yield* this.attempt_construction(I, user)) return f.dot;
+	return (yield* parent_proc());
+}, true);
 
-// /obj/machinery/door/airlock/clockwork/proc/allowed  (code/game/machinery/doors/airlock_types.dm:488)
+// airlock_types.dm:488
 rt.def("/obj/machinery/door/airlock/clockwork/proc/allowed", function allowed(f: Frame, M: Value) {
-	if (truthy(rt.call(f, P("/proc/is_servant_of_ratvar"), null, [live(M)]))) {
+	if (is_servant_of_ratvar(M)) {
 		return 1;
 	}
 	return 0;
 });
 
-// /obj/machinery/door/airlock/clockwork/proc/deconstruct  (code/game/machinery/doors/airlock_types.dm:499)  may sleep
+// airlock_types.dm:499
 rt.def("/obj/machinery/door/airlock/clockwork/proc/deconstruct", function* deconstruct(f: Frame, disassembled: Value) {
 	let _T: Value = null;
-	f.vars = () => [disassembled, _T];
-	if (live(disassembled) === null) {
-		disassembled = 1;
-	}
-	yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/items/deconstruct.ogg"), 50, 1]);
-	if (!truthy(rt.bitAnd(rt.sv(f, "flags"), 128))) {
-		_T = rt.getStep(f, live(f.src), 0);
-		if (truthy(live(disassembled))) {
-			yield* g.new_(f, T("/obj/item/stack/tile/brass"), [live(_T), 4]);
+	disassembled ??= 1;
+	playsound(this, rt.rsc("sound/items/deconstruct.ogg"), 50, 1);
+	if (!rt.bitAnd(this.flags, NODECONSTRUCT)) {
+		_T = rt.getStep(f, this, 0);
+		if (disassembled) {
+			yield* new_(T("/obj/item/stack/tile/brass"), _T, 4);
 		} else {
-			yield* g.new_(f, T("/obj/item/clockwork/alloy_shards"), [live(_T)]);
+			yield* new_(T("/obj/item/clockwork/alloy_shards"), _T);
 		}
-		yield* g.new_(f, T("/obj/item/clockwork/alloy_shards/pinion_lock"), [live(_T)]);
+		yield* new_(T("/obj/item/clockwork/alloy_shards/pinion_lock"), _T);
 	}
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
-// /obj/machinery/door/airlock/clockwork/proc/attempt_construction  (code/game/machinery/doors/airlock_types.dm:510)  may sleep
+// airlock_types.dm:510
 rt.def("/obj/machinery/door/airlock/clockwork/proc/attempt_construction", function* attempt_construction(f: Frame, I: Value, user: Value) {
-	f.vars = () => [I, user];
-	if (((!truthy(live(I)) || !truthy(live(user))) || !truthy((yield* g.callName(f, live(user), "canUseTopic", [live(f.src)]))))) {
+	if (!I || !user || !user.canUseTopic(this)) {
 		return 0;
-	} else {
-		if (truthy((rt.istype(live(I), T("/obj/item/weapon/wrench")) ? 1 : 0))) {
-			if (isEqual(rt.sv(f, "construction_state"), 1)) {
-				yield* g.callName(f, live(user), "visible_message", [fmt("<span class='notice'>＀ begins loosening ＀'s cogwheel...</span>", [live(user), live(f.src)]), fmt("<span class='notice'>You begin loosening ＀'s cogwheel...</span>", [live(f.src)])]);
-				yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.fv(f, "usesound", live(I)), 50, 1]);
-				if ((!truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(user), null, multiply(75, rt.fv(f, "toolspeed", live(I))), "target", live(f.src)], rt.Args.Named))) || !isEqual(rt.sv(f, "construction_state"), 1))) {
-					return 1;
-				}
-				yield* g.callName(f, live(user), "visible_message", [fmt("<span class='notice'>＀ loosens ＀'s cogwheel!</span>", [live(user), live(f.src)]), fmt("<span class='notice'>＀'s cogwheel pops off and dangles loosely.</span>", [live(f.src)])]);
-				yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/items/deconstruct.ogg"), 50, 1]);
-				rt.setSv(f, "construction_state", 2);
-			} else {
-				if (isEqual(rt.sv(f, "construction_state"), 2)) {
-					yield* g.callName(f, live(user), "visible_message", [fmt("<span class='notice'>＀ begins tightening ＀'s cogwheel...</span>", [live(user), live(f.src)]), fmt("<span class='notice'>You begin tightening ＀'s cogwheel into place...</span>", [live(f.src)])]);
-					yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.fv(f, "usesound", live(I)), 50, 1]);
-					if ((!truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(user), null, multiply(75, rt.fv(f, "toolspeed", live(I))), "target", live(f.src)], rt.Args.Named))) || !isEqual(rt.sv(f, "construction_state"), 2))) {
-						return 1;
-					}
-					yield* g.callName(f, live(user), "visible_message", [fmt("<span class='notice'>＀ tightens ＀'s cogwheel!</span>", [live(user), live(f.src)]), fmt("<span class='notice'>You firmly tighten ＀'s cogwheel into place.</span>", [live(f.src)])]);
-					yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/items/deconstruct.ogg"), 50, 1]);
-					rt.setSv(f, "construction_state", 1);
-				}
-			}
-			return 1;
-		} else {
-			if (truthy((rt.istype(live(I), T("/obj/item/weapon/crowbar")) ? 1 : 0))) {
-				if (isEqual(rt.sv(f, "construction_state"), 1)) {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀'s cogwheel is too tightly secured! Your ＀ can't reach under it!</span>", [live(f.src), rt.fv(f, "name", live(I))])]);
-					return 1;
-				} else {
-					if (isEqual(rt.sv(f, "construction_state"), 2)) {
-						yield* g.callName(f, live(user), "visible_message", [fmt("<span class='notice'>＀ begins slowly lifting off ＀'s cogwheel...</span>", [live(user), live(f.src)]), fmt("<span class='notice'>You slowly begin lifting off ＀'s cogwheel...</span>", [live(f.src)])]);
-						yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.fv(f, "usesound", live(I)), 50, 1]);
-						if ((!truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(user), null, multiply(75, rt.fv(f, "toolspeed", live(I))), "target", live(f.src)], rt.Args.Named))) || !isEqual(rt.sv(f, "construction_state"), 2))) {
-							return 1;
-						}
-						yield* g.callName(f, live(user), "visible_message", [fmt("<span class='notice'>＀ lifts off ＀'s cogwheel, causing it to fall apart!</span>", [live(user), live(f.src)]), fmt("<span class='notice'>You lift off ＀'s cogwheel, causing it to fall apart!</span>", [live(f.src)])]);
-						yield* g.srcCall(f, "deconstruct", 1);
-					}
-				}
+	} else if (rt.istype(I, T("/obj/item/weapon/wrench"))) {
+		if (this.construction_state == GEAR_SECURE) {
+			user.visible_message(`<span class='notice'>${user} begins loosening ${this}'s cogwheel...</span>`, `<span class='notice'>You begin loosening ${this}'s cogwheel...</span>`);
+			playsound(this, I.usesound, 50, 1);
+			if (!(yield* do_after(user, 75 * I.toolspeed, { target: this })) || this.construction_state != GEAR_SECURE) {
 				return 1;
 			}
+			user.visible_message(`<span class='notice'>${user} loosens ${this}'s cogwheel!</span>`, `<span class='notice'>${this}'s cogwheel pops off and dangles loosely.</span>`);
+			playsound(this, rt.rsc("sound/items/deconstruct.ogg"), 50, 1);
+			this.construction_state = GEAR_LOOSE;
+		} else if (this.construction_state == GEAR_LOOSE) {
+			user.visible_message(`<span class='notice'>${user} begins tightening ${this}'s cogwheel...</span>`, `<span class='notice'>You begin tightening ${this}'s cogwheel into place...</span>`);
+			playsound(this, I.usesound, 50, 1);
+			if (!(yield* do_after(user, 75 * I.toolspeed, { target: this })) || this.construction_state != GEAR_LOOSE) {
+				return 1;
+			}
+			user.visible_message(`<span class='notice'>${user} tightens ${this}'s cogwheel!</span>`, `<span class='notice'>You firmly tighten ${this}'s cogwheel into place.</span>`);
+			playsound(this, rt.rsc("sound/items/deconstruct.ogg"), 50, 1);
+			this.construction_state = GEAR_SECURE;
 		}
+		return 1;
+	} else if (rt.istype(I, T("/obj/item/weapon/crowbar"))) {
+		if (this.construction_state == GEAR_SECURE) {
+			to_chat(user, `<span class='warning'>${this}'s cogwheel is too tightly secured! Your ${I.name} can't reach under it!</span>`);
+			return 1;
+		} else if (this.construction_state == GEAR_LOOSE) {
+			user.visible_message(`<span class='notice'>${user} begins slowly lifting off ${this}'s cogwheel...</span>`, `<span class='notice'>You slowly begin lifting off ${this}'s cogwheel...</span>`);
+			playsound(this, I.usesound, 50, 1);
+			if (!(yield* do_after(user, 75 * I.toolspeed, { target: this })) || this.construction_state != GEAR_LOOSE) {
+				return 1;
+			}
+			user.visible_message(`<span class='notice'>${user} lifts off ${this}'s cogwheel, causing it to fall apart!</span>`, `<span class='notice'>You lift off ${this}'s cogwheel, causing it to fall apart!</span>`);
+			yield* this.deconstruct(1);
+		}
+		return 1;
 	}
 	return 0;
 }, true);

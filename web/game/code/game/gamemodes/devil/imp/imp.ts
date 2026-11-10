@@ -1,7 +1,7 @@
-// From code/game/gamemodes/devil/imp/imp.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/gamemodes/devil/imp/imp.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(5046, "/mob/living/simple_animal/imp", "/mob/living/simple_animal", {
@@ -41,45 +41,43 @@ rt.type(5046, "/mob/living/simple_animal/imp", "/mob/living/simple_animal", {
 	bloodcrawl: 2,
 });
 
-// /mob/living/simple_animal/imp/proc/<init>  (code/game/gamemodes/devil/imp/imp.dm:36)
+// imp.dm:36
 rt.def("/mob/living/simple_animal/imp/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "consumed_mobs", rt.list());
-	$0 = $0;
-	rt.setSv(f, "speak_emote", rt.list("cackles"));
-	rt.setSv(f, "emote_hear", rt.list("cackles", "screeches"));
-	rt.setSv(f, "atmos_requirements", rt.alist(f, ["min_oxy", 0, "max_oxy", 0, "min_tox", 0, "max_tox", 0, "min_co2", 0, "max_co2", 0, "min_n2", 0, "max_n2", 0]));
-	$0 = $0;
-	rt.setSv(f, "faction", rt.list("hell"));
+	parent_proc();
+	this.consumed_mobs = list();
+
+	this.speak_emote = list("cackles");
+	this.emote_hear = list("cackles", "screeches");
+	this.atmos_requirements = rt.alist(f, ["min_oxy", 0, "max_oxy", 0, "min_tox", 0, "max_tox", 0, "min_co2", 0, "max_co2", 0, "min_n2", 0, "max_n2", 0]);
+
+	this.faction = list("hell");
 	return f.dot;
 });
 
-// /mob/living/simple_animal/imp/proc/Initialize  (code/game/gamemodes/devil/imp/imp.dm:42)  may sleep
+// imp.dm:42
 rt.def("/mob/living/simple_animal/imp/proc/Initialize", function* Initialize(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "boost", add(rt.worldTime(f), 30));
+	yield* parent_proc();
+	this.boost = rt.worldTime(f) + 30;
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/imp/proc/Life  (code/game/gamemodes/devil/imp/imp.dm:46)
+// imp.dm:46
 rt.def("/mob/living/simple_animal/imp/proc/Life", function Life(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	if (rt.lt(rt.sv(f, "boost"), rt.worldTime(f))) {
-		rt.setSv(f, "speed", 1);
+	parent_proc();
+	if (this.boost < rt.worldTime(f)) {
+		this.speed = 1;
 	} else {
-		rt.setSv(f, "speed", 0);
+		this.speed = 0;
 	}
 	return f.dot;
 }, false, { waitfor: false });
 
-// /mob/living/simple_animal/imp/proc/death  (code/game/gamemodes/devil/imp/imp.dm:53)  may sleep
+// imp.dm:53
 rt.def("/mob/living/simple_animal/imp/proc/death", function* death(f: Frame) {
-	yield* g.callSuper(f, [1]);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/magic/demon_dies.ogg"), 200, 1]);
-	yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＀ screams in agony as it sublimates into a sulfurous smoke.</span>", [live(f.src)]));
-	yield* g.srcCall(f, "ghostize");
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* parent_proc(1);
+	playsound(rt.getStep(f, this, 0), rt.rsc("sound/magic/demon_dies.ogg"), 200, 1);
+	this.visible_message(`<span class='danger'>${this} screams in agony as it sublimates into a sulfurous smoke.</span>`);
+	yield* this.ghostize();
+	yield* qdel(this);
 	return f.dot;
 }, true);

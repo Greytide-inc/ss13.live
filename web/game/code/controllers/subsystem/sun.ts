@@ -1,7 +1,7 @@
-// From code/controllers/subsystem/sun.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/controllers/subsystem/sun.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(43, "/datum/controller/subsystem/sun", "/datum/controller/subsystem", {
@@ -15,69 +15,60 @@ rt.type(43, "/datum/controller/subsystem/sun", "/datum/controller/subsystem", {
 	flags: 9,
 });
 
-// /datum/controller/subsystem/sun/proc/New  (code/controllers/subsystem/sun.dm:1)  may sleep
+// sun.dm:1
 rt.def("/datum/controller/subsystem/sun/proc/New", function* New(f: Frame) {
-	if (!isEqual(rt.gl("SSsun"), live(f.src))) {
-		if (truthy((rt.istype(rt.gl("SSsun"), T("/datum/controller/subsystem/sun")) ? 1 : 0))) {
-			yield* g.srcCall(f, "Recover");
-			yield* g.call(f, P("/proc/qdel"), null, [rt.gl("SSsun")]);
+	if (GLOB.SSsun != this) {
+		if (rt.istype(GLOB.SSsun, T("/datum/controller/subsystem/sun"))) {
+			yield* this.Recover();
+			yield* qdel(GLOB.SSsun);
 		}
-		rt.setGl("SSsun", live(f.src));
+		GLOB.SSsun = this;
 	}
-	yield* g.srcCall(f, "PreInit");
+	this.PreInit();
 	return f.dot;
 }, true);
 
-// /datum/controller/subsystem/sun/proc/<init>  (code/controllers/subsystem/sun.dm:9)
+// sun.dm:9
 rt.def("/datum/controller/subsystem/sun/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "solars", rt.list());
+	parent_proc();
+	this.solars = list();
 	return f.dot;
 });
 
-// /datum/controller/subsystem/sun/proc/PreInit  (code/controllers/subsystem/sun.dm:12)
+// sun.dm:12
 rt.def("/datum/controller/subsystem/sun/proc/PreInit", function PreInit(f: Frame) {
-	rt.setSv(f, "angle", rt.call(f, P("/proc/rand"), null, [0, 360]));
-	rt.setSv(f, "rate", divide(rt.call(f, P("/proc/rand"), null, [50, 200]), 100));
-	if (!truthy(rt.op(f, "Prob", [], [50]))) return f.dot;
-	rt.setSv(f, "rate", rt.neg(rt.sv(f, "rate")));
+	this.angle = rand(0, 360);
+	this.rate = rand(50, 200) / 100;
+	if (!prob(50)) return f.dot;
+	this.rate = -this.rate;
 	return f.dot;
 });
 
-// /datum/controller/subsystem/sun/proc/stat_entry  (code/controllers/subsystem/sun.dm:18)  may sleep
+// sun.dm:18
 rt.def("/datum/controller/subsystem/sun/proc/stat_entry", function* stat_entry(f: Frame, msg: Value) {
-	f.vars = () => [msg];
-	yield* g.callSuper(f, [fmt("P:＀", [rt.len(f, rt.sv(f, "solars"))])]);
+	yield* parent_proc(`P:${rt.len(f, this.solars)}`);
 	return f.dot;
 }, true);
 
-// /datum/controller/subsystem/sun/proc/fire  (code/controllers/subsystem/sun.dm:21)  may sleep
+// sun.dm:21
 rt.def("/datum/controller/subsystem/sun/proc/fire", function* fire(f: Frame) {
-	let s: Value = null, c: Value = null, SC: Value = null;
-	let $e: any;
-	f.vars = () => [s, c, SC, $e];
-	rt.setSv(f, "angle", rt.modulus(add(add(360, rt.sv(f, "angle")), multiply(rt.sv(f, "rate"), 6)), 360));
-	s = rt.op(f, "Sin", [], [rt.sv(f, "angle")]);
-	c = rt.op(f, "Cos", [], [rt.sv(f, "angle")]);
-	if (rt.lt(rt.op(f, "Abs", [], [live(s)]), rt.op(f, "Abs", [], [live(c)]))) {
-		rt.setSv(f, "dx", divide(live(s), rt.op(f, "Abs", [], [live(c)])));
-		rt.setSv(f, "dy", divide(live(c), rt.op(f, "Abs", [], [live(c)])));
+	let SC: Value = null;
+	this.angle = (360 + this.angle + this.rate * 6) % 360;
+	let s: Value = rt.op(f, "Sin", [], [this.angle]);
+	let c: Value = rt.op(f, "Cos", [], [this.angle]);
+	if (rt.op(f, "Abs", [], [s]) < rt.op(f, "Abs", [], [c])) {
+		this.dx = s / rt.op(f, "Abs", [], [c]);
+		this.dy = c / rt.op(f, "Abs", [], [c]);
 	} else {
-		rt.setSv(f, "dx", divide(live(s), rt.op(f, "Abs", [], [live(s)])));
-		rt.setSv(f, "dy", divide(live(c), rt.op(f, "Abs", [], [live(s)])));
+		this.dx = s / rt.op(f, "Abs", [], [s]);
+		this.dy = c / rt.op(f, "Abs", [], [s]);
 	}
-	SC = null;
-	rt.forList(f, 0, rt.sv(f, "solars"), T("/obj/machinery/power/solar_control"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		SC = $e;
-		if (!truthy(rt.fv(f, "powernet", live(SC)))) {
-			yield* g.callName(f, rt.sv(f, "solars"), "Remove", [live(SC)]);
+	for (SC of each(this.solars, T("/obj/machinery/power/solar_control"))) {
+		if (!SC.powernet) {
+			yield* this.solars.Remove(SC);
 			continue;
 		}
-		yield* g.callName(f, live(SC), "update", []);
+		yield* SC.update();
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);

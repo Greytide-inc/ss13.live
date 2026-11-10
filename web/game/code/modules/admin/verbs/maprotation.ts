@@ -1,64 +1,57 @@
-// From code/modules/admin/verbs/maprotation.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/admin/verbs/maprotation.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { g } = rt;
 
 
-// /client/proc/forcerandomrotate  (code/modules/admin/verbs/maprotation.dm:4)  may sleep
+// maprotation.dm:4
 rt.def("/client/proc/forcerandomrotate", function* forcerandomrotate(f: Frame) {
 	let rotate: Value = null;
-	f.vars = () => [rotate];
-	if (!isEqual((rotate = (yield* g.call(f, P("/proc/alert"), null, ["Force a random map rotation to trigger?", "Rotate map?", "Yes", "Cancel"]))), "Yes")) {
-		return live(f.dot);
+	if ((rotate = (yield* alert("Force a random map rotation to trigger?", "Rotate map?", "Yes", "Cancel"))) != "Yes") {
+		return f.dot;
 	}
-	yield* g.call(f, P("/proc/message_admins"), null, [fmt("＀ is forcing a random map rotation.", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.usr)]))])]);
-	yield* g.call(f, P("/proc/log_admin"), null, [fmt("＀ is forcing a random map rotation.", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.usr)]))])]);
-	rt.setFv(f, "maprotatechecked", rt.gl("SSticker"), 1);
-	yield* g.callName(f, rt.gl("SSmapping"), "maprotate", []);
+	message_admins(`${key_name_admin(f.usr)} is forcing a random map rotation.`);
+	log_admin(`${key_name(f.usr)} is forcing a random map rotation.`);
+	GLOB.SSticker.maprotatechecked = 1;
+	GLOB.SSmapping.maprotate();
 	return f.dot;
 }, true, { verb: { name: "Trigger Random Map Rotation", category: "Server" } });
 
-// /client/proc/adminchangemap  (code/modules/admin/verbs/maprotation.dm:15)  may sleep
+// maprotation.dm:15
 rt.def("/client/proc/adminchangemap", function* adminchangemap(f: Frame) {
-	let maprotatechoices: Value = null, map: Value = null, VM: Value = null, mapname: Value = null, chosenmap: Value = null;
-	let $e: any;
-	f.vars = () => [maprotatechoices, map, VM, mapname, chosenmap, $e];
-	maprotatechoices = rt.list();
-	map = null;
-	rt.forList(f, 0, rt.fv(f, "maplist", rt.gl("config")));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		map = $e;
-		VM = rt.index(rt.fv(f, "maplist", rt.gl("config")), live(map));
-		mapname = rt.fv(f, "map_name", live(VM));
-		if (isEqual(live(VM), rt.fv(f, "defaultmap", rt.gl("config")))) {
-			mapname = rt.modify(live(mapname), " (Default)", add);
+	let map: Value = null, VM: Value = null, mapname: Value = null, chosenmap: Value = null;
+	let maprotatechoices: Value = list();
+	for (map of each(GLOB.config.maplist)) {
+		VM = rt.index(GLOB.config.maplist, map);
+		mapname = VM.map_name;
+		if (VM == GLOB.config.defaultmap) {
+			mapname += " (Default)";
 		}
-		if ((rt.gt(rt.fv(f, "config_min_users", live(VM)), 0) || rt.gt(rt.fv(f, "config_max_users", live(VM)), 0))) {
-			mapname = rt.modify(live(mapname), " [", add);
-			if (rt.gt(rt.fv(f, "config_min_users", live(VM)), 0)) {
-				mapname = rt.modify(live(mapname), fmt("＀", [rt.fv(f, "config_min_users", live(VM))]), add);
+		if (VM.config_min_users > 0 || VM.config_max_users > 0) {
+			mapname += " [";
+			if (VM.config_min_users > 0) {
+				mapname += `${VM.config_min_users}`;
 			} else {
-				mapname = rt.modify(live(mapname), "0", add);
+				mapname += "0";
 			}
-			mapname = rt.modify(live(mapname), "-", add);
-			if (rt.gt(rt.fv(f, "config_max_users", live(VM)), 0)) {
-				mapname = rt.modify(live(mapname), fmt("＀", [rt.fv(f, "config_max_users", live(VM))]), add);
+			mapname += "-";
+			if (VM.config_max_users > 0) {
+				mapname += `${VM.config_max_users}`;
 			} else {
-				mapname = rt.modify(live(mapname), "inf", add);
+				mapname += "inf";
 			}
-			mapname = rt.modify(live(mapname), "]", add);
+			mapname += "]";
 		}
-		rt.setAt(live(maprotatechoices), live(mapname), live(VM));
+		rt.setAt(maprotatechoices, mapname, VM);
 	}
-	rt.endFor(f, 0);
-	if (!truthy((chosenmap = (yield* g.op(f, "Prompt", [1], [null, null, "Change Map", "Choose a map to change to", live(maprotatechoices)]))))) {
-		return live(f.dot);
+	if (!(chosenmap = (yield* g.op(f, "Prompt", [1], [null, null, "Change Map", "Choose a map to change to", maprotatechoices])))) {
+		return f.dot;
 	}
-	rt.setFv(f, "maprotatechecked", rt.gl("SSticker"), 1);
-	VM = rt.index(live(maprotatechoices), live(chosenmap));
-	yield* g.call(f, P("/proc/message_admins"), null, [fmt("＀ is changing the map to ＀", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.usr)])), rt.fv(f, "map_name", live(VM))])]);
-	yield* g.call(f, P("/proc/log_admin"), null, [fmt("＀ is changing the map to ＀", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.usr)])), rt.fv(f, "map_name", live(VM))])]);
-	if (!isEqual((yield* g.callName(f, rt.gl("SSmapping"), "changemap", [live(VM)])), 0)) return f.dot;
-	yield* g.call(f, P("/proc/message_admins"), null, [fmt("＀ has changed the map to ＀", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.usr)])), rt.fv(f, "map_name", live(VM))])]);
+	GLOB.SSticker.maprotatechecked = 1;
+	VM = rt.index(maprotatechoices, chosenmap);
+	message_admins(`${key_name_admin(f.usr)} is changing the map to ${VM.map_name}`);
+	log_admin(`${key_name(f.usr)} is changing the map to ${VM.map_name}`);
+	if (GLOB.SSmapping.changemap(VM) != 0) return f.dot;
+	message_admins(`${key_name_admin(f.usr)} has changed the map to ${VM.map_name}`);
 	return f.dot;
 }, true, { verb: { name: "Change Map", category: "Server" } });

@@ -1,7 +1,7 @@
-// From code/modules/paperwork/photography.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/paperwork/photography.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, g, fmt } = rt;
 
 
 rt.type(7625, "/obj/item/weapon/photo", "/obj/item/weapon", {
@@ -19,85 +19,63 @@ rt.type(7625, "/obj/item/weapon/photo", "/obj/item/weapon", {
 	max_integrity: 50,
 });
 
-// /obj/item/weapon/photo/proc/attack_self  (code/modules/paperwork/photography.dm:42)  may sleep
+// photography.dm:42
 rt.def("/obj/item/weapon/photo/proc/attack_self", function* attack_self(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.callName(f, live(user), "examinate", [live(f.src)]);
+	yield* user.examinate(this);
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/photo/proc/attackby  (code/modules/paperwork/photography.dm:46)  may sleep
+// photography.dm:46
 rt.def("/obj/item/weapon/photo/proc/attackby", function* attackby(f: Frame) {
 	let txt: Value = null;
-	f.vars = () => [txt];
-	if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/pen")) ? 1 : 0)) || truthy((rt.istype(live(f.args[0]), T("/obj/item/toy/crayon")) ? 1 : 0)))) {
-		txt = (yield* g.call(f, P("/proc/copytext"), null, [(txt = (yield* g.call(f, P("/proc/sanitize"), null, [(yield* g.op(f, "Prompt", [2], [null, "Photo Writing", "What would you like to write on the back?", live(f.args[1]), null]))]))), 1, 128]));
-		if ((isEqual(rt.sv(f, "loc"), live(f.args[1])) && isEqual(rt.fv(f, "stat", live(f.args[1])), 0))) {
-			rt.setSv(f, "scribble", live(txt));
+	if (rt.istype(f.args[0], T("/obj/item/weapon/pen")) || rt.istype(f.args[0], T("/obj/item/toy/crayon"))) {
+		txt = copytext((txt = sanitize((yield* g.op(f, "Prompt", [2], [null, "Photo Writing", "What would you like to write on the back?", f.args[1], null])))), 1, 128);
+		if (this.loc == f.args[1] && f.args[1].stat == 0) {
+			this.scribble = txt;
 		}
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true, { args: ["P", "user", "params"] });
 
-// /obj/item/weapon/photo/proc/examine  (code/modules/paperwork/photography.dm:55)
-rt.def("/obj/item/weapon/photo/proc/examine", function examine(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	if (rt.le(rt.call(f, P("/proc/get_dist"), null, [live(f.src), live(f.args[0])]), 1)) {
-		rt.callSrc(f, "show", [live(f.args[0])]);
+// photography.dm:55
+rt.def("/obj/item/weapon/photo/proc/examine", function examine(f: Frame, user: Value) {
+	parent_proc();
+	if (get_dist(this, user) <= 1) {
+		this.show(user);
 	} else {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='warning'>You need to get closer to get a good look at this photo!</span>"]);
+		to_chat(user, "<span class='warning'>You need to get closer to get a good look at this photo!</span>");
 	}
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/item/weapon/photo/proc/show  (code/modules/paperwork/photography.dm:64)
+// photography.dm:64
 rt.def("/obj/item/weapon/photo/proc/show", function show(f: Frame, user: Value) {
-	let $0: any, $1: any, $2: any;
-	f.vars = () => [$0, $1, $2];
-	rt.op(f, "BrowseResource", [], [live(user), rt.sv(f, "img"), "tmp_photo.png"], false);
-	$0 = live(user);
-	$1 = add(add(fmt("<html><head><title>＀</title></head>", [rt.sv(f, "name")]), "<body style='overflow:hidden;margin:0;text-align:center'>"), "<img src='tmp_photo.png' width='192' style='-ms-interpolation-mode:nearest-neighbor' />");
-	if (truthy(rt.sv(f, "scribble"))) {
-		$2 = fmt("<br>Written on the back:<br><i>＀</i>", [rt.sv(f, "scribble")]);
-	} else {
-		$2 = "";
-	}
-	$1 = add(add($1, fmt("＀", [$2])), "</body></html>");
-	if (truthy(rt.sv(f, "scribble"))) {
-		$2 = 400;
-	} else {
-		$2 = 192;
-	}
-	rt.op(f, "Browse", [], [$0, $1, fmt("window=book;size=192x＀", [$2])], false);
-	rt.call(f, P("/proc/onclose"), null, [live(user), fmt("＀", [rt.sv(f, "name")])]);
+	rt.op(f, "BrowseResource", [], [user, this.img, "tmp_photo.png"], false);
+	let $0: any = user;
+	let $1: any = `<html><head><title>${this.name}</title></head>` + "<body style='overflow:hidden;margin:0;text-align:center'>" + "<img src='tmp_photo.png' width='192' style='-ms-interpolation-mode:nearest-neighbor' />";
+	$1 = $1 + `${this.scribble ? `<br>Written on the back:<br><i>${this.scribble}</i>` : ""}` + "</body></html>";
+	rt.op(f, "Browse", [], [$0, $1, `window=book;size=192x${this.scribble ? 400 : 192}`], false);
+	onclose(user, `${this.name}`);
 	return f.dot;
 });
 
-// /obj/item/weapon/photo/verb/rename  (code/modules/paperwork/photography.dm:78)  may sleep
+// photography.dm:78
 rt.def("/obj/item/weapon/photo/verb/rename", function* rename(f: Frame) {
-	let n_name: Value = null;
-	let $0: any;
-	f.vars = () => [n_name, $0];
-	n_name = (yield* g.call(f, P("/proc/copytext"), null, [(yield* g.call(f, P("/proc/sanitize"), null, [(yield* g.op(f, "Prompt", [2], [null, "Photo Labelling", "What would you like to label the photo?", live(f.usr), null]))])), 1, 42]));
-	if (((((isEqual(rt.sv(f, "loc"), live(f.usr)) || (truthy(rt.fv(f, "loc", rt.sv(f, "loc"))) && isEqual(rt.fv(f, "loc", rt.sv(f, "loc")), live(f.usr)))) && isEqual(rt.fv(f, "stat", live(f.usr)), 0)) && truthy(rt.fv(f, "canmove", live(f.usr)))) && !truthy((yield* g.callName(f, live(f.usr), "restrained", []))))) {
-		if (truthy(live(n_name))) {
-			$0 = fmt("- '＀'", [live(n_name)]);
-		} else {
-			$0 = null;
-		}
-		rt.setSv(f, "name", fmt("photo＀", [$0]));
+	let n_name: Value = copytext(sanitize((yield* g.op(f, "Prompt", [2], [null, "Photo Labelling", "What would you like to label the photo?", f.usr, null]))), 1, 42);
+	if ((this.loc == f.usr || this.loc.loc && this.loc.loc == f.usr) && f.usr.stat == 0 && f.usr.canmove && !f.usr.restrained()) {
+		this.name = `photo${n_name ? `- '${n_name}'` : null}`;
 	}
-	yield* g.srcCall(f, "add_fingerprint", live(f.usr));
+	yield* this.add_fingerprint(f.usr);
 	return f.dot;
 }, true, { verb: { name: "Rename photo", category: "Object", src: 11 } });
 
-// /obj/item/weapon/photo/proc/photocreate  (code/modules/paperwork/photography.dm:85)
+// photography.dm:85
 rt.def("/obj/item/weapon/photo/proc/photocreate", function photocreate(f: Frame, inicon: Value, inimg: Value, indesc: Value, inblueprints: Value) {
-	rt.setSv(f, "icon", live(inicon));
-	rt.setSv(f, "img", live(inimg));
-	rt.setSv(f, "desc", live(indesc));
-	rt.setSv(f, "blueprints", live(inblueprints));
+	this.icon = inicon;
+	this.img = inimg;
+	this.desc = indesc;
+	this.blueprints = inblueprints;
 	return f.dot;
 });
 
@@ -110,12 +88,10 @@ rt.type(5604, "/obj/item/weapon/storage/photo_album", "/obj/item/weapon/storage"
 	resistance_flags: 4,
 });
 
-// /obj/item/weapon/storage/photo_album/proc/<init>  (code/modules/paperwork/photography.dm:98)
+// photography.dm:98
 rt.def("/obj/item/weapon/storage/photo_album/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "can_hold", rt.list(T("/obj/item/weapon/photo")));
+	parent_proc();
+	this.can_hold = list(T("/obj/item/weapon/photo"));
 	return f.dot;
 });
 
@@ -137,305 +113,264 @@ rt.type(9422, "/obj/item/device/camera", "/obj/item/device", {
 	materials: null,
 });
 
-// /obj/item/device/camera/proc/<init>  (code/modules/paperwork/photography.dm:118)
+// photography.dm:118
 rt.def("/obj/item/device/camera/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "aipictures", rt.list());
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 2000]));
+	parent_proc();
+	this.aipictures = list();
+	this.materials = rt.alist(f, ["$metal", 2000]);
 	return f.dot;
 });
 
-// /obj/item/device/camera/proc/CheckParts  (code/modules/paperwork/photography.dm:123)  may sleep
-rt.def("/obj/item/device/camera/proc/CheckParts", function* CheckParts(f: Frame) {
+// photography.dm:123
+rt.def("/obj/item/device/camera/proc/CheckParts", function* CheckParts(f: Frame, parts_list: Value) {
 	let C: Value = null;
-	f.vars = () => [C];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy((C = rt.locateIn(f, T("/obj/item/device/camera"), rt.sv(f, "contents"))))) return f.dot;
-	rt.setSv(f, "pictures_max", rt.fv(f, "pictures_max", live(C)));
-	rt.setSv(f, "pictures_left", rt.fv(f, "pictures_left", live(C)));
-	yield* g.srcCall(f, "visible_message", fmt("＀ has been imbued with godlike power!", [live(C)]));
-	yield* g.call(f, P("/proc/qdel"), null, [live(C)]);
+	yield* parent_proc();
+	if (!(C = rt.locateIn(f, T("/obj/item/device/camera"), this.contents))) return f.dot;
+	this.pictures_max = C.pictures_max;
+	this.pictures_left = C.pictures_left;
+	this.visible_message(`${C} has been imbued with godlike power!`);
+	yield* qdel(C);
 	return f.dot;
-}, true, { args: ["parts_list"] });
+}, true);
 
 rt.type(9427, "/obj/item/device/camera/siliconcam/robot_camera", "/obj/item/device/camera/siliconcam", {
 	name: "Cyborg photo camera",
 });
 
-// /obj/item/device/camera/siliconcam/robot_camera/verb/borgprinting  (code/modules/paperwork/photography.dm:159)  may sleep
+// photography.dm:159
 rt.def("/obj/item/device/camera/siliconcam/robot_camera/verb/borgprinting", function* borgprinting(f: Frame) {
-	if (isEqual(rt.fv(f, "stat", live(f.usr)), 2)) {
-		return live(f.dot);
+	if (f.usr.stat == 2) {
+		return f.dot;
 	}
-	yield* g.srcCall(f, "borgprint");
+	yield* this.borgprint();
 	return f.dot;
 }, true, { verb: { name: "Print Image", category: "Robot Commands", src: 11 } });
 
-// /obj/item/device/camera/proc/attackby  (code/modules/paperwork/photography.dm:168)  may sleep
-rt.def("/obj/item/device/camera/proc/attackby", function* attackby(f: Frame) {
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/device/camera_film")) ? 1 : 0))) {
-		if (truthy(rt.sv(f, "pictures_left"))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>＀ still has some film in it!</span>", [live(f.src)])]);
-			return live(f.dot);
+// photography.dm:168
+rt.def("/obj/item/device/camera/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
+	if (rt.istype(I, T("/obj/item/device/camera_film"))) {
+		if (this.pictures_left) {
+			to_chat(user, `<span class='notice'>${this} still has some film in it!</span>`);
+			return f.dot;
 		}
-		if (!truthy((yield* g.callName(f, live(f.args[1]), "temporarilyRemoveItemFromInventory", [live(f.args[0])])))) {
-			return live(f.dot);
+		if (!(yield* user.temporarilyRemoveItemFromInventory(I))) {
+			return f.dot;
 		}
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You insert ＀ into ＀.</span>", [live(f.args[0]), live(f.src)])]);
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.args[0])]);
-		rt.setSv(f, "pictures_left", rt.sv(f, "pictures_max"));
-		return live(f.dot);
+		to_chat(user, `<span class='notice'>You insert ${I} into ${this}.</span>`);
+		yield* qdel(I);
+		this.pictures_left = this.pictures_max;
+		return f.dot;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["I", "user", "params"] });
+}, true);
 
-// /obj/item/device/camera/proc/examine  (code/modules/paperwork/photography.dm:182)
-rt.def("/obj/item/device/camera/proc/examine", function examine(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("It has ＀ photos left.", [rt.sv(f, "pictures_left")])]);
+// photography.dm:182
+rt.def("/obj/item/device/camera/proc/examine", function examine(f: Frame, user: Value) {
+	parent_proc();
+	to_chat(user, `It has ${this.pictures_left} photos left.`);
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/item/device/camera/proc/camera_get_icon  (code/modules/paperwork/photography.dm:187)
+// photography.dm:187
 rt.def("/obj/item/device/camera/proc/camera_get_icon", function camera_get_icon(f: Frame, turfs: Value, center: Value) {
-	let atoms: Value = null, _T: Value = null, A: Value = null, O: Value = null, sorted: Value = null, j: Value = null, i: Value = null, c: Value = null, c2: Value = null, res: Value = null, A_4: Value = null, img: Value = null, L: Value = null, offX: Value = null, offY: Value = null, _T_4: Value = null;
+	let _T: Value = null, A: Value = null, O: Value = null, j: Value = null, i: Value = null, c: Value = null, c2: Value = null, A_4: Value = null, img: Value = null, L: Value = null, offX: Value = null, offY: Value = null, _T_4: Value = null;
 	let $e: any;
-	f.vars = () => [atoms, _T, A, O, sorted, j, i, c, c2, res, A_4, img, L, offX, offY, _T_4, $e];
-	atoms = rt.list();
-	_T = null;
-	rt.forList(f, 0, live(turfs), T("/turf"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_T = $e;
-		rt.callName(f, live(atoms), "Add", [live(_T)]);
+	let atoms: Value = list();
+	for (_T of each(turfs, T("/turf"))) {
+		atoms.Add(_T);
 		A = null;
-		rt.forList(f, 1, live(_T), T("/atom/movable"));
-		while (($e = rt.next(f, 1)) !== undefined) {
-			A = $e;
-			if (truthy(rt.fv(f, "invisibility", live(A)))) {
-				if ((truthy(rt.sv(f, "see_ghosts")) && truthy((rt.istype(live(A), T("/mob/dead/observer")) ? 1 : 0)))) {
-					if (truthy(rt.gv(f, "orbiting", (O = live(A))))) {
+		for (A of each(_T, T("/atom/movable"))) {
+			if (A.invisibility) {
+				if (this.see_ghosts && rt.istype(A, T("/mob/dead/observer"))) {
+					if ((O = A).orbiting) {
 						continue;
 					}
 				} else {
 					continue;
 				}
 			}
-			rt.callName(f, live(atoms), "Add", [live(A)]);
+			atoms.Add(A);
 		}
-		rt.endFor(f, 1);
 	}
-	rt.endFor(f, 0);
-	sorted = rt.list();
-	j = null;
-	i = null;
-	rt.forRange(f, 0, 1, rt.len(f, live(atoms)), 1);
+	let sorted: Value = list();
+	rt.forRange(f, 0, 1, rt.len(f, atoms), 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		c = rt.index(live(atoms), live(i));
-		j = rt.len(f, live(sorted));
-		while (rt.gt(live(j), 0)) {
-			if (rt.le(rt.gv(f, "layer", (c2 = rt.index(live(sorted), live(j)))), rt.fv(f, "layer", live(c)))) {
+		c = rt.index(atoms, i);
+		j = rt.len(f, sorted);
+		while (j > 0) {
+			if ((c2 = rt.index(sorted, j)).layer <= c.layer) {
 				break;
 			}
-			j = rt.inc(live(j), -1);
+			j--;
 		}
-		rt.callName(f, live(sorted), "Insert", [add(live(j), 1), live(c)]);
+		sorted.Insert(j + 1, c);
 	}
 	rt.endFor(f, 0);
-	res = rt.call(f, P("/proc/icon"), null, [rt.rsc("icons/effects/96x96.dmi"), ""]);
-	A_4 = null;
-	rt.forList(f, 0, live(sorted), T("/atom"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		A_4 = $e;
-		img = rt.call(f, P("/proc/getFlatIcon"), null, [live(A_4)]);
-		if (truthy((rt.istype(live(A_4), T("/mob/living")) ? 1 : 0))) {
-			if (truthy(rt.gv(f, "lying", (L = live(A_4))))) {
-				rt.callName(f, live(img), "Turn", [rt.fv(f, "lying", live(L))]);
+	let res: Value = icon(rt.rsc("icons/effects/96x96.dmi"), "");
+	for (A_4 of each(sorted, T("/atom"))) {
+		img = getFlatIcon(A_4);
+		if (rt.istype(A_4, T("/mob/living"))) {
+			if ((L = A_4).lying) {
+				img.Turn(L.lying);
 			}
 		}
-		offX = add(add(multiply(32, subtract(rt.fv(f, "x", live(A_4)), rt.fv(f, "x", live(center)))), rt.fv(f, "pixel_x", live(A_4))), 33);
-		offY = add(add(multiply(32, subtract(rt.fv(f, "y", live(A_4)), rt.fv(f, "y", live(center)))), rt.fv(f, "pixel_y", live(A_4))), 33);
-		if (truthy((rt.istype(live(A_4), T("/atom/movable")) ? 1 : 0))) {
-			offX = rt.modify(live(offX), rt.fv(f, "step_x", live(A_4)), add);
-			offY = rt.modify(live(offY), rt.fv(f, "step_y", live(A_4)), add);
+		offX = 32 * (A_4.x - center.x) + A_4.pixel_x + 33;
+		offY = 32 * (A_4.y - center.y) + A_4.pixel_y + 33;
+		if (rt.istype(A_4, T("/atom/movable"))) {
+			offX += A_4.step_x;
+			offY += A_4.step_y;
 		}
-		rt.callName(f, live(res), "Blend", [live(img), rt.call(f, P("/proc/blendMode2iconMode"), null, [rt.fv(f, "blend_mode", live(A_4))]), live(offX), live(offY)]);
-		if (truthy((rt.istype(live(A_4), T("/obj/item/areaeditor/blueprints")) ? 1 : 0))) {
-			rt.setSv(f, "blueprints", 1);
+		res.Blend(img, blendMode2iconMode(A_4.blend_mode), offX, offY);
+		if (rt.istype(A_4, T("/obj/item/areaeditor/blueprints"))) {
+			this.blueprints = 1;
 		}
 	}
-	rt.endFor(f, 0);
-	_T_4 = null;
-	rt.forList(f, 0, live(turfs), T("/turf"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_T_4 = $e;
-		rt.callName(f, live(res), "Blend", [rt.call(f, P("/proc/getFlatIcon"), null, [rt.fv(f, "loc", live(_T_4))]), rt.call(f, P("/proc/blendMode2iconMode"), null, [rt.fv(f, "blend_mode", live(_T_4))]), add(multiply(32, subtract(rt.fv(f, "x", live(_T_4)), rt.fv(f, "x", live(center)))), 33), add(multiply(32, subtract(rt.fv(f, "y", live(_T_4)), rt.fv(f, "y", live(center)))), 33)]);
+	for (_T_4 of each(turfs, T("/turf"))) {
+		res.Blend(getFlatIcon(_T_4.loc), blendMode2iconMode(_T_4.blend_mode), 32 * (_T_4.x - center.x) + 33, 32 * (_T_4.y - center.y) + 33);
 	}
-	rt.endFor(f, 0);
-	return live(res);
+	return res;
 });
 
-// /obj/item/device/camera/proc/camera_get_mobs  (code/modules/paperwork/photography.dm:238)
+// photography.dm:238
 rt.def("/obj/item/device/camera/proc/camera_get_mobs", function camera_get_mobs(f: Frame, the_turf: Value) {
 	let mob_detail: Value = null, M: Value = null, O: Value = null, holding: Value = null, L: Value = null, I: Value = null;
 	let $0: any, $1: any, $2: any, $e: any;
-	f.vars = () => [mob_detail, M, O, holding, L, I, $0, $1, $2, $e];
-	mob_detail = null;
-	M = null;
-	rt.forList(f, 0, live(the_turf), T("/mob"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if (truthy(rt.fv(f, "invisibility", live(M)))) {
-			if ((truthy(rt.sv(f, "see_ghosts")) && truthy((rt.istype(live(M), T("/mob/dead/observer")) ? 1 : 0)))) {
-				if (truthy(rt.gv(f, "orbiting", (O = live(M))))) {
+	for (M of each(the_turf, T("/mob"))) {
+		if (M.invisibility) {
+			if (this.see_ghosts && rt.istype(M, T("/mob/dead/observer"))) {
+				if ((O = M).orbiting) {
 					continue;
 				}
-				if (!truthy(live(mob_detail))) {
+				if (!mob_detail) {
 					mob_detail = "You can see a g-g-g-g-ghooooost! ";
 				} else {
-					mob_detail = rt.modify(live(mob_detail), "You can also see a g-g-g-g-ghooooost!", add);
+					mob_detail += "You can also see a g-g-g-g-ghooooost!";
 				}
 			} else {
 				continue;
 			}
 		}
-		holding = rt.list();
-		if (truthy((rt.istype(live(M), T("/mob/living")) ? 1 : 0))) {
-			L = live(M);
+		holding = list();
+		if (rt.istype(M, T("/mob/living"))) {
+			L = M;
 			I = null;
-			rt.forList(f, 1, rt.fv(f, "held_items", live(L)), T("/obj/item"));
-			while (($e = rt.next(f, 1)) !== undefined) {
-				I = $e;
-				if (!truthy(live(holding))) {
-					holding = rt.modify(live(holding), fmt("＀ ＀ holding ＇！", [rt.callName(f, live(L), "p_they", [1]), rt.callName(f, live(L), "p_are", []), live(I)]), add);
+			for (I of each(L.held_items, T("/obj/item"))) {
+				if (!holding) {
+					holding += fmt("＀ ＀ holding ＇！", [L.p_they(1), L.p_are(), I]);
 				} else {
-					holding = rt.modify(live(holding), fmt(" and ＇！", [live(I)]), add);
+					holding += fmt(" and ＇！", [I]);
 				}
 			}
-			rt.endFor(f, 1);
-			holding = rt.callName(f, live(holding), "Join", []);
-			if (!truthy(live(mob_detail))) {
-				$0 = live(L);
-				if (rt.lt(rt.fv(f, "health", live(L)), multiply(rt.fv(f, "maxHealth", live(L)), 0.75))) {
-					$1 = fmt(" - ＀ looks hurt", [live(L)]);
+			holding = holding.Join();
+			if (!mob_detail) {
+				$0 = L;
+				if (L.health < L.maxHealth * 0.75) {
+					$1 = ` - ${L} looks hurt`;
 				} else {
 					$1 = "";
 				}
-				if (truthy(live(holding))) {
-					$2 = fmt(" ＀", [live(holding)]);
+				if (holding) {
+					$2 = ` ${holding}`;
 				} else {
 					$2 = ".";
 				}
-				mob_detail = fmt("You can see ＀ on the photo＀.＀. ", [$0, $1, $2]);
+				mob_detail = `You can see ${$0} on the photo${$1}.${$2}. `;
 			} else {
-				$0 = live(L);
-				if (rt.lt(rt.fv(f, "health", live(L)), multiply(rt.fv(f, "maxHealth", live(L)), 0.75))) {
-					$1 = fmt(" - ＀ looks hurt", [live(L)]);
+				$0 = L;
+				if (L.health < L.maxHealth * 0.75) {
+					$1 = ` - ${L} looks hurt`;
 				} else {
 					$1 = "";
 				}
-				if (truthy(live(holding))) {
-					$2 = fmt(" ＀", [live(holding)]);
+				if (holding) {
+					$2 = ` ${holding}`;
 				} else {
 					$2 = ".";
 				}
-				mob_detail = rt.modify(live(mob_detail), fmt("You can also see ＀ on the photo＀.＀.", [$0, $1, $2]), add);
+				mob_detail += `You can also see ${$0} on the photo${$1}.${$2}.`;
 			}
 		}
 	}
-	rt.endFor(f, 0);
-	return live(mob_detail);
+	return mob_detail;
 });
 
-// /obj/item/device/camera/proc/captureimage  (code/modules/paperwork/photography.dm:273)  may sleep
+// photography.dm:273
 rt.def("/obj/item/device/camera/proc/captureimage", function* captureimage(f: Frame, target: Value, user: Value, flag: Value) {
-	let mobs: Value = null, isAi: Value = null, seen: Value = null, turfs: Value = null, _T: Value = null, temp: Value = null;
-	let $e: any;
-	f.vars = () => [target, user, flag, mobs, isAi, seen, turfs, _T, temp, $e];
-	mobs = "";
-	isAi = (rt.istype(live(user), T("/mob/living/silicon/ai")) ? 1 : 0);
-	seen = null;
-	if (!truthy(live(isAi))) {
-		if (truthy(rt.fv(f, "client", live(user)))) {
-			seen = (yield* g.call(f, P("/proc/get_hear"), null, [rt.fv(f, "view", rt.world()), rt.gv(f, "eye", rt.fv(f, "client", live(user)))]));
+	let seen: Value = null, _T: Value = null, temp: Value = null;
+	let mobs: Value = "";
+	let isAi: Value = (rt.istype(user, T("/mob/living/silicon/ai")) ? 1 : 0);
+	if (!isAi) {
+		if (user.client) {
+			seen = get_hear(rt.world().view, user.client.eye);
 		} else {
-			seen = (yield* g.call(f, P("/proc/get_hear"), null, [rt.fv(f, "view", rt.world()), live(user)]));
+			seen = get_hear(rt.world().view, user);
 		}
 	} else {
-		seen = (yield* g.call(f, P("/proc/get_hear"), null, [rt.fv(f, "view", rt.world()), live(target)]));
+		seen = get_hear(rt.world().view, target);
 	}
-	turfs = rt.list();
-	_T = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/range"), null, [1, live(target)])), T("/turf"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_T = $e;
-		if (truthy((rt.isIn(f, live(_T), live(seen)) ? 1 : 0))) {
-			if ((truthy(live(isAi)) && !truthy((yield* g.callName(f, rt.gl("cameranet"), "checkTurfVis", [live(_T)]))))) {
+	let turfs: Value = list();
+	for (_T of each(range(1, target), T("/turf"))) {
+		if (rt.isIn(f, _T, seen)) {
+			if (isAi && !GLOB.cameranet.checkTurfVis(_T)) {
 				continue;
 			}
-			turfs = rt.modify(live(turfs), live(_T), add);
-			mobs = rt.modify(live(mobs), (yield* g.srcCall(f, "camera_get_mobs", live(_T))), add);
+			turfs += _T;
+			mobs += this.camera_get_mobs(_T);
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.callName(f, (temp = (yield* g.call(f, P("/proc/icon"), null, [rt.rsc("icons/effects/96x96.dmi"), ""]))), "Blend", ["#000", 3]);
-	yield* g.callName(f, live(temp), "Blend", [(yield* g.srcCall(f, "camera_get_icon", live(turfs), live(target))), 3]);
-	if (!truthy((rt.istype(live(user), T("/mob/living/silicon")) ? 1 : 0))) {
-		yield* g.srcCall(f, "printpicture", live(user), live(temp), live(mobs), live(flag));
+	(temp = icon(rt.rsc("icons/effects/96x96.dmi"), "")).Blend("#000", 3);
+	temp.Blend(this.camera_get_icon(turfs, target), 3);
+	if (!rt.istype(user, T("/mob/living/silicon"))) {
+		yield* this.printpicture(user, temp, mobs, flag);
 	} else {
-		yield* g.srcCall(f, "aipicture", live(user), live(temp), live(mobs), live(isAi), rt.sv(f, "blueprints"));
+		this.aipicture(user, temp, mobs, isAi, this.blueprints);
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/device/camera/proc/printpicture  (code/modules/paperwork/photography.dm:306)  may sleep
+// photography.dm:306
 rt.def("/obj/item/device/camera/proc/printpicture", function* printpicture(f: Frame, user: Value, temp: Value, mobs: Value, flag: Value) {
-	let _P: Value = null, small_img: Value = null, ic: Value = null;
-	f.vars = () => [user, temp, mobs, flag, _P, small_img, ic];
-	_P = (yield* g.new_(f, T("/obj/item/weapon/photo"), [rt.getStep(f, live(f.src), 0)]));
-	if (rt.le((yield* g.call(f, P("/proc/get_dist"), null, [live(f.src), live(user)])), 1)) {
-		yield* g.callName(f, live(user), "put_in_hands", [live(_P)]);
+	let _P: Value = (yield* new_(T("/obj/item/weapon/photo"), rt.getStep(f, this, 0)));
+	if (get_dist(this, user) <= 1) {
+		yield* user.put_in_hands(_P);
 	}
-	small_img = (yield* g.call(f, P("/proc/icon"), null, [live(temp)]));
-	ic = (yield* g.call(f, P("/proc/icon"), null, [rt.rsc("icons/obj/items.dmi"), "photo"]));
-	yield* g.callName(f, live(small_img), "Scale", [8, 8]);
-	yield* g.callName(f, live(ic), "Blend", [live(small_img), 3, 13, 13]);
-	rt.setFv(f, "icon", live(_P), live(ic));
-	rt.setFv(f, "img", live(_P), live(temp));
-	rt.setFv(f, "desc", live(_P), live(mobs));
-	rt.setFv(f, "pixel_x", live(_P), (yield* g.call(f, P("/proc/rand"), null, [-10, 10])));
-	rt.setFv(f, "pixel_y", live(_P), (yield* g.call(f, P("/proc/rand"), null, [-10, 10])));
-	if (!truthy(rt.sv(f, "blueprints"))) return f.dot;
-	rt.setFv(f, "blueprints", live(_P), 1);
-	rt.setSv(f, "blueprints", 0);
+	let small_img: Value = icon(temp);
+	let ic: Value = icon(rt.rsc("icons/obj/items.dmi"), "photo");
+	small_img.Scale(8, 8);
+	ic.Blend(small_img, 3, 13, 13);
+	_P.icon = ic;
+	_P.img = temp;
+	_P.desc = mobs;
+	_P.pixel_x = rand(-10, 10);
+	_P.pixel_y = rand(-10, 10);
+	if (!this.blueprints) return f.dot;
+	_P.blueprints = 1;
+	this.blueprints = 0;
 	return f.dot;
 }, true);
 
-// /obj/item/device/camera/proc/aipicture  (code/modules/paperwork/photography.dm:326)
+// photography.dm:326
 rt.def("/obj/item/device/camera/proc/aipicture", function aipicture(f: Frame, user: Value, temp: Value, mobs: Value, isAi: Value) {
-	let small_img: Value = null, ic: Value = null, icon: Value = null, img: Value = null, desc: Value = null, pixel_x: Value = null, pixel_y: Value = null, injectblueprints: Value = null;
-	f.vars = () => [small_img, ic, icon, img, desc, pixel_x, pixel_y, injectblueprints];
-	small_img = rt.call(f, P("/proc/icon"), null, [live(temp)]);
-	ic = rt.call(f, P("/proc/icon"), null, [rt.rsc("icons/obj/items.dmi"), "photo"]);
-	rt.callName(f, live(small_img), "Scale", [8, 8]);
-	rt.callName(f, live(ic), "Blend", [live(small_img), 3, 13, 13]);
-	icon = live(ic);
-	img = live(temp);
-	desc = live(mobs);
-	pixel_x = rt.call(f, P("/proc/rand"), null, [-10, 10]);
-	pixel_y = rt.call(f, P("/proc/rand"), null, [-10, 10]);
-	injectblueprints = 1;
-	if (truthy(rt.sv(f, "blueprints"))) {
+	let small_img: Value = rt.call(f, P("/proc/icon"), null, [temp]);
+	let ic: Value = rt.call(f, P("/proc/icon"), null, [rt.rsc("icons/obj/items.dmi"), "photo"]);
+	small_img.Scale(8, 8);
+	ic.Blend(small_img, 3, 13, 13);
+	let icon: Value = ic;
+	let img: Value = temp;
+	let desc: Value = mobs;
+	let pixel_x: Value = rand(-10, 10);
+	let pixel_y: Value = rand(-10, 10);
+	let injectblueprints: Value = 1;
+	if (this.blueprints) {
 		injectblueprints = 1;
-		rt.setSv(f, "blueprints", 0);
+		this.blueprints = 0;
 	}
-	if (truthy(live(isAi))) {
-		rt.callSrc(f, "injectaialbum", [live(icon), live(img), live(desc), live(pixel_x), live(pixel_y), live(injectblueprints)]);
+	if (isAi) {
+		this.injectaialbum(icon, img, desc, pixel_x, pixel_y, injectblueprints);
 	} else {
-		rt.callSrc(f, "injectmasteralbum", [live(icon), live(img), live(desc), live(pixel_x), live(pixel_y), live(injectblueprints)]);
+		this.injectmasteralbum(icon, img, desc, pixel_x, pixel_y, injectblueprints);
 	}
 	return f.dot;
 });
@@ -445,65 +380,51 @@ rt.type(4176, "/datum/picture", "/datum", {
 	fields: null,
 });
 
-// /datum/picture/proc/<init>  (code/modules/paperwork/photography.dm:350)
+// photography.dm:350
 rt.def("/datum/picture/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "fields", rt.list());
+	parent_proc();
+	this.fields = list();
 	return f.dot;
 });
 
-// /obj/item/device/camera/proc/injectaialbum  (code/modules/paperwork/photography.dm:355)
+// photography.dm:355
 rt.def("/obj/item/device/camera/proc/injectaialbum", function injectaialbum(f: Frame, icon: Value, img: Value, desc: Value, pixel_x: Value, pixel_y: Value, blueprintsinject: Value) {
-	let numberer: Value = null, picture: Value = null, _P: Value = null;
-	let $e: any;
-	f.vars = () => [numberer, picture, _P, $e];
-	numberer = 1;
-	picture = null;
-	rt.forList(f, 0, rt.fv(f, "aipictures", live(f.src)), T("/datum"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		picture = $e;
-		numberer = rt.inc(live(numberer), 1);
+	let picture: Value = null, _P: Value = null;
+	let numberer: Value = 1;
+	for (picture of each(this.aipictures, T("/datum"))) {
+		numberer++;
 	}
-	rt.endFor(f, 0);
-	rt.setAt(rt.gv(f, "fields", (_P = rt.new_(f, T("/datum/picture"), []))), "name", fmt("Image ＀ (taken by ＀)", [live(numberer), rt.gv(f, "name", rt.fv(f, "loc", live(f.src)))]));
-	rt.setAt(rt.fv(f, "fields", live(_P)), "icon", live(icon));
-	rt.setAt(rt.fv(f, "fields", live(_P)), "img", live(img));
-	rt.setAt(rt.fv(f, "fields", live(_P)), "desc", live(desc));
-	rt.setAt(rt.fv(f, "fields", live(_P)), "pixel_x", live(pixel_x));
-	rt.setAt(rt.fv(f, "fields", live(_P)), "pixel_y", live(pixel_y));
-	rt.setAt(rt.fv(f, "fields", live(_P)), "blueprints", live(blueprintsinject));
-	rt.modSrcVar(f, "aipictures", live(_P), add);
-	rt.call(f, P("/proc/to_chat"), null, [live(f.usr), "<span class='unconscious'>Image recorded</span>"]);
+	rt.setAt((_P = new_(T("/datum/picture"))).fields, "name", `Image ${numberer} (taken by ${this.loc.name})`);
+	rt.setAt(_P.fields, "icon", icon);
+	rt.setAt(_P.fields, "img", img);
+	rt.setAt(_P.fields, "desc", desc);
+	rt.setAt(_P.fields, "pixel_x", pixel_x);
+	rt.setAt(_P.fields, "pixel_y", pixel_y);
+	rt.setAt(_P.fields, "blueprints", blueprintsinject);
+	this.aipictures += _P;
+	to_chat(f.usr, "<span class='unconscious'>Image recorded</span>");
 	return f.dot;
 });
 
-// /obj/item/device/camera/proc/injectmasteralbum  (code/modules/paperwork/photography.dm:372)
+// photography.dm:372
 rt.def("/obj/item/device/camera/proc/injectmasteralbum", function injectmasteralbum(f: Frame, icon: Value, img: Value, desc: Value, pixel_x: Value, pixel_y: Value, blueprintsinject: Value) {
-	let numberer: Value = null, C: Value = null, picture: Value = null, _P: Value = null;
-	let $e: any;
-	f.vars = () => [numberer, C, picture, _P, $e];
-	numberer = 1;
-	if (truthy(rt.gv(f, "connected_ai", (C = rt.fv(f, "loc", live(f.src)))))) {
-		picture = null;
-		rt.forList(f, 0, rt.gv(f, "aipictures", rt.gv(f, "aicamera", rt.fv(f, "connected_ai", live(C)))), T("/datum"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			picture = $e;
-			numberer = rt.inc(live(numberer), 1);
+	let C: Value = null, picture: Value = null, _P: Value = null;
+	let numberer: Value = 1;
+	if ((C = this.loc).connected_ai) {
+		for (picture of each(C.connected_ai.aicamera.aipictures, T("/datum"))) {
+			numberer++;
 		}
-		rt.endFor(f, 0);
-		rt.setAt(rt.gv(f, "fields", (_P = rt.new_(f, T("/datum/picture"), []))), "name", fmt("Image ＀ (taken by ＀)", [live(numberer), rt.gv(f, "name", rt.fv(f, "loc", live(f.src)))]));
-		rt.setAt(rt.fv(f, "fields", live(_P)), "icon", live(icon));
-		rt.setAt(rt.fv(f, "fields", live(_P)), "img", live(img));
-		rt.setAt(rt.fv(f, "fields", live(_P)), "desc", live(desc));
-		rt.setAt(rt.fv(f, "fields", live(_P)), "pixel_x", live(pixel_x));
-		rt.setAt(rt.fv(f, "fields", live(_P)), "pixel_y", live(pixel_y));
-		rt.setAt(rt.fv(f, "fields", live(_P)), "blueprints", live(blueprintsinject));
-		rt.modField(f, rt.gv(f, "aicamera", rt.fv(f, "connected_ai", live(C))), "aipictures", live(_P), add);
-		rt.call(f, P("/proc/to_chat"), null, [live(f.usr), "<span class='unconscious'>Image recorded and saved to remote database</span>"]);
+		rt.setAt((_P = new_(T("/datum/picture"))).fields, "name", `Image ${numberer} (taken by ${this.loc.name})`);
+		rt.setAt(_P.fields, "icon", icon);
+		rt.setAt(_P.fields, "img", img);
+		rt.setAt(_P.fields, "desc", desc);
+		rt.setAt(_P.fields, "pixel_x", pixel_x);
+		rt.setAt(_P.fields, "pixel_y", pixel_y);
+		rt.setAt(_P.fields, "blueprints", blueprintsinject);
+		C.connected_ai.aicamera.aipictures += _P;
+		to_chat(f.usr, "<span class='unconscious'>Image recorded and saved to remote database</span>");
 	} else {
-		rt.callSrc(f, "injectaialbum", [live(icon), live(img), live(desc), live(pixel_x), live(pixel_y), live(blueprintsinject)]);
+		this.injectaialbum(icon, img, desc, pixel_x, pixel_y, blueprintsinject);
 	}
 	return f.dot;
 });
@@ -513,166 +434,137 @@ rt.type(9425, "/obj/item/device/camera/siliconcam", "/obj/item/device/camera", {
 	name: "silicon photo camera",
 });
 
-// /obj/item/device/camera/siliconcam/proc/selectpicture  (code/modules/paperwork/photography.dm:390)  may sleep
+// photography.dm:390
 rt.def("/obj/item/device/camera/siliconcam/proc/selectpicture", function* selectpicture(f: Frame, targetloc: Value) {
-	let nametemp: Value = null, find: Value = null, t: Value = null, q: Value = null;
-	let $e: any;
-	f.vars = () => [targetloc, nametemp, find, t, q, $e];
-	nametemp = rt.list();
-	find = null;
-	if (isEqual(rt.getLen(f, rt.fv(f, "aipictures", live(targetloc))), 0)) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), "<span class='boldannounce'>No images saved</span>"]);
-		return live(f.dot);
+	let t: Value = null, q: Value = null;
+	let nametemp: Value = list();
+	if (rt.len(f, targetloc.aipictures) == 0) {
+		to_chat(f.usr, "<span class='boldannounce'>No images saved</span>");
+		return f.dot;
 	}
-	t = null;
-	rt.forList(f, 0, rt.fv(f, "aipictures", live(targetloc)), T("/datum/picture"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		t = $e;
-		nametemp = rt.modify(live(nametemp), rt.index(rt.fv(f, "fields", live(t)), "name"), add);
+	for (t of each(targetloc.aipictures, T("/datum/picture"))) {
+		nametemp += rt.index(t.fields, "name");
 	}
-	rt.endFor(f, 0);
-	find = (yield* g.op(f, "Prompt", [0], [null, null, null, "Select image (numbered in order taken)", live(nametemp)]));
-	q = null;
-	rt.forList(f, 0, rt.fv(f, "aipictures", live(targetloc)), T("/datum/picture"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		q = $e;
-		if (isEqual(rt.index(rt.fv(f, "fields", live(q)), "name"), live(find))) {
-			return live(q);
+	let find: Value = (yield* g.op(f, "Prompt", [0], [null, null, null, "Select image (numbered in order taken)", nametemp]));
+	for (q of each(targetloc.aipictures, T("/datum/picture"))) {
+		if (rt.index(q.fields, "name") == find) {
+			return q;
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /obj/item/device/camera/siliconcam/proc/viewpichelper  (code/modules/paperwork/photography.dm:403)  may sleep
+// photography.dm:403
 rt.def("/obj/item/device/camera/siliconcam/proc/viewpichelper", function* viewpichelper(f: Frame, targetloc: Value) {
-	let _P: Value = null, selection: Value = null;
-	f.vars = () => [targetloc, _P, selection];
-	_P = (yield* g.new_(f, T("/obj/item/weapon/photo"), []));
-	if (truthy((selection = (yield* g.srcCall(f, "selectpicture", live(targetloc)))))) {
-		yield* g.callName(f, live(_P), "photocreate", [rt.index(rt.fv(f, "fields", live(selection)), "icon"), rt.index(rt.fv(f, "fields", live(selection)), "img"), rt.index(rt.fv(f, "fields", live(selection)), "desc")]);
-		rt.setFv(f, "pixel_x", live(_P), rt.index(rt.fv(f, "fields", live(selection)), "pixel_x"));
-		rt.setFv(f, "pixel_y", live(_P), rt.index(rt.fv(f, "fields", live(selection)), "pixel_y"));
-		yield* g.callName(f, live(_P), "show", [live(f.usr)]);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), rt.fv(f, "desc", live(_P))]);
+	let selection: Value = null;
+	let _P: Value = (yield* new_(T("/obj/item/weapon/photo")));
+	if (selection = (yield* this.selectpicture(targetloc))) {
+		_P.photocreate(rt.index(selection.fields, "icon"), rt.index(selection.fields, "img"), rt.index(selection.fields, "desc"));
+		_P.pixel_x = rt.index(selection.fields, "pixel_x");
+		_P.pixel_y = rt.index(selection.fields, "pixel_y");
+		yield* _P.show(f.usr);
+		to_chat(f.usr, _P.desc);
 	}
-	yield* g.call(f, P("/proc/qdel"), null, [live(_P)]);
+	yield* qdel(_P);
 	return f.dot;
 }, true);
 
-// /obj/item/device/camera/siliconcam/proc/viewpictures  (code/modules/paperwork/photography.dm:415)  may sleep
+// photography.dm:415
 rt.def("/obj/item/device/camera/siliconcam/proc/viewpictures", function* viewpictures(f: Frame, user: Value) {
 	let C: Value = null, Cinfo: Value = null, Ainfo: Value = null;
-	f.vars = () => [user, C, Cinfo, Ainfo];
-	if (truthy((rt.istype(live(user), T("/mob/living/silicon/robot")) ? 1 : 0))) {
-		C = rt.fv(f, "loc", live(f.src));
-		Cinfo = null;
-		if (truthy(rt.fv(f, "connected_ai", live(C)))) {
-			yield* g.srcCall(f, "viewpichelper", (Cinfo = rt.gv(f, "aicamera", rt.fv(f, "connected_ai", live(C)))));
+	if (rt.istype(user, T("/mob/living/silicon/robot"))) {
+		C = this.loc;
+		if (C.connected_ai) {
+			yield* this.viewpichelper((Cinfo = C.connected_ai.aicamera));
 		} else {
-			yield* g.srcCall(f, "viewpichelper", (Cinfo = rt.fv(f, "aicamera", live(C))));
+			yield* this.viewpichelper((Cinfo = C.aicamera));
 		}
 	} else {
-		yield* g.srcCall(f, "viewpichelper", (Ainfo = live(f.src)));
+		yield* this.viewpichelper((Ainfo = this));
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/device/camera/proc/afterattack  (code/modules/paperwork/photography.dm:429)  may sleep
+// photography.dm:429
 rt.def("/obj/item/device/camera/proc/afterattack", function* afterattack(f: Frame, target: Value, user: Value, flag: Value) {
-	f.vars = () => [target, user, flag];
-	if (((!truthy(rt.sv(f, "on")) || !truthy(rt.sv(f, "pictures_left"))) || !truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.fv(f, "loc", live(target))]))))) {
-		return live(f.dot);
+	if (!this.on || !this.pictures_left || !isturf(target.loc)) {
+		return f.dot;
 	}
-	yield* g.srcCall(f, "captureimage", live(target), live(user), live(flag));
-	yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.op(f, "PickUnweighted", [2], [rt.rsc("sound/items/polaroid1.ogg"), rt.rsc("sound/items/polaroid2.ogg")]), 75, 1, -3]);
-	rt.incSrcVar(f, "pictures_left", -1, true);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>＀ photos left.</span>", [rt.sv(f, "pictures_left")])]);
-	rt.setSv(f, "icon_state", "camera_off");
-	rt.setSv(f, "on", 0);
+	yield* this.captureimage(target, user, flag);
+	playsound(this.loc, pick(rt.rsc("sound/items/polaroid1.ogg"), rt.rsc("sound/items/polaroid2.ogg")), 75, 1, -3);
+	this.pictures_left--;
+	to_chat(user, `<span class='notice'>${this.pictures_left} photos left.</span>`);
+	this.icon_state = "camera_off";
+	this.on = 0;
 	rt.spawnTail(f, 64, "/obj/item/device/camera/proc/afterattack: spawn at modules/paperwork/photography.dm:440", target, user, flag);
 	return f.dot;
 }, true);
 
 // a spawn(64) body of /obj/item/device/camera/proc/afterattack, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/obj/item/device/camera/proc/afterattack: spawn at modules/paperwork/photography.dm:440", function* (f: Frame, target: Value, user: Value, flag: Value) {
-	f.vars = () => [target, user, flag];
-	rt.setSv(f, "icon_state", "camera");
-	rt.setSv(f, "on", 1);
+	this.icon_state = "camera";
+	this.on = 1;
 	return null;
 });
 
-// /obj/item/device/camera/siliconcam/proc/toggle_camera_mode  (code/modules/paperwork/photography.dm:446)
+// photography.dm:446
 rt.def("/obj/item/device/camera/siliconcam/proc/toggle_camera_mode", function toggle_camera_mode(f: Frame) {
-	if (truthy(rt.sv(f, "in_camera_mode"))) {
-		rt.callSrc(f, "camera_mode_off", []);
+	if (this.in_camera_mode) {
+		this.camera_mode_off();
 	} else {
-		rt.callSrc(f, "camera_mode_on", []);
+		this.camera_mode_on();
 	}
 	return f.dot;
 });
 
-// /obj/item/device/camera/siliconcam/proc/camera_mode_off  (code/modules/paperwork/photography.dm:451)
+// photography.dm:451
 rt.def("/obj/item/device/camera/siliconcam/proc/camera_mode_off", function camera_mode_off(f: Frame) {
-	rt.setFv(f, "in_camera_mode", live(f.src), 0);
-	rt.call(f, P("/proc/to_chat"), null, [live(f.usr), "<B>Camera Mode deactivated</B>"]);
+	this.in_camera_mode = 0;
+	to_chat(f.usr, "<B>Camera Mode deactivated</B>");
 	return f.dot;
 });
 
-// /obj/item/device/camera/siliconcam/proc/camera_mode_on  (code/modules/paperwork/photography.dm:455)
+// photography.dm:455
 rt.def("/obj/item/device/camera/siliconcam/proc/camera_mode_on", function camera_mode_on(f: Frame) {
-	rt.setFv(f, "in_camera_mode", live(f.src), 1);
-	rt.call(f, P("/proc/to_chat"), null, [live(f.usr), "<B>Camera Mode activated</B>"]);
+	this.in_camera_mode = 1;
+	to_chat(f.usr, "<B>Camera Mode activated</B>");
 	return f.dot;
 });
 
-// /obj/item/device/camera/siliconcam/robot_camera/proc/borgprint  (code/modules/paperwork/photography.dm:459)  may sleep
+// photography.dm:459
 rt.def("/obj/item/device/camera/siliconcam/robot_camera/proc/borgprint", function* borgprint(f: Frame) {
-	let nametemp: Value = null, find: Value = null, selection: Value = null, C: Value = null, targetcam: Value = null, t: Value = null, q: Value = null, p: Value = null;
-	let $e: any;
-	f.vars = () => [nametemp, find, selection, C, targetcam, t, q, p, $e];
-	nametemp = rt.list();
-	find = null;
-	selection = null;
-	C = rt.fv(f, "loc", live(f.src));
-	targetcam = null;
-	if (rt.lt(rt.fv(f, "toner", live(C)), 20)) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), "Insufficent toner to print image."]);
-		return live(f.dot);
+	let selection: Value = null, targetcam: Value = null, t: Value = null, q: Value = null, p: Value = null;
+	let nametemp: Value = list();
+	let C: Value = this.loc;
+	if (C.toner < 20) {
+		to_chat(f.usr, "Insufficent toner to print image.");
+		return f.dot;
 	}
-	if (truthy(rt.fv(f, "connected_ai", live(C)))) {
-		targetcam = rt.gv(f, "aicamera", rt.fv(f, "connected_ai", live(C)));
+	if (C.connected_ai) {
+		targetcam = C.connected_ai.aicamera;
 	} else {
-		targetcam = rt.fv(f, "aicamera", live(C));
+		targetcam = C.aicamera;
 	}
-	if (isEqual(rt.getLen(f, rt.fv(f, "aipictures", live(targetcam))), 0)) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), "<span class='userdanger'>No images saved</span>"]);
-		return live(f.dot);
+	if (rt.len(f, targetcam.aipictures) == 0) {
+		to_chat(f.usr, "<span class='userdanger'>No images saved</span>");
+		return f.dot;
 	}
-	t = null;
-	rt.forList(f, 0, rt.fv(f, "aipictures", live(targetcam)), T("/datum/picture"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		t = $e;
-		nametemp = rt.modify(live(nametemp), rt.index(rt.fv(f, "fields", live(t)), "name"), add);
+	for (t of each(targetcam.aipictures, T("/datum/picture"))) {
+		nametemp += rt.index(t.fields, "name");
 	}
-	rt.endFor(f, 0);
-	find = (yield* g.op(f, "Prompt", [0], [null, null, null, "Select image (numbered in order taken)", live(nametemp)]));
-	q = null;
-	rt.forList(f, 0, rt.fv(f, "aipictures", live(targetcam)), T("/datum/picture"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		q = $e;
-		if (isEqual(rt.index(rt.fv(f, "fields", live(q)), "name"), live(find))) {
-			selection = live(q);
+	let find: Value = (yield* g.op(f, "Prompt", [0], [null, null, null, "Select image (numbered in order taken)", nametemp]));
+	for (q of each(targetcam.aipictures, T("/datum/picture"))) {
+		if (rt.index(q.fields, "name") == find) {
+			selection = q;
 			break;
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.callName(f, (p = (yield* g.new_(f, T("/obj/item/weapon/photo"), [rt.fv(f, "loc", live(C))]))), "photocreate", [rt.index(rt.fv(f, "fields", live(selection)), "icon"), rt.index(rt.fv(f, "fields", live(selection)), "img"), rt.index(rt.fv(f, "fields", live(selection)), "desc"), rt.index(rt.fv(f, "fields", live(selection)), "blueprints")]);
-	rt.setFv(f, "pixel_x", live(p), (yield* g.call(f, P("/proc/rand"), null, [-10, 10])));
-	rt.setFv(f, "pixel_y", live(p), (yield* g.call(f, P("/proc/rand"), null, [-10, 10])));
-	(rt.modField(f, live(C), "toner", 20, subtract));
-	yield* g.srcCall(f, "visible_message", fmt("＀ spits out a photograph from a narrow slot on its chassis.", [rt.fv(f, "name", live(C))]));
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), "<span class='notice'>You print a photograph.</span>"]);
+	(p = (yield* new_(T("/obj/item/weapon/photo"), C.loc))).photocreate(rt.index(selection.fields, "icon"), rt.index(selection.fields, "img"), rt.index(selection.fields, "desc"), rt.index(selection.fields, "blueprints"));
+	p.pixel_x = rand(-10, 10);
+	p.pixel_y = rand(-10, 10);
+	C.toner -= 20;
+	this.visible_message(`${C.name} spits out a photograph from a narrow slot on its chassis.`);
+	to_chat(f.usr, "<span class='notice'>You print a photograph.</span>");
 	return f.dot;
 }, true);
 
@@ -687,87 +579,81 @@ rt.type(9550, "/obj/item/wallframe/picture", "/obj/item/wallframe", {
 	result_path: rt.typePath("/obj/structure/sign/picture_frame"),
 });
 
-// /obj/item/wallframe/picture/proc/<init>  (code/modules/paperwork/photography.dm:495)
+// photography.dm:495
 rt.def("/obj/item/wallframe/picture/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.list());
+	parent_proc();
+	this.materials = list();
 	return f.dot;
 });
 
-// /obj/item/wallframe/picture/proc/attackby  (code/modules/paperwork/photography.dm:502)  may sleep
-rt.def("/obj/item/wallframe/picture/proc/attackby", function* attackby(f: Frame) {
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/photo")) ? 1 : 0))) {
-		if (!truthy(rt.sv(f, "displayed"))) {
-			if (!truthy((yield* g.callName(f, live(f.args[1]), "transferItemToLoc", [live(f.args[0]), live(f.src)])))) {
-				return live(f.dot);
+// photography.dm:502
+rt.def("/obj/item/wallframe/picture/proc/attackby", function* attackby(f: Frame, I: Value, user: Value) {
+	if (rt.istype(I, T("/obj/item/weapon/photo"))) {
+		if (!this.displayed) {
+			if (!(yield* user.transferItemToLoc(I, this))) {
+				return f.dot;
 			}
-			rt.setSv(f, "displayed", live(f.args[0]));
-			yield* g.srcCall(f, "update_icon");
+			this.displayed = I;
+			yield* this.update_icon();
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class=notice>＄！ already contains a photo.</span>", [live(f.src)])]);
+			to_chat(user, fmt("<span class=notice>＄！ already contains a photo.</span>", [this]));
 		}
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	return f.dot;
-}, true, { args: ["I", "user"] });
-
-// /obj/item/wallframe/picture/proc/attack_hand  (code/modules/paperwork/photography.dm:513)  may sleep
-rt.def("/obj/item/wallframe/picture/proc/attack_hand", function* attack_hand(f: Frame) {
-	let I: Value = null;
-	f.vars = () => [I];
-	if (!isEqual((yield* g.callName(f, live(f.args[0]), "get_inactive_held_item", [])), live(f.src))) {
-		yield* g.callSuper(f, [], rt.Args.Same);
-		return live(f.dot);
-	}
-	if (!truthy(rt.len(f, rt.sv(f, "contents")))) return f.dot;
-	I = rt.op(f, "PickUnweighted", [1], [rt.sv(f, "contents")]);
-	yield* g.callName(f, live(f.args[0]), "put_in_hands", [live(I)]);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='notice'>You carefully remove the photo from ％！.</span>", [live(f.src)])]);
-	rt.setSv(f, "displayed", null);
-	yield* g.srcCall(f, "update_icon");
-	return f.dot;
-}, true, { args: ["user"] });
-
-// /obj/item/wallframe/picture/proc/attack_self  (code/modules/paperwork/photography.dm:524)  may sleep
-rt.def("/obj/item/wallframe/picture/proc/attack_self", function* attack_self(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.callName(f, live(user), "examinate", [live(f.src)]);
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /obj/item/wallframe/picture/proc/examine  (code/modules/paperwork/photography.dm:527)
-rt.def("/obj/item/wallframe/picture/proc/examine", function examine(f: Frame) {
-	if ((truthy(rt.callName(f, live(f.args[0]), "is_holding", [live(f.src)])) && truthy(rt.sv(f, "displayed")))) {
-		rt.callName(f, rt.sv(f, "displayed"), "show", [live(f.args[0])]);
+// photography.dm:513
+rt.def("/obj/item/wallframe/picture/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
+	if (user.get_inactive_held_item() != this) {
+		yield* parent_proc();
+		return f.dot;
+	}
+	if (!rt.len(f, this.contents)) return f.dot;
+	let I: Value = pick(this.contents);
+	yield* user.put_in_hands(I);
+	to_chat(user, fmt("<span class='notice'>You carefully remove the photo from ％！.</span>", [this]));
+	this.displayed = null;
+	yield* this.update_icon();
+	return f.dot;
+}, true);
+
+// photography.dm:524
+rt.def("/obj/item/wallframe/picture/proc/attack_self", function* attack_self(f: Frame, user: Value) {
+	yield* user.examinate(this);
+	return f.dot;
+}, true);
+
+// photography.dm:527
+rt.def("/obj/item/wallframe/picture/proc/examine", function examine(f: Frame, user: Value) {
+	if (user.is_holding(this) && this.displayed) {
+		this.displayed.show(user);
 	} else {
-		rt.callSuper(f, [], rt.Args.Same);
+		parent_proc();
 	}
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/item/wallframe/picture/proc/update_icon  (code/modules/paperwork/photography.dm:533)
+// photography.dm:533
 rt.def("/obj/item/wallframe/picture/proc/update_icon", function update_icon(f: Frame) {
-	rt.callSrc(f, "cut_overlays", []);
-	if (!truthy(rt.sv(f, "displayed"))) return f.dot;
-	rt.callSrc(f, "add_overlay", [rt.call(f, P("/proc/getFlatIcon"), null, [rt.sv(f, "displayed")])]);
+	this.cut_overlays();
+	if (!this.displayed) return f.dot;
+	this.add_overlay(getFlatIcon(this.displayed));
 	return f.dot;
 });
 
-// /obj/item/wallframe/picture/proc/after_attach  (code/modules/paperwork/photography.dm:538)  may sleep
-rt.def("/obj/item/wallframe/picture/proc/after_attach", function* after_attach(f: Frame) {
+// photography.dm:538
+rt.def("/obj/item/wallframe/picture/proc/after_attach", function* after_attach(f: Frame, O: Value) {
 	let PF: Value = null, I: Value = null;
-	f.vars = () => [PF, I];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.callName(f, (PF = live(f.args[0])), "copy_overlays", [live(f.src)]);
-	if (truthy(rt.sv(f, "displayed"))) {
-		rt.setFv(f, "framed", live(PF), rt.sv(f, "displayed"));
+	yield* parent_proc();
+	(PF = O).copy_overlays(this);
+	if (this.displayed) {
+		PF.framed = this.displayed;
 	}
-	if (!truthy(rt.len(f, rt.sv(f, "contents")))) return f.dot;
-	yield* g.callName(f, (I = rt.op(f, "PickUnweighted", [1], [rt.sv(f, "contents")])), "forceMove", [live(PF)]);
+	if (!rt.len(f, this.contents)) return f.dot;
+	yield* (I = pick(this.contents)).forceMove(PF);
 	return f.dot;
-}, true, { args: ["O"] });
+}, true);
 
 rt.type(12699, "/obj/structure/sign/picture_frame", "/obj/structure/sign", {
 	framed: null,
@@ -777,27 +663,24 @@ rt.type(12699, "/obj/structure/sign/picture_frame", "/obj/structure/sign", {
 	icon_state: "frame-empty",
 });
 
-// /obj/structure/sign/picture_frame/proc/New  (code/modules/paperwork/photography.dm:556)  may sleep
-rt.def("/obj/structure/sign/picture_frame/proc/New", function* New(f: Frame) {
+// photography.dm:556
+rt.def("/obj/structure/sign/picture_frame/proc/New", function* New(f: Frame, loc: Value, dir: Value, building: Value) {
 	let $0: any;
-	f.vars = () => [$0];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy(live(f.args[1]))) {
-		yield* g.srcCall(f, "setDir", live(f.args[1]));
+	yield* parent_proc();
+	if (dir) {
+		yield* this.setDir(dir);
 	}
-	if (!truthy(live(f.args[2]))) return f.dot;
-	if (truthy(rt.bitAnd(live(f.args[1]), 3))) {
+	if (!building) return f.dot;
+	if (rt.bitAnd(dir, 3)) {
 		$0 = 0;
+	} else if (dir == 4) {
+		$0 = -30;
 	} else {
-		if (isEqual(live(f.args[1]), 4)) {
-			$0 = -30;
-		} else {
-			$0 = 30;
-		}
+		$0 = 30;
 	}
-	rt.setSv(f, "pixel_x", $0);
-	if (truthy(rt.bitAnd(live(f.args[1]), 3))) {
-		if (isEqual(live(f.args[1]), 1)) {
+	this.pixel_x = $0;
+	if (rt.bitAnd(dir, 3)) {
+		if (dir == 1) {
 			$0 = -30;
 		} else {
 			$0 = 30;
@@ -805,84 +688,78 @@ rt.def("/obj/structure/sign/picture_frame/proc/New", function* New(f: Frame) {
 	} else {
 		$0 = 0;
 	}
-	rt.setSv(f, "pixel_y", $0);
+	this.pixel_y = $0;
 	return f.dot;
-}, true, { args: ["loc", "dir", "building"] });
+}, true);
 
-// /obj/structure/sign/picture_frame/proc/examine  (code/modules/paperwork/photography.dm:564)
-rt.def("/obj/structure/sign/picture_frame/proc/examine", function examine(f: Frame) {
-	if ((rt.le(rt.call(f, P("/proc/get_dist"), null, [live(f.src), live(f.args[0])]), 1) && truthy(rt.sv(f, "framed")))) {
-		rt.callName(f, rt.sv(f, "framed"), "show", [live(f.args[0])]);
+// photography.dm:564
+rt.def("/obj/structure/sign/picture_frame/proc/examine", function examine(f: Frame, user: Value) {
+	if (get_dist(this, user) <= 1 && this.framed) {
+		this.framed.show(user);
 	} else {
-		rt.callSuper(f, [], rt.Args.Same);
+		parent_proc();
 	}
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/structure/sign/picture_frame/proc/attackby  (code/modules/paperwork/photography.dm:570)  may sleep
-rt.def("/obj/structure/sign/picture_frame/proc/attackby", function* attackby(f: Frame) {
+// photography.dm:570
+rt.def("/obj/structure/sign/picture_frame/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
 	let _P: Value = null;
-	f.vars = () => [_P];
-	if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/screwdriver")) ? 1 : 0)) || truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/wrench")) ? 1 : 0)))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You start unsecuring ＀...</span>", [rt.sv(f, "name")])]);
-		yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.fv(f, "usesound", live(f.args[0])), 50, 1]);
-		if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, multiply(30, rt.fv(f, "toolspeed", live(f.args[0]))), "target", live(f.src)], rt.Args.Named)))) {
-			yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/items/deconstruct.ogg"), 50, 1]);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You unsecure ＀.</span>", [rt.sv(f, "name")])]);
+	if (rt.istype(I, T("/obj/item/weapon/screwdriver")) || rt.istype(I, T("/obj/item/weapon/wrench"))) {
+		to_chat(user, `<span class='notice'>You start unsecuring ${this.name}...</span>`);
+		playsound(this.loc, I.usesound, 50, 1);
+		if (yield* do_after(user, 30 * I.toolspeed, { target: this })) {
+			playsound(this.loc, rt.rsc("sound/items/deconstruct.ogg"), 50, 1);
+			to_chat(user, `<span class='notice'>You unsecure ${this.name}.</span>`);
 		}
-		yield* g.srcCall(f, "deconstruct");
-		return live(f.dot);
-	} else {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/photo")) ? 1 : 0))) {
-			if (!truthy(rt.sv(f, "framed"))) {
-				_P = live(f.args[0]);
-				if (!truthy((yield* g.callName(f, live(f.args[1]), "transferItemToLoc", [live(_P), live(f.src)])))) {
-					return live(f.dot);
-				}
-				rt.setSv(f, "framed", live(_P));
-				yield* g.srcCall(f, "update_icon");
-			} else {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class=notice>＄！ already contains a photo.</span>", [live(f.src)])]);
+		yield* this.deconstruct();
+		return f.dot;
+	} else if (rt.istype(I, T("/obj/item/weapon/photo"))) {
+		if (!this.framed) {
+			_P = I;
+			if (!(yield* user.transferItemToLoc(_P, this))) {
+				return f.dot;
 			}
+			this.framed = _P;
+			yield* this.update_icon();
+		} else {
+			to_chat(user, fmt("<span class=notice>＄！ already contains a photo.</span>", [this]));
 		}
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["I", "user", "params"] });
+}, true);
 
-// /obj/structure/sign/picture_frame/proc/attack_hand  (code/modules/paperwork/photography.dm:593)
+// photography.dm:593
 rt.def("/obj/structure/sign/picture_frame/proc/attack_hand", function attack_hand(f: Frame, user: Value) {
-	if (!truthy(rt.sv(f, "framed"))) return f.dot;
-	rt.callName(f, rt.sv(f, "framed"), "show", [live(user)]);
+	if (!this.framed) return f.dot;
+	this.framed.show(user);
 	return f.dot;
 });
 
-// /obj/structure/sign/picture_frame/proc/update_icon  (code/modules/paperwork/photography.dm:596)
+// photography.dm:596
 rt.def("/obj/structure/sign/picture_frame/proc/update_icon", function update_icon(f: Frame) {
-	rt.callSrc(f, "cut_overlays", []);
-	if (!truthy(rt.sv(f, "framed"))) return f.dot;
-	rt.callSrc(f, "add_overlay", [rt.call(f, P("/proc/getFlatIcon"), null, [rt.sv(f, "framed")])]);
+	this.cut_overlays();
+	if (!this.framed) return f.dot;
+	this.add_overlay(getFlatIcon(this.framed));
 	return f.dot;
 });
 
-// /obj/structure/sign/picture_frame/proc/deconstruct  (code/modules/paperwork/photography.dm:601)  may sleep
+// photography.dm:601
 rt.def("/obj/structure/sign/picture_frame/proc/deconstruct", function* deconstruct(f: Frame, disassembled: Value) {
 	let F: Value = null, I: Value = null;
-	f.vars = () => [disassembled, F, I];
-	if (live(disassembled) === null) {
-		disassembled = 1;
-	}
-	if (!truthy(rt.bitAnd(rt.sv(f, "flags"), 128))) {
-		F = (yield* g.new_(f, T("/obj/item/wallframe/picture"), [rt.sv(f, "loc")]));
-		if (truthy(rt.sv(f, "framed"))) {
-			rt.setFv(f, "displayed", live(F), rt.sv(f, "framed"));
-			rt.setSv(f, "framed", null);
+	disassembled ??= 1;
+	if (!rt.bitAnd(this.flags, NODECONSTRUCT)) {
+		F = (yield* new_(T("/obj/item/wallframe/picture"), this.loc));
+		if (this.framed) {
+			F.displayed = this.framed;
+			this.framed = null;
 		}
-		if (truthy(rt.len(f, rt.sv(f, "contents")))) {
-			yield* g.callName(f, (I = rt.op(f, "PickUnweighted", [1], [rt.sv(f, "contents")])), "forceMove", [live(F)]);
+		if (rt.len(f, this.contents)) {
+			yield* (I = pick(this.contents)).forceMove(F);
 		}
-		yield* g.callName(f, live(F), "update_icon", []);
+		yield* F.update_icon();
 	}
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* qdel(this);
 	return f.dot;
 }, true);

@@ -1,5 +1,5 @@
 // Types declared in code/modules/modular_computers/hardware that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(7583, "/obj/item/weapon/computer_hardware/processor_unit/small", "/obj/item/weapon/computer_hardware/processor_unit", {
 	power_usage: 25,

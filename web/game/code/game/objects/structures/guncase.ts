@@ -1,7 +1,7 @@
-// From code/game/objects/structures/guncase.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/structures/guncase.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(12777, "/obj/structure/guncase", "/obj/structure", {
@@ -18,159 +18,140 @@ rt.type(12777, "/obj/structure/guncase", "/obj/structure", {
 	opacity: 0,
 });
 
-// /obj/structure/guncase/proc/Initialize  (code/game/objects/structures/guncase.dm:16)  may sleep
-rt.def("/obj/structure/guncase/proc/Initialize", function* Initialize(f: Frame) {
+// guncase.dm:16
+rt.def("/obj/structure/guncase/proc/Initialize", function* Initialize(f: Frame, mapload: Value) {
 	let I: Value = null;
-	let $e: any;
-	f.vars = () => [I, $e];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy(live(f.args[0]))) {
-		I = null;
-		rt.forList(f, 0, rt.fv(f, "contents", rt.sv(f, "loc")), T("/obj/item"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			I = $e;
-			if (truthy(rt.op(f, "IsType", [], [live(I), rt.sv(f, "gun_category")]))) {
-				yield* g.callName(f, live(I), "forceMove", [live(f.src)]);
+	yield* parent_proc();
+	if (mapload) {
+		for (I of each(this.loc.contents, T("/obj/item"))) {
+			if (rt.op(f, "IsType", [], [I, this.gun_category])) {
+				yield* I.forceMove(this);
 			}
-			if (rt.ge(rt.len(f, rt.sv(f, "contents")), rt.sv(f, "capacity"))) {
+			if (rt.len(f, this.contents) >= this.capacity) {
 				break;
 			}
 		}
-		rt.endFor(f, 0);
 	}
-	yield* g.srcCall(f, "update_icon");
+	yield* this.update_icon();
 	return f.dot;
-}, true, { args: ["mapload"] });
+}, true);
 
-// /obj/structure/guncase/proc/update_icon  (code/game/objects/structures/guncase.dm:26)
+// guncase.dm:26
 rt.def("/obj/structure/guncase/proc/update_icon", function update_icon(f: Frame) {
 	let gun_overlay: Value = null, i: Value = null;
 	let $e: any;
-	f.vars = () => [gun_overlay, i, $e];
-	rt.callSrc(f, "cut_overlays", []);
-	if ((truthy(rt.sv(f, "case_type")) && truthy(rt.length(rt.sv(f, "contents"))))) {
-		gun_overlay = rt.call(f, P("/proc/mutable_appearance"), null, [rt.sv(f, "icon"), rt.sv(f, "case_type")]);
-		i = null;
-		rt.forRange(f, 0, 1, rt.len(f, rt.sv(f, "contents")), 1);
+	this.cut_overlays();
+	if (this.case_type && rt.length(this.contents)) {
+		gun_overlay = mutable_appearance(this.icon, this.case_type);
+		rt.forRange(f, 0, 1, rt.len(f, this.contents), 1);
 		while (($e = rt.next(f, 0)) !== undefined) {
 			i = $e;
-			rt.setFv(f, "pixel_x", live(gun_overlay), multiply(3, subtract(live(i), 1)));
-			rt.callSrc(f, "add_overlay", [live(gun_overlay)]);
+			gun_overlay.pixel_x = 3 * (i - 1);
+			this.add_overlay(gun_overlay);
 		}
 		rt.endFor(f, 0);
 	}
-	if (truthy(rt.sv(f, "open"))) {
-		rt.callSrc(f, "add_overlay", [fmt("＀_open", [rt.sv(f, "icon_state")])]);
+	if (this.open) {
+		this.add_overlay(`${this.icon_state}_open`);
 	} else {
-		rt.callSrc(f, "add_overlay", [fmt("＀_door", [rt.sv(f, "icon_state")])]);
+		this.add_overlay(`${this.icon_state}_door`);
 	}
 	return f.dot;
 });
 
-// /obj/structure/guncase/proc/attackby  (code/game/objects/structures/guncase.dm:38)  may sleep
-rt.def("/obj/structure/guncase/proc/attackby", function* attackby(f: Frame) {
-	if ((truthy((rt.istype(live(f.args[1]), T("/mob/living/silicon/robot")) ? 1 : 0)) || truthy((rt.istype(live(f.args[1]), T("/mob/living/carbon/alien")) ? 1 : 0)))) {
-		return live(f.dot);
+// guncase.dm:38
+rt.def("/obj/structure/guncase/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
+	if (rt.istype(user, T("/mob/living/silicon/robot")) || rt.istype(user, T("/mob/living/carbon/alien"))) {
+		return f.dot;
 	}
-	if ((truthy(rt.op(f, "IsType", [], [live(f.args[0]), rt.sv(f, "gun_category")])) && truthy(rt.sv(f, "open")))) {
-		if (rt.lt(rt.length(rt.sv(f, "contents")), rt.sv(f, "capacity"))) {
-			if (!truthy((yield* g.callName(f, live(f.args[1]), "drop_item", [])))) {
-				return live(f.dot);
+	if (rt.op(f, "IsType", [], [I, this.gun_category]) && this.open) {
+		if (rt.length(this.contents) < this.capacity) {
+			if (!(yield* user.drop_item())) {
+				return f.dot;
 			}
-			yield* g.callName(f, live(f.args[0]), "forceMove", [live(f.src)]);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You place ＀ in ＀.</span>", [live(f.args[0]), live(f.src)])]);
-			yield* g.srcCall(f, "update_icon");
+			yield* I.forceMove(this);
+			to_chat(user, `<span class='notice'>You place ${I} in ${this}.</span>`);
+			yield* this.update_icon();
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>＀ is full.</span>", [live(f.src)])]);
+			to_chat(user, `<span class='warning'>${this} is full.</span>`);
 		}
-		return live(f.dot);
+		return f.dot;
+	} else if (user.a_intent != "harm") {
+		this.open = (!this.open ? 1 : 0);
+		yield* this.update_icon();
 	} else {
-		if (!isEqual(rt.fv(f, "a_intent", live(f.args[1])), "harm")) {
-			rt.setSv(f, "open", (!truthy(rt.sv(f, "open")) ? 1 : 0));
-			yield* g.srcCall(f, "update_icon");
-		} else {
-			return (yield* g.callSuper(f, [], rt.Args.Same));
-		}
-	}
-	return f.dot;
-}, true, { args: ["I", "user", "params"] });
-
-// /obj/structure/guncase/proc/attack_hand  (code/game/objects/structures/guncase.dm:58)  may sleep
-rt.def("/obj/structure/guncase/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if ((truthy((rt.istype(live(user), T("/mob/living/silicon/robot")) ? 1 : 0)) || truthy((rt.istype(live(user), T("/mob/living/carbon/alien")) ? 1 : 0)))) {
-		return live(f.dot);
-	}
-	if ((truthy(rt.len(f, rt.sv(f, "contents"))) && truthy(rt.sv(f, "open")))) {
-		yield* g.srcCall(f, "ShowWindow", live(user));
-	} else {
-		rt.setSv(f, "open", (!truthy(rt.sv(f, "open")) ? 1 : 0));
-		yield* g.srcCall(f, "update_icon");
+		return (yield* parent_proc());
 	}
 	return f.dot;
 }, true);
 
-// /obj/structure/guncase/proc/ShowWindow  (code/game/objects/structures/guncase.dm:67)  may sleep
+// guncase.dm:58
+rt.def("/obj/structure/guncase/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
+	if (rt.istype(user, T("/mob/living/silicon/robot")) || rt.istype(user, T("/mob/living/carbon/alien"))) {
+		return f.dot;
+	}
+	if (rt.len(f, this.contents) && this.open) {
+		yield* this.ShowWindow(user);
+	} else {
+		this.open = (!this.open ? 1 : 0);
+		yield* this.update_icon();
+	}
+	return f.dot;
+}, true);
+
+// guncase.dm:67
 rt.def("/obj/structure/guncase/proc/ShowWindow", function* ShowWindow(f: Frame, user: Value) {
-	let dat: Value = null, i: Value = null, I: Value = null, popup: Value = null;
+	let i: Value = null, I: Value = null, popup: Value = null;
 	let $e: any;
-	f.vars = () => [user, dat, i, I, popup, $e];
-	dat = "<div class='block'>\n\t\t\t\t<h3>Stored Guns</h3>\n\t\t\t\t<table align='center'>";
-	if (truthy(rt.length(rt.sv(f, "contents")))) {
-		i = null;
-		rt.forRange(f, 0, 1, rt.len(f, rt.sv(f, "contents")), 1);
+	let dat: Value = "<div class='block'>\n\t\t\t\t<h3>Stored Guns</h3>\n\t\t\t\t<table align='center'>";
+	if (rt.length(this.contents)) {
+		rt.forRange(f, 0, 1, rt.len(f, this.contents), 1);
 		while (($e = rt.next(f, 0)) !== undefined) {
 			i = $e;
-			I = rt.index(rt.sv(f, "contents"), live(i));
-			dat = rt.modify(live(dat), fmt("<tr><A href='?src=＃;retrieve=＃'>＀</A><br>", [live(f.src), live(I), rt.fv(f, "name", live(I))]), add);
+			I = rt.index(this.contents, i);
+			dat += fmt("<tr><A href='?src=＃;retrieve=＃'>＀</A><br>", [this, I, I.name]);
 		}
 		rt.endFor(f, 0);
 	}
-	dat = rt.modify(live(dat), "</table></div>", add);
-	yield* g.callName(f, (popup = (yield* g.new_(f, T("/datum/browser"), [live(user), "gunlocker", fmt("<div align='center'>＀</div>", [rt.sv(f, "name")]), 350, 300]))), "set_content", [live(dat)]);
-	yield* g.callName(f, live(popup), "open", [0]);
+	dat += "</table></div>";
+	(popup = (yield* new_(T("/datum/browser"), user, "gunlocker", `<div align='center'>${this.name}</div>`, 350, 300))).set_content(dat);
+	yield* popup.open(0);
 	return f.dot;
 }, true);
 
-// /obj/structure/guncase/proc/Topic  (code/game/objects/structures/guncase.dm:81)  may sleep
+// guncase.dm:81
 rt.def("/obj/structure/guncase/proc/Topic", function* Topic(f: Frame, href: Value, href_list: Value) {
 	let O: Value = null;
-	f.vars = () => [href, href_list, O];
-	if (!truthy(rt.at(live(href_list), "retrieve"))) return f.dot;
-	if ((!truthy((O = rt.locateIn(f, rt.at(live(href_list), "retrieve"), rt.sv(f, "contents")))) || !truthy((rt.istype(live(O), T("/obj/item")) ? 1 : 0)))) {
-		return live(f.dot);
+	if (!rt.at(href_list, "retrieve")) return f.dot;
+	if (!(O = rt.locateIn(f, rt.at(href_list, "retrieve"), this.contents)) || !rt.istype(O, T("/obj/item"))) {
+		return f.dot;
 	}
-	if ((!truthy((yield* g.callName(f, live(f.usr), "canUseTopic", [live(f.src)]))) || !truthy(rt.sv(f, "open")))) {
-		return live(f.dot);
+	if (!f.usr.canUseTopic(this) || !this.open) {
+		return f.dot;
 	}
-	if (!truthy((rt.istype(live(f.usr), T("/mob/living/carbon/human")) ? 1 : 0))) return f.dot;
-	if (!truthy((yield* g.callName(f, live(f.usr), "put_in_hands", [live(O)])))) {
-		yield* g.callName(f, live(O), "forceMove", [rt.getStep(f, live(f.src), 0)]);
+	if (!rt.istype(f.usr, T("/mob/living/carbon/human"))) return f.dot;
+	if (!(yield* f.usr.put_in_hands(O))) {
+		yield* O.forceMove(rt.getStep(f, this, 0));
 	}
-	yield* g.srcCall(f, "update_icon");
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/structure/guncase/proc/handle_atom_del  (code/game/objects/structures/guncase.dm:93)
+// guncase.dm:93
 rt.def("/obj/structure/guncase/proc/handle_atom_del", function handle_atom_del(f: Frame, A: Value) {
-	rt.callSrc(f, "update_icon", []);
+	this.update_icon();
 	return f.dot;
 });
 
-// /obj/structure/guncase/proc/contents_explosion  (code/game/objects/structures/guncase.dm:96)  may sleep
+// guncase.dm:96
 rt.def("/obj/structure/guncase/proc/contents_explosion", function* contents_explosion(f: Frame, severity: Value, target: Value) {
 	let A: Value = null;
 	let $e: any, $t: any;
-	f.vars = () => [severity, target, A, $e, $t];
-	A = null;
-	rt.forList(f, 0, rt.sv(f, "contents"), T("/atom"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		A = $e;
-		yield* g.callName(f, live(A), "ex_act", [($t = live(severity), severity = rt.inc($t, 1), $t), live(target)]);
-		if (rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit"))) {
-			yield* g.call(f, P("/proc/stoplag"), null, []);
+	for (A of each(this.contents, T("/atom"))) {
+		yield* A.ex_act(($t = severity, severity = rt.inc($t, 1), $t), target);
+		if (rt.tickUsage(f) > GLOB.current_ticklimit) {
+			yield* stoplag();
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);

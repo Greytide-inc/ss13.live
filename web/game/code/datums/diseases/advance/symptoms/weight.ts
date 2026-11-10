@@ -1,7 +1,7 @@
-// From code/datums/diseases/advance/symptoms/weight.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/datums/diseases/advance/symptoms/weight.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(1023, "/datum/symptom/weight_gain", "/datum/symptom", {
@@ -14,24 +14,21 @@ rt.type(1023, "/datum/symptom/weight_gain", "/datum/symptom", {
 	severity: 1,
 });
 
-// /datum/symptom/weight_gain/proc/Activate  (code/datums/diseases/advance/symptoms/weight.dm:29)
-rt.def("/datum/symptom/weight_gain/proc/Activate", function Activate(f: Frame) {
+// weight.dm:29
+rt.def("/datum/symptom/weight_gain/proc/Activate", function Activate(f: Frame, A: Value) {
 	let M: Value = null;
-	let $0: any;
-	f.vars = () => [M, $0];
-	rt.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.op(f, "Prob", [], [rt.gl("SYMPTOM_ACTIVATION_PROB")]))) {
-		M = rt.fv(f, "affected_mob", live(f.args[0]));
-		$0 = rt.fv(f, "stage", live(f.args[0]));
-		if ($0 === 1 || $0 === 2 || $0 === 3 || $0 === 4) {
-			rt.call(f, P("/proc/to_chat"), null, [live(M), fmt("<span class='warning'>＀</span>", [rt.op(f, "PickUnweighted", [2], ["You feel blubbery.", "Your stomach hurts."])])]);
+	parent_proc();
+	if (prob(GLOB.SYMPTOM_ACTIVATION_PROB)) {
+		M = A.affected_mob;
+		if (A.stage === 1 || A.stage === 2 || A.stage === 3 || A.stage === 4) {
+			to_chat(M, `<span class='warning'>${pick("You feel blubbery.", "Your stomach hurts.")}</span>`);
 		} else {
-			rt.setFv(f, "overeatduration", live(M), rt.call(f, P("/proc/min"), null, [add(rt.fv(f, "overeatduration", live(M)), 100), 600]));
-			rt.setFv(f, "nutrition", live(M), rt.call(f, P("/proc/min"), null, [add(rt.fv(f, "nutrition", live(M)), 100), 550]));
+			M.overeatduration = min(M.overeatduration + 100, 600);
+			M.nutrition = min(M.nutrition + 100, NUTRITION_LEVEL_FULL);
 		}
 	}
-	return live(f.dot);
-}, false, { args: ["A"] });
+	return f.dot;
+}, false);
 
 rt.type(1024, "/datum/symptom/weight_loss", "/datum/symptom", {
 	name: "Weight Loss",
@@ -43,25 +40,22 @@ rt.type(1024, "/datum/symptom/weight_loss", "/datum/symptom", {
 	severity: 1,
 });
 
-// /datum/symptom/weight_loss/proc/Activate  (code/datums/diseases/advance/symptoms/weight.dm:71)
-rt.def("/datum/symptom/weight_loss/proc/Activate", function Activate(f: Frame) {
+// weight.dm:71
+rt.def("/datum/symptom/weight_loss/proc/Activate", function Activate(f: Frame, A: Value) {
 	let M: Value = null;
-	let $0: any;
-	f.vars = () => [M, $0];
-	rt.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.op(f, "Prob", [], [rt.gl("SYMPTOM_ACTIVATION_PROB")]))) {
-		M = rt.fv(f, "affected_mob", live(f.args[0]));
-		$0 = rt.fv(f, "stage", live(f.args[0]));
-		if ($0 === 1 || $0 === 2 || $0 === 3 || $0 === 4) {
-			rt.call(f, P("/proc/to_chat"), null, [live(M), fmt("<span class='warning'>＀</span>", [rt.op(f, "PickUnweighted", [2], ["You feel hungry.", "You crave for food."])])]);
+	parent_proc();
+	if (prob(GLOB.SYMPTOM_ACTIVATION_PROB)) {
+		M = A.affected_mob;
+		if (A.stage === 1 || A.stage === 2 || A.stage === 3 || A.stage === 4) {
+			to_chat(M, `<span class='warning'>${pick("You feel hungry.", "You crave for food.")}</span>`);
 		} else {
-			rt.call(f, P("/proc/to_chat"), null, [live(M), fmt("<span class='warning'><i>＀</i></span>", [rt.op(f, "PickUnweighted", [3], ["So hungry...", "You'd kill someone for a bite of food...", "Hunger cramps seize you..."])])]);
-			rt.setFv(f, "overeatduration", live(M), rt.call(f, P("/proc/max"), null, [subtract(rt.fv(f, "overeatduration", live(M)), 100), 0]));
-			rt.setFv(f, "nutrition", live(M), rt.call(f, P("/proc/max"), null, [subtract(rt.fv(f, "nutrition", live(M)), 100), 0]));
+			to_chat(M, `<span class='warning'><i>${pick("So hungry...", "You'd kill someone for a bite of food...", "Hunger cramps seize you...")}</i></span>`);
+			M.overeatduration = max(M.overeatduration - 100, 0);
+			M.nutrition = max(M.nutrition - 100, 0);
 		}
 	}
-	return live(f.dot);
-}, false, { args: ["A"] });
+	return f.dot;
+}, false);
 
 rt.type(1025, "/datum/symptom/weight_even", "/datum/symptom", {
 	name: "Weight Even",
@@ -72,19 +66,16 @@ rt.type(1025, "/datum/symptom/weight_even", "/datum/symptom", {
 	level: 4,
 });
 
-// /datum/symptom/weight_even/proc/Activate  (code/datums/diseases/advance/symptoms/weight.dm:113)
-rt.def("/datum/symptom/weight_even/proc/Activate", function Activate(f: Frame) {
+// weight.dm:113
+rt.def("/datum/symptom/weight_even/proc/Activate", function Activate(f: Frame, A: Value) {
 	let M: Value = null;
-	let $0: any;
-	f.vars = () => [M, $0];
-	rt.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.op(f, "Prob", [], [rt.gl("SYMPTOM_ACTIVATION_PROB")]))) {
-		M = rt.fv(f, "affected_mob", live(f.args[0]));
-		$0 = rt.fv(f, "stage", live(f.args[0]));
-		if ($0 === 4 || $0 === 5) {
-			rt.setFv(f, "overeatduration", live(M), 0);
-			rt.setFv(f, "nutrition", live(M), 500);
+	parent_proc();
+	if (prob(GLOB.SYMPTOM_ACTIVATION_PROB)) {
+		M = A.affected_mob;
+		if (A.stage === 4 || A.stage === 5) {
+			M.overeatduration = 0;
+			M.nutrition = 500;
 		}
 	}
-	return live(f.dot);
-}, false, { args: ["A"] });
+	return f.dot;
+}, false);

@@ -157,7 +157,9 @@ rt.override(G.delDrive, function* (f) {
 // The built-in Move() (a plain proc here) calling a hook that sleeps: Move carries on with the hook's `.` (VM.enter's MOVE_HOOKS rule).
 const move = tree.procs.find((p) => p.path === "/atom/movable/proc/Move" && !p.superProc);
 let hook = null;
-for (const p of tree.procs) {
+// /atom/movable/proc/Bump, the one tests/waitfor0.expected.txt was written with (the first that took an override then;
+// detranslate 7b gave /mob/proc/Bump its named argument, so it now would be first)
+for (const p of tree.procs.filter((p) => p.path === "/atom/movable/proc/Bump")) {
 	if (hook !== null) break;
 	if (!["Entered", "Crossed", "Uncrossed", "Exited", "Bump"].includes(p.name) || p.isNative || used.has(p) || (p.attributes & NOWAIT) !== 0) continue;
 	const body = function* (f) { f.dot = 15; yield* sleep(f, 1); R("hook " + p.name + " woke"); return 151; };

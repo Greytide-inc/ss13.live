@@ -1,7 +1,7 @@
-// From code/modules/hydroponics/grown/misc.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/hydroponics/grown/misc.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(10041, "/obj/item/seeds/starthistle", "/obj/item/seeds", {
@@ -22,41 +22,32 @@ rt.type(10041, "/obj/item/seeds/starthistle", "/obj/item/seeds", {
 	icon_state: "seed-starthistle",
 });
 
-// /obj/item/seeds/starthistle/proc/<init>  (code/modules/hydroponics/grown/misc.dm:16)
+// misc.dm:16
 rt.def("/obj/item/seeds/starthistle/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "genes", rt.list(T("/datum/plant_gene/trait/plant_type/weed_hardy")));
-	$0 = $0;
-	rt.setSv(f, "mutatelist", rt.list(T("/obj/item/seeds/harebell")));
+	parent_proc();
+	this.genes = list(T("/datum/plant_gene/trait/plant_type/weed_hardy"));
+
+	this.mutatelist = list(T("/obj/item/seeds/harebell"));
 	return f.dot;
 });
 
-// /obj/item/seeds/starthistle/proc/harvest  (code/modules/hydroponics/grown/misc.dm:20)  may sleep
+// misc.dm:20
 rt.def("/obj/item/seeds/starthistle/proc/harvest", function* harvest(f: Frame, user: Value) {
-	let parent: Value = null, seed_count: Value = null, output_loc: Value = null, i: Value = null, harvestseeds: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [user, parent, seed_count, output_loc, i, harvestseeds, $0, $e];
-	parent = rt.sv(f, "loc");
-	seed_count = rt.sv(f, "yield");
-	if (truthy(rt.op(f, "Prob", [], [multiply((yield* g.srcCall(f, "getYield")), 20)]))) {
-		seed_count = rt.inc(live(seed_count), 1);
-		if (truthy((yield* g.callName(f, live(parent), "Adjacent", [live(user)])))) {
-			$0 = rt.fv(f, "loc", live(user));
-		} else {
-			$0 = rt.fv(f, "loc", live(parent));
-		}
-		output_loc = $0;
-		i = null;
-		rt.forRange(f, 0, 1, live(seed_count), 1);
+	let output_loc: Value = null, i: Value = null, harvestseeds: Value = null;
+	let $e: any;
+	let parent: Value = this.loc;
+	let seed_count: Value = this.yield;
+	if (prob(this.getYield() * 20)) {
+		seed_count++;
+		output_loc = parent.Adjacent(user) ? user.loc : parent.loc;
+		rt.forRange(f, 0, 1, seed_count, 1);
 		while (($e = rt.next(f, 0)) !== undefined) {
 			i = $e;
-			yield* g.callName(f, (harvestseeds = (yield* g.srcCall(f, "Copy"))), "forceMove", [live(output_loc)]);
+			yield* (harvestseeds = (yield* this.Copy())).forceMove(output_loc);
 		}
 		rt.endFor(f, 0);
 	}
-	yield* g.callName(f, live(parent), "update_tray", []);
+	yield* parent.update_tray();
 	return f.dot;
 }, true);
 
@@ -79,15 +70,13 @@ rt.type(10042, "/obj/item/seeds/cabbage", "/obj/item/seeds", {
 	mutatelist: null,
 });
 
-// /obj/item/seeds/cabbage/proc/<init>  (code/modules/hydroponics/grown/misc.dm:46)
+// misc.dm:46
 rt.def("/obj/item/seeds/cabbage/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "genes", rt.list(T("/datum/plant_gene/trait/repeated_harvest")));
-	rt.setSv(f, "reagents_add", rt.alist(f, ["vitamin", 0.03999999910593033, "nutriment", 0.10000000149011612]));
-	$0 = $0;
-	rt.setSv(f, "mutatelist", rt.list(T("/obj/item/seeds/replicapod")));
+	parent_proc();
+	this.genes = list(T("/datum/plant_gene/trait/repeated_harvest"));
+	this.reagents_add = rt.alist(f, ["vitamin", 0.04, "nutriment", 0.1]);
+
+	this.mutatelist = list(T("/obj/item/seeds/replicapod"));
 	return f.dot;
 });
 
@@ -107,13 +96,11 @@ rt.type(10043, "/obj/item/seeds/sugarcane", "/obj/item/seeds", {
 	icon_state: "seed-sugarcane",
 });
 
-// /obj/item/seeds/sugarcane/proc/<init>  (code/modules/hydroponics/grown/misc.dm:67)
+// misc.dm:67
 rt.def("/obj/item/seeds/sugarcane/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "genes", rt.list(T("/datum/plant_gene/trait/repeated_harvest")));
-	rt.setSv(f, "reagents_add", rt.alist(f, ["sugar", 0.25]));
+	parent_proc();
+	this.genes = list(T("/datum/plant_gene/trait/repeated_harvest"));
+	this.reagents_add = rt.alist(f, ["sugar", 0.25]);
 	return f.dot;
 });
 
@@ -137,13 +124,11 @@ rt.type(10044, "/obj/item/seeds/gatfruit", "/obj/item/seeds", {
 	icon_state: "seed-gatfruit",
 });
 
-// /obj/item/seeds/gatfruit/proc/<init>  (code/modules/hydroponics/grown/misc.dm:92)
+// misc.dm:92
 rt.def("/obj/item/seeds/gatfruit/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "genes", rt.list(T("/datum/plant_gene/trait/repeated_harvest")));
-	rt.setSv(f, "reagents_add", rt.alist(f, ["sulfur", 0.10000000149011612, "carbon", 0.10000000149011612, "nitrogen", 0.07000000029802322, "potassium", 0.05000000074505806]));
+	parent_proc();
+	this.genes = list(T("/datum/plant_gene/trait/repeated_harvest"));
+	this.reagents_add = rt.alist(f, ["sulfur", 0.1, "carbon", 0.1, "nitrogen", 0.07, "potassium", 0.05]);
 	return f.dot;
 });
 
@@ -159,13 +144,11 @@ rt.type(10004, "/obj/item/seeds/cherry/bomb", "/obj/item/seeds/cherry", {
 	icon_state: "seed-cherry_bomb",
 });
 
-// /obj/item/seeds/cherry/bomb/proc/<init>  (code/modules/hydroponics/grown/misc.dm:121)
+// misc.dm:121
 rt.def("/obj/item/seeds/cherry/bomb/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "mutatelist", rt.list());
-	rt.setSv(f, "reagents_add", rt.alist(f, ["nutriment", 0.10000000149011612, "sugar", 0.10000000149011612, "blackpowder", 0.699999988079071]));
+	parent_proc();
+	this.mutatelist = list();
+	this.reagents_add = rt.alist(f, ["nutriment", 0.1, "sugar", 0.1, "blackpowder", 0.7]);
 	return f.dot;
 });
 
@@ -181,52 +164,46 @@ rt.type(6314, "/obj/item/weapon/reagent_containers/food/snacks/grown/cherry_bomb
 	max_integrity: 40,
 });
 
-// /obj/item/weapon/reagent_containers/food/snacks/grown/cherry_bomb/proc/attack_self  (code/modules/hydroponics/grown/misc.dm:137)  may sleep
+// misc.dm:137
 rt.def("/obj/item/weapon/reagent_containers/food/snacks/grown/cherry_bomb/proc/attack_self", function* attack_self(f: Frame, user: Value) {
-	let A: Value = null;
-	let $0: any, $1: any, $2: any;
-	f.vars = () => [user, A, $0, $1, $2];
-	A = (yield* g.call(f, P("/proc/get_area"), null, [live(user)]));
-	yield* g.callName(f, live(user), "visible_message", [fmt("<span class='warning'>＀ plucks the stem from ＀!</span>", [live(user), live(f.src)]), fmt("<span class='userdanger'>You pluck the stem from ＀, which begins to hiss loudly!</span>", [live(f.src)])]);
-	$0 = fmt("＀＀ ＀", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(user)])), fmt("(<a href='?_src_=holder;adminmoreinfo=＃'>?</a>)", [live(user)]), fmt("(<a href='?_src_=holder;adminplayerobservefollow=＃'>FLW</a>)", [live(user)])]);
-	$1 = live(A);
-	if (truthy(live(user))) {
-		$2 = fmt("＀ ＀", [fmt("(＀,＀,＀)", [rt.fv(f, "x", live(user)), rt.fv(f, "y", live(user)), rt.fv(f, "z", live(user))]), fmt("(<a href='?_src_=holder;adminplayerobservecoodjump=1;X=＀;Y=＀;Z=＀'>JMP</a>)", [rt.fv(f, "x", live(user)), rt.fv(f, "y", live(user)), rt.fv(f, "z", live(user))])]);
+	let $2: any;
+	let A: Value = get_area(user);
+	user.visible_message(`<span class='warning'>${user} plucks the stem from ${this}!</span>`, `<span class='userdanger'>You pluck the stem from ${this}, which begins to hiss loudly!</span>`);
+	let $0: any = `${key_name_admin(user)}${fmt("(<a href='?_src_=holder;adminmoreinfo=＃'>?</a>)", [user])} ${fmt("(<a href='?_src_=holder;adminplayerobservefollow=＃'>FLW</a>)", [user])}`;
+	let $1: any = A;
+	if (user) {
+		$2 = `${`(${user.x},${user.y},${user.z})`} ${`(<a href='?_src_=holder;adminplayerobservecoodjump=1;X=${user.x};Y=${user.y};Z=${user.z}'>JMP</a>)`}`;
 	} else {
 		$2 = "nonexistent location";
 	}
-	yield* g.call(f, P("/proc/message_admins"), null, [fmt("＀ primed a cherry bomb for detonation at ＀ ＀", [$0, $1, fmt("＀", [$2])])]);
-	yield* g.call(f, P("/proc/log_game"), null, [fmt("＀ primed a cherry bomb for detonation at ＀ ＀.", [(yield* g.call(f, P("/proc/key_name"), null, [live(user)])), live(A), fmt("(＀,＀,＀)", [rt.fv(f, "x", live(user)), rt.fv(f, "y", live(user)), rt.fv(f, "z", live(user))])])]);
-	yield* g.srcCall(f, "prime");
+	message_admins(`${$0} primed a cherry bomb for detonation at ${$1} ${`${$2}`}`);
+	log_game(`${key_name(user)} primed a cherry bomb for detonation at ${A} ${`(${user.x},${user.y},${user.z})`}.`);
+	yield* this.prime();
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/reagent_containers/food/snacks/grown/cherry_bomb/proc/deconstruct  (code/modules/hydroponics/grown/misc.dm:144)  may sleep
+// misc.dm:144
 rt.def("/obj/item/weapon/reagent_containers/food/snacks/grown/cherry_bomb/proc/deconstruct", function* deconstruct(f: Frame, disassembled: Value) {
-	f.vars = () => [disassembled];
-	if (live(disassembled) === null) {
-		disassembled = 1;
+	disassembled ??= 1;
+	if (!disassembled) {
+		yield* this.prime();
 	}
-	if (!truthy(live(disassembled))) {
-		yield* g.srcCall(f, "prime");
-	}
-	if (!truthy(live(f.src)) || truthy(rt.fv(f, "gc_destroyed", live(f.src)))) return f.dot;
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	if (!this || this.gc_destroyed) return f.dot;
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/reagent_containers/food/snacks/grown/cherry_bomb/proc/ex_act  (code/modules/hydroponics/grown/misc.dm:150)  may sleep
+// misc.dm:150
 rt.def("/obj/item/weapon/reagent_containers/food/snacks/grown/cherry_bomb/proc/ex_act", function* ex_act(f: Frame, severity: Value) {
-	f.vars = () => [severity];
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* qdel(this);
 	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/item/weapon/reagent_containers/food/snacks/grown/cherry_bomb/proc/prime  (code/modules/hydroponics/grown/misc.dm:153)  may sleep
+// misc.dm:153
 rt.def("/obj/item/weapon/reagent_containers/food/snacks/grown/cherry_bomb/proc/prime", function* prime(f: Frame) {
-	rt.setSv(f, "icon_state", "cherry_bomb_lit");
-	yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/effects/fuse.ogg"), rt.fv(f, "potency", rt.sv(f, "seed")), 0]);
-	rt.setFv(f, "chem_temp", rt.sv(f, "reagents"), 1000);
-	yield* g.callName(f, rt.sv(f, "reagents"), "handle_reactions", []);
+	this.icon_state = "cherry_bomb_lit";
+	playsound(this, rt.rsc("sound/effects/fuse.ogg"), this.seed.potency, 0);
+	this.reagents.chem_temp = 1000;
+	yield* this.reagents.handle_reactions();
 	return f.dot;
 }, true);

@@ -1,7 +1,7 @@
-// From code/game/gamemodes/blob/blobs/core.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/gamemodes/blob/blobs/core.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(12141, "/obj/structure/blob/core", "/obj/structure/blob", {
@@ -21,167 +21,152 @@ rt.type(12141, "/obj/structure/blob/core", "/obj/structure/blob", {
 	armor: null,
 });
 
-// /obj/structure/blob/core/proc/<init>  (code/game/gamemodes/blob/blobs/core.dm:8)
+// core.dm:8
 rt.def("/obj/structure/blob/core/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 75, "acid", 90]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 75, "acid", 90]);
 	return f.dot;
 });
 
-// /obj/structure/blob/core/proc/Initialize  (code/game/gamemodes/blob/blobs/core.dm:19)  may sleep
+// core.dm:19
 rt.def("/obj/structure/blob/core/proc/Initialize", function* Initialize(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = null;
 	}
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 2;
 	}
-	if (live(f.args[3]) === null) {
+	if (f.args[3] === null) {
 		f.args[3] = 0;
 	}
-	rt.modGl("blob_cores", live(f.src), add);
-	if (!truthy(rt.fv(f, "isprocessing", live(f.src)))) {
-		rt.setFv(f, "isprocessing", live(f.src), 1);
-		rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), add);
+	GLOB.blob_cores += this;
+	if (!this.isprocessing) {
+		this.isprocessing = 1;
+		GLOB.SSobj.processing += this;
 	}
-	(rt.modGl("poi_list", live(f.src), rt.bitOr));
-	yield* g.srcCall(f, "update_icon");
-	if ((!truthy(live(f.args[3])) && !truthy(rt.sv(f, "overmind")))) {
-		yield* g.srcCall(f, "create_overmind", live(f.args[1]));
+	(rt.modGl("poi_list", this, rt.bitOr));
+	yield* this.update_icon();
+	if (!f.args[3] && !this.overmind) {
+		yield* this.create_overmind(f.args[1]);
 	}
-	if (truthy(rt.sv(f, "overmind"))) {
-		yield* g.srcCall(f, "update_icon");
+	if (this.overmind) {
+		yield* this.update_icon();
 	}
-	rt.setSv(f, "point_rate", live(f.args[2]));
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	this.point_rate = f.args[2];
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true, { args: ["mapload", "new_overmind", "new_rate", "placed"] });
 
-// /obj/structure/blob/core/proc/scannerreport  (code/game/gamemodes/blob/blobs/core.dm:31)
+// core.dm:31
 rt.def("/obj/structure/blob/core/proc/scannerreport", function scannerreport(f: Frame) {
 	return "Directs the blob's expansion, gradually expands, and sustains nearby blob spores and blobbernauts.";
 });
 
-// /obj/structure/blob/core/proc/update_icon  (code/game/gamemodes/blob/blobs/core.dm:34)
+// core.dm:34
 rt.def("/obj/structure/blob/core/proc/update_icon", function update_icon(f: Frame) {
-	let blob_overlay: Value = null;
-	f.vars = () => [blob_overlay];
-	rt.callSrc(f, "cut_overlays", []);
-	rt.setSv(f, "color", null);
-	blob_overlay = rt.call(f, P("/proc/mutable_appearance"), null, [rt.rsc("icons/mob/blob.dmi"), "blob"]);
-	if (truthy(rt.sv(f, "overmind"))) {
-		rt.setFv(f, "color", live(blob_overlay), rt.gv(f, "color", rt.fv(f, "blob_reagent_datum", rt.sv(f, "overmind"))));
+	this.cut_overlays();
+	this.color = null;
+	let blob_overlay: Value = mutable_appearance(rt.rsc("icons/mob/blob.dmi"), "blob");
+	if (this.overmind) {
+		blob_overlay.color = this.overmind.blob_reagent_datum.color;
 	}
-	rt.callSrc(f, "add_overlay", [live(blob_overlay)]);
-	rt.callSrc(f, "add_overlay", [rt.call(f, P("/proc/mutable_appearance"), null, [rt.rsc("icons/mob/blob.dmi"), "blob_core_overlay"])]);
+	this.add_overlay(blob_overlay);
+	this.add_overlay(mutable_appearance(rt.rsc("icons/mob/blob.dmi"), "blob_core_overlay"));
 	return f.dot;
 });
 
-// /obj/structure/blob/core/proc/Destroy  (code/game/gamemodes/blob/blobs/core.dm:43)  may sleep
+// core.dm:43
 rt.def("/obj/structure/blob/core/proc/Destroy", function* Destroy(f: Frame) {
-	(rt.modGl("blob_cores", live(f.src), subtract));
-	if (truthy(rt.sv(f, "overmind"))) {
-		rt.setFv(f, "blob_core", rt.sv(f, "overmind"), null);
+	GLOB.blob_cores -= this;
+	if (this.overmind) {
+		this.overmind.blob_core = null;
 	}
-	rt.setSv(f, "overmind", null);
-	rt.setFv(f, "isprocessing", live(f.src), 0);
-	(rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), subtract));
-	(rt.modGl("poi_list", live(f.src), subtract));
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	this.overmind = null;
+	this.isprocessing = 0;
+	GLOB.SSobj.processing -= this;
+	GLOB.poi_list -= this;
+	return (yield* parent_proc());
 }, true);
 
-// /obj/structure/blob/core/proc/ex_act  (code/game/gamemodes/blob/blobs/core.dm:52)  may sleep
+// core.dm:52
 rt.def("/obj/structure/blob/core/proc/ex_act", function* ex_act(f: Frame, severity: Value, target: Value) {
 	let damage: Value = null;
-	f.vars = () => [severity, target, damage];
-	yield* g.srcCall(f, "take_damage", (damage = subtract(50, multiply(10, live(severity)))), "brute", "bomb", 0);
+	yield* this.take_damage((damage = 50 - 10 * severity), "brute", "bomb", 0);
 	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/structure/blob/core/proc/take_damage  (code/game/gamemodes/blob/blobs/core.dm:56)  may sleep
+// core.dm:56
 rt.def("/obj/structure/blob/core/proc/take_damage", function* take_damage(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = "brute";
 	}
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 0;
 	}
-	if (live(f.args[3]) === null) {
+	if (f.args[3] === null) {
 		f.args[3] = 1;
 	}
-	if (live(f.args[5]) === null) {
+	if (f.args[5] === null) {
 		f.args[5] = 1;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!rt.gt(rt.sv(f, "obj_integrity"), 0)) return f.dot;
-	if (!truthy(rt.sv(f, "overmind"))) return f.dot;
-	yield* g.callName(f, rt.sv(f, "overmind"), "update_health_hud", []);
+	f.dot = (yield* parent_proc());
+	if (!(this.obj_integrity > 0)) return f.dot;
+	if (!this.overmind) return f.dot;
+	this.overmind.update_health_hud();
 	return f.dot;
 }, true, { args: ["damage_amount", "damage_type", "damage_flag", "sound_effect", "attack_dir", "overmind_reagent_trigger"] });
 
-// /obj/structure/blob/core/proc/Life  (code/game/gamemodes/blob/blobs/core.dm:62)  may sleep
+// core.dm:62
 rt.def("/obj/structure/blob/core/proc/Life", function* Life(f: Frame) {
 	let B: Value = null;
-	let $e: any;
-	f.vars = () => [B, $e];
-	if ((!truthy(live(f.src)) || truthy(rt.fv(f, "gc_destroyed", live(f.src))))) {
-		return live(f.dot);
+	if (!this || this.gc_destroyed) {
+		return f.dot;
 	}
-	if (!truthy(rt.sv(f, "overmind"))) {
-		yield* g.srcCall(f, "create_overmind");
-	} else {
-		if (rt.le(rt.sv(f, "resource_delay"), rt.worldTime(f))) {
-			rt.setSv(f, "resource_delay", add(rt.worldTime(f), 10));
-			yield* g.callName(f, rt.sv(f, "overmind"), "add_points", [rt.sv(f, "point_rate")]);
+	if (!this.overmind) {
+		yield* this.create_overmind();
+	} else if (this.resource_delay <= rt.worldTime(f)) {
+		this.resource_delay = rt.worldTime(f) + 10;
+		this.overmind.add_points(this.point_rate);
+	}
+	this.obj_integrity = min(this.max_integrity, this.obj_integrity + this.core_regen);
+	if (this.overmind) {
+		this.overmind.update_health_hud();
+	}
+	yield* this.Pulse_Area(this.overmind, 12, 4, 3);
+	for (B of each(range(1, this), T("/obj/structure/blob/normal"))) {
+		if (prob(5)) {
+			yield* B.change_to(T("/obj/structure/blob/shield/core"), this.overmind);
 		}
 	}
-	rt.setSv(f, "obj_integrity", (yield* g.call(f, P("/proc/min"), null, [rt.sv(f, "max_integrity"), add(rt.sv(f, "obj_integrity"), rt.sv(f, "core_regen"))])));
-	if (truthy(rt.sv(f, "overmind"))) {
-		yield* g.callName(f, rt.sv(f, "overmind"), "update_health_hud", []);
-	}
-	yield* g.srcCall(f, "Pulse_Area", rt.sv(f, "overmind"), 12, 4, 3);
-	B = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/range"), null, [1, live(f.src)])), T("/obj/structure/blob/normal"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		B = $e;
-		if (truthy(rt.op(f, "Prob", [], [5]))) {
-			yield* g.callName(f, live(B), "change_to", [T("/obj/structure/blob/shield/core"), rt.sv(f, "overmind")]);
-		}
-	}
-	rt.endFor(f, 0);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /obj/structure/blob/core/proc/create_overmind  (code/game/gamemodes/blob/blobs/core.dm:81)  may sleep
+// core.dm:81
 rt.def("/obj/structure/blob/core/proc/create_overmind", function* create_overmind(f: Frame, new_overmind: Value, override_delay: Value) {
-	let C: Value = null, candidates: Value = null, B: Value = null;
-	f.vars = () => [new_overmind, override_delay, C, candidates, B];
-	if ((rt.gt(rt.sv(f, "overmind_get_delay"), rt.worldTime(f)) && !truthy(live(override_delay)))) {
-		return live(f.dot);
+	let C: Value = null, B: Value = null;
+	if (this.overmind_get_delay > rt.worldTime(f) && !override_delay) {
+		return f.dot;
 	}
-	rt.setSv(f, "overmind_get_delay", add(rt.worldTime(f), 150));
-	if (truthy(rt.sv(f, "overmind"))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "overmind")]);
+	this.overmind_get_delay = rt.worldTime(f) + 150;
+	if (this.overmind) {
+		yield* qdel(this.overmind);
 	}
-	C = null;
-	candidates = rt.list();
-	if (!truthy(live(new_overmind))) {
-		if (truthy(rt.getLen(f, (candidates = (yield* g.call(f, P("/proc/pollCandidatesForMob"), null, ["Do you want to play as a blob overmind?", "blob", null, "blob", 50, live(f.src)])))))) {
-			C = rt.op(f, "PickUnweighted", [1], [live(candidates)]);
+	let candidates: Value = list();
+	if (!new_overmind) {
+		if (rt.len(f, (candidates = (yield* pollCandidatesForMob("Do you want to play as a blob overmind?", "blob", null, "blob", 50, this))))) {
+			C = pick(candidates);
 		}
 	} else {
-		C = live(new_overmind);
+		C = new_overmind;
 	}
-	if (truthy(live(C))) {
-		rt.setFv(f, "key", (B = (yield* g.new_(f, T("/mob/camera/blob"), [rt.fv(f, "loc", live(f.src)), 1]))), rt.fv(f, "key", live(C)));
-		rt.setFv(f, "blob_core", live(B), live(f.src));
-		rt.setFv(f, "overmind", live(f.src), live(B));
-		yield* g.srcCall(f, "update_icon");
-		if ((truthy(rt.fv(f, "mind", live(B))) && !truthy(rt.gv(f, "special_role", rt.fv(f, "mind", live(B)))))) {
-			rt.setFv(f, "special_role", rt.fv(f, "mind", live(B)), "Blob Overmind");
+	if (C) {
+		(B = (yield* new_(T("/mob/camera/blob"), this.loc, 1))).key = C.key;
+		B.blob_core = this;
+		this.overmind = B;
+		yield* this.update_icon();
+		if (B.mind && !B.mind.special_role) {
+			B.mind.special_role = "Blob Overmind";
 		}
 		return 1;
 	}

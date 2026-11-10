@@ -1,93 +1,73 @@
-// From code/__HELPERS/time.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/__HELPERS/time.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
 
 
-// /proc/worldtime2text  (code/__HELPERS/time.dm:3)
+
+// time.dm:3
 rt.def("/proc/worldtime2text", function worldtime2text(f: Frame) {
-	return rt.call(f, P("/proc/gameTimestamp"), null, ["hh:mm:ss", rt.worldTime(f)]);
+	return gameTimestamp("hh:mm:ss", rt.worldTime(f));
 });
 
-// /proc/time_stamp  (code/__HELPERS/time.dm:6)
+// time.dm:6
 rt.def("/proc/time_stamp", function time_stamp(f: Frame, format: Value, show_ds: Value) {
-	let time_string: Value = null;
-	let $0: any;
-	f.vars = () => [format, time_string, $0];
-	if (live(format) === null) {
-		format = "hh:mm:ss";
-	}
-	time_string = rt.call(f, P("/proc/time2text"), null, [rt.fv(f, "timeofday", rt.world()), live(format)]);
-	if (truthy(live(show_ds))) {
-		$0 = fmt("＀:＀", [live(time_string), rt.modulus(rt.fv(f, "timeofday", rt.world()), 10)]);
-	} else {
-		$0 = live(time_string);
-	}
-	return $0;
+	format ??= "hh:mm:ss";
+	let time_string: Value = time2text(rt.world().timeofday, format);
+	return show_ds ? `${time_string}:${rt.world().timeofday % 10}` : time_string;
 });
 
-// /proc/gameTimestamp  (code/__HELPERS/time.dm:10)
+// time.dm:10
 rt.def("/proc/gameTimestamp", function gameTimestamp(f: Frame, format: Value, wtime: Value) {
-	f.vars = () => [format, wtime];
-	if (live(format) === null) {
-		format = "hh:mm:ss";
-	}
-	if (live(wtime) === null) {
-		wtime = null;
-	}
-	if (!truthy(live(wtime))) {
+	format ??= "hh:mm:ss";
+	if (!wtime) {
 		wtime = rt.worldTime(f);
 	}
-	return rt.call(f, P("/proc/time2text"), null, [subtract(add(subtract(live(wtime), rt.gl("timezoneOffset")), rt.fv(f, "gametime_offset", rt.gl("SSticker"))), rt.fv(f, "round_start_time", rt.gl("SSticker"))), live(format)]);
+	return time2text(wtime - GLOB.timezoneOffset + GLOB.SSticker.gametime_offset - GLOB.SSticker.round_start_time, format);
 });
 
-// /proc/SQLtime  (code/__HELPERS/time.dm:28)
+// time.dm:28
 rt.def("/proc/SQLtime", function SQLtime(f: Frame, timevar: Value) {
-	f.vars = () => [timevar];
-	if (!truthy(live(timevar))) {
-		timevar = rt.fv(f, "realtime", rt.world());
+	if (!timevar) {
+		timevar = rt.world().realtime;
 	}
-	return rt.call(f, P("/proc/time2text"), null, [live(timevar), "YYYY-MM-DD hh:mm:ss"]);
+	return time2text(timevar, "YYYY-MM-DD hh:mm:ss");
 });
 
-// /datum/controller/global_vars/proc/InitGlobalmidnight_rollovers  (code/__HELPERS/time.dm:33)
+// time.dm:33
 rt.def("/datum/controller/global_vars/proc/InitGlobalmidnight_rollovers", function InitGlobalmidnight_rollovers(f: Frame) {
-	rt.setGl("midnight_rollovers", 0);
-	rt.modSrcVar(f, "gvars_datum_init_order", "midnight_rollovers", add);
+	GLOB.midnight_rollovers = 0;
+	this.gvars_datum_init_order += "midnight_rollovers";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalrollovercheck_last_timeofday  (code/__HELPERS/time.dm:34)
+// time.dm:34
 rt.def("/datum/controller/global_vars/proc/InitGlobalrollovercheck_last_timeofday", function InitGlobalrollovercheck_last_timeofday(f: Frame) {
-	rt.setGl("rollovercheck_last_timeofday", 0);
-	rt.modSrcVar(f, "gvars_datum_init_order", "rollovercheck_last_timeofday", add);
+	GLOB.rollovercheck_last_timeofday = 0;
+	this.gvars_datum_init_order += "rollovercheck_last_timeofday";
 	return f.dot;
 });
 
-// /proc/update_midnight_rollover  (code/__HELPERS/time.dm:36)
+// time.dm:36
 rt.def("/proc/update_midnight_rollover", function update_midnight_rollover(f: Frame) {
-	if (rt.lt(rt.fv(f, "timeofday", rt.world()), rt.gl("rollovercheck_last_timeofday"))) {
+	if (rt.world().timeofday < GLOB.rollovercheck_last_timeofday) {
 		return rt.incGl("midnight_rollovers", 1, true);
 	}
-	return rt.gl("midnight_rollovers");
+	return GLOB.midnight_rollovers;
 });
 
-// /proc/weekdayofthemonth  (code/__HELPERS/time.dm:41)
+// time.dm:41
 rt.def("/proc/weekdayofthemonth", function weekdayofthemonth(f: Frame) {
 	let DD: Value = null;
-	let $0: any;
-	f.vars = () => [DD, $0];
-	$0 = (DD = rt.call(f, P("/proc/text2num"), null, [rt.call(f, P("/proc/time2text"), null, [rt.fv(f, "timeofday", rt.world()), "DD"])]));
-	if (rt.inRange($0, 8, 13)) {
+	const subject = (DD = text2num(time2text(rt.world().timeofday, "DD")));
+	if (rt.inRange(subject, 8, 13)) {
 		return 2;
-	} else if (rt.inRange($0, 14, 20)) {
+	} else if (rt.inRange(subject, 14, 20)) {
 		return 3;
-	} else if (rt.inRange($0, 21, 27)) {
+	} else if (rt.inRange(subject, 21, 27)) {
 		return 4;
-	} else if (rt.inRange($0, 28, 9.999999848243207e+30)) {
+	} else if (rt.inRange(subject, 28, 1e+31)) {
 		return 5;
 	} else {
 		return 1;
 	}
-	return f.dot;
 });

@@ -1,13 +1,13 @@
-// From code/modules/html_interface/html_interface.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/html_interface/html_interface.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, g, fmt } = rt;
 
 
-// /datum/controller/global_vars/proc/InitGlobalhtml_interfaces  (code/modules/html_interface/html_interface.dm:83)
+// html_interface.dm:83
 rt.def("/datum/controller/global_vars/proc/InitGlobalhtml_interfaces", function InitGlobalhtml_interfaces(f: Frame) {
-	rt.setGl("html_interfaces", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "html_interfaces", add);
+	GLOB.html_interfaces = list();
+	this.gvars_datum_init_order += "html_interfaces";
 	return f.dot;
 });
 
@@ -22,454 +22,353 @@ rt.type(2707, "/datum/html_interface", "/datum", {
 	content_elements: null,
 }, { global: { asset_list: 666 } });
 
-// /datum/html_interface/proc/<init>  (code/modules/html_interface/html_interface.dm:93)
+// html_interface.dm:93
 rt.def("/datum/html_interface/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "content_elements", rt.new_(f, T("/list"), []));
+	parent_proc();
+	this.content_elements = new_(T("/list"));
 	return f.dot;
 });
 
-// /datum/html_interface/proc/New  (code/modules/html_interface/html_interface.dm:115)
+// html_interface.dm:115
 rt.def("/datum/html_interface/proc/New", function New(f: Frame) {
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 700;
 	}
-	if (live(f.args[3]) === null) {
+	if (f.args[3] === null) {
 		f.args[3] = 480;
 	}
-	if (live(f.args[4]) === null) {
+	if (f.args[4] === null) {
 		f.args[4] = "";
 	}
-	rt.callName(f, rt.gl("html_interfaces"), "Add", [live(f.src)]);
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	rt.setFv(f, "ref", live(f.src), live(f.args[0]));
-	rt.setFv(f, "title", live(f.src), live(f.args[1]));
-	rt.setFv(f, "width", live(f.src), live(f.args[2]));
-	rt.setFv(f, "height", live(f.src), live(f.args[3]));
-	rt.setFv(f, "head", live(f.src), live(f.args[4]));
+	GLOB.html_interfaces.Add(this);
+	f.dot = parent_proc();
+	this.ref = f.args[0];
+	this.title = f.args[1];
+	this.width = f.args[2];
+	this.height = f.args[3];
+	this.head = f.args[4];
 	return f.dot;
 }, false, { args: ["ref", "title", "width", "height", "head"] });
 
-// /datum/html_interface/proc/Destroy  (code/modules/html_interface/html_interface.dm:126)  may sleep
+// html_interface.dm:126
 rt.def("/datum/html_interface/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.callName(f, live(f.src), "closeAll", []);
-	yield* g.callName(f, rt.gl("html_interfaces"), "Remove", [live(f.src)]);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* this.closeAll();
+	yield* GLOB.html_interfaces.Remove(this);
+	return (yield* parent_proc());
 }, true);
 
-// /datum/html_interface/proc/registerResources  (code/modules/html_interface/html_interface.dm:137)
+// html_interface.dm:137
 rt.def("/datum/html_interface/proc/registerResources", function registerResources(f: Frame, resources: Value) {
-	let assetlist: Value = null, R: Value = null;
-	let $e: any;
-	f.vars = () => [resources, assetlist, R, $e];
-	if (live(resources) === null) {
-		resources = rt.list();
+	let R: Value = null;
+	resources ??= list();
+	rt.setAt(resources, "jquery.min.js", rt.rsc("code/modules/html_interface/js/jquery.min.js"));
+	rt.setAt(resources, "bootstrap.min.js", rt.rsc("code/modules/html_interface/js/bootstrap.min.js"));
+	rt.setAt(resources, "bootstrap.min.css", rt.rsc("code/modules/html_interface/css/bootstrap.min.css"));
+	rt.setAt(resources, "html_interface.css", rt.rsc("code/modules/html_interface/css/html_interface.css"));
+	rt.setAt(resources, "html_interface.js", rt.rsc("code/modules/html_interface/js/html_interface.js"));
+	let assetlist: Value = list();
+	for (R of each(resources)) {
+		register_asset(R, rt.index(resources, R));
+		assetlist += R;
 	}
-	rt.setAt(live(resources), "jquery.min.js", rt.rsc("code/modules/html_interface/js/jquery.min.js"));
-	rt.setAt(live(resources), "bootstrap.min.js", rt.rsc("code/modules/html_interface/js/bootstrap.min.js"));
-	rt.setAt(live(resources), "bootstrap.min.css", rt.rsc("code/modules/html_interface/css/bootstrap.min.css"));
-	rt.setAt(live(resources), "html_interface.css", rt.rsc("code/modules/html_interface/css/html_interface.css"));
-	rt.setAt(live(resources), "html_interface.js", rt.rsc("code/modules/html_interface/js/html_interface.js"));
-	assetlist = rt.list();
-	R = null;
-	rt.forList(f, 0, live(resources));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		R = $e;
-		rt.call(f, P("/proc/register_asset"), null, [live(R), rt.index(live(resources), live(R))]);
-		assetlist = rt.modify(live(assetlist), live(R), add);
+	if (!GLOB.asset_list) {
+		GLOB.asset_list = list();
 	}
-	rt.endFor(f, 0);
-	if (!truthy(rt.gl("asset_list"))) {
-		rt.setGl("asset_list", rt.list());
-	}
-	rt.setAt(rt.gl("asset_list"), rt.sv(f, "type"), live(assetlist));
+	rt.setAt(GLOB.asset_list, this.type, assetlist);
 	return f.dot;
 });
 
-// /datum/html_interface/proc/createWindow  (code/modules/html_interface/html_interface.dm:151)
+// html_interface.dm:151
 rt.def("/datum/html_interface/proc/createWindow", function createWindow(f: Frame, hclient: Value) {
-	let params: Value = null;
-	f.vars = () => [params];
-	rt.call(f, P("/proc/winclone"), null, [rt.fv(f, "client", live(hclient)), "window", fmt("browser_＃", [live(f.src)])]);
-	params = rt.alist(f, ["size", fmt("＀x＀", [rt.sv(f, "width"), rt.sv(f, "height")]), "statusbar", "false", "on-close", fmt("byond://?src=＃&html_interface_action=onclose", [live(f.src)])]);
-	if (truthy(rt.gv(f, "hi_last_pos", rt.fv(f, "client", live(hclient))))) {
-		rt.setAt(live(params), "pos", fmt("＀", [rt.gv(f, "hi_last_pos", rt.fv(f, "client", live(hclient)))]));
+	winclone(hclient.client, "window", fmt("browser_＃", [this]));
+	let params: Value = rt.alist(f, ["size", `${this.width}x${this.height}`, "statusbar", "false", "on-close", fmt("byond://?src=＃&html_interface_action=onclose", [this])]);
+	if (hclient.client.hi_last_pos) {
+		rt.setAt(params, "pos", `${hclient.client.hi_last_pos}`);
 	}
-	rt.call(f, P("/proc/winset"), null, [rt.fv(f, "client", live(hclient)), fmt("browser_＃", [live(f.src)]), rt.call(f, P("/proc/list2params"), null, [live(params)])]);
-	rt.call(f, P("/proc/winset"), null, [rt.fv(f, "client", live(hclient)), fmt("browser_＃.browser", [live(f.src)]), rt.call(f, P("/proc/list2params"), null, [rt.alist(f, ["parent", fmt("browser_＃", [live(f.src)]), "type", "browser", "pos", "0,0", "size", fmt("＀x＀", [rt.sv(f, "width"), rt.sv(f, "height")]), "anchor1", "0,0", "anchor2", "100,100", "use-title", "true", "auto-format", "false"])])]);
+	winset(hclient.client, fmt("browser_＃", [this]), list2params(params));
+	winset(hclient.client, fmt("browser_＃.browser", [this]), list2params(rt.alist(f, ["parent", fmt("browser_＃", [this]), "type", "browser", "pos", "0,0", "size", `${this.width}x${this.height}`, "anchor1", "0,0", "anchor2", "100,100", "use-title", "true", "auto-format", "false"])));
 	return f.dot;
 });
 
-// /datum/html_interface/proc/getTitle  (code/modules/html_interface/html_interface.dm:166)
+// html_interface.dm:166
 rt.def("/datum/html_interface/proc/getTitle", function getTitle(f: Frame) {
-	return rt.fv(f, "title", live(f.src));
+	return this.title;
 });
 
-// /datum/html_interface/proc/setTitle  (code/modules/html_interface/html_interface.dm:173)  may sleep
+// html_interface.dm:173
 rt.def("/datum/html_interface/proc/setTitle", function* setTitle(f: Frame, title: Value, ignore_cache: Value) {
 	let hclient: Value = null, client: Value = null;
-	let $e: any;
-	f.vars = () => [title, ignore_cache, hclient, client, $e];
-	if (live(ignore_cache) === null) {
-		ignore_cache = 0;
-	}
-	rt.setFv(f, "title", live(f.src), live(title));
-	hclient = null;
-	client = null;
-	rt.forList(f, 0, rt.fv(f, "clients", live(f.src)));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		client = $e;
-		if ((truthy((hclient = (yield* g.callName(f, live(f.src), "_getClient", [rt.index(rt.fv(f, "clients", live(f.src)), live(client))])))) && truthy(rt.fv(f, "active", live(hclient))))) {
-			yield* g.callName(f, live(f.src), "_renderTitle", [rt.index(rt.fv(f, "clients", live(f.src)), live(client)), live(ignore_cache)]);
+	ignore_cache ??= 0;
+	this.title = title;
+	for (client of each(this.clients)) {
+		if ((hclient = (yield* this._getClient(rt.index(this.clients, client)))) && hclient.active) {
+			this._renderTitle(rt.index(this.clients, client), ignore_cache);
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /datum/html_interface/proc/executeJavaScript  (code/modules/html_interface/html_interface.dm:180)  may sleep
+// html_interface.dm:180
 rt.def("/datum/html_interface/proc/executeJavaScript", function* executeJavaScript(f: Frame, jscript: Value, hclient: Value) {
 	let client: Value = null;
-	let $e: any;
-	f.vars = () => [jscript, hclient, client, $e];
-	if (live(hclient) === null) {
-		hclient = null;
-	}
-	if (truthy(live(hclient))) {
-		if (truthy((rt.istype((hclient = (yield* g.srcCall(f, "getClient", live(hclient)))), T("/datum/html_interface_client")) ? 1 : 0))) {
-			if (truthy(rt.fv(f, "is_loaded", live(hclient)))) {
-				rt.op(f, "OutputControl", [], [rt.fv(f, "client", live(hclient)), (yield* g.call(f, P("/proc/list2params"), null, [rt.list(live(jscript))])), fmt("browser_＃.browser:eval", [live(f.src)])], false);
+	if (hclient) {
+		if (rt.istype((hclient = (yield* this.getClient(hclient))), T("/datum/html_interface_client"))) {
+			if (hclient.is_loaded) {
+				rt.op(f, "OutputControl", [], [hclient.client, list2params(list(jscript)), fmt("browser_＃.browser:eval", [this])], false);
 			}
 		}
 	} else {
-		client = null;
-		rt.forList(f, 0, rt.fv(f, "clients", live(f.src)));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			client = $e;
-			if (truthy(rt.index(rt.fv(f, "clients", live(f.src)), live(client)))) {
-				yield* g.callName(f, live(f.src), "executeJavaScript", [live(jscript), rt.index(rt.fv(f, "clients", live(f.src)), live(client))]);
+		for (client of each(this.clients)) {
+			if (rt.index(this.clients, client)) {
+				yield* this.executeJavaScript(jscript, rt.index(this.clients, client));
 			}
 		}
-		rt.endFor(f, 0);
 	}
 	return f.dot;
 }, true);
 
-// /datum/html_interface/proc/callJavaScript  (code/modules/html_interface/html_interface.dm:188)  may sleep
+// html_interface.dm:188
 rt.def("/datum/html_interface/proc/callJavaScript", function* callJavaScript(f: Frame, func: Value, _arguments: Value, hclient: Value) {
 	let client: Value = null;
-	let $e: any;
-	f.vars = () => [func, _arguments, hclient, client, $e];
-	if (live(hclient) === null) {
-		hclient = null;
+	if (!_arguments) {
+		_arguments = (yield* new_(T("/list")));
 	}
-	if (!truthy(live(_arguments))) {
-		_arguments = (yield* g.new_(f, T("/list"), []));
-	}
-	if (truthy(live(hclient))) {
-		if (truthy((rt.istype((hclient = (yield* g.srcCall(f, "getClient", live(hclient)))), T("/datum/html_interface_client")) ? 1 : 0))) {
-			if (truthy(rt.fv(f, "is_loaded", live(hclient)))) {
-				rt.op(f, "OutputControl", [], [rt.fv(f, "client", live(hclient)), (yield* g.call(f, P("/proc/list2params"), null, [live(_arguments)])), fmt("browser_＃.browser:＀", [live(f.src), live(func)])], false);
+	if (hclient) {
+		if (rt.istype((hclient = (yield* this.getClient(hclient))), T("/datum/html_interface_client"))) {
+			if (hclient.is_loaded) {
+				rt.op(f, "OutputControl", [], [hclient.client, list2params(_arguments), fmt("browser_＃.browser:＀", [this, func])], false);
 			}
 		}
 	} else {
-		client = null;
-		rt.forList(f, 0, rt.fv(f, "clients", live(f.src)));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			client = $e;
-			if (truthy(rt.index(rt.fv(f, "clients", live(f.src)), live(client)))) {
-				yield* g.callName(f, live(f.src), "callJavaScript", [live(func), live(_arguments), rt.index(rt.fv(f, "clients", live(f.src)), live(client))]);
+		for (client of each(this.clients)) {
+			if (rt.index(this.clients, client)) {
+				yield* this.callJavaScript(func, _arguments, rt.index(this.clients, client));
 			}
 		}
-		rt.endFor(f, 0);
 	}
 	return f.dot;
 }, true);
 
-// /datum/html_interface/proc/updateLayout  (code/modules/html_interface/html_interface.dm:204)  may sleep
+// html_interface.dm:204
 rt.def("/datum/html_interface/proc/updateLayout", function* updateLayout(f: Frame, layout: Value) {
 	let hclient: Value = null, client: Value = null;
-	let $e: any;
-	f.vars = () => [layout, hclient, client, $e];
-	rt.setFv(f, "layout", live(f.src), live(layout));
-	hclient = null;
-	client = null;
-	rt.forList(f, 0, rt.fv(f, "clients", live(f.src)));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		client = $e;
-		if ((truthy((hclient = (yield* g.callName(f, live(f.src), "_getClient", [rt.index(rt.fv(f, "clients", live(f.src)), live(client))])))) && truthy(rt.fv(f, "active", live(hclient))))) {
-			yield* g.callName(f, live(f.src), "_renderLayout", [live(hclient)]);
+	this.layout = layout;
+	for (client of each(this.clients)) {
+		if ((hclient = (yield* this._getClient(rt.index(this.clients, client)))) && hclient.active) {
+			this._renderLayout(hclient);
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /datum/html_interface/proc/updateContent  (code/modules/html_interface/html_interface.dm:214)  may sleep
+// html_interface.dm:214
 rt.def("/datum/html_interface/proc/updateContent", function* updateContent(f: Frame, id: Value, content: Value, ignore_cache: Value) {
 	let hclient: Value = null, client: Value = null;
-	let $e: any;
-	f.vars = () => [id, content, ignore_cache, hclient, client, $e];
-	if (live(ignore_cache) === null) {
-		ignore_cache = 0;
-	}
-	rt.setAt(rt.fv(f, "content_elements", live(f.src)), live(id), live(content));
-	hclient = null;
-	client = null;
-	rt.forList(f, 0, rt.fv(f, "clients", live(f.src)));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		client = $e;
-		if ((truthy((hclient = (yield* g.callName(f, live(f.src), "_getClient", [rt.index(rt.fv(f, "clients", live(f.src)), live(client))])))) && truthy(rt.fv(f, "active", live(hclient))))) {
+	ignore_cache ??= 0;
+	rt.setAt(this.content_elements, id, content);
+	for (client of each(this.clients)) {
+		if ((hclient = (yield* this._getClient(rt.index(this.clients, client)))) && hclient.active) {
 			rt.spawnTail(f, -1, "/datum/html_interface/proc/updateContent: spawn at modules/html_interface/html_interface.dm:218", id, content, ignore_cache, hclient, client);
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
 // a spawn(-1) body of /datum/html_interface/proc/updateContent, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/datum/html_interface/proc/updateContent: spawn at modules/html_interface/html_interface.dm:218", function* (f: Frame, id: Value, content: Value, ignore_cache: Value, hclient: Value, client: Value) {
-	f.vars = () => [id, content, ignore_cache, hclient, client];
-	yield* g.callName(f, live(f.src), "_renderContent", [live(id), live(hclient), live(ignore_cache)]);
+	this._renderContent(id, hclient, ignore_cache);
 	return null;
 });
 
-// /datum/html_interface/proc/show  (code/modules/html_interface/html_interface.dm:221)  may sleep
+// html_interface.dm:221
 rt.def("/datum/html_interface/proc/show", function* show(f: Frame, hclient: Value) {
-	f.vars = () => [hclient];
-	if (!truthy((rt.istype((hclient = (yield* g.srcCall(f, "getClient", live(hclient), 1))), T("/datum/html_interface_client")) ? 1 : 0))) return f.dot;
-	if ((truthy((rt.isIn(f, rt.sv(f, "type"), rt.gl("asset_list")) ? 1 : 0)) && truthy((rt.istype(rt.index(rt.gl("asset_list"), rt.sv(f, "type")), T("/list")) ? 1 : 0)))) {
-		yield* g.call(f, P("/proc/send_asset_list"), null, [rt.fv(f, "client", live(hclient)), rt.index(rt.gl("asset_list"), rt.sv(f, "type")), 1]);
+	if (!rt.istype((hclient = (yield* this.getClient(hclient, 1))), T("/datum/html_interface_client"))) return f.dot;
+	if (rt.isIn(f, this.type, GLOB.asset_list) && rt.istype(rt.index(GLOB.asset_list, this.type), T("/list"))) {
+		yield* send_asset_list(hclient.client, rt.index(GLOB.asset_list, this.type), 1);
 	}
-	if (!truthy((yield* g.call(f, P("/proc/winexists"), null, [rt.fv(f, "client", live(hclient)), fmt("browser_＃", [live(f.src)])])))) {
-		yield* g.callName(f, live(f.src), "createWindow", [live(hclient)]);
+	if (!(yield* winexists(hclient.client, fmt("browser_＃", [this])))) {
+		this.createWindow(hclient);
 	}
-	rt.setFv(f, "is_loaded", live(hclient), 0);
-	rt.op(f, "OutputControl", [], [rt.fv(f, "client", live(hclient)), (yield* g.call(f, P("/proc/replacetextEx"), null, [(yield* g.call(f, P("/proc/replacetextEx"), null, [(yield* g.call(f, P("/proc/file2text"), null, [rt.rsc("code/modules/html_interface/html_interface.html")])), "[hsrc]", fmt("＃", [live(f.src)])])), "</head>", fmt("＀</head>", [rt.sv(f, "head")])])), fmt("browser_＃.browser", [live(f.src)])], false);
-	yield* g.call(f, P("/proc/winshow"), null, [rt.fv(f, "client", live(hclient)), fmt("browser_＃", [live(f.src)]), 1]);
-	while ((truthy(rt.fv(f, "client", live(hclient))) && truthy(rt.fv(f, "active", live(hclient)))) && !truthy(rt.fv(f, "is_loaded", live(hclient)))) {
-		yield* g.call(f, P("/proc/sleep"), null, [2]);
+	hclient.is_loaded = 0;
+	rt.op(f, "OutputControl", [], [hclient.client, replacetextEx(replacetextEx(file2text(rt.rsc("code/modules/html_interface/html_interface.html")), "[hsrc]", fmt("＃", [this])), "</head>", `${this.head}</head>`), fmt("browser_＃.browser", [this])], false);
+	winshow(hclient.client, fmt("browser_＃", [this]), 1);
+	while (hclient.client && hclient.active && !hclient.is_loaded) {
+		yield* sleep(2);
 	}
 	return f.dot;
 }, true);
 
-// /datum/html_interface/proc/hide  (code/modules/html_interface/html_interface.dm:240)  may sleep
+// html_interface.dm:240
 rt.def("/datum/html_interface/proc/hide", function* hide(f: Frame, hclient: Value) {
-	f.vars = () => [hclient];
-	if (!truthy((rt.istype((hclient = (yield* g.srcCall(f, "getClient", live(hclient)))), T("/datum/html_interface_client")) ? 1 : 0))) return f.dot;
-	if (truthy(rt.fv(f, "clients", live(f.src)))) {
-		yield* g.callName(f, rt.fv(f, "clients", live(f.src)), "Remove", [rt.fv(f, "client", live(hclient))]);
-		if (!truthy(rt.getLen(f, rt.fv(f, "clients", live(f.src))))) {
-			rt.setFv(f, "clients", live(f.src), null);
+	if (!rt.istype((hclient = (yield* this.getClient(hclient))), T("/datum/html_interface_client"))) return f.dot;
+	if (this.clients) {
+		yield* this.clients.Remove(hclient.client);
+		if (!rt.len(f, this.clients)) {
+			this.clients = null;
 		}
 	}
-	rt.setFv(f, "hi_last_pos", rt.fv(f, "client", live(hclient)), (yield* g.call(f, P("/proc/winget"), null, [rt.fv(f, "client", live(hclient)), fmt("browser_＃", [live(f.src)]), "pos"])));
-	yield* g.call(f, P("/proc/winshow"), null, [rt.fv(f, "client", live(hclient)), fmt("browser_＃", [live(f.src)]), 0]);
-	yield* g.call(f, P("/proc/winset"), null, [rt.fv(f, "client", live(hclient)), fmt("browser_＃", [live(f.src)]), "parent=none"]);
-	if (!truthy((yield* g.call(f, P("/proc/hascall"), null, [rt.fv(f, "ref", live(f.src)), "hiOnHide"])))) return f.dot;
-	yield* g.callDyn(f, rt.fv(f, "ref", live(f.src)), "hiOnHide", [live(hclient)]);
+	hclient.client.hi_last_pos = (yield* winget(hclient.client, fmt("browser_＃", [this]), "pos"));
+	winshow(hclient.client, fmt("browser_＃", [this]), 0);
+	winset(hclient.client, fmt("browser_＃", [this]), "parent=none");
+	if (!hascall(this.ref, "hiOnHide")) return f.dot;
+	yield* g.callDyn(f, this.ref, "hiOnHide", [hclient]);
 	return f.dot;
 }, true);
 
-// /datum/html_interface/proc/getClient  (code/modules/html_interface/html_interface.dm:257)  may sleep
+// html_interface.dm:257
 rt.def("/datum/html_interface/proc/getClient", function* getClient(f: Frame, client: Value, create_if_not_exist: Value) {
 	let mob: Value = null;
-	f.vars = () => [client, create_if_not_exist, mob];
-	if (live(create_if_not_exist) === null) {
-		create_if_not_exist = 0;
+	create_if_not_exist ??= 0;
+	if (rt.istype(client, T("/datum/html_interface_client"))) {
+		return (yield* this._getClient(client));
 	}
-	if (truthy((rt.istype(live(client), T("/datum/html_interface_client")) ? 1 : 0))) {
-		return (yield* g.callName(f, live(f.src), "_getClient", [live(client)]));
+	if (ismob(client)) {
+		client = (mob = client).client;
 	}
-	if (truthy((yield* g.call(f, P("/proc/ismob"), null, [live(client)])))) {
-		client = rt.gv(f, "client", (mob = live(client)));
-	}
-	if (truthy((rt.istype(live(client), T("/client")) ? 1 : 0))) {
-		if ((truthy(live(create_if_not_exist)) && (!truthy(rt.fv(f, "clients", live(f.src))) || !truthy((rt.isIn(f, live(client), rt.fv(f, "clients", live(f.src))) ? 1 : 0))))) {
-			if (!truthy(rt.fv(f, "clients", live(f.src)))) {
-				rt.setFv(f, "clients", live(f.src), (yield* g.new_(f, T("/list"), [])));
+	if (rt.istype(client, T("/client"))) {
+		if (create_if_not_exist && (!this.clients || !rt.isIn(f, client, this.clients))) {
+			if (!this.clients) {
+				this.clients = (yield* new_(T("/list")));
 			}
-			if (!truthy((rt.isIn(f, live(client), rt.fv(f, "clients", live(f.src))) ? 1 : 0))) {
-				rt.setAt(rt.fv(f, "clients", live(f.src)), live(client), (yield* g.new_(f, T("/datum/html_interface_client"), [live(client)])));
+			if (!rt.isIn(f, client, this.clients)) {
+				rt.setAt(this.clients, client, (yield* new_(T("/datum/html_interface_client"), client)));
 			}
 		}
-		if ((truthy(rt.fv(f, "clients", live(f.src))) && truthy((rt.isIn(f, live(client), rt.fv(f, "clients", live(f.src))) ? 1 : 0)))) {
-			return (yield* g.callName(f, live(f.src), "_getClient", [rt.index(rt.fv(f, "clients", live(f.src)), live(client))]));
+		if (this.clients && rt.isIn(f, client, this.clients)) {
+			return (yield* this._getClient(rt.index(this.clients, client)));
 		}
 		return null;
 	} else {
 		return null;
 	}
-	return f.dot;
 }, true);
 
-// /datum/html_interface/proc/enableFor  (code/modules/html_interface/html_interface.dm:272)  may sleep
+// html_interface.dm:272
 rt.def("/datum/html_interface/proc/enableFor", function* enableFor(f: Frame, hclient: Value) {
-	f.vars = () => [hclient];
-	rt.setFv(f, "active", live(hclient), 1);
-	yield* g.callName(f, live(f.src), "show", [live(hclient)]);
+	hclient.active = 1;
+	yield* this.show(hclient);
 	return f.dot;
 }, true);
 
-// /datum/html_interface/proc/disableFor  (code/modules/html_interface/html_interface.dm:277)
+// html_interface.dm:277
 rt.def("/datum/html_interface/proc/disableFor", function disableFor(f: Frame, hclient: Value) {
-	rt.setFv(f, "active", live(hclient), 0);
+	hclient.active = 0;
 	return f.dot;
 });
 
-// /datum/html_interface/proc/isUsed  (code/modules/html_interface/html_interface.dm:280)  may sleep
+// html_interface.dm:280
 rt.def("/datum/html_interface/proc/isUsed", function* isUsed(f: Frame) {
 	let hclient: Value = null, key: Value = null;
-	let $e: any;
-	f.vars = () => [hclient, key, $e];
-	if ((truthy(rt.fv(f, "clients", live(f.src))) && rt.gt(rt.getLen(f, rt.fv(f, "clients", live(f.src))), 0))) {
-		hclient = null;
-		key = null;
-		rt.forList(f, 0, rt.sv(f, "clients"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			key = $e;
-			if (truthy((hclient = (yield* g.srcCall(f, "_getClient", rt.index(rt.sv(f, "clients"), live(key))))))) {
-				if (truthy(rt.fv(f, "active", live(hclient)))) {
+	if (this.clients && rt.len(f, this.clients) > 0) {
+		for (key of each(this.clients)) {
+			if (hclient = (yield* this._getClient(rt.index(this.clients, key)))) {
+				if (hclient.active) {
 					return 1;
 				}
 			} else {
-				yield* g.callName(f, rt.sv(f, "clients"), "Remove", [live(key)]);
+				yield* this.clients.Remove(key);
 			}
 		}
-		rt.endFor(f, 0);
 	}
 	return 0;
 }, true);
 
-// /datum/html_interface/proc/closeAll  (code/modules/html_interface/html_interface.dm:294)  may sleep
+// html_interface.dm:294
 rt.def("/datum/html_interface/proc/closeAll", function* closeAll(f: Frame) {
 	let client: Value = null;
-	let $e: any;
-	f.vars = () => [client, $e];
-	if (!truthy(rt.fv(f, "clients", live(f.src)))) return f.dot;
-	client = null;
-	rt.forList(f, 0, rt.fv(f, "clients", live(f.src)));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		client = $e;
-		yield* g.callName(f, live(f.src), "hide", [rt.index(rt.fv(f, "clients", live(f.src)), live(client))]);
+	if (!this.clients) return f.dot;
+	for (client of each(this.clients)) {
+		yield* this.hide(rt.index(this.clients, client));
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /datum/html_interface/proc/_getClient  (code/modules/html_interface/html_interface.dm:302)  may sleep
+// html_interface.dm:302
 rt.def("/datum/html_interface/proc/_getClient", function* _getClient(f: Frame, hclient: Value) {
 	let res: Value = null;
 	let $0: any;
-	f.vars = () => [hclient, res, $0];
-	if (truthy(live(hclient))) {
-		if (truthy(rt.fv(f, "client", live(hclient)))) {
-			$0 = (rt.le(rt.gv(f, "inactivity", rt.fv(f, "client", live(hclient))), 6000) ? 1 : 0);
-			if (truthy($0)) {
-				if (truthy((yield* g.call(f, P("/proc/hascall"), null, [rt.fv(f, "ref", live(f.src)), "hiIsValidClient"])))) {
-					$0 = (yield* g.callDyn(f, rt.fv(f, "ref", live(f.src)), "hiIsValidClient", [live(hclient), live(f.src)]));
+	if (hclient) {
+		if (hclient.client) {
+			$0 = (hclient.client.inactivity <= 6000 ? 1 : 0);
+			if ($0) {
+				if (hascall(this.ref, "hiIsValidClient")) {
+					$0 = (yield* g.callDyn(f, this.ref, "hiIsValidClient", [hclient, this]));
 				} else {
 					$0 = 1;
 				}
 			}
-			if (truthy((res = $0))) {
-				if (!truthy(rt.fv(f, "active", live(hclient)))) {
-					yield* g.callName(f, live(f.src), "enableFor", [live(hclient)]);
+			if (res = $0) {
+				if (!hclient.active) {
+					yield* this.enableFor(hclient);
 				}
-			} else {
-				if (truthy(rt.fv(f, "active", live(hclient)))) {
-					yield* g.callName(f, live(f.src), "disableFor", [live(hclient)]);
-				}
+			} else if (hclient.active) {
+				yield* this.disableFor(hclient);
 			}
-			return live(hclient);
+			return hclient;
 		} else {
 			return null;
 		}
 	} else {
 		return null;
 	}
-	return f.dot;
 }, true);
 
-// /datum/html_interface/proc/_renderTitle  (code/modules/html_interface/html_interface.dm:318)
+// html_interface.dm:318
 rt.def("/datum/html_interface/proc/_renderTitle", function _renderTitle(f: Frame, hclient: Value, ignore_cache: Value, ignore_loaded: Value) {
-	f.vars = () => [ignore_cache, ignore_loaded];
-	if (live(ignore_cache) === null) {
-		ignore_cache = 0;
-	}
-	if (live(ignore_loaded) === null) {
-		ignore_loaded = 0;
-	}
-	if (!(truthy(live(hclient)) && (truthy(live(ignore_loaded)) || truthy(rt.fv(f, "is_loaded", live(hclient)))))) return f.dot;
-	if (!(truthy(live(ignore_cache)) || !isEqual(rt.fv(f, "title", live(f.src)), rt.fv(f, "title", live(hclient))))) return f.dot;
-	rt.setFv(f, "title", live(hclient), rt.sv(f, "title"));
-	rt.callName(f, live(f.src), "specificRenderTitle", [live(hclient)]);
-	rt.op(f, "OutputControl", [], [rt.fv(f, "client", live(hclient)), rt.call(f, P("/proc/list2params"), null, [rt.list(rt.sv(f, "title"))]), fmt("browser_＃.browser:setTitle", [live(f.src)])], false);
+	ignore_cache ??= 0;
+	ignore_loaded ??= 0;
+	if (!(hclient && (ignore_loaded || hclient.is_loaded))) return f.dot;
+	if (!(ignore_cache || this.title != hclient.title)) return f.dot;
+	hclient.title = this.title;
+	this.specificRenderTitle(hclient);
+	rt.op(f, "OutputControl", [], [hclient.client, list2params(list(this.title)), fmt("browser_＃.browser:setTitle", [this])], false);
 	return f.dot;
 });
 
-// /datum/html_interface/proc/_renderLayout  (code/modules/html_interface/html_interface.dm:329)
+// html_interface.dm:329
 rt.def("/datum/html_interface/proc/_renderLayout", function _renderLayout(f: Frame, hclient: Value, ignore_loaded: Value) {
 	let html: Value = null, id: Value = null;
-	let $e: any;
-	f.vars = () => [ignore_loaded, html, id, $e];
-	if (live(ignore_loaded) === null) {
-		ignore_loaded = 0;
+	ignore_loaded ??= 0;
+	if (!(hclient && (ignore_loaded || hclient.is_loaded))) return f.dot;
+	if ((html = this.layout) == hclient.layout) return f.dot;
+	hclient.layout = html;
+	rt.op(f, "OutputControl", [], [hclient.client, list2params(list(html)), fmt("browser_＃.browser:updateLayout", [this])], false);
+	for (id of each(this.content_elements)) {
+		this._renderContent(id, hclient, { ignore_loaded: ignore_loaded });
 	}
-	if (!(truthy(live(hclient)) && (truthy(live(ignore_loaded)) || truthy(rt.fv(f, "is_loaded", live(hclient)))))) return f.dot;
-	if (isEqual((html = rt.fv(f, "layout", live(f.src))), rt.fv(f, "layout", live(hclient)))) return f.dot;
-	rt.setFv(f, "layout", live(hclient), live(html));
-	rt.op(f, "OutputControl", [], [rt.fv(f, "client", live(hclient)), rt.call(f, P("/proc/list2params"), null, [rt.list(live(html))]), fmt("browser_＃.browser:updateLayout", [live(f.src)])], false);
-	id = null;
-	rt.forList(f, 0, rt.fv(f, "content_elements", live(f.src)));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		id = $e;
-		rt.callName(f, live(f.src), "_renderContent", [null, live(id), null, live(hclient), "ignore_loaded", live(ignore_loaded)], rt.Args.Named);
-	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /datum/html_interface/proc/_renderContent  (code/modules/html_interface/html_interface.dm:341)
+// html_interface.dm:341
 rt.def("/datum/html_interface/proc/_renderContent", function _renderContent(f: Frame, id: Value, hclient: Value, ignore_cache: Value, ignore_loaded: Value) {
-	let html: Value = null;
-	f.vars = () => [ignore_cache, ignore_loaded, html];
-	if (live(ignore_cache) === null) {
-		ignore_cache = 0;
-	}
-	if (live(ignore_loaded) === null) {
-		ignore_loaded = 0;
-	}
-	if (!(truthy(live(hclient)) && (truthy(live(ignore_loaded)) || truthy(rt.fv(f, "is_loaded", live(hclient)))))) return f.dot;
-	html = rt.index(rt.fv(f, "content_elements", live(f.src)), live(id));
-	if (!((truthy(live(ignore_cache)) || !truthy((rt.isIn(f, live(id), rt.fv(f, "content_elements", live(hclient))) ? 1 : 0))) || !isEqual(live(html), rt.index(rt.fv(f, "content_elements", live(hclient)), live(id))))) return f.dot;
-	rt.setAt(rt.fv(f, "content_elements", live(hclient)), live(id), live(html));
-	rt.op(f, "OutputControl", [], [rt.fv(f, "client", live(hclient)), rt.call(f, P("/proc/list2params"), null, [rt.list(live(id), live(html))]), fmt("browser_＃.browser:updateContent", [live(f.src)])], false);
+	ignore_cache ??= 0;
+	ignore_loaded ??= 0;
+	if (!(hclient && (ignore_loaded || hclient.is_loaded))) return f.dot;
+	let html: Value = rt.index(this.content_elements, id);
+	if (!(ignore_cache || !rt.isIn(f, id, hclient.content_elements) || html != rt.index(hclient.content_elements, id))) return f.dot;
+	rt.setAt(hclient.content_elements, id, html);
+	rt.op(f, "OutputControl", [], [hclient.client, list2params(list(id, html)), fmt("browser_＃.browser:updateContent", [this])], false);
 	return f.dot;
 });
 
-// /datum/html_interface/proc/Topic  (code/modules/html_interface/html_interface.dm:351)  may sleep
+// html_interface.dm:351
 rt.def("/datum/html_interface/proc/Topic", function* Topic(f: Frame, href: Value, href_list: Value) {
 	let hclient: Value = null;
-	let $0: any;
-	f.vars = () => [href, href_list, hclient, $0];
-	if (!truthy((rt.istype((hclient = (yield* g.srcCall(f, "getClient", rt.fv(f, "client", live(f.usr))))), T("/datum/html_interface_client")) ? 1 : 0))) return f.dot;
-	if (truthy((rt.isIn(f, "html_interface_action", live(href_list)) ? 1 : 0))) {
-		$0 = rt.at(live(href_list), "html_interface_action");
-		if ($0 === "onload") {
-			rt.setFv(f, "layout", live(hclient), null);
-			rt.setFv(f, "len", rt.fv(f, "content_elements", live(hclient)), 0);
-			yield* g.callName(f, live(f.src), "_renderTitle", [live(hclient), 1, 1]);
-			yield* g.callName(f, live(f.src), "_renderLayout", [live(hclient), 1]);
-			rt.setFv(f, "is_loaded", live(hclient), 1);
-		} else if ($0 === "onclose") {
-			yield* g.callName(f, live(f.src), "hide", [live(hclient)]);
+	if (!rt.istype((hclient = (yield* this.getClient(f.usr.client))), T("/datum/html_interface_client"))) return f.dot;
+	if (rt.isIn(f, "html_interface_action", href_list)) {
+		const item = rt.at(href_list, "html_interface_action");
+		if (item === "onload") {
+			hclient.layout = null;
+			hclient.content_elements.len = 0;
+			this._renderTitle(hclient, 1, 1);
+			this._renderLayout(hclient, 1);
+			hclient.is_loaded = 1;
+		} else if (item === "onclose") {
+			yield* this.hide(hclient);
 		}
 	} else {
-		if (!(truthy(rt.fv(f, "ref", live(f.src))) && truthy(rt.fv(f, "active", live(hclient))))) return f.dot;
-		yield* g.callName(f, rt.fv(f, "ref", live(f.src)), "Topic", [live(href), live(href_list), live(hclient)]);
+		if (!(this.ref && hclient.active)) return f.dot;
+		yield* this.ref.Topic(href, href_list, hclient);
 	}
 	return f.dot;
 }, true);

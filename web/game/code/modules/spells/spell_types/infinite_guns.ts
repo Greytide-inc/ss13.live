@@ -1,7 +1,7 @@
-// From code/modules/spells/spell_types/infinite_guns.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/spells/spell_types/infinite_guns.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(11319, "/obj/effect/proc_holder/spell/targeted/infinite_guns", "/obj/effect/proc_holder/spell/targeted", {
@@ -18,25 +18,17 @@ rt.type(11319, "/obj/effect/proc_holder/spell/targeted/infinite_guns", "/obj/eff
 	action_icon_state: "bolt_action",
 });
 
-// /obj/effect/proc_holder/spell/targeted/infinite_guns/proc/cast  (code/modules/spells/spell_types/infinite_guns.dm:16)  may sleep
+// infinite_guns.dm:16
 rt.def("/obj/effect/proc_holder/spell/targeted/infinite_guns/proc/cast", function* cast(f: Frame, targets: Value, user: Value) {
 	let C: Value = null, GUN: Value = null;
-	let $e: any;
-	f.vars = () => [targets, user, C, GUN, $e];
-	if (live(user) === null) {
-		user = live(f.usr);
+	user ??= f.usr;
+	for (C of each(targets, T("/mob/living/carbon"))) {
+		yield* C.drop_item();
+		C.swap_hand();
+		yield* C.drop_item();
+		GUN = (yield* new_(this.summon_path));
+		yield* C.put_in_hands(GUN);
+		C.swap_hand(C.get_held_index_of_item(GUN));
 	}
-	C = null;
-	rt.forList(f, 0, live(targets), T("/mob/living/carbon"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		C = $e;
-		yield* g.callName(f, live(C), "drop_item", []);
-		yield* g.callName(f, live(C), "swap_hand", []);
-		yield* g.callName(f, live(C), "drop_item", []);
-		GUN = (yield* g.new_(f, rt.sv(f, "summon_path"), []));
-		yield* g.callName(f, live(C), "put_in_hands", [live(GUN)]);
-		yield* g.callName(f, live(C), "swap_hand", [(yield* g.callName(f, live(C), "get_held_index_of_item", [live(GUN)]))]);
-	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);

@@ -1,7 +1,7 @@
-// From code/datums/diseases/advance/symptoms/cough.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/datums/diseases/advance/symptoms/cough.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(986, "/datum/symptom/cough", "/datum/symptom", {
@@ -14,23 +14,20 @@ rt.type(986, "/datum/symptom/cough", "/datum/symptom", {
 	severity: 1,
 });
 
-// /datum/symptom/cough/proc/Activate  (code/datums/diseases/advance/symptoms/cough.dm:29)  may sleep
-rt.def("/datum/symptom/cough/proc/Activate", function* Activate(f: Frame) {
+// cough.dm:29
+rt.def("/datum/symptom/cough/proc/Activate", function* Activate(f: Frame, A: Value) {
 	let M: Value = null, I: Value = null;
-	let $0: any;
-	f.vars = () => [M, I, $0];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.op(f, "Prob", [], [rt.gl("SYMPTOM_ACTIVATION_PROB")]))) {
-		M = rt.fv(f, "affected_mob", live(f.args[0]));
-		$0 = rt.fv(f, "stage", live(f.args[0]));
-		if ($0 === 1 || $0 === 2 || $0 === 3) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(M), fmt("<span notice='warning'>＀</span>", [rt.op(f, "PickUnweighted", [2], ["You swallow excess mucus.", "You lightly cough."])])]);
+	yield* parent_proc();
+	if (prob(GLOB.SYMPTOM_ACTIVATION_PROB)) {
+		M = A.affected_mob;
+		if (A.stage === 1 || A.stage === 2 || A.stage === 3) {
+			to_chat(M, `<span notice='warning'>${pick("You swallow excess mucus.", "You lightly cough.")}</span>`);
 		} else {
-			yield* g.callName(f, live(M), "emote", ["cough"]);
-			if ((truthy((I = (yield* g.callName(f, live(M), "get_active_held_item", [])))) && isEqual(rt.fv(f, "w_class", live(I)), 1))) {
-				yield* g.callName(f, live(M), "drop_item", []);
+			yield* M.emote("cough");
+			if ((I = M.get_active_held_item()) && I.w_class == WEIGHT_CLASS_TINY) {
+				yield* M.drop_item();
 			}
 		}
 	}
-	return live(f.dot);
-}, true, { args: ["A"] });
+	return f.dot;
+}, true);

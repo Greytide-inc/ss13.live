@@ -15,7 +15,7 @@ import { normLookVar, parseColorText } from "./look.js";
 import { DMList, DMObject } from "./objects.js";
 import { Resource } from "./objtree.js";
 import { type IconOp, type IconRecipe, type RGBA, evalRecipe, getPixel, recipeSize, recipeStates } from "../dmi/icon-ops.js";
-import { DMRuntimeError, fround, stringify, type Value } from "./value.js";
+import { DMRuntimeError, stringify, type Value } from "./value.js";
 import { DMAtom } from "./world.js";
 
 const num = (v: Value, dflt: number): number => (typeof v === "number" ? v : dflt);
@@ -217,7 +217,7 @@ export function installMiscNatives(vm: VM): void {
 		return o;
 	};
 	const getM = (o: DMObject) => ["a", "b", "c", "d", "e", "f"].map((k) => num(o.getVar(k), 0));
-	const setM = (o: DMObject, v: number[]) => ["a", "b", "c", "d", "e", "f"].forEach((k, i) => o.setVar(k, fround(v[i])));
+	const setM = (o: DMObject, v: number[]) => ["a", "b", "c", "d", "e", "f"].forEach((k, i) => o.setVar(k, v[i]));
 	const mul = (x: number[], y: number[]) => {
 		// x then y (BYOND's Multiply: src = src * m, applying src first).
 		const [a, b, c, d, e, f] = x, [A, B, C, D, E, F] = y;

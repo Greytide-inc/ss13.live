@@ -1,7 +1,7 @@
-// From code/game/gamemodes/clock_cult/clock_mobs/clockwork_marauder.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/gamemodes/clock_cult/clock_mobs/clockwork_marauder.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(4861, "/mob/living/simple_animal/hostile/clockwork/marauder", "/mob/living/simple_animal/hostile/clockwork", {
@@ -29,549 +29,481 @@ rt.type(4861, "/mob/living/simple_animal/hostile/clockwork/marauder", "/mob/livi
 	playstyle_string: "<span class='sevtug'>You are a clockwork marauder</span><b>, a living extension of Sevtug's will. As a marauder, you are somewhat slow, but may block attacks, and have a chance to also counter blocked melee attacks for extra damage, in addition to being immune to extreme temperatures and pressures. Your primary goal is to serve the creature that you are now a part of. You can use <span class='sevtug_small'><i>:b</i></span> to communicate silently with your master, but can only exit if your master calls your true name or if they are exceptionally damaged. \n\nStay near your host to protect and heal them; being too far from your host will rapidly cause you massive damage. Recall to your host if you are too weak and believe you cannot continue fighting safely. As a final note, you should probably avoid harming any fellow servants of Ratvar.</span>",
 }, { global: { possible_true_names: 714, damage_heal_order: 715 } });
 
-// /mob/living/simple_animal/hostile/clockwork/marauder/proc/<init>  (code/game/gamemodes/clock_cult/clock_mobs/clockwork_marauder.dm:14)
+// clockwork_marauder.dm:14
 rt.def("/mob/living/simple_animal/hostile/clockwork/marauder/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "weather_immunities", rt.list("lava"));
-	$0 = $0;
-	rt.setSv(f, "loot", rt.list(T("/obj/item/clockwork/component/geis_capacitor/fallen_armor")));
+	parent_proc();
+	this.weather_immunities = list("lava");
+
+	this.loot = list(T("/obj/item/clockwork/component/geis_capacitor/fallen_armor"));
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/clockwork/marauder/proc/Initialize  (code/game/gamemodes/clock_cult/clock_mobs/clockwork_marauder.dm:35)  may sleep
+// clockwork_marauder.dm:35
 rt.def("/mob/living/simple_animal/hostile/clockwork/marauder/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "true_name", rt.op(f, "PickUnweighted", [1], [rt.gl("possible_true_names")]));
+	f.dot = (yield* parent_proc());
+	this.true_name = pick(GLOB.possible_true_names);
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/clockwork/marauder/proc/Life  (code/game/gamemodes/clock_cult/clock_mobs/clockwork_marauder.dm:39)  may sleep
+// clockwork_marauder.dm:39
 rt.def("/mob/living/simple_animal/hostile/clockwork/marauder/proc/Life", function* Life(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy((yield* g.srcCall(f, "is_in_host")))) {
-		if (!truthy((yield* g.call(f, P("/proc/is_servant_of_ratvar"), null, [rt.sv(f, "host")])))) {
-			yield* g.srcCall(f, "emerge_from_host", 0, 1);
-			yield* g.srcCall(f, "unbind_from_host");
-			return live(f.dot);
+	yield* parent_proc();
+	if (this.is_in_host()) {
+		if (!is_servant_of_ratvar(this.host)) {
+			yield* this.emerge_from_host(0, 1);
+			yield* this.unbind_from_host();
+			return f.dot;
 		}
-		if ((!truthy(rt.gl("ratvar_awakens")) && isEqual(rt.fv(f, "stat", rt.sv(f, "host")), 2))) {
-			yield* g.srcCall(f, "death");
-			return live(f.dot);
+		if (!GLOB.ratvar_awakens && this.host.stat == 2) {
+			yield* this.death();
+			return f.dot;
 		}
-		if (truthy(rt.gl("ratvar_awakens"))) {
-			yield* g.srcCall(f, "adjustHealth", -50);
+		if (GLOB.ratvar_awakens) {
+			yield* this.adjustHealth(-50);
 		} else {
-			yield* g.srcCall(f, "adjustHealth", -10);
+			yield* this.adjustHealth(-10);
 		}
-		if (!truthy(rt.sv(f, "recovering"))) {
-			yield* g.srcCall(f, "heal_host");
-		} else {
-			if (isEqual(rt.sv(f, "health"), rt.sv(f, "maxHealth"))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='userdanger'>Your strength has returned. You can once again come forward!</span>"]);
-				yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "host"), "<span class='userdanger'>Your marauder is now strong enough to come forward again!</span>"]);
-				rt.setSv(f, "recovering", 0);
-			}
+		if (!this.recovering) {
+			yield* this.heal_host();
+		} else if (this.health == this.maxHealth) {
+			to_chat(this, "<span class='userdanger'>Your strength has returned. You can once again come forward!</span>");
+			to_chat(this.host, "<span class='userdanger'>Your marauder is now strong enough to come forward again!</span>");
+			this.recovering = 0;
 		}
+	} else if (GLOB.ratvar_awakens) {
+		yield* this.adjustHealth(-5);
+		yield* this.heal_host();
 	} else {
-		if (truthy(rt.gl("ratvar_awakens"))) {
-			yield* g.srcCall(f, "adjustHealth", -5);
-			yield* g.srcCall(f, "heal_host");
-		} else {
-			if (!truthy(rt.sv(f, "host"))) return f.dot;
-			if (!truthy((yield* g.call(f, P("/proc/is_servant_of_ratvar"), null, [rt.sv(f, "host")])))) {
-				yield* g.srcCall(f, "unbind_from_host");
-				return live(f.dot);
-			}
-			if (isEqual(rt.fv(f, "stat", rt.sv(f, "host")), 2)) {
-				yield* g.srcCall(f, "adjustHealth", 50);
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='userdanger'>Your host is dead!</span>"]);
-				return live(f.dot);
-			}
-			if (((truthy(rt.sv(f, "z")) && truthy(rt.fv(f, "z", rt.sv(f, "host")))) && isEqual(rt.sv(f, "z"), rt.fv(f, "z", rt.sv(f, "host"))))) {
-				$0 = (yield* g.call(f, P("/proc/get_dist"), null, [rt.getStep(f, live(f.src), 0), rt.getStep(f, rt.sv(f, "host"), 0)]));
-				if ($0 === 2) {
-					yield* g.srcCall(f, "adjustHealth", -1);
-				} else if ($0 === 3) {
-				} else if ($0 === 4) {
-					yield* g.srcCall(f, "adjustHealth", 1);
-				} else if ($0 === 5) {
-					yield* g.srcCall(f, "adjustHealth", 3);
-				} else if ($0 === 6) {
-					yield* g.srcCall(f, "adjustHealth", 6);
-				} else if ($0 === 7) {
-					yield* g.srcCall(f, "adjustHealth", 9);
-				} else if (rt.inRange($0, 8, 9.999999848243207e+30)) {
-					yield* g.srcCall(f, "adjustHealth", 15);
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='userdanger'>You're too far from your host and rapidly taking damage!</span>"]);
-				} else {
-					yield* g.srcCall(f, "adjustHealth", -2);
-					yield* g.srcCall(f, "heal_host");
-				}
+		if (!this.host) return f.dot;
+		if (!is_servant_of_ratvar(this.host)) {
+			yield* this.unbind_from_host();
+			return f.dot;
+		}
+		if (this.host.stat == 2) {
+			yield* this.adjustHealth(50);
+			to_chat(this, "<span class='userdanger'>Your host is dead!</span>");
+			return f.dot;
+		}
+		if (this.z && this.host.z && this.z == this.host.z) {
+			const dist = get_dist(rt.getStep(f, this, 0), rt.getStep(f, this.host, 0));
+			if (dist === 2) {
+				yield* this.adjustHealth(-1);
+			} else if (dist === 3) {
+			} else if (dist === 4) {
+				yield* this.adjustHealth(1);
+			} else if (dist === 5) {
+				yield* this.adjustHealth(3);
+			} else if (dist === 6) {
+				yield* this.adjustHealth(6);
+			} else if (dist === 7) {
+				yield* this.adjustHealth(9);
+			} else if (rt.inRange(dist, 8, 1e+31)) {
+				yield* this.adjustHealth(15);
+				to_chat(this, "<span class='userdanger'>You're too far from your host and rapidly taking damage!</span>");
 			} else {
-				yield* g.srcCall(f, "adjustHealth", 15);
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='userdanger'>You're too far from your host and rapidly taking damage!</span>"]);
+				yield* this.adjustHealth(-2);
+				yield* this.heal_host();
 			}
+		} else {
+			yield* this.adjustHealth(15);
+			to_chat(this, "<span class='userdanger'>You're too far from your host and rapidly taking damage!</span>");
 		}
 	}
 	return f.dot;
 }, true, { waitfor: false });
 
-// /mob/living/simple_animal/hostile/clockwork/marauder/proc/death  (code/game/gamemodes/clock_cult/clock_mobs/clockwork_marauder.dm:95)  may sleep
-rt.def("/mob/living/simple_animal/hostile/clockwork/marauder/proc/death", function* death(f: Frame) {
-	yield* g.srcCall(f, "emerge_from_host", 0, 1);
-	yield* g.srcCall(f, "unbind_from_host");
-	yield* g.srcCall(f, "visible_message", fmt("<span class='warning'>＀'s equipment clatters lifelessly to the ground as the red flames within dissipate.</span>", [live(f.src)]), "<span class='userdanger'>Your equipment falls away. You feel a moment of confusion before your fragile form is annihilated.</span>");
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	return f.dot;
-}, true, { args: ["gibbed"] });
-
-// /mob/living/simple_animal/hostile/clockwork/marauder/proc/Stat  (code/game/gamemodes/clock_cult/clock_mobs/clockwork_marauder.dm:102)  may sleep
-rt.def("/mob/living/simple_animal/hostile/clockwork/marauder/proc/Stat", function* Stat(f: Frame) {
-	let resulthealth: Value = null;
-	let $0: any, $1: any;
-	f.vars = () => [resulthealth, $0, $1];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy((yield* g.call(f, P("/proc/statpanel"), null, ["Status"])))) return f.dot;
-	yield* g.call(f, P("/proc/stat"), null, [null, fmt("Current True Name: ＀", [rt.sv(f, "true_name")])]);
-	$0 = null;
-	if (truthy(rt.sv(f, "host"))) {
-		$1 = rt.sv(f, "host");
-	} else {
-		$1 = "NONE";
-	}
-	yield* g.call(f, P("/proc/stat"), null, [$0, fmt("Host: ＀", [$1])]);
-	if (truthy(rt.sv(f, "host"))) {
-		resulthealth = (yield* g.call(f, P("/proc/round"), null, [multiply(divide(rt.fv(f, "health", rt.sv(f, "host")), rt.fv(f, "maxHealth", rt.sv(f, "host"))), 100), 0.5]));
-		if (truthy((rt.istype(rt.sv(f, "host"), T("/mob/living/carbon")) ? 1 : 0))) {
-			resulthealth = (yield* g.call(f, P("/proc/round"), null, [multiply(divide(rt.op(f, "Abs", [], [subtract(-100, rt.fv(f, "health", rt.sv(f, "host")))]), rt.op(f, "Abs", [], [subtract(-100, rt.fv(f, "maxHealth", rt.sv(f, "host")))])), 100)]));
-		}
-		yield* g.call(f, P("/proc/stat"), null, [null, fmt("Host Health: ＀%", [live(resulthealth)])]);
-		if (truthy(rt.gl("ratvar_awakens"))) {
-			$0 = null;
-			if (truthy(rt.sv(f, "recovering"))) {
-				$1 = "un";
-			} else {
-				$1 = "";
-			}
-			yield* g.call(f, P("/proc/stat"), null, [$0, fmt("You are ＀able to deploy!", [$1])]);
-		} else {
-			if (rt.gt(live(resulthealth), 65)) {
-				$0 = null;
-				if (truthy(rt.sv(f, "recovering"))) {
-					$1 = "unable to deploy";
-				} else {
-					$1 = "able to deploy on hearing your True Name";
-				}
-				yield* g.call(f, P("/proc/stat"), null, [$0, fmt("You are ＀!", [$1])]);
-			} else {
-				$0 = null;
-				if (truthy(rt.sv(f, "recovering"))) {
-					$1 = "unable to deploy";
-				} else {
-					$1 = "able to deploy to protect your host";
-				}
-				yield* g.call(f, P("/proc/stat"), null, [$0, fmt("You are ＀!", [$1])]);
-			}
-		}
-	}
-	yield* g.call(f, P("/proc/stat"), null, [null, fmt("You do ＀ damage on melee attacks.", [rt.sv(f, "melee_damage_upper")])]);
+// clockwork_marauder.dm:95
+rt.def("/mob/living/simple_animal/hostile/clockwork/marauder/proc/death", function* death(f: Frame, gibbed: Value) {
+	yield* this.emerge_from_host(0, 1);
+	yield* this.unbind_from_host();
+	this.visible_message(`<span class='warning'>${this}'s equipment clatters lifelessly to the ground as the red flames within dissipate.</span>`, "<span class='userdanger'>Your equipment falls away. You feel a moment of confusion before your fragile form is annihilated.</span>");
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/clockwork/marauder/proc/bind_to_host  (code/game/gamemodes/clock_cult/clock_mobs/clockwork_marauder.dm:124)  may sleep
+// clockwork_marauder.dm:102
+rt.def("/mob/living/simple_animal/hostile/clockwork/marauder/proc/Stat", function* Stat(f: Frame) {
+	let resulthealth: Value = null;
+	yield* parent_proc();
+	if (!statpanel("Status")) return f.dot;
+	stat(null, `Current True Name: ${this.true_name}`);
+	let $0: any = null;
+	stat($0, `Host: ${this.host ? this.host : "NONE"}`);
+	if (this.host) {
+		resulthealth = round(this.host.health / this.host.maxHealth * 100, 0.5);
+		if (rt.istype(this.host, T("/mob/living/carbon"))) {
+			resulthealth = round(rt.op(f, "Abs", [], [-100 - this.host.health]) / rt.op(f, "Abs", [], [-100 - this.host.maxHealth]) * 100);
+		}
+		stat(null, `Host Health: ${resulthealth}%`);
+		if (GLOB.ratvar_awakens) {
+			stat(null, `You are ${this.recovering ? "un" : ""}able to deploy!`);
+		} else if (resulthealth > MARAUDER_EMERGE_THRESHOLD) {
+			stat(null, `You are ${this.recovering ? "unable to deploy" : "able to deploy on hearing your True Name"}!`);
+		} else {
+			stat(null, `You are ${this.recovering ? "unable to deploy" : "able to deploy to protect your host"}!`);
+		}
+	}
+	stat(null, `You do ${this.melee_damage_upper} damage on melee attacks.`);
+	return f.dot;
+}, true);
+
+// clockwork_marauder.dm:124
 rt.def("/mob/living/simple_animal/hostile/clockwork/marauder/proc/bind_to_host", function* bind_to_host(f: Frame, new_host: Value) {
 	let SM: Value = null, LM: Value = null;
-	f.vars = () => [new_host, SM, LM];
-	if (!truthy(live(new_host))) {
+	if (!new_host) {
 		return 0;
 	}
-	rt.setSv(f, "host", live(new_host));
-	rt.setFv(f, "linked_marauder", (SM = (yield* g.new_(f, T("/datum/action/innate/summon_marauder"), []))), live(f.src));
-	yield* g.callName(f, live(SM), "Grant", [rt.sv(f, "host")]);
-	rt.setFv(f, "linked_marauder", (LM = (yield* g.new_(f, T("/datum/action/innate/linked_minds"), []))), live(f.src));
-	yield* g.callName(f, live(LM), "Grant", [rt.sv(f, "host")]);
+	this.host = new_host;
+	(SM = (yield* new_(T("/datum/action/innate/summon_marauder")))).linked_marauder = this;
+	yield* SM.Grant(this.host);
+	(LM = (yield* new_(T("/datum/action/innate/linked_minds")))).linked_marauder = this;
+	yield* LM.Grant(this.host);
 	return 1;
 }, true);
 
-// /mob/living/simple_animal/hostile/clockwork/marauder/proc/unbind_from_host  (code/game/gamemodes/clock_cult/clock_mobs/clockwork_marauder.dm:137)  may sleep
+// clockwork_marauder.dm:137
 rt.def("/mob/living/simple_animal/hostile/clockwork/marauder/proc/unbind_from_host", function* unbind_from_host(f: Frame) {
 	let SM: Value = null, LM: Value = null;
-	let $e: any;
-	f.vars = () => [SM, LM, $e];
-	if (truthy(rt.sv(f, "host"))) {
-		SM = null;
-		rt.forList(f, 0, rt.fv(f, "actions", rt.sv(f, "host")), T("/datum/action/innate/summon_marauder"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			SM = $e;
-			yield* g.call(f, P("/proc/qdel"), null, [live(SM)]);
+	if (this.host) {
+		for (SM of each(this.host.actions, T("/datum/action/innate/summon_marauder"))) {
+			yield* qdel(SM);
 		}
-		rt.endFor(f, 0);
-		LM = null;
-		rt.forList(f, 0, rt.fv(f, "actions", rt.sv(f, "host")), T("/datum/action/innate/linked_minds"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			LM = $e;
-			yield* g.call(f, P("/proc/qdel"), null, [live(LM)]);
+		for (LM of each(this.host.actions, T("/datum/action/innate/linked_minds"))) {
+			yield* qdel(LM);
 		}
-		rt.endFor(f, 0);
-		rt.setSv(f, "host", null);
+		this.host = null;
 		return 1;
 	}
 	return 0;
 }, true);
 
-// /mob/living/simple_animal/hostile/clockwork/marauder/proc/heal_host  (code/game/gamemodes/clock_cult/clock_mobs/clockwork_marauder.dm:147)  may sleep
+// clockwork_marauder.dm:147
 rt.def("/mob/living/simple_animal/hostile/clockwork/marauder/proc/heal_host", function* heal_host(f: Frame) {
-	let resulthealth: Value = null;
-	f.vars = () => [resulthealth];
-	if (!truthy(rt.sv(f, "host"))) {
-		return live(f.dot);
+	if (!this.host) {
+		return f.dot;
 	}
-	resulthealth = (yield* g.call(f, P("/proc/round"), null, [multiply(divide(rt.fv(f, "health", rt.sv(f, "host")), rt.fv(f, "maxHealth", rt.sv(f, "host"))), 100), 0.5]));
-	if (truthy((rt.istype(rt.sv(f, "host"), T("/mob/living/carbon")) ? 1 : 0))) {
-		resulthealth = (yield* g.call(f, P("/proc/round"), null, [multiply(divide(rt.op(f, "Abs", [], [subtract(-100, rt.fv(f, "health", rt.sv(f, "host")))]), rt.op(f, "Abs", [], [subtract(-100, rt.fv(f, "maxHealth", rt.sv(f, "host")))])), 100)]));
+	let resulthealth: Value = round(this.host.health / this.host.maxHealth * 100, 0.5);
+	if (rt.istype(this.host, T("/mob/living/carbon"))) {
+		resulthealth = round(rt.op(f, "Abs", [], [-100 - this.host.health]) / rt.op(f, "Abs", [], [-100 - this.host.maxHealth]) * 100);
 	}
-	if (!(truthy(rt.gl("ratvar_awakens")) || rt.le(live(resulthealth), 65))) return f.dot;
-	yield* g.new_(f, T("/obj/effect/temp_visual/heal"), [rt.fv(f, "loc", rt.sv(f, "host")), "#AF0AAF"]);
-	yield* g.callName(f, rt.sv(f, "host"), "heal_ordered_damage", [4, rt.gl("damage_heal_order#3")]);
+	if (!(GLOB.ratvar_awakens || resulthealth <= MARAUDER_EMERGE_THRESHOLD)) return f.dot;
+	yield* new_(T("/obj/effect/temp_visual/heal"), this.host.loc, "#AF0AAF");
+	yield* this.host.heal_ordered_damage(4, rt.gl("damage_heal_order#3"));
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/clockwork/marauder/proc/adjustHealth  (code/game/gamemodes/clock_cult/clock_mobs/clockwork_marauder.dm:157)  may sleep
+// clockwork_marauder.dm:157
 rt.def("/mob/living/simple_animal/hostile/clockwork/marauder/proc/adjustHealth", function* adjustHealth(f: Frame) {
 	let L: Value = null;
-	let $e: any;
-	f.vars = () => [L, $e];
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 1;
 	}
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 0;
 	}
-	if (rt.gt(live(f.args[0]), 0)) {
-		L = null;
-		rt.forList(f, 0, (yield* g.call(f, P("/proc/view"), null, [2, live(f.src)])), T("/mob/living"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			L = $e;
-			if (truthy((yield* g.callName(f, live(L), "is_holding_item_of_type", [T("/obj/item/weapon/nullrod")])))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='userdanger'>The presence of a brandished holy artifact weakens your armor!</span>"]);
-				(f.args[0] = rt.modify(live(f.args[0]), 4, multiply));
+	if (f.args[0] > 0) {
+		for (L of each(view(2, this), T("/mob/living"))) {
+			if (L.is_holding_item_of_type(T("/obj/item/weapon/nullrod"))) {
+				to_chat(this, "<span class='userdanger'>The presence of a brandished holy artifact weakens your armor!</span>");
+				f.args[0] *= 4;
 				break;
 			}
 		}
-		rt.endFor(f, 0);
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!(truthy(live(f.src)) && truthy(live(f.args[1])))) return f.dot;
-	yield* g.srcCall(f, "update_health_hud");
-	yield* g.srcCall(f, "update_stats");
+	f.dot = (yield* parent_proc());
+	if (!(this && f.args[1])) return f.dot;
+	this.update_health_hud();
+	this.update_stats();
 	return f.dot;
 }, true, { args: ["amount", "updating_health", "forced"] });
 
-// /mob/living/simple_animal/hostile/clockwork/marauder/proc/update_health_hud  (code/game/gamemodes/clock_cult/clock_mobs/clockwork_marauder.dm:169)
+// clockwork_marauder.dm:169
 rt.def("/mob/living/simple_animal/hostile/clockwork/marauder/proc/update_health_hud", function update_health_hud(f: Frame) {
 	let M: Value = null, resulthealth: Value = null;
-	f.vars = () => [M, resulthealth];
-	if (!(truthy(rt.sv(f, "hud_used")) && truthy(rt.fv(f, "healths", rt.sv(f, "hud_used"))))) return f.dot;
-	if (truthy((rt.istype(rt.sv(f, "hud_used"), T("/datum/hud/marauder")) ? 1 : 0))) {
-		M = rt.sv(f, "hud_used");
-		resulthealth = null;
-		if (truthy(rt.sv(f, "host"))) {
-			if (truthy((rt.istype(rt.sv(f, "host"), T("/mob/living/carbon")) ? 1 : 0))) {
-				resulthealth = fmt("＀%", [rt.call(f, P("/proc/round"), null, [multiply(divide(rt.op(f, "Abs", [], [subtract(-100, rt.fv(f, "health", rt.sv(f, "host")))]), rt.op(f, "Abs", [], [subtract(-100, rt.fv(f, "maxHealth", rt.sv(f, "host")))])), 100)])]);
+	if (!(this.hud_used && this.hud_used.healths)) return f.dot;
+	if (rt.istype(this.hud_used, T("/datum/hud/marauder"))) {
+		M = this.hud_used;
+		if (this.host) {
+			if (rt.istype(this.host, T("/mob/living/carbon"))) {
+				resulthealth = `${round(rt.op(f, "Abs", [], [-100 - this.host.health]) / rt.op(f, "Abs", [], [-100 - this.host.maxHealth]) * 100)}%`;
 			} else {
-				resulthealth = fmt("＀%", [rt.call(f, P("/proc/round"), null, [multiply(divide(rt.fv(f, "health", rt.sv(f, "host")), rt.fv(f, "maxHealth", rt.sv(f, "host"))), 100), 0.5])]);
+				resulthealth = `${round(this.host.health / this.host.maxHealth * 100, 0.5)}%`;
 			}
 		} else {
 			resulthealth = "NONE";
 		}
-		rt.setFv(f, "maptext", rt.fv(f, "hosthealth", live(M)), fmt("<div align='center' valign='middle' style='position:relative; top:0px; left:6px'><font color='#AF0AAF'>HOST<br>＀</font></div>", [live(resulthealth)]));
+		M.hosthealth.maptext = `<div align='center' valign='middle' style='position:relative; top:0px; left:6px'><font color='#AF0AAF'>HOST<br>${resulthealth}</font></div>`;
 	}
-	rt.setFv(f, "maptext", rt.fv(f, "healths", rt.sv(f, "hud_used")), fmt("<div align='center' valign='middle' style='position:relative; top:0px; left:6px'><font color='#AF0AAF'>＀%</font>", [rt.call(f, P("/proc/round"), null, [multiply(divide(rt.sv(f, "health"), rt.sv(f, "maxHealth")), 100), 0.5])]));
+	this.hud_used.healths.maptext = `<div align='center' valign='middle' style='position:relative; top:0px; left:6px'><font color='#AF0AAF'>${round(this.health / this.maxHealth * 100, 0.5)}%</font>`;
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/clockwork/marauder/proc/update_stats  (code/game/gamemodes/clock_cult/clock_mobs/clockwork_marauder.dm:188)
+// clockwork_marauder.dm:188
 rt.def("/mob/living/simple_animal/hostile/clockwork/marauder/proc/update_stats", function update_stats(f: Frame) {
 	let healthpercent: Value = null;
-	let $0: any;
-	f.vars = () => [healthpercent, $0];
-	if (truthy(rt.gl("ratvar_awakens"))) {
-		rt.setSv(f, "speed", 0);
-		rt.setSv(f, "melee_damage_lower", 20);
-		rt.setSv(f, "melee_damage_upper", 20);
-		rt.setSv(f, "attacktext", "devastates");
+	if (GLOB.ratvar_awakens) {
+		this.speed = 0;
+		this.melee_damage_lower = 20;
+		this.melee_damage_upper = 20;
+		this.attacktext = "devastates";
 	} else {
-		$0 = (healthpercent = multiply(divide(rt.sv(f, "health"), rt.sv(f, "maxHealth")), 100));
-		if (rt.inRange($0, 100, 70)) {
-			rt.setSv(f, "speed", 0);
-			rt.setSv(f, "melee_damage_lower", 16);
-			rt.setSv(f, "melee_damage_upper", 16);
-			rt.setSv(f, "attacktext", "viciously slashes");
-		} else if (rt.inRange($0, 70, 40)) {
-			rt.setSv(f, "speed", rt.initial(f, live(f.src), "speed"));
-			rt.setSv(f, "melee_damage_lower", rt.initial(f, live(f.src), "melee_damage_lower"));
-			rt.setSv(f, "melee_damage_upper", rt.initial(f, live(f.src), "melee_damage_upper"));
-			rt.setSv(f, "attacktext", rt.initial(f, live(f.src), "attacktext"));
-		} else if (rt.inRange($0, 40, 30)) {
-			rt.setSv(f, "speed", rt.initial(f, live(f.src), "speed"));
-			rt.setSv(f, "melee_damage_lower", 10);
-			rt.setSv(f, "melee_damage_upper", 10);
-			rt.setSv(f, "attacktext", "lightly slashes");
-		} else if (rt.inRange($0, 30, 20)) {
-			rt.setSv(f, "speed", 2);
-			rt.setSv(f, "melee_damage_lower", 8);
-			rt.setSv(f, "melee_damage_upper", 8);
-			rt.setSv(f, "attacktext", "lightly slashes");
-		} else if (rt.inRange($0, 20, 10)) {
-			rt.setSv(f, "speed", 3);
-			rt.setSv(f, "melee_damage_lower", 6);
-			rt.setSv(f, "melee_damage_upper", 6);
-			rt.setSv(f, "attacktext", "weakly slashes");
-		} else if (rt.inRange($0, 10, 0)) {
-			rt.setSv(f, "speed", 4);
-			rt.setSv(f, "melee_damage_lower", 4);
-			rt.setSv(f, "melee_damage_upper", 4);
-			rt.setSv(f, "attacktext", "taps");
+		const subject = (healthpercent = this.health / this.maxHealth * 100);
+		if (rt.inRange(subject, 100, 70)) {
+			this.speed = 0;
+			this.melee_damage_lower = 16;
+			this.melee_damage_upper = 16;
+			this.attacktext = "viciously slashes";
+		} else if (rt.inRange(subject, 70, 40)) {
+			this.speed = rt.initial(f, this, "speed");
+			this.melee_damage_lower = rt.initial(f, this, "melee_damage_lower");
+			this.melee_damage_upper = rt.initial(f, this, "melee_damage_upper");
+			this.attacktext = rt.initial(f, this, "attacktext");
+		} else if (rt.inRange(subject, 40, 30)) {
+			this.speed = rt.initial(f, this, "speed");
+			this.melee_damage_lower = 10;
+			this.melee_damage_upper = 10;
+			this.attacktext = "lightly slashes";
+		} else if (rt.inRange(subject, 30, 20)) {
+			this.speed = 2;
+			this.melee_damage_lower = 8;
+			this.melee_damage_upper = 8;
+			this.attacktext = "lightly slashes";
+		} else if (rt.inRange(subject, 20, 10)) {
+			this.speed = 3;
+			this.melee_damage_lower = 6;
+			this.melee_damage_upper = 6;
+			this.attacktext = "weakly slashes";
+		} else if (rt.inRange(subject, 10, 0)) {
+			this.speed = 4;
+			this.melee_damage_lower = 4;
+			this.melee_damage_upper = 4;
+			this.attacktext = "taps";
 		}
 	}
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/clockwork/marauder/proc/AttackingTarget  (code/game/gamemodes/clock_cult/clock_mobs/clockwork_marauder.dm:226)  may sleep
+// clockwork_marauder.dm:226
 rt.def("/mob/living/simple_animal/hostile/clockwork/marauder/proc/AttackingTarget", function* AttackingTarget(f: Frame) {
-	if (truthy((yield* g.srcCall(f, "is_in_host")))) {
+	if (this.is_in_host()) {
 		return 0;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);
 
-// /mob/living/simple_animal/hostile/clockwork/marauder/proc/bullet_act  (code/game/gamemodes/clock_cult/clock_mobs/clockwork_marauder.dm:231)  may sleep
-rt.def("/mob/living/simple_animal/hostile/clockwork/marauder/proc/bullet_act", function* bullet_act(f: Frame) {
-	if (truthy((yield* g.srcCall(f, "blockOrCounter", null, live(f.args[0]))))) {
-		return live(f.dot);
+// clockwork_marauder.dm:231
+rt.def("/mob/living/simple_animal/hostile/clockwork/marauder/proc/bullet_act", function* bullet_act(f: Frame, Proj: Value) {
+	if (yield* this.blockOrCounter(null, Proj)) {
+		return f.dot;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["Proj"] });
+	return (yield* parent_proc());
+}, true);
 
-// /mob/living/simple_animal/hostile/clockwork/marauder/proc/hitby  (code/game/gamemodes/clock_cult/clock_mobs/clockwork_marauder.dm:236)  may sleep
-rt.def("/mob/living/simple_animal/hostile/clockwork/marauder/proc/hitby", function* hitby(f: Frame) {
-	if (truthy((yield* g.srcCall(f, "blockOrCounter", null, live(f.args[0]))))) {
-		return live(f.dot);
+// clockwork_marauder.dm:236
+rt.def("/mob/living/simple_animal/hostile/clockwork/marauder/proc/hitby", function* hitby(f: Frame, AM: Value, skipcatch: Value, hitpush: Value, blocked: Value) {
+	if (yield* this.blockOrCounter(null, AM)) {
+		return f.dot;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["AM", "skipcatch", "hitpush", "blocked"] });
+	return (yield* parent_proc());
+}, true);
 
-// /mob/living/simple_animal/hostile/clockwork/marauder/proc/attack_animal  (code/game/gamemodes/clock_cult/clock_mobs/clockwork_marauder.dm:241)  may sleep
-rt.def("/mob/living/simple_animal/hostile/clockwork/marauder/proc/attack_animal", function* attack_animal(f: Frame) {
-	if (!(truthy((rt.istype(live(f.args[0]), T("/mob/living/simple_animal/hostile/clockwork/marauder")) ? 1 : 0)) || !truthy((yield* g.srcCall(f, "blockOrCounter", live(f.args[0]), live(f.args[0])))))) return f.dot;
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["M"] });
+// clockwork_marauder.dm:241
+rt.def("/mob/living/simple_animal/hostile/clockwork/marauder/proc/attack_animal", function* attack_animal(f: Frame, M: Value) {
+	if (!(rt.istype(M, T("/mob/living/simple_animal/hostile/clockwork/marauder")) || !(yield* this.blockOrCounter(M, M)))) return f.dot;
+	return (yield* parent_proc());
+}, true);
 
-// /mob/living/simple_animal/hostile/clockwork/marauder/proc/attack_paw  (code/game/gamemodes/clock_cult/clock_mobs/clockwork_marauder.dm:245)  may sleep
-rt.def("/mob/living/simple_animal/hostile/clockwork/marauder/proc/attack_paw", function* attack_paw(f: Frame) {
-	if (truthy((yield* g.srcCall(f, "blockOrCounter", live(f.args[0]), live(f.args[0]))))) return f.dot;
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["M"] });
+// clockwork_marauder.dm:245
+rt.def("/mob/living/simple_animal/hostile/clockwork/marauder/proc/attack_paw", function* attack_paw(f: Frame, M: Value) {
+	if (yield* this.blockOrCounter(M, M)) return f.dot;
+	return (yield* parent_proc());
+}, true);
 
-// /mob/living/simple_animal/hostile/clockwork/marauder/proc/attack_alien  (code/game/gamemodes/clock_cult/clock_mobs/clockwork_marauder.dm:249)  may sleep
-rt.def("/mob/living/simple_animal/hostile/clockwork/marauder/proc/attack_alien", function* attack_alien(f: Frame) {
-	if (truthy((yield* g.srcCall(f, "blockOrCounter", live(f.args[0]), live(f.args[0]))))) return f.dot;
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["M"] });
+// clockwork_marauder.dm:249
+rt.def("/mob/living/simple_animal/hostile/clockwork/marauder/proc/attack_alien", function* attack_alien(f: Frame, M: Value) {
+	if (yield* this.blockOrCounter(M, M)) return f.dot;
+	return (yield* parent_proc());
+}, true);
 
-// /mob/living/simple_animal/hostile/clockwork/marauder/proc/attack_slime  (code/game/gamemodes/clock_cult/clock_mobs/clockwork_marauder.dm:253)  may sleep
-rt.def("/mob/living/simple_animal/hostile/clockwork/marauder/proc/attack_slime", function* attack_slime(f: Frame) {
-	if (truthy((yield* g.srcCall(f, "blockOrCounter", live(f.args[0]), live(f.args[0]))))) return f.dot;
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["M"] });
+// clockwork_marauder.dm:253
+rt.def("/mob/living/simple_animal/hostile/clockwork/marauder/proc/attack_slime", function* attack_slime(f: Frame, M: Value) {
+	if (yield* this.blockOrCounter(M, M)) return f.dot;
+	return (yield* parent_proc());
+}, true);
 
-// /mob/living/simple_animal/hostile/clockwork/marauder/proc/attack_hand  (code/game/gamemodes/clock_cult/clock_mobs/clockwork_marauder.dm:257)  may sleep
-rt.def("/mob/living/simple_animal/hostile/clockwork/marauder/proc/attack_hand", function* attack_hand(f: Frame) {
-	if (truthy((yield* g.srcCall(f, "blockOrCounter", live(f.args[0]), live(f.args[0]))))) return f.dot;
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["M"] });
+// clockwork_marauder.dm:257
+rt.def("/mob/living/simple_animal/hostile/clockwork/marauder/proc/attack_hand", function* attack_hand(f: Frame, M: Value) {
+	if (yield* this.blockOrCounter(M, M)) return f.dot;
+	return (yield* parent_proc());
+}, true);
 
-// /mob/living/simple_animal/hostile/clockwork/marauder/proc/attackby  (code/game/gamemodes/clock_cult/clock_mobs/clockwork_marauder.dm:261)  may sleep
-rt.def("/mob/living/simple_animal/hostile/clockwork/marauder/proc/attackby", function* attackby(f: Frame) {
-	if (!(truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/nullrod")) ? 1 : 0)) || !truthy((yield* g.srcCall(f, "blockOrCounter", live(f.args[1]), live(f.args[0])))))) return f.dot;
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["I", "user", "params"] });
+// clockwork_marauder.dm:261
+rt.def("/mob/living/simple_animal/hostile/clockwork/marauder/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
+	if (!(rt.istype(I, T("/obj/item/weapon/nullrod")) || !(yield* this.blockOrCounter(user, I)))) return f.dot;
+	return (yield* parent_proc());
+}, true);
 
-// /mob/living/simple_animal/hostile/clockwork/marauder/proc/blockOrCounter  (code/game/gamemodes/clock_cult/clock_mobs/clockwork_marauder.dm:268)  may sleep
+// clockwork_marauder.dm:268
 rt.def("/mob/living/simple_animal/hostile/clockwork/marauder/proc/blockOrCounter", function* blockOrCounter(f: Frame, target: Value, textobject: Value) {
 	let previousattacktext: Value = null;
 	let $0: any, $1: any;
-	f.vars = () => [target, textobject, previousattacktext, $0, $1];
-	if (truthy(rt.gl("ratvar_awakens"))) {
-		rt.setSv(f, "blockchance", 90);
-		rt.setSv(f, "counterchance", 90);
+	if (GLOB.ratvar_awakens) {
+		this.blockchance = 90;
+		this.counterchance = 90;
 	}
-	if (truthy(rt.op(f, "Prob", [], [rt.sv(f, "blockchance")]))) {
+	if (prob(this.blockchance)) {
 		f.dot = 1;
-		if (truthy(live(target))) {
-			yield* g.callName(f, live(target), "do_attack_animation", [live(f.src)]);
-			yield* g.callName(f, live(target), "changeNext_move", [8]);
+		if (target) {
+			yield* target.do_attack_animation(this);
+			target.changeNext_move(8);
 		}
-		rt.setSv(f, "blockchance", rt.initial(f, live(f.src), "blockchance"));
-		yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/magic/clockwork/fellowship_armory.ogg"), 30, 1, 0, 1]);
-		$0 = live(f.src);
-		if ((truthy(live(target)) && truthy((rt.istype(live(textobject), T("/obj/item")) ? 1 : 0)))) {
-			$1 = fmt("＀'s ＀", [live(target), rt.fv(f, "name", live(textobject))]);
+		this.blockchance = rt.initial(f, this, "blockchance");
+		playsound(this, rt.rsc("sound/magic/clockwork/fellowship_armory.ogg"), 30, 1, 0, 1);
+		$0 = this;
+		if (target && rt.istype(textobject, T("/obj/item"))) {
+			$1 = `${target}'s ${textobject.name}`;
 		} else {
-			$1 = fmt("％！", [live(textobject)]);
+			$1 = fmt("％！", [textobject]);
 		}
-		$0 = fmt("<span class='boldannounce'>＀ blocks ＀!</span>", [$0, $1]);
-		if ((truthy(live(target)) && truthy((rt.istype(live(textobject), T("/obj/item")) ? 1 : 0)))) {
-			$1 = fmt("＀'s ＀", [live(target), rt.fv(f, "name", live(textobject))]);
+		$0 = `<span class='boldannounce'>${$0} blocks ${$1}!</span>`;
+		if (target && rt.istype(textobject, T("/obj/item"))) {
+			$1 = `${target}'s ${textobject.name}`;
 		} else {
-			$1 = fmt("％！", [live(textobject)]);
+			$1 = fmt("％！", [textobject]);
 		}
-		yield* g.srcCall(f, "visible_message", $0, fmt("<span class='userdanger'>You block ＀!</span>", [$1]));
-		if ((truthy(live(target)) && truthy((yield* g.srcCall(f, "Adjacent", live(target)))))) {
-			if (truthy(rt.op(f, "Prob", [], [rt.sv(f, "counterchance")]))) {
-				rt.setSv(f, "counterchance", rt.initial(f, live(f.src), "counterchance"));
-				previousattacktext = rt.sv(f, "attacktext");
-				rt.setSv(f, "attacktext", "counters");
-				yield* g.srcCall(f, "UnarmedAttack", live(target));
-				rt.setSv(f, "attacktext", live(previousattacktext));
+		this.visible_message($0, `<span class='userdanger'>You block ${$1}!</span>`);
+		if (target && this.Adjacent(target)) {
+			if (prob(this.counterchance)) {
+				this.counterchance = rt.initial(f, this, "counterchance");
+				previousattacktext = this.attacktext;
+				this.attacktext = "counters";
+				yield* this.UnarmedAttack(target);
+				this.attacktext = previousattacktext;
 			} else {
-				rt.setSv(f, "counterchance", (yield* g.call(f, P("/proc/min"), null, [add(rt.sv(f, "counterchance"), rt.initial(f, live(f.src), "counterchance")), 100])));
+				this.counterchance = min(this.counterchance + rt.initial(f, this, "counterchance"), 100);
 			}
 		}
 	} else {
-		rt.setSv(f, "blockchance", (yield* g.call(f, P("/proc/min"), null, [add(rt.sv(f, "blockchance"), rt.initial(f, live(f.src), "blockchance")), 100])));
+		this.blockchance = min(this.blockchance + rt.initial(f, this, "blockchance"), 100);
 	}
-	if (!truthy(rt.gl("ratvar_awakens"))) return f.dot;
-	rt.setSv(f, "blockchance", 90);
-	rt.setSv(f, "counterchance", 90);
+	if (!GLOB.ratvar_awakens) return f.dot;
+	this.blockchance = 90;
+	this.counterchance = 90;
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/clockwork/marauder/proc/handle_inherent_channels  (code/game/gamemodes/clock_cult/clock_mobs/clockwork_marauder.dm:295)  may sleep
-rt.def("/mob/living/simple_animal/hostile/clockwork/marauder/proc/handle_inherent_channels", function* handle_inherent_channels(f: Frame) {
-	if ((truthy(rt.sv(f, "host")) && (truthy((yield* g.srcCall(f, "is_in_host"))) || isEqual(live(f.args[1]), "binary")))) {
-		yield* g.srcCall(f, "marauder_comms", live(f.args[0]));
+// clockwork_marauder.dm:295
+rt.def("/mob/living/simple_animal/hostile/clockwork/marauder/proc/handle_inherent_channels", function* handle_inherent_channels(f: Frame, message: Value, message_mode: Value) {
+	if (this.host && (this.is_in_host() || message_mode == "binary")) {
+		this.marauder_comms(message);
 		return 1;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["message", "message_mode"] });
+	return (yield* parent_proc());
+}, true);
 
-// /mob/living/simple_animal/hostile/clockwork/marauder/proc/marauder_comms  (code/game/gamemodes/clock_cult/clock_mobs/clockwork_marauder.dm:301)
+// clockwork_marauder.dm:301
 rt.def("/mob/living/simple_animal/hostile/clockwork/marauder/proc/marauder_comms", function marauder_comms(f: Frame, message: Value) {
-	let name_part: Value = null, M: Value = null, link: Value = null;
+	let M: Value = null, link: Value = null;
 	let $0: any, $1: any, $2: any, $3: any, $e: any;
-	f.vars = () => [message, name_part, M, link, $0, $1, $2, $3, $e];
-	name_part = fmt("<span class='sevtug'>＀ (＀)</span>", [live(f.src), rt.sv(f, "true_name")]);
-	message = fmt("<span class='sevtug_small'>\"＀\"</span>", [live(message)]);
-	rt.call(f, P("/proc/to_chat"), null, [live(f.src), fmt("＀<span class='sevtug_small'>:</span> ＀", [live(name_part), live(message)])]);
-	rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "host"), fmt("＀<span class='sevtug_small'>:</span> ＀", [live(name_part), live(message)])]);
-	M = null;
-	rt.forList(f, 0, rt.gl("mob_list"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if (truthy((rt.istype(live(M), T("/mob/dead/observer")) ? 1 : 0))) {
-			link = fmt("<a href=?src=＃;follow=＃>(F)</a>", [live(M), live(f.src)]);
-			$0 = live(M);
-			$1 = live(link);
-			$2 = live(name_part);
-			if (truthy(rt.call(f, P("/proc/findtextEx"), null, [rt.fv(f, "name", rt.sv(f, "host")), rt.fv(f, "real_name", rt.sv(f, "host"))]))) {
-				$3 = fmt("＀", [rt.fv(f, "name", rt.sv(f, "host"))]);
+	let name_part: Value = `<span class='sevtug'>${this} (${this.true_name})</span>`;
+	message = `<span class='sevtug_small'>"${message}"</span>`;
+	to_chat(this, `${name_part}<span class='sevtug_small'>:</span> ${message}`);
+	to_chat(this.host, `${name_part}<span class='sevtug_small'>:</span> ${message}`);
+	for (M of each(GLOB.mob_list)) {
+		if (rt.istype(M, T("/mob/dead/observer"))) {
+			link = fmt("<a href=?src=＃;follow=＃>(F)</a>", [M, this]);
+			$0 = M;
+			$1 = link;
+			$2 = name_part;
+			if (findtextEx(this.host.name, this.host.real_name)) {
+				$3 = `${this.host.name}`;
 			} else {
-				$3 = fmt("＀ (as ＀)", [rt.fv(f, "real_name", rt.sv(f, "host")), rt.fv(f, "name", rt.sv(f, "host"))]);
+				$3 = `${this.host.real_name} (as ${this.host.name})`;
 			}
-			rt.call(f, P("/proc/to_chat"), null, [$0, fmt("＀ ＀ <span class='sevtug_small'>(to</span> <span class='sevtug'>＀</span><span class='sevtug_small'>):</span> ＀ ", [$1, $2, $3, live(message)])]);
+			to_chat($0, `${$1} ${$2} <span class='sevtug_small'>(to</span> <span class='sevtug'>${$3}</span><span class='sevtug_small'>):</span> ${message} `);
 		}
 	}
-	rt.endFor(f, 0);
 	return 1;
 });
 
-// /mob/living/simple_animal/hostile/clockwork/marauder/proc/return_to_host  (code/game/gamemodes/clock_cult/clock_mobs/clockwork_marauder.dm:312)  may sleep
+// clockwork_marauder.dm:312
 rt.def("/mob/living/simple_animal/hostile/clockwork/marauder/proc/return_to_host", function* return_to_host(f: Frame) {
-	let resulthealth: Value = null;
-	f.vars = () => [resulthealth];
-	if (truthy((yield* g.srcCall(f, "is_in_host")))) {
+	if (this.is_in_host()) {
 		return 0;
 	}
-	if (!truthy(rt.sv(f, "host"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='warning'>You don't have a host!</span>"]);
+	if (!this.host) {
+		to_chat(this, "<span class='warning'>You don't have a host!</span>");
 		return 0;
 	}
-	resulthealth = (yield* g.call(f, P("/proc/round"), null, [multiply(divide(rt.fv(f, "health", rt.sv(f, "host")), rt.fv(f, "maxHealth", rt.sv(f, "host"))), 100), 0.5]));
-	if (truthy((rt.istype(rt.sv(f, "host"), T("/mob/living/carbon")) ? 1 : 0))) {
-		resulthealth = (yield* g.call(f, P("/proc/round"), null, [multiply(divide(rt.op(f, "Abs", [], [subtract(-100, rt.fv(f, "health", rt.sv(f, "host")))]), rt.op(f, "Abs", [], [subtract(-100, rt.fv(f, "maxHealth", rt.sv(f, "host")))])), 100)]));
+	let resulthealth: Value = round(this.host.health / this.host.maxHealth * 100, 0.5);
+	if (rt.istype(this.host, T("/mob/living/carbon"))) {
+		resulthealth = round(rt.op(f, "Abs", [], [-100 - this.host.health]) / rt.op(f, "Abs", [], [-100 - this.host.maxHealth]) * 100);
 	}
-	yield* g.callName(f, rt.sv(f, "host"), "visible_message", [fmt("<span class='warning'>＀'s skin flashes crimson!</span>", [rt.sv(f, "host")]), fmt("<span class='sevtug'>You feel ＀'s consciousness settle in your mind.</span>", [rt.sv(f, "true_name")])]);
-	yield* g.srcCall(f, "visible_message", fmt("<span class='warning'>＀ suddenly disappears!</span>", [live(f.src)]), fmt("<span class='sevtug'>You return to ＀.</span>", [rt.sv(f, "host")]));
-	yield* g.srcCall(f, "forceMove", rt.sv(f, "host"));
-	if ((rt.gt(live(resulthealth), 65) && !isEqual(rt.sv(f, "health"), rt.sv(f, "maxHealth")))) {
-		rt.setSv(f, "recovering", 1);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='userdanger'>You have weakened and will need to recover before manifesting again!</span>"]);
-		yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "host"), fmt("<span class='sevtug'>＀ has weakened and will need to recover before manifesting again!</span>", [rt.sv(f, "true_name")])]);
+	this.host.visible_message(`<span class='warning'>${this.host}'s skin flashes crimson!</span>`, `<span class='sevtug'>You feel ${this.true_name}'s consciousness settle in your mind.</span>`);
+	this.visible_message(`<span class='warning'>${this} suddenly disappears!</span>`, `<span class='sevtug'>You return to ${this.host}.</span>`);
+	yield* this.forceMove(this.host);
+	if (resulthealth > MARAUDER_EMERGE_THRESHOLD && this.health != this.maxHealth) {
+		this.recovering = 1;
+		to_chat(this, "<span class='userdanger'>You have weakened and will need to recover before manifesting again!</span>");
+		to_chat(this.host, `<span class='sevtug'>${this.true_name} has weakened and will need to recover before manifesting again!</span>`);
 	}
 	return 1;
 }, true);
 
-// /mob/living/simple_animal/hostile/clockwork/marauder/proc/try_emerge  (code/game/gamemodes/clock_cult/clock_mobs/clockwork_marauder.dm:330)  may sleep
+// clockwork_marauder.dm:330
 rt.def("/mob/living/simple_animal/hostile/clockwork/marauder/proc/try_emerge", function* try_emerge(f: Frame) {
 	let resulthealth: Value = null;
-	f.vars = () => [resulthealth];
-	if (!truthy(rt.sv(f, "host"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='warning'>You don't have a host!</span>"]);
+	if (!this.host) {
+		to_chat(this, "<span class='warning'>You don't have a host!</span>");
 		return 0;
 	}
-	if (!truthy(rt.gl("ratvar_awakens"))) {
-		resulthealth = (yield* g.call(f, P("/proc/round"), null, [multiply(divide(rt.fv(f, "health", rt.sv(f, "host")), rt.fv(f, "maxHealth", rt.sv(f, "host"))), 100), 0.5]));
-		if (truthy((rt.istype(rt.sv(f, "host"), T("/mob/living/carbon")) ? 1 : 0))) {
-			resulthealth = (yield* g.call(f, P("/proc/round"), null, [multiply(divide(rt.op(f, "Abs", [], [subtract(-100, rt.fv(f, "health", rt.sv(f, "host")))]), rt.op(f, "Abs", [], [subtract(-100, rt.fv(f, "maxHealth", rt.sv(f, "host")))])), 100)]));
+	if (!GLOB.ratvar_awakens) {
+		resulthealth = round(this.host.health / this.host.maxHealth * 100, 0.5);
+		if (rt.istype(this.host, T("/mob/living/carbon"))) {
+			resulthealth = round(rt.op(f, "Abs", [], [-100 - this.host.health]) / rt.op(f, "Abs", [], [-100 - this.host.maxHealth]) * 100);
 		}
-		if ((!isEqual(rt.fv(f, "stat", rt.sv(f, "host")), 2) && rt.gt(live(resulthealth), 65))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), fmt("<span class='warning'>Your host must be at ＀% or less health to emerge like this!</span>", [65])]);
+		if (this.host.stat != 2 && resulthealth > MARAUDER_EMERGE_THRESHOLD) {
+			to_chat(this, `<span class='warning'>Your host must be at ${MARAUDER_EMERGE_THRESHOLD}% or less health to emerge like this!</span>`);
 			return 0;
 		}
 	}
-	return (yield* g.srcCall(f, "emerge_from_host", 0));
+	return (yield* this.emerge_from_host(0));
 }, true);
 
-// /mob/living/simple_animal/hostile/clockwork/marauder/proc/emerge_from_host  (code/game/gamemodes/clock_cult/clock_mobs/clockwork_marauder.dm:343)  may sleep
+// clockwork_marauder.dm:343
 rt.def("/mob/living/simple_animal/hostile/clockwork/marauder/proc/emerge_from_host", function* emerge_from_host(f: Frame, hostchosen: Value, force: Value) {
-	f.vars = () => [hostchosen, force];
-	if (!truthy((yield* g.srcCall(f, "is_in_host")))) {
+	if (!this.is_in_host()) {
 		return 0;
 	}
-	if ((!truthy(live(force)) && truthy(rt.sv(f, "recovering")))) {
-		if (truthy(live(hostchosen))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "host"), fmt("<span class='sevtug'>＀ is too weak to come forth!</span>", [rt.sv(f, "true_name")])]);
+	if (!force && this.recovering) {
+		if (hostchosen) {
+			to_chat(this.host, `<span class='sevtug'>${this.true_name} is too weak to come forth!</span>`);
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "host"), fmt("<span class='sevtug'>＀ tries to emerge to protect you, but it's too weak!</span>", [rt.sv(f, "true_name")])]);
+			to_chat(this.host, `<span class='sevtug'>${this.true_name} tries to emerge to protect you, but it's too weak!</span>`);
 		}
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='userdanger'>You try to come forth, but you're too weak!</span>"]);
+		to_chat(this, "<span class='userdanger'>You try to come forth, but you're too weak!</span>");
 		return 0;
 	}
-	if (!truthy(live(force))) {
-		if (truthy(live(hostchosen))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "host"), fmt("<span class='sevtug'>Your words echo with power as ＀ emerges from your body!</span>", [rt.sv(f, "true_name")])]);
+	if (!force) {
+		if (hostchosen) {
+			to_chat(this.host, `<span class='sevtug'>Your words echo with power as ${this.true_name} emerges from your body!</span>`);
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "host"), fmt("<span class='sevtug'>＀ emerges from your body to protect you!</span>", [rt.sv(f, "true_name")])]);
+			to_chat(this.host, `<span class='sevtug'>${this.true_name} emerges from your body to protect you!</span>`);
 		}
 	}
-	yield* g.srcCall(f, "forceMove", rt.fv(f, "loc", rt.sv(f, "host")));
-	yield* g.srcCall(f, "visible_message", fmt("<span class='warning'>＀'s skin glows red as ＀ emerges from their body!</span>", [rt.sv(f, "host"), rt.sv(f, "name")]), fmt("<span class='sevtug_small'>You exit the safety of ＀'s body!</span>", [rt.sv(f, "host")]));
+	yield* this.forceMove(this.host.loc);
+	this.visible_message(`<span class='warning'>${this.host}'s skin glows red as ${this.name} emerges from their body!</span>`, `<span class='sevtug_small'>You exit the safety of ${this.host}'s body!</span>`);
 	return 1;
 }, true);
 
-// /mob/living/simple_animal/hostile/clockwork/marauder/proc/get_alt_name  (code/game/gamemodes/clock_cult/clock_mobs/clockwork_marauder.dm:362)
+// clockwork_marauder.dm:362
 rt.def("/mob/living/simple_animal/hostile/clockwork/marauder/proc/get_alt_name", function get_alt_name(f: Frame) {
-	return fmt(" (＀)", [rt.call(f, P("/proc/text2ratvar"), null, [rt.sv(f, "true_name")])]);
+	return ` (${text2ratvar(this.true_name)})`;
 });
 
-// /mob/living/simple_animal/hostile/clockwork/marauder/proc/is_in_host  (code/game/gamemodes/clock_cult/clock_mobs/clockwork_marauder.dm:365)
+// clockwork_marauder.dm:365
 rt.def("/mob/living/simple_animal/hostile/clockwork/marauder/proc/is_in_host", function is_in_host(f: Frame) {
-	return (rt.sv(f, "host") && (isEqual(rt.sv(f, "loc"), rt.sv(f, "host")) ? 1 : 0));
+	return (this.host && (this.loc == this.host ? 1 : 0));
 });
 
 rt.type(88, "/datum/action/innate/summon_marauder", "/datum/action/innate", {
@@ -584,29 +516,28 @@ rt.type(88, "/datum/action/innate/summon_marauder", "/datum/action/innate", {
 	buttontooltipstyle: "clockcult",
 }, { global: { defend_phrases: 626, return_phrases: 627 } });
 
-// /datum/action/innate/summon_marauder/proc/IsAvailable  (code/game/gamemodes/clock_cult/clock_mobs/clockwork_marauder.dm:382)
+// clockwork_marauder.dm:382
 rt.def("/datum/action/innate/summon_marauder/proc/IsAvailable", function IsAvailable(f: Frame) {
 	let L: Value = null;
-	f.vars = () => [L];
-	if (!truthy(rt.sv(f, "linked_marauder"))) {
+	if (!this.linked_marauder) {
 		return 0;
 	}
-	if (truthy((rt.istype(rt.sv(f, "owner"), T("/mob/living")) ? 1 : 0))) {
-		if ((!truthy(rt.callName(f, (L = rt.sv(f, "owner")), "can_speak_vocal", [])) || truthy(rt.fv(f, "stat", live(L))))) {
+	if (rt.istype(this.owner, T("/mob/living"))) {
+		if (!(L = this.owner).can_speak_vocal() || L.stat) {
 			return 0;
 		}
 	}
-	return rt.callSuper(f, [], rt.Args.Same);
+	return parent_proc();
 });
 
-// /datum/action/innate/summon_marauder/proc/Activate  (code/game/gamemodes/clock_cult/clock_mobs/clockwork_marauder.dm:391)  may sleep
+// clockwork_marauder.dm:391
 rt.def("/datum/action/innate/summon_marauder/proc/Activate", function* Activate(f: Frame) {
-	if (truthy((yield* g.callName(f, rt.sv(f, "linked_marauder"), "is_in_host", [])))) {
-		yield* g.call(f, P("/proc/clockwork_say"), null, [rt.sv(f, "owner"), (yield* g.call(f, P("/proc/text2ratvar"), null, [fmt("＀, ＀!", [rt.op(f, "PickUnweighted", [1], [rt.gl("defend_phrases")]), rt.fv(f, "true_name", rt.sv(f, "linked_marauder"))])]))]);
-		yield* g.callName(f, rt.sv(f, "linked_marauder"), "emerge_from_host", [1]);
+	if (this.linked_marauder.is_in_host()) {
+		yield* clockwork_say(this.owner, text2ratvar(`${pick(GLOB.defend_phrases)}, ${this.linked_marauder.true_name}!`));
+		yield* this.linked_marauder.emerge_from_host(1);
 	} else {
-		yield* g.call(f, P("/proc/clockwork_say"), null, [rt.sv(f, "owner"), (yield* g.call(f, P("/proc/text2ratvar"), null, [fmt("＀, ＀!", [rt.op(f, "PickUnweighted", [1], [rt.gl("return_phrases")]), rt.fv(f, "true_name", rt.sv(f, "linked_marauder"))])]))]);
-		yield* g.callName(f, rt.sv(f, "linked_marauder"), "return_to_host", []);
+		yield* clockwork_say(this.owner, text2ratvar(`${pick(GLOB.return_phrases)}, ${this.linked_marauder.true_name}!`));
+		yield* this.linked_marauder.return_to_host();
 	}
 	return 1;
 }, true);
@@ -621,45 +552,40 @@ rt.type(89, "/datum/action/innate/linked_minds", "/datum/action/innate", {
 	buttontooltipstyle: "clockcult",
 });
 
-// /datum/action/innate/linked_minds/proc/IsAvailable  (code/game/gamemodes/clock_cult/clock_mobs/clockwork_marauder.dm:410)
+// clockwork_marauder.dm:410
 rt.def("/datum/action/innate/linked_minds/proc/IsAvailable", function IsAvailable(f: Frame) {
-	if (!truthy(rt.sv(f, "linked_marauder"))) {
+	if (!this.linked_marauder) {
 		return 0;
 	}
-	return rt.callSuper(f, [], rt.Args.Same);
+	return parent_proc();
 });
 
-// /datum/action/innate/linked_minds/proc/Activate  (code/game/gamemodes/clock_cult/clock_mobs/clockwork_marauder.dm:415)  may sleep
+// clockwork_marauder.dm:415
 rt.def("/datum/action/innate/linked_minds/proc/Activate", function* Activate(f: Frame) {
-	let message: Value = null, name_part: Value = null, M: Value = null, link: Value = null;
+	let M: Value = null, link: Value = null;
 	let $0: any, $e: any;
-	f.vars = () => [message, name_part, M, link, $0, $e];
-	message = (yield* g.call(f, P("/proc/stripped_input"), null, [rt.sv(f, "owner"), "Enter a message to tell your marauder.", "Telepathy"]));
-	if ((!truthy(rt.sv(f, "owner")) || !truthy(live(message)))) {
+	let message: Value = (yield* stripped_input(this.owner, "Enter a message to tell your marauder.", "Telepathy"));
+	if (!this.owner || !message) {
 		return 0;
 	}
-	if (!truthy(rt.sv(f, "linked_marauder"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "owner"), "<span class='warning'>Your marauder seems to have been destroyed!</span>"]);
+	if (!this.linked_marauder) {
+		to_chat(this.owner, "<span class='warning'>Your marauder seems to have been destroyed!</span>");
 		return 0;
 	}
-	if (truthy((yield* g.call(f, P("/proc/findtextEx"), null, [rt.fv(f, "name", rt.sv(f, "owner")), rt.fv(f, "real_name", rt.sv(f, "owner"))])))) {
-		$0 = fmt("＀", [rt.fv(f, "name", rt.sv(f, "owner"))]);
+	if (findtextEx(this.owner.name, this.owner.real_name)) {
+		$0 = `${this.owner.name}`;
 	} else {
-		$0 = fmt("＀ (as ＀)", [rt.fv(f, "real_name", rt.sv(f, "owner")), rt.fv(f, "name", rt.sv(f, "owner"))]);
+		$0 = `${this.owner.real_name} (as ${this.owner.name})`;
 	}
-	name_part = fmt("<span class='sevtug'>Servant ＀</span>", [$0]);
-	message = fmt("<span class='sevtug_small'>\"＀\"</span>", [live(message)]);
-	yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "owner"), fmt("＀<span class='sevtug_small'>:</span> ＀", [live(name_part), live(message)])]);
-	yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "linked_marauder"), fmt("＀<span class='sevtug_small'>:</span> ＀", [live(name_part), live(message)])]);
-	M = null;
-	rt.forList(f, 0, rt.gl("mob_list"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if (truthy((rt.istype(live(M), T("/mob/dead/observer")) ? 1 : 0))) {
-			link = fmt("<a href=?src=＃;follow=＃>(F)</a>", [live(M), live(f.src)]);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(M), fmt("＀ ＀ <span class='sevtug_small'>(to</span> <span class='sevtug'>＀ (＀)</span><span class='sevtug_small'>):</span> ＀", [live(link), live(name_part), rt.sv(f, "linked_marauder"), rt.fv(f, "true_name", rt.sv(f, "linked_marauder")), live(message)])]);
+	let name_part: Value = `<span class='sevtug'>Servant ${$0}</span>`;
+	message = `<span class='sevtug_small'>"${message}"</span>`;
+	to_chat(this.owner, `${name_part}<span class='sevtug_small'>:</span> ${message}`);
+	to_chat(this.linked_marauder, `${name_part}<span class='sevtug_small'>:</span> ${message}`);
+	for (M of each(GLOB.mob_list)) {
+		if (rt.istype(M, T("/mob/dead/observer"))) {
+			link = fmt("<a href=?src=＃;follow=＃>(F)</a>", [M, this]);
+			to_chat(M, `${link} ${name_part} <span class='sevtug_small'>(to</span> <span class='sevtug'>${this.linked_marauder} (${this.linked_marauder.true_name})</span><span class='sevtug_small'>):</span> ${message}`);
 		}
 	}
-	rt.endFor(f, 0);
 	return 1;
 }, true);

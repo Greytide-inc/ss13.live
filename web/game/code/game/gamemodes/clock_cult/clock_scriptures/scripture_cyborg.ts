@@ -1,7 +1,7 @@
-// From code/game/gamemodes/clock_cult/clock_scriptures/scripture_cyborg.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/gamemodes/clock_cult/clock_scriptures/scripture_cyborg.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(1225, "/datum/clockwork_scripture/ranged_ability/linked_vanguard", "/datum/clockwork_scripture/ranged_ability", {
@@ -16,34 +16,28 @@ rt.type(1225, "/datum/clockwork_scripture/ranged_ability/linked_vanguard", "/dat
 	ranged_type: rt.typePath("/obj/effect/proc_holder/slab/vanguard"),
 });
 
-// /datum/clockwork_scripture/ranged_ability/linked_vanguard/proc/check_special_requirements  (code/game/gamemodes/clock_cult/clock_scriptures/scripture_cyborg.dm:20)
+// scripture_cyborg.dm:20
 rt.def("/datum/clockwork_scripture/ranged_ability/linked_vanguard/proc/check_special_requirements", function check_special_requirements(f: Frame) {
-	if ((((!truthy(rt.gl("ratvar_awakens")) && truthy((rt.istype(rt.fv(f, "stun_absorption", rt.sv(f, "invoker")), T("/list")) ? 1 : 0))) && truthy(rt.index(rt.fv(f, "stun_absorption", rt.sv(f, "invoker")), "vanguard"))) && rt.gt(rt.index(rt.index(rt.fv(f, "stun_absorption", rt.sv(f, "invoker")), "vanguard"), "end_time"), rt.worldTime(f)))) {
-		rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "invoker"), "<span class='warning'>You are already shielded by a Vanguard!</span>"]);
+	if (!GLOB.ratvar_awakens && rt.istype(this.invoker.stun_absorption, T("/list")) && rt.index(this.invoker.stun_absorption, "vanguard") && rt.index(rt.index(this.invoker.stun_absorption, "vanguard"), "end_time") > rt.worldTime(f)) {
+		to_chat(this.invoker, "<span class='warning'>You are already shielded by a Vanguard!</span>");
 		return 0;
 	}
 	return 1;
 });
 
-// /datum/clockwork_scripture/ranged_ability/linked_vanguard/proc/scripture_effects  (code/game/gamemodes/clock_cult/clock_scriptures/scripture_cyborg.dm:27)  may sleep
+// scripture_cyborg.dm:27
 rt.def("/datum/clockwork_scripture/ranged_ability/linked_vanguard/proc/scripture_effects", function* scripture_effects(f: Frame) {
 	let L: Value = null;
-	let $e: any;
-	f.vars = () => [L, $e];
-	if (truthy(rt.gl("ratvar_awakens"))) {
-		L = null;
-		rt.forList(f, 0, (yield* g.call(f, P("/proc/view"), null, [7, rt.getStep(f, rt.sv(f, "invoker"), 0)])), T("/mob/living"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			L = $e;
-			if ((!isEqual(rt.fv(f, "stat", live(L)), 2) && truthy((yield* g.call(f, P("/proc/is_servant_of_ratvar"), null, [live(L)]))))) {
-				yield* g.callName(f, live(L), "apply_status_effect", [T("/datum/status_effect/vanguard_shield")]);
+	if (GLOB.ratvar_awakens) {
+		for (L of each(view(7, rt.getStep(f, this.invoker, 0)), T("/mob/living"))) {
+			if (L.stat != 2 && is_servant_of_ratvar(L)) {
+				yield* L.apply_status_effect(T("/datum/status_effect/vanguard_shield"));
 			}
-			if (rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit"))) {
-				yield* g.call(f, P("/proc/stoplag"), null, []);
+			if (rt.tickUsage(f) > GLOB.current_ticklimit) {
+				yield* stoplag();
 			}
 		}
-		rt.endFor(f, 0);
 		return 1;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);

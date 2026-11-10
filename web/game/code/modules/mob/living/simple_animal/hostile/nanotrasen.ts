@@ -1,7 +1,7 @@
-// From code/modules/mob/living/simple_animal/hostile/nanotrasen.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/simple_animal/hostile/nanotrasen.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(4973, "/mob/living/simple_animal/hostile/nanotrasen", "/mob/living/simple_animal/hostile", {
@@ -37,24 +37,22 @@ rt.type(4973, "/mob/living/simple_animal/hostile/nanotrasen", "/mob/living/simpl
 	speak: null,
 });
 
-// /mob/living/simple_animal/hostile/nanotrasen/proc/<init>  (code/modules/mob/living/simple_animal/hostile/nanotrasen.dm:25)
+// nanotrasen.dm:25
 rt.def("/mob/living/simple_animal/hostile/nanotrasen/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "loot", rt.list(T("/obj/effect/mob_spawn/human/corpse/nanotrasensoldier")));
-	rt.setSv(f, "atmos_requirements", rt.alist(f, ["min_oxy", 5, "max_oxy", 0, "min_tox", 0, "max_tox", 1, "min_co2", 0, "max_co2", 5, "min_n2", 0, "max_n2", 0]));
-	$0 = $0;
-	rt.setSv(f, "faction", rt.list("nanotrasenprivate"));
-	rt.setSv(f, "speak", rt.list("Stop resisting!", "I AM THE LAW!", "Face the wrath of the golden bolt!", "Stop breaking the law, asshole!"));
+	parent_proc();
+	this.loot = list(T("/obj/effect/mob_spawn/human/corpse/nanotrasensoldier"));
+	this.atmos_requirements = rt.alist(f, ["min_oxy", 5, "max_oxy", 0, "min_tox", 0, "max_tox", 1, "min_co2", 0, "max_co2", 5, "min_n2", 0, "max_n2", 0]);
+
+	this.faction = list("nanotrasenprivate");
+	this.speak = list("Stop resisting!", "I AM THE LAW!", "Face the wrath of the golden bolt!", "Stop breaking the law, asshole!");
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/nanotrasen/proc/Aggro  (code/modules/mob/living/simple_animal/hostile/nanotrasen.dm:35)  may sleep
+// nanotrasen.dm:35
 rt.def("/mob/living/simple_animal/hostile/nanotrasen/proc/Aggro", function* Aggro(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "summon_backup", 15);
-	yield* g.srcCall(f, "say", "411 in progress, requesting backup!");
+	yield* parent_proc();
+	yield* this.summon_backup(15);
+	yield* this.say("411 in progress, requesting backup!");
 	return f.dot;
 }, true);
 
@@ -69,12 +67,10 @@ rt.type(4974, "/mob/living/simple_animal/hostile/nanotrasen/ranged", "/mob/livin
 	loot: null,
 });
 
-// /mob/living/simple_animal/hostile/nanotrasen/ranged/proc/<init>  (code/modules/mob/living/simple_animal/hostile/nanotrasen.dm:48)
+// nanotrasen.dm:48
 rt.def("/mob/living/simple_animal/hostile/nanotrasen/ranged/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "loot", rt.list(T("/obj/item/weapon/gun/ballistic/automatic/pistol/m1911"), T("/obj/effect/mob_spawn/human/corpse/nanotrasensoldier")));
+	parent_proc();
+	this.loot = list(T("/obj/item/weapon/gun/ballistic/automatic/pistol/m1911"), T("/obj/effect/mob_spawn/human/corpse/nanotrasensoldier"));
 	return f.dot;
 });
 
@@ -87,11 +83,9 @@ rt.type(4975, "/mob/living/simple_animal/hostile/nanotrasen/ranged/smg", "/mob/l
 	loot: null,
 });
 
-// /mob/living/simple_animal/hostile/nanotrasen/ranged/smg/proc/<init>  (code/modules/mob/living/simple_animal/hostile/nanotrasen.dm:58)
+// nanotrasen.dm:58
 rt.def("/mob/living/simple_animal/hostile/nanotrasen/ranged/smg/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "loot", rt.list(T("/obj/item/weapon/gun/ballistic/automatic/wt550"), T("/obj/effect/mob_spawn/human/corpse/nanotrasensoldier")));
+	parent_proc();
+	this.loot = list(T("/obj/item/weapon/gun/ballistic/automatic/wt550"), T("/obj/effect/mob_spawn/human/corpse/nanotrasensoldier"));
 	return f.dot;
 });

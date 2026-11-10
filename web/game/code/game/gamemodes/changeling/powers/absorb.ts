@@ -1,7 +1,7 @@
-// From code/game/gamemodes/changeling/powers/absorb.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/gamemodes/changeling/powers/absorb.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(11223, "/obj/effect/proc_holder/changeling/absorbDNA", "/obj/effect/proc_holder/changeling", {
@@ -12,108 +12,97 @@ rt.type(11223, "/obj/effect/proc_holder/changeling/absorbDNA", "/obj/effect/proc
 	desc: "Absorb the DNA of our victim.",
 });
 
-// /obj/effect/proc_holder/changeling/absorbDNA/proc/can_sting  (code/game/gamemodes/changeling/powers/absorb.dm:9)
-rt.def("/obj/effect/proc_holder/changeling/absorbDNA/proc/can_sting", function can_sting(f: Frame) {
-	let changeling: Value = null, target: Value = null;
-	f.vars = () => [changeling, target];
-	if (!truthy(rt.callSuper(f, [], rt.Args.Same))) {
-		return live(f.dot);
+// absorb.dm:9
+rt.def("/obj/effect/proc_holder/changeling/absorbDNA/proc/can_sting", function can_sting(f: Frame, user: Value) {
+	let changeling: Value = null;
+	if (!parent_proc()) {
+		return f.dot;
 	}
-	if (truthy(rt.gv(f, "isabsorbing", (changeling = rt.gv(f, "changeling", rt.fv(f, "mind", live(f.args[0]))))))) {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='warning'>We are already absorbing!</span>"]);
-		return live(f.dot);
+	if ((changeling = user.mind.changeling).isabsorbing) {
+		to_chat(user, "<span class='warning'>We are already absorbing!</span>");
+		return f.dot;
 	}
-	if ((!truthy(rt.fv(f, "pulling", live(f.args[0]))) || !truthy((rt.istype(rt.fv(f, "pulling", live(f.args[0])), T("/mob/living/carbon")) ? 1 : 0)))) {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='warning'>We must be grabbing a creature to absorb them!</span>"]);
-		return live(f.dot);
+	if (!user.pulling || !rt.istype(user.pulling, T("/mob/living/carbon"))) {
+		to_chat(user, "<span class='warning'>We must be grabbing a creature to absorb them!</span>");
+		return f.dot;
 	}
-	if (rt.le(rt.fv(f, "grab_state", live(f.args[0])), 2)) {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='warning'>We must have a tighter grip to absorb this creature!</span>"]);
-		return live(f.dot);
+	if (user.grab_state <= 2) {
+		to_chat(user, "<span class='warning'>We must have a tighter grip to absorb this creature!</span>");
+		return f.dot;
 	}
-	target = rt.fv(f, "pulling", live(f.args[0]));
-	return rt.callName(f, live(changeling), "can_absorb_dna", [live(f.args[0]), live(target)]);
-}, false, { args: ["user"] });
+	let target: Value = user.pulling;
+	return changeling.can_absorb_dna(user, target);
+}, false);
 
-// /obj/effect/proc_holder/changeling/absorbDNA/proc/sting_action  (code/game/gamemodes/changeling/powers/absorb.dm:30)  may sleep
+// absorb.dm:30
 rt.def("/obj/effect/proc_holder/changeling/absorbDNA/proc/sting_action", function* sting_action(f: Frame, user: Value) {
-	let changeling: Value = null, target: Value = null, i: Value = null, recent_speech: Value = null, say_log: Value = null, spoken_memory: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [user, changeling, target, i, recent_speech, say_log, spoken_memory, $0, $e];
-	changeling = rt.gv(f, "changeling", rt.fv(f, "mind", live(user)));
-	target = rt.fv(f, "pulling", live(user));
-	rt.setFv(f, "isabsorbing", live(changeling), 1);
-	i = null;
+	let i: Value = null, recent_speech: Value = null, say_log: Value = null, spoken_memory: Value = null;
+	let $e: any;
+	let changeling: Value = user.mind.changeling;
+	let target: Value = user.pulling;
+	changeling.isabsorbing = 1;
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		$0 = live(i);
-		if ($0 === 1) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>This creature is compatible. We must hold still...</span>"]);
-		} else if ($0 === 2) {
-			yield* g.callName(f, live(user), "visible_message", [fmt("<span class='warning'>＀ extends a proboscis!</span>", [live(user)]), "<span class='notice'>We extend a proboscis.</span>"]);
-		} else if ($0 === 3) {
-			yield* g.callName(f, live(user), "visible_message", [fmt("<span class='danger'>＀ stabs ＀ with the proboscis!</span>", [live(user), live(target)]), fmt("<span class='notice'>We stab ＀ with the proboscis.</span>", [live(target)])]);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(target), "<span class='userdanger'>You feel a sharp stabbing pain!</span>"]);
-			yield* g.callName(f, live(target), "take_overall_damage", [40]);
+		if (i === 1) {
+			to_chat(user, "<span class='notice'>This creature is compatible. We must hold still...</span>");
+		} else if (i === 2) {
+			user.visible_message(`<span class='warning'>${user} extends a proboscis!</span>`, "<span class='notice'>We extend a proboscis.</span>");
+		} else if (i === 3) {
+			user.visible_message(`<span class='danger'>${user} stabs ${target} with the proboscis!</span>`, `<span class='notice'>We stab ${target} with the proboscis.</span>`);
+			to_chat(target, "<span class='userdanger'>You feel a sharp stabbing pain!</span>");
+			yield* target.take_overall_damage(40);
 		}
-		if (!truthy((yield* g.call(f, P("/proc/do_mob"), null, [live(user), live(target), 150])))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>Our absorption of ＀ has been interrupted!</span>", [live(target)])]);
-			rt.setFv(f, "isabsorbing", live(changeling), 0);
-			return live(f.dot);
+		if (!(yield* do_mob(user, target, 150))) {
+			to_chat(user, `<span class='warning'>Our absorption of ${target} has been interrupted!</span>`);
+			changeling.isabsorbing = 0;
+			return f.dot;
 		}
 	}
 	rt.endFor(f, 0);
-	yield* g.callName(f, live(user), "visible_message", [fmt("<span class='danger'>＀ sucks the fluids from ＀!</span>", [live(user), live(target)]), fmt("<span class='notice'>We have absorbed ＀.</span>", [live(target)])]);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(target), "<span class='userdanger'>You are absorbed by the changeling!</span>"]);
-	if (!truthy((yield* g.callName(f, live(changeling), "has_dna", [rt.fv(f, "dna", live(target))])))) {
-		yield* g.callName(f, live(changeling), "add_new_profile", [live(target), live(user)]);
+	user.visible_message(`<span class='danger'>${user} sucks the fluids from ${target}!</span>`, `<span class='notice'>We have absorbed ${target}.</span>`);
+	to_chat(target, "<span class='userdanger'>You are absorbed by the changeling!</span>");
+	if (!changeling.has_dna(target.dna)) {
+		yield* changeling.add_new_profile(target, user);
 	}
-	if (rt.lt(rt.fv(f, "nutrition", live(user)), 450)) {
-		rt.setFv(f, "nutrition", live(user), (yield* g.call(f, P("/proc/min"), null, [add(rt.fv(f, "nutrition", live(user)), rt.fv(f, "nutrition", live(target))), 450])));
+	if (user.nutrition < NUTRITION_LEVEL_WELL_FED) {
+		user.nutrition = min(user.nutrition + target.nutrition, NUTRITION_LEVEL_WELL_FED);
 	}
-	if (truthy(rt.fv(f, "mind", live(target)))) {
-		yield* g.callName(f, rt.fv(f, "mind", live(target)), "show_memory", [live(user), 0]);
-		recent_speech = rt.list();
-		if (rt.gt(rt.length((say_log = rt.index(rt.fv(f, "logging", live(target)), "Say log"))), 8)) {
-			recent_speech = (yield* g.callName(f, live(say_log), "Copy", [add(subtract(rt.len(f, live(say_log)), 8), 1), 0]));
+	if (target.mind) {
+		target.mind.show_memory(user, 0);
+		recent_speech = list();
+		if (rt.length((say_log = rt.index(target.logging, "Say log"))) > LING_ABSORB_RECENT_SPEECH) {
+			recent_speech = (yield* say_log.Copy(rt.len(f, say_log) - LING_ABSORB_RECENT_SPEECH + 1, 0));
 		} else {
-			spoken_memory = null;
-			rt.forList(f, 0, live(say_log));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				spoken_memory = $e;
-				if (rt.ge(rt.len(f, live(recent_speech)), 8)) {
+			for (spoken_memory of each(say_log)) {
+				if (rt.len(f, recent_speech) >= LING_ABSORB_RECENT_SPEECH) {
 					break;
 				}
-				rt.setAt(live(recent_speech), live(spoken_memory), rt.index(live(say_log), live(spoken_memory)));
+				rt.setAt(recent_speech, spoken_memory, rt.index(say_log, spoken_memory));
 			}
-			rt.endFor(f, 0);
 		}
-		if (truthy(rt.len(f, live(recent_speech)))) {
-			yield* g.callName(f, rt.fv(f, "mind", live(user)), "store_memory", [fmt("<B>Some of ＀'s speech patterns, we should study these to better impersonate them!</B>", [live(target)])]);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='boldnotice'>Some of ＀'s speech patterns, we should study these to better impersonate them!</span>", [live(target)])]);
+		if (rt.len(f, recent_speech)) {
+			user.mind.store_memory(`<B>Some of ${target}'s speech patterns, we should study these to better impersonate them!</B>`);
+			to_chat(user, `<span class='boldnotice'>Some of ${target}'s speech patterns, we should study these to better impersonate them!</span>`);
 			spoken_memory = null;
-			rt.forList(f, 0, live(recent_speech));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				spoken_memory = $e;
-				yield* g.callName(f, rt.fv(f, "mind", live(user)), "store_memory", [fmt("\"＀\"", [rt.index(live(recent_speech), live(spoken_memory))])]);
-				yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>\"＀\"</span>", [rt.index(live(recent_speech), live(spoken_memory))])]);
+			for (spoken_memory of each(recent_speech)) {
+				user.mind.store_memory(`"${rt.index(recent_speech, spoken_memory)}"`);
+				to_chat(user, `<span class='notice'>"${rt.index(recent_speech, spoken_memory)}"</span>`);
 			}
-			rt.endFor(f, 0);
-			yield* g.callName(f, rt.fv(f, "mind", live(user)), "store_memory", [fmt("<B>We have no more knowledge of ＀'s speech patterns.</B>", [live(target)])]);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='boldnotice'>We have no more knowledge of ＀'s speech patterns.</span>", [live(target)])]);
+			user.mind.store_memory(`<B>We have no more knowledge of ${target}'s speech patterns.</B>`);
+			to_chat(user, `<span class='boldnotice'>We have no more knowledge of ${target}'s speech patterns.</span>`);
 		}
-		if (truthy(rt.gv(f, "changeling", rt.fv(f, "mind", live(target))))) {
-			rt.modField(f, live(changeling), "chem_charges", (yield* g.call(f, P("/proc/min"), null, [rt.gv(f, "chem_charges", rt.gv(f, "changeling", rt.fv(f, "mind", live(target)))), rt.fv(f, "chem_storage", live(changeling))])), add);
-			rt.modField(f, live(changeling), "absorbedcount", rt.gv(f, "absorbedcount", rt.gv(f, "changeling", rt.fv(f, "mind", live(target)))), add);
-			rt.setFv(f, "len", rt.gv(f, "stored_profiles", rt.gv(f, "changeling", rt.fv(f, "mind", live(target)))), 1);
-			rt.setFv(f, "absorbedcount", rt.gv(f, "changeling", rt.fv(f, "mind", live(target))), 0);
+		if (target.mind.changeling) {
+			changeling.chem_charges += min(target.mind.changeling.chem_charges, changeling.chem_storage);
+			changeling.absorbedcount += target.mind.changeling.absorbedcount;
+			target.mind.changeling.stored_profiles.len = 1;
+			target.mind.changeling.absorbedcount = 0;
 		}
 	}
-	rt.setFv(f, "chem_charges", live(changeling), (yield* g.call(f, P("/proc/min"), null, [add(rt.fv(f, "chem_charges", live(changeling)), 10), rt.fv(f, "chem_storage", live(changeling))])));
-	rt.setFv(f, "isabsorbing", live(changeling), 0);
-	rt.setFv(f, "canrespec", live(changeling), 1);
-	yield* g.callName(f, live(target), "death", [0]);
-	yield* g.callName(f, live(target), "Drain", []);
+	changeling.chem_charges = min(changeling.chem_charges + 10, changeling.chem_storage);
+	changeling.isabsorbing = 0;
+	changeling.canrespec = 1;
+	yield* target.death(0);
+	yield* target.Drain();
 	return 1;
 }, true);

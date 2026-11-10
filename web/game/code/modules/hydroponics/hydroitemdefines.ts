@@ -1,7 +1,7 @@
-// From code/modules/hydroponics/hydroitemdefines.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/hydroponics/hydroitemdefines.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(9393, "/obj/item/device/plant_analyzer", "/obj/item/device", {
@@ -16,12 +16,10 @@ rt.type(9393, "/obj/item/device/plant_analyzer", "/obj/item/device", {
 	materials: null,
 });
 
-// /obj/item/device/plant_analyzer/proc/<init>  (code/modules/hydroponics/hydroitemdefines.dm:11)
+// hydroitemdefines.dm:11
 rt.def("/obj/item/device/plant_analyzer/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 30, "$glass", 20]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 30, "$glass", 20]);
 	return f.dot;
 });
 
@@ -40,16 +38,16 @@ rt.type(6376, "/obj/item/weapon/reagent_containers/spray/weedspray", "/obj/item/
 	w_class: 2,
 });
 
-// /obj/item/weapon/reagent_containers/spray/weedspray/proc/Initialize  (code/modules/hydroponics/hydroitemdefines.dm:32)  may sleep
+// hydroitemdefines.dm:32
 rt.def("/obj/item/weapon/reagent_containers/spray/weedspray/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.callName(f, rt.sv(f, "reagents"), "add_reagent", ["weedkiller", 100]);
+	f.dot = (yield* parent_proc());
+	yield* this.reagents.add_reagent("weedkiller", 100);
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/reagent_containers/spray/weedspray/proc/suicide_act  (code/modules/hydroponics/hydroitemdefines.dm:36)
+// hydroitemdefines.dm:36
 rt.def("/obj/item/weapon/reagent_containers/spray/weedspray/proc/suicide_act", function suicide_act(f: Frame, user: Value) {
-	rt.callName(f, live(user), "visible_message", [fmt("<span class='suicide'>＀ is huffing ＀! It looks like ＀ trying to commit suicide!</span>", [live(user), live(f.src), rt.callName(f, live(user), "p_theyre", [])])]);
+	user.visible_message(`<span class='suicide'>${user} is huffing ${this}! It looks like ${user.p_theyre()} trying to commit suicide!</span>`);
 	return 4;
 });
 
@@ -68,16 +66,16 @@ rt.type(6377, "/obj/item/weapon/reagent_containers/spray/pestspray", "/obj/item/
 	w_class: 2,
 });
 
-// /obj/item/weapon/reagent_containers/spray/pestspray/proc/Initialize  (code/modules/hydroponics/hydroitemdefines.dm:54)  may sleep
+// hydroitemdefines.dm:54
 rt.def("/obj/item/weapon/reagent_containers/spray/pestspray/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.callName(f, rt.sv(f, "reagents"), "add_reagent", ["pestkiller", 100]);
+	f.dot = (yield* parent_proc());
+	yield* this.reagents.add_reagent("pestkiller", 100);
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/reagent_containers/spray/pestspray/proc/suicide_act  (code/modules/hydroponics/hydroitemdefines.dm:58)
+// hydroitemdefines.dm:58
 rt.def("/obj/item/weapon/reagent_containers/spray/pestspray/proc/suicide_act", function suicide_act(f: Frame, user: Value) {
-	rt.callName(f, live(user), "visible_message", [fmt("<span class='suicide'>＀ is huffing ＀! It looks like ＀ trying to commit suicide!</span>", [live(user), live(f.src), rt.callName(f, live(user), "p_theyre", [])])]);
+	user.visible_message(`<span class='suicide'>${user} is huffing ${this}! It looks like ${user.p_theyre()} trying to commit suicide!</span>`);
 	return 4;
 });
 
@@ -97,13 +95,11 @@ rt.type(7507, "/obj/item/weapon/cultivator", "/obj/item/weapon", {
 	hitsound: rt.rsc("sound/weapons/bladeslice.ogg"),
 });
 
-// /obj/item/weapon/cultivator/proc/<init>  (code/modules/hydroponics/hydroitemdefines.dm:72)
+// hydroitemdefines.dm:72
 rt.def("/obj/item/weapon/cultivator/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 50]));
-	rt.setSv(f, "attack_verb", rt.list("slashed", "sliced", "cut", "clawed"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 50]);
+	this.attack_verb = list("slashed", "sliced", "cut", "clawed");
 	return f.dot;
 });
 
@@ -125,20 +121,18 @@ rt.type(7508, "/obj/item/weapon/hatchet", "/obj/item/weapon", {
 	sharpness: 1,
 });
 
-// /obj/item/weapon/hatchet/proc/<init>  (code/modules/hydroponics/hydroitemdefines.dm:87)
+// hydroitemdefines.dm:87
 rt.def("/obj/item/weapon/hatchet/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 15000]));
-	rt.setSv(f, "attack_verb", rt.list("chopped", "torn", "cut"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 15000]);
+	this.attack_verb = list("chopped", "torn", "cut");
 	return f.dot;
 });
 
-// /obj/item/weapon/hatchet/proc/suicide_act  (code/modules/hydroponics/hydroitemdefines.dm:94)
+// hydroitemdefines.dm:94
 rt.def("/obj/item/weapon/hatchet/proc/suicide_act", function suicide_act(f: Frame, user: Value) {
-	rt.callName(f, live(user), "visible_message", [fmt("<span class='suicide'>＀ is chopping at ＀self with ＀! It looks like ＀ trying to commit suicide!</span>", [live(user), rt.callName(f, live(user), "p_them", []), live(f.src), rt.callName(f, live(user), "p_theyre", [])])]);
-	rt.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/weapons/bladeslice.ogg"), 50, 1, -1]);
+	user.visible_message(`<span class='suicide'>${user} is chopping at ${user.p_them()}self with ${this}! It looks like ${user.p_theyre()} trying to commit suicide!</span>`);
+	playsound(this.loc, rt.rsc("sound/weapons/bladeslice.ogg"), 50, 1, -1);
 	return 1;
 });
 
@@ -159,16 +153,15 @@ rt.type(7510, "/obj/item/weapon/scythe", "/obj/item/weapon", {
 	hitsound: rt.rsc("sound/weapons/bladeslice.ogg"),
 });
 
-// /obj/item/weapon/scythe/proc/suicide_act  (code/modules/hydroponics/hydroitemdefines.dm:115)  may sleep
+// hydroitemdefines.dm:115
 rt.def("/obj/item/weapon/scythe/proc/suicide_act", function* suicide_act(f: Frame, user: Value) {
 	let C: Value = null, BP: Value = null;
-	f.vars = () => [user, C, BP];
-	yield* g.callName(f, live(user), "visible_message", [fmt("<span class='suicide'>＀ is beheading ＀self with ＀! It looks like ＀ trying to commit suicide!</span>", [live(user), (yield* g.callName(f, live(user), "p_them", [])), live(f.src), (yield* g.callName(f, live(user), "p_theyre", []))])]);
-	if (truthy((rt.istype(live(user), T("/mob/living/carbon")) ? 1 : 0))) {
-		C = live(user);
-		if (truthy((BP = (yield* g.callName(f, live(C), "get_bodypart", ["head"]))))) {
-			yield* g.callName(f, live(BP), "drop_limb", []);
-			yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.op(f, "PickUnweighted", [3], [rt.rsc("sound/misc/desceration-01.ogg"), rt.rsc("sound/misc/desceration-02.ogg"), rt.rsc("sound/misc/desceration-01.ogg")]), 50, 1, -1]);
+	user.visible_message(`<span class='suicide'>${user} is beheading ${user.p_them()}self with ${this}! It looks like ${user.p_theyre()} trying to commit suicide!</span>`);
+	if (rt.istype(user, T("/mob/living/carbon"))) {
+		C = user;
+		if (BP = C.get_bodypart("head")) {
+			yield* BP.drop_limb();
+			playsound(this.loc, pick(rt.rsc("sound/misc/desceration-01.ogg"), rt.rsc("sound/misc/desceration-02.ogg"), rt.rsc("sound/misc/desceration-01.ogg")), 50, 1, -1);
 		}
 	}
 	return 1;
@@ -184,11 +177,11 @@ rt.type(6394, "/obj/item/weapon/reagent_containers/glass/bottle/nutrient", "/obj
 	possible_transfer_amounts: null,
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/nutrient/proc/Initialize  (code/modules/hydroponics/hydroitemdefines.dm:139)  may sleep
+// hydroitemdefines.dm:139
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/nutrient/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setFv(f, "pixel_x", live(f.src), (yield* g.call(f, P("/proc/rand"), null, [-5, 5])));
-	rt.setFv(f, "pixel_y", live(f.src), (yield* g.call(f, P("/proc/rand"), null, [-5, 5])));
+	f.dot = (yield* parent_proc());
+	this.pixel_x = rand(-5, 5);
+	this.pixel_y = rand(-5, 5);
 	return f.dot;
 }, true);
 
@@ -199,10 +192,10 @@ rt.type(6395, "/obj/item/weapon/reagent_containers/glass/bottle/nutrient/ez", "/
 	icon_state: "bottle16",
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/nutrient/ez/proc/Initialize  (code/modules/hydroponics/hydroitemdefines.dm:151)  may sleep
+// hydroitemdefines.dm:151
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/nutrient/ez/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.callName(f, rt.sv(f, "reagents"), "add_reagent", ["eznutriment", 50]);
+	f.dot = (yield* parent_proc());
+	yield* this.reagents.add_reagent("eznutriment", 50);
 	return f.dot;
 }, true);
 
@@ -213,10 +206,10 @@ rt.type(6396, "/obj/item/weapon/reagent_containers/glass/bottle/nutrient/l4z", "
 	icon_state: "bottle18",
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/nutrient/l4z/proc/Initialize  (code/modules/hydroponics/hydroitemdefines.dm:161)  may sleep
+// hydroitemdefines.dm:161
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/nutrient/l4z/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.callName(f, rt.sv(f, "reagents"), "add_reagent", ["left4zednutriment", 50]);
+	f.dot = (yield* parent_proc());
+	yield* this.reagents.add_reagent("left4zednutriment", 50);
 	return f.dot;
 }, true);
 
@@ -227,10 +220,10 @@ rt.type(6397, "/obj/item/weapon/reagent_containers/glass/bottle/nutrient/rh", "/
 	icon_state: "bottle15",
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/nutrient/rh/proc/Initialize  (code/modules/hydroponics/hydroitemdefines.dm:171)  may sleep
+// hydroitemdefines.dm:171
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/nutrient/rh/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.callName(f, rt.sv(f, "reagents"), "add_reagent", ["robustharvestnutriment", 50]);
+	f.dot = (yield* parent_proc());
+	yield* this.reagents.add_reagent("robustharvestnutriment", 50);
 	return f.dot;
 }, true);
 
@@ -241,10 +234,10 @@ rt.type(6400, "/obj/item/weapon/reagent_containers/glass/bottle/killer/weedkille
 	icon_state: "bottle19",
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/killer/weedkiller/proc/Initialize  (code/modules/hydroponics/hydroitemdefines.dm:195)  may sleep
+// hydroitemdefines.dm:195
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/killer/weedkiller/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.callName(f, rt.sv(f, "reagents"), "add_reagent", ["weedkiller", 50]);
+	f.dot = (yield* parent_proc());
+	yield* this.reagents.add_reagent("weedkiller", 50);
 	return f.dot;
 }, true);
 
@@ -255,9 +248,9 @@ rt.type(6401, "/obj/item/weapon/reagent_containers/glass/bottle/killer/pestkille
 	icon_state: "bottle20",
 });
 
-// /obj/item/weapon/reagent_containers/glass/bottle/killer/pestkiller/proc/Initialize  (code/modules/hydroponics/hydroitemdefines.dm:205)  may sleep
+// hydroitemdefines.dm:205
 rt.def("/obj/item/weapon/reagent_containers/glass/bottle/killer/pestkiller/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.callName(f, rt.sv(f, "reagents"), "add_reagent", ["pestkiller", 50]);
+	f.dot = (yield* parent_proc());
+	yield* this.reagents.add_reagent("pestkiller", 50);
 	return f.dot;
 }, true);

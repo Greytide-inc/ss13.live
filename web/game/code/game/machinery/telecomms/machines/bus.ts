@@ -1,51 +1,44 @@
-// From code/game/machinery/telecomms/machines/bus.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/machinery/telecomms/machines/bus.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, add } = rt;
 
 
-// /obj/machinery/telecomms/bus/proc/receive_information  (code/game/machinery/telecomms/machines/bus.dm:26)  may sleep
+// bus.dm:26
 rt.def("/obj/machinery/telecomms/bus/proc/receive_information", function* receive_information(f: Frame, signal: Value, machine_from: Value) {
-	let send_to_processor: Value = null, try_send: Value = null, i: Value = null, send: Value = null, can_send: Value = null;
-	let $e: any;
-	f.vars = () => [signal, machine_from, send_to_processor, try_send, i, send, can_send, $e];
-	if (!truthy((yield* g.srcCall(f, "is_freq_listening", live(signal))))) return f.dot;
-	if (truthy(rt.sv(f, "change_frequency"))) {
-		if (!isEqual(rt.fv(f, "frequency", live(signal)), 1213)) {
-			rt.setFv(f, "frequency", live(signal), rt.sv(f, "change_frequency"));
+	let send_to_processor: Value = null, send: Value = null, can_send: Value = null;
+	if (!this.is_freq_listening(signal)) return f.dot;
+	if (this.change_frequency) {
+		if (signal.frequency != 1213) {
+			signal.frequency = this.change_frequency;
 		}
 	}
-	if ((!truthy((rt.istype(live(machine_from), T("/obj/machinery/telecomms/processor")) ? 1 : 0)) && !isEqual(live(machine_from), live(f.src)))) {
-		if (truthy((send_to_processor = (yield* g.srcCall(f, "relay_information", live(signal), "/obj/machinery/telecomms/processor"))))) {
-			return live(f.dot);
+	if (!rt.istype(machine_from, T("/obj/machinery/telecomms/processor")) && machine_from != this) {
+		if (send_to_processor = (yield* this.relay_information(signal, "/obj/machinery/telecomms/processor"))) {
+			return f.dot;
 		}
-		rt.modAt(rt.fv(f, "data", live(signal)), "slow", (yield* g.call(f, P("/proc/rand"), null, [1, 5])), add);
-		yield* g.callName(f, live(f.src), "receive_information", [live(signal), live(f.src)]);
+		rt.modAt(signal.data, "slow", rand(1, 5), add);
+		yield* this.receive_information(signal, this);
 	}
-	try_send = rt.list("/obj/machinery/telecomms/server", "/obj/machinery/telecomms/hub", "/obj/machinery/telecomms/broadcaster", "/obj/machinery/telecomms/bus");
-	i = 0;
-	send = null;
-	rt.forList(f, 0, live(try_send));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		send = $e;
-		if (truthy(live(i))) {
-			rt.modAt(rt.fv(f, "data", live(signal)), "slow", (yield* g.call(f, P("/proc/rand"), null, [0, 1])), add);
+	let try_send: Value = list("/obj/machinery/telecomms/server", "/obj/machinery/telecomms/hub", "/obj/machinery/telecomms/broadcaster", "/obj/machinery/telecomms/bus");
+	let i: Value = 0;
+	for (send of each(try_send)) {
+		if (i) {
+			rt.modAt(signal.data, "slow", rand(0, 1), add);
 		}
-		i = rt.inc(live(i), 1);
-		if (truthy((can_send = (yield* g.srcCall(f, "relay_information", live(signal), live(send)))))) {
+		i++;
+		if (can_send = (yield* this.relay_information(signal, send))) {
 			break;
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /obj/machinery/telecomms/bus/proc/New  (code/game/machinery/telecomms/machines/bus.dm:53)  may sleep
+// bus.dm:53
 rt.def("/obj/machinery/telecomms/bus/proc/New", function* New(f: Frame) {
 	let B: Value = null;
-	f.vars = () => [B];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.callName(f, (B = (yield* g.new_(f, T("/obj/item/weapon/circuitboard/machine/telecomms/bus"), [null]))), "apply_default_parts", [live(f.src)]);
+	yield* parent_proc();
+	yield* (B = (yield* new_(T("/obj/item/weapon/circuitboard/machine/telecomms/bus"), null))).apply_default_parts(this);
 	return f.dot;
 }, true);
 
@@ -56,12 +49,10 @@ rt.type(6736, "/obj/item/weapon/circuitboard/machine/telecomms/bus", "/obj/item/
 	req_components: null,
 });
 
-// /obj/item/weapon/circuitboard/machine/telecomms/bus/proc/<init>  (code/game/machinery/telecomms/machines/bus.dm:61)
+// bus.dm:61
 rt.def("/obj/item/weapon/circuitboard/machine/telecomms/bus/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_components", rt.alist(f, [T("/obj/item/weapon/stock_parts/manipulator"), 2, T("/obj/item/stack/cable_coil"), 1, T("/obj/item/weapon/stock_parts/subspace/filter"), 1]));
+	parent_proc();
+	this.req_components = rt.alist(f, [T("/obj/item/weapon/stock_parts/manipulator"), 2, T("/obj/item/stack/cable_coil"), 1, T("/obj/item/weapon/stock_parts/subspace/filter"), 1]);
 	return f.dot;
 });
 
@@ -72,27 +63,22 @@ rt.type(10719, "/obj/machinery/telecomms/bus/preset_four", "/obj/machinery/telec
 	autolinkers: null,
 });
 
-// /obj/machinery/telecomms/bus/preset_four/proc/<init>  (code/game/machinery/telecomms/machines/bus.dm:93)
+// bus.dm:93
 rt.def("/obj/machinery/telecomms/bus/preset_four/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "freq_listening", rt.list(1357));
-	rt.setSv(f, "autolinkers", rt.list("processor4", "engineering", "common"));
+	parent_proc();
+	this.freq_listening = list(1357);
+	this.autolinkers = list("processor4", "engineering", "common");
 	return f.dot;
 });
 
-// /obj/machinery/telecomms/bus/preset_four/proc/New  (code/game/machinery/telecomms/machines/bus.dm:97)  may sleep
+// bus.dm:97
 rt.def("/obj/machinery/telecomms/bus/preset_four/proc/New", function* New(f: Frame) {
-	let i: Value = null;
-	f.vars = () => [i];
-	i = null;
-	i = 1441;
-	while (rt.lt(live(i), 1489)) {
-		(rt.modSrcVar(f, "freq_listening", live(i), rt.bitOr));
-		i = rt.modify(live(i), 2, add);
+	let i: Value = 1441;
+	while (i < 1489) {
+		(rt.modSrcVar(f, "freq_listening", i, rt.bitOr));
+		i += 2;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
@@ -102,13 +88,11 @@ rt.type(10716, "/obj/machinery/telecomms/bus/preset_one/birdstation", "/obj/mach
 	freq_listening: null,
 });
 
-// /obj/machinery/telecomms/bus/preset_one/birdstation/proc/<init>  (code/game/machinery/telecomms/machines/bus.dm:104)
+// bus.dm:104
 rt.def("/obj/machinery/telecomms/bus/preset_one/birdstation/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "autolinkers", rt.list("processor1", "common"));
-	$0 = $0;
-	rt.setSv(f, "freq_listening", rt.list());
+	parent_proc();
+	this.autolinkers = list("processor1", "common");
+
+	this.freq_listening = list();
 	return f.dot;
 });

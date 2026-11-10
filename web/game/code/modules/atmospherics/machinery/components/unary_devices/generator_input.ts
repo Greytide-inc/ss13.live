@@ -1,7 +1,7 @@
-// From code/modules/atmospherics/machinery/components/unary_devices/generator_input.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/atmospherics/machinery/components/unary_devices/generator_input.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(10584, "/obj/machinery/atmospherics/components/unary/generator_input", "/obj/machinery/atmospherics/components/unary", {
@@ -13,12 +13,12 @@ rt.type(10584, "/obj/machinery/atmospherics/components/unary/generator_input", "
 	layer: 2.5,
 });
 
-// /obj/machinery/atmospherics/components/unary/generator_input/proc/update_icon  (code/modules/atmospherics/machinery/components/unary_devices/generator_input.dm:13)
+// generator_input.dm:13
 rt.def("/obj/machinery/atmospherics/components/unary/generator_input/proc/update_icon", function update_icon(f: Frame) {
-	if (truthy(rt.index(rt.sv(f, "nodes"), 1))) {
-		rt.setSv(f, "icon_state", "intact");
+	if (rt.index(this.nodes, 1)) {
+		this.icon_state = "intact";
 	} else {
-		rt.setSv(f, "icon_state", "exposed");
+		this.icon_state = "exposed";
 	}
-	return live(f.dot);
+	return f.dot;
 });

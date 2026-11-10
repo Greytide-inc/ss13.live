@@ -1,7 +1,7 @@
-// From code/modules/reagents/reagent_containers/pill.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/reagents/reagent_containers/pill.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(6528, "/obj/item/weapon/reagent_containers/pill", "/obj/item/weapon/reagent_containers", {
@@ -18,79 +18,70 @@ rt.type(6528, "/obj/item/weapon/reagent_containers/pill", "/obj/item/weapon/reag
 	item_state: "pill",
 });
 
-// /obj/item/weapon/reagent_containers/pill/proc/<init>  (code/modules/reagents/reagent_containers/pill.dm:7)
+// pill.dm:7
 rt.def("/obj/item/weapon/reagent_containers/pill/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "possible_transfer_amounts", rt.list());
+	parent_proc();
+	this.possible_transfer_amounts = list();
 	return f.dot;
 });
 
-// /obj/item/weapon/reagent_containers/pill/proc/Initialize  (code/modules/reagents/reagent_containers/pill.dm:15)  may sleep
+// pill.dm:15
 rt.def("/obj/item/weapon/reagent_containers/pill/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(rt.sv(f, "icon_state"))) {
-		rt.setSv(f, "icon_state", fmt("pill＀", [(yield* g.call(f, P("/proc/rand"), null, [1, 20]))]));
+	f.dot = (yield* parent_proc());
+	if (!this.icon_state) {
+		this.icon_state = `pill${rand(1, 20)}`;
 	}
-	if (!(truthy(rt.fv(f, "total_volume", rt.sv(f, "reagents"))) && truthy(rt.sv(f, "roundstart")))) return f.dot;
-	rt.modSrcVar(f, "name", fmt(" (＀u)", [rt.fv(f, "total_volume", rt.sv(f, "reagents"))]), add);
+	if (!(this.reagents.total_volume && this.roundstart)) return f.dot;
+	this.name += ` (${this.reagents.total_volume}u)`;
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/reagent_containers/pill/proc/attack  (code/modules/reagents/reagent_containers/pill.dm:27)  may sleep
+// pill.dm:27
 rt.def("/obj/item/weapon/reagent_containers/pill/proc/attack", function* attack(f: Frame, M: Value, user: Value, def_zone: Value) {
-	f.vars = () => [M, user, def_zone];
-	if (!truthy((yield* g.srcCall(f, "canconsume", live(M), live(user))))) {
+	if (!this.canconsume(M, user)) {
 		return 0;
 	}
-	if (isEqual(live(M), live(user))) {
-		yield* g.callName(f, live(M), "visible_message", [fmt("<span class='notice'>＀ attempts to ＀ ＀.</span>", [live(user), rt.sv(f, "apply_method"), live(f.src)])]);
-		if (truthy(rt.sv(f, "self_delay"))) {
-			if (!truthy((yield* g.call(f, P("/proc/do_mob"), null, [live(user), live(M), rt.sv(f, "self_delay")])))) {
+	if (M == user) {
+		M.visible_message(`<span class='notice'>${user} attempts to ${this.apply_method} ${this}.</span>`);
+		if (this.self_delay) {
+			if (!(yield* do_mob(user, M, this.self_delay))) {
 				return 0;
 			}
 		}
-		yield* g.call(f, P("/proc/to_chat"), null, [live(M), fmt("<span class='notice'>You ＀ ＀.</span>", [rt.sv(f, "apply_method"), live(f.src)])]);
+		to_chat(M, `<span class='notice'>You ${this.apply_method} ${this}.</span>`);
 	} else {
-		yield* g.callName(f, live(M), "visible_message", [fmt("<span class='danger'>＀ attempts to force ＀ to ＀ ＀.</span>", [live(user), live(M), rt.sv(f, "apply_method"), live(f.src)]), fmt("<span class='userdanger'>＀ attempts to force ＀ to ＀ ＀.</span>", [live(user), live(M), rt.sv(f, "apply_method"), live(f.src)])]);
-		if (!truthy((yield* g.call(f, P("/proc/do_mob"), null, [live(user), live(M)])))) {
+		M.visible_message(`<span class='danger'>${user} attempts to force ${M} to ${this.apply_method} ${this}.</span>`, `<span class='userdanger'>${user} attempts to force ${M} to ${this.apply_method} ${this}.</span>`);
+		if (!(yield* do_mob(user, M))) {
 			return 0;
 		}
-		yield* g.callName(f, live(M), "visible_message", [fmt("<span class='danger'>＀ forces ＀ to ＀ ＀.</span>", [live(user), live(M), rt.sv(f, "apply_method"), live(f.src)]), fmt("<span class='userdanger'>＀ forces ＀ to ＀ ＀.</span>", [live(user), live(M), rt.sv(f, "apply_method"), live(f.src)])]);
+		M.visible_message(`<span class='danger'>${user} forces ${M} to ${this.apply_method} ${this}.</span>`, `<span class='userdanger'>${user} forces ${M} to ${this.apply_method} ${this}.</span>`);
 	}
-	yield* g.call(f, P("/proc/add_logs"), null, [live(user), live(M), "fed", (yield* g.srcCall(f, "reagentlist", live(f.src)))]);
-	if (truthy(rt.fv(f, "total_volume", rt.sv(f, "reagents")))) {
-		yield* g.callName(f, rt.sv(f, "reagents"), "reaction", [live(M), rt.sv(f, "apply_type")]);
-		yield* g.callName(f, rt.sv(f, "reagents"), "trans_to", [live(M), rt.fv(f, "total_volume", rt.sv(f, "reagents"))]);
+	add_logs(user, M, "fed", this.reagentlist(this));
+	if (this.reagents.total_volume) {
+		yield* this.reagents.reaction(M, this.apply_type);
+		yield* this.reagents.trans_to(M, this.reagents.total_volume);
 	}
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* qdel(this);
 	return 1;
 }, true);
 
-// /obj/item/weapon/reagent_containers/pill/proc/afterattack  (code/modules/reagents/reagent_containers/pill.dm:55)  may sleep
+// pill.dm:55
 rt.def("/obj/item/weapon/reagent_containers/pill/proc/afterattack", function* afterattack(f: Frame, target: Value, user: Value, proximity: Value) {
 	let O: Value = null;
-	let $e: any;
-	f.vars = () => [target, user, proximity, O, $e];
-	if (!truthy(live(proximity))) {
-		return live(f.dot);
+	if (!proximity) {
+		return f.dot;
 	}
-	if (!(!isEqual((yield* g.callName(f, live(target), "is_open_container", [])), 0) && truthy(rt.fv(f, "reagents", live(target))))) return f.dot;
-	if (!truthy(rt.gv(f, "total_volume", rt.fv(f, "reagents", live(target))))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ is empty! There's nothing to dissolve ＀ in.</span>", [live(target), live(f.src)])]);
-		return live(f.dot);
+	if (!(target.is_open_container() != 0 && target.reagents)) return f.dot;
+	if (!target.reagents.total_volume) {
+		to_chat(user, `<span class='warning'>${target} is empty! There's nothing to dissolve ${this} in.</span>`);
+		return f.dot;
 	}
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You dissolve ＀ in ＀.</span>", [live(f.src), live(target)])]);
-	O = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/viewers"), null, [2, live(user)])), T("/mob"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		O = $e;
-		yield* g.call(f, P("/proc/to_chat"), null, [live(O), fmt("<span class='warning'>＀ slips something into ＀!</span>", [live(user), live(target)])]);
+	to_chat(user, `<span class='notice'>You dissolve ${this} in ${target}.</span>`);
+	for (O of each(viewers(2, user), T("/mob"))) {
+		to_chat(O, `<span class='warning'>${user} slips something into ${target}!</span>`);
 	}
-	rt.endFor(f, 0);
-	yield* g.callName(f, rt.sv(f, "reagents"), "trans_to", [live(target), rt.fv(f, "total_volume", rt.sv(f, "reagents"))]);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* this.reagents.trans_to(target, this.reagents.total_volume);
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
@@ -102,12 +93,10 @@ rt.type(6532, "/obj/item/weapon/reagent_containers/pill/tox", "/obj/item/weapon/
 	icon_state: "pill5",
 });
 
-// /obj/item/weapon/reagent_containers/pill/tox/proc/<init>  (code/modules/reagents/reagent_containers/pill.dm:70)
+// pill.dm:70
 rt.def("/obj/item/weapon/reagent_containers/pill/tox/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["toxin", 50]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["toxin", 50]);
 	return f.dot;
 });
 
@@ -119,12 +108,10 @@ rt.type(6533, "/obj/item/weapon/reagent_containers/pill/cyanide", "/obj/item/wea
 	icon_state: "pill5",
 });
 
-// /obj/item/weapon/reagent_containers/pill/cyanide/proc/<init>  (code/modules/reagents/reagent_containers/pill.dm:76)
+// pill.dm:76
 rt.def("/obj/item/weapon/reagent_containers/pill/cyanide/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["cyanide", 50]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["cyanide", 50]);
 	return f.dot;
 });
 
@@ -136,12 +123,10 @@ rt.type(6534, "/obj/item/weapon/reagent_containers/pill/adminordrazine", "/obj/i
 	icon_state: "pill16",
 });
 
-// /obj/item/weapon/reagent_containers/pill/adminordrazine/proc/<init>  (code/modules/reagents/reagent_containers/pill.dm:82)
+// pill.dm:82
 rt.def("/obj/item/weapon/reagent_containers/pill/adminordrazine/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["adminordrazine", 50]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["adminordrazine", 50]);
 	return f.dot;
 });
 
@@ -153,12 +138,10 @@ rt.type(6535, "/obj/item/weapon/reagent_containers/pill/morphine", "/obj/item/we
 	icon_state: "pill8",
 });
 
-// /obj/item/weapon/reagent_containers/pill/morphine/proc/<init>  (code/modules/reagents/reagent_containers/pill.dm:88)
+// pill.dm:88
 rt.def("/obj/item/weapon/reagent_containers/pill/morphine/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["morphine", 30]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["morphine", 30]);
 	return f.dot;
 });
 
@@ -170,12 +153,10 @@ rt.type(6536, "/obj/item/weapon/reagent_containers/pill/stimulant", "/obj/item/w
 	icon_state: "pill19",
 });
 
-// /obj/item/weapon/reagent_containers/pill/stimulant/proc/<init>  (code/modules/reagents/reagent_containers/pill.dm:94)
+// pill.dm:94
 rt.def("/obj/item/weapon/reagent_containers/pill/stimulant/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["ephedrine", 10, "antihol", 10, "coffee", 30]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["ephedrine", 10, "antihol", 10, "coffee", 30]);
 	return f.dot;
 });
 
@@ -187,12 +168,10 @@ rt.type(6537, "/obj/item/weapon/reagent_containers/pill/salbutamol", "/obj/item/
 	icon_state: "pill16",
 });
 
-// /obj/item/weapon/reagent_containers/pill/salbutamol/proc/<init>  (code/modules/reagents/reagent_containers/pill.dm:100)
+// pill.dm:100
 rt.def("/obj/item/weapon/reagent_containers/pill/salbutamol/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["salbutamol", 30]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["salbutamol", 30]);
 	return f.dot;
 });
 
@@ -204,12 +183,10 @@ rt.type(6538, "/obj/item/weapon/reagent_containers/pill/charcoal", "/obj/item/we
 	icon_state: "pill17",
 });
 
-// /obj/item/weapon/reagent_containers/pill/charcoal/proc/<init>  (code/modules/reagents/reagent_containers/pill.dm:106)
+// pill.dm:106
 rt.def("/obj/item/weapon/reagent_containers/pill/charcoal/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["charcoal", 10]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["charcoal", 10]);
 	return f.dot;
 });
 
@@ -221,12 +198,10 @@ rt.type(6539, "/obj/item/weapon/reagent_containers/pill/epinephrine", "/obj/item
 	icon_state: "pill5",
 });
 
-// /obj/item/weapon/reagent_containers/pill/epinephrine/proc/<init>  (code/modules/reagents/reagent_containers/pill.dm:112)
+// pill.dm:112
 rt.def("/obj/item/weapon/reagent_containers/pill/epinephrine/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["epinephrine", 15]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["epinephrine", 15]);
 	return f.dot;
 });
 
@@ -238,12 +213,10 @@ rt.type(6540, "/obj/item/weapon/reagent_containers/pill/mannitol", "/obj/item/we
 	icon_state: "pill17",
 });
 
-// /obj/item/weapon/reagent_containers/pill/mannitol/proc/<init>  (code/modules/reagents/reagent_containers/pill.dm:118)
+// pill.dm:118
 rt.def("/obj/item/weapon/reagent_containers/pill/mannitol/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["mannitol", 50]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["mannitol", 50]);
 	return f.dot;
 });
 
@@ -255,12 +228,10 @@ rt.type(6541, "/obj/item/weapon/reagent_containers/pill/mutadone", "/obj/item/we
 	icon_state: "pill20",
 });
 
-// /obj/item/weapon/reagent_containers/pill/mutadone/proc/<init>  (code/modules/reagents/reagent_containers/pill.dm:124)
+// pill.dm:124
 rt.def("/obj/item/weapon/reagent_containers/pill/mutadone/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["mutadone", 50]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["mutadone", 50]);
 	return f.dot;
 });
 
@@ -272,12 +243,10 @@ rt.type(6542, "/obj/item/weapon/reagent_containers/pill/salicyclic", "/obj/item/
 	icon_state: "pill9",
 });
 
-// /obj/item/weapon/reagent_containers/pill/salicyclic/proc/<init>  (code/modules/reagents/reagent_containers/pill.dm:130)
+// pill.dm:130
 rt.def("/obj/item/weapon/reagent_containers/pill/salicyclic/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["sal_acid", 24]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["sal_acid", 24]);
 	return f.dot;
 });
 
@@ -289,12 +258,10 @@ rt.type(6543, "/obj/item/weapon/reagent_containers/pill/oxandrolone", "/obj/item
 	icon_state: "pill11",
 });
 
-// /obj/item/weapon/reagent_containers/pill/oxandrolone/proc/<init>  (code/modules/reagents/reagent_containers/pill.dm:136)
+// pill.dm:136
 rt.def("/obj/item/weapon/reagent_containers/pill/oxandrolone/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["oxandrolone", 24]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["oxandrolone", 24]);
 	return f.dot;
 });
 
@@ -306,12 +273,10 @@ rt.type(6544, "/obj/item/weapon/reagent_containers/pill/insulin", "/obj/item/wea
 	icon_state: "pill18",
 });
 
-// /obj/item/weapon/reagent_containers/pill/insulin/proc/<init>  (code/modules/reagents/reagent_containers/pill.dm:143)
+// pill.dm:143
 rt.def("/obj/item/weapon/reagent_containers/pill/insulin/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["insulin", 50]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["insulin", 50]);
 	return f.dot;
 });
 
@@ -323,11 +288,9 @@ rt.type(6545, "/obj/item/weapon/reagent_containers/pill/shadowtoxin", "/obj/item
 	color: "#454545",
 });
 
-// /obj/item/weapon/reagent_containers/pill/shadowtoxin/proc/<init>  (code/modules/reagents/reagent_containers/pill.dm:151)
+// pill.dm:151
 rt.def("/obj/item/weapon/reagent_containers/pill/shadowtoxin/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["shadowmutationtoxin", 1]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["shadowmutationtoxin", 1]);
 	return f.dot;
 });

@@ -1,7 +1,7 @@
-// From code/modules/hydroponics/grown/grass_carpet.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/hydroponics/grown/grass_carpet.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(10036, "/obj/item/seeds/grass", "/obj/item/seeds", {
@@ -24,15 +24,13 @@ rt.type(10036, "/obj/item/seeds/grass", "/obj/item/seeds", {
 	mutatelist: null,
 });
 
-// /obj/item/seeds/grass/proc/<init>  (code/modules/hydroponics/grown/grass_carpet.dm:17)
+// grass_carpet.dm:17
 rt.def("/obj/item/seeds/grass/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "genes", rt.list(T("/datum/plant_gene/trait/repeated_harvest")));
-	rt.setSv(f, "reagents_add", rt.alist(f, ["nutriment", 0.019999999552965164, "hydrogen", 0.05000000074505806]));
-	$0 = $0;
-	rt.setSv(f, "mutatelist", rt.list(T("/obj/item/seeds/grass/carpet")));
+	parent_proc();
+	this.genes = list(T("/datum/plant_gene/trait/repeated_harvest"));
+	this.reagents_add = rt.alist(f, ["nutriment", 0.02, "hydrogen", 0.05]);
+
+	this.mutatelist = list(T("/obj/item/seeds/grass/carpet"));
 	return f.dot;
 });
 
@@ -47,45 +45,35 @@ rt.type(6307, "/obj/item/weapon/reagent_containers/food/snacks/grown/grass", "/o
 	icon_state: "grassclump",
 });
 
-// /obj/item/weapon/reagent_containers/food/snacks/grown/grass/proc/attack_self  (code/modules/hydroponics/grown/grass_carpet.dm:32)  may sleep
+// grass_carpet.dm:32
 rt.def("/obj/item/weapon/reagent_containers/food/snacks/grown/grass/proc/attack_self", function* attack_self(f: Frame, user: Value) {
-	let grassAmt: Value = null, G: Value = null, GT: Value = null, _T: Value = null;
-	let $e: any;
-	f.vars = () => [user, grassAmt, G, GT, _T, $e];
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>You prepare the astroturf.</span>"]);
-	grassAmt = add(1, (yield* g.call(f, P("/proc/round"), null, [multiply(rt.fv(f, "potency", rt.sv(f, "seed")), rt.sv(f, "tile_coefficient"))])));
-	G = null;
-	rt.forList(f, 0, rt.fv(f, "loc", live(user)), T("/obj/item/weapon/reagent_containers/food/snacks/grown/grass"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		G = $e;
-		if (!isEqual(rt.fv(f, "type", live(G)), rt.sv(f, "type"))) {
+	let G: Value = null, _T: Value = null;
+	to_chat(user, "<span class='notice'>You prepare the astroturf.</span>");
+	let grassAmt: Value = 1 + round(this.seed.potency * this.tile_coefficient);
+	for (G of each(user.loc, T("/obj/item/weapon/reagent_containers/food/snacks/grown/grass"))) {
+		if (G.type != this.type) {
 			continue;
 		}
-		grassAmt = rt.modify(live(grassAmt), add(1, (yield* g.call(f, P("/proc/round"), null, [multiply(rt.gv(f, "potency", rt.fv(f, "seed", live(G))), rt.sv(f, "tile_coefficient"))]))), add);
-		yield* g.call(f, P("/proc/qdel"), null, [live(G)]);
+		grassAmt += 1 + round(G.seed.potency * this.tile_coefficient);
+		yield* qdel(G);
 	}
-	rt.endFor(f, 0);
-	GT = (yield* g.new_(f, rt.sv(f, "stacktype"), [rt.fv(f, "loc", live(user))]));
-	while (rt.gt(live(grassAmt), rt.fv(f, "max_amount", live(GT)))) {
-		rt.setFv(f, "amount", live(GT), rt.fv(f, "max_amount", live(GT)));
-		(grassAmt = rt.modify(live(grassAmt), rt.fv(f, "max_amount", live(GT)), subtract));
-		GT = (yield* g.new_(f, rt.sv(f, "stacktype"), [rt.fv(f, "loc", live(user))]));
+	let GT: Value = (yield* new_(this.stacktype, user.loc));
+	while (grassAmt > GT.max_amount) {
+		GT.amount = GT.max_amount;
+		grassAmt -= GT.max_amount;
+		GT = (yield* new_(this.stacktype, user.loc));
 	}
-	rt.setFv(f, "amount", live(GT), live(grassAmt));
-	_T = null;
-	rt.forList(f, 0, rt.fv(f, "loc", live(user)), T("/obj/item/stack/tile"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_T = $e;
-		if ((isEqual(rt.fv(f, "type", live(_T)), rt.sv(f, "stacktype")) && rt.lt(rt.fv(f, "amount", live(_T)), rt.fv(f, "max_amount", live(_T))))) {
-			yield* g.callName(f, live(GT), "merge", [live(_T)]);
-			if (rt.le(rt.fv(f, "amount", live(GT)), 0)) {
+	GT.amount = grassAmt;
+	for (_T of each(user.loc, T("/obj/item/stack/tile"))) {
+		if ((_T.type == this.stacktype && _T.amount < _T.max_amount)) {
+			yield* GT.merge(_T);
+			if (GT.amount <= 0) {
 				break;
 			}
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-	return live(f.dot);
+	yield* qdel(this);
+	return f.dot;
 }, true);
 
 rt.type(10037, "/obj/item/seeds/grass/carpet", "/obj/item/seeds/grass", {
@@ -99,11 +87,9 @@ rt.type(10037, "/obj/item/seeds/grass/carpet", "/obj/item/seeds/grass", {
 	icon_state: "seed-carpet",
 });
 
-// /obj/item/seeds/grass/carpet/proc/<init>  (code/modules/hydroponics/grown/grass_carpet.dm:61)
+// grass_carpet.dm:61
 rt.def("/obj/item/seeds/grass/carpet/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "mutatelist", rt.list());
+	parent_proc();
+	this.mutatelist = list();
 	return f.dot;
 });

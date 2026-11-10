@@ -1,7 +1,7 @@
-// From code/game/machinery/doors/firedoor.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/machinery/doors/firedoor.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(10288, "/obj/machinery/door/firedoor", "/obj/machinery/door", {
@@ -27,326 +27,289 @@ rt.type(10288, "/obj/machinery/door/firedoor", "/obj/machinery/door", {
 	armor: null,
 });
 
-// /obj/machinery/door/firedoor/proc/<init>  (code/game/machinery/doors/firedoor.dm:25)
+// firedoor.dm:25
 rt.def("/obj/machinery/door/firedoor/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 30, "bullet", 30, "laser", 20, "energy", 20, "bomb", 10, "bio", 100, "rad", 100, "fire", 95, "acid", 70]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 30, "bullet", 30, "laser", 20, "energy", 20, "bomb", 10, "bio", 100, "rad", 100, "fire", 95, "acid", 70]);
 	return f.dot;
 });
 
-// /obj/machinery/door/firedoor/proc/Initialize  (code/game/machinery/doors/firedoor.dm:30)  may sleep
+// firedoor.dm:30
 rt.def("/obj/machinery/door/firedoor/proc/Initialize", function* Initialize(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "CalculateAffectingAreas");
+	yield* parent_proc();
+	this.CalculateAffectingAreas();
 	return f.dot;
 }, true);
 
-// /obj/machinery/door/firedoor/proc/examine  (code/game/machinery/doors/firedoor.dm:34)
-rt.def("/obj/machinery/door/firedoor/proc/examine", function examine(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.sv(f, "density"))) {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='notice'>It is open, but could be <b>pried</b> closed.</span>"]);
+// firedoor.dm:34
+rt.def("/obj/machinery/door/firedoor/proc/examine", function examine(f: Frame, user: Value) {
+	parent_proc();
+	if (!this.density) {
+		to_chat(user, "<span class='notice'>It is open, but could be <b>pried</b> closed.</span>");
+	} else if (!this.welded) {
+		to_chat(user, "<span class='notice'>It is closed, but could be <i>pried</i> open. Deconstruction would require it to be <b>welded</b> shut.</span>");
+	} else if (this.boltslocked) {
+		to_chat(user, "<span class='notice'>It is <i>welded</i> shut. The floor bolt have been locked by <b>screws</b>.</span>");
 	} else {
-		if (!truthy(rt.sv(f, "welded"))) {
-			rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='notice'>It is closed, but could be <i>pried</i> open. Deconstruction would require it to be <b>welded</b> shut.</span>"]);
-		} else {
-			if (truthy(rt.sv(f, "boltslocked"))) {
-				rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='notice'>It is <i>welded</i> shut. The floor bolt have been locked by <b>screws</b>.</span>"]);
-			} else {
-				rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='notice'>The bolt locks have been <i>unscrewed</i>, but the bolts themselves are still <b>wrenched</b> to the floor.</span>"]);
-			}
-		}
+		to_chat(user, "<span class='notice'>The bolt locks have been <i>unscrewed</i>, but the bolts themselves are still <b>wrenched</b> to the floor.</span>");
 	}
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/machinery/door/firedoor/proc/CalculateAffectingAreas  (code/game/machinery/doors/firedoor.dm:47)
+// firedoor.dm:47
 rt.def("/obj/machinery/door/firedoor/proc/CalculateAffectingAreas", function CalculateAffectingAreas(f: Frame) {
 	let I: Value = null, A: Value = null;
-	let $e: any;
-	f.vars = () => [I, A, $e];
-	rt.callSrc(f, "remove_from_areas", []);
-	rt.setSv(f, "affecting_areas", rt.bitOr(rt.call(f, P("/proc/get_adjacent_open_areas"), null, [live(f.src)]), rt.call(f, P("/proc/get_area"), null, [live(f.src)])));
-	I = null;
-	rt.forList(f, 0, rt.sv(f, "affecting_areas"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		if (!truthy(rt.gv(f, "firedoors", (A = live(I))))) {
-			rt.setFv(f, "firedoors", live(A), rt.list());
+	this.remove_from_areas();
+	this.affecting_areas = rt.bitOr(get_adjacent_open_areas(this), get_area(this));
+	for (I of each(this.affecting_areas)) {
+		if (!(A = I).firedoors) {
+			A.firedoors = list();
 		}
-		rt.modField(f, live(A), "firedoors", live(f.src), add);
+		A.firedoors += this;
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /obj/machinery/door/firedoor/proc/remove_from_areas  (code/game/machinery/doors/firedoor.dm:62)
+// firedoor.dm:62
 rt.def("/obj/machinery/door/firedoor/proc/remove_from_areas", function remove_from_areas(f: Frame) {
 	let I: Value = null, A: Value = null;
-	let $e: any;
-	f.vars = () => [I, A, $e];
-	if (!truthy(rt.sv(f, "affecting_areas"))) return f.dot;
-	I = null;
-	rt.forList(f, 0, rt.sv(f, "affecting_areas"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		if (truthy(rt.gv(f, "firedoors", (A = live(I))))) {
-			(rt.modField(f, live(A), "firedoors", live(f.src), subtract));
-			if (!truthy(rt.getLen(f, rt.fv(f, "firedoors", live(A))))) {
-				rt.setFv(f, "firedoors", live(A), null);
+	if (!this.affecting_areas) return f.dot;
+	for (I of each(this.affecting_areas)) {
+		if ((A = I).firedoors) {
+			A.firedoors -= this;
+			if (!rt.len(f, A.firedoors)) {
+				A.firedoors = null;
 			}
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /obj/machinery/door/firedoor/proc/Destroy  (code/game/machinery/doors/firedoor.dm:67)  may sleep
+// firedoor.dm:67
 rt.def("/obj/machinery/door/firedoor/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.srcCall(f, "remove_from_areas");
-	yield* g.callName(f, rt.sv(f, "affecting_areas"), "Cut", []);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	this.remove_from_areas();
+	this.affecting_areas.Cut();
+	return (yield* parent_proc());
 }, true);
 
-// /obj/machinery/door/firedoor/proc/Bumped  (code/game/machinery/doors/firedoor.dm:72)  may sleep
-rt.def("/obj/machinery/door/firedoor/proc/Bumped", function* Bumped(f: Frame) {
-	if ((truthy(rt.sv(f, "panel_open")) || truthy(rt.sv(f, "operating")))) {
-		return live(f.dot);
+// firedoor.dm:72
+rt.def("/obj/machinery/door/firedoor/proc/Bumped", function* Bumped(f: Frame, AM: Value) {
+	if (this.panel_open || this.operating) {
+		return f.dot;
 	}
-	if (!truthy(rt.sv(f, "density"))) {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+	if (!this.density) {
+		return (yield* parent_proc());
 	}
 	return 0;
-}, true, { args: ["AM"] });
+}, true);
 
-// /obj/machinery/door/firedoor/proc/power_change  (code/game/machinery/doors/firedoor.dm:80)  may sleep
+// firedoor.dm:80
 rt.def("/obj/machinery/door/firedoor/proc/power_change", function* power_change(f: Frame) {
-	if (truthy((yield* g.srcCall(f, "powered", rt.sv(f, "power_channel"))))) {
+	if (this.powered(this.power_channel)) {
 		(rt.modSrcVar(f, "stat", 16777213, rt.bitAnd));
-		yield* g.srcCall(f, "latetoggle");
+		yield* this.latetoggle();
 	} else {
 		(rt.modSrcVar(f, "stat", 2, rt.bitOr));
 	}
 	return f.dot;
 }, true);
 
-// /obj/machinery/door/firedoor/proc/attack_hand  (code/game/machinery/doors/firedoor.dm:87)
+// firedoor.dm:87
 rt.def("/obj/machinery/door/firedoor/proc/attack_hand", function attack_hand(f: Frame, user: Value) {
-	if ((truthy(rt.sv(f, "operating")) || !truthy(rt.sv(f, "density")))) {
-		return live(f.dot);
+	if (this.operating || !this.density) {
+		return f.dot;
 	}
-	rt.callName(f, live(user), "changeNext_move", [8]);
-	rt.callName(f, live(user), "visible_message", [fmt("＀ bangs on ％！.", [live(user), live(f.src)]), fmt("You bang on ％！.", [live(f.src)])]);
-	rt.call(f, P("/proc/playsound"), null, [null, rt.sv(f, "loc"), null, rt.rsc("sound/effects/glassknock.ogg"), null, 10, null, 0, "frequency", 32000], rt.Args.Named);
+	user.changeNext_move(8);
+	user.visible_message(fmt("＀ bangs on ％！.", [user, this]), fmt("You bang on ％！.", [this]));
+	playsound(this.loc, rt.rsc("sound/effects/glassknock.ogg"), 10, 0, { frequency: 32000 });
 	return f.dot;
 });
 
-// /obj/machinery/door/firedoor/proc/attackby  (code/game/machinery/doors/firedoor.dm:96)  may sleep
-rt.def("/obj/machinery/door/firedoor/proc/attackby", function* attackby(f: Frame) {
+// firedoor.dm:96
+rt.def("/obj/machinery/door/firedoor/proc/attackby", function* attackby(f: Frame, C: Value, user: Value, params: Value) {
 	let $0: any, $1: any, $2: any;
-	f.vars = () => [$0, $1, $2];
-	yield* g.srcCall(f, "add_fingerprint", live(f.args[1]));
-	if (truthy(rt.sv(f, "operating"))) {
-		return live(f.dot);
+	yield* this.add_fingerprint(user);
+	if (this.operating) {
+		return f.dot;
 	}
-	if (truthy(rt.sv(f, "welded"))) {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/wrench")) ? 1 : 0))) {
-			if (truthy(rt.sv(f, "boltslocked"))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>There are screws locking the bolts in place!</span>"]);
-				return live(f.dot);
+	if (this.welded) {
+		if (rt.istype(C, T("/obj/item/weapon/wrench"))) {
+			if (this.boltslocked) {
+				to_chat(user, "<span class='notice'>There are screws locking the bolts in place!</span>");
+				return f.dot;
 			}
-			yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.fv(f, "usesound", live(f.args[0])), 50, 1]);
-			yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='notice'>＀ starts undoing ＀'s bolts...</span>", [live(f.args[1]), live(f.src)]), fmt("<span class='notice'>You start unfastening ＀'s floor bolts...</span>", [live(f.src)])]);
-			if (!truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, multiply(50, rt.fv(f, "toolspeed", live(f.args[0]))), "target", live(f.src)], rt.Args.Named)))) {
-				return live(f.dot);
+			playsound(rt.getStep(f, this, 0), C.usesound, 50, 1);
+			user.visible_message(`<span class='notice'>${user} starts undoing ${this}'s bolts...</span>`, `<span class='notice'>You start unfastening ${this}'s floor bolts...</span>`);
+			if (!(yield* do_after(user, 50 * C.toolspeed, { target: this }))) {
+				return f.dot;
 			}
-			yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/items/deconstruct.ogg"), 50, 1]);
-			yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='notice'>＀ unfastens ＀'s bolts.</span>", [live(f.args[1]), live(f.src)]), fmt("<span class='notice'>You undo ＀'s floor bolts.</span>", [live(f.src)])]);
-			yield* g.srcCall(f, "deconstruct", 1);
-			return live(f.dot);
+			playsound(rt.getStep(f, this, 0), rt.rsc("sound/items/deconstruct.ogg"), 50, 1);
+			user.visible_message(`<span class='notice'>${user} unfastens ${this}'s bolts.</span>`, `<span class='notice'>You undo ${this}'s floor bolts.</span>`);
+			yield* this.deconstruct(1);
+			return f.dot;
 		}
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/screwdriver")) ? 1 : 0))) {
-			$0 = live(f.args[1]);
-			$1 = live(f.args[1]);
-			if (truthy(rt.sv(f, "boltslocked"))) {
-				$1 = $1;
+		if (rt.istype(C, T("/obj/item/weapon/screwdriver"))) {
+			$0 = user;
+			$1 = user;
+			if (this.boltslocked) {
+
 				$2 = "unlocks";
 			} else {
 				$2 = "locks";
 			}
-			$1 = fmt("<span class='notice'>＀ ＀ ＀'s bolts.</span>", [$1, $2, live(f.src)]);
-			if (truthy(rt.sv(f, "boltslocked"))) {
+			$1 = `<span class='notice'>${$1} ${$2} ${this}'s bolts.</span>`;
+			if (this.boltslocked) {
 				$2 = "unlock";
 			} else {
 				$2 = "lock";
 			}
-			yield* g.callName(f, $0, "visible_message", [$1, fmt("<span class='notice'>You ＀ ＀'s floor bolts.</span>", [$2, live(f.src)])]);
-			yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.fv(f, "usesound", live(f.args[0])), 50, 1]);
-			rt.setSv(f, "boltslocked", (!truthy(rt.sv(f, "boltslocked")) ? 1 : 0));
-			return live(f.dot);
+			$0.visible_message($1, `<span class='notice'>You ${$2} ${this}'s floor bolts.</span>`);
+			playsound(rt.getStep(f, this, 0), C.usesound, 50, 1);
+			this.boltslocked = (!this.boltslocked ? 1 : 0);
+			return f.dot;
 		}
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["C", "user", "params"] });
+	return (yield* parent_proc());
+}, true);
 
-// /obj/machinery/door/firedoor/proc/try_to_weld  (code/game/machinery/doors/firedoor.dm:128)  may sleep
+// firedoor.dm:128
 rt.def("/obj/machinery/door/firedoor/proc/try_to_weld", function* try_to_weld(f: Frame, W: Value, user: Value) {
-	let $0: any, $1: any, $2: any;
-	f.vars = () => [W, user, $0, $1, $2];
-	if (!truthy((yield* g.callName(f, live(W), "remove_fuel", [0, live(user)])))) return f.dot;
-	yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.fv(f, "usesound", live(W)), 50, 1]);
-	$0 = live(user);
-	$1 = live(user);
-	if (truthy(rt.sv(f, "welded"))) {
-		$1 = $1;
+	let $2: any;
+	if (!(yield* W.remove_fuel(0, user))) return f.dot;
+	playsound(rt.getStep(f, this, 0), W.usesound, 50, 1);
+	let $0: any = user;
+	let $1: any = user;
+	if (this.welded) {
+
 		$2 = "unwelding";
 	} else {
 		$2 = "welding";
 	}
-	yield* g.callName(f, $0, "visible_message", [fmt("<span class='notice'>＀ starts ＀ ＀.</span>", [$1, $2, live(f.src)]), fmt("<span class='notice'>You start welding ＀.</span>", [live(f.src)])]);
-	if (!truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(user), null, multiply(40, rt.fv(f, "toolspeed", live(W))), null, 1, "target", live(f.src)], rt.Args.Named)))) return f.dot;
-	yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.fv(f, "usesound", live(W)), 50, 1]);
-	rt.setSv(f, "welded", (!truthy(rt.sv(f, "welded")) ? 1 : 0));
-	$0 = live(user);
-	$1 = live(user);
-	if (truthy(rt.sv(f, "welded"))) {
-		$1 = $1;
+	$0.visible_message(`<span class='notice'>${$1} starts ${$2} ${this}.</span>`, `<span class='notice'>You start welding ${this}.</span>`);
+	if (!(yield* do_after(user, 40 * W.toolspeed, 1, { target: this }))) return f.dot;
+	playsound(rt.getStep(f, this, 0), W.usesound, 50, 1);
+	this.welded = (!this.welded ? 1 : 0);
+	$0 = user;
+	$1 = user;
+	if (this.welded) {
+
 		$2 = "welds";
 	} else {
 		$2 = "unwelds";
 	}
-	$1 = fmt("<span class='danger'>＀ ＀ ＀.</span>", [$1, $2, live(f.src)]);
-	if (truthy(rt.sv(f, "welded"))) {
-		$2 = "weld";
-	} else {
-		$2 = "unweld";
-	}
-	yield* g.call(f, P("/proc/to_chat"), null, [$0, $1, fmt("<span class='notice'>You ＀ ＀.</span>", [$2, live(f.src)])]);
-	yield* g.srcCall(f, "update_icon");
+	$1 = `<span class='danger'>${$1} ${$2} ${this}.</span>`;
+	to_chat($0, $1, `<span class='notice'>You ${this.welded ? "weld" : "unweld"} ${this}.</span>`);
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/machinery/door/firedoor/proc/try_to_crowbar  (code/game/machinery/doors/firedoor.dm:138)  may sleep
+// firedoor.dm:138
 rt.def("/obj/machinery/door/firedoor/proc/try_to_crowbar", function* try_to_crowbar(f: Frame, I: Value, user: Value) {
-	f.vars = () => [I, user];
-	if ((truthy(rt.sv(f, "welded")) || truthy(rt.sv(f, "operating")))) {
-		return live(f.dot);
+	if (this.welded || this.operating) {
+		return f.dot;
 	}
-	if (truthy(rt.sv(f, "density"))) {
-		yield* g.srcCall(f, "open");
+	if (this.density) {
+		yield* this.open();
 	} else {
-		yield* g.srcCall(f, "close");
+		yield* this.close();
 	}
 	return f.dot;
 }, true);
 
-// /obj/machinery/door/firedoor/proc/attack_ai  (code/game/machinery/doors/firedoor.dm:147)  may sleep
+// firedoor.dm:147
 rt.def("/obj/machinery/door/firedoor/proc/attack_ai", function* attack_ai(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.srcCall(f, "add_fingerprint", live(user));
-	if (((truthy(rt.sv(f, "welded")) || truthy(rt.sv(f, "operating"))) || truthy(rt.bitAnd(rt.sv(f, "stat"), 2)))) {
-		return live(f.dot);
+	yield* this.add_fingerprint(user);
+	if (this.welded || this.operating || rt.bitAnd(this.stat, 2)) {
+		return f.dot;
 	}
-	if (truthy(rt.sv(f, "density"))) {
-		yield* g.srcCall(f, "open");
+	if (this.density) {
+		yield* this.open();
 	} else {
-		yield* g.srcCall(f, "close");
+		yield* this.close();
 	}
 	return f.dot;
 }, true);
 
-// /obj/machinery/door/firedoor/proc/attack_alien  (code/game/machinery/doors/firedoor.dm:156)  may sleep
+// firedoor.dm:156
 rt.def("/obj/machinery/door/firedoor/proc/attack_alien", function* attack_alien(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.srcCall(f, "add_fingerprint", live(user));
-	if (truthy(rt.sv(f, "welded"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ refuses to budge!</span>", [live(f.src)])]);
-		return live(f.dot);
+	yield* this.add_fingerprint(user);
+	if (this.welded) {
+		to_chat(user, `<span class='warning'>${this} refuses to budge!</span>`);
+		return f.dot;
 	}
-	yield* g.srcCall(f, "open");
+	yield* this.open();
 	return f.dot;
 }, true);
 
-// /obj/machinery/door/firedoor/proc/do_animate  (code/game/machinery/doors/firedoor.dm:163)
+// firedoor.dm:163
 rt.def("/obj/machinery/door/firedoor/proc/do_animate", function do_animate(f: Frame, animation: Value) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = live(animation);
-	if ($0 === "opening") {
-		rt.call(f, P("/proc/flick"), null, ["door_opening", live(f.src)]);
-	} else if ($0 === "closing") {
-		rt.call(f, P("/proc/flick"), null, ["door_closing", live(f.src)]);
+	if (animation === "opening") {
+		flick("door_opening", this);
+	} else if (animation === "closing") {
+		flick("door_closing", this);
 	}
 	return f.dot;
 });
 
-// /obj/machinery/door/firedoor/proc/update_icon  (code/game/machinery/doors/firedoor.dm:170)
+// firedoor.dm:170
 rt.def("/obj/machinery/door/firedoor/proc/update_icon", function update_icon(f: Frame) {
-	rt.callSrc(f, "cut_overlays", []);
-	if (truthy(rt.sv(f, "density"))) {
-		rt.setSv(f, "icon_state", "door_closed");
-		if (truthy(rt.sv(f, "welded"))) {
-			rt.callSrc(f, "add_overlay", ["welded"]);
+	this.cut_overlays();
+	if (this.density) {
+		this.icon_state = "door_closed";
+		if (this.welded) {
+			this.add_overlay("welded");
 		}
 	} else {
-		rt.setSv(f, "icon_state", "door_open");
-		if (!truthy(rt.sv(f, "welded"))) return f.dot;
-		rt.callSrc(f, "add_overlay", ["welded_open"]);
+		this.icon_state = "door_open";
+		if (!this.welded) return f.dot;
+		this.add_overlay("welded_open");
 	}
 	return f.dot;
 });
 
-// /obj/machinery/door/firedoor/proc/open  (code/game/machinery/doors/firedoor.dm:181)  may sleep
+// firedoor.dm:181
 rt.def("/obj/machinery/door/firedoor/proc/open", function* open(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.srcCall(f, "latetoggle");
+	f.dot = (yield* parent_proc());
+	yield* this.latetoggle();
 	return f.dot;
 }, true);
 
-// /obj/machinery/door/firedoor/proc/close  (code/game/machinery/doors/firedoor.dm:185)  may sleep
+// firedoor.dm:185
 rt.def("/obj/machinery/door/firedoor/proc/close", function* close(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.srcCall(f, "latetoggle");
+	f.dot = (yield* parent_proc());
+	yield* this.latetoggle();
 	return f.dot;
 }, true);
 
-// /obj/machinery/door/firedoor/proc/deconstruct  (code/game/machinery/doors/firedoor.dm:189)  may sleep
+// firedoor.dm:189
 rt.def("/obj/machinery/door/firedoor/proc/deconstruct", function* deconstruct(f: Frame, disassembled: Value) {
 	let F: Value = null;
-	f.vars = () => [disassembled, F];
-	if (live(disassembled) === null) {
-		disassembled = 1;
-	}
-	if (!truthy(rt.bitAnd(rt.sv(f, "flags"), 128))) {
-		F = (yield* g.new_(f, rt.sv(f, "assemblytype"), [rt.getStep(f, live(f.src), 0)]));
-		if (truthy(live(disassembled))) {
-			rt.setFv(f, "constructionStep", live(F), 1);
+	disassembled ??= CONSTRUCTION_PANEL_OPEN;
+	if (!rt.bitAnd(this.flags, NODECONSTRUCT)) {
+		F = (yield* new_(this.assemblytype, rt.getStep(f, this, 0)));
+		if (disassembled) {
+			F.constructionStep = CONSTRUCTION_PANEL_OPEN;
 		} else {
-			rt.setFv(f, "constructionStep", live(F), 2);
-			rt.setFv(f, "obj_integrity", live(F), multiply(rt.fv(f, "max_integrity", live(F)), 0.5));
+			F.constructionStep = CONSTRUCTION_WIRES_EXPOSED;
+			F.obj_integrity = F.max_integrity * 0.5;
 		}
-		yield* g.callName(f, live(F), "update_icon", []);
+		yield* F.update_icon();
 	}
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
-// /obj/machinery/door/firedoor/proc/latetoggle  (code/game/machinery/doors/firedoor.dm:201)  may sleep
+// firedoor.dm:201
 rt.def("/obj/machinery/door/firedoor/proc/latetoggle", function* latetoggle(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	if (((truthy(rt.sv(f, "operating")) || truthy(rt.bitAnd(rt.sv(f, "stat"), 2))) || !truthy(rt.sv(f, "nextstate")))) {
-		return live(f.dot);
+	if (this.operating || rt.bitAnd(this.stat, 2) || !this.nextstate) {
+		return f.dot;
 	}
-	$0 = rt.sv(f, "nextstate");
-	if ($0 === 1) {
-		rt.setSv(f, "nextstate", null);
-		yield* g.srcCall(f, "open");
-	} else if ($0 === 2) {
-		rt.setSv(f, "nextstate", null);
-		yield* g.srcCall(f, "close");
+	if (this.nextstate === 1) {
+		this.nextstate = null;
+		yield* this.open();
+	} else if (this.nextstate === 2) {
+		this.nextstate = null;
+		yield* this.close();
 	}
 	return f.dot;
 }, true);
@@ -357,36 +320,33 @@ rt.type(10290, "/obj/machinery/door/firedoor/border_only", "/obj/machinery/door/
 	icon: rt.rsc("icons/obj/doors/edge_Doorfire.dmi"),
 });
 
-// /obj/machinery/door/firedoor/border_only/proc/CanPass  (code/game/machinery/doors/firedoor.dm:217)
+// firedoor.dm:217
 rt.def("/obj/machinery/door/firedoor/border_only/proc/CanPass", function CanPass(f: Frame, mover: Value, target: Value, height: Value) {
-	f.vars = () => [height];
-	if (live(height) === null) {
-		height = 0;
-	}
-	if ((truthy((rt.istype(live(mover), T("/atom/movable")) ? 1 : 0)) && truthy(rt.callName(f, live(mover), "checkpass", [2])))) {
+	height ??= 0;
+	if (rt.istype(mover, T("/atom/movable")) && mover.checkpass(2)) {
 		return 1;
 	}
-	if (isEqual(rt.getDir(f, rt.sv(f, "loc"), live(target)), rt.sv(f, "dir"))) {
-		return (!truthy(rt.sv(f, "density")) ? 1 : 0);
+	if (rt.getDir(f, this.loc, target) == this.dir) {
+		return (!this.density ? 1 : 0);
 	}
 	return 1;
 });
 
-// /obj/machinery/door/firedoor/border_only/proc/CheckExit  (code/game/machinery/doors/firedoor.dm:225)
+// firedoor.dm:225
 rt.def("/obj/machinery/door/firedoor/border_only/proc/CheckExit", function CheckExit(f: Frame, mover: Value, target: Value) {
-	if ((truthy((rt.istype(live(mover), T("/atom/movable")) ? 1 : 0)) && truthy(rt.callName(f, live(mover), "checkpass", [2])))) {
+	if (rt.istype(mover, T("/atom/movable")) && mover.checkpass(2)) {
 		return 1;
 	}
-	if (isEqual(rt.getDir(f, rt.sv(f, "loc"), live(target)), rt.sv(f, "dir"))) {
-		return (!truthy(rt.sv(f, "density")) ? 1 : 0);
+	if (rt.getDir(f, this.loc, target) == this.dir) {
+		return (!this.density ? 1 : 0);
 	}
 	return 1;
 });
 
-// /obj/machinery/door/firedoor/border_only/proc/CanAtmosPass  (code/game/machinery/doors/firedoor.dm:233)
+// firedoor.dm:233
 rt.def("/obj/machinery/door/firedoor/border_only/proc/CanAtmosPass", function CanAtmosPass(f: Frame, _T: Value) {
-	if (isEqual(rt.getDir(f, rt.sv(f, "loc"), live(_T)), rt.sv(f, "dir"))) {
-		return (!truthy(rt.sv(f, "density")) ? 1 : 0);
+	if (rt.getDir(f, this.loc, _T) == this.dir) {
+		return (!this.density ? 1 : 0);
 	}
 	return 1;
 });
@@ -402,207 +362,201 @@ rt.type(12554, "/obj/structure/firelock_frame", "/obj/structure", {
 	density: 1,
 });
 
-// /obj/structure/firelock_frame/proc/examine  (code/game/machinery/doors/firedoor.dm:264)
-rt.def("/obj/structure/firelock_frame/proc/examine", function examine(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	rt.callSuper(f, [], rt.Args.Same);
-	$0 = rt.sv(f, "constructionStep");
-	if ($0 === 1) {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='notice'>It is <i>unbolted</i> from the floor. A small <b>loosely connected</b> metal plate is covering the wires.</span>"]);
-		if (!truthy(rt.sv(f, "reinforced"))) {
-			rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='notice'>It could be reinforced with plasteel.</span>"]);
+// firedoor.dm:264
+rt.def("/obj/structure/firelock_frame/proc/examine", function examine(f: Frame, user: Value) {
+	parent_proc();
+	if (this.constructionStep === CONSTRUCTION_PANEL_OPEN) {
+		to_chat(user, "<span class='notice'>It is <i>unbolted</i> from the floor. A small <b>loosely connected</b> metal plate is covering the wires.</span>");
+		if (!this.reinforced) {
+			to_chat(user, "<span class='notice'>It could be reinforced with plasteel.</span>");
 		}
-	} else if ($0 === 2) {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='notice'>The maintenance plate has been <i>pried away</i>, and <b>wires</b> are trailing.</span>"]);
-	} else if ($0 === 3) {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='notice'>The maintenance panel is missing <i>wires</i> and the circuit board is <b>loosely connected</b>.</span>"]);
-	} else if ($0 === 4) {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='notice'>There are no <i>firelock electronics</i> in the frame. The frame could be <b>cut</b> apart.</span>"]);
+	} else if (this.constructionStep === CONSTRUCTION_WIRES_EXPOSED) {
+		to_chat(user, "<span class='notice'>The maintenance plate has been <i>pried away</i>, and <b>wires</b> are trailing.</span>");
+	} else if (this.constructionStep === CONSTRUCTION_GUTTED) {
+		to_chat(user, "<span class='notice'>The maintenance panel is missing <i>wires</i> and the circuit board is <b>loosely connected</b>.</span>");
+	} else if (this.constructionStep === CONSTRUCTION_NOCIRCUIT) {
+		to_chat(user, "<span class='notice'>There are no <i>firelock electronics</i> in the frame. The frame could be <b>cut</b> apart.</span>");
 	}
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/structure/firelock_frame/proc/update_icon  (code/game/machinery/doors/firedoor.dm:278)
+// firedoor.dm:278
 rt.def("/obj/structure/firelock_frame/proc/update_icon", function update_icon(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "icon_state", fmt("frame＀", [rt.sv(f, "constructionStep")]));
+	parent_proc();
+	this.icon_state = `frame${this.constructionStep}`;
 	return f.dot;
 });
 
-// /obj/structure/firelock_frame/proc/attackby  (code/game/machinery/doors/firedoor.dm:282)  may sleep
-rt.def("/obj/structure/firelock_frame/proc/attackby", function* attackby(f: Frame) {
+// firedoor.dm:282
+rt.def("/obj/structure/firelock_frame/proc/attackby", function* attackby(f: Frame, C: Value, user: Value) {
 	let _P: Value = null, B: Value = null, W: Value = null, _T: Value = null;
-	let $0: any;
-	f.vars = () => [_P, B, W, _T, $0];
-	$0 = rt.sv(f, "constructionStep");
-	if ($0 === 1) {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/crowbar")) ? 1 : 0))) {
-			yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.fv(f, "usesound", live(f.args[0])), 50, 1]);
-			yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='notice'>＀ starts prying something out from ＀...</span>", [live(f.args[1]), live(f.src)]), "<span class='notice'>You begin prying out the wire cover...</span>"]);
-			if (!truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, multiply(50, rt.fv(f, "toolspeed", live(f.args[0]))), "target", live(f.src)], rt.Args.Named)))) {
-				return live(f.dot);
+	if (this.constructionStep === CONSTRUCTION_PANEL_OPEN) {
+		if (rt.istype(C, T("/obj/item/weapon/crowbar"))) {
+			playsound(rt.getStep(f, this, 0), C.usesound, 50, 1);
+			user.visible_message(`<span class='notice'>${user} starts prying something out from ${this}...</span>`, "<span class='notice'>You begin prying out the wire cover...</span>");
+			if (!(yield* do_after(user, 50 * C.toolspeed, { target: this }))) {
+				return f.dot;
 			}
-			if (!isEqual(rt.sv(f, "constructionStep"), 1)) {
-				return live(f.dot);
+			if (this.constructionStep != CONSTRUCTION_PANEL_OPEN) {
+				return f.dot;
 			}
-			yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/items/deconstruct.ogg"), 50, 1]);
-			yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='notice'>＀ pries out a metal plate from ＀, exposing the wires.</span>", [live(f.args[1]), live(f.src)]), fmt("<span class='notice'>You remove the cover plate from ＀, exposing the wires.</span>", [live(f.src)])]);
-			rt.setSv(f, "constructionStep", 2);
-			yield* g.srcCall(f, "update_icon");
-			return live(f.dot);
+			playsound(rt.getStep(f, this, 0), rt.rsc("sound/items/deconstruct.ogg"), 50, 1);
+			user.visible_message(`<span class='notice'>${user} pries out a metal plate from ${this}, exposing the wires.</span>`, `<span class='notice'>You remove the cover plate from ${this}, exposing the wires.</span>`);
+			this.constructionStep = CONSTRUCTION_WIRES_EXPOSED;
+			yield* this.update_icon();
+			return f.dot;
 		}
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/wrench")) ? 1 : 0))) {
-			if (truthy(rt.locateIn(f, T("/obj/machinery/door/firedoor"), rt.getStep(f, live(f.src), 0)))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>There's already a firelock there.</span>"]);
-				return live(f.dot);
+		if (rt.istype(C, T("/obj/item/weapon/wrench"))) {
+			if (rt.locateIn(f, T("/obj/machinery/door/firedoor"), rt.getStep(f, this, 0))) {
+				to_chat(user, "<span class='warning'>There's already a firelock there.</span>");
+				return f.dot;
 			}
-			yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.fv(f, "usesound", live(f.args[0])), 50, 1]);
-			yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='notice'>＀ starts bolting down ＀...</span>", [live(f.args[1]), live(f.src)]), fmt("<span class='notice'>You begin bolting ＀...</span>", [live(f.src)])]);
-			if (!truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, multiply(30, rt.fv(f, "toolspeed", live(f.args[0]))), "target", live(f.src)], rt.Args.Named)))) {
-				return live(f.dot);
+			playsound(rt.getStep(f, this, 0), C.usesound, 50, 1);
+			user.visible_message(`<span class='notice'>${user} starts bolting down ${this}...</span>`, `<span class='notice'>You begin bolting ${this}...</span>`);
+			if (!(yield* do_after(user, 30 * C.toolspeed, { target: this }))) {
+				return f.dot;
 			}
-			if (truthy(rt.locateIn(f, T("/obj/machinery/door/firedoor"), rt.getStep(f, live(f.src), 0)))) {
-				return live(f.dot);
+			if (rt.locateIn(f, T("/obj/machinery/door/firedoor"), rt.getStep(f, this, 0))) {
+				return f.dot;
 			}
-			yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='notice'>＀ finishes the firelock.</span>", [live(f.args[1])]), "<span class='notice'>You finish the firelock.</span>"]);
-			yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/items/deconstruct.ogg"), 50, 1]);
-			if (truthy(rt.sv(f, "reinforced"))) {
-				yield* g.new_(f, T("/obj/machinery/door/firedoor/heavy"), [rt.getStep(f, live(f.src), 0)]);
+			user.visible_message(`<span class='notice'>${user} finishes the firelock.</span>`, "<span class='notice'>You finish the firelock.</span>");
+			playsound(rt.getStep(f, this, 0), rt.rsc("sound/items/deconstruct.ogg"), 50, 1);
+			if (this.reinforced) {
+				yield* new_(T("/obj/machinery/door/firedoor/heavy"), rt.getStep(f, this, 0));
 			} else {
-				yield* g.new_(f, T("/obj/machinery/door/firedoor"), [rt.getStep(f, live(f.src), 0)]);
+				yield* new_(T("/obj/machinery/door/firedoor"), rt.getStep(f, this, 0));
 			}
-			yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-			return live(f.dot);
+			yield* qdel(this);
+			return f.dot;
 		}
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/stack/sheet/plasteel")) ? 1 : 0))) {
-			_P = live(f.args[0]);
-			if (truthy(rt.sv(f, "reinforced"))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>＀ is already reinforced.</span>", [live(f.src)])]);
-				return live(f.dot);
+		if (rt.istype(C, T("/obj/item/stack/sheet/plasteel"))) {
+			_P = C;
+			if (this.reinforced) {
+				to_chat(user, `<span class='warning'>${this} is already reinforced.</span>`);
+				return f.dot;
 			}
-			if (rt.lt((yield* g.callName(f, live(_P), "get_amount", [])), 2)) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>You need more plasteel to reinforce ＀.</span>", [live(f.src)])]);
-				return live(f.dot);
+			if (_P.get_amount() < 2) {
+				to_chat(user, `<span class='warning'>You need more plasteel to reinforce ${this}.</span>`);
+				return f.dot;
 			}
-			yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='notice'>＀ begins reinforcing ＀...</span>", [live(f.args[1]), live(f.src)]), fmt("<span class='notice'>You begin reinforcing ＀...</span>", [live(f.src)])]);
-			yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/items/deconstruct.ogg"), 50, 1]);
-			if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, 60, "target", live(f.src)], rt.Args.Named)))) {
-				if ((((!isEqual(rt.sv(f, "constructionStep"), 1) || truthy(rt.sv(f, "reinforced"))) || rt.lt((yield* g.callName(f, live(_P), "get_amount", [])), 2)) || !truthy(live(_P)))) {
-					return live(f.dot);
+			user.visible_message(`<span class='notice'>${user} begins reinforcing ${this}...</span>`, `<span class='notice'>You begin reinforcing ${this}...</span>`);
+			playsound(rt.getStep(f, this, 0), rt.rsc("sound/items/deconstruct.ogg"), 50, 1);
+			if (yield* do_after(user, 60, { target: this })) {
+				if (this.constructionStep != CONSTRUCTION_PANEL_OPEN || this.reinforced || _P.get_amount() < 2 || !_P) {
+					return f.dot;
 				}
-				yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='notice'>＀ reinforces ＀.</span>", [live(f.args[1]), live(f.src)]), fmt("<span class='notice'>You reinforce ＀.</span>", [live(f.src)])]);
-				yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/items/deconstruct.ogg"), 50, 1]);
-				yield* g.callName(f, live(_P), "use", [2]);
-				rt.setSv(f, "reinforced", 1);
+				user.visible_message(`<span class='notice'>${user} reinforces ${this}.</span>`, `<span class='notice'>You reinforce ${this}.</span>`);
+				playsound(rt.getStep(f, this, 0), rt.rsc("sound/items/deconstruct.ogg"), 50, 1);
+				yield* _P.use(2);
+				this.reinforced = 1;
 			}
-			return live(f.dot);
+			return f.dot;
 		}
-	} else if ($0 === 2) {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/wirecutters")) ? 1 : 0))) {
-			yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.fv(f, "usesound", live(f.args[0])), 50, 1]);
-			yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='notice'>＀ starts cutting the wires from ＀...</span>", [live(f.args[1]), live(f.src)]), fmt("<span class='notice'>You begin removing ＀'s wires...</span>", [live(f.src)])]);
-			if (!truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, multiply(60, rt.fv(f, "toolspeed", live(f.args[0]))), "target", live(f.src)], rt.Args.Named)))) {
-				return live(f.dot);
+	} else if (this.constructionStep === CONSTRUCTION_WIRES_EXPOSED) {
+		if (rt.istype(C, T("/obj/item/weapon/wirecutters"))) {
+			playsound(rt.getStep(f, this, 0), C.usesound, 50, 1);
+			user.visible_message(`<span class='notice'>${user} starts cutting the wires from ${this}...</span>`, `<span class='notice'>You begin removing ${this}'s wires...</span>`);
+			if (!(yield* do_after(user, 60 * C.toolspeed, { target: this }))) {
+				return f.dot;
 			}
-			if (!isEqual(rt.sv(f, "constructionStep"), 2)) {
-				return live(f.dot);
+			if (this.constructionStep != CONSTRUCTION_WIRES_EXPOSED) {
+				return f.dot;
 			}
-			yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='notice'>＀ removes the wires from ＀.</span>", [live(f.args[1]), live(f.src)]), fmt("<span class='notice'>You remove the wiring from ＀, exposing the circuit board.</span>", [live(f.src)])]);
-			rt.setFv(f, "amount", (B = (yield* g.new_(f, T("/obj/item/stack/cable_coil"), [rt.getStep(f, live(f.src), 0)]))), 5);
-			rt.setSv(f, "constructionStep", 3);
-			yield* g.srcCall(f, "update_icon");
-			return live(f.dot);
+			user.visible_message(`<span class='notice'>${user} removes the wires from ${this}.</span>`, `<span class='notice'>You remove the wiring from ${this}, exposing the circuit board.</span>`);
+			(B = (yield* new_(T("/obj/item/stack/cable_coil"), rt.getStep(f, this, 0)))).amount = 5;
+			this.constructionStep = CONSTRUCTION_GUTTED;
+			yield* this.update_icon();
+			return f.dot;
 		}
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/crowbar")) ? 1 : 0))) {
-			yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.fv(f, "usesound", live(f.args[0])), 50, 1]);
-			yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='notice'>＀ starts prying a metal plate into ＀...</span>", [live(f.args[1]), live(f.src)]), fmt("<span class='notice'>You begin prying the cover plate back onto ＀...</span>", [live(f.src)])]);
-			if (!truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, multiply(80, rt.fv(f, "toolspeed", live(f.args[0]))), "target", live(f.src)], rt.Args.Named)))) {
-				return live(f.dot);
+		if (rt.istype(C, T("/obj/item/weapon/crowbar"))) {
+			playsound(rt.getStep(f, this, 0), C.usesound, 50, 1);
+			user.visible_message(`<span class='notice'>${user} starts prying a metal plate into ${this}...</span>`, `<span class='notice'>You begin prying the cover plate back onto ${this}...</span>`);
+			if (!(yield* do_after(user, 80 * C.toolspeed, { target: this }))) {
+				return f.dot;
 			}
-			if (!isEqual(rt.sv(f, "constructionStep"), 2)) {
-				return live(f.dot);
+			if (this.constructionStep != CONSTRUCTION_WIRES_EXPOSED) {
+				return f.dot;
 			}
-			yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/items/deconstruct.ogg"), 50, 1]);
-			yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='notice'>＀ pries the metal plate into ＀.</span>", [live(f.args[1]), live(f.src)]), fmt("<span class='notice'>You pry ＀'s cover plate into place, hiding the wires.</span>", [live(f.src)])]);
-			rt.setSv(f, "constructionStep", 1);
-			yield* g.srcCall(f, "update_icon");
-			return live(f.dot);
+			playsound(rt.getStep(f, this, 0), rt.rsc("sound/items/deconstruct.ogg"), 50, 1);
+			user.visible_message(`<span class='notice'>${user} pries the metal plate into ${this}.</span>`, `<span class='notice'>You pry ${this}'s cover plate into place, hiding the wires.</span>`);
+			this.constructionStep = CONSTRUCTION_PANEL_OPEN;
+			yield* this.update_icon();
+			return f.dot;
 		}
-	} else if ($0 === 3) {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/crowbar")) ? 1 : 0))) {
-			yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='notice'>＀ begins removing the circuit board from ＀...</span>", [live(f.args[1]), live(f.src)]), fmt("<span class='notice'>You begin prying out the circuit board from ＀...</span>", [live(f.src)])]);
-			yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.fv(f, "usesound", live(f.args[0])), 50, 1]);
-			if (!truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, multiply(50, rt.fv(f, "toolspeed", live(f.args[0]))), "target", live(f.src)], rt.Args.Named)))) {
-				return live(f.dot);
+	} else if (this.constructionStep === CONSTRUCTION_GUTTED) {
+		if (rt.istype(C, T("/obj/item/weapon/crowbar"))) {
+			user.visible_message(`<span class='notice'>${user} begins removing the circuit board from ${this}...</span>`, `<span class='notice'>You begin prying out the circuit board from ${this}...</span>`);
+			playsound(rt.getStep(f, this, 0), C.usesound, 50, 1);
+			if (!(yield* do_after(user, 50 * C.toolspeed, { target: this }))) {
+				return f.dot;
 			}
-			if (!isEqual(rt.sv(f, "constructionStep"), 3)) {
-				return live(f.dot);
+			if (this.constructionStep != CONSTRUCTION_GUTTED) {
+				return f.dot;
 			}
-			yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='notice'>＀ removes ＀'s circuit board.</span>", [live(f.args[1]), live(f.src)]), fmt("<span class='notice'>You remove the circuit board from ＀.</span>", [live(f.src)])]);
-			yield* g.new_(f, T("/obj/item/weapon/electronics/firelock"), [rt.getStep(f, live(f.src), 0)]);
-			yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.fv(f, "usesound", live(f.args[0])), 50, 1]);
-			rt.setSv(f, "constructionStep", 4);
-			yield* g.srcCall(f, "update_icon");
-			return live(f.dot);
+			user.visible_message(`<span class='notice'>${user} removes ${this}'s circuit board.</span>`, `<span class='notice'>You remove the circuit board from ${this}.</span>`);
+			yield* new_(T("/obj/item/weapon/electronics/firelock"), rt.getStep(f, this, 0));
+			playsound(rt.getStep(f, this, 0), C.usesound, 50, 1);
+			this.constructionStep = CONSTRUCTION_NOCIRCUIT;
+			yield* this.update_icon();
+			return f.dot;
 		}
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/stack/cable_coil")) ? 1 : 0))) {
-			if (rt.lt((yield* g.callName(f, (B = live(f.args[0])), "get_amount", [])), 5)) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>You need more wires to add wiring to ＀.</span>", [live(f.src)])]);
-				return live(f.dot);
+		if (rt.istype(C, T("/obj/item/stack/cable_coil"))) {
+			if ((B = C).get_amount() < 5) {
+				to_chat(user, `<span class='warning'>You need more wires to add wiring to ${this}.</span>`);
+				return f.dot;
 			}
-			yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='notice'>＀ begins wiring ＀...</span>", [live(f.args[1]), live(f.src)]), fmt("<span class='notice'>You begin adding wires to ＀...</span>", [live(f.src)])]);
-			yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/items/deconstruct.ogg"), 50, 1]);
-			if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, 60, "target", live(f.src)], rt.Args.Named)))) {
-				if (((!isEqual(rt.sv(f, "constructionStep"), 3) || rt.lt((yield* g.callName(f, live(B), "get_amount", [])), 5)) || !truthy(live(B)))) {
-					return live(f.dot);
+			user.visible_message(`<span class='notice'>${user} begins wiring ${this}...</span>`, `<span class='notice'>You begin adding wires to ${this}...</span>`);
+			playsound(rt.getStep(f, this, 0), rt.rsc("sound/items/deconstruct.ogg"), 50, 1);
+			if (yield* do_after(user, 60, { target: this })) {
+				if (this.constructionStep != CONSTRUCTION_GUTTED || B.get_amount() < 5 || !B) {
+					return f.dot;
 				}
-				yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='notice'>＀ adds wires to ＀.</span>", [live(f.args[1]), live(f.src)]), fmt("<span class='notice'>You wire ＀.</span>", [live(f.src)])]);
-				yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/items/deconstruct.ogg"), 50, 1]);
-				yield* g.callName(f, live(B), "use", [5]);
-				rt.setSv(f, "constructionStep", 2);
-				yield* g.srcCall(f, "update_icon");
+				user.visible_message(`<span class='notice'>${user} adds wires to ${this}.</span>`, `<span class='notice'>You wire ${this}.</span>`);
+				playsound(rt.getStep(f, this, 0), rt.rsc("sound/items/deconstruct.ogg"), 50, 1);
+				yield* B.use(5);
+				this.constructionStep = CONSTRUCTION_WIRES_EXPOSED;
+				yield* this.update_icon();
 			}
-			return live(f.dot);
+			return f.dot;
 		}
-	} else if ($0 === 4) {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/weldingtool")) ? 1 : 0))) {
-			if (truthy((yield* g.callName(f, (W = live(f.args[0])), "remove_fuel", [1, live(f.args[1])])))) {
-				yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.fv(f, "usesound", live(W)), 50, 1]);
-				yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='notice'>＀ begins cutting apart ＀'s frame...</span>", [live(f.args[1]), live(f.src)]), fmt("<span class='notice'>You begin slicing ＀ apart...</span>", [live(f.src)])]);
-				if (!truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, multiply(80, rt.fv(f, "toolspeed", live(f.args[0]))), "target", live(f.src)], rt.Args.Named)))) {
-					return live(f.dot);
+	} else if (this.constructionStep === CONSTRUCTION_NOCIRCUIT) {
+		if (rt.istype(C, T("/obj/item/weapon/weldingtool"))) {
+			if (yield* (W = C).remove_fuel(1, user)) {
+				playsound(rt.getStep(f, this, 0), W.usesound, 50, 1);
+				user.visible_message(`<span class='notice'>${user} begins cutting apart ${this}'s frame...</span>`, `<span class='notice'>You begin slicing ${this} apart...</span>`);
+				if (!(yield* do_after(user, 80 * C.toolspeed, { target: this }))) {
+					return f.dot;
 				}
-				if (!isEqual(rt.sv(f, "constructionStep"), 4)) {
-					return live(f.dot);
+				if (this.constructionStep != CONSTRUCTION_NOCIRCUIT) {
+					return f.dot;
 				}
-				yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='notice'>＀ cuts apart ＀!</span>", [live(f.args[1]), live(f.src)]), fmt("<span class='notice'>You cut ＀ into metal.</span>", [live(f.src)])]);
-				yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/items/welder2.ogg"), 50, 1]);
-				yield* g.new_(f, T("/obj/item/stack/sheet/metal"), [(_T = rt.getStep(f, live(f.src), 0)), 3]);
-				if (truthy(rt.sv(f, "reinforced"))) {
-					yield* g.new_(f, T("/obj/item/stack/sheet/plasteel"), [live(_T), 2]);
+				user.visible_message(`<span class='notice'>${user} cuts apart ${this}!</span>`, `<span class='notice'>You cut ${this} into metal.</span>`);
+				playsound(rt.getStep(f, this, 0), rt.rsc("sound/items/welder2.ogg"), 50, 1);
+				yield* new_(T("/obj/item/stack/sheet/metal"), (_T = rt.getStep(f, this, 0)), 3);
+				if (this.reinforced) {
+					yield* new_(T("/obj/item/stack/sheet/plasteel"), _T, 2);
 				}
-				yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+				yield* qdel(this);
 			}
-			return live(f.dot);
+			return f.dot;
 		}
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/electronics/firelock")) ? 1 : 0))) {
-			yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='notice'>＀ starts adding ＀ to ＀...</span>", [live(f.args[1]), live(f.args[0]), live(f.src)]), fmt("<span class='notice'>You begin adding a circuit board to ＀...</span>", [live(f.src)])]);
-			yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/items/deconstruct.ogg"), 50, 1]);
-			if (!truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, 40, "target", live(f.src)], rt.Args.Named)))) {
-				return live(f.dot);
+		if (rt.istype(C, T("/obj/item/weapon/electronics/firelock"))) {
+			user.visible_message(`<span class='notice'>${user} starts adding ${C} to ${this}...</span>`, `<span class='notice'>You begin adding a circuit board to ${this}...</span>`);
+			playsound(rt.getStep(f, this, 0), rt.rsc("sound/items/deconstruct.ogg"), 50, 1);
+			if (!(yield* do_after(user, 40, { target: this }))) {
+				return f.dot;
 			}
-			if (!isEqual(rt.sv(f, "constructionStep"), 4)) {
-				return live(f.dot);
+			if (this.constructionStep != CONSTRUCTION_NOCIRCUIT) {
+				return f.dot;
 			}
-			yield* g.callName(f, live(f.args[1]), "drop_item", []);
-			yield* g.call(f, P("/proc/qdel"), null, [live(f.args[0])]);
-			yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='notice'>＀ adds a circuit to ＀.</span>", [live(f.args[1]), live(f.src)]), fmt("<span class='notice'>You insert and secure ＀.</span>", [live(f.args[0])])]);
-			yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/items/deconstruct.ogg"), 50, 1]);
-			rt.setSv(f, "constructionStep", 3);
-			yield* g.srcCall(f, "update_icon");
-			return live(f.dot);
+			yield* user.drop_item();
+			yield* qdel(C);
+			user.visible_message(`<span class='notice'>${user} adds a circuit to ${this}.</span>`, `<span class='notice'>You insert and secure ${C}.</span>`);
+			playsound(rt.getStep(f, this, 0), rt.rsc("sound/items/deconstruct.ogg"), 50, 1);
+			this.constructionStep = CONSTRUCTION_GUTTED;
+			yield* this.update_icon();
+			return f.dot;
 		}
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["C", "user"] });
+	return (yield* parent_proc());
+}, true);

@@ -1,7 +1,7 @@
-// From code/modules/surgery/organs/augments_arms.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/surgery/organs/augments_arms.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, g } = rt;
 
 
 rt.type(9488, "/obj/item/organ/cyberimp/arm", "/obj/item/organ/cyberimp", {
@@ -16,253 +16,240 @@ rt.type(9488, "/obj/item/organ/cyberimp/arm", "/obj/item/organ/cyberimp", {
 	actions_types: null,
 });
 
-// /obj/item/organ/cyberimp/arm/proc/<init>  (code/modules/surgery/organs/augments_arms.dm:10)
+// augments_arms.dm:10
 rt.def("/obj/item/organ/cyberimp/arm/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "items_list", rt.list());
-	$0 = $0;
-	rt.setSv(f, "actions_types", rt.list(T("/datum/action/item_action/organ_action/toggle")));
+	parent_proc();
+	this.items_list = list();
+
+	this.actions_types = list(T("/datum/action/item_action/organ_action/toggle"));
 	return f.dot;
 });
 
-// /obj/item/organ/cyberimp/arm/proc/Initialize  (code/modules/surgery/organs/augments_arms.dm:18)  may sleep
+// augments_arms.dm:18
 rt.def("/obj/item/organ/cyberimp/arm/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (truthy((yield* g.call(f, P("/proc/ispath"), null, [rt.sv(f, "holder")])))) {
-		rt.setSv(f, "holder", (yield* g.new_(f, rt.sv(f, "holder"), [live(f.src)])));
+	f.dot = (yield* parent_proc());
+	if (ispath(this.holder)) {
+		this.holder = (yield* new_(this.holder, this));
 	}
-	yield* g.srcCall(f, "update_icon");
-	rt.setSv(f, "slot", add(rt.sv(f, "zone"), "_device"));
-	rt.setSv(f, "items_list", (yield* g.callName(f, rt.sv(f, "contents"), "Copy", [])));
+	yield* this.update_icon();
+	this.slot = this.zone + "_device";
+	this.items_list = (yield* this.contents.Copy());
 	return f.dot;
 }, true);
 
-// /obj/item/organ/cyberimp/arm/proc/update_icon  (code/modules/surgery/organs/augments_arms.dm:27)
+// augments_arms.dm:27
 rt.def("/obj/item/organ/cyberimp/arm/proc/update_icon", function update_icon(f: Frame) {
-	if (isEqual(rt.sv(f, "zone"), "r_arm")) {
-		rt.setSv(f, "transform", null);
+	if (this.zone == "r_arm") {
+		this.transform = null;
 	} else {
-		rt.setSv(f, "transform", rt.call(f, P("/proc/matrix"), null, [-1, 0, 0, 0, 1, 0]));
+		this.transform = matrix(-1, 0, 0, 0, 1, 0);
 	}
 	return f.dot;
 });
 
-// /obj/item/organ/cyberimp/arm/proc/examine  (code/modules/surgery/organs/augments_arms.dm:33)
-rt.def("/obj/item/organ/cyberimp/arm/proc/examine", function examine(f: Frame) {
-	let $0: any, $1: any, $2: any;
-	f.vars = () => [$0, $1, $2];
-	rt.callSuper(f, [], rt.Args.Same);
-	$0 = live(f.args[0]);
-	$1 = live(f.src);
-	if (isEqual(rt.sv(f, "zone"), "r_arm")) {
+// augments_arms.dm:33
+rt.def("/obj/item/organ/cyberimp/arm/proc/examine", function examine(f: Frame, user: Value) {
+	let $2: any;
+	parent_proc();
+	let $0: any = user;
+	let $1: any = this;
+	if (this.zone == "r_arm") {
 		$2 = "right";
 	} else {
 		$2 = "left";
 	}
-	rt.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='info'>＀ is assembled in the ＀ arm configuration. You can use a screwdriver to reassemble it.</span>", [$1, $2])]);
+	to_chat($0, `<span class='info'>${$1} is assembled in the ${$2} arm configuration. You can use a screwdriver to reassemble it.</span>`);
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/item/organ/cyberimp/arm/proc/attackby  (code/modules/surgery/organs/augments_arms.dm:37)  may sleep
-rt.def("/obj/item/organ/cyberimp/arm/proc/attackby", function* attackby(f: Frame) {
+// augments_arms.dm:37
+rt.def("/obj/item/organ/cyberimp/arm/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
 	let $0: any, $1: any, $2: any;
-	f.vars = () => [$0, $1, $2];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/screwdriver")) ? 1 : 0))) {
-		if (isEqual(rt.sv(f, "zone"), "r_arm")) {
-			rt.setSv(f, "zone", "l_arm");
+	yield* parent_proc();
+	if (rt.istype(W, T("/obj/item/weapon/screwdriver"))) {
+		if (this.zone == "r_arm") {
+			this.zone = "l_arm";
 		} else {
-			rt.setSv(f, "zone", "r_arm");
+			this.zone = "r_arm";
 		}
-		rt.setSv(f, "slot", add(rt.sv(f, "zone"), "_device"));
-		$0 = live(f.args[1]);
-		$1 = live(f.src);
-		if (isEqual(rt.sv(f, "zone"), "r_arm")) {
+		this.slot = this.zone + "_device";
+		$0 = user;
+		$1 = this;
+		if (this.zone == "r_arm") {
 			$2 = "right";
 		} else {
 			$2 = "left";
 		}
-		yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='notice'>You modify ＀ to be installed on the ＀ arm.</span>", [$1, $2])]);
-		yield* g.srcCall(f, "update_icon");
+		to_chat($0, `<span class='notice'>You modify ${$1} to be installed on the ${$2} arm.</span>`);
+		yield* this.update_icon();
 	} else {
-		if (!truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/card/emag")) ? 1 : 0))) return f.dot;
-		yield* g.srcCall(f, "emag_act");
+		if (!rt.istype(W, T("/obj/item/weapon/card/emag"))) return f.dot;
+		yield* this.emag_act();
 	}
 	return f.dot;
-}, true, { args: ["W", "user", "params"] });
+}, true);
 
-// /obj/item/organ/cyberimp/arm/proc/Remove  (code/modules/surgery/organs/augments_arms.dm:50)  may sleep
+// augments_arms.dm:50
 rt.def("/obj/item/organ/cyberimp/arm/proc/Remove", function* Remove(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	yield* g.srcCall(f, "Retract");
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* this.Retract();
+	yield* parent_proc();
 	return f.dot;
 }, true, { args: ["M", "special"] });
 
 rt.type(9489, "/obj/item/organ/cyberimp/arm/gun", "/obj/item/organ/cyberimp/arm", {});
 
-// /obj/item/organ/cyberimp/arm/gun/proc/emp_act  (code/modules/surgery/organs/augments_arms.dm:57)  may sleep
-rt.def("/obj/item/organ/cyberimp/arm/gun/proc/emp_act", function* emp_act(f: Frame) {
-	if ((truthy(rt.op(f, "Prob", [], [divide(15, live(f.args[0]))])) && truthy(rt.sv(f, "owner")))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "owner"), fmt("<span class='warning'>＀ is hit by EMP!</span>", [live(f.src)])]);
-		yield* g.srcCall(f, "Retract");
+// augments_arms.dm:57
+rt.def("/obj/item/organ/cyberimp/arm/gun/proc/emp_act", function* emp_act(f: Frame, severity: Value) {
+	if (prob(15 / severity) && this.owner) {
+		to_chat(this.owner, `<span class='warning'>${this} is hit by EMP!</span>`);
+		yield* this.Retract();
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["severity"] });
+}, true);
 
-// /obj/item/organ/cyberimp/arm/proc/Retract  (code/modules/surgery/organs/augments_arms.dm:64)  may sleep
+// augments_arms.dm:64
 rt.def("/obj/item/organ/cyberimp/arm/proc/Retract", function* Retract(f: Frame) {
 	let F: Value = null;
-	let $0: any, $1: any, $2: any, $3: any, $4: any;
-	f.vars = () => [F, $0, $1, $2, $3, $4];
-	if ((!truthy(rt.sv(f, "holder")) || truthy((rt.isIn(f, rt.sv(f, "holder"), live(f.src)) ? 1 : 0)))) {
-		return live(f.dot);
+	let $4: any;
+	if (!this.holder || rt.isIn(f, this.holder, this)) {
+		return f.dot;
 	}
-	$0 = rt.sv(f, "owner");
-	$1 = rt.sv(f, "owner");
-	$2 = rt.sv(f, "holder");
-	$3 = (yield* g.callName(f, rt.sv(f, "owner"), "p_their", []));
-	if (isEqual(rt.sv(f, "zone"), "r_arm")) {
+	let $0: any = this.owner;
+	let $1: any = this.owner;
+	let $2: any = this.holder;
+	let $3: any = this.owner.p_their();
+	if (this.zone == "r_arm") {
 		$4 = "right";
 	} else {
 		$4 = "left";
 	}
-	$1 = fmt("<span class='notice'>＀ retracts ＀ back into ＀ ＀ arm.</span>", [$1, $2, $3, $4]);
-	$2 = rt.sv(f, "holder");
-	if (isEqual(rt.sv(f, "zone"), "r_arm")) {
+	$1 = `<span class='notice'>${$1} retracts ${$2} back into ${$3} ${$4} arm.</span>`;
+	$2 = this.holder;
+	if (this.zone == "r_arm") {
 		$3 = "right";
 	} else {
 		$3 = "left";
 	}
-	yield* g.callName(f, $0, "visible_message", [$1, fmt("<span class='notice'>＀ snaps back into your ＀ arm.</span>", [$2, $3]), "<span class='italics'>You hear a short mechanical noise.</span>"]);
-	if (truthy((rt.istype(rt.sv(f, "holder"), T("/obj/item/device/assembly/flash/armimplant")) ? 1 : 0))) {
-		yield* g.callName(f, (F = rt.sv(f, "holder")), "set_light", [0]);
+	$0.visible_message($1, `<span class='notice'>${$2} snaps back into your ${$3} arm.</span>`, "<span class='italics'>You hear a short mechanical noise.</span>");
+	if (rt.istype(this.holder, T("/obj/item/device/assembly/flash/armimplant"))) {
+		(F = this.holder).set_light(0);
 	}
-	yield* g.callName(f, rt.sv(f, "owner"), "transferItemToLoc", [rt.sv(f, "holder"), live(f.src), 1]);
-	rt.setSv(f, "holder", null);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, rt.sv(f, "owner"), 0), rt.rsc("sound/mecha/mechmove03.ogg"), 50, 1]);
+	yield* this.owner.transferItemToLoc(this.holder, this, 1);
+	this.holder = null;
+	playsound(rt.getStep(f, this.owner, 0), rt.rsc("sound/mecha/mechmove03.ogg"), 50, 1);
 	return f.dot;
 }, true);
 
-// /obj/item/organ/cyberimp/arm/proc/Extend  (code/modules/surgery/organs/augments_arms.dm:80)  may sleep
+// augments_arms.dm:80
 rt.def("/obj/item/organ/cyberimp/arm/proc/Extend", function* Extend(f: Frame, item: Value) {
 	let F: Value = null, arm_item: Value = null, result: Value = null;
-	let $0: any, $1: any, $2: any, $3: any, $4: any;
-	f.vars = () => [item, F, arm_item, result, $0, $1, $2, $3, $4];
-	if (!truthy((rt.isIn(f, live(item), live(f.src)) ? 1 : 0))) {
-		return live(f.dot);
+	let $0: any;
+	if (!rt.isIn(f, item, this)) {
+		return f.dot;
 	}
-	rt.setSv(f, "holder", live(item));
-	(rt.modField(f, rt.sv(f, "holder"), "flags", 2, rt.bitOr));
-	rt.setFv(f, "resistance_flags", rt.sv(f, "holder"), 115);
-	rt.setFv(f, "slot_flags", rt.sv(f, "holder"), null);
-	rt.setFv(f, "w_class", rt.sv(f, "holder"), 5);
-	rt.setFv(f, "materials", rt.sv(f, "holder"), null);
-	if (truthy((rt.istype(rt.sv(f, "holder"), T("/obj/item/device/assembly/flash/armimplant")) ? 1 : 0))) {
-		yield* g.callName(f, (F = rt.sv(f, "holder")), "set_light", [7]);
+	this.holder = item;
+	(rt.modField(f, this.holder, "flags", 2, rt.bitOr));
+	this.holder.resistance_flags = 115;
+	this.holder.slot_flags = null;
+	this.holder.w_class = WEIGHT_CLASS_HUGE;
+	this.holder.materials = null;
+	if (rt.istype(this.holder, T("/obj/item/device/assembly/flash/armimplant"))) {
+		(F = this.holder).set_light(7);
 	}
-	if (truthy((arm_item = (yield* g.callName(f, rt.sv(f, "owner"), "get_active_held_item", []))))) {
-		if (!truthy((yield* g.callName(f, rt.sv(f, "owner"), "dropItemToGround", [live(arm_item)])))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "owner"), fmt("<span class='warning'>Your ＀ interferes with ＀!</span>", [live(arm_item), live(f.src)])]);
-			return live(f.dot);
+	if (arm_item = this.owner.get_active_held_item()) {
+		if (!(yield* this.owner.dropItemToGround(arm_item))) {
+			to_chat(this.owner, `<span class='warning'>Your ${arm_item} interferes with ${this}!</span>`);
+			return f.dot;
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "owner"), fmt("<span class='notice'>You drop ＀ to activate ＀!</span>", [live(arm_item), live(f.src)])]);
+			to_chat(this.owner, `<span class='notice'>You drop ${arm_item} to activate ${this}!</span>`);
 		}
 	}
-	if (isEqual(rt.sv(f, "zone"), "r_arm")) {
-		$0 = (yield* g.callName(f, rt.sv(f, "owner"), "put_in_r_hand", [rt.sv(f, "holder")]));
+	if (this.zone == "r_arm") {
+		$0 = (yield* this.owner.put_in_r_hand(this.holder));
 	} else {
-		$0 = (yield* g.callName(f, rt.sv(f, "owner"), "put_in_l_hand", [rt.sv(f, "holder")]));
+		$0 = (yield* this.owner.put_in_l_hand(this.holder));
 	}
-	if (!truthy((result = $0))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "owner"), fmt("<span class='warning'>Your ＀ fails to activate!</span>", [live(f.src)])]);
-		return live(f.dot);
+	if (!(result = $0)) {
+		to_chat(this.owner, `<span class='warning'>Your ${this} fails to activate!</span>`);
+		return f.dot;
 	}
-	yield* g.callName(f, rt.sv(f, "owner"), "swap_hand", [live(result)]);
-	$0 = rt.sv(f, "owner");
-	$1 = rt.sv(f, "owner");
-	$2 = rt.sv(f, "holder");
-	$3 = (yield* g.callName(f, rt.sv(f, "owner"), "p_their", []));
-	if (isEqual(rt.sv(f, "zone"), "r_arm")) {
-		$4 = "right";
-	} else {
-		$4 = "left";
-	}
-	$1 = fmt("<span class='notice'>＀ extends ＀ from ＀ ＀ arm.</span>", [$1, $2, $3, $4]);
-	$2 = rt.sv(f, "holder");
-	if (isEqual(rt.sv(f, "zone"), "r_arm")) {
+	this.owner.swap_hand(result);
+	$0 = this.owner;
+	let $1: any = this.owner;
+	let $2: any = this.holder;
+	let $3: any = this.owner.p_their();
+	$1 = `<span class='notice'>${$1} extends ${$2} from ${$3} ${this.zone == "r_arm" ? "right" : "left"} arm.</span>`;
+	$2 = this.holder;
+	if (this.zone == "r_arm") {
 		$3 = "right";
 	} else {
 		$3 = "left";
 	}
-	yield* g.callName(f, $0, "visible_message", [$1, fmt("<span class='notice'>You extend ＀ from your ＀ arm.</span>", [$2, $3]), "<span class='italics'>You hear a short mechanical noise.</span>"]);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, rt.sv(f, "owner"), 0), rt.rsc("sound/mecha/mechmove03.ogg"), 50, 1]);
+	$0.visible_message($1, `<span class='notice'>You extend ${$2} from your ${$3} arm.</span>`, "<span class='italics'>You hear a short mechanical noise.</span>");
+	playsound(rt.getStep(f, this.owner, 0), rt.rsc("sound/mecha/mechmove03.ogg"), 50, 1);
 	return f.dot;
 }, true);
 
-// /obj/item/organ/cyberimp/arm/proc/ui_action_click  (code/modules/surgery/organs/augments_arms.dm:118)  may sleep
+// augments_arms.dm:118
 rt.def("/obj/item/organ/cyberimp/arm/proc/ui_action_click", function* ui_action_click(f: Frame) {
 	let choise: Value = null;
-	f.vars = () => [choise];
-	if ((truthy(rt.sv(f, "crit_fail")) || (!truthy(rt.sv(f, "holder")) && !truthy(rt.len(f, rt.sv(f, "contents")))))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "owner"), "<span class='warning'>The implant doesn't respond. It seems to be broken...</span>"]);
-		return live(f.dot);
+	if (this.crit_fail || !this.holder && !rt.len(f, this.contents)) {
+		to_chat(this.owner, "<span class='warning'>The implant doesn't respond. It seems to be broken...</span>");
+		return f.dot;
 	}
-	if ((truthy((rt.istype((yield* g.callName(f, rt.sv(f, "owner"), "get_active_held_item", [])), T("/obj/item/weapon/card/emag")) ? 1 : 0)) && truthy((yield* g.srcCall(f, "emag_act"))))) {
-		return live(f.dot);
+	if (rt.istype(this.owner.get_active_held_item(), T("/obj/item/weapon/card/emag")) && (yield* this.emag_act())) {
+		return f.dot;
 	}
-	if ((!truthy(rt.sv(f, "holder")) || truthy((rt.isIn(f, rt.sv(f, "holder"), live(f.src)) ? 1 : 0)))) {
-		rt.setSv(f, "holder", null);
-		if (isEqual(rt.len(f, rt.sv(f, "contents")), 1)) {
-			yield* g.srcCall(f, "Extend", rt.index(rt.sv(f, "contents"), 1));
+	if (!this.holder || rt.isIn(f, this.holder, this)) {
+		this.holder = null;
+		if (rt.len(f, this.contents) == 1) {
+			yield* this.Extend(rt.index(this.contents, 1));
 		} else {
-			choise = (yield* g.op(f, "Prompt", [1], [null, null, "Arm Implant", "Activate which item?", rt.sv(f, "items_list")]));
-			if (((((((truthy(rt.sv(f, "owner")) && isEqual(rt.sv(f, "owner"), live(f.usr))) && !isEqual(rt.fv(f, "stat", rt.sv(f, "owner")), 2)) && truthy((rt.isIn(f, live(f.src), rt.fv(f, "internal_organs", rt.sv(f, "owner"))) ? 1 : 0))) && !truthy(rt.sv(f, "holder"))) && truthy((rt.istype(live(choise), T("/obj/item")) ? 1 : 0))) && truthy((rt.isIn(f, live(choise), rt.sv(f, "contents")) ? 1 : 0)))) {
-				yield* g.srcCall(f, "Extend", live(choise));
+			choise = (yield* g.op(f, "Prompt", [1], [null, null, "Arm Implant", "Activate which item?", this.items_list]));
+			if (this.owner && this.owner == f.usr && this.owner.stat != 2 && rt.isIn(f, this, this.owner.internal_organs) && !this.holder && rt.istype(choise, T("/obj/item")) && rt.isIn(f, choise, this.contents)) {
+				yield* this.Extend(choise);
 			}
 		}
 	} else {
-		yield* g.srcCall(f, "Retract");
+		yield* this.Retract();
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/organ/cyberimp/arm/gun/proc/emp_act  (code/modules/surgery/organs/augments_arms.dm:140)  may sleep
-rt.def("/obj/item/organ/cyberimp/arm/gun/proc/emp_act", function* emp_act(f: Frame) {
+// augments_arms.dm:140
+rt.def("/obj/item/organ/cyberimp/arm/gun/proc/emp_act", function* emp_act(f: Frame, severity: Value) {
 	let $0: any, $1: any, $2: any;
-	f.vars = () => [$0, $1, $2];
-	if (((truthy(rt.op(f, "Prob", [], [divide(30, live(f.args[0]))])) && truthy(rt.sv(f, "owner"))) && !truthy(rt.sv(f, "crit_fail")))) {
-		yield* g.srcCall(f, "Retract");
-		$0 = rt.sv(f, "owner");
-		$1 = rt.sv(f, "owner");
-		if (isEqual(rt.sv(f, "zone"), "r_arm")) {
+	if (prob(30 / severity) && this.owner && !this.crit_fail) {
+		yield* this.Retract();
+		$0 = this.owner;
+		$1 = this.owner;
+		if (this.zone == "r_arm") {
 			$2 = "right";
 		} else {
 			$2 = "left";
 		}
-		yield* g.callName(f, $0, "visible_message", [fmt("<span class='danger'>A loud bang comes from ＀'s ＀ arm!</span>", [$1, $2])]);
-		yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, rt.sv(f, "owner"), 0), rt.rsc("sound/weapons/flashbang.ogg"), 100, 1]);
-		$0 = rt.sv(f, "owner");
-		if (isEqual(rt.sv(f, "zone"), "r_arm")) {
+		$0.visible_message(`<span class='danger'>A loud bang comes from ${$1}'s ${$2} arm!</span>`);
+		playsound(rt.getStep(f, this.owner, 0), rt.rsc("sound/weapons/flashbang.ogg"), 100, 1);
+		$0 = this.owner;
+		if (this.zone == "r_arm") {
 			$1 = "right";
 		} else {
 			$1 = "left";
 		}
-		yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='userdanger'>You feel an explosion erupt inside your ＀ arm as your implant breaks!</span>", [$1])]);
-		yield* g.callName(f, rt.sv(f, "owner"), "adjust_fire_stacks", [20]);
-		yield* g.callName(f, rt.sv(f, "owner"), "IgniteMob", []);
-		yield* g.callName(f, rt.sv(f, "owner"), "adjustFireLoss", [25]);
-		rt.setSv(f, "crit_fail", 1);
+		to_chat($0, `<span class='userdanger'>You feel an explosion erupt inside your ${$1} arm as your implant breaks!</span>`);
+		yield* this.owner.adjust_fire_stacks(20);
+		yield* this.owner.IgniteMob();
+		yield* this.owner.adjustFireLoss(25);
+		this.crit_fail = 1;
 	} else {
-		yield* g.callSuper(f, [], rt.Args.Same);
+		yield* parent_proc();
 	}
 	return f.dot;
-}, true, { args: ["severity"] });
+}, true);
 
 rt.type(9490, "/obj/item/organ/cyberimp/arm/gun/laser", "/obj/item/organ/cyberimp/arm/gun", {
 	name: "arm-mounted laser implant",
@@ -272,12 +259,10 @@ rt.type(9490, "/obj/item/organ/cyberimp/arm/gun/laser", "/obj/item/organ/cyberim
 	contents: null,
 });
 
-// /obj/item/organ/cyberimp/arm/gun/laser/proc/<init>  (code/modules/surgery/organs/augments_arms.dm:158)  may sleep
+// augments_arms.dm:158
 rt.def("/obj/item/organ/cyberimp/arm/gun/laser/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "contents", rt.list((yield* g.new_(f, T("/obj/item/weapon/gun/energy/laser/mounted"), []))));
+	yield* parent_proc();
+	this.contents = list((yield* new_(T("/obj/item/weapon/gun/energy/laser/mounted"))));
 	return f.dot;
 }, true);
 
@@ -289,12 +274,10 @@ rt.type(9492, "/obj/item/organ/cyberimp/arm/gun/taser", "/obj/item/organ/cyberim
 	contents: null,
 });
 
-// /obj/item/organ/cyberimp/arm/gun/taser/proc/<init>  (code/modules/surgery/organs/augments_arms.dm:169)  may sleep
+// augments_arms.dm:169
 rt.def("/obj/item/organ/cyberimp/arm/gun/taser/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "contents", rt.list((yield* g.new_(f, T("/obj/item/weapon/gun/energy/e_gun/advtaser/mounted"), []))));
+	yield* parent_proc();
+	this.contents = list((yield* new_(T("/obj/item/weapon/gun/energy/e_gun/advtaser/mounted"))));
 	return f.dot;
 }, true);
 
@@ -305,20 +288,18 @@ rt.type(9494, "/obj/item/organ/cyberimp/arm/toolset", "/obj/item/organ/cyberimp/
 	contents: null,
 });
 
-// /obj/item/organ/cyberimp/arm/toolset/proc/<init>  (code/modules/surgery/organs/augments_arms.dm:179)  may sleep
+// augments_arms.dm:179
 rt.def("/obj/item/organ/cyberimp/arm/toolset/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "contents", rt.list((yield* g.new_(f, T("/obj/item/weapon/screwdriver/cyborg"), [])), (yield* g.new_(f, T("/obj/item/weapon/wrench/cyborg"), [])), (yield* g.new_(f, T("/obj/item/weapon/weldingtool/largetank/cyborg"), [])), (yield* g.new_(f, T("/obj/item/weapon/crowbar/cyborg"), [])), (yield* g.new_(f, T("/obj/item/weapon/wirecutters/cyborg"), [])), (yield* g.new_(f, T("/obj/item/device/multitool/cyborg"), []))));
+	yield* parent_proc();
+	this.contents = list((yield* new_(T("/obj/item/weapon/screwdriver/cyborg"))), (yield* new_(T("/obj/item/weapon/wrench/cyborg"))), (yield* new_(T("/obj/item/weapon/weldingtool/largetank/cyborg"))), (yield* new_(T("/obj/item/weapon/crowbar/cyborg"))), (yield* new_(T("/obj/item/weapon/wirecutters/cyborg"))), (yield* new_(T("/obj/item/device/multitool/cyborg"))));
 	return f.dot;
 }, true);
 
-// /obj/item/organ/cyberimp/arm/toolset/proc/emag_act  (code/modules/surgery/organs/augments_arms.dm:186)  may sleep
+// augments_arms.dm:186
 rt.def("/obj/item/organ/cyberimp/arm/toolset/proc/emag_act", function* emag_act(f: Frame) {
-	if (!truthy(rt.locateIn(f, T("/obj/item/weapon/kitchen/knife/combat/cyborg"), rt.sv(f, "items_list")))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), fmt("<span class='notice'>You unlock ＀'s integrated knife!</span>", [live(f.src)])]);
-		rt.modSrcVar(f, "items_list", (yield* g.new_(f, T("/obj/item/weapon/kitchen/knife/combat/cyborg"), [live(f.src)])), add);
+	if (!rt.locateIn(f, T("/obj/item/weapon/kitchen/knife/combat/cyborg"), this.items_list)) {
+		to_chat(f.usr, `<span class='notice'>You unlock ${this}'s integrated knife!</span>`);
+		this.items_list += (yield* new_(T("/obj/item/weapon/kitchen/knife/combat/cyborg"), this));
 		return 1;
 	}
 	return 0;
@@ -331,12 +312,10 @@ rt.type(9496, "/obj/item/organ/cyberimp/arm/esword", "/obj/item/organ/cyberimp/a
 	origin_tech: "materials=4;combat=5;biotech=3;powerstorage=2;syndicate=5",
 });
 
-// /obj/item/organ/cyberimp/arm/esword/proc/<init>  (code/modules/surgery/organs/augments_arms.dm:195)  may sleep
+// augments_arms.dm:195
 rt.def("/obj/item/organ/cyberimp/arm/esword/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "contents", rt.list((yield* g.new_(f, T("/obj/item/weapon/melee/energy/blade/hardlight"), []))));
+	yield* parent_proc();
+	this.contents = list((yield* new_(T("/obj/item/weapon/melee/energy/blade/hardlight"))));
 	return f.dot;
 }, true);
 
@@ -347,12 +326,10 @@ rt.type(9497, "/obj/item/organ/cyberimp/arm/medibeam", "/obj/item/organ/cyberimp
 	origin_tech: "materials=5;combat=2;biotech=5;powerstorage=4;syndicate=1",
 });
 
-// /obj/item/organ/cyberimp/arm/medibeam/proc/<init>  (code/modules/surgery/organs/augments_arms.dm:201)  may sleep
+// augments_arms.dm:201
 rt.def("/obj/item/organ/cyberimp/arm/medibeam/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "contents", rt.list((yield* g.new_(f, T("/obj/item/weapon/gun/medbeam"), []))));
+	yield* parent_proc();
+	this.contents = list((yield* new_(T("/obj/item/weapon/gun/medbeam"))));
 	return f.dot;
 }, true);
 
@@ -363,22 +340,19 @@ rt.type(9498, "/obj/item/organ/cyberimp/arm/flash", "/obj/item/organ/cyberimp/ar
 	origin_tech: "materials=4;combat=3;biotech=4;magnets=4;powerstorage=3",
 });
 
-// /obj/item/organ/cyberimp/arm/flash/proc/<init>  (code/modules/surgery/organs/augments_arms.dm:207)  may sleep
+// augments_arms.dm:207
 rt.def("/obj/item/organ/cyberimp/arm/flash/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "contents", rt.list((yield* g.new_(f, T("/obj/item/device/assembly/flash/armimplant"), []))));
+	yield* parent_proc();
+	this.contents = list((yield* new_(T("/obj/item/device/assembly/flash/armimplant"))));
 	return f.dot;
 }, true);
 
-// /obj/item/organ/cyberimp/arm/flash/proc/Initialize  (code/modules/surgery/organs/augments_arms.dm:211)  may sleep
+// augments_arms.dm:211
 rt.def("/obj/item/organ/cyberimp/arm/flash/proc/Initialize", function* Initialize(f: Frame) {
 	let F: Value = null;
-	f.vars = () => [F];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(rt.locateIn(f, T("/obj/item/device/assembly/flash/armimplant"), rt.sv(f, "items_list")))) return f.dot;
-	rt.setFv(f, "I", (F = rt.locateIn(f, T("/obj/item/device/assembly/flash/armimplant"), rt.sv(f, "items_list"))), live(f.src));
+	f.dot = (yield* parent_proc());
+	if (!rt.locateIn(f, T("/obj/item/device/assembly/flash/armimplant"), this.items_list)) return f.dot;
+	(F = rt.locateIn(f, T("/obj/item/device/assembly/flash/armimplant"), this.items_list)).I = this;
 	return f.dot;
 }, true);
 
@@ -389,12 +363,10 @@ rt.type(9499, "/obj/item/organ/cyberimp/arm/baton", "/obj/item/organ/cyberimp/ar
 	origin_tech: "materials=3;combat=5;biotech=4;powerstorage=4;syndicate=3",
 });
 
-// /obj/item/organ/cyberimp/arm/baton/proc/<init>  (code/modules/surgery/organs/augments_arms.dm:219)  may sleep
+// augments_arms.dm:219
 rt.def("/obj/item/organ/cyberimp/arm/baton/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "contents", rt.list((yield* g.new_(f, T("/obj/item/borg/stun"), []))));
+	yield* parent_proc();
+	this.contents = list((yield* new_(T("/obj/item/borg/stun"))));
 	return f.dot;
 }, true);
 
@@ -405,22 +377,19 @@ rt.type(9500, "/obj/item/organ/cyberimp/arm/combat", "/obj/item/organ/cyberimp/a
 	origin_tech: "materials=5;combat=7;biotech=5;powerstorage=5;syndicate=6;programming=5",
 });
 
-// /obj/item/organ/cyberimp/arm/combat/proc/<init>  (code/modules/surgery/organs/augments_arms.dm:225)  may sleep
+// augments_arms.dm:225
 rt.def("/obj/item/organ/cyberimp/arm/combat/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "contents", rt.list((yield* g.new_(f, T("/obj/item/weapon/melee/energy/blade/hardlight"), [])), (yield* g.new_(f, T("/obj/item/weapon/gun/medbeam"), [])), (yield* g.new_(f, T("/obj/item/borg/stun"), [])), (yield* g.new_(f, T("/obj/item/device/assembly/flash/armimplant"), []))));
+	yield* parent_proc();
+	this.contents = list((yield* new_(T("/obj/item/weapon/melee/energy/blade/hardlight"))), (yield* new_(T("/obj/item/weapon/gun/medbeam"))), (yield* new_(T("/obj/item/borg/stun"))), (yield* new_(T("/obj/item/device/assembly/flash/armimplant"))));
 	return f.dot;
 }, true);
 
-// /obj/item/organ/cyberimp/arm/combat/proc/Initialize  (code/modules/surgery/organs/augments_arms.dm:229)  may sleep
+// augments_arms.dm:229
 rt.def("/obj/item/organ/cyberimp/arm/combat/proc/Initialize", function* Initialize(f: Frame) {
 	let F: Value = null;
-	f.vars = () => [F];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(rt.locateIn(f, T("/obj/item/device/assembly/flash/armimplant"), rt.sv(f, "items_list")))) return f.dot;
-	rt.setFv(f, "I", (F = rt.locateIn(f, T("/obj/item/device/assembly/flash/armimplant"), rt.sv(f, "items_list"))), live(f.src));
+	f.dot = (yield* parent_proc());
+	if (!rt.locateIn(f, T("/obj/item/device/assembly/flash/armimplant"), this.items_list)) return f.dot;
+	(F = rt.locateIn(f, T("/obj/item/device/assembly/flash/armimplant"), this.items_list)).I = this;
 	return f.dot;
 }, true);
 
@@ -431,11 +400,9 @@ rt.type(9501, "/obj/item/organ/cyberimp/arm/surgery", "/obj/item/organ/cyberimp/
 	origin_tech: "materials=3;engineering=3;biotech=3;programming=2;magnets=3",
 });
 
-// /obj/item/organ/cyberimp/arm/surgery/proc/<init>  (code/modules/surgery/organs/augments_arms.dm:237)  may sleep
+// augments_arms.dm:237
 rt.def("/obj/item/organ/cyberimp/arm/surgery/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "contents", rt.list((yield* g.new_(f, T("/obj/item/weapon/retractor"), [])), (yield* g.new_(f, T("/obj/item/weapon/hemostat"), [])), (yield* g.new_(f, T("/obj/item/weapon/cautery"), [])), (yield* g.new_(f, T("/obj/item/weapon/surgicaldrill"), [])), (yield* g.new_(f, T("/obj/item/weapon/scalpel"), [])), (yield* g.new_(f, T("/obj/item/weapon/circular_saw"), [])), (yield* g.new_(f, T("/obj/item/weapon/surgical_drapes"), []))));
+	yield* parent_proc();
+	this.contents = list((yield* new_(T("/obj/item/weapon/retractor"))), (yield* new_(T("/obj/item/weapon/hemostat"))), (yield* new_(T("/obj/item/weapon/cautery"))), (yield* new_(T("/obj/item/weapon/surgicaldrill"))), (yield* new_(T("/obj/item/weapon/scalpel"))), (yield* new_(T("/obj/item/weapon/circular_saw"))), (yield* new_(T("/obj/item/weapon/surgical_drapes"))));
 	return f.dot;
 }, true);

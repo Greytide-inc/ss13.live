@@ -1,7 +1,7 @@
-// From code/modules/reagents/chemistry/holder.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/reagents/chemistry/holder.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, add, fmt } = rt;
 
 
 rt.type(4178, "/datum/reagents", "/datum", {
@@ -16,1197 +16,919 @@ rt.type(4178, "/datum/reagents", "/datum", {
 	addiction_list: null,
 });
 
-// /datum/reagents/proc/<init>  (code/modules/reagents/chemistry/holder.dm:6)
+// holder.dm:6
 rt.def("/datum/reagents/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "reagent_list", rt.new_(f, T("/list"), []));
-	$0 = $0;
-	rt.setSv(f, "addiction_list", rt.new_(f, T("/list"), []));
+	parent_proc();
+	this.reagent_list = new_(T("/list"));
+
+	this.addiction_list = new_(T("/list"));
 	return f.dot;
 });
 
-// /datum/reagents/proc/New  (code/modules/reagents/chemistry/holder.dm:17)  may sleep
+// holder.dm:17
 rt.def("/datum/reagents/proc/New", function* New(f: Frame, maximum: Value) {
 	let paths: Value = null, path: Value = null, D: Value = null, reaction_ids: Value = null, reaction: Value = null, id: Value = null;
 	let $e: any;
-	f.vars = () => [maximum, paths, path, D, reaction_ids, reaction, id, $e];
-	if (live(maximum) === null) {
-		maximum = 100;
-	}
-	rt.setSv(f, "maximum_volume", live(maximum));
-	if (!truthy(rt.bitAnd(rt.sv(f, "flags"), 1))) {
-		if (!truthy(rt.fv(f, "isprocessing", live(f.src)))) {
-			rt.setFv(f, "isprocessing", live(f.src), 1);
-			rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), add);
+	maximum ??= 100;
+	this.maximum_volume = maximum;
+	if (!rt.bitAnd(this.flags, 1)) {
+		if (!this.isprocessing) {
+			this.isprocessing = 1;
+			GLOB.SSobj.processing += this;
 		}
 	}
-	if (!truthy(rt.gl("chemical_reagents_list"))) {
-		paths = subtract((yield* g.call(f, P("/proc/typesof"), null, [T("/datum/reagent")])), T("/datum/reagent"));
-		rt.setGl("chemical_reagents_list", rt.list());
-		path = null;
-		rt.forList(f, 0, live(paths));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			path = $e;
-			D = (yield* g.new_(f, live(path), []));
-			rt.setAt(rt.gl("chemical_reagents_list"), rt.fv(f, "id", live(D)), live(D));
+	if (!GLOB.chemical_reagents_list) {
+		paths = typesof(T("/datum/reagent")) - T("/datum/reagent");
+		GLOB.chemical_reagents_list = list();
+		for (path of each(paths)) {
+			D = (yield* new_(path));
+			rt.setAt(GLOB.chemical_reagents_list, D.id, D);
 		}
-		rt.endFor(f, 0);
 	}
-	if (truthy(rt.gl("chemical_reactions_list"))) return f.dot;
-	paths = subtract((yield* g.call(f, P("/proc/typesof"), null, [T("/datum/chemical_reaction")])), T("/datum/chemical_reaction"));
-	rt.setGl("chemical_reactions_list", rt.list());
+	if (GLOB.chemical_reactions_list) return f.dot;
+	paths = typesof(T("/datum/chemical_reaction")) - T("/datum/chemical_reaction");
+	GLOB.chemical_reactions_list = list();
 	path = null;
-	rt.forList(f, 0, live(paths));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		path = $e;
-		D = (yield* g.new_(f, live(path), []));
-		reaction_ids = rt.list();
-		if ((truthy(rt.fv(f, "required_reagents", live(D))) && truthy(rt.getLen(f, rt.fv(f, "required_reagents", live(D)))))) {
+	for (path of each(paths)) {
+		D = (yield* new_(path));
+		reaction_ids = list();
+		if (D.required_reagents && rt.len(f, D.required_reagents)) {
 			reaction = null;
-			rt.forList(f, 1, rt.fv(f, "required_reagents", live(D)));
-			while (($e = rt.next(f, 1)) !== undefined) {
-				reaction = $e;
-				reaction_ids = rt.modify(live(reaction_ids), live(reaction), add);
+			for (reaction of each(D.required_reagents)) {
+				reaction_ids += reaction;
 			}
-			rt.endFor(f, 1);
 		}
 		id = null;
-		rt.forList(f, 1, live(reaction_ids));
+		rt.forList(f, 1, reaction_ids);
 		if (($e = rt.next(f, 1)) !== undefined) {
 			id = $e;
-			if (!truthy(rt.index(rt.gl("chemical_reactions_list"), live(id)))) {
-				rt.setAt(rt.gl("chemical_reactions_list"), live(id), rt.list());
+			if (!rt.index(GLOB.chemical_reactions_list, id)) {
+				rt.setAt(GLOB.chemical_reactions_list, id, list());
 			}
-			rt.modAt(rt.gl("chemical_reactions_list"), live(id), live(D), add);
+			rt.modAt(GLOB.chemical_reactions_list, id, D, add);
 		}
 		rt.endFor(f, 1);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /datum/reagents/proc/Destroy  (code/modules/reagents/chemistry/holder.dm:56)  may sleep
+// holder.dm:56
 rt.def("/datum/reagents/proc/Destroy", function* Destroy(f: Frame) {
-	let cached_reagents: Value = null, reagent: Value = null, R: Value = null;
-	let $e: any;
-	f.vars = () => [cached_reagents, reagent, R, $e];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setFv(f, "isprocessing", live(f.src), 0);
-	(rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), subtract));
-	cached_reagents = rt.sv(f, "reagent_list");
-	reagent = null;
-	rt.forList(f, 0, live(cached_reagents));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		reagent = $e;
-		yield* g.call(f, P("/proc/qdel"), null, [(R = live(reagent))]);
+	let reagent: Value = null, R: Value = null;
+	f.dot = (yield* parent_proc());
+	this.isprocessing = 0;
+	GLOB.SSobj.processing -= this;
+	let cached_reagents: Value = this.reagent_list;
+	for (reagent of each(cached_reagents)) {
+		yield* qdel((R = reagent));
 	}
-	rt.endFor(f, 0);
-	yield* g.callName(f, live(cached_reagents), "Cut", []);
+	cached_reagents.Cut();
 	cached_reagents = null;
-	if (!(truthy(rt.sv(f, "my_atom")) && isEqual(rt.fv(f, "reagents", rt.sv(f, "my_atom")), live(f.src)))) return f.dot;
-	rt.setFv(f, "reagents", rt.sv(f, "my_atom"), null);
+	if (!(this.my_atom && this.my_atom.reagents == this)) return f.dot;
+	this.my_atom.reagents = null;
 	return f.dot;
 }, true);
 
-// /datum/reagents/proc/remove_any  (code/modules/reagents/chemistry/holder.dm:68)  may sleep
+// holder.dm:68
 rt.def("/datum/reagents/proc/remove_any", function* remove_any(f: Frame, amount: Value) {
-	let cached_reagents: Value = null, total_transfered: Value = null, current_list_element: Value = null, R: Value = null;
-	f.vars = () => [amount, cached_reagents, total_transfered, current_list_element, R];
-	if (live(amount) === null) {
-		amount = 1;
-	}
-	cached_reagents = rt.sv(f, "reagent_list");
-	total_transfered = 0;
-	current_list_element = 1;
-	current_list_element = (yield* g.call(f, P("/proc/rand"), null, [1, rt.len(f, live(cached_reagents))]));
-	while (!isEqual(live(total_transfered), live(amount))) {
-		if (rt.ge(live(total_transfered), live(amount))) {
+	let R: Value = null;
+	amount ??= 1;
+	let cached_reagents: Value = this.reagent_list;
+	let total_transfered: Value = 0;
+	let current_list_element: Value = rand(1, rt.len(f, cached_reagents));
+	while (total_transfered != amount) {
+		if (total_transfered >= amount) {
 			break;
 		}
-		if ((rt.le(rt.sv(f, "total_volume"), 0) || !truthy(rt.len(f, live(cached_reagents))))) {
+		if (this.total_volume <= 0 || !rt.len(f, cached_reagents)) {
 			break;
 		}
-		if (rt.gt(live(current_list_element), rt.len(f, live(cached_reagents)))) {
+		if (current_list_element > rt.len(f, cached_reagents)) {
 			current_list_element = 1;
 		}
-		yield* g.srcCall(f, "remove_reagent", rt.gv(f, "id", (R = rt.index(live(cached_reagents), live(current_list_element)))), 1);
-		current_list_element = rt.inc(live(current_list_element), 1);
-		total_transfered = rt.inc(live(total_transfered), 1);
-		yield* g.srcCall(f, "update_total");
+		yield* this.remove_reagent((R = rt.index(cached_reagents, current_list_element)).id, 1);
+		current_list_element++;
+		total_transfered++;
+		yield* this.update_total();
 	}
-	yield* g.srcCall(f, "handle_reactions");
-	return live(total_transfered);
+	yield* this.handle_reactions();
+	return total_transfered;
 }, true);
 
-// /datum/reagents/proc/remove_all  (code/modules/reagents/chemistry/holder.dm:94)  may sleep
+// holder.dm:94
 rt.def("/datum/reagents/proc/remove_all", function* remove_all(f: Frame, amount: Value) {
-	let cached_reagents: Value = null, part: Value = null, reagent: Value = null, R: Value = null;
-	let $e: any;
-	f.vars = () => [amount, cached_reagents, part, reagent, R, $e];
-	if (live(amount) === null) {
-		amount = 1;
+	let reagent: Value = null, R: Value = null;
+	amount ??= 1;
+	let cached_reagents: Value = this.reagent_list;
+	if (!(this.total_volume > 0)) return f.dot;
+	let part: Value = amount / this.total_volume;
+	for (reagent of each(cached_reagents)) {
+		yield* this.remove_reagent((R = reagent).id, R.volume * part);
 	}
-	cached_reagents = rt.sv(f, "reagent_list");
-	if (!rt.gt(rt.sv(f, "total_volume"), 0)) return f.dot;
-	part = divide(live(amount), rt.sv(f, "total_volume"));
-	reagent = null;
-	rt.forList(f, 0, live(cached_reagents));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		reagent = $e;
-		yield* g.srcCall(f, "remove_reagent", rt.gv(f, "id", (R = live(reagent))), multiply(rt.fv(f, "volume", live(R)), live(part)));
-	}
-	rt.endFor(f, 0);
-	yield* g.srcCall(f, "update_total");
-	yield* g.srcCall(f, "handle_reactions");
-	return live(amount);
+	yield* this.update_total();
+	yield* this.handle_reactions();
+	return amount;
 }, true);
 
-// /datum/reagents/proc/get_master_reagent_name  (code/modules/reagents/chemistry/holder.dm:106)
+// holder.dm:106
 rt.def("/datum/reagents/proc/get_master_reagent_name", function get_master_reagent_name(f: Frame) {
-	let cached_reagents: Value = null, name: Value = null, max_volume: Value = null, reagent: Value = null, R: Value = null;
-	let $e: any;
-	f.vars = () => [cached_reagents, name, max_volume, reagent, R, $e];
-	cached_reagents = rt.sv(f, "reagent_list");
-	name = null;
-	max_volume = 0;
-	reagent = null;
-	rt.forList(f, 0, live(cached_reagents));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		reagent = $e;
-		if (rt.gt(rt.gv(f, "volume", (R = live(reagent))), live(max_volume))) {
-			max_volume = rt.fv(f, "volume", live(R));
-			name = rt.fv(f, "name", live(R));
+	let name: Value = null, reagent: Value = null, R: Value = null;
+	let cached_reagents: Value = this.reagent_list;
+	let max_volume: Value = 0;
+	for (reagent of each(cached_reagents)) {
+		if ((R = reagent).volume > max_volume) {
+			max_volume = R.volume;
+			name = R.name;
 		}
 	}
-	rt.endFor(f, 0);
-	return live(name);
+	return name;
 });
 
-// /datum/reagents/proc/get_master_reagent_id  (code/modules/reagents/chemistry/holder.dm:118)
+// holder.dm:118
 rt.def("/datum/reagents/proc/get_master_reagent_id", function get_master_reagent_id(f: Frame) {
-	let cached_reagents: Value = null, id: Value = null, max_volume: Value = null, reagent: Value = null, R: Value = null;
-	let $e: any;
-	f.vars = () => [cached_reagents, id, max_volume, reagent, R, $e];
-	cached_reagents = rt.sv(f, "reagent_list");
-	id = null;
-	max_volume = 0;
-	reagent = null;
-	rt.forList(f, 0, live(cached_reagents));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		reagent = $e;
-		if (rt.gt(rt.gv(f, "volume", (R = live(reagent))), live(max_volume))) {
-			max_volume = rt.fv(f, "volume", live(R));
-			id = rt.fv(f, "id", live(R));
+	let id: Value = null, reagent: Value = null, R: Value = null;
+	let cached_reagents: Value = this.reagent_list;
+	let max_volume: Value = 0;
+	for (reagent of each(cached_reagents)) {
+		if ((R = reagent).volume > max_volume) {
+			max_volume = R.volume;
+			id = R.id;
 		}
 	}
-	rt.endFor(f, 0);
-	return live(id);
+	return id;
 });
 
-// /datum/reagents/proc/get_master_reagent  (code/modules/reagents/chemistry/holder.dm:130)
+// holder.dm:130
 rt.def("/datum/reagents/proc/get_master_reagent", function get_master_reagent(f: Frame) {
-	let cached_reagents: Value = null, master: Value = null, max_volume: Value = null, reagent: Value = null, R: Value = null;
-	let $e: any;
-	f.vars = () => [cached_reagents, master, max_volume, reagent, R, $e];
-	cached_reagents = rt.sv(f, "reagent_list");
-	master = null;
-	max_volume = 0;
-	reagent = null;
-	rt.forList(f, 0, live(cached_reagents));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		reagent = $e;
-		if (rt.gt(rt.gv(f, "volume", (R = live(reagent))), live(max_volume))) {
-			max_volume = rt.fv(f, "volume", live(R));
-			master = live(R);
+	let master: Value = null, reagent: Value = null, R: Value = null;
+	let cached_reagents: Value = this.reagent_list;
+	let max_volume: Value = 0;
+	for (reagent of each(cached_reagents)) {
+		if ((R = reagent).volume > max_volume) {
+			max_volume = R.volume;
+			master = R;
 		}
 	}
-	rt.endFor(f, 0);
-	return live(master);
+	return master;
 });
 
-// /datum/reagents/proc/trans_to  (code/modules/reagents/chemistry/holder.dm:142)  may sleep
+// holder.dm:142
 rt.def("/datum/reagents/proc/trans_to", function* trans_to(f: Frame, target: Value, amount: Value, multiplier: Value, preserve_data: Value, no_react: Value) {
-	let cached_reagents: Value = null, R: Value = null, part: Value = null, trans_data: Value = null, reagent: Value = null, _T: Value = null, transfer_amount: Value = null;
-	let $e: any;
-	f.vars = () => [target, amount, multiplier, preserve_data, no_react, cached_reagents, R, part, trans_data, reagent, _T, transfer_amount, $e];
-	if (live(amount) === null) {
-		amount = 1;
+	let R: Value = null, trans_data: Value = null, reagent: Value = null, _T: Value = null, transfer_amount: Value = null;
+	amount ??= 1;
+	multiplier ??= 1;
+	preserve_data ??= 1;
+	no_react ??= 0;
+	let cached_reagents: Value = this.reagent_list;
+	if (!target || !this.total_volume) {
+		return f.dot;
 	}
-	if (live(multiplier) === null) {
-		multiplier = 1;
+	if (amount < 0) {
+		return f.dot;
 	}
-	if (live(preserve_data) === null) {
-		preserve_data = 1;
-	}
-	if (live(no_react) === null) {
-		no_react = 0;
-	}
-	cached_reagents = rt.sv(f, "reagent_list");
-	if ((!truthy(live(target)) || !truthy(rt.sv(f, "total_volume")))) {
-		return live(f.dot);
-	}
-	if (rt.lt(live(amount), 0)) {
-		return live(f.dot);
-	}
-	R = null;
-	if (truthy((rt.istype(live(target), T("/datum/reagents")) ? 1 : 0))) {
-		R = live(target);
+	if (rt.istype(target, T("/datum/reagents"))) {
+		R = target;
 	} else {
-		if ((!truthy(rt.fv(f, "reagents", live(target))) || rt.le(rt.fv(f, "total_volume", live(f.src)), 0))) {
-			return live(f.dot);
+		if (!target.reagents || this.total_volume <= 0) {
+			return f.dot;
 		}
-		R = rt.fv(f, "reagents", live(target));
+		R = target.reagents;
 	}
-	amount = (yield* g.call(f, P("/proc/min"), null, [(yield* g.call(f, P("/proc/min"), null, [live(amount), rt.fv(f, "total_volume", live(f.src))])), subtract(rt.fv(f, "maximum_volume", live(R)), rt.fv(f, "total_volume", live(R)))]));
-	part = divide(live(amount), rt.fv(f, "total_volume", live(f.src)));
-	trans_data = null;
-	reagent = null;
-	rt.forList(f, 0, live(cached_reagents));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		reagent = $e;
-		_T = live(reagent);
-		transfer_amount = multiply(rt.fv(f, "volume", live(_T)), live(part));
-		if (truthy(live(preserve_data))) {
-			trans_data = (yield* g.srcCall(f, "copy_data", live(_T)));
+	amount = min(min(amount, this.total_volume), R.maximum_volume - R.total_volume);
+	let part: Value = amount / this.total_volume;
+	for (reagent of each(cached_reagents)) {
+		_T = reagent;
+		transfer_amount = _T.volume * part;
+		if (preserve_data) {
+			trans_data = this.copy_data(_T);
 		}
-		yield* g.callName(f, live(R), "add_reagent", [null, rt.fv(f, "id", live(_T)), null, multiply(live(transfer_amount), live(multiplier)), null, live(trans_data), null, rt.sv(f, "chem_temp"), "no_react", 1], rt.Args.Named);
-		yield* g.srcCall(f, "remove_reagent", rt.fv(f, "id", live(_T)), live(transfer_amount));
+		yield* R.add_reagent(_T.id, transfer_amount * multiplier, trans_data, this.chem_temp, { no_react: 1 });
+		yield* this.remove_reagent(_T.id, transfer_amount);
 	}
-	rt.endFor(f, 0);
-	yield* g.srcCall(f, "update_total");
-	yield* g.callName(f, live(R), "update_total", []);
-	if (!truthy(live(no_react))) {
-		yield* g.callName(f, live(R), "handle_reactions", []);
-		yield* g.callName(f, live(f.src), "handle_reactions", []);
+	yield* this.update_total();
+	yield* R.update_total();
+	if (!no_react) {
+		yield* R.handle_reactions();
+		yield* this.handle_reactions();
 	}
-	return live(amount);
+	return amount;
 }, true);
 
-// /datum/reagents/proc/copy_to  (code/modules/reagents/chemistry/holder.dm:174)  may sleep
+// holder.dm:174
 rt.def("/datum/reagents/proc/copy_to", function* copy_to(f: Frame, target: Value, amount: Value, multiplier: Value, preserve_data: Value) {
-	let cached_reagents: Value = null, R: Value = null, part: Value = null, trans_data: Value = null, reagent: Value = null, _T: Value = null, copy_amount: Value = null;
-	let $e: any;
-	f.vars = () => [target, amount, multiplier, preserve_data, cached_reagents, R, part, trans_data, reagent, _T, copy_amount, $e];
-	if (live(amount) === null) {
-		amount = 1;
+	let R: Value = null, trans_data: Value = null, reagent: Value = null, _T: Value = null, copy_amount: Value = null;
+	amount ??= 1;
+	multiplier ??= 1;
+	preserve_data ??= 1;
+	let cached_reagents: Value = this.reagent_list;
+	if (!target) {
+		return f.dot;
 	}
-	if (live(multiplier) === null) {
-		multiplier = 1;
-	}
-	if (live(preserve_data) === null) {
-		preserve_data = 1;
-	}
-	cached_reagents = rt.sv(f, "reagent_list");
-	if (!truthy(live(target))) {
-		return live(f.dot);
-	}
-	R = null;
-	if (truthy((rt.istype(live(target), T("/datum/reagents")) ? 1 : 0))) {
-		R = live(target);
+	if (rt.istype(target, T("/datum/reagents"))) {
+		R = target;
 	} else {
-		if ((!truthy(rt.fv(f, "reagents", live(target))) || rt.le(rt.fv(f, "total_volume", live(f.src)), 0))) {
-			return live(f.dot);
+		if (!target.reagents || this.total_volume <= 0) {
+			return f.dot;
 		}
-		R = rt.fv(f, "reagents", live(target));
+		R = target.reagents;
 	}
-	if (rt.lt(live(amount), 0)) {
-		return live(f.dot);
+	if (amount < 0) {
+		return f.dot;
 	}
-	amount = (yield* g.call(f, P("/proc/min"), null, [(yield* g.call(f, P("/proc/min"), null, [live(amount), rt.sv(f, "total_volume")])), subtract(rt.fv(f, "maximum_volume", live(R)), rt.fv(f, "total_volume", live(R)))]));
-	part = divide(live(amount), rt.sv(f, "total_volume"));
-	trans_data = null;
-	reagent = null;
-	rt.forList(f, 0, live(cached_reagents));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		reagent = $e;
-		_T = live(reagent);
-		copy_amount = multiply(rt.fv(f, "volume", live(_T)), live(part));
-		if (truthy(live(preserve_data))) {
-			trans_data = rt.fv(f, "data", live(_T));
+	amount = min(min(amount, this.total_volume), R.maximum_volume - R.total_volume);
+	let part: Value = amount / this.total_volume;
+	for (reagent of each(cached_reagents)) {
+		_T = reagent;
+		copy_amount = _T.volume * part;
+		if (preserve_data) {
+			trans_data = _T.data;
 		}
-		yield* g.callName(f, live(R), "add_reagent", [rt.fv(f, "id", live(_T)), multiply(live(copy_amount), live(multiplier)), live(trans_data)]);
+		yield* R.add_reagent(_T.id, copy_amount * multiplier, trans_data);
 	}
-	rt.endFor(f, 0);
-	yield* g.callName(f, live(f.src), "update_total", []);
-	yield* g.callName(f, live(R), "update_total", []);
-	yield* g.callName(f, live(R), "handle_reactions", []);
-	yield* g.callName(f, live(f.src), "handle_reactions", []);
-	return live(amount);
+	yield* this.update_total();
+	yield* R.update_total();
+	yield* R.handle_reactions();
+	yield* this.handle_reactions();
+	return amount;
 }, true);
 
-// /datum/reagents/proc/trans_id_to  (code/modules/reagents/chemistry/holder.dm:205)  may sleep
+// holder.dm:205
 rt.def("/datum/reagents/proc/trans_id_to", function* trans_id_to(f: Frame, target: Value, reagent: Value, amount: Value, preserve_data: Value) {
-	let cached_reagents: Value = null, R: Value = null, trans_data: Value = null, CR: Value = null, current_reagent: Value = null;
-	let $e: any;
-	f.vars = () => [target, reagent, amount, preserve_data, cached_reagents, R, trans_data, CR, current_reagent, $e];
-	if (live(amount) === null) {
-		amount = 1;
+	let trans_data: Value = null, CR: Value = null, current_reagent: Value = null;
+	amount ??= 1;
+	preserve_data ??= 1;
+	let cached_reagents: Value = this.reagent_list;
+	if (!target) {
+		return f.dot;
 	}
-	if (live(preserve_data) === null) {
-		preserve_data = 1;
+	if (!target.reagents || this.total_volume <= 0 || !this.get_reagent_amount(reagent)) {
+		return f.dot;
 	}
-	cached_reagents = rt.sv(f, "reagent_list");
-	if (!truthy(live(target))) {
-		return live(f.dot);
+	if (amount < 0) {
+		return f.dot;
 	}
-	if (((!truthy(rt.fv(f, "reagents", live(target))) || rt.le(rt.fv(f, "total_volume", live(f.src)), 0)) || !truthy((yield* g.callName(f, live(f.src), "get_reagent_amount", [live(reagent)]))))) {
-		return live(f.dot);
+	let R: Value = target.reagents;
+	if (this.get_reagent_amount(reagent) < amount) {
+		amount = this.get_reagent_amount(reagent);
 	}
-	if (rt.lt(live(amount), 0)) {
-		return live(f.dot);
-	}
-	R = rt.fv(f, "reagents", live(target));
-	if (rt.lt((yield* g.callName(f, live(f.src), "get_reagent_amount", [live(reagent)])), live(amount))) {
-		amount = (yield* g.callName(f, live(f.src), "get_reagent_amount", [live(reagent)]));
-	}
-	amount = (yield* g.call(f, P("/proc/min"), null, [live(amount), subtract(rt.fv(f, "maximum_volume", live(R)), rt.fv(f, "total_volume", live(R)))]));
-	trans_data = null;
-	CR = null;
-	rt.forList(f, 0, live(cached_reagents));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		CR = $e;
-		if (isEqual(rt.gv(f, "id", (current_reagent = live(CR))), live(reagent))) {
-			if (truthy(live(preserve_data))) {
-				trans_data = rt.fv(f, "data", live(current_reagent));
+	amount = min(amount, R.maximum_volume - R.total_volume);
+	for (CR of each(cached_reagents)) {
+		if ((current_reagent = CR).id == reagent) {
+			if (preserve_data) {
+				trans_data = current_reagent.data;
 			}
-			yield* g.callName(f, live(R), "add_reagent", [rt.fv(f, "id", live(current_reagent)), live(amount), live(trans_data), rt.fv(f, "chem_temp", live(f.src))]);
-			yield* g.srcCall(f, "remove_reagent", rt.fv(f, "id", live(current_reagent)), live(amount), 1);
+			yield* R.add_reagent(current_reagent.id, amount, trans_data, this.chem_temp);
+			yield* this.remove_reagent(current_reagent.id, amount, 1);
 			break;
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.callName(f, live(f.src), "update_total", []);
-	yield* g.callName(f, live(R), "update_total", []);
-	yield* g.callName(f, live(R), "handle_reactions", []);
-	return live(amount);
+	yield* this.update_total();
+	yield* R.update_total();
+	yield* R.handle_reactions();
+	return amount;
 }, true);
 
-// /datum/reagents/proc/metabolize  (code/modules/reagents/chemistry/holder.dm:233)  may sleep
+// holder.dm:233
 rt.def("/datum/reagents/proc/metabolize", function* metabolize(f: Frame, C: Value, can_overdose: Value) {
-	let cached_reagents: Value = null, cached_addictions: Value = null, need_mob_update: Value = null, reagent: Value = null, R: Value = null, new_reagent: Value = null, addiction: Value = null, A: Value = null, addiction_3: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [C, can_overdose, cached_reagents, cached_addictions, need_mob_update, reagent, R, new_reagent, addiction, A, addiction_3, $0, $e];
-	if (live(can_overdose) === null) {
-		can_overdose = 0;
+	let reagent: Value = null, R: Value = null, new_reagent: Value = null, addiction: Value = null, A: Value = null, addiction_3: Value = null;
+	let $e: any;
+	can_overdose ??= 0;
+	let cached_reagents: Value = this.reagent_list;
+	let cached_addictions: Value = this.addiction_list;
+	if (C) {
+		this.chem_temp = C.bodytemperature;
+		yield* this.handle_reactions();
 	}
-	cached_reagents = rt.sv(f, "reagent_list");
-	cached_addictions = rt.sv(f, "addiction_list");
-	if (truthy(live(C))) {
-		rt.setSv(f, "chem_temp", rt.fv(f, "bodytemperature", live(C)));
-		yield* g.srcCall(f, "handle_reactions");
-	}
-	need_mob_update = 0;
-	reagent = null;
-	rt.forList(f, 0, live(cached_reagents));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		reagent = $e;
-		if ((!truthy(rt.gv(f, "holder", (R = live(reagent)))) || truthy(rt.gv(f, "gc_destroyed", rt.fv(f, "holder", live(R)))))) {
+	let need_mob_update: Value = 0;
+	for (reagent of each(cached_reagents)) {
+		if (!(R = reagent).holder || R.holder.gc_destroyed) {
 			continue;
 		}
-		if (!truthy(live(C))) {
-			C = rt.gv(f, "my_atom", rt.fv(f, "holder", live(R)));
+		if (!C) {
+			C = R.holder.my_atom;
 		}
-		if ((truthy(live(C)) && truthy(live(R)))) {
-			if (!isEqual((yield* g.callName(f, live(C), "reagent_check", [live(R)])), 1)) {
-				if (truthy(live(can_overdose))) {
-					if (truthy(rt.fv(f, "overdose_threshold", live(R)))) {
-						if ((rt.ge(rt.fv(f, "volume", live(R)), rt.fv(f, "overdose_threshold", live(R))) && !truthy(rt.fv(f, "overdosed", live(R))))) {
-							rt.setFv(f, "overdosed", live(R), 1);
-							need_mob_update = rt.modify(live(need_mob_update), (yield* g.callName(f, live(R), "overdose_start", [live(C)])), add);
+		if (C && R) {
+			if ((yield* C.reagent_check(R)) != 1) {
+				if (can_overdose) {
+					if (R.overdose_threshold) {
+						if (R.volume >= R.overdose_threshold && !R.overdosed) {
+							R.overdosed = 1;
+							need_mob_update += (yield* R.overdose_start(C));
 						}
 					}
-					if (truthy(rt.fv(f, "addiction_threshold", live(R)))) {
-						if ((rt.ge(rt.fv(f, "volume", live(R)), rt.fv(f, "addiction_threshold", live(R))) && !truthy((yield* g.call(f, P("/proc/is_type_in_list"), null, [live(R), live(cached_addictions)]))))) {
-							new_reagent = (yield* g.new_(f, rt.fv(f, "type", live(R)), []));
-							yield* g.callName(f, live(cached_addictions), "Add", [live(new_reagent)]);
+					if (R.addiction_threshold) {
+						if (R.volume >= R.addiction_threshold && !is_type_in_list(R, cached_addictions)) {
+							new_reagent = (yield* new_(R.type));
+							cached_addictions.Add(new_reagent);
 						}
 					}
-					if (truthy(rt.fv(f, "overdosed", live(R)))) {
-						need_mob_update = rt.modify(live(need_mob_update), (yield* g.callName(f, live(R), "overdose_process", [live(C)])), add);
+					if (R.overdosed) {
+						need_mob_update += (yield* R.overdose_process(C));
 					}
-					if (truthy((yield* g.call(f, P("/proc/is_type_in_list"), null, [live(R), live(cached_addictions)])))) {
+					if (is_type_in_list(R, cached_addictions)) {
 						addiction = null;
-						rt.forList(f, 1, live(cached_addictions));
-						while (($e = rt.next(f, 1)) !== undefined) {
-							addiction = $e;
-							A = live(addiction);
-							if (truthy(rt.op(f, "IsType", [], [live(R), live(A)]))) {
-								rt.setFv(f, "addiction_stage", live(A), -15);
+						for (addiction of each(cached_addictions)) {
+							A = addiction;
+							if (rt.op(f, "IsType", [], [R, A])) {
+								A.addiction_stage = -15;
 							}
 						}
-						rt.endFor(f, 1);
 					}
 				}
-				need_mob_update = rt.modify(live(need_mob_update), (yield* g.callName(f, live(R), "on_mob_life", [live(C)])), add);
+				need_mob_update += (yield* R.on_mob_life(C));
 			}
 		}
 	}
-	rt.endFor(f, 0);
-	if (truthy(live(can_overdose))) {
-		if (isEqual(rt.sv(f, "addiction_tick"), 6)) {
-			rt.setSv(f, "addiction_tick", 1);
-			addiction_3 = null;
-			rt.forList(f, 0, live(cached_addictions));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				addiction_3 = $e;
-				R = live(addiction_3);
-				if ((truthy(live(C)) && truthy(live(R)))) {
-					rt.incField(f, live(R), "addiction_stage", 1, true);
-					$0 = rt.fv(f, "addiction_stage", live(R));
-					if (rt.inRange($0, 1, 10)) {
-						need_mob_update = rt.modify(live(need_mob_update), (yield* g.callName(f, live(R), "addiction_act_stage1", [live(C)])), add);
-					} else if (rt.inRange($0, 10, 20)) {
-						need_mob_update = rt.modify(live(need_mob_update), (yield* g.callName(f, live(R), "addiction_act_stage2", [live(C)])), add);
-					} else if (rt.inRange($0, 20, 30)) {
-						need_mob_update = rt.modify(live(need_mob_update), (yield* g.callName(f, live(R), "addiction_act_stage3", [live(C)])), add);
-					} else if (rt.inRange($0, 30, 40)) {
-						need_mob_update = rt.modify(live(need_mob_update), (yield* g.callName(f, live(R), "addiction_act_stage4", [live(C)])), add);
-					} else if (rt.inRange($0, 40, 9.999999848243207e+30)) {
-						yield* g.call(f, P("/proc/to_chat"), null, [live(C), fmt("<span class='notice'>You feel like you've gotten over your need for ＀.</span>", [rt.fv(f, "name", live(R))])]);
-						yield* g.callName(f, live(cached_addictions), "Remove", [live(R)]);
+	if (can_overdose) {
+		if (this.addiction_tick == 6) {
+			this.addiction_tick = 1;
+			for (addiction_3 of each(cached_addictions)) {
+				R = addiction_3;
+				if (C && R) {
+					R.addiction_stage++;
+					if (rt.inRange(R.addiction_stage, 1, 10)) {
+						need_mob_update += (yield* R.addiction_act_stage1(C));
+					} else if (rt.inRange(R.addiction_stage, 10, 20)) {
+						need_mob_update += (yield* R.addiction_act_stage2(C));
+					} else if (rt.inRange(R.addiction_stage, 20, 30)) {
+						need_mob_update += (yield* R.addiction_act_stage3(C));
+					} else if (rt.inRange(R.addiction_stage, 30, 40)) {
+						need_mob_update += (yield* R.addiction_act_stage4(C));
+					} else if (rt.inRange(R.addiction_stage, 40, 1e+31)) {
+						to_chat(C, `<span class='notice'>You feel like you've gotten over your need for ${R.name}.</span>`);
+						yield* cached_addictions.Remove(R);
 					}
 				}
 			}
-			rt.endFor(f, 0);
 		}
-		rt.incSrcVar(f, "addiction_tick", 1, true);
+		this.addiction_tick++;
 	}
-	if ((truthy(live(C)) && truthy(live(need_mob_update)))) {
-		yield* g.callName(f, live(C), "updatehealth", []);
-		yield* g.callName(f, live(C), "update_canmove", []);
-		yield* g.callName(f, live(C), "update_stamina", []);
+	if (C && need_mob_update) {
+		yield* C.updatehealth();
+		yield* C.update_canmove();
+		yield* C.update_stamina();
 	}
-	yield* g.srcCall(f, "update_total");
+	yield* this.update_total();
 	return f.dot;
 }, true);
 
-// /datum/reagents/proc/process  (code/modules/reagents/chemistry/holder.dm:292)  may sleep
+// holder.dm:292
 rt.def("/datum/reagents/proc/process", function* process(f: Frame) {
-	let cached_reagents: Value = null, reagent: Value = null, R: Value = null;
-	let $e: any;
-	f.vars = () => [cached_reagents, reagent, R, $e];
-	cached_reagents = rt.sv(f, "reagent_list");
-	if (truthy(rt.bitAnd(rt.sv(f, "flags"), 1))) {
-		rt.setFv(f, "isprocessing", live(f.src), 0);
-		(rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), subtract));
-		return live(f.dot);
+	let reagent: Value = null, R: Value = null;
+	let cached_reagents: Value = this.reagent_list;
+	if (rt.bitAnd(this.flags, 1)) {
+		this.isprocessing = 0;
+		GLOB.SSobj.processing -= this;
+		return f.dot;
 	}
-	reagent = null;
-	rt.forList(f, 0, live(cached_reagents));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		reagent = $e;
-		yield* g.callName(f, (R = live(reagent)), "on_tick", []);
+	for (reagent of each(cached_reagents)) {
+		yield* (R = reagent).on_tick();
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true, { waitfor: false });
 
-// /datum/reagents/proc/set_reacting  (code/modules/reagents/chemistry/holder.dm:305)
+// holder.dm:305
 rt.def("/datum/reagents/proc/set_reacting", function set_reacting(f: Frame, react: Value) {
-	f.vars = () => [react];
-	if (live(react) === null) {
-		react = 1;
-	}
-	if (truthy(live(react))) {
+	react ??= 1;
+	if (react) {
 		(rt.modSrcVar(f, "flags", 16777214, rt.bitAnd));
-		if (!truthy(rt.fv(f, "isprocessing", live(f.src)))) {
-			rt.setFv(f, "isprocessing", live(f.src), 1);
-			rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), add);
+		if (!this.isprocessing) {
+			this.isprocessing = 1;
+			GLOB.SSobj.processing += this;
 		}
 	} else {
-		rt.setFv(f, "isprocessing", live(f.src), 0);
-		(rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), subtract));
+		this.isprocessing = 0;
+		GLOB.SSobj.processing -= this;
 		(rt.modSrcVar(f, "flags", 1, rt.bitOr));
 	}
 	return f.dot;
 });
 
-// /datum/reagents/proc/conditional_update  (code/modules/reagents/chemistry/holder.dm:319)  may sleep
+// holder.dm:319
 rt.def("/datum/reagents/proc/conditional_update", function* conditional_update(f: Frame, A: Value) {
-	let cached_reagents: Value = null, reagent: Value = null, R: Value = null;
-	let $e: any;
-	f.vars = () => [A, cached_reagents, reagent, R, $e];
-	cached_reagents = rt.sv(f, "reagent_list");
-	reagent = null;
-	rt.forList(f, 0, live(cached_reagents));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		reagent = $e;
-		yield* g.callName(f, (R = live(reagent)), "on_update", [live(A)]);
+	let reagent: Value = null, R: Value = null;
+	let cached_reagents: Value = this.reagent_list;
+	for (reagent of each(cached_reagents)) {
+		(R = reagent).on_update(A);
 	}
-	rt.endFor(f, 0);
-	yield* g.srcCall(f, "update_total");
+	yield* this.update_total();
 	return f.dot;
 }, true);
 
-// /datum/reagents/proc/handle_reactions  (code/modules/reagents/chemistry/holder.dm:326)  may sleep
+// holder.dm:326
 rt.def("/datum/reagents/proc/handle_reactions", function* handle_reactions(f: Frame) {
-	let cached_reagents: Value = null, cached_reactions: Value = null, cached_my_atom: Value = null, reaction_occurred: Value = null, reagent: Value = null, R: Value = null, reaction: Value = null, C: Value = null, cached_required_reagents: Value = null, total_required_reagents: Value = null, total_matching_reagents: Value = null, cached_required_catalysts: Value = null, total_required_catalysts: Value = null, total_matching_catalysts: Value = null, matching_container: Value = null, matching_other: Value = null, multipliers: Value = null, required_temp: Value = null, is_cold_recipe: Value = null, meets_temp_requirement: Value = null, cached_results: Value = null, B: Value = null, M: Value = null, multiplier: Value = null, B_22: Value = null, _P: Value = null, seen: Value = null, M_23: Value = null, ME2: Value = null, M_24: Value = null;
-	let $e: any;
-	f.vars = () => [cached_reagents, cached_reactions, cached_my_atom, reaction_occurred, reagent, R, reaction, C, cached_required_reagents, total_required_reagents, total_matching_reagents, cached_required_catalysts, total_required_catalysts, total_matching_catalysts, matching_container, matching_other, multipliers, required_temp, is_cold_recipe, meets_temp_requirement, cached_results, B, M, multiplier, B_22, _P, seen, M_23, ME2, M_24, $e];
-	cached_reagents = rt.sv(f, "reagent_list");
-	cached_reactions = rt.gl("chemical_reactions_list");
-	cached_my_atom = rt.sv(f, "my_atom");
-	if (truthy(rt.bitAnd(rt.sv(f, "flags"), 1))) {
-		return live(f.dot);
+	let reagent: Value = null, R: Value = null, reaction: Value = null, C: Value = null, cached_required_reagents: Value = null, total_required_reagents: Value = null, total_matching_reagents: Value = null, cached_required_catalysts: Value = null, total_required_catalysts: Value = null, total_matching_catalysts: Value = null, matching_container: Value = null, matching_other: Value = null, multipliers: Value = null, required_temp: Value = null, is_cold_recipe: Value = null, meets_temp_requirement: Value = null, cached_results: Value = null, B: Value = null, M: Value = null, multiplier: Value = null, B_22: Value = null, _P: Value = null, seen: Value = null, M_23: Value = null, ME2: Value = null, M_24: Value = null;
+	let cached_reagents: Value = this.reagent_list;
+	let cached_reactions: Value = GLOB.chemical_reactions_list;
+	let cached_my_atom: Value = this.my_atom;
+	if (rt.bitAnd(this.flags, 1)) {
+		return f.dot;
 	}
-	reaction_occurred = 0;
+	let reaction_occurred: Value = 0;
 	while (true) {
 		reaction_occurred = 0;
 		reagent = null;
-		rt.forList(f, 0, live(cached_reagents));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			reagent = $e;
-			R = live(reagent);
+		for (reagent of each(cached_reagents)) {
+			R = reagent;
 			reaction = null;
-			rt.forList(f, 1, rt.index(live(cached_reactions), rt.fv(f, "id", live(R))));
-			while (($e = rt.next(f, 1)) !== undefined) {
-				reaction = $e;
-				if (!truthy(live(reaction))) {
+			for (reaction of each(rt.index(cached_reactions, R.id))) {
+				if (!reaction) {
 					continue;
 				}
-				C = live(reaction);
-				cached_required_reagents = rt.fv(f, "required_reagents", live(C));
-				total_required_reagents = rt.len(f, live(cached_required_reagents));
+				C = reaction;
+				cached_required_reagents = C.required_reagents;
+				total_required_reagents = rt.len(f, cached_required_reagents);
 				total_matching_reagents = 0;
-				cached_required_catalysts = rt.fv(f, "required_catalysts", live(C));
-				total_required_catalysts = rt.len(f, live(cached_required_catalysts));
+				cached_required_catalysts = C.required_catalysts;
+				total_required_catalysts = rt.len(f, cached_required_catalysts);
 				total_matching_catalysts = 0;
 				matching_container = 0;
 				matching_other = 0;
-				multipliers = (yield* g.new_(f, T("/list"), []));
-				required_temp = rt.fv(f, "required_temp", live(C));
-				is_cold_recipe = rt.fv(f, "is_cold_recipe", live(C));
+				multipliers = (yield* new_(T("/list")));
+				required_temp = C.required_temp;
+				is_cold_recipe = C.is_cold_recipe;
 				meets_temp_requirement = 0;
-				cached_results = rt.fv(f, "results", live(C));
+				cached_results = C.results;
 				B = null;
-				rt.forList(f, 2, live(cached_required_reagents));
-				while (($e = rt.next(f, 2)) !== undefined) {
-					B = $e;
-					if (!truthy((yield* g.srcCall(f, "has_reagent", live(B), rt.index(live(cached_required_reagents), live(B)))))) {
+				for (B of each(cached_required_reagents)) {
+					if (!this.has_reagent(B, rt.index(cached_required_reagents, B))) {
 						break;
 					}
-					total_matching_reagents = rt.inc(live(total_matching_reagents), 1);
-					multipliers = rt.modify(live(multipliers), (yield* g.call(f, P("/proc/round"), null, [divide((yield* g.srcCall(f, "get_reagent_amount", live(B))), rt.index(live(cached_required_reagents), live(B)))])), add);
+					total_matching_reagents++;
+					multipliers += round(this.get_reagent_amount(B) / rt.index(cached_required_reagents, B));
 				}
-				rt.endFor(f, 2);
 				B = null;
-				rt.forList(f, 2, live(cached_required_catalysts));
-				while (($e = rt.next(f, 2)) !== undefined) {
-					B = $e;
-					if (!truthy((yield* g.srcCall(f, "has_reagent", live(B), rt.index(live(cached_required_catalysts), live(B)))))) {
+				for (B of each(cached_required_catalysts)) {
+					if (!this.has_reagent(B, rt.index(cached_required_catalysts, B))) {
 						break;
 					}
-					total_matching_catalysts = rt.inc(live(total_matching_catalysts), 1);
+					total_matching_catalysts++;
 				}
-				rt.endFor(f, 2);
-				if (truthy(live(cached_my_atom))) {
-					if (!truthy(rt.fv(f, "required_container", live(C)))) {
+				if (cached_my_atom) {
+					if (!C.required_container) {
 						matching_container = 1;
-					} else {
-						if (isEqual(rt.fv(f, "type", live(cached_my_atom)), rt.fv(f, "required_container", live(C)))) {
-							matching_container = 1;
+					} else if (cached_my_atom.type == C.required_container) {
+						matching_container = 1;
+					}
+					if (rt.istype(cached_my_atom, T("/mob/living"))) {
+						if (C.mob_react) {
+							return f.dot;
 						}
 					}
-					if (truthy((rt.istype(live(cached_my_atom), T("/mob/living")) ? 1 : 0))) {
-						if (truthy(rt.fv(f, "mob_react", live(C)))) {
-							return live(f.dot);
-						}
-					}
-					if (!truthy(rt.fv(f, "required_other", live(C)))) {
+					if (!C.required_other) {
 						matching_other = 1;
-					} else {
-						if (truthy((rt.istype(live(cached_my_atom), T("/obj/item/slime_extract")) ? 1 : 0))) {
-							if (rt.gt(rt.gv(f, "Uses", (M = live(cached_my_atom))), 0)) {
-								matching_other = 1;
-							}
+					} else if (rt.istype(cached_my_atom, T("/obj/item/slime_extract"))) {
+						if ((M = cached_my_atom).Uses > 0) {
+							matching_other = 1;
 						}
 					}
 				} else {
-					if (!truthy(rt.fv(f, "required_container", live(C)))) {
+					if (!C.required_container) {
 						matching_container = 1;
 					}
-					if (!truthy(rt.fv(f, "required_other", live(C)))) {
+					if (!C.required_other) {
 						matching_other = 1;
 					}
 				}
-				if (((isEqual(live(required_temp), 0) || (truthy(live(is_cold_recipe)) && rt.le(rt.sv(f, "chem_temp"), live(required_temp)))) || (!truthy(live(is_cold_recipe)) && rt.ge(rt.sv(f, "chem_temp"), live(required_temp))))) {
+				if (required_temp == 0 || is_cold_recipe && this.chem_temp <= required_temp || !is_cold_recipe && this.chem_temp >= required_temp) {
 					meets_temp_requirement = 1;
 				}
-				if (((((isEqual(live(total_matching_reagents), live(total_required_reagents)) && isEqual(live(total_matching_catalysts), live(total_required_catalysts))) && truthy(live(matching_container))) && truthy(live(matching_other))) && truthy(live(meets_temp_requirement)))) {
-					multiplier = (yield* g.call(f, P("/proc/min"), null, [live(multipliers)]));
+				if (total_matching_reagents == total_required_reagents && total_matching_catalysts == total_required_catalysts && matching_container && matching_other && meets_temp_requirement) {
+					multiplier = min(multipliers);
 					B_22 = null;
-					rt.forList(f, 2, live(cached_required_reagents));
-					while (($e = rt.next(f, 2)) !== undefined) {
-						B_22 = $e;
-						yield* g.callSrc(f, "remove_reagent", [null, live(B_22), null, multiply(live(multiplier), rt.index(live(cached_required_reagents), live(B_22))), "safety", 1], rt.Args.Named);
+					for (B_22 of each(cached_required_reagents)) {
+						yield* this.remove_reagent(B_22, multiplier * rt.index(cached_required_reagents, B_22), { safety: 1 });
 					}
-					rt.endFor(f, 2);
 					_P = null;
-					rt.forList(f, 2, rt.fv(f, "results", live(C)));
-					while (($e = rt.next(f, 2)) !== undefined) {
-						_P = $e;
-						multiplier = (yield* g.call(f, P("/proc/max"), null, [live(multiplier), 1]));
-						yield* g.srcCall(f, "add_reagent", live(_P), multiply(rt.index(live(cached_results), live(_P)), live(multiplier)), null, rt.sv(f, "chem_temp"));
+					for (_P of each(C.results)) {
+						multiplier = max(multiplier, 1);
+						yield* this.add_reagent(_P, rt.index(cached_results, _P) * multiplier, null, this.chem_temp);
 					}
-					rt.endFor(f, 2);
-					seen = (yield* g.call(f, P("/proc/viewers"), null, [4, rt.getStep(f, rt.sv(f, "my_atom"), 0)]));
-					if (truthy(live(cached_my_atom))) {
-						if (!truthy((yield* g.call(f, P("/proc/ismob"), null, [live(cached_my_atom)])))) {
-							if (truthy(rt.fv(f, "mix_sound", live(C)))) {
-								yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(cached_my_atom), 0), rt.fv(f, "mix_sound", live(C)), 80, 1]);
+					seen = viewers(4, rt.getStep(f, this.my_atom, 0));
+					if (cached_my_atom) {
+						if (!ismob(cached_my_atom)) {
+							if (C.mix_sound) {
+								playsound(rt.getStep(f, cached_my_atom, 0), C.mix_sound, 80, 1);
 							}
 							M_23 = null;
-							rt.forList(f, 2, live(seen), T("/mob"));
-							while (($e = rt.next(f, 2)) !== undefined) {
-								M_23 = $e;
-								yield* g.call(f, P("/proc/to_chat"), null, [live(M_23), fmt("<span class='notice'>＀ ＀</span>", [(yield* g.call(f, P("/proc/bicon"), null, [rt.sv(f, "my_atom")])), rt.fv(f, "mix_message", live(C))])]);
+							for (M_23 of each(seen, T("/mob"))) {
+								to_chat(M_23, `<span class='notice'>${bicon(this.my_atom)} ${C.mix_message}</span>`);
 							}
-							rt.endFor(f, 2);
 						}
-						if (truthy((rt.istype(live(cached_my_atom), T("/obj/item/slime_extract")) ? 1 : 0))) {
-							rt.incField(f, (ME2 = rt.sv(f, "my_atom")), "Uses", -1, true);
-							if (rt.le(rt.fv(f, "Uses", live(ME2)), 0)) {
+						if (rt.istype(cached_my_atom, T("/obj/item/slime_extract"))) {
+							(ME2 = this.my_atom).Uses--;
+							if (ME2.Uses <= 0) {
 								M_24 = null;
-								rt.forList(f, 2, live(seen), T("/mob"));
-								while (($e = rt.next(f, 2)) !== undefined) {
-									M_24 = $e;
-									yield* g.call(f, P("/proc/to_chat"), null, [live(M_24), fmt("<span class='notice'>＀ ＄！'s power is consumed in the reaction.</span>", [(yield* g.call(f, P("/proc/bicon"), null, [rt.sv(f, "my_atom")])), rt.sv(f, "my_atom")])]);
-									rt.setFv(f, "name", live(ME2), "used slime extract");
-									rt.setFv(f, "desc", live(ME2), "This extract has been used up.");
+								for (M_24 of each(seen, T("/mob"))) {
+									to_chat(M_24, fmt("<span class='notice'>＀ ＄！'s power is consumed in the reaction.</span>", [bicon(this.my_atom), this.my_atom]));
+									ME2.name = "used slime extract";
+									ME2.desc = "This extract has been used up.";
 								}
-								rt.endFor(f, 2);
 							}
 						}
 					}
-					yield* g.callName(f, live(C), "on_reaction", [live(f.src), live(multiplier)]);
+					yield* C.on_reaction(this, multiplier);
 					reaction_occurred = 1;
 					break;
 				}
 			}
-			rt.endFor(f, 1);
 		}
-		rt.endFor(f, 0);
-		if (!truthy(live(reaction_occurred))) break;
+		if (!reaction_occurred) break;
 	}
-	yield* g.srcCall(f, "update_total");
+	yield* this.update_total();
 	return 0;
 }, true);
 
-// /datum/reagents/proc/del_reagent  (code/modules/reagents/chemistry/holder.dm:437)  may sleep
+// holder.dm:437
 rt.def("/datum/reagents/proc/del_reagent", function* del_reagent(f: Frame, reagent: Value) {
-	let cached_reagents: Value = null, _reagent: Value = null, R: Value = null, M: Value = null;
-	let $e: any;
-	f.vars = () => [reagent, cached_reagents, _reagent, R, M, $e];
-	cached_reagents = rt.sv(f, "reagent_list");
-	_reagent = null;
-	rt.forList(f, 0, live(cached_reagents));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_reagent = $e;
-		if (isEqual(rt.gv(f, "id", (R = live(_reagent))), live(reagent))) {
-			if ((truthy(rt.sv(f, "my_atom")) && truthy((rt.istype(rt.sv(f, "my_atom"), T("/mob/living")) ? 1 : 0)))) {
-				M = rt.sv(f, "my_atom");
-				yield* g.callName(f, live(R), "on_mob_delete", [live(M)]);
+	let _reagent: Value = null, R: Value = null, M: Value = null;
+	let cached_reagents: Value = this.reagent_list;
+	for (_reagent of each(cached_reagents)) {
+		if ((R = _reagent).id == reagent) {
+			if (this.my_atom && rt.istype(this.my_atom, T("/mob/living"))) {
+				M = this.my_atom;
+				yield* R.on_mob_delete(M);
 			}
-			yield* g.call(f, P("/proc/qdel"), null, [live(R)]);
-			(rt.modSrcVar(f, "reagent_list", live(R), subtract));
-			yield* g.srcCall(f, "update_total");
-			if (truthy(rt.sv(f, "my_atom"))) {
-				yield* g.callName(f, rt.sv(f, "my_atom"), "on_reagent_change", []);
-				yield* g.srcCall(f, "check_ignoreslow", rt.sv(f, "my_atom"));
-				yield* g.srcCall(f, "check_gofast", rt.sv(f, "my_atom"));
-				yield* g.srcCall(f, "check_goreallyfast", rt.sv(f, "my_atom"));
+			yield* qdel(R);
+			this.reagent_list -= R;
+			yield* this.update_total();
+			if (this.my_atom) {
+				this.my_atom.on_reagent_change();
+				this.check_ignoreslow(this.my_atom);
+				this.check_gofast(this.my_atom);
+				this.check_goreallyfast(this.my_atom);
 			}
 		}
 	}
-	rt.endFor(f, 0);
 	return 1;
 }, true);
 
-// /datum/reagents/proc/check_ignoreslow  (code/modules/reagents/chemistry/holder.dm:455)
+// holder.dm:455
 rt.def("/datum/reagents/proc/check_ignoreslow", function check_ignoreslow(f: Frame, M: Value) {
-	if (!truthy(rt.call(f, P("/proc/ismob"), null, [live(M)]))) return f.dot;
-	if (truthy(rt.callName(f, rt.fv(f, "reagents", live(M)), "has_reagent", ["morphine"]))) {
+	if (!ismob(M)) return f.dot;
+	if (M.reagents.has_reagent("morphine")) {
 		return 1;
 	} else {
-		(rt.modField(f, live(M), "status_flags", 16777199, rt.bitAnd));
+		(rt.modField(f, M, "status_flags", 16777199, rt.bitAnd));
 	}
 	return f.dot;
 });
 
-// /datum/reagents/proc/check_gofast  (code/modules/reagents/chemistry/holder.dm:462)
+// holder.dm:462
 rt.def("/datum/reagents/proc/check_gofast", function check_gofast(f: Frame, M: Value) {
-	if (!truthy(rt.call(f, P("/proc/ismob"), null, [live(M)]))) return f.dot;
-	if ((((truthy(rt.callName(f, rt.fv(f, "reagents", live(M)), "has_reagent", ["unholywater"])) || truthy(rt.callName(f, rt.fv(f, "reagents", live(M)), "has_reagent", ["nuka_cola"]))) || truthy(rt.callName(f, rt.fv(f, "reagents", live(M)), "has_reagent", ["stimulants"]))) || truthy(rt.callName(f, rt.fv(f, "reagents", live(M)), "has_reagent", ["ephedrine"])))) {
+	if (!ismob(M)) return f.dot;
+	if (M.reagents.has_reagent("unholywater") || M.reagents.has_reagent("nuka_cola") || M.reagents.has_reagent("stimulants") || M.reagents.has_reagent("ephedrine")) {
 		return 1;
 	} else {
-		(rt.modField(f, live(M), "status_flags", 16777183, rt.bitAnd));
+		(rt.modField(f, M, "status_flags", 16777183, rt.bitAnd));
 	}
 	return f.dot;
 });
 
-// /datum/reagents/proc/check_goreallyfast  (code/modules/reagents/chemistry/holder.dm:469)
+// holder.dm:469
 rt.def("/datum/reagents/proc/check_goreallyfast", function check_goreallyfast(f: Frame, M: Value) {
-	if (!truthy(rt.call(f, P("/proc/ismob"), null, [live(M)]))) return f.dot;
-	if (truthy(rt.callName(f, rt.fv(f, "reagents", live(M)), "has_reagent", ["methamphetamine"]))) {
+	if (!ismob(M)) return f.dot;
+	if (M.reagents.has_reagent("methamphetamine")) {
 		return 1;
 	} else {
-		(rt.modField(f, live(M), "status_flags", 16777151, rt.bitAnd));
+		(rt.modField(f, M, "status_flags", 16777151, rt.bitAnd));
 	}
 	return f.dot;
 });
 
-// /datum/reagents/proc/update_total  (code/modules/reagents/chemistry/holder.dm:476)  may sleep
+// holder.dm:476
 rt.def("/datum/reagents/proc/update_total", function* update_total(f: Frame) {
-	let cached_reagents: Value = null, reagent: Value = null, R: Value = null;
-	let $e: any;
-	f.vars = () => [cached_reagents, reagent, R, $e];
-	cached_reagents = rt.sv(f, "reagent_list");
-	rt.setSv(f, "total_volume", 0);
-	reagent = null;
-	rt.forList(f, 0, live(cached_reagents));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		reagent = $e;
-		if (rt.lt(rt.gv(f, "volume", (R = live(reagent))), 0.10000000149011612)) {
-			yield* g.srcCall(f, "del_reagent", rt.fv(f, "id", live(R)));
+	let reagent: Value = null, R: Value = null;
+	let cached_reagents: Value = this.reagent_list;
+	this.total_volume = 0;
+	for (reagent of each(cached_reagents)) {
+		if ((R = reagent).volume < 0.1) {
+			yield* this.del_reagent(R.id);
 		} else {
-			rt.modSrcVar(f, "total_volume", rt.fv(f, "volume", live(R)), add);
+			this.total_volume += R.volume;
 		}
 	}
-	rt.endFor(f, 0);
 	return 0;
 }, true);
 
-// /datum/reagents/proc/clear_reagents  (code/modules/reagents/chemistry/holder.dm:488)  may sleep
+// holder.dm:488
 rt.def("/datum/reagents/proc/clear_reagents", function* clear_reagents(f: Frame) {
-	let cached_reagents: Value = null, reagent: Value = null, R: Value = null;
-	let $e: any;
-	f.vars = () => [cached_reagents, reagent, R, $e];
-	cached_reagents = rt.sv(f, "reagent_list");
-	reagent = null;
-	rt.forList(f, 0, live(cached_reagents));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		reagent = $e;
-		yield* g.srcCall(f, "del_reagent", rt.gv(f, "id", (R = live(reagent))));
+	let reagent: Value = null, R: Value = null;
+	let cached_reagents: Value = this.reagent_list;
+	for (reagent of each(cached_reagents)) {
+		yield* this.del_reagent((R = reagent).id);
 	}
-	rt.endFor(f, 0);
 	return 0;
 }, true);
 
-// /datum/reagents/proc/reaction  (code/modules/reagents/chemistry/holder.dm:496)  may sleep
+// holder.dm:496
 rt.def("/datum/reagents/proc/reaction", function* reaction(f: Frame, A: Value, method: Value, volume_modifier: Value, show_message: Value) {
-	let react_type: Value = null, L: Value = null, cached_reagents: Value = null, reagent: Value = null, R: Value = null, touch_protection: Value = null, L_5: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [A, method, volume_modifier, show_message, react_type, L, cached_reagents, reagent, R, touch_protection, L_5, $0, $e];
-	if (live(method) === null) {
-		method = 1;
-	}
-	if (live(volume_modifier) === null) {
-		volume_modifier = 1;
-	}
-	if (live(show_message) === null) {
-		show_message = 1;
-	}
-	react_type = null;
-	if (truthy((rt.istype(live(A), T("/mob/living")) ? 1 : 0))) {
+	let react_type: Value = null, L: Value = null, reagent: Value = null, R: Value = null, touch_protection: Value = null, L_5: Value = null;
+	let $e: any;
+	method ??= TOUCH;
+	volume_modifier ??= 1;
+	show_message ??= 1;
+	if (rt.istype(A, T("/mob/living"))) {
 		react_type = "LIVING";
-		if (isEqual(live(method), 2)) {
-			yield* g.callName(f, (L = live(A)), "taste", [live(f.src)]);
+		if (method == INGEST) {
+			(L = A).taste(this);
 		}
+	} else if (isturf(A)) {
+		react_type = "TURF";
+	} else if (rt.istype(A, T("/obj"))) {
+		react_type = "OBJ";
 	} else {
-		if (truthy((yield* g.call(f, P("/proc/isturf"), null, [live(A)])))) {
-			react_type = "TURF";
-		} else {
-			if (truthy((rt.istype(live(A), T("/obj")) ? 1 : 0))) {
-				react_type = "OBJ";
-			} else {
-				return live(f.dot);
-			}
-		}
+		return f.dot;
 	}
-	cached_reagents = rt.sv(f, "reagent_list");
-	reagent = null;
-	rt.forList(f, 0, live(cached_reagents));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		reagent = $e;
-		R = live(reagent);
-		$0 = live(react_type);
-		if ($0 === "LIVING") {
+	let cached_reagents: Value = this.reagent_list;
+	for (reagent of each(cached_reagents)) {
+		R = reagent;
+		if (react_type === "LIVING") {
 			touch_protection = 0;
-			if (isEqual(live(method), 3)) {
-				touch_protection = (yield* g.callName(f, (L_5 = live(A)), "get_permeability_protection", []));
+			if (method == VAPOR) {
+				touch_protection = (L_5 = A).get_permeability_protection();
 			}
-			yield* g.callName(f, live(R), "reaction_mob", [live(A), live(method), multiply(rt.fv(f, "volume", live(R)), live(volume_modifier)), live(show_message), live(touch_protection)]);
-		} else if ($0 === "TURF") {
-			yield* g.callName(f, live(R), "reaction_turf", [live(A), multiply(rt.fv(f, "volume", live(R)), live(volume_modifier)), live(show_message)]);
-		} else if ($0 === "OBJ") {
-			yield* g.callName(f, live(R), "reaction_obj", [live(A), multiply(rt.fv(f, "volume", live(R)), live(volume_modifier)), live(show_message)]);
+			yield* R.reaction_mob(A, method, R.volume * volume_modifier, show_message, touch_protection);
+		} else if (react_type === "TURF") {
+			yield* R.reaction_turf(A, R.volume * volume_modifier, show_message);
+		} else if (react_type === "OBJ") {
+			yield* R.reaction_obj(A, R.volume * volume_modifier, show_message);
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /datum/reagents/proc/holder_full  (code/modules/reagents/chemistry/holder.dm:523)
+// holder.dm:523
 rt.def("/datum/reagents/proc/holder_full", function holder_full(f: Frame) {
-	if (rt.ge(rt.sv(f, "total_volume"), rt.sv(f, "maximum_volume"))) {
+	if (this.total_volume >= this.maximum_volume) {
 		return 1;
 	}
 	return 0;
 });
 
-// /datum/reagents/proc/add_reagent  (code/modules/reagents/chemistry/holder.dm:528)  may sleep
+// holder.dm:528
 rt.def("/datum/reagents/proc/add_reagent", function* add_reagent(f: Frame, reagent: Value, amount: Value, data: Value, reagtemp: Value, no_react: Value) {
-	let cached_reagents: Value = null, A: Value = null, R: Value = null, D: Value = null;
-	let $e: any;
-	f.vars = () => [reagent, amount, data, reagtemp, no_react, cached_reagents, A, R, D, $e];
-	if (live(data) === null) {
-		data = null;
-	}
-	if (live(reagtemp) === null) {
-		reagtemp = 300;
-	}
-	if (live(no_react) === null) {
-		no_react = 0;
-	}
-	if ((!truthy((yield* g.call(f, P("/proc/isnum"), null, [live(amount)]))) || !truthy(live(amount)))) {
+	let A: Value = null, R: Value = null, D: Value = null;
+	reagtemp ??= 300;
+	no_react ??= 0;
+	if (!isnum(amount) || !amount) {
 		return 0;
 	}
-	if (rt.lt(live(amount), 0)) {
+	if (amount < 0) {
 		return 0;
 	}
-	cached_reagents = rt.sv(f, "reagent_list");
-	yield* g.srcCall(f, "update_total");
-	if (rt.gt(add(rt.sv(f, "total_volume"), live(amount)), rt.sv(f, "maximum_volume"))) {
-		amount = subtract(rt.sv(f, "maximum_volume"), rt.sv(f, "total_volume"));
+	let cached_reagents: Value = this.reagent_list;
+	yield* this.update_total();
+	if (this.total_volume + amount > this.maximum_volume) {
+		amount = this.maximum_volume - this.total_volume;
 	}
-	rt.setSv(f, "chem_temp", (yield* g.call(f, P("/proc/round"), null, [divide(add(multiply(live(amount), live(reagtemp)), multiply(rt.sv(f, "total_volume"), rt.sv(f, "chem_temp"))), add(rt.sv(f, "total_volume"), live(amount)))])));
-	A = null;
-	rt.forList(f, 0, live(cached_reagents));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		A = $e;
-		if (isEqual(rt.gv(f, "id", (R = live(A))), live(reagent))) {
-			rt.modField(f, live(R), "volume", live(amount), add);
-			yield* g.srcCall(f, "update_total");
-			if (truthy(rt.sv(f, "my_atom"))) {
-				yield* g.callName(f, rt.sv(f, "my_atom"), "on_reagent_change", []);
+	this.chem_temp = round((amount * reagtemp + this.total_volume * this.chem_temp) / (this.total_volume + amount));
+	for (A of each(cached_reagents)) {
+		if ((R = A).id == reagent) {
+			R.volume += amount;
+			yield* this.update_total();
+			if (this.my_atom) {
+				this.my_atom.on_reagent_change();
 			}
-			yield* g.callName(f, live(R), "on_merge", [live(data), live(amount)]);
-			if (!truthy(live(no_react))) {
-				yield* g.srcCall(f, "handle_reactions");
+			yield* R.on_merge(data, amount);
+			if (!no_react) {
+				yield* this.handle_reactions();
 			}
 			return 1;
 		}
 	}
-	rt.endFor(f, 0);
-	if (truthy((D = rt.index(rt.gl("chemical_reagents_list"), live(reagent))))) {
-		cached_reagents = rt.modify(live(cached_reagents), (R = (yield* g.new_(f, rt.fv(f, "type", live(D)), [live(data)]))), add);
-		rt.setFv(f, "holder", live(R), live(f.src));
-		rt.setFv(f, "volume", live(R), live(amount));
-		if (truthy(live(data))) {
-			rt.setFv(f, "data", live(R), live(data));
-			yield* g.callName(f, live(R), "on_new", [live(data)]);
+	if (D = rt.index(GLOB.chemical_reagents_list, reagent)) {
+		cached_reagents += (R = (yield* new_(D.type, data)));
+		R.holder = this;
+		R.volume = amount;
+		if (data) {
+			R.data = data;
+			yield* R.on_new(data);
 		}
-		yield* g.srcCall(f, "update_total");
-		if (truthy(rt.sv(f, "my_atom"))) {
-			yield* g.callName(f, rt.sv(f, "my_atom"), "on_reagent_change", []);
+		yield* this.update_total();
+		if (this.my_atom) {
+			this.my_atom.on_reagent_change();
 		}
-		if (!truthy(live(no_react))) {
-			yield* g.srcCall(f, "handle_reactions");
+		if (!no_react) {
+			yield* this.handle_reactions();
 		}
 		return 1;
 	} else {
-		yield* g.call(f, P("/proc/warning"), null, [fmt("＀ in ＀ at line ＀ src: ＀ usr: ＀.", [fmt("＀ attempted to add a reagent called '＀' which doesn't exist. (＀)", [rt.sv(f, "my_atom"), live(reagent), live(f.usr)]), "code/modules/reagents/chemistry/holder.dm", 571, live(f.src), live(f.usr)])]);
+		warning(`${`${this.my_atom} attempted to add a reagent called '${reagent}' which doesn't exist. (${f.usr})`} in ${"code/modules/reagents/chemistry/holder.dm"} at line ${571} src: ${this} usr: ${f.usr}.`);
 	}
 	return 0;
 }, true, { argTypes: [{  }, {  }, { path: "/list" }, {  }, {  }] });
 
-// /datum/reagents/proc/add_reagent_list  (code/modules/reagents/chemistry/holder.dm:575)  may sleep
+// holder.dm:575
 rt.def("/datum/reagents/proc/add_reagent_list", function* add_reagent_list(f: Frame, list_reagents: Value, data: Value) {
 	let r_id: Value = null, amt: Value = null;
-	let $e: any;
-	f.vars = () => [list_reagents, data, r_id, amt, $e];
-	if (live(data) === null) {
-		data = null;
+	for (r_id of each(list_reagents)) {
+		amt = rt.index(list_reagents, r_id);
+		yield* this.add_reagent(r_id, amt, data);
 	}
-	r_id = null;
-	rt.forList(f, 0, live(list_reagents));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		r_id = $e;
-		amt = rt.index(live(list_reagents), live(r_id));
-		yield* g.srcCall(f, "add_reagent", live(r_id), live(amt), live(data));
-	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /datum/reagents/proc/remove_reagent  (code/modules/reagents/chemistry/holder.dm:581)  may sleep
+// holder.dm:581
 rt.def("/datum/reagents/proc/remove_reagent", function* remove_reagent(f: Frame, reagent: Value, amount: Value, safety: Value) {
-	let cached_reagents: Value = null, A: Value = null, R: Value = null;
-	let $e: any;
-	f.vars = () => [reagent, amount, safety, cached_reagents, A, R, $e];
-	if (live(amount) === null) {
+	let A: Value = null, R: Value = null;
+	if (amount === null) {
 		amount = 0;
-		yield* g.call(f, P("/proc/CRASH"), null, ["null amount passed to reagent code"]);
+		CRASH("null amount passed to reagent code");
 		return 0;
 	}
-	if (!truthy((yield* g.call(f, P("/proc/isnum"), null, [live(amount)])))) {
+	if (!isnum(amount)) {
 		return 0;
 	}
-	if (rt.lt(live(amount), 0)) {
+	if (amount < 0) {
 		return 0;
 	}
-	cached_reagents = rt.sv(f, "reagent_list");
-	A = null;
-	rt.forList(f, 0, live(cached_reagents));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		A = $e;
-		if (isEqual(rt.gv(f, "id", (R = live(A))), live(reagent))) {
-			amount = (yield* g.call(f, P("/proc/max"), null, [0, (yield* g.call(f, P("/proc/min"), null, [live(amount), rt.fv(f, "volume", live(R))]))]));
-			(rt.modField(f, live(R), "volume", live(amount), subtract));
-			yield* g.srcCall(f, "update_total");
-			if (!truthy(live(safety))) {
-				yield* g.srcCall(f, "handle_reactions");
+	let cached_reagents: Value = this.reagent_list;
+	for (A of each(cached_reagents)) {
+		if ((R = A).id == reagent) {
+			amount = max(0, min(amount, R.volume));
+			R.volume -= amount;
+			yield* this.update_total();
+			if (!safety) {
+				yield* this.handle_reactions();
 			}
-			if (truthy(rt.sv(f, "my_atom"))) {
-				yield* g.callName(f, rt.sv(f, "my_atom"), "on_reagent_change", []);
+			if (this.my_atom) {
+				this.my_atom.on_reagent_change();
 			}
 			return 1;
 		}
 	}
-	rt.endFor(f, 0);
 	return 0;
 }, true);
 
-// /datum/reagents/proc/has_reagent  (code/modules/reagents/chemistry/holder.dm:611)
+// holder.dm:611
 rt.def("/datum/reagents/proc/has_reagent", function has_reagent(f: Frame, reagent: Value, amount: Value) {
-	let cached_reagents: Value = null, _reagent: Value = null, R: Value = null;
-	let $e: any;
-	f.vars = () => [amount, cached_reagents, _reagent, R, $e];
-	if (live(amount) === null) {
-		amount = -1;
-	}
-	cached_reagents = rt.sv(f, "reagent_list");
-	_reagent = null;
-	rt.forList(f, 0, live(cached_reagents));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_reagent = $e;
-		if (isEqual(rt.gv(f, "id", (R = live(_reagent))), live(reagent))) {
-			if (!truthy(live(amount))) {
-				return live(R);
+	let _reagent: Value = null, R: Value = null;
+	amount ??= -1;
+	let cached_reagents: Value = this.reagent_list;
+	for (_reagent of each(cached_reagents)) {
+		if ((R = _reagent).id == reagent) {
+			if (!amount) {
+				return R;
+			} else if (R.volume >= amount) {
+				return R;
 			} else {
-				if (rt.ge(rt.fv(f, "volume", live(R)), live(amount))) {
-					return live(R);
-				} else {
-					return 0;
-				}
+				return 0;
 			}
 		}
 	}
-	rt.endFor(f, 0);
 	return 0;
 });
 
-// /datum/reagents/proc/get_reagent_amount  (code/modules/reagents/chemistry/holder.dm:626)
+// holder.dm:626
 rt.def("/datum/reagents/proc/get_reagent_amount", function get_reagent_amount(f: Frame, reagent: Value) {
-	let cached_reagents: Value = null, _reagent: Value = null, R: Value = null;
-	let $e: any;
-	f.vars = () => [cached_reagents, _reagent, R, $e];
-	cached_reagents = rt.sv(f, "reagent_list");
-	_reagent = null;
-	rt.forList(f, 0, live(cached_reagents));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_reagent = $e;
-		if (isEqual(rt.gv(f, "id", (R = live(_reagent))), live(reagent))) {
-			return rt.fv(f, "volume", live(R));
+	let _reagent: Value = null, R: Value = null;
+	let cached_reagents: Value = this.reagent_list;
+	for (_reagent of each(cached_reagents)) {
+		if ((R = _reagent).id == reagent) {
+			return R.volume;
 		}
 	}
-	rt.endFor(f, 0);
 	return 0;
 });
 
-// /datum/reagents/proc/remove_all_type  (code/modules/reagents/chemistry/holder.dm:644)  may sleep
+// holder.dm:644
 rt.def("/datum/reagents/proc/remove_all_type", function* remove_all_type(f: Frame, reagent_type: Value, amount: Value, strict: Value, safety: Value) {
-	let cached_reagents: Value = null, has_removed_reagent: Value = null, reagent: Value = null, R: Value = null, matches: Value = null;
-	let $e: any;
-	f.vars = () => [reagent_type, amount, strict, safety, cached_reagents, has_removed_reagent, reagent, R, matches, $e];
-	if (live(strict) === null) {
-		strict = 0;
-	}
-	if (live(safety) === null) {
-		safety = 1;
-	}
-	if (!truthy((yield* g.call(f, P("/proc/isnum"), null, [live(amount)])))) {
+	let reagent: Value = null, R: Value = null, matches: Value = null;
+	strict ??= 0;
+	safety ??= 1;
+	if (!isnum(amount)) {
 		return 1;
 	}
-	cached_reagents = rt.sv(f, "reagent_list");
-	has_removed_reagent = 0;
-	reagent = null;
-	rt.forList(f, 0, live(cached_reagents));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		reagent = $e;
-		R = live(reagent);
+	let cached_reagents: Value = this.reagent_list;
+	let has_removed_reagent: Value = 0;
+	for (reagent of each(cached_reagents)) {
+		R = reagent;
 		matches = 0;
-		if (truthy(live(strict))) {
-			if (isEqual(rt.fv(f, "type", live(R)), live(reagent_type))) {
+		if (strict) {
+			if (R.type == reagent_type) {
 				matches = 1;
 			}
-		} else {
-			if (truthy(rt.op(f, "IsType", [], [live(R), live(reagent_type)]))) {
-				matches = 1;
-			}
+		} else if (rt.op(f, "IsType", [], [R, reagent_type])) {
+			matches = 1;
 		}
-		if (truthy(live(matches))) {
-			has_removed_reagent = (yield* g.srcCall(f, "remove_reagent", rt.fv(f, "id", live(R)), live(amount), live(safety)));
+		if (matches) {
+			has_removed_reagent = (yield* this.remove_reagent(R.id, amount, safety));
 		}
 	}
-	rt.endFor(f, 0);
-	return live(has_removed_reagent);
+	return has_removed_reagent;
 }, true);
 
-// /datum/reagents/proc/get_data  (code/modules/reagents/chemistry/holder.dm:667)
+// holder.dm:667
 rt.def("/datum/reagents/proc/get_data", function get_data(f: Frame, reagent_id: Value) {
-	let cached_reagents: Value = null, reagent: Value = null, R: Value = null;
-	let $e: any;
-	f.vars = () => [cached_reagents, reagent, R, $e];
-	cached_reagents = rt.sv(f, "reagent_list");
-	reagent = null;
-	rt.forList(f, 0, live(cached_reagents));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		reagent = $e;
-		if (isEqual(rt.gv(f, "id", (R = live(reagent))), live(reagent_id))) {
-			return rt.fv(f, "data", live(R));
+	let reagent: Value = null, R: Value = null;
+	let cached_reagents: Value = this.reagent_list;
+	for (reagent of each(cached_reagents)) {
+		if ((R = reagent).id == reagent_id) {
+			return R.data;
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /datum/reagents/proc/copy_data  (code/modules/reagents/chemistry/holder.dm:683)
+// holder.dm:683
 rt.def("/datum/reagents/proc/copy_data", function copy_data(f: Frame, current_reagent: Value) {
 	let trans_data: Value = null, v: Value = null;
-	f.vars = () => [trans_data, v];
-	if ((!truthy(live(current_reagent)) || !truthy(rt.fv(f, "data", live(current_reagent))))) {
+	if (!current_reagent || !current_reagent.data) {
 		return null;
 	}
-	if (!truthy((rt.istype(rt.fv(f, "data", live(current_reagent)), T("/list")) ? 1 : 0))) {
-		return rt.fv(f, "data", live(current_reagent));
+	if (!rt.istype(current_reagent.data, T("/list"))) {
+		return current_reagent.data;
 	}
-	if (truthy(rt.index((trans_data = rt.callName(f, rt.fv(f, "data", live(current_reagent)), "Copy", [])), "viruses"))) {
-		v = rt.at(live(trans_data), "viruses");
-		rt.setAt(live(trans_data), "viruses", rt.callName(f, live(v), "Copy", []));
+	if (rt.index((trans_data = current_reagent.data.Copy()), "viruses")) {
+		v = rt.at(trans_data, "viruses");
+		rt.setAt(trans_data, "viruses", v.Copy());
 	}
-	return live(trans_data);
+	return trans_data;
 });
 
-// /datum/reagents/proc/get_reagent  (code/modules/reagents/chemistry/holder.dm:704)
+// holder.dm:704
 rt.def("/datum/reagents/proc/get_reagent", function get_reagent(f: Frame, type: Value) {
-	let cached_reagents: Value = null;
-	f.vars = () => [cached_reagents];
-	cached_reagents = rt.sv(f, "reagent_list");
-	f.dot = rt.locateIn(f, live(type), live(cached_reagents));
+	let cached_reagents: Value = this.reagent_list;
+	f.dot = rt.locateIn(f, type, cached_reagents);
 	return f.dot;
 });
 
-// /datum/reagents/proc/generate_taste_message  (code/modules/reagents/chemistry/holder.dm:709)
+// holder.dm:709
 rt.def("/datum/reagents/proc/generate_taste_message", function generate_taste_message(f: Frame, minimum_percent: Value) {
-	let out: Value = null, tastes: Value = null, R: Value = null, taste_data: Value = null, taste: Value = null, ratio: Value = null, amount: Value = null, taste_desc: Value = null, taste_amount: Value = null, total_taste: Value = null, percent: Value = null, intensity_desc: Value = null;
-	let $e: any;
-	f.vars = () => [minimum_percent, out, tastes, R, taste_data, taste, ratio, amount, taste_desc, taste_amount, total_taste, percent, intensity_desc, $e];
-	if (live(minimum_percent) === null) {
-		minimum_percent = 15;
-	}
-	out = rt.list();
-	tastes = rt.list();
-	if (rt.le(live(minimum_percent), 100)) {
-		R = null;
-		rt.forList(f, 0, rt.sv(f, "reagent_list"), T("/datum/reagent"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			R = $e;
-			if (!truthy(rt.fv(f, "taste_mult", live(R)))) {
+	let R: Value = null, taste_data: Value = null, taste: Value = null, ratio: Value = null, amount: Value = null, taste_desc: Value = null, taste_amount: Value = null, total_taste: Value = null, percent: Value = null, intensity_desc: Value = null;
+	minimum_percent ??= 15;
+	let out: Value = list();
+	let tastes: Value = list();
+	if (minimum_percent <= 100) {
+		for (R of each(this.reagent_list, T("/datum/reagent"))) {
+			if (!R.taste_mult) {
 				continue;
 			}
-			if (truthy((rt.istype(live(R), T("/datum/reagent/consumable/nutriment")) ? 1 : 0))) {
-				taste_data = rt.fv(f, "data", live(R));
+			if (rt.istype(R, T("/datum/reagent/consumable/nutriment"))) {
+				taste_data = R.data;
 				taste = null;
-				rt.forList(f, 1, live(taste_data));
-				while (($e = rt.next(f, 1)) !== undefined) {
-					taste = $e;
-					ratio = rt.index(live(taste_data), live(taste));
-					amount = multiply(multiply(live(ratio), rt.fv(f, "taste_mult", live(R))), rt.fv(f, "volume", live(R)));
-					if (truthy((rt.isIn(f, live(taste), live(tastes)) ? 1 : 0))) {
-						rt.modAt(live(tastes), live(taste), live(amount), add);
+				for (taste of each(taste_data)) {
+					ratio = rt.index(taste_data, taste);
+					amount = ratio * R.taste_mult * R.volume;
+					if (rt.isIn(f, taste, tastes)) {
+						rt.modAt(tastes, taste, amount, add);
 					} else {
-						rt.setAt(live(tastes), live(taste), live(amount));
+						rt.setAt(tastes, taste, amount);
 					}
 				}
-				rt.endFor(f, 1);
 			} else {
-				taste_desc = rt.fv(f, "taste_description", live(R));
-				taste_amount = multiply(rt.fv(f, "volume", live(R)), rt.fv(f, "taste_mult", live(R)));
-				if (truthy((rt.isIn(f, live(taste_desc), live(tastes)) ? 1 : 0))) {
-					rt.modAt(live(tastes), live(taste_desc), live(taste_amount), add);
+				taste_desc = R.taste_description;
+				taste_amount = R.volume * R.taste_mult;
+				if (rt.isIn(f, taste_desc, tastes)) {
+					rt.modAt(tastes, taste_desc, taste_amount, add);
 				} else {
-					rt.setAt(live(tastes), live(taste_desc), live(taste_amount));
+					rt.setAt(tastes, taste_desc, taste_amount);
 				}
 			}
 		}
-		rt.endFor(f, 0);
-		if (rt.gt((total_taste = rt.call(f, P("/proc/counterlist_sum"), null, [live(tastes)])), 0)) {
+		if ((total_taste = counterlist_sum(tastes)) > 0) {
 			taste_desc = null;
-			rt.forList(f, 0, live(tastes));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				taste_desc = $e;
-				if (rt.lt((percent = multiply(divide(rt.index(live(tastes), live(taste_desc)), live(total_taste)), 100)), live(minimum_percent))) {
+			for (taste_desc of each(tastes)) {
+				if ((percent = rt.index(tastes, taste_desc) / total_taste * 100) < minimum_percent) {
 					continue;
 				}
 				intensity_desc = "a hint of";
-				if ((rt.gt(live(percent), multiply(live(minimum_percent), 2)) || isEqual(live(percent), 100))) {
+				if (percent > minimum_percent * 2 || percent == 100) {
 					intensity_desc = "";
-				} else {
-					if (rt.gt(live(percent), multiply(live(minimum_percent), 3))) {
-						intensity_desc = "the strong flavor of";
-					}
+				} else if (percent > minimum_percent * 3) {
+					intensity_desc = "the strong flavor of";
 				}
-				if (!isEqual(live(intensity_desc), "")) {
-					out = rt.modify(live(out), fmt("＀ ＀", [live(intensity_desc), live(taste_desc)]), add);
+				if (intensity_desc != "") {
+					out += `${intensity_desc} ${taste_desc}`;
 				} else {
-					out = rt.modify(live(out), fmt("＀", [live(taste_desc)]), add);
+					out += `${taste_desc}`;
 				}
 			}
-			rt.endFor(f, 0);
 		}
 	}
-	return rt.call(f, P("/proc/english_list"), null, [live(out), "something indescribable"]);
+	return english_list(out, "something indescribable");
 });
 
-// /atom/proc/create_reagents  (code/modules/reagents/chemistry/holder.dm:759)  may sleep
+// holder.dm:759
 rt.def("/atom/proc/create_reagents", function* create_reagents(f: Frame, max_vol: Value) {
-	f.vars = () => [max_vol];
-	if (truthy(rt.sv(f, "reagents"))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "reagents")]);
+	if (this.reagents) {
+		yield* qdel(this.reagents);
 	}
-	rt.setSv(f, "reagents", (yield* g.new_(f, T("/datum/reagents"), [live(max_vol)])));
-	rt.setFv(f, "my_atom", rt.sv(f, "reagents"), live(f.src));
+	this.reagents = (yield* new_(T("/datum/reagents"), max_vol));
+	this.reagents.my_atom = this;
 	return f.dot;
 }, true);
 
-// /proc/get_random_reagent_id  (code/modules/reagents/chemistry/holder.dm:765)
+// holder.dm:765
 rt.def("/proc/get_random_reagent_id", function get_random_reagent_id(f: Frame) {
 	let thing: Value = null, R: Value = null, picked_reagent: Value = null;
-	let $e: any;
-	f.vars = () => [thing, R, picked_reagent, $e];
-	if (!truthy(rt.len(f, rt.gl("random_reagents")))) {
-		thing = null;
-		rt.forList(f, 0, subtract(rt.call(f, P("/proc/typesof"), null, [T("/datum/reagent")]), T("/datum/reagent")));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			thing = $e;
-			if (truthy(rt.initial(f, (R = live(thing)), "can_synth"))) {
-				rt.modGl("random_reagents", rt.initial(f, live(R), "id"), add);
+	if (!rt.len(f, GLOB.random_reagents)) {
+		for (thing of each(typesof(T("/datum/reagent")) - T("/datum/reagent"))) {
+			if (rt.initial(f, (R = thing), "can_synth")) {
+				GLOB.random_reagents += rt.initial(f, R, "id");
 			}
 		}
-		rt.endFor(f, 0);
 	}
-	return (picked_reagent = rt.op(f, "PickUnweighted", [1], [rt.gl("random_reagents")]));
+	return (picked_reagent = pick(GLOB.random_reagents));
 });

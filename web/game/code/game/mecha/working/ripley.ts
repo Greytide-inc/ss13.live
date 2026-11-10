@@ -1,7 +1,7 @@
-// From code/game/mecha/working/ripley.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/mecha/working/ripley.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, subtract, fmt } = rt;
 
 
 rt.type(12120, "/obj/mecha/working/ripley", "/obj/mecha/working", {
@@ -24,104 +24,77 @@ rt.type(12120, "/obj/mecha/working/ripley", "/obj/mecha/working", {
 	wreckage: rt.typePath("/obj/structure/mecha_wreckage/ripley"),
 });
 
-// /obj/mecha/working/ripley/proc/<init>  (code/game/mecha/working/ripley.dm:13)  may sleep
+// ripley.dm:13
 rt.def("/obj/mecha/working/ripley/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 40, "bullet", 20, "laser", 10, "energy", 20, "bomb", 40, "bio", 0, "rad", 0, "fire", 100, "acid", 100]));
-	$0 = $0;
-	rt.setSv(f, "cargo", (yield* g.new_(f, T("/list"), [])));
+	yield* parent_proc();
+	this.armor = rt.alist(f, ["melee", 40, "bullet", 20, "laser", 10, "energy", 20, "bomb", 40, "bio", 0, "rad", 0, "fire", 100, "acid", 100]);
+
+	this.cargo = (yield* new_(T("/list")));
 	return f.dot;
 }, true);
 
-// /obj/mecha/working/ripley/proc/Move  (code/game/mecha/working/ripley.dm:21)  may sleep
+// ripley.dm:21
 rt.def("/obj/mecha/working/ripley/proc/Move", function* Move(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (truthy(live(f.dot))) {
-		yield* g.srcCall(f, "collect_ore");
+	f.dot = (yield* parent_proc());
+	if (f.dot) {
+		yield* this.collect_ore();
 	}
-	yield* g.srcCall(f, "update_pressure");
+	this.update_pressure();
 	return f.dot;
 }, true);
 
-// /obj/mecha/working/ripley/proc/collect_ore  (code/game/mecha/working/ripley.dm:27)  may sleep
+// ripley.dm:27
 rt.def("/obj/mecha/working/ripley/proc/collect_ore", function* collect_ore(f: Frame) {
 	let ore_box: Value = null, ore: Value = null;
-	let $e: any;
-	f.vars = () => [ore_box, ore, $e];
-	if (!truthy(rt.locateIn(f, T("/obj/item/mecha_parts/mecha_equipment/hydraulic_clamp"), rt.sv(f, "equipment")))) return f.dot;
-	if (!truthy((ore_box = rt.locateIn(f, T("/obj/structure/ore_box"), rt.sv(f, "cargo"))))) return f.dot;
-	ore = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/range"), null, [1, live(f.src)])), T("/obj/item/weapon/ore"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		ore = $e;
-		if ((truthy((yield* g.callName(f, live(ore), "Adjacent", [live(f.src)]))) && (truthy(rt.bitAnd(rt.getDir(f, live(f.src), live(ore)), rt.sv(f, "dir"))) || isEqual(rt.fv(f, "loc", live(ore)), rt.sv(f, "loc"))))) {
-			yield* g.callName(f, live(ore), "forceMove", [live(ore_box)]);
+	if (!rt.locateIn(f, T("/obj/item/mecha_parts/mecha_equipment/hydraulic_clamp"), this.equipment)) return f.dot;
+	if (!(ore_box = rt.locateIn(f, T("/obj/structure/ore_box"), this.cargo))) return f.dot;
+	for (ore of each(range(1, this), T("/obj/item/weapon/ore"))) {
+		if (ore.Adjacent(this) && (rt.bitAnd(rt.getDir(f, this, ore), this.dir) || ore.loc == this.loc)) {
+			yield* ore.forceMove(ore_box);
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /obj/mecha/working/ripley/proc/Destroy  (code/game/mecha/working/ripley.dm:35)  may sleep
+// ripley.dm:35
 rt.def("/obj/mecha/working/ripley/proc/Destroy", function* Destroy(f: Frame) {
-	let i: Value = null, A: Value = null;
-	let $e: any;
-	f.vars = () => [i, A, $e];
-	i = null;
-	i = 1;
-	while (rt.le(live(i), rt.sv(f, "hides"))) {
-		yield* g.new_(f, T("/obj/item/stack/sheet/animalhide/goliath_hide"), [rt.sv(f, "loc")]);
-		i = rt.inc(live(i), 1);
+	let A: Value = null;
+	let i: Value = 1;
+	while (i <= this.hides) {
+		yield* new_(T("/obj/item/stack/sheet/animalhide/goliath_hide"), this.loc);
+		i++;
 	}
-	A = null;
-	rt.forList(f, 0, rt.sv(f, "cargo"), T("/atom/movable"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		A = $e;
-		yield* g.callName(f, live(A), "forceMove", [rt.sv(f, "loc")]);
-		yield* g.call(f, P("/proc/step_rand"), null, [live(A)]);
+	for (A of each(this.cargo, T("/atom/movable"))) {
+		yield* A.forceMove(this.loc);
+		yield* step_rand(A);
 	}
-	rt.endFor(f, 0);
-	yield* g.callName(f, rt.sv(f, "cargo"), "Cut", []);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	this.cargo.Cut();
+	return (yield* parent_proc());
 }, true);
 
-// /obj/mecha/working/ripley/proc/go_out  (code/game/mecha/working/ripley.dm:44)  may sleep
+// ripley.dm:44
 rt.def("/obj/mecha/working/ripley/proc/go_out", function* go_out(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "update_icon");
+	yield* parent_proc();
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/mecha/working/ripley/proc/moved_inside  (code/game/mecha/working/ripley.dm:48)  may sleep
-rt.def("/obj/mecha/working/ripley/proc/moved_inside", function* moved_inside(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "update_icon");
+// ripley.dm:48
+rt.def("/obj/mecha/working/ripley/proc/moved_inside", function* moved_inside(f: Frame, H: Value) {
+	yield* parent_proc();
+	yield* this.update_icon();
 	return f.dot;
-}, true, { args: ["H"] });
+}, true);
 
-// /obj/mecha/working/ripley/proc/update_icon  (code/game/mecha/working/ripley.dm:52)
+// ripley.dm:52
 rt.def("/obj/mecha/working/ripley/proc/update_icon", function update_icon(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	rt.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.sv(f, "hides"))) return f.dot;
-	rt.callSrc(f, "cut_overlays", []);
-	if (rt.lt(rt.sv(f, "hides"), 3)) {
-		if (truthy(rt.sv(f, "occupant"))) {
-			$0 = "ripley-g";
-		} else {
-			$0 = "ripley-g-open";
-		}
-		rt.callSrc(f, "add_overlay", [$0]);
+	parent_proc();
+	if (!this.hides) return f.dot;
+	this.cut_overlays();
+	if (this.hides < 3) {
+		this.add_overlay(this.occupant ? "ripley-g" : "ripley-g-open");
 	} else {
-		if (truthy(rt.sv(f, "occupant"))) {
-			$0 = "ripley-g-full";
-		} else {
-			$0 = "ripley-g-full-open";
-		}
-		rt.callSrc(f, "add_overlay", [$0]);
+		this.add_overlay(this.occupant ? "ripley-g-full" : "ripley-g-full-open");
 	}
 	return f.dot;
 });
@@ -140,12 +113,10 @@ rt.type(12121, "/obj/mecha/working/ripley/firefighter", "/obj/mecha/working/ripl
 	wreckage: rt.typePath("/obj/structure/mecha_wreckage/ripley/firefighter"),
 });
 
-// /obj/mecha/working/ripley/firefighter/proc/<init>  (code/game/mecha/working/ripley.dm:70)  may sleep
+// ripley.dm:70
 rt.def("/obj/mecha/working/ripley/firefighter/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 40, "bullet", 30, "laser", 30, "energy", 30, "bomb", 60, "bio", 0, "rad", 0, "fire", 100, "acid", 100]));
+	yield* parent_proc();
+	this.armor = rt.alist(f, ["melee", 40, "bullet", 30, "laser", 30, "energy", 30, "bomb", 60, "bio", 0, "rad", 0, "fire", 100, "acid", 100]);
 	return f.dot;
 }, true);
 
@@ -160,13 +131,12 @@ rt.type(12122, "/obj/mecha/working/ripley/deathripley", "/obj/mecha/working/ripl
 	wreckage: rt.typePath("/obj/structure/mecha_wreckage/ripley/deathripley"),
 });
 
-// /obj/mecha/working/ripley/deathripley/proc/New  (code/game/mecha/working/ripley.dm:86)  may sleep
+// ripley.dm:86
 rt.def("/obj/mecha/working/ripley/deathripley/proc/New", function* New(f: Frame) {
 	let ME: Value = null;
-	f.vars = () => [ME];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.callName(f, (ME = (yield* g.new_(f, T("/obj/item/mecha_parts/mecha_equipment/hydraulic_clamp/kill"), []))), "attach", [live(f.src)]);
-	return live(f.dot);
+	yield* parent_proc();
+	yield* (ME = (yield* new_(T("/obj/item/mecha_parts/mecha_equipment/hydraulic_clamp/kill")))).attach(this);
+	return f.dot;
 }, true);
 
 rt.type(12123, "/obj/mecha/working/ripley/mining", "/obj/mecha/working/ripley", {
@@ -175,145 +145,116 @@ rt.type(12123, "/obj/mecha/working/ripley/mining", "/obj/mecha/working/ripley", 
 	obj_integrity: 75,
 });
 
-// /obj/mecha/working/ripley/mining/proc/Initialize  (code/game/mecha/working/ripley.dm:97)  may sleep
+// ripley.dm:97
 rt.def("/obj/mecha/working/ripley/mining/proc/Initialize", function* Initialize(f: Frame) {
 	let D: Value = null, M: Value = null, HC: Value = null, B: Value = null, scanner: Value = null;
-	let $e: any;
-	f.vars = () => [D, M, HC, B, scanner, $e];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (truthy(rt.sv(f, "cell"))) {
-		rt.setFv(f, "charge", rt.sv(f, "cell"), (yield* g.call(f, P("/proc/Floor"), null, [multiply(rt.fv(f, "charge", rt.sv(f, "cell")), 0.25)])));
+	f.dot = (yield* parent_proc());
+	if (this.cell) {
+		this.cell.charge = Floor(this.cell.charge * 0.25);
 	}
-	if (truthy(rt.op(f, "Prob", [], [70]))) {
-		if (truthy(rt.op(f, "Prob", [], [15]))) {
-			yield* g.callName(f, (D = (yield* g.new_(f, T("/obj/item/mecha_parts/mecha_equipment/drill/diamonddrill"), []))), "attach", [live(f.src)]);
+	if (prob(70)) {
+		if (prob(15)) {
+			yield* (D = (yield* new_(T("/obj/item/mecha_parts/mecha_equipment/drill/diamonddrill")))).attach(this);
 		} else {
-			yield* g.callName(f, (D = (yield* g.new_(f, T("/obj/item/mecha_parts/mecha_equipment/drill"), []))), "attach", [live(f.src)]);
+			yield* (D = (yield* new_(T("/obj/item/mecha_parts/mecha_equipment/drill")))).attach(this);
 		}
 	} else {
-		yield* g.callName(f, (M = (yield* g.new_(f, T("/obj/item/mecha_parts/mecha_equipment"), []))), "attach", [live(f.src)]);
+		yield* (M = (yield* new_(T("/obj/item/mecha_parts/mecha_equipment")))).attach(this);
 	}
-	yield* g.callName(f, rt.sv(f, "cargo"), "Add", [(yield* g.new_(f, T("/obj/structure/ore_box"), [live(f.src)]))]);
-	yield* g.callName(f, (HC = (yield* g.new_(f, T("/obj/item/mecha_parts/mecha_equipment/hydraulic_clamp"), []))), "attach", [live(f.src)]);
-	B = null;
-	rt.forList(f, 0, rt.sv(f, "trackers"), T("/obj/item/mecha_parts/mecha_tracking"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		B = $e;
-		yield* g.call(f, P("/proc/qdel"), null, [live(B)]);
+	this.cargo.Add((yield* new_(T("/obj/structure/ore_box"), this)));
+	yield* (HC = (yield* new_(T("/obj/item/mecha_parts/mecha_equipment/hydraulic_clamp")))).attach(this);
+	for (B of each(this.trackers, T("/obj/item/mecha_parts/mecha_tracking"))) {
+		yield* qdel(B);
 	}
-	rt.endFor(f, 0);
-	yield* g.callName(f, (scanner = (yield* g.new_(f, T("/obj/item/mecha_parts/mecha_equipment/mining_scanner"), []))), "attach", [live(f.src)]);
+	yield* (scanner = (yield* new_(T("/obj/item/mecha_parts/mecha_equipment/mining_scanner")))).attach(this);
 	return f.dot;
 }, true);
 
-// /obj/mecha/working/ripley/proc/Exit  (code/game/mecha/working/ripley.dm:125)
-rt.def("/obj/mecha/working/ripley/proc/Exit", function Exit(f: Frame) {
-	if (truthy((rt.isIn(f, live(f.args[0]), rt.sv(f, "cargo")) ? 1 : 0))) {
+// ripley.dm:125
+rt.def("/obj/mecha/working/ripley/proc/Exit", function Exit(f: Frame, O: Value) {
+	if (rt.isIn(f, O, this.cargo)) {
 		return 0;
 	}
-	return rt.callSuper(f, [], rt.Args.Same);
-}, false, { args: ["O"] });
+	return parent_proc();
+}, false);
 
-// /obj/mecha/working/ripley/proc/Topic  (code/game/mecha/working/ripley.dm:130)  may sleep
-rt.def("/obj/mecha/working/ripley/proc/Topic", function* Topic(f: Frame) {
+// ripley.dm:130
+rt.def("/obj/mecha/working/ripley/proc/Topic", function* Topic(f: Frame, href: Value, href_list: Value) {
 	let O: Value = null;
-	f.vars = () => [O];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.at(live(f.args[1]), "drop_from_cargo"))) {
-		if (truthy((rt.isIn(f, ((O = rt.locateIn(f, rt.at(live(f.args[1]), "drop_from_cargo"), rt.world())) && live(O)), rt.fv(f, "cargo", live(f.src))) ? 1 : 0))) {
-			yield* g.callName(f, live(f.src), "occupant_message", [fmt("<span class='notice'>You unload ＀.</span>", [live(O)])]);
-			yield* g.callName(f, live(O), "forceMove", [rt.sv(f, "loc")]);
-			(rt.modField(f, live(f.src), "cargo", live(O), subtract));
-			yield* g.callName(f, live(f.src), "log_message", [fmt("Unloaded ＀. Cargo compartment capacity: ＀", [live(O), subtract(rt.sv(f, "cargo_capacity"), rt.getLen(f, rt.fv(f, "cargo", live(f.src))))])]);
+	yield* parent_proc();
+	if (rt.at(href_list, "drop_from_cargo")) {
+		if (rt.isIn(f, ((O = rt.locateIn(f, rt.at(href_list, "drop_from_cargo"), rt.world())) && O), this.cargo)) {
+			this.occupant_message(`<span class='notice'>You unload ${O}.</span>`);
+			yield* O.forceMove(this.loc);
+			(rt.modField(f, this, "cargo", O, subtract));
+			this.log_message(`Unloaded ${O}. Cargo compartment capacity: ${this.cargo_capacity - rt.len(f, this.cargo)}`);
 		}
 	}
-	return live(f.dot);
-}, true, { args: ["href", "href_list"] });
+	return f.dot;
+}, true);
 
-// /obj/mecha/working/ripley/proc/contents_explosion  (code/game/mecha/working/ripley.dm:142)  may sleep
-rt.def("/obj/mecha/working/ripley/proc/contents_explosion", function* contents_explosion(f: Frame) {
+// ripley.dm:142
+rt.def("/obj/mecha/working/ripley/proc/contents_explosion", function* contents_explosion(f: Frame, severity: Value, target: Value) {
 	let X: Value = null, O: Value = null;
-	let $e: any;
-	f.vars = () => [X, O, $e];
-	X = null;
-	rt.forList(f, 0, rt.sv(f, "cargo"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		X = $e;
-		O = live(X);
-		if (truthy(rt.op(f, "Prob", [], [divide(30, live(f.args[0]))]))) {
-			(rt.modSrcVar(f, "cargo", live(O), subtract));
-			yield* g.callName(f, live(O), "forceMove", [rt.sv(f, "loc")]);
+	for (X of each(this.cargo)) {
+		O = X;
+		if (prob(30 / severity)) {
+			this.cargo -= O;
+			yield* O.forceMove(this.loc);
 		}
 	}
-	rt.endFor(f, 0);
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	f.dot = (yield* parent_proc());
 	return f.dot;
-}, true, { args: ["severity", "target"] });
+}, true);
 
-// /obj/mecha/working/ripley/proc/get_stats_part  (code/game/mecha/working/ripley.dm:150)
+// ripley.dm:150
 rt.def("/obj/mecha/working/ripley/proc/get_stats_part", function get_stats_part(f: Frame) {
-	let output: Value = null, O: Value = null;
-	let $e: any;
-	f.vars = () => [output, O, $e];
-	output = rt.callSuper(f, [], rt.Args.Same);
-	output = rt.modify(live(output), "<b>Cargo Compartment Contents:</b><div style=\"margin-left: 15px;\">", add);
-	if (truthy(rt.len(f, rt.sv(f, "cargo")))) {
-		O = null;
-		rt.forList(f, 0, rt.sv(f, "cargo"), T("/obj"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			O = $e;
-			output = rt.modify(live(output), fmt("<a href='?src=＃;drop_from_cargo=＃'>Unload</a> : ＀<br>", [live(f.src), live(O), live(O)]), add);
+	let O: Value = null;
+	let output: Value = parent_proc();
+	output += "<b>Cargo Compartment Contents:</b><div style=\"margin-left: 15px;\">";
+	if (rt.len(f, this.cargo)) {
+		for (O of each(this.cargo, T("/obj"))) {
+			output += fmt("<a href='?src=＃;drop_from_cargo=＃'>Unload</a> : ＀<br>", [this, O, O]);
 		}
-		rt.endFor(f, 0);
 	} else {
-		output = rt.modify(live(output), "Nothing", add);
+		output += "Nothing";
 	}
-	return (output = rt.modify(live(output), "</div>", add));
+	return (output += "</div>");
 });
 
-// /obj/mecha/working/ripley/proc/update_pressure  (code/game/mecha/working/ripley.dm:161)
+// ripley.dm:161
 rt.def("/obj/mecha/working/ripley/proc/update_pressure", function update_pressure(f: Frame) {
-	let _T: Value = null, environment: Value = null, pressure: Value = null, drill: Value = null;
-	let $e: any;
-	f.vars = () => [_T, environment, pressure, drill, $e];
-	_T = rt.getStep(f, rt.sv(f, "loc"), 0);
-	environment = rt.callName(f, live(_T), "return_air", []);
-	if (rt.lt((pressure = rt.callName(f, live(environment), "return_pressure", [])), 40)) {
-		rt.setSv(f, "step_in", rt.sv(f, "lo_pres_step_in"));
-		drill = null;
-		rt.forList(f, 0, rt.sv(f, "equipment"), T("/obj/item/mecha_parts/mecha_equipment/drill"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			drill = $e;
-			rt.setFv(f, "equip_cooldown", live(drill), divide(rt.initial(f, live(drill), "equip_cooldown"), 2));
+	let pressure: Value = null, drill: Value = null;
+	let _T: Value = rt.getStep(f, this.loc, 0);
+	let environment: Value = _T.return_air();
+	if ((pressure = environment.return_pressure()) < 40) {
+		this.step_in = this.lo_pres_step_in;
+		for (drill of each(this.equipment, T("/obj/item/mecha_parts/mecha_equipment/drill"))) {
+			drill.equip_cooldown = rt.initial(f, drill, "equip_cooldown") / 2;
 		}
-		rt.endFor(f, 0);
 	} else {
-		rt.setSv(f, "step_in", rt.sv(f, "hi_pres_step_in"));
+		this.step_in = this.hi_pres_step_in;
 		drill = null;
-		rt.forList(f, 0, rt.sv(f, "equipment"), T("/obj/item/mecha_parts/mecha_equipment/drill"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			drill = $e;
-			rt.setFv(f, "equip_cooldown", live(drill), rt.initial(f, live(drill), "equip_cooldown"));
+		for (drill of each(this.equipment, T("/obj/item/mecha_parts/mecha_equipment/drill"))) {
+			drill.equip_cooldown = rt.initial(f, drill, "equip_cooldown");
 		}
-		rt.endFor(f, 0);
 	}
 	return f.dot;
 });
 
-// /obj/mecha/working/ripley/proc/relay_container_resist  (code/game/mecha/working/ripley.dm:175)  may sleep
+// ripley.dm:175
 rt.def("/obj/mecha/working/ripley/proc/relay_container_resist", function* relay_container_resist(f: Frame, user: Value, O: Value) {
-	f.vars = () => [user, O];
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You lean on the back of ＀ and start pushing so it falls out of ＀.</span>", [live(O), live(f.src)])]);
-	if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(user), null, 300, "target", live(O)], rt.Args.Named)))) {
-		if ((((!truthy(live(user)) || !isEqual(rt.fv(f, "stat", live(user)), 0)) || !isEqual(rt.fv(f, "loc", live(user)), live(f.src))) || !isEqual(rt.fv(f, "loc", live(O)), live(f.src)))) {
-			return live(f.dot);
+	to_chat(user, `<span class='notice'>You lean on the back of ${O} and start pushing so it falls out of ${this}.</span>`);
+	if (yield* do_after(user, 300, { target: O })) {
+		if (!user || user.stat != 0 || user.loc != this || O.loc != this) {
+			return f.dot;
 		}
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You successfully pushed ＀ out of ＀!</span>", [live(O), live(f.src)])]);
-		rt.setFv(f, "loc", live(O), rt.sv(f, "loc"));
-		(rt.modSrcVar(f, "cargo", live(O), subtract));
+		to_chat(user, `<span class='notice'>You successfully pushed ${O} out of ${this}!</span>`);
+		O.loc = this.loc;
+		this.cargo -= O;
 	} else {
-		if (!isEqual(rt.fv(f, "loc", live(user)), live(f.src))) return f.dot;
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>You fail to push ＀ out of ＀!</span>", [live(O), live(f.src)])]);
+		if (user.loc != this) return f.dot;
+		to_chat(user, `<span class='warning'>You fail to push ${O} out of ${this}!</span>`);
 	}
 	return f.dot;
 }, true);

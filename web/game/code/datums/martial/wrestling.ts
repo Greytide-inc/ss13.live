@@ -1,15 +1,15 @@
-// From code/datums/martial/wrestling.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/datums/martial/wrestling.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, g } = rt;
 
 
-// /mob/living/carbon/human/proc/wrestling_help  (code/datums/martial/wrestling.dm:6)
+// wrestling.dm:6
 rt.def("/mob/living/carbon/human/proc/wrestling_help", function wrestling_help(f: Frame) {
-	rt.call(f, P("/proc/to_chat"), null, [live(f.usr), "<b><i>You flex your muscles and have a revelation...</i></b>"]);
-	rt.call(f, P("/proc/to_chat"), null, [live(f.usr), "<span class='notice'>Clinch</span>: Grab. Passively gives you a chance to immediately aggressively grab someone. Not always successful."]);
-	rt.call(f, P("/proc/to_chat"), null, [live(f.usr), "<span class='notice'>Suplex</span>: Disarm someone you are grabbing. Suplexes your target to the floor. Greatly injures them and leaves both you and your target on the floor."]);
-	rt.call(f, P("/proc/to_chat"), null, [live(f.usr), "<span class='notice'>Advanced grab</span>: Grab. Passively causes stamina damage when grabbing someone."]);
+	to_chat(f.usr, "<b><i>You flex your muscles and have a revelation...</i></b>");
+	to_chat(f.usr, "<span class='notice'>Clinch</span>: Grab. Passively gives you a chance to immediately aggressively grab someone. Not always successful.");
+	to_chat(f.usr, "<span class='notice'>Suplex</span>: Disarm someone you are grabbing. Suplexes your target to the floor. Greatly injures them and leaves both you and your target on the floor.");
+	to_chat(f.usr, "<span class='notice'>Advanced grab</span>: Grab. Passively causes stamina damage when grabbing someone.");
 	return f.dot;
 }, false, { verb: { name: "Recall Teachings", category: "Wrestling", desc: "Remember how to wrestle." } });
 
@@ -22,47 +22,42 @@ rt.type(573, "/datum/martial_art/wrestling", "/datum/martial_art", {
 	name: "Wrestling",
 });
 
-// /datum/martial_art/wrestling/proc/<init>  (code/datums/martial/wrestling.dm:13)  may sleep
+// wrestling.dm:13
 rt.def("/datum/martial_art/wrestling/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "slam", (yield* g.new_(f, T("/datum/action/slam"), [])));
-	$0 = $0;
-	rt.setSv(f, "throw_wrassle", (yield* g.new_(f, T("/datum/action/throw_wrassle"), [])));
-	$0 = $0;
-	rt.setSv(f, "kick", (yield* g.new_(f, T("/datum/action/kick"), [])));
-	$0 = $0;
-	rt.setSv(f, "strike", (yield* g.new_(f, T("/datum/action/strike"), [])));
-	$0 = $0;
-	rt.setSv(f, "drop", (yield* g.new_(f, T("/datum/action/drop"), [])));
+	yield* parent_proc();
+	this.slam = (yield* new_(T("/datum/action/slam")));
+
+	this.throw_wrassle = (yield* new_(T("/datum/action/throw_wrassle")));
+
+	this.kick = (yield* new_(T("/datum/action/kick")));
+
+	this.strike = (yield* new_(T("/datum/action/strike")));
+
+	this.drop = (yield* new_(T("/datum/action/drop")));
 	return f.dot;
 }, true);
 
-// /datum/martial_art/wrestling/proc/check_streak  (code/datums/martial/wrestling.dm:20)  may sleep
+// wrestling.dm:20
 rt.def("/datum/martial_art/wrestling/proc/check_streak", function* check_streak(f: Frame, A: Value, D: Value) {
-	let $0: any;
-	f.vars = () => [A, D, $0];
-	$0 = rt.sv(f, "streak");
-	if ($0 === "drop") {
-		rt.setSv(f, "streak", "");
-		yield* g.srcCall(f, "drop", live(A), live(D));
+	if (this.streak === "drop") {
+		this.streak = "";
+		yield* g.srcCall(f, "drop", A, D);
 		return 1;
-	} else if ($0 === "strike") {
-		rt.setSv(f, "streak", "");
-		yield* g.srcCall(f, "strike", live(A), live(D));
+	} else if (this.streak === "strike") {
+		this.streak = "";
+		yield* g.srcCall(f, "strike", A, D);
 		return 1;
-	} else if ($0 === "kick") {
-		rt.setSv(f, "streak", "");
-		yield* g.srcCall(f, "kick", live(A), live(D));
+	} else if (this.streak === "kick") {
+		this.streak = "";
+		yield* this.kick(A, D);
 		return 1;
-	} else if ($0 === "throw") {
-		rt.setSv(f, "streak", "");
-		yield* g.srcCall(f, "throw_wrassle", live(A), live(D));
+	} else if (this.streak === "throw") {
+		this.streak = "";
+		yield* this.throw_wrassle(A, D);
 		return 1;
-	} else if ($0 === "slam") {
-		rt.setSv(f, "streak", "");
-		yield* g.srcCall(f, "slam", live(A), live(D));
+	} else if (this.streak === "slam") {
+		this.streak = "";
+		yield* this.slam(A, D);
 		return 1;
 	}
 	return 0;
@@ -73,16 +68,15 @@ rt.type(261, "/datum/action/slam", "/datum/action", {
 	button_icon_state: "wrassle_slam",
 });
 
-// /datum/action/slam/proc/Trigger  (code/datums/martial/wrestling.dm:48)
+// wrestling.dm:48
 rt.def("/datum/action/slam/proc/Trigger", function Trigger(f: Frame) {
 	let H: Value = null;
-	f.vars = () => [H];
-	if (truthy(rt.callName(f, rt.sv(f, "owner"), "incapacitated", []))) {
-		rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "owner"), "<span class='warning'>You can't WRESTLE while you're OUT FOR THE COUNT.</span>"]);
-		return live(f.dot);
+	if (this.owner.incapacitated()) {
+		to_chat(this.owner, "<span class='warning'>You can't WRESTLE while you're OUT FOR THE COUNT.</span>");
+		return f.dot;
 	}
-	rt.callName(f, rt.sv(f, "owner"), "visible_message", [fmt("<span class='danger'>＀ prepares to BODY SLAM!</span>", [rt.sv(f, "owner")]), "<b><i>Your next attack will be a BODY SLAM.</i></b>"]);
-	rt.setFv(f, "streak", rt.gv(f, "martial_art", rt.gv(f, "mind", (H = rt.sv(f, "owner")))), "slam");
+	this.owner.visible_message(`<span class='danger'>${this.owner} prepares to BODY SLAM!</span>`, "<b><i>Your next attack will be a BODY SLAM.</i></b>");
+	(H = this.owner).mind.martial_art.streak = "slam";
 	return f.dot;
 });
 
@@ -91,16 +85,15 @@ rt.type(262, "/datum/action/throw_wrassle", "/datum/action", {
 	button_icon_state: "wrassle_throw",
 });
 
-// /datum/action/throw_wrassle/proc/Trigger  (code/datums/martial/wrestling.dm:60)
+// wrestling.dm:60
 rt.def("/datum/action/throw_wrassle/proc/Trigger", function Trigger(f: Frame) {
 	let H: Value = null;
-	f.vars = () => [H];
-	if (truthy(rt.callName(f, rt.sv(f, "owner"), "incapacitated", []))) {
-		rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "owner"), "<span class='warning'>You can't WRESTLE while you're OUT FOR THE COUNT.</span>"]);
-		return live(f.dot);
+	if (this.owner.incapacitated()) {
+		to_chat(this.owner, "<span class='warning'>You can't WRESTLE while you're OUT FOR THE COUNT.</span>");
+		return f.dot;
 	}
-	rt.callName(f, rt.sv(f, "owner"), "visible_message", [fmt("<span class='danger'>＀ prepares to THROW!</span>", [rt.sv(f, "owner")]), "<b><i>Your next attack will be a THROW.</i></b>"]);
-	rt.setFv(f, "streak", rt.gv(f, "martial_art", rt.gv(f, "mind", (H = rt.sv(f, "owner")))), "throw");
+	this.owner.visible_message(`<span class='danger'>${this.owner} prepares to THROW!</span>`, "<b><i>Your next attack will be a THROW.</i></b>");
+	(H = this.owner).mind.martial_art.streak = "throw";
 	return f.dot;
 });
 
@@ -109,16 +102,15 @@ rt.type(263, "/datum/action/kick", "/datum/action", {
 	button_icon_state: "wrassle_kick",
 });
 
-// /datum/action/kick/proc/Trigger  (code/datums/martial/wrestling.dm:72)
+// wrestling.dm:72
 rt.def("/datum/action/kick/proc/Trigger", function Trigger(f: Frame) {
 	let H: Value = null;
-	f.vars = () => [H];
-	if (truthy(rt.callName(f, rt.sv(f, "owner"), "incapacitated", []))) {
-		rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "owner"), "<span class='warning'>You can't WRESTLE while you're OUT FOR THE COUNT.</span>"]);
-		return live(f.dot);
+	if (this.owner.incapacitated()) {
+		to_chat(this.owner, "<span class='warning'>You can't WRESTLE while you're OUT FOR THE COUNT.</span>");
+		return f.dot;
 	}
-	rt.callName(f, rt.sv(f, "owner"), "visible_message", [fmt("<span class='danger'>＀ prepares to KICK!</span>", [rt.sv(f, "owner")]), "<b><i>Your next attack will be a KICK.</i></b>"]);
-	rt.setFv(f, "streak", rt.gv(f, "martial_art", rt.gv(f, "mind", (H = rt.sv(f, "owner")))), "kick");
+	this.owner.visible_message(`<span class='danger'>${this.owner} prepares to KICK!</span>`, "<b><i>Your next attack will be a KICK.</i></b>");
+	(H = this.owner).mind.martial_art.streak = "kick";
 	return f.dot;
 });
 
@@ -127,16 +119,15 @@ rt.type(264, "/datum/action/strike", "/datum/action", {
 	button_icon_state: "wrassle_strike",
 });
 
-// /datum/action/strike/proc/Trigger  (code/datums/martial/wrestling.dm:84)
+// wrestling.dm:84
 rt.def("/datum/action/strike/proc/Trigger", function Trigger(f: Frame) {
 	let H: Value = null;
-	f.vars = () => [H];
-	if (truthy(rt.callName(f, rt.sv(f, "owner"), "incapacitated", []))) {
-		rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "owner"), "<span class='warning'>You can't WRESTLE while you're OUT FOR THE COUNT.</span>"]);
-		return live(f.dot);
+	if (this.owner.incapacitated()) {
+		to_chat(this.owner, "<span class='warning'>You can't WRESTLE while you're OUT FOR THE COUNT.</span>");
+		return f.dot;
 	}
-	rt.callName(f, rt.sv(f, "owner"), "visible_message", [fmt("<span class='danger'>＀ prepares to STRIKE!</span>", [rt.sv(f, "owner")]), "<b><i>Your next attack will be a STRIKE.</i></b>"]);
-	rt.setFv(f, "streak", rt.gv(f, "martial_art", rt.gv(f, "mind", (H = rt.sv(f, "owner")))), "strike");
+	this.owner.visible_message(`<span class='danger'>${this.owner} prepares to STRIKE!</span>`, "<b><i>Your next attack will be a STRIKE.</i></b>");
+	(H = this.owner).mind.martial_art.streak = "strike";
 	return f.dot;
 });
 
@@ -145,424 +136,399 @@ rt.type(265, "/datum/action/drop", "/datum/action", {
 	button_icon_state: "wrassle_drop",
 });
 
-// /datum/action/drop/proc/Trigger  (code/datums/martial/wrestling.dm:96)
+// wrestling.dm:96
 rt.def("/datum/action/drop/proc/Trigger", function Trigger(f: Frame) {
 	let H: Value = null;
-	f.vars = () => [H];
-	if (truthy(rt.callName(f, rt.sv(f, "owner"), "incapacitated", []))) {
-		rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "owner"), "<span class='warning'>You can't WRESTLE while you're OUT FOR THE COUNT.</span>"]);
-		return live(f.dot);
+	if (this.owner.incapacitated()) {
+		to_chat(this.owner, "<span class='warning'>You can't WRESTLE while you're OUT FOR THE COUNT.</span>");
+		return f.dot;
 	}
-	rt.callName(f, rt.sv(f, "owner"), "visible_message", [fmt("<span class='danger'>＀ prepares to LEG DROP!</span>", [rt.sv(f, "owner")]), "<b><i>Your next attack will be a LEG DROP.</i></b>"]);
-	rt.setFv(f, "streak", rt.gv(f, "martial_art", rt.gv(f, "mind", (H = rt.sv(f, "owner")))), "drop");
+	this.owner.visible_message(`<span class='danger'>${this.owner} prepares to LEG DROP!</span>`, "<b><i>Your next attack will be a LEG DROP.</i></b>");
+	(H = this.owner).mind.martial_art.streak = "drop";
 	return f.dot;
 });
 
-// /datum/martial_art/wrestling/proc/teach  (code/datums/martial/wrestling.dm:104)  may sleep
+// wrestling.dm:104
 rt.def("/datum/martial_art/wrestling/proc/teach", function* teach(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class = 'userdanger'>SNAP INTO A THIN TIM!</span>"]);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class = 'danger'>Place your cursor over a move at the top of the screen to see what it does.</span>"]);
-	yield* g.callName(f, rt.sv(f, "drop"), "Grant", [live(f.args[0])]);
-	yield* g.callName(f, rt.sv(f, "kick"), "Grant", [live(f.args[0])]);
-	yield* g.callName(f, rt.sv(f, "slam"), "Grant", [live(f.args[0])]);
-	yield* g.callName(f, rt.sv(f, "throw_wrassle"), "Grant", [live(f.args[0])]);
-	yield* g.callName(f, rt.sv(f, "strike"), "Grant", [live(f.args[0])]);
+	yield* parent_proc();
+	to_chat(f.args[0], "<span class = 'userdanger'>SNAP INTO A THIN TIM!</span>");
+	to_chat(f.args[0], "<span class = 'danger'>Place your cursor over a move at the top of the screen to see what it does.</span>");
+	yield* this.drop.Grant(f.args[0]);
+	yield* this.kick.Grant(f.args[0]);
+	yield* this.slam.Grant(f.args[0]);
+	yield* this.throw_wrassle.Grant(f.args[0]);
+	yield* this.strike.Grant(f.args[0]);
 	return f.dot;
 }, true, { args: ["H", "make_temporary"] });
 
-// /datum/martial_art/wrestling/proc/remove  (code/datums/martial/wrestling.dm:114)  may sleep
-rt.def("/datum/martial_art/wrestling/proc/remove", function* remove(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class = 'userdanger'>You no longer feel that the tower of power is too sweet to be sour...</span>"]);
-	yield* g.callName(f, rt.sv(f, "drop"), "Remove", [live(f.args[0])]);
-	yield* g.callName(f, rt.sv(f, "kick"), "Remove", [live(f.args[0])]);
-	yield* g.callName(f, rt.sv(f, "slam"), "Remove", [live(f.args[0])]);
-	yield* g.callName(f, rt.sv(f, "throw_wrassle"), "Remove", [live(f.args[0])]);
-	yield* g.callName(f, rt.sv(f, "strike"), "Remove", [live(f.args[0])]);
+// wrestling.dm:114
+rt.def("/datum/martial_art/wrestling/proc/remove", function* remove(f: Frame, H: Value) {
+	yield* parent_proc();
+	to_chat(H, "<span class = 'userdanger'>You no longer feel that the tower of power is too sweet to be sour...</span>");
+	yield* this.drop.Remove(H);
+	yield* this.kick.Remove(H);
+	yield* this.slam.Remove(H);
+	yield* this.throw_wrassle.Remove(H);
+	yield* this.strike.Remove(H);
 	return f.dot;
-}, true, { args: ["H"] });
+}, true);
 
-// /datum/martial_art/wrestling/proc/harm_act  (code/datums/martial/wrestling.dm:123)  may sleep
-rt.def("/datum/martial_art/wrestling/proc/harm_act", function* harm_act(f: Frame) {
-	if (truthy((yield* g.srcCall(f, "check_streak", live(f.args[0]), live(f.args[1]))))) {
+// wrestling.dm:123
+rt.def("/datum/martial_art/wrestling/proc/harm_act", function* harm_act(f: Frame, A: Value, D: Value) {
+	if (yield* this.check_streak(A, D)) {
 		return 1;
 	}
-	yield* g.call(f, P("/proc/add_logs"), null, [live(f.args[0]), live(f.args[1]), "punched with wrestling"]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	add_logs(A, D, "punched with wrestling");
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["A", "D"] });
+}, true);
 
-// /datum/martial_art/wrestling/proc/throw_wrassle  (code/datums/martial/wrestling.dm:129)  may sleep
+// wrestling.dm:129
 rt.def("/datum/martial_art/wrestling/proc/throw_wrassle", function* throw_wrassle(f: Frame, A: Value, D: Value) {
-	let i: Value = null, delay: Value = null, _T: Value = null, S: Value = null, _T_0: Value = null;
-	let $0: any;
-	f.vars = () => [A, D, i, delay, _T, S, _T_0, $0];
-	if (!truthy(live(D))) {
-		return live(f.dot);
+	let delay: Value = null, _T: Value = null, S: Value = null, _T_0: Value = null;
+	if (!D) {
+		return f.dot;
 	}
-	if ((!truthy(rt.fv(f, "pulling", live(A))) || !isEqual(rt.fv(f, "pulling", live(A)), live(D)))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(A), fmt("You need to have ＀ in a cinch!", [live(D)])]);
-		return live(f.dot);
+	if (!A.pulling || A.pulling != D) {
+		to_chat(A, `You need to have ${D} in a cinch!`);
+		return f.dot;
 	}
-	yield* g.callName(f, live(D), "forceMove", [rt.fv(f, "loc", live(A))]);
-	yield* g.callName(f, live(D), "setDir", [rt.getDir(f, live(D), live(A))]);
-	yield* g.callName(f, live(D), "Stun", [80]);
-	yield* g.callName(f, live(A), "visible_message", [fmt("<span class = 'danger'><B>＀ starts spinning around with ＀!</B></span>", [live(A), live(D)])]);
-	yield* g.callName(f, live(A), "emote", ["scream"]);
-	i = null;
-	i = 0;
-	while (rt.lt(live(i), 20)) {
+	yield* D.forceMove(A.loc);
+	yield* D.setDir(rt.getDir(f, D, A));
+	yield* D.Stun(80);
+	A.visible_message(`<span class = 'danger'><B>${A} starts spinning around with ${D}!</B></span>`);
+	yield* A.emote("scream");
+	let i: Value = 0;
+	while (i < 20) {
 		delay = 5;
-		$0 = live(i);
-		if (rt.inRange($0, 17, 9.999999848243207e+30)) {
+		if (rt.inRange(i, 17, 1e+31)) {
 			delay = 0.25;
-		} else if (rt.inRange($0, 14, 16)) {
+		} else if (rt.inRange(i, 14, 16)) {
 			delay = 0.5;
-		} else if (rt.inRange($0, 9, 13)) {
+		} else if (rt.inRange(i, 9, 13)) {
 			delay = 1;
-		} else if (rt.inRange($0, 5, 8)) {
+		} else if (rt.inRange(i, 5, 8)) {
 			delay = 2;
-		} else if (rt.inRange($0, 0, 4)) {
+		} else if (rt.inRange(i, 0, 4)) {
 			delay = 3;
 		}
-		if ((truthy(live(A)) && truthy(live(D)))) {
-			if (rt.gt((yield* g.call(f, P("/proc/get_dist"), null, [live(A), live(D)])), 1)) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(A), fmt("＀ is too far away!", [live(D)])]);
+		if (A && D) {
+			if (get_dist(A, D) > 1) {
+				to_chat(A, `${D} is too far away!`);
 				return 0;
 			}
-			if ((!truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.fv(f, "loc", live(A))]))) || !truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.fv(f, "loc", live(D))]))))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(A), fmt("You can't throw ＀ from here!", [live(D)])]);
+			if (!isturf(A.loc) || !isturf(D.loc)) {
+				to_chat(A, `You can't throw ${D} from here!`);
 				return 0;
 			}
-			yield* g.callName(f, live(A), "setDir", [(yield* g.call(f, P("/proc/turn"), null, [rt.fv(f, "dir", live(A)), 90]))]);
-			_T = rt.getStep(f, live(A), rt.fv(f, "dir", live(A)));
-			if ((((truthy((S = rt.fv(f, "loc", live(D)))) && truthy((yield* g.call(f, P("/proc/isturf"), null, [live(S)])))) && truthy((yield* g.callName(f, live(S), "Exit", [live(D)])))) && ((truthy(live(_T)) && truthy((yield* g.call(f, P("/proc/isturf"), null, [live(_T)])))) && truthy((yield* g.callName(f, live(_T), "Enter", [live(A)])))))) {
-				yield* g.callName(f, live(D), "forceMove", [live(_T)]);
-				yield* g.callName(f, live(D), "setDir", [rt.getDir(f, live(D), live(A))]);
+			yield* A.setDir(turn(A.dir, 90));
+			_T = rt.getStep(f, A, A.dir);
+			if ((S = D.loc) && isturf(S) && (yield* S.Exit(D)) && _T && isturf(_T) && (yield* _T.Enter(A))) {
+				yield* D.forceMove(_T);
+				yield* D.setDir(rt.getDir(f, D, A));
 			}
 		} else {
 			return 0;
 		}
-		yield* g.call(f, P("/proc/sleep"), null, [live(delay)]);
-		i = rt.inc(live(i), 1);
+		yield* sleep(delay);
+		i++;
 	}
-	if ((truthy(live(A)) && truthy(live(D)))) {
-		if (rt.gt((yield* g.call(f, P("/proc/get_dist"), null, [live(A), live(D)])), 1)) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(A), fmt("＀ is too far away!", [live(D)])]);
+	if (A && D) {
+		if (get_dist(A, D) > 1) {
+			to_chat(A, `${D} is too far away!`);
 			return 0;
 		}
-		if ((!truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.fv(f, "loc", live(A))]))) || !truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.fv(f, "loc", live(D))]))))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(A), fmt("You can't throw ＀ from here!", [live(D)])]);
+		if (!isturf(A.loc) || !isturf(D.loc)) {
+			to_chat(A, `You can't throw ${D} from here!`);
 			return 0;
 		}
-		yield* g.callName(f, live(D), "forceMove", [rt.fv(f, "loc", live(A))]);
-		yield* g.callName(f, live(A), "visible_message", [fmt("<span class = 'danger'><B>＀ throws ＀!</B></span>", [live(A), live(D)])]);
-		yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(A)), "swing_hit", 50, 1]);
-		if ((truthy((_T_0 = (yield* g.call(f, P("/proc/get_edge_target_turf"), null, [live(A), rt.fv(f, "dir", live(A))])))) && truthy((yield* g.call(f, P("/proc/isturf"), null, [live(_T_0)]))))) {
-			if (!truthy(rt.fv(f, "stat", live(D)))) {
-				yield* g.callName(f, live(D), "emote", ["scream"]);
+		yield* D.forceMove(A.loc);
+		A.visible_message(`<span class = 'danger'><B>${A} throws ${D}!</B></span>`);
+		playsound(A.loc, "swing_hit", 50, 1);
+		if ((_T_0 = get_edge_target_turf(A, A.dir)) && isturf(_T_0)) {
+			if (!D.stat) {
+				yield* D.emote("scream");
 			}
-			yield* g.callName(f, live(D), "throw_at", [null, live(_T_0), null, 10, null, 4, "callback", (yield* g.new_(f, T("/datum/callback"), [live(D), P("/mob/living/carbon/human/proc/Knockdown"), 20]))], rt.Args.Named);
+			yield* D.throw_at(_T_0, 10, 4, { callback: (yield* new_(T("/datum/callback"), D, P("/mob/living/carbon/human/proc/Knockdown"), 20)) });
 		}
 	}
-	yield* g.call(f, P("/proc/add_logs"), null, [live(A), live(D), "has thrown with wrestling"]);
+	add_logs(A, D, "has thrown with wrestling");
 	return 0;
 }, true);
 
-// /datum/martial_art/wrestling/proc/FlipAnimation  (code/datums/martial/wrestling.dm:202)  may sleep
+// wrestling.dm:202
 rt.def("/datum/martial_art/wrestling/proc/FlipAnimation", function* FlipAnimation(f: Frame, D: Value) {
-	f.vars = () => [D];
-	if (truthy(live(D))) {
-		rt.op(f, "Animate", [2, 8], [null, live(D), "transform", (yield* g.call(f, P("/proc/matrix"), null, [180, 5])), "time", 1, "loop", 0]);
+	if (D) {
+		rt.op(f, "Animate", [2, 8], [null, D, "transform", matrix(180, 5), "time", 1, "loop", 0]);
 	}
-	yield* g.call(f, P("/proc/sleep"), null, [15]);
-	if (!truthy(live(D))) return f.dot;
-	rt.op(f, "Animate", [2, 8], [null, live(D), "transform", null, "time", 1, "loop", 0]);
+	yield* sleep(15);
+	if (!D) return f.dot;
+	rt.op(f, "Animate", [2, 8], [null, D, "transform", null, "time", 1, "loop", 0]);
 	return f.dot;
 }, true, { waitfor: false });
 
-// /datum/martial_art/wrestling/proc/slam  (code/datums/martial/wrestling.dm:208)  may sleep
+// wrestling.dm:208
 rt.def("/datum/martial_art/wrestling/proc/slam", function* slam(f: Frame, A: Value, D: Value) {
-	let i: Value = null, fluff: Value = null;
-	let $0: any;
-	f.vars = () => [A, D, i, fluff, $0];
-	if (!truthy(live(D))) {
-		return live(f.dot);
+	let fluff: Value = null;
+	if (!D) {
+		return f.dot;
 	}
-	if ((!truthy(rt.fv(f, "pulling", live(A))) || !isEqual(rt.fv(f, "pulling", live(A)), live(D)))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(A), fmt("You need to have ＀ in a cinch!", [live(D)])]);
-		return live(f.dot);
+	if (!A.pulling || A.pulling != D) {
+		to_chat(A, `You need to have ${D} in a cinch!`);
+		return f.dot;
 	}
-	yield* g.callName(f, live(D), "forceMove", [rt.fv(f, "loc", live(A))]);
-	yield* g.callName(f, live(A), "setDir", [rt.getDir(f, live(A), live(D))]);
-	yield* g.callName(f, live(D), "setDir", [rt.getDir(f, live(D), live(A))]);
-	yield* g.callName(f, live(A), "visible_message", [fmt("<span class = 'danger'><B>＀ lifts ＀ up!</B></span>", [live(A), live(D)])]);
-	yield* g.srcCall(f, "FlipAnimation");
-	i = null;
-	i = 0;
-	while (rt.lt(live(i), 3)) {
-		if ((truthy(live(A)) && truthy(live(D)))) {
-			rt.modField(f, live(A), "pixel_y", 3, add);
-			rt.modField(f, live(D), "pixel_y", 3, add);
-			yield* g.callName(f, live(A), "setDir", [(yield* g.call(f, P("/proc/turn"), null, [rt.fv(f, "dir", live(A)), 90]))]);
-			yield* g.callName(f, live(D), "setDir", [(yield* g.call(f, P("/proc/turn"), null, [rt.fv(f, "dir", live(D)), 90]))]);
-			$0 = rt.fv(f, "dir", live(A));
-			if ($0 === 1) {
-				rt.setFv(f, "pixel_x", live(D), rt.fv(f, "pixel_x", live(A)));
-			} else if ($0 === 2) {
-				rt.setFv(f, "pixel_x", live(D), rt.fv(f, "pixel_x", live(A)));
-			} else if ($0 === 4) {
-				rt.setFv(f, "pixel_x", live(D), subtract(rt.fv(f, "pixel_x", live(A)), 8));
-			} else if ($0 === 8) {
-				rt.setFv(f, "pixel_x", live(D), add(rt.fv(f, "pixel_x", live(A)), 8));
+	yield* D.forceMove(A.loc);
+	yield* A.setDir(rt.getDir(f, A, D));
+	yield* D.setDir(rt.getDir(f, D, A));
+	A.visible_message(`<span class = 'danger'><B>${A} lifts ${D} up!</B></span>`);
+	yield* this.FlipAnimation();
+	let i: Value = 0;
+	while (i < 3) {
+		if (A && D) {
+			A.pixel_y += 3;
+			D.pixel_y += 3;
+			yield* A.setDir(turn(A.dir, 90));
+			yield* D.setDir(turn(D.dir, 90));
+			if (A.dir === 1) {
+				D.pixel_x = A.pixel_x;
+			} else if (A.dir === 2) {
+				D.pixel_x = A.pixel_x;
+			} else if (A.dir === 4) {
+				D.pixel_x = A.pixel_x - 8;
+			} else if (A.dir === 8) {
+				D.pixel_x = A.pixel_x + 8;
 			}
-			if (rt.gt((yield* g.call(f, P("/proc/get_dist"), null, [live(A), live(D)])), 1)) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(A), fmt("＀ is too far away!", [live(D)])]);
-				rt.setFv(f, "pixel_x", live(A), 0);
-				rt.setFv(f, "pixel_y", live(A), 0);
-				rt.setFv(f, "pixel_x", live(D), 0);
-				rt.setFv(f, "pixel_y", live(D), 0);
+			if (get_dist(A, D) > 1) {
+				to_chat(A, `${D} is too far away!`);
+				A.pixel_x = 0;
+				A.pixel_y = 0;
+				D.pixel_x = 0;
+				D.pixel_y = 0;
 				return 0;
 			}
-			if ((!truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.fv(f, "loc", live(A))]))) || !truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.fv(f, "loc", live(D))]))))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(A), fmt("You can't slam ＀ here!", [live(D)])]);
-				rt.setFv(f, "pixel_x", live(A), 0);
-				rt.setFv(f, "pixel_y", live(A), 0);
-				rt.setFv(f, "pixel_x", live(D), 0);
-				rt.setFv(f, "pixel_y", live(D), 0);
+			if (!isturf(A.loc) || !isturf(D.loc)) {
+				to_chat(A, `You can't slam ${D} here!`);
+				A.pixel_x = 0;
+				A.pixel_y = 0;
+				D.pixel_x = 0;
+				D.pixel_y = 0;
 				return 0;
 			}
 		} else {
-			if (truthy(live(A))) {
-				rt.setFv(f, "pixel_x", live(A), 0);
-				rt.setFv(f, "pixel_y", live(A), 0);
+			if (A) {
+				A.pixel_x = 0;
+				A.pixel_y = 0;
 			}
-			if (truthy(live(D))) {
-				rt.setFv(f, "pixel_x", live(D), 0);
-				rt.setFv(f, "pixel_y", live(D), 0);
+			if (D) {
+				D.pixel_x = 0;
+				D.pixel_y = 0;
 			}
 			return 0;
 		}
-		yield* g.call(f, P("/proc/sleep"), null, [1]);
-		i = rt.inc(live(i), 1);
+		yield* sleep(1);
+		i++;
 	}
-	if ((truthy(live(A)) && truthy(live(D)))) {
-		rt.setFv(f, "pixel_x", live(A), 0);
-		rt.setFv(f, "pixel_y", live(A), 0);
-		rt.setFv(f, "pixel_x", live(D), 0);
-		rt.setFv(f, "pixel_y", live(D), 0);
-		if (rt.gt((yield* g.call(f, P("/proc/get_dist"), null, [live(A), live(D)])), 1)) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(A), fmt("＀ is too far away!", [live(D)])]);
+	if (A && D) {
+		A.pixel_x = 0;
+		A.pixel_y = 0;
+		D.pixel_x = 0;
+		D.pixel_y = 0;
+		if (get_dist(A, D) > 1) {
+			to_chat(A, `${D} is too far away!`);
 			return 0;
 		}
-		if ((!truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.fv(f, "loc", live(A))]))) || !truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.fv(f, "loc", live(D))]))))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(A), fmt("You can't slam ＀ here!", [live(D)])]);
+		if (!isturf(A.loc) || !isturf(D.loc)) {
+			to_chat(A, `You can't slam ${D} here!`);
 			return 0;
 		}
-		yield* g.callName(f, live(D), "forceMove", [rt.fv(f, "loc", live(A))]);
+		yield* D.forceMove(A.loc);
 		fluff = "body-slam";
-		$0 = rt.op(f, "PickUnweighted", [2], [2, 3]);
-		if ($0 === 2) {
-			fluff = fmt("turbo ＀", [live(fluff)]);
-		} else if ($0 === 3) {
-			fluff = fmt("atomic ＀", [live(fluff)]);
+		const chosen = pick(2, 3);
+		if (chosen === 2) {
+			fluff = `turbo ${fluff}`;
+		} else if (chosen === 3) {
+			fluff = `atomic ${fluff}`;
 		}
-		yield* g.callName(f, live(A), "visible_message", [fmt("<span class = 'danger'><B>＀ ＀ ＀!</B></span>", [live(A), live(fluff), live(D)])]);
-		yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(A)), "swing_hit", 50, 1]);
-		if (!truthy(rt.fv(f, "stat", live(D)))) {
-			yield* g.callName(f, live(D), "emote", ["scream"]);
-			yield* g.callName(f, live(D), "Knockdown", [40]);
-			$0 = (yield* g.call(f, P("/proc/rand"), null, [1, 3]));
-			if ($0 === 2) {
-				yield* g.callName(f, live(D), "adjustBruteLoss", [(yield* g.call(f, P("/proc/rand"), null, [20, 30]))]);
-			} else if ($0 === 3) {
-				yield* g.callName(f, live(D), "ex_act", [3]);
+		A.visible_message(`<span class = 'danger'><B>${A} ${fluff} ${D}!</B></span>`);
+		playsound(A.loc, "swing_hit", 50, 1);
+		if (!D.stat) {
+			yield* D.emote("scream");
+			yield* D.Knockdown(40);
+			const die = rand(1, 3);
+			if (die === 2) {
+				yield* D.adjustBruteLoss(rand(20, 30));
+			} else if (die === 3) {
+				yield* D.ex_act(3);
 			} else {
-				yield* g.callName(f, live(D), "adjustBruteLoss", [(yield* g.call(f, P("/proc/rand"), null, [10, 20]))]);
+				yield* D.adjustBruteLoss(rand(10, 20));
 			}
 		} else {
-			yield* g.callName(f, live(D), "ex_act", [3]);
+			yield* D.ex_act(3);
 		}
 	} else {
-		if (truthy(live(A))) {
-			rt.setFv(f, "pixel_x", live(A), 0);
-			rt.setFv(f, "pixel_y", live(A), 0);
+		if (A) {
+			A.pixel_x = 0;
+			A.pixel_y = 0;
 		}
-		if (truthy(live(D))) {
-			rt.setFv(f, "pixel_x", live(D), 0);
-			rt.setFv(f, "pixel_y", live(D), 0);
+		if (D) {
+			D.pixel_x = 0;
+			D.pixel_y = 0;
 		}
 	}
-	yield* g.call(f, P("/proc/add_logs"), null, [live(A), live(D), "body-slammed"]);
+	add_logs(A, D, "body-slammed");
 	return 0;
 }, true);
 
-// /datum/martial_art/wrestling/proc/CheckStrikeTurf  (code/datums/martial/wrestling.dm:316)  may sleep
+// wrestling.dm:316
 rt.def("/datum/martial_art/wrestling/proc/CheckStrikeTurf", function* CheckStrikeTurf(f: Frame, A: Value, _T: Value) {
-	f.vars = () => [A, _T];
-	if (!(truthy(live(A)) && ((truthy(live(_T)) && truthy((yield* g.call(f, P("/proc/isturf"), null, [live(_T)])))) && rt.le((yield* g.call(f, P("/proc/get_dist"), null, [live(A), live(_T)])), 1)))) return f.dot;
-	yield* g.callName(f, live(A), "forceMove", [live(_T)]);
+	if (!(A && _T && isturf(_T) && get_dist(A, _T) <= 1)) return f.dot;
+	yield* A.forceMove(_T);
 	return f.dot;
 }, true, { argTypes: [{ type: 8, path: "/mob/living/carbon/human" }, { path: "/turf" }] });
 
-// /datum/martial_art/wrestling/proc/strike  (code/datums/martial/wrestling.dm:320)  may sleep
+// wrestling.dm:320
 rt.def("/datum/martial_art/wrestling/proc/strike", function* strike(f: Frame, A: Value, D: Value) {
 	let _T: Value = null, i: Value = null;
-	f.vars = () => [A, D, _T, i];
-	if (!truthy(live(D))) {
-		return live(f.dot);
+	if (!D) {
+		return f.dot;
 	}
-	if ((((truthy((_T = rt.getStep(f, live(A), 0))) && truthy((yield* g.call(f, P("/proc/isturf"), null, [live(_T)])))) && truthy(live(D))) && truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.fv(f, "loc", live(D))]))))) {
-		i = null;
+	if ((_T = rt.getStep(f, A, 0)) && isturf(_T) && D && isturf(D.loc)) {
 		i = 0;
-		while (rt.lt(live(i), 4)) {
-			yield* g.callName(f, live(A), "setDir", [(yield* g.call(f, P("/proc/turn"), null, [rt.fv(f, "dir", live(A)), 90]))]);
-			i = rt.inc(live(i), 1);
+		while (i < 4) {
+			yield* A.setDir(turn(A.dir, 90));
+			i++;
 		}
-		yield* g.callName(f, live(A), "forceMove", [rt.fv(f, "loc", live(D))]);
-		yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/datum/martial_art/wrestling/proc/CheckStrikeTurf"), live(A), live(_T)])), 4]);
-		yield* g.callName(f, live(A), "visible_message", [fmt("<span class = 'danger'><b>＀ headbutts ＀!</b></span>", [live(A), live(D)])]);
-		yield* g.callName(f, live(D), "adjustBruteLoss", [(yield* g.call(f, P("/proc/rand"), null, [10, 20]))]);
-		yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(A)), "swing_hit", 50, 1]);
-		yield* g.callName(f, live(D), "Unconscious", [20]);
+		yield* A.forceMove(D.loc);
+		yield* addtimer((yield* new_(T("/datum/callback"), this, P("/datum/martial_art/wrestling/proc/CheckStrikeTurf"), A, _T)), 4);
+		A.visible_message(`<span class = 'danger'><b>${A} headbutts ${D}!</b></span>`);
+		yield* D.adjustBruteLoss(rand(10, 20));
+		playsound(A.loc, "swing_hit", 50, 1);
+		yield* D.Unconscious(20);
 	}
-	yield* g.call(f, P("/proc/add_logs"), null, [live(A), live(D), "headbutted"]);
+	add_logs(A, D, "headbutted");
 	return f.dot;
 }, true);
 
-// /datum/martial_art/wrestling/proc/kick  (code/datums/martial/wrestling.dm:337)  may sleep
+// wrestling.dm:337
 rt.def("/datum/martial_art/wrestling/proc/kick", function* kick(f: Frame, A: Value, D: Value) {
 	let _T: Value = null;
-	f.vars = () => [A, D, _T];
-	if (!truthy(live(D))) {
-		return live(f.dot);
+	if (!D) {
+		return f.dot;
 	}
-	yield* g.callName(f, live(A), "emote", ["scream"]);
-	yield* g.callName(f, live(A), "emote", ["flip"]);
-	yield* g.callName(f, live(A), "setDir", [(yield* g.call(f, P("/proc/turn"), null, [rt.fv(f, "dir", live(A)), 90]))]);
-	yield* g.callName(f, live(A), "visible_message", [fmt("<span class = 'danger'><B>＀ roundhouse-kicks ＀!</B></span>", [live(A), live(D)])]);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(A)), "swing_hit", 50, 1]);
-	yield* g.callName(f, live(D), "adjustBruteLoss", [(yield* g.call(f, P("/proc/rand"), null, [10, 20]))]);
-	if ((truthy((_T = (yield* g.call(f, P("/proc/get_edge_target_turf"), null, [live(A), rt.getDir(f, live(A), (yield* g.call(f, P("/proc/get_step_away"), null, [live(D), live(A)])))])))) && truthy((yield* g.call(f, P("/proc/isturf"), null, [live(_T)]))))) {
-		yield* g.callName(f, live(D), "Knockdown", [20]);
-		yield* g.callName(f, live(D), "throw_at", [live(_T), 3, 2]);
+	yield* A.emote("scream");
+	yield* A.emote("flip");
+	yield* A.setDir(turn(A.dir, 90));
+	A.visible_message(`<span class = 'danger'><B>${A} roundhouse-kicks ${D}!</B></span>`);
+	playsound(A.loc, "swing_hit", 50, 1);
+	yield* D.adjustBruteLoss(rand(10, 20));
+	if ((_T = get_edge_target_turf(A, rt.getDir(f, A, get_step_away(D, A)))) && isturf(_T)) {
+		yield* D.Knockdown(20);
+		yield* D.throw_at(_T, 3, 2);
 	}
-	yield* g.call(f, P("/proc/add_logs"), null, [live(A), live(D), "roundhouse-kicked"]);
+	add_logs(A, D, "roundhouse-kicked");
 	return f.dot;
 }, true);
 
-// /datum/martial_art/wrestling/proc/drop  (code/datums/martial/wrestling.dm:354)  may sleep
+// wrestling.dm:354
 rt.def("/datum/martial_art/wrestling/proc/drop", function* drop(f: Frame, A: Value, D: Value) {
-	let surface: Value = null, ST: Value = null, falling: Value = null, O: Value = null;
-	let $e: any;
-	f.vars = () => [A, D, surface, ST, falling, O, $e];
-	if (!truthy(live(D))) {
-		return live(f.dot);
+	let surface: Value = null, ST: Value = null, O: Value = null;
+	if (!D) {
+		return f.dot;
 	}
-	surface = null;
-	ST = null;
-	falling = 0;
-	O = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/oview"), null, [1, live(A)])), T("/obj"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		O = $e;
-		if (isEqual(rt.fv(f, "density", live(O)), 1)) {
-			if (isEqual(live(O), live(A))) {
+	let falling: Value = 0;
+	for (O of each(oview(1, A), T("/obj"))) {
+		if (O.density == 1) {
+			if (O == A) {
 				continue;
 			}
-			if (isEqual(live(O), live(D))) {
+			if (O == D) {
 				continue;
 			}
-			if (truthy(rt.fv(f, "opacity", live(O)))) {
+			if (O.opacity) {
 				continue;
 			}
-			surface = live(O);
-			ST = rt.getStep(f, live(O), 0);
+			surface = O;
+			ST = rt.getStep(f, O, 0);
 			break;
 		}
 	}
-	rt.endFor(f, 0);
-	if ((truthy(live(surface)) && (truthy(live(ST)) && truthy((yield* g.call(f, P("/proc/isturf"), null, [live(ST)])))))) {
-		yield* g.callName(f, live(A), "forceMove", [live(ST)]);
-		yield* g.callName(f, live(A), "visible_message", [fmt("<span class = 'danger'><B>＀ climbs onto ＀!</b></span>", [live(A), live(surface)])]);
-		rt.setFv(f, "pixel_y", live(A), 10);
+	if (surface && ST && isturf(ST)) {
+		yield* A.forceMove(ST);
+		A.visible_message(`<span class = 'danger'><B>${A} climbs onto ${surface}!</b></span>`);
+		A.pixel_y = 10;
 		falling = 1;
-		yield* g.call(f, P("/proc/sleep"), null, [10]);
+		yield* sleep(10);
 	}
-	if ((truthy(live(A)) && truthy(live(D)))) {
-		if (((isEqual(live(falling), 0) && rt.gt((yield* g.call(f, P("/proc/get_dist"), null, [live(A), live(D)])), 1)) || (isEqual(live(falling), 1) && rt.gt((yield* g.call(f, P("/proc/get_dist"), null, [live(A), live(D)])), 2)))) {
-			rt.setFv(f, "pixel_y", live(A), 0);
-			if (isEqual(live(falling), 1)) {
-				yield* g.callName(f, live(A), "visible_message", ["<span class = 'danger'><B>...and dives head-first into the ground, ouch!</b></span>"]);
-				yield* g.callName(f, live(A), "adjustBruteLoss", [(yield* g.call(f, P("/proc/rand"), null, [10, 20]))]);
-				yield* g.callName(f, live(A), "Knockdown", [60]);
+	if (A && D) {
+		if (falling == 0 && get_dist(A, D) > 1 || falling == 1 && get_dist(A, D) > 2) {
+			A.pixel_y = 0;
+			if (falling == 1) {
+				A.visible_message("<span class = 'danger'><B>...and dives head-first into the ground, ouch!</b></span>");
+				yield* A.adjustBruteLoss(rand(10, 20));
+				yield* A.Knockdown(60);
 			}
-			yield* g.call(f, P("/proc/to_chat"), null, [live(A), fmt("＀ is too far away!", [live(D)])]);
+			to_chat(A, `${D} is too far away!`);
 			return 0;
 		}
-		if ((!truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.fv(f, "loc", live(A))]))) || !truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.fv(f, "loc", live(D))]))))) {
-			rt.setFv(f, "pixel_y", live(A), 0);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(A), fmt("You can't drop onto ＀ from here!", [live(D)])]);
+		if (!isturf(A.loc) || !isturf(D.loc)) {
+			A.pixel_y = 0;
+			to_chat(A, `You can't drop onto ${D} from here!`);
 			return 0;
 		}
-		if (truthy(live(A))) {
-			rt.op(f, "Animate", [2, 8], [null, live(A), "transform", (yield* g.call(f, P("/proc/matrix"), null, [90, 5])), "time", 1, "loop", 0]);
+		if (A) {
+			rt.op(f, "Animate", [2, 8], [null, A, "transform", matrix(90, 5), "time", 1, "loop", 0]);
 		}
-		yield* g.call(f, P("/proc/sleep"), null, [10]);
-		if (truthy(live(A))) {
-			rt.op(f, "Animate", [2, 8], [null, live(A), "transform", null, "time", 1, "loop", 0]);
+		yield* sleep(10);
+		if (A) {
+			rt.op(f, "Animate", [2, 8], [null, A, "transform", null, "time", 1, "loop", 0]);
 		}
-		yield* g.callName(f, live(A), "forceMove", [rt.fv(f, "loc", live(D))]);
-		yield* g.callName(f, live(A), "visible_message", [fmt("<span class = 'danger'><B>＀ leg-drops ＀!</B></span>", [live(A), live(D)])]);
-		yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(A)), "swing_hit", 50, 1]);
-		yield* g.callName(f, live(A), "emote", ["scream"]);
-		if (isEqual(live(falling), 1)) {
-			if ((truthy(rt.op(f, "Prob", [], [33])) || truthy(rt.fv(f, "stat", live(D))))) {
-				yield* g.callName(f, live(D), "ex_act", [3]);
+		yield* A.forceMove(D.loc);
+		A.visible_message(`<span class = 'danger'><B>${A} leg-drops ${D}!</B></span>`);
+		playsound(A.loc, "swing_hit", 50, 1);
+		yield* A.emote("scream");
+		if (falling == 1) {
+			if (prob(33) || D.stat) {
+				yield* D.ex_act(3);
 			} else {
-				yield* g.callName(f, live(D), "adjustBruteLoss", [(yield* g.call(f, P("/proc/rand"), null, [20, 30]))]);
+				yield* D.adjustBruteLoss(rand(20, 30));
 			}
 		} else {
-			yield* g.callName(f, live(D), "adjustBruteLoss", [(yield* g.call(f, P("/proc/rand"), null, [20, 30]))]);
+			yield* D.adjustBruteLoss(rand(20, 30));
 		}
-		yield* g.callName(f, live(D), "Knockdown", [40]);
-		rt.setFv(f, "pixel_y", live(A), 0);
-	} else {
-		if (truthy(live(A))) {
-			rt.setFv(f, "pixel_y", live(A), 0);
-		}
+		yield* D.Knockdown(40);
+		A.pixel_y = 0;
+	} else if (A) {
+		A.pixel_y = 0;
 	}
-	yield* g.call(f, P("/proc/add_logs"), null, [live(A), live(D), "leg-dropped"]);
-	return live(f.dot);
+	add_logs(A, D, "leg-dropped");
+	return f.dot;
 }, true);
 
-// /datum/martial_art/wrestling/proc/disarm_act  (code/datums/martial/wrestling.dm:425)  may sleep
-rt.def("/datum/martial_art/wrestling/proc/disarm_act", function* disarm_act(f: Frame) {
-	if (truthy((yield* g.srcCall(f, "check_streak", live(f.args[0]), live(f.args[1]))))) {
+// wrestling.dm:425
+rt.def("/datum/martial_art/wrestling/proc/disarm_act", function* disarm_act(f: Frame, A: Value, D: Value) {
+	if (yield* this.check_streak(A, D)) {
 		return 1;
 	}
-	yield* g.call(f, P("/proc/add_logs"), null, [live(f.args[0]), live(f.args[1]), "wrestling-disarmed"]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	add_logs(A, D, "wrestling-disarmed");
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["A", "D"] });
+}, true);
 
-// /datum/martial_art/wrestling/proc/grab_act  (code/datums/martial/wrestling.dm:431)  may sleep
+// wrestling.dm:431
 rt.def("/datum/martial_art/wrestling/proc/grab_act", function* grab_act(f: Frame, A: Value, D: Value) {
-	f.vars = () => [A, D];
-	if (truthy((yield* g.srcCall(f, "check_streak", live(A), live(D))))) {
+	if (yield* this.check_streak(A, D)) {
 		return 1;
 	}
-	if (isEqual(rt.fv(f, "pulling", live(A)), live(D))) {
+	if (A.pulling == D) {
 		return 1;
 	}
-	yield* g.callName(f, live(A), "start_pulling", [live(D)]);
-	yield* g.callName(f, live(D), "visible_message", [fmt("<span class='danger'>＀ gets ＀ in a cinch!</span>", [live(A), live(D)]), fmt("<span class='userdanger'>＀ gets ＀ in a cinch!</span>", [live(A), live(D)])]);
-	yield* g.callName(f, live(D), "Stun", [(yield* g.call(f, P("/proc/rand"), null, [60, 100]))]);
-	yield* g.call(f, P("/proc/add_logs"), null, [live(A), live(D), "cinched"]);
+	yield* A.start_pulling(D);
+	D.visible_message(`<span class='danger'>${A} gets ${D} in a cinch!</span>`, `<span class='userdanger'>${A} gets ${D} in a cinch!</span>`);
+	yield* D.Stun(rand(60, 100));
+	add_logs(A, D, "cinched");
 	return 1;
 }, true);
 
@@ -571,38 +537,34 @@ rt.type(5289, "/obj/item/weapon/storage/belt/champion/wrestling", "/obj/item/wea
 	name: "Wrestling Belt",
 });
 
-// /obj/item/weapon/storage/belt/champion/wrestling/proc/<init>  (code/datums/martial/wrestling.dm:444)  may sleep
+// wrestling.dm:444
 rt.def("/obj/item/weapon/storage/belt/champion/wrestling/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "style", (yield* g.new_(f, T("/datum/martial_art/wrestling"), [])));
+	yield* parent_proc();
+	this.style = (yield* new_(T("/datum/martial_art/wrestling")));
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/storage/belt/champion/wrestling/proc/equipped  (code/datums/martial/wrestling.dm:447)  may sleep
+// wrestling.dm:447
 rt.def("/obj/item/weapon/storage/belt/champion/wrestling/proc/equipped", function* equipped(f: Frame, user: Value, slot: Value) {
 	let H: Value = null;
-	f.vars = () => [user, slot, H];
-	if (!truthy((rt.istype(live(user), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		return live(f.dot);
+	if (!rt.istype(user, T("/mob/living/carbon/human"))) {
+		return f.dot;
 	}
-	if (isEqual(live(slot), 5)) {
-		H = live(user);
-		yield* g.callName(f, rt.sv(f, "style"), "teach", [live(H), 1]);
+	if (slot == slot_belt) {
+		H = user;
+		yield* this.style.teach(H, 1);
 	}
-	return live(f.dot);
+	return f.dot;
 }, true);
 
-// /obj/item/weapon/storage/belt/champion/wrestling/proc/dropped  (code/datums/martial/wrestling.dm:455)  may sleep
+// wrestling.dm:455
 rt.def("/obj/item/weapon/storage/belt/champion/wrestling/proc/dropped", function* dropped(f: Frame, user: Value) {
 	let H: Value = null;
-	f.vars = () => [user, H];
-	if (!truthy((rt.istype(live(user), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		return live(f.dot);
+	if (!rt.istype(user, T("/mob/living/carbon/human"))) {
+		return f.dot;
 	}
-	if (isEqual((yield* g.callName(f, (H = live(user)), "get_item_by_slot", [5])), live(f.src))) {
-		yield* g.callName(f, rt.sv(f, "style"), "remove", [live(H)]);
+	if ((H = user).get_item_by_slot(slot_belt) == this) {
+		yield* this.style.remove(H);
 	}
-	return live(f.dot);
+	return f.dot;
 }, true);

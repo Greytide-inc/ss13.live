@@ -1,7 +1,7 @@
-// From code/game/objects/effects/bump_teleporter.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/effects/bump_teleporter.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(11790, "/obj/effect/bump_teleporter", "/obj/effect", {
@@ -16,47 +16,41 @@ rt.type(11790, "/obj/effect/bump_teleporter", "/obj/effect", {
 	opacity: 0,
 }, { global: { AllTeleporters: 779 } });
 
-// /obj/effect/bump_teleporter/proc/New  (code/game/objects/effects/bump_teleporter.dm:15)  may sleep
+// bump_teleporter.dm:15
 rt.def("/obj/effect/bump_teleporter/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.gl("AllTeleporters"))) {
-		rt.setGl("AllTeleporters", rt.list());
+	yield* parent_proc();
+	if (!GLOB.AllTeleporters) {
+		GLOB.AllTeleporters = list();
 	}
-	rt.modGl("AllTeleporters", live(f.src), add);
+	GLOB.AllTeleporters += this;
 	return f.dot;
 }, true);
 
-// /obj/effect/bump_teleporter/proc/Destroy  (code/game/objects/effects/bump_teleporter.dm:19)  may sleep
+// bump_teleporter.dm:19
 rt.def("/obj/effect/bump_teleporter/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.gl("AllTeleporters"))) {
-		(rt.modGl("AllTeleporters", live(f.src), subtract));
-		if (!truthy(rt.len(f, rt.gl("AllTeleporters")))) {
-			rt.setGl("AllTeleporters", null);
+	if (GLOB.AllTeleporters) {
+		GLOB.AllTeleporters -= this;
+		if (!rt.len(f, GLOB.AllTeleporters)) {
+			GLOB.AllTeleporters = null;
 		}
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);
 
-// /obj/effect/bump_teleporter/proc/Bumped  (code/game/objects/effects/bump_teleporter.dm:23)
+// bump_teleporter.dm:23
 rt.def("/obj/effect/bump_teleporter/proc/Bumped", function Bumped(f: Frame, user: Value) {
 	let BT: Value = null;
-	let $e: any;
-	f.vars = () => [BT, $e];
-	if (!truthy(rt.call(f, P("/proc/ismob"), null, [live(user)]))) {
-		return live(f.dot);
+	if (!ismob(user)) {
+		return f.dot;
 	}
-	if (!truthy(rt.sv(f, "id_target"))) {
-		return live(f.dot);
+	if (!this.id_target) {
+		return f.dot;
 	}
-	BT = null;
-	rt.forList(f, 0, rt.gl("AllTeleporters"), T("/obj/effect/bump_teleporter"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		BT = $e;
-		if (isEqual(rt.fv(f, "id", live(BT)), rt.fv(f, "id_target", live(f.src)))) {
-			rt.setFv(f, "loc", live(f.usr), rt.fv(f, "loc", live(BT)));
-			return live(f.dot);
+	for (BT of each(GLOB.AllTeleporters, T("/obj/effect/bump_teleporter"))) {
+		if (BT.id == this.id_target) {
+			f.usr.loc = BT.loc;
+			return f.dot;
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });

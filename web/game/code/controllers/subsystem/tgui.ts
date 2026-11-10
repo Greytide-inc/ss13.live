@@ -1,7 +1,7 @@
-// From code/controllers/subsystem/tgui.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/controllers/subsystem/tgui.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(44, "/datum/controller/subsystem/tgui", "/datum/controller/subsystem", {
@@ -16,77 +16,66 @@ rt.type(44, "/datum/controller/subsystem/tgui", "/datum/controller/subsystem", {
 	runlevels: 15,
 });
 
-// /datum/controller/subsystem/tgui/proc/New  (code/controllers/subsystem/tgui.dm:1)  may sleep
+// tgui.dm:1
 rt.def("/datum/controller/subsystem/tgui/proc/New", function* New(f: Frame) {
-	if (!isEqual(rt.gl("SStgui"), live(f.src))) {
-		if (truthy((rt.istype(rt.gl("SStgui"), T("/datum/controller/subsystem/tgui")) ? 1 : 0))) {
-			yield* g.srcCall(f, "Recover");
-			yield* g.call(f, P("/proc/qdel"), null, [rt.gl("SStgui")]);
+	if (GLOB.SStgui != this) {
+		if (rt.istype(GLOB.SStgui, T("/datum/controller/subsystem/tgui"))) {
+			yield* this.Recover();
+			yield* qdel(GLOB.SStgui);
 		}
-		rt.setGl("SStgui", live(f.src));
+		GLOB.SStgui = this;
 	}
-	yield* g.srcCall(f, "PreInit");
+	this.PreInit();
 	return f.dot;
 }, true);
 
-// /datum/controller/subsystem/tgui/proc/<init>  (code/controllers/subsystem/tgui.dm:8)
+// tgui.dm:8
 rt.def("/datum/controller/subsystem/tgui/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "currentrun", rt.list());
-	$0 = $0;
-	rt.setSv(f, "open_uis", rt.list());
-	$0 = $0;
-	rt.setSv(f, "processing_uis", rt.list());
+	parent_proc();
+	this.currentrun = list();
+
+	this.open_uis = list();
+
+	this.processing_uis = list();
 	return f.dot;
 });
 
-// /datum/controller/subsystem/tgui/proc/PreInit  (code/controllers/subsystem/tgui.dm:14)
+// tgui.dm:14
 rt.def("/datum/controller/subsystem/tgui/proc/PreInit", function PreInit(f: Frame) {
-	rt.setSv(f, "basehtml", rt.call(f, P("/proc/file2text"), null, [rt.rsc("tgui/tgui.html")]));
+	this.basehtml = file2text(rt.rsc("tgui/tgui.html"));
 	return f.dot;
 });
 
-// /datum/controller/subsystem/tgui/proc/Shutdown  (code/controllers/subsystem/tgui.dm:17)  may sleep
+// tgui.dm:17
 rt.def("/datum/controller/subsystem/tgui/proc/Shutdown", function* Shutdown(f: Frame) {
-	yield* g.srcCall(f, "close_all_uis");
+	yield* this.close_all_uis();
 	return f.dot;
 }, true);
 
-// /datum/controller/subsystem/tgui/proc/stat_entry  (code/controllers/subsystem/tgui.dm:20)  may sleep
+// tgui.dm:20
 rt.def("/datum/controller/subsystem/tgui/proc/stat_entry", function* stat_entry(f: Frame) {
-	yield* g.callSuper(f, [fmt("P:＀", [rt.len(f, rt.sv(f, "processing_uis"))])]);
+	yield* parent_proc(`P:${rt.len(f, this.processing_uis)}`);
 	return f.dot;
 }, true);
 
-// /datum/controller/subsystem/tgui/proc/fire  (code/controllers/subsystem/tgui.dm:23)
+// tgui.dm:23
 rt.def("/datum/controller/subsystem/tgui/proc/fire", function fire(f: Frame, resumed: Value) {
-	let currentrun: Value = null, ui: Value = null;
-	let $0: any;
-	f.vars = () => [resumed, currentrun, ui, $0];
-	if (live(resumed) === null) {
-		resumed = 0;
+	let ui: Value = null;
+	resumed ??= 0;
+	if (!resumed) {
+		this.currentrun = this.processing_uis.Copy();
 	}
-	if (!truthy(live(resumed))) {
-		rt.setFv(f, "currentrun", live(f.src), rt.callName(f, rt.sv(f, "processing_uis"), "Copy", []));
-	}
-	currentrun = rt.fv(f, "currentrun", live(f.src));
-	while (truthy(rt.len(f, live(currentrun)))) {
-		ui = rt.index(live(currentrun), rt.len(f, live(currentrun)));
-		rt.incField(f, live(currentrun), "len", -1, true);
-		if (((truthy(live(ui)) && truthy(rt.fv(f, "user", live(ui)))) && truthy(rt.fv(f, "src_object", live(ui))))) {
-			rt.callName(f, live(ui), "process", []);
+	let currentrun: Value = this.currentrun;
+	while (rt.len(f, currentrun)) {
+		ui = rt.index(currentrun, rt.len(f, currentrun));
+		currentrun.len--;
+		if (ui && ui.user && ui.src_object) {
+			ui.process();
 		} else {
-			rt.callName(f, rt.sv(f, "processing_uis"), "Remove", [live(ui)]);
+			this.processing_uis.Remove(ui);
 		}
-		if ((rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit")) || !isEqual(rt.fv(f, "state", live(f.src)), 2))) {
-			$0 = rt.callSrc(f, "pause", []);
-		} else {
-			$0 = 0;
-		}
-		if (truthy($0)) {
-			return live(f.dot);
+		if (rt.tickUsage(f) > GLOB.current_ticklimit || this.state != 2 ? this.pause() : 0) {
+			return f.dot;
 		}
 	}
 	return f.dot;

@@ -1,7 +1,7 @@
-// From code/modules/projectiles/guns/ballistic.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/projectiles/guns/ballistic.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(5201, "/obj/item/weapon/gun/ballistic", "/obj/item/weapon/gun", {
@@ -16,289 +16,239 @@ rt.type(5201, "/obj/item/weapon/gun/ballistic", "/obj/item/weapon/gun", {
 	w_class: 3,
 });
 
-// /obj/item/weapon/gun/ballistic/proc/Initialize  (code/modules/projectiles/guns/ballistic.dm:13)  may sleep
+// ballistic.dm:13
 rt.def("/obj/item/weapon/gun/ballistic/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(rt.sv(f, "spawnwithmagazine"))) {
-		yield* g.srcCall(f, "update_icon");
-		return live(f.dot);
+	f.dot = (yield* parent_proc());
+	if (!this.spawnwithmagazine) {
+		yield* this.update_icon();
+		return f.dot;
 	}
-	if (!truthy(rt.sv(f, "magazine"))) {
-		rt.setSv(f, "magazine", (yield* g.new_(f, rt.sv(f, "mag_type"), [live(f.src)])));
+	if (!this.magazine) {
+		this.magazine = (yield* new_(this.mag_type, this));
 	}
-	yield* g.srcCall(f, "chamber_round");
-	yield* g.srcCall(f, "update_icon");
+	yield* this.chamber_round();
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/gun/ballistic/proc/update_icon  (code/modules/projectiles/guns/ballistic.dm:23)
+// ballistic.dm:23
 rt.def("/obj/item/weapon/gun/ballistic/proc/update_icon", function update_icon(f: Frame) {
-	let $0: any, $1: any, $2: any;
-	f.vars = () => [$0, $1, $2];
-	rt.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.sv(f, "current_skin"))) {
-		$0 = rt.sv(f, "current_skin");
-		if (truthy(rt.sv(f, "suppressed"))) {
-			$1 = "-suppressed";
-		} else {
-			$1 = "";
-		}
-		if (truthy(rt.sv(f, "sawn_state"))) {
-			$2 = "-sawn";
-		} else {
-			$2 = "";
-		}
-		rt.setSv(f, "icon_state", fmt("＀＀＀", [$0, $1, $2]));
+	parent_proc();
+	if (this.current_skin) {
+		this.icon_state = `${this.current_skin}${this.suppressed ? "-suppressed" : ""}${this.sawn_state ? "-sawn" : ""}`;
 	} else {
-		$0 = rt.initial(f, live(f.src), "icon_state");
-		if (truthy(rt.sv(f, "suppressed"))) {
-			$1 = "-suppressed";
-		} else {
-			$1 = "";
-		}
-		if (truthy(rt.sv(f, "sawn_state"))) {
-			$2 = "-sawn";
-		} else {
-			$2 = "";
-		}
-		rt.setSv(f, "icon_state", fmt("＀＀＀", [$0, $1, $2]));
+		this.icon_state = `${rt.initial(f, this, "icon_state")}${this.suppressed ? "-suppressed" : ""}${this.sawn_state ? "-sawn" : ""}`;
 	}
 	return f.dot;
 });
 
-// /obj/item/weapon/gun/ballistic/proc/process_chamber  (code/modules/projectiles/guns/ballistic.dm:31)  may sleep
+// ballistic.dm:31
 rt.def("/obj/item/weapon/gun/ballistic/proc/process_chamber", function* process_chamber(f: Frame, empty_chamber: Value) {
 	let AC: Value = null;
-	f.vars = () => [empty_chamber, AC];
-	if (live(empty_chamber) === null) {
-		empty_chamber = 1;
-	}
-	if (truthy((rt.istype((AC = rt.sv(f, "chambered")), T("/obj/item/ammo_casing")) ? 1 : 0))) {
-		if (truthy(rt.sv(f, "casing_ejector"))) {
-			yield* g.callName(f, live(AC), "forceMove", [rt.getStep(f, live(f.src), 0)]);
-			yield* g.callName(f, live(AC), "SpinAnimation", [10, 1]);
-			rt.setSv(f, "chambered", null);
-		} else {
-			if (truthy(live(empty_chamber))) {
-				rt.setSv(f, "chambered", null);
-			}
+	empty_chamber ??= 1;
+	if (rt.istype((AC = this.chambered), T("/obj/item/ammo_casing"))) {
+		if (this.casing_ejector) {
+			yield* AC.forceMove(rt.getStep(f, this, 0));
+			AC.SpinAnimation(10, 1);
+			this.chambered = null;
+		} else if (empty_chamber) {
+			this.chambered = null;
 		}
 	}
-	yield* g.srcCall(f, "chamber_round");
+	yield* this.chamber_round();
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/gun/ballistic/proc/chamber_round  (code/modules/projectiles/guns/ballistic.dm:43)  may sleep
+// ballistic.dm:43
 rt.def("/obj/item/weapon/gun/ballistic/proc/chamber_round", function* chamber_round(f: Frame) {
-	if ((truthy(rt.sv(f, "chambered")) || !truthy(rt.sv(f, "magazine")))) {
-		return live(f.dot);
+	if (this.chambered || !this.magazine) {
+		return f.dot;
 	} else {
-		if (!truthy((yield* g.callName(f, rt.sv(f, "magazine"), "ammo_count", [])))) return f.dot;
-		rt.setSv(f, "chambered", (yield* g.callName(f, rt.sv(f, "magazine"), "get_round", [])));
-		yield* g.callName(f, rt.sv(f, "chambered"), "forceMove", [live(f.src)]);
+		if (!this.magazine.ammo_count()) return f.dot;
+		this.chambered = this.magazine.get_round();
+		yield* this.chambered.forceMove(this);
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/gun/ballistic/proc/can_shoot  (code/modules/projectiles/guns/ballistic.dm:50)
+// ballistic.dm:50
 rt.def("/obj/item/weapon/gun/ballistic/proc/can_shoot", function can_shoot(f: Frame) {
-	if ((!truthy(rt.sv(f, "magazine")) || !truthy(rt.callName(f, rt.sv(f, "magazine"), "ammo_count", [0])))) {
+	if (!this.magazine || !this.magazine.ammo_count(0)) {
 		return 0;
 	}
 	return 1;
 });
 
-// /obj/item/weapon/gun/ballistic/proc/attackby  (code/modules/projectiles/guns/ballistic.dm:55)  may sleep
-rt.def("/obj/item/weapon/gun/ballistic/proc/attackby", function* attackby(f: Frame) {
+// ballistic.dm:55
+rt.def("/obj/item/weapon/gun/ballistic/proc/attackby", function* attackby(f: Frame, A: Value, user: Value, params: Value) {
 	let AM: Value = null, S: Value = null;
-	f.vars = () => [AM, S];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/ammo_box/magazine")) ? 1 : 0))) {
-		AM = live(f.args[0]);
-		if ((!truthy(rt.sv(f, "magazine")) && truthy(rt.op(f, "IsType", [], [live(AM), rt.sv(f, "mag_type")])))) {
-			if (truthy((yield* g.callName(f, live(f.args[1]), "transferItemToLoc", [live(AM), live(f.src)])))) {
-				rt.setSv(f, "magazine", live(AM));
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You load a new magazine into ％！.</span>", [live(f.src)])]);
-				yield* g.srcCall(f, "chamber_round");
-				yield* g.callName(f, live(f.args[0]), "update_icon", []);
-				yield* g.srcCall(f, "update_icon");
+	yield* parent_proc();
+	if (rt.istype(A, T("/obj/item/ammo_box/magazine"))) {
+		AM = A;
+		if (!this.magazine && rt.op(f, "IsType", [], [AM, this.mag_type])) {
+			if (yield* user.transferItemToLoc(AM, this)) {
+				this.magazine = AM;
+				to_chat(user, fmt("<span class='notice'>You load a new magazine into ％！.</span>", [this]));
+				yield* this.chamber_round();
+				yield* A.update_icon();
+				yield* this.update_icon();
 				return 1;
 			} else {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>You cannot seem to get ％！ out of your hands!</span>", [live(f.src)])]);
-				return live(f.dot);
+				to_chat(user, fmt("<span class='warning'>You cannot seem to get ％！ out of your hands!</span>", [this]));
+				return f.dot;
 			}
-		} else {
-			if (truthy(rt.sv(f, "magazine"))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>There's already a magazine in ％！.</span>", [live(f.src)])]);
-			}
+		} else if (this.magazine) {
+			to_chat(user, fmt("<span class='notice'>There's already a magazine in ％！.</span>", [this]));
 		}
 	}
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/suppressor")) ? 1 : 0))) {
-		S = live(f.args[0]);
-		if (truthy(rt.sv(f, "can_suppress"))) {
-			if (!truthy(rt.sv(f, "suppressed"))) {
-				if (!truthy((yield* g.callName(f, live(f.args[1]), "transferItemToLoc", [live(f.args[0]), live(f.src)])))) {
-					return live(f.dot);
+	if (rt.istype(A, T("/obj/item/weapon/suppressor"))) {
+		S = A;
+		if (this.can_suppress) {
+			if (!this.suppressed) {
+				if (!(yield* user.transferItemToLoc(A, this))) {
+					return f.dot;
 				}
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You screw ＀ onto ＀.</span>", [live(S), live(f.src)])]);
-				rt.setSv(f, "suppressed", live(f.args[0]));
-				rt.setFv(f, "oldsound", live(S), rt.sv(f, "fire_sound"));
-				rt.setFv(f, "initial_w_class", live(S), rt.sv(f, "w_class"));
-				rt.setSv(f, "fire_sound", rt.rsc("sound/weapons/gunshot_silenced.ogg"));
-				rt.setSv(f, "w_class", 3);
-				yield* g.srcCall(f, "update_icon");
-				return live(f.dot);
+				to_chat(user, `<span class='notice'>You screw ${S} onto ${this}.</span>`);
+				this.suppressed = A;
+				S.oldsound = this.fire_sound;
+				S.initial_w_class = this.w_class;
+				this.fire_sound = rt.rsc("sound/weapons/gunshot_silenced.ogg");
+				this.w_class = WEIGHT_CLASS_NORMAL;
+				yield* this.update_icon();
+				return f.dot;
 			} else {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>＀ already has a suppressor!</span>", [live(f.src)])]);
-				return live(f.dot);
+				to_chat(user, `<span class='warning'>${this} already has a suppressor!</span>`);
+				return f.dot;
 			}
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>You can't seem to figure out how to fit ＀ on ＀!</span>", [live(S), live(f.src)])]);
-			return live(f.dot);
+			to_chat(user, `<span class='warning'>You can't seem to figure out how to fit ${S} on ${this}!</span>`);
+			return f.dot;
 		}
 	}
 	return 0;
-}, true, { args: ["A", "user", "params"] });
-
-// /obj/item/weapon/gun/ballistic/proc/attack_hand  (code/modules/projectiles/guns/ballistic.dm:94)  may sleep
-rt.def("/obj/item/weapon/gun/ballistic/proc/attack_hand", function* attack_hand(f: Frame) {
-	let S: Value = null;
-	f.vars = () => [S];
-	if (isEqual(rt.sv(f, "loc"), live(f.args[0]))) {
-		if ((truthy(rt.sv(f, "suppressed")) && truthy(rt.sv(f, "can_unsuppress")))) {
-			S = rt.sv(f, "suppressed");
-			if (!truthy((yield* g.callName(f, live(f.args[0]), "is_holding", [live(f.src)])))) {
-				yield* g.callSuper(f, [], rt.Args.Same);
-				return live(f.dot);
-			}
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='notice'>You unscrew ＀ from ＀.</span>", [rt.sv(f, "suppressed"), live(f.src)])]);
-			yield* g.callName(f, live(f.args[0]), "put_in_hands", [rt.sv(f, "suppressed")]);
-			rt.setSv(f, "fire_sound", rt.fv(f, "oldsound", live(S)));
-			rt.setSv(f, "w_class", rt.fv(f, "initial_w_class", live(S)));
-			rt.setSv(f, "suppressed", 0);
-			yield* g.srcCall(f, "update_icon");
-			return live(f.dot);
-		}
-	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	return f.dot;
-}, true, { args: ["user"] });
-
-// /obj/item/weapon/gun/ballistic/proc/attack_self  (code/modules/projectiles/guns/ballistic.dm:110)  may sleep
-rt.def("/obj/item/weapon/gun/ballistic/proc/attack_self", function* attack_self(f: Frame, user: Value) {
-	let AC: Value = null;
-	f.vars = () => [user, AC];
-	AC = rt.sv(f, "chambered");
-	if (truthy(rt.sv(f, "magazine"))) {
-		rt.setFv(f, "loc", rt.sv(f, "magazine"), rt.getStep(f, rt.fv(f, "loc", live(f.src)), 0));
-		yield* g.callName(f, live(user), "put_in_hands", [rt.sv(f, "magazine")]);
-		yield* g.callName(f, rt.sv(f, "magazine"), "update_icon", []);
-		rt.setSv(f, "magazine", null);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You pull the magazine out of ％！.</span>", [live(f.src)])]);
-	} else {
-		if (truthy(rt.sv(f, "chambered"))) {
-			rt.setFv(f, "loc", live(AC), rt.getStep(f, live(f.src), 0));
-			yield* g.callName(f, live(AC), "SpinAnimation", [10, 1]);
-			rt.setSv(f, "chambered", null);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You unload the round from ％！'s chamber.</span>", [live(f.src)])]);
-		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>There's no magazine in ％！.</span>", [live(f.src)])]);
-		}
-	}
-	yield* g.srcCall(f, "update_icon");
-	return live(f.dot);
 }, true);
 
-// /obj/item/weapon/gun/ballistic/proc/examine  (code/modules/projectiles/guns/ballistic.dm:129)
-rt.def("/obj/item/weapon/gun/ballistic/proc/examine", function examine(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("Has ＀ round５ remaining.", [rt.callSrc(f, "get_ammo", [])])]);
+// ballistic.dm:94
+rt.def("/obj/item/weapon/gun/ballistic/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
+	let S: Value = null;
+	if (this.loc == user) {
+		if (this.suppressed && this.can_unsuppress) {
+			S = this.suppressed;
+			if (!user.is_holding(this)) {
+				yield* parent_proc();
+				return f.dot;
+			}
+			to_chat(user, `<span class='notice'>You unscrew ${this.suppressed} from ${this}.</span>`);
+			yield* user.put_in_hands(this.suppressed);
+			this.fire_sound = S.oldsound;
+			this.w_class = S.initial_w_class;
+			this.suppressed = 0;
+			yield* this.update_icon();
+			return f.dot;
+		}
+	}
+	yield* parent_proc();
 	return f.dot;
-}, false, { args: ["user"] });
+}, true);
 
-// /obj/item/weapon/gun/ballistic/proc/get_ammo  (code/modules/projectiles/guns/ballistic.dm:134)
+// ballistic.dm:110
+rt.def("/obj/item/weapon/gun/ballistic/proc/attack_self", function* attack_self(f: Frame, user: Value) {
+	let AC: Value = this.chambered;
+	if (this.magazine) {
+		this.magazine.loc = rt.getStep(f, this.loc, 0);
+		yield* user.put_in_hands(this.magazine);
+		yield* this.magazine.update_icon();
+		this.magazine = null;
+		to_chat(user, fmt("<span class='notice'>You pull the magazine out of ％！.</span>", [this]));
+	} else if (this.chambered) {
+		AC.loc = rt.getStep(f, this, 0);
+		AC.SpinAnimation(10, 1);
+		this.chambered = null;
+		to_chat(user, fmt("<span class='notice'>You unload the round from ％！'s chamber.</span>", [this]));
+	} else {
+		to_chat(user, fmt("<span class='notice'>There's no magazine in ％！.</span>", [this]));
+	}
+	yield* this.update_icon();
+	return f.dot;
+}, true);
+
+// ballistic.dm:129
+rt.def("/obj/item/weapon/gun/ballistic/proc/examine", function examine(f: Frame, user: Value) {
+	parent_proc();
+	to_chat(user, fmt("Has ＀ round５ remaining.", [this.get_ammo()]));
+	return f.dot;
+}, false);
+
+// ballistic.dm:134
 rt.def("/obj/item/weapon/gun/ballistic/proc/get_ammo", function get_ammo(f: Frame, countchambered: Value) {
-	let boolets: Value = null;
-	f.vars = () => [countchambered, boolets];
-	if (live(countchambered) === null) {
-		countchambered = 1;
+	countchambered ??= 1;
+	let boolets: Value = 0;
+	if (this.chambered && countchambered) {
+		boolets++;
 	}
-	boolets = 0;
-	if ((truthy(rt.sv(f, "chambered")) && truthy(live(countchambered)))) {
-		boolets = rt.inc(live(boolets), 1);
+	if (this.magazine) {
+		boolets += this.magazine.ammo_count();
 	}
-	if (truthy(rt.sv(f, "magazine"))) {
-		boolets = rt.modify(live(boolets), rt.callName(f, rt.sv(f, "magazine"), "ammo_count", []), add);
-	}
-	return live(boolets);
+	return boolets;
 });
 
-// /obj/item/weapon/gun/ballistic/proc/suicide_act  (code/modules/projectiles/guns/ballistic.dm:141)  may sleep
+// ballistic.dm:141
 rt.def("/obj/item/weapon/gun/ballistic/proc/suicide_act", function* suicide_act(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if ((((truthy(rt.sv(f, "chambered")) && truthy(rt.fv(f, "BB", rt.sv(f, "chambered")))) && truthy((yield* g.srcCall(f, "can_trigger_gun", live(user))))) && !truthy(rt.gv(f, "nodamage", rt.fv(f, "BB", rt.sv(f, "chambered")))))) {
-		yield* g.callName(f, live(user), "visible_message", [fmt("<span class='suicide'>＀ is putting the barrel of ＀ in ＀ mouth.  It looks like ＀ trying to commit suicide!</span>", [live(user), live(f.src), (yield* g.callName(f, live(user), "p_their", [])), (yield* g.callName(f, live(user), "p_theyre", []))])]);
-		yield* g.call(f, P("/proc/sleep"), null, [25]);
-		if (truthy((yield* g.callName(f, live(user), "is_holding", [live(f.src)])))) {
-			yield* g.callSrc(f, "process_fire", [null, live(user), null, live(user), null, 0, "zone_override", "head"], rt.Args.Named);
-			yield* g.callName(f, live(user), "visible_message", [fmt("<span class='suicide'>＀ blows ＀ brain＀ out with ＀!</span>", [live(user), (yield* g.callName(f, live(user), "p_their", [])), (yield* g.callName(f, live(user), "p_s", [])), live(f.src)])]);
+	if (this.chambered && this.chambered.BB && (yield* this.can_trigger_gun(user)) && !this.chambered.BB.nodamage) {
+		user.visible_message(`<span class='suicide'>${user} is putting the barrel of ${this} in ${user.p_their()} mouth.  It looks like ${user.p_theyre()} trying to commit suicide!</span>`);
+		yield* sleep(25);
+		if (user.is_holding(this)) {
+			yield* this.process_fire(user, user, 0, { zone_override: "head" });
+			user.visible_message(`<span class='suicide'>${user} blows ${user.p_their()} brain${user.p_s()} out with ${this}!</span>`);
 			return 1;
 		} else {
-			yield* g.callName(f, live(user), "visible_message", [fmt("<span class='suicide'>＀ panics and starts choking to death!</span>", [live(user)])]);
+			user.visible_message(`<span class='suicide'>${user} panics and starts choking to death!</span>`);
 			return 8;
 		}
 	} else {
-		yield* g.callName(f, live(user), "visible_message", [fmt("<span class='suicide'>＀ is pretending to blow ＀ brain＀ out with ＀! It looks like ＀ trying to commit suicide!</b></span>", [live(user), (yield* g.callName(f, live(user), "p_their", [])), (yield* g.callName(f, live(user), "p_s", [])), live(f.src), (yield* g.callName(f, live(user), "p_theyre", []))])]);
-		yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/weapons/empty.ogg"), 50, 1, -1]);
+		user.visible_message(`<span class='suicide'>${user} is pretending to blow ${user.p_their()} brain${user.p_s()} out with ${this}! It looks like ${user.p_theyre()} trying to commit suicide!</b></span>`);
+		playsound(this.loc, rt.rsc("sound/weapons/empty.ogg"), 50, 1, -1);
 		return 8;
 	}
-	return f.dot;
 }, true);
 
-// /obj/item/weapon/gun/ballistic/proc/sawoff  (code/modules/projectiles/guns/ballistic.dm:159)  may sleep
+// ballistic.dm:159
 rt.def("/obj/item/weapon/gun/ballistic/proc/sawoff", function* sawoff(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (isEqual(rt.sv(f, "sawn_state"), 1)) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＄！ is already shortened!</span>", [live(f.src)])]);
-		return live(f.dot);
+	if (this.sawn_state == 1) {
+		to_chat(user, fmt("<span class='warning'>＄！ is already shortened!</span>", [this]));
+		return f.dot;
 	}
-	yield* g.callName(f, live(user), "changeNext_move", [8]);
-	yield* g.callName(f, live(user), "visible_message", [fmt("＀ begins to shorten ％！.", [live(user), live(f.src)]), fmt("<span class='notice'>You begin to shorten ％！...</span>", [live(f.src)])]);
-	if (truthy((yield* g.srcCall(f, "blow_up", live(user))))) {
-		yield* g.callName(f, live(user), "visible_message", [fmt("<span class='danger'>＄！ goes off!</span>", [live(f.src)]), fmt("<span class='danger'>＄！ goes off in your face!</span>", [live(f.src)])]);
-		return live(f.dot);
+	user.changeNext_move(8);
+	user.visible_message(fmt("＀ begins to shorten ％！.", [user, this]), fmt("<span class='notice'>You begin to shorten ％！...</span>", [this]));
+	if (yield* this.blow_up(user)) {
+		user.visible_message(fmt("<span class='danger'>＄！ goes off!</span>", [this]), fmt("<span class='danger'>＄！ goes off in your face!</span>", [this]));
+		return f.dot;
 	}
-	if (!truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(user), null, 30, "target", live(f.src)], rt.Args.Named)))) return f.dot;
-	if (isEqual(rt.sv(f, "sawn_state"), 1)) {
-		return live(f.dot);
+	if (!(yield* do_after(user, 30, { target: this }))) return f.dot;
+	if (this.sawn_state == 1) {
+		return f.dot;
 	}
-	yield* g.callName(f, live(user), "visible_message", [fmt("＀ shortens ％！!", [live(user), live(f.src)]), fmt("<span class='notice'>You shorten ％！.</span>", [live(f.src)])]);
-	rt.setSv(f, "name", fmt("sawn-off ＀", [rt.fv(f, "name", live(f.src))]));
-	rt.setSv(f, "desc", rt.sv(f, "sawn_desc"));
-	rt.setSv(f, "w_class", 3);
-	rt.setSv(f, "item_state", "gun");
+	user.visible_message(fmt("＀ shortens ％！!", [user, this]), fmt("<span class='notice'>You shorten ％！.</span>", [this]));
+	this.name = `sawn-off ${this.name}`;
+	this.desc = this.sawn_desc;
+	this.w_class = WEIGHT_CLASS_NORMAL;
+	this.item_state = "gun";
 	(rt.modSrcVar(f, "slot_flags", 16776191, rt.bitAnd));
-	(rt.modSrcVar(f, "slot_flags", 512, rt.bitOr));
-	rt.setSv(f, "sawn_state", 1);
-	yield* g.srcCall(f, "update_icon");
+	(rt.modSrcVar(f, "slot_flags", SLOT_BELT, rt.bitOr));
+	this.sawn_state = 1;
+	yield* this.update_icon();
 	return 1;
 }, true);
 
-// /obj/item/weapon/gun/ballistic/proc/blow_up  (code/modules/projectiles/guns/ballistic.dm:187)  may sleep
+// ballistic.dm:187
 rt.def("/obj/item/weapon/gun/ballistic/proc/blow_up", function* blow_up(f: Frame, user: Value) {
 	let AC: Value = null;
-	let $e: any;
-	f.vars = () => [user, AC, $e];
 	f.dot = 0;
-	AC = null;
-	rt.forList(f, 0, rt.fv(f, "stored_ammo", rt.sv(f, "magazine")), T("/obj/item/ammo_casing"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		AC = $e;
-		if (truthy(rt.fv(f, "BB", live(AC)))) {
-			yield* g.srcCall(f, "process_fire", live(user), live(user), 0);
+	for (AC of each(this.magazine.stored_ammo, T("/obj/item/ammo_casing"))) {
+		if (AC.BB) {
+			yield* this.process_fire(user, user, 0);
 			f.dot = 1;
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);

@@ -1,7 +1,7 @@
-// From code/modules/projectiles/guns/ballistic/bow.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/projectiles/guns/ballistic/bow.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(5262, "/obj/item/weapon/gun/ballistic/bow", "/obj/item/weapon/gun/ballistic", {
@@ -21,88 +21,84 @@ rt.type(5262, "/obj/item/weapon/gun/ballistic/bow", "/obj/item/weapon/gun/ballis
 	weapon_weight: 3,
 });
 
-// /obj/item/weapon/gun/ballistic/bow/proc/Initialize  (code/modules/projectiles/guns/ballistic/bow.dm:18)  may sleep
-rt.def("/obj/item/weapon/gun/ballistic/bow/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(rt.fv(f, "secondary_flags", live(f.src)))) {
-		rt.setFv(f, "secondary_flags", live(f.src), rt.list());
+// bow.dm:18
+rt.def("/obj/item/weapon/gun/ballistic/bow/proc/Initialize", function* Initialize(f: Frame, mapload: Value) {
+	f.dot = (yield* parent_proc());
+	if (!this.secondary_flags) {
+		this.secondary_flags = list();
 	}
-	rt.setAt(rt.fv(f, "secondary_flags", live(f.src)), "slows_while_in_hand", 1);
-	return f.dot;
-}, true, { args: ["mapload"] });
-
-// /obj/item/weapon/gun/ballistic/bow/proc/update_icon  (code/modules/projectiles/guns/ballistic/bow.dm:23)
-rt.def("/obj/item/weapon/gun/ballistic/bow/proc/update_icon", function update_icon(f: Frame) {
-	if (truthy(rt.sv(f, "ready_to_fire"))) {
-		rt.setSv(f, "icon_state", rt.sv(f, "icon_state_firing"));
-		rt.setSv(f, "item_state", rt.sv(f, "item_state_firing"));
-		rt.setSv(f, "slowdown", rt.sv(f, "slowdown_when_ready"));
-	} else {
-		if ((truthy(rt.callName(f, rt.sv(f, "magazine"), "ammo_count", [])) && !truthy(rt.sv(f, "ready_to_fire")))) {
-			rt.setSv(f, "icon_state", rt.sv(f, "icon_state_loaded"));
-			rt.setSv(f, "item_state", rt.sv(f, "item_state_loaded"));
-			rt.setSv(f, "slowdown", rt.initial(f, live(f.src), "slowdown"));
-		} else {
-			rt.setSv(f, "icon_state", rt.initial(f, live(f.src), "icon_state"));
-			rt.setSv(f, "item_state", rt.initial(f, live(f.src), "item_state"));
-			rt.setSv(f, "slowdown", rt.initial(f, live(f.src), "slowdown"));
-		}
-	}
-	return f.dot;
-});
-
-// /obj/item/weapon/gun/ballistic/bow/proc/dropped  (code/modules/projectiles/guns/ballistic/bow.dm:36)  may sleep
-rt.def("/obj/item/weapon/gun/ballistic/bow/proc/dropped", function* dropped(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (!(truthy(rt.sv(f, "magazine")) && truthy((yield* g.callName(f, rt.sv(f, "magazine"), "ammo_count", []))))) return f.dot;
-	yield* g.callName(f, rt.sv(f, "magazine"), "empty_magazine", []);
-	rt.setSv(f, "ready_to_fire", 0);
-	yield* g.srcCall(f, "update_icon");
+	rt.setAt(this.secondary_flags, "slows_while_in_hand", 1);
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/gun/ballistic/bow/proc/attack_self  (code/modules/projectiles/guns/ballistic/bow.dm:42)
-rt.def("/obj/item/weapon/gun/ballistic/bow/proc/attack_self", function attack_self(f: Frame, user: Value) {
-	if ((!truthy(rt.sv(f, "ready_to_fire")) && truthy(rt.callName(f, rt.sv(f, "magazine"), "ammo_count", [])))) {
-		rt.setSv(f, "ready_to_fire", 1);
-		rt.call(f, P("/proc/playsound"), null, [live(user), rt.sv(f, "draw_sound"), 100, 1]);
-		rt.callSrc(f, "update_icon", []);
+// bow.dm:23
+rt.def("/obj/item/weapon/gun/ballistic/bow/proc/update_icon", function update_icon(f: Frame) {
+	if (this.ready_to_fire) {
+		this.icon_state = this.icon_state_firing;
+		this.item_state = this.item_state_firing;
+		this.slowdown = this.slowdown_when_ready;
+	} else if (this.magazine.ammo_count() && !this.ready_to_fire) {
+		this.icon_state = this.icon_state_loaded;
+		this.item_state = this.item_state_loaded;
+		this.slowdown = rt.initial(f, this, "slowdown");
 	} else {
-		rt.setSv(f, "ready_to_fire", 0);
-		rt.callSrc(f, "update_icon", []);
+		this.icon_state = rt.initial(f, this, "icon_state");
+		this.item_state = rt.initial(f, this, "item_state");
+		this.slowdown = rt.initial(f, this, "slowdown");
 	}
 	return f.dot;
 });
 
-// /obj/item/weapon/gun/ballistic/bow/proc/attackby  (code/modules/projectiles/guns/ballistic/bow.dm:51)  may sleep
+// bow.dm:36
+rt.def("/obj/item/weapon/gun/ballistic/bow/proc/dropped", function* dropped(f: Frame, user: Value) {
+	if (!(this.magazine && this.magazine.ammo_count())) return f.dot;
+	yield* this.magazine.empty_magazine();
+	this.ready_to_fire = 0;
+	yield* this.update_icon();
+	return f.dot;
+}, true);
+
+// bow.dm:42
+rt.def("/obj/item/weapon/gun/ballistic/bow/proc/attack_self", function attack_self(f: Frame, user: Value) {
+	if (!this.ready_to_fire && this.magazine.ammo_count()) {
+		this.ready_to_fire = 1;
+		playsound(user, this.draw_sound, 100, 1);
+		this.update_icon();
+	} else {
+		this.ready_to_fire = 0;
+		this.update_icon();
+	}
+	return f.dot;
+});
+
+// bow.dm:51
 rt.def("/obj/item/weapon/gun/ballistic/bow/proc/attackby", function* attackby(f: Frame, A: Value, user: Value, params: Value) {
 	let num_loaded: Value = null;
-	f.vars = () => [A, user, params, num_loaded];
-	if (!truthy((num_loaded = (yield* g.callName(f, rt.sv(f, "magazine"), "attackby", [live(A), live(user), live(params), 1]))))) return f.dot;
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You ready ％！ into ％！.</span>", [live(A), live(f.src)])]);
-	yield* g.srcCall(f, "update_icon");
-	yield* g.srcCall(f, "chamber_round");
+	if (!(num_loaded = (yield* this.magazine.attackby(A, user, params, 1)))) return f.dot;
+	to_chat(user, fmt("<span class='notice'>You ready ％！ into ％！.</span>", [A, this]));
+	yield* this.update_icon();
+	yield* this.chamber_round();
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/gun/ballistic/bow/proc/can_shoot  (code/modules/projectiles/guns/ballistic/bow.dm:58)
+// bow.dm:58
 rt.def("/obj/item/weapon/gun/ballistic/bow/proc/can_shoot", function can_shoot(f: Frame) {
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.sv(f, "ready_to_fire"))) return f.dot;
+	f.dot = parent_proc();
+	if (this.ready_to_fire) return f.dot;
 	return 0;
 });
 
-// /obj/item/weapon/gun/ballistic/bow/proc/process_chamber  (code/modules/projectiles/guns/ballistic/bow.dm:66)  may sleep
+// bow.dm:66
 rt.def("/obj/item/weapon/gun/ballistic/bow/proc/process_chamber", function* process_chamber(f: Frame) {
-	if (live(f.args[0]) === null) {
+	if (f.args[0] === null) {
 		f.args[0] = 0;
 	}
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 1;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "ready_to_fire", 0);
-	yield* g.srcCall(f, "update_icon");
+	f.dot = (yield* parent_proc());
+	this.ready_to_fire = 0;
+	yield* this.update_icon();
 	return f.dot;
 }, true, { args: ["eject_casing", "empty_chamber"] });
 
@@ -115,28 +111,24 @@ rt.type(5504, "/obj/item/weapon/storage/backpack/quiver", "/obj/item/weapon/stor
 	can_hold: null,
 });
 
-// /obj/item/weapon/storage/backpack/quiver/proc/<init>  (code/modules/projectiles/guns/ballistic/bow.dm:102)
+// bow.dm:102
 rt.def("/obj/item/weapon/storage/backpack/quiver/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "can_hold", rt.list(T("/obj/item/ammo_casing/caseless/arrow")));
+	parent_proc();
+	this.can_hold = list(T("/obj/item/ammo_casing/caseless/arrow"));
 	return f.dot;
 });
 
 rt.type(5505, "/obj/item/weapon/storage/backpack/quiver/full", "/obj/item/weapon/storage/backpack/quiver", {});
 
-// /obj/item/weapon/storage/backpack/quiver/full/proc/New  (code/modules/projectiles/guns/ballistic/bow.dm:107)  may sleep
+// bow.dm:107
 rt.def("/obj/item/weapon/storage/backpack/quiver/full/proc/New", function* New(f: Frame) {
 	let i: Value = null;
 	let $e: any;
-	f.vars = () => [i, $e];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	i = null;
-	rt.forRange(f, 0, 1, rt.sv(f, "storage_slots"), 1);
+	yield* parent_proc();
+	rt.forRange(f, 0, 1, this.storage_slots, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/ammo_casing/caseless/arrow"), [live(f.src)]);
+		yield* new_(T("/obj/item/ammo_casing/caseless/arrow"), this);
 	}
 	rt.endFor(f, 0);
 	return f.dot;

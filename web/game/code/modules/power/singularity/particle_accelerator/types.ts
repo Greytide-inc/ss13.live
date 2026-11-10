@@ -1,5 +1,5 @@
 // Types declared in code/modules/power/singularity/particle_accelerator that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(12091, "/obj/effect/accelerated_particle/weak", "/obj/effect/accelerated_particle", {
 	movement_range: 8,

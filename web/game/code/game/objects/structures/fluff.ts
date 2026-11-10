@@ -1,7 +1,7 @@
-// From code/game/objects/structures/fluff.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/structures/fluff.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(12752, "/obj/structure/fluff", "/obj/structure", {
@@ -15,23 +15,23 @@ rt.type(12752, "/obj/structure/fluff", "/obj/structure", {
 	opacity: 0,
 });
 
-// /obj/structure/fluff/proc/attackby  (code/game/objects/structures/fluff.dm:14)  may sleep
-rt.def("/obj/structure/fluff/proc/attackby", function* attackby(f: Frame) {
-	if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/wrench")) ? 1 : 0)) && truthy(rt.sv(f, "deconstructible")))) {
-		yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='notice'>＀ starts disassembling ＀...</span>", [live(f.args[1]), live(f.src)]), fmt("<span class='notice'>You start disassembling ＀...</span>", [live(f.src)])]);
-		yield* g.call(f, P("/proc/playsound"), null, [live(f.args[1]), rt.fv(f, "usesound", live(f.args[0])), 50, 1]);
-		if (!truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, 50, "target", live(f.src)], rt.Args.Named)))) {
+// fluff.dm:14
+rt.def("/obj/structure/fluff/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
+	if (rt.istype(I, T("/obj/item/weapon/wrench")) && this.deconstructible) {
+		user.visible_message(`<span class='notice'>${user} starts disassembling ${this}...</span>`, `<span class='notice'>You start disassembling ${this}...</span>`);
+		playsound(user, I.usesound, 50, 1);
+		if (!(yield* do_after(user, 50, { target: this }))) {
 			return 0;
 		}
-		yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='notice'>＀ disassembles ＀!</span>", [live(f.args[1]), live(f.src)]), fmt("<span class='notice'>You break down ＀ into scrap metal.</span>", [live(f.src)])]);
-		yield* g.call(f, P("/proc/playsound"), null, [live(f.args[1]), rt.rsc("sound/items/deconstruct.ogg"), 50, 1]);
-		yield* g.new_(f, T("/obj/item/stack/sheet/metal"), [rt.getStep(f, live(f.src), 0)]);
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-		return live(f.dot);
+		user.visible_message(`<span class='notice'>${user} disassembles ${this}!</span>`, `<span class='notice'>You break down ${this} into scrap metal.</span>`);
+		playsound(user, rt.rsc("sound/items/deconstruct.ogg"), 50, 1);
+		yield* new_(T("/obj/item/stack/sheet/metal"), rt.getStep(f, this, 0));
+		yield* qdel(this);
+		return f.dot;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["I", "user", "params"] });
+}, true);
 
 rt.type(12765, "/obj/structure/fluff/bus/passable/seat/driver", "/obj/structure/fluff/bus/passable/seat", {
 	name: "driver's seat",
@@ -39,8 +39,8 @@ rt.type(12765, "/obj/structure/fluff/bus/passable/seat/driver", "/obj/structure/
 	icon_state: "driverseat",
 });
 
-// /obj/structure/fluff/bus/passable/seat/driver/proc/attack_hand  (code/game/objects/structures/fluff.dm:108)
+// fluff.dm:108
 rt.def("/obj/structure/fluff/bus/passable/seat/driver/proc/attack_hand", function attack_hand(f: Frame, user: Value) {
-	rt.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/items/carhorn.ogg"), 50, 1]);
+	playsound(this.loc, rt.rsc("sound/items/carhorn.ogg"), 50, 1);
 	return f.dot;
 });

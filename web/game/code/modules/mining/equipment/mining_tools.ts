@@ -1,7 +1,7 @@
-// From code/modules/mining/equipment/mining_tools.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mining/equipment/mining_tools.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(7529, "/obj/item/weapon/pickaxe", "/obj/item/weapon", {
@@ -21,14 +21,12 @@ rt.type(7529, "/obj/item/weapon/pickaxe", "/obj/item/weapon", {
 	attack_verb: null,
 });
 
-// /obj/item/weapon/pickaxe/proc/<init>  (code/modules/mining/equipment/mining_tools.dm:12)
+// mining_tools.dm:12
 rt.def("/obj/item/weapon/pickaxe/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "digsound", rt.list(rt.rsc("sound/effects/picaxe1.ogg"), rt.rsc("sound/effects/picaxe2.ogg"), rt.rsc("sound/effects/picaxe3.ogg")));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 2000]));
-	rt.setSv(f, "attack_verb", rt.list("hit", "pierced", "sliced", "attacked"));
+	parent_proc();
+	this.digsound = list(rt.rsc("sound/effects/picaxe1.ogg"), rt.rsc("sound/effects/picaxe2.ogg"), rt.rsc("sound/effects/picaxe3.ogg"));
+	this.materials = rt.alist(f, ["$metal", 2000]);
+	this.attack_verb = list("hit", "pierced", "sliced", "attacked");
 	return f.dot;
 });
 
@@ -43,18 +41,16 @@ rt.type(7530, "/obj/item/weapon/pickaxe/mini", "/obj/item/weapon/pickaxe", {
 	materials: null,
 });
 
-// /obj/item/weapon/pickaxe/mini/proc/<init>  (code/modules/mining/equipment/mining_tools.dm:26)
+// mining_tools.dm:26
 rt.def("/obj/item/weapon/pickaxe/mini/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 1000]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 1000]);
 	return f.dot;
 });
 
-// /obj/item/weapon/pickaxe/proc/playDigSound  (code/modules/mining/equipment/mining_tools.dm:29)
+// mining_tools.dm:29
 rt.def("/obj/item/weapon/pickaxe/proc/playDigSound", function playDigSound(f: Frame) {
-	rt.call(f, P("/proc/playsound"), null, [live(f.src), rt.op(f, "PickUnweighted", [1], [rt.sv(f, "digsound")]), 50, 1]);
+	playsound(this, pick(this.digsound), 50, 1);
 	return f.dot;
 });
 
@@ -70,12 +66,10 @@ rt.type(7533, "/obj/item/weapon/pickaxe/drill", "/obj/item/weapon/pickaxe", {
 	desc: "An electric mining drill for the especially scrawny.",
 });
 
-// /obj/item/weapon/pickaxe/drill/proc/<init>  (code/modules/mining/equipment/mining_tools.dm:55)
+// mining_tools.dm:55
 rt.def("/obj/item/weapon/pickaxe/drill/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "digsound", rt.list(rt.rsc("sound/weapons/drill.ogg")));
+	parent_proc();
+	this.digsound = list(rt.rsc("sound/weapons/drill.ogg"));
 	return f.dot;
 });
 
@@ -90,12 +84,10 @@ rt.type(7537, "/obj/item/weapon/pickaxe/drill/jackhammer", "/obj/item/weapon/pic
 	desc: "Cracks rocks with sonic blasts, and doubles as a demolition power tool for smashing walls.",
 });
 
-// /obj/item/weapon/pickaxe/drill/jackhammer/proc/<init>  (code/modules/mining/equipment/mining_tools.dm:83)
+// mining_tools.dm:83
 rt.def("/obj/item/weapon/pickaxe/drill/jackhammer/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "digsound", rt.list(rt.rsc("sound/weapons/sonic_jackhammer.ogg")));
+	parent_proc();
+	this.digsound = list(rt.rsc("sound/weapons/sonic_jackhammer.ogg"));
 	return f.dot;
 });
 
@@ -117,12 +109,10 @@ rt.type(7539, "/obj/item/weapon/shovel", "/obj/item/weapon", {
 	sharpness: 1,
 });
 
-// /obj/item/weapon/shovel/proc/<init>  (code/modules/mining/equipment/mining_tools.dm:99)
+// mining_tools.dm:99
 rt.def("/obj/item/weapon/shovel/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 50]));
-	rt.setSv(f, "attack_verb", rt.list("bashed", "bludgeoned", "thrashed", "whacked"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 50]);
+	this.attack_verb = list("bashed", "bludgeoned", "thrashed", "whacked");
 	return f.dot;
 });

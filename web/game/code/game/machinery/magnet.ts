@@ -1,7 +1,7 @@
-// From code/game/machinery/magnet.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/machinery/magnet.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, g, fmt } = rt;
 
 
 rt.type(10804, "/obj/machinery/magnetic_module", "/obj/machinery", {
@@ -26,13 +26,12 @@ rt.type(10804, "/obj/machinery/magnetic_module", "/obj/machinery", {
 	layer: 2.5,
 });
 
-// /obj/machinery/magnetic_module/proc/New  (code/game/machinery/magnet.dm:33)  may sleep
+// magnet.dm:33
 rt.def("/obj/machinery/magnetic_module/proc/New", function* New(f: Frame) {
 	let _T: Value = null;
-	f.vars = () => [_T];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "hide", rt.gv(f, "intact", (_T = rt.sv(f, "loc"))));
-	rt.setSv(f, "center", live(_T));
+	yield* parent_proc();
+	yield* this.hide((_T = this.loc).intact);
+	this.center = _T;
 	rt.spawnTail(f, 10, "/obj/machinery/magnetic_module/proc/New: spawn at game/machinery/magnet.dm:38", _T);
 	rt.spawnTail(f, 0, "/obj/machinery/magnetic_module/proc/New: spawn at game/machinery/magnet.dm:42", _T);
 	return f.dot;
@@ -40,210 +39,186 @@ rt.def("/obj/machinery/magnetic_module/proc/New", function* New(f: Frame) {
 
 // a spawn(0) body of /obj/machinery/magnetic_module/proc/New, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/obj/machinery/magnetic_module/proc/New: spawn at game/machinery/magnet.dm:42", function* (f: Frame, _T: Value) {
-	f.vars = () => [_T];
-	yield* g.srcCall(f, "magnetic_process");
+	yield* this.magnetic_process();
 	return null;
 });
 
 // a spawn(10) body of /obj/machinery/magnetic_module/proc/New, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/obj/machinery/magnetic_module/proc/New: spawn at game/machinery/magnet.dm:38", function* (f: Frame, _T: Value) {
-	f.vars = () => [_T];
-	if (truthy(rt.gl("SSradio"))) {
-		yield* g.callName(f, rt.gl("SSradio"), "add_object", [live(f.src), rt.sv(f, "freq"), rt.gl("RADIO_MAGNETS")]);
+	if (GLOB.SSradio) {
+		GLOB.SSradio.add_object(this, this.freq, GLOB.RADIO_MAGNETS);
 	}
 	return null;
 });
 
-// /obj/machinery/magnetic_module/proc/Destroy  (code/game/machinery/magnet.dm:47)  may sleep
+// magnet.dm:47
 rt.def("/obj/machinery/magnetic_module/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.gl("SSradio"))) {
-		yield* g.callName(f, rt.gl("SSradio"), "remove_object", [live(f.src), rt.sv(f, "freq")]);
+	if (GLOB.SSradio) {
+		yield* GLOB.SSradio.remove_object(this, this.freq);
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "center", null);
+	f.dot = (yield* parent_proc());
+	this.center = null;
 	return f.dot;
 }, true);
 
-// /obj/machinery/magnetic_module/proc/hide  (code/game/machinery/magnet.dm:53)
+// magnet.dm:53
 rt.def("/obj/machinery/magnetic_module/proc/hide", function hide(f: Frame, intact: Value) {
-	let $0: any;
-	f.vars = () => [$0];
-	if (truthy(live(intact))) {
-		$0 = 100;
-	} else {
-		$0 = 0;
-	}
-	rt.setSv(f, "invisibility", $0);
-	rt.callSrc(f, "updateicon", []);
+	this.invisibility = intact ? INVISIBILITY_MAXIMUM : 0;
+	this.updateicon();
 	return f.dot;
 });
 
-// /obj/machinery/magnetic_module/proc/updateicon  (code/game/machinery/magnet.dm:58)
+// magnet.dm:58
 rt.def("/obj/machinery/magnetic_module/proc/updateicon", function updateicon(f: Frame) {
-	let state: Value = null, onstate: Value = null;
-	f.vars = () => [state, onstate];
-	state = "floor_magnet";
-	onstate = "";
-	if (!truthy(rt.sv(f, "on"))) {
+	let state: Value = "floor_magnet";
+	let onstate: Value = "";
+	if (!this.on) {
 		onstate = "0";
 	}
-	if (truthy(rt.sv(f, "invisibility"))) {
-		rt.setSv(f, "icon_state", fmt("＀＀-f", [live(state), live(onstate)]));
+	if (this.invisibility) {
+		this.icon_state = `${state}${onstate}-f`;
 	} else {
-		rt.setSv(f, "icon_state", fmt("＀＀", [live(state), live(onstate)]));
+		this.icon_state = `${state}${onstate}`;
 	}
 	return f.dot;
 });
 
-// /obj/machinery/magnetic_module/proc/receive_signal  (code/game/machinery/magnet.dm:71)
+// magnet.dm:71
 rt.def("/obj/machinery/magnetic_module/proc/receive_signal", function receive_signal(f: Frame, signal: Value) {
-	let command: Value = null, modifier: Value = null, signal_code: Value = null;
-	f.vars = () => [command, modifier, signal_code];
-	command = rt.index(rt.fv(f, "data", live(signal)), "command");
-	modifier = rt.index(rt.fv(f, "data", live(signal)), "modifier");
-	signal_code = rt.index(rt.fv(f, "data", live(signal)), "code");
-	if (!(truthy(live(command)) && isEqual(live(signal_code), rt.sv(f, "code")))) return f.dot;
-	rt.callSrc(f, "Cmd", [live(command), live(modifier)]);
+	let command: Value = rt.index(signal.data, "command");
+	let modifier: Value = rt.index(signal.data, "modifier");
+	let signal_code: Value = rt.index(signal.data, "code");
+	if (!(command && signal_code == this.code)) return f.dot;
+	this.Cmd(command, modifier);
 	return f.dot;
 });
 
-// /obj/machinery/magnetic_module/proc/Cmd  (code/game/machinery/magnet.dm:83)
+// magnet.dm:83
 rt.def("/obj/machinery/magnetic_module/proc/Cmd", function Cmd(f: Frame, command: Value, modifier: Value) {
-	let $0: any;
-	f.vars = () => [$0];
-	if (!truthy(live(command))) return f.dot;
-	$0 = live(command);
-	if ($0 === "set-electriclevel") {
-		if (truthy(live(modifier))) {
-			rt.setSv(f, "electricity_level", live(modifier));
+	if (!command) return f.dot;
+	if (command === "set-electriclevel") {
+		if (modifier) {
+			this.electricity_level = modifier;
 		}
-	} else if ($0 === "set-magneticfield") {
-		if (truthy(live(modifier))) {
-			rt.setSv(f, "magnetic_field", live(modifier));
+	} else if (command === "set-magneticfield") {
+		if (modifier) {
+			this.magnetic_field = modifier;
 		}
-	} else if ($0 === "add-elec") {
-		rt.incSrcVar(f, "electricity_level", 1, true);
-		if (rt.gt(rt.sv(f, "electricity_level"), 12)) {
-			rt.setSv(f, "electricity_level", 12);
+	} else if (command === "add-elec") {
+		this.electricity_level++;
+		if (this.electricity_level > 12) {
+			this.electricity_level = 12;
 		}
-	} else if ($0 === "sub-elec") {
-		rt.incSrcVar(f, "electricity_level", -1, true);
-		if (rt.le(rt.sv(f, "electricity_level"), 0)) {
-			rt.setSv(f, "electricity_level", 1);
+	} else if (command === "sub-elec") {
+		this.electricity_level--;
+		if (this.electricity_level <= 0) {
+			this.electricity_level = 1;
 		}
-	} else if ($0 === "add-mag") {
-		rt.incSrcVar(f, "magnetic_field", 1, true);
-		if (rt.gt(rt.sv(f, "magnetic_field"), 4)) {
-			rt.setSv(f, "magnetic_field", 4);
+	} else if (command === "add-mag") {
+		this.magnetic_field++;
+		if (this.magnetic_field > 4) {
+			this.magnetic_field = 4;
 		}
-	} else if ($0 === "sub-mag") {
-		rt.incSrcVar(f, "magnetic_field", -1, true);
-		if (rt.le(rt.sv(f, "magnetic_field"), 0)) {
-			rt.setSv(f, "magnetic_field", 1);
+	} else if (command === "sub-mag") {
+		this.magnetic_field--;
+		if (this.magnetic_field <= 0) {
+			this.magnetic_field = 1;
 		}
-	} else if ($0 === "set-x") {
-		if (truthy(live(modifier))) {
-			rt.setSv(f, "center_x", live(modifier));
+	} else if (command === "set-x") {
+		if (modifier) {
+			this.center_x = modifier;
 		}
-	} else if ($0 === "set-y") {
-		if (truthy(live(modifier))) {
-			rt.setSv(f, "center_y", live(modifier));
+	} else if (command === "set-y") {
+		if (modifier) {
+			this.center_y = modifier;
 		}
-	} else if ($0 === "N") {
-		rt.incSrcVar(f, "center_y", 1, true);
-	} else if ($0 === "S") {
-		rt.incSrcVar(f, "center_y", -1, true);
-	} else if ($0 === "E") {
-		rt.incSrcVar(f, "center_x", 1, true);
-	} else if ($0 === "W") {
-		rt.incSrcVar(f, "center_x", -1, true);
-	} else if ($0 === "C") {
-		rt.setSv(f, "center_x", 0);
-		rt.setSv(f, "center_y", 0);
-	} else if ($0 === "R") {
-		rt.setSv(f, "center_x", rt.call(f, P("/proc/rand"), null, [rt.neg(rt.sv(f, "max_dist")), rt.sv(f, "max_dist")]));
-		rt.setSv(f, "center_y", rt.call(f, P("/proc/rand"), null, [rt.neg(rt.sv(f, "max_dist")), rt.sv(f, "max_dist")]));
-	} else if ($0 === "set-code") {
-		if (truthy(live(modifier))) {
-			rt.setSv(f, "code", live(modifier));
+	} else if (command === "N") {
+		this.center_y++;
+	} else if (command === "S") {
+		this.center_y--;
+	} else if (command === "E") {
+		this.center_x++;
+	} else if (command === "W") {
+		this.center_x--;
+	} else if (command === "C") {
+		this.center_x = 0;
+		this.center_y = 0;
+	} else if (command === "R") {
+		this.center_x = rand(-this.max_dist, this.max_dist);
+		this.center_y = rand(-this.max_dist, this.max_dist);
+	} else if (command === "set-code") {
+		if (modifier) {
+			this.code = modifier;
 		}
-	} else if ($0 === "toggle-power") {
-		rt.setSv(f, "on", (!truthy(rt.sv(f, "on")) ? 1 : 0));
-		if (!truthy(rt.sv(f, "on"))) return f.dot;
-		rt.call(f, P("/proc/ImmediateInvokeAsync"), null, [live(f.src), P("/obj/machinery/magnetic_module/proc/magnetic_process")]);
+	} else if (command === "toggle-power") {
+		this.on = (!this.on ? 1 : 0);
+		if (!this.on) return f.dot;
+		ImmediateInvokeAsync(this, P("/obj/machinery/magnetic_module/proc/magnetic_process"));
 	}
 	return f.dot;
 });
 
-// /obj/machinery/magnetic_module/proc/process  (code/game/machinery/magnet.dm:142)
+// magnet.dm:142
 rt.def("/obj/machinery/magnetic_module/proc/process", function process(f: Frame) {
-	if (truthy(rt.bitAnd(rt.sv(f, "stat"), 2))) {
-		rt.setSv(f, "on", 0);
+	if (rt.bitAnd(this.stat, 2)) {
+		this.on = 0;
 	}
-	if (rt.le(rt.sv(f, "electricity_level"), 0)) {
-		rt.setSv(f, "electricity_level", 1);
+	if (this.electricity_level <= 0) {
+		this.electricity_level = 1;
 	}
-	if (rt.le(rt.sv(f, "magnetic_field"), 0)) {
-		rt.setSv(f, "magnetic_field", 1);
+	if (this.magnetic_field <= 0) {
+		this.magnetic_field = 1;
 	}
-	if (rt.gt(rt.op(f, "Abs", [], [rt.sv(f, "center_x")]), rt.sv(f, "max_dist"))) {
-		rt.setSv(f, "center_x", rt.sv(f, "max_dist"));
+	if (rt.op(f, "Abs", [], [this.center_x]) > this.max_dist) {
+		this.center_x = this.max_dist;
 	}
-	if (rt.gt(rt.op(f, "Abs", [], [rt.sv(f, "center_y")]), rt.sv(f, "max_dist"))) {
-		rt.setSv(f, "center_y", rt.sv(f, "max_dist"));
+	if (rt.op(f, "Abs", [], [this.center_y]) > this.max_dist) {
+		this.center_y = this.max_dist;
 	}
-	if (rt.gt(rt.sv(f, "magnetic_field"), 4)) {
-		rt.setSv(f, "magnetic_field", 4);
+	if (this.magnetic_field > 4) {
+		this.magnetic_field = 4;
 	}
-	if (rt.gt(rt.sv(f, "electricity_level"), 12)) {
-		rt.setSv(f, "electricity_level", 12);
+	if (this.electricity_level > 12) {
+		this.electricity_level = 12;
 	}
-	if (truthy(rt.sv(f, "on"))) {
-		rt.setSv(f, "use_power", 2);
-		rt.setSv(f, "active_power_usage", multiply(rt.sv(f, "electricity_level"), 15));
+	if (this.on) {
+		this.use_power = 2;
+		this.active_power_usage = this.electricity_level * 15;
 	} else {
-		rt.setSv(f, "use_power", 0);
+		this.use_power = 0;
 	}
-	rt.callSrc(f, "updateicon", []);
+	this.updateicon();
 	return f.dot;
 }, false, { waitfor: false });
 
-// /obj/machinery/magnetic_module/proc/magnetic_process  (code/game/machinery/magnet.dm:188)  may sleep
+// magnet.dm:188
 rt.def("/obj/machinery/magnetic_module/proc/magnetic_process", function* magnetic_process(f: Frame) {
 	let M: Value = null, S: Value = null;
-	let $e: any;
-	f.vars = () => [M, S, $e];
-	if (truthy(rt.sv(f, "pulling"))) {
-		return live(f.dot);
+	if (this.pulling) {
+		return f.dot;
 	}
-	while (truthy(rt.sv(f, "on"))) {
-		rt.setSv(f, "pulling", 1);
-		rt.setSv(f, "center", rt.locate(add(rt.sv(f, "x"), rt.sv(f, "center_x")), add(rt.sv(f, "y"), rt.sv(f, "center_y")), rt.sv(f, "z")));
-		if (truthy(rt.sv(f, "center"))) {
+	while (this.on) {
+		this.pulling = 1;
+		this.center = rt.locate(this.x + this.center_x, this.y + this.center_y, this.z);
+		if (this.center) {
 			M = null;
-			rt.forList(f, 0, (yield* g.call(f, P("/proc/orange"), null, [rt.sv(f, "magnetic_field"), rt.sv(f, "center")])), T("/obj"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				M = $e;
-				if ((!truthy(rt.fv(f, "anchored", live(M))) && truthy(rt.bitAnd(rt.fv(f, "flags", live(M)), 64)))) {
-					yield* g.call(f, P("/proc/step_towards"), null, [live(M), rt.sv(f, "center")]);
+			for (M of each(orange(this.magnetic_field, this.center), T("/obj"))) {
+				if (!M.anchored && rt.bitAnd(M.flags, CONDUCT)) {
+					yield* step_towards(M, this.center);
 				}
 			}
-			rt.endFor(f, 0);
 			S = null;
-			rt.forList(f, 0, (yield* g.call(f, P("/proc/orange"), null, [rt.sv(f, "magnetic_field"), rt.sv(f, "center")])), T("/mob/living/silicon"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				S = $e;
-				if (truthy((rt.istype(live(S), T("/mob/living/silicon/ai")) ? 1 : 0))) {
+			for (S of each(orange(this.magnetic_field, this.center), T("/mob/living/silicon"))) {
+				if (rt.istype(S, T("/mob/living/silicon/ai"))) {
 					continue;
 				}
-				yield* g.call(f, P("/proc/step_towards"), null, [live(S), rt.sv(f, "center")]);
+				yield* step_towards(S, this.center);
 			}
-			rt.endFor(f, 0);
 		}
-		yield* g.srcCall(f, "use_power", multiply(rt.sv(f, "electricity_level"), 5));
-		yield* g.call(f, P("/proc/sleep"), null, [subtract(13, rt.sv(f, "electricity_level"))]);
+		yield* this.use_power(this.electricity_level * 5);
+		yield* sleep(13 - this.electricity_level);
 	}
-	rt.setSv(f, "pulling", 0);
+	this.pulling = 0;
 	return f.dot;
 }, true);
 
@@ -269,259 +244,224 @@ rt.type(10805, "/obj/machinery/magnetic_controller", "/obj/machinery", {
 	density: 0,
 });
 
-// /obj/machinery/magnetic_controller/proc/<init>  (code/game/machinery/magnet.dm:217)
+// magnet.dm:217
 rt.def("/obj/machinery/magnetic_controller/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "magnets", rt.list());
-	$0 = $0;
-	rt.setSv(f, "rpath", rt.list());
+	parent_proc();
+	this.magnets = list();
+
+	this.rpath = list();
 	return f.dot;
 });
 
-// /obj/machinery/magnetic_controller/proc/New  (code/game/machinery/magnet.dm:233)  may sleep
+// magnet.dm:233
 rt.def("/obj/machinery/magnetic_controller/proc/New", function* New(f: Frame) {
 	let M: Value = null;
-	let $e: any;
-	f.vars = () => [M, $e];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.sv(f, "autolink"))) {
-		M = null;
-		rt.forList(f, 0, rt.gl("machines"), T("/obj/machinery/magnetic_module"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			M = $e;
-			if ((isEqual(rt.fv(f, "freq", live(M)), rt.sv(f, "frequency")) && isEqual(rt.fv(f, "code", live(M)), rt.sv(f, "code")))) {
-				yield* g.callName(f, rt.sv(f, "magnets"), "Add", [live(M)]);
+	yield* parent_proc();
+	if (this.autolink) {
+		for (M of each(GLOB.machines, T("/obj/machinery/magnetic_module"))) {
+			if (M.freq == this.frequency && M.code == this.code) {
+				this.magnets.Add(M);
 			}
 		}
-		rt.endFor(f, 0);
 	}
 	rt.spawnTail(f, 45, "/obj/machinery/magnetic_controller/proc/New: spawn at game/machinery/magnet.dm:241", M);
-	if (!truthy(rt.sv(f, "path"))) return f.dot;
-	yield* g.srcCall(f, "filter_path");
+	if (!this.path) return f.dot;
+	this.filter_path();
 	return f.dot;
 }, true);
 
 // a spawn(45) body of /obj/machinery/magnetic_controller/proc/New, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/obj/machinery/magnetic_controller/proc/New: spawn at game/machinery/magnet.dm:241", function* (f: Frame, M: Value) {
-	f.vars = () => [M];
-	if (truthy(rt.gl("SSradio"))) {
-		rt.setSv(f, "radio_connection", (yield* g.callName(f, rt.gl("SSradio"), "add_object", [live(f.src), rt.sv(f, "frequency"), rt.gl("RADIO_MAGNETS")])));
+	if (GLOB.SSradio) {
+		this.radio_connection = GLOB.SSradio.add_object(this, this.frequency, GLOB.RADIO_MAGNETS);
 	}
 	return null;
 });
 
-// /obj/machinery/magnetic_controller/proc/Destroy  (code/game/machinery/magnet.dm:251)  may sleep
+// magnet.dm:251
 rt.def("/obj/machinery/magnetic_controller/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.gl("SSradio"))) {
-		yield* g.callName(f, rt.gl("SSradio"), "remove_object", [live(f.src), rt.sv(f, "frequency")]);
+	if (GLOB.SSradio) {
+		yield* GLOB.SSradio.remove_object(this, this.frequency);
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "magnets", null);
-	rt.setSv(f, "rpath", null);
+	f.dot = (yield* parent_proc());
+	this.magnets = null;
+	this.rpath = null;
 	return f.dot;
 }, true);
 
-// /obj/machinery/magnetic_controller/proc/process  (code/game/machinery/magnet.dm:257)
+// magnet.dm:257
 rt.def("/obj/machinery/magnetic_controller/proc/process", function process(f: Frame) {
 	let M: Value = null;
-	let $e: any;
-	f.vars = () => [M, $e];
-	if (!(isEqual(rt.len(f, rt.sv(f, "magnets")), 0) && truthy(rt.sv(f, "autolink")))) return f.dot;
-	M = null;
-	rt.forList(f, 0, rt.gl("machines"), T("/obj/machinery/magnetic_module"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if ((isEqual(rt.fv(f, "freq", live(M)), rt.sv(f, "frequency")) && isEqual(rt.fv(f, "code", live(M)), rt.sv(f, "code")))) {
-			rt.callName(f, rt.sv(f, "magnets"), "Add", [live(M)]);
+	if (!(rt.len(f, this.magnets) == 0 && this.autolink)) return f.dot;
+	for (M of each(GLOB.machines, T("/obj/machinery/magnetic_module"))) {
+		if (M.freq == this.frequency && M.code == this.code) {
+			this.magnets.Add(M);
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, false, { waitfor: false });
 
-// /obj/machinery/magnetic_controller/proc/attack_ai  (code/game/machinery/magnet.dm:264)  may sleep
+// magnet.dm:264
 rt.def("/obj/machinery/magnetic_controller/proc/attack_ai", function* attack_ai(f: Frame, user: Value) {
-	f.vars = () => [user];
-	return (yield* g.callName(f, live(f.src), "attack_hand", [live(user)]));
+	return (yield* this.attack_hand(user));
 }, true);
 
-// /obj/machinery/magnetic_controller/proc/attack_hand  (code/game/machinery/magnet.dm:267)  may sleep
+// magnet.dm:267
 rt.def("/obj/machinery/magnetic_controller/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
-	let dat: Value = null, i: Value = null, M: Value = null;
+	let i: Value = null, M: Value = null;
 	let $0: any, $1: any, $2: any, $e: any;
-	f.vars = () => [user, dat, i, M, $0, $1, $2, $e];
-	if (truthy(rt.bitAnd(rt.sv(f, "stat"), 3))) {
-		return live(f.dot);
+	if (rt.bitAnd(this.stat, 3)) {
+		return f.dot;
 	}
-	yield* g.callName(f, live(user), "set_machine", [live(f.src)]);
-	dat = "<B>Magnetic Control Console</B><BR><BR>";
-	if (!truthy(rt.sv(f, "autolink"))) {
-		dat = rt.modify(live(dat), fmt("\n\t\tFrequency: <a href='?src=＃;operation=setfreq'>＀</a><br>\n\t\tCode: <a href='?src=＃;operation=setfreq'>＀</a><br>\n\t\t<a href='?src=＃;operation=probe'>Probe Generators</a><br>\n\t\t", [live(f.src), rt.sv(f, "frequency"), live(f.src), rt.sv(f, "code"), live(f.src)]), add);
+	yield* user.set_machine(this);
+	let dat: Value = "<B>Magnetic Control Console</B><BR><BR>";
+	if (!this.autolink) {
+		dat += fmt("\n\t\tFrequency: <a href='?src=＃;operation=setfreq'>＀</a><br>\n\t\tCode: <a href='?src=＃;operation=setfreq'>＀</a><br>\n\t\t<a href='?src=＃;operation=probe'>Probe Generators</a><br>\n\t\t", [this, this.frequency, this, this.code, this]);
 	}
-	if (rt.ge(rt.len(f, rt.sv(f, "magnets")), 1)) {
-		dat = rt.modify(live(dat), "Magnets confirmed: <br>", add);
+	if (rt.len(f, this.magnets) >= 1) {
+		dat += "Magnets confirmed: <br>";
 		i = 0;
-		M = null;
-		rt.forList(f, 0, rt.sv(f, "magnets"), T("/obj/machinery/magnetic_module"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			M = $e;
-			i = rt.inc(live(i), 1);
-			$0 = live(i);
-			$1 = live(f.src);
-			if (truthy(rt.fv(f, "on", live(M)))) {
+		for (M of each(this.magnets, T("/obj/machinery/magnetic_module"))) {
+			i++;
+			$0 = i;
+			$1 = this;
+			if (M.on) {
 				$2 = "On";
 			} else {
 				$2 = "Off";
 			}
-			dat = rt.modify(live(dat), fmt("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;< [＀] (<a href='?src=＃;radio-op=togglepower'>＀</a>) | Electricity level: <a href='?src=＃;radio-op=minuselec'>-</a> ＀ <a href='?src=＃;radio-op=pluselec'>+</a>; Magnetic field: <a href='?src=＃;radio-op=minusmag'>-</a> ＀ <a href='?src=＃;radio-op=plusmag'>+</a><br>", [$0, $1, $2, live(f.src), rt.fv(f, "electricity_level", live(M)), live(f.src), live(f.src), rt.fv(f, "magnetic_field", live(M)), live(f.src)]), add);
+			dat += fmt("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;< [＀] (<a href='?src=＃;radio-op=togglepower'>＀</a>) | Electricity level: <a href='?src=＃;radio-op=minuselec'>-</a> ＀ <a href='?src=＃;radio-op=pluselec'>+</a>; Magnetic field: <a href='?src=＃;radio-op=minusmag'>-</a> ＀ <a href='?src=＃;radio-op=plusmag'>+</a><br>", [$0, $1, $2, this, M.electricity_level, this, this, M.magnetic_field, this]);
 		}
-		rt.endFor(f, 0);
 	}
-	dat = rt.modify(live(dat), fmt("<br>Speed: <a href='?src=＃;operation=minusspeed'>-</a> ＀ <a href='?src=＃;operation=plusspeed'>+</a><br>", [live(f.src), rt.sv(f, "speed"), live(f.src)]), add);
-	dat = rt.modify(live(dat), fmt("Path: {<a href='?src=＃;operation=setpath'>＀</a>}<br>", [live(f.src), rt.sv(f, "path")]), add);
-	$0 = live(f.src);
-	if (truthy(rt.sv(f, "moving"))) {
-		$1 = "Enabled";
-	} else {
-		$1 = "Disabled";
-	}
-	dat = rt.modify(live(dat), fmt("Moving: <a href='?src=＃;operation=togglemoving'>＀</a>", [$0, $1]), add);
-	rt.op(f, "Browse", [], [live(user), live(dat), "window=magnet;size=400x500"], false);
-	yield* g.call(f, P("/proc/onclose"), null, [live(user), "magnet"]);
+	dat += fmt("<br>Speed: <a href='?src=＃;operation=minusspeed'>-</a> ＀ <a href='?src=＃;operation=plusspeed'>+</a><br>", [this, this.speed, this]);
+	dat += fmt("Path: {<a href='?src=＃;operation=setpath'>＀</a>}<br>", [this, this.path]);
+	dat += fmt("Moving: <a href='?src=＃;operation=togglemoving'>＀</a>", [this, this.moving ? "Enabled" : "Disabled"]);
+	rt.op(f, "Browse", [], [user, dat, "window=magnet;size=400x500"], false);
+	onclose(user, "magnet");
 	return f.dot;
 }, true);
 
-// /obj/machinery/magnetic_controller/proc/Topic  (code/game/machinery/magnet.dm:295)  may sleep
-rt.def("/obj/machinery/magnetic_controller/proc/Topic", function* Topic(f: Frame) {
+// magnet.dm:295
+rt.def("/obj/machinery/magnetic_controller/proc/Topic", function* Topic(f: Frame, href: Value, href_list: Value) {
 	let signal: Value = null, newpath: Value = null;
-	let $0: any;
-	f.vars = () => [signal, newpath, $0];
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		return live(f.dot);
+	if (yield* parent_proc()) {
+		return f.dot;
 	}
-	yield* g.callName(f, live(f.usr), "set_machine", [live(f.src)]);
-	if (truthy(rt.at(live(f.args[1]), "radio-op"))) {
-		rt.setFv(f, "transmission_method", (signal = (yield* g.new_(f, T("/datum/signal"), []))), 1);
-		rt.setFv(f, "source", live(signal), live(f.src));
-		rt.setFv(f, "frequency", live(signal), rt.sv(f, "frequency"));
-		rt.setAt(rt.fv(f, "data", live(signal)), "code", rt.sv(f, "code"));
-		$0 = rt.at(live(f.args[1]), "radio-op");
-		if ($0 === "togglepower") {
-			rt.setAt(rt.fv(f, "data", live(signal)), "command", "toggle-power");
-		} else if ($0 === "minuselec") {
-			rt.setAt(rt.fv(f, "data", live(signal)), "command", "sub-elec");
-		} else if ($0 === "pluselec") {
-			rt.setAt(rt.fv(f, "data", live(signal)), "command", "add-elec");
-		} else if ($0 === "minusmag") {
-			rt.setAt(rt.fv(f, "data", live(signal)), "command", "sub-mag");
-		} else if ($0 === "plusmag") {
-			rt.setAt(rt.fv(f, "data", live(signal)), "command", "add-mag");
+	yield* f.usr.set_machine(this);
+	if (rt.at(href_list, "radio-op")) {
+		(signal = (yield* new_(T("/datum/signal")))).transmission_method = 1;
+		signal.source = this;
+		signal.frequency = this.frequency;
+		rt.setAt(signal.data, "code", this.code);
+		const item = rt.at(href_list, "radio-op");
+		if (item === "togglepower") {
+			rt.setAt(signal.data, "command", "toggle-power");
+		} else if (item === "minuselec") {
+			rt.setAt(signal.data, "command", "sub-elec");
+		} else if (item === "pluselec") {
+			rt.setAt(signal.data, "command", "add-elec");
+		} else if (item === "minusmag") {
+			rt.setAt(signal.data, "command", "sub-mag");
+		} else if (item === "plusmag") {
+			rt.setAt(signal.data, "command", "add-mag");
 		}
-		yield* g.callName(f, rt.sv(f, "radio_connection"), "post_signal", [null, live(f.src), null, live(signal), "filter", rt.gl("RADIO_MAGNETS")], rt.Args.Named);
+		yield* this.radio_connection.post_signal(this, signal, { filter: GLOB.RADIO_MAGNETS });
 		rt.spawnTail(f, 1, "/obj/machinery/magnetic_controller/proc/Topic: spawn at game/machinery/magnet.dm:328", signal, newpath);
 	}
-	if (truthy(rt.at(live(f.args[1]), "operation"))) {
-		$0 = rt.at(live(f.args[1]), "operation");
-		if ($0 === "plusspeed") {
-			rt.incSrcVar(f, "speed", 1, true);
-			if (rt.gt(rt.sv(f, "speed"), 10)) {
-				rt.setSv(f, "speed", 10);
+	if (rt.at(href_list, "operation")) {
+		const item = rt.at(href_list, "operation");
+		if (item === "plusspeed") {
+			this.speed++;
+			if (this.speed > 10) {
+				this.speed = 10;
 			}
-		} else if ($0 === "minusspeed") {
-			rt.incSrcVar(f, "speed", -1, true);
-			if (rt.le(rt.sv(f, "speed"), 0)) {
-				rt.setSv(f, "speed", 1);
+		} else if (item === "minusspeed") {
+			this.speed--;
+			if (this.speed <= 0) {
+				this.speed = 1;
 			}
-		} else if ($0 === "setpath") {
-			if ((truthy((newpath = (yield* g.call(f, P("/proc/copytext"), null, [(yield* g.call(f, P("/proc/sanitize"), null, [(yield* g.op(f, "Prompt", [3], [rt.sv(f, "path"), null, "Please define a new path!", live(f.usr), null]))])), 1, 1024])))) && !isEqual(live(newpath), ""))) {
-				rt.setSv(f, "moving", 0);
-				rt.setSv(f, "path", live(newpath));
-				rt.setSv(f, "pathpos", 1);
-				yield* g.srcCall(f, "filter_path");
+		} else if (item === "setpath") {
+			if ((newpath = copytext(sanitize((yield* g.op(f, "Prompt", [3], [this.path, null, "Please define a new path!", f.usr, null]))), 1, 1024)) && newpath != "") {
+				this.moving = 0;
+				this.path = newpath;
+				this.pathpos = 1;
+				this.filter_path();
 			}
-		} else if ($0 === "togglemoving") {
-			rt.setSv(f, "moving", (!truthy(rt.sv(f, "moving")) ? 1 : 0));
-			if (truthy(rt.sv(f, "moving"))) {
+		} else if (item === "togglemoving") {
+			this.moving = (!this.moving ? 1 : 0);
+			if (this.moving) {
 				rt.spawnTail(f, 0, "/obj/machinery/magnetic_controller/proc/Topic: spawn at game/machinery/magnet.dm:352", signal, newpath);
 			}
 		}
 	}
-	yield* g.srcCall(f, "updateUsrDialog");
+	yield* this.updateUsrDialog();
 	return f.dot;
-}, true, { args: ["href", "href_list"] });
+}, true);
 
 // a spawn(0) body of /obj/machinery/magnetic_controller/proc/Topic, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/obj/machinery/magnetic_controller/proc/Topic: spawn at game/machinery/magnet.dm:352", function* (f: Frame, signal: Value, newpath: Value) {
-	f.vars = () => [signal, newpath];
-	yield* g.srcCall(f, "MagnetMove");
+	yield* this.MagnetMove();
 	return null;
 });
 
 // a spawn(1) body of /obj/machinery/magnetic_controller/proc/Topic, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/obj/machinery/magnetic_controller/proc/Topic: spawn at game/machinery/magnet.dm:328", function* (f: Frame, signal: Value, newpath: Value) {
-	f.vars = () => [signal, newpath];
-	yield* g.srcCall(f, "updateUsrDialog");
+	yield* this.updateUsrDialog();
 	return null;
 });
 
-// /obj/machinery/magnetic_controller/proc/MagnetMove  (code/game/machinery/magnet.dm:360)  may sleep
+// magnet.dm:360
 rt.def("/obj/machinery/magnetic_controller/proc/MagnetMove", function* MagnetMove(f: Frame) {
 	let signal: Value = null, nextmove: Value = null;
-	f.vars = () => [signal, nextmove];
-	if (truthy(rt.sv(f, "looping"))) {
-		return live(f.dot);
+	if (this.looping) {
+		return f.dot;
 	}
-	while (truthy(rt.sv(f, "moving")) && rt.ge(rt.len(f, rt.sv(f, "rpath")), 1)) {
-		if (truthy(rt.bitAnd(rt.sv(f, "stat"), 3))) {
+	while (this.moving && rt.len(f, this.rpath) >= 1) {
+		if (rt.bitAnd(this.stat, 3)) {
 			break;
 		}
-		rt.setSv(f, "looping", 1);
-		rt.setFv(f, "transmission_method", (signal = (yield* g.new_(f, T("/datum/signal"), []))), 1);
-		rt.setFv(f, "source", live(signal), live(f.src));
-		rt.setFv(f, "frequency", live(signal), rt.sv(f, "frequency"));
-		rt.setAt(rt.fv(f, "data", live(signal)), "code", rt.sv(f, "code"));
-		if (rt.gt(rt.sv(f, "pathpos"), rt.len(f, rt.sv(f, "rpath")))) {
-			rt.setSv(f, "pathpos", 1);
+		this.looping = 1;
+		(signal = (yield* new_(T("/datum/signal")))).transmission_method = 1;
+		signal.source = this;
+		signal.frequency = this.frequency;
+		rt.setAt(signal.data, "code", this.code);
+		if (this.pathpos > rt.len(f, this.rpath)) {
+			this.pathpos = 1;
 		}
-		if (!truthy((rt.isIn(f, (nextmove = (yield* g.call(f, P("/proc/uppertext"), null, [rt.index(rt.sv(f, "rpath"), rt.sv(f, "pathpos"))]))), rt.list("N", "S", "E", "W", "C", "R")) ? 1 : 0))) {
-			yield* g.call(f, P("/proc/qdel"), null, [live(signal)]);
+		if (!rt.isIn(f, (nextmove = uppertext(rt.index(this.rpath, this.pathpos))), list("N", "S", "E", "W", "C", "R"))) {
+			yield* qdel(signal);
 			break;
 		}
-		rt.setAt(rt.fv(f, "data", live(signal)), "command", live(nextmove));
-		rt.incSrcVar(f, "pathpos", 1, true);
+		rt.setAt(signal.data, "command", nextmove);
+		this.pathpos++;
 		rt.spawnTail(f, 0, "/obj/machinery/magnetic_controller/proc/MagnetMove: spawn at game/machinery/magnet.dm:392", signal, nextmove);
-		if (isEqual(rt.sv(f, "speed"), 10)) {
-			yield* g.call(f, P("/proc/sleep"), null, [1]);
+		if (this.speed == 10) {
+			yield* sleep(1);
 		} else {
-			yield* g.call(f, P("/proc/sleep"), null, [subtract(12, rt.sv(f, "speed"))]);
+			yield* sleep(12 - this.speed);
 		}
 	}
-	rt.setSv(f, "looping", 0);
+	this.looping = 0;
 	return f.dot;
 }, true);
 
 // a spawn(0) body of /obj/machinery/magnetic_controller/proc/MagnetMove, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/obj/machinery/magnetic_controller/proc/MagnetMove: spawn at game/machinery/magnet.dm:392", function* (f: Frame, signal: Value, nextmove: Value) {
-	f.vars = () => [signal, nextmove];
-	yield* g.callName(f, rt.sv(f, "radio_connection"), "post_signal", [null, live(f.src), null, live(signal), "filter", rt.gl("RADIO_MAGNETS")], rt.Args.Named);
+	yield* this.radio_connection.post_signal(this, signal, { filter: GLOB.RADIO_MAGNETS });
 	return null;
 });
 
-// /obj/machinery/magnetic_controller/proc/filter_path  (code/game/machinery/magnet.dm:406)
+// magnet.dm:406
 rt.def("/obj/machinery/magnetic_controller/proc/filter_path", function filter_path(f: Frame) {
-	let maximum_character: Value = null, i: Value = null, nextchar: Value = null;
-	f.vars = () => [maximum_character, i, nextchar];
-	rt.setSv(f, "rpath", rt.list());
-	maximum_character = rt.call(f, P("/proc/min"), null, [50, rt.length(rt.sv(f, "path"))]);
-	i = null;
-	i = 1;
-	while (rt.le(live(i), live(maximum_character))) {
-		if (!truthy((rt.isIn(f, (nextchar = rt.call(f, P("/proc/copytext"), null, [rt.sv(f, "path"), live(i), add(live(i), 1)])), rt.list(";", "&", "*", " ")) ? 1 : 0))) {
-			rt.modSrcVar(f, "rpath", rt.call(f, P("/proc/copytext"), null, [rt.sv(f, "path"), live(i), add(live(i), 1)]), add);
+	let nextchar: Value = null;
+	this.rpath = list();
+	let maximum_character: Value = min(50, rt.length(this.path));
+	let i: Value = 1;
+	while (i <= maximum_character) {
+		if (!rt.isIn(f, (nextchar = copytext(this.path, i, i + 1)), list(";", "&", "*", " "))) {
+			this.rpath += copytext(this.path, i, i + 1);
 		}
-		i = rt.inc(live(i), 1);
+		i++;
 	}
 	return f.dot;
 });

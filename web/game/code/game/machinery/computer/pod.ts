@@ -1,7 +1,7 @@
-// From code/game/machinery/computer/pod.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/machinery/computer/pod.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(10402, "/obj/machinery/computer/pod", "/obj/machinery/computer", {
@@ -15,193 +15,160 @@ rt.type(10402, "/obj/machinery/computer/pod", "/obj/machinery/computer", {
 	desc: "A combined blastdoor and mass driver control unit.",
 });
 
-// /obj/machinery/computer/pod/proc/Initialize  (code/game/machinery/computer/pod.dm:13)  may sleep
+// pod.dm:13
 rt.def("/obj/machinery/computer/pod/proc/Initialize", function* Initialize(f: Frame) {
 	let M: Value = null;
-	let $e: any;
-	f.vars = () => [M, $e];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	M = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/range"), null, [rt.sv(f, "range"), live(f.src)])), T("/obj/machinery/mass_driver"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if (isEqual(rt.fv(f, "id", live(M)), rt.sv(f, "id"))) {
-			rt.setSv(f, "connected", live(M));
+	yield* parent_proc();
+	for (M of each(range(this.range, this), T("/obj/machinery/mass_driver"))) {
+		if (M.id == this.id) {
+			this.connected = M;
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /obj/machinery/computer/pod/proc/alarm  (code/game/machinery/computer/pod.dm:20)  may sleep
+// pod.dm:20
 rt.def("/obj/machinery/computer/pod/proc/alarm", function* alarm(f: Frame) {
 	let M: Value = null;
-	let $e: any;
-	f.vars = () => [M, $e];
-	if (truthy(rt.bitAnd(rt.sv(f, "stat"), 3))) {
-		return live(f.dot);
+	if (rt.bitAnd(this.stat, 3)) {
+		return f.dot;
 	}
-	if (!truthy(rt.sv(f, "connected"))) {
-		rt.op(f, "Output", [], [(yield* g.call(f, P("/proc/viewers"), null, [null, null])), "Cannot locate mass driver connector. Cancelling firing sequence!"], false);
-		return live(f.dot);
+	if (!this.connected) {
+		rt.op(f, "Output", [], [viewers(null, null), "Cannot locate mass driver connector. Cancelling firing sequence!"], false);
+		return f.dot;
 	}
-	M = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/range"), null, [rt.sv(f, "range"), live(f.src)])), T("/obj/machinery/door/poddoor"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if (isEqual(rt.fv(f, "id", live(M)), rt.sv(f, "id"))) {
-			yield* g.callName(f, live(M), "open", []);
+	for (M of each(range(this.range, this), T("/obj/machinery/door/poddoor"))) {
+		if (M.id == this.id) {
+			yield* M.open();
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/sleep"), null, [20]);
+	yield* sleep(20);
 	M = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/range"), null, [rt.sv(f, "range"), live(f.src)])), T("/obj/machinery/mass_driver"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if (isEqual(rt.fv(f, "id", live(M)), rt.sv(f, "id"))) {
-			rt.setFv(f, "power", live(M), rt.fv(f, "power", rt.sv(f, "connected")));
-			yield* g.callName(f, live(M), "drive", []);
+	for (M of each(range(this.range, this), T("/obj/machinery/mass_driver"))) {
+		if (M.id == this.id) {
+			M.power = this.connected.power;
+			yield* M.drive();
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/sleep"), null, [50]);
+	yield* sleep(50);
 	M = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/range"), null, [rt.sv(f, "range"), live(f.src)])), T("/obj/machinery/door/poddoor"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if (isEqual(rt.fv(f, "id", live(M)), rt.sv(f, "id"))) {
-			yield* g.callName(f, live(M), "close", []);
+	for (M of each(range(this.range, this), T("/obj/machinery/door/poddoor"))) {
+		if (M.id == this.id) {
+			yield* M.close();
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /obj/machinery/computer/pod/proc/attack_hand  (code/game/machinery/computer/pod.dm:43)  may sleep
-rt.def("/obj/machinery/computer/pod/proc/attack_hand", function* attack_hand(f: Frame) {
-	let dat: Value = null, d2: Value = null, second: Value = null, minute: Value = null, temp: Value = null, L: Value = null, t: Value = null, popup: Value = null;
+// pod.dm:43
+rt.def("/obj/machinery/computer/pod/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
+	let d2: Value = null, second: Value = null, minute: Value = null, temp: Value = null, L: Value = null, t: Value = null, popup: Value = null;
 	let $0: any, $1: any, $e: any;
-	f.vars = () => [dat, d2, second, minute, temp, L, t, popup, $0, $1, $e];
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		return live(f.dot);
+	if (yield* parent_proc()) {
+		return f.dot;
 	}
-	dat = "";
-	yield* g.callName(f, live(f.args[0]), "set_machine", [live(f.src)]);
-	if (truthy(rt.sv(f, "connected"))) {
-		d2 = null;
-		if (truthy(rt.sv(f, "timing"))) {
-			d2 = fmt("<A href='?src=＃;time=0'>Stop Time Launch</A>", [live(f.src)]);
+	let dat: Value = "";
+	yield* user.set_machine(this);
+	if (this.connected) {
+		if (this.timing) {
+			d2 = fmt("<A href='?src=＃;time=0'>Stop Time Launch</A>", [this]);
 		} else {
-			d2 = fmt("<A href='?src=＃;time=1'>Initiate Time Launch</A>", [live(f.src)]);
+			d2 = fmt("<A href='?src=＃;time=1'>Initiate Time Launch</A>", [this]);
 		}
-		second = rt.modulus(rt.sv(f, "time"), 60);
-		minute = divide(subtract(rt.sv(f, "time"), live(second)), 60);
-		$0 = live(d2);
-		if (truthy(live(minute))) {
-			$1 = fmt("＀:", [live(minute)]);
+		second = this.time % 60;
+		minute = (this.time - second) / 60;
+		$0 = d2;
+		if (minute) {
+			$1 = `${minute}:`;
 		} else {
 			$1 = null;
 		}
-		dat = rt.modify(live(dat), fmt("<HR>\nTimer System: ＀\nTime Left: ＀＀ <A href='?src=＃;tp=-30'>-</A> <A href='?src=＃;tp=-1'>-</A> <A href='?src=＃;tp=1'>+</A> <A href='?src=＃;tp=30'>+</A>", [$0, $1, live(second), live(f.src), live(f.src), live(f.src), live(f.src)]), add);
+		dat += fmt("<HR>\nTimer System: ＀\nTime Left: ＀＀ <A href='?src=＃;tp=-30'>-</A> <A href='?src=＃;tp=-1'>-</A> <A href='?src=＃;tp=1'>+</A> <A href='?src=＃;tp=30'>+</A>", [$0, $1, second, this, this, this, this]);
 		temp = "";
-		L = rt.list(0.25, 0.5, 1, 2, 4, 8, 16);
-		t = null;
-		rt.forList(f, 0, live(L));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			t = $e;
-			if (isEqual(live(t), rt.fv(f, "power", rt.sv(f, "connected")))) {
-				temp = rt.modify(live(temp), fmt("＀ ", [live(t)]), add);
+		L = list(0.25, 0.5, 1, 2, 4, 8, 16);
+		for (t of each(L)) {
+			if (t == this.connected.power) {
+				temp += `${t} `;
 			} else {
-				temp = rt.modify(live(temp), fmt("<A href = '?src=＃;power=＀'>＀</A> ", [live(f.src), live(t), live(t)]), add);
+				temp += fmt("<A href = '?src=＃;power=＀'>＀</A> ", [this, t, t]);
 			}
 		}
-		rt.endFor(f, 0);
-		dat = rt.modify(live(dat), fmt("<HR>\nPower Level: ＀<BR>\n<A href = '?src=＃;alarm=1'>Firing Sequence</A><BR>\n<A href = '?src=＃;drive=1'>Test Fire Driver</A><BR>\n<A href = '?src=＃;door=1'>Toggle Outer Door</A><BR>", [live(temp), live(f.src), live(f.src), live(f.src)]), add);
+		dat += fmt("<HR>\nPower Level: ＀<BR>\n<A href = '?src=＃;alarm=1'>Firing Sequence</A><BR>\n<A href = '?src=＃;drive=1'>Test Fire Driver</A><BR>\n<A href = '?src=＃;door=1'>Toggle Outer Door</A><BR>", [temp, this, this, this]);
 	} else {
-		dat = rt.modify(live(dat), fmt("<BR>\n<A href = '?src=＃;door=1'>Toggle Outer Door</A><BR>", [live(f.src)]), add);
+		dat += fmt("<BR>\n<A href = '?src=＃;door=1'>Toggle Outer Door</A><BR>", [this]);
 	}
-	dat = rt.modify(live(dat), fmt("<BR><BR><A href='?src=＃;mach_close=computer'>Close</A>", [live(f.args[0])]), add);
-	yield* g.srcCall(f, "add_fingerprint", live(f.usr));
-	yield* g.callName(f, (popup = (yield* g.new_(f, T("/datum/browser"), [live(f.args[0]), "computer", rt.sv(f, "title"), 400, 500]))), "set_content", [live(dat)]);
-	yield* g.callName(f, live(popup), "set_title_image", [(yield* g.callName(f, live(f.args[0]), "browse_rsc_icon", [rt.sv(f, "icon"), rt.sv(f, "icon_state")]))]);
-	yield* g.callName(f, live(popup), "open", []);
+	dat += fmt("<BR><BR><A href='?src=＃;mach_close=computer'>Close</A>", [user]);
+	yield* this.add_fingerprint(f.usr);
+	(popup = (yield* new_(T("/datum/browser"), user, "computer", this.title, 400, 500))).set_content(dat);
+	popup.set_title_image(user.browse_rsc_icon(this.icon, this.icon_state));
+	yield* popup.open();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /obj/machinery/computer/pod/proc/process  (code/game/machinery/computer/pod.dm:76)  may sleep
+// pod.dm:76
 rt.def("/obj/machinery/computer/pod/proc/process", function* process(f: Frame) {
-	if (!truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		return live(f.dot);
+	if (!(yield* parent_proc())) {
+		return f.dot;
 	}
-	if (!truthy(rt.sv(f, "timing"))) return f.dot;
-	if (rt.gt(rt.sv(f, "time"), 0)) {
-		rt.setSv(f, "time", subtract((yield* g.call(f, P("/proc/round"), null, [rt.sv(f, "time")])), 1));
+	if (!this.timing) return f.dot;
+	if (this.time > 0) {
+		this.time = round(this.time) - 1;
 	} else {
-		yield* g.srcCall(f, "alarm");
-		rt.setSv(f, "time", 0);
-		rt.setSv(f, "timing", 0);
+		yield* this.alarm();
+		this.time = 0;
+		this.timing = 0;
 	}
-	yield* g.srcCall(f, "updateDialog");
+	yield* this.updateDialog();
 	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/machinery/computer/pod/proc/Topic  (code/game/machinery/computer/pod.dm:89)  may sleep
-rt.def("/obj/machinery/computer/pod/proc/Topic", function* Topic(f: Frame) {
+// pod.dm:89
+rt.def("/obj/machinery/computer/pod/proc/Topic", function* Topic(f: Frame, href: Value, href_list: Value) {
 	let t: Value = null, tp: Value = null, M: Value = null;
-	let $e: any;
-	f.vars = () => [t, tp, M, $e];
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		return live(f.dot);
+	if (yield* parent_proc()) {
+		return f.dot;
 	}
-	if (!((truthy((yield* g.callName(f, rt.fv(f, "contents", live(f.usr)), "Find", [live(f.src)]))) || (rt.le((yield* g.call(f, P("/proc/get_dist"), null, [live(f.src), live(f.usr)])), 1) && truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.sv(f, "loc")]))))) || truthy((rt.istype(live(f.usr), T("/mob/living/silicon")) ? 1 : 0)))) return f.dot;
-	yield* g.callName(f, live(f.usr), "set_machine", [live(f.src)]);
-	if (truthy(rt.at(live(f.args[1]), "power"))) {
-		t = (yield* g.call(f, P("/proc/text2num"), null, [rt.at(live(f.args[1]), "power")]));
-		t = (yield* g.call(f, P("/proc/min"), null, [(yield* g.call(f, P("/proc/max"), null, [0.25, live(t)])), 16]));
-		if (truthy(rt.sv(f, "connected"))) {
-			rt.setFv(f, "power", rt.sv(f, "connected"), live(t));
+	if (!(f.usr.contents.Find(this) || get_dist(this, f.usr) <= 1 && isturf(this.loc) || rt.istype(f.usr, T("/mob/living/silicon")))) return f.dot;
+	yield* f.usr.set_machine(this);
+	if (rt.at(href_list, "power")) {
+		t = text2num(rt.at(href_list, "power"));
+		t = min(max(0.25, t), 16);
+		if (this.connected) {
+			this.connected.power = t;
 		}
 	}
-	if (truthy(rt.at(live(f.args[1]), "alarm"))) {
-		yield* g.srcCall(f, "alarm");
+	if (rt.at(href_list, "alarm")) {
+		yield* this.alarm();
 	}
-	if (truthy(rt.at(live(f.args[1]), "time"))) {
-		rt.setSv(f, "timing", (yield* g.call(f, P("/proc/text2num"), null, [rt.at(live(f.args[1]), "time")])));
+	if (rt.at(href_list, "time")) {
+		this.timing = text2num(rt.at(href_list, "time"));
 	}
-	if (truthy(rt.at(live(f.args[1]), "tp"))) {
-		rt.setSv(f, "time", (yield* g.call(f, P("/proc/min"), null, [(yield* g.call(f, P("/proc/max"), null, [(yield* g.call(f, P("/proc/round"), null, [(rt.modSrcVar(f, "time", (tp = (yield* g.call(f, P("/proc/text2num"), null, [rt.at(live(f.args[1]), "tp")]))), add))])), 0])), 120])));
+	if (rt.at(href_list, "tp")) {
+		this.time = min(max(round((this.time += (tp = text2num(rt.at(href_list, "tp"))))), 0), 120);
 	}
-	if (truthy(rt.at(live(f.args[1]), "door"))) {
-		M = null;
-		rt.forList(f, 0, (yield* g.call(f, P("/proc/range"), null, [rt.sv(f, "range"), live(f.src)])), T("/obj/machinery/door/poddoor"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			M = $e;
-			if (isEqual(rt.fv(f, "id", live(M)), rt.sv(f, "id"))) {
-				if (truthy(rt.fv(f, "density", live(M)))) {
-					yield* g.callName(f, live(M), "open", []);
+	if (rt.at(href_list, "door")) {
+		for (M of each(range(this.range, this), T("/obj/machinery/door/poddoor"))) {
+			if (M.id == this.id) {
+				if (M.density) {
+					yield* M.open();
 				} else {
-					yield* g.callName(f, live(M), "close", []);
+					yield* M.close();
 				}
 			}
 		}
-		rt.endFor(f, 0);
 	}
-	if (truthy(rt.at(live(f.args[1]), "drive"))) {
+	if (rt.at(href_list, "drive")) {
 		M = null;
-		rt.forList(f, 0, (yield* g.call(f, P("/proc/range"), null, [rt.sv(f, "range"), live(f.src)])), T("/obj/machinery/mass_driver"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			M = $e;
-			if (isEqual(rt.fv(f, "id", live(M)), rt.sv(f, "id"))) {
-				rt.setFv(f, "power", live(M), rt.fv(f, "power", rt.sv(f, "connected")));
-				yield* g.callName(f, live(M), "drive", []);
+		for (M of each(range(this.range, this), T("/obj/machinery/mass_driver"))) {
+			if (M.id == this.id) {
+				M.power = this.connected.power;
+				yield* M.drive();
 			}
 		}
-		rt.endFor(f, 0);
 	}
-	yield* g.srcCall(f, "updateUsrDialog");
+	yield* this.updateUsrDialog();
 	return f.dot;
-}, true, { args: ["href", "href_list"] });
+}, true);
 
 rt.type(10404, "/obj/machinery/computer/pod/old/syndicate", "/obj/machinery/computer/pod/old", {
 	title: "External Airlock Controls",
@@ -210,22 +177,20 @@ rt.type(10404, "/obj/machinery/computer/pod/old/syndicate", "/obj/machinery/comp
 	req_access: null,
 });
 
-// /obj/machinery/computer/pod/old/syndicate/proc/<init>  (code/game/machinery/computer/pod.dm:133)
+// pod.dm:133
 rt.def("/obj/machinery/computer/pod/old/syndicate/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_access", rt.list(150));
+	parent_proc();
+	this.req_access = list(150);
 	return f.dot;
 });
 
-// /obj/machinery/computer/pod/old/syndicate/proc/attack_hand  (code/game/machinery/computer/pod.dm:136)  may sleep
-rt.def("/obj/machinery/computer/pod/old/syndicate/proc/attack_hand", function* attack_hand(f: Frame) {
-	if (!truthy((yield* g.srcCall(f, "allowed", live(f.args[0]))))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='notice'>Access denied.</span>"]);
-		return live(f.dot);
+// pod.dm:136
+rt.def("/obj/machinery/computer/pod/old/syndicate/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
+	if (!(yield* this.allowed(user))) {
+		to_chat(user, "<span class='notice'>Access denied.</span>");
+		return f.dot;
 	} else {
-		yield* g.callSuper(f, [], rt.Args.Same);
+		yield* parent_proc();
 	}
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);

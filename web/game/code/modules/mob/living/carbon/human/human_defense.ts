@@ -1,1071 +1,920 @@
-// From code/modules/mob/living/carbon/human/human_defense.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/carbon/human/human_defense.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
-// /mob/living/carbon/human/proc/getarmor  (code/modules/mob/living/carbon/human/human_defense.dm:6)
+// human_defense.dm:6
 rt.def("/mob/living/carbon/human/proc/getarmor", function getarmor(f: Frame, def_zone: Value, type: Value) {
-	let armorval: Value = null, organnum: Value = null, affecting: Value = null, X: Value = null, BP: Value = null;
-	let $e: any;
-	f.vars = () => [armorval, organnum, affecting, X, BP, $e];
-	armorval = 0;
-	organnum = 0;
-	if (truthy(live(def_zone))) {
-		if (truthy((rt.istype(live(def_zone), T("/obj/item/bodypart")) ? 1 : 0))) {
-			return rt.callSrc(f, "checkarmor", [live(def_zone), live(type)]);
+	let affecting: Value = null, X: Value = null, BP: Value = null;
+	let armorval: Value = 0;
+	let organnum: Value = 0;
+	if (def_zone) {
+		if (rt.istype(def_zone, T("/obj/item/bodypart"))) {
+			return this.checkarmor(def_zone, type);
 		}
-		return rt.callSrc(f, "checkarmor", [(affecting = rt.callSrc(f, "get_bodypart", [rt.call(f, P("/proc/ran_zone"), null, [live(def_zone)])])), live(type)]);
+		return this.checkarmor((affecting = this.get_bodypart(ran_zone(def_zone))), type);
 	}
-	X = null;
-	rt.forList(f, 0, rt.sv(f, "bodyparts"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		X = $e;
-		armorval = rt.modify(live(armorval), rt.callSrc(f, "checkarmor", [(BP = live(X)), live(type)]), add);
-		organnum = rt.inc(live(organnum), 1);
+	for (X of each(this.bodyparts)) {
+		armorval += this.checkarmor((BP = X), type);
+		organnum++;
 	}
-	rt.endFor(f, 0);
-	return divide(live(armorval), rt.call(f, P("/proc/max"), null, [live(organnum), 1]));
+	return armorval / max(organnum, 1);
 });
 
-// /mob/living/carbon/human/proc/checkarmor  (code/modules/mob/living/carbon/human/human_defense.dm:21)
+// human_defense.dm:21
 rt.def("/mob/living/carbon/human/proc/checkarmor", function checkarmor(f: Frame, def_zone: Value, d_type: Value) {
-	let protection: Value = null, body_parts: Value = null, bp: Value = null, C: Value = null;
-	let $e: any;
-	f.vars = () => [protection, body_parts, bp, C, $e];
-	if (!truthy(live(d_type))) {
+	let bp: Value = null, C: Value = null;
+	if (!d_type) {
 		return 0;
 	}
-	protection = 0;
-	body_parts = rt.list(rt.sv(f, "head"), rt.sv(f, "wear_mask"), rt.sv(f, "wear_suit"), rt.sv(f, "w_uniform"), rt.sv(f, "back"), rt.sv(f, "gloves"), rt.sv(f, "shoes"), rt.sv(f, "belt"), rt.sv(f, "s_store"), rt.sv(f, "glasses"), rt.sv(f, "ears"), rt.sv(f, "wear_id"));
-	bp = null;
-	rt.forList(f, 0, live(body_parts));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		bp = $e;
-		if (!truthy(live(bp))) {
+	let protection: Value = 0;
+	let body_parts: Value = list(this.head, this.wear_mask, this.wear_suit, this.w_uniform, this.back, this.gloves, this.shoes, this.belt, this.s_store, this.glasses, this.ears, this.wear_id);
+	for (bp of each(body_parts)) {
+		if (!bp) {
 			continue;
 		}
-		if ((truthy(live(bp)) && truthy((rt.istype(live(bp), T("/obj/item/clothing")) ? 1 : 0)))) {
-			if (truthy(rt.bitAnd(rt.gv(f, "body_parts_covered", (C = live(bp))), rt.fv(f, "body_part", live(def_zone))))) {
-				protection = rt.modify(live(protection), rt.index(rt.fv(f, "armor", live(C)), live(d_type)), add);
+		if (bp && rt.istype(bp, T("/obj/item/clothing"))) {
+			if (rt.bitAnd((C = bp).body_parts_covered, def_zone.body_part)) {
+				protection += rt.index(C.armor, d_type);
 			}
 		}
 	}
-	rt.endFor(f, 0);
-	return live(protection);
+	return protection;
 });
 
-// /mob/living/carbon/human/proc/on_hit  (code/modules/mob/living/carbon/human/human_defense.dm:35)  may sleep
+// human_defense.dm:35
 rt.def("/mob/living/carbon/human/proc/on_hit", function* on_hit(f: Frame, _P: Value) {
-	f.vars = () => [_P];
-	yield* g.callName(f, rt.fv(f, "species", rt.sv(f, "dna")), "on_hit", [live(_P), live(f.src)]);
+	yield* this.dna.species.on_hit(_P, this);
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/human/proc/bullet_act  (code/modules/mob/living/carbon/human/human_defense.dm:39)  may sleep
+// human_defense.dm:39
 rt.def("/mob/living/carbon/human/proc/bullet_act", function* bullet_act(f: Frame, _P: Value, def_zone: Value) {
 	let spec_return: Value = null, new_x: Value = null, new_y: Value = null, curloc: Value = null;
-	f.vars = () => [_P, def_zone, spec_return, new_x, new_y, curloc];
-	if (truthy((spec_return = (yield* g.callName(f, rt.fv(f, "species", rt.sv(f, "dna")), "bullet_act", [live(_P), live(f.src)]))))) {
-		return live(spec_return);
+	if (spec_return = (yield* this.dna.species.bullet_act(_P, this))) {
+		return spec_return;
 	}
-	if (truthy(rt.sv(f, "mind"))) {
-		if ((truthy(rt.fv(f, "martial_art", rt.sv(f, "mind"))) && truthy(rt.gv(f, "deflection_chance", rt.fv(f, "martial_art", rt.sv(f, "mind")))))) {
-			if (truthy(rt.op(f, "Prob", [], [rt.gv(f, "deflection_chance", rt.fv(f, "martial_art", rt.sv(f, "mind")))]))) {
-				if (((!truthy(rt.sv(f, "lying")) && truthy(rt.sv(f, "dna"))) && !truthy((yield* g.callName(f, rt.sv(f, "dna"), "check_mutation", ["Hulk"]))))) {
-					yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＀ deflects the projectile; ＀ can't be hit with ranged weapons!</span>", [live(f.src), (yield* g.srcCall(f, "p_they"))]), "<span class='userdanger'>You deflect the projectile!</span>");
-					yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.op(f, "PickUnweighted", [3], [rt.rsc("sound/weapons/bulletflyby.ogg"), rt.rsc("sound/weapons/bulletflyby2.ogg"), rt.rsc("sound/weapons/bulletflyby3.ogg")]), 75, 1]);
+	if (this.mind) {
+		if (this.mind.martial_art && this.mind.martial_art.deflection_chance) {
+			if (prob(this.mind.martial_art.deflection_chance)) {
+				if (!this.lying && this.dna && !this.dna.check_mutation("Hulk")) {
+					this.visible_message(`<span class='danger'>${this} deflects the projectile; ${this.p_they()} can't be hit with ranged weapons!</span>`, "<span class='userdanger'>You deflect the projectile!</span>");
+					playsound(this, pick(rt.rsc("sound/weapons/bulletflyby.ogg"), rt.rsc("sound/weapons/bulletflyby2.ogg"), rt.rsc("sound/weapons/bulletflyby3.ogg")), 75, 1);
 					return 0;
 				}
 			}
 		}
 	}
-	if (!(isEqual(rt.fv(f, "original", live(_P)), live(f.src)) && isEqual(rt.fv(f, "firer", live(_P)), live(f.src)))) {
-		if ((truthy((rt.istype(live(_P), T("/obj/item/projectile/energy")) ? 1 : 0)) || truthy((rt.istype(live(_P), T("/obj/item/projectile/beam")) ? 1 : 0)))) {
-			if (truthy((yield* g.srcCall(f, "check_reflect", live(def_zone))))) {
-				yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>The ＀ gets reflected by ＀!</span>", [rt.fv(f, "name", live(_P)), live(f.src)]), fmt("<span class='userdanger'>The ＀ gets reflected by ＀!</span>", [rt.fv(f, "name", live(_P)), live(f.src)]));
-				if (truthy(rt.fv(f, "starting", live(_P)))) {
-					new_x = add(rt.gv(f, "x", rt.fv(f, "starting", live(_P))), rt.op(f, "PickUnweighted", [9], [0, 0, 0, 0, 0, -1, 1, -2, 2]));
-					new_y = add(rt.gv(f, "y", rt.fv(f, "starting", live(_P))), rt.op(f, "PickUnweighted", [9], [0, 0, 0, 0, 0, -1, 1, -2, 2]));
-					curloc = rt.getStep(f, live(f.src), 0);
-					rt.setFv(f, "original", live(_P), rt.locate(live(new_x), live(new_y), rt.fv(f, "z", live(_P))));
-					rt.setFv(f, "starting", live(_P), live(curloc));
-					rt.setFv(f, "current", live(_P), live(curloc));
-					rt.setFv(f, "firer", live(_P), live(f.src));
-					rt.setFv(f, "yo", live(_P), subtract(live(new_y), rt.fv(f, "y", live(curloc))));
-					rt.setFv(f, "xo", live(_P), subtract(live(new_x), rt.fv(f, "x", live(curloc))));
-					rt.setFv(f, "Angle", live(_P), null);
+	if (!(_P.original == this && _P.firer == this)) {
+		if (rt.istype(_P, T("/obj/item/projectile/energy")) || rt.istype(_P, T("/obj/item/projectile/beam"))) {
+			if (yield* this.check_reflect(def_zone)) {
+				this.visible_message(`<span class='danger'>The ${_P.name} gets reflected by ${this}!</span>`, `<span class='userdanger'>The ${_P.name} gets reflected by ${this}!</span>`);
+				if (_P.starting) {
+					new_x = _P.starting.x + pick(0, 0, 0, 0, 0, -1, 1, -2, 2);
+					new_y = _P.starting.y + pick(0, 0, 0, 0, 0, -1, 1, -2, 2);
+					curloc = rt.getStep(f, this, 0);
+					_P.original = rt.locate(new_x, new_y, _P.z);
+					_P.starting = curloc;
+					_P.current = curloc;
+					_P.firer = this;
+					_P.yo = new_y - curloc.y;
+					_P.xo = new_x - curloc.x;
+					_P.Angle = null;
 				}
 				return -1;
 			}
 		}
-		if (truthy((yield* g.srcCall(f, "check_shields", live(_P), rt.fv(f, "damage", live(_P)), fmt("the ＀", [rt.fv(f, "name", live(_P))]), 3, rt.fv(f, "armour_penetration", live(_P)))))) {
-			yield* g.callName(f, live(_P), "on_hit", [live(f.src), 100, live(def_zone)]);
+		if (yield* this.check_shields(_P, _P.damage, `the ${_P.name}`, 3, _P.armour_penetration)) {
+			yield* _P.on_hit(this, 100, def_zone);
 			return 2;
 		}
 	}
-	return (yield* g.callSuper(f, [live(_P), live(def_zone)]));
+	return (yield* parent_proc(_P, def_zone));
 }, true);
 
-// /mob/living/carbon/human/proc/check_reflect  (code/modules/mob/living/carbon/human/human_defense.dm:81)  may sleep
+// human_defense.dm:81
 rt.def("/mob/living/carbon/human/proc/check_reflect", function* check_reflect(f: Frame, def_zone: Value) {
 	let I: Value = null;
-	let $e: any;
-	f.vars = () => [def_zone, I, $e];
-	if (truthy(rt.sv(f, "wear_suit"))) {
-		if (isEqual((yield* g.callName(f, rt.sv(f, "wear_suit"), "IsReflect", [live(def_zone)])), 1)) {
+	if (this.wear_suit) {
+		if ((yield* this.wear_suit.IsReflect(def_zone)) == 1) {
 			return 1;
 		}
 	}
-	I = null;
-	rt.forList(f, 0, rt.sv(f, "held_items"), T("/obj/item"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		if (isEqual((yield* g.callName(f, live(I), "IsReflect", [live(def_zone)])), 1)) {
+	for (I of each(this.held_items, T("/obj/item"))) {
+		if ((yield* I.IsReflect(def_zone)) == 1) {
 			return 1;
 		}
 	}
-	rt.endFor(f, 0);
 	return 0;
 }, true);
 
-// /mob/living/carbon/human/proc/check_shields  (code/modules/mob/living/carbon/human/human_defense.dm:89)  may sleep
+// human_defense.dm:89
 rt.def("/mob/living/carbon/human/proc/check_shields", function* check_shields(f: Frame, AM: Value, damage: Value, attack_text: Value, attack_type: Value, armour_penetration: Value) {
-	let block_chance_modifier: Value = null, I: Value = null, final_block_chance: Value = null, final_block_chance_1: Value = null;
-	let $e: any;
-	f.vars = () => [AM, damage, attack_text, attack_type, armour_penetration, block_chance_modifier, I, final_block_chance, final_block_chance_1, $e];
-	if (live(attack_text) === null) {
-		attack_text = "the attack";
-	}
-	if (live(attack_type) === null) {
-		attack_type = 1;
-	}
-	if (live(armour_penetration) === null) {
-		armour_penetration = 0;
-	}
-	block_chance_modifier = (yield* g.call(f, P("/proc/round"), null, [divide(live(damage), -3)]));
-	I = null;
-	rt.forList(f, 0, rt.sv(f, "held_items"), T("/obj/item"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		if (!truthy((rt.istype(live(I), T("/obj/item/clothing")) ? 1 : 0))) {
-			final_block_chance = add(subtract(rt.fv(f, "block_chance", live(I)), (yield* g.call(f, P("/proc/max"), null, [0, (yield* g.call(f, P("/proc/min"), null, [divide(subtract(live(armour_penetration), rt.fv(f, "armour_penetration", live(I))), 2), 100]))]))), live(block_chance_modifier));
-			if (truthy((yield* g.callName(f, live(I), "hit_reaction", [live(f.src), live(AM), live(attack_text), live(final_block_chance), live(damage), live(attack_type)])))) {
+	let I: Value = null, final_block_chance: Value = null, final_block_chance_1: Value = null;
+	attack_text ??= "the attack";
+	attack_type ??= 1;
+	armour_penetration ??= 0;
+	let block_chance_modifier: Value = round(damage / -3);
+	for (I of each(this.held_items, T("/obj/item"))) {
+		if (!rt.istype(I, T("/obj/item/clothing"))) {
+			final_block_chance = I.block_chance - max(0, min((armour_penetration - I.armour_penetration) / 2, 100)) + block_chance_modifier;
+			if (yield* I.hit_reaction(this, AM, attack_text, final_block_chance, damage, attack_type)) {
 				return 1;
 			}
 		}
 	}
-	rt.endFor(f, 0);
-	if (truthy(rt.sv(f, "wear_suit"))) {
-		final_block_chance_1 = add(subtract(rt.fv(f, "block_chance", rt.sv(f, "wear_suit")), (yield* g.call(f, P("/proc/max"), null, [0, (yield* g.call(f, P("/proc/min"), null, [divide(subtract(live(armour_penetration), rt.fv(f, "armour_penetration", rt.sv(f, "wear_suit"))), 2), 100]))]))), live(block_chance_modifier));
-		if (truthy((yield* g.callName(f, rt.sv(f, "wear_suit"), "hit_reaction", [live(f.src), live(AM), live(attack_text), live(final_block_chance_1), live(damage), live(attack_type)])))) {
+	if (this.wear_suit) {
+		final_block_chance_1 = this.wear_suit.block_chance - max(0, min((armour_penetration - this.wear_suit.armour_penetration) / 2, 100)) + block_chance_modifier;
+		if (yield* this.wear_suit.hit_reaction(this, AM, attack_text, final_block_chance_1, damage, attack_type)) {
 			return 1;
 		}
 	}
-	if (truthy(rt.sv(f, "w_uniform"))) {
-		final_block_chance_1 = add(subtract(rt.fv(f, "block_chance", rt.sv(f, "w_uniform")), (yield* g.call(f, P("/proc/max"), null, [0, (yield* g.call(f, P("/proc/min"), null, [divide(subtract(live(armour_penetration), rt.fv(f, "armour_penetration", rt.sv(f, "w_uniform"))), 2), 100]))]))), live(block_chance_modifier));
-		if (truthy((yield* g.callName(f, rt.sv(f, "w_uniform"), "hit_reaction", [live(f.src), live(AM), live(attack_text), live(final_block_chance_1), live(damage), live(attack_type)])))) {
+	if (this.w_uniform) {
+		final_block_chance_1 = this.w_uniform.block_chance - max(0, min((armour_penetration - this.w_uniform.armour_penetration) / 2, 100)) + block_chance_modifier;
+		if (yield* this.w_uniform.hit_reaction(this, AM, attack_text, final_block_chance_1, damage, attack_type)) {
 			return 1;
 		}
 	}
 	return 0;
 }, true);
 
-// /mob/living/carbon/human/proc/check_block  (code/modules/mob/living/carbon/human/human_defense.dm:108)
+// human_defense.dm:108
 rt.def("/mob/living/carbon/human/proc/check_block", function check_block(f: Frame) {
-	if (truthy(rt.sv(f, "mind"))) {
-		if ((((((truthy(rt.fv(f, "martial_art", rt.sv(f, "mind"))) && truthy(rt.op(f, "Prob", [], [rt.gv(f, "block_chance", rt.fv(f, "martial_art", rt.sv(f, "mind")))]))) && truthy(rt.sv(f, "in_throw_mode"))) && !truthy(rt.sv(f, "stat"))) && !truthy(rt.callSrc(f, "IsKnockdown", []))) && !truthy(rt.callSrc(f, "IsStun", [])))) {
+	if (this.mind) {
+		if (this.mind.martial_art && prob(this.mind.martial_art.block_chance) && this.in_throw_mode && !this.stat && !this.IsKnockdown() && !this.IsStun()) {
 			return 1;
 		}
 	}
 	return 0;
 });
 
-// /mob/living/carbon/human/proc/hitby  (code/modules/mob/living/carbon/human/human_defense.dm:113)  may sleep
+// human_defense.dm:113
 rt.def("/mob/living/carbon/human/proc/hitby", function* hitby(f: Frame) {
-	let spec_return: Value = null, I: Value = null, throwpower: Value = null, L: Value = null;
-	f.vars = () => [spec_return, I, throwpower, L];
-	if (live(f.args[1]) === null) {
+	let spec_return: Value = null, I: Value = null, L: Value = null;
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 1;
 	}
-	if (live(f.args[3]) === null) {
+	if (f.args[3] === null) {
 		f.args[3] = 0;
 	}
-	if (truthy((spec_return = (yield* g.callName(f, rt.fv(f, "species", rt.sv(f, "dna")), "spec_hitby", [live(f.args[0]), live(f.src)]))))) {
-		return live(spec_return);
+	if (spec_return = (yield* this.dna.species.spec_hitby(f.args[0], this))) {
+		return spec_return;
 	}
-	I = null;
-	throwpower = 30;
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item")) ? 1 : 0))) {
-		throwpower = rt.gv(f, "throwforce", (I = live(f.args[0])));
-		if (isEqual(rt.fv(f, "thrownby", live(I)), live(f.src))) {
-			return (yield* g.callSuper(f, [], rt.Args.Same));
+	let throwpower: Value = 30;
+	if (rt.istype(f.args[0], T("/obj/item"))) {
+		throwpower = (I = f.args[0]).throwforce;
+		if (I.thrownby == this) {
+			return (yield* parent_proc());
 		}
 	}
-	if (truthy((yield* g.srcCall(f, "check_shields", live(f.args[0]), live(throwpower), fmt("％！", [rt.fv(f, "name", live(f.args[0]))]), 4)))) {
+	if (yield* this.check_shields(f.args[0], throwpower, fmt("％！", [f.args[0].name]), 4)) {
 		f.args[2] = 0;
 		f.args[1] = 1;
 		f.args[3] = 1;
-	} else {
-		if (truthy(live(I))) {
-			if (rt.ge(rt.fv(f, "throw_speed", live(I)), 4)) {
-				if (truthy((yield* g.call(f, P("/proc/can_embed"), null, [live(I)])))) {
-					if ((truthy(rt.op(f, "Prob", [], [rt.fv(f, "embed_chance", live(I))])) && !(truthy(rt.sv(f, "dna")) && truthy((rt.isIn(f, 15, rt.gv(f, "species_traits", rt.fv(f, "species", rt.sv(f, "dna")))) ? 1 : 0))))) {
-						yield* g.srcCall(f, "throw_alert", "embeddedobject", T("/obj/screen/alert/embeddedobject"));
-						(rt.modField(f, (L = rt.op(f, "PickUnweighted", [1], [rt.sv(f, "bodyparts")])), "embedded_objects", live(I), rt.bitOr));
-						yield* g.callName(f, live(I), "add_mob_blood", [live(f.src)]);
-						rt.setFv(f, "loc", live(I), live(f.src));
-						yield* g.callName(f, live(L), "receive_damage", [multiply(rt.fv(f, "w_class", live(I)), rt.fv(f, "embedded_impact_pain_multiplier", live(I)))]);
-						yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＀ embeds itself in ＀'s ＀!</span>", [live(I), live(f.src), rt.fv(f, "name", live(L))]), fmt("<span class='userdanger'>＀ embeds itself in your ＀!</span>", [live(I), rt.fv(f, "name", live(L))]));
-						f.args[2] = 0;
-						f.args[1] = 1;
-					}
+	} else if (I) {
+		if (I.throw_speed >= EMBED_THROWSPEED_THRESHOLD) {
+			if (can_embed(I)) {
+				if (prob(I.embed_chance) && !(this.dna && rt.isIn(f, PIERCEIMMUNE, this.dna.species.species_traits))) {
+					yield* this.throw_alert("embeddedobject", T("/obj/screen/alert/embeddedobject"));
+					(rt.modField(f, (L = pick(this.bodyparts)), "embedded_objects", I, rt.bitOr));
+					yield* I.add_mob_blood(this);
+					I.loc = this;
+					yield* L.receive_damage(I.w_class * I.embedded_impact_pain_multiplier);
+					this.visible_message(`<span class='danger'>${I} embeds itself in ${this}'s ${L.name}!</span>`, `<span class='userdanger'>${I} embeds itself in your ${L.name}!</span>`);
+					f.args[2] = 0;
+					f.args[1] = 1;
 				}
 			}
 		}
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true, { args: ["AM", "skipcatch", "hitpush", "blocked"] });
 
-// /mob/living/carbon/human/proc/grabbedby  (code/modules/mob/living/carbon/human/human_defense.dm:144)  may sleep
+// human_defense.dm:144
 rt.def("/mob/living/carbon/human/proc/grabbedby", function* grabbedby(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	if ((((((isEqual(live(f.args[0]), live(f.src)) && truthy(rt.sv(f, "pulling"))) && !truthy(rt.fv(f, "anchored", rt.sv(f, "pulling")))) && rt.ge(rt.sv(f, "grab_state"), 1)) && truthy(rt.bitAnd(rt.sv(f, "disabilities"), 32))) && truthy((rt.istype(rt.sv(f, "pulling"), T("/mob/living/carbon/monkey")) ? 1 : 0)))) {
-		yield* g.srcCall(f, "devour_mob", rt.sv(f, "pulling"));
+	if (f.args[0] == this && this.pulling && !this.pulling.anchored && this.grab_state >= 1 && rt.bitAnd(this.disabilities, 32) && rt.istype(this.pulling, T("/mob/living/carbon/monkey"))) {
+		yield* this.devour_mob(this.pulling);
 	} else {
-		yield* g.callSuper(f, [], rt.Args.Same);
+		yield* parent_proc();
 	}
 	return f.dot;
 }, true, { args: ["user", "supress_message"] });
 
-// /mob/living/carbon/human/proc/grippedby  (code/modules/mob/living/carbon/human/human_defense.dm:151)  may sleep
-rt.def("/mob/living/carbon/human/proc/grippedby", function* grippedby(f: Frame) {
-	if (truthy(rt.sv(f, "w_uniform"))) {
-		yield* g.callName(f, rt.sv(f, "w_uniform"), "add_fingerprint", [live(f.args[0])]);
+// human_defense.dm:151
+rt.def("/mob/living/carbon/human/proc/grippedby", function* grippedby(f: Frame, user: Value) {
+	if (this.w_uniform) {
+		yield* this.w_uniform.add_fingerprint(user);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /mob/living/carbon/human/proc/attacked_by  (code/modules/mob/living/carbon/human/human_defense.dm:156)  may sleep
+// human_defense.dm:156
 rt.def("/mob/living/carbon/human/proc/attacked_by", function* attacked_by(f: Frame, I: Value, user: Value) {
-	let affecting: Value = null, target_area: Value = null;
-	f.vars = () => [I, user, affecting, target_area];
-	if ((!truthy(live(I)) || !truthy(live(user)))) {
+	if (!I || !user) {
 		return 0;
 	}
-	affecting = (yield* g.srcCall(f, "get_bodypart", (yield* g.call(f, P("/proc/ran_zone"), null, [rt.fv(f, "zone_selected", live(user))]))));
-	target_area = (yield* g.call(f, P("/proc/parse_zone"), null, [(yield* g.call(f, P("/proc/check_zone"), null, [rt.fv(f, "zone_selected", live(user))]))]));
-	return (yield* g.callName(f, rt.fv(f, "species", rt.sv(f, "dna")), "spec_attacked_by", [live(I), live(user), live(affecting), rt.sv(f, "a_intent"), live(f.src)]));
+	let affecting: Value = this.get_bodypart(ran_zone(user.zone_selected));
+	let target_area: Value = parse_zone(check_zone(user.zone_selected));
+	return (yield* this.dna.species.spec_attacked_by(I, user, affecting, this.a_intent, this));
 }, true);
 
-// /mob/living/carbon/human/proc/attack_hulk  (code/modules/mob/living/carbon/human/human_defense.dm:169)  may sleep
+// human_defense.dm:169
 rt.def("/mob/living/carbon/human/proc/attack_hulk", function* attack_hulk(f: Frame, user: Value, does_attack_animation: Value) {
-	let hulk_verb: Value = null, message: Value = null;
-	f.vars = () => [user, does_attack_animation, hulk_verb, message];
-	if (live(does_attack_animation) === null) {
-		does_attack_animation = 0;
+	let message: Value = null;
+	does_attack_animation ??= 0;
+	if (user.a_intent != "harm") return f.dot;
+	let hulk_verb: Value = pick("smash", "pummel");
+	if (yield* this.check_shields(user, 15, `the ${hulk_verb}ing`)) {
+		return f.dot;
 	}
-	if (!isEqual(rt.fv(f, "a_intent", live(user)), "harm")) return f.dot;
-	hulk_verb = rt.op(f, "PickUnweighted", [2], ["smash", "pummel"]);
-	if (truthy((yield* g.srcCall(f, "check_shields", live(user), 15, fmt("the ＀ing", [live(hulk_verb)]))))) {
-		return live(f.dot);
-	}
-	yield* g.callSuper(f, [live(user), 1]);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.gv(f, "attack_sound", rt.gv(f, "species", rt.fv(f, "dna", live(user)))), 25, 1, -1]);
-	yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＀</span>", [(message = fmt("＀ has ＀ed ＀!", [live(user), live(hulk_verb), live(f.src)]))]), fmt("<span class='userdanger'>＀</span>", [live(message)]));
-	yield* g.srcCall(f, "adjustBruteLoss", 15);
-	yield* g.srcCall(f, "damage_clothes", 15, "brute", "melee");
+	yield* parent_proc(user, 1);
+	playsound(this.loc, user.dna.species.attack_sound, 25, 1, -1);
+	this.visible_message(`<span class='danger'>${(message = `${user} has ${hulk_verb}ed ${this}!`)}</span>`, `<span class='userdanger'>${message}</span>`);
+	yield* this.adjustBruteLoss(15);
+	yield* this.damage_clothes(15, "brute", "melee");
 	return 1;
 }, true);
 
-// /mob/living/carbon/human/proc/attack_hand  (code/modules/mob/living/carbon/human/human_defense.dm:183)  may sleep
-rt.def("/mob/living/carbon/human/proc/attack_hand", function* attack_hand(f: Frame) {
+// human_defense.dm:183
+rt.def("/mob/living/carbon/human/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
 	let H: Value = null;
-	f.vars = () => [H];
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		return live(f.dot);
+	if (yield* parent_proc()) {
+		return f.dot;
 	}
-	if (!truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon/human")) ? 1 : 0))) return f.dot;
-	if (isEqual(rt.gv(f, "a_intent", (H = live(f.args[0]))), "disarm")) {
-		if (((truthy(rt.fv(f, "buckled_mobs", live(H))) && truthy((rt.isIn(f, live(f.src), rt.fv(f, "buckled_mobs", live(H))) ? 1 : 0))) && truthy(rt.fv(f, "riding_datum", live(H))))) {
-			yield* g.callName(f, rt.fv(f, "riding_datum", live(H)), "force_dismount", [live(f.src)]);
+	if (!rt.istype(user, T("/mob/living/carbon/human"))) return f.dot;
+	if ((H = user).a_intent == "disarm") {
+		if (H.buckled_mobs && rt.isIn(f, this, H.buckled_mobs) && H.riding_datum) {
+			yield* H.riding_datum.force_dismount(this);
 		}
 	}
-	yield* g.callName(f, rt.fv(f, "species", rt.sv(f, "dna")), "spec_attack_hand", [live(H), live(f.src)]);
+	yield* this.dna.species.spec_attack_hand(H, this);
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /mob/living/carbon/human/proc/attack_paw  (code/modules/mob/living/carbon/human/human_defense.dm:194)  may sleep
-rt.def("/mob/living/carbon/human/proc/attack_paw", function* attack_paw(f: Frame) {
-	let dam_zone: Value = null, affecting: Value = null, damage: Value = null;
-	f.vars = () => [dam_zone, affecting, damage];
-	dam_zone = rt.op(f, "PickUnweighted", [5], ["chest", "l_hand", "r_hand", "l_leg", "r_leg"]);
-	if (!truthy((affecting = (yield* g.srcCall(f, "get_bodypart", (yield* g.call(f, P("/proc/ran_zone"), null, [live(dam_zone)]))))))) {
-		affecting = (yield* g.srcCall(f, "get_bodypart", "chest"));
+// human_defense.dm:194
+rt.def("/mob/living/carbon/human/proc/attack_paw", function* attack_paw(f: Frame, M: Value) {
+	let affecting: Value = null, damage: Value = null;
+	let dam_zone: Value = pick("chest", "l_hand", "r_hand", "l_leg", "r_leg");
+	if (!(affecting = this.get_bodypart(ran_zone(dam_zone)))) {
+		affecting = this.get_bodypart("chest");
 	}
-	if (isEqual(rt.fv(f, "a_intent", live(f.args[0])), "help")) {
-		yield* g.callSuper(f, [], rt.Args.Same);
+	if (M.a_intent == "help") {
+		yield* parent_proc();
 		return 0;
 	}
-	if (isEqual(rt.fv(f, "a_intent", live(f.args[0])), "disarm")) {
-		if ((truthy((yield* g.srcCall(f, "get_active_held_item"))) && truthy((yield* g.srcCall(f, "drop_item"))))) {
-			yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/weapons/slash.ogg"), 25, 1, -1]);
-			yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＀ disarmed ＀!</span>", [live(f.args[0]), live(f.src)]), fmt("<span class='userdanger'>＀ disarmed ＀!</span>", [live(f.args[0]), live(f.src)]));
-		} else {
-			if ((!truthy(rt.fv(f, "client", live(f.args[0]))) || truthy(rt.op(f, "Prob", [], [5])))) {
-				yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/weapons/pierce.ogg"), 25, 1, -1]);
-				yield* g.srcCall(f, "Knockdown", 100);
-				yield* g.call(f, P("/proc/add_logs"), null, [live(f.args[0]), live(f.src), "tackled"]);
-				yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＀ has tackled down ＀!</span>", [live(f.args[0]), live(f.src)]), fmt("<span class='userdanger'>＀ has tackled down ＀!</span>", [live(f.args[0]), live(f.src)]));
-			}
+	if (M.a_intent == "disarm") {
+		if (this.get_active_held_item() && (yield* this.drop_item())) {
+			playsound(this.loc, rt.rsc("sound/weapons/slash.ogg"), 25, 1, -1);
+			this.visible_message(`<span class='danger'>${M} disarmed ${this}!</span>`, `<span class='userdanger'>${M} disarmed ${this}!</span>`);
+		} else if (!M.client || prob(5)) {
+			playsound(this.loc, rt.rsc("sound/weapons/pierce.ogg"), 25, 1, -1);
+			yield* this.Knockdown(100);
+			add_logs(M, this, "tackled");
+			this.visible_message(`<span class='danger'>${M} has tackled down ${this}!</span>`, `<span class='userdanger'>${M} has tackled down ${this}!</span>`);
 		}
 	}
-	if (truthy(rt.fv(f, "limb_destroyer", live(f.args[0])))) {
-		yield* g.srcCall(f, "dismembering_strike", live(f.args[0]), rt.fv(f, "body_zone", live(affecting)));
+	if (M.limb_destroyer) {
+		yield* this.dismembering_strike(M, affecting.body_zone);
 	}
-	if (!truthy((yield* g.srcCall(f, "can_inject", live(f.args[0]), 1, live(affecting))))) return f.dot;
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		damage = (yield* g.call(f, P("/proc/rand"), null, [1, 3]));
-		if (truthy((yield* g.srcCall(f, "check_shields", live(f.args[0]), live(damage), fmt("the ＀", [rt.fv(f, "name", live(f.args[0]))]))))) {
+	if (!(yield* this.can_inject(M, 1, affecting))) return f.dot;
+	if (yield* parent_proc()) {
+		damage = rand(1, 3);
+		if (yield* this.check_shields(M, damage, `the ${M.name}`)) {
 			return 0;
 		}
-		if (!isEqual(rt.sv(f, "stat"), 2)) {
-			yield* g.srcCall(f, "apply_damage", live(damage), "brute", live(affecting), (yield* g.srcCall(f, "run_armor_check", live(affecting), "melee")));
-			yield* g.srcCall(f, "damage_clothes", live(damage), "brute", "melee", rt.fv(f, "body_zone", live(affecting)));
+		if (this.stat != 2) {
+			yield* this.apply_damage(damage, "brute", affecting, this.run_armor_check(affecting, "melee"));
+			yield* this.damage_clothes(damage, "brute", "melee", affecting.body_zone);
 		}
 	}
 	return 1;
-}, true, { args: ["M"] });
+}, true);
 
-// /mob/living/carbon/human/proc/attack_alien  (code/modules/mob/living/carbon/human/human_defense.dm:228)  may sleep
-rt.def("/mob/living/carbon/human/proc/attack_alien", function* attack_alien(f: Frame) {
+// human_defense.dm:228
+rt.def("/mob/living/carbon/human/proc/attack_alien", function* attack_alien(f: Frame, M: Value) {
 	let damage: Value = null, affecting: Value = null, armor_block: Value = null;
-	let $0: any;
-	f.vars = () => [damage, affecting, armor_block, $0];
-	if (truthy((yield* g.srcCall(f, "check_shields", live(f.args[0]), 0, "the M.name")))) {
-		yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＀ attempted to touch ＀!</span>", [live(f.args[0]), live(f.src)]));
+	if (yield* this.check_shields(M, 0, "the M.name")) {
+		this.visible_message(`<span class='danger'>${M} attempted to touch ${this}!</span>`);
 		return 0;
 	}
-	if (!truthy((yield* g.callSuper(f, [], rt.Args.Same)))) return f.dot;
-	if (isEqual(rt.fv(f, "a_intent", live(f.args[0])), "harm")) {
-		if (truthy(rt.sv(f, "w_uniform"))) {
-			yield* g.callName(f, rt.sv(f, "w_uniform"), "add_fingerprint", [live(f.args[0])]);
+	if (!(yield* parent_proc())) return f.dot;
+	if (M.a_intent == "harm") {
+		if (this.w_uniform) {
+			yield* this.w_uniform.add_fingerprint(M);
 		}
-		if (truthy(rt.op(f, "Prob", [], [90]))) {
-			$0 = 20;
-		} else {
-			$0 = 0;
-		}
-		if (!truthy((damage = $0))) {
-			yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/weapons/slashmiss.ogg"), 50, 1, -1]);
-			yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＀ has lunged at ＀!</span>", [live(f.args[0]), live(f.src)]), fmt("<span class='userdanger'>＀ has lunged at ＀!</span>", [live(f.args[0]), live(f.src)]));
+		if (!(damage = prob(90) ? 20 : 0)) {
+			playsound(this.loc, rt.rsc("sound/weapons/slashmiss.ogg"), 50, 1, -1);
+			this.visible_message(`<span class='danger'>${M} has lunged at ${this}!</span>`, `<span class='userdanger'>${M} has lunged at ${this}!</span>`);
 			return 0;
 		}
-		if (!truthy((affecting = (yield* g.srcCall(f, "get_bodypart", (yield* g.call(f, P("/proc/ran_zone"), null, [rt.fv(f, "zone_selected", live(f.args[0]))]))))))) {
-			affecting = (yield* g.srcCall(f, "get_bodypart", "chest"));
+		if (!(affecting = this.get_bodypart(ran_zone(M.zone_selected)))) {
+			affecting = this.get_bodypart("chest");
 		}
-		armor_block = (yield* g.srcCall(f, "run_armor_check", live(affecting), "melee", "", "", 10));
-		yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/weapons/slice.ogg"), 25, 1, -1]);
-		yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＀ has slashed at ＀!</span>", [live(f.args[0]), live(f.src)]), fmt("<span class='userdanger'>＀ has slashed at ＀!</span>", [live(f.args[0]), live(f.src)]));
-		yield* g.call(f, P("/proc/add_logs"), null, [live(f.args[0]), live(f.src), "attacked"]);
-		if (!truthy((yield* g.srcCall(f, "dismembering_strike", live(f.args[0]), rt.fv(f, "zone_selected", live(f.args[0])))))) {
+		armor_block = this.run_armor_check(affecting, "melee", "", "", 10);
+		playsound(this.loc, rt.rsc("sound/weapons/slice.ogg"), 25, 1, -1);
+		this.visible_message(`<span class='danger'>${M} has slashed at ${this}!</span>`, `<span class='userdanger'>${M} has slashed at ${this}!</span>`);
+		add_logs(M, this, "attacked");
+		if (!(yield* this.dismembering_strike(M, M.zone_selected))) {
 			return 1;
 		}
-		yield* g.srcCall(f, "apply_damage", live(damage), "brute", live(affecting), live(armor_block));
-		yield* g.srcCall(f, "damage_clothes", live(damage), "brute", "melee", rt.fv(f, "body_zone", live(affecting)));
+		yield* this.apply_damage(damage, "brute", affecting, armor_block);
+		yield* this.damage_clothes(damage, "brute", "melee", affecting.body_zone);
 	}
-	if (!isEqual(rt.fv(f, "a_intent", live(f.args[0])), "disarm")) return f.dot;
-	if ((truthy((yield* g.srcCall(f, "get_active_held_item"))) && truthy((yield* g.srcCall(f, "drop_item"))))) {
-		yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/weapons/slash.ogg"), 25, 1, -1]);
-		yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＀ disarmed ＀!</span>", [live(f.args[0]), live(f.src)]), fmt("<span class='userdanger'>＀ disarmed ＀!</span>", [live(f.args[0]), live(f.src)]));
+	if (M.a_intent != "disarm") return f.dot;
+	if (this.get_active_held_item() && (yield* this.drop_item())) {
+		playsound(this.loc, rt.rsc("sound/weapons/slash.ogg"), 25, 1, -1);
+		this.visible_message(`<span class='danger'>${M} disarmed ${this}!</span>`, `<span class='userdanger'>${M} disarmed ${this}!</span>`);
 	} else {
-		yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/weapons/pierce.ogg"), 25, 1, -1]);
-		yield* g.srcCall(f, "Knockdown", 100);
-		yield* g.call(f, P("/proc/add_logs"), null, [live(f.args[0]), live(f.src), "tackled"]);
-		yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＀ has tackled down ＀!</span>", [live(f.args[0]), live(f.src)]), fmt("<span class='userdanger'>＀ has tackled down ＀!</span>", [live(f.args[0]), live(f.src)]));
+		playsound(this.loc, rt.rsc("sound/weapons/pierce.ogg"), 25, 1, -1);
+		yield* this.Knockdown(100);
+		add_logs(M, this, "tackled");
+		this.visible_message(`<span class='danger'>${M} has tackled down ${this}!</span>`, `<span class='userdanger'>${M} has tackled down ${this}!</span>`);
 	}
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /mob/living/carbon/human/proc/attack_larva  (code/modules/mob/living/carbon/human/human_defense.dm:271)  may sleep
-rt.def("/mob/living/carbon/human/proc/attack_larva", function* attack_larva(f: Frame) {
-	let damage: Value = null, affecting: Value = null, armor_block: Value = null;
-	f.vars = () => [damage, affecting, armor_block];
-	if (!truthy((yield* g.callSuper(f, [], rt.Args.Same)))) return f.dot;
-	damage = (yield* g.call(f, P("/proc/rand"), null, [1, 3]));
-	if (truthy((yield* g.srcCall(f, "check_shields", live(f.args[0]), live(damage), fmt("the ＀", [rt.fv(f, "name", live(f.args[0]))]))))) {
+// human_defense.dm:271
+rt.def("/mob/living/carbon/human/proc/attack_larva", function* attack_larva(f: Frame, L: Value) {
+	let affecting: Value = null;
+	if (!(yield* parent_proc())) return f.dot;
+	let damage: Value = rand(1, 3);
+	if (yield* this.check_shields(L, damage, `the ${L.name}`)) {
 		return 0;
 	}
-	if (isEqual(rt.sv(f, "stat"), 2)) return f.dot;
-	rt.setFv(f, "amount_grown", live(f.args[0]), (yield* g.call(f, P("/proc/min"), null, [add(rt.fv(f, "amount_grown", live(f.args[0])), live(damage)), rt.fv(f, "max_grown", live(f.args[0]))])));
-	if (!truthy((affecting = (yield* g.srcCall(f, "get_bodypart", (yield* g.call(f, P("/proc/ran_zone"), null, [rt.fv(f, "zone_selected", live(f.args[0]))]))))))) {
-		affecting = (yield* g.srcCall(f, "get_bodypart", "chest"));
+	if (this.stat == 2) return f.dot;
+	L.amount_grown = min(L.amount_grown + damage, L.max_grown);
+	if (!(affecting = this.get_bodypart(ran_zone(L.zone_selected)))) {
+		affecting = this.get_bodypart("chest");
 	}
-	armor_block = (yield* g.srcCall(f, "run_armor_check", live(affecting), "melee"));
-	yield* g.srcCall(f, "apply_damage", live(damage), "brute", live(affecting), live(armor_block));
-	yield* g.srcCall(f, "damage_clothes", live(damage), "brute", "melee", rt.fv(f, "body_zone", live(affecting)));
+	let armor_block: Value = this.run_armor_check(affecting, "melee");
+	yield* this.apply_damage(damage, "brute", affecting, armor_block);
+	yield* this.damage_clothes(damage, "brute", "melee", affecting.body_zone);
 	return f.dot;
-}, true, { args: ["L"] });
+}, true);
 
-// /mob/living/carbon/human/proc/attack_animal  (code/modules/mob/living/carbon/human/human_defense.dm:286)  may sleep
-rt.def("/mob/living/carbon/human/proc/attack_animal", function* attack_animal(f: Frame) {
-	let damage: Value = null, dam_zone: Value = null, affecting: Value = null, armor: Value = null;
-	f.vars = () => [damage, dam_zone, affecting, armor];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(live(f.dot))) return f.dot;
-	damage = (yield* g.call(f, P("/proc/rand"), null, [rt.fv(f, "melee_damage_lower", live(f.args[0])), rt.fv(f, "melee_damage_upper", live(f.args[0]))]));
-	if (truthy((yield* g.srcCall(f, "check_shields", live(f.args[0]), live(damage), fmt("the ＀", [rt.fv(f, "name", live(f.args[0]))]), 1, rt.fv(f, "armour_penetration", live(f.args[0])))))) {
+// human_defense.dm:286
+rt.def("/mob/living/carbon/human/proc/attack_animal", function* attack_animal(f: Frame, M: Value) {
+	let dam_zone: Value = null, affecting: Value = null;
+	f.dot = (yield* parent_proc());
+	if (!f.dot) return f.dot;
+	let damage: Value = rand(M.melee_damage_lower, M.melee_damage_upper);
+	if (yield* this.check_shields(M, damage, `the ${M.name}`, 1, M.armour_penetration)) {
 		return 0;
 	}
-	if (!truthy((dam_zone = (yield* g.srcCall(f, "dismembering_strike", live(f.args[0]), rt.op(f, "PickUnweighted", [5], ["chest", "l_hand", "r_hand", "l_leg", "r_leg"])))))) {
+	if (!(dam_zone = (yield* this.dismembering_strike(M, pick("chest", "l_hand", "r_hand", "l_leg", "r_leg"))))) {
 		return 1;
 	}
-	if (!truthy((affecting = (yield* g.srcCall(f, "get_bodypart", (yield* g.call(f, P("/proc/ran_zone"), null, [live(dam_zone)]))))))) {
-		affecting = (yield* g.srcCall(f, "get_bodypart", "chest"));
+	if (!(affecting = this.get_bodypart(ran_zone(dam_zone)))) {
+		affecting = this.get_bodypart("chest");
 	}
-	armor = (yield* g.callSrc(f, "run_armor_check", [null, live(affecting), null, "melee", "armour_penetration", rt.fv(f, "armour_penetration", live(f.args[0]))], rt.Args.Named));
-	yield* g.srcCall(f, "apply_damage", live(damage), rt.fv(f, "melee_damage_type", live(f.args[0])), live(affecting), live(armor));
-	yield* g.srcCall(f, "damage_clothes", live(damage), rt.fv(f, "melee_damage_type", live(f.args[0])), "melee", rt.fv(f, "body_zone", live(affecting)));
+	let armor: Value = (yield* this.run_armor_check(affecting, "melee", { armour_penetration: M.armour_penetration }));
+	yield* this.apply_damage(damage, M.melee_damage_type, affecting, armor);
+	yield* this.damage_clothes(damage, M.melee_damage_type, "melee", affecting.body_zone);
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /mob/living/carbon/human/proc/attack_slime  (code/modules/mob/living/carbon/human/human_defense.dm:303)  may sleep
-rt.def("/mob/living/carbon/human/proc/attack_slime", function* attack_slime(f: Frame) {
-	let damage: Value = null, dam_zone: Value = null, affecting: Value = null, armor_block: Value = null;
-	f.vars = () => [damage, dam_zone, affecting, armor_block];
-	if (!truthy((yield* g.callSuper(f, [], rt.Args.Same)))) return f.dot;
-	damage = (yield* g.call(f, P("/proc/rand"), null, [5, 25]));
-	if (truthy(rt.fv(f, "is_adult", live(f.args[0])))) {
-		damage = (yield* g.call(f, P("/proc/rand"), null, [10, 35]));
+// human_defense.dm:303
+rt.def("/mob/living/carbon/human/proc/attack_slime", function* attack_slime(f: Frame, M: Value) {
+	let dam_zone: Value = null, affecting: Value = null;
+	if (!(yield* parent_proc())) return f.dot;
+	let damage: Value = rand(5, 25);
+	if (M.is_adult) {
+		damage = rand(10, 35);
 	}
-	if (truthy((yield* g.srcCall(f, "check_shields", live(f.args[0]), live(damage), fmt("the ＀", [rt.fv(f, "name", live(f.args[0]))]))))) {
+	if (yield* this.check_shields(M, damage, `the ${M.name}`)) {
 		return 0;
 	}
-	if (!truthy((dam_zone = (yield* g.srcCall(f, "dismembering_strike", live(f.args[0]), rt.op(f, "PickUnweighted", [6], ["head", "chest", "l_arm", "r_arm", "l_leg", "r_leg"])))))) {
+	if (!(dam_zone = (yield* this.dismembering_strike(M, pick("head", "chest", "l_arm", "r_arm", "l_leg", "r_leg"))))) {
 		return 1;
 	}
-	if (!truthy((affecting = (yield* g.srcCall(f, "get_bodypart", (yield* g.call(f, P("/proc/ran_zone"), null, [live(dam_zone)]))))))) {
-		affecting = (yield* g.srcCall(f, "get_bodypart", "chest"));
+	if (!(affecting = this.get_bodypart(ran_zone(dam_zone)))) {
+		affecting = this.get_bodypart("chest");
 	}
-	armor_block = (yield* g.srcCall(f, "run_armor_check", live(affecting), "melee"));
-	yield* g.srcCall(f, "apply_damage", live(damage), "brute", live(affecting), live(armor_block));
-	yield* g.srcCall(f, "damage_clothes", live(damage), "brute", "melee", rt.fv(f, "body_zone", live(affecting)));
+	let armor_block: Value = this.run_armor_check(affecting, "melee");
+	yield* this.apply_damage(damage, "brute", affecting, armor_block);
+	yield* this.damage_clothes(damage, "brute", "melee", affecting.body_zone);
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /mob/living/carbon/human/proc/mech_melee_attack  (code/modules/mob/living/carbon/human/human_defense.dm:324)  may sleep
-rt.def("/mob/living/carbon/human/proc/mech_melee_attack", function* mech_melee_attack(f: Frame) {
+// human_defense.dm:324
+rt.def("/mob/living/carbon/human/proc/mech_melee_attack", function* mech_melee_attack(f: Frame, M: Value) {
 	let temp: Value = null, update: Value = null, dmg: Value = null;
-	let $0: any;
-	f.vars = () => [temp, update, dmg, $0];
-	if (isEqual(rt.gv(f, "a_intent", rt.fv(f, "occupant", live(f.args[0]))), "harm")) {
-		yield* g.callName(f, live(f.args[0]), "do_attack_animation", [live(f.src)]);
-		if (isEqual(rt.fv(f, "damtype", live(f.args[0])), "brute")) {
-			yield* g.call(f, P("/proc/step_away"), null, [live(f.src), live(f.args[0]), 15]);
+	if (M.occupant.a_intent == "harm") {
+		yield* M.do_attack_animation(this);
+		if (M.damtype == "brute") {
+			yield* step_away(this, M, 15);
 		}
-		if (truthy((temp = (yield* g.srcCall(f, "get_bodypart", rt.op(f, "PickUnweighted", [4], ["chest", "chest", "chest", "head"])))))) {
+		if (temp = this.get_bodypart(pick("chest", "chest", "chest", "head"))) {
 			update = 0;
-			dmg = (yield* g.call(f, P("/proc/rand"), null, [divide(rt.fv(f, "force", live(f.args[0])), 2), rt.fv(f, "force", live(f.args[0]))]));
-			$0 = rt.fv(f, "damtype", live(f.args[0]));
-			if ($0 === "brute") {
-				if (rt.gt(rt.fv(f, "force", live(f.args[0])), 20)) {
-					yield* g.srcCall(f, "Unconscious", 20);
+			dmg = rand(M.force / 2, M.force);
+			if (M.damtype === "brute") {
+				if (M.force > 20) {
+					yield* this.Unconscious(20);
 				}
-				(update = rt.modify(live(update), (yield* g.callName(f, live(temp), "receive_damage", [live(dmg), 0])), rt.bitOr));
-				yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/weapons/punch4.ogg"), 50, 1]);
-				yield* g.srcCall(f, "damage_clothes", live(dmg), "brute", "melee", rt.fv(f, "body_zone", live(temp)));
-			} else if ($0 === "fire") {
-				(update = rt.modify(live(update), (yield* g.callName(f, live(temp), "receive_damage", [0, live(dmg)])), rt.bitOr));
-				yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/items/welder.ogg"), 50, 1]);
-				yield* g.srcCall(f, "damage_clothes", live(dmg), "fire", "melee", rt.fv(f, "body_zone", live(temp)));
-			} else if ($0 === "tox") {
-				yield* g.callName(f, live(f.args[0]), "mech_toxin_damage", [live(f.src)]);
+				(update = rt.modify(update, (yield* temp.receive_damage(dmg, 0)), rt.bitOr));
+				playsound(this, rt.rsc("sound/weapons/punch4.ogg"), 50, 1);
+				yield* this.damage_clothes(dmg, "brute", "melee", temp.body_zone);
+			} else if (M.damtype === "fire") {
+				(update = rt.modify(update, (yield* temp.receive_damage(0, dmg)), rt.bitOr));
+				playsound(this, rt.rsc("sound/items/welder.ogg"), 50, 1);
+				yield* this.damage_clothes(dmg, "fire", "melee", temp.body_zone);
+			} else if (M.damtype === "tox") {
+				yield* M.mech_toxin_damage(this);
 			} else {
-				return live(f.dot);
+				return f.dot;
 			}
-			if (truthy(live(update))) {
-				yield* g.srcCall(f, "update_damage_overlays");
+			if (update) {
+				this.update_damage_overlays();
 			}
-			yield* g.srcCall(f, "updatehealth");
+			yield* this.updatehealth();
 		}
-		yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＀ has hit ＀!</span>", [rt.fv(f, "name", live(f.args[0])), live(f.src)]), fmt("<span class='userdanger'>＀ has hit ＀!</span>", [rt.fv(f, "name", live(f.args[0])), live(f.src)]), null, 3);
-		yield* g.call(f, P("/proc/add_logs"), null, [rt.fv(f, "occupant", live(f.args[0])), live(f.src), "attacked", live(f.args[0]), fmt("(INTENT: ＀) (DAMTYPE: ＀)", [(yield* g.call(f, P("/proc/uppertext"), null, [rt.gv(f, "a_intent", rt.fv(f, "occupant", live(f.args[0])))])), (yield* g.call(f, P("/proc/uppertext"), null, [rt.fv(f, "damtype", live(f.args[0]))]))])]);
+		this.visible_message(`<span class='danger'>${M.name} has hit ${this}!</span>`, `<span class='userdanger'>${M.name} has hit ${this}!</span>`, null, 3);
+		add_logs(M.occupant, this, "attacked", M, `(INTENT: ${uppertext(M.occupant.a_intent)}) (DAMTYPE: ${uppertext(M.damtype)})`);
 	} else {
-		yield* g.callSuper(f, [], rt.Args.Same);
+		yield* parent_proc();
 	}
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /mob/living/carbon/human/proc/ex_act  (code/modules/mob/living/carbon/human/human_defense.dm:361)  may sleep
-rt.def("/mob/living/carbon/human/proc/ex_act", function* ex_act(f: Frame) {
-	let b_loss: Value = null, f_loss: Value = null, bomb_armor: Value = null, throw_target: Value = null, max_limb_loss: Value = null, X: Value = null, BP: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [b_loss, f_loss, bomb_armor, throw_target, max_limb_loss, X, BP, $0, $e];
-	if (((truthy(live(f.args[2])) && truthy((rt.istype(live(f.args[2]), T("/datum/spacevine_mutation")) ? 1 : 0))) && truthy((yield* g.call(f, P("/proc/isvineimmune"), null, [live(f.src)]))))) {
-		return live(f.dot);
+// human_defense.dm:361
+rt.def("/mob/living/carbon/human/proc/ex_act", function* ex_act(f: Frame, severity: Value, target: Value, origin: Value) {
+	let throw_target: Value = null, X: Value = null, BP: Value = null;
+	let $e: any;
+	if (origin && rt.istype(origin, T("/datum/spacevine_mutation")) && isvineimmune(this)) {
+		return f.dot;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	b_loss = 0;
-	f_loss = 0;
-	bomb_armor = (yield* g.srcCall(f, "getarmor", null, "bomb"));
-	$0 = live(f.args[0]);
-	if ($0 === 1) {
-		if (truthy(rt.op(f, "Prob", [], [live(bomb_armor)]))) {
+	yield* parent_proc();
+	let b_loss: Value = 0;
+	let f_loss: Value = 0;
+	let bomb_armor: Value = this.getarmor(null, "bomb");
+	if (severity === 1) {
+		if (prob(bomb_armor)) {
 			b_loss = 500;
-			yield* g.srcCall(f, "throw_at", (throw_target = (yield* g.call(f, P("/proc/get_edge_target_turf"), null, [live(f.src), rt.getDir(f, live(f.src), (yield* g.call(f, P("/proc/get_step_away"), null, [live(f.src), live(f.src)])))]))), 200, 4);
-			yield* g.srcCall(f, "damage_clothes", subtract(400, live(bomb_armor)), "brute", "bomb");
+			yield* this.throw_at((throw_target = get_edge_target_turf(this, rt.getDir(f, this, get_step_away(this, this)))), 200, 4);
+			yield* this.damage_clothes(400 - bomb_armor, "brute", "bomb");
 		} else {
-			yield* g.srcCall(f, "gib");
-			return live(f.dot);
+			yield* this.gib();
+			return f.dot;
 		}
-	} else if ($0 === 2) {
+	} else if (severity === 2) {
 		b_loss = 60;
 		f_loss = 60;
-		if (truthy(live(bomb_armor))) {
-			f_loss = (b_loss = multiply(30, subtract(2, (yield* g.call(f, P("/proc/round"), null, [multiply(live(bomb_armor), 0.009999999776482582), 0.05000000074505806])))));
+		if (bomb_armor) {
+			f_loss = (b_loss = 30 * (2 - round(bomb_armor * 0.01, 0.05)));
 		}
-		yield* g.srcCall(f, "damage_clothes", subtract(200, live(bomb_armor)), "brute", "bomb");
-		if (!truthy((rt.istype(rt.sv(f, "ears"), T("/obj/item/clothing/ears/earmuffs")) ? 1 : 0))) {
-			yield* g.srcCall(f, "adjustEarDamage", 30, 120);
+		yield* this.damage_clothes(200 - bomb_armor, "brute", "bomb");
+		if (!rt.istype(this.ears, T("/obj/item/clothing/ears/earmuffs"))) {
+			this.adjustEarDamage(30, 120);
 		}
-		if (truthy(rt.op(f, "Prob", [], [(yield* g.call(f, P("/proc/max"), null, [subtract(70, multiply(live(bomb_armor), 0.5)), 0]))]))) {
-			yield* g.srcCall(f, "Unconscious", 200);
+		if (prob(max(70 - bomb_armor * 0.5, 0))) {
+			yield* this.Unconscious(200);
 		}
-	} else if ($0 === 3) {
+	} else if (severity === 3) {
 		b_loss = 30;
-		if (truthy(live(bomb_armor))) {
-			b_loss = multiply(15, subtract(2, (yield* g.call(f, P("/proc/round"), null, [multiply(live(bomb_armor), 0.009999999776482582), 0.05000000074505806]))));
+		if (bomb_armor) {
+			b_loss = 15 * (2 - round(bomb_armor * 0.01, 0.05));
 		}
-		yield* g.srcCall(f, "damage_clothes", (yield* g.call(f, P("/proc/max"), null, [subtract(50, live(bomb_armor)), 0])), "brute", "bomb");
-		if (!truthy((rt.istype(rt.sv(f, "ears"), T("/obj/item/clothing/ears/earmuffs")) ? 1 : 0))) {
-			yield* g.srcCall(f, "adjustEarDamage", 15, 60);
+		yield* this.damage_clothes(max(50 - bomb_armor, 0), "brute", "bomb");
+		if (!rt.istype(this.ears, T("/obj/item/clothing/ears/earmuffs"))) {
+			this.adjustEarDamage(15, 60);
 		}
-		if (truthy(rt.op(f, "Prob", [], [(yield* g.call(f, P("/proc/max"), null, [subtract(50, multiply(live(bomb_armor), 0.5)), 0]))]))) {
-			yield* g.srcCall(f, "Unconscious", 160);
+		if (prob(max(50 - bomb_armor * 0.5, 0))) {
+			yield* this.Unconscious(160);
 		}
 	}
-	yield* g.srcCall(f, "take_overall_damage", live(b_loss), live(f_loss));
-	if (!(rt.le(live(f.args[0]), 2) || !truthy(live(bomb_armor)))) return f.dot;
-	max_limb_loss = (yield* g.call(f, P("/proc/round"), null, [divide(4, live(f.args[0]))]));
-	X = null;
-	rt.forList(f, 0, rt.sv(f, "bodyparts"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		X = $e;
-		BP = live(X);
-		if ((((truthy(rt.op(f, "Prob", [], [divide(50, live(f.args[0]))])) && !truthy(rt.op(f, "Prob", [], [(yield* g.srcCall(f, "getarmor", live(BP), "bomb"))]))) && !isEqual(rt.fv(f, "body_zone", live(BP)), "head")) && !isEqual(rt.fv(f, "body_zone", live(BP)), "chest"))) {
-			rt.setFv(f, "brute_dam", live(BP), rt.fv(f, "max_damage", live(BP)));
-			yield* g.callName(f, live(BP), "dismember", []);
-			max_limb_loss = rt.inc(live(max_limb_loss), -1);
-			if (!truthy(live(max_limb_loss))) {
+	yield* this.take_overall_damage(b_loss, f_loss);
+	if (!(severity <= 2 || !bomb_armor)) return f.dot;
+	let max_limb_loss: Value = round(4 / severity);
+	for (X of each(this.bodyparts)) {
+		BP = X;
+		if (prob(50 / severity) && !prob(this.getarmor(BP, "bomb")) && BP.body_zone != "head" && BP.body_zone != "chest") {
+			BP.brute_dam = BP.max_damage;
+			yield* BP.dismember();
+			max_limb_loss--;
+			if (!max_limb_loss) {
 				break;
 			}
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
-}, true, { args: ["severity", "target", "origin"], waitfor: false });
+}, true, { waitfor: false });
 
-// /mob/living/carbon/human/proc/blob_act  (code/modules/mob/living/carbon/human/human_defense.dm:417)  may sleep
+// human_defense.dm:417
 rt.def("/mob/living/carbon/human/proc/blob_act", function* blob_act(f: Frame, B: Value) {
-	let dam_zone: Value = null, affecting: Value = null;
-	f.vars = () => [B, dam_zone, affecting];
-	if (isEqual(rt.sv(f, "stat"), 2)) {
-		return live(f.dot);
+	if (this.stat == 2) {
+		return f.dot;
 	}
-	yield* g.srcCall(f, "show_message", "<span class='userdanger'>The blob attacks you!</span>");
-	dam_zone = rt.op(f, "PickUnweighted", [5], ["chest", "l_hand", "r_hand", "l_leg", "r_leg"]);
-	affecting = (yield* g.srcCall(f, "get_bodypart", (yield* g.call(f, P("/proc/ran_zone"), null, [live(dam_zone)]))));
-	yield* g.srcCall(f, "apply_damage", 5, "brute", live(affecting), (yield* g.srcCall(f, "run_armor_check", live(affecting), "melee")));
+	this.show_message("<span class='userdanger'>The blob attacks you!</span>");
+	let dam_zone: Value = pick("chest", "l_hand", "r_hand", "l_leg", "r_leg");
+	let affecting: Value = this.get_bodypart(ran_zone(dam_zone));
+	yield* this.apply_damage(5, "brute", affecting, this.run_armor_check(affecting, "melee"));
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/human/proc/electrocute_act  (code/modules/mob/living/carbon/human/human_defense.dm:430)  may sleep
+// human_defense.dm:430
 rt.def("/mob/living/carbon/human/proc/electrocute_act", function* electrocute_act(f: Frame, shock_damage: Value, source: Value, siemens_coeff: Value, safety: Value, override: Value, tesla_shock: Value, illusion: Value, stun: Value) {
 	let total_coeff: Value = null, G: Value = null, S: Value = null, gloves_siemens_coeff: Value = null, heart: Value = null;
-	let $0: any;
-	f.vars = () => [shock_damage, source, siemens_coeff, safety, override, tesla_shock, illusion, stun, total_coeff, G, S, gloves_siemens_coeff, heart, $0];
-	if (live(siemens_coeff) === null) {
-		siemens_coeff = 1;
-	}
-	if (live(safety) === null) {
-		safety = 0;
-	}
-	if (live(override) === null) {
-		override = 0;
-	}
-	if (live(tesla_shock) === null) {
-		tesla_shock = 0;
-	}
-	if (live(illusion) === null) {
-		illusion = 0;
-	}
-	if (live(stun) === null) {
-		stun = 1;
-	}
-	if (truthy(live(tesla_shock))) {
+	siemens_coeff ??= 1;
+	safety ??= 0;
+	override ??= 0;
+	tesla_shock ??= 0;
+	illusion ??= 0;
+	stun ??= 1;
+	if (tesla_shock) {
 		total_coeff = 1;
-		if (truthy(rt.sv(f, "gloves"))) {
-			if (rt.le(rt.gv(f, "siemens_coefficient", (G = rt.sv(f, "gloves"))), 0)) {
-				(total_coeff = rt.modify(live(total_coeff), 0.5, subtract));
+		if (this.gloves) {
+			if ((G = this.gloves).siemens_coefficient <= 0) {
+				total_coeff -= 0.5;
 			}
 		}
-		if (truthy(rt.sv(f, "wear_suit"))) {
-			if (rt.le(rt.gv(f, "siemens_coefficient", (S = rt.sv(f, "wear_suit"))), 0)) {
-				(total_coeff = rt.modify(live(total_coeff), 0.949999988079071, subtract));
-			} else {
-				if (isEqual(rt.fv(f, "siemens_coefficient", live(S)), -1)) {
-					(total_coeff = rt.modify(live(total_coeff), 1, subtract));
-				}
+		if (this.wear_suit) {
+			if ((S = this.wear_suit).siemens_coefficient <= 0) {
+				total_coeff -= 0.95;
+			} else if (S.siemens_coefficient == -1) {
+				total_coeff -= 1;
 			}
 		}
-		siemens_coeff = live(total_coeff);
-		if (truthy(rt.fv(f, "secondary_flags", live(f.src)))) {
-			$0 = rt.index(rt.fv(f, "secondary_flags", live(f.src)), "tesla_ignore");
-		} else {
-			$0 = 0;
-		}
-		if (truthy($0)) {
+		siemens_coeff = total_coeff;
+		if (this.secondary_flags ? rt.index(this.secondary_flags, "tesla_ignore") : 0) {
 			siemens_coeff = 0;
 		}
-	} else {
-		if (!truthy(live(safety))) {
-			gloves_siemens_coeff = 1;
-			if (truthy(rt.sv(f, "gloves"))) {
-				gloves_siemens_coeff = rt.gv(f, "siemens_coefficient", (G = rt.sv(f, "gloves")));
-			}
-			siemens_coeff = live(gloves_siemens_coeff);
+	} else if (!safety) {
+		gloves_siemens_coeff = 1;
+		if (this.gloves) {
+			gloves_siemens_coeff = (G = this.gloves).siemens_coefficient;
 		}
+		siemens_coeff = gloves_siemens_coeff;
 	}
-	if ((truthy((yield* g.srcCall(f, "undergoing_cardiac_arrest"))) && !truthy(live(illusion)))) {
-		if ((rt.ge(multiply(live(shock_damage), live(siemens_coeff)), 1) && truthy(rt.op(f, "Prob", [], [25])))) {
-			rt.setFv(f, "beating", (heart = (yield* g.srcCall(f, "getorganslot", "heart"))), 1);
-			if (isEqual(rt.sv(f, "stat"), 0)) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='notice'>You feel your heart beating again!</span>"]);
+	if (this.undergoing_cardiac_arrest() && !illusion) {
+		if (shock_damage * siemens_coeff >= 1 && prob(25)) {
+			(heart = this.getorganslot("heart")).beating = 1;
+			if (this.stat == 0) {
+				to_chat(this, "<span class='notice'>You feel your heart beating again!</span>");
 			}
 		}
 	}
-	f.dot = (yield* g.callSuper(f, [live(shock_damage), live(source), live(siemens_coeff), live(safety), live(override), live(tesla_shock), live(illusion), live(stun)]));
-	if (!truthy(live(f.dot))) return f.dot;
-	yield* g.srcCall(f, "electrocution_animation", 40);
+	f.dot = (yield* parent_proc(shock_damage, source, siemens_coeff, safety, override, tesla_shock, illusion, stun));
+	if (!f.dot) return f.dot;
+	yield* this.electrocution_animation(40);
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/human/proc/emp_act  (code/modules/mob/living/carbon/human/human_defense.dm:461)  may sleep
-rt.def("/mob/living/carbon/human/proc/emp_act", function* emp_act(f: Frame) {
-	let informed: Value = null, L: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [informed, L, $0, $e];
-	informed = 0;
-	L = null;
-	rt.forList(f, 0, rt.fv(f, "bodyparts", live(f.src)), T("/obj/item/bodypart"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		L = $e;
-		if (isEqual(rt.fv(f, "status", live(L)), 2)) {
-			if (!truthy(live(informed))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='userdanger'>You feel a sharp pain as your robotic limbs overload.</span>"]);
+// human_defense.dm:461
+rt.def("/mob/living/carbon/human/proc/emp_act", function* emp_act(f: Frame, severity: Value) {
+	let L: Value = null;
+	let $e: any;
+	let informed: Value = 0;
+	for (L of each(this.bodyparts, T("/obj/item/bodypart"))) {
+		if (L.status == BODYPART_ROBOTIC) {
+			if (!informed) {
+				to_chat(this, "<span class='userdanger'>You feel a sharp pain as your robotic limbs overload.</span>");
 				informed = 1;
 			}
-			$0 = live(f.args[0]);
-			if ($0 === 1) {
-				yield* g.callName(f, live(L), "receive_damage", [0, 10]);
-				yield* g.srcCall(f, "Stun", 200);
-			} else if ($0 === 2) {
-				yield* g.callName(f, live(L), "receive_damage", [0, 5]);
-				yield* g.srcCall(f, "Stun", 100);
+			if (severity === 1) {
+				yield* L.receive_damage(0, 10);
+				yield* this.Stun(200);
+			} else if (severity === 2) {
+				yield* L.receive_damage(0, 5);
+				yield* this.Stun(100);
 			}
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["severity"] });
+}, true);
 
-// /mob/living/carbon/human/proc/acid_act  (code/modules/mob/living/carbon/human/human_defense.dm:476)  may sleep
+// human_defense.dm:476
 rt.def("/mob/living/carbon/human/proc/acid_act", function* acid_act(f: Frame, acidpwr: Value, acid_volume: Value, bodyzone_hit: Value) {
-	let damaged: Value = null, inventory_items_to_kill: Value = null, acidity: Value = null, head_clothes: Value = null, chest_clothes: Value = null, arm_clothes: Value = null, leg_clothes: Value = null, affecting: Value = null, I: Value = null;
-	let $e: any;
-	f.vars = () => [acidpwr, acid_volume, bodyzone_hit, damaged, inventory_items_to_kill, acidity, head_clothes, chest_clothes, arm_clothes, leg_clothes, affecting, I, $e];
-	damaged = rt.list();
-	inventory_items_to_kill = rt.list();
-	acidity = multiply(live(acidpwr), (yield* g.call(f, P("/proc/min"), null, [multiply(live(acid_volume), 0.004999999888241291), 0.10000000149011612])));
-	if ((!truthy(live(bodyzone_hit)) || isEqual(live(bodyzone_hit), "head"))) {
-		head_clothes = null;
-		if (truthy(rt.sv(f, "glasses"))) {
-			head_clothes = rt.sv(f, "glasses");
+	let head_clothes: Value = null, chest_clothes: Value = null, arm_clothes: Value = null, leg_clothes: Value = null, affecting: Value = null, I: Value = null;
+	let damaged: Value = list();
+	let inventory_items_to_kill: Value = list();
+	let acidity: Value = acidpwr * min(acid_volume * 0.005, 0.1);
+	if (!bodyzone_hit || bodyzone_hit == "head") {
+		if (this.glasses) {
+			head_clothes = this.glasses;
 		}
-		if (truthy(rt.sv(f, "wear_mask"))) {
-			head_clothes = rt.sv(f, "wear_mask");
+		if (this.wear_mask) {
+			head_clothes = this.wear_mask;
 		}
-		if (truthy(rt.sv(f, "wear_neck"))) {
-			head_clothes = rt.sv(f, "wear_neck");
+		if (this.wear_neck) {
+			head_clothes = this.wear_neck;
 		}
-		if (truthy(rt.sv(f, "head"))) {
-			head_clothes = rt.sv(f, "head");
+		if (this.head) {
+			head_clothes = this.head;
 		}
-		if (truthy(live(head_clothes))) {
-			if (!truthy(rt.bitAnd(rt.fv(f, "resistance_flags", live(head_clothes)), 16))) {
-				yield* g.callName(f, live(head_clothes), "acid_act", [live(acidpwr), live(acid_volume)]);
-				yield* g.srcCall(f, "update_inv_glasses");
-				yield* g.srcCall(f, "update_inv_wear_mask");
-				yield* g.srcCall(f, "update_inv_neck");
-				yield* g.srcCall(f, "update_inv_head");
+		if (head_clothes) {
+			if (!rt.bitAnd(head_clothes.resistance_flags, UNACIDABLE)) {
+				yield* head_clothes.acid_act(acidpwr, acid_volume);
+				this.update_inv_glasses();
+				yield* this.update_inv_wear_mask();
+				this.update_inv_neck();
+				yield* this.update_inv_head();
 			} else {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), fmt("<span class='notice'>Your ＀ protects your head and face from the acid!</span>", [rt.fv(f, "name", live(head_clothes))])]);
+				to_chat(this, `<span class='notice'>Your ${head_clothes.name} protects your head and face from the acid!</span>`);
 			}
 		} else {
-			f.dot = (yield* g.srcCall(f, "get_bodypart", "head"));
-			if (truthy(live(f.dot))) {
-				damaged = rt.modify(live(damaged), live(f.dot), add);
+			f.dot = this.get_bodypart("head");
+			if (f.dot) {
+				damaged += f.dot;
 			}
-			if (truthy(rt.sv(f, "ears"))) {
-				inventory_items_to_kill = rt.modify(live(inventory_items_to_kill), rt.sv(f, "ears"), add);
+			if (this.ears) {
+				inventory_items_to_kill += this.ears;
 			}
 		}
 	}
-	if ((!truthy(live(bodyzone_hit)) || isEqual(live(bodyzone_hit), "chest"))) {
-		chest_clothes = null;
-		if (truthy(rt.sv(f, "w_uniform"))) {
-			chest_clothes = rt.sv(f, "w_uniform");
+	if (!bodyzone_hit || bodyzone_hit == "chest") {
+		if (this.w_uniform) {
+			chest_clothes = this.w_uniform;
 		}
-		if (truthy(rt.sv(f, "wear_suit"))) {
-			chest_clothes = rt.sv(f, "wear_suit");
+		if (this.wear_suit) {
+			chest_clothes = this.wear_suit;
 		}
-		if (truthy(live(chest_clothes))) {
-			if (!truthy(rt.bitAnd(rt.fv(f, "resistance_flags", live(chest_clothes)), 16))) {
-				yield* g.callName(f, live(chest_clothes), "acid_act", [live(acidpwr), live(acid_volume)]);
-				yield* g.srcCall(f, "update_inv_w_uniform");
-				yield* g.srcCall(f, "update_inv_wear_suit");
+		if (chest_clothes) {
+			if (!rt.bitAnd(chest_clothes.resistance_flags, UNACIDABLE)) {
+				yield* chest_clothes.acid_act(acidpwr, acid_volume);
+				yield* this.update_inv_w_uniform();
+				yield* this.update_inv_wear_suit();
 			} else {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), fmt("<span class='notice'>Your ＀ protects your body from the acid!</span>", [rt.fv(f, "name", live(chest_clothes))])]);
+				to_chat(this, `<span class='notice'>Your ${chest_clothes.name} protects your body from the acid!</span>`);
 			}
 		} else {
-			f.dot = (yield* g.srcCall(f, "get_bodypart", "chest"));
-			if (truthy(live(f.dot))) {
-				damaged = rt.modify(live(damaged), live(f.dot), add);
+			f.dot = this.get_bodypart("chest");
+			if (f.dot) {
+				damaged += f.dot;
 			}
-			if (truthy(rt.sv(f, "wear_id"))) {
-				inventory_items_to_kill = rt.modify(live(inventory_items_to_kill), rt.sv(f, "wear_id"), add);
+			if (this.wear_id) {
+				inventory_items_to_kill += this.wear_id;
 			}
-			if (truthy(rt.sv(f, "r_store"))) {
-				inventory_items_to_kill = rt.modify(live(inventory_items_to_kill), rt.sv(f, "r_store"), add);
+			if (this.r_store) {
+				inventory_items_to_kill += this.r_store;
 			}
-			if (truthy(rt.sv(f, "l_store"))) {
-				inventory_items_to_kill = rt.modify(live(inventory_items_to_kill), rt.sv(f, "l_store"), add);
+			if (this.l_store) {
+				inventory_items_to_kill += this.l_store;
 			}
-			if (truthy(rt.sv(f, "s_store"))) {
-				inventory_items_to_kill = rt.modify(live(inventory_items_to_kill), rt.sv(f, "s_store"), add);
+			if (this.s_store) {
+				inventory_items_to_kill += this.s_store;
 			}
 		}
 	}
-	if (((!truthy(live(bodyzone_hit)) || isEqual(live(bodyzone_hit), "l_arm")) || isEqual(live(bodyzone_hit), "r_arm"))) {
-		arm_clothes = null;
-		if (truthy(rt.sv(f, "gloves"))) {
-			arm_clothes = rt.sv(f, "gloves");
+	if (!bodyzone_hit || bodyzone_hit == "l_arm" || bodyzone_hit == "r_arm") {
+		if (this.gloves) {
+			arm_clothes = this.gloves;
 		}
-		if ((truthy(rt.sv(f, "w_uniform")) && (truthy(rt.bitAnd(rt.fv(f, "body_parts_covered", rt.sv(f, "w_uniform")), 1536)) || truthy(rt.bitAnd(rt.fv(f, "body_parts_covered", rt.sv(f, "w_uniform")), 384))))) {
-			arm_clothes = rt.sv(f, "w_uniform");
+		if (this.w_uniform && (rt.bitAnd(this.w_uniform.body_parts_covered, HANDS) || rt.bitAnd(this.w_uniform.body_parts_covered, ARMS))) {
+			arm_clothes = this.w_uniform;
 		}
-		if ((truthy(rt.sv(f, "wear_suit")) && (truthy(rt.bitAnd(rt.fv(f, "body_parts_covered", rt.sv(f, "wear_suit")), 1536)) || truthy(rt.bitAnd(rt.fv(f, "body_parts_covered", rt.sv(f, "wear_suit")), 384))))) {
-			arm_clothes = rt.sv(f, "wear_suit");
+		if (this.wear_suit && (rt.bitAnd(this.wear_suit.body_parts_covered, HANDS) || rt.bitAnd(this.wear_suit.body_parts_covered, ARMS))) {
+			arm_clothes = this.wear_suit;
 		}
-		if (truthy(live(arm_clothes))) {
-			if (!truthy(rt.bitAnd(rt.fv(f, "resistance_flags", live(arm_clothes)), 16))) {
-				yield* g.callName(f, live(arm_clothes), "acid_act", [live(acidpwr), live(acid_volume)]);
-				yield* g.srcCall(f, "update_inv_gloves");
-				yield* g.srcCall(f, "update_inv_w_uniform");
-				yield* g.srcCall(f, "update_inv_wear_suit");
+		if (arm_clothes) {
+			if (!rt.bitAnd(arm_clothes.resistance_flags, UNACIDABLE)) {
+				yield* arm_clothes.acid_act(acidpwr, acid_volume);
+				this.update_inv_gloves();
+				yield* this.update_inv_w_uniform();
+				yield* this.update_inv_wear_suit();
 			} else {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), fmt("<span class='notice'>Your ＀ protects your arms and hands from the acid!</span>", [rt.fv(f, "name", live(arm_clothes))])]);
+				to_chat(this, `<span class='notice'>Your ${arm_clothes.name} protects your arms and hands from the acid!</span>`);
 			}
 		} else {
-			f.dot = (yield* g.srcCall(f, "get_bodypart", "r_arm"));
-			if (truthy(live(f.dot))) {
-				damaged = rt.modify(live(damaged), live(f.dot), add);
+			f.dot = this.get_bodypart("r_arm");
+			if (f.dot) {
+				damaged += f.dot;
 			}
-			f.dot = (yield* g.srcCall(f, "get_bodypart", "l_arm"));
-			if (truthy(live(f.dot))) {
-				damaged = rt.modify(live(damaged), live(f.dot), add);
+			f.dot = this.get_bodypart("l_arm");
+			if (f.dot) {
+				damaged += f.dot;
 			}
 		}
 	}
-	if ((((!truthy(live(bodyzone_hit)) || isEqual(live(bodyzone_hit), "l_leg")) || isEqual(live(bodyzone_hit), "r_leg")) || isEqual(live(bodyzone_hit), "feet"))) {
-		leg_clothes = null;
-		if (truthy(rt.sv(f, "shoes"))) {
-			leg_clothes = rt.sv(f, "shoes");
+	if (!bodyzone_hit || bodyzone_hit == "l_leg" || bodyzone_hit == "r_leg" || bodyzone_hit == "feet") {
+		if (this.shoes) {
+			leg_clothes = this.shoes;
 		}
-		if ((truthy(rt.sv(f, "w_uniform")) && (truthy(rt.bitAnd(rt.fv(f, "body_parts_covered", rt.sv(f, "w_uniform")), 96)) || (!isEqual(live(bodyzone_hit), "feet") && truthy(rt.bitAnd(rt.fv(f, "body_parts_covered", rt.sv(f, "w_uniform")), 24)))))) {
-			leg_clothes = rt.sv(f, "w_uniform");
+		if (this.w_uniform && (rt.bitAnd(this.w_uniform.body_parts_covered, FEET) || bodyzone_hit != "feet" && rt.bitAnd(this.w_uniform.body_parts_covered, LEGS))) {
+			leg_clothes = this.w_uniform;
 		}
-		if ((truthy(rt.sv(f, "wear_suit")) && (truthy(rt.bitAnd(rt.fv(f, "body_parts_covered", rt.sv(f, "wear_suit")), 96)) || (!isEqual(live(bodyzone_hit), "feet") && truthy(rt.bitAnd(rt.fv(f, "body_parts_covered", rt.sv(f, "wear_suit")), 24)))))) {
-			leg_clothes = rt.sv(f, "wear_suit");
+		if (this.wear_suit && (rt.bitAnd(this.wear_suit.body_parts_covered, FEET) || bodyzone_hit != "feet" && rt.bitAnd(this.wear_suit.body_parts_covered, LEGS))) {
+			leg_clothes = this.wear_suit;
 		}
-		if (truthy(live(leg_clothes))) {
-			if (!truthy(rt.bitAnd(rt.fv(f, "resistance_flags", live(leg_clothes)), 16))) {
-				yield* g.callName(f, live(leg_clothes), "acid_act", [live(acidpwr), live(acid_volume)]);
-				yield* g.srcCall(f, "update_inv_shoes");
-				yield* g.srcCall(f, "update_inv_w_uniform");
-				yield* g.srcCall(f, "update_inv_wear_suit");
+		if (leg_clothes) {
+			if (!rt.bitAnd(leg_clothes.resistance_flags, UNACIDABLE)) {
+				yield* leg_clothes.acid_act(acidpwr, acid_volume);
+				this.update_inv_shoes();
+				yield* this.update_inv_w_uniform();
+				yield* this.update_inv_wear_suit();
 			} else {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), fmt("<span class='notice'>Your ＀ protects your legs and feet from the acid!</span>", [rt.fv(f, "name", live(leg_clothes))])]);
+				to_chat(this, `<span class='notice'>Your ${leg_clothes.name} protects your legs and feet from the acid!</span>`);
 			}
 		} else {
-			f.dot = (yield* g.srcCall(f, "get_bodypart", "r_leg"));
-			if (truthy(live(f.dot))) {
-				damaged = rt.modify(live(damaged), live(f.dot), add);
+			f.dot = this.get_bodypart("r_leg");
+			if (f.dot) {
+				damaged += f.dot;
 			}
-			f.dot = (yield* g.srcCall(f, "get_bodypart", "l_leg"));
-			if (truthy(live(f.dot))) {
-				damaged = rt.modify(live(damaged), live(f.dot), add);
-			}
-		}
-	}
-	affecting = null;
-	rt.forList(f, 0, live(damaged), T("/obj/item/bodypart"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		affecting = $e;
-		yield* g.callName(f, live(affecting), "receive_damage", [live(acidity), multiply(2, live(acidity))]);
-		if (isEqual(rt.fv(f, "name", live(affecting)), "head")) {
-			if (truthy(rt.op(f, "Prob", [], [(yield* g.call(f, P("/proc/min"), null, [divide(multiply(live(acidpwr), live(acid_volume)), 10), 90]))]))) {
-				yield* g.callName(f, live(affecting), "receive_damage", [live(acidity), multiply(2, live(acidity))]);
-				yield* g.srcCall(f, "emote", "scream");
-				rt.setSv(f, "facial_hair_style", "Shaved");
-				rt.setSv(f, "hair_style", "Bald");
-				yield* g.srcCall(f, "update_hair");
-				(rt.modSrcVar(f, "status_flags", 16384, rt.bitOr));
+			f.dot = this.get_bodypart("l_leg");
+			if (f.dot) {
+				damaged += f.dot;
 			}
 		}
-		yield* g.srcCall(f, "update_damage_overlays");
 	}
-	rt.endFor(f, 0);
-	if (!truthy(live(bodyzone_hit))) {
-		if (truthy(rt.sv(f, "back"))) {
-			inventory_items_to_kill = rt.modify(live(inventory_items_to_kill), rt.sv(f, "back"), add);
+	for (affecting of each(damaged, T("/obj/item/bodypart"))) {
+		yield* affecting.receive_damage(acidity, 2 * acidity);
+		if (affecting.name == "head") {
+			if (prob(min(acidpwr * acid_volume / 10, 90))) {
+				yield* affecting.receive_damage(acidity, 2 * acidity);
+				yield* this.emote("scream");
+				this.facial_hair_style = "Shaved";
+				this.hair_style = "Bald";
+				yield* this.update_hair();
+				(rt.modSrcVar(f, "status_flags", DISFIGURED, rt.bitOr));
+			}
 		}
-		if (truthy(rt.sv(f, "belt"))) {
-			inventory_items_to_kill = rt.modify(live(inventory_items_to_kill), rt.sv(f, "belt"), add);
+		this.update_damage_overlays();
+	}
+	if (!bodyzone_hit) {
+		if (this.back) {
+			inventory_items_to_kill += this.back;
 		}
-		inventory_items_to_kill = rt.modify(live(inventory_items_to_kill), rt.sv(f, "held_items"), add);
+		if (this.belt) {
+			inventory_items_to_kill += this.belt;
+		}
+		inventory_items_to_kill += this.held_items;
 	}
-	I = null;
-	rt.forList(f, 0, live(inventory_items_to_kill), T("/obj/item"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		yield* g.callName(f, live(I), "acid_act", [live(acidpwr), live(acid_volume)]);
+	for (I of each(inventory_items_to_kill, T("/obj/item"))) {
+		yield* I.acid_act(acidpwr, acid_volume);
 	}
-	rt.endFor(f, 0);
 	return 1;
 }, true);
 
-// /mob/living/carbon/human/proc/singularity_act  (code/modules/mob/living/carbon/human/human_defense.dm:619)  may sleep
+// human_defense.dm:619
 rt.def("/mob/living/carbon/human/proc/singularity_act", function* singularity_act(f: Frame) {
-	let gain: Value = null;
-	f.vars = () => [gain];
-	gain = 20;
-	if (truthy(rt.sv(f, "mind"))) {
-		if ((isEqual(rt.fv(f, "assigned_role", rt.sv(f, "mind")), "Station Engineer") || isEqual(rt.fv(f, "assigned_role", rt.sv(f, "mind")), "Chief Engineer"))) {
+	let gain: Value = 20;
+	if (this.mind) {
+		if (this.mind.assigned_role == "Station Engineer" || this.mind.assigned_role == "Chief Engineer") {
 			gain = 100;
 		}
-		if (isEqual(rt.fv(f, "assigned_role", rt.sv(f, "mind")), "Clown")) {
-			gain = (yield* g.call(f, P("/proc/rand"), null, [-300, 300]));
+		if (this.mind.assigned_role == "Clown") {
+			gain = rand(-300, 300);
 		}
 	}
-	yield* g.srcCall(f, "investigate_log", fmt("(＀) has been consumed by the singularity.", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.src)]))]), "singulo");
-	yield* g.srcCall(f, "gib");
-	return live(gain);
+	this.investigate_log(`(${key_name(this)}) has been consumed by the singularity.`, "singulo");
+	yield* this.gib();
+	return gain;
 }, true);
 
-// /mob/living/carbon/human/proc/help_shake_act  (code/modules/mob/living/carbon/human/human_defense.dm:628)  may sleep
-rt.def("/mob/living/carbon/human/proc/help_shake_act", function* help_shake_act(f: Frame) {
+// human_defense.dm:628
+rt.def("/mob/living/carbon/human/proc/help_shake_act", function* help_shake_act(f: Frame, M: Value) {
 	let missing: Value = null, X: Value = null, LB: Value = null, status: Value = null, brutedamage: Value = null, burndamage: Value = null, I: Value = null, t: Value = null;
-	let $0: any, $1: any, $e: any;
-	f.vars = () => [missing, X, LB, status, brutedamage, burndamage, I, t, $0, $1, $e];
-	if (!truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon")) ? 1 : 0))) {
-		return live(f.dot);
+	let $e: any;
+	if (!rt.istype(M, T("/mob/living/carbon"))) {
+		return f.dot;
 	}
-	if (!rt.ge(rt.sv(f, "health"), 0)) return f.dot;
-	if (isEqual(live(f.src), live(f.args[0]))) {
-		yield* g.srcCall(f, "visible_message", fmt("＀ examines ＀self.", [live(f.src), (yield* g.srcCall(f, "p_them"))]), "<span class='notice'>You check yourself for injuries.</span>");
-		missing = rt.list("head", "chest", "l_arm", "r_arm", "l_leg", "r_leg");
-		X = null;
-		rt.forList(f, 0, rt.sv(f, "bodyparts"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			X = $e;
-			(missing = rt.modify(live(missing), rt.gv(f, "body_zone", (LB = live(X))), subtract));
+	if (!(this.health >= 0)) return f.dot;
+	if (this == M) {
+		this.visible_message(`${this} examines ${this.p_them()}self.`, "<span class='notice'>You check yourself for injuries.</span>");
+		missing = list("head", "chest", "l_arm", "r_arm", "l_leg", "r_leg");
+		for (X of each(this.bodyparts)) {
+			missing -= (LB = X).body_zone;
 			status = "";
-			brutedamage = rt.fv(f, "brute_dam", live(LB));
-			burndamage = rt.fv(f, "burn_dam", live(LB));
-			if (truthy(rt.sv(f, "hallucination"))) {
-				if (truthy(rt.op(f, "Prob", [], [30]))) {
-					brutedamage = rt.modify(live(brutedamage), (yield* g.call(f, P("/proc/rand"), null, [30, 40])), add);
+			brutedamage = LB.brute_dam;
+			burndamage = LB.burn_dam;
+			if (this.hallucination) {
+				if (prob(30)) {
+					brutedamage += rand(30, 40);
 				}
-				if (truthy(rt.op(f, "Prob", [], [30]))) {
-					burndamage = rt.modify(live(burndamage), (yield* g.call(f, P("/proc/rand"), null, [30, 40])), add);
+				if (prob(30)) {
+					burndamage += rand(30, 40);
 				}
 			}
-			if (rt.gt(live(brutedamage), 0)) {
+			if (brutedamage > 0) {
 				status = "bruised";
 			}
-			if (rt.gt(live(brutedamage), 20)) {
+			if (brutedamage > 20) {
 				status = "battered";
 			}
-			if (rt.gt(live(brutedamage), 40)) {
+			if (brutedamage > 40) {
 				status = "mangled";
 			}
-			if ((rt.gt(live(brutedamage), 0) && rt.gt(live(burndamage), 0))) {
-				status = rt.modify(live(status), " and ", add);
+			if (brutedamage > 0 && burndamage > 0) {
+				status += " and ";
 			}
-			if (rt.gt(live(burndamage), 40)) {
-				status = rt.modify(live(status), "peeling away", add);
-			} else {
-				if (rt.gt(live(burndamage), 10)) {
-					status = rt.modify(live(status), "blistered", add);
-				} else {
-					if (rt.gt(live(burndamage), 0)) {
-						status = rt.modify(live(status), "numb", add);
-					}
-				}
+			if (burndamage > 40) {
+				status += "peeling away";
+			} else if (burndamage > 10) {
+				status += "blistered";
+			} else if (burndamage > 0) {
+				status += "numb";
 			}
-			if (isEqual(live(status), "")) {
+			if (status == "") {
 				status = "OK";
 			}
-			$0 = live(f.src);
-			if (isEqual(live(status), "OK")) {
-				$1 = "notice";
-			} else {
-				$1 = "warning";
-			}
-			yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("\t <span class='＀'>Your ＀ is ＀.</span>", [$1, rt.fv(f, "name", live(LB)), live(status)])]);
+			to_chat(this, `\t <span class='${status == "OK" ? "notice" : "warning"}'>Your ${LB.name} is ${status}.</span>`);
 			I = null;
-			rt.forList(f, 1, rt.fv(f, "embedded_objects", live(LB)), T("/obj/item"));
-			while (($e = rt.next(f, 1)) !== undefined) {
-				I = $e;
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), fmt("\t <a href='?src=＃;embedded_object=＃;embedded_limb=＃' class='warning'>There is ＇！ embedded in your ＀!</a>", [live(f.src), live(I), live(LB), live(I), rt.fv(f, "name", live(LB))])]);
+			for (I of each(LB.embedded_objects, T("/obj/item"))) {
+				to_chat(this, fmt("\t <a href='?src=＃;embedded_object=＃;embedded_limb=＃' class='warning'>There is ＇！ embedded in your ＀!</a>", [this, I, LB, I, LB.name]));
 			}
-			rt.endFor(f, 1);
 		}
-		rt.endFor(f, 0);
-		t = null;
-		rt.forList(f, 0, live(missing));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			t = $e;
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), fmt("<span class='boldannounce'>Your ＀ is missing!</span>", [(yield* g.call(f, P("/proc/parse_zone"), null, [live(t)]))])]);
+		for (t of each(missing)) {
+			to_chat(this, `<span class='boldannounce'>Your ${parse_zone(t)} is missing!</span>`);
 		}
-		rt.endFor(f, 0);
-		if (truthy(rt.sv(f, "bleed_rate"))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='danger'>You are bleeding!</span>"]);
+		if (this.bleed_rate) {
+			to_chat(this, "<span class='danger'>You are bleeding!</span>");
 		}
-		if (truthy(rt.sv(f, "staminaloss"))) {
-			if (rt.gt(rt.sv(f, "staminaloss"), 30)) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='info'>You're completely exhausted.</span>"]);
+		if (this.staminaloss) {
+			if (this.staminaloss > 30) {
+				to_chat(this, "<span class='info'>You're completely exhausted.</span>");
 			} else {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='info'>You feel fatigued.</span>"]);
+				to_chat(this, "<span class='info'>You feel fatigued.</span>");
 			}
 		}
 	} else {
-		if (truthy(rt.sv(f, "wear_suit"))) {
-			yield* g.callName(f, rt.sv(f, "wear_suit"), "add_fingerprint", [live(f.args[0])]);
-		} else {
-			if (truthy(rt.sv(f, "w_uniform"))) {
-				yield* g.callName(f, rt.sv(f, "w_uniform"), "add_fingerprint", [live(f.args[0])]);
-			}
+		if (this.wear_suit) {
+			yield* this.wear_suit.add_fingerprint(M);
+		} else if (this.w_uniform) {
+			yield* this.w_uniform.add_fingerprint(M);
 		}
-		yield* g.callSuper(f, [], rt.Args.Same);
+		yield* parent_proc();
 	}
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /mob/living/carbon/human/proc/damage_clothes  (code/modules/mob/living/carbon/human/human_defense.dm:691)  may sleep
+// human_defense.dm:691
 rt.def("/mob/living/carbon/human/proc/damage_clothes", function* damage_clothes(f: Frame, damage_amount: Value, damage_type: Value, damage_flag: Value, def_zone: Value) {
-	let torn_items: Value = null, head_clothes: Value = null, chest_clothes: Value = null, arm_clothes: Value = null, leg_clothes: Value = null, I: Value = null;
-	let $e: any;
-	f.vars = () => [damage_amount, damage_type, damage_flag, def_zone, torn_items, head_clothes, chest_clothes, arm_clothes, leg_clothes, I, $e];
-	if (live(damage_type) === null) {
-		damage_type = "brute";
+	let head_clothes: Value = null, chest_clothes: Value = null, arm_clothes: Value = null, leg_clothes: Value = null, I: Value = null;
+	damage_type ??= "brute";
+	damage_flag ??= 0;
+	if (damage_type != "brute" && damage_type != "fire") {
+		return f.dot;
 	}
-	if (live(damage_flag) === null) {
-		damage_flag = 0;
-	}
-	if ((!isEqual(live(damage_type), "brute") && !isEqual(live(damage_type), "fire"))) {
-		return live(f.dot);
-	}
-	(damage_amount = rt.modify(live(damage_amount), 0.5, multiply));
-	torn_items = rt.list();
-	if ((!truthy(live(def_zone)) || isEqual(live(def_zone), "head"))) {
-		head_clothes = null;
-		if (truthy(rt.sv(f, "glasses"))) {
-			head_clothes = rt.sv(f, "glasses");
+	damage_amount *= 0.5;
+	let torn_items: Value = list();
+	if (!def_zone || def_zone == "head") {
+		if (this.glasses) {
+			head_clothes = this.glasses;
 		}
-		if (truthy(rt.sv(f, "wear_mask"))) {
-			head_clothes = rt.sv(f, "wear_mask");
+		if (this.wear_mask) {
+			head_clothes = this.wear_mask;
 		}
-		if (truthy(rt.sv(f, "wear_neck"))) {
-			head_clothes = rt.sv(f, "wear_neck");
+		if (this.wear_neck) {
+			head_clothes = this.wear_neck;
 		}
-		if (truthy(rt.sv(f, "head"))) {
-			head_clothes = rt.sv(f, "head");
+		if (this.head) {
+			head_clothes = this.head;
 		}
-		if (truthy(live(head_clothes))) {
-			torn_items = rt.modify(live(torn_items), live(head_clothes), add);
-		} else {
-			if (truthy(rt.sv(f, "ears"))) {
-				torn_items = rt.modify(live(torn_items), rt.sv(f, "ears"), add);
-			}
+		if (head_clothes) {
+			torn_items += head_clothes;
+		} else if (this.ears) {
+			torn_items += this.ears;
 		}
 	}
-	if ((!truthy(live(def_zone)) || isEqual(live(def_zone), "chest"))) {
-		chest_clothes = null;
-		if (truthy(rt.sv(f, "w_uniform"))) {
-			chest_clothes = rt.sv(f, "w_uniform");
+	if (!def_zone || def_zone == "chest") {
+		if (this.w_uniform) {
+			chest_clothes = this.w_uniform;
 		}
-		if (truthy(rt.sv(f, "wear_suit"))) {
-			chest_clothes = rt.sv(f, "wear_suit");
+		if (this.wear_suit) {
+			chest_clothes = this.wear_suit;
 		}
-		if (truthy(live(chest_clothes))) {
-			torn_items = rt.modify(live(torn_items), live(chest_clothes), add);
-		}
-	}
-	if (((!truthy(live(def_zone)) || isEqual(live(def_zone), "l_arm")) || isEqual(live(def_zone), "r_arm"))) {
-		arm_clothes = null;
-		if (truthy(rt.sv(f, "gloves"))) {
-			arm_clothes = rt.sv(f, "gloves");
-		}
-		if ((truthy(rt.sv(f, "w_uniform")) && (truthy(rt.bitAnd(rt.fv(f, "body_parts_covered", rt.sv(f, "w_uniform")), 1536)) || truthy(rt.bitAnd(rt.fv(f, "body_parts_covered", rt.sv(f, "w_uniform")), 384))))) {
-			arm_clothes = rt.sv(f, "w_uniform");
-		}
-		if ((truthy(rt.sv(f, "wear_suit")) && (truthy(rt.bitAnd(rt.fv(f, "body_parts_covered", rt.sv(f, "wear_suit")), 1536)) || truthy(rt.bitAnd(rt.fv(f, "body_parts_covered", rt.sv(f, "wear_suit")), 384))))) {
-			arm_clothes = rt.sv(f, "wear_suit");
-		}
-		if (truthy(live(arm_clothes))) {
-			torn_items = rt.modify(live(torn_items), live(arm_clothes), add);
+		if (chest_clothes) {
+			torn_items += chest_clothes;
 		}
 	}
-	if (((!truthy(live(def_zone)) || isEqual(live(def_zone), "l_leg")) || isEqual(live(def_zone), "r_leg"))) {
-		leg_clothes = null;
-		if (truthy(rt.sv(f, "shoes"))) {
-			leg_clothes = rt.sv(f, "shoes");
+	if (!def_zone || def_zone == "l_arm" || def_zone == "r_arm") {
+		if (this.gloves) {
+			arm_clothes = this.gloves;
 		}
-		if ((truthy(rt.sv(f, "w_uniform")) && (truthy(rt.bitAnd(rt.fv(f, "body_parts_covered", rt.sv(f, "w_uniform")), 96)) || truthy(rt.bitAnd(rt.fv(f, "body_parts_covered", rt.sv(f, "w_uniform")), 24))))) {
-			leg_clothes = rt.sv(f, "w_uniform");
+		if (this.w_uniform && (rt.bitAnd(this.w_uniform.body_parts_covered, HANDS) || rt.bitAnd(this.w_uniform.body_parts_covered, ARMS))) {
+			arm_clothes = this.w_uniform;
 		}
-		if ((truthy(rt.sv(f, "wear_suit")) && (truthy(rt.bitAnd(rt.fv(f, "body_parts_covered", rt.sv(f, "wear_suit")), 96)) || truthy(rt.bitAnd(rt.fv(f, "body_parts_covered", rt.sv(f, "wear_suit")), 24))))) {
-			leg_clothes = rt.sv(f, "wear_suit");
+		if (this.wear_suit && (rt.bitAnd(this.wear_suit.body_parts_covered, HANDS) || rt.bitAnd(this.wear_suit.body_parts_covered, ARMS))) {
+			arm_clothes = this.wear_suit;
 		}
-		if (truthy(live(leg_clothes))) {
-			torn_items = rt.modify(live(torn_items), live(leg_clothes), add);
+		if (arm_clothes) {
+			torn_items += arm_clothes;
 		}
 	}
-	I = null;
-	rt.forList(f, 0, live(torn_items), T("/obj/item"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		yield* g.callName(f, live(I), "take_damage", [live(damage_amount), live(damage_type), live(damage_flag), 0]);
+	if (!def_zone || def_zone == "l_leg" || def_zone == "r_leg") {
+		if (this.shoes) {
+			leg_clothes = this.shoes;
+		}
+		if (this.w_uniform && (rt.bitAnd(this.w_uniform.body_parts_covered, FEET) || rt.bitAnd(this.w_uniform.body_parts_covered, LEGS))) {
+			leg_clothes = this.w_uniform;
+		}
+		if (this.wear_suit && (rt.bitAnd(this.wear_suit.body_parts_covered, FEET) || rt.bitAnd(this.wear_suit.body_parts_covered, LEGS))) {
+			leg_clothes = this.wear_suit;
+		}
+		if (leg_clothes) {
+			torn_items += leg_clothes;
+		}
 	}
-	rt.endFor(f, 0);
+	for (I of each(torn_items, T("/obj/item"))) {
+		yield* I.take_damage(damage_amount, damage_type, damage_flag, 0);
+	}
 	return f.dot;
 }, true);

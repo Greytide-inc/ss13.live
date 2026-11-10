@@ -1,5 +1,5 @@
 // Types declared in code/game/gamemodes/clock_cult/clock_structures that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(12159, "/obj/structure/destructible/clockwork/shell/cogscarab", "/obj/structure/destructible/clockwork/shell", {
 	clockwork_desc: "A dormant receptable that, when powered with a soul vessel, will become a weak construct with an inbuilt fabricator.",

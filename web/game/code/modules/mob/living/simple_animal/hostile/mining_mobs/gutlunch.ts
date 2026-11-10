@@ -1,7 +1,7 @@
-// From code/modules/mob/living/simple_animal/hostile/mining_mobs/gutlunch.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/simple_animal/hostile/mining_mobs/gutlunch.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(5011, "/mob/living/simple_animal/hostile/asteroid/gutlunch", "/mob/living/simple_animal/hostile/asteroid", {
@@ -45,70 +45,68 @@ rt.type(5011, "/mob/living/simple_animal/hostile/asteroid/gutlunch", "/mob/livin
 	wanted_objects: null,
 });
 
-// /mob/living/simple_animal/hostile/asteroid/gutlunch/proc/<init>  (code/modules/mob/living/simple_animal/hostile/mining_mobs/gutlunch.dm:10)
+// gutlunch.dm:10
 rt.def("/mob/living/simple_animal/hostile/asteroid/gutlunch/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "speak_emote", rt.list("warbles", "quavers"));
-	$0 = $0;
-	rt.setSv(f, "emote_hear", rt.list("trills."));
-	rt.setSv(f, "emote_see", rt.list("sniffs.", "burps."));
-	rt.setSv(f, "weather_immunities", rt.list("lava", "ash"));
-	rt.setSv(f, "faction", rt.list("mining", "ashwalker"));
-	$0 = $0;
-	rt.setSv(f, "loot", rt.list(T("/obj/effect/decal/cleanable/blood/gibs")));
-	$0 = $0;
-	rt.setSv(f, "childtype", rt.alist(f, [T("/mob/living/simple_animal/hostile/asteroid/gutlunch/gubbuck"), 45, T("/mob/living/simple_animal/hostile/asteroid/gutlunch/guthen"), 55]));
-	$0 = $0;
-	rt.setSv(f, "wanted_objects", rt.list(T("/obj/effect/decal/cleanable/xenoblood/xgibs"), T("/obj/effect/decal/cleanable/blood/gibs")));
+	parent_proc();
+	this.speak_emote = list("warbles", "quavers");
+
+	this.emote_hear = list("trills.");
+	this.emote_see = list("sniffs.", "burps.");
+	this.weather_immunities = list("lava", "ash");
+	this.faction = list("mining", "ashwalker");
+
+	this.loot = list(T("/obj/effect/decal/cleanable/blood/gibs"));
+
+	this.childtype = rt.alist(f, [T("/mob/living/simple_animal/hostile/asteroid/gutlunch/gubbuck"), 45, T("/mob/living/simple_animal/hostile/asteroid/gutlunch/guthen"), 55]);
+
+	this.wanted_objects = list(T("/obj/effect/decal/cleanable/xenoblood/xgibs"), T("/obj/effect/decal/cleanable/blood/gibs"));
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/asteroid/gutlunch/proc/Initialize  (code/modules/mob/living/simple_animal/hostile/mining_mobs/gutlunch.dm:45)  may sleep
+// gutlunch.dm:45
 rt.def("/mob/living/simple_animal/hostile/asteroid/gutlunch/proc/Initialize", function* Initialize(f: Frame) {
-	rt.setSv(f, "udder", (yield* g.new_(f, T("/obj/item/udder/gutlunch"), [])));
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	this.udder = (yield* new_(T("/obj/item/udder/gutlunch")));
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/asteroid/gutlunch/proc/Destroy  (code/modules/mob/living/simple_animal/hostile/mining_mobs/gutlunch.dm:49)  may sleep
+// gutlunch.dm:49
 rt.def("/mob/living/simple_animal/hostile/asteroid/gutlunch/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "udder")]);
-	rt.setSv(f, "udder", null);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* qdel(this.udder);
+	this.udder = null;
+	return (yield* parent_proc());
 }, true);
 
-// /mob/living/simple_animal/hostile/asteroid/gutlunch/proc/regenerate_icons  (code/modules/mob/living/simple_animal/hostile/mining_mobs/gutlunch.dm:53)
+// gutlunch.dm:53
 rt.def("/mob/living/simple_animal/hostile/asteroid/gutlunch/proc/regenerate_icons", function regenerate_icons(f: Frame) {
-	rt.callSrc(f, "cut_overlays", []);
-	if (isEqual(rt.gv(f, "total_volume", rt.fv(f, "reagents", rt.sv(f, "udder"))), rt.gv(f, "maximum_volume", rt.fv(f, "reagents", rt.sv(f, "udder"))))) {
-		rt.callSrc(f, "add_overlay", ["gl_full"]);
+	this.cut_overlays();
+	if (this.udder.reagents.total_volume == this.udder.reagents.maximum_volume) {
+		this.add_overlay("gl_full");
 	}
-	rt.callSuper(f, [], rt.Args.Same);
+	parent_proc();
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/asteroid/gutlunch/proc/attackby  (code/modules/mob/living/simple_animal/hostile/mining_mobs/gutlunch.dm:59)  may sleep
-rt.def("/mob/living/simple_animal/hostile/asteroid/gutlunch/proc/attackby", function* attackby(f: Frame) {
-	if ((isEqual(rt.sv(f, "stat"), 0) && truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/reagent_containers/glass")) ? 1 : 0)))) {
-		yield* g.callName(f, rt.sv(f, "udder"), "milkAnimal", [live(f.args[0]), live(f.args[1])]);
-		yield* g.srcCall(f, "regenerate_icons");
+// gutlunch.dm:59
+rt.def("/mob/living/simple_animal/hostile/asteroid/gutlunch/proc/attackby", function* attackby(f: Frame, O: Value, user: Value, params: Value) {
+	if (this.stat == 0 && rt.istype(O, T("/obj/item/weapon/reagent_containers/glass"))) {
+		yield* this.udder.milkAnimal(O, user);
+		yield* this.regenerate_icons();
 	} else {
-		yield* g.callSuper(f, [], rt.Args.Same);
+		yield* parent_proc();
 	}
 	return f.dot;
-}, true, { args: ["O", "user", "params"] });
+}, true);
 
-// /mob/living/simple_animal/hostile/asteroid/gutlunch/proc/AttackingTarget  (code/modules/mob/living/simple_animal/hostile/mining_mobs/gutlunch.dm:66)  may sleep
+// gutlunch.dm:66
 rt.def("/mob/living/simple_animal/hostile/asteroid/gutlunch/proc/AttackingTarget", function* AttackingTarget(f: Frame) {
-	if (truthy((yield* g.call(f, P("/proc/is_type_in_typecache"), null, [rt.sv(f, "target"), rt.sv(f, "wanted_objects")])))) {
-		yield* g.callName(f, rt.sv(f, "udder"), "generateMilk", []);
-		yield* g.srcCall(f, "regenerate_icons");
-		yield* g.srcCall(f, "visible_message", fmt("<span class='notice'>＀ slurps up ＀.</span>", [live(f.src), rt.sv(f, "target")]));
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "target")]);
+	if (is_type_in_typecache(this.target, this.wanted_objects)) {
+		yield* this.udder.generateMilk();
+		yield* this.regenerate_icons();
+		this.visible_message(`<span class='notice'>${this} slurps up ${this.target}.</span>`);
+		yield* qdel(this.target);
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);
 
 rt.type(5012, "/mob/living/simple_animal/hostile/asteroid/gutlunch/gubbuck", "/mob/living/simple_animal/hostile/asteroid/gutlunch", {
@@ -116,12 +114,12 @@ rt.type(5012, "/mob/living/simple_animal/hostile/asteroid/gutlunch/gubbuck", "/m
 	gender: "male",
 });
 
-// /mob/living/simple_animal/hostile/asteroid/gutlunch/gubbuck/proc/Initialize  (code/modules/mob/living/simple_animal/hostile/mining_mobs/gutlunch.dm:79)  may sleep
+// gutlunch.dm:79
 rt.def("/mob/living/simple_animal/hostile/asteroid/gutlunch/gubbuck/proc/Initialize", function* Initialize(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "add_atom_colour", rt.op(f, "PickUnweighted", [3], ["#E39FBB", "#D97D64", "#CF8C4A"]), 4);
-	rt.setSv(f, "resize", 0.8500000238418579);
-	yield* g.srcCall(f, "update_transform");
+	yield* parent_proc();
+	this.add_atom_colour(pick("#E39FBB", "#D97D64", "#CF8C4A"), FIXED_COLOUR_PRIORITY);
+	this.resize = 0.85;
+	yield* this.update_transform();
 	return f.dot;
 }, true);
 
@@ -130,20 +128,20 @@ rt.type(5013, "/mob/living/simple_animal/hostile/asteroid/gutlunch/guthen", "/mo
 	gender: "female",
 });
 
-// /mob/living/simple_animal/hostile/asteroid/gutlunch/guthen/proc/Life  (code/modules/mob/living/simple_animal/hostile/mining_mobs/gutlunch.dm:90)  may sleep
+// gutlunch.dm:90
 rt.def("/mob/living/simple_animal/hostile/asteroid/gutlunch/guthen/proc/Life", function* Life(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!isEqual(rt.gv(f, "total_volume", rt.fv(f, "reagents", rt.sv(f, "udder"))), rt.gv(f, "maximum_volume", rt.fv(f, "reagents", rt.sv(f, "udder"))))) return f.dot;
-	yield* g.srcCall(f, "make_babies");
+	yield* parent_proc();
+	if (this.udder.reagents.total_volume != this.udder.reagents.maximum_volume) return f.dot;
+	yield* this.make_babies();
 	return f.dot;
 }, true, { waitfor: false });
 
-// /mob/living/simple_animal/hostile/asteroid/gutlunch/guthen/proc/make_babies  (code/modules/mob/living/simple_animal/hostile/mining_mobs/gutlunch.dm:95)  may sleep
+// gutlunch.dm:95
 rt.def("/mob/living/simple_animal/hostile/asteroid/gutlunch/guthen/proc/make_babies", function* make_babies(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(live(f.dot))) return f.dot;
-	yield* g.callName(f, rt.fv(f, "reagents", rt.sv(f, "udder")), "clear_reagents", []);
-	yield* g.srcCall(f, "regenerate_icons");
+	f.dot = (yield* parent_proc());
+	if (!f.dot) return f.dot;
+	yield* this.udder.reagents.clear_reagents();
+	yield* this.regenerate_icons();
 	return f.dot;
 }, true);
 
@@ -151,19 +149,19 @@ rt.type(10122, "/obj/item/udder/gutlunch", "/obj/item/udder", {
 	name: "nutrient sac",
 });
 
-// /obj/item/udder/gutlunch/proc/New  (code/modules/mob/living/simple_animal/hostile/mining_mobs/gutlunch.dm:105)  may sleep
+// gutlunch.dm:105
 rt.def("/obj/item/udder/gutlunch/proc/New", function* New(f: Frame) {
-	rt.setSv(f, "reagents", (yield* g.new_(f, T("/datum/reagents"), [50])));
-	rt.setFv(f, "my_atom", rt.sv(f, "reagents"), live(f.src));
+	this.reagents = (yield* new_(T("/datum/reagents"), 50));
+	this.reagents.my_atom = this;
 	return f.dot;
 }, true);
 
-// /obj/item/udder/gutlunch/proc/generateMilk  (code/modules/mob/living/simple_animal/hostile/mining_mobs/gutlunch.dm:109)  may sleep
+// gutlunch.dm:109
 rt.def("/obj/item/udder/gutlunch/proc/generateMilk", function* generateMilk(f: Frame) {
-	if (truthy(rt.op(f, "Prob", [], [60]))) {
-		yield* g.callName(f, rt.sv(f, "reagents"), "add_reagent", ["cream", (yield* g.call(f, P("/proc/rand"), null, [2, 5]))]);
+	if (prob(60)) {
+		yield* this.reagents.add_reagent("cream", rand(2, 5));
 	}
-	if (!truthy(rt.op(f, "Prob", [], [45]))) return f.dot;
-	yield* g.callName(f, rt.sv(f, "reagents"), "add_reagent", ["salglu_solution", (yield* g.call(f, P("/proc/rand"), null, [2, 5]))]);
+	if (!prob(45)) return f.dot;
+	yield* this.reagents.add_reagent("salglu_solution", rand(2, 5));
 	return f.dot;
 }, true);

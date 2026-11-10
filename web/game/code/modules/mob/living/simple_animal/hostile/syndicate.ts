@@ -1,7 +1,7 @@
-// From code/modules/mob/living/simple_animal/hostile/syndicate.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/simple_animal/hostile/syndicate.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(4889, "/mob/living/simple_animal/hostile/syndicate", "/mob/living/simple_animal/hostile", {
@@ -37,15 +37,13 @@ rt.type(4889, "/mob/living/simple_animal/hostile/syndicate", "/mob/living/simple
 	del_on_death: 1,
 });
 
-// /mob/living/simple_animal/hostile/syndicate/proc/<init>  (code/modules/mob/living/simple_animal/hostile/syndicate.dm:36)
+// syndicate.dm:36
 rt.def("/mob/living/simple_animal/hostile/syndicate/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "loot", rt.list(T("/obj/effect/mob_spawn/human/corpse/syndicatesoldier")));
-	rt.setSv(f, "atmos_requirements", rt.alist(f, ["min_oxy", 5, "max_oxy", 0, "min_tox", 0, "max_tox", 1, "min_co2", 0, "max_co2", 5, "min_n2", 0, "max_n2", 0]));
-	$0 = $0;
-	rt.setSv(f, "faction", rt.list("syndicate"));
+	parent_proc();
+	this.loot = list(T("/obj/effect/mob_spawn/human/corpse/syndicatesoldier"));
+	this.atmos_requirements = rt.alist(f, ["min_oxy", 5, "max_oxy", 0, "min_tox", 0, "max_tox", 1, "min_co2", 0, "max_co2", 5, "min_n2", 0, "max_n2", 0]);
+
+	this.faction = list("syndicate");
 	return f.dot;
 });
 
@@ -63,26 +61,24 @@ rt.type(4898, "/mob/living/simple_animal/hostile/syndicate/melee", "/mob/living/
 	health: 170,
 });
 
-// /mob/living/simple_animal/hostile/syndicate/melee/proc/<init>  (code/modules/mob/living/simple_animal/hostile/syndicate.dm:51)
+// syndicate.dm:51
 rt.def("/mob/living/simple_animal/hostile/syndicate/melee/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "loot", rt.list(T("/obj/effect/gibspawner/human")));
+	parent_proc();
+	this.loot = list(T("/obj/effect/gibspawner/human"));
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/syndicate/melee/proc/bullet_act  (code/modules/mob/living/simple_animal/hostile/syndicate.dm:60)  may sleep
-rt.def("/mob/living/simple_animal/hostile/syndicate/melee/proc/bullet_act", function* bullet_act(f: Frame) {
-	if (!truthy(live(f.args[0]))) {
-		return live(f.dot);
+// syndicate.dm:60
+rt.def("/mob/living/simple_animal/hostile/syndicate/melee/proc/bullet_act", function* bullet_act(f: Frame, Proj: Value) {
+	if (!Proj) {
+		return f.dot;
 	}
-	if (truthy(rt.op(f, "Prob", [], [50]))) {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+	if (prob(50)) {
+		return (yield* parent_proc());
 	}
-	yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＀ blocks ＀ with its shield!</span>", [live(f.src), live(f.args[0])]));
+	this.visible_message(`<span class='danger'>${this} blocks ${Proj} with its shield!</span>`);
 	return 0;
-}, true, { args: ["Proj"] });
+}, true);
 
 rt.type(4899, "/mob/living/simple_animal/hostile/syndicate/melee/space", "/mob/living/simple_animal/hostile/syndicate/melee", {
 	atmos_requirements: null,
@@ -94,14 +90,12 @@ rt.type(4899, "/mob/living/simple_animal/hostile/syndicate/melee/space", "/mob/l
 	speed: 1,
 });
 
-// /mob/living/simple_animal/hostile/syndicate/melee/space/proc/<init>  (code/modules/mob/living/simple_animal/hostile/syndicate.dm:70)
+// syndicate.dm:70
 rt.def("/mob/living/simple_animal/hostile/syndicate/melee/space/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "atmos_requirements", rt.alist(f, ["min_oxy", 0, "max_oxy", 0, "min_tox", 0, "max_tox", 0, "min_co2", 0, "max_co2", 0, "min_n2", 0, "max_n2", 0]));
-	$0 = $0;
-	rt.setSv(f, "loot", rt.list(T("/obj/effect/gibspawner/human")));
+	parent_proc();
+	this.atmos_requirements = rt.alist(f, ["min_oxy", 0, "max_oxy", 0, "min_tox", 0, "max_tox", 0, "min_co2", 0, "max_co2", 0, "min_n2", 0, "max_n2", 0]);
+
+	this.loot = list(T("/obj/effect/gibspawner/human"));
 	return f.dot;
 });
 
@@ -114,12 +108,10 @@ rt.type(4900, "/mob/living/simple_animal/hostile/syndicate/melee/space/stormtroo
 	loot: null,
 });
 
-// /mob/living/simple_animal/hostile/syndicate/melee/space/stormtrooper/proc/<init>  (code/modules/mob/living/simple_animal/hostile/syndicate.dm:87)
+// syndicate.dm:87
 rt.def("/mob/living/simple_animal/hostile/syndicate/melee/space/stormtrooper/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "loot", rt.list(T("/obj/effect/gibspawner/human")));
+	parent_proc();
+	this.loot = list(T("/obj/effect/gibspawner/human"));
 	return f.dot;
 });
 
@@ -135,12 +127,10 @@ rt.type(4890, "/mob/living/simple_animal/hostile/syndicate/ranged", "/mob/living
 	loot: null,
 });
 
-// /mob/living/simple_animal/hostile/syndicate/ranged/proc/<init>  (code/modules/mob/living/simple_animal/hostile/syndicate.dm:100)
+// syndicate.dm:100
 rt.def("/mob/living/simple_animal/hostile/syndicate/ranged/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "loot", rt.list(T("/obj/effect/gibspawner/human")));
+	parent_proc();
+	this.loot = list(T("/obj/effect/gibspawner/human"));
 	return f.dot;
 });
 
@@ -154,14 +144,12 @@ rt.type(4892, "/mob/living/simple_animal/hostile/syndicate/ranged/space", "/mob/
 	loot: null,
 });
 
-// /mob/living/simple_animal/hostile/syndicate/ranged/space/proc/<init>  (code/modules/mob/living/simple_animal/hostile/syndicate.dm:106)
+// syndicate.dm:106
 rt.def("/mob/living/simple_animal/hostile/syndicate/ranged/space/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "atmos_requirements", rt.alist(f, ["min_oxy", 0, "max_oxy", 0, "min_tox", 0, "max_tox", 0, "min_co2", 0, "max_co2", 0, "min_n2", 0, "max_n2", 0]));
-	$0 = $0;
-	rt.setSv(f, "loot", rt.list(T("/obj/effect/gibspawner/human")));
+	parent_proc();
+	this.atmos_requirements = rt.alist(f, ["min_oxy", 0, "max_oxy", 0, "min_tox", 0, "max_tox", 0, "min_co2", 0, "max_co2", 0, "min_n2", 0, "max_n2", 0]);
+
+	this.loot = list(T("/obj/effect/gibspawner/human"));
 	return f.dot;
 });
 
@@ -176,12 +164,10 @@ rt.type(4893, "/mob/living/simple_animal/hostile/syndicate/ranged/space/stormtro
 	loot: null,
 });
 
-// /mob/living/simple_animal/hostile/syndicate/ranged/space/stormtrooper/proc/<init>  (code/modules/mob/living/simple_animal/hostile/syndicate.dm:122)
+// syndicate.dm:122
 rt.def("/mob/living/simple_animal/hostile/syndicate/ranged/space/stormtrooper/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "loot", rt.list(T("/obj/effect/gibspawner/human")));
+	parent_proc();
+	this.loot = list(T("/obj/effect/gibspawner/human"));
 	return f.dot;
 });
 
@@ -192,11 +178,11 @@ rt.type(4901, "/mob/living/simple_animal/hostile/syndicate/civilian", "/mob/livi
 	environment_smash: 0,
 });
 
-// /mob/living/simple_animal/hostile/syndicate/civilian/proc/Aggro  (code/modules/mob/living/simple_animal/hostile/syndicate.dm:133)  may sleep
+// syndicate.dm:133
 rt.def("/mob/living/simple_animal/hostile/syndicate/civilian/proc/Aggro", function* Aggro(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "summon_backup", 15);
-	yield* g.srcCall(f, "say", "GUARDS!!");
+	yield* parent_proc();
+	yield* this.summon_backup(15);
+	yield* this.say("GUARDS!!");
 	return f.dot;
 }, true);
 
@@ -227,14 +213,12 @@ rt.type(4993, "/mob/living/simple_animal/hostile/viscerator", "/mob/living/simpl
 	deathmessage: "is smashed into pieces!",
 });
 
-// /mob/living/simple_animal/hostile/viscerator/proc/<init>  (code/modules/mob/living/simple_animal/hostile/syndicate.dm:152)
+// syndicate.dm:152
 rt.def("/mob/living/simple_animal/hostile/viscerator/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "faction", rt.list("syndicate"));
-	rt.setSv(f, "atmos_requirements", rt.alist(f, ["min_oxy", 0, "max_oxy", 0, "min_tox", 0, "max_tox", 0, "min_co2", 0, "max_co2", 0, "min_n2", 0, "max_n2", 0]));
-	$0 = $0;
-	rt.setSv(f, "speak_emote", rt.list("states"));
+	parent_proc();
+	this.faction = list("syndicate");
+	this.atmos_requirements = rt.alist(f, ["min_oxy", 0, "max_oxy", 0, "min_tox", 0, "max_tox", 0, "min_co2", 0, "max_co2", 0, "min_n2", 0, "max_n2", 0]);
+
+	this.speak_emote = list("states");
 	return f.dot;
 });

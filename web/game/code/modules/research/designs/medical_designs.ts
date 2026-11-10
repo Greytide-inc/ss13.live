@@ -1,7 +1,7 @@
-// From code/modules/research/designs/medical_designs.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/research/designs/medical_designs.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(3255, "/datum/design/mass_spectrometer", "/datum/design", {
@@ -15,15 +15,13 @@ rt.type(3255, "/datum/design/mass_spectrometer", "/datum/design", {
 	build_path: rt.typePath("/obj/item/device/mass_spectrometer"),
 });
 
-// /datum/design/mass_spectrometer/proc/<init>  (code/modules/research/designs/medical_designs.dm:10)
+// medical_designs.dm:10
 rt.def("/datum/design/mass_spectrometer/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["magnets", 2, "plasmatech", 2]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 300, "$glass", 100]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Medical Designs"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["magnets", 2, "plasmatech", 2]);
+	this.materials = rt.alist(f, ["$metal", 300, "$glass", 100]);
+
+	this.category = list("Medical Designs");
 	return f.dot;
 });
 
@@ -38,15 +36,13 @@ rt.type(3256, "/datum/design/adv_mass_spectrometer", "/datum/design", {
 	build_path: rt.typePath("/obj/item/device/mass_spectrometer/adv"),
 });
 
-// /datum/design/adv_mass_spectrometer/proc/<init>  (code/modules/research/designs/medical_designs.dm:20)
+// medical_designs.dm:20
 rt.def("/datum/design/adv_mass_spectrometer/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["biotech", 3, "magnets", 4, "plasmatech", 3]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 500, "$glass", 200]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Medical Designs"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["biotech", 3, "magnets", 4, "plasmatech", 3]);
+	this.materials = rt.alist(f, ["$metal", 500, "$glass", 200]);
+
+	this.category = list("Medical Designs");
 	return f.dot;
 });
 
@@ -62,14 +58,12 @@ rt.type(3257, "/datum/design/mmi", "/datum/design", {
 	build_path: rt.typePath("/obj/item/device/mmi"),
 });
 
-// /datum/design/mmi/proc/<init>  (code/modules/research/designs/medical_designs.dm:30)
+// medical_designs.dm:30
 rt.def("/datum/design/mmi/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 3, "biotech", 2, "engineering", 2]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 1000, "$glass", 500]));
-	rt.setSv(f, "category", rt.list("Misc", "Medical Designs"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 3, "biotech", 2, "engineering", 2]);
+	this.materials = rt.alist(f, ["$metal", 1000, "$glass", 500]);
+	this.category = list("Misc", "Medical Designs");
 	return f.dot;
 });
 
@@ -85,14 +79,12 @@ rt.type(3258, "/datum/design/posibrain", "/datum/design", {
 	build_path: rt.typePath("/obj/item/device/mmi/posibrain"),
 });
 
-// /datum/design/posibrain/proc/<init>  (code/modules/research/designs/medical_designs.dm:41)
+// medical_designs.dm:41
 rt.def("/datum/design/posibrain/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 5, "biotech", 4, "plasmatech", 3]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 1700, "$glass", 1350, "$gold", 500]));
-	rt.setSv(f, "category", rt.list("Misc", "Medical Designs"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 5, "biotech", 4, "plasmatech", 3]);
+	this.materials = rt.alist(f, ["$metal", 1700, "$glass", 1350, "$gold", 500]);
+	this.category = list("Misc", "Medical Designs");
 	return f.dot;
 });
 
@@ -107,15 +99,13 @@ rt.type(3259, "/datum/design/bluespacebeaker", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/reagent_containers/glass/beaker/bluespace"),
 });
 
-// /datum/design/bluespacebeaker/proc/<init>  (code/modules/research/designs/medical_designs.dm:52)
+// medical_designs.dm:52
 rt.def("/datum/design/bluespacebeaker/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["bluespace", 6, "materials", 5, "plasmatech", 4]));
-	rt.setSv(f, "materials", rt.alist(f, ["$glass", 3000, "$plasma", 3000, "$diamond", 250, "$bluespace", 250]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Medical Designs"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["bluespace", 6, "materials", 5, "plasmatech", 4]);
+	this.materials = rt.alist(f, ["$glass", 3000, "$plasma", 3000, "$diamond", 250, "$bluespace", 250]);
+
+	this.category = list("Medical Designs");
 	return f.dot;
 });
 
@@ -130,15 +120,13 @@ rt.type(3260, "/datum/design/noreactbeaker", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/reagent_containers/glass/beaker/noreact"),
 });
 
-// /datum/design/noreactbeaker/proc/<init>  (code/modules/research/designs/medical_designs.dm:62)
+// medical_designs.dm:62
 rt.def("/datum/design/noreactbeaker/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["materials", 3, "engineering", 3, "plasmatech", 3]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 3000]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Medical Designs"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["materials", 3, "engineering", 3, "plasmatech", 3]);
+	this.materials = rt.alist(f, ["$metal", 3000]);
+
+	this.category = list("Medical Designs");
 	return f.dot;
 });
 
@@ -153,15 +141,13 @@ rt.type(3261, "/datum/design/bluespacesyringe", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/reagent_containers/syringe/bluespace"),
 });
 
-// /datum/design/bluespacesyringe/proc/<init>  (code/modules/research/designs/medical_designs.dm:72)
+// medical_designs.dm:72
 rt.def("/datum/design/bluespacesyringe/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["bluespace", 5, "materials", 4, "biotech", 4]));
-	rt.setSv(f, "materials", rt.alist(f, ["$glass", 2000, "$plasma", 1000, "$diamond", 1000, "$bluespace", 500]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Medical Designs"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["bluespace", 5, "materials", 4, "biotech", 4]);
+	this.materials = rt.alist(f, ["$glass", 2000, "$plasma", 1000, "$diamond", 1000, "$bluespace", 500]);
+
+	this.category = list("Medical Designs");
 	return f.dot;
 });
 
@@ -176,15 +162,13 @@ rt.type(3262, "/datum/design/noreactsyringe", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/reagent_containers/syringe/noreact"),
 });
 
-// /datum/design/noreactsyringe/proc/<init>  (code/modules/research/designs/medical_designs.dm:82)
+// medical_designs.dm:82
 rt.def("/datum/design/noreactsyringe/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["materials", 3, "engineering", 3]));
-	rt.setSv(f, "materials", rt.alist(f, ["$glass", 2000, "$gold", 1000]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Medical Designs"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["materials", 3, "engineering", 3]);
+	this.materials = rt.alist(f, ["$glass", 2000, "$gold", 1000]);
+
+	this.category = list("Medical Designs");
 	return f.dot;
 });
 
@@ -199,15 +183,13 @@ rt.type(3263, "/datum/design/piercesyringe", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/reagent_containers/syringe/piercing"),
 });
 
-// /datum/design/piercesyringe/proc/<init>  (code/modules/research/designs/medical_designs.dm:92)
+// medical_designs.dm:92
 rt.def("/datum/design/piercesyringe/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["materials", 7, "combat", 3, "engineering", 5]));
-	rt.setSv(f, "materials", rt.alist(f, ["$glass", 2000, "$diamond", 1000]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Medical Designs"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["materials", 7, "combat", 3, "engineering", 5]);
+	this.materials = rt.alist(f, ["$glass", 2000, "$diamond", 1000]);
+
+	this.category = list("Medical Designs");
 	return f.dot;
 });
 
@@ -222,15 +204,13 @@ rt.type(3264, "/datum/design/bluespacebodybag", "/datum/design", {
 	build_path: rt.typePath("/obj/item/bodybag/bluespace"),
 });
 
-// /datum/design/bluespacebodybag/proc/<init>  (code/modules/research/designs/medical_designs.dm:102)
+// medical_designs.dm:102
 rt.def("/datum/design/bluespacebodybag/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["bluespace", 5, "materials", 4, "plasmatech", 4]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 3000, "$plasma", 2000, "$diamond", 500, "$bluespace", 500]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Medical Designs"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["bluespace", 5, "materials", 4, "plasmatech", 4]);
+	this.materials = rt.alist(f, ["$metal", 3000, "$plasma", 2000, "$diamond", 500, "$bluespace", 500]);
+
+	this.category = list("Medical Designs");
 	return f.dot;
 });
 
@@ -245,15 +225,13 @@ rt.type(3265, "/datum/design/plasmarefiller", "/datum/design", {
 	build_path: rt.typePath("/obj/item/device/extinguisher_refill"),
 });
 
-// /datum/design/plasmarefiller/proc/<init>  (code/modules/research/designs/medical_designs.dm:112)
+// medical_designs.dm:112
 rt.def("/datum/design/plasmarefiller/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["materials", 2, "plasmatech", 3]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 4000, "$plasma", 1000]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Medical Designs"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["materials", 2, "plasmatech", 3]);
+	this.materials = rt.alist(f, ["$metal", 4000, "$plasma", 1000]);
+
+	this.category = list("Medical Designs");
 	return f.dot;
 });
 
@@ -268,15 +246,13 @@ rt.type(3266, "/datum/design/alienscalpel", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/scalpel/alien"),
 });
 
-// /datum/design/alienscalpel/proc/<init>  (code/modules/research/designs/medical_designs.dm:122)
+// medical_designs.dm:122
 rt.def("/datum/design/alienscalpel/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["biotech", 4, "materials", 4, "abductor", 3]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 2000, "$silver", 1500, "$plasma", 500, "$titanium", 1500]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Medical Designs"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["biotech", 4, "materials", 4, "abductor", 3]);
+	this.materials = rt.alist(f, ["$metal", 2000, "$silver", 1500, "$plasma", 500, "$titanium", 1500]);
+
+	this.category = list("Medical Designs");
 	return f.dot;
 });
 
@@ -291,15 +267,13 @@ rt.type(3267, "/datum/design/alienhemostat", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/hemostat/alien"),
 });
 
-// /datum/design/alienhemostat/proc/<init>  (code/modules/research/designs/medical_designs.dm:132)
+// medical_designs.dm:132
 rt.def("/datum/design/alienhemostat/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["biotech", 4, "materials", 4, "abductor", 3]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 2000, "$silver", 1500, "$plasma", 500, "$titanium", 1500]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Medical Designs"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["biotech", 4, "materials", 4, "abductor", 3]);
+	this.materials = rt.alist(f, ["$metal", 2000, "$silver", 1500, "$plasma", 500, "$titanium", 1500]);
+
+	this.category = list("Medical Designs");
 	return f.dot;
 });
 
@@ -314,15 +288,13 @@ rt.type(3268, "/datum/design/alienretractor", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/retractor/alien"),
 });
 
-// /datum/design/alienretractor/proc/<init>  (code/modules/research/designs/medical_designs.dm:142)
+// medical_designs.dm:142
 rt.def("/datum/design/alienretractor/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["biotech", 4, "materials", 4, "abductor", 3]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 2000, "$silver", 1500, "$plasma", 500, "$titanium", 1500]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Medical Designs"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["biotech", 4, "materials", 4, "abductor", 3]);
+	this.materials = rt.alist(f, ["$metal", 2000, "$silver", 1500, "$plasma", 500, "$titanium", 1500]);
+
+	this.category = list("Medical Designs");
 	return f.dot;
 });
 
@@ -337,15 +309,13 @@ rt.type(3269, "/datum/design/aliensaw", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/circular_saw/alien"),
 });
 
-// /datum/design/aliensaw/proc/<init>  (code/modules/research/designs/medical_designs.dm:152)
+// medical_designs.dm:152
 rt.def("/datum/design/aliensaw/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["biotech", 4, "materials", 4, "abductor", 3]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 10000, "$silver", 2500, "$plasma", 1000, "$titanium", 1500]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Medical Designs"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["biotech", 4, "materials", 4, "abductor", 3]);
+	this.materials = rt.alist(f, ["$metal", 10000, "$silver", 2500, "$plasma", 1000, "$titanium", 1500]);
+
+	this.category = list("Medical Designs");
 	return f.dot;
 });
 
@@ -360,15 +330,13 @@ rt.type(3270, "/datum/design/aliendrill", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/surgicaldrill/alien"),
 });
 
-// /datum/design/aliendrill/proc/<init>  (code/modules/research/designs/medical_designs.dm:162)
+// medical_designs.dm:162
 rt.def("/datum/design/aliendrill/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["biotech", 4, "materials", 4, "abductor", 3]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 10000, "$silver", 2500, "$plasma", 1000, "$titanium", 1500]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Medical Designs"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["biotech", 4, "materials", 4, "abductor", 3]);
+	this.materials = rt.alist(f, ["$metal", 10000, "$silver", 2500, "$plasma", 1000, "$titanium", 1500]);
+
+	this.category = list("Medical Designs");
 	return f.dot;
 });
 
@@ -383,15 +351,13 @@ rt.type(3271, "/datum/design/aliencautery", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/cautery/alien"),
 });
 
-// /datum/design/aliencautery/proc/<init>  (code/modules/research/designs/medical_designs.dm:172)
+// medical_designs.dm:172
 rt.def("/datum/design/aliencautery/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["biotech", 4, "materials", 4, "abductor", 3]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 2000, "$silver", 1500, "$plasma", 500, "$titanium", 1500]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Medical Designs"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["biotech", 4, "materials", 4, "abductor", 3]);
+	this.materials = rt.alist(f, ["$metal", 2000, "$silver", 1500, "$plasma", 500, "$titanium", 1500]);
+
+	this.category = list("Medical Designs");
 	return f.dot;
 });
 
@@ -407,14 +373,12 @@ rt.type(3272, "/datum/design/cyberimp_welding", "/datum/design", {
 	build_path: rt.typePath("/obj/item/organ/eyes/robotic/shield"),
 });
 
-// /datum/design/cyberimp_welding/proc/<init>  (code/modules/research/designs/medical_designs.dm:186)
+// medical_designs.dm:186
 rt.def("/datum/design/cyberimp_welding/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["materials", 4, "biotech", 4, "engineering", 5, "plasmatech", 4]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 600, "$glass", 400]));
-	rt.setSv(f, "category", rt.list("Misc", "Medical Designs"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["materials", 4, "biotech", 4, "engineering", 5, "plasmatech", 4]);
+	this.materials = rt.alist(f, ["$metal", 600, "$glass", 400]);
+	this.category = list("Misc", "Medical Designs");
 	return f.dot;
 });
 
@@ -430,14 +394,12 @@ rt.type(3273, "/datum/design/cyberimp_gloweyes", "/datum/design", {
 	build_path: rt.typePath("/obj/item/organ/eyes/robotic/glow"),
 });
 
-// /datum/design/cyberimp_gloweyes/proc/<init>  (code/modules/research/designs/medical_designs.dm:197)
+// medical_designs.dm:197
 rt.def("/datum/design/cyberimp_gloweyes/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["materials", 3, "biotech", 3, "engineering", 4]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 600, "$glass", 1000]));
-	rt.setSv(f, "category", rt.list("Misc", "Medical Designs"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["materials", 3, "biotech", 3, "engineering", 4]);
+	this.materials = rt.alist(f, ["$metal", 600, "$glass", 1000]);
+	this.category = list("Misc", "Medical Designs");
 	return f.dot;
 });
 
@@ -453,14 +415,12 @@ rt.type(3274, "/datum/design/cyberimp_breather", "/datum/design", {
 	build_path: rt.typePath("/obj/item/organ/cyberimp/mouth/breathing_tube"),
 });
 
-// /datum/design/cyberimp_breather/proc/<init>  (code/modules/research/designs/medical_designs.dm:208)
+// medical_designs.dm:208
 rt.def("/datum/design/cyberimp_breather/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["materials", 2, "biotech", 3]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 600, "$glass", 250]));
-	rt.setSv(f, "category", rt.list("Misc", "Medical Designs"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["materials", 2, "biotech", 3]);
+	this.materials = rt.alist(f, ["$metal", 600, "$glass", 250]);
+	this.category = list("Misc", "Medical Designs");
 	return f.dot;
 });
 
@@ -476,14 +436,12 @@ rt.type(3275, "/datum/design/cyberimp_toolset", "/datum/design", {
 	build_path: rt.typePath("/obj/item/organ/cyberimp/arm/toolset"),
 });
 
-// /datum/design/cyberimp_toolset/proc/<init>  (code/modules/research/designs/medical_designs.dm:219)
+// medical_designs.dm:219
 rt.def("/datum/design/cyberimp_toolset/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["materials", 3, "engineering", 4, "biotech", 4, "powerstorage", 4]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 2500, "$glass", 1500, "$silver", 1500]));
-	rt.setSv(f, "category", rt.list("Misc", "Medical Designs"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["materials", 3, "engineering", 4, "biotech", 4, "powerstorage", 4]);
+	this.materials = rt.alist(f, ["$metal", 2500, "$glass", 1500, "$silver", 1500]);
+	this.category = list("Misc", "Medical Designs");
 	return f.dot;
 });
 
@@ -499,14 +457,12 @@ rt.type(3276, "/datum/design/cyberimp_medical_hud", "/datum/design", {
 	build_path: rt.typePath("/obj/item/organ/cyberimp/eyes/hud/medical"),
 });
 
-// /datum/design/cyberimp_medical_hud/proc/<init>  (code/modules/research/designs/medical_designs.dm:230)
+// medical_designs.dm:230
 rt.def("/datum/design/cyberimp_medical_hud/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["materials", 5, "programming", 4, "biotech", 4]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 600, "$glass", 600, "$silver", 500, "$gold", 500]));
-	rt.setSv(f, "category", rt.list("Misc", "Medical Designs"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["materials", 5, "programming", 4, "biotech", 4]);
+	this.materials = rt.alist(f, ["$metal", 600, "$glass", 600, "$silver", 500, "$gold", 500]);
+	this.category = list("Misc", "Medical Designs");
 	return f.dot;
 });
 
@@ -522,14 +478,12 @@ rt.type(3277, "/datum/design/cyberimp_security_hud", "/datum/design", {
 	build_path: rt.typePath("/obj/item/organ/cyberimp/eyes/hud/security"),
 });
 
-// /datum/design/cyberimp_security_hud/proc/<init>  (code/modules/research/designs/medical_designs.dm:241)
+// medical_designs.dm:241
 rt.def("/datum/design/cyberimp_security_hud/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["materials", 5, "programming", 4, "biotech", 4, "combat", 3]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 600, "$glass", 600, "$silver", 750, "$gold", 750]));
-	rt.setSv(f, "category", rt.list("Misc", "Medical Designs"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["materials", 5, "programming", 4, "biotech", 4, "combat", 3]);
+	this.materials = rt.alist(f, ["$metal", 600, "$glass", 600, "$silver", 750, "$gold", 750]);
+	this.category = list("Misc", "Medical Designs");
 	return f.dot;
 });
 
@@ -545,14 +499,12 @@ rt.type(3278, "/datum/design/cyberimp_xray", "/datum/design", {
 	build_path: rt.typePath("/obj/item/organ/eyes/robotic/xray"),
 });
 
-// /datum/design/cyberimp_xray/proc/<init>  (code/modules/research/designs/medical_designs.dm:252)
+// medical_designs.dm:252
 rt.def("/datum/design/cyberimp_xray/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["materials", 7, "programming", 5, "biotech", 7, "magnets", 5, "plasmatech", 6]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 600, "$glass", 600, "$silver", 600, "$gold", 600, "$plasma", 1000, "$uranium", 1000, "$diamond", 1000, "$bluespace", 1000]));
-	rt.setSv(f, "category", rt.list("Misc", "Medical Designs"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["materials", 7, "programming", 5, "biotech", 7, "magnets", 5, "plasmatech", 6]);
+	this.materials = rt.alist(f, ["$metal", 600, "$glass", 600, "$silver", 600, "$gold", 600, "$plasma", 1000, "$uranium", 1000, "$diamond", 1000, "$bluespace", 1000]);
+	this.category = list("Misc", "Medical Designs");
 	return f.dot;
 });
 
@@ -568,14 +520,12 @@ rt.type(3279, "/datum/design/cyberimp_thermals", "/datum/design", {
 	build_path: rt.typePath("/obj/item/organ/eyes/robotic/thermals"),
 });
 
-// /datum/design/cyberimp_thermals/proc/<init>  (code/modules/research/designs/medical_designs.dm:263)
+// medical_designs.dm:263
 rt.def("/datum/design/cyberimp_thermals/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["materials", 6, "programming", 4, "biotech", 7, "magnets", 5, "plasmatech", 4]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 600, "$glass", 600, "$silver", 600, "$gold", 600, "$plasma", 1000, "$diamond", 2000]));
-	rt.setSv(f, "category", rt.list("Misc", "Medical Designs"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["materials", 6, "programming", 4, "biotech", 7, "magnets", 5, "plasmatech", 4]);
+	this.materials = rt.alist(f, ["$metal", 600, "$glass", 600, "$silver", 600, "$gold", 600, "$plasma", 1000, "$diamond", 2000]);
+	this.category = list("Misc", "Medical Designs");
 	return f.dot;
 });
 
@@ -591,14 +541,12 @@ rt.type(3280, "/datum/design/cyberimp_antidrop", "/datum/design", {
 	build_path: rt.typePath("/obj/item/organ/cyberimp/brain/anti_drop"),
 });
 
-// /datum/design/cyberimp_antidrop/proc/<init>  (code/modules/research/designs/medical_designs.dm:274)
+// medical_designs.dm:274
 rt.def("/datum/design/cyberimp_antidrop/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["materials", 5, "programming", 6, "biotech", 5]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 600, "$glass", 600, "$silver", 400, "$gold", 400]));
-	rt.setSv(f, "category", rt.list("Misc", "Medical Designs"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["materials", 5, "programming", 6, "biotech", 5]);
+	this.materials = rt.alist(f, ["$metal", 600, "$glass", 600, "$silver", 400, "$gold", 400]);
+	this.category = list("Misc", "Medical Designs");
 	return f.dot;
 });
 
@@ -614,14 +562,12 @@ rt.type(3281, "/datum/design/cyberimp_antistun", "/datum/design", {
 	build_path: rt.typePath("/obj/item/organ/cyberimp/brain/anti_stun"),
 });
 
-// /datum/design/cyberimp_antistun/proc/<init>  (code/modules/research/designs/medical_designs.dm:285)
+// medical_designs.dm:285
 rt.def("/datum/design/cyberimp_antistun/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["materials", 6, "programming", 5, "biotech", 6]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 600, "$glass", 600, "$silver", 500, "$gold", 1000]));
-	rt.setSv(f, "category", rt.list("Misc", "Medical Designs"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["materials", 6, "programming", 5, "biotech", 6]);
+	this.materials = rt.alist(f, ["$metal", 600, "$glass", 600, "$silver", 500, "$gold", 1000]);
+	this.category = list("Misc", "Medical Designs");
 	return f.dot;
 });
 
@@ -637,14 +583,12 @@ rt.type(3282, "/datum/design/cyberimp_nutriment", "/datum/design", {
 	build_path: rt.typePath("/obj/item/organ/cyberimp/chest/nutriment"),
 });
 
-// /datum/design/cyberimp_nutriment/proc/<init>  (code/modules/research/designs/medical_designs.dm:296)
+// medical_designs.dm:296
 rt.def("/datum/design/cyberimp_nutriment/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["materials", 3, "powerstorage", 4, "biotech", 3]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 500, "$glass", 500, "$gold", 500]));
-	rt.setSv(f, "category", rt.list("Misc", "Medical Designs"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["materials", 3, "powerstorage", 4, "biotech", 3]);
+	this.materials = rt.alist(f, ["$metal", 500, "$glass", 500, "$gold", 500]);
+	this.category = list("Misc", "Medical Designs");
 	return f.dot;
 });
 
@@ -660,14 +604,12 @@ rt.type(3283, "/datum/design/cyberimp_nutriment_plus", "/datum/design", {
 	build_path: rt.typePath("/obj/item/organ/cyberimp/chest/nutriment/plus"),
 });
 
-// /datum/design/cyberimp_nutriment_plus/proc/<init>  (code/modules/research/designs/medical_designs.dm:307)
+// medical_designs.dm:307
 rt.def("/datum/design/cyberimp_nutriment_plus/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["materials", 5, "powerstorage", 4, "biotech", 4]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 600, "$glass", 600, "$gold", 500, "$uranium", 750]));
-	rt.setSv(f, "category", rt.list("Misc", "Medical Designs"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["materials", 5, "powerstorage", 4, "biotech", 4]);
+	this.materials = rt.alist(f, ["$metal", 600, "$glass", 600, "$gold", 500, "$uranium", 750]);
+	this.category = list("Misc", "Medical Designs");
 	return f.dot;
 });
 
@@ -683,14 +625,12 @@ rt.type(3284, "/datum/design/cyberimp_reviver", "/datum/design", {
 	build_path: rt.typePath("/obj/item/organ/cyberimp/chest/reviver"),
 });
 
-// /datum/design/cyberimp_reviver/proc/<init>  (code/modules/research/designs/medical_designs.dm:318)
+// medical_designs.dm:318
 rt.def("/datum/design/cyberimp_reviver/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["materials", 5, "programming", 4, "biotech", 5]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 800, "$glass", 800, "$gold", 300, "$uranium", 500]));
-	rt.setSv(f, "category", rt.list("Misc", "Medical Designs"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["materials", 5, "programming", 4, "biotech", 5]);
+	this.materials = rt.alist(f, ["$metal", 800, "$glass", 800, "$gold", 300, "$uranium", 500]);
+	this.category = list("Misc", "Medical Designs");
 	return f.dot;
 });
 
@@ -706,14 +646,12 @@ rt.type(3285, "/datum/design/cyberimp_thrusters", "/datum/design", {
 	build_path: rt.typePath("/obj/item/organ/cyberimp/chest/thrusters"),
 });
 
-// /datum/design/cyberimp_thrusters/proc/<init>  (code/modules/research/designs/medical_designs.dm:329)
+// medical_designs.dm:329
 rt.def("/datum/design/cyberimp_thrusters/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["materials", 5, "biotech", 5, "magnets", 4, "engineering", 7]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 4000, "$glass", 2000, "$silver", 1000, "$diamond", 1000]));
-	rt.setSv(f, "category", rt.list("Misc", "Medical Designs"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["materials", 5, "biotech", 5, "magnets", 4, "engineering", 7]);
+	this.materials = rt.alist(f, ["$metal", 4000, "$glass", 2000, "$silver", 1000, "$diamond", 1000]);
+	this.category = list("Misc", "Medical Designs");
 	return f.dot;
 });
 
@@ -728,15 +666,13 @@ rt.type(3286, "/datum/design/implanter", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/implanter"),
 });
 
-// /datum/design/implanter/proc/<init>  (code/modules/research/designs/medical_designs.dm:345)
+// medical_designs.dm:345
 rt.def("/datum/design/implanter/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["materials", 2, "biotech", 3, "programming", 2]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 600, "$glass", 200]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Medical Designs"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["materials", 2, "biotech", 3, "programming", 2]);
+	this.materials = rt.alist(f, ["$metal", 600, "$glass", 200]);
+
+	this.category = list("Medical Designs");
 	return f.dot;
 });
 
@@ -751,15 +687,13 @@ rt.type(3287, "/datum/design/implantcase", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/implantcase"),
 });
 
-// /datum/design/implantcase/proc/<init>  (code/modules/research/designs/medical_designs.dm:355)
+// medical_designs.dm:355
 rt.def("/datum/design/implantcase/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["biotech", 2]));
-	rt.setSv(f, "materials", rt.alist(f, ["$glass", 500]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Medical Designs"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["biotech", 2]);
+	this.materials = rt.alist(f, ["$glass", 500]);
+
+	this.category = list("Medical Designs");
 	return f.dot;
 });
 
@@ -774,15 +708,13 @@ rt.type(3288, "/datum/design/implant_sadtrombone", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/implantcase/sad_trombone"),
 });
 
-// /datum/design/implant_sadtrombone/proc/<init>  (code/modules/research/designs/medical_designs.dm:365)
+// medical_designs.dm:365
 rt.def("/datum/design/implant_sadtrombone/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["materials", 2, "biotech", 3, "programming", 2]));
-	rt.setSv(f, "materials", rt.alist(f, ["$glass", 500, "$bananium", 500]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Medical Designs"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["materials", 2, "biotech", 3, "programming", 2]);
+	this.materials = rt.alist(f, ["$glass", 500, "$bananium", 500]);
+
+	this.category = list("Medical Designs");
 	return f.dot;
 });
 
@@ -797,15 +729,13 @@ rt.type(3289, "/datum/design/implant_chem", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/implantcase/chem"),
 });
 
-// /datum/design/implant_chem/proc/<init>  (code/modules/research/designs/medical_designs.dm:375)
+// medical_designs.dm:375
 rt.def("/datum/design/implant_chem/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["materials", 3, "biotech", 5]));
-	rt.setSv(f, "materials", rt.alist(f, ["$glass", 700]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Medical Designs"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["materials", 3, "biotech", 5]);
+	this.materials = rt.alist(f, ["$glass", 700]);
+
+	this.category = list("Medical Designs");
 	return f.dot;
 });
 
@@ -820,14 +750,12 @@ rt.type(3290, "/datum/design/implant_tracking", "/datum/design", {
 	build_path: rt.typePath("/obj/item/weapon/implantcase/track"),
 });
 
-// /datum/design/implant_tracking/proc/<init>  (code/modules/research/designs/medical_designs.dm:385)
+// medical_designs.dm:385
 rt.def("/datum/design/implant_tracking/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["materials", 2, "biotech", 3, "magnets", 3, "programming", 2]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 500, "$glass", 500]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Medical Designs"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["materials", 2, "biotech", 3, "magnets", 3, "programming", 2]);
+	this.materials = rt.alist(f, ["$metal", 500, "$glass", 500]);
+
+	this.category = list("Medical Designs");
 	return f.dot;
 });

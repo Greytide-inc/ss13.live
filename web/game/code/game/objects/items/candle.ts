@@ -1,7 +1,7 @@
-// From code/game/objects/items/candle.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/candle.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(9657, "/obj/item/candle", "/obj/item", {
@@ -19,102 +19,91 @@ rt.type(9657, "/obj/item/candle", "/obj/item", {
 	icon_state: "candle1",
 });
 
-// /obj/item/candle/proc/New  (code/game/objects/items/candle.dm:18)  may sleep
+// candle.dm:18
 rt.def("/obj/item/candle/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.sv(f, "start_lit"))) return f.dot;
-	yield* g.callSrc(f, "light", ["show_message", 0], rt.Args.Named);
+	yield* parent_proc();
+	if (!this.start_lit) return f.dot;
+	yield* this.light({ show_message: 0 });
 	return f.dot;
 }, true);
 
-// /obj/item/candle/proc/update_icon  (code/game/objects/items/candle.dm:25)
+// candle.dm:25
 rt.def("/obj/item/candle/proc/update_icon", function update_icon(f: Frame) {
 	let i: Value = null;
-	let $0: any, $1: any;
-	f.vars = () => [i, $0, $1];
-	i = null;
-	if (rt.gt(rt.sv(f, "wax"), 150)) {
+	if (this.wax > 150) {
 		i = 1;
+	} else if (this.wax > 80) {
+		i = 2;
 	} else {
-		if (rt.gt(rt.sv(f, "wax"), 80)) {
-			i = 2;
-		} else {
-			i = 3;
-		}
+		i = 3;
 	}
-	$0 = live(i);
-	if (truthy(rt.sv(f, "lit"))) {
-		$1 = "_lit";
-	} else {
-		$1 = "";
-	}
-	rt.setSv(f, "icon_state", fmt("candle＀＀", [$0, $1]));
+	let $0: any = i;
+	this.icon_state = `candle${$0}${this.lit ? "_lit" : ""}`;
 	return f.dot;
 });
 
-// /obj/item/candle/proc/attackby  (code/game/objects/items/candle.dm:34)  may sleep
-rt.def("/obj/item/candle/proc/attackby", function* attackby(f: Frame) {
+// candle.dm:34
+rt.def("/obj/item/candle/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
 	let msg: Value = null;
-	f.vars = () => [msg];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy((msg = (yield* g.callName(f, live(f.args[0]), "ignition_effect", [live(f.src), live(f.args[1])]))))) return f.dot;
-	yield* g.srcCall(f, "light", live(msg));
+	yield* parent_proc();
+	if (!(msg = (yield* W.ignition_effect(this, user)))) return f.dot;
+	yield* this.light(msg);
 	return f.dot;
-}, true, { args: ["W", "user", "params"] });
+}, true);
 
-// /obj/item/candle/proc/fire_act  (code/game/objects/items/candle.dm:40)  may sleep
-rt.def("/obj/item/candle/proc/fire_act", function* fire_act(f: Frame) {
-	if (!truthy(rt.fv(f, "lit", live(f.src)))) {
-		yield* g.srcCall(f, "light");
+// candle.dm:40
+rt.def("/obj/item/candle/proc/fire_act", function* fire_act(f: Frame, exposed_temperature: Value, exposed_volume: Value) {
+	if (!this.lit) {
+		yield* this.light();
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["exposed_temperature", "exposed_volume"] });
+}, true);
 
-// /obj/item/candle/proc/light  (code/game/objects/items/candle.dm:45)
+// candle.dm:45
 rt.def("/obj/item/candle/proc/light", function light(f: Frame, show_message: Value) {
-	if (truthy(rt.fv(f, "lit", live(f.src)))) return f.dot;
-	rt.setFv(f, "lit", live(f.src), 1);
-	if (truthy(live(show_message))) {
-		rt.callName(f, live(f.usr), "visible_message", [live(show_message)]);
+	if (this.lit) return f.dot;
+	this.lit = 1;
+	if (show_message) {
+		f.usr.visible_message(show_message);
 	}
-	rt.callSrc(f, "set_light", [2]);
-	if (!truthy(rt.fv(f, "isprocessing", live(f.src)))) {
-		rt.setFv(f, "isprocessing", live(f.src), 1);
-		rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), add);
+	this.set_light(2);
+	if (!this.isprocessing) {
+		this.isprocessing = 1;
+		GLOB.SSobj.processing += this;
 	}
-	rt.callSrc(f, "update_icon", []);
+	this.update_icon();
 	return f.dot;
 });
 
-// /obj/item/candle/proc/process  (code/game/objects/items/candle.dm:56)  may sleep
+// candle.dm:56
 rt.def("/obj/item/candle/proc/process", function* process(f: Frame) {
-	if (!truthy(rt.sv(f, "lit"))) {
-		return live(f.dot);
+	if (!this.lit) {
+		return f.dot;
 	}
-	if (!truthy(rt.sv(f, "infinite"))) {
-		rt.incSrcVar(f, "wax", -1, true);
+	if (!this.infinite) {
+		this.wax--;
 	}
-	if (!truthy(rt.sv(f, "wax"))) {
-		yield* g.new_(f, T("/obj/item/trash/candle"), [rt.fv(f, "loc", live(f.src))]);
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	if (!this.wax) {
+		yield* new_(T("/obj/item/trash/candle"), this.loc);
+		yield* qdel(this);
 	}
-	yield* g.srcCall(f, "update_icon");
-	yield* g.srcCall(f, "open_flame");
+	yield* this.update_icon();
+	yield* this.open_flame();
 	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/item/candle/proc/attack_self  (code/game/objects/items/candle.dm:68)
+// candle.dm:68
 rt.def("/obj/item/candle/proc/attack_self", function attack_self(f: Frame, user: Value) {
-	if (!truthy(rt.sv(f, "lit"))) return f.dot;
-	rt.callName(f, live(user), "visible_message", [fmt("<span class='notice'>＀ snuffs ＀.</span>", [live(user), live(f.src)])]);
-	rt.setSv(f, "lit", 0);
-	rt.callSrc(f, "update_icon", []);
-	rt.callSrc(f, "set_light", [0]);
+	if (!this.lit) return f.dot;
+	user.visible_message(`<span class='notice'>${user} snuffs ${this}.</span>`);
+	this.lit = 0;
+	this.update_icon();
+	this.set_light(0);
 	return f.dot;
 });
 
-// /obj/item/candle/proc/is_hot  (code/game/objects/items/candle.dm:75)
+// candle.dm:75
 rt.def("/obj/item/candle/proc/is_hot", function is_hot(f: Frame) {
-	return multiply(rt.sv(f, "lit"), rt.sv(f, "heat"));
+	return this.lit * this.heat;
 });

@@ -1,7 +1,7 @@
-// From code/game/gamemodes/clock_cult/clock_structures/clock_shells.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/gamemodes/clock_cult/clock_structures/clock_shells.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(12158, "/obj/structure/destructible/clockwork/shell", "/obj/structure/destructible/clockwork", {
@@ -13,41 +13,39 @@ rt.type(12158, "/obj/structure/destructible/clockwork/shell", "/obj/structure/de
 	resistance_flags: 99,
 });
 
-// /obj/structure/destructible/clockwork/shell/proc/attackby  (code/game/gamemodes/clock_cult/clock_structures/clock_shells.dm:11)  may sleep
-rt.def("/obj/structure/destructible/clockwork/shell/proc/attackby", function* attackby(f: Frame) {
+// clock_shells.dm:11
+rt.def("/obj/structure/destructible/clockwork/shell/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
 	let S: Value = null, A: Value = null;
 	let $0: any, $1: any, $2: any;
-	f.vars = () => [S, A, $0, $1, $2];
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/device/mmi/posibrain/soul_vessel")) ? 1 : 0))) {
-		if (!truthy((yield* g.call(f, P("/proc/is_servant_of_ratvar"), null, [live(f.args[1])])))) {
-			yield* g.callSuper(f, [], rt.Args.Same);
+	if (rt.istype(I, T("/obj/item/device/mmi/posibrain/soul_vessel"))) {
+		if (!is_servant_of_ratvar(user)) {
+			yield* parent_proc();
 			return 0;
 		}
-		if (!truthy(rt.gv(f, "brainmob", (S = live(f.args[0]))))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>＀ is inactive! Turn it on or capture a mind first.</span>", [live(S)])]);
+		if (!(S = I).brainmob) {
+			to_chat(user, `<span class='warning'>${S} is inactive! Turn it on or capture a mind first.</span>`);
 			return 0;
 		}
-		if ((truthy(rt.fv(f, "brainmob", live(S))) && (!truthy(rt.gv(f, "client", rt.fv(f, "brainmob", live(S)))) || !truthy(rt.gv(f, "mind", rt.fv(f, "brainmob", live(S))))))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>＀'s trapped consciousness appears inactive!</span>", [live(S)])]);
+		if (S.brainmob && (!S.brainmob.client || !S.brainmob.mind)) {
+			to_chat(user, `<span class='warning'>${S}'s trapped consciousness appears inactive!</span>`);
 			return 0;
 		}
-		yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='notice'>＀ places ＀ in ＀, where it fuses to the shell.</span>", [live(f.args[1]), live(S), live(f.src)]), fmt("<span class='brass'>You place ＀ in ＀, fusing it to the shell.</span>", [live(S), live(f.src)])]);
-		yield* g.callName(f, (A = (yield* g.new_(f, rt.sv(f, "mobtype"), [rt.getStep(f, live(f.src), 0)]))), "visible_message", [fmt("<span class='brass'>＀＀</span>", [live(f.src), rt.sv(f, "spawn_message")])]);
-		yield* g.callName(f, rt.gv(f, "mind", rt.fv(f, "brainmob", live(S))), "transfer_to", [live(A)]);
-		$0 = live(A);
+		user.visible_message(`<span class='notice'>${user} places ${S} in ${this}, where it fuses to the shell.</span>`, `<span class='brass'>You place ${S} in ${this}, fusing it to the shell.</span>`);
+		(A = (yield* new_(this.mobtype, rt.getStep(f, this, 0)))).visible_message(`<span class='brass'>${this}${this.spawn_message}</span>`);
+		yield* S.brainmob.mind.transfer_to(A);
+		$0 = A;
 		$1 = null;
-		if (truthy((yield* g.call(f, P("/proc/findtext"), null, [rt.fv(f, "name", live(A)), rt.initial(f, live(A), "name")])))) {
-			$2 = fmt("＀", [rt.initial(f, live(A), "name")]);
+		if (findtext(A.name, rt.initial(f, A, "name"))) {
+			$2 = `${rt.initial(f, A, "name")}`;
 		} else {
-			$2 = fmt("＀", [rt.fv(f, "name", live(A))]);
+			$2 = `${A.name}`;
 		}
-		yield* g.callName(f, $0, "fully_replace_character_name", [$1, fmt("＀ (＀)", [$2, rt.gv(f, "name", rt.fv(f, "brainmob", live(S)))])]);
-		yield* g.callName(f, live(f.args[1]), "drop_item", []);
-		yield* g.call(f, P("/proc/qdel"), null, [live(S)]);
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+		yield* $0.fully_replace_character_name($1, `${$2} (${S.brainmob.name})`);
+		yield* user.drop_item();
+		yield* qdel(S);
+		yield* qdel(this);
 		return 1;
 	} else {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+		return (yield* parent_proc());
 	}
-	return f.dot;
-}, true, { args: ["I", "user", "params"] });
+}, true);

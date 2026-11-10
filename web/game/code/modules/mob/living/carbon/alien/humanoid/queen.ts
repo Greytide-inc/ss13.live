@@ -1,7 +1,7 @@
-// From code/modules/mob/living/carbon/alien/humanoid/queen.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/carbon/alien/humanoid/queen.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(4825, "/mob/living/carbon/alien/humanoid/royal", "/mob/living/carbon/alien/humanoid", {
@@ -18,12 +18,10 @@ rt.type(4825, "/mob/living/carbon/alien/humanoid/royal", "/mob/living/carbon/ali
 	butcher_results: null,
 });
 
-// /mob/living/carbon/alien/humanoid/royal/proc/<init>  (code/modules/mob/living/carbon/alien/humanoid/queen.dm:12)
+// queen.dm:12
 rt.def("/mob/living/carbon/alien/humanoid/royal/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "butcher_results", rt.alist(f, [T("/obj/item/weapon/reagent_containers/food/snacks/meat/slab/xeno"), 20, T("/obj/item/stack/sheet/animalhide/xeno"), 3]));
+	parent_proc();
+	this.butcher_results = rt.alist(f, [T("/obj/item/weapon/reagent_containers/food/snacks/meat/slab/xeno"), 20, T("/obj/item/stack/sheet/animalhide/xeno"), 3]);
 	return f.dot;
 });
 
@@ -36,12 +34,10 @@ rt.type(4826, "/mob/living/carbon/alien/humanoid/royal/queen", "/mob/living/carb
 	icon_state: "alienq",
 });
 
-// /mob/living/carbon/alien/humanoid/royal/queen/proc/<init>  (code/modules/mob/living/carbon/alien/humanoid/queen.dm:25)  may sleep
+// queen.dm:25
 rt.def("/mob/living/carbon/alien/humanoid/royal/queen/proc/<init>", function* _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = (yield* g.callSuper(f, []));
-	rt.setSv(f, "smallsprite", (yield* g.new_(f, T("/datum/action/small_sprite"), [])));
+	yield* parent_proc();
+	this.smallsprite = (yield* new_(T("/datum/action/small_sprite")));
 	return f.dot;
 }, true);
 
@@ -52,68 +48,61 @@ rt.type(266, "/datum/action/small_sprite", "/datum/action", {
 	background_icon_state: "bg_alien",
 });
 
-// /datum/action/small_sprite/proc/Trigger  (code/modules/mob/living/carbon/alien/humanoid/queen.dm:34)  may sleep
+// queen.dm:34
 rt.def("/datum/action/small_sprite/proc/Trigger", function* Trigger(f: Frame) {
 	let I: Value = null;
-	f.vars = () => [I];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.sv(f, "small"))) {
-		rt.setFv(f, "override", (I = (yield* g.call(f, P("/proc/image"), null, ["icon", rt.rsc("icons/mob/alien.dmi"), "icon_state", "alienq", "loc", rt.sv(f, "owner")], rt.Args.Named))), 1);
-		(rt.modField(f, live(I), "pixel_x", rt.fv(f, "pixel_x", rt.sv(f, "owner")), subtract));
-		(rt.modField(f, live(I), "pixel_y", rt.fv(f, "pixel_y", rt.sv(f, "owner")), subtract));
-		yield* g.callName(f, rt.sv(f, "owner"), "add_alt_appearance", [T("/datum/atom_hud/alternate_appearance/basic"), "smallqueen", live(I)]);
-		rt.setSv(f, "small", 1);
+	yield* parent_proc();
+	if (!this.small) {
+		(I = (yield* image({ icon: rt.rsc("icons/mob/alien.dmi"), icon_state: "alienq", loc: this.owner }))).override = 1;
+		I.pixel_x -= this.owner.pixel_x;
+		I.pixel_y -= this.owner.pixel_y;
+		yield* this.owner.add_alt_appearance(T("/datum/atom_hud/alternate_appearance/basic"), "smallqueen", I);
+		this.small = 1;
 	} else {
-		yield* g.callName(f, rt.sv(f, "owner"), "remove_alt_appearance", ["smallqueen"]);
-		rt.setSv(f, "small", 0);
+		yield* this.owner.remove_alt_appearance("smallqueen");
+		this.small = 0;
 	}
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/alien/humanoid/royal/queen/proc/Initialize  (code/modules/mob/living/carbon/alien/humanoid/queen.dm:49)  may sleep
+// queen.dm:49
 rt.def("/mob/living/carbon/alien/humanoid/royal/queen/proc/Initialize", function* Initialize(f: Frame) {
 	let Q: Value = null;
-	let $e: any;
-	f.vars = () => [Q, $e];
-	Q = null;
-	rt.forList(f, 0, rt.gl("living_mob_list"), T("/mob/living/carbon/alien/humanoid/royal/queen"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		Q = $e;
-		if (isEqual(live(Q), live(f.src))) {
+	for (Q of each(GLOB.living_mob_list, T("/mob/living/carbon/alien/humanoid/royal/queen"))) {
+		if (Q == this) {
 			continue;
 		}
-		if (isEqual(rt.fv(f, "stat", live(Q)), 2)) {
+		if (Q.stat == 2) {
 			continue;
 		}
-		if (truthy(rt.fv(f, "client", live(Q)))) {
-			rt.setSv(f, "name", fmt("alien princess (＀)", [(yield* g.call(f, P("/proc/rand"), null, [1, 999]))]));
+		if (Q.client) {
+			this.name = `alien princess (${rand(1, 999)})`;
 			break;
 		}
 	}
-	rt.endFor(f, 0);
-	rt.setSv(f, "real_name", rt.fv(f, "name", live(f.src)));
-	yield* g.srcCall(f, "AddSpell", (yield* g.new_(f, T("/obj/effect/proc_holder/spell/aoe_turf/repulse/xeno"), [live(f.src)])));
-	yield* g.srcCall(f, "AddAbility", (yield* g.new_(f, T("/obj/effect/proc_holder/alien/royal/queen/promote"), [])));
-	yield* g.callName(f, rt.sv(f, "smallsprite"), "Grant", [live(f.src)]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	this.real_name = this.name;
+	yield* this.AddSpell((yield* new_(T("/obj/effect/proc_holder/spell/aoe_turf/repulse/xeno"), this)));
+	yield* this.AddAbility((yield* new_(T("/obj/effect/proc_holder/alien/royal/queen/promote"))));
+	yield* this.smallsprite.Grant(this);
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/alien/humanoid/royal/queen/proc/create_internal_organs  (code/modules/mob/living/carbon/alien/humanoid/queen.dm:66)  may sleep
+// queen.dm:66
 rt.def("/mob/living/carbon/alien/humanoid/royal/queen/proc/create_internal_organs", function* create_internal_organs(f: Frame) {
-	rt.modSrcVar(f, "internal_organs", (yield* g.new_(f, T("/obj/item/organ/alien/plasmavessel/large/queen"), [])), add);
-	rt.modSrcVar(f, "internal_organs", (yield* g.new_(f, T("/obj/item/organ/alien/resinspinner"), [])), add);
-	rt.modSrcVar(f, "internal_organs", (yield* g.new_(f, T("/obj/item/organ/alien/acid"), [])), add);
-	rt.modSrcVar(f, "internal_organs", (yield* g.new_(f, T("/obj/item/organ/alien/neurotoxin"), [])), add);
-	rt.modSrcVar(f, "internal_organs", (yield* g.new_(f, T("/obj/item/organ/alien/eggsac"), [])), add);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	this.internal_organs += (yield* new_(T("/obj/item/organ/alien/plasmavessel/large/queen")));
+	this.internal_organs += (yield* new_(T("/obj/item/organ/alien/resinspinner")));
+	this.internal_organs += (yield* new_(T("/obj/item/organ/alien/acid")));
+	this.internal_organs += (yield* new_(T("/obj/item/organ/alien/neurotoxin")));
+	this.internal_organs += (yield* new_(T("/obj/item/organ/alien/eggsac")));
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/alien/humanoid/royal/queen/proc/movement_delay  (code/modules/mob/living/carbon/alien/humanoid/queen.dm:74)
+// queen.dm:74
 rt.def("/mob/living/carbon/alien/humanoid/royal/queen/proc/movement_delay", function movement_delay(f: Frame) {
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	f.dot = rt.modify(live(f.dot), 3, add);
+	f.dot = parent_proc();
+	f.dot += 3;
 	return f.dot;
 });
 
@@ -125,15 +114,14 @@ rt.type(11396, "/obj/effect/proc_holder/alien/lay_egg", "/obj/effect/proc_holder
 	desc: "Lay an egg to produce huggers to impregnate prey with.",
 });
 
-// /obj/effect/proc_holder/alien/lay_egg/proc/fire  (code/modules/mob/living/carbon/alien/humanoid/queen.dm:86)  may sleep
+// queen.dm:86
 rt.def("/obj/effect/proc_holder/alien/lay_egg/proc/fire", function* fire(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (truthy(rt.locateIn(f, T("/obj/structure/alien/egg"), rt.getStep(f, live(user), 0)))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "There's already an egg here."]);
+	if (rt.locateIn(f, T("/obj/structure/alien/egg"), rt.getStep(f, user, 0))) {
+		to_chat(user, "There's already an egg here.");
 		return 0;
 	}
-	yield* g.callName(f, live(user), "visible_message", [fmt("<span class='alertalien'>＀ has laid an egg!</span>", [live(user)])]);
-	yield* g.new_(f, T("/obj/structure/alien/egg"), [rt.fv(f, "loc", live(user))]);
+	user.visible_message(`<span class='alertalien'>${user} has laid an egg!</span>`);
+	yield* new_(T("/obj/structure/alien/egg"), user.loc);
 	return 1;
 }, true);
 
@@ -144,30 +132,24 @@ rt.type(11399, "/obj/effect/proc_holder/alien/royal/queen/promote", "/obj/effect
 	desc: "Produce a royal parasite to grant one of your children the honor of being your Praetorian.",
 });
 
-// /obj/effect/proc_holder/alien/royal/queen/promote/proc/fire  (code/modules/mob/living/carbon/alien/humanoid/queen.dm:105)  may sleep
+// queen.dm:105
 rt.def("/obj/effect/proc_holder/alien/royal/queen/promote/proc/fire", function* fire(f: Frame, user: Value) {
 	let prom: Value = null;
-	let $e: any;
-	f.vars = () => [user, prom, $e];
-	prom = null;
-	if (truthy((yield* g.call(f, P("/proc/get_alien_type"), null, [T("/mob/living/carbon/alien/humanoid/royal/praetorian")])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='noticealien'>You already have a Praetorian!</span>"]);
+	if (get_alien_type(T("/mob/living/carbon/alien/humanoid/royal/praetorian"))) {
+		to_chat(user, "<span class='noticealien'>You already have a Praetorian!</span>");
 		return 0;
 	} else {
-		rt.forList(f, 0, live(user), T("/obj/item/queenpromote"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			prom = $e;
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='noticealien'>You discard ＀.</span>", [live(prom)])]);
-			yield* g.call(f, P("/proc/qdel"), null, [live(prom)]);
+		for (prom of each(user, T("/obj/item/queenpromote"))) {
+			to_chat(user, `<span class='noticealien'>You discard ${prom}.</span>`);
+			yield* qdel(prom);
 			return 0;
 		}
-		rt.endFor(f, 0);
-		prom = (yield* g.new_(f, T("/obj/item/queenpromote"), [rt.fv(f, "loc", live(user))]));
-		if (!truthy((yield* g.callName(f, live(user), "put_in_active_hand", [live(prom), 1])))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>You must empty your hands before preparing the parasite.</span>"]);
+		prom = (yield* new_(T("/obj/item/queenpromote"), user.loc));
+		if (!(yield* user.put_in_active_hand(prom, 1))) {
+			to_chat(user, "<span class='warning'>You must empty your hands before preparing the parasite.</span>");
 			return 0;
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='noticealien'>Use the royal parasite on one of your children to promote her to Praetorian!</span>"]);
+			to_chat(user, "<span class='noticealien'>Use the royal parasite on one of your children to promote her to Praetorian!</span>");
 		}
 	}
 	return 0;
@@ -181,40 +163,38 @@ rt.type(10120, "/obj/item/queenpromote", "/obj/item", {
 	icon: rt.rsc("icons/mob/alien.dmi"),
 });
 
-// /obj/item/queenpromote/proc/attack  (code/modules/mob/living/carbon/alien/humanoid/queen.dm:130)  may sleep
+// queen.dm:130
 rt.def("/obj/item/queenpromote/proc/attack", function* attack(f: Frame, M: Value, user: Value) {
 	let A: Value = null, new_prae: Value = null;
-	f.vars = () => [M, user, A, new_prae];
-	if ((!truthy((rt.istype(live(M), T("/mob/living/carbon/alien/humanoid")) ? 1 : 0)) || truthy((rt.istype(live(M), T("/mob/living/carbon/alien/humanoid/royal")) ? 1 : 0)))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='noticealien'>You may only use this with your adult, non-royal children!</span>"]);
-		return live(f.dot);
+	if (!rt.istype(M, T("/mob/living/carbon/alien/humanoid")) || rt.istype(M, T("/mob/living/carbon/alien/humanoid/royal"))) {
+		to_chat(user, "<span class='noticealien'>You may only use this with your adult, non-royal children!</span>");
+		return f.dot;
 	}
-	if (truthy((yield* g.call(f, P("/proc/get_alien_type"), null, [T("/mob/living/carbon/alien/humanoid/royal/praetorian")])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='noticealien'>You already have a Praetorian!</span>"]);
-		return live(f.dot);
+	if (get_alien_type(T("/mob/living/carbon/alien/humanoid/royal/praetorian"))) {
+		to_chat(user, "<span class='noticealien'>You already have a Praetorian!</span>");
+		return f.dot;
 	}
-	if (((isEqual(rt.gv(f, "stat", (A = live(M))), 0) && truthy(rt.fv(f, "mind", live(A)))) && truthy(rt.fv(f, "key", live(A))))) {
-		if (!truthy((yield* g.callName(f, live(user), "usePlasma", [500])))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='noticealien'>You must have 500 plasma stored to use this!</span>"]);
-			return live(f.dot);
+	if ((A = M).stat == 0 && A.mind && A.key) {
+		if (!(yield* user.usePlasma(500))) {
+			to_chat(user, "<span class='noticealien'>You must have 500 plasma stored to use this!</span>");
+			return f.dot;
 		}
-		yield* g.call(f, P("/proc/to_chat"), null, [live(A), "<span class='noticealien'>The queen has granted you a promotion to Praetorian!</span>"]);
-		yield* g.callName(f, live(user), "visible_message", [fmt("<span class='alertalien'>＀ begins to expand, twist and contort!</span>", [live(A)])]);
-		new_prae = (yield* g.new_(f, T("/mob/living/carbon/alien/humanoid/royal/praetorian"), [rt.fv(f, "loc", live(A))]));
-		yield* g.callName(f, rt.fv(f, "mind", live(A)), "transfer_to", [live(new_prae)]);
-		yield* g.call(f, P("/proc/qdel"), null, [live(A)]);
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-		return live(f.dot);
+		to_chat(A, "<span class='noticealien'>The queen has granted you a promotion to Praetorian!</span>");
+		user.visible_message(`<span class='alertalien'>${A} begins to expand, twist and contort!</span>`);
+		new_prae = (yield* new_(T("/mob/living/carbon/alien/humanoid/royal/praetorian"), A.loc));
+		yield* A.mind.transfer_to(new_prae);
+		yield* qdel(A);
+		yield* qdel(this);
+		return f.dot;
 	} else {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>This child must be alert and responsive to become a Praetorian!</span>"]);
+		to_chat(user, "<span class='warning'>This child must be alert and responsive to become a Praetorian!</span>");
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/queenpromote/proc/attack_self  (code/modules/mob/living/carbon/alien/humanoid/queen.dm:154)  may sleep
+// queen.dm:154
 rt.def("/obj/item/queenpromote/proc/attack_self", function* attack_self(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='noticealien'>You discard ＀.</span>", [live(f.src)])]);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	to_chat(user, `<span class='noticealien'>You discard ${this}.</span>`);
+	yield* qdel(this);
 	return f.dot;
 }, true);

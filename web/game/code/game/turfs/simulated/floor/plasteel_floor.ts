@@ -1,7 +1,7 @@
-// From code/game/turfs/simulated/floor/plasteel_floor.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/turfs/simulated/floor/plasteel_floor.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(4612, "/turf/open/floor/plasteel", "/turf/open/floor", {
@@ -11,12 +11,12 @@ rt.type(4612, "/turf/open/floor/plasteel", "/turf/open/floor", {
 	floor_tile: rt.typePath("/obj/item/stack/tile/plasteel"),
 });
 
-// /turf/open/floor/plasteel/proc/update_icon  (code/game/turfs/simulated/floor/plasteel_floor.dm:8)
+// plasteel_floor.dm:8
 rt.def("/turf/open/floor/plasteel/proc/update_icon", function update_icon(f: Frame) {
-	if (!truthy(rt.callSuper(f, [], rt.Args.Same))) {
+	if (!parent_proc()) {
 		return 0;
 	}
-	if (!(!truthy(rt.sv(f, "broken")) && !truthy(rt.sv(f, "burnt")))) return f.dot;
-	rt.setSv(f, "icon_state", rt.sv(f, "icon_regular_floor"));
+	if (!(!this.broken && !this.burnt)) return f.dot;
+	this.icon_state = this.icon_regular_floor;
 	return f.dot;
 });

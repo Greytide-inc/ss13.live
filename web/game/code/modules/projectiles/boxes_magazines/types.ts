@@ -1,5 +1,5 @@
 // Types declared in code/modules/projectiles/boxes_magazines that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(9904, "/obj/item/ammo_box/magazine/smgm9mm/ap", "/obj/item/ammo_box/magazine/smgm9mm", {
 	name: "SMG magazine (Armour Piercing 9mm)",

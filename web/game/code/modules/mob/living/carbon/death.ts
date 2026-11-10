@@ -1,114 +1,90 @@
-// From code/modules/mob/living/carbon/death.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/carbon/death.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
-// /mob/living/carbon/proc/death  (code/modules/mob/living/carbon/death.dm:2)  may sleep
-rt.def("/mob/living/carbon/proc/death", function* death(f: Frame) {
-	if (isEqual(rt.sv(f, "stat"), 2)) {
-		return live(f.dot);
+// death.dm:2
+rt.def("/mob/living/carbon/proc/death", function* death(f: Frame, gibbed: Value) {
+	if (this.stat == 2) {
+		return f.dot;
 	}
-	rt.setSv(f, "silent", 0);
-	rt.setSv(f, "losebreath", 0);
-	if (!truthy(live(f.args[0]))) {
-		yield* g.srcCall(f, "emote", "deathgasp");
+	this.silent = 0;
+	this.losebreath = 0;
+	if (!gibbed) {
+		yield* this.emote("deathgasp");
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!(truthy(rt.gl("SSticker")) && truthy(rt.fv(f, "mode", rt.gl("SSticker"))))) return f.dot;
-	yield* g.callName(f, rt.fv(f, "mode", rt.gl("SSticker")), "check_win", []);
+	f.dot = (yield* parent_proc());
+	if (!(GLOB.SSticker && GLOB.SSticker.mode)) return f.dot;
+	GLOB.SSticker.mode.check_win();
 	return f.dot;
-}, true, { args: ["gibbed"] });
+}, true);
 
-// /mob/living/carbon/proc/gib  (code/modules/mob/living/carbon/death.dm:16)  may sleep
-rt.def("/mob/living/carbon/proc/gib", function* gib(f: Frame) {
+// death.dm:16
+rt.def("/mob/living/carbon/proc/gib", function* gib(f: Frame, no_brain: Value, no_organs: Value, no_bodyparts: Value) {
 	let M: Value = null;
-	let $e: any;
-	f.vars = () => [M, $e];
-	M = null;
-	rt.forList(f, 0, live(f.src), T("/mob"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if (truthy((rt.isIn(f, live(M), rt.sv(f, "stomach_contents")) ? 1 : 0))) {
-			yield* g.callName(f, rt.sv(f, "stomach_contents"), "Remove", [live(M)]);
+	for (M of each(this, T("/mob"))) {
+		if (rt.isIn(f, M, this.stomach_contents)) {
+			yield* this.stomach_contents.Remove(M);
 		}
-		yield* g.callName(f, live(M), "forceMove", [rt.sv(f, "loc")]);
-		yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＀ bursts out of ＀!</span>", [live(M), live(f.src)]));
+		yield* M.forceMove(this.loc);
+		this.visible_message(`<span class='danger'>${M} bursts out of ${this}!</span>`);
 	}
-	rt.endFor(f, 0);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["no_brain", "no_organs", "no_bodyparts"] });
+}, true);
 
-// /mob/living/carbon/proc/spill_organs  (code/modules/mob/living/carbon/death.dm:24)  may sleep
+// death.dm:24
 rt.def("/mob/living/carbon/proc/spill_organs", function* spill_organs(f: Frame, no_brain: Value, no_organs: Value, no_bodyparts: Value) {
 	let X: Value = null, O: Value = null, org_zone: Value = null, I: Value = null;
-	let $e: any;
-	f.vars = () => [no_brain, no_organs, no_bodyparts, X, O, org_zone, I, $e];
-	if (!truthy(live(no_bodyparts))) {
-		if (truthy(live(no_organs))) {
-			X = null;
-			rt.forList(f, 0, rt.sv(f, "internal_organs"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				X = $e;
-				if ((truthy(live(no_brain)) || !truthy((rt.istype(live(X), T("/obj/item/organ/brain")) ? 1 : 0)))) {
-					yield* g.call(f, P("/proc/qdel"), null, [live(X)]);
+	if (!no_bodyparts) {
+		if (no_organs) {
+			for (X of each(this.internal_organs)) {
+				if (no_brain || !rt.istype(X, T("/obj/item/organ/brain"))) {
+					yield* qdel(X);
 				}
 			}
-			rt.endFor(f, 0);
 		} else {
 			X = null;
-			rt.forList(f, 0, rt.sv(f, "internal_organs"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				X = $e;
-				O = live(X);
-				if ((truthy(live(no_brain)) && truthy((rt.istype(live(O), T("/obj/item/organ/brain")) ? 1 : 0)))) {
-					yield* g.call(f, P("/proc/qdel"), null, [live(O)]);
+			for (X of each(this.internal_organs)) {
+				O = X;
+				if (no_brain && rt.istype(O, T("/obj/item/organ/brain"))) {
+					yield* qdel(O);
 					continue;
 				}
-				if (isEqual((org_zone = (yield* g.call(f, P("/proc/check_zone"), null, [rt.fv(f, "zone", live(O))]))), "chest")) {
-					yield* g.callName(f, live(O), "Remove", [live(f.src)]);
-					yield* g.callName(f, live(O), "forceMove", [rt.getStep(f, live(f.src), 0)]);
-					yield* g.callName(f, live(O), "throw_at", [(yield* g.call(f, P("/proc/get_edge_target_turf"), null, [live(f.src), rt.op(f, "PickUnweighted", [1], [rt.gl("alldirs")])])), (yield* g.call(f, P("/proc/rand"), null, [1, 3])), 5]);
+				if ((org_zone = check_zone(O.zone)) == "chest") {
+					yield* O.Remove(this);
+					yield* O.forceMove(rt.getStep(f, this, 0));
+					yield* O.throw_at(get_edge_target_turf(this, pick(GLOB.alldirs)), rand(1, 3), 5);
 				}
 			}
-			rt.endFor(f, 0);
 		}
 	} else {
 		X = null;
-		rt.forList(f, 0, rt.sv(f, "internal_organs"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			X = $e;
-			I = live(X);
-			if ((truthy(live(no_brain)) && truthy((rt.istype(live(I), T("/obj/item/organ/brain")) ? 1 : 0)))) {
-				yield* g.call(f, P("/proc/qdel"), null, [live(I)]);
+		for (X of each(this.internal_organs)) {
+			I = X;
+			if (no_brain && rt.istype(I, T("/obj/item/organ/brain"))) {
+				yield* qdel(I);
 				continue;
 			}
-			if ((truthy(live(no_organs)) && !truthy((rt.istype(live(I), T("/obj/item/organ/brain")) ? 1 : 0)))) {
-				yield* g.call(f, P("/proc/qdel"), null, [live(I)]);
+			if (no_organs && !rt.istype(I, T("/obj/item/organ/brain"))) {
+				yield* qdel(I);
 				continue;
 			}
-			yield* g.callName(f, live(I), "Remove", [live(f.src)]);
-			yield* g.callName(f, live(I), "forceMove", [rt.getStep(f, live(f.src), 0)]);
-			yield* g.callName(f, live(I), "throw_at", [(yield* g.call(f, P("/proc/get_edge_target_turf"), null, [live(f.src), rt.op(f, "PickUnweighted", [1], [rt.gl("alldirs")])])), (yield* g.call(f, P("/proc/rand"), null, [1, 3])), 5]);
+			yield* I.Remove(this);
+			yield* I.forceMove(rt.getStep(f, this, 0));
+			yield* I.throw_at(get_edge_target_turf(this, pick(GLOB.alldirs)), rand(1, 3), 5);
 		}
-		rt.endFor(f, 0);
 	}
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/proc/spread_bodyparts  (code/modules/mob/living/carbon/death.dm:55)  may sleep
+// death.dm:55
 rt.def("/mob/living/carbon/proc/spread_bodyparts", function* spread_bodyparts(f: Frame) {
 	let X: Value = null, BP: Value = null;
-	let $e: any;
-	f.vars = () => [X, BP, $e];
-	X = null;
-	rt.forList(f, 0, rt.sv(f, "bodyparts"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		X = $e;
-		yield* g.callName(f, (BP = live(X)), "drop_limb", []);
-		yield* g.callName(f, live(BP), "throw_at", [(yield* g.call(f, P("/proc/get_edge_target_turf"), null, [live(f.src), rt.op(f, "PickUnweighted", [1], [rt.gl("alldirs")])])), (yield* g.call(f, P("/proc/rand"), null, [1, 3])), 5]);
+	for (X of each(this.bodyparts)) {
+		yield* (BP = X).drop_limb();
+		yield* BP.throw_at(get_edge_target_turf(this, pick(GLOB.alldirs)), rand(1, 3), 5);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);

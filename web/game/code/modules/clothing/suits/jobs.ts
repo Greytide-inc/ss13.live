@@ -1,7 +1,7 @@
-// From code/modules/clothing/suits/jobs.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/clothing/suits/jobs.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(7841, "/obj/item/clothing/suit/apron", "/obj/item/clothing/suit", {
@@ -14,12 +14,10 @@ rt.type(7841, "/obj/item/clothing/suit/apron", "/obj/item/clothing/suit", {
 	allowed: null,
 });
 
-// /obj/item/clothing/suit/apron/proc/<init>  (code/modules/clothing/suits/jobs.dm:13)
+// jobs.dm:13
 rt.def("/obj/item/clothing/suit/apron/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/weapon/reagent_containers/spray/plantbgone"), T("/obj/item/device/plant_analyzer"), T("/obj/item/seeds"), T("/obj/item/weapon/reagent_containers/glass/bottle"), T("/obj/item/weapon/reagent_containers/glass/beaker"), T("/obj/item/weapon/cultivator"), T("/obj/item/weapon/reagent_containers/spray/pestspray"), T("/obj/item/weapon/hatchet"), T("/obj/item/weapon/storage/bag/plants")));
+	parent_proc();
+	this.allowed = list(T("/obj/item/weapon/reagent_containers/spray/plantbgone"), T("/obj/item/device/plant_analyzer"), T("/obj/item/seeds"), T("/obj/item/weapon/reagent_containers/glass/bottle"), T("/obj/item/weapon/reagent_containers/glass/beaker"), T("/obj/item/weapon/cultivator"), T("/obj/item/weapon/reagent_containers/spray/pestspray"), T("/obj/item/weapon/hatchet"), T("/obj/item/weapon/storage/bag/plants"));
 	return f.dot;
 });
 
@@ -33,12 +31,10 @@ rt.type(7845, "/obj/item/clothing/suit/captunic", "/obj/item/clothing/suit", {
 	allowed: null,
 });
 
-// /obj/item/clothing/suit/captunic/proc/<init>  (code/modules/clothing/suits/jobs.dm:23)
+// jobs.dm:23
 rt.def("/obj/item/clothing/suit/captunic/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/weapon/disk"), T("/obj/item/weapon/stamp"), T("/obj/item/weapon/reagent_containers/food/drinks/flask"), T("/obj/item/weapon/melee"), T("/obj/item/weapon/storage/lockbox/medal"), T("/obj/item/device/assembly/flash/handheld"), T("/obj/item/weapon/storage/box/matches"), T("/obj/item/weapon/lighter"), T("/obj/item/clothing/mask/cigarette"), T("/obj/item/weapon/storage/fancy/cigarettes"), T("/obj/item/weapon/tank/internals/emergency_oxygen")));
+	parent_proc();
+	this.allowed = list(T("/obj/item/weapon/disk"), T("/obj/item/weapon/stamp"), T("/obj/item/weapon/reagent_containers/food/drinks/flask"), T("/obj/item/weapon/melee"), T("/obj/item/weapon/storage/lockbox/medal"), T("/obj/item/device/assembly/flash/handheld"), T("/obj/item/weapon/storage/box/matches"), T("/obj/item/weapon/lighter"), T("/obj/item/clothing/mask/cigarette"), T("/obj/item/weapon/storage/fancy/cigarettes"), T("/obj/item/weapon/tank/internals/emergency_oxygen"));
 	return f.dot;
 });
 
@@ -52,12 +48,10 @@ rt.type(7817, "/obj/item/clothing/suit/hooded/chaplain_hoodie", "/obj/item/cloth
 	hoodtype: rt.typePath("/obj/item/clothing/head/hooded/chaplain_hood"),
 });
 
-// /obj/item/clothing/suit/hooded/chaplain_hoodie/proc/<init>  (code/modules/clothing/suits/jobs.dm:32)
+// jobs.dm:32
 rt.def("/obj/item/clothing/suit/hooded/chaplain_hoodie/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/weapon/storage/book/bible"), T("/obj/item/weapon/nullrod"), T("/obj/item/weapon/reagent_containers/food/drinks/bottle/holywater"), T("/obj/item/weapon/storage/fancy/candle_box"), T("/obj/item/candle"), T("/obj/item/weapon/tank/internals/emergency_oxygen")));
+	parent_proc();
+	this.allowed = list(T("/obj/item/weapon/storage/book/bible"), T("/obj/item/weapon/nullrod"), T("/obj/item/weapon/reagent_containers/food/drinks/bottle/holywater"), T("/obj/item/weapon/storage/fancy/candle_box"), T("/obj/item/candle"), T("/obj/item/weapon/tank/internals/emergency_oxygen"));
 	return f.dot;
 });
 
@@ -71,12 +65,10 @@ rt.type(7846, "/obj/item/clothing/suit/nun", "/obj/item/clothing/suit", {
 	allowed: null,
 });
 
-// /obj/item/clothing/suit/nun/proc/<init>  (code/modules/clothing/suits/jobs.dm:49)
+// jobs.dm:49
 rt.def("/obj/item/clothing/suit/nun/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/weapon/storage/book/bible"), T("/obj/item/weapon/nullrod"), T("/obj/item/weapon/reagent_containers/food/drinks/bottle/holywater"), T("/obj/item/weapon/storage/fancy/candle_box"), T("/obj/item/candle"), T("/obj/item/weapon/tank/internals/emergency_oxygen")));
+	parent_proc();
+	this.allowed = list(T("/obj/item/weapon/storage/book/bible"), T("/obj/item/weapon/nullrod"), T("/obj/item/weapon/reagent_containers/food/drinks/bottle/holywater"), T("/obj/item/weapon/storage/fancy/candle_box"), T("/obj/item/candle"), T("/obj/item/weapon/tank/internals/emergency_oxygen"));
 	return f.dot;
 });
 
@@ -89,12 +81,10 @@ rt.type(7847, "/obj/item/clothing/suit/studentuni", "/obj/item/clothing/suit", {
 	allowed: null,
 });
 
-// /obj/item/clothing/suit/studentuni/proc/<init>  (code/modules/clothing/suits/jobs.dm:57)
+// jobs.dm:57
 rt.def("/obj/item/clothing/suit/studentuni/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/weapon/storage/book/bible"), T("/obj/item/weapon/nullrod"), T("/obj/item/weapon/reagent_containers/food/drinks/bottle/holywater"), T("/obj/item/weapon/storage/fancy/candle_box"), T("/obj/item/candle"), T("/obj/item/weapon/tank/internals/emergency_oxygen")));
+	parent_proc();
+	this.allowed = list(T("/obj/item/weapon/storage/book/bible"), T("/obj/item/weapon/nullrod"), T("/obj/item/weapon/reagent_containers/food/drinks/bottle/holywater"), T("/obj/item/weapon/storage/fancy/candle_box"), T("/obj/item/candle"), T("/obj/item/weapon/tank/internals/emergency_oxygen"));
 	return f.dot;
 });
 
@@ -107,12 +97,10 @@ rt.type(7848, "/obj/item/clothing/suit/witchhunter", "/obj/item/clothing/suit", 
 	allowed: null,
 });
 
-// /obj/item/clothing/suit/witchhunter/proc/<init>  (code/modules/clothing/suits/jobs.dm:65)
+// jobs.dm:65
 rt.def("/obj/item/clothing/suit/witchhunter/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/weapon/storage/book/bible"), T("/obj/item/weapon/nullrod"), T("/obj/item/weapon/reagent_containers/food/drinks/bottle/holywater"), T("/obj/item/weapon/storage/fancy/candle_box"), T("/obj/item/candle"), T("/obj/item/weapon/tank/internals/emergency_oxygen")));
+	parent_proc();
+	this.allowed = list(T("/obj/item/weapon/storage/book/bible"), T("/obj/item/weapon/nullrod"), T("/obj/item/weapon/reagent_containers/food/drinks/bottle/holywater"), T("/obj/item/weapon/storage/fancy/candle_box"), T("/obj/item/candle"), T("/obj/item/weapon/tank/internals/emergency_oxygen"));
 	return f.dot;
 });
 
@@ -128,12 +116,10 @@ rt.type(7850, "/obj/item/clothing/suit/toggle/chef", "/obj/item/clothing/suit/to
 	allowed: null,
 });
 
-// /obj/item/clothing/suit/toggle/chef/proc/<init>  (code/modules/clothing/suits/jobs.dm:76)
+// jobs.dm:76
 rt.def("/obj/item/clothing/suit/toggle/chef/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/weapon/kitchen")));
+	parent_proc();
+	this.allowed = list(T("/obj/item/weapon/kitchen"));
 	return f.dot;
 });
 
@@ -147,12 +133,10 @@ rt.type(7842, "/obj/item/clothing/suit/apron/chef", "/obj/item/clothing/suit/apr
 	allowed: null,
 });
 
-// /obj/item/clothing/suit/apron/chef/proc/<init>  (code/modules/clothing/suits/jobs.dm:87)
+// jobs.dm:87
 rt.def("/obj/item/clothing/suit/apron/chef/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/weapon/kitchen")));
+	parent_proc();
+	this.allowed = list(T("/obj/item/weapon/kitchen"));
 	return f.dot;
 });
 
@@ -169,13 +153,11 @@ rt.type(7864, "/obj/item/clothing/suit/det_suit", "/obj/item/clothing/suit", {
 	heat_protection: 414,
 });
 
-// /obj/item/clothing/suit/det_suit/proc/<init>  (code/modules/clothing/suits/jobs.dm:97)
+// jobs.dm:97
 rt.def("/obj/item/clothing/suit/det_suit/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/weapon/tank/internals/emergency_oxygen"), T("/obj/item/weapon/reagent_containers/spray/pepper"), T("/obj/item/device/flashlight"), T("/obj/item/weapon/gun/energy"), T("/obj/item/weapon/gun/ballistic"), T("/obj/item/ammo_box"), T("/obj/item/ammo_casing"), T("/obj/item/weapon/melee/baton"), T("/obj/item/weapon/restraints/handcuffs"), T("/obj/item/weapon/storage/fancy/cigarettes"), T("/obj/item/weapon/lighter"), T("/obj/item/device/detective_scanner"), T("/obj/item/device/taperecorder"), T("/obj/item/weapon/melee/classic_baton")));
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 25, "bullet", 10, "laser", 25, "energy", 10, "bomb", 0, "bio", 0, "rad", 0, "fire", 0, "acid", 45]));
+	parent_proc();
+	this.allowed = list(T("/obj/item/weapon/tank/internals/emergency_oxygen"), T("/obj/item/weapon/reagent_containers/spray/pepper"), T("/obj/item/device/flashlight"), T("/obj/item/weapon/gun/energy"), T("/obj/item/weapon/gun/ballistic"), T("/obj/item/ammo_box"), T("/obj/item/ammo_casing"), T("/obj/item/weapon/melee/baton"), T("/obj/item/weapon/restraints/handcuffs"), T("/obj/item/weapon/storage/fancy/cigarettes"), T("/obj/item/weapon/lighter"), T("/obj/item/device/detective_scanner"), T("/obj/item/device/taperecorder"), T("/obj/item/weapon/melee/classic_baton"));
+	this.armor = rt.alist(f, ["melee", 25, "bullet", 10, "laser", 25, "energy", 10, "bomb", 0, "bio", 0, "rad", 0, "fire", 0, "acid", 45]);
 	return f.dot;
 });
 
@@ -189,12 +171,10 @@ rt.type(7866, "/obj/item/clothing/suit/hazardvest", "/obj/item/clothing/suit", {
 	resistance_flags: 0,
 });
 
-// /obj/item/clothing/suit/hazardvest/proc/<init>  (code/modules/clothing/suits/jobs.dm:115)
+// jobs.dm:115
 rt.def("/obj/item/clothing/suit/hazardvest/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/device/flashlight"), T("/obj/item/weapon/tank/internals/emergency_oxygen"), T("/obj/item/device/t_scanner"), T("/obj/item/device/radio")));
+	parent_proc();
+	this.allowed = list(T("/obj/item/device/flashlight"), T("/obj/item/weapon/tank/internals/emergency_oxygen"), T("/obj/item/device/t_scanner"), T("/obj/item/device/radio"));
 	return f.dot;
 });
 
@@ -205,12 +185,10 @@ rt.type(7843, "/obj/item/clothing/suit/apron/surgical", "/obj/item/clothing/suit
 	allowed: null,
 });
 
-// /obj/item/clothing/suit/apron/surgical/proc/<init>  (code/modules/clothing/suits/jobs.dm:175)
+// jobs.dm:175
 rt.def("/obj/item/clothing/suit/apron/surgical/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/weapon/scalpel"), T("/obj/item/weapon/surgical_drapes"), T("/obj/item/weapon/cautery"), T("/obj/item/weapon/hemostat"), T("/obj/item/weapon/retractor")));
+	parent_proc();
+	this.allowed = list(T("/obj/item/weapon/scalpel"), T("/obj/item/weapon/surgical_drapes"), T("/obj/item/weapon/cautery"), T("/obj/item/weapon/hemostat"), T("/obj/item/weapon/retractor"));
 	return f.dot;
 });
 
@@ -227,12 +205,10 @@ rt.type(7873, "/obj/item/clothing/suit/curator", "/obj/item/clothing/suit", {
 	heat_protection: 386,
 });
 
-// /obj/item/clothing/suit/curator/proc/<init>  (code/modules/clothing/suits/jobs.dm:185)
+// jobs.dm:185
 rt.def("/obj/item/clothing/suit/curator/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/weapon/tank/internals"), T("/obj/item/weapon/melee/curator_whip")));
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 25, "bullet", 10, "laser", 25, "energy", 10, "bomb", 0, "bio", 0, "rad", 0, "fire", 0, "acid", 45]));
+	parent_proc();
+	this.allowed = list(T("/obj/item/weapon/tank/internals"), T("/obj/item/weapon/melee/curator_whip"));
+	this.armor = rt.alist(f, ["melee", 25, "bullet", 10, "laser", 25, "energy", 10, "bomb", 0, "bio", 0, "rad", 0, "fire", 0, "acid", 45]);
 	return f.dot;
 });

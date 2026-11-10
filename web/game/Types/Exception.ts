@@ -1,7 +1,7 @@
-// From Types/Exception.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on BYOND's Types/Exception.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(13806, "/exception", "/datum", {
@@ -11,10 +11,10 @@ rt.type(13806, "/exception", "/datum", {
 	line: null,
 });
 
-// /exception/proc/New  (Types/Exception.dm:10)
+// Exception.dm:10
 rt.def("/exception/proc/New", function New(f: Frame, N: Value, F: Value, L: Value) {
-	rt.setSv(f, "name", live(N));
-	rt.setSv(f, "file", live(F));
-	rt.setSv(f, "line", live(L));
+	this.name = N;
+	this.file = F;
+	this.line = L;
 	return f.dot;
 });

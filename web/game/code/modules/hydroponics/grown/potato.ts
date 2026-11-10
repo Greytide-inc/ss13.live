@@ -1,7 +1,7 @@
-// From code/modules/hydroponics/grown/potato.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/hydroponics/grown/potato.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(10065, "/obj/item/seeds/potato", "/obj/item/seeds", {
@@ -24,15 +24,13 @@ rt.type(10065, "/obj/item/seeds/potato", "/obj/item/seeds", {
 	mutatelist: null,
 });
 
-// /obj/item/seeds/potato/proc/<init>  (code/modules/hydroponics/grown/potato.dm:17)
+// potato.dm:17
 rt.def("/obj/item/seeds/potato/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "genes", rt.list(T("/datum/plant_gene/trait/battery")));
-	rt.setSv(f, "reagents_add", rt.alist(f, ["vitamin", 0.03999999910593033, "nutriment", 0.10000000149011612]));
-	$0 = $0;
-	rt.setSv(f, "mutatelist", rt.list(T("/obj/item/seeds/potato/sweet")));
+	parent_proc();
+	this.genes = list(T("/datum/plant_gene/trait/battery"));
+	this.reagents_add = rt.alist(f, ["vitamin", 0.04, "nutriment", 0.1]);
+
+	this.mutatelist = list(T("/obj/item/seeds/potato/sweet"));
 	return f.dot;
 });
 
@@ -45,21 +43,20 @@ rt.type(6328, "/obj/item/weapon/reagent_containers/food/snacks/grown/potato", "/
 	icon_state: "potato",
 });
 
-// /obj/item/weapon/reagent_containers/food/snacks/grown/potato/proc/attackby  (code/modules/hydroponics/grown/potato.dm:39)  may sleep
-rt.def("/obj/item/weapon/reagent_containers/food/snacks/grown/potato/proc/attackby", function* attackby(f: Frame) {
+// potato.dm:39
+rt.def("/obj/item/weapon/reagent_containers/food/snacks/grown/potato/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
 	let Wedges: Value = null;
-	f.vars = () => [Wedges];
-	if (truthy((yield* g.callName(f, live(f.args[0]), "is_sharp", [])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You cut the potato into wedges with ＀.</span>", [live(f.args[0])])]);
-		Wedges = (yield* g.new_(f, T("/obj/item/weapon/reagent_containers/food/snacks/grown/potato/wedges"), []));
-		yield* g.srcCall(f, "remove_item_from_storage", live(f.args[1]));
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-		yield* g.callName(f, live(f.args[1]), "put_in_hands", [live(Wedges)]);
+	if (W.is_sharp()) {
+		to_chat(user, `<span class='notice'>You cut the potato into wedges with ${W}.</span>`);
+		Wedges = (yield* new_(T("/obj/item/weapon/reagent_containers/food/snacks/grown/potato/wedges")));
+		yield* this.remove_item_from_storage(user);
+		yield* qdel(this);
+		yield* user.put_in_hands(Wedges);
 	} else {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["W", "user", "params"] });
+}, true);
 
 rt.type(10066, "/obj/item/seeds/potato/sweet", "/obj/item/seeds/potato", {
 	species: "sweetpotato",
@@ -72,12 +69,10 @@ rt.type(10066, "/obj/item/seeds/potato/sweet", "/obj/item/seeds/potato", {
 	icon_state: "seed-sweetpotato",
 });
 
-// /obj/item/seeds/potato/sweet/proc/<init>  (code/modules/hydroponics/grown/potato.dm:57)
+// potato.dm:57
 rt.def("/obj/item/seeds/potato/sweet/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "mutatelist", rt.list());
-	rt.setSv(f, "reagents_add", rt.alist(f, ["vitamin", 0.10000000149011612, "sugar", 0.10000000149011612, "nutriment", 0.10000000149011612]));
+	parent_proc();
+	this.mutatelist = list();
+	this.reagents_add = rt.alist(f, ["vitamin", 0.1, "sugar", 0.1, "nutriment", 0.1]);
 	return f.dot;
 });

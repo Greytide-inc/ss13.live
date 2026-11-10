@@ -1,7 +1,7 @@
-// From code/game/objects/items/robot/ai_upgrades.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/robot/ai_upgrades.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(9357, "/obj/item/device/malf_upgrade", "/obj/item/device", {
@@ -11,21 +11,20 @@ rt.type(9357, "/obj/item/device/malf_upgrade", "/obj/item/device", {
 	icon_state: "datadisk3",
 });
 
-// /obj/item/device/malf_upgrade/proc/afterattack  (code/game/objects/items/robot/ai_upgrades.dm:13)  may sleep
+// ai_upgrades.dm:13
 rt.def("/obj/item/device/malf_upgrade/proc/afterattack", function* afterattack(f: Frame, AI: Value, user: Value) {
-	f.vars = () => [AI, user];
-	if (!truthy((rt.istype(live(AI), T("/mob/living/silicon/ai")) ? 1 : 0))) {
-		return live(f.dot);
+	if (!rt.istype(AI, T("/mob/living/silicon/ai"))) {
+		return f.dot;
 	}
-	if (truthy(rt.fv(f, "malf_picker", live(AI)))) {
-		rt.modField(f, rt.fv(f, "malf_picker", live(AI)), "processing_time", 50, add);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(AI), fmt("<span class='userdanger'>＀ has attempted to upgrade you with combat software that you already possess. You gain 50 points to spend on Malfunction Modules instead.</span>", [live(user)])]);
+	if (AI.malf_picker) {
+		AI.malf_picker.processing_time += 50;
+		to_chat(AI, `<span class='userdanger'>${user} has attempted to upgrade you with combat software that you already possess. You gain 50 points to spend on Malfunction Modules instead.</span>`);
 	} else {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(AI), fmt("<span class='userdanger'>＀ has upgraded you with combat software!</span>", [live(user)])]);
-		yield* g.callName(f, live(AI), "add_malf_picker", []);
+		to_chat(AI, `<span class='userdanger'>${user} has upgraded you with combat software!</span>`);
+		yield* AI.add_malf_picker();
 	}
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You upgrade ＀. ＀ is consumed in the process.</span>", [live(AI), live(f.src)])]);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	to_chat(user, `<span class='notice'>You upgrade ${AI}. ${this} is consumed in the process.</span>`);
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
@@ -36,18 +35,17 @@ rt.type(9358, "/obj/item/device/surveillance_upgrade", "/obj/item/device", {
 	icon_state: "datadisk3",
 });
 
-// /obj/item/device/surveillance_upgrade/proc/afterattack  (code/game/objects/items/robot/ai_upgrades.dm:33)  may sleep
+// ai_upgrades.dm:33
 rt.def("/obj/item/device/surveillance_upgrade/proc/afterattack", function* afterattack(f: Frame, AI: Value, user: Value) {
-	f.vars = () => [AI, user];
-	if (!truthy((rt.istype(live(AI), T("/mob/living/silicon/ai")) ? 1 : 0))) {
-		return live(f.dot);
+	if (!rt.istype(AI, T("/mob/living/silicon/ai"))) {
+		return f.dot;
 	}
-	if (truthy(rt.fv(f, "eyeobj", live(AI)))) {
-		rt.setFv(f, "relay_speech", rt.fv(f, "eyeobj", live(AI)), 1);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(AI), fmt("<span class='userdanger'>＀ has upgraded you with surveillance software!</span>", [live(user)])]);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(AI), "Via a combination of hidden microphones and lip reading software, you are able to use your cameras to listen in on conversations."]);
+	if (AI.eyeobj) {
+		AI.eyeobj.relay_speech = 1;
+		to_chat(AI, `<span class='userdanger'>${user} has upgraded you with surveillance software!</span>`);
+		to_chat(AI, "Via a combination of hidden microphones and lip reading software, you are able to use your cameras to listen in on conversations.");
 	}
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You upgrade ＀. ＀ is consumed in the process.</span>", [live(AI), live(f.src)])]);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	to_chat(user, `<span class='notice'>You upgrade ${AI}. ${this} is consumed in the process.</span>`);
+	yield* qdel(this);
 	return f.dot;
 }, true);

@@ -1,7 +1,7 @@
-// From code/game/gamemodes/changeling/powers/mimic_voice.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/gamemodes/changeling/powers/mimic_voice.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(11238, "/obj/effect/proc_holder/changeling/mimicvoice", "/obj/effect/proc_holder/changeling", {
@@ -13,22 +13,21 @@ rt.type(11238, "/obj/effect/proc_holder/changeling/mimicvoice", "/obj/effect/pro
 	desc: "We shape our vocal glands to sound like a desired voice.",
 });
 
-// /obj/effect/proc_holder/changeling/mimicvoice/proc/sting_action  (code/game/gamemodes/changeling/powers/mimic_voice.dm:12)  may sleep
+// mimic_voice.dm:12
 rt.def("/obj/effect/proc_holder/changeling/mimicvoice/proc/sting_action", function* sting_action(f: Frame, user: Value) {
 	let changeling: Value = null, mimic_voice: Value = null;
-	f.vars = () => [user, changeling, mimic_voice];
-	if (truthy(rt.gv(f, "mimicing", (changeling = rt.gv(f, "changeling", rt.fv(f, "mind", live(user))))))) {
-		rt.setFv(f, "mimicing", live(changeling), "");
-		(rt.modField(f, live(changeling), "chem_recharge_slowdown", 0.5, subtract));
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>We return our vocal glands to their original position.</span>"]);
-		return live(f.dot);
+	if ((changeling = user.mind.changeling).mimicing) {
+		changeling.mimicing = "";
+		changeling.chem_recharge_slowdown -= 0.5;
+		to_chat(user, "<span class='notice'>We return our vocal glands to their original position.</span>");
+		return f.dot;
 	}
-	if (!truthy((mimic_voice = (yield* g.call(f, P("/proc/stripped_input"), null, [live(user), "Enter a name to mimic.", "Mimic Voice", null, 42]))))) {
-		return live(f.dot);
+	if (!(mimic_voice = (yield* stripped_input(user, "Enter a name to mimic.", "Mimic Voice", null, 42)))) {
+		return f.dot;
 	}
-	rt.setFv(f, "mimicing", live(changeling), live(mimic_voice));
-	rt.modField(f, live(changeling), "chem_recharge_slowdown", 0.5, add);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>We shape our glands to take the voice of <b>＀</b>, this will slow down regenerating chemicals while active.</span>", [live(mimic_voice)])]);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>Use this power again to return to our original voice and return chemical production to normal levels.</span>"]);
+	changeling.mimicing = mimic_voice;
+	changeling.chem_recharge_slowdown += 0.5;
+	to_chat(user, `<span class='notice'>We shape our glands to take the voice of <b>${mimic_voice}</b>, this will slow down regenerating chemicals while active.</span>`);
+	to_chat(user, "<span class='notice'>Use this power again to return to our original voice and return chemical production to normal levels.</span>");
 	return 1;
 }, true);

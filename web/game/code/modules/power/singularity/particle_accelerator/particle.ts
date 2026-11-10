@@ -1,7 +1,7 @@
-// From code/modules/power/singularity/particle_accelerator/particle.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/power/singularity/particle_accelerator/particle.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(12090, "/obj/effect/accelerated_particle", "/obj/effect", {
@@ -16,64 +16,58 @@ rt.type(12090, "/obj/effect/accelerated_particle", "/obj/effect", {
 	density: 0,
 });
 
-// /obj/effect/accelerated_particle/proc/New  (code/modules/power/singularity/particle_accelerator/particle.dm:26)  may sleep
-rt.def("/obj/effect/accelerated_particle/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/effect/accelerated_particle/proc/move")])), 1]);
+// particle.dm:26
+rt.def("/obj/effect/accelerated_particle/proc/New", function* New(f: Frame, loc: Value) {
+	yield* parent_proc();
+	yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/effect/accelerated_particle/proc/move"))), 1);
 	return f.dot;
-}, true, { args: ["loc"] });
+}, true);
 
-// /obj/effect/accelerated_particle/proc/Bump  (code/modules/power/singularity/particle_accelerator/particle.dm:33)  may sleep
+// particle.dm:33
 rt.def("/obj/effect/accelerated_particle/proc/Bump", function* Bump(f: Frame, A: Value) {
 	let S: Value = null;
-	f.vars = () => [A, S];
-	if (!truthy(live(A))) return f.dot;
-	if (truthy((rt.istype(live(A), T("/mob/living")) ? 1 : 0))) {
-		yield* g.srcCall(f, "toxmob", live(A));
+	if (!A) return f.dot;
+	if (rt.istype(A, T("/mob/living"))) {
+		yield* this.toxmob(A);
+	} else if (rt.istype(A, T("/obj/machinery/the_singularitygen"))) {
+		(S = A).energy += this.energy;
 	} else {
-		if (truthy((rt.istype(live(A), T("/obj/machinery/the_singularitygen")) ? 1 : 0))) {
-			rt.modField(f, (S = live(A)), "energy", rt.sv(f, "energy"), add);
-		} else {
-			if (!truthy((rt.istype(live(A), T("/obj/singularity")) ? 1 : 0))) return f.dot;
-			rt.modField(f, (S = live(A)), "energy", rt.sv(f, "energy"), add);
-		}
+		if (!rt.istype(A, T("/obj/singularity"))) return f.dot;
+		(S = A).energy += this.energy;
 	}
 	return f.dot;
 }, true);
 
-// /obj/effect/accelerated_particle/proc/Crossed  (code/modules/power/singularity/particle_accelerator/particle.dm:44)  may sleep
+// particle.dm:44
 rt.def("/obj/effect/accelerated_particle/proc/Crossed", function* Crossed(f: Frame, A: Value) {
-	f.vars = () => [A];
-	if (!truthy((rt.istype(live(A), T("/mob/living")) ? 1 : 0))) return f.dot;
-	yield* g.srcCall(f, "toxmob", live(A));
+	if (!rt.istype(A, T("/mob/living"))) return f.dot;
+	yield* this.toxmob(A);
 	return f.dot;
 }, true);
 
-// /obj/effect/accelerated_particle/proc/ex_act  (code/modules/power/singularity/particle_accelerator/particle.dm:49)  may sleep
+// particle.dm:49
 rt.def("/obj/effect/accelerated_particle/proc/ex_act", function* ex_act(f: Frame, severity: Value, target: Value) {
-	f.vars = () => [severity, target];
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* qdel(this);
 	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/effect/accelerated_particle/proc/toxmob  (code/modules/power/singularity/particle_accelerator/particle.dm:52)  may sleep
+// particle.dm:52
 rt.def("/obj/effect/accelerated_particle/proc/toxmob", function* toxmob(f: Frame, M: Value) {
-	f.vars = () => [M];
-	yield* g.callName(f, live(M), "rad_act", [multiply(rt.sv(f, "energy"), 6)]);
+	yield* M.rad_act(this.energy * 6);
 	return f.dot;
 }, true);
 
-// /obj/effect/accelerated_particle/proc/move  (code/modules/power/singularity/particle_accelerator/particle.dm:55)  may sleep
+// particle.dm:55
 rt.def("/obj/effect/accelerated_particle/proc/move", function* move(f: Frame) {
-	if (!truthy((yield* g.call(f, P("/proc/step"), null, [live(f.src), rt.sv(f, "dir")])))) {
-		yield* g.srcCall(f, "forceMove", rt.getStep(f, live(f.src), rt.sv(f, "dir")));
+	if (!(yield* step(this, this.dir))) {
+		yield* this.forceMove(rt.getStep(f, this, this.dir));
 	}
-	rt.incSrcVar(f, "movement_range", -1, true);
-	if (isEqual(rt.sv(f, "movement_range"), 0)) {
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	this.movement_range--;
+	if (this.movement_range == 0) {
+		yield* qdel(this);
 	} else {
-		yield* g.call(f, P("/proc/sleep"), null, [rt.sv(f, "speed")]);
-		yield* g.srcCall(f, "move");
+		yield* sleep(this.speed);
+		yield* this.move();
 	}
 	return f.dot;
 }, true);

@@ -1,7 +1,7 @@
-// From code/modules/hydroponics/grown/banana.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/hydroponics/grown/banana.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(9993, "/obj/item/seeds/banana", "/obj/item/seeds", {
@@ -20,15 +20,13 @@ rt.type(9993, "/obj/item/seeds/banana", "/obj/item/seeds", {
 	mutatelist: null,
 });
 
-// /obj/item/seeds/banana/proc/<init>  (code/modules/hydroponics/grown/banana.dm:13)
+// banana.dm:13
 rt.def("/obj/item/seeds/banana/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "genes", rt.list(T("/datum/plant_gene/trait/slip"), T("/datum/plant_gene/trait/repeated_harvest")));
-	rt.setSv(f, "reagents_add", rt.alist(f, ["banana", 0.10000000149011612, "potassium", 0.10000000149011612, "vitamin", 0.03999999910593033, "nutriment", 0.019999999552965164]));
-	$0 = $0;
-	rt.setSv(f, "mutatelist", rt.list(T("/obj/item/seeds/banana/mime"), T("/obj/item/seeds/banana/bluespace")));
+	parent_proc();
+	this.genes = list(T("/datum/plant_gene/trait/slip"), T("/datum/plant_gene/trait/repeated_harvest"));
+	this.reagents_add = rt.alist(f, ["banana", 0.1, "potassium", 0.1, "vitamin", 0.04, "nutriment", 0.02]);
+
+	this.mutatelist = list(T("/obj/item/seeds/banana/mime"), T("/obj/item/seeds/banana/bluespace"));
 	return f.dot;
 });
 
@@ -43,21 +41,20 @@ rt.type(6268, "/obj/item/weapon/reagent_containers/food/snacks/grown/banana", "/
 	trash: rt.typePath("/obj/item/weapon/grown/bananapeel"),
 });
 
-// /obj/item/weapon/reagent_containers/food/snacks/grown/banana/proc/suicide_act  (code/modules/hydroponics/grown/banana.dm:28)  may sleep
+// banana.dm:28
 rt.def("/obj/item/weapon/reagent_containers/food/snacks/grown/banana/proc/suicide_act", function* suicide_act(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.callName(f, live(user), "visible_message", [fmt("<span class='suicide'>＀ is aiming ＀ at ＀self! It looks like ＀ trying to commit suicide!</span>", [live(user), live(f.src), (yield* g.callName(f, live(user), "p_them", [])), (yield* g.callName(f, live(user), "p_theyre", []))])]);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/items/bikehorn.ogg"), 50, 1, -1]);
-	yield* g.call(f, P("/proc/sleep"), null, [25]);
-	if (!truthy(live(user))) {
+	user.visible_message(`<span class='suicide'>${user} is aiming ${this} at ${user.p_them()}self! It looks like ${user.p_theyre()} trying to commit suicide!</span>`);
+	playsound(this.loc, rt.rsc("sound/items/bikehorn.ogg"), 50, 1, -1);
+	yield* sleep(25);
+	if (!user) {
 		return 8;
 	}
-	yield* g.callName(f, live(user), "say", ["BANG!"]);
-	yield* g.call(f, P("/proc/sleep"), null, [25]);
-	if (!truthy(live(user))) {
+	yield* user.say("BANG!");
+	yield* sleep(25);
+	if (!user) {
 		return 8;
 	}
-	yield* g.callName(f, live(user), "visible_message", [fmt("<B>＀</B> laughs so hard they begin to suffocate!", [live(user)])]);
+	user.visible_message(`<B>${user}</B> laughs so hard they begin to suffocate!`);
 	return 8;
 }, true);
 
@@ -73,10 +70,10 @@ rt.type(7493, "/obj/item/weapon/grown/bananapeel", "/obj/item/weapon/grown", {
 	throwforce: 0,
 });
 
-// /obj/item/weapon/grown/bananapeel/proc/suicide_act  (code/modules/hydroponics/grown/banana.dm:52)
+// banana.dm:52
 rt.def("/obj/item/weapon/grown/bananapeel/proc/suicide_act", function suicide_act(f: Frame, user: Value) {
-	rt.callName(f, live(user), "visible_message", [fmt("<span class='suicide'>＀ is deliberately slipping on ＀! It looks like ＀ trying to commit suicide!</span>", [live(user), live(f.src), rt.callName(f, live(user), "p_theyre", [])])]);
-	rt.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/misc/slip.ogg"), 50, 1, -1]);
+	user.visible_message(`<span class='suicide'>${user} is deliberately slipping on ${this}! It looks like ${user.p_theyre()} trying to commit suicide!</span>`);
+	playsound(this.loc, rt.rsc("sound/misc/slip.ogg"), 50, 1, -1);
 	return 1;
 });
 
@@ -93,13 +90,11 @@ rt.type(9994, "/obj/item/seeds/banana/mime", "/obj/item/seeds/banana", {
 	icon_state: "seed-mimana",
 });
 
-// /obj/item/seeds/banana/mime/proc/<init>  (code/modules/hydroponics/grown/banana.dm:66)
+// banana.dm:66
 rt.def("/obj/item/seeds/banana/mime/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "mutatelist", rt.list());
-	rt.setSv(f, "reagents_add", rt.alist(f, ["nothing", 0.10000000149011612, "mutetoxin", 0.10000000149011612, "nutriment", 0.019999999552965164]));
+	parent_proc();
+	this.mutatelist = list();
+	this.reagents_add = rt.alist(f, ["nothing", 0.1, "mutetoxin", 0.1, "nutriment", 0.02]);
 	return f.dot;
 });
 
@@ -117,15 +112,13 @@ rt.type(9995, "/obj/item/seeds/banana/bluespace", "/obj/item/seeds/banana", {
 	icon_state: "seed-banana-blue",
 });
 
-// /obj/item/seeds/banana/bluespace/proc/<init>  (code/modules/hydroponics/grown/banana.dm:93)
+// banana.dm:93
 rt.def("/obj/item/seeds/banana/bluespace/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "mutatelist", rt.list());
-	$0 = $0;
-	rt.setSv(f, "genes", rt.list(T("/datum/plant_gene/trait/slip"), T("/datum/plant_gene/trait/teleport"), T("/datum/plant_gene/trait/repeated_harvest")));
-	rt.setSv(f, "reagents_add", rt.alist(f, ["bluespace", 0.20000000298023224, "banana", 0.10000000149011612, "vitamin", 0.03999999910593033, "nutriment", 0.019999999552965164]));
+	parent_proc();
+	this.mutatelist = list();
+
+	this.genes = list(T("/datum/plant_gene/trait/slip"), T("/datum/plant_gene/trait/teleport"), T("/datum/plant_gene/trait/repeated_harvest"));
+	this.reagents_add = rt.alist(f, ["bluespace", 0.2, "banana", 0.1, "vitamin", 0.04, "nutriment", 0.02]);
 	return f.dot;
 });
 
@@ -134,12 +127,11 @@ rt.type(7496, "/obj/item/weapon/grown/bananapeel/specialpeel", "/obj/item/weapon
 	desc: "A synthetic banana peel.",
 });
 
-// /obj/item/weapon/grown/bananapeel/specialpeel/proc/Crossed  (code/modules/hydroponics/grown/banana.dm:118)  may sleep
+// banana.dm:118
 rt.def("/obj/item/weapon/grown/bananapeel/specialpeel/proc/Crossed", function* Crossed(f: Frame, AM: Value) {
 	let carbon: Value = null;
-	f.vars = () => [AM, carbon];
-	if (!truthy((rt.istype(live(AM), T("/mob/living/carbon")) ? 1 : 0))) return f.dot;
-	if (!truthy((yield* g.callName(f, (carbon = live(AM)), "slip", [40, live(f.src), 0])))) return f.dot;
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	if (!rt.istype(AM, T("/mob/living/carbon"))) return f.dot;
+	if (!(yield* (carbon = AM).slip(40, this, 0))) return f.dot;
+	yield* qdel(this);
 	return f.dot;
 }, true);

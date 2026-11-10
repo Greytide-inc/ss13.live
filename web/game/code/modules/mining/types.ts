@@ -1,5 +1,5 @@
 // Types declared in code/modules/mining that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(6762, "/obj/item/weapon/circuitboard/machine/mining_equipment_vendor/golem", "/obj/item/weapon/circuitboard/machine/mining_equipment_vendor", {
 	name: "Golem Ship Equipment Vendor (Machine Board)",

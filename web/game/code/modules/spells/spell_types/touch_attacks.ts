@@ -1,7 +1,7 @@
-// From code/modules/spells/spell_types/touch_attacks.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/spells/spell_types/touch_attacks.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(11335, "/obj/effect/proc_holder/spell/targeted/touch", "/obj/effect/proc_holder/spell/targeted", {
@@ -12,59 +12,50 @@ rt.type(11335, "/obj/effect/proc_holder/spell/targeted/touch", "/obj/effect/proc
 	range: -1,
 });
 
-// /obj/effect/proc_holder/spell/targeted/touch/proc/Click  (code/modules/spells/spell_types/touch_attacks.dm:10)  may sleep
+// touch_attacks.dm:10
 rt.def("/obj/effect/proc_holder/spell/targeted/touch/proc/Click", function* Click(f: Frame) {
-	if (live(f.args[0]) === null) {
-		f.args[0] = live(f.usr);
+	if (f.args[0] === null) {
+		f.args[0] = f.usr;
 	}
-	if (truthy(rt.sv(f, "attached_hand"))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "attached_hand")]);
-		rt.setSv(f, "charge_counter", rt.sv(f, "charge_max"));
-		rt.setSv(f, "attached_hand", null);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='notice'>You draw the power out of your hand.</span>"]);
+	if (this.attached_hand) {
+		yield* qdel(this.attached_hand);
+		this.charge_counter = this.charge_max;
+		this.attached_hand = null;
+		to_chat(f.args[0], "<span class='notice'>You draw the power out of your hand.</span>");
 		return 0;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true, { args: ["user"] });
 
-// /obj/effect/proc_holder/spell/targeted/touch/proc/cast  (code/modules/spells/spell_types/touch_attacks.dm:18)  may sleep
+// touch_attacks.dm:18
 rt.def("/obj/effect/proc_holder/spell/targeted/touch/proc/cast", function* cast(f: Frame, targets: Value, user: Value) {
 	let C: Value = null;
-	let $e: any;
-	f.vars = () => [targets, user, C, $e];
-	if (live(user) === null) {
-		user = live(f.usr);
-	}
-	C = null;
-	rt.forList(f, 0, live(targets), T("/mob/living/carbon"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		C = $e;
-		if (!truthy(rt.sv(f, "attached_hand"))) {
-			if (!truthy((yield* g.srcCall(f, "ChargeHand", live(C))))) {
+	user ??= f.usr;
+	for (C of each(targets, T("/mob/living/carbon"))) {
+		if (!this.attached_hand) {
+			if (!(yield* this.ChargeHand(C))) {
 				return 0;
 			}
 		}
 	}
-	rt.endFor(f, 0);
-	while (truthy(rt.sv(f, "attached_hand"))) {
-		rt.setSv(f, "charge_counter", 0);
-		yield* g.call(f, P("/proc/sleep"), null, [1]);
+	while (this.attached_hand) {
+		this.charge_counter = 0;
+		yield* sleep(1);
 	}
 	return f.dot;
 }, true);
 
-// /obj/effect/proc_holder/spell/targeted/touch/proc/ChargeHand  (code/modules/spells/spell_types/touch_attacks.dm:27)  may sleep
+// touch_attacks.dm:27
 rt.def("/obj/effect/proc_holder/spell/targeted/touch/proc/ChargeHand", function* ChargeHand(f: Frame, user: Value) {
-	f.vars = () => [user];
-	rt.setSv(f, "attached_hand", (yield* g.new_(f, rt.sv(f, "hand_path"), [live(f.src)])));
-	if (!truthy((yield* g.callName(f, live(user), "put_in_hands", [rt.sv(f, "attached_hand")])))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "attached_hand")]);
-		rt.setSv(f, "charge_counter", rt.sv(f, "charge_max"));
-		rt.setSv(f, "attached_hand", null);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>Your hands are full!</span>"]);
+	this.attached_hand = (yield* new_(this.hand_path, this));
+	if (!(yield* user.put_in_hands(this.attached_hand))) {
+		yield* qdel(this.attached_hand);
+		this.charge_counter = this.charge_max;
+		this.attached_hand = null;
+		to_chat(user, "<span class='warning'>Your hands are full!</span>");
 		return 0;
 	}
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>You channel the power of the spell to your hand.</span>"]);
+	to_chat(user, "<span class='notice'>You channel the power of the spell to your hand.</span>");
 	return 1;
 }, true);

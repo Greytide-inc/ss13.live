@@ -1,7 +1,7 @@
-// From code/game/objects/effects/decals/cleanable/aliens.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/effects/decals/cleanable/aliens.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(11725, "/obj/effect/decal/cleanable/xenoblood", "/obj/effect/decal/cleanable", {
@@ -16,32 +16,24 @@ rt.type(11725, "/obj/effect/decal/cleanable/xenoblood", "/obj/effect/decal/clean
 	icon_state: "xfloor1",
 });
 
-// /obj/effect/decal/cleanable/xenoblood/proc/<init>  (code/game/objects/effects/decals/cleanable/aliens.dm:9)
+// aliens.dm:9
 rt.def("/obj/effect/decal/cleanable/xenoblood/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "random_icon_states", rt.list("xfloor1", "xfloor2", "xfloor3", "xfloor4", "xfloor5", "xfloor6", "xfloor7"));
-	$0 = $0;
-	rt.setSv(f, "viruses", rt.list());
-	rt.setSv(f, "blood_DNA", rt.alist(f, ["UNKNOWN DNA", "X*"]));
+	parent_proc();
+	this.random_icon_states = list("xfloor1", "xfloor2", "xfloor3", "xfloor4", "xfloor5", "xfloor6", "xfloor7");
+
+	this.viruses = list();
+	this.blood_DNA = rt.alist(f, ["UNKNOWN DNA", "X*"]);
 	return f.dot;
 });
 
-// /obj/effect/decal/cleanable/xenoblood/proc/Destroy  (code/game/objects/effects/decals/cleanable/aliens.dm:15)  may sleep
+// aliens.dm:15
 rt.def("/obj/effect/decal/cleanable/xenoblood/proc/Destroy", function* Destroy(f: Frame) {
 	let D: Value = null;
-	let $e: any;
-	f.vars = () => [D, $e];
-	D = null;
-	rt.forList(f, 0, rt.sv(f, "viruses"), T("/datum/disease"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		D = $e;
-		yield* g.callName(f, live(D), "cure", [0]);
+	for (D of each(this.viruses, T("/datum/disease"))) {
+		yield* D.cure(0);
 	}
-	rt.endFor(f, 0);
-	rt.setSv(f, "viruses", null);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	this.viruses = null;
+	return (yield* parent_proc());
 }, true);
 
 rt.type(11727, "/obj/effect/decal/cleanable/xenoblood/xgibs", "/obj/effect/decal/cleanable/xenoblood", {
@@ -54,32 +46,26 @@ rt.type(11727, "/obj/effect/decal/cleanable/xenoblood/xgibs", "/obj/effect/decal
 	layer: 2.5,
 });
 
-// /obj/effect/decal/cleanable/xenoblood/xgibs/proc/streak  (code/game/objects/effects/decals/cleanable/aliens.dm:34)  may sleep
+// aliens.dm:34
 rt.def("/obj/effect/decal/cleanable/xenoblood/xgibs/proc/streak", function* streak(f: Frame, directions: Value) {
-	let direction: Value = null, i: Value = null, b: Value = null, D: Value = null, ND: Value = null;
-	let $e: any;
-	f.vars = () => [directions, direction, i, b, D, ND, $e];
-	direction = rt.op(f, "PickUnweighted", [1], [live(directions)]);
-	i = null;
-	i = 0;
-	while (rt.lt(live(i), rt.op(f, "PickWeighted", [4], [100, 1, 200, 2, 150, 3, 100, 50]))) {
-		yield* g.call(f, P("/proc/sleep"), null, [2]);
-		if (rt.gt(live(i), 0)) {
-			b = (yield* g.new_(f, T("/obj/effect/decal/cleanable/xenoblood/xsplatter"), [rt.fv(f, "loc", live(f.src))]));
+	let b: Value = null, D: Value = null, ND: Value = null;
+	let direction: Value = pick(directions);
+	let i: Value = 0;
+	while (i < rt.op(f, "PickWeighted", [4], [100, 1, 200, 2, 150, 3, 100, 50])) {
+		yield* sleep(2);
+		if (i > 0) {
+			b = (yield* new_(T("/obj/effect/decal/cleanable/xenoblood/xsplatter"), this.loc));
 			D = null;
-			rt.forList(f, 0, rt.fv(f, "viruses", live(f.src)), T("/datum/disease"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				D = $e;
-				ND = (yield* g.callName(f, live(D), "Copy", [1]));
-				rt.modField(f, live(b), "viruses", live(ND), add);
-				rt.setFv(f, "holder", live(ND), live(b));
+			for (D of each(this.viruses, T("/datum/disease"))) {
+				ND = (yield* D.Copy(1));
+				b.viruses += ND;
+				ND.holder = b;
 			}
-			rt.endFor(f, 0);
 		}
-		if (!truthy((yield* g.call(f, P("/proc/step_to"), null, [live(f.src), rt.getStep(f, live(f.src), live(direction)), 0])))) {
+		if (!(yield* step_to(this, rt.getStep(f, this, direction), 0))) {
 			break;
 		}
-		i = rt.inc(live(i), 1);
+		i++;
 	}
 	return f.dot;
 }, true, { waitfor: false });
@@ -88,12 +74,10 @@ rt.type(11731, "/obj/effect/decal/cleanable/xenoblood/xgibs/torso", "/obj/effect
 	random_icon_states: null,
 });
 
-// /obj/effect/decal/cleanable/xenoblood/xgibs/torso/proc/<init>  (code/game/objects/effects/decals/cleanable/aliens.dm:59)
+// aliens.dm:59
 rt.def("/obj/effect/decal/cleanable/xenoblood/xgibs/torso/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "random_icon_states", rt.list("xgibtorso"));
+	parent_proc();
+	this.random_icon_states = list("xgibtorso");
 	return f.dot;
 });
 
@@ -103,13 +87,11 @@ rt.type(11709, "/obj/effect/decal/cleanable/blood/xtracks", "/obj/effect/decal/c
 	random_icon_states: null,
 });
 
-// /obj/effect/decal/cleanable/blood/xtracks/proc/<init>  (code/game/objects/effects/decals/cleanable/aliens.dm:76)
+// aliens.dm:76
 rt.def("/obj/effect/decal/cleanable/blood/xtracks/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "blood_DNA", rt.alist(f, ["UNKNOWN DNA", "X*"]));
-	$0 = $0;
-	rt.setSv(f, "random_icon_states", null);
+	parent_proc();
+	this.blood_DNA = rt.alist(f, ["UNKNOWN DNA", "X*"]);
+
+	this.random_icon_states = null;
 	return f.dot;
 });

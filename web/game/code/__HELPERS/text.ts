@@ -1,603 +1,464 @@
-// From code/__HELPERS/text.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/__HELPERS/text.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { g, fmt } = rt;
 
 
-// /proc/strip_html_simple  (code/__HELPERS/text.dm:31)
+// text.dm:31
 rt.def("/proc/strip_html_simple", function strip_html_simple(f: Frame, t: Value, limit: Value) {
-	let strip_chars: Value = null, char: Value = null, index: Value = null;
-	let $e: any;
-	f.vars = () => [t, limit, strip_chars, char, index, $e];
-	if (live(limit) === null) {
-		limit = 1024;
-	}
-	strip_chars = rt.list("<", ">");
-	t = rt.call(f, P("/proc/copytext"), null, [live(t), 1, live(limit)]);
-	char = null;
-	rt.forList(f, 0, live(strip_chars));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		char = $e;
-		index = rt.call(f, P("/proc/findtext"), null, [live(t), live(char)]);
-		while (truthy(live(index))) {
-			index = rt.call(f, P("/proc/findtext"), null, [(t = add(rt.call(f, P("/proc/copytext"), null, [live(t), 1, live(index)]), rt.call(f, P("/proc/copytext"), null, [live(t), add(live(index), 1)]))), live(char)]);
+	let char: Value = null, index: Value = null;
+	limit ??= 1024;
+	let strip_chars: Value = list("<", ">");
+	t = copytext(t, 1, limit);
+	for (char of each(strip_chars)) {
+		index = findtext(t, char);
+		while (index) {
+			index = findtext((t = copytext(t, 1, index) + copytext(t, index + 1)), char);
 		}
 	}
-	rt.endFor(f, 0);
-	return live(t);
+	return t;
 });
 
-// /proc/sanitize_simple  (code/__HELPERS/text.dm:41)
+// text.dm:41
 rt.def("/proc/sanitize_simple", function sanitize_simple(f: Frame, t: Value, repl_chars: Value) {
 	let char: Value = null, index: Value = null;
-	let $e: any;
-	f.vars = () => [t, repl_chars, char, index, $e];
-	if (live(repl_chars) === null) {
-		repl_chars = rt.alist(f, ["\n", "#", "\t", "#"]);
-	}
-	char = null;
-	rt.forList(f, 0, live(repl_chars));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		char = $e;
-		index = rt.call(f, P("/proc/findtext"), null, [live(t), live(char)]);
-		while (truthy(live(index))) {
-			index = rt.call(f, P("/proc/findtext"), null, [(t = add(add(rt.call(f, P("/proc/copytext"), null, [live(t), 1, live(index)]), rt.index(live(repl_chars), live(char))), rt.call(f, P("/proc/copytext"), null, [live(t), add(live(index), 1)]))), live(char), add(live(index), 1)]);
+	repl_chars ??= rt.alist(f, ["\n", "#", "\t", "#"]);
+	for (char of each(repl_chars)) {
+		index = findtext(t, char);
+		while (index) {
+			index = findtext((t = copytext(t, 1, index) + rt.index(repl_chars, char) + copytext(t, index + 1)), char, index + 1);
 		}
 	}
-	rt.endFor(f, 0);
-	return live(t);
+	return t;
 });
 
-// /proc/sanitize  (code/__HELPERS/text.dm:50)
+// text.dm:50
 rt.def("/proc/sanitize", function sanitize(f: Frame, t: Value, repl_chars: Value) {
-	f.vars = () => [repl_chars];
-	if (live(repl_chars) === null) {
-		repl_chars = null;
-	}
-	return rt.call(f, P("/proc/html_encode"), null, [rt.call(f, P("/proc/sanitize_simple"), null, [live(t), live(repl_chars)])]);
+	return html_encode(sanitize_simple(t, repl_chars));
 });
 
-// /proc/strip_html  (code/__HELPERS/text.dm:55)
+// text.dm:55
 rt.def("/proc/strip_html", function strip_html(f: Frame, t: Value, limit: Value) {
-	f.vars = () => [limit];
-	if (live(limit) === null) {
-		limit = 1024;
-	}
-	return rt.call(f, P("/proc/copytext"), null, [rt.call(f, P("/proc/sanitize"), null, [rt.call(f, P("/proc/strip_html_simple"), null, [live(t)])]), 1, live(limit)]);
+	limit ??= 1024;
+	return copytext(sanitize(strip_html_simple(t)), 1, limit);
 });
 
-// /proc/adminscrub  (code/__HELPERS/text.dm:60)
+// text.dm:60
 rt.def("/proc/adminscrub", function adminscrub(f: Frame, t: Value, limit: Value) {
-	f.vars = () => [limit];
-	if (live(limit) === null) {
-		limit = 1024;
-	}
-	return rt.call(f, P("/proc/copytext"), null, [rt.call(f, P("/proc/html_encode"), null, [rt.call(f, P("/proc/strip_html_simple"), null, [live(t)])]), 1, live(limit)]);
+	limit ??= 1024;
+	return copytext(html_encode(strip_html_simple(t)), 1, limit);
 });
 
-// /proc/reject_bad_text  (code/__HELPERS/text.dm:65)
+// text.dm:65
 rt.def("/proc/reject_bad_text", function reject_bad_text(f: Frame, text: Value, max_length: Value) {
-	let non_whitespace: Value = null, i: Value = null;
-	let $0: any;
-	f.vars = () => [max_length, non_whitespace, i, $0];
-	if (live(max_length) === null) {
-		max_length = 512;
+	max_length ??= 512;
+	if (rt.length(text) > max_length) {
+		return f.dot;
 	}
-	if (rt.gt(rt.length(live(text)), live(max_length))) {
-		return live(f.dot);
-	}
-	non_whitespace = 0;
-	i = null;
-	i = 1;
-	while (rt.le(live(i), rt.length(live(text)))) {
-		$0 = rt.call(f, P("/proc/text2ascii"), null, [live(text), live(i)]);
-		if ($0 === 62 || $0 === 60 || $0 === 92 || $0 === 47) {
-			return live(f.dot);
-		} else if (rt.inRange($0, 127, 255)) {
-			return live(f.dot);
-		} else if (rt.inRange($0, 0, 31)) {
-			return live(f.dot);
-		} else if ($0 === 32) {
+	let non_whitespace: Value = 0;
+	let i: Value = 1;
+	while (i <= rt.length(text)) {
+		const text2ascii_2 = text2ascii(text, i);
+		if (text2ascii_2 === 62 || text2ascii_2 === 60 || text2ascii_2 === 92 || text2ascii_2 === 47) {
+			return f.dot;
+		} else if (rt.inRange(text2ascii_2, 127, 255)) {
+			return f.dot;
+		} else if (rt.inRange(text2ascii_2, 0, 31)) {
+			return f.dot;
+		} else if (text2ascii_2 === 32) {
 		} else {
 			non_whitespace = 1;
 		}
-		i = rt.inc(live(i), 1);
+		i++;
 	}
-	if (!truthy(live(non_whitespace))) return f.dot;
-	return live(text);
+	if (!non_whitespace) return f.dot;
+	return text;
 });
 
-// /proc/stripped_input  (code/__HELPERS/text.dm:86)  may sleep
+// text.dm:86
 rt.def("/proc/stripped_input", function* stripped_input(f: Frame, user: Value, message: Value, title: Value, _default: Value, max_length: Value, no_trim: Value) {
-	let name: Value = null;
-	f.vars = () => [user, message, title, _default, max_length, no_trim, name];
-	if (live(message) === null) {
-		message = "";
+	message ??= "";
+	title ??= "";
+	_default ??= "";
+	max_length ??= 1024;
+	no_trim ??= 0;
+	let name: Value = (yield* g.op(f, "Prompt", [3], [_default, title, message, user, null]));
+	if (no_trim) {
+		return copytext(html_encode(name), 1, max_length);
 	}
-	if (live(title) === null) {
-		title = "";
-	}
-	if (live(_default) === null) {
-		_default = "";
-	}
-	if (live(max_length) === null) {
-		max_length = 1024;
-	}
-	if (live(no_trim) === null) {
-		no_trim = 0;
-	}
-	name = (yield* g.op(f, "Prompt", [3], [live(_default), live(title), live(message), live(user), null]));
-	if (truthy(live(no_trim))) {
-		return (yield* g.call(f, P("/proc/copytext"), null, [(yield* g.call(f, P("/proc/html_encode"), null, [live(name)])), 1, live(max_length)]));
-	}
-	return (yield* g.call(f, P("/proc/trim"), null, [(yield* g.call(f, P("/proc/html_encode"), null, [live(name)])), live(max_length)]));
+	return trim(html_encode(name), max_length);
 }, true);
 
-// /proc/stripped_multiline_input  (code/__HELPERS/text.dm:94)  may sleep
+// text.dm:94
 rt.def("/proc/stripped_multiline_input", function* stripped_multiline_input(f: Frame, user: Value, message: Value, title: Value, _default: Value, max_length: Value, no_trim: Value) {
-	let name: Value = null;
-	f.vars = () => [user, message, title, _default, max_length, no_trim, name];
-	if (live(message) === null) {
-		message = "";
+	message ??= "";
+	title ??= "";
+	_default ??= "";
+	max_length ??= 1024;
+	no_trim ??= 0;
+	let name: Value = (yield* g.op(f, "Prompt", [65], [_default, title, message, user, null]));
+	if (no_trim) {
+		return copytext(html_encode(name), 1, max_length);
 	}
-	if (live(title) === null) {
-		title = "";
-	}
-	if (live(_default) === null) {
-		_default = "";
-	}
-	if (live(max_length) === null) {
-		max_length = 1024;
-	}
-	if (live(no_trim) === null) {
-		no_trim = 0;
-	}
-	name = (yield* g.op(f, "Prompt", [65], [live(_default), live(title), live(message), live(user), null]));
-	if (truthy(live(no_trim))) {
-		return (yield* g.call(f, P("/proc/copytext"), null, [(yield* g.call(f, P("/proc/html_encode"), null, [live(name)])), 1, live(max_length)]));
-	}
-	return (yield* g.call(f, P("/proc/trim"), null, [(yield* g.call(f, P("/proc/html_encode"), null, [live(name)])), live(max_length)]));
+	return trim(html_encode(name), max_length);
 }, true);
 
-// /proc/reject_bad_name  (code/__HELPERS/text.dm:102)
+// text.dm:102
 rt.def("/proc/reject_bad_name", function reject_bad_name(f: Frame, t_in: Value, allow_numbers: Value, max_length: Value) {
-	let number_of_alphanumeric: Value = null, last_char_group: Value = null, t_out: Value = null, i: Value = null, ascii_char: Value = null, bad_name: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [allow_numbers, max_length, number_of_alphanumeric, last_char_group, t_out, i, ascii_char, bad_name, $0, $e];
-	if (live(allow_numbers) === null) {
-		allow_numbers = 0;
+	let ascii_char: Value = null, bad_name: Value = null;
+	let $e: any;
+	allow_numbers ??= 0;
+	max_length ??= 42;
+	if (!t_in || rt.length(t_in) > max_length) {
+		return f.dot;
 	}
-	if (live(max_length) === null) {
-		max_length = 42;
-	}
-	if ((!truthy(live(t_in)) || rt.gt(rt.length(live(t_in)), live(max_length)))) {
-		return live(f.dot);
-	}
-	number_of_alphanumeric = 0;
-	last_char_group = 0;
-	t_out = "";
-	i = null;
-	i = 1;
-	while (rt.le(live(i), rt.length(live(t_in)))) {
+	let number_of_alphanumeric: Value = 0;
+	let last_char_group: Value = 0;
+	let t_out: Value = "";
+	let i: Value = 1;
+	while (i <= rt.length(t_in)) {
 		blk123: {
-			$0 = (ascii_char = rt.call(f, P("/proc/text2ascii"), null, [live(t_in), live(i)]));
-			if (rt.inRange($0, 65, 90)) {
-				t_out = rt.modify(live(t_out), rt.call(f, P("/proc/ascii2text"), null, [live(ascii_char)]), add);
-				number_of_alphanumeric = rt.inc(live(number_of_alphanumeric), 1);
+			const subject = (ascii_char = text2ascii(t_in, i));
+			if (rt.inRange(subject, 65, 90)) {
+				t_out += ascii2text(ascii_char);
+				number_of_alphanumeric++;
 				last_char_group = 4;
-			} else if (rt.inRange($0, 97, 122)) {
-				if (rt.lt(live(last_char_group), 2)) {
-					t_out = rt.modify(live(t_out), rt.call(f, P("/proc/ascii2text"), null, [subtract(live(ascii_char), 32)]), add);
+			} else if (rt.inRange(subject, 97, 122)) {
+				if (last_char_group < 2) {
+					t_out += ascii2text(ascii_char - 32);
 				} else {
-					t_out = rt.modify(live(t_out), rt.call(f, P("/proc/ascii2text"), null, [live(ascii_char)]), add);
+					t_out += ascii2text(ascii_char);
 				}
-				number_of_alphanumeric = rt.inc(live(number_of_alphanumeric), 1);
+				number_of_alphanumeric++;
 				last_char_group = 4;
-			} else if (rt.inRange($0, 48, 57)) {
-				if (!truthy(live(last_char_group))) {
+			} else if (rt.inRange(subject, 48, 57)) {
+				if (!last_char_group) {
 					break blk123;
 				}
-				if (!truthy(live(allow_numbers))) {
+				if (!allow_numbers) {
 					break blk123;
 				}
-				t_out = rt.modify(live(t_out), rt.call(f, P("/proc/ascii2text"), null, [live(ascii_char)]), add);
-				number_of_alphanumeric = rt.inc(live(number_of_alphanumeric), 1);
+				t_out += ascii2text(ascii_char);
+				number_of_alphanumeric++;
 				last_char_group = 3;
-			} else if ($0 === 39 || $0 === 45 || $0 === 46) {
-				if (!truthy(live(last_char_group))) {
+			} else if (subject === 39 || subject === 45 || subject === 46) {
+				if (!last_char_group) {
 					break blk123;
 				}
-				t_out = rt.modify(live(t_out), rt.call(f, P("/proc/ascii2text"), null, [live(ascii_char)]), add);
+				t_out += ascii2text(ascii_char);
 				last_char_group = 2;
-			} else if ($0 === 126 || $0 === 124 || $0 === 64 || $0 === 58 || $0 === 35 || $0 === 36 || $0 === 37 || $0 === 38 || $0 === 42 || $0 === 43) {
-				if (!truthy(live(last_char_group))) {
+			} else if (subject === 126 || subject === 124 || subject === 64 || subject === 58 || subject === 35 || subject === 36 || subject === 37 || subject === 38 || subject === 42 || subject === 43) {
+				if (!last_char_group) {
 					break blk123;
 				}
-				if (!truthy(live(allow_numbers))) {
+				if (!allow_numbers) {
 					break blk123;
 				}
-				t_out = rt.modify(live(t_out), rt.call(f, P("/proc/ascii2text"), null, [live(ascii_char)]), add);
+				t_out += ascii2text(ascii_char);
 				last_char_group = 2;
-			} else if ($0 === 32) {
-				if (!rt.le(live(last_char_group), 1)) {
-					t_out = rt.modify(live(t_out), rt.call(f, P("/proc/ascii2text"), null, [live(ascii_char)]), add);
+			} else if (subject === 32) {
+				if (!(last_char_group <= 1)) {
+					t_out += ascii2text(ascii_char);
 					last_char_group = 1;
 				}
 			} else {
-				return live(f.dot);
+				return f.dot;
 			}
 		}
-		i = rt.inc(live(i), 1);
+		i++;
 	}
-	if (rt.lt(live(number_of_alphanumeric), 2)) {
-		return live(f.dot);
+	if (number_of_alphanumeric < 2) {
+		return f.dot;
 	}
-	if (isEqual(live(last_char_group), 1)) {
-		t_out = rt.call(f, P("/proc/copytext"), null, [live(t_out), 1, rt.length(live(t_out))]);
+	if (last_char_group == 1) {
+		t_out = copytext(t_out, 1, rt.length(t_out));
 	}
-	bad_name = null;
-	rt.forList(f, 0, rt.list("space", "floor", "wall", "r-wall", "monkey", "unknown", "inactive ai"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		bad_name = $e;
-		if (truthy(rt.call(f, P("/proc/cmptext"), null, [live(t_out), live(bad_name)]))) {
-			return live(f.dot);
+	for (bad_name of each(list("space", "floor", "wall", "r-wall", "monkey", "unknown", "inactive ai"))) {
+		if (cmptext(t_out, bad_name)) {
+			return f.dot;
 		}
 	}
-	rt.endFor(f, 0);
-	return live(t_out);
+	return t_out;
 });
 
-// /proc/dd_hasprefix  (code/__HELPERS/text.dm:191)
+// text.dm:191
 rt.def("/proc/dd_hasprefix", function dd_hasprefix(f: Frame, text: Value, prefix: Value) {
-	let start: Value = null, end: Value = null;
-	f.vars = () => [start, end];
-	start = 1;
-	end = add(rt.length(live(prefix)), 1);
-	return rt.call(f, P("/proc/findtext"), null, [live(text), live(prefix), live(start), live(end)]);
+	let start: Value = 1;
+	let end: Value = rt.length(prefix) + 1;
+	return findtext(text, prefix, start, end);
 });
 
-// /proc/dd_hasprefix_case  (code/__HELPERS/text.dm:198)
+// text.dm:198
 rt.def("/proc/dd_hasprefix_case", function dd_hasprefix_case(f: Frame, text: Value, prefix: Value) {
-	let start: Value = null, end: Value = null;
-	f.vars = () => [start, end];
-	start = 1;
-	end = add(rt.length(live(prefix)), 1);
-	return rt.call(f, P("/proc/findtextEx"), null, [live(text), live(prefix), live(start), live(end)]);
+	let start: Value = 1;
+	let end: Value = rt.length(prefix) + 1;
+	return findtextEx(text, prefix, start, end);
 });
 
-// /proc/dd_hassuffix  (code/__HELPERS/text.dm:204)
+// text.dm:204
 rt.def("/proc/dd_hassuffix", function dd_hassuffix(f: Frame, text: Value, suffix: Value) {
 	let start: Value = null;
-	f.vars = () => [start];
-	if (truthy((start = subtract(rt.length(live(text)), rt.length(live(suffix)))))) {
-		return rt.call(f, P("/proc/findtext"), null, [live(text), live(suffix), live(start), null]);
+	if (start = rt.length(text) - rt.length(suffix)) {
+		return findtext(text, suffix, start, null);
 	}
-	return live(f.dot);
+	return f.dot;
 });
 
-// /proc/add_zero  (code/__HELPERS/text.dm:232)
+// text.dm:232
 rt.def("/proc/add_zero", function add_zero(f: Frame, t: Value, u: Value) {
-	f.vars = () => [t];
-	while (rt.lt(rt.length(live(t)), live(u))) {
-		t = fmt("0＀", [live(t)]);
+	while (rt.length(t) < u) {
+		t = `0${t}`;
 	}
-	return live(t);
+	return t;
 });
 
-// /proc/trim_left  (code/__HELPERS/text.dm:250)
+// text.dm:250
 rt.def("/proc/trim_left", function trim_left(f: Frame, text: Value) {
 	let i: Value = null;
 	let $e: any;
-	f.vars = () => [i, $e];
-	i = null;
-	rt.forRange(f, 0, 1, rt.length(live(text)), 1);
+	rt.forRange(f, 0, 1, rt.length(text), 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		if (rt.gt(rt.call(f, P("/proc/text2ascii"), null, [live(text), live(i)]), 32)) {
-			return rt.call(f, P("/proc/copytext"), null, [live(text), live(i)]);
+		if (text2ascii(text, i) > 32) {
+			return copytext(text, i);
 		}
 	}
 	rt.endFor(f, 0);
 	return "";
 });
 
-// /proc/trim_right  (code/__HELPERS/text.dm:257)
+// text.dm:257
 rt.def("/proc/trim_right", function trim_right(f: Frame, text: Value) {
-	let i: Value = null;
-	f.vars = () => [i];
-	i = null;
-	i = rt.length(live(text));
-	while (rt.gt(live(i), 0)) {
-		if (rt.gt(rt.call(f, P("/proc/text2ascii"), null, [live(text), live(i)]), 32)) {
-			return rt.call(f, P("/proc/copytext"), null, [live(text), 1, add(live(i), 1)]);
+	let i: Value = rt.length(text);
+	while (i > 0) {
+		if (text2ascii(text, i) > 32) {
+			return copytext(text, 1, i + 1);
 		}
-		i = rt.inc(live(i), -1);
+		i--;
 	}
 	return "";
 });
 
-// /proc/trim  (code/__HELPERS/text.dm:266)
+// text.dm:266
 rt.def("/proc/trim", function trim(f: Frame, text: Value, max_length: Value) {
-	f.vars = () => [text];
-	if (truthy(live(max_length))) {
-		text = rt.call(f, P("/proc/copytext"), null, [live(text), 1, live(max_length)]);
+	if (max_length) {
+		text = copytext(text, 1, max_length);
 	}
-	return rt.call(f, P("/proc/trim_left"), null, [rt.call(f, P("/proc/trim_right"), null, [live(text)])]);
+	return trim_left(trim_right(text));
 });
 
-// /proc/capitalize  (code/__HELPERS/text.dm:271)
+// text.dm:271
 rt.def("/proc/capitalize", function capitalize(f: Frame, t: Value) {
-	return add(rt.call(f, P("/proc/uppertext"), null, [rt.call(f, P("/proc/copytext"), null, [live(t), 1, 2])]), rt.call(f, P("/proc/copytext"), null, [live(t), 2]));
+	return uppertext(copytext(t, 1, 2)) + copytext(t, 2);
 });
 
-// /proc/dd_limittext  (code/__HELPERS/text.dm:292)
+// text.dm:292
 rt.def("/proc/dd_limittext", function dd_limittext(f: Frame, message: Value, length: Value) {
 	let size: Value = null;
-	f.vars = () => [size];
-	if (rt.le((size = rt.length(live(message))), live(length))) {
-		return live(message);
+	if ((size = rt.length(message)) <= length) {
+		return message;
 	}
-	return rt.call(f, P("/proc/copytext"), null, [live(message), 1, add(live(length), 1)]);
+	return copytext(message, 1, length + 1);
 });
 
-// /datum/controller/global_vars/proc/InitGlobalzero_character_only  (code/__HELPERS/text.dm:337)
+// text.dm:337
 rt.def("/datum/controller/global_vars/proc/InitGlobalzero_character_only", function InitGlobalzero_character_only(f: Frame) {
-	rt.setGl("zero_character_only", rt.list("0"));
-	rt.modSrcVar(f, "gvars_datum_init_order", "zero_character_only", add);
+	GLOB.zero_character_only = list("0");
+	this.gvars_datum_init_order += "zero_character_only";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalhex_characters  (code/__HELPERS/text.dm:338)
+// text.dm:338
 rt.def("/datum/controller/global_vars/proc/InitGlobalhex_characters", function InitGlobalhex_characters(f: Frame) {
-	rt.setGl("hex_characters", rt.list("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"));
-	rt.modSrcVar(f, "gvars_datum_init_order", "hex_characters", add);
+	GLOB.hex_characters = list("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f");
+	this.gvars_datum_init_order += "hex_characters";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalalphabet  (code/__HELPERS/text.dm:339)
+// text.dm:339
 rt.def("/datum/controller/global_vars/proc/InitGlobalalphabet", function InitGlobalalphabet(f: Frame) {
-	rt.setGl("alphabet", rt.list("a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"));
-	rt.modSrcVar(f, "gvars_datum_init_order", "alphabet", add);
+	GLOB.alphabet = list("a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z");
+	this.gvars_datum_init_order += "alphabet";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalbinary  (code/__HELPERS/text.dm:340)
+// text.dm:340
 rt.def("/datum/controller/global_vars/proc/InitGlobalbinary", function InitGlobalbinary(f: Frame) {
-	rt.setGl("binary", rt.list("0", "1"));
-	rt.modSrcVar(f, "gvars_datum_init_order", "binary", add);
+	GLOB.binary = list("0", "1");
+	this.gvars_datum_init_order += "binary";
 	return f.dot;
 });
 
-// /proc/random_string  (code/__HELPERS/text.dm:342)
+// text.dm:342
 rt.def("/proc/random_string", function random_string(f: Frame, length: Value, characters: Value) {
-	let i: Value = null;
-	f.vars = () => [i];
 	f.dot = "";
-	i = null;
-	i = 1;
-	while (rt.le(live(i), live(length))) {
-		f.dot = rt.modify(live(f.dot), rt.op(f, "PickUnweighted", [1], [live(characters)]), add);
-		i = rt.inc(live(i), 1);
+	let i: Value = 1;
+	while (i <= length) {
+		f.dot += pick(characters);
+		i++;
 	}
 	return f.dot;
 });
 
-// /proc/repeat_string  (code/__HELPERS/text.dm:347)
+// text.dm:347
 rt.def("/proc/repeat_string", function repeat_string(f: Frame, times: Value, string: Value) {
-	let i: Value = null;
-	f.vars = () => [string, i];
-	if (live(string) === null) {
-		string = "";
-	}
+	string ??= "";
 	f.dot = "";
-	i = null;
-	i = 1;
-	while (rt.le(live(i), live(times))) {
-		f.dot = rt.modify(live(f.dot), live(string), add);
-		i = rt.inc(live(i), 1);
+	let i: Value = 1;
+	while (i <= times) {
+		f.dot += string;
+		i++;
 	}
 	return f.dot;
 });
 
-// /proc/random_short_color  (code/__HELPERS/text.dm:352)
+// text.dm:352
 rt.def("/proc/random_short_color", function random_short_color(f: Frame) {
-	return rt.call(f, P("/proc/random_string"), null, [3, rt.gl("hex_characters")]);
+	return random_string(3, GLOB.hex_characters);
 });
 
-// /proc/random_color  (code/__HELPERS/text.dm:355)
+// text.dm:355
 rt.def("/proc/random_color", function random_color(f: Frame) {
-	return rt.call(f, P("/proc/random_string"), null, [6, rt.gl("hex_characters")]);
+	return random_string(6, GLOB.hex_characters);
 });
 
-// /proc/merge_text  (code/__HELPERS/text.dm:373)
+// text.dm:373
 rt.def("/proc/merge_text", function merge_text(f: Frame, into: Value, from: Value, null_char: Value) {
-	let null_ascii: Value = null, previous: Value = null, start: Value = null, end: Value = null, i: Value = null, ascii: Value = null;
-	let $0: any;
-	f.vars = () => [into, from, null_char, null_ascii, previous, start, end, i, ascii, $0];
-	if (live(null_char) === null) {
-		null_char = "_";
-	}
+	let ascii: Value = null;
+	null_char ??= "_";
 	f.dot = "";
-	if (!truthy(rt.call(f, P("/proc/istext"), null, [live(into)]))) {
+	if (!istext(into)) {
 		into = "";
 	}
-	if (!truthy(rt.call(f, P("/proc/istext"), null, [live(from)]))) {
+	if (!istext(from)) {
 		from = "";
 	}
-	if (truthy(rt.call(f, P("/proc/istext"), null, [live(null_char)]))) {
-		$0 = rt.call(f, P("/proc/text2ascii"), null, [live(null_char), 1]);
-	} else {
-		$0 = live(null_char);
-	}
-	null_ascii = $0;
-	previous = 0;
-	start = 1;
-	end = add(rt.length(live(into)), 1);
-	i = null;
-	i = 1;
-	while (rt.lt(live(i), live(end))) {
-		if (isEqual((ascii = rt.call(f, P("/proc/text2ascii"), null, [live(from), live(i)])), live(null_ascii))) {
-			if (!isEqual(live(previous), 1)) {
-				f.dot = rt.modify(live(f.dot), rt.call(f, P("/proc/copytext"), null, [live(from), live(start), live(i)]), add);
-				start = live(i);
+	let null_ascii: Value = istext(null_char) ? text2ascii(null_char, 1) : null_char;
+	let previous: Value = 0;
+	let start: Value = 1;
+	let end: Value = rt.length(into) + 1;
+	let i: Value = 1;
+	while (i < end) {
+		if ((ascii = text2ascii(from, i)) == null_ascii) {
+			if (previous != 1) {
+				f.dot += copytext(from, start, i);
+				start = i;
 				previous = 1;
 			}
-		} else {
-			if (!isEqual(live(previous), 0)) {
-				f.dot = rt.modify(live(f.dot), rt.call(f, P("/proc/copytext"), null, [live(into), live(start), live(i)]), add);
-				start = live(i);
-				previous = 0;
-			}
+		} else if (previous != 0) {
+			f.dot += copytext(into, start, i);
+			start = i;
+			previous = 0;
 		}
-		i = rt.inc(live(i), 1);
+		i++;
 	}
-	if (isEqual(live(previous), 0)) {
-		f.dot = rt.modify(live(f.dot), rt.call(f, P("/proc/copytext"), null, [live(from), live(start), live(end)]), add);
+	if (previous == 0) {
+		f.dot += copytext(from, start, end);
 	} else {
-		f.dot = rt.modify(live(f.dot), rt.call(f, P("/proc/copytext"), null, [live(into), live(start), live(end)]), add);
+		f.dot += copytext(into, start, end);
 	}
 	return f.dot;
 });
 
-// /proc/findchar  (code/__HELPERS/text.dm:407)
+// text.dm:407
 rt.def("/proc/findchar", function findchar(f: Frame, haystack: Value, needles: Value, start: Value, end: Value) {
-	let temp: Value = null, len: Value = null, i: Value = null;
-	f.vars = () => [start, end, temp, len, i];
-	if (live(start) === null) {
-		start = 1;
-	}
-	if (live(end) === null) {
-		end = 0;
-	}
-	temp = null;
-	len = rt.length(live(needles));
-	i = null;
-	i = 1;
-	while (rt.le(live(i), live(len))) {
-		if (truthy((temp = rt.call(f, P("/proc/findtextEx"), null, [live(haystack), rt.call(f, P("/proc/ascii2text"), null, [rt.call(f, P("/proc/text2ascii"), null, [live(needles), live(i)])]), live(start), live(end)])))) {
-			end = live(temp);
+	let temp: Value = null;
+	start ??= 1;
+	end ??= 0;
+	let len: Value = rt.length(needles);
+	let i: Value = 1;
+	while (i <= len) {
+		if (temp = findtextEx(haystack, ascii2text(text2ascii(needles, i)), start, end)) {
+			end = temp;
 		}
-		i = rt.inc(live(i), 1);
+		i++;
 	}
-	return live(end);
+	return end;
 });
 
-// /proc/parsepencode  (code/__HELPERS/text.dm:416)
+// text.dm:416
 rt.def("/proc/parsepencode", function parsepencode(f: Frame, t: Value, user: Value, signfont: Value) {
-	f.vars = () => [t, user, signfont];
-	if (live(user) === null) {
-		user = null;
+	signfont ??= "Times New Roman";
+	if (rt.length(t) < 1) {
+		return f.dot;
 	}
-	if (live(signfont) === null) {
-		signfont = "Times New Roman";
-	}
-	if (rt.lt(rt.length(live(t)), 1)) {
-		return live(f.dot);
-	}
-	t = rt.call(f, P("/proc/replacetext"), null, [(t = rt.call(f, P("/proc/replacetext"), null, [(t = rt.call(f, P("/proc/replacetext"), null, [(t = rt.call(f, P("/proc/replacetext"), null, [(t = rt.call(f, P("/proc/replacetext"), null, [(t = rt.call(f, P("/proc/replacetext"), null, [(t = rt.call(f, P("/proc/replacetext"), null, [(t = rt.call(f, P("/proc/replacetext"), null, [(t = rt.call(f, P("/proc/replacetext"), null, [(t = rt.call(f, P("/proc/replacetext"), null, [(t = rt.call(f, P("/proc/replacetext"), null, [live(t), "[center]", "<center>"])), "[/center]", "</center>"])), "[br]", "<BR>"])), "[b]", "<B>"])), "[/b]", "</B>"])), "[i]", "<I>"])), "[/i]", "</I>"])), "[u]", "<U>"])), "[/u]", "</U>"])), "[large]", "<font size=\"4\">"])), "[/large]", "</font>"]);
-	if (truthy(live(user))) {
-		t = rt.call(f, P("/proc/replacetext"), null, [live(t), "[sign]", fmt("<font face=\"＀\"><i>＀</i></font>", [live(signfont), rt.fv(f, "real_name", live(user))])]);
+	t = replacetext((t = replacetext((t = replacetext((t = replacetext((t = replacetext((t = replacetext((t = replacetext((t = replacetext((t = replacetext((t = replacetext((t = replacetext(t, "[center]", "<center>")), "[/center]", "</center>")), "[br]", "<BR>")), "[b]", "<B>")), "[/b]", "</B>")), "[i]", "<I>")), "[/i]", "</I>")), "[u]", "<U>")), "[/u]", "</U>")), "[large]", "<font size=\"4\">")), "[/large]", "</font>");
+	if (user) {
+		t = replacetext(t, "[sign]", `<font face="${signfont}"><i>${user.real_name}</i></font>`);
 	} else {
-		t = rt.call(f, P("/proc/replacetext"), null, [live(t), "[sign]", ""]);
+		t = replacetext(t, "[sign]", "");
 	}
-	return (t = rt.call(f, P("/proc/replacetext"), null, [(t = rt.call(f, P("/proc/replacetext"), null, [(t = rt.call(f, P("/proc/replacetext"), null, [(t = rt.call(f, P("/proc/replacetext"), null, [(t = rt.call(f, P("/proc/replacetext"), null, [(t = rt.call(f, P("/proc/replacetext"), null, [(t = rt.call(f, P("/proc/replacetext"), null, [live(t), "[field]", "<span class=\"paper_field\"></span>"])), "[*]", "<li>"])), "[hr]", "<HR>"])), "[small]", "<font size = \"1\">"])), "[/small]", "</font>"])), "[list]", "<ul>"])), "[/list]", "</ul>"]));
+	return (t = replacetext((t = replacetext((t = replacetext((t = replacetext((t = replacetext((t = replacetext((t = replacetext(t, "[field]", "<span class=\"paper_field\"></span>")), "[*]", "<li>")), "[hr]", "<HR>")), "[small]", "<font size = \"1\">")), "[/small]", "</font>")), "[list]", "<ul>")), "[/list]", "</ul>"));
 });
 
-// /proc/rot13  (code/__HELPERS/text.dm:448)
+// text.dm:448
 rt.def("/proc/rot13", function rot13(f: Frame, text: Value) {
-	let textlist: Value = null, result: Value = null, c: Value = null, ca: Value = null;
-	let $e: any;
-	f.vars = () => [text, textlist, result, c, ca, $e];
-	if (live(text) === null) {
-		text = "";
-	}
-	textlist = subtract(rt.call(f, P("/proc/splittext"), null, [live(text), rt.call(f, P("/proc/regex"), null, ["(.)"])]), rt.call(f, P("/proc/splittext"), null, [live(text), ""]));
-	result = rt.list();
-	c = null;
-	rt.forList(f, 0, live(textlist));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		c = $e;
-		if ((rt.ge((ca = rt.call(f, P("/proc/text2ascii"), null, [live(c)])), rt.call(f, P("/proc/text2ascii"), null, ["a"])) && rt.le(live(ca), rt.call(f, P("/proc/text2ascii"), null, ["m"])))) {
-			ca = rt.modify(live(ca), 13, add);
-		} else {
-			if ((rt.ge(live(ca), rt.call(f, P("/proc/text2ascii"), null, ["n"])) && rt.le(live(ca), rt.call(f, P("/proc/text2ascii"), null, ["z"])))) {
-				(ca = rt.modify(live(ca), 13, subtract));
-			} else {
-				if ((rt.ge(live(ca), rt.call(f, P("/proc/text2ascii"), null, ["A"])) && rt.le(live(ca), rt.call(f, P("/proc/text2ascii"), null, ["M"])))) {
-					ca = rt.modify(live(ca), 13, add);
-				} else {
-					if ((rt.ge(live(ca), rt.call(f, P("/proc/text2ascii"), null, ["N"])) && rt.le(live(ca), rt.call(f, P("/proc/text2ascii"), null, ["Z"])))) {
-						(ca = rt.modify(live(ca), 13, subtract));
-					}
-				}
-			}
+	let c: Value = null, ca: Value = null;
+	text ??= "";
+	let textlist: Value = splittext(text, regex("(.)")) - splittext(text, "");
+	let result: Value = list();
+	for (c of each(textlist)) {
+		if ((ca = text2ascii(c)) >= text2ascii("a") && ca <= text2ascii("m")) {
+			ca += 13;
+		} else if (ca >= text2ascii("n") && ca <= text2ascii("z")) {
+			ca -= 13;
+		} else if (ca >= text2ascii("A") && ca <= text2ascii("M")) {
+			ca += 13;
+		} else if (ca >= text2ascii("N") && ca <= text2ascii("Z")) {
+			ca -= 13;
 		}
-		result = rt.modify(live(result), rt.call(f, P("/proc/ascii2text"), null, [live(ca)]), add);
+		result += ascii2text(ca);
 	}
-	rt.endFor(f, 0);
-	return rt.call(f, P("/proc/jointext"), null, [live(result), ""]);
+	return jointext(result, "");
 });
 
-// /proc/apply_text_macros  (code/__HELPERS/text.dm:560)
+// text.dm:560
 rt.def("/proc/apply_text_macros", function apply_text_macros(f: Frame, string: Value) {
-	let next_backslash: Value = null, leng: Value = null, next_space: Value = null, base: Value = null, macro: Value = null, rest: Value = null;
-	let $0: any;
-	f.vars = () => [next_backslash, leng, next_space, base, macro, rest, $0];
-	if (!truthy((next_backslash = rt.call(f, P("/proc/findtext"), null, [live(string), "\\"])))) {
-		return live(string);
+	let next_backslash: Value = null, next_space: Value = null;
+	if (!(next_backslash = findtext(string, "\\"))) {
+		return string;
 	}
-	leng = rt.length(live(string));
-	if (!truthy((next_space = rt.call(f, P("/proc/findtext"), null, [live(string), " ", add(live(next_backslash), 1)])))) {
-		next_space = subtract(live(leng), live(next_backslash));
+	let leng: Value = rt.length(string);
+	if (!(next_space = findtext(string, " ", next_backslash + 1))) {
+		next_space = leng - next_backslash;
 	}
-	if (!truthy(live(next_space))) {
-		return live(string);
+	if (!next_space) {
+		return string;
 	}
-	if (isEqual(live(next_backslash), 1)) {
-		$0 = "";
-	} else {
-		$0 = rt.call(f, P("/proc/copytext"), null, [live(string), 1, live(next_backslash)]);
+	let base: Value = next_backslash == 1 ? "" : copytext(string, 1, next_backslash);
+	let macro: Value = lowertext(copytext(string, next_backslash + 1, next_space));
+	let rest: Value = next_backslash > leng ? "" : copytext(string, next_space + 1);
+	if (macro === "the") {
+		rest = fmt("％！", [rest]);
+	} else if (macro === "a") {
+		rest = fmt("＇！", [rest]);
+	} else if (macro === "an") {
+		rest = fmt("＇！", [rest]);
+	} else if (macro === "proper") {
+		rest = `ÿ\u0015${rest}`;
+	} else if (macro === "improper") {
+		rest = `ÿ\u0016${rest}`;
+	} else if (macro === "roman") {
+		rest = fmt("２ ！", [rest]);
+	} else if (macro === "th") {
+		base = fmt("＀４", [rest]);
+	} else if (macro === "s") {
+		base = fmt("＀５", [rest]);
+	} else if (macro === "he") {
+		base = fmt("＀）", [rest]);
+	} else if (macro === "she") {
+		base = fmt("＀）", [rest]);
+	} else if (macro === "his") {
+		base = fmt("＀＋", [rest]);
+	} else if (macro === "himself") {
+		base = fmt("＀－", [rest]);
+	} else if (macro === "herself") {
+		base = fmt("＀－", [rest]);
+	} else if (macro === "hers") {
+		base = fmt("＀／", [rest]);
 	}
-	base = $0;
-	macro = rt.call(f, P("/proc/lowertext"), null, [rt.call(f, P("/proc/copytext"), null, [live(string), add(live(next_backslash), 1), live(next_space)])]);
-	if (rt.gt(live(next_backslash), live(leng))) {
-		$0 = "";
-	} else {
-		$0 = rt.call(f, P("/proc/copytext"), null, [live(string), add(live(next_space), 1)]);
-	}
-	rest = $0;
-	$0 = live(macro);
-	if ($0 === "the") {
-		rest = fmt("％！", [live(rest)]);
-	} else if ($0 === "a") {
-		rest = fmt("＇！", [live(rest)]);
-	} else if ($0 === "an") {
-		rest = fmt("＇！", [live(rest)]);
-	} else if ($0 === "proper") {
-		rest = fmt("ÿ\u0015＀", [live(rest)]);
-	} else if ($0 === "improper") {
-		rest = fmt("ÿ\u0016＀", [live(rest)]);
-	} else if ($0 === "roman") {
-		rest = fmt("２ ！", [live(rest)]);
-	} else if ($0 === "th") {
-		base = fmt("＀４", [live(rest)]);
-	} else if ($0 === "s") {
-		base = fmt("＀５", [live(rest)]);
-	} else if ($0 === "he") {
-		base = fmt("＀）", [live(rest)]);
-	} else if ($0 === "she") {
-		base = fmt("＀）", [live(rest)]);
-	} else if ($0 === "his") {
-		base = fmt("＀＋", [live(rest)]);
-	} else if ($0 === "himself") {
-		base = fmt("＀－", [live(rest)]);
-	} else if ($0 === "herself") {
-		base = fmt("＀－", [live(rest)]);
-	} else if ($0 === "hers") {
-		base = fmt("＀／", [live(rest)]);
-	}
-	f.dot = live(base);
-	if (!truthy(live(rest))) return f.dot;
-	f.dot = rt.modify(live(f.dot), rt.callSelf(f, [live(rest)]), add);
+	f.dot = base;
+	if (!rest) return f.dot;
+	f.dot += rt.callSelf(f, [rest]);
 	return f.dot;
 });

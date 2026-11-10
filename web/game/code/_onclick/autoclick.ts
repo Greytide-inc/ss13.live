@@ -1,7 +1,7 @@
-// From code/_onclick/autoclick.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/_onclick/autoclick.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(4801, "/client", "/datum", {
@@ -102,96 +102,90 @@ rt.type(4801, "/client", "/datum", {
 	bound_height: null,
 }, { global: { void: 697 }, const: ["type"] });
 
-// /client/proc/<init>  (code/_onclick/autoclick.dm:2)
+// autoclick.dm:2
 rt.def("/client/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "selected_target", rt.op(f, "CreateMultidimensionalList", [1], [2]));
-	$0 = $0;
-	rt.setSv(f, "cache", rt.list());
-	$0 = $0;
-	rt.setSv(f, "completed_asset_jobs", rt.list());
-	$0 = $0;
-	rt.setSv(f, "sending", rt.list());
+	parent_proc();
+	this.selected_target = rt.op(f, "CreateMultidimensionalList", [1], [2]);
+
+	this.cache = list();
+
+	this.completed_asset_jobs = list();
+
+	this.sending = list();
 	return f.dot;
 });
 
-// /client/proc/MouseDown  (code/_onclick/autoclick.dm:10)  may sleep
+// autoclick.dm:10
 rt.def("/client/proc/MouseDown", function* MouseDown(f: Frame, object: Value, location: Value, control: Value, params: Value) {
 	let delay: Value = null;
-	f.vars = () => [object, location, control, params, delay];
-	if (truthy((delay = (yield* g.callName(f, rt.sv(f, "mob"), "CanMobAutoclick", [live(object), live(location), live(params)]))))) {
-		rt.setAt(rt.sv(f, "selected_target"), 1, live(object));
-		rt.setAt(rt.sv(f, "selected_target"), 2, live(params));
-		while (truthy(rt.index(rt.sv(f, "selected_target"), 1))) {
-			yield* g.srcCall(f, "Click", rt.index(rt.sv(f, "selected_target"), 1), live(location), live(control), rt.index(rt.sv(f, "selected_target"), 2));
-			yield* g.call(f, P("/proc/sleep"), null, [live(delay)]);
+	if (delay = this.mob.CanMobAutoclick(object, location, params)) {
+		rt.setAt(this.selected_target, 1, object);
+		rt.setAt(this.selected_target, 2, params);
+		while (rt.index(this.selected_target, 1)) {
+			yield* this.Click(rt.index(this.selected_target, 1), location, control, rt.index(this.selected_target, 2));
+			yield* sleep(delay);
 		}
 	}
-	rt.setSv(f, "active_mousedown_item", (yield* g.callName(f, rt.sv(f, "mob"), "canMobMousedown", [live(object), live(location), live(params)])));
-	if (!truthy(rt.sv(f, "active_mousedown_item"))) return f.dot;
-	yield* g.callName(f, rt.sv(f, "active_mousedown_item"), "onMouseDown", [live(object), live(location), live(params), rt.sv(f, "mob")]);
+	this.active_mousedown_item = this.mob.canMobMousedown(object, location, params);
+	if (!this.active_mousedown_item) return f.dot;
+	this.active_mousedown_item.onMouseDown(object, location, params, this.mob);
 	return f.dot;
 }, true);
 
-// /client/proc/MouseUp  (code/_onclick/autoclick.dm:22)  may sleep
+// autoclick.dm:22
 rt.def("/client/proc/MouseUp", function* MouseUp(f: Frame, object: Value, location: Value, control: Value, params: Value) {
-	f.vars = () => [object, location, control, params];
-	rt.setAt(rt.sv(f, "selected_target"), 1, null);
-	if (!truthy(rt.sv(f, "active_mousedown_item"))) return f.dot;
-	yield* g.callName(f, rt.sv(f, "active_mousedown_item"), "onMouseUp", [live(object), live(location), live(params), rt.sv(f, "mob")]);
-	rt.setSv(f, "active_mousedown_item", null);
+	rt.setAt(this.selected_target, 1, null);
+	if (!this.active_mousedown_item) return f.dot;
+	yield* this.active_mousedown_item.onMouseUp(object, location, params, this.mob);
+	this.active_mousedown_item = null;
 	return f.dot;
 }, true);
 
-// /client/proc/MouseDrag  (code/_onclick/autoclick.dm:28)
+// autoclick.dm:28
 rt.def("/client/proc/MouseDrag", function MouseDrag(f: Frame, src_object: Value, over_object: Value, src_location: Value, over_location: Value, src_control: Value, over_control: Value, params: Value) {
-	rt.setSv(f, "mouseParams", live(params));
-	rt.setSv(f, "mouseLocation", live(over_location));
-	rt.setSv(f, "mouseObject", live(over_object));
-	rt.setSv(f, "mouseControlObject", live(over_control));
-	if (((truthy(rt.index(rt.sv(f, "selected_target"), 1)) && truthy(live(over_object))) && truthy(rt.callName(f, live(over_object), "IsAutoclickable", [])))) {
-		rt.setAt(rt.sv(f, "selected_target"), 1, live(over_object));
-		rt.setAt(rt.sv(f, "selected_target"), 2, live(params));
+	this.mouseParams = params;
+	this.mouseLocation = over_location;
+	this.mouseObject = over_object;
+	this.mouseControlObject = over_control;
+	if (rt.index(this.selected_target, 1) && over_object && over_object.IsAutoclickable()) {
+		rt.setAt(this.selected_target, 1, over_object);
+		rt.setAt(this.selected_target, 2, params);
 	}
-	if (!truthy(rt.sv(f, "active_mousedown_item"))) return f.dot;
-	rt.callName(f, rt.sv(f, "active_mousedown_item"), "onMouseDrag", [live(src_object), live(over_object), live(src_location), live(over_location), live(params), rt.sv(f, "mob")]);
+	if (!this.active_mousedown_item) return f.dot;
+	this.active_mousedown_item.onMouseDrag(src_object, over_object, src_location, over_location, params, this.mob);
 	return f.dot;
 });
 
-// /mob/living/carbon/proc/CanMobAutoclick  (code/_onclick/autoclick.dm:41)
+// autoclick.dm:41
 rt.def("/mob/living/carbon/proc/CanMobAutoclick", function CanMobAutoclick(f: Frame, object: Value, location: Value, params: Value) {
 	let h: Value = null;
-	f.vars = () => [h];
-	if (!truthy(rt.callName(f, live(object), "IsAutoclickable", []))) {
-		return live(f.dot);
+	if (!object.IsAutoclickable()) {
+		return f.dot;
 	}
-	if (!truthy((h = rt.callSrc(f, "get_active_held_item", [])))) return f.dot;
-	f.dot = rt.callName(f, live(h), "CanItemAutoclick", [live(object), live(location), live(params)]);
+	if (!(h = this.get_active_held_item())) return f.dot;
+	f.dot = h.CanItemAutoclick(object, location, params);
 	return f.dot;
 });
 
-// /mob/living/carbon/proc/canMobMousedown  (code/_onclick/autoclick.dm:50)
+// autoclick.dm:50
 rt.def("/mob/living/carbon/proc/canMobMousedown", function canMobMousedown(f: Frame, object: Value, location: Value, params: Value) {
 	let H: Value = null;
-	f.vars = () => [H];
-	if (!truthy((H = rt.callSrc(f, "get_active_held_item", [])))) return f.dot;
-	f.dot = rt.callName(f, live(H), "canItemMouseDown", [live(object), live(location), live(params)]);
+	if (!(H = this.get_active_held_item())) return f.dot;
+	f.dot = H.canItemMouseDown(object, location, params);
 	return f.dot;
 });
 
-// /obj/item/weapon/gun/proc/CanItemAutoclick  (code/_onclick/autoclick.dm:76)
+// autoclick.dm:76
 rt.def("/obj/item/weapon/gun/proc/CanItemAutoclick", function CanItemAutoclick(f: Frame, object: Value, location: Value, params: Value) {
-	f.dot = rt.sv(f, "automatic");
+	f.dot = this.automatic;
 	return f.dot;
 });
 
-// /client/proc/MouseMove  (code/_onclick/autoclick.dm:89)
+// autoclick.dm:89
 rt.def("/client/proc/MouseMove", function MouseMove(f: Frame, object: Value, location: Value, control: Value, params: Value) {
-	rt.setSv(f, "mouseParams", live(params));
-	rt.setSv(f, "mouseLocation", live(location));
-	rt.setSv(f, "mouseObject", live(object));
-	rt.setSv(f, "mouseControlObject", live(control));
+	this.mouseParams = params;
+	this.mouseLocation = location;
+	this.mouseObject = object;
+	this.mouseControlObject = control;
 	return f.dot;
 });

@@ -1,141 +1,127 @@
-// From code/modules/mob/living/carbon/monkey/monkey.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/carbon/monkey/monkey.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
-// /mob/living/carbon/monkey/proc/Initialize  (code/modules/mob/living/carbon/monkey/monkey.dm:21)  may sleep
+// monkey.dm:21
 rt.def("/mob/living/carbon/monkey/proc/Initialize", function* Initialize(f: Frame) {
-	rt.modSrcVar(f, "verbs", P("/mob/living/proc/mob_sleep"), add);
-	rt.modSrcVar(f, "verbs", P("/mob/living/proc/lay_down"), add);
-	if (truthy(rt.sv(f, "unique_name"))) {
-		rt.setSv(f, "gender", rt.op(f, "PickUnweighted", [2], ["male", "female"]));
+	this.verbs += P("/mob/living/proc/mob_sleep");
+	this.verbs += P("/mob/living/proc/lay_down");
+	if (this.unique_name) {
+		this.gender = pick("male", "female");
 	}
-	rt.setSv(f, "real_name", rt.sv(f, "name"));
-	yield* g.srcCall(f, "create_bodyparts");
-	yield* g.srcCall(f, "create_internal_organs");
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.srcCall(f, "create_dna", live(f.src));
-	yield* g.callName(f, rt.sv(f, "dna"), "initialize_dna", [(yield* g.call(f, P("/proc/random_blood_type"), null, []))]);
+	this.real_name = this.name;
+	yield* this.create_bodyparts();
+	yield* this.create_internal_organs();
+	f.dot = (yield* parent_proc());
+	yield* this.create_dna(this);
+	yield* this.dna.initialize_dna(random_blood_type());
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/monkey/proc/create_internal_organs  (code/modules/mob/living/carbon/monkey/monkey.dm:39)  may sleep
+// monkey.dm:39
 rt.def("/mob/living/carbon/monkey/proc/create_internal_organs", function* create_internal_organs(f: Frame) {
-	rt.modSrcVar(f, "internal_organs", (yield* g.new_(f, T("/obj/item/organ/appendix"), [])), add);
-	rt.modSrcVar(f, "internal_organs", (yield* g.new_(f, T("/obj/item/organ/lungs"), [])), add);
-	rt.modSrcVar(f, "internal_organs", (yield* g.new_(f, T("/obj/item/organ/heart"), [])), add);
-	rt.modSrcVar(f, "internal_organs", (yield* g.new_(f, T("/obj/item/organ/brain"), [])), add);
-	rt.modSrcVar(f, "internal_organs", (yield* g.new_(f, T("/obj/item/organ/tongue"), [])), add);
-	rt.modSrcVar(f, "internal_organs", (yield* g.new_(f, T("/obj/item/organ/eyes"), [])), add);
-	rt.modSrcVar(f, "internal_organs", (yield* g.new_(f, T("/obj/item/organ/ears"), [])), add);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	this.internal_organs += (yield* new_(T("/obj/item/organ/appendix")));
+	this.internal_organs += (yield* new_(T("/obj/item/organ/lungs")));
+	this.internal_organs += (yield* new_(T("/obj/item/organ/heart")));
+	this.internal_organs += (yield* new_(T("/obj/item/organ/brain")));
+	this.internal_organs += (yield* new_(T("/obj/item/organ/tongue")));
+	this.internal_organs += (yield* new_(T("/obj/item/organ/eyes")));
+	this.internal_organs += (yield* new_(T("/obj/item/organ/ears")));
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/monkey/proc/movement_delay  (code/modules/mob/living/carbon/monkey/monkey.dm:50)
+// monkey.dm:50
 rt.def("/mob/living/carbon/monkey/proc/movement_delay", function movement_delay(f: Frame) {
 	let health_deficiency: Value = null;
-	f.vars = () => [health_deficiency];
-	if (truthy(rt.sv(f, "reagents"))) {
-		if (truthy(rt.callName(f, rt.sv(f, "reagents"), "has_reagent", ["morphine"]))) {
+	if (this.reagents) {
+		if (this.reagents.has_reagent("morphine")) {
 			return -1;
 		}
-		if (truthy(rt.callName(f, rt.sv(f, "reagents"), "has_reagent", ["nuka_cola"]))) {
+		if (this.reagents.has_reagent("nuka_cola")) {
 			return -1;
 		}
 	}
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	if (rt.ge((health_deficiency = subtract(100, rt.sv(f, "health"))), 45)) {
-		f.dot = rt.modify(live(f.dot), divide(live(health_deficiency), 25), add);
+	f.dot = parent_proc();
+	if ((health_deficiency = 100 - this.health) >= 45) {
+		f.dot += health_deficiency / 25;
 	}
-	if (rt.lt(rt.sv(f, "bodytemperature"), 283.22198486328125)) {
-		f.dot = rt.modify(live(f.dot), multiply(divide(subtract(283.22198486328125, rt.sv(f, "bodytemperature")), 10), 1.75), add);
+	if (this.bodytemperature < 283.222) {
+		f.dot += (283.222 - this.bodytemperature) / 10 * 1.75;
 	}
-	return add(live(f.dot), rt.fv(f, "monkey_delay", rt.gl("config")));
+	return f.dot + GLOB.config.monkey_delay;
 });
 
-// /mob/living/carbon/monkey/proc/Stat  (code/modules/mob/living/carbon/monkey/monkey.dm:66)  may sleep
+// monkey.dm:66
 rt.def("/mob/living/carbon/monkey/proc/Stat", function* Stat(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy((yield* g.call(f, P("/proc/statpanel"), null, ["Status"])))) {
-		yield* g.call(f, P("/proc/stat"), null, [null, fmt("Intent: ＀", [rt.sv(f, "a_intent")])]);
-		yield* g.call(f, P("/proc/stat"), null, [null, fmt("Move Mode: ＀", [rt.sv(f, "m_intent")])]);
-		if ((truthy(rt.sv(f, "client")) && truthy(rt.sv(f, "mind")))) {
-			if (truthy(rt.fv(f, "changeling", rt.sv(f, "mind")))) {
-				yield* g.call(f, P("/proc/stat"), null, ["Chemical Storage", fmt("＀/＀", [rt.gv(f, "chem_charges", rt.fv(f, "changeling", rt.sv(f, "mind"))), rt.gv(f, "chem_storage", rt.fv(f, "changeling", rt.sv(f, "mind")))])]);
-				yield* g.call(f, P("/proc/stat"), null, ["Absorbed DNA", rt.gv(f, "absorbedcount", rt.fv(f, "changeling", rt.sv(f, "mind")))]);
+	yield* parent_proc();
+	if (statpanel("Status")) {
+		stat(null, `Intent: ${this.a_intent}`);
+		stat(null, `Move Mode: ${this.m_intent}`);
+		if (this.client && this.mind) {
+			if (this.mind.changeling) {
+				stat("Chemical Storage", `${this.mind.changeling.chem_charges}/${this.mind.changeling.chem_storage}`);
+				stat("Absorbed DNA", this.mind.changeling.absorbedcount);
 			}
 		}
 	}
-	return live(f.dot);
+	return f.dot;
 }, true);
 
-// /mob/living/carbon/monkey/proc/assess_threat  (code/modules/mob/living/carbon/monkey/monkey.dm:94)  may sleep
+// monkey.dm:94
 rt.def("/mob/living/carbon/monkey/proc/assess_threat", function* assess_threat(f: Frame, judgement_criteria: Value, lasercolor: Value, weaponcheck: Value) {
-	let threatcount: Value = null, I: Value = null;
-	let $e: any;
-	f.vars = () => [judgement_criteria, lasercolor, weaponcheck, threatcount, I, $e];
-	if (live(lasercolor) === null) {
-		lasercolor = "";
-	}
-	if (live(weaponcheck) === null) {
-		weaponcheck = null;
-	}
-	if (truthy(rt.bitAnd(live(judgement_criteria), 1))) {
+	let I: Value = null;
+	lasercolor ??= "";
+	if (rt.bitAnd(judgement_criteria, JUDGE_EMAGGED)) {
 		return 10;
 	}
-	threatcount = 0;
-	if ((!truthy(rt.bitAnd(live(judgement_criteria), 16)) && truthy(rt.bitAnd(live(judgement_criteria), 2)))) {
-		threatcount = rt.modify(live(threatcount), 4, add);
+	let threatcount: Value = 0;
+	if (!rt.bitAnd(judgement_criteria, JUDGE_IGNOREMONKEYS) && rt.bitAnd(judgement_criteria, JUDGE_IDCHECK)) {
+		threatcount += 4;
 	}
-	if (truthy(live(lasercolor))) {
-		if (isEqual(live(lasercolor), "b")) {
-			if (truthy((yield* g.srcCall(f, "is_holding_item_of_type", T("/obj/item/weapon/gun/energy/laser/redtag"))))) {
-				threatcount = rt.modify(live(threatcount), 4, add);
+	if (lasercolor) {
+		if (lasercolor == "b") {
+			if (this.is_holding_item_of_type(T("/obj/item/weapon/gun/energy/laser/redtag"))) {
+				threatcount += 4;
 			}
 		}
-		if (isEqual(live(lasercolor), "r")) {
-			if (truthy((yield* g.srcCall(f, "is_holding_item_of_type", T("/obj/item/weapon/gun/energy/laser/bluetag"))))) {
-				threatcount = rt.modify(live(threatcount), 4, add);
+		if (lasercolor == "r") {
+			if (this.is_holding_item_of_type(T("/obj/item/weapon/gun/energy/laser/bluetag"))) {
+				threatcount += 4;
 			}
 		}
-		return live(threatcount);
+		return threatcount;
 	}
-	if ((truthy(rt.bitAnd(live(judgement_criteria), 4)) && truthy(live(weaponcheck)))) {
-		I = null;
-		rt.forList(f, 0, rt.sv(f, "held_items"), T("/obj/item"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			I = $e;
-			if (truthy((yield* g.callName(f, live(weaponcheck), "Invoke", [live(I)])))) {
-				threatcount = rt.modify(live(threatcount), 4, add);
+	if (rt.bitAnd(judgement_criteria, JUDGE_WEAPONCHECK) && weaponcheck) {
+		for (I of each(this.held_items, T("/obj/item"))) {
+			if (yield* weaponcheck.Invoke(I)) {
+				threatcount += 4;
 			}
 		}
-		rt.endFor(f, 0);
 	}
-	if (truthy((yield* g.srcCall(f, "isloyal")))) {
-		(threatcount = rt.modify(live(threatcount), 1, subtract));
+	if (this.isloyal()) {
+		threatcount -= 1;
 	}
-	return live(threatcount);
+	return threatcount;
 }, true);
 
-// /mob/living/carbon/monkey/proc/get_permeability_protection  (code/modules/mob/living/carbon/monkey/monkey.dm:130)
+// monkey.dm:130
 rt.def("/mob/living/carbon/monkey/proc/get_permeability_protection", function get_permeability_protection(f: Frame) {
-	let protection: Value = null;
-	f.vars = () => [protection];
-	protection = 0;
-	if (truthy(rt.sv(f, "head"))) {
-		protection = subtract(1, rt.fv(f, "permeability_coefficient", rt.sv(f, "head")));
+	let protection: Value = 0;
+	if (this.head) {
+		protection = 1 - this.head.permeability_coefficient;
 	}
-	if (truthy(rt.sv(f, "wear_mask"))) {
-		protection = rt.call(f, P("/proc/max"), null, [subtract(1, rt.fv(f, "permeability_coefficient", rt.sv(f, "wear_mask"))), live(protection)]);
+	if (this.wear_mask) {
+		protection = max(1 - this.wear_mask.permeability_coefficient, protection);
 	}
-	return (protection = divide(live(protection), 7));
+	return (protection = protection / 7);
 });
 
-// /mob/living/carbon/monkey/proc/IsVocal  (code/modules/mob/living/carbon/monkey/monkey.dm:137)
+// monkey.dm:137
 rt.def("/mob/living/carbon/monkey/proc/IsVocal", function IsVocal(f: Frame) {
-	if (!truthy(rt.callSrc(f, "getorganslot", ["lungs"]))) {
+	if (!this.getorganslot("lungs")) {
 		return 0;
 	}
 	return 1;
@@ -145,13 +131,12 @@ rt.type(4820, "/mob/living/carbon/monkey/angry", "/mob/living/carbon/monkey", {
 	aggressive: 1,
 });
 
-// /mob/living/carbon/monkey/angry/proc/Initialize  (code/modules/mob/living/carbon/monkey/monkey.dm:148)  may sleep
+// monkey.dm:148
 rt.def("/mob/living/carbon/monkey/angry/proc/Initialize", function* Initialize(f: Frame) {
 	let helmet: Value = null;
-	f.vars = () => [helmet];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.op(f, "Prob", [], [10]))) return f.dot;
-	yield* g.srcCall(f, "equip_to_slot_or_del", (helmet = (yield* g.new_(f, T("/obj/item/clothing/head/helmet/justice/escape"), [live(f.src)]))), 11);
-	yield* g.callName(f, live(helmet), "attack_self", [live(f.src)]);
+	yield* parent_proc();
+	if (!prob(10)) return f.dot;
+	yield* this.equip_to_slot_or_del((helmet = (yield* new_(T("/obj/item/clothing/head/helmet/justice/escape"), this))), slot_head);
+	yield* helmet.attack_self(this);
 	return f.dot;
 }, true);

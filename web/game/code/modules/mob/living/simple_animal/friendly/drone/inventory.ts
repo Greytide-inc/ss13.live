@@ -1,95 +1,86 @@
-// From code/modules/mob/living/simple_animal/friendly/drone/inventory.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/simple_animal/friendly/drone/inventory.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
-// /mob/living/simple_animal/drone/proc/doUnEquip  (code/modules/mob/living/simple_animal/friendly/drone/inventory.dm:10)  may sleep
-rt.def("/mob/living/simple_animal/drone/proc/doUnEquip", function* doUnEquip(f: Frame) {
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		yield* g.srcCall(f, "update_inv_hands");
-		if (isEqual(live(f.args[0]), rt.sv(f, "head"))) {
-			rt.setSv(f, "head", null);
-			yield* g.srcCall(f, "update_inv_head");
+// inventory.dm:10
+rt.def("/mob/living/simple_animal/drone/proc/doUnEquip", function* doUnEquip(f: Frame, I: Value, force: Value) {
+	if (yield* parent_proc()) {
+		yield* this.update_inv_hands();
+		if (I == this.head) {
+			this.head = null;
+			yield* this.update_inv_head();
 		}
-		if (isEqual(live(f.args[0]), rt.sv(f, "internal_storage"))) {
-			rt.setSv(f, "internal_storage", null);
-			yield* g.srcCall(f, "update_inv_internal_storage");
+		if (I == this.internal_storage) {
+			this.internal_storage = null;
+			this.update_inv_internal_storage();
 		}
 		return 1;
 	}
 	return 0;
-}, true, { args: ["I", "force"] });
+}, true);
 
-// /mob/living/simple_animal/drone/proc/can_equip  (code/modules/mob/living/simple_animal/friendly/drone/inventory.dm:23)
-rt.def("/mob/living/simple_animal/drone/proc/can_equip", function can_equip(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = live(f.args[1]);
-	if ($0 === 11) {
-		if (truthy(rt.sv(f, "head"))) {
+// inventory.dm:23
+rt.def("/mob/living/simple_animal/drone/proc/can_equip", function can_equip(f: Frame, I: Value, slot: Value) {
+	if (slot === slot_head) {
+		if (this.head) {
 			return 0;
 		}
-		if (!(truthy(rt.bitAnd(rt.fv(f, "slot_flags", live(f.args[0])), 64)) || truthy(rt.bitAnd(rt.fv(f, "slot_flags", live(f.args[0])), 32)))) {
+		if (!(rt.bitAnd(I.slot_flags, SLOT_HEAD) || rt.bitAnd(I.slot_flags, SLOT_MASK))) {
 			return 0;
 		}
 		return 1;
-	} else if ($0 === 20) {
-		if (truthy(rt.sv(f, "internal_storage"))) {
+	} else if (slot === slot_generic_dextrous_storage) {
+		if (this.internal_storage) {
 			return 0;
 		}
 		return 1;
 	}
-	rt.callSuper(f, [], rt.Args.Same);
+	parent_proc();
 	return f.dot;
-}, false, { args: ["I", "slot"] });
+}, false);
 
-// /mob/living/simple_animal/drone/proc/get_item_by_slot  (code/modules/mob/living/simple_animal/friendly/drone/inventory.dm:38)
-rt.def("/mob/living/simple_animal/drone/proc/get_item_by_slot", function get_item_by_slot(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = live(f.args[0]);
-	if ($0 === 11) {
-		return rt.sv(f, "head");
-	} else if ($0 === 20) {
-		return rt.sv(f, "internal_storage");
+// inventory.dm:38
+rt.def("/mob/living/simple_animal/drone/proc/get_item_by_slot", function get_item_by_slot(f: Frame, slot_id: Value) {
+	if (slot_id === slot_head) {
+		return this.head;
+	} else if (slot_id === slot_generic_dextrous_storage) {
+		return this.internal_storage;
 	}
-	return rt.callSuper(f, [], rt.Args.Same);
-}, false, { args: ["slot_id"] });
+	return parent_proc();
+}, false);
 
-// /mob/living/simple_animal/drone/proc/equip_to_slot  (code/modules/mob/living/simple_animal/friendly/drone/inventory.dm:47)  may sleep
+// inventory.dm:47
 rt.def("/mob/living/simple_animal/drone/proc/equip_to_slot", function* equip_to_slot(f: Frame, I: Value, slot: Value) {
 	let index: Value = null;
-	let $0: any;
-	f.vars = () => [I, slot, index, $0];
-	if (!truthy(live(slot))) {
-		return live(f.dot);
+	if (!slot) {
+		return f.dot;
 	}
-	if (!truthy((rt.istype(live(I), T("/obj/item")) ? 1 : 0))) {
-		return live(f.dot);
+	if (!rt.istype(I, T("/obj/item"))) {
+		return f.dot;
 	}
-	if (truthy((index = (yield* g.srcCall(f, "get_held_index_of_item", live(I)))))) {
-		rt.setAt(rt.sv(f, "held_items"), live(index), null);
+	if (index = this.get_held_index_of_item(I)) {
+		rt.setAt(this.held_items, index, null);
 	}
-	yield* g.srcCall(f, "update_inv_hands");
-	if (truthy(rt.fv(f, "pulledby", live(I)))) {
-		yield* g.callName(f, rt.fv(f, "pulledby", live(I)), "stop_pulling", []);
+	yield* this.update_inv_hands();
+	if (I.pulledby) {
+		yield* I.pulledby.stop_pulling();
 	}
-	rt.setFv(f, "screen_loc", live(I), null);
-	rt.setFv(f, "loc", live(I), live(f.src));
-	rt.setFv(f, "layer", live(I), 20);
-	rt.setFv(f, "plane", live(I), 20);
-	$0 = live(slot);
-	if ($0 === 11) {
-		rt.setSv(f, "head", live(I));
-		yield* g.srcCall(f, "update_inv_head");
-	} else if ($0 === 20) {
-		rt.setSv(f, "internal_storage", live(I));
-		yield* g.srcCall(f, "update_inv_internal_storage");
+	I.screen_loc = null;
+	I.loc = this;
+	I.layer = ABOVE_HUD_LAYER;
+	I.plane = ABOVE_HUD_PLANE;
+	if (slot === slot_head) {
+		this.head = I;
+		yield* this.update_inv_head();
+	} else if (slot === slot_generic_dextrous_storage) {
+		this.internal_storage = I;
+		this.update_inv_internal_storage();
 	} else {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='danger'>You are trying to equip this item to an unsupported inventory slot. Report this to a coder!</span>"]);
-		return live(f.dot);
+		to_chat(this, "<span class='danger'>You are trying to equip this item to an unsupported inventory slot. Report this to a coder!</span>");
+		return f.dot;
 	}
-	yield* g.callName(f, live(I), "equipped", [live(f.src), live(slot)]);
+	yield* I.equipped(this, slot);
 	return f.dot;
 }, true);

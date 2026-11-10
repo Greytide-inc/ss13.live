@@ -1,5 +1,5 @@
 // Types declared in code/game/objects/structures/crates_lockers/crates that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(12270, "/obj/structure/closet/crate/secure/weapon", "/obj/structure/closet/crate/secure", {
 	desc: "A secure weapons crate.",

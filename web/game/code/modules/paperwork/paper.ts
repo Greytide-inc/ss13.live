@@ -1,7 +1,7 @@
-// From code/modules/paperwork/paper.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/paperwork/paper.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(6562, "/obj/item/weapon/paper", "/obj/item/weapon", {
@@ -32,403 +32,377 @@ rt.type(6562, "/obj/item/weapon/paper", "/obj/item/weapon", {
 	dog_fashion: rt.typePath("/datum/dog_fashion/head"),
 });
 
-// /obj/item/weapon/paper/proc/pickup  (code/modules/paperwork/paper.dm:38)  may sleep
-rt.def("/obj/item/weapon/paper/proc/pickup", function* pickup(f: Frame) {
+// paper.dm:38
+rt.def("/obj/item/weapon/paper/proc/pickup", function* pickup(f: Frame, user: Value) {
 	let H: Value = null, G: Value = null;
-	f.vars = () => [H, G];
-	if ((truthy(rt.sv(f, "contact_poison")) && truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon/human")) ? 1 : 0)))) {
-		H = live(f.args[0]);
-		if ((!truthy((rt.istype((G = rt.fv(f, "gloves", live(H))), T("/obj/item/clothing/gloves")) ? 1 : 0)) || truthy(rt.fv(f, "transfer_prints", live(G))))) {
-			yield* g.callName(f, rt.fv(f, "reagents", live(H)), "add_reagent", [rt.sv(f, "contact_poison"), rt.sv(f, "contact_poison_volume")]);
-			rt.setSv(f, "contact_poison", null);
+	if (this.contact_poison && rt.istype(user, T("/mob/living/carbon/human"))) {
+		H = user;
+		if (!rt.istype((G = H.gloves), T("/obj/item/clothing/gloves")) || G.transfer_prints) {
+			yield* H.reagents.add_reagent(this.contact_poison, this.contact_poison_volume);
+			this.contact_poison = null;
 		}
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	return f.dot;
-}, true, { args: ["user"] });
-
-// /obj/item/weapon/paper/proc/Initialize  (code/modules/paperwork/paper.dm:48)  may sleep
-rt.def("/obj/item/weapon/paper/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "pixel_y", (yield* g.call(f, P("/proc/rand"), null, [-8, 8])));
-	rt.setSv(f, "pixel_x", (yield* g.call(f, P("/proc/rand"), null, [-9, 9])));
-	yield* g.srcCall(f, "update_icon");
-	yield* g.srcCall(f, "updateinfolinks");
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/paper/proc/update_icon  (code/modules/paperwork/paper.dm:57)
+// paper.dm:48
+rt.def("/obj/item/weapon/paper/proc/Initialize", function* Initialize(f: Frame) {
+	f.dot = (yield* parent_proc());
+	this.pixel_y = rand(-8, 8);
+	this.pixel_x = rand(-9, 9);
+	yield* this.update_icon();
+	this.updateinfolinks();
+	return f.dot;
+}, true);
+
+// paper.dm:57
 rt.def("/obj/item/weapon/paper/proc/update_icon", function update_icon(f: Frame) {
-	if (truthy(rt.bitAnd(rt.sv(f, "resistance_flags"), 8))) {
-		rt.setSv(f, "icon_state", "paper_onfire");
-		return live(f.dot);
+	if (rt.bitAnd(this.resistance_flags, 8)) {
+		this.icon_state = "paper_onfire";
+		return f.dot;
 	}
-	if (truthy(rt.sv(f, "info"))) {
-		rt.setSv(f, "icon_state", "paper_words");
-		return live(f.dot);
+	if (this.info) {
+		this.icon_state = "paper_words";
+		return f.dot;
 	}
-	rt.setSv(f, "icon_state", "paper");
+	this.icon_state = "paper";
 	return f.dot;
 });
 
-// /obj/item/weapon/paper/proc/examine  (code/modules/paperwork/paper.dm:67)  may sleep
-rt.def("/obj/item/weapon/paper/proc/examine", function* examine(f: Frame) {
+// paper.dm:67
+rt.def("/obj/item/weapon/paper/proc/examine", function* examine(f: Frame, user: Value) {
 	let assets: Value = null;
-	f.vars = () => [assets];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.callName(f, (assets = (yield* g.call(f, P("/proc/get_asset_datum"), null, [T("/datum/asset/simple/paper")]))), "send", [live(f.args[0])]);
-	if (truthy((rt.istype(live(f.src), T("/obj/item/weapon/paper/talisman")) ? 1 : 0))) {
-		if ((!truthy((yield* g.call(f, P("/proc/iscultist"), null, [live(f.args[0])]))) && !truthy(rt.fv(f, "stat", live(f.args[0]))))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='danger'>There are indecipherable images scrawled on the paper in what looks to be... <i>blood?</i></span>"]);
-			return live(f.dot);
+	yield* parent_proc();
+	yield* (assets = (yield* get_asset_datum(T("/datum/asset/simple/paper")))).send(user);
+	if (rt.istype(this, T("/obj/item/weapon/paper/talisman"))) {
+		if (!iscultist(user) && !user.stat) {
+			to_chat(user, "<span class='danger'>There are indecipherable images scrawled on the paper in what looks to be... <i>blood?</i></span>");
+			return f.dot;
 		}
 	}
-	if ((rt.le((yield* g.call(f, P("/proc/get_dist"), null, [live(f.args[0]), live(f.src)])), 1) || truthy((rt.istype(live(f.args[0]), T("/mob/dead/observer")) ? 1 : 0)))) {
-		if (truthy((yield* g.callName(f, live(f.args[0]), "is_literate", [])))) {
-			rt.op(f, "Browse", [], [live(f.args[0]), fmt("<HTML><HEAD><TITLE>＀</TITLE></HEAD><BODY>＀<HR>＀</BODY></HTML>", [rt.sv(f, "name"), rt.sv(f, "info"), rt.sv(f, "stamps")]), fmt("window=＀", [rt.sv(f, "name")])], false);
-			yield* g.call(f, P("/proc/onclose"), null, [live(f.args[0]), fmt("＀", [rt.sv(f, "name")])]);
+	if (get_dist(user, this) <= 1 || rt.istype(user, T("/mob/dead/observer"))) {
+		if (user.is_literate()) {
+			rt.op(f, "Browse", [], [user, `<HTML><HEAD><TITLE>${this.name}</TITLE></HEAD><BODY>${this.info}<HR>${this.stamps}</BODY></HTML>`, `window=${this.name}`], false);
+			onclose(user, `${this.name}`);
 		} else {
-			rt.op(f, "Browse", [], [live(f.args[0]), fmt("<HTML><HEAD><TITLE>＀</TITLE></HEAD><BODY>＀<HR>＀</BODY></HTML>", [rt.sv(f, "name"), (yield* g.call(f, P("/proc/stars"), null, [rt.sv(f, "info")])), rt.sv(f, "stamps")]), fmt("window=＀", [rt.sv(f, "name")])], false);
-			yield* g.call(f, P("/proc/onclose"), null, [live(f.args[0]), fmt("＀", [rt.sv(f, "name")])]);
+			rt.op(f, "Browse", [], [user, `<HTML><HEAD><TITLE>${this.name}</TITLE></HEAD><BODY>${stars(this.info)}<HR>${this.stamps}</BODY></HTML>`, `window=${this.name}`], false);
+			onclose(user, `${this.name}`);
 		}
 	} else {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='notice'>It is too far away.</span>"]);
+		to_chat(user, "<span class='notice'>It is too far away.</span>");
 	}
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /obj/item/weapon/paper/verb/rename  (code/modules/paperwork/paper.dm:91)  may sleep
+// paper.dm:91
 rt.def("/obj/item/weapon/paper/verb/rename", function* rename(f: Frame) {
-	let H: Value = null, n_name: Value = null;
-	let $0: any;
-	f.vars = () => [H, n_name, $0];
-	if ((truthy((yield* g.callName(f, live(f.usr), "incapacitated", []))) || !truthy((yield* g.callName(f, live(f.usr), "is_literate", []))))) {
-		return live(f.dot);
+	let H: Value = null;
+	if (f.usr.incapacitated() || !f.usr.is_literate()) {
+		return f.dot;
 	}
-	if (truthy((rt.istype(live(f.usr), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		if ((truthy(rt.bitAnd(rt.gv(f, "disabilities", (H = live(f.usr))), 256)) && truthy(rt.op(f, "Prob", [], [25])))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(H), "<span class='warning'>You cut yourself on the paper! Ahhhh! Ahhhhh!</span>"]);
-			rt.setFv(f, "damageoverlaytemp", live(H), 9001);
-			yield* g.callName(f, live(H), "update_damage_hud", []);
-			return live(f.dot);
+	if (rt.istype(f.usr, T("/mob/living/carbon/human"))) {
+		if (rt.bitAnd((H = f.usr).disabilities, 256) && prob(25)) {
+			to_chat(H, "<span class='warning'>You cut yourself on the paper! Ahhhh! Ahhhhh!</span>");
+			H.damageoverlaytemp = 9001;
+			yield* H.update_damage_hud();
+			return f.dot;
 		}
 	}
-	n_name = (yield* g.call(f, P("/proc/stripped_input"), null, [live(f.usr), "What would you like to label the paper?", "Paper Labelling", null, 42]));
-	if ((isEqual(rt.sv(f, "loc"), live(f.usr)) && isEqual(rt.fv(f, "stat", live(f.usr)), 0))) {
-		if (truthy(live(n_name))) {
-			$0 = fmt("- '＀'", [live(n_name)]);
-		} else {
-			$0 = null;
-		}
-		rt.setSv(f, "name", fmt("paper＀", [$0]));
+	let n_name: Value = (yield* stripped_input(f.usr, "What would you like to label the paper?", "Paper Labelling", null, 42));
+	if (this.loc == f.usr && f.usr.stat == 0) {
+		this.name = `paper${n_name ? `- '${n_name}'` : null}`;
 	}
-	yield* g.srcCall(f, "add_fingerprint", live(f.usr));
+	yield* this.add_fingerprint(f.usr);
 	return f.dot;
 }, true, { verb: { name: "Rename paper", category: "Object", src: 11 } });
 
-// /obj/item/weapon/paper/proc/suicide_act  (code/modules/paperwork/paper.dm:106)
+// paper.dm:106
 rt.def("/obj/item/weapon/paper/proc/suicide_act", function suicide_act(f: Frame, user: Value) {
-	rt.callName(f, live(user), "visible_message", [fmt("<span class='suicide'>＀ scratches a grid on ＀ wrist with the paper! It looks like ＀ trying to commit sudoku...</span>", [live(user), rt.callName(f, live(user), "p_their", []), rt.callName(f, live(user), "p_theyre", [])])]);
+	user.visible_message(`<span class='suicide'>${user} scratches a grid on ${user.p_their()} wrist with the paper! It looks like ${user.p_theyre()} trying to commit sudoku...</span>`);
 	return 1;
 });
 
-// /obj/item/weapon/paper/proc/attack_self  (code/modules/paperwork/paper.dm:110)  may sleep
+// paper.dm:110
 rt.def("/obj/item/weapon/paper/proc/attack_self", function* attack_self(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.callName(f, live(user), "examinate", [live(f.src)]);
-	if (!(truthy(rt.sv(f, "rigged")) && (truthy(rt.fv(f, "holidays", rt.gl("SSevents"))) && truthy(rt.index(rt.fv(f, "holidays", rt.gl("SSevents")), "April Fool's Day"))))) return f.dot;
-	if (!isEqual(rt.sv(f, "spam_flag"), 0)) return f.dot;
-	rt.setSv(f, "spam_flag", 1);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/items/bikehorn.ogg"), 50, 1]);
+	yield* user.examinate(this);
+	if (!(this.rigged && GLOB.SSevents.holidays && rt.index(GLOB.SSevents.holidays, "April Fool's Day"))) return f.dot;
+	if (this.spam_flag != 0) return f.dot;
+	this.spam_flag = 1;
+	playsound(this.loc, rt.rsc("sound/items/bikehorn.ogg"), 50, 1);
 	rt.spawnTail(f, 20, "/obj/item/weapon/paper/proc/attack_self: spawn at modules/paperwork/paper.dm:115", user);
 	return f.dot;
 }, true);
 
 // a spawn(20) body of /obj/item/weapon/paper/proc/attack_self, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/obj/item/weapon/paper/proc/attack_self: spawn at modules/paperwork/paper.dm:115", function* (f: Frame, user: Value) {
-	f.vars = () => [user];
-	rt.setSv(f, "spam_flag", 0);
+	this.spam_flag = 0;
 	return null;
 });
 
-// /obj/item/weapon/paper/proc/attack_ai  (code/modules/paperwork/paper.dm:121)
+// paper.dm:121
 rt.def("/obj/item/weapon/paper/proc/attack_ai", function attack_ai(f: Frame, user: Value) {
 	let dist: Value = null;
-	f.vars = () => [dist];
-	dist = null;
-	if ((truthy((rt.istype(live(user), T("/mob/living/silicon/ai")) ? 1 : 0)) && truthy(rt.fv(f, "current", live(user))))) {
-		dist = rt.call(f, P("/proc/get_dist"), null, [live(f.src), rt.fv(f, "current", live(user))]);
+	if (rt.istype(user, T("/mob/living/silicon/ai")) && user.current) {
+		dist = get_dist(this, user.current);
 	} else {
-		dist = rt.call(f, P("/proc/get_dist"), null, [live(f.src), live(user)]);
+		dist = get_dist(this, user);
 	}
-	if (rt.lt(live(dist), 2)) {
-		rt.op(f, "Browse", [], [live(f.usr), fmt("<HTML><HEAD><TITLE>＀</TITLE></HEAD><BODY>＀<HR>＀</BODY></HTML>", [rt.sv(f, "name"), rt.sv(f, "info"), rt.sv(f, "stamps")]), fmt("window=＀", [rt.sv(f, "name")])], false);
-		rt.call(f, P("/proc/onclose"), null, [live(f.usr), fmt("＀", [rt.sv(f, "name")])]);
+	if (dist < 2) {
+		rt.op(f, "Browse", [], [f.usr, `<HTML><HEAD><TITLE>${this.name}</TITLE></HEAD><BODY>${this.info}<HR>${this.stamps}</BODY></HTML>`, `window=${this.name}`], false);
+		onclose(f.usr, `${this.name}`);
 	} else {
-		rt.op(f, "Browse", [], [live(f.usr), fmt("<HTML><HEAD><TITLE>＀</TITLE></HEAD><BODY>＀<HR>＀</BODY></HTML>", [rt.sv(f, "name"), rt.call(f, P("/proc/stars"), null, [rt.sv(f, "info")]), rt.sv(f, "stamps")]), fmt("window=＀", [rt.sv(f, "name")])], false);
-		rt.call(f, P("/proc/onclose"), null, [live(f.usr), fmt("＀", [rt.sv(f, "name")])]);
+		rt.op(f, "Browse", [], [f.usr, `<HTML><HEAD><TITLE>${this.name}</TITLE></HEAD><BODY>${stars(this.info)}<HR>${this.stamps}</BODY></HTML>`, `window=${this.name}`], false);
+		onclose(f.usr, `${this.name}`);
 	}
 	return f.dot;
 });
 
-// /obj/item/weapon/paper/proc/addtofield  (code/modules/paperwork/paper.dm:140)
+// paper.dm:140
 rt.def("/obj/item/weapon/paper/proc/addtofield", function addtofield(f: Frame, id: Value, text: Value, links: Value) {
-	let locid: Value = null, laststart: Value = null, textindex: Value = null, istart: Value = null, iend: Value = null, before: Value = null, after: Value = null;
-	f.vars = () => [links, locid, laststart, textindex, istart, iend, before, after];
-	if (live(links) === null) {
-		links = 0;
-	}
-	locid = 0;
-	laststart = 1;
-	textindex = 1;
+	let istart: Value = null, iend: Value = null, before: Value = null, after: Value = null;
+	links ??= 0;
+	let locid: Value = 0;
+	let laststart: Value = 1;
+	let textindex: Value = 1;
 	while (true) {
 		istart = 0;
-		if (truthy(live(links))) {
-			istart = rt.call(f, P("/proc/findtext"), null, [rt.sv(f, "info_links"), "<span class=\"paper_field\">", live(laststart)]);
+		if (links) {
+			istart = findtext(this.info_links, "<span class=\"paper_field\">", laststart);
 		} else {
-			istart = rt.call(f, P("/proc/findtext"), null, [rt.sv(f, "info"), "<span class=\"paper_field\">", live(laststart)]);
+			istart = findtext(this.info, "<span class=\"paper_field\">", laststart);
 		}
-		if (isEqual(live(istart), 0)) {
-			return live(f.dot);
+		if (istart == 0) {
+			return f.dot;
 		}
-		laststart = add(live(istart), 1);
-		locid = rt.inc(live(locid), 1);
-		if (isEqual(live(locid), live(id))) {
+		laststart = istart + 1;
+		locid++;
+		if (locid == id) {
 			iend = 1;
-			if (truthy(live(links))) {
-				iend = rt.call(f, P("/proc/findtext"), null, [rt.sv(f, "info_links"), "</span>", live(istart)]);
+			if (links) {
+				iend = findtext(this.info_links, "</span>", istart);
 			} else {
-				iend = rt.call(f, P("/proc/findtext"), null, [rt.sv(f, "info"), "</span>", live(istart)]);
+				iend = findtext(this.info, "</span>", istart);
 			}
-			textindex = live(iend);
+			textindex = iend;
 			break;
 		}
 	}
-	if (truthy(live(links))) {
-		before = rt.call(f, P("/proc/copytext"), null, [rt.sv(f, "info_links"), 1, live(textindex)]);
-		after = rt.call(f, P("/proc/copytext"), null, [rt.sv(f, "info_links"), live(textindex)]);
-		rt.setSv(f, "info_links", add(add(live(before), live(text)), live(after)));
+	if (links) {
+		before = copytext(this.info_links, 1, textindex);
+		after = copytext(this.info_links, textindex);
+		this.info_links = before + text + after;
 	} else {
-		before = rt.call(f, P("/proc/copytext"), null, [rt.sv(f, "info"), 1, live(textindex)]);
-		after = rt.call(f, P("/proc/copytext"), null, [rt.sv(f, "info"), live(textindex)]);
-		rt.setSv(f, "info", add(add(live(before), live(text)), live(after)));
-		rt.callSrc(f, "updateinfolinks", []);
+		before = copytext(this.info, 1, textindex);
+		after = copytext(this.info, textindex);
+		this.info = before + text + after;
+		this.updateinfolinks();
 	}
 	return f.dot;
 });
 
-// /obj/item/weapon/paper/proc/updateinfolinks  (code/modules/paperwork/paper.dm:172)
+// paper.dm:172
 rt.def("/obj/item/weapon/paper/proc/updateinfolinks", function updateinfolinks(f: Frame) {
 	let i: Value = null;
 	let $e: any;
-	f.vars = () => [i, $e];
-	rt.setSv(f, "info_links", rt.sv(f, "info"));
-	i = null;
-	rt.forRange(f, 0, 1, rt.call(f, P("/proc/min"), null, [rt.sv(f, "fields"), 15]), 1);
+	this.info_links = this.info;
+	rt.forRange(f, 0, 1, min(this.fields, 15), 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		rt.callSrc(f, "addtofield", [live(i), fmt("<font face=\"＀\"><A href='?src=＃;write=＀'>write</A></font>", ["Verdana", live(f.src), live(i)]), 1]);
+		this.addtofield(i, fmt("<font face=\"＀\"><A href='?src=＃;write=＀'>write</A></font>", ["Verdana", this, i]), 1);
 	}
 	rt.endFor(f, 0);
-	rt.setSv(f, "info_links", add(rt.sv(f, "info_links"), fmt("<font face=\"＀\"><A href='?src=＃;write=end'>write</A></font>", ["Verdana", live(f.src)])));
+	this.info_links = this.info_links + fmt("<font face=\"＀\"><A href='?src=＃;write=end'>write</A></font>", ["Verdana", this]);
 	return f.dot;
 });
 
-// /obj/item/weapon/paper/proc/clearpaper  (code/modules/paperwork/paper.dm:181)
+// paper.dm:181
 rt.def("/obj/item/weapon/paper/proc/clearpaper", function clearpaper(f: Frame) {
-	rt.setSv(f, "info", null);
-	rt.setSv(f, "stamps", null);
-	if (truthy(rt.sv(f, "stamped"))) {
-		rt.callName(f, rt.sv(f, "stamped"), "Cut", []);
+	this.info = null;
+	this.stamps = null;
+	if (this.stamped) {
+		this.stamped.Cut();
 	}
-	rt.callSrc(f, "cut_overlays", []);
-	rt.callSrc(f, "updateinfolinks", []);
-	rt.callSrc(f, "update_icon", []);
+	this.cut_overlays();
+	this.updateinfolinks();
+	this.update_icon();
 	return f.dot;
 });
 
-// /obj/item/weapon/paper/proc/parsepencode  (code/modules/paperwork/paper.dm:188)
+// paper.dm:188
 rt.def("/obj/item/weapon/paper/proc/parsepencode", function parsepencode(f: Frame, t: Value, _P: Value, user: Value, iscrayon: Value) {
-	let C: Value = null, laststart: Value = null, i: Value = null;
-	f.vars = () => [t, iscrayon, C, laststart, i];
-	if (live(iscrayon) === null) {
-		iscrayon = 0;
+	let C: Value = null, i: Value = null;
+	iscrayon ??= 0;
+	if (rt.length(t) < 1) {
+		return f.dot;
 	}
-	if (rt.lt(rt.length(live(t)), 1)) {
-		return live(f.dot);
-	}
-	t = rt.call(f, P("/proc/replacetext"), null, [(t = rt.call(f, P("/proc/replacetext"), null, [(t = rt.call(f, P("/proc/replacetext"), null, [(t = rt.call(f, P("/proc/replacetext"), null, [(t = rt.call(f, P("/proc/replacetext"), null, [(t = rt.call(f, P("/proc/replacetext"), null, [(t = rt.call(f, P("/proc/replacetext"), null, [(t = rt.call(f, P("/proc/replacetext"), null, [(t = rt.call(f, P("/proc/replacetext"), null, [(t = rt.call(f, P("/proc/replacetext"), null, [(t = rt.call(f, P("/proc/replacetext"), null, [(t = rt.call(f, P("/proc/replacetext"), null, [(t = rt.call(f, P("/proc/replacetext"), null, [(t = rt.call(f, P("/proc/replacetext"), null, [(t = rt.call(f, P("/proc/replacetext"), null, [live(t), "[center]", "<center>"])), "[/center]", "</center>"])), "[br]", "<BR>"])), "\n", "<BR>"])), "[b]", "<B>"])), "[/b]", "</B>"])), "[i]", "<I>"])), "[/i]", "</I>"])), "[u]", "<U>"])), "[/u]", "</U>"])), "[large]", "<font size=\"4\">"])), "[/large]", "</font>"])), "[sign]", fmt("<font face=\"＀\"><i>＀</i></font>", ["Times New Roman", rt.fv(f, "real_name", live(user))])])), "[field]", "<span class=\"paper_field\"></span>"])), "[tab]", "&nbsp;&nbsp;&nbsp;&nbsp;"]);
-	if (!truthy(live(iscrayon))) {
-		t = rt.call(f, P("/proc/replacetext"), null, [(t = rt.call(f, P("/proc/replacetext"), null, [(t = rt.call(f, P("/proc/replacetext"), null, [(t = rt.call(f, P("/proc/replacetext"), null, [(t = rt.call(f, P("/proc/replacetext"), null, [(t = rt.call(f, P("/proc/replacetext"), null, [live(t), "[*]", "<li>"])), "[hr]", "<HR>"])), "[small]", "<font size = \"1\">"])), "[/small]", "</font>"])), "[list]", "<ul>"])), "[/list]", "</ul>"]);
-		t = fmt("<font face=\"＀\" color=＀>＀</font>", [rt.fv(f, "font", live(_P)), rt.fv(f, "colour", live(_P)), live(t)]);
+	t = replacetext((t = replacetext((t = replacetext((t = replacetext((t = replacetext((t = replacetext((t = replacetext((t = replacetext((t = replacetext((t = replacetext((t = replacetext((t = replacetext((t = replacetext((t = replacetext((t = replacetext(t, "[center]", "<center>")), "[/center]", "</center>")), "[br]", "<BR>")), "\n", "<BR>")), "[b]", "<B>")), "[/b]", "</B>")), "[i]", "<I>")), "[/i]", "</I>")), "[u]", "<U>")), "[/u]", "</U>")), "[large]", "<font size=\"4\">")), "[/large]", "</font>")), "[sign]", `<font face="${"Times New Roman"}"><i>${user.real_name}</i></font>`)), "[field]", "<span class=\"paper_field\"></span>")), "[tab]", "&nbsp;&nbsp;&nbsp;&nbsp;");
+	if (!iscrayon) {
+		t = replacetext((t = replacetext((t = replacetext((t = replacetext((t = replacetext((t = replacetext(t, "[*]", "<li>")), "[hr]", "<HR>")), "[small]", "<font size = \"1\">")), "[/small]", "</font>")), "[list]", "<ul>")), "[/list]", "</ul>");
+		t = `<font face="${_P.font}" color=${_P.colour}>${t}</font>`;
 	} else {
-		C = live(_P);
-		t = rt.call(f, P("/proc/replacetext"), null, [(t = rt.call(f, P("/proc/replacetext"), null, [(t = rt.call(f, P("/proc/replacetext"), null, [(t = rt.call(f, P("/proc/replacetext"), null, [(t = rt.call(f, P("/proc/replacetext"), null, [(t = rt.call(f, P("/proc/replacetext"), null, [live(t), "[*]", ""])), "[hr]", ""])), "[small]", ""])), "[/small]", ""])), "[list]", ""])), "[/list]", ""]);
-		t = fmt("<font face=\"＀\" color=＀><b>＀</b></font>", ["Comic Sans MS", rt.fv(f, "paint_color", live(C)), live(t)]);
+		C = _P;
+		t = replacetext((t = replacetext((t = replacetext((t = replacetext((t = replacetext((t = replacetext(t, "[*]", "")), "[hr]", "")), "[small]", "")), "[/small]", "")), "[list]", "")), "[/list]", "");
+		t = `<font face="${"Comic Sans MS"}" color=${C.paint_color}><b>${t}</b></font>`;
 	}
-	laststart = 1;
+	let laststart: Value = 1;
 	while (true) {
-		if (isEqual((i = rt.call(f, P("/proc/findtext"), null, [live(t), "<span class=\"paper_field\">", live(laststart)])), 0)) {
+		if ((i = findtext(t, "<span class=\"paper_field\">", laststart)) == 0) {
 			break;
 		}
-		laststart = add(live(i), 1);
-		rt.incSrcVar(f, "fields", 1, true);
+		laststart = i + 1;
+		this.fields++;
 	}
-	return live(t);
+	return t;
 });
 
-// /obj/item/weapon/paper/proc/reload_fields  (code/modules/paperwork/paper.dm:246)
+// paper.dm:246
 rt.def("/obj/item/weapon/paper/proc/reload_fields", function reload_fields(f: Frame) {
-	let laststart: Value = null, i: Value = null;
-	f.vars = () => [laststart, i];
-	rt.setSv(f, "fields", 0);
-	laststart = 1;
+	let i: Value = null;
+	this.fields = 0;
+	let laststart: Value = 1;
 	while (true) {
-		if (isEqual((i = rt.call(f, P("/proc/findtext"), null, [rt.sv(f, "info"), "<span class=\"paper_field\">", live(laststart)])), 0)) {
+		if ((i = findtext(this.info, "<span class=\"paper_field\">", laststart)) == 0) {
 			break;
 		}
-		laststart = add(live(i), 1);
-		rt.incSrcVar(f, "fields", 1, true);
+		laststart = i + 1;
+		this.fields++;
 	}
-	rt.callSrc(f, "updateinfolinks", []);
+	this.updateinfolinks();
 	return f.dot;
 });
 
-// /obj/item/weapon/paper/proc/openhelp  (code/modules/paperwork/paper.dm:255)
+// paper.dm:255
 rt.def("/obj/item/weapon/paper/proc/openhelp", function openhelp(f: Frame, user: Value) {
-	rt.op(f, "Browse", [], [live(user), "<HTML><HEAD><TITLE>Paper Help</TITLE></HEAD>\n\t<BODY>\n\t\t<b><center>Crayon&Pen commands</center></b><br>\n\t\t<br>\n\t\t[br] : Creates a linebreak.<br>\n\t\t[center] - [/center] : Centers the text.<br>\n\t\t[b] - [/b] : Makes the text <b>bold</b>.<br>\n\t\t[i] - [/i] : Makes the text <i>italic</i>.<br>\n\t\t[u] - [/u] : Makes the text <u>underlined</u>.<br>\n\t\t[large] - [/large] : Increases the <font size = \"4\">size</font> of the text.<br>\n\t\t[sign] : Inserts a signature of your name in a foolproof way.<br>\n\t\t[field] : Inserts an invisible field which lets you start type from there. Useful for forms.<br>\n\t\t<br>\n\t\t<b><center>Pen exclusive commands</center></b><br>\n\t\t[small] - [/small] : Decreases the <font size = \"1\">size</font> of the text.<br>\n\t\t[list] - [/list] : A list.<br>\n\t\t[*] : A dot used for lists.<br>\n\t\t[hr] : Adds a horizontal rule.\n\t</BODY></HTML>", "window=paper_help"], false);
+	rt.op(f, "Browse", [], [user, "<HTML><HEAD><TITLE>Paper Help</TITLE></HEAD>\n\t<BODY>\n\t\t<b><center>Crayon&Pen commands</center></b><br>\n\t\t<br>\n\t\t[br] : Creates a linebreak.<br>\n\t\t[center] - [/center] : Centers the text.<br>\n\t\t[b] - [/b] : Makes the text <b>bold</b>.<br>\n\t\t[i] - [/i] : Makes the text <i>italic</i>.<br>\n\t\t[u] - [/u] : Makes the text <u>underlined</u>.<br>\n\t\t[large] - [/large] : Increases the <font size = \"4\">size</font> of the text.<br>\n\t\t[sign] : Inserts a signature of your name in a foolproof way.<br>\n\t\t[field] : Inserts an invisible field which lets you start type from there. Useful for forms.<br>\n\t\t<br>\n\t\t<b><center>Pen exclusive commands</center></b><br>\n\t\t[small] - [/small] : Decreases the <font size = \"1\">size</font> of the text.<br>\n\t\t[list] - [/list] : A list.<br>\n\t\t[*] : A dot used for lists.<br>\n\t\t[hr] : Adds a horizontal rule.\n\t</BODY></HTML>", "window=paper_help"], false);
 	return f.dot;
 });
 
-// /obj/item/weapon/paper/proc/Topic  (code/modules/paperwork/paper.dm:277)  may sleep
-rt.def("/obj/item/weapon/paper/proc/Topic", function* Topic(f: Frame) {
-	let id: Value = null, t: Value = null, i: Value = null, iscrayon: Value = null;
-	f.vars = () => [id, t, i, iscrayon];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if ((truthy(rt.fv(f, "stat", live(f.usr))) || truthy((yield* g.callName(f, live(f.usr), "restrained", []))))) {
-		return live(f.dot);
+// paper.dm:277
+rt.def("/obj/item/weapon/paper/proc/Topic", function* Topic(f: Frame, href: Value, href_list: Value) {
+	let t: Value = null;
+	yield* parent_proc();
+	if (f.usr.stat || f.usr.restrained()) {
+		return f.dot;
 	}
-	if (truthy(rt.at(live(f.args[1]), "help"))) {
-		yield* g.srcCall(f, "openhelp", live(f.usr));
-		return live(f.dot);
+	if (rt.at(href_list, "help")) {
+		this.openhelp(f.usr);
+		return f.dot;
 	}
-	if (!truthy(rt.at(live(f.args[1]), "write"))) return f.dot;
-	id = rt.at(live(f.args[1]), "write");
-	if (!truthy((t = (yield* g.call(f, P("/proc/stripped_multiline_input"), null, [null, "Enter what you want to write:", null, "Write", "no_trim", 1], rt.Args.Named))))) {
-		return live(f.dot);
+	if (!rt.at(href_list, "write")) return f.dot;
+	let id: Value = rt.at(href_list, "write");
+	if (!(t = (yield* stripped_multiline_input("Enter what you want to write:", "Write", { no_trim: 1 })))) {
+		return f.dot;
 	}
-	i = (yield* g.callName(f, live(f.usr), "get_active_held_item", []));
-	iscrayon = 0;
-	if (!truthy((rt.istype(live(i), T("/obj/item/weapon/pen")) ? 1 : 0))) {
-		if (!truthy((rt.istype(live(i), T("/obj/item/toy/crayon")) ? 1 : 0))) {
-			return live(f.dot);
+	let i: Value = f.usr.get_active_held_item();
+	let iscrayon: Value = 0;
+	if (!rt.istype(i, T("/obj/item/weapon/pen"))) {
+		if (!rt.istype(i, T("/obj/item/toy/crayon"))) {
+			return f.dot;
 		}
 		iscrayon = 1;
 	}
-	if (((((!rt.le((yield* g.call(f, P("/proc/get_dist"), null, [live(f.src), live(f.usr)])), 1) && !isEqual(rt.sv(f, "loc"), live(f.usr))) && !truthy((rt.istype(rt.sv(f, "loc"), T("/obj/item/weapon/clipboard")) ? 1 : 0))) && !isEqual(rt.fv(f, "loc", rt.sv(f, "loc")), live(f.usr))) && !isEqual((yield* g.callName(f, live(f.usr), "get_active_held_item", [])), live(i)))) {
-		return live(f.dot);
+	if (!(get_dist(this, f.usr) <= 1) && this.loc != f.usr && !rt.istype(this.loc, T("/obj/item/weapon/clipboard")) && this.loc.loc != f.usr && f.usr.get_active_held_item() != i) {
+		return f.dot;
 	}
-	if ((t = (yield* g.srcCall(f, "parsepencode", live(t), live(i), live(f.usr), live(iscrayon)))) === null) return f.dot;
-	if (!isEqual(live(id), "end")) {
-		yield* g.srcCall(f, "addtofield", (yield* g.call(f, P("/proc/text2num"), null, [live(id)])), live(t));
+	if ((t = this.parsepencode(t, i, f.usr, iscrayon)) === null) return f.dot;
+	if (id != "end") {
+		this.addtofield(text2num(id), t);
 	} else {
-		rt.modSrcVar(f, "info", live(t), add);
-		yield* g.srcCall(f, "updateinfolinks");
+		this.info += t;
+		this.updateinfolinks();
 	}
-	rt.op(f, "Browse", [], [live(f.usr), fmt("<HTML><HEAD><TITLE>＀</TITLE></HEAD><BODY>＀<HR>＀</BODY><div align='right'style='position:fixed;bottom:0;font-style:bold;'><A href='?src=＃;help=1'>[?]</A></div></HTML>", [rt.sv(f, "name"), rt.sv(f, "info_links"), rt.sv(f, "stamps"), live(f.src)]), fmt("window=＀", [rt.sv(f, "name")])], false);
-	yield* g.srcCall(f, "update_icon");
+	rt.op(f, "Browse", [], [f.usr, fmt("<HTML><HEAD><TITLE>＀</TITLE></HEAD><BODY>＀<HR>＀</BODY><div align='right'style='position:fixed;bottom:0;font-style:bold;'><A href='?src=＃;help=1'>[?]</A></div></HTML>", [this.name, this.info_links, this.stamps, this]), `window=${this.name}`], false);
+	yield* this.update_icon();
 	return f.dot;
-}, true, { args: ["href", "href_list"] });
+}, true);
 
-// /obj/item/weapon/paper/proc/attackby  (code/modules/paperwork/paper.dm:312)  may sleep
+// paper.dm:312
 rt.def("/obj/item/weapon/paper/proc/attackby", function* attackby(f: Frame) {
 	let stampoverlay: Value = null;
-	f.vars = () => [stampoverlay];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.bitAnd(rt.sv(f, "resistance_flags"), 8))) {
-		return live(f.dot);
+	yield* parent_proc();
+	if (rt.bitAnd(this.resistance_flags, 8)) {
+		return f.dot;
 	}
-	if (truthy((yield* g.call(f, P("/proc/is_blind"), null, [live(f.args[1])])))) {
-		return live(f.dot);
+	if (is_blind(f.args[1])) {
+		return f.dot;
 	}
-	if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/pen")) ? 1 : 0)) || truthy((rt.istype(live(f.args[0]), T("/obj/item/toy/crayon")) ? 1 : 0)))) {
+	if (rt.istype(f.args[0], T("/obj/item/weapon/pen")) || rt.istype(f.args[0], T("/obj/item/toy/crayon"))) {
 		// tg bug: the talisman check sat after both branches' returns, so a talisman opened the write window; checked first now
-		if (truthy((rt.istype(live(f.src), T("/obj/item/weapon/paper/talisman")) ? 1 : 0))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>＀'s ink fades away shortly after it is written.</span>", [live(f.args[0])])]);
-			return live(f.dot);
+		if (rt.istype(this, T("/obj/item/weapon/paper/talisman"))) {
+			to_chat(f.args[1], `<span class='warning'>${f.args[0]}'s ink fades away shortly after it is written.</span>`);
+			return f.dot;
 		}
-		if (truthy((yield* g.callName(f, live(f.args[1]), "is_literate", [])))) {
-			rt.op(f, "Browse", [], [live(f.args[1]), fmt("<HTML><HEAD><TITLE>＀</TITLE></HEAD><BODY>＀<HR>＀</BODY><div align='right'style='position:fixed;bottom:0;font-style:bold;'><A href='?src=＃;help=1'>[?]</A></div></HTML>", [rt.sv(f, "name"), rt.sv(f, "info_links"), rt.sv(f, "stamps"), live(f.src)]), fmt("window=＀", [rt.sv(f, "name")])], false);
-			return live(f.dot);
+		if (f.args[1].is_literate()) {
+			rt.op(f, "Browse", [], [f.args[1], fmt("<HTML><HEAD><TITLE>＀</TITLE></HEAD><BODY>＀<HR>＀</BODY><div align='right'style='position:fixed;bottom:0;font-style:bold;'><A href='?src=＃;help=1'>[?]</A></div></HTML>", [this.name, this.info_links, this.stamps, this]), `window=${this.name}`], false);
+			return f.dot;
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You don't know how to read or write.</span>"]);
-			return live(f.dot);
+			to_chat(f.args[1], "<span class='notice'>You don't know how to read or write.</span>");
+			return f.dot;
 		}
-	} else {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/stamp")) ? 1 : 0))) {
-			if (!rt.le((yield* g.call(f, P("/proc/get_dist"), null, [live(f.src), live(f.args[1])])), 1)) {
-				return live(f.dot);
-			}
-			rt.modSrcVar(f, "stamps", fmt("<img src=large_＀.png>", [rt.fv(f, "icon_state", live(f.args[0]))]), add);
-			rt.setFv(f, "pixel_x", (stampoverlay = (yield* g.call(f, P("/proc/mutable_appearance"), null, [rt.rsc("icons/obj/bureaucracy.dmi"), fmt("paper_＀", [rt.fv(f, "icon_state", live(f.args[0]))])]))), (yield* g.call(f, P("/proc/rand"), null, [-2, 2])));
-			rt.setFv(f, "pixel_y", live(stampoverlay), (yield* g.call(f, P("/proc/rand"), null, [-3, 2])));
-			if (!truthy(rt.sv(f, "stamped"))) {
-				rt.setSv(f, "stamped", rt.list());
-			}
-			rt.modSrcVar(f, "stamped", rt.fv(f, "icon_state", live(f.args[0])), add);
-			yield* g.srcCall(f, "add_overlay", live(stampoverlay));
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You stamp the paper with your rubber stamp.</span>"]);
+	} else if (rt.istype(f.args[0], T("/obj/item/weapon/stamp"))) {
+		if (!(get_dist(this, f.args[1]) <= 1)) {
+			return f.dot;
 		}
+		this.stamps += `<img src=large_${f.args[0].icon_state}.png>`;
+		(stampoverlay = mutable_appearance(rt.rsc("icons/obj/bureaucracy.dmi"), `paper_${f.args[0].icon_state}`)).pixel_x = rand(-2, 2);
+		stampoverlay.pixel_y = rand(-3, 2);
+		if (!this.stamped) {
+			this.stamped = list();
+		}
+		this.stamped += f.args[0].icon_state;
+		this.add_overlay(stampoverlay);
+		to_chat(f.args[1], "<span class='notice'>You stamp the paper with your rubber stamp.</span>");
 	}
-	if (truthy((yield* g.callName(f, live(f.args[0]), "is_hot", [])))) {
-		if ((truthy(rt.bitAnd(rt.fv(f, "disabilities", live(f.args[1])), 256)) && truthy(rt.op(f, "Prob", [], [10])))) {
-			yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='warning'>＀ accidentally ignites themselves!</span>", [live(f.args[1])]), "<span class='userdanger'>You miss the paper and accidentally light yourself on fire!</span>"]);
-			yield* g.callName(f, live(f.args[1]), "dropItemToGround", [live(f.args[0])]);
-			yield* g.callName(f, live(f.args[1]), "adjust_fire_stacks", [1]);
-			yield* g.callName(f, live(f.args[1]), "IgniteMob", []);
-			return live(f.dot);
+	if (f.args[0].is_hot()) {
+		if (rt.bitAnd(f.args[1].disabilities, 256) && prob(10)) {
+			f.args[1].visible_message(`<span class='warning'>${f.args[1]} accidentally ignites themselves!</span>`, "<span class='userdanger'>You miss the paper and accidentally light yourself on fire!</span>");
+			yield* f.args[1].dropItemToGround(f.args[0]);
+			yield* f.args[1].adjust_fire_stacks(1);
+			yield* f.args[1].IgniteMob();
+			return f.dot;
 		}
-		if (!rt.le((yield* g.call(f, P("/proc/get_dist"), null, [live(f.args[1]), live(f.src)])), 1)) {
-			return live(f.dot);
+		if (!(get_dist(f.args[1], this) <= 1)) {
+			return f.dot;
 		}
-		yield* g.callName(f, live(f.args[1]), "dropItemToGround", [live(f.src)]);
-		yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='danger'>＀ lights ＀ ablaze with ＀!</span>", [live(f.args[1]), live(f.src), live(f.args[0])]), fmt("<span class='danger'>You light ＀ on fire!</span>", [live(f.src)])]);
-		yield* g.srcCall(f, "fire_act");
+		yield* f.args[1].dropItemToGround(this);
+		f.args[1].visible_message(`<span class='danger'>${f.args[1]} lights ${this} ablaze with ${f.args[0]}!</span>`, `<span class='danger'>You light ${this} on fire!</span>`);
+		yield* this.fire_act();
 	}
-	yield* g.srcCall(f, "add_fingerprint", live(f.args[1]));
+	yield* this.add_fingerprint(f.args[1]);
 	return f.dot;
 }, true, { args: ["P", "user", "params"] });
 
-// /obj/item/weapon/paper/proc/fire_act  (code/modules/paperwork/paper.dm:366)  may sleep
-rt.def("/obj/item/weapon/paper/proc/fire_act", function* fire_act(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.bitAnd(rt.sv(f, "resistance_flags"), 2))) return f.dot;
-	rt.setSv(f, "icon_state", "paper_onfire");
-	rt.setSv(f, "info", fmt("＀", [(yield* g.call(f, P("/proc/stars"), null, [rt.sv(f, "info")]))]));
+// paper.dm:366
+rt.def("/obj/item/weapon/paper/proc/fire_act", function* fire_act(f: Frame, exposed_temperature: Value, exposed_volume: Value) {
+	yield* parent_proc();
+	if (rt.bitAnd(this.resistance_flags, FIRE_PROOF)) return f.dot;
+	this.icon_state = "paper_onfire";
+	this.info = `${stars(this.info)}`;
 	return f.dot;
-}, true, { args: ["exposed_temperature", "exposed_volume"] });
+}, true);
 
-// /obj/item/weapon/paper/proc/extinguish  (code/modules/paperwork/paper.dm:373)
+// paper.dm:373
 rt.def("/obj/item/weapon/paper/proc/extinguish", function extinguish(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.callSrc(f, "update_icon", []);
+	parent_proc();
+	this.update_icon();
 	return f.dot;
 });
 
 rt.type(6620, "/obj/item/weapon/paper/construction", "/obj/item/weapon/paper", {});
 
-// /obj/item/weapon/paper/construction/proc/Initialize  (code/modules/paperwork/paper.dm:383)  may sleep
+// paper.dm:383
 rt.def("/obj/item/weapon/paper/construction/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "color", rt.op(f, "PickUnweighted", [6], ["FF0000", "#33cc33", "#ffb366", "#551A8B", "#ff80d5", "#4d94ff"]));
+	f.dot = (yield* parent_proc());
+	this.color = pick("FF0000", "#33cc33", "#ffb366", "#551A8B", "#ff80d5", "#4d94ff");
 	return f.dot;
 }, true);
 
 rt.type(6621, "/obj/item/weapon/paper/natural", "/obj/item/weapon/paper", {});
 
-// /obj/item/weapon/paper/natural/proc/Initialize  (code/modules/paperwork/paper.dm:391)  may sleep
+// paper.dm:391
 rt.def("/obj/item/weapon/paper/natural/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "color", "#FFF5ED");
+	f.dot = (yield* parent_proc());
+	this.color = "#FFF5ED";
 	return f.dot;
 }, true);

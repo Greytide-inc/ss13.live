@@ -1,44 +1,43 @@
-// From code/modules/ninja/suit/n_suit_verbs/ninja_sword_recall.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/ninja/suit/n_suit_verbs/ninja_sword_recall.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
-// /obj/item/clothing/suit/space/space_ninja/proc/ninja_sword_recall  (code/modules/ninja/suit/n_suit_verbs/ninja_sword_recall.dm:3)  may sleep
+// ninja_sword_recall.dm:3
 rt.def("/obj/item/clothing/suit/space/space_ninja/proc/ninja_sword_recall", function* ninja_sword_recall(f: Frame) {
-	let H: Value = null, cost: Value = null, inview: Value = null, distance: Value = null, C: Value = null;
-	f.vars = () => [H, cost, inview, distance, C];
-	H = rt.sv(f, "affecting");
-	cost = 0;
-	inview = 1;
-	if (!truthy(rt.sv(f, "energyKatana"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(H), "<span class='warning'>Could not locate Energy Katana!</span>"]);
-		return live(f.dot);
+	let C: Value = null;
+	let H: Value = this.affecting;
+	let cost: Value = 0;
+	let inview: Value = 1;
+	if (!this.energyKatana) {
+		to_chat(H, "<span class='warning'>Could not locate Energy Katana!</span>");
+		return f.dot;
 	}
-	if (truthy((rt.isIn(f, rt.sv(f, "energyKatana"), live(H)) ? 1 : 0))) {
-		return live(f.dot);
+	if (rt.isIn(f, this.energyKatana, H)) {
+		return f.dot;
 	}
-	distance = (yield* g.call(f, P("/proc/get_dist"), null, [live(H), rt.sv(f, "energyKatana")]));
-	if (!truthy((rt.isIn(f, rt.sv(f, "energyKatana"), (yield* g.call(f, P("/proc/view"), null, [live(H)]))) ? 1 : 0))) {
-		cost = live(distance);
+	let distance: Value = get_dist(H, this.energyKatana);
+	if (!rt.isIn(f, this.energyKatana, view(H))) {
+		cost = distance;
 		inview = 0;
 	}
-	if (truthy((yield* g.srcCall(f, "ninjacost", live(cost))))) return f.dot;
-	if (truthy((rt.istype(rt.fv(f, "loc", rt.sv(f, "energyKatana")), T("/mob/living/carbon")) ? 1 : 0))) {
-		yield* g.callName(f, (C = rt.fv(f, "loc", rt.sv(f, "energyKatana"))), "transferItemToLoc", [rt.sv(f, "energyKatana"), rt.getStep(f, rt.sv(f, "energyKatana"), 0), 1]);
-		if (truthy((rt.isIn(f, rt.sv(f, "energyKatana"), rt.fv(f, "stomach_contents", live(C))) ? 1 : 0))) {
-			(rt.modField(f, live(C), "stomach_contents", rt.sv(f, "energyKatana"), subtract));
+	if (this.ninjacost(cost)) return f.dot;
+	if (rt.istype(this.energyKatana.loc, T("/mob/living/carbon"))) {
+		yield* (C = this.energyKatana.loc).transferItemToLoc(this.energyKatana, rt.getStep(f, this.energyKatana, 0), 1);
+		if (rt.isIn(f, this.energyKatana, C.stomach_contents)) {
+			C.stomach_contents -= this.energyKatana;
 		}
 	} else {
-		yield* g.callName(f, rt.sv(f, "energyKatana"), "forceMove", [rt.getStep(f, rt.sv(f, "energyKatana"), 0)]);
+		yield* this.energyKatana.forceMove(rt.getStep(f, this.energyKatana, 0));
 	}
-	if (truthy(live(inview))) {
-		yield* g.callName(f, rt.fv(f, "spark_system", rt.sv(f, "energyKatana")), "start", []);
-		yield* g.call(f, P("/proc/playsound"), null, [live(H), "sparks", 50, 1]);
-		yield* g.callName(f, live(H), "visible_message", [fmt("<span class='danger'>％！ flies towards ＀!</span>", [rt.sv(f, "energyKatana"), live(H)]), fmt("<span class='warning'>You hold out your hand and ％！ flies towards you!</span>", [rt.sv(f, "energyKatana")])]);
-		yield* g.callName(f, rt.sv(f, "energyKatana"), "throw_at", [live(H), add(live(distance), 1), rt.fv(f, "throw_speed", rt.sv(f, "energyKatana")), live(H)]);
+	if (inview) {
+		yield* this.energyKatana.spark_system.start();
+		playsound(H, "sparks", 50, 1);
+		H.visible_message(fmt("<span class='danger'>％！ flies towards ＀!</span>", [this.energyKatana, H]), fmt("<span class='warning'>You hold out your hand and ％！ flies towards you!</span>", [this.energyKatana]));
+		yield* this.energyKatana.throw_at(H, distance + 1, this.energyKatana.throw_speed, H);
 	} else {
-		yield* g.callName(f, rt.sv(f, "energyKatana"), "returnToOwner", [live(H), 1]);
+		yield* this.energyKatana.returnToOwner(H, 1);
 	}
 	return f.dot;
 }, true);

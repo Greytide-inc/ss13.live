@@ -1,7 +1,7 @@
-// From code/game/gamemodes/objective_items.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/gamemodes/objective_items.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(1159, "/datum/objective_item", "/datum", {
@@ -13,16 +13,14 @@ rt.type(1159, "/datum/objective_item", "/datum", {
 	targetitem: rt.typePath("/obj/item/weapon/bikehorn"),
 });
 
-// /datum/objective_item/proc/<init>  (code/game/gamemodes/objective_items.dm:7)
+// objective_items.dm:7
 rt.def("/datum/objective_item/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "excludefromjob", rt.list());
-	$0 = $0;
-	rt.setSv(f, "altitems", rt.list());
-	$0 = $0;
-	rt.setSv(f, "special_equipment", rt.list());
+	parent_proc();
+	this.excludefromjob = list();
+
+	this.altitems = list();
+
+	this.special_equipment = list();
 	return f.dot;
 });
 
@@ -33,12 +31,10 @@ rt.type(1161, "/datum/objective_item/steal/caplaser", "/datum/objective_item/ste
 	targetitem: rt.typePath("/obj/item/weapon/gun/energy/laser/captain"),
 });
 
-// /datum/objective_item/steal/caplaser/proc/<init>  (code/game/gamemodes/objective_items.dm:18)
+// objective_items.dm:18
 rt.def("/datum/objective_item/steal/caplaser/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "excludefromjob", rt.list("Captain"));
+	parent_proc();
+	this.excludefromjob = list("Captain");
 	return f.dot;
 });
 
@@ -49,12 +45,10 @@ rt.type(1162, "/datum/objective_item/steal/hoslaser", "/datum/objective_item/ste
 	targetitem: rt.typePath("/obj/item/weapon/gun/energy/e_gun/hos"),
 });
 
-// /datum/objective_item/steal/hoslaser/proc/<init>  (code/game/gamemodes/objective_items.dm:24)
+// objective_items.dm:24
 rt.def("/datum/objective_item/steal/hoslaser/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "excludefromjob", rt.list("Head Of Security"));
+	parent_proc();
+	this.excludefromjob = list("Head Of Security");
 	return f.dot;
 });
 
@@ -65,12 +59,10 @@ rt.type(1163, "/datum/objective_item/steal/handtele", "/datum/objective_item/ste
 	targetitem: rt.typePath("/obj/item/weapon/hand_tele"),
 });
 
-// /datum/objective_item/steal/handtele/proc/<init>  (code/game/gamemodes/objective_items.dm:30)
+// objective_items.dm:30
 rt.def("/datum/objective_item/steal/handtele/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "excludefromjob", rt.list("Captain"));
+	parent_proc();
+	this.excludefromjob = list("Captain");
 	return f.dot;
 });
 
@@ -81,12 +73,10 @@ rt.type(1164, "/datum/objective_item/steal/jetpack", "/datum/objective_item/stea
 	targetitem: rt.typePath("/obj/item/weapon/tank/jetpack/oxygen/captain"),
 });
 
-// /datum/objective_item/steal/jetpack/proc/<init>  (code/game/gamemodes/objective_items.dm:36)
+// objective_items.dm:36
 rt.def("/datum/objective_item/steal/jetpack/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "excludefromjob", rt.list("Captain"));
+	parent_proc();
+	this.excludefromjob = list("Captain");
 	return f.dot;
 });
 
@@ -97,12 +87,10 @@ rt.type(1165, "/datum/objective_item/steal/magboots", "/datum/objective_item/ste
 	targetitem: rt.typePath("/obj/item/clothing/shoes/magboots/advance"),
 });
 
-// /datum/objective_item/steal/magboots/proc/<init>  (code/game/gamemodes/objective_items.dm:42)
+// objective_items.dm:42
 rt.def("/datum/objective_item/steal/magboots/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "excludefromjob", rt.list("Chief Engineer"));
+	parent_proc();
+	this.excludefromjob = list("Chief Engineer");
 	return f.dot;
 });
 
@@ -113,12 +101,10 @@ rt.type(1166, "/datum/objective_item/steal/capmedal", "/datum/objective_item/ste
 	targetitem: rt.typePath("/obj/item/clothing/accessory/medal/gold/captain"),
 });
 
-// /datum/objective_item/steal/capmedal/proc/<init>  (code/game/gamemodes/objective_items.dm:48)
+// objective_items.dm:48
 rt.def("/datum/objective_item/steal/capmedal/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "excludefromjob", rt.list("Captain"));
+	parent_proc();
+	this.excludefromjob = list("Captain");
 	return f.dot;
 });
 
@@ -129,12 +115,10 @@ rt.type(1167, "/datum/objective_item/steal/hypo", "/datum/objective_item/steal",
 	targetitem: rt.typePath("/obj/item/weapon/reagent_containers/hypospray/CMO"),
 });
 
-// /datum/objective_item/steal/hypo/proc/<init>  (code/game/gamemodes/objective_items.dm:54)
+// objective_items.dm:54
 rt.def("/datum/objective_item/steal/hypo/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "excludefromjob", rt.list("Chief Medical Officer"));
+	parent_proc();
+	this.excludefromjob = list("Chief Medical Officer");
 	return f.dot;
 });
 
@@ -145,12 +129,10 @@ rt.type(1168, "/datum/objective_item/steal/nukedisc", "/datum/objective_item/ste
 	targetitem: rt.typePath("/obj/item/weapon/disk/nuclear"),
 });
 
-// /datum/objective_item/steal/nukedisc/proc/<init>  (code/game/gamemodes/objective_items.dm:60)
+// objective_items.dm:60
 rt.def("/datum/objective_item/steal/nukedisc/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "excludefromjob", rt.list("Captain"));
+	parent_proc();
+	this.excludefromjob = list("Captain");
 	return f.dot;
 });
 
@@ -161,12 +143,10 @@ rt.type(1170, "/datum/objective_item/steal/reactive", "/datum/objective_item/ste
 	targetitem: rt.typePath("/obj/item/clothing/suit/armor/reactive"),
 });
 
-// /datum/objective_item/steal/reactive/proc/<init>  (code/game/gamemodes/objective_items.dm:72)
+// objective_items.dm:72
 rt.def("/datum/objective_item/steal/reactive/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "excludefromjob", rt.list("Research Director"));
+	parent_proc();
+	this.excludefromjob = list("Research Director");
 	return f.dot;
 });
 
@@ -176,10 +156,10 @@ rt.type(1172, "/datum/objective_item/steal/nuke_core", "/datum/objective_item/st
 	targetitem: rt.typePath("/obj/item/nuke_core"),
 });
 
-// /datum/objective_item/steal/nuke_core/proc/New  (code/game/gamemodes/objective_items.dm:85)
+// objective_items.dm:85
 rt.def("/datum/objective_item/steal/nuke_core/proc/New", function New(f: Frame) {
-	rt.modSrcVar(f, "special_equipment", T("/obj/item/weapon/storage/box/syndie_kit/nuke"), add);
-	rt.callSuper(f, [], rt.Args.Same);
+	this.special_equipment += T("/obj/item/weapon/storage/box/syndie_kit/nuke");
+	parent_proc();
 	return f.dot;
 });
 
@@ -189,10 +169,10 @@ rt.type(1173, "/datum/objective_item/steal/supermatter", "/datum/objective_item/
 	targetitem: rt.typePath("/obj/item/nuke_core/supermatter_sliver"),
 });
 
-// /datum/objective_item/steal/supermatter/proc/New  (code/game/gamemodes/objective_items.dm:94)
+// objective_items.dm:94
 rt.def("/datum/objective_item/steal/supermatter/proc/New", function New(f: Frame) {
-	rt.modSrcVar(f, "special_equipment", T("/obj/item/weapon/storage/box/syndie_kit/supermatter"), add);
-	rt.callSuper(f, [], rt.Args.Same);
+	this.special_equipment += T("/obj/item/weapon/storage/box/syndie_kit/supermatter");
+	parent_proc();
 	return f.dot;
 });
 
@@ -203,19 +183,17 @@ rt.type(1174, "/datum/objective_item/steal/plasma", "/datum/objective_item/steal
 	targetitem: rt.typePath("/obj/item/weapon/tank"),
 });
 
-// /datum/objective_item/steal/plasma/proc/check_special_completion  (code/game/gamemodes/objective_items.dm:105)
+// objective_items.dm:105
 rt.def("/datum/objective_item/steal/plasma/proc/check_special_completion", function check_special_completion(f: Frame, _T: Value) {
-	let target_amount: Value = null, found_amount: Value = null;
 	let $0: any;
-	f.vars = () => [target_amount, found_amount, $0];
-	target_amount = rt.call(f, P("/proc/text2num"), null, [rt.sv(f, "name")]);
-	found_amount = 0;
-	if (truthy(rt.index(rt.gv(f, "gases", rt.fv(f, "air_contents", live(_T))), "plasma"))) {
-		$0 = rt.index(rt.index(rt.gv(f, "gases", rt.fv(f, "air_contents", live(_T))), "plasma"), 1);
+	let target_amount: Value = text2num(this.name);
+	let found_amount: Value = 0;
+	if (rt.index(_T.air_contents.gases, "plasma")) {
+		$0 = rt.index(rt.index(_T.air_contents.gases, "plasma"), 1);
 	} else {
 		$0 = 0;
 	}
-	return (rt.ge((found_amount = rt.modify(live(found_amount), $0, add)), live(target_amount)) ? 1 : 0);
+	return ((found_amount += $0) >= target_amount ? 1 : 0);
 });
 
 rt.type(1175, "/datum/objective_item/steal/functionalai", "/datum/objective_item/steal", {
@@ -224,20 +202,14 @@ rt.type(1175, "/datum/objective_item/steal/functionalai", "/datum/objective_item
 	targetitem: rt.typePath("/obj/item/device/aicard"),
 });
 
-// /datum/objective_item/steal/functionalai/proc/check_special_completion  (code/game/gamemodes/objective_items.dm:117)
+// objective_items.dm:117
 rt.def("/datum/objective_item/steal/functionalai/proc/check_special_completion", function check_special_completion(f: Frame, C: Value) {
 	let A: Value = null;
-	let $e: any;
-	f.vars = () => [A, $e];
-	A = null;
-	rt.forList(f, 0, live(C), T("/mob/living/silicon/ai"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		A = $e;
-		if ((truthy((rt.istype(live(A), T("/mob/living/silicon/ai")) ? 1 : 0)) && !isEqual(rt.fv(f, "stat", live(A)), 2))) {
+	for (A of each(C, T("/mob/living/silicon/ai"))) {
+		if (rt.istype(A, T("/mob/living/silicon/ai")) && A.stat != 2) {
 			return 1;
 		}
 	}
-	rt.endFor(f, 0);
 	return 0;
 });
 
@@ -249,26 +221,23 @@ rt.type(1176, "/datum/objective_item/steal/blueprints", "/datum/objective_item/s
 	altitems: null,
 });
 
-// /datum/objective_item/steal/blueprints/proc/<init>  (code/game/gamemodes/objective_items.dm:126)
+// objective_items.dm:126
 rt.def("/datum/objective_item/steal/blueprints/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "excludefromjob", rt.list("Chief Engineer"));
-	$0 = $0;
-	rt.setSv(f, "altitems", rt.list(T("/obj/item/weapon/photo")));
+	parent_proc();
+	this.excludefromjob = list("Chief Engineer");
+
+	this.altitems = list(T("/obj/item/weapon/photo"));
 	return f.dot;
 });
 
-// /datum/objective_item/steal/blueprints/proc/check_special_completion  (code/game/gamemodes/objective_items.dm:130)
+// objective_items.dm:130
 rt.def("/datum/objective_item/steal/blueprints/proc/check_special_completion", function check_special_completion(f: Frame, I: Value) {
 	let _P: Value = null;
-	f.vars = () => [_P];
-	if (truthy((rt.istype(live(I), T("/obj/item/areaeditor/blueprints")) ? 1 : 0))) {
+	if (rt.istype(I, T("/obj/item/areaeditor/blueprints"))) {
 		return 1;
 	}
-	if (truthy((rt.istype(live(I), T("/obj/item/weapon/photo")) ? 1 : 0))) {
-		if (truthy(rt.gv(f, "blueprints", (_P = live(I))))) {
+	if (rt.istype(I, T("/obj/item/weapon/photo"))) {
+		if ((_P = I).blueprints) {
 			return 1;
 		}
 	}
@@ -282,9 +251,9 @@ rt.type(1177, "/datum/objective_item/steal/slime", "/datum/objective_item/steal"
 	targetitem: rt.typePath("/obj/item/slime_extract"),
 });
 
-// /datum/objective_item/steal/slime/proc/check_special_completion  (code/game/gamemodes/objective_items.dm:145)
+// objective_items.dm:145
 rt.def("/datum/objective_item/steal/slime/proc/check_special_completion", function check_special_completion(f: Frame, E: Value) {
-	if (rt.gt(rt.fv(f, "Uses", live(E)), 0)) {
+	if (E.Uses > 0) {
 		return 1;
 	}
 	return 0;
@@ -296,14 +265,12 @@ rt.type(1189, "/datum/objective_item/stack", "/datum/objective_item", {
 	targetitem: rt.typePath("/obj/item/stack/sheet/cardboard"),
 });
 
-// /datum/objective_item/stack/proc/check_special_completion  (code/game/gamemodes/objective_items.dm:203)
+// objective_items.dm:203
 rt.def("/datum/objective_item/stack/proc/check_special_completion", function check_special_completion(f: Frame, S: Value) {
-	let target_amount: Value = null, found_amount: Value = null;
-	f.vars = () => [target_amount, found_amount];
-	target_amount = rt.call(f, P("/proc/text2num"), null, [rt.sv(f, "name")]);
-	found_amount = 0;
-	if (truthy(rt.op(f, "IsType", [], [live(S), rt.sv(f, "targetitem")]))) {
-		found_amount = rt.fv(f, "amount", live(S));
+	let target_amount: Value = text2num(this.name);
+	let found_amount: Value = 0;
+	if (rt.op(f, "IsType", [], [S, this.targetitem])) {
+		found_amount = S.amount;
 	}
-	return (rt.ge(live(found_amount), live(target_amount)) ? 1 : 0);
+	return (found_amount >= target_amount ? 1 : 0);
 });

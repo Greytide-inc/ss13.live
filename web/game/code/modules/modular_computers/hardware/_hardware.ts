@@ -1,7 +1,7 @@
-// From code/modules/modular_computers/hardware/_hardware.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/modular_computers/hardware/_hardware.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(7578, "/obj/item/weapon/computer_hardware", "/obj/item/weapon", {
@@ -23,108 +23,98 @@ rt.type(7578, "/obj/item/weapon/computer_hardware", "/obj/item/weapon", {
 	w_class: 1,
 });
 
-// /obj/item/weapon/computer_hardware/proc/New  (code/modules/modular_computers/hardware/_hardware.dm:24)  may sleep
-rt.def("/obj/item/weapon/computer_hardware/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "pixel_x", (yield* g.call(f, P("/proc/rand"), null, [-8, 8])));
-	rt.setSv(f, "pixel_y", (yield* g.call(f, P("/proc/rand"), null, [-8, 8])));
+// _hardware.dm:24
+rt.def("/obj/item/weapon/computer_hardware/proc/New", function* New(f: Frame, L: Value) {
+	yield* parent_proc();
+	this.pixel_x = rand(-8, 8);
+	this.pixel_y = rand(-8, 8);
 	return f.dot;
-}, true, { args: ["L"] });
-
-// /obj/item/weapon/computer_hardware/proc/Destroy  (code/modules/modular_computers/hardware/_hardware.dm:30)  may sleep
-rt.def("/obj/item/weapon/computer_hardware/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.sv(f, "holder"))) {
-		yield* g.callName(f, rt.sv(f, "holder"), "uninstall_component", [live(f.src)]);
-	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
 }, true);
 
-// /obj/item/weapon/computer_hardware/proc/attackby  (code/modules/modular_computers/hardware/_hardware.dm:36)  may sleep
-rt.def("/obj/item/weapon/computer_hardware/proc/attackby", function* attackby(f: Frame) {
+// _hardware.dm:30
+rt.def("/obj/item/weapon/computer_hardware/proc/Destroy", function* Destroy(f: Frame) {
+	if (this.holder) {
+		yield* this.holder.uninstall_component(this);
+	}
+	return (yield* parent_proc());
+}, true);
+
+// _hardware.dm:36
+rt.def("/obj/item/weapon/computer_hardware/proc/attackby", function* attackby(f: Frame, I: Value, user: Value) {
 	let S: Value = null;
-	f.vars = () => [S];
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/device/multitool")) ? 1 : 0))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "***** DIAGNOSTICS REPORT *****"]);
-		yield* g.srcCall(f, "diagnostics", live(f.args[1]));
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "******************************"]);
+	if (rt.istype(I, T("/obj/item/device/multitool"))) {
+		to_chat(user, "***** DIAGNOSTICS REPORT *****");
+		this.diagnostics(user);
+		to_chat(user, "******************************");
 		return 1;
 	}
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/stack/cable_coil")) ? 1 : 0))) {
-		S = live(f.args[0]);
-		if (isEqual(rt.sv(f, "obj_integrity"), rt.sv(f, "max_integrity"))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>＄！ doesn't seem to require repairs.</span>", [live(f.src)])]);
+	if (rt.istype(I, T("/obj/item/stack/cable_coil"))) {
+		S = I;
+		if (this.obj_integrity == this.max_integrity) {
+			to_chat(user, fmt("<span class='warning'>＄！ doesn't seem to require repairs.</span>", [this]));
 			return 1;
 		}
-		if (truthy((yield* g.callName(f, live(S), "use", [1])))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You patch up ％！ with a bit of ％！.</span>", [live(f.src), live(f.args[0])])]);
-			rt.setSv(f, "obj_integrity", (yield* g.call(f, P("/proc/min"), null, [add(rt.sv(f, "obj_integrity"), 10), rt.sv(f, "max_integrity")])));
+		if (yield* S.use(1)) {
+			to_chat(user, fmt("<span class='notice'>You patch up ％！ with a bit of ％！.</span>", [this, I]));
+			this.obj_integrity = min(this.obj_integrity + 10, this.max_integrity);
 		}
 		return 1;
 	}
-	if (truthy((yield* g.srcCall(f, "try_insert", live(f.args[0]), live(f.args[1]))))) {
+	if (yield* this.try_insert(I, user)) {
 		return 1;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["I", "user"] });
+	return (yield* parent_proc());
+}, true);
 
-// /obj/item/weapon/computer_hardware/proc/diagnostics  (code/modules/modular_computers/hardware/_hardware.dm:60)
+// _hardware.dm:60
 rt.def("/obj/item/weapon/computer_hardware/proc/diagnostics", function diagnostics(f: Frame, user: Value) {
-	let $0: any, $1: any, $2: any, $3: any;
-	f.vars = () => [$0, $1, $2, $3];
-	$0 = live(user);
-	$1 = rt.sv(f, "damage");
-	$2 = rt.sv(f, "max_damage");
-	if (rt.gt(rt.sv(f, "damage"), rt.sv(f, "damage_failure"))) {
+	let $3: any;
+	let $0: any = user;
+	let $1: any = this.damage;
+	let $2: any = this.max_damage;
+	if (this.damage > this.damage_failure) {
 		$3 = "FAIL";
+	} else if (this.damage > this.damage_malfunction) {
+		$3 = "WARN";
 	} else {
-		if (rt.gt(rt.sv(f, "damage"), rt.sv(f, "damage_malfunction"))) {
-			$3 = "WARN";
-		} else {
-			$3 = "PASS";
-		}
+		$3 = "PASS";
 	}
-	rt.call(f, P("/proc/to_chat"), null, [$0, fmt("Hardware Integrity Test... (Corruption: ＀/＀) ＀", [$1, $2, $3])]);
+	to_chat($0, `Hardware Integrity Test... (Corruption: ${$1}/${$2}) ${$3}`);
 	return f.dot;
 });
 
-// /obj/item/weapon/computer_hardware/proc/check_functionality  (code/modules/modular_computers/hardware/_hardware.dm:64)
+// _hardware.dm:64
 rt.def("/obj/item/weapon/computer_hardware/proc/check_functionality", function check_functionality(f: Frame) {
-	if (!truthy(rt.sv(f, "enabled"))) {
+	if (!this.enabled) {
 		return 0;
 	}
-	if (rt.gt(rt.sv(f, "damage"), rt.sv(f, "damage_failure"))) {
+	if (this.damage > this.damage_failure) {
 		return 0;
 	}
-	if (rt.gt(rt.sv(f, "damage"), rt.sv(f, "damage_malfunction"))) {
-		if (truthy(rt.op(f, "Prob", [], [rt.sv(f, "malfunction_probability")]))) {
+	if (this.damage > this.damage_malfunction) {
+		if (prob(this.malfunction_probability)) {
 			return 0;
 		}
 	}
 	return 1;
 });
 
-// /obj/item/weapon/computer_hardware/proc/examine  (code/modules/modular_computers/hardware/_hardware.dm:77)
-rt.def("/obj/item/weapon/computer_hardware/proc/examine", function examine(f: Frame) {
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	if (rt.gt(rt.sv(f, "damage"), rt.sv(f, "damage_failure"))) {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='danger'>It seems to be severely damaged!</span>"]);
+// _hardware.dm:77
+rt.def("/obj/item/weapon/computer_hardware/proc/examine", function examine(f: Frame, user: Value) {
+	f.dot = parent_proc();
+	if (this.damage > this.damage_failure) {
+		to_chat(user, "<span class='danger'>It seems to be severely damaged!</span>");
+	} else if (this.damage > this.damage_malfunction) {
+		to_chat(user, "<span class='warning'>It seems to be damaged!</span>");
 	} else {
-		if (rt.gt(rt.sv(f, "damage"), rt.sv(f, "damage_malfunction"))) {
-			rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='warning'>It seems to be damaged!</span>"]);
-		} else {
-			if (!truthy(rt.sv(f, "damage"))) return f.dot;
-			rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='notice'>It seems to be slightly damaged.</span>"]);
-		}
+		if (!this.damage) return f.dot;
+		to_chat(user, "<span class='notice'>It seems to be slightly damaged.</span>");
 	}
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/item/weapon/computer_hardware/proc/on_remove  (code/modules/modular_computers/hardware/_hardware.dm:95)  may sleep
+// _hardware.dm:95
 rt.def("/obj/item/weapon/computer_hardware/proc/on_remove", function* on_remove(f: Frame, M: Value, user: Value) {
-	f.vars = () => [M, user];
-	if (live(user) === null) {
-		user = null;
-	}
-	yield* g.callSrc(f, "try_eject", ["forced", 1], rt.Args.Named);
+	yield* this.try_eject({ forced: 1 });
 	return f.dot;
 }, true);

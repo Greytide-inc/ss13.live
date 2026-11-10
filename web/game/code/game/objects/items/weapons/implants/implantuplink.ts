@@ -1,7 +1,7 @@
-// From code/game/objects/items/weapons/implants/implantuplink.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/weapons/implants/implantuplink.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(7416, "/obj/item/weapon/implant/uplink", "/obj/item/weapon/implant", {
@@ -13,43 +13,37 @@ rt.type(7416, "/obj/item/weapon/implant/uplink", "/obj/item/weapon/implant", {
 	origin_tech: "materials=4;magnets=4;programming=4;biotech=4;syndicate=5;bluespace=5",
 });
 
-// /obj/item/weapon/implant/uplink/proc/New  (code/game/objects/items/weapons/implants/implantuplink.dm:10)  may sleep
+// implantuplink.dm:10
 rt.def("/obj/item/weapon/implant/uplink/proc/New", function* New(f: Frame) {
-	rt.setSv(f, "hidden_uplink", (yield* g.new_(f, T("/obj/item/device/uplink"), [live(f.src)])));
-	rt.setFv(f, "telecrystals", rt.sv(f, "hidden_uplink"), rt.sv(f, "starting_tc"));
-	yield* g.callSuper(f, [], rt.Args.Same);
+	this.hidden_uplink = (yield* new_(T("/obj/item/device/uplink"), this));
+	this.hidden_uplink.telecrystals = this.starting_tc;
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/implant/uplink/proc/implant  (code/game/objects/items/weapons/implants/implantuplink.dm:15)  may sleep
+// implantuplink.dm:15
 rt.def("/obj/item/weapon/implant/uplink/proc/implant", function* implant(f: Frame) {
 	let X: Value = null, imp_e: Value = null;
-	let $e: any;
-	f.vars = () => [X, imp_e, $e];
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 0;
 	}
-	X = null;
-	rt.forList(f, 0, rt.fv(f, "implants", live(f.args[0])));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		X = $e;
-		if (truthy(rt.op(f, "IsType", [], [live(X), rt.sv(f, "type")]))) {
-			rt.modField(f, rt.gv(f, "hidden_uplink", (imp_e = live(X))), "telecrystals", rt.fv(f, "telecrystals", rt.sv(f, "hidden_uplink")), add);
-			yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	for (X of each(f.args[0].implants)) {
+		if (rt.op(f, "IsType", [], [X, this.type])) {
+			(imp_e = X).hidden_uplink.telecrystals += this.hidden_uplink.telecrystals;
+			yield* qdel(this);
 			return 1;
 		}
 	}
-	rt.endFor(f, 0);
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		rt.setFv(f, "owner", rt.sv(f, "hidden_uplink"), fmt("＀", [rt.fv(f, "key", live(f.args[1]))]));
+	if (yield* parent_proc()) {
+		this.hidden_uplink.owner = `${f.args[1].key}`;
 		return 1;
 	}
 	return 0;
 }, true, { args: ["target", "user", "silent"] });
 
-// /obj/item/weapon/implant/uplink/proc/activate  (code/game/objects/items/weapons/implants/implantuplink.dm:29)  may sleep
+// implantuplink.dm:29
 rt.def("/obj/item/weapon/implant/uplink/proc/activate", function* activate(f: Frame) {
-	if (!truthy(rt.sv(f, "hidden_uplink"))) return f.dot;
-	yield* g.callName(f, rt.sv(f, "hidden_uplink"), "interact", [live(f.usr)]);
+	if (!this.hidden_uplink) return f.dot;
+	yield* this.hidden_uplink.interact(f.usr);
 	return f.dot;
 }, true);

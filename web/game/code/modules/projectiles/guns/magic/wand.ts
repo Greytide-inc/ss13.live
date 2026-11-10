@@ -1,7 +1,7 @@
-// From code/modules/projectiles/guns/magic/wand.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/projectiles/guns/magic/wand.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(5113, "/obj/item/weapon/gun/magic/wand", "/obj/item/weapon/gun/magic", {
@@ -16,78 +16,70 @@ rt.type(5113, "/obj/item/weapon/gun/magic/wand", "/obj/item/weapon/gun/magic", {
 	max_charges: 100,
 });
 
-// /obj/item/weapon/gun/magic/wand/proc/Initialize  (code/modules/projectiles/guns/magic/wand.dm:13)  may sleep
+// wand.dm:13
 rt.def("/obj/item/weapon/gun/magic/wand/proc/Initialize", function* Initialize(f: Frame) {
-	if ((truthy(rt.op(f, "Prob", [], [75])) && truthy(rt.sv(f, "variable_charges")))) {
-		if (truthy(rt.op(f, "Prob", [], [33]))) {
-			rt.setSv(f, "max_charges", (yield* g.call(f, P("/proc/Ceiling"), null, [divide(rt.sv(f, "max_charges"), 3)])));
+	if (prob(75) && this.variable_charges) {
+		if (prob(33)) {
+			this.max_charges = Ceiling(this.max_charges / 3);
 		} else {
-			rt.setSv(f, "max_charges", (yield* g.call(f, P("/proc/Ceiling"), null, [divide(rt.sv(f, "max_charges"), 2)])));
+			this.max_charges = Ceiling(this.max_charges / 2);
 		}
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);
 
-// /obj/item/weapon/gun/magic/wand/proc/examine  (code/modules/projectiles/guns/magic/wand.dm:21)
-rt.def("/obj/item/weapon/gun/magic/wand/proc/examine", function examine(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("Has ＀ charge５ remaining.", [rt.sv(f, "charges")])]);
+// wand.dm:21
+rt.def("/obj/item/weapon/gun/magic/wand/proc/examine", function examine(f: Frame, user: Value) {
+	parent_proc();
+	to_chat(user, fmt("Has ＀ charge５ remaining.", [this.charges]));
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/item/weapon/gun/magic/wand/proc/update_icon  (code/modules/projectiles/guns/magic/wand.dm:25)
+// wand.dm:25
 rt.def("/obj/item/weapon/gun/magic/wand/proc/update_icon", function update_icon(f: Frame) {
-	let $0: any, $1: any;
-	f.vars = () => [$0, $1];
-	$0 = rt.initial(f, live(f.src), "icon_state");
-	if (truthy(rt.sv(f, "charges"))) {
-		$1 = "";
-	} else {
-		$1 = "-drained";
-	}
-	rt.setSv(f, "icon_state", fmt("＀＀", [$0, $1]));
+	let $0: any = rt.initial(f, this, "icon_state");
+	this.icon_state = `${$0}${this.charges ? "" : "-drained"}`;
 	return f.dot;
 });
 
-// /obj/item/weapon/gun/magic/wand/proc/attack  (code/modules/projectiles/guns/magic/wand.dm:28)  may sleep
-rt.def("/obj/item/weapon/gun/magic/wand/proc/attack", function* attack(f: Frame) {
-	if (isEqual(live(f.args[0]), live(f.args[1]))) {
-		return live(f.dot);
+// wand.dm:28
+rt.def("/obj/item/weapon/gun/magic/wand/proc/attack", function* attack(f: Frame, target: Value, user: Value) {
+	if (target == user) {
+		return f.dot;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["target", "user"] });
+}, true);
 
-// /obj/item/weapon/gun/magic/wand/proc/afterattack  (code/modules/projectiles/guns/magic/wand.dm:33)  may sleep
-rt.def("/obj/item/weapon/gun/magic/wand/proc/afterattack", function* afterattack(f: Frame) {
+// wand.dm:33
+rt.def("/obj/item/weapon/gun/magic/wand/proc/afterattack", function* afterattack(f: Frame, target: Value, user: Value) {
 	let A: Value = null;
-	f.vars = () => [A];
-	if (!truthy(rt.sv(f, "charges"))) {
-		yield* g.srcCall(f, "shoot_with_empty_chamber", live(f.args[1]));
-		return live(f.dot);
+	if (!this.charges) {
+		this.shoot_with_empty_chamber(user);
+		return f.dot;
 	}
-	if (isEqual(live(f.args[0]), live(f.args[1]))) {
-		if (truthy(rt.sv(f, "no_den_usage"))) {
-			if (truthy((rt.istype((A = (yield* g.call(f, P("/proc/get_area"), null, [live(f.args[1])]))), T("/area/wizard_station")) ? 1 : 0))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>You know better than to violate the security of The Den, best wait until you leave to use ＀.<span>", [live(f.src)])]);
-				return live(f.dot);
+	if (target == user) {
+		if (this.no_den_usage) {
+			if (rt.istype((A = get_area(user)), T("/area/wizard_station"))) {
+				to_chat(user, `<span class='warning'>You know better than to violate the security of The Den, best wait until you leave to use ${this}.<span>`);
+				return f.dot;
 			} else {
-				rt.setSv(f, "no_den_usage", 0);
+				this.no_den_usage = 0;
 			}
 		}
-		yield* g.srcCall(f, "zap_self", live(f.args[1]));
+		yield* this.zap_self(user);
 	} else {
-		yield* g.callSuper(f, [], rt.Args.Same);
+		yield* parent_proc();
 	}
-	yield* g.srcCall(f, "update_icon");
+	yield* this.update_icon();
 	return f.dot;
-}, true, { args: ["target", "user"] });
+}, true);
 
-// /obj/item/weapon/gun/magic/wand/proc/zap_self  (code/modules/projectiles/guns/magic/wand.dm:51)
+// wand.dm:51
 rt.def("/obj/item/weapon/gun/magic/wand/proc/zap_self", function zap_self(f: Frame, user: Value) {
-	rt.callName(f, live(user), "visible_message", [fmt("<span class='danger'>＀ zaps ＀self with ＀.</span>", [live(user), rt.callName(f, live(user), "p_them", []), live(f.src)])]);
-	rt.call(f, P("/proc/playsound"), null, [live(user), rt.sv(f, "fire_sound"), 50, 1]);
-	rt.callName(f, live(user), "log_message", [fmt("zapped ＀self with a <b>＀</b>", [rt.callName(f, live(user), "p_them", []), live(f.src)]), "Attack log"]);
+	user.visible_message(`<span class='danger'>${user} zaps ${user.p_them()}self with ${this}.</span>`);
+	playsound(user, this.fire_sound, 50, 1);
+	user.log_message(`zapped ${user.p_them()}self with a <b>${this}</b>`, "Attack log");
 	return f.dot;
 });
 
@@ -100,14 +92,14 @@ rt.type(5118, "/obj/item/weapon/gun/magic/wand/death", "/obj/item/weapon/gun/mag
 	max_charges: 3,
 });
 
-// /obj/item/weapon/gun/magic/wand/death/proc/zap_self  (code/modules/projectiles/guns/magic/wand.dm:69)  may sleep
-rt.def("/obj/item/weapon/gun/magic/wand/death/proc/zap_self", function* zap_self(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='warning'>You irradiate yourself with pure energy! ＀</span>", [rt.op(f, "PickUnweighted", [4], ["Do not pass go. Do not collect 200 zorkmids.", "You feel more confident in your spell casting skills.", "You Die...", "Do you want your possessions identified?"])])]);
-	yield* g.callName(f, live(f.args[0]), "adjustOxyLoss", [500]);
-	rt.incSrcVar(f, "charges", -1, true);
+// wand.dm:69
+rt.def("/obj/item/weapon/gun/magic/wand/death/proc/zap_self", function* zap_self(f: Frame, user: Value) {
+	yield* parent_proc();
+	to_chat(user, `<span class='warning'>You irradiate yourself with pure energy! ${pick("Do not pass go. Do not collect 200 zorkmids.", "You feel more confident in your spell casting skills.", "You Die...", "Do you want your possessions identified?")}</span>`);
+	yield* user.adjustOxyLoss(500);
+	this.charges--;
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
 rt.type(5116, "/obj/item/weapon/gun/magic/wand/resurrection", "/obj/item/weapon/gun/magic/wand", {
 	name: "wand of healing",
@@ -118,20 +110,19 @@ rt.type(5116, "/obj/item/weapon/gun/magic/wand/resurrection", "/obj/item/weapon/
 	max_charges: 10,
 });
 
-// /obj/item/weapon/gun/magic/wand/resurrection/proc/zap_self  (code/modules/projectiles/guns/magic/wand.dm:90)  may sleep
-rt.def("/obj/item/weapon/gun/magic/wand/resurrection/proc/zap_self", function* zap_self(f: Frame) {
+// wand.dm:90
+rt.def("/obj/item/weapon/gun/magic/wand/resurrection/proc/zap_self", function* zap_self(f: Frame, user: Value) {
 	let C: Value = null;
-	f.vars = () => [C];
-	yield* g.callName(f, live(f.args[0]), "revive", ["full_heal", 1], rt.Args.Named);
-	if (truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon")) ? 1 : 0))) {
-		yield* g.callName(f, (C = live(f.args[0])), "regenerate_limbs", []);
-		yield* g.callName(f, live(C), "regenerate_organs", []);
+	yield* user.revive({ full_heal: 1 });
+	if (rt.istype(user, T("/mob/living/carbon"))) {
+		yield* (C = user).regenerate_limbs();
+		yield* C.regenerate_organs();
 	}
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='notice'>You feel great!</span>"]);
-	rt.incSrcVar(f, "charges", -1, true);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	to_chat(user, "<span class='notice'>You feel great!</span>");
+	this.charges--;
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
 rt.type(5119, "/obj/item/weapon/gun/magic/wand/polymorph", "/obj/item/weapon/gun/magic/wand", {
 	name: "wand of polymorph",
@@ -142,13 +133,13 @@ rt.type(5119, "/obj/item/weapon/gun/magic/wand/polymorph", "/obj/item/weapon/gun
 	max_charges: 10,
 });
 
-// /obj/item/weapon/gun/magic/wand/polymorph/proc/zap_self  (code/modules/projectiles/guns/magic/wand.dm:112)  may sleep
-rt.def("/obj/item/weapon/gun/magic/wand/polymorph/proc/zap_self", function* zap_self(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.call(f, P("/proc/wabbajack"), null, [live(f.args[0])]);
-	rt.incSrcVar(f, "charges", -1, true);
+// wand.dm:112
+rt.def("/obj/item/weapon/gun/magic/wand/polymorph/proc/zap_self", function* zap_self(f: Frame, user: Value) {
+	yield* parent_proc();
+	yield* wabbajack(user);
+	this.charges--;
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
 rt.type(5120, "/obj/item/weapon/gun/magic/wand/teleport", "/obj/item/weapon/gun/magic/wand", {
 	name: "wand of teleportation",
@@ -160,18 +151,17 @@ rt.type(5120, "/obj/item/weapon/gun/magic/wand/teleport", "/obj/item/weapon/gun/
 	no_den_usage: 1,
 });
 
-// /obj/item/weapon/gun/magic/wand/teleport/proc/zap_self  (code/modules/projectiles/guns/magic/wand.dm:130)  may sleep
-rt.def("/obj/item/weapon/gun/magic/wand/teleport/proc/zap_self", function* zap_self(f: Frame) {
+// wand.dm:130
+rt.def("/obj/item/weapon/gun/magic/wand/teleport/proc/zap_self", function* zap_self(f: Frame, user: Value) {
 	let smoke: Value = null;
-	f.vars = () => [smoke];
-	if (truthy((yield* g.call(f, P("/proc/do_teleport"), null, [live(f.args[0]), live(f.args[0]), 10])))) {
-		yield* g.callName(f, (smoke = (yield* g.new_(f, T("/datum/effect_system/smoke_spread"), []))), "set_up", [3, rt.fv(f, "loc", live(f.args[0]))]);
-		yield* g.callName(f, live(smoke), "start", []);
-		rt.incSrcVar(f, "charges", -1, true);
+	if (yield* do_teleport(user, user, 10)) {
+		yield* (smoke = (yield* new_(T("/datum/effect_system/smoke_spread")))).set_up(3, user.loc);
+		yield* smoke.start();
+		this.charges--;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
 rt.type(5121, "/obj/item/weapon/gun/magic/wand/door", "/obj/item/weapon/gun/magic/wand", {
 	name: "wand of door creation",
@@ -183,13 +173,13 @@ rt.type(5121, "/obj/item/weapon/gun/magic/wand/door", "/obj/item/weapon/gun/magi
 	no_den_usage: 1,
 });
 
-// /obj/item/weapon/gun/magic/wand/door/proc/zap_self  (code/modules/projectiles/guns/magic/wand.dm:151)
-rt.def("/obj/item/weapon/gun/magic/wand/door/proc/zap_self", function zap_self(f: Frame) {
-	rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='notice'>You feel vaguely more open with your feelings.</span>"]);
-	rt.incSrcVar(f, "charges", -1, true);
-	rt.callSuper(f, [], rt.Args.Same);
+// wand.dm:151
+rt.def("/obj/item/weapon/gun/magic/wand/door/proc/zap_self", function zap_self(f: Frame, user: Value) {
+	to_chat(user, "<span class='notice'>You feel vaguely more open with your feelings.</span>");
+	this.charges--;
+	parent_proc();
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
 rt.type(5114, "/obj/item/weapon/gun/magic/wand/fireball", "/obj/item/weapon/gun/magic/wand", {
 	name: "wand of fireball",
@@ -200,10 +190,10 @@ rt.type(5114, "/obj/item/weapon/gun/magic/wand/fireball", "/obj/item/weapon/gun/
 	max_charges: 8,
 });
 
-// /obj/item/weapon/gun/magic/wand/fireball/proc/zap_self  (code/modules/projectiles/guns/magic/wand.dm:168)
-rt.def("/obj/item/weapon/gun/magic/wand/fireball/proc/zap_self", function zap_self(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.call(f, P("/proc/explosion"), null, [null, rt.fv(f, "loc", live(f.args[0])), null, -1, null, 0, null, 2, null, 3, null, 0, "flame_range", 2], rt.Args.Named);
-	rt.incSrcVar(f, "charges", -1, true);
+// wand.dm:168
+rt.def("/obj/item/weapon/gun/magic/wand/fireball/proc/zap_self", function zap_self(f: Frame, user: Value) {
+	parent_proc();
+	explosion(user.loc, -1, 0, 2, 3, 0, { flame_range: 2 });
+	this.charges--;
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);

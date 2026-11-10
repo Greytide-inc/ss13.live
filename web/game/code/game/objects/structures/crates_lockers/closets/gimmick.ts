@@ -1,7 +1,7 @@
-// From code/game/objects/structures/crates_lockers/closets/gimmick.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/structures/crates_lockers/closets/gimmick.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(12302, "/obj/structure/closet/gimmick/russian", "/obj/structure/closet/gimmick", {
@@ -9,24 +9,22 @@ rt.type(12302, "/obj/structure/closet/gimmick/russian", "/obj/structure/closet/g
 	desc: "It's a storage unit for Russian standard-issue surplus.",
 });
 
-// /obj/structure/closet/gimmick/russian/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/gimmick.dm:25)  may sleep
+// gimmick.dm:25
 rt.def("/obj/structure/closet/gimmick/russian/proc/PopulateContents", function* PopulateContents(f: Frame) {
 	let i: Value = null;
 	let $e: any;
-	f.vars = () => [i, $e];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	i = null;
+	yield* parent_proc();
 	rt.forRange(f, 0, 1, 5, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/clothing/head/ushanka"), [live(f.src)]);
+		yield* new_(T("/obj/item/clothing/head/ushanka"), this);
 	}
 	rt.endFor(f, 0);
 	i = null;
 	rt.forRange(f, 0, 1, 5, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/clothing/under/soviet"), [live(f.src)]);
+		yield* new_(T("/obj/item/clothing/under/soviet"), this);
 	}
 	rt.endFor(f, 0);
 	return f.dot;
@@ -37,23 +35,23 @@ rt.type(12303, "/obj/structure/closet/gimmick/tacticool", "/obj/structure/closet
 	desc: "It's a storage unit for Tacticool gear.",
 });
 
-// /obj/structure/closet/gimmick/tacticool/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/gimmick.dm:36)  may sleep
+// gimmick.dm:36
 rt.def("/obj/structure/closet/gimmick/tacticool/proc/PopulateContents", function* PopulateContents(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.new_(f, T("/obj/item/clothing/glasses/eyepatch"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/glasses/sunglasses"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/gloves/combat"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/gloves/combat"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/head/helmet/swat"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/head/helmet/swat"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/mask/gas/sechailer/swat"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/mask/gas/sechailer/swat"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/shoes/combat/swat"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/shoes/combat/swat"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/space/hardsuit/deathsquad"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/space/hardsuit/deathsquad"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/under/syndicate/tacticool"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/under/syndicate/tacticool"), [live(f.src)]);
+	yield* parent_proc();
+	yield* new_(T("/obj/item/clothing/glasses/eyepatch"), this);
+	yield* new_(T("/obj/item/clothing/glasses/sunglasses"), this);
+	yield* new_(T("/obj/item/clothing/gloves/combat"), this);
+	yield* new_(T("/obj/item/clothing/gloves/combat"), this);
+	yield* new_(T("/obj/item/clothing/head/helmet/swat"), this);
+	yield* new_(T("/obj/item/clothing/head/helmet/swat"), this);
+	yield* new_(T("/obj/item/clothing/mask/gas/sechailer/swat"), this);
+	yield* new_(T("/obj/item/clothing/mask/gas/sechailer/swat"), this);
+	yield* new_(T("/obj/item/clothing/shoes/combat/swat"), this);
+	yield* new_(T("/obj/item/clothing/shoes/combat/swat"), this);
+	yield* new_(T("/obj/item/clothing/suit/space/hardsuit/deathsquad"), this);
+	yield* new_(T("/obj/item/clothing/suit/space/hardsuit/deathsquad"), this);
+	yield* new_(T("/obj/item/clothing/under/syndicate/tacticool"), this);
+	yield* new_(T("/obj/item/clothing/under/syndicate/tacticool"), this);
 	return f.dot;
 }, true);
 
@@ -62,52 +60,50 @@ rt.type(12305, "/obj/structure/closet/thunderdome/tdred", "/obj/structure/closet
 	name: "red-team Thunderdome closet",
 });
 
-// /obj/structure/closet/thunderdome/tdred/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/gimmick.dm:63)  may sleep
+// gimmick.dm:63
 rt.def("/obj/structure/closet/thunderdome/tdred/proc/PopulateContents", function* PopulateContents(f: Frame) {
 	let i: Value = null;
 	let $e: any;
-	f.vars = () => [i, $e];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	i = null;
+	yield* parent_proc();
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/clothing/suit/armor/tdome/red"), [live(f.src)]);
+		yield* new_(T("/obj/item/clothing/suit/armor/tdome/red"), this);
 	}
 	rt.endFor(f, 0);
 	i = null;
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/weapon/melee/energy/sword/saber"), [live(f.src)]);
+		yield* new_(T("/obj/item/weapon/melee/energy/sword/saber"), this);
 	}
 	rt.endFor(f, 0);
 	i = null;
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/weapon/gun/energy/laser"), [live(f.src)]);
+		yield* new_(T("/obj/item/weapon/gun/energy/laser"), this);
 	}
 	rt.endFor(f, 0);
 	i = null;
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/weapon/melee/baton/loaded"), [live(f.src)]);
+		yield* new_(T("/obj/item/weapon/melee/baton/loaded"), this);
 	}
 	rt.endFor(f, 0);
 	i = null;
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/weapon/storage/box/flashbangs"), [live(f.src)]);
+		yield* new_(T("/obj/item/weapon/storage/box/flashbangs"), this);
 	}
 	rt.endFor(f, 0);
 	i = null;
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/clothing/head/helmet/thunderdome"), [live(f.src)]);
+		yield* new_(T("/obj/item/clothing/head/helmet/thunderdome"), this);
 	}
 	rt.endFor(f, 0);
 	return f.dot;
@@ -118,52 +114,50 @@ rt.type(12306, "/obj/structure/closet/thunderdome/tdgreen", "/obj/structure/clos
 	name: "green-team Thunderdome closet",
 });
 
-// /obj/structure/closet/thunderdome/tdgreen/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/gimmick.dm:82)  may sleep
+// gimmick.dm:82
 rt.def("/obj/structure/closet/thunderdome/tdgreen/proc/PopulateContents", function* PopulateContents(f: Frame) {
 	let i: Value = null;
 	let $e: any;
-	f.vars = () => [i, $e];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	i = null;
+	yield* parent_proc();
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/clothing/suit/armor/tdome/green"), [live(f.src)]);
+		yield* new_(T("/obj/item/clothing/suit/armor/tdome/green"), this);
 	}
 	rt.endFor(f, 0);
 	i = null;
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/weapon/melee/energy/sword/saber"), [live(f.src)]);
+		yield* new_(T("/obj/item/weapon/melee/energy/sword/saber"), this);
 	}
 	rt.endFor(f, 0);
 	i = null;
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/weapon/gun/energy/laser"), [live(f.src)]);
+		yield* new_(T("/obj/item/weapon/gun/energy/laser"), this);
 	}
 	rt.endFor(f, 0);
 	i = null;
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/weapon/melee/baton/loaded"), [live(f.src)]);
+		yield* new_(T("/obj/item/weapon/melee/baton/loaded"), this);
 	}
 	rt.endFor(f, 0);
 	i = null;
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/weapon/storage/box/flashbangs"), [live(f.src)]);
+		yield* new_(T("/obj/item/weapon/storage/box/flashbangs"), this);
 	}
 	rt.endFor(f, 0);
 	i = null;
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/clothing/head/helmet/thunderdome"), [live(f.src)]);
+		yield* new_(T("/obj/item/clothing/head/helmet/thunderdome"), this);
 	}
 	rt.endFor(f, 0);
 	return f.dot;
@@ -174,15 +168,15 @@ rt.type(12308, "/obj/structure/closet/malf/suits", "/obj/structure/closet/malf",
 	icon_state: "syndicate",
 });
 
-// /obj/structure/closet/malf/suits/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/gimmick.dm:101)  may sleep
+// gimmick.dm:101
 rt.def("/obj/structure/closet/malf/suits/proc/PopulateContents", function* PopulateContents(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.new_(f, T("/obj/item/weapon/tank/jetpack/void"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/mask/breath"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/head/helmet/space/nasavoid"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/clothing/suit/space/nasavoid"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/crowbar"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/stock_parts/cell"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/device/multitool"), [live(f.src)]);
+	yield* parent_proc();
+	yield* new_(T("/obj/item/weapon/tank/jetpack/void"), this);
+	yield* new_(T("/obj/item/clothing/mask/breath"), this);
+	yield* new_(T("/obj/item/clothing/head/helmet/space/nasavoid"), this);
+	yield* new_(T("/obj/item/clothing/suit/space/nasavoid"), this);
+	yield* new_(T("/obj/item/weapon/crowbar"), this);
+	yield* new_(T("/obj/item/weapon/stock_parts/cell"), this);
+	yield* new_(T("/obj/item/device/multitool"), this);
 	return f.dot;
 }, true);

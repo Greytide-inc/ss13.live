@@ -1,7 +1,7 @@
-// From code/datums/diseases/advance/symptoms/deafness.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/datums/diseases/advance/symptoms/deafness.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(987, "/datum/symptom/deafness", "/datum/symptom", {
@@ -14,20 +14,16 @@ rt.type(987, "/datum/symptom/deafness", "/datum/symptom", {
 	severity: 3,
 });
 
-// /datum/symptom/deafness/proc/Activate  (code/datums/diseases/advance/symptoms/deafness.dm:29)
-rt.def("/datum/symptom/deafness/proc/Activate", function Activate(f: Frame) {
-	let M: Value = null;
-	let $0: any;
-	f.vars = () => [M, $0];
-	rt.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.op(f, "Prob", [], [rt.gl("SYMPTOM_ACTIVATION_PROB")]))) return f.dot;
-	M = rt.fv(f, "affected_mob", live(f.args[0]));
-	$0 = rt.fv(f, "stage", live(f.args[0]));
-	if ($0 === 3 || $0 === 4) {
-		rt.call(f, P("/proc/to_chat"), null, [live(M), fmt("<span class='warning'>＀</span>", [rt.op(f, "PickUnweighted", [2], ["You hear a ringing in your ear.", "Your ears pop."])])]);
-	} else if ($0 === 5) {
-		rt.call(f, P("/proc/to_chat"), null, [live(M), "<span class='userdanger'>Your ears pop and begin ringing loudly!</span>"]);
-		rt.callName(f, live(M), "minimumDeafTicks", [20]);
+// deafness.dm:29
+rt.def("/datum/symptom/deafness/proc/Activate", function Activate(f: Frame, A: Value) {
+	parent_proc();
+	if (!prob(GLOB.SYMPTOM_ACTIVATION_PROB)) return f.dot;
+	let M: Value = A.affected_mob;
+	if (A.stage === 3 || A.stage === 4) {
+		to_chat(M, `<span class='warning'>${pick("You hear a ringing in your ear.", "Your ears pop.")}</span>`);
+	} else if (A.stage === 5) {
+		to_chat(M, "<span class='userdanger'>Your ears pop and begin ringing loudly!</span>");
+		M.minimumDeafTicks(20);
 	}
 	return f.dot;
-}, false, { args: ["A"] });
+}, false);

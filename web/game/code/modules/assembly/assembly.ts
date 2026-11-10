@@ -1,7 +1,7 @@
-// From code/modules/assembly/assembly.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/assembly/assembly.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(9360, "/obj/item/device/assembly", "/obj/item/device", {
@@ -30,39 +30,34 @@ rt.type(9360, "/obj/item/device/assembly", "/obj/item/device", {
 	origin_tech: "magnets=1;engineering=1",
 }, { const: ["WIRE_RECEIVE","WIRE_PULSE","WIRE_PULSE_SPECIAL","WIRE_RADIO_RECEIVE","WIRE_RADIO_PULSE"] });
 
-// /obj/item/device/assembly/proc/<init>  (code/modules/assembly/assembly.dm:8)
+// assembly.dm:8
 rt.def("/obj/item/device/assembly/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 100]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 100]);
 	return f.dot;
 });
 
-// /obj/item/device/assembly/proc/describe  (code/modules/assembly/assembly.dm:37)
+// assembly.dm:37
 rt.def("/obj/item/device/assembly/proc/describe", function describe(f: Frame) {
 	return "The trigger assembly looks broken!";
 });
 
-// /obj/item/device/assembly/proc/is_secured  (code/modules/assembly/assembly.dm:41)
+// assembly.dm:41
 rt.def("/obj/item/device/assembly/proc/is_secured", function is_secured(f: Frame, user: Value) {
-	if (!truthy(rt.sv(f, "secured"))) {
-		rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>The ＀ is unsecured!</span>", [rt.sv(f, "name")])]);
+	if (!this.secured) {
+		to_chat(user, `<span class='warning'>The ${this.name} is unsecured!</span>`);
 		return 0;
 	}
 	return 1;
 });
 
-// /obj/item/device/assembly/proc/pulsed  (code/modules/assembly/assembly.dm:49)
+// assembly.dm:49
 rt.def("/obj/item/device/assembly/proc/pulsed", function pulsed(f: Frame, radio: Value) {
-	f.vars = () => [radio];
-	if (live(radio) === null) {
-		radio = 0;
-	}
-	if (truthy(rt.bitAnd(rt.sv(f, "wire_type"), 1))) {
+	radio ??= 0;
+	if (rt.bitAnd(this.wire_type, 1)) {
 		rt.spawnTail(f, 0, "/obj/item/device/assembly/proc/pulsed: spawn at modules/assembly/assembly.dm:50", radio);
 	}
-	if ((truthy(live(radio)) && truthy(rt.bitAnd(rt.sv(f, "wire_type"), 8)))) {
+	if (radio && rt.bitAnd(this.wire_type, 8)) {
 		rt.spawnTail(f, 0, "/obj/item/device/assembly/proc/pulsed: spawn at modules/assembly/assembly.dm:53", radio);
 	}
 	return 1;
@@ -70,97 +65,90 @@ rt.def("/obj/item/device/assembly/proc/pulsed", function pulsed(f: Frame, radio:
 
 // a spawn(0) body of /obj/item/device/assembly/proc/pulsed, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/obj/item/device/assembly/proc/pulsed: spawn at modules/assembly/assembly.dm:53", function* (f: Frame, radio: Value) {
-	f.vars = () => [radio];
-	yield* g.srcCall(f, "activate");
+	yield* this.activate();
 	return null;
 });
 
 // a spawn(0) body of /obj/item/device/assembly/proc/pulsed, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/obj/item/device/assembly/proc/pulsed: spawn at modules/assembly/assembly.dm:50", function* (f: Frame, radio: Value) {
-	f.vars = () => [radio];
-	yield* g.srcCall(f, "activate");
+	yield* this.activate();
 	return null;
 });
 
-// /obj/item/device/assembly/proc/pulse  (code/modules/assembly/assembly.dm:60)  may sleep
+// assembly.dm:60
 rt.def("/obj/item/device/assembly/proc/pulse", function* pulse(f: Frame, radio: Value) {
-	f.vars = () => [radio];
-	if (live(radio) === null) {
-		radio = 0;
-	}
-	if ((truthy(rt.sv(f, "connected")) && truthy(rt.sv(f, "wire_type")))) {
-		yield* g.callName(f, rt.sv(f, "connected"), "pulse_assembly", [live(f.src)]);
+	radio ??= 0;
+	if (this.connected && this.wire_type) {
+		yield* this.connected.pulse_assembly(this);
 		return 1;
 	}
-	if ((truthy(rt.sv(f, "holder")) && truthy(rt.bitAnd(rt.sv(f, "wire_type"), 2)))) {
-		yield* g.callName(f, rt.sv(f, "holder"), "process_activation", [live(f.src), 1, 0]);
+	if (this.holder && rt.bitAnd(this.wire_type, 2)) {
+		yield* this.holder.process_activation(this, 1, 0);
 	}
-	if ((truthy(rt.sv(f, "holder")) && truthy(rt.bitAnd(rt.sv(f, "wire_type"), 4)))) {
-		yield* g.callName(f, rt.sv(f, "holder"), "process_activation", [live(f.src), 0, 1]);
+	if (this.holder && rt.bitAnd(this.wire_type, 4)) {
+		yield* this.holder.process_activation(this, 0, 1);
 	}
 	return 1;
 }, true);
 
-// /obj/item/device/assembly/proc/activate  (code/modules/assembly/assembly.dm:72)
+// assembly.dm:72
 rt.def("/obj/item/device/assembly/proc/activate", function activate(f: Frame) {
-	if ((((!truthy(live(f.src)) || truthy(rt.fv(f, "gc_destroyed", live(f.src)))) || !truthy(rt.sv(f, "secured"))) || rt.gt(rt.sv(f, "next_activate"), rt.worldTime(f)))) {
+	if (!this || this.gc_destroyed || !this.secured || this.next_activate > rt.worldTime(f)) {
 		return 0;
 	}
-	rt.setSv(f, "next_activate", add(rt.worldTime(f), 30));
+	this.next_activate = rt.worldTime(f) + 30;
 	return 1;
 });
 
-// /obj/item/device/assembly/proc/toggle_secure  (code/modules/assembly/assembly.dm:79)  may sleep
+// assembly.dm:79
 rt.def("/obj/item/device/assembly/proc/toggle_secure", function* toggle_secure(f: Frame) {
-	rt.setSv(f, "secured", (!truthy(rt.sv(f, "secured")) ? 1 : 0));
-	yield* g.srcCall(f, "update_icon");
-	return rt.sv(f, "secured");
+	this.secured = (!this.secured ? 1 : 0);
+	yield* this.update_icon();
+	return this.secured;
 }, true);
 
-// /obj/item/device/assembly/proc/attackby  (code/modules/assembly/assembly.dm:85)  may sleep
-rt.def("/obj/item/device/assembly/proc/attackby", function* attackby(f: Frame) {
+// assembly.dm:85
+rt.def("/obj/item/device/assembly/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
 	let A: Value = null;
-	f.vars = () => [A];
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/device/assembly")) ? 1 : 0))) {
-		if ((!truthy(rt.gv(f, "secured", (A = live(f.args[0])))) && !truthy(rt.sv(f, "secured")))) {
-			rt.setSv(f, "holder", (yield* g.new_(f, T("/obj/item/device/assembly_holder"), [rt.getStep(f, live(f.src), 0)])));
-			yield* g.callName(f, rt.sv(f, "holder"), "assemble", [live(f.src), live(A), live(f.args[1])]);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You attach and secure ％！ to ％！!</span>", [live(A), live(f.src)])]);
+	if (rt.istype(W, T("/obj/item/device/assembly"))) {
+		if (!(A = W).secured && !this.secured) {
+			this.holder = (yield* new_(T("/obj/item/device/assembly_holder"), rt.getStep(f, this, 0)));
+			yield* this.holder.assemble(this, A, user);
+			to_chat(user, fmt("<span class='notice'>You attach and secure ％！ to ％！!</span>", [A, this]));
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>Both devices must be in attachable mode to be attached together.</span>"]);
+			to_chat(user, "<span class='warning'>Both devices must be in attachable mode to be attached together.</span>");
 		}
-		return live(f.dot);
+		return f.dot;
 	}
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/screwdriver")) ? 1 : 0))) {
-		if (truthy((yield* g.srcCall(f, "toggle_secure")))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>＄！ is ready!</span>", [live(f.src)])]);
+	if (rt.istype(W, T("/obj/item/weapon/screwdriver"))) {
+		if (yield* this.toggle_secure()) {
+			to_chat(user, fmt("<span class='notice'>＄！ is ready!</span>", [this]));
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>＄！ can now be attached!</span>", [live(f.src)])]);
+			to_chat(user, fmt("<span class='notice'>＄！ can now be attached!</span>", [this]));
 		}
-		return live(f.dot);
+		return f.dot;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["W", "user", "params"] });
+}, true);
 
-// /obj/item/device/assembly/proc/examine  (code/modules/assembly/assembly.dm:104)
-rt.def("/obj/item/device/assembly/proc/examine", function examine(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.sv(f, "secured"))) {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("＄！ is secured and ready to be used.", [live(f.src)])]);
+// assembly.dm:104
+rt.def("/obj/item/device/assembly/proc/examine", function examine(f: Frame, user: Value) {
+	parent_proc();
+	if (this.secured) {
+		to_chat(user, fmt("＄！ is secured and ready to be used.", [this]));
 	} else {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("＄！ can be attached to other things.", [live(f.src)])]);
+		to_chat(user, fmt("＄！ can be attached to other things.", [this]));
 	}
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/item/device/assembly/proc/attack_self  (code/modules/assembly/assembly.dm:112)  may sleep
+// assembly.dm:112
 rt.def("/obj/item/device/assembly/proc/attack_self", function* attack_self(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (!truthy(live(user))) {
+	if (!user) {
 		return 0;
 	}
-	yield* g.callName(f, live(user), "set_machine", [live(f.src)]);
-	yield* g.srcCall(f, "interact", live(user));
+	yield* user.set_machine(this);
+	yield* this.interact(user);
 	return 1;
 }, true);

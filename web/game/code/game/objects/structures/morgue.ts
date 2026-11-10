@@ -1,7 +1,7 @@
-// From code/game/objects/structures/morgue.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/structures/morgue.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(12812, "/obj/structure/bodycontainer", "/obj/structure", {
@@ -16,160 +16,137 @@ rt.type(12812, "/obj/structure/bodycontainer", "/obj/structure", {
 	max_integrity: 400,
 });
 
-// /obj/structure/bodycontainer/proc/Destroy  (code/game/objects/structures/morgue.dm:29)  may sleep
+// morgue.dm:29
 rt.def("/obj/structure/bodycontainer/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.srcCall(f, "open");
-	if (truthy(rt.sv(f, "connected"))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "connected")]);
-		rt.setSv(f, "connected", null);
+	yield* this.open();
+	if (this.connected) {
+		yield* qdel(this.connected);
+		this.connected = null;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);
 
-// /obj/structure/bodycontainer/proc/on_log  (code/game/objects/structures/morgue.dm:36)
-rt.def("/obj/structure/bodycontainer/proc/on_log", function on_log(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.callSrc(f, "update_icon", []);
+// morgue.dm:36
+rt.def("/obj/structure/bodycontainer/proc/on_log", function on_log(f: Frame, login: Value) {
+	parent_proc();
+	this.update_icon();
 	return f.dot;
-}, false, { args: ["login"] });
+}, false);
 
-// /obj/structure/bodycontainer/proc/relaymove  (code/game/objects/structures/morgue.dm:43)  may sleep
+// morgue.dm:43
 rt.def("/obj/structure/bodycontainer/proc/relaymove", function* relaymove(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if ((truthy(rt.fv(f, "stat", live(user))) || !truthy((yield* g.call(f, P("/proc/isturf"), null, [rt.sv(f, "loc")]))))) {
-		return live(f.dot);
+	if (user.stat || !isturf(this.loc)) {
+		return f.dot;
 	}
-	yield* g.srcCall(f, "open");
+	yield* this.open();
 	return f.dot;
 }, true);
 
-// /obj/structure/bodycontainer/proc/attack_paw  (code/game/objects/structures/morgue.dm:48)  may sleep
+// morgue.dm:48
 rt.def("/obj/structure/bodycontainer/proc/attack_paw", function* attack_paw(f: Frame, user: Value) {
-	f.vars = () => [user];
-	return (yield* g.callName(f, live(f.src), "attack_hand", [live(user)]));
+	return (yield* this.attack_hand(user));
 }, true);
 
-// /obj/structure/bodycontainer/proc/attack_hand  (code/game/objects/structures/morgue.dm:52)  may sleep
+// morgue.dm:52
 rt.def("/obj/structure/bodycontainer/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (truthy(rt.sv(f, "locked"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='danger'>It's locked.</span>"]);
-		return live(f.dot);
+	if (this.locked) {
+		to_chat(user, "<span class='danger'>It's locked.</span>");
+		return f.dot;
 	}
-	if (!truthy(rt.sv(f, "connected"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "That doesn't appear to have a tray."]);
-		return live(f.dot);
+	if (!this.connected) {
+		to_chat(user, "That doesn't appear to have a tray.");
+		return f.dot;
 	}
-	if (isEqual(rt.fv(f, "loc", rt.sv(f, "connected")), live(f.src))) {
-		yield* g.srcCall(f, "open");
+	if (this.connected.loc == this) {
+		yield* this.open();
 	} else {
-		yield* g.srcCall(f, "close");
+		yield* this.close();
 	}
-	yield* g.srcCall(f, "add_fingerprint", live(user));
+	yield* this.add_fingerprint(user);
 	return f.dot;
 }, true);
 
-// /obj/structure/bodycontainer/proc/attack_robot  (code/game/objects/structures/morgue.dm:64)  may sleep
+// morgue.dm:64
 rt.def("/obj/structure/bodycontainer/proc/attack_robot", function* attack_robot(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (!truthy((yield* g.callName(f, live(user), "Adjacent", [live(f.src)])))) {
-		return live(f.dot);
+	if (!user.Adjacent(this)) {
+		return f.dot;
 	}
-	return (yield* g.srcCall(f, "attack_hand", live(user)));
+	return (yield* this.attack_hand(user));
 }, true);
 
-// /obj/structure/bodycontainer/proc/attackby  (code/game/objects/structures/morgue.dm:69)  may sleep
+// morgue.dm:69
 rt.def("/obj/structure/bodycontainer/proc/attackby", function* attackby(f: Frame) {
 	let t: Value = null;
-	f.vars = () => [t];
-	yield* g.srcCall(f, "add_fingerprint", live(f.args[1]));
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/pen")) ? 1 : 0))) {
-		t = (yield* g.call(f, P("/proc/stripped_input"), null, [live(f.args[1]), "What would you like the label to be?", fmt("＀", [rt.sv(f, "name")]), null]));
-		if (!isEqual((yield* g.callName(f, live(f.args[1]), "get_active_held_item", [])), live(f.args[0]))) {
-			return live(f.dot);
+	yield* this.add_fingerprint(f.args[1]);
+	if (rt.istype(f.args[0], T("/obj/item/weapon/pen"))) {
+		t = (yield* stripped_input(f.args[1], "What would you like the label to be?", `${this.name}`, null));
+		if (f.args[1].get_active_held_item() != f.args[0]) {
+			return f.dot;
 		}
-		if ((!rt.le((yield* g.call(f, P("/proc/get_dist"), null, [live(f.src), live(f.usr)])), 1) && !isEqual(rt.fv(f, "loc", live(f.src)), live(f.args[1])))) {
-			return live(f.dot);
+		if (!(get_dist(this, f.usr) <= 1) && this.loc != f.args[1]) {
+			return f.dot;
 		}
-		if (truthy(live(t))) {
-			rt.setSv(f, "name", fmt("＀- '＀'", [rt.initial(f, live(f.src), "name"), live(t)]));
+		if (t) {
+			this.name = `${rt.initial(f, this, "name")}- '${t}'`;
 		} else {
-			rt.setSv(f, "name", rt.initial(f, live(f.src), "name"));
+			this.name = rt.initial(f, this, "name");
 		}
 	} else {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+		return (yield* parent_proc());
 	}
 	return f.dot;
 }, true, { args: ["P", "user", "params"] });
 
-// /obj/structure/bodycontainer/proc/deconstruct  (code/game/objects/structures/morgue.dm:84)  may sleep
+// morgue.dm:84
 rt.def("/obj/structure/bodycontainer/proc/deconstruct", function* deconstruct(f: Frame, disassembled: Value) {
-	f.vars = () => [disassembled];
-	if (live(disassembled) === null) {
-		disassembled = 1;
-	}
-	yield* g.new_(f, T("/obj/item/stack/sheet/metal"), [rt.sv(f, "loc"), 5]);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	disassembled ??= 1;
+	yield* new_(T("/obj/item/stack/sheet/metal"), this.loc, 5);
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
-// /obj/structure/bodycontainer/proc/container_resist  (code/game/objects/structures/morgue.dm:88)  may sleep
+// morgue.dm:88
 rt.def("/obj/structure/bodycontainer/proc/container_resist", function* container_resist(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.srcCall(f, "open");
+	yield* this.open();
 	return f.dot;
 }, true);
 
-// /obj/structure/bodycontainer/proc/relay_container_resist  (code/game/objects/structures/morgue.dm:91)  may sleep
+// morgue.dm:91
 rt.def("/obj/structure/bodycontainer/proc/relay_container_resist", function* relay_container_resist(f: Frame, user: Value, O: Value) {
-	f.vars = () => [user, O];
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You slam yourself into the side of ＀.</span>", [live(O)])]);
-	yield* g.srcCall(f, "container_resist", live(user));
+	to_chat(user, `<span class='notice'>You slam yourself into the side of ${O}.</span>`);
+	yield* this.container_resist(user);
 	return f.dot;
 }, true);
 
-// /obj/structure/bodycontainer/proc/open  (code/game/objects/structures/morgue.dm:95)  may sleep
+// morgue.dm:95
 rt.def("/obj/structure/bodycontainer/proc/open", function* open(f: Frame) {
-	let _T: Value = null, AM: Value = null;
-	let $e: any;
-	f.vars = () => [_T, AM, $e];
-	yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/items/deconstruct.ogg"), 50, 1]);
-	_T = rt.getStep(f, live(f.src), rt.sv(f, "opendir"));
-	AM = null;
-	rt.forList(f, 0, live(f.src), T("/atom/movable"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		AM = $e;
-		yield* g.callName(f, live(AM), "forceMove", [live(_T)]);
+	let AM: Value = null;
+	playsound(this.loc, rt.rsc("sound/items/deconstruct.ogg"), 50, 1);
+	let _T: Value = rt.getStep(f, this, this.opendir);
+	for (AM of each(this, T("/atom/movable"))) {
+		yield* AM.forceMove(_T);
 	}
-	rt.endFor(f, 0);
-	yield* g.srcCall(f, "update_icon");
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/structure/bodycontainer/proc/close  (code/game/objects/structures/morgue.dm:102)  may sleep
+// morgue.dm:102
 rt.def("/obj/structure/bodycontainer/proc/close", function* close(f: Frame) {
 	let AM: Value = null;
-	let $e: any;
-	f.vars = () => [AM, $e];
-	yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/items/deconstruct.ogg"), 50, 1]);
-	AM = null;
-	rt.forList(f, 0, rt.fv(f, "loc", rt.sv(f, "connected")), T("/atom/movable"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		AM = $e;
-		if ((!truthy(rt.fv(f, "anchored", live(AM))) || isEqual(live(AM), rt.sv(f, "connected")))) {
-			yield* g.callName(f, live(AM), "forceMove", [live(f.src)]);
+	playsound(this.loc, rt.rsc("sound/items/deconstruct.ogg"), 50, 1);
+	for (AM of each(this.connected.loc, T("/atom/movable"))) {
+		if (!AM.anchored || AM == this.connected) {
+			yield* AM.forceMove(this);
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.srcCall(f, "update_icon");
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/structure/bodycontainer/proc/get_remote_view_fullscreens  (code/game/objects/structures/morgue.dm:109)  may sleep
+// morgue.dm:109
 rt.def("/obj/structure/bodycontainer/proc/get_remote_view_fullscreens", function* get_remote_view_fullscreens(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (!(isEqual(rt.fv(f, "stat", live(user)), 2) || !truthy(rt.bitAnd(rt.fv(f, "sight", live(user)), 12)))) return f.dot;
-	yield* g.callName(f, live(user), "overlay_fullscreen", ["remote_view", T("/obj/screen/fullscreen/impaired"), 2]);
+	if (!(user.stat == 2 || !rt.bitAnd(user.sight, 12))) return f.dot;
+	yield* user.overlay_fullscreen("remote_view", T("/obj/screen/fullscreen/impaired"), 2);
 	return f.dot;
 }, true);
 
@@ -180,49 +157,41 @@ rt.type(12813, "/obj/structure/bodycontainer/morgue", "/obj/structure/bodycontai
 	icon_state: "morgue1",
 });
 
-// /obj/structure/bodycontainer/morgue/proc/New  (code/game/objects/structures/morgue.dm:121)  may sleep
+// morgue.dm:121
 rt.def("/obj/structure/bodycontainer/morgue/proc/New", function* New(f: Frame) {
-	rt.setSv(f, "connected", (yield* g.new_(f, T("/obj/structure/tray/m_tray"), [live(f.src)])));
-	rt.setFv(f, "connected", rt.sv(f, "connected"), live(f.src));
-	yield* g.callSuper(f, [], rt.Args.Same);
+	this.connected = (yield* new_(T("/obj/structure/tray/m_tray"), this));
+	this.connected.connected = this;
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /obj/structure/bodycontainer/morgue/proc/update_icon  (code/game/objects/structures/morgue.dm:126)
+// morgue.dm:126
 rt.def("/obj/structure/bodycontainer/morgue/proc/update_icon", function update_icon(f: Frame) {
 	let compiled: Value = null, M: Value = null;
-	let $e: any;
-	f.vars = () => [compiled, M, $e];
-	if ((!truthy(rt.sv(f, "connected")) || !isEqual(rt.fv(f, "loc", rt.sv(f, "connected")), live(f.src)))) {
-		rt.setSv(f, "icon_state", "morgue0");
+	if (!this.connected || this.connected.loc != this) {
+		this.icon_state = "morgue0";
+	} else if (rt.len(f, this.contents) == 1) {
+		this.icon_state = "morgue1";
 	} else {
-		if (isEqual(rt.len(f, rt.sv(f, "contents")), 1)) {
-			rt.setSv(f, "icon_state", "morgue1");
-		} else {
-			rt.setSv(f, "icon_state", "morgue2");
-			if (!truthy(rt.length((compiled = rt.call(f, P("/proc/recursive_mob_check"), null, [live(f.src), 0, 0]))))) {
-				rt.setSv(f, "icon_state", "morgue3");
-				return live(f.dot);
+		this.icon_state = "morgue2";
+		if (!rt.length((compiled = recursive_mob_check(this, 0, 0)))) {
+			this.icon_state = "morgue3";
+			return f.dot;
+		}
+		for (M of each(compiled, T("/mob/living"))) {
+			if (M.client && !M.suiciding) {
+				this.icon_state = "morgue4";
+				break;
 			}
-			M = null;
-			rt.forList(f, 0, live(compiled), T("/mob/living"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				M = $e;
-				if ((truthy(rt.fv(f, "client", live(M))) && !truthy(rt.fv(f, "suiciding", live(M))))) {
-					rt.setSv(f, "icon_state", "morgue4");
-					break;
-				}
-			}
-			rt.endFor(f, 0);
 		}
 	}
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobalcrematoriums  (code/game/objects/structures/morgue.dm:149)
+// morgue.dm:149
 rt.def("/datum/controller/global_vars/proc/InitGlobalcrematoriums", function InitGlobalcrematoriums(f: Frame) {
-	rt.setGl("crematoriums", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "crematoriums", add);
+	GLOB.crematoriums = list();
+	this.gvars_datum_init_order += "crematoriums";
 	return f.dot;
 });
 
@@ -234,94 +203,84 @@ rt.type(12814, "/obj/structure/bodycontainer/crematorium", "/obj/structure/bodyc
 	icon_state: "crema1",
 });
 
-// /obj/structure/bodycontainer/crematorium/proc/attack_robot  (code/game/objects/structures/morgue.dm:158)
+// morgue.dm:158
 rt.def("/obj/structure/bodycontainer/crematorium/proc/attack_robot", function attack_robot(f: Frame, user: Value) {
-	rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ is locked against you.</span>", [live(f.src)])]);
-	return live(f.dot);
+	to_chat(user, `<span class='warning'>${this} is locked against you.</span>`);
+	return f.dot;
 });
 
-// /obj/structure/bodycontainer/crematorium/proc/Destroy  (code/game/objects/structures/morgue.dm:162)  may sleep
+// morgue.dm:162
 rt.def("/obj/structure/bodycontainer/crematorium/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.callName(f, rt.gl("crematoriums"), "Remove", [live(f.src)]);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* GLOB.crematoriums.Remove(this);
+	return (yield* parent_proc());
 }, true);
 
-// /obj/structure/bodycontainer/crematorium/proc/New  (code/game/objects/structures/morgue.dm:166)  may sleep
+// morgue.dm:166
 rt.def("/obj/structure/bodycontainer/crematorium/proc/New", function* New(f: Frame) {
-	rt.setSv(f, "connected", (yield* g.new_(f, T("/obj/structure/tray/c_tray"), [live(f.src)])));
-	rt.setFv(f, "connected", rt.sv(f, "connected"), live(f.src));
-	yield* g.callName(f, rt.gl("crematoriums"), "Add", [live(f.src)]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	this.connected = (yield* new_(T("/obj/structure/tray/c_tray"), this));
+	this.connected.connected = this;
+	GLOB.crematoriums.Add(this);
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /obj/structure/bodycontainer/crematorium/proc/update_icon  (code/game/objects/structures/morgue.dm:173)
+// morgue.dm:173
 rt.def("/obj/structure/bodycontainer/crematorium/proc/update_icon", function update_icon(f: Frame) {
-	if ((!truthy(rt.sv(f, "connected")) || !isEqual(rt.fv(f, "loc", rt.sv(f, "connected")), live(f.src)))) {
-		rt.setSv(f, "icon_state", "crema0");
+	if (!this.connected || this.connected.loc != this) {
+		this.icon_state = "crema0";
 	} else {
-		if (rt.gt(rt.getLen(f, rt.fv(f, "contents", live(f.src))), 1)) {
-			rt.setFv(f, "icon_state", live(f.src), "crema2");
+		if (rt.len(f, this.contents) > 1) {
+			this.icon_state = "crema2";
 		} else {
-			rt.setFv(f, "icon_state", live(f.src), "crema1");
+			this.icon_state = "crema1";
 		}
-		if (truthy(rt.sv(f, "locked"))) {
-			rt.setFv(f, "icon_state", live(f.src), "crema_active");
+		if (this.locked) {
+			this.icon_state = "crema_active";
 		}
 	}
-	return live(f.dot);
+	return f.dot;
 });
 
-// /obj/structure/bodycontainer/crematorium/proc/cremate  (code/game/objects/structures/morgue.dm:191)  may sleep
+// morgue.dm:191
 rt.def("/obj/structure/bodycontainer/crematorium/proc/cremate", function* cremate(f: Frame, user: Value) {
 	let conts: Value = null, M: Value = null, O: Value = null;
-	let $e: any;
-	f.vars = () => [user, conts, M, O, $e];
-	if (truthy(rt.sv(f, "locked"))) {
-		return live(f.dot);
+	if (this.locked) {
+		return f.dot;
 	}
-	if (!truthy(rt.getLen(f, (conts = subtract(subtract((yield* g.srcCall(f, "GetAllContents")), live(f.src)), rt.sv(f, "connected")))))) {
-		yield* g.srcCall(f, "audible_message", "<span class='italics'>You hear a hollow crackle.</span>");
-		return live(f.dot);
+	if (!rt.len(f, (conts = this.GetAllContents() - this - this.connected))) {
+		this.audible_message("<span class='italics'>You hear a hollow crackle.</span>");
+		return f.dot;
 	} else {
-		yield* g.srcCall(f, "audible_message", "<span class='italics'>You hear a roar as the crematorium activates.</span>");
-		rt.setSv(f, "locked", 1);
-		yield* g.srcCall(f, "update_icon");
-		M = null;
-		rt.forList(f, 0, live(conts), T("/mob/living"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			M = $e;
-			if (!isEqual(rt.fv(f, "stat", live(M)), 2)) {
-				yield* g.callName(f, live(M), "emote", ["scream"]);
+		this.audible_message("<span class='italics'>You hear a roar as the crematorium activates.</span>");
+		this.locked = 1;
+		yield* this.update_icon();
+		for (M of each(conts, T("/mob/living"))) {
+			if (M.stat != 2) {
+				yield* M.emote("scream");
 			}
-			if (truthy(live(user))) {
-				yield* g.callName(f, live(user), "log_message", [fmt("Cremated <b>＀/＀</b>", [live(M), rt.fv(f, "ckey", live(M))]), "Attack log"]);
-				yield* g.call(f, P("/proc/log_attack"), null, [fmt("[＀] <b>＀/＀</b> cremated <b>＀/＀</b>", [(yield* g.call(f, P("/proc/time_stamp"), null, [])), live(user), rt.fv(f, "ckey", live(user)), live(M), rt.fv(f, "ckey", live(M))])]);
+			if (user) {
+				user.log_message(`Cremated <b>${M}/${M.ckey}</b>`, "Attack log");
+				log_attack(`[${time_stamp()}] <b>${user}/${user.ckey}</b> cremated <b>${M}/${M.ckey}</b>`);
 			} else {
-				yield* g.call(f, P("/proc/log_attack"), null, [fmt("[＀] <b>UNKNOWN</b> cremated <b>＀/＀</b>", [(yield* g.call(f, P("/proc/time_stamp"), null, [])), live(M), rt.fv(f, "ckey", live(M))])]);
+				log_attack(`[${time_stamp()}] <b>UNKNOWN</b> cremated <b>${M}/${M.ckey}</b>`);
 			}
-			yield* g.callName(f, live(M), "death", [1]);
-			if (truthy(live(M))) {
-				yield* g.callName(f, live(M), "ghostize", []);
-				yield* g.call(f, P("/proc/qdel"), null, [live(M)]);
-			}
-		}
-		rt.endFor(f, 0);
-		O = null;
-		rt.forList(f, 0, live(conts), T("/obj"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			O = $e;
-			if (!isEqual(live(O), rt.sv(f, "connected"))) {
-				yield* g.call(f, P("/proc/qdel"), null, [live(O)]);
+			yield* M.death(1);
+			if (M) {
+				yield* M.ghostize();
+				yield* qdel(M);
 			}
 		}
-		rt.endFor(f, 0);
-		yield* g.new_(f, T("/obj/effect/decal/cleanable/ash"), [live(f.src)]);
-		yield* g.call(f, P("/proc/sleep"), null, [30]);
-		if (!truthy(live(f.src)) || truthy(rt.fv(f, "gc_destroyed", live(f.src)))) return f.dot;
-		rt.setSv(f, "locked", 0);
-		yield* g.srcCall(f, "update_icon");
-		yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/machines/ding.ogg"), 50, 1]);
+		for (O of each(conts, T("/obj"))) {
+			if (O != this.connected) {
+				yield* qdel(O);
+			}
+		}
+		yield* new_(T("/obj/effect/decal/cleanable/ash"), this);
+		yield* sleep(30);
+		if (!this || this.gc_destroyed) return f.dot;
+		this.locked = 0;
+		yield* this.update_icon();
+		playsound(this.loc, rt.rsc("sound/machines/ding.ogg"), 50, 1);
 	}
 	return f.dot;
 }, true);
@@ -331,31 +290,21 @@ rt.type(12815, "/obj/structure/bodycontainer/crematorium/creamatorium", "/obj/st
 	desc: "A human incinerator. Works well during ice cream socials.",
 });
 
-// /obj/structure/bodycontainer/crematorium/creamatorium/proc/cremate  (code/game/objects/structures/morgue.dm:232)  may sleep
-rt.def("/obj/structure/bodycontainer/crematorium/creamatorium/proc/cremate", function* cremate(f: Frame) {
-	let icecreams: Value = null, i_scream: Value = null, IC: Value = null, IC_1: Value = null;
-	let $e: any;
-	f.vars = () => [icecreams, i_scream, IC, IC_1, $e];
-	icecreams = (yield* g.new_(f, T("/list"), []));
-	i_scream = null;
-	rt.forList(f, 0, (yield* g.srcCall(f, "GetAllContents")), T("/mob/living"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		i_scream = $e;
-		yield* g.callName(f, (IC = (yield* g.new_(f, T("/obj/item/weapon/reagent_containers/food/snacks/icecream"), []))), "set_cone_type", ["waffle"]);
-		yield* g.callName(f, live(IC), "add_mob_flavor", [live(i_scream)]);
-		icecreams = rt.modify(live(icecreams), live(IC), add);
+// morgue.dm:232
+rt.def("/obj/structure/bodycontainer/crematorium/creamatorium/proc/cremate", function* cremate(f: Frame, user: Value) {
+	let i_scream: Value = null, IC: Value = null, IC_1: Value = null;
+	let icecreams: Value = (yield* new_(T("/list")));
+	for (i_scream of each(this.GetAllContents(), T("/mob/living"))) {
+		yield* (IC = (yield* new_(T("/obj/item/weapon/reagent_containers/food/snacks/icecream")))).set_cone_type("waffle");
+		yield* IC.add_mob_flavor(i_scream);
+		icecreams += IC;
 	}
-	rt.endFor(f, 0);
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	IC_1 = null;
-	rt.forList(f, 0, live(icecreams), T("/obj"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		IC_1 = $e;
-		yield* g.callName(f, live(IC_1), "forceMove", [live(f.src)]);
+	f.dot = (yield* parent_proc());
+	for (IC_1 of each(icecreams, T("/obj"))) {
+		yield* IC_1.forceMove(this);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
 rt.type(12816, "/obj/structure/tray", "/obj/structure", {
 	connected: null,
@@ -368,69 +317,61 @@ rt.type(12816, "/obj/structure/tray", "/obj/structure", {
 	max_integrity: 350,
 });
 
-// /obj/structure/tray/proc/Destroy  (code/game/objects/structures/morgue.dm:259)  may sleep
+// morgue.dm:259
 rt.def("/obj/structure/tray/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.sv(f, "connected"))) {
-		rt.setFv(f, "connected", rt.sv(f, "connected"), null);
-		yield* g.callName(f, rt.sv(f, "connected"), "update_icon", []);
-		rt.setSv(f, "connected", null);
+	if (this.connected) {
+		this.connected.connected = null;
+		yield* this.connected.update_icon();
+		this.connected = null;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);
 
-// /obj/structure/tray/proc/deconstruct  (code/game/objects/structures/morgue.dm:265)  may sleep
+// morgue.dm:265
 rt.def("/obj/structure/tray/proc/deconstruct", function* deconstruct(f: Frame, disassembled: Value) {
-	f.vars = () => [disassembled];
-	if (live(disassembled) === null) {
-		disassembled = 1;
-	}
-	yield* g.new_(f, T("/obj/item/stack/sheet/metal"), [rt.sv(f, "loc"), 2]);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	disassembled ??= 1;
+	yield* new_(T("/obj/item/stack/sheet/metal"), this.loc, 2);
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
-// /obj/structure/tray/proc/attack_paw  (code/game/objects/structures/morgue.dm:269)  may sleep
+// morgue.dm:269
 rt.def("/obj/structure/tray/proc/attack_paw", function* attack_paw(f: Frame, user: Value) {
-	f.vars = () => [user];
-	return (yield* g.callName(f, live(f.src), "attack_hand", [live(user)]));
+	return (yield* this.attack_hand(user));
 }, true);
 
-// /obj/structure/tray/proc/attack_hand  (code/game/objects/structures/morgue.dm:272)  may sleep
+// morgue.dm:272
 rt.def("/obj/structure/tray/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (truthy(rt.fv(f, "connected", live(f.src)))) {
-		yield* g.callName(f, rt.sv(f, "connected"), "close", []);
-		yield* g.srcCall(f, "add_fingerprint", live(user));
+	if (this.connected) {
+		yield* this.connected.close();
+		yield* this.add_fingerprint(user);
 	} else {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>That's not connected to anything!</span>"]);
+		to_chat(user, "<span class='warning'>That's not connected to anything!</span>");
 	}
 	return f.dot;
 }, true);
 
-// /obj/structure/tray/proc/MouseDrop_T  (code/game/objects/structures/morgue.dm:279)
+// morgue.dm:279
 rt.def("/obj/structure/tray/proc/MouseDrop_T", function MouseDrop_T(f: Frame, O: Value, user: Value) {
 	let M: Value = null;
-	f.vars = () => [M];
-	if (((((!truthy((rt.istype(live(O), T("/atom/movable")) ? 1 : 0)) || truthy(rt.fv(f, "anchored", live(O)))) || !truthy(rt.callSrc(f, "Adjacent", [live(user)]))) || !truthy(rt.callName(f, live(user), "Adjacent", [live(O)]))) || isEqual(rt.fv(f, "loc", live(O)), live(user)))) {
-		return live(f.dot);
+	if (!rt.istype(O, T("/atom/movable")) || O.anchored || !this.Adjacent(user) || !user.Adjacent(O) || O.loc == user) {
+		return f.dot;
 	}
-	if (!truthy(rt.call(f, P("/proc/ismob"), null, [live(O)]))) {
-		if (!truthy((rt.istype(live(O), T("/obj/structure/closet/body_bag")) ? 1 : 0))) {
-			return live(f.dot);
+	if (!ismob(O)) {
+		if (!rt.istype(O, T("/obj/structure/closet/body_bag"))) {
+			return f.dot;
 		}
-	} else {
-		if (truthy(rt.gv(f, "buckled", (M = live(O))))) {
-			return live(f.dot);
-		}
+	} else if ((M = O).buckled) {
+		return f.dot;
 	}
-	if (((!truthy(rt.call(f, P("/proc/ismob"), null, [live(user)])) || truthy(rt.fv(f, "lying", live(user)))) || truthy(rt.callName(f, live(user), "incapacitated", [])))) {
-		return live(f.dot);
+	if (!ismob(user) || user.lying || user.incapacitated()) {
+		return f.dot;
 	}
-	rt.setFv(f, "loc", live(O), rt.fv(f, "loc", live(f.src)));
-	if (!isEqual(live(user), live(O))) {
-		rt.callSrc(f, "visible_message", [fmt("<span class='warning'>＀ stuffs ＀ into ＀.</span>", [live(user), live(O), live(f.src)])]);
+	O.loc = this.loc;
+	if (user != O) {
+		this.visible_message(`<span class='warning'>${user} stuffs ${O} into ${this}.</span>`);
 	}
-	return live(f.dot);
+	return f.dot;
 });
 
 rt.type(12818, "/obj/structure/tray/m_tray", "/obj/structure/tray", {
@@ -439,33 +380,27 @@ rt.type(12818, "/obj/structure/tray/m_tray", "/obj/structure/tray", {
 	icon_state: "morguet",
 });
 
-// /obj/structure/tray/m_tray/proc/CanPass  (code/game/objects/structures/morgue.dm:312)
+// morgue.dm:312
 rt.def("/obj/structure/tray/m_tray/proc/CanPass", function CanPass(f: Frame, mover: Value, target: Value, height: Value) {
-	f.vars = () => [height];
-	if (live(height) === null) {
-		height = 0;
-	}
-	if (isEqual(live(height), 0)) {
+	height ??= 0;
+	if (height == 0) {
 		return 1;
 	}
-	if ((truthy((rt.istype(live(mover), T("/atom/movable")) ? 1 : 0)) && truthy(rt.callName(f, live(mover), "checkpass", [1])))) {
+	if (rt.istype(mover, T("/atom/movable")) && mover.checkpass(1)) {
 		return 1;
 	}
-	if (truthy(rt.locateIn(f, T("/obj/structure/table"), rt.getStep(f, live(mover), 0)))) {
+	if (rt.locateIn(f, T("/obj/structure/table"), rt.getStep(f, mover, 0))) {
 		return 1;
 	} else {
 		return 0;
 	}
-	return f.dot;
 });
 
-// /obj/structure/tray/m_tray/proc/CanAStarPass  (code/game/objects/structures/morgue.dm:323)
+// morgue.dm:323
 rt.def("/obj/structure/tray/m_tray/proc/CanAStarPass", function CanAStarPass(f: Frame, ID: Value, dir: Value, caller: Value) {
-	let mover: Value = null;
-	f.vars = () => [mover];
-	f.dot = (!truthy(rt.sv(f, "density")) ? 1 : 0);
-	if (!truthy((rt.istype(live(caller), T("/atom/movable")) ? 1 : 0))) return f.dot;
-	mover = live(caller);
-	f.dot = (live(f.dot) || rt.callName(f, live(mover), "checkpass", [1]));
+	f.dot = (!this.density ? 1 : 0);
+	if (!rt.istype(caller, T("/atom/movable"))) return f.dot;
+	let mover: Value = caller;
+	f.dot = (f.dot || mover.checkpass(1));
 	return f.dot;
 });

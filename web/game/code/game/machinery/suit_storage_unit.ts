@@ -1,7 +1,7 @@
-// From code/game/machinery/suit_storage_unit.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/machinery/suit_storage_unit.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(10831, "/obj/machinery/suit_storage_unit", "/obj/machinery", {
@@ -30,430 +30,389 @@ rt.type(10831, "/obj/machinery/suit_storage_unit", "/obj/machinery", {
 	max_integrity: 250,
 });
 
-// /obj/machinery/suit_storage_unit/proc/New  (code/game/machinery/suit_storage_unit.dm:106)  may sleep
+// suit_storage_unit.dm:106
 rt.def("/obj/machinery/suit_storage_unit/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "wires", (yield* g.new_(f, T("/datum/wires/suit_storage_unit"), [live(f.src)])));
-	if (truthy(rt.sv(f, "suit_type"))) {
-		rt.setSv(f, "suit", (yield* g.new_(f, rt.sv(f, "suit_type"), [live(f.src)])));
+	yield* parent_proc();
+	this.wires = (yield* new_(T("/datum/wires/suit_storage_unit"), this));
+	if (this.suit_type) {
+		this.suit = (yield* new_(this.suit_type, this));
 	}
-	if (truthy(rt.sv(f, "helmet_type"))) {
-		rt.setSv(f, "helmet", (yield* g.new_(f, rt.sv(f, "helmet_type"), [live(f.src)])));
+	if (this.helmet_type) {
+		this.helmet = (yield* new_(this.helmet_type, this));
 	}
-	if (truthy(rt.sv(f, "mask_type"))) {
-		rt.setSv(f, "mask", (yield* g.new_(f, rt.sv(f, "mask_type"), [live(f.src)])));
+	if (this.mask_type) {
+		this.mask = (yield* new_(this.mask_type, this));
 	}
-	if (truthy(rt.sv(f, "storage_type"))) {
-		rt.setSv(f, "storage", (yield* g.new_(f, rt.sv(f, "storage_type"), [live(f.src)])));
+	if (this.storage_type) {
+		this.storage = (yield* new_(this.storage_type, this));
 	}
-	yield* g.srcCall(f, "update_icon");
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/machinery/suit_storage_unit/proc/Destroy  (code/game/machinery/suit_storage_unit.dm:120)  may sleep
+// suit_storage_unit.dm:120
 rt.def("/obj/machinery/suit_storage_unit/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.sv(f, "suit"))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "suit")]);
-		rt.setSv(f, "suit", null);
+	if (this.suit) {
+		yield* qdel(this.suit);
+		this.suit = null;
 	}
-	if (truthy(rt.sv(f, "helmet"))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "helmet")]);
-		rt.setSv(f, "helmet", null);
+	if (this.helmet) {
+		yield* qdel(this.helmet);
+		this.helmet = null;
 	}
-	if (truthy(rt.sv(f, "mask"))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "mask")]);
-		rt.setSv(f, "mask", null);
+	if (this.mask) {
+		yield* qdel(this.mask);
+		this.mask = null;
 	}
-	if (truthy(rt.sv(f, "storage"))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "storage")]);
-		rt.setSv(f, "storage", null);
+	if (this.storage) {
+		yield* qdel(this.storage);
+		this.storage = null;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);
 
-// /obj/machinery/suit_storage_unit/proc/update_icon  (code/game/machinery/suit_storage_unit.dm:134)
+// suit_storage_unit.dm:134
 rt.def("/obj/machinery/suit_storage_unit/proc/update_icon", function update_icon(f: Frame) {
-	rt.callSrc(f, "cut_overlays", []);
-	if (truthy(rt.sv(f, "uv"))) {
-		if (truthy(rt.sv(f, "uv_super"))) {
-			rt.callSrc(f, "add_overlay", ["super"]);
+	this.cut_overlays();
+	if (this.uv) {
+		if (this.uv_super) {
+			this.add_overlay("super");
+		} else if (this.occupant) {
+			this.add_overlay("uvhuman");
 		} else {
-			if (truthy(rt.sv(f, "occupant"))) {
-				rt.callSrc(f, "add_overlay", ["uvhuman"]);
-			} else {
-				rt.callSrc(f, "add_overlay", ["uv"]);
+			this.add_overlay("uv");
+		}
+	} else if (this.state_open) {
+		if (rt.bitAnd(this.stat, 1)) {
+			this.add_overlay("broken");
+		} else {
+			this.add_overlay("open");
+			if (this.suit) {
+				this.add_overlay("suit");
+			}
+			if (this.helmet) {
+				this.add_overlay("helm");
+			}
+			if (this.storage) {
+				this.add_overlay("storage");
 			}
 		}
 	} else {
-		if (truthy(rt.sv(f, "state_open"))) {
-			if (truthy(rt.bitAnd(rt.sv(f, "stat"), 1))) {
-				rt.callSrc(f, "add_overlay", ["broken"]);
-			} else {
-				rt.callSrc(f, "add_overlay", ["open"]);
-				if (truthy(rt.sv(f, "suit"))) {
-					rt.callSrc(f, "add_overlay", ["suit"]);
-				}
-				if (truthy(rt.sv(f, "helmet"))) {
-					rt.callSrc(f, "add_overlay", ["helm"]);
-				}
-				if (truthy(rt.sv(f, "storage"))) {
-					rt.callSrc(f, "add_overlay", ["storage"]);
-				}
-			}
-		} else {
-			if (!truthy(rt.sv(f, "occupant"))) return f.dot;
-			rt.callSrc(f, "add_overlay", ["human"]);
-		}
+		if (!this.occupant) return f.dot;
+		this.add_overlay("human");
 	}
 	return f.dot;
 });
 
-// /obj/machinery/suit_storage_unit/proc/power_change  (code/game/machinery/suit_storage_unit.dm:158)  may sleep
+// suit_storage_unit.dm:158
 rt.def("/obj/machinery/suit_storage_unit/proc/power_change", function* power_change(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if ((!truthy((yield* g.srcCall(f, "is_operational"))) && truthy(rt.sv(f, "state_open")))) {
-		yield* g.srcCall(f, "open_machine");
-		yield* g.srcCall(f, "dump_contents");
+	yield* parent_proc();
+	if (!this.is_operational() && this.state_open) {
+		yield* this.open_machine();
+		yield* this.dump_contents();
 	}
-	yield* g.srcCall(f, "update_icon");
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/machinery/suit_storage_unit/proc/dump_contents  (code/game/machinery/suit_storage_unit.dm:165)  may sleep
+// suit_storage_unit.dm:165
 rt.def("/obj/machinery/suit_storage_unit/proc/dump_contents", function* dump_contents(f: Frame) {
-	yield* g.srcCall(f, "dropContents");
-	rt.setSv(f, "helmet", null);
-	rt.setSv(f, "suit", null);
-	rt.setSv(f, "mask", null);
-	rt.setSv(f, "storage", null);
-	rt.setSv(f, "occupant", null);
+	yield* this.dropContents();
+	this.helmet = null;
+	this.suit = null;
+	this.mask = null;
+	this.storage = null;
+	this.occupant = null;
 	return f.dot;
 }, true);
 
-// /obj/machinery/suit_storage_unit/proc/deconstruct  (code/game/machinery/suit_storage_unit.dm:173)  may sleep
+// suit_storage_unit.dm:173
 rt.def("/obj/machinery/suit_storage_unit/proc/deconstruct", function* deconstruct(f: Frame, disassembled: Value) {
-	f.vars = () => [disassembled];
-	if (live(disassembled) === null) {
-		disassembled = 1;
+	disassembled ??= 1;
+	if (!rt.bitAnd(this.flags, NODECONSTRUCT)) {
+		yield* this.open_machine();
+		yield* this.dump_contents();
+		yield* new_(T("/obj/item/stack/sheet/metal"), this.loc, 2);
 	}
-	if (!truthy(rt.bitAnd(rt.sv(f, "flags"), 128))) {
-		yield* g.srcCall(f, "open_machine");
-		yield* g.srcCall(f, "dump_contents");
-		yield* g.new_(f, T("/obj/item/stack/sheet/metal"), [rt.sv(f, "loc"), 2]);
-	}
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
-// /obj/machinery/suit_storage_unit/proc/MouseDrop_T  (code/game/machinery/suit_storage_unit.dm:180)  may sleep
+// suit_storage_unit.dm:180
 rt.def("/obj/machinery/suit_storage_unit/proc/MouseDrop_T", function* MouseDrop_T(f: Frame, A: Value, user: Value) {
-	let target: Value = null;
-	f.vars = () => [A, user, target];
-	if (((((truthy(rt.fv(f, "stat", live(user))) || truthy(rt.fv(f, "lying", live(user)))) || !truthy((yield* g.srcCall(f, "Adjacent", live(user))))) || !truthy((yield* g.srcCall(f, "Adjacent", live(A))))) || !truthy((rt.istype(live(A), T("/mob/living")) ? 1 : 0)))) {
-		return live(f.dot);
+	if (user.stat || user.lying || !this.Adjacent(user) || !this.Adjacent(A) || !rt.istype(A, T("/mob/living"))) {
+		return f.dot;
 	}
-	target = live(A);
-	if (!truthy(rt.sv(f, "state_open"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>The unit's doors are shut!</span>"]);
-		return live(f.dot);
+	let target: Value = A;
+	if (!this.state_open) {
+		to_chat(user, "<span class='warning'>The unit's doors are shut!</span>");
+		return f.dot;
 	}
-	if (!truthy((yield* g.srcCall(f, "is_operational")))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>The unit is not operational!</span>"]);
-		return live(f.dot);
+	if (!this.is_operational()) {
+		to_chat(user, "<span class='warning'>The unit is not operational!</span>");
+		return f.dot;
 	}
-	if ((((truthy(rt.sv(f, "occupant")) || truthy(rt.sv(f, "helmet"))) || truthy(rt.sv(f, "suit"))) || truthy(rt.sv(f, "storage")))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>It's too cluttered inside to fit in!</span>"]);
-		return live(f.dot);
+	if (this.occupant || this.helmet || this.suit || this.storage) {
+		to_chat(user, "<span class='warning'>It's too cluttered inside to fit in!</span>");
+		return f.dot;
 	}
-	if (isEqual(live(target), live(user))) {
-		yield* g.callName(f, live(user), "visible_message", [fmt("<span class='warning'>＀ starts squeezing into ＀!</span>", [live(user), live(f.src)]), fmt("<span class='notice'>You start working your way into ＀...</span>", [live(f.src)])]);
+	if (target == user) {
+		user.visible_message(`<span class='warning'>${user} starts squeezing into ${this}!</span>`, `<span class='notice'>You start working your way into ${this}...</span>`);
 	} else {
-		yield* g.callName(f, live(target), "visible_message", [fmt("<span class='warning'>＀ starts shoving ＀ into ＀!</span>", [live(user), live(target), live(f.src)]), fmt("<span class='userdanger'>＀ starts shoving you into ＀!</span>", [live(user), live(f.src)])]);
+		target.visible_message(`<span class='warning'>${user} starts shoving ${target} into ${this}!</span>`, `<span class='userdanger'>${user} starts shoving you into ${this}!</span>`);
 	}
-	if (!truthy((yield* g.call(f, P("/proc/do_mob"), null, [live(user), live(target), 30])))) return f.dot;
-	if ((((truthy(rt.sv(f, "occupant")) || truthy(rt.sv(f, "helmet"))) || truthy(rt.sv(f, "suit"))) || truthy(rt.sv(f, "storage")))) {
-		return live(f.dot);
+	if (!(yield* do_mob(user, target, 30))) return f.dot;
+	if (this.occupant || this.helmet || this.suit || this.storage) {
+		return f.dot;
 	}
-	if (isEqual(live(target), live(user))) {
-		yield* g.callName(f, live(user), "visible_message", [fmt("<span class='warning'>＀ slips into ＀ and closes the door behind them!</span>", [live(user), live(f.src)]), fmt("<span class=notice'>You slip into ＀'s cramped space and shut its door.</span>", [live(f.src)])]);
+	if (target == user) {
+		user.visible_message(`<span class='warning'>${user} slips into ${this} and closes the door behind them!</span>`, `<span class=notice'>You slip into ${this}'s cramped space and shut its door.</span>`);
 	} else {
-		yield* g.callName(f, live(target), "visible_message", [fmt("<span class='warning'>＀ pushes ＀ into ＀ and shuts its door!<span>", [live(user), live(target), live(f.src)]), fmt("<span class='userdanger'>＀ shoves you into ＀ and shuts the door!</span>", [live(user), live(f.src)])]);
+		target.visible_message(`<span class='warning'>${user} pushes ${target} into ${this} and shuts its door!<span>`, `<span class='userdanger'>${user} shoves you into ${this} and shuts the door!</span>`);
 	}
-	yield* g.srcCall(f, "close_machine", live(target));
-	yield* g.srcCall(f, "add_fingerprint", live(user));
+	yield* this.close_machine(target);
+	yield* this.add_fingerprint(user);
 	return f.dot;
 }, true);
 
-// /obj/machinery/suit_storage_unit/proc/cook  (code/game/machinery/suit_storage_unit.dm:210)  may sleep
+// suit_storage_unit.dm:210
 rt.def("/obj/machinery/suit_storage_unit/proc/cook", function* cook(f: Frame) {
 	let mob_occupant: Value = null, I: Value = null;
-	let $e: any;
-	f.vars = () => [mob_occupant, I, $e];
-	if (truthy(rt.sv(f, "uv_cycles"))) {
-		rt.incSrcVar(f, "uv_cycles", -1, true);
-		rt.setSv(f, "uv", 1);
-		rt.setSv(f, "locked", 1);
-		yield* g.srcCall(f, "update_icon");
-		if (truthy(rt.sv(f, "occupant"))) {
-			mob_occupant = rt.sv(f, "occupant");
-			if (truthy(rt.sv(f, "uv_super"))) {
-				yield* g.callName(f, live(mob_occupant), "adjustFireLoss", [(yield* g.call(f, P("/proc/rand"), null, [20, 36]))]);
+	if (this.uv_cycles) {
+		this.uv_cycles--;
+		this.uv = 1;
+		this.locked = 1;
+		yield* this.update_icon();
+		if (this.occupant) {
+			mob_occupant = this.occupant;
+			if (this.uv_super) {
+				yield* mob_occupant.adjustFireLoss(rand(20, 36));
 			} else {
-				yield* g.callName(f, live(mob_occupant), "adjustFireLoss", [(yield* g.call(f, P("/proc/rand"), null, [10, 16]))]);
+				yield* mob_occupant.adjustFireLoss(rand(10, 16));
 			}
-			yield* g.callName(f, live(mob_occupant), "emote", ["scream"]);
+			yield* mob_occupant.emote("scream");
 		}
-		yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/machinery/suit_storage_unit/proc/cook")])), 50]);
+		yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/machinery/suit_storage_unit/proc/cook"))), 50);
 	} else {
-		rt.setSv(f, "uv_cycles", rt.initial(f, live(f.src), "uv_cycles"));
-		rt.setSv(f, "uv", 0);
-		rt.setSv(f, "locked", 0);
-		if (truthy(rt.sv(f, "uv_super"))) {
-			yield* g.srcCall(f, "visible_message", fmt("<span class='warning'>＀'s door creaks open with a loud whining noise. A cloud of foul black smoke escapes from its chamber.</span>", [live(f.src)]));
-			yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/machines/airlock_alien_prying.ogg"), 50, 1]);
-			rt.setSv(f, "helmet", null);
-			yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "helmet")]);
-			rt.setSv(f, "suit", null);
-			yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "suit")]);
-			rt.setSv(f, "mask", null);
-			yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "mask")]);
-			rt.setSv(f, "storage", null);
-			yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "storage")]);
-			yield* g.callName(f, rt.sv(f, "wires"), "cut_all", []);
+		this.uv_cycles = rt.initial(f, this, "uv_cycles");
+		this.uv = 0;
+		this.locked = 0;
+		if (this.uv_super) {
+			this.visible_message(`<span class='warning'>${this}'s door creaks open with a loud whining noise. A cloud of foul black smoke escapes from its chamber.</span>`);
+			playsound(this, rt.rsc("sound/machines/airlock_alien_prying.ogg"), 50, 1);
+			this.helmet = null;
+			yield* qdel(this.helmet);
+			this.suit = null;
+			yield* qdel(this.suit);
+			this.mask = null;
+			yield* qdel(this.mask);
+			this.storage = null;
+			yield* qdel(this.storage);
+			yield* this.wires.cut_all();
 		} else {
-			if (!truthy(rt.sv(f, "occupant"))) {
-				yield* g.srcCall(f, "visible_message", fmt("<span class='notice'>＀'s door slides open. The glowing yellow lights dim to a gentle green.</span>", [live(f.src)]));
+			if (!this.occupant) {
+				this.visible_message(`<span class='notice'>${this}'s door slides open. The glowing yellow lights dim to a gentle green.</span>`);
 			} else {
-				yield* g.srcCall(f, "visible_message", fmt("<span class='warning'>＀'s door slides open, barraging you with the nauseating smell of charred flesh.</span>", [live(f.src)]));
+				this.visible_message(`<span class='warning'>${this}'s door slides open, barraging you with the nauseating smell of charred flesh.</span>`);
 			}
-			yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/machines/airlockclose.ogg"), 25, 1]);
-			I = null;
-			rt.forList(f, 0, live(f.src), T("/obj/item"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				I = $e;
-				yield* g.callName(f, live(I), "clean_blood", []);
-				rt.setFv(f, "fingerprints", live(I), rt.list());
+			playsound(this, rt.rsc("sound/machines/airlockclose.ogg"), 25, 1);
+			for (I of each(this, T("/obj/item"))) {
+				I.clean_blood();
+				I.fingerprints = list();
 			}
-			rt.endFor(f, 0);
 		}
-		yield* g.srcCall(f, "open_machine", 0);
-		if (!truthy(rt.sv(f, "occupant"))) return f.dot;
-		yield* g.srcCall(f, "dump_contents");
+		yield* this.open_machine(0);
+		if (!this.occupant) return f.dot;
+		yield* this.dump_contents();
 	}
 	return f.dot;
 }, true);
 
-// /obj/machinery/suit_storage_unit/proc/shock  (code/game/machinery/suit_storage_unit.dm:253)  may sleep
+// suit_storage_unit.dm:253
 rt.def("/obj/machinery/suit_storage_unit/proc/shock", function* shock(f: Frame, user: Value, prb: Value) {
 	let s: Value = null;
-	f.vars = () => [user, prb, s];
-	if (truthy(rt.op(f, "Prob", [], [live(prb)]))) return f.dot;
-	yield* g.callName(f, (s = (yield* g.new_(f, T("/datum/effect_system/spark_spread"), []))), "set_up", [5, 1, live(f.src)]);
-	yield* g.callName(f, live(s), "start", []);
-	if (!truthy((yield* g.call(f, P("/proc/electrocute_mob"), null, [live(user), live(f.src), live(f.src), 1, 1])))) return f.dot;
+	if (prob(prb)) return f.dot;
+	yield* (s = (yield* new_(T("/datum/effect_system/spark_spread")))).set_up(5, 1, this);
+	yield* s.start();
+	if (!(yield* electrocute_mob(user, this, this, 1, 1))) return f.dot;
 	return 1;
 }, true);
 
-// /obj/machinery/suit_storage_unit/proc/relaymove  (code/game/machinery/suit_storage_unit.dm:261)  may sleep
+// suit_storage_unit.dm:261
 rt.def("/obj/machinery/suit_storage_unit/proc/relaymove", function* relaymove(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.srcCall(f, "container_resist", live(user));
+	yield* this.container_resist(user);
 	return f.dot;
 }, true);
 
-// /obj/machinery/suit_storage_unit/proc/container_resist  (code/game/machinery/suit_storage_unit.dm:264)  may sleep
+// suit_storage_unit.dm:264
 rt.def("/obj/machinery/suit_storage_unit/proc/container_resist", function* container_resist(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.srcCall(f, "add_fingerprint", live(user));
-	if (truthy(rt.sv(f, "locked"))) {
-		yield* g.srcCall(f, "visible_message", fmt("<span class='notice'>You see ＀ kicking against the doors of ＀!</span>", [live(user), live(f.src)]), "<span class='notice'>You start kicking against the doors...</span>");
-		yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/machinery/suit_storage_unit/proc/resist_open"), live(user)])), 300]);
+	yield* this.add_fingerprint(user);
+	if (this.locked) {
+		this.visible_message(`<span class='notice'>You see ${user} kicking against the doors of ${this}!</span>`, "<span class='notice'>You start kicking against the doors...</span>");
+		yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/machinery/suit_storage_unit/proc/resist_open"), user)), 300);
 	} else {
-		yield* g.srcCall(f, "open_machine");
-		yield* g.srcCall(f, "dump_contents");
+		yield* this.open_machine();
+		yield* this.dump_contents();
 	}
 	return f.dot;
 }, true);
 
-// /obj/machinery/suit_storage_unit/proc/resist_open  (code/game/machinery/suit_storage_unit.dm:273)  may sleep
+// suit_storage_unit.dm:273
 rt.def("/obj/machinery/suit_storage_unit/proc/resist_open", function* resist_open(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (!(((!truthy(rt.sv(f, "state_open")) && truthy(rt.sv(f, "occupant"))) && truthy((rt.isIn(f, live(user), live(f.src)) ? 1 : 0))) && isEqual(rt.fv(f, "stat", live(user)), 0))) return f.dot;
-	yield* g.srcCall(f, "visible_message", fmt("<span class='notice'>You see ＀ bursts out of ＀!</span>", [live(user), live(f.src)]), fmt("<span class='notice'>You escape the cramped confines of ＀!</span>", [live(f.src)]));
-	yield* g.srcCall(f, "open_machine");
+	if (!(!this.state_open && this.occupant && rt.isIn(f, user, this) && user.stat == 0)) return f.dot;
+	this.visible_message(`<span class='notice'>You see ${user} bursts out of ${this}!</span>`, `<span class='notice'>You escape the cramped confines of ${this}!</span>`);
+	yield* this.open_machine();
 	return f.dot;
 }, true, { argTypes: [{ type: 8, path: "/mob" }] });
 
-// /obj/machinery/suit_storage_unit/proc/attackby  (code/game/machinery/suit_storage_unit.dm:278)  may sleep
-rt.def("/obj/machinery/suit_storage_unit/proc/attackby", function* attackby(f: Frame) {
-	if ((truthy(rt.sv(f, "state_open")) && truthy((yield* g.srcCall(f, "is_operational"))))) {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/clothing/suit/space")) ? 1 : 0))) {
-			if (truthy(rt.sv(f, "suit"))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>The unit already contains a suit!.</span>"]);
-				return live(f.dot);
+// suit_storage_unit.dm:278
+rt.def("/obj/machinery/suit_storage_unit/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
+	if (this.state_open && this.is_operational()) {
+		if (rt.istype(I, T("/obj/item/clothing/suit/space"))) {
+			if (this.suit) {
+				to_chat(user, "<span class='warning'>The unit already contains a suit!.</span>");
+				return f.dot;
 			}
-			if (!truthy((yield* g.callName(f, live(f.args[1]), "drop_item", [])))) {
-				return live(f.dot);
+			if (!(yield* user.drop_item())) {
+				return f.dot;
 			}
-			rt.setSv(f, "suit", live(f.args[0]));
+			this.suit = I;
+		} else if (rt.istype(I, T("/obj/item/clothing/head/helmet"))) {
+			if (this.helmet) {
+				to_chat(user, "<span class='warning'>The unit already contains a helmet!</span>");
+				return f.dot;
+			}
+			if (!(yield* user.drop_item())) {
+				return f.dot;
+			}
+			this.helmet = I;
+		} else if (rt.istype(I, T("/obj/item/clothing/mask"))) {
+			if (this.mask) {
+				to_chat(user, "<span class='warning'>The unit already contains a mask!</span>");
+				return f.dot;
+			}
+			if (!(yield* user.drop_item())) {
+				return f.dot;
+			}
+			this.mask = I;
 		} else {
-			if (truthy((rt.istype(live(f.args[0]), T("/obj/item/clothing/head/helmet")) ? 1 : 0))) {
-				if (truthy(rt.sv(f, "helmet"))) {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>The unit already contains a helmet!</span>"]);
-					return live(f.dot);
-				}
-				if (!truthy((yield* g.callName(f, live(f.args[1]), "drop_item", [])))) {
-					return live(f.dot);
-				}
-				rt.setSv(f, "helmet", live(f.args[0]));
-			} else {
-				if (truthy((rt.istype(live(f.args[0]), T("/obj/item/clothing/mask")) ? 1 : 0))) {
-					if (truthy(rt.sv(f, "mask"))) {
-						yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>The unit already contains a mask!</span>"]);
-						return live(f.dot);
-					}
-					if (!truthy((yield* g.callName(f, live(f.args[1]), "drop_item", [])))) {
-						return live(f.dot);
-					}
-					rt.setSv(f, "mask", live(f.args[0]));
-				} else {
-					if (truthy(rt.sv(f, "storage"))) {
-						yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>The auxiliary storage compartment is full!</span>"]);
-						return live(f.dot);
-					}
-					if (!truthy((yield* g.callName(f, live(f.args[1]), "drop_item", [])))) {
-						return live(f.dot);
-					}
-					rt.setSv(f, "storage", live(f.args[0]));
-				}
+			if (this.storage) {
+				to_chat(user, "<span class='warning'>The auxiliary storage compartment is full!</span>");
+				return f.dot;
 			}
+			if (!(yield* user.drop_item())) {
+				return f.dot;
+			}
+			this.storage = I;
 		}
-		rt.setFv(f, "loc", live(f.args[0]), live(f.src));
-		yield* g.srcCall(f, "visible_message", fmt("<span class='notice'>＀ inserts ＀ into ＀</span>", [live(f.args[1]), live(f.args[0]), live(f.src)]), fmt("<span class='notice'>You load ＀ into ＀.</span>", [live(f.args[0]), live(f.src)]));
-		yield* g.srcCall(f, "update_icon");
-		return live(f.dot);
+		I.loc = this;
+		this.visible_message(`<span class='notice'>${user} inserts ${I} into ${this}</span>`, `<span class='notice'>You load ${I} into ${this}.</span>`);
+		yield* this.update_icon();
+		return f.dot;
 	}
-	if ((truthy(rt.sv(f, "panel_open")) && truthy((yield* g.call(f, P("/proc/is_wire_tool"), null, [live(f.args[0])]))))) {
-		yield* g.callName(f, rt.sv(f, "wires"), "interact", [live(f.args[1])]);
+	if (this.panel_open && is_wire_tool(I)) {
+		yield* this.wires.interact(user);
 	}
-	if (!truthy(rt.sv(f, "state_open"))) {
-		if (truthy((yield* g.srcCall(f, "default_deconstruction_screwdriver", live(f.args[1]), "panel", "close", live(f.args[0]))))) {
-			return live(f.dot);
+	if (!this.state_open) {
+		if (this.default_deconstruction_screwdriver(user, "panel", "close", I)) {
+			return f.dot;
 		}
 	}
-	if (truthy((yield* g.srcCall(f, "default_pry_open", live(f.args[0]))))) {
-		yield* g.srcCall(f, "dump_contents");
-		return live(f.dot);
+	if (yield* this.default_pry_open(I)) {
+		yield* this.dump_contents();
+		return f.dot;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
-}, true, { args: ["I", "user", "params"] });
+	return (yield* parent_proc());
+}, true);
 
-// /obj/machinery/suit_storage_unit/proc/ui_interact  (code/game/machinery/suit_storage_unit.dm:326)  may sleep
+// suit_storage_unit.dm:326
 rt.def("/obj/machinery/suit_storage_unit/proc/ui_interact", function* ui_interact(f: Frame, user: Value, ui_key: Value, ui: Value, force_open: Value, master_ui: Value, state: Value) {
-	f.vars = () => [user, ui_key, ui, force_open, master_ui, state];
-	if (live(ui_key) === null) {
-		ui_key = "main";
-	}
-	if (live(ui) === null) {
-		ui = null;
-	}
-	if (live(force_open) === null) {
-		force_open = 0;
-	}
-	if (live(master_ui) === null) {
-		master_ui = null;
-	}
-	if (live(state) === null) {
-		state = rt.gl("notcontained_state");
-	}
-	if (truthy((ui = (yield* g.callName(f, rt.gl("SStgui"), "try_update_ui", [live(user), live(f.src), live(ui_key), live(ui), live(force_open)]))))) return f.dot;
-	yield* g.callName(f, (ui = (yield* g.new_(f, T("/datum/tgui"), [live(user), live(f.src), live(ui_key), "suit_storage_unit", rt.sv(f, "name"), 400, 305, live(master_ui), live(state)]))), "open", []);
+	ui_key ??= "main";
+	force_open ??= 0;
+	state ??= GLOB.notcontained_state;
+	if (ui = (yield* GLOB.SStgui.try_update_ui(user, this, ui_key, ui, force_open))) return f.dot;
+	yield* (ui = (yield* new_(T("/datum/tgui"), user, this, ui_key, "suit_storage_unit", this.name, 400, 305, master_ui, state))).open();
 	return f.dot;
 }, true);
 
-// /obj/machinery/suit_storage_unit/proc/ui_data  (code/game/machinery/suit_storage_unit.dm:332)
+// suit_storage_unit.dm:332
 rt.def("/obj/machinery/suit_storage_unit/proc/ui_data", function ui_data(f: Frame) {
 	let data: Value = null;
-	f.vars = () => [data];
-	rt.setAt((data = rt.list()), "locked", rt.sv(f, "locked"));
-	rt.setAt(live(data), "open", rt.sv(f, "state_open"));
-	rt.setAt(live(data), "safeties", rt.sv(f, "safeties"));
-	rt.setAt(live(data), "uv_active", rt.sv(f, "uv"));
-	rt.setAt(live(data), "uv_super", rt.sv(f, "uv_super"));
-	if (truthy(rt.sv(f, "helmet"))) {
-		rt.setAt(live(data), "helmet", rt.fv(f, "name", rt.sv(f, "helmet")));
+	rt.setAt((data = list()), "locked", this.locked);
+	rt.setAt(data, "open", this.state_open);
+	rt.setAt(data, "safeties", this.safeties);
+	rt.setAt(data, "uv_active", this.uv);
+	rt.setAt(data, "uv_super", this.uv_super);
+	if (this.helmet) {
+		rt.setAt(data, "helmet", this.helmet.name);
 	}
-	if (truthy(rt.sv(f, "suit"))) {
-		rt.setAt(live(data), "suit", rt.fv(f, "name", rt.sv(f, "suit")));
+	if (this.suit) {
+		rt.setAt(data, "suit", this.suit.name);
 	}
-	if (truthy(rt.sv(f, "mask"))) {
-		rt.setAt(live(data), "mask", rt.fv(f, "name", rt.sv(f, "mask")));
+	if (this.mask) {
+		rt.setAt(data, "mask", this.mask.name);
 	}
-	if (truthy(rt.sv(f, "storage"))) {
-		rt.setAt(live(data), "storage", rt.fv(f, "name", rt.sv(f, "storage")));
+	if (this.storage) {
+		rt.setAt(data, "storage", this.storage.name);
 	}
-	if (truthy(rt.sv(f, "occupant"))) {
-		rt.setAt(live(data), "occupied", 1);
+	if (this.occupant) {
+		rt.setAt(data, "occupied", 1);
 	}
-	return live(data);
+	return data;
 });
 
-// /obj/machinery/suit_storage_unit/proc/ui_act  (code/game/machinery/suit_storage_unit.dm:351)  may sleep
-rt.def("/obj/machinery/suit_storage_unit/proc/ui_act", function* ui_act(f: Frame) {
+// suit_storage_unit.dm:351
+rt.def("/obj/machinery/suit_storage_unit/proc/ui_act", function* ui_act(f: Frame, action: Value, params: Value) {
 	let mob_occupant: Value = null, item_name: Value = null, I: Value = null;
 	let $0: any, $1: any, $2: any;
-	f.vars = () => [mob_occupant, item_name, I, $0, $1, $2];
-	if ((truthy((yield* g.callSuper(f, [], rt.Args.Same))) || truthy(rt.sv(f, "uv")))) {
-		return live(f.dot);
+	if ((yield* parent_proc()) || this.uv) {
+		return f.dot;
 	}
-	$0 = live(f.args[0]);
-	if ($0 === "door") {
-		if (truthy(rt.sv(f, "state_open"))) {
-			yield* g.srcCall(f, "close_machine");
+	if (action === "door") {
+		if (this.state_open) {
+			yield* this.close_machine();
 		} else {
-			yield* g.srcCall(f, "open_machine", 0);
-			if (truthy(rt.sv(f, "occupant"))) {
-				yield* g.srcCall(f, "dump_contents");
+			yield* this.open_machine(0);
+			if (this.occupant) {
+				yield* this.dump_contents();
 			}
 		}
 		f.dot = 1;
-	} else if ($0 === "lock") {
-		rt.setSv(f, "locked", (!truthy(rt.sv(f, "locked")) ? 1 : 0));
+	} else if (action === "lock") {
+		this.locked = (!this.locked ? 1 : 0);
 		f.dot = 1;
-	} else if ($0 === "uv") {
-		if ((truthy(rt.sv(f, "occupant")) && truthy(rt.sv(f, "safeties")))) {
-			return live(f.dot);
+	} else if (action === "uv") {
+		if (this.occupant && this.safeties) {
+			return f.dot;
+		} else if (!this.helmet && !this.mask && !this.suit && !this.storage && !this.occupant) {
+			return f.dot;
 		} else {
-			if (((((!truthy(rt.sv(f, "helmet")) && !truthy(rt.sv(f, "mask"))) && !truthy(rt.sv(f, "suit"))) && !truthy(rt.sv(f, "storage"))) && !truthy(rt.sv(f, "occupant")))) {
-				return live(f.dot);
-			} else {
-				if (truthy(rt.sv(f, "occupant"))) {
-					$0 = (mob_occupant = rt.sv(f, "occupant"));
-					$1 = live(f.src);
-					if (!truthy(rt.fv(f, "stat", live(mob_occupant)))) {
-						$2 = "alive";
-					} else {
-						$2 = "away";
-					}
-					yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='userdanger'>＀'s confines grow warm, then hot, then scorching. You're being burned ＀!</span>", [$1, $2])]);
+			if (this.occupant) {
+				$0 = (mob_occupant = this.occupant);
+				$1 = this;
+				if (!mob_occupant.stat) {
+					$2 = "alive";
+				} else {
+					$2 = "away";
 				}
-				yield* g.srcCall(f, "cook");
-				f.dot = 1;
+				to_chat($0, `<span class='userdanger'>${$1}'s confines grow warm, then hot, then scorching. You're being burned ${$2}!</span>`);
 			}
+			yield* this.cook();
+			f.dot = 1;
 		}
-	} else if ($0 === "dispense") {
-		if (!truthy(rt.sv(f, "state_open"))) {
-			return live(f.dot);
+	} else if (action === "dispense") {
+		if (!this.state_open) {
+			return f.dot;
 		}
-		if (truthy((rt.isIn(f, (item_name = rt.at(live(f.args[1]), "item")), rt.gl("valid_items")) ? 1 : 0))) {
-			I = rt.index(rt.sv(f, "vars"), live(item_name));
-			rt.setAt(rt.sv(f, "vars"), live(item_name), null);
-			if (truthy(live(I))) {
-				yield* g.callName(f, live(I), "forceMove", [rt.sv(f, "loc")]);
+		if (rt.isIn(f, (item_name = rt.at(params, "item")), GLOB.valid_items)) {
+			I = rt.index(this.vars, item_name);
+			rt.setAt(this.vars, item_name, null);
+			if (I) {
+				yield* I.forceMove(this.loc);
 			}
 		}
 		f.dot = 1;
 	}
-	yield* g.srcCall(f, "update_icon");
+	yield* this.update_icon();
 	return f.dot;
-}, true, { args: ["action", "params"] });
+}, true);

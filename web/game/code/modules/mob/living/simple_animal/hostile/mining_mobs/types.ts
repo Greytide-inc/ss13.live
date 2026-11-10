@@ -1,5 +1,5 @@
 // Types declared in code/modules/mob/living/simple_animal/hostile/mining_mobs that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(4930, "/mob/living/simple_animal/hostile/spawner/lavaland/goliath", "/mob/living/simple_animal/hostile/spawner/lavaland", {
 	mob_type: rt.typePath("/mob/living/simple_animal/hostile/asteroid/goliath/beast/tendril"),

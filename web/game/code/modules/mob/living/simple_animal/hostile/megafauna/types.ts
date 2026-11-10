@@ -1,5 +1,5 @@
 // Types declared in code/modules/mob/living/simple_animal/hostile/megafauna that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(11662, "/obj/effect/temp_visual/hierophant/wall/crusher", "/obj/effect/temp_visual/hierophant/wall", {
 	duration: 75,

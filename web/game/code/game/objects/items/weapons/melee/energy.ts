@@ -1,7 +1,7 @@
-// From code/game/objects/items/weapons/melee/energy.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/weapons/melee/energy.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(5673, "/obj/item/weapon/melee/energy", "/obj/item/weapon/melee", {
@@ -22,48 +22,43 @@ rt.type(5673, "/obj/item/weapon/melee/energy", "/obj/item/weapon/melee", {
 	resistance_flags: 2,
 });
 
-// /obj/item/weapon/melee/energy/proc/<init>  (code/game/objects/items/weapons/melee/energy.dm:14)
+// energy.dm:14
 rt.def("/obj/item/weapon/melee/energy/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "attack_verb_on", rt.list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut"));
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 100, "acid", 30]));
+	parent_proc();
+	this.attack_verb_on = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut");
+	this.armor = rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 100, "acid", 30]);
 	return f.dot;
 });
 
-// /obj/item/weapon/melee/energy/proc/Initialize  (code/game/objects/items/weapons/melee/energy.dm:19)  may sleep
+// energy.dm:19
 rt.def("/obj/item/weapon/melee/energy/proc/Initialize", function* Initialize(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (truthy(rt.length(rt.sv(f, "possible_colors")))) {
-		rt.setSv(f, "item_color", rt.op(f, "PickUnweighted", [1], [rt.sv(f, "possible_colors")]));
-		$0 = rt.sv(f, "item_color");
-		if ($0 === "red") {
-			rt.setSv(f, "light_color", "#FA8282");
-		} else if ($0 === "green") {
-			rt.setSv(f, "light_color", "#64C864");
-		} else if ($0 === "blue") {
-			rt.setSv(f, "light_color", "#40CEFF");
-		} else if ($0 === "purple") {
-			rt.setSv(f, "light_color", "#9B51FF");
+	f.dot = (yield* parent_proc());
+	if (rt.length(this.possible_colors)) {
+		this.item_color = pick(this.possible_colors);
+		if (this.item_color === "red") {
+			this.light_color = "#FA8282";
+		} else if (this.item_color === "green") {
+			this.light_color = "#64C864";
+		} else if (this.item_color === "blue") {
+			this.light_color = "#40CEFF";
+		} else if (this.item_color === "purple") {
+			this.light_color = "#9B51FF";
 		}
 	}
-	if (!truthy(rt.sv(f, "active"))) return f.dot;
-	yield* g.srcCall(f, "set_light", rt.sv(f, "brightness_on"));
+	if (!this.active) return f.dot;
+	this.set_light(this.brightness_on);
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/melee/energy/proc/suicide_act  (code/game/objects/items/weapons/melee/energy.dm:35)
+// energy.dm:35
 rt.def("/obj/item/weapon/melee/energy/proc/suicide_act", function suicide_act(f: Frame, user: Value) {
-	rt.callName(f, live(user), "visible_message", [fmt("<span class='suicide'>＀ is ＀ ＀! It looks like ＀ trying to commit seppuku!</span>", [live(user), rt.op(f, "PickUnweighted", [2], [fmt("slitting ＀ stomach open with", [rt.callName(f, live(user), "p_their", [])]), "falling on"]), live(f.src), rt.callName(f, live(user), "p_theyre", [])])]);
+	user.visible_message(`<span class='suicide'>${user} is ${pick(`slitting ${user.p_their()} stomach open with`, "falling on")} ${this}! It looks like ${user.p_theyre()} trying to commit seppuku!</span>`);
 	return 3;
 });
 
-// /obj/item/weapon/melee/energy/proc/is_sharp  (code/game/objects/items/weapons/melee/energy.dm:42)
+// energy.dm:42
 rt.def("/obj/item/weapon/melee/energy/proc/is_sharp", function is_sharp(f: Frame) {
-	return multiply(rt.sv(f, "active"), rt.sv(f, "sharpness"));
+	return this.active * this.sharpness;
 });
 
 rt.type(5674, "/obj/item/weapon/melee/energy/axe", "/obj/item/weapon/melee/energy", {
@@ -87,19 +82,17 @@ rt.type(5674, "/obj/item/weapon/melee/energy/axe", "/obj/item/weapon/melee/energ
 	attack_verb: null,
 });
 
-// /obj/item/weapon/melee/energy/axe/proc/<init>  (code/game/objects/items/weapons/melee/energy.dm:61)
+// energy.dm:61
 rt.def("/obj/item/weapon/melee/energy/axe/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "attack_verb_on", rt.list());
-	rt.setSv(f, "attack_verb", rt.list("attacked", "chopped", "cleaved", "torn", "cut"));
+	parent_proc();
+	this.attack_verb_on = list();
+	this.attack_verb = list("attacked", "chopped", "cleaved", "torn", "cut");
 	return f.dot;
 });
 
-// /obj/item/weapon/melee/energy/axe/proc/suicide_act  (code/game/objects/items/weapons/melee/energy.dm:65)
+// energy.dm:65
 rt.def("/obj/item/weapon/melee/energy/axe/proc/suicide_act", function suicide_act(f: Frame, user: Value) {
-	rt.callName(f, live(user), "visible_message", [fmt("<span class='suicide'>＀ swings ＀ towards ＀ head! It looks like ＀ trying to commit suicide!</span>", [live(user), live(f.src), rt.callName(f, live(user), "p_their", []), rt.callName(f, live(user), "p_theyre", [])])]);
+	user.visible_message(`<span class='suicide'>${user} swings ${this} towards ${user.p_their()} head! It looks like ${user.p_theyre()} trying to commit suicide!</span>`);
 	return 3;
 });
 
@@ -122,118 +115,116 @@ rt.type(5675, "/obj/item/weapon/melee/energy/sword", "/obj/item/weapon/melee/ene
 	block_chance: 50,
 });
 
-// /obj/item/weapon/melee/energy/sword/proc/Destroy  (code/game/objects/items/weapons/melee/energy.dm:87)  may sleep
+// energy.dm:87
 rt.def("/obj/item/weapon/melee/energy/sword/proc/Destroy", function* Destroy(f: Frame) {
-	rt.setFv(f, "isprocessing", live(f.src), 0);
-	(rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), subtract));
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	this.isprocessing = 0;
+	GLOB.SSobj.processing -= this;
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/melee/energy/sword/proc/process  (code/game/objects/items/weapons/melee/energy.dm:93)  may sleep
+// energy.dm:93
 rt.def("/obj/item/weapon/melee/energy/sword/proc/process", function* process(f: Frame) {
-	if (truthy(rt.sv(f, "active"))) {
-		if (truthy(rt.sv(f, "hacked"))) {
-			rt.setSv(f, "light_color", rt.op(f, "PickUnweighted", [4], ["#FA8282", "#64C864", "#40CEFF", "#9B51FF"]));
+	if (this.active) {
+		if (this.hacked) {
+			this.light_color = pick("#FA8282", "#64C864", "#40CEFF", "#9B51FF");
 		}
-		yield* g.srcCall(f, "open_flame");
+		yield* this.open_flame();
 	} else {
-		rt.setFv(f, "isprocessing", live(f.src), 0);
-		(rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), subtract));
+		this.isprocessing = 0;
+		GLOB.SSobj.processing -= this;
 	}
 	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/item/weapon/melee/energy/sword/proc/hit_reaction  (code/game/objects/items/weapons/melee/energy.dm:100)
+// energy.dm:100
 rt.def("/obj/item/weapon/melee/energy/sword/proc/hit_reaction", function hit_reaction(f: Frame) {
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = "the attack";
 	}
-	if (live(f.args[3]) === null) {
+	if (f.args[3] === null) {
 		f.args[3] = 0;
 	}
-	if (live(f.args[4]) === null) {
+	if (f.args[4] === null) {
 		f.args[4] = 0;
 	}
-	if (live(f.args[5]) === null) {
+	if (f.args[5] === null) {
 		f.args[5] = 1;
 	}
-	if (truthy(rt.sv(f, "active"))) {
-		return rt.callSuper(f, [], rt.Args.Same);
+	if (this.active) {
+		return parent_proc();
 	}
 	return 0;
 }, false, { args: ["owner", "hitby", "attack_text", "final_block_chance", "damage", "attack_type"] });
 
-// /obj/item/weapon/melee/energy/proc/attack_self  (code/game/objects/items/weapons/melee/energy.dm:104)  may sleep
+// energy.dm:104
 rt.def("/obj/item/weapon/melee/energy/proc/attack_self", function* attack_self(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if ((truthy(rt.bitAnd(rt.fv(f, "disabilities", live(user)), 256)) && truthy(rt.op(f, "Prob", [], [50])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>You accidentally cut yourself with ＀, like a doofus!</span>", [live(f.src)])]);
-		yield* g.callName(f, live(user), "take_bodypart_damage", [5, 5]);
+	if (rt.bitAnd(user.disabilities, 256) && prob(50)) {
+		to_chat(user, `<span class='warning'>You accidentally cut yourself with ${this}, like a doofus!</span>`);
+		yield* user.take_bodypart_damage(5, 5);
 	}
-	rt.setSv(f, "active", (!truthy(rt.sv(f, "active")) ? 1 : 0));
-	if (truthy(rt.sv(f, "active"))) {
-		rt.setSv(f, "force", rt.sv(f, "force_on"));
-		rt.setSv(f, "throwforce", rt.sv(f, "throwforce_on"));
-		rt.setSv(f, "hitsound", rt.rsc("sound/weapons/blade1.ogg"));
-		rt.setSv(f, "throw_speed", 4);
-		if (truthy(rt.len(f, rt.sv(f, "attack_verb_on")))) {
-			rt.setSv(f, "attack_verb", rt.sv(f, "attack_verb_on"));
+	this.active = (!this.active ? 1 : 0);
+	if (this.active) {
+		this.force = this.force_on;
+		this.throwforce = this.throwforce_on;
+		this.hitsound = rt.rsc("sound/weapons/blade1.ogg");
+		this.throw_speed = 4;
+		if (rt.len(f, this.attack_verb_on)) {
+			this.attack_verb = this.attack_verb_on;
 		}
-		if (!truthy(rt.sv(f, "item_color"))) {
-			rt.setSv(f, "icon_state", rt.sv(f, "icon_state_on"));
+		if (!this.item_color) {
+			this.icon_state = this.icon_state_on;
 		} else {
-			rt.setSv(f, "icon_state", fmt("sword＀", [rt.sv(f, "item_color")]));
+			this.icon_state = `sword${this.item_color}`;
 		}
-		rt.setSv(f, "w_class", rt.sv(f, "w_class_on"));
-		yield* g.call(f, P("/proc/playsound"), null, [live(user), rt.rsc("sound/weapons/saberon.ogg"), 35, 1]);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>＀ is now active.</span>", [live(f.src)])]);
-		if (!truthy(rt.fv(f, "isprocessing", live(f.src)))) {
-			rt.setFv(f, "isprocessing", live(f.src), 1);
-			rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), add);
+		this.w_class = this.w_class_on;
+		playsound(user, rt.rsc("sound/weapons/saberon.ogg"), 35, 1);
+		to_chat(user, `<span class='notice'>${this} is now active.</span>`);
+		if (!this.isprocessing) {
+			this.isprocessing = 1;
+			GLOB.SSobj.processing += this;
 		}
-		yield* g.srcCall(f, "set_light", rt.sv(f, "brightness_on"));
+		this.set_light(this.brightness_on);
 	} else {
-		rt.setSv(f, "force", rt.initial(f, live(f.src), "force"));
-		rt.setSv(f, "throwforce", rt.initial(f, live(f.src), "throwforce"));
-		rt.setSv(f, "hitsound", rt.initial(f, live(f.src), "hitsound"));
-		rt.setSv(f, "throw_speed", rt.initial(f, live(f.src), "throw_speed"));
-		if (truthy(rt.len(f, rt.sv(f, "attack_verb_on")))) {
-			rt.setSv(f, "attack_verb", rt.list());
+		this.force = rt.initial(f, this, "force");
+		this.throwforce = rt.initial(f, this, "throwforce");
+		this.hitsound = rt.initial(f, this, "hitsound");
+		this.throw_speed = rt.initial(f, this, "throw_speed");
+		if (rt.len(f, this.attack_verb_on)) {
+			this.attack_verb = list();
 		}
-		rt.setSv(f, "icon_state", rt.initial(f, live(f.src), "icon_state"));
-		rt.setSv(f, "w_class", rt.initial(f, live(f.src), "w_class"));
-		yield* g.call(f, P("/proc/playsound"), null, [live(user), rt.rsc("sound/weapons/saberoff.ogg"), 35, 1]);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>＀ can now be concealed.</span>", [live(f.src)])]);
-		rt.setFv(f, "isprocessing", live(f.src), 0);
-		(rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), subtract));
-		yield* g.srcCall(f, "set_light", 0);
+		this.icon_state = rt.initial(f, this, "icon_state");
+		this.w_class = rt.initial(f, this, "w_class");
+		playsound(user, rt.rsc("sound/weapons/saberoff.ogg"), 35, 1);
+		to_chat(user, `<span class='notice'>${this} can now be concealed.</span>`);
+		this.isprocessing = 0;
+		GLOB.SSobj.processing -= this;
+		this.set_light(0);
 	}
-	yield* g.srcCall(f, "add_fingerprint", live(user));
+	yield* this.add_fingerprint(user);
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/melee/energy/proc/is_hot  (code/game/objects/items/weapons/melee/energy.dm:140)
+// energy.dm:140
 rt.def("/obj/item/weapon/melee/energy/proc/is_hot", function is_hot(f: Frame) {
-	return multiply(rt.sv(f, "active"), rt.sv(f, "heat"));
+	return this.active * this.heat;
 });
 
-// /obj/item/weapon/melee/energy/proc/ignition_effect  (code/game/objects/items/weapons/melee/energy.dm:143)  may sleep
+// energy.dm:143
 rt.def("/obj/item/weapon/melee/energy/proc/ignition_effect", function* ignition_effect(f: Frame, A: Value, user: Value) {
-	let in_mouth: Value = null, C: Value = null;
-	f.vars = () => [A, user, in_mouth, C];
-	if (!truthy(rt.sv(f, "active"))) {
+	let C: Value = null;
+	if (!this.active) {
 		return "";
 	}
-	in_mouth = "";
-	if (truthy((rt.istype(live(user), T("/mob/living/carbon")) ? 1 : 0))) {
-		if (isEqual(rt.gv(f, "wear_mask", (C = live(user))), live(f.src))) {
+	let in_mouth: Value = "";
+	if (rt.istype(user, T("/mob/living/carbon"))) {
+		if ((C = user).wear_mask == this) {
 			in_mouth = ", barely missing their nose";
 		}
 	}
-	f.dot = fmt("<span class='warning'>＀ swings their ＀＀. They light ＀ in the process.</span>", [live(user), live(f.src), live(in_mouth), live(A)]);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.sv(f, "hitsound"), (yield* g.srcCall(f, "get_clamped_volume")), 1, -1]);
-	yield* g.srcCall(f, "add_fingerprint", live(user));
+	f.dot = `<span class='warning'>${user} swings their ${this}${in_mouth}. They light ${A} in the process.</span>`;
+	playsound(this.loc, this.hitsound, this.get_clamped_volume(), 1, -1);
+	yield* this.add_fingerprint(user);
 	return f.dot;
 }, true);
 
@@ -241,21 +232,20 @@ rt.type(5676, "/obj/item/weapon/melee/energy/sword/cyborg", "/obj/item/weapon/me
 	hitcost: 50,
 });
 
-// /obj/item/weapon/melee/energy/sword/cyborg/proc/attack  (code/game/objects/items/weapons/melee/energy.dm:160)  may sleep
-rt.def("/obj/item/weapon/melee/energy/sword/cyborg/proc/attack", function* attack(f: Frame) {
+// energy.dm:160
+rt.def("/obj/item/weapon/melee/energy/sword/cyborg/proc/attack", function* attack(f: Frame, M: Value, R: Value) {
 	let C: Value = null;
-	f.vars = () => [C];
-	if (truthy(rt.fv(f, "cell", live(f.args[1])))) {
-		C = rt.fv(f, "cell", live(f.args[1]));
-		if ((truthy(rt.sv(f, "active")) && !truthy((yield* g.callName(f, live(C), "use", [rt.sv(f, "hitcost")]))))) {
-			yield* g.srcCall(f, "attack_self", live(f.args[1]));
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>It's out of charge!</span>"]);
-			return live(f.dot);
+	if (R.cell) {
+		C = R.cell;
+		if (this.active && !(yield* C.use(this.hitcost))) {
+			yield* this.attack_self(R);
+			to_chat(R, "<span class='notice'>It's out of charge!</span>");
+			return f.dot;
 		}
-		yield* g.callSuper(f, [], rt.Args.Same);
+		yield* parent_proc();
 	}
-	return live(f.dot);
-}, true, { args: ["M", "R"] });
+	return f.dot;
+}, true);
 
 rt.type(5677, "/obj/item/weapon/melee/energy/sword/cyborg/saw", "/obj/item/weapon/melee/energy/sword/cyborg", {
 	force_on: 30,
@@ -274,20 +264,18 @@ rt.type(5677, "/obj/item/weapon/melee/energy/sword/cyborg/saw", "/obj/item/weapo
 	sharpness: 1,
 });
 
-// /obj/item/weapon/melee/energy/sword/cyborg/saw/proc/<init>  (code/game/objects/items/weapons/melee/energy.dm:184)
+// energy.dm:184
 rt.def("/obj/item/weapon/melee/energy/sword/cyborg/saw/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "possible_colors", null);
+	parent_proc();
+	this.possible_colors = null;
 	return f.dot;
 });
 
-// /obj/item/weapon/melee/energy/sword/cyborg/saw/proc/Initialize  (code/game/objects/items/weapons/melee/energy.dm:187)  may sleep
+// energy.dm:187
 rt.def("/obj/item/weapon/melee/energy/sword/cyborg/saw/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "icon_state", "esaw_0");
-	rt.setSv(f, "item_color", null);
+	f.dot = (yield* parent_proc());
+	this.icon_state = "esaw_0";
+	this.item_color = null;
 	return f.dot;
 }, true);
 
@@ -295,12 +283,10 @@ rt.type(5679, "/obj/item/weapon/melee/energy/sword/saber/blue", "/obj/item/weapo
 	possible_colors: null,
 });
 
-// /obj/item/weapon/melee/energy/sword/saber/blue/proc/<init>  (code/game/objects/items/weapons/melee/energy.dm:197)
+// energy.dm:197
 rt.def("/obj/item/weapon/melee/energy/sword/saber/blue/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "possible_colors", rt.list("blue"));
+	parent_proc();
+	this.possible_colors = list("blue");
 	return f.dot;
 });
 
@@ -308,12 +294,10 @@ rt.type(5680, "/obj/item/weapon/melee/energy/sword/saber/purple", "/obj/item/wea
 	possible_colors: null,
 });
 
-// /obj/item/weapon/melee/energy/sword/saber/purple/proc/<init>  (code/game/objects/items/weapons/melee/energy.dm:200)
+// energy.dm:200
 rt.def("/obj/item/weapon/melee/energy/sword/saber/purple/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "possible_colors", rt.list("purple"));
+	parent_proc();
+	this.possible_colors = list("purple");
 	return f.dot;
 });
 
@@ -321,12 +305,10 @@ rt.type(5681, "/obj/item/weapon/melee/energy/sword/saber/green", "/obj/item/weap
 	possible_colors: null,
 });
 
-// /obj/item/weapon/melee/energy/sword/saber/green/proc/<init>  (code/game/objects/items/weapons/melee/energy.dm:203)
+// energy.dm:203
 rt.def("/obj/item/weapon/melee/energy/sword/saber/green/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "possible_colors", rt.list("green"));
+	parent_proc();
+	this.possible_colors = list("green");
 	return f.dot;
 });
 
@@ -334,36 +316,34 @@ rt.type(5682, "/obj/item/weapon/melee/energy/sword/saber/red", "/obj/item/weapon
 	possible_colors: null,
 });
 
-// /obj/item/weapon/melee/energy/sword/saber/red/proc/<init>  (code/game/objects/items/weapons/melee/energy.dm:206)
+// energy.dm:206
 rt.def("/obj/item/weapon/melee/energy/sword/saber/red/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "possible_colors", rt.list("red"));
+	parent_proc();
+	this.possible_colors = list("red");
 	return f.dot;
 });
 
 rt.type(5678, "/obj/item/weapon/melee/energy/sword/saber", "/obj/item/weapon/melee/energy/sword", {});
 
-// /obj/item/weapon/melee/energy/sword/saber/proc/attackby  (code/game/objects/items/weapons/melee/energy.dm:210)  may sleep
-rt.def("/obj/item/weapon/melee/energy/sword/saber/proc/attackby", function* attackby(f: Frame) {
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/device/multitool")) ? 1 : 0))) {
-		if (!truthy(rt.sv(f, "hacked"))) {
-			rt.setSv(f, "hacked", 1);
-			rt.setSv(f, "item_color", "rainbow");
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>RNBW_ENGAGE</span>"]);
-			if (truthy(rt.sv(f, "active"))) {
-				rt.setSv(f, "icon_state", "swordrainbow");
-				yield* g.callName(f, live(f.args[1]), "update_inv_hands", []);
+// energy.dm:210
+rt.def("/obj/item/weapon/melee/energy/sword/saber/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
+	if (rt.istype(W, T("/obj/item/device/multitool"))) {
+		if (!this.hacked) {
+			this.hacked = 1;
+			this.item_color = "rainbow";
+			to_chat(user, "<span class='warning'>RNBW_ENGAGE</span>");
+			if (this.active) {
+				this.icon_state = "swordrainbow";
+				yield* user.update_inv_hands();
 			}
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>It's already fabulous!</span>"]);
+			to_chat(user, "<span class='warning'>It's already fabulous!</span>");
 		}
 	} else {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["W", "user", "params"] });
+}, true);
 
 rt.type(5684, "/obj/item/weapon/melee/energy/blade", "/obj/item/weapon/melee/energy", {
 	spark_system: null,
@@ -380,11 +360,11 @@ rt.type(5684, "/obj/item/weapon/melee/energy/blade", "/obj/item/weapon/melee/ene
 	sharpness: 1,
 });
 
-// /obj/item/weapon/melee/energy/blade/proc/Initialize  (code/game/objects/items/weapons/melee/energy.dm:247)  may sleep
+// energy.dm:247
 rt.def("/obj/item/weapon/melee/energy/blade/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "spark_system", (yield* g.new_(f, T("/datum/effect_system/spark_spread"), [])));
-	yield* g.callName(f, rt.sv(f, "spark_system"), "set_up", [5, 0, live(f.src)]);
-	yield* g.callName(f, rt.sv(f, "spark_system"), "attach", [live(f.src)]);
+	f.dot = (yield* parent_proc());
+	this.spark_system = (yield* new_(T("/datum/effect_system/spark_spread")));
+	yield* this.spark_system.set_up(5, 0, this);
+	yield* this.spark_system.attach(this);
 	return f.dot;
 }, true);

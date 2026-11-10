@@ -1,7 +1,7 @@
-// From code/modules/awaymissions/mission_code/wildwest.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/awaymissions/mission_code/wildwest.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, g } = rt;
 
 
 rt.type(10891, "/obj/machinery/wish_granter_dark", "/obj/machinery", {
@@ -16,69 +16,58 @@ rt.type(10891, "/obj/machinery/wish_granter_dark", "/obj/machinery", {
 	density: 1,
 });
 
-// /obj/machinery/wish_granter_dark/proc/attack_hand  (code/modules/awaymissions/mission_code/wildwest.dm:25)  may sleep
+// wildwest.dm:25
 rt.def("/obj/machinery/wish_granter_dark/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
 	let wish: Value = null, hijack: Value = null, F: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [user, wish, hijack, F, $0, $e];
-	yield* g.callName(f, live(f.usr), "set_machine", [live(f.src)]);
-	if (rt.le(rt.sv(f, "chargesa"), 0)) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "The Wish Granter lies silent."]);
-		return live(f.dot);
+	let $e: any;
+	yield* f.usr.set_machine(this);
+	if (this.chargesa <= 0) {
+		to_chat(user, "The Wish Granter lies silent.");
+		return f.dot;
+	} else if (!rt.istype(user, T("/mob/living/carbon/human"))) {
+		to_chat(user, "You feel a dark stirring inside of the Wish Granter, something you want nothing of. Your instincts are better than any man's.");
+		return f.dot;
+	} else if (is_special_character(user)) {
+		to_chat(user, "Even to a heart as dark as yours, you know nothing good will come of this.  Something instinctual makes you pull away.");
+	} else if (!this.insistinga) {
+		to_chat(user, "Your first touch makes the Wish Granter stir, listening to you.  Are you really sure you want to do this?");
+		this.insistinga++;
 	} else {
-		if (!truthy((rt.istype(live(user), T("/mob/living/carbon/human")) ? 1 : 0))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), "You feel a dark stirring inside of the Wish Granter, something you want nothing of. Your instincts are better than any man's."]);
-			return live(f.dot);
-		} else {
-			if (truthy((yield* g.call(f, P("/proc/is_special_character"), null, [live(user)])))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(user), "Even to a heart as dark as yours, you know nothing good will come of this.  Something instinctual makes you pull away."]);
-			} else {
-				if (!truthy(rt.sv(f, "insistinga"))) {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(user), "Your first touch makes the Wish Granter stir, listening to you.  Are you really sure you want to do this?"]);
-					rt.incSrcVar(f, "insistinga", 1, true);
-				} else {
-					rt.incSrcVar(f, "chargesa", -1, true);
-					rt.setSv(f, "insistinga", 0);
-					$0 = (wish = (yield* g.op(f, "Prompt", [1], [null, null, "Wish", "You want...", rt.list("Power", "Wealth", "Immortality", "To Kill", "Peace")])));
-					if ($0 === "Power") {
-						yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<B>Your wish is granted, but at a terrible cost...</B>"]);
-						yield* g.call(f, P("/proc/to_chat"), null, [live(user), "The Wish Granter punishes you for your selfishness, claiming your soul and warping your body to match the darkness in your heart."]);
-						yield* g.callName(f, rt.fv(f, "dna", live(user)), "add_mutation", ["Laser Eyes"]);
-						yield* g.callName(f, rt.fv(f, "dna", live(user)), "add_mutation", ["Cold Resistance"]);
-						yield* g.callName(f, rt.fv(f, "dna", live(user)), "add_mutation", ["X Ray Vision"]);
-						yield* g.callName(f, live(user), "set_species", [T("/datum/species/shadow")]);
-					} else if ($0 === "Wealth") {
-						yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<B>Your wish is granted, but at a terrible cost...</B>"]);
-						yield* g.call(f, P("/proc/to_chat"), null, [live(user), "The Wish Granter punishes you for your selfishness, claiming your soul and warping your body to match the darkness in your heart."]);
-						yield* g.new_(f, T("/obj/structure/closet/syndicate/resources/everything"), [rt.sv(f, "loc")]);
-						yield* g.callName(f, live(user), "set_species", [T("/datum/species/shadow")]);
-					} else if ($0 === "Immortality") {
-						yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<B>Your wish is granted, but at a terrible cost...</B>"]);
-						yield* g.call(f, P("/proc/to_chat"), null, [live(user), "The Wish Granter punishes you for your selfishness, claiming your soul and warping your body to match the darkness in your heart."]);
-						rt.modField(f, live(user), "verbs", P("/mob/living/carbon/proc/immortality"), add);
-						yield* g.callName(f, live(user), "set_species", [T("/datum/species/shadow")]);
-					} else if ($0 === "To Kill") {
-						yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<B>Your wish is granted, but at a terrible cost...</B>"]);
-						yield* g.call(f, P("/proc/to_chat"), null, [live(user), "The Wish Granter punishes you for your wickedness, claiming your soul and warping your body to match the darkness in your heart."]);
-						rt.modField(f, rt.fv(f, "mode", rt.gl("SSticker")), "traitors", rt.fv(f, "mind", live(user)), add);
-						rt.setFv(f, "special_role", rt.fv(f, "mind", live(user)), "traitor");
-						rt.setFv(f, "owner", (hijack = (yield* g.new_(f, T("/datum/objective/hijack"), []))), rt.fv(f, "mind", live(user)));
-						rt.modField(f, rt.fv(f, "mind", live(user)), "objectives", live(hijack), add);
-						yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<B>Your inhibitions are swept away, the bonds of loyalty broken, you are free to murder as you please!</B>"]);
-						yield* g.callName(f, rt.fv(f, "mind", live(user)), "announce_objectives", []);
-						yield* g.callName(f, live(user), "set_species", [T("/datum/species/shadow")]);
-					} else if ($0 === "Peace") {
-						yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<B>Whatever alien sentience that the Wish Granter possesses is satisfied with your wish. There is a distant wailing as the last of the Faithless begin to die, then silence.</B>"]);
-						yield* g.call(f, P("/proc/to_chat"), null, [live(user), "You feel as if you just narrowly avoided a terrible fate..."]);
-						F = null;
-						rt.forList(f, 0, rt.gl("mob_list"), T("/mob/living/simple_animal/hostile/faithless"));
-						while (($e = rt.next(f, 0)) !== undefined) {
-							F = $e;
-							yield* g.callName(f, live(F), "death", []);
-						}
-						rt.endFor(f, 0);
-					}
-				}
+		this.chargesa--;
+		this.insistinga = 0;
+		const subject = (wish = (yield* g.op(f, "Prompt", [1], [null, null, "Wish", "You want...", list("Power", "Wealth", "Immortality", "To Kill", "Peace")])));
+		if (subject === "Power") {
+			to_chat(user, "<B>Your wish is granted, but at a terrible cost...</B>");
+			to_chat(user, "The Wish Granter punishes you for your selfishness, claiming your soul and warping your body to match the darkness in your heart.");
+			yield* user.dna.add_mutation("Laser Eyes");
+			yield* user.dna.add_mutation("Cold Resistance");
+			yield* user.dna.add_mutation("X Ray Vision");
+			yield* user.set_species(T("/datum/species/shadow"));
+		} else if (subject === "Wealth") {
+			to_chat(user, "<B>Your wish is granted, but at a terrible cost...</B>");
+			to_chat(user, "The Wish Granter punishes you for your selfishness, claiming your soul and warping your body to match the darkness in your heart.");
+			yield* new_(T("/obj/structure/closet/syndicate/resources/everything"), this.loc);
+			yield* user.set_species(T("/datum/species/shadow"));
+		} else if (subject === "Immortality") {
+			to_chat(user, "<B>Your wish is granted, but at a terrible cost...</B>");
+			to_chat(user, "The Wish Granter punishes you for your selfishness, claiming your soul and warping your body to match the darkness in your heart.");
+			user.verbs += P("/mob/living/carbon/proc/immortality");
+			yield* user.set_species(T("/datum/species/shadow"));
+		} else if (subject === "To Kill") {
+			to_chat(user, "<B>Your wish is granted, but at a terrible cost...</B>");
+			to_chat(user, "The Wish Granter punishes you for your wickedness, claiming your soul and warping your body to match the darkness in your heart.");
+			GLOB.SSticker.mode.traitors += user.mind;
+			user.mind.special_role = "traitor";
+			(hijack = (yield* new_(T("/datum/objective/hijack")))).owner = user.mind;
+			user.mind.objectives += hijack;
+			to_chat(user, "<B>Your inhibitions are swept away, the bonds of loyalty broken, you are free to murder as you please!</B>");
+			user.mind.announce_objectives();
+			yield* user.set_species(T("/datum/species/shadow"));
+		} else if (subject === "Peace") {
+			to_chat(user, "<B>Whatever alien sentience that the Wish Granter possesses is satisfied with your wish. There is a distant wailing as the last of the Faithless begin to die, then silence.</B>");
+			to_chat(user, "You feel as if you just narrowly avoided a terrible fate...");
+			for (F of each(GLOB.mob_list, T("/mob/living/simple_animal/hostile/faithless"))) {
+				yield* F.death();
 			}
 		}
 	}
@@ -95,49 +84,41 @@ rt.type(12046, "/obj/effect/meatgrinder", "/obj/effect", {
 	icon_state: "blobpod",
 });
 
-// /obj/effect/meatgrinder/proc/Crossed  (code/modules/awaymissions/mission_code/wildwest.dm:95)  may sleep
+// wildwest.dm:95
 rt.def("/obj/effect/meatgrinder/proc/Crossed", function* Crossed(f: Frame, AM: Value) {
-	f.vars = () => [AM];
-	yield* g.srcCall(f, "Bumped", live(AM));
+	yield* this.Bumped(AM);
 	return f.dot;
 }, true);
 
-// /obj/effect/meatgrinder/proc/Bumped  (code/modules/awaymissions/mission_code/wildwest.dm:102)  may sleep
+// wildwest.dm:102
 rt.def("/obj/effect/meatgrinder/proc/Bumped", function* Bumped(f: Frame, M: Value) {
 	let O: Value = null, s: Value = null;
-	let $e: any;
-	f.vars = () => [M, O, s, $e];
-	if (truthy(rt.sv(f, "triggered"))) {
-		return live(f.dot);
+	if (this.triggered) {
+		return f.dot;
 	}
-	if (!((truthy((rt.istype(live(M), T("/mob/living/carbon/human")) ? 1 : 0)) && !isEqual(rt.fv(f, "stat", live(M)), 2)) && truthy(rt.fv(f, "ckey", live(M))))) return f.dot;
-	O = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/viewers"), null, [rt.fv(f, "view", rt.world()), rt.fv(f, "loc", live(f.src))])), T("/mob"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		O = $e;
+	if (!(rt.istype(M, T("/mob/living/carbon/human")) && M.stat != 2 && M.ckey)) return f.dot;
+	for (O of each(viewers(rt.world().view, this.loc), T("/mob"))) {
 	}
-	rt.endFor(f, 0);
-	yield* g.srcCall(f, "visible_message", fmt("<span class='warning'>＀ triggered the ＀!</span>", [live(M), live(f.src)]));
-	rt.setSv(f, "triggered", 1);
-	yield* g.callName(f, (s = (yield* g.new_(f, T("/datum/effect_system/spark_spread"), []))), "set_up", [3, 1, live(f.src)]);
-	yield* g.callName(f, live(s), "start", []);
-	yield* g.call(f, P("/proc/explosion"), null, [live(M), 1, 0, 0, 0]);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	this.visible_message(`<span class='warning'>${M} triggered the ${this}!</span>`);
+	this.triggered = 1;
+	yield* (s = (yield* new_(T("/datum/effect_system/spark_spread")))).set_up(3, 1, this);
+	yield* s.start();
+	yield* explosion(M, 1, 0, 0, 0);
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
-// /mob/living/carbon/proc/immortality  (code/modules/awaymissions/mission_code/wildwest.dm:119)  may sleep
+// wildwest.dm:119
 rt.def("/mob/living/carbon/proc/immortality", function* immortality(f: Frame) {
 	let C: Value = null;
-	f.vars = () => [C];
-	if (!truthy(rt.gv(f, "stat", (C = live(f.usr))))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(C), "<span class='notice'>You're not dead yet!</span>"]);
-		return live(f.dot);
+	if (!(C = f.usr).stat) {
+		to_chat(C, "<span class='notice'>You're not dead yet!</span>");
+		return f.dot;
 	}
-	if (truthy((yield* g.callName(f, live(C), "has_status_effect", [T("/datum/status_effect/wish_granters_gift")])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(C), "<span class='warning'>You're already resurrecting!</span>"]);
-		return live(f.dot);
+	if (C.has_status_effect(T("/datum/status_effect/wish_granters_gift"))) {
+		to_chat(C, "<span class='warning'>You're already resurrecting!</span>");
+		return f.dot;
 	}
-	yield* g.callName(f, live(C), "apply_status_effect", [T("/datum/status_effect/wish_granters_gift")]);
+	yield* C.apply_status_effect(T("/datum/status_effect/wish_granters_gift"));
 	return 1;
 }, true, { verb: { name: "Resurrection", category: "Immortality" } });

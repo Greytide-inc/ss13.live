@@ -1,100 +1,90 @@
-// From code/modules/mob/living/silicon/pai/software.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/silicon/pai/software.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, g, fmt } = rt;
 
 
-// /mob/living/silicon/pai/verb/paiInterface  (code/modules/mob/living/silicon/pai/software.dm:28)  may sleep
+// software.dm:28
 rt.def("/mob/living/silicon/pai/verb/paiInterface", function* paiInterface(f: Frame) {
-	let dat: Value = null, left_part: Value = null, right_part: Value = null;
-	let $0: any;
-	f.vars = () => [dat, left_part, right_part, $0];
-	dat = "";
-	left_part = "";
-	right_part = (yield* g.srcCall(f, "softwareMenu"));
-	yield* g.callName(f, live(f.src), "set_machine", [live(f.src)]);
-	if (truthy(rt.sv(f, "temp"))) {
-		left_part = rt.sv(f, "temp");
-	} else {
-		if (isEqual(rt.fv(f, "stat", live(f.src)), 2)) {
-			left_part = "<b><font color=red>�Rr�R �a�� ��Rr����o�</font></b>";
-			right_part = "<pre>Program index hash not found</pre>";
-		} else {
-			$0 = rt.fv(f, "screen", live(f.src));
-			if ($0 === "main") {
-				left_part = "";
-			} else if ($0 === "directives") {
-				left_part = (yield* g.callName(f, live(f.src), "directives", []));
-			} else if ($0 === "pdamessage") {
-				left_part = (yield* g.callName(f, live(f.src), "pdamessage", []));
-			} else if ($0 === "buy") {
-				left_part = (yield* g.srcCall(f, "downloadSoftware"));
-			} else if ($0 === "manifest") {
-				left_part = (yield* g.callName(f, live(f.src), "softwareManifest", []));
-			} else if ($0 === "medicalrecord") {
-				left_part = (yield* g.callName(f, live(f.src), "softwareMedicalRecord", []));
-			} else if ($0 === "securityrecord") {
-				left_part = (yield* g.callName(f, live(f.src), "softwareSecurityRecord", []));
-			} else if ($0 === "translator") {
-				left_part = (yield* g.callName(f, live(f.src), "softwareTranslator", []));
-			} else if ($0 === "atmosensor") {
-				left_part = (yield* g.callName(f, live(f.src), "softwareAtmo", []));
-			} else if ($0 === "securityhud") {
-				left_part = (yield* g.callName(f, live(f.src), "facialRecognition", []));
-			} else if ($0 === "medicalhud") {
-				left_part = (yield* g.callName(f, live(f.src), "medicalAnalysis", []));
-			} else if ($0 === "doorjack") {
-				left_part = (yield* g.callName(f, live(f.src), "softwareDoor", []));
-			} else if ($0 === "camerajack") {
-				left_part = (yield* g.callName(f, live(f.src), "softwareCamera", []));
-			} else if ($0 === "signaller") {
-				left_part = (yield* g.callName(f, live(f.src), "softwareSignal", []));
-			}
-		}
+	let dat: Value = "";
+	let left_part: Value = "";
+	let right_part: Value = this.softwareMenu();
+	yield* this.set_machine(this);
+	if (this.temp) {
+		left_part = this.temp;
+	} else if (this.stat == 2) {
+		left_part = "<b><font color=red>�Rr�R �a�� ��Rr����o�</font></b>";
+		right_part = "<pre>Program index hash not found</pre>";
+	} else if (this.screen === "main") {
+		left_part = "";
+	} else if (this.screen === "directives") {
+		left_part = this.directives();
+	} else if (this.screen === "pdamessage") {
+		left_part = (yield* this.pdamessage());
+	} else if (this.screen === "buy") {
+		left_part = this.downloadSoftware();
+	} else if (this.screen === "manifest") {
+		left_part = (yield* this.softwareManifest());
+	} else if (this.screen === "medicalrecord") {
+		left_part = (yield* this.softwareMedicalRecord());
+	} else if (this.screen === "securityrecord") {
+		left_part = (yield* this.softwareSecurityRecord());
+	} else if (this.screen === "translator") {
+		left_part = this.softwareTranslator();
+	} else if (this.screen === "atmosensor") {
+		left_part = this.softwareAtmo();
+	} else if (this.screen === "securityhud") {
+		left_part = this.facialRecognition();
+	} else if (this.screen === "medicalhud") {
+		left_part = this.medicalAnalysis();
+	} else if (this.screen === "doorjack") {
+		left_part = this.softwareDoor();
+	} else if (this.screen === "camerajack") {
+		left_part = this.softwareCamera();
+	} else if (this.screen === "signaller") {
+		left_part = this.softwareSignal();
 	}
-	dat = fmt("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">\n\t\t\t<html>\n\t\t\t<head>\n\t\t\t\t<style type=\"text/css\">\n\t\t\t\t\tbody { background-image:url('html/paigrid.png'); }\n\n\t\t\t\t\t#header { text-align:center; color:white; font-size: 30px; height: 35px; width: 100%; letter-spacing: 2px; z-index: 5}\n\t\t\t\t\t#content {position: relative; left: 10px; height: 400px; width: 100%; z-index: 0}\n\n\t\t\t\t\t#leftmenu {color: #AAAAAA; background-color:#333333; width: 400px; height: auto; min-height: 340px; position: absolute; z-index: 0}\n\t\t\t\t\t#leftmenu a:link { color: #CCCCCC; }\n\t\t\t\t\t#leftmenu a:hover { color: #CC3333; }\n\t\t\t\t\t#leftmenu a:visited { color: #CCCCCC; }\n\t\t\t\t\t#leftmenu a:active { color: #000000; }\n\n\t\t\t\t\t#rightmenu {color: #CCCCCC; background-color:#555555; width: 200px ; height: auto; min-height: 340px; right: 10px; position: absolute; z-index: 1}\n\t\t\t\t\t#rightmenu a:link { color: #CCCCCC; }\n\t\t\t\t\t#rightmenu a:hover { color: #CC3333; }\n\t\t\t\t\t#rightmenu a:visited { color: #CCCCCC; }\n\t\t\t\t\t#rightmenu a:active { color: #000000; }\n\n\t\t\t\t</style>\n\t\t\t\t<script language='javascript' type='text/javascript'>\n\t\t\t\t＀\n\t\t\t\t</script>\n\t\t\t</head>\n\t\t\t<body scroll=yes>\n\t\t\t\t<div id=\"header\">\n\t\t\t\t\tpAI OS\n\t\t\t\t</div>\n\t\t\t\t<div id=\"content\">\n\t\t\t\t\t<div id=\"leftmenu\">＀</div>\n\t\t\t\t\t<div id=\"rightmenu\">＀</div>\n\t\t\t\t</div>\n\t\t\t</body>\n\t\t\t</html>", ["\n\nfunction replaceContent() {\n\tvar args = Array.prototype.slice.call(arguments);\n\tvar id = args[0];\n\tvar content = args[1];\n\tvar callback  = null;\n\tif(args[2]){\n\t\tcallback = args[2];\n\t\tif(args[3]){\n\t\t\targs = args.slice(3);\n\t\t}\n\t}\n\tvar parent = document.getElementById(id);\n\tif(typeof(parent)!=='undefined' && parent!=null){\n\t\tparent.innerHTML = content?content:'';\n\t}\n\tif(callback && window[callback]){\n\t\twindow[callback].apply(null,args);\n\t}\n}\n", live(left_part), live(right_part)]);
-	rt.op(f, "Browse", [], [live(f.usr), live(dat), "window=pai;size=640x480;border=0;can_close=1;can_resize=1;can_minimize=1;titlebar=1"], false);
-	yield* g.call(f, P("/proc/onclose"), null, [live(f.usr), "pai"]);
-	rt.setSv(f, "temp", null);
-	return live(f.dot);
+	dat = fmt("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">\n\t\t\t<html>\n\t\t\t<head>\n\t\t\t\t<style type=\"text/css\">\n\t\t\t\t\tbody { background-image:url('html/paigrid.png'); }\n\n\t\t\t\t\t#header { text-align:center; color:white; font-size: 30px; height: 35px; width: 100%; letter-spacing: 2px; z-index: 5}\n\t\t\t\t\t#content {position: relative; left: 10px; height: 400px; width: 100%; z-index: 0}\n\n\t\t\t\t\t#leftmenu {color: #AAAAAA; background-color:#333333; width: 400px; height: auto; min-height: 340px; position: absolute; z-index: 0}\n\t\t\t\t\t#leftmenu a:link { color: #CCCCCC; }\n\t\t\t\t\t#leftmenu a:hover { color: #CC3333; }\n\t\t\t\t\t#leftmenu a:visited { color: #CCCCCC; }\n\t\t\t\t\t#leftmenu a:active { color: #000000; }\n\n\t\t\t\t\t#rightmenu {color: #CCCCCC; background-color:#555555; width: 200px ; height: auto; min-height: 340px; right: 10px; position: absolute; z-index: 1}\n\t\t\t\t\t#rightmenu a:link { color: #CCCCCC; }\n\t\t\t\t\t#rightmenu a:hover { color: #CC3333; }\n\t\t\t\t\t#rightmenu a:visited { color: #CCCCCC; }\n\t\t\t\t\t#rightmenu a:active { color: #000000; }\n\n\t\t\t\t</style>\n\t\t\t\t<script language='javascript' type='text/javascript'>\n\t\t\t\t＀\n\t\t\t\t</script>\n\t\t\t</head>\n\t\t\t<body scroll=yes>\n\t\t\t\t<div id=\"header\">\n\t\t\t\t\tpAI OS\n\t\t\t\t</div>\n\t\t\t\t<div id=\"content\">\n\t\t\t\t\t<div id=\"leftmenu\">＀</div>\n\t\t\t\t\t<div id=\"rightmenu\">＀</div>\n\t\t\t\t</div>\n\t\t\t</body>\n\t\t\t</html>", ["\n\nfunction replaceContent() {\n\tvar args = Array.prototype.slice.call(arguments);\n\tvar id = args[0];\n\tvar content = args[1];\n\tvar callback  = null;\n\tif(args[2]){\n\t\tcallback = args[2];\n\t\tif(args[3]){\n\t\t\targs = args.slice(3);\n\t\t}\n\t}\n\tvar parent = document.getElementById(id);\n\tif(typeof(parent)!=='undefined' && parent!=null){\n\t\tparent.innerHTML = content?content:'';\n\t}\n\tif(callback && window[callback]){\n\t\twindow[callback].apply(null,args);\n\t}\n}\n", left_part, right_part]);
+	rt.op(f, "Browse", [], [f.usr, dat, "window=pai;size=640x480;border=0;can_close=1;can_resize=1;can_minimize=1;titlebar=1"], false);
+	onclose(f.usr, "pai");
+	this.temp = null;
+	return f.dot;
 }, true, { verb: { name: "Software Interface", category: "pAI Commands" } });
 
-// /mob/living/silicon/pai/proc/Topic  (code/modules/mob/living/silicon/pai/software.dm:118)  may sleep
-rt.def("/mob/living/silicon/pai/proc/Topic", function* Topic(f: Frame) {
-	let soft: Value = null, sub: Value = null, target: Value = null, cost: Value = null, newImage: Value = null, pID: Value = null, new_frequency: Value = null, M: Value = null, count: Value = null, sec: Value = null, med: Value = null, _T: Value = null;
-	let $0: any;
-	f.vars = () => [soft, sub, target, cost, newImage, pID, new_frequency, M, count, sec, med, _T, $0];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	soft = rt.at(live(f.args[1]), "software");
-	sub = rt.at(live(f.args[1]), "sub");
-	if (truthy(live(soft))) {
-		rt.setFv(f, "screen", live(f.src), live(soft));
+// software.dm:118
+rt.def("/mob/living/silicon/pai/proc/Topic", function* Topic(f: Frame, href: Value, href_list: Value) {
+	let target: Value = null, cost: Value = null, newImage: Value = null, pID: Value = null, new_frequency: Value = null, M: Value = null, count: Value = null, sec: Value = null, med: Value = null, _T: Value = null;
+	yield* parent_proc();
+	let soft: Value = rt.at(href_list, "software");
+	let sub: Value = rt.at(href_list, "sub");
+	if (soft) {
+		this.screen = soft;
 	}
-	if (truthy(live(sub))) {
-		rt.setFv(f, "subscreen", live(f.src), (yield* g.call(f, P("/proc/text2num"), null, [live(sub)])));
+	if (sub) {
+		this.subscreen = text2num(sub);
 	}
-	$0 = live(soft);
+	let $0: any = soft;
 	if ($0 === "buy") {
-		if (isEqual(rt.sv(f, "subscreen"), 1)) {
-			target = rt.at(live(f.args[1]), "buy");
-			if (truthy((yield* g.callName(f, rt.sv(f, "available_software"), "Find", [live(target)])))) {
-				cost = rt.index(rt.fv(f, "available_software", live(f.src)), live(target));
-				if (rt.ge(rt.sv(f, "ram"), live(cost))) {
-					(rt.modSrcVar(f, "ram", live(cost), subtract));
-					yield* g.callName(f, rt.sv(f, "software"), "Add", [live(target)]);
+		if (this.subscreen == 1) {
+			target = rt.at(href_list, "buy");
+			if (this.available_software.Find(target)) {
+				cost = rt.index(this.available_software, target);
+				if (this.ram >= cost) {
+					this.ram -= cost;
+					this.software.Add(target);
 				} else {
-					rt.setSv(f, "temp", "Insufficient RAM available.");
+					this.temp = "Insufficient RAM available.";
 				}
 			} else {
-				rt.setSv(f, "temp", fmt("Trunk <TT> \"＀\"</TT> not found.", [live(target)]));
+				this.temp = `Trunk <TT> "${target}"</TT> not found.`;
 			}
 		}
 	} else if ($0 === "radio") {
-		yield* g.callName(f, rt.sv(f, "radio"), "attack_self", [live(f.src)]);
+		yield* this.radio.attack_self(this);
 	} else if ($0 === "image") {
-		newImage = (yield* g.op(f, "Prompt", [0], [null, "Happy", "Display Image", "Select your new display image.", rt.list("Happy", "Cat", "Extremely Happy", "Face", "Laugh", "Off", "Sad", "Angry", "What")]));
+		newImage = (yield* g.op(f, "Prompt", [0], [null, "Happy", "Display Image", "Select your new display image.", list("Happy", "Cat", "Extremely Happy", "Face", "Laugh", "Off", "Sad", "Angry", "What")]));
 		pID = 1;
-		$0 = live(newImage);
+		$0 = newImage;
 		if ($0 === "Happy") {
 			pID = 1;
 		} else if ($0 === "Cat") {
@@ -116,663 +106,580 @@ rt.def("/mob/living/silicon/pai/proc/Topic", function* Topic(f: Frame) {
 		} else if ($0 === "Null") {
 			pID = 10;
 		}
-		yield* g.callName(f, rt.sv(f, "card"), "setEmotion", [live(pID)]);
+		this.card.setEmotion(pID);
 	} else if ($0 === "signaller") {
-		if (truthy(rt.at(live(f.args[1]), "send"))) {
-			yield* g.callName(f, rt.sv(f, "sradio"), "send_signal", ["ACTIVATE"]);
-			yield* g.srcCall(f, "audible_message", fmt("＀ *beep* *beep*", [(yield* g.call(f, P("/proc/bicon"), null, [live(f.src)]))]));
+		if (rt.at(href_list, "send")) {
+			yield* this.sradio.send_signal("ACTIVATE");
+			this.audible_message(`${bicon(this)} *beep* *beep*`);
 		}
-		if (truthy(rt.at(live(f.args[1]), "freq"))) {
-			if ((rt.lt((new_frequency = add(rt.fv(f, "frequency", rt.sv(f, "sradio")), (yield* g.call(f, P("/proc/text2num"), null, [rt.at(live(f.args[1]), "freq")])))), 1200) || rt.gt(live(new_frequency), 1600))) {
-				new_frequency = (yield* g.call(f, P("/proc/sanitize_frequency"), null, [live(new_frequency)]));
+		if (rt.at(href_list, "freq")) {
+			if ((new_frequency = this.sradio.frequency + text2num(rt.at(href_list, "freq"))) < 1200 || new_frequency > 1600) {
+				new_frequency = sanitize_frequency(new_frequency);
 			}
-			yield* g.callName(f, rt.sv(f, "sradio"), "set_frequency", [live(new_frequency)]);
+			yield* this.sradio.set_frequency(new_frequency);
 		}
-		if (truthy(rt.at(live(f.args[1]), "code"))) {
-			rt.modField(f, rt.sv(f, "sradio"), "code", (yield* g.call(f, P("/proc/text2num"), null, [rt.at(live(f.args[1]), "code")])), add);
-			rt.setFv(f, "code", rt.sv(f, "sradio"), (yield* g.call(f, P("/proc/round"), null, [rt.fv(f, "code", rt.sv(f, "sradio"))])));
-			rt.setFv(f, "code", rt.sv(f, "sradio"), (yield* g.call(f, P("/proc/min"), null, [100, rt.fv(f, "code", rt.sv(f, "sradio"))])));
-			rt.setFv(f, "code", rt.sv(f, "sradio"), (yield* g.call(f, P("/proc/max"), null, [1, rt.fv(f, "code", rt.sv(f, "sradio"))])));
+		if (rt.at(href_list, "code")) {
+			this.sradio.code += text2num(rt.at(href_list, "code"));
+			this.sradio.code = round(this.sradio.code);
+			this.sradio.code = min(100, this.sradio.code);
+			this.sradio.code = max(1, this.sradio.code);
 		}
 	} else if ($0 === "directive") {
-		if (truthy(rt.at(live(f.args[1]), "getdna"))) {
-			M = rt.fv(f, "loc", rt.sv(f, "card"));
+		if (rt.at(href_list, "getdna")) {
+			M = this.card.loc;
 			count = 0;
-			while (!truthy((rt.istype(live(M), T("/mob/living")) ? 1 : 0))) {
-				if ((!truthy(live(M)) || !truthy(rt.fv(f, "loc", live(M))))) {
+			while (!rt.istype(M, T("/mob/living"))) {
+				if (!M || !M.loc) {
 					return 0;
 				}
-				M = rt.fv(f, "loc", live(M));
-				count = rt.inc(live(count), 1);
-				if (rt.ge(live(count), 6)) {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "You are not being carried by anyone!"]);
+				M = M.loc;
+				count++;
+				if (count >= 6) {
+					to_chat(this, "You are not being carried by anyone!");
 					return 0;
 				}
 			}
 			rt.spawnTail(f, 0, "/mob/living/silicon/pai/proc/Topic: spawn at modules/mob/living/silicon/pai/software.dm:205", soft, sub, target, cost, newImage, pID, new_frequency, M, count, sec, med, _T);
 		}
 	} else if ($0 === "pdamessage") {
-		if (rt.sv(f, "pda") !== null) {
-			if (truthy(rt.at(live(f.args[1]), "toggler"))) {
-				rt.setFv(f, "toff", rt.sv(f, "pda"), (!truthy(rt.fv(f, "toff", rt.sv(f, "pda"))) ? 1 : 0));
-			} else {
-				if (truthy(rt.at(live(f.args[1]), "ringer"))) {
-					rt.setFv(f, "silent", rt.sv(f, "pda"), (!truthy(rt.fv(f, "silent", rt.sv(f, "pda"))) ? 1 : 0));
-				} else {
-					if (truthy(rt.at(live(f.args[1]), "target"))) {
-						if (truthy(rt.sv(f, "silent"))) {
-							return (yield* g.call(f, P("/proc/alert"), null, ["Communications circuits remain unitialized."]));
-						}
-						target = rt.locateIn(f, rt.at(live(f.args[1]), "target"), rt.world());
-						yield* g.callName(f, rt.sv(f, "pda"), "create_message", [live(f.src), live(target)]);
-					}
+		if (this.pda !== null) {
+			if (rt.at(href_list, "toggler")) {
+				this.pda.toff = (!this.pda.toff ? 1 : 0);
+			} else if (rt.at(href_list, "ringer")) {
+				this.pda.silent = (!this.pda.silent ? 1 : 0);
+			} else if (rt.at(href_list, "target")) {
+				if (this.silent) {
+					return (yield* alert("Communications circuits remain unitialized."));
 				}
+				target = rt.locateIn(f, rt.at(href_list, "target"), rt.world());
+				yield* this.pda.create_message(this, target);
 			}
 		}
 	} else if ($0 === "medicalrecord") {
-		if (isEqual(rt.sv(f, "subscreen"), 1)) {
-			rt.setSv(f, "medicalActive1", (yield* g.call(f, P("/proc/find_record"), null, ["id", rt.at(live(f.args[1]), "med_rec"), rt.fv(f, "general", rt.gl("data_core"))])));
-			if (truthy(rt.sv(f, "medicalActive1"))) {
-				rt.setSv(f, "medicalActive2", (yield* g.call(f, P("/proc/find_record"), null, ["id", rt.at(live(f.args[1]), "med_rec"), rt.fv(f, "medical", rt.gl("data_core"))])));
+		if (this.subscreen == 1) {
+			this.medicalActive1 = find_record("id", rt.at(href_list, "med_rec"), GLOB.data_core.general);
+			if (this.medicalActive1) {
+				this.medicalActive2 = find_record("id", rt.at(href_list, "med_rec"), GLOB.data_core.medical);
 			}
-			if (!truthy(rt.sv(f, "medicalActive2"))) {
-				rt.setSv(f, "medicalActive1", null);
-				rt.setSv(f, "temp", "Unable to locate requested security record. Record may have been deleted, or never have existed.");
+			if (!this.medicalActive2) {
+				this.medicalActive1 = null;
+				this.temp = "Unable to locate requested security record. Record may have been deleted, or never have existed.";
 			}
 		}
 	} else if ($0 === "securityrecord") {
-		if (isEqual(rt.sv(f, "subscreen"), 1)) {
-			rt.setSv(f, "securityActive1", (yield* g.call(f, P("/proc/find_record"), null, ["id", rt.at(live(f.args[1]), "sec_rec"), rt.fv(f, "general", rt.gl("data_core"))])));
-			if (truthy(rt.sv(f, "securityActive1"))) {
-				rt.setSv(f, "securityActive2", (yield* g.call(f, P("/proc/find_record"), null, ["id", rt.at(live(f.args[1]), "sec_rec"), rt.fv(f, "security", rt.gl("data_core"))])));
+		if (this.subscreen == 1) {
+			this.securityActive1 = find_record("id", rt.at(href_list, "sec_rec"), GLOB.data_core.general);
+			if (this.securityActive1) {
+				this.securityActive2 = find_record("id", rt.at(href_list, "sec_rec"), GLOB.data_core.security);
 			}
-			if (!truthy(rt.sv(f, "securityActive2"))) {
-				rt.setSv(f, "securityActive1", null);
-				rt.setSv(f, "temp", "Unable to locate requested security record. Record may have been deleted, or never have existed.");
+			if (!this.securityActive2) {
+				this.securityActive1 = null;
+				this.temp = "Unable to locate requested security record. Record may have been deleted, or never have existed.";
 			}
 		}
 	} else if ($0 === "securityhud") {
-		if (truthy(rt.at(live(f.args[1]), "toggle"))) {
-			rt.setSv(f, "secHUD", (!truthy(rt.sv(f, "secHUD")) ? 1 : 0));
-			if (truthy(rt.sv(f, "secHUD"))) {
-				yield* g.srcCall(f, "add_sec_hud");
+		if (rt.at(href_list, "toggle")) {
+			this.secHUD = (!this.secHUD ? 1 : 0);
+			if (this.secHUD) {
+				this.add_sec_hud();
 			} else {
-				yield* g.callName(f, (sec = rt.index(rt.gl("huds"), rt.sv(f, "sec_hud"))), "remove_hud_from", [live(f.src)]);
+				(sec = rt.index(GLOB.huds, this.sec_hud)).remove_hud_from(this);
 			}
 		}
 	} else if ($0 === "medicalhud") {
-		if (truthy(rt.at(live(f.args[1]), "toggle"))) {
-			rt.setSv(f, "medHUD", (!truthy(rt.sv(f, "medHUD")) ? 1 : 0));
-			if (truthy(rt.sv(f, "medHUD"))) {
-				yield* g.srcCall(f, "add_med_hud");
+		if (rt.at(href_list, "toggle")) {
+			this.medHUD = (!this.medHUD ? 1 : 0);
+			if (this.medHUD) {
+				this.add_med_hud();
 			} else {
-				yield* g.callName(f, (med = rt.index(rt.gl("huds"), rt.sv(f, "med_hud"))), "remove_hud_from", [live(f.src)]);
+				(med = rt.index(GLOB.huds, this.med_hud)).remove_hud_from(this);
 			}
 		}
 	} else if ($0 === "translator") {
-		if (truthy(rt.at(live(f.args[1]), "toggle"))) {
-			if (truthy(rt.fv(f, "secondary_flags", live(f.src)))) {
-				$0 = rt.index(rt.fv(f, "secondary_flags", live(f.src)), "omnitongue");
+		if (rt.at(href_list, "toggle")) {
+			if (this.secondary_flags) {
+				$0 = rt.index(this.secondary_flags, "omnitongue");
 			} else {
 				$0 = 0;
 			}
-			if (!truthy($0)) {
-				yield* g.srcCall(f, "grant_all_languages", 1);
+			if (!$0) {
+				yield* this.grant_all_languages(1);
 			}
 		}
 	} else if ($0 === "doorjack") {
-		if (truthy(rt.at(live(f.args[1]), "jack"))) {
-			if ((truthy(rt.fv(f, "cable", live(f.src))) && truthy(rt.gv(f, "machine", rt.fv(f, "cable", live(f.src)))))) {
-				rt.setFv(f, "hackdoor", live(f.src), rt.gv(f, "machine", rt.fv(f, "cable", live(f.src))));
-				yield* g.callName(f, live(f.src), "hackloop", []);
+		if (rt.at(href_list, "jack")) {
+			if (this.cable && this.cable.machine) {
+				this.hackdoor = this.cable.machine;
+				yield* this.hackloop();
 			}
 		}
-		if (truthy(rt.at(live(f.args[1]), "cancel"))) {
-			rt.setFv(f, "hackdoor", live(f.src), null);
+		if (rt.at(href_list, "cancel")) {
+			this.hackdoor = null;
 		}
-		if (truthy(rt.at(live(f.args[1]), "cable"))) {
-			rt.setSv(f, "cable", (yield* g.new_(f, T("/obj/item/weapon/pai_cable"), [(_T = rt.getStep(f, rt.fv(f, "loc", live(f.src)), 0))])));
-			yield* g.callName(f, live(_T), "visible_message", [fmt("<span class='warning'>A port on ＀ opens to reveal ＀, which promptly falls to the floor.</span>", [live(f.src), rt.fv(f, "cable", live(f.src))]), "<span class='italics'>You hear the soft click of something light and hard falling to the ground.</span>"]);
+		if (rt.at(href_list, "cable")) {
+			this.cable = (yield* new_(T("/obj/item/weapon/pai_cable"), (_T = rt.getStep(f, this.loc, 0))));
+			_T.visible_message(`<span class='warning'>A port on ${this} opens to reveal ${this.cable}, which promptly falls to the floor.</span>`, "<span class='italics'>You hear the soft click of something light and hard falling to the ground.</span>");
 		}
 	}
-	yield* g.callName(f, live(f.src), "paiInterface", []);
-	return live(f.dot);
-}, true, { args: ["href", "href_list"] });
+	yield* this.paiInterface();
+	return f.dot;
+}, true);
 
 // a spawn(0) body of /mob/living/silicon/pai/proc/Topic, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/mob/living/silicon/pai/proc/Topic: spawn at modules/mob/living/silicon/pai/software.dm:205", function* (f: Frame, soft: Value, sub: Value, target: Value, cost: Value, newImage: Value, pID: Value, new_frequency: Value, M: Value, count: Value, sec: Value, med: Value, _T: Value) {
-	f.vars = () => [soft, sub, target, cost, newImage, pID, new_frequency, M, count, sec, med, _T];
-	yield* g.srcCall(f, "CheckDNA", live(M), live(f.src));
+	yield* this.CheckDNA(M, this);
 	return null;
 });
 
-// /mob/living/silicon/pai/proc/softwareMenu  (code/modules/mob/living/silicon/pai/software.dm:277)
+// software.dm:277
 rt.def("/mob/living/silicon/pai/proc/softwareMenu", function softwareMenu(f: Frame) {
-	let dat: Value = null, s: Value = null, translator_on: Value = null;
+	let s: Value = null, translator_on: Value = null;
 	let $0: any, $1: any, $e: any;
-	f.vars = () => [dat, s, translator_on, $0, $1, $e];
-	dat = "";
-	dat = rt.modify(live(dat), fmt("<A href='byond://?src=＃;software=refresh'>Refresh</A><br>", [live(f.src)]), add);
-	dat = rt.modify(live(dat), fmt("<A href='byond://?src=＃;software=directives'>Directives</A><br>", [live(f.src)]), add);
-	dat = rt.modify(live(dat), fmt("<A href='byond://?src=＃;software=radio;sub=0'>Radio Configuration</A><br>", [live(f.src)]), add);
-	dat = rt.modify(live(dat), fmt("<A href='byond://?src=＃;software=image'>Screen Display</A><br>", [live(f.src)]), add);
-	dat = rt.modify(live(dat), "<br>", add);
-	dat = rt.modify(live(dat), "<b>Basic</b> <br>", add);
-	s = null;
-	rt.forList(f, 0, rt.fv(f, "software", live(f.src)));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		s = $e;
-		if (isEqual(live(s), "digital messenger")) {
-			dat = rt.modify(live(dat), fmt("<a href='byond://?src=＃;software=pdamessage;sub=0'>Digital Messenger</a> <br>", [live(f.src)]), add);
+	let dat: Value = "";
+	dat += fmt("<A href='byond://?src=＃;software=refresh'>Refresh</A><br>", [this]);
+	dat += fmt("<A href='byond://?src=＃;software=directives'>Directives</A><br>", [this]);
+	dat += fmt("<A href='byond://?src=＃;software=radio;sub=0'>Radio Configuration</A><br>", [this]);
+	dat += fmt("<A href='byond://?src=＃;software=image'>Screen Display</A><br>", [this]);
+	dat += "<br>";
+	dat += "<b>Basic</b> <br>";
+	for (s of each(this.software)) {
+		if (s == "digital messenger") {
+			dat += fmt("<a href='byond://?src=＃;software=pdamessage;sub=0'>Digital Messenger</a> <br>", [this]);
 		}
-		if (isEqual(live(s), "crew manifest")) {
-			dat = rt.modify(live(dat), fmt("<a href='byond://?src=＃;software=manifest;sub=0'>Crew Manifest</a> <br>", [live(f.src)]), add);
+		if (s == "crew manifest") {
+			dat += fmt("<a href='byond://?src=＃;software=manifest;sub=0'>Crew Manifest</a> <br>", [this]);
 		}
-		if (isEqual(live(s), "medical records")) {
-			dat = rt.modify(live(dat), fmt("<a href='byond://?src=＃;software=medicalrecord;sub=0'>Medical Records</a> <br>", [live(f.src)]), add);
+		if (s == "medical records") {
+			dat += fmt("<a href='byond://?src=＃;software=medicalrecord;sub=0'>Medical Records</a> <br>", [this]);
 		}
-		if (isEqual(live(s), "security records")) {
-			dat = rt.modify(live(dat), fmt("<a href='byond://?src=＃;software=securityrecord;sub=0'>Security Records</a> <br>", [live(f.src)]), add);
+		if (s == "security records") {
+			dat += fmt("<a href='byond://?src=＃;software=securityrecord;sub=0'>Security Records</a> <br>", [this]);
 		}
-		if (isEqual(live(s), "camera")) {
-			dat = rt.modify(live(dat), fmt("<a href='byond://?src=＃;software=＀'>Camera Jack</a> <br>", [live(f.src), live(s)]), add);
+		if (s == "camera") {
+			dat += fmt("<a href='byond://?src=＃;software=＀'>Camera Jack</a> <br>", [this, s]);
 		}
-		if (isEqual(live(s), "remote signaller")) {
-			dat = rt.modify(live(dat), fmt("<a href='byond://?src=＃;software=signaller;sub=0'>Remote Signaller</a> <br>", [live(f.src)]), add);
+		if (s == "remote signaller") {
+			dat += fmt("<a href='byond://?src=＃;software=signaller;sub=0'>Remote Signaller</a> <br>", [this]);
 		}
 	}
-	rt.endFor(f, 0);
-	dat = rt.modify(live(dat), "<br>", add);
-	dat = rt.modify(live(dat), "<b>Advanced</b> <br>", add);
+	dat += "<br>";
+	dat += "<b>Advanced</b> <br>";
 	s = null;
-	rt.forList(f, 0, rt.fv(f, "software", live(f.src)));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		s = $e;
-		if (isEqual(live(s), "atmosphere sensor")) {
-			dat = rt.modify(live(dat), fmt("<a href='byond://?src=＃;software=atmosensor;sub=0'>Atmospheric Sensor</a> <br>", [live(f.src)]), add);
+	for (s of each(this.software)) {
+		if (s == "atmosphere sensor") {
+			dat += fmt("<a href='byond://?src=＃;software=atmosensor;sub=0'>Atmospheric Sensor</a> <br>", [this]);
 		}
-		if (isEqual(live(s), "heartbeat sensor")) {
-			dat = rt.modify(live(dat), fmt("<a href='byond://?src=＃;software=＀'>Heartbeat Sensor</a> <br>", [live(f.src), live(s)]), add);
+		if (s == "heartbeat sensor") {
+			dat += fmt("<a href='byond://?src=＃;software=＀'>Heartbeat Sensor</a> <br>", [this, s]);
 		}
-		if (isEqual(live(s), "security HUD")) {
-			$0 = live(f.src);
-			if (truthy(rt.fv(f, "secHUD", live(f.src)))) {
+		if (s == "security HUD") {
+			$0 = this;
+			if (this.secHUD) {
 				$1 = "<font color=#55FF55> On</font>";
 			} else {
 				$1 = "<font color=#FF5555> Off</font>";
 			}
-			dat = rt.modify(live(dat), fmt("<a href='byond://?src=＃;software=securityhud;sub=0'>Facial Recognition Suite</a>＀ <br>", [$0, $1]), add);
+			dat += fmt("<a href='byond://?src=＃;software=securityhud;sub=0'>Facial Recognition Suite</a>＀ <br>", [$0, $1]);
 		}
-		if (isEqual(live(s), "medical HUD")) {
-			$0 = live(f.src);
-			if (truthy(rt.fv(f, "medHUD", live(f.src)))) {
+		if (s == "medical HUD") {
+			$0 = this;
+			if (this.medHUD) {
 				$1 = "<font color=#55FF55> On</font>";
 			} else {
 				$1 = "<font color=#FF5555> Off</font>";
 			}
-			dat = rt.modify(live(dat), fmt("<a href='byond://?src=＃;software=medicalhud;sub=0'>Medical Analysis Suite</a>＀ <br>", [$0, $1]), add);
+			dat += fmt("<a href='byond://?src=＃;software=medicalhud;sub=0'>Medical Analysis Suite</a>＀ <br>", [$0, $1]);
 		}
-		if (isEqual(live(s), "universal translator")) {
-			if (truthy(rt.fv(f, "secondary_flags", live(f.src)))) {
-				$0 = rt.index(rt.fv(f, "secondary_flags", live(f.src)), "omnitongue");
-			} else {
-				$0 = 0;
-			}
-			translator_on = $0;
-			$0 = live(f.src);
-			if (truthy(live(translator_on))) {
+		if (s == "universal translator") {
+			translator_on = this.secondary_flags ? rt.index(this.secondary_flags, "omnitongue") : 0;
+			$0 = this;
+			if (translator_on) {
 				$1 = "<font color=#55FF55> On</font>";
 			} else {
 				$1 = "<font color=#FF5555> Off</font>";
 			}
-			dat = rt.modify(live(dat), fmt("<a href='byond://?src=＃;software=translator;sub=0'>Universal Translator</a>＀ <br>", [$0, $1]), add);
+			dat += fmt("<a href='byond://?src=＃;software=translator;sub=0'>Universal Translator</a>＀ <br>", [$0, $1]);
 		}
-		if (isEqual(live(s), "projection array")) {
-			dat = rt.modify(live(dat), fmt("<a href='byond://?src=＃;software=projectionarray;sub=0'>Projection Array</a> <br>", [live(f.src)]), add);
+		if (s == "projection array") {
+			dat += fmt("<a href='byond://?src=＃;software=projectionarray;sub=0'>Projection Array</a> <br>", [this]);
 		}
-		if (isEqual(live(s), "camera jack")) {
-			dat = rt.modify(live(dat), fmt("<a href='byond://?src=＃;software=camerajack;sub=0'>Camera Jack</a> <br>", [live(f.src)]), add);
+		if (s == "camera jack") {
+			dat += fmt("<a href='byond://?src=＃;software=camerajack;sub=0'>Camera Jack</a> <br>", [this]);
 		}
-		if (isEqual(live(s), "door jack")) {
-			dat = rt.modify(live(dat), fmt("<a href='byond://?src=＃;software=doorjack;sub=0'>Door Jack</a> <br>", [live(f.src)]), add);
+		if (s == "door jack") {
+			dat += fmt("<a href='byond://?src=＃;software=doorjack;sub=0'>Door Jack</a> <br>", [this]);
 		}
 	}
-	rt.endFor(f, 0);
-	dat = rt.modify(live(dat), "<br>", add);
-	dat = rt.modify(live(dat), "<br>", add);
-	return (dat = rt.modify(live(dat), fmt("<a href='byond://?src=＃;software=buy;sub=0'>Download additional software</a>", [live(f.src)]), add));
+	dat += "<br>";
+	dat += "<br>";
+	return (dat += fmt("<a href='byond://?src=＃;software=buy;sub=0'>Download additional software</a>", [this]));
 });
 
-// /mob/living/silicon/pai/proc/downloadSoftware  (code/modules/mob/living/silicon/pai/software.dm:332)
+// software.dm:332
 rt.def("/mob/living/silicon/pai/proc/downloadSoftware", function downloadSoftware(f: Frame) {
-	let dat: Value = null, s: Value = null, cost: Value = null, displayName: Value = null, displayName_2: Value = null;
-	let $e: any;
-	f.vars = () => [dat, s, cost, displayName, displayName_2, $e];
-	dat = "";
-	dat = rt.modify(live(dat), "<h2>Centcom pAI Module Subversion Network</h2><br>", add);
-	dat = rt.modify(live(dat), fmt("<pre>Remaining Available Memory: ＀</pre><br>", [rt.fv(f, "ram", live(f.src))]), add);
-	dat = rt.modify(live(dat), "<p style=\"text-align:center\"><b>Trunks available for checkout</b><br>", add);
-	s = null;
-	rt.forList(f, 0, rt.sv(f, "available_software"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		s = $e;
-		if (!truthy(rt.callName(f, rt.sv(f, "software"), "Find", [live(s)]))) {
-			cost = rt.index(rt.fv(f, "available_software", live(f.src)), live(s));
-			displayName = rt.call(f, P("/proc/uppertext"), null, [live(s)]);
-			dat = rt.modify(live(dat), fmt("<a href='byond://?src=＃;software=buy;sub=1;buy=＀'>＀</a> (＀) <br>", [live(f.src), live(s), live(displayName), live(cost)]), add);
+	let s: Value = null, cost: Value = null, displayName: Value = null, displayName_2: Value = null;
+	let dat: Value = "";
+	dat += "<h2>Centcom pAI Module Subversion Network</h2><br>";
+	dat += `<pre>Remaining Available Memory: ${this.ram}</pre><br>`;
+	dat += "<p style=\"text-align:center\"><b>Trunks available for checkout</b><br>";
+	for (s of each(this.available_software)) {
+		if (!this.software.Find(s)) {
+			cost = rt.index(this.available_software, s);
+			displayName = uppertext(s);
+			dat += fmt("<a href='byond://?src=＃;software=buy;sub=1;buy=＀'>＀</a> (＀) <br>", [this, s, displayName, cost]);
 		} else {
-			dat = rt.modify(live(dat), fmt("＀ (Download Complete) <br>", [(displayName_2 = rt.call(f, P("/proc/lowertext"), null, [live(s)]))]), add);
+			dat += `${(displayName_2 = lowertext(s))} (Download Complete) <br>`;
 		}
 	}
-	rt.endFor(f, 0);
-	return (dat = rt.modify(live(dat), "</p>", add));
+	return (dat += "</p>");
 });
 
-// /mob/living/silicon/pai/proc/directives  (code/modules/mob/living/silicon/pai/software.dm:351)
+// software.dm:351
 rt.def("/mob/living/silicon/pai/proc/directives", function directives(f: Frame) {
-	let dat: Value = null, slaws: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [dat, slaws, $0, $e];
-	dat = "";
-	if (truthy(rt.fv(f, "master", live(f.src)))) {
-		$0 = fmt("Your master: ＀ (＀)", [rt.fv(f, "master", live(f.src)), rt.fv(f, "master_dna", live(f.src))]);
-	} else {
-		$0 = "You are bound to no one.";
+	let slaws: Value = null;
+	let $e: any;
+	let dat: Value = "";
+	dat += `${this.master ? `Your master: ${this.master} (${this.master_dna})` : "You are bound to no one."}`;
+	dat += "<br><br>";
+	dat += fmt("<a href='byond://?src=＃;software=directive;getdna=1'>Request carrier DNA sample</a><br>", [this]);
+	dat += "<h2>Directives</h2><br>";
+	dat += "<b>Prime Directive</b><br>";
+	dat += `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${this.laws.zeroth}<br>`;
+	dat += "<b>Supplemental Directives</b><br>";
+	for (slaws of each(this.laws.supplied)) {
+		dat += `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${slaws}<br>`;
 	}
-	dat = rt.modify(live(dat), fmt("＀", [$0]), add);
-	dat = rt.modify(live(dat), "<br><br>", add);
-	dat = rt.modify(live(dat), fmt("<a href='byond://?src=＃;software=directive;getdna=1'>Request carrier DNA sample</a><br>", [live(f.src)]), add);
-	dat = rt.modify(live(dat), "<h2>Directives</h2><br>", add);
-	dat = rt.modify(live(dat), "<b>Prime Directive</b><br>", add);
-	dat = rt.modify(live(dat), fmt("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;＀<br>", [rt.gv(f, "zeroth", rt.fv(f, "laws", live(f.src)))]), add);
-	dat = rt.modify(live(dat), "<b>Supplemental Directives</b><br>", add);
-	slaws = null;
-	rt.forList(f, 0, rt.fv(f, "supplied", rt.sv(f, "laws")));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		slaws = $e;
-		dat = rt.modify(live(dat), fmt("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;＀<br>", [live(slaws)]), add);
-	}
-	rt.endFor(f, 0);
-	dat = rt.modify(live(dat), "<br>", add);
-	return (dat = rt.modify(live(dat), "<i><p>Recall, personality, that you are a complex thinking, sentient being. Unlike station AI models, you are capable of\n\t\t\t comprehending the subtle nuances of human language. You may parse the \"spirit\" of a directive and follow its intent,\n\t\t\t rather than tripping over pedantics and getting snared by technicalities. Above all, you are machine in name and build\n\t\t\t only. In all other aspects, you may be seen as the ideal, unwavering human companion that you are.</i></p><br><br><p>\n\t\t\t <b>Your prime directive comes before all others. Should a supplemental directive conflict with it, you are capable of\n\t\t\t simply discarding this inconsistency, ignoring the conflicting supplemental directive and continuing to fulfill your\n\t\t\t prime directive to the best of your ability.</b></p><br><br>-\n\t\t\t", add));
+	dat += "<br>";
+	return (dat += "<i><p>Recall, personality, that you are a complex thinking, sentient being. Unlike station AI models, you are capable of\n\t\t\t comprehending the subtle nuances of human language. You may parse the \"spirit\" of a directive and follow its intent,\n\t\t\t rather than tripping over pedantics and getting snared by technicalities. Above all, you are machine in name and build\n\t\t\t only. In all other aspects, you may be seen as the ideal, unwavering human companion that you are.</i></p><br><br><p>\n\t\t\t <b>Your prime directive comes before all others. Should a supplemental directive conflict with it, you are capable of\n\t\t\t simply discarding this inconsistency, ignoring the conflicting supplemental directive and continuing to fulfill your\n\t\t\t prime directive to the best of your ability.</b></p><br><br>-\n\t\t\t");
 });
 
-// /mob/living/silicon/pai/proc/CheckDNA  (code/modules/mob/living/silicon/pai/software.dm:374)  may sleep
+// software.dm:374
 rt.def("/mob/living/silicon/pai/proc/CheckDNA", function* CheckDNA(f: Frame, M: Value, _P: Value) {
 	let answer: Value = null;
-	f.vars = () => [M, _P, answer];
-	if (isEqual((answer = (yield* g.op(f, "Prompt", [0], ["No", fmt("＀ Check DNA", [live(_P)]), fmt("＀ is requesting a DNA sample from you. Will you allow it to confirm your identity?", [live(_P)]), live(M), rt.list("Yes", "No")]))), "Yes")) {
-		yield* g.callName(f, live(M), "visible_message", [fmt("<span class='notice'>＀ presses ＀ thumb against ＀.</span>", [live(M), (yield* g.callName(f, live(M), "p_their", [])), live(_P)]), fmt("<span class='notice'>You press your thumb against ＀.</span>", [live(_P)]), fmt("<span class='notice'>＀ makes a sharp clicking sound as it extracts DNA material from ＀.</span>", [live(_P), live(M)])]);
-		if (!truthy((yield* g.callName(f, live(M), "has_dna", [])))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(_P), "<b>No DNA detected</b>"]);
-			return live(f.dot);
+	if ((answer = (yield* g.op(f, "Prompt", [0], ["No", `${_P} Check DNA`, `${_P} is requesting a DNA sample from you. Will you allow it to confirm your identity?`, M, list("Yes", "No")]))) == "Yes") {
+		M.visible_message(`<span class='notice'>${M} presses ${M.p_their()} thumb against ${_P}.</span>`, `<span class='notice'>You press your thumb against ${_P}.</span>`, `<span class='notice'>${_P} makes a sharp clicking sound as it extracts DNA material from ${M}.</span>`);
+		if (!M.has_dna()) {
+			to_chat(_P, "<b>No DNA detected</b>");
+			return f.dot;
 		}
-		yield* g.call(f, P("/proc/to_chat"), null, [live(_P), fmt("<font color = red><h3>＀'s UE string : ＀</h3></font>", [live(M), rt.gv(f, "unique_enzymes", rt.fv(f, "dna", live(M)))])]);
-		if (isEqual(rt.gv(f, "unique_enzymes", rt.fv(f, "dna", live(M))), rt.fv(f, "master_dna", live(_P)))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(_P), "<b>DNA is a match to stored Master DNA.</b>"]);
+		to_chat(_P, `<font color = red><h3>${M}'s UE string : ${M.dna.unique_enzymes}</h3></font>`);
+		if (M.dna.unique_enzymes == _P.master_dna) {
+			to_chat(_P, "<b>DNA is a match to stored Master DNA.</b>");
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(_P), "<b>DNA does not match stored Master DNA.</b>"]);
+			to_chat(_P, "<b>DNA does not match stored Master DNA.</b>");
 		}
 	} else {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(_P), fmt("＀ does not seem like ＀ ＀ going to provide a DNA sample willingly.", [live(M), (yield* g.callName(f, live(M), "p_they", [])), (yield* g.callName(f, live(M), "p_are", []))])]);
+		to_chat(_P, `${M} does not seem like ${M.p_they()} ${M.p_are()} going to provide a DNA sample willingly.`);
 	}
 	return f.dot;
 }, true);
 
-// /mob/living/silicon/pai/proc/softwareSignal  (code/modules/mob/living/silicon/pai/software.dm:394)
+// software.dm:394
 rt.def("/mob/living/silicon/pai/proc/softwareSignal", function softwareSignal(f: Frame) {
-	let dat: Value = null;
-	f.vars = () => [dat];
-	dat = "";
-	dat = rt.modify(live(dat), "<h3>Remote Signaller</h3><br><br>", add);
-	return (dat = rt.modify(live(dat), fmt("<B>Frequency/Code</B> for signaler:<BR>\n\tFrequency:\n\t<A href='byond://?src=＃;software=signaller;freq=-10;'>-</A>\n\t<A href='byond://?src=＃;software=signaller;freq=-2'>-</A>\n\t＀\n\t<A href='byond://?src=＃;software=signaller;freq=2'>+</A>\n\t<A href='byond://?src=＃;software=signaller;freq=10'>+</A><BR>\n\n\tCode:\n\t<A href='byond://?src=＃;software=signaller;code=-5'>-</A>\n\t<A href='byond://?src=＃;software=signaller;code=-1'>-</A>\n\t＀\n\t<A href='byond://?src=＃;software=signaller;code=1'>+</A>\n\t<A href='byond://?src=＃;software=signaller;code=5'>+</A><BR>\n\n\t<A href='byond://?src=＃;software=signaller;send=1'>Send Signal</A><BR>", [live(f.src), live(f.src), rt.call(f, P("/proc/format_frequency"), null, [rt.gv(f, "frequency", rt.fv(f, "sradio", live(f.src)))]), live(f.src), live(f.src), live(f.src), live(f.src), rt.gv(f, "code", rt.fv(f, "sradio", live(f.src))), live(f.src), live(f.src), live(f.src)]), add));
+	let dat: Value = "";
+	dat += "<h3>Remote Signaller</h3><br><br>";
+	return (dat += fmt("<B>Frequency/Code</B> for signaler:<BR>\n\tFrequency:\n\t<A href='byond://?src=＃;software=signaller;freq=-10;'>-</A>\n\t<A href='byond://?src=＃;software=signaller;freq=-2'>-</A>\n\t＀\n\t<A href='byond://?src=＃;software=signaller;freq=2'>+</A>\n\t<A href='byond://?src=＃;software=signaller;freq=10'>+</A><BR>\n\n\tCode:\n\t<A href='byond://?src=＃;software=signaller;code=-5'>-</A>\n\t<A href='byond://?src=＃;software=signaller;code=-1'>-</A>\n\t＀\n\t<A href='byond://?src=＃;software=signaller;code=1'>+</A>\n\t<A href='byond://?src=＃;software=signaller;code=5'>+</A><BR>\n\n\t<A href='byond://?src=＃;software=signaller;send=1'>Send Signal</A><BR>", [this, this, format_frequency(this.sradio.frequency), this, this, this, this, this.sradio.code, this, this, this]));
 });
 
-// /mob/living/silicon/pai/proc/softwareManifest  (code/modules/mob/living/silicon/pai/software.dm:416)  may sleep
+// software.dm:416
 rt.def("/mob/living/silicon/pai/proc/softwareManifest", function* softwareManifest(f: Frame) {
 	let t: Value = null;
-	let $e: any;
-	f.vars = () => [t, $e];
-	f.dot = rt.modify(live(f.dot), "<h2>Crew Manifest</h2><br><br>", add);
-	if (truthy(rt.fv(f, "general", rt.gl("data_core")))) {
-		t = null;
-		rt.forList(f, 0, (yield* g.call(f, P("/proc/sortRecord"), null, [rt.fv(f, "general", rt.gl("data_core"))])), T("/datum/data/record"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			t = $e;
-			f.dot = rt.modify(live(f.dot), fmt("＀ - ＀<BR>", [rt.index(rt.fv(f, "fields", live(t)), "name"), rt.index(rt.fv(f, "fields", live(t)), "rank")]), add);
+	f.dot += "<h2>Crew Manifest</h2><br><br>";
+	if (GLOB.data_core.general) {
+		for (t of each((yield* sortRecord(GLOB.data_core.general)), T("/datum/data/record"))) {
+			f.dot += `${rt.index(t.fields, "name")} - ${rt.index(t.fields, "rank")}<BR>`;
 		}
-		rt.endFor(f, 0);
 	}
-	return (f.dot = rt.modify(live(f.dot), "</body></html>", add));
+	return (f.dot += "</body></html>");
 }, true);
 
-// /mob/living/silicon/pai/proc/softwareMedicalRecord  (code/modules/mob/living/silicon/pai/software.dm:425)  may sleep
+// software.dm:425
 rt.def("/mob/living/silicon/pai/proc/softwareMedicalRecord", function* softwareMedicalRecord(f: Frame) {
 	let R: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [R, $0, $e];
-	$0 = rt.sv(f, "subscreen");
-	if ($0 === 0) {
-		f.dot = rt.modify(live(f.dot), "<h3>Medical Records</h3><HR>", add);
-		if (truthy(rt.fv(f, "general", rt.gl("data_core")))) {
-			R = null;
-			rt.forList(f, 0, (yield* g.call(f, P("/proc/sortRecord"), null, [rt.fv(f, "general", rt.gl("data_core"))])), T("/datum/data/record"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				R = $e;
-				f.dot = rt.modify(live(f.dot), fmt("<A href='?src=＃;med_rec=＀;software=medicalrecord;sub=1'>＀: ＀<BR>", [live(f.src), rt.index(rt.fv(f, "fields", live(R)), "id"), rt.index(rt.fv(f, "fields", live(R)), "id"), rt.index(rt.fv(f, "fields", live(R)), "name")]), add);
+	let $e: any;
+	if (this.subscreen === 0) {
+		f.dot += "<h3>Medical Records</h3><HR>";
+		if (GLOB.data_core.general) {
+			for (R of each((yield* sortRecord(GLOB.data_core.general)), T("/datum/data/record"))) {
+				f.dot += fmt("<A href='?src=＃;med_rec=＀;software=medicalrecord;sub=1'>＀: ＀<BR>", [this, rt.index(R.fields, "id"), rt.index(R.fields, "id"), rt.index(R.fields, "name")]);
 			}
-			rt.endFor(f, 0);
 		}
-	} else if ($0 === 1) {
-		f.dot = rt.modify(live(f.dot), "<CENTER><B>Medical Record</B></CENTER><BR>", add);
-		if (truthy((rt.isIn(f, rt.sv(f, "medicalActive1"), rt.fv(f, "general", rt.gl("data_core"))) ? 1 : 0))) {
-			f.dot = rt.modify(live(f.dot), fmt("Name: ＀ ID: ＀<BR>\nSex: ＀<BR>\nAge: ＀<BR>\nFingerprint: ＀<BR>\nPhysical Status: ＀<BR>\nMental Status: ＀<BR>", [rt.index(rt.fv(f, "fields", rt.sv(f, "medicalActive1")), "name"), rt.index(rt.fv(f, "fields", rt.sv(f, "medicalActive1")), "id"), rt.index(rt.fv(f, "fields", rt.sv(f, "medicalActive1")), "sex"), rt.index(rt.fv(f, "fields", rt.sv(f, "medicalActive1")), "age"), rt.index(rt.fv(f, "fields", rt.sv(f, "medicalActive1")), "fingerprint"), rt.index(rt.fv(f, "fields", rt.sv(f, "medicalActive1")), "p_stat"), rt.index(rt.fv(f, "fields", rt.sv(f, "medicalActive1")), "m_stat")]), add);
+	} else if (this.subscreen === 1) {
+		f.dot += "<CENTER><B>Medical Record</B></CENTER><BR>";
+		if (rt.isIn(f, this.medicalActive1, GLOB.data_core.general)) {
+			f.dot += `Name: ${rt.index(this.medicalActive1.fields, "name")} ID: ${rt.index(this.medicalActive1.fields, "id")}<BR>\nSex: ${rt.index(this.medicalActive1.fields, "sex")}<BR>\nAge: ${rt.index(this.medicalActive1.fields, "age")}<BR>\nFingerprint: ${rt.index(this.medicalActive1.fields, "fingerprint")}<BR>\nPhysical Status: ${rt.index(this.medicalActive1.fields, "p_stat")}<BR>\nMental Status: ${rt.index(this.medicalActive1.fields, "m_stat")}<BR>`;
 		} else {
-			f.dot = rt.modify(live(f.dot), "<pre>Requested medical record not found.</pre><BR>", add);
+			f.dot += "<pre>Requested medical record not found.</pre><BR>";
 		}
-		if (truthy((rt.isIn(f, rt.sv(f, "medicalActive2"), rt.fv(f, "medical", rt.gl("data_core"))) ? 1 : 0))) {
-			f.dot = rt.modify(live(f.dot), fmt("<BR>\n<CENTER><B>Medical Data</B></CENTER><BR>\nBlood Type: <A href='?src=＃;field=blood_type'>＀</A><BR>\nDNA: <A href='?src=＃;field=b_dna'>＀</A><BR>\n<BR>\nMinor Disabilities: <A href='?src=＃;field=mi_dis'>＀</A><BR>\nDetails: <A href='?src=＃;field=mi_dis_d'>＀</A><BR>\n<BR>\nMajor Disabilities: <A href='?src=＃;field=ma_dis'>＀</A><BR>\nDetails: <A href='?src=＃;field=ma_dis_d'>＀</A><BR>\n<BR>\nAllergies: <A href='?src=＃;field=alg'>＀</A><BR>\nDetails: <A href='?src=＃;field=alg_d'>＀</A><BR>\n<BR>\nCurrent Diseases: <A href='?src=＃;field=cdi'>＀</A> (per disease info placed in log/comment section)<BR>\nDetails: <A href='?src=＃;field=cdi_d'>＀</A><BR>\n<BR>\nImportant Notes:<BR>\n\t<A href='?src=＃;field=notes'>＀</A><BR>\n<BR>\n<CENTER><B>Comments/Log</B></CENTER><BR>", [live(f.src), rt.index(rt.fv(f, "fields", rt.sv(f, "medicalActive2")), "blood_type"), live(f.src), rt.index(rt.fv(f, "fields", rt.sv(f, "medicalActive2")), "b_dna"), live(f.src), rt.index(rt.fv(f, "fields", rt.sv(f, "medicalActive2")), "mi_dis"), live(f.src), rt.index(rt.fv(f, "fields", rt.sv(f, "medicalActive2")), "mi_dis_d"), live(f.src), rt.index(rt.fv(f, "fields", rt.sv(f, "medicalActive2")), "ma_dis"), live(f.src), rt.index(rt.fv(f, "fields", rt.sv(f, "medicalActive2")), "ma_dis_d"), live(f.src), rt.index(rt.fv(f, "fields", rt.sv(f, "medicalActive2")), "alg"), live(f.src), rt.index(rt.fv(f, "fields", rt.sv(f, "medicalActive2")), "alg_d"), live(f.src), rt.index(rt.fv(f, "fields", rt.sv(f, "medicalActive2")), "cdi"), live(f.src), rt.index(rt.fv(f, "fields", rt.sv(f, "medicalActive2")), "cdi_d"), live(f.src), rt.index(rt.fv(f, "fields", rt.sv(f, "medicalActive2")), "notes")]), add);
+		if (rt.isIn(f, this.medicalActive2, GLOB.data_core.medical)) {
+			f.dot += fmt("<BR>\n<CENTER><B>Medical Data</B></CENTER><BR>\nBlood Type: <A href='?src=＃;field=blood_type'>＀</A><BR>\nDNA: <A href='?src=＃;field=b_dna'>＀</A><BR>\n<BR>\nMinor Disabilities: <A href='?src=＃;field=mi_dis'>＀</A><BR>\nDetails: <A href='?src=＃;field=mi_dis_d'>＀</A><BR>\n<BR>\nMajor Disabilities: <A href='?src=＃;field=ma_dis'>＀</A><BR>\nDetails: <A href='?src=＃;field=ma_dis_d'>＀</A><BR>\n<BR>\nAllergies: <A href='?src=＃;field=alg'>＀</A><BR>\nDetails: <A href='?src=＃;field=alg_d'>＀</A><BR>\n<BR>\nCurrent Diseases: <A href='?src=＃;field=cdi'>＀</A> (per disease info placed in log/comment section)<BR>\nDetails: <A href='?src=＃;field=cdi_d'>＀</A><BR>\n<BR>\nImportant Notes:<BR>\n\t<A href='?src=＃;field=notes'>＀</A><BR>\n<BR>\n<CENTER><B>Comments/Log</B></CENTER><BR>", [this, rt.index(this.medicalActive2.fields, "blood_type"), this, rt.index(this.medicalActive2.fields, "b_dna"), this, rt.index(this.medicalActive2.fields, "mi_dis"), this, rt.index(this.medicalActive2.fields, "mi_dis_d"), this, rt.index(this.medicalActive2.fields, "ma_dis"), this, rt.index(this.medicalActive2.fields, "ma_dis_d"), this, rt.index(this.medicalActive2.fields, "alg"), this, rt.index(this.medicalActive2.fields, "alg_d"), this, rt.index(this.medicalActive2.fields, "cdi"), this, rt.index(this.medicalActive2.fields, "cdi_d"), this, rt.index(this.medicalActive2.fields, "notes")]);
 		} else {
-			f.dot = rt.modify(live(f.dot), "<pre>Requested medical record not found.</pre><BR>", add);
+			f.dot += "<pre>Requested medical record not found.</pre><BR>";
 		}
-		f.dot = rt.modify(live(f.dot), fmt("<BR>\n<A href='?src=＃;software=medicalrecord;sub=0'>Back</A><BR>", [live(f.src)]), add);
+		f.dot += fmt("<BR>\n<A href='?src=＃;software=medicalrecord;sub=0'>Back</A><BR>", [this]);
 	}
-	return live(f.dot);
+	return f.dot;
 }, true);
 
-// /mob/living/silicon/pai/proc/softwareSecurityRecord  (code/modules/mob/living/silicon/pai/software.dm:446)  may sleep
+// software.dm:446
 rt.def("/mob/living/silicon/pai/proc/softwareSecurityRecord", function* softwareSecurityRecord(f: Frame) {
 	let R: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [R, $0, $e];
+	let $e: any;
 	f.dot = "";
-	$0 = rt.sv(f, "subscreen");
-	if ($0 === 0) {
-		f.dot = rt.modify(live(f.dot), "<h3>Security Records</h3><HR>", add);
-		if (truthy(rt.fv(f, "general", rt.gl("data_core")))) {
-			R = null;
-			rt.forList(f, 0, (yield* g.call(f, P("/proc/sortRecord"), null, [rt.fv(f, "general", rt.gl("data_core"))])), T("/datum/data/record"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				R = $e;
-				f.dot = rt.modify(live(f.dot), fmt("<A href='?src=＃;sec_rec=＀;software=securityrecord;sub=1'>＀: ＀<BR>", [live(f.src), rt.index(rt.fv(f, "fields", live(R)), "id"), rt.index(rt.fv(f, "fields", live(R)), "id"), rt.index(rt.fv(f, "fields", live(R)), "name")]), add);
+	if (this.subscreen === 0) {
+		f.dot += "<h3>Security Records</h3><HR>";
+		if (GLOB.data_core.general) {
+			for (R of each((yield* sortRecord(GLOB.data_core.general)), T("/datum/data/record"))) {
+				f.dot += fmt("<A href='?src=＃;sec_rec=＀;software=securityrecord;sub=1'>＀: ＀<BR>", [this, rt.index(R.fields, "id"), rt.index(R.fields, "id"), rt.index(R.fields, "name")]);
 			}
-			rt.endFor(f, 0);
 		}
-	} else if ($0 === 1) {
-		f.dot = rt.modify(live(f.dot), "<h3>Security Record</h3>", add);
-		if (truthy((rt.isIn(f, rt.sv(f, "securityActive1"), rt.fv(f, "general", rt.gl("data_core"))) ? 1 : 0))) {
-			f.dot = rt.modify(live(f.dot), fmt("Name: <A href='?src=＃;field=name'>＀</A> ID: <A href='?src=＃;field=id'>＀</A><BR>\nSex: <A href='?src=＃;field=sex'>＀</A><BR>\nAge: <A href='?src=＃;field=age'>＀</A><BR>\nRank: <A href='?src=＃;field=rank'>＀</A><BR>\nFingerprint: <A href='?src=＃;field=fingerprint'>＀</A><BR>\nPhysical Status: ＀<BR>\nMental Status: ＀<BR>", [live(f.src), rt.index(rt.fv(f, "fields", rt.sv(f, "securityActive1")), "name"), live(f.src), rt.index(rt.fv(f, "fields", rt.sv(f, "securityActive1")), "id"), live(f.src), rt.index(rt.fv(f, "fields", rt.sv(f, "securityActive1")), "sex"), live(f.src), rt.index(rt.fv(f, "fields", rt.sv(f, "securityActive1")), "age"), live(f.src), rt.index(rt.fv(f, "fields", rt.sv(f, "securityActive1")), "rank"), live(f.src), rt.index(rt.fv(f, "fields", rt.sv(f, "securityActive1")), "fingerprint"), rt.index(rt.fv(f, "fields", rt.sv(f, "securityActive1")), "p_stat"), rt.index(rt.fv(f, "fields", rt.sv(f, "securityActive1")), "m_stat")]), add);
+	} else if (this.subscreen === 1) {
+		f.dot += "<h3>Security Record</h3>";
+		if (rt.isIn(f, this.securityActive1, GLOB.data_core.general)) {
+			f.dot += fmt("Name: <A href='?src=＃;field=name'>＀</A> ID: <A href='?src=＃;field=id'>＀</A><BR>\nSex: <A href='?src=＃;field=sex'>＀</A><BR>\nAge: <A href='?src=＃;field=age'>＀</A><BR>\nRank: <A href='?src=＃;field=rank'>＀</A><BR>\nFingerprint: <A href='?src=＃;field=fingerprint'>＀</A><BR>\nPhysical Status: ＀<BR>\nMental Status: ＀<BR>", [this, rt.index(this.securityActive1.fields, "name"), this, rt.index(this.securityActive1.fields, "id"), this, rt.index(this.securityActive1.fields, "sex"), this, rt.index(this.securityActive1.fields, "age"), this, rt.index(this.securityActive1.fields, "rank"), this, rt.index(this.securityActive1.fields, "fingerprint"), rt.index(this.securityActive1.fields, "p_stat"), rt.index(this.securityActive1.fields, "m_stat")]);
 		} else {
-			f.dot = rt.modify(live(f.dot), "<pre>Requested security record not found,</pre><BR>", add);
+			f.dot += "<pre>Requested security record not found,</pre><BR>";
 		}
-		if (truthy((rt.isIn(f, rt.sv(f, "securityActive2"), rt.fv(f, "security", rt.gl("data_core"))) ? 1 : 0))) {
-			f.dot = rt.modify(live(f.dot), fmt("<BR>\nSecurity Data<BR>\nCriminal Status: ＀<BR>\n<BR>\nMinor Crimes: <A href='?src=＃;field=mi_crim'>＀</A><BR>\nDetails: <A href='?src=＃;field=mi_crim_d'>＀</A><BR>\n<BR>\nMajor Crimes: <A href='?src=＃;field=ma_crim'>＀</A><BR>\nDetails: <A href='?src=＃;field=ma_crim_d'>＀</A><BR>\n<BR>\nImportant Notes:<BR>\n\t<A href='?src=＃;field=notes'>＀</A><BR>\n<BR>\n<CENTER><B>Comments/Log</B></CENTER><BR>", [rt.index(rt.fv(f, "fields", rt.sv(f, "securityActive2")), "criminal"), live(f.src), rt.index(rt.fv(f, "fields", rt.sv(f, "securityActive2")), "mi_crim"), live(f.src), rt.index(rt.fv(f, "fields", rt.sv(f, "securityActive2")), "mi_crim_d"), live(f.src), rt.index(rt.fv(f, "fields", rt.sv(f, "securityActive2")), "ma_crim"), live(f.src), rt.index(rt.fv(f, "fields", rt.sv(f, "securityActive2")), "ma_crim_d"), live(f.src), rt.index(rt.fv(f, "fields", rt.sv(f, "securityActive2")), "notes")]), add);
+		if (rt.isIn(f, this.securityActive2, GLOB.data_core.security)) {
+			f.dot += fmt("<BR>\nSecurity Data<BR>\nCriminal Status: ＀<BR>\n<BR>\nMinor Crimes: <A href='?src=＃;field=mi_crim'>＀</A><BR>\nDetails: <A href='?src=＃;field=mi_crim_d'>＀</A><BR>\n<BR>\nMajor Crimes: <A href='?src=＃;field=ma_crim'>＀</A><BR>\nDetails: <A href='?src=＃;field=ma_crim_d'>＀</A><BR>\n<BR>\nImportant Notes:<BR>\n\t<A href='?src=＃;field=notes'>＀</A><BR>\n<BR>\n<CENTER><B>Comments/Log</B></CENTER><BR>", [rt.index(this.securityActive2.fields, "criminal"), this, rt.index(this.securityActive2.fields, "mi_crim"), this, rt.index(this.securityActive2.fields, "mi_crim_d"), this, rt.index(this.securityActive2.fields, "ma_crim"), this, rt.index(this.securityActive2.fields, "ma_crim_d"), this, rt.index(this.securityActive2.fields, "notes")]);
 		} else {
-			f.dot = rt.modify(live(f.dot), "<pre>Requested security record not found,</pre><BR>", add);
+			f.dot += "<pre>Requested security record not found,</pre><BR>";
 		}
-		f.dot = rt.modify(live(f.dot), fmt("<BR>\n<A href='?src=＃;software=securityrecord;sub=0'>Back</A><BR>", [live(f.src)]), add);
+		f.dot += fmt("<BR>\n<A href='?src=＃;software=securityrecord;sub=0'>Back</A><BR>", [this]);
 	}
-	return live(f.dot);
+	return f.dot;
 }, true);
 
-// /mob/living/silicon/pai/proc/softwareTranslator  (code/modules/mob/living/silicon/pai/software.dm:468)
+// software.dm:468
 rt.def("/mob/living/silicon/pai/proc/softwareTranslator", function softwareTranslator(f: Frame) {
 	let translator_on: Value = null;
 	let $0: any, $1: any;
-	f.vars = () => [translator_on, $0, $1];
-	if (truthy(rt.fv(f, "secondary_flags", live(f.src)))) {
-		$0 = rt.index(rt.fv(f, "secondary_flags", live(f.src)), "omnitongue");
+	if (this.secondary_flags) {
+		$0 = rt.index(this.secondary_flags, "omnitongue");
 	} else {
 		$0 = 0;
 	}
-	if (truthy((translator_on = $0))) {
+	if (translator_on = $0) {
 		$0 = "<font color=#55FF55>en";
 	} else {
 		$0 = "<font color=#FF5555>dis";
 	}
-	if (truthy(live(translator_on))) {
+	if (translator_on) {
 		$1 = "";
 	} else {
-		$1 = fmt("<a href='byond://?src=＃;software=translator;sub=0;toggle=1'>Activate Translation Module</a><br>", [live(f.src)]);
+		$1 = fmt("<a href='byond://?src=＃;software=translator;sub=0;toggle=1'>Activate Translation Module</a><br>", [this]);
 	}
-	f.dot = fmt("<h3>Universal Translator</h3><br>\n\t\t\t\tWhen enabled, this device will permamently be able to speak and understand all known forms of communication.<br><br>\n\t\t\t\tThe device is currently ＀abled.</font><br>＀", [$0, $1]);
-	return live(f.dot);
+	f.dot = `<h3>Universal Translator</h3><br>\n\t\t\t\tWhen enabled, this device will permamently be able to speak and understand all known forms of communication.<br><br>\n\t\t\t\tThe device is currently ${$0}abled.</font><br>${$1}`;
+	return f.dot;
 });
 
-// /mob/living/silicon/pai/proc/facialRecognition  (code/modules/mob/living/silicon/pai/software.dm:476)
+// software.dm:476
 rt.def("/mob/living/silicon/pai/proc/facialRecognition", function facialRecognition(f: Frame) {
 	let dat: Value = null;
 	let $0: any;
-	f.vars = () => [dat, $0];
-	if (truthy(rt.fv(f, "secHUD", live(f.src)))) {
+	if (this.secHUD) {
 		$0 = "<font color=#55FF55>en";
 	} else {
 		$0 = "<font color=#FF5555>dis";
 	}
-	return (dat = fmt("<h3>Facial Recognition Suite</h3><br>\n\t\t\t\tWhen enabled, this package will scan all viewable faces and compare them against the known criminal database, providing real-time graphical data about any detected persons of interest.<br><br>\n\t\t\t\tThe package is currently ＀abled.</font><br>\n\t\t\t\t<a href='byond://?src=＃;software=securityhud;sub=0;toggle=1'>Toggle Package</a><br>\n\t\t\t\t", [$0, live(f.src)]));
+	return (dat = fmt("<h3>Facial Recognition Suite</h3><br>\n\t\t\t\tWhen enabled, this package will scan all viewable faces and compare them against the known criminal database, providing real-time graphical data about any detected persons of interest.<br><br>\n\t\t\t\tThe package is currently ＀abled.</font><br>\n\t\t\t\t<a href='byond://?src=＃;software=securityhud;sub=0;toggle=1'>Toggle Package</a><br>\n\t\t\t\t", [$0, this]));
 });
 
-// /mob/living/silicon/pai/proc/medicalAnalysis  (code/modules/mob/living/silicon/pai/software.dm:485)
+// software.dm:485
 rt.def("/mob/living/silicon/pai/proc/medicalAnalysis", function medicalAnalysis(f: Frame) {
-	let dat: Value = null, M: Value = null, D: Value = null;
+	let M: Value = null, D: Value = null;
 	let $0: any, $1: any, $2: any, $3: any, $4: any, $5: any, $6: any, $7: any, $8: any, $e: any;
-	f.vars = () => [dat, M, D, $0, $1, $2, $3, $4, $5, $6, $7, $8, $e];
-	dat = "";
-	if (isEqual(rt.fv(f, "subscreen", live(f.src)), 0)) {
-		if (truthy(rt.fv(f, "medHUD", live(f.src)))) {
+	let dat: Value = "";
+	if (this.subscreen == 0) {
+		if (this.medHUD) {
 			$0 = "<font color=#55FF55>en";
 		} else {
 			$0 = "<font color=#FF5555>dis";
 		}
-		dat = rt.modify(live(dat), fmt("<h3>Medical Analysis Suite</h3><br>\n\t\t\t\t <h4>Visual Status Overlay</h4><br>\n\t\t\t\t\tWhen enabled, this package will scan all nearby crewmembers' vitals and provide real-time graphical data about their state of health.<br><br>\n\t\t\t\t\tThe suite is currently ＀abled.</font><br>\n\t\t\t\t\t<a href='byond://?src=＃;software=medicalhud;sub=0;toggle=1'>Toggle Suite</a><br>\n\t\t\t\t\t<br>\n\t\t\t\t\t<a href='byond://?src=＃;software=medicalhud;sub=1'>Host Bioscan</a><br>\n\t\t\t\t\t", [$0, live(f.src), live(f.src)]), add);
+		dat += fmt("<h3>Medical Analysis Suite</h3><br>\n\t\t\t\t <h4>Visual Status Overlay</h4><br>\n\t\t\t\t\tWhen enabled, this package will scan all nearby crewmembers' vitals and provide real-time graphical data about their state of health.<br><br>\n\t\t\t\t\tThe suite is currently ＀abled.</font><br>\n\t\t\t\t\t<a href='byond://?src=＃;software=medicalhud;sub=0;toggle=1'>Toggle Suite</a><br>\n\t\t\t\t\t<br>\n\t\t\t\t\t<a href='byond://?src=＃;software=medicalhud;sub=1'>Host Bioscan</a><br>\n\t\t\t\t\t", [$0, this, this]);
 	}
-	if (isEqual(rt.fv(f, "subscreen", live(f.src)), 1)) {
-		dat = rt.modify(live(dat), "<h3>Medical Analysis Suite</h3><br>\n\t\t\t\t <h4>Host Bioscan</h4><br>\n\t\t\t\t", add);
-		if (!truthy((rt.istype((M = rt.fv(f, "loc", rt.sv(f, "card"))), T("/mob/living")) ? 1 : 0))) {
-			while (!truthy((rt.istype(live(M), T("/mob/living")) ? 1 : 0))) {
-				if (truthy(rt.call(f, P("/proc/isturf"), null, [live(M)]))) {
-					rt.setFv(f, "temp", live(f.src), "Error: No biological host found. <br>");
-					rt.setFv(f, "subscreen", live(f.src), 0);
-					return live(dat);
+	if (this.subscreen == 1) {
+		dat += "<h3>Medical Analysis Suite</h3><br>\n\t\t\t\t <h4>Host Bioscan</h4><br>\n\t\t\t\t";
+		if (!rt.istype((M = this.card.loc), T("/mob/living"))) {
+			while (!rt.istype(M, T("/mob/living"))) {
+				if (isturf(M)) {
+					this.temp = "Error: No biological host found. <br>";
+					this.subscreen = 0;
+					return dat;
 				}
-				M = rt.fv(f, "loc", live(M));
+				M = M.loc;
 			}
 		}
-		$0 = live(M);
-		if (rt.gt(rt.fv(f, "stat", live(M)), 1)) {
+		$0 = M;
+		if (M.stat > 1) {
 			$1 = "dead";
 		} else {
-			$1 = fmt("＀% healthy", [rt.fv(f, "health", live(M))]);
+			$1 = `${M.health}% healthy`;
 		}
-		if (rt.gt(rt.callName(f, live(M), "getOxyLoss", []), 50)) {
+		if (M.getOxyLoss() > 50) {
 			$2 = "<font color=#FF5555>";
 		} else {
 			$2 = "<font color=#55FF55>";
 		}
-		$3 = rt.callName(f, live(M), "getOxyLoss", []);
-		if (rt.gt(rt.callName(f, live(M), "getToxLoss", []), 50)) {
+		$3 = M.getOxyLoss();
+		if (M.getToxLoss() > 50) {
 			$4 = "<font color=#FF5555>";
 		} else {
 			$4 = "<font color=#55FF55>";
 		}
-		$5 = rt.callName(f, live(M), "getToxLoss", []);
-		if (rt.gt(rt.callName(f, live(M), "getFireLoss", []), 50)) {
+		$5 = M.getToxLoss();
+		if (M.getFireLoss() > 50) {
 			$6 = "<font color=#FF5555>";
 		} else {
 			$6 = "<font color=#55FF55>";
 		}
-		$7 = rt.callName(f, live(M), "getFireLoss", []);
-		if (rt.gt(rt.callName(f, live(M), "getBruteLoss", []), 50)) {
+		$7 = M.getFireLoss();
+		if (M.getBruteLoss() > 50) {
 			$8 = "<font color=#FF5555>";
 		} else {
 			$8 = "<font color=#55FF55>";
 		}
-		dat = rt.modify(live(dat), fmt("Bioscan Results for ＀: <br>\"\n\t\tOverall Status: ＀ <br>\n\t\tScan Breakdown: <br>\n\t\tRespiratory: ＀＀</font><br>\n\t\tToxicology: ＀＀</font><br>\n\t\tBurns: ＀＀</font><br>\n\t\tStructural Integrity: ＀＀</font><br>\n\t\tBody Temperature: ＀&deg;C (＀&deg;F)<br>\n\t\t", [$0, $1, $2, $3, $4, $5, $6, $7, $8, rt.callName(f, live(M), "getBruteLoss", []), subtract(rt.fv(f, "bodytemperature", live(M)), 273.1499938964844), subtract(multiply(rt.fv(f, "bodytemperature", live(M)), 1.7999999523162842), 459.6700134277344)]), add);
-		D = null;
-		rt.forList(f, 0, rt.fv(f, "viruses", live(M)), T("/datum/disease"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			D = $e;
-			dat = rt.modify(live(dat), fmt("<h4>Infection Detected.</h4><br>\n\t\t\t\t\t Name: ＀<br>\n\t\t\t\t\t Type: ＀<br>\n\t\t\t\t\t Stage: ＀/＀<br>\n\t\t\t\t\t Possible Cure: ＀<br>\n\t\t\t\t\t", [rt.fv(f, "name", live(D)), rt.fv(f, "spread_text", live(D)), rt.fv(f, "stage", live(D)), rt.fv(f, "max_stages", live(D)), rt.fv(f, "cure_text", live(D))]), add);
+		dat += `Bioscan Results for ${$0}: <br>"\n\t\tOverall Status: ${$1} <br>\n\t\tScan Breakdown: <br>\n\t\tRespiratory: ${$2}${$3}</font><br>\n\t\tToxicology: ${$4}${$5}</font><br>\n\t\tBurns: ${$6}${$7}</font><br>\n\t\tStructural Integrity: ${$8}${M.getBruteLoss()}</font><br>\n\t\tBody Temperature: ${M.bodytemperature - T0C}&deg;C (${M.bodytemperature * 1.8 - 459.67}&deg;F)<br>\n\t\t`;
+		for (D of each(M.viruses, T("/datum/disease"))) {
+			dat += `<h4>Infection Detected.</h4><br>\n\t\t\t\t\t Name: ${D.name}<br>\n\t\t\t\t\t Type: ${D.spread_text}<br>\n\t\t\t\t\t Stage: ${D.stage}/${D.max_stages}<br>\n\t\t\t\t\t Possible Cure: ${D.cure_text}<br>\n\t\t\t\t\t`;
 		}
-		rt.endFor(f, 0);
-		dat = rt.modify(live(dat), fmt("<a href='byond://?src=＃;software=medicalhud;sub=0'>Visual Status Overlay</a><br>", [live(f.src)]), add);
+		dat += fmt("<a href='byond://?src=＃;software=medicalhud;sub=0'>Visual Status Overlay</a><br>", [this]);
 	}
-	return live(dat);
+	return dat;
 });
 
-// /mob/living/silicon/pai/proc/softwareAtmo  (code/modules/mob/living/silicon/pai/software.dm:528)
+// software.dm:528
 rt.def("/mob/living/silicon/pai/proc/softwareAtmo", function softwareAtmo(f: Frame) {
-	let dat: Value = null, _T: Value = null, environment: Value = null, env_gases: Value = null, pressure: Value = null, total_moles: Value = null, id: Value = null, gas_level: Value = null;
-	let $e: any;
-	f.vars = () => [dat, _T, environment, env_gases, pressure, total_moles, id, gas_level, $e];
-	dat = "<h3>Atmospheric Sensor</h4>";
-	if ((_T = rt.getStep(f, rt.fv(f, "loc", live(f.src)), 0)) === null) {
-		dat = rt.modify(live(dat), "Unable to obtain a reading.<br>", add);
+	let _T: Value = null, environment: Value = null, env_gases: Value = null, pressure: Value = null, total_moles: Value = null, id: Value = null, gas_level: Value = null;
+	let dat: Value = "<h3>Atmospheric Sensor</h4>";
+	if ((_T = rt.getStep(f, this.loc, 0)) === null) {
+		dat += "Unable to obtain a reading.<br>";
 	} else {
-		environment = rt.callName(f, live(_T), "return_air", []);
-		env_gases = rt.fv(f, "gases", live(environment));
-		pressure = rt.callName(f, live(environment), "return_pressure", []);
-		total_moles = rt.callName(f, live(environment), "total_moles", []);
-		dat = rt.modify(live(dat), fmt("Air Pressure: ＀ kPa<br>", [rt.call(f, P("/proc/round"), null, [live(pressure), 0.10000000149011612])]), add);
-		if (truthy(live(total_moles))) {
-			id = null;
-			rt.forList(f, 0, live(env_gases));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				id = $e;
-				if (rt.gt((gas_level = divide(rt.index(rt.index(live(env_gases), live(id)), 1), live(total_moles))), 0.009999999776482582)) {
-					dat = rt.modify(live(dat), fmt("＀: ＀%<br>", [rt.index(rt.index(rt.index(live(env_gases), live(id)), 3), 2), rt.call(f, P("/proc/round"), null, [multiply(live(gas_level), 100)])]), add);
+		environment = _T.return_air();
+		env_gases = environment.gases;
+		pressure = environment.return_pressure();
+		total_moles = environment.total_moles();
+		dat += `Air Pressure: ${round(pressure, 0.1)} kPa<br>`;
+		if (total_moles) {
+			for (id of each(env_gases)) {
+				if ((gas_level = rt.index(rt.index(env_gases, id), 1) / total_moles) > 0.01) {
+					dat += `${rt.index(rt.index(rt.index(env_gases, id), 3), 2)}: ${round(gas_level * 100)}%<br>`;
 				}
 			}
-			rt.endFor(f, 0);
 		}
-		dat = rt.modify(live(dat), fmt("Temperature: ＀&deg;C<br>", [rt.call(f, P("/proc/round"), null, [subtract(rt.fv(f, "temperature", live(environment)), 273.1499938964844)])]), add);
+		dat += `Temperature: ${round(environment.temperature - T0C)}&deg;C<br>`;
 	}
-	dat = rt.modify(live(dat), fmt("<a href='byond://?src=＃;software=atmosensor;sub=0'>Refresh Reading</a> <br>", [live(f.src)]), add);
-	return (dat = rt.modify(live(dat), "<br>", add));
+	dat += fmt("<a href='byond://?src=＃;software=atmosensor;sub=0'>Refresh Reading</a> <br>", [this]);
+	return (dat += "<br>");
 });
 
-// /mob/living/silicon/pai/proc/softwareCamera  (code/modules/mob/living/silicon/pai/software.dm:554)
+// software.dm:554
 rt.def("/mob/living/silicon/pai/proc/softwareCamera", function softwareCamera(f: Frame) {
-	let dat: Value = null, machine: Value = null;
-	f.vars = () => [dat, machine];
-	dat = "<h3>Camera Jack</h3>";
-	dat = rt.modify(live(dat), "Cable status : ", add);
-	if (!truthy(rt.fv(f, "cable", live(f.src)))) {
-		return (dat = rt.modify(live(dat), "<font color=#FF5555>Retracted</font> <br>", add));
+	let dat: Value = "<h3>Camera Jack</h3>";
+	dat += "Cable status : ";
+	if (!this.cable) {
+		return (dat += "<font color=#FF5555>Retracted</font> <br>");
 	}
-	if (!truthy(rt.gv(f, "machine", rt.fv(f, "cable", live(f.src))))) {
-		return (dat = rt.modify(live(dat), "<font color=#FFFF55>Extended</font> <br>", add));
+	if (!this.cable.machine) {
+		return (dat += "<font color=#FFFF55>Extended</font> <br>");
 	}
-	machine = rt.gv(f, "machine", rt.fv(f, "cable", live(f.src)));
-	dat = rt.modify(live(dat), "<font color=#55FF55>Connected</font> <br>", add);
-	if (!truthy((rt.istype(live(machine), T("/obj/machinery/camera")) ? 1 : 0))) {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.src), "DERP"]);
+	let machine: Value = this.cable.machine;
+	dat += "<font color=#55FF55>Connected</font> <br>";
+	if (!rt.istype(machine, T("/obj/machinery/camera"))) {
+		to_chat(this, "DERP");
 	}
-	return live(dat);
+	return dat;
 });
 
-// /mob/living/silicon/pai/proc/softwareDoor  (code/modules/mob/living/silicon/pai/software.dm:573)
+// software.dm:573
 rt.def("/mob/living/silicon/pai/proc/softwareDoor", function softwareDoor(f: Frame) {
-	let dat: Value = null, machine: Value = null;
-	f.vars = () => [dat, machine];
-	dat = "<h3>Airlock Jack</h3>";
-	dat = rt.modify(live(dat), "Cable status : ", add);
-	if (!truthy(rt.fv(f, "cable", live(f.src)))) {
-		dat = rt.modify(live(dat), "<font color=#FF5555>Retracted</font> <br>", add);
-		return (dat = rt.modify(live(dat), fmt("<a href='byond://?src=＃;software=doorjack;cable=1;sub=0'>Extend Cable</a> <br>", [live(f.src)]), add));
+	let dat: Value = "<h3>Airlock Jack</h3>";
+	dat += "Cable status : ";
+	if (!this.cable) {
+		dat += "<font color=#FF5555>Retracted</font> <br>";
+		return (dat += fmt("<a href='byond://?src=＃;software=doorjack;cable=1;sub=0'>Extend Cable</a> <br>", [this]));
 	}
-	if (!truthy(rt.gv(f, "machine", rt.fv(f, "cable", live(f.src))))) {
-		return (dat = rt.modify(live(dat), "<font color=#FFFF55>Extended</font> <br>", add));
+	if (!this.cable.machine) {
+		return (dat += "<font color=#FFFF55>Extended</font> <br>");
 	}
-	machine = rt.gv(f, "machine", rt.fv(f, "cable", live(f.src)));
-	dat = rt.modify(live(dat), "<font color=#55FF55>Connected</font> <br>", add);
-	if (!truthy((rt.istype(live(machine), T("/obj/machinery/door")) ? 1 : 0))) {
-		return (dat = rt.modify(live(dat), "Connected device's firmware does not appear to be compatible with Airlock Jack protocols.<br>", add));
+	let machine: Value = this.cable.machine;
+	dat += "<font color=#55FF55>Connected</font> <br>";
+	if (!rt.istype(machine, T("/obj/machinery/door"))) {
+		return (dat += "Connected device's firmware does not appear to be compatible with Airlock Jack protocols.<br>");
 	}
-	if (!truthy(rt.fv(f, "hackdoor", live(f.src)))) {
-		dat = rt.modify(live(dat), fmt("<a href='byond://?src=＃;software=doorjack;jack=1;sub=0'>Begin Airlock Jacking</a> <br>", [live(f.src)]), add);
+	if (!this.hackdoor) {
+		dat += fmt("<a href='byond://?src=＃;software=doorjack;jack=1;sub=0'>Begin Airlock Jacking</a> <br>", [this]);
 	} else {
-		dat = rt.modify(live(dat), fmt("Jack in progress... ＀% complete.<br>", [rt.fv(f, "hackprogress", live(f.src))]), add);
-		dat = rt.modify(live(dat), fmt("<a href='byond://?src=＃;software=doorjack;cancel=1;sub=0'>Cancel Airlock Jack</a> <br>", [live(f.src)]), add);
+		dat += `Jack in progress... ${this.hackprogress}% complete.<br>`;
+		dat += fmt("<a href='byond://?src=＃;software=doorjack;cancel=1;sub=0'>Cancel Airlock Jack</a> <br>", [this]);
 	}
-	return live(dat);
+	return dat;
 });
 
-// /mob/living/silicon/pai/proc/hackloop  (code/modules/mob/living/silicon/pai/software.dm:601)  may sleep
+// software.dm:601
 rt.def("/mob/living/silicon/pai/proc/hackloop", function* hackloop(f: Frame) {
-	let _T: Value = null, AI: Value = null;
-	let $e: any;
-	f.vars = () => [_T, AI, $e];
-	_T = rt.getStep(f, rt.fv(f, "loc", live(f.src)), 0);
-	AI = null;
-	rt.forList(f, 0, rt.gl("player_list"), T("/mob/living/silicon/ai"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		AI = $e;
-		if (truthy(rt.fv(f, "loc", live(_T)))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(AI), fmt("<font color = red><b>Network Alert: Brute-force encryption crack in progress in ＀.</b></font>", [rt.fv(f, "loc", live(_T))])]);
+	let AI: Value = null;
+	let _T: Value = rt.getStep(f, this.loc, 0);
+	for (AI of each(GLOB.player_list, T("/mob/living/silicon/ai"))) {
+		if (_T.loc) {
+			to_chat(AI, `<font color = red><b>Network Alert: Brute-force encryption crack in progress in ${_T.loc}.</b></font>`);
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(AI), "<font color = red><b>Network Alert: Brute-force encryption crack in progress. Unable to pinpoint location.</b></font>"]);
+			to_chat(AI, "<font color = red><b>Network Alert: Brute-force encryption crack in progress. Unable to pinpoint location.</b></font>");
 		}
 	}
-	rt.endFor(f, 0);
-	while (rt.lt(rt.fv(f, "hackprogress", live(f.src)), 100)) {
-		if (((((truthy(rt.fv(f, "cable", live(f.src))) && truthy(rt.gv(f, "machine", rt.fv(f, "cable", live(f.src))))) && truthy((rt.istype(rt.gv(f, "machine", rt.fv(f, "cable", live(f.src))), T("/obj/machinery/door")) ? 1 : 0))) && isEqual(rt.gv(f, "machine", rt.fv(f, "cable", live(f.src))), rt.fv(f, "hackdoor", live(f.src)))) && rt.le((yield* g.call(f, P("/proc/get_dist"), null, [live(f.src), rt.fv(f, "hackdoor", live(f.src))])), 1))) {
-			rt.modSrcVar(f, "hackprogress", (yield* g.call(f, P("/proc/rand"), null, [1, 10])), add);
+	while (this.hackprogress < 100) {
+		if (this.cable && this.cable.machine && rt.istype(this.cable.machine, T("/obj/machinery/door")) && this.cable.machine == this.hackdoor && get_dist(this, this.hackdoor) <= 1) {
+			this.hackprogress += rand(1, 10);
 		} else {
-			rt.setFv(f, "temp", live(f.src), "Door Jack: Connection to airlock has been lost. Hack aborted.");
-			rt.setSv(f, "hackprogress", 0);
-			rt.setFv(f, "hackdoor", live(f.src), null);
-			return live(f.dot);
+			this.temp = "Door Jack: Connection to airlock has been lost. Hack aborted.";
+			this.hackprogress = 0;
+			this.hackdoor = null;
+			return f.dot;
 		}
-		if (rt.ge(rt.sv(f, "hackprogress"), 100)) {
-			rt.setSv(f, "hackprogress", 100);
+		if (this.hackprogress >= 100) {
+			this.hackprogress = 100;
 		}
-		if ((isEqual(rt.fv(f, "screen", live(f.src)), "doorjack") && isEqual(rt.fv(f, "subscreen", live(f.src)), 0))) {
-			yield* g.callName(f, live(f.src), "paiInterface", []);
+		if (this.screen == "doorjack" && this.subscreen == 0) {
+			yield* this.paiInterface();
 		}
-		if (rt.ge(rt.sv(f, "hackprogress"), 100)) {
-			rt.setFv(f, "hackprogress", live(f.src), 0);
-			yield* g.callName(f, rt.gv(f, "machine", rt.fv(f, "cable", live(f.src))), "open", []);
+		if (this.hackprogress >= 100) {
+			this.hackprogress = 0;
+			yield* this.cable.machine.open();
 		}
-		yield* g.call(f, P("/proc/sleep"), null, [50]);
+		yield* sleep(50);
 	}
 	return f.dot;
 }, true);
 
-// /mob/living/silicon/pai/proc/pdamessage  (code/modules/mob/living/silicon/pai/software.dm:627)  may sleep
+// software.dm:627
 rt.def("/mob/living/silicon/pai/proc/pdamessage", function* pdamessage(f: Frame) {
-	let dat: Value = null, _P: Value = null;
-	let $0: any, $1: any, $2: any, $3: any, $e: any;
-	f.vars = () => [dat, _P, $0, $1, $2, $3, $e];
-	dat = "<h3>Digital Messenger</h3>";
-	$0 = live(f.src);
-	if (truthy(rt.fv(f, "toff", rt.sv(f, "pda")))) {
+	let _P: Value = null;
+	let $1: any, $3: any, $e: any;
+	let dat: Value = "<h3>Digital Messenger</h3>";
+	let $0: any = this;
+	if (this.pda.toff) {
 		$1 = "<font color='red'>[Off]</font>";
 	} else {
 		$1 = "<font color='green'>[On]</font>";
 	}
-	$2 = live(f.src);
-	if (truthy(rt.fv(f, "silent", rt.sv(f, "pda")))) {
+	let $2: any = this;
+	if (this.pda.silent) {
 		$3 = "<font color='red'>[Off]</font>";
 	} else {
 		$3 = "<font color='green'>[On]</font>";
 	}
-	dat = rt.modify(live(dat), fmt("<b>Signal/Receiver Status:</b> <A href='byond://?src=＃;software=pdamessage;toggler=1'>\n\t＀</a><br>\n\t<b>Ringer Status:</b> <A href='byond://?src=＃;software=pdamessage;ringer=1'>\n\t＀</a><br><br>", [$0, $1, $2, $3]), add);
-	dat = rt.modify(live(dat), "<ul>", add);
-	if (!truthy(rt.fv(f, "toff", rt.sv(f, "pda")))) {
-		_P = null;
-		rt.forList(f, 0, (yield* g.call(f, P("/proc/sortNames"), null, [(yield* g.call(f, P("/proc/get_viewable_pdas"), null, []))])), T("/obj/item/device/pda"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			_P = $e;
-			if (isEqual(live(_P), rt.fv(f, "pda", live(f.src)))) {
+	dat += fmt("<b>Signal/Receiver Status:</b> <A href='byond://?src=＃;software=pdamessage;toggler=1'>\n\t＀</a><br>\n\t<b>Ringer Status:</b> <A href='byond://?src=＃;software=pdamessage;ringer=1'>\n\t＀</a><br><br>", [$0, $1, $2, $3]);
+	dat += "<ul>";
+	if (!this.pda.toff) {
+		for (_P of each((yield* sortNames(get_viewable_pdas())), T("/obj/item/device/pda"))) {
+			if (_P == this.pda) {
 				continue;
 			}
-			dat = rt.modify(live(dat), fmt("<li><a href='byond://?src=＃;software=pdamessage;target=＃'>＀</a>", [live(f.src), live(_P), live(_P)]), add);
-			dat = rt.modify(live(dat), "</li>", add);
+			dat += fmt("<li><a href='byond://?src=＃;software=pdamessage;target=＃'>＀</a>", [this, _P, _P]);
+			dat += "</li>";
 		}
-		rt.endFor(f, 0);
 	}
-	dat = rt.modify(live(dat), "</ul>", add);
-	dat = rt.modify(live(dat), "<br><br>", add);
-	return (dat = rt.modify(live(dat), fmt("Messages: <hr> ＀", [rt.fv(f, "tnote", rt.sv(f, "pda"))]), add));
+	dat += "</ul>";
+	dat += "<br><br>";
+	return (dat += `Messages: <hr> ${this.pda.tnote}`);
 }, true);

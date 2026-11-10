@@ -1,7 +1,7 @@
-// From code/modules/mob/living/simple_animal/shade.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/simple_animal/shade.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(5077, "/mob/living/simple_animal/shade", "/mob/living/simple_animal", {
@@ -37,66 +37,62 @@ rt.type(5077, "/mob/living/simple_animal/shade", "/mob/living/simple_animal", {
 	del_on_death: 1,
 });
 
-// /mob/living/simple_animal/shade/proc/<init>  (code/modules/mob/living/simple_animal/shade.dm:12)
+// shade.dm:12
 rt.def("/mob/living/simple_animal/shade/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "speak_emote", rt.list("hisses"));
-	rt.setSv(f, "emote_hear", rt.list("wails.", "screeches."));
-	rt.setSv(f, "atmos_requirements", rt.alist(f, ["min_oxy", 0, "max_oxy", 0, "min_tox", 0, "max_tox", 0, "min_co2", 0, "max_co2", 0, "min_n2", 0, "max_n2", 0]));
-	$0 = $0;
-	rt.setSv(f, "faction", rt.list("cult"));
-	$0 = $0;
-	rt.setSv(f, "loot", rt.list(T("/obj/item/weapon/ectoplasm")));
+	parent_proc();
+	this.speak_emote = list("hisses");
+	this.emote_hear = list("wails.", "screeches.");
+	this.atmos_requirements = rt.alist(f, ["min_oxy", 0, "max_oxy", 0, "min_tox", 0, "max_tox", 0, "min_co2", 0, "max_co2", 0, "min_n2", 0, "max_n2", 0]);
+
+	this.faction = list("cult");
+
+	this.loot = list(T("/obj/item/weapon/ectoplasm"));
 	return f.dot;
 });
 
-// /mob/living/simple_animal/shade/proc/death  (code/modules/mob/living/simple_animal/shade.dm:35)  may sleep
+// shade.dm:35
 rt.def("/mob/living/simple_animal/shade/proc/death", function* death(f: Frame) {
-	rt.setSv(f, "deathmessage", fmt("lets out a contented sigh as ＀ form unwinds.", [(yield* g.srcCall(f, "p_their"))]));
-	yield* g.callSuper(f, [], rt.Args.Same);
+	this.deathmessage = `lets out a contented sigh as ${this.p_their()} form unwinds.`;
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/shade/proc/canSuicide  (code/modules/mob/living/simple_animal/shade.dm:39)
+// shade.dm:39
 rt.def("/mob/living/simple_animal/shade/proc/canSuicide", function canSuicide(f: Frame) {
-	if (truthy((rt.istype(rt.sv(f, "loc"), T("/obj/item/device/soulstone")) ? 1 : 0))) {
+	if (rt.istype(this.loc, T("/obj/item/device/soulstone"))) {
 		return 0;
 	}
-	return rt.callSuper(f, [], rt.Args.Same);
+	return parent_proc();
 });
 
-// /mob/living/simple_animal/shade/proc/attack_animal  (code/modules/mob/living/simple_animal/shade.dm:47)  may sleep
-rt.def("/mob/living/simple_animal/shade/proc/attack_animal", function* attack_animal(f: Frame) {
+// shade.dm:47
+rt.def("/mob/living/simple_animal/shade/proc/attack_animal", function* attack_animal(f: Frame, M: Value) {
 	let C: Value = null;
-	f.vars = () => [C];
-	if (truthy((rt.istype(live(f.args[0]), T("/mob/living/simple_animal/hostile/construct")) ? 1 : 0))) {
-		if (!truthy(rt.gv(f, "can_repair_constructs", (C = live(f.args[0]))))) {
-			return live(f.dot);
+	if (rt.istype(M, T("/mob/living/simple_animal/hostile/construct"))) {
+		if (!(C = M).can_repair_constructs) {
+			return f.dot;
 		}
-		if (rt.lt(rt.sv(f, "health"), rt.sv(f, "maxHealth"))) {
-			yield* g.srcCall(f, "adjustHealth", -25);
-			yield* g.callSrc(f, "Beam", [null, live(f.args[0]), "icon_state", "sendbeam", "time", 4], rt.Args.Named);
-			yield* g.callName(f, live(f.args[0]), "visible_message", [fmt("<span class='danger'>＀ heals ％<b>！</b>.</span>", [live(f.args[0]), live(f.src)]), fmt("<span class='cult'>You heal <b>＀</b>, leaving <b>＀</b> at <b>＀/＀</b> health.</span>", [live(f.src), live(f.src), rt.sv(f, "health"), rt.sv(f, "maxHealth")])]);
+		if (this.health < this.maxHealth) {
+			yield* this.adjustHealth(-25);
+			yield* this.Beam(M, { icon_state: "sendbeam", time: 4 });
+			M.visible_message(fmt("<span class='danger'>＀ heals ％<b>！</b>.</span>", [M, this]), `<span class='cult'>You heal <b>${this}</b>, leaving <b>${this}</b> at <b>${this.health}/${this.maxHealth}</b> health.</span>`);
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='cult'>You cannot heal <b>＀</b>, as ＀ ＀ unharmed!</span>", [live(f.src), (yield* g.srcCall(f, "p_they")), (yield* g.srcCall(f, "p_are"))])]);
+			to_chat(M, `<span class='cult'>You cannot heal <b>${this}</b>, as ${this.p_they()} ${this.p_are()} unharmed!</span>`);
 		}
 	} else {
-		if (isEqual(live(f.src), live(f.args[0]))) return f.dot;
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+		if (this == M) return f.dot;
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["M"] });
+}, true);
 
-// /mob/living/simple_animal/shade/proc/attackby  (code/modules/mob/living/simple_animal/shade.dm:62)  may sleep
-rt.def("/mob/living/simple_animal/shade/proc/attackby", function* attackby(f: Frame) {
+// shade.dm:62
+rt.def("/mob/living/simple_animal/shade/proc/attackby", function* attackby(f: Frame, O: Value, user: Value, params: Value) {
 	let SS: Value = null;
-	f.vars = () => [SS];
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/device/soulstone")) ? 1 : 0))) {
-		yield* g.callName(f, (SS = live(f.args[0])), "transfer_soul", ["SHADE", live(f.src), live(f.args[1])]);
+	if (rt.istype(O, T("/obj/item/device/soulstone"))) {
+		yield* (SS = O).transfer_soul("SHADE", this, user);
 	} else {
-		yield* g.callSuper(f, [], rt.Args.Same);
+		yield* parent_proc();
 	}
 	return f.dot;
-}, true, { args: ["O", "user", "params"] });
+}, true);

@@ -1,7 +1,7 @@
-// From code/datums/dog_fashion.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/datums/dog_fashion.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(399, "/datum/dog_fashion", "/datum", {
@@ -17,21 +17,20 @@ rt.type(399, "/datum/dog_fashion", "/datum", {
 	obj_color: null,
 });
 
-// /datum/dog_fashion/proc/New  (code/datums/dog_fashion.dm:17)
+// dog_fashion.dm:17
 rt.def("/datum/dog_fashion/proc/New", function New(f: Frame, M: Value) {
-	rt.setSv(f, "name", rt.call(f, P("/proc/replacetext"), null, [rt.sv(f, "name"), "REAL_NAME", rt.fv(f, "real_name", live(M))]));
-	rt.setSv(f, "desc", rt.call(f, P("/proc/replacetext"), null, [rt.sv(f, "desc"), "NAME", rt.sv(f, "name")]));
+	this.name = replacetext(this.name, "REAL_NAME", M.real_name);
+	this.desc = replacetext(this.desc, "NAME", this.name);
 	return f.dot;
 });
 
-// /datum/dog_fashion/proc/get_overlay  (code/datums/dog_fashion.dm:35)
+// dog_fashion.dm:35
 rt.def("/datum/dog_fashion/proc/get_overlay", function get_overlay(f: Frame, dir: Value) {
 	let corgI: Value = null;
-	f.vars = () => [corgI];
-	if (!(truthy(rt.sv(f, "icon_file")) && truthy(rt.sv(f, "obj_icon_state")))) return f.dot;
-	rt.setFv(f, "alpha", (corgI = rt.call(f, P("/proc/image"), null, [null, rt.sv(f, "icon_file"), null, rt.sv(f, "obj_icon_state"), "dir", live(dir)], rt.Args.Named)), rt.sv(f, "obj_alpha"));
-	rt.setFv(f, "color", live(corgI), rt.sv(f, "obj_color"));
-	return live(corgI);
+	if (!(this.icon_file && this.obj_icon_state)) return f.dot;
+	(corgI = image(this.icon_file, this.obj_icon_state, { dir: dir })).alpha = this.obj_alpha;
+	corgI.color = this.obj_color;
+	return corgI;
 });
 
 rt.type(404, "/datum/dog_fashion/head/kitty", "/datum/dog_fashion/head", {
@@ -42,15 +41,13 @@ rt.type(404, "/datum/dog_fashion/head/kitty", "/datum/dog_fashion/head", {
 	desc: "It's a cute little kitty-cat! ... wait ... what the hell?",
 });
 
-// /datum/dog_fashion/head/kitty/proc/<init>  (code/datums/dog_fashion.dm:64)
+// dog_fashion.dm:64
 rt.def("/datum/dog_fashion/head/kitty/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "emote_see", rt.list("coughs up a furball", "stretches"));
-	$0 = $0;
-	rt.setSv(f, "emote_hear", rt.list("purrs"));
-	rt.setSv(f, "speak", rt.list("Purrr", "Meow!", "MAOOOOOW!", "HISSSSS", "MEEEEEEW"));
+	parent_proc();
+	this.emote_see = list("coughs up a furball", "stretches");
+
+	this.emote_hear = list("purrs");
+	this.speak = list("Purrr", "Meow!", "MAOOOOOW!", "HISSSSS", "MEEEEEEW");
 	return f.dot;
 });
 
@@ -62,12 +59,12 @@ rt.type(409, "/datum/dog_fashion/head/pirate", "/datum/dog_fashion/head", {
 	speak: null,
 });
 
-// /datum/dog_fashion/head/pirate/proc/New  (code/datums/dog_fashion.dm:98)
-rt.def("/datum/dog_fashion/head/pirate/proc/New", function New(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "name", fmt("＀ ＀", [rt.op(f, "PickUnweighted", [9], ["Ol'", "Scurvy", "Black", "Rum", "Gammy", "Bloody", "Gangrene", "Death", "Long-John"]), rt.op(f, "PickUnweighted", [10], ["kibble", "leg", "beard", "tooth", "poop-deck", "Threepwood", "Le Chuck", "corsair", "Silver", "Crusoe"])]));
+// dog_fashion.dm:98
+rt.def("/datum/dog_fashion/head/pirate/proc/New", function New(f: Frame, M: Value) {
+	parent_proc();
+	this.name = `${pick("Ol'", "Scurvy", "Black", "Rum", "Gammy", "Bloody", "Gangrene", "Death", "Long-John")} ${pick("kibble", "leg", "beard", "tooth", "poop-deck", "Threepwood", "Le Chuck", "corsair", "Silver", "Crusoe")}`;
 	return f.dot;
-}, false, { args: ["M"] });
+}, false);
 
 rt.type(410, "/datum/dog_fashion/head/ushanka", "/datum/dog_fashion/head", {
 	name: "Communist-title Realname",
@@ -75,21 +72,21 @@ rt.type(410, "/datum/dog_fashion/head/ushanka", "/datum/dog_fashion/head", {
 	emote_see: null,
 });
 
-// /datum/dog_fashion/head/ushanka/proc/New  (code/datums/dog_fashion.dm:107)
-rt.def("/datum/dog_fashion/head/ushanka/proc/New", function New(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "name", fmt("＀ ＀", [rt.op(f, "PickUnweighted", [3], ["Comrade", "Commissar", "Glorious Leader"]), rt.fv(f, "real_name", live(f.args[0]))]));
+// dog_fashion.dm:107
+rt.def("/datum/dog_fashion/head/ushanka/proc/New", function New(f: Frame, M: Value) {
+	parent_proc();
+	this.name = `${pick("Comrade", "Commissar", "Glorious Leader")} ${M.real_name}`;
 	return f.dot;
-}, false, { args: ["M"] });
+}, false);
 
 rt.type(419, "/datum/dog_fashion/head/sombrero", "/datum/dog_fashion/head", {
 	name: "Segnor REAL_NAME",
 	desc: "You must respect Elder Dogname",
 });
 
-// /datum/dog_fashion/head/sombrero/proc/New  (code/datums/dog_fashion.dm:157)
-rt.def("/datum/dog_fashion/head/sombrero/proc/New", function New(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "desc", fmt("You must respect Elder ＀.", [rt.fv(f, "real_name", live(f.args[0]))]));
+// dog_fashion.dm:157
+rt.def("/datum/dog_fashion/head/sombrero/proc/New", function New(f: Frame, M: Value) {
+	parent_proc();
+	this.desc = `You must respect Elder ${M.real_name}.`;
 	return f.dot;
-}, false, { args: ["M"] });
+}, false);

@@ -1,7 +1,7 @@
-// From code/modules/power/tesla/generator.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/power/tesla/generator.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(10977, "/obj/machinery/the_singularitygen/tesla", "/obj/machinery/the_singularitygen", {
@@ -12,13 +12,10 @@ rt.type(10977, "/obj/machinery/the_singularitygen/tesla", "/obj/machinery/the_si
 	creation_type: rt.typePath("/obj/singularity/energy_ball"),
 });
 
-// /obj/machinery/the_singularitygen/tesla/proc/tesla_act  (code/modules/power/tesla/generator.dm:10)
+// generator.dm:10
 rt.def("/obj/machinery/the_singularitygen/tesla/proc/tesla_act", function tesla_act(f: Frame, power: Value, explosive: Value) {
-	f.vars = () => [explosive];
-	if (live(explosive) === null) {
-		explosive = 0;
-	}
-	if (!truthy(live(explosive))) return f.dot;
-	rt.modSrcVar(f, "energy", live(power), add);
+	explosive ??= 0;
+	if (!explosive) return f.dot;
+	this.energy += power;
 	return f.dot;
 });

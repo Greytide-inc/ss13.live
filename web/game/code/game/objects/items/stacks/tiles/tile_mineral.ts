@@ -1,7 +1,7 @@
-// From code/game/objects/items/stacks/tiles/tile_mineral.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/stacks/tiles/tile_mineral.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(8975, "/obj/item/stack/tile/mineral/plasma", "/obj/item/stack/tile/mineral", {
@@ -15,12 +15,10 @@ rt.type(8975, "/obj/item/stack/tile/mineral/plasma", "/obj/item/stack/tile/miner
 	materials: null,
 });
 
-// /obj/item/stack/tile/mineral/plasma/proc/<init>  (code/game/objects/items/stacks/tiles/tile_mineral.dm:9)
+// tile_mineral.dm:9
 rt.def("/obj/item/stack/tile/mineral/plasma/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$plasma", 500]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$plasma", 500]);
 	return f.dot;
 });
 
@@ -34,12 +32,10 @@ rt.type(8976, "/obj/item/stack/tile/mineral/uranium", "/obj/item/stack/tile/mine
 	materials: null,
 });
 
-// /obj/item/stack/tile/mineral/uranium/proc/<init>  (code/game/objects/items/stacks/tiles/tile_mineral.dm:18)
+// tile_mineral.dm:18
 rt.def("/obj/item/stack/tile/mineral/uranium/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$uranium", 500]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$uranium", 500]);
 	return f.dot;
 });
 
@@ -53,12 +49,10 @@ rt.type(8977, "/obj/item/stack/tile/mineral/gold", "/obj/item/stack/tile/mineral
 	materials: null,
 });
 
-// /obj/item/stack/tile/mineral/gold/proc/<init>  (code/game/objects/items/stacks/tiles/tile_mineral.dm:27)
+// tile_mineral.dm:27
 rt.def("/obj/item/stack/tile/mineral/gold/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$gold", 500]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$gold", 500]);
 	return f.dot;
 });
 
@@ -72,12 +66,10 @@ rt.type(8978, "/obj/item/stack/tile/mineral/silver", "/obj/item/stack/tile/miner
 	materials: null,
 });
 
-// /obj/item/stack/tile/mineral/silver/proc/<init>  (code/game/objects/items/stacks/tiles/tile_mineral.dm:36)
+// tile_mineral.dm:36
 rt.def("/obj/item/stack/tile/mineral/silver/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$silver", 500]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$silver", 500]);
 	return f.dot;
 });
 
@@ -92,12 +84,10 @@ rt.type(8979, "/obj/item/stack/tile/mineral/diamond", "/obj/item/stack/tile/mine
 	materials: null,
 });
 
-// /obj/item/stack/tile/mineral/diamond/proc/<init>  (code/game/objects/items/stacks/tiles/tile_mineral.dm:46)
+// tile_mineral.dm:46
 rt.def("/obj/item/stack/tile/mineral/diamond/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$diamond", 500]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$diamond", 500]);
 	return f.dot;
 });
 
@@ -111,12 +101,10 @@ rt.type(8980, "/obj/item/stack/tile/mineral/bananium", "/obj/item/stack/tile/min
 	materials: null,
 });
 
-// /obj/item/stack/tile/mineral/bananium/proc/<init>  (code/game/objects/items/stacks/tiles/tile_mineral.dm:55)
+// tile_mineral.dm:55
 rt.def("/obj/item/stack/tile/mineral/bananium/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$bananium", 500]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$bananium", 500]);
 	return f.dot;
 });
 
@@ -131,12 +119,10 @@ rt.type(8982, "/obj/item/stack/tile/mineral/titanium", "/obj/item/stack/tile/min
 	materials: null,
 });
 
-// /obj/item/stack/tile/mineral/titanium/proc/<init>  (code/game/objects/items/stacks/tiles/tile_mineral.dm:75)
+// tile_mineral.dm:75
 rt.def("/obj/item/stack/tile/mineral/titanium/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$titanium", 500]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$titanium", 500]);
 	return f.dot;
 });
 
@@ -151,11 +137,9 @@ rt.type(8983, "/obj/item/stack/tile/mineral/plastitanium", "/obj/item/stack/tile
 	materials: null,
 });
 
-// /obj/item/stack/tile/mineral/plastitanium/proc/<init>  (code/game/objects/items/stacks/tiles/tile_mineral.dm:85)
+// tile_mineral.dm:85
 rt.def("/obj/item/stack/tile/mineral/plastitanium/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$titanium", 250, "$plasma", 250]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$titanium", 250, "$plasma", 250]);
 	return f.dot;
 });

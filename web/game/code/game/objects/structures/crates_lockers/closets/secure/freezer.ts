@@ -1,7 +1,7 @@
-// From code/game/objects/structures/crates_lockers/closets/secure/freezer.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/structures/crates_lockers/closets/secure/freezer.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(12365, "/obj/structure/closet/secure_closet/freezer/kitchen", "/obj/structure/closet/secure_closet/freezer", {
@@ -9,28 +9,23 @@ rt.type(12365, "/obj/structure/closet/secure_closet/freezer/kitchen", "/obj/stru
 	req_access: null,
 });
 
-// /obj/structure/closet/secure_closet/freezer/kitchen/proc/<init>  (code/game/objects/structures/crates_lockers/closets/secure/freezer.dm:6)
+// freezer.dm:6
 rt.def("/obj/structure/closet/secure_closet/freezer/kitchen/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_access", rt.list(28));
+	parent_proc();
+	this.req_access = list(28);
 	return f.dot;
 });
 
-// /obj/structure/closet/secure_closet/freezer/kitchen/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/secure/freezer.dm:9)  may sleep
+// freezer.dm:9
 rt.def("/obj/structure/closet/secure_closet/freezer/kitchen/proc/PopulateContents", function* PopulateContents(f: Frame) {
-	let i: Value = null;
-	f.vars = () => [i];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	i = null;
-	i = 0;
-	while (rt.lt(live(i), 3)) {
-		yield* g.new_(f, T("/obj/item/weapon/reagent_containers/food/condiment/flour"), [live(f.src)]);
-		i = rt.inc(live(i), 1);
+	yield* parent_proc();
+	let i: Value = 0;
+	while (i < 3) {
+		yield* new_(T("/obj/item/weapon/reagent_containers/food/condiment/flour"), this);
+		i++;
 	}
-	yield* g.new_(f, T("/obj/item/weapon/reagent_containers/food/condiment/rice"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/reagent_containers/food/condiment/sugar"), [live(f.src)]);
+	yield* new_(T("/obj/item/weapon/reagent_containers/food/condiment/rice"), this);
+	yield* new_(T("/obj/item/weapon/reagent_containers/food/condiment/sugar"), this);
 	return f.dot;
 }, true);
 
@@ -40,37 +35,30 @@ rt.type(12366, "/obj/structure/closet/secure_closet/freezer/kitchen/maintenance"
 	req_access: null,
 });
 
-// /obj/structure/closet/secure_closet/freezer/kitchen/maintenance/proc/<init>  (code/game/objects/structures/crates_lockers/closets/secure/freezer.dm:18)
+// freezer.dm:18
 rt.def("/obj/structure/closet/secure_closet/freezer/kitchen/maintenance/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_access", rt.list());
+	parent_proc();
+	this.req_access = list();
 	return f.dot;
 });
 
-// /obj/structure/closet/secure_closet/freezer/kitchen/maintenance/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/secure/freezer.dm:21)  may sleep
+// freezer.dm:21
 rt.def("/obj/structure/closet/secure_closet/freezer/kitchen/maintenance/proc/PopulateContents", function* PopulateContents(f: Frame) {
-	let i: Value = null;
-	f.vars = () => [i];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	i = null;
-	i = 0;
-	while (rt.lt(live(i), 5)) {
-		yield* g.new_(f, T("/obj/item/weapon/reagent_containers/food/condiment/milk"), [live(f.src)]);
-		i = rt.inc(live(i), 1);
+	yield* parent_proc();
+	let i: Value = 0;
+	while (i < 5) {
+		yield* new_(T("/obj/item/weapon/reagent_containers/food/condiment/milk"), this);
+		i++;
 	}
-	i = null;
 	i = 0;
-	while (rt.lt(live(i), 5)) {
-		yield* g.new_(f, T("/obj/item/weapon/reagent_containers/food/condiment/soymilk"), [live(f.src)]);
-		i = rt.inc(live(i), 1);
+	while (i < 5) {
+		yield* new_(T("/obj/item/weapon/reagent_containers/food/condiment/soymilk"), this);
+		i++;
 	}
-	i = null;
 	i = 0;
-	while (rt.lt(live(i), 2)) {
-		yield* g.new_(f, T("/obj/item/weapon/storage/fancy/egg_box"), [live(f.src)]);
-		i = rt.inc(live(i), 1);
+	while (i < 2) {
+		yield* new_(T("/obj/item/weapon/storage/fancy/egg_box"), this);
+		i++;
 	}
 	return f.dot;
 }, true);
@@ -79,12 +67,10 @@ rt.type(12367, "/obj/structure/closet/secure_closet/freezer/kitchen/mining", "/o
 	req_access: null,
 });
 
-// /obj/structure/closet/secure_closet/freezer/kitchen/mining/proc/<init>  (code/game/objects/structures/crates_lockers/closets/secure/freezer.dm:30)
+// freezer.dm:30
 rt.def("/obj/structure/closet/secure_closet/freezer/kitchen/mining/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_access", rt.list());
+	parent_proc();
+	this.req_access = list();
 	return f.dot;
 });
 
@@ -92,16 +78,13 @@ rt.type(12368, "/obj/structure/closet/secure_closet/freezer/meat", "/obj/structu
 	name: "meat fridge",
 });
 
-// /obj/structure/closet/secure_closet/freezer/meat/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/secure/freezer.dm:36)  may sleep
+// freezer.dm:36
 rt.def("/obj/structure/closet/secure_closet/freezer/meat/proc/PopulateContents", function* PopulateContents(f: Frame) {
-	let i: Value = null;
-	f.vars = () => [i];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	i = null;
-	i = 0;
-	while (rt.lt(live(i), 4)) {
-		yield* g.new_(f, T("/obj/item/weapon/reagent_containers/food/snacks/meat/slab/monkey"), [live(f.src)]);
-		i = rt.inc(live(i), 1);
+	yield* parent_proc();
+	let i: Value = 0;
+	while (i < 4) {
+		yield* new_(T("/obj/item/weapon/reagent_containers/food/snacks/meat/slab/monkey"), this);
+		i++;
 	}
 	return f.dot;
 }, true);
@@ -110,28 +93,23 @@ rt.type(12369, "/obj/structure/closet/secure_closet/freezer/fridge", "/obj/struc
 	name: "refrigerator",
 });
 
-// /obj/structure/closet/secure_closet/freezer/fridge/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/secure/freezer.dm:43)  may sleep
+// freezer.dm:43
 rt.def("/obj/structure/closet/secure_closet/freezer/fridge/proc/PopulateContents", function* PopulateContents(f: Frame) {
-	let i: Value = null;
-	f.vars = () => [i];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	i = null;
-	i = 0;
-	while (rt.lt(live(i), 5)) {
-		yield* g.new_(f, T("/obj/item/weapon/reagent_containers/food/condiment/milk"), [live(f.src)]);
-		i = rt.inc(live(i), 1);
+	yield* parent_proc();
+	let i: Value = 0;
+	while (i < 5) {
+		yield* new_(T("/obj/item/weapon/reagent_containers/food/condiment/milk"), this);
+		i++;
 	}
-	i = null;
 	i = 0;
-	while (rt.lt(live(i), 5)) {
-		yield* g.new_(f, T("/obj/item/weapon/reagent_containers/food/condiment/soymilk"), [live(f.src)]);
-		i = rt.inc(live(i), 1);
+	while (i < 5) {
+		yield* new_(T("/obj/item/weapon/reagent_containers/food/condiment/soymilk"), this);
+		i++;
 	}
-	i = null;
 	i = 0;
-	while (rt.lt(live(i), 2)) {
-		yield* g.new_(f, T("/obj/item/weapon/storage/fancy/egg_box"), [live(f.src)]);
-		i = rt.inc(live(i), 1);
+	while (i < 2) {
+		yield* new_(T("/obj/item/weapon/storage/fancy/egg_box"), this);
+		i++;
 	}
 	return f.dot;
 }, true);
@@ -142,37 +120,30 @@ rt.type(12370, "/obj/structure/closet/secure_closet/freezer/money", "/obj/struct
 	req_access: null,
 });
 
-// /obj/structure/closet/secure_closet/freezer/money/proc/<init>  (code/game/objects/structures/crates_lockers/closets/secure/freezer.dm:54)
+// freezer.dm:54
 rt.def("/obj/structure/closet/secure_closet/freezer/money/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_access", rt.list(53));
+	parent_proc();
+	this.req_access = list(53);
 	return f.dot;
 });
 
-// /obj/structure/closet/secure_closet/freezer/money/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/secure/freezer.dm:57)  may sleep
+// freezer.dm:57
 rt.def("/obj/structure/closet/secure_closet/freezer/money/proc/PopulateContents", function* PopulateContents(f: Frame) {
-	let i: Value = null;
-	f.vars = () => [i];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	i = null;
-	i = 0;
-	while (rt.lt(live(i), 3)) {
-		yield* g.new_(f, T("/obj/item/stack/spacecash/c1000"), [live(f.src)]);
-		i = rt.inc(live(i), 1);
+	yield* parent_proc();
+	let i: Value = 0;
+	while (i < 3) {
+		yield* new_(T("/obj/item/stack/spacecash/c1000"), this);
+		i++;
 	}
-	i = null;
 	i = 0;
-	while (rt.lt(live(i), 5)) {
-		yield* g.new_(f, T("/obj/item/stack/spacecash/c500"), [live(f.src)]);
-		i = rt.inc(live(i), 1);
+	while (i < 5) {
+		yield* new_(T("/obj/item/stack/spacecash/c500"), this);
+		i++;
 	}
-	i = null;
 	i = 0;
-	while (rt.lt(live(i), 6)) {
-		yield* g.new_(f, T("/obj/item/stack/spacecash/c200"), [live(f.src)]);
-		i = rt.inc(live(i), 1);
+	while (i < 6) {
+		yield* new_(T("/obj/item/stack/spacecash/c200"), this);
+		i++;
 	}
 	return f.dot;
 }, true);
@@ -183,20 +154,18 @@ rt.type(12371, "/obj/structure/closet/secure_closet/freezer/cream_pie", "/obj/st
 	req_access: null,
 });
 
-// /obj/structure/closet/secure_closet/freezer/cream_pie/proc/<init>  (code/game/objects/structures/crates_lockers/closets/secure/freezer.dm:68)
+// freezer.dm:68
 rt.def("/obj/structure/closet/secure_closet/freezer/cream_pie/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_access", rt.list(46));
+	parent_proc();
+	this.req_access = list(46);
 	return f.dot;
 });
 
 rt.type(12372, "/obj/structure/closet/secure_closet/freezer/pie", "/obj/structure/closet/secure_closet/freezer", {});
 
-// /obj/structure/closet/secure_closet/freezer/pie/proc/PopulateContents  (code/game/objects/structures/crates_lockers/closets/secure/freezer.dm:71)  may sleep
+// freezer.dm:71
 rt.def("/obj/structure/closet/secure_closet/freezer/pie/proc/PopulateContents", function* PopulateContents(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.new_(f, T("/obj/item/weapon/reagent_containers/food/snacks/pie/cream"), [live(f.src)]);
+	yield* parent_proc();
+	yield* new_(T("/obj/item/weapon/reagent_containers/food/snacks/pie/cream"), this);
 	return f.dot;
 }, true);

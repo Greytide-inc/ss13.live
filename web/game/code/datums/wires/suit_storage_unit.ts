@@ -1,7 +1,7 @@
-// From code/datums/wires/suit_storage_unit.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/datums/wires/suit_storage_unit.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(1075, "/datum/wires/suit_storage_unit", "/datum/wires", {
@@ -9,75 +9,53 @@ rt.type(1075, "/datum/wires/suit_storage_unit", "/datum/wires", {
 	proper_name: "Suit Storage Unit",
 });
 
-// /datum/wires/suit_storage_unit/proc/New  (code/datums/wires/suit_storage_unit.dm:10)
-rt.def("/datum/wires/suit_storage_unit/proc/New", function New(f: Frame) {
-	rt.setSv(f, "wires", rt.list("Hack", "Safety", "High Voltage Circuit"));
-	rt.callSrc(f, "add_duds", [2]);
-	rt.callSuper(f, [], rt.Args.Same);
+// suit_storage_unit.dm:10
+rt.def("/datum/wires/suit_storage_unit/proc/New", function New(f: Frame, holder: Value) {
+	this.wires = list("Hack", "Safety", "High Voltage Circuit");
+	this.add_duds(2);
+	parent_proc();
 	return f.dot;
-}, false, { args: ["holder"] });
+}, false);
 
-// /datum/wires/suit_storage_unit/proc/interactable  (code/datums/wires/suit_storage_unit.dm:14)
+// suit_storage_unit.dm:14
 rt.def("/datum/wires/suit_storage_unit/proc/interactable", function interactable(f: Frame, user: Value) {
 	let SSU: Value = null;
-	f.vars = () => [SSU];
-	if (!truthy(rt.gv(f, "panel_open", (SSU = rt.sv(f, "holder"))))) return f.dot;
+	if (!(SSU = this.holder).panel_open) return f.dot;
 	return 1;
 });
 
-// /datum/wires/suit_storage_unit/proc/get_status  (code/datums/wires/suit_storage_unit.dm:19)
+// suit_storage_unit.dm:19
 rt.def("/datum/wires/suit_storage_unit/proc/get_status", function get_status(f: Frame) {
-	let SSU: Value = null, status: Value = null;
-	let $0: any;
-	f.vars = () => [SSU, status, $0];
-	SSU = rt.sv(f, "holder");
-	status = rt.list();
-	if (truthy(rt.fv(f, "uv_super", live(SSU)))) {
-		$0 = "glowing";
-	} else {
-		$0 = "dim";
-	}
-	status = rt.modify(live(status), fmt("The UV bulb is ＀.", [$0]), add);
-	if (truthy(rt.fv(f, "safeties", live(SSU)))) {
-		$0 = "off";
-	} else {
-		$0 = "on";
-	}
-	return (status = rt.modify(live(status), fmt("The service light is ＀.", [$0]), add));
+	let SSU: Value = this.holder;
+	let status: Value = list();
+	status += `The UV bulb is ${SSU.uv_super ? "glowing" : "dim"}.`;
+	return (status += `The service light is ${SSU.safeties ? "off" : "on"}.`);
 });
 
-// /datum/wires/suit_storage_unit/proc/on_pulse  (code/datums/wires/suit_storage_unit.dm:26)  may sleep
+// suit_storage_unit.dm:26
 rt.def("/datum/wires/suit_storage_unit/proc/on_pulse", function* on_pulse(f: Frame, wire: Value) {
-	let SSU: Value = null;
-	let $0: any;
-	f.vars = () => [wire, SSU, $0];
-	SSU = rt.sv(f, "holder");
-	$0 = live(wire);
-	if ($0 === "Hack") {
-		rt.setFv(f, "uv_super", live(SSU), (!truthy(rt.fv(f, "uv_super", live(SSU))) ? 1 : 0));
-	} else if ($0 === "Safety") {
-		rt.setFv(f, "safeties", live(SSU), (!truthy(rt.fv(f, "safeties", live(SSU))) ? 1 : 0));
-	} else if ($0 === "High Voltage Circuit") {
-		if (!truthy(live(f.usr))) return f.dot;
-		yield* g.callName(f, live(SSU), "shock", [live(f.usr)]);
+	let SSU: Value = this.holder;
+	if (wire === "Hack") {
+		SSU.uv_super = (!SSU.uv_super ? 1 : 0);
+	} else if (wire === "Safety") {
+		SSU.safeties = (!SSU.safeties ? 1 : 0);
+	} else if (wire === "High Voltage Circuit") {
+		if (!f.usr) return f.dot;
+		yield* SSU.shock(f.usr);
 	}
 	return f.dot;
 }, true);
 
-// /datum/wires/suit_storage_unit/proc/on_cut  (code/datums/wires/suit_storage_unit.dm:37)  may sleep
+// suit_storage_unit.dm:37
 rt.def("/datum/wires/suit_storage_unit/proc/on_cut", function* on_cut(f: Frame, wire: Value, mend: Value) {
-	let SSU: Value = null;
-	let $0: any;
-	f.vars = () => [wire, mend, SSU, $0];
-	SSU = rt.sv(f, "holder");
-	$0 = live(wire);
-	if ($0 === "Hack") {
-		rt.setFv(f, "uv_super", live(SSU), (!truthy(live(mend)) ? 1 : 0));
-	} else if ($0 === "Safety") {
-		rt.setFv(f, "safeties", live(SSU), live(mend));
-	} else if ($0 === "High Voltage Circuit") {
-		if (!truthy(live(f.usr))) return f.dot;
-		yield* g.callName(f, live(SSU), "shock", [live(f.usr)]);
+	let SSU: Value = this.holder;
+	if (wire === "Hack") {
+		SSU.uv_super = (!mend ? 1 : 0);
+	} else if (wire === "Safety") {
+		SSU.safeties = mend;
+	} else if (wire === "High Voltage Circuit") {
+		if (!f.usr) return f.dot;
+		yield* SSU.shock(f.usr);
 	}
 	return f.dot;
 }, true);

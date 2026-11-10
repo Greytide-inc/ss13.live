@@ -47,8 +47,7 @@ function check(name: string, got: unknown, want: unknown): void {
 	}
 }
 
-// BYOND numbers are float32 (Math.fround'd throughout the VM), so a literal like 2.05 comes back
-// as its nearest float32 (2.049999952316284): compare with a float32-scale tolerance, not exact.
+// Floating layers are sums of fractions (FLOAT_LAYER / 1000): compare those with a tolerance, not exact.
 function close(name: string, got: number, want: number, eps = 1e-4): void {
 	if (Math.abs(got - want) < eps) console.log(`ok   ${name}`);
 	else {
@@ -109,7 +108,7 @@ if (!existsSync(gamePath)) {
 		check("wall icon", a.icon, "icons/turf/walls/wall.dmi");
 		check("wall icon_state", a.iconState, "wall");
 		check("wall dir (default SOUTH)", a.dir, SOUTH);
-		close("wall layer (CLOSED_TURF_LAYER)", a.layer, 2.05);
+		check("wall layer (CLOSED_TURF_LAYER)", a.layer, 2.05);
 		check("wall plane (default)", a.plane, 0);
 		check("wall alpha (default)", a.alpha, 255);
 		check("wall color (default)", a.color, null);
@@ -129,7 +128,7 @@ if (!existsSync(gamePath)) {
 		const rawIcon = airlock.getVar("icon") as { path: string };
 		check("airlock icon path", rawIcon.path, "icons/obj/doors/airlocks/station/public.dmi");
 		check("airlock icon_state", airlock.getVar("icon_state"), "closed");
-		close("airlock layer set by its own New() (CLOSED_DOOR_LAYER, density=1)", airlock.getVar("layer") as number, 3.1);
+		check("airlock layer set by its own New() (CLOSED_DOOR_LAYER, density=1)", airlock.getVar("layer") as number, 3.1);
 
 		// A default-everything overlay (as `overlays += image('bolts.dmi', "bolts-animation")` would
 		// give): floating layer/plane, no dir/icon_state of its own -> inherits the airlock's.

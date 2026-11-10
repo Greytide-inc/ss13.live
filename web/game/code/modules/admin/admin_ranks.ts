@@ -1,20 +1,20 @@
-// From code/modules/admin/admin_ranks.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/admin/admin_ranks.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
-// /datum/controller/global_vars/proc/InitGlobaladmin_ranks  (code/modules/admin/admin_ranks.dm:1)
+// admin_ranks.dm:1
 rt.def("/datum/controller/global_vars/proc/InitGlobaladmin_ranks", function InitGlobaladmin_ranks(f: Frame) {
-	rt.setGl("admin_ranks", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "admin_ranks", add);
+	GLOB.admin_ranks = list();
+	this.gvars_datum_init_order += "admin_ranks";
 	return f.dot;
 });
 
-// /datum/controller/global_vars/proc/InitGlobaladmin_ranks  (code/modules/admin/admin_ranks.dm:2)
+// admin_ranks.dm:2
 rt.def("/datum/controller/global_vars/proc/InitGlobaladmin_ranks", function InitGlobaladmin_ranks(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.modSrcVar(f, "gvars_datum_protected_varlist", "admin_ranks", add);
+	parent_proc();
+	this.gvars_datum_protected_varlist += "admin_ranks";
 	return f.dot;
 });
 
@@ -25,181 +25,149 @@ rt.type(1838, "/datum/admin_rank", "/datum", {
 	subs: null,
 });
 
-// /datum/admin_rank/proc/New  (code/modules/admin/admin_ranks.dm:11)
+// admin_ranks.dm:11
 rt.def("/datum/admin_rank/proc/New", function New(f: Frame, init_name: Value, init_rights: Value, init_adds: Value, init_subs: Value) {
-	let $0: any;
-	f.vars = () => [init_adds, init_subs, $0];
-	rt.setSv(f, "name", live(init_name));
-	$0 = rt.sv(f, "name");
-	if ($0 === "Removed" || isEqual($0, null) || $0 === "") {
+	this.name = init_name;
+	if (this.name === "Removed" || this.name == null || this.name === "") {
 		rt.spawnTail(f, 0, "/datum/admin_rank/proc/New: spawn at modules/admin/admin_ranks.dm:14", init_name, init_rights, init_adds, init_subs);
-		rt.throw_(f, rt.new_(f, T("/exception"), ["invalid admin-rank name", "code/modules/admin/admin_ranks.dm", 16]));
-		return live(f.dot);
+		rt.throw_(f, new_(T("/exception"), "invalid admin-rank name", "code/modules/admin/admin_ranks.dm", 16));
+		return f.dot;
 	}
-	if (truthy(live(init_rights))) {
-		rt.setSv(f, "rights", live(init_rights));
+	if (init_rights) {
+		this.rights = init_rights;
 	}
-	if (!truthy(live(init_adds))) {
-		init_adds = rt.list();
+	if (!init_adds) {
+		init_adds = list();
 	}
-	if (!truthy(live(init_subs))) {
-		init_subs = rt.list();
+	if (!init_subs) {
+		init_subs = list();
 	}
-	rt.setSv(f, "adds", live(init_adds));
-	rt.setSv(f, "subs", live(init_subs));
+	this.adds = init_adds;
+	this.subs = init_subs;
 	return f.dot;
 });
 
 // a spawn(0) body of /datum/admin_rank/proc/New, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/datum/admin_rank/proc/New: spawn at modules/admin/admin_ranks.dm:14", function* (f: Frame, init_name: Value, init_rights: Value, init_adds: Value, init_subs: Value) {
-	f.vars = () => [init_name, init_rights, init_adds, init_subs];
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* qdel(this);
 	return null;
 });
 
-// /proc/admin_keyword_to_flag  (code/modules/admin/admin_ranks.dm:35)
+// admin_ranks.dm:35
 rt.def("/proc/admin_keyword_to_flag", function admin_keyword_to_flag(f: Frame, word: Value, previous_rights: Value) {
-	let flag: Value = null;
-	let $0: any;
-	f.vars = () => [previous_rights, flag, $0];
-	if (live(previous_rights) === null) {
-		previous_rights = 0;
-	}
-	flag = 0;
-	$0 = rt.call(f, P("/proc/ckey"), null, [live(word)]);
-	if ($0 === "buildmode" || $0 === "build") {
+	previous_rights ??= 0;
+	let flag: Value = 0;
+	const ckey_2 = ckey(word);
+	if (ckey_2 === "buildmode" || ckey_2 === "build") {
 		flag = 1;
-	} else if ($0 === "admin") {
+	} else if (ckey_2 === "admin") {
 		flag = 2;
-	} else if ($0 === "ban") {
+	} else if (ckey_2 === "ban") {
 		flag = 4;
-	} else if ($0 === "fun") {
+	} else if (ckey_2 === "fun") {
 		flag = 8;
-	} else if ($0 === "server") {
+	} else if (ckey_2 === "server") {
 		flag = 16;
-	} else if ($0 === "debug") {
+	} else if (ckey_2 === "debug") {
 		flag = 32;
-	} else if ($0 === "permissions" || $0 === "rights") {
+	} else if (ckey_2 === "permissions" || ckey_2 === "rights") {
 		flag = 128;
-	} else if ($0 === "possess") {
+	} else if (ckey_2 === "possess") {
 		flag = 64;
-	} else if ($0 === "stealth") {
+	} else if (ckey_2 === "stealth") {
 		flag = 256;
-	} else if ($0 === "poll") {
+	} else if (ckey_2 === "poll") {
 		flag = 512;
-	} else if ($0 === "varedit") {
+	} else if (ckey_2 === "varedit") {
 		flag = 1024;
-	} else if ($0 === "everything" || $0 === "host" || $0 === "all") {
+	} else if (ckey_2 === "everything" || ckey_2 === "host" || ckey_2 === "all") {
 		flag = 65535;
-	} else if ($0 === "sound" || $0 === "sounds") {
+	} else if (ckey_2 === "sound" || ckey_2 === "sounds") {
 		flag = 2048;
-	} else if ($0 === "spawn" || $0 === "create") {
+	} else if (ckey_2 === "spawn" || ckey_2 === "create") {
 		flag = 4096;
-	} else if ($0 === "@" || $0 === "prev") {
-		flag = live(previous_rights);
-	} else if ($0 === "rejuv" || $0 === "rejuvinate") {
-		rt.call(f, P("/proc/stack_trace"), null, ["Legacy keyword rejuvinate used defaulting to R_ADMIN"]);
+	} else if (ckey_2 === "@" || ckey_2 === "prev") {
+		flag = previous_rights;
+	} else if (ckey_2 === "rejuv" || ckey_2 === "rejuvinate") {
+		stack_trace("Legacy keyword rejuvinate used defaulting to R_ADMIN");
 		flag = 2;
 	}
-	return live(flag);
+	return flag;
 });
 
-// /proc/admin_keyword_to_path  (code/modules/admin/admin_ranks.dm:72)
+// admin_ranks.dm:72
 rt.def("/proc/admin_keyword_to_path", function admin_keyword_to_path(f: Frame, word: Value) {
-	return rt.call(f, P("/proc/text2path"), null, [rt.call(f, P("/proc/copytext"), null, [live(word), 2, rt.call(f, P("/proc/findtext"), null, [live(word), " ", 2, 0])])]);
+	return text2path(copytext(word, 2, findtext(word, " ", 2, 0)));
 });
 
-// /datum/admin_rank/proc/process_keyword  (code/modules/admin/admin_ranks.dm:76)
+// admin_ranks.dm:76
 rt.def("/datum/admin_rank/proc/process_keyword", function process_keyword(f: Frame, word: Value, previous_rights: Value) {
 	let flag: Value = null, path: Value = null;
-	let $0: any;
-	f.vars = () => [previous_rights, flag, path, $0];
-	if (live(previous_rights) === null) {
-		previous_rights = 0;
-	}
-	if (truthy((flag = rt.call(f, P("/proc/admin_keyword_to_flag"), null, [live(word), live(previous_rights)])))) {
-		$0 = rt.call(f, P("/proc/text2ascii"), null, [live(word), 1]);
-		if ($0 === 43) {
-			(rt.modSrcVar(f, "rights", live(flag), rt.bitOr));
-		} else if ($0 === 45) {
-			(rt.modSrcVar(f, "rights", rt.op(f, "BitNot", [], [live(flag)]), rt.bitAnd));
+	previous_rights ??= 0;
+	if (flag = admin_keyword_to_flag(word, previous_rights)) {
+		const text2ascii_2 = text2ascii(word, 1);
+		if (text2ascii_2 === 43) {
+			(rt.modSrcVar(f, "rights", flag, rt.bitOr));
+		} else if (text2ascii_2 === 45) {
+			(rt.modSrcVar(f, "rights", rt.op(f, "BitNot", [], [flag]), rt.bitAnd));
 		}
 	} else {
-		if (!truthy((path = rt.call(f, P("/proc/admin_keyword_to_path"), null, [live(word)])))) return f.dot;
-		$0 = rt.call(f, P("/proc/text2ascii"), null, [live(word), 1]);
-		if ($0 === 43) {
-			if (!truthy(rt.callName(f, rt.sv(f, "subs"), "Remove", [live(path)]))) {
-				rt.modSrcVar(f, "adds", live(path), add);
+		if (!(path = admin_keyword_to_path(word))) return f.dot;
+		const text2ascii_2 = text2ascii(word, 1);
+		if (text2ascii_2 === 43) {
+			if (!this.subs.Remove(path)) {
+				this.adds += path;
 			}
-		} else if ($0 === 45) {
-			if (truthy(rt.callName(f, rt.sv(f, "adds"), "Remove", [live(path)]))) return f.dot;
-			rt.modSrcVar(f, "subs", live(path), add);
+		} else if (text2ascii_2 === 45) {
+			if (this.adds.Remove(path)) return f.dot;
+			this.subs += path;
 		}
 	}
 	return f.dot;
 });
 
-// /proc/load_admin_ranks  (code/modules/admin/admin_ranks.dm:109)
+// admin_ranks.dm:109
 rt.def("/proc/load_admin_ranks", function load_admin_ranks(f: Frame) {
-	let previous_rights: Value = null, line: Value = null, next: Value = null, R: Value = null, prev: Value = null;
-	let $e: any;
-	f.vars = () => [previous_rights, line, next, R, prev, $e];
-	rt.callName(f, rt.gl("admin_ranks"), "Cut", []);
-	previous_rights = 0;
-	line = null;
-	rt.forList(f, 0, rt.callName(f, rt.world(), "file2list", ["config/admin_ranks.txt"]));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		line = $e;
-		if (!truthy(live(line))) {
+	let line: Value = null, next: Value = null, R: Value = null, prev: Value = null;
+	GLOB.admin_ranks.Cut();
+	let previous_rights: Value = 0;
+	for (line of each(rt.world().file2list("config/admin_ranks.txt"))) {
+		if (!line) {
 			continue;
 		}
-		if (truthy(rt.call(f, P("/proc/findtextEx"), null, [live(line), "#", 1, 2]))) {
+		if (findtextEx(line, "#", 1, 2)) {
 			continue;
 		}
-		next = rt.call(f, P("/proc/findtext"), null, [live(line), "="]);
-		if (!truthy((R = rt.new_(f, T("/datum/admin_rank"), [rt.call(f, P("/proc/ckeyEx"), null, [rt.call(f, P("/proc/copytext"), null, [live(line), 1, live(next)])])])))) {
+		next = findtext(line, "=");
+		if (!(R = new_(T("/datum/admin_rank"), ckeyEx(copytext(line, 1, next))))) {
 			continue;
 		}
-		rt.modGl("admin_ranks", live(R), add);
-		prev = rt.call(f, P("/proc/findchar"), null, [live(line), "+-", live(next), 0]);
-		while (truthy(live(prev))) {
-			next = rt.call(f, P("/proc/findchar"), null, [live(line), "+-", add(live(prev), 1), 0]);
-			rt.callName(f, live(R), "process_keyword", [rt.call(f, P("/proc/copytext"), null, [live(line), live(prev), live(next)]), live(previous_rights)]);
-			prev = live(next);
+		GLOB.admin_ranks += R;
+		prev = findchar(line, "+-", next, 0);
+		while (prev) {
+			next = findchar(line, "+-", prev + 1, 0);
+			R.process_keyword(copytext(line, prev, next), previous_rights);
+			prev = next;
 		}
-		previous_rights = rt.fv(f, "rights", live(R));
+		previous_rights = R.rights;
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /proc/load_admins  (code/modules/admin/admin_ranks.dm:167)  may sleep
+// admin_ranks.dm:167
 rt.def("/proc/load_admins", function* load_admins(f: Frame, target: Value) {
 	let C: Value = null, A: Value = null;
-	let $e: any;
-	f.vars = () => [target, C, A, $e];
-	if (live(target) === null) {
-		target = null;
-	}
-	if (!truthy(live(target))) {
-		yield* g.callName(f, rt.gl("admin_datums"), "Cut", []);
-		C = null;
-		rt.forList(f, 0, rt.gl("admins"), T("/client"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			C = $e;
-			yield* g.callName(f, live(C), "remove_admin_verbs", []);
-			rt.setFv(f, "holder", live(C), null);
+	if (!target) {
+		GLOB.admin_datums.Cut();
+		for (C of each(GLOB.admins, T("/client"))) {
+			C.remove_admin_verbs();
+			C.holder = null;
 		}
-		rt.endFor(f, 0);
-		yield* g.callName(f, rt.gl("admins"), "Cut", []);
-		yield* g.call(f, P("/proc/load_admin_ranks"), null, []);
-		A = null;
-		rt.forList(f, 0, (yield* g.callName(f, rt.world(), "GetConfig", ["admin"])));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			A = $e;
-			yield* g.callName(f, rt.world(), "SetConfig", ["APP/admin", live(A), null]);
+		GLOB.admins.Cut();
+		load_admin_ranks();
+		for (A of each(rt.world().GetConfig("admin"))) {
+			rt.world().SetConfig("APP/admin", A, null);
 		}
-		rt.endFor(f, 0);
 	}
 	return f.dot;
 }, true);

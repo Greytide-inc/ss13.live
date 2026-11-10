@@ -1,7 +1,7 @@
-// From code/modules/paperwork/paperplane.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/paperwork/paperplane.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(7624, "/obj/item/weapon/paperplane", "/obj/item/weapon", {
@@ -19,150 +19,130 @@ rt.type(7624, "/obj/item/weapon/paperplane", "/obj/item/weapon", {
 	max_integrity: 50,
 });
 
-// /obj/item/weapon/paperplane/proc/Initialize  (code/modules/paperwork/paperplane.dm:17)  may sleep
-rt.def("/obj/item/weapon/paperplane/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "pixel_y", (yield* g.call(f, P("/proc/rand"), null, [-8, 8])));
-	rt.setSv(f, "pixel_x", (yield* g.call(f, P("/proc/rand"), null, [-9, 9])));
-	if (truthy(live(f.args[1]))) {
-		rt.setSv(f, "internalPaper", live(f.args[1]));
-		rt.setSv(f, "flags", rt.fv(f, "flags", live(f.args[1])));
-		rt.setSv(f, "color", rt.fv(f, "color", live(f.args[1])));
-		yield* g.callName(f, live(f.args[1]), "forceMove", [live(f.src)]);
+// paperplane.dm:17
+rt.def("/obj/item/weapon/paperplane/proc/Initialize", function* Initialize(f: Frame, mapload: Value, newPaper: Value) {
+	f.dot = (yield* parent_proc());
+	this.pixel_y = rand(-8, 8);
+	this.pixel_x = rand(-9, 9);
+	if (newPaper) {
+		this.internalPaper = newPaper;
+		this.flags = newPaper.flags;
+		this.color = newPaper.color;
+		yield* newPaper.forceMove(this);
 	} else {
-		rt.setSv(f, "internalPaper", (yield* g.new_(f, T("/obj/item/weapon/paper"), [live(f.src)])));
+		this.internalPaper = (yield* new_(T("/obj/item/weapon/paper"), this));
 	}
-	yield* g.srcCall(f, "update_icon");
+	yield* this.update_icon();
 	return f.dot;
-}, true, { args: ["mapload", "newPaper"] });
-
-// /obj/item/weapon/paperplane/proc/Destroy  (code/modules/paperwork/paperplane.dm:31)  may sleep
-rt.def("/obj/item/weapon/paperplane/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.sv(f, "internalPaper"))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "internalPaper")]);
-		rt.setSv(f, "internalPaper", null);
-	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
 }, true);
 
-// /obj/item/weapon/paperplane/proc/suicide_act  (code/modules/paperwork/paperplane.dm:36)  may sleep
+// paperplane.dm:31
+rt.def("/obj/item/weapon/paperplane/proc/Destroy", function* Destroy(f: Frame) {
+	if (this.internalPaper) {
+		yield* qdel(this.internalPaper);
+		this.internalPaper = null;
+	}
+	return (yield* parent_proc());
+}, true);
+
+// paperplane.dm:36
 rt.def("/obj/item/weapon/paperplane/proc/suicide_act", function* suicide_act(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.callName(f, live(user), "Stun", [200]);
-	yield* g.callName(f, live(user), "visible_message", [fmt("<span class='suicide'>＀ jams the ＀ in ＀ nose. It looks like ＀ trying to commit suicide!</span>", [live(user), live(f.src), (yield* g.callName(f, live(user), "p_their", [])), (yield* g.callName(f, live(user), "p_theyre", []))])]);
-	yield* g.callName(f, live(user), "adjust_blurriness", [6]);
-	yield* g.callName(f, live(user), "adjust_eye_damage", [(yield* g.call(f, P("/proc/rand"), null, [6, 8]))]);
-	yield* g.call(f, P("/proc/sleep"), null, [10]);
+	yield* user.Stun(200);
+	user.visible_message(`<span class='suicide'>${user} jams the ${this} in ${user.p_their()} nose. It looks like ${user.p_theyre()} trying to commit suicide!</span>`);
+	yield* user.adjust_blurriness(6);
+	yield* user.adjust_eye_damage(rand(6, 8));
+	yield* sleep(10);
 	return 1;
 }, true);
 
-// /obj/item/weapon/paperplane/proc/update_icon  (code/modules/paperwork/paperplane.dm:44)
+// paperplane.dm:44
 rt.def("/obj/item/weapon/paperplane/proc/update_icon", function update_icon(f: Frame) {
 	let stamped: Value = null, S: Value = null;
-	let $e: any;
-	f.vars = () => [stamped, S, $e];
-	rt.callSrc(f, "cut_overlays", []);
-	if (!truthy((stamped = rt.fv(f, "stamped", rt.sv(f, "internalPaper"))))) return f.dot;
-	S = null;
-	rt.forList(f, 0, live(stamped));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		S = $e;
-		rt.callSrc(f, "add_overlay", [fmt("paperplane_＀", [live(S)])]);
+	this.cut_overlays();
+	if (!(stamped = this.internalPaper.stamped)) return f.dot;
+	for (S of each(stamped)) {
+		this.add_overlay(`paperplane_${S}`);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /obj/item/weapon/paperplane/proc/attack_self  (code/modules/paperwork/paperplane.dm:51)  may sleep
+// paperplane.dm:51
 rt.def("/obj/item/weapon/paperplane/proc/attack_self", function* attack_self(f: Frame, user: Value) {
 	let internal_paper_tmp: Value = null;
-	f.vars = () => [user, internal_paper_tmp];
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You unfold ＀.</span>", [live(f.src)])]);
-	yield* g.callName(f, (internal_paper_tmp = rt.sv(f, "internalPaper")), "forceMove", [rt.sv(f, "loc")]);
-	rt.setSv(f, "internalPaper", null);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-	yield* g.callName(f, live(user), "put_in_hands", [live(internal_paper_tmp)]);
+	to_chat(user, `<span class='notice'>You unfold ${this}.</span>`);
+	yield* (internal_paper_tmp = this.internalPaper).forceMove(this.loc);
+	this.internalPaper = null;
+	yield* qdel(this);
+	yield* user.put_in_hands(internal_paper_tmp);
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/paperplane/proc/attackby  (code/modules/paperwork/paperplane.dm:59)  may sleep
+// paperplane.dm:59
 rt.def("/obj/item/weapon/paperplane/proc/attackby", function* attackby(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/pen")) ? 1 : 0)) || truthy((rt.istype(live(f.args[0]), T("/obj/item/toy/crayon")) ? 1 : 0)))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You should unfold ＀ before changing it.</span>", [live(f.src)])]);
-		return live(f.dot);
-	} else {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/stamp")) ? 1 : 0))) {
-			yield* g.callName(f, rt.sv(f, "internalPaper"), "attackby", [live(f.args[0]), live(f.args[1])]);
-			yield* g.srcCall(f, "update_icon");
-		} else {
-			if (truthy((yield* g.callName(f, live(f.args[0]), "is_hot", [])))) {
-				if ((truthy(rt.bitAnd(rt.fv(f, "disabilities", live(f.args[1])), 256)) && truthy(rt.op(f, "Prob", [], [10])))) {
-					yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='warning'>＀ accidentally ignites themselves!</span>", [live(f.args[1])]), fmt("<span class='userdanger'>You miss the ＀ and accidentally light yourself on fire!</span>", [live(f.src)])]);
-					yield* g.callName(f, live(f.args[1]), "dropItemToGround", [live(f.args[0])]);
-					yield* g.callName(f, live(f.args[1]), "adjust_fire_stacks", [1]);
-					yield* g.callName(f, live(f.args[1]), "IgniteMob", []);
-					return live(f.dot);
-				}
-				if (!rt.le((yield* g.call(f, P("/proc/get_dist"), null, [live(f.args[1]), live(f.src)])), 1)) {
-					return live(f.dot);
-				}
-				yield* g.callName(f, live(f.args[1]), "dropItemToGround", [live(f.src)]);
-				yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='danger'>＀ lights ＀ ablaze with ＀!</span>", [live(f.args[1]), live(f.src), live(f.args[0])]), fmt("<span class='danger'>You light ＀ on fire!</span>", [live(f.src)])]);
-				yield* g.srcCall(f, "fire_act");
-			}
+	yield* parent_proc();
+	if (rt.istype(f.args[0], T("/obj/item/weapon/pen")) || rt.istype(f.args[0], T("/obj/item/toy/crayon"))) {
+		to_chat(f.args[1], `<span class='notice'>You should unfold ${this} before changing it.</span>`);
+		return f.dot;
+	} else if (rt.istype(f.args[0], T("/obj/item/weapon/stamp"))) {
+		yield* this.internalPaper.attackby(f.args[0], f.args[1]);
+		yield* this.update_icon();
+	} else if (f.args[0].is_hot()) {
+		if (rt.bitAnd(f.args[1].disabilities, 256) && prob(10)) {
+			f.args[1].visible_message(`<span class='warning'>${f.args[1]} accidentally ignites themselves!</span>`, `<span class='userdanger'>You miss the ${this} and accidentally light yourself on fire!</span>`);
+			yield* f.args[1].dropItemToGround(f.args[0]);
+			yield* f.args[1].adjust_fire_stacks(1);
+			yield* f.args[1].IgniteMob();
+			return f.dot;
 		}
+		if (!(get_dist(f.args[1], this) <= 1)) {
+			return f.dot;
+		}
+		yield* f.args[1].dropItemToGround(this);
+		f.args[1].visible_message(`<span class='danger'>${f.args[1]} lights ${this} ablaze with ${f.args[0]}!</span>`, `<span class='danger'>You light ${this} on fire!</span>`);
+		yield* this.fire_act();
 	}
-	yield* g.srcCall(f, "add_fingerprint", live(f.args[1]));
+	yield* this.add_fingerprint(f.args[1]);
 	return f.dot;
 }, true, { args: ["P", "user", "params"] });
 
-// /obj/item/weapon/paperplane/proc/throw_at  (code/modules/paperwork/paperplane.dm:87)  may sleep
+// paperplane.dm:87
 rt.def("/obj/item/weapon/paperplane/proc/throw_at", function* throw_at(f: Frame, target: Value, range: Value, speed: Value, thrower: Value, spin: Value, diagonals_first: Value, callback: Value) {
-	f.vars = () => [target, range, speed, thrower, spin, diagonals_first, callback];
-	if (live(spin) === null) {
-		spin = 0;
-	}
-	if (live(diagonals_first) === null) {
-		diagonals_first = 0;
-	}
-	f.dot = (yield* g.callSuper(f, [live(target), live(range), live(speed), live(thrower), 0, live(diagonals_first), live(callback)]));
+	spin ??= 0;
+	diagonals_first ??= 0;
+	f.dot = (yield* parent_proc(target, range, speed, thrower, 0, diagonals_first, callback));
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/paperplane/proc/throw_impact  (code/modules/paperwork/paperplane.dm:90)  may sleep
-rt.def("/obj/item/weapon/paperplane/proc/throw_impact", function* throw_impact(f: Frame) {
-	let H: Value = null;
-	f.vars = () => [H];
-	if ((truthy((yield* g.callSuper(f, [], rt.Args.Same))) || !truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon/human")) ? 1 : 0)))) {
-		return live(f.dot);
+// paperplane.dm:90
+rt.def("/obj/item/weapon/paperplane/proc/throw_impact", function* throw_impact(f: Frame, hit_atom: Value) {
+	if ((yield* parent_proc()) || !rt.istype(hit_atom, T("/mob/living/carbon/human"))) {
+		return f.dot;
 	}
-	H = live(f.args[0]);
-	if (!truthy(rt.op(f, "Prob", [], [2]))) return f.dot;
-	if ((((truthy(rt.fv(f, "head", live(H))) && truthy(rt.bitAnd(rt.gv(f, "flags_cover", rt.fv(f, "head", live(H))), 4))) || (truthy(rt.fv(f, "wear_mask", live(H))) && truthy(rt.bitAnd(rt.gv(f, "flags_cover", rt.fv(f, "wear_mask", live(H))), 2)))) || (truthy(rt.fv(f, "glasses", live(H))) && truthy(rt.bitAnd(rt.gv(f, "flags_cover", rt.fv(f, "glasses", live(H))), 1))))) {
-		return live(f.dot);
+	let H: Value = hit_atom;
+	if (!prob(2)) return f.dot;
+	if (H.head && rt.bitAnd(H.head.flags_cover, HEADCOVERSEYES) || H.wear_mask && rt.bitAnd(H.wear_mask.flags_cover, MASKCOVERSEYES) || H.glasses && rt.bitAnd(H.glasses.flags_cover, GLASSESCOVERSEYES)) {
+		return f.dot;
 	}
-	yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＄！ hits ＀ in the eye!</span>", [live(f.src), live(H)]));
-	yield* g.callName(f, live(H), "adjust_blurriness", [6]);
-	yield* g.callName(f, live(H), "adjust_eye_damage", [(yield* g.call(f, P("/proc/rand"), null, [6, 8]))]);
-	yield* g.callName(f, live(H), "Knockdown", [40]);
-	yield* g.callName(f, live(H), "emote", ["scream"]);
+	this.visible_message(fmt("<span class='danger'>＄！ hits ＀ in the eye!</span>", [this, H]));
+	yield* H.adjust_blurriness(6);
+	yield* H.adjust_eye_damage(rand(6, 8));
+	yield* H.Knockdown(40);
+	yield* H.emote("scream");
 	return f.dot;
-}, true, { args: ["hit_atom"], waitfor: false });
+}, true, { waitfor: false });
 
-// /obj/item/weapon/paper/proc/AltClick  (code/modules/paperwork/paperplane.dm:103)  may sleep
+// paperplane.dm:103
 rt.def("/obj/item/weapon/paper/proc/AltClick", function* AltClick(f: Frame, user: Value, I: Value) {
-	f.vars = () => [user, I];
-	if (truthy((rt.istype(live(user), T("/mob/living/carbon")) ? 1 : 0))) {
-		if (((!rt.le((yield* g.call(f, P("/proc/get_dist"), null, [live(f.src), live(user)])), 1) || truthy(rt.fv(f, "stat", live(user)))) || truthy((yield* g.callName(f, live(user), "restrained", []))))) {
-			return live(f.dot);
+	if (rt.istype(user, T("/mob/living/carbon"))) {
+		if (!(get_dist(this, user) <= 1) || user.stat || user.restrained()) {
+			return f.dot;
 		}
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You fold ＀ into the shape of a plane!</span>", [live(f.src)])]);
-		yield* g.callName(f, live(user), "temporarilyRemoveItemFromInventory", [live(f.src)]);
-		I = (yield* g.new_(f, T("/obj/item/weapon/paperplane"), [live(user), live(f.src)]));
-		yield* g.callName(f, live(user), "put_in_hands", [live(I)]);
+		to_chat(user, `<span class='notice'>You fold ${this} into the shape of a plane!</span>`);
+		yield* user.temporarilyRemoveItemFromInventory(this);
+		I = (yield* new_(T("/obj/item/weapon/paperplane"), user, this));
+		yield* user.put_in_hands(I);
 	} else {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'> You lack the dexterity to fold ％！. </span>", [live(f.src)])]);
+		to_chat(user, fmt("<span class='notice'> You lack the dexterity to fold ％！. </span>", [this]));
 	}
 	return f.dot;
 }, true);

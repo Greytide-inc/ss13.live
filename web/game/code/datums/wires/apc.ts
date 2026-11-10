@@ -1,7 +1,7 @@
-// From code/datums/wires/apc.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/datums/wires/apc.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(1062, "/datum/wires/apc", "/datum/wires", {
@@ -9,92 +9,65 @@ rt.type(1062, "/datum/wires/apc", "/datum/wires", {
 	proper_name: "APC",
 });
 
-// /datum/wires/apc/proc/New  (code/datums/wires/apc.dm:10)
-rt.def("/datum/wires/apc/proc/New", function New(f: Frame) {
-	rt.setSv(f, "wires", rt.list("Main Power 1", "Main Power 2", "ID Scan", "AI Connection"));
-	rt.callSrc(f, "add_duds", [6]);
-	rt.callSuper(f, [], rt.Args.Same);
+// apc.dm:10
+rt.def("/datum/wires/apc/proc/New", function New(f: Frame, holder: Value) {
+	this.wires = list("Main Power 1", "Main Power 2", "ID Scan", "AI Connection");
+	this.add_duds(6);
+	parent_proc();
 	return f.dot;
-}, false, { args: ["holder"] });
+}, false);
 
-// /datum/wires/apc/proc/interactable  (code/datums/wires/apc.dm:14)
+// apc.dm:14
 rt.def("/datum/wires/apc/proc/interactable", function interactable(f: Frame, user: Value) {
 	let A: Value = null;
-	f.vars = () => [A];
-	if (!(truthy(rt.gv(f, "panel_open", (A = rt.sv(f, "holder")))) && !truthy(rt.fv(f, "opened", live(A))))) return f.dot;
+	if (!((A = this.holder).panel_open && !A.opened)) return f.dot;
 	return 1;
 });
 
-// /datum/wires/apc/proc/get_status  (code/datums/wires/apc.dm:19)
+// apc.dm:19
 rt.def("/datum/wires/apc/proc/get_status", function get_status(f: Frame) {
-	let A: Value = null, status: Value = null;
-	let $0: any;
-	f.vars = () => [A, status, $0];
-	A = rt.sv(f, "holder");
-	status = rt.list();
-	if (truthy(rt.fv(f, "locked", live(A)))) {
-		$0 = "red";
-	} else {
-		$0 = "green";
-	}
-	status = rt.modify(live(status), fmt("The interface light is ＀.", [$0]), add);
-	if (truthy(rt.fv(f, "shorted", live(A)))) {
-		$0 = "lit";
-	} else {
-		$0 = "off";
-	}
-	status = rt.modify(live(status), fmt("The short indicator is ＀.", [$0]), add);
-	if (!truthy(rt.fv(f, "aidisabled", live(A)))) {
-		$0 = "on";
-	} else {
-		$0 = "off";
-	}
-	return (status = rt.modify(live(status), fmt("The AI connection light is ＀.", [$0]), add));
+	let A: Value = this.holder;
+	let status: Value = list();
+	status += `The interface light is ${A.locked ? "red" : "green"}.`;
+	status += `The short indicator is ${A.shorted ? "lit" : "off"}.`;
+	return (status += `The AI connection light is ${!A.aidisabled ? "on" : "off"}.`);
 });
 
-// /datum/wires/apc/proc/on_pulse  (code/datums/wires/apc.dm:27)  may sleep
+// apc.dm:27
 rt.def("/datum/wires/apc/proc/on_pulse", function* on_pulse(f: Frame, wire: Value) {
-	let A: Value = null;
-	let $0: any;
-	f.vars = () => [wire, A, $0];
-	A = rt.sv(f, "holder");
-	$0 = live(wire);
-	if ($0 === "Main Power 1" || $0 === "Main Power 2") {
-		if (!truthy(rt.fv(f, "shorted", live(A)))) {
-			rt.setFv(f, "shorted", live(A), 1);
-			yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(A), P("/obj/machinery/power/apc/proc/reset"), live(wire)])), 1200]);
+	let A: Value = this.holder;
+	if (wire === "Main Power 1" || wire === "Main Power 2") {
+		if (!A.shorted) {
+			A.shorted = 1;
+			yield* addtimer((yield* new_(T("/datum/callback"), A, P("/obj/machinery/power/apc/proc/reset"), wire)), 1200);
 		}
-	} else if ($0 === "ID Scan") {
-		rt.setFv(f, "locked", live(A), 0);
-		yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(A), P("/obj/machinery/power/apc/proc/reset"), live(wire)])), 300]);
-	} else if ($0 === "AI Connection") {
-		if (truthy(rt.fv(f, "aidisabled", live(A)))) return f.dot;
-		rt.setFv(f, "aidisabled", live(A), 1);
-		yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(A), P("/obj/machinery/power/apc/proc/reset"), live(wire)])), 10]);
+	} else if (wire === "ID Scan") {
+		A.locked = 0;
+		yield* addtimer((yield* new_(T("/datum/callback"), A, P("/obj/machinery/power/apc/proc/reset"), wire)), 300);
+	} else if (wire === "AI Connection") {
+		if (A.aidisabled) return f.dot;
+		A.aidisabled = 1;
+		yield* addtimer((yield* new_(T("/datum/callback"), A, P("/obj/machinery/power/apc/proc/reset"), wire)), 10);
 	}
 	return f.dot;
 }, true);
 
-// /datum/wires/apc/proc/on_cut  (code/datums/wires/apc.dm:42)  may sleep
+// apc.dm:42
 rt.def("/datum/wires/apc/proc/on_cut", function* on_cut(f: Frame, index: Value, mend: Value) {
-	let A: Value = null;
-	let $0: any;
-	f.vars = () => [index, mend, A, $0];
-	A = rt.sv(f, "holder");
-	$0 = live(index);
-	if ($0 === "Main Power 1" || $0 === "Main Power 2") {
-		if (((truthy(live(mend)) && !truthy((yield* g.srcCall(f, "is_cut", "Main Power 1")))) && !truthy((yield* g.srcCall(f, "is_cut", "Main Power 2"))))) {
-			rt.setFv(f, "shorted", live(A), 0);
-			yield* g.callName(f, live(A), "shock", [live(f.usr), 50]);
+	let A: Value = this.holder;
+	if (index === "Main Power 1" || index === "Main Power 2") {
+		if (mend && !this.is_cut("Main Power 1") && !this.is_cut("Main Power 2")) {
+			A.shorted = 0;
+			yield* A.shock(f.usr, 50);
 		} else {
-			rt.setFv(f, "shorted", live(A), 1);
-			yield* g.callName(f, live(A), "shock", [live(f.usr), 50]);
+			A.shorted = 1;
+			yield* A.shock(f.usr, 50);
 		}
-	} else if ($0 === "AI Connection") {
-		if (truthy(live(mend))) {
-			rt.setFv(f, "aidisabled", live(A), 0);
+	} else if (index === "AI Connection") {
+		if (mend) {
+			A.aidisabled = 0;
 		} else {
-			rt.setFv(f, "aidisabled", live(A), 1);
+			A.aidisabled = 1;
 		}
 	}
 	return f.dot;

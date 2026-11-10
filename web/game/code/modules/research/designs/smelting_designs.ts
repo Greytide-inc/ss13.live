@@ -1,7 +1,7 @@
-// From code/modules/research/designs/smelting_designs.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/research/designs/smelting_designs.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(3298, "/datum/design/plasteel_alloy", "/datum/design", {
@@ -13,14 +13,12 @@ rt.type(3298, "/datum/design/plasteel_alloy", "/datum/design", {
 	build_path: rt.typePath("/obj/item/stack/sheet/plasteel"),
 });
 
-// /datum/design/plasteel_alloy/proc/<init>  (code/modules/research/designs/smelting_designs.dm:7)
+// smelting_designs.dm:7
 rt.def("/datum/design/plasteel_alloy/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 2000, "$plasma", 2000]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("initial"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 2000, "$plasma", 2000]);
+
+	this.category = list("initial");
 	return f.dot;
 });
 
@@ -33,14 +31,12 @@ rt.type(3299, "/datum/design/plastitanium_alloy", "/datum/design", {
 	build_path: rt.typePath("/obj/item/stack/sheet/mineral/plastitanium"),
 });
 
-// /datum/design/plastitanium_alloy/proc/<init>  (code/modules/research/designs/smelting_designs.dm:16)
+// smelting_designs.dm:16
 rt.def("/datum/design/plastitanium_alloy/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$titanium", 2000, "$plasma", 2000]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("initial"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$titanium", 2000, "$plasma", 2000]);
+
+	this.category = list("initial");
 	return f.dot;
 });
 
@@ -55,14 +51,12 @@ rt.type(3300, "/datum/design/alienalloy", "/datum/design", {
 	build_path: rt.typePath("/obj/item/stack/sheet/mineral/abductor"),
 });
 
-// /datum/design/alienalloy/proc/<init>  (code/modules/research/designs/smelting_designs.dm:24)
+// smelting_designs.dm:24
 rt.def("/datum/design/alienalloy/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["abductor", 1, "materials", 7, "plasmatech", 2]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 4000, "$plasma", 4000]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Stock Parts"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["abductor", 1, "materials", 7, "plasmatech", 2]);
+	this.materials = rt.alist(f, ["$metal", 4000, "$plasma", 4000]);
+
+	this.category = list("Stock Parts");
 	return f.dot;
 });

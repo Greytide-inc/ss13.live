@@ -1,7 +1,7 @@
-// From code/modules/ruins/objects_and_mobs/necropolis_gate.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/ruins/objects_and_mobs/necropolis_gate.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(12990, "/obj/structure/necropolis_gate", "/obj/structure", {
@@ -25,51 +25,49 @@ rt.type(12990, "/obj/structure/necropolis_gate", "/obj/structure", {
 	resistance_flags: 115,
 }, { global: { top_overlay: 805, door_overlay: 806, dais_overlay: 807 } });
 
-// /obj/structure/necropolis_gate/proc/Initialize  (code/modules/ruins/objects_and_mobs/necropolis_gate.dm:26)  may sleep
+// necropolis_gate.dm:26
 rt.def("/obj/structure/necropolis_gate/proc/Initialize", function* Initialize(f: Frame) {
-	let sight_blocker_turf: Value = null, i: Value = null;
+	let i: Value = null;
 	let $e: any;
-	f.vars = () => [sight_blocker_turf, i, $e];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	sight_blocker_turf = rt.getStep(f, live(f.src), 0);
-	if (truthy(rt.sv(f, "sight_blocker_distance"))) {
-		i = null;
-		rt.forRange(f, 0, 1, rt.sv(f, "sight_blocker_distance"), 1);
+	f.dot = (yield* parent_proc());
+	let sight_blocker_turf: Value = rt.getStep(f, this, 0);
+	if (this.sight_blocker_distance) {
+		rt.forRange(f, 0, 1, this.sight_blocker_distance, 1);
 		while (($e = rt.next(f, 0)) !== undefined) {
 			i = $e;
-			if (!truthy(live(sight_blocker_turf))) {
+			if (!sight_blocker_turf) {
 				break;
 			}
-			sight_blocker_turf = rt.getStep(f, live(sight_blocker_turf), 1);
+			sight_blocker_turf = rt.getStep(f, sight_blocker_turf, 1);
 		}
 		rt.endFor(f, 0);
 	}
-	if (truthy(live(sight_blocker_turf))) {
-		rt.setSv(f, "sight_blocker", (yield* g.new_(f, T("/obj/structure/opacity_blocker"), [live(sight_blocker_turf)])));
+	if (sight_blocker_turf) {
+		this.sight_blocker = (yield* new_(T("/obj/structure/opacity_blocker"), sight_blocker_turf));
 	}
-	rt.setSv(f, "icon_state", "gate_bottom");
-	rt.setGl("top_overlay", (yield* g.call(f, P("/proc/mutable_appearance"), null, [rt.rsc("icons/effects/96x96.dmi"), "gate_top"])));
-	rt.setFv(f, "layer", rt.gl("top_overlay"), 4.300000190734863);
-	yield* g.srcCall(f, "add_overlay", rt.gl("top_overlay"));
-	rt.setGl("door_overlay", (yield* g.call(f, P("/proc/mutable_appearance"), null, [rt.rsc("icons/effects/96x96.dmi"), "door"])));
-	rt.setFv(f, "layer", rt.gl("door_overlay"), 4.300000190734863);
-	yield* g.srcCall(f, "add_overlay", rt.gl("door_overlay"));
-	rt.setGl("dais_overlay", (yield* g.call(f, P("/proc/mutable_appearance"), null, [rt.rsc("icons/effects/96x96.dmi"), "gate_dais"])));
-	rt.setFv(f, "layer", rt.gl("dais_overlay"), 2.049999952316284);
-	yield* g.srcCall(f, "add_overlay", rt.gl("dais_overlay"));
+	this.icon_state = "gate_bottom";
+	GLOB.top_overlay = mutable_appearance(rt.rsc("icons/effects/96x96.dmi"), "gate_top");
+	GLOB.top_overlay.layer = EDGED_TURF_LAYER;
+	this.add_overlay(GLOB.top_overlay);
+	GLOB.door_overlay = mutable_appearance(rt.rsc("icons/effects/96x96.dmi"), "door");
+	GLOB.door_overlay.layer = EDGED_TURF_LAYER;
+	this.add_overlay(GLOB.door_overlay);
+	GLOB.dais_overlay = mutable_appearance(rt.rsc("icons/effects/96x96.dmi"), "gate_dais");
+	GLOB.dais_overlay.layer = CLOSED_TURF_LAYER;
+	this.add_overlay(GLOB.dais_overlay);
 	return f.dot;
 }, true);
 
-// /obj/structure/necropolis_gate/proc/Destroy  (code/modules/ruins/objects_and_mobs/necropolis_gate.dm:48)  may sleep
-rt.def("/obj/structure/necropolis_gate/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(live(f.args[0]))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "sight_blocker"), 1]);
-		f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+// necropolis_gate.dm:48
+rt.def("/obj/structure/necropolis_gate/proc/Destroy", function* Destroy(f: Frame, force: Value) {
+	if (force) {
+		yield* qdel(this.sight_blocker, 1);
+		f.dot = (yield* parent_proc());
 	} else {
 		return 1;
 	}
 	return f.dot;
-}, true, { args: ["force"] });
+}, true);
 
 rt.type(12993, "/obj/structure/opacity_blocker", "/obj/structure", {
 	icon: rt.rsc("icons/effects/effects.dmi"),
@@ -78,93 +76,83 @@ rt.type(12993, "/obj/structure/opacity_blocker", "/obj/structure", {
 	opacity: 1,
 });
 
-// /obj/structure/opacity_blocker/proc/Destroy  (code/modules/ruins/objects_and_mobs/necropolis_gate.dm:67)  may sleep
-rt.def("/obj/structure/opacity_blocker/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(live(f.args[0]))) {
-		f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+// necropolis_gate.dm:67
+rt.def("/obj/structure/opacity_blocker/proc/Destroy", function* Destroy(f: Frame, force: Value) {
+	if (force) {
+		f.dot = (yield* parent_proc());
 	} else {
 		return 1;
 	}
 	return f.dot;
-}, true, { args: ["force"] });
+}, true);
 
-// /obj/structure/necropolis_gate/proc/attack_hand  (code/modules/ruins/objects_and_mobs/necropolis_gate.dm:73)  may sleep
+// necropolis_gate.dm:73
 rt.def("/obj/structure/necropolis_gate/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
-	let $0: any, $1: any;
-	f.vars = () => [user, $0, $1];
-	if (truthy(rt.sv(f, "locked"))) {
-		$0 = live(user);
-		if (truthy(rt.sv(f, "open"))) {
-			$1 = "stuck open";
-		} else {
-			$1 = "locked";
-		}
-		yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='boldannounce'>It's ＀.</span>", [$1])]);
-		return live(f.dot);
+	if (this.locked) {
+		to_chat(user, `<span class='boldannounce'>It's ${this.open ? "stuck open" : "locked"}.</span>`);
+		return f.dot;
 	}
-	yield* g.srcCall(f, "toggle_the_gate", live(user));
+	yield* this.toggle_the_gate(user);
 	return f.dot;
 }, true);
 
-// /obj/structure/necropolis_gate/proc/toggle_the_gate  (code/modules/ruins/objects_and_mobs/necropolis_gate.dm:81)  may sleep
+// necropolis_gate.dm:81
 rt.def("/obj/structure/necropolis_gate/proc/toggle_the_gate", function* toggle_the_gate(f: Frame, user: Value, legion_damaged: Value) {
-	let _T: Value = null, sight_blocker_turf: Value = null, i: Value = null;
+	let sight_blocker_turf: Value = null, i: Value = null;
 	let $e: any;
-	f.vars = () => [user, legion_damaged, _T, sight_blocker_turf, i, $e];
-	if (truthy(rt.sv(f, "changing_openness"))) {
-		return live(f.dot);
+	if (this.changing_openness) {
+		return f.dot;
 	}
-	rt.setSv(f, "changing_openness", 1);
-	_T = rt.getStep(f, live(f.src), 0);
-	if (truthy(rt.sv(f, "open"))) {
-		yield* g.new_(f, T("/obj/effect/temp_visual/necropolis"), [live(_T)]);
-		yield* g.srcCall(f, "visible_message", "<span class='boldwarning'>The door slams closed!</span>");
-		yield* g.call(f, P("/proc/sleep"), null, [1]);
-		yield* g.call(f, P("/proc/playsound"), null, [null, live(_T), null, rt.rsc("sound/effects/stonedoor_openclose.ogg"), null, 300, null, 1, "frequency", 80000], rt.Args.Named);
-		yield* g.call(f, P("/proc/sleep"), null, [1]);
-		rt.setSv(f, "density", 1);
-		yield* g.call(f, P("/proc/sleep"), null, [1]);
-		sight_blocker_turf = rt.getStep(f, live(f.src), 0);
-		if (truthy(rt.sv(f, "sight_blocker_distance"))) {
-			i = null;
-			rt.forRange(f, 0, 1, rt.sv(f, "sight_blocker_distance"), 1);
+	this.changing_openness = 1;
+	let _T: Value = rt.getStep(f, this, 0);
+	if (this.open) {
+		yield* new_(T("/obj/effect/temp_visual/necropolis"), _T);
+		this.visible_message("<span class='boldwarning'>The door slams closed!</span>");
+		yield* sleep(1);
+		yield* playsound(_T, rt.rsc("sound/effects/stonedoor_openclose.ogg"), 300, 1, { frequency: 80000 });
+		yield* sleep(1);
+		this.density = 1;
+		yield* sleep(1);
+		sight_blocker_turf = rt.getStep(f, this, 0);
+		if (this.sight_blocker_distance) {
+			rt.forRange(f, 0, 1, this.sight_blocker_distance, 1);
 			while (($e = rt.next(f, 0)) !== undefined) {
 				i = $e;
-				if (!truthy(live(sight_blocker_turf))) {
+				if (!sight_blocker_turf) {
 					break;
 				}
-				sight_blocker_turf = rt.getStep(f, live(sight_blocker_turf), 1);
+				sight_blocker_turf = rt.getStep(f, sight_blocker_turf, 1);
 			}
 			rt.endFor(f, 0);
 		}
-		if (truthy(live(sight_blocker_turf))) {
-			yield* g.callName(f, rt.sv(f, "sight_blocker"), "forceMove", [live(sight_blocker_turf)]);
+		if (sight_blocker_turf) {
+			yield* this.sight_blocker.forceMove(sight_blocker_turf);
 		}
-		yield* g.call(f, P("/proc/sleep"), null, [2.5]);
-		yield* g.call(f, P("/proc/playsound"), null, [null, live(_T), null, rt.rsc("sound/magic/clockwork/invoke_general.ogg"), null, 30, null, 1, "frequency", 15000], rt.Args.Named);
-		yield* g.srcCall(f, "add_overlay", rt.gl("door_overlay"));
-		rt.setSv(f, "open", 0);
+		yield* sleep(2.5);
+		yield* playsound(_T, rt.rsc("sound/magic/clockwork/invoke_general.ogg"), 30, 1, { frequency: 15000 });
+		this.add_overlay(GLOB.door_overlay);
+		this.open = 0;
 	} else {
-		yield* g.srcCall(f, "cut_overlay", rt.gl("door_overlay"));
-		yield* g.new_(f, T("/obj/effect/temp_visual/necropolis/open"), [live(_T)]);
-		yield* g.call(f, P("/proc/sleep"), null, [2]);
-		yield* g.srcCall(f, "visible_message", "<span class='warning'>The door starts to grind open...</span>");
-		yield* g.call(f, P("/proc/playsound"), null, [null, live(_T), null, rt.rsc("sound/effects/stonedoor_openclose.ogg"), null, 300, null, 1, "frequency", 20000], rt.Args.Named);
-		yield* g.call(f, P("/proc/sleep"), null, [22]);
-		yield* g.callName(f, rt.sv(f, "sight_blocker"), "forceMove", [live(f.src)]);
-		yield* g.call(f, P("/proc/sleep"), null, [5]);
-		rt.setSv(f, "density", 0);
-		yield* g.call(f, P("/proc/sleep"), null, [5]);
-		rt.setSv(f, "open", 1);
+		this.cut_overlay(GLOB.door_overlay);
+		yield* new_(T("/obj/effect/temp_visual/necropolis/open"), _T);
+		yield* sleep(2);
+		this.visible_message("<span class='warning'>The door starts to grind open...</span>");
+		yield* playsound(_T, rt.rsc("sound/effects/stonedoor_openclose.ogg"), 300, 1, { frequency: 20000 });
+		yield* sleep(22);
+		yield* this.sight_blocker.forceMove(this);
+		yield* sleep(5);
+		this.density = 0;
+		yield* sleep(5);
+		this.open = 1;
 	}
-	rt.setSv(f, "changing_openness", 0);
+	this.changing_openness = 0;
 	return 1;
 }, true);
 
-// /datum/controller/global_vars/proc/InitGlobalnecropolis_gate  (code/modules/ruins/objects_and_mobs/necropolis_gate.dm:120)
+// necropolis_gate.dm:120
 rt.def("/datum/controller/global_vars/proc/InitGlobalnecropolis_gate", function InitGlobalnecropolis_gate(f: Frame) {
-	rt.setGl("necropolis_gate", null);
-	rt.modSrcVar(f, "gvars_datum_init_order", "necropolis_gate", add);
+	GLOB.necropolis_gate = null;
+	this.gvars_datum_init_order += "necropolis_gate";
 	return f.dot;
 });
 
@@ -173,87 +161,71 @@ rt.type(12992, "/obj/structure/necropolis_gate/legion_gate", "/obj/structure/nec
 	desc: "A tremendous, impossibly large gateway, set into a massive tower of stone.",
 });
 
-// /obj/structure/necropolis_gate/legion_gate/proc/Initialize  (code/modules/ruins/objects_and_mobs/necropolis_gate.dm:126)  may sleep
+// necropolis_gate.dm:126
 rt.def("/obj/structure/necropolis_gate/legion_gate/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setGl("necropolis_gate", live(f.src));
+	f.dot = (yield* parent_proc());
+	GLOB.necropolis_gate = this;
 	return f.dot;
 }, true);
 
-// /obj/structure/necropolis_gate/legion_gate/proc/Destroy  (code/modules/ruins/objects_and_mobs/necropolis_gate.dm:131)  may sleep
-rt.def("/obj/structure/necropolis_gate/legion_gate/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(live(f.args[0]))) {
-		if (isEqual(rt.gl("necropolis_gate"), live(f.src))) {
-			rt.setGl("necropolis_gate", null);
+// necropolis_gate.dm:131
+rt.def("/obj/structure/necropolis_gate/legion_gate/proc/Destroy", function* Destroy(f: Frame, force: Value) {
+	if (force) {
+		if (GLOB.necropolis_gate == this) {
+			GLOB.necropolis_gate = null;
 		}
-		f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+		f.dot = (yield* parent_proc());
 	} else {
 		return 1;
 	}
 	return f.dot;
-}, true, { args: ["force"] });
+}, true);
 
-// /obj/structure/necropolis_gate/legion_gate/proc/attack_hand  (code/modules/ruins/objects_and_mobs/necropolis_gate.dm:138)  may sleep
-rt.def("/obj/structure/necropolis_gate/legion_gate/proc/attack_hand", function* attack_hand(f: Frame) {
+// necropolis_gate.dm:138
+rt.def("/obj/structure/necropolis_gate/legion_gate/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
 	let safety: Value = null;
-	f.vars = () => [safety];
-	if ((!truthy(rt.sv(f, "open")) && !truthy(rt.sv(f, "changing_openness")))) {
-		if ((((((isEqual((safety = (yield* g.call(f, P("/proc/alert"), null, [live(f.args[0]), "You think this might be a bad idea...", "Knock on the door?", "Proceed", "Abort"]))), "Abort") || !rt.le((yield* g.call(f, P("/proc/get_dist"), null, [live(f.src), live(f.args[0])])), 1)) || !truthy(live(f.src))) || truthy(rt.sv(f, "open"))) || truthy(rt.sv(f, "changing_openness"))) || truthy((yield* g.callName(f, live(f.args[0]), "incapacitated", []))))) {
-			return live(f.dot);
+	if (!this.open && !this.changing_openness) {
+		if ((safety = (yield* alert(user, "You think this might be a bad idea...", "Knock on the door?", "Proceed", "Abort"))) == "Abort" || !(get_dist(this, user) <= 1) || !this || this.open || this.changing_openness || user.incapacitated()) {
+			return f.dot;
 		}
-		yield* g.callName(f, live(f.args[0]), "visible_message", [fmt("<span class='warning'>＀ knocks on ＀...</span>", [live(f.args[0]), live(f.src)]), fmt("<span class='boldannounce'>You tentatively knock on ＀...</span>", [live(f.src)])]);
-		yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.args[0])), rt.rsc("sound/effects/shieldbash.ogg"), 100, 1]);
-		yield* g.call(f, P("/proc/sleep"), null, [50]);
+		user.visible_message(`<span class='warning'>${user} knocks on ${this}...</span>`, `<span class='boldannounce'>You tentatively knock on ${this}...</span>`);
+		playsound(user.loc, rt.rsc("sound/effects/shieldbash.ogg"), 100, 1);
+		yield* sleep(50);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /obj/structure/necropolis_gate/legion_gate/proc/toggle_the_gate  (code/modules/ruins/objects_and_mobs/necropolis_gate.dm:150)  may sleep
-rt.def("/obj/structure/necropolis_gate/legion_gate/proc/toggle_the_gate", function* toggle_the_gate(f: Frame) {
-	let _T: Value = null, M: Value = null, release_overlay: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [_T, M, release_overlay, $0, $e];
-	if (truthy(rt.sv(f, "open"))) {
-		return live(f.dot);
+// necropolis_gate.dm:150
+rt.def("/obj/structure/necropolis_gate/legion_gate/proc/toggle_the_gate", function* toggle_the_gate(f: Frame, user: Value, legion_damaged: Value) {
+	let M: Value = null;
+	let $e: any;
+	if (this.open) {
+		return f.dot;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(live(f.dot))) return f.dot;
-	rt.setSv(f, "locked", 1);
-	_T = rt.getStep(f, live(f.src), 0);
-	yield* g.srcCall(f, "visible_message", "<span class='userdanger'>Something horrible emerges from the Necropolis!</span>");
-	if (truthy(live(f.args[1]))) {
-		yield* g.call(f, P("/proc/message_admins"), null, ["Legion took damage while the necropolis gate was closed, and has released itself!"]);
-		yield* g.call(f, P("/proc/log_game"), null, ["Legion took damage while the necropolis gate was closed and released itself."]);
+	f.dot = (yield* parent_proc());
+	if (!f.dot) return f.dot;
+	this.locked = 1;
+	let _T: Value = rt.getStep(f, this, 0);
+	this.visible_message("<span class='userdanger'>Something horrible emerges from the Necropolis!</span>");
+	if (legion_damaged) {
+		message_admins("Legion took damage while the necropolis gate was closed, and has released itself!");
+		log_game("Legion took damage while the necropolis gate was closed and released itself.");
 	} else {
-		if (truthy(live(f.args[0]))) {
-			$0 = "key_name_admin(user)";
-		} else {
-			$0 = "Unknown";
-		}
-		yield* g.call(f, P("/proc/message_admins"), null, [fmt("＀ has released Legion!", [$0])]);
-		if (truthy(live(f.args[0]))) {
-			$0 = "key_name(user)";
-		} else {
-			$0 = "Unknown";
-		}
-		yield* g.call(f, P("/proc/log_game"), null, [fmt("＀ released Legion.", [$0])]);
+		message_admins(`${user ? "key_name_admin(user)" : "Unknown"} has released Legion!`);
+		log_game(`${user ? "key_name(user)" : "Unknown"} released Legion.`);
 	}
-	M = null;
-	rt.forList(f, 0, rt.gl("player_list"), T("/mob"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if (isEqual(rt.fv(f, "z", live(M)), rt.sv(f, "z"))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(M), "<span class='userdanger'>Discordant whispers flood your mind in a thousand voices. Each one speaks your name, over and over. Something horrible has been released.</span>"]);
-			yield* g.callName(f, live(M), "playsound_local", [null, live(_T), null, rt.rsc("sound/creatures/legion_spawn.ogg"), null, 100, null, 0, null, 0, null, 0, "pressure_affected", 0], rt.Args.Named);
-			yield* g.call(f, P("/proc/flash_color"), null, [null, live(M), "flash_color", "#FF0000", "flash_time", 50], rt.Args.Named);
+	for (M of each(GLOB.player_list, T("/mob"))) {
+		if (M.z == this.z) {
+			to_chat(M, "<span class='userdanger'>Discordant whispers flood your mind in a thousand voices. Each one speaks your name, over and over. Something horrible has been released.</span>");
+			yield* M.playsound_local(_T, rt.rsc("sound/creatures/legion_spawn.ogg"), 100, 0, 0, 0, { pressure_affected: 0 });
+			yield* flash_color(M, { flash_color: "#FF0000", flash_time: 50 });
 		}
 	}
-	rt.endFor(f, 0);
-	release_overlay = (yield* g.call(f, P("/proc/mutable_appearance"), null, [rt.rsc("icons/effects/effects.dmi"), "legiondoor"]));
-	yield* g.call(f, P("/proc/notify_ghosts"), null, [null, fmt("Legion has been released in the ＀!", [(yield* g.call(f, P("/proc/get_area"), null, [live(f.src)]))]), "source", live(f.src), "alert_overlay", live(release_overlay), "action", "jump"], rt.Args.Named);
+	let release_overlay: Value = mutable_appearance(rt.rsc("icons/effects/effects.dmi"), "legiondoor");
+	yield* notify_ghosts(`Legion has been released in the ${get_area(this)}!`, { source: this, alert_overlay: release_overlay, action: "jump" });
 	return f.dot;
-}, true, { args: ["user", "legion_damaged"] });
+}, true);
 
 rt.type(12994, "/obj/structure/necropolis_arch", "/obj/structure", {
 	open: 0,
@@ -269,25 +241,25 @@ rt.type(12994, "/obj/structure/necropolis_arch", "/obj/structure", {
 	resistance_flags: 115,
 }, { global: { top_overlay: 808 } });
 
-// /obj/structure/necropolis_arch/proc/Initialize  (code/modules/ruins/objects_and_mobs/necropolis_gate.dm:197)
+// necropolis_gate.dm:197
 rt.def("/obj/structure/necropolis_arch/proc/Initialize", function Initialize(f: Frame) {
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "icon_state", "arch_bottom");
-	rt.setGl("top_overlay#2", rt.call(f, P("/proc/mutable_appearance"), null, [rt.rsc("icons/effects/160x160.dmi"), "arch_top"]));
-	rt.setFv(f, "layer", rt.gl("top_overlay#2"), 4.300000190734863);
-	rt.callSrc(f, "add_overlay", [rt.gl("top_overlay#2")]);
+	f.dot = parent_proc();
+	this.icon_state = "arch_bottom";
+	rt.setGl("top_overlay#2", mutable_appearance(rt.rsc("icons/effects/160x160.dmi"), "arch_top"));
+	rt.gl("top_overlay#2").layer = EDGED_TURF_LAYER;
+	this.add_overlay(rt.gl("top_overlay#2"));
 	return f.dot;
 });
 
-// /obj/structure/necropolis_arch/proc/Destroy  (code/modules/ruins/objects_and_mobs/necropolis_gate.dm:208)  may sleep
-rt.def("/obj/structure/necropolis_arch/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(live(f.args[0]))) {
-		f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+// necropolis_gate.dm:208
+rt.def("/obj/structure/necropolis_arch/proc/Destroy", function* Destroy(f: Frame, force: Value) {
+	if (force) {
+		f.dot = (yield* parent_proc());
 	} else {
 		return 1;
 	}
 	return f.dot;
-}, true, { args: ["force"] });
+}, true);
 
 rt.type(12995, "/obj/structure/stone_tile", "/obj/structure", {
 	tile_key: "pristine_tile",
@@ -300,19 +272,19 @@ rt.type(12995, "/obj/structure/stone_tile", "/obj/structure", {
 	resistance_flags: 115,
 });
 
-// /obj/structure/stone_tile/proc/Initialize  (code/modules/ruins/objects_and_mobs/necropolis_gate.dm:224)
-rt.def("/obj/structure/stone_tile/proc/Initialize", function Initialize(f: Frame) {
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "icon_state", fmt("＀＀", [rt.sv(f, "tile_key"), rt.call(f, P("/proc/rand"), null, [1, rt.sv(f, "tile_random_sprite_max")])]));
+// necropolis_gate.dm:224
+rt.def("/obj/structure/stone_tile/proc/Initialize", function Initialize(f: Frame, mapload: Value) {
+	f.dot = parent_proc();
+	this.icon_state = `${this.tile_key}${rand(1, this.tile_random_sprite_max)}`;
 	return f.dot;
-}, false, { args: ["mapload"] });
+}, false);
 
-// /obj/structure/stone_tile/proc/Destroy  (code/modules/ruins/objects_and_mobs/necropolis_gate.dm:229)  may sleep
-rt.def("/obj/structure/stone_tile/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(live(f.args[0]))) {
-		f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+// necropolis_gate.dm:229
+rt.def("/obj/structure/stone_tile/proc/Destroy", function* Destroy(f: Frame, force: Value) {
+	if (force) {
+		f.dot = (yield* parent_proc());
 	} else {
 		return 1;
 	}
 	return f.dot;
-}, true, { args: ["force"] });
+}, true);

@@ -1,7 +1,7 @@
-// From code/modules/modular_computers/file_system/programs/ntmonitor.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/modular_computers/file_system/programs/ntmonitor.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { g, add } = rt;
 
 
 rt.type(4166, "/datum/computer_file/program/ntnetmonitor", "/datum/computer_file/program", {
@@ -16,89 +16,80 @@ rt.type(4166, "/datum/computer_file/program/ntnetmonitor", "/datum/computer_file
 	required_access: 67,
 });
 
-// /datum/computer_file/program/ntnetmonitor/proc/ui_act  (code/modules/modular_computers/file_system/programs/ntmonitor.dm:13)  may sleep
-rt.def("/datum/computer_file/program/ntnetmonitor/proc/ui_act", function* ui_act(f: Frame) {
+// ntmonitor.dm:13
+rt.def("/datum/computer_file/program/ntnetmonitor/proc/ui_act", function* ui_act(f: Frame, action: Value, params: Value) {
 	let user: Value = null, response: Value = null, logcount: Value = null;
-	let $0: any;
-	f.vars = () => [user, response, logcount, $0];
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
+	if (yield* parent_proc()) {
 		return 1;
 	}
-	$0 = live(f.args[0]);
-	if ($0 === "resetIDS") {
+	if (action === "resetIDS") {
 		f.dot = 1;
-		if (truthy(rt.gl("ntnet_global"))) {
-			yield* g.callName(f, rt.gl("ntnet_global"), "resetIDS", []);
+		if (GLOB.ntnet_global) {
+			GLOB.ntnet_global.resetIDS();
 		}
 		return 1;
-	} else if ($0 === "toggleIDS") {
+	} else if (action === "toggleIDS") {
 		f.dot = 1;
-		if (truthy(rt.gl("ntnet_global"))) {
-			yield* g.callName(f, rt.gl("ntnet_global"), "toggleIDS", []);
+		if (GLOB.ntnet_global) {
+			GLOB.ntnet_global.toggleIDS();
 		}
 		return 1;
-	} else if ($0 === "toggleWireless") {
+	} else if (action === "toggleWireless") {
 		f.dot = 1;
-		if (!truthy(rt.gl("ntnet_global"))) {
+		if (!GLOB.ntnet_global) {
 			return 1;
 		}
-		if (truthy(rt.fv(f, "setting_disabled", rt.gl("ntnet_global")))) {
-			rt.setFv(f, "setting_disabled", rt.gl("ntnet_global"), 0);
+		if (GLOB.ntnet_global.setting_disabled) {
+			GLOB.ntnet_global.setting_disabled = 0;
 			return 1;
 		}
-		if (!truthy((user = live(f.usr)))) {
+		if (!(user = f.usr)) {
 			return 1;
 		}
-		if (isEqual((response = (yield* g.call(f, P("/proc/alert"), null, [live(user), "Really disable NTNet wireless? If your computer is connected wirelessly you won't be able to turn it back on! This will affect all connected wireless devices.", "NTNet shutdown", "Yes", "No"]))), "Yes")) {
-			rt.setFv(f, "setting_disabled", rt.gl("ntnet_global"), 1);
+		if ((response = (yield* alert(user, "Really disable NTNet wireless? If your computer is connected wirelessly you won't be able to turn it back on! This will affect all connected wireless devices.", "NTNet shutdown", "Yes", "No"))) == "Yes") {
+			GLOB.ntnet_global.setting_disabled = 1;
 		}
 		return 1;
-	} else if ($0 === "purgelogs") {
+	} else if (action === "purgelogs") {
 		f.dot = 1;
-		if (truthy(rt.gl("ntnet_global"))) {
-			yield* g.callName(f, rt.gl("ntnet_global"), "purge_logs", []);
+		if (GLOB.ntnet_global) {
+			GLOB.ntnet_global.purge_logs();
 		}
-	} else if ($0 === "updatemaxlogs") {
+	} else if (action === "updatemaxlogs") {
 		f.dot = 1;
-		user = live(f.usr);
-		logcount = (yield* g.call(f, P("/proc/text2num"), null, [(yield* g.op(f, "Prompt", [2], [null, null, fmt("Enter amount of logs to keep in memory (＀-＀):", [10, 300]), live(user), null]))]));
-		if (truthy(rt.gl("ntnet_global"))) {
-			yield* g.callName(f, rt.gl("ntnet_global"), "update_max_log_count", [live(logcount)]);
+		user = f.usr;
+		logcount = text2num((yield* g.op(f, "Prompt", [2], [null, null, `Enter amount of logs to keep in memory (${10}-${300}):`, user, null])));
+		if (GLOB.ntnet_global) {
+			GLOB.ntnet_global.update_max_log_count(logcount);
 		}
-	} else if ($0 === "toggle_function") {
+	} else if (action === "toggle_function") {
 		f.dot = 1;
-		if (!truthy(rt.gl("ntnet_global"))) {
+		if (!GLOB.ntnet_global) {
 			return 1;
 		}
-		yield* g.callName(f, rt.gl("ntnet_global"), "toggle_function", [(yield* g.call(f, P("/proc/text2num"), null, [rt.at(live(f.args[1]), "id")]))]);
+		GLOB.ntnet_global.toggle_function(text2num(rt.at(params, "id")));
 	}
 	return f.dot;
-}, true, { args: ["action", "params"] });
+}, true);
 
-// /datum/computer_file/program/ntnetmonitor/proc/ui_data  (code/modules/modular_computers/file_system/programs/ntmonitor.dm:61)
+// ntmonitor.dm:61
 rt.def("/datum/computer_file/program/ntnetmonitor/proc/ui_data", function ui_data(f: Frame, user: Value) {
 	let data: Value = null, i: Value = null;
-	let $e: any;
-	f.vars = () => [data, i, $e];
-	if (!truthy(rt.gl("ntnet_global"))) {
-		return live(f.dot);
+	if (!GLOB.ntnet_global) {
+		return f.dot;
 	}
-	rt.setAt((data = rt.callSrc(f, "get_header_data", [])), "ntnetstatus", rt.callName(f, rt.gl("ntnet_global"), "check_function", []));
-	rt.setAt(live(data), "ntnetrelays", rt.getLen(f, rt.fv(f, "relays", rt.gl("ntnet_global"))));
-	rt.setAt(live(data), "idsstatus", rt.fv(f, "intrusion_detection_enabled", rt.gl("ntnet_global")));
-	rt.setAt(live(data), "idsalarm", rt.fv(f, "intrusion_detection_alarm", rt.gl("ntnet_global")));
-	rt.setAt(live(data), "config_softwaredownload", rt.fv(f, "setting_softwaredownload", rt.gl("ntnet_global")));
-	rt.setAt(live(data), "config_peertopeer", rt.fv(f, "setting_peertopeer", rt.gl("ntnet_global")));
-	rt.setAt(live(data), "config_communication", rt.fv(f, "setting_communication", rt.gl("ntnet_global")));
-	rt.setAt(live(data), "config_systemcontrol", rt.fv(f, "setting_systemcontrol", rt.gl("ntnet_global")));
-	rt.setAt(live(data), "ntnetlogs", rt.list());
-	i = null;
-	rt.forList(f, 0, rt.fv(f, "logs", rt.gl("ntnet_global")));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		i = $e;
-		rt.modAt(live(data), "ntnetlogs", rt.list(rt.alist(f, ["entry", live(i)])), add);
+	rt.setAt((data = this.get_header_data()), "ntnetstatus", GLOB.ntnet_global.check_function());
+	rt.setAt(data, "ntnetrelays", rt.len(f, GLOB.ntnet_global.relays));
+	rt.setAt(data, "idsstatus", GLOB.ntnet_global.intrusion_detection_enabled);
+	rt.setAt(data, "idsalarm", GLOB.ntnet_global.intrusion_detection_alarm);
+	rt.setAt(data, "config_softwaredownload", GLOB.ntnet_global.setting_softwaredownload);
+	rt.setAt(data, "config_peertopeer", GLOB.ntnet_global.setting_peertopeer);
+	rt.setAt(data, "config_communication", GLOB.ntnet_global.setting_communication);
+	rt.setAt(data, "config_systemcontrol", GLOB.ntnet_global.setting_systemcontrol);
+	rt.setAt(data, "ntnetlogs", list());
+	for (i of each(GLOB.ntnet_global.logs)) {
+		rt.modAt(data, "ntnetlogs", list(rt.alist(f, ["entry", i])), add);
 	}
-	rt.endFor(f, 0);
-	rt.setAt(live(data), "ntnetmaxlogs", rt.fv(f, "setting_maxlogcount", rt.gl("ntnet_global")));
-	return live(data);
+	rt.setAt(data, "ntnetmaxlogs", GLOB.ntnet_global.setting_maxlogcount);
+	return data;
 });

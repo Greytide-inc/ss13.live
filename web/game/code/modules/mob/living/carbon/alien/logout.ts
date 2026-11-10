@@ -1,12 +1,12 @@
-// From code/modules/mob/living/carbon/alien/logout.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/carbon/alien/logout.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
 
 
-// /mob/living/carbon/alien/proc/Logout  (code/modules/mob/living/carbon/alien/logout.dm:2)  may sleep
+
+// logout.dm:2
 rt.def("/mob/living/carbon/alien/proc/Logout", function* Logout(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "RemoveInfectionImages");
-	return live(f.dot);
+	yield* parent_proc();
+	yield* this.RemoveInfectionImages();
+	return f.dot;
 }, true);

@@ -1,7 +1,7 @@
-// From code/modules/zombie/organs.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/zombie/organs.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(9536, "/obj/item/organ/zombie_infection", "/obj/item/organ", {
@@ -19,112 +19,108 @@ rt.type(9536, "/obj/item/organ/zombie_infection", "/obj/item/organ", {
 	origin_tech: "biotech=5",
 });
 
-// /obj/item/organ/zombie_infection/proc/Initialize  (code/modules/zombie/organs.dm:17)  may sleep
+// organs.dm:17
 rt.def("/obj/item/organ/zombie_infection/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (truthy((rt.istype(rt.sv(f, "loc"), T("/mob/living/carbon")) ? 1 : 0))) {
-		yield* g.srcCall(f, "Insert", rt.sv(f, "loc"));
+	f.dot = (yield* parent_proc());
+	if (rt.istype(this.loc, T("/mob/living/carbon"))) {
+		yield* this.Insert(this.loc);
 	}
-	rt.modGl("zombie_infection_list", live(f.src), add);
+	GLOB.zombie_infection_list += this;
 	return f.dot;
 }, true);
 
-// /obj/item/organ/zombie_infection/proc/Destroy  (code/modules/zombie/organs.dm:23)  may sleep
+// organs.dm:23
 rt.def("/obj/item/organ/zombie_infection/proc/Destroy", function* Destroy(f: Frame) {
-	(rt.modGl("zombie_infection_list", live(f.src), subtract));
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	GLOB.zombie_infection_list -= this;
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true);
 
-// /obj/item/organ/zombie_infection/proc/Insert  (code/modules/zombie/organs.dm:27)  may sleep
+// organs.dm:27
 rt.def("/obj/item/organ/zombie_infection/proc/Insert", function* Insert(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (truthy(rt.fv(f, "isprocessing", live(f.src)))) return f.dot;
-	rt.setFv(f, "isprocessing", live(f.src), 1);
-	rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), add);
+	f.dot = (yield* parent_proc());
+	if (this.isprocessing) return f.dot;
+	this.isprocessing = 1;
+	GLOB.SSobj.processing += this;
 	return f.dot;
 }, true, { args: ["M", "special"] });
 
-// /obj/item/organ/zombie_infection/proc/Remove  (code/modules/zombie/organs.dm:31)  may sleep
+// organs.dm:31
 rt.def("/obj/item/organ/zombie_infection/proc/Remove", function* Remove(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setFv(f, "isprocessing", live(f.src), 0);
-	(rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), subtract));
-	if ((truthy((yield* g.call(f, P("/proc/is_species"), null, [live(f.args[0]), T("/datum/species/zombie")]))) && truthy(rt.sv(f, "old_species")))) {
-		yield* g.callName(f, live(f.args[0]), "set_species", [rt.sv(f, "old_species")]);
+	f.dot = (yield* parent_proc());
+	this.isprocessing = 0;
+	GLOB.SSobj.processing -= this;
+	if (is_species(f.args[0], T("/datum/species/zombie")) && this.old_species) {
+		yield* f.args[0].set_species(this.old_species);
 	}
-	if (!truthy(rt.sv(f, "timer_id"))) return f.dot;
-	yield* g.call(f, P("/proc/deltimer"), null, [rt.sv(f, "timer_id")]);
+	if (!this.timer_id) return f.dot;
+	yield* deltimer(this.timer_id);
 	return f.dot;
 }, true, { args: ["M", "special"] });
 
-// /obj/item/organ/zombie_infection/proc/on_find  (code/modules/zombie/organs.dm:39)
+// organs.dm:39
 rt.def("/obj/item/organ/zombie_infection/proc/on_find", function on_find(f: Frame, finder: Value) {
-	rt.call(f, P("/proc/to_chat"), null, [live(finder), "<span class='warning'>Inside the head is a disgusting black web of pus and vicera, bound tightly around the brain like some biological harness.</span>"]);
+	to_chat(finder, "<span class='warning'>Inside the head is a disgusting black web of pus and vicera, bound tightly around the brain like some biological harness.</span>");
 	return f.dot;
 });
 
-// /obj/item/organ/zombie_infection/proc/process  (code/modules/zombie/organs.dm:44)  may sleep
+// organs.dm:44
 rt.def("/obj/item/organ/zombie_infection/proc/process", function* process(f: Frame) {
-	let revive_time: Value = null, flags: Value = null;
-	f.vars = () => [revive_time, flags];
-	if (!truthy(rt.sv(f, "owner"))) {
-		return live(f.dot);
+	if (!this.owner) {
+		return f.dot;
 	}
-	if (!truthy((rt.isIn(f, live(f.src), rt.fv(f, "internal_organs", rt.sv(f, "owner"))) ? 1 : 0))) {
-		yield* g.srcCall(f, "Remove", rt.sv(f, "owner"));
+	if (!rt.isIn(f, this, this.owner.internal_organs)) {
+		yield* this.Remove(this.owner);
 	}
-	if (truthy(rt.sv(f, "timer_id"))) {
-		return live(f.dot);
+	if (this.timer_id) {
+		return f.dot;
 	}
-	if ((!isEqual(rt.fv(f, "stat", rt.sv(f, "owner")), 2) && !truthy(rt.sv(f, "converts_living")))) {
-		return live(f.dot);
+	if (this.owner.stat != 2 && !this.converts_living) {
+		return f.dot;
 	}
-	if (!truthy((yield* g.call(f, P("/proc/is_species"), null, [rt.sv(f, "owner"), T("/datum/species/zombie")])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "owner"), "<span class='cultlarge'>You can feel your heart stopping, but something isn't right... life has not abandoned your broken form. You can only feel a deep and immutable hunger that not even death can stop, you will rise again!</span>"]);
+	if (!is_species(this.owner, T("/datum/species/zombie"))) {
+		to_chat(this.owner, "<span class='cultlarge'>You can feel your heart stopping, but something isn't right... life has not abandoned your broken form. You can only feel a deep and immutable hunger that not even death can stop, you will rise again!</span>");
 	}
-	revive_time = (yield* g.call(f, P("/proc/rand"), null, [rt.sv(f, "revive_time_min"), rt.sv(f, "revive_time_max")]));
-	flags = 8;
-	rt.setSv(f, "timer_id", (yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/item/organ/zombie_infection/proc/zombify")])), live(revive_time), live(flags)])));
+	let revive_time: Value = rand(this.revive_time_min, this.revive_time_max);
+	let flags: Value = 8;
+	this.timer_id = (yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/item/organ/zombie_infection/proc/zombify"))), revive_time, flags));
 	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/item/organ/zombie_infection/proc/zombify  (code/modules/zombie/organs.dm:64)  may sleep
+// organs.dm:64
 rt.def("/obj/item/organ/zombie_infection/proc/zombify", function* zombify(f: Frame) {
-	let stand_up: Value = null;
-	let $0: any, $1: any, $2: any, $3: any;
-	f.vars = () => [stand_up, $0, $1, $2, $3];
-	rt.setSv(f, "timer_id", null);
-	if (!truthy((yield* g.call(f, P("/proc/is_species"), null, [rt.sv(f, "owner"), T("/datum/species/zombie")])))) {
-		rt.setSv(f, "old_species", rt.gv(f, "type", rt.gv(f, "species", rt.fv(f, "dna", rt.sv(f, "owner")))));
-		yield* g.callName(f, rt.sv(f, "owner"), "set_species", [T("/datum/species/zombie/infectious")]);
+	let $3: any;
+	this.timer_id = null;
+	if (!is_species(this.owner, T("/datum/species/zombie"))) {
+		this.old_species = this.owner.dna.species.type;
+		yield* this.owner.set_species(T("/datum/species/zombie/infectious"));
 	}
-	if ((!truthy(rt.sv(f, "converts_living")) && !isEqual(rt.fv(f, "stat", rt.sv(f, "owner")), 2))) {
-		return live(f.dot);
+	if (!this.converts_living && this.owner.stat != 2) {
+		return f.dot;
 	}
-	stand_up = ((isEqual(rt.fv(f, "stat", rt.sv(f, "owner")), 2) ? 1 : 0) || (isEqual(rt.fv(f, "stat", rt.sv(f, "owner")), 1) ? 1 : 0));
-	if (!truthy((yield* g.callName(f, rt.sv(f, "owner"), "revive", ["full_heal", 1], rt.Args.Named)))) {
-		return live(f.dot);
+	let stand_up: Value = ((this.owner.stat == 2 ? 1 : 0) || (this.owner.stat == 1 ? 1 : 0));
+	if (!(yield* this.owner.revive({ full_heal: 1 }))) {
+		return f.dot;
 	}
-	yield* g.callName(f, rt.sv(f, "owner"), "grab_ghost", []);
-	$0 = rt.sv(f, "owner");
-	$1 = rt.sv(f, "owner");
-	$2 = (yield* g.callName(f, rt.sv(f, "owner"), "p_they", []));
-	if (truthy(live(stand_up))) {
-		$3 = fmt(" stagger to ＀ feet and", [(yield* g.callName(f, rt.sv(f, "owner"), "p_their", []))]);
+	yield* this.owner.grab_ghost();
+	let $0: any = this.owner;
+	let $1: any = this.owner;
+	let $2: any = this.owner.p_they();
+	if (stand_up) {
+		$3 = ` stagger to ${this.owner.p_their()} feet and`;
 	} else {
 		$3 = "";
 	}
-	yield* g.callName(f, $0, "visible_message", [fmt("<span class='danger'>＀ suddenly convulses, as ＀＀ gain a ravenous hunger in ＀ eyes!</span>", [$1, $2, $3, (yield* g.callName(f, rt.sv(f, "owner"), "p_their", []))]), "<span class='alien'>You HUNGER!</span>"]);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", rt.sv(f, "owner")), rt.rsc("sound/hallucinations/far_noise.ogg"), 50, 1]);
-	yield* g.callName(f, rt.sv(f, "owner"), "do_jitter_animation", [rt.sv(f, "living_transformation_time")]);
-	yield* g.callName(f, rt.sv(f, "owner"), "Stun", [rt.sv(f, "living_transformation_time")]);
-	yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "owner"), "<span class='alertalien'>You are now a zombie!</span>"]);
+	$0.visible_message(`<span class='danger'>${$1} suddenly convulses, as ${$2}${$3} gain a ravenous hunger in ${this.owner.p_their()} eyes!</span>`, "<span class='alien'>You HUNGER!</span>");
+	playsound(this.owner.loc, rt.rsc("sound/hallucinations/far_noise.ogg"), 50, 1);
+	this.owner.do_jitter_animation(this.living_transformation_time);
+	yield* this.owner.Stun(this.living_transformation_time);
+	to_chat(this.owner, "<span class='alertalien'>You are now a zombie!</span>");
 	return f.dot;
 }, true);

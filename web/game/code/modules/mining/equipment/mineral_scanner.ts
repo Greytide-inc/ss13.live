@@ -1,7 +1,7 @@
-// From code/modules/mining/equipment/mineral_scanner.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mining/equipment/mineral_scanner.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, g } = rt;
 
 
 rt.type(9400, "/obj/item/device/mining_scanner", "/obj/item/device", {
@@ -17,35 +17,28 @@ rt.type(9400, "/obj/item/device/mining_scanner", "/obj/item/device", {
 	origin_tech: "engineering=1;magnets=1",
 });
 
-// /obj/item/device/mining_scanner/proc/attack_self  (code/modules/mining/equipment/mineral_scanner.dm:15)  may sleep
+// mineral_scanner.dm:15
 rt.def("/obj/item/device/mining_scanner/proc/attack_self", function* attack_self(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (!truthy(rt.fv(f, "client", live(user)))) {
-		return live(f.dot);
+	if (!user.client) {
+		return f.dot;
 	}
-	if (!rt.le(rt.sv(f, "current_cooldown"), rt.worldTime(f))) return f.dot;
-	rt.setSv(f, "current_cooldown", add(rt.worldTime(f), rt.sv(f, "cooldown")));
-	yield* g.call(f, P("/proc/mineral_scan_pulse"), null, [rt.getStep(f, live(user), 0)]);
+	if (!(this.current_cooldown <= rt.worldTime(f))) return f.dot;
+	this.current_cooldown = rt.worldTime(f) + this.cooldown;
+	yield* mineral_scan_pulse(rt.getStep(f, user, 0));
 	return f.dot;
 }, true);
 
 rt.type(9401, "/obj/item/device/mining_scanner/admin", "/obj/item/device/mining_scanner", {});
 
-// /obj/item/device/mining_scanner/admin/proc/attack_self  (code/modules/mining/equipment/mineral_scanner.dm:25)  may sleep
+// mineral_scanner.dm:25
 rt.def("/obj/item/device/mining_scanner/admin/proc/attack_self", function* attack_self(f: Frame, user: Value) {
 	let M: Value = null;
-	let $e: any;
-	f.vars = () => [user, M, $e];
-	M = null;
-	rt.forList(f, 0, rt.world(), T("/turf/closed/mineral"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if (truthy(rt.fv(f, "scan_state", live(M)))) {
-			rt.setFv(f, "icon_state", live(M), rt.fv(f, "scan_state", live(M)));
+	for (M of each(rt.world(), T("/turf/closed/mineral"))) {
+		if (M.scan_state) {
+			M.icon_state = M.scan_state;
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
@@ -63,45 +56,33 @@ rt.type(9280, "/obj/item/device/t_scanner/adv_mining_scanner", "/obj/item/device
 	origin_tech: "engineering=3;magnets=3",
 });
 
-// /obj/item/device/t_scanner/adv_mining_scanner/proc/scan  (code/modules/mining/equipment/mineral_scanner.dm:50)  may sleep
+// mineral_scanner.dm:50
 rt.def("/obj/item/device/t_scanner/adv_mining_scanner/proc/scan", function* scan(f: Frame) {
 	let t: Value = null;
-	f.vars = () => [t];
-	if (!rt.le(rt.sv(f, "current_cooldown"), rt.worldTime(f))) return f.dot;
-	rt.setSv(f, "current_cooldown", add(rt.worldTime(f), rt.sv(f, "cooldown")));
-	yield* g.call(f, P("/proc/mineral_scan_pulse"), null, [(t = rt.getStep(f, live(f.src), 0)), rt.sv(f, "range")]);
+	if (!(this.current_cooldown <= rt.worldTime(f))) return f.dot;
+	this.current_cooldown = rt.worldTime(f) + this.cooldown;
+	yield* mineral_scan_pulse((t = rt.getStep(f, this, 0)), this.range);
 	return f.dot;
 }, true);
 
-// /proc/mineral_scan_pulse  (code/modules/mining/equipment/mineral_scanner.dm:56)  may sleep
+// mineral_scanner.dm:56
 rt.def("/proc/mineral_scan_pulse", function* mineral_scan_pulse(f: Frame, _T: Value, range: Value) {
-	let minerals: Value = null, M: Value = null, oldC: Value = null, C: Value = null;
-	let $e: any;
-	f.vars = () => [_T, range, minerals, M, oldC, C, $e];
-	if (live(range) === null) {
-		range = rt.fv(f, "view", rt.world());
-	}
-	minerals = rt.list();
-	M = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/range"), null, [live(range), live(_T)])), T("/turf/closed/mineral"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if (truthy(rt.fv(f, "scan_state", live(M)))) {
-			minerals = rt.modify(live(minerals), live(M), add);
+	let M: Value = null, oldC: Value = null, C: Value = null;
+	range ??= rt.world().view;
+	let minerals: Value = list();
+	for (M of each((yield* g.call(f, P("/proc/range"), null, [range, _T])), T("/turf/closed/mineral"))) {
+		if (M.scan_state) {
+			minerals += M;
 		}
 	}
-	rt.endFor(f, 0);
-	if (!truthy(rt.length(live(minerals)))) return f.dot;
+	if (!rt.length(minerals)) return f.dot;
 	M = null;
-	rt.forList(f, 0, live(minerals), T("/turf/closed/mineral"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if (truthy((oldC = rt.locateIn(f, T("/obj/effect/temp_visual/mining_overlay"), live(M))))) {
-			yield* g.call(f, P("/proc/qdel"), null, [live(oldC)]);
+	for (M of each(minerals, T("/turf/closed/mineral"))) {
+		if (oldC = rt.locateIn(f, T("/obj/effect/temp_visual/mining_overlay"), M)) {
+			yield* qdel(oldC);
 		}
-		rt.setFv(f, "icon_state", (C = (yield* g.new_(f, T("/obj/effect/temp_visual/mining_overlay"), [live(M)]))), rt.fv(f, "scan_state", live(M)));
+		(C = (yield* new_(T("/obj/effect/temp_visual/mining_overlay"), M))).icon_state = M.scan_state;
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
@@ -115,9 +96,9 @@ rt.type(11671, "/obj/effect/temp_visual/mining_overlay", "/obj/effect/temp_visua
 	pixel_y: -224,
 });
 
-// /obj/effect/temp_visual/mining_overlay/proc/Initialize  (code/modules/mining/equipment/mineral_scanner.dm:78)  may sleep
+// mineral_scanner.dm:78
 rt.def("/obj/effect/temp_visual/mining_overlay/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.op(f, "Animate", [2, 8], [null, live(f.src), "alpha", 0, "time", rt.sv(f, "duration"), "easing", 64]);
+	f.dot = (yield* parent_proc());
+	rt.op(f, "Animate", [2, 8], [null, this, "alpha", 0, "time", this.duration, "easing", 64]);
 	return f.dot;
 }, true);

@@ -1,19 +1,17 @@
-// From code/modules/mob/living/carbon/emote.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/carbon/emote.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(493, "/datum/emote/living/carbon", "/datum/emote/living", {
 	mob_type_allowed_typecache: null,
 });
 
-// /datum/emote/living/carbon/proc/<init>  (code/modules/mob/living/carbon/emote.dm:2)
+// emote.dm:2
 rt.def("/datum/emote/living/carbon/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "mob_type_allowed_typecache", rt.list(T("/mob/living/carbon")));
+	parent_proc();
+	this.mob_type_allowed_typecache = list(T("/mob/living/carbon"));
 	return f.dot;
 });
 
@@ -24,12 +22,10 @@ rt.type(498, "/datum/emote/living/carbon/gnarl", "/datum/emote/living/carbon", {
 	mob_type_allowed_typecache: null,
 });
 
-// /datum/emote/living/carbon/gnarl/proc/<init>  (code/modules/mob/living/carbon/emote.dm:30)
+// emote.dm:30
 rt.def("/datum/emote/living/carbon/gnarl/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "mob_type_allowed_typecache", rt.list(T("/mob/living/carbon/monkey"), T("/mob/living/carbon/alien")));
+	parent_proc();
+	this.mob_type_allowed_typecache = list(T("/mob/living/carbon/monkey"), T("/mob/living/carbon/alien"));
 	return f.dot;
 });
 
@@ -41,12 +37,10 @@ rt.type(500, "/datum/emote/living/carbon/roll", "/datum/emote/living/carbon", {
 	mob_type_allowed_typecache: null,
 });
 
-// /datum/emote/living/carbon/roll/proc/<init>  (code/modules/mob/living/carbon/emote.dm:43)
+// emote.dm:43
 rt.def("/datum/emote/living/carbon/roll/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "mob_type_allowed_typecache", rt.list(T("/mob/living/carbon/monkey"), T("/mob/living/carbon/alien")));
+	parent_proc();
+	this.mob_type_allowed_typecache = list(T("/mob/living/carbon/monkey"), T("/mob/living/carbon/alien"));
 	return f.dot;
 });
 
@@ -58,12 +52,10 @@ rt.type(501, "/datum/emote/living/carbon/scratch", "/datum/emote/living/carbon",
 	mob_type_allowed_typecache: null,
 });
 
-// /datum/emote/living/carbon/scratch/proc/<init>  (code/modules/mob/living/carbon/emote.dm:50)
+// emote.dm:50
 rt.def("/datum/emote/living/carbon/scratch/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "mob_type_allowed_typecache", rt.list(T("/mob/living/carbon/monkey"), T("/mob/living/carbon/alien")));
+	parent_proc();
+	this.mob_type_allowed_typecache = list(T("/mob/living/carbon/monkey"), T("/mob/living/carbon/alien"));
 	return f.dot;
 });
 
@@ -74,12 +66,10 @@ rt.type(502, "/datum/emote/living/carbon/screech", "/datum/emote/living/carbon",
 	mob_type_allowed_typecache: null,
 });
 
-// /datum/emote/living/carbon/screech/proc/<init>  (code/modules/mob/living/carbon/emote.dm:57)
+// emote.dm:57
 rt.def("/datum/emote/living/carbon/screech/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "mob_type_allowed_typecache", rt.list(T("/mob/living/carbon/monkey"), T("/mob/living/carbon/alien")));
+	parent_proc();
+	this.mob_type_allowed_typecache = list(T("/mob/living/carbon/monkey"), T("/mob/living/carbon/alien"));
 	return f.dot;
 });
 
@@ -91,21 +81,19 @@ rt.type(503, "/datum/emote/living/carbon/sign", "/datum/emote/living/carbon", {
 	mob_type_allowed_typecache: null,
 });
 
-// /datum/emote/living/carbon/sign/proc/<init>  (code/modules/mob/living/carbon/emote.dm:63)
+// emote.dm:63
 rt.def("/datum/emote/living/carbon/sign/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "mob_type_allowed_typecache", rt.list(T("/mob/living/carbon/monkey"), T("/mob/living/carbon/alien")));
+	parent_proc();
+	this.mob_type_allowed_typecache = list(T("/mob/living/carbon/monkey"), T("/mob/living/carbon/alien"));
 	return f.dot;
 });
 
-// /datum/emote/living/carbon/sign/proc/select_param  (code/modules/mob/living/carbon/emote.dm:67)
-rt.def("/datum/emote/living/carbon/sign/proc/select_param", function select_param(f: Frame) {
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.call(f, P("/proc/isnum"), null, [rt.call(f, P("/proc/text2num"), null, [live(f.args[1])])]))) return f.dot;
+// emote.dm:67
+rt.def("/datum/emote/living/carbon/sign/proc/select_param", function select_param(f: Frame, user: Value, params: Value) {
+	f.dot = parent_proc();
+	if (isnum(text2num(params))) return f.dot;
 	return rt.sv(f, "message");
-}, false, { args: ["user", "params"] });
+}, false);
 
 rt.type(504, "/datum/emote/living/carbon/sign/signal", "/datum/emote/living/carbon/sign", {
 	key: "signal",
@@ -115,12 +103,10 @@ rt.type(504, "/datum/emote/living/carbon/sign/signal", "/datum/emote/living/carb
 	mob_type_allowed_typecache: null,
 });
 
-// /datum/emote/living/carbon/sign/signal/proc/<init>  (code/modules/mob/living/carbon/emote.dm:75)
+// emote.dm:75
 rt.def("/datum/emote/living/carbon/sign/signal/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "mob_type_allowed_typecache", rt.list(T("/mob/living/carbon/human")));
+	parent_proc();
+	this.mob_type_allowed_typecache = list(T("/mob/living/carbon/human"));
 	return f.dot;
 });
 
@@ -130,11 +116,9 @@ rt.type(505, "/datum/emote/living/carbon/tail", "/datum/emote/living/carbon", {
 	mob_type_allowed_typecache: null,
 });
 
-// /datum/emote/living/carbon/tail/proc/<init>  (code/modules/mob/living/carbon/emote.dm:81)
+// emote.dm:81
 rt.def("/datum/emote/living/carbon/tail/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "mob_type_allowed_typecache", rt.list(T("/mob/living/carbon/monkey"), T("/mob/living/carbon/alien")));
+	parent_proc();
+	this.mob_type_allowed_typecache = list(T("/mob/living/carbon/monkey"), T("/mob/living/carbon/alien"));
 	return f.dot;
 });

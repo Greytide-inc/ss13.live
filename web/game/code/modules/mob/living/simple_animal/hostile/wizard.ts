@@ -1,7 +1,7 @@
-// From code/modules/mob/living/simple_animal/hostile/wizard.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/simple_animal/hostile/wizard.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(4997, "/mob/living/simple_animal/hostile/wizard", "/mob/living/simple_animal/hostile", {
@@ -39,59 +39,57 @@ rt.type(4997, "/mob/living/simple_animal/hostile/wizard", "/mob/living/simple_an
 	loot: null,
 });
 
-// /mob/living/simple_animal/hostile/wizard/proc/<init>  (code/modules/mob/living/simple_animal/hostile/wizard.dm:22)
+// wizard.dm:22
 rt.def("/mob/living/simple_animal/hostile/wizard/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "atmos_requirements", rt.alist(f, ["min_oxy", 5, "max_oxy", 0, "min_tox", 0, "max_tox", 1, "min_co2", 0, "max_co2", 5, "min_n2", 0, "max_n2", 0]));
-	$0 = $0;
-	rt.setSv(f, "faction", rt.list("wizard"));
-	$0 = $0;
-	rt.setSv(f, "loot", rt.list(T("/obj/effect/mob_spawn/human/corpse/wizard"), T("/obj/item/weapon/staff")));
+	parent_proc();
+	this.atmos_requirements = rt.alist(f, ["min_oxy", 5, "max_oxy", 0, "min_tox", 0, "max_tox", 1, "min_co2", 0, "max_co2", 5, "min_n2", 0, "max_n2", 0]);
+
+	this.faction = list("wizard");
+
+	this.loot = list(T("/obj/effect/mob_spawn/human/corpse/wizard"), T("/obj/item/weapon/staff"));
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/wizard/proc/Initialize  (code/modules/mob/living/simple_animal/hostile/wizard.dm:40)  may sleep
+// wizard.dm:40
 rt.def("/mob/living/simple_animal/hostile/wizard/proc/Initialize", function* Initialize(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "fireball", (yield* g.new_(f, T("/obj/effect/proc_holder/spell/aimed/fireball"), [])));
-	rt.setFv(f, "clothes_req", rt.sv(f, "fireball"), 0);
-	rt.setFv(f, "human_req", rt.sv(f, "fireball"), 0);
-	rt.setFv(f, "player_lock", rt.sv(f, "fireball"), 0);
-	yield* g.srcCall(f, "AddSpell", rt.sv(f, "fireball"));
-	rt.modSrcVar(f, "implants", (yield* g.new_(f, T("/obj/item/weapon/implant/exile"), [live(f.src)])), add);
-	rt.setSv(f, "mm", (yield* g.new_(f, T("/obj/effect/proc_holder/spell/targeted/projectile/magic_missile"), [])));
-	rt.setFv(f, "clothes_req", rt.sv(f, "mm"), 0);
-	rt.setFv(f, "human_req", rt.sv(f, "mm"), 0);
-	rt.setFv(f, "player_lock", rt.sv(f, "mm"), 0);
-	yield* g.srcCall(f, "AddSpell", rt.sv(f, "mm"));
-	rt.setSv(f, "blink", (yield* g.new_(f, T("/obj/effect/proc_holder/spell/targeted/turf_teleport/blink"), [])));
-	rt.setFv(f, "clothes_req", rt.sv(f, "blink"), 0);
-	rt.setFv(f, "human_req", rt.sv(f, "blink"), 0);
-	rt.setFv(f, "player_lock", rt.sv(f, "blink"), 0);
-	rt.setFv(f, "outer_tele_radius", rt.sv(f, "blink"), 3);
-	yield* g.srcCall(f, "AddSpell", rt.sv(f, "blink"));
+	yield* parent_proc();
+	this.fireball = (yield* new_(T("/obj/effect/proc_holder/spell/aimed/fireball")));
+	this.fireball.clothes_req = 0;
+	this.fireball.human_req = 0;
+	this.fireball.player_lock = 0;
+	yield* this.AddSpell(this.fireball);
+	this.implants += (yield* new_(T("/obj/item/weapon/implant/exile"), this));
+	this.mm = (yield* new_(T("/obj/effect/proc_holder/spell/targeted/projectile/magic_missile")));
+	this.mm.clothes_req = 0;
+	this.mm.human_req = 0;
+	this.mm.player_lock = 0;
+	yield* this.AddSpell(this.mm);
+	this.blink = (yield* new_(T("/obj/effect/proc_holder/spell/targeted/turf_teleport/blink")));
+	this.blink.clothes_req = 0;
+	this.blink.human_req = 0;
+	this.blink.player_lock = 0;
+	this.blink.outer_tele_radius = 3;
+	yield* this.AddSpell(this.blink);
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/wizard/proc/handle_automated_action  (code/modules/mob/living/simple_animal/hostile/wizard.dm:62)  may sleep
+// wizard.dm:62
 rt.def("/mob/living/simple_animal/hostile/wizard/proc/handle_automated_action", function* handle_automated_action(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!(truthy(rt.sv(f, "target")) && rt.lt(rt.sv(f, "next_cast"), rt.worldTime(f)))) return f.dot;
-	if ((truthy((rt.isIn(f, rt.getDir(f, live(f.src), rt.sv(f, "target")), rt.list(2, 4, 8, 1)) ? 1 : 0)) && truthy((yield* g.callName(f, rt.sv(f, "fireball"), "cast_check", [0, live(f.src)]))))) {
-		yield* g.callName(f, live(f.src), "setDir", [rt.getDir(f, live(f.src), rt.sv(f, "target"))]);
-		yield* g.callName(f, rt.sv(f, "fireball"), "perform", [null, rt.list(rt.sv(f, "target")), "user", live(f.src)], rt.Args.Named);
-		rt.setSv(f, "next_cast", add(rt.worldTime(f), 10));
-		return live(f.dot);
+	f.dot = (yield* parent_proc());
+	if (!(this.target && this.next_cast < rt.worldTime(f))) return f.dot;
+	if (rt.isIn(f, rt.getDir(f, this, this.target), list(2, 4, 8, 1)) && (yield* this.fireball.cast_check(0, this))) {
+		yield* this.setDir(rt.getDir(f, this, this.target));
+		yield* this.fireball.perform(list(this.target), { user: this });
+		this.next_cast = rt.worldTime(f) + 10;
+		return f.dot;
 	}
-	if (truthy((yield* g.callName(f, rt.sv(f, "mm"), "cast_check", [0, live(f.src)])))) {
-		yield* g.callName(f, rt.sv(f, "mm"), "choose_targets", [live(f.src)]);
-		rt.setSv(f, "next_cast", add(rt.worldTime(f), 10));
-		return live(f.dot);
+	if (yield* this.mm.cast_check(0, this)) {
+		yield* this.mm.choose_targets(this);
+		this.next_cast = rt.worldTime(f) + 10;
+		return f.dot;
 	}
-	if (!truthy((yield* g.callName(f, rt.sv(f, "blink"), "cast_check", [0, live(f.src)])))) return f.dot;
-	yield* g.callName(f, rt.sv(f, "blink"), "choose_targets", [live(f.src)]);
-	rt.setSv(f, "next_cast", add(rt.worldTime(f), 10));
-	return live(f.dot);
+	if (!(yield* this.blink.cast_check(0, this))) return f.dot;
+	yield* this.blink.choose_targets(this);
+	this.next_cast = rt.worldTime(f) + 10;
+	return f.dot;
 }, true, { waitfor: false });

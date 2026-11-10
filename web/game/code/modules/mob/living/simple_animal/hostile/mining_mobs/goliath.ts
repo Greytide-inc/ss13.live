@@ -1,7 +1,7 @@
-// From code/modules/mob/living/simple_animal/hostile/mining_mobs/goliath.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/simple_animal/hostile/mining_mobs/goliath.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(5008, "/mob/living/simple_animal/hostile/asteroid/goliath", "/mob/living/simple_animal/hostile/asteroid", {
@@ -38,94 +38,90 @@ rt.type(5008, "/mob/living/simple_animal/hostile/asteroid/goliath", "/mob/living
 	loot: null,
 });
 
-// /mob/living/simple_animal/hostile/asteroid/goliath/proc/<init>  (code/modules/mob/living/simple_animal/hostile/mining_mobs/goliath.dm:16)
+// goliath.dm:16
 rt.def("/mob/living/simple_animal/hostile/asteroid/goliath/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "speak_emote", rt.list("bellows"));
-	$0 = $0;
-	rt.setSv(f, "loot", rt.list(T("/obj/item/stack/sheet/animalhide/goliath_hide")));
+	parent_proc();
+	this.speak_emote = list("bellows");
+
+	this.loot = list(T("/obj/item/stack/sheet/animalhide/goliath_hide"));
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/asteroid/goliath/proc/Life  (code/modules/mob/living/simple_animal/hostile/mining_mobs/goliath.dm:36)
+// goliath.dm:36
 rt.def("/mob/living/simple_animal/hostile/asteroid/goliath/proc/Life", function Life(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.callSrc(f, "handle_preattack", []);
+	parent_proc();
+	this.handle_preattack();
 	return f.dot;
 }, false, { waitfor: false });
 
-// /mob/living/simple_animal/hostile/asteroid/goliath/proc/handle_preattack  (code/modules/mob/living/simple_animal/hostile/mining_mobs/goliath.dm:40)
+// goliath.dm:40
 rt.def("/mob/living/simple_animal/hostile/asteroid/goliath/proc/handle_preattack", function handle_preattack(f: Frame) {
-	if ((rt.le(rt.sv(f, "ranged_cooldown"), add(rt.worldTime(f), multiply(rt.sv(f, "ranged_cooldown_time"), 0.25))) && !truthy(rt.sv(f, "pre_attack")))) {
-		rt.incSrcVar(f, "pre_attack", 1, true);
+	if (this.ranged_cooldown <= rt.worldTime(f) + this.ranged_cooldown_time * 0.25 && !this.pre_attack) {
+		this.pre_attack++;
 	}
-	if (((!truthy(rt.sv(f, "pre_attack")) || truthy(rt.sv(f, "stat"))) || isEqual(rt.sv(f, "AIStatus"), 2))) {
-		return live(f.dot);
+	if (!this.pre_attack || this.stat || this.AIStatus == AI_IDLE) {
+		return f.dot;
 	}
-	rt.setSv(f, "icon_state", rt.sv(f, "pre_attack_icon"));
+	this.icon_state = this.pre_attack_icon;
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/asteroid/goliath/proc/revive  (code/modules/mob/living/simple_animal/hostile/mining_mobs/goliath.dm:47)  may sleep
+// goliath.dm:47
 rt.def("/mob/living/simple_animal/hostile/asteroid/goliath/proc/revive", function* revive(f: Frame) {
-	if (live(f.args[0]) === null) {
+	if (f.args[0] === null) {
 		f.args[0] = 0;
 	}
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	if (!truthy((yield* g.callSuper(f, [], rt.Args.Same)))) return f.dot;
-	rt.setSv(f, "anchored", 1);
+	if (!(yield* parent_proc())) return f.dot;
+	this.anchored = 1;
 	f.dot = 1;
 	return f.dot;
 }, true, { args: ["full_heal", "admin_revive"] });
 
-// /mob/living/simple_animal/hostile/asteroid/goliath/proc/death  (code/modules/mob/living/simple_animal/hostile/mining_mobs/goliath.dm:53)  may sleep
+// goliath.dm:53
 rt.def("/mob/living/simple_animal/hostile/asteroid/goliath/proc/death", function* death(f: Frame, gibbed: Value) {
-	f.vars = () => [gibbed];
-	rt.setSv(f, "anchored", 0);
-	yield* g.callSuper(f, [live(gibbed)]);
+	this.anchored = 0;
+	yield* parent_proc(gibbed);
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/asteroid/goliath/proc/OpenFire  (code/modules/mob/living/simple_animal/hostile/mining_mobs/goliath.dm:56)  may sleep
+// goliath.dm:56
 rt.def("/mob/living/simple_animal/hostile/asteroid/goliath/proc/OpenFire", function* OpenFire(f: Frame) {
 	let tturf: Value = null;
-	f.vars = () => [tturf];
-	if (!truthy((yield* g.call(f, P("/proc/isturf"), null, [(tturf = rt.getStep(f, rt.sv(f, "target"), 0))])))) {
-		return live(f.dot);
+	if (!isturf((tturf = rt.getStep(f, this.target, 0)))) {
+		return f.dot;
 	}
-	if (!rt.le((yield* g.call(f, P("/proc/get_dist"), null, [live(f.src), rt.sv(f, "target")])), 7)) return f.dot;
-	yield* g.srcCall(f, "visible_message", fmt("<span class='warning'>The ＀ digs its tentacles under ＀!</span>", [rt.fv(f, "name", live(f.src)), rt.fv(f, "name", rt.sv(f, "target"))]));
-	yield* g.new_(f, T("/obj/effect/goliath_tentacle/original"), [live(tturf)]);
-	rt.setSv(f, "ranged_cooldown", add(rt.worldTime(f), rt.sv(f, "ranged_cooldown_time")));
-	rt.setSv(f, "icon_state", rt.sv(f, "icon_aggro"));
-	rt.setSv(f, "pre_attack", 0);
+	if (!(get_dist(this, this.target) <= 7)) return f.dot;
+	this.visible_message(`<span class='warning'>The ${this.name} digs its tentacles under ${this.target.name}!</span>`);
+	yield* new_(T("/obj/effect/goliath_tentacle/original"), tturf);
+	this.ranged_cooldown = rt.worldTime(f) + this.ranged_cooldown_time;
+	this.icon_state = this.icon_aggro;
+	this.pre_attack = 0;
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/asteroid/goliath/proc/adjustHealth  (code/modules/mob/living/simple_animal/hostile/mining_mobs/goliath.dm:67)  may sleep
+// goliath.dm:67
 rt.def("/mob/living/simple_animal/hostile/asteroid/goliath/proc/adjustHealth", function* adjustHealth(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 1;
 	}
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 0;
 	}
-	(rt.modSrcVar(f, "ranged_cooldown", 10, subtract));
-	yield* g.srcCall(f, "handle_preattack");
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	this.ranged_cooldown -= 10;
+	this.handle_preattack();
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true, { args: ["amount", "updating_health", "forced"] });
 
-// /mob/living/simple_animal/hostile/asteroid/goliath/proc/Aggro  (code/modules/mob/living/simple_animal/hostile/mining_mobs/goliath.dm:72)
+// goliath.dm:72
 rt.def("/mob/living/simple_animal/hostile/asteroid/goliath/proc/Aggro", function Aggro(f: Frame) {
-	rt.setSv(f, "vision_range", rt.sv(f, "aggro_vision_range"));
-	rt.callSrc(f, "handle_preattack", []);
-	if (isEqual(rt.sv(f, "icon_state"), rt.sv(f, "icon_aggro"))) return f.dot;
-	rt.setSv(f, "icon_state", rt.sv(f, "icon_aggro"));
+	this.vision_range = this.aggro_vision_range;
+	this.handle_preattack();
+	if (this.icon_state == this.icon_aggro) return f.dot;
+	this.icon_state = this.icon_aggro;
 	return f.dot;
 });
 
@@ -146,14 +142,12 @@ rt.type(5009, "/mob/living/simple_animal/hostile/asteroid/goliath/beast", "/mob/
 	loot: null,
 });
 
-// /mob/living/simple_animal/hostile/asteroid/goliath/beast/proc/<init>  (code/modules/mob/living/simple_animal/hostile/mining_mobs/goliath.dm:89)
+// goliath.dm:89
 rt.def("/mob/living/simple_animal/hostile/asteroid/goliath/beast/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "butcher_results", rt.alist(f, [T("/obj/item/weapon/reagent_containers/food/snacks/meat/slab/goliath"), 2, T("/obj/item/stack/sheet/animalhide/goliath_hide"), 1, T("/obj/item/stack/sheet/bone"), 2]));
-	$0 = $0;
-	rt.setSv(f, "loot", rt.list());
+	parent_proc();
+	this.butcher_results = rt.alist(f, [T("/obj/item/weapon/reagent_containers/food/snacks/meat/slab/goliath"), 2, T("/obj/item/stack/sheet/animalhide/goliath_hide"), 1, T("/obj/item/stack/sheet/bone"), 2]);
+
+	this.loot = list();
 	return f.dot;
 });
 
@@ -165,68 +159,55 @@ rt.type(12087, "/obj/effect/goliath_tentacle", "/obj/effect", {
 	icon_state: "Goliath_tentacle",
 });
 
-// /obj/effect/goliath_tentacle/proc/Initialize  (code/modules/mob/living/simple_animal/hostile/mining_mobs/goliath.dm:106)  may sleep
+// goliath.dm:106
 rt.def("/obj/effect/goliath_tentacle/proc/Initialize", function* Initialize(f: Frame) {
 	let M: Value = null;
-	f.vars = () => [M];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (truthy((rt.istype(rt.sv(f, "loc"), T("/turf/closed/mineral")) ? 1 : 0))) {
-		yield* g.callName(f, (M = rt.sv(f, "loc")), "gets_drilled", []);
+	f.dot = (yield* parent_proc());
+	if (rt.istype(this.loc, T("/turf/closed/mineral"))) {
+		yield* (M = this.loc).gets_drilled();
 	}
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/effect/goliath_tentacle/proc/Trip")])), 10]);
+	yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/effect/goliath_tentacle/proc/Trip"))), 10);
 	return f.dot;
 }, true);
 
 rt.type(12088, "/obj/effect/goliath_tentacle/original", "/obj/effect/goliath_tentacle", {});
 
-// /obj/effect/goliath_tentacle/original/proc/Initialize  (code/modules/mob/living/simple_animal/hostile/mining_mobs/goliath.dm:113)  may sleep
+// goliath.dm:113
 rt.def("/obj/effect/goliath_tentacle/original/proc/Initialize", function* Initialize(f: Frame) {
-	let O: Value = null, directions: Value = null, i: Value = null, spawndir: Value = null, _T: Value = null;
+	let O: Value = null, i: Value = null, spawndir: Value = null, _T: Value = null;
 	let $e: any;
-	f.vars = () => [O, directions, i, spawndir, _T, $e];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	O = null;
-	rt.forList(f, 0, rt.sv(f, "loc"), T("/obj/effect/goliath_tentacle/original"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		O = $e;
-		if (!isEqual(live(O), live(f.src))) {
-			yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	f.dot = (yield* parent_proc());
+	for (O of each(this.loc, T("/obj/effect/goliath_tentacle/original"))) {
+		if (O != this) {
+			yield* qdel(this);
 		}
 	}
-	rt.endFor(f, 0);
-	directions = (yield* g.callName(f, rt.gl("cardinal"), "Copy", []));
-	i = null;
+	let directions: Value = (yield* GLOB.cardinal.Copy());
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		(directions = rt.modify(live(directions), (spawndir = rt.op(f, "PickUnweighted", [1], [live(directions)])), subtract));
-		if (truthy((_T = rt.getStep(f, live(f.src), live(spawndir))))) {
-			yield* g.new_(f, T("/obj/effect/goliath_tentacle"), [live(_T)]);
+		directions -= (spawndir = pick(directions));
+		if (_T = rt.getStep(f, this, spawndir)) {
+			yield* new_(T("/obj/effect/goliath_tentacle"), _T);
 		}
 	}
 	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /obj/effect/goliath_tentacle/proc/Trip  (code/modules/mob/living/simple_animal/hostile/mining_mobs/goliath.dm:126)  may sleep
+// goliath.dm:126
 rt.def("/obj/effect/goliath_tentacle/proc/Trip", function* Trip(f: Frame) {
 	let M: Value = null;
-	let $e: any;
-	f.vars = () => [M, $e];
-	M = null;
-	rt.forList(f, 0, rt.fv(f, "loc", live(f.src)), T("/mob/living"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>The ＀ grabs hold of ＀!</span>", [rt.fv(f, "name", live(f.src)), rt.fv(f, "name", live(M))]));
-		yield* g.callName(f, live(M), "Stun", [100]);
-		yield* g.callName(f, live(M), "adjustBruteLoss", [(yield* g.call(f, P("/proc/rand"), null, [10, 15]))]);
-		rt.setSv(f, "latched", 1);
+	for (M of each(this.loc, T("/mob/living"))) {
+		this.visible_message(`<span class='danger'>The ${this.name} grabs hold of ${M.name}!</span>`);
+		yield* M.Stun(100);
+		yield* M.adjustBruteLoss(rand(10, 15));
+		this.latched = 1;
 	}
-	rt.endFor(f, 0);
-	if (!truthy(rt.sv(f, "latched"))) {
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	if (!this.latched) {
+		yield* qdel(this);
 	} else {
-		yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), ["some_magic_bullshit", P("/proc/qdel"), live(f.src)])), 50, 8]);
+		yield* addtimer((yield* new_(T("/datum/callback"), "some_magic_bullshit", P("/proc/qdel"), this)), 50, 8);
 	}
 	return f.dot;
 }, true);

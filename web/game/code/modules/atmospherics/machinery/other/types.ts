@@ -1,5 +1,5 @@
 // Types declared in code/modules/atmospherics/machinery/other that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(10612, "/obj/machinery/atmospherics/miner/n2o", "/obj/machinery/atmospherics/miner", {
 	overlay_color: "#FFCCCC",

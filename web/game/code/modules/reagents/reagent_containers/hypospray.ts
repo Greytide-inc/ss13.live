@@ -1,7 +1,7 @@
-// From code/modules/reagents/reagent_containers/hypospray.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/reagents/reagent_containers/hypospray.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(6517, "/obj/item/weapon/reagent_containers/hypospray", "/obj/item/weapon/reagent_containers", {
@@ -20,56 +20,47 @@ rt.type(6517, "/obj/item/weapon/reagent_containers/hypospray", "/obj/item/weapon
 	slot_flags: 512,
 });
 
-// /obj/item/weapon/reagent_containers/hypospray/proc/<init>  (code/modules/reagents/reagent_containers/hypospray.dm:9)
+// hypospray.dm:9
 rt.def("/obj/item/weapon/reagent_containers/hypospray/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "possible_transfer_amounts", rt.list());
+	parent_proc();
+	this.possible_transfer_amounts = list();
 	return f.dot;
 });
 
-// /obj/item/weapon/reagent_containers/hypospray/proc/attack_paw  (code/modules/reagents/reagent_containers/hypospray.dm:17)  may sleep
+// hypospray.dm:17
 rt.def("/obj/item/weapon/reagent_containers/hypospray/proc/attack_paw", function* attack_paw(f: Frame, user: Value) {
-	f.vars = () => [user];
-	return (yield* g.srcCall(f, "attack_hand", live(user)));
+	return (yield* this.attack_hand(user));
 }, true);
 
-// /obj/item/weapon/reagent_containers/hypospray/proc/attack  (code/modules/reagents/reagent_containers/hypospray.dm:20)  may sleep
+// hypospray.dm:20
 rt.def("/obj/item/weapon/reagent_containers/hypospray/proc/attack", function* attack(f: Frame, M: Value, user: Value) {
-	let fraction: Value = null, injected: Value = null, R: Value = null, trans: Value = null, contained: Value = null;
-	let $e: any;
-	f.vars = () => [M, user, fraction, injected, R, trans, contained, $e];
-	if (!truthy(rt.fv(f, "total_volume", rt.sv(f, "reagents")))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ is empty!</span>", [live(f.src)])]);
-		return live(f.dot);
+	let R: Value = null;
+	if (!this.reagents.total_volume) {
+		to_chat(user, `<span class='warning'>${this} is empty!</span>`);
+		return f.dot;
 	}
-	if (!truthy((rt.istype(live(M), T("/mob/living/carbon")) ? 1 : 0))) {
-		return live(f.dot);
+	if (!rt.istype(M, T("/mob/living/carbon"))) {
+		return f.dot;
 	}
-	if (!(truthy(rt.fv(f, "total_volume", rt.sv(f, "reagents"))) && (truthy(rt.sv(f, "ignore_flags")) || truthy((yield* g.callName(f, live(M), "can_inject", [live(user), 1])))))) return f.dot;
-	yield* g.call(f, P("/proc/to_chat"), null, [live(M), "<span class='warning'>You feel a tiny prick!</span>"]);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You inject ＀ with ＀.</span>", [live(M), live(f.src)])]);
-	fraction = (yield* g.call(f, P("/proc/min"), null, [divide(rt.sv(f, "amount_per_transfer_from_this"), rt.fv(f, "total_volume", rt.sv(f, "reagents"))), 1]));
-	yield* g.callName(f, rt.sv(f, "reagents"), "reaction", [live(M), 5, live(fraction)]);
-	if (!truthy(rt.fv(f, "reagents", live(M)))) return f.dot;
-	injected = rt.list();
-	R = null;
-	rt.forList(f, 0, rt.fv(f, "reagent_list", rt.sv(f, "reagents")), T("/datum/reagent"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		R = $e;
-		injected = rt.modify(live(injected), rt.fv(f, "name", live(R)), add);
+	if (!(this.reagents.total_volume && (this.ignore_flags || (yield* M.can_inject(user, 1))))) return f.dot;
+	to_chat(M, "<span class='warning'>You feel a tiny prick!</span>");
+	to_chat(user, `<span class='notice'>You inject ${M} with ${this}.</span>`);
+	let fraction: Value = min(this.amount_per_transfer_from_this / this.reagents.total_volume, 1);
+	yield* this.reagents.reaction(M, INJECT, fraction);
+	if (!M.reagents) return f.dot;
+	let injected: Value = list();
+	for (R of each(this.reagents.reagent_list, T("/datum/reagent"))) {
+		injected += R.name;
 	}
-	rt.endFor(f, 0);
-	trans = 0;
-	if (!truthy(rt.sv(f, "infinite"))) {
-		trans = (yield* g.callName(f, rt.sv(f, "reagents"), "trans_to", [live(M), rt.sv(f, "amount_per_transfer_from_this")]));
+	let trans: Value = 0;
+	if (!this.infinite) {
+		trans = (yield* this.reagents.trans_to(M, this.amount_per_transfer_from_this));
 	} else {
-		trans = (yield* g.callName(f, rt.sv(f, "reagents"), "copy_to", [live(M), rt.sv(f, "amount_per_transfer_from_this")]));
+		trans = (yield* this.reagents.copy_to(M, this.amount_per_transfer_from_this));
 	}
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>＀ unit５ injected.  ＀ unit５ remaining in ＀.</span>", [live(trans), rt.fv(f, "total_volume", rt.sv(f, "reagents")), live(f.src)])]);
-	contained = (yield* g.call(f, P("/proc/english_list"), null, [live(injected)]));
-	yield* g.call(f, P("/proc/add_logs"), null, [live(user), live(M), "injected", live(f.src), fmt("(＀)", [live(contained)])]);
+	to_chat(user, fmt("<span class='notice'>＀ unit５ injected.  ＀ unit５ remaining in ＀.</span>", [trans, this.reagents.total_volume, this]));
+	let contained: Value = english_list(injected);
+	add_logs(user, M, "injected", this, `(${contained})`);
 	return f.dot;
 }, true);
 
@@ -78,12 +69,10 @@ rt.type(6518, "/obj/item/weapon/reagent_containers/hypospray/CMO", "/obj/item/we
 	resistance_flags: 99,
 });
 
-// /obj/item/weapon/reagent_containers/hypospray/CMO/proc/<init>  (code/modules/reagents/reagent_containers/hypospray.dm:49)
+// hypospray.dm:49
 rt.def("/obj/item/weapon/reagent_containers/hypospray/CMO/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["omnizine", 30]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["omnizine", 30]);
 	return f.dot;
 });
 
@@ -97,12 +86,10 @@ rt.type(6519, "/obj/item/weapon/reagent_containers/hypospray/combat", "/obj/item
 	icon_state: "combat_hypo",
 });
 
-// /obj/item/weapon/reagent_containers/hypospray/combat/proc/<init>  (code/modules/reagents/reagent_containers/hypospray.dm:59)
+// hypospray.dm:59
 rt.def("/obj/item/weapon/reagent_containers/hypospray/combat/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["epinephrine", 30, "omnizine", 30, "leporazine", 15, "atropine", 15]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["epinephrine", 30, "omnizine", 30, "leporazine", 15, "atropine", 15]);
 	return f.dot;
 });
 
@@ -112,12 +99,10 @@ rt.type(6520, "/obj/item/weapon/reagent_containers/hypospray/combat/nanites", "/
 	desc: "A modified air-needle autoinjector for use in combat situations. Prefilled with expensive medical nanites for rapid healing.",
 });
 
-// /obj/item/weapon/reagent_containers/hypospray/combat/nanites/proc/<init>  (code/modules/reagents/reagent_containers/hypospray.dm:64)
+// hypospray.dm:64
 rt.def("/obj/item/weapon/reagent_containers/hypospray/combat/nanites/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["nanites", 80, "synaptizine", 20]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["nanites", 80, "synaptizine", 20]);
 	return f.dot;
 });
 
@@ -133,62 +118,58 @@ rt.type(6521, "/obj/item/weapon/reagent_containers/hypospray/medipen", "/obj/ite
 	item_state: "medipen",
 });
 
-// /obj/item/weapon/reagent_containers/hypospray/medipen/proc/<init>  (code/modules/reagents/reagent_containers/hypospray.dm:77)
+// hypospray.dm:77
 rt.def("/obj/item/weapon/reagent_containers/hypospray/medipen/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["epinephrine", 10]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["epinephrine", 10]);
 	return f.dot;
 });
 
-// /obj/item/weapon/reagent_containers/hypospray/medipen/proc/attack  (code/modules/reagents/reagent_containers/hypospray.dm:80)  may sleep
-rt.def("/obj/item/weapon/reagent_containers/hypospray/medipen/proc/attack", function* attack(f: Frame) {
+// hypospray.dm:80
+rt.def("/obj/item/weapon/reagent_containers/hypospray/medipen/proc/attack", function* attack(f: Frame, M: Value, user: Value) {
 	let R: Value = null;
-	f.vars = () => [R];
-	if (!truthy(rt.fv(f, "total_volume", rt.sv(f, "reagents")))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>＀ is empty!</span>", [live(f.src)])]);
-		return live(f.dot);
+	if (!this.reagents.total_volume) {
+		to_chat(user, `<span class='warning'>${this} is empty!</span>`);
+		return f.dot;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy((rt.istype(live(f.args[1]), T("/mob/living/silicon/robot")) ? 1 : 0))) {
-		rt.setFv(f, "maximum_volume", rt.sv(f, "reagents"), 0);
-		rt.setSv(f, "container_type", 0);
+	yield* parent_proc();
+	if (!rt.istype(user, T("/mob/living/silicon/robot"))) {
+		this.reagents.maximum_volume = 0;
+		this.container_type = 0;
 	}
-	yield* g.srcCall(f, "update_icon");
+	yield* this.update_icon();
 	rt.spawnTail(f, 80, "/obj/item/weapon/reagent_containers/hypospray/medipen/proc/attack: spawn at modules/reagents/reagent_containers/hypospray.dm:88", R);
-	return live(f.dot);
-}, true, { args: ["M", "user"] });
+	return f.dot;
+}, true);
 
 // a spawn(80) body of /obj/item/weapon/reagent_containers/hypospray/medipen/proc/attack, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/obj/item/weapon/reagent_containers/hypospray/medipen/proc/attack: spawn at modules/reagents/reagent_containers/hypospray.dm:88", function* (f: Frame, R: Value) {
-	f.vars = () => [R];
-	if ((truthy((rt.istype(live(f.args[1]), T("/mob/living/silicon/robot")) ? 1 : 0)) && !truthy(rt.fv(f, "total_volume", rt.sv(f, "reagents"))))) {
-		if (truthy((yield* g.callName(f, rt.gv(f, "cell", (R = live(f.args[1]))), "use", [100])))) {
-			yield* g.callName(f, rt.sv(f, "reagents"), "add_reagent_list", [rt.sv(f, "list_reagents")]);
-			yield* g.srcCall(f, "update_icon");
+	if (rt.istype(f.args[1], T("/mob/living/silicon/robot")) && !this.reagents.total_volume) {
+		if (yield* (R = f.args[1]).cell.use(100)) {
+			yield* this.reagents.add_reagent_list(this.list_reagents);
+			yield* this.update_icon();
 		}
 	}
 	return null;
 });
 
-// /obj/item/weapon/reagent_containers/hypospray/medipen/proc/update_icon  (code/modules/reagents/reagent_containers/hypospray.dm:97)
+// hypospray.dm:97
 rt.def("/obj/item/weapon/reagent_containers/hypospray/medipen/proc/update_icon", function update_icon(f: Frame) {
-	if (rt.gt(rt.fv(f, "total_volume", rt.sv(f, "reagents")), 0)) {
-		rt.setSv(f, "icon_state", rt.initial(f, live(f.src), "icon_state"));
+	if (this.reagents.total_volume > 0) {
+		this.icon_state = rt.initial(f, this, "icon_state");
 	} else {
-		rt.setSv(f, "icon_state", fmt("＀0", [rt.initial(f, live(f.src), "icon_state")]));
+		this.icon_state = `${rt.initial(f, this, "icon_state")}0`;
 	}
 	return f.dot;
 });
 
-// /obj/item/weapon/reagent_containers/hypospray/medipen/proc/examine  (code/modules/reagents/reagent_containers/hypospray.dm:103)
+// hypospray.dm:103
 rt.def("/obj/item/weapon/reagent_containers/hypospray/medipen/proc/examine", function examine(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	if ((truthy(rt.sv(f, "reagents")) && truthy(rt.getLen(f, rt.fv(f, "reagent_list", rt.sv(f, "reagents")))))) {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.usr), "<span class='notice'>It is currently loaded.</span>"]);
+	parent_proc();
+	if (this.reagents && rt.len(f, this.reagents.reagent_list)) {
+		to_chat(f.usr, "<span class='notice'>It is currently loaded.</span>");
 	} else {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.usr), "<span class='notice'>It is spent.</span>"]);
+		to_chat(f.usr, "<span class='notice'>It is spent.</span>");
 	}
 	return f.dot;
 });
@@ -202,12 +183,10 @@ rt.type(6522, "/obj/item/weapon/reagent_containers/hypospray/medipen/stimpack", 
 	icon_state: "stimpen",
 });
 
-// /obj/item/weapon/reagent_containers/hypospray/medipen/stimpack/proc/<init>  (code/modules/reagents/reagent_containers/hypospray.dm:115)
+// hypospray.dm:115
 rt.def("/obj/item/weapon/reagent_containers/hypospray/medipen/stimpack/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["ephedrine", 10, "coffee", 10]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["ephedrine", 10, "coffee", 10]);
 	return f.dot;
 });
 
@@ -216,12 +195,10 @@ rt.type(6523, "/obj/item/weapon/reagent_containers/hypospray/medipen/stimpack/tr
 	desc: "A modified stimulants autoinjector for use in combat situations. Has a mild healing effect.",
 });
 
-// /obj/item/weapon/reagent_containers/hypospray/medipen/stimpack/traitor/proc/<init>  (code/modules/reagents/reagent_containers/hypospray.dm:119)
+// hypospray.dm:119
 rt.def("/obj/item/weapon/reagent_containers/hypospray/medipen/stimpack/traitor/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["stimulants", 10, "omnizine", 10]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["stimulants", 10, "omnizine", 10]);
 	return f.dot;
 });
 
@@ -231,12 +208,10 @@ rt.type(6524, "/obj/item/weapon/reagent_containers/hypospray/medipen/morphine", 
 	desc: "A rapid way to get you out of a tight situation and fast! You'll feel rather drowsy, though.",
 });
 
-// /obj/item/weapon/reagent_containers/hypospray/medipen/morphine/proc/<init>  (code/modules/reagents/reagent_containers/hypospray.dm:124)
+// hypospray.dm:124
 rt.def("/obj/item/weapon/reagent_containers/hypospray/medipen/morphine/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["morphine", 10]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["morphine", 10]);
 	return f.dot;
 });
 
@@ -249,12 +224,10 @@ rt.type(6525, "/obj/item/weapon/reagent_containers/hypospray/medipen/tuberculosi
 	icon_state: "stimpen",
 });
 
-// /obj/item/weapon/reagent_containers/hypospray/medipen/tuberculosiscure/proc/<init>  (code/modules/reagents/reagent_containers/hypospray.dm:132)
+// hypospray.dm:132
 rt.def("/obj/item/weapon/reagent_containers/hypospray/medipen/tuberculosiscure/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["atropine", 10, "epinephrine", 10, "salbutamol", 20, "spaceacillin", 20]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["atropine", 10, "epinephrine", 10, "salbutamol", 20, "spaceacillin", 20]);
 	return f.dot;
 });
 
@@ -267,12 +240,10 @@ rt.type(6526, "/obj/item/weapon/reagent_containers/hypospray/medipen/survival", 
 	icon_state: "stimpen",
 });
 
-// /obj/item/weapon/reagent_containers/hypospray/medipen/survival/proc/<init>  (code/modules/reagents/reagent_containers/hypospray.dm:140)
+// hypospray.dm:140
 rt.def("/obj/item/weapon/reagent_containers/hypospray/medipen/survival/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["salbutamol", 10, "leporazine", 15, "tricordrazine", 15, "epinephrine", 10, "miningnanites", 2, "omnizine", 5]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["salbutamol", 10, "leporazine", 15, "tricordrazine", 15, "epinephrine", 10, "miningnanites", 2, "omnizine", 5]);
 	return f.dot;
 });
 
@@ -284,11 +255,9 @@ rt.type(6527, "/obj/item/weapon/reagent_containers/hypospray/medipen/species_mut
 	desc: "Embark on a whirlwind tour of racial insensitivity by literally appropriating other races.",
 });
 
-// /obj/item/weapon/reagent_containers/hypospray/medipen/species_mutator/proc/<init>  (code/modules/reagents/reagent_containers/hypospray.dm:148)
+// hypospray.dm:148
 rt.def("/obj/item/weapon/reagent_containers/hypospray/medipen/species_mutator/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "list_reagents", rt.alist(f, ["unstablemutationtoxin", 1]));
+	parent_proc();
+	this.list_reagents = rt.alist(f, ["unstablemutationtoxin", 1]);
 	return f.dot;
 });

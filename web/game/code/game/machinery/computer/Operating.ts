@@ -1,7 +1,7 @@
-// From code/game/machinery/computer/Operating.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/machinery/computer/Operating.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(10401, "/obj/machinery/computer/operating", "/obj/machinery/computer", {
@@ -15,85 +15,73 @@ rt.type(10401, "/obj/machinery/computer/operating", "/obj/machinery/computer", {
 	desc: "Used to monitor the vitals of a patient during surgery.",
 });
 
-// /obj/machinery/computer/operating/proc/Initialize  (code/game/machinery/computer/Operating.dm:13)  may sleep
+// Operating.dm:13
 rt.def("/obj/machinery/computer/operating/proc/Initialize", function* Initialize(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "find_table");
+	yield* parent_proc();
+	this.find_table();
 	return f.dot;
 }, true);
 
-// /obj/machinery/computer/operating/proc/find_table  (code/game/machinery/computer/Operating.dm:17)
+// Operating.dm:17
 rt.def("/obj/machinery/computer/operating/proc/find_table", function find_table(f: Frame) {
 	let dir: Value = null;
-	let $e: any;
-	f.vars = () => [dir, $e];
-	dir = null;
-	rt.forList(f, 0, rt.gl("cardinal"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		dir = $e;
-		rt.setSv(f, "table", rt.locateIn(f, T("/obj/structure/table/optable"), rt.getStep(f, live(f.src), live(dir))));
-		if (truthy(rt.sv(f, "table"))) {
-			rt.setFv(f, "computer", rt.sv(f, "table"), live(f.src));
+	for (dir of each(GLOB.cardinal)) {
+		this.table = rt.locateIn(f, T("/obj/structure/table/optable"), rt.getStep(f, this, dir));
+		if (this.table) {
+			this.table.computer = this;
 			break;
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /obj/machinery/computer/operating/proc/attack_hand  (code/game/machinery/computer/Operating.dm:25)  may sleep
-rt.def("/obj/machinery/computer/operating/proc/attack_hand", function* attack_hand(f: Frame) {
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		return live(f.dot);
+// Operating.dm:25
+rt.def("/obj/machinery/computer/operating/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
+	if (yield* parent_proc()) {
+		return f.dot;
 	}
-	yield* g.srcCall(f, "interact", live(f.args[0]));
-	return f.dot;
-}, true, { args: ["user"] });
-
-// /obj/machinery/computer/operating/proc/interact  (code/game/machinery/computer/Operating.dm:30)  may sleep
-rt.def("/obj/machinery/computer/operating/proc/interact", function* interact(f: Frame, user: Value) {
-	let dat: Value = null, popup: Value = null;
-	f.vars = () => [user, dat, popup];
-	dat = "";
-	if (truthy(rt.sv(f, "table"))) {
-		dat = rt.modify(live(dat), "<B>Patient information:</B><BR>", add);
-		if (truthy((yield* g.callName(f, rt.sv(f, "table"), "check_patient", [])))) {
-			rt.setSv(f, "patient", rt.fv(f, "patient", rt.sv(f, "table")));
-			dat = rt.modify(live(dat), (yield* g.srcCall(f, "get_patient_info")), add);
-		} else {
-			rt.setSv(f, "patient", null);
-			dat = rt.modify(live(dat), "<B>No patient detected</B>", add);
-		}
-	} else {
-		dat = rt.modify(live(dat), "<B>Operating table not found.</B>", add);
-	}
-	yield* g.callName(f, (popup = (yield* g.new_(f, T("/datum/browser"), [live(user), "op", "Operating Computer", 400, 500]))), "set_content", [live(dat)]);
-	yield* g.callName(f, live(popup), "open", []);
+	yield* this.interact(user);
 	return f.dot;
 }, true);
 
-// /obj/machinery/computer/operating/proc/get_patient_info  (code/game/machinery/computer/Operating.dm:47)  may sleep
+// Operating.dm:30
+rt.def("/obj/machinery/computer/operating/proc/interact", function* interact(f: Frame, user: Value) {
+	let popup: Value = null;
+	let dat: Value = "";
+	if (this.table) {
+		dat += "<B>Patient information:</B><BR>";
+		if (this.table.check_patient()) {
+			this.patient = this.table.patient;
+			dat += (yield* this.get_patient_info());
+		} else {
+			this.patient = null;
+			dat += "<B>No patient detected</B>";
+		}
+	} else {
+		dat += "<B>Operating table not found.</B>";
+	}
+	(popup = (yield* new_(T("/datum/browser"), user, "op", "Operating Computer", 400, 500))).set_content(dat);
+	yield* popup.open();
+	return f.dot;
+}, true);
+
+// Operating.dm:47
 rt.def("/obj/machinery/computer/operating/proc/get_patient_info", function* get_patient_info(f: Frame) {
-	let dat: Value = null, procedure: Value = null, surgery_step: Value = null;
+	let procedure: Value = null, surgery_step: Value = null;
 	let $0: any, $e: any;
-	f.vars = () => [dat, procedure, surgery_step, $0, $e];
-	if (truthy(rt.fv(f, "stat", rt.sv(f, "patient")))) {
+	if (this.patient.stat) {
 		$0 = "<span class='bad'>Non-Responsive</span>";
 	} else {
 		$0 = "<span class='good'>Stable</span>";
 	}
-	dat = fmt("\n\t\t\t\t<div class='statusLabel'>Patient:</div> ＀<BR>\n\t\t\t\t<div class='statusLabel'>Blood Type:</div> ＀\n\n\t\t\t\t<BR>\n\t\t\t\t<div class='line'><div class='statusLabel'>Health:</div><div class='progressBar'><div style='width: ＀%;' class='progressFill good'></div></div><div class='statusValue'>＀%</div></div>\n\t\t\t\t<div class='line'><div class='statusLabel'>> Brute Damage:</div><div class='progressBar'><div style='width: ＀%;' class='progressFill bad'></div></div><div class='statusValue'>＀%</div></div>\n\t\t\t\t<div class='line'><div class='statusLabel'>> Resp. Damage:</div><div class='progressBar'><div style='width: ＀%;' class='progressFill bad'></div></div><div class='statusValue'>＀%</div></div>\n\t\t\t\t<div class='line'><div class='statusLabel'>> Toxin Content:</div><div class='progressBar'><div style='width: ＀%;' class='progressFill bad'></div></div><div class='statusValue'>＀%</div></div>\n\t\t\t\t<div class='line'><div class='statusLabel'>> Burn Severity:</div><div class='progressBar'><div style='width: ＀%;' class='progressFill bad'></div></div><div class='statusValue'>＀%</div></div>\n\n\t\t\t\t", [$0, rt.gv(f, "blood_type", rt.fv(f, "dna", rt.sv(f, "patient"))), (yield* g.call(f, P("/proc/max"), null, [rt.fv(f, "health", rt.sv(f, "patient")), 0])), rt.fv(f, "health", rt.sv(f, "patient")), (yield* g.call(f, P("/proc/max"), null, [(yield* g.callName(f, rt.sv(f, "patient"), "getBruteLoss", [])), 0])), (yield* g.callName(f, rt.sv(f, "patient"), "getBruteLoss", [])), (yield* g.call(f, P("/proc/max"), null, [(yield* g.callName(f, rt.sv(f, "patient"), "getOxyLoss", [])), 0])), (yield* g.callName(f, rt.sv(f, "patient"), "getOxyLoss", [])), (yield* g.call(f, P("/proc/max"), null, [(yield* g.callName(f, rt.sv(f, "patient"), "getToxLoss", [])), 0])), (yield* g.callName(f, rt.sv(f, "patient"), "getToxLoss", [])), (yield* g.call(f, P("/proc/max"), null, [(yield* g.callName(f, rt.sv(f, "patient"), "getFireLoss", [])), 0])), (yield* g.callName(f, rt.sv(f, "patient"), "getFireLoss", []))]);
-	if (truthy(rt.getLen(f, rt.fv(f, "surgeries", rt.sv(f, "patient"))))) {
-		dat = rt.modify(live(dat), "<BR><BR><B>Initiated Procedures</B><div class='statusDisplay'>", add);
-		procedure = null;
-		rt.forList(f, 0, rt.fv(f, "surgeries", rt.sv(f, "patient")), T("/datum/surgery"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			procedure = $e;
-			dat = rt.modify(live(dat), fmt("＀<BR>", [(yield* g.call(f, P("/proc/capitalize"), null, [rt.fv(f, "name", live(procedure))]))]), add);
-			dat = rt.modify(live(dat), fmt("Next step: ＀<BR>", [(yield* g.call(f, P("/proc/capitalize"), null, [rt.gv(f, "name", (surgery_step = (yield* g.callName(f, live(procedure), "get_surgery_step", []))))]))]), add);
+	let dat: Value = `\n\t\t\t\t<div class='statusLabel'>Patient:</div> ${$0}<BR>\n\t\t\t\t<div class='statusLabel'>Blood Type:</div> ${this.patient.dna.blood_type}\n\n\t\t\t\t<BR>\n\t\t\t\t<div class='line'><div class='statusLabel'>Health:</div><div class='progressBar'><div style='width: ${max(this.patient.health, 0)}%;' class='progressFill good'></div></div><div class='statusValue'>${this.patient.health}%</div></div>\n\t\t\t\t<div class='line'><div class='statusLabel'>> Brute Damage:</div><div class='progressBar'><div style='width: ${max(this.patient.getBruteLoss(), 0)}%;' class='progressFill bad'></div></div><div class='statusValue'>${this.patient.getBruteLoss()}%</div></div>\n\t\t\t\t<div class='line'><div class='statusLabel'>> Resp. Damage:</div><div class='progressBar'><div style='width: ${max(this.patient.getOxyLoss(), 0)}%;' class='progressFill bad'></div></div><div class='statusValue'>${this.patient.getOxyLoss()}%</div></div>\n\t\t\t\t<div class='line'><div class='statusLabel'>> Toxin Content:</div><div class='progressBar'><div style='width: ${max(this.patient.getToxLoss(), 0)}%;' class='progressFill bad'></div></div><div class='statusValue'>${this.patient.getToxLoss()}%</div></div>\n\t\t\t\t<div class='line'><div class='statusLabel'>> Burn Severity:</div><div class='progressBar'><div style='width: ${max(this.patient.getFireLoss(), 0)}%;' class='progressFill bad'></div></div><div class='statusValue'>${this.patient.getFireLoss()}%</div></div>\n\n\t\t\t\t`;
+	if (rt.len(f, this.patient.surgeries)) {
+		dat += "<BR><BR><B>Initiated Procedures</B><div class='statusDisplay'>";
+		for (procedure of each(this.patient.surgeries, T("/datum/surgery"))) {
+			dat += `${capitalize(procedure.name)}<BR>`;
+			dat += `Next step: ${capitalize((surgery_step = (yield* procedure.get_surgery_step())).name)}<BR>`;
 		}
-		rt.endFor(f, 0);
-		dat = rt.modify(live(dat), "</div>", add);
+		dat += "</div>";
 	}
-	return live(dat);
+	return dat;
 }, true);

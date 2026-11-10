@@ -1,5 +1,5 @@
 // Types declared in code/game/objects/items/stacks that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(7038, "/obj/item/weapon/ore/bluespace_crystal/refined", "/obj/item/weapon/ore/bluespace_crystal", {
 	name: "refined bluespace crystal",

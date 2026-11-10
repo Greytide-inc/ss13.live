@@ -1,7 +1,7 @@
-// From code/game/objects/structures/door_assembly.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/structures/door_assembly.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, g } = rt;
 
 
 rt.type(12410, "/obj/structure/door_assembly", "/obj/structure", {
@@ -26,409 +26,376 @@ rt.type(12410, "/obj/structure/door_assembly", "/obj/structure", {
 	max_integrity: 200,
 });
 
-// /obj/structure/door_assembly/proc/New  (code/game/objects/structures/door_assembly.dm:22)  may sleep
+// door_assembly.dm:22
 rt.def("/obj/structure/door_assembly/proc/New", function* New(f: Frame) {
-	yield* g.srcCall(f, "update_icon");
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* this.update_icon();
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /obj/structure/door_assembly/proc/attackby  (code/game/objects/structures/door_assembly.dm:368)  may sleep
-rt.def("/obj/structure/door_assembly/proc/attackby", function* attackby(f: Frame) {
+// door_assembly.dm:368
+rt.def("/obj/structure/door_assembly/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
 	let t: Value = null, WT: Value = null, icontype: Value = null, optionlist: Value = null, has_solid: Value = null, has_glass: Value = null, door_check: Value = null, D: Value = null, C: Value = null, ae: Value = null, G: Value = null, M: Value = null, door: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [t, WT, icontype, optionlist, has_solid, has_glass, door_check, D, C, ae, G, M, door, $0, $e];
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/pen")) ? 1 : 0))) {
-		if (!truthy((t = (yield* g.call(f, P("/proc/stripped_input"), null, [live(f.args[1]), "Enter the name for the door.", rt.fv(f, "name", live(f.src)), rt.fv(f, "created_name", live(f.src)), 42]))))) {
-			return live(f.dot);
+	let $e: any;
+	if (rt.istype(W, T("/obj/item/weapon/pen"))) {
+		if (!(t = (yield* stripped_input(user, "Enter the name for the door.", this.name, this.created_name, 42)))) {
+			return f.dot;
 		}
-		if ((!rt.le((yield* g.call(f, P("/proc/get_dist"), null, [live(f.src), live(f.usr)])), 1) && !isEqual(rt.fv(f, "loc", live(f.src)), live(f.usr)))) {
-			return live(f.dot);
+		if (!(get_dist(this, f.usr) <= 1) && this.loc != f.usr) {
+			return f.dot;
 		}
-		rt.setSv(f, "created_name", live(t));
-	} else {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/airlock_painter")) ? 1 : 0))) {
-			if (truthy((yield* g.callName(f, (WT = live(f.args[0])), "can_use", [live(f.args[1])])))) {
-				icontype = null;
-				optionlist = null;
-				if ((truthy(rt.sv(f, "mineral")) && isEqual(rt.sv(f, "mineral"), "glass"))) {
-					optionlist = rt.list("Public", "Public2", "Engineering", "Atmospherics", "Security", "Command", "Medical", "Research", "Science", "Mining");
-				} else {
-					optionlist = rt.list("Public", "Engineering", "Atmospherics", "Security", "Command", "Medical", "Research", "Science", "Mining", "Maintenance", "External", "High Security");
-				}
-				icontype = (yield* g.op(f, "Prompt", [0], [null, null, "Please select a paintjob for this airlock.", live(f.args[1]), live(optionlist)]));
-				if (((!rt.le((yield* g.call(f, P("/proc/get_dist"), null, [live(f.src), live(f.usr)])), 1) && !isEqual(rt.fv(f, "loc", live(f.src)), live(f.usr))) || !truthy((yield* g.callName(f, live(WT), "use", [live(f.args[1])]))))) {
-					return live(f.dot);
-				}
-				has_solid = 0;
-				has_glass = 0;
-				$0 = live(icontype);
-				if ($0 === "Public") {
-					rt.setSv(f, "icon", rt.rsc("icons/obj/doors/airlocks/station/public.dmi"));
-					rt.setSv(f, "overlays_file", rt.rsc("icons/obj/doors/airlocks/station/overlays.dmi"));
-					rt.setSv(f, "typetext", "");
-					rt.setSv(f, "icontext", "");
-					has_solid = 1;
-					has_glass = 1;
-				} else if ($0 === "Public2") {
-					rt.setSv(f, "icon", rt.rsc("icons/obj/doors/airlocks/station2/glass.dmi"));
-					rt.setSv(f, "overlays_file", rt.rsc("icons/obj/doors/airlocks/station2/overlays.dmi"));
-					rt.setSv(f, "typetext", "");
-					rt.setSv(f, "icontext", "");
-					has_solid = 1;
-					has_glass = 1;
-				} else if ($0 === "Engineering") {
-					rt.setSv(f, "icon", rt.rsc("icons/obj/doors/airlocks/station/engineering.dmi"));
-					rt.setSv(f, "overlays_file", rt.rsc("icons/obj/doors/airlocks/station/overlays.dmi"));
-					rt.setSv(f, "typetext", "engineering");
-					rt.setSv(f, "icontext", "eng");
-					has_solid = 1;
-					has_glass = 1;
-				} else if ($0 === "Atmospherics") {
-					rt.setSv(f, "icon", rt.rsc("icons/obj/doors/airlocks/station/atmos.dmi"));
-					rt.setSv(f, "overlays_file", rt.rsc("icons/obj/doors/airlocks/station/overlays.dmi"));
-					rt.setSv(f, "typetext", "atmos");
-					rt.setSv(f, "icontext", "atmo");
-					has_solid = 1;
-					has_glass = 1;
-				} else if ($0 === "Security") {
-					rt.setSv(f, "icon", rt.rsc("icons/obj/doors/airlocks/station/security.dmi"));
-					rt.setSv(f, "overlays_file", rt.rsc("icons/obj/doors/airlocks/station/overlays.dmi"));
-					rt.setSv(f, "typetext", "security");
-					rt.setSv(f, "icontext", "sec");
-					has_solid = 1;
-					has_glass = 1;
-				} else if ($0 === "Command") {
-					rt.setSv(f, "icon", rt.rsc("icons/obj/doors/airlocks/station/command.dmi"));
-					rt.setSv(f, "overlays_file", rt.rsc("icons/obj/doors/airlocks/station/overlays.dmi"));
-					rt.setSv(f, "typetext", "command");
-					rt.setSv(f, "icontext", "com");
-					has_solid = 1;
-					has_glass = 1;
-				} else if ($0 === "Medical") {
-					rt.setSv(f, "icon", rt.rsc("icons/obj/doors/airlocks/station/medical.dmi"));
-					rt.setSv(f, "overlays_file", rt.rsc("icons/obj/doors/airlocks/station/overlays.dmi"));
-					rt.setSv(f, "typetext", "medical");
-					rt.setSv(f, "icontext", "med");
-					has_solid = 1;
-					has_glass = 1;
-				} else if ($0 === "Research") {
-					rt.setSv(f, "icon", rt.rsc("icons/obj/doors/airlocks/station/research.dmi"));
-					rt.setSv(f, "overlays_file", rt.rsc("icons/obj/doors/airlocks/station/overlays.dmi"));
-					rt.setSv(f, "typetext", "research");
-					rt.setSv(f, "icontext", "res");
-					has_solid = 1;
-					has_glass = 1;
-				} else if ($0 === "Science") {
-					rt.setSv(f, "icon", rt.rsc("icons/obj/doors/airlocks/station/science.dmi"));
-					rt.setSv(f, "overlays_file", rt.rsc("icons/obj/doors/airlocks/station/overlays.dmi"));
-					rt.setSv(f, "typetext", "research");
-					rt.setSv(f, "icontext", "res");
-					has_solid = 1;
-					has_glass = 1;
-				} else if ($0 === "Mining") {
-					rt.setSv(f, "icon", rt.rsc("icons/obj/doors/airlocks/station/mining.dmi"));
-					rt.setSv(f, "overlays_file", rt.rsc("icons/obj/doors/airlocks/station/overlays.dmi"));
-					rt.setSv(f, "typetext", "mining");
-					rt.setSv(f, "icontext", "min");
-					has_solid = 1;
-					has_glass = 1;
-				} else if ($0 === "Maintenance") {
-					rt.setSv(f, "icon", rt.rsc("icons/obj/doors/airlocks/station/maintenance.dmi"));
-					rt.setSv(f, "overlays_file", rt.rsc("icons/obj/doors/airlocks/station/overlays.dmi"));
-					rt.setSv(f, "typetext", "maintenance");
-					rt.setSv(f, "icontext", "mai");
-					has_solid = 1;
-					has_glass = 0;
-				} else if ($0 === "External") {
-					rt.setSv(f, "icon", rt.rsc("icons/obj/doors/airlocks/external/external.dmi"));
-					rt.setSv(f, "overlays_file", rt.rsc("icons/obj/doors/airlocks/external/overlays.dmi"));
-					rt.setSv(f, "typetext", "external");
-					rt.setSv(f, "icontext", "ext");
-					has_solid = 1;
-					has_glass = 0;
-				} else if ($0 === "High Security") {
-					rt.setSv(f, "icon", rt.rsc("icons/obj/doors/airlocks/highsec/highsec.dmi"));
-					rt.setSv(f, "overlays_file", rt.rsc("icons/obj/doors/airlocks/highsec/overlays.dmi"));
-					rt.setSv(f, "typetext", "highsecurity");
-					rt.setSv(f, "icontext", "highsec");
-					has_solid = 1;
-					has_glass = 0;
-				}
-				if (truthy(live(has_solid))) {
-					rt.setSv(f, "airlock_type", (yield* g.call(f, P("/proc/text2path"), null, [fmt("/obj/machinery/door/airlock/＀", [rt.sv(f, "typetext")])])));
-				} else {
-					rt.setSv(f, "airlock_type", T("/obj/machinery/door/airlock"));
-				}
-				if (truthy(live(has_glass))) {
-					rt.setSv(f, "glass_type", (yield* g.call(f, P("/proc/text2path"), null, [fmt("/obj/machinery/door/airlock/glass_＀", [rt.sv(f, "typetext")])])));
-				} else {
-					rt.setSv(f, "glass_type", T("/obj/machinery/door/airlock/glass"));
-				}
-				if ((truthy(rt.sv(f, "mineral")) && !isEqual(rt.sv(f, "mineral"), "glass"))) {
-					rt.setSv(f, "mineral", null);
-				}
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You change the paintjob on the airlock assembly.</span>"]);
+		this.created_name = t;
+	} else if (rt.istype(W, T("/obj/item/weapon/airlock_painter"))) {
+		if ((WT = W).can_use(user)) {
+			if (this.mineral && this.mineral == "glass") {
+				optionlist = list("Public", "Public2", "Engineering", "Atmospherics", "Security", "Command", "Medical", "Research", "Science", "Mining");
+			} else {
+				optionlist = list("Public", "Engineering", "Atmospherics", "Security", "Command", "Medical", "Research", "Science", "Mining", "Maintenance", "External", "High Security");
 			}
-		} else {
-			if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/weldingtool")) ? 1 : 0)) && !truthy(rt.sv(f, "anchored")))) {
-				if (truthy((yield* g.callName(f, (WT = live(f.args[0])), "remove_fuel", [0, live(f.args[1])])))) {
-					yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='warning'>＀ disassembles the airlock assembly.</span>", [live(f.args[1])]), "You start to disassemble the airlock assembly..."]);
-					yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/items/welder2.ogg"), 50, 1]);
-					if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, multiply(40, rt.fv(f, "toolspeed", live(f.args[0]))), "target", live(f.src)], rt.Args.Named)))) {
-						if (!truthy((yield* g.callName(f, live(WT), "isOn", [])))) {
-							return live(f.dot);
-						}
-						yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You disassemble the airlock assembly.</span>"]);
-						yield* g.srcCall(f, "deconstruct", 1);
+			icontype = (yield* g.op(f, "Prompt", [0], [null, null, "Please select a paintjob for this airlock.", user, optionlist]));
+			if (!(get_dist(this, f.usr) <= 1) && this.loc != f.usr || !(yield* WT.use(user))) {
+				return f.dot;
+			}
+			has_solid = 0;
+			has_glass = 0;
+			if (icontype === "Public") {
+				this.icon = rt.rsc("icons/obj/doors/airlocks/station/public.dmi");
+				this.overlays_file = rt.rsc("icons/obj/doors/airlocks/station/overlays.dmi");
+				this.typetext = "";
+				this.icontext = "";
+				has_solid = 1;
+				has_glass = 1;
+			} else if (icontype === "Public2") {
+				this.icon = rt.rsc("icons/obj/doors/airlocks/station2/glass.dmi");
+				this.overlays_file = rt.rsc("icons/obj/doors/airlocks/station2/overlays.dmi");
+				this.typetext = "";
+				this.icontext = "";
+				has_solid = 1;
+				has_glass = 1;
+			} else if (icontype === "Engineering") {
+				this.icon = rt.rsc("icons/obj/doors/airlocks/station/engineering.dmi");
+				this.overlays_file = rt.rsc("icons/obj/doors/airlocks/station/overlays.dmi");
+				this.typetext = "engineering";
+				this.icontext = "eng";
+				has_solid = 1;
+				has_glass = 1;
+			} else if (icontype === "Atmospherics") {
+				this.icon = rt.rsc("icons/obj/doors/airlocks/station/atmos.dmi");
+				this.overlays_file = rt.rsc("icons/obj/doors/airlocks/station/overlays.dmi");
+				this.typetext = "atmos";
+				this.icontext = "atmo";
+				has_solid = 1;
+				has_glass = 1;
+			} else if (icontype === "Security") {
+				this.icon = rt.rsc("icons/obj/doors/airlocks/station/security.dmi");
+				this.overlays_file = rt.rsc("icons/obj/doors/airlocks/station/overlays.dmi");
+				this.typetext = "security";
+				this.icontext = "sec";
+				has_solid = 1;
+				has_glass = 1;
+			} else if (icontype === "Command") {
+				this.icon = rt.rsc("icons/obj/doors/airlocks/station/command.dmi");
+				this.overlays_file = rt.rsc("icons/obj/doors/airlocks/station/overlays.dmi");
+				this.typetext = "command";
+				this.icontext = "com";
+				has_solid = 1;
+				has_glass = 1;
+			} else if (icontype === "Medical") {
+				this.icon = rt.rsc("icons/obj/doors/airlocks/station/medical.dmi");
+				this.overlays_file = rt.rsc("icons/obj/doors/airlocks/station/overlays.dmi");
+				this.typetext = "medical";
+				this.icontext = "med";
+				has_solid = 1;
+				has_glass = 1;
+			} else if (icontype === "Research") {
+				this.icon = rt.rsc("icons/obj/doors/airlocks/station/research.dmi");
+				this.overlays_file = rt.rsc("icons/obj/doors/airlocks/station/overlays.dmi");
+				this.typetext = "research";
+				this.icontext = "res";
+				has_solid = 1;
+				has_glass = 1;
+			} else if (icontype === "Science") {
+				this.icon = rt.rsc("icons/obj/doors/airlocks/station/science.dmi");
+				this.overlays_file = rt.rsc("icons/obj/doors/airlocks/station/overlays.dmi");
+				this.typetext = "research";
+				this.icontext = "res";
+				has_solid = 1;
+				has_glass = 1;
+			} else if (icontype === "Mining") {
+				this.icon = rt.rsc("icons/obj/doors/airlocks/station/mining.dmi");
+				this.overlays_file = rt.rsc("icons/obj/doors/airlocks/station/overlays.dmi");
+				this.typetext = "mining";
+				this.icontext = "min";
+				has_solid = 1;
+				has_glass = 1;
+			} else if (icontype === "Maintenance") {
+				this.icon = rt.rsc("icons/obj/doors/airlocks/station/maintenance.dmi");
+				this.overlays_file = rt.rsc("icons/obj/doors/airlocks/station/overlays.dmi");
+				this.typetext = "maintenance";
+				this.icontext = "mai";
+				has_solid = 1;
+				has_glass = 0;
+			} else if (icontype === "External") {
+				this.icon = rt.rsc("icons/obj/doors/airlocks/external/external.dmi");
+				this.overlays_file = rt.rsc("icons/obj/doors/airlocks/external/overlays.dmi");
+				this.typetext = "external";
+				this.icontext = "ext";
+				has_solid = 1;
+				has_glass = 0;
+			} else if (icontype === "High Security") {
+				this.icon = rt.rsc("icons/obj/doors/airlocks/highsec/highsec.dmi");
+				this.overlays_file = rt.rsc("icons/obj/doors/airlocks/highsec/overlays.dmi");
+				this.typetext = "highsecurity";
+				this.icontext = "highsec";
+				has_solid = 1;
+				has_glass = 0;
+			}
+			if (has_solid) {
+				this.airlock_type = text2path(`/obj/machinery/door/airlock/${this.typetext}`);
+			} else {
+				this.airlock_type = T("/obj/machinery/door/airlock");
+			}
+			if (has_glass) {
+				this.glass_type = text2path(`/obj/machinery/door/airlock/glass_${this.typetext}`);
+			} else {
+				this.glass_type = T("/obj/machinery/door/airlock/glass");
+			}
+			if (this.mineral && this.mineral != "glass") {
+				this.mineral = null;
+			}
+			to_chat(user, "<span class='notice'>You change the paintjob on the airlock assembly.</span>");
+		}
+	} else if (rt.istype(W, T("/obj/item/weapon/weldingtool")) && !this.anchored) {
+		if (yield* (WT = W).remove_fuel(0, user)) {
+			user.visible_message(`<span class='warning'>${user} disassembles the airlock assembly.</span>`, "You start to disassemble the airlock assembly...");
+			playsound(this.loc, rt.rsc("sound/items/welder2.ogg"), 50, 1);
+			if (yield* do_after(user, 40 * W.toolspeed, { target: this })) {
+				if (!WT.isOn()) {
+					return f.dot;
+				}
+				to_chat(user, "<span class='notice'>You disassemble the airlock assembly.</span>");
+				yield* this.deconstruct(1);
+			}
+		}
+	} else if (rt.istype(W, T("/obj/item/weapon/wrench"))) {
+		if (!this.anchored) {
+			door_check = 1;
+			for (D of each(this.loc, T("/obj/machinery/door"))) {
+				if (!D.sub_door) {
+					door_check = 0;
+					break;
+				}
+			}
+			if (door_check) {
+				playsound(this.loc, W.usesound, 100, 1);
+				user.visible_message(`${user} secures the airlock assembly to the floor.`, "<span class='notice'>You start to secure the airlock assembly to the floor...</span>", "<span class='italics'>You hear wrenching.</span>");
+				if (yield* do_after(user, 40 * W.toolspeed, { target: this })) {
+					if (this.anchored) {
+						return f.dot;
 					}
+					to_chat(user, "<span class='notice'>You secure the airlock assembly.</span>");
+					this.name = "secured airlock assembly";
+					this.anchored = 1;
 				}
 			} else {
-				if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/wrench")) ? 1 : 0))) {
-					if (!truthy(rt.sv(f, "anchored"))) {
-						door_check = 1;
-						D = null;
-						rt.forList(f, 0, rt.sv(f, "loc"), T("/obj/machinery/door"));
-						while (($e = rt.next(f, 0)) !== undefined) {
-							D = $e;
-							if (!truthy(rt.fv(f, "sub_door", live(D)))) {
-								door_check = 0;
-								break;
-							}
+				to_chat(user, "There is another door here!");
+			}
+		} else {
+			playsound(this.loc, W.usesound, 100, 1);
+			user.visible_message(`${user} unsecures the airlock assembly from the floor.`, "<span class='notice'>You start to unsecure the airlock assembly from the floor...</span>", "<span class='italics'>You hear wrenching.</span>");
+			if (yield* do_after(user, 40 * W.toolspeed, { target: this })) {
+				if (!this.anchored) {
+					return f.dot;
+				}
+				to_chat(user, "<span class='notice'>You unsecure the airlock assembly.</span>");
+				this.name = "airlock assembly";
+				this.anchored = 0;
+			}
+		}
+	} else if (rt.istype(W, T("/obj/item/stack/cable_coil")) && this.state == 0 && this.anchored) {
+		if ((C = W).get_amount() < 1) {
+			to_chat(user, "<span class='warning'>You need one length of cable to wire the airlock assembly!</span>");
+			return f.dot;
+		}
+		user.visible_message(`${user} wires the airlock assembly.`, "<span class='notice'>You start to wire the airlock assembly...</span>");
+		if (yield* do_after(user, 40, { target: this })) {
+			if (C.get_amount() < 1 || this.state != 0) {
+				return f.dot;
+			}
+			yield* C.use(1);
+			this.state = 1;
+			to_chat(user, "<span class='notice'>You wire the airlock assembly.</span>");
+			this.name = "wired airlock assembly";
+		}
+	} else if (rt.istype(W, T("/obj/item/weapon/wirecutters")) && this.state == 1) {
+		playsound(this.loc, W.usesound, 100, 1);
+		user.visible_message(`${user} cuts the wires from the airlock assembly.`, "<span class='notice'>You start to cut the wires from the airlock assembly...</span>");
+		if (yield* do_after(user, 40 * W.toolspeed, { target: this })) {
+			if (this.state != 1) {
+				return f.dot;
+			}
+			to_chat(user, "<span class='notice'>You cut the wires from the airlock assembly.</span>");
+			yield* new_(T("/obj/item/stack/cable_coil"), rt.getStep(f, user, 0), 1);
+			this.state = 0;
+			this.name = "secured airlock assembly";
+		}
+	} else if (rt.istype(W, T("/obj/item/weapon/electronics/airlock")) && this.state == 1) {
+		playsound(this.loc, W.usesound, 100, 1);
+		user.visible_message(`${user} installs the electronics into the airlock assembly.`, "<span class='notice'>You start to install electronics into the airlock assembly...</span>");
+		if (yield* do_after(user, 40, { target: this })) {
+			if (this.state != 1) {
+				return f.dot;
+			}
+			if (!(yield* user.drop_item())) {
+				return f.dot;
+			}
+			W.loc = this;
+			to_chat(user, "<span class='notice'>You install the airlock electronics.</span>");
+			this.state = 2;
+			this.name = "near finished airlock assembly";
+			this.electronics = W;
+		}
+	} else if (rt.istype(W, T("/obj/item/weapon/crowbar")) && this.state == 2) {
+		playsound(this.loc, W.usesound, 100, 1);
+		user.visible_message(`${user} removes the electronics from the airlock assembly.`, "<span class='notice'>You start to remove electronics from the airlock assembly...</span>");
+		if (yield* do_after(user, 40 * W.toolspeed, { target: this })) {
+			if (this.state != 2) {
+				return f.dot;
+			}
+			to_chat(user, "<span class='notice'>You remove the airlock electronics.</span>");
+			this.state = 1;
+			this.name = "wired airlock assembly";
+			if (!this.electronics) {
+				ae = (yield* new_(T("/obj/item/weapon/electronics/airlock"), this.loc));
+			} else {
+				ae = this.electronics;
+				this.electronics = null;
+				ae.loc = this.loc;
+			}
+		}
+	} else if (rt.istype(W, T("/obj/item/stack/sheet")) && !this.mineral) {
+		if (G = W) {
+			if (G.get_amount() >= 1) {
+				if (rt.istype(G, T("/obj/item/stack/sheet/rglass")) || rt.istype(G, T("/obj/item/stack/sheet/glass"))) {
+					playsound(this.loc, rt.rsc("sound/items/crowbar.ogg"), 100, 1);
+					user.visible_message(`${user} adds ${G.name} to the airlock assembly.`, `<span class='notice'>You start to install ${G.name} into the airlock assembly...</span>`);
+					if (yield* do_after(user, 40, { target: this })) {
+						if (G.get_amount() < 1 || this.mineral) {
+							return f.dot;
 						}
-						rt.endFor(f, 0);
-						if (truthy(live(door_check))) {
-							yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.fv(f, "usesound", live(f.args[0])), 100, 1]);
-							yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("＀ secures the airlock assembly to the floor.", [live(f.args[1])]), "<span class='notice'>You start to secure the airlock assembly to the floor...</span>", "<span class='italics'>You hear wrenching.</span>"]);
-							if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, multiply(40, rt.fv(f, "toolspeed", live(f.args[0]))), "target", live(f.src)], rt.Args.Named)))) {
-								if (truthy(rt.fv(f, "anchored", live(f.src)))) {
-									return live(f.dot);
-								}
-								yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You secure the airlock assembly.</span>"]);
-								rt.setFv(f, "name", live(f.src), "secured airlock assembly");
-								rt.setFv(f, "anchored", live(f.src), 1);
-							}
+						if (G.type == T("/obj/item/stack/sheet/rglass")) {
+							to_chat(user, "<span class='notice'>You install reinforced glass windows into the airlock assembly.</span>");
+							this.heat_proof_finished = 1;
+							this.name = "near finished heat-proofed window airlock assembly";
 						} else {
-							yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "There is another door here!"]);
+							to_chat(user, "<span class='notice'>You install regular glass windows into the airlock assembly.</span>");
+							this.name = "near finished window airlock assembly";
 						}
-					} else {
-						yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.fv(f, "usesound", live(f.args[0])), 100, 1]);
-						yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("＀ unsecures the airlock assembly from the floor.", [live(f.args[1])]), "<span class='notice'>You start to unsecure the airlock assembly from the floor...</span>", "<span class='italics'>You hear wrenching.</span>"]);
-						if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, multiply(40, rt.fv(f, "toolspeed", live(f.args[0]))), "target", live(f.src)], rt.Args.Named)))) {
-							if (!truthy(rt.sv(f, "anchored"))) {
-								return live(f.dot);
-							}
-							yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You unsecure the airlock assembly.</span>"]);
-							rt.setSv(f, "name", "airlock assembly");
-							rt.setSv(f, "anchored", 0);
+						yield* G.use(1);
+						this.mineral = "glass";
+						this.material = "glass";
+						if (rt.isIn(f, this.icontext, list("eng", "atmo", "sec", "com", "med", "res", "min"))) {
+							this.airlock_type = text2path(`/obj/machinery/door/airlock/${this.typetext}`);
+							this.glass_type = text2path(`/obj/machinery/door/airlock/glass_${this.typetext}`);
+						} else {
+							this.airlock_type = T("/obj/machinery/door/airlock");
+							this.glass_type = T("/obj/machinery/door/airlock/glass");
+							this.typetext = "";
+							this.icontext = "";
 						}
 					}
-				} else {
-					if (((truthy((rt.istype(live(f.args[0]), T("/obj/item/stack/cable_coil")) ? 1 : 0)) && isEqual(rt.sv(f, "state"), 0)) && truthy(rt.sv(f, "anchored")))) {
-						if (rt.lt((yield* g.callName(f, (C = live(f.args[0])), "get_amount", [])), 1)) {
-							yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You need one length of cable to wire the airlock assembly!</span>"]);
-							return live(f.dot);
-						}
-						yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("＀ wires the airlock assembly.", [live(f.args[1])]), "<span class='notice'>You start to wire the airlock assembly...</span>"]);
-						if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, 40, "target", live(f.src)], rt.Args.Named)))) {
-							if ((rt.lt((yield* g.callName(f, live(C), "get_amount", [])), 1) || !isEqual(rt.sv(f, "state"), 0))) {
-								return live(f.dot);
+				} else if (rt.istype(G, T("/obj/item/stack/sheet/mineral"))) {
+					M = G.sheettype;
+					if (G.get_amount() >= 2) {
+						playsound(this.loc, rt.rsc("sound/items/crowbar.ogg"), 100, 1);
+						user.visible_message(`${user} adds ${G.name} to the airlock assembly.`, `<span class='notice'>You start to install ${G.name} into the airlock assembly...</span>`);
+						if (yield* do_after(user, 40, { target: this })) {
+							if (G.get_amount() < 2 || this.mineral) {
+								return f.dot;
 							}
-							yield* g.callName(f, live(C), "use", [1]);
-							rt.setFv(f, "state", live(f.src), 1);
-							yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You wire the airlock assembly.</span>"]);
-							rt.setFv(f, "name", live(f.src), "wired airlock assembly");
-						}
-					} else {
-						if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/wirecutters")) ? 1 : 0)) && isEqual(rt.sv(f, "state"), 1))) {
-							yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.fv(f, "usesound", live(f.args[0])), 100, 1]);
-							yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("＀ cuts the wires from the airlock assembly.", [live(f.args[1])]), "<span class='notice'>You start to cut the wires from the airlock assembly...</span>"]);
-							if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, multiply(40, rt.fv(f, "toolspeed", live(f.args[0]))), "target", live(f.src)], rt.Args.Named)))) {
-								if (!isEqual(rt.fv(f, "state", live(f.src)), 1)) {
-									return live(f.dot);
-								}
-								yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You cut the wires from the airlock assembly.</span>"]);
-								yield* g.new_(f, T("/obj/item/stack/cable_coil"), [rt.getStep(f, live(f.args[1]), 0), 1]);
-								rt.setFv(f, "state", live(f.src), 0);
-								rt.setFv(f, "name", live(f.src), "secured airlock assembly");
-							}
-						} else {
-							if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/electronics/airlock")) ? 1 : 0)) && isEqual(rt.sv(f, "state"), 1))) {
-								yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.fv(f, "usesound", live(f.args[0])), 100, 1]);
-								yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("＀ installs the electronics into the airlock assembly.", [live(f.args[1])]), "<span class='notice'>You start to install electronics into the airlock assembly...</span>"]);
-								if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, 40, "target", live(f.src)], rt.Args.Named)))) {
-									if (!isEqual(rt.fv(f, "state", live(f.src)), 1)) {
-										return live(f.dot);
-									}
-									if (!truthy((yield* g.callName(f, live(f.args[1]), "drop_item", [])))) {
-										return live(f.dot);
-									}
-									rt.setFv(f, "loc", live(f.args[0]), live(f.src));
-									yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You install the airlock electronics.</span>"]);
-									rt.setFv(f, "state", live(f.src), 2);
-									rt.setFv(f, "name", live(f.src), "near finished airlock assembly");
-									rt.setFv(f, "electronics", live(f.src), live(f.args[0]));
-								}
-							} else {
-								if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/crowbar")) ? 1 : 0)) && isEqual(rt.sv(f, "state"), 2))) {
-									yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.fv(f, "usesound", live(f.args[0])), 100, 1]);
-									yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("＀ removes the electronics from the airlock assembly.", [live(f.args[1])]), "<span class='notice'>You start to remove electronics from the airlock assembly...</span>"]);
-									if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, multiply(40, rt.fv(f, "toolspeed", live(f.args[0]))), "target", live(f.src)], rt.Args.Named)))) {
-										if (!isEqual(rt.fv(f, "state", live(f.src)), 2)) {
-											return live(f.dot);
-										}
-										yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You remove the airlock electronics.</span>"]);
-										rt.setFv(f, "state", live(f.src), 1);
-										rt.setFv(f, "name", live(f.src), "wired airlock assembly");
-										ae = null;
-										if (!truthy(rt.sv(f, "electronics"))) {
-											ae = (yield* g.new_(f, T("/obj/item/weapon/electronics/airlock"), [rt.fv(f, "loc", live(f.src))]));
-										} else {
-											ae = rt.sv(f, "electronics");
-											rt.setSv(f, "electronics", null);
-											rt.setFv(f, "loc", live(ae), rt.fv(f, "loc", live(f.src)));
-										}
-									}
-								} else {
-									if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/stack/sheet")) ? 1 : 0)) && !truthy(rt.sv(f, "mineral")))) {
-										if (truthy((G = live(f.args[0])))) {
-											if (rt.ge((yield* g.callName(f, live(G), "get_amount", [])), 1)) {
-												if ((truthy((rt.istype(live(G), T("/obj/item/stack/sheet/rglass")) ? 1 : 0)) || truthy((rt.istype(live(G), T("/obj/item/stack/sheet/glass")) ? 1 : 0)))) {
-													yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/items/crowbar.ogg"), 100, 1]);
-													yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("＀ adds ＀ to the airlock assembly.", [live(f.args[1]), rt.fv(f, "name", live(G))]), fmt("<span class='notice'>You start to install ＀ into the airlock assembly...</span>", [rt.fv(f, "name", live(G))])]);
-													if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, 40, "target", live(f.src)], rt.Args.Named)))) {
-														if ((rt.lt((yield* g.callName(f, live(G), "get_amount", [])), 1) || truthy(rt.sv(f, "mineral")))) {
-															return live(f.dot);
-														}
-														if (isEqual(rt.fv(f, "type", live(G)), T("/obj/item/stack/sheet/rglass"))) {
-															yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You install reinforced glass windows into the airlock assembly.</span>"]);
-															rt.setSv(f, "heat_proof_finished", 1);
-															rt.setSv(f, "name", "near finished heat-proofed window airlock assembly");
-														} else {
-															yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You install regular glass windows into the airlock assembly.</span>"]);
-															rt.setSv(f, "name", "near finished window airlock assembly");
-														}
-														yield* g.callName(f, live(G), "use", [1]);
-														rt.setSv(f, "mineral", "glass");
-														rt.setSv(f, "material", "glass");
-														if (truthy((rt.isIn(f, rt.sv(f, "icontext"), rt.list("eng", "atmo", "sec", "com", "med", "res", "min")) ? 1 : 0))) {
-															rt.setFv(f, "airlock_type", live(f.src), (yield* g.call(f, P("/proc/text2path"), null, [fmt("/obj/machinery/door/airlock/＀", [rt.sv(f, "typetext")])])));
-															rt.setFv(f, "glass_type", live(f.src), (yield* g.call(f, P("/proc/text2path"), null, [fmt("/obj/machinery/door/airlock/glass_＀", [rt.sv(f, "typetext")])])));
-														} else {
-															rt.setSv(f, "airlock_type", T("/obj/machinery/door/airlock"));
-															rt.setSv(f, "glass_type", T("/obj/machinery/door/airlock/glass"));
-															rt.setSv(f, "typetext", "");
-															rt.setSv(f, "icontext", "");
-														}
-													}
-												} else {
-													if (truthy((rt.istype(live(G), T("/obj/item/stack/sheet/mineral")) ? 1 : 0))) {
-														M = rt.fv(f, "sheettype", live(G));
-														if (rt.ge((yield* g.callName(f, live(G), "get_amount", [])), 2)) {
-															yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/items/crowbar.ogg"), 100, 1]);
-															yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("＀ adds ＀ to the airlock assembly.", [live(f.args[1]), rt.fv(f, "name", live(G))]), fmt("<span class='notice'>You start to install ＀ into the airlock assembly...</span>", [rt.fv(f, "name", live(G))])]);
-															if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, 40, "target", live(f.src)], rt.Args.Named)))) {
-																if ((rt.lt((yield* g.callName(f, live(G), "get_amount", [])), 2) || truthy(rt.sv(f, "mineral")))) {
-																	return live(f.dot);
-																}
-																yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You install ＀ plating into the airlock assembly.</span>", [live(M)])]);
-																yield* g.callName(f, live(G), "use", [2]);
-																rt.setSv(f, "mineral", fmt("＀", [live(M)]));
-																rt.setSv(f, "name", fmt("near finished ＀ airlock assembly", [live(M)]));
-																rt.setSv(f, "airlock_type", (yield* g.call(f, P("/proc/text2path"), null, [fmt("/obj/machinery/door/airlock/＀", [live(M)])])));
-																rt.setSv(f, "glass_type", T("/obj/machinery/door/airlock/glass"));
-															}
-														}
-													}
-												}
-											}
-										}
-									} else {
-										if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/screwdriver")) ? 1 : 0)) && isEqual(rt.sv(f, "state"), 2))) {
-											yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.fv(f, "usesound", live(f.args[0])), 100, 1]);
-											yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("＀ finishes the airlock.", [live(f.args[1])]), "<span class='notice'>You start finishing the airlock...</span>"]);
-											if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, multiply(40, rt.fv(f, "toolspeed", live(f.args[0]))), "target", live(f.src)], rt.Args.Named)))) {
-												if ((truthy(rt.fv(f, "loc", live(f.src))) && isEqual(rt.sv(f, "state"), 2))) {
-													yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You finish the airlock.</span>"]);
-													door = null;
-													if (isEqual(rt.sv(f, "mineral"), "glass")) {
-														door = (yield* g.new_(f, rt.fv(f, "glass_type", live(f.src)), [rt.fv(f, "loc", live(f.src))]));
-													} else {
-														door = (yield* g.new_(f, rt.fv(f, "airlock_type", live(f.src)), [rt.fv(f, "loc", live(f.src))]));
-													}
-													rt.setFv(f, "electronics", live(door), rt.fv(f, "electronics", live(f.src)));
-													rt.setFv(f, "heat_proof", live(door), rt.fv(f, "heat_proof_finished", live(f.src)));
-													if (truthy(rt.gv(f, "one_access", rt.fv(f, "electronics", live(f.src))))) {
-														rt.setFv(f, "req_one_access", live(door), rt.gv(f, "accesses", rt.fv(f, "electronics", live(f.src))));
-													} else {
-														rt.setFv(f, "req_access", live(door), rt.gv(f, "accesses", rt.fv(f, "electronics", live(f.src))));
-													}
-													if (truthy(rt.sv(f, "created_name"))) {
-														rt.setFv(f, "name", live(door), rt.sv(f, "created_name"));
-													}
-													rt.setFv(f, "loc", rt.fv(f, "electronics", live(f.src)), live(door));
-													yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-												}
-											}
-										} else {
-											return (yield* g.callSuper(f, [], rt.Args.Same));
-										}
-									}
-								}
-							}
+							to_chat(user, `<span class='notice'>You install ${M} plating into the airlock assembly.</span>`);
+							yield* G.use(2);
+							this.mineral = `${M}`;
+							this.name = `near finished ${M} airlock assembly`;
+							this.airlock_type = text2path(`/obj/machinery/door/airlock/${M}`);
+							this.glass_type = T("/obj/machinery/door/airlock/glass");
 						}
 					}
 				}
 			}
 		}
-	}
-	yield* g.srcCall(f, "update_icon");
-	return f.dot;
-}, true, { args: ["W", "user", "params"] });
-
-// /obj/structure/door_assembly/proc/update_icon  (code/game/objects/structures/door_assembly.dm:690)
-rt.def("/obj/structure/door_assembly/proc/update_icon", function update_icon(f: Frame) {
-	rt.callSrc(f, "cut_overlays", []);
-	if (!truthy(rt.sv(f, "material"))) {
-		rt.callSrc(f, "add_overlay", [rt.call(f, P("/proc/get_airlock_overlay"), null, ["fill_construction", rt.sv(f, "icon")])]);
+	} else if (rt.istype(W, T("/obj/item/weapon/screwdriver")) && this.state == 2) {
+		playsound(this.loc, W.usesound, 100, 1);
+		user.visible_message(`${user} finishes the airlock.`, "<span class='notice'>You start finishing the airlock...</span>");
+		if (yield* do_after(user, 40 * W.toolspeed, { target: this })) {
+			if (this.loc && this.state == 2) {
+				to_chat(user, "<span class='notice'>You finish the airlock.</span>");
+				if (this.mineral == "glass") {
+					door = (yield* new_(this.glass_type, this.loc));
+				} else {
+					door = (yield* new_(this.airlock_type, this.loc));
+				}
+				door.electronics = this.electronics;
+				door.heat_proof = this.heat_proof_finished;
+				if (this.electronics.one_access) {
+					door.req_one_access = this.electronics.accesses;
+				} else {
+					door.req_access = this.electronics.accesses;
+				}
+				if (this.created_name) {
+					door.name = this.created_name;
+				}
+				this.electronics.loc = door;
+				yield* qdel(this);
+			}
+		}
 	} else {
-		rt.callSrc(f, "add_overlay", [rt.call(f, P("/proc/get_airlock_overlay"), null, [fmt("＀_construction", [rt.sv(f, "material")]), rt.sv(f, "overlays_file")])]);
+		return (yield* parent_proc());
 	}
-	rt.callSrc(f, "add_overlay", [rt.call(f, P("/proc/get_airlock_overlay"), null, [fmt("panel_c＀", [add(rt.sv(f, "state"), 1)]), rt.sv(f, "overlays_file")])]);
+	yield* this.update_icon();
+	return f.dot;
+}, true);
+
+// door_assembly.dm:690
+rt.def("/obj/structure/door_assembly/proc/update_icon", function update_icon(f: Frame) {
+	this.cut_overlays();
+	if (!this.material) {
+		this.add_overlay(get_airlock_overlay("fill_construction", this.icon));
+	} else {
+		this.add_overlay(get_airlock_overlay(`${this.material}_construction`, this.overlays_file));
+	}
+	this.add_overlay(get_airlock_overlay(`panel_c${this.state + 1}`, this.overlays_file));
 	return f.dot;
 });
 
-// /obj/structure/door_assembly/proc/deconstruct  (code/game/objects/structures/door_assembly.dm:699)  may sleep
+// door_assembly.dm:699
 rt.def("/obj/structure/door_assembly/proc/deconstruct", function* deconstruct(f: Frame, disassembled: Value) {
 	let _T: Value = null, metal_amt: Value = null, mineral_path: Value = null;
-	f.vars = () => [disassembled, _T, metal_amt, mineral_path];
-	if (live(disassembled) === null) {
-		disassembled = 1;
-	}
-	if (!truthy(rt.bitAnd(rt.sv(f, "flags"), 128))) {
-		_T = rt.getStep(f, live(f.src), 0);
+	disassembled ??= 1;
+	if (!rt.bitAnd(this.flags, NODECONSTRUCT)) {
+		_T = rt.getStep(f, this, 0);
 		metal_amt = 4;
-		if (!truthy(live(disassembled))) {
-			metal_amt = (yield* g.call(f, P("/proc/rand"), null, [2, 4]));
+		if (!disassembled) {
+			metal_amt = rand(2, 4);
 		}
-		yield* g.new_(f, T("/obj/item/stack/sheet/metal"), [live(_T), live(metal_amt)]);
-		if (truthy(rt.sv(f, "mineral"))) {
-			if (isEqual(rt.sv(f, "mineral"), "glass")) {
-				if (truthy(live(disassembled))) {
-					if (truthy(rt.sv(f, "heat_proof_finished"))) {
-						yield* g.new_(f, T("/obj/item/stack/sheet/rglass"), [live(_T)]);
+		yield* new_(T("/obj/item/stack/sheet/metal"), _T, metal_amt);
+		if (this.mineral) {
+			if (this.mineral == "glass") {
+				if (disassembled) {
+					if (this.heat_proof_finished) {
+						yield* new_(T("/obj/item/stack/sheet/rglass"), _T);
 					} else {
-						yield* g.new_(f, T("/obj/item/stack/sheet/glass"), [live(_T)]);
+						yield* new_(T("/obj/item/stack/sheet/glass"), _T);
 					}
 				} else {
-					yield* g.new_(f, T("/obj/item/weapon/shard"), [live(_T)]);
+					yield* new_(T("/obj/item/weapon/shard"), _T);
 				}
 			} else {
-				mineral_path = (yield* g.call(f, P("/proc/text2path"), null, [fmt("/obj/item/stack/sheet/mineral/＀", [rt.sv(f, "mineral")])]));
-				yield* g.new_(f, live(mineral_path), [live(_T), 2]);
+				mineral_path = text2path(`/obj/item/stack/sheet/mineral/${this.mineral}`);
+				yield* new_(mineral_path, _T, 2);
 			}
 		}
 	}
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* qdel(this);
 	return f.dot;
 }, true);

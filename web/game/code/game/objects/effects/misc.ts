@@ -1,7 +1,7 @@
-// From code/game/objects/effects/misc.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/effects/misc.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(11892, "/obj/effect/list_container/mobl", "/obj/effect/list_container", {
@@ -10,12 +10,10 @@ rt.type(11892, "/obj/effect/list_container/mobl", "/obj/effect/list_container", 
 	name: "mobl",
 });
 
-// /obj/effect/list_container/mobl/proc/<init>  (code/game/objects/effects/misc.dm:25)
+// misc.dm:25
 rt.def("/obj/effect/list_container/mobl/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "container", rt.list());
+	parent_proc();
+	this.container = list();
 	return f.dot;
 });
 
@@ -27,16 +25,16 @@ rt.type(11802, "/obj/effect/abstract/marker", "/obj/effect/abstract", {
 	layer: 5.1,
 });
 
-// /obj/effect/abstract/marker/proc/Initialize  (code/game/objects/effects/misc.dm:43)
-rt.def("/obj/effect/abstract/marker/proc/Initialize", function Initialize(f: Frame) {
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	rt.modGl("all_abstract_markers", live(f.src), add);
+// misc.dm:43
+rt.def("/obj/effect/abstract/marker/proc/Initialize", function Initialize(f: Frame, mapload: Value) {
+	f.dot = parent_proc();
+	GLOB.all_abstract_markers += this;
 	return f.dot;
-}, false, { args: ["mapload"] });
+}, false);
 
-// /obj/effect/abstract/marker/proc/Destroy  (code/game/objects/effects/misc.dm:47)  may sleep
+// misc.dm:47
 rt.def("/obj/effect/abstract/marker/proc/Destroy", function* Destroy(f: Frame) {
-	(rt.modGl("all_abstract_markers", live(f.src), subtract));
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	GLOB.all_abstract_markers -= this;
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true);

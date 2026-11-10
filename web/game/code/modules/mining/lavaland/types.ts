@@ -1,5 +1,5 @@
 // Types declared in code/modules/mining/lavaland that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(6350, "/obj/item/weapon/reagent_containers/food/snacks/grown/ash_flora/shavings", "/obj/item/weapon/reagent_containers/food/snacks/grown/ash_flora", {});
 rt.type(6678, "/obj/item/weapon/disk/design_disk/modkit_disc/mob_and_turf_aoe", "/obj/item/weapon/disk/design_disk/modkit_disc", {

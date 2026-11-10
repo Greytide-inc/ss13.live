@@ -1,7 +1,7 @@
-// From code/__DATASTRUCTURES/priority_queue.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/__DATASTRUCTURES/priority_queue.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, g } = rt;
 
 
 rt.type(4410, "/PriorityQueue", "/datum", {
@@ -9,57 +9,56 @@ rt.type(4410, "/PriorityQueue", "/datum", {
 	cmp: null,
 });
 
-// /PriorityQueue/proc/New  (code/__DATASTRUCTURES/priority_queue.dm:12)
+// priority_queue.dm:12
 rt.def("/PriorityQueue/proc/New", function New(f: Frame, compare: Value) {
-	rt.setSv(f, "L", rt.new_(f, T("/list"), []));
-	rt.setSv(f, "cmp", live(compare));
+	this.L = new_(T("/list"));
+	this.cmp = compare;
 	return f.dot;
 });
 
-// /PriorityQueue/proc/IsEmpty  (code/__DATASTRUCTURES/priority_queue.dm:16)
+// priority_queue.dm:16
 rt.def("/PriorityQueue/proc/IsEmpty", function IsEmpty(f: Frame) {
-	return (!truthy(rt.len(f, rt.sv(f, "L"))) ? 1 : 0);
+	return (!rt.len(f, this.L) ? 1 : 0);
 });
 
-// /PriorityQueue/proc/Remove  (code/__DATASTRUCTURES/priority_queue.dm:57)
+// priority_queue.dm:57
 rt.def("/PriorityQueue/proc/Remove", function Remove(f: Frame, A: Value) {
-	return rt.callName(f, rt.sv(f, "L"), "Remove", [live(A)]);
+	return this.L.Remove(A);
 });
 
-// /PriorityQueue/proc/List  (code/__DATASTRUCTURES/priority_queue.dm:61)
+// priority_queue.dm:61
 rt.def("/PriorityQueue/proc/List", function List(f: Frame) {
-	f.dot = rt.callName(f, rt.sv(f, "L"), "Copy", []);
+	f.dot = this.L.Copy();
 	return f.dot;
 });
 
-// /PriorityQueue/proc/Seek  (code/__DATASTRUCTURES/priority_queue.dm:65)
+// priority_queue.dm:65
 rt.def("/PriorityQueue/proc/Seek", function Seek(f: Frame, A: Value) {
-	f.dot = rt.callName(f, rt.sv(f, "L"), "Find", [live(A)]);
+	f.dot = this.L.Find(A);
 	return f.dot;
 });
 
-// /PriorityQueue/proc/Get  (code/__DATASTRUCTURES/priority_queue.dm:69)
+// priority_queue.dm:69
 rt.def("/PriorityQueue/proc/Get", function Get(f: Frame, i: Value) {
-	if ((rt.gt(live(i), rt.len(f, rt.sv(f, "L"))) || rt.lt(live(i), 1))) {
+	if (i > rt.len(f, this.L) || i < 1) {
 		return 0;
 	}
-	return rt.index(rt.sv(f, "L"), live(i));
+	return rt.index(this.L, i);
 });
 
-// /PriorityQueue/proc/ReSort  (code/__DATASTRUCTURES/priority_queue.dm:75)  may sleep
+// priority_queue.dm:75
 rt.def("/PriorityQueue/proc/ReSort", function* ReSort(f: Frame, A: Value) {
 	let i: Value = null;
-	f.vars = () => [A, i];
-	if (isEqual((i = (yield* g.srcCall(f, "Seek", live(A)))), 0)) {
-		return live(f.dot);
+	if ((i = this.Seek(A)) == 0) {
+		return f.dot;
 	}
-	while (rt.lt(live(i), rt.len(f, rt.sv(f, "L"))) && rt.gt((yield* g.callDyn(f, rt.sv(f, "cmp"), undefined, [rt.index(rt.sv(f, "L"), live(i)), rt.index(rt.sv(f, "L"), add(live(i), 1))])), 0)) {
-		yield* g.callName(f, rt.sv(f, "L"), "Swap", [live(i), add(live(i), 1)]);
-		i = rt.inc(live(i), 1);
+	while (i < rt.len(f, this.L) && (yield* g.callDyn(f, this.cmp, undefined, [rt.index(this.L, i), rt.index(this.L, i + 1)])) > 0) {
+		this.L.Swap(i, i + 1);
+		i++;
 	}
-	while (rt.gt(live(i), 1) && rt.le((yield* g.callDyn(f, rt.sv(f, "cmp"), undefined, [rt.index(rt.sv(f, "L"), live(i)), rt.index(rt.sv(f, "L"), subtract(live(i), 1))])), 0)) {
-		yield* g.callName(f, rt.sv(f, "L"), "Swap", [live(i), subtract(live(i), 1)]);
-		i = rt.inc(live(i), -1);
+	while (i > 1 && (yield* g.callDyn(f, this.cmp, undefined, [rt.index(this.L, i), rt.index(this.L, i - 1)])) <= 0) {
+		this.L.Swap(i, i - 1);
+		i--;
 	}
 	return f.dot;
 }, true);

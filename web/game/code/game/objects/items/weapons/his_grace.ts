@@ -1,7 +1,7 @@
-// From code/game/objects/items/weapons/his_grace.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/weapons/his_grace.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(7233, "/obj/item/weapon/his_grace", "/obj/item/weapon", {
@@ -21,301 +21,278 @@ rt.type(7233, "/obj/item/weapon/his_grace", "/obj/item/weapon", {
 	hitsound: rt.rsc("sound/weapons/smash.ogg"),
 });
 
-// /obj/item/weapon/his_grace/proc/<init>  (code/game/objects/items/weapons/his_grace.dm:16)
+// his_grace.dm:16
 rt.def("/obj/item/weapon/his_grace/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "attack_verb", rt.list("robusted"));
+	parent_proc();
+	this.attack_verb = list("robusted");
 	return f.dot;
 });
 
-// /obj/item/weapon/his_grace/proc/New  (code/game/objects/items/weapons/his_grace.dm:24)  may sleep
+// his_grace.dm:24
 rt.def("/obj/item/weapon/his_grace/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.fv(f, "isprocessing", live(f.src)))) return f.dot;
-	rt.setFv(f, "isprocessing", live(f.src), 1);
-	rt.modField(f, rt.gl("SSprocessing"), "processing", live(f.src), add);
+	yield* parent_proc();
+	if (this.isprocessing) return f.dot;
+	this.isprocessing = 1;
+	GLOB.SSprocessing.processing += this;
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/his_grace/proc/Destroy  (code/game/objects/items/weapons/his_grace.dm:28)  may sleep
+// his_grace.dm:28
 rt.def("/obj/item/weapon/his_grace/proc/Destroy", function* Destroy(f: Frame) {
 	let L: Value = null;
-	let $e: any;
-	f.vars = () => [L, $e];
-	rt.setFv(f, "isprocessing", live(f.src), 0);
-	(rt.modField(f, rt.gl("SSprocessing"), "processing", live(f.src), subtract));
-	L = null;
-	rt.forList(f, 0, live(f.src), T("/mob/living"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		L = $e;
-		yield* g.callName(f, live(L), "forceMove", [rt.getStep(f, live(f.src), 0)]);
+	this.isprocessing = 0;
+	GLOB.SSprocessing.processing -= this;
+	for (L of each(this, T("/mob/living"))) {
+		yield* L.forceMove(rt.getStep(f, this, 0));
 	}
-	rt.endFor(f, 0);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);
 
-// /obj/item/weapon/his_grace/proc/attack_self  (code/game/objects/items/weapons/his_grace.dm:34)
+// his_grace.dm:34
 rt.def("/obj/item/weapon/his_grace/proc/attack_self", function attack_self(f: Frame, user: Value) {
-	if (truthy(rt.sv(f, "awakened"))) return f.dot;
-	rt.call(f, P("/proc/ImmediateInvokeAsync"), null, [live(f.src), P("/obj/item/weapon/his_grace/proc/awaken"), live(user)]);
+	if (this.awakened) return f.dot;
+	ImmediateInvokeAsync(this, P("/obj/item/weapon/his_grace/proc/awaken"), user);
 	return f.dot;
 });
 
-// /obj/item/weapon/his_grace/proc/attack  (code/game/objects/items/weapons/his_grace.dm:38)  may sleep
-rt.def("/obj/item/weapon/his_grace/proc/attack", function* attack(f: Frame) {
-	if ((truthy(rt.sv(f, "awakened")) && truthy(rt.fv(f, "stat", live(f.args[0]))))) {
-		yield* g.srcCall(f, "consume", live(f.args[0]));
+// his_grace.dm:38
+rt.def("/obj/item/weapon/his_grace/proc/attack", function* attack(f: Frame, M: Value, user: Value) {
+	if (this.awakened && M.stat) {
+		yield* this.consume(M);
 	} else {
-		yield* g.callSuper(f, [], rt.Args.Same);
+		yield* parent_proc();
 	}
-	return f.dot;
-}, true, { args: ["M", "user"] });
-
-// /obj/item/weapon/his_grace/proc/examine  (code/game/objects/items/weapons/his_grace.dm:47)
-rt.def("/obj/item/weapon/his_grace/proc/examine", function examine(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	rt.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.sv(f, "awakened"))) {
-		$0 = rt.sv(f, "bloodthirst");
-		if (rt.inRange($0, 0, 20)) {
-			rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='his_grace'>＀ isn't very hungry. Not yet.</span>", [live(f.src)])]);
-		} else if (rt.inRange($0, 20, 60)) {
-			rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='his_grace'>＀ would like a snack.</span>", [live(f.src)])]);
-		} else if (rt.inRange($0, 60, 100)) {
-			rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='his_grace'>＀ is quite hungry now.</span>", [live(f.src)])]);
-		} else if (rt.inRange($0, 100, 120)) {
-			rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='his_grace'>＀ is openly salivating at the sight of you. Be careful.</span>", [live(f.src)])]);
-		} else if (rt.inRange($0, 120, 140)) {
-			rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='his_grace bold'>You walk a fine line. ＀ is very close to devouring you.</span>", [live(f.src)])]);
-		} else if (rt.inRange($0, 140, 160)) {
-			rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='his_grace bold'>＀ is shaking violently and staring directly at you.</span>", [live(f.src)])]);
-		}
-	} else {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='his_grace'>＀ is latched closed.</span>", [live(f.src)])]);
-	}
-	return f.dot;
-}, false, { args: ["user"] });
-
-// /obj/item/weapon/his_grace/proc/relaymove  (code/game/objects/items/weapons/his_grace.dm:66)  may sleep
-rt.def("/obj/item/weapon/his_grace/proc/relaymove", function* relaymove(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if (truthy(rt.sv(f, "awakened"))) return f.dot;
-	yield* g.callName(f, live(user), "forceMove", [rt.getStep(f, live(f.src), 0)]);
-	yield* g.callName(f, live(user), "visible_message", [fmt("<span class='warning'>＀ scrambles out of ＀!</span>", [live(user), live(f.src)]), fmt("<span class='notice'>You climb out of ＀!</span>", [live(f.src)])]);
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/his_grace/proc/process  (code/game/objects/items/weapons/his_grace.dm:71)  may sleep
-rt.def("/obj/item/weapon/his_grace/proc/process", function* process(f: Frame) {
-	let master: Value = null, targets: Value = null, L: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [master, targets, L, $0, $e];
-	if (!truthy(rt.sv(f, "bloodthirst"))) {
-		yield* g.srcCall(f, "drowse");
-		return live(f.dot);
-	}
-	if (rt.lt(rt.sv(f, "bloodthirst"), 140)) {
-		yield* g.srcCall(f, "adjust_bloodthirst", add(1, (yield* g.call(f, P("/proc/Floor"), null, [multiply(rt.length(rt.sv(f, "contents")), 0.5)]))));
-	} else {
-		yield* g.srcCall(f, "adjust_bloodthirst", 1);
-	}
-	if ((truthy((rt.istype((master = (yield* g.call(f, P("/proc/get_atom_on_turf"), null, [live(f.src), T("/mob/living")]))), T("/mob/living")) ? 1 : 0)) && truthy((rt.isIn(f, live(f.src), rt.fv(f, "held_items", live(master))) ? 1 : 0)))) {
-		$0 = rt.sv(f, "bloodthirst");
-		if (rt.inRange($0, 140, 160)) {
-			yield* g.callName(f, live(master), "visible_message", [fmt("<span class='boldwarning'>＀ turns on ＀!</span>", [live(f.src), live(master)]), fmt("<span class='his_grace big bold'>＀ turns on you!</span>", [live(f.src)])]);
-			yield* g.srcCall(f, "do_attack_animation", live(master), null, live(f.src));
-			yield* g.callName(f, live(master), "emote", ["scream"]);
-			yield* g.callName(f, live(master), "remove_status_effect", [T("/datum/status_effect/his_grace")]);
-			(rt.modSrcVar(f, "flags", 16777213, rt.bitAnd));
-			yield* g.callName(f, live(master), "Knockdown", [60]);
-			yield* g.callName(f, live(master), "adjustBruteLoss", [rt.fv(f, "maxHealth", live(master))]);
-			yield* g.call(f, P("/proc/playsound"), null, [live(master), rt.rsc("sound/effects/splat.ogg"), 100, 0]);
-		} else {
-			yield* g.callName(f, live(master), "apply_status_effect", [T("/datum/status_effect/his_grace")]);
+// his_grace.dm:47
+rt.def("/obj/item/weapon/his_grace/proc/examine", function examine(f: Frame, user: Value) {
+	parent_proc();
+	if (this.awakened) {
+		if (rt.inRange(this.bloodthirst, HIS_GRACE_SATIATED, HIS_GRACE_PECKISH)) {
+			to_chat(user, `<span class='his_grace'>${this} isn't very hungry. Not yet.</span>`);
+		} else if (rt.inRange(this.bloodthirst, HIS_GRACE_PECKISH, HIS_GRACE_HUNGRY)) {
+			to_chat(user, `<span class='his_grace'>${this} would like a snack.</span>`);
+		} else if (rt.inRange(this.bloodthirst, HIS_GRACE_HUNGRY, HIS_GRACE_FAMISHED)) {
+			to_chat(user, `<span class='his_grace'>${this} is quite hungry now.</span>`);
+		} else if (rt.inRange(this.bloodthirst, HIS_GRACE_FAMISHED, HIS_GRACE_STARVING)) {
+			to_chat(user, `<span class='his_grace'>${this} is openly salivating at the sight of you. Be careful.</span>`);
+		} else if (rt.inRange(this.bloodthirst, HIS_GRACE_STARVING, HIS_GRACE_CONSUME_OWNER)) {
+			to_chat(user, `<span class='his_grace bold'>You walk a fine line. ${this} is very close to devouring you.</span>`);
+		} else if (rt.inRange(this.bloodthirst, HIS_GRACE_CONSUME_OWNER, HIS_GRACE_FALL_ASLEEP)) {
+			to_chat(user, `<span class='his_grace bold'>${this} is shaking violently and staring directly at you.</span>`);
 		}
-		return live(f.dot);
-	}
-	yield* g.srcCall(f, "forceMove", rt.getStep(f, live(f.src), 0));
-	if (rt.lt(rt.sv(f, "bloodthirst"), 140)) {
-		return live(f.dot);
-	}
-	if (rt.ge(rt.sv(f, "bloodthirst"), 160)) {
-		yield* g.srcCall(f, "drowse");
-		return live(f.dot);
-	}
-	targets = rt.list();
-	L = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/oview"), null, [2, live(f.src)])), T("/mob/living"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		L = $e;
-		targets = rt.modify(live(targets), live(L), add);
-	}
-	rt.endFor(f, 0);
-	if (!truthy(rt.length(live(targets)))) {
-		return live(f.dot);
-	}
-	L = rt.op(f, "PickUnweighted", [1], [live(targets)]);
-	yield* g.call(f, P("/proc/step_to"), null, [live(f.src), live(L)]);
-	if (!truthy((yield* g.srcCall(f, "Adjacent", live(L))))) return f.dot;
-	if (!truthy(rt.fv(f, "stat", live(L)))) {
-		yield* g.callName(f, live(L), "visible_message", [fmt("<span class='warning'>＀ lunges at ＀!</span>", [live(f.src), live(L)]), fmt("<span class='his_grace big bold'>＀ lunges at you!</span>", [live(f.src)])]);
-		yield* g.srcCall(f, "do_attack_animation", live(L), null, live(f.src));
-		yield* g.call(f, P("/proc/playsound"), null, [live(L), rt.rsc("sound/weapons/smash.ogg"), 50, 1]);
-		yield* g.call(f, P("/proc/playsound"), null, [live(L), rt.rsc("sound/misc/desceration-01.ogg"), 50, 1]);
-		yield* g.callName(f, live(L), "adjustBruteLoss", [rt.sv(f, "force")]);
-		yield* g.srcCall(f, "adjust_bloodthirst", -5);
 	} else {
-		yield* g.srcCall(f, "consume", live(L));
+		to_chat(user, `<span class='his_grace'>${this} is latched closed.</span>`);
+	}
+	return f.dot;
+}, false);
+
+// his_grace.dm:66
+rt.def("/obj/item/weapon/his_grace/proc/relaymove", function* relaymove(f: Frame, user: Value) {
+	if (this.awakened) return f.dot;
+	yield* user.forceMove(rt.getStep(f, this, 0));
+	user.visible_message(`<span class='warning'>${user} scrambles out of ${this}!</span>`, `<span class='notice'>You climb out of ${this}!</span>`);
+	return f.dot;
+}, true);
+
+// his_grace.dm:71
+rt.def("/obj/item/weapon/his_grace/proc/process", function* process(f: Frame) {
+	let master: Value = null, L: Value = null;
+	let $e: any;
+	if (!this.bloodthirst) {
+		this.drowse();
+		return f.dot;
+	}
+	if (this.bloodthirst < HIS_GRACE_CONSUME_OWNER) {
+		this.adjust_bloodthirst(1 + Floor(rt.length(this.contents) * 0.5));
+	} else {
+		this.adjust_bloodthirst(1);
+	}
+	if (rt.istype((master = get_atom_on_turf(this, T("/mob/living"))), T("/mob/living")) && rt.isIn(f, this, master.held_items)) {
+		if (rt.inRange(this.bloodthirst, HIS_GRACE_CONSUME_OWNER, HIS_GRACE_FALL_ASLEEP)) {
+			master.visible_message(`<span class='boldwarning'>${this} turns on ${master}!</span>`, `<span class='his_grace big bold'>${this} turns on you!</span>`);
+			yield* this.do_attack_animation(master, null, this);
+			yield* master.emote("scream");
+			yield* master.remove_status_effect(T("/datum/status_effect/his_grace"));
+			(rt.modSrcVar(f, "flags", 16777213, rt.bitAnd));
+			yield* master.Knockdown(60);
+			yield* master.adjustBruteLoss(master.maxHealth);
+			playsound(master, rt.rsc("sound/effects/splat.ogg"), 100, 0);
+		} else {
+			yield* master.apply_status_effect(T("/datum/status_effect/his_grace"));
+		}
+		return f.dot;
+	}
+	yield* this.forceMove(rt.getStep(f, this, 0));
+	if (this.bloodthirst < HIS_GRACE_CONSUME_OWNER) {
+		return f.dot;
+	}
+	if (this.bloodthirst >= HIS_GRACE_FALL_ASLEEP) {
+		this.drowse();
+		return f.dot;
+	}
+	let targets: Value = list();
+	for (L of each(oview(2, this), T("/mob/living"))) {
+		targets += L;
+	}
+	if (!rt.length(targets)) {
+		return f.dot;
+	}
+	L = pick(targets);
+	yield* step_to(this, L);
+	if (!this.Adjacent(L)) return f.dot;
+	if (!L.stat) {
+		L.visible_message(`<span class='warning'>${this} lunges at ${L}!</span>`, `<span class='his_grace big bold'>${this} lunges at you!</span>`);
+		yield* this.do_attack_animation(L, null, this);
+		playsound(L, rt.rsc("sound/weapons/smash.ogg"), 50, 1);
+		playsound(L, rt.rsc("sound/misc/desceration-01.ogg"), 50, 1);
+		yield* L.adjustBruteLoss(this.force);
+		this.adjust_bloodthirst(-5);
+	} else {
+		yield* this.consume(L);
 	}
 	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/item/weapon/his_grace/proc/awaken  (code/game/objects/items/weapons/his_grace.dm:121)
+// his_grace.dm:121
 rt.def("/obj/item/weapon/his_grace/proc/awaken", function awaken(f: Frame, user: Value) {
-	if (truthy(rt.sv(f, "awakened"))) {
-		return live(f.dot);
+	if (this.awakened) {
+		return f.dot;
 	}
-	rt.setSv(f, "awakened", 1);
-	rt.callName(f, live(user), "visible_message", [fmt("<span class='boldwarning'>＀ begins to rattle. He thirsts.</span>", [live(f.src)]), fmt("<span class='his_grace'>You flick ＀'s latch up. You hope this is a good idea.</span>", [live(f.src)])]);
-	rt.setSv(f, "name", "His Grace");
-	rt.setSv(f, "desc", "A bloodthirsty artifact created by a profane rite.");
-	rt.setSv(f, "gender", "male");
-	rt.callSrc(f, "adjust_bloodthirst", [1]);
-	rt.setSv(f, "force_bonus", multiply(4, rt.length(rt.sv(f, "contents"))));
-	rt.call(f, P("/proc/playsound"), null, [live(user), rt.rsc("sound/effects/pope_entry.ogg"), 100]);
-	rt.setSv(f, "icon_state", "his_grace_awakened");
+	this.awakened = 1;
+	user.visible_message(`<span class='boldwarning'>${this} begins to rattle. He thirsts.</span>`, `<span class='his_grace'>You flick ${this}'s latch up. You hope this is a good idea.</span>`);
+	this.name = "His Grace";
+	this.desc = "A bloodthirsty artifact created by a profane rite.";
+	this.gender = "male";
+	this.adjust_bloodthirst(1);
+	this.force_bonus = HIS_GRACE_FORCE_BONUS * rt.length(this.contents);
+	playsound(user, rt.rsc("sound/effects/pope_entry.ogg"), 100);
+	this.icon_state = "his_grace_awakened";
 	return f.dot;
 }, false, { argTypes: [{ type: 8, path: "/mob" }] });
 
-// /obj/item/weapon/his_grace/proc/drowse  (code/game/objects/items/weapons/his_grace.dm:131)
+// his_grace.dm:131
 rt.def("/obj/item/weapon/his_grace/proc/drowse", function drowse(f: Frame) {
 	let _T: Value = null;
-	f.vars = () => [_T];
-	if (!truthy(rt.sv(f, "awakened"))) {
-		return live(f.dot);
+	if (!this.awakened) {
+		return f.dot;
 	}
-	rt.callName(f, (_T = rt.getStep(f, live(f.src), 0)), "visible_message", [fmt("<span class='boldwarning'>＀ slowly stops rattling and falls still, His latch snapping closed.</span>", [live(f.src)])]);
-	rt.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/weapons/batonextend.ogg"), 100, 1]);
-	rt.setSv(f, "name", rt.initial(f, live(f.src), "name"));
-	rt.setSv(f, "desc", rt.initial(f, live(f.src), "desc"));
-	rt.setSv(f, "icon_state", rt.initial(f, live(f.src), "icon_state"));
-	rt.setSv(f, "gender", rt.initial(f, live(f.src), "gender"));
-	rt.setSv(f, "force", rt.initial(f, live(f.src), "force"));
-	rt.setSv(f, "force_bonus", rt.initial(f, live(f.src), "force_bonus"));
-	rt.setSv(f, "awakened", 0);
-	rt.setSv(f, "bloodthirst", 0);
+	(_T = rt.getStep(f, this, 0)).visible_message(`<span class='boldwarning'>${this} slowly stops rattling and falls still, His latch snapping closed.</span>`);
+	playsound(this.loc, rt.rsc("sound/weapons/batonextend.ogg"), 100, 1);
+	this.name = rt.initial(f, this, "name");
+	this.desc = rt.initial(f, this, "desc");
+	this.icon_state = rt.initial(f, this, "icon_state");
+	this.gender = rt.initial(f, this, "gender");
+	this.force = rt.initial(f, this, "force");
+	this.force_bonus = rt.initial(f, this, "force_bonus");
+	this.awakened = 0;
+	this.bloodthirst = 0;
 	return f.dot;
 });
 
-// /obj/item/weapon/his_grace/proc/consume  (code/game/objects/items/weapons/his_grace.dm:146)  may sleep
+// his_grace.dm:146
 rt.def("/obj/item/weapon/his_grace/proc/consume", function* consume(f: Frame, meal: Value) {
-	f.vars = () => [meal];
-	if (!truthy(live(meal))) {
-		return live(f.dot);
+	if (!meal) {
+		return f.dot;
 	}
-	yield* g.callName(f, live(meal), "visible_message", [fmt("<span class='warning'>＀ swings open and devours ＀!</span>", [live(f.src), live(meal)]), fmt("<span class='his_grace big bold'>＀ consumes you!</span>", [live(f.src)])]);
-	yield* g.callName(f, live(meal), "adjustBruteLoss", [200]);
-	yield* g.call(f, P("/proc/playsound"), null, [live(meal), rt.rsc("sound/misc/desceration-02.ogg"), 75, 1]);
-	yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/items/eatfood.ogg"), 100, 1]);
-	yield* g.callName(f, live(meal), "forceMove", [live(f.src)]);
-	rt.modSrcVar(f, "force_bonus", 4, add);
-	rt.setSv(f, "prev_bloodthirst", rt.sv(f, "bloodthirst"));
-	if (rt.lt(rt.sv(f, "prev_bloodthirst"), 140)) {
-		rt.setSv(f, "bloodthirst", (yield* g.call(f, P("/proc/max"), null, [rt.length(rt.sv(f, "contents")), 1])));
+	meal.visible_message(`<span class='warning'>${this} swings open and devours ${meal}!</span>`, `<span class='his_grace big bold'>${this} consumes you!</span>`);
+	yield* meal.adjustBruteLoss(200);
+	playsound(meal, rt.rsc("sound/misc/desceration-02.ogg"), 75, 1);
+	playsound(this, rt.rsc("sound/items/eatfood.ogg"), 100, 1);
+	yield* meal.forceMove(this);
+	this.force_bonus += HIS_GRACE_FORCE_BONUS;
+	this.prev_bloodthirst = this.bloodthirst;
+	if (this.prev_bloodthirst < HIS_GRACE_CONSUME_OWNER) {
+		this.bloodthirst = max(rt.length(this.contents), 1);
 	} else {
-		rt.setSv(f, "bloodthirst", 140);
+		this.bloodthirst = HIS_GRACE_CONSUME_OWNER;
 	}
-	yield* g.srcCall(f, "update_stats");
+	this.update_stats();
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/his_grace/proc/adjust_bloodthirst  (code/game/objects/items/weapons/his_grace.dm:162)
+// his_grace.dm:162
 rt.def("/obj/item/weapon/his_grace/proc/adjust_bloodthirst", function adjust_bloodthirst(f: Frame, amt: Value) {
-	rt.setSv(f, "prev_bloodthirst", rt.sv(f, "bloodthirst"));
-	if (rt.lt(rt.sv(f, "prev_bloodthirst"), 140)) {
-		rt.setSv(f, "bloodthirst", rt.call(f, P("/proc/max"), null, [0, rt.call(f, P("/proc/min"), null, [add(rt.sv(f, "bloodthirst"), live(amt)), 140])]));
+	this.prev_bloodthirst = this.bloodthirst;
+	if (this.prev_bloodthirst < HIS_GRACE_CONSUME_OWNER) {
+		this.bloodthirst = max(HIS_GRACE_SATIATED, min(this.bloodthirst + amt, HIS_GRACE_CONSUME_OWNER));
 	} else {
-		rt.setSv(f, "bloodthirst", rt.call(f, P("/proc/max"), null, [140, rt.call(f, P("/proc/min"), null, [add(rt.sv(f, "bloodthirst"), live(amt)), 160])]));
+		this.bloodthirst = max(HIS_GRACE_CONSUME_OWNER, min(this.bloodthirst + amt, HIS_GRACE_FALL_ASLEEP));
 	}
-	rt.callSrc(f, "update_stats", []);
+	this.update_stats();
 	return f.dot;
 });
 
-// /obj/item/weapon/his_grace/proc/update_stats  (code/game/objects/items/weapons/his_grace.dm:170)
+// his_grace.dm:170
 rt.def("/obj/item/weapon/his_grace/proc/update_stats", function update_stats(f: Frame) {
-	let master: Value = null;
 	let $0: any, $1: any, $2: any, $3: any, $4: any;
-	f.vars = () => [master, $0, $1, $2, $3, $4];
 	(rt.modSrcVar(f, "flags", 16777213, rt.bitAnd));
-	master = rt.call(f, P("/proc/get_atom_on_turf"), null, [live(f.src), T("/mob/living")]);
-	$0 = rt.sv(f, "bloodthirst");
-	if (rt.inRange($0, 140, 160)) {
-		if (rt.gt(140, rt.sv(f, "prev_bloodthirst"))) {
-			rt.callName(f, live(master), "visible_message", [fmt("<span class='userdanger'>＀ enters a frenzy!</span>", [live(f.src)])]);
+	let master: Value = get_atom_on_turf(this, T("/mob/living"));
+	if (rt.inRange(this.bloodthirst, HIS_GRACE_CONSUME_OWNER, HIS_GRACE_FALL_ASLEEP)) {
+		if (HIS_GRACE_CONSUME_OWNER > this.prev_bloodthirst) {
+			master.visible_message(`<span class='userdanger'>${this} enters a frenzy!</span>`);
 		}
-	} else if (rt.inRange($0, 120, 140)) {
-		(rt.modSrcVar(f, "flags", 2, rt.bitOr));
-		if (rt.gt(120, rt.sv(f, "prev_bloodthirst"))) {
-			$0 = live(master);
-			$1 = fmt("<span class='boldwarning'>＀ is starving!</span>", [live(f.src)]);
-			$2 = live(f.src);
-			$3 = live(f.src);
-			if (rt.lt(rt.sv(f, "force_bonus"), 15)) {
+	} else if (rt.inRange(this.bloodthirst, HIS_GRACE_STARVING, HIS_GRACE_CONSUME_OWNER)) {
+		(rt.modSrcVar(f, "flags", NODROP, rt.bitOr));
+		if (HIS_GRACE_STARVING > this.prev_bloodthirst) {
+			$0 = master;
+			$1 = `<span class='boldwarning'>${this} is starving!</span>`;
+			$2 = this;
+			$3 = this;
+			if (this.force_bonus < 15) {
 				$4 = " And still, His power grows.";
 			} else {
 				$4 = "";
 			}
-			rt.callName(f, $0, "visible_message", [$1, fmt("<span class='his_grace big'>＀'s bloodlust overcomes you. ＀ must be fed, or you will become His meal.＀</span>", [$2, $3, $4])]);
-			rt.setSv(f, "force_bonus", rt.call(f, P("/proc/max"), null, [rt.sv(f, "force_bonus"), 15]));
+			$0.visible_message($1, `<span class='his_grace big'>${$2}'s bloodlust overcomes you. ${$3} must be fed, or you will become His meal.${$4}</span>`);
+			this.force_bonus = max(this.force_bonus, 15);
 		}
-	} else if (rt.inRange($0, 100, 120)) {
-		(rt.modSrcVar(f, "flags", 2, rt.bitOr));
-		if (rt.gt(100, rt.sv(f, "prev_bloodthirst"))) {
-			$0 = live(master);
-			$1 = fmt("<span class='warning'>＀ is very hungry!</span>", [live(f.src)]);
-			$2 = live(f.src);
-			if (rt.lt(rt.sv(f, "force_bonus"), 10)) {
+	} else if (rt.inRange(this.bloodthirst, HIS_GRACE_FAMISHED, HIS_GRACE_STARVING)) {
+		(rt.modSrcVar(f, "flags", NODROP, rt.bitOr));
+		if (HIS_GRACE_FAMISHED > this.prev_bloodthirst) {
+			$0 = master;
+			$1 = `<span class='warning'>${this} is very hungry!</span>`;
+			$2 = this;
+			if (this.force_bonus < 10) {
 				$3 = " His power grows.";
 			} else {
 				$3 = "";
 			}
-			rt.callName(f, $0, "visible_message", [$1, fmt("<span class='his_grace big'>Spines sink into your hand. ＀ must feed immediately.＀</span>", [$2, $3])]);
-			rt.setSv(f, "force_bonus", rt.call(f, P("/proc/max"), null, [rt.sv(f, "force_bonus"), 10]));
+			$0.visible_message($1, `<span class='his_grace big'>Spines sink into your hand. ${$2} must feed immediately.${$3}</span>`);
+			this.force_bonus = max(this.force_bonus, 10);
 		}
-		if (rt.ge(rt.sv(f, "prev_bloodthirst"), 120)) {
-			rt.callName(f, live(master), "visible_message", [fmt("<span class='warning'>＀ is now only very hungry!</span>", [live(f.src)]), "<span class='his_grace big'>Your bloodlust recedes.</span>"]);
+		if (this.prev_bloodthirst >= HIS_GRACE_STARVING) {
+			master.visible_message(`<span class='warning'>${this} is now only very hungry!</span>`, "<span class='his_grace big'>Your bloodlust recedes.</span>");
 		}
-	} else if (rt.inRange($0, 60, 100)) {
-		if (rt.gt(60, rt.sv(f, "prev_bloodthirst"))) {
-			$0 = live(master);
-			$1 = fmt("<span class='warning'>＀ is getting hungry.</span>", [live(f.src)]);
-			$2 = live(f.src);
-			if (rt.lt(rt.sv(f, "force_bonus"), 5)) {
+	} else if (rt.inRange(this.bloodthirst, HIS_GRACE_HUNGRY, HIS_GRACE_FAMISHED)) {
+		if (HIS_GRACE_HUNGRY > this.prev_bloodthirst) {
+			$0 = master;
+			$1 = `<span class='warning'>${this} is getting hungry.</span>`;
+			$2 = this;
+			if (this.force_bonus < 5) {
 				$3 = " His power grows.";
 			} else {
 				$3 = "";
 			}
-			rt.callName(f, $0, "visible_message", [$1, fmt("<span class='his_grace big'>You feel ＀'s hunger within you.＀</span>", [$2, $3])]);
-			rt.setSv(f, "force_bonus", rt.call(f, P("/proc/max"), null, [rt.sv(f, "force_bonus"), 5]));
+			$0.visible_message($1, `<span class='his_grace big'>You feel ${$2}'s hunger within you.${$3}</span>`);
+			this.force_bonus = max(this.force_bonus, 5);
 		}
-		if (rt.ge(rt.sv(f, "prev_bloodthirst"), 100)) {
-			rt.callName(f, live(master), "visible_message", [fmt("<span class='warning'>＀ is now only somewhat hungry.</span>", [live(f.src)]), fmt("<span class='his_grace'>＀'s hunger recedes a little...</span>", [live(f.src)])]);
+		if (this.prev_bloodthirst >= HIS_GRACE_FAMISHED) {
+			master.visible_message(`<span class='warning'>${this} is now only somewhat hungry.</span>`, `<span class='his_grace'>${this}'s hunger recedes a little...</span>`);
 		}
-	} else if (rt.inRange($0, 20, 60)) {
-		if (rt.gt(20, rt.sv(f, "prev_bloodthirst"))) {
-			rt.callName(f, live(master), "visible_message", [fmt("<span class='warning'>＀ is feeling snackish.</span>", [live(f.src)]), fmt("<span class='his_grace'>＀ begins to hunger.</span>", [live(f.src)])]);
+	} else if (rt.inRange(this.bloodthirst, HIS_GRACE_PECKISH, HIS_GRACE_HUNGRY)) {
+		if (HIS_GRACE_PECKISH > this.prev_bloodthirst) {
+			master.visible_message(`<span class='warning'>${this} is feeling snackish.</span>`, `<span class='his_grace'>${this} begins to hunger.</span>`);
 		}
-		if (rt.ge(rt.sv(f, "prev_bloodthirst"), 60)) {
-			rt.callName(f, live(master), "visible_message", [fmt("<span class='warning'>＀ is now only a little peckish.</span>", [live(f.src)]), fmt("<span class='his_grace big'>＀'s hunger recedes somewhat...</span>", [live(f.src)])]);
+		if (this.prev_bloodthirst >= HIS_GRACE_HUNGRY) {
+			master.visible_message(`<span class='warning'>${this} is now only a little peckish.</span>`, `<span class='his_grace big'>${this}'s hunger recedes somewhat...</span>`);
 		}
-	} else if (rt.inRange($0, 0, 20)) {
-		if (rt.ge(rt.sv(f, "prev_bloodthirst"), 20)) {
-			rt.callName(f, live(master), "visible_message", [fmt("<span class='warning'>＀ is satiated.</span>", [live(f.src)]), fmt("<span class='his_grace big'>＀'s hunger recedes...</span>", [live(f.src)])]);
+	} else if (rt.inRange(this.bloodthirst, HIS_GRACE_SATIATED, HIS_GRACE_PECKISH)) {
+		if (this.prev_bloodthirst >= HIS_GRACE_PECKISH) {
+			master.visible_message(`<span class='warning'>${this} is satiated.</span>`, `<span class='his_grace big'>${this}'s hunger recedes...</span>`);
 		}
 	}
-	rt.setSv(f, "force", add(rt.initial(f, live(f.src), "force"), rt.sv(f, "force_bonus")));
+	this.force = rt.initial(f, this, "force") + this.force_bonus;
 	return f.dot;
 });

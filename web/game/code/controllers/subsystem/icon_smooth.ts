@@ -1,7 +1,7 @@
-// From code/controllers/subsystem/icon_smooth.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/controllers/subsystem/icon_smooth.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(22, "/datum/controller/subsystem/icon_smooth", "/datum/controller/subsystem", {
@@ -13,73 +13,58 @@ rt.type(22, "/datum/controller/subsystem/icon_smooth", "/datum/controller/subsys
 	flags: 16,
 });
 
-// /datum/controller/subsystem/icon_smooth/proc/New  (code/controllers/subsystem/icon_smooth.dm:1)  may sleep
+// icon_smooth.dm:1
 rt.def("/datum/controller/subsystem/icon_smooth/proc/New", function* New(f: Frame) {
-	if (!isEqual(rt.gl("SSicon_smooth"), live(f.src))) {
-		if (truthy((rt.istype(rt.gl("SSicon_smooth"), T("/datum/controller/subsystem/icon_smooth")) ? 1 : 0))) {
-			yield* g.srcCall(f, "Recover");
-			yield* g.call(f, P("/proc/qdel"), null, [rt.gl("SSicon_smooth")]);
+	if (GLOB.SSicon_smooth != this) {
+		if (rt.istype(GLOB.SSicon_smooth, T("/datum/controller/subsystem/icon_smooth"))) {
+			yield* this.Recover();
+			yield* qdel(GLOB.SSicon_smooth);
 		}
-		rt.setGl("SSicon_smooth", live(f.src));
+		GLOB.SSicon_smooth = this;
 	}
-	yield* g.srcCall(f, "PreInit");
+	this.PreInit();
 	return f.dot;
 }, true);
 
-// /datum/controller/subsystem/icon_smooth/proc/<init>  (code/controllers/subsystem/icon_smooth.dm:8)
+// icon_smooth.dm:8
 rt.def("/datum/controller/subsystem/icon_smooth/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "smooth_queue", rt.list());
+	parent_proc();
+	this.smooth_queue = list();
 	return f.dot;
 });
 
-// /datum/controller/subsystem/icon_smooth/proc/fire  (code/controllers/subsystem/icon_smooth.dm:11)
+// icon_smooth.dm:11
 rt.def("/datum/controller/subsystem/icon_smooth/proc/fire", function fire(f: Frame) {
 	let A: Value = null;
-	let $0: any;
-	f.vars = () => [A, $0];
-	while (truthy(rt.len(f, rt.sv(f, "smooth_queue")))) {
-		A = rt.index(rt.sv(f, "smooth_queue"), rt.len(f, rt.sv(f, "smooth_queue")));
-		rt.incField(f, rt.sv(f, "smooth_queue"), "len", -1, true);
-		rt.call(f, P("/proc/smooth_icon"), null, [live(A)]);
-		if ((rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit")) || !isEqual(rt.fv(f, "state", live(f.src)), 2))) {
-			$0 = rt.callSrc(f, "pause", []);
-		} else {
-			$0 = 0;
-		}
-		if (truthy($0)) {
-			return live(f.dot);
+	while (rt.len(f, this.smooth_queue)) {
+		A = rt.index(this.smooth_queue, rt.len(f, this.smooth_queue));
+		this.smooth_queue.len--;
+		smooth_icon(A);
+		if (rt.tickUsage(f) > GLOB.current_ticklimit || this.state != 2 ? this.pause() : 0) {
+			return f.dot;
 		}
 	}
-	if (truthy(rt.len(f, rt.sv(f, "smooth_queue")))) return f.dot;
-	rt.setSv(f, "can_fire", 0);
+	if (rt.len(f, this.smooth_queue)) return f.dot;
+	this.can_fire = 0;
 	return f.dot;
 });
 
-// /datum/controller/subsystem/icon_smooth/proc/Initialize  (code/controllers/subsystem/icon_smooth.dm:21)  may sleep
+// icon_smooth.dm:21
 rt.def("/datum/controller/subsystem/icon_smooth/proc/Initialize", function* Initialize(f: Frame) {
-	let queue: Value = null, V: Value = null, A: Value = null;
-	let $e: any;
-	f.vars = () => [queue, V, A, $e];
-	yield* g.call(f, P("/proc/smooth_zlevel"), null, [1, 1]);
-	yield* g.call(f, P("/proc/smooth_zlevel"), null, [2, 1]);
-	queue = rt.sv(f, "smooth_queue");
-	rt.setSv(f, "smooth_queue", rt.list());
-	V = null;
-	rt.forList(f, 0, live(queue));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		V = $e;
-		if ((!truthy((A = live(V))) || rt.le(rt.fv(f, "z", live(A)), 2))) {
+	let V: Value = null, A: Value = null;
+	smooth_zlevel(1, 1);
+	smooth_zlevel(2, 1);
+	let queue: Value = this.smooth_queue;
+	this.smooth_queue = list();
+	for (V of each(queue)) {
+		if (!(A = V) || A.z <= 2) {
 			continue;
 		}
-		yield* g.call(f, P("/proc/smooth_icon"), null, [live(A)]);
-		if (rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit"))) {
-			yield* g.call(f, P("/proc/stoplag"), null, []);
+		smooth_icon(A);
+		if (rt.tickUsage(f) > GLOB.current_ticklimit) {
+			yield* stoplag();
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true);

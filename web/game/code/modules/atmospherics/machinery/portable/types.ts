@@ -1,5 +1,5 @@
 // Types declared in code/modules/atmospherics/machinery/portable that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(10690, "/obj/machinery/portable_atmospherics/canister/nitrogen", "/obj/machinery/portable_atmospherics/canister", {
 	gas_type: "n2",

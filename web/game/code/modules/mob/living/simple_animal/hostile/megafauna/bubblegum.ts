@@ -1,7 +1,7 @@
-// From code/modules/mob/living/simple_animal/hostile/megafauna/bubblegum.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/simple_animal/hostile/megafauna/bubblegum.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(5023, "/mob/living/simple_animal/hostile/megafauna/bubblegum", "/mob/living/simple_animal/hostile/megafauna", {
@@ -35,454 +35,400 @@ rt.type(5023, "/mob/living/simple_animal/hostile/megafauna/bubblegum", "/mob/liv
 	death_sound: rt.rsc("sound/magic/enter_blood.ogg"),
 });
 
-// /mob/living/simple_animal/hostile/megafauna/bubblegum/proc/<init>  (code/modules/mob/living/simple_animal/hostile/megafauna/bubblegum.dm:38)
+// bubblegum.dm:38
 rt.def("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "speak_emote", rt.list("gurgles"));
-	$0 = $0;
-	rt.setSv(f, "crusher_loot", rt.list(T("/obj/structure/closet/crate/necropolis/bubblegum/crusher")));
-	$0 = $0;
-	rt.setSv(f, "loot", rt.list(T("/obj/structure/closet/crate/necropolis/bubblegum")));
+	parent_proc();
+	this.speak_emote = list("gurgles");
+
+	this.crusher_loot = list(T("/obj/structure/closet/crate/necropolis/bubblegum/crusher"));
+
+	this.loot = list(T("/obj/structure/closet/crate/necropolis/bubblegum"));
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/megafauna/bubblegum/proc/adjustBruteLoss  (code/modules/mob/living/simple_animal/hostile/megafauna/bubblegum.dm:63)  may sleep
+// bubblegum.dm:63
 rt.def("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/adjustBruteLoss", function* adjustBruteLoss(f: Frame) {
-	let B: Value = null;
-	f.vars = () => [B];
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 1;
 	}
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 0;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!(rt.gt(live(f.dot), 0) && truthy(rt.op(f, "Prob", [], [25])))) return f.dot;
-	B = (yield* g.new_(f, T("/obj/effect/decal/cleanable/blood/gibs/bubblegum"), [rt.sv(f, "loc")]));
-	if (truthy(rt.op(f, "Prob", [], [40]))) {
-		yield* g.call(f, P("/proc/step"), null, [live(B), rt.op(f, "PickUnweighted", [1], [rt.gl("cardinal")])]);
+	f.dot = (yield* parent_proc());
+	if (!(f.dot > 0 && prob(25))) return f.dot;
+	let B: Value = (yield* new_(T("/obj/effect/decal/cleanable/blood/gibs/bubblegum"), this.loc));
+	if (prob(40)) {
+		yield* step(B, pick(GLOB.cardinal));
 	} else {
-		yield* g.callName(f, live(B), "setDir", [rt.op(f, "PickUnweighted", [1], [rt.gl("cardinal")])]);
+		yield* B.setDir(pick(GLOB.cardinal));
 	}
 	return f.dot;
 }, true, { args: ["amount", "updating_health", "forced"] });
 
-// /mob/living/simple_animal/hostile/megafauna/bubblegum/proc/Life  (code/modules/mob/living/simple_animal/hostile/megafauna/bubblegum.dm:81)
+// bubblegum.dm:81
 rt.def("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/Life", function Life(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "move_to_delay", rt.call(f, P("/proc/max"), null, [5, rt.call(f, P("/proc/min"), null, [multiply(divide(rt.sv(f, "health"), rt.sv(f, "maxHealth")), 10), 10])]));
+	parent_proc();
+	this.move_to_delay = max(5, min(this.health / this.maxHealth * 10, 10));
 	return f.dot;
 }, false, { waitfor: false });
 
-// /mob/living/simple_animal/hostile/megafauna/bubblegum/proc/OpenFire  (code/modules/mob/living/simple_animal/hostile/megafauna/bubblegum.dm:85)  may sleep
+// bubblegum.dm:85
 rt.def("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/OpenFire", function* OpenFire(f: Frame) {
-	let warped: Value = null;
-	f.vars = () => [warped];
-	rt.setSv(f, "anger_modifier", (yield* g.call(f, P("/proc/max"), null, [0, (yield* g.call(f, P("/proc/min"), null, [divide(subtract(rt.sv(f, "maxHealth"), rt.sv(f, "health")), 60), 20]))])));
-	if (truthy(rt.sv(f, "charging"))) {
-		return live(f.dot);
+	this.anger_modifier = max(0, min((this.maxHealth - this.health) / 60, 20));
+	if (this.charging) {
+		return f.dot;
 	}
-	rt.setSv(f, "ranged_cooldown", add(rt.worldTime(f), rt.sv(f, "ranged_cooldown_time")));
-	warped = 0;
-	if (!truthy((yield* g.srcCall(f, "try_bloodattack")))) {
-		yield* g.call(f, P("/proc/ImmediateInvokeAsync"), null, [live(f.src), P("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/blood_spray")]);
-		if ((truthy((warped = (yield* g.srcCall(f, "blood_warp")))) && truthy(rt.op(f, "Prob", [], [subtract(100, rt.sv(f, "anger_modifier"))])))) {
-			return live(f.dot);
+	this.ranged_cooldown = rt.worldTime(f) + this.ranged_cooldown_time;
+	let warped: Value = 0;
+	if (!this.try_bloodattack()) {
+		yield* ImmediateInvokeAsync(this, P("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/blood_spray"));
+		if ((warped = (yield* this.blood_warp())) && prob(100 - this.anger_modifier)) {
+			return f.dot;
 		}
 	}
-	if (!(truthy(rt.op(f, "Prob", [], [subtract(90, rt.sv(f, "anger_modifier"))])) || truthy((yield* g.srcCall(f, "slaughterlings"))))) return f.dot;
-	if (rt.gt(rt.sv(f, "health"), multiply(rt.sv(f, "maxHealth"), 0.5))) {
-		yield* g.call(f, P("/proc/ImmediateInvokeAsync"), null, [live(f.src), P("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/charge")]);
+	if (!(prob(90 - this.anger_modifier) || (yield* this.slaughterlings()))) return f.dot;
+	if (this.health > this.maxHealth * 0.5) {
+		yield* ImmediateInvokeAsync(this, P("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/charge"));
+	} else if (prob(70) || warped) {
+		yield* ImmediateInvokeAsync(this, P("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/charge"), 2);
 	} else {
-		if ((truthy(rt.op(f, "Prob", [], [70])) || truthy(live(warped)))) {
-			yield* g.call(f, P("/proc/ImmediateInvokeAsync"), null, [live(f.src), P("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/charge"), 2]);
-		} else {
-			yield* g.call(f, P("/proc/ImmediateInvokeAsync"), null, [live(f.src), P("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/warp_charge")]);
-		}
+		yield* ImmediateInvokeAsync(this, P("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/warp_charge"));
 	}
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/megafauna/bubblegum/proc/Initialize  (code/modules/mob/living/simple_animal/hostile/megafauna/bubblegum.dm:108)  may sleep
+// bubblegum.dm:108
 rt.def("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/Initialize", function* Initialize(f: Frame) {
 	let B: Value = null, bloodspell: Value = null;
-	let $e: any;
-	f.vars = () => [B, bloodspell, $e];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	B = null;
-	rt.forList(f, 0, rt.gl("mob_list"), T("/mob/living/simple_animal/hostile/megafauna/bubblegum"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		B = $e;
-		if (!isEqual(live(B), live(f.src))) {
-			yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-			return live(f.dot);
+	yield* parent_proc();
+	for (B of each(GLOB.mob_list, T("/mob/living/simple_animal/hostile/megafauna/bubblegum"))) {
+		if (B != this) {
+			yield* qdel(this);
+			return f.dot;
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.srcCall(f, "AddSpell", (bloodspell = (yield* g.new_(f, T("/obj/effect/proc_holder/spell/bloodcrawl"), []))));
-	if (truthy((rt.istype(rt.sv(f, "loc"), T("/obj/effect/dummy/slaughter")) ? 1 : 0))) {
-		rt.setFv(f, "phased", live(bloodspell), 1);
+	yield* this.AddSpell((bloodspell = (yield* new_(T("/obj/effect/proc_holder/spell/bloodcrawl")))));
+	if (rt.istype(this.loc, T("/obj/effect/dummy/slaughter"))) {
+		bloodspell.phased = 1;
 	}
-	rt.setSv(f, "internal", (yield* g.new_(f, T("/obj/item/device/gps/internal/bubblegum"), [live(f.src)])));
+	this.internal = (yield* new_(T("/obj/item/device/gps/internal/bubblegum"), this));
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/megafauna/bubblegum/proc/grant_achievement  (code/modules/mob/living/simple_animal/hostile/megafauna/bubblegum.dm:120)
-rt.def("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/grant_achievement", function grant_achievement(f: Frame) {
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	if (!truthy(live(f.dot))) return f.dot;
-	(rt.modField(f, rt.gl("SSshuttle"), "shuttle_purchase_requirements_met", "bubblegum", rt.bitOr));
+// bubblegum.dm:120
+rt.def("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/grant_achievement", function grant_achievement(f: Frame, medaltype: Value, scoretype: Value) {
+	f.dot = parent_proc();
+	if (!f.dot) return f.dot;
+	(rt.modField(f, GLOB.SSshuttle, "shuttle_purchase_requirements_met", "bubblegum", rt.bitOr));
 	return f.dot;
-}, false, { args: ["medaltype", "scoretype"] });
+}, false);
 
-// /mob/living/simple_animal/hostile/megafauna/bubblegum/proc/do_attack_animation  (code/modules/mob/living/simple_animal/hostile/megafauna/bubblegum.dm:125)  may sleep
-rt.def("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/do_attack_animation", function* do_attack_animation(f: Frame) {
-	if (truthy(rt.sv(f, "charging"))) return f.dot;
-	yield* g.callSuper(f, [], rt.Args.Same);
+// bubblegum.dm:125
+rt.def("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/do_attack_animation", function* do_attack_animation(f: Frame, A: Value, visual_effect_icon: Value) {
+	if (this.charging) return f.dot;
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["A", "visual_effect_icon"] });
+}, true);
 
-// /mob/living/simple_animal/hostile/megafauna/bubblegum/proc/AttackingTarget  (code/modules/mob/living/simple_animal/hostile/megafauna/bubblegum.dm:129)  may sleep
+// bubblegum.dm:129
 rt.def("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/AttackingTarget", function* AttackingTarget(f: Frame) {
-	if (truthy(rt.sv(f, "charging"))) return f.dot;
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	if (this.charging) return f.dot;
+	return (yield* parent_proc());
 }, true);
 
-// /mob/living/simple_animal/hostile/megafauna/bubblegum/proc/Goto  (code/modules/mob/living/simple_animal/hostile/megafauna/bubblegum.dm:133)
-rt.def("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/Goto", function Goto(f: Frame) {
-	if (truthy(rt.sv(f, "charging"))) return f.dot;
-	rt.callSuper(f, [], rt.Args.Same);
+// bubblegum.dm:133
+rt.def("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/Goto", function Goto(f: Frame, target: Value, delay: Value, minimum_distance: Value) {
+	if (this.charging) return f.dot;
+	parent_proc();
 	return f.dot;
-}, false, { args: ["target", "delay", "minimum_distance"] });
+}, false);
 
-// /mob/living/simple_animal/hostile/megafauna/bubblegum/proc/Move  (code/modules/mob/living/simple_animal/hostile/megafauna/bubblegum.dm:138)  may sleep
+// bubblegum.dm:138
 rt.def("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/Move", function* Move(f: Frame) {
-	if (truthy(rt.sv(f, "charging"))) {
-		yield* g.new_(f, T("/obj/effect/temp_visual/decoy/fading"), [rt.sv(f, "loc"), live(f.src)]);
-		yield* g.srcCall(f, "DestroySurroundings");
+	if (this.charging) {
+		yield* new_(T("/obj/effect/temp_visual/decoy/fading"), this.loc, this);
+		yield* this.DestroySurroundings();
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if ((!truthy(rt.sv(f, "stat")) && truthy(live(f.dot)))) {
-		yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/effects/meteorimpact.ogg"), 200, 1, 2, 1]);
+	f.dot = (yield* parent_proc());
+	if (!this.stat && f.dot) {
+		playsound(this, rt.rsc("sound/effects/meteorimpact.ogg"), 200, 1, 2, 1);
 	}
-	if (!truthy(rt.sv(f, "charging"))) return f.dot;
-	yield* g.srcCall(f, "DestroySurroundings");
+	if (!this.charging) return f.dot;
+	yield* this.DestroySurroundings();
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/megafauna/bubblegum/proc/warp_charge  (code/modules/mob/living/simple_animal/hostile/megafauna/bubblegum.dm:147)  may sleep
+// bubblegum.dm:147
 rt.def("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/warp_charge", function* warp_charge(f: Frame) {
-	yield* g.srcCall(f, "blood_warp");
-	yield* g.srcCall(f, "charge");
+	yield* this.blood_warp();
+	yield* this.charge();
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/megafauna/bubblegum/proc/charge  (code/modules/mob/living/simple_animal/hostile/megafauna/bubblegum.dm:151)  may sleep
+// bubblegum.dm:151
 rt.def("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/charge", function* charge(f: Frame, bonus_charges: Value) {
-	let _T: Value = null, D: Value = null;
-	f.vars = () => [bonus_charges, _T, D];
-	if ((!truthy((_T = rt.getStep(f, rt.sv(f, "target"), 0))) || isEqual(live(_T), rt.sv(f, "loc")))) {
-		return live(f.dot);
+	let _T: Value = null;
+	if (!(_T = rt.getStep(f, this.target, 0)) || _T == this.loc) {
+		return f.dot;
 	}
-	yield* g.new_(f, T("/obj/effect/temp_visual/dragon_swoop/bubblegum"), [live(_T)]);
-	rt.setSv(f, "charging", 1);
-	yield* g.srcCall(f, "DestroySurroundings");
-	yield* g.call(f, P("/proc/walk"), null, [live(f.src), 0]);
-	yield* g.srcCall(f, "setDir", rt.getDir(f, live(f.src), live(_T)));
-	D = (yield* g.new_(f, T("/obj/effect/temp_visual/decoy"), [rt.sv(f, "loc"), live(f.src)]));
-	rt.op(f, "Animate", [2, 10], [null, live(D), "alpha", 0, "color", "#FF0000", "transform", multiply((yield* g.call(f, P("/proc/matrix"), null, [])), 2), "time", 3]);
-	yield* g.call(f, P("/proc/sleep"), null, [3]);
-	yield* g.callSrc(f, "throw_at", [null, live(_T), null, (yield* g.call(f, P("/proc/get_dist"), null, [live(f.src), live(_T)])), null, 1, null, live(f.src), null, 0, "callback", (yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/charge_end"), live(bonus_charges)]))], rt.Args.Named);
+	yield* new_(T("/obj/effect/temp_visual/dragon_swoop/bubblegum"), _T);
+	this.charging = 1;
+	yield* this.DestroySurroundings();
+	walk(this, 0);
+	yield* this.setDir(rt.getDir(f, this, _T));
+	let D: Value = (yield* new_(T("/obj/effect/temp_visual/decoy"), this.loc, this));
+	rt.op(f, "Animate", [2, 10], [null, D, "alpha", 0, "color", "#FF0000", "transform", matrix() * 2, "time", 3]);
+	yield* sleep(3);
+	yield* this.throw_at(_T, get_dist(this, _T), 1, this, 0, { callback: (yield* new_(T("/datum/callback"), this, P("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/charge_end"), bonus_charges)) });
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/megafauna/bubblegum/proc/charge_end  (code/modules/mob/living/simple_animal/hostile/megafauna/bubblegum.dm:166)  may sleep
+// bubblegum.dm:166
 rt.def("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/charge_end", function* charge_end(f: Frame, bonus_charges: Value, effects_to_destroy: Value) {
-	f.vars = () => [bonus_charges, effects_to_destroy];
-	rt.setSv(f, "charging", 0);
-	yield* g.srcCall(f, "try_bloodattack");
-	if (!truthy(rt.sv(f, "target"))) return f.dot;
-	if (truthy(live(bonus_charges))) {
-		bonus_charges = rt.inc(live(bonus_charges), -1);
-		yield* g.srcCall(f, "charge", live(bonus_charges));
+	this.charging = 0;
+	this.try_bloodattack();
+	if (!this.target) return f.dot;
+	if (bonus_charges) {
+		bonus_charges--;
+		yield* this.charge(bonus_charges);
 	} else {
-		yield* g.srcCall(f, "Goto", rt.sv(f, "target"), rt.sv(f, "move_to_delay"), rt.sv(f, "minimum_distance"));
-		yield* g.srcCall(f, "SetRecoveryTime", 5);
+		this.Goto(this.target, this.move_to_delay, this.minimum_distance);
+		this.SetRecoveryTime(MEGAFAUNA_DEFAULT_RECOVERY_TIME);
 	}
 	return f.dot;
 }, true, { argTypes: [{  }, { path: "/list" }] });
 
-// /mob/living/simple_animal/hostile/megafauna/bubblegum/proc/Bump  (code/modules/mob/living/simple_animal/hostile/megafauna/bubblegum.dm:178)  may sleep
-rt.def("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/Bump", function* Bump(f: Frame) {
-	if (truthy(rt.sv(f, "charging"))) {
-		if ((truthy((yield* g.call(f, P("/proc/isturf"), null, [live(f.args[0])]))) || (truthy((rt.istype(live(f.args[0]), T("/obj")) ? 1 : 0)) && truthy(rt.fv(f, "density", live(f.args[0])))))) {
-			yield* g.callName(f, live(f.args[0]), "ex_act", [2]);
+// bubblegum.dm:178
+rt.def("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/Bump", function* Bump(f: Frame, A: Value) {
+	if (this.charging) {
+		if (isturf(A) || rt.istype(A, T("/obj")) && A.density) {
+			yield* A.ex_act(2);
 		}
-		yield* g.srcCall(f, "DestroySurroundings");
+		yield* this.DestroySurroundings();
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["A"] });
+}, true);
 
-// /mob/living/simple_animal/hostile/megafauna/bubblegum/proc/throw_impact  (code/modules/mob/living/simple_animal/hostile/megafauna/bubblegum.dm:184)  may sleep
-rt.def("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/throw_impact", function* throw_impact(f: Frame) {
+// bubblegum.dm:184
+rt.def("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/throw_impact", function* throw_impact(f: Frame, A: Value) {
 	let L: Value = null, throwtarget: Value = null;
-	f.vars = () => [L, throwtarget];
-	if (!truthy(rt.sv(f, "charging"))) {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+	if (!this.charging) {
+		return (yield* parent_proc());
 	}
-	if (truthy((rt.istype(live(f.args[0]), T("/mob/living")) ? 1 : 0))) {
-		yield* g.callName(f, (L = live(f.args[0])), "visible_message", [fmt("<span class='danger'>＀ slams into ＀!</span>", [live(f.src), live(L)]), fmt("<span class='userdanger'>＀ slams into you!</span>", [live(f.src)])]);
-		yield* g.callName(f, live(L), "apply_damage", [40, "brute"]);
-		yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(L), 0), rt.rsc("sound/effects/meteorimpact.ogg"), 100, 1]);
-		yield* g.call(f, P("/proc/shake_camera"), null, [live(L), 4, 3]);
-		yield* g.call(f, P("/proc/shake_camera"), null, [live(f.src), 2, 3]);
-		throwtarget = (yield* g.call(f, P("/proc/get_edge_target_turf"), null, [live(f.src), rt.getDir(f, live(f.src), (yield* g.call(f, P("/proc/get_step_away"), null, [live(L), live(f.src)])))]));
-		yield* g.callName(f, live(L), "throw_at", [live(throwtarget), 3]);
+	if (rt.istype(A, T("/mob/living"))) {
+		(L = A).visible_message(`<span class='danger'>${this} slams into ${L}!</span>`, `<span class='userdanger'>${this} slams into you!</span>`);
+		yield* L.apply_damage(40, "brute");
+		playsound(rt.getStep(f, L, 0), rt.rsc("sound/effects/meteorimpact.ogg"), 100, 1);
+		shake_camera(L, 4, 3);
+		shake_camera(this, 2, 3);
+		throwtarget = get_edge_target_turf(this, rt.getDir(f, this, get_step_away(L, this)));
+		yield* L.throw_at(throwtarget, 3);
 	}
-	rt.setSv(f, "charging", 0);
+	this.charging = 0;
 	return f.dot;
-}, true, { args: ["A"], waitfor: false });
+}, true, { waitfor: false });
 
-// /mob/living/simple_animal/hostile/megafauna/bubblegum/proc/get_mobs_on_blood  (code/modules/mob/living/simple_animal/hostile/megafauna/bubblegum.dm:201)
+// bubblegum.dm:201
 rt.def("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/get_mobs_on_blood", function get_mobs_on_blood(f: Frame) {
-	let targets: Value = null, L: Value = null, bloodpool: Value = null;
-	let $e: any;
-	f.vars = () => [targets, L, bloodpool, $e];
-	targets = rt.callSrc(f, "ListTargets", []);
-	f.dot = rt.list();
-	L = null;
-	rt.forList(f, 0, live(targets), T("/mob/living"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		L = $e;
-		if ((truthy(rt.getLen(f, (bloodpool = rt.callSrc(f, "get_pools", [rt.getStep(f, live(L), 0), 0])))) && (!truthy(rt.callSrc(f, "faction_check_mob", [live(L)])) || isEqual(rt.fv(f, "stat", live(L)), 2)))) {
-			f.dot = rt.modify(live(f.dot), live(L), add);
+	let L: Value = null, bloodpool: Value = null;
+	let targets: Value = this.ListTargets();
+	f.dot = list();
+	for (L of each(targets, T("/mob/living"))) {
+		if (rt.len(f, (bloodpool = this.get_pools(rt.getStep(f, L, 0), 0))) && (!this.faction_check_mob(L) || L.stat == 2)) {
+			f.dot += L;
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/megafauna/bubblegum/proc/try_bloodattack  (code/modules/mob/living/simple_animal/hostile/megafauna/bubblegum.dm:209)
+// bubblegum.dm:209
 rt.def("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/try_bloodattack", function try_bloodattack(f: Frame) {
 	let targets: Value = null;
-	f.vars = () => [targets];
-	if (truthy(rt.getLen(f, (targets = rt.callSrc(f, "get_mobs_on_blood", []))))) {
-		rt.call(f, P("/proc/ImmediateInvokeAsync"), null, [live(f.src), P("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/bloodattack"), live(targets), rt.op(f, "Prob", [], [50])]);
+	if (rt.len(f, (targets = this.get_mobs_on_blood()))) {
+		ImmediateInvokeAsync(this, P("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/bloodattack"), targets, prob(50));
 		return 1;
 	}
 	return 0;
 });
 
-// /mob/living/simple_animal/hostile/megafauna/bubblegum/proc/bloodattack  (code/modules/mob/living/simple_animal/hostile/megafauna/bubblegum.dm:217)  may sleep
+// bubblegum.dm:217
 rt.def("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/bloodattack", function* bloodattack(f: Frame, targets: Value, handedness: Value) {
-	let target_one: Value = null, target_one_turf: Value = null, target_two: Value = null, target_two_turf: Value = null, pools: Value = null, poolstwo: Value = null;
-	f.vars = () => [targets, handedness, target_one, target_one_turf, target_two, target_two_turf, pools, poolstwo];
-	target_one = (yield* g.call(f, P("/proc/pick_n_take"), null, [live(targets)]));
-	target_one_turf = rt.getStep(f, live(target_one), 0);
-	target_two = null;
-	if (truthy(rt.len(f, live(targets)))) {
-		target_two = (yield* g.call(f, P("/proc/pick_n_take"), null, [live(targets)]));
-		target_two_turf = rt.getStep(f, live(target_two), 0);
-		if ((!isEqual(rt.fv(f, "stat", live(target_two)), 0) || truthy(rt.op(f, "Prob", [], [10])))) {
-			yield* g.srcCall(f, "bloodgrab", live(target_two_turf), live(handedness));
+	let target_two: Value = null, target_two_turf: Value = null, pools: Value = null, poolstwo: Value = null;
+	let target_one: Value = pick_n_take(targets);
+	let target_one_turf: Value = rt.getStep(f, target_one, 0);
+	if (rt.len(f, targets)) {
+		target_two = pick_n_take(targets);
+		target_two_turf = rt.getStep(f, target_two, 0);
+		if (target_two.stat != 0 || prob(10)) {
+			yield* this.bloodgrab(target_two_turf, handedness);
 		} else {
-			yield* g.srcCall(f, "bloodsmack", live(target_two_turf), live(handedness));
+			yield* this.bloodsmack(target_two_turf, handedness);
 		}
 	}
-	if (truthy(live(target_one))) {
-		if (truthy(rt.getLen(f, (pools = (yield* g.srcCall(f, "get_pools", rt.getStep(f, live(target_one), 0), 0)))))) {
-			if (truthy((target_one_turf = rt.getStep(f, live(target_one), 0)))) {
-				if ((!isEqual(rt.fv(f, "stat", live(target_one)), 0) || truthy(rt.op(f, "Prob", [], [10])))) {
-					yield* g.srcCall(f, "bloodgrab", live(target_one_turf), (!truthy(live(handedness)) ? 1 : 0));
+	if (target_one) {
+		if (rt.len(f, (pools = this.get_pools(rt.getStep(f, target_one, 0), 0)))) {
+			if (target_one_turf = rt.getStep(f, target_one, 0)) {
+				if (target_one.stat != 0 || prob(10)) {
+					yield* this.bloodgrab(target_one_turf, (!handedness ? 1 : 0));
 				} else {
-					yield* g.srcCall(f, "bloodsmack", live(target_one_turf), (!truthy(live(handedness)) ? 1 : 0));
+					yield* this.bloodsmack(target_one_turf, (!handedness ? 1 : 0));
 				}
 			}
 		}
 	}
-	if (!(!truthy(live(target_two)) && truthy(live(target_one)))) return f.dot;
-	if (!truthy(rt.getLen(f, (poolstwo = (yield* g.srcCall(f, "get_pools", rt.getStep(f, live(target_one), 0), 0)))))) return f.dot;
-	if (!truthy((target_one_turf = rt.getStep(f, live(target_one), 0)))) return f.dot;
-	if ((!isEqual(rt.fv(f, "stat", live(target_one)), 0) || truthy(rt.op(f, "Prob", [], [10])))) {
-		yield* g.srcCall(f, "bloodgrab", live(target_one_turf), live(handedness));
+	if (!(!target_two && target_one)) return f.dot;
+	if (!rt.len(f, (poolstwo = this.get_pools(rt.getStep(f, target_one, 0), 0)))) return f.dot;
+	if (!(target_one_turf = rt.getStep(f, target_one, 0))) return f.dot;
+	if (target_one.stat != 0 || prob(10)) {
+		yield* this.bloodgrab(target_one_turf, handedness);
 	} else {
-		yield* g.srcCall(f, "bloodsmack", live(target_one_turf), live(handedness));
+		yield* this.bloodsmack(target_one_turf, handedness);
 	}
 	return f.dot;
 }, true, { argTypes: [{ path: "/list" }, {  }] });
 
-// /mob/living/simple_animal/hostile/megafauna/bubblegum/proc/bloodsmack  (code/modules/mob/living/simple_animal/hostile/megafauna/bubblegum.dm:250)  may sleep
+// bubblegum.dm:250
 rt.def("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/bloodsmack", function* bloodsmack(f: Frame, _T: Value, handedness: Value) {
 	let L: Value = null, limb_to_hit: Value = null;
-	let $e: any;
-	f.vars = () => [_T, handedness, L, limb_to_hit, $e];
-	if (truthy(live(handedness))) {
-		yield* g.new_(f, T("/obj/effect/temp_visual/bubblegum_hands/rightsmack"), [live(_T)]);
+	if (handedness) {
+		yield* new_(T("/obj/effect/temp_visual/bubblegum_hands/rightsmack"), _T);
 	} else {
-		yield* g.new_(f, T("/obj/effect/temp_visual/bubblegum_hands/leftsmack"), [live(_T)]);
+		yield* new_(T("/obj/effect/temp_visual/bubblegum_hands/leftsmack"), _T);
 	}
-	yield* g.call(f, P("/proc/sleep"), null, [2.5]);
-	L = null;
-	rt.forList(f, 0, live(_T), T("/mob/living"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		L = $e;
-		if (!truthy((yield* g.srcCall(f, "faction_check_mob", live(L))))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(L), fmt("<span class='userdanger'>＀ rends you!</span>", [live(f.src)])]);
-			yield* g.call(f, P("/proc/playsound"), null, [live(_T), rt.sv(f, "attack_sound"), 100, 1, -1]);
-			limb_to_hit = (yield* g.callName(f, live(L), "get_bodypart", [rt.op(f, "PickUnweighted", [6], ["head", "chest", "r_arm", "l_arm", "r_leg", "l_leg"])]));
-			yield* g.callName(f, live(L), "apply_damage", [25, "brute", live(limb_to_hit), (yield* g.callName(f, live(L), "run_armor_check", [live(limb_to_hit), "melee", null, null, rt.sv(f, "armour_penetration")]))]);
+	yield* sleep(2.5);
+	for (L of each(_T, T("/mob/living"))) {
+		if (!this.faction_check_mob(L)) {
+			to_chat(L, `<span class='userdanger'>${this} rends you!</span>`);
+			playsound(_T, this.attack_sound, 100, 1, -1);
+			limb_to_hit = L.get_bodypart(pick("head", "chest", "r_arm", "l_arm", "r_leg", "l_leg"));
+			yield* L.apply_damage(25, "brute", limb_to_hit, L.run_armor_check(limb_to_hit, "melee", null, null, this.armour_penetration));
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/sleep"), null, [3]);
+	yield* sleep(3);
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/megafauna/bubblegum/proc/bloodgrab  (code/modules/mob/living/simple_animal/hostile/megafauna/bubblegum.dm:264)  may sleep
+// bubblegum.dm:264
 rt.def("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/bloodgrab", function* bloodgrab(f: Frame, _T: Value, handedness: Value) {
 	let L: Value = null, targetturf: Value = null;
-	let $e: any;
-	f.vars = () => [_T, handedness, L, targetturf, $e];
-	if (truthy(live(handedness))) {
-		yield* g.new_(f, T("/obj/effect/temp_visual/bubblegum_hands/rightpaw"), [live(_T)]);
-		yield* g.new_(f, T("/obj/effect/temp_visual/bubblegum_hands/rightthumb"), [live(_T)]);
+	if (handedness) {
+		yield* new_(T("/obj/effect/temp_visual/bubblegum_hands/rightpaw"), _T);
+		yield* new_(T("/obj/effect/temp_visual/bubblegum_hands/rightthumb"), _T);
 	} else {
-		yield* g.new_(f, T("/obj/effect/temp_visual/bubblegum_hands/leftpaw"), [live(_T)]);
-		yield* g.new_(f, T("/obj/effect/temp_visual/bubblegum_hands/leftthumb"), [live(_T)]);
+		yield* new_(T("/obj/effect/temp_visual/bubblegum_hands/leftpaw"), _T);
+		yield* new_(T("/obj/effect/temp_visual/bubblegum_hands/leftthumb"), _T);
 	}
-	yield* g.call(f, P("/proc/sleep"), null, [6]);
-	L = null;
-	rt.forList(f, 0, live(_T), T("/mob/living"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		L = $e;
-		if (!truthy((yield* g.srcCall(f, "faction_check_mob", live(L))))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(L), fmt("<span class='userdanger'>＀ drags you through the blood!</span>", [live(f.src)])]);
-			yield* g.call(f, P("/proc/playsound"), null, [live(_T), rt.rsc("sound/magic/enter_blood.ogg"), 100, 1, -1]);
-			targetturf = rt.getStep(f, live(f.src), rt.sv(f, "dir"));
-			yield* g.callName(f, live(L), "forceMove", [live(targetturf)]);
-			yield* g.call(f, P("/proc/playsound"), null, [live(targetturf), rt.rsc("sound/magic/exit_blood.ogg"), 100, 1, -1]);
-			if (!isEqual(rt.fv(f, "stat", live(L)), 0)) {
-				yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/mob/living/simple_animal/hostile/megafauna/proc/devour"), live(L)])), 2]);
+	yield* sleep(6);
+	for (L of each(_T, T("/mob/living"))) {
+		if (!this.faction_check_mob(L)) {
+			to_chat(L, `<span class='userdanger'>${this} drags you through the blood!</span>`);
+			playsound(_T, rt.rsc("sound/magic/enter_blood.ogg"), 100, 1, -1);
+			targetturf = rt.getStep(f, this, this.dir);
+			yield* L.forceMove(targetturf);
+			playsound(targetturf, rt.rsc("sound/magic/exit_blood.ogg"), 100, 1, -1);
+			if (L.stat != 0) {
+				yield* addtimer((yield* new_(T("/datum/callback"), this, P("/mob/living/simple_animal/hostile/megafauna/proc/devour"), L)), 2);
 			}
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/sleep"), null, [1]);
+	yield* sleep(1);
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/megafauna/bubblegum/proc/blood_warp  (code/modules/mob/living/simple_animal/hostile/megafauna/bubblegum.dm:309)  may sleep
+// bubblegum.dm:309
 rt.def("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/blood_warp", function* blood_warp(f: Frame) {
-	let can_jaunt: Value = null, pools: Value = null, pools_to_remove: Value = null, DA: Value = null, oldtransform: Value = null, found_bloodpool: Value = null;
-	f.vars = () => [can_jaunt, pools, pools_to_remove, DA, oldtransform, found_bloodpool];
-	if (truthy((yield* g.srcCall(f, "Adjacent", rt.sv(f, "target"))))) {
+	let can_jaunt: Value = null, pools_to_remove: Value = null, DA: Value = null, found_bloodpool: Value = null;
+	if (this.Adjacent(this.target)) {
 		return 0;
 	}
-	if (!truthy(rt.getLen(f, (can_jaunt = (yield* g.srcCall(f, "get_pools", rt.getStep(f, live(f.src), 0), 1)))))) {
+	if (!rt.len(f, (can_jaunt = this.get_pools(rt.getStep(f, this, 0), 1)))) {
 		return 0;
 	}
-	pools = (yield* g.srcCall(f, "get_pools", rt.getStep(f, rt.sv(f, "target"), 0), 2));
-	(pools = rt.modify(live(pools), (pools_to_remove = (yield* g.srcCall(f, "get_pools", rt.getStep(f, rt.sv(f, "target"), 0), 1))), subtract));
-	if (!truthy(rt.len(f, live(pools)))) {
+	let pools: Value = this.get_pools(rt.getStep(f, this.target, 0), 2);
+	pools -= (pools_to_remove = this.get_pools(rt.getStep(f, this.target, 0), 1));
+	if (!rt.len(f, pools)) {
 		return 0;
 	}
-	rt.setFv(f, "color", (DA = (yield* g.new_(f, T("/obj/effect/temp_visual/decoy"), [rt.sv(f, "loc"), live(f.src)]))), "#FF0000");
-	oldtransform = rt.fv(f, "transform", live(DA));
-	rt.setFv(f, "transform", live(DA), multiply((yield* g.call(f, P("/proc/matrix"), null, [])), 2));
-	rt.op(f, "Animate", [2, 10], [null, live(DA), "alpha", 255, "color", rt.initial(f, live(DA), "color"), "transform", live(oldtransform), "time", 3]);
-	yield* g.call(f, P("/proc/sleep"), null, [3]);
-	yield* g.call(f, P("/proc/qdel"), null, [live(DA)]);
-	found_bloodpool = null;
-	pools = (yield* g.srcCall(f, "get_pools", rt.getStep(f, rt.sv(f, "target"), 0), 2));
-	(pools = rt.modify(live(pools), (pools_to_remove = (yield* g.srcCall(f, "get_pools", rt.getStep(f, rt.sv(f, "target"), 0), 1))), subtract));
-	if (truthy(rt.len(f, live(pools)))) {
-		yield* g.call(f, P("/proc/shuffle_inplace"), null, [live(pools)]);
-		found_bloodpool = rt.op(f, "PickUnweighted", [1], [live(pools)]);
+	(DA = (yield* new_(T("/obj/effect/temp_visual/decoy"), this.loc, this))).color = "#FF0000";
+	let oldtransform: Value = DA.transform;
+	DA.transform = matrix() * 2;
+	rt.op(f, "Animate", [2, 10], [null, DA, "alpha", 255, "color", rt.initial(f, DA, "color"), "transform", oldtransform, "time", 3]);
+	yield* sleep(3);
+	yield* qdel(DA);
+	pools = this.get_pools(rt.getStep(f, this.target, 0), 2);
+	pools -= (pools_to_remove = this.get_pools(rt.getStep(f, this.target, 0), 1));
+	if (rt.len(f, pools)) {
+		shuffle_inplace(pools);
+		found_bloodpool = pick(pools);
 	}
-	if (truthy(live(found_bloodpool))) {
-		yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＀ sinks into the blood...</span>", [live(f.src)]));
-		yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/magic/enter_blood.ogg"), 100, 1, -1]);
-		yield* g.srcCall(f, "forceMove", rt.getStep(f, live(found_bloodpool), 0));
-		yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(f.src), 0), rt.rsc("sound/magic/exit_blood.ogg"), 100, 1, -1]);
-		yield* g.srcCall(f, "visible_message", "<span class='danger'>And springs back out!</span>");
+	if (found_bloodpool) {
+		this.visible_message(`<span class='danger'>${this} sinks into the blood...</span>`);
+		playsound(rt.getStep(f, this, 0), rt.rsc("sound/magic/enter_blood.ogg"), 100, 1, -1);
+		yield* this.forceMove(rt.getStep(f, found_bloodpool, 0));
+		playsound(rt.getStep(f, this, 0), rt.rsc("sound/magic/exit_blood.ogg"), 100, 1, -1);
+		this.visible_message("<span class='danger'>And springs back out!</span>");
 		return 1;
 	}
 	return 0;
 }, true);
 
-// /mob/living/simple_animal/hostile/megafauna/bubblegum/proc/get_pools  (code/modules/mob/living/simple_animal/hostile/megafauna/bubblegum.dm:346)
+// bubblegum.dm:346
 rt.def("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/get_pools", function get_pools(f: Frame, _T: Value, range: Value) {
 	let nearby: Value = null;
-	let $e: any;
-	f.vars = () => [nearby, $e];
-	f.dot = rt.list();
-	nearby = null;
-	rt.forList(f, 0, rt.call(f, P("/proc/view"), null, [live(_T), live(range)]), T("/obj/effect/decal/cleanable"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		nearby = $e;
-		if (truthy(rt.callName(f, live(nearby), "can_bloodcrawl_in", []))) {
-			f.dot = rt.modify(live(f.dot), live(nearby), add);
+	f.dot = list();
+	for (nearby of each(view(_T, range), T("/obj/effect/decal/cleanable"))) {
+		if (nearby.can_bloodcrawl_in()) {
+			f.dot += nearby;
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/megafauna/bubblegum/proc/blood_spray  (code/modules/mob/living/simple_animal/hostile/megafauna/bubblegum.dm:352)  may sleep
+// bubblegum.dm:352
 rt.def("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/blood_spray", function* blood_spray(f: Frame) {
-	let range: Value = null, previousturf: Value = null, J: Value = null, targetdir: Value = null, i: Value = null;
+	let i: Value = null;
 	let $e: any;
-	f.vars = () => [range, previousturf, J, targetdir, i, $e];
-	yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＀ sprays a stream of gore!</span>", [live(f.src)]));
-	range = add(6, (yield* g.call(f, P("/proc/round"), null, [multiply(rt.sv(f, "anger_modifier"), 0.4000000059604645)])));
-	previousturf = rt.getStep(f, live(f.src), 0);
-	J = live(previousturf);
-	targetdir = rt.getDir(f, live(f.src), rt.sv(f, "target"));
-	if (isEqual(rt.fv(f, "loc", rt.sv(f, "target")), rt.sv(f, "loc"))) {
-		targetdir = rt.sv(f, "dir");
+	this.visible_message(`<span class='danger'>${this} sprays a stream of gore!</span>`);
+	let range: Value = 6 + round(this.anger_modifier * 0.4);
+	let previousturf: Value = rt.getStep(f, this, 0);
+	let J: Value = previousturf;
+	let targetdir: Value = rt.getDir(f, this, this.target);
+	if (this.target.loc == this.loc) {
+		targetdir = this.dir;
 	}
-	yield* g.srcCall(f, "face_atom", rt.sv(f, "target"));
-	yield* g.new_(f, T("/obj/effect/decal/cleanable/blood/bubblegum"), [live(J)]);
-	i = null;
-	rt.forRange(f, 0, 1, live(range), 1);
+	yield* this.face_atom(this.target);
+	yield* new_(T("/obj/effect/decal/cleanable/blood/bubblegum"), J);
+	rt.forRange(f, 0, 1, range, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		J = rt.getStep(f, live(previousturf), live(targetdir));
-		yield* g.new_(f, T("/obj/effect/temp_visual/dir_setting/bloodsplatter"), [live(previousturf), rt.getDir(f, live(previousturf), live(J))]);
-		yield* g.call(f, P("/proc/playsound"), null, [live(previousturf), rt.rsc("sound/effects/splat.ogg"), 100, 1, -1]);
-		if (((!truthy(live(J)) || !truthy(rt.fv(f, "atmos_adjacent_turfs", live(previousturf)))) || !truthy(rt.index(rt.fv(f, "atmos_adjacent_turfs", live(previousturf)), live(J))))) {
+		J = rt.getStep(f, previousturf, targetdir);
+		yield* new_(T("/obj/effect/temp_visual/dir_setting/bloodsplatter"), previousturf, rt.getDir(f, previousturf, J));
+		playsound(previousturf, rt.rsc("sound/effects/splat.ogg"), 100, 1, -1);
+		if (!J || !previousturf.atmos_adjacent_turfs || !rt.index(previousturf.atmos_adjacent_turfs, J)) {
 			break;
 		}
-		yield* g.new_(f, T("/obj/effect/decal/cleanable/blood/bubblegum"), [live(J)]);
-		previousturf = live(J);
-		yield* g.call(f, P("/proc/sleep"), null, [1]);
+		yield* new_(T("/obj/effect/decal/cleanable/blood/bubblegum"), J);
+		previousturf = J;
+		yield* sleep(1);
 	}
 	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/megafauna/bubblegum/proc/slaughterlings  (code/modules/mob/living/simple_animal/hostile/megafauna/bubblegum.dm:378)  may sleep
+// bubblegum.dm:378
 rt.def("/mob/living/simple_animal/hostile/megafauna/bubblegum/proc/slaughterlings", function* slaughterlings(f: Frame) {
-	let max_amount: Value = null, H: Value = null, B: Value = null;
-	let $e: any;
-	f.vars = () => [max_amount, H, B, $e];
-	yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>＀ summons a shoal of slaughterlings!</span>", [live(f.src)]));
-	max_amount = 6;
-	H = null;
-	rt.forList(f, 0, (yield* g.srcCall(f, "get_pools", rt.getStep(f, live(f.src), 0), 1)));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		H = $e;
-		if (!truthy(live(max_amount))) {
+	let H: Value = null, B: Value = null;
+	this.visible_message(`<span class='danger'>${this} summons a shoal of slaughterlings!</span>`);
+	let max_amount: Value = 6;
+	for (H of each(this.get_pools(rt.getStep(f, this, 0), 1))) {
+		if (!max_amount) {
 			break;
 		}
-		max_amount = rt.inc(live(max_amount), -1);
-		yield* g.new_(f, T("/mob/living/simple_animal/hostile/asteroid/hivelordbrood/slaughter"), [rt.gv(f, "loc", (B = live(H)))]);
+		max_amount--;
+		yield* new_(T("/mob/living/simple_animal/hostile/asteroid/hivelordbrood/slaughter"), (B = H).loc);
 	}
-	rt.endFor(f, 0);
-	return live(max_amount);
+	return max_amount;
 }, true);
 
 rt.type(5001, "/mob/living/simple_animal/hostile/asteroid/hivelordbrood/slaughter", "/mob/living/simple_animal/hostile/asteroid/hivelordbrood", {
@@ -498,13 +444,10 @@ rt.type(5001, "/mob/living/simple_animal/hostile/asteroid/hivelordbrood/slaughte
 	weather_immunities: null,
 });
 
-// /mob/living/simple_animal/hostile/asteroid/hivelordbrood/slaughter/proc/CanPass  (code/modules/mob/living/simple_animal/hostile/megafauna/bubblegum.dm:401)
+// bubblegum.dm:401
 rt.def("/mob/living/simple_animal/hostile/asteroid/hivelordbrood/slaughter/proc/CanPass", function CanPass(f: Frame, mover: Value, target: Value, height: Value) {
-	f.vars = () => [height];
-	if (live(height) === null) {
-		height = 0;
-	}
-	if (truthy((rt.istype(live(mover), T("/mob/living/simple_animal/hostile/megafauna/bubblegum")) ? 1 : 0))) {
+	height ??= 0;
+	if (rt.istype(mover, T("/mob/living/simple_animal/hostile/megafauna/bubblegum"))) {
 		return 1;
 	}
 	return 0;

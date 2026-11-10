@@ -1,7 +1,7 @@
-// From code/game/objects/items/devices/radio/encryptionkey.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/devices/radio/encryptionkey.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(9334, "/obj/item/device/encryptionkey", "/obj/item/device", {
@@ -17,12 +17,10 @@ rt.type(9334, "/obj/item/device/encryptionkey", "/obj/item/device", {
 	origin_tech: "engineering=2;bluespace=1",
 });
 
-// /obj/item/device/encryptionkey/proc/<init>  (code/game/objects/items/devices/radio/encryptionkey.dm:11)
+// encryptionkey.dm:11
 rt.def("/obj/item/device/encryptionkey/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "channels", rt.list());
+	parent_proc();
+	this.channels = list();
 	return f.dot;
 });
 
@@ -35,12 +33,10 @@ rt.type(9335, "/obj/item/device/encryptionkey/syndicate", "/obj/item/device/encr
 	origin_tech: "syndicate=1;engineering=3;bluespace=2",
 });
 
-// /obj/item/device/encryptionkey/syndicate/proc/<init>  (code/game/objects/items/devices/radio/encryptionkey.dm:17)
+// encryptionkey.dm:17
 rt.def("/obj/item/device/encryptionkey/syndicate/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "channels", rt.alist(f, ["Syndicate", 1]));
+	parent_proc();
+	this.channels = rt.alist(f, ["Syndicate", 1]);
 	return f.dot;
 });
 
@@ -51,12 +47,10 @@ rt.type(9337, "/obj/item/device/encryptionkey/headset_sec", "/obj/item/device/en
 	icon_state: "sec_cypherkey",
 });
 
-// /obj/item/device/encryptionkey/headset_sec/proc/<init>  (code/game/objects/items/devices/radio/encryptionkey.dm:32)
+// encryptionkey.dm:32
 rt.def("/obj/item/device/encryptionkey/headset_sec/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "channels", rt.alist(f, ["Security", 1]));
+	parent_proc();
+	this.channels = rt.alist(f, ["Security", 1]);
 	return f.dot;
 });
 
@@ -67,12 +61,10 @@ rt.type(9338, "/obj/item/device/encryptionkey/headset_eng", "/obj/item/device/en
 	icon_state: "eng_cypherkey",
 });
 
-// /obj/item/device/encryptionkey/headset_eng/proc/<init>  (code/game/objects/items/devices/radio/encryptionkey.dm:38)
+// encryptionkey.dm:38
 rt.def("/obj/item/device/encryptionkey/headset_eng/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "channels", rt.alist(f, ["Engineering", 1]));
+	parent_proc();
+	this.channels = rt.alist(f, ["Engineering", 1]);
 	return f.dot;
 });
 
@@ -83,12 +75,10 @@ rt.type(9339, "/obj/item/device/encryptionkey/headset_rob", "/obj/item/device/en
 	icon_state: "rob_cypherkey",
 });
 
-// /obj/item/device/encryptionkey/headset_rob/proc/<init>  (code/game/objects/items/devices/radio/encryptionkey.dm:44)
+// encryptionkey.dm:44
 rt.def("/obj/item/device/encryptionkey/headset_rob/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "channels", rt.alist(f, ["Science", 1, "Engineering", 1]));
+	parent_proc();
+	this.channels = rt.alist(f, ["Science", 1, "Engineering", 1]);
 	return f.dot;
 });
 
@@ -99,12 +89,10 @@ rt.type(9340, "/obj/item/device/encryptionkey/headset_med", "/obj/item/device/en
 	icon_state: "med_cypherkey",
 });
 
-// /obj/item/device/encryptionkey/headset_med/proc/<init>  (code/game/objects/items/devices/radio/encryptionkey.dm:50)
+// encryptionkey.dm:50
 rt.def("/obj/item/device/encryptionkey/headset_med/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "channels", rt.alist(f, ["Medical", 1]));
+	parent_proc();
+	this.channels = rt.alist(f, ["Medical", 1]);
 	return f.dot;
 });
 
@@ -115,12 +103,10 @@ rt.type(9341, "/obj/item/device/encryptionkey/headset_sci", "/obj/item/device/en
 	icon_state: "sci_cypherkey",
 });
 
-// /obj/item/device/encryptionkey/headset_sci/proc/<init>  (code/game/objects/items/devices/radio/encryptionkey.dm:56)
+// encryptionkey.dm:56
 rt.def("/obj/item/device/encryptionkey/headset_sci/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "channels", rt.alist(f, ["Science", 1]));
+	parent_proc();
+	this.channels = rt.alist(f, ["Science", 1]);
 	return f.dot;
 });
 
@@ -131,12 +117,10 @@ rt.type(9342, "/obj/item/device/encryptionkey/headset_medsci", "/obj/item/device
 	icon_state: "medsci_cypherkey",
 });
 
-// /obj/item/device/encryptionkey/headset_medsci/proc/<init>  (code/game/objects/items/devices/radio/encryptionkey.dm:62)
+// encryptionkey.dm:62
 rt.def("/obj/item/device/encryptionkey/headset_medsci/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "channels", rt.alist(f, ["Science", 1, "Medical", 1]));
+	parent_proc();
+	this.channels = rt.alist(f, ["Science", 1, "Medical", 1]);
 	return f.dot;
 });
 
@@ -147,12 +131,10 @@ rt.type(9343, "/obj/item/device/encryptionkey/headset_com", "/obj/item/device/en
 	icon_state: "com_cypherkey",
 });
 
-// /obj/item/device/encryptionkey/headset_com/proc/<init>  (code/game/objects/items/devices/radio/encryptionkey.dm:68)
+// encryptionkey.dm:68
 rt.def("/obj/item/device/encryptionkey/headset_com/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "channels", rt.alist(f, ["Command", 1]));
+	parent_proc();
+	this.channels = rt.alist(f, ["Command", 1]);
 	return f.dot;
 });
 
@@ -163,12 +145,10 @@ rt.type(9345, "/obj/item/device/encryptionkey/heads/captain", "/obj/item/device/
 	icon_state: "cap_cypherkey",
 });
 
-// /obj/item/device/encryptionkey/heads/captain/proc/<init>  (code/game/objects/items/devices/radio/encryptionkey.dm:74)
+// encryptionkey.dm:74
 rt.def("/obj/item/device/encryptionkey/heads/captain/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "channels", rt.alist(f, ["Command", 1, "Security", 1, "Engineering", 0, "Science", 0, "Medical", 0, "Supply", 0, "Service", 0]));
+	parent_proc();
+	this.channels = rt.alist(f, ["Command", 1, "Security", 1, "Engineering", 0, "Science", 0, "Medical", 0, "Supply", 0, "Service", 0]);
 	return f.dot;
 });
 
@@ -179,12 +159,10 @@ rt.type(9346, "/obj/item/device/encryptionkey/heads/rd", "/obj/item/device/encry
 	icon_state: "rd_cypherkey",
 });
 
-// /obj/item/device/encryptionkey/heads/rd/proc/<init>  (code/game/objects/items/devices/radio/encryptionkey.dm:80)
+// encryptionkey.dm:80
 rt.def("/obj/item/device/encryptionkey/heads/rd/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "channels", rt.alist(f, ["Science", 1, "Command", 1]));
+	parent_proc();
+	this.channels = rt.alist(f, ["Science", 1, "Command", 1]);
 	return f.dot;
 });
 
@@ -195,12 +173,10 @@ rt.type(9347, "/obj/item/device/encryptionkey/heads/hos", "/obj/item/device/encr
 	icon_state: "hos_cypherkey",
 });
 
-// /obj/item/device/encryptionkey/heads/hos/proc/<init>  (code/game/objects/items/devices/radio/encryptionkey.dm:86)
+// encryptionkey.dm:86
 rt.def("/obj/item/device/encryptionkey/heads/hos/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "channels", rt.alist(f, ["Security", 1, "Command", 1]));
+	parent_proc();
+	this.channels = rt.alist(f, ["Security", 1, "Command", 1]);
 	return f.dot;
 });
 
@@ -211,12 +187,10 @@ rt.type(9348, "/obj/item/device/encryptionkey/heads/ce", "/obj/item/device/encry
 	icon_state: "ce_cypherkey",
 });
 
-// /obj/item/device/encryptionkey/heads/ce/proc/<init>  (code/game/objects/items/devices/radio/encryptionkey.dm:92)
+// encryptionkey.dm:92
 rt.def("/obj/item/device/encryptionkey/heads/ce/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "channels", rt.alist(f, ["Engineering", 1, "Command", 1]));
+	parent_proc();
+	this.channels = rt.alist(f, ["Engineering", 1, "Command", 1]);
 	return f.dot;
 });
 
@@ -227,12 +201,10 @@ rt.type(9349, "/obj/item/device/encryptionkey/heads/cmo", "/obj/item/device/encr
 	icon_state: "cmo_cypherkey",
 });
 
-// /obj/item/device/encryptionkey/heads/cmo/proc/<init>  (code/game/objects/items/devices/radio/encryptionkey.dm:98)
+// encryptionkey.dm:98
 rt.def("/obj/item/device/encryptionkey/heads/cmo/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "channels", rt.alist(f, ["Medical", 1, "Command", 1]));
+	parent_proc();
+	this.channels = rt.alist(f, ["Medical", 1, "Command", 1]);
 	return f.dot;
 });
 
@@ -243,12 +215,10 @@ rt.type(9350, "/obj/item/device/encryptionkey/heads/hop", "/obj/item/device/encr
 	icon_state: "hop_cypherkey",
 });
 
-// /obj/item/device/encryptionkey/heads/hop/proc/<init>  (code/game/objects/items/devices/radio/encryptionkey.dm:104)
+// encryptionkey.dm:104
 rt.def("/obj/item/device/encryptionkey/heads/hop/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "channels", rt.alist(f, ["Supply", 1, "Service", 1, "Command", 1]));
+	parent_proc();
+	this.channels = rt.alist(f, ["Supply", 1, "Service", 1, "Command", 1]);
 	return f.dot;
 });
 
@@ -259,12 +229,10 @@ rt.type(9351, "/obj/item/device/encryptionkey/headset_cargo", "/obj/item/device/
 	icon_state: "cargo_cypherkey",
 });
 
-// /obj/item/device/encryptionkey/headset_cargo/proc/<init>  (code/game/objects/items/devices/radio/encryptionkey.dm:110)
+// encryptionkey.dm:110
 rt.def("/obj/item/device/encryptionkey/headset_cargo/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "channels", rt.alist(f, ["Supply", 1]));
+	parent_proc();
+	this.channels = rt.alist(f, ["Supply", 1]);
 	return f.dot;
 });
 
@@ -275,12 +243,10 @@ rt.type(9352, "/obj/item/device/encryptionkey/headset_mining", "/obj/item/device
 	icon_state: "cargo_cypherkey",
 });
 
-// /obj/item/device/encryptionkey/headset_mining/proc/<init>  (code/game/objects/items/devices/radio/encryptionkey.dm:116)
+// encryptionkey.dm:116
 rt.def("/obj/item/device/encryptionkey/headset_mining/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "channels", rt.alist(f, ["Supply", 1, "Science", 1]));
+	parent_proc();
+	this.channels = rt.alist(f, ["Supply", 1, "Science", 1]);
 	return f.dot;
 });
 
@@ -291,12 +257,10 @@ rt.type(9353, "/obj/item/device/encryptionkey/headset_service", "/obj/item/devic
 	icon_state: "srv_cypherkey",
 });
 
-// /obj/item/device/encryptionkey/headset_service/proc/<init>  (code/game/objects/items/devices/radio/encryptionkey.dm:122)
+// encryptionkey.dm:122
 rt.def("/obj/item/device/encryptionkey/headset_service/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "channels", rt.alist(f, ["Service", 1]));
+	parent_proc();
+	this.channels = rt.alist(f, ["Service", 1]);
 	return f.dot;
 });
 
@@ -308,12 +272,10 @@ rt.type(9354, "/obj/item/device/encryptionkey/headset_cent", "/obj/item/device/e
 	icon_state: "cent_cypherkey",
 });
 
-// /obj/item/device/encryptionkey/headset_cent/proc/<init>  (code/game/objects/items/devices/radio/encryptionkey.dm:129)
+// encryptionkey.dm:129
 rt.def("/obj/item/device/encryptionkey/headset_cent/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "channels", rt.alist(f, ["Centcom", 1]));
+	parent_proc();
+	this.channels = rt.alist(f, ["Centcom", 1]);
 	return f.dot;
 });
 
@@ -321,12 +283,10 @@ rt.type(9355, "/obj/item/device/encryptionkey/ai", "/obj/item/device/encryptionk
 	channels: null,
 });
 
-// /obj/item/device/encryptionkey/ai/proc/<init>  (code/game/objects/items/devices/radio/encryptionkey.dm:132)
+// encryptionkey.dm:132
 rt.def("/obj/item/device/encryptionkey/ai/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "channels", rt.alist(f, ["Command", 1, "Security", 1, "Engineering", 1, "Science", 1, "Medical", 1, "Supply", 1, "Service", 1, "AI Private", 1]));
+	parent_proc();
+	this.channels = rt.alist(f, ["Command", 1, "Security", 1, "Engineering", 1, "Science", 1, "Medical", 1, "Supply", 1, "Service", 1, "AI Private", 1]);
 	return f.dot;
 });
 
@@ -334,11 +294,9 @@ rt.type(9356, "/obj/item/device/encryptionkey/secbot", "/obj/item/device/encrypt
 	channels: null,
 });
 
-// /obj/item/device/encryptionkey/secbot/proc/<init>  (code/game/objects/items/devices/radio/encryptionkey.dm:135)
+// encryptionkey.dm:135
 rt.def("/obj/item/device/encryptionkey/secbot/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "channels", rt.alist(f, ["AI Private", 1, "Security", 1]));
+	parent_proc();
+	this.channels = rt.alist(f, ["AI Private", 1, "Security", 1]);
 	return f.dot;
 });

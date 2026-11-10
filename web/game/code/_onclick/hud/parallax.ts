@@ -1,306 +1,266 @@
-// From code/_onclick/hud/parallax.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/_onclick/hud/parallax.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
-// /datum/hud/proc/create_parallax  (code/_onclick/hud/parallax.dm:15)  may sleep
+// parallax.dm:15
 rt.def("/datum/hud/proc/create_parallax", function* create_parallax(f: Frame, viewmob: Value) {
-	let screenmob: Value = null, C: Value = null, PM: Value = null;
-	f.vars = () => [viewmob, screenmob, C, PM];
-	screenmob = (live(viewmob) || rt.sv(f, "mymob"));
-	C = rt.fv(f, "client", live(screenmob));
-	if (!truthy((yield* g.srcCall(f, "apply_parallax_pref", live(viewmob))))) {
-		return live(f.dot);
+	let screenmob: Value = (viewmob || this.mymob);
+	let C: Value = screenmob.client;
+	if (!this.apply_parallax_pref(viewmob)) {
+		return f.dot;
 	}
-	if (!truthy(rt.length(rt.fv(f, "parallax_layers_cached", live(C))))) {
-		rt.setFv(f, "parallax_layers_cached", live(C), rt.list());
-		rt.modField(f, live(C), "parallax_layers_cached", (yield* g.new_(f, T("/obj/screen/parallax_layer/layer_1"), [null, rt.fv(f, "view", live(C))])), add);
-		rt.modField(f, live(C), "parallax_layers_cached", (yield* g.new_(f, T("/obj/screen/parallax_layer/layer_2"), [null, rt.fv(f, "view", live(C))])), add);
-		rt.modField(f, live(C), "parallax_layers_cached", (yield* g.new_(f, T("/obj/screen/parallax_layer/layer_3"), [null, rt.fv(f, "view", live(C))])), add);
+	if (!rt.length(C.parallax_layers_cached)) {
+		C.parallax_layers_cached = list();
+		C.parallax_layers_cached += (yield* new_(T("/obj/screen/parallax_layer/layer_1"), null, C.view));
+		C.parallax_layers_cached += (yield* new_(T("/obj/screen/parallax_layer/layer_2"), null, C.view));
+		C.parallax_layers_cached += (yield* new_(T("/obj/screen/parallax_layer/layer_3"), null, C.view));
 	}
-	rt.setFv(f, "parallax_layers", live(C), (yield* g.callName(f, rt.fv(f, "parallax_layers_cached", live(C)), "Copy", [])));
-	if (rt.gt(rt.length(rt.fv(f, "parallax_layers", live(C))), rt.fv(f, "parallax_layers_max", live(C)))) {
-		rt.setFv(f, "len", rt.fv(f, "parallax_layers", live(C)), rt.fv(f, "parallax_layers_max", live(C)));
+	C.parallax_layers = (yield* C.parallax_layers_cached.Copy());
+	if (rt.length(C.parallax_layers) > C.parallax_layers_max) {
+		C.parallax_layers.len = C.parallax_layers_max;
 	}
-	(rt.modField(f, live(C), "screen", rt.fv(f, "parallax_layers", live(C)), rt.bitOr));
-	PM = rt.index(rt.gv(f, "plane_masters", rt.fv(f, "hud_used", live(screenmob))), fmt("＀", [-95]));
-	if (!isEqual(live(screenmob), rt.sv(f, "mymob"))) {
-		(rt.modField(f, live(C), "screen", rt.locateIn(f, T("/obj/screen/plane_master/parallax_white"), rt.fv(f, "screen", live(C))), subtract));
-		rt.modField(f, live(C), "screen", live(PM), add);
+	(rt.modField(f, C, "screen", C.parallax_layers, rt.bitOr));
+	let PM: Value = rt.index(screenmob.hud_used.plane_masters, `${PLANE_SPACE}`);
+	if (screenmob != this.mymob) {
+		C.screen -= rt.locateIn(f, T("/obj/screen/plane_master/parallax_white"), C.screen);
+		C.screen += PM;
 	}
-	rt.setFv(f, "color", live(PM), rt.list(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0));
+	PM.color = list(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0);
 	return f.dot;
 }, true);
 
-// /datum/hud/proc/remove_parallax  (code/_onclick/hud/parallax.dm:46)
+// parallax.dm:46
 rt.def("/datum/hud/proc/remove_parallax", function remove_parallax(f: Frame, viewmob: Value) {
-	let screenmob: Value = null, C: Value = null, PM: Value = null;
-	f.vars = () => [screenmob, C, PM];
-	screenmob = (live(viewmob) || rt.sv(f, "mymob"));
-	(rt.modField(f, (C = rt.fv(f, "client", live(screenmob))), "screen", rt.fv(f, "parallax_layers_cached", live(C)), subtract));
-	PM = rt.index(rt.gv(f, "plane_masters", rt.fv(f, "hud_used", live(screenmob))), fmt("＀", [-95]));
-	if (!isEqual(live(screenmob), rt.sv(f, "mymob"))) {
-		(rt.modField(f, live(C), "screen", rt.locateIn(f, T("/obj/screen/plane_master/parallax_white"), rt.fv(f, "screen", live(C))), subtract));
-		rt.modField(f, live(C), "screen", live(PM), add);
+	let C: Value = null;
+	let screenmob: Value = (viewmob || this.mymob);
+	(C = screenmob.client).screen -= C.parallax_layers_cached;
+	let PM: Value = rt.index(screenmob.hud_used.plane_masters, `${PLANE_SPACE}`);
+	if (screenmob != this.mymob) {
+		C.screen -= rt.locateIn(f, T("/obj/screen/plane_master/parallax_white"), C.screen);
+		C.screen += PM;
 	}
-	rt.setFv(f, "color", live(PM), rt.initial(f, live(PM), "color"));
-	rt.setFv(f, "parallax_layers", live(C), null);
+	PM.color = rt.initial(f, PM, "color");
+	C.parallax_layers = null;
 	return f.dot;
 });
 
-// /datum/hud/proc/apply_parallax_pref  (code/_onclick/hud/parallax.dm:57)
+// parallax.dm:57
 rt.def("/datum/hud/proc/apply_parallax_pref", function apply_parallax_pref(f: Frame, viewmob: Value) {
-	let screenmob: Value = null, C: Value = null, pref: Value = null;
-	let $0: any;
-	f.vars = () => [screenmob, C, pref, $0];
-	screenmob = (live(viewmob) || rt.sv(f, "mymob"));
-	if (truthy(rt.gv(f, "prefs", (C = rt.fv(f, "client", live(screenmob)))))) {
-		if ((pref = rt.gv(f, "parallax", rt.fv(f, "prefs", live(C)))) === null) {
-			pref = 0;
-			if (rt.lt(rt.fv(f, "byond_version", live(C)), 511)) {
-				pref = 3;
+	let C: Value = null, pref: Value = null;
+	let screenmob: Value = (viewmob || this.mymob);
+	if ((C = screenmob.client).prefs) {
+		if ((pref = C.prefs.parallax) === null) {
+			pref = PARALLAX_HIGH;
+			if (C.byond_version < 511) {
+				pref = PARALLAX_DISABLE;
 			}
 		}
-		$0 = rt.gv(f, "parallax", rt.fv(f, "prefs", live(C)));
-		if ($0 === -1) {
-			rt.setFv(f, "parallax_throttle", live(C), 0);
-			rt.setFv(f, "parallax_layers_max", live(C), 4);
+		if (C.prefs.parallax === PARALLAX_INSANE) {
+			C.parallax_throttle = 0;
+			C.parallax_layers_max = 4;
 			return 1;
-		} else if ($0 === 1) {
-			rt.setFv(f, "parallax_throttle", live(C), 1);
-			rt.setFv(f, "parallax_layers_max", live(C), 2);
+		} else if (C.prefs.parallax === 1) {
+			C.parallax_throttle = 1;
+			C.parallax_layers_max = 2;
 			return 1;
-		} else if ($0 === 2) {
-			rt.setFv(f, "parallax_throttle", live(C), 2);
-			rt.setFv(f, "parallax_layers_max", live(C), 1);
+		} else if (C.prefs.parallax === 2) {
+			C.parallax_throttle = 2;
+			C.parallax_layers_max = 1;
 			return 1;
-		} else if ($0 === 3) {
+		} else if (C.prefs.parallax === PARALLAX_DISABLE) {
 			return 0;
 		}
 	}
-	rt.setFv(f, "parallax_throttle", live(C), rt.fv(f, "tick_lag", rt.world()));
-	rt.setFv(f, "parallax_layers_max", live(C), 3);
+	C.parallax_throttle = rt.world().tick_lag;
+	C.parallax_layers_max = 3;
 	return 1;
 });
 
-// /datum/hud/proc/update_parallax_pref  (code/_onclick/hud/parallax.dm:89)  may sleep
+// parallax.dm:89
 rt.def("/datum/hud/proc/update_parallax_pref", function* update_parallax_pref(f: Frame, viewmob: Value) {
-	f.vars = () => [viewmob];
-	yield* g.srcCall(f, "remove_parallax", live(viewmob));
-	yield* g.srcCall(f, "create_parallax", live(viewmob));
+	this.remove_parallax(viewmob);
+	yield* this.create_parallax(viewmob);
 	return f.dot;
 }, true);
 
-// /datum/hud/proc/set_parallax_movedir  (code/_onclick/hud/parallax.dm:96)  may sleep
+// parallax.dm:96
 rt.def("/datum/hud/proc/set_parallax_movedir", function* set_parallax_movedir(f: Frame, new_parallax_movedir: Value, skip_windups: Value) {
-	let C: Value = null, animatedir: Value = null, animate_time: Value = null, thing: Value = null, L: Value = null, _T: Value = null, newtransform: Value = null, shortesttimer: Value = null, thing_4: Value = null, L_5: Value = null, _T_6: Value = null, CB: Value = null;
+	let animate_time: Value = null, thing: Value = null, L: Value = null, _T: Value = null, newtransform: Value = null, shortesttimer: Value = null, thing_4: Value = null, L_5: Value = null, _T_6: Value = null;
 	let $0: any, $1: any, $2: any, $3: any, $4: any, $5: any, $6: any, $7: any, $8: any, $e: any;
-	f.vars = () => [new_parallax_movedir, skip_windups, C, animatedir, animate_time, thing, L, _T, newtransform, shortesttimer, thing_4, L_5, _T_6, CB, $0, $1, $2, $3, $4, $5, $6, $7, $8, $e];
 	f.dot = 0;
-	C = rt.fv(f, "client", rt.sv(f, "mymob"));
-	if (isEqual(live(new_parallax_movedir), rt.fv(f, "parallax_movedir", live(C)))) {
-		return live(f.dot);
+	let C: Value = this.mymob.client;
+	if (new_parallax_movedir == C.parallax_movedir) {
+		return f.dot;
 	}
-	animatedir = live(new_parallax_movedir);
-	if (isEqual(live(new_parallax_movedir), 0)) {
+	let animatedir: Value = new_parallax_movedir;
+	if (new_parallax_movedir == 0) {
 		animate_time = 0;
-		thing = null;
-		rt.forList(f, 0, rt.fv(f, "parallax_layers", live(C)));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			thing = $e;
-			rt.setFv(f, "icon_state", (L = live(thing)), rt.initial(f, live(L), "icon_state"));
-			yield* g.callName(f, live(L), "update_o", [rt.fv(f, "view", live(C))]);
-			if (rt.gt((_T = divide(25, rt.fv(f, "speed", live(L)))), live(animate_time))) {
-				animate_time = live(_T);
+		for (thing of each(C.parallax_layers)) {
+			(L = thing).icon_state = rt.initial(f, L, "icon_state");
+			L.update_o(C.view);
+			if ((_T = PARALLAX_LOOP_TIME / L.speed) > animate_time) {
+				animate_time = _T;
 			}
 		}
-		rt.endFor(f, 0);
-		rt.setFv(f, "dont_animate_parallax", live(C), add(rt.worldTime(f), (yield* g.call(f, P("/proc/min"), null, [live(animate_time), 25]))));
-		animatedir = rt.fv(f, "parallax_movedir", live(C));
+		C.dont_animate_parallax = rt.worldTime(f) + min(animate_time, PARALLAX_LOOP_TIME);
+		animatedir = C.parallax_movedir;
 	}
-	newtransform = null;
-	$0 = live(animatedir);
-	if ($0 === 1) {
-		newtransform = (yield* g.call(f, P("/proc/matrix"), null, [1, 0, 0, 0, 1, 480]));
-	} else if ($0 === 2) {
-		newtransform = (yield* g.call(f, P("/proc/matrix"), null, [1, 0, 0, 0, 1, -480]));
-	} else if ($0 === 4) {
-		newtransform = (yield* g.call(f, P("/proc/matrix"), null, [1, 0, 480, 0, 1, 0]));
-	} else if ($0 === 8) {
-		newtransform = (yield* g.call(f, P("/proc/matrix"), null, [1, 0, -480, 0, 1, 0]));
+	if (animatedir === 1) {
+		newtransform = matrix(1, 0, 0, 0, 1, 480);
+	} else if (animatedir === 2) {
+		newtransform = matrix(1, 0, 0, 0, 1, -480);
+	} else if (animatedir === 4) {
+		newtransform = matrix(1, 0, 480, 0, 1, 0);
+	} else if (animatedir === 8) {
+		newtransform = matrix(1, 0, -480, 0, 1, 0);
 	}
-	shortesttimer = null;
-	if (!truthy(live(skip_windups))) {
-		thing_4 = null;
-		rt.forList(f, 0, rt.fv(f, "parallax_layers", live(C)));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			thing_4 = $e;
-			L_5 = live(thing_4);
-			_T_6 = divide(25, rt.fv(f, "speed", live(L_5)));
-			if (live(shortesttimer) === null) {
-				shortesttimer = live(_T_6);
+	if (!skip_windups) {
+		for (thing_4 of each(C.parallax_layers)) {
+			L_5 = thing_4;
+			_T_6 = 25 / L_5.speed;
+			if (shortesttimer === null) {
+				shortesttimer = _T_6;
 			}
-			if (rt.lt(live(_T_6), live(shortesttimer))) {
-				shortesttimer = live(_T_6);
+			if (_T_6 < shortesttimer) {
+				shortesttimer = _T_6;
 			}
-			rt.setFv(f, "transform", live(L_5), live(newtransform));
+			L_5.transform = newtransform;
 			$0 = null;
-			$1 = live(L_5);
+			$1 = L_5;
 			$2 = "transform";
-			$3 = (yield* g.call(f, P("/proc/matrix"), null, []));
+			$3 = matrix();
 			$4 = "time";
-			$5 = live(_T_6);
+			$5 = _T_6;
 			$6 = "easing";
 			$7 = 7;
-			if (truthy(live(new_parallax_movedir))) {
+			if (new_parallax_movedir) {
 				$8 = 64;
 			} else {
 				$8 = 128;
 			}
 			rt.op(f, "Animate", [2, 10], [$0, $1, $2, $3, $4, $5, $6, rt.bitOr($7, $8), "flags", 1]);
-			if (truthy(live(new_parallax_movedir))) {
-				rt.setFv(f, "transform", live(L_5), live(newtransform));
-				rt.op(f, "Animate", [2, 4], ["transform", (yield* g.call(f, P("/proc/matrix"), null, [])), "time", live(_T_6)]);
+			if (new_parallax_movedir) {
+				L_5.transform = newtransform;
+				rt.op(f, "Animate", [2, 4], ["transform", matrix(), "time", _T_6]);
 			}
 		}
-		rt.endFor(f, 0);
 	}
-	rt.setFv(f, "parallax_movedir", live(C), live(new_parallax_movedir));
-	if (truthy(rt.fv(f, "parallax_animate_timer", live(C)))) {
-		yield* g.call(f, P("/proc/deltimer"), null, [rt.fv(f, "parallax_animate_timer", live(C))]);
+	C.parallax_movedir = new_parallax_movedir;
+	if (C.parallax_animate_timer) {
+		yield* deltimer(C.parallax_animate_timer);
 	}
-	CB = (yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/datum/hud/proc/update_parallax_motionblur"), live(C), live(animatedir), live(new_parallax_movedir), live(newtransform)]));
-	if (truthy(live(skip_windups))) {
-		yield* g.callName(f, live(CB), "Invoke", []);
+	let CB: Value = (yield* new_(T("/datum/callback"), this, P("/datum/hud/proc/update_parallax_motionblur"), C, animatedir, new_parallax_movedir, newtransform));
+	if (skip_windups) {
+		yield* CB.Invoke();
 	} else {
-		rt.setFv(f, "parallax_animate_timer", live(C), (yield* g.call(f, P("/proc/addtimer"), null, [live(CB), (yield* g.call(f, P("/proc/min"), null, [live(shortesttimer), 25])), 12])));
+		C.parallax_animate_timer = (yield* addtimer(CB, min(shortesttimer, 25), 12));
 	}
 	return f.dot;
 }, true);
 
-// /datum/hud/proc/update_parallax_motionblur  (code/_onclick/hud/parallax.dm:149)
+// parallax.dm:149
 rt.def("/datum/hud/proc/update_parallax_motionblur", function update_parallax_motionblur(f: Frame, C: Value, animatedir: Value, new_parallax_movedir: Value, newtransform: Value) {
 	let thing: Value = null, L: Value = null, newstate: Value = null, _T: Value = null;
-	let $e: any;
-	f.vars = () => [thing, L, newstate, _T, $e];
-	rt.setFv(f, "parallax_animate_timer", live(C), 0);
-	thing = null;
-	rt.forList(f, 0, rt.fv(f, "parallax_layers", live(C)));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		thing = $e;
-		L = live(thing);
-		if (!truthy(live(new_parallax_movedir))) {
-			rt.op(f, "Animate", [1, 1], [live(L)]);
+	C.parallax_animate_timer = 0;
+	for (thing of each(C.parallax_layers)) {
+		L = thing;
+		if (!new_parallax_movedir) {
+			rt.op(f, "Animate", [1, 1], [L]);
 			continue;
 		}
-		newstate = rt.initial(f, live(L), "icon_state");
-		if (truthy(live(animatedir))) {
-			if ((isEqual(live(animatedir), 1) || isEqual(live(animatedir), 2))) {
-				newstate = rt.modify(live(newstate), "_vertical", add);
+		newstate = rt.initial(f, L, "icon_state");
+		if (animatedir) {
+			if (animatedir == 1 || animatedir == 2) {
+				newstate += "_vertical";
 			} else {
-				newstate = rt.modify(live(newstate), "_horizontal", add);
+				newstate += "_horizontal";
 			}
 		}
-		_T = divide(25, rt.fv(f, "speed", live(L)));
-		if (truthy((rt.isIn(f, live(newstate), rt.call(f, P("/proc/icon_states"), null, [rt.fv(f, "icon", live(L))])) ? 1 : 0))) {
-			rt.setFv(f, "icon_state", live(L), live(newstate));
-			rt.callName(f, live(L), "update_o", [rt.fv(f, "view", live(C))]);
+		_T = PARALLAX_LOOP_TIME / L.speed;
+		if (rt.isIn(f, newstate, icon_states(L.icon))) {
+			L.icon_state = newstate;
+			L.update_o(C.view);
 		}
-		rt.setFv(f, "transform", live(L), live(newtransform));
-		rt.op(f, "Animate", [2, 10], [null, live(L), "transform", rt.call(f, P("/proc/matrix"), null, []), "time", live(_T), "loop", -1, "flags", 1]);
+		L.transform = newtransform;
+		rt.op(f, "Animate", [2, 10], [null, L, "transform", matrix(), "time", _T, "loop", -1, "flags", 1]);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, false, { argTypes: [{ path: "/client" }, {  }, {  }, { path: "/matrix" }] });
 
-// /datum/hud/proc/update_parallax  (code/_onclick/hud/parallax.dm:175)  may sleep
+// parallax.dm:175
 rt.def("/datum/hud/proc/update_parallax", function* update_parallax(f: Frame) {
-	let C: Value = null, posobj: Value = null, areaobj: Value = null, force: Value = null, offset_x: Value = null, offset_y: Value = null, last_delay: Value = null, thing: Value = null, L: Value = null, change_x: Value = null, change_y: Value = null;
-	let $e: any;
-	f.vars = () => [C, posobj, areaobj, force, offset_x, offset_y, last_delay, thing, L, change_x, change_y, $e];
-	C = rt.fv(f, "client", rt.sv(f, "mymob"));
-	posobj = rt.getStep(f, rt.fv(f, "eye", live(C)), 0);
+	let areaobj: Value = null, force: Value = null, last_delay: Value = null, thing: Value = null, L: Value = null, change_x: Value = null, change_y: Value = null;
+	let C: Value = this.mymob.client;
+	let posobj: Value = rt.getStep(f, C.eye, 0);
 	// The eye can be off the map for a moment (a brain's Login while its head is still being placed): 2017 tg read
 	// null.loc here. Modern tg returns early too.
-	if (!truthy(live(posobj))) {
+	if (!posobj) {
 		return null;
 	}
-	yield* g.srcCall(f, "set_parallax_movedir", rt.gv(f, "parallax_movedir", (areaobj = rt.fv(f, "loc", live(posobj)))), 0);
-	force = null;
-	if ((!truthy(rt.fv(f, "previous_turf", live(C))) || !isEqual(rt.gv(f, "z", rt.fv(f, "previous_turf", live(C))), rt.fv(f, "z", live(posobj))))) {
-		rt.setFv(f, "previous_turf", live(C), live(posobj));
+	yield* this.set_parallax_movedir((areaobj = posobj.loc).parallax_movedir, 0);
+	if (!C.previous_turf || C.previous_turf.z != posobj.z) {
+		C.previous_turf = posobj;
 		force = 1;
 	}
-	if ((!truthy(live(force)) && rt.lt(rt.worldTime(f), add(rt.fv(f, "last_parallax_shift", live(C)), rt.fv(f, "parallax_throttle", live(C)))))) {
-		return live(f.dot);
+	if (!force && rt.worldTime(f) < C.last_parallax_shift + C.parallax_throttle) {
+		return f.dot;
 	}
-	offset_x = subtract(rt.fv(f, "x", live(posobj)), rt.gv(f, "x", rt.fv(f, "previous_turf", live(C))));
-	offset_y = subtract(rt.fv(f, "y", live(posobj)), rt.gv(f, "y", rt.fv(f, "previous_turf", live(C))));
-	if (((!truthy(live(offset_x)) && !truthy(live(offset_y))) && !truthy(live(force)))) {
-		return live(f.dot);
+	let offset_x: Value = posobj.x - C.previous_turf.x;
+	let offset_y: Value = posobj.y - C.previous_turf.y;
+	if (!offset_x && !offset_y && !force) {
+		return f.dot;
 	}
-	last_delay = (yield* g.call(f, P("/proc/min"), null, [(last_delay = subtract(rt.worldTime(f), rt.fv(f, "last_parallax_shift", live(C)))), rt.fv(f, "parallax_throttle", live(C))]));
-	rt.setFv(f, "previous_turf", live(C), live(posobj));
-	rt.setFv(f, "last_parallax_shift", live(C), rt.worldTime(f));
-	thing = null;
-	rt.forList(f, 0, rt.fv(f, "parallax_layers", live(C)));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		thing = $e;
-		if (!isEqual(rt.gv(f, "view_sized", (L = live(thing))), rt.fv(f, "view", live(C)))) {
-			yield* g.callName(f, live(L), "update_o", [rt.fv(f, "view", live(C))]);
+	last_delay = min((last_delay = rt.worldTime(f) - C.last_parallax_shift), C.parallax_throttle);
+	C.previous_turf = posobj;
+	C.last_parallax_shift = rt.worldTime(f);
+	for (thing of each(C.parallax_layers)) {
+		if ((L = thing).view_sized != C.view) {
+			L.update_o(C.view);
 		}
-		change_x = multiply(live(offset_x), rt.fv(f, "speed", live(L)));
-		(rt.modField(f, live(L), "offset_x", live(change_x), subtract));
-		change_y = multiply(live(offset_y), rt.fv(f, "speed", live(L)));
-		(rt.modField(f, live(L), "offset_y", live(change_y), subtract));
-		if (rt.gt(rt.fv(f, "offset_x", live(L)), 240)) {
-			(rt.modField(f, live(L), "offset_x", 480, subtract));
+		change_x = offset_x * L.speed;
+		L.offset_x -= change_x;
+		change_y = offset_y * L.speed;
+		L.offset_y -= change_y;
+		if (L.offset_x > 240) {
+			L.offset_x -= 480;
 		}
-		if (rt.lt(rt.fv(f, "offset_x", live(L)), -240)) {
-			rt.modField(f, live(L), "offset_x", 480, add);
+		if (L.offset_x < -240) {
+			L.offset_x += 480;
 		}
-		if (rt.gt(rt.fv(f, "offset_y", live(L)), 240)) {
-			(rt.modField(f, live(L), "offset_y", 480, subtract));
+		if (L.offset_y > 240) {
+			L.offset_y -= 480;
 		}
-		if (rt.lt(rt.fv(f, "offset_y", live(L)), -240)) {
-			rt.modField(f, live(L), "offset_y", 480, add);
+		if (L.offset_y < -240) {
+			L.offset_y += 480;
 		}
-		if ((((((!truthy(rt.fv(f, "parallax_movedir", live(areaobj))) && rt.le(rt.fv(f, "dont_animate_parallax", live(C)), rt.worldTime(f))) && (truthy(live(offset_x)) || truthy(live(offset_y)))) && rt.le(rt.op(f, "Abs", [], [live(offset_x)]), (yield* g.call(f, P("/proc/max"), null, [add(divide(rt.fv(f, "parallax_throttle", live(C)), rt.fv(f, "tick_lag", rt.world())), 1), 1])))) && rt.le(rt.op(f, "Abs", [], [live(offset_y)]), (yield* g.call(f, P("/proc/max"), null, [add(divide(rt.fv(f, "parallax_throttle", live(C)), rt.fv(f, "tick_lag", rt.world())), 1), 1])))) && (rt.gt((yield* g.call(f, P("/proc/round"), null, [rt.op(f, "Abs", [], [live(change_x)])])), 1) || rt.gt((yield* g.call(f, P("/proc/round"), null, [rt.op(f, "Abs", [], [live(change_y)])])), 1)))) {
-			rt.setFv(f, "transform", live(L), (yield* g.call(f, P("/proc/matrix"), null, [1, 0, multiply(live(offset_x), rt.fv(f, "speed", live(L))), 0, 1, multiply(live(offset_y), rt.fv(f, "speed", live(L)))])));
-			rt.op(f, "Animate", [2, 6], [null, live(L), "transform", (yield* g.call(f, P("/proc/matrix"), null, [])), "time", live(last_delay)]);
+		if (!areaobj.parallax_movedir && C.dont_animate_parallax <= rt.worldTime(f) && (offset_x || offset_y) && rt.op(f, "Abs", [], [offset_x]) <= max(C.parallax_throttle / rt.world().tick_lag + 1, 1) && rt.op(f, "Abs", [], [offset_y]) <= max(C.parallax_throttle / rt.world().tick_lag + 1, 1) && (round(rt.op(f, "Abs", [], [change_x])) > 1 || round(rt.op(f, "Abs", [], [change_y])) > 1)) {
+			L.transform = matrix(1, 0, offset_x * L.speed, 0, 1, offset_y * L.speed);
+			rt.op(f, "Animate", [2, 6], [null, L, "transform", matrix(), "time", last_delay]);
 		}
-		rt.setFv(f, "screen_loc", live(L), fmt("CENTER-7:＀,CENTER-7:＀", [(yield* g.call(f, P("/proc/round"), null, [rt.fv(f, "offset_x", live(L)), 1])), (yield* g.call(f, P("/proc/round"), null, [rt.fv(f, "offset_y", live(L)), 1]))]));
+		L.screen_loc = `CENTER-7:${round(L.offset_x, 1)},CENTER-7:${round(L.offset_y, 1)}`;
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /atom/movable/proc/update_parallax_contents  (code/_onclick/hud/parallax.dm:226)  may sleep
+// parallax.dm:226
 rt.def("/atom/movable/proc/update_parallax_contents", function* update_parallax_contents(f: Frame) {
 	let thing: Value = null, M: Value = null;
-	let $e: any;
-	f.vars = () => [thing, M, $e];
-	if (!truthy(rt.length(rt.sv(f, "client_mobs_in_contents")))) return f.dot;
-	thing = null;
-	rt.forList(f, 0, rt.sv(f, "client_mobs_in_contents"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		thing = $e;
-		if ((((truthy((M = live(thing))) && truthy(rt.fv(f, "client", live(M)))) && truthy(rt.fv(f, "hud_used", live(M)))) && truthy(rt.length(rt.gv(f, "parallax_layers", rt.fv(f, "client", live(M))))))) {
-			yield* g.callName(f, rt.fv(f, "hud_used", live(M)), "update_parallax", []);
+	if (!rt.length(this.client_mobs_in_contents)) return f.dot;
+	for (thing of each(this.client_mobs_in_contents)) {
+		if ((M = thing) && M.client && M.hud_used && rt.length(M.client.parallax_layers)) {
+			yield* M.hud_used.update_parallax();
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /mob/proc/update_parallax_teleport  (code/_onclick/hud/parallax.dm:233)  may sleep
+// parallax.dm:233
 rt.def("/mob/proc/update_parallax_teleport", function* update_parallax_teleport(f: Frame) {
-	let areaobj: Value = null;
-	f.vars = () => [areaobj];
-	if (!(((truthy(rt.sv(f, "client")) && truthy(rt.fv(f, "eye", rt.sv(f, "client")))) && truthy(rt.sv(f, "hud_used"))) && truthy(rt.length(rt.fv(f, "parallax_layers", rt.sv(f, "client")))))) return f.dot;
-	areaobj = (yield* g.call(f, P("/proc/get_area"), null, [rt.fv(f, "eye", rt.sv(f, "client"))]));
-	yield* g.callName(f, rt.sv(f, "hud_used"), "set_parallax_movedir", [rt.fv(f, "parallax_movedir", live(areaobj)), 1]);
+	if (!(this.client && this.client.eye && this.hud_used && rt.length(this.client.parallax_layers))) return f.dot;
+	let areaobj: Value = get_area(this.client.eye);
+	yield* this.hud_used.set_parallax_movedir(areaobj.parallax_movedir, 1);
 	return f.dot;
 }, true);
 
@@ -316,47 +276,45 @@ rt.type(11137, "/obj/screen/parallax_layer", "/obj/screen", {
 	mouse_opacity: 0,
 });
 
-// /obj/screen/parallax_layer/proc/Initialize  (code/_onclick/hud/parallax.dm:250)
+// parallax.dm:250
 rt.def("/obj/screen/parallax_layer/proc/Initialize", function Initialize(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	if (!truthy(live(f.args[1]))) {
-		f.args[1] = rt.fv(f, "view", rt.world());
+	parent_proc();
+	if (!f.args[1]) {
+		f.args[1] = rt.world().view;
 	}
-	rt.callSrc(f, "update_o", [live(f.args[1])]);
+	this.update_o(f.args[1]);
 	return f.dot;
 }, false, { args: ["mapload", "view"] });
 
-// /obj/screen/parallax_layer/proc/update_o  (code/_onclick/hud/parallax.dm:256)
+// parallax.dm:256
 rt.def("/obj/screen/parallax_layer/proc/update_o", function update_o(f: Frame, view: Value) {
-	let viewscales: Value = null, countx: Value = null, county: Value = null, new_overlays: Value = null, x: Value = null, y: Value = null, texture_overlay: Value = null;
+	let x: Value = null, y: Value = null, texture_overlay: Value = null;
 	let $e: any;
-	f.vars = () => [view, viewscales, countx, county, new_overlays, x, y, texture_overlay, $e];
-	if (!truthy(live(view))) {
-		view = rt.fv(f, "view", rt.world());
+	if (!view) {
+		view = rt.world().view;
 	}
-	viewscales = rt.call(f, P("/proc/getviewsize"), null, [live(view)]);
-	countx = add(rt.call(f, P("/proc/Ceiling"), null, [divide(divide(rt.index(live(viewscales), 1), 2), divide(480, rt.fv(f, "icon_size", rt.world())))]), 1);
-	county = add(rt.call(f, P("/proc/Ceiling"), null, [divide(divide(rt.index(live(viewscales), 2), 2), divide(480, rt.fv(f, "icon_size", rt.world())))]), 1);
-	new_overlays = rt.new_(f, T("/list"), []);
-	x = null;
-	rt.forRange(f, 0, rt.neg(live(countx)), live(countx), 1);
+	let viewscales: Value = getviewsize(view);
+	let countx: Value = Ceiling(rt.index(viewscales, 1) / 2 / (480 / rt.world().icon_size)) + 1;
+	let county: Value = Ceiling(rt.index(viewscales, 2) / 2 / (480 / rt.world().icon_size)) + 1;
+	let new_overlays: Value = new_(T("/list"));
+	rt.forRange(f, 0, -countx, countx, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		x = $e;
 		y = null;
-		rt.forRange(f, 1, rt.neg(live(county)), live(county), 1);
+		rt.forRange(f, 1, -county, county, 1);
 		while (($e = rt.next(f, 1)) !== undefined) {
 			y = $e;
-			if ((isEqual(live(x), 0) && isEqual(live(y), 0))) {
+			if (x == 0 && y == 0) {
 				continue;
 			}
-			rt.setFv(f, "transform", (texture_overlay = rt.call(f, P("/proc/mutable_appearance"), null, [rt.sv(f, "icon"), rt.sv(f, "icon_state")])), rt.call(f, P("/proc/matrix"), null, [1, 0, multiply(live(x), 480), 0, 1, multiply(live(y), 480)]));
-			new_overlays = rt.modify(live(new_overlays), live(texture_overlay), add);
+			(texture_overlay = mutable_appearance(this.icon, this.icon_state)).transform = matrix(1, 0, x * 480, 0, 1, y * 480);
+			new_overlays += texture_overlay;
 		}
 		rt.endFor(f, 1);
 	}
 	rt.endFor(f, 0);
-	rt.callSrc(f, "cut_overlays", []);
-	rt.callSrc(f, "add_overlay", [live(new_overlays)]);
-	rt.setSv(f, "view_sized", live(view));
+	this.cut_overlays();
+	this.add_overlay(new_overlays);
+	this.view_sized = view;
 	return f.dot;
 });

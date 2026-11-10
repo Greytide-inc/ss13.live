@@ -1,58 +1,57 @@
-// From code/modules/hydroponics/plant_genes.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/hydroponics/plant_genes.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(2711, "/datum/plant_gene", "/datum", {
 	name: null,
 });
 
-// /datum/plant_gene/proc/can_add  (code/modules/hydroponics/plant_genes.dm:8)
+// plant_genes.dm:8
 rt.def("/datum/plant_gene/proc/can_add", function can_add(f: Frame, S: Value) {
-	return (!truthy((rt.istype(live(S), T("/obj/item/seeds/sample")) ? 1 : 0)) ? 1 : 0);
+	return (!rt.istype(S, T("/obj/item/seeds/sample")) ? 1 : 0);
 });
 
-// /datum/plant_gene/proc/Copy  (code/modules/hydroponics/plant_genes.dm:11)  may sleep
+// plant_genes.dm:11
 rt.def("/datum/plant_gene/proc/Copy", function* Copy(f: Frame) {
-	return (yield* g.new_(f, rt.sv(f, "type"), []));
+	return (yield* new_(this.type));
 }, true);
 
 rt.type(2712, "/datum/plant_gene/core", "/datum/plant_gene", {
 	value: null,
 });
 
-// /datum/plant_gene/core/proc/get_name  (code/modules/hydroponics/plant_genes.dm:21)
+// plant_genes.dm:21
 rt.def("/datum/plant_gene/core/proc/get_name", function get_name(f: Frame) {
-	return fmt("＀ ＀", [rt.sv(f, "name"), rt.sv(f, "value")]);
+	return `${this.name} ${rt.sv(f, "value")}`;
 });
 
-// /datum/plant_gene/core/proc/New  (code/modules/hydroponics/plant_genes.dm:27)
+// plant_genes.dm:27
 rt.def("/datum/plant_gene/core/proc/New", function New(f: Frame) {
-	if (live(f.args[0]) === null) {
+	if (f.args[0] === null) {
 		f.args[0] = null;
 	}
-	rt.callSuper(f, [], rt.Args.Same);
-	if (live(f.args[0]) === null) return f.dot;
-	rt.setSv(f, "value", live(f.args[0]));
+	parent_proc();
+	if (f.args[0] === null) return f.dot;
+	rt.setSv(f, "value", f.args[0]);
 	return f.dot;
 }, false, { args: ["i"] });
 
-// /datum/plant_gene/core/proc/Copy  (code/modules/hydroponics/plant_genes.dm:32)  may sleep
+// plant_genes.dm:32
 rt.def("/datum/plant_gene/core/proc/Copy", function* Copy(f: Frame) {
 	let C: Value = null;
-	f.vars = () => [C];
-	rt.setFv(f, "value", (C = (yield* g.callSuper(f, [], rt.Args.Same))), rt.sv(f, "value"));
-	return live(C);
+	rt.setFv(f, "value", (C = (yield* parent_proc())), rt.sv(f, "value"));
+	return C;
 }, true);
 
-// /datum/plant_gene/core/proc/can_add  (code/modules/hydroponics/plant_genes.dm:37)
-rt.def("/datum/plant_gene/core/proc/can_add", function can_add(f: Frame) {
-	if (!truthy(rt.callSuper(f, [], rt.Args.Same))) {
+// plant_genes.dm:37
+rt.def("/datum/plant_gene/core/proc/can_add", function can_add(f: Frame, S: Value) {
+	if (!parent_proc()) {
 		return 0;
 	}
-	return rt.callName(f, live(f.args[0]), "get_gene", [rt.fv(f, "type", live(f.src))]);
-}, false, { args: ["S"] });
+	return S.get_gene(this.type);
+}, false);
 
 rt.type(2720, "/datum/plant_gene/reagent", "/datum/plant_gene", {
 	reagent_id: "nutriment",
@@ -60,66 +59,58 @@ rt.type(2720, "/datum/plant_gene/reagent", "/datum/plant_gene", {
 	name: "Nutriment",
 });
 
-// /datum/plant_gene/reagent/proc/get_name  (code/modules/hydroponics/plant_genes.dm:104)
+// plant_genes.dm:104
 rt.def("/datum/plant_gene/reagent/proc/get_name", function get_name(f: Frame) {
-	return fmt("＀ production ＀%", [rt.sv(f, "name"), multiply(rt.sv(f, "rate"), 100)]);
+	return `${this.name} production ${this.rate * 100}%`;
 });
 
-// /datum/plant_gene/reagent/proc/set_reagent  (code/modules/hydroponics/plant_genes.dm:107)
+// plant_genes.dm:107
 rt.def("/datum/plant_gene/reagent/proc/set_reagent", function set_reagent(f: Frame, reag_id: Value) {
 	let R: Value = null;
-	f.vars = () => [R];
-	rt.setSv(f, "reagent_id", live(reag_id));
-	rt.setSv(f, "name", "UNKNOWN");
-	if (!(truthy((R = rt.index(rt.gl("chemical_reagents_list"), live(reag_id)))) && isEqual(rt.fv(f, "id", live(R)), rt.sv(f, "reagent_id")))) return f.dot;
-	rt.setSv(f, "name", rt.fv(f, "name", live(R)));
+	this.reagent_id = reag_id;
+	this.name = "UNKNOWN";
+	if (!((R = rt.index(GLOB.chemical_reagents_list, reag_id)) && R.id == this.reagent_id)) return f.dot;
+	this.name = R.name;
 	return f.dot;
 });
 
-// /datum/plant_gene/reagent/proc/New  (code/modules/hydroponics/plant_genes.dm:115)
+// plant_genes.dm:115
 rt.def("/datum/plant_gene/reagent/proc/New", function New(f: Frame) {
-	if (live(f.args[0]) === null) {
+	if (f.args[0] === null) {
 		f.args[0] = null;
 	}
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	rt.callSuper(f, [], rt.Args.Same);
-	if (!(truthy(live(f.args[0])) && truthy(live(f.args[1])))) return f.dot;
-	rt.callSrc(f, "set_reagent", [live(f.args[0])]);
-	rt.setSv(f, "rate", live(f.args[1]));
+	parent_proc();
+	if (!(f.args[0] && f.args[1])) return f.dot;
+	this.set_reagent(f.args[0]);
+	this.rate = f.args[1];
 	return f.dot;
 }, false, { args: ["reag_id", "reag_rate"] });
 
-// /datum/plant_gene/reagent/proc/Copy  (code/modules/hydroponics/plant_genes.dm:121)  may sleep
+// plant_genes.dm:121
 rt.def("/datum/plant_gene/reagent/proc/Copy", function* Copy(f: Frame) {
 	let G: Value = null;
-	f.vars = () => [G];
-	rt.setFv(f, "name", (G = (yield* g.callSuper(f, [], rt.Args.Same))), rt.sv(f, "name"));
-	rt.setFv(f, "reagent_id", live(G), rt.sv(f, "reagent_id"));
-	rt.setFv(f, "rate", live(G), rt.sv(f, "rate"));
-	return live(G);
+	(G = (yield* parent_proc())).name = this.name;
+	G.reagent_id = this.reagent_id;
+	G.rate = this.rate;
+	return G;
 }, true);
 
-// /datum/plant_gene/reagent/proc/can_add  (code/modules/hydroponics/plant_genes.dm:128)
-rt.def("/datum/plant_gene/reagent/proc/can_add", function can_add(f: Frame) {
+// plant_genes.dm:128
+rt.def("/datum/plant_gene/reagent/proc/can_add", function can_add(f: Frame, S: Value) {
 	let R: Value = null;
-	let $e: any;
-	f.vars = () => [R, $e];
-	if (!truthy(rt.callSuper(f, [], rt.Args.Same))) {
+	if (!parent_proc()) {
 		return 0;
 	}
-	R = null;
-	rt.forList(f, 0, rt.fv(f, "genes", live(f.args[0])), T("/datum/plant_gene/reagent"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		R = $e;
-		if (isEqual(rt.fv(f, "reagent_id", live(R)), rt.sv(f, "reagent_id"))) {
+	for (R of each(S.genes, T("/datum/plant_gene/reagent"))) {
+		if (R.reagent_id == this.reagent_id) {
 			return 0;
 		}
 	}
-	rt.endFor(f, 0);
 	return 1;
-}, false, { args: ["S"] });
+}, false);
 
 rt.type(2721, "/datum/plant_gene/trait", "/datum/plant_gene", {
 	rate: 0.05,
@@ -128,61 +119,48 @@ rt.type(2721, "/datum/plant_gene/trait", "/datum/plant_gene", {
 	trait_id: null,
 });
 
-// /datum/plant_gene/trait/proc/Copy  (code/modules/hydroponics/plant_genes.dm:144)  may sleep
+// plant_genes.dm:144
 rt.def("/datum/plant_gene/trait/proc/Copy", function* Copy(f: Frame) {
 	let G: Value = null;
-	f.vars = () => [G];
-	rt.setFv(f, "rate", (G = (yield* g.callSuper(f, [], rt.Args.Same))), rt.sv(f, "rate"));
-	return live(G);
+	(G = (yield* parent_proc())).rate = this.rate;
+	return G;
 }, true);
 
-// /datum/plant_gene/trait/proc/can_add  (code/modules/hydroponics/plant_genes.dm:149)
-rt.def("/datum/plant_gene/trait/proc/can_add", function can_add(f: Frame) {
+// plant_genes.dm:149
+rt.def("/datum/plant_gene/trait/proc/can_add", function can_add(f: Frame, S: Value) {
 	let R: Value = null;
-	let $e: any;
-	f.vars = () => [R, $e];
-	if (!truthy(rt.callSuper(f, [], rt.Args.Same))) {
+	if (!parent_proc()) {
 		return 0;
 	}
-	R = null;
-	rt.forList(f, 0, rt.fv(f, "genes", live(f.args[0])), T("/datum/plant_gene/trait"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		R = $e;
-		if ((truthy(rt.sv(f, "trait_id")) && isEqual(rt.fv(f, "trait_id", live(R)), rt.sv(f, "trait_id")))) {
+	for (R of each(S.genes, T("/datum/plant_gene/trait"))) {
+		if (this.trait_id && R.trait_id == this.trait_id) {
 			return 0;
 		}
-		if (isEqual(rt.sv(f, "type"), rt.fv(f, "type", live(R)))) {
+		if (this.type == R.type) {
 			return 0;
 		}
 	}
-	rt.endFor(f, 0);
 	return 1;
-}, false, { args: ["S"] });
+}, false);
 
-// /datum/plant_gene/trait/proc/on_new  (code/modules/hydroponics/plant_genes.dm:160)
+// plant_genes.dm:160
 rt.def("/datum/plant_gene/trait/proc/on_new", function on_new(f: Frame, G: Value, newloc: Value) {
 	let tech: Value = null, t: Value = null;
-	let $e: any;
-	f.vars = () => [tech, t, $e];
-	if (!truthy(rt.sv(f, "origin_tech"))) {
-		return live(f.dot);
+	if (!this.origin_tech) {
+		return f.dot;
 	}
-	if (truthy(rt.fv(f, "origin_tech", live(G)))) {
-		tech = rt.call(f, P("/proc/params2list"), null, [rt.fv(f, "origin_tech", live(G))]);
-		t = null;
-		rt.forList(f, 0, rt.sv(f, "origin_tech"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			t = $e;
-			if (truthy((rt.isIn(f, live(t), live(tech)) ? 1 : 0))) {
-				rt.setAt(live(tech), live(t), rt.call(f, P("/proc/max"), null, [rt.call(f, P("/proc/text2num"), null, [rt.index(live(tech), live(t))]), rt.index(rt.sv(f, "origin_tech"), live(t))]));
+	if (G.origin_tech) {
+		tech = params2list(G.origin_tech);
+		for (t of each(this.origin_tech)) {
+			if (rt.isIn(f, t, tech)) {
+				rt.setAt(tech, t, max(text2num(rt.index(tech, t)), rt.index(this.origin_tech, t)));
 			} else {
-				rt.setAt(live(tech), live(t), rt.index(rt.sv(f, "origin_tech"), live(t)));
+				rt.setAt(tech, t, rt.index(this.origin_tech, t));
 			}
 		}
-		rt.endFor(f, 0);
-		rt.setFv(f, "origin_tech", live(G), rt.call(f, P("/proc/list2params"), null, [live(tech)]));
+		G.origin_tech = list2params(tech);
 	} else {
-		rt.setFv(f, "origin_tech", live(G), rt.call(f, P("/proc/list2params"), null, [rt.sv(f, "origin_tech")]));
+		G.origin_tech = list2params(this.origin_tech);
 	}
 	return f.dot;
 });
@@ -193,12 +171,10 @@ rt.type(2722, "/datum/plant_gene/trait/squash", "/datum/plant_gene/trait", {
 	origin_tech: null,
 });
 
-// /datum/plant_gene/trait/squash/proc/<init>  (code/modules/hydroponics/plant_genes.dm:198)
+// plant_genes.dm:198
 rt.def("/datum/plant_gene/trait/squash/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "origin_tech", rt.alist(f, ["biotech", 5]));
+	parent_proc();
+	this.origin_tech = rt.alist(f, ["biotech", 5]);
 	return f.dot;
 });
 
@@ -208,30 +184,24 @@ rt.type(2723, "/datum/plant_gene/trait/slip", "/datum/plant_gene/trait", {
 	examine_line: "<span class='info'>It has a very slippery skin.</span>",
 });
 
-// /datum/plant_gene/trait/slip/proc/on_cross  (code/modules/hydroponics/plant_genes.dm:208)  may sleep
+// plant_genes.dm:208
 rt.def("/datum/plant_gene/trait/slip/proc/on_cross", function* on_cross(f: Frame, G: Value, target: Value) {
-	let seed: Value = null, M: Value = null, stun_len: Value = null, knockdown: Value = null, _T: Value = null;
-	let $e: any;
-	f.vars = () => [G, target, seed, M, stun_len, knockdown, _T, $e];
-	if (!truthy((rt.istype(live(target), T("/mob/living/carbon")) ? 1 : 0))) return f.dot;
-	seed = rt.fv(f, "seed", live(G));
-	M = live(target);
-	if ((truthy((rt.istype(live(G), T("/obj/item/weapon/reagent_containers/food/snacks/grown")) ? 1 : 0)) && truthy((yield* g.call(f, P("/proc/ispath"), null, [rt.fv(f, "trash", live(G)), T("/obj/item/weapon/grown")]))))) {
-		return live(f.dot);
+	let _T: Value = null;
+	if (!rt.istype(target, T("/mob/living/carbon"))) return f.dot;
+	let seed: Value = G.seed;
+	let M: Value = target;
+	if (rt.istype(G, T("/obj/item/weapon/reagent_containers/food/snacks/grown")) && ispath(G.trash, T("/obj/item/weapon/grown"))) {
+		return f.dot;
 	}
-	stun_len = multiply(rt.fv(f, "potency", live(seed)), rt.sv(f, "rate"));
-	if ((!truthy((rt.istype(live(G), T("/obj/item/weapon/grown/bananapeel")) ? 1 : 0)) && (!truthy(rt.fv(f, "reagents", live(G))) || !truthy((yield* g.callName(f, rt.fv(f, "reagents", live(G)), "has_reagent", ["lube"])))))) {
-		(stun_len = rt.modify(live(stun_len), 3, divide));
+	let stun_len: Value = seed.potency * this.rate;
+	if (!rt.istype(G, T("/obj/item/weapon/grown/bananapeel")) && (!G.reagents || !G.reagents.has_reagent("lube"))) {
+		stun_len /= 3;
 	}
-	knockdown = (yield* g.call(f, P("/proc/min"), null, [live(stun_len), 140]));
-	if (!truthy((yield* g.callName(f, live(M), "slip", [live(knockdown), live(G)])))) return f.dot;
-	_T = null;
-	rt.forList(f, 0, rt.fv(f, "genes", live(seed)), T("/datum/plant_gene/trait"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_T = $e;
-		yield* g.callName(f, live(_T), "on_slip", [live(G), live(M)]);
+	let knockdown: Value = min(stun_len, 140);
+	if (!(yield* M.slip(knockdown, G))) return f.dot;
+	for (_T of each(seed.genes, T("/datum/plant_gene/trait"))) {
+		yield* _T.on_slip(G, M);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
@@ -241,59 +211,49 @@ rt.type(2724, "/datum/plant_gene/trait/cell_charge", "/datum/plant_gene/trait", 
 	origin_tech: null,
 });
 
-// /datum/plant_gene/trait/cell_charge/proc/<init>  (code/modules/hydroponics/plant_genes.dm:232)
+// plant_genes.dm:232
 rt.def("/datum/plant_gene/trait/cell_charge/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "origin_tech", rt.alist(f, ["powerstorage", 5]));
+	parent_proc();
+	this.origin_tech = rt.alist(f, ["powerstorage", 5]);
 	return f.dot;
 });
 
-// /datum/plant_gene/trait/cell_charge/proc/on_slip  (code/modules/hydroponics/plant_genes.dm:235)  may sleep
+// plant_genes.dm:235
 rt.def("/datum/plant_gene/trait/cell_charge/proc/on_slip", function* on_slip(f: Frame, G: Value, C: Value) {
 	let power: Value = null;
-	f.vars = () => [G, C, power];
-	if (!truthy(rt.op(f, "Prob", [], [(power = multiply(rt.gv(f, "potency", rt.fv(f, "seed", live(G))), rt.sv(f, "rate")))]))) return f.dot;
-	yield* g.callName(f, live(C), "electrocute_act", [(yield* g.call(f, P("/proc/round"), null, [live(power)])), live(G), 1, 1]);
+	if (!prob((power = G.seed.potency * this.rate))) return f.dot;
+	yield* C.electrocute_act(round(power), G, 1, 1);
 	return f.dot;
 }, true);
 
-// /datum/plant_gene/trait/cell_charge/proc/on_squash  (code/modules/hydroponics/plant_genes.dm:240)  may sleep
+// plant_genes.dm:240
 rt.def("/datum/plant_gene/trait/cell_charge/proc/on_squash", function* on_squash(f: Frame, G: Value, target: Value) {
-	let C: Value = null, power: Value = null;
-	f.vars = () => [G, target, C, power];
-	if (!truthy((rt.istype(live(target), T("/mob/living/carbon")) ? 1 : 0))) return f.dot;
-	C = live(target);
-	if (!truthy(rt.op(f, "Prob", [], [(power = multiply(rt.gv(f, "potency", rt.fv(f, "seed", live(G))), rt.sv(f, "rate")))]))) return f.dot;
-	yield* g.callName(f, live(C), "electrocute_act", [(yield* g.call(f, P("/proc/round"), null, [live(power)])), live(G), 1, 1]);
+	let power: Value = null;
+	if (!rt.istype(target, T("/mob/living/carbon"))) return f.dot;
+	let C: Value = target;
+	if (!prob((power = G.seed.potency * this.rate))) return f.dot;
+	yield* C.electrocute_act(round(power), G, 1, 1);
 	return f.dot;
 }, true);
 
-// /datum/plant_gene/trait/cell_charge/proc/on_consume  (code/modules/hydroponics/plant_genes.dm:247)  may sleep
+// plant_genes.dm:247
 rt.def("/datum/plant_gene/trait/cell_charge/proc/on_consume", function* on_consume(f: Frame, G: Value, target: Value) {
-	let batteries_recharged: Value = null, C: Value = null, newcharge: Value = null, O: Value = null;
-	let $e: any;
-	f.vars = () => [G, target, batteries_recharged, C, newcharge, O, $e];
-	if (truthy(rt.gv(f, "total_volume", rt.fv(f, "reagents", live(G))))) return f.dot;
-	batteries_recharged = 0;
-	C = null;
-	rt.forList(f, 0, (yield* g.callName(f, live(target), "GetAllContents", [])), T("/obj/item/weapon/stock_parts/cell"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		C = $e;
-		newcharge = (yield* g.call(f, P("/proc/min"), null, [multiply(multiply(rt.gv(f, "potency", rt.fv(f, "seed", live(G))), 0.009999999776482582), rt.fv(f, "maxcharge", live(C))), rt.fv(f, "maxcharge", live(C))]));
-		if (rt.lt(rt.fv(f, "charge", live(C)), live(newcharge))) {
-			rt.setFv(f, "charge", live(C), live(newcharge));
-			if (truthy((rt.istype(rt.fv(f, "loc", live(C)), T("/obj")) ? 1 : 0))) {
-				yield* g.callName(f, (O = rt.fv(f, "loc", live(C))), "update_icon", []);
+	let C: Value = null, newcharge: Value = null, O: Value = null;
+	if (G.reagents.total_volume) return f.dot;
+	let batteries_recharged: Value = 0;
+	for (C of each(target.GetAllContents(), T("/obj/item/weapon/stock_parts/cell"))) {
+		newcharge = min(G.seed.potency * 0.01 * C.maxcharge, C.maxcharge);
+		if (C.charge < newcharge) {
+			C.charge = newcharge;
+			if (rt.istype(C.loc, T("/obj"))) {
+				yield* (O = C.loc).update_icon();
 			}
-			yield* g.callName(f, live(C), "update_icon", []);
+			yield* C.update_icon();
 			batteries_recharged = 1;
 		}
 	}
-	rt.endFor(f, 0);
-	if (!truthy(live(batteries_recharged))) return f.dot;
-	yield* g.call(f, P("/proc/to_chat"), null, [live(target), "<span class='notice'>Your batteries are recharged!</span>"]);
+	if (!batteries_recharged) return f.dot;
+	to_chat(target, "<span class='notice'>Your batteries are recharged!</span>");
 	return f.dot;
 }, true);
 
@@ -305,22 +265,22 @@ rt.type(2725, "/datum/plant_gene/trait/glow", "/datum/plant_gene/trait", {
 	trait_id: "glow",
 });
 
-// /datum/plant_gene/trait/glow/proc/glow_range  (code/modules/hydroponics/plant_genes.dm:273)
+// plant_genes.dm:273
 rt.def("/datum/plant_gene/trait/glow/proc/glow_range", function glow_range(f: Frame, S: Value) {
-	return add(1.399999976158142, multiply(rt.fv(f, "potency", live(S)), rt.sv(f, "rate")));
+	return 1.4 + S.potency * this.rate;
 });
 
-// /datum/plant_gene/trait/glow/proc/glow_power  (code/modules/hydroponics/plant_genes.dm:276)
+// plant_genes.dm:276
 rt.def("/datum/plant_gene/trait/glow/proc/glow_power", function glow_power(f: Frame, S: Value) {
-	return rt.call(f, P("/proc/max"), null, [multiply(rt.fv(f, "potency", live(S)), add(rt.sv(f, "rate"), 0.009999999776482582)), 0.10000000149011612]);
+	return max(S.potency * (this.rate + 0.01), 0.1);
 });
 
-// /datum/plant_gene/trait/glow/proc/on_new  (code/modules/hydroponics/plant_genes.dm:279)
-rt.def("/datum/plant_gene/trait/glow/proc/on_new", function on_new(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.callName(f, live(f.args[0]), "set_light", [rt.callSrc(f, "glow_range", [rt.fv(f, "seed", live(f.args[0]))]), rt.callSrc(f, "glow_power", [rt.fv(f, "seed", live(f.args[0]))]), rt.sv(f, "glow_color")]);
+// plant_genes.dm:279
+rt.def("/datum/plant_gene/trait/glow/proc/on_new", function on_new(f: Frame, G: Value, newloc: Value) {
+	parent_proc();
+	G.set_light(this.glow_range(G.seed), this.glow_power(G.seed), this.glow_color);
 	return f.dot;
-}, false, { args: ["G", "newloc"] });
+}, false);
 
 rt.type(2726, "/datum/plant_gene/trait/glow/shadow", "/datum/plant_gene/trait/glow", {
 	name: "Shadow Emission",
@@ -328,9 +288,9 @@ rt.type(2726, "/datum/plant_gene/trait/glow/shadow", "/datum/plant_gene/trait/gl
 	glow_color: "#AAD84B",
 });
 
-// /datum/plant_gene/trait/glow/shadow/proc/glow_power  (code/modules/hydroponics/plant_genes.dm:290)
+// plant_genes.dm:290
 rt.def("/datum/plant_gene/trait/glow/shadow/proc/glow_power", function glow_power(f: Frame, S: Value) {
-	return rt.neg(rt.call(f, P("/proc/max"), null, [multiply(rt.fv(f, "potency", live(S)), multiply(rt.sv(f, "rate"), 0.05000000074505806)), 0.07500000298023224]));
+	return -max(S.potency * (this.rate * 0.05), 0.075);
 });
 
 rt.type(2729, "/datum/plant_gene/trait/teleport", "/datum/plant_gene/trait", {
@@ -339,39 +299,34 @@ rt.type(2729, "/datum/plant_gene/trait/teleport", "/datum/plant_gene/trait", {
 	origin_tech: null,
 });
 
-// /datum/plant_gene/trait/teleport/proc/<init>  (code/modules/hydroponics/plant_genes.dm:307)
+// plant_genes.dm:307
 rt.def("/datum/plant_gene/trait/teleport/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "origin_tech", rt.alist(f, ["bluespace", 5]));
+	parent_proc();
+	this.origin_tech = rt.alist(f, ["bluespace", 5]);
 	return f.dot;
 });
 
-// /datum/plant_gene/trait/teleport/proc/on_squash  (code/modules/hydroponics/plant_genes.dm:310)  may sleep
+// plant_genes.dm:310
 rt.def("/datum/plant_gene/trait/teleport/proc/on_squash", function* on_squash(f: Frame, G: Value, target: Value) {
-	let teleport_radius: Value = null, _T: Value = null;
-	f.vars = () => [G, target, teleport_radius, _T];
-	if (!truthy((rt.istype(live(target), T("/mob/living")) ? 1 : 0))) return f.dot;
-	teleport_radius = (yield* g.call(f, P("/proc/max"), null, [(yield* g.call(f, P("/proc/round"), null, [divide(rt.gv(f, "potency", rt.fv(f, "seed", live(G))), 10)])), 1]));
-	yield* g.new_(f, T("/obj/effect/decal/cleanable/molten_object"), [(_T = rt.getStep(f, live(target), 0))]);
-	yield* g.call(f, P("/proc/do_teleport"), null, [live(target), live(_T), live(teleport_radius)]);
+	let _T: Value = null;
+	if (!rt.istype(target, T("/mob/living"))) return f.dot;
+	let teleport_radius: Value = max(round(G.seed.potency / 10), 1);
+	yield* new_(T("/obj/effect/decal/cleanable/molten_object"), (_T = rt.getStep(f, target, 0)));
+	yield* do_teleport(target, _T, teleport_radius);
 	return f.dot;
 }, true);
 
-// /datum/plant_gene/trait/teleport/proc/on_slip  (code/modules/hydroponics/plant_genes.dm:317)  may sleep
+// plant_genes.dm:317
 rt.def("/datum/plant_gene/trait/teleport/proc/on_slip", function* on_slip(f: Frame, G: Value, C: Value) {
-	let teleport_radius: Value = null, _T: Value = null;
-	f.vars = () => [G, C, teleport_radius, _T];
-	teleport_radius = (yield* g.call(f, P("/proc/max"), null, [(yield* g.call(f, P("/proc/round"), null, [divide(rt.gv(f, "potency", rt.fv(f, "seed", live(G))), 10)])), 1]));
-	_T = rt.getStep(f, live(C), 0);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(C), "<span class='warning'>You slip through spacetime!</span>"]);
-	yield* g.call(f, P("/proc/do_teleport"), null, [live(C), live(_T), live(teleport_radius)]);
-	if (truthy(rt.op(f, "Prob", [], [50]))) {
-		yield* g.call(f, P("/proc/do_teleport"), null, [live(G), live(_T), live(teleport_radius)]);
+	let teleport_radius: Value = max(round(G.seed.potency / 10), 1);
+	let _T: Value = rt.getStep(f, C, 0);
+	to_chat(C, "<span class='warning'>You slip through spacetime!</span>");
+	yield* do_teleport(C, _T, teleport_radius);
+	if (prob(50)) {
+		yield* do_teleport(G, _T, teleport_radius);
 	} else {
-		yield* g.new_(f, T("/obj/effect/decal/cleanable/molten_object"), [live(_T)]);
-		yield* g.call(f, P("/proc/qdel"), null, [live(G)]);
+		yield* new_(T("/obj/effect/decal/cleanable/molten_object"), _T);
+		yield* qdel(G);
 	}
 	return f.dot;
 }, true);
@@ -380,18 +335,17 @@ rt.type(2730, "/datum/plant_gene/trait/noreact", "/datum/plant_gene/trait", {
 	name: "Separated Chemicals",
 });
 
-// /datum/plant_gene/trait/noreact/proc/on_new  (code/modules/hydroponics/plant_genes.dm:333)
-rt.def("/datum/plant_gene/trait/noreact/proc/on_new", function on_new(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.callName(f, rt.fv(f, "reagents", live(f.args[0])), "set_reacting", [0]);
+// plant_genes.dm:333
+rt.def("/datum/plant_gene/trait/noreact/proc/on_new", function on_new(f: Frame, G: Value, newloc: Value) {
+	parent_proc();
+	G.reagents.set_reacting(0);
 	return f.dot;
-}, false, { args: ["G", "newloc"] });
+}, false);
 
-// /datum/plant_gene/trait/noreact/proc/on_squash  (code/modules/hydroponics/plant_genes.dm:337)  may sleep
+// plant_genes.dm:337
 rt.def("/datum/plant_gene/trait/noreact/proc/on_squash", function* on_squash(f: Frame, G: Value, target: Value) {
-	f.vars = () => [G, target];
-	yield* g.callName(f, rt.fv(f, "reagents", live(G)), "set_reacting", [1]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(G)), "handle_reactions", []);
+	G.reagents.set_reacting(1);
+	yield* G.reagents.handle_reactions();
 	return f.dot;
 }, true);
 
@@ -400,53 +354,52 @@ rt.type(2731, "/datum/plant_gene/trait/maxchem", "/datum/plant_gene/trait", {
 	rate: 2,
 });
 
-// /datum/plant_gene/trait/maxchem/proc/on_new  (code/modules/hydroponics/plant_genes.dm:347)
-rt.def("/datum/plant_gene/trait/maxchem/proc/on_new", function on_new(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	(rt.modField(f, rt.fv(f, "reagents", live(f.args[0])), "maximum_volume", rt.sv(f, "rate"), multiply));
+// plant_genes.dm:347
+rt.def("/datum/plant_gene/trait/maxchem/proc/on_new", function on_new(f: Frame, G: Value, newloc: Value) {
+	parent_proc();
+	G.reagents.maximum_volume *= this.rate;
 	return f.dot;
-}, false, { args: ["G", "newloc"] });
+}, false);
 
 rt.type(2732, "/datum/plant_gene/trait/repeated_harvest", "/datum/plant_gene/trait", {
 	name: "Perennial Growth",
 });
 
-// /datum/plant_gene/trait/repeated_harvest/proc/can_add  (code/modules/hydroponics/plant_genes.dm:354)
-rt.def("/datum/plant_gene/trait/repeated_harvest/proc/can_add", function can_add(f: Frame) {
-	if (!truthy(rt.callSuper(f, [], rt.Args.Same))) {
+// plant_genes.dm:354
+rt.def("/datum/plant_gene/trait/repeated_harvest/proc/can_add", function can_add(f: Frame, S: Value) {
+	if (!parent_proc()) {
 		return 0;
 	}
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/seeds/replicapod")) ? 1 : 0))) {
+	if (rt.istype(S, T("/obj/item/seeds/replicapod"))) {
 		return 0;
 	}
 	return 1;
-}, false, { args: ["S"] });
+}, false);
 
 rt.type(2733, "/datum/plant_gene/trait/battery", "/datum/plant_gene/trait", {
 	name: "Capacitive Cell Production",
 });
 
-// /datum/plant_gene/trait/battery/proc/on_attackby  (code/modules/hydroponics/plant_genes.dm:364)  may sleep
+// plant_genes.dm:364
 rt.def("/datum/plant_gene/trait/battery/proc/on_attackby", function* on_attackby(f: Frame, G: Value, I: Value, user: Value) {
 	let C: Value = null, pocell: Value = null, CG: Value = null;
-	f.vars = () => [G, I, user, C, pocell, CG];
-	if (!truthy((rt.istype(live(I), T("/obj/item/stack/cable_coil")) ? 1 : 0))) return f.dot;
-	if (truthy((yield* g.callName(f, (C = live(I)), "use", [5])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You add some cable to ＀ and slide it inside the battery encasing.</span>", [live(G)])]);
-		rt.setFv(f, "icon_state", (pocell = (yield* g.new_(f, T("/obj/item/weapon/stock_parts/cell/potato"), [rt.fv(f, "loc", live(user))]))), rt.fv(f, "icon_state", live(G)));
-		rt.setFv(f, "maxcharge", live(pocell), multiply(rt.gv(f, "potency", rt.fv(f, "seed", live(G))), 20));
-		if (truthy((CG = (yield* g.callName(f, rt.fv(f, "seed", live(G)), "get_gene", [T("/datum/plant_gene/trait/cell_charge")]))))) {
-			(rt.modField(f, live(pocell), "maxcharge", multiply(rt.fv(f, "rate", live(CG)), 1000), multiply));
+	if (!rt.istype(I, T("/obj/item/stack/cable_coil"))) return f.dot;
+	if (yield* (C = I).use(5)) {
+		to_chat(user, `<span class='notice'>You add some cable to ${G} and slide it inside the battery encasing.</span>`);
+		(pocell = (yield* new_(T("/obj/item/weapon/stock_parts/cell/potato"), user.loc))).icon_state = G.icon_state;
+		pocell.maxcharge = G.seed.potency * 20;
+		if (CG = G.seed.get_gene(T("/datum/plant_gene/trait/cell_charge"))) {
+			pocell.maxcharge *= CG.rate * 1000;
 		}
-		rt.setFv(f, "charge", live(pocell), rt.fv(f, "maxcharge", live(pocell)));
-		rt.setFv(f, "name", live(pocell), fmt("＀ battery", [rt.fv(f, "name", live(G))]));
-		rt.setFv(f, "desc", live(pocell), fmt("A rechargable plant based power cell. This one has a power rating of ＀, and you should not swallow it.", [rt.fv(f, "maxcharge", live(pocell))]));
-		if (truthy((yield* g.callName(f, rt.fv(f, "reagents", live(G)), "has_reagent", ["plasma", 2])))) {
-			rt.setFv(f, "rigged", live(pocell), 1);
+		pocell.charge = pocell.maxcharge;
+		pocell.name = `${G.name} battery`;
+		pocell.desc = `A rechargable plant based power cell. This one has a power rating of ${pocell.maxcharge}, and you should not swallow it.`;
+		if (G.reagents.has_reagent("plasma", 2)) {
+			pocell.rigged = 1;
 		}
-		yield* g.call(f, P("/proc/qdel"), null, [live(G)]);
+		yield* qdel(G);
 	} else {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>You need five lengths of cable to make a ＀ battery!</span>", [live(G)])]);
+		to_chat(user, `<span class='warning'>You need five lengths of cable to make a ${G} battery!</span>`);
 	}
 	return f.dot;
 }, true);
@@ -455,17 +408,16 @@ rt.type(2734, "/datum/plant_gene/trait/stinging", "/datum/plant_gene/trait", {
 	name: "Hypodermic Prickles",
 });
 
-// /datum/plant_gene/trait/stinging/proc/on_throw_impact  (code/modules/hydroponics/plant_genes.dm:392)  may sleep
+// plant_genes.dm:392
 rt.def("/datum/plant_gene/trait/stinging/proc/on_throw_impact", function* on_throw_impact(f: Frame, G: Value, target: Value) {
-	let L: Value = null, injecting_amount: Value = null, fraction: Value = null;
-	f.vars = () => [G, target, L, injecting_amount, fraction];
-	if (!((truthy((rt.istype(live(target), T("/mob/living")) ? 1 : 0)) && truthy(rt.fv(f, "reagents", live(G)))) && truthy(rt.gv(f, "total_volume", rt.fv(f, "reagents", live(G)))))) return f.dot;
-	if (!(truthy(rt.gv(f, "reagents", (L = live(target)))) && truthy((yield* g.callName(f, live(L), "can_inject", [null, 0]))))) return f.dot;
-	injecting_amount = (yield* g.call(f, P("/proc/max"), null, [1, multiply(rt.gv(f, "potency", rt.fv(f, "seed", live(G))), 0.20000000298023224)]));
-	fraction = (yield* g.call(f, P("/proc/min"), null, [divide(live(injecting_amount), rt.gv(f, "total_volume", rt.fv(f, "reagents", live(G)))), 1]));
-	yield* g.callName(f, rt.fv(f, "reagents", live(G)), "reaction", [live(L), 5, live(fraction)]);
-	yield* g.callName(f, rt.fv(f, "reagents", live(G)), "trans_to", [live(L), live(injecting_amount)]);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(target), fmt("<span class='danger'>You are pricked by ＀!</span>", [live(G)])]);
+	let L: Value = null;
+	if (!(rt.istype(target, T("/mob/living")) && G.reagents && G.reagents.total_volume)) return f.dot;
+	if (!((L = target).reagents && (yield* L.can_inject(null, 0)))) return f.dot;
+	let injecting_amount: Value = max(1, G.seed.potency * 0.2);
+	let fraction: Value = min(injecting_amount / G.reagents.total_volume, 1);
+	yield* G.reagents.reaction(L, INJECT, fraction);
+	yield* G.reagents.trans_to(L, injecting_amount);
+	to_chat(target, `<span class='danger'>You are pricked by ${G}!</span>`);
 	return f.dot;
 }, true);
 
@@ -473,17 +425,15 @@ rt.type(2735, "/datum/plant_gene/trait/smoke", "/datum/plant_gene/trait", {
 	name: "gaseous decomposition",
 });
 
-// /datum/plant_gene/trait/smoke/proc/on_squash  (code/modules/hydroponics/plant_genes.dm:405)  may sleep
+// plant_genes.dm:405
 rt.def("/datum/plant_gene/trait/smoke/proc/on_squash", function* on_squash(f: Frame, G: Value, target: Value) {
-	let S: Value = null, splat_location: Value = null, smoke_amount: Value = null;
-	f.vars = () => [G, target, S, splat_location, smoke_amount];
-	S = (yield* g.new_(f, T("/datum/effect_system/smoke_spread/chem"), []));
-	splat_location = rt.getStep(f, live(target), 0);
-	smoke_amount = (yield* g.call(f, P("/proc/round"), null, [rt.op(f, "Sqrt", [], [multiply(rt.gv(f, "potency", rt.fv(f, "seed", live(G))), 0.10000000149011612)]), 1]));
-	yield* g.callName(f, live(S), "attach", [live(splat_location)]);
-	yield* g.callName(f, live(S), "set_up", [rt.fv(f, "reagents", live(G)), live(smoke_amount), live(splat_location), 0]);
-	yield* g.callName(f, live(S), "start", []);
-	yield* g.callName(f, rt.fv(f, "reagents", live(G)), "clear_reagents", []);
+	let S: Value = (yield* new_(T("/datum/effect_system/smoke_spread/chem")));
+	let splat_location: Value = rt.getStep(f, target, 0);
+	let smoke_amount: Value = round(rt.op(f, "Sqrt", [], [G.seed.potency * 0.1]), 1);
+	yield* S.attach(splat_location);
+	yield* S.set_up(G.reagents, smoke_amount, splat_location, 0);
+	yield* S.start();
+	yield* G.reagents.clear_reagents();
 	return f.dot;
 }, true);
 
@@ -491,16 +441,16 @@ rt.type(2736, "/datum/plant_gene/trait/fire_resistance", "/datum/plant_gene/trai
 	name: "Fire Resistance",
 });
 
-// /datum/plant_gene/trait/fire_resistance/proc/apply_vars  (code/modules/hydroponics/plant_genes.dm:417)
+// plant_genes.dm:417
 rt.def("/datum/plant_gene/trait/fire_resistance/proc/apply_vars", function apply_vars(f: Frame, S: Value) {
-	if (truthy(rt.bitAnd(rt.fv(f, "resistance_flags", live(S)), 2))) return f.dot;
-	(rt.modField(f, live(S), "resistance_flags", 2, rt.bitOr));
+	if (rt.bitAnd(S.resistance_flags, FIRE_PROOF)) return f.dot;
+	(rt.modField(f, S, "resistance_flags", FIRE_PROOF, rt.bitOr));
 	return f.dot;
 });
 
-// /datum/plant_gene/trait/fire_resistance/proc/on_new  (code/modules/hydroponics/plant_genes.dm:421)
+// plant_genes.dm:421
 rt.def("/datum/plant_gene/trait/fire_resistance/proc/on_new", function on_new(f: Frame, G: Value, newloc: Value) {
-	if (truthy(rt.bitAnd(rt.fv(f, "resistance_flags", live(G)), 2))) return f.dot;
-	(rt.modField(f, live(G), "resistance_flags", 2, rt.bitOr));
+	if (rt.bitAnd(G.resistance_flags, FIRE_PROOF)) return f.dot;
+	(rt.modField(f, G, "resistance_flags", FIRE_PROOF, rt.bitOr));
 	return f.dot;
 });

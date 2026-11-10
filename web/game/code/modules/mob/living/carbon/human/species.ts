@@ -1,7 +1,7 @@
-// From code/modules/mob/living/carbon/human/species.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/carbon/human/species.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, fmt } = rt;
 
 
 rt.type(4074, "/datum/species", "/datum", {
@@ -55,894 +55,812 @@ rt.type(4074, "/datum/species", "/datum", {
 	mutanttongue: rt.typePath("/obj/item/organ/tongue"),
 });
 
-// /datum/species/proc/<init>  (code/modules/mob/living/carbon/human/species.dm:32)
+// species.dm:32
 rt.def("/datum/species/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "no_equip", rt.list());
-	$0 = $0;
-	rt.setSv(f, "default_features", rt.list());
-	$0 = $0;
-	rt.setSv(f, "mutant_bodyparts", rt.list());
-	$0 = $0;
-	rt.setSv(f, "mutant_organs", rt.list());
-	$0 = $0;
-	rt.setSv(f, "species_traits", rt.list());
-	$0 = $0;
-	rt.setSv(f, "ignored_by", rt.list());
+	parent_proc();
+	this.no_equip = list();
+
+	this.default_features = list();
+
+	this.mutant_bodyparts = list();
+
+	this.mutant_organs = list();
+
+	this.species_traits = list();
+
+	this.ignored_by = list();
 	return f.dot;
 });
 
-// /datum/species/proc/New  (code/modules/mob/living/carbon/human/species.dm:81)
+// species.dm:81
 rt.def("/datum/species/proc/New", function New(f: Frame) {
-	if (!truthy(rt.sv(f, "limbs_id"))) {
-		rt.setSv(f, "limbs_id", rt.sv(f, "id"));
+	if (!this.limbs_id) {
+		this.limbs_id = this.id;
 	}
-	rt.callSuper(f, [], rt.Args.Same);
+	parent_proc();
 	return f.dot;
 });
 
-// /datum/species/proc/random_name  (code/modules/mob/living/carbon/human/species.dm:88)
+// species.dm:88
 rt.def("/datum/species/proc/random_name", function random_name(f: Frame, gender: Value, unique: Value, lastname: Value) {
 	let randname: Value = null;
-	f.vars = () => [randname];
-	if (truthy(live(unique))) {
-		return rt.call(f, P("/proc/random_unique_name"), null, [live(gender)]);
+	if (unique) {
+		return random_unique_name(gender);
 	}
-	randname = null;
-	if (isEqual(live(gender), "male")) {
-		randname = rt.op(f, "PickUnweighted", [1], [rt.gl("first_names_male")]);
+	if (gender == "male") {
+		randname = pick(GLOB.first_names_male);
 	} else {
-		randname = rt.op(f, "PickUnweighted", [1], [rt.gl("first_names_female")]);
+		randname = pick(GLOB.first_names_female);
 	}
-	if (truthy(live(lastname))) {
-		randname = rt.modify(live(randname), fmt(" ＀", [live(lastname)]), add);
+	if (lastname) {
+		randname += ` ${lastname}`;
 	} else {
-		randname = rt.modify(live(randname), fmt(" ＀", [rt.op(f, "PickUnweighted", [1], [rt.gl("last_names")])]), add);
+		randname += ` ${pick(GLOB.last_names)}`;
 	}
-	return live(randname);
+	return randname;
 });
 
-// /datum/species/proc/qualifies_for_rank  (code/modules/mob/living/carbon/human/species.dm:106)
+// species.dm:106
 rt.def("/datum/species/proc/qualifies_for_rank", function qualifies_for_rank(f: Frame, rank: Value, features: Value) {
-	if (truthy((rt.isIn(f, live(rank), rt.gl("command_positions")) ? 1 : 0))) {
+	if (rt.isIn(f, rank, GLOB.command_positions)) {
 		return 0;
 	}
 	return 1;
 });
 
-// /datum/species/proc/on_species_gain  (code/modules/mob/living/carbon/human/species.dm:112)  may sleep
+// species.dm:112
 rt.def("/datum/species/proc/on_species_gain", function* on_species_gain(f: Frame, C: Value, old_species: Value) {
-	let slot_id: Value = null, thing: Value = null, heart: Value = null, lungs: Value = null, appendix: Value = null, eyes: Value = null, ears: Value = null, tongue: Value = null, path: Value = null, I: Value = null, I_6: Value = null, V: Value = null;
-	let $e: any;
-	f.vars = () => [C, old_species, slot_id, thing, heart, lungs, appendix, eyes, ears, tongue, path, I, I_6, V, $e];
-	slot_id = null;
-	rt.forList(f, 0, rt.sv(f, "no_equip"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		slot_id = $e;
-		if ((truthy((thing = (yield* g.callName(f, live(C), "get_item_by_slot", [live(slot_id)])))) && (!truthy(rt.fv(f, "species_exception", live(thing))) || !truthy((yield* g.call(f, P("/proc/is_type_in_list"), null, [live(f.src), rt.fv(f, "species_exception", live(thing))])))))) {
-			yield* g.callName(f, live(C), "dropItemToGround", [live(thing)]);
+	let slot_id: Value = null, thing: Value = null, path: Value = null, I: Value = null, I_6: Value = null, V: Value = null;
+	for (slot_id of each(this.no_equip)) {
+		if ((thing = C.get_item_by_slot(slot_id)) && (!thing.species_exception || !is_type_in_list(this, thing.species_exception))) {
+			yield* C.dropItemToGround(thing);
 		}
 	}
-	rt.endFor(f, 0);
-	if (truthy(rt.fv(f, "hud_used", live(C)))) {
-		yield* g.callName(f, rt.fv(f, "hud_used", live(C)), "update_locked_slots", []);
+	if (C.hud_used) {
+		C.hud_used.update_locked_slots();
 	}
-	if ((truthy((rt.isIn(f, "legs", rt.gv(f, "mutant_bodyparts", rt.gv(f, "species", rt.fv(f, "dna", live(C))))) ? 1 : 0)) && isEqual(rt.index(rt.gv(f, "features", rt.fv(f, "dna", live(C))), "legs"), "Digitigrade Legs"))) {
-		rt.modSrcVar(f, "species_traits", 25, add);
+	if (rt.isIn(f, "legs", C.dna.species.mutant_bodyparts) && rt.index(C.dna.features, "legs") == "Digitigrade Legs") {
+		this.species_traits += DIGITIGRADE;
 	}
-	if (truthy((rt.isIn(f, 25, rt.sv(f, "species_traits")) ? 1 : 0))) {
-		yield* g.callName(f, live(C), "Digitigrade_Leg_Swap", [0]);
+	if (rt.isIn(f, DIGITIGRADE, this.species_traits)) {
+		yield* C.Digitigrade_Leg_Swap(0);
 	}
-	heart = (yield* g.callName(f, live(C), "getorganslot", ["heart"]));
-	lungs = (yield* g.callName(f, live(C), "getorganslot", ["lungs"]));
-	appendix = (yield* g.callName(f, live(C), "getorganslot", ["appendix"]));
-	eyes = (yield* g.callName(f, live(C), "getorganslot", ["eye_sight"]));
-	ears = (yield* g.callName(f, live(C), "getorganslot", ["ears"]));
-	tongue = (yield* g.callName(f, live(C), "getorganslot", ["tongue"]));
-	if ((truthy((rt.isIn(f, 12, rt.sv(f, "species_traits")) ? 1 : 0)) && truthy(live(heart)))) {
-		yield* g.callName(f, live(heart), "Remove", [live(C)]);
-		yield* g.call(f, P("/proc/qdel"), null, [live(heart)]);
-	} else {
-		if ((!truthy((rt.isIn(f, 12, rt.sv(f, "species_traits")) ? 1 : 0)) && !truthy(live(heart)))) {
-			yield* g.callName(f, (heart = (yield* g.new_(f, T("/obj/item/organ/heart"), []))), "Insert", [live(C)]);
-		}
+	let heart: Value = C.getorganslot("heart");
+	let lungs: Value = C.getorganslot("lungs");
+	let appendix: Value = C.getorganslot("appendix");
+	let eyes: Value = C.getorganslot("eye_sight");
+	let ears: Value = C.getorganslot("ears");
+	let tongue: Value = C.getorganslot("tongue");
+	if (rt.isIn(f, NOBLOOD, this.species_traits) && heart) {
+		yield* heart.Remove(C);
+		yield* qdel(heart);
+	} else if (!rt.isIn(f, NOBLOOD, this.species_traits) && !heart) {
+		yield* (heart = (yield* new_(T("/obj/item/organ/heart")))).Insert(C);
 	}
-	if (truthy(live(lungs))) {
-		yield* g.call(f, P("/proc/qdel"), null, [live(lungs)]);
+	if (lungs) {
+		yield* qdel(lungs);
 		lungs = null;
 	}
-	if (truthy((yield* g.callName(f, live(C), "get_bodypart", ["head"])))) {
-		if (truthy(live(eyes))) {
-			yield* g.call(f, P("/proc/qdel"), null, [live(eyes)]);
-			yield* g.callName(f, (eyes = (yield* g.new_(f, rt.sv(f, "mutanteyes"), []))), "Insert", [live(C)]);
+	if (C.get_bodypart("head")) {
+		if (eyes) {
+			yield* qdel(eyes);
+			yield* (eyes = (yield* new_(this.mutanteyes))).Insert(C);
 		}
-		if (truthy(live(ears))) {
-			yield* g.call(f, P("/proc/qdel"), null, [live(ears)]);
-			yield* g.callName(f, (ears = (yield* g.new_(f, rt.sv(f, "mutantears"), []))), "Insert", [live(C)]);
+		if (ears) {
+			yield* qdel(ears);
+			yield* (ears = (yield* new_(this.mutantears))).Insert(C);
 		}
-		if (truthy(live(tongue))) {
-			yield* g.call(f, P("/proc/qdel"), null, [live(tongue)]);
-			yield* g.callName(f, (tongue = (yield* g.new_(f, rt.sv(f, "mutanttongue"), []))), "Insert", [live(C)]);
+		if (tongue) {
+			yield* qdel(tongue);
+			yield* (tongue = (yield* new_(this.mutanttongue))).Insert(C);
 		}
 	}
-	if ((!truthy((rt.isIn(f, 10, rt.sv(f, "species_traits")) ? 1 : 0)) && !truthy(live(lungs)))) {
-		if (truthy(rt.sv(f, "mutantlungs"))) {
-			lungs = (yield* g.new_(f, rt.sv(f, "mutantlungs"), []));
+	if (!rt.isIn(f, NOBREATH, this.species_traits) && !lungs) {
+		if (this.mutantlungs) {
+			lungs = (yield* new_(this.mutantlungs));
 		} else {
-			lungs = (yield* g.new_(f, T("/obj/item/organ/lungs"), []));
+			lungs = (yield* new_(T("/obj/item/organ/lungs")));
 		}
-		yield* g.callName(f, live(lungs), "Insert", [live(C)]);
+		yield* lungs.Insert(C);
 	}
-	if ((truthy((rt.isIn(f, 19, rt.sv(f, "species_traits")) ? 1 : 0)) && truthy(live(appendix)))) {
-		yield* g.call(f, P("/proc/qdel"), null, [live(appendix)]);
-	} else {
-		if ((!truthy((rt.isIn(f, 19, rt.sv(f, "species_traits")) ? 1 : 0)) && !truthy(live(appendix)))) {
-			yield* g.callName(f, (appendix = (yield* g.new_(f, T("/obj/item/organ/appendix"), []))), "Insert", [live(C)]);
-		}
+	if (rt.isIn(f, NOHUNGER, this.species_traits) && appendix) {
+		yield* qdel(appendix);
+	} else if (!rt.isIn(f, NOHUNGER, this.species_traits) && !appendix) {
+		yield* (appendix = (yield* new_(T("/obj/item/organ/appendix")))).Insert(C);
 	}
-	path = null;
-	rt.forList(f, 0, rt.sv(f, "mutant_organs"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		path = $e;
-		yield* g.callName(f, (I = (yield* g.new_(f, live(path), []))), "Insert", [live(C)]);
+	for (path of each(this.mutant_organs)) {
+		yield* (I = (yield* new_(path))).Insert(C);
 	}
-	rt.endFor(f, 0);
-	if ((truthy(rt.sv(f, "exotic_bloodtype")) && !isEqual(rt.gv(f, "blood_type", rt.fv(f, "dna", live(C))), rt.sv(f, "exotic_bloodtype")))) {
-		rt.setFv(f, "blood_type", rt.fv(f, "dna", live(C)), rt.sv(f, "exotic_bloodtype"));
+	if (this.exotic_bloodtype && C.dna.blood_type != this.exotic_bloodtype) {
+		C.dna.blood_type = this.exotic_bloodtype;
 	}
-	if (truthy(rt.fv(f, "mutanthands", live(old_species)))) {
-		I_6 = null;
-		rt.forList(f, 0, rt.fv(f, "held_items", live(C)), T("/obj/item"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			I_6 = $e;
-			if (truthy(rt.op(f, "IsType", [], [live(I_6), rt.fv(f, "mutanthands", live(old_species))]))) {
-				yield* g.call(f, P("/proc/qdel"), null, [live(I_6)]);
+	if (old_species.mutanthands) {
+		for (I_6 of each(C.held_items, T("/obj/item"))) {
+			if (rt.op(f, "IsType", [], [I_6, old_species.mutanthands])) {
+				yield* qdel(I_6);
 			}
 		}
-		rt.endFor(f, 0);
 	}
-	if (!truthy(rt.sv(f, "mutanthands"))) return f.dot;
-	V = null;
-	rt.forList(f, 0, rt.fv(f, "held_items", live(C)));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		V = $e;
-		if (truthy((rt.istype((I = live(V)), T("/obj/item")) ? 1 : 0))) {
-			yield* g.callName(f, live(C), "dropItemToGround", [live(I)]);
+	if (!this.mutanthands) return f.dot;
+	for (V of each(C.held_items)) {
+		if (rt.istype((I = V), T("/obj/item"))) {
+			yield* C.dropItemToGround(I);
 		} else {
-			yield* g.callName(f, live(C), "put_in_hands", [(yield* g.new_(f, rt.sv(f, "mutanthands"), []))]);
+			yield* C.put_in_hands((yield* new_(this.mutanthands)));
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /datum/species/proc/on_species_loss  (code/modules/mob/living/carbon/human/species.dm:195)  may sleep
+// species.dm:195
 rt.def("/datum/species/proc/on_species_loss", function* on_species_loss(f: Frame, C: Value) {
-	f.vars = () => [C];
-	if (truthy(rt.gv(f, "exotic_bloodtype", rt.gv(f, "species", rt.fv(f, "dna", live(C)))))) {
-		rt.setFv(f, "blood_type", rt.fv(f, "dna", live(C)), (yield* g.call(f, P("/proc/random_blood_type"), null, [])));
+	if (C.dna.species.exotic_bloodtype) {
+		C.dna.blood_type = random_blood_type();
 	}
-	if (!truthy((rt.isIn(f, 25, rt.sv(f, "species_traits")) ? 1 : 0))) return f.dot;
-	yield* g.callName(f, live(C), "Digitigrade_Leg_Swap", [1]);
+	if (!rt.isIn(f, DIGITIGRADE, this.species_traits)) return f.dot;
+	yield* C.Digitigrade_Leg_Swap(1);
 	return f.dot;
 }, true);
 
-// /datum/species/proc/handle_hair  (code/modules/mob/living/carbon/human/species.dm:201)  may sleep
+// species.dm:201
 rt.def("/datum/species/proc/handle_hair", function* handle_hair(f: Frame, H: Value, forced_colour: Value) {
-	let HD: Value = null, S: Value = null, standing: Value = null, hair_hidden: Value = null, facialhair_hidden: Value = null, dynamic_hair_suffix: Value = null, dynamic_fhair_suffix: Value = null, I: Value = null, C: Value = null, M: Value = null, fhair_extensions: Value = null, s: Value = null, fhair_state: Value = null, fhair_file: Value = null, facial_overlay: Value = null, hair_overlay: Value = null, hair_extensions: Value = null, s_9: Value = null, hair_state: Value = null, hair_file: Value = null;
-	let $e: any;
-	f.vars = () => [H, forced_colour, HD, S, standing, hair_hidden, facialhair_hidden, dynamic_hair_suffix, dynamic_fhair_suffix, I, C, M, fhair_extensions, s, fhair_state, fhair_file, facial_overlay, hair_overlay, hair_extensions, s_9, hair_state, hair_file, $e];
-	yield* g.callName(f, live(H), "remove_overlay", [8]);
-	if (!truthy((HD = (yield* g.callName(f, live(H), "get_bodypart", ["head"]))))) {
-		return live(f.dot);
+	let HD: Value = null, S: Value = null, I: Value = null, C: Value = null, M: Value = null, fhair_extensions: Value = null, s: Value = null, fhair_state: Value = null, fhair_file: Value = null, facial_overlay: Value = null, hair_overlay: Value = null, hair_extensions: Value = null, s_9: Value = null, hair_state: Value = null, hair_file: Value = null;
+	H.remove_overlay(HAIR_LAYER);
+	if (!(HD = H.get_bodypart("head"))) {
+		return f.dot;
 	}
-	if (truthy(rt.bitAnd(rt.fv(f, "disabilities", live(H)), 64))) {
-		return live(f.dot);
+	if (rt.bitAnd(H.disabilities, 64)) {
+		return f.dot;
 	}
-	S = null;
-	standing = rt.list();
-	hair_hidden = 0;
-	facialhair_hidden = 0;
-	dynamic_hair_suffix = "";
-	dynamic_fhair_suffix = "";
-	if (truthy(rt.fv(f, "head", live(H)))) {
-		if (truthy((rt.istype((I = rt.fv(f, "head", live(H))), T("/obj/item/clothing")) ? 1 : 0))) {
-			dynamic_fhair_suffix = rt.gv(f, "dynamic_fhair_suffix", (C = live(I)));
+	let standing: Value = list();
+	let hair_hidden: Value = 0;
+	let facialhair_hidden: Value = 0;
+	let dynamic_hair_suffix: Value = "";
+	let dynamic_fhair_suffix: Value = "";
+	if (H.head) {
+		if (rt.istype((I = H.head), T("/obj/item/clothing"))) {
+			dynamic_fhair_suffix = (C = I).dynamic_fhair_suffix;
 		}
-		if (truthy(rt.bitAnd(rt.fv(f, "flags_inv", live(I)), 512))) {
+		if (rt.bitAnd(I.flags_inv, HIDEFACIALHAIR)) {
 			facialhair_hidden = 1;
 		}
 	}
-	if (truthy(rt.fv(f, "wear_mask", live(H)))) {
-		dynamic_fhair_suffix = rt.gv(f, "dynamic_fhair_suffix", (M = rt.fv(f, "wear_mask", live(H))));
-		if (truthy(rt.bitAnd(rt.fv(f, "flags_inv", live(M)), 512))) {
+	if (H.wear_mask) {
+		dynamic_fhair_suffix = (M = H.wear_mask).dynamic_fhair_suffix;
+		if (rt.bitAnd(M.flags_inv, HIDEFACIALHAIR)) {
 			facialhair_hidden = 1;
 		}
 	}
-	if (((truthy(rt.fv(f, "facial_hair_style", live(H))) && truthy((rt.isIn(f, 3, rt.sv(f, "species_traits")) ? 1 : 0))) && (!truthy(live(facialhair_hidden)) || truthy(live(dynamic_fhair_suffix))))) {
-		if (truthy((S = rt.index(rt.gl("facial_hair_styles_list"), rt.fv(f, "facial_hair_style", live(H)))))) {
-			if (!truthy(rt.gl("fextensions"))) {
-				fhair_extensions = (yield* g.call(f, P("/proc/icon"), null, [rt.rsc("icons/mob/facialhair_extensions.dmi")]));
-				rt.setGl("fextensions", rt.list());
-				s = null;
-				rt.forList(f, 0, (yield* g.callName(f, live(fhair_extensions), "IconStates", [1])));
-				while (($e = rt.next(f, 0)) !== undefined) {
-					s = $e;
-					rt.setAt(rt.gl("fextensions"), live(s), 1);
+	if (H.facial_hair_style && rt.isIn(f, FACEHAIR, this.species_traits) && (!facialhair_hidden || dynamic_fhair_suffix)) {
+		if (S = rt.index(GLOB.facial_hair_styles_list, H.facial_hair_style)) {
+			if (!GLOB.fextensions) {
+				fhair_extensions = icon(rt.rsc("icons/mob/facialhair_extensions.dmi"));
+				GLOB.fextensions = list();
+				for (s of each(fhair_extensions.IconStates(1))) {
+					rt.setAt(GLOB.fextensions, s, 1);
 				}
-				rt.endFor(f, 0);
-				yield* g.call(f, P("/proc/qdel"), null, [live(fhair_extensions)]);
+				yield* qdel(fhair_extensions);
 			}
-			fhair_state = rt.fv(f, "icon_state", live(S));
-			fhair_file = rt.fv(f, "icon", live(S));
-			if (truthy(rt.index(rt.gl("fextensions"), add(live(fhair_state), live(dynamic_fhair_suffix))))) {
-				fhair_state = rt.modify(live(fhair_state), live(dynamic_fhair_suffix), add);
+			fhair_state = S.icon_state;
+			fhair_file = S.icon;
+			if (rt.index(GLOB.fextensions, fhair_state + dynamic_fhair_suffix)) {
+				fhair_state += dynamic_fhair_suffix;
 				fhair_file = rt.rsc("icons/mob/facialhair_extensions.dmi");
 			}
-			facial_overlay = (yield* g.call(f, P("/proc/mutable_appearance"), null, [live(fhair_file), live(fhair_state), -8]));
-			if (!truthy(live(forced_colour))) {
-				if (truthy(rt.sv(f, "hair_color"))) {
-					if (isEqual(rt.sv(f, "hair_color"), "mutcolor")) {
-						rt.setFv(f, "color", live(facial_overlay), add("#", rt.index(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "mcolor")));
+			facial_overlay = mutable_appearance(fhair_file, fhair_state, -8);
+			if (!forced_colour) {
+				if (this.hair_color) {
+					if (this.hair_color == "mutcolor") {
+						facial_overlay.color = "#" + rt.index(H.dna.features, "mcolor");
 					} else {
-						rt.setFv(f, "color", live(facial_overlay), add("#", rt.sv(f, "hair_color")));
+						facial_overlay.color = "#" + this.hair_color;
 					}
 				} else {
-					rt.setFv(f, "color", live(facial_overlay), add("#", rt.fv(f, "facial_hair_color", live(H))));
+					facial_overlay.color = "#" + H.facial_hair_color;
 				}
 			} else {
-				rt.setFv(f, "color", live(facial_overlay), live(forced_colour));
+				facial_overlay.color = forced_colour;
 			}
-			rt.setFv(f, "alpha", live(facial_overlay), rt.sv(f, "hair_alpha"));
-			standing = rt.modify(live(standing), live(facial_overlay), add);
+			facial_overlay.alpha = this.hair_alpha;
+			standing += facial_overlay;
 		}
 	}
-	if (truthy(rt.fv(f, "head", live(H)))) {
-		if (truthy((rt.istype((I = rt.fv(f, "head", live(H))), T("/obj/item/clothing")) ? 1 : 0))) {
-			dynamic_hair_suffix = rt.gv(f, "dynamic_hair_suffix", (C = live(I)));
+	if (H.head) {
+		if (rt.istype((I = H.head), T("/obj/item/clothing"))) {
+			dynamic_hair_suffix = (C = I).dynamic_hair_suffix;
 		}
-		if (truthy(rt.bitAnd(rt.fv(f, "flags_inv", live(I)), 256))) {
+		if (rt.bitAnd(I.flags_inv, HIDEHAIR)) {
 			hair_hidden = 1;
 		}
 	}
-	if (truthy(rt.fv(f, "wear_mask", live(H)))) {
-		M = rt.fv(f, "wear_mask", live(H));
-		if (!truthy(live(dynamic_hair_suffix))) {
-			dynamic_hair_suffix = rt.fv(f, "dynamic_hair_suffix", live(M));
+	if (H.wear_mask) {
+		M = H.wear_mask;
+		if (!dynamic_hair_suffix) {
+			dynamic_hair_suffix = M.dynamic_hair_suffix;
 		}
-		if (truthy(rt.bitAnd(rt.fv(f, "flags_inv", live(M)), 256))) {
+		if (rt.bitAnd(M.flags_inv, HIDEHAIR)) {
 			hair_hidden = 1;
 		}
 	}
-	if ((!truthy(live(hair_hidden)) || truthy(live(dynamic_hair_suffix)))) {
-		hair_overlay = (yield* g.call(f, P("/proc/mutable_appearance"), null, ["layer", -8], rt.Args.Named));
-		if ((!truthy(live(hair_hidden)) && !truthy((yield* g.callName(f, live(H), "getorgan", [T("/obj/item/organ/brain")]))))) {
-			if (!truthy((rt.isIn(f, 12, rt.sv(f, "species_traits")) ? 1 : 0))) {
-				rt.setFv(f, "icon", live(hair_overlay), rt.rsc("icons/mob/human_face.dmi"));
-				rt.setFv(f, "icon_state", live(hair_overlay), "debrained");
+	if (!hair_hidden || dynamic_hair_suffix) {
+		hair_overlay = (yield* mutable_appearance({ layer: -8 }));
+		if (!hair_hidden && !H.getorgan(T("/obj/item/organ/brain"))) {
+			if (!rt.isIn(f, NOBLOOD, this.species_traits)) {
+				hair_overlay.icon = rt.rsc("icons/mob/human_face.dmi");
+				hair_overlay.icon_state = "debrained";
 			}
-		} else {
-			if ((truthy(rt.fv(f, "hair_style", live(H))) && truthy((rt.isIn(f, 2, rt.sv(f, "species_traits")) ? 1 : 0)))) {
-				if (truthy((S = rt.index(rt.gl("hair_styles_list"), rt.fv(f, "hair_style", live(H)))))) {
-					if (!truthy(rt.gl("extensions"))) {
-						hair_extensions = (yield* g.call(f, P("/proc/icon"), null, [rt.rsc("icons/mob/hair_extensions.dmi")]));
-						rt.setGl("extensions", rt.list());
-						s_9 = null;
-						rt.forList(f, 0, (yield* g.callName(f, live(hair_extensions), "IconStates", [1])));
-						while (($e = rt.next(f, 0)) !== undefined) {
-							s_9 = $e;
-							rt.setAt(rt.gl("extensions"), live(s_9), 1);
-						}
-						rt.endFor(f, 0);
-						yield* g.call(f, P("/proc/qdel"), null, [live(hair_extensions)]);
+		} else if (H.hair_style && rt.isIn(f, HAIR, this.species_traits)) {
+			if (S = rt.index(GLOB.hair_styles_list, H.hair_style)) {
+				if (!GLOB.extensions) {
+					hair_extensions = icon(rt.rsc("icons/mob/hair_extensions.dmi"));
+					GLOB.extensions = list();
+					for (s_9 of each(hair_extensions.IconStates(1))) {
+						rt.setAt(GLOB.extensions, s_9, 1);
 					}
-					hair_state = rt.fv(f, "icon_state", live(S));
-					hair_file = rt.fv(f, "icon", live(S));
-					if (truthy(rt.index(rt.gl("extensions"), add(live(hair_state), live(dynamic_hair_suffix))))) {
-						hair_state = rt.modify(live(hair_state), live(dynamic_hair_suffix), add);
-						hair_file = rt.rsc("icons/mob/hair_extensions.dmi");
-					}
-					rt.setFv(f, "icon", live(hair_overlay), live(hair_file));
-					rt.setFv(f, "icon_state", live(hair_overlay), live(hair_state));
-					if (!truthy(live(forced_colour))) {
-						if (truthy(rt.sv(f, "hair_color"))) {
-							if (isEqual(rt.sv(f, "hair_color"), "mutcolor")) {
-								rt.setFv(f, "color", live(hair_overlay), add("#", rt.index(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "mcolor")));
-							} else {
-								rt.setFv(f, "color", live(hair_overlay), add("#", rt.sv(f, "hair_color")));
-							}
+					yield* qdel(hair_extensions);
+				}
+				hair_state = S.icon_state;
+				hair_file = S.icon;
+				if (rt.index(GLOB.extensions, hair_state + dynamic_hair_suffix)) {
+					hair_state += dynamic_hair_suffix;
+					hair_file = rt.rsc("icons/mob/hair_extensions.dmi");
+				}
+				hair_overlay.icon = hair_file;
+				hair_overlay.icon_state = hair_state;
+				if (!forced_colour) {
+					if (this.hair_color) {
+						if (this.hair_color == "mutcolor") {
+							hair_overlay.color = "#" + rt.index(H.dna.features, "mcolor");
 						} else {
-							rt.setFv(f, "color", live(hair_overlay), add("#", rt.fv(f, "hair_color", live(H))));
+							hair_overlay.color = "#" + this.hair_color;
 						}
 					} else {
-						rt.setFv(f, "color", live(hair_overlay), live(forced_colour));
+						hair_overlay.color = "#" + H.hair_color;
 					}
-					rt.setFv(f, "alpha", live(hair_overlay), rt.sv(f, "hair_alpha"));
-					rt.modField(f, live(hair_overlay), "pixel_y", rt.sv(f, "hair_y_offset"), add);
-				}
-			}
-		}
-		if (truthy(rt.fv(f, "icon", live(hair_overlay)))) {
-			standing = rt.modify(live(standing), live(hair_overlay), add);
-		}
-	}
-	if (truthy(rt.len(f, live(standing)))) {
-		rt.setAt(rt.fv(f, "overlays_standing", live(H)), 8, live(standing));
-	}
-	yield* g.callName(f, live(H), "apply_overlay", [8]);
-	return f.dot;
-}, true);
-
-// /datum/species/proc/handle_body  (code/modules/mob/living/carbon/human/species.dm:336)  may sleep
-rt.def("/datum/species/proc/handle_body", function* handle_body(f: Frame, H: Value) {
-	let standing: Value = null, HD: Value = null, lip_overlay: Value = null, eye_overlay: Value = null, underwear: Value = null, undershirt: Value = null, socks: Value = null;
-	f.vars = () => [H, standing, HD, lip_overlay, eye_overlay, underwear, undershirt, socks];
-	yield* g.callName(f, live(H), "remove_overlay", [22]);
-	standing = rt.list();
-	HD = (yield* g.callName(f, live(H), "get_bodypart", ["head"]));
-	if (!truthy(rt.bitAnd(rt.fv(f, "disabilities", live(H)), 64))) {
-		if (((truthy(rt.fv(f, "lip_style", live(H))) && truthy((rt.isIn(f, 5, rt.sv(f, "species_traits")) ? 1 : 0))) && truthy(live(HD)))) {
-			rt.setFv(f, "color", (lip_overlay = (yield* g.call(f, P("/proc/mutable_appearance"), null, [rt.rsc("icons/mob/human_face.dmi"), fmt("lips_＀", [rt.fv(f, "lip_style", live(H))]), -22]))), rt.fv(f, "lip_color", live(H)));
-			rt.modField(f, live(lip_overlay), "pixel_y", rt.sv(f, "face_y_offset"), add);
-			standing = rt.modify(live(standing), live(lip_overlay), add);
-		}
-		if ((truthy((rt.isIn(f, 4, rt.sv(f, "species_traits")) ? 1 : 0)) && truthy(live(HD)))) {
-			rt.setFv(f, "color", (eye_overlay = (yield* g.call(f, P("/proc/mutable_appearance"), null, [rt.rsc("icons/mob/human_face.dmi"), "eyes", -22]))), add("#", rt.fv(f, "eye_color", live(H))));
-			rt.modField(f, live(eye_overlay), "pixel_y", rt.sv(f, "face_y_offset"), add);
-			standing = rt.modify(live(standing), live(eye_overlay), add);
-		}
-	}
-	if (!truthy((rt.isIn(f, 26, rt.sv(f, "species_traits")) ? 1 : 0))) {
-		if (truthy(rt.fv(f, "underwear", live(H)))) {
-			if (truthy((underwear = rt.index(rt.gl("underwear_list"), rt.fv(f, "underwear", live(H)))))) {
-				standing = rt.modify(live(standing), (yield* g.call(f, P("/proc/mutable_appearance"), null, [rt.fv(f, "icon", live(underwear)), rt.fv(f, "icon_state", live(underwear)), -22])), add);
-			}
-		}
-		if (truthy(rt.fv(f, "undershirt", live(H)))) {
-			if (truthy((undershirt = rt.index(rt.gl("undershirt_list"), rt.fv(f, "undershirt", live(H)))))) {
-				if ((truthy(rt.gv(f, "sexes", rt.gv(f, "species", rt.fv(f, "dna", live(H))))) && isEqual(rt.fv(f, "gender", live(H)), "female"))) {
-					standing = rt.modify(live(standing), (yield* g.call(f, P("/proc/wear_female_version"), null, [rt.fv(f, "icon_state", live(undershirt)), rt.fv(f, "icon", live(undershirt)), 22])), add);
 				} else {
-					standing = rt.modify(live(standing), (yield* g.call(f, P("/proc/mutable_appearance"), null, [rt.fv(f, "icon", live(undershirt)), rt.fv(f, "icon_state", live(undershirt)), -22])), add);
+					hair_overlay.color = forced_colour;
 				}
+				hair_overlay.alpha = this.hair_alpha;
+				hair_overlay.pixel_y += this.hair_y_offset;
 			}
 		}
-		if (((truthy(rt.fv(f, "socks", live(H))) && rt.ge((yield* g.callName(f, live(H), "get_num_legs", [])), 2)) && !truthy((rt.isIn(f, 25, rt.sv(f, "species_traits")) ? 1 : 0)))) {
-			if (truthy((socks = rt.index(rt.gl("socks_list"), rt.fv(f, "socks", live(H)))))) {
-				standing = rt.modify(live(standing), (yield* g.call(f, P("/proc/mutable_appearance"), null, [rt.fv(f, "icon", live(socks)), rt.fv(f, "icon_state", live(socks)), -22])), add);
-			}
+		if (hair_overlay.icon) {
+			standing += hair_overlay;
 		}
 	}
-	if (truthy(rt.len(f, live(standing)))) {
-		rt.setAt(rt.fv(f, "overlays_standing", live(H)), 22, live(standing));
+	if (rt.len(f, standing)) {
+		rt.setAt(H.overlays_standing, HAIR_LAYER, standing);
 	}
-	yield* g.callName(f, live(H), "apply_overlay", [22]);
-	yield* g.srcCall(f, "handle_mutant_bodyparts", live(H));
+	H.apply_overlay(HAIR_LAYER);
 	return f.dot;
 }, true);
 
-// /datum/species/proc/handle_mutant_bodyparts  (code/modules/mob/living/carbon/human/species.dm:384)  may sleep
+// species.dm:336
+rt.def("/datum/species/proc/handle_body", function* handle_body(f: Frame, H: Value) {
+	let lip_overlay: Value = null, eye_overlay: Value = null, underwear: Value = null, undershirt: Value = null, socks: Value = null;
+	H.remove_overlay(BODY_LAYER);
+	let standing: Value = list();
+	let HD: Value = H.get_bodypart("head");
+	if (!rt.bitAnd(H.disabilities, 64)) {
+		if (H.lip_style && rt.isIn(f, LIPS, this.species_traits) && HD) {
+			(lip_overlay = mutable_appearance(rt.rsc("icons/mob/human_face.dmi"), `lips_${H.lip_style}`, -22)).color = H.lip_color;
+			lip_overlay.pixel_y += this.face_y_offset;
+			standing += lip_overlay;
+		}
+		if (rt.isIn(f, EYECOLOR, this.species_traits) && HD) {
+			(eye_overlay = mutable_appearance(rt.rsc("icons/mob/human_face.dmi"), "eyes", -22)).color = "#" + H.eye_color;
+			eye_overlay.pixel_y += this.face_y_offset;
+			standing += eye_overlay;
+		}
+	}
+	if (!rt.isIn(f, NO_UNDERWEAR, this.species_traits)) {
+		if (H.underwear) {
+			if (underwear = rt.index(GLOB.underwear_list, H.underwear)) {
+				standing += mutable_appearance(underwear.icon, underwear.icon_state, -22);
+			}
+		}
+		if (H.undershirt) {
+			if (undershirt = rt.index(GLOB.undershirt_list, H.undershirt)) {
+				if (H.dna.species.sexes && H.gender == "female") {
+					standing += wear_female_version(undershirt.icon_state, undershirt.icon, BODY_LAYER);
+				} else {
+					standing += mutable_appearance(undershirt.icon, undershirt.icon_state, -22);
+				}
+			}
+		}
+		if (H.socks && H.get_num_legs() >= 2 && !rt.isIn(f, DIGITIGRADE, this.species_traits)) {
+			if (socks = rt.index(GLOB.socks_list, H.socks)) {
+				standing += mutable_appearance(socks.icon, socks.icon_state, -22);
+			}
+		}
+	}
+	if (rt.len(f, standing)) {
+		rt.setAt(H.overlays_standing, BODY_LAYER, standing);
+	}
+	H.apply_overlay(BODY_LAYER);
+	yield* this.handle_mutant_bodyparts(H);
+	return f.dot;
+}, true);
+
+// species.dm:384
 rt.def("/datum/species/proc/handle_mutant_bodyparts", function* handle_mutant_bodyparts(f: Frame, H: Value, forced_colour: Value) {
-	let bodyparts_to_add: Value = null, relevent_layers: Value = null, standing: Value = null, HD: Value = null, update_needed: Value = null, not_digitigrade: Value = null, X: Value = null, O: Value = null, should_be_squished: Value = null, _g: Value = null, layer: Value = null, layertext: Value = null, bodypart: Value = null, S: Value = null, accessory_overlay: Value = null, inner_accessory_overlay: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [H, forced_colour, bodyparts_to_add, relevent_layers, standing, HD, update_needed, not_digitigrade, X, O, should_be_squished, _g, layer, layertext, bodypart, S, accessory_overlay, inner_accessory_overlay, $0, $e];
-	bodyparts_to_add = (yield* g.callName(f, rt.sv(f, "mutant_bodyparts"), "Copy", []));
-	relevent_layers = rt.list(25, 23, 2);
-	standing = rt.list();
-	yield* g.callName(f, live(H), "remove_overlay", [25]);
-	yield* g.callName(f, live(H), "remove_overlay", [23]);
-	yield* g.callName(f, live(H), "remove_overlay", [2]);
-	if (!truthy(rt.sv(f, "mutant_bodyparts"))) {
-		return live(f.dot);
+	let X: Value = null, O: Value = null, should_be_squished: Value = null, layer: Value = null, layertext: Value = null, bodypart: Value = null, S: Value = null, accessory_overlay: Value = null, inner_accessory_overlay: Value = null;
+	let $e: any;
+	let bodyparts_to_add: Value = (yield* this.mutant_bodyparts.Copy());
+	let relevent_layers: Value = list(BODY_BEHIND_LAYER, BODY_ADJ_LAYER, BODY_FRONT_LAYER);
+	let standing: Value = list();
+	H.remove_overlay(BODY_BEHIND_LAYER);
+	H.remove_overlay(BODY_ADJ_LAYER);
+	H.remove_overlay(BODY_FRONT_LAYER);
+	if (!this.mutant_bodyparts) {
+		return f.dot;
 	}
-	HD = (yield* g.callName(f, live(H), "get_bodypart", ["head"]));
-	if (truthy((rt.isIn(f, "tail_lizard", rt.sv(f, "mutant_bodyparts")) ? 1 : 0))) {
-		if ((truthy(rt.fv(f, "wear_suit", live(H))) && truthy(rt.bitAnd(rt.gv(f, "flags_inv", rt.fv(f, "wear_suit", live(H))), 4)))) {
-			(bodyparts_to_add = rt.modify(live(bodyparts_to_add), "tail_lizard", subtract));
+	let HD: Value = H.get_bodypart("head");
+	if (rt.isIn(f, "tail_lizard", this.mutant_bodyparts)) {
+		if (H.wear_suit && rt.bitAnd(H.wear_suit.flags_inv, HIDEJUMPSUIT)) {
+			bodyparts_to_add -= "tail_lizard";
 		}
 	}
-	if (truthy((rt.isIn(f, "waggingtail_lizard", rt.sv(f, "mutant_bodyparts")) ? 1 : 0))) {
-		if ((truthy(rt.fv(f, "wear_suit", live(H))) && truthy(rt.bitAnd(rt.gv(f, "flags_inv", rt.fv(f, "wear_suit", live(H))), 4)))) {
-			(bodyparts_to_add = rt.modify(live(bodyparts_to_add), "waggingtail_lizard", subtract));
-		} else {
-			if (truthy((rt.isIn(f, "tail_lizard", rt.sv(f, "mutant_bodyparts")) ? 1 : 0))) {
-				(bodyparts_to_add = rt.modify(live(bodyparts_to_add), "waggingtail_lizard", subtract));
-			}
+	if (rt.isIn(f, "waggingtail_lizard", this.mutant_bodyparts)) {
+		if (H.wear_suit && rt.bitAnd(H.wear_suit.flags_inv, HIDEJUMPSUIT)) {
+			bodyparts_to_add -= "waggingtail_lizard";
+		} else if (rt.isIn(f, "tail_lizard", this.mutant_bodyparts)) {
+			bodyparts_to_add -= "waggingtail_lizard";
 		}
 	}
-	if (truthy((rt.isIn(f, "tail_human", rt.sv(f, "mutant_bodyparts")) ? 1 : 0))) {
-		if ((truthy(rt.fv(f, "wear_suit", live(H))) && truthy(rt.bitAnd(rt.gv(f, "flags_inv", rt.fv(f, "wear_suit", live(H))), 4)))) {
-			(bodyparts_to_add = rt.modify(live(bodyparts_to_add), "tail_human", subtract));
+	if (rt.isIn(f, "tail_human", this.mutant_bodyparts)) {
+		if (H.wear_suit && rt.bitAnd(H.wear_suit.flags_inv, HIDEJUMPSUIT)) {
+			bodyparts_to_add -= "tail_human";
 		}
 	}
-	if (truthy((rt.isIn(f, "waggingtail_human", rt.sv(f, "mutant_bodyparts")) ? 1 : 0))) {
-		if ((truthy(rt.fv(f, "wear_suit", live(H))) && truthy(rt.bitAnd(rt.gv(f, "flags_inv", rt.fv(f, "wear_suit", live(H))), 4)))) {
-			(bodyparts_to_add = rt.modify(live(bodyparts_to_add), "waggingtail_human", subtract));
-		} else {
-			if (truthy((rt.isIn(f, "tail_human", rt.sv(f, "mutant_bodyparts")) ? 1 : 0))) {
-				(bodyparts_to_add = rt.modify(live(bodyparts_to_add), "waggingtail_human", subtract));
-			}
+	if (rt.isIn(f, "waggingtail_human", this.mutant_bodyparts)) {
+		if (H.wear_suit && rt.bitAnd(H.wear_suit.flags_inv, HIDEJUMPSUIT)) {
+			bodyparts_to_add -= "waggingtail_human";
+		} else if (rt.isIn(f, "tail_human", this.mutant_bodyparts)) {
+			bodyparts_to_add -= "waggingtail_human";
 		}
 	}
-	if (truthy((rt.isIn(f, "spines", rt.sv(f, "mutant_bodyparts")) ? 1 : 0))) {
-		if (((!truthy(rt.index(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "spines")) || isEqual(rt.index(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "spines"), "None")) || (truthy(rt.fv(f, "wear_suit", live(H))) && truthy(rt.bitAnd(rt.gv(f, "flags_inv", rt.fv(f, "wear_suit", live(H))), 4))))) {
-			(bodyparts_to_add = rt.modify(live(bodyparts_to_add), "spines", subtract));
+	if (rt.isIn(f, "spines", this.mutant_bodyparts)) {
+		if (!rt.index(H.dna.features, "spines") || rt.index(H.dna.features, "spines") == "None" || H.wear_suit && rt.bitAnd(H.wear_suit.flags_inv, HIDEJUMPSUIT)) {
+			bodyparts_to_add -= "spines";
 		}
 	}
-	if (truthy((rt.isIn(f, "waggingspines", rt.sv(f, "mutant_bodyparts")) ? 1 : 0))) {
-		if (((!truthy(rt.index(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "spines")) || isEqual(rt.index(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "spines"), "None")) || (truthy(rt.fv(f, "wear_suit", live(H))) && truthy(rt.bitAnd(rt.gv(f, "flags_inv", rt.fv(f, "wear_suit", live(H))), 4))))) {
-			(bodyparts_to_add = rt.modify(live(bodyparts_to_add), "waggingspines", subtract));
-		} else {
-			if (truthy((rt.isIn(f, "tail", rt.sv(f, "mutant_bodyparts")) ? 1 : 0))) {
-				(bodyparts_to_add = rt.modify(live(bodyparts_to_add), "waggingspines", subtract));
-			}
+	if (rt.isIn(f, "waggingspines", this.mutant_bodyparts)) {
+		if (!rt.index(H.dna.features, "spines") || rt.index(H.dna.features, "spines") == "None" || H.wear_suit && rt.bitAnd(H.wear_suit.flags_inv, HIDEJUMPSUIT)) {
+			bodyparts_to_add -= "waggingspines";
+		} else if (rt.isIn(f, "tail", this.mutant_bodyparts)) {
+			bodyparts_to_add -= "waggingspines";
 		}
 	}
-	if (truthy((rt.isIn(f, "snout", rt.sv(f, "mutant_bodyparts")) ? 1 : 0))) {
-		if (((((truthy(rt.fv(f, "wear_mask", live(H))) && truthy(rt.bitAnd(rt.gv(f, "flags_inv", rt.fv(f, "wear_mask", live(H))), 128))) || (truthy(rt.fv(f, "head", live(H))) && truthy(rt.bitAnd(rt.gv(f, "flags_inv", rt.fv(f, "head", live(H))), 128)))) || !truthy(live(HD))) || isEqual(rt.fv(f, "status", live(HD)), 2))) {
-			(bodyparts_to_add = rt.modify(live(bodyparts_to_add), "snout", subtract));
+	if (rt.isIn(f, "snout", this.mutant_bodyparts)) {
+		if (H.wear_mask && rt.bitAnd(H.wear_mask.flags_inv, HIDEFACE) || H.head && rt.bitAnd(H.head.flags_inv, HIDEFACE) || !HD || HD.status == BODYPART_ROBOTIC) {
+			bodyparts_to_add -= "snout";
 		}
 	}
-	if (truthy((rt.isIn(f, "frills", rt.sv(f, "mutant_bodyparts")) ? 1 : 0))) {
-		if (((((!truthy(rt.index(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "frills")) || isEqual(rt.index(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "frills"), "None")) || (truthy(rt.fv(f, "head", live(H))) && truthy(rt.bitAnd(rt.gv(f, "flags_inv", rt.fv(f, "head", live(H))), 32)))) || !truthy(live(HD))) || isEqual(rt.fv(f, "status", live(HD)), 2))) {
-			(bodyparts_to_add = rt.modify(live(bodyparts_to_add), "frills", subtract));
+	if (rt.isIn(f, "frills", this.mutant_bodyparts)) {
+		if (!rt.index(H.dna.features, "frills") || rt.index(H.dna.features, "frills") == "None" || H.head && rt.bitAnd(H.head.flags_inv, HIDEEARS) || !HD || HD.status == BODYPART_ROBOTIC) {
+			bodyparts_to_add -= "frills";
 		}
 	}
-	if (truthy((rt.isIn(f, "horns", rt.sv(f, "mutant_bodyparts")) ? 1 : 0))) {
-		if ((((((!truthy(rt.index(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "horns")) || isEqual(rt.index(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "horns"), "None")) || (truthy(rt.fv(f, "head", live(H))) && truthy(rt.bitAnd(rt.gv(f, "flags_inv", rt.fv(f, "head", live(H))), 256)))) || (truthy(rt.fv(f, "wear_mask", live(H))) && truthy(rt.bitAnd(rt.gv(f, "flags_inv", rt.fv(f, "wear_mask", live(H))), 256)))) || !truthy(live(HD))) || isEqual(rt.fv(f, "status", live(HD)), 2))) {
-			(bodyparts_to_add = rt.modify(live(bodyparts_to_add), "horns", subtract));
+	if (rt.isIn(f, "horns", this.mutant_bodyparts)) {
+		if (!rt.index(H.dna.features, "horns") || rt.index(H.dna.features, "horns") == "None" || H.head && rt.bitAnd(H.head.flags_inv, HIDEHAIR) || H.wear_mask && rt.bitAnd(H.wear_mask.flags_inv, HIDEHAIR) || !HD || HD.status == BODYPART_ROBOTIC) {
+			bodyparts_to_add -= "horns";
 		}
 	}
-	if (truthy((rt.isIn(f, "ears", rt.sv(f, "mutant_bodyparts")) ? 1 : 0))) {
-		if ((((((!truthy(rt.index(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "ears")) || isEqual(rt.index(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "ears"), "None")) || (truthy(rt.fv(f, "head", live(H))) && truthy(rt.bitAnd(rt.gv(f, "flags_inv", rt.fv(f, "head", live(H))), 256)))) || (truthy(rt.fv(f, "wear_mask", live(H))) && truthy(rt.bitAnd(rt.gv(f, "flags_inv", rt.fv(f, "wear_mask", live(H))), 256)))) || !truthy(live(HD))) || isEqual(rt.fv(f, "status", live(HD)), 2))) {
-			(bodyparts_to_add = rt.modify(live(bodyparts_to_add), "ears", subtract));
+	if (rt.isIn(f, "ears", this.mutant_bodyparts)) {
+		if (!rt.index(H.dna.features, "ears") || rt.index(H.dna.features, "ears") == "None" || H.head && rt.bitAnd(H.head.flags_inv, HIDEHAIR) || H.wear_mask && rt.bitAnd(H.wear_mask.flags_inv, HIDEHAIR) || !HD || HD.status == BODYPART_ROBOTIC) {
+			bodyparts_to_add -= "ears";
 		}
 	}
-	if (truthy((rt.isIn(f, "wings", rt.sv(f, "mutant_bodyparts")) ? 1 : 0))) {
-		if (((!truthy(rt.index(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "wings")) || isEqual(rt.index(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "wings"), "None")) || ((truthy(rt.fv(f, "wear_suit", live(H))) && truthy(rt.bitAnd(rt.gv(f, "flags_inv", rt.fv(f, "wear_suit", live(H))), 4))) && (!truthy(rt.gv(f, "species_exception", rt.fv(f, "wear_suit", live(H)))) || !truthy((yield* g.call(f, P("/proc/is_type_in_list"), null, [live(f.src), rt.gv(f, "species_exception", rt.fv(f, "wear_suit", live(H)))]))))))) {
-			(bodyparts_to_add = rt.modify(live(bodyparts_to_add), "wings", subtract));
+	if (rt.isIn(f, "wings", this.mutant_bodyparts)) {
+		if (!rt.index(H.dna.features, "wings") || rt.index(H.dna.features, "wings") == "None" || H.wear_suit && rt.bitAnd(H.wear_suit.flags_inv, HIDEJUMPSUIT) && (!H.wear_suit.species_exception || !is_type_in_list(this, H.wear_suit.species_exception))) {
+			bodyparts_to_add -= "wings";
 		}
 	}
-	if (truthy((rt.isIn(f, "wings_open", rt.sv(f, "mutant_bodyparts")) ? 1 : 0))) {
-		if (((truthy(rt.fv(f, "wear_suit", live(H))) && truthy(rt.bitAnd(rt.gv(f, "flags_inv", rt.fv(f, "wear_suit", live(H))), 4))) && (!truthy(rt.gv(f, "species_exception", rt.fv(f, "wear_suit", live(H)))) || !truthy((yield* g.call(f, P("/proc/is_type_in_list"), null, [live(f.src), rt.gv(f, "species_exception", rt.fv(f, "wear_suit", live(H)))])))))) {
-			(bodyparts_to_add = rt.modify(live(bodyparts_to_add), "wings_open", subtract));
-		} else {
-			if (truthy((rt.isIn(f, "wings", rt.sv(f, "mutant_bodyparts")) ? 1 : 0))) {
-				(bodyparts_to_add = rt.modify(live(bodyparts_to_add), "wings_open", subtract));
-			}
+	if (rt.isIn(f, "wings_open", this.mutant_bodyparts)) {
+		if (H.wear_suit && rt.bitAnd(H.wear_suit.flags_inv, HIDEJUMPSUIT) && (!H.wear_suit.species_exception || !is_type_in_list(this, H.wear_suit.species_exception))) {
+			bodyparts_to_add -= "wings_open";
+		} else if (rt.isIn(f, "wings", this.mutant_bodyparts)) {
+			bodyparts_to_add -= "wings_open";
 		}
 	}
-	update_needed = 0;
-	not_digitigrade = 1;
-	X = null;
-	rt.forList(f, 0, rt.fv(f, "bodyparts", live(H)));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		X = $e;
-		if (!truthy(rt.gv(f, "use_digitigrade", (O = live(X))))) {
+	let update_needed: Value = 0;
+	let not_digitigrade: Value = 1;
+	for (X of each(H.bodyparts)) {
+		if (!(O = X).use_digitigrade) {
 			continue;
 		}
 		not_digitigrade = 0;
-		if (!truthy((rt.isIn(f, 25, rt.sv(f, "species_traits")) ? 1 : 0))) {
-			rt.modSrcVar(f, "species_traits", 25, add);
+		if (!rt.isIn(f, DIGITIGRADE, this.species_traits)) {
+			this.species_traits += DIGITIGRADE;
 		}
 		should_be_squished = 0;
-		if (((truthy(rt.fv(f, "wear_suit", live(H))) && (truthy(rt.bitAnd(rt.gv(f, "flags_inv", rt.fv(f, "wear_suit", live(H))), 4)) || truthy(rt.bitAnd(rt.gv(f, "body_parts_covered", rt.fv(f, "wear_suit", live(H))), 24)))) || (truthy(rt.fv(f, "w_uniform", live(H))) && truthy(rt.bitAnd(rt.gv(f, "body_parts_covered", rt.fv(f, "w_uniform", live(H))), 24))))) {
+		if (H.wear_suit && (rt.bitAnd(H.wear_suit.flags_inv, HIDEJUMPSUIT) || rt.bitAnd(H.wear_suit.body_parts_covered, LEGS)) || H.w_uniform && rt.bitAnd(H.w_uniform.body_parts_covered, LEGS)) {
 			should_be_squished = 1;
 		}
-		if ((isEqual(rt.fv(f, "use_digitigrade", live(O)), 1) && truthy(live(should_be_squished)))) {
-			rt.setFv(f, "use_digitigrade", live(O), 2);
+		if (O.use_digitigrade == 1 && should_be_squished) {
+			O.use_digitigrade = SQUISHED_DIGITIGRADE;
 			update_needed = 1;
-		} else {
-			if ((isEqual(rt.fv(f, "use_digitigrade", live(O)), 2) && !truthy(live(should_be_squished)))) {
-				rt.setFv(f, "use_digitigrade", live(O), 1);
-				update_needed = 1;
-			}
+		} else if (O.use_digitigrade == SQUISHED_DIGITIGRADE && !should_be_squished) {
+			O.use_digitigrade = 1;
+			update_needed = 1;
 		}
 	}
-	rt.endFor(f, 0);
-	if (truthy(live(update_needed))) {
-		yield* g.callName(f, live(H), "update_body_parts", []);
+	if (update_needed) {
+		yield* H.update_body_parts();
 	}
-	if ((truthy(live(not_digitigrade)) && truthy((rt.isIn(f, 25, rt.sv(f, "species_traits")) ? 1 : 0)))) {
-		(rt.modSrcVar(f, "species_traits", 25, subtract));
+	if (not_digitigrade && rt.isIn(f, DIGITIGRADE, this.species_traits)) {
+		this.species_traits -= DIGITIGRADE;
 	}
-	if (!truthy(live(bodyparts_to_add))) {
-		return live(f.dot);
+	if (!bodyparts_to_add) {
+		return f.dot;
 	}
-	if (isEqual(rt.fv(f, "gender", live(H)), "female")) {
-		$0 = "f";
-	} else {
-		$0 = "m";
-	}
-	_g = $0;
-	layer = null;
-	rt.forList(f, 0, live(relevent_layers));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		layer = $e;
-		layertext = (yield* g.srcCall(f, "mutant_bodyparts_layertext", live(layer)));
+	let _g: Value = H.gender == "female" ? "f" : "m";
+	for (layer of each(relevent_layers)) {
+		layertext = this.mutant_bodyparts_layertext(layer);
 		bodypart = null;
-		rt.forList(f, 1, live(bodyparts_to_add));
-		while (($e = rt.next(f, 1)) !== undefined) {
-			bodypart = $e;
+		for (bodypart of each(bodyparts_to_add)) {
 			S = null;
-			$0 = live(bodypart);
-			if ($0 === "tail_lizard") {
-				S = rt.index(rt.gl("tails_list_lizard"), rt.index(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "tail_lizard"));
-			} else if ($0 === "waggingtail_lizard") {
-				S = rt.index(rt.gl("animated_tails_list_lizard"), rt.index(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "tail_lizard"));
-			} else if ($0 === "tail_human") {
-				S = rt.index(rt.gl("tails_list_human"), rt.index(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "tail_human"));
-			} else if ($0 === "waggingtail_human") {
-				S = rt.index(rt.gl("animated_tails_list_human"), rt.index(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "tail_human"));
-			} else if ($0 === "spines") {
-				S = rt.index(rt.gl("spines_list"), rt.index(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "spines"));
-			} else if ($0 === "waggingspines") {
-				S = rt.index(rt.gl("animated_spines_list"), rt.index(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "spines"));
-			} else if ($0 === "snout") {
-				S = rt.index(rt.gl("snouts_list"), rt.index(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "snout"));
-			} else if ($0 === "frills") {
-				S = rt.index(rt.gl("frills_list"), rt.index(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "frills"));
-			} else if ($0 === "horns") {
-				S = rt.index(rt.gl("horns_list"), rt.index(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "horns"));
-			} else if ($0 === "ears") {
-				S = rt.index(rt.gl("ears_list"), rt.index(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "ears"));
-			} else if ($0 === "body_markings") {
-				S = rt.index(rt.gl("body_markings_list"), rt.index(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "body_markings"));
-			} else if ($0 === "wings") {
-				S = rt.index(rt.gl("wings_list"), rt.index(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "wings"));
-			} else if ($0 === "wingsopen") {
-				S = rt.index(rt.gl("wings_open_list"), rt.index(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "wings"));
-			} else if ($0 === "legs") {
-				S = rt.index(rt.gl("legs_list"), rt.index(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "legs"));
+			if (bodypart === "tail_lizard") {
+				S = rt.index(GLOB.tails_list_lizard, rt.index(H.dna.features, "tail_lizard"));
+			} else if (bodypart === "waggingtail_lizard") {
+				S = rt.index(GLOB.animated_tails_list_lizard, rt.index(H.dna.features, "tail_lizard"));
+			} else if (bodypart === "tail_human") {
+				S = rt.index(GLOB.tails_list_human, rt.index(H.dna.features, "tail_human"));
+			} else if (bodypart === "waggingtail_human") {
+				S = rt.index(GLOB.animated_tails_list_human, rt.index(H.dna.features, "tail_human"));
+			} else if (bodypart === "spines") {
+				S = rt.index(GLOB.spines_list, rt.index(H.dna.features, "spines"));
+			} else if (bodypart === "waggingspines") {
+				S = rt.index(GLOB.animated_spines_list, rt.index(H.dna.features, "spines"));
+			} else if (bodypart === "snout") {
+				S = rt.index(GLOB.snouts_list, rt.index(H.dna.features, "snout"));
+			} else if (bodypart === "frills") {
+				S = rt.index(GLOB.frills_list, rt.index(H.dna.features, "frills"));
+			} else if (bodypart === "horns") {
+				S = rt.index(GLOB.horns_list, rt.index(H.dna.features, "horns"));
+			} else if (bodypart === "ears") {
+				S = rt.index(GLOB.ears_list, rt.index(H.dna.features, "ears"));
+			} else if (bodypart === "body_markings") {
+				S = rt.index(GLOB.body_markings_list, rt.index(H.dna.features, "body_markings"));
+			} else if (bodypart === "wings") {
+				S = rt.index(GLOB.wings_list, rt.index(H.dna.features, "wings"));
+			} else if (bodypart === "wingsopen") {
+				S = rt.index(GLOB.wings_open_list, rt.index(H.dna.features, "wings"));
+			} else if (bodypart === "legs") {
+				S = rt.index(GLOB.legs_list, rt.index(H.dna.features, "legs"));
 			}
-			if ((!truthy(live(S)) || isEqual(rt.fv(f, "icon_state", live(S)), "none"))) {
+			if (!S || S.icon_state == "none") {
 				continue;
 			}
-			accessory_overlay = (yield* g.call(f, P("/proc/mutable_appearance"), null, [null, rt.fv(f, "icon", live(S)), "layer", rt.neg(live(layer))], rt.Args.Named));
-			if ((isEqual(live(bodypart), "tail_lizard") || isEqual(live(bodypart), "tail_human"))) {
+			accessory_overlay = (yield* mutable_appearance(S.icon, { layer: -layer }));
+			if (bodypart == "tail_lizard" || bodypart == "tail_human") {
 				bodypart = "tail";
+			} else if (bodypart == "waggingtail_lizard" || bodypart == "waggingtail_human") {
+				bodypart = "waggingtail";
+			}
+			if (S.gender_specific) {
+				accessory_overlay.icon_state = `${_g}_${bodypart}_${S.icon_state}_${layertext}`;
 			} else {
-				if ((isEqual(live(bodypart), "waggingtail_lizard") || isEqual(live(bodypart), "waggingtail_human"))) {
-					bodypart = "waggingtail";
-				}
+				accessory_overlay.icon_state = `m_${bodypart}_${S.icon_state}_${layertext}`;
 			}
-			if (truthy(rt.fv(f, "gender_specific", live(S)))) {
-				rt.setFv(f, "icon_state", live(accessory_overlay), fmt("＀_＀_＀_＀", [live(_g), live(bodypart), rt.fv(f, "icon_state", live(S)), live(layertext)]));
-			} else {
-				rt.setFv(f, "icon_state", live(accessory_overlay), fmt("m_＀_＀_＀", [live(bodypart), rt.fv(f, "icon_state", live(S)), live(layertext)]));
+			if (S.center) {
+				accessory_overlay = center_image(accessory_overlay, S.dimension_x, S.dimension_y);
 			}
-			if (truthy(rt.fv(f, "center", live(S)))) {
-				accessory_overlay = (yield* g.call(f, P("/proc/center_image"), null, [live(accessory_overlay), rt.fv(f, "dimension_x", live(S)), rt.fv(f, "dimension_y", live(S))]));
-			}
-			if (!truthy(rt.bitAnd(rt.fv(f, "disabilities", live(H)), 64))) {
-				if (!truthy(live(forced_colour))) {
-					$0 = rt.fv(f, "color_src", live(S));
-					if ($0 === 1) {
-						if (truthy(rt.sv(f, "fixed_mut_color"))) {
-							rt.setFv(f, "color", live(accessory_overlay), fmt("#＀", [rt.sv(f, "fixed_mut_color")]));
+			if (!rt.bitAnd(H.disabilities, 64)) {
+				if (!forced_colour) {
+					if (S.color_src === MUTCOLORS) {
+						if (this.fixed_mut_color) {
+							accessory_overlay.color = `#${this.fixed_mut_color}`;
 						} else {
-							rt.setFv(f, "color", live(accessory_overlay), fmt("#＀", [rt.index(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "mcolor")]));
+							accessory_overlay.color = `#${rt.index(H.dna.features, "mcolor")}`;
 						}
-					} else if ($0 === 2) {
-						if (isEqual(rt.sv(f, "hair_color"), "mutcolor")) {
-							rt.setFv(f, "color", live(accessory_overlay), fmt("#＀", [rt.index(rt.gv(f, "features", rt.fv(f, "dna", live(H))), "mcolor")]));
+					} else if (S.color_src === HAIR) {
+						if (this.hair_color == "mutcolor") {
+							accessory_overlay.color = `#${rt.index(H.dna.features, "mcolor")}`;
 						} else {
-							rt.setFv(f, "color", live(accessory_overlay), fmt("#＀", [rt.fv(f, "hair_color", live(H))]));
+							accessory_overlay.color = `#${H.hair_color}`;
 						}
-					} else if ($0 === 3) {
-						rt.setFv(f, "color", live(accessory_overlay), fmt("#＀", [rt.fv(f, "facial_hair_color", live(H))]));
-					} else if ($0 === 4) {
-						rt.setFv(f, "color", live(accessory_overlay), fmt("#＀", [rt.fv(f, "eye_color", live(H))]));
+					} else if (S.color_src === FACEHAIR) {
+						accessory_overlay.color = `#${H.facial_hair_color}`;
+					} else if (S.color_src === EYECOLOR) {
+						accessory_overlay.color = `#${H.eye_color}`;
 					}
 				} else {
-					rt.setFv(f, "color", live(accessory_overlay), live(forced_colour));
+					accessory_overlay.color = forced_colour;
 				}
 			}
-			standing = rt.modify(live(standing), live(accessory_overlay), add);
-			if (truthy(rt.fv(f, "hasinner", live(S)))) {
-				inner_accessory_overlay = (yield* g.call(f, P("/proc/mutable_appearance"), null, [null, rt.fv(f, "icon", live(S)), "layer", rt.neg(live(layer))], rt.Args.Named));
-				if (truthy(rt.fv(f, "gender_specific", live(S)))) {
-					rt.setFv(f, "icon_state", live(inner_accessory_overlay), fmt("＀_＀inner_＀_＀", [live(_g), live(bodypart), rt.fv(f, "icon_state", live(S)), live(layertext)]));
+			standing += accessory_overlay;
+			if (S.hasinner) {
+				inner_accessory_overlay = (yield* mutable_appearance(S.icon, { layer: -layer }));
+				if (S.gender_specific) {
+					inner_accessory_overlay.icon_state = `${_g}_${bodypart}inner_${S.icon_state}_${layertext}`;
 				} else {
-					rt.setFv(f, "icon_state", live(inner_accessory_overlay), fmt("m_＀inner_＀_＀", [live(bodypart), rt.fv(f, "icon_state", live(S)), live(layertext)]));
+					inner_accessory_overlay.icon_state = `m_${bodypart}inner_${S.icon_state}_${layertext}`;
 				}
-				if (truthy(rt.fv(f, "center", live(S)))) {
-					inner_accessory_overlay = (yield* g.call(f, P("/proc/center_image"), null, [live(inner_accessory_overlay), rt.fv(f, "dimension_x", live(S)), rt.fv(f, "dimension_y", live(S))]));
+				if (S.center) {
+					inner_accessory_overlay = center_image(inner_accessory_overlay, S.dimension_x, S.dimension_y);
 				}
-				standing = rt.modify(live(standing), live(inner_accessory_overlay), add);
+				standing += inner_accessory_overlay;
 			}
 		}
-		rt.endFor(f, 1);
-		rt.setAt(rt.fv(f, "overlays_standing", live(H)), live(layer), (yield* g.callName(f, live(standing), "Copy", [])));
-		standing = rt.list();
+		rt.setAt(H.overlays_standing, layer, (yield* standing.Copy()));
+		standing = list();
 	}
-	rt.endFor(f, 0);
-	yield* g.callName(f, live(H), "apply_overlay", [25]);
-	yield* g.callName(f, live(H), "apply_overlay", [23]);
-	yield* g.callName(f, live(H), "apply_overlay", [2]);
+	H.apply_overlay(BODY_BEHIND_LAYER);
+	H.apply_overlay(BODY_ADJ_LAYER);
+	H.apply_overlay(BODY_FRONT_LAYER);
 	return f.dot;
 }, true);
 
-// /datum/species/proc/mutant_bodyparts_layertext  (code/modules/mob/living/carbon/human/species.dm:581)
+// species.dm:581
 rt.def("/datum/species/proc/mutant_bodyparts_layertext", function mutant_bodyparts_layertext(f: Frame, layer: Value) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = live(layer);
-	if ($0 === 25) {
+	if (layer === BODY_BEHIND_LAYER) {
 		return "BEHIND";
-	} else if ($0 === 23) {
+	} else if (layer === BODY_ADJ_LAYER) {
 		return "ADJ";
-	} else if ($0 === 2) {
+	} else if (layer === BODY_FRONT_LAYER) {
 		return "FRONT";
 	}
 	return f.dot;
 });
 
-// /datum/species/proc/spec_life  (code/modules/mob/living/carbon/human/species.dm:591)  may sleep
+// species.dm:591
 rt.def("/datum/species/proc/spec_life", function* spec_life(f: Frame, H: Value) {
-	let takes_crit_damage: Value = null;
-	f.vars = () => [H, takes_crit_damage];
-	if (!truthy((rt.isIn(f, 10, rt.sv(f, "species_traits")) ? 1 : 0))) return f.dot;
-	yield* g.callName(f, live(H), "setOxyLoss", [0]);
-	rt.setFv(f, "losebreath", live(H), 0);
-	takes_crit_damage = (!truthy((rt.isIn(f, 20, rt.sv(f, "species_traits")) ? 1 : 0)) ? 1 : 0);
-	if (!(rt.lt(rt.fv(f, "health", live(H)), 0) && truthy(live(takes_crit_damage)))) return f.dot;
-	yield* g.callName(f, live(H), "adjustBruteLoss", [1]);
+	if (!rt.isIn(f, NOBREATH, this.species_traits)) return f.dot;
+	yield* H.setOxyLoss(0);
+	H.losebreath = 0;
+	let takes_crit_damage: Value = (!rt.isIn(f, NOCRITDAMAGE, this.species_traits) ? 1 : 0);
+	if (!(H.health < 0 && takes_crit_damage)) return f.dot;
+	yield* H.adjustBruteLoss(1);
 	return f.dot;
 }, true);
 
-// /datum/species/proc/can_equip  (code/modules/mob/living/carbon/human/species.dm:607)  may sleep
+// species.dm:607
 rt.def("/datum/species/proc/can_equip", function* can_equip(f: Frame, I: Value, slot: Value, disable_warning: Value, H: Value, bypass_equip_delay_self: Value) {
-	let num_arms: Value = null, num_legs: Value = null, O: Value = null, B: Value = null;
-	let $0: any;
-	f.vars = () => [I, slot, disable_warning, H, bypass_equip_delay_self, num_arms, num_legs, O, B, $0];
-	if (live(bypass_equip_delay_self) === null) {
-		bypass_equip_delay_self = 0;
-	}
-	if (truthy((rt.isIn(f, live(slot), rt.sv(f, "no_equip")) ? 1 : 0))) {
-		if ((!truthy(rt.fv(f, "species_exception", live(I))) || !truthy((yield* g.call(f, P("/proc/is_type_in_list"), null, [live(f.src), rt.fv(f, "species_exception", live(I))]))))) {
+	let O: Value = null, B: Value = null;
+	bypass_equip_delay_self ??= 0;
+	if (rt.isIn(f, slot, this.no_equip)) {
+		if (!I.species_exception || !is_type_in_list(this, I.species_exception)) {
 			return 0;
 		}
 	}
-	num_arms = (yield* g.callName(f, live(H), "get_num_arms", []));
-	num_legs = (yield* g.callName(f, live(H), "get_num_legs", []));
-	$0 = live(slot);
-	if ($0 === 4) {
-		if (truthy((yield* g.callName(f, live(H), "get_empty_held_indexes", [])))) {
+	let num_arms: Value = H.get_num_arms();
+	let num_legs: Value = H.get_num_legs();
+	if (slot === slot_hands) {
+		if (H.get_empty_held_indexes()) {
 			return 1;
 		}
 		return 0;
-	} else if ($0 === 2) {
-		if (truthy(rt.fv(f, "wear_mask", live(H)))) {
+	} else if (slot === slot_wear_mask) {
+		if (H.wear_mask) {
 			return 0;
 		}
-		if (!truthy(rt.bitAnd(rt.fv(f, "slot_flags", live(I)), 32))) {
+		if (!rt.bitAnd(I.slot_flags, SLOT_MASK)) {
 			return 0;
 		}
-		if (!truthy((yield* g.callName(f, live(H), "get_bodypart", ["head"])))) {
+		if (!H.get_bodypart("head")) {
 			return 0;
 		}
-		return (yield* g.srcCall(f, "equip_delay_self_check", live(I), live(H), live(bypass_equip_delay_self)));
-	} else if ($0 === 10) {
-		if (truthy(rt.fv(f, "wear_neck", live(H)))) {
+		return (yield* this.equip_delay_self_check(I, H, bypass_equip_delay_self));
+	} else if (slot === slot_neck) {
+		if (H.wear_neck) {
 			return 0;
 		}
-		if (!truthy(rt.bitAnd(rt.fv(f, "slot_flags", live(I)), 8192))) {
+		if (!rt.bitAnd(I.slot_flags, SLOT_NECK)) {
 			return 0;
 		}
-		return 1;
-	} else if ($0 === 1) {
-		if (truthy(rt.fv(f, "back", live(H)))) {
+		return slot_back;
+	} else if (slot === slot_back) {
+		if (H.back) {
 			return 0;
 		}
-		if (!truthy(rt.bitAnd(rt.fv(f, "slot_flags", live(I)), 1024))) {
+		if (!rt.bitAnd(I.slot_flags, SLOT_BACK)) {
 			return 0;
 		}
-		return (yield* g.srcCall(f, "equip_delay_self_check", live(I), live(H), live(bypass_equip_delay_self)));
-	} else if ($0 === 13) {
-		if (truthy(rt.fv(f, "wear_suit", live(H)))) {
+		return (yield* this.equip_delay_self_check(I, H, bypass_equip_delay_self));
+	} else if (slot === slot_wear_suit) {
+		if (H.wear_suit) {
 			return 0;
 		}
-		if (!truthy(rt.bitAnd(rt.fv(f, "slot_flags", live(I)), 1))) {
+		if (!rt.bitAnd(I.slot_flags, SLOT_OCLOTHING)) {
 			return 0;
 		}
-		return (yield* g.srcCall(f, "equip_delay_self_check", live(I), live(H), live(bypass_equip_delay_self)));
-	} else if ($0 === 9) {
-		if (truthy(rt.fv(f, "gloves", live(H)))) {
+		return (yield* this.equip_delay_self_check(I, H, bypass_equip_delay_self));
+	} else if (slot === slot_gloves) {
+		if (H.gloves) {
 			return 0;
 		}
-		if (!truthy(rt.bitAnd(rt.fv(f, "slot_flags", live(I)), 4))) {
+		if (!rt.bitAnd(I.slot_flags, SLOT_GLOVES)) {
 			return 0;
 		}
-		if (rt.lt(live(num_arms), 2)) {
+		if (num_arms < 2) {
 			return 0;
 		}
-		return (yield* g.srcCall(f, "equip_delay_self_check", live(I), live(H), live(bypass_equip_delay_self)));
-	} else if ($0 === 12) {
-		if (truthy(rt.fv(f, "shoes", live(H)))) {
+		return (yield* this.equip_delay_self_check(I, H, bypass_equip_delay_self));
+	} else if (slot === slot_shoes) {
+		if (H.shoes) {
 			return 0;
 		}
-		if (!truthy(rt.bitAnd(rt.fv(f, "slot_flags", live(I)), 128))) {
+		if (!rt.bitAnd(I.slot_flags, SLOT_FEET)) {
 			return 0;
 		}
-		if (rt.lt(live(num_legs), 2)) {
+		if (num_legs < 2) {
 			return 0;
 		}
-		if (truthy((rt.isIn(f, 25, rt.sv(f, "species_traits")) ? 1 : 0))) {
-			if (!truthy(live(disable_warning))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(H), "<span class='warning'>The footwear around here isn't compatible with your feet!</span>"]);
+		if (rt.isIn(f, DIGITIGRADE, this.species_traits)) {
+			if (!disable_warning) {
+				to_chat(H, "<span class='warning'>The footwear around here isn't compatible with your feet!</span>");
 			}
 			return 0;
 		}
-		return (yield* g.srcCall(f, "equip_delay_self_check", live(I), live(H), live(bypass_equip_delay_self)));
-	} else if ($0 === 5) {
-		if (truthy(rt.fv(f, "belt", live(H)))) {
+		return (yield* this.equip_delay_self_check(I, H, bypass_equip_delay_self));
+	} else if (slot === slot_belt) {
+		if (H.belt) {
 			return 0;
 		}
-		O = (yield* g.callName(f, live(H), "get_bodypart", ["chest"]));
-		if (((!truthy(rt.fv(f, "w_uniform", live(H))) && !truthy(rt.sv(f, "nojumpsuit"))) && (!truthy(live(O)) || !isEqual(rt.fv(f, "status", live(O)), 2)))) {
-			if (!truthy(live(disable_warning))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(H), fmt("<span class='warning'>You need a jumpsuit before you can attach this ＀!</span>", [rt.fv(f, "name", live(I))])]);
+		O = H.get_bodypart("chest");
+		if (!H.w_uniform && !this.nojumpsuit && (!O || O.status != BODYPART_ROBOTIC)) {
+			if (!disable_warning) {
+				to_chat(H, `<span class='warning'>You need a jumpsuit before you can attach this ${I.name}!</span>`);
 			}
 			return 0;
 		}
-		if (!truthy(rt.bitAnd(rt.fv(f, "slot_flags", live(I)), 512))) {
-			return live(f.dot);
+		if (!rt.bitAnd(I.slot_flags, SLOT_BELT)) {
+			return f.dot;
 		}
-		return (yield* g.srcCall(f, "equip_delay_self_check", live(I), live(H), live(bypass_equip_delay_self)));
-	} else if ($0 === 8) {
-		if (truthy(rt.fv(f, "glasses", live(H)))) {
+		return (yield* this.equip_delay_self_check(I, H, bypass_equip_delay_self));
+	} else if (slot === slot_glasses) {
+		if (H.glasses) {
 			return 0;
 		}
-		if (!truthy(rt.bitAnd(rt.fv(f, "slot_flags", live(I)), 8))) {
+		if (!rt.bitAnd(I.slot_flags, SLOT_EYES)) {
 			return 0;
 		}
-		if (!truthy((yield* g.callName(f, live(H), "get_bodypart", ["head"])))) {
+		if (!H.get_bodypart("head")) {
 			return 0;
 		}
-		return (yield* g.srcCall(f, "equip_delay_self_check", live(I), live(H), live(bypass_equip_delay_self)));
-	} else if ($0 === 11) {
-		if (truthy(rt.fv(f, "head", live(H)))) {
+		return (yield* this.equip_delay_self_check(I, H, bypass_equip_delay_self));
+	} else if (slot === slot_head) {
+		if (H.head) {
 			return 0;
 		}
-		if (!truthy(rt.bitAnd(rt.fv(f, "slot_flags", live(I)), 64))) {
+		if (!rt.bitAnd(I.slot_flags, SLOT_HEAD)) {
 			return 0;
 		}
-		if (!truthy((yield* g.callName(f, live(H), "get_bodypart", ["head"])))) {
+		if (!H.get_bodypart("head")) {
 			return 0;
 		}
-		return (yield* g.srcCall(f, "equip_delay_self_check", live(I), live(H), live(bypass_equip_delay_self)));
-	} else if ($0 === 7) {
-		if (truthy(rt.fv(f, "ears", live(H)))) {
+		return (yield* this.equip_delay_self_check(I, H, bypass_equip_delay_self));
+	} else if (slot === slot_ears) {
+		if (H.ears) {
 			return 0;
 		}
-		if (!truthy(rt.bitAnd(rt.fv(f, "slot_flags", live(I)), 16))) {
+		if (!rt.bitAnd(I.slot_flags, SLOT_EARS)) {
 			return 0;
 		}
-		if (!truthy((yield* g.callName(f, live(H), "get_bodypart", ["head"])))) {
+		if (!H.get_bodypart("head")) {
 			return 0;
 		}
-		return (yield* g.srcCall(f, "equip_delay_self_check", live(I), live(H), live(bypass_equip_delay_self)));
-	} else if ($0 === 14) {
-		if (truthy(rt.fv(f, "w_uniform", live(H)))) {
+		return (yield* this.equip_delay_self_check(I, H, bypass_equip_delay_self));
+	} else if (slot === slot_w_uniform) {
+		if (H.w_uniform) {
 			return 0;
 		}
-		if (!truthy(rt.bitAnd(rt.fv(f, "slot_flags", live(I)), 2))) {
+		if (!rt.bitAnd(I.slot_flags, SLOT_ICLOTHING)) {
 			return 0;
 		}
-		return (yield* g.srcCall(f, "equip_delay_self_check", live(I), live(H), live(bypass_equip_delay_self)));
-	} else if ($0 === 6) {
-		if (truthy(rt.fv(f, "wear_id", live(H)))) {
+		return (yield* this.equip_delay_self_check(I, H, bypass_equip_delay_self));
+	} else if (slot === slot_wear_id) {
+		if (H.wear_id) {
 			return 0;
 		}
-		O = (yield* g.callName(f, live(H), "get_bodypart", ["chest"]));
-		if (((!truthy(rt.fv(f, "w_uniform", live(H))) && !truthy(rt.sv(f, "nojumpsuit"))) && (!truthy(live(O)) || !isEqual(rt.fv(f, "status", live(O)), 2)))) {
-			if (!truthy(live(disable_warning))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(H), fmt("<span class='warning'>You need a jumpsuit before you can attach this ＀!</span>", [rt.fv(f, "name", live(I))])]);
+		O = H.get_bodypart("chest");
+		if (!H.w_uniform && !this.nojumpsuit && (!O || O.status != BODYPART_ROBOTIC)) {
+			if (!disable_warning) {
+				to_chat(H, `<span class='warning'>You need a jumpsuit before you can attach this ${I.name}!</span>`);
 			}
 			return 0;
 		}
-		if (!truthy(rt.bitAnd(rt.fv(f, "slot_flags", live(I)), 256))) {
+		if (!rt.bitAnd(I.slot_flags, SLOT_ID)) {
 			return 0;
 		}
-		return (yield* g.srcCall(f, "equip_delay_self_check", live(I), live(H), live(bypass_equip_delay_self)));
-	} else if ($0 === 15) {
-		if (truthy(rt.bitAnd(rt.fv(f, "flags", live(I)), 2))) {
+		return (yield* this.equip_delay_self_check(I, H, bypass_equip_delay_self));
+	} else if (slot === slot_l_store) {
+		if (rt.bitAnd(I.flags, NODROP)) {
 			return 0;
 		}
-		if (truthy(rt.fv(f, "l_store", live(H)))) {
+		if (H.l_store) {
 			return 0;
 		}
-		O = (yield* g.callName(f, live(H), "get_bodypart", ["l_leg"]));
-		if (((!truthy(rt.fv(f, "w_uniform", live(H))) && !truthy(rt.sv(f, "nojumpsuit"))) && (!truthy(live(O)) || !isEqual(rt.fv(f, "status", live(O)), 2)))) {
-			if (!truthy(live(disable_warning))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(H), fmt("<span class='warning'>You need a jumpsuit before you can attach this ＀!</span>", [rt.fv(f, "name", live(I))])]);
+		O = H.get_bodypart("l_leg");
+		if (!H.w_uniform && !this.nojumpsuit && (!O || O.status != BODYPART_ROBOTIC)) {
+			if (!disable_warning) {
+				to_chat(H, `<span class='warning'>You need a jumpsuit before you can attach this ${I.name}!</span>`);
 			}
 			return 0;
 		}
-		if (truthy(rt.bitAnd(rt.fv(f, "slot_flags", live(I)), 4096))) {
-			return live(f.dot);
+		if (rt.bitAnd(I.slot_flags, SLOT_DENYPOCKET)) {
+			return f.dot;
 		}
-		if ((rt.le(rt.fv(f, "w_class", live(I)), 2) || truthy(rt.bitAnd(rt.fv(f, "slot_flags", live(I)), 2048)))) {
+		if (I.w_class <= WEIGHT_CLASS_SMALL || rt.bitAnd(I.slot_flags, SLOT_POCKET)) {
 			return 1;
 		}
-	} else if ($0 === 16) {
-		if (truthy(rt.bitAnd(rt.fv(f, "flags", live(I)), 2))) {
+	} else if (slot === slot_r_store) {
+		if (rt.bitAnd(I.flags, NODROP)) {
 			return 0;
 		}
-		if (truthy(rt.fv(f, "r_store", live(H)))) {
+		if (H.r_store) {
 			return 0;
 		}
-		O = (yield* g.callName(f, live(H), "get_bodypart", ["r_leg"]));
-		if (((!truthy(rt.fv(f, "w_uniform", live(H))) && !truthy(rt.sv(f, "nojumpsuit"))) && (!truthy(live(O)) || !isEqual(rt.fv(f, "status", live(O)), 2)))) {
-			if (!truthy(live(disable_warning))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(H), fmt("<span class='warning'>You need a jumpsuit before you can attach this ＀!</span>", [rt.fv(f, "name", live(I))])]);
+		O = H.get_bodypart("r_leg");
+		if (!H.w_uniform && !this.nojumpsuit && (!O || O.status != BODYPART_ROBOTIC)) {
+			if (!disable_warning) {
+				to_chat(H, `<span class='warning'>You need a jumpsuit before you can attach this ${I.name}!</span>`);
 			}
 			return 0;
 		}
-		if (truthy(rt.bitAnd(rt.fv(f, "slot_flags", live(I)), 4096))) {
+		if (rt.bitAnd(I.slot_flags, SLOT_DENYPOCKET)) {
 			return 0;
 		}
-		if ((rt.le(rt.fv(f, "w_class", live(I)), 2) || truthy(rt.bitAnd(rt.fv(f, "slot_flags", live(I)), 2048)))) {
-			return 1;
-		}
-		return 0;
-	} else if ($0 === 17) {
-		if (truthy(rt.bitAnd(rt.fv(f, "flags", live(I)), 2))) {
-			return 0;
-		}
-		if (truthy(rt.fv(f, "s_store", live(H)))) {
-			return 0;
-		}
-		if (!truthy(rt.fv(f, "wear_suit", live(H)))) {
-			if (!truthy(live(disable_warning))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(H), fmt("<span class='warning'>You need a suit before you can attach this ＀!</span>", [rt.fv(f, "name", live(I))])]);
-			}
-			return 0;
-		}
-		if (!truthy(rt.gv(f, "allowed", rt.fv(f, "wear_suit", live(H))))) {
-			if (!truthy(live(disable_warning))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(H), "You somehow have a suit with no defined allowed items for suit storage, stop that."]);
-			}
-			return 0;
-		}
-		if (rt.gt(rt.fv(f, "w_class", live(I)), 4)) {
-			if (!truthy(live(disable_warning))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(H), fmt("The ＀ is too big to attach.", [rt.fv(f, "name", live(I))])]);
-			}
-			return 0;
-		}
-		if (((truthy((rt.istype(live(I), T("/obj/item/device/pda")) ? 1 : 0)) || truthy((rt.istype(live(I), T("/obj/item/weapon/pen")) ? 1 : 0))) || truthy((yield* g.call(f, P("/proc/is_type_in_list"), null, [live(I), rt.gv(f, "allowed", rt.fv(f, "wear_suit", live(H)))]))))) {
+		if (I.w_class <= WEIGHT_CLASS_SMALL || rt.bitAnd(I.slot_flags, SLOT_POCKET)) {
 			return 1;
 		}
 		return 0;
-	} else if ($0 === 3) {
-		if (truthy(rt.fv(f, "handcuffed", live(H)))) {
+	} else if (slot === slot_s_store) {
+		if (rt.bitAnd(I.flags, NODROP)) {
 			return 0;
 		}
-		if (!truthy((rt.istype(live(I), T("/obj/item/weapon/restraints/handcuffs")) ? 1 : 0))) {
+		if (H.s_store) {
 			return 0;
 		}
-		if (rt.lt(live(num_arms), 2)) {
+		if (!H.wear_suit) {
+			if (!disable_warning) {
+				to_chat(H, `<span class='warning'>You need a suit before you can attach this ${I.name}!</span>`);
+			}
+			return 0;
+		}
+		if (!H.wear_suit.allowed) {
+			if (!disable_warning) {
+				to_chat(H, "You somehow have a suit with no defined allowed items for suit storage, stop that.");
+			}
+			return 0;
+		}
+		if (I.w_class > WEIGHT_CLASS_BULKY) {
+			if (!disable_warning) {
+				to_chat(H, `The ${I.name} is too big to attach.`);
+			}
+			return 0;
+		}
+		if (rt.istype(I, T("/obj/item/device/pda")) || rt.istype(I, T("/obj/item/weapon/pen")) || is_type_in_list(I, H.wear_suit.allowed)) {
+			return 1;
+		}
+		return 0;
+	} else if (slot === slot_handcuffed) {
+		if (H.handcuffed) {
+			return 0;
+		}
+		if (!rt.istype(I, T("/obj/item/weapon/restraints/handcuffs"))) {
+			return 0;
+		}
+		if (num_arms < 2) {
 			return 0;
 		}
 		return 1;
-	} else if ($0 === 19) {
-		if (truthy(rt.fv(f, "legcuffed", live(H)))) {
+	} else if (slot === slot_legcuffed) {
+		if (H.legcuffed) {
 			return 0;
 		}
-		if (!truthy((rt.istype(live(I), T("/obj/item/weapon/restraints/legcuffs")) ? 1 : 0))) {
+		if (!rt.istype(I, T("/obj/item/weapon/restraints/legcuffs"))) {
 			return 0;
 		}
-		if (rt.lt(live(num_legs), 2)) {
+		if (num_legs < 2) {
 			return 0;
 		}
 		return 1;
-	} else if ($0 === 18) {
-		if ((truthy(rt.fv(f, "back", live(H))) && truthy((rt.istype(rt.fv(f, "back", live(H)), T("/obj/item/weapon/storage")) ? 1 : 0)))) {
-			if (truthy((yield* g.callName(f, (B = rt.fv(f, "back", live(H))), "can_be_inserted", [live(I), 1, live(H)])))) {
+	} else if (slot === slot_in_backpack) {
+		if (H.back && rt.istype(H.back, T("/obj/item/weapon/storage"))) {
+			if ((B = H.back).can_be_inserted(I, 1, H)) {
 				return 1;
 			}
 		}
@@ -951,832 +869,736 @@ rt.def("/datum/species/proc/can_equip", function* can_equip(f: Frame, I: Value, 
 	return 0;
 }, true);
 
-// /datum/species/proc/equip_delay_self_check  (code/modules/mob/living/carbon/human/species.dm:798)  may sleep
+// species.dm:798
 rt.def("/datum/species/proc/equip_delay_self_check", function* equip_delay_self_check(f: Frame, I: Value, H: Value, bypass_equip_delay_self: Value) {
-	f.vars = () => [I, H, bypass_equip_delay_self];
-	if ((!truthy(rt.fv(f, "equip_delay_self", live(I))) || truthy(live(bypass_equip_delay_self)))) {
+	if (!I.equip_delay_self || bypass_equip_delay_self) {
 		return 1;
 	}
-	yield* g.callName(f, live(H), "visible_message", [fmt("<span class='notice'>＀ start putting on ＀...</span>", [live(H), live(I)]), fmt("<span class='notice'>You start putting on ＀...</span>", [live(I)])]);
-	return (yield* g.call(f, P("/proc/do_after"), null, [null, live(H), null, rt.fv(f, "equip_delay_self", live(I)), "target", live(H)], rt.Args.Named));
+	H.visible_message(`<span class='notice'>${H} start putting on ${I}...</span>`, `<span class='notice'>You start putting on ${I}...</span>`);
+	return (yield* do_after(H, I.equip_delay_self, { target: H }));
 }, true);
 
-// /datum/species/proc/after_equip_job  (code/modules/mob/living/carbon/human/species.dm:807)  may sleep
+// species.dm:807
 rt.def("/datum/species/proc/after_equip_job", function* after_equip_job(f: Frame, J: Value, H: Value) {
-	f.vars = () => [J, H];
-	yield* g.callName(f, live(H), "update_mutant_bodyparts", []);
+	yield* H.update_mutant_bodyparts();
 	return f.dot;
 }, true);
 
-// /datum/species/proc/handle_chemicals  (code/modules/mob/living/carbon/human/species.dm:810)  may sleep
+// species.dm:810
 rt.def("/datum/species/proc/handle_chemicals", function* handle_chemicals(f: Frame, chem: Value, H: Value) {
-	f.vars = () => [chem, H];
-	if (isEqual(rt.fv(f, "id", live(chem)), rt.sv(f, "exotic_blood"))) {
-		rt.setFv(f, "blood_volume", live(H), (yield* g.call(f, P("/proc/min"), null, [add(rt.fv(f, "blood_volume", live(H)), (yield* g.call(f, P("/proc/round"), null, [rt.fv(f, "volume", live(chem)), 0.10000000149011612]))), 2000])));
-		yield* g.callName(f, rt.fv(f, "reagents", live(H)), "del_reagent", [rt.fv(f, "id", live(chem))]);
+	if (chem.id == this.exotic_blood) {
+		H.blood_volume = min(H.blood_volume + round(chem.volume, 0.1), BLOOD_VOLUME_MAXIMUM);
+		yield* H.reagents.del_reagent(chem.id);
 		return 1;
 	}
 	return 0;
 }, true);
 
-// /datum/species/proc/get_spans  (code/modules/mob/living/carbon/human/species.dm:821)
+// species.dm:821
 rt.def("/datum/species/proc/get_spans", function get_spans(f: Frame) {
-	return rt.list();
+	return list();
 });
 
-// /datum/species/proc/handle_chemicals_in_body  (code/modules/mob/living/carbon/human/species.dm:833)  may sleep
+// species.dm:833
 rt.def("/datum/species/proc/handle_chemicals_in_body", function* handle_chemicals_in_body(f: Frame, H: Value) {
 	let hunger_rate: Value = null;
-	let $0: any;
-	f.vars = () => [H, hunger_rate, $0];
-	if (truthy(rt.bitAnd(rt.fv(f, "disabilities", live(H)), 32))) {
-		if (rt.lt(rt.fv(f, "overeatduration", live(H)), 100)) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(H), "<span class='notice'>You feel fit again!</span>"]);
-			(rt.modField(f, live(H), "disabilities", 16777183, rt.bitAnd));
-			yield* g.callName(f, live(H), "update_inv_w_uniform", []);
-			yield* g.callName(f, live(H), "update_inv_wear_suit", []);
+	if (rt.bitAnd(H.disabilities, 32)) {
+		if (H.overeatduration < 100) {
+			to_chat(H, "<span class='notice'>You feel fit again!</span>");
+			(rt.modField(f, H, "disabilities", 16777183, rt.bitAnd));
+			yield* H.update_inv_w_uniform();
+			yield* H.update_inv_wear_suit();
 		}
-	} else {
-		if (rt.gt(rt.fv(f, "overeatduration", live(H)), 500)) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(H), "<span class='danger'>You suddenly feel blubbery!</span>"]);
-			(rt.modField(f, live(H), "disabilities", 32, rt.bitOr));
-			yield* g.callName(f, live(H), "update_inv_w_uniform", []);
-			yield* g.callName(f, live(H), "update_inv_wear_suit", []);
-		}
+	} else if (H.overeatduration > 500) {
+		to_chat(H, "<span class='danger'>You suddenly feel blubbery!</span>");
+		(rt.modField(f, H, "disabilities", 32, rt.bitOr));
+		yield* H.update_inv_w_uniform();
+		yield* H.update_inv_wear_suit();
 	}
-	if (((((rt.gt(rt.fv(f, "nutrition", live(H)), 0) && !isEqual(rt.fv(f, "stat", live(H)), 2)) && truthy(rt.fv(f, "dna", live(H)))) && truthy(rt.gv(f, "species", rt.fv(f, "dna", live(H))))) && !truthy((rt.isIn(f, 19, rt.gv(f, "species_traits", rt.gv(f, "species", rt.fv(f, "dna", live(H))))) ? 1 : 0)))) {
-		hunger_rate = 0.10000000149011612;
-		if (rt.gt(rt.fv(f, "satiety", live(H)), 0)) {
-			rt.incField(f, live(H), "satiety", -1, true);
+	if (H.nutrition > 0 && H.stat != 2 && H.dna && H.dna.species && !rt.isIn(f, NOHUNGER, H.dna.species.species_traits)) {
+		hunger_rate = HUNGER_FACTOR;
+		if (H.satiety > 0) {
+			H.satiety--;
 		}
-		if (rt.lt(rt.fv(f, "satiety", live(H)), 0)) {
-			rt.incField(f, live(H), "satiety", 1, true);
-			if (truthy(rt.op(f, "Prob", [], [(yield* g.call(f, P("/proc/round"), null, [divide(rt.neg(rt.fv(f, "satiety", live(H))), 40)]))]))) {
-				yield* g.callName(f, live(H), "Jitter", [5]);
+		if (H.satiety < 0) {
+			H.satiety++;
+			if (prob(round(-H.satiety / 40))) {
+				H.Jitter(5);
 			}
-			hunger_rate = 0.30000001192092896;
+			hunger_rate = 0.3;
 		}
-		rt.setFv(f, "nutrition", live(H), (yield* g.call(f, P("/proc/max"), null, [0, subtract(rt.fv(f, "nutrition", live(H)), live(hunger_rate))])));
+		H.nutrition = max(0, H.nutrition - hunger_rate);
 	}
-	if (rt.gt(rt.fv(f, "nutrition", live(H)), 550)) {
-		if (rt.lt(rt.fv(f, "overeatduration", live(H)), 600)) {
-			rt.incField(f, live(H), "overeatduration", 1, true);
+	if (H.nutrition > NUTRITION_LEVEL_FULL) {
+		if (H.overeatduration < 600) {
+			H.overeatduration++;
 		}
-	} else {
-		if (rt.gt(rt.fv(f, "overeatduration", live(H)), 1)) {
-			(rt.modField(f, live(H), "overeatduration", 2, subtract));
-		}
+	} else if (H.overeatduration > 1) {
+		H.overeatduration -= 2;
 	}
-	if (rt.gt(rt.fv(f, "nutrition", live(H)), 600)) {
-		rt.setFv(f, "metabolism_efficiency", live(H), 1);
-	} else {
-		if ((rt.gt(rt.fv(f, "nutrition", live(H)), 350) && rt.gt(rt.fv(f, "satiety", live(H)), 80))) {
-			if ((!isEqual(rt.fv(f, "metabolism_efficiency", live(H)), 1.25) && ((truthy(rt.fv(f, "dna", live(H))) && truthy(rt.gv(f, "species", rt.fv(f, "dna", live(H))))) && !truthy((rt.isIn(f, 19, rt.gv(f, "species_traits", rt.gv(f, "species", rt.fv(f, "dna", live(H))))) ? 1 : 0))))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(H), "<span class='notice'>You feel vigorous.</span>"]);
-				rt.setFv(f, "metabolism_efficiency", live(H), 1.25);
-			}
-		} else {
-			if (rt.lt(rt.fv(f, "nutrition", live(H)), 200)) {
-				if (!isEqual(rt.fv(f, "metabolism_efficiency", live(H)), 0.800000011920929)) {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(H), "<span class='notice'>You feel sluggish.</span>"]);
-				}
-				rt.setFv(f, "metabolism_efficiency", live(H), 0.800000011920929);
-			} else {
-				if (isEqual(rt.fv(f, "metabolism_efficiency", live(H)), 1.25)) {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(H), "<span class='notice'>You no longer feel vigorous.</span>"]);
-				}
-				rt.setFv(f, "metabolism_efficiency", live(H), 1);
-			}
+	if (H.nutrition > NUTRITION_LEVEL_FAT) {
+		H.metabolism_efficiency = 1;
+	} else if (H.nutrition > NUTRITION_LEVEL_FED && H.satiety > 80) {
+		if (H.metabolism_efficiency != 1.25 && H.dna && H.dna.species && !rt.isIn(f, NOHUNGER, H.dna.species.species_traits)) {
+			to_chat(H, "<span class='notice'>You feel vigorous.</span>");
+			H.metabolism_efficiency = 1.25;
 		}
-	}
-	$0 = rt.fv(f, "nutrition", live(H));
-	if (rt.inRange($0, 550, 9.999999848243207e+30)) {
-		yield* g.callName(f, live(H), "throw_alert", ["nutrition", T("/obj/screen/alert/fat")]);
-	} else if (rt.inRange($0, 250, 550)) {
-		yield* g.callName(f, live(H), "clear_alert", ["nutrition"]);
-	} else if (rt.inRange($0, 150, 250)) {
-		yield* g.callName(f, live(H), "throw_alert", ["nutrition", T("/obj/screen/alert/hungry")]);
+	} else if (H.nutrition < 200) {
+		if (H.metabolism_efficiency != 0.8) {
+			to_chat(H, "<span class='notice'>You feel sluggish.</span>");
+		}
+		H.metabolism_efficiency = 0.8;
 	} else {
-		yield* g.callName(f, live(H), "throw_alert", ["nutrition", T("/obj/screen/alert/starving")]);
+		if (H.metabolism_efficiency == 1.25) {
+			to_chat(H, "<span class='notice'>You no longer feel vigorous.</span>");
+		}
+		H.metabolism_efficiency = 1;
+	}
+	if (rt.inRange(H.nutrition, NUTRITION_LEVEL_FULL, 1e+31)) {
+		yield* H.throw_alert("nutrition", T("/obj/screen/alert/fat"));
+	} else if (rt.inRange(H.nutrition, NUTRITION_LEVEL_HUNGRY, NUTRITION_LEVEL_FULL)) {
+		yield* H.clear_alert("nutrition");
+	} else if (rt.inRange(H.nutrition, NUTRITION_LEVEL_STARVING, NUTRITION_LEVEL_HUNGRY)) {
+		yield* H.throw_alert("nutrition", T("/obj/screen/alert/hungry"));
+	} else {
+		yield* H.throw_alert("nutrition", T("/obj/screen/alert/starving"));
 	}
 	return f.dot;
 }, true);
 
-// /datum/species/proc/handle_mutations_and_radiation  (code/modules/mob/living/carbon/human/species.dm:899)  may sleep
+// species.dm:899
 rt.def("/datum/species/proc/handle_mutations_and_radiation", function* handle_mutations_and_radiation(f: Frame, H: Value) {
-	let $0: any;
-	f.vars = () => [H, $0];
-	if (!truthy((rt.isIn(f, 9, rt.sv(f, "species_traits")) ? 1 : 0))) {
-		if (truthy(rt.fv(f, "radiation", live(H)))) {
-			if (rt.gt(rt.fv(f, "radiation", live(H)), 100)) {
-				if (!truthy((yield* g.callName(f, live(H), "IsKnockdown", [])))) {
-					yield* g.callName(f, live(H), "emote", ["collapse"]);
+	if (!rt.isIn(f, RADIMMUNE, this.species_traits)) {
+		if (H.radiation) {
+			if (H.radiation > 100) {
+				if (!H.IsKnockdown()) {
+					yield* H.emote("collapse");
 				}
-				yield* g.callName(f, live(H), "Knockdown", [200]);
-				yield* g.call(f, P("/proc/to_chat"), null, [live(H), "<span class='danger'>You feel weak.</span>"]);
+				yield* H.Knockdown(200);
+				to_chat(H, "<span class='danger'>You feel weak.</span>");
 			}
-			$0 = rt.fv(f, "radiation", live(H));
-			if (rt.inRange($0, 50, 75)) {
-				if (truthy(rt.op(f, "Prob", [], [5]))) {
-					if (!truthy((yield* g.callName(f, live(H), "IsKnockdown", [])))) {
-						yield* g.callName(f, live(H), "emote", ["collapse"]);
+			if (rt.inRange(H.radiation, 50, 75)) {
+				if (prob(5)) {
+					if (!H.IsKnockdown()) {
+						yield* H.emote("collapse");
 					}
-					yield* g.callName(f, live(H), "Knockdown", [60]);
-					yield* g.call(f, P("/proc/to_chat"), null, [live(H), "<span class='danger'>You feel weak.</span>"]);
+					yield* H.Knockdown(60);
+					to_chat(H, "<span class='danger'>You feel weak.</span>");
 				}
-				if (truthy(rt.op(f, "Prob", [], [15]))) {
-					if (((!isEqual(rt.fv(f, "hair_style", live(H)), "Shaved") || !isEqual(rt.fv(f, "hair_style", live(H)), "Bald")) || truthy((rt.isIn(f, 2, rt.sv(f, "species_traits")) ? 1 : 0)))) {
-						yield* g.call(f, P("/proc/to_chat"), null, [live(H), "<span class='danger'>Your hair starts to fall out in clumps...<span>"]);
-						yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/datum/species/proc/go_bald"), live(H)])), 50]);
+				if (prob(15)) {
+					if (H.hair_style != "Shaved" || H.hair_style != "Bald" || rt.isIn(f, HAIR, this.species_traits)) {
+						to_chat(H, "<span class='danger'>Your hair starts to fall out in clumps...<span>");
+						yield* addtimer((yield* new_(T("/datum/callback"), this, P("/datum/species/proc/go_bald"), H)), 50);
 					}
 				}
-			} else if (rt.inRange($0, 75, 100)) {
-				if (truthy(rt.op(f, "Prob", [], [1]))) {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(H), "<span class='danger'>You mutate!</span>"]);
-					yield* g.callName(f, live(H), "randmutb", []);
-					yield* g.callName(f, live(H), "emote", ["gasp"]);
-					yield* g.callName(f, live(H), "domutcheck", []);
+			} else if (rt.inRange(H.radiation, 75, 100)) {
+				if (prob(1)) {
+					to_chat(H, "<span class='danger'>You mutate!</span>");
+					yield* H.randmutb();
+					yield* H.emote("gasp");
+					yield* H.domutcheck();
 				}
 			}
 		}
 		return 0;
 	}
-	rt.setFv(f, "radiation", live(H), 0);
+	H.radiation = 0;
 	return 1;
 }, true);
 
-// /datum/species/proc/go_bald  (code/modules/mob/living/carbon/human/species.dm:930)  may sleep
+// species.dm:930
 rt.def("/datum/species/proc/go_bald", function* go_bald(f: Frame, H: Value) {
-	f.vars = () => [H];
-	if ((!truthy(live(H)) || truthy(rt.fv(f, "gc_destroyed", live(H))))) {
-		return live(f.dot);
+	if (!H || H.gc_destroyed) {
+		return f.dot;
 	}
-	rt.setFv(f, "facial_hair_style", live(H), "Shaved");
-	rt.setFv(f, "hair_style", live(H), "Bald");
-	yield* g.callName(f, live(H), "update_hair", []);
+	H.facial_hair_style = "Shaved";
+	H.hair_style = "Bald";
+	yield* H.update_hair();
 	return f.dot;
 }, true, { argTypes: [{ type: 8, path: "/mob/living/carbon/human" }] });
 
-// /datum/species/proc/movement_delay  (code/modules/mob/living/carbon/human/species.dm:946)  may sleep
+// species.dm:946
 rt.def("/datum/species/proc/movement_delay", function* movement_delay(f: Frame, H: Value) {
-	let flight: Value = null, flightpack: Value = null, ignoreslow: Value = null, gravity: Value = null, F: Value = null, J: Value = null, C: Value = null, _T: Value = null, I: Value = null, health_deficiency: Value = null, hungry: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [H, flight, flightpack, ignoreslow, gravity, F, J, C, _T, I, health_deficiency, hungry, $0, $e];
+	let F: Value = null, J: Value = null, C: Value = null, _T: Value = null, I: Value = null, health_deficiency: Value = null, hungry: Value = null;
+	let $e: any;
 	f.dot = 0;
-	flight = 0;
-	flightpack = 0;
-	ignoreslow = 0;
-	gravity = 0;
-	if ((truthy((rt.istype((F = (yield* g.callName(f, live(H), "get_flightpack", []))), T("/obj/item/device/flightpack")) ? 1 : 0)) && truthy(rt.fv(f, "flight", live(F))))) {
+	let flight: Value = 0;
+	let flightpack: Value = 0;
+	let ignoreslow: Value = 0;
+	let gravity: Value = 0;
+	if (rt.istype((F = H.get_flightpack()), T("/obj/item/device/flightpack")) && F.flight) {
 		flightpack = 1;
 	}
-	if (truthy(rt.bitAnd(rt.fv(f, "movement_type", live(H)), 2))) {
+	if (rt.bitAnd(H.movement_type, 2)) {
 		flight = 1;
 	}
-	if (!truthy(live(flightpack))) {
-		if (truthy(rt.bitAnd(rt.fv(f, "status_flags", live(H)), 32))) {
-			(f.dot = rt.modify(live(f.dot), 1, subtract));
+	if (!flightpack) {
+		if (rt.bitAnd(H.status_flags, 32)) {
+			f.dot -= 1;
 		}
-		if (truthy(rt.bitAnd(rt.fv(f, "status_flags", live(H)), 64))) {
-			(f.dot = rt.modify(live(f.dot), 2, subtract));
+		if (rt.bitAnd(H.status_flags, 64)) {
+			f.dot -= 2;
 		}
-		f.dot = rt.modify(live(f.dot), rt.sv(f, "speedmod"), add);
+		f.dot += this.speedmod;
 	}
-	if (truthy(rt.bitAnd(rt.fv(f, "status_flags", live(H)), 16))) {
+	if (rt.bitAnd(H.status_flags, 16)) {
 		ignoreslow = 1;
 	}
-	if (truthy((yield* g.callName(f, live(H), "has_gravity", [])))) {
+	if (H.has_gravity()) {
 		gravity = 1;
 	}
-	if (!truthy(live(gravity))) {
-		J = rt.fv(f, "back", live(H));
-		C = rt.fv(f, "wear_suit", live(H));
-		_T = (yield* g.callName(f, live(H), "getorganslot", ["thrusters"]));
-		if ((!truthy((rt.istype(live(J), T("/obj/item/weapon/tank/jetpack")) ? 1 : 0)) && truthy((rt.istype(live(C), T("/obj/item/clothing/suit/space/hardsuit")) ? 1 : 0)))) {
-			J = rt.fv(f, "jetpack", live(C));
+	if (!gravity) {
+		J = H.back;
+		C = H.wear_suit;
+		_T = H.getorganslot("thrusters");
+		if (!rt.istype(J, T("/obj/item/weapon/tank/jetpack")) && rt.istype(C, T("/obj/item/clothing/suit/space/hardsuit"))) {
+			J = C.jetpack;
 		}
-		if (((truthy((rt.istype(live(J), T("/obj/item/weapon/tank/jetpack")) ? 1 : 0)) && truthy(rt.fv(f, "full_speed", live(J)))) && truthy((yield* g.callName(f, live(J), "allow_thrust", [0.009999999776482582, live(H)]))))) {
-			(f.dot = rt.modify(live(f.dot), 2, subtract));
-		} else {
-			if ((truthy((rt.istype(live(_T), T("/obj/item/organ/cyberimp/chest/thrusters")) ? 1 : 0)) && truthy((yield* g.callName(f, live(_T), "allow_thrust", [0.009999999776482582, live(H)]))))) {
-				(f.dot = rt.modify(live(f.dot), 2, subtract));
-			} else {
-				if ((truthy(live(flightpack)) && truthy((yield* g.callName(f, live(F), "allow_thrust", [0.009999999776482582, live(f.src)]))))) {
-					(f.dot = rt.modify(live(f.dot), 2, subtract));
-				}
-			}
+		if (rt.istype(J, T("/obj/item/weapon/tank/jetpack")) && J.full_speed && (yield* J.allow_thrust(0.01, H))) {
+			f.dot -= 2;
+		} else if (rt.istype(_T, T("/obj/item/organ/cyberimp/chest/thrusters")) && (yield* _T.allow_thrust(0.01, H))) {
+			f.dot -= 2;
+		} else if (flightpack && (yield* F.allow_thrust(0.01, this))) {
+			f.dot -= 2;
 		}
 	}
-	if ((truthy(live(flightpack)) && truthy(rt.fv(f, "boost", live(F))))) {
-		(f.dot = rt.modify(live(f.dot), rt.fv(f, "boost_speed", live(F)), subtract));
-	} else {
-		if ((truthy(live(flightpack)) && truthy(rt.fv(f, "brake", live(F))))) {
-			f.dot = rt.modify(live(f.dot), 2, add);
+	if (flightpack && F.boost) {
+		f.dot -= F.boost_speed;
+	} else if (flightpack && F.brake) {
+		f.dot += 2;
+	}
+	if (!ignoreslow && !flightpack && gravity) {
+		if (H.wear_suit) {
+			f.dot += H.wear_suit.slowdown;
+		}
+		if (H.shoes) {
+			f.dot += H.shoes.slowdown;
+		}
+		if (H.back) {
+			f.dot += H.back.slowdown;
+		}
+		for (I of each(H.held_items, T("/obj/item"))) {
+			if (I.secondary_flags ? rt.index(I.secondary_flags, "slows_while_in_hand") : 0) {
+				f.dot += I.slowdown;
+			}
+		}
+		health_deficiency = 100 - H.health + H.staminaloss;
+		hungry = (500 - H.nutrition) / 5;
+		if (health_deficiency >= 40) {
+			if (flight) {
+				f.dot += health_deficiency / 75;
+			} else {
+				f.dot += health_deficiency / 25;
+			}
+		}
+		if (hungry >= 70 && !flight) {
+			f.dot += hungry / 50;
+		}
+		if (rt.bitAnd(H.disabilities, 32)) {
+			f.dot += 1.5 - flight;
+		}
+		if (H.bodytemperature < BODYTEMP_COLD_DAMAGE_LIMIT) {
+			f.dot += (BODYTEMP_COLD_DAMAGE_LIMIT - H.bodytemperature) / COLD_SLOWDOWN_FACTOR;
 		}
 	}
-	if (((!truthy(live(ignoreslow)) && !truthy(live(flightpack))) && truthy(live(gravity)))) {
-		if (truthy(rt.fv(f, "wear_suit", live(H)))) {
-			f.dot = rt.modify(live(f.dot), rt.gv(f, "slowdown", rt.fv(f, "wear_suit", live(H))), add);
-		}
-		if (truthy(rt.fv(f, "shoes", live(H)))) {
-			f.dot = rt.modify(live(f.dot), rt.gv(f, "slowdown", rt.fv(f, "shoes", live(H))), add);
-		}
-		if (truthy(rt.fv(f, "back", live(H)))) {
-			f.dot = rt.modify(live(f.dot), rt.gv(f, "slowdown", rt.fv(f, "back", live(H))), add);
-		}
-		I = null;
-		rt.forList(f, 0, rt.fv(f, "held_items", live(H)), T("/obj/item"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			I = $e;
-			if (truthy(rt.fv(f, "secondary_flags", live(I)))) {
-				$0 = rt.index(rt.fv(f, "secondary_flags", live(I)), "slows_while_in_hand");
-			} else {
-				$0 = 0;
-			}
-			if (truthy($0)) {
-				f.dot = rt.modify(live(f.dot), rt.fv(f, "slowdown", live(I)), add);
-			}
-		}
-		rt.endFor(f, 0);
-		health_deficiency = add(subtract(100, rt.fv(f, "health", live(H))), rt.fv(f, "staminaloss", live(H)));
-		hungry = divide(subtract(500, rt.fv(f, "nutrition", live(H))), 5);
-		if (rt.ge(live(health_deficiency), 40)) {
-			if (truthy(live(flight))) {
-				f.dot = rt.modify(live(f.dot), divide(live(health_deficiency), 75), add);
-			} else {
-				f.dot = rt.modify(live(f.dot), divide(live(health_deficiency), 25), add);
-			}
-		}
-		if ((rt.ge(live(hungry), 70) && !truthy(live(flight)))) {
-			f.dot = rt.modify(live(f.dot), divide(live(hungry), 50), add);
-		}
-		if (truthy(rt.bitAnd(rt.fv(f, "disabilities", live(H)), 32))) {
-			f.dot = rt.modify(live(f.dot), subtract(1.5, live(flight)), add);
-		}
-		if (rt.lt(rt.fv(f, "bodytemperature", live(H)), 260.1499938964844)) {
-			f.dot = rt.modify(live(f.dot), divide(subtract(260.1499938964844, rt.fv(f, "bodytemperature", live(H))), 20), add);
-		}
-	}
-	return live(f.dot);
+	return f.dot;
 }, true);
 
-// /datum/species/proc/help  (code/modules/mob/living/carbon/human/species.dm:1017)  may sleep
+// species.dm:1017
 rt.def("/datum/species/proc/help", function* help(f: Frame, user: Value, target: Value, attacker_style: Value) {
 	let we_breathe: Value = null, we_lung: Value = null;
-	f.vars = () => [user, target, attacker_style, we_breathe, we_lung];
-	if ((rt.ge(rt.fv(f, "health", live(target)), 0) && !truthy(rt.bitAnd(rt.fv(f, "status_flags", live(target)), 8192)))) {
-		yield* g.callName(f, live(target), "help_shake_act", [live(user)]);
-		if (!isEqual(live(target), live(user))) {
-			yield* g.call(f, P("/proc/add_logs"), null, [live(user), live(target), "shaked"]);
+	if (target.health >= 0 && !rt.bitAnd(target.status_flags, FAKEDEATH)) {
+		yield* target.help_shake_act(user);
+		if (target != user) {
+			add_logs(user, target, "shaked");
 		}
 		return 1;
 	} else {
-		we_breathe = (!truthy((rt.isIn(f, 10, rt.gv(f, "species_traits", rt.gv(f, "species", rt.fv(f, "dna", live(user))))) ? 1 : 0)) ? 1 : 0);
-		we_lung = (yield* g.callName(f, live(user), "getorganslot", ["lungs"]));
-		if ((truthy(live(we_breathe)) && truthy(live(we_lung)))) {
-			yield* g.callName(f, live(user), "do_cpr", [live(target)]);
+		we_breathe = (!rt.isIn(f, NOBREATH, user.dna.species.species_traits) ? 1 : 0);
+		we_lung = user.getorganslot("lungs");
+		if (we_breathe && we_lung) {
+			yield* user.do_cpr(target);
+		} else if (we_breathe && !we_lung) {
+			to_chat(user, "<span class='warning'>You have no lungs to breathe with, so you cannot peform CPR.</span>");
 		} else {
-			if ((truthy(live(we_breathe)) && !truthy(live(we_lung)))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>You have no lungs to breathe with, so you cannot peform CPR.</span>"]);
-			} else {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='notice'>You do not breathe, so you cannot perform CPR.</span>"]);
-			}
+			to_chat(user, "<span class='notice'>You do not breathe, so you cannot perform CPR.</span>");
 		}
 	}
 	return f.dot;
 }, true);
 
-// /datum/species/proc/grab  (code/modules/mob/living/carbon/human/species.dm:1034)  may sleep
+// species.dm:1034
 rt.def("/datum/species/proc/grab", function* grab(f: Frame, user: Value, target: Value, attacker_style: Value) {
-	f.vars = () => [user, target, attacker_style];
-	if (truthy((yield* g.callName(f, live(target), "check_block", [])))) {
-		yield* g.callName(f, live(target), "visible_message", [fmt("<span class='warning'>＀ blocks ＀'s grab attempt!</span>", [live(target), live(user)])]);
+	if (yield* target.check_block()) {
+		target.visible_message(`<span class='warning'>${target} blocks ${user}'s grab attempt!</span>`);
 		return 0;
 	}
-	if ((truthy(live(attacker_style)) && truthy((yield* g.callName(f, live(attacker_style), "grab_act", [live(user), live(target)]))))) {
+	if (attacker_style && (yield* attacker_style.grab_act(user, target))) {
 		return 1;
 	} else {
-		yield* g.callName(f, live(target), "grabbedby", [live(user)]);
+		yield* target.grabbedby(user);
 		return 1;
 	}
-	return f.dot;
 }, true);
 
-// /datum/species/proc/harm  (code/modules/mob/living/carbon/human/species.dm:1048)  may sleep
+// species.dm:1048
 rt.def("/datum/species/proc/harm", function* harm(f: Frame, user: Value, target: Value, attacker_style: Value) {
 	let atk_verb: Value = null, damage: Value = null, affecting: Value = null, armor_block: Value = null;
-	let $0: any;
-	f.vars = () => [user, target, attacker_style, atk_verb, damage, affecting, armor_block, $0];
-	if (truthy((yield* g.callName(f, live(target), "check_block", [])))) {
-		yield* g.callName(f, live(target), "visible_message", [fmt("<span class='warning'>＀ blocks ＀'s attack!</span>", [live(target), live(user)])]);
+	if (yield* target.check_block()) {
+		target.visible_message(`<span class='warning'>${target} blocks ${user}'s attack!</span>`);
 		return 0;
 	}
-	if ((truthy(live(attacker_style)) && truthy((yield* g.callName(f, live(attacker_style), "harm_act", [live(user), live(target)]))))) {
+	if (attacker_style && (yield* attacker_style.harm_act(user, target))) {
 		return 1;
 	} else {
-		atk_verb = rt.gv(f, "attack_verb", rt.gv(f, "species", rt.fv(f, "dna", live(user))));
-		if (truthy(rt.fv(f, "lying", live(target)))) {
+		atk_verb = user.dna.species.attack_verb;
+		if (target.lying) {
 			atk_verb = "kick";
 		}
-		$0 = live(atk_verb);
-		if ($0 === "kick") {
-			yield* g.callName(f, live(user), "do_attack_animation", [live(target), "kick"]);
-		} else if ($0 === "slash") {
-			yield* g.callName(f, live(user), "do_attack_animation", [live(target), "claw"]);
-		} else if ($0 === "smash") {
-			yield* g.callName(f, live(user), "do_attack_animation", [live(target), "smash"]);
+		if (atk_verb === "kick") {
+			yield* user.do_attack_animation(target, "kick");
+		} else if (atk_verb === "slash") {
+			yield* user.do_attack_animation(target, "claw");
+		} else if (atk_verb === "smash") {
+			yield* user.do_attack_animation(target, "smash");
 		} else {
-			yield* g.callName(f, live(user), "do_attack_animation", [live(target), "punch"]);
+			yield* user.do_attack_animation(target, "punch");
 		}
-		damage = (yield* g.call(f, P("/proc/rand"), null, [rt.gv(f, "punchdamagelow", rt.gv(f, "species", rt.fv(f, "dna", live(user)))), rt.gv(f, "punchdamagehigh", rt.gv(f, "species", rt.fv(f, "dna", live(user))))]));
-		affecting = (yield* g.callName(f, live(target), "get_bodypart", [(yield* g.call(f, P("/proc/ran_zone"), null, [rt.fv(f, "zone_selected", live(user))]))]));
-		if ((!truthy(live(damage)) || !truthy(live(affecting)))) {
-			yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(target)), rt.gv(f, "miss_sound", rt.gv(f, "species", rt.fv(f, "dna", live(user)))), 25, 1, -1]);
-			yield* g.callName(f, live(target), "visible_message", [fmt("<span class='danger'>＀ has attempted to ＀ ＀!</span>", [live(user), live(atk_verb), live(target)]), fmt("<span class='userdanger'>＀ has attempted to ＀ ＀!</span>", [live(user), live(atk_verb), live(target)]), null, 3]);
+		damage = rand(user.dna.species.punchdamagelow, user.dna.species.punchdamagehigh);
+		affecting = target.get_bodypart(ran_zone(user.zone_selected));
+		if (!damage || !affecting) {
+			playsound(target.loc, user.dna.species.miss_sound, 25, 1, -1);
+			target.visible_message(`<span class='danger'>${user} has attempted to ${atk_verb} ${target}!</span>`, `<span class='userdanger'>${user} has attempted to ${atk_verb} ${target}!</span>`, null, 3);
 			return 0;
 		}
-		armor_block = (yield* g.callName(f, live(target), "run_armor_check", [live(affecting), "melee"]));
-		yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(target)), rt.gv(f, "attack_sound", rt.gv(f, "species", rt.fv(f, "dna", live(user)))), 25, 1, -1]);
-		yield* g.callName(f, live(target), "visible_message", [fmt("<span class='danger'>＀ has ＀ed ＀!</span>", [live(user), live(atk_verb), live(target)]), fmt("<span class='userdanger'>＀ has ＀ed ＀!</span>", [live(user), live(atk_verb), live(target)]), null, 3]);
-		if (truthy(rt.fv(f, "limb_destroyer", live(user)))) {
-			yield* g.callName(f, live(target), "dismembering_strike", [live(user), rt.fv(f, "body_zone", live(affecting))]);
+		armor_block = target.run_armor_check(affecting, "melee");
+		playsound(target.loc, user.dna.species.attack_sound, 25, 1, -1);
+		target.visible_message(`<span class='danger'>${user} has ${atk_verb}ed ${target}!</span>`, `<span class='userdanger'>${user} has ${atk_verb}ed ${target}!</span>`, null, 3);
+		if (user.limb_destroyer) {
+			yield* target.dismembering_strike(user, affecting.body_zone);
 		}
-		yield* g.callName(f, live(target), "apply_damage", [live(damage), "brute", live(affecting), live(armor_block)]);
-		yield* g.call(f, P("/proc/add_logs"), null, [live(user), live(target), "punched"]);
-		if ((!isEqual(rt.fv(f, "stat", live(target)), 2) && rt.ge(live(damage), rt.gv(f, "punchstunthreshold", rt.gv(f, "species", rt.fv(f, "dna", live(user))))))) {
-			yield* g.callName(f, live(target), "visible_message", [fmt("<span class='danger'>＀ has knocked  ＀ down!</span>", [live(user), live(target)]), fmt("<span class='userdanger'>＀ has knocked ＀ down!</span>", [live(user), live(target)])]);
-			yield* g.callName(f, live(target), "apply_effect", [80, "knockdown", live(armor_block)]);
-			yield* g.callName(f, live(target), "forcesay", [rt.gl("hit_appends")]);
+		yield* target.apply_damage(damage, "brute", affecting, armor_block);
+		add_logs(user, target, "punched");
+		if (target.stat != 2 && damage >= user.dna.species.punchstunthreshold) {
+			target.visible_message(`<span class='danger'>${user} has knocked  ${target} down!</span>`, `<span class='userdanger'>${user} has knocked ${target} down!</span>`);
+			yield* target.apply_effect(80, "knockdown", armor_block);
+			yield* target.forcesay(GLOB.hit_appends);
 		} else {
-			if (!truthy(rt.fv(f, "lying", live(target)))) return f.dot;
-			yield* g.callName(f, live(target), "forcesay", [rt.gl("hit_appends")]);
+			if (!target.lying) return f.dot;
+			yield* target.forcesay(GLOB.hit_appends);
 		}
 	}
 	return f.dot;
 }, true);
 
-// /datum/species/proc/disarm  (code/modules/mob/living/carbon/human/species.dm:1102)  may sleep
+// species.dm:1102
 rt.def("/datum/species/proc/disarm", function* disarm(f: Frame, user: Value, target: Value, attacker_style: Value) {
 	let affecting: Value = null, randn: Value = null, I: Value = null;
-	let $0: any, $1: any, $2: any, $3: any;
-	f.vars = () => [user, target, attacker_style, affecting, randn, I, $0, $1, $2, $3];
-	if (truthy((yield* g.callName(f, live(target), "check_block", [])))) {
-		yield* g.callName(f, live(target), "visible_message", [fmt("<span class='warning'>＀ blocks ＀'s disarm attempt!</span>", [live(target), live(user)])]);
+	if (yield* target.check_block()) {
+		target.visible_message(`<span class='warning'>${target} blocks ${user}'s disarm attempt!</span>`);
 		return 0;
 	}
-	if ((truthy(live(attacker_style)) && truthy((yield* g.callName(f, live(attacker_style), "disarm_act", [live(user), live(target)]))))) {
+	if (attacker_style && (yield* attacker_style.disarm_act(user, target))) {
 		return 1;
 	} else {
-		yield* g.callName(f, live(user), "do_attack_animation", [live(target), "disarm"]);
-		if (truthy(rt.fv(f, "w_uniform", live(target)))) {
-			yield* g.callName(f, rt.fv(f, "w_uniform", live(target)), "add_fingerprint", [live(user)]);
+		yield* user.do_attack_animation(target, "disarm");
+		if (target.w_uniform) {
+			yield* target.w_uniform.add_fingerprint(user);
 		}
-		affecting = (yield* g.callName(f, live(target), "get_bodypart", [(yield* g.call(f, P("/proc/ran_zone"), null, [rt.fv(f, "zone_selected", live(user))]))]));
-		if (rt.le((randn = (yield* g.call(f, P("/proc/rand"), null, [1, 100]))), 25)) {
-			yield* g.call(f, P("/proc/playsound"), null, [live(target), rt.rsc("sound/weapons/thudswoosh.ogg"), 50, 1, -1]);
-			yield* g.callName(f, live(target), "visible_message", [fmt("<span class='danger'>＀ has pushed ＀!</span>", [live(user), live(target)]), fmt("<span class='userdanger'>＀ has pushed ＀!</span>", [live(user), live(target)]), null, 3]);
-			yield* g.callName(f, live(target), "apply_effect", [40, "knockdown", (yield* g.callName(f, live(target), "run_armor_check", [live(affecting), "melee", "Your armor prevents your fall!", "Your armor softens your fall!"]))]);
-			yield* g.callName(f, live(target), "forcesay", [rt.gl("hit_appends")]);
-			yield* g.call(f, P("/proc/add_logs"), null, [live(user), live(target), "disarmed", " pushing them to the ground"]);
-			return live(f.dot);
+		affecting = target.get_bodypart(ran_zone(user.zone_selected));
+		if ((randn = rand(1, 100)) <= 25) {
+			playsound(target, rt.rsc("sound/weapons/thudswoosh.ogg"), 50, 1, -1);
+			target.visible_message(`<span class='danger'>${user} has pushed ${target}!</span>`, `<span class='userdanger'>${user} has pushed ${target}!</span>`, null, 3);
+			yield* target.apply_effect(40, "knockdown", target.run_armor_check(affecting, "melee", "Your armor prevents your fall!", "Your armor softens your fall!"));
+			yield* target.forcesay(GLOB.hit_appends);
+			add_logs(user, target, "disarmed", " pushing them to the ground");
+			return f.dot;
 		}
-		if (rt.le(live(randn), 60)) {
-			I = null;
-			if (truthy(rt.fv(f, "pulling", live(target)))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(target), fmt("<span class='warning'>＀ has broken ＀'s grip on ＀!</span>", [live(user), live(target), rt.fv(f, "pulling", live(target))])]);
-				yield* g.callName(f, live(target), "stop_pulling", []);
+		if (randn <= 60) {
+			if (target.pulling) {
+				to_chat(target, `<span class='warning'>${user} has broken ${target}'s grip on ${target.pulling}!</span>`);
+				yield* target.stop_pulling();
 			} else {
-				I = (yield* g.callName(f, live(target), "get_active_held_item", []));
-				if (truthy((yield* g.callName(f, live(target), "drop_item", [])))) {
-					yield* g.callName(f, live(target), "visible_message", [fmt("<span class='danger'>＀ has disarmed ＀!</span>", [live(user), live(target)]), fmt("<span class='userdanger'>＀ has disarmed ＀!</span>", [live(user), live(target)]), null, 3]);
+				I = target.get_active_held_item();
+				if (yield* target.drop_item()) {
+					target.visible_message(`<span class='danger'>${user} has disarmed ${target}!</span>`, `<span class='userdanger'>${user} has disarmed ${target}!</span>`, null, 3);
 				} else {
 					I = null;
 				}
 			}
-			yield* g.call(f, P("/proc/playsound"), null, [live(target), rt.rsc("sound/weapons/thudswoosh.ogg"), 50, 1, -1]);
-			$0 = live(user);
-			$1 = live(target);
-			$2 = "disarmed";
-			if (truthy(live(I))) {
-				$3 = fmt(" removing ％！", [live(I)]);
-			} else {
-				$3 = "";
-			}
-			yield* g.call(f, P("/proc/add_logs"), null, [$0, $1, $2, fmt("＀", [$3])]);
-			return live(f.dot);
+			playsound(target, rt.rsc("sound/weapons/thudswoosh.ogg"), 50, 1, -1);
+			add_logs(user, target, "disarmed", `${I ? fmt(" removing ％！", [I]) : ""}`);
+			return f.dot;
 		}
-		yield* g.call(f, P("/proc/playsound"), null, [live(target), rt.rsc("sound/weapons/punchmiss.ogg"), 25, 1, -1]);
-		yield* g.callName(f, live(target), "visible_message", [fmt("<span class='danger'>＀ attempted to disarm ＀!</span>", [live(user), live(target)]), fmt("<span class='userdanger'>＀ attemped to disarm ＀!</span>", [live(user), live(target)]), null, 3]);
+		playsound(target, rt.rsc("sound/weapons/punchmiss.ogg"), 25, 1, -1);
+		target.visible_message(`<span class='danger'>${user} attempted to disarm ${target}!</span>`, `<span class='userdanger'>${user} attemped to disarm ${target}!</span>`, null, 3);
 	}
 	return f.dot;
 }, true);
 
-// /datum/species/proc/spec_attack_hand  (code/modules/mob/living/carbon/human/species.dm:1150)  may sleep
+// species.dm:1150
 rt.def("/datum/species/proc/spec_attack_hand", function* spec_attack_hand(f: Frame, M: Value, H: Value, attacker_style: Value) {
-	let $0: any;
-	f.vars = () => [M, H, attacker_style, $0];
-	if (!truthy((rt.istype(live(M), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		return live(f.dot);
+	if (!rt.istype(M, T("/mob/living/carbon/human"))) {
+		return f.dot;
 	}
-	if ((!truthy(rt.fv(f, "dna", live(M))) || !truthy(rt.gv(f, "species", rt.fv(f, "dna", live(M)))))) {
-		return live(f.dot);
+	if (!M.dna || !M.dna.species) {
+		return f.dot;
 	}
-	if ((!truthy(rt.fv(f, "dna", live(H))) || !truthy(rt.gv(f, "species", rt.fv(f, "dna", live(H)))))) {
-		return live(f.dot);
+	if (!H.dna || !H.dna.species) {
+		return f.dot;
 	}
-	if (!truthy((rt.istype(live(M), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		return live(f.dot);
+	if (!rt.istype(M, T("/mob/living/carbon/human"))) {
+		return f.dot;
 	}
-	if (truthy(rt.fv(f, "mind", live(M)))) {
-		attacker_style = rt.gv(f, "martial_art", rt.fv(f, "mind", live(M)));
+	if (M.mind) {
+		attacker_style = M.mind.martial_art;
 	}
-	if (((!isEqual(live(M), live(H)) && !isEqual(rt.fv(f, "a_intent", live(M)), "help")) && truthy((yield* g.callName(f, live(H), "check_shields", [null, live(M), null, 0, null, rt.fv(f, "name", live(M)), "attack_type", 2], rt.Args.Named))))) {
-		yield* g.call(f, P("/proc/add_logs"), null, [live(M), live(H), "attempted to touch"]);
-		yield* g.callName(f, live(H), "visible_message", [fmt("<span class='warning'>＀ attempted to touch ＀!</span>", [live(M), live(H)])]);
+	if (M != H && M.a_intent != "help" && (yield* H.check_shields(M, 0, M.name, { attack_type: 2 }))) {
+		add_logs(M, H, "attempted to touch");
+		H.visible_message(`<span class='warning'>${M} attempted to touch ${H}!</span>`);
 		return 0;
 	}
-	$0 = rt.fv(f, "a_intent", live(M));
-	if ($0 === "help") {
-		yield* g.srcCall(f, "help", live(M), live(H), live(attacker_style));
-	} else if ($0 === "grab") {
-		yield* g.srcCall(f, "grab", live(M), live(H), live(attacker_style));
-	} else if ($0 === "harm") {
-		yield* g.srcCall(f, "harm", live(M), live(H), live(attacker_style));
-	} else if ($0 === "disarm") {
-		yield* g.srcCall(f, "disarm", live(M), live(H), live(attacker_style));
+	if (M.a_intent === "help") {
+		yield* this.help(M, H, attacker_style);
+	} else if (M.a_intent === "grab") {
+		yield* this.grab(M, H, attacker_style);
+	} else if (M.a_intent === "harm") {
+		yield* this.harm(M, H, attacker_style);
+	} else if (M.a_intent === "disarm") {
+		yield* this.disarm(M, H, attacker_style);
 	}
 	return f.dot;
 }, true);
 
-// /datum/species/proc/spec_attacked_by  (code/modules/mob/living/carbon/human/species.dm:1178)  may sleep
+// species.dm:1178
 rt.def("/datum/species/proc/spec_attacked_by", function* spec_attacked_by(f: Frame, I: Value, user: Value, affecting: Value, intent: Value, H: Value) {
-	let hit_area: Value = null, def_zone: Value = null, armor_block: Value = null, Iforce: Value = null, weakness: Value = null, probability: Value = null, bloody: Value = null, location: Value = null;
-	let $0: any;
-	f.vars = () => [I, user, affecting, intent, H, hit_area, def_zone, armor_block, Iforce, weakness, probability, bloody, location, $0];
-	if (!isEqual(live(user), live(H))) {
-		if (truthy((yield* g.callName(f, live(H), "check_shields", [live(I), rt.fv(f, "force", live(I)), fmt("the ＀", [rt.fv(f, "name", live(I))]), 1, rt.fv(f, "armour_penetration", live(I))])))) {
+	let probability: Value = null, location: Value = null;
+	if (user != H) {
+		if (yield* H.check_shields(I, I.force, `the ${I.name}`, 1, I.armour_penetration)) {
 			return 0;
 		}
 	}
-	if (truthy((yield* g.callName(f, live(H), "check_block", [])))) {
-		yield* g.callName(f, live(H), "visible_message", [fmt("<span class='warning'>＀ blocks ＀!</span>", [live(H), live(I)])]);
+	if (yield* H.check_block()) {
+		H.visible_message(`<span class='warning'>${H} blocks ${I}!</span>`);
 		return 0;
 	}
-	hit_area = null;
-	if (!truthy(live(affecting))) {
-		affecting = rt.index(rt.fv(f, "bodyparts", live(H)), 1);
+	if (!affecting) {
+		affecting = rt.index(H.bodyparts, 1);
 	}
-	hit_area = rt.fv(f, "name", live(affecting));
-	def_zone = rt.fv(f, "body_zone", live(affecting));
-	armor_block = (yield* g.callName(f, live(H), "run_armor_check", [live(affecting), "melee", fmt("<span class='notice'>Your armor has protected your ＀.</span>", [live(hit_area)]), fmt("<span class='notice'>Your armor has softened a hit to your ＀.</span>", [live(hit_area)]), rt.fv(f, "armour_penetration", live(I))]));
-	armor_block = (yield* g.call(f, P("/proc/min"), null, [90, live(armor_block)]));
-	Iforce = rt.fv(f, "force", live(I));
-	weakness = (yield* g.callName(f, live(H), "check_weakness", [live(I), live(user)]));
-	yield* g.srcCall(f, "apply_damage", multiply(rt.fv(f, "force", live(I)), live(weakness)), rt.fv(f, "damtype", live(I)), live(def_zone), live(armor_block), live(H));
-	yield* g.callName(f, live(H), "damage_clothes", [rt.fv(f, "force", live(I)), rt.fv(f, "damtype", live(I)), "melee", rt.fv(f, "body_zone", live(affecting))]);
-	yield* g.callName(f, live(H), "send_item_attack_message", [live(I), live(user), live(hit_area)]);
-	if (!truthy(rt.fv(f, "force", live(I)))) {
+	let hit_area: Value = affecting.name;
+	let def_zone: Value = affecting.body_zone;
+	let armor_block: Value = H.run_armor_check(affecting, "melee", `<span class='notice'>Your armor has protected your ${hit_area}.</span>`, `<span class='notice'>Your armor has softened a hit to your ${hit_area}.</span>`, I.armour_penetration);
+	armor_block = min(90, armor_block);
+	let Iforce: Value = I.force;
+	let weakness: Value = (yield* H.check_weakness(I, user));
+	yield* this.apply_damage(I.force * weakness, I.damtype, def_zone, armor_block, H);
+	yield* H.damage_clothes(I.force, I.damtype, "melee", affecting.body_zone);
+	H.send_item_attack_message(I, user, hit_area);
+	if (!I.force) {
 		return 0;
 	}
-	if ((truthy(rt.op(f, "Prob", [], [(probability = (yield* g.callName(f, live(I), "get_dismemberment_chance", [live(affecting)])))])) || (truthy((rt.isIn(f, 22, rt.sv(f, "species_traits")) ? 1 : 0)) && truthy(rt.op(f, "Prob", [], [multiply(2, live(probability))]))))) {
-		if (truthy((yield* g.callName(f, live(affecting), "dismember", [rt.fv(f, "damtype", live(I))])))) {
-			yield* g.callName(f, live(I), "add_mob_blood", [live(H)]);
-			yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(H), 0), (yield* g.callName(f, live(I), "get_dismember_sound", [])), 80, 1]);
+	if (prob((probability = I.get_dismemberment_chance(affecting))) || rt.isIn(f, EASYDISMEMBER, this.species_traits) && prob(2 * probability)) {
+		if (yield* affecting.dismember(I.damtype)) {
+			yield* I.add_mob_blood(H);
+			playsound(rt.getStep(f, H, 0), I.get_dismember_sound(), 80, 1);
 		}
 	}
-	bloody = 0;
-	if (((isEqual(rt.fv(f, "damtype", live(I)), "brute") && truthy(rt.fv(f, "force", live(I)))) && truthy(rt.op(f, "Prob", [], [add(25, multiply(rt.fv(f, "force", live(I)), 2))])))) {
-		if (isEqual(rt.fv(f, "status", live(affecting)), 1)) {
-			yield* g.callName(f, live(I), "add_mob_blood", [live(H)]);
-			if (truthy(rt.op(f, "Prob", [], [multiply(rt.fv(f, "force", live(I)), 2)]))) {
+	let bloody: Value = 0;
+	if (I.damtype == "brute" && I.force && prob(25 + I.force * 2)) {
+		if (affecting.status == BODYPART_ORGANIC) {
+			yield* I.add_mob_blood(H);
+			if (prob(I.force * 2)) {
 				bloody = 1;
-				if (truthy((rt.istype((location = rt.fv(f, "loc", live(H))), T("/turf")) ? 1 : 0))) {
-					yield* g.callName(f, live(H), "add_splatter_floor", [live(location)]);
+				if (rt.istype((location = H.loc), T("/turf"))) {
+					yield* H.add_splatter_floor(location);
 				}
-				if (rt.le((yield* g.call(f, P("/proc/get_dist"), null, [live(user), live(H)])), 1)) {
-					yield* g.callName(f, live(user), "add_mob_blood", [live(H)]);
-				}
-			}
-		}
-		$0 = live(hit_area);
-		if ($0 === "head") {
-			if ((isEqual(rt.fv(f, "stat", live(H)), 0) && rt.lt(live(armor_block), 50))) {
-				if (truthy(rt.op(f, "Prob", [], [rt.fv(f, "force", live(I))]))) {
-					yield* g.callName(f, live(H), "visible_message", [fmt("<span class='danger'>＀ has been knocked senseless!</span>", [live(H)]), fmt("<span class='userdanger'>＀ has been knocked senseless!</span>", [live(H)])]);
-					rt.setFv(f, "confused", live(H), (yield* g.call(f, P("/proc/max"), null, [rt.fv(f, "confused", live(H)), 20])));
-					yield* g.callName(f, live(H), "adjust_blurriness", [10]);
-				}
-				if ((truthy(rt.op(f, "Prob", [], [add(rt.fv(f, "force", live(I)), divide(subtract(100, rt.fv(f, "health", live(H))), 2))])) && !isEqual(live(H), live(user)))) {
-					yield* g.callName(f, rt.fv(f, "mode", rt.gl("SSticker")), "remove_revolutionary", [rt.fv(f, "mind", live(H))]);
-				}
-			}
-			if (truthy(live(bloody))) {
-				if (truthy(rt.fv(f, "wear_mask", live(H)))) {
-					yield* g.callName(f, rt.fv(f, "wear_mask", live(H)), "add_mob_blood", [live(H)]);
-					yield* g.callName(f, live(H), "update_inv_wear_mask", []);
-				}
-				if (truthy(rt.fv(f, "head", live(H)))) {
-					yield* g.callName(f, rt.fv(f, "head", live(H)), "add_mob_blood", [live(H)]);
-					yield* g.callName(f, live(H), "update_inv_head", []);
-				}
-				if ((truthy(rt.fv(f, "glasses", live(H))) && truthy(rt.op(f, "Prob", [], [33])))) {
-					yield* g.callName(f, rt.fv(f, "glasses", live(H)), "add_mob_blood", [live(H)]);
-					yield* g.callName(f, live(H), "update_inv_glasses", []);
-				}
-			}
-		} else if ($0 === "chest") {
-			if ((isEqual(rt.fv(f, "stat", live(H)), 0) && rt.lt(live(armor_block), 50))) {
-				if (truthy(rt.op(f, "Prob", [], [rt.fv(f, "force", live(I))]))) {
-					yield* g.callName(f, live(H), "visible_message", [fmt("<span class='danger'>＀ has been knocked down!</span>", [live(H)]), fmt("<span class='userdanger'>＀ has been knocked down!</span>", [live(H)])]);
-					yield* g.callName(f, live(H), "apply_effect", [60, "knockdown", live(armor_block)]);
-				}
-			}
-			if (truthy(live(bloody))) {
-				if (truthy(rt.fv(f, "wear_suit", live(H)))) {
-					yield* g.callName(f, rt.fv(f, "wear_suit", live(H)), "add_mob_blood", [live(H)]);
-					yield* g.callName(f, live(H), "update_inv_wear_suit", []);
-				}
-				if (truthy(rt.fv(f, "w_uniform", live(H)))) {
-					yield* g.callName(f, rt.fv(f, "w_uniform", live(H)), "add_mob_blood", [live(H)]);
-					yield* g.callName(f, live(H), "update_inv_w_uniform", []);
+				if (get_dist(user, H) <= 1) {
+					yield* user.add_mob_blood(H);
 				}
 			}
 		}
-		if ((rt.gt(live(Iforce), 10) || (rt.ge(live(Iforce), 5) && truthy(rt.op(f, "Prob", [], [33]))))) {
-			yield* g.callName(f, live(H), "forcesay", [rt.gl("hit_appends")]);
+		if (hit_area === "head") {
+			if (H.stat == 0 && armor_block < 50) {
+				if (prob(I.force)) {
+					H.visible_message(`<span class='danger'>${H} has been knocked senseless!</span>`, `<span class='userdanger'>${H} has been knocked senseless!</span>`);
+					H.confused = max(H.confused, 20);
+					yield* H.adjust_blurriness(10);
+				}
+				if (prob(I.force + (100 - H.health) / 2) && H != user) {
+					yield* GLOB.SSticker.mode.remove_revolutionary(H.mind);
+				}
+			}
+			if (bloody) {
+				if (H.wear_mask) {
+					yield* H.wear_mask.add_mob_blood(H);
+					yield* H.update_inv_wear_mask();
+				}
+				if (H.head) {
+					yield* H.head.add_mob_blood(H);
+					yield* H.update_inv_head();
+				}
+				if (H.glasses && prob(33)) {
+					yield* H.glasses.add_mob_blood(H);
+					H.update_inv_glasses();
+				}
+			}
+		} else if (hit_area === "chest") {
+			if (H.stat == 0 && armor_block < 50) {
+				if (prob(I.force)) {
+					H.visible_message(`<span class='danger'>${H} has been knocked down!</span>`, `<span class='userdanger'>${H} has been knocked down!</span>`);
+					yield* H.apply_effect(60, "knockdown", armor_block);
+				}
+			}
+			if (bloody) {
+				if (H.wear_suit) {
+					yield* H.wear_suit.add_mob_blood(H);
+					yield* H.update_inv_wear_suit();
+				}
+				if (H.w_uniform) {
+					yield* H.w_uniform.add_mob_blood(H);
+					yield* H.update_inv_w_uniform();
+				}
+			}
+		}
+		if (Iforce > 10 || Iforce >= 5 && prob(33)) {
+			yield* H.forcesay(GLOB.hit_appends);
 		}
 	}
 	return 1;
 }, true);
 
-// /datum/species/proc/apply_damage  (code/modules/mob/living/carbon/human/species.dm:1267)  may sleep
+// species.dm:1267
 rt.def("/datum/species/proc/apply_damage", function* apply_damage(f: Frame, damage: Value, damagetype: Value, def_zone: Value, blocked: Value, H: Value) {
-	let hit_percent: Value = null, BP: Value = null;
-	let $0: any;
-	f.vars = () => [damage, damagetype, def_zone, blocked, H, hit_percent, BP, $0];
-	if (live(damagetype) === null) {
-		damagetype = "brute";
-	}
-	if (live(def_zone) === null) {
-		def_zone = null;
-	}
-	hit_percent = divide(subtract(100, add(live(blocked), rt.sv(f, "armor"))), 100);
-	if ((!truthy(live(damage)) || rt.le(live(hit_percent), 0))) {
+	let BP: Value = null;
+	damagetype ??= "brute";
+	let hit_percent: Value = (100 - (blocked + this.armor)) / 100;
+	if (!damage || hit_percent <= 0) {
 		return 0;
 	}
-	BP = null;
-	if (truthy((rt.istype(live(def_zone), T("/obj/item/bodypart")) ? 1 : 0))) {
-		BP = live(def_zone);
+	if (rt.istype(def_zone, T("/obj/item/bodypart"))) {
+		BP = def_zone;
 	} else {
-		if (!truthy(live(def_zone))) {
-			def_zone = (yield* g.call(f, P("/proc/ran_zone"), null, [live(def_zone)]));
+		if (!def_zone) {
+			def_zone = ran_zone(def_zone);
 		}
-		if (!truthy((BP = (yield* g.callName(f, live(H), "get_bodypart", [(yield* g.call(f, P("/proc/check_zone"), null, [live(def_zone)]))]))))) {
-			BP = rt.index(rt.fv(f, "bodyparts", live(H)), 1);
+		if (!(BP = H.get_bodypart(check_zone(def_zone)))) {
+			BP = rt.index(H.bodyparts, 1);
 		}
 	}
-	$0 = live(damagetype);
-	if ($0 === "brute") {
-		rt.setFv(f, "damageoverlaytemp", live(H), 20);
-		if (truthy(live(BP))) {
-			if (truthy((yield* g.callName(f, live(BP), "receive_damage", [multiply(multiply(live(damage), live(hit_percent)), rt.sv(f, "brutemod")), 0])))) {
-				yield* g.callName(f, live(H), "update_damage_overlays", []);
+	if (damagetype === "brute") {
+		H.damageoverlaytemp = 20;
+		if (BP) {
+			if (yield* BP.receive_damage(damage * hit_percent * this.brutemod, 0)) {
+				H.update_damage_overlays();
 			}
 		} else {
-			yield* g.callName(f, live(H), "adjustBruteLoss", [multiply(multiply(live(damage), live(hit_percent)), rt.sv(f, "brutemod"))]);
+			yield* H.adjustBruteLoss(damage * hit_percent * this.brutemod);
 		}
-	} else if ($0 === "fire") {
-		rt.setFv(f, "damageoverlaytemp", live(H), 20);
-		if (truthy(live(BP))) {
-			if (truthy((yield* g.callName(f, live(BP), "receive_damage", [0, multiply(multiply(live(damage), live(hit_percent)), rt.sv(f, "burnmod"))])))) {
-				yield* g.callName(f, live(H), "update_damage_overlays", []);
+	} else if (damagetype === "fire") {
+		H.damageoverlaytemp = 20;
+		if (BP) {
+			if (yield* BP.receive_damage(0, damage * hit_percent * this.burnmod)) {
+				H.update_damage_overlays();
 			}
 		} else {
-			yield* g.callName(f, live(H), "adjustFireLoss", [multiply(multiply(live(damage), live(hit_percent)), rt.sv(f, "burnmod"))]);
+			yield* H.adjustFireLoss(damage * hit_percent * this.burnmod);
 		}
-	} else if ($0 === "tox") {
-		yield* g.callName(f, live(H), "adjustToxLoss", [multiply(live(damage), live(hit_percent))]);
-	} else if ($0 === "oxy") {
-		yield* g.callName(f, live(H), "adjustOxyLoss", [multiply(live(damage), live(hit_percent))]);
-	} else if ($0 === "clone") {
-		yield* g.callName(f, live(H), "adjustCloneLoss", [multiply(live(damage), live(hit_percent))]);
-	} else if ($0 === "stamina") {
-		yield* g.callName(f, live(H), "adjustStaminaLoss", [multiply(live(damage), live(hit_percent))]);
+	} else if (damagetype === "tox") {
+		yield* H.adjustToxLoss(damage * hit_percent);
+	} else if (damagetype === "oxy") {
+		yield* H.adjustOxyLoss(damage * hit_percent);
+	} else if (damagetype === "clone") {
+		yield* H.adjustCloneLoss(damage * hit_percent);
+	} else if (damagetype === "stamina") {
+		yield* H.adjustStaminaLoss(damage * hit_percent);
 	}
 	return 1;
 }, true);
 
-// /datum/species/proc/on_hit  (code/modules/mob/living/carbon/human/species.dm:1308)
+// species.dm:1308
 rt.def("/datum/species/proc/on_hit", function on_hit(f: Frame, _P: Value, H: Value) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.fv(f, "type", live(_P));
-	if (isEqual($0, T("/obj/item/projectile/energy/floramut"))) {
-		rt.callName(f, live(H), "show_message", ["<span class='notice'>The radiation beam dissipates harmlessly through your body.</span>"]);
-	} else if (isEqual($0, T("/obj/item/projectile/energy/florayield"))) {
-		rt.callName(f, live(H), "show_message", ["<span class='notice'>The radiation beam dissipates harmlessly through your body.</span>"]);
+	let $0: any = _P.type;
+	if ($0 == T("/obj/item/projectile/energy/floramut")) {
+		H.show_message("<span class='notice'>The radiation beam dissipates harmlessly through your body.</span>");
+	} else if ($0 == T("/obj/item/projectile/energy/florayield")) {
+		H.show_message("<span class='notice'>The radiation beam dissipates harmlessly through your body.</span>");
 	}
 	return f.dot;
 });
 
-// /datum/species/proc/breathe  (code/modules/mob/living/carbon/human/species.dm:1323)
+// species.dm:1323
 rt.def("/datum/species/proc/breathe", function breathe(f: Frame, H: Value) {
-	if (!truthy((rt.isIn(f, 10, rt.sv(f, "species_traits")) ? 1 : 0))) return f.dot;
+	if (!rt.isIn(f, NOBREATH, this.species_traits)) return f.dot;
 	return 1;
 });
 
-// /datum/species/proc/handle_environment  (code/modules/mob/living/carbon/human/species.dm:1327)  may sleep
+// species.dm:1327
 rt.def("/datum/species/proc/handle_environment", function* handle_environment(f: Frame, environment: Value, H: Value) {
-	let loc_temp: Value = null, thermal_protection: Value = null, burn_damage: Value = null, pressure: Value = null, adjusted_pressure: Value = null;
-	let $0: any;
-	f.vars = () => [environment, H, loc_temp, thermal_protection, burn_damage, pressure, adjusted_pressure, $0];
-	if (!truthy(live(environment))) {
-		return live(f.dot);
+	let thermal_protection: Value = null, burn_damage: Value = null, adjusted_pressure: Value = null;
+	if (!environment) {
+		return f.dot;
 	}
-	if (truthy((rt.istype(rt.fv(f, "loc", live(H)), T("/obj/machinery/atmospherics/components/unary/cryo_cell")) ? 1 : 0))) {
-		return live(f.dot);
+	if (rt.istype(H.loc, T("/obj/machinery/atmospherics/components/unary/cryo_cell"))) {
+		return f.dot;
 	}
-	loc_temp = (yield* g.callName(f, live(H), "get_temperature", [live(environment)]));
-	if (!isEqual(rt.fv(f, "stat", live(H)), 2)) {
-		yield* g.callName(f, live(H), "natural_bodytemperature_stabilization", []);
+	let loc_temp: Value = H.get_temperature(environment);
+	if (H.stat != 2) {
+		H.natural_bodytemperature_stabilization();
 	}
-	if (!truthy(rt.fv(f, "on_fire", live(H)))) {
-		if (rt.lt(live(loc_temp), rt.fv(f, "bodytemperature", live(H)))) {
-			if (rt.lt((thermal_protection = (yield* g.callName(f, live(H), "get_cold_protection", [live(loc_temp)]))), 1)) {
-				rt.modField(f, live(H), "bodytemperature", (yield* g.call(f, P("/proc/min"), null, [multiply(subtract(1, live(thermal_protection)), divide(subtract(live(loc_temp), rt.fv(f, "bodytemperature", live(H))), 6)), 30])), add);
+	if (!H.on_fire) {
+		if (loc_temp < H.bodytemperature) {
+			if ((thermal_protection = H.get_cold_protection(loc_temp)) < 1) {
+				H.bodytemperature += min((1 - thermal_protection) * ((loc_temp - H.bodytemperature) / BODYTEMP_COLD_DIVISOR), BODYTEMP_COOLING_MAX);
 			}
-		} else {
-			if (rt.lt((thermal_protection = (yield* g.callName(f, live(H), "get_heat_protection", [live(loc_temp)]))), 1)) {
-				rt.modField(f, live(H), "bodytemperature", (yield* g.call(f, P("/proc/min"), null, [multiply(subtract(1, live(thermal_protection)), divide(subtract(live(loc_temp), rt.fv(f, "bodytemperature", live(H))), 6)), 30])), add);
-			}
+		} else if ((thermal_protection = H.get_heat_protection(loc_temp)) < 1) {
+			H.bodytemperature += min((1 - thermal_protection) * ((loc_temp - H.bodytemperature) / BODYTEMP_HEAT_DIVISOR), BODYTEMP_HEATING_MAX);
 		}
 	}
-	if ((rt.gt(rt.fv(f, "bodytemperature", live(H)), 360.1499938964844) && !truthy((rt.isIn(f, 6, rt.sv(f, "species_traits")) ? 1 : 0)))) {
-		burn_damage = null;
-		$0 = rt.fv(f, "bodytemperature", live(H));
-		if (rt.inRange($0, 360, 400)) {
-			yield* g.callName(f, live(H), "throw_alert", ["temp", T("/obj/screen/alert/hot"), 1]);
-			burn_damage = 2;
-		} else if (rt.inRange($0, 400, 460)) {
-			yield* g.callName(f, live(H), "throw_alert", ["temp", T("/obj/screen/alert/hot"), 2]);
-			burn_damage = 3;
-		} else if (rt.inRange($0, 460, 9.999999848243207e+30)) {
-			yield* g.callName(f, live(H), "throw_alert", ["temp", T("/obj/screen/alert/hot"), 3]);
-			if (truthy(rt.fv(f, "on_fire", live(H)))) {
-				burn_damage = 8;
+	if (H.bodytemperature > BODYTEMP_HEAT_DAMAGE_LIMIT && !rt.isIn(f, RESISTHOT, this.species_traits)) {
+		if (rt.inRange(H.bodytemperature, 360, 400)) {
+			yield* H.throw_alert("temp", T("/obj/screen/alert/hot"), 1);
+			burn_damage = HEAT_DAMAGE_LEVEL_1;
+		} else if (rt.inRange(H.bodytemperature, 400, 460)) {
+			yield* H.throw_alert("temp", T("/obj/screen/alert/hot"), 2);
+			burn_damage = HEAT_DAMAGE_LEVEL_2;
+		} else if (rt.inRange(H.bodytemperature, 460, 1e+31)) {
+			yield* H.throw_alert("temp", T("/obj/screen/alert/hot"), 3);
+			if (H.on_fire) {
+				burn_damage = HEAT_DAMAGE_LEVEL_3;
 			} else {
-				burn_damage = 3;
+				burn_damage = HEAT_DAMAGE_LEVEL_2;
 			}
 		}
-		(burn_damage = rt.modify(live(burn_damage), rt.sv(f, "heatmod"), multiply));
-		if (truthy(divide(multiply(rt.op(f, "Prob", [], [live(burn_damage)]), 10), 4))) {
-			yield* g.callName(f, live(H), "emote", ["scream"]);
+		burn_damage *= this.heatmod;
+		if (prob(burn_damage) * 10 / 4) {
+			yield* H.emote("scream");
 		}
-		yield* g.callName(f, live(H), "apply_damage", [live(burn_damage), "fire"]);
-	} else {
-		if ((rt.lt(rt.fv(f, "bodytemperature", live(H)), 260.1499938964844) && !truthy((rt.isIn(f, rt.at(rt.gl("mutations_list"), "Cold Resistance"), rt.gv(f, "mutations", rt.fv(f, "dna", live(H)))) ? 1 : 0)))) {
-			$0 = rt.fv(f, "bodytemperature", live(H));
-			if (rt.inRange($0, 200, 260)) {
-				yield* g.callName(f, live(H), "throw_alert", ["temp", T("/obj/screen/alert/cold"), 1]);
-				yield* g.callName(f, live(H), "apply_damage", [multiply(0.5, rt.sv(f, "coldmod")), "fire"]);
-			} else if (rt.inRange($0, 120, 200)) {
-				yield* g.callName(f, live(H), "throw_alert", ["temp", T("/obj/screen/alert/cold"), 2]);
-				yield* g.callName(f, live(H), "apply_damage", [multiply(1.5, rt.sv(f, "coldmod")), "fire"]);
-			} else if (rt.inRange($0, -9.999999848243207e+30, 120)) {
-				yield* g.callName(f, live(H), "throw_alert", ["temp", T("/obj/screen/alert/cold"), 3]);
-				yield* g.callName(f, live(H), "apply_damage", [multiply(3, rt.sv(f, "coldmod")), "fire"]);
-			} else {
-				yield* g.callName(f, live(H), "clear_alert", ["temp"]);
-			}
+		yield* H.apply_damage(burn_damage, "fire");
+	} else if (H.bodytemperature < BODYTEMP_COLD_DAMAGE_LIMIT && !rt.isIn(f, rt.at(GLOB.mutations_list, "Cold Resistance"), H.dna.mutations)) {
+		if (rt.inRange(H.bodytemperature, 200, 260)) {
+			yield* H.throw_alert("temp", T("/obj/screen/alert/cold"), 1);
+			yield* H.apply_damage(COLD_DAMAGE_LEVEL_1 * this.coldmod, "fire");
+		} else if (rt.inRange(H.bodytemperature, 120, 200)) {
+			yield* H.throw_alert("temp", T("/obj/screen/alert/cold"), 2);
+			yield* H.apply_damage(COLD_DAMAGE_LEVEL_2 * this.coldmod, "fire");
+		} else if (rt.inRange(H.bodytemperature, -1e+31, 120)) {
+			yield* H.throw_alert("temp", T("/obj/screen/alert/cold"), 3);
+			yield* H.apply_damage(COLD_DAMAGE_LEVEL_3 * this.coldmod, "fire");
 		} else {
-			yield* g.callName(f, live(H), "clear_alert", ["temp"]);
+			yield* H.clear_alert("temp");
 		}
+	} else {
+		yield* H.clear_alert("temp");
 	}
-	pressure = (yield* g.callName(f, live(environment), "return_pressure", []));
-	$0 = (adjusted_pressure = (yield* g.callName(f, live(H), "calculate_affecting_pressure", [live(pressure)])));
-	if (rt.inRange($0, 550, 9.999999848243207e+30)) {
-		if (!truthy((rt.isIn(f, 8, rt.sv(f, "species_traits")) ? 1 : 0))) {
-			yield* g.callName(f, live(H), "adjustBruteLoss", [(yield* g.call(f, P("/proc/min"), null, [multiply(subtract(divide(live(adjusted_pressure), 550), 1), 4), 4]))]);
-			yield* g.callName(f, live(H), "throw_alert", ["pressure", T("/obj/screen/alert/highpressure"), 2]);
+	let pressure: Value = environment.return_pressure();
+	const subject = (adjusted_pressure = H.calculate_affecting_pressure(pressure));
+	if (rt.inRange(subject, HAZARD_HIGH_PRESSURE, 1e+31)) {
+		if (!rt.isIn(f, RESISTPRESSURE, this.species_traits)) {
+			yield* H.adjustBruteLoss(min((adjusted_pressure / HAZARD_HIGH_PRESSURE - 1) * PRESSURE_DAMAGE_COEFFICIENT, MAX_HIGH_PRESSURE_DAMAGE));
+			yield* H.throw_alert("pressure", T("/obj/screen/alert/highpressure"), 2);
 		} else {
-			yield* g.callName(f, live(H), "clear_alert", ["pressure"]);
+			yield* H.clear_alert("pressure");
 		}
-	} else if (rt.inRange($0, 325, 550)) {
-		yield* g.callName(f, live(H), "throw_alert", ["pressure", T("/obj/screen/alert/highpressure"), 1]);
-	} else if (rt.inRange($0, 50, 325)) {
-		yield* g.callName(f, live(H), "clear_alert", ["pressure"]);
-	} else if (rt.inRange($0, 20, 50)) {
-		yield* g.callName(f, live(H), "throw_alert", ["pressure", T("/obj/screen/alert/lowpressure"), 1]);
+	} else if (rt.inRange(subject, WARNING_HIGH_PRESSURE, HAZARD_HIGH_PRESSURE)) {
+		yield* H.throw_alert("pressure", T("/obj/screen/alert/highpressure"), 1);
+	} else if (rt.inRange(subject, WARNING_LOW_PRESSURE, WARNING_HIGH_PRESSURE)) {
+		yield* H.clear_alert("pressure");
+	} else if (rt.inRange(subject, HAZARD_LOW_PRESSURE, WARNING_LOW_PRESSURE)) {
+		yield* H.throw_alert("pressure", T("/obj/screen/alert/lowpressure"), 1);
+	} else if (H.dna.check_mutation("Cold Resistance") || rt.isIn(f, RESISTPRESSURE, this.species_traits)) {
+		yield* H.clear_alert("pressure");
 	} else {
-		if ((truthy((yield* g.callName(f, rt.fv(f, "dna", live(H)), "check_mutation", ["Cold Resistance"]))) || truthy((rt.isIn(f, 8, rt.sv(f, "species_traits")) ? 1 : 0)))) {
-			yield* g.callName(f, live(H), "clear_alert", ["pressure"]);
-		} else {
-			yield* g.callName(f, live(H), "adjustBruteLoss", [2]);
-			yield* g.callName(f, live(H), "throw_alert", ["pressure", T("/obj/screen/alert/lowpressure"), 2]);
-		}
+		yield* H.adjustBruteLoss(LOW_PRESSURE_DAMAGE);
+		yield* H.throw_alert("pressure", T("/obj/screen/alert/lowpressure"), 2);
 	}
 	return f.dot;
 }, true);
 
-// /datum/species/proc/handle_fire  (code/modules/mob/living/carbon/human/species.dm:1419)  may sleep
+// species.dm:1419
 rt.def("/datum/species/proc/handle_fire", function* handle_fire(f: Frame, H: Value, no_protection: Value) {
-	let burning_items: Value = null, head_clothes: Value = null, chest_clothes: Value = null, arm_clothes: Value = null, leg_clothes: Value = null, X: Value = null, I: Value = null, thermal_protection: Value = null;
-	let $e: any;
-	f.vars = () => [H, no_protection, burning_items, head_clothes, chest_clothes, arm_clothes, leg_clothes, X, I, thermal_protection, $e];
-	if (live(no_protection) === null) {
-		no_protection = 0;
+	let head_clothes: Value = null, chest_clothes: Value = null, arm_clothes: Value = null, leg_clothes: Value = null, X: Value = null, I: Value = null, thermal_protection: Value = null;
+	no_protection ??= 0;
+	if (rt.isIn(f, NOFIRE, this.species_traits)) {
+		return f.dot;
 	}
-	if (truthy((rt.isIn(f, 13, rt.sv(f, "species_traits")) ? 1 : 0))) {
-		return live(f.dot);
+	if (!H.on_fire) return f.dot;
+	let burning_items: Value = list();
+	if (H.glasses) {
+		head_clothes = H.glasses;
 	}
-	if (!truthy(rt.fv(f, "on_fire", live(H)))) return f.dot;
-	burning_items = rt.list();
-	head_clothes = null;
-	if (truthy(rt.fv(f, "glasses", live(H)))) {
-		head_clothes = rt.fv(f, "glasses", live(H));
+	if (H.wear_mask) {
+		head_clothes = H.wear_mask;
 	}
-	if (truthy(rt.fv(f, "wear_mask", live(H)))) {
-		head_clothes = rt.fv(f, "wear_mask", live(H));
+	if (H.wear_neck) {
+		head_clothes = H.wear_neck;
 	}
-	if (truthy(rt.fv(f, "wear_neck", live(H)))) {
-		head_clothes = rt.fv(f, "wear_neck", live(H));
+	if (H.head) {
+		head_clothes = H.head;
 	}
-	if (truthy(rt.fv(f, "head", live(H)))) {
-		head_clothes = rt.fv(f, "head", live(H));
+	if (head_clothes) {
+		burning_items += head_clothes;
+	} else if (H.ears) {
+		burning_items += H.ears;
 	}
-	if (truthy(live(head_clothes))) {
-		burning_items = rt.modify(live(burning_items), live(head_clothes), add);
-	} else {
-		if (truthy(rt.fv(f, "ears", live(H)))) {
-			burning_items = rt.modify(live(burning_items), rt.fv(f, "ears", live(H)), add);
+	if (H.w_uniform) {
+		chest_clothes = H.w_uniform;
+	}
+	if (H.wear_suit) {
+		chest_clothes = H.wear_suit;
+	}
+	if (chest_clothes) {
+		burning_items += chest_clothes;
+	}
+	if (H.gloves) {
+		arm_clothes = H.gloves;
+	}
+	if (H.w_uniform && (rt.bitAnd(H.w_uniform.body_parts_covered, HANDS) || rt.bitAnd(H.w_uniform.body_parts_covered, ARMS))) {
+		arm_clothes = H.w_uniform;
+	}
+	if (H.wear_suit && (rt.bitAnd(H.wear_suit.body_parts_covered, HANDS) || rt.bitAnd(H.wear_suit.body_parts_covered, ARMS))) {
+		arm_clothes = H.wear_suit;
+	}
+	if (arm_clothes) {
+		burning_items += arm_clothes;
+	}
+	if (H.shoes) {
+		leg_clothes = H.shoes;
+	}
+	if (H.w_uniform && (rt.bitAnd(H.w_uniform.body_parts_covered, FEET) || rt.bitAnd(H.w_uniform.body_parts_covered, LEGS))) {
+		leg_clothes = H.w_uniform;
+	}
+	if (H.wear_suit && (rt.bitAnd(H.wear_suit.body_parts_covered, FEET) || rt.bitAnd(H.wear_suit.body_parts_covered, LEGS))) {
+		leg_clothes = H.wear_suit;
+	}
+	if (leg_clothes) {
+		burning_items += leg_clothes;
+	}
+	for (X of each(burning_items)) {
+		if (!rt.bitAnd((I = X).resistance_flags, FIRE_PROOF)) {
+			yield* I.take_damage(H.fire_stacks, "fire", "fire", 0);
 		}
 	}
-	chest_clothes = null;
-	if (truthy(rt.fv(f, "w_uniform", live(H)))) {
-		chest_clothes = rt.fv(f, "w_uniform", live(H));
+	if ((thermal_protection = H.get_thermal_protection()) >= FIRE_IMMUNITY_SUIT_MAX_TEMP_PROTECT && !no_protection) {
+		return f.dot;
 	}
-	if (truthy(rt.fv(f, "wear_suit", live(H)))) {
-		chest_clothes = rt.fv(f, "wear_suit", live(H));
-	}
-	if (truthy(live(chest_clothes))) {
-		burning_items = rt.modify(live(burning_items), live(chest_clothes), add);
-	}
-	arm_clothes = null;
-	if (truthy(rt.fv(f, "gloves", live(H)))) {
-		arm_clothes = rt.fv(f, "gloves", live(H));
-	}
-	if ((truthy(rt.fv(f, "w_uniform", live(H))) && (truthy(rt.bitAnd(rt.gv(f, "body_parts_covered", rt.fv(f, "w_uniform", live(H))), 1536)) || truthy(rt.bitAnd(rt.gv(f, "body_parts_covered", rt.fv(f, "w_uniform", live(H))), 384))))) {
-		arm_clothes = rt.fv(f, "w_uniform", live(H));
-	}
-	if ((truthy(rt.fv(f, "wear_suit", live(H))) && (truthy(rt.bitAnd(rt.gv(f, "body_parts_covered", rt.fv(f, "wear_suit", live(H))), 1536)) || truthy(rt.bitAnd(rt.gv(f, "body_parts_covered", rt.fv(f, "wear_suit", live(H))), 384))))) {
-		arm_clothes = rt.fv(f, "wear_suit", live(H));
-	}
-	if (truthy(live(arm_clothes))) {
-		burning_items = rt.modify(live(burning_items), live(arm_clothes), add);
-	}
-	leg_clothes = null;
-	if (truthy(rt.fv(f, "shoes", live(H)))) {
-		leg_clothes = rt.fv(f, "shoes", live(H));
-	}
-	if ((truthy(rt.fv(f, "w_uniform", live(H))) && (truthy(rt.bitAnd(rt.gv(f, "body_parts_covered", rt.fv(f, "w_uniform", live(H))), 96)) || truthy(rt.bitAnd(rt.gv(f, "body_parts_covered", rt.fv(f, "w_uniform", live(H))), 24))))) {
-		leg_clothes = rt.fv(f, "w_uniform", live(H));
-	}
-	if ((truthy(rt.fv(f, "wear_suit", live(H))) && (truthy(rt.bitAnd(rt.gv(f, "body_parts_covered", rt.fv(f, "wear_suit", live(H))), 96)) || truthy(rt.bitAnd(rt.gv(f, "body_parts_covered", rt.fv(f, "wear_suit", live(H))), 24))))) {
-		leg_clothes = rt.fv(f, "wear_suit", live(H));
-	}
-	if (truthy(live(leg_clothes))) {
-		burning_items = rt.modify(live(burning_items), live(leg_clothes), add);
-	}
-	X = null;
-	rt.forList(f, 0, live(burning_items));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		X = $e;
-		if (!truthy(rt.bitAnd(rt.gv(f, "resistance_flags", (I = live(X))), 2))) {
-			yield* g.callName(f, live(I), "take_damage", [rt.fv(f, "fire_stacks", live(H)), "fire", "fire", 0]);
-		}
-	}
-	rt.endFor(f, 0);
-	if ((rt.ge((thermal_protection = (yield* g.callName(f, live(H), "get_thermal_protection", []))), 35000) && !truthy(live(no_protection)))) {
-		return live(f.dot);
-	}
-	if ((rt.ge(live(thermal_protection), 30000) && !truthy(live(no_protection)))) {
-		rt.modField(f, live(H), "bodytemperature", 11, add);
+	if (thermal_protection >= FIRE_SUIT_MAX_TEMP_PROTECT && !no_protection) {
+		H.bodytemperature += 11;
 	} else {
-		rt.modField(f, live(H), "bodytemperature", add(30, multiply(rt.fv(f, "fire_stacks", live(H)), 12)), add);
+		H.bodytemperature += BODYTEMP_HEATING_MAX + H.fire_stacks * 12;
 	}
 	return f.dot;
 }, true);
 
-// /datum/species/proc/CanIgniteMob  (code/modules/mob/living/carbon/human/species.dm:1486)
+// species.dm:1486
 rt.def("/datum/species/proc/CanIgniteMob", function CanIgniteMob(f: Frame, H: Value) {
-	if (truthy((rt.isIn(f, 13, rt.sv(f, "species_traits")) ? 1 : 0))) {
+	if (rt.isIn(f, NOFIRE, this.species_traits)) {
 		return 0;
 	}
 	return 1;
 });
 
-// /datum/species/proc/spec_stun  (code/modules/mob/living/carbon/human/species.dm:1499)
+// species.dm:1499
 rt.def("/datum/species/proc/spec_stun", function spec_stun(f: Frame, H: Value, amount: Value) {
-	f.dot = multiply(rt.sv(f, "stunmod"), live(amount));
+	f.dot = this.stunmod * amount;
 	return f.dot;
 });

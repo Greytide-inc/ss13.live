@@ -1,7 +1,7 @@
-// From code/game/objects/structures/hivebot.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/structures/hivebot.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(12780, "/obj/structure/hivebot_beacon", "/obj/structure", {
@@ -15,39 +15,35 @@ rt.type(12780, "/obj/structure/hivebot_beacon", "/obj/structure", {
 	density: 1,
 });
 
-// /obj/structure/hivebot_beacon/proc/New  (code/game/objects/structures/hivebot.dm:12)  may sleep
+// hivebot.dm:12
 rt.def("/obj/structure/hivebot_beacon/proc/New", function* New(f: Frame) {
 	let smoke: Value = null;
-	f.vars = () => [smoke];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.callName(f, (smoke = (yield* g.new_(f, T("/datum/effect_system/smoke_spread"), []))), "set_up", [2, rt.sv(f, "loc")]);
-	yield* g.callName(f, live(smoke), "start", []);
-	yield* g.srcCall(f, "visible_message", fmt("<span class='boldannounce'>The ＀ warps in!</span>", [live(f.src)]));
-	yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/effects/empulse.ogg"), 25, 1]);
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/structure/hivebot_beacon/proc/warpbots")])), (yield* g.call(f, P("/proc/rand"), null, [10, 600]))]);
+	yield* parent_proc();
+	yield* (smoke = (yield* new_(T("/datum/effect_system/smoke_spread")))).set_up(2, this.loc);
+	yield* smoke.start();
+	this.visible_message(`<span class='boldannounce'>The ${this} warps in!</span>`);
+	playsound(this.loc, rt.rsc("sound/effects/empulse.ogg"), 25, 1);
+	yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/structure/hivebot_beacon/proc/warpbots"))), rand(10, 600));
 	return f.dot;
 }, true);
 
-// /obj/structure/hivebot_beacon/proc/warpbots  (code/game/objects/structures/hivebot.dm:21)  may sleep
+// hivebot.dm:21
 rt.def("/obj/structure/hivebot_beacon/proc/warpbots", function* warpbots(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	rt.setSv(f, "icon_state", "def_radar");
-	yield* g.srcCall(f, "visible_message", fmt("<span class='danger'>The ＀ turns on!</span>", [live(f.src)]));
-	while (rt.gt(rt.sv(f, "bot_amt"), 0)) {
-		rt.incSrcVar(f, "bot_amt", -1, true);
-		$0 = rt.sv(f, "bot_type");
-		if ($0 === "norm") {
-			yield* g.new_(f, T("/mob/living/simple_animal/hostile/hivebot"), [rt.getStep(f, live(f.src), 0)]);
-		} else if ($0 === "range") {
-			yield* g.new_(f, T("/mob/living/simple_animal/hostile/hivebot/range"), [rt.getStep(f, live(f.src), 0)]);
-		} else if ($0 === "rapid") {
-			yield* g.new_(f, T("/mob/living/simple_animal/hostile/hivebot/rapid"), [rt.getStep(f, live(f.src), 0)]);
+	this.icon_state = "def_radar";
+	this.visible_message(`<span class='danger'>The ${this} turns on!</span>`);
+	while (this.bot_amt > 0) {
+		this.bot_amt--;
+		if (this.bot_type === "norm") {
+			yield* new_(T("/mob/living/simple_animal/hostile/hivebot"), rt.getStep(f, this, 0));
+		} else if (this.bot_type === "range") {
+			yield* new_(T("/mob/living/simple_animal/hostile/hivebot/range"), rt.getStep(f, this, 0));
+		} else if (this.bot_type === "rapid") {
+			yield* new_(T("/mob/living/simple_animal/hostile/hivebot/rapid"), rt.getStep(f, this, 0));
 		}
 	}
-	yield* g.call(f, P("/proc/sleep"), null, [100]);
-	yield* g.srcCall(f, "visible_message", fmt("<span class='boldannounce'>The ＀ warps out!</span>", [live(f.src)]));
-	yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/effects/empulse.ogg"), 25, 1]);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-	return live(f.dot);
+	yield* sleep(100);
+	this.visible_message(`<span class='boldannounce'>The ${this} warps out!</span>`);
+	playsound(this.loc, rt.rsc("sound/effects/empulse.ogg"), 25, 1);
+	yield* qdel(this);
+	return f.dot;
 }, true);

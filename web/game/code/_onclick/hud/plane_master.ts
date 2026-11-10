@@ -1,7 +1,7 @@
-// From code/_onclick/hud/plane_master.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/_onclick/hud/plane_master.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(11141, "/obj/screen/plane_master", "/obj/screen", {
@@ -13,18 +13,18 @@ rt.type(11141, "/obj/screen/plane_master", "/obj/screen", {
 	blend_mode: 1,
 });
 
-// /obj/screen/plane_master/proc/backdrop  empty
+// Empty in tg.
 rt.def("/obj/screen/plane_master/proc/backdrop", undefined, false, { args: ["mymob"] });
 
-// /obj/screen/plane_master/proc/Show  (code/_onclick/hud/plane_master.dm:10)
+// plane_master.dm:10
 rt.def("/obj/screen/plane_master/proc/Show", function Show(f: Frame, override: Value) {
-	rt.setSv(f, "alpha", (live(override) || rt.sv(f, "show_alpha")));
+	this.alpha = (override || this.show_alpha);
 	return f.dot;
 });
 
-// /obj/screen/plane_master/proc/Hide  (code/_onclick/hud/plane_master.dm:13)
+// plane_master.dm:13
 rt.def("/obj/screen/plane_master/proc/Hide", function Hide(f: Frame, override: Value) {
-	rt.setSv(f, "alpha", (live(override) || rt.sv(f, "hide_alpha")));
+	this.alpha = (override || this.hide_alpha);
 	return f.dot;
 });
 
@@ -35,10 +35,9 @@ rt.type(11143, "/obj/screen/plane_master/lighting", "/obj/screen/plane_master", 
 	mouse_opacity: 0,
 });
 
-// /obj/screen/plane_master/lighting/proc/backdrop  (code/_onclick/hud/plane_master.dm:42)  may sleep
+// plane_master.dm:42
 rt.def("/obj/screen/plane_master/lighting/proc/backdrop", function* backdrop(f: Frame, mymob: Value) {
-	f.vars = () => [mymob];
-	yield* g.callName(f, live(mymob), "overlay_fullscreen", ["lighting_backdrop_lit", T("/obj/screen/fullscreen/lighting_backdrop/lit")]);
-	yield* g.callName(f, live(mymob), "overlay_fullscreen", ["lighting_backdrop_unlit", T("/obj/screen/fullscreen/lighting_backdrop/unlit")]);
+	yield* mymob.overlay_fullscreen("lighting_backdrop_lit", T("/obj/screen/fullscreen/lighting_backdrop/lit"));
+	yield* mymob.overlay_fullscreen("lighting_backdrop_unlit", T("/obj/screen/fullscreen/lighting_backdrop/unlit"));
 	return f.dot;
 }, true);

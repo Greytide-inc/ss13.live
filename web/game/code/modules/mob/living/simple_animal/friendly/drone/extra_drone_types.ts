@@ -1,7 +1,7 @@
-// From code/modules/mob/living/simple_animal/friendly/drone/extra_drone_types.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/simple_animal/friendly/drone/extra_drone_types.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(4845, "/mob/living/simple_animal/drone/syndrone", "/mob/living/simple_animal/drone", {
@@ -25,28 +25,26 @@ rt.type(4845, "/mob/living/simple_animal/drone/syndrone", "/mob/living/simple_an
 	default_hatmask: rt.typePath("/obj/item/clothing/head/helmet/space/hardsuit/syndi"),
 });
 
-// /mob/living/simple_animal/drone/syndrone/proc/<init>  (code/modules/mob/living/simple_animal/friendly/drone/extra_drone_types.dm:21)
+// extra_drone_types.dm:21
 rt.def("/mob/living/simple_animal/drone/syndrone/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "faction", rt.list("syndicate"));
-	$0 = $0;
-	rt.setSv(f, "speak_emote", rt.list("hisses"));
+	parent_proc();
+	this.faction = list("syndicate");
+
+	this.speak_emote = list("hisses");
 	return f.dot;
 });
 
-// /mob/living/simple_animal/drone/syndrone/proc/Initialize  (code/modules/mob/living/simple_animal/friendly/drone/extra_drone_types.dm:36)  may sleep
+// extra_drone_types.dm:36
 rt.def("/mob/living/simple_animal/drone/syndrone/proc/Initialize", function* Initialize(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setFv(f, "telecrystals", rt.fv(f, "hidden_uplink", rt.sv(f, "internal_storage")), 10);
+	yield* parent_proc();
+	this.internal_storage.hidden_uplink.telecrystals = 10;
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/drone/syndrone/proc/Login  (code/modules/mob/living/simple_animal/friendly/drone/extra_drone_types.dm:40)  may sleep
+// extra_drone_types.dm:40
 rt.def("/mob/living/simple_animal/drone/syndrone/proc/Login", function* Login(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "<span class='notice'>You can kill and eat other drones to increase your health!</span>"]);
+	yield* parent_proc();
+	to_chat(this, "<span class='notice'>You can kill and eat other drones to increase your health!</span>");
 	return f.dot;
 }, true);
 
@@ -56,13 +54,12 @@ rt.type(4846, "/mob/living/simple_animal/drone/syndrone/badass", "/mob/living/si
 	default_storage: rt.typePath("/obj/item/device/radio/uplink/nuclear"),
 });
 
-// /mob/living/simple_animal/drone/syndrone/badass/proc/Initialize  (code/modules/mob/living/simple_animal/friendly/drone/extra_drone_types.dm:49)  may sleep
+// extra_drone_types.dm:49
 rt.def("/mob/living/simple_animal/drone/syndrone/badass/proc/Initialize", function* Initialize(f: Frame) {
 	let W: Value = null;
-	f.vars = () => [W];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setFv(f, "telecrystals", rt.fv(f, "hidden_uplink", rt.sv(f, "internal_storage")), 30);
-	yield* g.callName(f, (W = (yield* g.new_(f, T("/obj/item/weapon/implant/weapons_auth"), [live(f.src)]))), "implant", [live(f.src)]);
+	yield* parent_proc();
+	this.internal_storage.hidden_uplink.telecrystals = 30;
+	yield* (W = (yield* new_(T("/obj/item/weapon/implant/weapons_auth"), this))).implant(this);
 	return f.dot;
 }, true);
 
@@ -70,10 +67,10 @@ rt.type(4847, "/mob/living/simple_animal/drone/snowflake", "/mob/living/simple_a
 	default_hatmask: rt.typePath("/obj/item/clothing/head/chameleon/drone"),
 });
 
-// /mob/living/simple_animal/drone/snowflake/proc/Initialize  (code/modules/mob/living/simple_animal/friendly/drone/extra_drone_types.dm:58)  may sleep
+// extra_drone_types.dm:58
 rt.def("/mob/living/simple_animal/drone/snowflake/proc/Initialize", function* Initialize(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.modSrcVar(f, "desc", " This drone appears to have a complex holoprojector built on its 'head'.", add);
+	yield* parent_proc();
+	this.desc += " This drone appears to have a complex holoprojector built on its 'head'.";
 	return f.dot;
 }, true);
 
@@ -83,21 +80,20 @@ rt.type(4849, "/mob/living/simple_animal/drone/polymorphed", "/mob/living/simple
 	default_storage: null,
 });
 
-// /mob/living/simple_animal/drone/polymorphed/proc/Initialize  (code/modules/mob/living/simple_animal/friendly/drone/extra_drone_types.dm:82)  may sleep
+// extra_drone_types.dm:82
 rt.def("/mob/living/simple_animal/drone/polymorphed/proc/Initialize", function* Initialize(f: Frame) {
 	let colour: Value = null;
-	f.vars = () => [colour];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.srcCall(f, "liberate");
-	rt.setSv(f, "visualAppearence", rt.op(f, "PickUnweighted", [3], ["drone_maint", "drone_repair", "drone_scout"]));
-	if (isEqual(rt.sv(f, "visualAppearence"), "drone_maint")) {
-		colour = rt.op(f, "PickUnweighted", [6], ["grey", "blue", "red", "green", "pink", "orange"]);
-		rt.setSv(f, "icon_state", fmt("＀_＀", [rt.sv(f, "visualAppearence"), live(colour)]));
+	f.dot = (yield* parent_proc());
+	this.liberate();
+	this.visualAppearence = pick("drone_maint", "drone_repair", "drone_scout");
+	if (this.visualAppearence == "drone_maint") {
+		colour = pick("grey", "blue", "red", "green", "pink", "orange");
+		this.icon_state = `${this.visualAppearence}_${colour}`;
 	} else {
-		rt.setSv(f, "icon_state", rt.sv(f, "visualAppearence"));
+		this.icon_state = this.visualAppearence;
 	}
-	rt.setSv(f, "icon_living", rt.sv(f, "icon_state"));
-	rt.setSv(f, "icon_dead", fmt("＀_dead", [rt.sv(f, "visualAppearence")]));
+	this.icon_living = this.icon_state;
+	this.icon_dead = `${this.visualAppearence}_dead`;
 	return f.dot;
 }, true);
 
@@ -134,184 +130,181 @@ rt.type(4842, "/mob/living/simple_animal/drone/cogscarab", "/mob/living/simple_a
 	default_storage: rt.typePath("/obj/item/weapon/storage/toolbox/brass/prefilled"),
 });
 
-// /mob/living/simple_animal/drone/cogscarab/proc/Initialize  (code/modules/mob/living/simple_animal/friendly/drone/extra_drone_types.dm:144)  may sleep
+// extra_drone_types.dm:144
 rt.def("/mob/living/simple_animal/drone/cogscarab/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.srcCall(f, "set_light", 2, 0.5);
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "access_card")]);
-	rt.setSv(f, "access_card", null);
-	(rt.modSrcVar(f, "verbs", P("/mob/living/simple_animal/drone/verb/check_laws"), subtract));
-	(rt.modSrcVar(f, "verbs", P("/mob/living/simple_animal/drone/verb/toggle_light"), subtract));
-	(rt.modSrcVar(f, "verbs", P("/mob/living/simple_animal/drone/verb/drone_ping"), subtract));
+	f.dot = (yield* parent_proc());
+	this.set_light(2, 0.5);
+	yield* qdel(this.access_card);
+	this.access_card = null;
+	this.verbs -= P("/mob/living/simple_animal/drone/verb/check_laws");
+	this.verbs -= P("/mob/living/simple_animal/drone/verb/toggle_light");
+	this.verbs -= P("/mob/living/simple_animal/drone/verb/drone_ping");
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/drone/cogscarab/proc/Login  (code/modules/mob/living/simple_animal/friendly/drone/extra_drone_types.dm:153)  may sleep
+// extra_drone_types.dm:153
 rt.def("/mob/living/simple_animal/drone/cogscarab/proc/Login", function* Login(f: Frame) {
-	let $0: any, $1: any;
-	f.vars = () => [$0, $1];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.call(f, P("/proc/add_servant_of_ratvar"), null, [live(f.src), 1]);
-	$0 = live(f.src);
-	if (truthy(rt.gl("ratvar_awakens"))) {
+	let $1: any;
+	yield* parent_proc();
+	yield* add_servant_of_ratvar(this, 1);
+	let $0: any = this;
+	if (GLOB.ratvar_awakens) {
 		$1 = "";
 	} else {
 		$1 = ", <i>excluding a clockwork slab</i>";
 	}
-	yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<b>You yourself are one of these servants, and will be able to utilize almost anything they can＀.</b>", [$1])]);
+	to_chat($0, `<b>You yourself are one of these servants, and will be able to utilize almost anything they can${$1}.</b>`);
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/drone/cogscarab/proc/alert_drones  (code/modules/mob/living/simple_animal/friendly/drone/extra_drone_types.dm:161)
+// extra_drone_types.dm:161
 rt.def("/mob/living/simple_animal/drone/cogscarab/proc/alert_drones", function alert_drones(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	if (isEqual(live(f.args[0]), fmt("<span class='notice'>DRONE NETWORK: ＀ connected.</span>", [rt.sv(f, "name")]))) {
-		f.args[0] = fmt("<span class='brass'><i>Hierophant Network:</i> ＀ activated.</span>", [rt.sv(f, "name")]);
-	} else {
-		if (isEqual(live(f.args[0]), fmt("<span class='danger'>DRONE NETWORK: ＀ is not responding.</span>", [rt.sv(f, "name")]))) {
-			f.args[0] = fmt("<span class='brass'><i>Hierophant Network:</i></span> <span class='alloy'>＀ disabled.</span>", [rt.sv(f, "name")]);
-		}
+	if (f.args[0] == `<span class='notice'>DRONE NETWORK: ${this.name} connected.</span>`) {
+		f.args[0] = `<span class='brass'><i>Hierophant Network:</i> ${this.name} activated.</span>`;
+	} else if (f.args[0] == `<span class='danger'>DRONE NETWORK: ${this.name} is not responding.</span>`) {
+		f.args[0] = `<span class='brass'><i>Hierophant Network:</i></span> <span class='alloy'>${this.name} disabled.</span>`;
 	}
-	rt.callSuper(f, [], rt.Args.Same);
+	parent_proc();
 	return f.dot;
 }, false, { args: ["msg", "dead_can_hear"] });
 
-// /mob/living/simple_animal/drone/proc/attackby  (code/modules/mob/living/simple_animal/friendly/drone/extra_drone_types.dm:168)  may sleep
-rt.def("/mob/living/simple_animal/drone/proc/attackby", function* attackby(f: Frame) {
-	if ((truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/screwdriver")) ? 1 : 0)) && isEqual(rt.sv(f, "stat"), 2))) {
-		yield* g.srcCall(f, "try_reactivate", live(f.args[1]));
+// extra_drone_types.dm:168
+rt.def("/mob/living/simple_animal/drone/proc/attackby", function* attackby(f: Frame, I: Value, user: Value) {
+	if (rt.istype(I, T("/obj/item/weapon/screwdriver")) && this.stat == 2) {
+		yield* this.try_reactivate(user);
 	} else {
-		yield* g.callSuper(f, [], rt.Args.Same);
+		yield* parent_proc();
 	}
-	return f.dot;
-}, true, { args: ["I", "user"] });
-
-// /mob/living/simple_animal/drone/cogscarab/proc/try_reactivate  (code/modules/mob/living/simple_animal/friendly/drone/extra_drone_types.dm:174)  may sleep
-rt.def("/mob/living/simple_animal/drone/cogscarab/proc/try_reactivate", function* try_reactivate(f: Frame) {
-	if (!truthy((yield* g.call(f, P("/proc/is_servant_of_ratvar"), null, [live(f.args[0])])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='warning'>You fiddle around with ＀ to no avail.</span>", [live(f.src)])]);
-	} else {
-		yield* g.callSuper(f, [], rt.Args.Same);
-	}
-	return f.dot;
-}, true, { args: ["user"] });
-
-// /mob/living/simple_animal/drone/cogscarab/proc/get_armor_effectiveness  (code/modules/mob/living/simple_animal/friendly/drone/extra_drone_types.dm:185)
-rt.def("/mob/living/simple_animal/drone/cogscarab/proc/get_armor_effectiveness", function get_armor_effectiveness(f: Frame) {
-	if (truthy(rt.gl("ratvar_awakens"))) {
-		return 1;
-	}
-	return rt.callSuper(f, [], rt.Args.Same);
-});
-
-// /mob/living/simple_animal/drone/cogscarab/proc/drone_chat  (code/modules/mob/living/simple_animal/friendly/drone/extra_drone_types.dm:197)
-rt.def("/mob/living/simple_animal/drone/cogscarab/proc/drone_chat", function drone_chat(f: Frame, msg: Value) {
-	rt.call(f, P("/proc/titled_hierophant_message"), null, [live(f.src), live(msg), "nezbere", "brass", "Construct"]);
-	return f.dot;
-});
-
-// /mob/living/simple_animal/drone/cogscarab/proc/ratvar_act  (code/modules/mob/living/simple_animal/friendly/drone/extra_drone_types.dm:200)  may sleep
-rt.def("/mob/living/simple_animal/drone/cogscarab/proc/ratvar_act", function* ratvar_act(f: Frame) {
-	yield* g.srcCall(f, "fully_heal", 1);
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/drone/cogscarab/proc/update_icons  (code/modules/mob/living/simple_animal/friendly/drone/extra_drone_types.dm:203)
+// extra_drone_types.dm:174
+rt.def("/mob/living/simple_animal/drone/cogscarab/proc/try_reactivate", function* try_reactivate(f: Frame, user: Value) {
+	if (!is_servant_of_ratvar(user)) {
+		to_chat(user, `<span class='warning'>You fiddle around with ${this} to no avail.</span>`);
+	} else {
+		yield* parent_proc();
+	}
+	return f.dot;
+}, true);
+
+// extra_drone_types.dm:185
+rt.def("/mob/living/simple_animal/drone/cogscarab/proc/get_armor_effectiveness", function get_armor_effectiveness(f: Frame) {
+	if (GLOB.ratvar_awakens) {
+		return 1;
+	}
+	return parent_proc();
+});
+
+// extra_drone_types.dm:197
+rt.def("/mob/living/simple_animal/drone/cogscarab/proc/drone_chat", function drone_chat(f: Frame, msg: Value) {
+	titled_hierophant_message(this, msg, "nezbere", "brass", "Construct");
+	return f.dot;
+});
+
+// extra_drone_types.dm:200
+rt.def("/mob/living/simple_animal/drone/cogscarab/proc/ratvar_act", function* ratvar_act(f: Frame) {
+	yield* this.fully_heal(1);
+	return f.dot;
+}, true);
+
+// extra_drone_types.dm:203
 rt.def("/mob/living/simple_animal/drone/cogscarab/proc/update_icons", function update_icons(f: Frame) {
-	if (!isEqual(rt.sv(f, "stat"), 2)) {
-		if (truthy(rt.callSrc(f, "incapacitated", []))) {
-			rt.setSv(f, "icon_state", fmt("＀_flipped", [rt.sv(f, "visualAppearence")]));
+	if (this.stat != 2) {
+		if (this.incapacitated()) {
+			this.icon_state = `${this.visualAppearence}_flipped`;
 		} else {
-			rt.setSv(f, "icon_state", rt.sv(f, "visualAppearence"));
+			this.icon_state = this.visualAppearence;
 		}
 	} else {
-		rt.setSv(f, "icon_state", fmt("＀_dead", [rt.sv(f, "visualAppearence")]));
+		this.icon_state = `${this.visualAppearence}_dead`;
 	}
 	return f.dot;
 });
 
-// /mob/living/simple_animal/drone/cogscarab/proc/Stun  (code/modules/mob/living/simple_animal/friendly/drone/extra_drone_types.dm:212)  may sleep
+// extra_drone_types.dm:212
 rt.def("/mob/living/simple_animal/drone/cogscarab/proc/Stun", function* Stun(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 1;
 	}
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 0;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(live(f.dot))) return f.dot;
-	yield* g.srcCall(f, "update_icons");
+	f.dot = (yield* parent_proc());
+	if (!f.dot) return f.dot;
+	yield* this.update_icons();
 	return f.dot;
 }, true, { args: ["amount", "updating", "ignore_canstun"] });
 
-// /mob/living/simple_animal/drone/cogscarab/proc/SetStun  (code/modules/mob/living/simple_animal/friendly/drone/extra_drone_types.dm:217)  may sleep
+// extra_drone_types.dm:217
 rt.def("/mob/living/simple_animal/drone/cogscarab/proc/SetStun", function* SetStun(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 1;
 	}
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 0;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(live(f.dot))) return f.dot;
-	yield* g.srcCall(f, "update_icons");
+	f.dot = (yield* parent_proc());
+	if (!f.dot) return f.dot;
+	yield* this.update_icons();
 	return f.dot;
 }, true, { args: ["amount", "updating", "ignore_canstun"] });
 
-// /mob/living/simple_animal/drone/cogscarab/proc/AdjustStun  (code/modules/mob/living/simple_animal/friendly/drone/extra_drone_types.dm:222)  may sleep
+// extra_drone_types.dm:222
 rt.def("/mob/living/simple_animal/drone/cogscarab/proc/AdjustStun", function* AdjustStun(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 1;
 	}
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 0;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(live(f.dot))) return f.dot;
-	yield* g.srcCall(f, "update_icons");
+	f.dot = (yield* parent_proc());
+	if (!f.dot) return f.dot;
+	yield* this.update_icons();
 	return f.dot;
 }, true, { args: ["amount", "updating", "ignore_canstun"] });
 
-// /mob/living/simple_animal/drone/cogscarab/proc/Knockdown  (code/modules/mob/living/simple_animal/friendly/drone/extra_drone_types.dm:227)  may sleep
+// extra_drone_types.dm:227
 rt.def("/mob/living/simple_animal/drone/cogscarab/proc/Knockdown", function* Knockdown(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 1;
 	}
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 0;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(live(f.dot))) return f.dot;
-	yield* g.srcCall(f, "update_icons");
+	f.dot = (yield* parent_proc());
+	if (!f.dot) return f.dot;
+	yield* this.update_icons();
 	return f.dot;
 }, true, { args: ["amount", "updating", "ignore_canknockdown"] });
 
-// /mob/living/simple_animal/drone/cogscarab/proc/SetKnockdown  (code/modules/mob/living/simple_animal/friendly/drone/extra_drone_types.dm:232)  may sleep
+// extra_drone_types.dm:232
 rt.def("/mob/living/simple_animal/drone/cogscarab/proc/SetKnockdown", function* SetKnockdown(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 1;
 	}
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 0;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(live(f.dot))) return f.dot;
-	yield* g.srcCall(f, "update_icons");
+	f.dot = (yield* parent_proc());
+	if (!f.dot) return f.dot;
+	yield* this.update_icons();
 	return f.dot;
 }, true, { args: ["amount", "updating", "ignore_canknockdown"] });
 
-// /mob/living/simple_animal/drone/cogscarab/proc/AdjustKnockdown  (code/modules/mob/living/simple_animal/friendly/drone/extra_drone_types.dm:237)  may sleep
+// extra_drone_types.dm:237
 rt.def("/mob/living/simple_animal/drone/cogscarab/proc/AdjustKnockdown", function* AdjustKnockdown(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 1;
 	}
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 0;
 	}
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy(live(f.dot))) return f.dot;
-	yield* g.srcCall(f, "update_icons");
+	f.dot = (yield* parent_proc());
+	if (!f.dot) return f.dot;
+	yield* this.update_icons();
 	return f.dot;
 }, true, { args: ["amount", "updating", "ignore_canknockdown"] });

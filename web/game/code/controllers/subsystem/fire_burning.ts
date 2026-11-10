@@ -1,7 +1,7 @@
-// From code/controllers/subsystem/fire_burning.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/controllers/subsystem/fire_burning.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(20, "/datum/controller/subsystem/fire_burning", "/datum/controller/subsystem", {
@@ -13,75 +13,70 @@ rt.type(20, "/datum/controller/subsystem/fire_burning", "/datum/controller/subsy
 	runlevels: 12,
 });
 
-// /datum/controller/subsystem/fire_burning/proc/New  (code/controllers/subsystem/fire_burning.dm:1)  may sleep
+// fire_burning.dm:1
 rt.def("/datum/controller/subsystem/fire_burning/proc/New", function* New(f: Frame) {
-	if (!isEqual(rt.gl("SSfire_burning"), live(f.src))) {
-		if (truthy((rt.istype(rt.gl("SSfire_burning"), T("/datum/controller/subsystem/fire_burning")) ? 1 : 0))) {
-			yield* g.srcCall(f, "Recover");
-			yield* g.call(f, P("/proc/qdel"), null, [rt.gl("SSfire_burning")]);
+	if (GLOB.SSfire_burning != this) {
+		if (rt.istype(GLOB.SSfire_burning, T("/datum/controller/subsystem/fire_burning"))) {
+			yield* this.Recover();
+			yield* qdel(GLOB.SSfire_burning);
 		}
-		rt.setGl("SSfire_burning", live(f.src));
+		GLOB.SSfire_burning = this;
 	}
-	yield* g.srcCall(f, "PreInit");
+	this.PreInit();
 	return f.dot;
 }, true);
 
-// /datum/controller/subsystem/fire_burning/proc/<init>  (code/controllers/subsystem/fire_burning.dm:7)
+// fire_burning.dm:7
 rt.def("/datum/controller/subsystem/fire_burning/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "currentrun", rt.list());
-	$0 = $0;
-	rt.setSv(f, "processing", rt.list());
+	parent_proc();
+	this.currentrun = list();
+
+	this.processing = list();
 	return f.dot;
 });
 
-// /datum/controller/subsystem/fire_burning/proc/stat_entry  (code/controllers/subsystem/fire_burning.dm:11)  may sleep
+// fire_burning.dm:11
 rt.def("/datum/controller/subsystem/fire_burning/proc/stat_entry", function* stat_entry(f: Frame) {
-	yield* g.callSuper(f, [fmt("P:＀", [rt.len(f, rt.sv(f, "processing"))])]);
+	yield* parent_proc(`P:${rt.len(f, this.processing)}`);
 	return f.dot;
 }, true);
 
-// /datum/controller/subsystem/fire_burning/proc/fire  (code/controllers/subsystem/fire_burning.dm:15)  may sleep
+// fire_burning.dm:15
 rt.def("/datum/controller/subsystem/fire_burning/proc/fire", function* fire(f: Frame, resumed: Value) {
-	let currentrun: Value = null, O: Value = null;
+	let O: Value = null;
 	let $0: any;
-	f.vars = () => [resumed, currentrun, O, $0];
-	if (live(resumed) === null) {
-		resumed = 0;
+	resumed ??= 0;
+	if (!resumed) {
+		this.currentrun = (yield* this.processing.Copy());
 	}
-	if (!truthy(live(resumed))) {
-		rt.setFv(f, "currentrun", live(f.src), (yield* g.callName(f, rt.sv(f, "processing"), "Copy", [])));
-	}
-	currentrun = rt.fv(f, "currentrun", live(f.src));
-	while (truthy(rt.len(f, live(currentrun)))) {
-		O = rt.index(live(currentrun), rt.len(f, live(currentrun)));
-		rt.incField(f, live(currentrun), "len", -1, true);
-		if ((!truthy(live(O)) || (!truthy(live(O)) || truthy(rt.fv(f, "gc_destroyed", live(O)))))) {
-			(rt.modSrcVar(f, "processing", live(O), subtract));
-			if ((rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit")) || !isEqual(rt.fv(f, "state", live(f.src)), 2))) {
-				$0 = (yield* g.srcCall(f, "pause"));
+	let currentrun: Value = this.currentrun;
+	while (rt.len(f, currentrun)) {
+		O = rt.index(currentrun, rt.len(f, currentrun));
+		currentrun.len--;
+		if (!O || !O || O.gc_destroyed) {
+			this.processing -= O;
+			if (rt.tickUsage(f) > GLOB.current_ticklimit || this.state != 2) {
+				$0 = this.pause();
 			} else {
 				$0 = 0;
 			}
-			if (truthy($0)) {
-				return live(f.dot);
+			if ($0) {
+				return f.dot;
 			}
 			continue;
 		}
-		if (truthy(rt.bitAnd(rt.fv(f, "resistance_flags", live(O)), 8))) {
-			yield* g.callName(f, live(O), "take_damage", [20, "fire", "fire", 0]);
+		if (rt.bitAnd(O.resistance_flags, 8)) {
+			yield* O.take_damage(20, "fire", "fire", 0);
 		} else {
-			(rt.modSrcVar(f, "processing", live(O), subtract));
+			this.processing -= O;
 		}
-		if ((rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit")) || !isEqual(rt.fv(f, "state", live(f.src)), 2))) {
-			$0 = (yield* g.srcCall(f, "pause"));
+		if (rt.tickUsage(f) > GLOB.current_ticklimit || this.state != 2) {
+			$0 = this.pause();
 		} else {
 			$0 = 0;
 		}
-		if (truthy($0)) {
-			return live(f.dot);
+		if ($0) {
+			return f.dot;
 		}
 	}
 	return f.dot;

@@ -1,7 +1,7 @@
-// From code/modules/ruins/objects_and_mobs/ruin_mapping_aids.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/ruins/objects_and_mobs/ruin_mapping_aids.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(12098, "/obj/effect/baseturf_helper", "/obj/effect", {
@@ -11,22 +11,16 @@ rt.type(12098, "/obj/effect/baseturf_helper", "/obj/effect", {
 	icon_state: "syndballoon",
 });
 
-// /obj/effect/baseturf_helper/proc/Initialize  (code/modules/ruins/objects_and_mobs/ruin_mapping_aids.dm:10)  may sleep
+// ruin_mapping_aids.dm:10
 rt.def("/obj/effect/baseturf_helper/proc/Initialize", function* Initialize(f: Frame) {
-	let thearea: Value = null, _T: Value = null;
-	let $e: any;
-	f.vars = () => [thearea, _T, $e];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	thearea = (yield* g.call(f, P("/proc/get_area"), null, [live(f.src)]));
-	_T = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/get_area_turfs"), null, [live(thearea), rt.sv(f, "z")])), T("/turf"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		_T = $e;
-		if (!isEqual(rt.fv(f, "baseturf", live(_T)), rt.fv(f, "type", live(_T)))) {
-			rt.setFv(f, "baseturf", live(_T), rt.sv(f, "baseturf"));
+	let _T: Value = null;
+	f.dot = (yield* parent_proc());
+	let thearea: Value = get_area(this);
+	for (_T of each(get_area_turfs(thearea, this.z), T("/turf"))) {
+		if (_T.baseturf != _T.type) {
+			_T.baseturf = this.baseturf;
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* qdel(this);
 	return f.dot;
 }, true);

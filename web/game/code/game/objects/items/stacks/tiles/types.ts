@@ -1,5 +1,5 @@
 // Types declared in code/game/objects/items/stacks/tiles that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(8974, "/obj/item/stack/tile/mineral", "/obj/item/stack/tile", {});
 rt.type(8981, "/obj/item/stack/tile/mineral/abductor", "/obj/item/stack/tile/mineral", {

@@ -1,7 +1,7 @@
-// From code/modules/atmospherics/machinery/components/unary_devices/portables_connector.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/atmospherics/machinery/components/unary_devices/portables_connector.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(10589, "/obj/machinery/atmospherics/components/unary/portables_connector", "/obj/machinery/atmospherics/components/unary", {
@@ -16,44 +16,43 @@ rt.type(10589, "/obj/machinery/atmospherics/components/unary/portables_connector
 	layer: 2.48,
 });
 
-// /obj/machinery/atmospherics/components/unary/portables_connector/proc/New  (code/modules/atmospherics/machinery/components/unary_devices/portables_connector.dm:13)  may sleep
+// portables_connector.dm:13
 rt.def("/obj/machinery/atmospherics/components/unary/portables_connector/proc/New", function* New(f: Frame) {
 	let air_contents: Value = null;
-	f.vars = () => [air_contents];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setFv(f, "volume", (air_contents = rt.index(rt.sv(f, "airs"), 1)), 0);
+	yield* parent_proc();
+	(air_contents = rt.index(this.airs, 1)).volume = 0;
 	return f.dot;
 }, true);
 
-// /obj/machinery/atmospherics/components/unary/portables_connector/proc/process_atmos  (code/modules/atmospherics/machinery/components/unary_devices/portables_connector.dm:22)
+// portables_connector.dm:22
 rt.def("/obj/machinery/atmospherics/components/unary/portables_connector/proc/process_atmos", function process_atmos(f: Frame) {
-	if (!truthy(rt.sv(f, "connected_device"))) {
-		return live(f.dot);
+	if (!this.connected_device) {
+		return f.dot;
 	}
-	rt.callSrc(f, "update_parents", []);
+	this.update_parents();
 	return f.dot;
 });
 
-// /obj/machinery/atmospherics/components/unary/portables_connector/proc/Destroy  (code/modules/atmospherics/machinery/components/unary_devices/portables_connector.dm:28)  may sleep
+// portables_connector.dm:28
 rt.def("/obj/machinery/atmospherics/components/unary/portables_connector/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.sv(f, "connected_device"))) {
-		yield* g.callName(f, rt.sv(f, "connected_device"), "disconnect", []);
+	if (this.connected_device) {
+		yield* this.connected_device.disconnect();
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);
 
-// /obj/machinery/atmospherics/components/unary/portables_connector/proc/can_unwrench  (code/modules/atmospherics/machinery/components/unary_devices/portables_connector.dm:32)
-rt.def("/obj/machinery/atmospherics/components/unary/portables_connector/proc/can_unwrench", function can_unwrench(f: Frame) {
-	if (!truthy(rt.callSuper(f, [], rt.Args.Same))) return f.dot;
-	if (truthy(rt.sv(f, "connected_device"))) {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='warning'>You cannot unwrench ＀, detach ＀ first!</span>", [live(f.src), rt.sv(f, "connected_device")])]);
+// portables_connector.dm:32
+rt.def("/obj/machinery/atmospherics/components/unary/portables_connector/proc/can_unwrench", function can_unwrench(f: Frame, user: Value) {
+	if (!parent_proc()) return f.dot;
+	if (this.connected_device) {
+		to_chat(user, `<span class='warning'>You cannot unwrench ${this}, detach ${this.connected_device} first!</span>`);
 	} else {
 		return 1;
 	}
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/machinery/atmospherics/components/unary/portables_connector/proc/portableConnectorReturnAir  (code/modules/atmospherics/machinery/components/unary_devices/portables_connector.dm:39)
+// portables_connector.dm:39
 rt.def("/obj/machinery/atmospherics/components/unary/portables_connector/proc/portableConnectorReturnAir", function portableConnectorReturnAir(f: Frame) {
-	return rt.callName(f, rt.sv(f, "connected_device"), "portableConnectorReturnAir", []);
+	return this.connected_device.portableConnectorReturnAir();
 });

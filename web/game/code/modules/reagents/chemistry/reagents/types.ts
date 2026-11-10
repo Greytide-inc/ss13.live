@@ -1,5 +1,5 @@
 // Types declared in code/modules/reagents/chemistry/reagents that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(3360, "/datum/reagent/consumable/ethanol/beer", "/datum/reagent/consumable/ethanol", {
 	name: "Beer",

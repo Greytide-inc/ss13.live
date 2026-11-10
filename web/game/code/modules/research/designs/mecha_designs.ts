@@ -1,7 +1,7 @@
-// From code/modules/research/designs/mecha_designs.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/research/designs/mecha_designs.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(2966, "/datum/design/board/ripley_main", "/datum/design/board", {
@@ -13,14 +13,12 @@ rt.type(2966, "/datum/design/board/ripley_main", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/mecha/ripley/main"),
 });
 
-// /datum/design/board/ripley_main/proc/<init>  (code/modules/research/designs/mecha_designs.dm:9)
+// mecha_designs.dm:9
 rt.def("/datum/design/board/ripley_main/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 2]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Modules"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 2]);
+
+	this.category = list("Exosuit Modules");
 	return f.dot;
 });
 
@@ -33,14 +31,12 @@ rt.type(2967, "/datum/design/board/ripley_peri", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/mecha/ripley/peripherals"),
 });
 
-// /datum/design/board/ripley_peri/proc/<init>  (code/modules/research/designs/mecha_designs.dm:17)
+// mecha_designs.dm:17
 rt.def("/datum/design/board/ripley_peri/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 2]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Modules"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 2]);
+
+	this.category = list("Exosuit Modules");
 	return f.dot;
 });
 
@@ -53,14 +49,12 @@ rt.type(2968, "/datum/design/board/odysseus_main", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/mecha/odysseus/main"),
 });
 
-// /datum/design/board/odysseus_main/proc/<init>  (code/modules/research/designs/mecha_designs.dm:26)
+// mecha_designs.dm:26
 rt.def("/datum/design/board/odysseus_main/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 3, "biotech", 3, "engineering", 3]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Modules"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 3, "biotech", 3, "engineering", 3]);
+
+	this.category = list("Exosuit Modules");
 	return f.dot;
 });
 
@@ -73,14 +67,12 @@ rt.type(2969, "/datum/design/board/odysseus_peri", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/mecha/odysseus/peripherals"),
 });
 
-// /datum/design/board/odysseus_peri/proc/<init>  (code/modules/research/designs/mecha_designs.dm:34)
+// mecha_designs.dm:34
 rt.def("/datum/design/board/odysseus_peri/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 3, "biotech", 3, "engineering", 3]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Modules"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 3, "biotech", 3, "engineering", 3]);
+
+	this.category = list("Exosuit Modules");
 	return f.dot;
 });
 
@@ -93,14 +85,12 @@ rt.type(2970, "/datum/design/board/gygax_main", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/mecha/gygax/main"),
 });
 
-// /datum/design/board/gygax_main/proc/<init>  (code/modules/research/designs/mecha_designs.dm:43)
+// mecha_designs.dm:43
 rt.def("/datum/design/board/gygax_main/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 4, "combat", 3, "engineering", 4]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Modules"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 4, "combat", 3, "engineering", 4]);
+
+	this.category = list("Exosuit Modules");
 	return f.dot;
 });
 
@@ -113,14 +103,12 @@ rt.type(2971, "/datum/design/board/gygax_peri", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/mecha/gygax/peripherals"),
 });
 
-// /datum/design/board/gygax_peri/proc/<init>  (code/modules/research/designs/mecha_designs.dm:51)
+// mecha_designs.dm:51
 rt.def("/datum/design/board/gygax_peri/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 4, "combat", 3, "engineering", 4]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Modules"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 4, "combat", 3, "engineering", 4]);
+
+	this.category = list("Exosuit Modules");
 	return f.dot;
 });
 
@@ -133,14 +121,12 @@ rt.type(2972, "/datum/design/board/gygax_targ", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/mecha/gygax/targeting"),
 });
 
-// /datum/design/board/gygax_targ/proc/<init>  (code/modules/research/designs/mecha_designs.dm:59)
+// mecha_designs.dm:59
 rt.def("/datum/design/board/gygax_targ/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 4, "combat", 4, "engineering", 4]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Modules"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 4, "combat", 4, "engineering", 4]);
+
+	this.category = list("Exosuit Modules");
 	return f.dot;
 });
 
@@ -153,14 +139,12 @@ rt.type(2973, "/datum/design/board/durand_main", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/mecha/durand/main"),
 });
 
-// /datum/design/board/durand_main/proc/<init>  (code/modules/research/designs/mecha_designs.dm:68)
+// mecha_designs.dm:68
 rt.def("/datum/design/board/durand_main/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 4, "combat", 4, "engineering", 4]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Modules"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 4, "combat", 4, "engineering", 4]);
+
+	this.category = list("Exosuit Modules");
 	return f.dot;
 });
 
@@ -173,14 +157,12 @@ rt.type(2974, "/datum/design/board/durand_peri", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/mecha/durand/peripherals"),
 });
 
-// /datum/design/board/durand_peri/proc/<init>  (code/modules/research/designs/mecha_designs.dm:76)
+// mecha_designs.dm:76
 rt.def("/datum/design/board/durand_peri/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 4, "combat", 4, "engineering", 4]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Modules"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 4, "combat", 4, "engineering", 4]);
+
+	this.category = list("Exosuit Modules");
 	return f.dot;
 });
 
@@ -193,14 +175,12 @@ rt.type(2975, "/datum/design/board/durand_targ", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/mecha/durand/targeting"),
 });
 
-// /datum/design/board/durand_targ/proc/<init>  (code/modules/research/designs/mecha_designs.dm:84)
+// mecha_designs.dm:84
 rt.def("/datum/design/board/durand_targ/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 5, "combat", 4, "engineering", 4]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Modules"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 5, "combat", 4, "engineering", 4]);
+
+	this.category = list("Exosuit Modules");
 	return f.dot;
 });
 
@@ -213,14 +193,12 @@ rt.type(2976, "/datum/design/board/honker_main", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/mecha/honker/main"),
 });
 
-// /datum/design/board/honker_main/proc/<init>  (code/modules/research/designs/mecha_designs.dm:93)
+// mecha_designs.dm:93
 rt.def("/datum/design/board/honker_main/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 3, "engineering", 3]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Modules"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 3, "engineering", 3]);
+
+	this.category = list("Exosuit Modules");
 	return f.dot;
 });
 
@@ -233,14 +211,12 @@ rt.type(2977, "/datum/design/board/honker_peri", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/mecha/honker/peripherals"),
 });
 
-// /datum/design/board/honker_peri/proc/<init>  (code/modules/research/designs/mecha_designs.dm:101)
+// mecha_designs.dm:101
 rt.def("/datum/design/board/honker_peri/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 3, "engineering", 3]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Modules"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 3, "engineering", 3]);
+
+	this.category = list("Exosuit Modules");
 	return f.dot;
 });
 
@@ -253,14 +229,12 @@ rt.type(2978, "/datum/design/board/honker_targ", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/mecha/honker/targeting"),
 });
 
-// /datum/design/board/honker_targ/proc/<init>  (code/modules/research/designs/mecha_designs.dm:109)
+// mecha_designs.dm:109
 rt.def("/datum/design/board/honker_targ/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 3, "engineering", 3]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Modules"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["programming", 3, "engineering", 3]);
+
+	this.category = list("Exosuit Modules");
 	return f.dot;
 });
 
@@ -274,15 +248,13 @@ rt.type(2979, "/datum/design/board/phazon_main", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/mecha/phazon/main"),
 });
 
-// /datum/design/board/phazon_main/proc/<init>  (code/modules/research/designs/mecha_designs.dm:118)
+// mecha_designs.dm:118
 rt.def("/datum/design/board/phazon_main/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$glass", 1000, "$bluespace", 100]));
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 6, "materials", 6, "plasmatech", 5]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Modules"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$glass", 1000, "$bluespace", 100]);
+	this.req_tech = rt.alist(f, ["programming", 6, "materials", 6, "plasmatech", 5]);
+
+	this.category = list("Exosuit Modules");
 	return f.dot;
 });
 
@@ -296,15 +268,13 @@ rt.type(2980, "/datum/design/board/phazon_peri", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/mecha/phazon/peripherals"),
 });
 
-// /datum/design/board/phazon_peri/proc/<init>  (code/modules/research/designs/mecha_designs.dm:127)
+// mecha_designs.dm:127
 rt.def("/datum/design/board/phazon_peri/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$glass", 1000, "$bluespace", 100]));
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 6, "bluespace", 5, "plasmatech", 5]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Modules"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$glass", 1000, "$bluespace", 100]);
+	this.req_tech = rt.alist(f, ["programming", 6, "bluespace", 5, "plasmatech", 5]);
+
+	this.category = list("Exosuit Modules");
 	return f.dot;
 });
 
@@ -318,15 +288,13 @@ rt.type(2981, "/datum/design/board/phazon_targ", "/datum/design/board", {
 	build_path: rt.typePath("/obj/item/weapon/circuitboard/mecha/phazon/targeting"),
 });
 
-// /datum/design/board/phazon_targ/proc/<init>  (code/modules/research/designs/mecha_designs.dm:136)
+// mecha_designs.dm:136
 rt.def("/datum/design/board/phazon_targ/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$glass", 1000, "$bluespace", 100]));
-	rt.setSv(f, "req_tech", rt.alist(f, ["programming", 6, "magnets", 5, "plasmatech", 5]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Modules"));
+	parent_proc();
+	this.materials = rt.alist(f, ["$glass", 1000, "$bluespace", 100]);
+	this.req_tech = rt.alist(f, ["programming", 6, "magnets", 5, "plasmatech", 5]);
+
+	this.category = list("Exosuit Modules");
 	return f.dot;
 });
 
@@ -342,15 +310,13 @@ rt.type(3146, "/datum/design/mech_scattershot", "/datum/design", {
 	build_path: rt.typePath("/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/scattershot"),
 });
 
-// /datum/design/mech_scattershot/proc/<init>  (code/modules/research/designs/mecha_designs.dm:150)
+// mecha_designs.dm:150
 rt.def("/datum/design/mech_scattershot/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["combat", 4]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 10000]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Equipment"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["combat", 4]);
+	this.materials = rt.alist(f, ["$metal", 10000]);
+
+	this.category = list("Exosuit Equipment");
 	return f.dot;
 });
 
@@ -366,15 +332,13 @@ rt.type(3147, "/datum/design/mech_carbine", "/datum/design", {
 	build_path: rt.typePath("/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/carbine"),
 });
 
-// /datum/design/mech_carbine/proc/<init>  (code/modules/research/designs/mecha_designs.dm:161)
+// mecha_designs.dm:161
 rt.def("/datum/design/mech_carbine/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["combat", 5, "materials", 4]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 10000]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Equipment"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["combat", 5, "materials", 4]);
+	this.materials = rt.alist(f, ["$metal", 10000]);
+
+	this.category = list("Exosuit Equipment");
 	return f.dot;
 });
 
@@ -390,15 +354,13 @@ rt.type(3148, "/datum/design/mech_ion", "/datum/design", {
 	build_path: rt.typePath("/obj/item/mecha_parts/mecha_equipment/weapon/energy/ion"),
 });
 
-// /datum/design/mech_ion/proc/<init>  (code/modules/research/designs/mecha_designs.dm:172)
+// mecha_designs.dm:172
 rt.def("/datum/design/mech_ion/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["combat", 6, "magnets", 5, "materials", 5]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 20000, "$silver", 6000, "$uranium", 2000]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Equipment"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["combat", 6, "magnets", 5, "materials", 5]);
+	this.materials = rt.alist(f, ["$metal", 20000, "$silver", 6000, "$uranium", 2000]);
+
+	this.category = list("Exosuit Equipment");
 	return f.dot;
 });
 
@@ -414,15 +376,13 @@ rt.type(3149, "/datum/design/mech_tesla", "/datum/design", {
 	build_path: rt.typePath("/obj/item/mecha_parts/mecha_equipment/weapon/energy/tesla"),
 });
 
-// /datum/design/mech_tesla/proc/<init>  (code/modules/research/designs/mecha_designs.dm:183)
+// mecha_designs.dm:183
 rt.def("/datum/design/mech_tesla/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["combat", 6, "magnets", 5, "materials", 5]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 20000, "$silver", 8000]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Equipment"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["combat", 6, "magnets", 5, "materials", 5]);
+	this.materials = rt.alist(f, ["$metal", 20000, "$silver", 8000]);
+
+	this.category = list("Exosuit Equipment");
 	return f.dot;
 });
 
@@ -438,15 +398,13 @@ rt.type(3150, "/datum/design/mech_laser", "/datum/design", {
 	build_path: rt.typePath("/obj/item/mecha_parts/mecha_equipment/weapon/energy/laser"),
 });
 
-// /datum/design/mech_laser/proc/<init>  (code/modules/research/designs/mecha_designs.dm:194)
+// mecha_designs.dm:194
 rt.def("/datum/design/mech_laser/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["combat", 3, "magnets", 3, "engineering", 3]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 10000]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Equipment"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["combat", 3, "magnets", 3, "engineering", 3]);
+	this.materials = rt.alist(f, ["$metal", 10000]);
+
+	this.category = list("Exosuit Equipment");
 	return f.dot;
 });
 
@@ -462,15 +420,13 @@ rt.type(3151, "/datum/design/mech_laser_heavy", "/datum/design", {
 	build_path: rt.typePath("/obj/item/mecha_parts/mecha_equipment/weapon/energy/laser/heavy"),
 });
 
-// /datum/design/mech_laser_heavy/proc/<init>  (code/modules/research/designs/mecha_designs.dm:205)
+// mecha_designs.dm:205
 rt.def("/datum/design/mech_laser_heavy/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["combat", 4, "magnets", 4, "engineering", 4]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 10000]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Equipment"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["combat", 4, "magnets", 4, "engineering", 4]);
+	this.materials = rt.alist(f, ["$metal", 10000]);
+
+	this.category = list("Exosuit Equipment");
 	return f.dot;
 });
 
@@ -486,15 +442,13 @@ rt.type(3152, "/datum/design/mech_grenade_launcher", "/datum/design", {
 	build_path: rt.typePath("/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/launcher/flashbang"),
 });
 
-// /datum/design/mech_grenade_launcher/proc/<init>  (code/modules/research/designs/mecha_designs.dm:216)
+// mecha_designs.dm:216
 rt.def("/datum/design/mech_grenade_launcher/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["combat", 4, "engineering", 4]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 22000, "$gold", 6000, "$silver", 8000]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Equipment"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["combat", 4, "engineering", 4]);
+	this.materials = rt.alist(f, ["$metal", 22000, "$gold", 6000, "$silver", 8000]);
+
+	this.category = list("Exosuit Equipment");
 	return f.dot;
 });
 
@@ -510,15 +464,13 @@ rt.type(3153, "/datum/design/mech_missile_rack", "/datum/design", {
 	build_path: rt.typePath("/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/missile_rack"),
 });
 
-// /datum/design/mech_missile_rack/proc/<init>  (code/modules/research/designs/mecha_designs.dm:227)
+// mecha_designs.dm:227
 rt.def("/datum/design/mech_missile_rack/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["combat", 6, "materials", 5, "engineering", 5]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 22000, "$gold", 6000, "$silver", 8000]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Equipment"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["combat", 6, "materials", 5, "engineering", 5]);
+	this.materials = rt.alist(f, ["$metal", 22000, "$gold", 6000, "$silver", 8000]);
+
+	this.category = list("Exosuit Equipment");
 	return f.dot;
 });
 
@@ -534,15 +486,13 @@ rt.type(3154, "/datum/design/clusterbang_launcher", "/datum/design", {
 	build_path: rt.typePath("/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/launcher/flashbang/clusterbang"),
 });
 
-// /datum/design/clusterbang_launcher/proc/<init>  (code/modules/research/designs/mecha_designs.dm:238)
+// mecha_designs.dm:238
 rt.def("/datum/design/clusterbang_launcher/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["combat", 5, "materials", 5, "syndicate", 3]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 20000, "$gold", 10000, "$uranium", 10000]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Equipment"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["combat", 5, "materials", 5, "syndicate", 3]);
+	this.materials = rt.alist(f, ["$metal", 20000, "$gold", 10000, "$uranium", 10000]);
+
+	this.category = list("Exosuit Equipment");
 	return f.dot;
 });
 
@@ -558,15 +508,13 @@ rt.type(3155, "/datum/design/mech_wormhole_gen", "/datum/design", {
 	build_path: rt.typePath("/obj/item/mecha_parts/mecha_equipment/wormhole_generator"),
 });
 
-// /datum/design/mech_wormhole_gen/proc/<init>  (code/modules/research/designs/mecha_designs.dm:249)
+// mecha_designs.dm:249
 rt.def("/datum/design/mech_wormhole_gen/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["bluespace", 4, "magnets", 4, "plasmatech", 3]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 10000]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Equipment"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["bluespace", 4, "magnets", 4, "plasmatech", 3]);
+	this.materials = rt.alist(f, ["$metal", 10000]);
+
+	this.category = list("Exosuit Equipment");
 	return f.dot;
 });
 
@@ -582,15 +530,13 @@ rt.type(3156, "/datum/design/mech_teleporter", "/datum/design", {
 	build_path: rt.typePath("/obj/item/mecha_parts/mecha_equipment/teleporter"),
 });
 
-// /datum/design/mech_teleporter/proc/<init>  (code/modules/research/designs/mecha_designs.dm:260)
+// mecha_designs.dm:260
 rt.def("/datum/design/mech_teleporter/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["bluespace", 8, "magnets", 5]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 10000, "$diamond", 10000]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Equipment"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["bluespace", 8, "magnets", 5]);
+	this.materials = rt.alist(f, ["$metal", 10000, "$diamond", 10000]);
+
+	this.category = list("Exosuit Equipment");
 	return f.dot;
 });
 
@@ -606,15 +552,13 @@ rt.type(3157, "/datum/design/mech_rcd", "/datum/design", {
 	build_path: rt.typePath("/obj/item/mecha_parts/mecha_equipment/rcd"),
 });
 
-// /datum/design/mech_rcd/proc/<init>  (code/modules/research/designs/mecha_designs.dm:271)
+// mecha_designs.dm:271
 rt.def("/datum/design/mech_rcd/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["materials", 5, "bluespace", 3, "magnets", 4, "powerstorage", 4, "engineering", 5]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 30000, "$gold", 20000, "$plasma", 25000, "$silver", 20000]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Equipment"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["materials", 5, "bluespace", 3, "magnets", 4, "powerstorage", 4, "engineering", 5]);
+	this.materials = rt.alist(f, ["$metal", 30000, "$gold", 20000, "$plasma", 25000, "$silver", 20000]);
+
+	this.category = list("Exosuit Equipment");
 	return f.dot;
 });
 
@@ -630,15 +574,13 @@ rt.type(3158, "/datum/design/mech_gravcatapult", "/datum/design", {
 	build_path: rt.typePath("/obj/item/mecha_parts/mecha_equipment/gravcatapult"),
 });
 
-// /datum/design/mech_gravcatapult/proc/<init>  (code/modules/research/designs/mecha_designs.dm:282)
+// mecha_designs.dm:282
 rt.def("/datum/design/mech_gravcatapult/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["bluespace", 4, "magnets", 3, "engineering", 4]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 10000]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Equipment"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["bluespace", 4, "magnets", 3, "engineering", 4]);
+	this.materials = rt.alist(f, ["$metal", 10000]);
+
+	this.category = list("Exosuit Equipment");
 	return f.dot;
 });
 
@@ -654,15 +596,13 @@ rt.type(3159, "/datum/design/mech_repair_droid", "/datum/design", {
 	build_path: rt.typePath("/obj/item/mecha_parts/mecha_equipment/repair_droid"),
 });
 
-// /datum/design/mech_repair_droid/proc/<init>  (code/modules/research/designs/mecha_designs.dm:293)
+// mecha_designs.dm:293
 rt.def("/datum/design/mech_repair_droid/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["magnets", 3, "programming", 3, "engineering", 5]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 10000, "$glass", 5000, "$gold", 1000, "$silver", 2000]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Equipment"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["magnets", 3, "programming", 3, "engineering", 5]);
+	this.materials = rt.alist(f, ["$metal", 10000, "$glass", 5000, "$gold", 1000, "$silver", 2000]);
+
+	this.category = list("Exosuit Equipment");
 	return f.dot;
 });
 
@@ -678,15 +618,13 @@ rt.type(3160, "/datum/design/mech_energy_relay", "/datum/design", {
 	build_path: rt.typePath("/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay"),
 });
 
-// /datum/design/mech_energy_relay/proc/<init>  (code/modules/research/designs/mecha_designs.dm:304)
+// mecha_designs.dm:304
 rt.def("/datum/design/mech_energy_relay/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["magnets", 4, "powerstorage", 5, "engineering", 4]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 10000, "$glass", 2000, "$gold", 2000, "$silver", 3000]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Equipment"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["magnets", 4, "powerstorage", 5, "engineering", 4]);
+	this.materials = rt.alist(f, ["$metal", 10000, "$glass", 2000, "$gold", 2000, "$silver", 3000]);
+
+	this.category = list("Exosuit Equipment");
 	return f.dot;
 });
 
@@ -702,15 +640,13 @@ rt.type(3161, "/datum/design/mech_ccw_armor", "/datum/design", {
 	build_path: rt.typePath("/obj/item/mecha_parts/mecha_equipment/anticcw_armor_booster"),
 });
 
-// /datum/design/mech_ccw_armor/proc/<init>  (code/modules/research/designs/mecha_designs.dm:315)
+// mecha_designs.dm:315
 rt.def("/datum/design/mech_ccw_armor/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["materials", 5, "combat", 4]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 20000, "$silver", 5000]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Equipment"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["materials", 5, "combat", 4]);
+	this.materials = rt.alist(f, ["$metal", 20000, "$silver", 5000]);
+
+	this.category = list("Exosuit Equipment");
 	return f.dot;
 });
 
@@ -726,15 +662,13 @@ rt.type(3162, "/datum/design/mech_proj_armor", "/datum/design", {
 	build_path: rt.typePath("/obj/item/mecha_parts/mecha_equipment/antiproj_armor_booster"),
 });
 
-// /datum/design/mech_proj_armor/proc/<init>  (code/modules/research/designs/mecha_designs.dm:326)
+// mecha_designs.dm:326
 rt.def("/datum/design/mech_proj_armor/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["materials", 5, "combat", 5, "engineering", 3]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 20000, "$gold", 5000]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Equipment"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["materials", 5, "combat", 5, "engineering", 3]);
+	this.materials = rt.alist(f, ["$metal", 20000, "$gold", 5000]);
+
+	this.category = list("Exosuit Equipment");
 	return f.dot;
 });
 
@@ -750,15 +684,13 @@ rt.type(3163, "/datum/design/mech_diamond_drill", "/datum/design", {
 	build_path: rt.typePath("/obj/item/mecha_parts/mecha_equipment/drill/diamonddrill"),
 });
 
-// /datum/design/mech_diamond_drill/proc/<init>  (code/modules/research/designs/mecha_designs.dm:337)
+// mecha_designs.dm:337
 rt.def("/datum/design/mech_diamond_drill/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["materials", 5, "engineering", 4]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 10000, "$diamond", 6500]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Equipment"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["materials", 5, "engineering", 4]);
+	this.materials = rt.alist(f, ["$metal", 10000, "$diamond", 6500]);
+
+	this.category = list("Exosuit Equipment");
 	return f.dot;
 });
 
@@ -774,15 +706,13 @@ rt.type(3164, "/datum/design/mech_generator_nuclear", "/datum/design", {
 	build_path: rt.typePath("/obj/item/mecha_parts/mecha_equipment/generator/nuclear"),
 });
 
-// /datum/design/mech_generator_nuclear/proc/<init>  (code/modules/research/designs/mecha_designs.dm:348)
+// mecha_designs.dm:348
 rt.def("/datum/design/mech_generator_nuclear/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["powerstorage", 5, "engineering", 4, "materials", 3]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 10000, "$glass", 1000, "$silver", 500]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Equipment"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["powerstorage", 5, "engineering", 4, "materials", 3]);
+	this.materials = rt.alist(f, ["$metal", 10000, "$glass", 1000, "$silver", 500]);
+
+	this.category = list("Exosuit Equipment");
 	return f.dot;
 });
 
@@ -798,15 +728,13 @@ rt.type(3165, "/datum/design/mech_plasma_cutter", "/datum/design", {
 	build_path: rt.typePath("/obj/item/mecha_parts/mecha_equipment/weapon/energy/plasma"),
 });
 
-// /datum/design/mech_plasma_cutter/proc/<init>  (code/modules/research/designs/mecha_designs.dm:359)
+// mecha_designs.dm:359
 rt.def("/datum/design/mech_plasma_cutter/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["engineering", 3, "materials", 3, "plasmatech", 4]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 8000, "$glass", 1000, "$plasma", 2000]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Equipment"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["engineering", 3, "materials", 3, "plasmatech", 4]);
+	this.materials = rt.alist(f, ["$metal", 8000, "$glass", 1000, "$plasma", 2000]);
+
+	this.category = list("Exosuit Equipment");
 	return f.dot;
 });
 
@@ -822,15 +750,13 @@ rt.type(3166, "/datum/design/mech_taser", "/datum/design", {
 	build_path: rt.typePath("/obj/item/mecha_parts/mecha_equipment/weapon/energy/taser"),
 });
 
-// /datum/design/mech_taser/proc/<init>  (code/modules/research/designs/mecha_designs.dm:370)
+// mecha_designs.dm:370
 rt.def("/datum/design/mech_taser/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["combat", 3]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 10000]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Equipment"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["combat", 3]);
+	this.materials = rt.alist(f, ["$metal", 10000]);
+
+	this.category = list("Exosuit Equipment");
 	return f.dot;
 });
 
@@ -846,15 +772,13 @@ rt.type(3167, "/datum/design/mech_lmg", "/datum/design", {
 	build_path: rt.typePath("/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/lmg"),
 });
 
-// /datum/design/mech_lmg/proc/<init>  (code/modules/research/designs/mecha_designs.dm:381)
+// mecha_designs.dm:381
 rt.def("/datum/design/mech_lmg/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["combat", 4]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 10000]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Equipment"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["combat", 4]);
+	this.materials = rt.alist(f, ["$metal", 10000]);
+
+	this.category = list("Exosuit Equipment");
 	return f.dot;
 });
 
@@ -870,15 +794,13 @@ rt.type(3168, "/datum/design/mech_sleeper", "/datum/design", {
 	build_path: rt.typePath("/obj/item/mecha_parts/mecha_equipment/medical/sleeper"),
 });
 
-// /datum/design/mech_sleeper/proc/<init>  (code/modules/research/designs/mecha_designs.dm:392)
+// mecha_designs.dm:392
 rt.def("/datum/design/mech_sleeper/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["biotech", 3, "engineering", 3, "plasmatech", 2]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 5000, "$glass", 10000]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Equipment"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["biotech", 3, "engineering", 3, "plasmatech", 2]);
+	this.materials = rt.alist(f, ["$metal", 5000, "$glass", 10000]);
+
+	this.category = list("Exosuit Equipment");
 	return f.dot;
 });
 
@@ -894,15 +816,13 @@ rt.type(3169, "/datum/design/mech_syringe_gun", "/datum/design", {
 	build_path: rt.typePath("/obj/item/mecha_parts/mecha_equipment/medical/syringe_gun"),
 });
 
-// /datum/design/mech_syringe_gun/proc/<init>  (code/modules/research/designs/mecha_designs.dm:403)
+// mecha_designs.dm:403
 rt.def("/datum/design/mech_syringe_gun/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["magnets", 4, "biotech", 4, "combat", 3, "materials", 4]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 3000, "$glass", 2000]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Equipment"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["magnets", 4, "biotech", 4, "combat", 3, "materials", 4]);
+	this.materials = rt.alist(f, ["$metal", 3000, "$glass", 2000]);
+
+	this.category = list("Exosuit Equipment");
 	return f.dot;
 });
 
@@ -918,14 +838,12 @@ rt.type(3170, "/datum/design/mech_medical_beamgun", "/datum/design", {
 	build_path: rt.typePath("/obj/item/mecha_parts/mecha_equipment/medical/mechmedbeam"),
 });
 
-// /datum/design/mech_medical_beamgun/proc/<init>  (code/modules/research/designs/mecha_designs.dm:413)
+// mecha_designs.dm:413
 rt.def("/datum/design/mech_medical_beamgun/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_tech", rt.alist(f, ["engineering", 6, "materials", 7, "powerstorage", 5, "biotech", 6]));
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 15000, "$glass", 8000, "$plasma", 3000, "$gold", 8000, "$diamond", 2000]));
-	$0 = $0;
-	rt.setSv(f, "category", rt.list("Exosuit Equipment"));
+	parent_proc();
+	this.req_tech = rt.alist(f, ["engineering", 6, "materials", 7, "powerstorage", 5, "biotech", 6]);
+	this.materials = rt.alist(f, ["$metal", 15000, "$glass", 8000, "$plasma", 3000, "$gold", 8000, "$diamond", 2000]);
+
+	this.category = list("Exosuit Equipment");
 	return f.dot;
 });

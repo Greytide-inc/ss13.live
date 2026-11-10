@@ -1,77 +1,59 @@
-// From code/modules/admin/verbs/manipulate_organs.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/admin/verbs/manipulate_organs.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, g } = rt;
 
 
-// /client/proc/manipulate_organs  (code/modules/admin/verbs/manipulate_organs.dm:4)  may sleep
+// manipulate_organs.dm:4
 rt.def("/client/proc/manipulate_organs", function* manipulate_organs(f: Frame, C: Value) {
-	let operation: Value = null, organs: Value = null, path: Value = null, dat: Value = null, organ: Value = null, X: Value = null, I: Value = null, O: Value = null, I_4: Value = null, _case: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [C, operation, organs, path, dat, organ, X, I, O, I_4, _case, $0, $e];
-	operation = (yield* g.op(f, "Prompt", [0], [null, "cancel", "Organ Manipulation", "Select organ operation.", rt.list("add organ", "add implant", "drop organ/implant", "remove organ/implant", "cancel")]));
-	organs = rt.list();
-	$0 = live(operation);
-	if ($0 === "add organ") {
+	let path: Value = null, dat: Value = null, organ: Value = null, X: Value = null, I: Value = null, O: Value = null, I_4: Value = null, _case: Value = null;
+	let $e: any;
+	let operation: Value = (yield* g.op(f, "Prompt", [0], [null, "cancel", "Organ Manipulation", "Select organ operation.", list("add organ", "add implant", "drop organ/implant", "remove organ/implant", "cancel")]));
+	let organs: Value = list();
+	if (operation === "add organ") {
+		for (path of each(typesof(T("/obj/item/organ")) - T("/obj/item/organ"))) {
+			dat = replacetext(`${path}`, "/obj/item/organ/", ":");
+			rt.setAt(organs, dat, path);
+		}
+		organ = (yield* g.op(f, "Prompt", [0], [null, null, "Organ Manipulation", "Select organ type:", organs]));
+		organ = rt.index(organs, organ);
+		yield* (organ = (yield* new_(organ))).Insert(C);
+	} else if (operation === "add implant") {
 		path = null;
-		rt.forList(f, 0, subtract((yield* g.call(f, P("/proc/typesof"), null, [T("/obj/item/organ")])), T("/obj/item/organ")));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			path = $e;
-			dat = (yield* g.call(f, P("/proc/replacetext"), null, [fmt("＀", [live(path)]), "/obj/item/organ/", ":"]));
-			rt.setAt(live(organs), live(dat), live(path));
+		for (path of each(typesof(T("/obj/item/weapon/implant")) - T("/obj/item/weapon/implant"))) {
+			dat = replacetext(`${path}`, "/obj/item/weapon/implant/", ":");
+			rt.setAt(organs, dat, path);
 		}
-		rt.endFor(f, 0);
-		organ = (yield* g.op(f, "Prompt", [0], [null, null, "Organ Manipulation", "Select organ type:", live(organs)]));
-		organ = rt.index(live(organs), live(organ));
-		yield* g.callName(f, (organ = (yield* g.new_(f, live(organ), []))), "Insert", [live(C)]);
-	} else if ($0 === "add implant") {
-		path = null;
-		rt.forList(f, 0, subtract((yield* g.call(f, P("/proc/typesof"), null, [T("/obj/item/weapon/implant")])), T("/obj/item/weapon/implant")));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			path = $e;
-			dat = (yield* g.call(f, P("/proc/replacetext"), null, [fmt("＀", [live(path)]), "/obj/item/weapon/implant/", ":"]));
-			rt.setAt(live(organs), live(dat), live(path));
+		organ = (yield* g.op(f, "Prompt", [0], [null, null, "Organ Manipulation", "Select implant type:", organs]));
+		organ = rt.index(organs, organ);
+		yield* (organ = (yield* new_(organ))).implant(C);
+	} else if (operation === "drop organ/implant" || operation === "remove organ/implant") {
+		for (X of each(C.internal_organs)) {
+			I = X;
+			rt.setAt(organs, `${I.name} (${I.type})`, I);
 		}
-		rt.endFor(f, 0);
-		organ = (yield* g.op(f, "Prompt", [0], [null, null, "Organ Manipulation", "Select implant type:", live(organs)]));
-		organ = rt.index(live(organs), live(organ));
-		yield* g.callName(f, (organ = (yield* g.new_(f, live(organ), []))), "implant", [live(C)]);
-	} else if ($0 === "drop organ/implant" || $0 === "remove organ/implant") {
 		X = null;
-		rt.forList(f, 0, rt.fv(f, "internal_organs", live(C)));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			X = $e;
-			I = live(X);
-			rt.setAt(live(organs), fmt("＀ (＀)", [rt.fv(f, "name", live(I)), rt.fv(f, "type", live(I))]), live(I));
+		for (X of each(C.implants)) {
+			I = X;
+			rt.setAt(organs, `${I.name} (${I.type})`, I);
 		}
-		rt.endFor(f, 0);
-		X = null;
-		rt.forList(f, 0, rt.fv(f, "implants", live(C)));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			X = $e;
-			I = live(X);
-			rt.setAt(live(organs), fmt("＀ (＀)", [rt.fv(f, "name", live(I)), rt.fv(f, "type", live(I))]), live(I));
+		organ = (yield* g.op(f, "Prompt", [0], [null, null, "Organ Manipulation", "Select organ/implant:", organs]));
+		if (!(organ = rt.index(organs, organ))) {
+			return f.dot;
 		}
-		rt.endFor(f, 0);
-		organ = (yield* g.op(f, "Prompt", [0], [null, null, "Organ Manipulation", "Select organ/implant:", live(organs)]));
-		if (!truthy((organ = rt.index(live(organs), live(organ))))) {
-			return live(f.dot);
-		}
-		O = null;
-		I_4 = null;
-		if (truthy((rt.istype(live(organ), T("/obj/item/organ")) ? 1 : 0))) {
-			yield* g.callName(f, (O = live(organ)), "Remove", [live(C)]);
+		if (rt.istype(organ, T("/obj/item/organ"))) {
+			yield* (O = organ).Remove(C);
 		} else {
-			yield* g.callName(f, (I_4 = live(organ)), "removed", [live(C)]);
+			yield* (I_4 = organ).removed(C);
 		}
-		yield* g.callName(f, live(organ), "forceMove", [rt.getStep(f, live(C), 0)]);
-		if (isEqual(live(operation), "remove organ/implant")) {
-			yield* g.call(f, P("/proc/qdel"), null, [live(organ)]);
+		yield* organ.forceMove(rt.getStep(f, C, 0));
+		if (operation == "remove organ/implant") {
+			yield* qdel(organ);
 		} else {
-			if (!truthy(live(I_4))) return f.dot;
-			rt.setFv(f, "imp", (_case = (yield* g.new_(f, T("/obj/item/weapon/implantcase"), [rt.getStep(f, live(C), 0)]))), live(I_4));
-			rt.setFv(f, "loc", live(I_4), live(_case));
-			yield* g.callName(f, live(_case), "update_icon", []);
+			if (!I_4) return f.dot;
+			(_case = (yield* new_(T("/obj/item/weapon/implantcase"), rt.getStep(f, C, 0)))).imp = I_4;
+			I_4.loc = _case;
+			yield* _case.update_icon();
 		}
 	}
 	return f.dot;

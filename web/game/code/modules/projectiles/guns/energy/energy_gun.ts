@@ -1,7 +1,7 @@
-// From code/modules/projectiles/guns/energy/energy_gun.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/projectiles/guns/energy/energy_gun.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(5151, "/obj/item/weapon/gun/energy/e_gun", "/obj/item/weapon/gun/energy", {
@@ -18,12 +18,10 @@ rt.type(5151, "/obj/item/weapon/gun/energy/e_gun", "/obj/item/weapon/gun/energy"
 	ammo_type: null,
 });
 
-// /obj/item/weapon/gun/energy/e_gun/proc/<init>  (code/modules/projectiles/guns/energy/energy_gun.dm:6)
+// energy_gun.dm:6
 rt.def("/obj/item/weapon/gun/energy/e_gun/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "ammo_type", rt.list(T("/obj/item/ammo_casing/energy/disabler"), T("/obj/item/ammo_casing/energy/laser")));
+	parent_proc();
+	this.ammo_type = list(T("/obj/item/ammo_casing/energy/disabler"), T("/obj/item/ammo_casing/energy/laser"));
 	return f.dot;
 });
 
@@ -39,17 +37,17 @@ rt.type(5156, "/obj/item/weapon/gun/energy/e_gun/mini", "/obj/item/weapon/gun/en
 	cell_type: rt.typePath("/obj/item/weapon/stock_parts/cell"),
 });
 
-// /obj/item/weapon/gun/energy/e_gun/mini/proc/Initialize  (code/modules/projectiles/guns/energy/energy_gun.dm:26)  may sleep
+// energy_gun.dm:26
 rt.def("/obj/item/weapon/gun/energy/e_gun/mini/proc/Initialize", function* Initialize(f: Frame) {
-	rt.setSv(f, "gun_light", (yield* g.new_(f, T("/obj/item/device/flashlight/seclite"), [live(f.src)])));
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	this.gun_light = (yield* new_(T("/obj/item/device/flashlight/seclite"), this));
+	return (yield* parent_proc());
 }, true);
 
-// /obj/item/weapon/gun/energy/e_gun/mini/proc/update_icon  (code/modules/projectiles/guns/energy/energy_gun.dm:30)
+// energy_gun.dm:30
 rt.def("/obj/item/weapon/gun/energy/e_gun/mini/proc/update_icon", function update_icon(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	if (!(truthy(rt.sv(f, "gun_light")) && truthy(rt.fv(f, "on", rt.sv(f, "gun_light"))))) return f.dot;
-	rt.callSrc(f, "add_overlay", ["mini-light"]);
+	parent_proc();
+	if (!(this.gun_light && this.gun_light.on)) return f.dot;
+	this.add_overlay("mini-light");
 	return f.dot;
 });
 
@@ -61,12 +59,10 @@ rt.type(5158, "/obj/item/weapon/gun/energy/e_gun/stun", "/obj/item/weapon/gun/en
 	ammo_type: null,
 });
 
-// /obj/item/weapon/gun/energy/e_gun/stun/proc/<init>  (code/modules/projectiles/guns/energy/energy_gun.dm:39)
+// energy_gun.dm:39
 rt.def("/obj/item/weapon/gun/energy/e_gun/stun/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "ammo_type", rt.list(T("/obj/item/ammo_casing/energy/electrode/spec"), T("/obj/item/ammo_casing/energy/disabler"), T("/obj/item/ammo_casing/energy/laser")));
+	parent_proc();
+	this.ammo_type = list(T("/obj/item/ammo_casing/energy/electrode/spec"), T("/obj/item/ammo_casing/energy/disabler"), T("/obj/item/ammo_casing/energy/laser"));
 	return f.dot;
 });
 
@@ -78,12 +74,10 @@ rt.type(5159, "/obj/item/weapon/gun/energy/e_gun/old", "/obj/item/weapon/gun/ene
 	ammo_type: null,
 });
 
-// /obj/item/weapon/gun/energy/e_gun/old/proc/<init>  (code/modules/projectiles/guns/energy/energy_gun.dm:46)
+// energy_gun.dm:46
 rt.def("/obj/item/weapon/gun/energy/e_gun/old/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "ammo_type", rt.list(T("/obj/item/ammo_casing/energy/laser"), T("/obj/item/ammo_casing/energy/electrode/old")));
+	parent_proc();
+	this.ammo_type = list(T("/obj/item/ammo_casing/energy/laser"), T("/obj/item/ammo_casing/energy/electrode/old"));
 	return f.dot;
 });
 
@@ -94,12 +88,10 @@ rt.type(5157, "/obj/item/weapon/gun/energy/e_gun/mini/practice_phaser", "/obj/it
 	ammo_type: null,
 });
 
-// /obj/item/weapon/gun/energy/e_gun/mini/practice_phaser/proc/<init>  (code/modules/projectiles/guns/energy/energy_gun.dm:51)
+// energy_gun.dm:51
 rt.def("/obj/item/weapon/gun/energy/e_gun/mini/practice_phaser/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "ammo_type", rt.list(T("/obj/item/ammo_casing/energy/disabler"), T("/obj/item/ammo_casing/energy/laser/practice")));
+	parent_proc();
+	this.ammo_type = list(T("/obj/item/ammo_casing/energy/disabler"), T("/obj/item/ammo_casing/energy/laser/practice"));
 	return f.dot;
 });
 
@@ -114,12 +106,10 @@ rt.type(5160, "/obj/item/weapon/gun/energy/e_gun/hos", "/obj/item/weapon/gun/ene
 	ammo_type: null,
 });
 
-// /obj/item/weapon/gun/energy/e_gun/hos/proc/<init>  (code/modules/projectiles/guns/energy/energy_gun.dm:60)
+// energy_gun.dm:60
 rt.def("/obj/item/weapon/gun/energy/e_gun/hos/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "ammo_type", rt.list(T("/obj/item/ammo_casing/energy/electrode/hos"), T("/obj/item/ammo_casing/energy/laser/hos"), T("/obj/item/ammo_casing/energy/disabler")));
+	parent_proc();
+	this.ammo_type = list(T("/obj/item/ammo_casing/energy/electrode/hos"), T("/obj/item/ammo_casing/energy/laser/hos"), T("/obj/item/ammo_casing/energy/disabler"));
 	return f.dot;
 });
 
@@ -133,12 +123,10 @@ rt.type(5161, "/obj/item/weapon/gun/energy/e_gun/dragnet", "/obj/item/weapon/gun
 	ammo_type: null,
 });
 
-// /obj/item/weapon/gun/energy/e_gun/dragnet/proc/<init>  (code/modules/projectiles/guns/energy/energy_gun.dm:69)
+// energy_gun.dm:69
 rt.def("/obj/item/weapon/gun/energy/e_gun/dragnet/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "ammo_type", rt.list(T("/obj/item/ammo_casing/energy/net"), T("/obj/item/ammo_casing/energy/trap")));
+	parent_proc();
+	this.ammo_type = list(T("/obj/item/ammo_casing/energy/net"), T("/obj/item/ammo_casing/energy/trap"));
 	return f.dot;
 });
 
@@ -148,12 +136,10 @@ rt.type(5162, "/obj/item/weapon/gun/energy/e_gun/dragnet/snare", "/obj/item/weap
 	ammo_type: null,
 });
 
-// /obj/item/weapon/gun/energy/e_gun/dragnet/snare/proc/<init>  (code/modules/projectiles/guns/energy/energy_gun.dm:76)
+// energy_gun.dm:76
 rt.def("/obj/item/weapon/gun/energy/e_gun/dragnet/snare/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "ammo_type", rt.list(T("/obj/item/ammo_casing/energy/trap")));
+	parent_proc();
+	this.ammo_type = list(T("/obj/item/ammo_casing/energy/trap"));
 	return f.dot;
 });
 
@@ -171,12 +157,10 @@ rt.type(5152, "/obj/item/weapon/gun/energy/e_gun/turret", "/obj/item/weapon/gun/
 	ammo_type: null,
 });
 
-// /obj/item/weapon/gun/energy/e_gun/turret/proc/<init>  (code/modules/projectiles/guns/energy/energy_gun.dm:85)
+// energy_gun.dm:85
 rt.def("/obj/item/weapon/gun/energy/e_gun/turret/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "ammo_type", rt.list(T("/obj/item/ammo_casing/energy/electrode"), T("/obj/item/ammo_casing/energy/laser")));
+	parent_proc();
+	this.ammo_type = list(T("/obj/item/ammo_casing/energy/electrode"), T("/obj/item/ammo_casing/energy/laser"));
 	return f.dot;
 });
 
@@ -196,76 +180,65 @@ rt.type(5163, "/obj/item/weapon/gun/energy/e_gun/nuclear", "/obj/item/weapon/gun
 	ammo_type: null,
 });
 
-// /obj/item/weapon/gun/energy/e_gun/nuclear/proc/<init>  (code/modules/projectiles/guns/energy/energy_gun.dm:101)
+// energy_gun.dm:101
 rt.def("/obj/item/weapon/gun/energy/e_gun/nuclear/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "ammo_type", rt.list(T("/obj/item/ammo_casing/energy/electrode"), T("/obj/item/ammo_casing/energy/laser"), T("/obj/item/ammo_casing/energy/disabler")));
+	parent_proc();
+	this.ammo_type = list(T("/obj/item/ammo_casing/energy/electrode"), T("/obj/item/ammo_casing/energy/laser"), T("/obj/item/ammo_casing/energy/disabler"));
 	return f.dot;
 });
 
-// /obj/item/weapon/gun/energy/e_gun/nuclear/proc/process  (code/modules/projectiles/guns/energy/energy_gun.dm:107)
+// energy_gun.dm:107
 rt.def("/obj/item/weapon/gun/energy/e_gun/nuclear/proc/process", function process(f: Frame) {
-	if (rt.gt(rt.sv(f, "fail_tick"), 0)) {
-		rt.incSrcVar(f, "fail_tick", -1, true);
+	if (this.fail_tick > 0) {
+		this.fail_tick--;
 	}
-	rt.callSuper(f, [], rt.Args.Same);
+	parent_proc();
 	return f.dot;
 }, false, { waitfor: false });
 
-// /obj/item/weapon/gun/energy/e_gun/nuclear/proc/shoot_live_shot  (code/modules/projectiles/guns/energy/energy_gun.dm:112)  may sleep
+// energy_gun.dm:112
 rt.def("/obj/item/weapon/gun/energy/e_gun/nuclear/proc/shoot_live_shot", function* shoot_live_shot(f: Frame) {
-	yield* g.srcCall(f, "failcheck");
-	yield* g.srcCall(f, "update_icon");
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* this.failcheck();
+	yield* this.update_icon();
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/gun/energy/e_gun/nuclear/proc/failcheck  (code/modules/projectiles/guns/energy/energy_gun.dm:117)  may sleep
+// energy_gun.dm:117
 rt.def("/obj/item/weapon/gun/energy/e_gun/nuclear/proc/failcheck", function* failcheck(f: Frame) {
-	let M: Value = null;
-	let $0: any;
-	f.vars = () => [M, $0];
-	if (!(truthy(rt.op(f, "Prob", [], [rt.sv(f, "fail_chance")])) && truthy((rt.istype(rt.sv(f, "loc"), T("/mob/living")) ? 1 : 0)))) return f.dot;
-	M = rt.sv(f, "loc");
-	$0 = rt.sv(f, "fail_tick");
-	if (rt.inRange($0, 0, 200)) {
-		rt.modSrcVar(f, "fail_tick", multiply(2, rt.sv(f, "fail_chance")), add);
-		yield* g.callName(f, live(M), "rad_act", [40]);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(M), fmt("<span class='userdanger'>Your ＀ feels warmer.</span>", [rt.sv(f, "name")])]);
-	} else if (rt.inRange($0, 201, 9.999999848243207e+30)) {
-		yield* g.callName(f, rt.fv(f, "processing", rt.gl("SSobj")), "Remove", [live(f.src)]);
-		yield* g.callName(f, live(M), "rad_act", [80]);
-		rt.setSv(f, "crit_fail", 1);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(M), fmt("<span class='userdanger'>Your ＀'s reactor overloads!</span>", [rt.sv(f, "name")])]);
+	if (!(prob(this.fail_chance) && rt.istype(this.loc, T("/mob/living")))) return f.dot;
+	let M: Value = this.loc;
+	if (rt.inRange(this.fail_tick, 0, 200)) {
+		this.fail_tick += 2 * this.fail_chance;
+		yield* M.rad_act(40);
+		to_chat(M, `<span class='userdanger'>Your ${this.name} feels warmer.</span>`);
+	} else if (rt.inRange(this.fail_tick, 201, 1e+31)) {
+		yield* GLOB.SSobj.processing.Remove(this);
+		yield* M.rad_act(80);
+		this.crit_fail = 1;
+		to_chat(M, `<span class='userdanger'>Your ${this.name}'s reactor overloads!</span>`);
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/gun/energy/e_gun/nuclear/proc/emp_act  (code/modules/projectiles/guns/energy/energy_gun.dm:131)  may sleep
-rt.def("/obj/item/weapon/gun/energy/e_gun/nuclear/proc/emp_act", function* emp_act(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "fail_chance", (yield* g.call(f, P("/proc/min"), null, [add(rt.sv(f, "fail_chance"), (yield* g.call(f, P("/proc/round"), null, [divide(15, live(f.args[0]))]))), 100])));
+// energy_gun.dm:131
+rt.def("/obj/item/weapon/gun/energy/e_gun/nuclear/proc/emp_act", function* emp_act(f: Frame, severity: Value) {
+	yield* parent_proc();
+	this.fail_chance = min(this.fail_chance + round(15 / severity), 100);
 	return f.dot;
-}, true, { args: ["severity"] });
+}, true);
 
-// /obj/item/weapon/gun/energy/e_gun/nuclear/proc/update_icon  (code/modules/projectiles/guns/energy/energy_gun.dm:135)
+// energy_gun.dm:135
 rt.def("/obj/item/weapon/gun/energy/e_gun/nuclear/proc/update_icon", function update_icon(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	rt.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.sv(f, "crit_fail"))) {
-		rt.callSrc(f, "add_overlay", [fmt("＀_fail_3", [rt.sv(f, "icon_state")])]);
-	} else {
-		$0 = rt.sv(f, "fail_tick");
-		if ($0 === 0) {
-			rt.callSrc(f, "add_overlay", [fmt("＀_fail_0", [rt.sv(f, "icon_state")])]);
-		} else if (rt.inRange($0, 1, 150)) {
-			rt.callSrc(f, "add_overlay", [fmt("＀_fail_1", [rt.sv(f, "icon_state")])]);
-		} else if (rt.inRange($0, 151, 9.999999848243207e+30)) {
-			rt.callSrc(f, "add_overlay", [fmt("＀_fail_2", [rt.sv(f, "icon_state")])]);
-		}
+	parent_proc();
+	if (this.crit_fail) {
+		this.add_overlay(`${this.icon_state}_fail_3`);
+	} else if (this.fail_tick === 0) {
+		this.add_overlay(`${this.icon_state}_fail_0`);
+	} else if (rt.inRange(this.fail_tick, 1, 150)) {
+		this.add_overlay(`${this.icon_state}_fail_1`);
+	} else if (rt.inRange(this.fail_tick, 151, 1e+31)) {
+		this.add_overlay(`${this.icon_state}_fail_2`);
 	}
 	return f.dot;
 });

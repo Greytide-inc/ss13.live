@@ -1,7 +1,7 @@
-// From code/game/gamemodes/changeling/powers/lesserform.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/gamemodes/changeling/powers/lesserform.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(11236, "/obj/effect/proc_holder/changeling/lesserform", "/obj/effect/proc_holder/changeling", {
@@ -12,13 +12,12 @@ rt.type(11236, "/obj/effect/proc_holder/changeling/lesserform", "/obj/effect/pro
 	desc: "We debase ourselves and become lesser. We become a monkey.",
 });
 
-// /obj/effect/proc_holder/changeling/lesserform/proc/sting_action  (code/game/gamemodes/changeling/powers/lesserform.dm:10)  may sleep
+// lesserform.dm:10
 rt.def("/obj/effect/proc_holder/changeling/lesserform/proc/sting_action", function* sting_action(f: Frame, user: Value) {
-	f.vars = () => [user];
-	if ((!truthy(live(user)) || truthy(rt.fv(f, "notransform", live(user))))) {
+	if (!user || user.notransform) {
 		return 0;
 	}
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>Our genes cry out!</span>"]);
-	yield* g.callName(f, live(user), "monkeyize", [311]);
-	return 1;
+	to_chat(user, "<span class='warning'>Our genes cry out!</span>");
+	yield* user.monkeyize(311);
+	return TR_KEEPITEMS;
 }, true);

@@ -1,7 +1,7 @@
-// From code/game/objects/items/weapons/stunbaton.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/weapons/stunbaton.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(5661, "/obj/item/weapon/melee/baton", "/obj/item/weapon/melee", {
@@ -23,227 +23,214 @@ rt.type(5661, "/obj/item/weapon/melee/baton", "/obj/item/weapon/melee", {
 	armor: null,
 });
 
-// /obj/item/weapon/melee/baton/proc/<init>  (code/game/objects/items/weapons/stunbaton.dm:11)
+// stunbaton.dm:11
 rt.def("/obj/item/weapon/melee/baton/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "attack_verb", rt.list("beaten"));
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 50, "bio", 0, "rad", 0, "fire", 80, "acid", 80]));
+	parent_proc();
+	this.attack_verb = list("beaten");
+	this.armor = rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 50, "bio", 0, "rad", 0, "fire", 80, "acid", 80]);
 	return f.dot;
 });
 
-// /obj/item/weapon/melee/baton/proc/suicide_act  (code/game/objects/items/weapons/stunbaton.dm:24)
+// stunbaton.dm:24
 rt.def("/obj/item/weapon/melee/baton/proc/suicide_act", function suicide_act(f: Frame, user: Value) {
-	rt.callName(f, live(user), "visible_message", [fmt("<span class='suicide'>＀ is putting the live ＀ in ＀ mouth! It looks like ＀ trying to commit suicide!</span>", [live(user), rt.sv(f, "name"), rt.callName(f, live(user), "p_their", []), rt.callName(f, live(user), "p_theyre", [])])]);
+	user.visible_message(`<span class='suicide'>${user} is putting the live ${this.name} in ${user.p_their()} mouth! It looks like ${user.p_theyre()} trying to commit suicide!</span>`);
 	return 2;
 });
 
-// /obj/item/weapon/melee/baton/proc/Initialize  (code/game/objects/items/weapons/stunbaton.dm:28)  may sleep
+// stunbaton.dm:28
 rt.def("/obj/item/weapon/melee/baton/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.srcCall(f, "update_icon");
+	f.dot = (yield* parent_proc());
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/melee/baton/proc/throw_impact  (code/game/objects/items/weapons/stunbaton.dm:32)  may sleep
-rt.def("/obj/item/weapon/melee/baton/proc/throw_impact", function* throw_impact(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!((truthy(rt.sv(f, "status")) && truthy(rt.op(f, "Prob", [], [rt.sv(f, "throw_hit_chance")]))) && truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon")) ? 1 : 0)))) return f.dot;
-	yield* g.srcCall(f, "baton_stun", live(f.args[0]));
+// stunbaton.dm:32
+rt.def("/obj/item/weapon/melee/baton/proc/throw_impact", function* throw_impact(f: Frame, hit_atom: Value) {
+	yield* parent_proc();
+	if (!(this.status && prob(this.throw_hit_chance) && rt.istype(hit_atom, T("/mob/living/carbon")))) return f.dot;
+	yield* this.baton_stun(hit_atom);
 	return f.dot;
-}, true, { args: ["hit_atom"], waitfor: false });
+}, true, { waitfor: false });
 
 rt.type(5662, "/obj/item/weapon/melee/baton/loaded", "/obj/item/weapon/melee/baton", {});
 
-// /obj/item/weapon/melee/baton/loaded/proc/Initialize  (code/game/objects/items/weapons/stunbaton.dm:38)  may sleep
+// stunbaton.dm:38
 rt.def("/obj/item/weapon/melee/baton/loaded/proc/Initialize", function* Initialize(f: Frame) {
-	rt.setSv(f, "cell", (yield* g.new_(f, T("/obj/item/weapon/stock_parts/cell/high"), [live(f.src)])));
-	yield* g.srcCall(f, "update_icon");
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	this.cell = (yield* new_(T("/obj/item/weapon/stock_parts/cell/high"), this));
+	yield* this.update_icon();
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/melee/baton/proc/deductcharge  (code/game/objects/items/weapons/stunbaton.dm:46)  may sleep
+// stunbaton.dm:46
 rt.def("/obj/item/weapon/melee/baton/proc/deductcharge", function* deductcharge(f: Frame, chrgdeductamt: Value) {
-	f.vars = () => [chrgdeductamt];
-	if (!truthy(rt.sv(f, "cell"))) return f.dot;
-	f.dot = (yield* g.callName(f, rt.sv(f, "cell"), "use", [live(chrgdeductamt)]));
-	if (!(truthy(rt.sv(f, "status")) && rt.lt(rt.fv(f, "charge", rt.sv(f, "cell")), rt.sv(f, "hitcost")))) return f.dot;
-	rt.setSv(f, "status", 0);
-	yield* g.srcCall(f, "update_icon");
-	yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), "sparks", 75, 1, -1]);
+	if (!this.cell) return f.dot;
+	f.dot = (yield* this.cell.use(chrgdeductamt));
+	if (!(this.status && this.cell.charge < this.hitcost)) return f.dot;
+	this.status = 0;
+	yield* this.update_icon();
+	playsound(this.loc, "sparks", 75, 1, -1);
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/melee/baton/proc/update_icon  (code/game/objects/items/weapons/stunbaton.dm:56)
+// stunbaton.dm:56
 rt.def("/obj/item/weapon/melee/baton/proc/update_icon", function update_icon(f: Frame) {
-	if (truthy(rt.sv(f, "status"))) {
-		rt.setSv(f, "icon_state", fmt("＀_active", [rt.initial(f, live(f.src), "name")]));
+	if (this.status) {
+		this.icon_state = `${rt.initial(f, this, "name")}_active`;
+	} else if (!this.cell) {
+		this.icon_state = `${rt.initial(f, this, "name")}_nocell`;
 	} else {
-		if (!truthy(rt.sv(f, "cell"))) {
-			rt.setSv(f, "icon_state", fmt("＀_nocell", [rt.initial(f, live(f.src), "name")]));
-		} else {
-			rt.setSv(f, "icon_state", fmt("＀", [rt.initial(f, live(f.src), "name")]));
-		}
+		this.icon_state = `${rt.initial(f, this, "name")}`;
 	}
 	return f.dot;
 });
 
-// /obj/item/weapon/melee/baton/proc/examine  (code/game/objects/items/weapons/stunbaton.dm:63)
-rt.def("/obj/item/weapon/melee/baton/proc/examine", function examine(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.sv(f, "cell"))) {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='notice'>The baton is ＀% charged.</span>", [rt.call(f, P("/proc/round"), null, [rt.callName(f, rt.sv(f, "cell"), "percent", [])])])]);
+// stunbaton.dm:63
+rt.def("/obj/item/weapon/melee/baton/proc/examine", function examine(f: Frame, user: Value) {
+	parent_proc();
+	if (this.cell) {
+		to_chat(user, `<span class='notice'>The baton is ${round(this.cell.percent())}% charged.</span>`);
 	} else {
-		rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), "<span class='warning'>The baton does not have a power source installed.</span>"]);
+		to_chat(user, "<span class='warning'>The baton does not have a power source installed.</span>");
 	}
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/item/weapon/melee/baton/proc/attackby  (code/game/objects/items/weapons/stunbaton.dm:70)  may sleep
-rt.def("/obj/item/weapon/melee/baton/proc/attackby", function* attackby(f: Frame) {
+// stunbaton.dm:70
+rt.def("/obj/item/weapon/melee/baton/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
 	let C: Value = null;
-	f.vars = () => [C];
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/stock_parts/cell")) ? 1 : 0))) {
-		C = live(f.args[0]);
-		if (truthy(rt.sv(f, "cell"))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>＀ already has a cell.</span>", [live(f.src)])]);
+	if (rt.istype(W, T("/obj/item/weapon/stock_parts/cell"))) {
+		C = W;
+		if (this.cell) {
+			to_chat(user, `<span class='notice'>${this} already has a cell.</span>`);
 		} else {
-			if (rt.lt(rt.fv(f, "maxcharge", live(C)), rt.sv(f, "hitcost"))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>＀ requires a higher capacity cell.</span>", [live(f.src)])]);
-				return live(f.dot);
+			if (C.maxcharge < this.hitcost) {
+				to_chat(user, `<span class='notice'>${this} requires a higher capacity cell.</span>`);
+				return f.dot;
 			}
-			if (!truthy((yield* g.callName(f, live(f.args[1]), "transferItemToLoc", [live(f.args[0]), live(f.src)])))) {
-				return live(f.dot);
+			if (!(yield* user.transferItemToLoc(W, this))) {
+				return f.dot;
 			}
-			rt.setSv(f, "cell", live(f.args[0]));
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You install a cell in ＀.</span>", [live(f.src)])]);
-			yield* g.srcCall(f, "update_icon");
+			this.cell = W;
+			to_chat(user, `<span class='notice'>You install a cell in ${this}.</span>`);
+			yield* this.update_icon();
+		}
+	} else if (rt.istype(W, T("/obj/item/weapon/screwdriver"))) {
+		if (this.cell) {
+			yield* this.cell.update_icon();
+			yield* this.cell.forceMove(rt.getStep(f, this, 0));
+			this.cell = null;
+			to_chat(user, `<span class='notice'>You remove the cell from ${this}.</span>`);
+			this.status = 0;
+			yield* this.update_icon();
 		}
 	} else {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/screwdriver")) ? 1 : 0))) {
-			if (truthy(rt.sv(f, "cell"))) {
-				yield* g.callName(f, rt.sv(f, "cell"), "update_icon", []);
-				yield* g.callName(f, rt.sv(f, "cell"), "forceMove", [rt.getStep(f, live(f.src), 0)]);
-				rt.setSv(f, "cell", null);
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You remove the cell from ＀.</span>", [live(f.src)])]);
-				rt.setSv(f, "status", 0);
-				yield* g.srcCall(f, "update_icon");
-			}
-		} else {
-			return (yield* g.callSuper(f, [], rt.Args.Same));
-		}
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["W", "user", "params"] });
+}, true);
 
-// /obj/item/weapon/melee/baton/proc/attack_self  (code/game/objects/items/weapons/stunbaton.dm:96)  may sleep
+// stunbaton.dm:96
 rt.def("/obj/item/weapon/melee/baton/proc/attack_self", function* attack_self(f: Frame, user: Value) {
 	let $0: any, $1: any, $2: any;
-	f.vars = () => [user, $0, $1, $2];
-	if ((truthy(rt.sv(f, "cell")) && rt.gt(rt.fv(f, "charge", rt.sv(f, "cell")), rt.sv(f, "hitcost")))) {
-		rt.setSv(f, "status", (!truthy(rt.sv(f, "status")) ? 1 : 0));
-		$0 = live(user);
-		$1 = live(f.src);
-		if (truthy(rt.sv(f, "status"))) {
-			$1 = $1;
+	if (this.cell && this.cell.charge > this.hitcost) {
+		this.status = (!this.status ? 1 : 0);
+		$0 = user;
+		$1 = this;
+		if (this.status) {
+
 			$2 = "on";
 		} else {
 			$2 = "off";
 		}
-		yield* g.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='notice'>＀ is now ＀.</span>", [$1, $2])]);
-		yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), "sparks", 75, 1, -1]);
+		to_chat($0, `<span class='notice'>${$1} is now ${$2}.</span>`);
+		playsound(this.loc, "sparks", 75, 1, -1);
 	} else {
-		rt.setSv(f, "status", 0);
-		if (!truthy(rt.sv(f, "cell"))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ does not have a power source!</span>", [live(f.src)])]);
+		this.status = 0;
+		if (!this.cell) {
+			to_chat(user, `<span class='warning'>${this} does not have a power source!</span>`);
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>＀ is out of charge.</span>", [live(f.src)])]);
+			to_chat(user, `<span class='warning'>${this} is out of charge.</span>`);
 		}
 	}
-	yield* g.srcCall(f, "update_icon");
-	yield* g.srcCall(f, "add_fingerprint", live(user));
+	yield* this.update_icon();
+	yield* this.add_fingerprint(user);
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/melee/baton/proc/attack  (code/game/objects/items/weapons/stunbaton.dm:110)  may sleep
-rt.def("/obj/item/weapon/melee/baton/proc/attack", function* attack(f: Frame) {
+// stunbaton.dm:110
+rt.def("/obj/item/weapon/melee/baton/proc/attack", function* attack(f: Frame, M: Value, user: Value) {
 	let L: Value = null;
-	f.vars = () => [L];
-	if (((truthy(rt.sv(f, "status")) && truthy(rt.bitAnd(rt.fv(f, "disabilities", live(f.args[1])), 256))) && truthy(rt.op(f, "Prob", [], [50])))) {
-		yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("<span class='danger'>＀ accidentally hits themself with ＀!</span>", [live(f.args[1]), live(f.src)]), fmt("<span class='userdanger'>You accidentally hit yourself with ＀!</span>", [live(f.src)])]);
-		yield* g.callName(f, live(f.args[1]), "Knockdown", [multiply(rt.sv(f, "stunforce"), 3)]);
-		yield* g.srcCall(f, "deductcharge", rt.sv(f, "hitcost"));
-		return live(f.dot);
+	if (this.status && rt.bitAnd(user.disabilities, 256) && prob(50)) {
+		user.visible_message(`<span class='danger'>${user} accidentally hits themself with ${this}!</span>`, `<span class='userdanger'>You accidentally hit yourself with ${this}!</span>`);
+		yield* user.Knockdown(this.stunforce * 3);
+		yield* this.deductcharge(this.hitcost);
+		return f.dot;
 	}
-	if (truthy((rt.istype(live(f.args[0]), T("/mob/living/silicon/robot")) ? 1 : 0))) {
-		yield* g.callSuper(f, [], rt.Args.Same);
-		return live(f.dot);
+	if (rt.istype(M, T("/mob/living/silicon/robot"))) {
+		yield* parent_proc();
+		return f.dot;
 	}
-	if (truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		if (truthy((yield* g.srcCall(f, "check_martial_counter", (L = live(f.args[0])), live(f.args[1]))))) {
-			return live(f.dot);
+	if (rt.istype(M, T("/mob/living/carbon/human"))) {
+		if (yield* this.check_martial_counter((L = M), user)) {
+			return f.dot;
 		}
 	}
-	if (!isEqual(rt.fv(f, "a_intent", live(f.args[1])), "harm")) {
-		if (truthy(rt.sv(f, "status"))) {
-			if (truthy((yield* g.srcCall(f, "baton_stun", live(f.args[0]), live(f.args[1]))))) {
-				yield* g.callName(f, live(f.args[1]), "do_attack_animation", [live(f.args[0])]);
-				return live(f.dot);
+	if (user.a_intent != "harm") {
+		if (this.status) {
+			if (yield* this.baton_stun(M, user)) {
+				yield* user.do_attack_animation(M);
+				return f.dot;
 			}
 		} else {
-			yield* g.callName(f, live(f.args[0]), "visible_message", [fmt("<span class='warning'>＀ has prodded ＀ with ＀. Luckily it was off.</span>", [live(f.args[1]), live(f.args[0]), live(f.src)]), fmt("<span class='warning'>＀ has prodded you with ＀. Luckily it was off</span>", [live(f.args[1]), live(f.src)])]);
+			M.visible_message(`<span class='warning'>${user} has prodded ${M} with ${this}. Luckily it was off.</span>`, `<span class='warning'>${user} has prodded you with ${this}. Luckily it was off</span>`);
 		}
 	} else {
-		if (truthy(rt.sv(f, "status"))) {
-			yield* g.srcCall(f, "baton_stun", live(f.args[0]), live(f.args[1]));
+		if (this.status) {
+			yield* this.baton_stun(M, user);
 		}
-		yield* g.callSuper(f, [], rt.Args.Same);
+		yield* parent_proc();
 	}
 	return f.dot;
-}, true, { args: ["M", "user"] });
+}, true);
 
-// /obj/item/weapon/melee/baton/proc/baton_stun  (code/game/objects/items/weapons/stunbaton.dm:142)  may sleep
+// stunbaton.dm:142
 rt.def("/obj/item/weapon/melee/baton/proc/baton_stun", function* baton_stun(f: Frame, L: Value, user: Value) {
 	let H: Value = null, R: Value = null;
-	f.vars = () => [L, user, H, R];
-	if (truthy((rt.istype(live(L), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		if (truthy((yield* g.callName(f, (H = live(L)), "check_shields", [live(f.src), 0, fmt("＀'s ＀", [live(user), rt.sv(f, "name")]), 1])))) {
-			yield* g.call(f, P("/proc/playsound"), null, [live(L), rt.rsc("sound/weapons/genhit.ogg"), 50, 1]);
+	if (rt.istype(L, T("/mob/living/carbon/human"))) {
+		if (yield* (H = L).check_shields(this, 0, `${user}'s ${this.name}`, 1)) {
+			playsound(L, rt.rsc("sound/weapons/genhit.ogg"), 50, 1);
 			return 0;
 		}
 	}
-	if (truthy((rt.istype(rt.sv(f, "loc"), T("/mob/living/silicon/robot")) ? 1 : 0))) {
-		if (((!truthy((R = rt.sv(f, "loc"))) || !truthy(rt.fv(f, "cell", live(R)))) || !truthy((yield* g.callName(f, rt.fv(f, "cell", live(R)), "use", [rt.sv(f, "hitcost")]))))) {
+	if (rt.istype(this.loc, T("/mob/living/silicon/robot"))) {
+		if (!(R = this.loc) || !R.cell || !(yield* R.cell.use(this.hitcost))) {
 			return 0;
 		}
-	} else {
-		if (!truthy((yield* g.srcCall(f, "deductcharge", rt.sv(f, "hitcost"))))) {
-			return 0;
-		}
+	} else if (!(yield* this.deductcharge(this.hitcost))) {
+		return 0;
 	}
-	yield* g.callName(f, live(L), "Knockdown", [rt.sv(f, "stunforce")]);
-	yield* g.callName(f, live(L), "apply_effect", ["stutter", rt.sv(f, "stunforce")]);
-	if (truthy(live(user))) {
-		rt.setFv(f, "lastattacked", live(user), live(L));
-		rt.setFv(f, "lastattacker", live(L), live(user));
-		yield* g.callName(f, live(L), "visible_message", [fmt("<span class='danger'>＀ has stunned ＀ with ＀!</span>", [live(user), live(L), live(f.src)]), fmt("<span class='userdanger'>＀ has stunned you with ＀!</span>", [live(user), live(f.src)])]);
-		yield* g.call(f, P("/proc/add_logs"), null, [live(user), live(L), "stunned"]);
+	yield* L.Knockdown(this.stunforce);
+	yield* L.apply_effect("stutter", this.stunforce);
+	if (user) {
+		user.lastattacked = L;
+		L.lastattacker = user;
+		L.visible_message(`<span class='danger'>${user} has stunned ${L} with ${this}!</span>`, `<span class='userdanger'>${user} has stunned you with ${this}!</span>`);
+		add_logs(user, L, "stunned");
 	}
-	yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/weapons/egloves.ogg"), 50, 1, -1]);
-	if (truthy((rt.istype(live(L), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		yield* g.callName(f, (H = live(L)), "forcesay", [rt.gl("hit_appends")]);
+	playsound(this.loc, rt.rsc("sound/weapons/egloves.ogg"), 50, 1, -1);
+	if (rt.istype(L, T("/mob/living/carbon/human"))) {
+		yield* (H = L).forcesay(GLOB.hit_appends);
 	}
 	return 1;
 }, true);
 
-// /obj/item/weapon/melee/baton/proc/emp_act  (code/game/objects/items/weapons/stunbaton.dm:174)  may sleep
-rt.def("/obj/item/weapon/melee/baton/proc/emp_act", function* emp_act(f: Frame) {
-	yield* g.srcCall(f, "deductcharge", divide(1000, live(f.args[0])));
-	yield* g.callSuper(f, [], rt.Args.Same);
+// stunbaton.dm:174
+rt.def("/obj/item/weapon/melee/baton/proc/emp_act", function* emp_act(f: Frame, severity: Value) {
+	yield* this.deductcharge(1000 / severity);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["severity"] });
+}, true);
 
 rt.type(5663, "/obj/item/weapon/melee/baton/cattleprod", "/obj/item/weapon/melee/baton", {
 	sparkler: 0,
@@ -260,16 +247,16 @@ rt.type(5663, "/obj/item/weapon/melee/baton/cattleprod", "/obj/item/weapon/melee
 	slot_flags: 1024,
 });
 
-// /obj/item/weapon/melee/baton/cattleprod/proc/Initialize  (code/game/objects/items/weapons/stunbaton.dm:193)  may sleep
+// stunbaton.dm:193
 rt.def("/obj/item/weapon/melee/baton/cattleprod/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "sparkler", (yield* g.new_(f, T("/obj/item/device/assembly/igniter"), [live(f.src)])));
+	f.dot = (yield* parent_proc());
+	this.sparkler = (yield* new_(T("/obj/item/device/assembly/igniter"), this));
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/melee/baton/cattleprod/proc/baton_stun  (code/game/objects/items/weapons/stunbaton.dm:197)  may sleep
+// stunbaton.dm:197
 rt.def("/obj/item/weapon/melee/baton/cattleprod/proc/baton_stun", function* baton_stun(f: Frame) {
-	if (!truthy((yield* g.callName(f, rt.sv(f, "sparkler"), "activate", [])))) return f.dot;
-	yield* g.callSuper(f, [], rt.Args.Same);
+	if (!(yield* this.sparkler.activate())) return f.dot;
+	yield* parent_proc();
 	return f.dot;
 }, true);

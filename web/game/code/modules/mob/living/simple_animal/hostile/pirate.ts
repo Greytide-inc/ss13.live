@@ -1,7 +1,7 @@
-// From code/modules/mob/living/simple_animal/hostile/pirate.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/simple_animal/hostile/pirate.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(4976, "/mob/living/simple_animal/hostile/pirate", "/mob/living/simple_animal/hostile", {
@@ -33,18 +33,16 @@ rt.type(4976, "/mob/living/simple_animal/hostile/pirate", "/mob/living/simple_an
 	faction: null,
 });
 
-// /mob/living/simple_animal/hostile/pirate/proc/<init>  (code/modules/mob/living/simple_animal/hostile/pirate.dm:24)
+// pirate.dm:24
 rt.def("/mob/living/simple_animal/hostile/pirate/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "atmos_requirements", rt.alist(f, ["min_oxy", 5, "max_oxy", 0, "min_tox", 0, "max_tox", 1, "min_co2", 0, "max_co2", 5, "min_n2", 0, "max_n2", 0]));
-	$0 = $0;
-	rt.setSv(f, "speak_emote", rt.list("yarrs"));
-	$0 = $0;
-	rt.setSv(f, "loot", rt.list(T("/obj/effect/mob_spawn/human/corpse/pirate"), T("/obj/item/weapon/melee/energy/sword/pirate")));
-	$0 = $0;
-	rt.setSv(f, "faction", rt.list("pirate"));
+	parent_proc();
+	this.atmos_requirements = rt.alist(f, ["min_oxy", 5, "max_oxy", 0, "min_tox", 0, "max_tox", 1, "min_co2", 0, "max_co2", 5, "min_n2", 0, "max_n2", 0]);
+
+	this.speak_emote = list("yarrs");
+
+	this.loot = list(T("/obj/effect/mob_spawn/human/corpse/pirate"), T("/obj/item/weapon/melee/energy/sword/pirate"));
+
+	this.faction = list("pirate");
 	return f.dot;
 });
 
@@ -62,12 +60,10 @@ rt.type(4977, "/mob/living/simple_animal/hostile/pirate/ranged", "/mob/living/si
 	loot: null,
 });
 
-// /mob/living/simple_animal/hostile/pirate/ranged/proc/<init>  (code/modules/mob/living/simple_animal/hostile/pirate.dm:43)
+// pirate.dm:43
 rt.def("/mob/living/simple_animal/hostile/pirate/ranged/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "loot", rt.list(T("/obj/effect/mob_spawn/human/corpse/pirate/ranged"), T("/obj/item/weapon/gun/energy/laser")));
+	parent_proc();
+	this.loot = list(T("/obj/effect/mob_spawn/human/corpse/pirate/ranged"), T("/obj/item/weapon/gun/energy/laser"));
 	return f.dot;
 });
 
@@ -80,12 +76,10 @@ rt.type(4978, "/mob/living/simple_animal/hostile/pirate/space", "/mob/living/sim
 	speed: 1,
 });
 
-// /mob/living/simple_animal/hostile/pirate/space/proc/<init>  (code/modules/mob/living/simple_animal/hostile/pirate.dm:50)
+// pirate.dm:50
 rt.def("/mob/living/simple_animal/hostile/pirate/space/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "atmos_requirements", rt.alist(f, ["min_oxy", 0, "max_oxy", 0, "min_tox", 0, "max_tox", 0, "min_co2", 0, "max_co2", 0, "min_n2", 0, "max_n2", 0]));
+	parent_proc();
+	this.atmos_requirements = rt.alist(f, ["min_oxy", 0, "max_oxy", 0, "min_tox", 0, "max_tox", 0, "min_co2", 0, "max_co2", 0, "min_n2", 0, "max_n2", 0]);
 	return f.dot;
 });
 
@@ -102,11 +96,9 @@ rt.type(4979, "/mob/living/simple_animal/hostile/pirate/space/ranged", "/mob/liv
 	loot: null,
 });
 
-// /mob/living/simple_animal/hostile/pirate/space/ranged/proc/<init>  (code/modules/mob/living/simple_animal/hostile/pirate.dm:64)
+// pirate.dm:64
 rt.def("/mob/living/simple_animal/hostile/pirate/space/ranged/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "loot", rt.list(T("/obj/effect/mob_spawn/human/corpse/pirate/ranged"), T("/obj/item/weapon/gun/energy/laser")));
+	parent_proc();
+	this.loot = list(T("/obj/effect/mob_spawn/human/corpse/pirate/ranged"), T("/obj/item/weapon/gun/energy/laser"));
 	return f.dot;
 });

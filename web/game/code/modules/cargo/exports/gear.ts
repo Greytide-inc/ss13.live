@@ -1,7 +1,7 @@
-// From code/modules/cargo/exports/gear.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/cargo/exports/gear.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(1946, "/datum/export/gear/sec_helmet", "/datum/export/gear", {
@@ -10,12 +10,10 @@ rt.type(1946, "/datum/export/gear/sec_helmet", "/datum/export/gear", {
 	export_types: null,
 });
 
-// /datum/export/gear/sec_helmet/proc/<init>  (code/modules/cargo/exports/gear.dm:9)
+// gear.dm:9
 rt.def("/datum/export/gear/sec_helmet/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/item/clothing/head/helmet/sec")));
+	parent_proc();
+	this.export_types = list(T("/obj/item/clothing/head/helmet/sec"));
 	return f.dot;
 });
 
@@ -26,12 +24,10 @@ rt.type(1947, "/datum/export/gear/sec_armor", "/datum/export/gear", {
 	export_types: null,
 });
 
-// /datum/export/gear/sec_armor/proc/<init>  (code/modules/cargo/exports/gear.dm:14)
+// gear.dm:14
 rt.def("/datum/export/gear/sec_armor/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/item/clothing/suit/armor/vest")));
+	parent_proc();
+	this.export_types = list(T("/obj/item/clothing/suit/armor/vest"));
 	return f.dot;
 });
 
@@ -41,12 +37,10 @@ rt.type(1948, "/datum/export/gear/riot_helmet", "/datum/export/gear", {
 	export_types: null,
 });
 
-// /datum/export/gear/riot_helmet/proc/<init>  (code/modules/cargo/exports/gear.dm:21)
+// gear.dm:21
 rt.def("/datum/export/gear/riot_helmet/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/item/clothing/head/helmet/riot")));
+	parent_proc();
+	this.export_types = list(T("/obj/item/clothing/head/helmet/riot"));
 	return f.dot;
 });
 
@@ -56,12 +50,10 @@ rt.type(1949, "/datum/export/gear/riot_armor", "/datum/export/gear", {
 	export_types: null,
 });
 
-// /datum/export/gear/riot_armor/proc/<init>  (code/modules/cargo/exports/gear.dm:26)
+// gear.dm:26
 rt.def("/datum/export/gear/riot_armor/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/item/clothing/suit/armor/riot")));
+	parent_proc();
+	this.export_types = list(T("/obj/item/clothing/suit/armor/riot"));
 	return f.dot;
 });
 
@@ -71,12 +63,10 @@ rt.type(1950, "/datum/export/gear/bulletproof_armor", "/datum/export/gear", {
 	export_types: null,
 });
 
-// /datum/export/gear/bulletproof_armor/proc/<init>  (code/modules/cargo/exports/gear.dm:31)
+// gear.dm:31
 rt.def("/datum/export/gear/bulletproof_armor/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/item/clothing/suit/armor/bulletproof")));
+	parent_proc();
+	this.export_types = list(T("/obj/item/clothing/suit/armor/bulletproof"));
 	return f.dot;
 });
 
@@ -86,12 +76,10 @@ rt.type(1951, "/datum/export/gear/reflector_armor", "/datum/export/gear", {
 	export_types: null,
 });
 
-// /datum/export/gear/reflector_armor/proc/<init>  (code/modules/cargo/exports/gear.dm:36)
+// gear.dm:36
 rt.def("/datum/export/gear/reflector_armor/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/item/clothing/suit/armor/laserproof")));
+	parent_proc();
+	this.export_types = list(T("/obj/item/clothing/suit/armor/laserproof"));
 	return f.dot;
 });
 
@@ -101,12 +89,10 @@ rt.type(1952, "/datum/export/gear/riot_shield", "/datum/export/gear", {
 	export_types: null,
 });
 
-// /datum/export/gear/riot_shield/proc/<init>  (code/modules/cargo/exports/gear.dm:42)
+// gear.dm:42
 rt.def("/datum/export/gear/riot_shield/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/item/weapon/shield/riot")));
+	parent_proc();
+	this.export_types = list(T("/obj/item/weapon/shield/riot"));
 	return f.dot;
 });
 
@@ -116,12 +102,10 @@ rt.type(1954, "/datum/export/gear/mask/breath", "/datum/export/gear/mask", {
 	export_types: null,
 });
 
-// /datum/export/gear/mask/breath/proc/<init>  (code/modules/cargo/exports/gear.dm:49)
+// gear.dm:49
 rt.def("/datum/export/gear/mask/breath/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/item/clothing/mask/breath")));
+	parent_proc();
+	this.export_types = list(T("/obj/item/clothing/mask/breath"));
 	return f.dot;
 });
 
@@ -132,12 +116,10 @@ rt.type(1955, "/datum/export/gear/mask/gas", "/datum/export/gear/mask", {
 	export_types: null,
 });
 
-// /datum/export/gear/mask/gas/proc/<init>  (code/modules/cargo/exports/gear.dm:54)
+// gear.dm:54
 rt.def("/datum/export/gear/mask/gas/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/item/clothing/mask/gas")));
+	parent_proc();
+	this.export_types = list(T("/obj/item/clothing/mask/gas"));
 	return f.dot;
 });
 
@@ -147,12 +129,10 @@ rt.type(1957, "/datum/export/gear/space/helmet", "/datum/export/gear/space", {
 	export_types: null,
 });
 
-// /datum/export/gear/space/helmet/proc/<init>  (code/modules/cargo/exports/gear.dm:66)
+// gear.dm:66
 rt.def("/datum/export/gear/space/helmet/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/item/clothing/head/helmet/space"), T("/obj/item/clothing/head/helmet/space/eva")));
+	parent_proc();
+	this.export_types = list(T("/obj/item/clothing/head/helmet/space"), T("/obj/item/clothing/head/helmet/space/eva"));
 	return f.dot;
 });
 
@@ -162,12 +142,10 @@ rt.type(1958, "/datum/export/gear/space/suit", "/datum/export/gear/space", {
 	export_types: null,
 });
 
-// /datum/export/gear/space/suit/proc/<init>  (code/modules/cargo/exports/gear.dm:71)
+// gear.dm:71
 rt.def("/datum/export/gear/space/suit/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/item/clothing/suit/space"), T("/obj/item/clothing/suit/space/eva")));
+	parent_proc();
+	this.export_types = list(T("/obj/item/clothing/suit/space"), T("/obj/item/clothing/suit/space/eva"));
 	return f.dot;
 });
 
@@ -177,12 +155,10 @@ rt.type(1959, "/datum/export/gear/space/voidhelmet", "/datum/export/gear/space",
 	export_types: null,
 });
 
-// /datum/export/gear/space/voidhelmet/proc/<init>  (code/modules/cargo/exports/gear.dm:77)
+// gear.dm:77
 rt.def("/datum/export/gear/space/voidhelmet/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/item/clothing/head/helmet/space/nasavoid")));
+	parent_proc();
+	this.export_types = list(T("/obj/item/clothing/head/helmet/space/nasavoid"));
 	return f.dot;
 });
 
@@ -192,12 +168,10 @@ rt.type(1960, "/datum/export/gear/space/voidsuit", "/datum/export/gear/space", {
 	export_types: null,
 });
 
-// /datum/export/gear/space/voidsuit/proc/<init>  (code/modules/cargo/exports/gear.dm:82)
+// gear.dm:82
 rt.def("/datum/export/gear/space/voidsuit/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/item/clothing/suit/space/nasavoid")));
+	parent_proc();
+	this.export_types = list(T("/obj/item/clothing/suit/space/nasavoid"));
 	return f.dot;
 });
 
@@ -208,12 +182,10 @@ rt.type(1961, "/datum/export/gear/space/syndiehelmet", "/datum/export/gear/space
 	export_types: null,
 });
 
-// /datum/export/gear/space/syndiehelmet/proc/<init>  (code/modules/cargo/exports/gear.dm:88)
+// gear.dm:88
 rt.def("/datum/export/gear/space/syndiehelmet/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/item/clothing/head/helmet/space/syndicate")));
+	parent_proc();
+	this.export_types = list(T("/obj/item/clothing/head/helmet/space/syndicate"));
 	return f.dot;
 });
 
@@ -224,12 +196,10 @@ rt.type(1962, "/datum/export/gear/space/syndiesuit", "/datum/export/gear/space",
 	export_types: null,
 });
 
-// /datum/export/gear/space/syndiesuit/proc/<init>  (code/modules/cargo/exports/gear.dm:94)
+// gear.dm:94
 rt.def("/datum/export/gear/space/syndiesuit/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/item/clothing/suit/space/syndicate")));
+	parent_proc();
+	this.export_types = list(T("/obj/item/clothing/suit/space/syndicate"));
 	return f.dot;
 });
 
@@ -239,12 +209,10 @@ rt.type(1963, "/datum/export/gear/radhelmet", "/datum/export/gear", {
 	export_types: null,
 });
 
-// /datum/export/gear/radhelmet/proc/<init>  (code/modules/cargo/exports/gear.dm:102)
+// gear.dm:102
 rt.def("/datum/export/gear/radhelmet/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/item/clothing/head/radiation")));
+	parent_proc();
+	this.export_types = list(T("/obj/item/clothing/head/radiation"));
 	return f.dot;
 });
 
@@ -254,12 +222,10 @@ rt.type(1964, "/datum/export/gear/radsuit", "/datum/export/gear", {
 	export_types: null,
 });
 
-// /datum/export/gear/radsuit/proc/<init>  (code/modules/cargo/exports/gear.dm:107)
+// gear.dm:107
 rt.def("/datum/export/gear/radsuit/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/item/clothing/suit/radiation")));
+	parent_proc();
+	this.export_types = list(T("/obj/item/clothing/suit/radiation"));
 	return f.dot;
 });
 
@@ -269,12 +235,10 @@ rt.type(1965, "/datum/export/gear/biohood", "/datum/export/gear", {
 	export_types: null,
 });
 
-// /datum/export/gear/biohood/proc/<init>  (code/modules/cargo/exports/gear.dm:113)
+// gear.dm:113
 rt.def("/datum/export/gear/biohood/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/item/clothing/head/bio_hood")));
+	parent_proc();
+	this.export_types = list(T("/obj/item/clothing/head/bio_hood"));
 	return f.dot;
 });
 
@@ -284,12 +248,10 @@ rt.type(1966, "/datum/export/gear/biosuit", "/datum/export/gear", {
 	export_types: null,
 });
 
-// /datum/export/gear/biosuit/proc/<init>  (code/modules/cargo/exports/gear.dm:118)
+// gear.dm:118
 rt.def("/datum/export/gear/biosuit/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/item/clothing/suit/bio_suit")));
+	parent_proc();
+	this.export_types = list(T("/obj/item/clothing/suit/bio_suit"));
 	return f.dot;
 });
 
@@ -299,12 +261,10 @@ rt.type(1967, "/datum/export/gear/bombhelmet", "/datum/export/gear", {
 	export_types: null,
 });
 
-// /datum/export/gear/bombhelmet/proc/<init>  (code/modules/cargo/exports/gear.dm:124)
+// gear.dm:124
 rt.def("/datum/export/gear/bombhelmet/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/item/clothing/head/bomb_hood")));
+	parent_proc();
+	this.export_types = list(T("/obj/item/clothing/head/bomb_hood"));
 	return f.dot;
 });
 
@@ -314,11 +274,9 @@ rt.type(1968, "/datum/export/gear/bombsuit", "/datum/export/gear", {
 	export_types: null,
 });
 
-// /datum/export/gear/bombsuit/proc/<init>  (code/modules/cargo/exports/gear.dm:129)
+// gear.dm:129
 rt.def("/datum/export/gear/bombsuit/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "export_types", rt.list(T("/obj/item/clothing/suit/bomb_suit")));
+	parent_proc();
+	this.export_types = list(T("/obj/item/clothing/suit/bomb_suit"));
 	return f.dot;
 });

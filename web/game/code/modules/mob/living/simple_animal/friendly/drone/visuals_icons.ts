@@ -1,194 +1,176 @@
-// From code/modules/mob/living/simple_animal/friendly/drone/visuals_icons.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/simple_animal/friendly/drone/visuals_icons.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, g } = rt;
 
 
-// /mob/living/simple_animal/drone/proc/apply_overlay  (code/modules/mob/living/simple_animal/friendly/drone/visuals_icons.dm:10)
+// visuals_icons.dm:10
 rt.def("/mob/living/simple_animal/drone/proc/apply_overlay", function apply_overlay(f: Frame, cache_index: Value) {
-	if (!truthy((f.dot = rt.index(rt.sv(f, "drone_overlays"), live(cache_index))))) return f.dot;
-	rt.callSrc(f, "add_overlay", [live(f.dot)]);
+	if (!(f.dot = rt.index(this.drone_overlays, cache_index))) return f.dot;
+	this.add_overlay(f.dot);
 	return f.dot;
 });
 
-// /mob/living/simple_animal/drone/proc/remove_overlay  (code/modules/mob/living/simple_animal/friendly/drone/visuals_icons.dm:15)
+// visuals_icons.dm:15
 rt.def("/mob/living/simple_animal/drone/proc/remove_overlay", function remove_overlay(f: Frame, cache_index: Value) {
 	let I: Value = null;
-	f.vars = () => [I];
-	if (!truthy((I = rt.index(rt.sv(f, "drone_overlays"), live(cache_index))))) return f.dot;
-	rt.callSrc(f, "cut_overlay", [live(I)]);
-	rt.setAt(rt.sv(f, "drone_overlays"), live(cache_index), null);
+	if (!(I = rt.index(this.drone_overlays, cache_index))) return f.dot;
+	this.cut_overlay(I);
+	rt.setAt(this.drone_overlays, cache_index, null);
 	return f.dot;
 });
 
-// /mob/living/simple_animal/drone/proc/update_inv_hands  (code/modules/mob/living/simple_animal/friendly/drone/visuals_icons.dm:22)
+// visuals_icons.dm:22
 rt.def("/mob/living/simple_animal/drone/proc/update_inv_hands", function update_inv_hands(f: Frame) {
-	let hands_overlays: Value = null, l_hand: Value = null, r_hand: Value = null, y_shift: Value = null, r_state: Value = null, r_hand_overlay: Value = null, l_state: Value = null, l_hand_overlay: Value = null;
-	f.vars = () => [hands_overlays, l_hand, r_hand, y_shift, r_state, r_hand_overlay, l_state, l_hand_overlay];
-	rt.callSrc(f, "remove_overlay", [1]);
-	hands_overlays = rt.list();
-	l_hand = rt.callSrc(f, "get_item_for_held_index", [1]);
-	r_hand = rt.callSrc(f, "get_item_for_held_index", [2]);
-	y_shift = rt.callSrc(f, "getItemPixelShiftY", []);
-	if (truthy(live(r_hand))) {
-		if (!truthy((r_state = rt.fv(f, "item_state", live(r_hand))))) {
-			r_state = rt.fv(f, "icon_state", live(r_hand));
+	let r_state: Value = null, r_hand_overlay: Value = null, l_state: Value = null, l_hand_overlay: Value = null;
+	this.remove_overlay(DRONE_HANDS_LAYER);
+	let hands_overlays: Value = list();
+	let l_hand: Value = this.get_item_for_held_index(1);
+	let r_hand: Value = this.get_item_for_held_index(2);
+	let y_shift: Value = this.getItemPixelShiftY();
+	if (r_hand) {
+		if (!(r_state = r_hand.item_state)) {
+			r_state = r_hand.icon_state;
 		}
-		r_hand_overlay = rt.callName(f, live(r_hand), "build_worn_icon", ["state", live(r_state), "default_layer", 1, "default_icon_file", rt.fv(f, "righthand_file", live(r_hand)), "isinhands", 1], rt.Args.Named);
-		if (truthy(live(y_shift))) {
-			rt.modField(f, live(r_hand_overlay), "pixel_y", live(y_shift), add);
+		r_hand_overlay = r_hand.build_worn_icon({ state: r_state, default_layer: DRONE_HANDS_LAYER, default_icon_file: r_hand.righthand_file, isinhands: DRONE_HANDS_LAYER });
+		if (y_shift) {
+			r_hand_overlay.pixel_y += y_shift;
 		}
-		hands_overlays = rt.modify(live(hands_overlays), live(r_hand_overlay), add);
-		if (((truthy(rt.sv(f, "client")) && truthy(rt.sv(f, "hud_used"))) && !isEqual(rt.fv(f, "hud_version", rt.sv(f, "hud_used")), 3))) {
-			rt.setFv(f, "layer", live(r_hand), 20);
-			rt.setFv(f, "plane", live(r_hand), 20);
-			rt.setFv(f, "screen_loc", live(r_hand), rt.call(f, P("/proc/ui_hand_position"), null, [rt.callSrc(f, "get_held_index_of_item", [live(r_hand)])]));
-			(rt.modField(f, rt.sv(f, "client"), "screen", live(r_hand), rt.bitOr));
-		}
-	}
-	if (truthy(live(l_hand))) {
-		if (!truthy((l_state = rt.fv(f, "item_state", live(l_hand))))) {
-			l_state = rt.fv(f, "icon_state", live(l_hand));
-		}
-		l_hand_overlay = rt.callName(f, live(l_hand), "build_worn_icon", ["state", live(l_state), "default_layer", 1, "default_icon_file", rt.fv(f, "lefthand_file", live(l_hand)), "isinhands", 1], rt.Args.Named);
-		if (truthy(live(y_shift))) {
-			rt.modField(f, live(l_hand_overlay), "pixel_y", live(y_shift), add);
-		}
-		hands_overlays = rt.modify(live(hands_overlays), live(l_hand_overlay), add);
-		if (((truthy(rt.sv(f, "client")) && truthy(rt.sv(f, "hud_used"))) && !isEqual(rt.fv(f, "hud_version", rt.sv(f, "hud_used")), 3))) {
-			rt.setFv(f, "layer", live(l_hand), 20);
-			rt.setFv(f, "plane", live(l_hand), 20);
-			rt.setFv(f, "screen_loc", live(l_hand), rt.call(f, P("/proc/ui_hand_position"), null, [rt.callSrc(f, "get_held_index_of_item", [live(l_hand)])]));
-			(rt.modField(f, rt.sv(f, "client"), "screen", live(l_hand), rt.bitOr));
+		hands_overlays += r_hand_overlay;
+		if (this.client && this.hud_used && this.hud_used.hud_version != HUD_STYLE_NOHUD) {
+			r_hand.layer = ABOVE_HUD_LAYER;
+			r_hand.plane = ABOVE_HUD_PLANE;
+			r_hand.screen_loc = ui_hand_position(this.get_held_index_of_item(r_hand));
+			(rt.modField(f, this.client, "screen", r_hand, rt.bitOr));
 		}
 	}
-	if (truthy(rt.len(f, live(hands_overlays)))) {
-		rt.setAt(rt.sv(f, "drone_overlays"), 1, live(hands_overlays));
+	if (l_hand) {
+		if (!(l_state = l_hand.item_state)) {
+			l_state = l_hand.icon_state;
+		}
+		l_hand_overlay = l_hand.build_worn_icon({ state: l_state, default_layer: DRONE_HANDS_LAYER, default_icon_file: l_hand.lefthand_file, isinhands: DRONE_HANDS_LAYER });
+		if (y_shift) {
+			l_hand_overlay.pixel_y += y_shift;
+		}
+		hands_overlays += l_hand_overlay;
+		if (this.client && this.hud_used && this.hud_used.hud_version != HUD_STYLE_NOHUD) {
+			l_hand.layer = ABOVE_HUD_LAYER;
+			l_hand.plane = ABOVE_HUD_PLANE;
+			l_hand.screen_loc = ui_hand_position(this.get_held_index_of_item(l_hand));
+			(rt.modField(f, this.client, "screen", l_hand, rt.bitOr));
+		}
 	}
-	rt.callSrc(f, "apply_overlay", [1]);
+	if (rt.len(f, hands_overlays)) {
+		rt.setAt(this.drone_overlays, DRONE_HANDS_LAYER, hands_overlays);
+	}
+	this.apply_overlay(DRONE_HANDS_LAYER);
 	return f.dot;
 });
 
-// /mob/living/simple_animal/drone/proc/update_inv_internal_storage  (code/modules/mob/living/simple_animal/friendly/drone/visuals_icons.dm:73)
+// visuals_icons.dm:73
 rt.def("/mob/living/simple_animal/drone/proc/update_inv_internal_storage", function update_inv_internal_storage(f: Frame) {
-	if (!(((truthy(rt.sv(f, "internal_storage")) && truthy(rt.sv(f, "client"))) && truthy(rt.sv(f, "hud_used"))) && truthy(rt.fv(f, "hud_shown", rt.sv(f, "hud_used"))))) return f.dot;
-	rt.setFv(f, "screen_loc", rt.sv(f, "internal_storage"), "CENTER-2:14,SOUTH:5");
-	rt.modField(f, rt.sv(f, "client"), "screen", rt.sv(f, "internal_storage"), add);
+	if (!(this.internal_storage && this.client && this.hud_used && this.hud_used.hud_shown)) return f.dot;
+	this.internal_storage.screen_loc = "CENTER-2:14,SOUTH:5";
+	this.client.screen += this.internal_storage;
 	return f.dot;
 });
 
-// /mob/living/simple_animal/drone/proc/update_inv_head  (code/modules/mob/living/simple_animal/friendly/drone/visuals_icons.dm:79)
+// visuals_icons.dm:79
 rt.def("/mob/living/simple_animal/drone/proc/update_inv_head", function update_inv_head(f: Frame) {
 	let used_head_icon: Value = null, head_overlay: Value = null;
-	f.vars = () => [used_head_icon, head_overlay];
-	rt.callSrc(f, "remove_overlay", [2]);
-	if (truthy(rt.sv(f, "head"))) {
-		if (((truthy(rt.sv(f, "client")) && truthy(rt.sv(f, "hud_used"))) && truthy(rt.fv(f, "hud_shown", rt.sv(f, "hud_used"))))) {
-			rt.setFv(f, "screen_loc", rt.sv(f, "head"), "CENTER-3:14,SOUTH:5");
-			rt.modField(f, rt.sv(f, "client"), "screen", rt.sv(f, "head"), add);
+	this.remove_overlay(DRONE_HEAD_LAYER);
+	if (this.head) {
+		if (this.client && this.hud_used && this.hud_used.hud_shown) {
+			this.head.screen_loc = "CENTER-3:14,SOUTH:5";
+			this.client.screen += this.head;
 		}
 		used_head_icon = rt.rsc("icons/mob/head.dmi");
-		if (truthy((rt.istype(rt.sv(f, "head"), T("/obj/item/clothing/mask")) ? 1 : 0))) {
+		if (rt.istype(this.head, T("/obj/item/clothing/mask"))) {
 			used_head_icon = rt.rsc("icons/mob/mask.dmi");
 		}
-		rt.modField(f, (head_overlay = rt.callName(f, rt.sv(f, "head"), "build_worn_icon", ["state", rt.fv(f, "icon_state", rt.sv(f, "head")), "default_layer", 2, "default_icon_file", live(used_head_icon)], rt.Args.Named)), "pixel_y", -15, add);
-		rt.setAt(rt.sv(f, "drone_overlays"), 2, live(head_overlay));
+		(head_overlay = this.head.build_worn_icon({ state: this.head.icon_state, default_layer: DRONE_HEAD_LAYER, default_icon_file: used_head_icon })).pixel_y += -15;
+		rt.setAt(this.drone_overlays, DRONE_HEAD_LAYER, head_overlay);
 	}
-	rt.callSrc(f, "apply_overlay", [2]);
+	this.apply_overlay(DRONE_HEAD_LAYER);
 	return f.dot;
 });
 
-// /mob/living/simple_animal/drone/proc/update_inv_wear_mask  (code/modules/mob/living/simple_animal/friendly/drone/visuals_icons.dm:96)
+// visuals_icons.dm:96
 rt.def("/mob/living/simple_animal/drone/proc/update_inv_wear_mask", function update_inv_wear_mask(f: Frame) {
-	rt.callSrc(f, "update_inv_head", []);
+	this.update_inv_head();
 	return f.dot;
 });
 
-// /mob/living/simple_animal/drone/proc/regenerate_icons  (code/modules/mob/living/simple_animal/friendly/drone/visuals_icons.dm:101)
+// visuals_icons.dm:101
 rt.def("/mob/living/simple_animal/drone/proc/regenerate_icons", function regenerate_icons(f: Frame) {
-	rt.callSrc(f, "update_inv_hands", []);
-	rt.callSrc(f, "update_inv_head", []);
-	rt.callSrc(f, "update_inv_internal_storage", []);
+	this.update_inv_hands();
+	this.update_inv_head();
+	this.update_inv_internal_storage();
 	return f.dot;
 });
 
-// /mob/living/simple_animal/drone/proc/pickVisualAppearence  (code/modules/mob/living/simple_animal/friendly/drone/visuals_icons.dm:108)  may sleep
+// visuals_icons.dm:108
 rt.def("/mob/living/simple_animal/drone/proc/pickVisualAppearence", function* pickVisualAppearence(f: Frame) {
 	let appearence: Value = null;
-	let $0: any;
-	f.vars = () => [appearence, $0];
-	rt.setSv(f, "picked", 0);
-	$0 = (appearence = (yield* g.op(f, "Prompt", [0], [null, "Maintenance Drone", "Appearence", "Choose your appearence!", rt.list("Maintenance Drone", "Repair Drone", "Scout Drone")])));
-	if ($0 === "Maintenance Drone") {
-		rt.setSv(f, "visualAppearence", "drone_maint");
-		rt.setSv(f, "colour", (yield* g.op(f, "Prompt", [0], [null, "grey", "Colour", "Choose your colour!", rt.list("grey", "blue", "red", "green", "pink", "orange")])));
-		rt.setSv(f, "icon_state", fmt("＀_＀", [rt.sv(f, "visualAppearence"), rt.sv(f, "colour")]));
-		rt.setSv(f, "icon_living", fmt("＀_＀", [rt.sv(f, "visualAppearence"), rt.sv(f, "colour")]));
-		rt.setSv(f, "icon_dead", fmt("＀_dead", [rt.sv(f, "visualAppearence")]));
-	} else if ($0 === "Repair Drone") {
-		rt.setSv(f, "visualAppearence", "drone_repair");
-		rt.setSv(f, "icon_state", rt.sv(f, "visualAppearence"));
-		rt.setSv(f, "icon_living", rt.sv(f, "visualAppearence"));
-		rt.setSv(f, "icon_dead", fmt("＀_dead", [rt.sv(f, "visualAppearence")]));
-	} else if ($0 === "Scout Drone") {
-		rt.setSv(f, "visualAppearence", "drone_scout");
-		rt.setSv(f, "icon_state", rt.sv(f, "visualAppearence"));
-		rt.setSv(f, "icon_living", rt.sv(f, "visualAppearence"));
-		rt.setSv(f, "icon_dead", fmt("＀_dead", [rt.sv(f, "visualAppearence")]));
+	this.picked = 0;
+	const subject = (appearence = (yield* g.op(f, "Prompt", [0], [null, "Maintenance Drone", "Appearence", "Choose your appearence!", list("Maintenance Drone", "Repair Drone", "Scout Drone")])));
+	if (subject === "Maintenance Drone") {
+		this.visualAppearence = "drone_maint";
+		this.colour = (yield* g.op(f, "Prompt", [0], [null, "grey", "Colour", "Choose your colour!", list("grey", "blue", "red", "green", "pink", "orange")]));
+		this.icon_state = `${this.visualAppearence}_${this.colour}`;
+		this.icon_living = `${this.visualAppearence}_${this.colour}`;
+		this.icon_dead = `${this.visualAppearence}_dead`;
+	} else if (subject === "Repair Drone") {
+		this.visualAppearence = "drone_repair";
+		this.icon_state = this.visualAppearence;
+		this.icon_living = this.visualAppearence;
+		this.icon_dead = `${this.visualAppearence}_dead`;
+	} else if (subject === "Scout Drone") {
+		this.visualAppearence = "drone_scout";
+		this.icon_state = this.visualAppearence;
+		this.icon_living = this.visualAppearence;
+		this.icon_dead = `${this.visualAppearence}_dead`;
 	} else {
-		return live(f.dot);
+		return f.dot;
 	}
-	rt.setSv(f, "picked", 1);
+	this.picked = 1;
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/drone/proc/getItemPixelShiftY  (code/modules/mob/living/simple_animal/friendly/drone/visuals_icons.dm:137)
+// visuals_icons.dm:137
 rt.def("/mob/living/simple_animal/drone/proc/getItemPixelShiftY", function getItemPixelShiftY(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.sv(f, "visualAppearence");
-	if ($0 === "drone_maint") {
+	if (this.visualAppearence === "drone_maint") {
 		f.dot = 0;
-	} else if ($0 === "drone_repair" || $0 === "drone_scout" || $0 === "drone_clock") {
+	} else if (this.visualAppearence === "drone_repair" || this.visualAppearence === "drone_scout" || this.visualAppearence === "drone_clock") {
 		f.dot = -6;
 	}
 	return f.dot;
 });
 
-// /mob/living/simple_animal/drone/proc/updateSeeStaticMobs  (code/modules/mob/living/simple_animal/friendly/drone/visuals_icons.dm:144)
+// visuals_icons.dm:144
 rt.def("/mob/living/simple_animal/drone/proc/updateSeeStaticMobs", function updateSeeStaticMobs(f: Frame) {
 	let i: Value = null, L: Value = null, chosen: Value = null;
-	let $e: any;
-	f.vars = () => [i, L, chosen, $e];
-	if (!truthy(rt.sv(f, "client"))) {
-		return live(f.dot);
+	if (!this.client) {
+		return f.dot;
 	}
-	i = null;
-	rt.forList(f, 0, rt.sv(f, "staticOverlays"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		i = $e;
-		rt.callName(f, rt.fv(f, "images", rt.sv(f, "client")), "Remove", [live(i)]);
-		rt.callName(f, rt.sv(f, "staticOverlays"), "Remove", [live(i)]);
+	for (i of each(this.staticOverlays)) {
+		this.client.images.Remove(i);
+		this.staticOverlays.Remove(i);
 	}
-	rt.endFor(f, 0);
-	rt.setFv(f, "len", rt.sv(f, "staticOverlays"), 0);
-	if (!truthy(rt.sv(f, "seeStatic"))) return f.dot;
-	L = null;
-	rt.forList(f, 0, rt.gl("mob_list"), T("/mob/living"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		L = $e;
-		if (truthy((rt.istype(live(L), T("/mob/living/simple_animal/drone")) ? 1 : 0))) {
+	this.staticOverlays.len = 0;
+	if (!this.seeStatic) return f.dot;
+	for (L of each(GLOB.mob_list, T("/mob/living"))) {
+		if (rt.istype(L, T("/mob/living/simple_animal/drone"))) {
 			continue;
 		}
 		chosen = null;
-		if (truthy((rt.isIn(f, rt.sv(f, "staticChoice"), rt.fv(f, "staticOverlays", live(L))) ? 1 : 0))) {
-			chosen = rt.index(rt.fv(f, "staticOverlays", live(L)), rt.sv(f, "staticChoice"));
+		if (rt.isIn(f, this.staticChoice, L.staticOverlays)) {
+			chosen = rt.index(L.staticOverlays, this.staticChoice);
 		} else {
-			chosen = rt.index(rt.fv(f, "staticOverlays", live(L)), "static");
+			chosen = rt.index(L.staticOverlays, "static");
 		}
-		(rt.modSrcVar(f, "staticOverlays", live(chosen), rt.bitOr));
-		(rt.modField(f, rt.sv(f, "client"), "images", live(chosen), rt.bitOr));
+		(rt.modSrcVar(f, "staticOverlays", chosen, rt.bitOr));
+		(rt.modField(f, this.client, "images", chosen, rt.bitOr));
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });

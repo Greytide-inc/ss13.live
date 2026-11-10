@@ -1,7 +1,7 @@
-// From code/modules/clothing/glasses/hud.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/clothing/glasses/hud.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(8244, "/obj/item/clothing/glasses/hud", "/obj/item/clothing/glasses", {
@@ -12,40 +12,38 @@ rt.type(8244, "/obj/item/clothing/glasses/hud", "/obj/item/clothing/glasses", {
 	origin_tech: "magnets=3;biotech=2",
 });
 
-// /obj/item/clothing/glasses/hud/proc/equipped  (code/modules/clothing/glasses/hud.dm:9)  may sleep
-rt.def("/obj/item/clothing/glasses/hud/proc/equipped", function* equipped(f: Frame) {
+// hud.dm:9
+rt.def("/obj/item/clothing/glasses/hud/proc/equipped", function* equipped(f: Frame, user: Value, slot: Value) {
 	let H: Value = null;
-	f.vars = () => [H];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!(truthy(rt.sv(f, "hud_type")) && isEqual(live(f.args[1]), 8))) return f.dot;
-	yield* g.callName(f, (H = rt.index(rt.gl("huds"), rt.sv(f, "hud_type"))), "add_hud_to", [live(f.args[0])]);
+	yield* parent_proc();
+	if (!(this.hud_type && slot == slot_glasses)) return f.dot;
+	(H = rt.index(GLOB.huds, this.hud_type)).add_hud_to(user);
 	return f.dot;
-}, true, { args: ["user", "slot"] });
+}, true);
 
-// /obj/item/clothing/glasses/hud/proc/dropped  (code/modules/clothing/glasses/hud.dm:15)  may sleep
-rt.def("/obj/item/clothing/glasses/hud/proc/dropped", function* dropped(f: Frame) {
+// hud.dm:15
+rt.def("/obj/item/clothing/glasses/hud/proc/dropped", function* dropped(f: Frame, user: Value) {
 	let H: Value = null;
-	f.vars = () => [H];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!((truthy(rt.sv(f, "hud_type")) && truthy((rt.istype(live(f.args[0]), T("/mob/living/carbon/human")) ? 1 : 0))) && isEqual(rt.fv(f, "glasses", live(f.args[0])), live(f.src)))) return f.dot;
-	yield* g.callName(f, (H = rt.index(rt.gl("huds"), rt.sv(f, "hud_type"))), "remove_hud_from", [live(f.args[0])]);
+	yield* parent_proc();
+	if (!(this.hud_type && rt.istype(user, T("/mob/living/carbon/human")) && user.glasses == this)) return f.dot;
+	(H = rt.index(GLOB.huds, this.hud_type)).remove_hud_from(user);
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /obj/item/clothing/glasses/hud/proc/emp_act  (code/modules/clothing/glasses/hud.dm:21)
+// hud.dm:21
 rt.def("/obj/item/clothing/glasses/hud/proc/emp_act", function emp_act(f: Frame, severity: Value) {
-	if (!isEqual(rt.sv(f, "emagged"), 0)) return f.dot;
-	rt.setSv(f, "emagged", 1);
-	rt.setSv(f, "desc", fmt("＀ The display is flickering slightly.", [rt.sv(f, "desc")]));
+	if (this.emagged != 0) return f.dot;
+	this.emagged = 1;
+	this.desc = `${this.desc} The display is flickering slightly.`;
 	return f.dot;
 });
 
-// /obj/item/clothing/glasses/hud/proc/emag_act  (code/modules/clothing/glasses/hud.dm:26)
+// hud.dm:26
 rt.def("/obj/item/clothing/glasses/hud/proc/emag_act", function emag_act(f: Frame, user: Value) {
-	if (!isEqual(rt.sv(f, "emagged"), 0)) return f.dot;
-	rt.setSv(f, "emagged", 1);
-	rt.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>PZZTTPFFFT</span>"]);
-	rt.setSv(f, "desc", fmt("＀ The display is flickering slightly.", [rt.sv(f, "desc")]));
+	if (this.emagged != 0) return f.dot;
+	this.emagged = 1;
+	to_chat(user, "<span class='warning'>PZZTTPFFFT</span>");
+	this.desc = `${this.desc} The display is flickering slightly.`;
 	return f.dot;
 });
 
@@ -56,23 +54,23 @@ rt.type(8251, "/obj/item/clothing/glasses/hud/security/chameleon", "/obj/item/cl
 	flash_protect: 1,
 });
 
-// /obj/item/clothing/glasses/hud/security/chameleon/proc/New  (code/modules/clothing/glasses/hud.dm:95)  may sleep
+// hud.dm:95
 rt.def("/obj/item/clothing/glasses/hud/security/chameleon/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "chameleon_action", (yield* g.new_(f, T("/datum/action/item_action/chameleon/change"), [live(f.src)])));
-	rt.setFv(f, "chameleon_type", rt.sv(f, "chameleon_action"), T("/obj/item/clothing/glasses"));
-	rt.setFv(f, "chameleon_name", rt.sv(f, "chameleon_action"), "Glasses");
-	rt.setFv(f, "chameleon_blacklist", rt.sv(f, "chameleon_action"), (yield* g.call(f, P("/proc/typecacheof"), null, [null, T("/obj/item/clothing/glasses/changeling"), "only_root_path", 1], rt.Args.Named)));
-	yield* g.callName(f, rt.sv(f, "chameleon_action"), "initialize_disguises", []);
+	yield* parent_proc();
+	this.chameleon_action = (yield* new_(T("/datum/action/item_action/chameleon/change"), this));
+	this.chameleon_action.chameleon_type = T("/obj/item/clothing/glasses");
+	this.chameleon_action.chameleon_name = "Glasses";
+	this.chameleon_action.chameleon_blacklist = (yield* typecacheof(T("/obj/item/clothing/glasses/changeling"), { only_root_path: 1 }));
+	this.chameleon_action.initialize_disguises();
 	return f.dot;
 }, true);
 
-// /obj/item/clothing/glasses/hud/security/chameleon/proc/emp_act  (code/modules/clothing/glasses/hud.dm:103)  may sleep
-rt.def("/obj/item/clothing/glasses/hud/security/chameleon/proc/emp_act", function* emp_act(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.callName(f, rt.sv(f, "chameleon_action"), "emp_randomise", []);
+// hud.dm:103
+rt.def("/obj/item/clothing/glasses/hud/security/chameleon/proc/emp_act", function* emp_act(f: Frame, severity: Value) {
+	f.dot = (yield* parent_proc());
+	yield* this.chameleon_action.emp_randomise();
 	return f.dot;
-}, true, { args: ["severity"] });
+}, true);
 
 rt.type(8254, "/obj/item/clothing/glasses/hud/security/sunglasses/gars", "/obj/item/clothing/glasses/hud/security/sunglasses", {
 	throw_speed: 4,
@@ -87,12 +85,10 @@ rt.type(8254, "/obj/item/clothing/glasses/hud/security/sunglasses/gars", "/obj/i
 	sharpness: 1,
 });
 
-// /obj/item/clothing/glasses/hud/security/sunglasses/gars/proc/<init>  (code/modules/clothing/glasses/hud.dm:139)
+// hud.dm:139
 rt.def("/obj/item/clothing/glasses/hud/security/sunglasses/gars/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "attack_verb", rt.list("sliced"));
+	parent_proc();
+	this.attack_verb = list("sliced");
 	return f.dot;
 });
 
@@ -102,39 +98,34 @@ rt.type(8257, "/obj/item/clothing/glasses/hud/toggle", "/obj/item/clothing/glass
 	actions_types: null,
 });
 
-// /obj/item/clothing/glasses/hud/toggle/proc/<init>  (code/modules/clothing/glasses/hud.dm:154)
+// hud.dm:154
 rt.def("/obj/item/clothing/glasses/hud/toggle/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "actions_types", rt.list(T("/datum/action/item_action/switch_hud")));
+	parent_proc();
+	this.actions_types = list(T("/datum/action/item_action/switch_hud"));
 	return f.dot;
 });
 
-// /obj/item/clothing/glasses/hud/toggle/proc/attack_self  (code/modules/clothing/glasses/hud.dm:157)
+// hud.dm:157
 rt.def("/obj/item/clothing/glasses/hud/toggle/proc/attack_self", function attack_self(f: Frame, user: Value) {
 	let wearer: Value = null, H: Value = null;
-	f.vars = () => [wearer, H];
-	if (!truthy((rt.istype(live(user), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		return live(f.dot);
+	if (!rt.istype(user, T("/mob/living/carbon/human"))) {
+		return f.dot;
 	}
-	if (!isEqual(rt.gv(f, "glasses", (wearer = live(user))), live(f.src))) {
-		return live(f.dot);
+	if ((wearer = user).glasses != this) {
+		return f.dot;
 	}
-	if (truthy(rt.sv(f, "hud_type"))) {
-		rt.callName(f, (H = rt.index(rt.gl("huds"), rt.sv(f, "hud_type"))), "remove_hud_from", [live(user)]);
+	if (this.hud_type) {
+		(H = rt.index(GLOB.huds, this.hud_type)).remove_hud_from(user);
 	}
-	if (isEqual(rt.sv(f, "hud_type"), 4)) {
-		rt.setSv(f, "hud_type", null);
+	if (this.hud_type == DATA_HUD_MEDICAL_ADVANCED) {
+		this.hud_type = null;
+	} else if (this.hud_type == DATA_HUD_SECURITY_ADVANCED) {
+		this.hud_type = DATA_HUD_MEDICAL_ADVANCED;
 	} else {
-		if (isEqual(rt.sv(f, "hud_type"), 2)) {
-			rt.setSv(f, "hud_type", 4);
-		} else {
-			rt.setSv(f, "hud_type", 2);
-		}
+		this.hud_type = DATA_HUD_SECURITY_ADVANCED;
 	}
-	if (!truthy(rt.sv(f, "hud_type"))) return f.dot;
-	rt.callName(f, (H = rt.index(rt.gl("huds"), rt.sv(f, "hud_type"))), "add_hud_to", [live(user)]);
+	if (!this.hud_type) return f.dot;
+	(H = rt.index(GLOB.huds, this.hud_type)).add_hud_to(user);
 	return f.dot;
 });
 
@@ -148,29 +139,26 @@ rt.type(8258, "/obj/item/clothing/glasses/hud/toggle/thermal", "/obj/item/clothi
 	icon_state: "thermal",
 });
 
-// /obj/item/clothing/glasses/hud/toggle/thermal/proc/attack_self  (code/modules/clothing/glasses/hud.dm:188)  may sleep
-rt.def("/obj/item/clothing/glasses/hud/toggle/thermal/proc/attack_self", function* attack_self(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	$0 = rt.sv(f, "hud_type");
-	if ($0 === 4) {
-		rt.setSv(f, "icon_state", "meson");
-		yield* g.srcCall(f, "change_glass_color", live(f.args[0]), T("/datum/client_colour/glass_colour/green"));
-	} else if ($0 === 2) {
-		rt.setSv(f, "icon_state", "thermal");
-		yield* g.srcCall(f, "change_glass_color", live(f.args[0]), T("/datum/client_colour/glass_colour/red"));
+// hud.dm:188
+rt.def("/obj/item/clothing/glasses/hud/toggle/thermal/proc/attack_self", function* attack_self(f: Frame, user: Value) {
+	yield* parent_proc();
+	if (this.hud_type === DATA_HUD_MEDICAL_ADVANCED) {
+		this.icon_state = "meson";
+		yield* this.change_glass_color(user, T("/datum/client_colour/glass_colour/green"));
+	} else if (this.hud_type === DATA_HUD_SECURITY_ADVANCED) {
+		this.icon_state = "thermal";
+		yield* this.change_glass_color(user, T("/datum/client_colour/glass_colour/red"));
 	} else {
-		rt.setSv(f, "icon_state", "purple");
-		yield* g.srcCall(f, "change_glass_color", live(f.args[0]), T("/datum/client_colour/glass_colour/purple"));
+		this.icon_state = "purple";
+		yield* this.change_glass_color(user, T("/datum/client_colour/glass_colour/purple"));
 	}
-	yield* g.callName(f, live(f.args[0]), "update_inv_glasses", []);
+	user.update_inv_glasses();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /obj/item/clothing/glasses/hud/toggle/thermal/proc/emp_act  (code/modules/clothing/glasses/hud.dm:202)  may sleep
-rt.def("/obj/item/clothing/glasses/hud/toggle/thermal/proc/emp_act", function* emp_act(f: Frame) {
-	yield* g.srcCall(f, "thermal_overload");
-	yield* g.callSuper(f, [], rt.Args.Same);
+// hud.dm:202
+rt.def("/obj/item/clothing/glasses/hud/toggle/thermal/proc/emp_act", function* emp_act(f: Frame, severity: Value) {
+	yield* this.thermal_overload();
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["severity"] });
+}, true);

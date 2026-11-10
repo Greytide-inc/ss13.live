@@ -1,5 +1,5 @@
 // Types declared in code/game/objects/effects/effect_system that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(1522, "/datum/effect_system/smoke_spread/bad", "/datum/effect_system/smoke_spread", {
 	effect_type: rt.typePath("/obj/effect/particle_effect/smoke/bad"),

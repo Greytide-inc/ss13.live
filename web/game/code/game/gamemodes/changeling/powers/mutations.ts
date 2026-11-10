@@ -1,7 +1,7 @@
-// From code/game/gamemodes/changeling/powers/mutations.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/gamemodes/changeling/powers/mutations.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, fmt } = rt;
 
 
 rt.type(11239, "/obj/effect/proc_holder/changeling/weapon", "/obj/effect/proc_holder/changeling", {
@@ -15,75 +15,60 @@ rt.type(11239, "/obj/effect/proc_holder/changeling/weapon", "/obj/effect/proc_ho
 	desc: "Go tell a coder if you see this",
 });
 
-// /obj/effect/proc_holder/changeling/weapon/proc/try_to_sting  (code/game/gamemodes/changeling/powers/mutations.dm:25)  may sleep
+// mutations.dm:25
 rt.def("/obj/effect/proc_holder/changeling/weapon/proc/try_to_sting", function* try_to_sting(f: Frame, user: Value, target: Value) {
 	let I: Value = null;
-	let $e: any;
-	f.vars = () => [user, target, I, $e];
-	I = null;
-	rt.forList(f, 0, rt.fv(f, "held_items", live(user)), T("/obj/item"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		if (truthy((yield* g.srcCall(f, "check_weapon", live(user), live(I))))) {
-			return live(f.dot);
+	for (I of each(user.held_items, T("/obj/item"))) {
+		if (yield* this.check_weapon(user, I)) {
+			return f.dot;
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.callSuper(f, [live(user), live(target)]);
+	yield* parent_proc(user, target);
 	return f.dot;
 }, true);
 
-// /obj/effect/proc_holder/changeling/weapon/proc/check_weapon  (code/game/gamemodes/changeling/powers/mutations.dm:31)  may sleep
+// mutations.dm:31
 rt.def("/obj/effect/proc_holder/changeling/weapon/proc/check_weapon", function* check_weapon(f: Frame, user: Value, hand_item: Value) {
-	f.vars = () => [user, hand_item];
-	if (!truthy(rt.op(f, "IsType", [], [live(hand_item), rt.sv(f, "weapon_type")]))) return f.dot;
-	yield* g.callName(f, live(user), "temporarilyRemoveItemFromInventory", [live(hand_item), 1]);
-	if (!truthy(rt.sv(f, "silent"))) {
-		yield* g.call(f, P("/proc/playsound"), null, [live(user), rt.rsc("sound/effects/blobattack.ogg"), 30, 1]);
-		yield* g.callName(f, live(user), "visible_message", [fmt("<span class='warning'>With a sickening crunch, ＀ reforms their ＀ into an arm!</span>", [live(user), rt.sv(f, "weapon_name_simple")]), fmt("<span class='notice'>We assimilate the ＀ back into our body.</span>", [rt.sv(f, "weapon_name_simple")]), "<span class='italics>You hear organic matter ripping and tearing!</span>"]);
+	if (!rt.op(f, "IsType", [], [hand_item, this.weapon_type])) return f.dot;
+	yield* user.temporarilyRemoveItemFromInventory(hand_item, 1);
+	if (!this.silent) {
+		playsound(user, rt.rsc("sound/effects/blobattack.ogg"), 30, 1);
+		user.visible_message(`<span class='warning'>With a sickening crunch, ${user} reforms their ${this.weapon_name_simple} into an arm!</span>`, `<span class='notice'>We assimilate the ${this.weapon_name_simple} back into our body.</span>`, "<span class='italics>You hear organic matter ripping and tearing!</span>");
 	}
-	yield* g.callName(f, live(user), "update_inv_hands", []);
+	yield* user.update_inv_hands();
 	return 1;
 }, true);
 
-// /obj/effect/proc_holder/changeling/weapon/proc/sting_action  (code/game/gamemodes/changeling/powers/mutations.dm:40)  may sleep
+// mutations.dm:40
 rt.def("/obj/effect/proc_holder/changeling/weapon/proc/sting_action", function* sting_action(f: Frame, user: Value) {
-	let limb_regen: Value = null, W: Value = null;
-	f.vars = () => [user, limb_regen, W];
-	if (!truthy((yield* g.callName(f, live(user), "drop_item", [])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>The ＀ is stuck to your hand, you cannot grow a ＀ over it!</span>", [(yield* g.callName(f, live(user), "get_active_held_item", [])), rt.sv(f, "weapon_name_simple")])]);
-		return live(f.dot);
+	if (!(yield* user.drop_item())) {
+		to_chat(user, `<span class='warning'>The ${user.get_active_held_item()} is stuck to your hand, you cannot grow a ${this.weapon_name_simple} over it!</span>`);
+		return f.dot;
 	}
-	limb_regen = 0;
-	if (isEqual(rt.modulus(rt.fv(f, "active_hand_index", live(user)), 2), 0)) {
-		limb_regen = (yield* g.callName(f, live(user), "regenerate_limb", ["r_arm", 1]));
+	let limb_regen: Value = 0;
+	if (user.active_hand_index % 2 == 0) {
+		limb_regen = (yield* user.regenerate_limb("r_arm", 1));
 	} else {
-		limb_regen = (yield* g.callName(f, live(user), "regenerate_limb", ["l_arm", 1]));
+		limb_regen = (yield* user.regenerate_limb("l_arm", 1));
 	}
-	if (truthy(live(limb_regen))) {
-		yield* g.callName(f, live(user), "visible_message", [fmt("<span class='warning'>＀'s missing arm reforms, making a loud, grotesque sound!</span>", [live(user)]), "<span class='userdanger'>Your arm regrows, making a loud, crunchy sound and giving you great pain!</span>", "<span class='italics'>You hear organic matter ripping and tearing!</span>"]);
-		yield* g.callName(f, live(user), "emote", ["scream"]);
+	if (limb_regen) {
+		user.visible_message(`<span class='warning'>${user}'s missing arm reforms, making a loud, grotesque sound!</span>`, "<span class='userdanger'>Your arm regrows, making a loud, crunchy sound and giving you great pain!</span>", "<span class='italics'>You hear organic matter ripping and tearing!</span>");
+		yield* user.emote("scream");
 	}
-	W = (yield* g.new_(f, rt.sv(f, "weapon_type"), [live(user), rt.sv(f, "silent")]));
-	yield* g.callName(f, live(user), "put_in_hands", [live(W)]);
-	if (!truthy(rt.sv(f, "silent"))) {
-		yield* g.call(f, P("/proc/playsound"), null, [live(user), rt.rsc("sound/effects/blobattack.ogg"), 30, 1]);
+	let W: Value = (yield* new_(this.weapon_type, user, this.silent));
+	yield* user.put_in_hands(W);
+	if (!this.silent) {
+		playsound(user, rt.rsc("sound/effects/blobattack.ogg"), 30, 1);
 	}
-	return live(W);
+	return W;
 }, true);
 
-// /obj/effect/proc_holder/changeling/weapon/proc/on_refund  (code/game/gamemodes/changeling/powers/mutations.dm:58)  may sleep
+// mutations.dm:58
 rt.def("/obj/effect/proc_holder/changeling/weapon/proc/on_refund", function* on_refund(f: Frame, user: Value) {
 	let I: Value = null;
-	let $e: any;
-	f.vars = () => [user, I, $e];
-	I = null;
-	rt.forList(f, 0, rt.fv(f, "held_items", live(user)), T("/obj/item"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		yield* g.srcCall(f, "check_weapon", live(user), live(I));
+	for (I of each(user.held_items, T("/obj/item"))) {
+		yield* this.check_weapon(user, I);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
@@ -101,68 +86,64 @@ rt.type(11243, "/obj/effect/proc_holder/changeling/suit", "/obj/effect/proc_hold
 	desc: "Go tell a coder if you see this",
 });
 
-// /obj/effect/proc_holder/changeling/suit/proc/try_to_sting  (code/game/gamemodes/changeling/powers/mutations.dm:78)  may sleep
+// mutations.dm:78
 rt.def("/obj/effect/proc_holder/changeling/suit/proc/try_to_sting", function* try_to_sting(f: Frame, user: Value, target: Value) {
 	let H: Value = null;
-	f.vars = () => [user, target, H];
-	if (truthy((yield* g.srcCall(f, "check_suit", live(user))))) {
-		return live(f.dot);
+	if (yield* this.check_suit(user)) {
+		return f.dot;
 	}
-	yield* g.callSuper(f, [(H = live(user)), live(target)]);
+	yield* parent_proc((H = user), target);
 	return f.dot;
 }, true);
 
-// /obj/effect/proc_holder/changeling/suit/proc/check_suit  (code/game/gamemodes/changeling/powers/mutations.dm:85)  may sleep
+// mutations.dm:85
 rt.def("/obj/effect/proc_holder/changeling/suit/proc/check_suit", function* check_suit(f: Frame, user: Value) {
-	let changeling: Value = null, H: Value = null;
-	f.vars = () => [user, changeling, H];
-	changeling = rt.gv(f, "changeling", rt.fv(f, "mind", live(user)));
-	if ((!truthy((rt.istype(live(user), T("/mob/living/carbon/human")) ? 1 : 0)) || !truthy(live(changeling)))) {
+	let H: Value = null;
+	let changeling: Value = user.mind.changeling;
+	if (!rt.istype(user, T("/mob/living/carbon/human")) || !changeling) {
 		return 1;
 	}
-	if (!(truthy(rt.op(f, "IsType", [], [rt.gv(f, "wear_suit", (H = live(user))), rt.sv(f, "suit_type")])) || truthy(rt.op(f, "IsType", [], [rt.fv(f, "head", live(H)), rt.sv(f, "helmet_type")])))) return f.dot;
-	yield* g.callName(f, live(H), "visible_message", [fmt("<span class='warning'>＀ casts off their ＀!</span>", [live(H), rt.sv(f, "suit_name_simple")]), fmt("<span class='warning'>We cast off our ＀.</span>", [rt.sv(f, "suit_name_simple")]), "<span class='italics'>You hear the organic matter ripping and tearing!</span>"]);
-	yield* g.callName(f, live(H), "temporarilyRemoveItemFromInventory", [rt.fv(f, "head", live(H)), 1]);
-	yield* g.callName(f, live(H), "temporarilyRemoveItemFromInventory", [rt.fv(f, "wear_suit", live(H)), 1]);
-	yield* g.callName(f, live(H), "update_inv_wear_suit", []);
-	yield* g.callName(f, live(H), "update_inv_head", []);
-	yield* g.callName(f, live(H), "update_hair", []);
-	if (truthy(rt.sv(f, "blood_on_castoff"))) {
-		yield* g.callName(f, live(H), "add_splatter_floor", []);
-		yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(H)), rt.rsc("sound/effects/splat.ogg"), 50, 1]);
+	if (!(rt.op(f, "IsType", [], [(H = user).wear_suit, this.suit_type]) || rt.op(f, "IsType", [], [H.head, this.helmet_type]))) return f.dot;
+	H.visible_message(`<span class='warning'>${H} casts off their ${this.suit_name_simple}!</span>`, `<span class='warning'>We cast off our ${this.suit_name_simple}.</span>`, "<span class='italics'>You hear the organic matter ripping and tearing!</span>");
+	yield* H.temporarilyRemoveItemFromInventory(H.head, 1);
+	yield* H.temporarilyRemoveItemFromInventory(H.wear_suit, 1);
+	yield* H.update_inv_wear_suit();
+	yield* H.update_inv_head();
+	yield* H.update_hair();
+	if (this.blood_on_castoff) {
+		yield* H.add_splatter_floor();
+		playsound(H.loc, rt.rsc("sound/effects/splat.ogg"), 50, 1);
 	}
-	(rt.modField(f, live(changeling), "chem_recharge_slowdown", rt.sv(f, "recharge_slowdown"), subtract));
+	changeling.chem_recharge_slowdown -= this.recharge_slowdown;
 	return 1;
 }, true);
 
-// /obj/effect/proc_holder/changeling/suit/proc/on_refund  (code/game/gamemodes/changeling/powers/mutations.dm:105)  may sleep
+// mutations.dm:105
 rt.def("/obj/effect/proc_holder/changeling/suit/proc/on_refund", function* on_refund(f: Frame, user: Value) {
 	let H: Value = null;
-	f.vars = () => [user, H];
-	if (!truthy((rt.istype(live(user), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		return live(f.dot);
+	if (!rt.istype(user, T("/mob/living/carbon/human"))) {
+		return f.dot;
 	}
-	yield* g.srcCall(f, "check_suit", (H = live(user)));
+	yield* this.check_suit((H = user));
 	return f.dot;
 }, true);
 
-// /obj/effect/proc_holder/changeling/suit/proc/sting_action  (code/game/gamemodes/changeling/powers/mutations.dm:111)  may sleep
+// mutations.dm:111
 rt.def("/obj/effect/proc_holder/changeling/suit/proc/sting_action", function* sting_action(f: Frame, user: Value) {
 	let changeling: Value = null;
-	f.vars = () => [user, changeling];
-	if (!truthy((yield* g.callName(f, live(user), "canUnEquip", [rt.fv(f, "wear_suit", live(user))])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("％！ is stuck to your body, you cannot grow a ＀ over it!", [rt.fv(f, "wear_suit", live(user)), rt.sv(f, "suit_name_simple")])]);
-		return live(f.dot);
+	if (!user.canUnEquip(user.wear_suit)) {
+		to_chat(user, fmt("％！ is stuck to your body, you cannot grow a ＀ over it!", [user.wear_suit, this.suit_name_simple]));
+		return f.dot;
 	}
-	if (!truthy((yield* g.callName(f, live(user), "canUnEquip", [rt.fv(f, "head", live(user))])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("％！ is stuck on your head, you cannot grow a ＀ over it!", [rt.fv(f, "head", live(user)), rt.sv(f, "helmet_name_simple")])]);
-		return live(f.dot);
+	if (!user.canUnEquip(user.head)) {
+		to_chat(user, fmt("％！ is stuck on your head, you cannot grow a ＀ over it!", [user.head, this.helmet_name_simple]));
+		return f.dot;
 	}
-	yield* g.callName(f, live(user), "dropItemToGround", [rt.fv(f, "head", live(user))]);
-	yield* g.callName(f, live(user), "dropItemToGround", [rt.fv(f, "wear_suit", live(user))]);
-	yield* g.callName(f, live(user), "equip_to_slot_if_possible", [(yield* g.new_(f, rt.sv(f, "suit_type"), [live(user)])), 13, 1, 1, 1]);
-	yield* g.callName(f, live(user), "equip_to_slot_if_possible", [(yield* g.new_(f, rt.sv(f, "helmet_type"), [live(user)])), 11, 1, 1, 1]);
-	rt.modField(f, (changeling = rt.gv(f, "changeling", rt.fv(f, "mind", live(user)))), "chem_recharge_slowdown", rt.sv(f, "recharge_slowdown"), add);
+	yield* user.dropItemToGround(user.head);
+	yield* user.dropItemToGround(user.wear_suit);
+	yield* user.equip_to_slot_if_possible((yield* new_(this.suit_type, user)), slot_wear_suit, 1, 1, 1);
+	yield* user.equip_to_slot_if_possible((yield* new_(this.helmet_type, user)), slot_head, 1, 1, 1);
+	(changeling = user.mind.changeling).chem_recharge_slowdown += this.recharge_slowdown;
 	return 1;
 }, true);
 
@@ -184,59 +165,56 @@ rt.type(5655, "/obj/item/weapon/melee/arm_blade", "/obj/item/weapon/melee", {
 	sharpness: 1,
 });
 
-// /obj/item/weapon/melee/arm_blade/proc/Initialize  (code/game/gamemodes/changeling/powers/mutations.dm:161)  may sleep
-rt.def("/obj/item/weapon/melee/arm_blade/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if ((truthy((yield* g.call(f, P("/proc/ismob"), null, [rt.sv(f, "loc")]))) && !truthy(live(f.args[1])))) {
-		yield* g.callName(f, rt.sv(f, "loc"), "visible_message", [fmt("<span class='warning'>A grotesque blade forms around ＀'s arm!</span>", [rt.fv(f, "name", rt.sv(f, "loc"))]), "<span class='warning'>Our arm twists and mutates, transforming it into a deadly blade.</span>", "<span class='italics'>You hear organic matter ripping and tearing!</span>"]);
+// mutations.dm:161
+rt.def("/obj/item/weapon/melee/arm_blade/proc/Initialize", function* Initialize(f: Frame, mapload: Value, silent: Value, synthetic: Value) {
+	f.dot = (yield* parent_proc());
+	if (ismob(this.loc) && !silent) {
+		this.loc.visible_message(`<span class='warning'>A grotesque blade forms around ${this.loc.name}'s arm!</span>`, "<span class='warning'>Our arm twists and mutates, transforming it into a deadly blade.</span>", "<span class='italics'>You hear organic matter ripping and tearing!</span>");
 	}
-	if (!truthy(live(f.args[2]))) return f.dot;
-	rt.setSv(f, "can_drop", 1);
+	if (!synthetic) return f.dot;
+	this.can_drop = 1;
 	return f.dot;
-}, true, { args: ["mapload", "silent", "synthetic"] });
+}, true);
 
-// /obj/item/weapon/melee/arm_blade/proc/afterattack  (code/game/gamemodes/changeling/powers/mutations.dm:168)  may sleep
+// mutations.dm:168
 rt.def("/obj/item/weapon/melee/arm_blade/proc/afterattack", function* afterattack(f: Frame, target: Value, user: Value, proximity: Value) {
 	let _T: Value = null, C: Value = null, A: Value = null;
-	f.vars = () => [target, user, proximity, _T, C, A];
-	if (!truthy(live(proximity))) {
-		return live(f.dot);
+	if (!proximity) {
+		return f.dot;
 	}
-	if (truthy((rt.istype(live(target), T("/obj/structure/table")) ? 1 : 0))) {
-		yield* g.callName(f, (_T = live(target)), "deconstruct", [0]);
+	if (rt.istype(target, T("/obj/structure/table"))) {
+		yield* (_T = target).deconstruct(0);
+	} else if (rt.istype(target, T("/obj/machinery/computer"))) {
+		yield* (C = target).attack_alien(user);
 	} else {
-		if (truthy((rt.istype(live(target), T("/obj/machinery/computer")) ? 1 : 0))) {
-			yield* g.callName(f, (C = live(target)), "attack_alien", [live(user)]);
-		} else {
-			if (!truthy((rt.istype(live(target), T("/obj/machinery/door/airlock")) ? 1 : 0))) return f.dot;
-			if ((!truthy((yield* g.callName(f, (A = live(target)), "requiresID", []))) || truthy((yield* g.callName(f, live(A), "allowed", [live(user)]))))) {
-				return live(f.dot);
-			}
-			if (truthy(rt.fv(f, "locked", live(A)))) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>The airlock's bolts prevent it from being forced!</span>"]);
-				return live(f.dot);
-			}
-			if (truthy((yield* g.callName(f, live(A), "hasPower", [])))) {
-				yield* g.callName(f, live(user), "visible_message", [fmt("<span class='warning'>＀ jams ＀ into the airlock and starts prying it open!</span>", [live(user), live(f.src)]), "<span class='warning'>We start forcing the airlock open.</span>", "<span class='italics'>You hear a metal screeching sound.</span>"]);
-				yield* g.call(f, P("/proc/playsound"), null, [live(A), rt.rsc("sound/machines/airlock_alien_prying.ogg"), 100, 1]);
-				if (!truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(user), null, 100, "target", live(A)], rt.Args.Named)))) {
-					return live(f.dot);
-				}
-			}
-			yield* g.callName(f, live(user), "visible_message", [fmt("<span class='warning'>＀ forces the airlock to open with their ＀!</span>", [live(user), live(f.src)]), "<span class='warning'>We force the airlock to open.</span>", "<span class='italics'>You hear a metal screeching sound.</span>"]);
-			yield* g.callName(f, live(A), "open", [2]);
+		if (!rt.istype(target, T("/obj/machinery/door/airlock"))) return f.dot;
+		if (!(A = target).requiresID() || (yield* A.allowed(user))) {
+			return f.dot;
 		}
+		if (A.locked) {
+			to_chat(user, "<span class='warning'>The airlock's bolts prevent it from being forced!</span>");
+			return f.dot;
+		}
+		if (A.hasPower()) {
+			user.visible_message(`<span class='warning'>${user} jams ${this} into the airlock and starts prying it open!</span>`, "<span class='warning'>We start forcing the airlock open.</span>", "<span class='italics'>You hear a metal screeching sound.</span>");
+			playsound(A, rt.rsc("sound/machines/airlock_alien_prying.ogg"), 100, 1);
+			if (!(yield* do_after(user, 100, { target: A }))) {
+				return f.dot;
+			}
+		}
+		user.visible_message(`<span class='warning'>${user} forces the airlock to open with their ${this}!</span>`, "<span class='warning'>We force the airlock to open.</span>", "<span class='italics'>You hear a metal screeching sound.</span>");
+		yield* A.open(2);
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/melee/arm_blade/proc/dropped  (code/game/gamemodes/changeling/powers/mutations.dm:199)  may sleep
-rt.def("/obj/item/weapon/melee/arm_blade/proc/dropped", function* dropped(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.sv(f, "can_drop"))) return f.dot;
-	yield* g.new_(f, T("/obj/item/weapon/melee/synthetic_arm_blade"), [rt.getStep(f, live(f.args[0]), 0)]);
+// mutations.dm:199
+rt.def("/obj/item/weapon/melee/arm_blade/proc/dropped", function* dropped(f: Frame, user: Value) {
+	yield* parent_proc();
+	if (!this.can_drop) return f.dot;
+	yield* new_(T("/obj/item/weapon/melee/synthetic_arm_blade"), rt.getStep(f, user, 0));
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
 rt.type(5112, "/obj/item/weapon/gun/magic/tentacle", "/obj/item/weapon/gun/magic", {
 	flags: 16518,
@@ -255,27 +233,27 @@ rt.type(5112, "/obj/item/weapon/gun/magic/tentacle", "/obj/item/weapon/gun/magic
 	throwforce: 0,
 });
 
-// /obj/item/weapon/gun/magic/tentacle/proc/Initialize  (code/game/gamemodes/changeling/powers/mutations.dm:237)  may sleep
-rt.def("/obj/item/weapon/gun/magic/tentacle/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy((yield* g.call(f, P("/proc/ismob"), null, [rt.sv(f, "loc")])))) return f.dot;
-	if (!truthy(live(f.args[1]))) {
-		yield* g.callName(f, rt.sv(f, "loc"), "visible_message", [fmt("<span class='warning'>＀'s arm starts stretching inhumanly!</span>", [rt.fv(f, "name", rt.sv(f, "loc"))]), "<span class='warning'>Our arm twists and mutates, transforming it into a tentacle.</span>", "<span class='italics'>You hear organic matter ripping and tearing!</span>"]);
+// mutations.dm:237
+rt.def("/obj/item/weapon/gun/magic/tentacle/proc/Initialize", function* Initialize(f: Frame, mapload: Value, silent: Value) {
+	f.dot = (yield* parent_proc());
+	if (!ismob(this.loc)) return f.dot;
+	if (!silent) {
+		this.loc.visible_message(`<span class='warning'>${this.loc.name}'s arm starts stretching inhumanly!</span>`, "<span class='warning'>Our arm twists and mutates, transforming it into a tentacle.</span>", "<span class='italics'>You hear organic matter ripping and tearing!</span>");
 	} else {
-		yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "loc"), "<span class='notice'>You prepare to extend a tentacle.</span>"]);
+		to_chat(this.loc, "<span class='notice'>You prepare to extend a tentacle.</span>");
 	}
 	return f.dot;
-}, true, { args: ["mapload", "silent"] });
+}, true);
 
-// /obj/item/weapon/gun/magic/tentacle/proc/shoot_with_empty_chamber  (code/game/gamemodes/changeling/powers/mutations.dm:246)
+// mutations.dm:246
 rt.def("/obj/item/weapon/gun/magic/tentacle/proc/shoot_with_empty_chamber", function shoot_with_empty_chamber(f: Frame, user: Value) {
-	rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='warning'>The ＀ is not ready yet.<span>", [rt.sv(f, "name")])]);
+	to_chat(user, `<span class='warning'>The ${this.name} is not ready yet.<span>`);
 	return f.dot;
 });
 
-// /obj/item/weapon/gun/magic/tentacle/proc/suicide_act  (code/game/gamemodes/changeling/powers/mutations.dm:249)
+// mutations.dm:249
 rt.def("/obj/item/weapon/gun/magic/tentacle/proc/suicide_act", function suicide_act(f: Frame, user: Value) {
-	rt.callName(f, live(user), "visible_message", [fmt("<span class='suicide'>＀ coils ＀ tightly around ＀ neck! It looks like ＀ trying to commit suicide!</span>", [live(user), live(f.src), rt.callName(f, live(user), "p_their", []), rt.callName(f, live(user), "p_theyre", [])])]);
+	user.visible_message(`<span class='suicide'>${user} coils ${this} tightly around ${user.p_their()} neck! It looks like ${user.p_theyre()} trying to commit suicide!</span>`);
 	return 8;
 });
 
@@ -289,17 +267,17 @@ rt.type(8656, "/obj/item/ammo_casing/magic/tentacle", "/obj/item/ammo_casing/mag
 	firing_effect_type: null,
 });
 
-// /obj/item/ammo_casing/magic/tentacle/proc/Initialize  (code/game/gamemodes/changeling/powers/mutations.dm:263)  may sleep
+// mutations.dm:263
 rt.def("/obj/item/ammo_casing/magic/tentacle/proc/Initialize", function* Initialize(f: Frame) {
-	rt.setSv(f, "gun", rt.sv(f, "loc"));
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	this.gun = this.loc;
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true);
 
-// /obj/item/ammo_casing/magic/tentacle/proc/Destroy  (code/game/gamemodes/changeling/powers/mutations.dm:268)  may sleep
+// mutations.dm:268
 rt.def("/obj/item/ammo_casing/magic/tentacle/proc/Destroy", function* Destroy(f: Frame) {
-	rt.setSv(f, "gun", null);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	this.gun = null;
+	return (yield* parent_proc());
 }, true);
 
 rt.type(8789, "/obj/item/projectile/tentacle", "/obj/item/projectile", {
@@ -314,120 +292,108 @@ rt.type(8789, "/obj/item/projectile/tentacle", "/obj/item/projectile", {
 	hitsound: rt.rsc("sound/weapons/thudswoosh.ogg"),
 });
 
-// /obj/item/projectile/tentacle/proc/Initialize  (code/game/gamemodes/changeling/powers/mutations.dm:282)  may sleep
+// mutations.dm:282
 rt.def("/obj/item/projectile/tentacle/proc/Initialize", function* Initialize(f: Frame) {
-	rt.setSv(f, "source", rt.sv(f, "loc"));
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
+	this.source = this.loc;
+	f.dot = (yield* parent_proc());
 	return f.dot;
 }, true);
 
-// /obj/item/projectile/tentacle/proc/fire  (code/game/gamemodes/changeling/powers/mutations.dm:287)  may sleep
-rt.def("/obj/item/projectile/tentacle/proc/fire", function* fire(f: Frame) {
-	if (truthy(rt.sv(f, "firer"))) {
-		rt.setSv(f, "chain", (yield* g.callName(f, rt.sv(f, "firer"), "Beam", [null, live(f.src), "icon_state", "tentacle", "time", 9.999999848243207e+30, "maxdistance", 9.999999848243207e+30, "beam_sleep_time", 1], rt.Args.Named)));
+// mutations.dm:287
+rt.def("/obj/item/projectile/tentacle/proc/fire", function* fire(f: Frame, setAngle: Value) {
+	if (this.firer) {
+		this.chain = (yield* this.firer.Beam(this, { icon_state: "tentacle", time: 1e+31, maxdistance: 1e+31, beam_sleep_time: 1 }));
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["setAngle"], waitfor: false });
+}, true, { waitfor: false });
 
-// /obj/item/projectile/tentacle/proc/tentacle_grab  (code/game/gamemodes/changeling/powers/mutations.dm:295)  may sleep
+// mutations.dm:295
 rt.def("/obj/item/projectile/tentacle/proc/tentacle_grab", function* tentacle_grab(f: Frame, H: Value, C: Value) {
-	f.vars = () => [H, C];
-	if (!truthy((yield* g.callName(f, live(H), "Adjacent", [live(C)])))) return f.dot;
-	yield* g.callName(f, live(C), "grabbedby", [live(H)]);
-	yield* g.callName(f, live(C), "grippedby", [live(H)]);
+	if (!H.Adjacent(C)) return f.dot;
+	yield* C.grabbedby(H);
+	yield* C.grippedby(H);
 	return f.dot;
 }, true, { argTypes: [{ type: 8, path: "/mob/living/carbon/human" }, { type: 8, path: "/mob/living/carbon" }] });
 
-// /obj/item/projectile/tentacle/proc/tentacle_stab  (code/game/gamemodes/changeling/powers/mutations.dm:300)  may sleep
+// mutations.dm:300
 rt.def("/obj/item/projectile/tentacle/proc/tentacle_stab", function* tentacle_stab(f: Frame, H: Value, C: Value) {
 	let I: Value = null;
-	let $e: any;
-	f.vars = () => [H, C, I, $e];
-	if (!truthy((yield* g.callName(f, live(H), "Adjacent", [live(C)])))) return f.dot;
-	I = null;
-	rt.forList(f, 0, rt.fv(f, "held_items", live(H)), T("/obj/item"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		I = $e;
-		if (truthy((yield* g.callName(f, live(I), "is_sharp", [])))) {
-			yield* g.callName(f, live(C), "visible_message", [fmt("<span class='danger'>＀ impales ＀ with ＀ ＀!</span>", [live(H), live(C), (yield* g.callName(f, live(H), "p_their", [])), rt.fv(f, "name", live(I))]), fmt("<span class='userdanger'>＀ impales you with ＀ ＀!</span>", [live(H), (yield* g.callName(f, live(H), "p_their", [])), rt.fv(f, "name", live(I))])]);
-			yield* g.callName(f, live(C), "apply_damage", [rt.fv(f, "force", live(I)), "brute", "chest"]);
-			yield* g.callName(f, live(H), "do_item_attack_animation", [null, live(C), "used_item", live(I)], rt.Args.Named);
-			yield* g.callName(f, live(H), "add_mob_blood", [live(C)]);
-			yield* g.call(f, P("/proc/playsound"), null, [rt.getStep(f, live(H), 0), rt.fv(f, "hitsound", live(I)), 75, 1]);
-			return live(f.dot);
+	if (!H.Adjacent(C)) return f.dot;
+	for (I of each(H.held_items, T("/obj/item"))) {
+		if (I.is_sharp()) {
+			C.visible_message(`<span class='danger'>${H} impales ${C} with ${H.p_their()} ${I.name}!</span>`, `<span class='userdanger'>${H} impales you with ${H.p_their()} ${I.name}!</span>`);
+			yield* C.apply_damage(I.force, "brute", "chest");
+			yield* H.do_item_attack_animation(C, { used_item: I });
+			yield* H.add_mob_blood(C);
+			playsound(rt.getStep(f, H, 0), I.hitsound, 75, 1);
+			return f.dot;
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true, { argTypes: [{ type: 8, path: "/mob/living/carbon/human" }, { type: 8, path: "/mob/living/carbon" }] });
 
-// /obj/item/projectile/tentacle/proc/on_hit  (code/game/gamemodes/changeling/powers/mutations.dm:311)  may sleep
+// mutations.dm:311
 rt.def("/obj/item/projectile/tentacle/proc/on_hit", function* on_hit(f: Frame, target: Value, blocked: Value) {
 	let H: Value = null, I: Value = null, L: Value = null, C: Value = null, I_3: Value = null;
-	let $0: any;
-	f.vars = () => [target, blocked, H, I, L, C, I_3, $0];
-	if (live(blocked) === null) {
-		blocked = 0;
-	}
-	yield* g.callName(f, (H = rt.sv(f, "firer")), "dropItemToGround", [rt.fv(f, "gun", rt.sv(f, "source")), 1]);
-	if (rt.ge(live(blocked), 100)) {
+	blocked ??= 0;
+	yield* (H = this.firer).dropItemToGround(this.source.gun, 1);
+	if (blocked >= 100) {
 		return 0;
 	}
-	if (truthy((rt.istype(live(target), T("/obj/item")) ? 1 : 0))) {
-		if (!truthy(rt.gv(f, "anchored", (I = live(target))))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "firer"), fmt("<span class='notice'>You pull ＀ towards yourself.</span>", [live(I)])]);
-			yield* g.callName(f, live(H), "throw_mode_on", []);
-			yield* g.callName(f, live(I), "throw_at", [live(H), 10, 2]);
+	if (rt.istype(target, T("/obj/item"))) {
+		if (!(I = target).anchored) {
+			to_chat(this.firer, `<span class='notice'>You pull ${I} towards yourself.</span>`);
+			H.throw_mode_on();
+			yield* I.throw_at(H, 10, 2);
 			f.dot = 1;
 		}
 	} else {
-		if (!truthy((rt.istype(live(target), T("/mob/living")) ? 1 : 0))) return f.dot;
-		if (!(!truthy(rt.gv(f, "anchored", (L = live(target)))) && !truthy(rt.fv(f, "throwing", live(L))))) return f.dot;
-		if (truthy((rt.istype(live(L), T("/mob/living/carbon")) ? 1 : 0))) {
-			C = live(L);
-			$0 = rt.fv(f, "a_intent", rt.sv(f, "firer"));
-			if ($0 === "help") {
-				yield* g.callName(f, live(C), "visible_message", [fmt("<span class='danger'>＀ is pulled by ＀'s tentacle!</span>", [live(L), live(H)]), fmt("<span class='userdanger'>A tentacle grabs you and pulls you towards ＀!</span>", [live(H)])]);
-				yield* g.callName(f, live(C), "throw_at", [(yield* g.call(f, P("/proc/get_step_towards"), null, [live(H), live(C)])), 8, 2]);
+		if (!rt.istype(target, T("/mob/living"))) return f.dot;
+		if (!(!(L = target).anchored && !L.throwing)) return f.dot;
+		if (rt.istype(L, T("/mob/living/carbon"))) {
+			C = L;
+			if (this.firer.a_intent === "help") {
+				C.visible_message(`<span class='danger'>${L} is pulled by ${H}'s tentacle!</span>`, `<span class='userdanger'>A tentacle grabs you and pulls you towards ${H}!</span>`);
+				yield* C.throw_at(get_step_towards(H, C), 8, 2);
 				return 1;
-			} else if ($0 === "disarm") {
-				if (truthy((I_3 = (yield* g.callName(f, live(C), "get_active_held_item", []))))) {
-					if (truthy((yield* g.callName(f, live(C), "drop_item", [])))) {
-						yield* g.callName(f, live(C), "visible_message", [fmt("<span class='danger'>＀ is yanked off ＀'s hand by ＀!</span>", [live(I_3), live(C), live(f.src)]), fmt("<span class='userdanger'>A tentacle pulls ＀ away from you!</span>", [live(I_3)])]);
-						yield* g.srcCall(f, "on_hit", live(I_3));
+			} else if (this.firer.a_intent === "disarm") {
+				if (I_3 = C.get_active_held_item()) {
+					if (yield* C.drop_item()) {
+						C.visible_message(`<span class='danger'>${I_3} is yanked off ${C}'s hand by ${this}!</span>`, `<span class='userdanger'>A tentacle pulls ${I_3} away from you!</span>`);
+						yield* this.on_hit(I_3);
 						return 1;
 					} else {
-						yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "firer"), fmt("<span class='danger'>You can't seem to pry ＀ off ＀'s hands!<span>", [live(I_3), live(C)])]);
+						to_chat(this.firer, `<span class='danger'>You can't seem to pry ${I_3} off ${C}'s hands!<span>`);
 						return 0;
 					}
 				} else {
-					yield* g.call(f, P("/proc/to_chat"), null, [rt.sv(f, "firer"), fmt("<span class='danger'>＀ has nothing in hand to disarm!<span>", [live(C)])]);
+					to_chat(this.firer, `<span class='danger'>${C} has nothing in hand to disarm!<span>`);
 					return 0;
 				}
-			} else if ($0 === "grab") {
-				yield* g.callName(f, live(C), "visible_message", [fmt("<span class='danger'>＀ is grabbed by ＀'s tentacle!</span>", [live(L), live(H)]), fmt("<span class='userdanger'>A tentacle grabs you and pulls you towards ＀!</span>", [live(H)])]);
-				yield* g.callName(f, live(C), "throw_at", [null, (yield* g.call(f, P("/proc/get_step_towards"), null, [live(H), live(C)])), null, 8, null, 2, "callback", (yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/item/projectile/tentacle/proc/tentacle_grab"), live(H), live(C)]))], rt.Args.Named);
+			} else if (this.firer.a_intent === "grab") {
+				C.visible_message(`<span class='danger'>${L} is grabbed by ${H}'s tentacle!</span>`, `<span class='userdanger'>A tentacle grabs you and pulls you towards ${H}!</span>`);
+				yield* C.throw_at(get_step_towards(H, C), 8, 2, { callback: (yield* new_(T("/datum/callback"), this, P("/obj/item/projectile/tentacle/proc/tentacle_grab"), H, C)) });
 				return 1;
-			} else if ($0 === "harm") {
-				yield* g.callName(f, live(C), "visible_message", [fmt("<span class='danger'>＀ is thrown towards ＀ by a tentacle!</span>", [live(L), live(H)]), fmt("<span class='userdanger'>A tentacle grabs you and throws you towards ＀!</span>", [live(H)])]);
-				yield* g.callName(f, live(C), "throw_at", [null, (yield* g.call(f, P("/proc/get_step_towards"), null, [live(H), live(C)])), null, 8, null, 2, "callback", (yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/obj/item/projectile/tentacle/proc/tentacle_stab"), live(H), live(C)]))], rt.Args.Named);
+			} else if (this.firer.a_intent === "harm") {
+				C.visible_message(`<span class='danger'>${L} is thrown towards ${H} by a tentacle!</span>`, `<span class='userdanger'>A tentacle grabs you and throws you towards ${H}!</span>`);
+				yield* C.throw_at(get_step_towards(H, C), 8, 2, { callback: (yield* new_(T("/datum/callback"), this, P("/obj/item/projectile/tentacle/proc/tentacle_stab"), H, C)) });
 				return 1;
 			}
 		} else {
-			yield* g.callName(f, live(L), "visible_message", [fmt("<span class='danger'>＀ is pulled by ＀'s tentacle!</span>", [live(L), live(H)]), fmt("<span class='userdanger'>A tentacle grabs you and pulls you towards ＀!</span>", [live(H)])]);
-			yield* g.callName(f, live(L), "throw_at", [(yield* g.call(f, P("/proc/get_step_towards"), null, [live(H), live(L)])), 8, 2]);
+			L.visible_message(`<span class='danger'>${L} is pulled by ${H}'s tentacle!</span>`, `<span class='userdanger'>A tentacle grabs you and pulls you towards ${H}!</span>`);
+			yield* L.throw_at(get_step_towards(H, L), 8, 2);
 			f.dot = 1;
 		}
 	}
 	return f.dot;
 }, true);
 
-// /obj/item/projectile/tentacle/proc/Destroy  (code/game/gamemodes/changeling/powers/mutations.dm:363)  may sleep
+// mutations.dm:363
 rt.def("/obj/item/projectile/tentacle/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "chain")]);
-	rt.setSv(f, "source", null);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* qdel(this.chain);
+	this.source = null;
+	return (yield* parent_proc());
 }, true);
 
 rt.type(11242, "/obj/effect/proc_holder/changeling/weapon/shield", "/obj/effect/proc_holder/changeling/weapon", {
@@ -441,14 +407,13 @@ rt.type(11242, "/obj/effect/proc_holder/changeling/weapon/shield", "/obj/effect/
 	desc: "We reform one of our arms into a hard shield.",
 });
 
-// /obj/effect/proc_holder/changeling/weapon/shield/proc/sting_action  (code/game/gamemodes/changeling/powers/mutations.dm:383)  may sleep
+// mutations.dm:383
 rt.def("/obj/effect/proc_holder/changeling/weapon/shield/proc/sting_action", function* sting_action(f: Frame, user: Value) {
 	let changeling: Value = null, S: Value = null;
-	f.vars = () => [user, changeling, S];
-	if (!truthy((changeling = rt.gv(f, "changeling", rt.fv(f, "mind", live(user)))))) {
-		return live(f.dot);
+	if (!(changeling = user.mind.changeling)) {
+		return f.dot;
 	}
-	rt.setFv(f, "remaining_uses", (S = (yield* g.callSuper(f, [live(user)]))), (yield* g.call(f, P("/proc/round"), null, [multiply(rt.fv(f, "absorbedcount", live(changeling)), 3)])));
+	(S = (yield* parent_proc(user))).remaining_uses = round(changeling.absorbedcount * 3);
 	return 1;
 }, true);
 
@@ -462,41 +427,39 @@ rt.type(5700, "/obj/item/weapon/shield/changeling", "/obj/item/weapon/shield", {
 	block_chance: 50,
 });
 
-// /obj/item/weapon/shield/changeling/proc/Initialize  (code/game/gamemodes/changeling/powers/mutations.dm:402)  may sleep
+// mutations.dm:402
 rt.def("/obj/item/weapon/shield/changeling/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy((yield* g.call(f, P("/proc/ismob"), null, [rt.sv(f, "loc")])))) return f.dot;
-	yield* g.callName(f, rt.sv(f, "loc"), "visible_message", [fmt("<span class='warning'>The end of ＀'s hand inflates rapidly, forming a huge shield-like mass!</span>", [rt.fv(f, "name", rt.sv(f, "loc"))]), "<span class='warning'>We inflate our hand into a strong shield.</span>", "<span class='italics'>You hear organic matter ripping and tearing!</span>"]);
+	f.dot = (yield* parent_proc());
+	if (!ismob(this.loc)) return f.dot;
+	this.loc.visible_message(`<span class='warning'>The end of ${this.loc.name}'s hand inflates rapidly, forming a huge shield-like mass!</span>`, "<span class='warning'>We inflate our hand into a strong shield.</span>", "<span class='italics'>You hear organic matter ripping and tearing!</span>");
 	return f.dot;
 }, true);
 
-// /obj/item/weapon/shield/changeling/proc/hit_reaction  (code/game/gamemodes/changeling/powers/mutations.dm:407)  may sleep
+// mutations.dm:407
 rt.def("/obj/item/weapon/shield/changeling/proc/hit_reaction", function* hit_reaction(f: Frame) {
 	let H: Value = null;
-	f.vars = () => [H];
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = "the attack";
 	}
-	if (live(f.args[3]) === null) {
+	if (f.args[3] === null) {
 		f.args[3] = 0;
 	}
-	if (live(f.args[4]) === null) {
+	if (f.args[4] === null) {
 		f.args[4] = 0;
 	}
-	if (live(f.args[5]) === null) {
+	if (f.args[5] === null) {
 		f.args[5] = 1;
 	}
-	if (rt.lt(rt.sv(f, "remaining_uses"), 1)) {
-		if (truthy((rt.istype(rt.sv(f, "loc"), T("/mob/living/carbon/human")) ? 1 : 0))) {
-			yield* g.callName(f, (H = rt.sv(f, "loc")), "visible_message", [fmt("<span class='warning'>With a sickening crunch, ＀ reforms his shield into an arm!</span>", [live(H)]), "<span class='notice'>We assimilate our shield into our body</span>", "<span class='italics>You hear organic matter ripping and tearing!</span>"]);
+	if (this.remaining_uses < 1) {
+		if (rt.istype(this.loc, T("/mob/living/carbon/human"))) {
+			(H = this.loc).visible_message(`<span class='warning'>With a sickening crunch, ${H} reforms his shield into an arm!</span>`, "<span class='notice'>We assimilate our shield into our body</span>", "<span class='italics>You hear organic matter ripping and tearing!</span>");
 		}
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+		yield* qdel(this);
 		return 0;
 	} else {
-		rt.incSrcVar(f, "remaining_uses", -1, true);
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+		this.remaining_uses--;
+		return (yield* parent_proc());
 	}
-	return f.dot;
 }, true, { args: ["owner", "hitby", "attack_text", "final_block_chance", "damage", "attack_type"] });
 
 rt.type(7701, "/obj/item/clothing/suit/space/changeling", "/obj/item/clothing/suit/space", {
@@ -508,34 +471,31 @@ rt.type(7701, "/obj/item/clothing/suit/space/changeling", "/obj/item/clothing/su
 	armor: null,
 });
 
-// /obj/item/clothing/suit/space/changeling/proc/<init>  (code/game/gamemodes/changeling/powers/mutations.dm:441)
+// mutations.dm:441
 rt.def("/obj/item/clothing/suit/space/changeling/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "allowed", rt.list(T("/obj/item/device/flashlight"), T("/obj/item/weapon/tank/internals/emergency_oxygen"), T("/obj/item/weapon/tank/internals/oxygen")));
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 90, "acid", 90]));
+	parent_proc();
+	this.allowed = list(T("/obj/item/device/flashlight"), T("/obj/item/weapon/tank/internals/emergency_oxygen"), T("/obj/item/weapon/tank/internals/oxygen"));
+	this.armor = rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 90, "acid", 90]);
 	return f.dot;
 });
 
-// /obj/item/clothing/suit/space/changeling/proc/Initialize  (code/game/gamemodes/changeling/powers/mutations.dm:445)  may sleep
+// mutations.dm:445
 rt.def("/obj/item/clothing/suit/space/changeling/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (truthy((yield* g.call(f, P("/proc/ismob"), null, [rt.sv(f, "loc")])))) {
-		yield* g.callName(f, rt.sv(f, "loc"), "visible_message", [fmt("<span class='warning'>＀'s flesh rapidly inflates, forming a bloated mass around their body!</span>", [rt.fv(f, "name", rt.sv(f, "loc"))]), "<span class='warning'>We inflate our flesh, creating a spaceproof suit!</span>", "<span class='italics'>You hear organic matter ripping and tearing!</span>"]);
+	f.dot = (yield* parent_proc());
+	if (ismob(this.loc)) {
+		this.loc.visible_message(`<span class='warning'>${this.loc.name}'s flesh rapidly inflates, forming a bloated mass around their body!</span>`, "<span class='warning'>We inflate our flesh, creating a spaceproof suit!</span>", "<span class='italics'>You hear organic matter ripping and tearing!</span>");
 	}
-	if (truthy(rt.fv(f, "isprocessing", live(f.src)))) return f.dot;
-	rt.setFv(f, "isprocessing", live(f.src), 1);
-	rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), add);
+	if (this.isprocessing) return f.dot;
+	this.isprocessing = 1;
+	GLOB.SSobj.processing += this;
 	return f.dot;
 }, true);
 
-// /obj/item/clothing/suit/space/changeling/proc/process  (code/game/gamemodes/changeling/powers/mutations.dm:451)  may sleep
+// mutations.dm:451
 rt.def("/obj/item/clothing/suit/space/changeling/proc/process", function* process(f: Frame) {
 	let H: Value = null;
-	f.vars = () => [H];
-	if (!truthy((rt.istype(rt.sv(f, "loc"), T("/mob/living/carbon/human")) ? 1 : 0))) return f.dot;
-	yield* g.callName(f, rt.gv(f, "reagents", (H = rt.sv(f, "loc"))), "add_reagent", ["salbutamol", 0.4000000059604645]);
+	if (!rt.istype(this.loc, T("/mob/living/carbon/human"))) return f.dot;
+	yield* (H = this.loc).reagents.add_reagent("salbutamol", REAGENTS_METABOLISM);
 	return f.dot;
 }, true, { waitfor: false });
 
@@ -548,12 +508,10 @@ rt.type(7934, "/obj/item/clothing/head/helmet/space/changeling", "/obj/item/clot
 	flags_cover: 20,
 });
 
-// /obj/item/clothing/head/helmet/space/changeling/proc/<init>  (code/game/gamemodes/changeling/powers/mutations.dm:460)
+// mutations.dm:460
 rt.def("/obj/item/clothing/head/helmet/space/changeling/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 90, "acid", 90]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 0, "bullet", 0, "laser", 0, "energy", 0, "bomb", 0, "bio", 0, "rad", 0, "fire", 90, "acid", 90]);
 	return f.dot;
 });
 
@@ -569,20 +527,18 @@ rt.type(7763, "/obj/item/clothing/suit/armor/changeling", "/obj/item/clothing/su
 	heat_protection: 0,
 });
 
-// /obj/item/clothing/suit/armor/changeling/proc/<init>  (code/game/gamemodes/changeling/powers/mutations.dm:486)
+// mutations.dm:486
 rt.def("/obj/item/clothing/suit/armor/changeling/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 40, "bullet", 40, "laser", 40, "energy", 20, "bomb", 10, "bio", 4, "rad", 0, "fire", 90, "acid", 90]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 40, "bullet", 40, "laser", 40, "energy", 20, "bomb", 10, "bio", 4, "rad", 0, "fire", 90, "acid", 90]);
 	return f.dot;
 });
 
-// /obj/item/clothing/suit/armor/changeling/proc/Initialize  (code/game/gamemodes/changeling/powers/mutations.dm:492)  may sleep
+// mutations.dm:492
 rt.def("/obj/item/clothing/suit/armor/changeling/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!truthy((yield* g.call(f, P("/proc/ismob"), null, [rt.sv(f, "loc")])))) return f.dot;
-	yield* g.callName(f, rt.sv(f, "loc"), "visible_message", [fmt("<span class='warning'>＀'s flesh turns black, quickly transforming into a hard, chitinous mass!</span>", [rt.fv(f, "name", rt.sv(f, "loc"))]), "<span class='warning'>We harden our flesh, creating a suit of armor!</span>", "<span class='italics'>You hear organic matter ripping and tearing!</span>"]);
+	f.dot = (yield* parent_proc());
+	if (!ismob(this.loc)) return f.dot;
+	this.loc.visible_message(`<span class='warning'>${this.loc.name}'s flesh turns black, quickly transforming into a hard, chitinous mass!</span>`, "<span class='warning'>We harden our flesh, creating a suit of armor!</span>", "<span class='italics'>You hear organic matter ripping and tearing!</span>");
 	return f.dot;
 }, true);
 
@@ -595,11 +551,9 @@ rt.type(7993, "/obj/item/clothing/head/helmet/changeling", "/obj/item/clothing/h
 	flags_inv: 992,
 });
 
-// /obj/item/clothing/head/helmet/changeling/proc/<init>  (code/game/gamemodes/changeling/powers/mutations.dm:501)
+// mutations.dm:501
 rt.def("/obj/item/clothing/head/helmet/changeling/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "armor", rt.alist(f, ["melee", 40, "bullet", 40, "laser", 40, "energy", 20, "bomb", 10, "bio", 4, "rad", 0, "fire", 90, "acid", 90]));
+	parent_proc();
+	this.armor = rt.alist(f, ["melee", 40, "bullet", 40, "laser", 40, "energy", 20, "bomb", 10, "bio", 4, "rad", 0, "fire", 90, "acid", 90]);
 	return f.dot;
 });

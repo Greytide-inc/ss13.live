@@ -1,7 +1,7 @@
-// From code/modules/assembly/shock_kit.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/assembly/shock_kit.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(9883, "/obj/item/assembly/shock_kit", "/obj/item/assembly", {
@@ -15,49 +15,46 @@ rt.type(9883, "/obj/item/assembly/shock_kit", "/obj/item/assembly", {
 	icon_state: "shock_kit",
 });
 
-// /obj/item/assembly/shock_kit/proc/Destroy  (code/modules/assembly/shock_kit.dm:12)  may sleep
+// shock_kit.dm:12
 rt.def("/obj/item/assembly/shock_kit/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "part1")]);
-	yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "part2")]);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	yield* qdel(this.part1);
+	yield* qdel(this.part2);
+	return (yield* parent_proc());
 }, true);
 
-// /obj/item/assembly/shock_kit/proc/attackby  (code/modules/assembly/shock_kit.dm:17)  may sleep
+// shock_kit.dm:17
 rt.def("/obj/item/assembly/shock_kit/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
 	let _T: Value = null;
-	f.vars = () => [W, user, params, _T];
-	if (truthy((rt.istype(live(W), T("/obj/item/weapon/wrench")) ? 1 : 0))) {
-		if (truthy((yield* g.call(f, P("/proc/ismob"), null, [(_T = rt.sv(f, "loc"))])))) {
-			_T = rt.fv(f, "loc", live(_T));
+	if (rt.istype(W, T("/obj/item/weapon/wrench"))) {
+		if (ismob((_T = this.loc))) {
+			_T = _T.loc;
 		}
-		rt.setFv(f, "loc", rt.sv(f, "part1"), live(_T));
-		rt.setFv(f, "loc", rt.sv(f, "part2"), live(_T));
-		rt.setFv(f, "master", rt.sv(f, "part1"), null);
-		rt.setFv(f, "master", rt.sv(f, "part2"), null);
-		rt.setSv(f, "part1", null);
-		rt.setSv(f, "part2", null);
-		yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
-		return live(f.dot);
+		this.part1.loc = _T;
+		this.part2.loc = _T;
+		this.part1.master = null;
+		this.part2.master = null;
+		this.part1 = null;
+		this.part2 = null;
+		yield* qdel(this);
+		return f.dot;
 	}
-	yield* g.srcCall(f, "add_fingerprint", live(user));
-	return live(f.dot);
+	yield* this.add_fingerprint(user);
+	return f.dot;
 }, true);
 
-// /obj/item/assembly/shock_kit/proc/attack_self  (code/modules/assembly/shock_kit.dm:33)  may sleep
+// shock_kit.dm:33
 rt.def("/obj/item/assembly/shock_kit/proc/attack_self", function* attack_self(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.callName(f, rt.sv(f, "part1"), "attack_self", [live(user)]);
-	yield* g.callName(f, rt.sv(f, "part2"), "attack_self", [live(user)]);
-	yield* g.srcCall(f, "add_fingerprint", live(user));
-	return live(f.dot);
+	yield* this.part1.attack_self(user);
+	yield* this.part2.attack_self(user);
+	yield* this.add_fingerprint(user);
+	return f.dot;
 }, true);
 
-// /obj/item/assembly/shock_kit/proc/receive_signal  (code/modules/assembly/shock_kit.dm:39)  may sleep
+// shock_kit.dm:39
 rt.def("/obj/item/assembly/shock_kit/proc/receive_signal", function* receive_signal(f: Frame) {
 	let C: Value = null;
-	f.vars = () => [C];
-	if (truthy((rt.istype(rt.sv(f, "loc"), T("/obj/structure/chair/e_chair")) ? 1 : 0))) {
-		yield* g.callName(f, (C = rt.sv(f, "loc")), "shock", []);
+	if (rt.istype(this.loc, T("/obj/structure/chair/e_chair"))) {
+		yield* (C = this.loc).shock();
 	}
-	return live(f.dot);
+	return f.dot;
 }, true);

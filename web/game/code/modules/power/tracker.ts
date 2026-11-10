@@ -1,7 +1,7 @@
-// From code/modules/power/tracker.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/power/tracker.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(10324, "/obj/machinery/power/tracker", "/obj/machinery/power", {
@@ -20,106 +20,101 @@ rt.type(10324, "/obj/machinery/power/tracker", "/obj/machinery/power", {
 	integrity_failure: 50,
 });
 
-// /obj/machinery/power/tracker/proc/New  (code/modules/power/tracker.dm:23)  may sleep
+// tracker.dm:23
 rt.def("/obj/machinery/power/tracker/proc/New", function* New(f: Frame, loc: Value, S: Value) {
-	f.vars = () => [loc, S];
-	yield* g.callSuper(f, [live(loc)]);
-	yield* g.srcCall(f, "Make", live(S));
-	yield* g.srcCall(f, "connect_to_network");
+	yield* parent_proc(loc);
+	yield* this.Make(S);
+	yield* this.connect_to_network();
 	return f.dot;
 }, true);
 
-// /obj/machinery/power/tracker/proc/Destroy  (code/modules/power/tracker.dm:28)  may sleep
+// tracker.dm:28
 rt.def("/obj/machinery/power/tracker/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.srcCall(f, "unset_control");
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	this.unset_control();
+	return (yield* parent_proc());
 }, true);
 
-// /obj/machinery/power/tracker/proc/set_control  (code/modules/power/tracker.dm:33)
+// tracker.dm:33
 rt.def("/obj/machinery/power/tracker/proc/set_control", function set_control(f: Frame, SC: Value) {
-	if ((!truthy(live(SC)) || rt.gt(rt.call(f, P("/proc/get_dist"), null, [live(f.src), live(SC)]), 40))) {
+	if (!SC || get_dist(this, SC) > SOLAR_MAX_DIST) {
 		return 0;
 	}
-	rt.setSv(f, "control", live(SC));
-	rt.setFv(f, "connected_tracker", live(SC), live(f.src));
+	this.control = SC;
+	SC.connected_tracker = this;
 	return 1;
 });
 
-// /obj/machinery/power/tracker/proc/unset_control  (code/modules/power/tracker.dm:42)
+// tracker.dm:42
 rt.def("/obj/machinery/power/tracker/proc/unset_control", function unset_control(f: Frame) {
-	if (truthy(rt.sv(f, "control"))) {
-		rt.setFv(f, "connected_tracker", rt.sv(f, "control"), null);
+	if (this.control) {
+		this.control.connected_tracker = null;
 	}
-	rt.setSv(f, "control", null);
+	this.control = null;
 	return f.dot;
 });
 
-// /obj/machinery/power/tracker/proc/Make  (code/modules/power/tracker.dm:46)  may sleep
+// tracker.dm:46
 rt.def("/obj/machinery/power/tracker/proc/Make", function* Make(f: Frame, S: Value) {
-	f.vars = () => [S];
-	if (!truthy(live(S))) {
-		rt.setFv(f, "glass_type", (S = (yield* g.new_(f, T("/obj/item/solar_assembly"), [live(f.src)]))), T("/obj/item/stack/sheet/glass"));
-		rt.setFv(f, "tracker", live(S), 1);
-		rt.setFv(f, "anchored", live(S), 1);
+	if (!S) {
+		(S = (yield* new_(T("/obj/item/solar_assembly"), this))).glass_type = T("/obj/item/stack/sheet/glass");
+		S.tracker = 1;
+		S.anchored = 1;
 	}
-	rt.setFv(f, "loc", live(S), live(f.src));
-	yield* g.srcCall(f, "update_icon");
+	S.loc = this;
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/machinery/power/tracker/proc/set_angle  (code/modules/power/tracker.dm:56)
+// tracker.dm:56
 rt.def("/obj/machinery/power/tracker/proc/set_angle", function set_angle(f: Frame, angle: Value) {
-	rt.setSv(f, "sun_angle", live(angle));
-	rt.callSrc(f, "setDir", [rt.call(f, P("/proc/turn"), null, [1, subtract(rt.neg(live(angle)), 22.5)])]);
-	if (!(truthy(rt.sv(f, "powernet")) && isEqual(rt.sv(f, "powernet"), rt.fv(f, "powernet", rt.sv(f, "control"))))) return f.dot;
-	rt.setFv(f, "currentdir", rt.sv(f, "control"), live(angle));
+	this.sun_angle = angle;
+	this.setDir(turn(1, -angle - 22.5));
+	if (!(this.powernet && this.powernet == this.control.powernet)) return f.dot;
+	this.control.currentdir = angle;
 	return f.dot;
 });
 
-// /obj/machinery/power/tracker/proc/attackby  (code/modules/power/tracker.dm:66)  may sleep
-rt.def("/obj/machinery/power/tracker/proc/attackby", function* attackby(f: Frame) {
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/crowbar")) ? 1 : 0))) {
-		yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/machines/click.ogg"), 50, 1]);
-		yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("＀ begins to take the glass off the solar tracker.", [live(f.args[1])]), "<span class='notice'>You begin to take the glass off the solar tracker...</span>"]);
-		if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, multiply(50, rt.fv(f, "toolspeed", live(f.args[0]))), "target", live(f.src)], rt.Args.Named)))) {
-			yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/items/deconstruct.ogg"), 50, 1]);
-			yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("＀ takes the glass off the tracker.", [live(f.args[1])]), "<span class='notice'>You take the glass off the tracker.</span>"]);
-			yield* g.srcCall(f, "deconstruct", 1);
+// tracker.dm:66
+rt.def("/obj/machinery/power/tracker/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
+	if (rt.istype(W, T("/obj/item/weapon/crowbar"))) {
+		playsound(this.loc, rt.rsc("sound/machines/click.ogg"), 50, 1);
+		user.visible_message(`${user} begins to take the glass off the solar tracker.`, "<span class='notice'>You begin to take the glass off the solar tracker...</span>");
+		if (yield* do_after(user, 50 * W.toolspeed, { target: this })) {
+			playsound(this.loc, rt.rsc("sound/items/deconstruct.ogg"), 50, 1);
+			user.visible_message(`${user} takes the glass off the tracker.`, "<span class='notice'>You take the glass off the tracker.</span>");
+			yield* this.deconstruct(1);
 		}
 	} else {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["W", "user", "params"] });
+}, true);
 
-// /obj/machinery/power/tracker/proc/obj_break  (code/modules/power/tracker.dm:77)
+// tracker.dm:77
 rt.def("/obj/machinery/power/tracker/proc/obj_break", function obj_break(f: Frame, damage_flag: Value) {
-	if (!(!truthy(rt.bitAnd(rt.sv(f, "stat"), 1)) && !truthy(rt.bitAnd(rt.sv(f, "flags"), 128)))) return f.dot;
-	rt.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/effects/glassbr3.ogg"), 100, 1]);
+	if (!(!rt.bitAnd(this.stat, 1) && !rt.bitAnd(this.flags, NODECONSTRUCT))) return f.dot;
+	playsound(this.loc, rt.rsc("sound/effects/glassbr3.ogg"), 100, 1);
 	(rt.modSrcVar(f, "stat", 1, rt.bitOr));
-	rt.callSrc(f, "unset_control", []);
+	this.unset_control();
 	return f.dot;
 });
 
-// /obj/machinery/power/solar/proc/deconstruct  (code/modules/power/tracker.dm:83)  may sleep
+// tracker.dm:83
 rt.def("/obj/machinery/power/solar/proc/deconstruct", function* deconstruct(f: Frame, disassembled: Value) {
 	let S: Value = null;
-	f.vars = () => [disassembled, S];
-	if (live(disassembled) === null) {
-		disassembled = 1;
-	}
-	if (!truthy(rt.bitAnd(rt.sv(f, "flags"), 128))) {
-		if (truthy(live(disassembled))) {
-			if (truthy((S = rt.locateIn(f, T("/obj/item/solar_assembly"), live(f.src))))) {
-				yield* g.callName(f, live(S), "forceMove", [rt.sv(f, "loc")]);
-				yield* g.callName(f, live(S), "give_glass", [rt.bitAnd(rt.sv(f, "stat"), 1)]);
+	disassembled ??= 1;
+	if (!rt.bitAnd(this.flags, NODECONSTRUCT)) {
+		if (disassembled) {
+			if (S = rt.locateIn(f, T("/obj/item/solar_assembly"), this)) {
+				yield* S.forceMove(this.loc);
+				yield* S.give_glass(rt.bitAnd(this.stat, 1));
 			}
 		} else {
-			yield* g.call(f, P("/proc/playsound"), null, [live(f.src), "shatter", 70, 1]);
-			yield* g.new_(f, T("/obj/item/weapon/shard"), [rt.fv(f, "loc", live(f.src))]);
-			yield* g.new_(f, T("/obj/item/weapon/shard"), [rt.fv(f, "loc", live(f.src))]);
+			playsound(this, "shatter", 70, 1);
+			yield* new_(T("/obj/item/weapon/shard"), this.loc);
+			yield* new_(T("/obj/item/weapon/shard"), this.loc);
 		}
 	}
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* qdel(this);
 	return f.dot;
 }, true);

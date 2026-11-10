@@ -1,7 +1,7 @@
-// From code/_onclick/hud/alert.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/_onclick/hud/alert.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, g } = rt;
 
 
 rt.type(4808, "/mob", "/atom/movable", {
@@ -116,98 +116,90 @@ rt.type(4808, "/mob", "/atom/movable", {
 	mouse_drag_pointer: 1,
 }, { global: { next_mob_id: 726 }, tmp: ["ckey","group"] });
 
-// /mob/proc/throw_alert  (code/_onclick/hud/alert.dm:18)  may sleep
+// alert.dm:18
 rt.def("/mob/proc/throw_alert", function* throw_alert(f: Frame, category: Value, type: Value, severity: Value, new_master: Value, override: Value) {
 	let thealert: Value = null, old_layer: Value = null, old_plane: Value = null;
-	f.vars = () => [category, type, severity, new_master, override, thealert, old_layer, old_plane];
-	if (live(override) === null) {
-		override = 0;
+	override ??= 0;
+	if (!category) {
+		return f.dot;
 	}
-	if (!truthy(live(category))) {
-		return live(f.dot);
-	}
-	thealert = null;
-	if (truthy(rt.index(rt.sv(f, "alerts"), live(category)))) {
-		if (truthy(rt.gv(f, "override_alerts", (thealert = rt.index(rt.sv(f, "alerts"), live(category)))))) {
+	if (rt.index(this.alerts, category)) {
+		if ((thealert = rt.index(this.alerts, category)).override_alerts) {
 			return 0;
 		}
-		if ((truthy(live(new_master)) && !isEqual(live(new_master), rt.fv(f, "master", live(thealert))))) {
-			yield* g.call(f, P("/proc/warning"), null, [fmt("＀ in ＀ at line ＀ src: ＀ usr: ＀.", [fmt("＀ threw alert ＀ with new_master ＀ while already having that alert with master ＀", [live(f.src), live(category), live(new_master), rt.fv(f, "master", live(thealert))]), "code/_onclick/hud/alert.dm", 27, live(f.src), live(f.usr)])]);
-			yield* g.srcCall(f, "clear_alert", live(category));
+		if (new_master && new_master != thealert.master) {
+			warning(`${`${this} threw alert ${category} with new_master ${new_master} while already having that alert with master ${thealert.master}`} in ${"code/_onclick/hud/alert.dm"} at line ${27} src: ${this} usr: ${f.usr}.`);
+			yield* this.clear_alert(category);
 			return (yield* g.callSelf(f, []));
 		}
-		if (!isEqual(rt.fv(f, "type", live(thealert)), live(type))) {
-			yield* g.srcCall(f, "clear_alert", live(category));
+		if (thealert.type != type) {
+			yield* this.clear_alert(category);
 			return (yield* g.callSelf(f, []));
 		}
-		if ((!truthy(live(severity)) || isEqual(live(severity), rt.fv(f, "severity", live(thealert))))) {
-			if (truthy(rt.fv(f, "timeout", live(thealert)))) {
-				yield* g.srcCall(f, "clear_alert", live(category));
+		if (!severity || severity == thealert.severity) {
+			if (thealert.timeout) {
+				yield* this.clear_alert(category);
 				return (yield* g.callSelf(f, []));
 			}
 			return 0;
 		}
 	} else {
-		rt.setFv(f, "override_alerts", (thealert = (yield* g.new_(f, live(type), []))), live(override));
-		if (truthy(live(override))) {
-			rt.setFv(f, "timeout", live(thealert), null);
+		(thealert = (yield* new_(type))).override_alerts = override;
+		if (override) {
+			thealert.timeout = null;
 		}
 	}
-	rt.setFv(f, "mob_viewer", live(thealert), live(f.src));
-	if (truthy(live(new_master))) {
-		old_layer = rt.fv(f, "layer", live(new_master));
-		old_plane = rt.fv(f, "plane", live(new_master));
-		rt.setFv(f, "layer", live(new_master), -1);
-		rt.setFv(f, "plane", live(new_master), -32767);
-		yield* g.callName(f, live(thealert), "add_overlay", [live(new_master)]);
-		rt.setFv(f, "layer", live(new_master), live(old_layer));
-		rt.setFv(f, "plane", live(new_master), live(old_plane));
-		rt.setFv(f, "icon_state", live(thealert), "template");
-		rt.setFv(f, "master", live(thealert), live(new_master));
+	thealert.mob_viewer = this;
+	if (new_master) {
+		old_layer = new_master.layer;
+		old_plane = new_master.plane;
+		new_master.layer = -1;
+		new_master.plane = -32767;
+		thealert.add_overlay(new_master);
+		new_master.layer = old_layer;
+		new_master.plane = old_plane;
+		thealert.icon_state = "template";
+		thealert.master = new_master;
 	} else {
-		rt.setFv(f, "icon_state", live(thealert), fmt("＀＀", [rt.initial(f, live(thealert), "icon_state"), live(severity)]));
-		rt.setFv(f, "severity", live(thealert), live(severity));
+		thealert.icon_state = `${rt.initial(f, thealert, "icon_state")}${severity}`;
+		thealert.severity = severity;
 	}
-	rt.setAt(rt.sv(f, "alerts"), live(category), live(thealert));
-	if ((truthy(rt.sv(f, "client")) && truthy(rt.sv(f, "hud_used")))) {
-		yield* g.callName(f, rt.sv(f, "hud_used"), "reorganize_alerts", []);
+	rt.setAt(this.alerts, category, thealert);
+	if (this.client && this.hud_used) {
+		this.hud_used.reorganize_alerts();
 	}
-	rt.setFv(f, "transform", live(thealert), (yield* g.call(f, P("/proc/matrix"), null, [32, 6, 7])));
-	rt.op(f, "Animate", [2, 8], [null, live(thealert), "transform", (yield* g.call(f, P("/proc/matrix"), null, [])), "time", 2.5, "easing", 3]);
-	if (truthy(rt.fv(f, "timeout", live(thealert)))) {
-		yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/mob/proc/alert_timeout"), live(thealert), live(category)])), rt.fv(f, "timeout", live(thealert))]);
-		rt.setFv(f, "timeout", live(thealert), subtract(add(rt.worldTime(f), rt.fv(f, "timeout", live(thealert))), rt.fv(f, "tick_lag", rt.world())));
+	thealert.transform = matrix(32, 6, 7);
+	rt.op(f, "Animate", [2, 8], [null, thealert, "transform", matrix(), "time", 2.5, "easing", 3]);
+	if (thealert.timeout) {
+		yield* addtimer((yield* new_(T("/datum/callback"), this, P("/mob/proc/alert_timeout"), thealert, category)), thealert.timeout);
+		thealert.timeout = rt.worldTime(f) + thealert.timeout - rt.world().tick_lag;
 	}
-	return live(thealert);
+	return thealert;
 }, true);
 
-// /mob/proc/alert_timeout  (code/_onclick/hud/alert.dm:73)  may sleep
+// alert.dm:73
 rt.def("/mob/proc/alert_timeout", function* alert_timeout(f: Frame, alert: Value, category: Value) {
-	f.vars = () => [alert, category];
-	if (!((truthy(rt.fv(f, "timeout", live(alert))) && isEqual(rt.index(rt.sv(f, "alerts"), live(category)), live(alert))) && rt.ge(rt.worldTime(f), rt.fv(f, "timeout", live(alert))))) return f.dot;
-	yield* g.srcCall(f, "clear_alert", live(category));
+	if (!(alert.timeout && rt.index(this.alerts, category) == alert && rt.worldTime(f) >= alert.timeout)) return f.dot;
+	yield* this.clear_alert(category);
 	return f.dot;
 }, true, { argTypes: [{ type: 4, path: "/obj/screen/alert" }, {  }] });
 
-// /mob/proc/clear_alert  (code/_onclick/hud/alert.dm:78)  may sleep
+// alert.dm:78
 rt.def("/mob/proc/clear_alert", function* clear_alert(f: Frame, category: Value, clear_override: Value) {
 	let alert: Value = null;
-	f.vars = () => [category, clear_override, alert];
-	if (live(clear_override) === null) {
-		clear_override = 0;
-	}
-	if (!truthy((alert = rt.index(rt.sv(f, "alerts"), live(category))))) {
+	clear_override ??= 0;
+	if (!(alert = rt.index(this.alerts, category))) {
 		return 0;
 	}
-	if ((truthy(rt.fv(f, "override_alerts", live(alert))) && !truthy(live(clear_override)))) {
+	if (alert.override_alerts && !clear_override) {
 		return 0;
 	}
-	(rt.modSrcVar(f, "alerts", live(category), subtract));
-	if ((truthy(rt.sv(f, "client")) && truthy(rt.sv(f, "hud_used")))) {
-		yield* g.callName(f, rt.sv(f, "hud_used"), "reorganize_alerts", []);
-		(rt.modField(f, rt.sv(f, "client"), "screen", live(alert), subtract));
+	this.alerts -= category;
+	if (this.client && this.hud_used) {
+		this.hud_used.reorganize_alerts();
+		this.client.screen -= alert;
 	}
-	yield* g.call(f, P("/proc/qdel"), null, [live(alert)]);
+	yield* qdel(alert);
 	return f.dot;
 }, true);
 
@@ -224,15 +216,15 @@ rt.type(11021, "/obj/screen/alert", "/obj/screen", {
 	mouse_opacity: 1,
 });
 
-// /obj/screen/alert/proc/MouseEntered  (code/_onclick/hud/alert.dm:104)
+// alert.dm:104
 rt.def("/obj/screen/alert/proc/MouseEntered", function MouseEntered(f: Frame, location: Value, control: Value, params: Value) {
-	rt.call(f, P("/proc/openToolTip"), null, [null, live(f.usr), null, live(f.src), null, live(params), "title", rt.sv(f, "name"), "content", rt.sv(f, "desc"), "theme", rt.sv(f, "alerttooltipstyle")], rt.Args.Named);
+	openToolTip(f.usr, this, params, { title: this.name, content: this.desc, theme: this.alerttooltipstyle });
 	return f.dot;
 });
 
-// /obj/screen/alert/proc/MouseExited  (code/_onclick/hud/alert.dm:108)
+// alert.dm:108
 rt.def("/obj/screen/alert/proc/MouseExited", function MouseExited(f: Frame) {
-	rt.call(f, P("/proc/closeToolTip"), null, [live(f.usr)]);
+	closeToolTip(f.usr);
 	return f.dot;
 });
 
@@ -242,12 +234,11 @@ rt.type(11038, "/obj/screen/alert/embeddedobject", "/obj/screen/alert", {
 	icon_state: "embeddedobject",
 });
 
-// /obj/screen/alert/embeddedobject/proc/Click  (code/_onclick/hud/alert.dm:204)  may sleep
+// alert.dm:204
 rt.def("/obj/screen/alert/embeddedobject/proc/Click", function* Click(f: Frame) {
 	let M: Value = null;
-	f.vars = () => [M];
-	if (!truthy((rt.istype(live(f.usr), T("/mob/living")) ? 1 : 0))) return f.dot;
-	return (yield* g.callName(f, (M = live(f.usr)), "help_shake_act", [live(M)]));
+	if (!rt.istype(f.usr, T("/mob/living"))) return f.dot;
+	return (yield* (M = f.usr).help_shake_act(M));
 }, true);
 
 rt.type(11040, "/obj/screen/alert/fire", "/obj/screen/alert", {
@@ -256,12 +247,11 @@ rt.type(11040, "/obj/screen/alert/fire", "/obj/screen/alert", {
 	icon_state: "fire",
 });
 
-// /obj/screen/alert/fire/proc/Click  (code/_onclick/hud/alert.dm:222)  may sleep
+// alert.dm:222
 rt.def("/obj/screen/alert/fire/proc/Click", function* Click(f: Frame) {
 	let L: Value = null;
-	f.vars = () => [L];
-	if (!truthy((rt.istype(live(f.usr), T("/mob/living")) ? 1 : 0))) return f.dot;
-	return (yield* g.callName(f, (L = live(f.usr)), "resist", []));
+	if (!rt.istype(f.usr, T("/mob/living"))) return f.dot;
+	return (yield* (L = f.usr).resist());
 }, true);
 
 rt.type(11045, "/obj/screen/alert/bloodsense", "/obj/screen/alert", {
@@ -273,108 +263,104 @@ rt.type(11045, "/obj/screen/alert/bloodsense", "/obj/screen/alert", {
 	icon_state: "cult_sense",
 }, { global: { narnar: 773 } });
 
-// /obj/screen/alert/bloodsense/proc/Initialize  (code/_onclick/hud/alert.dm:268)
+// alert.dm:268
 rt.def("/obj/screen/alert/bloodsense/proc/Initialize", function Initialize(f: Frame) {
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	rt.setGl("narnar", rt.new_(f, T("/image"), [rt.rsc("icons/mob/screen_alert.dmi"), "mini_nar"]));
-	if (truthy(rt.fv(f, "isprocessing", live(f.src)))) return f.dot;
-	rt.setFv(f, "isprocessing", live(f.src), 1);
-	rt.modField(f, rt.gl("SSprocessing"), "processing", live(f.src), add);
+	f.dot = parent_proc();
+	GLOB.narnar = new_(T("/image"), rt.rsc("icons/mob/screen_alert.dmi"), "mini_nar");
+	if (this.isprocessing) return f.dot;
+	this.isprocessing = 1;
+	GLOB.SSprocessing.processing += this;
 	return f.dot;
 });
 
-// /obj/screen/alert/bloodsense/proc/Destroy  (code/_onclick/hud/alert.dm:274)  may sleep
+// alert.dm:274
 rt.def("/obj/screen/alert/bloodsense/proc/Destroy", function* Destroy(f: Frame) {
-	rt.setSv(f, "Cviewer", null);
-	rt.setFv(f, "isprocessing", live(f.src), 0);
-	(rt.modField(f, rt.gl("SSprocessing"), "processing", live(f.src), subtract));
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	this.Cviewer = null;
+	this.isprocessing = 0;
+	GLOB.SSprocessing.processing -= this;
+	return (yield* parent_proc());
 }, true);
 
-// /obj/screen/alert/bloodsense/proc/process  (code/_onclick/hud/alert.dm:280)
+// alert.dm:280
 rt.def("/obj/screen/alert/bloodsense/proc/process", function process(f: Frame) {
-	let blood_target: Value = null, _P: Value = null, Q: Value = null, A: Value = null, target_angle: Value = null, target_dist: Value = null, difference: Value = null, final: Value = null;
-	let $0: any;
-	f.vars = () => [blood_target, _P, Q, A, target_angle, target_dist, difference, final, $0];
-	blood_target = null;
-	if (truthy(rt.gl("blood_target"))) {
-		if (!truthy(rt.getStep(f, rt.gl("blood_target"), 0))) {
-			rt.setGl("blood_target", null);
+	let blood_target: Value = null, final: Value = null;
+	if (GLOB.blood_target) {
+		if (!rt.getStep(f, GLOB.blood_target, 0)) {
+			GLOB.blood_target = null;
 		} else {
-			blood_target = rt.gl("blood_target");
+			blood_target = GLOB.blood_target;
 		}
 	}
-	if (((truthy(rt.sv(f, "Cviewer")) && truthy(rt.fv(f, "seeking", rt.sv(f, "Cviewer")))) && truthy(rt.fv(f, "master", rt.sv(f, "Cviewer"))))) {
-		blood_target = rt.fv(f, "master", rt.sv(f, "Cviewer"));
-		rt.setSv(f, "desc", fmt("Your blood sense is leading you to ＀", [rt.fv(f, "master", rt.sv(f, "Cviewer"))]));
+	if (this.Cviewer && this.Cviewer.seeking && this.Cviewer.master) {
+		blood_target = this.Cviewer.master;
+		this.desc = `Your blood sense is leading you to ${this.Cviewer.master}`;
 	}
-	if (!truthy(live(blood_target))) {
-		if (!truthy(rt.gl("sac_complete"))) {
-			if (isEqual(rt.sv(f, "icon_state"), "runed_sense0")) {
-				return live(f.dot);
+	if (!blood_target) {
+		if (!GLOB.sac_complete) {
+			if (this.icon_state == "runed_sense0") {
+				return f.dot;
 			}
-			rt.op(f, "Animate", [2, 8], [null, live(f.src), "transform", null, "time", 1, "loop", 0]);
-			rt.setSv(f, "angle", 0);
-			rt.callSrc(f, "cut_overlays", []);
-			rt.setSv(f, "icon_state", "runed_sense0");
-			rt.setSv(f, "desc", fmt("Nar-Sie demands that ＀ be sacrificed before the summoning ritual can begin.", [rt.gl("sac_mind")]));
-			rt.callSrc(f, "add_overlay", [rt.gl("sac_image")]);
+			rt.op(f, "Animate", [2, 8], [null, this, "transform", null, "time", 1, "loop", 0]);
+			this.angle = 0;
+			this.cut_overlays();
+			this.icon_state = "runed_sense0";
+			this.desc = `Nar-Sie demands that ${GLOB.sac_mind} be sacrificed before the summoning ritual can begin.`;
+			this.add_overlay(GLOB.sac_image);
 		} else {
-			if (isEqual(rt.sv(f, "icon_state"), "runed_sense1")) {
-				return live(f.dot);
+			if (this.icon_state == "runed_sense1") {
+				return f.dot;
 			}
-			rt.op(f, "Animate", [2, 8], [null, live(f.src), "transform", null, "time", 1, "loop", 0]);
-			rt.setSv(f, "angle", 0);
-			rt.callSrc(f, "cut_overlays", []);
-			rt.setSv(f, "icon_state", "runed_sense1");
-			rt.setSv(f, "desc", fmt("The sacrifice is complete, summon Nar-Sie! The summoning can only take place in ＀!", [rt.call(f, P("/proc/english_list"), null, [rt.gl("summon_spots")])]));
-			rt.callSrc(f, "add_overlay", [rt.gl("narnar")]);
+			rt.op(f, "Animate", [2, 8], [null, this, "transform", null, "time", 1, "loop", 0]);
+			this.angle = 0;
+			this.cut_overlays();
+			this.icon_state = "runed_sense1";
+			this.desc = `The sacrifice is complete, summon Nar-Sie! The summoning can only take place in ${english_list(GLOB.summon_spots)}!`;
+			this.add_overlay(GLOB.narnar);
 		}
-		return live(f.dot);
+		return f.dot;
 	}
-	_P = rt.getStep(f, live(blood_target), 0);
-	Q = rt.getStep(f, rt.sv(f, "mob_viewer"), 0);
-	A = rt.call(f, P("/proc/get_area"), null, [live(_P)]);
-	if (!isEqual(rt.fv(f, "z", live(_P)), rt.fv(f, "z", live(Q)))) {
-		rt.setSv(f, "icon_state", "runed_sense2");
-		rt.setSv(f, "desc", fmt("＀ is no longer in your sector, you cannot sense its presence here.", [live(blood_target)]));
-		return live(f.dot);
+	let _P: Value = rt.getStep(f, blood_target, 0);
+	let Q: Value = rt.getStep(f, this.mob_viewer, 0);
+	let A: Value = get_area(_P);
+	if (_P.z != Q.z) {
+		this.icon_state = "runed_sense2";
+		this.desc = `${blood_target} is no longer in your sector, you cannot sense its presence here.`;
+		return f.dot;
 	}
-	rt.setSv(f, "desc", fmt("You are currently tracking ＀ in ＀.", [live(blood_target), rt.fv(f, "name", live(A))]));
-	target_angle = rt.call(f, P("/proc/Get_Angle"), null, [live(Q), live(_P)]);
-	target_dist = rt.call(f, P("/proc/get_dist"), null, [live(_P), live(Q)]);
-	rt.callSrc(f, "cut_overlays", []);
-	$0 = live(target_dist);
-	if (rt.inRange($0, 0, 1)) {
-		rt.setSv(f, "icon_state", "runed_sense2");
-	} else if (rt.inRange($0, 2, 8)) {
-		rt.setSv(f, "icon_state", "arrow8");
-	} else if (rt.inRange($0, 9, 15)) {
-		rt.setSv(f, "icon_state", "arrow7");
-	} else if (rt.inRange($0, 16, 22)) {
-		rt.setSv(f, "icon_state", "arrow6");
-	} else if (rt.inRange($0, 23, 29)) {
-		rt.setSv(f, "icon_state", "arrow5");
-	} else if (rt.inRange($0, 30, 36)) {
-		rt.setSv(f, "icon_state", "arrow4");
-	} else if (rt.inRange($0, 37, 43)) {
-		rt.setSv(f, "icon_state", "arrow3");
-	} else if (rt.inRange($0, 44, 50)) {
-		rt.setSv(f, "icon_state", "arrow2");
-	} else if (rt.inRange($0, 51, 57)) {
-		rt.setSv(f, "icon_state", "arrow1");
-	} else if (rt.inRange($0, 58, 64)) {
-		rt.setSv(f, "icon_state", "arrow0");
-	} else if (rt.inRange($0, 65, 400)) {
-		rt.setSv(f, "icon_state", "arrow");
+	this.desc = `You are currently tracking ${blood_target} in ${A.name}.`;
+	let target_angle: Value = Get_Angle(Q, _P);
+	let target_dist: Value = get_dist(_P, Q);
+	this.cut_overlays();
+	if (rt.inRange(target_dist, 0, 1)) {
+		this.icon_state = "runed_sense2";
+	} else if (rt.inRange(target_dist, 2, 8)) {
+		this.icon_state = "arrow8";
+	} else if (rt.inRange(target_dist, 9, 15)) {
+		this.icon_state = "arrow7";
+	} else if (rt.inRange(target_dist, 16, 22)) {
+		this.icon_state = "arrow6";
+	} else if (rt.inRange(target_dist, 23, 29)) {
+		this.icon_state = "arrow5";
+	} else if (rt.inRange(target_dist, 30, 36)) {
+		this.icon_state = "arrow4";
+	} else if (rt.inRange(target_dist, 37, 43)) {
+		this.icon_state = "arrow3";
+	} else if (rt.inRange(target_dist, 44, 50)) {
+		this.icon_state = "arrow2";
+	} else if (rt.inRange(target_dist, 51, 57)) {
+		this.icon_state = "arrow1";
+	} else if (rt.inRange(target_dist, 58, 64)) {
+		this.icon_state = "arrow0";
+	} else if (rt.inRange(target_dist, 65, 400)) {
+		this.icon_state = "arrow";
 	}
-	difference = subtract(live(target_angle), rt.sv(f, "angle"));
-	rt.setSv(f, "angle", live(target_angle));
-	if (!truthy(live(difference))) {
-		return live(f.dot);
+	let difference: Value = target_angle - this.angle;
+	this.angle = target_angle;
+	if (!difference) {
+		return f.dot;
 	}
-	rt.callName(f, (final = rt.call(f, P("/proc/matrix"), null, [rt.sv(f, "transform")])), "Turn", [live(difference)]);
-	rt.op(f, "Animate", [2, 8], [null, live(f.src), "transform", live(final), "time", 5, "loop", 0]);
+	(final = matrix(this.transform)).Turn(difference);
+	rt.op(f, "Animate", [2, 8], [null, this, "transform", final, "time", 5, "loop", 0]);
 	return f.dot;
 }, false, { waitfor: false });
 
@@ -384,121 +370,106 @@ rt.type(11047, "/obj/screen/alert/clockwork/scripture_reqs", "/obj/screen/alert/
 	icon_state: "no-servants-caches",
 });
 
-// /obj/screen/alert/clockwork/scripture_reqs/proc/Initialize  (code/_onclick/hud/alert.dm:361)
+// alert.dm:361
 rt.def("/obj/screen/alert/clockwork/scripture_reqs/proc/Initialize", function Initialize(f: Frame) {
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.fv(f, "isprocessing", live(f.src)))) {
-		rt.setFv(f, "isprocessing", live(f.src), 1);
-		rt.modField(f, rt.gl("SSprocessing"), "processing", live(f.src), add);
+	f.dot = parent_proc();
+	if (!this.isprocessing) {
+		this.isprocessing = 1;
+		GLOB.SSprocessing.processing += this;
 	}
-	rt.callSrc(f, "process", []);
+	this.process();
 	return f.dot;
 });
 
-// /obj/screen/alert/clockwork/scripture_reqs/proc/Destroy  (code/_onclick/hud/alert.dm:366)  may sleep
+// alert.dm:366
 rt.def("/obj/screen/alert/clockwork/scripture_reqs/proc/Destroy", function* Destroy(f: Frame) {
-	rt.setFv(f, "isprocessing", live(f.src), 0);
-	(rt.modField(f, rt.gl("SSprocessing"), "processing", live(f.src), subtract));
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	this.isprocessing = 0;
+	GLOB.SSprocessing.processing -= this;
+	return (yield* parent_proc());
 }, true);
 
-// /obj/screen/alert/clockwork/scripture_reqs/proc/process  (code/_onclick/hud/alert.dm:371)  may sleep
+// alert.dm:371
 rt.def("/obj/screen/alert/clockwork/scripture_reqs/proc/process", function* process(f: Frame) {
 	let current_state: Value = null, i: Value = null, G: Value = null, gate_area: Value = null, validservants: Value = null, unconverted_ais_exist: Value = null, L: Value = null, req_servants: Value = null, req_caches: Value = null, req_cv: Value = null, req_ai: Value = null, textlist: Value = null;
-	let $0: any, $e: any;
-	f.vars = () => [current_state, i, G, gate_area, validservants, unconverted_ais_exist, L, req_servants, req_caches, req_cv, req_ai, textlist, $0, $e];
-	if (truthy(rt.gl("clockwork_gateway_activated"))) {
-		yield* g.callName(f, rt.sv(f, "mob_viewer"), "clear_alert", ["scripturereq"]);
-		return live(f.dot);
+	let $e: any;
+	if (GLOB.clockwork_gateway_activated) {
+		yield* this.mob_viewer.clear_alert("scripturereq");
+		return f.dot;
 	}
-	current_state = null;
-	i = null;
-	rt.forList(f, 0, rt.fv(f, "scripture_states", rt.gl("SSticker")));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		i = $e;
-		if (!truthy(rt.index(rt.fv(f, "scripture_states", rt.gl("SSticker")), live(i)))) {
-			current_state = live(i);
+	for (i of each(GLOB.SSticker.scripture_states)) {
+		if (!rt.index(GLOB.SSticker.scripture_states, i)) {
+			current_state = i;
 			break;
 		}
 	}
-	rt.endFor(f, 0);
-	rt.setSv(f, "icon_state", "no");
-	if (!truthy(live(current_state))) {
-		rt.setSv(f, "name", "Current Objective");
-		G = null;
-		rt.forList(f, 0, rt.gl("all_clockwork_objects"), T("/obj/structure/destructible/clockwork/massive/celestial_gateway"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			G = $e;
-			rt.setSv(f, "desc", fmt("<b>Protect the Ark at ＀!</b>", [rt.gv(f, "map_name", (gate_area = (yield* g.call(f, P("/proc/get_area"), null, [live(G)]))))]));
-			return live(f.dot);
+	this.icon_state = "no";
+	if (!current_state) {
+		this.name = "Current Objective";
+		for (G of each(GLOB.all_clockwork_objects, T("/obj/structure/destructible/clockwork/massive/celestial_gateway"))) {
+			this.desc = `<b>Protect the Ark at ${(gate_area = get_area(G)).map_name}!</b>`;
+			return f.dot;
 		}
-		rt.endFor(f, 0);
-		rt.setSv(f, "desc", "<b>All tiers of Scripture are unlocked.<br>Acquire components and summon the Ark.</b>");
+		this.desc = "<b>All tiers of Scripture are unlocked.<br>Acquire components and summon the Ark.</b>";
 	} else {
-		rt.setSv(f, "name", "Next Tier Requirements");
+		this.name = "Next Tier Requirements";
 		validservants = 0;
-		unconverted_ais_exist = (yield* g.call(f, P("/proc/get_unconverted_ais"), null, []));
-		L = null;
-		rt.forList(f, 0, rt.gl("living_mob_list"), T("/mob/living"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			L = $e;
-			if ((truthy((yield* g.call(f, P("/proc/is_servant_of_ratvar"), null, [live(L)]))) && (truthy((rt.istype(live(L), T("/mob/living/carbon/human")) ? 1 : 0)) || truthy((rt.istype(live(L), T("/mob/living/silicon")) ? 1 : 0))))) {
-				validservants = rt.inc(live(validservants), 1);
+		unconverted_ais_exist = get_unconverted_ais();
+		for (L of each(GLOB.living_mob_list, T("/mob/living"))) {
+			if (is_servant_of_ratvar(L) && (rt.istype(L, T("/mob/living/carbon/human")) || rt.istype(L, T("/mob/living/silicon")))) {
+				validservants++;
 			}
 		}
-		rt.endFor(f, 0);
 		req_servants = 0;
 		req_caches = 0;
 		req_cv = 0;
 		req_ai = 0;
-		textlist = rt.list(fmt("Requirements for <b>＀ Scripture:</b>", [live(current_state)]));
-		$0 = live(current_state);
-		if ($0 === "Script") {
+		textlist = list(`Requirements for <b>${current_state} Scripture:</b>`);
+		if (current_state === "Script") {
 			req_servants = 6;
 			req_caches = 1;
-		} else if ($0 === "Application") {
+		} else if (current_state === "Application") {
 			req_servants = 9;
 			req_caches = 3;
 			req_cv = 100;
-		} else if ($0 === "Judgement") {
+		} else if (current_state === "Judgement") {
 			req_servants = 12;
 			req_caches = 5;
 			req_cv = 300;
 			req_ai = 1;
 		}
-		textlist = rt.modify(live(textlist), fmt("<br><b>＀/＀</b> Servants", [live(validservants), live(req_servants)]), add);
-		if (rt.lt(live(validservants), live(req_servants))) {
-			rt.modSrcVar(f, "icon_state", "-servants", add);
+		textlist += `<br><b>${validservants}/${req_servants}</b> Servants`;
+		if (validservants < req_servants) {
+			this.icon_state += "-servants";
 		} else {
-			textlist = rt.modify(live(textlist), ": <b><font color=#5A6068>[CHECK]</font></b>", add);
+			textlist += ": <b><font color=#5A6068>[CHECK]</font></b>";
 		}
-		textlist = rt.modify(live(textlist), fmt("<br><b>＀/＀</b> Tinkerer's Caches", [rt.gl("clockwork_caches"), live(req_caches)]), add);
-		if (rt.lt(rt.gl("clockwork_caches"), live(req_caches))) {
-			rt.modSrcVar(f, "icon_state", "-caches", add);
+		textlist += `<br><b>${GLOB.clockwork_caches}/${req_caches}</b> Tinkerer's Caches`;
+		if (GLOB.clockwork_caches < req_caches) {
+			this.icon_state += "-caches";
 		} else {
-			textlist = rt.modify(live(textlist), ": <b><font color=#5A6068>[CHECK]</font></b>", add);
+			textlist += ": <b><font color=#5A6068>[CHECK]</font></b>";
 		}
-		if (truthy(live(req_cv))) {
-			textlist = rt.modify(live(textlist), fmt("<br><b>＀/＀</b> Construction Value", [rt.gl("clockwork_construction_value"), live(req_cv)]), add);
-			if (rt.lt(rt.gl("clockwork_construction_value"), live(req_cv))) {
-				rt.modSrcVar(f, "icon_state", "-cv", add);
+		if (req_cv) {
+			textlist += `<br><b>${GLOB.clockwork_construction_value}/${req_cv}</b> Construction Value`;
+			if (GLOB.clockwork_construction_value < req_cv) {
+				this.icon_state += "-cv";
 			} else {
-				textlist = rt.modify(live(textlist), ": <b><font color=#5A6068>[CHECK]</font></b>", add);
+				textlist += ": <b><font color=#5A6068>[CHECK]</font></b>";
 			}
 		}
-		if (truthy(live(req_ai))) {
-			if (truthy(live(unconverted_ais_exist))) {
-				if (rt.gt(live(unconverted_ais_exist), 1)) {
-					textlist = rt.modify(live(textlist), fmt("<br><b>＀ unconverted AIs exist!</b><br>", [live(unconverted_ais_exist)]), add);
+		if (req_ai) {
+			if (unconverted_ais_exist) {
+				if (unconverted_ais_exist > 1) {
+					textlist += `<br><b>${unconverted_ais_exist} unconverted AIs exist!</b><br>`;
 				} else {
-					textlist = rt.modify(live(textlist), "<br><b>An unconverted AI exists!</b>", add);
+					textlist += "<br><b>An unconverted AI exists!</b>";
 				}
-				rt.modSrcVar(f, "icon_state", "-ai", add);
+				this.icon_state += "-ai";
 			} else {
-				textlist = rt.modify(live(textlist), "<br>No unconverted AIs exist: <b><font color=#5A6068>[CHECK]</font></b>", add);
+				textlist += "<br>No unconverted AIs exist: <b><font color=#5A6068>[CHECK]</font></b>";
 			}
 		}
-		rt.setSv(f, "desc", (yield* g.callName(f, live(textlist), "Join", [])));
+		this.desc = textlist.Join();
 	}
 	return f.dot;
 }, true, { waitfor: false });
@@ -509,107 +480,81 @@ rt.type(11048, "/obj/screen/alert/clockwork/infodump", "/obj/screen/alert/clockw
 	icon_state: "clockinfo",
 });
 
-// /obj/screen/alert/clockwork/infodump/proc/MouseEntered  (code/_onclick/hud/alert.dm:446)
-rt.def("/obj/screen/alert/clockwork/infodump/proc/MouseEntered", function MouseEntered(f: Frame) {
+// alert.dm:446
+rt.def("/obj/screen/alert/clockwork/infodump/proc/MouseEntered", function MouseEntered(f: Frame, location: Value, control: Value, params: Value) {
 	let servants: Value = null, validservants: Value = null, unconverted_ais_exist: Value = null, textlist: Value = null, L: Value = null, G: Value = null, gate_area: Value = null, i: Value = null, i_4: Value = null;
 	let $0: any, $1: any, $e: any;
-	f.vars = () => [servants, validservants, unconverted_ais_exist, textlist, L, G, gate_area, i, i_4, $0, $1, $e];
-	if (truthy(rt.gl("ratvar_awakens"))) {
-		rt.setSv(f, "desc", "<font size=3><b>CHETR<br>NYY<br>HAGEHUGF-NAQ-UBABE<br>RATVAR.</b></font>");
+	if (GLOB.ratvar_awakens) {
+		this.desc = "<font size=3><b>CHETR<br>NYY<br>HAGEHUGF-NAQ-UBABE<br>RATVAR.</b></font>";
 	} else {
 		servants = 0;
 		validservants = 0;
-		unconverted_ais_exist = rt.call(f, P("/proc/get_unconverted_ais"), null, []);
-		textlist = null;
-		L = null;
-		rt.forList(f, 0, rt.gl("living_mob_list"), T("/mob/living"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			L = $e;
-			if (truthy(rt.call(f, P("/proc/is_servant_of_ratvar"), null, [live(L)]))) {
-				servants = rt.inc(live(servants), 1);
-				if ((truthy((rt.istype(live(L), T("/mob/living/carbon/human")) ? 1 : 0)) || truthy((rt.istype(live(L), T("/mob/living/silicon")) ? 1 : 0)))) {
-					validservants = rt.inc(live(validservants), 1);
+		unconverted_ais_exist = get_unconverted_ais();
+		for (L of each(GLOB.living_mob_list, T("/mob/living"))) {
+			if (is_servant_of_ratvar(L)) {
+				servants++;
+				if (rt.istype(L, T("/mob/living/carbon/human")) || rt.istype(L, T("/mob/living/silicon"))) {
+					validservants++;
 				}
 			}
 		}
-		rt.endFor(f, 0);
-		if (rt.gt(live(servants), 1)) {
-			if (rt.gt(live(validservants), 1)) {
-				textlist = rt.list(fmt("<b>＀</b> Servants, <b>＀</b> of which count towards scripture.<br>", [live(servants), live(validservants)]));
+		if (servants > 1) {
+			if (validservants > 1) {
+				textlist = list(`<b>${servants}</b> Servants, <b>${validservants}</b> of which count towards scripture.<br>`);
 			} else {
-				$0 = live(servants);
-				if (truthy(live(validservants))) {
-					$1 = fmt("<b>＀</b> of which counts", [live(validservants)]);
+				$0 = servants;
+				if (validservants) {
+					$1 = `<b>${validservants}</b> of which counts`;
 				} else {
 					$1 = "none of which count";
 				}
-				textlist = rt.list(fmt("<b>＀</b> Servants, ＀ towards scripture.<br>", [$0, $1]));
+				textlist = list(`<b>${$0}</b> Servants, ${$1} towards scripture.<br>`);
 			}
 		} else {
-			$0 = live(servants);
-			if (truthy(live(validservants))) {
-				$1 = "counts";
-			} else {
-				$1 = "does not count";
-			}
-			textlist = rt.list(fmt("<b>＀</b> Servant, who ＀ towards scripture.<br>", [$0, $1]));
+			$0 = servants;
+			textlist = list(`<b>${$0}</b> Servant, who ${validservants ? "counts" : "does not count"} towards scripture.<br>`);
 		}
-		if (truthy(rt.gl("clockwork_caches"))) {
-			$0 = fmt("＀</b> Tinkerer's Caches.", [rt.gl("clockwork_caches")]);
+		if (GLOB.clockwork_caches) {
+			$0 = `${GLOB.clockwork_caches}</b> Tinkerer's Caches.`;
 		} else {
 			$0 = "No Tinkerer's Caches, construct one!</b>";
 		}
-		textlist = rt.modify(live(textlist), fmt("<b>＀<br><b>＀</b> Construction Value.<br>", [$0, rt.gl("clockwork_construction_value")]), add);
-		textlist = rt.modify(live(textlist), fmt("<b>＀</b> Tinkerer's Daemons can be active at once. <b>＀</b> are active.<br>", [rt.call(f, P("/proc/Floor"), null, [multiply(live(servants), 0.20000000298023224)]), rt.length(rt.gl("active_daemons"))]), add);
-		G = null;
-		rt.forList(f, 0, rt.gl("all_clockwork_objects"), T("/obj/structure/destructible/clockwork/massive/celestial_gateway"));
+		textlist += `<b>${$0}<br><b>${GLOB.clockwork_construction_value}</b> Construction Value.<br>`;
+		textlist += `<b>${Floor(servants * 0.2)}</b> Tinkerer's Daemons can be active at once. <b>${rt.length(GLOB.active_daemons)}</b> are active.<br>`;
+		rt.forList(f, 0, GLOB.all_clockwork_objects, T("/obj/structure/destructible/clockwork/massive/celestial_gateway"));
 		if (($e = rt.next(f, 0)) !== undefined) {
 			G = $e;
-			textlist = rt.modify(live(textlist), fmt("Ark Location: <b>＀</b><br>", [rt.call(f, P("/proc/uppertext"), null, [rt.gv(f, "map_name", (gate_area = rt.call(f, P("/proc/get_area"), null, [live(G)])))])]), add);
-			if (truthy(rt.callName(f, live(G), "still_needs_components", []))) {
-				textlist = rt.modify(live(textlist), "Ark Components required: ", add);
-				i = null;
-				rt.forList(f, 1, rt.fv(f, "required_components", live(G)));
-				while (($e = rt.next(f, 1)) !== undefined) {
-					i = $e;
-					if (truthy(rt.index(rt.fv(f, "required_components", live(G)), live(i)))) {
-						textlist = rt.modify(live(textlist), fmt("<b><font color=＀>＀</font></b> ", [rt.call(f, P("/proc/get_component_color_bright"), null, [live(i)]), rt.index(rt.fv(f, "required_components", live(G)), live(i))]), add);
+			textlist += `Ark Location: <b>${uppertext((gate_area = get_area(G)).map_name)}</b><br>`;
+			if (G.still_needs_components()) {
+				textlist += "Ark Components required: ";
+				for (i of each(G.required_components)) {
+					if (rt.index(G.required_components, i)) {
+						textlist += `<b><font color=${get_component_color_bright(i)}>${rt.index(G.required_components, i)}</font></b> `;
 					}
 				}
-				rt.endFor(f, 1);
-				textlist = rt.modify(live(textlist), "<br>", add);
+				textlist += "<br>";
 			} else {
-				textlist = rt.modify(live(textlist), fmt("Seconds until Ratvar's arrival: <b>＀</b><br>", [rt.callName(f, live(G), "get_arrival_text", [1])]), add);
+				textlist += `Seconds until Ratvar's arrival: <b>${G.get_arrival_text(1)}</b><br>`;
 			}
 		}
 		rt.endFor(f, 0);
-		if (truthy(live(unconverted_ais_exist))) {
-			if (rt.gt(live(unconverted_ais_exist), 1)) {
-				textlist = rt.modify(live(textlist), fmt("<b>＀ unconverted AIs exist!</b><br>", [live(unconverted_ais_exist)]), add);
+		if (unconverted_ais_exist) {
+			if (unconverted_ais_exist > 1) {
+				textlist += `<b>${unconverted_ais_exist} unconverted AIs exist!</b><br>`;
 			} else {
-				textlist = rt.modify(live(textlist), "<b>An unconverted AI exists!</b><br>", add);
+				textlist += "<b>An unconverted AI exists!</b><br>";
 			}
 		}
-		i_4 = null;
-		rt.forList(f, 0, rt.fv(f, "scripture_states", rt.gl("SSticker")));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			i_4 = $e;
-			if (!isEqual(live(i_4), "Driver")) {
-				$0 = live(i_4);
-				if (truthy(rt.index(rt.fv(f, "scripture_states", rt.gl("SSticker")), live(i_4)))) {
-					$1 = "UNLOCKED";
-				} else {
-					$1 = "LOCKED";
-				}
-				textlist = rt.modify(live(textlist), fmt("＀ Scripture: <b>＀</b><br>", [$0, $1]), add);
+		for (i_4 of each(GLOB.SSticker.scripture_states)) {
+			if (i_4 != "Driver") {
+				textlist += `${i_4} Scripture: <b>${rt.index(GLOB.SSticker.scripture_states, i_4) ? "UNLOCKED" : "LOCKED"}</b><br>`;
 			}
 		}
-		rt.endFor(f, 0);
-		rt.setSv(f, "desc", rt.callName(f, live(textlist), "Join", []));
+		this.desc = textlist.Join();
 	}
-	rt.callSuper(f, [], rt.Args.Same);
+	parent_proc();
 	return f.dot;
-}, false, { args: ["location", "control", "params"] });
+}, false);
 
 rt.type(11058, "/obj/screen/alert/hackingapc", "/obj/screen/alert", {
 	target: null,
@@ -619,19 +564,18 @@ rt.type(11058, "/obj/screen/alert/hackingapc", "/obj/screen/alert", {
 	icon_state: "hackingapc",
 });
 
-// /obj/screen/alert/hackingapc/proc/Click  (code/_onclick/hud/alert.dm:557)  may sleep
+// alert.dm:557
 rt.def("/obj/screen/alert/hackingapc/proc/Click", function* Click(f: Frame) {
-	let AI: Value = null, _T: Value = null;
-	f.vars = () => [AI, _T];
-	if ((!truthy(live(f.usr)) || !truthy(rt.fv(f, "client", live(f.usr))))) {
-		return live(f.dot);
+	let _T: Value = null;
+	if (!f.usr || !f.usr.client) {
+		return f.dot;
 	}
-	if (!truthy(rt.sv(f, "target"))) {
-		return live(f.dot);
+	if (!this.target) {
+		return f.dot;
 	}
-	AI = live(f.usr);
-	if (!truthy((_T = rt.getStep(f, rt.sv(f, "target"), 0)))) return f.dot;
-	yield* g.callName(f, rt.fv(f, "eyeobj", live(AI)), "setLoc", [live(_T)]);
+	let AI: Value = f.usr;
+	if (!(_T = rt.getStep(f, this.target, 0))) return f.dot;
+	yield* AI.eyeobj.setLoc(_T);
 	return f.dot;
 }, true);
 
@@ -642,14 +586,13 @@ rt.type(11060, "/obj/screen/alert/notify_cloning", "/obj/screen/alert", {
 	icon_state: "template",
 });
 
-// /obj/screen/alert/notify_cloning/proc/Click  (code/_onclick/hud/alert.dm:581)  may sleep
+// alert.dm:581
 rt.def("/obj/screen/alert/notify_cloning/proc/Click", function* Click(f: Frame) {
 	let G: Value = null;
-	f.vars = () => [G];
-	if ((!truthy(live(f.usr)) || !truthy(rt.fv(f, "client", live(f.usr))))) {
-		return live(f.dot);
+	if (!f.usr || !f.usr.client) {
+		return f.dot;
 	}
-	yield* g.callName(f, (G = live(f.usr)), "reenter_corpse", []);
+	yield* (G = f.usr).reenter_corpse();
 	return f.dot;
 }, true);
 
@@ -662,147 +605,134 @@ rt.type(11061, "/obj/screen/alert/notify_action", "/obj/screen/alert", {
 	icon_state: "template",
 });
 
-// /obj/screen/alert/notify_action/proc/Click  (code/_onclick/hud/alert.dm:594)  may sleep
+// alert.dm:594
 rt.def("/obj/screen/alert/notify_action/proc/Click", function* Click(f: Frame) {
 	let G: Value = null, _T: Value = null;
-	let $0: any;
-	f.vars = () => [G, _T, $0];
-	if ((!truthy(live(f.usr)) || !truthy(rt.fv(f, "client", live(f.usr))))) {
-		return live(f.dot);
+	if (!f.usr || !f.usr.client) {
+		return f.dot;
 	}
-	if (!truthy(rt.sv(f, "target"))) {
-		return live(f.dot);
+	if (!this.target) {
+		return f.dot;
 	}
-	if (!truthy((rt.istype((G = live(f.usr)), T("/mob/dead/observer")) ? 1 : 0))) {
-		return live(f.dot);
+	if (!rt.istype((G = f.usr), T("/mob/dead/observer"))) {
+		return f.dot;
 	}
-	$0 = rt.sv(f, "action");
-	if ($0 === "attack") {
-		yield* g.callName(f, rt.sv(f, "target"), "attack_ghost", [live(G)]);
-	} else if ($0 === "jump") {
-		if ((truthy((_T = rt.getStep(f, rt.sv(f, "target"), 0))) && truthy((yield* g.call(f, P("/proc/isturf"), null, [live(_T)]))))) {
-			rt.setFv(f, "loc", live(G), live(_T));
+	if (this.action === "attack") {
+		yield* this.target.attack_ghost(G);
+	} else if (this.action === "jump") {
+		if ((_T = rt.getStep(f, this.target, 0)) && isturf(_T)) {
+			G.loc = _T;
 		}
-	} else if ($0 === "orbit") {
-		yield* g.callName(f, live(G), "ManualFollow", [rt.sv(f, "target")]);
+	} else if (this.action === "orbit") {
+		yield* G.ManualFollow(this.target);
 	}
 	return f.dot;
 }, true);
 
 rt.type(11062, "/obj/screen/alert/restrained", "/obj/screen/alert", {});
 
-// /obj/screen/alert/restrained/proc/Click  (code/_onclick/hud/alert.dm:623)  may sleep
+// alert.dm:623
 rt.def("/obj/screen/alert/restrained/proc/Click", function* Click(f: Frame) {
 	let L: Value = null;
-	f.vars = () => [L];
-	if (!truthy((rt.istype(live(f.usr), T("/mob/living")) ? 1 : 0))) return f.dot;
-	return (yield* g.callName(f, (L = live(f.usr)), "resist", []));
+	if (!rt.istype(f.usr, T("/mob/living"))) return f.dot;
+	return (yield* (L = f.usr).resist());
 }, true);
 
-// /datum/hud/proc/reorganize_alerts  (code/_onclick/hud/alert.dm:633)
+// alert.dm:633
 rt.def("/datum/hud/proc/reorganize_alerts", function reorganize_alerts(f: Frame) {
-	let alerts: Value = null, icon_pref: Value = null, i: Value = null, alert: Value = null;
-	let $0: any;
-	f.vars = () => [alerts, icon_pref, i, alert, $0];
-	alerts = rt.fv(f, "alerts", rt.sv(f, "mymob"));
-	icon_pref = null;
-	if (!truthy(rt.sv(f, "hud_shown"))) {
-		i = null;
+	let icon_pref: Value = null, i: Value = null, alert: Value = null;
+	let alerts: Value = this.mymob.alerts;
+	if (!this.hud_shown) {
 		i = 1;
-		while (rt.le(live(i), rt.len(f, live(alerts)))) {
-			(rt.modField(f, rt.fv(f, "client", rt.sv(f, "mymob")), "screen", rt.index(live(alerts), rt.index(live(alerts), live(i))), subtract));
-			i = rt.inc(live(i), 1);
+		while (i <= rt.len(f, alerts)) {
+			this.mymob.client.screen -= rt.index(alerts, rt.index(alerts, i));
+			i++;
 		}
 		return 1;
 	}
-	i = null;
 	i = 1;
-	while (rt.le(live(i), rt.len(f, live(alerts)))) {
-		if (isEqual(rt.gv(f, "icon_state", (alert = rt.index(live(alerts), rt.index(live(alerts), live(i))))), "template")) {
-			if (!truthy(live(icon_pref))) {
-				icon_pref = rt.call(f, P("/proc/ui_style2icon"), null, [rt.gv(f, "UI_style", rt.gv(f, "prefs", rt.fv(f, "client", rt.sv(f, "mymob"))))]);
+	while (i <= rt.len(f, alerts)) {
+		if ((alert = rt.index(alerts, rt.index(alerts, i))).icon_state == "template") {
+			if (!icon_pref) {
+				icon_pref = ui_style2icon(this.mymob.client.prefs.UI_style);
 			}
-			rt.setFv(f, "icon", live(alert), live(icon_pref));
+			alert.icon = icon_pref;
 		}
-		$0 = live(i);
-		if ($0 === 1) {
+		if (i === 1) {
 			f.dot = "EAST-1:28,CENTER+5:27";
-		} else if ($0 === 2) {
+		} else if (i === 2) {
 			f.dot = "EAST-1:28,CENTER+4:25";
-		} else if ($0 === 3) {
+		} else if (i === 3) {
 			f.dot = "EAST-1:28,CENTER+3:23";
-		} else if ($0 === 4) {
+		} else if (i === 4) {
 			f.dot = "EAST-1:28,CENTER+2:21";
-		} else if ($0 === 5) {
+		} else if (i === 5) {
 			f.dot = "EAST-1:28,CENTER+1:19";
 		} else {
 			f.dot = "";
 		}
-		rt.setFv(f, "screen_loc", live(alert), live(f.dot));
-		(rt.modField(f, rt.fv(f, "client", rt.sv(f, "mymob")), "screen", live(alert), rt.bitOr));
-		i = rt.inc(live(i), 1);
+		alert.screen_loc = f.dot;
+		(rt.modField(f, this.mymob.client, "screen", alert, rt.bitOr));
+		i++;
 	}
 	return 1;
 });
 
-// /mob/proc/<init>  (code/_onclick/hud/alert.dm:661)
+// alert.dm:661
 rt.def("/mob/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "alerts", rt.list());
-	$0 = $0;
-	rt.setSv(f, "screens", rt.list());
-	$0 = $0;
-	rt.setSv(f, "skincmds", rt.list());
-	$0 = $0;
-	rt.setSv(f, "client_colours", rt.list());
-	$0 = $0;
-	rt.setSv(f, "hud_possible", rt.list("15"));
-	$0 = $0;
-	rt.setSv(f, "actions", rt.list());
-	rt.setSv(f, "logging", rt.list("Attack log", "Say log", "Emote log", "OOC log"));
-	$0 = $0;
-	rt.setSv(f, "held_items", rt.list(null, null));
-	$0 = $0;
-	rt.setSv(f, "mapobjs", rt.list());
-	$0 = $0;
-	rt.setSv(f, "faction", rt.list("neutral"));
-	$0 = $0;
-	rt.setSv(f, "mob_spell_list", rt.list());
-	$0 = $0;
-	rt.setSv(f, "viruses", rt.list());
-	$0 = $0;
-	rt.setSv(f, "resistances", rt.list());
-	$0 = $0;
-	rt.setSv(f, "permanent_huds", rt.list());
-	$0 = $0;
-	rt.setSv(f, "can_ride_typecache", rt.list());
-	$0 = $0;
-	rt.setSv(f, "open_uis", rt.list());
+	parent_proc();
+	this.alerts = list();
+
+	this.screens = list();
+
+	this.skincmds = list();
+
+	this.client_colours = list();
+
+	this.hud_possible = list("15");
+
+	this.actions = list();
+	this.logging = list("Attack log", "Say log", "Emote log", "OOC log");
+
+	this.held_items = list(null, null);
+
+	this.mapobjs = list();
+
+	this.faction = list("neutral");
+
+	this.mob_spell_list = list();
+
+	this.viruses = list();
+
+	this.resistances = list();
+
+	this.permanent_huds = list();
+
+	this.can_ride_typecache = list();
+
+	this.open_uis = list();
 	return f.dot;
 });
 
-// /obj/screen/alert/proc/Click  (code/_onclick/hud/alert.dm:664)  may sleep
+// alert.dm:664
 rt.def("/obj/screen/alert/proc/Click", function* Click(f: Frame, location: Value, control: Value, params: Value) {
 	let paramslist: Value = null;
-	f.vars = () => [location, control, params, paramslist];
-	if ((!truthy(live(f.usr)) || !truthy(rt.fv(f, "client", live(f.usr))))) {
-		return live(f.dot);
+	if (!f.usr || !f.usr.client) {
+		return f.dot;
 	}
-	if (truthy(rt.index((paramslist = (yield* g.call(f, P("/proc/params2list"), null, [live(params)]))), "shift"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), fmt("<span class='boldnotice'>＀</span> - <span class='info'>＀</span>", [rt.sv(f, "name"), rt.sv(f, "desc")])]);
-		return live(f.dot);
+	if (rt.index((paramslist = params2list(params)), "shift")) {
+		to_chat(f.usr, `<span class='boldnotice'>${this.name}</span> - <span class='info'>${this.desc}</span>`);
+		return f.dot;
 	}
-	if (!truthy(rt.sv(f, "master"))) return f.dot;
-	return (yield* g.callName(f, rt.fv(f, "client", live(f.usr)), "Click", [rt.sv(f, "master"), live(location), live(control), live(params)]));
+	if (!this.master) return f.dot;
+	return (yield* f.usr.client.Click(this.master, location, control, params));
 }, true);
 
-// /obj/screen/alert/proc/Destroy  (code/_onclick/hud/alert.dm:674)  may sleep
+// alert.dm:674
 rt.def("/obj/screen/alert/proc/Destroy", function* Destroy(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "severity", 0);
-	rt.setSv(f, "master", null);
-	rt.setSv(f, "screen_loc", "");
+	f.dot = (yield* parent_proc());
+	this.severity = 0;
+	this.master = null;
+	this.screen_loc = "";
 	return f.dot;
 }, true);

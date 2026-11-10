@@ -1,5 +1,5 @@
 // Types declared in code/modules/mob/living/simple_animal/hostile that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(4905, "/mob/living/simple_animal/hostile/carp/holocarp", "/mob/living/simple_animal/hostile/carp", {
 	icon_state: "holocarp",

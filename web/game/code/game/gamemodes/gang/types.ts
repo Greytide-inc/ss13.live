@@ -1,5 +1,5 @@
 // Types declared in code/game/gamemodes/gang that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(1253, "/datum/gang_item/clothing", "/datum/gang_item", {
 	category: "Purchase Influence-Enhancing Clothes:",

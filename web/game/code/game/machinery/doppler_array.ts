@@ -1,13 +1,13 @@
-// From code/game/machinery/doppler_array.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/machinery/doppler_array.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
-// /datum/controller/global_vars/proc/InitGlobaldoppler_arrays  (code/game/machinery/doppler_array.dm:1)
+// doppler_array.dm:1
 rt.def("/datum/controller/global_vars/proc/InitGlobaldoppler_arrays", function InitGlobaldoppler_arrays(f: Frame) {
-	rt.setGl("doppler_arrays", rt.list());
-	rt.modSrcVar(f, "gvars_datum_init_order", "doppler_arrays", add);
+	GLOB.doppler_arrays = list();
+	this.gvars_datum_init_order += "doppler_arrays";
 	return f.dot;
 });
 
@@ -23,118 +23,108 @@ rt.type(10788, "/obj/machinery/doppler_array", "/obj/machinery", {
 	density: 1,
 });
 
-// /obj/machinery/doppler_array/proc/New  (code/game/machinery/doppler_array.dm:15)  may sleep
+// doppler_array.dm:15
 rt.def("/obj/machinery/doppler_array/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.modGl("doppler_arrays", live(f.src), add);
+	yield* parent_proc();
+	GLOB.doppler_arrays += this;
 	return f.dot;
 }, true);
 
-// /obj/machinery/doppler_array/proc/Destroy  (code/game/machinery/doppler_array.dm:19)  may sleep
+// doppler_array.dm:19
 rt.def("/obj/machinery/doppler_array/proc/Destroy", function* Destroy(f: Frame) {
-	(rt.modGl("doppler_arrays", live(f.src), subtract));
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	GLOB.doppler_arrays -= this;
+	return (yield* parent_proc());
 }, true);
 
-// /obj/machinery/doppler_array/proc/attackby  (code/game/machinery/doppler_array.dm:26)  may sleep
-rt.def("/obj/machinery/doppler_array/proc/attackby", function* attackby(f: Frame) {
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/wrench")) ? 1 : 0))) {
-		if ((!truthy(rt.sv(f, "anchored")) && !truthy((yield* g.srcCall(f, "isinspace"))))) {
-			rt.setSv(f, "anchored", 1);
-			yield* g.srcCall(f, "power_change");
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You fasten ＀.</span>", [live(f.src)])]);
-		} else {
-			if (truthy(rt.sv(f, "anchored"))) {
-				rt.setSv(f, "anchored", 0);
-				yield* g.srcCall(f, "power_change");
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You unfasten ＀.</span>", [live(f.src)])]);
-			}
+// doppler_array.dm:26
+rt.def("/obj/machinery/doppler_array/proc/attackby", function* attackby(f: Frame, O: Value, user: Value, params: Value) {
+	if (rt.istype(O, T("/obj/item/weapon/wrench"))) {
+		if (!this.anchored && !this.isinspace()) {
+			this.anchored = 1;
+			yield* this.power_change();
+			to_chat(user, `<span class='notice'>You fasten ${this}.</span>`);
+		} else if (this.anchored) {
+			this.anchored = 0;
+			yield* this.power_change();
+			to_chat(user, `<span class='notice'>You unfasten ${this}.</span>`);
 		}
-		yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.fv(f, "usesound", live(f.args[0])), 50, 1]);
+		playsound(this.loc, O.usesound, 50, 1);
 	} else {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["O", "user", "params"] });
+}, true);
 
-// /obj/machinery/doppler_array/verb/rotate  (code/game/machinery/doppler_array.dm:44)
+// doppler_array.dm:44
 rt.def("/obj/machinery/doppler_array/verb/rotate", function rotate(f: Frame) {
-	if ((!truthy(live(f.usr)) || !truthy(rt.call(f, P("/proc/isturf"), null, [rt.fv(f, "loc", live(f.usr))])))) {
-		return live(f.dot);
+	if (!f.usr || !isturf(f.usr.loc)) {
+		return f.dot;
 	}
-	if (((truthy(rt.fv(f, "stat", live(f.usr))) || truthy(rt.callName(f, live(f.usr), "restrained", []))) || !truthy(rt.fv(f, "canmove", live(f.usr))))) {
-		return live(f.dot);
+	if (f.usr.stat || f.usr.restrained() || !f.usr.canmove) {
+		return f.dot;
 	}
-	rt.callName(f, live(f.src), "setDir", [rt.call(f, P("/proc/turn"), null, [rt.fv(f, "dir", live(f.src)), 90])]);
-	return live(f.dot);
+	this.setDir(turn(this.dir, 90));
+	return f.dot;
 }, false, { verb: { name: "Rotate Tachyon-doppler Dish", category: "Object", src: 3, range: 1 } });
 
-// /obj/machinery/doppler_array/proc/AltClick  (code/game/machinery/doppler_array.dm:52)
+// doppler_array.dm:52
 rt.def("/obj/machinery/doppler_array/proc/AltClick", function AltClick(f: Frame, user: Value) {
-	if ((!truthy((rt.istype(live(user), T("/mob/living")) ? 1 : 0)) || truthy(rt.callName(f, live(user), "incapacitated", [])))) {
-		rt.call(f, P("/proc/to_chat"), null, [live(user), "<span class='warning'>You can't do that right now!</span>"]);
-		return live(f.dot);
+	if (!rt.istype(user, T("/mob/living")) || user.incapacitated()) {
+		to_chat(user, "<span class='warning'>You can't do that right now!</span>");
+		return f.dot;
 	}
-	if (!rt.le(rt.call(f, P("/proc/get_dist"), null, [live(f.src), live(user)]), 1)) {
-		return live(f.dot);
+	if (!(get_dist(this, user) <= 1)) {
+		return f.dot;
 	} else {
-		rt.callSrc(f, "rotate", []);
+		this.rotate();
 	}
 	return f.dot;
 });
 
-// /obj/machinery/doppler_array/proc/sense_explosion  (code/game/machinery/doppler_array.dm:62)  may sleep
+// doppler_array.dm:62
 rt.def("/obj/machinery/doppler_array/proc/sense_explosion", function* sense_explosion(f: Frame, epicenter: Value, devastation_range: Value, heavy_impact_range: Value, light_impact_range: Value, took: Value, orig_dev_range: Value, orig_heavy_range: Value, orig_light_range: Value) {
-	let zone: Value = null, distance: Value = null, direct: Value = null, messages: Value = null, helm: Value = null, message: Value = null;
-	let $e: any;
-	f.vars = () => [epicenter, devastation_range, heavy_impact_range, light_impact_range, took, orig_dev_range, orig_heavy_range, orig_light_range, zone, distance, direct, messages, helm, message, $e];
-	if (truthy(rt.bitAnd(rt.sv(f, "stat"), 2))) {
-		return live(f.dot);
+	let zone: Value = null, helm: Value = null, message: Value = null;
+	if (rt.bitAnd(this.stat, 2)) {
+		return f.dot;
 	}
-	if (!isEqual(rt.gv(f, "z", (zone = rt.getStep(f, live(f.src), 0))), rt.fv(f, "z", live(epicenter)))) {
-		return live(f.dot);
+	if ((zone = rt.getStep(f, this, 0)).z != epicenter.z) {
+		return f.dot;
 	}
-	distance = (yield* g.call(f, P("/proc/get_dist"), null, [live(epicenter), live(zone)]));
-	direct = rt.getDir(f, live(zone), live(epicenter));
-	if (rt.gt(live(distance), rt.sv(f, "max_dist"))) {
-		return live(f.dot);
+	let distance: Value = get_dist(epicenter, zone);
+	let direct: Value = rt.getDir(f, zone, epicenter);
+	if (distance > this.max_dist) {
+		return f.dot;
 	}
-	if ((!truthy(rt.bitAnd(live(direct), rt.sv(f, "dir"))) && !truthy(rt.sv(f, "integrated")))) {
-		return live(f.dot);
+	if (!rt.bitAnd(direct, this.dir) && !this.integrated) {
+		return f.dot;
 	}
-	messages = rt.list("Explosive disturbance detected.", fmt("Epicenter at: grid (＀,＀). Temporal displacement of tachyons: ＀ seconds.", [rt.fv(f, "x", live(epicenter)), rt.fv(f, "y", live(epicenter)), live(took)]), fmt("Factual: Epicenter radius: ＀. Outer radius: ＀. Shockwave radius: ＀.", [live(devastation_range), live(heavy_impact_range), live(light_impact_range)]));
-	if (((rt.lt(live(devastation_range), live(orig_dev_range)) || rt.lt(live(heavy_impact_range), live(orig_heavy_range))) || rt.lt(live(light_impact_range), live(orig_light_range)))) {
-		messages = rt.modify(live(messages), fmt("Theoretical: Epicenter radius: ＀. Outer radius: ＀. Shockwave radius: ＀.", [live(orig_dev_range), live(orig_heavy_range), live(orig_light_range)]), add);
+	let messages: Value = list("Explosive disturbance detected.", `Epicenter at: grid (${epicenter.x},${epicenter.y}). Temporal displacement of tachyons: ${took} seconds.`, `Factual: Epicenter radius: ${devastation_range}. Outer radius: ${heavy_impact_range}. Shockwave radius: ${light_impact_range}.`);
+	if (devastation_range < orig_dev_range || heavy_impact_range < orig_heavy_range || light_impact_range < orig_light_range) {
+		messages += `Theoretical: Epicenter radius: ${orig_dev_range}. Outer radius: ${orig_heavy_range}. Shockwave radius: ${orig_light_range}.`;
 	}
-	if (truthy(rt.sv(f, "integrated"))) {
-		if ((!truthy((helm = rt.sv(f, "loc"))) || !truthy((rt.istype(live(helm), T("/obj/item/clothing/head/helmet/space/hardsuit")) ? 1 : 0)))) {
-			return live(f.dot);
+	if (this.integrated) {
+		if (!(helm = this.loc) || !rt.istype(helm, T("/obj/item/clothing/head/helmet/space/hardsuit"))) {
+			return f.dot;
 		}
-		yield* g.callName(f, live(helm), "display_visor_message", [fmt("Explosion detected! Epicenter: ＀, Outer: ＀, Shock: ＀", [live(devastation_range), live(heavy_impact_range), live(light_impact_range)])]);
+		helm.display_visor_message(`Explosion detected! Epicenter: ${devastation_range}, Outer: ${heavy_impact_range}, Shock: ${light_impact_range}`);
 	} else {
-		message = null;
-		rt.forList(f, 0, live(messages));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			message = $e;
-			yield* g.srcCall(f, "say", live(message));
+		for (message of each(messages)) {
+			yield* this.say(message);
 		}
-		rt.endFor(f, 0);
 	}
 	return f.dot;
 }, true);
 
-// /obj/machinery/doppler_array/proc/power_change  (code/game/machinery/doppler_array.dm:96)
+// doppler_array.dm:96
 rt.def("/obj/machinery/doppler_array/proc/power_change", function power_change(f: Frame) {
-	if (truthy(rt.bitAnd(rt.sv(f, "stat"), 1))) {
-		rt.setSv(f, "icon_state", fmt("＀-broken", [rt.initial(f, live(f.src), "icon_state")]));
+	if (rt.bitAnd(this.stat, 1)) {
+		this.icon_state = `${rt.initial(f, this, "icon_state")}-broken`;
+	} else if (this.powered() && this.anchored) {
+		this.icon_state = rt.initial(f, this, "icon_state");
+		(rt.modSrcVar(f, "stat", 16777213, rt.bitAnd));
 	} else {
-		if ((truthy(rt.callSrc(f, "powered", [])) && truthy(rt.sv(f, "anchored")))) {
-			rt.setSv(f, "icon_state", rt.initial(f, live(f.src), "icon_state"));
-			(rt.modSrcVar(f, "stat", 16777213, rt.bitAnd));
-		} else {
-			rt.setSv(f, "icon_state", fmt("＀-off", [rt.initial(f, live(f.src), "icon_state")]));
-			(rt.modSrcVar(f, "stat", 2, rt.bitOr));
-		}
+		this.icon_state = `${rt.initial(f, this, "icon_state")}-off`;
+		(rt.modSrcVar(f, "stat", 2, rt.bitOr));
 	}
 	return f.dot;
 });

@@ -1,7 +1,7 @@
-// From code/modules/events/electrical_storm.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/events/electrical_storm.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(300, "/datum/round_event/electrical_storm", "/datum/round_event", {
@@ -10,53 +10,40 @@ rt.type(300, "/datum/round_event/electrical_storm", "/datum/round_event", {
 	announceWhen: 1,
 });
 
-// /datum/round_event/electrical_storm/proc/announce  (code/modules/events/electrical_storm.dm:15)  may sleep
+// electrical_storm.dm:15
 rt.def("/datum/round_event/electrical_storm/proc/announce", function* announce(f: Frame) {
-	yield* g.call(f, P("/proc/priority_announce"), null, ["An electrical storm has been detected in your area, please repair potential electronic overloads.", "Electrical Storm Alert"]);
+	yield* priority_announce("An electrical storm has been detected in your area, please repair potential electronic overloads.", "Electrical Storm Alert");
 	return f.dot;
 }, true);
 
-// /datum/round_event/electrical_storm/proc/start  (code/modules/events/electrical_storm.dm:19)  may sleep
+// electrical_storm.dm:19
 rt.def("/datum/round_event/electrical_storm/proc/start", function* start(f: Frame) {
-	let epicentreList: Value = null, i: Value = null, possibleEpicentres: Value = null, newEpicentre: Value = null, epicentre: Value = null, apc: Value = null;
-	let $e: any;
-	f.vars = () => [epicentreList, i, possibleEpicentres, newEpicentre, epicentre, apc, $e];
-	epicentreList = rt.list();
-	i = null;
-	i = 1;
-	while (rt.le(live(i), rt.sv(f, "lightsoutAmount"))) {
-		possibleEpicentres = rt.list();
+	let possibleEpicentres: Value = null, newEpicentre: Value = null, epicentre: Value = null, apc: Value = null;
+	let epicentreList: Value = list();
+	let i: Value = 1;
+	while (i <= this.lightsoutAmount) {
+		possibleEpicentres = list();
 		newEpicentre = null;
-		rt.forList(f, 0, rt.gl("landmarks_list"), T("/obj/effect/landmark"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			newEpicentre = $e;
-			if ((isEqual(rt.fv(f, "name", live(newEpicentre)), "lightsout") && !truthy((rt.isIn(f, live(newEpicentre), live(epicentreList)) ? 1 : 0)))) {
-				possibleEpicentres = rt.modify(live(possibleEpicentres), live(newEpicentre), add);
+		for (newEpicentre of each(GLOB.landmarks_list, T("/obj/effect/landmark"))) {
+			if (newEpicentre.name == "lightsout" && !rt.isIn(f, newEpicentre, epicentreList)) {
+				possibleEpicentres += newEpicentre;
 			}
 		}
-		rt.endFor(f, 0);
-		if (truthy(rt.len(f, live(possibleEpicentres)))) {
-			epicentreList = rt.modify(live(epicentreList), rt.op(f, "PickUnweighted", [1], [live(possibleEpicentres)]), add);
+		if (rt.len(f, possibleEpicentres)) {
+			epicentreList += pick(possibleEpicentres);
 		} else {
 			break;
 		}
-		i = rt.inc(live(i), 1);
+		i++;
 	}
-	if (!truthy(rt.len(f, live(epicentreList)))) {
-		return live(f.dot);
+	if (!rt.len(f, epicentreList)) {
+		return f.dot;
 	}
-	epicentre = null;
-	rt.forList(f, 0, live(epicentreList), T("/obj/effect/landmark"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		epicentre = $e;
+	for (epicentre of each(epicentreList, T("/obj/effect/landmark"))) {
 		apc = null;
-		rt.forList(f, 1, (yield* g.call(f, P("/proc/urange"), null, [rt.sv(f, "lightsoutRange"), live(epicentre)])), T("/obj/machinery/power/apc"));
-		while (($e = rt.next(f, 1)) !== undefined) {
-			apc = $e;
-			yield* g.callName(f, live(apc), "overload_lighting", []);
+		for (apc of each(urange(this.lightsoutRange, epicentre), T("/obj/machinery/power/apc"))) {
+			yield* apc.overload_lighting();
 		}
-		rt.endFor(f, 1);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);

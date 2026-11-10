@@ -1,5 +1,5 @@
 // Types declared in code/game/gamemodes/clock_cult that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(1226, "/datum/clockwork_scripture/ranged_ability/judicial_marker", "/datum/clockwork_scripture/ranged_ability", {
 	name: "Judicial Marker",

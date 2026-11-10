@@ -1,7 +1,7 @@
-// From code/modules/stock_market/computer.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/stock_market/computer.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, g, fmt } = rt;
 
 
 rt.type(10436, "/obj/machinery/computer/stockexchange", "/obj/machinery/computer", {
@@ -17,428 +17,374 @@ rt.type(10436, "/obj/machinery/computer/stockexchange", "/obj/machinery/computer
 	icon_state: "oldcomp",
 });
 
-// /obj/machinery/computer/stockexchange/proc/New  (code/modules/stock_market/computer.dm:15)  may sleep
+// computer.dm:15
 rt.def("/obj/machinery/computer/stockexchange/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "logged_in", fmt("＀ Cargo Department", [(yield* g.call(f, P("/proc/station_name"), null, []))]));
+	yield* parent_proc();
+	this.logged_in = `${station_name()} Cargo Department`;
 	return f.dot;
 }, true);
 
-// /obj/machinery/computer/stockexchange/proc/balance  (code/modules/stock_market/computer.dm:19)
+// computer.dm:19
 rt.def("/obj/machinery/computer/stockexchange/proc/balance", function balance(f: Frame) {
-	if (!truthy(rt.sv(f, "logged_in"))) {
+	if (!this.logged_in) {
 		return 0;
 	}
-	return rt.fv(f, "points", rt.gl("SSshuttle"));
+	return GLOB.SSshuttle.points;
 });
 
-// /obj/machinery/computer/stockexchange/proc/attack_ai  (code/modules/stock_market/computer.dm:24)  may sleep
+// computer.dm:24
 rt.def("/obj/machinery/computer/stockexchange/proc/attack_ai", function* attack_ai(f: Frame, user: Value) {
-	f.vars = () => [user];
-	return (yield* g.srcCall(f, "attack_hand", live(user)));
+	return (yield* this.attack_hand(user));
 }, true);
 
-// /obj/machinery/computer/stockexchange/proc/attack_robot  (code/modules/stock_market/computer.dm:27)  may sleep
+// computer.dm:27
 rt.def("/obj/machinery/computer/stockexchange/proc/attack_robot", function* attack_robot(f: Frame, user: Value) {
-	f.vars = () => [user];
-	return (yield* g.srcCall(f, "attack_hand", live(user)));
+	return (yield* this.attack_hand(user));
 }, true);
 
-// /obj/machinery/computer/stockexchange/proc/attack_hand  (code/modules/stock_market/computer.dm:30)  may sleep
-rt.def("/obj/machinery/computer/stockexchange/proc/attack_hand", function* attack_hand(f: Frame) {
-	let css: Value = null, dat: Value = null, S: Value = null, LR: Value = null, mystocks: Value = null, prod: Value = null, news: Value = null, LR_5: Value = null, lrt: Value = null, A: Value = null, E: Value = null, popup: Value = null;
-	let $0: any, $1: any, $2: any, $e: any;
-	f.vars = () => [css, dat, S, LR, mystocks, prod, news, LR_5, lrt, A, E, popup, $0, $1, $2, $e];
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		return live(f.dot);
+// computer.dm:30
+rt.def("/obj/machinery/computer/stockexchange/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
+	let S: Value = null, LR: Value = null, mystocks: Value = null, prod: Value = null, news: Value = null, LR_5: Value = null, lrt: Value = null, A: Value = null, E: Value = null, popup: Value = null;
+	let $1: any, $2: any, $e: any;
+	if (yield* parent_proc()) {
+		return f.dot;
 	}
-	rt.setFv(f, "machine", live(f.args[0]), live(f.src));
-	css = "<style>\n.change {\n\tfont-weight: bold;\n\tfont-family: monospace;\n}\n.up {\n\tbackground: #00a000;\n}\n.down {\n\tbackground: #a00000;\n}\n.stable {\n\twidth: 100%\n\tborder-collapse: collapse;\n\tborder: 1px solid #305260;\n\tborder-spacing: 4px 4px;\n}\n.stable td, .stable th {\n\tborder: 1px solid #305260;\n\tpadding: 0px 3px;\n}\n.bankrupt {\n\tborder: 1px solid #a00000;\n\tbackground: #a00000;\n}\n\na.updated {\n\tcolor: red;\n}\n</style>";
-	dat = fmt("<html><head><title>＀ Stock Exchange</title>＀</head><body>", [(yield* g.call(f, P("/proc/station_name"), null, [])), live(css)]);
-	dat = rt.modify(live(dat), fmt("<span class='user'>Welcome, <b>＀</b></span><br><span class='balance'><b>Credits:</b> ＀ </span><br>", [rt.sv(f, "logged_in"), (yield* g.srcCall(f, "balance"))]), add);
-	S = null;
-	rt.forList(f, 0, rt.fv(f, "last_read", rt.gl("stockExchange")), T("/datum/stock"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		S = $e;
-		LR = rt.index(rt.fv(f, "last_read", rt.gl("stockExchange")), live(S));
-		if (!truthy((rt.isIn(f, rt.sv(f, "logged_in"), live(LR)) ? 1 : 0))) {
-			rt.setAt(live(LR), rt.sv(f, "logged_in"), 0);
+	user.machine = this;
+	let css: Value = "<style>\n.change {\n\tfont-weight: bold;\n\tfont-family: monospace;\n}\n.up {\n\tbackground: #00a000;\n}\n.down {\n\tbackground: #a00000;\n}\n.stable {\n\twidth: 100%\n\tborder-collapse: collapse;\n\tborder: 1px solid #305260;\n\tborder-spacing: 4px 4px;\n}\n.stable td, .stable th {\n\tborder: 1px solid #305260;\n\tpadding: 0px 3px;\n}\n.bankrupt {\n\tborder: 1px solid #a00000;\n\tbackground: #a00000;\n}\n\na.updated {\n\tcolor: red;\n}\n</style>";
+	let dat: Value = `<html><head><title>${station_name()} Stock Exchange</title>${css}</head><body>`;
+	dat += `<span class='user'>Welcome, <b>${this.logged_in}</b></span><br><span class='balance'><b>Credits:</b> ${this.balance()} </span><br>`;
+	for (S of each(GLOB.stockExchange.last_read, T("/datum/stock"))) {
+		LR = rt.index(GLOB.stockExchange.last_read, S);
+		if (!rt.isIn(f, this.logged_in, LR)) {
+			rt.setAt(LR, this.logged_in, 0);
 		}
 	}
-	rt.endFor(f, 0);
-	$0 = live(f.src);
-	if (truthy(rt.sv(f, "vmode"))) {
-		$1 = "Compact";
-	} else {
-		$1 = "Full";
-	}
-	dat = rt.modify(live(dat), fmt("<b>View mode:</b> <a href='?src=＃;cycleview=1'>＀</a> ", [$0, $1]), add);
-	dat = rt.modify(live(dat), fmt("<b>Stock Transaction Log:</b> <a href='?src=＃;show_logs=1'>Check</a><br>", [live(f.src)]), add);
-	dat = rt.modify(live(dat), "<i>This is a work in progress. Certain features may not be available.</i>", add);
-	dat = rt.modify(live(dat), "<h3>Listed stocks</h3>", add);
-	if (isEqual(rt.sv(f, "vmode"), 0)) {
+	let $0: any = this;
+	dat += fmt("<b>View mode:</b> <a href='?src=＃;cycleview=1'>＀</a> ", [$0, this.vmode ? "Compact" : "Full"]);
+	dat += fmt("<b>Stock Transaction Log:</b> <a href='?src=＃;show_logs=1'>Check</a><br>", [this]);
+	dat += "<i>This is a work in progress. Certain features may not be available.</i>";
+	dat += "<h3>Listed stocks</h3>";
+	if (this.vmode == 0) {
 		S = null;
-		rt.forList(f, 0, rt.fv(f, "stocks", rt.gl("stockExchange")), T("/datum/stock"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			S = $e;
+		for (S of each(GLOB.stockExchange.stocks, T("/datum/stock"))) {
 			mystocks = 0;
-			if ((truthy(rt.sv(f, "logged_in")) && truthy((rt.isIn(f, rt.sv(f, "logged_in"), rt.fv(f, "shareholders", live(S))) ? 1 : 0)))) {
-				mystocks = rt.index(rt.fv(f, "shareholders", live(S)), rt.sv(f, "logged_in"));
+			if (this.logged_in && rt.isIn(f, this.logged_in, S.shareholders)) {
+				mystocks = rt.index(S.shareholders, this.logged_in);
 			}
-			$0 = rt.fv(f, "name", live(S));
-			$1 = rt.fv(f, "short_name", live(S));
-			if (truthy(rt.fv(f, "bankrupt", live(S)))) {
+			$0 = S.name;
+			$1 = S.short_name;
+			if (S.bankrupt) {
 				$2 = " <b style='color:red'>BANKRUPT</b>";
 			} else {
 				$2 = null;
 			}
-			dat = rt.modify(live(dat), fmt("<hr /><div class='stock'><span class='company'>＀</span> <span class='s_company'>(＀)</span>＀<br>", [$0, $1, $2]), add);
-			if (truthy(rt.fv(f, "last_unification", live(S)))) {
-				dat = rt.modify(live(dat), fmt("<b>Unified shares</b> ＀ minutes ago.<br>", [divide(subtract(rt.worldTime(f), rt.fv(f, "last_unification", live(S))), 600)]), add);
+			dat += `<hr /><div class='stock'><span class='company'>${$0}</span> <span class='s_company'>(${$1})</span>${$2}<br>`;
+			if (S.last_unification) {
+				dat += `<b>Unified shares</b> ${(rt.worldTime(f) - S.last_unification) / 600} minutes ago.<br>`;
 			}
-			dat = rt.modify(live(dat), fmt("<b>Current value per share:</b> ＀ | <a href='?src=＃;viewhistory=＃'>View history</a><br><br>", [rt.fv(f, "current_value", live(S)), live(f.src), live(S)]), add);
-			dat = rt.modify(live(dat), fmt("You currently own <b>＀</b> shares in this company. There are ＀ purchasable shares on the market currently.<br>", [live(mystocks), rt.fv(f, "available_shares", live(S))]), add);
-			if (truthy(rt.fv(f, "bankrupt", live(S)))) {
-				dat = rt.modify(live(dat), "You cannot buy or sell shares in a bankrupt company!<br><br>", add);
+			dat += fmt("<b>Current value per share:</b> ＀ | <a href='?src=＃;viewhistory=＃'>View history</a><br><br>", [S.current_value, this, S]);
+			dat += `You currently own <b>${mystocks}</b> shares in this company. There are ${S.available_shares} purchasable shares on the market currently.<br>`;
+			if (S.bankrupt) {
+				dat += "You cannot buy or sell shares in a bankrupt company!<br><br>";
 			} else {
-				dat = rt.modify(live(dat), fmt("<a href='?src=＃;buyshares=＃'>Buy shares</a> | <a href='?src=＃;sellshares=＃'>Sell shares</a><br><br>", [live(f.src), live(S), live(f.src), live(S)]), add);
+				dat += fmt("<a href='?src=＃;buyshares=＃'>Buy shares</a> | <a href='?src=＃;sellshares=＃'>Sell shares</a><br><br>", [this, S, this, S]);
 			}
-			dat = rt.modify(live(dat), "<b>Prominent products:</b><br>", add);
+			dat += "<b>Prominent products:</b><br>";
 			prod = null;
-			rt.forList(f, 1, rt.fv(f, "products", live(S)));
-			while (($e = rt.next(f, 1)) !== undefined) {
-				prod = $e;
-				dat = rt.modify(live(dat), fmt("<i>＀</i><br>", [live(prod)]), add);
+			for (prod of each(S.products)) {
+				dat += `<i>${prod}</i><br>`;
 			}
-			rt.endFor(f, 1);
 			news = 0;
-			if (truthy(rt.sv(f, "logged_in"))) {
-				LR_5 = rt.index(rt.fv(f, "last_read", rt.gl("stockExchange")), live(S));
-				lrt = rt.index(live(LR_5), rt.sv(f, "logged_in"));
+			if (this.logged_in) {
+				LR_5 = rt.index(GLOB.stockExchange.last_read, S);
+				lrt = rt.index(LR_5, this.logged_in);
 				A = null;
-				rt.forList(f, 1, rt.fv(f, "articles", live(S)), T("/datum/article"));
-				while (($e = rt.next(f, 1)) !== undefined) {
-					A = $e;
-					if (rt.gt(rt.fv(f, "ticks", live(A)), live(lrt))) {
+				for (A of each(S.articles, T("/datum/article"))) {
+					if (A.ticks > lrt) {
 						news = 1;
 						break;
 					}
 				}
-				rt.endFor(f, 1);
-				if (!truthy(live(news))) {
+				if (!news) {
 					E = null;
-					rt.forList(f, 1, rt.fv(f, "events", live(S)), T("/datum/stockEvent"));
-					while (($e = rt.next(f, 1)) !== undefined) {
-						E = $e;
-						if ((rt.gt(rt.fv(f, "last_change", live(E)), live(lrt)) && !truthy(rt.fv(f, "hidden", live(E))))) {
+					for (E of each(S.events, T("/datum/stockEvent"))) {
+						if (E.last_change > lrt && !E.hidden) {
 							news = 1;
 							break;
 						}
 					}
-					rt.endFor(f, 1);
 				}
 			}
-			$0 = live(f.src);
-			$1 = live(S);
-			if (truthy(live(news))) {
-				$1 = $1;
+			$0 = this;
+			$1 = S;
+			if (news) {
+
 				$2 = " <span style='color:red'>(updated)</span>";
 			} else {
 				$2 = null;
 			}
-			dat = rt.modify(live(dat), fmt("<a href='?src=＃;archive=＃'>View news archives</a>＀</div>", [$0, $1, $2]), add);
+			dat += fmt("<a href='?src=＃;archive=＃'>View news archives</a>＀</div>", [$0, $1, $2]);
 		}
-		rt.endFor(f, 0);
-	} else {
-		if (isEqual(rt.sv(f, "vmode"), 1)) {
-			dat = rt.modify(live(dat), "<b>Actions:</b> + Buy, - Sell, (A)rchives, (H)istory<br><br>", add);
-			dat = rt.modify(live(dat), "<table class='stable'>", add);
-			dat = rt.modify(live(dat), "<tr><th>&nbsp;</th><th>ID</th><th>Name</th><th>Value</th><th>Owned</th><th>Avail</th><th>Actions</th></tr>", add);
-			S = null;
-			rt.forList(f, 0, rt.fv(f, "stocks", rt.gl("stockExchange")), T("/datum/stock"));
-			while (($e = rt.next(f, 0)) !== undefined) {
-				S = $e;
-				mystocks = 0;
-				if ((truthy(rt.sv(f, "logged_in")) && truthy((rt.isIn(f, rt.sv(f, "logged_in"), rt.fv(f, "shareholders", live(S))) ? 1 : 0)))) {
-					mystocks = rt.index(rt.fv(f, "shareholders", live(S)), rt.sv(f, "logged_in"));
-				}
-				if (truthy(rt.fv(f, "bankrupt", live(S)))) {
-					dat = rt.modify(live(dat), "<tr class='bankrupt'>", add);
-				} else {
-					dat = rt.modify(live(dat), "<tr>", add);
-				}
-				if (rt.gt(rt.fv(f, "disp_value_change", live(S)), 0)) {
-					dat = rt.modify(live(dat), "<td class='change up'>+</td>", add);
-				} else {
-					if (rt.lt(rt.fv(f, "disp_value_change", live(S)), 0)) {
-						dat = rt.modify(live(dat), "<td class='change down'>-</td>", add);
-					} else {
-						dat = rt.modify(live(dat), "<td class='change'>=</td>", add);
+	} else if (this.vmode == 1) {
+		dat += "<b>Actions:</b> + Buy, - Sell, (A)rchives, (H)istory<br><br>";
+		dat += "<table class='stable'>";
+		dat += "<tr><th>&nbsp;</th><th>ID</th><th>Name</th><th>Value</th><th>Owned</th><th>Avail</th><th>Actions</th></tr>";
+		S = null;
+		for (S of each(GLOB.stockExchange.stocks, T("/datum/stock"))) {
+			mystocks = 0;
+			if (this.logged_in && rt.isIn(f, this.logged_in, S.shareholders)) {
+				mystocks = rt.index(S.shareholders, this.logged_in);
+			}
+			if (S.bankrupt) {
+				dat += "<tr class='bankrupt'>";
+			} else {
+				dat += "<tr>";
+			}
+			if (S.disp_value_change > 0) {
+				dat += "<td class='change up'>+</td>";
+			} else if (S.disp_value_change < 0) {
+				dat += "<td class='change down'>-</td>";
+			} else {
+				dat += "<td class='change'>=</td>";
+			}
+			dat += `<td><b>${S.short_name}</b></td>`;
+			dat += `<td>${S.name}</td>`;
+			if (!S.bankrupt) {
+				dat += `<td>${S.current_value}</td>`;
+			} else {
+				dat += "<td>0</td>";
+			}
+			if (mystocks) {
+				dat += `<td><b>${mystocks}</b></td>`;
+			} else {
+				dat += "<td>0</td>";
+			}
+			dat += `<td>${S.available_shares}</td>`;
+			news = 0;
+			if (this.logged_in) {
+				LR_5 = rt.index(GLOB.stockExchange.last_read, S);
+				lrt = rt.index(LR_5, this.logged_in);
+				A = null;
+				for (A of each(S.articles, T("/datum/article"))) {
+					if (A.ticks > lrt) {
+						news = 1;
+						break;
 					}
 				}
-				dat = rt.modify(live(dat), fmt("<td><b>＀</b></td>", [rt.fv(f, "short_name", live(S))]), add);
-				dat = rt.modify(live(dat), fmt("<td>＀</td>", [rt.fv(f, "name", live(S))]), add);
-				if (!truthy(rt.fv(f, "bankrupt", live(S)))) {
-					dat = rt.modify(live(dat), fmt("<td>＀</td>", [rt.fv(f, "current_value", live(S))]), add);
-				} else {
-					dat = rt.modify(live(dat), "<td>0</td>", add);
-				}
-				if (truthy(live(mystocks))) {
-					dat = rt.modify(live(dat), fmt("<td><b>＀</b></td>", [live(mystocks)]), add);
-				} else {
-					dat = rt.modify(live(dat), "<td>0</td>", add);
-				}
-				dat = rt.modify(live(dat), fmt("<td>＀</td>", [rt.fv(f, "available_shares", live(S))]), add);
-				news = 0;
-				if (truthy(rt.sv(f, "logged_in"))) {
-					LR_5 = rt.index(rt.fv(f, "last_read", rt.gl("stockExchange")), live(S));
-					lrt = rt.index(live(LR_5), rt.sv(f, "logged_in"));
-					A = null;
-					rt.forList(f, 1, rt.fv(f, "articles", live(S)), T("/datum/article"));
-					while (($e = rt.next(f, 1)) !== undefined) {
-						A = $e;
-						if (rt.gt(rt.fv(f, "ticks", live(A)), live(lrt))) {
+				if (!news) {
+					E = null;
+					for (E of each(S.events, T("/datum/stockEvent"))) {
+						if (E.last_change > lrt && !E.hidden) {
 							news = 1;
 							break;
 						}
 					}
-					rt.endFor(f, 1);
-					if (!truthy(live(news))) {
-						E = null;
-						rt.forList(f, 1, rt.fv(f, "events", live(S)), T("/datum/stockEvent"));
-						while (($e = rt.next(f, 1)) !== undefined) {
-							E = $e;
-							if ((rt.gt(rt.fv(f, "last_change", live(E)), live(lrt)) && !truthy(rt.fv(f, "hidden", live(E))))) {
-								news = 1;
-								break;
-							}
-						}
-						rt.endFor(f, 1);
-					}
 				}
-				dat = rt.modify(live(dat), "<td>", add);
-				if (truthy(rt.fv(f, "bankrupt", live(S)))) {
-					dat = rt.modify(live(dat), "<span class='linkOff'>+</span> <span class='linkOff'>-</span> ", add);
-				} else {
-					dat = rt.modify(live(dat), fmt("<a href='?src=＃;buyshares=＃'>+</a> <a href='?src=＃;sellshares=＃'>-</a> ", [live(f.src), live(S), live(f.src), live(S)]), add);
-				}
-				$0 = live(f.src);
-				$1 = live(S);
-				if (truthy(live(news))) {
-					$1 = $1;
-					$2 = "updated";
-				} else {
-					$2 = "default";
-				}
-				dat = rt.modify(live(dat), fmt("<a href='?src=＃;archive=＃' class='＀'>(A)</a> <a href='?src=＃;viewhistory=＃'>(H)</a></td>", [$0, $1, $2, live(f.src), live(S)]), add);
-				dat = rt.modify(live(dat), "</tr>", add);
 			}
-			rt.endFor(f, 0);
-			dat = rt.modify(live(dat), "</table>", add);
+			dat += "<td>";
+			if (S.bankrupt) {
+				dat += "<span class='linkOff'>+</span> <span class='linkOff'>-</span> ";
+			} else {
+				dat += fmt("<a href='?src=＃;buyshares=＃'>+</a> <a href='?src=＃;sellshares=＃'>-</a> ", [this, S, this, S]);
+			}
+			$0 = this;
+			$1 = S;
+			if (news) {
+
+				$2 = "updated";
+			} else {
+				$2 = "default";
+			}
+			dat += fmt("<a href='?src=＃;archive=＃' class='＀'>(A)</a> <a href='?src=＃;viewhistory=＃'>(H)</a></td>", [$0, $1, $2, this, S]);
+			dat += "</tr>";
 		}
+		dat += "</table>";
 	}
-	dat = rt.modify(live(dat), "</body></html>", add);
-	yield* g.callName(f, (popup = (yield* g.new_(f, T("/datum/browser"), [live(f.args[0]), "computer", "Stock Exchange", 600, 600]))), "set_content", [live(dat)]);
-	yield* g.callName(f, live(popup), "set_title_image", [(yield* g.callName(f, live(f.args[0]), "browse_rsc_icon", [rt.fv(f, "icon", live(f.src)), rt.fv(f, "icon_state", live(f.src))]))]);
-	yield* g.callName(f, live(popup), "open", []);
-	return live(f.dot);
-}, true, { args: ["user"] });
+	dat += "</body></html>";
+	(popup = (yield* new_(T("/datum/browser"), user, "computer", "Stock Exchange", 600, 600))).set_content(dat);
+	popup.set_title_image(user.browse_rsc_icon(this.icon, this.icon_state));
+	yield* popup.open();
+	return f.dot;
+}, true);
 
-// /obj/machinery/computer/stockexchange/proc/sell_some_shares  (code/modules/stock_market/computer.dm:177)  may sleep
+// computer.dm:177
 rt.def("/obj/machinery/computer/stockexchange/proc/sell_some_shares", function* sell_some_shares(f: Frame, S: Value, user: Value) {
-	let li: Value = null, b: Value = null, avail: Value = null, price: Value = null, amt: Value = null, total: Value = null;
-	f.vars = () => [S, user, li, b, avail, price, amt, total];
-	if ((!truthy(live(user)) || !truthy(live(S)))) {
-		return live(f.dot);
+	let li: Value = null, avail: Value = null, amt: Value = null;
+	if (!user || !S) {
+		return f.dot;
 	}
-	if (!truthy((li = rt.sv(f, "logged_in")))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='danger'>No active account on the console!</span>"]);
-		return live(f.dot);
+	if (!(li = this.logged_in)) {
+		to_chat(user, "<span class='danger'>No active account on the console!</span>");
+		return f.dot;
 	}
-	b = rt.fv(f, "points", rt.gl("SSshuttle"));
-	if (!truthy((avail = rt.index(rt.fv(f, "shareholders", live(S)), rt.sv(f, "logged_in"))))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='danger'>This account does not own any shares of ＀!</span>", [rt.fv(f, "name", live(S))])]);
-		return live(f.dot);
+	let b: Value = GLOB.SSshuttle.points;
+	if (!(avail = rt.index(S.shareholders, this.logged_in))) {
+		to_chat(user, `<span class='danger'>This account does not own any shares of ${S.name}!</span>`);
+		return f.dot;
 	}
-	price = rt.fv(f, "current_value", live(S));
-	amt = (yield* g.call(f, P("/proc/min"), null, [(amt = (yield* g.call(f, P("/proc/round"), null, [(yield* g.op(f, "Prompt", [33], [0, fmt("Sell shares in ＀", [rt.fv(f, "name", live(S))]), fmt("How many shares? \n(Have: ＀, unit price: ＀)", [live(avail), live(price)]), live(user), null]))]))), rt.index(rt.fv(f, "shareholders", live(S)), rt.sv(f, "logged_in"))]));
-	if ((!truthy(live(user)) || (!truthy((rt.isIn(f, live(user), (yield* g.call(f, P("/proc/range"), null, [1, live(f.src)]))) ? 1 : 0)) && truthy((rt.istype(live(user), T("/mob/living/carbon")) ? 1 : 0))))) {
-		return live(f.dot);
+	let price: Value = S.current_value;
+	amt = min((amt = round((yield* g.op(f, "Prompt", [33], [0, `Sell shares in ${S.name}`, `How many shares? \n(Have: ${avail}, unit price: ${price})`, user, null])))), rt.index(S.shareholders, this.logged_in));
+	if (!user || !rt.isIn(f, user, range(1, this)) && rt.istype(user, T("/mob/living/carbon"))) {
+		return f.dot;
 	}
-	if (!truthy(live(amt))) {
-		return live(f.dot);
+	if (!amt) {
+		return f.dot;
 	}
-	if (!isEqual(live(li), rt.sv(f, "logged_in"))) {
-		return live(f.dot);
+	if (li != this.logged_in) {
+		return f.dot;
 	}
-	if (!truthy((yield* g.call(f, P("/proc/isnum"), null, [(b = rt.fv(f, "points", rt.gl("SSshuttle")))])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='danger'>No active account on the console!</span>"]);
-		return live(f.dot);
+	if (!isnum((b = GLOB.SSshuttle.points))) {
+		to_chat(user, "<span class='danger'>No active account on the console!</span>");
+		return f.dot;
 	}
-	total = multiply(live(amt), rt.fv(f, "current_value", live(S)));
-	if (!truthy((yield* g.callName(f, live(S), "sellShares", [rt.sv(f, "logged_in"), live(amt)])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='danger'>Could not complete transaction.</span>"]);
-		return live(f.dot);
+	let total: Value = amt * S.current_value;
+	if (!S.sellShares(this.logged_in, amt)) {
+		to_chat(user, "<span class='danger'>Could not complete transaction.</span>");
+		return f.dot;
 	}
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>Sold ＀ shares of ＀ at ＀ a share for ＀ credits.</span>", [live(amt), rt.fv(f, "name", live(S)), rt.fv(f, "current_value", live(S)), live(total)])]);
-	yield* g.callName(f, rt.gl("stockExchange"), "add_log", [T("/datum/stock_log/sell"), rt.fv(f, "name", live(user)), rt.fv(f, "name", live(S)), live(amt), rt.fv(f, "current_value", live(S)), live(total)]);
+	to_chat(user, `<span class='notice'>Sold ${amt} shares of ${S.name} at ${S.current_value} a share for ${total} credits.</span>`);
+	yield* GLOB.stockExchange.add_log(T("/datum/stock_log/sell"), user.name, S.name, amt, S.current_value, total);
 	return f.dot;
 }, true);
 
-// /obj/machinery/computer/stockexchange/proc/buy_some_shares  (code/modules/stock_market/computer.dm:211)  may sleep
+// computer.dm:211
 rt.def("/obj/machinery/computer/stockexchange/proc/buy_some_shares", function* buy_some_shares(f: Frame, S: Value, user: Value) {
-	let li: Value = null, b: Value = null, avail: Value = null, price: Value = null, canbuy: Value = null, amt: Value = null, total: Value = null;
-	f.vars = () => [S, user, li, b, avail, price, canbuy, amt, total];
-	if ((!truthy(live(user)) || !truthy(live(S)))) {
-		return live(f.dot);
+	let li: Value = null, b: Value = null;
+	if (!user || !S) {
+		return f.dot;
 	}
-	if (!truthy((li = rt.sv(f, "logged_in")))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='danger'>No active account on the console!</span>"]);
-		return live(f.dot);
+	if (!(li = this.logged_in)) {
+		to_chat(user, "<span class='danger'>No active account on the console!</span>");
+		return f.dot;
 	}
-	if (!truthy((yield* g.call(f, P("/proc/isnum"), null, [(b = (yield* g.srcCall(f, "balance")))])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='danger'>No active account on the console!</span>"]);
-		return live(f.dot);
+	if (!isnum((b = this.balance()))) {
+		to_chat(user, "<span class='danger'>No active account on the console!</span>");
+		return f.dot;
 	}
-	avail = rt.fv(f, "available_shares", live(S));
-	price = rt.fv(f, "current_value", live(S));
-	canbuy = (yield* g.call(f, P("/proc/round"), null, [divide(live(b), live(price))]));
-	amt = (yield* g.call(f, P("/proc/round"), null, [(yield* g.op(f, "Prompt", [33], [0, fmt("Buy shares in ＀", [rt.fv(f, "name", live(S))]), fmt("How many shares? \n(Available: ＀, unit price: ＀, can buy: ＀)", [live(avail), live(price), live(canbuy)]), live(user), null]))]));
-	if ((!truthy(live(user)) || (!truthy((rt.isIn(f, live(user), (yield* g.call(f, P("/proc/range"), null, [1, live(f.src)]))) ? 1 : 0)) && truthy((rt.istype(live(user), T("/mob/living/carbon")) ? 1 : 0))))) {
-		return live(f.dot);
+	let avail: Value = S.available_shares;
+	let price: Value = S.current_value;
+	let canbuy: Value = round(b / price);
+	let amt: Value = round((yield* g.op(f, "Prompt", [33], [0, `Buy shares in ${S.name}`, `How many shares? \n(Available: ${avail}, unit price: ${price}, can buy: ${canbuy})`, user, null])));
+	if (!user || !rt.isIn(f, user, range(1, this)) && rt.istype(user, T("/mob/living/carbon"))) {
+		return f.dot;
 	}
-	if (!isEqual(live(li), rt.sv(f, "logged_in"))) {
-		return live(f.dot);
+	if (li != this.logged_in) {
+		return f.dot;
 	}
-	if (!truthy((yield* g.call(f, P("/proc/isnum"), null, [(b = (yield* g.srcCall(f, "balance")))])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='danger'>No active account on the console!</span>"]);
-		return live(f.dot);
+	if (!isnum((b = this.balance()))) {
+		to_chat(user, "<span class='danger'>No active account on the console!</span>");
+		return f.dot;
 	}
-	if (!truthy((amt = (yield* g.call(f, P("/proc/min"), null, [live(amt), rt.fv(f, "available_shares", live(S)), (yield* g.call(f, P("/proc/round"), null, [divide(live(b), rt.fv(f, "current_value", live(S)))]))]))))) {
-		return live(f.dot);
+	if (!(amt = min(amt, S.available_shares, round(b / S.current_value)))) {
+		return f.dot;
 	}
-	if (!truthy((yield* g.callName(f, live(S), "buyShares", [rt.sv(f, "logged_in"), live(amt)])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='danger'>Could not complete transaction.</span>"]);
-		return live(f.dot);
+	if (!S.buyShares(this.logged_in, amt)) {
+		to_chat(user, "<span class='danger'>Could not complete transaction.</span>");
+		return f.dot;
 	}
-	total = multiply(live(amt), rt.fv(f, "current_value", live(S)));
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>Bought ＀ shares of ＀ at ＀ a share for ＀ credits.</span>", [live(amt), rt.fv(f, "name", live(S)), rt.fv(f, "current_value", live(S)), live(total)])]);
-	yield* g.callName(f, rt.gl("stockExchange"), "add_log", [T("/datum/stock_log/buy"), rt.fv(f, "name", live(user)), rt.fv(f, "name", live(S)), live(amt), rt.fv(f, "current_value", live(S)), live(total)]);
+	let total: Value = amt * S.current_value;
+	to_chat(user, `<span class='notice'>Bought ${amt} shares of ${S.name} at ${S.current_value} a share for ${total} credits.</span>`);
+	yield* GLOB.stockExchange.add_log(T("/datum/stock_log/buy"), user.name, S.name, amt, S.current_value, total);
 	return f.dot;
 }, true);
 
-// /obj/machinery/computer/stockexchange/proc/do_borrowing_deal  (code/modules/stock_market/computer.dm:246)  may sleep
+// computer.dm:246
 rt.def("/obj/machinery/computer/stockexchange/proc/do_borrowing_deal", function* do_borrowing_deal(f: Frame, B: Value, user: Value) {
-	f.vars = () => [B, user];
-	if (truthy((yield* g.callName(f, rt.fv(f, "stock", live(B)), "borrow", [live(B), rt.sv(f, "logged_in")])))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You successfully borrowed ＀ shares. Deposit: ＀.</span>", [rt.fv(f, "share_amount", live(B)), rt.fv(f, "deposit", live(B))])]);
-		yield* g.callName(f, rt.gl("stockExchange"), "add_log", [T("/datum/stock_log/borrow"), rt.fv(f, "name", live(user)), rt.gv(f, "name", rt.fv(f, "stock", live(B))), rt.fv(f, "share_amount", live(B)), rt.fv(f, "deposit", live(B))]);
+	if (B.stock.borrow(B, this.logged_in)) {
+		to_chat(user, `<span class='notice'>You successfully borrowed ${B.share_amount} shares. Deposit: ${B.deposit}.</span>`);
+		yield* GLOB.stockExchange.add_log(T("/datum/stock_log/borrow"), user.name, B.stock.name, B.share_amount, B.deposit);
 	} else {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='danger'>Could not complete transaction. Check your account balance.</span>"]);
+		to_chat(user, "<span class='danger'>Could not complete transaction. Check your account balance.</span>");
 	}
 	return f.dot;
 }, true);
 
-// /obj/machinery/computer/stockexchange/proc/Topic  (code/modules/stock_market/computer.dm:253)  may sleep
-rt.def("/obj/machinery/computer/stockexchange/proc/Topic", function* Topic(f: Frame) {
+// computer.dm:253
+rt.def("/obj/machinery/computer/stockexchange/proc/Topic", function* Topic(f: Frame, href: Value, href_list: Value) {
 	let S: Value = null, dat: Value = null, D: Value = null, L: Value = null, popup: Value = null, LR: Value = null, dat_1: Value = null, p: Value = null, E: Value = null, A: Value = null, popup_3: Value = null;
-	let $e: any;
-	f.vars = () => [S, dat, D, L, popup, LR, dat_1, p, E, A, popup_3, $e];
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
+	if (yield* parent_proc()) {
 		return 1;
 	}
-	if ((!truthy(live(f.usr)) || (!truthy((rt.isIn(f, live(f.usr), (yield* g.call(f, P("/proc/range"), null, [1, live(f.src)]))) ? 1 : 0)) && truthy((rt.istype(live(f.usr), T("/mob/living/carbon")) ? 1 : 0))))) {
-		rt.setFv(f, "machine", live(f.usr), live(f.src));
+	if (!f.usr || !rt.isIn(f, f.usr, range(1, this)) && rt.istype(f.usr, T("/mob/living/carbon"))) {
+		f.usr.machine = this;
 	}
-	if (truthy(rt.at(live(f.args[1]), "viewhistory"))) {
-		if (truthy((S = rt.locateIn(f, rt.at(live(f.args[1]), "viewhistory"), rt.fv(f, "stocks", rt.gl("stockExchange")))))) {
-			yield* g.callName(f, live(S), "displayValues", [live(f.usr)]);
+	if (rt.at(href_list, "viewhistory")) {
+		if (S = rt.locateIn(f, rt.at(href_list, "viewhistory"), GLOB.stockExchange.stocks)) {
+			S.displayValues(f.usr);
 		}
 	}
-	if (truthy(rt.at(live(f.args[1]), "logout"))) {
-		rt.setSv(f, "logged_in", null);
+	if (rt.at(href_list, "logout")) {
+		this.logged_in = null;
 	}
-	if (truthy(rt.at(live(f.args[1]), "buyshares"))) {
-		if (truthy((S = rt.locateIn(f, rt.at(live(f.args[1]), "buyshares"), rt.fv(f, "stocks", rt.gl("stockExchange")))))) {
-			yield* g.srcCall(f, "buy_some_shares", live(S), live(f.usr));
+	if (rt.at(href_list, "buyshares")) {
+		if (S = rt.locateIn(f, rt.at(href_list, "buyshares"), GLOB.stockExchange.stocks)) {
+			yield* this.buy_some_shares(S, f.usr);
 		}
 	}
-	if (truthy(rt.at(live(f.args[1]), "sellshares"))) {
-		if (truthy((S = rt.locateIn(f, rt.at(live(f.args[1]), "sellshares"), rt.fv(f, "stocks", rt.gl("stockExchange")))))) {
-			yield* g.srcCall(f, "sell_some_shares", live(S), live(f.usr));
+	if (rt.at(href_list, "sellshares")) {
+		if (S = rt.locateIn(f, rt.at(href_list, "sellshares"), GLOB.stockExchange.stocks)) {
+			yield* this.sell_some_shares(S, f.usr);
 		}
 	}
-	if (truthy(rt.at(live(f.args[1]), "show_logs"))) {
-		dat = fmt("<html><head><title>Stock Transaction Logs</title></head><body><h2>Stock Transaction Logs</h2><div><a href='?src=＃;show_logs=1'>Refresh</a></div><br>", [live(f.src)]);
-		D = null;
-		rt.forList(f, 0, rt.fv(f, "logs", rt.gl("stockExchange")));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			D = $e;
-			if (truthy((rt.istype((L = live(D)), T("/datum/stock_log/buy")) ? 1 : 0))) {
-				dat = rt.modify(live(dat), fmt("＀ | <b>＀</b> bought <b>＀</b> stocks at ＀ a share for <b>＀</b> total credits in <b>＀</b>.<br>", [rt.fv(f, "time", live(L)), rt.fv(f, "user_name", live(L)), rt.fv(f, "stocks", live(L)), rt.fv(f, "shareprice", live(L)), rt.fv(f, "money", live(L)), rt.fv(f, "company_name", live(L))]), add);
+	if (rt.at(href_list, "show_logs")) {
+		dat = fmt("<html><head><title>Stock Transaction Logs</title></head><body><h2>Stock Transaction Logs</h2><div><a href='?src=＃;show_logs=1'>Refresh</a></div><br>", [this]);
+		for (D of each(GLOB.stockExchange.logs)) {
+			if (rt.istype((L = D), T("/datum/stock_log/buy"))) {
+				dat += `${L.time} | <b>${L.user_name}</b> bought <b>${L.stocks}</b> stocks at ${L.shareprice} a share for <b>${L.money}</b> total credits in <b>${L.company_name}</b>.<br>`;
 				continue;
 			}
-			if (truthy((rt.istype(live(L), T("/datum/stock_log/sell")) ? 1 : 0))) {
-				dat = rt.modify(live(dat), fmt("＀ | <b>＀</b> sold <b>＀</b> stocks at ＀ a share for <b>＀</b> total credits from <b>＀</b>.<br>", [rt.fv(f, "time", live(L)), rt.fv(f, "user_name", live(L)), rt.fv(f, "stocks", live(L)), rt.fv(f, "shareprice", live(L)), rt.fv(f, "money", live(L)), rt.fv(f, "company_name", live(L))]), add);
+			if (rt.istype(L, T("/datum/stock_log/sell"))) {
+				dat += `${L.time} | <b>${L.user_name}</b> sold <b>${L.stocks}</b> stocks at ${L.shareprice} a share for <b>${L.money}</b> total credits from <b>${L.company_name}</b>.<br>`;
 				continue;
 			}
-			if (truthy((rt.istype(live(L), T("/datum/stock_log/borrow")) ? 1 : 0))) {
-				dat = rt.modify(live(dat), fmt("＀ | <b>＀</b> borrowed <b>＀</b> stocks with a deposit of <b>＀</b> credits in <b>＀</b>.<br>", [rt.fv(f, "time", live(L)), rt.fv(f, "user_name", live(L)), rt.fv(f, "stocks", live(L)), rt.fv(f, "money", live(L)), rt.fv(f, "company_name", live(L))]), add);
+			if (rt.istype(L, T("/datum/stock_log/borrow"))) {
+				dat += `${L.time} | <b>${L.user_name}</b> borrowed <b>${L.stocks}</b> stocks with a deposit of <b>${L.money}</b> credits in <b>${L.company_name}</b>.<br>`;
 				continue;
 			}
 		}
-		rt.endFor(f, 0);
-		yield* g.callName(f, (popup = (yield* g.new_(f, T("/datum/browser"), [live(f.usr), "stock_logs", "Stock Transaction Logs", 600, 400]))), "set_content", [live(dat)]);
-		yield* g.callName(f, live(popup), "set_title_image", [(yield* g.callName(f, live(f.usr), "browse_rsc_icon", [rt.fv(f, "icon", live(f.src)), rt.fv(f, "icon_state", live(f.src))]))]);
-		yield* g.callName(f, live(popup), "open", []);
+		(popup = (yield* new_(T("/datum/browser"), f.usr, "stock_logs", "Stock Transaction Logs", 600, 400))).set_content(dat);
+		popup.set_title_image(f.usr.browse_rsc_icon(this.icon, this.icon_state));
+		yield* popup.open();
 	}
-	if (truthy(rt.at(live(f.args[1]), "archive"))) {
-		S = rt.locateIn(f, rt.at(live(f.args[1]), "archive"), rt.world());
-		if ((truthy(rt.sv(f, "logged_in")) && !isEqual(rt.sv(f, "logged_in"), ""))) {
-			rt.setAt((LR = rt.index(rt.fv(f, "last_read", rt.gl("stockExchange")), live(S))), rt.sv(f, "logged_in"), rt.worldTime(f));
+	if (rt.at(href_list, "archive")) {
+		S = rt.locateIn(f, rt.at(href_list, "archive"), rt.world());
+		if (this.logged_in && this.logged_in != "") {
+			rt.setAt((LR = rt.index(GLOB.stockExchange.last_read, S)), this.logged_in, rt.worldTime(f));
 		}
-		dat_1 = fmt("<html><head><title>News feed for ＀</title></head><body><h2>News feed for ＀</h2><div><a href='?src=＃;archive=＃'>Refresh</a></div>", [rt.fv(f, "name", live(S)), rt.fv(f, "name", live(S)), live(f.src), live(S)]);
-		dat_1 = rt.modify(live(dat_1), "<div><h3>Events</h3>", add);
+		dat_1 = fmt("<html><head><title>News feed for ＀</title></head><body><h2>News feed for ＀</h2><div><a href='?src=＃;archive=＃'>Refresh</a></div>", [S.name, S.name, this, S]);
+		dat_1 += "<div><h3>Events</h3>";
 		p = 0;
-		E = null;
-		rt.forList(f, 0, rt.fv(f, "events", live(S)), T("/datum/stockEvent"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			E = $e;
-			if (truthy(rt.fv(f, "hidden", live(E)))) {
+		for (E of each(S.events, T("/datum/stockEvent"))) {
+			if (E.hidden) {
 				continue;
 			}
-			if (rt.gt(live(p), 0)) {
-				dat_1 = rt.modify(live(dat_1), "<hr>", add);
+			if (p > 0) {
+				dat_1 += "<hr>";
 			}
-			dat_1 = rt.modify(live(dat_1), fmt("<div><b style='font-size:1.25em'>＀</b><br>＀</div>", [rt.fv(f, "current_title", live(E)), rt.fv(f, "current_desc", live(E))]), add);
-			p = rt.inc(live(p), 1);
+			dat_1 += `<div><b style='font-size:1.25em'>${E.current_title}</b><br>${E.current_desc}</div>`;
+			p++;
 		}
-		rt.endFor(f, 0);
-		dat_1 = rt.modify(live(dat_1), "</div><hr><div><h3>Articles</h3>", add);
+		dat_1 += "</div><hr><div><h3>Articles</h3>";
 		p = 0;
-		A = null;
-		rt.forList(f, 0, rt.fv(f, "articles", live(S)), T("/datum/article"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			A = $e;
-			if (rt.gt(live(p), 0)) {
-				dat_1 = rt.modify(live(dat_1), "<hr>", add);
+		for (A of each(S.articles, T("/datum/article"))) {
+			if (p > 0) {
+				dat_1 += "<hr>";
 			}
-			dat_1 = rt.modify(live(dat_1), fmt("<div><b style='font-size:1.25em'>＀</b><br><i>＀</i><br><br>＀<br>- ＀, ＀ (via <i>＀</i>)</div>", [rt.fv(f, "headline", live(A)), rt.fv(f, "subtitle", live(A)), rt.fv(f, "article", live(A)), rt.fv(f, "author", live(A)), rt.fv(f, "spacetime", live(A)), rt.fv(f, "outlet", live(A))]), add);
-			p = rt.inc(live(p), 1);
+			dat_1 += `<div><b style='font-size:1.25em'>${A.headline}</b><br><i>${A.subtitle}</i><br><br>${A.article}<br>- ${A.author}, ${A.spacetime} (via <i>${A.outlet}</i>)</div>`;
+			p++;
 		}
-		rt.endFor(f, 0);
-		dat_1 = rt.modify(live(dat_1), "</div></body></html>", add);
-		yield* g.callName(f, (popup_3 = (yield* g.new_(f, T("/datum/browser"), [live(f.usr), fmt("archive_＀", [rt.fv(f, "name", live(S))]), "Stock News", 600, 400]))), "set_content", [live(dat_1)]);
-		yield* g.callName(f, live(popup_3), "set_title_image", [(yield* g.callName(f, live(f.usr), "browse_rsc_icon", [rt.fv(f, "icon", live(f.src)), rt.fv(f, "icon_state", live(f.src))]))]);
-		yield* g.callName(f, live(popup_3), "open", []);
+		dat_1 += "</div></body></html>";
+		(popup_3 = (yield* new_(T("/datum/browser"), f.usr, `archive_${S.name}`, "Stock News", 600, 400))).set_content(dat_1);
+		popup_3.set_title_image(f.usr.browse_rsc_icon(this.icon, this.icon_state));
+		yield* popup_3.open();
 	}
-	if (truthy(rt.at(live(f.args[1]), "cycleview"))) {
-		rt.incSrcVar(f, "vmode", 1, true);
-		if (rt.gt(rt.sv(f, "vmode"), 1)) {
-			rt.setSv(f, "vmode", 0);
+	if (rt.at(href_list, "cycleview")) {
+		this.vmode++;
+		if (this.vmode > 1) {
+			this.vmode = 0;
 		}
 	}
-	yield* g.callName(f, live(f.src), "add_fingerprint", [live(f.usr)]);
-	yield* g.callName(f, live(f.src), "updateUsrDialog", []);
+	yield* this.add_fingerprint(f.usr);
+	yield* this.updateUsrDialog();
 	return f.dot;
-}, true, { args: ["href", "href_list"] });
+}, true);

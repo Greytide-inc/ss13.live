@@ -1,7 +1,7 @@
-// From code/game/objects/structures/crates_lockers/crates.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/structures/crates_lockers/crates.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(12253, "/obj/structure/closet/crate", "/obj/structure/closet", {
@@ -22,83 +22,72 @@ rt.type(12253, "/obj/structure/closet/crate", "/obj/structure/closet", {
 	climb_stun: 0,
 });
 
-// /obj/structure/closet/crate/proc/New  (code/game/objects/structures/crates_lockers/crates.dm:19)  may sleep
+// crates.dm:19
 rt.def("/obj/structure/closet/crate/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "update_icon");
+	yield* parent_proc();
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/structure/closet/crate/proc/CanPass  (code/game/objects/structures/crates_lockers/crates.dm:23)
+// crates.dm:23
 rt.def("/obj/structure/closet/crate/proc/CanPass", function CanPass(f: Frame, mover: Value, target: Value, height: Value) {
 	let locatedcrate: Value = null;
-	f.vars = () => [height, locatedcrate];
-	if (live(height) === null) {
-		height = 0;
-	}
-	if (!truthy((rt.istype(live(mover), T("/obj/structure/closet")) ? 1 : 0))) {
-		if (truthy((locatedcrate = rt.locateIn(f, T("/obj/structure/closet/crate"), rt.getStep(f, live(mover), 0))))) {
-			if (truthy(rt.sv(f, "opened"))) {
+	height ??= 0;
+	if (!rt.istype(mover, T("/obj/structure/closet"))) {
+		if (locatedcrate = rt.locateIn(f, T("/obj/structure/closet/crate"), rt.getStep(f, mover, 0))) {
+			if (this.opened) {
 				return 1;
 			}
-			if (!truthy(rt.fv(f, "opened", live(locatedcrate)))) {
+			if (!locatedcrate.opened) {
 				return 1;
 			}
 		}
 	}
-	return (!truthy(rt.sv(f, "density")) ? 1 : 0);
+	return (!this.density ? 1 : 0);
 });
 
-// /obj/structure/closet/crate/proc/update_icon  (code/game/objects/structures/crates_lockers/crates.dm:33)
+// crates.dm:33
 rt.def("/obj/structure/closet/crate/proc/update_icon", function update_icon(f: Frame) {
-	let $0: any, $1: any;
-	f.vars = () => [$0, $1];
-	$0 = rt.initial(f, live(f.src), "icon_state");
-	if (truthy(rt.sv(f, "opened"))) {
-		$1 = "open";
-	} else {
-		$1 = "";
-	}
-	rt.setSv(f, "icon_state", fmt("＀＀", [$0, $1]));
-	rt.callSrc(f, "cut_overlays", []);
-	if (!truthy(rt.sv(f, "manifest"))) return f.dot;
-	rt.callSrc(f, "add_overlay", ["manifest"]);
+	let $0: any = rt.initial(f, this, "icon_state");
+	this.icon_state = `${$0}${this.opened ? "open" : ""}`;
+	this.cut_overlays();
+	if (!this.manifest) return f.dot;
+	this.add_overlay("manifest");
 	return f.dot;
 });
 
-// /obj/structure/closet/crate/proc/attack_hand  (code/game/objects/structures/crates_lockers/crates.dm:41)  may sleep
-rt.def("/obj/structure/closet/crate/proc/attack_hand", function* attack_hand(f: Frame) {
-	if (truthy(rt.sv(f, "manifest"))) {
-		yield* g.srcCall(f, "tear_manifest", live(f.args[0]));
-		return live(f.dot);
+// crates.dm:41
+rt.def("/obj/structure/closet/crate/proc/attack_hand", function* attack_hand(f: Frame, user: Value) {
+	if (this.manifest) {
+		yield* this.tear_manifest(user);
+		return f.dot;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /obj/structure/closet/crate/proc/open  (code/game/objects/structures/crates_lockers/crates.dm:46)  may sleep
-rt.def("/obj/structure/closet/crate/proc/open", function* open(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	if (!(truthy(live(f.dot)) && truthy(rt.sv(f, "manifest")))) return f.dot;
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='notice'>The manifest is torn off ＀.</span>", [live(f.src)])]);
-	yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/items/poster_ripped.ogg"), 75, 1]);
-	yield* g.callName(f, rt.sv(f, "manifest"), "forceMove", [rt.getStep(f, live(f.src), 0)]);
-	rt.setSv(f, "manifest", null);
-	yield* g.srcCall(f, "update_icon");
+// crates.dm:46
+rt.def("/obj/structure/closet/crate/proc/open", function* open(f: Frame, user: Value) {
+	f.dot = (yield* parent_proc());
+	if (!(f.dot && this.manifest)) return f.dot;
+	to_chat(user, `<span class='notice'>The manifest is torn off ${this}.</span>`);
+	playsound(this, rt.rsc("sound/items/poster_ripped.ogg"), 75, 1);
+	yield* this.manifest.forceMove(rt.getStep(f, this, 0));
+	this.manifest = null;
+	yield* this.update_icon();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /obj/structure/closet/crate/proc/tear_manifest  (code/game/objects/structures/crates_lockers/crates.dm:55)  may sleep
+// crates.dm:55
 rt.def("/obj/structure/closet/crate/proc/tear_manifest", function* tear_manifest(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You tear the manifest off of ＀.</span>", [live(f.src)])]);
-	yield* g.call(f, P("/proc/playsound"), null, [live(f.src), rt.rsc("sound/items/poster_ripped.ogg"), 75, 1]);
-	yield* g.callName(f, rt.sv(f, "manifest"), "forceMove", [rt.sv(f, "loc")]);
-	if (truthy((rt.istype(live(user), T("/mob/living/carbon/human")) ? 1 : 0))) {
-		yield* g.callName(f, live(user), "put_in_hands", [rt.sv(f, "manifest")]);
+	to_chat(user, `<span class='notice'>You tear the manifest off of ${this}.</span>`);
+	playsound(this, rt.rsc("sound/items/poster_ripped.ogg"), 75, 1);
+	yield* this.manifest.forceMove(this.loc);
+	if (rt.istype(user, T("/mob/living/carbon/human"))) {
+		yield* user.put_in_hands(this.manifest);
 	}
-	rt.setSv(f, "manifest", null);
-	yield* g.srcCall(f, "update_icon");
+	this.manifest = null;
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
@@ -107,25 +96,23 @@ rt.type(12258, "/obj/structure/closet/crate/freezer/blood", "/obj/structure/clos
 	desc: "A freezer containing packs of blood.",
 });
 
-// /obj/structure/closet/crate/freezer/blood/proc/PopulateContents  (code/game/objects/structures/crates_lockers/crates.dm:89)  may sleep
+// crates.dm:89
 rt.def("/obj/structure/closet/crate/freezer/blood/proc/PopulateContents", function* PopulateContents(f: Frame) {
 	let i: Value = null;
 	let $e: any;
-	f.vars = () => [i, $e];
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.new_(f, T("/obj/item/weapon/reagent_containers/blood/empty"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/reagent_containers/blood/empty"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/reagent_containers/blood/AMinus"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/reagent_containers/blood/BMinus"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/reagent_containers/blood/BPlus"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/reagent_containers/blood/OMinus"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/reagent_containers/blood/OPlus"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/weapon/reagent_containers/blood/lizard"), [live(f.src)]);
-	i = null;
+	f.dot = (yield* parent_proc());
+	yield* new_(T("/obj/item/weapon/reagent_containers/blood/empty"), this);
+	yield* new_(T("/obj/item/weapon/reagent_containers/blood/empty"), this);
+	yield* new_(T("/obj/item/weapon/reagent_containers/blood/AMinus"), this);
+	yield* new_(T("/obj/item/weapon/reagent_containers/blood/BMinus"), this);
+	yield* new_(T("/obj/item/weapon/reagent_containers/blood/BPlus"), this);
+	yield* new_(T("/obj/item/weapon/reagent_containers/blood/OMinus"), this);
+	yield* new_(T("/obj/item/weapon/reagent_containers/blood/OPlus"), this);
+	yield* new_(T("/obj/item/weapon/reagent_containers/blood/lizard"), this);
 	rt.forRange(f, 0, 1, 3, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/weapon/reagent_containers/blood/random"), [live(f.src)]);
+		yield* new_(T("/obj/item/weapon/reagent_containers/blood/random"), this);
 	}
 	rt.endFor(f, 0);
 	return f.dot;
@@ -136,17 +123,17 @@ rt.type(12259, "/obj/structure/closet/crate/freezer/surplus_limbs", "/obj/struct
 	desc: "A crate containing an assortment of cheap prosthetic limbs.",
 });
 
-// /obj/structure/closet/crate/freezer/surplus_limbs/proc/PopulateContents  (code/game/objects/structures/crates_lockers/crates.dm:106)  may sleep
+// crates.dm:106
 rt.def("/obj/structure/closet/crate/freezer/surplus_limbs/proc/PopulateContents", function* PopulateContents(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	yield* g.new_(f, T("/obj/item/bodypart/l_arm/robot/surplus"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/bodypart/l_arm/robot/surplus"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/bodypart/r_arm/robot/surplus"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/bodypart/r_arm/robot/surplus"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/bodypart/l_leg/robot/surplus"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/bodypart/l_leg/robot/surplus"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/bodypart/r_leg/robot/surplus"), [live(f.src)]);
-	yield* g.new_(f, T("/obj/item/bodypart/r_leg/robot/surplus"), [live(f.src)]);
+	f.dot = (yield* parent_proc());
+	yield* new_(T("/obj/item/bodypart/l_arm/robot/surplus"), this);
+	yield* new_(T("/obj/item/bodypart/l_arm/robot/surplus"), this);
+	yield* new_(T("/obj/item/bodypart/r_arm/robot/surplus"), this);
+	yield* new_(T("/obj/item/bodypart/r_arm/robot/surplus"), this);
+	yield* new_(T("/obj/item/bodypart/l_leg/robot/surplus"), this);
+	yield* new_(T("/obj/item/bodypart/l_leg/robot/surplus"), this);
+	yield* new_(T("/obj/item/bodypart/r_leg/robot/surplus"), this);
+	yield* new_(T("/obj/item/bodypart/r_leg/robot/surplus"), this);
 	return f.dot;
 }, true);
 
@@ -156,19 +143,17 @@ rt.type(12264, "/obj/structure/closet/crate/rcd", "/obj/structure/closet/crate",
 	icon_state: "engi_crate",
 });
 
-// /obj/structure/closet/crate/rcd/proc/PopulateContents  (code/game/objects/structures/crates_lockers/crates.dm:139)  may sleep
+// crates.dm:139
 rt.def("/obj/structure/closet/crate/rcd/proc/PopulateContents", function* PopulateContents(f: Frame) {
 	let i: Value = null;
 	let $e: any;
-	f.vars = () => [i, $e];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	i = null;
+	yield* parent_proc();
 	rt.forRange(f, 0, 1, 4, 1);
 	while (($e = rt.next(f, 0)) !== undefined) {
 		i = $e;
-		yield* g.new_(f, T("/obj/item/weapon/rcd_ammo"), [live(f.src)]);
+		yield* new_(T("/obj/item/weapon/rcd_ammo"), this);
 	}
 	rt.endFor(f, 0);
-	yield* g.new_(f, T("/obj/item/weapon/construction/rcd"), [live(f.src)]);
+	yield* new_(T("/obj/item/weapon/construction/rcd"), this);
 	return f.dot;
 }, true);

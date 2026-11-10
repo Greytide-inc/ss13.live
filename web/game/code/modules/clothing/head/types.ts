@@ -1,5 +1,5 @@
 // Types declared in code/modules/clothing/head that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(7995, "/obj/item/clothing/head/helmet/abductor", "/obj/item/clothing/head/helmet", {
 	name: "agent headgear",

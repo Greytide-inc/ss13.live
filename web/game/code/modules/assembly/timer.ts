@@ -1,7 +1,7 @@
-// From code/modules/assembly/timer.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/assembly/timer.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(9384, "/obj/item/device/assembly/timer", "/obj/item/device/assembly", {
@@ -17,156 +17,146 @@ rt.type(9384, "/obj/item/device/assembly/timer", "/obj/item/device/assembly", {
 	origin_tech: "magnets=1;engineering=1",
 });
 
-// /obj/item/device/assembly/timer/proc/<init>  (code/modules/assembly/timer.dm:5)
+// timer.dm:5
 rt.def("/obj/item/device/assembly/timer/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 500, "$glass", 50]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 500, "$glass", 50]);
 	return f.dot;
 });
 
-// /obj/item/device/assembly/timer/proc/New  (code/modules/assembly/timer.dm:16)  may sleep
+// timer.dm:16
 rt.def("/obj/item/device/assembly/timer/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy(rt.fv(f, "isprocessing", live(f.src)))) return f.dot;
-	rt.setFv(f, "isprocessing", live(f.src), 1);
-	rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), add);
+	yield* parent_proc();
+	if (this.isprocessing) return f.dot;
+	this.isprocessing = 1;
+	GLOB.SSobj.processing += this;
 	return f.dot;
 }, true);
 
-// /obj/item/device/assembly/timer/proc/describe  (code/modules/assembly/timer.dm:21)
+// timer.dm:21
 rt.def("/obj/item/device/assembly/timer/proc/describe", function describe(f: Frame) {
-	if (truthy(rt.sv(f, "timing"))) {
-		return fmt("The timer is counting down from ＀!", [rt.sv(f, "time")]);
+	if (this.timing) {
+		return `The timer is counting down from ${this.time}!`;
 	}
-	return fmt("The timer is set for ＀ seconds.", [rt.sv(f, "time")]);
+	return `The timer is set for ${this.time} seconds.`;
 });
 
-// /obj/item/device/assembly/timer/proc/activate  (code/modules/assembly/timer.dm:26)  may sleep
+// timer.dm:26
 rt.def("/obj/item/device/assembly/timer/proc/activate", function* activate(f: Frame) {
-	if (!truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
+	if (!(yield* parent_proc())) {
 		return 0;
 	}
-	rt.setSv(f, "timing", (!truthy(rt.sv(f, "timing")) ? 1 : 0));
-	yield* g.srcCall(f, "update_icon");
+	this.timing = (!this.timing ? 1 : 0);
+	yield* this.update_icon();
 	return 1;
 }, true);
 
-// /obj/item/device/assembly/timer/proc/toggle_secure  (code/modules/assembly/timer.dm:34)  may sleep
+// timer.dm:34
 rt.def("/obj/item/device/assembly/timer/proc/toggle_secure", function* toggle_secure(f: Frame) {
-	rt.setSv(f, "secured", (!truthy(rt.sv(f, "secured")) ? 1 : 0));
-	if (truthy(rt.sv(f, "secured"))) {
-		if (!truthy(rt.fv(f, "isprocessing", live(f.src)))) {
-			rt.setFv(f, "isprocessing", live(f.src), 1);
-			rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), add);
+	this.secured = (!this.secured ? 1 : 0);
+	if (this.secured) {
+		if (!this.isprocessing) {
+			this.isprocessing = 1;
+			GLOB.SSobj.processing += this;
 		}
 	} else {
-		rt.setSv(f, "timing", 0);
-		rt.setFv(f, "isprocessing", live(f.src), 0);
-		(rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), subtract));
+		this.timing = 0;
+		this.isprocessing = 0;
+		GLOB.SSobj.processing -= this;
 	}
-	yield* g.srcCall(f, "update_icon");
-	return rt.sv(f, "secured");
+	yield* this.update_icon();
+	return this.secured;
 }, true);
 
-// /obj/item/device/assembly/timer/proc/timer_end  (code/modules/assembly/timer.dm:45)  may sleep
+// timer.dm:45
 rt.def("/obj/item/device/assembly/timer/proc/timer_end", function* timer_end(f: Frame) {
-	if ((!truthy(rt.sv(f, "secured")) || rt.gt(rt.sv(f, "next_activate"), rt.worldTime(f)))) {
+	if (!this.secured || this.next_activate > rt.worldTime(f)) {
 		return 0;
 	}
-	yield* g.srcCall(f, "pulse", 0);
-	yield* g.srcCall(f, "audible_message", fmt("＀ *beep* *beep*", [(yield* g.call(f, P("/proc/bicon"), null, [live(f.src)]))]), null, 3);
-	if (truthy(rt.sv(f, "loop"))) {
-		rt.setSv(f, "timing", 1);
+	yield* this.pulse(0);
+	this.audible_message(`${bicon(this)} *beep* *beep*`, null, 3);
+	if (this.loop) {
+		this.timing = 1;
 	}
-	yield* g.srcCall(f, "update_icon");
+	yield* this.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/item/device/assembly/timer/proc/process  (code/modules/assembly/timer.dm:56)  may sleep
+// timer.dm:56
 rt.def("/obj/item/device/assembly/timer/proc/process", function* process(f: Frame) {
-	if (!truthy(rt.sv(f, "timing"))) return f.dot;
-	rt.incSrcVar(f, "time", -1, true);
-	if (!rt.le(rt.sv(f, "time"), 0)) return f.dot;
-	rt.setSv(f, "timing", 0);
-	yield* g.srcCall(f, "timer_end");
-	rt.setSv(f, "time", rt.sv(f, "saved_time"));
+	if (!this.timing) return f.dot;
+	this.time--;
+	if (!(this.time <= 0)) return f.dot;
+	this.timing = 0;
+	yield* this.timer_end();
+	this.time = this.saved_time;
 	return f.dot;
 }, true, { waitfor: false });
 
-// /obj/item/device/assembly/timer/proc/update_icon  (code/modules/assembly/timer.dm:64)  may sleep
+// timer.dm:64
 rt.def("/obj/item/device/assembly/timer/proc/update_icon", function* update_icon(f: Frame) {
-	yield* g.srcCall(f, "cut_overlays");
-	rt.setSv(f, "attached_overlays", rt.list());
-	if (truthy(rt.sv(f, "timing"))) {
-		yield* g.srcCall(f, "add_overlay", "timer_timing");
-		rt.modSrcVar(f, "attached_overlays", "timer_timing", add);
+	this.cut_overlays();
+	this.attached_overlays = list();
+	if (this.timing) {
+		this.add_overlay("timer_timing");
+		this.attached_overlays += "timer_timing";
 	}
-	if (!truthy(rt.sv(f, "holder"))) return f.dot;
-	yield* g.callName(f, rt.sv(f, "holder"), "update_icon", []);
+	if (!this.holder) return f.dot;
+	yield* this.holder.update_icon();
 	return f.dot;
 }, true);
 
-// /obj/item/device/assembly/timer/proc/interact  (code/modules/assembly/timer.dm:74)  may sleep
+// timer.dm:74
 rt.def("/obj/item/device/assembly/timer/proc/interact", function* interact(f: Frame, user: Value) {
-	let second: Value = null, minute: Value = null, dat: Value = null, popup: Value = null;
-	let $0: any, $1: any;
-	f.vars = () => [user, second, minute, dat, popup, $0, $1];
-	if (!truthy((yield* g.srcCall(f, "is_secured", live(user))))) return f.dot;
-	second = rt.modulus(rt.sv(f, "time"), 60);
-	minute = divide(subtract(rt.sv(f, "time"), live(second)), 60);
-	if (truthy(rt.sv(f, "timing"))) {
-		$0 = fmt("<A href='?src=＃;time=0'>Timing</A>", [live(f.src)]);
+	let popup: Value = null;
+	let $0: any;
+	if (!this.is_secured(user)) return f.dot;
+	let second: Value = this.time % 60;
+	let minute: Value = (this.time - second) / 60;
+	if (this.timing) {
+		$0 = fmt("<A href='?src=＃;time=0'>Timing</A>", [this]);
 	} else {
-		$0 = fmt("<A href='?src=＃;time=1'>Not Timing</A>", [live(f.src)]);
+		$0 = fmt("<A href='?src=＃;time=1'>Not Timing</A>", [this]);
 	}
-	dat = fmt("<TT><B>Timing Unit</B>\n＀ ＀:＀\n<A href='?src=＃;tp=-30'>-</A> <A href='?src=＃;tp=-1'>-</A> <A href='?src=＃;tp=1'>+</A> <A href='?src=＃;tp=30'>+</A>\n</TT>", [$0, live(minute), live(second), live(f.src), live(f.src), live(f.src), live(f.src)]);
-	$0 = live(f.src);
-	if (truthy(rt.sv(f, "loop"))) {
-		$1 = "0'>Stop repeating";
-	} else {
-		$1 = "1'>Set to repeat";
-	}
-	dat = rt.modify(live(dat), fmt("<BR><BR><A href='?src=＃;repeat=＀</A>", [$0, $1]), add);
-	dat = rt.modify(live(dat), fmt("<BR><BR><A href='?src=＃;refresh=1'>Refresh</A>", [live(f.src)]), add);
-	dat = rt.modify(live(dat), fmt("<BR><BR><A href='?src=＃;close=1'>Close</A>", [live(f.src)]), add);
-	yield* g.callName(f, (popup = (yield* g.new_(f, T("/datum/browser"), [live(user), "timer", rt.sv(f, "name")]))), "set_content", [live(dat)]);
-	yield* g.callName(f, live(popup), "open", []);
+	let dat: Value = fmt("<TT><B>Timing Unit</B>\n＀ ＀:＀\n<A href='?src=＃;tp=-30'>-</A> <A href='?src=＃;tp=-1'>-</A> <A href='?src=＃;tp=1'>+</A> <A href='?src=＃;tp=30'>+</A>\n</TT>", [$0, minute, second, this, this, this, this]);
+	dat += fmt("<BR><BR><A href='?src=＃;repeat=＀</A>", [this, this.loop ? "0'>Stop repeating" : "1'>Set to repeat"]);
+	dat += fmt("<BR><BR><A href='?src=＃;refresh=1'>Refresh</A>", [this]);
+	dat += fmt("<BR><BR><A href='?src=＃;close=1'>Close</A>", [this]);
+	(popup = (yield* new_(T("/datum/browser"), user, "timer", this.name))).set_content(dat);
+	yield* popup.open();
 	return f.dot;
 }, true);
 
-// /obj/item/device/assembly/timer/proc/Topic  (code/modules/assembly/timer.dm:87)  may sleep
-rt.def("/obj/item/device/assembly/timer/proc/Topic", function* Topic(f: Frame) {
+// timer.dm:87
+rt.def("/obj/item/device/assembly/timer/proc/Topic", function* Topic(f: Frame, href: Value, href_list: Value) {
 	let timer_message: Value = null, tp: Value = null;
-	f.vars = () => [timer_message, tp];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if ((truthy((yield* g.callName(f, live(f.usr), "incapacitated", []))) || !rt.le((yield* g.call(f, P("/proc/get_dist"), null, [rt.sv(f, "loc"), live(f.usr)])), 1))) {
-		rt.op(f, "Browse", [], [live(f.usr), null, "window=timer"], false);
-		yield* g.call(f, P("/proc/onclose"), null, [live(f.usr), "timer"]);
-		return live(f.dot);
+	yield* parent_proc();
+	if (f.usr.incapacitated() || !(get_dist(this.loc, f.usr) <= 1)) {
+		rt.op(f, "Browse", [], [f.usr, null, "window=timer"], false);
+		onclose(f.usr, "timer");
+		return f.dot;
 	}
-	if (truthy(rt.at(live(f.args[1]), "time"))) {
-		rt.setSv(f, "timing", (yield* g.call(f, P("/proc/text2num"), null, [rt.at(live(f.args[1]), "time")])));
-		if ((truthy(rt.sv(f, "timing")) && truthy((rt.istype(rt.sv(f, "holder"), T("/obj/item/device/transfer_valve")) ? 1 : 0)))) {
-			yield* g.call(f, P("/proc/message_admins"), null, [(timer_message = fmt("＀ activated ＀ attachment on ＀.", [fmt("＀＀ ＀", [(yield* g.call(f, P("/proc/key_name_admin"), null, [live(f.usr)])), fmt("(<a href='?_src_=holder;adminmoreinfo=＃'>?</a>)", [live(f.usr)]), fmt("(<a href='?_src_=holder;adminplayerobservefollow=＃'>FLW</a>)", [live(f.usr)])]), live(f.src), rt.sv(f, "holder")]))]);
-			rt.modGl("bombers", live(timer_message), add);
-			yield* g.call(f, P("/proc/log_game"), null, [fmt("＀ activated ＀ attachment on ＀", [(yield* g.call(f, P("/proc/key_name"), null, [live(f.usr)])), live(f.src), rt.sv(f, "holder")])]);
+	if (rt.at(href_list, "time")) {
+		this.timing = text2num(rt.at(href_list, "time"));
+		if (this.timing && rt.istype(this.holder, T("/obj/item/device/transfer_valve"))) {
+			message_admins((timer_message = `${`${key_name_admin(f.usr)}${fmt("(<a href='?_src_=holder;adminmoreinfo=＃'>?</a>)", [f.usr])} ${fmt("(<a href='?_src_=holder;adminplayerobservefollow=＃'>FLW</a>)", [f.usr])}`} activated ${this} attachment on ${this.holder}.`));
+			GLOB.bombers += timer_message;
+			log_game(`${key_name(f.usr)} activated ${this} attachment on ${this.holder}`);
 		}
-		yield* g.srcCall(f, "update_icon");
+		yield* this.update_icon();
 	}
-	if (truthy(rt.at(live(f.args[1]), "repeat"))) {
-		rt.setSv(f, "loop", (yield* g.call(f, P("/proc/text2num"), null, [rt.at(live(f.args[1]), "repeat")])));
+	if (rt.at(href_list, "repeat")) {
+		this.loop = text2num(rt.at(href_list, "repeat"));
 	}
-	if (truthy(rt.at(live(f.args[1]), "tp"))) {
-		rt.setSv(f, "time", (yield* g.call(f, P("/proc/min"), null, [(yield* g.call(f, P("/proc/max"), null, [(yield* g.call(f, P("/proc/round"), null, [(rt.modSrcVar(f, "time", (tp = (yield* g.call(f, P("/proc/text2num"), null, [rt.at(live(f.args[1]), "tp")]))), add))])), 1])), 600])));
-		rt.setSv(f, "saved_time", rt.sv(f, "time"));
+	if (rt.at(href_list, "tp")) {
+		this.time = min(max(round((this.time += (tp = text2num(rt.at(href_list, "tp"))))), 1), 600);
+		this.saved_time = this.time;
 	}
-	if (truthy(rt.at(live(f.args[1]), "close"))) {
-		rt.op(f, "Browse", [], [live(f.usr), null, "window=timer"], false);
-		return live(f.dot);
+	if (rt.at(href_list, "close")) {
+		rt.op(f, "Browse", [], [f.usr, null, "window=timer"], false);
+		return f.dot;
 	}
-	if (!truthy(live(f.usr))) return f.dot;
-	yield* g.srcCall(f, "attack_self", live(f.usr));
+	if (!f.usr) return f.dot;
+	yield* this.attack_self(f.usr);
 	return f.dot;
-}, true, { args: ["href", "href_list"] });
+}, true);

@@ -1,7 +1,7 @@
-// From code/game/machinery/flasher.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/machinery/flasher.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(10792, "/obj/machinery/flasher", "/obj/machinery", {
@@ -21,31 +21,28 @@ rt.type(10792, "/obj/machinery/flasher", "/obj/machinery", {
 	integrity_failure: 100,
 });
 
-// /obj/machinery/flasher/proc/New  (code/game/machinery/flasher.dm:29)  may sleep
+// flasher.dm:29
 rt.def("/obj/machinery/flasher/proc/New", function* New(f: Frame) {
 	let $0: any;
-	f.vars = () => [$0];
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 0;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (truthy(live(f.args[2]))) {
-		yield* g.srcCall(f, "setDir", live(f.args[1]));
-		if (truthy(rt.bitAnd(rt.sv(f, "dir"), 3))) {
+	yield* parent_proc();
+	if (f.args[2]) {
+		yield* this.setDir(f.args[1]);
+		if (rt.bitAnd(this.dir, 3)) {
 			$0 = 0;
+		} else if (this.dir == 4) {
+			$0 = -28;
 		} else {
-			if (isEqual(rt.sv(f, "dir"), 4)) {
-				$0 = -28;
-			} else {
-				$0 = 28;
-			}
+			$0 = 28;
 		}
-		rt.setSv(f, "pixel_x", $0);
-		if (truthy(rt.bitAnd(rt.sv(f, "dir"), 3))) {
-			if (isEqual(rt.sv(f, "dir"), 1)) {
+		this.pixel_x = $0;
+		if (rt.bitAnd(this.dir, 3)) {
+			if (this.dir == 1) {
 				$0 = -28;
 			} else {
 				$0 = 28;
@@ -53,184 +50,170 @@ rt.def("/obj/machinery/flasher/proc/New", function* New(f: Frame) {
 		} else {
 			$0 = 0;
 		}
-		rt.setSv(f, "pixel_y", $0);
+		this.pixel_y = $0;
 	} else {
-		rt.setSv(f, "bulb", (yield* g.new_(f, T("/obj/item/device/assembly/flash/handheld"), [live(f.src)])));
+		this.bulb = (yield* new_(T("/obj/item/device/assembly/flash/handheld"), this));
 	}
 	return f.dot;
 }, true, { args: ["loc", "ndir", "built"] });
 
-// /obj/machinery/flasher/proc/Destroy  (code/game/machinery/flasher.dm:39)  may sleep
+// flasher.dm:39
 rt.def("/obj/machinery/flasher/proc/Destroy", function* Destroy(f: Frame) {
-	if (truthy(rt.sv(f, "bulb"))) {
-		yield* g.call(f, P("/proc/qdel"), null, [rt.sv(f, "bulb")]);
-		rt.setSv(f, "bulb", null);
+	if (this.bulb) {
+		yield* qdel(this.bulb);
+		this.bulb = null;
 	}
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	return (yield* parent_proc());
 }, true);
 
-// /obj/machinery/flasher/proc/power_change  (code/game/machinery/flasher.dm:44)
+// flasher.dm:44
 rt.def("/obj/machinery/flasher/proc/power_change", function power_change(f: Frame) {
-	if (((truthy(rt.callSrc(f, "powered", [])) && truthy(rt.sv(f, "anchored"))) && truthy(rt.sv(f, "bulb")))) {
+	if (this.powered() && this.anchored && this.bulb) {
 		(rt.modSrcVar(f, "stat", 16777213, rt.bitAnd));
-		if (truthy(rt.fv(f, "crit_fail", rt.sv(f, "bulb")))) {
-			rt.setSv(f, "icon_state", fmt("＀1-p", [rt.sv(f, "base_state")]));
+		if (this.bulb.crit_fail) {
+			this.icon_state = `${this.base_state}1-p`;
 		} else {
-			rt.setSv(f, "icon_state", fmt("＀1", [rt.sv(f, "base_state")]));
+			this.icon_state = `${this.base_state}1`;
 		}
 	} else {
 		(rt.modSrcVar(f, "stat", 2, rt.bitOr));
-		rt.setSv(f, "icon_state", fmt("＀1-p", [rt.sv(f, "base_state")]));
+		this.icon_state = `${this.base_state}1-p`;
 	}
 	return f.dot;
 });
 
-// /obj/machinery/flasher/proc/attackby  (code/game/machinery/flasher.dm:56)  may sleep
-rt.def("/obj/machinery/flasher/proc/attackby", function* attackby(f: Frame) {
-	yield* g.srcCall(f, "add_fingerprint", live(f.args[1]));
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/wirecutters")) ? 1 : 0))) {
-		if (truthy(rt.sv(f, "bulb"))) {
-			yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("＀ begins to disconnect ＀'s flashbulb.", [live(f.args[1]), live(f.src)]), fmt("<span class='notice'>You begin to disconnect ＀'s flashbulb...</span>", [live(f.src)])]);
-			yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.fv(f, "usesound", live(f.args[0])), 100, 1]);
-			if ((truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, multiply(30, rt.fv(f, "toolspeed", live(f.args[0]))), "target", live(f.src)], rt.Args.Named))) && truthy(rt.sv(f, "bulb")))) {
-				yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("＀ has disconnected ＀'s flashbulb!", [live(f.args[1]), live(f.src)]), fmt("<span class='notice'>You disconnect ＀'s flashbulb.</span>", [live(f.src)])]);
-				yield* g.callName(f, rt.sv(f, "bulb"), "forceMove", [rt.sv(f, "loc")]);
-				rt.setSv(f, "bulb", null);
-				yield* g.srcCall(f, "power_change");
+// flasher.dm:56
+rt.def("/obj/machinery/flasher/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
+	yield* this.add_fingerprint(user);
+	if (rt.istype(W, T("/obj/item/weapon/wirecutters"))) {
+		if (this.bulb) {
+			user.visible_message(`${user} begins to disconnect ${this}'s flashbulb.`, `<span class='notice'>You begin to disconnect ${this}'s flashbulb...</span>`);
+			playsound(this.loc, W.usesound, 100, 1);
+			if ((yield* do_after(user, 30 * W.toolspeed, { target: this })) && this.bulb) {
+				user.visible_message(`${user} has disconnected ${this}'s flashbulb!`, `<span class='notice'>You disconnect ${this}'s flashbulb.</span>`);
+				yield* this.bulb.forceMove(this.loc);
+				this.bulb = null;
+				yield* this.power_change();
 			}
 		}
-	} else {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/device/assembly/flash/handheld")) ? 1 : 0))) {
-			if (!truthy(rt.sv(f, "bulb"))) {
-				if (!truthy((yield* g.callName(f, live(f.args[1]), "drop_item", [])))) {
-					return live(f.dot);
-				}
-				yield* g.callName(f, live(f.args[1]), "visible_message", [fmt("＀ installs ＀ into ＀.", [live(f.args[1]), live(f.args[0]), live(f.src)]), fmt("<span class='notice'>You install ＀ into ＀.</span>", [live(f.args[0]), live(f.src)])]);
-				yield* g.callName(f, live(f.args[0]), "forceMove", [live(f.src)]);
-				rt.setSv(f, "bulb", live(f.args[0]));
-				yield* g.srcCall(f, "power_change");
-			} else {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>A flashbulb is already installed in ＀!</span>", [live(f.src)])]);
+	} else if (rt.istype(W, T("/obj/item/device/assembly/flash/handheld"))) {
+		if (!this.bulb) {
+			if (!(yield* user.drop_item())) {
+				return f.dot;
+			}
+			user.visible_message(`${user} installs ${W} into ${this}.`, `<span class='notice'>You install ${W} into ${this}.</span>`);
+			yield* W.forceMove(this);
+			this.bulb = W;
+			yield* this.power_change();
+		} else {
+			to_chat(user, `<span class='warning'>A flashbulb is already installed in ${this}!</span>`);
+		}
+	} else if (rt.istype(W, T("/obj/item/weapon/wrench"))) {
+		if (!this.bulb) {
+			to_chat(user, "<span class='notice'>You start unsecuring the flasher frame...</span>");
+			playsound(this.loc, W.usesound, 50, 1);
+			if (yield* do_after(user, 40 * W.toolspeed, { target: this })) {
+				to_chat(user, "<span class='notice'>You unsecure the flasher frame.</span>");
+				yield* this.deconstruct(1);
 			}
 		} else {
-			if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/wrench")) ? 1 : 0))) {
-				if (!truthy(rt.sv(f, "bulb"))) {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You start unsecuring the flasher frame...</span>"]);
-					yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.fv(f, "usesound", live(f.args[0])), 50, 1]);
-					if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, multiply(40, rt.fv(f, "toolspeed", live(f.args[0]))), "target", live(f.src)], rt.Args.Named)))) {
-						yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='notice'>You unsecure the flasher frame.</span>"]);
-						yield* g.srcCall(f, "deconstruct", 1);
-					}
-				} else {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>Remove a flashbulb from ＀ first!</span>", [live(f.src)])]);
-				}
-			} else {
-				return (yield* g.callSuper(f, [], rt.Args.Same));
-			}
+			to_chat(user, `<span class='warning'>Remove a flashbulb from ${this} first!</span>`);
 		}
+	} else {
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["W", "user", "params"] });
-
-// /obj/machinery/flasher/proc/attack_ai  (code/game/machinery/flasher.dm:93)  may sleep
-rt.def("/obj/machinery/flasher/proc/attack_ai", function* attack_ai(f: Frame) {
-	if (!truthy(rt.sv(f, "anchored"))) return f.dot;
-	return (yield* g.srcCall(f, "flash"));
 }, true);
 
-// /obj/machinery/flasher/proc/run_obj_armor  (code/game/machinery/flasher.dm:96)
+// flasher.dm:93
+rt.def("/obj/machinery/flasher/proc/attack_ai", function* attack_ai(f: Frame) {
+	if (!this.anchored) return f.dot;
+	return (yield* this.flash());
+}, true);
+
+// flasher.dm:96
 rt.def("/obj/machinery/flasher/proc/run_obj_armor", function run_obj_armor(f: Frame) {
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 0;
 	}
-	if ((isEqual(live(f.args[2]), "melee") && rt.lt(live(f.args[0]), 10))) {
+	if (f.args[2] == "melee" && f.args[0] < 10) {
 		return 0;
 	}
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
+	f.dot = parent_proc();
 	return f.dot;
 }, false, { args: ["damage_amount", "damage_type", "damage_flag", "attack_dir"] });
 
-// /obj/machinery/flasher/proc/flash  (code/game/machinery/flasher.dm:101)  may sleep
+// flasher.dm:101
 rt.def("/obj/machinery/flasher/proc/flash", function* flash(f: Frame) {
 	let L: Value = null;
-	let $e: any;
-	f.vars = () => [L, $e];
-	if ((!truthy((yield* g.srcCall(f, "powered"))) || !truthy(rt.sv(f, "bulb")))) {
-		return live(f.dot);
+	if (!this.powered() || !this.bulb) {
+		return f.dot;
 	}
-	if ((truthy(rt.fv(f, "crit_fail", rt.sv(f, "bulb"))) || (truthy(rt.sv(f, "last_flash")) && rt.lt(rt.worldTime(f), add(rt.fv(f, "last_flash", live(f.src)), 150))))) {
-		return live(f.dot);
+	if (this.bulb.crit_fail || this.last_flash && rt.worldTime(f) < this.last_flash + 150) {
+		return f.dot;
 	}
-	if (!truthy((yield* g.callName(f, rt.sv(f, "bulb"), "flash_recharge", [30])))) {
-		yield* g.srcCall(f, "power_change");
-		return live(f.dot);
+	if (!(yield* this.bulb.flash_recharge(30))) {
+		yield* this.power_change();
+		return f.dot;
 	}
-	rt.incField(f, rt.sv(f, "bulb"), "times_used", 1, true);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/weapons/flash.ogg"), 100, 1]);
-	yield* g.call(f, P("/proc/flick"), null, [fmt("＀_flash", [rt.sv(f, "base_state")]), live(f.src)]);
-	rt.setSv(f, "last_flash", rt.worldTime(f));
-	yield* g.srcCall(f, "use_power", 1000);
-	L = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/viewers"), null, [live(f.src), null])), T("/mob/living"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		L = $e;
-		if (rt.gt((yield* g.call(f, P("/proc/get_dist"), null, [live(f.src), live(L)])), rt.sv(f, "range"))) {
+	this.bulb.times_used++;
+	playsound(this.loc, rt.rsc("sound/weapons/flash.ogg"), 100, 1);
+	flick(`${this.base_state}_flash`, this);
+	this.last_flash = rt.worldTime(f);
+	yield* this.use_power(1000);
+	for (L of each(viewers(this, null), T("/mob/living"))) {
+		if (get_dist(this, L) > this.range) {
 			continue;
 		}
-		if (truthy((yield* g.callName(f, live(L), "flash_act", ["affect_silicon", 1], rt.Args.Named)))) {
-			yield* g.callName(f, live(L), "Knockdown", [rt.sv(f, "strength")]);
+		if (yield* L.flash_act({ affect_silicon: 1 })) {
+			yield* L.Knockdown(this.strength);
 		}
 	}
-	rt.endFor(f, 0);
 	return 1;
 }, true);
 
-// /obj/machinery/flasher/proc/emp_act  (code/game/machinery/flasher.dm:128)  may sleep
-rt.def("/obj/machinery/flasher/proc/emp_act", function* emp_act(f: Frame) {
-	if (!truthy(rt.bitAnd(rt.sv(f, "stat"), 3))) {
-		if ((truthy(rt.sv(f, "bulb")) && truthy(rt.op(f, "Prob", [], [divide(75, live(f.args[0]))])))) {
-			yield* g.srcCall(f, "flash");
-			yield* g.callName(f, rt.sv(f, "bulb"), "burn_out", []);
-			yield* g.srcCall(f, "power_change");
+// flasher.dm:128
+rt.def("/obj/machinery/flasher/proc/emp_act", function* emp_act(f: Frame, severity: Value) {
+	if (!rt.bitAnd(this.stat, 3)) {
+		if (this.bulb && prob(75 / severity)) {
+			yield* this.flash();
+			yield* this.bulb.burn_out();
+			yield* this.power_change();
 		}
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	return f.dot;
-}, true, { args: ["severity"] });
-
-// /obj/machinery/flasher/proc/obj_break  (code/game/machinery/flasher.dm:136)  may sleep
-rt.def("/obj/machinery/flasher/proc/obj_break", function* obj_break(f: Frame, damage_flag: Value) {
-	f.vars = () => [damage_flag];
-	if (truthy(rt.bitAnd(rt.sv(f, "flags"), 128))) return f.dot;
-	if (truthy(rt.bitAnd(rt.sv(f, "stat"), 1))) return f.dot;
-	(rt.modSrcVar(f, "stat", 1, rt.bitOr));
-	if (!truthy(rt.sv(f, "bulb"))) return f.dot;
-	yield* g.callName(f, rt.sv(f, "bulb"), "burn_out", []);
-	yield* g.srcCall(f, "power_change");
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /obj/machinery/flasher/proc/deconstruct  (code/game/machinery/flasher.dm:144)  may sleep
+// flasher.dm:136
+rt.def("/obj/machinery/flasher/proc/obj_break", function* obj_break(f: Frame, damage_flag: Value) {
+	if (rt.bitAnd(this.flags, NODECONSTRUCT)) return f.dot;
+	if (rt.bitAnd(this.stat, 1)) return f.dot;
+	(rt.modSrcVar(f, "stat", 1, rt.bitOr));
+	if (!this.bulb) return f.dot;
+	yield* this.bulb.burn_out();
+	yield* this.power_change();
+	return f.dot;
+}, true);
+
+// flasher.dm:144
 rt.def("/obj/machinery/flasher/proc/deconstruct", function* deconstruct(f: Frame, disassembled: Value) {
 	let F: Value = null;
-	f.vars = () => [disassembled, F];
-	if (live(disassembled) === null) {
-		disassembled = 1;
-	}
-	if (!truthy(rt.bitAnd(rt.sv(f, "flags"), 128))) {
-		if (truthy(rt.sv(f, "bulb"))) {
-			yield* g.callName(f, rt.sv(f, "bulb"), "forceMove", [rt.sv(f, "loc")]);
-			rt.setSv(f, "bulb", null);
+	disassembled ??= 1;
+	if (!rt.bitAnd(this.flags, NODECONSTRUCT)) {
+		if (this.bulb) {
+			yield* this.bulb.forceMove(this.loc);
+			this.bulb = null;
 		}
-		if (truthy(live(disassembled))) {
-			yield* g.srcCall(f, "transfer_fingerprints_to", (F = (yield* g.new_(f, T("/obj/item/wallframe/flasher"), [rt.getStep(f, live(f.src), 0)]))));
-			rt.setFv(f, "id", live(F), rt.sv(f, "id"));
-			yield* g.call(f, P("/proc/playsound"), null, [rt.sv(f, "loc"), rt.rsc("sound/items/deconstruct.ogg"), 50, 1]);
+		if (disassembled) {
+			this.transfer_fingerprints_to((F = (yield* new_(T("/obj/item/wallframe/flasher"), rt.getStep(f, this, 0)))));
+			F.id = this.id;
+			playsound(this.loc, rt.rsc("sound/items/deconstruct.ogg"), 50, 1);
 		} else {
-			yield* g.new_(f, T("/obj/item/stack/sheet/metal"), [rt.sv(f, "loc"), 2]);
+			yield* new_(T("/obj/item/stack/sheet/metal"), this.loc, 2);
 		}
 	}
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
@@ -244,48 +227,47 @@ rt.type(10793, "/obj/machinery/flasher/portable", "/obj/machinery/flasher", {
 	density: 1,
 });
 
-// /obj/machinery/flasher/portable/proc/Initialize  (code/game/machinery/flasher.dm:158)  may sleep
+// flasher.dm:158
 rt.def("/obj/machinery/flasher/portable/proc/Initialize", function* Initialize(f: Frame) {
-	f.dot = (yield* g.callSuper(f, [], rt.Args.Same));
-	rt.setSv(f, "proximity_monitor", (yield* g.new_(f, T("/datum/proximity_monitor"), [live(f.src), 0])));
+	f.dot = (yield* parent_proc());
+	this.proximity_monitor = (yield* new_(T("/datum/proximity_monitor"), this, 0));
 	return f.dot;
 }, true);
 
-// /obj/machinery/flasher/portable/proc/HasProximity  (code/game/machinery/flasher.dm:162)  may sleep
+// flasher.dm:162
 rt.def("/obj/machinery/flasher/portable/proc/HasProximity", function* HasProximity(f: Frame, AM: Value) {
 	let M: Value = null;
-	f.vars = () => [AM, M];
-	if ((truthy(rt.sv(f, "last_flash")) && rt.lt(rt.worldTime(f), add(rt.sv(f, "last_flash"), 150)))) {
-		return live(f.dot);
+	if (this.last_flash && rt.worldTime(f) < this.last_flash + 150) {
+		return f.dot;
 	}
-	if (!truthy((rt.istype(live(AM), T("/mob/living/carbon")) ? 1 : 0))) return f.dot;
-	if (!(!isEqual(rt.gv(f, "m_intent", (M = live(AM))), "walk") && truthy(rt.sv(f, "anchored")))) return f.dot;
-	yield* g.srcCall(f, "flash");
+	if (!rt.istype(AM, T("/mob/living/carbon"))) return f.dot;
+	if (!((M = AM).m_intent != "walk" && this.anchored)) return f.dot;
+	yield* this.flash();
 	return f.dot;
 }, true);
 
-// /obj/machinery/flasher/portable/proc/attackby  (code/game/machinery/flasher.dm:171)  may sleep
-rt.def("/obj/machinery/flasher/portable/proc/attackby", function* attackby(f: Frame) {
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/wrench")) ? 1 : 0))) {
-		yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.fv(f, "usesound", live(f.args[0])), 100, 1]);
-		if ((!truthy(rt.sv(f, "anchored")) && !truthy((yield* g.srcCall(f, "isinspace"))))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>＀ is now secured.</span>", [live(f.src)])]);
-			yield* g.srcCall(f, "add_overlay", fmt("＀-s", [rt.sv(f, "base_state")]));
-			rt.setSv(f, "anchored", 1);
-			yield* g.srcCall(f, "power_change");
-			yield* g.callName(f, rt.sv(f, "proximity_monitor"), "SetRange", [rt.sv(f, "range")]);
+// flasher.dm:171
+rt.def("/obj/machinery/flasher/portable/proc/attackby", function* attackby(f: Frame, W: Value, user: Value, params: Value) {
+	if (rt.istype(W, T("/obj/item/weapon/wrench"))) {
+		playsound(this.loc, W.usesound, 100, 1);
+		if (!this.anchored && !this.isinspace()) {
+			to_chat(user, `<span class='notice'>${this} is now secured.</span>`);
+			this.add_overlay(`${this.base_state}-s`);
+			this.anchored = 1;
+			yield* this.power_change();
+			yield* this.proximity_monitor.SetRange(this.range);
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>＀ can now be moved.</span>", [live(f.src)])]);
-			yield* g.srcCall(f, "cut_overlays");
-			rt.setSv(f, "anchored", 0);
-			yield* g.srcCall(f, "power_change");
-			yield* g.callName(f, rt.sv(f, "proximity_monitor"), "SetRange", [0]);
+			to_chat(user, `<span class='notice'>${this} can now be moved.</span>`);
+			this.cut_overlays();
+			this.anchored = 0;
+			yield* this.power_change();
+			yield* this.proximity_monitor.SetRange(0);
 		}
 	} else {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["W", "user", "params"] });
+}, true);
 
 rt.type(9542, "/obj/item/wallframe/flasher", "/obj/item/wallframe", {
 	id: null,
@@ -296,18 +278,17 @@ rt.type(9542, "/obj/item/wallframe/flasher", "/obj/item/wallframe", {
 	result_path: rt.typePath("/obj/machinery/flasher"),
 });
 
-// /obj/item/wallframe/flasher/proc/examine  (code/game/machinery/flasher.dm:199)
-rt.def("/obj/item/wallframe/flasher/proc/examine", function examine(f: Frame) {
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.call(f, P("/proc/to_chat"), null, [live(f.args[0]), fmt("<span class='notice'>Its channel ID is '＀'.</span>", [rt.sv(f, "id")])]);
+// flasher.dm:199
+rt.def("/obj/item/wallframe/flasher/proc/examine", function examine(f: Frame, user: Value) {
+	parent_proc();
+	to_chat(user, `<span class='notice'>Its channel ID is '${this.id}'.</span>`);
 	return f.dot;
-}, false, { args: ["user"] });
+}, false);
 
-// /obj/item/wallframe/flasher/proc/after_attach  (code/game/machinery/flasher.dm:203)
-rt.def("/obj/item/wallframe/flasher/proc/after_attach", function after_attach(f: Frame) {
+// flasher.dm:203
+rt.def("/obj/item/wallframe/flasher/proc/after_attach", function after_attach(f: Frame, O: Value) {
 	let F: Value = null;
-	f.vars = () => [F];
-	rt.callSuper(f, [], rt.Args.Same);
-	rt.setFv(f, "id", (F = live(f.args[0])), rt.sv(f, "id"));
+	parent_proc();
+	(F = O).id = this.id;
 	return f.dot;
-}, false, { args: ["O"] });
+}, false);

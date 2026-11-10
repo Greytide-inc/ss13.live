@@ -1,7 +1,7 @@
-// From code/game/mecha/medical/odysseus.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/mecha/medical/odysseus.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(12118, "/obj/mecha/medical/odysseus", "/obj/mecha/medical", {
@@ -19,32 +19,29 @@ rt.type(12118, "/obj/mecha/medical/odysseus", "/obj/mecha/medical", {
 	wreckage: rt.typePath("/obj/structure/mecha_wreckage/odysseus"),
 });
 
-// /obj/mecha/medical/odysseus/proc/moved_inside  (code/game/mecha/medical/odysseus.dm:16)  may sleep
-rt.def("/obj/mecha/medical/odysseus/proc/moved_inside", function* moved_inside(f: Frame) {
+// odysseus.dm:16
+rt.def("/obj/mecha/medical/odysseus/proc/moved_inside", function* moved_inside(f: Frame, H: Value) {
 	let A: Value = null;
-	f.vars = () => [A];
-	if (truthy((yield* g.callSuper(f, [], rt.Args.Same)))) {
-		if ((truthy(rt.fv(f, "glasses", live(f.args[0]))) && truthy((rt.istype(rt.fv(f, "glasses", live(f.args[0])), T("/obj/item/clothing/glasses/hud")) ? 1 : 0)))) {
-			yield* g.srcCall(f, "occupant_message", fmt("<span class='warning'>Your ＀ prevent you from using the built-in medical hud.</span>", [rt.fv(f, "glasses", live(f.args[0]))]));
+	if (yield* parent_proc()) {
+		if (H.glasses && rt.istype(H.glasses, T("/obj/item/clothing/glasses/hud"))) {
+			this.occupant_message(`<span class='warning'>Your ${H.glasses} prevent you from using the built-in medical hud.</span>`);
 		} else {
-			yield* g.callName(f, (A = rt.index(rt.gl("huds"), 4)), "add_hud_to", [live(f.args[0])]);
-			rt.setSv(f, "builtin_hud_user", 1);
+			(A = rt.index(GLOB.huds, DATA_HUD_MEDICAL_ADVANCED)).add_hud_to(H);
+			this.builtin_hud_user = 1;
 		}
 		return 1;
 	} else {
 		return 0;
 	}
-	return f.dot;
-}, true, { args: ["H"] });
+}, true);
 
-// /obj/mecha/medical/odysseus/proc/go_out  (code/game/mecha/medical/odysseus.dm:28)  may sleep
+// odysseus.dm:28
 rt.def("/obj/mecha/medical/odysseus/proc/go_out", function* go_out(f: Frame) {
 	let H: Value = null, A: Value = null;
-	f.vars = () => [H, A];
-	if ((truthy((rt.istype(rt.sv(f, "occupant"), T("/mob/living/carbon/human")) ? 1 : 0)) && truthy(rt.sv(f, "builtin_hud_user")))) {
-		H = rt.sv(f, "occupant");
-		yield* g.callName(f, (A = rt.index(rt.gl("huds"), 4)), "remove_hud_from", [live(H)]);
+	if (rt.istype(this.occupant, T("/mob/living/carbon/human")) && this.builtin_hud_user) {
+		H = this.occupant;
+		(A = rt.index(GLOB.huds, DATA_HUD_MEDICAL_ADVANCED)).remove_hud_from(H);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	return live(f.dot);
+	yield* parent_proc();
+	return f.dot;
 }, true);

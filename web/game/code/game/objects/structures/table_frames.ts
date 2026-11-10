@@ -1,7 +1,7 @@
-// From code/game/objects/structures/table_frames.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/structures/table_frames.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(12203, "/obj/structure/table_frame", "/obj/structure", {
@@ -18,122 +18,105 @@ rt.type(12203, "/obj/structure/table_frame", "/obj/structure", {
 	max_integrity: 100,
 });
 
-// /obj/structure/table_frame/proc/attackby  (code/game/objects/structures/table_frames.dm:26)  may sleep
-rt.def("/obj/structure/table_frame/proc/attackby", function* attackby(f: Frame) {
+// table_frames.dm:26
+rt.def("/obj/structure/table_frame/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
 	let _P: Value = null, M: Value = null, G: Value = null, S: Value = null, C: Value = null;
-	f.vars = () => [_P, M, G, S, C];
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/weapon/wrench")) ? 1 : 0))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You start disassembling ＀...</span>", [live(f.src)])]);
-		yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.fv(f, "usesound", live(f.args[0])), 50, 1]);
-		if (truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, multiply(30, rt.fv(f, "toolspeed", live(f.args[0]))), "target", live(f.src)], rt.Args.Named)))) {
-			yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/items/deconstruct.ogg"), 50, 1]);
-			yield* g.srcCall(f, "deconstruct", 1);
+	if (rt.istype(I, T("/obj/item/weapon/wrench"))) {
+		to_chat(user, `<span class='notice'>You start disassembling ${this}...</span>`);
+		playsound(this.loc, I.usesound, 50, 1);
+		if (yield* do_after(user, 30 * I.toolspeed, { target: this })) {
+			playsound(this.loc, rt.rsc("sound/items/deconstruct.ogg"), 50, 1);
+			yield* this.deconstruct(1);
+		}
+	} else if (rt.istype(I, T("/obj/item/stack/sheet/plasteel"))) {
+		if ((_P = I).get_amount() < 1) {
+			to_chat(user, "<span class='warning'>You need one plasteel sheet to do this!</span>");
+			return f.dot;
+		}
+		to_chat(user, `<span class='notice'>You start adding ${_P} to ${this}...</span>`);
+		if ((yield* do_after(user, 50, { target: this })) && (yield* _P.use(1))) {
+			yield* this.make_new_table(T("/obj/structure/table/reinforced"));
+		}
+	} else if (rt.istype(I, T("/obj/item/stack/sheet/metal"))) {
+		if ((M = I).get_amount() < 1) {
+			to_chat(user, "<span class='warning'>You need one metal sheet to do this!</span>");
+			return f.dot;
+		}
+		to_chat(user, `<span class='notice'>You start adding ${M} to ${this}...</span>`);
+		if ((yield* do_after(user, 20, { target: this })) && (yield* M.use(1))) {
+			yield* this.make_new_table(T("/obj/structure/table"));
+		}
+	} else if (rt.istype(I, T("/obj/item/stack/sheet/glass"))) {
+		if ((G = I).get_amount() < 1) {
+			to_chat(user, "<span class='warning'>You need one glass sheet to do this!</span>");
+			return f.dot;
+		}
+		to_chat(user, `<span class='notice'>You start adding ${G} to ${this}...</span>`);
+		if ((yield* do_after(user, 20, { target: this })) && (yield* G.use(1))) {
+			yield* this.make_new_table(T("/obj/structure/table/glass"));
+		}
+	} else if (rt.istype(I, T("/obj/item/stack/sheet/mineral/silver"))) {
+		if ((S = I).get_amount() < 1) {
+			to_chat(user, "<span class='warning'>You need one silver sheet to do this!</span>");
+			return f.dot;
+		}
+		to_chat(user, `<span class='notice'>You start adding ${S} to ${this}...</span>`);
+		if ((yield* do_after(user, 20, { target: this })) && (yield* S.use(1))) {
+			yield* this.make_new_table(T("/obj/structure/table/optable"));
+		}
+	} else if (rt.istype(I, T("/obj/item/stack/tile/carpet/black"))) {
+		if ((C = I).get_amount() < 1) {
+			to_chat(user, "<span class='warning'>You need one  black carpet sheet to do this!</span>");
+			return f.dot;
+		}
+		to_chat(user, `<span class='notice'>You start adding ${C} to ${this}...</span>`);
+		if ((yield* do_after(user, 20, { target: this })) && (yield* C.use(1))) {
+			yield* this.make_new_table(T("/obj/structure/table/wood/fancy/black"));
+		}
+	} else if (rt.istype(I, T("/obj/item/stack/tile/carpet"))) {
+		if ((C = I).get_amount() < 1) {
+			to_chat(user, "<span class='warning'>You need one carpet sheet to do this!</span>");
+			return f.dot;
+		}
+		to_chat(user, `<span class='notice'>You start adding ${C} to ${this}...</span>`);
+		if ((yield* do_after(user, 20, { target: this })) && (yield* C.use(1))) {
+			yield* this.make_new_table(T("/obj/structure/table/wood/fancy"));
 		}
 	} else {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/stack/sheet/plasteel")) ? 1 : 0))) {
-			if (rt.lt((yield* g.callName(f, (_P = live(f.args[0])), "get_amount", [])), 1)) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You need one plasteel sheet to do this!</span>"]);
-				return live(f.dot);
-			}
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You start adding ＀ to ＀...</span>", [live(_P), live(f.src)])]);
-			if ((truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, 50, "target", live(f.src)], rt.Args.Named))) && truthy((yield* g.callName(f, live(_P), "use", [1]))))) {
-				yield* g.srcCall(f, "make_new_table", T("/obj/structure/table/reinforced"));
-			}
-		} else {
-			if (truthy((rt.istype(live(f.args[0]), T("/obj/item/stack/sheet/metal")) ? 1 : 0))) {
-				if (rt.lt((yield* g.callName(f, (M = live(f.args[0])), "get_amount", [])), 1)) {
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You need one metal sheet to do this!</span>"]);
-					return live(f.dot);
-				}
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You start adding ＀ to ＀...</span>", [live(M), live(f.src)])]);
-				if ((truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, 20, "target", live(f.src)], rt.Args.Named))) && truthy((yield* g.callName(f, live(M), "use", [1]))))) {
-					yield* g.srcCall(f, "make_new_table", T("/obj/structure/table"));
-				}
-			} else {
-				if (truthy((rt.istype(live(f.args[0]), T("/obj/item/stack/sheet/glass")) ? 1 : 0))) {
-					if (rt.lt((yield* g.callName(f, (G = live(f.args[0])), "get_amount", [])), 1)) {
-						yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You need one glass sheet to do this!</span>"]);
-						return live(f.dot);
-					}
-					yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You start adding ＀ to ＀...</span>", [live(G), live(f.src)])]);
-					if ((truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, 20, "target", live(f.src)], rt.Args.Named))) && truthy((yield* g.callName(f, live(G), "use", [1]))))) {
-						yield* g.srcCall(f, "make_new_table", T("/obj/structure/table/glass"));
-					}
-				} else {
-					if (truthy((rt.istype(live(f.args[0]), T("/obj/item/stack/sheet/mineral/silver")) ? 1 : 0))) {
-						if (rt.lt((yield* g.callName(f, (S = live(f.args[0])), "get_amount", [])), 1)) {
-							yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You need one silver sheet to do this!</span>"]);
-							return live(f.dot);
-						}
-						yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You start adding ＀ to ＀...</span>", [live(S), live(f.src)])]);
-						if ((truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, 20, "target", live(f.src)], rt.Args.Named))) && truthy((yield* g.callName(f, live(S), "use", [1]))))) {
-							yield* g.srcCall(f, "make_new_table", T("/obj/structure/table/optable"));
-						}
-					} else {
-						if (truthy((rt.istype(live(f.args[0]), T("/obj/item/stack/tile/carpet/black")) ? 1 : 0))) {
-							if (rt.lt((yield* g.callName(f, (C = live(f.args[0])), "get_amount", [])), 1)) {
-								yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You need one  black carpet sheet to do this!</span>"]);
-								return live(f.dot);
-							}
-							yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You start adding ＀ to ＀...</span>", [live(C), live(f.src)])]);
-							if ((truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, 20, "target", live(f.src)], rt.Args.Named))) && truthy((yield* g.callName(f, live(C), "use", [1]))))) {
-								yield* g.srcCall(f, "make_new_table", T("/obj/structure/table/wood/fancy/black"));
-							}
-						} else {
-							if (truthy((rt.istype(live(f.args[0]), T("/obj/item/stack/tile/carpet")) ? 1 : 0))) {
-								if (rt.lt((yield* g.callName(f, (C = live(f.args[0])), "get_amount", [])), 1)) {
-									yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You need one carpet sheet to do this!</span>"]);
-									return live(f.dot);
-								}
-								yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You start adding ＀ to ＀...</span>", [live(C), live(f.src)])]);
-								if ((truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, 20, "target", live(f.src)], rt.Args.Named))) && truthy((yield* g.callName(f, live(C), "use", [1]))))) {
-									yield* g.srcCall(f, "make_new_table", T("/obj/structure/table/wood/fancy"));
-								}
-							} else {
-								return (yield* g.callSuper(f, [], rt.Args.Same));
-							}
-						}
-					}
-				}
-			}
-		}
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["I", "user", "params"] });
+}, true);
 
-// /obj/structure/table_frame/proc/make_new_table  (code/game/objects/structures/table_frames.dm:84)  may sleep
+// table_frames.dm:84
 rt.def("/obj/structure/table_frame/proc/make_new_table", function* make_new_table(f: Frame, table_type: Value) {
 	let _T: Value = null;
-	f.vars = () => [table_type, _T];
-	rt.setFv(f, "frame", (_T = (yield* g.new_(f, live(table_type), [rt.sv(f, "loc")]))), rt.sv(f, "type"));
-	rt.setFv(f, "framestack", live(_T), rt.sv(f, "framestack"));
-	rt.setFv(f, "framestackamount", live(_T), rt.sv(f, "framestackamount"));
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	(_T = (yield* new_(table_type, this.loc))).frame = this.type;
+	_T.framestack = this.framestack;
+	_T.framestackamount = this.framestackamount;
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
-// /obj/structure/table_frame/proc/deconstruct  (code/game/objects/structures/table_frames.dm:91)  may sleep
+// table_frames.dm:91
 rt.def("/obj/structure/table_frame/proc/deconstruct", function* deconstruct(f: Frame, disassembled: Value) {
-	f.vars = () => [disassembled];
-	if (live(disassembled) === null) {
-		disassembled = 1;
-	}
-	yield* g.new_(f, rt.sv(f, "framestack"), [rt.getStep(f, live(f.src), 0), rt.sv(f, "framestackamount")]);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	disassembled ??= 1;
+	yield* new_(this.framestack, rt.getStep(f, this, 0), this.framestackamount);
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
-// /obj/structure/table_frame/proc/narsie_act  (code/game/objects/structures/table_frames.dm:95)  may sleep
+// table_frames.dm:95
 rt.def("/obj/structure/table_frame/proc/narsie_act", function* narsie_act(f: Frame) {
-	yield* g.new_(f, T("/obj/structure/table_frame/wood"), [rt.fv(f, "loc", live(f.src))]);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* new_(T("/obj/structure/table_frame/wood"), this.loc);
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
-// /obj/structure/table_frame/proc/ratvar_act  (code/game/objects/structures/table_frames.dm:99)  may sleep
+// table_frames.dm:99
 rt.def("/obj/structure/table_frame/proc/ratvar_act", function* ratvar_act(f: Frame) {
-	yield* g.new_(f, T("/obj/structure/table_frame/brass"), [rt.fv(f, "loc", live(f.src))]);
-	yield* g.call(f, P("/proc/qdel"), null, [live(f.src)]);
+	yield* new_(T("/obj/structure/table_frame/brass"), this.loc);
+	yield* qdel(this);
 	return f.dot;
 }, true);
 
@@ -146,36 +129,33 @@ rt.type(12206, "/obj/structure/table_frame/wood", "/obj/structure/table_frame", 
 	resistance_flags: 4,
 });
 
-// /obj/structure/table_frame/wood/proc/attackby  (code/game/objects/structures/table_frames.dm:115)  may sleep
-rt.def("/obj/structure/table_frame/wood/proc/attackby", function* attackby(f: Frame) {
+// table_frames.dm:115
+rt.def("/obj/structure/table_frame/wood/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
 	let W: Value = null, C: Value = null;
-	f.vars = () => [W, C];
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/stack/sheet/mineral/wood")) ? 1 : 0))) {
-		if (rt.lt((yield* g.callName(f, (W = live(f.args[0])), "get_amount", [])), 1)) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You need one wood sheet to do this!</span>"]);
-			return live(f.dot);
+	if (rt.istype(I, T("/obj/item/stack/sheet/mineral/wood"))) {
+		if ((W = I).get_amount() < 1) {
+			to_chat(user, "<span class='warning'>You need one wood sheet to do this!</span>");
+			return f.dot;
 		}
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You start adding ＀ to ＀...</span>", [live(W), live(f.src)])]);
-		if ((truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, 20, "target", live(f.src)], rt.Args.Named))) && truthy((yield* g.callName(f, live(W), "use", [1]))))) {
-			yield* g.srcCall(f, "make_new_table", T("/obj/structure/table/wood"));
+		to_chat(user, `<span class='notice'>You start adding ${W} to ${this}...</span>`);
+		if ((yield* do_after(user, 20, { target: this })) && (yield* W.use(1))) {
+			yield* this.make_new_table(T("/obj/structure/table/wood"));
 		}
-		return live(f.dot);
+		return f.dot;
+	} else if (rt.istype(I, T("/obj/item/stack/tile/carpet"))) {
+		if ((C = I).get_amount() < 1) {
+			to_chat(user, "<span class='warning'>You need one carpet sheet to do this!</span>");
+			return f.dot;
+		}
+		to_chat(user, `<span class='notice'>You start adding ${C} to ${this}...</span>`);
+		if ((yield* do_after(user, 20, { target: this })) && (yield* C.use(1))) {
+			yield* this.make_new_table(T("/obj/structure/table/wood/poker"));
+		}
 	} else {
-		if (truthy((rt.istype(live(f.args[0]), T("/obj/item/stack/tile/carpet")) ? 1 : 0))) {
-			if (rt.lt((yield* g.callName(f, (C = live(f.args[0])), "get_amount", [])), 1)) {
-				yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You need one carpet sheet to do this!</span>"]);
-				return live(f.dot);
-			}
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You start adding ＀ to ＀...</span>", [live(C), live(f.src)])]);
-			if ((truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, 20, "target", live(f.src)], rt.Args.Named))) && truthy((yield* g.callName(f, live(C), "use", [1]))))) {
-				yield* g.srcCall(f, "make_new_table", T("/obj/structure/table/wood/poker"));
-			}
-		} else {
-			return (yield* g.callSuper(f, [], rt.Args.Same));
-		}
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["I", "user", "params"] });
+}, true);
 
 rt.type(12204, "/obj/structure/table_frame/brass", "/obj/structure/table_frame", {
 	name: "brass table frame",
@@ -186,47 +166,44 @@ rt.type(12204, "/obj/structure/table_frame/brass", "/obj/structure/table_frame",
 	framestackamount: 1,
 });
 
-// /obj/structure/table_frame/brass/proc/New  (code/game/objects/structures/table_frames.dm:144)  may sleep
+// table_frames.dm:144
 rt.def("/obj/structure/table_frame/brass/proc/New", function* New(f: Frame) {
-	yield* g.call(f, P("/proc/change_construction_value"), null, [1]);
-	yield* g.callSuper(f, [], rt.Args.Same);
+	change_construction_value(1);
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /obj/structure/table_frame/brass/proc/Destroy  (code/game/objects/structures/table_frames.dm:148)  may sleep
+// table_frames.dm:148
 rt.def("/obj/structure/table_frame/brass/proc/Destroy", function* Destroy(f: Frame) {
-	yield* g.call(f, P("/proc/change_construction_value"), null, [-1]);
-	return (yield* g.callSuper(f, [], rt.Args.Same));
+	change_construction_value(-1);
+	return (yield* parent_proc());
 }, true);
 
-// /obj/structure/table_frame/brass/proc/attackby  (code/game/objects/structures/table_frames.dm:152)  may sleep
-rt.def("/obj/structure/table_frame/brass/proc/attackby", function* attackby(f: Frame) {
+// table_frames.dm:152
+rt.def("/obj/structure/table_frame/brass/proc/attackby", function* attackby(f: Frame, I: Value, user: Value, params: Value) {
 	let W: Value = null;
-	f.vars = () => [W];
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/item/stack/tile/brass")) ? 1 : 0))) {
-		if (rt.lt((yield* g.callName(f, (W = live(f.args[0])), "get_amount", [])), 1)) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>You need one brass sheet to do this!</span>"]);
-			return live(f.dot);
+	if (rt.istype(I, T("/obj/item/stack/tile/brass"))) {
+		if ((W = I).get_amount() < 1) {
+			to_chat(user, "<span class='warning'>You need one brass sheet to do this!</span>");
+			return f.dot;
 		}
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='notice'>You start adding ＀ to ＀...</span>", [live(W), live(f.src)])]);
-		if ((truthy((yield* g.call(f, P("/proc/do_after"), null, [null, live(f.args[1]), null, 20, "target", live(f.src)], rt.Args.Named))) && truthy((yield* g.callName(f, live(W), "use", [1]))))) {
-			yield* g.srcCall(f, "make_new_table", T("/obj/structure/table/reinforced/brass"));
+		to_chat(user, `<span class='notice'>You start adding ${W} to ${this}...</span>`);
+		if ((yield* do_after(user, 20, { target: this })) && (yield* W.use(1))) {
+			yield* this.make_new_table(T("/obj/structure/table/reinforced/brass"));
 		}
 	} else {
-		return (yield* g.callSuper(f, [], rt.Args.Same));
+		return (yield* parent_proc());
 	}
 	return f.dot;
-}, true, { args: ["I", "user", "params"] });
+}, true);
 
-// /obj/structure/table_frame/brass/proc/narsie_act  (code/game/objects/structures/table_frames.dm:164)  may sleep
+// table_frames.dm:164
 rt.def("/obj/structure/table_frame/brass/proc/narsie_act", function* narsie_act(f: Frame) {
-	let previouscolor: Value = null;
-	f.vars = () => [previouscolor];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy(live(f.src))) return f.dot;
-	previouscolor = rt.sv(f, "color");
-	rt.setSv(f, "color", "#960000");
-	rt.op(f, "Animate", [2, 6], [null, live(f.src), "color", live(previouscolor), "time", 8]);
-	yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [live(f.src), P("/atom/proc/update_atom_colour")])), 8]);
+	yield* parent_proc();
+	if (!this) return f.dot;
+	let previouscolor: Value = this.color;
+	this.color = "#960000";
+	rt.op(f, "Animate", [2, 6], [null, this, "color", previouscolor, "time", 8]);
+	yield* addtimer((yield* new_(T("/datum/callback"), this, P("/atom/proc/update_atom_colour"))), 8);
 	return f.dot;
 }, true);

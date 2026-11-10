@@ -1,5 +1,5 @@
 // Types declared in code/modules/atmospherics/machinery/components/trinary_devices that have no procs of their own (step 3, tools/export-types.mjs; see src/vm/typedefs.ts).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
+import * as rt from "#runtime";
 
 rt.type(10577, "/obj/machinery/atmospherics/components/trinary/filter/flipped", "/obj/machinery/atmospherics/components/trinary/filter", {
 	icon_state: "filter_off_f",

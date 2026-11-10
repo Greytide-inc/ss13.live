@@ -1,7 +1,7 @@
-// From code/game/objects/items/devices/traitordevices.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/game/objects/items/devices/traitordevices.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, fmt } = rt;
 
 
 rt.type(9293, "/obj/item/device/batterer", "/obj/item/device", {
@@ -19,41 +19,31 @@ rt.type(9293, "/obj/item/device/batterer", "/obj/item/device", {
 	origin_tech: "magnets=3;combat=3;syndicate=3",
 });
 
-// /obj/item/device/batterer/proc/attack_self  (code/game/objects/items/devices/traitordevices.dm:35)  may sleep
+// traitordevices.dm:35
 rt.def("/obj/item/device/batterer/proc/attack_self", function* attack_self(f: Frame, user: Value, flag: Value, emp: Value) {
 	let M: Value = null;
-	let $e: any;
-	f.vars = () => [user, flag, emp, M, $e];
-	if (live(flag) === null) {
-		flag = 0;
+	flag ??= 0;
+	emp ??= 0;
+	if (!user) {
+		return f.dot;
 	}
-	if (live(emp) === null) {
-		emp = 0;
+	if (this.times_used >= this.max_uses) {
+		to_chat(user, "<span class='danger'>The mind batterer has been burnt out!</span>");
+		return f.dot;
 	}
-	if (!truthy(live(user))) {
-		return live(f.dot);
-	}
-	if (rt.ge(rt.sv(f, "times_used"), rt.sv(f, "max_uses"))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(user), "<span class='danger'>The mind batterer has been burnt out!</span>"]);
-		return live(f.dot);
-	}
-	yield* g.call(f, P("/proc/add_logs"), null, [live(user), null, "knocked down people in the area", live(f.src)]);
-	M = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/urange"), null, [10, live(user), 1])), T("/mob/living/carbon/human"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		M = $e;
-		if (truthy(rt.op(f, "Prob", [], [50]))) {
-			yield* g.callName(f, live(M), "Knockdown", [(yield* g.call(f, P("/proc/rand"), null, [200, 400]))]);
-			yield* g.call(f, P("/proc/to_chat"), null, [live(M), "<span class='userdanger'>You feel a tremendous, paralyzing wave flood your mind.</span>"]);
+	add_logs(user, null, "knocked down people in the area", this);
+	for (M of each(urange(10, user, 1), T("/mob/living/carbon/human"))) {
+		if (prob(50)) {
+			yield* M.Knockdown(rand(200, 400));
+			to_chat(M, "<span class='userdanger'>You feel a tremendous, paralyzing wave flood your mind.</span>");
 		} else {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(M), "<span class='userdanger'>You feel a sudden, electric jolt travel through your head.</span>"]);
+			to_chat(M, "<span class='userdanger'>You feel a sudden, electric jolt travel through your head.</span>");
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.call(f, P("/proc/playsound"), null, [rt.fv(f, "loc", live(f.src)), rt.rsc("sound/misc/interference.ogg"), 50, 1]);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You trigger ＀.</span>", [live(f.src)])]);
-	if (!rt.ge((rt.modSrcVar(f, "times_used", 1, add)), rt.sv(f, "max_uses"))) return f.dot;
-	rt.setSv(f, "icon_state", "battererburnt");
+	playsound(this.loc, rt.rsc("sound/misc/interference.ogg"), 50, 1);
+	to_chat(user, `<span class='notice'>You trigger ${this}.</span>`);
+	if (!((this.times_used += 1) >= this.max_uses)) return f.dot;
+	this.icon_state = "battererburnt";
 	return f.dot;
 }, true);
 
@@ -66,133 +56,111 @@ rt.type(9283, "/obj/item/device/healthanalyzer/rad_laser", "/obj/item/device/hea
 	origin_tech: "magnets=3;biotech=5;syndicate=3",
 });
 
-// /obj/item/device/healthanalyzer/rad_laser/proc/<init>  (code/game/objects/items/devices/traitordevices.dm:70)
+// traitordevices.dm:70
 rt.def("/obj/item/device/healthanalyzer/rad_laser/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "materials", rt.alist(f, ["$metal", 400]));
+	parent_proc();
+	this.materials = rt.alist(f, ["$metal", 400]);
 	return f.dot;
 });
 
-// /obj/item/device/healthanalyzer/rad_laser/proc/attack  (code/game/objects/items/devices/traitordevices.dm:78)  may sleep
-rt.def("/obj/item/device/healthanalyzer/rad_laser/proc/attack", function* attack(f: Frame) {
+// traitordevices.dm:78
+rt.def("/obj/item/device/healthanalyzer/rad_laser/proc/attack", function* attack(f: Frame, M: Value, user: Value) {
 	let cooldown: Value = null;
-	f.vars = () => [cooldown];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.sv(f, "irradiate"))) {
-		return live(f.dot);
+	yield* parent_proc();
+	if (!this.irradiate) {
+		return f.dot;
 	}
-	if (!truthy(rt.sv(f, "used"))) {
-		yield* g.call(f, P("/proc/add_logs"), null, [live(f.args[1]), live(f.args[0]), "irradiated", live(f.src)]);
-		cooldown = multiply((yield* g.call(f, P("/proc/round"), null, [(yield* g.call(f, P("/proc/max"), null, [10, subtract(multiply(rt.sv(f, "intensity"), 5), divide(rt.sv(f, "wavelength"), 4))]))])), 10);
-		rt.setSv(f, "used", 1);
-		rt.setSv(f, "icon_state", "health1");
-		yield* g.srcCall(f, "handle_cooldown", live(cooldown));
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), fmt("<span class='warning'>Successfully irradiated ＀.</span>", [live(f.args[0])])]);
-		rt.spawnTail(f, multiply(add(rt.sv(f, "wavelength"), multiply(rt.sv(f, "intensity"), 4)), 5), "/obj/item/device/healthanalyzer/rad_laser/proc/attack: spawn at game/objects/items/devices/traitordevices.dm:87", cooldown);
+	if (!this.used) {
+		add_logs(user, M, "irradiated", this);
+		cooldown = round(max(10, this.intensity * 5 - this.wavelength / 4)) * 10;
+		this.used = 1;
+		this.icon_state = "health1";
+		this.handle_cooldown(cooldown);
+		to_chat(user, `<span class='warning'>Successfully irradiated ${M}.</span>`);
+		rt.spawnTail(f, (this.wavelength + this.intensity * 4) * 5, "/obj/item/device/healthanalyzer/rad_laser/proc/attack: spawn at game/objects/items/devices/traitordevices.dm:87", cooldown);
 	} else {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.args[1]), "<span class='warning'>The radioactive microlaser is still recharging.</span>"]);
+		to_chat(user, "<span class='warning'>The radioactive microlaser is still recharging.</span>");
 	}
 	return f.dot;
-}, true, { args: ["M", "user"] });
+}, true);
 
 // a spawn(multiply(add(rt.srcVarI(f, $ic[12]), multiply(rt.srcVarI(f, $ic[13]), 4)), 5)) body of /obj/item/device/healthanalyzer/rad_laser/proc/attack, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/obj/item/device/healthanalyzer/rad_laser/proc/attack: spawn at game/objects/items/devices/traitordevices.dm:87", function* (f: Frame, cooldown: Value) {
-	f.vars = () => [cooldown];
-	if (truthy(live(f.args[0]))) {
-		if (rt.ge(rt.sv(f, "intensity"), 5)) {
-			yield* g.callName(f, live(f.args[0]), "apply_effect", [(yield* g.call(f, P("/proc/round"), null, [divide(rt.sv(f, "intensity"), 0.07500000298023224)])), 1]);
+	if (f.args[0]) {
+		if (this.intensity >= 5) {
+			yield* f.args[0].apply_effect(round(this.intensity / 0.075), 1);
 		}
-		yield* g.callName(f, live(f.args[0]), "rad_act", [multiply(rt.sv(f, "intensity"), 10)]);
+		yield* f.args[0].rad_act(this.intensity * 10);
 	}
 	return null;
 });
 
-// /obj/item/device/healthanalyzer/rad_laser/proc/handle_cooldown  (code/game/objects/items/devices/traitordevices.dm:97)
+// traitordevices.dm:97
 rt.def("/obj/item/device/healthanalyzer/rad_laser/proc/handle_cooldown", function handle_cooldown(f: Frame, cooldown: Value) {
-	rt.spawnTail(f, live(cooldown), "/obj/item/device/healthanalyzer/rad_laser/proc/handle_cooldown: spawn at game/objects/items/devices/traitordevices.dm:97", cooldown);
+	rt.spawnTail(f, cooldown, "/obj/item/device/healthanalyzer/rad_laser/proc/handle_cooldown: spawn at game/objects/items/devices/traitordevices.dm:97", cooldown);
 	return f.dot;
 });
 
 // a spawn(live(cooldown)) body of /obj/item/device/healthanalyzer/rad_laser/proc/handle_cooldown, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/obj/item/device/healthanalyzer/rad_laser/proc/handle_cooldown: spawn at game/objects/items/devices/traitordevices.dm:97", function* (f: Frame, cooldown: Value) {
-	f.vars = () => [cooldown];
-	rt.setSv(f, "used", 0);
-	rt.setSv(f, "icon_state", "health");
+	this.used = 0;
+	this.icon_state = "health";
 	return null;
 });
 
-// /obj/item/device/healthanalyzer/rad_laser/proc/attack_self  (code/game/objects/items/devices/traitordevices.dm:102)  may sleep
+// traitordevices.dm:102
 rt.def("/obj/item/device/healthanalyzer/rad_laser/proc/attack_self", function* attack_self(f: Frame, user: Value) {
-	f.vars = () => [user];
-	yield* g.srcCall(f, "interact", live(user));
+	yield* this.interact(user);
 	return f.dot;
 }, true);
 
-// /obj/item/device/healthanalyzer/rad_laser/proc/interact  (code/game/objects/items/devices/traitordevices.dm:105)  may sleep
+// traitordevices.dm:105
 rt.def("/obj/item/device/healthanalyzer/rad_laser/proc/interact", function* interact(f: Frame, user: Value) {
-	let cooldown: Value = null, dat: Value = null, popup: Value = null;
-	let $0: any, $1: any;
-	f.vars = () => [user, cooldown, dat, popup, $0, $1];
-	yield* g.callName(f, live(user), "set_machine", [live(f.src)]);
-	cooldown = (yield* g.call(f, P("/proc/round"), null, [(yield* g.call(f, P("/proc/max"), null, [10, subtract(multiply(rt.sv(f, "intensity"), 5), divide(rt.sv(f, "wavelength"), 4))]))]));
-	$0 = live(f.src);
-	if (truthy(rt.sv(f, "irradiate"))) {
-		$1 = "On";
+	let popup: Value = null;
+	yield* user.set_machine(this);
+	let cooldown: Value = round(max(10, this.intensity * 5 - this.wavelength / 4));
+	let $0: any = this;
+	let dat: Value = fmt("Irradiation: <A href='?src=＃;rad=1'>＀</A><br>", [$0, this.irradiate ? "On" : "Off"]);
+	dat += fmt("Scan Mode: <a href='?src=＃;mode=1'>", [this]);
+	if (!this.scanmode) {
+		dat += "Scan Health";
+	} else if (this.scanmode == 1) {
+		dat += "Scan Reagents";
 	} else {
-		$1 = "Off";
+		dat += "Disabled";
 	}
-	dat = fmt("Irradiation: <A href='?src=＃;rad=1'>＀</A><br>", [$0, $1]);
-	dat = rt.modify(live(dat), fmt("Scan Mode: <a href='?src=＃;mode=1'>", [live(f.src)]), add);
-	if (!truthy(rt.sv(f, "scanmode"))) {
-		dat = rt.modify(live(dat), "Scan Health", add);
-	} else {
-		if (isEqual(rt.sv(f, "scanmode"), 1)) {
-			dat = rt.modify(live(dat), "Scan Reagents", add);
-		} else {
-			dat = rt.modify(live(dat), "Disabled", add);
-		}
-	}
-	dat = rt.modify(live(dat), "</a><br><br>", add);
-	dat = rt.modify(live(dat), fmt("\n\tRadiation Intensity:\n\t<A href='?src=＃;radint=-5'>-</A><A href='?src=＃;radint=-1'>-</A>\n\t＀\n\t<A href='?src=＃;radint=1'>+</A><A href='?src=＃;radint=5'>+</A><BR>\n\n\tRadiation Wavelength:\n\t<A href='?src=＃;radwav=-5'>-</A><A href='?src=＃;radwav=-1'>-</A>\n\t＀\n\t<A href='?src=＃;radwav=1'>+</A><A href='?src=＃;radwav=5'>+</A><BR>\n\tLaser Cooldown: ＀ Seconds<BR>\n\t", [live(f.src), live(f.src), rt.sv(f, "intensity"), live(f.src), live(f.src), live(f.src), live(f.src), add(rt.sv(f, "wavelength"), multiply(rt.sv(f, "intensity"), 4)), live(f.src), live(f.src), live(cooldown)]), add);
-	yield* g.callName(f, (popup = (yield* g.new_(f, T("/datum/browser"), [live(user), "radlaser", "Radioactive Microlaser Interface", 400, 240]))), "set_content", [live(dat)]);
-	yield* g.callName(f, live(popup), "open", []);
+	dat += "</a><br><br>";
+	dat += fmt("\n\tRadiation Intensity:\n\t<A href='?src=＃;radint=-5'>-</A><A href='?src=＃;radint=-1'>-</A>\n\t＀\n\t<A href='?src=＃;radint=1'>+</A><A href='?src=＃;radint=5'>+</A><BR>\n\n\tRadiation Wavelength:\n\t<A href='?src=＃;radwav=-5'>-</A><A href='?src=＃;radwav=-1'>-</A>\n\t＀\n\t<A href='?src=＃;radwav=1'>+</A><A href='?src=＃;radwav=5'>+</A><BR>\n\tLaser Cooldown: ＀ Seconds<BR>\n\t", [this, this, this.intensity, this, this, this, this, this.wavelength + this.intensity * 4, this, this, cooldown]);
+	(popup = (yield* new_(T("/datum/browser"), user, "radlaser", "Radioactive Microlaser Interface", 400, 240))).set_content(dat);
+	yield* popup.open();
 	return f.dot;
 }, true);
 
-// /obj/item/device/healthanalyzer/rad_laser/proc/Topic  (code/game/objects/items/devices/traitordevices.dm:136)  may sleep
+// traitordevices.dm:136
 rt.def("/obj/item/device/healthanalyzer/rad_laser/proc/Topic", function* Topic(f: Frame, href: Value, href_list: Value) {
 	let amount: Value = null;
-	f.vars = () => [href, href_list, amount];
-	if (!truthy((yield* g.callName(f, live(f.usr), "canUseTopic", [live(f.src)])))) {
+	if (!f.usr.canUseTopic(this)) {
 		return 1;
 	}
-	yield* g.callName(f, live(f.usr), "set_machine", [live(f.src)]);
-	if (truthy(rt.at(live(href_list), "rad"))) {
-		rt.setSv(f, "irradiate", (!truthy(rt.sv(f, "irradiate")) ? 1 : 0));
-	} else {
-		if (truthy(rt.at(live(href_list), "mode"))) {
-			if (rt.gt((rt.modSrcVar(f, "scanmode", 1, add)), 2)) {
-				rt.setSv(f, "scanmode", 0);
-			}
-		} else {
-			if (truthy(rt.at(live(href_list), "radint"))) {
-				amount = (yield* g.call(f, P("/proc/text2num"), null, [rt.at(live(href_list), "radint")]));
-				amount = rt.modify(live(amount), rt.sv(f, "intensity"), add);
-				rt.setSv(f, "intensity", (yield* g.call(f, P("/proc/max"), null, [1, (yield* g.call(f, P("/proc/min"), null, [20, live(amount)]))])));
-			} else {
-				if (truthy(rt.at(live(href_list), "radwav"))) {
-					amount = (yield* g.call(f, P("/proc/text2num"), null, [rt.at(live(href_list), "radwav")]));
-					amount = rt.modify(live(amount), rt.sv(f, "wavelength"), add);
-					rt.setSv(f, "wavelength", (yield* g.call(f, P("/proc/max"), null, [0, (yield* g.call(f, P("/proc/min"), null, [120, live(amount)]))])));
-				}
-			}
+	yield* f.usr.set_machine(this);
+	if (rt.at(href_list, "rad")) {
+		this.irradiate = (!this.irradiate ? 1 : 0);
+	} else if (rt.at(href_list, "mode")) {
+		if ((this.scanmode += 1) > 2) {
+			this.scanmode = 0;
 		}
+	} else if (rt.at(href_list, "radint")) {
+		amount = text2num(rt.at(href_list, "radint"));
+		amount += this.intensity;
+		this.intensity = max(1, min(20, amount));
+	} else if (rt.at(href_list, "radwav")) {
+		amount = text2num(rt.at(href_list, "radwav"));
+		amount += this.wavelength;
+		this.wavelength = max(0, min(120, amount));
 	}
-	yield* g.srcCall(f, "attack_self", live(f.usr));
-	yield* g.srcCall(f, "add_fingerprint", live(f.usr));
-	return live(f.dot);
+	yield* this.attack_self(f.usr);
+	yield* this.add_fingerprint(f.usr);
+	return f.dot;
 }, true);
 
 rt.type(9294, "/obj/item/device/shadowcloak", "/obj/item/device", {
@@ -211,88 +179,85 @@ rt.type(9294, "/obj/item/device/shadowcloak", "/obj/item/device", {
 	actions_types: null,
 });
 
-// /obj/item/device/shadowcloak/proc/<init>  (code/game/objects/items/devices/traitordevices.dm:176)
+// traitordevices.dm:176
 rt.def("/obj/item/device/shadowcloak/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "attack_verb", rt.list("whipped", "lashed", "disciplined"));
-	$0 = $0;
-	rt.setSv(f, "actions_types", rt.list(T("/datum/action/item_action/toggle")));
+	parent_proc();
+	this.attack_verb = list("whipped", "lashed", "disciplined");
+
+	this.actions_types = list(T("/datum/action/item_action/toggle"));
 	return f.dot;
 });
 
-// /obj/item/device/shadowcloak/proc/ui_action_click  (code/game/objects/items/devices/traitordevices.dm:179)
+// traitordevices.dm:179
 rt.def("/obj/item/device/shadowcloak/proc/ui_action_click", function ui_action_click(f: Frame, user: Value) {
-	if (isEqual(rt.callName(f, live(user), "get_item_by_slot", [5]), live(f.src))) {
-		if (!truthy(rt.sv(f, "on"))) {
-			rt.callSrc(f, "Activate", [live(f.usr)]);
+	if (user.get_item_by_slot(slot_belt) == this) {
+		if (!this.on) {
+			this.Activate(f.usr);
 		} else {
-			rt.callSrc(f, "Deactivate", []);
+			this.Deactivate();
 		}
 	}
-	return live(f.dot);
+	return f.dot;
 });
 
-// /obj/item/device/shadowcloak/proc/item_action_slot_check  (code/game/objects/items/devices/traitordevices.dm:187)
+// traitordevices.dm:187
 rt.def("/obj/item/device/shadowcloak/proc/item_action_slot_check", function item_action_slot_check(f: Frame, slot: Value, user: Value) {
-	if (!isEqual(live(slot), 5)) return f.dot;
+	if (slot != slot_belt) return f.dot;
 	return 1;
 });
 
-// /obj/item/device/shadowcloak/proc/Activate  (code/game/objects/items/devices/traitordevices.dm:191)
+// traitordevices.dm:191
 rt.def("/obj/item/device/shadowcloak/proc/Activate", function Activate(f: Frame, user: Value) {
-	if (!truthy(live(user))) {
-		return live(f.dot);
+	if (!user) {
+		return f.dot;
 	}
-	rt.call(f, P("/proc/to_chat"), null, [live(user), fmt("<span class='notice'>You activate ＀.</span>", [live(f.src)])]);
-	rt.setFv(f, "user", live(f.src), live(user));
-	if (!truthy(rt.fv(f, "isprocessing", live(f.src)))) {
-		rt.setFv(f, "isprocessing", live(f.src), 1);
-		rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), add);
+	to_chat(user, `<span class='notice'>You activate ${this}.</span>`);
+	this.user = user;
+	if (!this.isprocessing) {
+		this.isprocessing = 1;
+		GLOB.SSobj.processing += this;
 	}
-	rt.setSv(f, "old_alpha", rt.fv(f, "alpha", live(user)));
-	rt.setSv(f, "on", 1);
+	this.old_alpha = user.alpha;
+	this.on = 1;
 	return f.dot;
 });
 
-// /obj/item/device/shadowcloak/proc/Deactivate  (code/game/objects/items/devices/traitordevices.dm:200)
+// traitordevices.dm:200
 rt.def("/obj/item/device/shadowcloak/proc/Deactivate", function Deactivate(f: Frame) {
-	rt.call(f, P("/proc/to_chat"), null, [rt.sv(f, "user"), fmt("<span class='notice'>You deactivate ＀.</span>", [live(f.src)])]);
-	rt.setFv(f, "isprocessing", live(f.src), 0);
-	(rt.modField(f, rt.gl("SSobj"), "processing", live(f.src), subtract));
-	if (truthy(rt.sv(f, "user"))) {
-		rt.setFv(f, "alpha", rt.sv(f, "user"), rt.sv(f, "old_alpha"));
+	to_chat(this.user, `<span class='notice'>You deactivate ${this}.</span>`);
+	this.isprocessing = 0;
+	GLOB.SSobj.processing -= this;
+	if (this.user) {
+		this.user.alpha = this.old_alpha;
 	}
-	rt.setSv(f, "on", 0);
-	rt.setSv(f, "user", null);
+	this.on = 0;
+	this.user = null;
 	return f.dot;
 });
 
-// /obj/item/device/shadowcloak/proc/dropped  (code/game/objects/items/devices/traitordevices.dm:208)  may sleep
-rt.def("/obj/item/device/shadowcloak/proc/dropped", function* dropped(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!(truthy(live(f.args[0])) && !isEqual((yield* g.callName(f, live(f.args[0]), "get_item_by_slot", [5])), live(f.src)))) return f.dot;
-	yield* g.srcCall(f, "Deactivate");
+// traitordevices.dm:208
+rt.def("/obj/item/device/shadowcloak/proc/dropped", function* dropped(f: Frame, user: Value) {
+	yield* parent_proc();
+	if (!(user && user.get_item_by_slot(slot_belt) != this)) return f.dot;
+	yield* this.Deactivate();
 	return f.dot;
-}, true, { args: ["user"] });
+}, true);
 
-// /obj/item/device/shadowcloak/proc/process  (code/game/objects/items/devices/traitordevices.dm:213)
+// traitordevices.dm:213
 rt.def("/obj/item/device/shadowcloak/proc/process", function process(f: Frame) {
-	let _T: Value = null, lumcount: Value = null;
-	f.vars = () => [_T, lumcount];
-	if (!isEqual(rt.callName(f, rt.sv(f, "user"), "get_item_by_slot", [5]), live(f.src))) {
-		rt.callSrc(f, "Deactivate", []);
-		return live(f.dot);
+	let lumcount: Value = null;
+	if (this.user.get_item_by_slot(slot_belt) != this) {
+		this.Deactivate();
+		return f.dot;
 	}
-	_T = rt.getStep(f, live(f.src), 0);
-	if (!truthy(rt.sv(f, "on"))) return f.dot;
-	if (rt.gt((lumcount = rt.callName(f, live(_T), "get_lumcount", [])), 0.30000001192092896)) {
-		rt.setSv(f, "charge", rt.call(f, P("/proc/max"), null, [0, subtract(rt.sv(f, "charge"), 25)]));
+	let _T: Value = rt.getStep(f, this, 0);
+	if (!this.on) return f.dot;
+	if ((lumcount = _T.get_lumcount()) > 0.3) {
+		this.charge = max(0, this.charge - 25);
 	} else {
-		rt.setSv(f, "charge", rt.call(f, P("/proc/min"), null, [rt.sv(f, "max_charge"), add(rt.sv(f, "charge"), 50)]));
+		this.charge = min(this.max_charge, this.charge + 50);
 	}
-	rt.op(f, "Animate", [2, 6], [null, rt.sv(f, "user"), "alpha", rt.call(f, P("/proc/max"), null, [0, rt.call(f, P("/proc/min"), null, [subtract(255, rt.sv(f, "charge")), 255])]), "time", 10]);
+	rt.op(f, "Animate", [2, 6], [null, this.user, "alpha", max(0, min(255 - this.charge, 255)), "time", 10]);
 	return f.dot;
 }, false, { waitfor: false });
 
@@ -304,23 +269,16 @@ rt.type(9295, "/obj/item/device/jammer", "/obj/item/device", {
 	icon_state: "jammer",
 });
 
-// /obj/item/device/jammer/proc/attack_self  (code/game/objects/items/devices/traitordevices.dm:234)
+// traitordevices.dm:234
 rt.def("/obj/item/device/jammer/proc/attack_self", function attack_self(f: Frame, user: Value) {
-	let $0: any, $1: any;
-	f.vars = () => [$0, $1];
-	$0 = live(user);
-	if (truthy(rt.sv(f, "active"))) {
-		$1 = "deactivate";
+	let $0: any = user;
+	to_chat($0, `<span class='notice'>You ${this.active ? "deactivate" : "activate"} the ${this}<span>`);
+	this.active = (!this.active ? 1 : 0);
+	if (this.active) {
+		(rt.modGl("active_jammers", this, rt.bitOr));
 	} else {
-		$1 = "activate";
+		GLOB.active_jammers -= this;
 	}
-	rt.call(f, P("/proc/to_chat"), null, [$0, fmt("<span class='notice'>You ＀ the ＀<span>", [$1, live(f.src)])]);
-	rt.setSv(f, "active", (!truthy(rt.sv(f, "active")) ? 1 : 0));
-	if (truthy(rt.sv(f, "active"))) {
-		(rt.modGl("active_jammers", live(f.src), rt.bitOr));
-	} else {
-		(rt.modGl("active_jammers", live(f.src), subtract));
-	}
-	rt.callSrc(f, "update_icon", []);
+	this.update_icon();
 	return f.dot;
 });

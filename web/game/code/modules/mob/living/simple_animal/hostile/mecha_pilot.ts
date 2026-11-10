@@ -1,7 +1,7 @@
-// From code/modules/mob/living/simple_animal/hostile/mecha_pilot.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mob/living/simple_animal/hostile/mecha_pilot.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P } = rt;
 
 
 rt.type(4894, "/mob/living/simple_animal/hostile/syndicate/mecha_pilot", "/mob/living/simple_animal/hostile/syndicate", {
@@ -19,12 +19,10 @@ rt.type(4894, "/mob/living/simple_animal/hostile/syndicate/mecha_pilot", "/mob/l
 	search_objects: 0,
 });
 
-// /mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/<init>  (code/modules/mob/living/simple_animal/hostile/mecha_pilot.dm:24)
+// mecha_pilot.dm:24
 rt.def("/mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "wanted_objects", rt.list());
+	parent_proc();
+	this.wanted_objects = list();
 	return f.dot;
 });
 
@@ -33,10 +31,10 @@ rt.type(4895, "/mob/living/simple_animal/hostile/syndicate/mecha_pilot/no_mech",
 	search_objects: 2,
 });
 
-// /mob/living/simple_animal/hostile/syndicate/mecha_pilot/no_mech/proc/Initialize  (code/modules/mob/living/simple_animal/hostile/mecha_pilot.dm:43)  may sleep
+// mecha_pilot.dm:43
 rt.def("/mob/living/simple_animal/hostile/syndicate/mecha_pilot/no_mech/proc/Initialize", function* Initialize(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	rt.setSv(f, "wanted_objects", (yield* g.call(f, P("/proc/typecacheof"), null, [null, T("/obj/mecha/combat"), "ignore_root_path", 1], rt.Args.Named)));
+	yield* parent_proc();
+	this.wanted_objects = (yield* typecacheof(T("/obj/mecha/combat"), { ignore_root_path: 1 }));
 	return f.dot;
 }, true);
 
@@ -49,12 +47,10 @@ rt.type(4897, "/mob/living/simple_animal/hostile/syndicate/mecha_pilot/nanotrase
 	spawn_mecha_type: rt.typePath("/obj/mecha/combat/marauder/loaded"),
 });
 
-// /mob/living/simple_animal/hostile/syndicate/mecha_pilot/nanotrasen/proc/<init>  (code/modules/mob/living/simple_animal/hostile/mecha_pilot.dm:51)
+// mecha_pilot.dm:51
 rt.def("/mob/living/simple_animal/hostile/syndicate/mecha_pilot/nanotrasen/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "faction", rt.list("nanotrasen"));
+	parent_proc();
+	this.faction = list("nanotrasen");
 	return f.dot;
 });
 
@@ -66,265 +62,224 @@ rt.type(4896, "/mob/living/simple_animal/hostile/syndicate/mecha_pilot/no_mech/n
 	faction: null,
 });
 
-// /mob/living/simple_animal/hostile/syndicate/mecha_pilot/no_mech/nanotrasen/proc/<init>  (code/modules/mob/living/simple_animal/hostile/mecha_pilot.dm:59)
+// mecha_pilot.dm:59
 rt.def("/mob/living/simple_animal/hostile/syndicate/mecha_pilot/no_mech/nanotrasen/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "faction", rt.list("nanotrasen"));
+	parent_proc();
+	this.faction = list("nanotrasen");
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/Initialize  (code/modules/mob/living/simple_animal/hostile/mecha_pilot.dm:63)  may sleep
+// mecha_pilot.dm:63
 rt.def("/mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/Initialize", function* Initialize(f: Frame) {
 	let M: Value = null;
-	f.vars = () => [M];
-	yield* g.callSuper(f, [], rt.Args.Same);
-	if (!truthy(rt.sv(f, "spawn_mecha_type"))) return f.dot;
-	if (!truthy((rt.istype((M = (yield* g.new_(f, rt.sv(f, "spawn_mecha_type"), [rt.getStep(f, live(f.src), 0)]))), T("/obj/mecha")) ? 1 : 0))) return f.dot;
-	yield* g.srcCall(f, "enter_mecha", live(M));
+	yield* parent_proc();
+	if (!this.spawn_mecha_type) return f.dot;
+	if (!rt.istype((M = (yield* new_(this.spawn_mecha_type, rt.getStep(f, this, 0)))), T("/obj/mecha"))) return f.dot;
+	yield* this.enter_mecha(M);
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/enter_mecha  (code/modules/mob/living/simple_animal/hostile/mecha_pilot.dm:71)  may sleep
+// mecha_pilot.dm:71
 rt.def("/mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/enter_mecha", function* enter_mecha(f: Frame, M: Value) {
-	let do_ranged: Value = null, equip: Value = null, ME: Value = null;
-	let $e: any;
-	f.vars = () => [M, do_ranged, equip, ME, $e];
-	if (!truthy(live(M))) {
+	let equip: Value = null, ME: Value = null;
+	if (!M) {
 		return 0;
 	}
-	rt.setSv(f, "target", null);
-	yield* g.callName(f, live(M), "aimob_enter_mech", [live(f.src)]);
-	rt.setSv(f, "targets_from", live(M));
-	rt.setSv(f, "allow_movement_on_non_turfs", 1);
-	do_ranged = 0;
-	equip = null;
-	rt.forList(f, 0, rt.fv(f, "equipment", rt.sv(f, "mecha")));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		equip = $e;
-		if (truthy(rt.bitAnd(rt.gv(f, "range", (ME = live(equip))), 2))) {
+	this.target = null;
+	yield* M.aimob_enter_mech(this);
+	this.targets_from = M;
+	this.allow_movement_on_non_turfs = 1;
+	let do_ranged: Value = 0;
+	for (equip of each(this.mecha.equipment)) {
+		if (rt.bitAnd((ME = equip).range, 2)) {
 			do_ranged = 1;
 			break;
 		}
 	}
-	rt.endFor(f, 0);
-	if (truthy(live(do_ranged))) {
-		rt.setSv(f, "minimum_distance", 5);
-		rt.setSv(f, "ranged", 1);
+	if (do_ranged) {
+		this.minimum_distance = 5;
+		this.ranged = 1;
 	} else {
-		rt.setSv(f, "minimum_distance", 1);
-		rt.setSv(f, "ranged", 0);
+		this.minimum_distance = 1;
+		this.ranged = 0;
 	}
-	rt.setSv(f, "wanted_objects", rt.list());
-	rt.setSv(f, "search_objects", 0);
-	if (!(truthy(rt.sv(f, "mecha")) && truthy(rt.fv(f, "lights_action", rt.sv(f, "mecha"))))) return f.dot;
-	yield* g.callName(f, rt.fv(f, "lights_action", rt.sv(f, "mecha")), "Activate", []);
+	this.wanted_objects = list();
+	this.search_objects = 0;
+	if (!(this.mecha && this.mecha.lights_action)) return f.dot;
+	yield* this.mecha.lights_action.Activate();
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/exit_mecha  (code/modules/mob/living/simple_animal/hostile/mecha_pilot.dm:96)  may sleep
+// mecha_pilot.dm:96
 rt.def("/mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/exit_mecha", function* exit_mecha(f: Frame, M: Value) {
-	let search_aggressiveness: Value = null, C: Value = null;
-	let $e: any;
-	f.vars = () => [M, search_aggressiveness, C, $e];
-	if (!truthy(live(M))) {
+	let C: Value = null;
+	if (!M) {
 		return 0;
 	}
-	yield* g.callName(f, rt.sv(f, "mecha"), "aimob_exit_mech", [live(f.src)]);
-	rt.setSv(f, "allow_movement_on_non_turfs", 0);
-	rt.setSv(f, "targets_from", live(f.src));
-	rt.setSv(f, "wanted_objects", (yield* g.call(f, P("/proc/typecacheof"), null, [null, T("/obj/mecha/combat"), "ignore_root_path", 1], rt.Args.Named)));
-	search_aggressiveness = 2;
-	C = null;
-	rt.forList(f, 0, (yield* g.call(f, P("/proc/range"), null, [rt.sv(f, "vision_range"), live(f.src)])), T("/obj/mecha/combat"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		C = $e;
-		if (truthy((yield* g.srcCall(f, "is_valid_mecha", live(C))))) {
-			rt.setSv(f, "target", live(C));
+	yield* this.mecha.aimob_exit_mech(this);
+	this.allow_movement_on_non_turfs = 0;
+	this.targets_from = f.src;
+	this.wanted_objects = (yield* typecacheof(T("/obj/mecha/combat"), { ignore_root_path: 1 }));
+	let search_aggressiveness: Value = 2;
+	for (C of each(range(this.vision_range, this), T("/obj/mecha/combat"))) {
+		if (this.is_valid_mecha(C)) {
+			this.target = C;
 			search_aggressiveness = 3;
 			break;
 		}
 	}
-	rt.endFor(f, 0);
-	rt.setSv(f, "search_objects", live(search_aggressiveness));
-	rt.setSv(f, "ranged", 0);
-	rt.setSv(f, "minimum_distance", 1);
-	yield* g.call(f, P("/proc/walk"), null, [live(M), 0]);
+	this.search_objects = search_aggressiveness;
+	this.ranged = 0;
+	this.minimum_distance = 1;
+	walk(M, 0);
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/is_valid_mecha  (code/modules/mob/living/simple_animal/hostile/mecha_pilot.dm:119)
+// mecha_pilot.dm:119
 rt.def("/mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/is_valid_mecha", function is_valid_mecha(f: Frame, M: Value) {
-	if (!truthy(live(M))) {
+	if (!M) {
 		return 0;
 	}
-	if (truthy(rt.fv(f, "occupant", live(M)))) {
+	if (M.occupant) {
 		return 0;
 	}
-	if (!truthy(rt.callName(f, live(M), "has_charge", [rt.sv(f, "required_mecha_charge")]))) {
+	if (!M.has_charge(this.required_mecha_charge)) {
 		return 0;
 	}
-	if (rt.lt(rt.fv(f, "obj_integrity", live(M)), multiply(rt.fv(f, "max_integrity", live(M)), 0.5))) {
+	if (M.obj_integrity < M.max_integrity * 0.5) {
 		return 0;
 	}
 	return 1;
 });
 
-// /mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/mecha_face_target  (code/modules/mob/living/simple_animal/hostile/mecha_pilot.dm:132)
+// mecha_pilot.dm:132
 rt.def("/mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/mecha_face_target", function mecha_face_target(f: Frame, A: Value) {
-	let dirto: Value = null;
-	f.vars = () => [dirto];
-	if (!truthy(rt.sv(f, "mecha"))) return f.dot;
-	dirto = rt.getDir(f, rt.sv(f, "mecha"), live(A));
-	if (isEqual(rt.fv(f, "dir", rt.sv(f, "mecha")), live(dirto))) return f.dot;
-	rt.callName(f, rt.sv(f, "mecha"), "mechturn", [live(dirto)]);
+	if (!this.mecha) return f.dot;
+	let dirto: Value = rt.getDir(f, this.mecha, A);
+	if (this.mecha.dir == dirto) return f.dot;
+	this.mecha.mechturn(dirto);
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/mecha_reload  (code/modules/mob/living/simple_animal/hostile/mecha_pilot.dm:140)  may sleep
+// mecha_pilot.dm:140
 rt.def("/mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/mecha_reload", function* mecha_reload(f: Frame) {
 	let equip: Value = null, ME: Value = null;
-	let $e: any;
-	f.vars = () => [equip, ME, $e];
-	if (!truthy(rt.sv(f, "mecha"))) return f.dot;
-	equip = null;
-	rt.forList(f, 0, rt.fv(f, "equipment", rt.sv(f, "mecha")));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		equip = $e;
-		if (truthy((yield* g.callName(f, (ME = live(equip)), "needs_rearm", [])))) {
-			yield* g.callName(f, live(ME), "rearm", []);
+	if (!this.mecha) return f.dot;
+	for (equip of each(this.mecha.equipment)) {
+		if ((ME = equip).needs_rearm()) {
+			yield* ME.rearm();
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/get_mecha_equip_by_flag  (code/modules/mob/living/simple_animal/hostile/mecha_pilot.dm:147)
+// mecha_pilot.dm:147
 rt.def("/mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/get_mecha_equip_by_flag", function get_mecha_equip_by_flag(f: Frame, flag: Value) {
 	let equip: Value = null, ME: Value = null;
-	let $e: any;
-	f.vars = () => [flag, equip, ME, $e];
-	if (live(flag) === null) {
-		flag = 2;
-	}
-	f.dot = rt.list();
-	if (!truthy(rt.sv(f, "mecha"))) return f.dot;
-	equip = null;
-	rt.forList(f, 0, rt.fv(f, "equipment", rt.sv(f, "mecha")));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		equip = $e;
-		if ((truthy(rt.bitAnd(rt.gv(f, "range", (ME = live(equip))), live(flag))) && truthy(rt.callName(f, live(ME), "action_checks", [live(ME)])))) {
-			f.dot = rt.modify(live(f.dot), live(ME), add);
+	flag ??= 2;
+	f.dot = list();
+	if (!this.mecha) return f.dot;
+	for (equip of each(this.mecha.equipment)) {
+		if (rt.bitAnd((ME = equip).range, flag) && ME.action_checks(ME)) {
+			f.dot += ME;
 		}
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/OpenFire  (code/modules/mob/living/simple_animal/hostile/mecha_pilot.dm:160)  may sleep
-rt.def("/mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/OpenFire", function* OpenFire(f: Frame) {
+// mecha_pilot.dm:160
+rt.def("/mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/OpenFire", function* OpenFire(f: Frame, A: Value) {
 	let possible_weapons: Value = null, ME: Value = null;
-	f.vars = () => [possible_weapons, ME];
-	if (truthy(rt.sv(f, "mecha"))) {
-		yield* g.srcCall(f, "mecha_reload");
-		yield* g.srcCall(f, "mecha_face_target", live(f.args[0]));
-		if (truthy(rt.getLen(f, (possible_weapons = (yield* g.srcCall(f, "get_mecha_equip_by_flag", 2)))))) {
-			if (truthy((yield* g.callName(f, (ME = rt.op(f, "PickUnweighted", [1], [live(possible_weapons)])), "action", [live(f.args[0])])))) {
-				yield* g.callName(f, live(ME), "start_cooldown", []);
-				return live(f.dot);
+	if (this.mecha) {
+		yield* this.mecha_reload();
+		this.mecha_face_target(A);
+		if (rt.len(f, (possible_weapons = this.get_mecha_equip_by_flag(2)))) {
+			if (yield* (ME = pick(possible_weapons)).action(A)) {
+				yield* ME.start_cooldown();
+				return f.dot;
 			}
 		}
 	} else {
-		yield* g.callSuper(f, [], rt.Args.Same);
-	}
-	return f.dot;
-}, true, { args: ["A"] });
-
-// /mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/AttackingTarget  (code/modules/mob/living/simple_animal/hostile/mecha_pilot.dm:175)  may sleep
-rt.def("/mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/AttackingTarget", function* AttackingTarget(f: Frame) {
-	let possible_weapons: Value = null, ME: Value = null, M: Value = null;
-	f.vars = () => [possible_weapons, ME, M];
-	if (truthy(rt.sv(f, "mecha"))) {
-		if (truthy(rt.getLen(f, (possible_weapons = (yield* g.srcCall(f, "get_mecha_equip_by_flag", 1)))))) {
-			ME = rt.op(f, "PickUnweighted", [1], [live(possible_weapons)]);
-			yield* g.srcCall(f, "mecha_face_target", rt.sv(f, "target"));
-			if (truthy((yield* g.callName(f, live(ME), "action", [rt.sv(f, "target")])))) {
-				yield* g.callName(f, live(ME), "start_cooldown", []);
-				return live(f.dot);
-			}
-		}
-		if (truthy(rt.fv(f, "melee_can_hit", rt.sv(f, "mecha")))) {
-			yield* g.srcCall(f, "mecha_face_target", rt.sv(f, "target"));
-			yield* g.callName(f, rt.sv(f, "target"), "mech_melee_attack", [rt.sv(f, "mecha")]);
-		}
-	} else {
-		if (truthy((rt.istype(rt.sv(f, "target"), T("/obj/mecha")) ? 1 : 0))) {
-			if (truthy((yield* g.srcCall(f, "is_valid_mecha", (M = rt.sv(f, "target")))))) {
-				yield* g.srcCall(f, "enter_mecha", live(M));
-				return live(f.dot);
-			} else {
-				if (!truthy((yield* g.srcCall(f, "CanAttack", live(M))))) {
-					rt.setSv(f, "target", null);
-					return live(f.dot);
-				}
-			}
-		}
-		return (yield* g.callName(f, rt.sv(f, "target"), "attack_animal", [live(f.src)]));
+		yield* parent_proc();
 	}
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/handle_automated_action  (code/modules/mob/living/simple_animal/hostile/mecha_pilot.dm:201)  may sleep
+// mecha_pilot.dm:175
+rt.def("/mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/AttackingTarget", function* AttackingTarget(f: Frame) {
+	let possible_weapons: Value = null, ME: Value = null, M: Value = null;
+	if (this.mecha) {
+		if (rt.len(f, (possible_weapons = this.get_mecha_equip_by_flag(1)))) {
+			ME = pick(possible_weapons);
+			this.mecha_face_target(this.target);
+			if (yield* ME.action(this.target)) {
+				yield* ME.start_cooldown();
+				return f.dot;
+			}
+		}
+		if (this.mecha.melee_can_hit) {
+			this.mecha_face_target(this.target);
+			yield* this.target.mech_melee_attack(this.mecha);
+		}
+	} else {
+		if (rt.istype(this.target, T("/obj/mecha"))) {
+			if (this.is_valid_mecha((M = this.target))) {
+				yield* this.enter_mecha(M);
+				return f.dot;
+			} else if (!this.CanAttack(M)) {
+				this.target = null;
+				return f.dot;
+			}
+		}
+		return (yield* this.target.attack_animal(this));
+	}
+	return f.dot;
+}, true);
+
+// mecha_pilot.dm:201
 rt.def("/mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/handle_automated_action", function* handle_automated_action(f: Frame) {
-	let C: Value = null, L: Value = null, threat_count: Value = null;
-	let $e: any;
-	f.vars = () => [C, L, threat_count, $e];
-	if (!truthy((yield* g.callSuper(f, [], rt.Args.Same)))) return f.dot;
-	if (!truthy(rt.sv(f, "mecha"))) {
-		C = null;
-		rt.forList(f, 0, (yield* g.call(f, P("/proc/range"), null, [live(f.src), rt.sv(f, "vision_range")])), T("/obj/mecha/combat"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			C = $e;
-			if (truthy((yield* g.srcCall(f, "is_valid_mecha", live(C))))) {
-				rt.setSv(f, "target", live(C));
-				rt.setSv(f, "minimum_distance", 1);
-				rt.setSv(f, "ranged", 0);
+	let C: Value = null;
+	if (!(yield* parent_proc())) return f.dot;
+	if (!this.mecha) {
+		for (C of each(range(this, this.vision_range), T("/obj/mecha/combat"))) {
+			if (this.is_valid_mecha(C)) {
+				this.target = C;
+				this.minimum_distance = 1;
+				this.ranged = 0;
 				break;
 			}
 		}
-		rt.endFor(f, 0);
 	}
-	if (!truthy(rt.sv(f, "mecha"))) return f.dot;
-	L = (yield* g.srcCall(f, "PossibleThreats"));
-	threat_count = rt.len(f, live(L));
-	if (!truthy((yield* g.callName(f, rt.sv(f, "mecha"), "has_charge", [rt.sv(f, "mecha_charge_evacuate")])))) {
-		yield* g.srcCall(f, "exit_mecha", rt.sv(f, "mecha"));
-		return live(f.dot);
+	if (!this.mecha) return f.dot;
+	let L: Value = this.PossibleThreats();
+	let threat_count: Value = rt.len(f, L);
+	if (!this.mecha.has_charge(this.mecha_charge_evacuate)) {
+		yield* this.exit_mecha(this.mecha);
+		return f.dot;
 	}
-	if (rt.lt(rt.fv(f, "obj_integrity", rt.sv(f, "mecha")), multiply(rt.fv(f, "max_integrity", rt.sv(f, "mecha")), 0.10000000149011612))) {
-		yield* g.srcCall(f, "exit_mecha", rt.sv(f, "mecha"));
-		return live(f.dot);
+	if (this.mecha.obj_integrity < this.mecha.max_integrity * 0.1) {
+		yield* this.exit_mecha(this.mecha);
+		return f.dot;
 	}
-	if ((rt.ge(live(threat_count), rt.sv(f, "threat_use_mecha_smoke")) && truthy(rt.op(f, "Prob", [], [rt.sv(f, "smoke_chance")])))) {
-		if (((truthy(rt.fv(f, "smoke_action", rt.sv(f, "mecha"))) && truthy(rt.gv(f, "owner", rt.fv(f, "smoke_action", rt.sv(f, "mecha"))))) && truthy(rt.fv(f, "smoke", rt.sv(f, "mecha"))))) {
-			yield* g.callName(f, rt.fv(f, "smoke_action", rt.sv(f, "mecha")), "Activate", []);
+	if (threat_count >= this.threat_use_mecha_smoke && prob(this.smoke_chance)) {
+		if (this.mecha.smoke_action && this.mecha.smoke_action.owner && this.mecha.smoke) {
+			yield* this.mecha.smoke_action.Activate();
 		}
 	}
-	if (!rt.lt(rt.fv(f, "obj_integrity", rt.sv(f, "mecha")), multiply(rt.fv(f, "max_integrity", rt.sv(f, "mecha")), 0.25))) return f.dot;
-	if (truthy(rt.op(f, "Prob", [], [rt.sv(f, "defence_mode_chance")]))) {
-		if (((truthy(rt.fv(f, "defense_action", rt.sv(f, "mecha"))) && truthy(rt.gv(f, "owner", rt.fv(f, "defense_action", rt.sv(f, "mecha"))))) && !truthy(rt.fv(f, "defence_mode", rt.sv(f, "mecha"))))) {
-			rt.setFv(f, "leg_overload_mode", rt.sv(f, "mecha"), 0);
-			yield* g.callName(f, rt.fv(f, "defense_action", rt.sv(f, "mecha")), "Activate", [1]);
-			yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [rt.fv(f, "defense_action", rt.sv(f, "mecha")), P("/datum/action/innate/mecha/mech_defence_mode/proc/Activate"), 0])), 100]);
+	if (!(this.mecha.obj_integrity < this.mecha.max_integrity * 0.25)) return f.dot;
+	if (prob(this.defence_mode_chance)) {
+		if (this.mecha.defense_action && this.mecha.defense_action.owner && !this.mecha.defence_mode) {
+			this.mecha.leg_overload_mode = 0;
+			yield* this.mecha.defense_action.Activate(1);
+			yield* addtimer((yield* new_(T("/datum/callback"), this.mecha.defense_action, P("/datum/action/innate/mecha/mech_defence_mode/proc/Activate"), 0)), 100);
 		}
 	} else {
-		if (!truthy(rt.op(f, "Prob", [], [rt.sv(f, "retreat_chance")]))) return f.dot;
-		if (((truthy(rt.fv(f, "overload_action", rt.sv(f, "mecha"))) && truthy(rt.gv(f, "owner", rt.fv(f, "overload_action", rt.sv(f, "mecha"))))) && !truthy(rt.fv(f, "leg_overload_mode", rt.sv(f, "mecha"))))) {
-			yield* g.callName(f, rt.fv(f, "overload_action", rt.sv(f, "mecha")), "Activate", [1]);
-			yield* g.call(f, P("/proc/addtimer"), null, [(yield* g.new_(f, T("/datum/callback"), [rt.fv(f, "overload_action", rt.sv(f, "mecha")), P("/datum/action/innate/mecha/mech_defence_mode/proc/Activate"), 0])), 100]);
+		if (!prob(this.retreat_chance)) return f.dot;
+		if (this.mecha.overload_action && this.mecha.overload_action.owner && !this.mecha.leg_overload_mode) {
+			yield* this.mecha.overload_action.Activate(1);
+			yield* addtimer((yield* new_(T("/datum/callback"), this.mecha.overload_action, P("/datum/action/innate/mecha/mech_defence_mode/proc/Activate"), 0)), 100);
 		}
-		rt.setSv(f, "retreat_distance", 50);
+		this.retreat_distance = 50;
 		rt.spawnTail(f, 100, "/mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/handle_automated_action: spawn at modules/mob/living/simple_animal/hostile/mecha_pilot.dm:243", C, L, threat_count);
 	}
 	return f.dot;
@@ -332,89 +287,83 @@ rt.def("/mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/handle_auto
 
 // a spawn(100) body of /mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/handle_automated_action, a named tail so a world snapshot can hold it while it waits.
 rt.tail("/mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/handle_automated_action: spawn at modules/mob/living/simple_animal/hostile/mecha_pilot.dm:243", function* (f: Frame, C: Value, L: Value, threat_count: Value) {
-	f.vars = () => [C, L, threat_count];
-	rt.setSv(f, "retreat_distance", 0);
+	this.retreat_distance = 0;
 	return null;
 });
 
-// /mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/death  (code/modules/mob/living/simple_animal/hostile/mecha_pilot.dm:250)  may sleep
-rt.def("/mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/death", function* death(f: Frame) {
-	if (truthy(rt.sv(f, "mecha"))) {
-		yield* g.callName(f, rt.sv(f, "mecha"), "aimob_exit_mech", [live(f.src)]);
+// mecha_pilot.dm:250
+rt.def("/mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/death", function* death(f: Frame, gibbed: Value) {
+	if (this.mecha) {
+		yield* this.mecha.aimob_exit_mech(this);
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
-	return f.dot;
-}, true, { args: ["gibbed"] });
-
-// /mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/gib  (code/modules/mob/living/simple_animal/hostile/mecha_pilot.dm:255)  may sleep
-rt.def("/mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/gib", function* gib(f: Frame) {
-	if (truthy(rt.sv(f, "mecha"))) {
-		yield* g.callName(f, rt.sv(f, "mecha"), "aimob_exit_mech", [live(f.src)]);
-	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/CanAttack  (code/modules/mob/living/simple_animal/hostile/mecha_pilot.dm:262)
-rt.def("/mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/CanAttack", function CanAttack(f: Frame) {
+// mecha_pilot.dm:255
+rt.def("/mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/gib", function* gib(f: Frame) {
+	if (this.mecha) {
+		yield* this.mecha.aimob_exit_mech(this);
+	}
+	yield* parent_proc();
+	return f.dot;
+}, true);
+
+// mecha_pilot.dm:262
+rt.def("/mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/CanAttack", function CanAttack(f: Frame, the_target: Value) {
 	let M: Value = null;
-	f.vars = () => [M];
-	if (truthy((rt.istype(live(f.args[0]), T("/obj/mecha")) ? 1 : 0))) {
-		M = live(f.args[0]);
-		if (truthy(rt.sv(f, "mecha"))) {
-			if ((isEqual(live(M), rt.sv(f, "mecha")) || !truthy(rt.callSrc(f, "CanAttack", [rt.fv(f, "occupant", live(M))])))) {
+	if (rt.istype(the_target, T("/obj/mecha"))) {
+		M = the_target;
+		if (this.mecha) {
+			if (M == this.mecha || !this.CanAttack(M.occupant)) {
 				return 0;
 			}
+		} else if (this.is_valid_mecha(M)) {
+			return 1;
+		} else if (M.occupant && this.CanAttack(M.occupant)) {
+			return 1;
 		} else {
-			if (truthy(rt.callSrc(f, "is_valid_mecha", [live(M)]))) {
-				return 1;
-			} else {
-				if ((truthy(rt.fv(f, "occupant", live(M))) && truthy(rt.callSrc(f, "CanAttack", [rt.fv(f, "occupant", live(M))])))) {
-					return 1;
-				} else {
-					return 0;
-				}
-			}
+			return 0;
 		}
 	}
-	f.dot = rt.callSuper(f, [], rt.Args.Same);
+	f.dot = parent_proc();
 	return f.dot;
-}, false, { args: ["the_target"] });
+}, false);
 
-// /mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/EscapeConfinement  (code/modules/mob/living/simple_animal/hostile/mecha_pilot.dm:279)  may sleep
+// mecha_pilot.dm:279
 rt.def("/mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/EscapeConfinement", function* EscapeConfinement(f: Frame) {
-	if ((truthy(rt.sv(f, "mecha")) && isEqual(rt.sv(f, "loc"), rt.sv(f, "mecha")))) {
+	if (this.mecha && this.loc == this.mecha) {
 		return 0;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true);
 
-// /mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/Move  (code/modules/mob/living/simple_animal/hostile/mecha_pilot.dm:285)  may sleep
+// mecha_pilot.dm:285
 rt.def("/mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/Move", function* Move(f: Frame) {
-	if (live(f.args[1]) === null) {
+	if (f.args[1] === null) {
 		f.args[1] = 0;
 	}
-	if (live(f.args[2]) === null) {
+	if (f.args[2] === null) {
 		f.args[2] = 0;
 	}
-	if (live(f.args[3]) === null) {
+	if (f.args[3] === null) {
 		f.args[3] = 0;
 	}
-	if ((truthy(rt.sv(f, "mecha")) && isEqual(rt.sv(f, "loc"), rt.sv(f, "mecha")))) {
-		yield* g.callName(f, rt.sv(f, "mecha"), "relaymove", [live(f.src), live(f.args[1])]);
-		return live(f.dot);
+	if (this.mecha && this.loc == this.mecha) {
+		yield* this.mecha.relaymove(this, f.args[1]);
+		return f.dot;
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
 }, true, { args: ["NewLoc", "Dir", "step_x", "step_y"] });
 
-// /mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/Goto  (code/modules/mob/living/simple_animal/hostile/mecha_pilot.dm:293)
-rt.def("/mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/Goto", function Goto(f: Frame) {
-	if (truthy(rt.sv(f, "mecha"))) {
-		rt.call(f, P("/proc/walk_to"), null, [rt.sv(f, "mecha"), live(f.args[0]), live(f.args[2]), live(f.args[1])]);
+// mecha_pilot.dm:293
+rt.def("/mob/living/simple_animal/hostile/syndicate/mecha_pilot/proc/Goto", function Goto(f: Frame, target: Value, delay: Value, minimum_distance: Value) {
+	if (this.mecha) {
+		walk_to(this.mecha, target, minimum_distance, delay);
 	} else {
-		rt.callSuper(f, [], rt.Args.Same);
+		parent_proc();
 	}
 	return f.dot;
-}, false, { args: ["target", "delay", "minimum_distance"] });
+}, false);

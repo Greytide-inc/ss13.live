@@ -1,7 +1,7 @@
-// From code/modules/procedural_mapping/mapGenerator.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/procedural_mapping/mapGenerator.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T, P, g } = rt;
 
 
 rt.type(1867, "/datum/mapGenerator", "/datum", {
@@ -9,179 +9,151 @@ rt.type(1867, "/datum/mapGenerator", "/datum", {
 	modules: null,
 });
 
-// /datum/mapGenerator/proc/<init>  (code/modules/procedural_mapping/mapGenerator.dm:24)
+// mapGenerator.dm:24
 rt.def("/datum/mapGenerator/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "map", rt.list());
-	$0 = $0;
-	rt.setSv(f, "modules", rt.list());
+	parent_proc();
+	this.map = list();
+
+	this.modules = list();
 	return f.dot;
 });
 
-// /datum/mapGenerator/proc/New  (code/modules/procedural_mapping/mapGenerator.dm:30)  may sleep
+// mapGenerator.dm:30
 rt.def("/datum/mapGenerator/proc/New", function* New(f: Frame) {
-	yield* g.callSuper(f, [], rt.Args.Same);
-	yield* g.srcCall(f, "initialiseModules");
+	yield* parent_proc();
+	yield* this.initialiseModules();
 	return f.dot;
 }, true);
 
-// /datum/mapGenerator/proc/defineRegion  (code/modules/procedural_mapping/mapGenerator.dm:36)
+// mapGenerator.dm:36
 rt.def("/datum/mapGenerator/proc/defineRegion", function defineRegion(f: Frame, Start: Value, End: Value, replace: Value) {
-	f.vars = () => [replace];
-	if (live(replace) === null) {
-		replace = 0;
-	}
-	if (!truthy(rt.callSrc(f, "checkRegion", [live(Start), live(End)]))) {
+	replace ??= 0;
+	if (!this.checkRegion(Start, End)) {
 		return 0;
 	}
-	if (truthy(live(replace))) {
-		rt.callSrc(f, "undefineRegion", []);
+	if (replace) {
+		this.undefineRegion();
 	}
-	(rt.modSrcVar(f, "map", rt.call(f, P("/proc/block"), null, [live(Start), live(End)]), rt.bitOr));
-	return rt.sv(f, "map");
+	(rt.modSrcVar(f, "map", block(Start, End), rt.bitOr));
+	return this.map;
 });
 
-// /datum/mapGenerator/proc/undefineRegion  (code/modules/procedural_mapping/mapGenerator.dm:83)
+// mapGenerator.dm:83
 rt.def("/datum/mapGenerator/proc/undefineRegion", function undefineRegion(f: Frame) {
-	rt.setSv(f, "map", rt.list());
+	this.map = list();
 	return f.dot;
 });
 
-// /datum/mapGenerator/proc/checkRegion  (code/modules/procedural_mapping/mapGenerator.dm:91)
+// mapGenerator.dm:91
 rt.def("/datum/mapGenerator/proc/checkRegion", function checkRegion(f: Frame, Start: Value, End: Value) {
 	f.dot = 1;
-	if ((!truthy(live(Start)) || !truthy(live(End)))) {
+	if (!Start || !End) {
 		return 0;
 	}
-	if ((rt.gt(rt.fv(f, "x", live(Start)), rt.fv(f, "maxx", rt.world())) || rt.gt(rt.fv(f, "x", live(End)), rt.fv(f, "maxx", rt.world())))) {
+	if (Start.x > rt.world().maxx || End.x > rt.world().maxx) {
 		f.dot = 0;
 	}
-	if ((rt.gt(rt.fv(f, "y", live(Start)), rt.fv(f, "maxy", rt.world())) || rt.gt(rt.fv(f, "y", live(End)), rt.fv(f, "maxy", rt.world())))) {
+	if (Start.y > rt.world().maxy || End.y > rt.world().maxy) {
 		f.dot = 0;
 	}
-	if (!(rt.gt(rt.fv(f, "z", live(Start)), rt.fv(f, "maxz", rt.world())) || rt.gt(rt.fv(f, "z", live(End)), rt.fv(f, "maxz", rt.world())))) return f.dot;
+	if (!(Start.z > rt.world().maxz || End.z > rt.world().maxz)) return f.dot;
 	f.dot = 0;
 	return f.dot;
 });
 
-// /datum/mapGenerator/proc/generate  (code/modules/procedural_mapping/mapGenerator.dm:106)  may sleep
+// mapGenerator.dm:106
 rt.def("/datum/mapGenerator/proc/generate", function* generate(f: Frame) {
 	let mod: Value = null;
-	let $e: any;
-	f.vars = () => [mod, $e];
-	yield* g.srcCall(f, "syncModules");
-	if ((!truthy(rt.sv(f, "modules")) || !truthy(rt.len(f, rt.sv(f, "modules"))))) {
-		return live(f.dot);
+	this.syncModules();
+	if (!this.modules || !rt.len(f, this.modules)) {
+		return f.dot;
 	}
-	mod = null;
-	rt.forList(f, 0, rt.sv(f, "modules"), T("/datum/mapGeneratorModule"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		mod = $e;
-		yield* g.call(f, P("/proc/ImmediateInvokeAsync"), null, [live(mod), P("/datum/mapGeneratorModule/proc/generate")]);
-		yield* g.call(f, P("/proc/sleep"), null, [-1]);
+	for (mod of each(this.modules, T("/datum/mapGeneratorModule"))) {
+		yield* ImmediateInvokeAsync(mod, P("/datum/mapGeneratorModule/proc/generate"));
+		yield* sleep(-1);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 }, true);
 
-// /datum/mapGenerator/proc/initialiseModules  (code/modules/procedural_mapping/mapGenerator.dm:126)  may sleep
+// mapGenerator.dm:126
 rt.def("/datum/mapGenerator/proc/initialiseModules", function* initialiseModules(f: Frame) {
 	let path: Value = null;
-	let $e: any;
-	f.vars = () => [path, $e];
-	path = null;
-	rt.forList(f, 0, rt.sv(f, "modules"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		path = $e;
-		if (truthy((yield* g.call(f, P("/proc/ispath"), null, [live(path)])))) {
-			yield* g.callName(f, rt.sv(f, "modules"), "Remove", [live(path)]);
-			(rt.modSrcVar(f, "modules", (yield* g.new_(f, live(path), [])), rt.bitOr));
+	for (path of each(this.modules)) {
+		if (ispath(path)) {
+			yield* this.modules.Remove(path);
+			(rt.modSrcVar(f, "modules", (yield* new_(path)), rt.bitOr));
 		}
 	}
-	rt.endFor(f, 0);
-	yield* g.srcCall(f, "syncModules");
+	this.syncModules();
 	return f.dot;
 }, true);
 
-// /datum/mapGenerator/proc/syncModules  (code/modules/procedural_mapping/mapGenerator.dm:135)
+// mapGenerator.dm:135
 rt.def("/datum/mapGenerator/proc/syncModules", function syncModules(f: Frame) {
 	let mod: Value = null;
-	let $e: any;
-	f.vars = () => [mod, $e];
-	mod = null;
-	rt.forList(f, 0, rt.sv(f, "modules"), T("/datum/mapGeneratorModule"));
-	while (($e = rt.next(f, 0)) !== undefined) {
-		mod = $e;
-		rt.callName(f, live(mod), "sync", [live(f.src)]);
+	for (mod of each(this.modules, T("/datum/mapGeneratorModule"))) {
+		mod.sync(this);
 	}
-	rt.endFor(f, 0);
 	return f.dot;
 });
 
-// /client/proc/debugNatureMapGenerator  (code/modules/procedural_mapping/mapGenerator.dm:148)  may sleep
+// mapGenerator.dm:148
 rt.def("/client/proc/debugNatureMapGenerator", function* debugNatureMapGenerator(f: Frame) {
-	let N: Value = null, startInput: Value = null, endInput: Value = null, startCoords: Value = null, endCoords: Value = null, Start: Value = null, End: Value = null, clusters: Value = null, moduleClusters: Value = null, theCluster: Value = null, M: Value = null;
-	let $0: any, $1: any, $2: any, $e: any;
-	f.vars = () => [N, startInput, endInput, startCoords, endCoords, Start, End, clusters, moduleClusters, theCluster, M, $0, $1, $2, $e];
-	N = (yield* g.new_(f, T("/datum/mapGenerator/nature"), []));
-	startInput = (yield* g.op(f, "Prompt", [2], ["1;1;1", "Map Gen Settings", "Start turf of Map, (X;Y;Z)", live(f.usr), null]));
-	$0 = rt.fv(f, "maxx", rt.world());
-	$1 = rt.fv(f, "maxy", rt.world());
-	if (truthy(rt.sv(f, "mob"))) {
-		$2 = rt.fv(f, "z", rt.sv(f, "mob"));
+	let M: Value = null;
+	let $2: any, $e: any;
+	let N: Value = (yield* new_(T("/datum/mapGenerator/nature")));
+	let startInput: Value = (yield* g.op(f, "Prompt", [2], ["1;1;1", "Map Gen Settings", "Start turf of Map, (X;Y;Z)", f.usr, null]));
+	let $0: any = rt.world().maxx;
+	let $1: any = rt.world().maxy;
+	if (this.mob) {
+		$2 = this.mob.z;
 	} else {
-		$1 = $1;
+
 		$2 = 1;
 	}
-	endInput = (yield* g.op(f, "Prompt", [2], [fmt("＀;＀;＀", [$0, $1, $2]), "Map Gen Settings", "End turf of Map (X;Y;Z)", live(f.usr), null]));
-	if ((!truthy(live(startInput)) || !truthy(live(endInput)))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "Missing Input"]);
-		return live(f.dot);
+	let endInput: Value = (yield* g.op(f, "Prompt", [2], [`${$0};${$1};${$2}`, "Map Gen Settings", "End turf of Map (X;Y;Z)", f.usr, null]));
+	if (!startInput || !endInput) {
+		to_chat(this, "Missing Input");
+		return f.dot;
 	}
-	startCoords = (yield* g.call(f, P("/proc/splittext"), null, [live(startInput), ";"]));
-	endCoords = (yield* g.call(f, P("/proc/splittext"), null, [live(endInput), ";"]));
-	if ((!truthy(live(startCoords)) || !truthy(live(endCoords)))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "Invalid Coords"]);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), fmt("Start Input: ＀", [live(startInput)])]);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), fmt("End Input: ＀", [live(endInput)])]);
-		return live(f.dot);
+	let startCoords: Value = splittext(startInput, ";");
+	let endCoords: Value = splittext(endInput, ";");
+	if (!startCoords || !endCoords) {
+		to_chat(this, "Invalid Coords");
+		to_chat(this, `Start Input: ${startInput}`);
+		to_chat(this, `End Input: ${endInput}`);
+		return f.dot;
 	}
-	Start = rt.locate((yield* g.call(f, P("/proc/text2num"), null, [rt.index(live(startCoords), 1)])), (yield* g.call(f, P("/proc/text2num"), null, [rt.index(live(startCoords), 2)])), (yield* g.call(f, P("/proc/text2num"), null, [rt.index(live(startCoords), 3)])));
-	End = rt.locate((yield* g.call(f, P("/proc/text2num"), null, [rt.index(live(endCoords), 1)])), (yield* g.call(f, P("/proc/text2num"), null, [rt.index(live(endCoords), 2)])), (yield* g.call(f, P("/proc/text2num"), null, [rt.index(live(endCoords), 3)])));
-	if ((!truthy(live(Start)) || !truthy(live(End)))) {
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "Invalid Turfs"]);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), fmt("Start Coords: ＀ - ＀ - ＀", [rt.index(live(startCoords), 1), rt.index(live(startCoords), 2), rt.index(live(startCoords), 3)])]);
-		yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), fmt("End Coords: ＀ - ＀ - ＀", [rt.index(live(endCoords), 1), rt.index(live(endCoords), 2), rt.index(live(endCoords), 3)])]);
-		return live(f.dot);
+	let Start: Value = rt.locate(text2num(rt.index(startCoords, 1)), text2num(rt.index(startCoords, 2)), text2num(rt.index(startCoords, 3)));
+	let End: Value = rt.locate(text2num(rt.index(endCoords, 1)), text2num(rt.index(endCoords, 2)), text2num(rt.index(endCoords, 3)));
+	if (!Start || !End) {
+		to_chat(this, "Invalid Turfs");
+		to_chat(this, `Start Coords: ${rt.index(startCoords, 1)} - ${rt.index(startCoords, 2)} - ${rt.index(startCoords, 3)}`);
+		to_chat(this, `End Coords: ${rt.index(endCoords, 1)} - ${rt.index(endCoords, 2)} - ${rt.index(endCoords, 3)}`);
+		return f.dot;
 	}
-	clusters = rt.alist(f, ["None", 0, "All", 30, "Sames", 24, "Differents", 6, "Same turfs", 8, "Same atoms", 16, "Different turfs", 2, "Different atoms", 4, "All turfs", 10, "All atoms", 20]);
-	moduleClusters = (yield* g.op(f, "Prompt", [1], [null, null, "Map Gen Settings", "Cluster Flags (Cancel to leave unchanged from defaults)", live(clusters)]));
-	theCluster = 0;
-	if (!isEqual(live(moduleClusters), "None")) {
-		if (!truthy(rt.index(live(clusters), live(moduleClusters)))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "Invalid Cluster Flags"]);
-			return live(f.dot);
+	let clusters: Value = rt.alist(f, ["None", CLUSTER_CHECK_NONE, "All", CLUSTER_CHECK_ALL, "Sames", CLUSTER_CHECK_SAMES, "Differents", CLUSTER_CHECK_DIFFERENTS, "Same turfs", CLUSTER_CHECK_SAME_TURFS, "Same atoms", CLUSTER_CHECK_SAME_ATOMS, "Different turfs", CLUSTER_CHECK_DIFFERENT_TURFS, "Different atoms", CLUSTER_CHECK_DIFFERENT_ATOMS, "All turfs", CLUSTER_CHECK_ALL_TURFS, "All atoms", CLUSTER_CHECK_ALL_ATOMS]);
+	let moduleClusters: Value = (yield* g.op(f, "Prompt", [1], [null, null, "Map Gen Settings", "Cluster Flags (Cancel to leave unchanged from defaults)", clusters]));
+	let theCluster: Value = CLUSTER_CHECK_NONE;
+	if (moduleClusters != "None") {
+		if (!rt.index(clusters, moduleClusters)) {
+			to_chat(this, "Invalid Cluster Flags");
+			return f.dot;
 		}
-		theCluster = rt.index(live(clusters), live(moduleClusters));
+		theCluster = rt.index(clusters, moduleClusters);
 	} else {
-		theCluster = 0;
+		theCluster = CLUSTER_CHECK_NONE;
 	}
-	if (truthy(live(theCluster))) {
-		M = null;
-		rt.forList(f, 0, rt.fv(f, "modules", live(N)), T("/datum/mapGeneratorModule"));
-		while (($e = rt.next(f, 0)) !== undefined) {
-			M = $e;
-			rt.setFv(f, "clusterCheckFlags", live(M), live(theCluster));
+	if (theCluster) {
+		for (M of each(N.modules, T("/datum/mapGeneratorModule"))) {
+			M.clusterCheckFlags = theCluster;
 		}
-		rt.endFor(f, 0);
 	}
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "Defining Region"]);
-	yield* g.callName(f, live(N), "defineRegion", [live(Start), live(End)]);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "Region Defined"]);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "Generating Region"]);
-	yield* g.callName(f, live(N), "generate", []);
-	yield* g.call(f, P("/proc/to_chat"), null, [live(f.src), "Generated Region"]);
+	to_chat(this, "Defining Region");
+	N.defineRegion(Start, End);
+	to_chat(this, "Region Defined");
+	to_chat(this, "Generating Region");
+	yield* N.generate();
+	to_chat(this, "Generated Region");
 	return f.dot;
 }, true, { verb: { name: "Test Nature Map Generator", category: "Debug" } });

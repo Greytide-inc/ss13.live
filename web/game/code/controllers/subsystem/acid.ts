@@ -1,7 +1,7 @@
-// From code/controllers/subsystem/acid.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/controllers/subsystem/acid.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+const { T } = rt;
 
 
 rt.type(12, "/datum/controller/subsystem/acid", "/datum/controller/subsystem", {
@@ -13,74 +13,69 @@ rt.type(12, "/datum/controller/subsystem/acid", "/datum/controller/subsystem", {
 	runlevels: 12,
 });
 
-// /datum/controller/subsystem/acid/proc/New  (code/controllers/subsystem/acid.dm:1)  may sleep
+// acid.dm:1
 rt.def("/datum/controller/subsystem/acid/proc/New", function* New(f: Frame) {
-	if (!isEqual(rt.gl("SSacid"), live(f.src))) {
-		if (truthy((rt.istype(rt.gl("SSacid"), T("/datum/controller/subsystem/acid")) ? 1 : 0))) {
-			yield* g.srcCall(f, "Recover");
-			yield* g.call(f, P("/proc/qdel"), null, [rt.gl("SSacid")]);
+	if (GLOB.SSacid != this) {
+		if (rt.istype(GLOB.SSacid, T("/datum/controller/subsystem/acid"))) {
+			yield* this.Recover();
+			yield* qdel(GLOB.SSacid);
 		}
-		rt.setGl("SSacid", live(f.src));
+		GLOB.SSacid = this;
 	}
-	yield* g.srcCall(f, "PreInit");
+	this.PreInit();
 	return f.dot;
 }, true);
 
-// /datum/controller/subsystem/acid/proc/<init>  (code/controllers/subsystem/acid.dm:7)
+// acid.dm:7
 rt.def("/datum/controller/subsystem/acid/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "currentrun", rt.list());
-	$0 = $0;
-	rt.setSv(f, "processing", rt.list());
+	parent_proc();
+	this.currentrun = list();
+
+	this.processing = list();
 	return f.dot;
 });
 
-// /datum/controller/subsystem/acid/proc/stat_entry  (code/controllers/subsystem/acid.dm:11)  may sleep
+// acid.dm:11
 rt.def("/datum/controller/subsystem/acid/proc/stat_entry", function* stat_entry(f: Frame) {
-	yield* g.callSuper(f, [fmt("P:＀", [rt.len(f, rt.sv(f, "processing"))])]);
+	yield* parent_proc(`P:${rt.len(f, this.processing)}`);
 	return f.dot;
 }, true);
 
-// /datum/controller/subsystem/acid/proc/fire  (code/controllers/subsystem/acid.dm:15)  may sleep
+// acid.dm:15
 rt.def("/datum/controller/subsystem/acid/proc/fire", function* fire(f: Frame, resumed: Value) {
-	let currentrun: Value = null, O: Value = null;
+	let O: Value = null;
 	let $0: any;
-	f.vars = () => [resumed, currentrun, O, $0];
-	if (live(resumed) === null) {
-		resumed = 0;
+	resumed ??= 0;
+	if (!resumed) {
+		this.currentrun = (yield* this.processing.Copy());
 	}
-	if (!truthy(live(resumed))) {
-		rt.setFv(f, "currentrun", live(f.src), (yield* g.callName(f, rt.sv(f, "processing"), "Copy", [])));
-	}
-	currentrun = rt.fv(f, "currentrun", live(f.src));
-	while (truthy(rt.len(f, live(currentrun)))) {
-		O = rt.index(live(currentrun), rt.len(f, live(currentrun)));
-		rt.incField(f, live(currentrun), "len", -1, true);
-		if ((!truthy(live(O)) || (!truthy(live(O)) || truthy(rt.fv(f, "gc_destroyed", live(O)))))) {
-			(rt.modSrcVar(f, "processing", live(O), subtract));
-			if ((rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit")) || !isEqual(rt.fv(f, "state", live(f.src)), 2))) {
-				$0 = (yield* g.srcCall(f, "pause"));
+	let currentrun: Value = this.currentrun;
+	while (rt.len(f, currentrun)) {
+		O = rt.index(currentrun, rt.len(f, currentrun));
+		currentrun.len--;
+		if (!O || !O || O.gc_destroyed) {
+			this.processing -= O;
+			if (rt.tickUsage(f) > GLOB.current_ticklimit || this.state != 2) {
+				$0 = this.pause();
 			} else {
 				$0 = 0;
 			}
-			if (truthy($0)) {
-				return live(f.dot);
+			if ($0) {
+				return f.dot;
 			}
 			continue;
 		}
-		if (!(truthy(rt.fv(f, "acid_level", live(O))) && truthy((yield* g.callName(f, live(O), "acid_processing", []))))) {
-			yield* g.callName(f, live(O), "cut_overlay", [rt.gl("acid_overlay"), 1]);
-			(rt.modSrcVar(f, "processing", live(O), subtract));
+		if (!(O.acid_level && (yield* O.acid_processing()))) {
+			O.cut_overlay(GLOB.acid_overlay, 1);
+			this.processing -= O;
 		}
-		if ((rt.gt(rt.tickUsage(f), rt.gl("current_ticklimit")) || !isEqual(rt.fv(f, "state", live(f.src)), 2))) {
-			$0 = (yield* g.srcCall(f, "pause"));
+		if (rt.tickUsage(f) > GLOB.current_ticklimit || this.state != 2) {
+			$0 = this.pause();
 		} else {
 			$0 = 0;
 		}
-		if (truthy($0)) {
-			return live(f.dot);
+		if ($0) {
+			return f.dot;
 		}
 	}
 	return f.dot;

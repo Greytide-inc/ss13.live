@@ -1,7 +1,7 @@
-// From code/modules/mining/laborcamp/laborshuttle.dm (translated once from the DM; this file is now the source, edit it by hand).
-import * as rt from "../../../../../build/dist/src/translate/runtime.js";
-import type { Frame, Value } from "../../../../../build/dist/src/translate/runtime.js";
-const { T, P, g, live, truthy, isEqual, add, subtract, multiply, divide, fmt } = rt;
+// Based on /tg/station's code/modules/mining/laborcamp/laborshuttle.dm.
+import * as rt from "#runtime";
+import type { Frame, Value } from "#runtime";
+
 
 
 rt.type(10392, "/obj/machinery/computer/shuttle/labor", "/obj/machinery/computer/shuttle", {
@@ -13,12 +13,10 @@ rt.type(10392, "/obj/machinery/computer/shuttle/labor", "/obj/machinery/computer
 	req_access: null,
 });
 
-// /obj/machinery/computer/shuttle/labor/proc/<init>  (code/modules/mining/laborcamp/laborshuttle.dm:7)
+// laborshuttle.dm:7
 rt.def("/obj/machinery/computer/shuttle/labor/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_access", rt.list(2));
+	parent_proc();
+	this.req_access = list(2);
 	return f.dot;
 });
 
@@ -30,29 +28,26 @@ rt.type(10393, "/obj/machinery/computer/shuttle/labor/one_way", "/obj/machinery/
 	req_access: null,
 });
 
-// /obj/machinery/computer/shuttle/labor/one_way/proc/<init>  (code/modules/mining/laborcamp/laborshuttle.dm:15)
+// laborshuttle.dm:15
 rt.def("/obj/machinery/computer/shuttle/labor/one_way/proc/<init>", function _init_(f: Frame) {
-	let $0: any;
-	f.vars = () => [$0];
-	$0 = rt.callSuper(f, []);
-	rt.setSv(f, "req_access", rt.list());
+	parent_proc();
+	this.req_access = list();
 	return f.dot;
 });
 
-// /obj/machinery/computer/shuttle/labor/one_way/proc/Topic  (code/modules/mining/laborcamp/laborshuttle.dm:18)  may sleep
-rt.def("/obj/machinery/computer/shuttle/labor/one_way/proc/Topic", function* Topic(f: Frame) {
+// laborshuttle.dm:18
+rt.def("/obj/machinery/computer/shuttle/labor/one_way/proc/Topic", function* Topic(f: Frame, href: Value, href_list: Value) {
 	let M: Value = null, S: Value = null;
-	f.vars = () => [M, S];
-	if (truthy(rt.at(live(f.args[1]), "move"))) {
-		if (!truthy((M = (yield* g.callName(f, rt.gl("SSshuttle"), "getShuttle", ["laborcamp"]))))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), "<span class='warning'>Cannot locate shuttle!</span>"]);
+	if (rt.at(href_list, "move")) {
+		if (!(M = GLOB.SSshuttle.getShuttle("laborcamp"))) {
+			to_chat(f.usr, "<span class='warning'>Cannot locate shuttle!</span>");
 			return 0;
 		}
-		if ((truthy((S = (yield* g.callName(f, live(M), "get_docked", [])))) && isEqual(rt.fv(f, "name", live(S)), "laborcamp_away"))) {
-			yield* g.call(f, P("/proc/to_chat"), null, [live(f.usr), "<span class='warning'>Shuttle is already at the outpost!</span>"]);
+		if ((S = M.get_docked()) && S.name == "laborcamp_away") {
+			to_chat(f.usr, "<span class='warning'>Shuttle is already at the outpost!</span>");
 			return 0;
 		}
 	}
-	yield* g.callSuper(f, [], rt.Args.Same);
+	yield* parent_proc();
 	return f.dot;
-}, true, { args: ["href", "href_list"] });
+}, true);
