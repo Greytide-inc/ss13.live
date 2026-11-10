@@ -150,7 +150,7 @@ await import(pathToFileURL(resolve(repoRoot, "web/build/game-types.js")).href);
 const tree = new ObjectTree(gameProgram());
 log(`[vm-boot] type tree from web/game (build/game-types.js) built in ${((Date.now() - tTree) / 1000).toFixed(2)} s`);
 const bundle = JSON.parse(readFileSync(bundleFile, "utf8")) as VfsBundle;
-// Same one-line config change as the BYOND reference boot (web/reference/boot-byond.sh).
+// Same one-line config change as the BYOND reference boot (archive/byond-reference/boot-byond.sh).
 const cfg = bundle.files["config/config.txt"];
 if (cfg) bundle.files["config/config.txt"] = cfg.replace(/^GUEST_BAN/m, "#GUEST_BAN");
 
@@ -241,7 +241,7 @@ const effectiveDeadline = () => (afterStartLimit !== null ? Math.min(hardLimit, 
 // Every runtime error also gets a one-line [vm-boot] note (tg's world/Error prints its own dump).
 vm.onRuntimeError = (e) => {
 	diary?.line("runtime", `${e.message} | ${e.proc}`);
-	log(`[vm-boot] ${e.message.startsWith("not implemented:") ? "VM gap" : "runtime"}: ${e.message} | ${e.proc} (${e.game ? `${e.game}, DM ` : ""}${e.source}) | ${e.callStack.slice(1, 6).join(" <- ")}`);
+	log(`[vm-boot] ${e.message.startsWith("not implemented:") ? "VM gap" : "runtime"}: ${e.message} | ${e.proc} (${e.source}) | ${e.callStack.slice(1, 6).join(" <- ")}`);
 };
 
 // The time limits: checked between ticks, and inside a long tick by vm.onStopCheck below.
@@ -303,7 +303,7 @@ try {
 			const heapBefore = process.memoryUsage().heapUsed;
 			const lines = logLines;
 			logLines = null;
-			for (const th of vm.sched.sleepers()) log(`[vm-boot] snapshot: sleeping thread, ${th.frames.length} frames: ${th.frames.map((f) => { const at = f.gen !== null ? vm.translatedSource?.(f, null) : null; return f.proc.path + (at ? ` (${at.dm ?? at.game})` : ""); }).reverse().join(" <- ")}`);
+			for (const th of vm.sched.sleepers()) log(`[vm-boot] snapshot: sleeping thread, ${th.frames.length} frames: ${th.frames.map((f) => { const at = f.gen !== null ? vm.translatedSource?.(f, null) : null; return f.proc.path + (at ? ` (${at})` : ""); }).reverse().join(" <- ")}`);
 			const { bytes, stats } = saveSnapshot(vm, { log: lines, ticks, wall: (Date.now() - t0) / 1000 });
 			const tw = Date.now();
 			writeFileSync(snapSave, bytes);
@@ -553,7 +553,7 @@ if (stressFile) { // write the per-tick lines, the profile of the run, the compu
 }
 closeSync(fd);
 // What the game wrote under data/ (its own logs: config_error.log, game.log, runtime.log...) goes to
-// web/build/vm-boot-data/, to compare with web/reference/byond-data-logs/.
+// web/build/vm-boot-data/, to compare with archive/byond-reference/byond-data-logs/.
 const dataOut = resolve(opt("--data-out", resolve(repoRoot, "web/build/vm-boot-data"))); // --data-out: own folder, so parallel boots don't clash
 rmSync(dataOut, { recursive: true, force: true });
 const dump = (dir: string): void => {

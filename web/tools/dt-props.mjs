@@ -2,7 +2,7 @@
 // dt-props.mjs - Detranslate robot (plans/archive/detranslate.md): rewrites src var reads and writes in game procs as properties.
 // Usage (from web/, after `npx tsc -p .`): node tools/dt-props.mjs [--check] TARGET...
 //   TARGET: a game file (game/code/...ts: every proc and tail in it) or a proc path (/obj/machinery/proc/use_power: that rt.def,
-//   in whichever file has it). --check changes nothing, prints what it would do. Afterwards: node tools/remap-dm-cols.mjs HEAD.
+//   in whichever file has it). --check changes nothing, prints what it would do.
 // Rules (each gives exactly what the old text did; the engine side is runtime.ts installVarProps and invoke's `this`):
 //   live(f.src)              -> this        a proc's code never runs with its src deleted (the proc ends: checkSrc, dt-life 3)
 //   rt.sv(f, "n")            -> this.n      reads through the same VM.readIC as srcVarI

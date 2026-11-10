@@ -7,6 +7,7 @@
 // Usage (from web/): node --experimental-websocket tests/static/lobby-art.test.mjs
 import { spawn } from "node:child_process";
 import { createServer } from "node:http";
+const freePort = () => new Promise((ok) => { const s = createServer().listen(0, "127.0.0.1", () => { const p = s.address().port; s.close(() => ok(p)); }); }); // the browser's debug port: one the system says is free (npm test runs several browsers at once)
 import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -74,7 +75,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const connect = async (url) => { for (let i = 0; i < 100; i++) { await sleep(150); try { const s = new WebSocket(await url()); await new Promise((ok, no) => { s.onopen = ok; s.onerror = no; }); return s; } catch {} } throw new Error("no browser"); };
 const rpc = (ws) => { let id = 0; const pending = new Map(); ws.onmessage = (e) => { const m = JSON.parse(e.data); if (m.id && pending.has(m.id)) { pending.get(m.id)(m); pending.delete(m.id); } }; return (method, params = {}) => new Promise((r) => { pending.set(++id, r); ws.send(JSON.stringify({ id, method, params })); }); };
 
-const port = 40000 + ((process.pid + 7) % 20000), prof = join(web, `build/ff-profile-lobby${process.pid}`); mkdirSync(prof, { recursive: true });
+const port = await freePort(), prof = join(web, `build/ff-profile-lobby${process.pid}`); mkdirSync(prof, { recursive: true });
 const ff = spawn("/usr/bin/firefox", ["--headless", "--no-remote", "--profile", prof, `--remote-debugging-port=${port}`], { stdio: "ignore", env: { ...process.env, MOZ_HEADLESS: "1" } });
 try {
 	const send = rpc(await connect(async () => `ws://127.0.0.1:${port}/session`));

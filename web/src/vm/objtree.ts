@@ -175,7 +175,7 @@ export class DMProc {
 		return `${owner}/${this.isVerb ? (this.attributes & ProcAttr.IsOverride ? "" : "verb/") : "proc/"}${this.name}`;
 	}
 
-	/** "file:line" where the proc starts in the DM source (error-lines.procStart, from build/translated-tg.lines.json). */
+	/** "game/code/.../x.ts:line" of the proc's rt.def (error-lines.procStart, from build/translated-tg.lines.json). */
 	sourceStart(): string {
 		return procStart(this.id);
 	}

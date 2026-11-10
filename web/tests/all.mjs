@@ -1,7 +1,9 @@
-// all.mjs - `npm test`: runs every quick test below in turn (after tsc), prints one line each, exits 1 if any failed.
+// all.mjs - `npm test`: runs every quick test below (after tsc), up to 8 at once, prints one line each in list order, exits 1 if any failed.
+// TEST_JOBS=1 npm test runs them one by one (TEST_JOBS=N: N at once). A test in ALONE runs by itself after the rest (it measures real time).
 // A new test goes in this list. Slow or browser-heavy ones stay separate npm scripts (test:sw, test:restart, test:ui1,
 // test:dmi-all, boot-check); tests/static/mem-budget.mjs and snap-time.mjs are browser measurements, not tests. Run from web/.
-import { spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
+import os from "node:os";
 
 const WS = "--experimental-websocket";
 const tests = [
@@ -27,7 +29,6 @@ const tests = [
 	[WS, "tests/static/lobby-art.test.mjs"],
 	"tests/static/lobby-menu.test.mjs",
 	"tests/page-scripts.test.mjs",
-	"tests/dm-lines-cols.test.mjs",
 	"tests/plain-gen-calls.test.mjs",
 	"tests/dt-life.test.mjs",
 	"tests/dt-rules.test.mjs",
@@ -35,6 +36,7 @@ const tests = [
 	"tests/dt-calls.test.mjs",
 	"tests/dt-vars.test.mjs",
 	"tests/unreachable.test.mjs",
+	"tests/name-check.test.mjs",
 	"tests/pb-spellings.test.mjs",
 	"tests/sleep0.test.mjs",
 	"tests/waitfor0.test.mjs",
@@ -87,20 +89,44 @@ const tests = [
 	[WS, "tools/tgui-quick.mjs", "stack-3sheets", "communications_console-purchase", "mecha_fabricator-parts", "autolathe-category", "pda-main", "pda-messenger", "pda-bots", "pda-chat", "pda-messages"],
 ];
 
+const ALONE = new Set(["tests/tick-wait.test.mjs"]);
+// started first (output order is unchanged): the longest ones, so none begins last and holds up the end
+const FIRST = ["tests/server-private.test.mjs", "tests/static/csp.test.mjs", "tests/static/lobby-art.test.mjs", "build/dist/tests/sight-shadow/sight-shadow.test.js", "tools/tgui-quick.mjs"];
+const JOBS = Math.max(1, Number(process.env.TEST_JOBS) || Math.min(8, os.availableParallelism()));
+
+const run = (args) => new Promise((done) => {
+	const t1 = Date.now(), out = [];
+	const p = spawn(process.execPath, args, { stdio: ["ignore", "pipe", "pipe"] });
+	p.stdout.on("data", (d) => out.push(d));
+	p.stderr.on("data", (d) => out.push(d));
+	p.on("close", (code, signal) => done({ code, signal, out: Buffer.concat(out).toString("utf8"), s: ((Date.now() - t1) / 1000).toFixed(1) }));
+});
+
 const failed = [];
 const t0 = Date.now();
-for (const t of tests) {
-	const args = Array.isArray(t) ? t : [t];
-	const name = args.find((a) => !a.startsWith("--"));
-	const t1 = Date.now();
-	const r = spawnSync(process.execPath, args, { encoding: "utf8", maxBuffer: 1 << 26 });
-	const s = ((Date.now() - t1) / 1000).toFixed(1);
-	if (r.status === 0) {
-		console.log(`ok   ${name} (${s} s)`);
-	} else {
-		failed.push(name);
-		console.log(`FAIL ${name} (${s} s, exit ${r.status ?? r.signal})\n${(r.stdout + r.stderr).trimEnd()}\n`);
+const jobs = tests.map((t) => { const args = Array.isArray(t) ? t : [t]; return { args, name: args.find((a) => !a.startsWith("--")) }; });
+const results = new Array(jobs.length);
+const waiting = [];
+for (let i = 0; i < jobs.length; i++) results[i] = new Promise((r) => (waiting[i] = r));
+let shown = 0;
+const show = async () => { // print finished results in list order
+	for (; shown < jobs.length; shown++) {
+		const r = await results[shown], { name } = jobs[shown];
+		if (r.code === 0) console.log(`ok   ${name} (${r.s} s)`);
+		else {
+			failed.push(name);
+			console.log(`FAIL ${name} (${r.s} s, exit ${r.code ?? r.signal})\n${r.out.trimEnd()}\n`);
+		}
 	}
-}
+};
+const printer = show();
+const side = jobs.map((j, i) => i).filter((i) => !ALONE.has(jobs[i].name));
+side.sort((a, b) => (FIRST.includes(jobs[a].name) ? 0 : 1) - (FIRST.includes(jobs[b].name) ? 0 : 1) || a - b);
+let next = 0;
+await Promise.all(Array.from({ length: JOBS }, async () => {
+	while (next < side.length) { const i = side[next++]; waiting[i](await run(jobs[i].args)); }
+}));
+for (let i = 0; i < jobs.length; i++) if (ALONE.has(jobs[i].name)) waiting[i](await run(jobs[i].args));
+await printer;
 console.log(`\n${tests.length - failed.length}/${tests.length} ok in ${((Date.now() - t0) / 1000).toFixed(0)} s${failed.length ? `; FAILED: ${failed.join(", ")}` : ""}`);
 process.exit(failed.length ? 1 : 0);

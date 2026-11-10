@@ -8,19 +8,28 @@ import { join, resolve } from "node:path";
 
 const web = resolve(import.meta.dirname, ".."), tmp = mkdtempSync(join(tmpdir(), "dt-calls-"));
 let failures = 0;
-const fail = (m) => { failures++; console.log(`FAIL ${m}`); };
+const fail = (m) => { if (collecting) return; failures++; console.log(`FAIL ${m}`); };
 const HEAD = 'import * as rt from "../../build/dist/src/translate/runtime.js";\nimport type { Value, Frame } from "../../build/dist/src/translate/runtime.js";\nconst { T, P, g } = rt;\n'; // (Value, Frame: not the standard head, so the file's own short name list counts, not the full one)
 /** the bundle text of a fixture game file (null and the error if the bundler stopped) */
+/** the bundle text of a fixture game file (null and the error if the bundler stopped). The checks run twice: the first pass
+ * only collects the fixtures (fake results, fail() quiet), one bundler start bundles them all (--hot-each), and the
+ * second pass checks those results; a fixture the first pass didn't reach is bundled on its own. */
+let collecting = true, n = 0;
+const collected = [], done = new Map();
+const lines = (body) => (HEAD + body).replace(/\n$/, "").split("\n").length;
+const result = (r, body) => (r.err !== undefined ? { text: null, err: r.err } : { text: r.body, err: null, lines: lines(body) });
 function lower(body) {
-	const file = join(tmp, "fixture.ts"), out = join(tmp, "out.json");
-	writeFileSync(file, HEAD + body);
-	try {
-		execFileSync(process.execPath, ["tools/translate-tg.mjs", "--hot", out, `code/zz_dt_calls.ts=${file}`], { cwd: web, stdio: ["ignore", "pipe", "pipe"] });
-	} catch (e) {
-		return { text: null, err: String(e.stderr) };
-	}
-	return { text: JSON.parse(readFileSync(out, "utf8"))[0].body, err: null, lines: (HEAD + body).replace(/\n$/, "").split("\n").length };
+	if (collecting) { collected.push(body); return { text: "", err: "", lines: 0 }; }
+	if (done.has(body)) return done.get(body);
+	return bundle([body])[0];
 }
+function bundle(bodies) {
+	const out = join(tmp, "out.json"), args = bodies.map((b, i) => { const file = join(tmp, `fixture${n++}.ts`); writeFileSync(file, HEAD + b); return `code/zz_dt_calls.ts=${file}`; });
+	execFileSync(process.execPath, ["tools/translate-tg.mjs", "--hot-each", out, ...args], { cwd: web, stdio: ["ignore", "pipe", "pipe"] });
+	return JSON.parse(readFileSync(out, "utf8")).map((r, i) => result(r, bodies[i]));
+}
+
+async function checks() { // (not indented: the fixtures are multi-line strings)
 
 // 1. each kind, plain and generator, as the translator spelled it (the sites' and $P tables go on the import line)
 const ok = lower(`
@@ -337,7 +346,7 @@ else {
 	const flat = lp.text.replace(/[ \t]+/g, " ").replace(/^ /gm, "\t");
 	for (const w of wantLp) if (!flat.includes(w.replace(/[ \t]+/g, " ").replace(/^ /gm, "\t"))) fail(`missing from the bundle: ${w}`);
 	if (lp.text.split("\n").length !== lp.lines) fail(`loops: line count changed: ${lp.text.split("\n").length} lines, not ${lp.lines}`);
-	if ((lp.text.split("function loopsown")[1].match(/let \$e/g) ?? []).length !== 1) fail("a proc that declares $e got another one");
+	if ((lp.text.split("function loopsown")[1]?.match(/let \$e/g) ?? []).length !== 1) fail("a proc that declares $e got another one");
 }
 const lproc = (b) => `rt.def("/obj/zz/proc/x", function x(f: Frame, L: Value) {\n\tlet M: Value = null;\n\t${b}\n});\n`;
 const badLp = [
@@ -456,6 +465,13 @@ for (const [what, b, msg] of badDf) {
 	if (r.err === null) fail(`${what}: bundled without an error`);
 	else if (!r.err.includes(msg)) fail(`${what}: stopped with another error: ${r.err.slice(0, 200)}`);
 }
+return `dt-calls: ${want.length + wantVars.length + wantOps.length + wantBi.length + wantTx.length + wantYl.length + wantGl.length + wantLp.length + wantEq.length + wantLs.length + wantNw.length + wantNm.length + wantDf.length} lowered spellings, ${bad.length + badVars.length + badOps.length + badBi.length + badTx.length + badGl.length + badLp.length + badNm.length + badDf.length} refusals ok`;
+}
+try { await checks(); } catch (e) { console.log(`first pass stopped: ${e.message}`); } // first pass: a fake result may break a check; the fixtures it skipped are bundled on their own later
+const uniq = [...new Set(collected)];
+bundle(uniq).forEach((r, i) => done.set(uniq[i], r));
+collecting = false;
+const summary = await checks();
 rmSync(tmp, { recursive: true, force: true });
 if (failures) { console.log(`dt-calls: ${failures} failed`); process.exit(1); }
-console.log(`dt-calls: ${want.length + wantVars.length + wantOps.length + wantBi.length + wantTx.length + wantYl.length + wantGl.length + wantLp.length + wantEq.length + wantLs.length + wantNw.length + wantNm.length + wantDf.length} lowered spellings, ${bad.length + badVars.length + badOps.length + badBi.length + badTx.length + badGl.length + badLp.length + badNm.length + badDf.length} refusals ok`);
+console.log(`${summary} (${uniq.length} fixtures in one bundler start, ${n - uniq.length} alone)`);

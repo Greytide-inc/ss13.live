@@ -22,7 +22,7 @@ fs.mkdirSync(path.join(dist, "web/scenarios"), { recursive: true });
 fs.writeFileSync(path.join(dist, "web/scenarios/s.txt"), "scenario\n");
 for (const d of ["icons", "sound"]) fs.mkdirSync(path.join(dist, d));
 fs.writeFileSync(path.join(dist, "icons/x.dmi"), "dmi"); fs.writeFileSync(path.join(dist, "sound/x.ogg"), "ogg");
-const port = 8700 + Math.floor(Math.random() * 80);
+const port = 8700 + Math.floor(Math.random() * 26); // 8700-8725; server-private 8726-8751, server-bans 8752-8777 (npm test runs them side by side)
 const srv = spawn(process.execPath, ["tools/server.mjs", "--dist", dist, "--port", String(port), "--log", path.join(dist, "server.log"), "--empty-reset", "1"], { stdio: "ignore" });
 try {
 	let up = false;

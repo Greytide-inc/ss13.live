@@ -10,7 +10,9 @@
     "noFallthroughCasesInSwitch": true,
     "sourceMap": true,
     "types": ["node"],
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "incremental": true,
+    "tsBuildInfoFile": "build/dist/.tsbuildinfo"
   },
   "include": ["src/**/*.ts", "tests/**/*.ts"]
 }

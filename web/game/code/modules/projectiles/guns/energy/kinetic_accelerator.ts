@@ -130,7 +130,9 @@ rt.def("/obj/item/weapon/gun/energy/kinetic_accelerator/proc/equipped", function
 // kinetic_accelerator.dm:90
 rt.def("/obj/item/weapon/gun/energy/kinetic_accelerator/proc/dropped", function* dropped(f: Frame) {
 	f.dot = (yield* parent_proc());
-	if (this.holds_charge) return f.dot;
+	// tg bug fix: a gun deleted inside a bag is "dropped" by the bag after Destroy cleared its timers; a new timer
+	// would fire on the dead gun (null.charge runtime).
+	if (this.holds_charge || this.gc_destroyed) return f.dot;
 	yield* addtimer((yield* new_(T("/datum/callback"), this, P("/obj/item/weapon/gun/energy/kinetic_accelerator/proc/empty_if_not_held"))), 2);
 	return f.dot;
 }, true);

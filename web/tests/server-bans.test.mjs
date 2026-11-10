@@ -24,7 +24,7 @@ setInterval(() => {}, 1e9);
 const bansFile = path.join(dist, "bans.json");
 fs.writeFileSync(bansFile, JSON.stringify({ keys: { carol: true }, ips: { "198.51.100.7": true } })); // an older file's entries stay
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const port = 8700 + Math.floor(Math.random() * 80);
+const port = 8752 + Math.floor(Math.random() * 26); // own range: npm test runs the server tests side by side
 const start = (extra = []) => spawn(process.execPath, ["tools/server.mjs", "--dist", dist, "--port", String(port), "--log", path.join(dist, "server.log"), "--host-key", "hk", "--bans", bansFile, ...extra], { stdio: "ignore" });
 const join = async (hello, xff) => {
 	const ws = new WebSocket(`ws://127.0.0.1:${port}`, xff ? { headers: { "X-Forwarded-For": xff } } : {}), got = [];

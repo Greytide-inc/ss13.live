@@ -51,7 +51,7 @@
 // exactly `maptext_height` tall and just doesn't have room to draw the earliest lines. This is
 // evidence from OpenDream's client, not a live BYOND capture -- moderate-high, not certain.
 //
-// BYOND 511 checked (web/reference/render-rules/): bottom anchor right; align/valign are whole-box,
+// BYOND 511 checked (archive/byond-reference/render-rules/): bottom anchor right; align/valign are whole-box,
 // from the first text character; <div valign> works in 511; position:relative is ignored.
 //
 // Supported subset -- anything else falls through to plain text (the tag is dropped,
@@ -84,7 +84,7 @@ export interface MaptextDoc {
 }
 
 // tg's skin.dmf map element: Arial 7pt, text-color none (-> white). BYOND 511 screenshot (
-// web/reference/render-rules/): 7pt Arial = 9.33px, 9px line pitch, baseline 3px above the line bottom.
+// archive/byond-reference/render-rules/): 7pt Arial = 9.33px, 9px line pitch, baseline 3px above the line bottom.
 const DEFAULT_FONT_PX = 7 * 96 / 72;
 const PT_TO_PX = 96 / 72;
 const fontOf = (run: MaptextRun) => `${run.bold ? "bold " : ""}${run.fontSize ?? DEFAULT_FONT_PX}px Arial, "Liberation Sans", sans-serif`;

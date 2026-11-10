@@ -12,6 +12,7 @@ import { createServer } from "node:http";
 import { mkdirSync, readFileSync, existsSync, writeFileSync, rmSync } from "node:fs";
 import { dirname, resolve, join, extname } from "node:path";
 import { fileURLToPath } from "node:url";
+const freePort = () => new Promise((ok) => { const s = createServer().listen(0, "127.0.0.1", () => { const p = s.address().port; s.close(() => ok(p)); }); }); // the browser's debug port: one the system says is free (npm test runs several browsers at once)
 const here = dirname(fileURLToPath(import.meta.url)), web = resolve(here, ".."), root = resolve(web, "..");
 const argv = process.argv.slice(2), flags = {}, files = [];
 for (let i = 0; i < argv.length; i++) { if (argv[i] === "--shot" || argv[i] === "--click") flags[argv[i].slice(2)] = argv[++i]; else files.push(argv[i]); }
@@ -40,7 +41,7 @@ const srv = createServer((q, r) => {
 	r.writeHead(200, { "content-type": MIME[extname(p)] ?? "application/octet-stream" }); r.end(body);
 });
 await new Promise((ok) => srv.listen(0, "127.0.0.1", ok));
-const PORT = srv.address().port, FF = String(40000 + (process.pid % 20000)), prof = resolve(web, `build/ff-profile-q${process.pid}`);
+const PORT = srv.address().port, FF = String(await freePort()), prof = resolve(web, `build/ff-profile-q${process.pid}`);
 mkdirSync(prof, { recursive: true });
 const ff = spawn("/usr/bin/firefox", ["--headless", "--no-remote", "--profile", prof, `--remote-debugging-port=${FF}`, "--window-size=1000,900"], { stdio: "ignore", env: { ...process.env, MOZ_HEADLESS: "1" } });
 let bad = 0; const check = (ok, msg) => { console.log((ok ? "ok   " : "FAIL ") + msg); if (!ok) bad++; };

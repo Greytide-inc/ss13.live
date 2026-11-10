@@ -1,0 +1,75 @@
+[vm-boot] type tree from web/game (build/game-types.js) built in 0.54 s
+[vm-boot] translated: 25547 procs installed from web/build/translated-tg.js in 1.1 s
+[vm-boot] global init + compiled maps + world/New at 1.7 s
+map_config not found: data/next_map.json
+608 global variables
+World loaded at 22:21:13
+[vm-boot] compile-time maps read from 5 .dmm files in 60 ms
+[vm-boot] world/New returned at 3.0 s, world.time 0
+Initialized Server Tasks subsystem within 0 seconds!
+Initialized Jobs subsystem within 0 seconds!
+Initialized Events subsystem within 0 seconds!
+Initialized Ticker subsystem within 0 seconds!
+Loading Box Station...
+Loaded station in 1.7s!
+Ruin "Biodome Winter" placed at (110, 76, 5)
+Ruin "Ruin of Gluttony" placed at (161, 119, 5)
+Ruin "Summoning Ritual" placed at (195, 166, 5)
+Ruin "Ruin of Sloth" placed at (102, 129, 5)
+Ruin "Makeshift Shelter" placed at (157, 83, 5)
+Ruin "Ruin of Envy" placed at (66, 139, 5)
+Ruin "Hierophant's Arena" placed at (144, 205, 5)
+Ruin "Fountain Hall" placed at (133, 179, 5)
+Ruin "Seed Vault" placed at (117, 147, 5)
+Ruin "Derelict 6" placed at (93, 83, 8)
+Ruin "Salvation" placed at (77, 42, 6)
+Ruin "Ancient Space Station" placed at (174, 135, 4)
+Ruin "CF Corsair" placed at (82, 211, 6)
+Ruin "Asteroid 2" placed at (86, 119, 4)
+Ruin "Aesthetic Outpost" placed at (181, 213, 3)
+Ruin "A Giant Ball of Paper in Space" placed at (158, 79, 6)
+Ruin "Derelict 3" placed at (70, 119, 8)
+Ruin "Abandoned Teleporter" placed at (117, 149, 8)
+Ruin "Derelict 5" placed at (207, 49, 8)
+Ruin "Crashed Clown Ship" placed at (135, 36, 7)
+Ruin "Disposal Facility 17" placed at (101, 91, 10)
+Ruin "Asteroid 1" placed at (106, 145, 3)
+Ruin "Dinner for Two" placed at (66, 161, 10)
+Ruin "Asteroid 5" placed at (181, 122, 10)
+Ruin "Ordinary Space Tile" placed at (113, 31, 4)
+Initialized Mapping subsystem within 4.4 seconds!
+## WARNING: one or more paperbins ate a pen duing initialize()
+Initialized 814881 atoms
+Initialized Atoms subsystem within 8.6 seconds!
+Initialized Language subsystem within 0 seconds!
+Initialized Machines subsystem within 0 seconds!
+Initialized Shuttle subsystem within 4.6 seconds!
+Initialized Weather subsystem within 0 seconds!
+## WARNING: There are 19 active turfs at roundstart, this is a mapping error caused by a difference of the air between the adjacent turfs. You can see its coordinates using "Mapping -> Show roundstart AT list" verb (debug verbs required)
+## WARNING: HEY! LISTEN! 0 Seconds were wasted processing 19 turf(s) (connected to 88 other turfs) with atmos differences at round start.
+Initialized Atmospherics subsystem within 3 seconds!
+Initialized Minimap subsystem within 0 seconds!
+Initialized Assets subsystem within 0 seconds!
+Initialized Icon Smoothing subsystem within 1.5 seconds!
+Initialized Overlay subsystem within 0.3 seconds!
+Initialized Lighting subsystem within 4.7 seconds!
+Initialized Persistence subsystem within 0.1 seconds!
+Initializations complete within 27.3 seconds!
+Game start took 0s
+[vm-boot] round start detected at 31.1 s wall; stopping 120 s after this (--after-start)
+[vm-boot] --after-start 120 s elapsed since round start at 151.1 s wall; stopping
+[vm-boot] stopped after 53269 ticks, world.time 26665, 151.1 s wall, 0 runtime errors, 0 not-implemented hits
+[vm-boot] after round start (at 31.1 s, tick 2258): 51011 ticks in 120.0 s = 2.35 ms/tick
+[vm-boot] SSgarbage: totalgcs 5385, totaldels 0, queue 297, tobequeued 0
+[vm-boot] VM collector: 7860765 objects freed at 53271 safe points, 4.3 s; 939176 atoms
+[vm-boot] heap at end 1819 MB
+[vm-boot] missing features, in the order first hit:
+
+
+Starting up round ID . 22:21:13
+---------------------
+[22:21:13]ADMIN: Loading Banlist
+[22:21:13]ADMIN: Banlist is empty.
+[22:21:13]ADMIN: Banlist missing base dir.
+[22:21:13]GAME: Saved mode is 'extended'
+[22:21:16]GAME: Biodome Winter loaded at at 95,61,5

@@ -1,10 +1,8 @@
 // error-lines.ts - where a runtime error in translated code happened, read off the JS stack only when one happens.
-// tools/translate-tg.mjs builds translated-tg.js with every game file at the same lines (and columns, but where it lowers a
-// plain proc call: there it moves the file's DM columns to the bundle's), and writes
-// translated-tg.lines.json next to it: each file's first bundle line, its rt.def lines, and game/_dm-lines.json (each
-// proc's DM file:line by game line and column, kept from the old `f.at = N` statements by tools/strip-at.mjs). So the
-// innermost translated-tg.js frame of the error's stack gives the game/ file:line, and from there the DM file:line,
-// which tg's /exception (file, line) and so compare-logs still use.
+// tools/translate-tg.mjs builds translated-tg.js with every game file at the same lines, and writes
+// translated-tg.lines.json next to it: each file's first bundle line and its rt.def lines. So the innermost
+// translated-tg.js frame of the error's stack gives the game/ file:line, which the error log and tg's /exception
+// (file, line) print.
 
 /** build/translated-tg.lines.json (see tools/translate-tg.mjs). */
 interface LinesFile {
@@ -12,15 +10,6 @@ interface LinesFile {
 	starts: number[];
 	/** Per file, flat: rt.def line, proc path, rt.def line, proc path, ... */
 	defs: (number | string)[][];
-	/** "file|path" (#n for the n-th def of a path in one file): [DM file, DM line at the rt.def, (line, column, DM line)...]. */
-	dm: Record<string, (number | string)[]>;
-}
-
-export interface ErrorSource {
-	/** "game/code/.../x.ts:12" */
-	game: string;
-	/** "code/.../x.dm:103", or null if the proc has no DM lines (written at translation time). */
-	dm: string | null;
 }
 
 let table: LinesFile | null | undefined;
@@ -54,9 +43,9 @@ export function noteBundle(stack: string | undefined): void {
 }
 
 /**
- * "file.dm:line" where proc number `id` (the id-th rt.def of the game files, in bundle order) starts in the DM
- * source, or "?:0" if it has no DM lines. What tg's error fallback and the heartbeat stacks print for a translated
- * frame (the bytecode's SourceInfo at offset 0 before the JSON went). Loads translated-tg.lines.json on first use.
+ * "game/code/.../x.ts:line" of proc number `id`'s rt.def (the id-th rt.def of the game files, in bundle order), or "?:0"
+ * if the table isn't there. What tg's error fallback and the heartbeat stacks print for a translated frame with no
+ * position of its own. Loads translated-tg.lines.json on first use.
  */
 export function procStart(id: number): string {
 	if (startLines === null) {
@@ -64,13 +53,8 @@ export function procStart(id: number): string {
 		if (!table) return "?:0";
 		const out: string[] = [];
 		table.files.forEach((file, fi) => {
-			const defs = table!.defs[fi], nth = new Map<string, number>();
-			for (let i = 1; i < defs.length; i += 2) {
-				const path = defs[i] as string, n = (nth.get(path) ?? 0) + 1;
-				nth.set(path, n);
-				const e = table!.dm[`${file}|${path}${n > 1 ? `#${n}` : ""}`];
-				out.push(e ? `${e[0]}:${e[1]}` : "?:0");
-			}
+			const defs = table!.defs[fi];
+			for (let i = 0; i < defs.length; i += 2) out.push(`game/${file}:${defs[i]}`);
 		});
 		startLines = out;
 	}
@@ -82,24 +66,24 @@ export function procStart(id: number): string {
  * frame in that proc (an error a proc carries up to its caller is reported for each). Null if the stack doesn't show
  * the proc (e.g. a proc replaced by hand-written JS).
  */
-export function errorSource(err: unknown, procPath: string): ErrorSource | null {
+export function errorSource(err: unknown, procPath: string): string | null {
 	const stack = err instanceof Error ? err.stack : undefined;
 	if (!stack) return null;
 	// a file loaded into the running world (runtime.hotSwap) is its own script, hot/FILE.ts, with the game file's lines.
-	// The build's line table doesn't fit an edited file, so the innermost such frame is reported as it stands, with no DM line.
+	// The build's line table doesn't fit an edited file, so the innermost such frame is reported as it stands.
 	const h = HOT_RE.exec(stack), b = stack.indexOf("translated-tg.js");
-	if (h !== null && (b < 0 || h.index < b)) return { game: `game/${h[1]}:${h[2]} (hot-loaded)`, dm: null };
+	if (h !== null && (b < 0 || h.index < b)) return `game/${h[1]}:${h[2]} (hot-loaded)`;
 	for (const m of stack.matchAll(STACK_RE)) {
 		if (table === undefined) table = load(m[1]);
 		if (!table) return null;
-		const r = at(table, Number(m[2]), Number(m[3]) - 1, procPath);
+		const r = at(table, Number(m[2]), procPath);
 		if (r !== null) return r;
 	}
 	return null;
 }
 
-/** Bundle line b, column col, if that's in proc procPath. */
-function at(table: LinesFile, b: number, col: number, procPath: string): ErrorSource | null {
+/** "game/FILE:line" for bundle line b, if that's in proc procPath. */
+function at(table: LinesFile, b: number, procPath: string): string | null {
 	const starts = table.starts;
 	let lo = 0, hi = starts.length - 1;
 	while (lo < hi) {
@@ -108,23 +92,9 @@ function at(table: LinesFile, b: number, col: number, procPath: string): ErrorSo
 		else hi = mid - 1;
 	}
 	if (starts[lo] > b) return null;
-	const file = table.files[lo], line = b - starts[lo] + 1, defs = table.defs[lo];
+	const line = b - starts[lo] + 1, defs = table.defs[lo];
 	let d = -1;
 	for (let i = 0; i < defs.length && (defs[i] as number) <= line; i += 2) d = i;
 	if (d < 0 || defs[d + 1] !== procPath) return null;
-	let nth = 1;
-	for (let i = 0; i < d; i += 2) if (defs[i + 1] === procPath) nth++;
-	const e = table.dm[`${file}|${procPath}${nth > 1 ? `#${nth}` : ""}`];
-	const game = `game/${file}:${line}`;
-	if (!e) return { game, dm: null };
-	const rel = line - (defs[d] as number);
-	let v = e[1], exact: number | string | undefined;
-	for (let i = 2; i < e.length; i += 3) {
-		const l = e[i] as number, c = e[i + 1] as number;
-		if (c < 0) {
-			if (l === rel && -1 - c === col) exact = e[i + 2];
-		} else if (l < rel || (l === rel && c <= col)) v = e[i + 2];
-	}
-	if (exact !== undefined) v = exact;
-	return { game, dm: typeof v === "number" ? `${e[0]}:${v}` : v };
+	return `game/${table.files[lo]}:${line}`;
 }

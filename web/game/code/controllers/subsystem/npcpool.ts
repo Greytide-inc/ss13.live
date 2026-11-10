@@ -101,7 +101,11 @@ rt.def("/datum/controller/subsystem/npcpool/proc/fire", function fire(f: Frame, 
 		while (rt.len(f, currentrun)) {
 			SA = rt.index(currentrun, rt.len(f, currentrun));
 			--currentrun.len;
-			if (!SA.ckey && !(rt.istype(SA, T("/mob/living/simple_animal/hostile")) && this.npc_z_asleep(SA))) {
+			// tg bug fix: a mob hard-deleted while this run was paused leaves a null in the copy (null.ckey runtime).
+			if (!SA) {
+				continue;
+			}
+			if (!SA.ckey &&!(rt.istype(SA, T("/mob/living/simple_animal/hostile")) && this.npc_z_asleep(SA))) {
 				if (SA.stat != 2) {
 					SA.handle_automated_movement();
 				}

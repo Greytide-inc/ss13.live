@@ -50,7 +50,7 @@ For development:
 | Command (from `web/`) | What it does |
 |---|---|
 | `npm test` | Engine and page tests |
-| `npm run boot-check -- NAME` | Boots the game headless in Node and checks its log against recorded BYOND results in `web/reference/`. The main check after any game or engine change |
+| `npm run boot-check -- NAME` | Boots the game headless in Node and checks its log: every boot milestone in order and no runtime error. The main check after any game or engine change |
 | `npm run build:tgui` | Rebuilds the tgui assets from `tgui/src` |
 
 More commands are in [web/README.md](web/README.md). The rules for editing game code are in [web/game/README.md](web/game/README.md). New to the code? [web/game/HOW-TO-READ.md](web/game/HOW-TO-READ.md) explains the names you'll meet most, `function*` and `yield*`, with a worked example.
@@ -63,7 +63,7 @@ More commands are in [web/README.md](web/README.md). The rules for editing game 
 | `web/src/` | Engine: `vm/` runs the game, `render/` draws, `worker/` is the game thread (the code that runs inside the Web Worker), plus `dmi/`, `vfs/`, `appearance/` |
 | `web/worker/` | The game page (`index.html` and its scripts): the client side, despite the folder's name |
 | `web/site/` | The landing page at ss13.live |
-| `web/tests/`, `web/reference/` | Tests and the BYOND recordings they compare against |
+| `web/tests/` | Tests |
 | `web/tools/` | Build, boot, profiling and check scripts |
 
 ## Licence

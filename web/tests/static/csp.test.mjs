@@ -10,6 +10,7 @@ import { readFileSync, mkdirSync, rmSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { fixCsp } from "../../tools/csp.mjs";
+const freePort = () => new Promise((ok) => { const s = createServer().listen(0, "127.0.0.1", () => { const p = s.address().port; s.close(() => ok(p)); }); }); // the browser's debug port: one the system says is free (npm test runs several browsers at once)
 
 const web = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 let bad = 0; const check = (ok, msg) => { console.log((ok ? "ok   " : "FAIL ") + msg); if (!ok) bad++; };
@@ -78,7 +79,7 @@ const connect = async (url) => { for (let i = 0; i < 100; i++) { await sleep(150
 const rpc = (ws) => { let id = 0; const pending = new Map(); ws.onmessage = (e) => { const m = JSON.parse(e.data); if (m.id && pending.has(m.id)) { pending.get(m.id)(m); pending.delete(m.id); } }; return (method, params = {}) => new Promise((r) => { pending.set(++id, r); ws.send(JSON.stringify({ id, method, params })); }); };
 
 async function firefox() {
-	const port = 40000 + (process.pid % 20000), prof = join(web, `build/ff-profile-csp${process.pid}`); mkdirSync(prof, { recursive: true });
+	const port = await freePort(), prof = join(web, `build/ff-profile-csp${process.pid}`); mkdirSync(prof, { recursive: true });
 	const p = spawn("/usr/bin/firefox", ["--headless", "--no-remote", "--profile", prof, `--remote-debugging-port=${port}`], { stdio: "ignore", env: { ...process.env, MOZ_HEADLESS: "1" } });
 	const send = rpc(await connect(async () => `ws://127.0.0.1:${port}/session`));
 	await send("session.new", { capabilities: {} });
@@ -88,7 +89,7 @@ async function firefox() {
 		ev: async (e) => { const r = await send("script.evaluate", { expression: e, target: { context }, awaitPromise: true, serializationOptions: { maxObjectDepth: 3 } }); return r.result?.result?.type === "string" ? r.result.result.value : undefined; } };
 }
 async function chromium() {
-	const port = 20000 + (process.pid % 20000), H = process.env.HOME + "/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell";
+	const port = await freePort(), H = process.env.HOME + "/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell";
 	const p = spawn(H, ["--no-sandbox", `--remote-debugging-port=${port}`, "about:blank"], { stdio: "ignore" });
 	const send = rpc(await connect(async () => (await (await fetch(`http://127.0.0.1:${port}/json/list`)).json()).find((t) => t.type === "page").webSocketDebuggerUrl));
 	return { name: "chromium", close: () => p.kill(), go: (url) => send("Page.navigate", { url }),

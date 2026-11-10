@@ -13,7 +13,7 @@ import ts from "typescript";
 export const JS_NAMES = new Set(["filter", "apply", "clear", "pop", "trim", "get", "strike", "drop", "add", "fill", "slice", "blink", "search", "eval"]);
 const JS_GLOBALS = new Set(Object.getOwnPropertyNames(globalThis));
 /** what a JS method's name could be (prototypes of the built-ins game code holds); a DM proc named like one must be in JS_NAMES. */
-const jsMethodNames = () => {
+export const jsMethodNames = () => {
 	const s = new Set();
 	for (const o of [Array, String, Map, Set, Object, Function, RegExp, Number, Promise, Date, WeakMap, globalThis.Iterator].filter(Boolean))
 		for (const k of Object.getOwnPropertyNames(o.prototype)) s.add(k);

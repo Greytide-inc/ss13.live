@@ -1,4 +1,4 @@
-// error-lines.test.mjs - a runtime error in translated tg reports its game/ file:line (JS stack) and DM file:line.
+// error-lines.test.mjs - a runtime error in translated tg reports its game/ file:line (JS stack), and so does tg's /exception (file, line).
 // Forces tg's open.dm,103 bug (`air.compare()` on a turf with no air: "Cannot execute null.compare()") on a 3x3 space map.
 // Usage (from web/, env loaded, after `npx tsc -p .` and `node tools/translate-tg.mjs`): node tests/error-lines.test.mjs
 import { readFileSync } from "node:fs";
@@ -21,7 +21,7 @@ vm.map.resize(3, 3, 1, false); // world.turf: /turf/open/space, never initialize
 const turf = vm.map.turfAt(2, 2, 1);
 vm.call(tree.getType("/turf/open").procs.get("Initalize_Atmos"), [1], turf);
 
-const want = { message: "Cannot execute null.compare().", proc: "/turf/open/proc/Initalize_Atmos", source: "code/game/turfs/open.dm:103" };
+const want = { message: "Cannot execute null.compare().", proc: "/turf/open/proc/Initalize_Atmos" };
 const gameFile = "game/code/game/turfs/open.ts";
 const lines = readFileSync(resolve(web, gameFile), "utf8").split("\n");
 const wantLine = lines.findIndex((l) => l.includes(".compare(enemy_air)")) + 1;
@@ -29,10 +29,14 @@ let fail = 0;
 const check = (what, ok) => { console.log(`${ok ? "ok  " : "FAIL"} ${what}`); if (!ok) fail++; };
 check(`one runtime error (got ${errors.length})`, errors.length === 1);
 const e = errors[0] ?? {};
-console.log(`     ${e.message} | ${e.proc} (${e.game}, DM ${e.source})`);
+console.log(`     ${e.message} | ${e.proc} (${e.source})`);
 check(`message "${want.message}"`, e.message === want.message);
 check(`proc ${want.proc}`, e.proc === want.proc);
-check(`game ${gameFile}:${wantLine}`, e.game === `${gameFile}:${wantLine}`);
-check(`DM ${want.source}`, e.source === want.source);
+check(`source ${gameFile}:${wantLine}`, e.source === `${gameFile}:${wantLine}`);
+check("no DM line kept", e.game === undefined);
+const { procStart } = await imp("build/dist/src/translate/error-lines.js");
+const p = tree.getType("/turf/open").procs.get("Initalize_Atmos");
+const def = lines.findIndex((l) => l.includes('rt.def("/turf/open/proc/Initalize_Atmos"')) + 1;
+check(`proc start ${gameFile}:${def} (got ${procStart(p.id)})`, def > 0 && procStart(p.id) === `${gameFile}:${def}`);
 console.log(fail ? `error-lines: ${fail} FAILED` : "error-lines: OK");
 process.exit(fail ? 1 : 0);

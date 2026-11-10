@@ -26,7 +26,7 @@ self.onmessage = ({ data }) => {
 setInterval(() => {}, 1e9);
 `);
 fs.writeFileSync(path.join(dist, "bans.json"), JSON.stringify({ ips: { "2001:db8:1:4::/64": true } }));
-const port = 8700 + Math.floor(Math.random() * 80);
+const port = 8726 + Math.floor(Math.random() * 26); // own range: npm test runs the server tests side by side
 const srv = spawn(process.execPath, ["tools/server.mjs", "--dist", dist, "--port", String(port), "--log", path.join(dist, "server.log"), "--host-key", "hk", "--bans", path.join(dist, "bans.json")], { stdio: "ignore" });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // xff: the address a proxy on this machine (cloudflared) says the player has

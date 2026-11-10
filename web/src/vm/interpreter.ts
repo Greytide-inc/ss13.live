@@ -279,10 +279,8 @@ export class Frame {
 export interface RuntimeErrorRecord {
 	message: string;
 	proc: string;
-	/** DM file:line, as BYOND prints it (tg's /exception file and line; compare-logs matches these). */
+	/** "game/code/.../x.ts:12": where it happened (translated code: off the JS stack), else its proc's first line. */
 	source: string;
-	/** the game/ file:line, for an error in translated code (from the JS stack). */
-	game?: string;
 	/** Innermost first, as BYOND prints it. */
 	callStack: string[];
 }
@@ -1810,11 +1808,11 @@ export class VM {
 			e.setVar("desc", `proc name: ${procDisplayName(f.proc)} (${f.proc.path})\n`);
 			return e;
 		}
-		// With DEBUG (tg defines it): the shape of BYOND's reference boot log (web/reference/byond-boot.log).
-		const src = this.sourceOf(f, err).source;
+		// With DEBUG (tg defines it): the shape of BYOND's reference boot log (archive/byond-reference/byond-boot.log).
+		const src = this.sourceOf(f, err);
 		const colon = src.lastIndexOf(":");
 		const file = src.slice(0, colon);
-		const line = Number(src.slice(colon + 1));
+		const line = parseInt(src.slice(colon + 1), 10) || 0;
 		e.setVar("file", file.slice(file.lastIndexOf("/") + 1));
 		e.setVar("line", line);
 		const lines = [
@@ -1870,22 +1868,21 @@ export class VM {
 
 	/**
 	 * hook from src/translate/runtime.ts: where error `err` happened in translated proc frame `f` (game/ file:line from
-	 * the JS stack, DM file:line from game/_dm-lines.json), or null if the stack doesn't show it.
+	 * the JS stack), or null if the stack doesn't show it.
 	 */
-	translatedSource: ((f: Frame, err: unknown) => { game: string; dm: string | null } | null) | null = null;
+	translatedSource: ((f: Frame, err: unknown) => string | null) | null = null;
 
 	/** Where frame f is: (translated) where `err` was thrown, else its proc's first line. */
-	private sourceOf(f: Frame, err: unknown): { source: string; game?: string } {
+	private sourceOf(f: Frame, err: unknown): string {
 		// the /exception (makeException) and the log line (reportError) ask for the same error: found once
 		const key = err !== null && typeof err === "object" ? err : null;
 		const known = key !== null ? this.errorSources.get(key) : undefined;
 		if (known !== undefined && known.frame === f) return known.where;
-		const t = this.translatedSource?.(f, err ?? new Error()) ?? null;
-		const where = t === null ? { source: f.proc.sourceStart() } : { source: t.dm ?? f.proc.sourceStart(), game: t.game };
+		const where = this.translatedSource?.(f, err ?? new Error()) ?? f.proc.sourceStart();
 		if (key !== null) this.errorSources.set(key, { frame: f, where });
 		return where;
 	}
-	private readonly errorSources = new WeakMap<object, { frame: Frame; where: { source: string; game?: string } }>();
+	private readonly errorSources = new WeakMap<object, { frame: Frame; where: string }>();
 
 	reportError(message: string, frames: Frame[], alsoInto?: RuntimeErrorRecord[], err?: unknown): void {
 		const f = frames[frames.length - 1];
@@ -1893,10 +1890,9 @@ export class VM {
 		const rec: RuntimeErrorRecord = {
 			message,
 			proc: f.proc.path,
-			source: where.source,
+			source: where,
 			callStack: frames.map((fr) => fr.proc.path).reverse(),
 		};
-		if (where.game !== undefined) rec.game = where.game;
 		this.runtimeErrors.push(rec);
 		alsoInto?.push(rec);
 		if (this.dumpSrcOn && rec.proc.includes(this.dumpSrcOn)) this.dumpSrc(f.src);

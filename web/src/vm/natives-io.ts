@@ -1,6 +1,6 @@
 // File built-ins over the virtual file system (src/vfs/vfs.ts), and the `<<` output operator
 //. Behaviour measured in BYOND 511 through web/tests/dm/files.dm and the VFS quirk
-// test (web/reference/byond-quirk-tests/q5-vfs.*) unless marked "unverified".
+// test (archive/byond-reference/byond-quirk-tests/q5-vfs.*) unless marked "unverified".
 //
 // A file value is a Resource: `file("x")` and a compiled-in 'x' are the same kind of value, and
 // both print as their path.

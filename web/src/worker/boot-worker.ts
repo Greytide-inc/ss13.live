@@ -358,7 +358,7 @@ async function run(opts: StartMsg): Promise<void> {
 		}
 	};
 	vm.onRuntimeError = (e) =>
-		log(`[vm-boot] ${e.message.startsWith("not implemented:") ? "VM gap" : "runtime"}: ${e.message} | ${e.proc} (${e.game ? `${e.game}, DM ` : ""}${e.source}) | ${e.callStack.slice(1, 6).join(" <- ")}`);
+		log(`[vm-boot] ${e.message.startsWith("not implemented:") ? "VM gap" : "runtime"}: ${e.message} | ${e.proc} (${e.source}) | ${e.callStack.slice(1, 6).join(" <- ")}`);
 	const hardLimit = t0 + maxSeconds * 1000;
 	const deadline = () => (afterStartLimit !== null ? Math.min(hardLimit, afterStartLimit) : hardLimit);
 

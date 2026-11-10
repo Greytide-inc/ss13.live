@@ -70,7 +70,7 @@ function fail(msg: string): void {
 	}
 }
 
-// a space-side wall exactly as BYOND 511 lit it (web/reference/lighting-probe, probe tile a8 105,66: a
+// a space-side wall exactly as BYOND 511 lit it (archive/byond-reference/lighting-probe, probe tile a8 105,66: a
 // flashlight-strength lamp on the space tile west of it). Its corners: SW 0.694, SE 0.532, NE and NW 0 (those
 // corners touch only walls and space, which give tg's lights no corners). Drawn through the real
 // lighting_object.dmi base state, the wall's top edge must come out black and its bottom edge lit: that is

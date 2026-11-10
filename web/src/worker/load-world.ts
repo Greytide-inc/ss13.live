@@ -89,7 +89,7 @@ export async function loadWorld(ctx: LoadWorldCtx) {
 	const tTree = Date.now();
 	const tree = new ObjectTree(gameProgram()); // types and procs from the game files, no tgstation.json
 	log(`[vm-boot] type tree: game-types.js downloaded and run in ${(typesMs / 1000).toFixed(1)} s (from the start), built in ${((Date.now() - tTree) / 1000).toFixed(2)} s, at ${secs()} s`);
-	// Same one-line config change as the BYOND reference boot (web/reference/boot-byond.sh) and boot.ts.
+	// Same one-line config change as the BYOND reference boot (archive/byond-reference/boot-byond.sh) and boot.ts.
 	const cfg = bundle.files["config/config.txt"];
 	if (cfg) bundle.files["config/config.txt"] = cfg.replace(/^GUEST_BAN/m, "#GUEST_BAN");
 

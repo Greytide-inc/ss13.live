@@ -80,7 +80,7 @@ check("nested font+b: both properties apply to the innermost text", parseMaptext
 });
 
 // ---- text-align: one alignment for the whole box, taken from the first text character
-// (BYOND 511 screenshots, web/reference/render-rules/) ----
+// (BYOND 511 screenshots, archive/byond-reference/render-rules/) ----
 check("span text-align sets box-wide alignment", parseMaptext('<span style="text-align:center">X</span>'), {
 	align: "center",
 	valign: "bottom",

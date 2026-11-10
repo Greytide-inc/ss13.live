@@ -89,7 +89,7 @@ export const savefileStates = states;
 
 // ---- ExportText/ImportText -------------------------------------------------------------------
 // BYOND 511's savefile export format (measured with a real DreamDaemon, see
-// web/reference/byond-quirk-tests/q6-savefile.dme and q7-savefile.dme):
+// archive/byond-reference/byond-quirk-tests/q6-savefile.dme and q7-savefile.dme):
 //   A plain value at the exported key is `. = <literal>\n\n`.
 //   An object is `. = object(".0")\n\n` plus a `.0\n\ttype = <path>\n\t<var> = <value>\n...\n\n`
 //   block per referenced object, one block per distinct object reached, `.0`, `.1`, ... in the

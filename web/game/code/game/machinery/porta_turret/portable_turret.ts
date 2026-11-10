@@ -392,7 +392,8 @@ rt.def("/obj/machinery/porta_turret/proc/take_damage", function* take_damage(f: 
 		f.args[3] = 1;
 	}
 	f.dot = (yield* parent_proc());
-	if (!f.dot) return f.dot;
+	// tg bug fix: a lethal hit deletes the turret inside ..() (spark_system nulled): stop here (null.start() runtime).
+	if (!f.dot || this.gc_destroyed) return f.dot;
 	if (prob(30)) {
 		yield* this.spark_system.start();
 	}

@@ -1,5 +1,5 @@
 // layers-demo - web/draw/index.html?scene=layers-demo. The tile cases of
-// tests/render-rules/layers.dm (BYOND 511 reference: reference/render-rules/byond-511-layers.png), built by
+// tests/render-rules/layers.dm (BYOND 511 reference: archive/byond-reference/render-rules/byond-511-layers.png), built by
 // hand as appearances and drawn through the live view's own itemsOf + sortPrepared + drawAppearance.
 // The canvas sits at the page's top-left, 32 px per tile, so it can be cropped and diffed against
 // the BYOND capture (tests/render-rules/layers-sample.py prints who is on top at each case).
