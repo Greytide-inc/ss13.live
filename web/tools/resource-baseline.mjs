@@ -1,7 +1,7 @@
 // resource-baseline - How much of a computer solo play uses: load time + bytes, then CPU, RAM and frame times in three cases (idle, typical play, stress).
 // Usage (from web/): node --experimental-websocket tools/resource-baseline.mjs --dist build/perf-dist --mode solo|creative --out build/baseline/NAME.json
 //   [--idle 60] [--typical 540] [--stress 90] [--headed] [--fps 144] [--window 1280,720] [--ff-port P (drive a Firefox already running)]
-// Method and results: plans/resource-baseline.md. Serves --dist itself (counting bytes sent), starts Firefox with a fresh profile, runs the phases, writes JSON.
+// The player's-computer baseline (CPU, RAM, FPS, load). Serves --dist itself (counting bytes sent), starts Firefox with a fresh profile, runs the phases, writes JSON.
 import { spawn } from "node:child_process";
 import { createServer } from "node:http";
 import { createReadStream, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";

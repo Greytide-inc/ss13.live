@@ -1,6 +1,6 @@
 // lobby-art - The lobby picture: one of the animated SS13.LIVE designs, picked at random each page load, drawn on a canvas over the map view
-// while the player is in the lobby (plans/lobby-art.md). Each design is one file in designs/: {name, desc, draw(ctx, t)} on a 480x480 canvas,
-// t in seconds. Sprites are cut from the game's own icons/ (plans/lobby-art/dmi.py), one PNG per strip in img/ (32 px frames side by side),
+// while the player is in the lobby. Each design is one file in designs/: {name, desc, draw(ctx, t)} on a 480x480 canvas,
+// t in seconds. Sprites are cut from the game's own icons/, one PNG per strip in img/ (32 px frames side by side),
 // fetched the first time the lobby shows. Shared drawing helpers are in helpers.js.
 import { SPRITES, IMG, W } from "./helpers.js";
 import crew from "./designs/2-the-crew.js";

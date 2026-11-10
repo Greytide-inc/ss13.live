@@ -1,4 +1,4 @@
-// map-vote-check - the map vote (plans/anarchy-light.md step 5) on a real server: a player starts it from the Vote panel and votes
+// map-vote-check - the map vote on a real server: a player starts it from the Vote panel and votes
 //   PubbyStation; the server notes it, and when the round ends the next world loads Pubby. Short rounds as in rounds-check.mjs.
 //   node tools/map-vote-check.mjs [DIST=build/bootvote-dist] [PORT=8794]      exit 0 = all checks passed (~5 min: two world starts, one without a snapshot)
 import fs from "node:fs";

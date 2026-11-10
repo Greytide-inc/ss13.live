@@ -55,7 +55,7 @@ try {
 	const log = () => fs.readFileSync(path.join(dist, "server.log"), "utf8");
 	await new Promise((r) => setTimeout(r, 1500));
 	check(!/starting world 2/.test(log()), "nobody has joined yet: no fresh world");
-	// /status (plans/site.md step 1): what the landing page on another address shows, no names
+	// /status: what the landing page on another address shows, no names
 	const status = async () => { const r = await get("/status"); return { r, j: await r.json().catch(() => null) }; };
 	const st0 = await status();
 	check(st0.r.status === 200 && st0.j?.players === 0 && st0.j?.round === 1 && "map" in st0.j && st0.j?.started === false, `/status: nobody on, round 1, not started (${JSON.stringify(st0.j)})`);

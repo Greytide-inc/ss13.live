@@ -2,7 +2,7 @@
 // Usage (from web/): node --max-old-space-size=6000 tools/gc-profile.mjs PROFILE.json [FROM_S TO_S]  (default 60 330: in the round)
 // Prints each major GC (a solo freeze: seconds, pause, which heap set it off) and, in the window, the bytes promoted by minor GCs
 // and the cells born old (pretenured: never promoted, so promotion alone misses them), per minute and by reason.
-// Firefox GCs the worker once its object heap or its malloc heap outgrows the last GC's survivors (plans/less-garbage.md).
+// Firefox GCs the worker once its object heap or its malloc heap outgrows the last GC's survivors.
 // Compare runs of the same length; Firefox resizes its nursery, so check a change in Firefox, not only in Node.
 import { readFileSync } from "node:fs";
 const [file, a = "60", b = "330"] = process.argv.slice(2);

@@ -253,7 +253,7 @@ rt.def("/datum/controller/subsystem/vote/proc/submit_vote", function* submit_vot
 			if (vote && 1 <= vote && vote <= rt.len(f, this.choices)) {
 				if (yield* this.newcomer_refused(f.usr.client, "vote")) return 0;
 				id = rt.callSrc(f, "vote_id", [f.usr.client]);
-				if (rt.isIn(f, id, this.voted_ids)) { // ss13.live: one vote per address (plans/server-rules.md step 3)
+				if (rt.isIn(f, id, this.voted_ids)) { // ss13.live: one vote per address
 					to_chat(f.usr, "<span class='warning'>Someone at your address has already voted: one vote per address.</span>");
 					return 0;
 				}
@@ -272,7 +272,7 @@ rt.def("/datum/controller/subsystem/vote/proc/initiate_vote", function* initiate
 	let next_allowed_time: Value = null, admin: Value = null, ckey: Value = null, i: Value = null, option: Value = null, text: Value = null, c: Value = null, C: Value = null, V: Value = null;
 	let $e: any;
 	if (!this.mode) {
-		if (initiator_key !== null && (yield* this.newcomer_refused(f.usr.client, "start a vote"))) { // ss13.live: plans/server-rules.md step 4
+		if (initiator_key !== null && (yield* this.newcomer_refused(f.usr.client, "start a vote"))) { // ss13.live
 			return 0;
 		}
 		if (this.started_time) {
@@ -553,7 +553,7 @@ rt.def("/datum/controller/subsystem/vote/proc/Topic", function* Topic(f: Frame, 
 	return f.dot;
 }, true);
 
-// ss13.live: the shuttle vote (plans/anarchy-light.md). Worth starting while the shuttle is at CentCom, recalled, or on its way
+// ss13.live: the shuttle vote. Worth starting while the shuttle is at CentCom, recalled, or on its way
 // with more than 5 minutes left.
 rt.def("/datum/controller/subsystem/vote/proc/shuttle_vote_useful", function* shuttle_vote_useful(f: Frame) {
 	let E: Value = null;
@@ -581,7 +581,7 @@ rt.def("/datum/controller/subsystem/vote/proc/shuttle_vote_passed", function* sh
 	return f.dot;
 }, true);
 
-// ss13.live: who a vote counts as (plans/server-rules.md step 3): one vote per address, so one person with several tabs or names
+// ss13.live: who a vote counts as: one vote per address, so one person with several tabs or names
 // votes once. This machine's own connections (admins, local play) count by key: they all share 127.0.0.1.
 rt.def("/datum/controller/subsystem/vote/proc/vote_id", function vote_id(f: Frame, C: Value) {
 	const address = C ? C.address : null;
@@ -589,7 +589,7 @@ rt.def("/datum/controller/subsystem/vote/proc/vote_id", function vote_id(f: Fram
 	return C ? C.ckey : null;
 });
 
-// ss13.live: new arrivals wait (plans/server-rules.md step 4). A name and address not seen this round that joins more than
+// ss13.live: new arrivals wait. A name and address not seen this round that joins more than
 // config.newcomer_wait after the round started can't use OOC, vote or start a vote for that long. Joining before then is free: the
 // server starts each round as soon as its world is up, and the regulars rejoin within seconds. A known name or address shares the wait (or none) already
 // recorded for it, so a reconnect, a new tab or a new name from the same address doesn't skip or restart it. arrivals: id -> world.time the wait ends.
@@ -628,7 +628,7 @@ rt.def("/datum/controller/subsystem/vote/proc/newcomer_refused", function* newco
 	return 1;
 }, true);
 
-// ss13.live: punishments are seen (plans/server-rules.md step 5). Every kick, ban and boot vote this round goes on the list the
+// ss13.live: punishments are seen. Every kick, ban and boot vote this round goes on the list the
 // round-end report shows; kicks and bans are also told to everyone at once (config.announce_removals; the boot vote announces itself).
 rt.def("/datum/controller/subsystem/vote/proc/note_removal", function* note_removal(f: Frame, text: Value, announce: Value) {
 	this.removals.Add(text);
@@ -656,7 +656,7 @@ rt.def("/datum/controller/subsystem/vote/proc/status_quo", function status_quo(f
 	return null;
 });
 
-// ss13.live: the map vote (plans/anarchy-light.md step 5). The choices: config/maps.txt's maps that allow this many players.
+// ss13.live: the map vote. The choices: config/maps.txt's maps that allow this many players.
 rt.def("/datum/controller/subsystem/vote/proc/map_choices", function* map_choices(f: Frame) {
 	let name: Value = null, VM: Value = null;
 	let L: Value = list();
@@ -683,7 +683,7 @@ rt.def("/datum/controller/subsystem/vote/proc/map_vote_passed", function* map_vo
 	return f.dot;
 }, true);
 
-// ss13.live: the boot vote (plans/anarchy-light.md step 4): players vote a griefer off the server for the rest of the round.
+// ss13.live: the boot vote: players vote a griefer off the server for the rest of the round.
 // How a player shows in the picker and the vote: their character's name, then their key (the key tells two Sams apart).
 rt.def("/datum/controller/subsystem/vote/proc/boot_label", function* boot_label(f: Frame, C: Value) {
 	let M: Value = C.mob;

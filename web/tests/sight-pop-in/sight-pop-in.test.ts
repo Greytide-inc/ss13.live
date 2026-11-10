@@ -1,4 +1,4 @@
-// sight-pop-in.test.ts - plans/archive/sight-pop-in.md. viewSight (vm/view-los.ts) for the box's own eye gives what clientSight worked out before
+// sight-pop-in.test.ts - viewSight (vm/view-los.ts) for the box's own eye gives what clientSight worked out before
 // (inner view from the cropped box, the outer ring from the whole box), and for a tile off the centre the same as a box built round that tile;
 // on random worlds of walls, lamps and lit areas. The box goes to the page (opq + lum) and comes back the same (step 2). unionExtra (step 3), with
 // the eye's own sight, is line of sight from every tile reachable in up to UNION_R steps (paths walked out one by one here), so it holds all the page

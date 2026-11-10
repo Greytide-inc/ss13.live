@@ -468,7 +468,7 @@ rt.def("/datum/admins/proc/Topic", function* Topic(f: Frame, href: Value, href_l
 			to_chat($0, `<span class='danger'>You have been kicked from the server by ${$1}.</span>`);
 			log_admin(`${key_name(f.usr)} kicked ${key_name(M_0)}.`);
 			message_admins(`<span class='adminnotice'>${key_name_admin(f.usr)} kicked ${key_name_admin(M_0)}.</span>`);
-			if (M_0.client) yield* GLOB.SSvote.note_removal(`${(yield* GLOB.SSvote.boot_label(M_0.client))} was kicked by an admin.`, 1); // ss13.live: plans/server-rules.md step 5
+			if (M_0.client) yield* GLOB.SSvote.note_removal(`${(yield* GLOB.SSvote.boot_label(M_0.client))} was kicked by an admin.`, 1); // ss13.live
 			yield* qdel(M_0.client);
 		}
 	} else if (rt.at(href_list, "newban")) {
@@ -509,7 +509,7 @@ rt.def("/datum/admins/proc/Topic", function* Topic(f: Frame, href: Value, href_l
 			if (AH_4 = $0) {
 				yield* AH_4.Resolve();
 			}
-			if (M_0.client) yield* GLOB.SSvote.note_removal(`${(yield* GLOB.SSvote.boot_label(M_0.client))} was banned by an admin for ${mins_1} minutes. Reason: ${reason_2}`, 1); // ss13.live: plans/server-rules.md step 5
+			if (M_0.client) yield* GLOB.SSvote.note_removal(`${(yield* GLOB.SSvote.boot_label(M_0.client))} was banned by an admin for ${mins_1} minutes. Reason: ${reason_2}`, 1); // ss13.live
 			yield* qdel(M_0.client);
 		} else if ($0 === "No") {
 			if (!(reason_1 = (yield* g.op(f, "Prompt", [65], [null, "Reason", "Please State Reason.", f.usr, null])))) {
@@ -541,7 +541,7 @@ rt.def("/datum/admins/proc/Topic", function* Topic(f: Frame, href: Value, href_l
 			if (AH_3 = $0) {
 				yield* AH_3.Resolve();
 			}
-			if (M_0.client) yield* GLOB.SSvote.note_removal(`${(yield* GLOB.SSvote.boot_label(M_0.client))} was banned by an admin. Reason: ${reason_1}`, 1); // ss13.live: plans/server-rules.md step 5
+			if (M_0.client) yield* GLOB.SSvote.note_removal(`${(yield* GLOB.SSvote.boot_label(M_0.client))} was banned by an admin. Reason: ${reason_1}`, 1); // ss13.live
 			yield* qdel(M_0.client);
 		} else if ($0 === "Cancel") {
 			return f.dot;

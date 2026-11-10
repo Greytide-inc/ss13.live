@@ -46,7 +46,7 @@ closeArr(rot90, [0, 1, -1, 0, 0, 0], "Turn(90) matrix");
 closeArr(applyCanvas(rot90, 1, 0), [0, 1], "Turn(90): right -> down");
 closeArr(applyCanvas(rot90, 0, -1), [1, 0], "Turn(90): up -> right");
 
-// 5. BYOND 511 screenshots (archive/byond-reference/render-rules/): matrices as BYOND logged them.
+// 5. BYOND 511 screenshots (2026-09): matrices as BYOND logged them.
 // Scale(2,1).Turn(90).Translate(16,0) = (0,1,16,-2,0,0): tip (canvas (0,-16)) lands 32 px right of the old centre.
 closeArr(applyCanvas(byondMatrixToCanvas([0, 1, 16, -2, 0, 0]), 0, -16), [32, 0], "combo: tip -> right");
 // Shear matrix(1,0.5,0,0,1,0): the top of the icon leans right (x' = x + 0.5*y, y up).

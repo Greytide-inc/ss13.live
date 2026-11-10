@@ -1,4 +1,4 @@
-// sight-pop-in (plans/archive/sight-pop-in.md step 4) - The page's own sight: what BYOND's client would see from the tile the page has stepped you to
+// sight-pop-in - The page's own sight: what BYOND's client would see from the tile the page has stepped you to
 // (the server's eye tile plus the predicted steps drawn), worked out by the server's rules (vm/view-los.ts viewSight) over the box it sends
 // (opq + lum). The server sends what could be seen a step or two ahead too (worker/client-view.ts unionExtra); the page shows only this.
 

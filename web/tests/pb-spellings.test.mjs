@@ -1,4 +1,4 @@
-// pb-spellings.test.mjs - phrasebook's ratchet (plans/phrasebook.md): counts each engine spelling the game files still
+// pb-spellings.test.mjs - phrasebook's ratchet: counts each engine spelling the game files still
 // borrow (`rt.istype(`, `return f.dot`...) in web/game and fails if one went up. A phrasebook step lowers its own line to
 // the new count. Counts are occurrences, not lines. No build needed. Usage (from web/): node tests/pb-spellings.test.mjs
 import { readdirSync, readFileSync } from "node:fs";

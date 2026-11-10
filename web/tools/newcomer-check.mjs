@@ -1,4 +1,4 @@
-// newcomer-check - new arrivals wait (plans/server-rules.md step 4) on a real server: Alice joins before the round starts and can use
+// newcomer-check - new arrivals wait on a real server: Alice joins before the round starts and can use
 //   OOC at once. Newbie joins from a new address more than NEWCOMER_WAIT (2 min) after it started (earlier joins are free): OOC, starting a vote and voting are refused, a reconnect and a second name
 //   from his address are refused too, a second name from Alice's address isn't. After NEWCOMER_WAIT (2 min) Newbie's OOC goes through.
 //   node tools/newcomer-check.mjs [DIST=build/newcomer-dist] [PORT=8795]      exit 0 = all checks passed (~5.5 min: game start + 2 min free joins + the 2 min wait)

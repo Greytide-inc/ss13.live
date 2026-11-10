@@ -1,4 +1,4 @@
-// The Cloudflare Pages worker for ss13.live (plans/site.md): tools/site-pages.mjs copies it into the deploy folder as _worker.js,
+// The Cloudflare Pages worker for ss13.live: tools/site-pages.mjs copies it into the deploy folder as _worker.js,
 // filling in BUILD (the build's hash) and BIG (the files over Pages' 25 MiB limit, kept in the R2 bucket under BUILD/).
 // Every other file is Pages' own static copy. Same answers as tools/server.mjs gives: no type sniffing, no foreign frames,
 // .dmi files are PNGs.

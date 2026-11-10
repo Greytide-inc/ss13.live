@@ -13,7 +13,7 @@ export const repoRoot = resolve(fileURLToPath(import.meta.url), "../../../../../
 
 // -------------------------------------------------------------------------------------------
 // 1. Milestones: the key lines of a Box boot, in the order they must appear. Once read off the
-//    recorded BYOND boot (archive/byond-reference/byond-boot.log); now kept here. Left out: "World opened on
+//    boot real BYOND 511 recorded in 2026-09; now kept here. Left out: "World opened on
 //    network port" (DreamDaemon's own networking) and XKeyScore (removed on purpose).
 //    A line matches a milestone by its kind; times, counts and coordinates are free.
 // -------------------------------------------------------------------------------------------

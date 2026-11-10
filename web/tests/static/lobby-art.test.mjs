@@ -1,4 +1,4 @@
-// The lobby pictures (worker/lobby-art/, plans/lobby-art.md), in headless Firefox:
+// The lobby pictures (worker/lobby-art/), in headless Firefox:
 // 1. every sprite loads and every design draws at a few times with no error and not all black;
 // 2. the overlay: show(true) puts one 480x480 canvas in the host, show(false) takes it out again.
 //    Behind the menu (helpers.js MENU_ZONE) every design stays dark and quiet, so the menu reads.

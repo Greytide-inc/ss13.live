@@ -1,4 +1,4 @@
-// dt-props.test.mjs - DM var names as properties (plans/archive/detranslate.md step 4, runtime.ts installVarProps): no name that the
+// dt-props.test.mjs - DM var names as properties (runtime.ts installVarProps): no name that the
 // engine's object and list classes use themselves (a field, a method, also one set only on some objects) or that JS gives a
 // meaning of its own becomes a property (runtime NOT_PROPS covers them all), and every other DM var name is one.
 // The classes are read from src/ (every class that extends GCNode, at any depth), so a new engine field with a DM var's

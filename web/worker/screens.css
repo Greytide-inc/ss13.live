@@ -1,4 +1,4 @@
-/* ss13.live's windows in the tgui look (plans/site.md look B): the landing page (site/index.html) and the game page's join, loading,
+/* ss13.live's windows in the tgui look: the landing page (site/index.html) and the game page's join, loading,
    round-over and error windows (worker/index.html). Everything sits under .tgw, so the game's own dialogs and menus are untouched. */
 .tgw,.tgw *{box-sizing:border-box}
 .ovl{position:fixed;inset:0;z-index:9;display:flex;align-items:center;justify-content:center;padding:12px;overflow:auto;background:#0c0f14ee}

@@ -223,7 +223,7 @@ export class ScriptPlayer {
 				const sw = mover === mob ? swapOf(this.vm, mover, free).map(([o, dx, dy]) => `${o.type.path}@${dx},${dy}`) : [];
 				return `pred free tiles ${n}${mover && mover !== mob ? " (eye)" : ""}${mover && t instanceof DMAtom ? ` ${mover.type.path}@${t.x},${t.y}` : ""}${mover && predTurnOf(mover) ? ` turn first, facing ${String(live(mover.getVar("dir")))}` : ""}${mover === mob ? ` swap ${sw.join(" ") || "none"}` : ""}`; // what moves, its tile; the mobs a step swaps with
 			}
-			case "union": { // union: what a predicting page is sent beyond what the eye sees (plans/archive/sight-pop-in.md step 3), and what working it out costs
+			case "union": { // union: what a predicting page is sent beyond what the eye sees, and what working it out costs
 				const cv = clientSeen(this.vm, c, { key: "", vis: new Uint8Array(0) }), cs = cv.cs;
 				if (!cs?.own || !cv.free) return `union none (predicts ${cl.predicts(c)}, popInSight ${popInSight(cv)}, free ${cv.free ? "yes" : "no"})`;
 				const n = (v: Uint8Array) => v.reduce((x, y) => x + y, 0), t0 = performance.now();

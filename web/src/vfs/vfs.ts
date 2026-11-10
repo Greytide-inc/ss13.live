@@ -4,8 +4,8 @@
 // here it's plain JS Maps, gone when the process exits.
 //
 // This module implements path handling and the flist/fexists/file2text/text2file/fdel/fcopy
-// semantics measured against real BYOND 511 (see archive/byond-reference/byond-quirk-tests/ for the quirk-test
-// transcript). It does NOT wire itself into the VM's native procs -- that's the next chunk's
+// semantics measured against real BYOND 511 (quirk tests, 2026-09).
+// It does NOT wire itself into the VM's native procs -- that's the next chunk's
 // job, using the API below.
 //
 // ---- BYOND 511 path & file semantics this module implements ----

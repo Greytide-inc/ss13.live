@@ -1,4 +1,4 @@
-# ss13.live on Cloudflare Pages (plans/site.md). The deploy script runs wrangler from this folder.
+# ss13.live on Cloudflare Pages. The deploy script runs wrangler from this folder.
 name = "ss13-live"
 pages_build_output_dir = "../build/site-pages"
 compatibility_date = "2026-10-01"

@@ -151,7 +151,7 @@ const httpServer = http.createServer((req, res) => {
 		res.writeHead(200).end(`log level ${lv}\n`); return;
 	}
 	if (req.method !== "GET" && req.method !== "HEAD") { res.writeHead(405).end(); return; }
-	if ((req.url ?? "").split("?")[0] === "/status") { // plans/site.md step 1: for the landing page on ss13.live (another address): no names
+	if ((req.url ?? "").split("?")[0] === "/status") { // for the landing page on ss13.live (another address): no names
 		const body = JSON.stringify({ players: clients.size, map: mapName, round, started: roundStarted, roundSeconds: roundStartAt ? Math.round((Date.now() - roundStartAt) / 1000) : null });
 		res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-store", "Access-Control-Allow-Origin": "*" }).end(req.method === "HEAD" ? undefined : body); return;
 	}

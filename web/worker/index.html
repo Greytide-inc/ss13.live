@@ -74,7 +74,7 @@ html,body{height:100%}body{font:12px monospace;margin:0;display:flex;flex-direct
 </style>
 <div id="popups"></div>
 <div id="dialogs"></div>
-<!-- the loading, round-over, join and error windows (plans/site.md step 4; look: worker/screens.css). #loading stays until the first view. -->
+<!-- the loading, round-over, join and error windows (look: worker/screens.css). #loading stays until the first view. -->
 <div id="loading" class="ovl"><div class="tgw narrow">
 	<div class="tb"><img class="px" src="/web/worker/img/computer.png" alt=""><span id="loading-title">Starting the game</span></div>
 	<div class="body one"><div class="sec"><h3 id="loading-stage">Starting...</h3><div class="bar" id="loading-bar"><i></i><span></span></div><ul class="steps" id="loading-steps"></ul><div id="loading-rows"></div></div>
@@ -144,7 +144,7 @@ const status = document.getElementById("boot"), pre = document.getElementById("l
 const $id = (i) => document.getElementById(i);
 const loading = $id("loading"), stage = $id("loading-stage"), loadBar = $id("loading-bar"); // held: off the page between rounds, so $id can't find them then
 const loadTitle = $id("loading-title"), loadSteps = $id("loading-steps"), loadRows = $id("loading-rows"), loadNote = $id("loading-note");
-// the windows over the game (plans/site.md step 4): loading (a bar per step), round over, join, something went wrong
+// the windows over the game: loading (a bar per step), round over, join, something went wrong
 const playMode = q.get("server") || document.querySelector('meta[name="ss13-server"]') ? "mp" : "solo";
 const home = /\/play(\.html)?$/.test(location.pathname) ? "./" : "https://ss13.live/"; // the landing page: this site's own on ss13.live, else the public one
 let load = loadProgress(playMode), loadDone = false, loadCreep = 0, loadClosing = 0; // loadDone: the window shows a round over, not steps
@@ -375,7 +375,7 @@ const setPlayer = (asked) => {
 if (serverUrl && q.get("name")) { setPlayer(q.get("name") + (() => { try { return decodeURIComponent(location.hash); } catch { return location.hash; } })()); if (location.hash) history.replaceState(history.state, "", location.pathname + location.search); }
 else if (serverUrl && navigator.webdriver) setPlayer(joinName(savedName(), () => null)); // test drivers: the offered name, no window
 // The join window (no ?name=): name and an optional secret; the page sends "Name#secret" as before. A short or common secret is warned
-// about once, never refused (plans/site.md step 4). It opens again when the server refuses the name.
+// about once, never refused. It opens again when the server refuses the name.
 const joinWin = $id("joinwin"), joinNm = $id("join-name"), joinSc = $id("join-secret"), joinGo = $id("join-go");
 let joinDone = null, warned = null;
 const joinSay = (a) => { const box = $id("join-answer"); box.replaceChildren(); if (a) { const d = document.createElement("div"); d.className = "notice " + a.cls; d.textContent = a.text; box.append(d); } };

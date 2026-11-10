@@ -1,4 +1,4 @@
-// dt-calls.test.mjs - Proc calls, DM vars, operators, built-ins, text, yield*, globals, list loops, equality, list(), new_() and named arguments written by hand (plans/archive/detranslate.md steps 8, 9a-k, 10a): the bundler (tools/translate-tg.mjs
+// dt-calls.test.mjs - Proc calls, DM vars, operators, built-ins, text, yield*, globals, list loops, equality, list(), new_() and named arguments written by hand (detranslate steps 8, 9a-k, 10a): the bundler (tools/translate-tg.mjs
 // lowerCall, lowerVar, lowerOp, lowerBuiltin, lowerTemplate, lowerGlobal, lowerEach) turns each into the engine call the translator wrote, leaves JS ones alone, and stops on one it can't make right.
 // Usage (from web/, env loaded): node tests/dt-calls.test.mjs
 import { execFileSync } from "node:child_process";

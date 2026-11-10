@@ -104,7 +104,7 @@ export class DMAtom extends DMObject {
 	}
 	private firstTurf: DMAtom | null | undefined = undefined;
 	/** Areas only: the turf that gives the area its x/y/z, the first in map order (lowest z, then y, then x;
-	 * measured, archive/byond-reference/byond-quirk-tests/q6-area), or null with no turfs. A linear scan, cached like sortedAreaTurfs. */
+	 * measured, quirk test q6-area), or null with no turfs. A linear scan, cached like sortedAreaTurfs. */
 	firstAreaTurf(): DMAtom | null {
 		if (this.firstTurf !== undefined) return this.firstTurf;
 		if (this.sortedTurfs) return (this.firstTurf = this.sortedTurfs[0] ?? null);

@@ -1,5 +1,5 @@
 // dt-life.test.mjs - today's rules for deleted and freed objects, pinned before detranslate changes how game code reads
-// and writes vars (plans/archive/detranslate.md step 2): every later step must still pass this. Deleting through an alias in a
+// and writes vars: every later step must still pass this. Deleting through an alias in a
 // var, a list and a local; reading a var of a deleted object (a tg runtime error that ends only that proc); deleting a
 // proc's src in a nested call (that proc ends, its caller goes on); references kept by a sleeping proc; locate(tag) after
 // tag writes and after deletion; an object freed once its last reference is overwritten; the same through properties

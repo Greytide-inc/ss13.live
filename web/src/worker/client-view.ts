@@ -72,7 +72,7 @@ export interface ClientSeen {
 	free?: number;
 }
 
-/** the client's mob is tg's lobby mob (new_player): the page shows the lobby picture over the view (plans/lobby-art.md) */
+/** the client's mob is tg's lobby mob (new_player): the page shows the lobby picture over the view */
 export function inLobby(c: DMObject): boolean { const m = live(c.getVar("mob")); return m instanceof DMObject && m.type.path === "/mob/dead/new_player"; }
 
 let cfgVm: VM | null = null, cfgIdx = -1;
@@ -86,7 +86,7 @@ export function baseViewOf(vm: VM, c: DMObject): unknown {
 	return live(cfg.getVar(wide ? "default_view" : "default_view_square"));
 }
 
-/** plans/archive/sight-pop-in.md step 3: the last unionExtra per client, kept while nothing it was worked out from changes */
+/** Sight pop-in: the last unionExtra per client, kept while nothing it was worked out from changes */
 export interface UnionCache { key: string; vis: Uint8Array; at?: UnionAt }
 /** per tile unionExtra looked from, by world tile (unionAtKey): its sub-box's opacity and the line of sight worked out from it. A step moves
  *  the eye one tile, so most of the up to 24 tiles were looked from last time: kept while their walls are the same, ~4x less work a step. */
@@ -170,7 +170,7 @@ export function seenOn(vm: VM, cv: ClientSeen, tx: number, ty: number, objs: DMO
 export interface ClientSight { x0: number; y0: number; w: number; vis: Uint8Array; flags: number; self: DMObject | null; opaque: Uint8Array | null; box: LosBox | null; own?: Uint8Array }
 
 const SEE_SELF = 32, XRAY = SEE_MOBS | SEE_OBJS | SEE_TURFS;
-/** plans/archive/sight-pop-in.md: the page works out sight itself from the tile it has stepped to: a predicting page, a box of opacity, no x-ray sight
+/** Sight pop-in: the page works out sight itself from the tile it has stepped to: a predicting page, a box of opacity, no x-ray sight
  *  (with mesons or thermals the hidden tiles still show some things, which the page can't sort out) */
 export const popInSight = (cv: ClientSeen): boolean => cv.ring > 1 && !!cv.cs?.box && (cv.cs.flags & XRAY) === 0;
 
@@ -395,7 +395,7 @@ export interface ViewUpdate {
 	/** sight-shadows: which tiles block sight in the box clientSight works out (the view plus its ring), packed (render/sight-shadow.ts
 	 *  packOpacity), when it changed; [] = none now (a ghost, blind). Absent: as before. */
 	opq?: Opq | [];
-	/** the light of the opq box, for the page's own line of sight from the tile it has stepped to (plans/archive/sight-pop-in.md): sent only to a predicting page
+	/** the light of the opq box, for the page's own line of sight from the tile it has stepped to: sent only to a predicting page
 	 *  with no x-ray sight, when it changes; [] = none now (the page then shows what the server sends, as before) */
 	lum?: Lum | [];
 }

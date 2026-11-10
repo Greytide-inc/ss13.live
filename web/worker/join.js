@@ -22,7 +22,7 @@ export const warnOnLeave = (boot, webdriver = false) => !webdriver && boot.views
 const COMMON = new Set(["password", "passw0rd", "12345678", "123456789", "1234567890", "qwertyui", "qwertyuiop", "iloveyou", "11111111", "00000000",
 	"abcdefgh", "abc12345", "password1", "letmein1", "sunshine", "princess", "football", "baseball", "superman", "trustno1", "whatever", "welcome1",
 	"spacestation", "spacestation13", "ss13ss13", "greytide", "robustin", "honkhonk", "clownclown", "assistant"]);
-/** Whether to warn before joining with this secret (plans/site.md step 4: warn, never block). An empty secret is no secret: no warning. */
+/** Whether to warn before joining with this secret (warn, never block). An empty secret is no secret: no warning. */
 export const weakSecret = (s) => s !== "" && (s.length < 8 || COMMON.has(s.toLowerCase()));
 
 /** What the join window sends: "Name" or "Name#secret" (the server makes the tag from the secret). */
@@ -45,7 +45,7 @@ export const ERRORS = {
 };
 
 /**
- * The loading window's steps (a bar per step; plans/site.md step 7 gives each its measured share). `loadStep(mode, step)` gives
+ * The loading window's steps (a bar per step, each its measured share). `loadStep(mode, step)` gives
  * the step's place; "stage" texts from the worker ("Loading the station... 12 / 36 MB") are matched to a step by loadStepOf.
  */
 export const LOAD_STEPS = {
@@ -62,7 +62,7 @@ export function loadStepOf(mode, ev) {
 /** "12 / 36 MB" in a stage text, as a share of that step (0 when there is none). */
 export const stepShare = (text) => { const m = /(\d+) \/ (\d+) MB/.exec(text ?? ""); return m && +m[2] ? Math.min(1, m[1] / m[2]) : 0; };
 /**
- * Where each step's part of the bar ends, from a measured first solo visit (plans/site.md step 7): the station downloads for ~11 s
+ * Where each step's part of the bar ends, from a measured first solo visit: the station downloads for ~11 s
  * with the game code alongside it (so step 0 has no part of its own), unpacks in ~6 s, the lobby opens in ~1 s.
  */
 export const LOAD_ENDS = { solo: [0, 0.6, 0.92, 1], mp: [0.5, 1] };

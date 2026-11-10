@@ -89,7 +89,7 @@ export async function loadWorld(ctx: LoadWorldCtx) {
 	const tTree = Date.now();
 	const tree = new ObjectTree(gameProgram()); // types and procs from the game files, no tgstation.json
 	log(`[vm-boot] type tree: game-types.js downloaded and run in ${(typesMs / 1000).toFixed(1)} s (from the start), built in ${((Date.now() - tTree) / 1000).toFixed(2)} s, at ${secs()} s`);
-	// Same one-line config change as the BYOND reference boot (archive/byond-reference/boot-byond.sh) and boot.ts.
+	// Same one-line config change as the BYOND 511 boot recorded in 2026-09, and boot.ts.
 	const cfg = bundle.files["config/config.txt"];
 	if (cfg) bundle.files["config/config.txt"] = cfg.replace(/^GUEST_BAN/m, "#GUEST_BAN");
 
@@ -171,7 +171,7 @@ export async function loadWorld(ctx: LoadWorldCtx) {
 	// Runtime icons (fcopy_rsc'd /icons) -> blob: URLs of real .dmi files, made once each, by the page: the worker sends the
 	// bytes under a made-up blob: name (rtIcon) and the page makes the real URL. URL.createObjectURL in a Firefox worker waits
 	// on the main thread with the worker's queue empty, which starts its 5 s idle GC: a ~1 s freeze 5 s after a spawn that
-	// drew one (plans/less-garbage.md step 4). The name ends in ")" so no name is the start of another (the page's server
+	// drew one. The name ends in ")" so no name is the start of another (the page's server
 	// path swaps them by text), and carries this world's start time so a later world's icon isn't the page's cached one.
 	const runtimeUrls = new Map<string, string>(), rtTag = Date.now().toString(36);
 	const runtimeUrl = (path: string): string | null => {

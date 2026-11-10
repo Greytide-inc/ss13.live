@@ -1,4 +1,4 @@
-// dt-rules.test.mjs - the number and error rules game code runs on since detranslate step 3 (plans/archive/detranslate.md):
+// dt-rules.test.mjs - the number and error rules game code runs on since detranslate step 3:
 // numbers are plain JS doubles (no float32 rounding, in the maths, the natives, var defaults or text2num), true/false is
 // JS's (NaN is false), and a JS error from game code (`o.health` with o null) is a tg runtime error: logged, that proc
 // ends with its `.`, the caller goes on. No boot: the game's types, procs taken over with hand-written bodies.

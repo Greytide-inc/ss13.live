@@ -13,7 +13,7 @@
 // type contains TEXT, e.g. hud:swap_hand). Prefixes shift+ ctrl+ alt+ right+ middle+ dbl+ (two presses); @MS waits after. The page's own
 // mouse handlers see real mouse events and pick the object by pixel (hit-test.ts); tg's replies show in the log as "[vm-boot] to client".
 // --record DIR (hv1; a "rec:start" key token drops the frames so far, and the GPU is on while recording): records the page (CDP Page.startScreencast, jpeg frames + DIR/frames.txt for ffmpeg's concat) from the
-// start of --keys/--clicks/--command until the final screenshot; archive/tools/verify-file.mjs turned it into a clip for a (retired) verify ticket.
+// start of --keys/--clicks/--command until the final screenshot.
 // --query "check=1": extra page query; check=1 has the worker send a full snapshot every 2 s to check the per-tick updates against,
 // and asks for one resync (a full view update) after the keys.
 // --rounds N: round end / restart. Use with --lobby-route (the route is clicked again in every new world's lobby) and

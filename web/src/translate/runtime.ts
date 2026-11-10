@@ -447,7 +447,7 @@ const propNames = new Set<string>();
  * Every DM var name (but NOT_PROPS) becomes a property of every object and list: `o.health` reads and `o.health = v`
  * writes through the same engine path as rt.fv/rt.setFv (VM.readIC/writeIC: deleted objects read null, a var of a
  * deleted object is a runtime error, refcounts and tags kept), with one cache per name instead of one per site. A
- * property read doesn't set the frame's lastDeref (rt.fv does): see plans/archive/detranslate.md step 4. The accessors sit on
+ * property read doesn't set the frame's lastDeref (rt.fv does). The accessors sit on
  * plain objects chained above GCNode.prototype, under 1000 per object: V8 turns an object with more properties into a
  * hash table, and a read found in one of those isn't inlined.
  */

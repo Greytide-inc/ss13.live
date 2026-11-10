@@ -1,4 +1,4 @@
-// boot-vote-check - the boot vote (plans/anarchy-light.md step 4) end to end on a real server: three players join, Alice starts a boot
+// boot-vote-check - the boot vote end to end on a real server: three players join, Alice starts a boot
 //   vote on Carol from the Vote panel, Alice and Bob vote "Boot them", Carol doesn't vote. When the vote ends Carol is disconnected and
 //   refused until the next round: her own name and secret, and a new name and secret from her address. Someone from another address still joins.
 //   node tools/boot-vote-check.mjs [DIST=build/bootvote-dist] [PORT=8793]      exit 0 = all checks passed (~2.5 min: game start + the 60 s vote)

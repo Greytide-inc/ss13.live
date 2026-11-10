@@ -1808,7 +1808,7 @@ export class VM {
 			e.setVar("desc", `proc name: ${procDisplayName(f.proc)} (${f.proc.path})\n`);
 			return e;
 		}
-		// With DEBUG (tg defines it): the shape of BYOND's reference boot log (archive/byond-reference/byond-boot.log).
+		// With DEBUG (tg defines it): the shape of the boot log real BYOND 511 wrote (recorded 2026-09).
 		const src = this.sourceOf(f, err);
 		const colon = src.lastIndexOf(":");
 		const file = src.slice(0, colon);

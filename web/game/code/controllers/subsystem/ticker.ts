@@ -652,7 +652,7 @@ rt.def("/datum/controller/subsystem/ticker/proc/declare_completion", function* d
 		yield* stoplag();
 	}
 	yield* this.mode.declare_completion();
-	yield* GLOB.SSvote.removals_report(); // ss13.live: kicks, bans and boot votes this round (plans/server-rules.md step 5)
+	yield* GLOB.SSvote.removals_report(); // ss13.live: kicks, bans and boot votes this round
 	if (rt.tickUsage(f) > GLOB.current_ticklimit) {
 		yield* stoplag();
 	}

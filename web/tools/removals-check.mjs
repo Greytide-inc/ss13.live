@@ -1,6 +1,6 @@
-// removals-check - punishments are seen (plans/server-rules.md step 5) on a real server: admin Alice (a listed tag) kicks Bob (his mob ref
+// removals-check - punishments are seen on a real server: admin Alice (a listed tag) kicks Bob (his mob ref
 //   from his adminhelp's admin links); Bob is disconnected, Carol is told "... was kicked by an admin", and when the round ends (--endround) the round-end
-//   report lists the kick under "Removed this round". Also the server rules (plans/server-rules.md step 1): the welcome message shows
+//   report lists the kick under "Removed this round". Also the server rules: the welcome message shows
 //   them, and the same OOC line 11 times in a row auto-mutes the sender.
 //   node tools/removals-check.mjs [DIST=build/removals-dist] [PORT=8796]      exit 0 = all checks passed (~2 min)
 import fs from "node:fs";

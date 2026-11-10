@@ -180,7 +180,7 @@ rt.def("/client/proc/New", function* New(f: Frame) {
 		rt.setAt(GLOB.preferences_datums, this.ckey, this.prefs);
 	}
 	this.prefs.last_ip = this.address;
-	if (GLOB.SSvote) GLOB.SSvote.note_arrival(this); // ss13.live: the newcomer wait (plans/server-rules.md step 4)
+	if (GLOB.SSvote) GLOB.SSvote.note_arrival(this); // ss13.live: the newcomer wait
 	this.prefs.last_id = this.computer_id;
 	if (rt.world().byond_version >= 511 && this.byond_version >= 511 && this.prefs.clientfps) {
 		rt.setAt(this.vars, "fps", this.prefs.clientfps);

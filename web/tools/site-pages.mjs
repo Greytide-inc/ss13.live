@@ -1,4 +1,4 @@
-// site-pages - turns a static build (build/site-dist, from build-static) into what ss13.live's Cloudflare deploy uploads (plans/site.md):
+// site-pages - turns a static build (build/site-dist, from build-static) into what ss13.live's Cloudflare deploy uploads:
 // build/site-pages/ for Pages (with site/worker.js as _worker.js, the front page site/index.html, the game as play.html, Box's saved world only) and build/site-r2/BUILD/... for the R2 bucket: the files over
 // Pages' 25 MiB limit, served by the worker at their usual paths. No test scenarios. Prints BUILD. The deploy script runs it.
 import { cpSync, rmSync, mkdirSync, readFileSync, writeFileSync, readdirSync, statSync, renameSync, existsSync } from "node:fs";

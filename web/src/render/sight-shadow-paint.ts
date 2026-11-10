@@ -1,4 +1,4 @@
-// sight-shadow-paint (plans/archive/sight-shadows.md step 3) - Paints the soft sight shadows for the box the server sent (`opq`) from where the
+// sight-shadow-paint - Paints the soft sight shadows for the box the server sent (`opq`) from where the
 // page draws the eye: per eye point (eyePoints) its shadows (shadowPolys) filled as one shape, added up at 1/16 each, then turned
 // into darkness (softDark's rule, one value per pixel) on a small canvas, `res` pixels a tile; the backend stretches it over the map (smooth).
 // The smoothed tg look (mode "smooth") is tg's black squares with hard diagonal steps (hardTile per tile: black, or stamps of its corner triangles), one canvas pixel per game pixel and

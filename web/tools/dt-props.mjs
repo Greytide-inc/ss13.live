@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// dt-props.mjs - Detranslate robot (plans/archive/detranslate.md): rewrites src var reads and writes in game procs as properties.
+// dt-props.mjs - Detranslate robot: rewrites src var reads and writes in game procs as properties.
 // Usage (from web/, after `npx tsc -p .`): node tools/dt-props.mjs [--check] TARGET...
 //   TARGET: a game file (game/code/...ts: every proc and tail in it) or a proc path (/obj/machinery/proc/use_power: that rt.def,
 //   in whichever file has it). --check changes nothing, prints what it would do.

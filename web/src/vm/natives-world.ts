@@ -96,7 +96,7 @@ export function installWorldNatives(vm: VM): void {
 
 	// Measured: `..()` in an overridden world/Error logs the error as BYOND normally would.
 	// With DEBUG (tg), it writes "runtime error: <E.name>" and E.desc to world.log, which tg's
-	// handler points at its runtime log file first (matches archive/byond-reference/byond-boot.log's shape).
+	// handler points at its runtime log file first (the shape of the boot log real BYOND 511 wrote).
 	def("/world/proc/Error", (vm, [E = null]) => {
 		vm.pendingErrorLog?.();
 		if (vm.debugInfo && E instanceof DMObject && vm.world) {

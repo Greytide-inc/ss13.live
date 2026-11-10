@@ -1,4 +1,4 @@
-// vote-address-check - one vote per address (plans/server-rules.md step 3) on a real server: Alice and Bob join from their own
+// vote-address-check - one vote per address on a real server: Alice and Bob join from their own
 //   addresses, Mal from one address under three names. Mal starts a shuttle vote and votes "Call the shuttle" from two tabs, the third
 //   stays silent; Alice votes "Keep playing", Bob votes "Call". The count must be Call 2 (Mal once, Bob), Keep 1 (Alice; Mal's silent
 //   tab is not a non-voter, his address voted), and Mal's second tab is told someone at his address already voted.

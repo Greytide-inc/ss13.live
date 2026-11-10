@@ -1,5 +1,5 @@
 // lobby-menu - tg's "New Player Options" window (playersetup) drawn as a title-screen menu over the lobby picture: plain text on the
-// left, a > on the one under the mouse, the current ready choice in green (mockup E, plans/lobby-art/lobby-window-mockups.html).
+// left, a > on the one under the mouse, the current ready choice in green.
 // It always shows, straight on the picture with no dark backing; the black outline on the text keeps it readable.
 // The game still sends tg's window html; the page reads its links out of it, so a click is the same topic the window's link sent.
 // The line under the menu is the Lobby stat tab (time to start, players), passed in by the page whenever that tab updates.

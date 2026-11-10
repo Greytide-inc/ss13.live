@@ -20,7 +20,7 @@ eq(j.warnOnLeave({ views: 3 }), true, "playing: ask before closing");
 eq(j.warnOnLeave({ views: 3, done: true }), false, "the world stopped / connection lost: close freely");
 eq(j.warnOnLeave({ views: 3, error: "refused" }), false, "refused or replaced: close freely");
 eq(j.warnOnLeave({ views: 3 }, true), false, "test drivers (navigator.webdriver) never get the question");
-// the join window (plans/site.md step 4): short or common secrets are warned about, never refused; no secret is no warning
+// the join window: short or common secrets are warned about, never refused; no secret is no warning
 eq(j.weakSecret(""), false, "no secret: nothing to warn about");
 eq(j.weakSecret("abc"), true, "under 8 characters");
 eq(j.weakSecret("Password"), true, "on the common list, any case");

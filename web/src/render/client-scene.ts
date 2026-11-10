@@ -1204,7 +1204,7 @@ export function liveClientView(host: HTMLElement, resync: () => void, sendStep: 
 	// every frame, the four looks only when the light does.
 	const CARRIED_ID0 = -1000000;
 	const carryOn = new URLSearchParams(location.search).get("carrylight") !== "0";
-	// Sight shadows (plans/archive/sight-shadows.md): soft shadows cast past walls from where the camera is drawn, over the box of opacity the server
+	// Sight shadows: soft shadows cast past walls from where the camera is drawn, over the box of opacity the server
 	// sends (u.opq, only when it changes); dimmed with mesons/thermals, none for ghosts and the AI (shadowStrength). The look (ShadowMode) is
 	// the player's pick in the ⚙ panel (localStorage "ss13-shadows", event "ss13-shadows" when it changes), tg's black squares by default;
 	// ?shadows=0 / smooth / full overrides it.
@@ -1215,7 +1215,7 @@ export function liveClientView(host: HTMLElement, resync: () => void, sendStep: 
 	let shadowMode: ShadowMode = shadowQ !== null ? modeOf(shadowQ) : pickedMode();
 	if (shadowQ === null) globalThis.addEventListener?.("ss13-shadows", () => { shadowMode = pickedMode(); forceNext = true; schedule(); });
 	let opqNow: Opq | null = null, shadowVersion = 0;
-	// Sight pop-in (plans/archive/sight-pop-in.md): with prediction the server sends what could be seen a step or two ahead (u.lum then comes with the
+	// Sight pop-in: with prediction the server sends what could be seen a step or two ahead (u.lum then comes with the
 	// box's light); the page shows only what is seen from the tile it has stepped you to (sightNow, worked out again when that tile or the box
 	// changes). Tiles it doesn't see are left out of the scene: black and unclickable, as tiles the server doesn't send.
 	let lumNow: Lum | null = null, sightNow: PageSight | null = null, sightOpq: Opq | null = null, sightFrom: unknown[] = [];

@@ -1,4 +1,4 @@
-// dt-vars.test.mjs - translate-tg writes each proc's `f.vars` list (plans/archive/detranslate.md step 7b, tools/translate-tg.mjs varsCut):
+// dt-vars.test.mjs - translate-tg writes each proc's `f.vars` list (tools/translate-tg.mjs varsCut):
 // the arguments the body assigns and every top-level declaration, right after the last declaration, lines and columns kept;
 // nothing when there is nothing to list; a hand-written `f.vars` in game code stops the bundle (it would hide a forgotten local).
 // Usage (from web/, env loaded): node tests/dt-vars.test.mjs

@@ -227,7 +227,7 @@ const freeBytes = (b: Uint8Array) => {
 	} catch { /* already detached, or no ArrayBuffer.transfer (older browsers): the GC frees it later */ }
 };
 // One channel for good: a new MessageChannel's first message may wait on another thread, leaving the worker's queue empty
-// for a moment, which starts Firefox's 5 s idle GC (tick-wait.ts). Suspected after the slow spawn tick (plans/less-garbage.md step 4).
+// for a moment, which starts Firefox's 5 s idle GC (tick-wait.ts). Suspected after the slow spawn tick.
 const yieldPort = new MessageChannel();
 let yieldWake: (() => void) | null = null;
 yieldPort.port1.onmessage = () => { const w = yieldWake; yieldWake = null; w?.(); };
@@ -405,7 +405,7 @@ async function run(opts: StartMsg): Promise<void> {
 					startStore(true); // after the load: the snapshot replaced the file layer
 					// Memory: free the load's garbage now, behind the loading screen. Without a GC here the first full GC came ~85 s in,
 					// at a ~0.9 GB higher peak. It used to let Firefox's worker go idle once (its idle GC, see tick-wait.ts), but that GC
-					// came 5 s later, just after a quick join's spawn: a ~0.9 s freeze (plans/less-garbage.md step 4). A big buffer that
+					// came 5 s later, just after a quick join's spawn: a ~0.9 s freeze. A big buffer that
 					// is never touched (no memory used) puts the malloc heap over its limit, so SpiderMonkey runs one ~0.5 s GC at once.
 					if (busyWait) try { new ArrayBuffer(512 * 1048576); } catch { /* no room: the GC comes later instead */ }
 				} catch (e) {

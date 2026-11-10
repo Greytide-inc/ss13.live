@@ -1,4 +1,4 @@
-// sight-shadow (plans/archive/sight-shadows.md) - Which tiles block sight round the eye, as the server sends them (`opq` in a view update), and how
+// sight-shadow - Which tiles block sight round the eye, as the server sends them (`opq` in a view update), and how
 // much of each tile a straight line from the eye reaches past them: the page's own line of sight, worked out from where it draws the eye.
 // Tile (i, j) of a box covers [i, i+1] x [j, j+1]; the eye is a point in the same units (the eye tile's centre is ex + 0.5, ey + 0.5).
 
@@ -34,7 +34,7 @@ export function unpackOpacity(p: Opq): { x0: number; y0: number; w: number; h: n
 	return { x0, y0, w, h, opaque: unpackBits(w * h, s), vis: v ? unpackBits(w * h, v) : null };
 }
 
-/** `lum` on the wire (plans/archive/sight-pop-in.md): the light of the same box as `opq`, for the page's own line of sight (vm/view-los.ts viewSight):
+/** `lum` on the wire: the light of the same box as `opq`, for the page's own line of sight (vm/view-los.ts viewSight):
  *  [lit-area bits, then tile k and lamp value pairs for the lit tiles]. */
 export type Lum = [string, ...number[]];
 
@@ -123,7 +123,7 @@ export function inPoly(p: number[], x: number, y: number): boolean {
 	return inside;
 }
 
-/** How strong the page draws the sight shadow for a mob's `sight` flags (plans/archive/sight-shadows.md, player forms): 1 = full; DIM with mesons or
+/** How strong the page draws the sight shadow for a mob's `sight` flags (every player form): 1 = full; DIM with mesons or
  *  thermals (SEE_TURFS, SEE_OBJS or SEE_MOBS but not all three: what they show through walls stays readable); 0 = none, when the server sent
  *  no opacity box (`hasBox` false: ghosts and the AI see through everything, the blind see nothing). */
 export const SHADOW_DIM = 0.5;
@@ -133,7 +133,7 @@ export function shadowStrength(sight: number, hasBox: boolean): number {
 	return x === 28 ? 0 : x ? SHADOW_DIM : 1;
 }
 
-/** The soft shadows (plans/archive/sight-shadows.md, rule 2): the eye is N x N points spread over a tile-sized square round the drawn eye
+/** The soft shadows: the eye is N x N points spread over a tile-sized square round the drawn eye
  *  (ex, ey); a spot is fully lit once a 1/GAIN share of them see it, and darker the fewer do. */
 export const SOFT_N = 4, SOFT_GAIN = 4;
 export function eyePoints(ex: number, ey: number, n = SOFT_N): [number, number][] {

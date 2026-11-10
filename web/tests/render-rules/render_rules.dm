@@ -1,5 +1,5 @@
 // Test world for web/tests/render-rules/run.sh. Map is 15x11; layout is described in README of
-// archive/byond-reference/render-rules/. Tile (x,y) is at screen x = 39+(x-1)*32, y = 303+(11-y)*32 in the capture.
+// BYOND 511 screenshots (2026-09). Tile (x,y) is at screen x = 39+(x-1)*32, y = 303+(11-y)*32 in the capture.
 world
 	maxx = 15
 	maxy = 11

@@ -52,7 +52,7 @@ rt.def("/client/verb/ooc", function* ooc(f: Frame, msg: Value) {
 				return f.dot;
 			}
 		}
-		if (GLOB.SSvote && (yield* GLOB.SSvote.newcomer_refused(this, "use OOC"))) { // ss13.live: plans/server-rules.md step 4
+		if (GLOB.SSvote && (yield* GLOB.SSvote.newcomer_refused(this, "use OOC"))) { // ss13.live
 			return f.dot;
 		}
 		if (this.handle_spam_prevention(msg, 2)) {

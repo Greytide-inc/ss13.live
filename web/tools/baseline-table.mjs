@@ -1,4 +1,4 @@
-// baseline-table - Turns resource-baseline.mjs's JSON files into the markdown tables of plans/resource-baseline.md.
+// baseline-table - Turns resource-baseline.mjs's JSON files into markdown tables.
 // Usage (from web/): node tools/baseline-table.mjs build/baseline/desktop-solo.json build/baseline/desktop-creative.json
 import { readFileSync } from "node:fs";
 const f = (x, d = 0) => (x == null || Number.isNaN(x) ? "-" : x.toFixed(d));
