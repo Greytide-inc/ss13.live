@@ -348,11 +348,31 @@ function rimSparks(c, t) {
 	c.restore();
 }
 
+// the room's air rushing out: pale streaks that start far from the hole and speed up towards it. Each: direction, how far out it
+// starts, seconds to reach the middle, when in that time it starts
+const AIR = (() => {
+	const random = rng(53);
+	return Array.from({ length: 38 }, () => [random() * Math.PI * 2, 250 + random() * 90, 1.1 + random() * 1.3, random()]);
+})();
+
+/** the air streaks; the hole itself is drawn over them afterwards, so they end at its edge */
+function airRush(c, t) {
+	const [cx, cy] = HOLE_CENTRE;
+	for (const [angle, far, seconds, start] of AIR) {
+		const life = (t / seconds + start) % 1;
+		const r = far * (1 - life * life);
+		const dx = Math.cos(angle) * 1.25, dy = Math.sin(angle) * .85;   // a wide oval, like the hole
+		const len = 5 + 26 * life;
+		c.fillStyle = `rgba(255,225,215,${(Math.min(1, life * 3) * .3).toFixed(2)})`;
+		pixLine(c, cx + dx * r, cy + dy * r, cx + dx * (r + len), cy + dy * (r + len));
+	}
+}
+
 let room = null;                                  // the floor, walls and cracks, drawn the first time
 
 export default {
 	name: '3. Red alert',
-	desc: 'A bomb has blown a jagged hull breach in a station room: dark space and dim stars show through the hole, its bent edge catching the red light and sparking, while loose plating, floor tiles and a few crew are sucked towards it. Two rotating beacons on a hazard-striped banner sweep red light round the room, a broken lamp sparks and CODE RED flashes under the logo.',
+	desc: 'A bomb has blown a jagged hull breach in a station room: dark space and dim stars show through the hole, its bent edge catching the red light and sparking, while streaks of escaping air, loose plating, floor tiles and a few crew are sucked towards it. Two rotating beacons on a hazard-striped banner sweep red light round the room, a broken lamp sparks and CODE RED flashes under the logo.',
 	draw(c, t) {
 		room = room || buildRoom();
 
@@ -538,6 +558,7 @@ export default {
 		c.beginPath();
 		c.rect(0, BANNER_BOTTOM, W, W - BANNER_BOTTOM);
 		c.clip();
+		airRush(c, t);
 		breach(c, t, pulse);
 		rimSparks(c, t);
 		c.restore();

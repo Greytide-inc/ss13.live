@@ -1,4 +1,4 @@
-import { W, spr, tiles, starfield, crwPut, crwLogo } from "../helpers.js";
+import { W, spr, tiles, starfield, crwPut, crwLogo, smallText } from "../helpers.js";
 
 // the observation window: wide at the top, then a tall pane down the left side that holds the menu
 const FRAME = 14;             // thick hull frame round the window
@@ -8,11 +8,61 @@ const SIDE_PANE_RIGHT = 336;   // the tall left pane ends here
 const SILL_Y = 358;            // bottom of the tall pane
 const BASEBOARD_Y = 376;
 const DECK_Y = 382;            // floor tiles start here
-const FEET_Y = 452;
+const FEET_Y = 460;
 const AI_X = 364;              // left edge of the AI's wall screen
 const AI_Y = 204;
 const CREW_GAP = 70;           // even spacing along the deck
 const CREW_X0 = 65;
+
+const PLANET = { x: 446, y: 330, r: 190 };   // a blue planet low in the window's right corner; only its top edge shows
+// who says what, in turn: one line every SAY_EVERY seconds, shown for SAY_FOR
+const CREW = ['clown', 'nt', 'wizard', 'syndi', 'secbot', 'ian'];
+const SAYS = [['clown', 'HONK!'], ['ian', 'Woof!'], ['secbot', 'Beep!'], ['wizard', 'EI NATH!'], ['nt', 'Halt!'], ['clown', 'Honk honk!'], ['syndi', '...'], ['ian', 'Arf!']];
+const SAY_EVERY = 4.5, SAY_FOR = 2.2;
+
+/** the planet's top edge: dark blue with a lighter band and a thin bright rim of air; drawn inside whatever clip is set */
+function planet(c) {
+	const { x, y, r } = PLANET;
+	c.fillStyle = '#16365f';
+	c.beginPath();
+	c.arc(x, y, r, 0, 7);
+	c.fill();
+	c.fillStyle = '#1d4a7c';                    // a paler band of cloud just under the rim
+	for (let i = 0; i < 3; i++) {
+		c.beginPath();
+		c.ellipse(x - 30 + i * 22, y - r + 14 + i * 5, 46 - i * 8, 2, -.12, 0, 7);
+		c.fill();
+	}
+	c.strokeStyle = 'rgba(120,190,255,.9)';
+	c.lineWidth = 2;
+	c.beginPath();
+	c.arc(x, y, r, Math.PI, Math.PI * 2);
+	c.stroke();
+	c.strokeStyle = 'rgba(90,160,255,.25)';
+	c.lineWidth = 3;
+	c.beginPath();
+	c.arc(x, y, r + 3, Math.PI, Math.PI * 2);
+	c.stroke();
+	c.lineWidth = 1;
+}
+
+/** a speech bubble with its bottom-left corner over a head at x, y: white with a dark edge and a small tail */
+function bubble(c, text, x, y) {
+	c.font = 'bold 11px "DejaVu Sans Mono",monospace';
+	const w = Math.ceil(c.measureText(text).width) + 10, h = 15;
+	x = Math.min(Math.round(x), W - w - 4);
+	y = Math.round(y) - h;
+	c.fillStyle = '#10161d';
+	c.fillRect(x - 1, y, w + 2, h);
+	c.fillRect(x, y - 1, w, h + 2);
+	c.fillRect(x + 4, y + h, 6, 3);
+	c.fillRect(x + 4, y + h + 3, 3, 2);
+	c.fillStyle = '#f4f7fa';
+	c.fillRect(x, y, w, h);
+	c.fillRect(x + 5, y + h, 4, 2);
+	c.fillRect(x + 5, y + h + 2, 2, 2);
+	smallText(c, text, x + 5, y + 11, '#10161d', 'left', 11);
+}
 
 // a small rivet: a light dot with a dark one under it
 function rivet(c, x, y) {
@@ -24,9 +74,10 @@ function rivet(c, x, y) {
 
 export default {
 	name: '2. The crew',
-	desc: 'An observation deck: a big riveted window of stars runs down the left side, the station AI watches from a bracketed wall screen on the right (vent, panel seams and blinking lights around it), and six station regulars idle on the deck below: clown, officer, wizard, syndie, Beepsky (light flashing), Ian (hops now and then).',
+	desc: 'An observation deck: a big riveted window of stars runs down the left side with the edge of a blue planet in its corner, the station AI watches from a bracketed wall screen on the right (vent, panel seams and blinking lights around it), and six station regulars idle on the deck below: clown, officer, wizard, syndie, Beepsky (light flashing), Ian (hops now and then). Now and then one of them speaks in a speech bubble (HONK!, Woof!), and the staff of the wizard twinkles.',
 	draw(c, t) {
 		starfield(c, t, 3);
+		planet(c);
 
 		// wall everywhere below the top pane, with panel seams on the right
 		c.fillStyle = '#27313d';
@@ -41,6 +92,7 @@ export default {
 		c.rect(FRAME, TOP_PANE_BOTTOM, SIDE_PANE_RIGHT - FRAME, paneH);
 		c.clip();
 		starfield(c, t, 3);
+		planet(c);
 		c.fillStyle = 'rgba(0,0,0,.75)';
 		c.fillRect(FRAME, TOP_PANE_BOTTOM, SIDE_PANE_RIGHT - FRAME, paneH);
 		c.restore();
@@ -116,6 +168,13 @@ export default {
 		c.fillStyle = Math.floor(t * 0.7) % 3 ? '#27a' : '#4af';
 		c.fillRect(352, 194, 5, 5);
 
+		// the screen's blue light on the wall round it, breathing slowly
+		const shine = c.createRadialGradient(AI_X + 44, AI_Y + 35, 30, AI_X + 44, AI_Y + 35, 100);
+		shine.addColorStop(0, `rgba(70,170,255,${(.20 + .05 * Math.sin(t * 1.3)).toFixed(3)})`);
+		shine.addColorStop(1, 'rgba(70,170,255,0)');
+		c.fillStyle = shine;
+		c.fillRect(wallL, TOP_PANE_BOTTOM, W - wallL, BASEBOARD_Y - TOP_PANE_BOTTOM);
+
 		// the AI's wall screen: a cable from the vent up to a bracket, a thick bezel, then the screen
 		c.fillStyle = '#0b0f13';
 		c.fillRect(406, AI_Y + 84, 4, 312 - AI_Y - 84);
@@ -172,7 +231,7 @@ export default {
 		for (let y = DECK_Y + 4; y < 480; y += 2) c.fillRect(sx + (y - DECK_Y) * 0.6 | 0, y, 90, 2);
 
 		// the crew in an evenly spaced row, each bobbing a pixel at its own pace; Ian hops now and then, Beepsky's light flashes red and blue
-		['clown', 'nt', 'wizard', 'syndi', 'secbot', 'ian'].forEach((who, i) => {
+		CREW.forEach((who, i) => {
 			const cx = CREW_X0 + i * CREW_GAP;
 			let up = Math.floor(t * 0.9 + i * 0.37) % 2 && who != 'secbot' ? 1 : 0;
 			if (who == 'ian') {
@@ -184,7 +243,24 @@ export default {
 				c.fillStyle = Math.floor(t * 4) % 2 ? '#f33' : '#38f';
 				c.fillRect(cx - 48 + 14 * 3, FEET_Y - 29 * 3 + 9 * 3, 3, 3);
 			}
+			if (who == 'wizard') {                           // the staff's gem twinkles every 3 s
+				const tw = (t + .8) % 3;
+				if (tw < .45) {
+					const gx = cx + 28, gy = FEET_Y - 96 - up + 25, big = tw > .1 && tw < .3 ? 5 : 3;
+					c.fillStyle = '#e8ffff';
+					c.fillRect(gx - big, gy, big * 2 + 1, 1);
+					c.fillRect(gx, gy - big, 1, big * 2 + 1);
+				}
+			}
 		});
+
+		// now and then one of them says something
+		const turn = Math.floor(t / SAY_EVERY), since = t - turn * SAY_EVERY;
+		if (since > .6 && since < .6 + SAY_FOR) {
+			const [who, text] = SAYS[turn % SAYS.length];
+			const tall = { ian: 54, secbot: 66 }[who] || 92;
+			bubble(c, text, CREW_X0 + CREW.indexOf(who) * CREW_GAP + 10, FEET_Y - tall - 6);
+		}
 
 		crwLogo(c, 36, '#fff', '#4af', 128, '#9bc');
 	}

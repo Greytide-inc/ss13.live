@@ -15,6 +15,7 @@ const WIN_X = MENU_ZONE.x - 10, WIN_Y = MENU_ZONE.y - 8;
 const WIN_W = MENU_ZONE.w + 20, WIN_H = MENU_ZONE.h + 16;
 const random = rng(11);
 const WINDOW_STARS = Array.from({ length: 40 }, () => ({ x: random() * WIN_W, y: random() * WIN_H, tw: random() * 6 }));
+const GUIDE_Y = 471, GUIDE_GAP = 24;   // the strip of green guide lights along the near edge of the floor
 
 // x of a door or light, scrolled left and looping from -120 to 600
 const loopX = (x, scrolled) => ((x - scrolled) % LOOP + LOOP) % LOOP - 120;
@@ -60,7 +61,7 @@ function pipe(c, y, h, scrolled) {
 
 export default {
 	name: '3a. Corridor run',
-	desc: 'A hallway in red alarm: crew, Ian and a wizard sprint along the floor under sweeping sirens, past a long dark window onto quiet space.',
+	desc: 'A hallway in red alarm: crew, Ian and a wizard sprint along the floor kicking up dust under sweeping sirens that pool red on the floor, past a long dark window onto quiet space, a lit EVACUATE sign above and green guide lights chasing towards the exit along the floor.',
 	draw(c, t) {
 		wallDetail ??= makeWallDetail();
 		c.fillStyle = '#000';
@@ -123,11 +124,51 @@ export default {
 		c.restore();
 		lightXs.forEach((x) => spr(c, 'alert_light', x, LIGHT_Y, DOOR_SCALE, Math.floor(t * 10)));
 
+		// each alarm light also throws a red pool on the floor below it, brighter as its beam swings down
+		c.save();
+		c.globalCompositeOperation = 'lighter';
+		lightXs.forEach((x, i) => {
+			const down = Math.abs(Math.sin(t * 2.4 + i * 2.1));
+			c.save();
+			c.translate(x + 32, FLOOR_Y + 6);
+			c.scale(1, .45);
+			const pool = c.createRadialGradient(0, 0, 0, 0, 0, 170);
+			pool.addColorStop(0, `rgba(255,50,30,${(.12 + .3 * down).toFixed(2)})`);
+			pool.addColorStop(1, 'rgba(255,0,0,0)');
+			c.fillStyle = pool;
+			c.fillRect(-170, 0, 340, 170);
+			c.restore();
+		});
+		c.restore();
+
+		// green guide lights along the near edge of the floor, moving with it; a brighter one chases along them towards the exit
+		c.fillStyle = '#0b0d0c';
+		c.fillRect(0, GUIDE_Y, W, 7);
+		c.fillStyle = '#2a2f2c';
+		c.fillRect(0, GUIDE_Y, W, 1);
+		const guideX = -Math.floor(floorScroll % GUIDE_GAP), firstLight = Math.floor(floorScroll / GUIDE_GAP);
+		for (let x = guideX, n = firstLight; x < W; x += GUIDE_GAP, n++) {
+			const lit = ((n - Math.floor(t * 9)) % 5 + 5) % 5 == 0;
+			c.fillStyle = lit ? '#7dffa0' : '#1c6a36';
+			c.fillRect(x + 4, GUIDE_Y + 2, 10, 3);
+			c.fillRect(x + 14, GUIDE_Y + 3, 2, 1);        // a small point: the way out is to the right
+			if (lit) {
+				c.fillStyle = 'rgba(100,255,150,.25)';
+				c.fillRect(x + 2, GUIDE_Y - 1, 16, 9);
+			}
+		}
+
 		// the runners, each with a soft shadow, bobbing a step out of time with the next
 		RUNNERS.forEach((sprite, i) => {
 			const x = Math.floor(((i * RUN_GAP + t * RUN_SPEED) % RUN_LOOP + RUN_LOOP) % RUN_LOOP) - 2 * 32 * RUN_SCALE + 20;
 			const bob = Math.floor(t * 8 + i) % 2 ? 0 : -RUN_SCALE;
 			const mid = x + 16 * RUN_SCALE;
+			// dust kicked up behind the feet: three puffs drifting back, growing and fading
+			for (let k = 0; k < 3; k++) {
+				const age = (t * 2.6 + k / 3 + i * .37) % 1, size = Math.round(3 + age * 6);
+				c.fillStyle = `rgba(245,232,225,${(.6 * (1 - age)).toFixed(2)})`;
+				c.fillRect(Math.round(mid - 24 - age * 36), Math.round(RUN_FEET_Y - 4 - age * 10 - size / 2), size, size);
+			}
 			c.fillStyle = 'rgba(0,0,0,.22)';
 			c.fillRect(mid - 11 * RUN_SCALE, RUN_FEET_Y - RUN_SCALE, 22 * RUN_SCALE, 3 * RUN_SCALE);
 			c.fillStyle = 'rgba(0,0,0,.3)';
@@ -149,9 +190,9 @@ export default {
 		// the window over everything: dark glass, a few dim stars, then a chunky metal frame
 		c.fillStyle = '#02030a';
 		c.fillRect(WIN_X, WIN_Y, WIN_W, WIN_H);
-		WINDOW_STARS.forEach((s) => {
+		WINDOW_STARS.forEach((s) => {                    // drifting slowly back, as the corridor does
 			c.fillStyle = `rgba(190,200,255,${.2 + .15 * Math.sin(t * 2 + s.tw)})`;
-			c.fillRect(WIN_X + Math.floor(s.x), WIN_Y + Math.floor(s.y), 1, 1);
+			c.fillRect(WIN_X + Math.floor(((s.x - t * 3) % WIN_W + WIN_W) % WIN_W), WIN_Y + Math.floor(s.y), 1, 1);
 		});
 		const fx = WIN_X - FRAME, fy = WIN_Y - FRAME, fw = WIN_W + 2 * FRAME, fh = WIN_H + 2 * FRAME;
 		// four bars: dark outer line, mid steel, a light top edge, dark inner lip next to the glass
@@ -186,6 +227,14 @@ export default {
 		c.fillRect(fx, fy + fh - 2, fw, 2);
 
 		pixText(c, LOGO, W / 2, 8, 16, 3, '#fff', '#f22');
-		if (Math.floor(t * 2) % 2 === 0) smallText(c, '!! EVACUATE !!', W / 2, 90, '#f66', 'center', 16);
+		// the EVACUATE sign: a dark plate with a red edge, its words and edge lighting up twice a second
+		const signOn = Math.floor(t * 2) % 2 === 0;
+		c.fillStyle = '#160406';
+		c.fillRect(W / 2 - 92, 72, 184, 22);
+		c.strokeStyle = signOn ? '#ff4a3c' : '#5a1210';
+		c.lineWidth = 2;
+		c.strokeRect(W / 2 - 91, 73, 182, 20);
+		c.lineWidth = 1;
+		smallText(c, '!! EVACUATE !!', W / 2, 89, signOn ? '#ffd9d0' : '#7a2420', 'center', 16);
 	}
 };

@@ -17,8 +17,20 @@ const SCRAMBLE = '#%&@01/\\|<>?=+';
 
 const AI_X = W / 2 - 64, AI_Y = 36;      // the AI sprite, drawn 4 times its size, above the menu box
 const LOG = { x: 24, y: 349, w: 348, h: 34 }; // the law log panel, in the strip between the menu and the logo
-const LOGO_Y = 392;
+const LOGO_Y = 411;                      // letters centred top to bottom in the space under the law log
+const LOGO_X = LOG.x + LOG.w / 2;        // the logo's middle: centred under the law log, clear of the takeover panel
 const LIGHT_COLOURS = ['#ff2a1c', '#ff2a1c', '#ff2a1c', '#ff9a2e', '#ff5a4a'];
+
+// the takeover panel, right of the logo: the station's systems fall to the AI one by one through the loop, then it starts over.
+// Each: name, what the AI does to it, when in the loop (seconds)
+const TAKEOVER = { x: 382, y: 349, w: 92, h: 122 };
+const SYSTEMS = [['DOORS', 'BOLTED', 1.2], ['COMMS', 'JAMMED', 3.9], ['APCS', 'HACKED', 6.6], ['TURRET', 'LETHAL', 9.3], ['SHUTTLE', 'HELD', 12]];
+// cables from the rack banks to the AI: x0, y0, x1, y1, sag, colour (filled in with the background); bright pulses run along them.
+// Each ends behind the AI's frame (x 188-310, y 36-152), which hides the join
+const CABLES = [
+	[146, 90, 200, 108, 14, '#2a0b0e'], [146, 120, 200, 124, 12, '#3a1115'], [146, 150, 200, 140, 8, '#2a0b0e'],
+	[332, 100, 296, 108, 14, '#3a1115'], [332, 130, 296, 124, 12, '#2a0b0e'], [332, 156, 296, 140, 8, '#3a1115'],
+];
 
 // blinking rack lights, filled in when the background is drawn: { x, y, colour, speed, phase }
 const lights = [];
@@ -26,7 +38,7 @@ const lights = [];
 /** one server rack: a dark cabinet of units with vent slots and places for lights */
 function rack(g, x, y, w, h, seed) {
 	const random = rng(seed);
-	g.fillStyle = '#11070a';
+	g.fillStyle = '#180a0e';
 	g.fillRect(x, y, w, h);
 	g.fillStyle = '#3a1519';               // lit edges
 	g.fillRect(x, y, w, 1);
@@ -34,9 +46,9 @@ function rack(g, x, y, w, h, seed) {
 	g.fillStyle = '#050102';
 	g.fillRect(x + w - 1, y, 1, h);
 	for (let uy = y + 4; uy + 9 <= y + h - 3; uy += 10) {
-		g.fillStyle = '#1f0c0f';            // one unit
+		g.fillStyle = '#2a1015';            // one unit
 		g.fillRect(x + 3, uy, w - 6, 8);
-		g.fillStyle = '#34141a';
+		g.fillStyle = '#451b22';
 		g.fillRect(x + 3, uy, w - 6, 1);
 		g.fillStyle = '#050102';
 		g.fillRect(x + 3, uy + 8, w - 6, 1);
@@ -74,14 +86,8 @@ function makeBack() {
 	for (let i = 0; i < 3; i++) rack(g, 332 + i * 50, 38, 46, 134, 20 + i);
 	rack(g, -28, 176, 46, 302, 30);
 	for (let i = 0; i < 3; i++) rack(g, 332 + i * 50, 176, 46, 168, 40 + i);
-	for (let i = 1; i < 3; i++) rack(g, 332 + i * 50, 348, 46, 130, 50 + i);
 	// cables from the banks to the AI's pedestal
-	cable(g, 146, 90, 212, 128, 18, '#2a0b0e');
-	cable(g, 146, 120, 212, 146, 14, '#3a1115');
-	cable(g, 146, 150, 214, 160, 10, '#2a0b0e');
-	cable(g, 332, 100, 212 + 112, 132, 16, '#3a1115');
-	cable(g, 332, 130, 212 + 114, 150, 12, '#2a0b0e');
-	cable(g, 332, 156, 212 + 116, 162, 8, '#3a1115');
+	for (const [x0, y0, x1, y1, sag, colour] of CABLES) cable(g, x0, y0, x1, y1, sag, colour);
 	// the alert bar's frame: dark red with hazard stripes along its edges
 	g.fillStyle = '#1a0306';
 	g.fillRect(0, 8, W, 23);
@@ -134,6 +140,68 @@ function drawAI(c, t, random, glitching) {
 	}
 }
 
+/** bright pulses running out along the cables from the AI to the racks, one per cable, each with a short fading tail */
+function cablePulses(c, t) {
+	CABLES.forEach(([x0, y0, x1, y1, sag], i) => {
+		const at = 1 - ((t * .55 + i * .37) % 1.6);      // 1 = at the AI, 0 = at the rack; a pause between pulses
+		for (let tail = 0; tail < 4; tail++) {
+			const k = at + tail * .035;
+			if (k < 0 || k > 1) continue;
+			c.fillStyle = `rgba(255,${120 - tail * 20},${90 - tail * 20},${(1 - tail * .25).toFixed(2)})`;
+			c.fillRect(Math.round(x0 + (x1 - x0) * k), Math.round(y0 + (y1 - y0) * k + Math.sin(k * Math.PI) * sag), 2, 2);
+		}
+	});
+}
+
+/** the takeover panel: each system reads OK in dim green until its time, then scrambles and turns red; a bar shows how much of the
+ *  station the AI holds */
+function drawTakeover(c, t, random) {
+	const { x, y, w, h } = TAKEOVER, loopT = t % LOOP_TIME;
+	c.fillStyle = 'rgba(14,3,5,.94)';
+	c.fillRect(x, y, w, h);
+	c.fillStyle = '#7a1f22';
+	c.fillRect(x, y, w, 1);
+	c.fillRect(x, y + h - 1, w, 1);
+	c.fillRect(x, y, 1, h);
+	c.fillRect(x + w - 1, y, 1, h);
+	c.fillStyle = '#3a0c10';
+	c.fillRect(x + 1, y + 1, w - 2, 13);
+	c.font = 'bold 10px "DejaVu Sans Mono",monospace';
+	c.fillStyle = '#ff8a7a';
+	c.fillText('STATION', x + 6, y + 11);
+	let taken = 0;
+	SYSTEMS.forEach(([name, state, at], i) => {
+		const since = loopT - at, ly = y + 28 + i * 15;
+		let text = 'OK', colour = '#3f9a52';
+		if (since > 0 && since < .35) {               // falling: its word is noise
+			text = '';
+			for (let k = 0; k < state.length; k++) text += SCRAMBLE[(random() * SCRAMBLE.length) | 0];
+			colour = '#ffd0cc';
+		} else if (since >= .35) {
+			text = state;
+			colour = since < 1.3 && Math.floor(since * 8) % 2 ? '#ffd0cc' : '#ff4a3c';
+			taken++;
+		}
+		c.fillStyle = since > 0 ? '#c8605a' : '#7a4a4a';
+		c.fillText(name, x + 6, ly);
+		c.fillStyle = colour;
+		c.textAlign = 'right';
+		c.fillText(text, x + w - 6, ly);
+		c.textAlign = 'left';
+	});
+	// the control bar, in five blocks
+	c.fillStyle = '#c8605a';
+	c.fillText('CONTROL', x + 6, y + h - 16);
+	c.textAlign = 'right';
+	c.fillStyle = taken == SYSTEMS.length ? '#ffd0cc' : '#ff4a3c';
+	c.fillText(taken * 20 + '%', x + w - 6, y + h - 16);
+	c.textAlign = 'left';
+	for (let i = 0; i < SYSTEMS.length; i++) {
+		c.fillStyle = i < taken ? '#ff3a2e' : '#3a0c10';
+		c.fillRect(x + 6 + i * 16, y + h - 11, 14, 6);
+	}
+}
+
 /** the law log: the last law as it ended up (dim) above the one being typed, scrambled and rewritten (bright), with a caret */
 function drawLog(c, t, random) {
 	c.fillStyle = 'rgba(14,3,5,.92)';
@@ -172,7 +240,7 @@ function drawLog(c, t, random) {
 
 export default {
 	name: '5a. Malfunction',
-	desc: 'The AI core goes rogue: server racks and cables frame a glitching AI under a blinking alert bar, and a law log rewrites itself above the glowing logo.',
+	desc: 'The AI core goes rogue: server racks and cables frame a glitching AI under a blinking alert bar, pulses of light run out along the cables, a law log rewrites itself above the glowing logo, and beside it a panel shows the station falling to the AI system by system (doors bolted, comms jammed ...).',
 	draw(c, t) {
 		if (!back) {
 			makeBack();
@@ -206,12 +274,14 @@ export default {
 		glow.addColorStop(1, 'rgba(255,30,20,0)');
 		c.fillStyle = glow;
 		c.fillRect(0, 0, W, MENU_ZONE.y);
+		cablePulses(c, t);                     // before the AI, so its frame covers the cables' ends
 		drawAI(c, t, random, glitching);
 
 		drawLog(c, t, random);
+		drawTakeover(c, t, random);
 
 		scanlines(c, .3);
-		vignette(c, 150, 350, .8);
+		vignette(c, 150, 350, .7);
 
 		// the alert bar blinks between bright and dim red, its words with it
 		const on = Math.floor(t * 2.5) % 2 === 0;
@@ -229,18 +299,18 @@ export default {
 		if (flicker) {                          // the cyan copy sits behind the red letters
 			c.save();
 			c.globalAlpha = 0.45;
-			pixText(c, LOGO, W / 2 - 4, LOGO_Y + 1, 16, 3, '#18e0ff', null);
+			pixText(c, LOGO, LOGO_X - 4, LOGO_Y + 1, 16, 3, '#18e0ff', null);
 			c.restore();
 		}
 		c.save();
 		c.globalAlpha = 0.5;
-		pixText(c, LOGO, W / 2, LOGO_Y, 16, 3, '#ff2a1c', '#ff1000');
+		pixText(c, LOGO, LOGO_X, LOGO_Y, 16, 3, '#ff2a1c', '#ff1000');
 		c.restore();
-		pixText(c, LOGO, W / 2 + 3, LOGO_Y + 3, 16, 3, '#4a0508', null);
-		pixText(c, LOGO, W / 2, LOGO_Y, 16, 3, '#ff3a2e', null);
+		pixText(c, LOGO, LOGO_X + 3, LOGO_Y + 3, 16, 3, '#4a0508', null);
+		pixText(c, LOGO, LOGO_X, LOGO_Y, 16, 3, '#ff3a2e', null);
 		if (flicker) {
 			const y = LOGO_Y + 6 + ((random() * 30) | 0), shift = Math.round((random() - 0.5) * 5) * 4;
-			c.drawImage(c.canvas, 90, y, 300, 6, 90 + shift, y, 300, 6);
+			c.drawImage(c.canvas, LOGO_X - 150, y, 300, 6, LOGO_X - 150 + shift, y, 300, 6);
 		}
 	}
 };

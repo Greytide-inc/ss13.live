@@ -7,6 +7,14 @@ const FIRST_X = 50, SPACING = 72;   // centres of the five suspects
 const BEEPSKY_X = 430;              // Beepsky stands well clear of the last suspect and the edge
 const GLASS = { x: 16, y: 140, w: 314, h: 224 };   // the one-way mirror, covering the whole menu box (x 22..318, y 176..344)
 const CAMERA = { x: 452, y: 40 };   // the wall camera that takes the flash photos, right of the logo sign
+const BOARD = { x: 346, y: 144, w: 124, h: 150 };  // the charge board on the wall right of the mirror
+const SUSPECTS = [
+	['crew_syndi', 'GRAND', 'SABOTAGE'], ['crew_pirate', 'SPACE', 'PIRACY'], ['crew_clown', 'EXCESSIVE', 'HONKING'],
+	['crew_skel', 'INDECENT', 'EXPOSURE'], ['crew_wizard', 'UNLICENSED', 'MAGIC'],
+];
+// the spotlight stops on each suspect in turn, along the row and back: STAY seconds on one, then MOVE seconds gliding to the next
+const ORDER = [0, 1, 2, 3, 4, 3, 2, 1], STAY = 2.7, MOVE = 0.6;
+const FLASH_AT = 0.9;               // the camera takes the photo this long after the spotlight arrives
 
 let wallCache = null;   // the wall, drawn once: a moody blue-grey with panel seams, darker toward the corners
 
@@ -58,7 +66,7 @@ function buildWall() {
 
 export default {
 	name: '2c. Line-up',
-	desc: 'A police line-up room: five suspects on numbered spots in front of a numbered height chart on a moody blue-grey wall, a spotlight sweeping along them, a wall camera flashing, and Beepsky on guard, with a dark framed one-way mirror on the wall above them.',
+	desc: 'A police line-up room: five suspects on numbered spots in front of a numbered height chart on a moody blue-grey wall, a spotlight stopping on each in turn while a wall camera takes the photo (the suspect flinches) and a board on the wall names the charge (the clown: excessive honking), and Beepsky on guard, with a dark framed one-way mirror on the wall above them.',
 	draw(c, t) {
 		wallCache ??= buildWall();
 		c.drawImage(wallCache, 0, 0);
@@ -70,8 +78,12 @@ export default {
 		c.fillStyle = '#e8d34a';
 		c.fillRect(0, FLOOR_Y - 4, W, 4);
 
-		// the spotlight sweeps from the first suspect to the last and back
-		const spotX = (Math.sin(t * 0.7) * 0.5 + 0.5) * (SPACING * 4) + FIRST_X;
+		// the spotlight stops on one suspect, then glides to the next
+		const turn = Math.floor(t / (STAY + MOVE)), inTurn = t - turn * (STAY + MOVE);
+		const now = ORDER[turn % ORDER.length], next = ORDER[(turn + 1) % ORDER.length];
+		const glide = Math.max(0, (inTurn - STAY) / MOVE), eased = glide * glide * (3 - 2 * glide);
+		const spotX = FIRST_X + SPACING * (now + (next - now) * eased);
+		const sinceFlash = inTurn - FLASH_AT;
 
 		// a pool of light on the floor under the spotlight
 		c.fillStyle = 'rgba(255,250,200,.12)';
@@ -80,10 +92,11 @@ export default {
 		c.fill();
 
 		// the suspects, dimmed unless the spotlight is on them, each fidgeting (2 px up) for a third of a second
-		// every 3.5 s at its own time, over a numbered plate
-		['crew_syndi', 'crew_pirate', 'crew_clown', 'crew_skel', 'crew_wizard'].forEach((who, i) => {
+		// every 3.5 s at its own time, over a numbered plate; the one in the spotlight flinches at the camera flash
+		SUSPECTS.forEach(([who], i) => {
 			const x = FIRST_X + i * SPACING;
-			const hop = Math.floor(t * 3 + i * 5) % 10 == 0 ? 2 : 0;
+			const flinch = i == now && sinceFlash > 0 && sinceFlash < 0.25;
+			const hop = flinch ? 3 : Math.floor(t * 3 + i * 5) % 10 == 0 ? 2 : 0;
 			c.save();
 			c.filter = `brightness(${Math.abs(x - spotX) < 46 ? 1 : 0.6})`;
 			crwPut(c, who + '_s', x, FEET_Y, 2, 0, true, hop);
@@ -113,11 +126,36 @@ export default {
 		// Beepsky on guard at the right, three times his size, bobbing
 		crwPut(c, 'crew_secbot_w', BEEPSKY_X, FEET_Y, 3, 0, true, Math.round(Math.sin(t * 3) * 1.5 + 2));
 
-		// camera flash every 3 s (at t = 2, 5, 8 ...), fading out over 0.4 s; a hard white spark at the camera lens
-		const sinceFlash = (t + 1) % 3;
-		if (sinceFlash < 0.4) {
+		// the charge board: which suspect is in the spotlight and what for; the name of the charge types itself out
+		c.fillStyle = '#0c1218';
+		c.fillRect(BOARD.x - 3, BOARD.y - 3, BOARD.w + 6, BOARD.h + 6);
+		c.fillStyle = '#8d9eab';
+		c.fillRect(BOARD.x - 2, BOARD.y - 2, BOARD.w + 4, BOARD.h + 4);
+		c.fillStyle = '#10181f';
+		c.fillRect(BOARD.x, BOARD.y, BOARD.w, BOARD.h);
+		c.fillStyle = '#e8d34a';
+		c.fillRect(BOARD.x, BOARD.y, BOARD.w, 16);
+		smallText(c, 'NOW VIEWING', BOARD.x + BOARD.w / 2, BOARD.y + 12, '#14202c', 'center', 11);
+		const moving = inTurn > STAY;
+		if (!moving) {
+			smallText(c, 'SUSPECT', BOARD.x + 10, BOARD.y + 34, '#8fa3b0', 'left', 10);
+			pixText(c, String(now + 1), BOARD.x + BOARD.w - 34, BOARD.y + 22, 16, 3, '#ffe66a', null);
+			smallText(c, 'CHARGE:', BOARD.x + 10, BOARD.y + 92, '#8fa3b0', 'left', 10);
+			const [, line1, line2] = SUSPECTS[now], typed = Math.floor(inTurn * 22);
+			smallText(c, line1.slice(0, typed), BOARD.x + 10, BOARD.y + 108, '#ff8a70', 'left', 12);
+			smallText(c, line2.slice(0, Math.max(0, typed - line1.length)), BOARD.x + 10, BOARD.y + 123, '#ff8a70', 'left', 12);
+		}
+		SUSPECTS.forEach((_, i) => {             // five lamps along the bottom, the current one lit
+			c.fillStyle = '#05080b';
+			c.fillRect(BOARD.x + 13 + i * 22, BOARD.y + BOARD.h - 14, 10, 8);
+			c.fillStyle = i == now && !moving ? '#ffe66a' : '#3a4650';
+			c.fillRect(BOARD.x + 14 + i * 22, BOARD.y + BOARD.h - 13, 8, 6);
+		});
+
+		// the camera flashes once for each suspect, fading out over 0.4 s; a hard white spark at the camera lens
+		if (sinceFlash > 0 && sinceFlash < 0.4) {
 			const fade = 1 - sinceFlash / 0.4;
-			c.fillStyle = `rgba(255,255,255,${0.6 * fade * fade})`;
+			c.fillStyle = `rgba(255,255,255,${0.4 * fade * fade})`;
 			c.fillRect(0, 0, W, W);
 			c.fillStyle = `rgba(255,255,255,${fade})`;
 			c.fillRect(CAMERA.x - 14, CAMERA.y + 6, 28, 3);

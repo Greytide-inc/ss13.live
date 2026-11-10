@@ -1,4 +1,4 @@
-import { W, spr, pixText, LOGO, scanlines, vignette } from "../helpers.js";
+import { W, IMG, spr, pixText, LOGO, scanlines, vignette } from "../helpers.js";
 
 const GREEN = '#3f6';
 const DIM = '#1a6a30';
@@ -8,7 +8,14 @@ const PANE = { x: 28, y: 356, w: 300, h: 108 };
 // side panels, all outside the menu box (x 22-318, y 176-344)
 const LAWS = { x: 14, y: 26, w: 132, h: 130 };
 const POWER = { x: 336, y: 26, w: 130, h: 62 };
-const HEX = { x: 336, y: 100, w: 130, h: 244 };
+const MAP = { x: 336, y: 100, w: 130, h: 122 };
+const HEX = { x: 336, y: 234, w: 130, h: 110 };
+// the pane round the lobby menu: its lines stay just outside the menu box, so the box itself is empty and dark
+const MENU = { x: 14, y: 167, w: 312, h: 181 };
+// the part of the station picture that holds the station (the rest is empty space), and the crew trackers blinking on the map
+// (x, y as parts of the map's width and height)
+const STATION_PART = { x: 100, y: 240, w: 860, h: 720 };
+const TRACKERS = [[.42, .38], [.6, .52], [.3, .62], [.72, .3], [.5, .78]];
 const GAUGES = { x: 336, y: 356, w: 130, h: 108 };
 
 const LOG = [
@@ -47,7 +54,32 @@ const HEX_ROWS = (() => {
 	});
 })();
 
-let frame; // the parts that never move, drawn once: glow, bezel, panel boxes, labels
+let frame; // the parts that never move, drawn once: glow, bezel, panel boxes, labels, the station map
+let mapBox; // where the map was drawn: x, y, w, h
+
+/** the station as the terminal shows it: shrunk to fit its pane and turned green, brighter where the station is brighter */
+function drawMap(g) {
+	const w = MAP.w - 12, h = Math.round(w * STATION_PART.h / STATION_PART.w);
+	const small = document.createElement('canvas');
+	small.width = w;
+	small.height = h;
+	const sg = small.getContext('2d');
+	sg.imageSmoothingEnabled = true;
+	sg.imageSmoothingQuality = 'high';
+	sg.drawImage(IMG.station, STATION_PART.x, STATION_PART.y, STATION_PART.w, STATION_PART.h, 0, 0, w, h);
+	const d = sg.getImageData(0, 0, w, h), px = d.data;
+	for (let i = 0; i < px.length; i += 4) {
+		const light = Math.max(px[i], px[i + 1], px[i + 2]);
+		px[i] = 30;
+		px[i + 1] = light > 150 ? 235 : 170;
+		px[i + 2] = 70;
+		px[i + 3] = light < 28 ? 0 : Math.min(255, 70 + light * 1.4);
+	}
+	sg.putImageData(d, 0, 0);
+	mapBox = { x: MAP.x + 6, y: MAP.y + 10 + Math.round((MAP.h - 12 - h) / 2), w, h };
+	g.drawImage(small, mapBox.x, mapBox.y);
+}
+
 
 /** a thin green box with a small title tab */
 function box(g, r, title) {
@@ -86,7 +118,10 @@ function makeFrame() {
 	}
 	box(g, LAWS, 'LAW MODULE');
 	box(g, POWER, 'STATION POWER');
+	box(g, MAP, 'STATION MAP');
+	drawMap(g);
 	box(g, HEX, 'MEMORY');
+	box(g, MENU, 'CREW ACCESS');
 	box(g, GAUGES, 'SYSTEMS');
 	box(g, PANE, 'BOOT LOG');
 	// top status bar
@@ -120,12 +155,29 @@ function drawHex(c, t) {
 	c.clip();
 	const offset = Math.floor(t * 14); // px scrolled
 	const row = Math.floor(offset / 12);
-	for (let i = 0; i < 22; i++) {
+	for (let i = 0; i < HEX.h / 12 + 1; i++) {
 		const y = HEX.y + 20 + i * 12 - (offset % 12);
 		c.fillStyle = (row + i) % 7 === 0 ? '#3c6' : '#1f7a38';
 		c.fillText(HEX_ROWS[(row + i) % HEX_ROWS.length], HEX.x + 8, y);
 	}
 	c.restore();
+}
+
+/** over the station map: a scan line moving down it, and the crew trackers blinking, each at its own time */
+function drawMapLive(c, t) {
+	const { x, y, w, h } = mapBox;
+	const scanY = y + Math.floor((t * 14) % (h + 16)) - 8;
+	if (scanY >= y && scanY < y + h) {
+		c.fillStyle = 'rgba(120,255,160,.35)';
+		c.fillRect(x, scanY, w, 1);
+		c.fillStyle = 'rgba(120,255,160,.10)';
+		c.fillRect(x, scanY - 3, w, 3);
+	}
+	TRACKERS.forEach(([fx, fy], i) => {
+		if (Math.floor(t * 1.4 + i * .43) % 2) return;
+		c.fillStyle = '#d8ffe0';
+		c.fillRect(Math.round(x + fx * w), Math.round(y + fy * h), 2, 2);
+	});
 }
 
 /** the station power graph: a row of bars drifting along, the newest one bright */
@@ -164,7 +216,7 @@ function drawLaws(c, t) {
 
 export default {
 	name: '5. AI terminal',
-	desc: 'A whole green-phosphor terminal: bezel, status bar, the station AI glowing in a frame with its laws beside it, a power graph, scrolling memory and gauges, and the boot log typing line after line at the bottom, jokes and all. Nerdy and calm.',
+	desc: 'A whole green-phosphor terminal: bezel, status bar, the station AI glowing in a frame with its laws beside it, a power graph, a map of the station with a scan line and blinking crew trackers, scrolling memory and gauges, the menu in its own CREW ACCESS pane, and the boot log typing line after line at the bottom, jokes and all. Nerdy and calm.',
 	draw(c, t) {
 		frame ??= makeFrame();
 		c.drawImage(frame, 0, 0);
@@ -185,6 +237,7 @@ export default {
 
 		drawLaws(c, t);
 		drawPower(c, t);
+		drawMapLive(c, t);
 		drawHex(c, t);
 		drawGauges(c, t);
 

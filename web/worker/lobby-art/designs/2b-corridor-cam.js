@@ -184,6 +184,26 @@ function corridorView(c, t, x, y, w, h, crew, scale, label, number, scene) {
 		c.fillRect(Math.round(x + w / 2 - lw / 2), Math.round(ly + 1), Math.round(lw), 2 + Math.round(f * 2));
 	}
 
+	// light: a pale sheen down the middle of the floor, a soft pool of light on the far end, the near corners darker
+	c.save();
+	c.globalCompositeOperation = 'lighter';
+	const mid = x + w / 2;
+	const sheen = c.createLinearGradient(0, s.bottom, 0, y + h);
+	sheen.addColorStop(0, 'rgba(190,215,235,.16)');
+	sheen.addColorStop(1, 'rgba(190,215,235,.03)');
+	quad(c, sheen, lerp(s.bx0, mid, .45), s.bottom, lerp(s.bx1, mid, .45), s.bottom, mid + w * .2, y + h, mid - w * .2, y + h);
+	const pool = c.createRadialGradient(mid, s.top, 2, mid, s.top, (s.bx1 - s.bx0) * .9);
+	pool.addColorStop(0, 'rgba(200,225,245,.22)');
+	pool.addColorStop(1, 'rgba(200,225,245,0)');
+	c.fillStyle = pool;
+	c.fillRect(x, y, w, h);
+	c.restore();
+	const corners = c.createRadialGradient(mid, y + h * .45, Math.min(w, h) * .45, mid, y + h * .45, Math.max(w, h) * .8);
+	corners.addColorStop(0, 'rgba(0,0,0,0)');
+	corners.addColorStop(1, 'rgba(0,0,0,.45)');
+	c.fillStyle = corners;
+	c.fillRect(x, y, w, h);
+
 	// crew walking across the floor, looping round
 	const loop = w + 64 * scale;
 	crew.forEach(([who, dir], i) => {
@@ -247,6 +267,38 @@ function bezel(c, x, y, w, h) {
 	c.strokeRect(x - 0.5, y - 0.5, w + 1, h + 1);
 }
 
+// the motion scanner in the title band: rings, a sweeping line with a fading tail, and blips that light as the line passes them
+const BLIPS = [[.9, .55], [2.6, .8], [4.4, .4], [5.5, .7]];   // angle, distance from the middle (0-1)
+function scanner(c, t, x, y, size) {
+	const cx = x + size / 2, cy = y + size / 2, r = size / 2 - 3, angle = (t * 1.6) % (Math.PI * 2);
+	c.fillStyle = '#06100a';
+	c.fillRect(x, y, size, size);
+	c.strokeStyle = '#1d5a30';
+	c.lineWidth = 1;
+	for (const k of [1, .62, .26]) {
+		c.beginPath();
+		c.arc(cx, cy, r * k, 0, 7);
+		c.stroke();
+	}
+	c.fillStyle = '#1d5a30';
+	c.fillRect(x + 2, Math.round(cy), size - 4, 1);
+	c.fillRect(Math.round(cx), y + 2, 1, size - 4);
+	for (let i = 0; i < 10; i++) {            // the tail: wedges behind the line, fading out
+		c.fillStyle = `rgba(80,255,130,${(.3 * (1 - i / 10)).toFixed(2)})`;
+		c.beginPath();
+		c.moveTo(cx, cy);
+		c.arc(cx, cy, r, angle - (i + 1) * .09, angle - i * .09);
+		c.closePath();
+		c.fill();
+	}
+	for (const [a, d] of BLIPS) {
+		const since = ((angle - a) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) / 1.6;   // seconds since the line passed it
+		if (since > 2.2) continue;
+		c.fillStyle = `rgba(190,255,200,${(1 - since / 2.2).toFixed(2)})`;
+		c.fillRect(Math.round(cx + Math.cos(a) * r * d) - 1, Math.round(cy + Math.sin(a) * r * d) - 1, 3, 3);
+	}
+}
+
 // a screw head with a lighter top edge and a slot
 function screw(c, x, y) {
 	c.fillStyle = '#566472';
@@ -290,7 +342,7 @@ const SCREENS = [
 
 export default {
 	name: '2b. Corridor cam',
-	desc: 'A security console with four camera screens in bevelled bezels, scanlines and now and then a burst of static: CAM 02 looks at an arrivals window where a shuttle docks, CAM 04 down the main hall, CAM 07 at the bridge, with the crew (and Ian, and a cyborg) walking by; the fourth, over the menu, has lost its signal and sits dark. Bright green logo above, blinking status lights below.',
+	desc: 'A security console with four camera screens in bevelled bezels, scanlines and now and then a burst of static: CAM 02 looks at an arrivals window where a shuttle docks, CAM 04 down the main hall, CAM 07 at the bridge, with the crew (and Ian, and a cyborg) walking by; the fourth, over the menu, has lost its signal and sits dark. Each view has its own light (a sheen on the floor, darker corners). Bright green logo above between the AI and a sweeping motion scanner, blinking status lights below.',
 	draw(c, t) {
 		// console background and panel edge
 		c.fillStyle = '#0d1218';
@@ -307,6 +359,8 @@ export default {
 		c.fillStyle = '#0b1210';
 		c.fillRect(14, 44, 48, 48);
 		spr(c, 'ai', 22, 52, 1, Math.floor(t * 8));
+		bezel(c, 418, 44, 48, 48);
+		scanner(c, t, 418, 44, 48);
 
 		// the four screens: dead one top-left (behind the menu), places elsewhere
 		signalLostScreen(c, t, LEFT_X, GRID_TOP, LEFT_W, TOP_H);
