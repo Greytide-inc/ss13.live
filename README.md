@@ -4,6 +4,8 @@ A standalone fork of Space Station 13 as it was on /tg/station in 2017, with qua
 
 Play it at https://ss13.live. Singleplayer is always there and runs on your own computer; Multiplayer opens when the game server is up, and the page shows whether it is.
 
+There is also a Creative mode: an endless flat floor where you can't be hurt and can build and spawn what you like, with no round, no announcements and no random events (`?map=creative` on the game page).
+
 ## How it works
 
 The game is split into two parts, the same way BYOND splits it:
@@ -32,7 +34,7 @@ Assets are the original plain files at the repo root: `icons/`, `sound/`, `_maps
 
 ## Running it
 
-You need Node 20.
+You need Node 24.
 
 ```bash
 cd web
@@ -49,7 +51,7 @@ For development:
 
 | Command (from `web/`) | What it does |
 |---|---|
-| `npm test` | Engine and page tests |
+| `npm test` | Engine and page tests, plus a name check that fails on a misspelt var or proc name in the game code |
 | `npm run boot-check -- NAME` | Boots the game headless in Node and checks its log: every boot milestone in order and no runtime error. The main check after any game or engine change |
 | `npm run build:tgui` | Rebuilds the tgui assets from `tgui/src` |
 

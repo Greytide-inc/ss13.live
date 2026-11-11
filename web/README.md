@@ -4,14 +4,14 @@
 
 ## Play it
 
-Build the game into `dist/` (repo root: `source activate`, then from `web/`); `node tools/server.mjs --dist dist --lobby` serves it (see Multiplayer below):
+Build the game into `dist/` (from `web/`); `node tools/server.mjs --dist dist --lobby` serves it (see Multiplayer below):
 
 ```bash
 npm run build:static -- --no-snapshot   # quick (~10-40 s): no saved worlds, the station takes ~40 s to load
 npm run build:static                    # full (~2 min): saved worlds, loads in ~15 s; for release builds
 ```
 
-## Commands (from `web/`, after `source ../activate`)
+## Commands (from `web/`)
 
 | Command | What it does |
 |---|---|

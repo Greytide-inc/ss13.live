@@ -28,7 +28,7 @@
     "extract-screen-locs": "tsc -p . && node build/dist/src/tools/extract-screen-locs.js"
   },
   "devDependencies": {
-    "@types/node": "^20.19.43",
+    "@types/node": "^24.19.2",
     "typescript": "^5.9.3"
   },
   "dependencies": {

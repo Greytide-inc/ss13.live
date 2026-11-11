@@ -1,5 +1,6 @@
 // all.mjs - `npm test`: runs every quick test below (after tsc), up to 8 at once, prints one line each in list order, exits 1 if any failed.
-// TEST_JOBS=1 npm test runs them one by one (TEST_JOBS=N: N at once). A test in ALONE runs by itself after the rest (it measures real time).
+// TEST_JOBS=1 npm test runs them one by one (TEST_JOBS=N: N at once). A test still running after TEST_TIMEOUT seconds (default 120;
+// the slowest takes ~15) is killed and fails: one froze for 20 min on Node 24 (2026-11-11) and held up the whole run. A test in ALONE runs by itself after the rest (it measures real time).
 // A new test goes in this list. Slow or browser-heavy ones stay separate npm scripts (test:sw, test:restart, test:ui1,
 // test:dmi-all, boot-check); tests/static/mem-budget.mjs and snap-time.mjs are browser measurements, not tests. Run from web/.
 import { spawn } from "node:child_process";
@@ -92,6 +93,7 @@ const tests = [
 const ALONE = new Set(["tests/tick-wait.test.mjs"]);
 // started first (output order is unchanged): the longest ones, so none begins last and holds up the end
 const FIRST = ["tests/server-private.test.mjs", "tests/static/csp.test.mjs", "tests/static/lobby-art.test.mjs", "build/dist/tests/sight-shadow/sight-shadow.test.js", "tools/tgui-quick.mjs"];
+const LIMIT = 1000 * (Number(process.env.TEST_TIMEOUT) || 120);
 const JOBS = Math.max(1, Number(process.env.TEST_JOBS) || Math.min(8, os.availableParallelism()));
 
 const run = (args) => new Promise((done) => {
@@ -99,7 +101,8 @@ const run = (args) => new Promise((done) => {
 	const p = spawn(process.execPath, args, { stdio: ["ignore", "pipe", "pipe"] });
 	p.stdout.on("data", (d) => out.push(d));
 	p.stderr.on("data", (d) => out.push(d));
-	p.on("close", (code, signal) => done({ code, signal, out: Buffer.concat(out).toString("utf8"), s: ((Date.now() - t1) / 1000).toFixed(1) }));
+	const timer = setTimeout(() => { out.push(Buffer.from(`(timed out: still running after ${LIMIT / 1000} s, killed)\n`)); p.kill("SIGKILL"); }, LIMIT);
+	p.on("close", (code, signal) => clearTimeout(timer) ?? done({ code, signal, out: Buffer.concat(out).toString("utf8"), s: ((Date.now() - t1) / 1000).toFixed(1) }));
 });
 
 const failed = [];

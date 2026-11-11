@@ -198,7 +198,6 @@ let worker;
 function spawnWorker() {
 	const w = new Worker(fileURLToPath(new URL("./server-prelude.mjs", import.meta.url)), {
 		workerData: { script, saves: opt("--saves", null) && path.resolve(opt("--saves")) },
-		execArgv: ["--experimental-default-type=module"],
 		resourceLimits: { maxOldGenerationSizeMb: 3072, stackSizeMb: 8 },
 	});
 	w.on("error", (e) => out(`[server] worker thread error: ${e.stack ?? e}`));

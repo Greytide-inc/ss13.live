@@ -24,7 +24,7 @@ if [ -f "build/long/$name.pid" ] && [ ! -f "build/long/$name.done" ] && kill -0 
 fi
 rm -f "build/long/$name.done"
 printf '%q ' "$@" > "build/long/$name.cmd"
-setsid nohup bash -c 'source ../activate >/dev/null 2>&1; "$@"; echo $? > "build/long/'"$name"'.done"' _ "$@" \
+setsid nohup bash -c '"$@"; echo $? > "build/long/'"$name"'.done"' _ "$@" \
   > "build/long/$name.log" 2>&1 < /dev/null &
 echo $! > "build/long/$name.pid"
 
