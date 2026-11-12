@@ -376,7 +376,7 @@ rt.def("/obj/effect/anomaly/pyro/proc/makepyroslime", function* makepyroslime(f:
 	(S = (yield* new_(T("/mob/living/simple_animal/slime"), _T, new_colour))).rabid = 1;
 	S.amount_grown = SLIME_EVOLUTION_THRESHOLD;
 	yield* S.Evolve();
-	yield* offer_control(S);
+	if (!is_creative()) yield* offer_control(S); // tg_js: Creative's slime asks no ghost (a ring of anomalies made a pop-up each)
 	return f.dot;
 }, true);
 
